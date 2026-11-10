@@ -1,6 +1,6 @@
 #include "rhi/dx12/dx12_adapters.h"
 
-#include <cstdio>
+#include "cstr/format.h"
 
 #include "os/windows/utf16.h"
 
@@ -8,15 +8,15 @@ namespace engine_placeholder::rhi::dx12 {
 
 AdapterInfo MakeAdapterInfo(const AdapterFacts& facts, bool presentable) {
     AdapterInfo out;
-    std::snprintf(out.id, sizeof(out.id), "dx12-%04x-%04x-%08x-%02x", facts.vendor_id & 0xFFFFu, facts.device_id & 0xFFFFu, facts.subsystem_id,
+    FormatTo(out.id, sizeof(out.id), "dx12-%04x-%04x-%08x-%02x", facts.vendor_id & 0xFFFFu, facts.device_id & 0xFFFFu, facts.subsystem_id,
                   facts.revision & 0xFFu);
-    std::snprintf(out.luid, sizeof(out.luid), "%08x%08x", static_cast<u32>(facts.luid_high), facts.luid_low);
-    std::snprintf(out.name, sizeof(out.name), "%s", facts.name);
+    FormatTo(out.luid, sizeof(out.luid), "%08x%08x", static_cast<u32>(facts.luid_high), facts.luid_low);
+    FormatTo(out.name, sizeof(out.name), "%s", facts.name);
     out.kind = facts.software ? AdapterKind::Software : facts.uma ? AdapterKind::Integrated : AdapterKind::Discrete;
     out.dedicated_memory_bytes = facts.dedicated_video_memory;
     if (facts.driver_version != 0) {
         const u64 v = facts.driver_version;
-        std::snprintf(out.driver, sizeof(out.driver), "%u.%u.%u.%u", static_cast<u32>((v >> 48) & 0xFFFF), static_cast<u32>((v >> 32) & 0xFFFF),
+        FormatTo(out.driver, sizeof(out.driver), "%u.%u.%u.%u", static_cast<u32>((v >> 48) & 0xFFFF), static_cast<u32>((v >> 32) & 0xFFFF),
                       static_cast<u32>((v >> 16) & 0xFFFF), static_cast<u32>(v & 0xFFFF));
     }
     if (!facts.feature_level_ok) {
@@ -113,11 +113,11 @@ int PickAdapter(const AdapterSet& set, const char* request, char* reason, usize 
     if (request != nullptr && request[0] != '\0') {
         const int match = MatchAdapter(list.items, list.count, request);
         if (match < 0) {
-            std::snprintf(reason, reason_size, "DeviceCreateInfo::adapter='%s' matches none of the %u Direct3D 12 adapters", request, list.count);
+            FormatTo(reason, reason_size, "DeviceCreateInfo::adapter='%s' matches none of the %u Direct3D 12 adapters", request, list.count);
             return -1;
         }
         if (!list.items[match].suitable) {
-            std::snprintf(reason, reason_size, "DeviceCreateInfo::adapter='%s' selects '%s', which is unsuitable: %s", request, list.items[match].name,
+            FormatTo(reason, reason_size, "DeviceCreateInfo::adapter='%s' selects '%s', which is unsuitable: %s", request, list.items[match].name,
                           list.items[match].unsuitable_reason != nullptr ? list.items[match].unsuitable_reason : "unknown");
             return -1;
         }
@@ -133,7 +133,7 @@ int PickAdapter(const AdapterSet& set, const char* request, char* reason, usize 
             return static_cast<int>(i);
         }
     }
-    std::snprintf(reason, reason_size, "none of the %u Direct3D 12 adapters is suitable", list.count);
+    FormatTo(reason, reason_size, "none of the %u Direct3D 12 adapters is suitable", list.count);
     return -1;
 }
 

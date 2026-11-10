@@ -2,8 +2,7 @@
 // openers, Stat and Lstat over junctions and links, long paths, and that nothing leaks a handle. Windows only.
 #include <catch2/catch_test_macros.hpp>
 
-#include <cstdlib>
-#include <cwchar>
+#include "os/console.h"
 
 #include "file_conformance.h"
 #include "io/file.h"
@@ -404,7 +403,7 @@ TEST_CASE("io: special folders on Windows", "[io][fs][windows]") {
 // the crash dumps) into a directory of its own; a relative value is ignored. The variables are put back afterwards.
 TEST_CASE("io: the user folders follow APPDATA and LOCALAPPDATA when they are absolute", "[io][fs][windows]") {
     auto get = [](const char* name) {
-        const char* v = std::getenv(name);
+        const char* v = os::GetEnvironment(name);
         return engine_test::MakeText(StringView(v != nullptr ? v : ""));
     };
     struct Restore {

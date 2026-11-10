@@ -1,7 +1,6 @@
 // The Direct3D 12 backend's shaders, pipelines and pipeline cache (Phase 13 Day 167): the cache file's rules, every committed shader as a
 // pipeline whose layouts come from its reflection, the refusals, the cache's round trip and its damaged files, and cold against warm
 // creation. Windows only.
-#include <chrono>
 #include "cstr/format.h"
 #include "cstr/cstr.h"
 
@@ -60,6 +59,7 @@
 #include "rhi/dx12/dx12_debug.h"
 #include "rhi/dx12/dx12_device.h"
 #include "rhi/dx12/dx12_pipeline_cache.h"
+#include "os/os.h"
 #include "rhi/rhi.h"
 #include "cstr/mem_ops.h"
 
@@ -554,9 +554,9 @@ TEST_CASE("Creating every committed pipeline on DX12: cold, warm from the librar
         Dx12DevicePtr device = MakePipelineDevice(native.CStr());
         REQUIRE(device);
         Everything all;
-        const auto start = std::chrono::steady_clock::now();
+        const u64 start = os::MonotonicTimeNanos();
         all.Make(*device);
-        *ms = std::chrono::duration<f64, std::milli>(std::chrono::steady_clock::now() - start).count();
+        *ms = (static_cast<f64>(os::MonotonicTimeNanos() - start) / 1e6);
         *stats = device->PipelineCache();
         all.Destroy(*device);
     };
@@ -607,22 +607,22 @@ TEST_CASE("Creating every committed pipeline on DX12: cold, warm from the librar
     d.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
     const int kRuns = 20;
     ComRef<ID3D12PipelineState> first;
-    auto t0 = std::chrono::steady_clock::now();
+    u64 t0 = os::MonotonicTimeNanos();
     for (int i = 0; i < kRuns; ++i) {
         ComRef<ID3D12PipelineState> s;
         REQUIRE(SUCCEEDED(device->D3D()->CreateGraphicsPipelineState(&d, __uuidof(ID3D12PipelineState), s.PutVoid())));
         if (i == 0) first = static_cast<ComRef<ID3D12PipelineState>&&>(s);
     }
-    const f64 plain_ms = std::chrono::duration<f64, std::milli>(std::chrono::steady_clock::now() - t0).count() / kRuns;
+    const f64 plain_ms = (static_cast<f64>(os::MonotonicTimeNanos() - t0) / 1e6) / kRuns;
     ComRef<ID3DBlob> blob;
     REQUIRE(SUCCEEDED(first->GetCachedBlob(blob.Put())));
     d.CachedPSO = {blob->GetBufferPointer(), blob->GetBufferSize()};
-    t0 = std::chrono::steady_clock::now();
+    t0 = os::MonotonicTimeNanos();
     for (int i = 0; i < kRuns; ++i) {
         ComRef<ID3D12PipelineState> s;
         REQUIRE(SUCCEEDED(device->D3D()->CreateGraphicsPipelineState(&d, __uuidof(ID3D12PipelineState), s.PutVoid())));
     }
-    const f64 blob_ms = std::chrono::duration<f64, std::milli>(std::chrono::steady_clock::now() - t0).count() / kRuns;
+    const f64 blob_ms = (static_cast<f64>(os::MonotonicTimeNanos() - t0) / 1e6) / kRuns;
     layouts.Destroy(*device);
     WARN("all " << cold_stats.misses << " pipelines: cold " << cold << " ms, warm from the library " << warm << " ms (" << warm_stats.hits
                 << " hits); one G-buffer pipeline: " << plain_ms << " ms plain, " << blob_ms << " ms from its cached blob ("

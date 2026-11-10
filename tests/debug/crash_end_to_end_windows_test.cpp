@@ -1,7 +1,12 @@
 // Crash handling end to end on Windows (Phase 13 Day 155): a child process installs the crash handler and faults in various ways; the parent
 // checks the report on standard error, the report file, the envelope with its minidump, and the exception status the process ended with.
 // The Linux counterpart is crash_end_to_end_linux_test.cpp; the cases that differ are noted where they are.
-#include <cstdlib> // _set_abort_behavior
+#include "containers/array.h"
+#include "cstr/mem_ops.h"
+#include "cstr/cstr.h"
+#include "cstr/format.h"
+#include "sync/atomic.h"
+#include "sync/thread.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -24,11 +29,6 @@
 #include "support/death_test_skip.h"
 #include "test_text.h"
 
-#include <atomic>
-#include <cstdio>
-#include <cstring>
-#include <thread>
-
 #include "os/windows/win32.h"
 
 using namespace engine_placeholder;
@@ -38,6 +38,13 @@ using engine_test::Text;
 using engine_test::TextList;
 
 namespace {
+
+// A number as 0x-prefixed hexadecimal text, for test messages.
+Array<char, 24> HexText(i64 value) {
+    Array<char, 24> text = {};
+    FormatTo(text.Data(), text.Size(), "0x%llx", static_cast<unsigned long long>(value));
+    return text;
+}
 
 LogChannel LogEndToEndWindows("LogEndToEndWindows", LogVerbosity::Info);
 
@@ -134,8 +141,7 @@ void CheckReportAndDump(const ChildResult& r, const TempDir& dir, const char* re
     const StringView err = Stderr(r);
     const Text reason_line = engine_test::Concat("reason: ", StringView(reason_name));
     INFO("child stderr: " << Catch::Detail::stringify(err));
-    INFO("child ended: exited " << r.exited << " code " << r.exit_code << ", terminated " << r.terminated << " status 0x" << std::hex
-                                << r.native_code << std::dec << ", timed out " << r.timed_out);
+    INFO("child ended: exited " << r.exited << " code " << r.exit_code << ", terminated " << r.terminated << " status " << HexText(r.native_code).Data() << ", timed out " << r.timed_out);
     CHECK(TextHas(err, "=== CRASH REPORT ==="));
     CHECK(TextHas(err, reason_line));
     CHECK(TextHas(err, "--- stack trace ---"));
@@ -148,7 +154,7 @@ void CheckReportAndDump(const ChildResult& r, const TempDir& dir, const char* re
     const Vector<u8> content = ReadWholeFile(envelopes[0]);
     crash_extract::Minidump dump;
     REQUIRE(crash_extract::FindMinidump(reinterpret_cast<const char*>(content.Data()), content.Size(), &dump) == crash_extract::EnvelopeResult::Ok);
-    CHECK(std::memcmp(dump.data, "MDMP", 4) == 0);
+    CHECK(MemCompare(dump.data, "MDMP", 4) == 0);
     // The report travels in the envelope too (attached), and sits beside the dump.
     CHECK(TextHas(AsText(content), "=== CRASH REPORT ==="));
     const Vector<u8> file = ReadWholeFile((dir.IoPath() / "crash-report.txt").View());
@@ -186,7 +192,7 @@ ENGINE_DEATH_TEST_FN(dt_e2e_win_abort_flags) {
     const unsigned int installed = _set_abort_behavior(0, 0) & kFlags;
     UninstallCrashHandler();
     const unsigned int after = _set_abort_behavior(0, 0) & kFlags;
-    std::exit(installed != 0 ? 1 : (after != kFlags ? 2 : 0));
+    os::Exit(installed != 0 ? 1 : (after != kFlags ? 2 : 0));
 }
 ENGINE_DEATH_TEST_FN(dt_e2e_win_stack_overflow) {
     InstallInto(argument);
@@ -210,10 +216,10 @@ TEST_CASE("Windows: a null write prints the report, leaves a dump and the proces
     INFO(first.CStr());
     unsigned long long address = 0;
     unsigned long long offset = 0;
-    const char* plus = std::strstr(first.CStr(), "+0x");
-    REQUIRE(std::sscanf(first.CStr(), "#0  0x%llx", &address) == 1);
+    const char* plus = CStrFind(first.CStr(), "+0x");
+    REQUIRE(ScanFrom(first.CStr(), "#0  0x%llx", &address) == 1);
     REQUIRE(plus != nullptr);
-    REQUIRE(std::sscanf(plus, "+0x%llx", &offset) == 1);
+    REQUIRE(ScanFrom(plus, "+0x%llx", &offset) == 1);
     CHECK(TextHas(first, "debug_tests"));
     CHECK(((address - offset) & 0xffffull) == 0); // the offset is from the image base, which is 64 KiB aligned
     // The first frame is the function that faulted, not the hook that walked the stack: the same offset in this process (the same
@@ -224,7 +230,7 @@ TEST_CASE("Windows: a null write prints the report, leaves a dump and the proces
     char text[4096];
     FormatStackTrace(here, text, sizeof(text));
     INFO(text);
-    CHECK(std::strstr(text, "InjectFault") != nullptr);
+    CHECK(CStrFind(text, "InjectFault") != nullptr);
 }
 
 TEST_CASE("Windows: an illegal instruction, a divide by zero and an abort each report their reason", "[crash][crashreport][death][debug][windows]") {
@@ -256,6 +262,8 @@ TEST_CASE("Windows: while the crash handler is installed, abort() shows no dialo
     TempDir dir;
     REQUIRE(dir.Path()[0] != '\0');
     const ChildResult r = RunCrashChild("dt_e2e_win_abort_flags", dir.Path());
+    INFO("child ended: exited " << r.exited << " code " << r.exit_code << ", terminated " << r.terminated << " status " << HexText(r.native_code).Data()
+                                << ", timed out " << r.timed_out);
     INFO("child stderr: " << Catch::Detail::stringify(Stderr(r)));
     REQUIRE(r.exited);
     CHECK(r.exit_code == 0);
@@ -276,14 +284,14 @@ TEST_CASE("Windows: a stack overflow on the main thread prints a report and leav
 namespace {
 
 void WorkerFault(FaultKind kind, bool register_thread) {
-    std::thread worker([kind, register_thread] {
+    Thread worker([kind, register_thread] {
         if (register_thread) {
             RegisterThreadForCrashHandling();
         }
         SetCrashThreadName("worker-7");
         InjectFault(kind);
     });
-    worker.join();
+    worker.Join();
 }
 
 } // namespace
@@ -354,18 +362,18 @@ TEST_CASE("Windows: an abort on a thread never registered is reported for an unk
 
 ENGINE_DEATH_TEST_FN(dt_e2e_win_two_threads_fault) {
     InstallInto(argument);
-    std::atomic<int> ready{0};
+    Atomic<int> ready{0};
     auto body = [&ready] {
-        ready.fetch_add(1);
-        while (ready.load() < 2) {
-            std::this_thread::yield();
+        ready.FetchAdd(1);
+        while (ready.Load() < 2) {
+            ThisThread::Yield();
         }
         InjectFault(FaultKind::NullWrite);
     };
-    std::thread a(body);
-    std::thread b(body);
-    a.join();
-    b.join();
+    Thread a(body);
+    Thread b(body);
+    a.Join();
+    b.Join();
 }
 
 TEST_CASE("Windows: two threads faulting at once produce one report and one dump", "[crash][crashreport][death][debug][windows]") {
@@ -378,25 +386,25 @@ TEST_CASE("Windows: two threads faulting at once produce one report and one dump
 }
 
 namespace {
-std::atomic<bool> g_win_slow_provider_started{false};
+Atomic<bool> g_win_slow_provider_started{false};
 void WinSlowProvider(void*, char* out, usize capacity) {
     g_win_slow_provider_started = true;
     os::SleepNanos(400ull * 1000 * 1000); // long enough for the other thread to fault in the middle of the report
-    std::snprintf(out, capacity, "slow but done");
+    FormatTo(out, capacity, "slow but done");
 }
 } // namespace
 
 ENGINE_DEATH_TEST_FN(dt_e2e_win_second_fault_during_report) {
     InstallInto(argument);
     RegisterCrashStateProvider("slow", &WinSlowProvider, nullptr);
-    std::thread second([] {
-        while (!g_win_slow_provider_started.load()) {
-            std::this_thread::yield();
+    Thread second([] {
+        while (!g_win_slow_provider_started.Load()) {
+            ThisThread::Yield();
         }
         os::SleepNanos(50ull * 1000 * 1000);
         InjectFault(FaultKind::NullWrite);
     });
-    second.detach(); // InjectFault does not return: the process ends with the crash
+    second.Detach(); // InjectFault does not return: the process ends with the crash
     InjectFault(FaultKind::NullWrite); // the main thread reports first, slowly
 }
 
@@ -523,7 +531,7 @@ private:
 
 void PutResult(const char* key, int value) {
     char line[64];
-    const int n = std::snprintf(line, sizeof(line), "%s=%d\n", key, value);
+    const int n = FormatTo(line, sizeof(line), "%s=%d\n", key, value);
     os::Write(1, line, static_cast<usize>(n));
 }
 
@@ -594,7 +602,7 @@ TEST_CASE("Windows: a crash dump is still there after the program is started aga
     REQUIRE(FindFiles(dir.IoPath(), "*.envelope").Size() == 1);
     for (int launch = 0; launch < 2; ++launch) {
         const ChildResult restarted = RunCrashChild("dt_e2e_win_install_and_exit", dir.Path());
-        INFO("launch " << launch << ": terminated " << restarted.terminated << " status 0x" << std::hex << restarted.native_code << std::dec
+        INFO("launch " << launch << ": terminated " << restarted.terminated << " status " << HexText(restarted.native_code).Data()
                        << ", timed out " << restarted.timed_out << ", stdout " << Catch::Detail::stringify(StringView(restarted.stdout_text, restarted.stdout_length))
                        << ", stderr " << Catch::Detail::stringify(Stderr(restarted)));
         if (!restarted.exited) hang_watchdog::NameFrames(restarted.stderr_text, restarted.stderr_length);

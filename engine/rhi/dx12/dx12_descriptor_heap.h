@@ -1,6 +1,6 @@
 #pragma once
 
-#include <atomic>
+#include "sync/atomic.h"
 
 #include "containers/vector.h"
 #include "rhi/dx12/com_ref.h"
@@ -133,7 +133,7 @@ public:
     /// Param slot: the frame slot.
     void Reset(u32 slot);
     /// Returns how many descriptors of a slot are used.
-    u32 Used(u32 slot) const { return slot < kMaxSlots ? used_[slot].load(std::memory_order_relaxed) : 0; }
+    u32 Used(u32 slot) const { return slot < kMaxSlots ? used_[slot].Load(MemoryOrder::Relaxed) : 0; }
     /// Returns the descriptors per slot.
     u32 PerSlot() const { return per_slot_; }
     /// Returns the heap. Ownership: borrowed.
@@ -148,7 +148,7 @@ private:
     D3D12_GPU_DESCRIPTOR_HANDLE gpu_start_{};
     u32 increment_ = 0;
     u32 per_slot_ = 0;
-    std::atomic<u32> used_[kMaxSlots] = {};
+    Atomic<u32> used_[kMaxSlots] = {};
 };
 
 /// Persistent ranges of the shader-visible sampler heap (2048 descriptors at most, D3D12's limit), first fit with coalescing on free:

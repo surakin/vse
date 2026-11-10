@@ -1,7 +1,7 @@
 // The window host on Windows (Phase 13 Day 158): the one backend is Win32 (PlanWin32WindowBackends); Wayland and X11 are refused.
 #include "platform/window_host.h"
 
-#include <cstdlib>
+#include "os/console.h"
 
 #include "debug/crash_state.h"
 #include "log/log.h"
@@ -44,7 +44,7 @@ bool PlatformWindowHost::Open(WindowBackend requested, StringView title, u32 wid
 
 bool PlatformWindowHost::OpenFromEnvironment(StringView title, u32 width, u32 height, InputState* input) {
     WindowBackend requested = WindowBackend::Auto;
-    const char* value = std::getenv("ENGINE_WINDOW_BACKEND");
+    const char* value = os::GetEnvironment("ENGINE_WINDOW_BACKEND");
     if (value != nullptr && value[0] != '\0') {
         requested = ParseWindowBackend(StringView(value));
         if (requested == WindowBackend::Invalid) {

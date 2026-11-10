@@ -1,7 +1,6 @@
 #include "os/os.h"
 
-#include <atomic>
-#include <cstdlib>
+#include "sync/atomic.h"
 #include <fcntl.h> // the POSIX-named open flags callers pass (_O_RDONLY, ...), from the UCRT
 
 #include "os/windows/utf16.h"
@@ -24,7 +23,7 @@ namespace {
 
 constexpr int kFirstTableDescriptor = 3;
 constexpr int kTableSize = 256;
-std::atomic<HANDLE> g_handles[kTableSize] = {};
+Atomic<HANDLE> g_handles[kTableSize] = {};
 
 constexpr DWORD kMaxIoPerCall = 0x7FFFFFFF; // `long` is 32 bits on Windows: one call moves at most this much and reports a short count
 
@@ -36,7 +35,7 @@ HANDLE HandleOf(int fd) {
     default: break;
     }
     if (fd < kFirstTableDescriptor || fd >= kFirstTableDescriptor + kTableSize) return INVALID_HANDLE_VALUE;
-    HANDLE h = g_handles[fd - kFirstTableDescriptor].load(std::memory_order_acquire);
+    HANDLE h = g_handles[fd - kFirstTableDescriptor].Load(MemoryOrder::Acquire);
     return h != nullptr ? h : INVALID_HANDLE_VALUE;
 }
 
@@ -44,7 +43,7 @@ int Adopt(HANDLE h) {
     if (h == INVALID_HANDLE_VALUE || h == nullptr) return -1;
     for (int i = 0; i < kTableSize; ++i) {
         HANDLE expected = nullptr;
-        if (g_handles[i].compare_exchange_strong(expected, h, std::memory_order_acq_rel)) return i + kFirstTableDescriptor;
+        if (g_handles[i].CompareExchangeStrong(expected, h, MemoryOrder::AcqRel)) return i + kFirstTableDescriptor;
     }
     CloseHandle(h); // the table is full
     return -1;
@@ -58,15 +57,15 @@ bool QueryIsConsole(HANDLE h) {
 // Whether a handle is a console, remembered for the last handle seen on each standard descriptor (a program rarely swaps them with
 // SetStdHandle, and a changed handle is simply queried again) so a log line does not cost two system calls. Table slots are files and
 // pipes from CreateFileW, queried each time (rare).
-std::atomic<HANDLE> g_std_seen[3] = {};
-std::atomic<bool> g_std_console[3] = {};
+Atomic<HANDLE> g_std_seen[3] = {};
+Atomic<bool> g_std_console[3] = {};
 
 bool IsConsole(int fd, HANDLE h) {
     if (fd < 0 || fd > 2) return QueryIsConsole(h);
-    if (g_std_seen[fd].load(std::memory_order_acquire) == h) return g_std_console[fd].load(std::memory_order_relaxed);
+    if (g_std_seen[fd].Load(MemoryOrder::Acquire) == h) return g_std_console[fd].Load(MemoryOrder::Relaxed);
     const bool console = QueryIsConsole(h);
-    g_std_console[fd].store(console, std::memory_order_relaxed);
-    g_std_seen[fd].store(h, std::memory_order_release);
+    g_std_console[fd].Store(console, MemoryOrder::Relaxed);
+    g_std_seen[fd].Store(h, MemoryOrder::Release);
     return console;
 }
 
@@ -99,7 +98,7 @@ bool WidePath(StringView path, wchar_t (&wide)[kMaxPathBytes]) {
 } // namespace
 
 void Exit(int code) {
-    std::exit(code); // as on Linux: atexit handlers and static destructors run, the C runtime flushes
+    ::exit(code); // as on Linux: atexit handlers and static destructors run, the C runtime flushes
 }
 
 long Write(int fd, const void* buf, usize len) {
@@ -127,7 +126,7 @@ struct TimedWrite {
 };
 char g_stage[64 * 1024];
 TimedWrite g_timed_write;
-std::atomic<bool> g_stage_busy{false};
+Atomic<bool> g_stage_busy{false};
 
 DWORD WINAPI TimedWriteThread(void*) {
     const TimedWrite& w = g_timed_write;
@@ -139,7 +138,7 @@ DWORD WINAPI TimedWriteThread(void*) {
         n = WriteFile(w.handle, g_stage, w.length, &written, nullptr) ? static_cast<long>(written) : -1;
     }
     g_timed_write.result = n;
-    g_stage_busy.store(false, std::memory_order_release); // the buffer is free again, whether or not the caller still waits
+    g_stage_busy.Store(false, MemoryOrder::Release); // the buffer is free again, whether or not the caller still waits
     return 0;
 }
 
@@ -153,13 +152,13 @@ long WriteAllWithTimeout(int fd, const void* buf, usize len, u64 timeout_nanos) 
     const u64 deadline = MonotonicTimeNanos() + timeout_nanos;
     while (done < len) {
         bool expected = false;
-        if (!g_stage_busy.compare_exchange_strong(expected, true, std::memory_order_acq_rel)) break; // an earlier write is still blocked
+        if (!g_stage_busy.CompareExchangeStrong(expected, true, MemoryOrder::AcqRel)) break; // an earlier write is still blocked
         const usize chunk = len - done < sizeof(g_stage) ? len - done : sizeof(g_stage);
         for (usize i = 0; i < chunk; ++i) g_stage[i] = bytes[done + i];
         g_timed_write = TimedWrite{fd, h, static_cast<DWORD>(chunk), -1};
         HANDLE thread = CreateThread(nullptr, 64 * 1024, TimedWriteThread, nullptr, STACK_SIZE_PARAM_IS_A_RESERVATION, nullptr);
         if (thread == nullptr) {
-            g_stage_busy.store(false, std::memory_order_release);
+            g_stage_busy.Store(false, MemoryOrder::Release);
             break;
         }
         const u64 now = MonotonicTimeNanos();
@@ -230,7 +229,7 @@ int CreateFileForWriting(StringView path, int mode) {
 int Close(int fd) {
     if (fd >= 0 && fd < kFirstTableDescriptor) return 0; // the standard handles belong to the process
     if (fd < kFirstTableDescriptor || fd >= kFirstTableDescriptor + kTableSize) return -1;
-    HANDLE h = g_handles[fd - kFirstTableDescriptor].exchange(nullptr, std::memory_order_acq_rel);
+    HANDLE h = g_handles[fd - kFirstTableDescriptor].Exchange(nullptr, MemoryOrder::AcqRel);
     if (h == nullptr) return -1;
     return CloseHandle(h) ? 0 : -1;
 }

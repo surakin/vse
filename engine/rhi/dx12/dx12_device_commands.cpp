@@ -13,18 +13,20 @@
 #include "rhi/dx12/dx12_format.h"
 #include "rhi/dx12/dx12_result.h"
 #include "rhi/rhi_log.h"
+#include "sync/atomic.h"
+#include "sync/mutex.h"
 
 namespace engine_placeholder::rhi::dx12 {
 
 // ---- command lists ----
 
 CommandList* Dx12Device::CreateCommandList() {
-    ENGINE_ASSERT(frame_open_.load(std::memory_order_acquire), "CreateCommandList: no frame is open (call BeginFrame first)");
-    if (device_lost_.load(std::memory_order_relaxed)) {
+    ENGINE_ASSERT(frame_open_.Load(MemoryOrder::Acquire), "CreateCommandList: no frame is open (call BeginFrame first)");
+    if (device_lost_.Load(MemoryOrder::Relaxed)) {
         return nullptr;
     }
     const u64 frame = FrameNumber();
-    std::lock_guard<std::mutex> lock(list_mutex_);
+    LockGuard<Mutex> lock(list_mutex_);
     ListPool& pool = list_pools_[frame % kFrameSlots];
     if (pool.frame != frame) {
         pool.used = 0; // the slot's previous frame has finished: its lists can be recorded again
@@ -58,22 +60,22 @@ CommandList* Dx12Device::CreateCommandList() {
 }
 
 void Dx12Device::ShutdownCommands() {
-    std::lock_guard<std::mutex> lock(list_mutex_);
+    LockGuard<Mutex> lock(list_mutex_);
     for (ListPool& pool : list_pools_) {
         pool.lists.Clear();
         pool.used = 0;
     }
-    std::lock_guard<std::mutex> mip(mip_mutex_);
+    LockGuard<Mutex> mip(mip_mutex_);
     mip_state_.Reset();
     mip_root_.Reset();
 }
 
 FenceValue Dx12Device::Submit(CommandList* const* lists, usize count) {
-    ENGINE_ASSERT(frame_open_.load(std::memory_order_acquire), "Submit: no frame is open (call BeginFrame first)");
+    ENGINE_ASSERT(frame_open_.Load(MemoryOrder::Acquire), "Submit: no frame is open (call BeginFrame first)");
     ENGINE_ASSERT(count == 0 || lists != nullptr, "Submit: lists is null but count is not zero");
     const u64 frame = FrameNumber();
     // Everything below is under the submission lock, so two threads that wrongly submit one list are serialized and the second aborts.
-    std::lock_guard<std::mutex> lock(submit_mutex_);
+    LockGuard<Mutex> lock(submit_mutex_);
     for (usize i = 0; i < count; ++i) {
         auto* list = static_cast<Dx12CommandList*>(lists[i]);
         ENGINE_ASSERT(list != nullptr && list->Owner() == this, "Submit: a list is null or belongs to another device");
@@ -84,14 +86,14 @@ FenceValue Dx12Device::Submit(CommandList* const* lists, usize count) {
     auto finish = [&]() {
         for (usize i = 0; i < count; ++i) static_cast<Dx12CommandList*>(lists[i])->SetPhase(Dx12CommandList::Phase::Submitted);
     };
-    if (device_lost_.load(std::memory_order_relaxed)) {
+    if (device_lost_.Load(MemoryOrder::Relaxed)) {
         finish();
         return 0;
     }
     if (count == 0) {
         return last_signaled_; // nothing new: the fence for everything submitted so far
     }
-    if (lose_device_at_submit_ != 0 && submit_count_.fetch_add(1, std::memory_order_relaxed) + 1 == lose_device_at_submit_ &&
+    if (lose_device_at_submit_ != 0 && submit_count_.FetchAdd(1, MemoryOrder::Relaxed) + 1 == lose_device_at_submit_ &&
         InjectLoss("submit", lose_device_at_submit_)) {
         finish();
         return 0;
@@ -109,7 +111,7 @@ FenceValue Dx12Device::Submit(CommandList* const* lists, usize count) {
         const Vector<Dx12CommandList::TextureUse>& uses = list->TextureUses();
         prologue.Clear();
         {
-            std::lock_guard<std::mutex> resources(resource_mutex_);
+            LockGuard<Mutex> resources(resource_mutex_);
             for (usize u = 0; u < uses.Size(); ++u) {
                 const TextureRes* t = textures_.Get(uses[u].texture);
                 if (t == nullptr || t->state == uses[u].initial) continue; // a texture destroyed since: its frame keeps it, nothing reads it
@@ -137,7 +139,7 @@ FenceValue Dx12Device::Submit(CommandList* const* lists, usize count) {
         }
         ID3D12CommandList* one[] = {list->List()};
         queue_->ExecuteCommandLists(1, one);
-        std::lock_guard<std::mutex> resources(resource_mutex_);
+        LockGuard<Mutex> resources(resource_mutex_);
         for (usize u = 0; u < uses.Size(); ++u) {
             if (TextureRes* t = textures_.Get(uses[u].texture)) t->state = uses[u].current;
         }
@@ -167,7 +169,7 @@ bool Dx12Device::MipGenCapable(const TextureDesc& desc) const {
 }
 
 bool Dx12Device::MipPipelineFor(MipPipeline* out) {
-    std::lock_guard<std::mutex> lock(mip_mutex_);
+    LockGuard<Mutex> lock(mip_mutex_);
     if (!mip_state_) {
         // shaders/mipgen.comp: t0 the source level, s1 a linear clamp sampler (static here), u2 the written level, b0 space15 four constants.
         D3D12_DESCRIPTOR_RANGE ranges[2]{};

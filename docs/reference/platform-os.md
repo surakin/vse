@@ -390,6 +390,20 @@ Flushes standard error (`fflush(stderr)`).
 |---|---|
 | Thread-safety | thread-safe. |
 
+## `FlushAll()` {#os-flushall}
+
+`function os::FlushAll` — defined in `engine/foundation/os/console.h`
+
+```cpp
+inline void FlushAll();
+```
+
+Flushes every open C stream, standard output and standard error included (`fflush(nullptr)`): what a process that ends without running exit handlers does first, so nothing a library wrote through the C streams is lost.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-safe. |
+
 ## `Abort()` {#os-abort-noexcept}
 
 `function os::Abort` — defined in `engine/foundation/os/console.h`

@@ -8,9 +8,9 @@
 #include "debug/post_mortem.h"
 #include "support/death_test_skip.h"
 
-#include <cstdio>
-#include <cstring>
-#include <cwchar>
+#include "cstr/cstr.h"
+#include "cstr/format.h"
+#include "os/console.h"
 
 #include "os/windows/debug/post_mortem_windows.h"
 #include "os/windows/win32.h"
@@ -40,19 +40,19 @@ bool KeyExists(HKEY root, const wchar_t* key) {
 // True if WER keeps local dumps of this program on this machine (its own key or the machine-wide one).
 bool MachineKeepsLocalDumps() {
     wchar_t key[MAX_PATH * 2];
-    std::swprintf(key, sizeof(key) / sizeof(key[0]), L"SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting\\LocalDumps\\%ls", ExeName());
+    WFormatTo(key, sizeof(key) / sizeof(key[0]), L"SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting\\LocalDumps\\%ls", ExeName());
     return KeyExists(HKEY_LOCAL_MACHINE, key) || KeyExists(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting\\LocalDumps");
 }
 
 bool UserKeyExists() {
     wchar_t key[MAX_PATH * 2];
-    std::swprintf(key, sizeof(key) / sizeof(key[0]), L"Software\\Microsoft\\Windows\\Windows Error Reporting\\LocalDumps\\%ls", ExeName());
+    WFormatTo(key, sizeof(key) / sizeof(key[0]), L"Software\\Microsoft\\Windows\\Windows Error Reporting\\LocalDumps\\%ls", ExeName());
     return KeyExists(HKEY_CURRENT_USER, key);
 }
 
 void PrintReport(const PostMortemReport& report) {
-    std::printf("RESULT=%d;\nDESTINATION=%s;\nNOTE=%s;\n", static_cast<int>(report.result), report.destination, report.note);
-    std::fflush(stdout);
+    os::Print("RESULT=%d;\nDESTINATION=%s;\nNOTE=%s;\n", static_cast<int>(report.result), report.destination, report.note);
+    os::Flush();
 }
 
 } // namespace
@@ -69,11 +69,11 @@ ENGINE_DEATH_TEST_FN(dt_pm_win_error_mode_cleared) {
 // The reading itself, against a key of the test's own (a throw-away HKCU key, removed at the end), since the machine's needs an administrator.
 TEST_CASE("Windows: a LocalDumps key is read with its folder's variables expanded, the program's own key first", "[postmortem][debug][windows]") {
     wchar_t base[128];
-    std::swprintf(base, sizeof(base) / sizeof(base[0]), L"Software\\engine-post-mortem-test-%lu", static_cast<unsigned long>(GetCurrentProcessId()));
+    WFormatTo(base, sizeof(base) / sizeof(base[0]), L"Software\\engine-post-mortem-test-%lu", static_cast<unsigned long>(GetCurrentProcessId()));
     wchar_t dumps_key[192];
-    std::swprintf(dumps_key, sizeof(dumps_key) / sizeof(dumps_key[0]), L"%ls\\LocalDumps", base);
+    WFormatTo(dumps_key, sizeof(dumps_key) / sizeof(dumps_key[0]), L"%ls\\LocalDumps", base);
     wchar_t program_key[256];
-    std::swprintf(program_key, sizeof(program_key) / sizeof(program_key[0]), L"%ls\\game.exe", dumps_key);
+    WFormatTo(program_key, sizeof(program_key) / sizeof(program_key[0]), L"%ls\\game.exe", dumps_key);
     struct RemoveTree {
         const wchar_t* key;
         ~RemoveTree() { RegDeleteTreeW(HKEY_CURRENT_USER, key); }
@@ -91,21 +91,21 @@ TEST_CASE("Windows: a LocalDumps key is read with its folder's variables expande
     REQUIRE(debug::detail::DescribeLocalDumps(HKEY_CURRENT_USER, dumps_key, L"game.exe", &report, &dump_type));
     INFO(report.destination);
     CHECK(dump_type == 2);
-    CHECK(std::strstr(report.destination, "%TEMP%") == nullptr); // expanded
-    CHECK(std::strstr(report.destination, "engine-pm-folder (full dump)") != nullptr);
+    CHECK(CStrFind(report.destination, "%TEMP%") == nullptr); // expanded
+    CHECK(CStrFind(report.destination, "engine-pm-folder (full dump)") != nullptr);
     CHECK(report.current_limit_bytes == ~u64{0});
 
     // Another program falls back to the values on the LocalDumps key itself; here there are none, so WER's defaults are named.
     PostMortemReport other;
     REQUIRE(debug::detail::DescribeLocalDumps(HKEY_CURRENT_USER, dumps_key, L"other.exe", &other, &dump_type));
-    CHECK(std::strstr(other.destination, "CrashDumps (mini dump)") != nullptr);
+    CHECK(CStrFind(other.destination, "CrashDumps (mini dump)") != nullptr);
 
     // No key at all: false, with the key to create.
     wchar_t missing[192];
-    std::swprintf(missing, sizeof(missing) / sizeof(missing[0]), L"%ls\\Absent", base);
+    WFormatTo(missing, sizeof(missing) / sizeof(missing[0]), L"%ls\\Absent", base);
     PostMortemReport none;
     CHECK_FALSE(debug::detail::DescribeLocalDumps(HKEY_CURRENT_USER, missing, L"game.exe", &none, &dump_type));
-    CHECK(std::strstr(none.note, "LocalDumps\\game.exe") != nullptr);
+    CHECK(CStrFind(none.note, "LocalDumps\\game.exe") != nullptr);
 }
 
 TEST_CASE("Windows: in a death-test child post-mortem dumps are Limited, with a note", "[postmortem][death][debug][windows]") {

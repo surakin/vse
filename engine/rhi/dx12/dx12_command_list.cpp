@@ -3,7 +3,8 @@
 
 #include "rhi/dx12/dx12_command_list.h"
 
-#include <cstring>
+#include "cstr/mem_ops.h"
+#include "cstr/cstr.h"
 
 #include "log/assert.h"
 #include "rhi/dx12/dx12_format.h"
@@ -477,7 +478,7 @@ void Dx12CommandList::PushDebugLabel(const char* name) {
     ++label_depth_;
     if (usable) {
         // Metadata 1 is PIX's ANSI string (WINPIX_EVENT_ANSI_VERSION): tools that read the plain BeginEvent show it.
-        list_->BeginEvent(1, name, static_cast<UINT>(std::strlen(name) + 1));
+        list_->BeginEvent(1, name, static_cast<UINT>(CStrLength(name) + 1));
     }
 }
 
@@ -590,7 +591,7 @@ void Dx12CommandList::SetPushConstants(u32 offset, const void* data, u32 size) {
     ENGINE_ASSERT(data != nullptr && offset % 4 == 0 && size % 4 == 0 && size > 0,
                   "CommandList::SetPushConstants: offset and size must be non-zero multiples of 4 and data must not be null");
     ENGINE_ASSERT(offset <= pipeline_.push_bytes && size <= pipeline_.push_bytes - offset, "CommandList::SetPushConstants: the range exceeds the pipeline's push-constant range");
-    std::memcpy(push_shadow_ + offset, data, size);
+    MemCopy(push_shadow_ + offset, data, size);
     if (offset + size > push_written_) push_written_ = offset + size;
     if (!usable || !pipeline_applied_ || pipeline_.root.push_param < 0) {
         return; // set with the pipeline when it is applied again

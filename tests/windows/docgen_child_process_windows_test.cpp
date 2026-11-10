@@ -1,7 +1,7 @@
 // docgen's child processes on Windows (tools/docgen/src/windows/child_process_windows.cpp, Phase 13 Day 161), through child_probe: the
 // arguments arrive as given, the output files, the working directory, how a child ended, and that killing a child ends what it started.
-#include <cstdlib>
-#include <initializer_list>
+#include "cstr/number.h"
+#include "lang/initializer_list.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -26,7 +26,7 @@ StringView Probe() { return StringView(CHILD_PROBE_PATH_UTF8); }
 // A NUL-terminated copy (StartChild needs every view to be followed by a NUL).
 StringView Z(ArenaAllocator& arena, StringView text) { return docgen::ArenaCat(arena, text, StringView()); }
 
-Vector<StringView, ArenaAllocator> Args(ArenaAllocator& arena, std::initializer_list<StringView> items) {
+Vector<StringView, ArenaAllocator> Args(ArenaAllocator& arena, InitializerList<StringView> items) {
     Vector<StringView, ArenaAllocator> args(arena);
     args.Push(Z(arena, Probe()));
     for (const StringView item : items) args.Push(Z(arena, item));
@@ -129,7 +129,7 @@ TEST_CASE("docgen on Windows: killing a child also ends the process it started",
     unsigned long grandchild = 0;
     for (int i = 0; i < 1500 && grandchild == 0; ++i) {
         const engine_test::Text text = io_test::ReadText(out);
-        if (text.View().IndexOf('\n') != text.View().Length()) grandchild = std::strtoul(text.CStr(), nullptr, 10);
+        if (text.View().IndexOf('\n') != text.View().Length()) grandchild = CStrToULong(text.CStr(), nullptr, 10);
         else os::SleepNanos(10'000'000);
     }
     REQUIRE(grandchild != 0);

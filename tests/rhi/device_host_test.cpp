@@ -4,6 +4,7 @@
 
 #include "gpu_fixture.h"
 #include "test_text.h"
+#include "containers/array.h"
 #include "log/assert.h"
 #include "rhi/device_host.h"
 #include "rhi/handle_pool.h"
@@ -69,12 +70,19 @@ struct Recorder final : DeviceObserver {
     const char* ObserverName() const override { return name; }
 };
 
+// What the throwing handler throws: a copy of the assertion's message (a thrown object must be copyable, so no owning text).
 struct AssertThrown {
-    engine_test::Text message;
+    Array<char, 256> text = {};
+    usize length = 0;
+    StringView Message() const { return StringView(text.Data(), length); }
 };
 
 AssertAction ThrowingHandler(const AssertInfo& info) {
-    throw AssertThrown{engine_test::MakeText(StringView(info.message != nullptr ? info.message : ""))};
+    AssertThrown thrown;
+    const StringView message(info.message != nullptr ? info.message : "");
+    thrown.length = message.Length() < thrown.text.Size() ? message.Length() : thrown.text.Size();
+    for (usize i = 0; i < thrown.length; ++i) thrown.text[i] = message[i];
+    throw thrown;
 }
 
 struct ThrowingAsserts {
@@ -316,7 +324,7 @@ TEST_CASE("DeviceHost refuses Recreate inside a frame or off the owning thread",
         host.Recreate(info, SwapchainDesc{});
     } catch (const AssertThrown& e) {
         threw = true;
-        CHECK(e.message.View().Contains(StringView("BeginFrame")));
+        CHECK(e.Message().Contains(StringView("BeginFrame")));
     }
     CHECK(threw);
     CHECK(host.Epoch() == epoch); // untouched
@@ -327,7 +335,7 @@ TEST_CASE("DeviceHost refuses Recreate inside a frame or off the owning thread",
         try {
             host.Recreate(info, SwapchainDesc{});
         } catch (const AssertThrown& e) {
-            other_threw = e.message.View().Contains(StringView("thread"));
+            other_threw = e.Message().Contains(StringView("thread"));
         }
     });
     other.Join();

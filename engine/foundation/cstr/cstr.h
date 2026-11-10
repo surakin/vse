@@ -64,6 +64,10 @@ inline char* CStrFindChar(char* text, int c) noexcept {
 inline const char* CStrFindLastChar(const char* text, int c) noexcept {
     return std::strrchr(text, c);
 }
+/// Finds the last occurrence of the character `c` in writable text (`strrchr`).
+inline char* CStrFindLastChar(char* text, int c) noexcept {
+    return std::strrchr(text, c);
+}
 
 /// Finds the first character of `text` that is in `set` (`strpbrk`).
 ///
@@ -125,8 +129,16 @@ inline int WStrCompareN(const wchar_t* a, const wchar_t* b, usize count) noexcep
 inline const wchar_t* WStrFind(const wchar_t* haystack, const wchar_t* needle) noexcept {
     return std::wcsstr(haystack, needle);
 }
+/// Finds the first occurrence of `needle` in a writable `haystack` (`wcsstr`).
+inline wchar_t* WStrFind(wchar_t* haystack, const wchar_t* needle) noexcept {
+    return std::wcsstr(haystack, needle);
+}
 /// Finds the last occurrence of the wide character `c` (`wcsrchr`).
 inline const wchar_t* WStrFindLastChar(const wchar_t* text, wchar_t c) noexcept {
+    return std::wcsrchr(text, c);
+}
+/// Finds the last occurrence of the wide character `c` in writable text (`wcsrchr`).
+inline wchar_t* WStrFindLastChar(wchar_t* text, wchar_t c) noexcept {
     return std::wcsrchr(text, c);
 }
 /// Appends `source` to the terminated wide string `destination` (`wcscat`).

@@ -18,16 +18,15 @@
 #include "os/windows/utf16.h"
 #include "os/windows/win32.h"
 
-#include <atomic>
-#include <cstdlib> // _set_abort_behavior
+#include "sync/atomic.h"
 #include "build_defs.h"
 
 namespace engine_placeholder::debug {
 
 namespace {
 
-std::atomic<detail::CrashEventFn> g_crash_event_fn{nullptr};
-std::atomic<int> g_reports_in_progress{0};
+Atomic<detail::CrashEventFn> g_crash_event_fn{nullptr};
+Atomic<int> g_reports_in_progress{0};
 PVOID g_observer = nullptr; // the vectored handler, added by InstallCrashEventHook (under the facade's install lock)
 // abort()'s flags before InstallCrashEventHook cleared them, restored by RemoveCrashEventHook (both under the facade's install lock).
 constexpr unsigned int kAbortFlags = _WRITE_ABORT_MSG | _CALL_REPORTFAULT;
@@ -37,37 +36,37 @@ bool g_abort_flags_saved = false;
 // One exception the observer saw: the record's address, the thread it was raised on, and that thread's crash name at the time (the report
 // is written on another thread, which cannot read the faulting thread's thread_local name).
 struct SeenException {
-    std::atomic<const void*> record{nullptr}; // null while the slot is being written
-    std::atomic<u32> thread{0};
+    Atomic<const void*> record{nullptr}; // null while the slot is being written
+    Atomic<u32> thread{0};
     char name[kMaxThreadNameBytes] = {};
 };
 constexpr u32 kSeenExceptions = 128; // room for the exceptions other threads raise between the fault and the report
 SeenException g_seen[kSeenExceptions];
-std::atomic<u32> g_seen_next{0};
+Atomic<u32> g_seen_next{0};
 
 struct ThreadStack {
-    std::atomic<u32> thread{0};
-    std::atomic<u64> low{0};
-    std::atomic<u64> high{0};
-    std::atomic<const char*> name{nullptr}; // the thread's CrashThreadName buffer (thread_local: valid while the thread runs)
+    Atomic<u32> thread{0};
+    Atomic<u64> low{0};
+    Atomic<u64> high{0};
+    Atomic<const char*> name{nullptr}; // the thread's CrashThreadName buffer (thread_local: valid while the thread runs)
 };
 constexpr u32 kRegisteredThreads = 256;
 ThreadStack g_threads[kRegisteredThreads];
-std::atomic<u32> g_thread_count{0};
+Atomic<u32> g_thread_count{0};
 
 // SIGNAL-SAFE-BEGIN
 // The observer: runs first for every exception on the thread that raised it (also on an overflowed stack, within the stack guarantee). It
 // records and passes the exception on; it never handles one.
 LONG CALLBACK ObserveException(EXCEPTION_POINTERS* info) {
-    SeenException& seen = g_seen[g_seen_next.fetch_add(1, std::memory_order_relaxed) % kSeenExceptions];
-    seen.record.store(nullptr, std::memory_order_relaxed);
-    std::atomic_thread_fence(std::memory_order_release); // a reader that still sees the old record sees it before these writes
-    seen.thread.store(GetCurrentThreadId(), std::memory_order_relaxed);
+    SeenException& seen = g_seen[g_seen_next.FetchAdd(1, MemoryOrder::Relaxed) % kSeenExceptions];
+    seen.record.Store(nullptr, MemoryOrder::Relaxed);
+    AtomicThreadFence(MemoryOrder::Release); // a reader that still sees the old record sees it before these writes
+    seen.thread.Store(GetCurrentThreadId(), MemoryOrder::Relaxed);
     const char* name = CrashThreadName();
     usize n = 0;
     for (; n + 1 < kMaxThreadNameBytes && name[n] != '\0'; ++n) seen.name[n] = name[n];
     seen.name[n] = '\0';
-    seen.record.store(info->ExceptionRecord, std::memory_order_release);
+    seen.record.Store(info->ExceptionRecord, MemoryOrder::Release);
     return EXCEPTION_CONTINUE_SEARCH;
 }
 
@@ -99,26 +98,26 @@ u64 StackPointerOf(const CONTEXT& context) {
 // exception record's address and a stack range can be reused by a later exception or thread, and the newest entry is the live one.
 u32 FaultingThread(const EXCEPTION_POINTERS& info, char* name) {
     name[0] = '\0';
-    const u32 next = g_seen_next.load(std::memory_order_acquire);
+    const u32 next = g_seen_next.Load(MemoryOrder::Acquire);
     for (u32 k = 1; k <= kSeenExceptions; ++k) {
         SeenException& seen = g_seen[(next - k) % kSeenExceptions];
-        if (seen.record.load(std::memory_order_acquire) != info.ExceptionRecord) continue;
-        const u32 thread = seen.thread.load(std::memory_order_relaxed);
+        if (seen.record.Load(MemoryOrder::Acquire) != info.ExceptionRecord) continue;
+        const u32 thread = seen.thread.Load(MemoryOrder::Relaxed);
         for (usize n = 0; n < kMaxThreadNameBytes; ++n) name[n] = seen.name[n];
         name[kMaxThreadNameBytes - 1] = '\0';
-        std::atomic_thread_fence(std::memory_order_acquire);
-        if (seen.record.load(std::memory_order_relaxed) == info.ExceptionRecord) return thread; // not rewritten while it was read
+        AtomicThreadFence(MemoryOrder::Acquire);
+        if (seen.record.Load(MemoryOrder::Relaxed) == info.ExceptionRecord) return thread; // not rewritten while it was read
         name[0] = '\0';
     }
     const u64 sp = StackPointerOf(*info.ContextRecord);
-    const u32 count = g_thread_count.load(std::memory_order_acquire);
+    const u32 count = g_thread_count.Load(MemoryOrder::Acquire);
     for (u32 k = count < kRegisteredThreads ? count : kRegisteredThreads; k > 0; --k) {
         const ThreadStack& entry = g_threads[k - 1];
-        const u64 low = entry.low.load(std::memory_order_relaxed);
-        const u64 high = entry.high.load(std::memory_order_relaxed);
+        const u64 low = entry.low.Load(MemoryOrder::Relaxed);
+        const u64 high = entry.high.Load(MemoryOrder::Relaxed);
         if (sp >= low && sp < high) {
-            CopyNameGuarded(entry.name.load(std::memory_order_relaxed), name);
-            return entry.thread.load(std::memory_order_relaxed);
+            CopyNameGuarded(entry.name.Load(MemoryOrder::Relaxed), name);
+            return entry.thread.Load(MemoryOrder::Relaxed);
         }
     }
     return 0;
@@ -190,10 +189,10 @@ void RunReportGuarded(detail::CrashEventFn fn, const detail::CrashEvent* event) 
 // is installed both before the library (so it is the filter Breakpad restores while it works) and after it (so every crash passes it first);
 // it handles nothing: the first crash goes to the library, a later one waits for the process to end, and a crash the library hands back
 // goes on to the system.
-std::atomic<bool> g_gate_active{false};
-std::atomic<LPTOP_LEVEL_EXCEPTION_FILTER> g_filter_before_gate{nullptr}; // what was installed before the gate (normally none)
-std::atomic<LPTOP_LEVEL_EXCEPTION_FILTER> g_library_filter{nullptr};     // Breakpad's, found when the gate goes on top of it
-std::atomic<u32> g_crashing_thread{0};
+Atomic<bool> g_gate_active{false};
+Atomic<LPTOP_LEVEL_EXCEPTION_FILTER> g_filter_before_gate{nullptr}; // what was installed before the gate (normally none)
+Atomic<LPTOP_LEVEL_EXCEPTION_FILTER> g_library_filter{nullptr};     // Breakpad's, found when the gate goes on top of it
+Atomic<u32> g_crashing_thread{0};
 constexpr DWORD kGateWaitMs = 60 * 1000; // the first crash normally ends the process long before this
 
 LONG PassOn(LPTOP_LEVEL_EXCEPTION_FILTER filter, EXCEPTION_POINTERS* info) {
@@ -201,17 +200,17 @@ LONG PassOn(LPTOP_LEVEL_EXCEPTION_FILTER filter, EXCEPTION_POINTERS* info) {
 }
 
 LONG WINAPI CrashGate(EXCEPTION_POINTERS* info) {
-    if (!g_gate_active.load(std::memory_order_acquire)) return PassOn(g_filter_before_gate.load(std::memory_order_acquire), info);
+    if (!g_gate_active.Load(MemoryOrder::Acquire)) return PassOn(g_filter_before_gate.Load(MemoryOrder::Acquire), info);
     const u32 self = GetCurrentThreadId();
     u32 first = 0;
-    if (g_crashing_thread.compare_exchange_strong(first, self, std::memory_order_acq_rel)) {
-        const LONG action = PassOn(g_library_filter.load(std::memory_order_acquire), info); // the first crash: the library writes the dump
-        if (action == EXCEPTION_CONTINUE_EXECUTION) g_crashing_thread.store(0, std::memory_order_release); // the program goes on: not a crash
+    if (g_crashing_thread.CompareExchangeStrong(first, self, MemoryOrder::AcqRel)) {
+        const LONG action = PassOn(g_library_filter.Load(MemoryOrder::Acquire), info); // the first crash: the library writes the dump
+        if (action == EXCEPTION_CONTINUE_EXECUTION) g_crashing_thread.Store(0, MemoryOrder::Release); // the program goes on: not a crash
         return action;
     }
     if (first == self) {
         // The library gave this thread's crash back (it wrote no dump) and called the filter it replaced, the gate: the system's turn.
-        return PassOn(g_filter_before_gate.load(std::memory_order_acquire), info);
+        return PassOn(g_filter_before_gate.Load(MemoryOrder::Acquire), info);
     }
     Sleep(kGateWaitMs); // another thread's crash is being handled; the process ends when it is done
     return EXCEPTION_CONTINUE_SEARCH;
@@ -224,11 +223,11 @@ namespace detail {
 
 void PrepareCrashEventHook() {
     const LPTOP_LEVEL_EXCEPTION_FILTER previous = SetUnhandledExceptionFilter(&CrashGate);
-    if (previous != &CrashGate) g_filter_before_gate.store(previous, std::memory_order_release); // (installed again after an uninstall)
+    if (previous != &CrashGate) g_filter_before_gate.Store(previous, MemoryOrder::Release); // (installed again after an uninstall)
 }
 
 bool InstallCrashEventHook(CrashEventFn fn) {
-    g_crash_event_fn.store(fn, std::memory_order_release);
+    g_crash_event_fn.Store(fn, MemoryOrder::Release);
     if (g_observer == nullptr) g_observer = AddVectoredExceptionHandler(1, &ObserveException);
     // abort() reaches the library's SIGABRT handler only after the C runtime's message: a dialog box in a Debug build, which waits for a
     // click (a windowed program has nowhere else to print it). The report is the message; no dialog and no Windows Error Reporting call.
@@ -237,19 +236,19 @@ bool InstallCrashEventHook(CrashEventFn fn) {
         g_abort_flags_saved = true;
     }
     const LPTOP_LEVEL_EXCEPTION_FILTER library = SetUnhandledExceptionFilter(&CrashGate);
-    if (library != &CrashGate) g_library_filter.store(library, std::memory_order_release);
-    g_crashing_thread.store(0, std::memory_order_release);
-    g_gate_active.store(true, std::memory_order_release);
+    if (library != &CrashGate) g_library_filter.Store(library, MemoryOrder::Release);
+    g_crashing_thread.Store(0, MemoryOrder::Release);
+    g_gate_active.Store(true, MemoryOrder::Release);
     return g_observer != nullptr;
 }
 
-bool CrashReportInProgress() { return g_reports_in_progress.load(std::memory_order_acquire) != 0; }
+bool CrashReportInProgress() { return g_reports_in_progress.Load(MemoryOrder::Acquire) != 0; }
 
 void RemoveCrashEventHook() {
     // The gate stays the top-level filter (the library restores it when it closes) but passes everything on to what was there before it.
-    g_gate_active.store(false, std::memory_order_release);
-    g_library_filter.store(nullptr, std::memory_order_release);
-    g_crash_event_fn.store(nullptr, std::memory_order_release);
+    g_gate_active.Store(false, MemoryOrder::Release);
+    g_library_filter.Store(nullptr, MemoryOrder::Release);
+    g_crash_event_fn.Store(nullptr, MemoryOrder::Release);
     if (g_abort_flags_saved) {
         _set_abort_behavior(g_abort_flags_before, kAbortFlags);
         g_abort_flags_saved = false;
@@ -262,11 +261,11 @@ void RemoveCrashEventHook() {
 
 // SIGNAL-SAFE-BEGIN
 void ReportCrashFromExceptionPointers(const void* exception_pointers) {
-    const CrashEventFn fn = g_crash_event_fn.load(std::memory_order_acquire);
+    const CrashEventFn fn = g_crash_event_fn.Load(MemoryOrder::Acquire);
     if (fn == nullptr || exception_pointers == nullptr) return;
     const EXCEPTION_POINTERS& info = *static_cast<const EXCEPTION_POINTERS*>(exception_pointers);
     if (info.ExceptionRecord == nullptr || info.ContextRecord == nullptr) return;
-    g_reports_in_progress.fetch_add(1, std::memory_order_acq_rel);
+    g_reports_in_progress.FetchAdd(1, MemoryOrder::AcqRel);
     CrashEvent event;
     const EXCEPTION_RECORD& record = *info.ExceptionRecord;
     event.reason = ReasonOf(record.ExceptionCode);
@@ -286,7 +285,7 @@ void ReportCrashFromExceptionPointers(const void* exception_pointers) {
     event.thread_name = thread_name;
     WalkStack(*info.ContextRecord, event.trace);
     RunReportGuarded(fn, &event);
-    g_reports_in_progress.fetch_sub(1, std::memory_order_acq_rel);
+    g_reports_in_progress.FetchSub(1, MemoryOrder::AcqRel);
 }
 // SIGNAL-SAFE-END
 
@@ -309,14 +308,14 @@ bool RegisterThreadForCrashHandling(const char* name) {
         ULONG_PTR low = 0;
         ULONG_PTR high = 0;
         GetCurrentThreadStackLimits(&low, &high);
-        const u32 slot = g_thread_count.fetch_add(1, std::memory_order_acq_rel);
+        const u32 slot = g_thread_count.FetchAdd(1, MemoryOrder::AcqRel);
         if (slot < kRegisteredThreads) {
-            g_threads[slot].thread.store(GetCurrentThreadId(), std::memory_order_relaxed);
-            g_threads[slot].low.store(low, std::memory_order_relaxed);
-            g_threads[slot].high.store(high, std::memory_order_relaxed);
-            g_threads[slot].name.store(CrashThreadName(), std::memory_order_relaxed); // read at crash time, so a later rename shows
+            g_threads[slot].thread.Store(GetCurrentThreadId(), MemoryOrder::Relaxed);
+            g_threads[slot].low.Store(low, MemoryOrder::Relaxed);
+            g_threads[slot].high.Store(high, MemoryOrder::Relaxed);
+            g_threads[slot].name.Store(CrashThreadName(), MemoryOrder::Relaxed); // read at crash time, so a later rename shows
         } else {
-            g_thread_count.store(kRegisteredThreads, std::memory_order_release);
+            g_thread_count.Store(kRegisteredThreads, MemoryOrder::Release);
         }
         recorded = true;
     }

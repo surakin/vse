@@ -156,19 +156,22 @@ CStrFind(char*,const char*) noexcept	function	foundation/cstr	cstrfind-char-star
 CStrFindChar(const char*,int) noexcept	function	foundation/cstr	cstrfindchar-const-char-star-int-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:52
 CStrFindChar(char*,int) noexcept	function	foundation/cstr	cstrfindchar-char-star-int-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:56
 CStrFindLastChar(const char*,int) noexcept	function	foundation/cstr	cstrfindlastchar-const-char-star-int-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:64
-CStrFindAny(const char*,const char*) noexcept	function	foundation/cstr	cstrfindany-const-char-star-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:71
-CStrCopy(char*,const char*) noexcept	function	foundation/cstr	cstrcopy-char-star-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:79
-CStrCopyN(char*,const char*,usize) noexcept	function	foundation/cstr	cstrcopyn-char-star-const-char-star-usize-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:86
-CStrAppend(char*,const char*) noexcept	function	foundation/cstr	cstrappend-char-star-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:93
-CStrCopyTo(char*,usize,const char*) noexcept	function	foundation/cstr	cstrcopyto-char-star-usize-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:102
-WStrLength(const wchar_t*) noexcept	function	foundation/cstr	wstrlength-const-wchar-t-star-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:113
-WStrCompare(const wchar_t*,const wchar_t*) noexcept	function	foundation/cstr	wstrcompare-const-wchar-t-star-const-wchar-t-star-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:117
-WStrCompareN(const wchar_t*,const wchar_t*,usize) noexcept	function	foundation/cstr	wstrcomparen-const-wchar-t-star-const-wchar-t-star-usize-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:121
-WStrFind(const wchar_t*,const wchar_t*) noexcept	function	foundation/cstr	wstrfind-const-wchar-t-star-const-wchar-t-star-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:125
-WStrFindLastChar(const wchar_t*,wchar_t) noexcept	function	foundation/cstr	wstrfindlastchar-const-wchar-t-star-wchar-t-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:129
-WStrAppend(wchar_t*,const wchar_t*) noexcept	function	foundation/cstr	wstrappend-wchar-t-star-const-wchar-t-star-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:133
-WMemCopy(wchar_t*,const wchar_t*,usize) noexcept	function	foundation/cstr	wmemcopy-wchar-t-star-const-wchar-t-star-usize-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:137
-WMemMove(wchar_t*,const wchar_t*,usize) noexcept	function	foundation/cstr	wmemmove-wchar-t-star-const-wchar-t-star-usize-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:141
+CStrFindLastChar(char*,int) noexcept	function	foundation/cstr	cstrfindlastchar-char-star-int-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:68
+CStrFindAny(const char*,const char*) noexcept	function	foundation/cstr	cstrfindany-const-char-star-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:75
+CStrCopy(char*,const char*) noexcept	function	foundation/cstr	cstrcopy-char-star-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:83
+CStrCopyN(char*,const char*,usize) noexcept	function	foundation/cstr	cstrcopyn-char-star-const-char-star-usize-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:90
+CStrAppend(char*,const char*) noexcept	function	foundation/cstr	cstrappend-char-star-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:97
+CStrCopyTo(char*,usize,const char*) noexcept	function	foundation/cstr	cstrcopyto-char-star-usize-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:106
+WStrLength(const wchar_t*) noexcept	function	foundation/cstr	wstrlength-const-wchar-t-star-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:117
+WStrCompare(const wchar_t*,const wchar_t*) noexcept	function	foundation/cstr	wstrcompare-const-wchar-t-star-const-wchar-t-star-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:121
+WStrCompareN(const wchar_t*,const wchar_t*,usize) noexcept	function	foundation/cstr	wstrcomparen-const-wchar-t-star-const-wchar-t-star-usize-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:125
+WStrFind(const wchar_t*,const wchar_t*) noexcept	function	foundation/cstr	wstrfind-const-wchar-t-star-const-wchar-t-star-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:129
+WStrFind(wchar_t*,const wchar_t*) noexcept	function	foundation/cstr	wstrfind-wchar-t-star-const-wchar-t-star-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:133
+WStrFindLastChar(const wchar_t*,wchar_t) noexcept	function	foundation/cstr	wstrfindlastchar-const-wchar-t-star-wchar-t-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:137
+WStrFindLastChar(wchar_t*,wchar_t) noexcept	function	foundation/cstr	wstrfindlastchar-wchar-t-star-wchar-t-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:141
+WStrAppend(wchar_t*,const wchar_t*) noexcept	function	foundation/cstr	wstrappend-wchar-t-star-const-wchar-t-star-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:145
+WMemCopy(wchar_t*,const wchar_t*,usize) noexcept	function	foundation/cstr	wmemcopy-wchar-t-star-const-wchar-t-star-usize-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:149
+WMemMove(wchar_t*,const wchar_t*,usize) noexcept	function	foundation/cstr	wmemmove-wchar-t-star-const-wchar-t-star-usize-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:153
 FormatTo(char*,usize,const char*,...)	function	foundation/cstr	formatto-char-star-usize-const-char-star	foundation-cstr.md	engine/foundation/cstr/format.h:19
 VFormatTo(char*,usize,const char*,VarArgs)	function	foundation/cstr	vformatto-char-star-usize-const-char-star-varargs	foundation-cstr.md	engine/foundation/cstr/format.h:24
 WFormatTo(wchar_t*,usize,const wchar_t*,Args...)	function	foundation/cstr	wformatto-wchar-t-star-usize-const-wchar-t-star-args	foundation-cstr.md	engine/foundation/cstr/format.h:40
@@ -230,19 +233,20 @@ Atomic::CompareExchangeWeak(T&,T,MemoryOrder,MemoryOrder) noexcept	function	foun
 Atomic::CompareExchangeWeak(T&,T,MemoryOrder) noexcept	function	foundation/sync	atomic-compareexchangeweak-t-amp-t-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:105
 Atomic::CompareExchangeStrong(T&,T,MemoryOrder,MemoryOrder) noexcept	function	foundation/sync	atomic-compareexchangestrong-t-amp-t-memoryorder-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:109
 Atomic::CompareExchangeStrong(T&,T,MemoryOrder) noexcept	function	foundation/sync	atomic-compareexchangestrong-t-amp-t-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:113
-Atomic::FetchAdd(D,MemoryOrder) noexcept	function	foundation/sync	atomic-fetchadd-d-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:118
-Atomic::FetchSub(D,MemoryOrder) noexcept	function	foundation/sync	atomic-fetchsub-d-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:123
-Atomic::FetchAnd(T,MemoryOrder) noexcept	function	foundation/sync	atomic-fetchand-t-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:128
-Atomic::FetchOr(T,MemoryOrder) noexcept	function	foundation/sync	atomic-fetchor-t-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:130
-Atomic::FetchXor(T,MemoryOrder) noexcept	function	foundation/sync	atomic-fetchxor-t-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:132
-Atomic::operator T() const noexcept	function	foundation/sync	atomic-operator-t-const-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:135
-Atomic::operator=(T) noexcept	function	foundation/sync	atomic-operator-eq-t-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:137
-Atomic::operator++() noexcept	function	foundation/sync	atomic-operator-plus-plus-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:142
-Atomic::operator++(int) noexcept	function	foundation/sync	atomic-operator-plus-plus-int-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:144
-Atomic::operator--() noexcept	function	foundation/sync	atomic-operator-minus-minus-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:146
-Atomic::operator--(int) noexcept	function	foundation/sync	atomic-operator-minus-minus-int-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:148
-AtomicThreadFence(MemoryOrder) noexcept	function	foundation/sync	atomicthreadfence-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:159
-AtomicSignalFence(MemoryOrder) noexcept	function	foundation/sync	atomicsignalfence-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:164
+Atomic::Delta	alias	foundation/sync	atomic-delta	foundation-sync.md	engine/foundation/sync/atomic.h:119
+Atomic::FetchAdd(Delta,MemoryOrder) noexcept	function	foundation/sync	atomic-fetchadd-delta-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:121
+Atomic::FetchSub(Delta,MemoryOrder) noexcept	function	foundation/sync	atomic-fetchsub-delta-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:123
+Atomic::FetchAnd(T,MemoryOrder) noexcept	function	foundation/sync	atomic-fetchand-t-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:125
+Atomic::FetchOr(T,MemoryOrder) noexcept	function	foundation/sync	atomic-fetchor-t-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:127
+Atomic::FetchXor(T,MemoryOrder) noexcept	function	foundation/sync	atomic-fetchxor-t-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:129
+Atomic::operator T() const noexcept	function	foundation/sync	atomic-operator-t-const-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:132
+Atomic::operator=(T) noexcept	function	foundation/sync	atomic-operator-eq-t-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:134
+Atomic::operator++() noexcept	function	foundation/sync	atomic-operator-plus-plus-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:139
+Atomic::operator++(int) noexcept	function	foundation/sync	atomic-operator-plus-plus-int-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:141
+Atomic::operator--() noexcept	function	foundation/sync	atomic-operator-minus-minus-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:143
+Atomic::operator--(int) noexcept	function	foundation/sync	atomic-operator-minus-minus-int-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:145
+AtomicThreadFence(MemoryOrder) noexcept	function	foundation/sync	atomicthreadfence-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:156
+AtomicSignalFence(MemoryOrder) noexcept	function	foundation/sync	atomicsignalfence-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:161
 Mutex	class	foundation/sync	mutex	foundation-sync.md	engine/foundation/sync/mutex.h:18
 Mutex::Native	alias	foundation/sync	mutex-native	foundation-sync.md	engine/foundation/sync/mutex.h:21
 Mutex::Mutex() noexcept	function	foundation/sync	mutex-mutex-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:23
@@ -1672,9 +1676,10 @@ os::PrintBytes(const void*,usize)	function	platform/os	os-printbytes-const-void-
 os::PrintErrorBytes(const void*,usize)	function	platform/os	os-printerrorbytes-const-void-star-usize	platform-os.md	engine/foundation/os/console.h:60
 os::Flush()	function	platform/os	os-flush	platform-os.md	engine/foundation/os/console.h:64
 os::FlushError()	function	platform/os	os-flusherror	platform-os.md	engine/foundation/os/console.h:68
-os::Abort() noexcept	function	platform/os	os-abort-noexcept	platform-os.md	engine/foundation/os/console.h:73
-os::ExitNow(int) noexcept	function	platform/os	os-exitnow-int-noexcept	platform-os.md	engine/foundation/os/console.h:77
-os::GetEnvironment(const char*) noexcept	function	platform/os	os-getenvironment-const-char-star-noexcept	platform-os.md	engine/foundation/os/console.h:85
+os::FlushAll()	function	platform/os	os-flushall	platform-os.md	engine/foundation/os/console.h:73
+os::Abort() noexcept	function	platform/os	os-abort-noexcept	platform-os.md	engine/foundation/os/console.h:78
+os::ExitNow(int) noexcept	function	platform/os	os-exitnow-int-noexcept	platform-os.md	engine/foundation/os/console.h:82
+os::GetEnvironment(const char*) noexcept	function	platform/os	os-getenvironment-const-char-star-noexcept	platform-os.md	engine/foundation/os/console.h:90
 os::VulkanLoaderName()	function	platform/os	os-vulkanloadername	platform-os.md	engine/foundation/os/gpu_driver_probe.h:14
 os::ProbeVulkanCreateInstance()	function	platform/os	os-probevulkancreateinstance	platform-os.md	engine/foundation/os/gpu_driver_probe.h:22
 os::LastError() noexcept	function	platform/os	os-lasterror-noexcept	platform-os.md	engine/foundation/os/last_error.h:12

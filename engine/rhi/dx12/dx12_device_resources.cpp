@@ -6,8 +6,9 @@
 // typeless so that its depth view and its shader view can both exist. Copies between buffers and textures go through 256-byte row pitches
 // (D3D12_TEXTURE_DATA_PITCH_ALIGNMENT) and 512-byte placements, repacked on the CPU from and to the caller's rows.
 
-#include <cstdio>
-#include <cstring>
+#include "cstr/mem_ops.h"
+#include "sync/atomic.h"
+#include "sync/mutex.h"
 
 #include "log/assert.h"
 #include "os/windows/utf16.h"
@@ -195,7 +196,7 @@ void Dx12Device::SetDebugName(ID3D12Object* object, const char* name) {
 bool Dx12Device::CreateCommitted(D3D12_HEAP_TYPE heap, const D3D12_RESOURCE_DESC& desc, D3D12_RESOURCE_STATES state, const char* name,
                                  ComRef<ID3D12Resource>* out, u64* bytes) {
     // Each committed resource is one device-memory allocation: the Nth and every later one fail when a test injects it.
-    const u32 allocation = allocation_count_.fetch_add(1, std::memory_order_relaxed) + 1;
+    const u32 allocation = allocation_count_.FetchAdd(1, MemoryOrder::Relaxed) + 1;
     if (fail_allocations_from_ != 0 && allocation >= fail_allocations_from_) {
         RhiLog(LogVerbosity::Error, "D3D12: no memory for the resource '%s' (an injected allocation failure)", name != nullptr ? name : "(unnamed)");
         return false;
@@ -215,14 +216,14 @@ bool Dx12Device::CreateCommitted(D3D12_HEAP_TYPE heap, const D3D12_RESOURCE_DESC
     SetDebugName(out->Get(), name);
     const D3D12_RESOURCE_ALLOCATION_INFO info = device_->GetResourceAllocationInfo(0, 1, &desc);
     *bytes = info.SizeInBytes;
-    device_memory_bytes_.fetch_add(info.SizeInBytes, std::memory_order_relaxed);
-    raw_resources_.fetch_add(1, std::memory_order_relaxed);
+    device_memory_bytes_.FetchAdd(info.SizeInBytes, MemoryOrder::Relaxed);
+    raw_resources_.FetchAdd(1, MemoryOrder::Relaxed);
     return true;
 }
 
 void Dx12Device::ReleaseResourceBytes(u64 bytes) {
-    device_memory_bytes_.fetch_sub(bytes, std::memory_order_relaxed);
-    raw_resources_.fetch_sub(1, std::memory_order_relaxed);
+    device_memory_bytes_.FetchSub(bytes, MemoryOrder::Relaxed);
+    raw_resources_.FetchSub(1, MemoryOrder::Relaxed);
 }
 
 void Dx12Device::ReleaseTextureViews(TextureRes& t) {
@@ -236,7 +237,7 @@ void Dx12Device::ReleaseTextureViews(TextureRes& t) {
 // ---- internal submissions ----
 
 ID3D12GraphicsCommandList* Dx12Device::BeginInternalLocked(usize* slot) {
-    if (device_lost_.load(std::memory_order_relaxed)) {
+    if (device_lost_.Load(MemoryOrder::Relaxed)) {
         return nullptr;
     }
     const u64 completed = CompletedFence();
@@ -322,7 +323,7 @@ BufferHandle Dx12Device::CreateBuffer(const BufferDesc& desc) {
             return {};
         }
     }
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     const BufferHandle handle = buffers_.Allocate(static_cast<BufferRes&&>(res));
     if (!handle.IsValid()) {
         RhiLog(LogVerbosity::Error, "CreateBuffer: out of buffer handles");
@@ -332,7 +333,7 @@ BufferHandle Dx12Device::CreateBuffer(const BufferDesc& desc) {
 }
 
 void Dx12Device::DestroyBuffer(BufferHandle buffer) {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     BufferRes* b = buffers_.Get(buffer);
     ENGINE_ASSERT(b != nullptr, "DestroyBuffer: handle is invalid or already destroyed");
     if (b == nullptr) {
@@ -340,11 +341,11 @@ void Dx12Device::DestroyBuffer(BufferHandle buffer) {
     }
     ENGINE_ASSERT(!b->user_mapped, "DestroyBuffer: the buffer is still mapped");
     // Work in the open frame may still use it; outside a frame, the next frame is the earliest that can have used it.
-    buffers_.Retire(buffer, frame_open_.load(std::memory_order_relaxed) ? frame_number_ : frame_number_ + 1);
+    buffers_.Retire(buffer, frame_open_.Load(MemoryOrder::Relaxed) ? frame_number_ : frame_number_ + 1);
 }
 
 bool Dx12Device::LookupBuffer(BufferHandle buffer, BufferInfo* out) const {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     const BufferRes* b = buffers_.Get(buffer);
     if (b == nullptr) {
         return false;
@@ -356,7 +357,7 @@ bool Dx12Device::LookupBuffer(BufferHandle buffer, BufferInfo* out) const {
 }
 
 void* Dx12Device::MapBuffer(BufferHandle buffer) {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     BufferRes* b = buffers_.Get(buffer);
     ENGINE_ASSERT(b != nullptr, "MapBuffer: handle is invalid or already destroyed");
     if (b == nullptr) {
@@ -369,7 +370,7 @@ void* Dx12Device::MapBuffer(BufferHandle buffer) {
 }
 
 void Dx12Device::UnmapBuffer(BufferHandle buffer) {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     BufferRes* b = buffers_.Get(buffer);
     ENGINE_ASSERT(b != nullptr, "UnmapBuffer: handle is invalid or already destroyed");
     if (b == nullptr) {
@@ -383,7 +384,7 @@ UploadTicket Dx12Device::UploadBuffer(BufferHandle dst, u64 offset, const void* 
     ID3D12Resource* resource = nullptr;
     BufferRes snapshot;
     {
-        std::lock_guard<std::mutex> lock(resource_mutex_);
+        LockGuard<Mutex> lock(resource_mutex_);
         BufferRes* b = buffers_.Get(dst);
         ENGINE_ASSERT(b != nullptr, "UploadBuffer: handle is invalid or already destroyed");
         if (b == nullptr) {
@@ -400,20 +401,20 @@ UploadTicket Dx12Device::UploadBuffer(BufferHandle dst, u64 offset, const void* 
         return {};
     }
     if (snapshot.desc.location == MemoryLocation::CpuToGpu) {
-        std::memcpy(snapshot.mapped + offset, data, static_cast<usize>(size)); // coherent: visible to work submitted afterwards
+        MemCopy(snapshot.mapped + offset, data, static_cast<usize>(size)); // coherent: visible to work submitted afterwards
         return {};
     }
     UploadTicket ticket;
     u64 done = 0;
     while (done < size) {
         const u64 chunk = size - done < kUploadChunkBytes ? size - done : kUploadChunkBytes;
-        std::lock_guard<std::mutex> lock(submit_mutex_);
+        LockGuard<Mutex> lock(submit_mutex_);
         u64 ring_offset = 0;
-        if (device_lost_.load(std::memory_order_relaxed) || !StageLocked(chunk, 16, &ring_offset)) {
+        if (device_lost_.Load(MemoryOrder::Relaxed) || !StageLocked(chunk, 16, &ring_offset)) {
             ticket.ok = false;
             return ticket;
         }
-        std::memcpy(staging_mapped_ + ring_offset, static_cast<const u8*>(data) + done, static_cast<usize>(chunk));
+        MemCopy(staging_mapped_ + ring_offset, static_cast<const u8*>(data) + done, static_cast<usize>(chunk));
         usize slot = 0;
         ID3D12GraphicsCommandList* list = BeginInternalLocked(&slot);
         if (list == nullptr) {
@@ -441,7 +442,7 @@ bool Dx12Device::ReadbackBuffer(BufferHandle src, u64 offset, void* dst, u64 siz
     ID3D12Resource* resource = nullptr;
     BufferRes snapshot;
     {
-        std::lock_guard<std::mutex> lock(resource_mutex_);
+        LockGuard<Mutex> lock(resource_mutex_);
         const BufferRes* b = buffers_.Get(src);
         ENGINE_ASSERT(b != nullptr, "ReadbackBuffer: handle is invalid or already destroyed");
         if (b == nullptr) {
@@ -458,19 +459,19 @@ bool Dx12Device::ReadbackBuffer(BufferHandle src, u64 offset, void* dst, u64 siz
     if (size == 0) {
         return true;
     }
-    if (device_lost_.load(std::memory_order_relaxed)) {
+    if (device_lost_.Load(MemoryOrder::Relaxed)) {
         return false;
     }
     if (snapshot.desc.location != MemoryLocation::GpuOnly) {
         u64 last = 0;
         {
-            std::lock_guard<std::mutex> lock(submit_mutex_);
+            LockGuard<Mutex> lock(submit_mutex_);
             last = last_signaled_;
         }
         if (!WaitForValue(last, ~0ull)) {
             return false;
         }
-        std::memcpy(dst, snapshot.mapped + offset, static_cast<usize>(size));
+        MemCopy(dst, snapshot.mapped + offset, static_cast<usize>(size));
         return true;
     }
     ComRef<ID3D12Resource> temp;
@@ -481,7 +482,7 @@ bool Dx12Device::ReadbackBuffer(BufferHandle src, u64 offset, void* dst, u64 siz
     }
     u64 value = 0;
     {
-        std::lock_guard<std::mutex> lock(submit_mutex_);
+        LockGuard<Mutex> lock(submit_mutex_);
         usize slot = 0;
         ID3D12GraphicsCommandList* list = BeginInternalLocked(&slot);
         if (list != nullptr) {
@@ -495,7 +496,7 @@ bool Dx12Device::ReadbackBuffer(BufferHandle src, u64 offset, void* dst, u64 siz
         D3D12_RANGE read{0, static_cast<SIZE_T>(size)};
         ok = Check(temp->Map(0, &read, &mapped), "Map (readback)");
         if (ok) {
-            std::memcpy(dst, mapped, static_cast<usize>(size));
+            MemCopy(dst, mapped, static_cast<usize>(size));
             D3D12_RANGE none{0, 0};
             temp->Unmap(0, &none);
         }
@@ -560,7 +561,7 @@ TextureHandle Dx12Device::CreateTexture(const TextureDesc& desc) {
     const bool array = !is3d && desc.array_layers > 1;
     const bool ms = desc.samples > 1;
 
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     bool views_ok = true;
     if (Has(desc.usage, TextureUsage::Sampled)) {
         D3D12_SHADER_RESOURCE_VIEW_DESC v{};
@@ -647,18 +648,18 @@ TextureHandle Dx12Device::CreateTexture(const TextureDesc& desc) {
 }
 
 void Dx12Device::DestroyTexture(TextureHandle texture) {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     TextureRes* t = textures_.Get(texture);
     ENGINE_ASSERT(t != nullptr, "DestroyTexture: handle is invalid or already destroyed");
     if (t == nullptr) {
         return;
     }
     ENGINE_ASSERT(!t->external, "DestroyTexture: a swapchain image belongs to its swapchain");
-    textures_.Retire(texture, frame_open_.load(std::memory_order_relaxed) ? frame_number_ : frame_number_ + 1);
+    textures_.Retire(texture, frame_open_.Load(MemoryOrder::Relaxed) ? frame_number_ : frame_number_ + 1);
 }
 
 bool Dx12Device::LookupTexture(TextureHandle texture, TextureInfo* out) const {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     const TextureRes* t = textures_.Get(texture);
     if (t == nullptr) {
         return false;
@@ -674,13 +675,13 @@ bool Dx12Device::LookupTexture(TextureHandle texture, TextureInfo* out) const {
 }
 
 D3D12_RESOURCE_STATES Dx12Device::TextureState(TextureHandle texture) const {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     const TextureRes* t = textures_.Get(texture);
     return t != nullptr ? t->state : D3D12_RESOURCE_STATE_COMMON;
 }
 
 void Dx12Device::SetTextureState(TextureHandle texture, D3D12_RESOURCE_STATES state) {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     if (TextureRes* t = textures_.Get(texture)) {
         t->state = state;
     }
@@ -691,7 +692,7 @@ UploadTicket Dx12Device::UploadTexture(TextureHandle dst, u32 mip, u32 layer, co
     TextureDesc desc;
     D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_COMMON;
     {
-        std::lock_guard<std::mutex> lock(resource_mutex_);
+        LockGuard<Mutex> lock(resource_mutex_);
         const TextureRes* t = textures_.Get(dst);
         ENGINE_ASSERT(t != nullptr, "UploadTexture: handle is invalid or already destroyed");
         if (t == nullptr) {
@@ -741,17 +742,17 @@ UploadTicket Dx12Device::UploadTexture(TextureHandle dst, u32 mip, u32 layer, co
             const u32 rows = block_rows - row < rows_per_band ? block_rows - row : rows_per_band;
             const bool first = z == 0 && row == 0;
             const bool last = z + slices_per_copy >= depth && row + rows >= block_rows;
-            std::lock_guard<std::mutex> lock(submit_mutex_);
+            LockGuard<Mutex> lock(submit_mutex_);
             const u64 band_bytes = pitch * rows * slices_per_copy;
             u64 ring_offset = 0;
-            if (device_lost_.load(std::memory_order_relaxed) || !StageLocked(band_bytes, D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT, &ring_offset)) {
+            if (device_lost_.Load(MemoryOrder::Relaxed) || !StageLocked(band_bytes, D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT, &ring_offset)) {
                 ticket.ok = false;
                 break;
             }
             for (u32 s = 0; s < slices_per_copy; ++s) {
                 for (u32 r = 0; r < rows; ++r) {
                     const u64 src_offset = (static_cast<u64>(z + s) * block_rows + row + r) * src_pitch;
-                    std::memcpy(staging_mapped_ + ring_offset + (static_cast<u64>(s) * rows + r) * pitch, static_cast<const u8*>(data) + src_offset,
+                    MemCopy(staging_mapped_ + ring_offset + (static_cast<u64>(s) * rows + r) * pitch, static_cast<const u8*>(data) + src_offset,
                                 static_cast<usize>(row_bytes));
                 }
             }
@@ -805,7 +806,7 @@ UploadTicket Dx12Device::UploadTexture(TextureHandle dst, u32 mip, u32 layer, co
     }
     if (!ticket.ok && current != kShaderRead && current != state) {
         // A failure after the first band left the texture in COPY_DEST: put it in ShaderRead anyway (the level only partly written).
-        std::lock_guard<std::mutex> lock(submit_mutex_);
+        LockGuard<Mutex> lock(submit_mutex_);
         usize slot = 0;
         if (ID3D12GraphicsCommandList* list = BeginInternalLocked(&slot)) {
             const D3D12_RESOURCE_BARRIER b = Transition(resource, current, kShaderRead);
@@ -813,7 +814,7 @@ UploadTicket Dx12Device::UploadTexture(TextureHandle dst, u32 mip, u32 layer, co
             if (SubmitInternalLocked(slot) != 0) current = kShaderRead;
         }
     }
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     if (TextureRes* t = textures_.Get(dst)) {
         t->state = current;
         t->upload_state = ResourceState::ShaderRead;
@@ -826,7 +827,7 @@ bool Dx12Device::ReadbackTexture(TextureHandle src, u32 mip, u32 layer, void* ds
     TextureDesc desc;
     D3D12_RESOURCE_STATES actual = D3D12_RESOURCE_STATE_COMMON;
     {
-        std::lock_guard<std::mutex> lock(resource_mutex_);
+        LockGuard<Mutex> lock(resource_mutex_);
         const TextureRes* t = textures_.Get(src);
         ENGINE_ASSERT(t != nullptr, "ReadbackTexture: handle is invalid or already destroyed");
         if (t == nullptr) {
@@ -849,7 +850,7 @@ bool Dx12Device::ReadbackTexture(TextureHandle src, u32 mip, u32 layer, void* ds
     const u64 row_bytes = FormatRowBytes(desc.format, width);
     const u32 block_rows = (height + fp.block_height - 1) / fp.block_height;
     ENGINE_ASSERT(dst_size >= row_bytes * block_rows * depth, "ReadbackTexture: destination is smaller than the level");
-    if (device_lost_.load(std::memory_order_relaxed)) {
+    if (device_lost_.Load(MemoryOrder::Relaxed)) {
         return false;
     }
     D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout{};
@@ -866,7 +867,7 @@ bool Dx12Device::ReadbackTexture(TextureHandle src, u32 mip, u32 layer, void* ds
     }
     u64 value = 0;
     {
-        std::lock_guard<std::mutex> lock(submit_mutex_);
+        LockGuard<Mutex> lock(submit_mutex_);
         usize slot = 0;
         ID3D12GraphicsCommandList* list = BeginInternalLocked(&slot);
         if (list != nullptr) {
@@ -899,7 +900,7 @@ bool Dx12Device::ReadbackTexture(TextureHandle src, u32 mip, u32 layer, void* ds
         if (ok) {
             for (u32 z = 0; z < depth; ++z) {
                 for (u32 r = 0; r < block_rows; ++r) {
-                    std::memcpy(static_cast<u8*>(dst) + (static_cast<u64>(z) * block_rows + r) * row_bytes, mapped + (static_cast<u64>(z) * block_rows + r) * pitch,
+                    MemCopy(static_cast<u8*>(dst) + (static_cast<u64>(z) * block_rows + r) * row_bytes, mapped + (static_cast<u64>(z) * block_rows + r) * pitch,
                                 static_cast<usize>(row_bytes));
                 }
             }

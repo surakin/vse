@@ -6,9 +6,10 @@
 #include "os/windows/utf16.h"
 #include "os/windows/win32.h"
 
-#include <cstdio>
-#include <cstring>
-#include <ctime>
+#include "cstr/mem_ops.h"
+#include "cstr/cstr.h"
+#include "cstr/format.h"
+#include <time.h> // ::time, the operating system's clock (not the C++ library)
 #include <intrin.h>
 #include "build_defs.h"
 
@@ -35,7 +36,7 @@ void AppendDecimal(char* dest, usize capacity, u64 value) {
         digits[n++] = static_cast<char>('0' + value % 10);
         value /= 10;
     } while (value > 0);
-    usize at = std::strlen(dest);
+    usize at = CStrLength(dest);
     while (n > 0 && at + 1 < capacity) dest[at++] = digits[--n];
     dest[at] = '\0';
 }
@@ -47,26 +48,26 @@ void BuildIdFromCodeView(char* out, usize capacity) {
     const byte* base = reinterpret_cast<const byte*>(GetModuleHandleW(nullptr));
     if (base == nullptr) return;
     IMAGE_DOS_HEADER dos;
-    std::memcpy(&dos, base, sizeof(dos));
+    MemCopy(&dos, base, sizeof(dos));
     if (dos.e_magic != IMAGE_DOS_SIGNATURE) return;
     IMAGE_NT_HEADERS nt;
-    std::memcpy(&nt, base + dos.e_lfanew, sizeof(nt));
+    MemCopy(&nt, base + dos.e_lfanew, sizeof(nt));
     if (nt.Signature != IMAGE_NT_SIGNATURE) return;
     const IMAGE_DATA_DIRECTORY& directory = nt.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_DEBUG];
     const usize entries = directory.Size / sizeof(IMAGE_DEBUG_DIRECTORY);
     for (usize i = 0; i < entries; ++i) {
         IMAGE_DEBUG_DIRECTORY entry;
-        std::memcpy(&entry, base + directory.VirtualAddress + i * sizeof(IMAGE_DEBUG_DIRECTORY), sizeof(entry));
+        MemCopy(&entry, base + directory.VirtualAddress + i * sizeof(IMAGE_DEBUG_DIRECTORY), sizeof(entry));
         if (entry.Type != IMAGE_DEBUG_TYPE_CODEVIEW || entry.AddressOfRawData == 0 || entry.SizeOfData < 24) continue;
         const byte* record = base + entry.AddressOfRawData;
-        if (std::memcmp(record, "RSDS", 4) != 0) continue;
+        if (MemCompare(record, "RSDS", 4) != 0) continue;
         // GUID (16 bytes: Data1 u32, Data2 u16, Data3 u16, Data4 u8[8], the first three little-endian) and age (u32).
         GUID guid;
         DWORD age = 0;
-        std::memcpy(&guid, record + 4, sizeof(guid));
-        std::memcpy(&age, record + 20, sizeof(age));
+        MemCopy(&guid, record + 4, sizeof(guid));
+        MemCopy(&age, record + 20, sizeof(age));
         char text[48];
-        std::snprintf(text, sizeof(text), "%08lx%04x%04x%02x%02x%02x%02x%02x%02x%02x%02x%lx", static_cast<unsigned long>(guid.Data1),
+        FormatTo(text, sizeof(text), "%08lx%04x%04x%02x%02x%02x%02x%02x%02x%02x%02x%lx", static_cast<unsigned long>(guid.Data1),
                       guid.Data2, guid.Data3, guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3], guid.Data4[4], guid.Data4[5],
                       guid.Data4[6], guid.Data4[7], static_cast<unsigned long>(age));
         CopyText(out, capacity, text);
@@ -95,9 +96,9 @@ void FillPlatformCrashContext(CrashContext& context) {
     if (rtl_get_version != nullptr && rtl_get_version(&version) == 0) {
         context.os_version[0] = '\0';
         AppendDecimal(context.os_version, sizeof(context.os_version), version.dwMajorVersion);
-        CopyText(context.os_version + std::strlen(context.os_version), sizeof(context.os_version) - std::strlen(context.os_version), ".");
+        CopyText(context.os_version + CStrLength(context.os_version), sizeof(context.os_version) - CStrLength(context.os_version), ".");
         AppendDecimal(context.os_version, sizeof(context.os_version), version.dwMinorVersion);
-        CopyText(context.os_version + std::strlen(context.os_version), sizeof(context.os_version) - std::strlen(context.os_version), ".");
+        CopyText(context.os_version + CStrLength(context.os_version), sizeof(context.os_version) - CStrLength(context.os_version), ".");
         AppendDecimal(context.os_version, sizeof(context.os_version), version.dwBuildNumber);
     }
     SYSTEM_INFO system{};
@@ -116,7 +117,7 @@ void FillPlatformCrashContext(CrashContext& context) {
         char brand[49] = {};
         for (unsigned leaf = 0; leaf < 3; ++leaf) {
             __cpuid(registers, static_cast<int>(0x80000002u + leaf));
-            std::memcpy(brand + leaf * 16, registers, 16);
+            MemCopy(brand + leaf * 16, registers, 16);
         }
         const char* start = brand;
         while (*start == ' ') ++start;

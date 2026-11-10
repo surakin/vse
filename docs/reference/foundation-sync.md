@@ -225,24 +225,32 @@ bool CompareExchangeStrong(T& expected, T desired, MemoryOrder order = MemoryOrd
 
 As above with one order; the failure order is the strongest valid one.
 
-### `FetchAdd(D,MemoryOrder)` {#atomic-fetchadd-d-memoryorder-noexcept}
+### `Delta` {#atomic-delta}
+
+`alias Atomic::Delta` — defined in `engine/foundation/sync/atomic.h`
+
+```cpp
+using Delta = Conditional<IsPointer<T>, isize, T>;
+```
+
+The type of a `FetchAdd`/`FetchSub` delta: `T` itself, or `isize` (elements) for a pointer, as `std::atomic` takes it. A narrowing argument converts at the call, where the compiler can warn about it.
+
+### `FetchAdd(Delta,MemoryOrder)` {#atomic-fetchadd-delta-memoryorder-noexcept}
 
 `method Atomic::FetchAdd` — defined in `engine/foundation/sync/atomic.h`
 
 ```cpp
-template <class D>
-T FetchAdd(D delta, MemoryOrder order = MemoryOrder::SeqCst) noexcept;
+T FetchAdd(Delta delta, MemoryOrder order = MemoryOrder::SeqCst) noexcept;
 ```
 
 Adds `delta` and returns the value before the addition (integers, floats; for a pointer `T*`, `delta` counts elements).
 
-### `FetchSub(D,MemoryOrder)` {#atomic-fetchsub-d-memoryorder-noexcept}
+### `FetchSub(Delta,MemoryOrder)` {#atomic-fetchsub-delta-memoryorder-noexcept}
 
 `method Atomic::FetchSub` — defined in `engine/foundation/sync/atomic.h`
 
 ```cpp
-template <class D>
-T FetchSub(D delta, MemoryOrder order = MemoryOrder::SeqCst) noexcept;
+T FetchSub(Delta delta, MemoryOrder order = MemoryOrder::SeqCst) noexcept;
 ```
 
 Subtracts `delta` and returns the value before the subtraction.

@@ -4,9 +4,9 @@
 // arguments of a program written with ENGINE_WINDOWED_PROGRAM.
 #include <catch2/catch_test_macros.hpp>
 
-#include <cstdio>
-#include <cstring>
-#include <cwchar>
+#include "cstr/mem_ops.h"
+#include "cstr/cstr.h"
+#include "cstr/format.h"
 
 #include "display_session.h"
 #include "io/file.h"
@@ -60,11 +60,11 @@ u32 Subsystem(const io::Path& path) {
     usize got = 0;
     if (!io::ReadFile(path, arena, &header, &got).Ok() || got < 0x40 || header[0] != 'M' || header[1] != 'Z') return 0;
     u32 pe = 0;
-    std::memcpy(&pe, header + 0x3C, 4);
+    MemCopy(&pe, header + 0x3C, 4);
     // "PE\0\0", the 20-byte file header, then the optional header, whose Subsystem field is at offset 68.
-    if (pe + 24 + 70 > got || std::memcmp(header + pe, "PE\0\0", 4) != 0) return 0;
+    if (pe + 24 + 70 > got || MemCompare(header + pe, "PE\0\0", 4) != 0) return 0;
     u16 subsystem = 0;
-    std::memcpy(&subsystem, header + pe + 24 + 68, 2);
+    MemCopy(&subsystem, header + pe + 24 + 68, 2);
     return subsystem;
 }
 
@@ -94,7 +94,7 @@ ProbeResult RunWindowedProbe(const wchar_t* arguments) {
     SetHandleInformation(out_read, HANDLE_FLAG_INHERIT, 0);
     SetHandleInformation(err_read, HANDLE_FLAG_INHERIT, 0);
     wchar_t command[2048];
-    std::swprintf(command, 2048, L"\"%ls\" %ls", WINDOWED_PROBE_PATH, arguments);
+    WFormatTo(command, 2048, L"\"%ls\" %ls", WINDOWED_PROBE_PATH, arguments);
     STARTUPINFOW startup = {};
     startup.cb = sizeof(startup);
     startup.dwFlags = STARTF_USESTDHANDLES;
@@ -117,12 +117,12 @@ ProbeResult RunWindowedProbe(const wchar_t* arguments) {
 }
 
 void AppendHexLine(char* out, usize capacity, const char* label, int index, const char* utf8) {
-    usize used = std::strlen(out);
-    used += static_cast<usize>(std::snprintf(out + used, capacity - used, "%s %d ", label, index));
+    usize used = CStrLength(out);
+    used += static_cast<usize>(FormatTo(out + used, capacity - used, "%s %d ", label, index));
     for (const char* c = utf8; *c != '\0'; ++c) {
-        used += static_cast<usize>(std::snprintf(out + used, capacity - used, "%02x", static_cast<unsigned>(static_cast<u8>(*c))));
+        used += static_cast<usize>(FormatTo(out + used, capacity - used, "%02x", static_cast<unsigned>(static_cast<u8>(*c))));
     }
-    std::snprintf(out + used, capacity - used, "\n");
+    FormatTo(out + used, capacity - used, "\n");
 }
 
 void StripCarriageReturns(char* text) {
@@ -186,7 +186,7 @@ TEST_CASE("Windows: a Win32 window opens with the client size asked for and hand
     CHECK(info.display == reinterpret_cast<void*>(GetWindowLongPtrW(hwnd, GWLP_HINSTANCE)));
     wchar_t title[64] = {};
     GetWindowTextW(hwnd, title, 64);
-    CHECK(std::wcscmp(title, L"w\x00E4hlen \x2713") == 0);
+    CHECK(WStrCompare(title, L"w\x00E4hlen \x2713") == 0);
     // The window is per-monitor-v2 aware, whatever the thread was.
     CHECK(AreDpiAwarenessContextsEqual(GetWindowDpiAwarenessContext(hwnd), DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2));
 
@@ -462,6 +462,6 @@ TEST_CASE("Windows: a windowed program gets UTF-8 arguments split by the Windows
     for (int i = 0; i < 5; ++i) AppendHexLine(want, sizeof(want), "arg", i, expected[i]);
     for (int i = 0; i < 5; ++i) AppendHexLine(want, sizeof(want), "stash", i, expected[i]);
     StripCarriageReturns(r.out); // the C runtime may end lines with CR LF on a text-mode standard output
-    CHECK(std::strcmp(r.out, want) == 0);
-    CHECK(std::strcmp(r.err, "stderr ok\n") == 0);
+    CHECK(CStrCompare(r.out, want) == 0);
+    CHECK(CStrCompare(r.err, "stderr ok\n") == 0);
 }

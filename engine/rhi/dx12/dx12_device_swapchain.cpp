@@ -7,6 +7,8 @@
 #include "rhi/dx12/dx12_result.h"
 #include "rhi/dx12/dx12_swapchain.h"
 #include "rhi/rhi_log.h"
+#include "sync/atomic.h"
+#include "sync/mutex.h"
 
 namespace engine_placeholder::rhi::dx12 {
 
@@ -20,7 +22,7 @@ Swapchain* Dx12Device::CreateSwapchain(const SwapchainDesc& desc) {
         return nullptr;
     }
     swapchain_ = Dx12Swapchain::Create(this, desc);
-    swapchain_live_.store(swapchain_ ? 1 : 0, std::memory_order_release);
+    swapchain_live_.Store(swapchain_ ? 1 : 0, MemoryOrder::Release);
     return swapchain_.Get();
 }
 
@@ -30,12 +32,12 @@ void Dx12Device::DestroySwapchain(Swapchain* swapchain) {
     }
     ENGINE_ASSERT(swapchain == swapchain_.Get(), "DestroySwapchain: not this device's swapchain");
     swapchain_.Reset();
-    swapchain_live_.store(0, std::memory_order_release);
+    swapchain_live_.Store(0, MemoryOrder::Release);
 }
 
 bool Dx12Device::RecreateSurface(const os::Window* window) {
     ENGINE_ASSERT(!swapchain_, "RecreateSurface: destroy the swapchain first");
-    ENGINE_ASSERT(!frame_open_.load(std::memory_order_acquire), "RecreateSurface: called between BeginFrame and EndFrame");
+    ENGINE_ASSERT(!frame_open_.Load(MemoryOrder::Acquire), "RecreateSurface: called between BeginFrame and EndFrame");
     if (window == nullptr || window->GetNativeInfo().kind != os::NativeWindowKind::Win32) {
         RhiLog(LogVerbosity::Error, "RecreateSurface: no Win32 window");
         return false;
@@ -56,7 +58,7 @@ TextureHandle Dx12Device::RegisterSwapchainImage(ComRef<ID3D12Resource> buffer, 
     res.resource_format = buffer->GetDesc().Format;
     res.state = D3D12_RESOURCE_STATE_PRESENT;
     res.external = true;
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     if (!rtv_heap_.Allocate(&res.rtv)) {
         return {};
     }
@@ -75,7 +77,7 @@ TextureHandle Dx12Device::RegisterSwapchainImage(ComRef<ID3D12Resource> buffer, 
 
 void Dx12Device::ReleaseSwapchainImage(TextureHandle texture) {
     // The swapchain waited for the GPU first: the image is freed at once (ResizeBuffers needs every reference gone), not retired.
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     TextureRes* t = textures_.Get(texture);
     if (t == nullptr) {
         return;
@@ -86,15 +88,15 @@ void Dx12Device::ReleaseSwapchainImage(TextureHandle texture) {
 }
 
 bool Dx12Device::CountPresent() {
-    const u32 n = present_count_.fetch_add(1, std::memory_order_relaxed) + 1;
+    const u32 n = present_count_.FetchAdd(1, MemoryOrder::Relaxed) + 1;
     if (lose_device_at_present_ != 0 && n == lose_device_at_present_) {
         InjectLoss("present", n);
     }
-    return device_lost_.load(std::memory_order_relaxed);
+    return device_lost_.Load(MemoryOrder::Relaxed);
 }
 
 HRESULT Dx12Device::PresentSwapchain(IDXGISwapChain3* swapchain, UINT interval, UINT flags) {
-    std::lock_guard<std::mutex> lock(submit_mutex_); // ordered with the submissions on the queue
+    LockGuard<Mutex> lock(submit_mutex_); // ordered with the submissions on the queue
     const HRESULT hr = swapchain->Present(interval, flags);
     if (IsDeviceLostResult(hr)) {
         NoteRemoved("IDXGISwapChain::Present");

@@ -2,7 +2,7 @@
 //
 // Synchronous for now: Day 152 opens with FILE_FLAG_OVERLAPPED and completes asynchronous requests natively. Reads and writes at an offset
 // pass it in an OVERLAPPED on the synchronous handle, so concurrent offset reads of one file do not share a file pointer.
-#include <cstdio>
+#include "cstr/format.h"
 
 #include "io/file.h"
 #include "io/windows/win_path.h"
@@ -38,7 +38,7 @@ public:
         const Status s = Close();
         if (s.Failed()) {
             char text[96];
-            const int n = std::snprintf(text, sizeof(text), "closing a file failed: %s (os code %d)", ErrorName(s.error), static_cast<int>(s.os_code));
+            const int n = FormatTo(text, sizeof(text), "closing a file failed: %s (os code %d)", ErrorName(s.error), static_cast<int>(s.os_code));
             Log(LogIo, LogVerbosity::Error, StringView(text, n > 0 ? static_cast<usize>(n) : 0));
         }
     }

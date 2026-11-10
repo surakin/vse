@@ -12,9 +12,11 @@
 #include "support/death_test_skip.h"
 #include "test_text.h"
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include "containers/array.h"
+#include "containers/vector.h"
+#include "cstr/cstr.h"
+#include "lang/initializer_list.h"
+#include "os/windows/utf16.h"
 
 #include "os/windows/win32.h"
 
@@ -31,18 +33,44 @@ struct ScriptRun {
 };
 
 // Runs one of the PowerShell scripts with its arguments (each quoted), standard error with standard output.
-ScriptRun RunScript(const char* script, std::initializer_list<const char*> arguments) {
+ScriptRun RunScript(const char* script, InitializerList<const char*> arguments) {
     _putenv_s("ENGINE_CRASH_EXTRACT", ENGINE_CRASH_EXTRACT_PATH);
     Text command = engine_test::Format("\"powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"%s\\scripts\\%s\"", ENGINE_SOURCE_DIR, script);
     for (const char* argument : arguments) command.Append(engine_test::Format(" \"%s\"", argument).View());
     command.Append(StringView(" 2>&1\"")); // the outer quotes are cmd.exe's (_popen runs cmd /c)
+    // cmd.exe runs the line, as _popen would; standard output and standard error share one pipe, read until the script ends.
     ScriptRun run;
-    FILE* pipe = _popen(command.CStr(), "r");
-    if (pipe == nullptr) return run;
-    char buffer[4096];
-    usize n = 0;
-    while ((n = std::fread(buffer, 1, sizeof(buffer), pipe)) > 0) run.output.AppendRawBytes(buffer, n);
-    run.exit_code = _pclose(pipe);
+    SECURITY_ATTRIBUTES inherit = {sizeof(inherit), nullptr, TRUE};
+    HANDLE read_end = nullptr;
+    HANDLE write_end = nullptr;
+    if (!CreatePipe(&read_end, &write_end, &inherit, 0)) return run;
+    SetHandleInformation(read_end, HANDLE_FLAG_INHERIT, 0);
+    const Text line = engine_test::Format("cmd.exe /d /c %s", command.CStr());
+    Vector<wchar_t> wide;
+    wide.Resize(line.View().Length() + 1);
+    const usize units = os::windows::Utf8ToUtf16(line.View(), wide.Data(), wide.Size());
+    wide[units < wide.Size() ? units : wide.Size() - 1] = L'\0';
+    STARTUPINFOW startup = {};
+    startup.cb = sizeof(startup);
+    startup.dwFlags = STARTF_USESTDHANDLES;
+    startup.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
+    startup.hStdOutput = write_end;
+    startup.hStdError = write_end;
+    PROCESS_INFORMATION process = {};
+    const bool started = CreateProcessW(nullptr, wide.Data(), nullptr, nullptr, TRUE, CREATE_NO_WINDOW, nullptr, nullptr, &startup, &process) != FALSE;
+    CloseHandle(write_end);
+    if (started) {
+        Array<char, 4096> buffer;
+        DWORD got = 0;
+        while (ReadFile(read_end, buffer.Data(), static_cast<DWORD>(buffer.Size()), &got, nullptr) && got > 0) run.output.AppendRawBytes(buffer.Data(), got);
+        WaitForSingleObject(process.hProcess, INFINITE);
+        DWORD code = 0;
+        GetExitCodeProcess(process.hProcess, &code);
+        run.exit_code = static_cast<int>(code);
+        CloseHandle(process.hThread);
+        CloseHandle(process.hProcess);
+    }
+    CloseHandle(read_end);
     return run;
 }
 
@@ -155,7 +183,7 @@ TEST_CASE("Windows: crash-report.ps1 refuses a different build of the program, a
     ScriptTempDir copy;
     const Text envelope = CrashInto(dumps);
     REQUIRE(envelope.Length() > 0);
-    const char* name = std::strrchr(exe.CStr(), '\\');
+    const char* name = CStrFindLastChar(exe.CStr(), '\\');
     REQUIRE(name != nullptr);
     io::Path target;
     REQUIRE(io::Path::Parse(engine_test::Concat(StringView(copy.Path()), StringView(name)).View(), io::NativePathStyle(), &target));

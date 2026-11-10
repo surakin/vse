@@ -48,6 +48,24 @@ TEST_CASE("os::Print and friends write to standard output", "[cstr][os]") {
     CHECK(std::strcmp(text, "a1|b|c\ndd") == 0);
 }
 
+TEST_CASE("os::FlushAll empties every C stream's buffer, not only the console's", "[cstr][os]") {
+    char path[] = "/tmp/engine_flush_all_XXXXXX";
+    const int tmp = mkstemp(path);
+    REQUIRE(tmp >= 0);
+    FILE* stream = fdopen(dup(tmp), "w"); // a stream on a file is fully buffered
+    REQUIRE(stream != nullptr);
+    std::fputs("held", stream);
+    char before[16] = {};
+    CHECK(pread(tmp, before, sizeof(before) - 1, 0) == 0); // still in the stream's buffer
+    os::FlushAll();
+    char after[16] = {};
+    CHECK(pread(tmp, after, sizeof(after) - 1, 0) == 4);
+    CHECK(std::strcmp(after, "held") == 0);
+    std::fclose(stream);
+    close(tmp);
+    unlink(path);
+}
+
 TEST_CASE("os::PrintError and friends write to standard error", "[cstr][os]") {
     char text[256];
     Capture(2, text, sizeof(text), [] {

@@ -12,9 +12,9 @@
 #include "string/string.h"
 #include "types.h"
 
-#include <atomic>
-#include <mutex>
-#include <thread>
+#include "sync/atomic.h"
+#include "sync/mutex.h"
+#include "sync/thread.h"
 
 namespace engine_placeholder::settings {
 
@@ -99,13 +99,13 @@ private:
     RegistryHive hive_;
     bool read_only_;
     String<HeapAllocator> path_ = String<HeapAllocator>(HeapAllocator::Default());
-    std::mutex mutex_;              // a write and the watch thread's comparison never interleave
+    Mutex mutex_;                   // a write and the watch thread's comparison never interleave
     Vector<Entry> known_;           // the state as this store last saw it (its own writes included)
     ChangeListener listener_ = nullptr;
     void* listener_user_ = nullptr;
-    std::thread watcher_;
+    Thread watcher_;
     void* stop_event_ = nullptr;    // HANDLE
-    std::atomic<bool> stopping_{false};
+    Atomic<bool> stopping_{false};
 };
 
 } // namespace engine_placeholder::settings

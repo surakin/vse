@@ -2,8 +2,7 @@
 // and standard output and error for a GUI program.
 #include "platform/entry_point.h"
 
-#include <cstdio>
-#include <cwchar>
+#include "cstr/cstr.h"
 
 #include "mem/heap_allocator.h"
 #include "os/command_line.h"
@@ -54,7 +53,7 @@ int RunWindowedProgram(int, char**, WindowedProgramEntry entry) {
     // One block, never freed (below): the `argv` pointers (with the closing null), then each argument's UTF-8 text and its terminator.
     const usize pointers = (static_cast<usize>(count) + 1) * sizeof(char*);
     usize bytes = pointers;
-    for (int i = 0; i < count; ++i) bytes += windows::Utf16ToUtf8(wide[i], std::wcslen(wide[i]), nullptr, 0) + 1;
+    for (int i = 0; i < count; ++i) bytes += windows::Utf16ToUtf8(wide[i], WStrLength(wide[i]), nullptr, 0) + 1;
     void* block = HeapAllocator::Default().Alloc(bytes, alignof(char*));
     if (block == nullptr) {
         LocalFree(wide);
@@ -63,7 +62,7 @@ int RunWindowedProgram(int, char**, WindowedProgramEntry entry) {
     char** argv = static_cast<char**>(block);
     char* text = static_cast<char*>(block) + pointers;
     for (int i = 0; i < count; ++i) {
-        const usize length = windows::Utf16ToUtf8(wide[i], std::wcslen(wide[i]), text, bytes - static_cast<usize>(text - static_cast<char*>(block)));
+        const usize length = windows::Utf16ToUtf8(wide[i], WStrLength(wide[i]), text, bytes - static_cast<usize>(text - static_cast<char*>(block)));
         argv[i] = text;
         text += length + 1;
     }

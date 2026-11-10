@@ -3,8 +3,8 @@
 
 #include "platform/windows/win32_dragdrop.h" // complete Win32Dnd for the UniquePtr member
 
-#include <cstring>
-#include <mutex>
+#include "cstr/mem_ops.h"
+#include "sync/mutex.h"
 
 #include "containers/array.h"
 #include "containers/vector.h"
@@ -338,9 +338,9 @@ void Win32Window::Proc::ReleaseInput(Win32Window& self, HWND hwnd) {
 }
 
 bool Win32Window::Proc::RegisterClassOnce(HINSTANCE instance) {
-    static std::once_flag once;
+    static OnceFlag once;
     static bool registered = false;
-    std::call_once(once, [instance] {
+    CallOnce(once, [instance] {
         WNDCLASSEXW wc{};
         wc.cbSize = sizeof(wc);
         wc.style = CS_HREDRAW | CS_VREDRAW; // no CS_OWNDC: the swapchain draws, not GDI
@@ -711,7 +711,7 @@ bool Win32Window::SetFullscreen(bool fullscreen) {
             WINDOWPLACEMENT placement{};
             placement.length = sizeof(placement);
             GetWindowPlacement(hwnd_, &placement);
-            std::memcpy(saved_placement_.Data(), &placement, sizeof(placement));
+            MemCopy(saved_placement_.Data(), &placement, sizeof(placement));
             SetWindowLongPtrW(hwnd_, GWL_STYLE, saved_style_ & ~static_cast<LONG_PTR>(WS_OVERLAPPEDWINDOW));
             fullscreen_wanted_ = true;
         }
@@ -724,7 +724,7 @@ bool Win32Window::SetFullscreen(bool fullscreen) {
     fullscreen_wanted_ = false;
     fullscreen_ = false;
     WINDOWPLACEMENT placement{};
-    std::memcpy(&placement, saved_placement_.Data(), sizeof(placement));
+    MemCopy(&placement, saved_placement_.Data(), sizeof(placement));
     SetWindowLongPtrW(hwnd_, GWL_STYLE, saved_style_);
     SetWindowPlacement(hwnd_, &placement);
     SetWindowPos(hwnd_, nullptr, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED);

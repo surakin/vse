@@ -5,11 +5,11 @@
 // settings (HKCU\Software\<app> of a real program) or any HKLM key.
 #include <catch2/catch_test_macros.hpp>
 
-#include <atomic>
-#include <chrono>
-#include <cstdio>
-#include <cstdlib>
-#include <thread>
+#include "cstr/cstr.h"
+#include "cstr/format.h"
+#include "cstr/number.h"
+#include "sync/atomic.h"
+#include "sync/thread.h"
 
 #include "catch_engine_types.h"
 #include "config_store_conformance.h"
@@ -44,8 +44,8 @@ void SweepStaleTestKeys() {
         const int n = WideCharToMultiByte(CP_UTF8, 0, name, static_cast<int>(units), utf8, sizeof(utf8) - 1, nullptr, nullptr);
         if (n <= 0) continue;
         utf8[n] = '\0';
-        if (std::strncmp(utf8, kTestPrefix, sizeof(kTestPrefix) - 1) != 0) continue;
-        const unsigned long pid = std::strtoul(utf8 + sizeof(kTestPrefix) - 1, nullptr, 10);
+        if (CStrCompareN(utf8, kTestPrefix, sizeof(kTestPrefix) - 1) != 0) continue;
+        const unsigned long pid = CStrToULong(utf8 + sizeof(kTestPrefix) - 1, nullptr, 10);
         if (pid == GetCurrentProcessId()) continue;
         const HANDLE process = OpenProcess(SYNCHRONIZE, FALSE, static_cast<DWORD>(pid));
         if (process != nullptr) {
@@ -58,7 +58,7 @@ void SweepStaleTestKeys() {
     RegCloseKey(software);
     for (usize i = 0; i < stale.Size(); ++i) {
         wchar_t wide[300];
-        std::swprintf(wide, 300, L"Software\\%hs", stale[i].CStr());
+        WFormatTo(wide, 300, L"Software\\%hs", stale[i].CStr());
         RegDeleteTreeW(HKEY_CURRENT_USER, wide);
     }
 }
@@ -67,10 +67,10 @@ void SweepStaleTestKeys() {
 class TestKey {
 public:
     TestKey() {
-        static std::atomic<int> next{0};
-        static std::atomic<bool> swept{false};
-        if (!swept.exchange(true)) SweepStaleTestKeys();
-        std::snprintf(path_, sizeof(path_), "Software\\%s%lu-%d", kTestPrefix, static_cast<unsigned long>(GetCurrentProcessId()), next.fetch_add(1));
+        static Atomic<int> next{0};
+        static Atomic<bool> swept{false};
+        if (!swept.Exchange(true)) SweepStaleTestKeys();
+        FormatTo(path_, sizeof(path_), "Software\\%s%lu-%d", kTestPrefix, static_cast<unsigned long>(GetCurrentProcessId()), next.FetchAdd(1));
     }
     ~TestKey() {
         wchar_t wide[300];
@@ -91,9 +91,9 @@ public:
     void WriteRaw(const wchar_t* section, const wchar_t* name, DWORD type, const void* data, DWORD bytes) const {
         wchar_t wide[400];
         if (section != nullptr) {
-            std::swprintf(wide, 400, L"%hs\\%ls", path_, section);
+            WFormatTo(wide, 400, L"%hs\\%ls", path_, section);
         } else {
-            std::swprintf(wide, 400, L"%hs", path_);
+            WFormatTo(wide, 400, L"%hs", path_);
         }
         HKEY key = nullptr;
         REQUIRE(RegCreateKeyExW(HKEY_CURRENT_USER, wide, 0, nullptr, 0, KEY_SET_VALUE | KEY_WOW64_64KEY, nullptr, &key, nullptr) == ERROR_SUCCESS);
@@ -102,7 +102,7 @@ public:
     }
     bool SubkeyExists(const wchar_t* section) const {
         wchar_t wide[400];
-        std::swprintf(wide, 400, L"%hs\\%ls", path_, section);
+        WFormatTo(wide, 400, L"%hs\\%ls", path_, section);
         HKEY key = nullptr;
         if (RegOpenKeyExW(HKEY_CURRENT_USER, wide, 0, KEY_READ | KEY_WOW64_64KEY, &key) != ERROR_SUCCESS) return false;
         RegCloseKey(key);
@@ -151,13 +151,13 @@ TEST_CASE("Windows: sections are subkeys, values are REG_SZ text, and anything e
     CHECK(key.SubkeyExists(L"renderer"));
     // What regedit shows: the value width under the subkey renderer, a REG_SZ with the text of the value.
     wchar_t sub[400];
-    std::swprintf(sub, 400, L"%hs\\renderer", key.Path());
+    WFormatTo(sub, 400, L"%hs\\renderer", key.Path());
     wchar_t text[64] = {};
     DWORD bytes = sizeof(text);
     DWORD type = 0;
     REQUIRE(RegGetValueW(HKEY_CURRENT_USER, sub, L"width", RRF_RT_ANY | RRF_SUBKEY_WOW6464KEY, &type, text, &bytes) == ERROR_SUCCESS);
     CHECK(type == REG_SZ);
-    CHECK(std::wcscmp(text, L"1920") == 0);
+    CHECK(WStrCompare(text, L"1920") == 0);
     // A value written by hand as a REG_DWORD is a type mismatch for its key, not a number read some other way.
     const DWORD dword = 7;
     key.WriteRaw(L"renderer", L"height", REG_DWORD, &dword, sizeof(dword));
@@ -198,17 +198,17 @@ TEST_CASE("Windows: sections are subkeys, values are REG_SZ text, and anything e
 namespace {
 
 struct Counter {
-    std::atomic<int> calls{0};
+    Atomic<int> calls{0};
 };
 
-void Count(void* user) { static_cast<Counter*>(user)->calls.fetch_add(1); }
+void Count(void* user) { static_cast<Counter*>(user)->calls.FetchAdd(1); }
 
 bool WaitFor(const Counter& c, int at_least, int ms) {
     for (int waited = 0; waited < ms; waited += 10) {
-        if (c.calls.load() >= at_least) return true;
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        if (c.calls.Load() >= at_least) return true;
+        ThisThread::SleepForMilliseconds(10);
     }
-    return c.calls.load() >= at_least;
+    return c.calls.Load() >= at_least;
 }
 
 } // namespace
@@ -223,31 +223,31 @@ TEST_CASE("Windows: another writer's change is announced, the store's own is not
     // The key does not exist yet: the first write of another store creates it, and that is a change too.
     REQUIRE(other.Set("renderer.width", AsText(d, Value::FromInt(800))).Ok());
     CHECK(WaitFor(counter, 1, 5000));
-    const int after_other = counter.calls.load();
+    const int after_other = counter.calls.Load();
     // The store's own write: nothing.
     REQUIRE(watched.Set("renderer.width", AsText(d, Value::FromInt(1024))).Ok());
-    std::this_thread::sleep_for(std::chrono::milliseconds(400));
-    CHECK(counter.calls.load() == after_other);
+    ThisThread::SleepForMilliseconds(400);
+    CHECK(counter.calls.Load() == after_other);
     // A change by hand (regedit, another process) is announced.
     const wchar_t height[] = L"600";
     key.WriteRaw(L"renderer", L"height", REG_SZ, height, sizeof(height));
     CHECK(WaitFor(counter, after_other + 1, 5000));
     // Stopped: nothing more.
     REQUIRE(watched.SetChangeListener(nullptr, nullptr).Ok());
-    const int stopped = counter.calls.load();
+    const int stopped = counter.calls.Load();
     REQUIRE(other.Remove("renderer.width").Ok());
-    std::this_thread::sleep_for(std::chrono::milliseconds(300));
-    CHECK(counter.calls.load() == stopped);
+    ThisThread::SleepForMilliseconds(300);
+    CHECK(counter.calls.Load() == stopped);
 }
 
 namespace {
 struct SelfRemoval {
     RegistryConfigStore* store = nullptr;
-    std::atomic<int> result{-1};
+    Atomic<int> result{-1};
 };
 void RemoveSelf(void* user) {
     SelfRemoval* s = static_cast<SelfRemoval*>(user);
-    s->result.store(static_cast<int>(s->store->SetChangeListener(nullptr, nullptr).error));
+    s->result.Store(static_cast<int>(s->store->SetChangeListener(nullptr, nullptr).error));
 }
 } // namespace
 
@@ -261,8 +261,8 @@ TEST_CASE("Windows: a listener cannot change its own store's listener, and nothi
     REQUIRE(watched.SetChangeListener(&RemoveSelf, &self).Ok());
     RegistryConfigStore other(key.Options());
     REQUIRE(other.Set("s.n", AsText(d, Value::FromInt(1))).Ok());
-    for (int waited = 0; waited < 5000 && self.result.load() < 0; waited += 10) std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    CHECK(self.result.load() == static_cast<int>(StoreError::Invalid));
+    for (int waited = 0; waited < 5000 && self.result.Load() < 0; waited += 10) ThisThread::SleepForMilliseconds(10);
+    CHECK(self.result.Load() == static_cast<int>(StoreError::Invalid));
     CHECK(watched.SetChangeListener(nullptr, nullptr).Ok()); // from another thread it works
 }
 
@@ -271,20 +271,20 @@ TEST_CASE("Windows: a store destroyed while a change is being announced stops cl
     const SettingDesc d = MakeInt("s.n", 0, 0, 1000000);
     RegistryConfigStore writer(key.Options());
     REQUIRE(writer.Set("s.n", AsText(d, Value::FromInt(0))).Ok());
-    std::atomic<bool> stop{false};
-    std::thread churn([&] {
+    Atomic<bool> stop{false};
+    Thread churn([&] {
         RegistryConfigStore w(key.Options());
-        for (int n = 1; !stop.load(); ++n) (void)w.Set("s.n", AsText(d, Value::FromInt(n % 1000000)));
+        for (int n = 1; !stop.Load(); ++n) (void)w.Set("s.n", AsText(d, Value::FromInt(n % 1000000)));
     });
     Counter counter;
     for (int i = 0; i < 1000; ++i) {
         RegistryConfigStore watched(key.Options());
         REQUIRE(watched.SetChangeListener(&Count, &counter).Ok());
-        if (i % 50 == 0) std::this_thread::sleep_for(std::chrono::milliseconds(2)); // now and then, long enough to be mid-announcement
+        if (i % 50 == 0) ThisThread::SleepForMilliseconds(2); // now and then, long enough to be mid-announcement
     }
     stop = true;
-    churn.join();
-    CHECK(counter.calls.load() >= 0); // the point is that no listener ran on a destroyed store (ASan) and nothing hung
+    churn.Join();
+    CHECK(counter.calls.Load() >= 0); // the point is that no listener ran on a destroyed store (ASan) and nothing hung
 }
 
 TEST_CASE("Windows: a group-policy value wins over the user's file and the command line, and is never written", "[settings][policy][windows]") {

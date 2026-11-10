@@ -2,6 +2,7 @@
 
 #include "rhi/dx12/dx12_result.h"
 #include "rhi/rhi_log.h"
+#include "sync/atomic.h"
 
 namespace engine_placeholder::rhi::dx12 {
 
@@ -130,7 +131,7 @@ bool GpuDescriptorRing::Initialize(ID3D12Device* device, u32 per_slot, u32 slots
     gpu_start_ = heap_->GetGPUDescriptorHandleForHeapStart();
     increment_ = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     per_slot_ = per_slot;
-    for (std::atomic<u32>& u : used_) u.store(0, std::memory_order_relaxed);
+    for (Atomic<u32>& u : used_) u.Store(0, MemoryOrder::Relaxed);
     return true;
 }
 
@@ -139,7 +140,7 @@ bool GpuDescriptorRing::Allocate(u32 slot, u32 count, D3D12_CPU_DESCRIPTOR_HANDL
         return false;
     }
     // A claim that overflows the region is not undone: the region is full for the rest of the frame anyway.
-    const u32 first = used_[slot].fetch_add(count, std::memory_order_relaxed);
+    const u32 first = used_[slot].FetchAdd(count, MemoryOrder::Relaxed);
     if (first > per_slot_ - count) {
         return false;
     }
@@ -150,7 +151,7 @@ bool GpuDescriptorRing::Allocate(u32 slot, u32 count, D3D12_CPU_DESCRIPTOR_HANDL
 }
 
 void GpuDescriptorRing::Reset(u32 slot) {
-    if (slot < kMaxSlots) used_[slot].store(0, std::memory_order_relaxed);
+    if (slot < kMaxSlots) used_[slot].Store(0, MemoryOrder::Relaxed);
 }
 
 // ---- GpuDescriptorTables ----

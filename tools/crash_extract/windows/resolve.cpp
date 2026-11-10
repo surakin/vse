@@ -5,8 +5,8 @@
 #include "io/file_system.h"
 #include "io/path.h"
 
-#include <cstdio>
-#include <cstring>
+#include "cstr/mem_ops.h"
+#include "os/console.h"
 
 #include "os/windows/win32.h"
 
@@ -17,6 +17,9 @@
 namespace crash_extract {
 
 namespace io = engine_placeholder::io;
+namespace os = engine_placeholder::os;
+using engine_placeholder::MemSet;
+using engine_placeholder::usize;
 
 namespace {
 
@@ -30,7 +33,7 @@ void ToUtf8(const wchar_t* wide, char* out, int capacity) {
 
 } // namespace
 
-int ResolveReport(const char* report, std::size_t report_size, const DumpModule* modules, std::size_t module_count, const char* store) {
+int ResolveReport(const char* report, usize report_size, const DumpModule* modules, usize module_count, const char* store) {
     const HANDLE session = GetCurrentProcess(); // a handle that names this DbgHelp session; nothing of this process is read (no invade)
     SymSetOptions(SYMOPT_UNDNAME | SYMOPT_LOAD_LINES | SYMOPT_FAIL_CRITICAL_ERRORS | SYMOPT_NO_PROMPTS);
     wchar_t search[2048];
@@ -39,12 +42,12 @@ int ResolveReport(const char* report, std::size_t report_size, const DumpModule*
     if (!SymInitializeW(session, search, FALSE)) return -1;
     bool loaded[512] = {};
     int named = 0;
-    std::size_t pos = 0;
+    usize pos = 0;
     while (pos < report_size) {
-        std::size_t end = pos;
+        usize end = pos;
         while (end < report_size && report[end] != '\n') ++end;
         const char* line = report + pos;
-        std::size_t length = end - pos;
+        usize length = end - pos;
         if (length > 0 && line[length - 1] == '\r') --length;
         unsigned number = 0;
         char module_text[kMaxDumpText];
@@ -54,7 +57,7 @@ int ResolveReport(const char* report, std::size_t report_size, const DumpModule*
             const DumpModule* module = FindModule(module_text, modules, module_count);
             char pdb_path[2048];
             if (module != nullptr && StorePdbPath(store, *module, pdb_path, sizeof(pdb_path))) {
-                const std::size_t index = static_cast<std::size_t>(module - modules);
+                const usize index = static_cast<usize>(module - modules);
                 wchar_t pdb_wide[2048];
                 ToWide(pdb_path, pdb_wide, 2048);
                 io::Path pdb_file;
@@ -69,7 +72,7 @@ int ResolveReport(const char* report, std::size_t report_size, const DumpModule*
                     const u64 address = module->base + offset - (number > 0 && offset > 0 ? 1 : 0);
                     alignas(SYMBOL_INFOW) engine_placeholder::byte storage[sizeof(SYMBOL_INFOW) + 1024 * sizeof(wchar_t)];
                     SYMBOL_INFOW* symbol = reinterpret_cast<SYMBOL_INFOW*>(storage);
-                    std::memset(symbol, 0, sizeof(SYMBOL_INFOW));
+                    MemSet(symbol, 0, sizeof(SYMBOL_INFOW));
                     symbol->SizeOfStruct = sizeof(SYMBOL_INFOW);
                     symbol->MaxNameLen = 1023;
                     DWORD64 displacement = 0;
@@ -82,10 +85,10 @@ int ResolveReport(const char* report, std::size_t report_size, const DumpModule*
                         char file[2048] = {};
                         if (SymGetLineFromAddrW64(session, address, &line_displacement, &source) && source.FileName != nullptr) {
                             ToUtf8(source.FileName, file, sizeof(file));
-                            std::printf("#%u  %s  %s:%lu  (%s+0x%llx)\n", number, function, file, static_cast<unsigned long>(source.LineNumber),
+                            os::Print("#%u  %s  %s:%lu  (%s+0x%llx)\n", number, function, file, static_cast<unsigned long>(source.LineNumber),
                                         BaseName(module_text), static_cast<unsigned long long>(offset));
                         } else {
-                            std::printf("#%u  %s  (%s+0x%llx)\n", number, function, BaseName(module_text), static_cast<unsigned long long>(offset));
+                            os::Print("#%u  %s  (%s+0x%llx)\n", number, function, BaseName(module_text), static_cast<unsigned long long>(offset));
                         }
                         printed = true;
                         ++named;
@@ -93,7 +96,7 @@ int ResolveReport(const char* report, std::size_t report_size, const DumpModule*
                 }
             }
         }
-        if (!printed) std::printf("%.*s\n", static_cast<int>(length), line);
+        if (!printed) os::Print("%.*s\n", static_cast<int>(length), line);
         pos = end + 1;
     }
     SymCleanup(session);

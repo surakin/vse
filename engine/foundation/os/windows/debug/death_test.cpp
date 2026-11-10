@@ -10,10 +10,10 @@
 #include "os/windows/utf16.h"
 #include "os/windows/win32.h"
 
-#include <csignal>
-#include <cstdlib>
-#include <cstring>
-#include <cwchar>
+#include "cstr/mem_ops.h"
+#include "cstr/cstr.h"
+#include "os/console.h"
+#include "os/signal.h"
 
 namespace engine_placeholder::debug {
 
@@ -33,7 +33,7 @@ constexpr const char kAbortMarker[] = "ENGINE-ABORT";
 void OnAbortSignal(int) {
     static const char kLine[] = "ENGINE-ABORT\n";
     os::Write(2, kLine, sizeof(kLine) - 1);
-    std::_Exit(3);
+    os::ExitNow(3);
 }
 
 // Sanitizer flags that make a child's faults reach its exit code instead of being reported (and turned into an exit code) by the runtime.
@@ -124,7 +124,7 @@ void AppendQuoted(Vector<wchar_t>& out, const wchar_t* arg) {
 bool BuildEnvironment(Vector<wchar_t>& env, const char* name, const char* argument, const ChildOptions& options) {
     wchar_t* parent = GetEnvironmentStringsW();
     if (parent == nullptr) return false;
-    for (const wchar_t* e = parent; *e != 0; e += std::wcslen(e) + 1) {
+    for (const wchar_t* e = parent; *e != 0; e += WStrLength(e) + 1) {
         if (KeyEquals(e, kChildNameVariable) || KeyEquals(e, kChildArgumentVariable) || KeyEquals(e, kNoCoreVariable)) continue;
         bool replaced = options.sanitizers_pass_faults && IsSanitizerKey(e);
         for (usize i = 0; i < options.extra_env_count && !replaced; ++i) {
@@ -139,7 +139,7 @@ bool BuildEnvironment(Vector<wchar_t>& env, const char* name, const char* argume
     FreeEnvironmentStringsW(parent);
     for (usize i = 0; i < options.extra_env_count; ++i) {
         // A sanitizer option the caller passes is merged below instead of added twice (the child would read only the first).
-        if (options.sanitizers_pass_faults && std::strncmp(options.extra_env[i], "ASAN_OPTIONS=", 13) == 0) continue;
+        if (options.sanitizers_pass_faults && CStrCompareN(options.extra_env[i], "ASAN_OPTIONS=", 13) == 0) continue;
         AppendUtf8(env, StringView(options.extra_env[i]));
         env.Push(0);
     }
@@ -157,9 +157,9 @@ bool BuildEnvironment(Vector<wchar_t>& env, const char* name, const char* argume
         // The caller's value wins over the parent's own; either way the fault flags are appended after it.
         const char* existing = nullptr;
         for (usize i = 0; i < options.extra_env_count; ++i) {
-            if (std::strncmp(options.extra_env[i], "ASAN_OPTIONS=", 13) == 0) existing = options.extra_env[i] + 13;
+            if (CStrCompareN(options.extra_env[i], "ASAN_OPTIONS=", 13) == 0) existing = options.extra_env[i] + 13;
         }
-        if (existing == nullptr) existing = std::getenv("ASAN_OPTIONS");
+        if (existing == nullptr) existing = os::GetEnvironment("ASAN_OPTIONS");
         AppendUtf8(env, StringView("ASAN_OPTIONS="));
         if (existing != nullptr && existing[0] != '\0') {
             AppendUtf8(env, StringView(existing));
@@ -175,7 +175,7 @@ bool BuildEnvironment(Vector<wchar_t>& env, const char* name, const char* argume
 void Append(char* buffer, usize& length, bool& truncated, const char* data, usize count) {
     const usize room = kChildCaptureBytes - length;
     const usize take = count < room ? count : room;
-    std::memcpy(buffer + length, data, take);
+    MemCopy(buffer + length, data, take);
     length += take;
     if (take < count) truncated = true;
 }
@@ -239,9 +239,9 @@ namespace detail {
 bool PlatformCanSpawn() { return true; }
 
 bool PlatformChildRequest(const char** name, const char** argument) {
-    const char* requested = std::getenv(kChildNameVariable);
+    const char* requested = os::GetEnvironment(kChildNameVariable);
     if (requested == nullptr) return false;
-    const char* arg = std::getenv(kChildArgumentVariable);
+    const char* arg = os::GetEnvironment(kChildArgumentVariable);
     *name = requested;
     *argument = arg != nullptr ? arg : "";
     return true;
@@ -252,7 +252,7 @@ void PlatformPrepareChild() {
     // exit code. (The job object also sets SEM_NOGPFAULTERRORBOX for the child.)
     SetErrorMode(SEM_NOGPFAULTERRORBOX | SEM_FAILCRITICALERRORS);
     _set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
-    std::signal(SIGABRT, &OnAbortSignal);
+    os::SetSignalHandler(SIGABRT, &OnAbortSignal);
 }
 
 ChildResult PlatformRunChild(const char* name, const char* argument, const ChildOptions& options) {
@@ -389,7 +389,7 @@ ChildResult PlatformRunChild(const char* name, const char* argument, const Child
 // with the crash library loaded (seen on Day 156: the child waited in RtlExitUserProcess until its deadline). The C streams are flushed first
 // (a child's printf output is what the parent reads).
 void ExitChildProcess(int code) {
-    std::fflush(nullptr);
+    os::FlushAll();
     TerminateProcess(GetCurrentProcess(), static_cast<UINT>(code));
     for (;;) Sleep(INFINITE); // TerminateProcess on this process does not return; this keeps [[noreturn]] true if it ever did
 }

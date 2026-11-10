@@ -1,6 +1,6 @@
 #include "rhi/dx12/dx12_backend.h"
 
-#include <cstdio>
+#include "cstr/format.h"
 
 #include "rhi/backend_registry.h"
 #include "rhi/dx12/dx12_device.h"
@@ -17,7 +17,7 @@ bool EnumerateDx12Adapters(const DeviceCreateInfo& info, AdapterList* out) { ret
 bool Dx12Available(char* reason, usize reason_size) {
     dx12::ComRef<IDXGIFactory6> factory;
     if (FAILED(CreateDXGIFactory2(0, __uuidof(IDXGIFactory6), factory.PutVoid()))) {
-        std::snprintf(reason, reason_size, "no DXGI 1.6 factory could be created");
+        FormatTo(reason, reason_size, "no DXGI 1.6 factory could be created");
         return false;
     }
     for (UINT i = 0;; ++i) {
@@ -30,7 +30,7 @@ bool Dx12Available(char* reason, usize reason_size) {
             return true;
         }
     }
-    std::snprintf(reason, reason_size, "no adapter supports Direct3D 12 at feature level 12_0");
+    FormatTo(reason, reason_size, "no adapter supports Direct3D 12 at feature level 12_0");
     return false;
 }
 

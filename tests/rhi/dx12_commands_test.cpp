@@ -268,9 +268,9 @@ TEST_CASE("The triangle renders offscreen on DX12 and matches its golden image",
     CHECK(Abs(image.Pixel(1, 1)[0] - 51) <= 1); // the clear color
     CHECK(Abs(image.Pixel(6, 40)[0] - 51) <= 1); // just left of the triangle: background
     gpu_test::Image golden;
-    REQUIRE(gpu_test::ReadPpm(gpu_test::GoldenPath("triangle.ppm").c_str(), &golden));
+    REQUIRE(gpu_test::ReadPpm(gpu_test::GoldenPath("triangle.ppm").CStr(), &golden));
     const gpu_test::CompareResult result = gpu_test::Compare(golden, image, gpu_test::CompareOptions{}, "dx12_triangle");
-    INFO(result.message);
+    INFO(result.message.CStr());
     CHECK(result.same);
     device->DestroyTexture(target);
     device->DestroyBuffer(vb);

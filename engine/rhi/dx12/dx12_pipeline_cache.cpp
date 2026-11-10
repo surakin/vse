@@ -2,7 +2,8 @@
 
 #include "rhi/dx12/dx12_pipeline_cache.h"
 
-#include <cstring>
+#include "cstr/mem_ops.h"
+#include "cstr/cstr.h"
 
 namespace engine_placeholder::rhi::dx12 {
 
@@ -52,15 +53,15 @@ u64 Fnv1a(const void* data, usize size, u64 seed) {
 }
 
 u64 PipelineLibraryIdentity(const char* adapter_id, const char* driver) {
-    u64 h = Fnv1a(adapter_id, std::strlen(adapter_id));
+    u64 h = Fnv1a(adapter_id, CStrLength(adapter_id));
     const byte separator = 0;
     h = Fnv1a(&separator, 1, h);
-    return Fnv1a(driver, std::strlen(driver), h);
+    return Fnv1a(driver, CStrLength(driver), h);
 }
 
 void WritePipelineLibraryHeader(byte* out, u64 identity, u32 key_count, const void* payload, usize payload_size) {
     // magic (8), format version (4), key count (4), identity (8), payload size (8), payload FNV-1a (8): 40 bytes, little-endian.
-    std::memcpy(out, kMagic, 8);
+    MemCopy(out, kMagic, 8);
     PutU32(out + 8, kFormatVersion);
     PutU32(out + 12, key_count);
     PutU64(out + 16, identity);
@@ -73,7 +74,7 @@ const char* CheckPipelineLibraryFile(const void* data, usize size, u64 identity,
     if (size < kPipelineLibraryHeaderBytes) {
         return "shorter than its header";
     }
-    if (std::memcmp(p, kMagic, 8) != 0) {
+    if (MemCompare(p, kMagic, 8) != 0) {
         return "not a pipeline library file";
     }
     if (GetU32(p + 8) != kFormatVersion) {

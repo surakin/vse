@@ -193,15 +193,21 @@ TEST_CASE("Number conversion matches the C library", "[cstr]") {
     CHECK(CStrToInt("  -17abc") == std::atoi("  -17abc"));
     CHECK(CStrToInt("none") == 0);
     CHECK(CStrToLong("123456789012") == std::atol("123456789012"));
+    // Both parse one string, so the end pointers are comparable (identical literals are separate objects unless the compiler pools them,
+    // which MSVC's debug build does not).
+    const char* hex = "0x1F rest";
     char* end1 = nullptr;
     char* end2 = nullptr;
-    CHECK(CStrToULong("0x1F rest", &end1, 16) == std::strtoul("0x1F rest", &end2, 16));
+    CHECK(CStrToULong(hex, &end1, 16) == std::strtoul(hex, &end2, 16));
     CHECK(end1 == end2);
+    CHECK(end1 == hex + 4);
     CHECK(CStrToULongLong("18446744073709551615", nullptr, 10) == 18446744073709551615ull);
     CHECK(CStrToLong("-5", nullptr, 10) == -5);
     CHECK(CStrToLongLong("-9", nullptr, 10) == -9);
-    CHECK(CStrToDouble("2.5e3x", &end1) == std::strtod("2.5e3x", &end2));
+    const char* decimal = "2.5e3x";
+    CHECK(CStrToDouble(decimal, &end1) == std::strtod(decimal, &end2));
     CHECK(end1 == end2);
+    CHECK(end1 == decimal + 5);
     CHECK(CStrToDouble("1.25") == 1.25);
     CHECK(CStrToFloat("0.5", nullptr) == 0.5f);
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <atomic>
-#include <mutex>
+#include "sync/atomic.h"
+#include "sync/mutex.h"
 
 #include "containers/shared_ptr.h"
 #include "containers/unique_ptr.h"
@@ -77,9 +77,9 @@ public:
     u32 Epoch() const override { return epoch_; }
     const DeviceCaps& Caps() const override { return caps_; }
     ResourceCounts Resources() const override;
-    bool InFrame() const override { return frame_open_.load(std::memory_order_acquire); }
+    bool InFrame() const override { return frame_open_.Load(MemoryOrder::Acquire); }
     void InjectDeviceLoss() override;
-    bool DeviceLost() const override { return device_lost_.load(std::memory_order_relaxed); }
+    bool DeviceLost() const override { return device_lost_.Load(MemoryOrder::Relaxed); }
     BufferHandle CreateBuffer(const BufferDesc& desc) override;
     void DestroyBuffer(BufferHandle buffer) override;
     TextureHandle CreateTexture(const TextureDesc& desc) override;
@@ -603,14 +603,14 @@ private:
         u64 frame = 0; // the frame the pool's lists were last handed out in
     };
     UniquePtr<Dx12Swapchain> swapchain_;    // owner thread (dx12_device_swapchain.cpp)
-    std::atomic<u32> swapchain_live_{0};
-    std::atomic<u32> present_count_{0};
+    Atomic<u32> swapchain_live_{0};
+    Atomic<u32> present_count_{0};
     ListPool list_pools_[kFrameSlots];      // under list_mutex_
-    std::mutex list_mutex_;
+    Mutex list_mutex_;
     void ShutdownCommands();
     ComRef<ID3D12RootSignature> mip_root_;  // under mip_mutex_
     ComRef<ID3D12PipelineState> mip_state_;
-    std::mutex mip_mutex_;
+    Mutex mip_mutex_;
     bool mip_support_[static_cast<usize>(Format::Count)] = {};
 
     HandlePool<ShaderRes, ShaderTag> shaders_;
@@ -621,7 +621,7 @@ private:
     Vector<u64> library_keys_;              // sorted: the pipelines the library holds (asking for another one makes the debug layer warn)
     char cache_path_[512] = {};
     PipelineCacheStats cache_stats_;        // under library_mutex_
-    mutable std::mutex library_mutex_;
+    mutable Mutex library_mutex_;
 
     HandlePool<SamplerRes, SamplerTag> samplers_;
     HandlePool<BindGroupLayoutRes, BindGroupLayoutTag> bind_group_layouts_;
@@ -646,8 +646,8 @@ private:
     u8* staging_mapped_ = nullptr;
     UniquePtr<RingAllocator> staging_ring_;
     Vector<InternalList> internal_lists_;   // under submit_mutex_
-    std::atomic<u64> device_memory_bytes_{0};
-    std::atomic<u32> raw_resources_{0};     // ID3D12Resource objects alive, user and internal
+    Atomic<u64> device_memory_bytes_{0};
+    Atomic<u32> raw_resources_{0};     // ID3D12Resource objects alive, user and internal
     u32 format_support_[static_cast<usize>(Format::Count)] = {}; // D3D12_FORMAT_SUPPORT1 of the typed (or view) format
     bool format_support_ready_ = false;
 
@@ -672,20 +672,20 @@ private:
     u32 lose_device_at_frame_ = 0;
     u32 lose_device_at_submit_ = 0;
     u32 lose_device_at_present_ = 0;
-    std::atomic<u32>* strikes_left_ = nullptr;
+    Atomic<u32>* strikes_left_ = nullptr;
     u32 fail_allocations_from_ = 0;
-    std::atomic<u32> allocation_count_{0}; // committed resources asked for, for fail_allocations_from
+    Atomic<u32> allocation_count_{0}; // committed resources asked for, for fail_allocations_from
     bool removal_injected_ = false;        // InjectDeviceLoss removed this device with the debug layer on (owner thread)
-    std::atomic<u32> submit_count_{0};
+    Atomic<u32> submit_count_{0};
 
-    std::atomic<bool> device_lost_{false};
-    std::atomic<bool> frame_open_{false};
+    Atomic<bool> device_lost_{false};
+    Atomic<bool> frame_open_{false};
 
     // The submission lock orders ExecuteCommandLists and fence signals; the resource lock guards the frame counters and pools.
-    std::mutex submit_mutex_;
-    mutable std::mutex resource_mutex_;
+    Mutex submit_mutex_;
+    mutable Mutex resource_mutex_;
     u64 last_signaled_ = 0; // under submit_mutex_
-    std::atomic<u64> last_signaled_published_{0};
+    Atomic<u64> last_signaled_published_{0};
     u64 frame_number_ = 0;
     u64 ended_frames_ = 0;
     u64 completed_frames_ = 0;

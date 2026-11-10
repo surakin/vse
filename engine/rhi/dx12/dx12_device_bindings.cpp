@@ -6,7 +6,9 @@
 // group with the same samplers. A root signature has one CBV/SRV/UAV table and one sampler table per group and root constants for the push
 // constants; registers follow the bindings, spaces the group slots (shaders/target_common.slang).
 
-#include <cstring>
+#include "cstr/mem_ops.h"
+#include "sync/atomic.h"
+#include "sync/mutex.h"
 
 #include "log/assert.h"
 #include "rhi/dx12/dx12_device.h"
@@ -99,12 +101,12 @@ void Dx12Device::ShutdownBindings() {
 }
 
 u32 Dx12Device::FreeSamplerDescriptors() const {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     return sampler_tables_heap_.FreeCount();
 }
 
 usize Dx12Device::RootSignatureCount() const {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     return root_signatures_.Size();
 }
 
@@ -120,7 +122,7 @@ SamplerHandle Dx12Device::CreateSampler(const SamplerDesc& desc) {
     if (normalized.max_anisotropy > caps_.max_sampler_anisotropy) {
         normalized.max_anisotropy = caps_.max_sampler_anisotropy;
     }
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     SamplerHandle shared;
     samplers_.ForEachLive([&](SamplerHandle h, SamplerRes& s) {
         if (!shared.IsValid() && SameSampler(s.desc, normalized)) {
@@ -165,13 +167,13 @@ SamplerHandle Dx12Device::CreateSampler(const SamplerDesc& desc) {
 }
 
 void Dx12Device::DestroySampler(SamplerHandle sampler) {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     SamplerRes* s = samplers_.Get(sampler);
     ENGINE_ASSERT(s != nullptr, "DestroySampler: handle is invalid or already destroyed");
     if (s == nullptr || --s->refs > 0) {
         return;
     }
-    samplers_.Retire(sampler, frame_open_.load(std::memory_order_relaxed) ? frame_number_ : frame_number_ + 1);
+    samplers_.Retire(sampler, frame_open_.Load(MemoryOrder::Relaxed) ? frame_number_ : frame_number_ + 1);
 }
 
 // ---- bind group layouts ----
@@ -215,7 +217,7 @@ BindGroupLayoutHandle Dx12Device::CreateBindGroupLayout(const BindGroupLayoutDes
         RhiLog(LogVerbosity::Error, "CreateBindGroupLayout: %u samplers in one group is more than %u", res.sampler_count, kMaxSamplersPerGroup);
         return {};
     }
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     for (usize i = 0; i < layout_identities_.Size() && res.id == 0; ++i) {
         if (SameBindings(layout_identities_[i].bindings, layout_identities_[i].count, sorted, res.binding_count)) {
             res.id = layout_identities_[i].id;
@@ -237,12 +239,12 @@ BindGroupLayoutHandle Dx12Device::CreateBindGroupLayout(const BindGroupLayoutDes
 }
 
 void Dx12Device::DestroyBindGroupLayout(BindGroupLayoutHandle layout) {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     ENGINE_ASSERT(bind_group_layouts_.Get(layout) != nullptr, "DestroyBindGroupLayout: handle is invalid or already destroyed");
     if (bind_group_layouts_.Get(layout) == nullptr) {
         return;
     }
-    bind_group_layouts_.Retire(layout, frame_open_.load(std::memory_order_relaxed) ? frame_number_ : frame_number_ + 1);
+    bind_group_layouts_.Retire(layout, frame_open_.Load(MemoryOrder::Relaxed) ? frame_number_ : frame_number_ + 1);
 }
 
 // ---- sampler tables ----
@@ -255,7 +257,7 @@ u32 Dx12Device::AcquireSamplerTableLocked(const u64* keys, const usize* sources,
             if (free_entry == ~0u) free_entry = i;
             continue;
         }
-        if (t.count == count && std::memcmp(t.keys.Data(), keys, count * sizeof(u64)) == 0) {
+        if (t.count == count && MemCompare(t.keys.Data(), keys, count * sizeof(u64)) == 0) {
             ++t.refs;
             return i;
         }
@@ -300,9 +302,9 @@ BindGroupHandle Dx12Device::CreateBindGroup(const BindGroupDesc& desc) {
         RhiLog(LogVerbosity::Error, "CreateBindGroup: %s", why);
         return {};
     }
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     if (desc.transient) {
-        ENGINE_ASSERT(frame_open_.load(std::memory_order_relaxed), "CreateBindGroup: a transient group can only be created inside a frame");
+        ENGINE_ASSERT(frame_open_.Load(MemoryOrder::Relaxed), "CreateBindGroup: a transient group can only be created inside a frame");
     }
     const BindGroupLayoutRes* layout = bind_group_layouts_.Get(desc.layout);
     if (layout == nullptr) {
@@ -479,7 +481,7 @@ BindGroupHandle Dx12Device::CreateBindGroup(const BindGroupDesc& desc) {
 }
 
 void Dx12Device::DestroyBindGroup(BindGroupHandle group) {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     const BindGroupRes* g = bind_groups_.Get(group);
     ENGINE_ASSERT(g != nullptr, "DestroyBindGroup: handle is invalid or already destroyed");
     if (g == nullptr) {
@@ -489,7 +491,7 @@ void Dx12Device::DestroyBindGroup(BindGroupHandle group) {
     if (g->transient) {
         return;
     }
-    bind_groups_.Retire(group, frame_open_.load(std::memory_order_relaxed) ? frame_number_ : frame_number_ + 1);
+    bind_groups_.Retire(group, frame_open_.Load(MemoryOrder::Relaxed) ? frame_number_ : frame_number_ + 1);
 }
 
 void Dx12Device::ReleaseBindGroupLocked(BindGroupRes& group) {
@@ -514,7 +516,7 @@ void Dx12Device::RetireFrameGroupsLocked(u32 slot) {
 }
 
 bool Dx12Device::LookupBindGroup(BindGroupHandle group, BindGroupInfo* out) const {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     const BindGroupRes* g = bind_groups_.Get(group);
     if (g == nullptr) {
         return false;
@@ -547,7 +549,7 @@ bool Dx12Device::LookupBindGroup(BindGroupHandle group, BindGroupInfo* out) cons
 
 bool Dx12Device::RootSignatureFor(const BindGroupLayoutHandle* layouts, u32 count, u32 push_bytes, ShaderStage push_stages, bool compute, RootLayout* out) {
     ENGINE_ASSERT(count <= kMaxBindGroups && push_bytes <= kMaxPushConstantBytes, "RootSignatureFor: too many groups or push bytes");
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     const BindGroupLayoutRes* res[kMaxBindGroups] = {};
     u64 ids[kMaxBindGroups] = {};
     for (u32 g = 0; g < count; ++g) {
@@ -561,7 +563,7 @@ bool Dx12Device::RootSignatureFor(const BindGroupLayoutHandle* layouts, u32 coun
     for (usize i = 0; i < root_signatures_.Size(); ++i) {
         const RootSignatureEntry& e = root_signatures_[i];
         if (e.compute == compute && e.push_bytes == push_bytes && e.push_stages == push_stages && e.layout.layout_count == count &&
-            std::memcmp(e.layout.layout_ids, ids, count * sizeof(u64)) == 0) {
+            MemCompare(e.layout.layout_ids, ids, count * sizeof(u64)) == 0) {
             *out = e.layout;
             return true;
         }

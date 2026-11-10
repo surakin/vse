@@ -6,16 +6,16 @@
 #include "containers/unique_ptr.h"
 #include "settings/windows/registry_store.h"
 
-#include <cstdio>
+#include "cstr/format.h"
 
 namespace engine_placeholder::settings::detail {
 
 void AddPolicyLayers(const LoadOptions& options, LayerStack* stack) {
     char path[512];
     if (options.policy_path != nullptr) {
-        std::snprintf(path, sizeof(path), "%s", options.policy_path);
+        FormatTo(path, sizeof(path), "%s", options.policy_path);
     } else {
-        std::snprintf(path, sizeof(path), "Software\\Policies\\%s", options.policy_name != nullptr ? options.policy_name : options.app_name);
+        FormatTo(path, sizeof(path), "Software\\Policies\\%s", options.policy_name != nullptr ? options.policy_name : options.app_name);
     }
     RegistryStoreOptions user;
     user.hive = RegistryHive::CurrentUser;

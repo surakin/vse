@@ -2,7 +2,9 @@
 // Prints the active code page (65001 is UTF-8) and the thread's DPI awareness; the ctest matches the line.
 #include "os/windows/win32.h"
 
-#include <cstdio>
+#include "os/console.h"
+
+using namespace engine_placeholder;
 
 int main() {
     const UINT code_page = GetACP();
@@ -15,6 +17,6 @@ int main() {
     } else if (AreDpiAwarenessContextsEqual(context, DPI_AWARENESS_CONTEXT_UNAWARE)) {
         awareness = "unaware";
     }
-    std::printf("active code page %u; DPI awareness %s\n", code_page, awareness);
+    os::Print("active code page %u; DPI awareness %s\n", code_page, awareness);
     return code_page == 65001 ? 0 : 1;
 }

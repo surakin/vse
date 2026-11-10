@@ -5,9 +5,10 @@
 #include "rhi/dx12/dx12_command_list.h"
 #include "rhi/dx12/dx12_swapchain.h"
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include "cstr/cstr.h"
+#include "os/console.h"
+#include "sync/atomic.h"
+#include "sync/mutex.h"
 
 #include "log/assert.h"
 #include "os/os.h"
@@ -19,14 +20,14 @@ namespace engine_placeholder::rhi::dx12 {
 
 namespace {
 
-std::atomic<u64> g_leaked_user_objects{0};
-std::atomic<u64> g_leaked_d3d12_objects{0};
+Atomic<u64> g_leaked_user_objects{0};
+Atomic<u64> g_leaked_d3d12_objects{0};
 
 // "1" on, "0" off, anything else (or unset) undecided.
 int ParseSwitch(const char* text) {
     if (text == nullptr) return -1;
-    if (std::strcmp(text, "1") == 0) return 1;
-    if (std::strcmp(text, "0") == 0) return 0;
+    if (CStrCompare(text, "1") == 0) return 1;
+    if (CStrCompare(text, "0") == 0) return 0;
     return -1;
 }
 
@@ -38,14 +39,14 @@ constexpr bool kDebugBuild = true;
 
 // Live devices that removed themselves on purpose (InjectDeviceLoss, with the debug layer on): while one lives, the debug layer's
 // removal messages are expected. A count of devices, not of messages, so a message that never comes leaves nothing behind.
-std::atomic<u32> g_injected_removals{0};
+Atomic<u32> g_injected_removals{0};
 
 // The info queue's callback: every debug-layer message. A live-object report at device destruction is not a warning about the
 // application's use of the API: the device naming itself is expected, anything else is a leak.
 void CALLBACK OnDebugMessage(D3D12_MESSAGE_CATEGORY, D3D12_MESSAGE_SEVERITY severity, D3D12_MESSAGE_ID id, LPCSTR description, void*) {
     const char* text = description != nullptr ? description : "";
-    if (std::strncmp(text, "Live ", 5) == 0) {
-        if (std::strstr(text, "ID3D12Device") == nullptr && std::strncmp(text, "Live Object Summary", 19) != 0) {
+    if (CStrCompareN(text, "Live ", 5) == 0) {
+        if (CStrFind(text, "ID3D12Device") == nullptr && CStrCompareN(text, "Live Object Summary", 19) != 0) {
             NoteLiveObject();
             RhiLog(LogVerbosity::Warn, "D3D12 debug layer: %s", text);
         }
@@ -57,7 +58,7 @@ void CALLBACK OnDebugMessage(D3D12_MESSAGE_CATEGORY, D3D12_MESSAGE_SEVERITY seve
         severity = D3D12_MESSAGE_SEVERITY_INFO;
     }
     if (id >= D3D12_MESSAGE_ID_DEVICE_REMOVAL_PROCESS_AT_FAULT && id <= D3D12_MESSAGE_ID_DEVICE_REMOVAL_PROCESS_NOT_AT_FAULT &&
-        g_injected_removals.load(std::memory_order_relaxed) != 0) {
+        g_injected_removals.Load(MemoryOrder::Relaxed) != 0) {
         severity = D3D12_MESSAGE_SEVERITY_INFO; // the removal InjectDeviceLoss asked for
     }
     RecordDebugMessage(severity, id, text);
@@ -67,14 +68,14 @@ void CALLBACK OnDebugMessage(D3D12_MESSAGE_CATEGORY, D3D12_MESSAGE_SEVERITY seve
 
 Dx12Device::LeakCounts Dx12Device::GetLeakCounts() {
     LeakCounts c;
-    c.user_objects = g_leaked_user_objects.load(std::memory_order_relaxed);
-    c.live_d3d12_objects = g_leaked_d3d12_objects.load(std::memory_order_relaxed);
+    c.user_objects = g_leaked_user_objects.Load(MemoryOrder::Relaxed);
+    c.live_d3d12_objects = g_leaked_d3d12_objects.Load(MemoryOrder::Relaxed);
     return c;
 }
 
 void Dx12Device::ResetLeakCounts() {
-    g_leaked_user_objects.store(0, std::memory_order_relaxed);
-    g_leaked_d3d12_objects.store(0, std::memory_order_relaxed);
+    g_leaked_user_objects.Store(0, MemoryOrder::Relaxed);
+    g_leaked_d3d12_objects.Store(0, MemoryOrder::Relaxed);
 }
 
 Dx12DevicePtr Dx12Device::Create(const DeviceCreateInfo& info) {
@@ -109,7 +110,7 @@ bool Dx12Device::Initialize(const DeviceCreateInfo& info) {
     case ValidationSetting::On: want_validation = true; break;
     case ValidationSetting::Off: want_validation = false; break;
     case ValidationSetting::Auto: {
-        const int env = ParseSwitch(std::getenv("ENGINE_RHI_VALIDATION"));
+        const int env = ParseSwitch(os::GetEnvironment("ENGINE_RHI_VALIDATION"));
         want_validation = env >= 0 ? env == 1 : kDebugBuild;
         break;
     }
@@ -123,14 +124,14 @@ bool Dx12Device::Initialize(const DeviceCreateInfo& info) {
                                             "Graphics Tools optional feature (BUILD.md)");
                 return false;
             }
-            static std::atomic<bool> warned{false};
-            if (!warned.exchange(true)) {
+            static Atomic<bool> warned{false};
+            if (!warned.Exchange(true)) {
                 RhiLog(LogVerbosity::Warn, "D3D12: the debug layer is not installed (the Graphics Tools optional feature); running without validation");
             }
         } else {
             debug->EnableDebugLayer();
             validation_ = true;
-            const int sync_env = ParseSwitch(std::getenv("ENGINE_RHI_VALIDATION_SYNC"));
+            const int sync_env = ParseSwitch(os::GetEnvironment("ENGINE_RHI_VALIDATION_SYNC"));
             if (sync_env >= 0 ? sync_env == 1 : info.sync_validation) {
                 // The closest D3D12 counterpart of Vulkan's synchronization validation: GPU-based validation checks resource states
                 // and descriptors as the GPU executes. Slow; for tests and debugging only.
@@ -157,7 +158,7 @@ bool Dx12Device::Initialize(const DeviceCreateInfo& info) {
     adapters_ = set.list;
     char reason[256] = {};
     // The descriptor's adapter, else ENGINE_RHI_GPU, as the Vulkan backend picks (Phase 8; the setting renderer.adapter fills the descriptor).
-    const char* requested = info.adapter != nullptr && info.adapter[0] != '\0' ? info.adapter : std::getenv("ENGINE_RHI_GPU");
+    const char* requested = info.adapter != nullptr && info.adapter[0] != '\0' ? info.adapter : os::GetEnvironment("ENGINE_RHI_GPU");
     const int pick = PickAdapter(set, requested, reason, sizeof(reason));
     if (pick < 0) {
         RhiLog(LogVerbosity::Error, "CreateDevice: %s", reason);
@@ -252,12 +253,12 @@ Dx12Device::~Dx12Device() {
     WaitIdle();
     ShutdownCommands(); // the lists hold nothing else; the GPU is done with them
     {
-        std::lock_guard<std::mutex> lock(resource_mutex_);
+        LockGuard<Mutex> lock(resource_mutex_);
         CollectRetiredLocked(true);
     }
     const ResourceCounts counts = Resources();
     if (counts.UserObjects() != 0) {
-        g_leaked_user_objects.fetch_add(counts.UserObjects(), std::memory_order_relaxed);
+        g_leaked_user_objects.FetchAdd(counts.UserObjects(), MemoryOrder::Relaxed);
         RhiLog(LogVerbosity::Warn, "D3D12: %zu application object(s) were still alive when the device was destroyed", counts.UserObjects());
     }
     swapchain_.Reset(); // leaked by the application (counted above); its images go before the resources
@@ -268,7 +269,7 @@ Dx12Device::~Dx12Device() {
     queue_.Reset();
     ReportLiveObjects();
     if (removal_injected_) {
-        g_injected_removals.fetch_sub(1, std::memory_order_relaxed); // its removal messages have all been delivered by now
+        g_injected_removals.FetchSub(1, MemoryOrder::Relaxed); // its removal messages have all been delivered by now
     }
     if (info_queue_) {
         info_queue_->UnregisterMessageCallback(info_callback_cookie_);
@@ -292,7 +293,7 @@ void Dx12Device::ReportLiveObjects() {
     debug_device->ReportLiveDeviceObjects(D3D12_RLDO_DETAIL | D3D12_RLDO_IGNORE_INTERNAL);
     const u64 live = GetDebugMessageCounts().live_objects - before;
     if (live != 0) {
-        g_leaked_d3d12_objects.fetch_add(live, std::memory_order_relaxed);
+        g_leaked_d3d12_objects.FetchAdd(live, MemoryOrder::Relaxed);
         RhiLog(LogVerbosity::Error, "D3D12: %llu D3D12 object(s) besides the device were alive at its destruction (see the warnings above)",
                static_cast<unsigned long long>(live));
     }
@@ -313,7 +314,7 @@ bool Dx12Device::Check(HRESULT result, const char* what) {
 }
 
 void Dx12Device::NoteRemoved(const char* where) {
-    if (device_lost_.exchange(true, std::memory_order_relaxed)) {
+    if (device_lost_.Exchange(true, MemoryOrder::Relaxed)) {
         return;
     }
     const HRESULT reason = device_ ? device_->GetDeviceRemovedReason() : S_OK;
@@ -326,7 +327,7 @@ void Dx12Device::InjectDeviceLoss() {
     // A real removal (ID3D12Device5::RemoveDevice), so the loss is found the way a real one is: GetDeviceRemovedReason, fence values,
     // Present. D3D12 shares one device per adapter in a process, so every device of this adapter is lost with it, as with a real
     // removal; a device made after they are all released is a new one.
-    if (device_lost_.load(std::memory_order_relaxed)) {
+    if (device_lost_.Load(MemoryOrder::Relaxed)) {
         return;
     }
     ComRef<ID3D12Device5> device5;
@@ -339,7 +340,7 @@ void Dx12Device::InjectDeviceLoss() {
     }
     if (validation_ && !removal_injected_) {
         removal_injected_ = true;
-        g_injected_removals.fetch_add(1, std::memory_order_relaxed);
+        g_injected_removals.FetchAdd(1, MemoryOrder::Relaxed);
     }
     device5->RemoveDevice();
     NoteRemoved("InjectDeviceLoss");
@@ -349,9 +350,9 @@ bool Dx12Device::TakeStrike() {
     if (strikes_left_ == nullptr) {
         return true;
     }
-    u32 left = strikes_left_->load(std::memory_order_relaxed);
+    u32 left = strikes_left_->Load(MemoryOrder::Relaxed);
     while (left != 0) {
-        if (strikes_left_->compare_exchange_weak(left, left - 1, std::memory_order_relaxed)) {
+        if (strikes_left_->CompareExchangeWeak(left, left - 1, MemoryOrder::Relaxed)) {
             return true;
         }
     }
@@ -359,13 +360,13 @@ bool Dx12Device::TakeStrike() {
 }
 
 bool Dx12Device::InjectLoss(const char* where, u32 number) {
-    if (device_lost_.load(std::memory_order_relaxed)) {
+    if (device_lost_.Load(MemoryOrder::Relaxed)) {
         return true;
     }
     if (!TakeStrike()) {
         return false;
     }
-    if (!device_lost_.exchange(true, std::memory_order_relaxed)) {
+    if (!device_lost_.Exchange(true, MemoryOrder::Relaxed)) {
         RhiLog(LogVerbosity::Error, "D3D12: the device was lost (injected at %s %u); further submissions are ignored", where, number);
         ENGINE_ENSURE(false, "the D3D12 device was lost");
     }
@@ -380,7 +381,7 @@ u64 Dx12Device::SignalLocked() {
         return 0;
     }
     last_signaled_ = value;
-    last_signaled_published_.store(value, std::memory_order_release);
+    last_signaled_published_.Store(value, MemoryOrder::Release);
     return value;
 }
 
@@ -439,7 +440,7 @@ bool Dx12Device::WaitFence(FenceValue value, u64 timeout_ns) {
     if (value == 0) {
         return true;
     }
-    if (device_lost_.load(std::memory_order_relaxed)) {
+    if (device_lost_.Load(MemoryOrder::Relaxed)) {
         return false;
     }
     return WaitForValue(value, timeout_ns);
@@ -447,7 +448,7 @@ bool Dx12Device::WaitFence(FenceValue value, u64 timeout_ns) {
 
 FenceValue Dx12Device::CompletedFence() const {
     const u64 completed = fence_->GetCompletedValue();
-    return completed == ~0ull ? last_signaled_published_.load(std::memory_order_acquire) : completed;
+    return completed == ~0ull ? last_signaled_published_.Load(MemoryOrder::Acquire) : completed;
 }
 
 // ---- frames ----
@@ -460,7 +461,7 @@ void Dx12Device::UpdateCompletedFramesLocked() {
 }
 
 u64 Dx12Device::CompletedFrame() const {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     return completed_frames_;
 }
 
@@ -490,7 +491,7 @@ void Dx12Device::BeginFrame() {
     for (;;) {
         u64 wait_for = 0;
         {
-            std::lock_guard<std::mutex> lock(resource_mutex_);
+            LockGuard<Mutex> lock(resource_mutex_);
             UpdateCompletedFramesLocked();
             if (ended_frames_ - completed_frames_ >= kTrackedFrames - 2) {
                 wait_for = frame_fences_[(completed_frames_ + 1) % kTrackedFrames];
@@ -505,11 +506,11 @@ void Dx12Device::BeginFrame() {
             break; // nothing to wait for, or the device is removed (the wait returned at once)
         }
     }
-    std::lock_guard<std::mutex> lock(resource_mutex_);
-    ENGINE_ASSERT(!frame_open_.load(std::memory_order_relaxed), "BeginFrame: the previous frame was not ended");
+    LockGuard<Mutex> lock(resource_mutex_);
+    ENGINE_ASSERT(!frame_open_.Load(MemoryOrder::Relaxed), "BeginFrame: the previous frame was not ended");
     UpdateCompletedFramesLocked();
     ++frame_number_;
-    frame_open_.store(true, std::memory_order_release);
+    frame_open_.Store(true, MemoryOrder::Release);
     if (lose_device_at_frame_ != 0 && frame_number_ == lose_device_at_frame_) {
         InjectLoss("frame", static_cast<u32>(frame_number_));
     }
@@ -521,32 +522,32 @@ void Dx12Device::BeginFrame() {
 void Dx12Device::EndFrame() {
     u64 frame = 0;
     {
-        std::lock_guard<std::mutex> lock(resource_mutex_);
-        ENGINE_ASSERT(frame_open_.load(std::memory_order_relaxed), "EndFrame: no frame is open");
-        frame_open_.store(false, std::memory_order_release); // later destroys belong to the next frame
+        LockGuard<Mutex> lock(resource_mutex_);
+        ENGINE_ASSERT(frame_open_.Load(MemoryOrder::Relaxed), "EndFrame: no frame is open");
+        frame_open_.Store(false, MemoryOrder::Release); // later destroys belong to the next frame
         frame = frame_number_;
     }
     // Read the last signal after closing the frame: a resource destroyed in this frame may have been used by any submission made
     // before the close, and this value covers all of them.
     u64 last = 0;
     {
-        std::lock_guard<std::mutex> lock(submit_mutex_);
+        LockGuard<Mutex> lock(submit_mutex_);
         last = last_signaled_;
     }
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     ended_frames_ = frame;
     frame_fences_[frame % kTrackedFrames] = last;
 }
 
 u64 Dx12Device::FrameNumber() const {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     return frame_number_;
 }
 
 void Dx12Device::WaitForGpu() {
     u64 last = 0;
     {
-        std::lock_guard<std::mutex> lock(submit_mutex_);
+        LockGuard<Mutex> lock(submit_mutex_);
         last = last_signaled_;
     }
     WaitForValue(last, ~0ull);
@@ -557,11 +558,11 @@ void Dx12Device::WaitIdle() {
     // may still run work, so the wait happens in both cases.
     u64 last = 0;
     {
-        std::lock_guard<std::mutex> lock(submit_mutex_);
+        LockGuard<Mutex> lock(submit_mutex_);
         last = last_signaled_;
     }
     WaitForValue(last, ~0ull);
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     UpdateCompletedFramesLocked();
     CollectRetiredLocked(true);
 }
@@ -569,19 +570,19 @@ void Dx12Device::WaitIdle() {
 ResourceCounts Dx12Device::Resources() const {
     ResourceCounts c;
     {
-        std::lock_guard<std::mutex> lock(resource_mutex_);
+        LockGuard<Mutex> lock(resource_mutex_);
         c.buffers = buffers_.LiveCount();
         c.textures = textures_.LiveCount();
         c.samplers = samplers_.LiveCount();
         c.shaders = shaders_.LiveCount();
         c.pipelines = pipelines_.LiveCount();
-        c.swapchains = swapchain_live_.load(std::memory_order_acquire);
+        c.swapchains = swapchain_live_.Load(MemoryOrder::Acquire);
         c.bind_group_layouts = bind_group_layouts_.LiveCount();
         bind_groups_.ForEachLive([&](BindGroupHandle, const BindGroupRes& g) { c.bind_groups += g.transient ? 0 : 1; }); // transient groups end with their frame
     }
     // As on Vulkan: every raw resource alive (the application's and the backend's own, such as the staging ring), and their memory.
-    c.internal_objects = raw_resources_.load(std::memory_order_relaxed);
-    c.device_memory_bytes = device_memory_bytes_.load(std::memory_order_relaxed);
+    c.internal_objects = raw_resources_.Load(MemoryOrder::Relaxed);
+    c.device_memory_bytes = device_memory_bytes_.Load(MemoryOrder::Relaxed);
     return c;
 }
 

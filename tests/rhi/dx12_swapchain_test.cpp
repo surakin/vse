@@ -1,7 +1,6 @@
 // The Direct3D 12 swapchain on a Win32 window (Phase 13 Day 169): the DeviceHost flow the Vulkan swapchains run (present mode, HDR and format
 // requests, a replaced surface), the tearing flag and Immediate, the frame-latency wait, the sRGB view of a linear buffer, a window with no
 // area, and a device lost at present. Windows only; skipped when the session cannot show windows.
-#include <chrono>
 #include "lang/scalar.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -14,6 +13,7 @@
 #include "rhi/dx12/dx12_debug.h"
 #include "rhi/dx12/dx12_device.h"
 #include "rhi/dx12/dx12_swapchain.h"
+#include "os/os.h"
 #include "rhi/rhi.h"
 
 using namespace engine_placeholder;
@@ -232,13 +232,13 @@ TEST_CASE("A DX12 swapchain skips a minimized window without waiting and is rebu
     ShowWindow(hwnd, SW_MINIMIZE);
     for (int i = 0; i < 50 && !window->IsMinimized(); ++i) window->PumpEvents();
     REQUIRE(window->IsMinimized());
-    const auto start = std::chrono::steady_clock::now();
+    const u64 start = os::MonotonicTimeNanos();
     for (int i = 0; i < 20; ++i) {
         device->BeginFrame();
         CHECK(sc->Acquire() == SwapchainStatus::Minimized);
         device->EndFrame();
     }
-    const f64 ms = std::chrono::duration<f64, std::milli>(std::chrono::steady_clock::now() - start).count();
+    const f64 ms = (static_cast<f64>(os::MonotonicTimeNanos() - start) / 1e6);
     CHECK(ms < 200.0); // twenty skipped frames, no waits
     ShowWindow(hwnd, SW_RESTORE);
     for (int i = 0; i < 50 && window->IsMinimized(); ++i) window->PumpEvents();

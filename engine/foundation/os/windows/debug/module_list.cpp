@@ -6,8 +6,8 @@
 #include "os/windows/utf16.h"
 #include "os/windows/win32.h"
 
-#include <atomic>
-#include <mutex>
+#include "sync/atomic.h"
+#include "sync/mutex.h"
 
 #include "unity/windows_enable.h"
 #include <psapi.h>
@@ -25,13 +25,13 @@ struct ModuleTable {
     const LoadedModule* Entries() const { return reinterpret_cast<const LoadedModule*>(this + 1); }
 };
 
-std::atomic<const ModuleTable*> g_module_table{nullptr};
-std::mutex g_module_refresh_mutex;
+Atomic<const ModuleTable*> g_module_table{nullptr};
+Mutex g_module_refresh_mutex;
 
 } // namespace
 
 void RefreshLoadedModules() {
-    std::lock_guard<std::mutex> lock(g_module_refresh_mutex);
+    LockGuard<Mutex> lock(g_module_refresh_mutex);
     const HANDLE process = GetCurrentProcess();
     // Ask how many there are, then list them; a module loaded in between is left for the next refresh.
     DWORD needed = 0;
@@ -68,11 +68,11 @@ void RefreshLoadedModules() {
         }
     }
     os::ReleaseMemory(handles, room * sizeof(HMODULE));
-    g_module_table.store(table, std::memory_order_release);
+    g_module_table.Store(table, MemoryOrder::Release);
 }
 
 bool FindLoadedModule(u64 address, LoadedModule* out) {
-    const ModuleTable* table = g_module_table.load(std::memory_order_acquire);
+    const ModuleTable* table = g_module_table.Load(MemoryOrder::Acquire);
     if (table == nullptr) return false;
     for (u32 i = 0; i < table->count; ++i) {
         const LoadedModule& m = table->Entries()[i];

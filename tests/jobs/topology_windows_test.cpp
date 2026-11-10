@@ -2,10 +2,10 @@
 // more than 64 logical processors (several processor groups) are tested on a machine with one group; and the live answer of this machine.
 #include <catch2/catch_test_macros.hpp>
 
-#include <cstddef>
-#include <cstring>
-#include <cwchar>
-#include <thread>
+#include "cstr/mem_ops.h"
+#include "cstr/cstr.h"
+#include "sync/thread.h"
+#include "lang/initializer_list.h"
 
 #include "containers/vector.h"
 #include "jobs/detail/thread_platform.h"
@@ -19,21 +19,21 @@ using namespace engine_placeholder::jobs;
 namespace {
 
 // A RelationGroup record for groups with the given active processor masks, as the OS lays it out.
-Vector<u64> GroupRecord(std::initializer_list<u64> masks) {
+Vector<u64> GroupRecord(InitializerList<u64> masks) {
     const usize header = offsetof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, Group);
     const usize infos = offsetof(GROUP_RELATIONSHIP, GroupInfo);
     const usize size = header + infos + masks.size() * sizeof(PROCESSOR_GROUP_INFO);
     Vector<u64> storage;
     storage.Resize((size + 7) / 8);
     byte* at = reinterpret_cast<byte*>(storage.Data());
-    std::memset(at, 0, storage.Size() * 8);
+    MemSet(at, 0, storage.Size() * 8);
     const LOGICAL_PROCESSOR_RELATIONSHIP relation = RelationGroup;
     const DWORD record_size = static_cast<DWORD>(size);
-    std::memcpy(at + offsetof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, Relationship), &relation, sizeof(relation));
-    std::memcpy(at + offsetof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, Size), &record_size, sizeof(record_size));
+    MemCopy(at + offsetof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, Relationship), &relation, sizeof(relation));
+    MemCopy(at + offsetof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, Size), &record_size, sizeof(record_size));
     const WORD count = static_cast<WORD>(masks.size());
-    std::memcpy(at + header + offsetof(GROUP_RELATIONSHIP, MaximumGroupCount), &count, sizeof(count));
-    std::memcpy(at + header + offsetof(GROUP_RELATIONSHIP, ActiveGroupCount), &count, sizeof(count));
+    MemCopy(at + header + offsetof(GROUP_RELATIONSHIP, MaximumGroupCount), &count, sizeof(count));
+    MemCopy(at + header + offsetof(GROUP_RELATIONSHIP, ActiveGroupCount), &count, sizeof(count));
     usize g = 0;
     for (u64 mask : masks) {
         PROCESSOR_GROUP_INFO info{};
@@ -42,13 +42,13 @@ Vector<u64> GroupRecord(std::initializer_list<u64> masks) {
         for (u64 m = mask; m != 0; m &= m - 1) ++bits;
         info.ActiveProcessorCount = static_cast<BYTE>(bits);
         info.MaximumProcessorCount = info.ActiveProcessorCount;
-        std::memcpy(at + header + infos + g * sizeof(PROCESSOR_GROUP_INFO), &info, sizeof(info));
+        MemCopy(at + header + infos + g * sizeof(PROCESSOR_GROUP_INFO), &info, sizeof(info));
         ++g;
     }
     return storage;
 }
 
-usize Size(std::initializer_list<u64> masks) {
+usize Size(InitializerList<u64> masks) {
     return offsetof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, Group) + offsetof(GROUP_RELATIONSHIP, GroupInfo) +
            masks.size() * sizeof(PROCESSOR_GROUP_INFO);
 }
@@ -95,7 +95,7 @@ TEST_CASE("Windows topology: capacity and malformed records are respected", "[jo
     CHECK(jobs::detail::CpusFromGroupRecords(record.Data(), 4, groups, 1, ~u64{0}, cpus, 8) == 0);
     Vector<u64> lying = GroupRecord({~u64{0}});
     const DWORD too_big = 1 << 20;
-    std::memcpy(reinterpret_cast<byte*>(lying.Data()) + offsetof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, Size), &too_big, sizeof(too_big));
+    MemCopy(reinterpret_cast<byte*>(lying.Data()) + offsetof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, Size), &too_big, sizeof(too_big));
     CHECK(jobs::detail::CpusFromGroupRecords(lying.Data(), Size({~u64{0}}), groups, 1, ~u64{0}, cpus, 8) == 0);
 }
 
@@ -114,18 +114,18 @@ TEST_CASE("Windows topology: this machine's CPUs, thread ids, pinning and names"
     // Pinning a fresh thread to the last allowed CPU, and its name, are what the OS reports back.
     bool pinned = false;
     bool named = false;
-    std::thread t([&] {
+    Thread t([&] {
         pinned = jobs::detail::PinCurrentThread(cpus[n - 1]);
         GROUP_AFFINITY affinity{};
         pinned = pinned && GetThreadGroupAffinity(GetCurrentThread(), &affinity) && affinity.Mask == (KAFFINITY{1} << (cpus[n - 1] % 64));
         jobs::detail::NameCurrentThread("worker-test");
         PWSTR description = nullptr;
         if (SUCCEEDED(GetThreadDescription(GetCurrentThread(), &description)) && description != nullptr) {
-            named = std::wcscmp(description, L"worker-test") == 0;
+            named = WStrCompare(description, L"worker-test") == 0;
             LocalFree(description);
         }
     });
-    t.join();
+    t.Join();
     CHECK(pinned);
     CHECK(named);
 }
@@ -136,15 +136,15 @@ TEST_CASE("Windows topology: a record too short for its group header is not read
     Vector<u64> storage;
     storage.Resize((header + 7) / 8);
     byte* at = reinterpret_cast<byte*>(storage.Data());
-    std::memset(at, 0, storage.Size() * 8);
+    MemSet(at, 0, storage.Size() * 8);
     const LOGICAL_PROCESSOR_RELATIONSHIP relation = RelationGroup;
     const DWORD record_size = static_cast<DWORD>(header);
-    std::memcpy(at + offsetof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, Relationship), &relation, sizeof(relation));
-    std::memcpy(at + offsetof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, Size), &record_size, sizeof(record_size));
+    MemCopy(at + offsetof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, Relationship), &relation, sizeof(relation));
+    MemCopy(at + offsetof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, Size), &record_size, sizeof(record_size));
     // A heap block of exactly the record's size, so ASan sees any read past it.
     Vector<byte> exact;
     exact.Resize(header);
-    std::memcpy(exact.Data(), at, header);
+    MemCopy(exact.Data(), at, header);
     const u16 groups[] = {0};
     u32 cpus[8];
     CHECK(jobs::detail::CpusFromGroupRecords(exact.Data(), header, groups, 1, ~u64{0}, cpus, 8) == 0);

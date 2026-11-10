@@ -66,6 +66,11 @@ inline void Flush() { std::fflush(stdout); }
 ///
 /// Thread-safety: thread-safe.
 inline void FlushError() { std::fflush(stderr); }
+/// Flushes every open C stream, standard output and standard error included (`fflush(nullptr)`): what a process that ends without running
+/// exit handlers does first, so nothing a library wrote through the C streams is lost.
+///
+/// Thread-safety: thread-safe.
+inline void FlushAll() { std::fflush(nullptr); }
 
 /// Ends the process abnormally at once, without running exit handlers (`abort`).
 ///

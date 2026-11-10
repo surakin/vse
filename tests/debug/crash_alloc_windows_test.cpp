@@ -20,9 +20,10 @@
 #include "support/death_test_skip.h"
 #include "test_text.h"
 
-#include <atomic>
-#include <cstdio>
-#include <cstdlib>
+#include "cstr/mem_ops.h"
+#include "cstr/format.h"
+#include "os/console.h"
+#include "sync/atomic.h"
 
 #include "os/windows/win32.h"
 #include "build_defs.h"
@@ -38,23 +39,23 @@ using namespace engine_placeholder::debug;
 namespace {
 
 #if defined(CRASH_ALLOC_HOOK)
-std::atomic<u32> g_counted_thread{0};
-std::atomic<long> g_allocations{0};
+Atomic<u32> g_counted_thread{0};
+Atomic<long> g_allocations{0};
 
 StackTrace g_first_allocation; // where the first counted allocation came from, printed when there is one
 
 int CountAllocation(int type, void*, size_t, int, long, const byte*, int) { // (the hook type spells the file name as unsigned char)
-    if (type != _HOOK_FREE && GetCurrentThreadId() == g_counted_thread.load(std::memory_order_relaxed)) {
-        if (g_allocations.fetch_add(1, std::memory_order_relaxed) == 0) CaptureStackTrace(g_first_allocation, 0);
+    if (type != _HOOK_FREE && GetCurrentThreadId() == g_counted_thread.Load(MemoryOrder::Relaxed)) {
+        if (g_allocations.FetchAdd(1, MemoryOrder::Relaxed) == 0) CaptureStackTrace(g_first_allocation, 0);
     }
     return TRUE; // let the allocation go on
 }
 #endif
 
 void PlantedAllocationProvider(void*, char* out, usize capacity) {
-    void* block = std::malloc(64); // what the report must never do: the check has to see this one
-    std::snprintf(out, capacity, "planted %s", block != nullptr ? "yes" : "no");
-    std::free(block);
+    void* block = MemAllocate(64); // what the report must never do: the check has to see this one
+    FormatTo(out, capacity, "planted %s", block != nullptr ? "yes" : "no");
+    MemFree(block);
 }
 
 // Installs the crash handler into `directory`, then reports a made-up access violation from this thread the way the library's hook does,
@@ -65,7 +66,7 @@ void ReportAndCount(const char* directory, bool plant) {
     InitDebugFacilities();
     InitCrashContext(0, nullptr);
     if (InstallCrashHandler(options) != CrashHandlerResult::Installed) {
-        std::printf("INSTALL-FAILED\n");
+        os::Print("INSTALL-FAILED\n");
         return;
     }
     if (plant) RegisterCrashStateProvider("planted", &PlantedAllocationProvider, nullptr);
@@ -80,21 +81,21 @@ void ReportAndCount(const char* directory, bool plant) {
     pointers.ExceptionRecord = &record;
     pointers.ContextRecord = &context;
 #if defined(CRASH_ALLOC_HOOK)
-    g_counted_thread.store(GetCurrentThreadId());
+    g_counted_thread.Store(GetCurrentThreadId());
     _CrtSetAllocHook(&CountAllocation);
     debug::detail::ReportCrashFromExceptionPointers(&pointers);
     _CrtSetAllocHook(nullptr);
-    g_counted_thread.store(0);
-    std::printf("ALLOCS=%ld;\n", g_allocations.load()); // the ";" ends the number (standard output turns a newline into two bytes)
-    if (g_allocations.load() != 0) {
+    g_counted_thread.Store(0);
+    os::Print("ALLOCS=%ld;\n", g_allocations.Load()); // the ";" ends the number (standard output turns a newline into two bytes)
+    if (g_allocations.Load() != 0) {
         static char text[16384];
         FormatStackTrace(g_first_allocation, text, sizeof(text)); // after the count: resolving allocates
-        std::printf("first allocation:\n%s", text);
+        os::Print("first allocation:\n%s", text);
     }
 #else
     debug::detail::ReportCrashFromExceptionPointers(&pointers);
 #endif
-    std::fflush(stdout);
+    os::Flush();
     UninstallCrashHandler();
 }
 

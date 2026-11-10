@@ -10,8 +10,8 @@
 #include "os/windows/utf16.h"
 #include "os/windows/win32.h"
 
-#include <cstdio>
-#include <cwchar>
+#include "cstr/cstr.h"
+#include "cstr/format.h"
 
 namespace engine_placeholder::debug {
 
@@ -40,15 +40,15 @@ namespace detail {
 
 bool DescribeLocalDumps(HKEY root, const wchar_t* local_dumps_key, const wchar_t* exe_name, PostMortemReport* report, u32* dump_type_out) {
     char name_utf8[MAX_PATH * 3];
-    os::windows::Utf16ToUtf8(exe_name, std::wcslen(exe_name), name_utf8, sizeof(name_utf8));
+    os::windows::Utf16ToUtf8(exe_name, WStrLength(exe_name), name_utf8, sizeof(name_utf8));
     // The program's own key wins over the one for every program, as WER reads them. A name too long for the buffer has no key of its own.
     wchar_t program_key[1024];
-    const int key_length = std::swprintf(program_key, sizeof(program_key) / sizeof(program_key[0]), L"%ls\\%ls", local_dumps_key, exe_name);
+    const int key_length = WFormatTo(program_key, sizeof(program_key) / sizeof(program_key[0]), L"%ls\\%ls", local_dumps_key, exe_name);
     const bool program_key_exists = key_length > 0 && KeyExists(root, program_key);
     const wchar_t* key = program_key_exists ? program_key : (KeyExists(root, local_dumps_key) ? local_dumps_key : nullptr);
     if (key == nullptr) {
-        std::snprintf(report->destination, sizeof(report->destination), "none: Windows Error Reporting keeps no local dump of %s", name_utf8);
-        std::snprintf(report->note, sizeof(report->note),
+        FormatTo(report->destination, sizeof(report->destination), "none: Windows Error Reporting keeps no local dump of %s", name_utf8);
+        FormatTo(report->note, sizeof(report->note),
                       "an administrator can create HKLM\\SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting\\LocalDumps\\%s with DumpFolder, "
                       "DumpType (2: full) and DumpCount",
                       name_utf8);
@@ -62,13 +62,13 @@ bool DescribeLocalDumps(HKEY root, const wchar_t* local_dumps_key, const wchar_t
     if (RegGetValueW(root, key, L"DumpFolder", RRF_RT_REG_SZ | RRF_RT_REG_EXPAND_SZ | RRF_NOEXPAND, nullptr, raw, &raw_bytes) == ERROR_SUCCESS) {
         const DWORD expanded = ExpandEnvironmentStringsW(raw, folder, static_cast<DWORD>(sizeof(folder) / sizeof(folder[0])));
         const wchar_t* shown = expanded > 0 && expanded <= sizeof(folder) / sizeof(folder[0]) ? folder : raw;
-        os::windows::Utf16ToUtf8(shown, std::wcslen(shown), folder_utf8, sizeof(folder_utf8));
+        os::windows::Utf16ToUtf8(shown, WStrLength(shown), folder_utf8, sizeof(folder_utf8));
     } else {
-        std::snprintf(folder_utf8, sizeof(folder_utf8), "%%LOCALAPPDATA%%\\CrashDumps");
+        FormatTo(folder_utf8, sizeof(folder_utf8), "%%LOCALAPPDATA%%\\CrashDumps");
     }
     DWORD dump_type = kMiniDump; // WER's default when DumpType is absent
     ReadDword(root, key, L"DumpType", &dump_type);
-    std::snprintf(report->destination, sizeof(report->destination), "Windows Error Reporting LocalDumps: %s (%s dump)", folder_utf8,
+    FormatTo(report->destination, sizeof(report->destination), "Windows Error Reporting LocalDumps: %s (%s dump)", folder_utf8,
                   dump_type == 2 ? "full" : dump_type == 0 ? "custom" : "mini");
     report->previous_limit_bytes = dump_type == 2 ? ~u64{0} : 0; // a full dump has no limit; a minidump's size is WER's choice
     report->current_limit_bytes = report->previous_limit_bytes;
@@ -85,7 +85,7 @@ PostMortemReport EnablePostMortemDumps(const PostMortemOptions& options) {
     wchar_t exe[MAX_PATH * 4];
     const DWORD exe_length = GetModuleFileNameW(nullptr, exe, static_cast<DWORD>(sizeof(exe) / sizeof(exe[0])));
     if (exe_length == 0 || exe_length >= sizeof(exe) / sizeof(exe[0])) {
-        std::snprintf(report.note, sizeof(report.note), "the program's own file name could not be read");
+        FormatTo(report.note, sizeof(report.note), "the program's own file name could not be read");
         return report;
     }
     const wchar_t* name = exe;
@@ -97,19 +97,19 @@ PostMortemReport EnablePostMortemDumps(const PostMortemOptions& options) {
 
     DWORD disabled = 0;
     if (ReadDword(HKEY_LOCAL_MACHINE, kWerKey, L"Disabled", &disabled) && disabled != 0) {
-        std::snprintf(report.note, sizeof(report.note), "Windows Error Reporting is turned off on this machine (HKLM ...\\Windows Error Reporting\\Disabled)");
+        FormatTo(report.note, sizeof(report.note), "Windows Error Reporting is turned off on this machine (HKLM ...\\Windows Error Reporting\\Disabled)");
         return report;
     }
     // A process whose error mode keeps the fault dialog away (SEM_NOGPFAULTERRORBOX, which every death-test child and many launchers set)
     // never reaches Windows Error Reporting.
     if ((GetErrorMode() & SEM_NOGPFAULTERRORBOX) != 0) {
-        std::snprintf(report.note, sizeof(report.note),
+        FormatTo(report.note, sizeof(report.note),
                       "this process's error mode (SEM_NOGPFAULTERRORBOX) keeps Windows Error Reporting from running at a crash; clear it with "
                       "SetErrorMode for a post-mortem dump");
         return report;
     }
     if (options.size_limit_bytes != 0 && dump_type == 2) {
-        std::snprintf(report.note, sizeof(report.note), "Windows Error Reporting has no size limit: DumpType 1 (a minidump) under the key keeps dumps small");
+        FormatTo(report.note, sizeof(report.note), "Windows Error Reporting has no size limit: DumpType 1 (a minidump) under the key keeps dumps small");
         return report;
     }
     report.result = PostMortemResult::Enabled;

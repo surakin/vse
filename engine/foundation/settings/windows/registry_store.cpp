@@ -6,8 +6,11 @@
 #include "os/windows/utf16.h"
 #include "os/windows/win32.h"
 
-#include <cstdio>
-#include <cwchar>
+#include "cstr/cstr.h"
+#include "cstr/format.h"
+#include "sync/atomic.h"
+#include "sync/mutex.h"
+#include "sync/thread.h"
 
 namespace engine_placeholder::settings {
 
@@ -86,7 +89,7 @@ StoreError ReadString(HKEY key, const wchar_t* name, char* text, usize capacity,
 
 void RegistrySettingsPath(StringView app, char* out, usize capacity) {
     if (capacity == 0) return;
-    std::snprintf(out, capacity, "Software\\%.*s", static_cast<int>(app.Length()), app.Data());
+    FormatTo(out, capacity, "Software\\%.*s", static_cast<int>(app.Length()), app.Data());
 }
 
 RegistryConfigStore::RegistryConfigStore(const RegistryStoreOptions& options)
@@ -100,7 +103,7 @@ u32 RegistryConfigStore::Capabilities() const {
 
 void RegistryConfigStore::Describe(char* out, usize capacity) const {
     if (capacity == 0) return;
-    std::snprintf(out, capacity, "registry %s\\%s", HiveName(hive_), path_.CStr());
+    FormatTo(out, capacity, "registry %s\\%s", HiveName(hive_), path_.CStr());
 }
 
 Status RegistryConfigStore::Load() {
@@ -145,7 +148,7 @@ Status RegistryConfigStore::Set(StringView key, const StoredValue& value) {
     if (!Locate(path_.View(), k, subkey, name)) return Status::Of(StoreError::TooLong);
     const usize units = os::windows::Utf8ToUtf16(text, data, kMaxValueUnits + 1);
     if (units > kMaxValueUnits) return Status::Of(StoreError::TooLong);
-    std::lock_guard<std::mutex> lock(mutex_);
+    LockGuard<Mutex> lock(mutex_);
     HKEY handle = nullptr;
     LSTATUS rc = RegCreateKeyExW(Root(hive_), subkey, 0, nullptr, REG_OPTION_NON_VOLATILE, KEY_SET_VALUE | kView, nullptr, &handle, nullptr);
     if (rc != ERROR_SUCCESS) return Status::Of(FromWin32(rc));
@@ -163,7 +166,7 @@ Status RegistryConfigStore::Remove(StringView key) {
     wchar_t subkey[kMaxPathUnits];
     wchar_t name[kMaxNameUnits];
     if (!Locate(path_.View(), k, subkey, name)) return Status::Of(StoreError::TooLong);
-    std::lock_guard<std::mutex> lock(mutex_);
+    LockGuard<Mutex> lock(mutex_);
     HKEY handle = nullptr;
     LSTATUS rc = RegOpenKeyExW(Root(hive_), subkey, 0, KEY_SET_VALUE | kView, &handle);
     if (rc != ERROR_SUCCESS) return Status::Of(FromWin32(rc));
@@ -174,8 +177,8 @@ Status RegistryConfigStore::Remove(StringView key) {
     // The section subkeys the value leaves empty go too (deepest first; the store's own root stays).
     wchar_t root[kMaxPathUnits];
     if (!ToWide(path_.View(), root, kMaxPathUnits)) return Status();
-    const usize root_length = std::wcslen(root);
-    for (usize length = std::wcslen(subkey); length > root_length;) {
+    const usize root_length = WStrLength(root);
+    for (usize length = WStrLength(subkey); length > root_length;) {
         HKEY section = nullptr;
         if (RegOpenKeyExW(Root(hive_), subkey, 0, KEY_READ | kView, &section) != ERROR_SUCCESS) break;
         DWORD subkeys = 0;
@@ -219,7 +222,7 @@ void RegistryConfigStore::Origin(StringView key, char* out, usize capacity) cons
     usize n = 0;
     for (usize i = 0; i < section.Length() && n + 1 < sizeof(sections); ++i) sections[n++] = section[i] == '.' ? '\\' : section[i];
     sections[n] = '\0';
-    std::snprintf(out, capacity, "%s\\%s%s%s, value %.*s", HiveName(hive_), path_.CStr(), n != 0 ? "\\" : "", sections,
+    FormatTo(out, capacity, "%s\\%s%s%s, value %.*s", HiveName(hive_), path_.CStr(), n != 0 ? "\\" : "", sections,
                   static_cast<int>(k.Name().Length()), k.Name().Data());
 }
 
@@ -261,7 +264,7 @@ void Walk(HKEY key, const char* prefix, usize prefix_length, int depth, Vector<K
             texts->Push(String<HeapAllocator>(HeapAllocator::Default(), StringView(text, length)));
         } else {
             char marker[32];
-            const int m = std::snprintf(marker, sizeof(marker), "\x01type %lu error %d", static_cast<unsigned long>(type), static_cast<int>(error));
+            const int m = FormatTo(marker, sizeof(marker), "\x01type %lu error %d", static_cast<unsigned long>(type), static_cast<int>(error));
             texts->Push(String<HeapAllocator>(HeapAllocator::Default(), StringView(marker, static_cast<usize>(m))));
         }
     }
@@ -313,7 +316,7 @@ bool RegistryConfigStore::ReadAll(Vector<Entry>* out) const {
 }
 
 void RegistryConfigStore::RememberOwn(const Key& key, const StringView* text) {
-    if (!watcher_.joinable()) return; // nobody compares: nothing to keep
+    if (!watcher_.Joinable()) return; // nobody compares: nothing to keep
     for (usize i = 0; i < known_.Size(); ++i) {
         if (known_[i].key == key) {
             if (text == nullptr) {
@@ -337,7 +340,7 @@ void RegistryConfigStore::CheckForChange() {
     ChangeListener listener = nullptr;
     void* user = nullptr;
     {
-        std::lock_guard<std::mutex> lock(mutex_);
+        LockGuard<Mutex> lock(mutex_);
         Vector<Entry> now;
         if (!ReadAll(&now)) return;
         bool same = now.Size() == known_.Size();
@@ -347,7 +350,7 @@ void RegistryConfigStore::CheckForChange() {
         listener = listener_;
         user = listener_user_;
     }
-    if (listener != nullptr && !stopping_.load(std::memory_order_acquire)) listener(user);
+    if (listener != nullptr && !stopping_.Load(MemoryOrder::Acquire)) listener(user);
 }
 
 void RegistryConfigStore::WatchLoop() {
@@ -356,7 +359,7 @@ void RegistryConfigStore::WatchLoop() {
     if (changed == nullptr) return;
     wchar_t root[kMaxPathUnits];
     const bool named = ToWide(path_.View(), root, kMaxPathUnits);
-    while (named && !stopping_.load(std::memory_order_acquire)) {
+    while (named && !stopping_.Load(MemoryOrder::Acquire)) {
         HKEY key = nullptr;
         if (RegOpenKeyExW(Root(hive_), root, 0, KEY_NOTIFY | KEY_READ | kView, &key) != ERROR_SUCCESS) {
             // The key does not exist yet: look again in a moment (a write from another process creates it).
@@ -383,33 +386,33 @@ void RegistryConfigStore::WatchLoop() {
 
 Status RegistryConfigStore::SetChangeListener(ChangeListener listener, void* user) {
     // From the listener itself (the watch thread): stopping would wait for this very call to return. Refused instead of hanging.
-    if (watcher_.joinable() && std::this_thread::get_id() == watcher_.get_id()) return Status::Of(StoreError::Invalid);
+    if (watcher_.Joinable() && ThisThread::Id() == watcher_.Id()) return Status::Of(StoreError::Invalid);
     StopWatching();
     if (listener == nullptr) return Status();
     {
-        std::lock_guard<std::mutex> lock(mutex_);
+        LockGuard<Mutex> lock(mutex_);
         listener_ = listener;
         listener_user_ = user;
         if (!ReadAll(&known_)) known_.Clear();
     }
     stop_event_ = CreateEventW(nullptr, TRUE, FALSE, nullptr);
     if (stop_event_ == nullptr) return Status::Of(StoreError::Io);
-    stopping_.store(false, std::memory_order_release);
-    watcher_ = std::thread([this] { WatchLoop(); });
+    stopping_.Store(false, MemoryOrder::Release);
+    watcher_ = Thread([this] { WatchLoop(); });
     return Status();
 }
 
 void RegistryConfigStore::StopWatching() {
-    if (watcher_.joinable()) {
-        stopping_.store(true, std::memory_order_release);
+    if (watcher_.Joinable()) {
+        stopping_.Store(true, MemoryOrder::Release);
         SetEvent(static_cast<HANDLE>(stop_event_));
-        watcher_.join();
+        watcher_.Join();
     }
     if (stop_event_ != nullptr) {
         CloseHandle(static_cast<HANDLE>(stop_event_));
         stop_event_ = nullptr;
     }
-    std::lock_guard<std::mutex> lock(mutex_);
+    LockGuard<Mutex> lock(mutex_);
     listener_ = nullptr;
     listener_user_ = nullptr;
     known_.Clear();

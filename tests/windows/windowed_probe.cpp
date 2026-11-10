@@ -3,7 +3,7 @@
 //   arg <i> <hex>      each argument after the program name as EngineMain received it, hex UTF-8 bytes
 //   stash <i> <hex>    the same arguments read back through os::CommandLine::FromNative
 // and "stderr ok" to its standard error, then exits with 7, so a parent sees its output, its arguments and its exit code.
-#include <cstdio>
+#include "os/console.h"
 
 #include "mem/arena_allocator.h"
 #include "os/command_line.h"
@@ -16,9 +16,9 @@ using namespace engine_placeholder;
 namespace {
 
 void PrintHex(const char* label, int index, const char* text, usize length) {
-    std::printf("%s %d ", label, index);
-    for (usize i = 0; i < length; ++i) std::printf("%02x", static_cast<unsigned>(static_cast<u8>(text[i])));
-    std::printf("\n");
+    os::Print("%s %d ", label, index);
+    for (usize i = 0; i < length; ++i) os::Print("%02x", static_cast<unsigned>(static_cast<u8>(text[i])));
+    os::Print("\n");
 }
 
 usize Length(const char* text) {
@@ -34,7 +34,7 @@ int EngineMain(int argc, char** argv) {
     ArenaAllocator arena(16 * 1024);
     const os::CommandLine<ArenaAllocator> line = os::CommandLine<ArenaAllocator>::FromNative(arena);
     for (usize i = 0; i < line.ArgCount(); ++i) PrintHex("stash", static_cast<int>(i), line.Arg(i).Data(), line.Arg(i).Length());
-    std::fflush(stdout);
+    os::Flush();
     os::Write(2, "stderr ok\n", 10);
     return 7;
 }

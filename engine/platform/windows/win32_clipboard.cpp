@@ -3,7 +3,7 @@
 // shape the Linux backends give their asynchronous transfers.
 #include "platform/windows/win32_window.h"
 
-#include <cstring>
+#include "cstr/mem_ops.h"
 
 #include "containers/vector.h"
 #include "os/os.h"
@@ -35,7 +35,7 @@ HGLOBAL GlobalCopy(const void* data, usize size) {
         GlobalFree(block);
         return nullptr;
     }
-    if (size != 0) std::memcpy(p, data, size);
+    if (size != 0) MemCopy(p, data, size);
     GlobalUnlock(block);
     return block;
 }
@@ -76,8 +76,8 @@ HGLOBAL MakeHdrop(const byte* paths, usize size) {
     DROPFILES header{};
     header.pFiles = sizeof(DROPFILES);
     header.fWide = TRUE;
-    std::memcpy(block.Data(), &header, sizeof(header));
-    std::memcpy(block.Data() + sizeof(DROPFILES), list.Data(), list.Size() * sizeof(wchar_t));
+    MemCopy(block.Data(), &header, sizeof(header));
+    MemCopy(block.Data() + sizeof(DROPFILES), list.Data(), list.Size() * sizeof(wchar_t));
     return GlobalCopy(block.Data(), block.Size());
 }
 
@@ -221,7 +221,7 @@ u32 Win32Window::RequestClipboard(ClipboardKind kind, ClipboardFormat format, St
             status = ClipboardStatus::TooLarge;
         } else {
             bytes.Resize(size); // a custom block may be rounded up by the system; the program's own format carries its length if it needs one
-            std::memcpy(bytes.Data(), p, size);
+            MemCopy(bytes.Data(), p, size);
         }
         GlobalUnlock(data);
     }

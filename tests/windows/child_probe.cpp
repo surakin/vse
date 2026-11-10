@@ -8,51 +8,53 @@
 //   child_probe --cwd                     prints the working directory
 //   child_probe --sleep SECONDS           sleeps
 //   child_probe --parent SECONDS          starts `child_probe --sleep SECONDS`, prints its process id, then sleeps as long
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <cwchar>
+#include "cstr/cstr.h"
+#include "cstr/format.h"
+#include "cstr/number.h"
+#include "os/console.h"
 
 #include "io/file_system.h"
 #include "os/windows/win32.h"
 
+using namespace engine_placeholder;
+
 int main(int argc, char** argv) {
-    if (argc >= 3 && std::strcmp(argv[1], "--stderr") == 0) {
-        std::fprintf(stderr, "%s\n", argv[2]);
+    if (argc >= 3 && CStrCompare(argv[1], "--stderr") == 0) {
+        os::PrintError("%s\n", argv[2]);
         return 0;
     }
-    if (argc >= 3 && std::strcmp(argv[1], "--exit") == 0) return std::atoi(argv[2]);
-    if (argc >= 2 && std::strcmp(argv[1], "--crash") == 0) {
+    if (argc >= 3 && CStrCompare(argv[1], "--exit") == 0) return CStrToInt(argv[2]);
+    if (argc >= 2 && CStrCompare(argv[1], "--crash") == 0) {
         volatile int* nowhere = nullptr;
         *nowhere = 1;
         return 0;
     }
-    if (argc >= 2 && std::strcmp(argv[1], "--cwd") == 0) {
+    if (argc >= 2 && CStrCompare(argv[1], "--cwd") == 0) {
         engine_placeholder::io::Path dir;
         if (engine_placeholder::io::CurrentDirectory(&dir).Failed()) return 2;
-        std::printf("%.*s\n", static_cast<int>(dir.View().Length()), dir.View().Data());
+        os::Print("%.*s\n", static_cast<int>(dir.View().Length()), dir.View().Data());
         return 0;
     }
-    if (argc >= 3 && std::strcmp(argv[1], "--sleep") == 0) {
-        Sleep(static_cast<DWORD>(std::atoi(argv[2])) * 1000);
+    if (argc >= 3 && CStrCompare(argv[1], "--sleep") == 0) {
+        Sleep(static_cast<DWORD>(CStrToInt(argv[2])) * 1000);
         return 0;
     }
-    if (argc >= 3 && std::strcmp(argv[1], "--parent") == 0) {
+    if (argc >= 3 && CStrCompare(argv[1], "--parent") == 0) {
         wchar_t self[MAX_PATH + 1];
         GetModuleFileNameW(nullptr, self, MAX_PATH + 1);
         wchar_t command[2 * MAX_PATH];
-        std::swprintf(command, sizeof(command) / sizeof(command[0]), L"\"%ls\" --sleep %S", self, argv[2]);
+        WFormatTo(command, sizeof(command) / sizeof(command[0]), L"\"%ls\" --sleep %S", self, argv[2]);
         STARTUPINFOW startup{};
         startup.cb = sizeof(startup);
         PROCESS_INFORMATION child{};
         if (!CreateProcessW(nullptr, command, nullptr, nullptr, FALSE, CREATE_NO_WINDOW, nullptr, nullptr, &startup, &child)) return 2;
-        std::printf("%lu\n", static_cast<unsigned long>(child.dwProcessId));
-        std::fflush(stdout);
+        os::Print("%lu\n", static_cast<unsigned long>(child.dwProcessId));
+        os::Flush();
         CloseHandle(child.hThread);
         CloseHandle(child.hProcess);
-        Sleep(static_cast<DWORD>(std::atoi(argv[2])) * 1000);
+        Sleep(static_cast<DWORD>(CStrToInt(argv[2])) * 1000);
         return 0;
     }
-    for (int i = 1; i < argc; ++i) std::printf("[%s]\n", argv[i]);
+    for (int i = 1; i < argc; ++i) os::Print("[%s]\n", argv[i]);
     return 0;
 }

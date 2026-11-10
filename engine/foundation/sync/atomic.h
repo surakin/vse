@@ -114,16 +114,13 @@ public:
         return CompareExchangeStrong(expected, desired, order, detail_sync::FailureOrder(order));
     }
 
+    /// The type of a `FetchAdd`/`FetchSub` delta: `T` itself, or `isize` (elements) for a pointer, as `std::atomic` takes it. A narrowing argument
+    /// converts at the call, where the compiler can warn about it.
+    using Delta = Conditional<IsPointer<T>, isize, T>;
     /// Adds `delta` and returns the value before the addition (integers, floats; for a pointer `T*`, `delta` counts elements).
-    template <class D>
-    T FetchAdd(D delta, MemoryOrder order = MemoryOrder::SeqCst) noexcept {
-        return value_.fetch_add(delta, detail_sync::ToStd(order));
-    }
+    T FetchAdd(Delta delta, MemoryOrder order = MemoryOrder::SeqCst) noexcept { return value_.fetch_add(delta, detail_sync::ToStd(order)); }
     /// Subtracts `delta` and returns the value before the subtraction.
-    template <class D>
-    T FetchSub(D delta, MemoryOrder order = MemoryOrder::SeqCst) noexcept {
-        return value_.fetch_sub(delta, detail_sync::ToStd(order));
-    }
+    T FetchSub(Delta delta, MemoryOrder order = MemoryOrder::SeqCst) noexcept { return value_.fetch_sub(delta, detail_sync::ToStd(order)); }
     /// Bitwise-ands `mask` into the value and returns the value before (integers only).
     T FetchAnd(T mask, MemoryOrder order = MemoryOrder::SeqCst) noexcept { return value_.fetch_and(mask, detail_sync::ToStd(order)); }
     /// Bitwise-ors `mask` into the value and returns the value before (integers only).

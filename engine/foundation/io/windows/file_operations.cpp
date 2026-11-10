@@ -5,9 +5,9 @@
 // Renames and removals use the POSIX semantics NTFS offers since Windows 10 1809 (FileRenameInfoEx, FileDispositionInfoEx): a rename
 // replaces a file that is open, read-only or an empty directory, and a removed file's name is gone at once even while it is open, as on
 // Linux. A file system without them (FAT) gets the classic MoveFileExW / DeleteFileW path.
-#include <cstdlib>
-#include <cstring>
-#include <cwchar>
+#include "cstr/mem_ops.h"
+#include "cstr/cstr.h"
+#include "os/console.h"
 
 #include "containers/vector.h"
 #include "io/file_system.h"
@@ -48,17 +48,17 @@ bool NoPosixSemantics(DWORD e) { return e == ERROR_INVALID_PARAMETER || e == ERR
 Status FromWide(const wchar_t* text, usize length, Path* out) {
     char utf8[kMaxPathBytes + 1];
     // Long results come back with the `\\?\` prefix; the layer adds it itself when it needs it, so a Path never carries it.
-    if (length >= 8 && std::wcsncmp(text, L"\\\\?\\UNC\\", 8) == 0) {
+    if (length >= 8 && WStrCompareN(text, L"\\\\?\\UNC\\", 8) == 0) {
         wchar_t unc[kMaxPathBytes + 8];
         if (length - 6 >= sizeof(unc) / sizeof(unc[0])) return Status::Of(Error::TooLong);
         unc[0] = L'\\';
         unc[1] = L'\\';
-        std::wmemcpy(unc + 2, text + 8, length - 8);
+        WMemCopy(unc + 2, text + 8, length - 8);
         const usize n = os::windows::Utf16ToUtf8(unc, length - 6, utf8, sizeof(utf8));
         if (n >= sizeof(utf8) || !Path::Parse(StringView(utf8, n), PathStyle::Windows, out)) return Status::Of(Error::TooLong);
         return Status::Success();
     }
-    if (length >= 4 && std::wcsncmp(text, L"\\\\?\\", 4) == 0 && length >= 6 && text[5] == L':') {
+    if (length >= 4 && WStrCompareN(text, L"\\\\?\\", 4) == 0 && length >= 6 && text[5] == L':') {
         text += 4;
         length -= 4;
     }
@@ -117,13 +117,13 @@ Status RemoveTree(WidePath& path, int depth) {
             do {
                 const wchar_t* name = data.cFileName;
                 if (name[0] == L'.' && (name[1] == 0 || (name[1] == L'.' && name[2] == 0))) continue;
-                const usize n = std::wcslen(name);
+                const usize n = WStrLength(name);
                 if (base + 1 + n >= kWidePathCapacity) {
                     if (first.Ok()) first = Status::Of(Error::TooLong);
                     continue;
                 }
                 path.text[base] = L'\\';
-                std::wmemcpy(path.text + base + 1, name, n + 1);
+                WMemCopy(path.text + base + 1, name, n + 1);
                 path.length = base + 1 + n;
                 const Status s = RemoveTree(path, depth + 1);
                 path.text[base] = 0;
@@ -143,11 +143,11 @@ Status RemoveTree(WidePath& path, int depth) {
 BOOL RenameHandle(HANDLE source, const WidePath& to) {
     alignas(FILE_RENAME_INFO) byte buffer[sizeof(FILE_RENAME_INFO) + kWidePathCapacity * sizeof(wchar_t)];
     FILE_RENAME_INFO* info = reinterpret_cast<FILE_RENAME_INFO*>(buffer);
-    std::memset(info, 0, sizeof(FILE_RENAME_INFO));
+    MemSet(info, 0, sizeof(FILE_RENAME_INFO));
     info->Flags = kRenameReplaceIfExists | kRenamePosixSemantics | kRenameIgnoreReadOnly;
     info->RootDirectory = nullptr;
     info->FileNameLength = static_cast<DWORD>(to.length * sizeof(wchar_t));
-    std::memcpy(info->FileName, to.text, (to.length + 1) * sizeof(wchar_t));
+    MemCopy(info->FileName, to.text, (to.length + 1) * sizeof(wchar_t));
     return SetFileInformationByHandle(source, FileRenameInfoEx, info, static_cast<DWORD>(sizeof(FILE_RENAME_INFO) + to.length * sizeof(wchar_t)));
 }
 
@@ -191,7 +191,7 @@ Status MakeTemp(const Path& directory, StringView prefix, bool as_directory, Pat
         byte random[8];
         if (BCryptGenRandom(nullptr, random, sizeof(random), BCRYPT_USE_SYSTEM_PREFERRED_RNG) != 0) return Status::Of(Error::Io);
         char leaf[256];
-        std::memcpy(leaf, prefix.Data(), prefix.Length());
+        MemCopy(leaf, prefix.Data(), prefix.Length());
         leaf[prefix.Length()] = '.';
         for (usize i = 0; i < sizeof(random); ++i) leaf[prefix.Length() + 1 + i] = kAlphabet[random[i] % (sizeof(kAlphabet) - 1)];
         Path candidate;
@@ -227,7 +227,7 @@ Status KnownFolder(REFKNOWNFOLDERID id, Path* out) {
         if (folder != nullptr) CoTaskMemFree(folder);
         return Status{Error::NotFound, static_cast<i32>(hr)};
     }
-    const Status s = FromWide(folder, std::wcslen(folder), out);
+    const Status s = FromWide(folder, WStrLength(folder), out);
     CoTaskMemFree(folder);
     return s;
 }
@@ -363,7 +363,7 @@ Status Copy(const Path& from, const Path& to, bool overwrite) {
         FILE_ID_INFO ib{};
         if (ha != INVALID_HANDLE_VALUE && hb != INVALID_HANDLE_VALUE && GetFileInformationByHandleEx(ha, FileIdInfo, &ia, sizeof(ia)) &&
             GetFileInformationByHandleEx(hb, FileIdInfo, &ib, sizeof(ib)) && ia.VolumeSerialNumber == ib.VolumeSerialNumber &&
-            std::memcmp(&ia.FileId, &ib.FileId, sizeof(ia.FileId)) == 0) {
+            MemCompare(&ia.FileId, &ib.FileId, sizeof(ia.FileId)) == 0) {
             return Status::Of(Error::Invalid);
         }
         if (target.type == FileType::Directory) return Status::Of(Error::IsADirectory);
@@ -563,7 +563,7 @@ Status ReadLink(const Path& path, Path* out) {
     if (!ok) return Status::FromOs(static_cast<i32>(e));
     if (got < sizeof(ReparseHeader)) return Status::Of(Error::Io);
     ReparseHeader header;
-    std::memcpy(&header, buffer, sizeof(header));
+    MemCopy(&header, buffer, sizeof(header));
     usize names_at = sizeof(ReparseHeader);
     if (header.tag == IO_REPARSE_TAG_SYMLINK) {
         names_at += sizeof(ULONG); // Flags
@@ -575,9 +575,9 @@ Status ReadLink(const Path& path, Path* out) {
     usize length = (use_print ? header.print_length : header.substitute_length) / sizeof(wchar_t);
     if (offset + length * sizeof(wchar_t) > got) return Status::Of(Error::Io);
     wchar_t target[MAXIMUM_REPARSE_DATA_BUFFER_SIZE / sizeof(wchar_t)];
-    std::memcpy(target, buffer + offset, length * sizeof(wchar_t));
+    MemCopy(target, buffer + offset, length * sizeof(wchar_t));
     usize start = 0;
-    if (!use_print && length >= 4 && std::wcsncmp(target, L"\\??\\", 4) == 0) start = 4; // the NT form of an absolute target
+    if (!use_print && length >= 4 && WStrCompareN(target, L"\\??\\", 4) == 0) start = 4; // the NT form of an absolute target
     return FromWide(target + start, length - start, out);
 }
 
@@ -611,17 +611,17 @@ Status UserStateDirectory(StringView app_name, Path* out) { return AppFolder(L"L
 
 Status CrashDumpDirectory(Path* out) {
     char app[256];
-    const char* configured = std::getenv("ENGINE_APP_NAME"); // read before any settings exist (the crash handler's directory)
+    const char* configured = os::GetEnvironment("ENGINE_APP_NAME"); // read before any settings exist (the crash handler's directory)
     if (configured != nullptr && configured[0] != '\0') {
-        const usize length = std::strlen(configured);
+        const usize length = CStrLength(configured);
         if (length > 200) return Status::Of(Error::Invalid);
-        std::memcpy(app, configured, length + 1);
+        MemCopy(app, configured, length + 1);
     } else {
         Path exe;
         if (Status s = ExecutablePath(&exe); s.Failed()) return s;
         const StringView name = exe.Stem(); // `game.exe` -> `game`
         if (name.Empty() || name.Length() > 200) return Status::Of(Error::NotFound);
-        std::memcpy(app, name.Data(), name.Length());
+        MemCopy(app, name.Data(), name.Length());
         app[name.Length()] = '\0';
     }
     Path dir;

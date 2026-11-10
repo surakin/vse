@@ -8,7 +8,7 @@
 //     once on whatever window is under the cursor when none is.
 #include "platform/windows/win32_dragdrop.h"
 
-#include <cstring>
+#include "cstr/mem_ops.h"
 
 #include "log/log.h"
 #include "os/os.h"
@@ -66,7 +66,7 @@ bool Win32DataObject::Set(const ClipboardOffer* offers, usize count) {
             ToWide(StringView(reinterpret_cast<const char*>(clean.Data()), clean.Size()), &wide);
             out.format = CF_UNICODETEXT;
             out.bytes.Resize(wide.Size() * sizeof(wchar_t));
-            std::memcpy(out.bytes.Data(), wide.Data(), out.bytes.Size());
+            MemCopy(out.bytes.Data(), wide.Data(), out.bytes.Size());
         } else if (o.format == ClipboardFormat::FileList) {
             HGLOBAL block = MakeHdrop(o.data, o.size);
             if (block == nullptr) {
@@ -81,7 +81,7 @@ bool Win32DataObject::Set(const ClipboardOffer* offers, usize count) {
             }
             out.format = CF_HDROP;
             out.bytes.Resize(GlobalSize(block));
-            std::memcpy(out.bytes.Data(), locked, out.bytes.Size());
+            MemCopy(out.bytes.Data(), locked, out.bytes.Size());
             GlobalUnlock(block);
             GlobalFree(block);
         } else {
@@ -91,7 +91,7 @@ bool Win32DataObject::Set(const ClipboardOffer* offers, usize count) {
                 return false;
             }
             out.bytes.Resize(o.size);
-            std::memcpy(out.bytes.Data(), o.data, o.size);
+            MemCopy(out.bytes.Data(), o.data, o.size);
         }
         ++count_;
     }
@@ -374,7 +374,7 @@ HRESULT Win32DndAccess::Drop(Win32Window& w, IDataObject* data, DWORD keys, POIN
             f.status = ClipboardStatus::TooLarge;
         } else {
             f.bytes.Resize(size);
-            std::memcpy(f.bytes.Data(), p, size);
+            MemCopy(f.bytes.Data(), p, size);
         }
         if (p != nullptr) GlobalUnlock(medium.hGlobal);
         ReleaseStgMedium(&medium);
@@ -425,7 +425,7 @@ u32 Win32Window::RequestDropData(ClipboardFormat format, StringView custom_name)
     }
     Vector<byte> copy;
     copy.Resize(f.bytes.Size());
-    if (copy.Size() != 0) std::memcpy(copy.Data(), f.bytes.Data(), copy.Size());
+    if (copy.Size() != 0) MemCopy(copy.Data(), f.bytes.Data(), copy.Size());
     clipboard_requests_.Complete(id, f.status, static_cast<Vector<byte>&&>(copy), f.replaced, f.rejected, now);
     return id;
 }

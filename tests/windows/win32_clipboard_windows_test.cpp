@@ -3,7 +3,7 @@
 // clipboard, so a guard saves its text first and puts it back afterwards (other formats it held are not restored).
 #include <catch2/catch_test_macros.hpp>
 
-#include <cstring>
+#include "cstr/mem_ops.h"
 
 #include "containers/vector.h"
 #include "display_session.h"
@@ -49,7 +49,7 @@ public:
         if (had_text_) {
             HGLOBAL block = GlobalAlloc(GMEM_MOVEABLE, saved_.Size() * sizeof(wchar_t));
             if (block != nullptr) {
-                std::memcpy(GlobalLock(block), saved_.Data(), saved_.Size() * sizeof(wchar_t));
+                MemCopy(GlobalLock(block), saved_.Data(), saved_.Size() * sizeof(wchar_t));
                 GlobalUnlock(block);
                 if (SetClipboardData(CF_UNICODETEXT, block) == nullptr) GlobalFree(block);
             }
@@ -118,8 +118,8 @@ void SetRawHdrop(const wchar_t* const* paths, usize count) {
     DROPFILES header{};
     header.pFiles = sizeof(DROPFILES);
     header.fWide = TRUE;
-    std::memcpy(p, &header, sizeof(header));
-    std::memcpy(p + sizeof(DROPFILES), list.Data(), list.Size() * sizeof(wchar_t));
+    MemCopy(p, &header, sizeof(header));
+    MemCopy(p + sizeof(DROPFILES), list.Data(), list.Size() * sizeof(wchar_t));
     GlobalUnlock(block);
     REQUIRE(OpenClipboard(nullptr));
     EmptyClipboard();
@@ -195,7 +195,7 @@ TEST_CASE("Windows clipboard: a file list and a custom format round trip; a miss
     r = w.Read(ClipboardFormat::Custom, name);
     CHECK(r.status == ClipboardStatus::Ok);
     REQUIRE(r.bytes.Size() >= sizeof(payload)); // the system may round a block up
-    CHECK(std::memcmp(r.bytes.Data(), payload, sizeof(payload)) == 0);
+    CHECK(MemCompare(r.bytes.Data(), payload, sizeof(payload)) == 0);
     CHECK_FALSE(w.window.ClipboardHasFormat(ClipboardKind::Clipboard, ClipboardFormat::Text, StringView()));
     CHECK(w.Read(ClipboardFormat::Text).status == ClipboardStatus::Missing);
     CHECK(w.Read(ClipboardFormat::Custom, StringView("application/x-engine-nobody")).status == ClipboardStatus::Missing);

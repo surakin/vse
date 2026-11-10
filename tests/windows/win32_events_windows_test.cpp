@@ -13,6 +13,7 @@
 #include "platform/input_event.h"
 #include "platform/windows/win32_window.h"
 #include "string_view.h"
+#include "lang/initializer_list.h"
 
 using namespace engine_placeholder;
 using os::InputEvent;
@@ -50,7 +51,7 @@ struct EventWindow {
         return out;
     }
     // Drains and keeps only the events of these types (the system adds focus, enter and leave events of its own while a test runs).
-    Vector<InputEvent> Only(std::initializer_list<InputEventType> types) {
+    Vector<InputEvent> Only(InitializerList<InputEventType> types) {
         Vector<InputEvent> all = Drain();
         Vector<InputEvent> out;
         for (usize i = 0; i < all.Size(); ++i) {

@@ -123,6 +123,16 @@ Finds the last occurrence of the character `c` (`strrchr`).
 | Returns | a pointer into `text`, or null. |
 | Thread-safety | thread-compatible. |
 
+## `CStrFindLastChar(char*,int)` {#cstrfindlastchar-char-star-int-noexcept}
+
+`function CStrFindLastChar` — defined in `engine/foundation/cstr/cstr.h`
+
+```cpp
+inline char* CStrFindLastChar(char* text, int c) noexcept;
+```
+
+Finds the last occurrence of the character `c` in writable text (`strrchr`).
+
 ## `CStrFindAny(const char*,const char*)` {#cstrfindany-const-char-star-const-char-star-noexcept}
 
 `function CStrFindAny` — defined in `engine/foundation/cstr/cstr.h`
@@ -237,6 +247,16 @@ inline const wchar_t* WStrFind(const wchar_t* haystack, const wchar_t* needle) n
 
 Finds the first occurrence of `needle` in `haystack` (`wcsstr`).
 
+## `WStrFind(wchar_t*,const wchar_t*)` {#wstrfind-wchar-t-star-const-wchar-t-star-noexcept}
+
+`function WStrFind` — defined in `engine/foundation/cstr/cstr.h`
+
+```cpp
+inline wchar_t* WStrFind(wchar_t* haystack, const wchar_t* needle) noexcept;
+```
+
+Finds the first occurrence of `needle` in a writable `haystack` (`wcsstr`).
+
 ## `WStrFindLastChar(const wchar_t*,wchar_t)` {#wstrfindlastchar-const-wchar-t-star-wchar-t-noexcept}
 
 `function WStrFindLastChar` — defined in `engine/foundation/cstr/cstr.h`
@@ -246,6 +266,16 @@ inline const wchar_t* WStrFindLastChar(const wchar_t* text, wchar_t c) noexcept;
 ```
 
 Finds the last occurrence of the wide character `c` (`wcsrchr`).
+
+## `WStrFindLastChar(wchar_t*,wchar_t)` {#wstrfindlastchar-wchar-t-star-wchar-t-noexcept}
+
+`function WStrFindLastChar` — defined in `engine/foundation/cstr/cstr.h`
+
+```cpp
+inline wchar_t* WStrFindLastChar(wchar_t* text, wchar_t c) noexcept;
+```
+
+Finds the last occurrence of the wide character `c` in writable text (`wcsrchr`).
 
 ## `WStrAppend(wchar_t*,const wchar_t*)` {#wstrappend-wchar-t-star-const-wchar-t-star-noexcept}
 

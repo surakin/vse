@@ -6,7 +6,10 @@
 // it, so a later run loads it instead of compiling. The file is checked (header, identity, size, hash) before D3D12 reads any of it,
 // and anything D3D12 still refuses is discarded with a log line.
 
-#include <cstring>
+#include "cstr/mem_ops.h"
+#include "cstr/cstr.h"
+#include "sync/atomic.h"
+#include "sync/mutex.h"
 
 #include "log/assert.h"
 #include "rhi/dx12/dx12_device.h"
@@ -117,7 +120,7 @@ u64 GraphicsKey(const D3D12_GRAPHICS_PIPELINE_STATE_DESC& d, u64 vs, u64 ps, u64
         const D3D12_INPUT_ELEMENT_DESC& e = d.InputLayout.pInputElementDescs[i];
         const u32 parts[6] = {e.SemanticIndex, static_cast<u32>(e.Format), e.InputSlot, e.AlignedByteOffset, static_cast<u32>(e.InputSlotClass),
                               e.InstanceDataStepRate};
-        h = Fnv1a(e.SemanticName, std::strlen(e.SemanticName), h);
+        h = Fnv1a(e.SemanticName, CStrLength(e.SemanticName), h);
         h = HashValue(parts, h);
     }
     h = HashValue(d.IBStripCutValue, h);
@@ -136,7 +139,7 @@ u64 GraphicsKey(const D3D12_GRAPHICS_PIPELINE_STATE_DESC& d, u64 vs, u64 ps, u64
 void Dx12Device::InitializePipelineCache(const DeviceCreateInfo& info) {
     shaders_.SeedGeneration(GenerationSeed(epoch_));
     pipelines_.SeedGeneration(GenerationSeed(epoch_));
-    std::lock_guard<std::mutex> lock(library_mutex_);
+    LockGuard<Mutex> lock(library_mutex_);
     cache_path_[0] = '\0';
     if (!info.pipeline_cache) {
         return;
@@ -193,12 +196,12 @@ void Dx12Device::InitializePipelineCache(const DeviceCreateInfo& info) {
 }
 
 Dx12Device::PipelineCacheStats Dx12Device::PipelineCache() const {
-    std::lock_guard<std::mutex> lock(library_mutex_);
+    LockGuard<Mutex> lock(library_mutex_);
     return cache_stats_;
 }
 
 bool Dx12Device::SavePipelineCache() {
-    std::lock_guard<std::mutex> lock(library_mutex_);
+    LockGuard<Mutex> lock(library_mutex_);
     if (!library_ || cache_path_[0] == '\0' || !library_dirty_) {
         return false;
     }
@@ -227,7 +230,7 @@ bool Dx12Device::SavePipelineCache() {
 }
 
 void Dx12Device::StoreInLibrary(u64 key, ID3D12PipelineState* state) {
-    std::lock_guard<std::mutex> lock(library_mutex_);
+    LockGuard<Mutex> lock(library_mutex_);
     if (!library_) {
         return;
     }
@@ -243,7 +246,7 @@ void Dx12Device::StoreInLibrary(u64 key, ID3D12PipelineState* state) {
 ComRef<ID3D12PipelineState> Dx12Device::CachedGraphicsState(u64 key, const D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc, const char* name) {
     ComRef<ID3D12PipelineState> state;
     {
-        std::lock_guard<std::mutex> lock(library_mutex_);
+        LockGuard<Mutex> lock(library_mutex_);
         if (library_ && HasSortedKey(library_keys_, key)) {
             wchar_t lib_name[18];
             PipelineLibraryName(key, lib_name);
@@ -268,7 +271,7 @@ ComRef<ID3D12PipelineState> Dx12Device::CachedGraphicsState(u64 key, const D3D12
 ComRef<ID3D12PipelineState> Dx12Device::CachedComputeState(u64 key, const D3D12_COMPUTE_PIPELINE_STATE_DESC& desc, const char* name) {
     ComRef<ID3D12PipelineState> state;
     {
-        std::lock_guard<std::mutex> lock(library_mutex_);
+        LockGuard<Mutex> lock(library_mutex_);
         if (library_ && HasSortedKey(library_keys_, key)) {
             wchar_t lib_name[18];
             PipelineLibraryName(key, lib_name);
@@ -296,7 +299,7 @@ void Dx12Device::ShutdownPipelines() {
         p.state_cut16.Reset();
     });
     SavePipelineCache();
-    std::lock_guard<std::mutex> lock(library_mutex_);
+    LockGuard<Mutex> lock(library_mutex_);
     library_.Reset();
     library_file_.Reset();
     library_keys_.Reset();
@@ -320,10 +323,10 @@ ShaderHandle Dx12Device::CreateShader(const ShaderDesc& desc) {
         RhiLog(LogVerbosity::Error, "CreateShader: out of memory for '%s' (%zu bytes)", NameOr(desc.debug_name), desc.size);
         return {};
     }
-    std::memcpy(res.code->bytes.Data(), desc.bytes, desc.size);
+    MemCopy(res.code->bytes.Data(), desc.bytes, desc.size);
     res.stage = desc.stage;
     res.hash = Fnv1a(desc.bytes, desc.size);
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     const ShaderHandle handle = shaders_.Allocate(static_cast<ShaderRes&&>(res));
     if (!handle.IsValid()) {
         RhiLog(LogVerbosity::Error, "CreateShader: out of shader handles");
@@ -332,7 +335,7 @@ ShaderHandle Dx12Device::CreateShader(const ShaderDesc& desc) {
 }
 
 void Dx12Device::DestroyShader(ShaderHandle shader) {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     ENGINE_ASSERT(shaders_.Get(shader) != nullptr, "DestroyShader: handle is invalid or already destroyed");
     if (shaders_.Get(shader) == nullptr) {
         return;
@@ -344,7 +347,7 @@ void Dx12Device::DestroyShader(ShaderHandle shader) {
 // ---- pipelines ----
 
 PipelineHandle Dx12Device::AddPipeline(PipelineRes&& res, const char* what) {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     const PipelineHandle handle = pipelines_.Allocate(static_cast<PipelineRes&&>(res));
     if (!handle.IsValid()) {
         RhiLog(LogVerbosity::Error, "%s: out of pipeline handles", what);
@@ -380,13 +383,13 @@ PipelineHandle Dx12Device::CreateGraphicsPipeline(const GraphicsPipelineDesc& de
         return {};
     }
     D3D12_GRAPHICS_PIPELINE_STATE_DESC d;
-    std::memset(&d, 0, sizeof(d)); // the cache key hashes the plain parts whole, padding included
+    MemSet(&d, 0, sizeof(d)); // the cache key hashes the plain parts whole, padding included
     D3D12_INPUT_ELEMENT_DESC elements[kMaxVertexAttributes];
-    std::memset(elements, 0, sizeof(elements));
+    MemSet(elements, 0, sizeof(elements));
     u64 vs_hash = 0, ps_hash = 0;
     SharedPtr<ShaderCode> vs_code, ps_code; // held while the pipeline compiles, outside the lock
     {
-        std::lock_guard<std::mutex> lock(resource_mutex_);
+        LockGuard<Mutex> lock(resource_mutex_);
         const ShaderRes* vs = shaders_.Get(desc.vertex_shader);
         if (vs == nullptr || vs->stage != ShaderStage::Vertex) {
             RhiLog(LogVerbosity::Error, "CreateGraphicsPipeline: vertex shader is invalid, destroyed or not a vertex stage");
@@ -505,7 +508,7 @@ PipelineHandle Dx12Device::CreateComputePipeline(const ComputePipelineDesc& desc
     SharedPtr<ShaderCode> code;
     u64 key = HashValue(u32{2}, 0xcbf29ce484222325ull); // the key's own version
     {
-        std::lock_guard<std::mutex> lock(resource_mutex_);
+        LockGuard<Mutex> lock(resource_mutex_);
         const ShaderRes* cs = shaders_.Get(desc.shader);
         if (cs == nullptr || cs->stage != ShaderStage::Compute) {
             RhiLog(LogVerbosity::Error, "CreateComputePipeline: shader is invalid, destroyed or not a compute stage");
@@ -515,7 +518,7 @@ PipelineHandle Dx12Device::CreateComputePipeline(const ComputePipelineDesc& desc
         key = HashValue(cs->hash, key);
     }
     D3D12_COMPUTE_PIPELINE_STATE_DESC d;
-    std::memset(&d, 0, sizeof(d));
+    MemSet(&d, 0, sizeof(d));
     d.pRootSignature = res.info.root.signature;
     d.CS = {code->bytes.Data(), code->bytes.Size()};
     key = HashValue(res.info.root.content_hash, key);
@@ -530,16 +533,16 @@ PipelineHandle Dx12Device::CreateComputePipeline(const ComputePipelineDesc& desc
 }
 
 void Dx12Device::DestroyPipeline(PipelineHandle pipeline) {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     ENGINE_ASSERT(pipelines_.Get(pipeline) != nullptr, "DestroyPipeline: handle is invalid or already destroyed");
     if (pipelines_.Get(pipeline) == nullptr) {
         return;
     }
-    pipelines_.Retire(pipeline, frame_open_.load(std::memory_order_relaxed) ? frame_number_ : frame_number_ + 1);
+    pipelines_.Retire(pipeline, frame_open_.Load(MemoryOrder::Relaxed) ? frame_number_ : frame_number_ + 1);
 }
 
 bool Dx12Device::LookupPipeline(PipelineHandle pipeline, PipelineInfo* out) const {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     const PipelineRes* p = pipelines_.Get(pipeline);
     if (p == nullptr) {
         return false;

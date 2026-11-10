@@ -4,7 +4,8 @@
 // refuses; a drag to Explorer and back is on the Day 205 by-eye list.
 #include <catch2/catch_test_macros.hpp>
 
-#include <cstring>
+#include "cstr/mem_ops.h"
+#include "cstr/cstr.h"
 
 #include "containers/vector.h"
 #include "display_session.h"
@@ -116,7 +117,7 @@ TEST_CASE("Windows drag and drop: the data object hands out what it holds and li
     unc.format = ClipboardFormat::FileList;
     const char* network = "\\\\server\\share\\x";
     unc.data = reinterpret_cast<const byte*>(network);
-    unc.size = std::strlen(network);
+    unc.size = CStrLength(network);
     CHECK_FALSE(data.Set(&unc, 1));
     CHECK(data.References() == 0);
 }
@@ -276,8 +277,8 @@ TEST_CASE("Windows drag and drop: a dropped CF_HDROP keeps only local drive path
     DROPFILES header{};
     header.pFiles = sizeof(DROPFILES);
     header.fWide = TRUE;
-    std::memcpy(p, &header, sizeof(header));
-    std::memcpy(p + sizeof(DROPFILES), list.Data(), list.Size() * sizeof(wchar_t));
+    MemCopy(p, &header, sizeof(header));
+    MemCopy(p + sizeof(DROPFILES), list.Data(), list.Size() * sizeof(wchar_t));
     GlobalUnlock(block);
     REQUIRE(OpenClipboard(nullptr));
     EmptyClipboard();
@@ -322,7 +323,7 @@ TEST_CASE("Windows drag and drop: a dropped CF_HDROP keeps only local drive path
     r = w.ReadDrop(ClipboardFormat::Custom, "application/x-engine-dnd-test");
     CHECK(r.status == ClipboardStatus::Ok);
     REQUIRE(r.bytes.Size() >= sizeof(payload));
-    CHECK(std::memcmp(r.bytes.Data(), payload, sizeof(payload)) == 0);
+    CHECK(MemCompare(r.bytes.Data(), payload, sizeof(payload)) == 0);
     CHECK(w.ReadDrop(ClipboardFormat::Custom, "application/x-other").status == ClipboardStatus::Missing);
 }
 

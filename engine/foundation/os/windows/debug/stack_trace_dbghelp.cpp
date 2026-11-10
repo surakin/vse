@@ -11,9 +11,9 @@
 #include "os/windows/utf16.h"
 #include "os/windows/win32.h"
 
-#include <atomic>
-#include <cstring>
-#include <mutex>
+#include "cstr/mem_ops.h"
+#include "sync/atomic.h"
+#include "sync/mutex.h"
 
 #include "unity/windows_enable.h"
 #include <dbghelp.h>
@@ -23,8 +23,8 @@ namespace engine_placeholder::debug {
 
 namespace {
 
-std::mutex g_dbghelp_mutex;           // every DbgHelp call
-std::atomic<bool> g_initialized{false};
+Mutex g_dbghelp_mutex;                // every DbgHelp call
+Atomic<bool> g_initialized{false};
 bool g_symbols_ready = false;         // SymInitializeW succeeded (under the mutex)
 
 void CopyText(char* dest, usize capacity, const char* source) {
@@ -90,7 +90,7 @@ void ResolveIn(u64 address, DWORD context, bool use_context, FrameInfo& info) {
     // The symbol: a SYMBOL_INFOW followed by room for the longest name the facade keeps.
     alignas(SYMBOL_INFOW) byte storage[sizeof(SYMBOL_INFOW) + kMaxSymbolBytes * sizeof(wchar_t)];
     SYMBOL_INFOW* symbol = reinterpret_cast<SYMBOL_INFOW*>(storage);
-    std::memset(symbol, 0, sizeof(SYMBOL_INFOW));
+    MemSet(symbol, 0, sizeof(SYMBOL_INFOW));
     symbol->SizeOfStruct = sizeof(SYMBOL_INFOW);
     symbol->MaxNameLen = kMaxSymbolBytes - 1; // in characters; longer names are cut by DbgHelp
     DWORD64 displacement = 0;
@@ -155,20 +155,20 @@ void ResolveOne(u64 address, FrameInfo* out, usize capacity, usize* count) {
 
 void InitDebugFacilities() {
     InstallDiagnosticsHooks();
-    if (g_initialized.load(std::memory_order_acquire)) return;
-    std::lock_guard<std::mutex> lock(g_dbghelp_mutex);
-    if (g_initialized.load(std::memory_order_relaxed)) return;
+    if (g_initialized.Load(MemoryOrder::Acquire)) return;
+    LockGuard<Mutex> lock(g_dbghelp_mutex);
+    if (g_initialized.Load(MemoryOrder::Relaxed)) return;
     RefreshLoadedModules();
     StartSymbols();
-    g_initialized.store(true, std::memory_order_release);
+    g_initialized.Store(true, MemoryOrder::Release);
 }
 
 void ReloadDebugModules() {
-    std::lock_guard<std::mutex> lock(g_dbghelp_mutex);
+    LockGuard<Mutex> lock(g_dbghelp_mutex);
     RefreshLoadedModules();
     StartSymbols(); // or, when started, only the search path again (the environment is never consulted)
     if (g_symbols_ready) SymRefreshModuleList(GetCurrentProcess()); // modules loaded or unloaded since SymInitializeW
-    g_initialized.store(true, std::memory_order_release);
+    g_initialized.Store(true, MemoryOrder::Release);
 }
 
 bool CaptureStackTrace(StackTrace& trace, u32 skip_frames) {
@@ -196,8 +196,8 @@ usize ResolveStackTrace(const StackTrace& trace, FrameInfo* out, usize capacity)
         }
         return count;
     }
-    if (!g_initialized.load(std::memory_order_acquire)) InitDebugFacilities();
-    std::lock_guard<std::mutex> lock(g_dbghelp_mutex);
+    if (!g_initialized.Load(MemoryOrder::Acquire)) InitDebugFacilities();
+    LockGuard<Mutex> lock(g_dbghelp_mutex);
     usize count = 0;
     for (u32 i = 0; i < trace.count && count < capacity; ++i) ResolveOne(trace.frames[i], out, capacity, &count);
     return count;
@@ -211,11 +211,11 @@ bool DemangleSymbol(const char* mangled, char* out, usize capacity) {
     char readable[kMaxSymbolBytes];
     DWORD n = 0;
     {
-        std::lock_guard<std::mutex> lock(g_dbghelp_mutex); // UnDecorateSymbolName is part of DbgHelp
+        LockGuard<Mutex> lock(g_dbghelp_mutex); // UnDecorateSymbolName is part of DbgHelp
         n = UnDecorateSymbolName(mangled, readable, static_cast<DWORD>(sizeof(readable)), UNDNAME_COMPLETE);
     }
     if (n == 0 || n >= sizeof(readable) || n >= capacity) return false;
-    std::memcpy(out, readable, n + 1);
+    MemCopy(out, readable, n + 1);
     return true;
 }
 

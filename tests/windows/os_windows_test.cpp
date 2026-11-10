@@ -2,9 +2,9 @@
 // gpu_driver_loading_test.cpp, session_state_test.cpp, command_line_test.cpp) run unchanged; these cover what only Windows has.
 #include <catch2/catch_test_macros.hpp>
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include "cstr/mem_ops.h"
+#include "cstr/cstr.h"
+#include "cstr/format.h"
 #include <fcntl.h>
 
 #include "os/command_line.h"
@@ -69,7 +69,7 @@ ProbeResult RunProbe(const wchar_t* arguments, bool read_stderr) {
     SetHandleInformation(err_read, HANDLE_FLAG_INHERIT, 0);
 
     wchar_t command[2048];
-    std::swprintf(command, 2048, L"\"%ls\" %ls", WINDOWS_OS_PROBE_PATH, arguments);
+    WFormatTo(command, 2048, L"\"%ls\" %ls", WINDOWS_OS_PROBE_PATH, arguments);
     STARTUPINFOW startup = {};
     startup.cb = sizeof(startup);
     startup.dwFlags = STARTF_USESTDHANDLES;
@@ -92,7 +92,7 @@ ProbeResult RunProbe(const wchar_t* arguments, bool read_stderr) {
 }
 
 void Hex(const char* utf8, char* out) {
-    for (; *utf8 != '\0'; ++utf8, out += 2) std::snprintf(out, 3, "%02x", static_cast<unsigned>(static_cast<u8>(*utf8)));
+    for (; *utf8 != '\0'; ++utf8, out += 2) FormatTo(out, 3, "%02x", static_cast<unsigned>(static_cast<u8>(*utf8)));
     *out = '\0';
 }
 
@@ -109,7 +109,7 @@ TEST_CASE("UTF-8 to UTF-16 and back round-trips every scalar value of every plan
         usize bad = 99;
         const usize units = win::Utf8ToUtf16(StringView(utf8, n), wide, 3, &bad);
         const usize bytes = win::Utf16ToUtf8(wide, units, back, 5, nullptr);
-        if (bad != 0 || units != (cp >= 0x10000 ? 2u : 1u) || bytes != n || std::memcmp(back, utf8, n) != 0) ++mismatches;
+        if (bad != 0 || units != (cp >= 0x10000 ? 2u : 1u) || bytes != n || MemCompare(back, utf8, n) != 0) ++mismatches;
     }
     CHECK(mismatches == 0);
 }
@@ -136,8 +136,8 @@ TEST_CASE("invalid UTF-8 becomes U+FFFD, counted, never dropped", "[windows][utf
         usize replaced = 0;
         const usize n = win::Utf8ToUtf16(StringView(c.bytes, c.length), out, 8, &replaced);
         CHECK(replaced == c.replaced);
-        CHECK(n == std::wcslen(c.expect));
-        CHECK(std::wcscmp(out, c.expect) == 0);
+        CHECK(n == WStrLength(c.expect));
+        CHECK(WStrCompare(out, c.expect) == 0);
     }
 }
 
@@ -149,12 +149,12 @@ TEST_CASE("unpaired UTF-16 surrogates from Windows become U+FFFD, counted", "[wi
     usize replaced = 0;
     CHECK(win::Utf16ToUtf8(high_alone, 3, out, 16, &replaced) == 5);
     CHECK(replaced == 1);
-    CHECK(std::strcmp(out, "a\xEF\xBF\xBD" "b") == 0);
+    CHECK(CStrCompare(out, "a\xEF\xBF\xBD" "b") == 0);
     CHECK(win::Utf16ToUtf8(low_alone, 2, out, 16, &replaced) == 4);
     CHECK(replaced == 1);
     CHECK(win::Utf16ToUtf8(high_at_end, 2, out, 16, &replaced) == 4);
     CHECK(replaced == 1);
-    CHECK(std::strcmp(out, "d\xEF\xBF\xBD") == 0);
+    CHECK(CStrCompare(out, "d\xEF\xBF\xBD") == 0);
 }
 
 TEST_CASE("UTF-16 conversion reports the full length and writes whole code points only", "[windows][utf16]") {
@@ -162,14 +162,14 @@ TEST_CASE("UTF-16 conversion reports the full length and writes whole code point
     CHECK(win::Utf8ToUtf16(StringView(text), nullptr, 0) == 5);
     wchar_t small[4]; // room for 3 units: "ab" fits, the pair does not
     CHECK(win::Utf8ToUtf16(StringView(text), small, 4) == 5);
-    CHECK(std::wcscmp(small, L"ab") == 0);
+    CHECK(WStrCompare(small, L"ab") == 0);
     wchar_t exact[6];
     CHECK(win::Utf8ToUtf16(StringView(text), exact, 6) == 5);
     CHECK(exact[5] == 0);
     char narrow[5]; // "ab" + 4-byte sequence does not fit before the terminator
     const wchar_t wide[] = {L'a', L'b', 0xD83D, 0xDE00};
     CHECK(win::Utf16ToUtf8(wide, 4, narrow, 5) == 6);
-    CHECK(std::strcmp(narrow, "ab") == 0);
+    CHECK(CStrCompare(narrow, "ab") == 0);
     CHECK(win::Utf8ToUtf16(StringView(""), exact, 6) == 0);
     CHECK(exact[0] == 0);
 }
@@ -177,34 +177,34 @@ TEST_CASE("UTF-16 conversion reports the full length and writes whole code point
 TEST_CASE("PathToWin32 converts separators and adds the long-path prefix only to long absolute paths", "[windows][utf16]") {
     wchar_t out[1024];
     CHECK(win::PathToWin32(StringView("C:/Users/x/file.txt"), out, 1024) == 19);
-    CHECK(std::wcscmp(out, L"C:\\Users\\x\\file.txt") == 0);
+    CHECK(WStrCompare(out, L"C:\\Users\\x\\file.txt") == 0);
 
     // The prefix starts at 248 UTF-16 units, CreateDirectoryW's limit without it (MAX_PATH - 12).
     char at_247[300] = "C:/";
     char at_248[300] = "C:/";
-    for (int i = 0; i < 244; ++i) std::strcat(at_247, "d");
-    for (int i = 0; i < 245; ++i) std::strcat(at_248, "d");
+    for (int i = 0; i < 244; ++i) CStrAppend(at_247, "d");
+    for (int i = 0; i < 245; ++i) CStrAppend(at_248, "d");
     CHECK(win::PathToWin32(StringView(at_247), out, 1024) == 247);
     CHECK(out[0] == L'C');
     CHECK(win::PathToWin32(StringView(at_248), out, 1024) == 4 + 248);
-    CHECK(std::wcsncmp(out, L"\\\\?\\C:\\", 7) == 0);
+    CHECK(WStrCompareN(out, L"\\\\?\\C:\\", 7) == 0);
 
     char long_drive[400] = "C:/";
     char long_unc[400] = "//server/share/";
     char long_relative[400] = "dir/";
     for (int i = 0; i < 300; ++i) {
-        std::strcat(long_drive, "a");
-        std::strcat(long_unc, "b");
-        std::strcat(long_relative, "c");
+        CStrAppend(long_drive, "a");
+        CStrAppend(long_unc, "b");
+        CStrAppend(long_relative, "c");
     }
     REQUIRE(win::PathToWin32(StringView(long_drive), out, 1024) == 4 + 303);
-    CHECK(std::wcsncmp(out, L"\\\\?\\C:\\aaa", 10) == 0);
+    CHECK(WStrCompareN(out, L"\\\\?\\C:\\aaa", 10) == 0);
     REQUIRE(win::PathToWin32(StringView(long_unc), out, 1024) == 8 + 313);
-    CHECK(std::wcsncmp(out, L"\\\\?\\UNC\\server\\share\\bbb", 24) == 0);
+    CHECK(WStrCompareN(out, L"\\\\?\\UNC\\server\\share\\bbb", 24) == 0);
     REQUIRE(win::PathToWin32(StringView(long_relative), out, 1024) == 304);
-    CHECK(std::wcsncmp(out, L"dir\\ccc", 7) == 0); // never prefixed: the prefix turns off relative-path rules
+    CHECK(WStrCompareN(out, L"dir\\ccc", 7) == 0); // never prefixed: the prefix turns off relative-path rules
     CHECK(win::PathToWin32(StringView("\\\\?\\C:\\x"), out, 1024) == 8);
-    CHECK(std::wcscmp(out, L"\\\\?\\C:\\x") == 0);
+    CHECK(WStrCompare(out, L"\\\\?\\C:\\x") == 0);
     CHECK(win::PathToWin32(StringView(long_drive), out, 10) >= 10); // does not fit: reported, nothing usable written
     CHECK(out[0] == 0);
 }
@@ -212,34 +212,34 @@ TEST_CASE("PathToWin32 converts separators and adds the long-path prefix only to
 TEST_CASE("a prefixed long path is normalized as Win32 would normalize it without the prefix", "[windows][utf16]") {
     // The \\?\ prefix turns off Win32's own handling of `.`, `..` and trailing dots and spaces, so PathToWin32 does it.
     char path[600] = "C:/top/";
-    for (int i = 0; i < 260; ++i) std::strcat(path, "x");
-    std::strcat(path, "/./skip/../keep. ./file.txt");
+    for (int i = 0; i < 260; ++i) CStrAppend(path, "x");
+    CStrAppend(path, "/./skip/../keep. ./file.txt");
     wchar_t out[1024];
     const usize n = win::PathToWin32(StringView(path), out, 1024);
     wchar_t want[1024] = L"\\\\?\\C:\\top\\";
-    for (int i = 0; i < 260; ++i) std::wcscat(want, L"x");
-    std::wcscat(want, L"\\keep\\file.txt");
-    CHECK(n == std::wcslen(want));
-    CHECK(std::wcscmp(out, want) == 0);
+    for (int i = 0; i < 260; ++i) WStrAppend(want, L"x");
+    WStrAppend(want, L"\\keep\\file.txt");
+    CHECK(n == WStrLength(want));
+    CHECK(WStrCompare(out, want) == 0);
 
     char climb[600] = "C:/";
-    for (int i = 0; i < 260; ++i) std::strcat(climb, "y");
-    std::strcat(climb, "/../../../z");
+    for (int i = 0; i < 260; ++i) CStrAppend(climb, "y");
+    CStrAppend(climb, "/../../../z");
     CHECK(win::PathToWin32(StringView(climb), out, 1024) == 4 + 4);
-    CHECK(std::wcscmp(out, L"\\\\?\\C:\\z") == 0); // `..` stops at the root
+    CHECK(WStrCompare(out, L"\\\\?\\C:\\z") == 0); // `..` stops at the root
 
     char unc[600] = "//server/share/";
-    for (int i = 0; i < 260; ++i) std::strcat(unc, "u");
-    std::strcat(unc, "/..");
+    for (int i = 0; i < 260; ++i) CStrAppend(unc, "u");
+    CStrAppend(unc, "/..");
     CHECK(win::PathToWin32(StringView(unc), out, 1024) == 8 + 13);
-    CHECK(std::wcscmp(out, L"\\\\?\\UNC\\server\\share\\") == 0); // `..` stops at the share, which keeps its separator as C:\ does
+    CHECK(WStrCompare(out, L"\\\\?\\UNC\\server\\share\\") == 0); // `..` stops at the share, which keeps its separator as C:\ does
 }
 
 TEST_CASE("os descriptors write, read and close files through the engine's handle table", "[windows][os]") {
     char path[MAX_PATH];
     char temp[MAX_PATH];
     GetTempPathA(MAX_PATH, temp);
-    std::snprintf(path, sizeof(path), "%sengine_os_windows_test_%lu.txt", temp, GetCurrentProcessId());
+    FormatTo(path, sizeof(path), "%sengine_os_windows_test_%lu.txt", temp, GetCurrentProcessId());
     const int out = os::CreateFileForWriting(StringView(path));
     REQUIRE(out >= 3);
     const char text[] = "h\xC3\xA9llo";
@@ -252,7 +252,7 @@ TEST_CASE("os descriptors write, read and close files through the engine's handl
     REQUIRE(in >= 3);
     char back[16] = {};
     CHECK(os::Read(in, back, sizeof(back)) == static_cast<long>(sizeof(text) - 1));
-    CHECK(std::strcmp(back, text) == 0);
+    CHECK(CStrCompare(back, text) == 0);
     CHECK(os::Read(in, back, sizeof(back)) == 0); // end of file
     CHECK(os::Close(in) == 0);
     CHECK(os::Open(StringView(path), _O_WRONLY | _O_CREAT | _O_EXCL) == -1); // exists
@@ -301,7 +301,7 @@ TEST_CASE("SleepNanos never returns early, and its resolution is recorded", "[wi
             longest = slept > longest ? slept : longest;
         }
         char line[160];
-        std::snprintf(line, sizeof(line), "SleepNanos(%llu ns): shortest %llu ns, longest %llu ns of 50", static_cast<unsigned long long>(request),
+        FormatTo(line, sizeof(line), "SleepNanos(%llu ns): shortest %llu ns, longest %llu ns of 50", static_cast<unsigned long long>(request),
                       static_cast<unsigned long long>(shortest), static_cast<unsigned long long>(longest));
         WARN(line);
     }
@@ -315,7 +315,7 @@ TEST_CASE("LoadLibrary finds system libraries by name and never resolves a relat
     char system_dir[MAX_PATH];
     GetSystemDirectoryA(system_dir, MAX_PATH);
     char absolute[MAX_PATH + 32];
-    std::snprintf(absolute, sizeof(absolute), "%s/kernel32.dll", system_dir); // forward slash: converted
+    FormatTo(absolute, sizeof(absolute), "%s/kernel32.dll", system_dir); // forward slash: converted
     os::DynamicLibraryHandle by_path = os::LoadLibrary(StringView(absolute));
     CHECK(by_path != nullptr);
     os::UnloadLibrary(by_path);
@@ -334,7 +334,7 @@ TEST_CASE("EnvironmentEntry skips the drive entries and converts values to UTF-8
         usize length = 0;
         REQUIRE(os::EnvironmentEntry(i, entry, sizeof(entry), &length));
         drive_entries += entry[0] == '=' ? 1 : 0;
-        found = found || std::strcmp(entry, expect) == 0;
+        found = found || CStrCompare(entry, expect) == 0;
     }
     CHECK(found);
     CHECK(drive_entries == 0);
@@ -355,8 +355,8 @@ TEST_CASE("arguments reach the program as UTF-8, split by the Windows rules for 
         char hex[256];
         Hex(expected[i], hex);
         char line[300];
-        std::snprintf(line, sizeof(line), "arg %d %s\n", i, hex);
-        std::strcat(want, line);
+        FormatTo(line, sizeof(line), "arg %d %s\n", i, hex);
+        CStrAppend(want, line);
     }
     // The C runtime may end lines with \r\n on a text-mode standard output.
     char got[8192];
@@ -365,13 +365,13 @@ TEST_CASE("arguments reach the program as UTF-8, split by the Windows rules for 
         if (*c != '\r') got[j++] = *c;
     }
     got[j] = '\0';
-    CHECK(std::strcmp(got, want) == 0);
+    CHECK(CStrCompare(got, want) == 0);
 }
 
 TEST_CASE("the log writes a non-ASCII line to a pipe byte for byte", "[windows][os][log]") {
     const ProbeResult r = RunProbe(L"log", true);
     REQUIRE(r.exit_code == 0);
-    CHECK(std::strstr(r.out, "probe: h\xC3\xA9llo w\xC3\xB6rld \xE2\x9C\x93 \xF0\x9F\x98\x80") != nullptr);
+    CHECK(CStrFind(r.out, "probe: h\xC3\xA9llo w\xC3\xB6rld \xE2\x9C\x93 \xF0\x9F\x98\x80") != nullptr);
 }
 
 TEST_CASE("WriteAllWithTimeout gives up on a pipe whose reader stopped", "[windows][os]") {
@@ -379,7 +379,7 @@ TEST_CASE("WriteAllWithTimeout gives up on a pipe whose reader stopped", "[windo
     REQUIRE(r.exit_code == 0);
     long written = -1;
     unsigned long long total = 0, ms = 0;
-    REQUIRE(std::sscanf(r.out, "wrote %ld of %llu in %llu ms", &written, &total, &ms) == 3);
+    REQUIRE(ScanFrom(r.out, "wrote %ld of %llu in %llu ms", &written, &total, &ms) == 3);
     CHECK(written >= 0);
     CHECK(static_cast<unsigned long long>(written) < total); // the 4 KiB pipe filled; nothing read it
     CHECK(ms >= 150);
@@ -392,7 +392,7 @@ TEST_CASE("WriteAllWithTimeout gives up at once while an earlier timed-out write
     REQUIRE(r.exit_code == 0);
     long written = -1;
     unsigned long long ms = 0;
-    REQUIRE(std::sscanf(std::strstr(r.out, "second"), "second wrote %ld in %llu ms", &written, &ms) == 2);
+    REQUIRE(ScanFrom(CStrFind(r.out, "second"), "second wrote %ld in %llu ms", &written, &ms) == 2);
     CHECK(written == 0);
     CHECK(ms < 50);
 }
