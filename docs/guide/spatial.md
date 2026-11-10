@@ -1,7 +1,7 @@
 # Spatial partitioning: what is near what
 
 Status: in progress (Phase 18). Built: the shared shapes (Day 238), the static and dynamic bounding-volume hierarchies (Days 239-240), the query vocabulary
-(Day 241). Next: the hash grid, spatial sets, the pair tracker, the ECS tier and the renderer's culling (Days 242-249).
+(Day 241), the hash grid and the spatial set (Day 242). Next: the pair tracker, the ECS tier and the renderer's culling (Days 243-249).
 
 **Audience:** engine programmers who write a system that asks "what is near this box, ray or frustum" (physics, culling, audio, gameplay). Read
 [Math](foundation-math.md) first.
@@ -306,6 +306,67 @@ Rules:
   single-threaded answers). `Nearest` is a depth-first search that skips every node farther than the k-th best so far, for a small `k` (each candidate costs up to
   `k` steps); `ForEachPair` runs one overlap
   query per item, so it costs about n times an overlap query.
+
+## The spatial set
+
+`spatial::SpatialSet` (`spatial/spatial_set.h`) is what a system uses: one static tree for what does not move, plus one structure for what does (a
+dynamic tree by default, or a hash grid), answering every query of `spatial/query.h` over both. Keep one set per purpose (the renderer's, physics',
+audio's), so the render set never holds an invisible trigger and the reverse.
+
+```cpp compile run standalone
+#include "containers/vector.h"
+#include "os/console.h"
+#include "spatial/query.h"
+
+using namespace engine_placeholder;
+using namespace engine_placeholder::spatial;
+
+int main() {
+    SpatialSet world;
+    world.AddStatic(Aabb::FromMinMax(Vec3(0, 0, 0), Vec3(10, 3, 1)), 1, 0);              // a wall
+    const SetHandle door = world.AddStatic(Aabb::FromMinMax(Vec3(10, 0, 0), Vec3(12, 3, 1)), 2, 0);
+    const SetHandle guard = world.AddDynamic(Aabb::FromMinMax(Vec3(5, 0, 2), Vec3(6, 2, 3)), 3, 0);
+    world.RebuildStatic(); // the wall and the door go into the static tree
+
+    // The door opens: it moves now, so it becomes dynamic (same handle).
+    world.MakeDynamic(door);
+    world.Move(door, Aabb::FromMinMax(Vec3(10, 0, 0), Vec3(11, 3, 2)));
+    world.Move(guard, Aabb::FromMinMax(Vec3(10, 0, 1), Vec3(11, 2, 2)));
+
+    Vector<SpatialKey> near_door;
+    OverlapKeys(world, Aabb::FromMinMax(Vec3(9, 0, 0), Vec3(12, 3, 3)), QueryFilter(), Order::Ordered, &near_door);
+    os::Print("near the door:");
+    for (usize i = 0; i < near_door.Size(); ++i) os::Print(" %llu", static_cast<unsigned long long>(near_door[i]));
+    os::Print("\n");
+    os::Print("door is static: %s\n", world.IsStatic(door) ? "yes" : "no");
+    return 0;
+}
+```
+
+```output
+near the door: 1 2 3
+door is static: no
+```
+
+- **Static items** join the static tree at the next `RebuildStatic()` (call it after loading a level or a batch of changes); until then queries scan
+  them from a short pending list, and the tree's entries for items removed or made dynamic are skipped, so a query is exact at every moment. The same
+  items rebuild the same tree. `Move` refuses a static item: `MakeDynamic` first (the door that opens), `MakeStatic` when it settles.
+- **The dynamic side** is a `DynamicBvh` (items of any size; call `Optimize(budget)` once a frame) or, with `SpatialSetConfig::dynamic =
+  DynamicKind::Grid`, a `HashGrid` for many items of about one size.
+- **Order.** A visitor sees the static tree's items first, then the pending static items in the order they came, then the dynamic side; `Order::Ordered`
+  sorts as for every structure.
+
+### The hash grid
+
+`spatial::HashGrid` (`spatial/hash_grid.h`) registers each item in every cubic cell its box touches; the occupied cells are in an open-addressing
+hash table keyed by their coordinates. Box and sphere overlaps and the all-pairs query walk the cells and report each result once (from the cell holding
+the lowest corner of the overlap: no per-query marks, so concurrent queries stay safe); the frustum, ray, sweep and nearest queries scan the items, so use
+a BVH where those matter. An item that would touch more than 64 cells, or lies beyond the cells a key holds (about a million cells from the origin on
+each axis), goes to an "oversized" list that every query scans: keep the cell size 2 to 4 times the items' size.
+
+Measured on the Windows PC (Release), 100,000 agents of 1 x 2 x 1 on a 1000 x 1000 plane, cell 4: the all-pairs query takes 7 ms on the grid against
+16.6 ms on a static tree of the same boxes (2.4 times faster; the design spec's experiment found 2.1 times), and an update costs 36 ns per moved agent
+(a static tree would need a 35 ms rebuild). That is why the grid is kept, and why it is opt-in: on boxes of very different sizes and for rays it loses.
 
 ## See also
 

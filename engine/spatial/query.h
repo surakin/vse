@@ -3,7 +3,8 @@
 //! The query vocabulary (Phase 18 Day 241): overlap with a box, sphere or frustum, ray casts (closest, any, all), box sweeps, the k nearest items and all
 //! overlapping pairs, with layer masks, an optional filter and a documented order. Free functions over any structure with the two traversals of
 //! [[spatial::StaticBvh]] and [[spatial::DynamicBvh]] (`Traverse` and `TraverseRay`), so the static tree, the dynamic tree and later the spatial set answer
-//! the same calls.
+//! the same calls, and so do [[spatial::HashGrid]] and [[spatial::SpatialSet]]: box and sphere overlaps on them use the grid's cells, the all-pairs query
+//! on a grid too; the other queries scan a grid's items (a grid is for overlaps and pairs; use a BVH for rays).
 
 #include "algorithm.h"
 #include "containers/span.h"
@@ -11,8 +12,10 @@
 #include "lang/scalar.h"
 #include "math/geometry.h"
 #include "spatial/dynamic_bvh.h"
+#include "spatial/hash_grid.h"
 #include "spatial/internal/query_walk.h"
 #include "spatial/spatial.h"
+#include "spatial/spatial_set.h"
 #include "spatial/static_bvh.h"
 #include "types.h"
 
@@ -414,12 +417,12 @@ QueryStats ForEachPair(const Tree& tree, u32 mask_a, u32 mask_b, const QueryFilt
     return stats;
 }
 
-/// Collects the overlapping pairs of [[spatial::ForEachPair]], in the order asked for.
+/// Collects the overlapping pairs of `ForEachPair`, in the order asked for.
 ///
 /// Param tree: the structure.
 /// Param mask_a: the layers of one side.
 /// Param mask_b: the layers of the other side.
-/// Param filter: as for [[spatial::ForEachPair]].
+/// Param filter: as for `ForEachPair`.
 /// Param order: `Traversal`, or `Ordered` by first key then second.
 /// Param out: receives the pairs (cleared first); its capacity is reused.
 /// Returns: what the query did.
@@ -438,6 +441,141 @@ QueryStats PairKeys(const Tree& tree, u32 mask_a, u32 mask_b, const QueryFilter&
     if (order == Order::Ordered) {
         Sort(Span<KeyPair>(out->Data(), out->Size()), [](const KeyPair& x, const KeyPair& y) { return x.a < y.a || (x.a == y.a && x.b < y.b); });
     }
+    return stats;
+}
+
+/// The box overlap of [[spatial::HashGrid]]: through its cells, each item once.
+///
+/// Param grid: the grid.
+/// Param box: the query box.
+/// Param filter: which items count.
+/// Param visit: `bool(const Item&)`; returns false to stop.
+/// Returns: what the query did.
+/// Fails: as `Overlap` for a box.
+template <class Visit>
+QueryStats Overlap(const HashGrid& grid, const Aabb& box, const QueryFilter& filter, Visit&& visit) {
+    QueryStats stats;
+    if (detail_query::HasNaN(box)) {
+        stats.refused_input = true;
+        return stats;
+    }
+    if (box.IsEmpty()) return stats;
+    const TraversalStats t = grid.ForEachInRegion(box, [&](const Item& item) { return filter.Accepts(item); }, [&](const Item& item) {
+        ++stats.results;
+        return static_cast<bool>(visit(item));
+    });
+    stats.nodes_tested = t.nodes_tested;
+    stats.items_tested = t.items_visited;
+    stats.stopped = t.stopped;
+    return stats;
+}
+
+/// The sphere overlap of [[spatial::HashGrid]]: through the cells of the sphere's box, each item once.
+///
+/// Param grid: the grid.
+/// Param sphere: the query sphere.
+/// Param filter: which items count.
+/// Param visit: `bool(const Item&)`; returns false to stop.
+/// Returns: what the query did.
+/// Fails: as `Overlap` for a sphere.
+template <class Visit>
+QueryStats Overlap(const HashGrid& grid, const Sphere& sphere, const QueryFilter& filter, Visit&& visit) {
+    QueryStats stats;
+    if (!detail_query::Finite(sphere.center) || detail_query::HasNaN(sphere.radius)) {
+        stats.refused_input = true;
+        return stats;
+    }
+    if (sphere.radius < 0.0f) return stats;
+    const Vec3 r(sphere.radius, sphere.radius, sphere.radius);
+    const TraversalStats t = grid.ForEachInRegion(Aabb::FromMinMax(sphere.center - r, sphere.center + r),
+                                                  [&](const Item& item) { return Overlaps(item.box, sphere) && filter.Accepts(item); }, [&](const Item& item) {
+                                                      ++stats.results;
+                                                      return static_cast<bool>(visit(item));
+                                                  });
+    stats.nodes_tested = t.nodes_tested;
+    stats.items_tested = t.items_visited;
+    stats.stopped = t.stopped;
+    return stats;
+}
+
+/// The box overlap of [[spatial::SpatialSet]]: the static parts and the dynamic side (through a grid's cells when it is one), each item once.
+///
+/// Param set: the set.
+/// Param box: the query box.
+/// Param filter: which items count.
+/// Param visit: `bool(const Item&)`; returns false to stop.
+/// Returns: what the query did.
+/// Fails: as `Overlap` for a box.
+template <class Visit>
+QueryStats Overlap(const SpatialSet& set, const Aabb& box, const QueryFilter& filter, Visit&& visit) {
+    QueryStats stats;
+    if (detail_query::HasNaN(box)) {
+        stats.refused_input = true;
+        return stats;
+    }
+    if (box.IsEmpty()) return stats;
+    const TraversalStats t = set.ForEachInRegion(box, [&](const Item& item) { return filter.Accepts(item); }, [&](const Item& item) {
+        ++stats.results;
+        return static_cast<bool>(visit(item));
+    });
+    stats.nodes_tested = t.nodes_tested;
+    stats.items_tested = t.items_visited;
+    stats.stopped = t.stopped;
+    return stats;
+}
+
+/// The sphere overlap of [[spatial::SpatialSet]], as its box overlap with the sphere's box and the exact sphere test.
+///
+/// Param set: the set.
+/// Param sphere: the query sphere.
+/// Param filter: which items count.
+/// Param visit: `bool(const Item&)`; returns false to stop.
+/// Returns: what the query did.
+/// Fails: as `Overlap` for a sphere.
+template <class Visit>
+QueryStats Overlap(const SpatialSet& set, const Sphere& sphere, const QueryFilter& filter, Visit&& visit) {
+    QueryStats stats;
+    if (!detail_query::Finite(sphere.center) || detail_query::HasNaN(sphere.radius)) {
+        stats.refused_input = true;
+        return stats;
+    }
+    if (sphere.radius < 0.0f) return stats;
+    const Vec3 r(sphere.radius, sphere.radius, sphere.radius);
+    const TraversalStats t = set.ForEachInRegion(Aabb::FromMinMax(sphere.center - r, sphere.center + r),
+                                                 [&](const Item& item) { return Overlaps(item.box, sphere) && filter.Accepts(item); }, [&](const Item& item) {
+                                                     ++stats.results;
+                                                     return static_cast<bool>(visit(item));
+                                                 });
+    stats.nodes_tested = t.nodes_tested;
+    stats.items_tested = t.items_visited;
+    stats.stopped = t.stopped;
+    return stats;
+}
+
+/// The all-pairs query of [[spatial::HashGrid]]: through its cells, each pair once (the smaller key first), with the masks and filter of
+/// `ForEachPair`.
+///
+/// Param grid: the grid.
+/// Param mask_a: the layers of one side.
+/// Param mask_b: the layers of the other side.
+/// Param filter: its function applies to both items; its mask is not used.
+/// Param visit: `bool(const Item& a, const Item& b)`; returns false to stop.
+/// Returns: what the query did.
+/// Fails: never.
+template <class Visit>
+QueryStats ForEachPair(const HashGrid& grid, u32 mask_a, u32 mask_b, const QueryFilter& filter, Visit&& visit) {
+    QueryStats stats;
+    auto in = [](u32 mask, const Item& item) { return item.layer < 32 && (mask & (1u << item.layer)) != 0; };
+    auto passes = [&](const Item& item) { return filter.filter == nullptr || filter.filter(item.key, filter.user); };
+    const TraversalStats t = grid.ForEachOverlappingPair([&](const Item& a, const Item& b) {
+        const bool matches = (in(mask_a, a) && in(mask_b, b)) || (in(mask_b, a) && in(mask_a, b));
+        if (!matches || !passes(a) || !passes(b)) return true;
+        ++stats.results;
+        return static_cast<bool>(visit(a, b));
+    });
+    stats.nodes_tested = t.nodes_tested;
+    stats.items_tested = t.items_visited;
+    stats.stopped = t.stopped;
     return stats;
 }
 

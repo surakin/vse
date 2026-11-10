@@ -6,6 +6,8 @@
 #include "lang/scalar.h"
 #include "math/geometry.h"
 #include "spatial/dynamic_bvh.h"
+#include "spatial/hash_grid.h"
+#include "spatial/spatial_set.h"
 #include "spatial/static_bvh.h"
 #include "types.h"
 
@@ -33,6 +35,23 @@ TraversalStats WalkRay(const StaticBvh& tree, const Ray& ray, f32 max_t, Visit&&
 template <class Visit>
 TraversalStats WalkRay(const DynamicBvh& tree, const Ray& ray, f32 max_t, Visit&& visit) {
     return tree.TraverseRay(ray, max_t, [&](ProxyId, const Item& item, f32& limit) { return visit(item, limit); });
+}
+
+template <class NodeTest, class Visit>
+TraversalStats Walk(const HashGrid& grid, NodeTest&& node_test, Visit&& visit) {
+    return grid.Traverse(node_test, [&](ProxyId, const Item& item) { return visit(item); });
+}
+template <class NodeTest, class Visit>
+TraversalStats Walk(const SpatialSet& set, NodeTest&& node_test, Visit&& visit) {
+    return set.Traverse(node_test, [&](SetHandle, const Item& item) { return visit(item); });
+}
+template <class Visit>
+TraversalStats WalkRay(const HashGrid& grid, const Ray& ray, f32 max_t, Visit&& visit) {
+    return grid.TraverseRay(ray, max_t, [&](ProxyId, const Item& item, f32& limit) { return visit(item, limit); });
+}
+template <class Visit>
+TraversalStats WalkRay(const SpatialSet& set, const Ray& ray, f32 max_t, Visit&& visit) {
+    return set.TraverseRay(ray, max_t, [&](SetHandle, const Item& item, f32& limit) { return visit(item, limit); });
 }
 
 // Whether hit `x` comes before `y`: nearer first, then the smaller key.
