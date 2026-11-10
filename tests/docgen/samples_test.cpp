@@ -1,15 +1,8 @@
-#include <dirent.h>
-#include <ftw.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include <cstdio>
-#include <chrono>
-#include <cstdlib>
-#include <string>
+#include "os/os.h"
 #include "sync/thread.h"
-#include <utility>
-#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -19,14 +12,18 @@
 #include "source_file.h"
 
 using namespace docgen;
+using docgen_test::Num;
+using docgen_test::Str;
+using docgen_test::StrList;
+using docgen_test::StrPairList;
 
 namespace {
 
-std::string SamplesTestStr(StringView v) { return std::string(v.Data(), v.Length()); }
-StringView SamplesTestSv(const std::string& s) { return StringView(s.data(), s.size()); }
+Str SamplesTestStr(StringView v) { return Str(v.Data(), v.Length()); }
+StringView SamplesTestSv(const Str& s) { return StringView(s.Data(), s.Size()); }
 
 struct SamplesTestTree {
-    std::string root;
+    Str root;
     SamplesTestTree() {
         root = docgen_test::MakeTempRoot("docgen_samples");
         docgen_test::MakeDirectory(root + "/docs");
@@ -36,11 +33,11 @@ struct SamplesTestTree {
     ~SamplesTestTree() {
         docgen_test::RemoveTreeAt(root);
     }
-    void Put(const std::string& rel, const std::string& content) {
+    void Put(const Str& rel, const Str& content) {
         docgen_test::WriteFileText(root + "/" + rel, content);
     }
-    size_t ScratchEntries() const {
-        return docgen_test::ListNamesSorted(root + "/scratch").size();
+    usize ScratchEntries() const {
+        return docgen_test::ListNamesSorted(root + "/scratch").Size();
     }
 };
 
@@ -50,11 +47,11 @@ struct Result {
     Vector<Sample, ArenaAllocator> samples{arena};
     SampleStats stats;
     bool set_up = false;
-    std::vector<std::string> lines;
+    StrList lines;
 
     // Runs every sample of docs/NAME.md of `t`.
-    Result(const SamplesTestTree& t, const std::string& md, u32 jobs = 1, u32 run_timeout = 10, bool keep = false) {
-        std::string text_path = t.root + "/" + md;
+    Result(const SamplesTestTree& t, const Str& md, u32 jobs = 1, u32 run_timeout = 10, bool keep = false) {
+        Str text_path = t.root + "/" + md;
         StringView text;
         REQUIRE(LoadSourceFile(SamplesTestSv(text_path), arena, text));
         MdDoc doc(arena);
@@ -71,18 +68,18 @@ struct Result {
         opt.keep_scratch = keep;
         set_up = RunSamples(opt, samples, arena, diags, stats);
         for (usize i = 0; i < diags.Size(); ++i) {
-            lines.push_back(SamplesTestStr(diags[i].path) + ":" + std::to_string(diags[i].d.line) + ": " + SeverityName(diags[i].d.severity) + ": " +
+            lines.Push(SamplesTestStr(diags[i].path) + ":" + Num(diags[i].d.line) + ": " + SeverityName(diags[i].d.severity) + ": " +
                             SamplesTestStr(diags[i].d.message));
         }
     }
-    bool Has(const std::string& needle) const {
+    bool Has(const Str& needle) const {
         for (auto& l : lines) {
-            if (l.find(needle) != std::string::npos) return true;
+            if (l.Find(needle) != Str::npos) return true;
         }
         return false;
     }
-    size_t Errors() const {
-        size_t n = 0;
+    usize Errors() const {
+        usize n = 0;
         for (usize i = 0; i < diags.Size(); ++i) n += diags[i].d.severity == Severity::Error;
         return n;
     }
@@ -197,10 +194,10 @@ TEST_CASE("Samples: an output block that is not adjacent is not used", "[docgen]
 
 TEST_CASE("Samples: failures are collected together, in parallel, and the scratch directory is removed", "[docgen][samples]") {
     SamplesTestTree t;
-    std::string md;
+    Str md;
     for (int i = 0; i < 6; ++i) {
-        if (i % 2 == 0) md += "```cpp compile run\nstd::printf(\"%d\\n\", " + std::to_string(i) + ");\n```\n```output\n" + std::to_string(i) + "\n```\n";
-        else md += "```cpp compile\nint bad" + std::to_string(i) + " = missing;\n```\n";
+        if (i % 2 == 0) md += "```cpp compile run\nstd::printf(\"%d\\n\", " + Num(i) + ");\n```\n```output\n" + Num(i) + "\n```\n";
+        else md += "```cpp compile\nint bad" + Num(i) + " = missing;\n```\n";
     }
     t.Put("docs/a.md", md);
     Result serial(t, "docs/a.md", 1);
@@ -227,7 +224,7 @@ TEST_CASE("Samples: a missing compiler is reported per sample, not a crash", "[d
     Vector<FileDiag, ArenaAllocator> diags(arena);
     Vector<Sample, ArenaAllocator> samples(arena);
     StringView text;
-    std::string p = t.root + "/docs/a.md";
+    Str p = t.root + "/docs/a.md";
     REQUIRE(LoadSourceFile(SamplesTestSv(p), arena, text));
     MdDoc doc(arena);
     ScanMarkdown(text, arena, doc);
@@ -238,11 +235,11 @@ TEST_CASE("Samples: a missing compiler is reported per sample, not a crash", "[d
     SampleStats stats;
     REQUIRE(RunSamples(opt, samples, arena, diags, stats));
     REQUIRE(diags.Size() == 1);
-    CHECK(SamplesTestStr(diags[0].d.message).find("cannot start the compiler") != std::string::npos);
+    CHECK(SamplesTestStr(diags[0].d.message).Find("cannot start the compiler") != Str::npos);
 }
 
 TEST_CASE("Samples: the repository's own docs have no failing or malformed samples", "[docgen][samples][repo]") {
-    const std::string repo = std::string(DOCGEN_ENGINE_DIR) + "/..";
+    const Str repo = Str(DOCGEN_ENGINE_DIR) + "/..";
     ArenaAllocator arena{usize{1} << 29};
     Vector<StringView, ArenaAllocator> files(arena);
     REQUIRE(CollectMarkdownFiles(SamplesTestSv(repo), arena, files));
@@ -250,14 +247,14 @@ TEST_CASE("Samples: the repository's own docs have no failing or malformed sampl
     Vector<Sample, ArenaAllocator> samples(arena);
     for (usize i = 0; i < files.Size(); ++i) {
         StringView text;
-        std::string p = repo + "/" + SamplesTestStr(files[i]);
+        Str p = repo + "/" + SamplesTestStr(files[i]);
         REQUIRE(LoadSourceFile(SamplesTestSv(p), arena, text));
         MdDoc doc(arena);
         ScanMarkdown(text, arena, doc);
         ExtractSamples(files[i], text, doc, arena, samples, problems);
     }
     for (usize i = 0; i < problems.Size(); ++i) {
-        INFO(SamplesTestStr(problems[i].path) << ":" << problems[i].d.line << ": " << SamplesTestStr(problems[i].d.message));
+        INFO(SamplesTestStr(problems[i].path).CStr() << ":" << problems[i].d.line << ": " << SamplesTestStr(problems[i].d.message).CStr());
         CHECK(problems[i].d.severity != Severity::Error);
     }
 }
@@ -277,10 +274,10 @@ TEST_CASE("Samples: [review] a stop request kills running samples and removes th
         engine_placeholder::ThisThread::SleepForMilliseconds(1500);
         RequestStop();
     });
-    const auto start = std::chrono::steady_clock::now();
+    const engine_placeholder::u64 start = engine_placeholder::os::MonotonicTimeNanos();
     Result r(t, "docs/a.md", 1, 60);
     stopper.Join();
-    CHECK(std::chrono::steady_clock::now() - start < std::chrono::seconds(20));
+    CHECK(engine_placeholder::os::MonotonicTimeNanos() - start < engine_placeholder::u64{20} * 1000000000u);
     CHECK(r.Has("interrupted"));
     CHECK(t.ScratchEntries() == 0);
 }
@@ -293,7 +290,7 @@ TEST_CASE("Samples: [review] a standalone sample finds headers through -I", "[do
     Vector<FileDiag, ArenaAllocator> diags(arena);
     Vector<Sample, ArenaAllocator> samples(arena);
     StringView text;
-    std::string p = t.root + "/docs/a.md";
+    Str p = t.root + "/docs/a.md";
     REQUIRE(LoadSourceFile(SamplesTestSv(p), arena, text));
     MdDoc doc(arena);
     ScanMarkdown(text, arena, doc);
@@ -312,14 +309,14 @@ TEST_CASE("Samples: the compiler path keeps its name when made absolute (no syml
     ArenaAllocator arena(1 << 16);
     SamplesTestTree t;
     // clang++ is usually a symlink to clang, itself a symlink to clang-NN; resolving it would change the driver mode.
-    std::string link = t.root + "/fake-clang++";
-    REQUIRE(symlink("/bin/true", link.c_str()) == 0);
+    Str link = t.root + "/fake-clang++";
+    REQUIRE(symlink("/bin/true", link.CStr()) == 0);
 
     CHECK(SamplesTestStr(AbsoluteKeepingLinks(SamplesTestSv(link), arena)) == link);  // absolute: unchanged, still the link name
 
     char cwd[4096];
     REQUIRE(getcwd(cwd, sizeof(cwd)) != nullptr);
-    CHECK(SamplesTestStr(AbsoluteKeepingLinks(StringView("tools/clang++"), arena)) == std::string(cwd) + "/tools/clang++");
-    CHECK(SamplesTestStr(AbsoluteKeepingLinks(StringView("./clang++"), arena)) == std::string(cwd) + "/clang++");
-    unlink(link.c_str());
+    CHECK(SamplesTestStr(AbsoluteKeepingLinks(StringView("tools/clang++"), arena)) == Str(cwd) + "/tools/clang++");
+    CHECK(SamplesTestStr(AbsoluteKeepingLinks(StringView("./clang++"), arena)) == Str(cwd) + "/clang++");
+    unlink(link.CStr());
 }

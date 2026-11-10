@@ -1,11 +1,4 @@
-#include <dirent.h>
-#include <sys/stat.h>
 
-#include <algorithm>
-#include <cstdio>
-#include <cstring>
-#include <string>
-#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -14,57 +7,61 @@
 #include "cstr/cstr.h"
 
 using namespace docgen;
+using docgen_test::Num;
+using docgen_test::Str;
+using docgen_test::StrList;
+using docgen_test::StrPairList;
 
 namespace {
 
-std::string DocParserTestStr(StringView v) { return std::string(v.Data(), v.Length()); }
+Str DocParserTestStr(StringView v) { return Str(v.Data(), v.Length()); }
 
 struct Parsed {
     ArenaAllocator arena{usize{64} << 20};
-    std::string src;
+    Str src;
     ScanResult scan{arena};
     ExtractResult ex{arena};
     DocResult docs{arena};
 
-    explicit Parsed(const std::string& s) : src(s) {
-        Scan(StringView(src.data(), src.size()), arena, scan);
+    explicit Parsed(const Str& s) : src(s) {
+        Scan(StringView(src.Data(), src.Size()), arena, scan);
         Extract(scan, arena, ex);
         ParseDocs(scan, ex, arena, docs);
     }
 
     usize Diags() const { return docs.diagnostics.Size(); }
-    std::string Diag(usize i) const {
+    Str Diag(usize i) const {
         const Diagnostic& d = docs.diagnostics[i];
-        return std::to_string(d.line) + ": " + SeverityName(d.severity) + ": " + DocParserTestStr(d.message);
+        return Num(d.line) + ": " + SeverityName(d.severity) + ": " + DocParserTestStr(d.message);
     }
-    bool HasDiag(const std::string& text) const {
+    bool HasDiag(const Str& text) const {
         for (usize i = 0; i < Diags(); ++i) {
             if (Diag(i) == text) return true;
         }
         return false;
     }
     // Whether any doc diagnostic starts with `prefix` (e.g. "4: error: unknown label").
-    bool HasDiagPrefix(const std::string& prefix) const {
+    bool HasDiagPrefix(const Str& prefix) const {
         for (usize i = 0; i < Diags(); ++i) {
-            if (Diag(i).compare(0, prefix.size(), prefix) == 0) return true;
+            if (Diag(i).Compare(0, prefix.Size(), prefix) == 0) return true;
         }
         return false;
     }
     const ParsedDoc& Doc(usize i = 0) const { return *docs.parsed[i]; }
-    std::string Emit(usize i = 0) {
+    Str Emit(usize i = 0) {
         engine_placeholder::StringBuilder<ArenaAllocator> sb(arena);
         EmitDoc(Doc(i), sb);
         return DocParserTestStr(sb.View());
     }
-    std::vector<std::string> Undocumented() const {
-        std::vector<std::string> v;
-        for (usize i = 0; i < docs.undocumented.Size(); ++i) v.push_back(DocParserTestStr(docs.undocumented[i]->qualified));
+    StrList Undocumented() const {
+        StrList v;
+        for (usize i = 0; i < docs.undocumented.Size(); ++i) v.Push(DocParserTestStr(docs.undocumented[i]->qualified));
         return v;
     }
-    const Decl* Find(const std::string& q) const { return FindIn(ex.root, q); }
+    const Decl* Find(const Str& q) const { return FindIn(ex.root, q); }
 
 private:
-    static const Decl* FindIn(const Decl* d, const std::string& q) {
+    static const Decl* FindIn(const Decl* d, const Str& q) {
         if (DocParserTestStr(d->qualified) == q && d->parent != nullptr) return d;
         for (usize i = 0; i < d->children.Size(); ++i) {
             if (const Decl* r = FindIn(d->children[i], q)) return r;
@@ -74,41 +71,41 @@ private:
 };
 
 // "a\nb" -> "/// a\n/// b\n"; empty lines become "///".
-std::string AsComment(const std::string& text) {
-    std::string out;
-    size_t pos = 0;
-    while (pos <= text.size()) {
-        size_t nl = text.find('\n', pos);
-        if (nl == std::string::npos) nl = text.size();
-        std::string line = text.substr(pos, nl - pos);
-        out += line.empty() ? "///\n" : "/// " + line + "\n";
+Str AsComment(const Str& text) {
+    Str out;
+    usize pos = 0;
+    while (pos <= text.Size()) {
+        usize nl = text.Find('\n', pos);
+        if (nl == Str::npos) nl = text.Size();
+        Str line = text.Substr(pos, nl - pos);
+        out += line.Empty() ? "///\n" : "/// " + line + "\n";
         pos = nl + 1;
     }
     return out;
 }
 
 // A function with `comment` above it.
-std::string Fn(const std::string& comment, const std::string& decl = "int f(int a, int b);") {
+Str Fn(const Str& comment, const Str& decl = "int f(int a, int b);") {
     return AsComment(comment) + decl + "\n";
 }
 
-std::string DocParserTestReadWhole(const std::string& path) { return docgen_test::ReadFileText(path); }
+Str DocParserTestReadWhole(const Str& path) { return docgen_test::ReadFileText(path); }
 
-void DocParserTestListFiles(const std::string& dir, const char* suffix, std::vector<std::string>& out) {
-    for (const std::string& n : docgen_test::ListNamesSorted(dir)) {
-        std::string p = dir + "/" + n;
+void DocParserTestListFiles(const Str& dir, const char* suffix, StrList& out) {
+    for (const Str& n : docgen_test::ListNamesSorted(dir)) {
+        Str p = dir + "/" + n;
         if (docgen_test::IsDirectoryAt(p)) DocParserTestListFiles(p, suffix, out);
-        else if (p.size() >= engine_placeholder::CStrLength(suffix) && p.compare(p.size() - engine_placeholder::CStrLength(suffix), engine_placeholder::CStrLength(suffix), suffix) == 0)
-            out.push_back(p);
+        else if (p.Size() >= engine_placeholder::CStrLength(suffix) && p.Compare(p.Size() - engine_placeholder::CStrLength(suffix), engine_placeholder::CStrLength(suffix), suffix) == 0)
+            out.Push(p);
     }
 }
 
-bool DocOwns(const std::string& message) {
+bool DocOwns(const Str& message) {
     static const char* prefixes[] = {"unknown label", "duplicate label", "Param name does not match", "Returns on a void",
                                      "missing summary", "empty label", "invalid thread-safety", "malformed", "unterminated code",
                                      "doc comment is not attached", "summary"};
     for (const char* p : prefixes)
-        if (message.rfind(p, 0) == 0) return true;
+        if (message.RFind(p, 0) == 0) return true;
     return false;
 }
 
@@ -117,48 +114,48 @@ bool DocOwns(const std::string& message) {
 // ---- fixtures -----------------------------------------------------------------------------
 
 TEST_CASE("Good fixtures have no doc diagnostics", "[docgen][docs][fixtures]") {
-    std::vector<std::string> files;
-    DocParserTestListFiles(std::string(DOCGEN_FIXTURE_DIR) + "/good", ".h", files);
-    REQUIRE(files.size() >= 13);
+    StrList files;
+    DocParserTestListFiles(Str(DOCGEN_FIXTURE_DIR) + "/good", ".h", files);
+    REQUIRE(files.Size() >= 13);
     for (auto& f : files) {
-        INFO(f);
+        INFO(f.CStr());
         Parsed p(DocParserTestReadWhole(f));
-        if (p.Diags() > 0) INFO(p.Diag(0));
+        if (p.Diags() > 0) INFO(p.Diag(0).CStr());
         REQUIRE(p.Diags() == 0);
         for (usize i = 0; i < p.scan.docs.Size(); ++i) REQUIRE(p.docs.parsed[i] != nullptr);
     }
 }
 
 TEST_CASE("Bad fixtures: the doc parser reports exactly the diagnostics it owns", "[docgen][docs][fixtures]") {
-    std::vector<std::string> files;
-    DocParserTestListFiles(std::string(DOCGEN_FIXTURE_DIR) + "/bad", ".h", files);
+    StrList files;
+    DocParserTestListFiles(Str(DOCGEN_FIXTURE_DIR) + "/bad", ".h", files);
     int checked = 0;
     for (auto& f : files) {
-        INFO(f);
-        std::vector<std::string> expected;
-        std::string exp = DocParserTestReadWhole(f + ".expect");
-        size_t pos = 0;
-        while (pos < exp.size()) {
-            size_t nl = exp.find('\n', pos);
-            if (nl == std::string::npos) nl = exp.size();
-            std::string line = exp.substr(pos, nl - pos);
+        INFO(f.CStr());
+        StrList expected;
+        Str exp = DocParserTestReadWhole(f + ".expect");
+        usize pos = 0;
+        while (pos < exp.Size()) {
+            usize nl = exp.Find('\n', pos);
+            if (nl == Str::npos) nl = exp.Size();
+            Str line = exp.Substr(pos, nl - pos);
             pos = nl + 1;
-            if (line.empty()) continue;
-            size_t c1 = line.find(": ");
-            size_t c2 = line.find(": ", c1 + 2);
-            REQUIRE(c2 != std::string::npos);
-            if (DocOwns(line.substr(c2 + 2))) expected.push_back(line);
+            if (line.Empty()) continue;
+            usize c1 = line.Find(": ");
+            usize c2 = line.Find(": ", c1 + 2);
+            REQUIRE(c2 != Str::npos);
+            if (DocOwns(line.Substr(c2 + 2))) expected.Push(line);
         }
         Parsed p(DocParserTestReadWhole(f));
-        REQUIRE(p.Diags() == expected.size());
-        for (usize i = 0; i < p.Diags(); ++i) REQUIRE(p.Diag(i).compare(0, expected[i].size(), expected[i]) == 0);
-        if (!expected.empty()) ++checked;
+        REQUIRE(p.Diags() == expected.Size());
+        for (usize i = 0; i < p.Diags(); ++i) REQUIRE(p.Diag(i).Compare(0, expected[i].Size(), expected[i]) == 0);
+        if (!expected.Empty()) ++checked;
     }
     REQUIRE(checked >= 5);
 }
 
 TEST_CASE("The contract_labels fixture parses into the expected structure", "[docgen][docs]") {
-    Parsed p(DocParserTestReadWhole(std::string(DOCGEN_FIXTURE_DIR) + "/good/contract_labels.h"));
+    Parsed p(DocParserTestReadWhole(Str(DOCGEN_FIXTURE_DIR) + "/good/contract_labels.h"));
     REQUIRE(p.Diags() == 0);
     const ParsedDoc& d = p.Doc(0);
     REQUIRE(DocParserTestStr(d.summary) == "Reads a value from a handle.");
@@ -277,7 +274,7 @@ TEST_CASE("Duplicate labels are errors; Param is per parameter", "[docgen][docs]
 TEST_CASE("The Backend label is known and keeps its text", "[docgen][docs]") {
     Parsed p(Fn("Summary.\nBackend: Windows IsDebuggerPresent; macOS sysctl P_TRACED."));
     REQUIRE(p.Diags() == 0);
-    REQUIRE(std::string(LabelName(LabelKind::Backend)) == "Backend");
+    REQUIRE(Str(LabelName(LabelKind::Backend)) == "Backend");
 }
 
 TEST_CASE("Empty labels are errors", "[docgen][docs]") {
@@ -290,7 +287,7 @@ TEST_CASE("Empty labels are errors", "[docgen][docs]") {
 
 TEST_CASE("Thread-safety must start with a known category", "[docgen][docs]") {
     for (const char* c : {"immutable", "thread-safe", "thread-compatible", "owner-thread-only", "single-consumer", "not-thread-safe"}) {
-        Parsed p(Fn(std::string("Summary.\nThread-safety: ") + c + ". Details."));
+        Parsed p(Fn(Str("Summary.\nThread-safety: ") + c + ". Details."));
         INFO(c);
         REQUIRE(p.Diags() == 0);
     }
@@ -305,7 +302,7 @@ TEST_CASE("See needs a reference; malformed references are errors", "[docgen][do
     {
         Parsed p(Fn("Summary.\nSee: the other function."));
         REQUIRE(p.Diags() == 1);
-        REQUIRE(p.Diag(0).compare(0, 24, "2: error: malformed labe") == 0);
+        REQUIRE(p.Diag(0).Compare(0, 24, "2: error: malformed labe") == 0);
     }
     {
         Parsed p(Fn("Summary with [[Broken."));
@@ -315,7 +312,7 @@ TEST_CASE("See needs a reference; malformed references are errors", "[docgen][do
     {
         Parsed p(Fn("Summary with [[ ]] nothing."));
         REQUIRE(p.Diags() == 1);
-        REQUIRE(p.Diag(0).compare(0, 33, "1: error: malformed reference: em") == 0);
+        REQUIRE(p.Diag(0).Compare(0, 33, "1: error: malformed reference: em") == 0);
     }
     {
         Parsed p(Fn("Summary with [[a::B::c(Counter&)]] and [[X]]."));
@@ -348,9 +345,9 @@ TEST_CASE("Summary rules", "[docgen][docs]") {
         REQUIRE(p.Diag(0) == "1: warning: summary does not end in a period");
     }
     {
-        Parsed p(Fn(std::string(170, 'x') + "."));
+        Parsed p(Fn(Str(170, 'x') + "."));
         REQUIRE(p.Diags() == 1);
-        REQUIRE(p.Diag(0).compare(0, 25, "1: warning: summary too l") == 0);
+        REQUIRE(p.Diag(0).Compare(0, 25, "1: warning: summary too l") == 0);
     }
 }
 
@@ -369,7 +366,7 @@ TEST_CASE("Param names must match real parameters", "[docgen][docs]") {
     {
         Parsed p(Fn("Adds.\nParam: no name."));
         REQUIRE(p.Diags() == 1);
-        REQUIRE(p.Diag(0).compare(0, 40, "2: error: malformed label: Param needs a") == 0);
+        REQUIRE(p.Diag(0).Compare(0, 40, "2: error: malformed label: Param needs a") == 0);
     }
     { // typo: case matters
         Parsed p(Fn("Adds.\nParam A: x."));
@@ -379,12 +376,12 @@ TEST_CASE("Param names must match real parameters", "[docgen][docs]") {
 
 TEST_CASE("Parameter names are extracted from every declarator form", "[docgen][docs]") {
     Parsed p(
-        "/// F.\nvoid F(const char* name, unsigned count, bool (*done)(void* user), int (&arr)[3], std::size_t, const Foo&, "
+        "/// F.\nvoid F(const char* name, unsigned count, bool (*done)(void* user), int (&arr)[3], std::usize, const Foo&, "
         "Foo<int, 2>& tmpl, int def = 4, Args... rest);\n"
         "/// G.\nvoid G(void);\n"
         "/// H.\nvoid H(int, ...);\n");
     const Decl* f = p.Find("F");
-    std::string names;
+    Str names;
     for (usize i = 0; i < f->params.Size(); ++i) names += DocParserTestStr(f->params[i]) + ",";
     REQUIRE(names == "name,count,done,arr,tmpl,def,rest,");
     REQUIRE(p.Find("G")->params.Size() == 0);
@@ -442,7 +439,7 @@ TEST_CASE("Undocumented public symbols are listed, not errors", "[docgen][docs]"
         "/// Class.\nclass K {\npublic:\n  void M();\n  int v; ///< Trailing doc.\n  int w;\nprivate:\n  void P();\n};\n"
         "enum class E { X, ///< Doc.\n Y };\n");
     REQUIRE(p.Diags() == 0);
-    std::vector<std::string> want = {"B", "n::C", "K::M", "K::w", "E", "E::Y"};
+    StrList want = {"B", "n::C", "K::M", "K::w", "E", "E::Y"};
     REQUIRE(p.Undocumented() == want);
 }
 
@@ -462,7 +459,7 @@ TEST_CASE("An override without a doc comment inherits from the base", "[docgen][
     REQUIRE(ResolveInherited(*p.Find("A::F"), p.ex) == nullptr);
     // Inheriting members are not reported as undocumented.
     for (auto& n : p.Undocumented()) {
-        INFO(n);
+        INFO(n.CStr());
         REQUIRE(n != "B::F");
         REQUIRE(n != "C::F");
     }
@@ -475,7 +472,7 @@ TEST_CASE("An override whose bases have no docs stays undocumented; constness mu
     REQUIRE(ResolveInherited(*p.Find("B::F"), p.ex) == nullptr);
     REQUIRE(ResolveInherited(*p.Find("B::H"), p.ex) == nullptr);
     auto u = p.Undocumented();
-    REQUIRE(std::find(u.begin(), u.end(), "B::F") != u.end());
+    REQUIRE(u.Has("B::F"));
 }
 
 // ---- attachment ---------------------------------------------------------------------------
@@ -502,18 +499,18 @@ TEST_CASE("A doc comment on a non-declaration is an error", "[docgen][docs]") {
 // ---- round trip ---------------------------------------------------------------------------
 
 TEST_CASE("Emit then parse then emit is stable", "[docgen][docs][roundtrip]") {
-    std::vector<std::string> files;
-    DocParserTestListFiles(std::string(DOCGEN_FIXTURE_DIR) + "/good", ".h", files);
+    StrList files;
+    DocParserTestListFiles(Str(DOCGEN_FIXTURE_DIR) + "/good", ".h", files);
     int docs = 0;
     for (auto& f : files) {
-        INFO(f);
+        INFO(f.CStr());
         Parsed p(DocParserTestReadWhole(f));
         for (usize i = 0; i < p.scan.docs.Size(); ++i) {
             if (p.scan.docs[i].kind != DocKind::Declaration) continue;
-            std::string e1 = p.Emit(i);
-            Parsed q(AsComment(e1.substr(0, e1.size() - 1)) + "void g();\n"); // drop the final '\n'
-            INFO(e1);
-            std::string e2 = q.Emit(0);
+            Str e1 = p.Emit(i);
+            Parsed q(AsComment(e1.Substr(0, e1.Size() - 1)) + "void g();\n"); // drop the final '\n'
+            INFO(e1.CStr());
+            Str e2 = q.Emit(0);
             REQUIRE(e1 == e2);
             ++docs;
         }
@@ -524,20 +521,20 @@ TEST_CASE("Emit then parse then emit is stable", "[docgen][docs][roundtrip]") {
 TEST_CASE("Round trip preserves a rich comment exactly", "[docgen][docs][roundtrip]") {
     Parsed p(Fn("Summary line.\n\nDetails with [[Ref]] and `code`.\n\n- a\n- b\n  more\n\n```cpp\nx;\n\ny;\n```\n\n"
                 "Param a: first,\n  continued.\nReturns: r.\nExample: e.\n```cpp\nz;\n```\nSee: [[A]]"));
-    std::string e1 = p.Emit();
+    Str e1 = p.Emit();
     REQUIRE(e1 ==
             "Summary line.\n\nDetails with [[Ref]] and `code`.\n\n- a\n- b more\n\n```cpp\nx;\n\ny;\n```\n\n"
             "Param a: first, continued.\nReturns: r.\nExample: e.\n```cpp\nz;\n```\nSee: [[A]]\n");
-    Parsed q(Fn(e1.substr(0, e1.size() - 1)));
+    Parsed q(Fn(e1.Substr(0, e1.Size() - 1)));
     REQUIRE(q.Emit() == e1);
 }
 
 // ---- robustness -------------------------------------------------------------------------------
 
 TEST_CASE("Mutated comments never crash the doc parser", "[docgen][docs][fuzz]") {
-    std::vector<std::string> files;
-    DocParserTestListFiles(std::string(DOCGEN_FIXTURE_DIR) + "/good", ".h", files);
-    DocParserTestListFiles(std::string(DOCGEN_FIXTURE_DIR) + "/bad", ".h", files);
+    StrList files;
+    DocParserTestListFiles(Str(DOCGEN_FIXTURE_DIR) + "/good", ".h", files);
+    DocParserTestListFiles(Str(DOCGEN_FIXTURE_DIR) + "/bad", ".h", files);
     unsigned long long seed = 0x2545F4914F6CDD1Dull;
     auto next = [&]() {
         seed = seed * 6364136223846793005ull + 1442695040888963407ull;
@@ -545,16 +542,16 @@ TEST_CASE("Mutated comments never crash the doc parser", "[docgen][docs][fuzz]")
     };
     const char* junk[] = {"[[", "]]", "`", "```", "Param ", "Returns:", "Example:", "See: ", ":", "- ", "  ", "///\n", "/// ", "\n\n", "Thread-safety:"};
     for (auto& f : files) {
-        std::string base = DocParserTestReadWhole(f);
+        Str base = DocParserTestReadWhole(f);
         for (int round = 0; round < 40; ++round) {
-            std::string s = base;
+            Str s = base;
             int edits = 1 + static_cast<int>(next() % 5);
-            for (int k = 0; k < edits && !s.empty(); ++k) {
-                size_t at = next() % s.size();
+            for (int k = 0; k < edits && !s.Empty(); ++k) {
+                usize at = next() % s.Size();
                 switch (next() % 3) {
-                case 0: s.erase(at, 1 + next() % 8); break;
-                case 1: s.insert(at, junk[next() % (sizeof(junk) / sizeof(junk[0]))]); break;
-                default: s.resize(at); break;
+                case 0: s.Erase(at, 1 + next() % 8); break;
+                case 1: s.Insert(at, junk[next() % (sizeof(junk) / sizeof(junk[0]))]); break;
+                default: s.Resize(at); break;
                 }
             }
             Parsed p(s);
@@ -577,7 +574,7 @@ TEST_CASE("[review] overrides inherit even when parameter names differ from the 
     REQUIRE(ResolveInherited(*p.Find("D::Hook"), p.ex) != nullptr);
     REQUIRE(ResolveInherited(*p.Find("D::Get"), p.ex) != nullptr);
     for (auto& n : p.Undocumented()) {
-        INFO(n);
+        INFO(n.CStr());
         REQUIRE(n != "D::Hook");
         REQUIRE(n != "D::Get");
     }

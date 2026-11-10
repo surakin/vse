@@ -1,13 +1,6 @@
-#include <dirent.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include <algorithm>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <string>
-#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -17,21 +10,25 @@
 #include "source_file.h"
 
 using namespace docgen;
+using docgen_test::Num;
+using docgen_test::Str;
+using docgen_test::StrList;
+using docgen_test::StrPairList;
 namespace io = engine_placeholder::io;
 
 namespace {
 
-std::string ReferenceTestStr(StringView v) { return std::string(v.Data(), v.Length()); }
+Str ReferenceTestStr(StringView v) { return Str(v.Data(), v.Length()); }
 
-std::string ReferenceTestReadWhole(const std::string& path) { return docgen_test::ReadFileText(path); }
+Str ReferenceTestReadWhole(const Str& path) { return docgen_test::ReadFileText(path); }
 
-void WriteWhole(const std::string& path, const std::string& content) { docgen_test::WriteFileText(path, content); }
+void WriteWhole(const Str& path, const Str& content) { docgen_test::WriteFileText(path, content); }
 
-std::vector<std::string> ListDir(const std::string& dir) { return docgen_test::ListNamesSorted(dir); }
+StrList ListDir(const Str& dir) { return docgen_test::ListNamesSorted(dir); }
 
 // A scratch directory removed with its (flat) contents.
 struct TempDir {
-    std::string path;
+    Str path;
     TempDir() {
         path = docgen_test::MakeTempRoot("docgen_ref");
     }
@@ -40,36 +37,36 @@ struct TempDir {
     }
 };
 
-const std::string kRoot = std::string(DOCGEN_FIXTURE_DIR);
-const std::string kMap = kRoot + "/ref/modules.txt";
-const std::string kExpected = kRoot + "/ref/expected";
+const Str kRoot = Str(DOCGEN_FIXTURE_DIR);
+const Str kMap = kRoot + "/ref/modules.txt";
+const Str kExpected = kRoot + "/ref/expected";
 
 struct Built {
     ArenaAllocator arena{usize{1} << 28};
     ReferenceBuild build{arena};
     bool ok;
-    explicit Built(const std::string& root = kRoot, const std::string& map = kMap)
-        : ok(BuildReference(StringView(root.data(), root.size()), StringView(map.data(), map.size()), arena, build)) {}
+    explicit Built(const Str& root = kRoot, const Str& map = kMap)
+        : ok(BuildReference(StringView(root.Data(), root.Size()), StringView(map.Data(), map.Size()), arena, build)) {}
 
-    std::string File(const std::string& name) const {
+    Str File(const Str& name) const {
         for (usize i = 0; i < build.files.Size(); ++i) {
             if (ReferenceTestStr(build.files[i].name) == name) return ReferenceTestStr(build.files[i].content);
         }
         return "<none>";
     }
-    std::vector<std::string> Diags() const {
-        std::vector<std::string> v;
+    StrList Diags() const {
+        StrList v;
         for (usize i = 0; i < build.index.diagnostics.Size(); ++i) {
             const FileDiag& f = build.index.diagnostics[i];
-            v.push_back(ReferenceTestStr(f.path) + ":" + std::to_string(f.d.line) + ": " + SeverityName(f.d.severity) + ": " + ReferenceTestStr(f.d.message));
+            v.Push(ReferenceTestStr(f.path) + ":" + Num(f.d.line) + ": " + SeverityName(f.d.severity) + ": " + ReferenceTestStr(f.d.message));
         }
         return v;
     }
 };
 
-bool HasDiag(const Built& b, const std::string& needle) {
+bool HasDiag(const Built& b, const Str& needle) {
     for (auto& d : b.Diags()) {
-        if (d.find(needle) != std::string::npos) return true;
+        if (d.Find(needle) != Str::npos) return true;
     }
     return false;
 }
@@ -77,14 +74,14 @@ bool HasDiag(const Built& b, const std::string& needle) {
 // Builds a throwaway project: files = {relative path -> content}, plus the map text.
 struct Project {
     TempDir dir;
-    explicit Project(const std::vector<std::pair<std::string, std::string>>& files, const std::string& map) {
+    explicit Project(const StrPairList& files, const Str& map) {
         for (auto& f : files) {
             WriteWhole(dir.path + "/" + f.first, f.second);
         }
         WriteWhole(dir.path + "/modules.txt", map);
     }
     // the TempDir removes the whole tree, nested directories included
-    std::string Map() const { return dir.path + "/modules.txt"; }
+    Str Map() const { return dir.path + "/modules.txt"; }
 };
 
 } // namespace
@@ -134,7 +131,7 @@ TEST_CASE("Module map parsing and its errors", "[docgen][reference][map]") {
         INFO(text);
         REQUIRE(m->diagnostics.Size() >= 1);
         REQUIRE(m->diagnostics[0].line == line);
-        REQUIRE(ReferenceTestStr(m->diagnostics[0].message).find(expect) != std::string::npos);
+        REQUIRE(ReferenceTestStr(m->diagnostics[0].message).Find(expect) != Str::npos);
     };
     err("header x.h\n", "outside a module", 1);
     err("module a\n", "malformed module line", 1);
@@ -153,31 +150,31 @@ TEST_CASE("Module expansion is sorted, deduplicated and independent of input ord
     ModuleMap map(arena);
     ParseModuleMap(StringView("module m \"M\"\n header a/*.h\n header a/b.h\n exclude a/skip.h\n"), arena, map);
     REQUIRE_FALSE(map.HasErrors());
-    std::vector<std::string> names = {"a/z.h", "a/b.h", "a/skip.h", "a/c.h", "q/other.h", "a/sub/deep.h", "a/b.h"};
-    std::vector<std::string> first;
+    StrList names = {"a/z.h", "a/b.h", "a/skip.h", "a/c.h", "q/other.h", "a/sub/deep.h", "a/b.h"};
+    StrList first;
     for (int round = 0; round < 6; ++round) {
         Vector<StringView, ArenaAllocator> files(arena), out(arena);
-        for (auto& n : names) files.Push(StringView(n.data(), n.size()));
+        for (auto& n : names) files.Push(StringView(n.Data(), n.Size()));
         ExpandModule(*map.modules[0], files, arena, out);
-        std::vector<std::string> got;
-        for (usize i = 0; i < out.Size(); ++i) got.push_back(ReferenceTestStr(out[i]));
+        StrList got;
+        for (usize i = 0; i < out.Size(); ++i) got.Push(ReferenceTestStr(out[i]));
         if (round == 0) first = got;
         REQUIRE(got == first);
-        std::next_permutation(names.begin(), names.end());
-        std::rotate(names.begin(), names.begin() + 1, names.end());
+        names.NextPermutation();
+        names.RotateLeft(1);
     }
-    REQUIRE(first == (std::vector<std::string>{"a/b.h", "a/c.h", "a/z.h"}));
+    REQUIRE(first == (StrList{"a/b.h", "a/c.h", "a/z.h"}));
 }
 
 TEST_CASE("File collection walks directories deterministically after sorting", "[docgen][reference][map]") {
     ArenaAllocator arena(usize{1} << 24);
     Vector<StringView, ArenaAllocator> files(arena);
-    REQUIRE(CollectFiles(StringView(kRoot.data(), kRoot.size()), StringView("ref"), arena, files));
-    std::vector<std::string> got;
-    for (usize i = 0; i < files.Size(); ++i) got.push_back(ReferenceTestStr(files[i]));
-    REQUIRE(std::find(got.begin(), got.end(), "ref/headers/counter.h") != got.end());
-    REQUIRE(std::find(got.begin(), got.end(), "ref/modules.txt") != got.end());
-    REQUIRE_FALSE(CollectFiles(StringView(kRoot.data(), kRoot.size()), StringView("nonexistent"), arena, files));
+    REQUIRE(CollectFiles(StringView(kRoot.Data(), kRoot.Size()), StringView("ref"), arena, files));
+    StrList got;
+    for (usize i = 0; i < files.Size(); ++i) got.Push(ReferenceTestStr(files[i]));
+    REQUIRE(got.Has("ref/headers/counter.h"));
+    REQUIRE(got.Has("ref/modules.txt"));
+    REQUIRE_FALSE(CollectFiles(StringView(kRoot.Data(), kRoot.Size()), StringView("nonexistent"), arena, files));
 }
 
 // ---- symbol IDs, anchors, resolution --------------------------------------------------------
@@ -195,8 +192,8 @@ TEST_CASE("Symbol IDs drop the outer namespace, normalize parameters and keep qu
               "module m \"M\"\n header h/a.h\n");
     Built b(p.dir.path, p.Map());
     REQUIRE(b.ok);
-    std::vector<std::string> ids;
-    for (usize i = 0; i < b.build.index.symbols.Size(); ++i) ids.push_back(ReferenceTestStr(b.build.index.symbols[i]->id));
+    StrList ids;
+    for (usize i = 0; i < b.build.index.symbols.Size(); ++i) ids.Push(ReferenceTestStr(b.build.index.symbols[i]->id));
     REQUIRE(ids[0] == "n::K");
     REQUIRE(ids[1] == "n::K::Sum(const std::atomic<int>&,unsigned long long,char* const[],Foo<int,2>) const noexcept");
     REQUIRE(ids[2] == "n::K::Plain()");
@@ -214,24 +211,24 @@ TEST_CASE("Anchors: lowercase, punctuation words for * & operators, remaining ti
               "module m \"M\"\n header h/a.h\n");
     Built b(p.dir.path, p.Map());
     REQUIRE(b.ok);
-    std::vector<std::string> anchors;
-    for (usize i = 0; i < b.build.index.symbols.Size(); ++i) anchors.push_back(ReferenceTestStr(b.build.index.symbols[i]->anchor));
-    REQUIRE(anchors == (std::vector<std::string>{"do-int", "do-int-star", "do-int-amp", "do-int-2"}));
+    StrList anchors;
+    for (usize i = 0; i < b.build.index.symbols.Size(); ++i) anchors.Push(ReferenceTestStr(b.build.index.symbols[i]->anchor));
+    REQUIRE(anchors == (StrList{"do-int", "do-int-star", "do-int-amp", "do-int-2"}));
 }
 
 TEST_CASE("Hidden, Internal and namespace-less declarations are indexed correctly", "[docgen][reference][index]") {
     Built b;
     REQUIRE(b.ok);
-    std::vector<std::string> ids;
-    for (usize i = 0; i < b.build.index.symbols.Size(); ++i) ids.push_back(ReferenceTestStr(b.build.index.symbols[i]->id));
-    auto has = [&](const char* id) { return std::find(ids.begin(), ids.end(), id) != ids.end(); };
+    StrList ids;
+    for (usize i = 0; i < b.build.index.symbols.Size(); ++i) ids.Push(ReferenceTestStr(b.build.index.symbols[i]->id));
+    auto has = [&](const char* id) { return ids.Has(id); };
     REQUIRE(has("demo::Counter::Increment(unsigned long)"));
     REQUIRE_FALSE(has("demo::Counter::count_"));      // private
     REQUIRE_FALSE(has("demo::HelperForTests()"));     // Internal:
     REQUIRE_FALSE(has("ForTests()"));                 // Internal: in the corpus
     REQUIRE(has("DEMO_SQUARE"));
     // Source order within a header: the macro sits between MakeCounter and Count.
-    auto pos = [&](const char* id) { return std::find(ids.begin(), ids.end(), id) - ids.begin(); };
+    auto pos = [&](const char* id) { return ids.IndexOf(id); };
     REQUIRE(pos("demo::MakeCounter(unsigned long)") < pos("DEMO_SQUARE"));
     REQUIRE(pos("DEMO_SQUARE") < pos("demo::Count"));
 }
@@ -344,11 +341,11 @@ TEST_CASE("Excluded headers are never parsed", "[docgen][reference][index]") {
 TEST_CASE("Generated pages match the committed golden output", "[docgen][reference][golden]") {
     Built b;
     REQUIRE(b.ok);
-    std::vector<std::string> names;
-    for (usize i = 0; i < b.build.files.Size(); ++i) names.push_back(ReferenceTestStr(b.build.files[i].name));
-    REQUIRE(names == (std::vector<std::string>{"README.md", "demo.md", "extras.md", "symbols.txt"}));
+    StrList names;
+    for (usize i = 0; i < b.build.files.Size(); ++i) names.Push(ReferenceTestStr(b.build.files[i].name));
+    REQUIRE(names == (StrList{"README.md", "demo.md", "extras.md", "symbols.txt"}));
     for (auto& n : names) {
-        INFO(n);
+        INFO(n.CStr());
         REQUIRE(b.File(n) == ReferenceTestReadWhole(kExpected + "/" + n));
     }
     // No stray files in the golden directory.
@@ -358,8 +355,8 @@ TEST_CASE("Generated pages match the committed golden output", "[docgen][referen
 TEST_CASE("Rendering details", "[docgen][reference][render]") {
     Built b;
     REQUIRE(b.ok);
-    const std::string demo = b.File("demo.md");
-    auto has = [&](const char* s) { return demo.find(s) != std::string::npos; };
+    const Str demo = b.File("demo.md");
+    auto has = [&](const char* s) { return demo.Find(s) != Str::npos; };
     REQUIRE(has("# Demo Module\n\n_Generated by docgen. Do not edit._\n"));
     REQUIRE(has("**Headers:** `ref/headers/counter.h`, `ref/headers/shapes.h`"));
     REQUIRE(has("The join primitive of the demo module."));                          // file overview
@@ -376,17 +373,17 @@ TEST_CASE("Rendering details", "[docgen][reference][render]") {
     REQUIRE_FALSE(has("count_"));
     REQUIRE_FALSE(has("HelperForTests"));
 
-    const std::string extras = b.File("extras.md");
-    REQUIRE(extras.find("Base(const Base&) = delete;") != std::string::npos);
-    REQUIRE(extras.find("virtual void Hook() = 0;") != std::string::npos);
-    REQUIRE(extras.find("template <>\nclass Buffer<char, 1> { ... }") != std::string::npos);
-    REQUIRE(extras.find("| Deprecated | use [`Read`](#read-int-int-star) instead") != std::string::npos);
-    REQUIRE(extras.find("_Undocumented._") != std::string::npos);
+    const Str extras = b.File("extras.md");
+    REQUIRE(extras.Find("Base(const Base&) = delete;") != Str::npos);
+    REQUIRE(extras.Find("virtual void Hook() = 0;") != Str::npos);
+    REQUIRE(extras.Find("template <>\nclass Buffer<char, 1> { ... }") != Str::npos);
+    REQUIRE(extras.Find("| Deprecated | use [`Read`](#read-int-int-star) instead") != Str::npos);
+    REQUIRE(extras.Find("_Undocumented._") != Str::npos);
 
-    const std::string syms = b.File("symbols.txt");
-    REQUIRE(syms.compare(0, 20, "# docgen symbols v1\n") == 0);
-    REQUIRE(syms.find("demo::Counter::Count() const\tfunction\tdemo\tdemo-counter-count-const\tdemo.md\tref/headers/counter.h:47\n") !=
-            std::string::npos);
+    const Str syms = b.File("symbols.txt");
+    REQUIRE(syms.Compare(0, 20, "# docgen symbols v1\n") == 0);
+    REQUIRE(syms.Find("demo::Counter::Count() const\tfunction\tdemo\tdemo-counter-count-const\tdemo.md\tref/headers/counter.h:47\n") !=
+            Str::npos);
 }
 
 TEST_CASE("Cross-module links name the other page", "[docgen][reference][render]") {
@@ -394,8 +391,8 @@ TEST_CASE("Cross-module links name the other page", "[docgen][reference][render]
               "module one \"One\"\n header h/a.h\nmodule two/x \"Two\"\n header g/b.h\n");
     Built b(p.dir.path, p.Map());
     REQUIRE(b.ok);
-    REQUIRE(b.File("one.md").find("Uses [`B`](two-x.md#b).") != std::string::npos);
-    REQUIRE(b.File("README.md").find("[Two](two-x.md)") != std::string::npos);
+    REQUIRE(b.File("one.md").Find("Uses [`B`](two-x.md#b).") != Str::npos);
+    REQUIRE(b.File("README.md").Find("[Two](two-x.md)") != Str::npos);
 }
 
 // ---- determinism, idempotence, staleness -------------------------------------------------------
@@ -417,96 +414,97 @@ TEST_CASE("reference writes, then check passes; stale output is detected", "[doc
     REQUIRE(b.ok);
     {
         Vector<FileDiag, ArenaAllocator> problems(b.arena);
-        StringView dir(out.path.data(), out.path.size());
+        StringView dir(out.path.Data(), out.path.Size());
         REQUIRE(WriteReference(b.build, dir, b.arena, problems));
         REQUIRE(problems.Size() == 0);
-        REQUIRE(ListDir(out.path) == (std::vector<std::string>{"README.md", "demo.md", "extras.md", "symbols.txt"}));
+        REQUIRE(ListDir(out.path) == (StrList{"README.md", "demo.md", "extras.md", "symbols.txt"}));
 
         // idempotent: a second write changes nothing, and check is clean
-        std::string before = ReferenceTestReadWhole(out.path + "/demo.md");
+        Str before = ReferenceTestReadWhole(out.path + "/demo.md");
         REQUIRE(WriteReference(b.build, dir, b.arena, problems));
         REQUIRE(ReferenceTestReadWhole(out.path + "/demo.md") == before);
         REQUIRE(CheckReference(b.build, dir, b.arena, problems));
         REQUIRE(problems.Size() == 0);
     }
-    auto check = [&](std::vector<std::string>& msgs) {
+    auto check = [&](StrList& msgs) {
         Vector<FileDiag, ArenaAllocator> problems(b.arena);
-        bool ok = CheckReference(b.build, StringView(out.path.data(), out.path.size()), b.arena, problems);
-        for (usize i = 0; i < problems.Size(); ++i) msgs.push_back(ReferenceTestStr(problems[i].path).substr(out.path.size() + 1) + ":" +
-                                                                   std::to_string(problems[i].d.line) + ": " + ReferenceTestStr(problems[i].d.message));
+        bool ok = CheckReference(b.build, StringView(out.path.Data(), out.path.Size()), b.arena, problems);
+        for (usize i = 0; i < problems.Size(); ++i) msgs.Push(ReferenceTestStr(problems[i].path).Substr(out.path.Size() + 1) + ":" +
+                                                                   Num(problems[i].d.line) + ": " + ReferenceTestStr(problems[i].d.message));
         return ok;
     };
     // 1. a changed page
-    std::string demo = ReferenceTestReadWhole(out.path + "/demo.md");
+    Str demo = ReferenceTestReadWhole(out.path + "/demo.md");
     WriteWhole(out.path + "/demo.md", demo + "extra\n");
     {
-        std::vector<std::string> msgs;
+        StrList msgs;
         REQUIRE_FALSE(check(msgs));
-        REQUIRE(msgs.size() == 1);
-        REQUIRE(msgs[0].compare(0, 8, "demo.md:") == 0);
-        REQUIRE(msgs[0].find("out of date") != std::string::npos);
+        REQUIRE(msgs.Size() == 1);
+        REQUIRE(msgs[0].Compare(0, 8, "demo.md:") == 0);
+        REQUIRE(msgs[0].Find("out of date") != Str::npos);
         // reports the first differing line
-        size_t lines = std::count(demo.begin(), demo.end(), '\n');
-        REQUIRE(msgs[0].find("line " + std::to_string(lines + 1)) != std::string::npos);
+        usize lines = 0;
+        for (usize i = 0; i < demo.Size(); ++i) lines += demo[i] == '\n' ? 1 : 0;
+        REQUIRE(msgs[0].Find("line " + Num(lines + 1)) != Str::npos);
     }
     WriteWhole(out.path + "/demo.md", demo);
     // 2. a missing file
     {
         io::Path symbols;
-        REQUIRE(io::Path::Parse(StringView((out.path + "/symbols.txt").c_str()), io::NativePathStyle(), &symbols));
+        REQUIRE(io::Path::Parse(StringView((out.path + "/symbols.txt").CStr()), io::NativePathStyle(), &symbols));
         REQUIRE(io::Remove(symbols).Ok());
     }
     {
-        std::vector<std::string> msgs;
+        StrList msgs;
         REQUIRE_FALSE(check(msgs));
-        REQUIRE(msgs.size() == 1);
-        REQUIRE(msgs[0].find("missing") != std::string::npos);
+        REQUIRE(msgs.Size() == 1);
+        REQUIRE(msgs[0].Find("missing") != Str::npos);
     }
     // 3. a generated page that is no longer produced; a hand-written md is left alone
     Vector<FileDiag, ArenaAllocator> problems(b.arena);
-    REQUIRE(WriteReference(b.build, StringView(out.path.data(), out.path.size()), b.arena, problems));
-    WriteWhole(out.path + "/old.md", std::string("# Old\n\n") + kGeneratedMarker + "\n");
+    REQUIRE(WriteReference(b.build, StringView(out.path.Data(), out.path.Size()), b.arena, problems));
+    WriteWhole(out.path + "/old.md", Str("# Old\n\n") + kGeneratedMarker + "\n");
     WriteWhole(out.path + "/notes.md", "# Hand written\n");
     {
-        std::vector<std::string> msgs;
+        StrList msgs;
         REQUIRE_FALSE(check(msgs));
-        REQUIRE(msgs.size() == 1);
-        REQUIRE(msgs[0].compare(0, 7, "old.md:") == 0);
+        REQUIRE(msgs.Size() == 1);
+        REQUIRE(msgs[0].Compare(0, 7, "old.md:") == 0);
     }
     // reference removes the stale generated page and keeps the hand-written one
-    REQUIRE(WriteReference(b.build, StringView(out.path.data(), out.path.size()), b.arena, problems));
-    REQUIRE(ListDir(out.path) == (std::vector<std::string>{"README.md", "demo.md", "extras.md", "notes.md", "symbols.txt"}));
-    std::vector<std::string> msgs;
+    REQUIRE(WriteReference(b.build, StringView(out.path.Data(), out.path.Size()), b.arena, problems));
+    REQUIRE(ListDir(out.path) == (StrList{"README.md", "demo.md", "extras.md", "notes.md", "symbols.txt"}));
+    StrList msgs;
     REQUIRE(check(msgs));
 }
 
 TEST_CASE("The repository's own module map builds (headers and patterns all resolve)", "[docgen][reference][engine]") {
-    const std::string root = std::string(DOCGEN_ENGINE_DIR) + "/..";
-    const std::string map = root + "/docs/reference/modules.txt";
+    const Str root = Str(DOCGEN_ENGINE_DIR) + "/..";
+    const Str map = root + "/docs/reference/modules.txt";
     Built b(root, map);
-    for (auto& d : b.Diags()) INFO(d);
+    for (auto& d : b.Diags()) INFO(d.CStr());
     REQUIRE(b.ok);
     REQUIRE(b.build.index.symbols.Size() > 500);
     // The generated Wayland protocol headers are excluded.
     for (usize i = 0; i < b.build.index.units.Size(); ++i) {
-        REQUIRE(ReferenceTestStr(b.build.index.units[i]->path).find("/generated/") == std::string::npos);
+        REQUIRE(ReferenceTestStr(b.build.index.units[i]->path).Find("/generated/") == Str::npos);
     }
 }
 
 // ---- code-review regressions (Day 40) -----------------------------------------------------------
 
 TEST_CASE("[review] operators, destructors and pointer overloads keep distinct, stable anchors", "[docgen][reference][review]") {
-    auto anchors_for = [](const std::string& body) {
+    auto anchors_for = [](const Str& body) {
         Project p({{"h/a.h", "#pragma once\n" + body}}, "module m \"M\"\n header h/a.h\n");
         Built b(p.dir.path, p.Map());
         REQUIRE(b.ok);
-        std::vector<std::string> v;
+        StrList v;
         for (usize i = 0; i < b.build.index.symbols.Size(); ++i) {
-            v.push_back(ReferenceTestStr(b.build.index.symbols[i]->id) + " => " + ReferenceTestStr(b.build.index.symbols[i]->anchor));
+            v.Push(ReferenceTestStr(b.build.index.symbols[i]->id) + " => " + ReferenceTestStr(b.build.index.symbols[i]->anchor));
         }
         return v;
     };
-    const std::string ops =
+    const Str ops =
         "/// V.\nstruct V {\n"
         "  /// Default.\n  V();\n  /// Dtor.\n  ~V();\n"
         "  /// Minus.\n  V operator-(const V&) const;\n"
@@ -519,8 +517,8 @@ TEST_CASE("[review] operators, destructors and pointer overloads keep distinct, 
     auto first = anchors_for(ops);
     // No anchor needed a -2 tie-break suffix.
     for (auto& a : first) {
-        INFO(a);
-        REQUIRE(a.find("-2") == std::string::npos);
+        INFO(a.CStr());
+        REQUIRE(a.Find("-2") == Str::npos);
     }
     REQUIRE(first[1] == "V::V() => v-v");
     REQUIRE(first[2] == "V::~V() => v-tilde-v");
@@ -528,7 +526,7 @@ TEST_CASE("[review] operators, destructors and pointer overloads keep distinct, 
     REQUIRE(first[7] == "V::operator()(int) const => v-operator-call-int-const");
     REQUIRE(first[8] == "V::operator[](int) const => v-operator-index-int-const");
     // Reordering the operators does not change any anchor.
-    const std::string swapped =
+    const Str swapped =
         "/// V.\nstruct V {\n"
         "  /// Dtor.\n  ~V();\n  /// Default.\n  V();\n"
         "  /// Ne.\n  bool operator!=(const V&) const;\n"
@@ -539,8 +537,8 @@ TEST_CASE("[review] operators, destructors and pointer overloads keep distinct, 
         "  /// Lt.\n  bool operator<(const V&) const;\n"
         "};\n";
     auto second = anchors_for(swapped);
-    std::sort(first.begin(), first.end());
-    std::sort(second.begin(), second.end());
+    first.Sort();
+    second.Sort();
     REQUIRE(first == second);
 }
 
@@ -549,16 +547,16 @@ TEST_CASE("[review] only a real marker line makes a page 'generated'", "[docgen]
     Built b;
     REQUIRE(b.ok);
     Vector<FileDiag, ArenaAllocator> problems(b.arena);
-    StringView dir(out.path.data(), out.path.size());
+    StringView dir(out.path.Data(), out.path.Size());
     REQUIRE(WriteReference(b.build, dir, b.arena, problems));
     // Hand-written pages that quote the marker (mid-file, or as an indented line) are not touched.
-    WriteWhole(out.path + "/design.md", std::string("# Design\n\nThe tool writes `") + kGeneratedMarker + "` at the top.\n");
-    WriteWhole(out.path + "/quote.md", std::string("# Quote\n\n    ") + kGeneratedMarker + "\n");
+    WriteWhole(out.path + "/design.md", Str("# Design\n\nThe tool writes `") + kGeneratedMarker + "` at the top.\n");
+    WriteWhole(out.path + "/quote.md", Str("# Quote\n\n    ") + kGeneratedMarker + "\n");
     WriteWhole(out.path + "/nolines.md", kGeneratedMarker);
     REQUIRE(CheckReference(b.build, dir, b.arena, problems));
     REQUIRE(problems.Size() == 0);
     REQUIRE(WriteReference(b.build, dir, b.arena, problems));
-    REQUIRE(ListDir(out.path) == (std::vector<std::string>{"README.md", "demo.md", "design.md", "extras.md", "nolines.md", "quote.md", "symbols.txt"}));
+    REQUIRE(ListDir(out.path) == (StrList{"README.md", "demo.md", "design.md", "extras.md", "nolines.md", "quote.md", "symbols.txt"}));
 }
 
 TEST_CASE("[review] a missing module map is an I/O failure; documentation errors are not", "[docgen][reference][review]") {
@@ -576,17 +574,17 @@ TEST_CASE("[review] reference creates a nested output directory", "[docgen][refe
     Built b;
     REQUIRE(b.ok);
     Vector<FileDiag, ArenaAllocator> problems(b.arena);
-    std::string nested = base.path + "/a/b/c";
-    REQUIRE(WriteReference(b.build, StringView(nested.data(), nested.size()), b.arena, problems));
+    Str nested = base.path + "/a/b/c";
+    REQUIRE(WriteReference(b.build, StringView(nested.Data(), nested.Size()), b.arena, problems));
     REQUIRE(problems.Size() == 0);
-    REQUIRE(ListDir(nested).size() == 4);
+    REQUIRE(ListDir(nested).Size() == 4);
     // the TempDir removes the nested tree
     // a path that cannot be created is reported once, not once per file
-    std::string bad = base.path + "/file";
+    Str bad = base.path + "/file";
     WriteWhole(bad, "x");
-    std::string under_file = bad + "/sub";
+    Str under_file = bad + "/sub";
     Vector<FileDiag, ArenaAllocator> problems2(b.arena);
-    REQUIRE_FALSE(WriteReference(b.build, StringView(under_file.data(), under_file.size()), b.arena, problems2));
+    REQUIRE_FALSE(WriteReference(b.build, StringView(under_file.Data(), under_file.Size()), b.arena, problems2));
     REQUIRE(problems2.Size() == 1);
 }
 
@@ -604,7 +602,7 @@ TEST_CASE("[review] same-ID declarations: a function redeclaration merges, other
 
 TEST_CASE("[review] duplicate classes, enums and variables in one header are errors", "[docgen][reference][review]") {
     for (const char* body : {"/// A.\nstruct S {};\n/// B.\nstruct S {};\n", "/// A.\nint v;\n/// B.\nint v;\n", "/// A.\nenum E { X };\n/// B.\nenum E { Y };\n"}) {
-        Project p({{"h/a.h", std::string("#pragma once\n") + body}}, "module m \"M\"\n header h/a.h\n");
+        Project p({{"h/a.h", Str("#pragma once\n") + body}}, "module m \"M\"\n header h/a.h\n");
         Built b(p.dir.path, p.Map());
         INFO(body);
         REQUIRE_FALSE(b.ok);
@@ -613,8 +611,8 @@ TEST_CASE("[review] duplicate classes, enums and variables in one header are err
 }
 
 TEST_CASE("[review] references to operator() and long overload hints resolve", "[docgen][reference][review]") {
-    std::string params;
-    for (int i = 0; i < 80; ++i) params += std::string(i ? ", " : "") + "SomeLongTypeName" + std::to_string(i) + " p" + std::to_string(i);
+    Str params;
+    for (int i = 0; i < 80; ++i) params += Str(i ? ", " : "") + "SomeLongTypeName" + Num(i) + " p" + Num(i);
     Project p({{"h/a.h",
                 "#pragma once\n"
                 "/// Hash.\nstruct Hash {\n  /// Call.\n  unsigned long operator()(int v) const;\n  /// Index.\n  int operator[](int i) const;\n"
@@ -622,54 +620,54 @@ TEST_CASE("[review] references to operator() and long overload hints resolve", "
               "module m \"M\"\n header h/a.h\n");
     Built b(p.dir.path, p.Map());
     REQUIRE(b.ok);
-    auto id = [&](const std::string& t) {
+    auto id = [&](const Str& t) {
         const Symbol* s = nullptr;
-        ResolveStatus st = ResolveRef(b.build.index, StringView(t.data(), t.size()), s);
-        return st == ResolveStatus::Ok ? ReferenceTestStr(s->id).substr(0, 40) : std::string("<") + std::to_string(static_cast<int>(st)) + ">";
+        ResolveStatus st = ResolveRef(b.build.index, StringView(t.Data(), t.Size()), s);
+        return st == ResolveStatus::Ok ? ReferenceTestStr(s->id).Substr(0, 40) : Str("<") + Num(static_cast<int>(st)) + ">";
     };
     REQUIRE(id("Hash::operator()") == "Hash::operator()(int) const");
     REQUIRE(id("Hash::operator()(int)") == "Hash::operator()(int) const");
     REQUIRE(id("operator()(int)") == "Hash::operator()(int) const");
     REQUIRE(id("Hash::operator[](int)") == "Hash::operator[](int) const");
-    std::string hint = "Wide(";
-    for (int i = 0; i < 80; ++i) hint += std::string(i ? "," : "") + "SomeLongTypeName" + std::to_string(i);
+    Str hint = "Wide(";
+    for (int i = 0; i < 80; ++i) hint += Str(i ? "," : "") + "SomeLongTypeName" + Num(i);
     hint += ")";
-    REQUIRE(id(hint).compare(0, 10, "Hash::Wide") == 0);          // > 512 characters of hint
-    REQUIRE(id(hint.substr(0, hint.size() - 2) + "x)") == "<1>");   // a long hint that differs at the end is NotFound
+    REQUIRE(id(hint).Compare(0, 10, "Hash::Wide") == 0);          // > 512 characters of hint
+    REQUIRE(id(hint.Substr(0, hint.Size() - 2) + "x)") == "<1>");   // a long hint that differs at the end is NotFound
 }
 
 TEST_CASE("[review] file collection does not follow directory symlinks and reports unreadable subdirectories", "[docgen][reference][review]") {
     TempDir dir;
     WriteWhole(dir.path + "/real/a.h", "x"); // creates the directory
     // The links and the unreadable directory below are raw on purpose: they build the exact file-system shapes the walk must survive.
-    REQUIRE(symlink(dir.path.c_str(), (dir.path + "/real/loop").c_str()) == 0); // a cycle
-    REQUIRE(symlink("a.h", (dir.path + "/real/link.h").c_str()) == 0);         // a file symlink is still a file
+    REQUIRE(symlink(dir.path.CStr(), (dir.path + "/real/loop").CStr()) == 0); // a cycle
+    REQUIRE(symlink("a.h", (dir.path + "/real/link.h").CStr()) == 0);         // a file symlink is still a file
     ArenaAllocator arena(usize{1} << 24);
     Vector<StringView, ArenaAllocator> files(arena);
-    REQUIRE(CollectFiles(StringView(dir.path.data(), dir.path.size()), StringView(), arena, files));
-    std::vector<std::string> got;
-    for (usize i = 0; i < files.Size(); ++i) got.push_back(ReferenceTestStr(files[i]));
-    std::sort(got.begin(), got.end());
-    REQUIRE(got == (std::vector<std::string>{"real/a.h", "real/link.h"}));
+    REQUIRE(CollectFiles(StringView(dir.path.Data(), dir.path.Size()), StringView(), arena, files));
+    StrList got;
+    for (usize i = 0; i < files.Size(); ++i) got.Push(ReferenceTestStr(files[i]));
+    got.Sort();
+    REQUIRE(got == (StrList{"real/a.h", "real/link.h"}));
     // an unreadable subdirectory makes the walk report failure (running as root ignores modes)
     if (geteuid() != 0) {
-        mkdir((dir.path + "/locked").c_str(), 0000);
+        mkdir((dir.path + "/locked").CStr(), 0000);
         Vector<StringView, ArenaAllocator> files2(arena);
-        REQUIRE_FALSE(CollectFiles(StringView(dir.path.data(), dir.path.size()), StringView(), arena, files2));
-        chmod((dir.path + "/locked").c_str(), 0700); // so the TempDir can remove it
+        REQUIRE_FALSE(CollectFiles(StringView(dir.path.Data(), dir.path.Size()), StringView(), arena, files2));
+        chmod((dir.path + "/locked").CStr(), 0700); // so the TempDir can remove it
     }
 }
 
 TEST_CASE("Reference: [review] deleted and defaulted members render as such, not as undocumented", "[docgen][reference]") {
     Project p({{"h/a.h", "#pragma once\nnamespace engine_placeholder {\n/// A thing.\nstruct T {\n  T() = default;\n  T(const T&) = delete;\n  /// Doc.\n  void F();\n  void G();\n};\n}\n"}},
               "module m \"M\"\n  header h/*.h\n");
-    std::string map = p.dir.path + "/modules.txt";
+    Str map = p.dir.path + "/modules.txt";
     Built b(p.dir.path, map);
     REQUIRE(b.ok);
-    std::string page = b.File("m.md");
-    CHECK(page.find("_Defaulted._") != std::string::npos);
-    CHECK(page.find("_Deleted._") != std::string::npos);
-    CHECK(page.find("_Undocumented._") != std::string::npos); // G()
+    Str page = b.File("m.md");
+    CHECK(page.Find("_Defaulted._") != Str::npos);
+    CHECK(page.Find("_Deleted._") != Str::npos);
+    CHECK(page.Find("_Undocumented._") != Str::npos); // G()
 }
 
 namespace {
@@ -681,40 +679,40 @@ struct NameOrderGuard {
 
 TEST_CASE("Reference output and the collected file lists do not depend on directory iteration order", "[docgen][reference][determinism]") {
     NameOrderGuard guard;
-    std::vector<std::pair<std::string, std::string>> files;
+    StrPairList files;
     for (int d = 0; d < 6; ++d) {
         for (int f = 0; f < 6; ++f) {
-            const std::string name = "h/d" + std::to_string(d) + "/f" + std::to_string(f) + ".h";
-            files.push_back({name, "#pragma once\nnamespace engine_placeholder {\n/// Thing " + std::to_string(d * 10 + f) + ".\nstruct T" +
-                                       std::to_string(d * 10 + f) + " {};\n}\n"});
+            const Str name = "h/d" + Num(d) + "/f" + Num(f) + ".h";
+            files.Push({name, "#pragma once\nnamespace engine_placeholder {\n/// Thing " + Num(d * 10 + f) + ".\nstruct T" +
+                                       Num(d * 10 + f) + " {};\n}\n"});
         }
     }
-    for (int m = 0; m < 5; ++m) files.push_back({"docs/page" + std::to_string(m) + ".md", "# Page\n"});
-    files.push_back({"top.md", "# Top\n"});
+    for (int m = 0; m < 5; ++m) files.Push({"docs/page" + Num(m) + ".md", "# Page\n"});
+    files.Push({"top.md", "# Top\n"});
     Project p(files, "module m \"M\"\n  header h/*/*.h\n");
-    const std::string root = p.dir.path;
-    const std::string map = p.Map();
-    auto snapshot = [&](u32 seed, std::vector<std::string>* markdown) {
+    const Str root = p.dir.path;
+    const Str map = p.Map();
+    auto snapshot = [&](u32 seed, StrList* markdown) {
         SetNameOrderSeedForTesting(seed);
         Built b(root, map);
         REQUIRE(b.ok);
-        std::vector<std::string> out;
+        StrList out;
         for (usize i = 0; i < b.build.files.Size(); ++i) {
-            out.push_back(ReferenceTestStr(b.build.files[i].name) + "\n" + ReferenceTestStr(b.build.files[i].content));
+            out.Push(ReferenceTestStr(b.build.files[i].name) + "\n" + ReferenceTestStr(b.build.files[i].content));
         }
         Vector<StringView, ArenaAllocator> md(b.arena);
-        REQUIRE(CollectMarkdownFiles(StringView(root.data(), root.size()), b.arena, md));
-        markdown->clear();
-        for (usize i = 0; i < md.Size(); ++i) markdown->push_back(ReferenceTestStr(md[i]));
+        REQUIRE(CollectMarkdownFiles(StringView(root.Data(), root.Size()), b.arena, md));
+        markdown->Clear();
+        for (usize i = 0; i < md.Size(); ++i) markdown->Push(ReferenceTestStr(md[i]));
         return out;
     };
-    std::vector<std::string> base_markdown;
-    const std::vector<std::string> base = snapshot(0, &base_markdown);
-    REQUIRE(base.size() >= 3);
-    REQUIRE(base_markdown.size() == 6);
+    StrList base_markdown;
+    const StrList base = snapshot(0, &base_markdown);
+    REQUIRE(base.Size() >= 3);
+    REQUIRE(base_markdown.Size() == 6);
     for (u32 seed : {1u, 7u, 99u, 12345u}) {
         INFO("seed " << seed);
-        std::vector<std::string> markdown;
+        StrList markdown;
         CHECK(snapshot(seed, &markdown) == base);
         CHECK(markdown == base_markdown);
     }
@@ -729,19 +727,19 @@ TEST_CASE("Reference: a directory that cannot be written keeps the previous outp
     Built b;
     REQUIRE(b.ok);
     Vector<FileDiag, ArenaAllocator> problems(b.arena);
-    REQUIRE(WriteReference(b.build, StringView(out.path.data(), out.path.size()), b.arena, problems));
-    const std::vector<std::string> before = ListDir(out.path);
-    std::vector<std::string> contents;
-    for (const std::string& n : before) contents.push_back(ReferenceTestReadWhole(out.path + "/" + n));
+    REQUIRE(WriteReference(b.build, StringView(out.path.Data(), out.path.Size()), b.arena, problems));
+    const StrList before = ListDir(out.path);
+    StrList contents;
+    for (const Str& n : before) contents.Push(ReferenceTestReadWhole(out.path + "/" + n));
     // The files are about to change, and the directory can no longer take new entries (a temporary file cannot be created).
-    REQUIRE(chmod(out.path.c_str(), 0500) == 0);
+    REQUIRE(chmod(out.path.CStr(), 0500) == 0);
     Built changed;
     REQUIRE(changed.ok);
     changed.build.files[0].content = StringView("replaced\n");
     Vector<FileDiag, ArenaAllocator> failures(changed.arena);
-    CHECK_FALSE(WriteReference(changed.build, StringView(out.path.data(), out.path.size()), changed.arena, failures));
+    CHECK_FALSE(WriteReference(changed.build, StringView(out.path.Data(), out.path.Size()), changed.arena, failures));
     CHECK(failures.Size() >= 1);
-    REQUIRE(chmod(out.path.c_str(), 0700) == 0);
+    REQUIRE(chmod(out.path.CStr(), 0700) == 0);
     CHECK(ListDir(out.path) == before); // no stray temporary files
-    for (size_t i = 0; i < before.size(); ++i) CHECK(ReferenceTestReadWhole(out.path + "/" + before[i]) == contents[i]);
+    for (usize i = 0; i < before.Size(); ++i) CHECK(ReferenceTestReadWhole(out.path + "/" + before[i]) == contents[i]);
 }

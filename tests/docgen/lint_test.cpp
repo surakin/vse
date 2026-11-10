@@ -1,12 +1,4 @@
-#include <ftw.h>
-#include <sys/stat.h>
-#include <unistd.h>
 
-#include <cstdio>
-#include <cstdlib>
-#include <string>
-#include <utility>
-#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -16,14 +8,18 @@
 #include "source_file.h"
 
 using namespace docgen;
+using docgen_test::Num;
+using docgen_test::Str;
+using docgen_test::StrList;
+using docgen_test::StrPairList;
 
 namespace {
 
-std::string LintTestStr(StringView v) { return std::string(v.Data(), v.Length()); }
-StringView LintTestSv(const std::string& s) { return StringView(s.data(), s.size()); }
+Str LintTestStr(StringView v) { return Str(v.Data(), v.Length()); }
+StringView LintTestSv(const Str& s) { return StringView(s.Data(), s.Size()); }
 
 struct LintTestTree {
-    std::string root;
+    Str root;
     LintTestTree() {
         root = docgen_test::MakeTempRoot("docgen_lint");
         docgen_test::MakeDirectory(root + "/h");
@@ -31,7 +27,7 @@ struct LintTestTree {
     ~LintTestTree() {
         docgen_test::RemoveTreeAt(root);
     }
-    void Put(const std::string& rel, const std::string& content) {
+    void Put(const Str& rel, const Str& content) {
         docgen_test::WriteFileText(root + "/" + rel, content);
     }
 };
@@ -44,23 +40,23 @@ struct Linted {
     LintResult result{arena};
     bool built = false;
 
-    Linted(const std::string& header, const std::string& strict = "") {
+    Linted(const Str& header, const Str& strict = "") {
         tree.Put("h/a.h", "#pragma once\nnamespace engine_placeholder {\n" + header + "\n}\n");
         tree.Put("modules.txt", "module m \"M\"\n  header h/*.h\n" + strict);
-        std::string map = tree.root + "/modules.txt";
+        Str map = tree.root + "/modules.txt";
         built = BuildReference(LintTestSv(tree.root), LintTestSv(map), arena, build);
         REQUIRE(built);
         RunLint(build.index, arena, result);
     }
 
-    std::vector<std::string> Findings() const {
-        std::vector<std::string> v;
+    StrList Findings() const {
+        StrList v;
         for (usize i = 0; i < result.findings.Size(); ++i) {
-            v.push_back(std::string(LintRuleName(result.findings[i].rule)) + " " + LintTestStr(result.findings[i].symbol->id));
+            v.Push(Str(LintRuleName(result.findings[i].rule)) + " " + LintTestStr(result.findings[i].symbol->id));
         }
         return v;
     }
-    bool Has(const std::string& f) const {
+    bool Has(const Str& f) const {
         for (auto& x : Findings()) {
             if (x == f) return true;
         }
@@ -87,15 +83,15 @@ TEST_CASE("Lint: a trailing ///< comment documents an enumerator; an undocumente
     Linted l("/// A base.\nstruct Base {\n  /// Does it.\n  virtual void Go();\n};\n"
              "/// A derived.\nstruct Derived : Base {\n  void Go() override;\n};\n"
              "/// Colors.\nenum class Color { Red, ///< The red one.\n Green };\n");
-    CHECK(l.Findings() == std::vector<std::string>{"undocumented Color::Green"});
+    CHECK(l.Findings() == StrList{"undocumented Color::Green"});
 }
 
 TEST_CASE("Lint: thread-safety is required on classes of strict modules only", "[docgen][lint]") {
-    const std::string h = "/// Documented.\nstruct S {};\n/// Documented too.\n/// Thread-safety: thread-safe. Anywhere.\nstruct T {};\n";
+    const Str h = "/// Documented.\nstruct S {};\n/// Documented too.\n/// Thread-safety: thread-safe. Anywhere.\nstruct T {};\n";
     Linted strict(h, "  strict thread-safety\n");
-    CHECK(strict.Findings() == std::vector<std::string>{"thread-safety S"});
+    CHECK(strict.Findings() == StrList{"thread-safety S"});
     Linted lax(h);
-    CHECK(lax.Findings().empty());
+    CHECK(lax.Findings().Empty());
 }
 
 TEST_CASE("Lint: ownership is required for raw non-const pointers, pointer returns and destructors", "[docgen][lint]") {
@@ -114,7 +110,7 @@ TEST_CASE("Lint: ownership is required for raw non-const pointers, pointer retur
     CHECK_FALSE(l.Has("ownership Read(const char*)"));
     CHECK_FALSE(l.Has("ownership Call(void(*)(int))"));
     CHECK_FALSE(l.Has("ownership Made()"));
-    CHECK(l.Findings().size() == 3);
+    CHECK(l.Findings().Size() == 3);
 }
 
 TEST_CASE("Lint: failure labels are required for bool, pointer and nodiscard functions", "[docgen][lint]") {
@@ -130,12 +126,12 @@ TEST_CASE("Lint: failure labels are required for bool, pointer and nodiscard fun
     CHECK_FALSE(l.Has("failure Fine()"));
     CHECK_FALSE(l.Has("failure Plain()"));
     CHECK_FALSE(l.Has("failure S::operator==(const S&) const")); // operators are exempt
-    CHECK(l.Findings().size() == 3);
+    CHECK(l.Findings().Size() == 3);
 }
 
 TEST_CASE("Lint: labels are not demanded of undocumented symbols (they get one finding, not two)", "[docgen][lint]") {
     Linted l("struct S {};\nbool Try();\n", kAllStrict);
-    CHECK(l.Findings() == (std::vector<std::string>{"undocumented S", "undocumented Try()"}));
+    CHECK(l.Findings() == (StrList{"undocumented S", "undocumented Try()"}));
 }
 
 TEST_CASE("Lint baseline: render, parse, and tolerate exactly the recorded findings", "[docgen][lint][baseline]") {
@@ -164,9 +160,9 @@ TEST_CASE("Lint baseline: a new finding, a coverage drop and no baseline at all 
     Linted now("/// A.\nstruct S {};\nvoid Done();\nvoid Undoc();\nvoid Fresh();\n");
     Vector<FileDiag, ArenaAllocator> out(now.arena);
     CompareToBaseline(now.result, &b, now.arena, out);
-    std::vector<std::string> msgs;
-    for (usize i = 0; i < out.Size(); ++i) msgs.push_back(LintTestStr(out[i].d.message));
-    REQUIRE(msgs.size() == 4);
+    StrList msgs;
+    for (usize i = 0; i < out.Size(); ++i) msgs.Push(LintTestStr(out[i].d.message));
+    REQUIRE(msgs.Size() == 4);
     CHECK(msgs[0] == "undocumented public symbol: Done()");
     CHECK(msgs[1] == "undocumented public symbol: Fresh()");
     CHECK(msgs[2] == "coverage of m dropped from 2/3 to 1/4");
@@ -189,7 +185,7 @@ TEST_CASE("Lint baseline: [review] entries that no longer apply are errors (the 
     CompareToBaseline(now.result, &b, now.arena, out);
     REQUIRE(out.Size() == 1);
     CHECK(out[0].d.severity == Severity::Error);
-    CHECK(LintTestStr(out[0].d.message).find("no longer applies: undocumented Undoc()") != std::string::npos);
+    CHECK(LintTestStr(out[0].d.message).Find("no longer applies: undocumented Undoc()") != Str::npos);
 }
 
 TEST_CASE("Lint baseline: malformed files are rejected with a line number", "[docgen][lint][baseline]") {
@@ -198,22 +194,22 @@ TEST_CASE("Lint baseline: malformed files are rejected with a line number", "[do
     StringView err;
     CHECK_FALSE(ParseBaseline(StringView("module\tm\t1\t2\n"), arena, b, err));          // no header
     CHECK_FALSE(ParseBaseline(StringView("# docgen lint baseline v1\nbogus\n"), arena, b, err));
-    CHECK(LintTestStr(err).rfind("2:", 0) == 0);
+    CHECK(LintTestStr(err).RFind("2:", 0) == 0);
     CHECK_FALSE(ParseBaseline(StringView("# docgen lint baseline v1\nmodule\tm\tx\t2\n"), arena, b, err));
     CHECK(ParseBaseline(StringView("# docgen lint baseline v1\n# comment\n\nknown\tundocumented\tA::B(int)\n"), arena, b, err));
 }
 
 TEST_CASE("Lint: the committed baseline matches the repository's headers", "[docgen][lint][repo]") {
-    const std::string repo = std::string(DOCGEN_ENGINE_DIR) + "/..";
+    const Str repo = Str(DOCGEN_ENGINE_DIR) + "/..";
     ArenaAllocator arena{usize{1} << 29};
     ReferenceBuild build(arena);
-    std::string map = repo + "/docs/reference/modules.txt";
+    Str map = repo + "/docs/reference/modules.txt";
     BuildReference(LintTestSv(repo), LintTestSv(map), arena, build);
     REQUIRE_FALSE(build.index.HasErrors());
     LintResult result(arena);
     RunLint(build.index, arena, result);
     StringView text;
-    std::string bp = repo + "/docs/reference/lint-baseline.txt";
+    Str bp = repo + "/docs/reference/lint-baseline.txt";
     REQUIRE(LoadSourceFile(LintTestSv(bp), arena, text));
     Baseline baseline(arena);
     StringView err;
@@ -221,7 +217,7 @@ TEST_CASE("Lint: the committed baseline matches the repository's headers", "[doc
     Vector<FileDiag, ArenaAllocator> out(arena);
     CompareToBaseline(result, &baseline, arena, out);
     for (usize i = 0; i < out.Size(); ++i) {
-        INFO(LintTestStr(out[i].path) << ":" << out[i].d.line << ": " << LintTestStr(out[i].d.message));
+        INFO(LintTestStr(out[i].path).CStr() << ":" << out[i].d.line << ": " << LintTestStr(out[i].d.message).CStr());
         CHECK(out[i].d.severity != Severity::Error);
     }
 }
@@ -234,11 +230,11 @@ TEST_CASE("Lint baseline: [review] renamed, removed and new modules, and an over
     Linted now("/// A.\nstruct S {};\nvoid Undoc();\nvoid U2();\n");
     Vector<FileDiag, ArenaAllocator> out(now.arena);
     CompareToBaseline(now.result, &b, now.arena, out);
-    std::vector<std::string> msgs;
-    for (usize i = 0; i < out.Size(); ++i) msgs.push_back(LintTestStr(out[i].d.message));
-    auto has = [&](const std::string& n) {
+    StrList msgs;
+    for (usize i = 0; i < out.Size(); ++i) msgs.Push(LintTestStr(out[i].d.message));
+    auto has = [&](const Str& n) {
         for (auto& m : msgs) {
-            if (m.find(n) != std::string::npos) return true;
+            if (m.Find(n) != Str::npos) return true;
         }
         return false;
     };
@@ -252,7 +248,7 @@ TEST_CASE("Lint: [review] Aborts satisfies the failure rule; an inheriting overr
              "/// Base.\nstruct B {\n  /// Go.\n  /// Returns: true when done.\n  virtual bool Go();\n};\n"
              "/// Derived 2.\nstruct E : B {\n  bool Go() override;\n};\n",
              "  strict failure\n");
-    CHECK(l.Findings().empty());
+    CHECK(l.Findings().Empty());
 }
 
 TEST_CASE("Lint: [review] `T* const` parameters count as raw pointers; unlocatable names judge nothing", "[docgen][lint]") {

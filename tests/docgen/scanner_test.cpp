@@ -1,10 +1,4 @@
-#include <dirent.h>
-#include <sys/stat.h>
 
-#include <algorithm>
-#include <cstring>
-#include <string>
-#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -14,39 +8,43 @@
 #include "cstr/cstr.h"
 
 using namespace docgen;
+using docgen_test::Num;
+using docgen_test::Str;
+using docgen_test::StrList;
+using docgen_test::StrPairList;
 
 namespace {
 
 struct Scanned {
     ArenaAllocator arena{usize{64} << 20};
-    std::string src;
+    Str src;
     ScanResult r{arena};
-    explicit Scanned(const std::string& s) : src(s) { Scan(StringView(src.data(), src.size()), arena, r); }
+    explicit Scanned(const Str& s) : src(s) { Scan(StringView(src.Data(), src.Size()), arena, r); }
 
-    std::string Text(usize i) const { return std::string(r.tokens[i].text.Data(), r.tokens[i].text.Length()); }
-    std::vector<std::string> Texts() const {
-        std::vector<std::string> v;
-        for (usize i = 0; i < r.tokens.Size(); ++i) v.push_back(Text(i));
+    Str Text(usize i) const { return Str(r.tokens[i].text.Data(), r.tokens[i].text.Length()); }
+    StrList Texts() const {
+        StrList v;
+        for (usize i = 0; i < r.tokens.Size(); ++i) v.Push(Text(i));
         return v;
     }
-    std::string DocText(usize i) const { return std::string(r.docs[i].text.Data(), r.docs[i].text.Length()); }
-    std::string Diag(usize i) const {
+    Str DocText(usize i) const { return Str(r.docs[i].text.Data(), r.docs[i].text.Length()); }
+    Str Diag(usize i) const {
         const Diagnostic& d = r.diagnostics[i];
-        return std::to_string(d.line) + ": " + SeverityName(d.severity) + ": " + std::string(d.message.Data(), d.message.Length());
+        return Num(d.line) + ": " + SeverityName(d.severity) + ": " + Str(d.message.Data(), d.message.Length());
     }
     usize Diags() const { return r.diagnostics.Size(); }
 };
 
-using Strs = std::vector<std::string>;
+using Strs = StrList;
 
-std::string ReadWhole(const std::string& path) { return docgen_test::ReadFileText(path); }
+Str ReadWhole(const Str& path) { return docgen_test::ReadFileText(path); }
 
-void ListFiles(const std::string& dir, const char* suffix, std::vector<std::string>& out) {
-    for (const std::string& n : docgen_test::ListNamesSorted(dir)) {
-        std::string p = dir + "/" + n;
+void ListFiles(const Str& dir, const char* suffix, StrList& out) {
+    for (const Str& n : docgen_test::ListNamesSorted(dir)) {
+        Str p = dir + "/" + n;
         if (docgen_test::IsDirectoryAt(p)) ListFiles(p, suffix, out);
-        else if (p.size() >= engine_placeholder::CStrLength(suffix) && p.compare(p.size() - engine_placeholder::CStrLength(suffix), engine_placeholder::CStrLength(suffix), suffix) == 0)
-            out.push_back(p);
+        else if (p.Size() >= engine_placeholder::CStrLength(suffix) && p.Compare(p.Size() - engine_placeholder::CStrLength(suffix), engine_placeholder::CStrLength(suffix), suffix) == 0)
+            out.Push(p);
     }
 }
 
@@ -89,7 +87,7 @@ TEST_CASE("String, char and raw-string literals hide their contents", "[docgen][
     int raw = 0, lit = 0;
     for (usize i = 0; i < s.r.tokens.Size(); ++i) {
         if (s.r.tokens[i].kind == TokenKind::StringLiteral) ++lit;
-        if (s.Text(i).rfind("R\"", 0) == 0) ++raw;
+        if (s.Text(i).RFind("R\"", 0) == 0) ++raw;
     }
     REQUIRE(raw == 2);
     REQUIRE(lit == 6);
@@ -141,8 +139,8 @@ TEST_CASE("Preprocessor lines: includes are skipped, #define is captured with co
     REQUIRE(s.Diags() == 0);
     REQUIRE(s.r.tokens.Size() == 5);
     REQUIRE(s.r.tokens[0].kind == TokenKind::Define);
-    REQUIRE(s.Text(0).rfind("SQUARE(x)", 0) == 0);
-    REQUIRE(s.Text(0).find("((x) * (x))") != std::string::npos);
+    REQUIRE(s.Text(0).RFind("SQUARE(x)", 0) == 0);
+    REQUIRE(s.Text(0).Find("((x) * (x))") != Str::npos);
     REQUIRE(s.r.tokens[0].doc == 0); // the doc comment attaches to the define
     REQUIRE(s.Text(1) == "PLAIN 1");
     REQUIRE(s.r.tokens[1].doc == -1);
@@ -252,8 +250,8 @@ TEST_CASE("Lexical errors are reported and scanning resumes", "[docgen][scanner]
         REQUIRE(s.Diags() == 1);
         REQUIRE(s.Diag(0) == "1: error: unterminated string literal");
         auto t = s.Texts();
-        REQUIRE(t.back() == ";");
-        REQUIRE(t[t.size() - 2] == "b");
+        REQUIRE(t.Back() == ";");
+        REQUIRE(t[t.Size() - 2] == "b");
     }
     SECTION("unterminated char literal") {
         Scanned s("char c = 'x;\nint d;\n");
@@ -378,14 +376,14 @@ TEST_CASE("Raw string delimiters are limited to 16 characters", "[docgen][scanne
 // ---- fixture corpus ----------------------------------------------------------------
 
 TEST_CASE("Good fixtures scan with zero diagnostics", "[docgen][scanner][fixtures]") {
-    std::vector<std::string> files;
-    ListFiles(std::string(DOCGEN_FIXTURE_DIR) + "/good", ".h", files);
-    REQUIRE(files.size() >= 13);
+    StrList files;
+    ListFiles(Str(DOCGEN_FIXTURE_DIR) + "/good", ".h", files);
+    REQUIRE(files.Size() >= 13);
     for (auto& f : files) {
-        INFO(f);
+        INFO(f.CStr());
         Scanned s(ReadWhole(f));
         REQUIRE(s.r.tokens.Size() > 0);
-        for (usize i = 0; i < s.Diags(); ++i) INFO("diagnostic: " << s.Diag(i));
+        for (usize i = 0; i < s.Diags(); ++i) INFO("diagnostic: " << s.Diag(i).CStr());
         REQUIRE(s.Diags() == 0);
     }
 }
@@ -393,46 +391,46 @@ TEST_CASE("Good fixtures scan with zero diagnostics", "[docgen][scanner][fixture
 namespace {
 // Diagnostics the scanner itself is responsible for; the rest are checked
 // on later days.
-bool ScannerOwns(const std::string& message) {
+bool ScannerOwns(const Str& message) {
     static const char* prefixes[] = {"unterminated", "detached doc comment", "misplaced file overview",
                                      "trailing doc comment"};
     for (const char* p : prefixes)
-        if (message.rfind(p, 0) == 0) return true;
+        if (message.RFind(p, 0) == 0) return true;
     return false;
 }
 } // namespace
 
 TEST_CASE("Bad fixtures: the scanner reports exactly the diagnostics it owns", "[docgen][scanner][fixtures]") {
-    std::vector<std::string> files;
-    ListFiles(std::string(DOCGEN_FIXTURE_DIR) + "/bad", ".h", files);
-    REQUIRE(files.size() >= 10);
+    StrList files;
+    ListFiles(Str(DOCGEN_FIXTURE_DIR) + "/bad", ".h", files);
+    REQUIRE(files.Size() >= 10);
     for (auto& f : files) {
-        INFO(f);
+        INFO(f.CStr());
         // Expected, restricted to scanner-owned diagnostics.
-        std::vector<std::string> expected;
-        std::string exp = ReadWhole(f + ".expect");
-        REQUIRE_FALSE(exp.empty());
-        size_t pos = 0;
-        while (pos < exp.size()) {
-            size_t nl = exp.find('\n', pos);
-            if (nl == std::string::npos) nl = exp.size();
-            std::string line = exp.substr(pos, nl - pos);
+        StrList expected;
+        Str exp = ReadWhole(f + ".expect");
+        REQUIRE_FALSE(exp.Empty());
+        usize pos = 0;
+        while (pos < exp.Size()) {
+            usize nl = exp.Find('\n', pos);
+            if (nl == Str::npos) nl = exp.Size();
+            Str line = exp.Substr(pos, nl - pos);
             pos = nl + 1;
-            if (line.empty()) continue;
+            if (line.Empty()) continue;
             // "<line>: <severity>: <message prefix>"
-            size_t c1 = line.find(": ");
-            size_t c2 = line.find(": ", c1 + 2);
-            REQUIRE(c1 != std::string::npos);
-            REQUIRE(c2 != std::string::npos);
-            if (ScannerOwns(line.substr(c2 + 2))) expected.push_back(line);
+            usize c1 = line.Find(": ");
+            usize c2 = line.Find(": ", c1 + 2);
+            REQUIRE(c1 != Str::npos);
+            REQUIRE(c2 != Str::npos);
+            if (ScannerOwns(line.Substr(c2 + 2))) expected.Push(line);
         }
         Scanned s(ReadWhole(f));
-        std::vector<std::string> actual;
-        for (usize i = 0; i < s.Diags(); ++i) actual.push_back(s.Diag(i));
-        REQUIRE(actual.size() == expected.size());
-        for (size_t i = 0; i < actual.size(); ++i) {
+        StrList actual;
+        for (usize i = 0; i < s.Diags(); ++i) actual.Push(s.Diag(i));
+        REQUIRE(actual.Size() == expected.Size());
+        for (usize i = 0; i < actual.Size(); ++i) {
             // expected message is a prefix of the actual one
-            REQUIRE(actual[i].compare(0, expected[i].size(), expected[i]) == 0);
+            REQUIRE(actual[i].Compare(0, expected[i].Size(), expected[i]) == 0);
         }
     }
 }
@@ -440,12 +438,12 @@ TEST_CASE("Bad fixtures: the scanner reports exactly the diagnostics it owns", "
 // ---- robustness ------------------------------------------------------------------------
 
 namespace {
-std::string Dump(const Scanned& s) {
-    std::string out;
+Str Dump(const Scanned& s) {
+    Str out;
     for (usize i = 0; i < s.r.tokens.Size(); ++i) {
         const Token& t = s.r.tokens[i];
-        out += std::to_string(t.line) + ":" + std::to_string(t.column) + ":" + std::to_string(static_cast<int>(t.kind)) + ":" +
-               s.Text(i) + ":" + std::to_string(t.doc) + "\n";
+        out += Num(t.line) + ":" + Num(t.column) + ":" + Num(static_cast<int>(t.kind)) + ":" +
+               s.Text(i) + ":" + Num(t.doc) + "\n";
     }
     for (usize i = 0; i < s.r.docs.Size(); ++i) out += "doc:" + s.DocText(i) + "\n";
     for (usize i = 0; i < s.Diags(); ++i) out += s.Diag(i) + "\n";
@@ -454,21 +452,21 @@ std::string Dump(const Scanned& s) {
 } // namespace
 
 TEST_CASE("Every header under engine/ scans cleanly and deterministically", "[docgen][scanner][engine]") {
-    std::vector<std::string> files;
+    StrList files;
     ListFiles(DOCGEN_ENGINE_DIR, ".h", files);
-    REQUIRE(files.size() > 40);
+    REQUIRE(files.Size() > 40);
     for (auto& f : files) {
-        INFO(f);
-        std::string text = ReadWhole(f);
+        INFO(f.CStr());
+        Str text = ReadWhole(f);
         Scanned a(text), b(text);
-        for (usize i = 0; i < a.Diags(); ++i) INFO("diagnostic: " << a.Diag(i));
+        for (usize i = 0; i < a.Diags(); ++i) INFO("diagnostic: " << a.Diag(i).CStr());
         REQUIRE(a.Diags() == 0);
         REQUIRE(Dump(a) == Dump(b));
     }
 }
 
 TEST_CASE("Truncated and garbage inputs terminate without crashing", "[docgen][scanner][fuzz]") {
-    std::vector<std::string> files;
+    StrList files;
     ListFiles(DOCGEN_ENGINE_DIR, ".h", files);
     ListFiles(DOCGEN_FIXTURE_DIR, ".h", files);
     unsigned long long rng = 0x2545F4914F6CDD1Dull;
@@ -479,26 +477,26 @@ TEST_CASE("Truncated and garbage inputs terminate without crashing", "[docgen][s
         return rng;
     };
     for (auto& f : files) {
-        std::string text = ReadWhole(f);
-        if (text.empty()) continue;
+        Str text = ReadWhole(f);
+        if (text.Empty()) continue;
         for (int i = 0; i < 12; ++i) {
-            Scanned s(text.substr(0, next() % (text.size() + 1)));
+            Scanned s(text.Substr(0, next() % (text.Size() + 1)));
             (void)s;
         }
     }
     // Random byte soup biased toward the characters the scanner cares about.
     const char alphabet[] = "/*\"'\\\n\r #<>(){}[];,.:!R()abcxyz019_-+=?\t";
     for (int i = 0; i < 400; ++i) {
-        std::string junk;
-        size_t len = next() % 300;
-        for (size_t k = 0; k < len; ++k) junk.push_back(alphabet[next() % (sizeof(alphabet) - 1)]);
+        Str junk;
+        usize len = next() % 300;
+        for (usize k = 0; k < len; ++k) junk.Push(alphabet[next() % (sizeof(alphabet) - 1)]);
         Scanned s(junk);
         (void)s;
     }
     for (int i = 0; i < 100; ++i) {
-        std::string junk;
-        size_t len = next() % 200;
-        for (size_t k = 0; k < len; ++k) junk.push_back(static_cast<char>(next() & 0xFF));
+        Str junk;
+        usize len = next() % 200;
+        for (usize k = 0; k < len; ++k) junk.Push(static_cast<char>(next() & 0xFF));
         Scanned s(junk);
         (void)s;
     }

@@ -1,10 +1,4 @@
-#include <dirent.h>
-#include <sys/stat.h>
 
-#include <algorithm>
-#include <cstring>
-#include <string>
-#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -14,38 +8,42 @@
 #include "cstr/cstr.h"
 
 using namespace docgen;
+using docgen_test::Num;
+using docgen_test::Str;
+using docgen_test::StrList;
+using docgen_test::StrPairList;
 
 namespace {
 
 struct Extracted {
     ArenaAllocator arena{usize{64} << 20};
-    std::string src;
+    Str src;
     ScanResult scan{arena};
     ExtractResult ex{arena};
 
-    explicit Extracted(const std::string& s) : src(s) {
-        Scan(StringView(src.data(), src.size()), arena, scan);
+    explicit Extracted(const Str& s) : src(s) {
+        Scan(StringView(src.Data(), src.Size()), arena, scan);
         Extract(scan, arena, ex);
     }
 
-    std::string Dump(bool hidden = false) {
+    Str Dump(bool hidden = false) {
         engine_placeholder::StringBuilder<ArenaAllocator> sb(arena);
         DumpTree(ex, scan, sb, hidden);
         StringView v = sb.View();
-        return std::string(v.Data(), v.Length());
+        return Str(v.Data(), v.Length());
     }
-    std::string Diag(usize i) const {
+    Str Diag(usize i) const {
         const Diagnostic& d = ex.diagnostics[i];
-        return std::to_string(d.line) + ": " + SeverityName(d.severity) + ": " + std::string(d.message.Data(), d.message.Length());
+        return Num(d.line) + ": " + SeverityName(d.severity) + ": " + Str(d.message.Data(), d.message.Length());
     }
     usize Diags() const { return ex.diagnostics.Size(); }
 
     // Finds a declaration by qualified name (depth-first, hidden included).
-    const Decl* Find(const std::string& qualified) const { return FindIn(ex.root, qualified); }
+    const Decl* Find(const Str& qualified) const { return FindIn(ex.root, qualified); }
 
 private:
-    static const Decl* FindIn(const Decl* d, const std::string& q) {
-        if (std::string(d->qualified.Data(), d->qualified.Length()) == q && d->parent != nullptr) return d;
+    static const Decl* FindIn(const Decl* d, const Str& q) {
+        if (Str(d->qualified.Data(), d->qualified.Length()) == q && d->parent != nullptr) return d;
         for (usize i = 0; i < d->children.Size(); ++i) {
             if (const Decl* r = FindIn(d->children[i], q)) return r;
         }
@@ -53,23 +51,22 @@ private:
     }
 };
 
-std::string Str(StringView v) { return std::string(v.Data(), v.Length()); }
 
-std::string ExtractorTestReadWhole(const std::string& path) { return docgen_test::ReadFileText(path); }
+Str ExtractorTestReadWhole(const Str& path) { return docgen_test::ReadFileText(path); }
 
-void ExtractorTestListFiles(const std::string& dir, const char* suffix, std::vector<std::string>& out) {
-    for (const std::string& n : docgen_test::ListNamesSorted(dir)) {
-        std::string p = dir + "/" + n;
+void ExtractorTestListFiles(const Str& dir, const char* suffix, StrList& out) {
+    for (const Str& n : docgen_test::ListNamesSorted(dir)) {
+        Str p = dir + "/" + n;
         if (docgen_test::IsDirectoryAt(p)) ExtractorTestListFiles(p, suffix, out);
-        else if (p.size() >= engine_placeholder::CStrLength(suffix) && p.compare(p.size() - engine_placeholder::CStrLength(suffix), engine_placeholder::CStrLength(suffix), suffix) == 0)
-            out.push_back(p);
+        else if (p.Size() >= engine_placeholder::CStrLength(suffix) && p.Compare(p.Size() - engine_placeholder::CStrLength(suffix), engine_placeholder::CStrLength(suffix), suffix) == 0)
+            out.Push(p);
     }
 }
 
-bool ExtractorOwns(const std::string& message) {
+bool ExtractorOwns(const Str& message) {
     static const char* prefixes[] = {"unbalanced braces", "unrecognized declaration", "macro-generated declaration"};
     for (const char* p : prefixes)
-        if (message.rfind(p, 0) == 0) return true;
+        if (message.RFind(p, 0) == 0) return true;
     return false;
 }
 
@@ -78,63 +75,63 @@ bool ExtractorOwns(const std::string& message) {
 // ---- fixtures ---------------------------------------------------------------------------
 
 TEST_CASE("Good fixtures extract with no diagnostics and match their golden trees", "[docgen][extractor][fixtures]") {
-    std::vector<std::string> files;
-    ExtractorTestListFiles(std::string(DOCGEN_FIXTURE_DIR) + "/good", ".h", files);
-    REQUIRE(files.size() >= 13);
+    StrList files;
+    ExtractorTestListFiles(Str(DOCGEN_FIXTURE_DIR) + "/good", ".h", files);
+    REQUIRE(files.Size() >= 13);
     for (auto& f : files) {
-        INFO(f);
+        INFO(f.CStr());
         Extracted e(ExtractorTestReadWhole(f));
         REQUIRE(e.scan.diagnostics.Size() == 0);
         REQUIRE(e.Diags() == 0);
-        std::string golden = ExtractorTestReadWhole(f.substr(0, f.size() - 2) + ".tree");
+        Str golden = ExtractorTestReadWhole(f.Substr(0, f.Size() - 2) + ".tree");
         INFO("missing or empty golden tree");
-        REQUIRE_FALSE(golden.empty());
+        REQUIRE_FALSE(golden.Empty());
         REQUIRE(e.Dump() == golden);
     }
 }
 
 TEST_CASE("Bad fixtures: the extractor reports exactly the diagnostics it owns", "[docgen][extractor][fixtures]") {
-    std::vector<std::string> files;
-    ExtractorTestListFiles(std::string(DOCGEN_FIXTURE_DIR) + "/bad", ".h", files);
+    StrList files;
+    ExtractorTestListFiles(Str(DOCGEN_FIXTURE_DIR) + "/bad", ".h", files);
     int checked = 0;
     for (auto& f : files) {
-        INFO(f);
-        std::vector<std::string> expected;
-        std::string exp = ExtractorTestReadWhole(f + ".expect");
-        size_t pos = 0;
-        while (pos < exp.size()) {
-            size_t nl = exp.find('\n', pos);
-            if (nl == std::string::npos) nl = exp.size();
-            std::string line = exp.substr(pos, nl - pos);
+        INFO(f.CStr());
+        StrList expected;
+        Str exp = ExtractorTestReadWhole(f + ".expect");
+        usize pos = 0;
+        while (pos < exp.Size()) {
+            usize nl = exp.Find('\n', pos);
+            if (nl == Str::npos) nl = exp.Size();
+            Str line = exp.Substr(pos, nl - pos);
             pos = nl + 1;
-            if (line.empty()) continue;
-            size_t c1 = line.find(": ");
-            size_t c2 = line.find(": ", c1 + 2);
-            REQUIRE(c2 != std::string::npos);
-            if (ExtractorOwns(line.substr(c2 + 2))) expected.push_back(line);
+            if (line.Empty()) continue;
+            usize c1 = line.Find(": ");
+            usize c2 = line.Find(": ", c1 + 2);
+            REQUIRE(c2 != Str::npos);
+            if (ExtractorOwns(line.Substr(c2 + 2))) expected.Push(line);
         }
         Extracted e(ExtractorTestReadWhole(f));
-        REQUIRE(e.Diags() == expected.size());
-        for (usize i = 0; i < e.Diags(); ++i) REQUIRE(e.Diag(i).compare(0, expected[i].size(), expected[i]) == 0);
-        if (!expected.empty()) ++checked;
+        REQUIRE(e.Diags() == expected.Size());
+        for (usize i = 0; i < e.Diags(); ++i) REQUIRE(e.Diag(i).Compare(0, expected[i].Size(), expected[i]) == 0);
+        if (!expected.Empty()) ++checked;
     }
     REQUIRE(checked >= 2);
 }
 
 TEST_CASE("Every engine header extracts with zero diagnostics", "[docgen][extractor][engine]") {
-    std::vector<std::string> files;
+    StrList files;
     ExtractorTestListFiles(DOCGEN_ENGINE_DIR, ".h", files);
-    REQUIRE(files.size() >= 40);
+    REQUIRE(files.Size() >= 40);
     usize functions = 0, classes = 0;
     for (auto& f : files) {
-        INFO(f);
+        INFO(f.CStr());
         Extracted e(ExtractorTestReadWhole(f));
         REQUIRE(e.scan.diagnostics.Size() == 0);
-        if (e.Diags() != 0) INFO(e.Diag(0));
+        if (e.Diags() != 0) INFO(e.Diag(0).CStr());
         REQUIRE(e.Diags() == 0);
-        std::string dump = e.Dump(true);
-        for (size_t p = dump.find(" function "); p != std::string::npos; p = dump.find(" function ", p + 1)) ++functions;
-        for (size_t p = dump.find("class "); p != std::string::npos; p = dump.find("class ", p + 1)) ++classes;
+        Str dump = e.Dump(true);
+        for (usize p = dump.Find(" function "); p != Str::npos; p = dump.Find(" function ", p + 1)) ++functions;
+        for (usize p = dump.Find("class "); p != Str::npos; p = dump.Find("class ", p + 1)) ++classes;
     }
     // Guards against the extractor silently dropping everything.
     REQUIRE(functions > 300);
@@ -165,10 +162,10 @@ TEST_CASE("Visibility: private, protected, detail and anonymous are hidden", "[d
     REQUIRE(e.Find("(anonymous)::F")->hidden);
     REQUIRE(e.Find("n::detail::X::M")->hidden);
     REQUIRE_FALSE(e.Find("n::Ok")->hidden);
-    std::string pub = e.Dump(false);
-    REQUIRE(pub.find("C::P") == std::string::npos);
-    REQUIRE(pub.find("detail") == std::string::npos);
-    REQUIRE(e.Dump(true).find("C::P") != std::string::npos);
+    Str pub = e.Dump(false);
+    REQUIRE(pub.Find("C::P") == Str::npos);
+    REQUIRE(pub.Find("detail") == Str::npos);
+    REQUIRE(e.Dump(true).Find("C::P") != Str::npos);
 }
 
 TEST_CASE("Constructor initializer lists and member initializers do not end the declaration", "[docgen][extractor]") {
@@ -203,7 +200,7 @@ TEST_CASE("A requires clause after a template header belongs to the header", "[d
     const Decl* twice = e.Find("Twice");
     REQUIRE(Str(twice->template_header) == "template <typename T> requires std::integral<T>");
     REQUIRE(Str(twice->signature) == "T Twice(T v)");
-    REQUIRE(Str(e.Find("G")->template_header).find("requires (sizeof(T) > 2) && Other<T>") != std::string::npos);
+    REQUIRE(Str(e.Find("G")->template_header).Find("requires (sizeof(T) > 2) && Other<T>") != Str::npos);
     REQUIRE(Str(e.Find("G")->signature) == "void G(T)");
     // A trailing requires-clause stays in the signature.
     REQUIRE(Str(e.Find("H")->signature) == "void H(T) requires std::integral<T>");
@@ -354,9 +351,9 @@ TEST_CASE("[review] multiple declarators are refused, never silently dropped", "
     REQUIRE(e.Diags() == 5);
     const char* lines[] = {"1", "2", "3", "3", "4"};
     for (usize i = 0; i < 5; ++i) {
-        INFO(e.Diag(i));
-        REQUIRE(e.Diag(i).compare(0, 2, std::string(lines[i]) + ":") == 0);
-        REQUIRE(e.Diag(i).find("error: unrecognized declaration") != std::string::npos);
+        INFO(e.Diag(i).CStr());
+        REQUIRE(e.Diag(i).Compare(0, 2, Str(lines[i]) + ":") == 0);
+        REQUIRE(e.Diag(i).Find("error: unrecognized declaration") != Str::npos);
     }
     REQUIRE(e.Find("ok") != nullptr);
     REQUIRE(e.Find("k") != nullptr);
@@ -410,18 +407,18 @@ TEST_CASE("Unbalanced braces are reported once at the unclosed brace", "[docgen]
         // better); what is left open at end of file is `struct S` (line 2), reported once.
         Extracted e("namespace n {\n  struct S {\n    void f() {\n      if (x) {\n    }\n};\n");
         REQUIRE(e.Diags() == 1);
-        REQUIRE(e.Diag(0).compare(0, 24, "2: error: unbalanced bra") == 0);
+        REQUIRE(e.Diag(0).Compare(0, 24, "2: error: unbalanced bra") == 0);
     }
     {
         Extracted e("void f();\n}\nvoid g();\n");
         REQUIRE(e.Diags() == 1);
-        REQUIRE(e.Diag(0).compare(0, 24, "2: error: unbalanced bra") == 0);
+        REQUIRE(e.Diag(0).Compare(0, 24, "2: error: unbalanced bra") == 0);
         REQUIRE(e.Find("g") != nullptr); // recovered
     }
     {
         Extracted e("void f(int a, \n");
         REQUIRE(e.Diags() >= 1);
-        REQUIRE(e.Diag(0).find("error: unbalanced braces") != std::string::npos);
+        REQUIRE(e.Diag(0).Find("error: unbalanced braces") != Str::npos);
     }
 }
 
@@ -455,7 +452,7 @@ TEST_CASE("A declaration cut off by a closing brace or end of file is an error",
 }
 
 TEST_CASE("Extraction is deterministic", "[docgen][extractor]") {
-    std::string src = ExtractorTestReadWhole(std::string(DOCGEN_FIXTURE_DIR) + "/good/classes.h");
+    Str src = ExtractorTestReadWhole(Str(DOCGEN_FIXTURE_DIR) + "/good/classes.h");
     Extracted a(src), b(src);
     REQUIRE(a.Dump(true) == b.Dump(true));
 }
@@ -463,9 +460,9 @@ TEST_CASE("Extraction is deterministic", "[docgen][extractor]") {
 // ---- robustness --------------------------------------------------------------------------
 
 TEST_CASE("Mutated headers never crash or hang the extractor", "[docgen][extractor][fuzz]") {
-    std::vector<std::string> files;
-    ExtractorTestListFiles(std::string(DOCGEN_FIXTURE_DIR) + "/good", ".h", files);
-    ExtractorTestListFiles(std::string(DOCGEN_FIXTURE_DIR) + "/bad", ".h", files);
+    StrList files;
+    ExtractorTestListFiles(Str(DOCGEN_FIXTURE_DIR) + "/good", ".h", files);
+    ExtractorTestListFiles(Str(DOCGEN_FIXTURE_DIR) + "/bad", ".h", files);
     unsigned long long seed = 0x9E3779B97F4A7C15ull;
     auto next = [&]() {
         seed = seed * 6364136223846793005ull + 1442695040888963407ull;
@@ -474,16 +471,16 @@ TEST_CASE("Mutated headers never crash or hang the extractor", "[docgen][extract
     const char* junk[] = {"{", "}", "(", ")", "[", "]", "<", ">", ";", "template <", "operator", "requires", "enum", "class ", "::", "= ",
                           ": ", "namespace ", "extern \"C\" {", "///", "///<", "\n"};
     for (auto& f : files) {
-        std::string base = ExtractorTestReadWhole(f);
+        Str base = ExtractorTestReadWhole(f);
         for (int round = 0; round < 40; ++round) {
-            std::string s = base;
+            Str s = base;
             int edits = 1 + static_cast<int>(next() % 4);
-            for (int k = 0; k < edits && !s.empty(); ++k) {
-                size_t at = next() % s.size();
+            for (int k = 0; k < edits && !s.Empty(); ++k) {
+                usize at = next() % s.Size();
                 switch (next() % 3) {
-                case 0: s.erase(at, 1 + next() % 8); break;
-                case 1: s.insert(at, junk[next() % (sizeof(junk) / sizeof(junk[0]))]); break;
-                default: s.resize(at); break;
+                case 0: s.Erase(at, 1 + next() % 8); break;
+                case 1: s.Insert(at, junk[next() % (sizeof(junk) / sizeof(junk[0]))]); break;
+                default: s.Resize(at); break;
                 }
             }
             Extracted e(s);

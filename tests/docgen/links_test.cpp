@@ -1,12 +1,4 @@
-#include <ftw.h>
-#include <sys/stat.h>
-#include <unistd.h>
 
-#include <cstdio>
-#include <cstdlib>
-#include <string>
-#include <utility>
-#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -16,23 +8,27 @@
 #include "lang/utility.h"
 
 using namespace docgen;
+using docgen_test::Num;
+using docgen_test::Str;
+using docgen_test::StrList;
+using docgen_test::StrPairList;
 
 namespace {
 
-std::string LinksTestStr(StringView v) { return std::string(v.Data(), v.Length()); }
-StringView Sv(const std::string& s) { return StringView(s.data(), s.size()); }
+Str LinksTestStr(StringView v) { return Str(v.Data(), v.Length()); }
+StringView Sv(const Str& s) { return StringView(s.Data(), s.Size()); }
 
 // A throwaway repository tree, removed recursively.
 struct Tree {
-    std::string root;
-    explicit Tree(const std::vector<std::pair<std::string, std::string>>& files) {
+    Str root;
+    explicit Tree(const StrPairList& files) {
         root = docgen_test::MakeTempRoot("docgen_links");
         for (auto& f : files) Put(f.first, f.second);
     }
     ~Tree() {
         docgen_test::RemoveTreeAt(root);
     }
-    void Put(const std::string& rel, const std::string& content) {
+    void Put(const Str& rel, const Str& content) {
         docgen_test::WriteFileText(root + "/" + rel, content);
     }
 };
@@ -43,12 +39,12 @@ struct Checked {
     Vector<FileDiag, ArenaAllocator> diags{arena};
     LinkStats stats;
     bool read_ok = false;
-    std::vector<std::string> lines;
+    StrList lines;
 
     explicit Checked(const Tree& t, bool with_index = false, bool external = false) {
         const SymbolIndex* index = nullptr;
         if (with_index) {
-            std::string map = t.root + "/docs/reference/modules.txt";
+            Str map = t.root + "/docs/reference/modules.txt";
             BuildReference(Sv(t.root), Sv(map), arena, build);
             index = &build.index;
         }
@@ -57,17 +53,17 @@ struct Checked {
         read_ok = CheckLinks(Sv(t.root), index, arena, opt, diags, stats);
         for (usize i = 0; i < diags.Size(); ++i) {
             const FileDiag& f = diags[i];
-            lines.push_back(LinksTestStr(f.path) + ":" + std::to_string(f.d.line) + ": " + SeverityName(f.d.severity) + ": " + LinksTestStr(f.d.message));
+            lines.Push(LinksTestStr(f.path) + ":" + Num(f.d.line) + ": " + SeverityName(f.d.severity) + ": " + LinksTestStr(f.d.message));
         }
     }
-    bool Has(const std::string& needle) const {
+    bool Has(const Str& needle) const {
         for (auto& l : lines) {
-            if (l.find(needle) != std::string::npos) return true;
+            if (l.Find(needle) != Str::npos) return true;
         }
         return false;
     }
-    size_t Errors() const {
-        size_t n = 0;
+    usize Errors() const {
+        usize n = 0;
         for (usize i = 0; i < diags.Size(); ++i) n += diags[i].d.severity == Severity::Error;
         return n;
     }
@@ -76,10 +72,10 @@ struct Checked {
 const char kHome[] = "# Docs\n\n- [guide](guide/a.md)\n";
 
 struct LinksTestScanned {
-    std::string text; // the scanned views point into it
+    Str text; // the scanned views point into it
     ArenaAllocator arena{usize{1} << 24};
     MdDoc doc{arena};
-    explicit LinksTestScanned(std::string t) : text(engine_placeholder::Move(t)) { ScanMarkdown(Sv(text), arena, doc); }
+    explicit LinksTestScanned(Str t) : text(engine_placeholder::Move(t)) { ScanMarkdown(Sv(text), arena, doc); }
 };
 
 } // namespace
@@ -189,7 +185,7 @@ TEST_CASE("Links: a consistent tree is clean", "[docgen][links]") {
             {"PLAN.md", "# Plan\n"}});
     Checked c(t);
     REQUIRE(c.read_ok);
-    for (auto& l : c.lines) INFO(l);
+    for (auto& l : c.lines) INFO(l.CStr());
     CHECK(c.Errors() == 0);
     CHECK(c.stats.files == 4);
     CHECK(c.stats.external == 1);
@@ -241,10 +237,10 @@ TEST_CASE("Links: orphan pages under docs are errors, reachability is transitive
 TEST_CASE("Links: external links are counted, listed on request, never fetched", "[docgen][links]") {
     Tree t({{"docs/README.md", "# Docs\n[x](https://example.invalid/a) [m](mailto:a@b.c) <http://example.invalid/b>\n"}});
     Checked quiet(t);
-    CHECK(quiet.lines.empty());
+    CHECK(quiet.lines.Empty());
     CHECK(quiet.stats.external == 3);
     Checked loud(t, false, true);
-    CHECK(loud.lines.size() == 3);
+    CHECK(loud.lines.Size() == 3);
     CHECK(loud.Errors() == 0);
 }
 
@@ -264,8 +260,8 @@ TEST_CASE("Links: [[refs]] resolve against the symbol index, with candidates on 
     CHECK(c.Has("docs/README.md:3: error: unresolved reference 'geo::Nothing'"));
     CHECK_FALSE(c.Has("README.md:4"));
     CHECK_FALSE(c.Has("README.md:6"));
-    size_t in_docs = 0;
-    for (auto& l : c.lines) in_docs += l.rfind("docs/README.md", 0) == 0;
+    usize in_docs = 0;
+    for (auto& l : c.lines) in_docs += l.RFind("docs/README.md", 0) == 0;
     CHECK(in_docs == 2);
 }
 
@@ -278,27 +274,27 @@ TEST_CASE("Links: generated reference anchors match what the checker computes", 
                       "/// Colors.\nenum class Color { Red, ///< The red one.\n Green ///< The green one.\n};\n}\n"}});
     ArenaAllocator arena{usize{1} << 28};
     ReferenceBuild build(arena);
-    std::string map = t.root + "/docs/reference/modules.txt";
+    Str map = t.root + "/docs/reference/modules.txt";
     REQUIRE(BuildReference(Sv(t.root), Sv(map), arena, build));
-    std::string idx = "# Docs\n";
-    std::string readme = "# Reference\n\n";
-    std::string syms;
+    Str idx = "# Docs\n";
+    Str readme = "# Reference\n\n";
+    Str syms;
     for (usize i = 0; i < build.files.Size(); ++i) {
-        const std::string name = LinksTestStr(build.files[i].name);
+        const Str name = LinksTestStr(build.files[i].name);
         t.Put("docs/reference/" + name, LinksTestStr(build.files[i].content));
         if (name == "symbols.txt") syms = LinksTestStr(build.files[i].content);
     }
-    size_t linked = 0;
-    size_t at = 0;
-    while ((at = syms.find('\n', at)) != std::string::npos && at + 1 < syms.size()) {
+    usize linked = 0;
+    usize at = 0;
+    while ((at = syms.Find('\n', at)) != Str::npos && at + 1 < syms.Size()) {
         ++at;
-        size_t e = syms.find('\n', at);
-        std::string line = syms.substr(at, e - at);
-        std::vector<std::string> f;
-        size_t p = 0;
-        for (size_t q; (q = line.find('\t', p)) != std::string::npos; p = q + 1) f.push_back(line.substr(p, q - p));
-        f.push_back(line.substr(p));
-        if (f.size() < 5) continue;
+        usize e = syms.Find('\n', at);
+        Str line = syms.Substr(at, e - at);
+        StrList f;
+        usize p = 0;
+        for (usize q; (q = line.Find('\t', p)) != Str::npos; p = q + 1) f.Push(line.Substr(p, q - p));
+        f.Push(line.Substr(p));
+        if (f.Size() < 5) continue;
         readme += "[" + f[0] + "](" + f[4] + "#" + f[3] + ")\n";
         ++linked;
     }
@@ -306,21 +302,21 @@ TEST_CASE("Links: generated reference anchors match what the checker computes", 
     t.Put("docs/reference/README.md", readme);
     REQUIRE(linked >= 5);
     Checked c(t);
-    for (auto& l : c.lines) INFO(l);
+    for (auto& l : c.lines) INFO(l.CStr());
     CHECK(c.Errors() == 0);
 }
 
 TEST_CASE("Links: the repository's own docs tree is clean", "[docgen][links][repo]") {
-    const std::string repo = std::string(DOCGEN_ENGINE_DIR) + "/..";
+    const Str repo = Str(DOCGEN_ENGINE_DIR) + "/..";
     ArenaAllocator arena{usize{1} << 29};
     ReferenceBuild build(arena);
-    std::string map = repo + "/docs/reference/modules.txt";
+    Str map = repo + "/docs/reference/modules.txt";
     BuildReference(Sv(repo), Sv(map), arena, build);
     Vector<FileDiag, ArenaAllocator> diags(arena);
     LinkStats stats;
     REQUIRE(CheckLinks(Sv(repo), &build.index, arena, LinkOptions(), diags, stats));
     for (usize i = 0; i < diags.Size(); ++i) {
-        INFO(LinksTestStr(diags[i].path) << ":" << diags[i].d.line << ": " << LinksTestStr(diags[i].d.message));
+        INFO(LinksTestStr(diags[i].path).CStr() << ":" << diags[i].d.line << ": " << LinksTestStr(diags[i].d.message).CStr());
         CHECK(diags[i].d.severity != Severity::Error);
     }
     CHECK(stats.files > 10);
