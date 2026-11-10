@@ -596,6 +596,36 @@ Include `scene/render_sync.h` and link `scene` (module `engine/scene`, above `ec
 - **The camera.** `MakeCameraSystem(name)` builds `CameraOutput` (a `renderer::Camera`) from the `ActiveCamera` resource's entity, which carries a `scene::Camera` and a `WorldTransform`
   (+X right, +Y up, -Z forward); `CameraOutput::valid` is false when there is none.
 
+## Measured cost
+
+`game/ecs_bench` runs the workload of the design spec (section 6) on the ECS and on a naive object-oriented baseline (heap-allocated objects, virtual `Update`, optional components behind owning
+pointers, visited in shuffled order) with the same arithmetic, and compares a checksum so neither side can win by doing less. Numbers below: AMD Ryzen 9 7950X3D (16 cores, 32 threads), Linux 7.2,
+clang 23.1.4, Release (`-O3 -DNDEBUG`), unity build, commit `daa73b1` plus the Day 235 files; median of 100 frames after 20 warm-up frames.
+Run it yourself with `ecs_bench [--entities N] [--frames N] [--threads N] [--csv PATH]`.
+
+| Scenario (100k entities unless noted) | ECS | Baseline | Ratio |
+|---|---|---|---|
+| Four-step iteration, 1k entities | 0.0029 ms | 0.0060 ms | 2.1x |
+| Four-step iteration, 10k | 0.029 ms | 0.086 ms | 3.0x |
+| Four-step iteration, 100k | 0.30 ms | 1.67 ms | 5.6x |
+| Four-step iteration, 1M | 8.5 ms | 55 ms | 6.5x |
+| Sparse access (1 percent carry a tag) | 0.0005 ms | 0.10 ms | 200x |
+| `Changed<T>`, 1 percent written, clustered | 0.007 ms | 0.093 ms | 13x |
+| `Changed<T>`, 1 percent written, random | 0.091 ms | 0.112 ms | 1.2x |
+| Structural churn (10 percent created and destroyed, 10 percent tag toggled, per frame) | 1.58 ms | 0.65 ms | **0.41x (slower)** |
+| Hierarchy propagation (chains of five, every root moved, sequential schedule) | 3.2 ms | 2.2 ms | **0.67x (slower)** |
+
+- **Parallel scaling** of a heavy per-entity system (7.5 ms single-threaded in the baseline): 1 worker 2.0 ms; 2 workers 97 percent efficiency; 4 workers 85 percent; 8 workers 84 percent; 16 workers 79 percent;
+  32 workers (all hardware threads, so shared cores) 48 percent.
+- **Memory:** 110 bytes per entity for the workload's four components (Vec3, Vec3, spring, 4x4 matrix plus the 8-byte entity) against about 208 bytes for the baseline's two heap blocks. Creating an entity costs 32 ns
+  and destroying one 17 ns (baseline 35 ns and 27 ns).
+- **Change stamping** costs nothing measurable: the same 100k-position pass through a `Write` term and a `Read` term takes 0.0588 ms both ways.
+- **`Changed<T>` is chunk precision.** Writes clustered in the first rows skip nearly everything; 1 percent of the entities written at random touches almost every chunk, so the filter then saves little. Keep
+  data that changes together next to each other, or split the rarely written part into its own component.
+- **Churn and hierarchy are slower than the baseline's equivalent.** A structural change moves a row between chunks (and a destroy swaps the last row in); the baseline replaces a pointer. Propagation recomputes
+  every world matrix of a changed tree, parent before child, in depth order across chunks; the baseline walks its tree once. Both are listed in `KNOWN-ISSUES.md`.
+- A sparse set was **not** added: the sparse case is 200x faster than the baseline, far from the 2x slower that the spec set as the threshold.
+
 ## Common mistakes
 
 - **Keeping a pointer from `Get<T>` across an `Add`, `Remove`, `Create` or `Destroy`.** The row may have moved; fetch the pointer again.

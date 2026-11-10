@@ -12,6 +12,8 @@ set(ECS_TEST_SOURCES
   parallel_test.cpp
   transform_test.cpp
   removal_test.cpp
+  bench_test.cpp
+  ../../game/ecs_bench/bench.cpp
   alloc_counter.cpp
 )
 
@@ -21,7 +23,7 @@ include(Catch)
 function(engine_add_ecs_tests target ecs_lib suffix label)
   add_executable(${target} ${ECS_TEST_SOURCES})
   target_link_libraries(${target} PRIVATE ${ecs_lib} Catch2::Catch2WithMain Threads::Threads)
-  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/game/ecs_bench)
   if(label STREQUAL "asan")
     engine_asan_runtime(${target})
   endif()
