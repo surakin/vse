@@ -166,6 +166,17 @@ struct PolymorphicBase {
 };
 struct PlainType {};
 
+TEST_CASE("IsReference, IsArray, IsVolatile, IsDestructible and IsDefaultConstructible", "[lang]") {
+    struct NoDefault { explicit NoDefault(int) {} };
+    struct NoDestroy { ~NoDestroy() = delete; };
+    static_assert(IsReference<int&> && IsReference<int&&> && !IsReference<int>);
+    static_assert(IsArray<int[3]> && IsArray<int[]> && !IsArray<int*>);
+    static_assert(IsVolatile<volatile int> && !IsVolatile<const int>);
+    static_assert(IsDestructible<int> && !IsDestructible<NoDestroy>);
+    static_assert(IsDefaultConstructible<int> && !IsDefaultConstructible<NoDefault>);
+    CHECK(true);
+}
+
 TEST_CASE("HasVirtualDestructor, TypeIdentity and kMaxAlign", "[lang]") {
     static_assert(HasVirtualDestructor<PolymorphicBase>);
     static_assert(!HasVirtualDestructor<PlainType>);

@@ -7,7 +7,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | Module | Headers | Symbols |
 |---|---|---|
 | [Foundation: Memory](foundation-memory.md) | 4 | 28 |
-| [Foundation: Language support](foundation-lang.md) | 7 | 121 |
+| [Foundation: Language support](foundation-lang.md) | 7 | 126 |
 | [Foundation: C library](foundation-cstr.md) | 5 | 60 |
 | [Foundation: Synchronization](foundation-sync.md) | 3 | 113 |
 | [Foundation: Containers](foundation-containers.md) | 7 | 165 |
@@ -21,7 +21,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Platform: Windowing and Input](platform-window-input.md) | 22 | 669 |
 | [Foundation: Debugging](foundation-debug.md) | 15 | 208 |
 | [Text](text.md) | 6 | 221 |
-| [ECS](ecs.md) | 2 | 37 |
+| [ECS](ecs.md) | 4 | 71 |
 | [The UI Toolkit](ui.md) | 46 | 1420 |
 | [The UI Window Adapter](ui_window.md) | 2 | 25 |
 | [The Job System](jobs.md) | 12 | 193 |

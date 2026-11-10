@@ -74,6 +74,21 @@ inline constexpr bool IsBaseOf = std::is_base_of_v<Base, Derived>;
 /// True when `T` is an empty class.
 template <class T>
 inline constexpr bool IsEmpty = std::is_empty_v<T>;
+/// True when `T` is an lvalue or rvalue reference.
+template <class T>
+inline constexpr bool IsReference = std::is_reference_v<T>;
+/// True when `T` is an array type (bounded or not).
+template <class T>
+inline constexpr bool IsArray = std::is_array_v<T>;
+/// True when `T` is volatile-qualified.
+template <class T>
+inline constexpr bool IsVolatile = std::is_volatile_v<T>;
+/// True when an object of `T` can be destroyed (`T` is not an abstract class with a deleted destructor, an array of unknown bound, ...).
+template <class T>
+inline constexpr bool IsDestructible = std::is_destructible_v<T>;
+/// True when `T` can be default constructed.
+template <class T>
+inline constexpr bool IsDefaultConstructible = std::is_default_constructible_v<T>;
 /// True when `T` has a virtual destructor.
 template <class T>
 inline constexpr bool HasVirtualDestructor = std::has_virtual_destructor_v<T>;

@@ -1021,6 +1021,61 @@ inline constexpr bool IsEmpty;
 
 True when `T` is an empty class.
 
+## `IsReference` {#isreference}
+
+`variable IsReference` — defined in `engine/foundation/lang/traits.h`
+
+```cpp
+template <class T>
+inline constexpr bool IsReference;
+```
+
+True when `T` is an lvalue or rvalue reference.
+
+## `IsArray` {#isarray}
+
+`variable IsArray` — defined in `engine/foundation/lang/traits.h`
+
+```cpp
+template <class T>
+inline constexpr bool IsArray;
+```
+
+True when `T` is an array type (bounded or not).
+
+## `IsVolatile` {#isvolatile}
+
+`variable IsVolatile` — defined in `engine/foundation/lang/traits.h`
+
+```cpp
+template <class T>
+inline constexpr bool IsVolatile;
+```
+
+True when `T` is volatile-qualified.
+
+## `IsDestructible` {#isdestructible}
+
+`variable IsDestructible` — defined in `engine/foundation/lang/traits.h`
+
+```cpp
+template <class T>
+inline constexpr bool IsDestructible;
+```
+
+True when an object of `T` can be destroyed (`T` is not an abstract class with a deleted destructor, an array of unknown bound, ...).
+
+## `IsDefaultConstructible` {#isdefaultconstructible}
+
+`variable IsDefaultConstructible` — defined in `engine/foundation/lang/traits.h`
+
+```cpp
+template <class T>
+inline constexpr bool IsDefaultConstructible;
+```
+
+True when `T` can be default constructed.
+
 ## `HasVirtualDestructor` {#hasvirtualdestructor}
 
 `variable HasVirtualDestructor` — defined in `engine/foundation/lang/traits.h`

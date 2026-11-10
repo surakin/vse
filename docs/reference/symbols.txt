@@ -124,24 +124,29 @@ IsCopyConstructible	variable	foundation/lang	iscopyconstructible	foundation-lang
 IsNothrowMoveConstructible	variable	foundation/lang	isnothrowmoveconstructible	foundation-lang.md	engine/foundation/lang/traits.h:69
 IsBaseOf	variable	foundation/lang	isbaseof	foundation-lang.md	engine/foundation/lang/traits.h:72
 IsEmpty	variable	foundation/lang	isempty	foundation-lang.md	engine/foundation/lang/traits.h:75
-HasVirtualDestructor	variable	foundation/lang	hasvirtualdestructor	foundation-lang.md	engine/foundation/lang/traits.h:78
-TypeIdentity	alias	foundation/lang	typeidentity	foundation-lang.md	engine/foundation/lang/traits.h:81
-EnableIf	alias	foundation/lang	enableif	foundation-lang.md	engine/foundation/lang/traits.h:85
-Conditional	alias	foundation/lang	conditional	foundation-lang.md	engine/foundation/lang/traits.h:88
-RemoveReference	alias	foundation/lang	removereference	foundation-lang.md	engine/foundation/lang/traits.h:91
-RemoveConst	alias	foundation/lang	removeconst	foundation-lang.md	engine/foundation/lang/traits.h:94
-RemoveCV	alias	foundation/lang	removecv	foundation-lang.md	engine/foundation/lang/traits.h:97
-RemoveCVRef	alias	foundation/lang	removecvref	foundation-lang.md	engine/foundation/lang/traits.h:100
-RemovePointer	alias	foundation/lang	removepointer	foundation-lang.md	engine/foundation/lang/traits.h:103
-Decay	alias	foundation/lang	decay	foundation-lang.md	engine/foundation/lang/traits.h:106
-UnderlyingType	alias	foundation/lang	underlyingtype	foundation-lang.md	engine/foundation/lang/traits.h:109
-MakeSigned	alias	foundation/lang	makesigned	foundation-lang.md	engine/foundation/lang/traits.h:112
-MakeUnsigned	alias	foundation/lang	makeunsigned	foundation-lang.md	engine/foundation/lang/traits.h:115
-AddLvalueReference	alias	foundation/lang	addlvaluereference	foundation-lang.md	engine/foundation/lang/traits.h:118
-AddPointer	alias	foundation/lang	addpointer	foundation-lang.md	engine/foundation/lang/traits.h:121
-InvokeResult	alias	foundation/lang	invokeresult	foundation-lang.md	engine/foundation/lang/traits.h:124
-IsInvocable	variable	foundation/lang	isinvocable	foundation-lang.md	engine/foundation/lang/traits.h:127
-IsConstantEvaluated() noexcept	function	foundation/lang	isconstantevaluated-noexcept	foundation-lang.md	engine/foundation/lang/traits.h:131
+IsReference	variable	foundation/lang	isreference	foundation-lang.md	engine/foundation/lang/traits.h:78
+IsArray	variable	foundation/lang	isarray	foundation-lang.md	engine/foundation/lang/traits.h:81
+IsVolatile	variable	foundation/lang	isvolatile	foundation-lang.md	engine/foundation/lang/traits.h:84
+IsDestructible	variable	foundation/lang	isdestructible	foundation-lang.md	engine/foundation/lang/traits.h:87
+IsDefaultConstructible	variable	foundation/lang	isdefaultconstructible	foundation-lang.md	engine/foundation/lang/traits.h:90
+HasVirtualDestructor	variable	foundation/lang	hasvirtualdestructor	foundation-lang.md	engine/foundation/lang/traits.h:93
+TypeIdentity	alias	foundation/lang	typeidentity	foundation-lang.md	engine/foundation/lang/traits.h:96
+EnableIf	alias	foundation/lang	enableif	foundation-lang.md	engine/foundation/lang/traits.h:100
+Conditional	alias	foundation/lang	conditional	foundation-lang.md	engine/foundation/lang/traits.h:103
+RemoveReference	alias	foundation/lang	removereference	foundation-lang.md	engine/foundation/lang/traits.h:106
+RemoveConst	alias	foundation/lang	removeconst	foundation-lang.md	engine/foundation/lang/traits.h:109
+RemoveCV	alias	foundation/lang	removecv	foundation-lang.md	engine/foundation/lang/traits.h:112
+RemoveCVRef	alias	foundation/lang	removecvref	foundation-lang.md	engine/foundation/lang/traits.h:115
+RemovePointer	alias	foundation/lang	removepointer	foundation-lang.md	engine/foundation/lang/traits.h:118
+Decay	alias	foundation/lang	decay	foundation-lang.md	engine/foundation/lang/traits.h:121
+UnderlyingType	alias	foundation/lang	underlyingtype	foundation-lang.md	engine/foundation/lang/traits.h:124
+MakeSigned	alias	foundation/lang	makesigned	foundation-lang.md	engine/foundation/lang/traits.h:127
+MakeUnsigned	alias	foundation/lang	makeunsigned	foundation-lang.md	engine/foundation/lang/traits.h:130
+AddLvalueReference	alias	foundation/lang	addlvaluereference	foundation-lang.md	engine/foundation/lang/traits.h:133
+AddPointer	alias	foundation/lang	addpointer	foundation-lang.md	engine/foundation/lang/traits.h:136
+InvokeResult	alias	foundation/lang	invokeresult	foundation-lang.md	engine/foundation/lang/traits.h:139
+IsInvocable	variable	foundation/lang	isinvocable	foundation-lang.md	engine/foundation/lang/traits.h:142
+IsConstantEvaluated() noexcept	function	foundation/lang	isconstantevaluated-noexcept	foundation-lang.md	engine/foundation/lang/traits.h:146
 Move(T&&) noexcept	function	foundation/lang	move-t-amp-amp-noexcept	foundation-lang.md	engine/foundation/lang/utility.h:13
 Forward(U&&) noexcept	function	foundation/lang	forward-u-amp-amp-noexcept	foundation-lang.md	engine/foundation/lang/utility.h:21
 Exchange(T&,U&&) noexcept	function	foundation/lang	exchange-t-amp-u-amp-amp-noexcept	foundation-lang.md	engine/foundation/lang/utility.h:29
@@ -2815,6 +2820,40 @@ text::ShelfPacker::Place(u32,u32,Rect*)	function	text	text-shelfpacker-place-u32
 text::ShelfPacker::UsedArea() const	function	text	text-shelfpacker-usedarea-const	text.md	engine/text/shelf_packer.h:49
 text::ShelfPacker::Width() const	function	text	text-shelfpacker-width-const	text.md	engine/text/shelf_packer.h:53
 text::ShelfPacker::Height() const	function	text	text-shelfpacker-height-const	text.md	engine/text/shelf_packer.h:57
+ecs::ComponentId	alias	ecs	ecs-componentid	ecs.md	engine/ecs/component.h:15
+ecs::kInvalidComponent	variable	ecs	ecs-kinvalidcomponent	ecs.md	engine/ecs/component.h:18
+ecs::kMaxComponentTypes	variable	ecs	ecs-kmaxcomponenttypes	ecs.md	engine/ecs/component.h:21
+ecs::kMaxComponentAlign	variable	ecs	ecs-kmaxcomponentalign	ecs.md	engine/ecs/component.h:24
+ecs::TypeInfo	struct	ecs	ecs-typeinfo	ecs.md	engine/ecs/component.h:30
+ecs::TypeInfo::size	variable	ecs	ecs-typeinfo-size	ecs.md	engine/ecs/component.h:32
+ecs::TypeInfo::align	variable	ecs	ecs-typeinfo-align	ecs.md	engine/ecs/component.h:34
+ecs::TypeInfo::is_tag	variable	ecs	ecs-typeinfo-is-tag	ecs.md	engine/ecs/component.h:36
+ecs::TypeInfo::trivially_relocatable	variable	ecs	ecs-typeinfo-trivially-relocatable	ecs.md	engine/ecs/component.h:38
+ecs::TypeInfo::move_construct	variable	ecs	ecs-typeinfo-move-construct	ecs.md	engine/ecs/component.h:40
+ecs::TypeInfo::destroy	variable	ecs	ecs-typeinfo-destroy	ecs.md	engine/ecs/component.h:42
+ecs::TypeInfo::default_construct	variable	ecs	ecs-typeinfo-default-construct	ecs.md	engine/ecs/component.h:44
+ecs::TypeInfo::name	variable	ecs	ecs-typeinfo-name	ecs.md	engine/ecs/component.h:46
+ecs::ComponentRegistry	class	ecs	ecs-componentregistry	ecs.md	engine/ecs/component.h:54
+ecs::ComponentRegistry::ComponentRegistry()	function	ecs	ecs-componentregistry-componentregistry	ecs.md	engine/ecs/component.h:57
+ecs::ComponentRegistry::ComponentRegistry(const ComponentRegistry&)	function	ecs	ecs-componentregistry-componentregistry-const-componentregistry-amp	ecs.md	engine/ecs/component.h:58
+ecs::ComponentRegistry::operator=(const ComponentRegistry&)	function	ecs	ecs-componentregistry-operator-eq-const-componentregistry-amp	ecs.md	engine/ecs/component.h:59
+ecs::ComponentRegistry::Global()	function	ecs	ecs-componentregistry-global	ecs.md	engine/ecs/component.h:62
+ecs::ComponentRegistry::Register(const TypeInfo&)	function	ecs	ecs-componentregistry-register-const-typeinfo-amp	ecs.md	engine/ecs/component.h:68
+ecs::ComponentRegistry::Info(ComponentId) const	function	ecs	ecs-componentregistry-info-componentid-const	ecs.md	engine/ecs/component.h:72
+ecs::ComponentRegistry::Count() const	function	ecs	ecs-componentregistry-count-const	ecs.md	engine/ecs/component.h:75
+ecs::ComponentRegistry::Refused() const	function	ecs	ecs-componentregistry-refused-const	ecs.md	engine/ecs/component.h:78
+ecs::ComponentOf()	function	ecs	ecs-componentof	ecs.md	engine/ecs/component.h:139
+ecs::ComponentSet	struct	ecs	ecs-componentset	ecs.md	engine/ecs/component_set.h:15
+ecs::ComponentSet::words	variable	ecs	ecs-componentset-words	ecs.md	engine/ecs/component_set.h:17
+ecs::ComponentSet::Add(ComponentId)	function	ecs	ecs-componentset-add-componentid	ecs.md	engine/ecs/component_set.h:21
+ecs::ComponentSet::Remove(ComponentId)	function	ecs	ecs-componentset-remove-componentid	ecs.md	engine/ecs/component_set.h:27
+ecs::ComponentSet::Has(ComponentId) const	function	ecs	ecs-componentset-has-componentid-const	ecs.md	engine/ecs/component_set.h:33
+ecs::ComponentSet::IsEmpty() const	function	ecs	ecs-componentset-isempty-const	ecs.md	engine/ecs/component_set.h:38
+ecs::ComponentSet::Count() const	function	ecs	ecs-componentset-count-const	ecs.md	engine/ecs/component_set.h:41
+ecs::ComponentSet::IsSubsetOf(const ComponentSet&) const	function	ecs	ecs-componentset-issubsetof-const-componentset-amp-const	ecs.md	engine/ecs/component_set.h:44
+ecs::ComponentSet::Intersects(const ComponentSet&) const	function	ecs	ecs-componentset-intersects-const-componentset-amp-const	ecs.md	engine/ecs/component_set.h:49
+ecs::ComponentSet::Hash() const	function	ecs	ecs-componentset-hash-const	ecs.md	engine/ecs/component_set.h:54
+ecs::ComponentSet::NextFrom(u32) const	function	ecs	ecs-componentset-nextfrom-u32-const	ecs.md	engine/ecs/component_set.h:64
 ecs::Entity	struct	ecs	ecs-entity	ecs.md	engine/ecs/entity.h:16
 ecs::Entity::index	variable	ecs	ecs-entity-index	ecs.md	engine/ecs/entity.h:18
 ecs::Entity::generation	variable	ecs	ecs-entity-generation	ecs.md	engine/ecs/entity.h:20

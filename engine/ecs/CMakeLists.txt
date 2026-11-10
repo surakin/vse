@@ -3,6 +3,7 @@
 # Headers are included as "ecs/<name>.h", rooted at engine/. It includes no renderer, RHI or platform header (module_deps_check).
 set(ECS_SOURCES
   entity_table.cpp
+  component.cpp
 )
 set(ECS_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
