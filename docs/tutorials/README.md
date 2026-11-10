@@ -1,6 +1,6 @@
 # Tutorials
 
-Goal-oriented walkthroughs. Most are currently skeletons; Clear a Window with the RHI and From a Scene to a Lit Frame with the Renderer are written.
+Goal-oriented walkthroughs. Every tutorial is written; each one has a program you can build, and the ones that need no display run in the docs checks.
 
 - [Open a Window](hello-window.md)
 - [Handle Keyboard and Mouse Input](handling-input.md)
