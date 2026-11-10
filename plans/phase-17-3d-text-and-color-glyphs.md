@@ -8,7 +8,28 @@ system, vertex colors and triangle strips from Phase 5 Day 78). Phase 15 (UI) do
 holes (`o`, `B`) right, watertight, correctly wound; and a font's colored glyphs (`COLR` v0 layers and `CBDT`/`sbix` bitmaps) render in 2D and 3D, with
 the unsupported formats falling back to the monochrome outline or `.notdef` in a logged, tested way.
 
-## Key deliverables (to be expanded into day-by-day tasks when started)
+## Days
+
+222. [Design Spec, Decisions & Phase Setup](phase-17-3d-text-and-color-glyphs/day-222-design-spec-and-setup.md)
+223. [Flattening Glyph Outlines](phase-17-3d-text-and-color-glyphs/day-223-flatten-outlines.md)
+224. [Contour Orientation, Nesting & Overlap Removal](phase-17-3d-text-and-color-glyphs/day-224-contour-cleanup.md)
+225. [Triangulating Polygons with Holes](phase-17-3d-text-and-color-glyphs/day-225-triangulation.md)
+226. [Large 2D Glyph Meshes: Cache & Edge Ramp](phase-17-3d-text-and-color-glyphs/day-226-large-2d-glyph-meshes.md)
+227. [Large 2D Text on the GPU](phase-17-3d-text-and-color-glyphs/day-227-large-2d-text-rendering.md)
+228. [Extruding Glyph Geometry](phase-17-3d-text-and-color-glyphs/day-228-extrusion.md)
+229. [Beveled Extrusion](phase-17-3d-text-and-color-glyphs/day-229-bevel.md)
+230. [3D Text Meshes Through the Renderer](phase-17-3d-text-and-color-glyphs/day-230-text-3d-mesh-and-rendering.md)
+231. [Test Font Builder & COLR v0 Layers](phase-17-3d-text-and-color-glyphs/day-231-test-fonts-and-colr.md)
+232. [COLR Layers on the 2D and 3D Paths](phase-17-3d-text-and-color-glyphs/day-232-colr-on-2d-and-3d.md)
+233. [Inflate & PNG Decoder (`engine/image`)](phase-17-3d-text-and-color-glyphs/day-233-inflate-and-png.md)
+234. [`CBDT`/`CBLC` and `sbix` Bitmap Strikes](phase-17-3d-text-and-color-glyphs/day-234-color-bitmap-tables.md)
+235. [RGBA Atlas Pages & Bitmap Color Glyphs on 2D and 3D](phase-17-3d-text-and-color-glyphs/day-235-rgba-atlas-and-bitmap-drawing.md)
+236. [`text3d_demo`, Settings Screen & Integration](phase-17-3d-text-and-color-glyphs/day-236-demo-and-integration.md)
+237. [Docs, Windows PC, Closing Full Run & Phase Review](phase-17-3d-text-and-color-glyphs/day-237-docs-closing-run-and-review.md)
+
+Order reasoning: geometry first, pure CPU and testable without a GPU (flatten 223, cleanup 224, triangulate 225), because both consumers share it; the large 2D path (226-227) comes before 3D because it replaces a Phase 14 stand-in and is smaller; extrusion and bevel (228-229) precede the renderer integration (230); colors start with COLR (231-232), which needs no new decoder, and the bitmap formats (233-235) come last because they need the new PNG decoder.
+
+## Key deliverables (the original list; the days above break it down)
 
 Carried over unchanged from the Phase 14 plan as it stood before the split:
 
@@ -33,4 +54,5 @@ Carried over unchanged from the Phase 14 plan as it stood before the split:
   units (font units or world units); contour winding rules for fonts that mix conventions. Hinting is irrelevant to the 3D path (outlines load unhinted).
 - Phase 14 must keep the seams this phase needs (recorded in its design spec): the font object exposes outline loading as well as bitmap rendering,
   the layout produces glyph ids and pen positions independent of how a glyph is drawn, and the atlas can hold an RGBA page later.
-- Full day-by-day breakdown is written when Phase 15 is complete (policy: every day gets its file before the phase starts).
+- Day files written 2026-11-10 (Days 222-237). Day 222 settles the open questions above with the planner's defaults and experiments; **scope-bearing call flagged to the user:** `libpng` is a third-party convenience dependency FreeType would need for `CBDT`/`sbix` PNG strikes, so the plan adds an engine-owned inflate and PNG decoder (`engine/image`, Day 233) and reads the bitmap tables itself. Dropping bitmap color glyphs (COLR v0 only) is a cheap cut: delete Days 233-235 and their share of 236.
+- Phase 16's Day 219 (Windows PC) is still open; Day 237 also needs the Windows PC, for DXIL minting and the Windows closing run.
