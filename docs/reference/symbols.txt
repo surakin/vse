@@ -2815,6 +2815,43 @@ text::ShelfPacker::Place(u32,u32,Rect*)	function	text	text-shelfpacker-place-u32
 text::ShelfPacker::UsedArea() const	function	text	text-shelfpacker-usedarea-const	text.md	engine/text/shelf_packer.h:49
 text::ShelfPacker::Width() const	function	text	text-shelfpacker-width-const	text.md	engine/text/shelf_packer.h:53
 text::ShelfPacker::Height() const	function	text	text-shelfpacker-height-const	text.md	engine/text/shelf_packer.h:57
+ecs::Entity	struct	ecs	ecs-entity	ecs.md	engine/ecs/entity.h:16
+ecs::Entity::index	variable	ecs	ecs-entity-index	ecs.md	engine/ecs/entity.h:18
+ecs::Entity::generation	variable	ecs	ecs-entity-generation	ecs.md	engine/ecs/entity.h:20
+ecs::Entity::IsValid() const	function	ecs	ecs-entity-isvalid-const	ecs.md	engine/ecs/entity.h:24
+ecs::Entity::ToU64() const	function	ecs	ecs-entity-tou64-const	ecs.md	engine/ecs/entity.h:27
+ecs::Entity::FromU64(u64)	function	ecs	ecs-entity-fromu64-u64	ecs.md	engine/ecs/entity.h:30
+ecs::Entity::operator==(const Entity&) const	function	ecs	ecs-entity-operator-eq-eq-const-entity-amp-const	ecs.md	engine/ecs/entity.h:32
+ecs::Entity::operator!=(const Entity&) const	function	ecs	ecs-entity-operator-not-eq-const-entity-amp-const	ecs.md	engine/ecs/entity.h:34
+ecs::Entity::operator<(const Entity&) const	function	ecs	ecs-entity-operator-lt-const-entity-amp-const	ecs.md	engine/ecs/entity.h:36
+Hash<ecs::Entity>	struct	ecs	hash-lt-ecs-entity-gt	ecs.md	engine/ecs/entity.h:48
+Hash<ecs::Entity>::operator()(const ecs::Entity&) const	function	ecs	hash-lt-ecs-entity-gt-operator-call-const-ecs-entity-amp-const	ecs.md	engine/ecs/entity.h:51
+ecs::kMaxEntitySlots	variable	ecs	ecs-kmaxentityslots	ecs.md	engine/ecs/entity_table.h:13
+ecs::kNoArchetype	variable	ecs	ecs-knoarchetype	ecs.md	engine/ecs/entity_table.h:16
+ecs::EntityLocation	struct	ecs	ecs-entitylocation	ecs.md	engine/ecs/entity_table.h:22
+ecs::EntityLocation::archetype	variable	ecs	ecs-entitylocation-archetype	ecs.md	engine/ecs/entity_table.h:24
+ecs::EntityLocation::chunk	variable	ecs	ecs-entitylocation-chunk	ecs.md	engine/ecs/entity_table.h:26
+ecs::EntityLocation::row	variable	ecs	ecs-entitylocation-row	ecs.md	engine/ecs/entity_table.h:28
+ecs::EntityTableStats	struct	ecs	ecs-entitytablestats	ecs.md	engine/ecs/entity_table.h:35
+ecs::EntityTableStats::alive	variable	ecs	ecs-entitytablestats-alive	ecs.md	engine/ecs/entity_table.h:37
+ecs::EntityTableStats::slots	variable	ecs	ecs-entitytablestats-slots	ecs.md	engine/ecs/entity_table.h:39
+ecs::EntityTableStats::free	variable	ecs	ecs-entitytablestats-free	ecs.md	engine/ecs/entity_table.h:41
+ecs::EntityTableStats::refused	variable	ecs	ecs-entitytablestats-refused	ecs.md	engine/ecs/entity_table.h:43
+ecs::EntityTableStats::generation_wraps	variable	ecs	ecs-entitytablestats-generation-wraps	ecs.md	engine/ecs/entity_table.h:45
+ecs::EntityTable	class	ecs	ecs-entitytable	ecs.md	engine/ecs/entity_table.h:57
+ecs::EntityTable::EntityTable()	function	ecs	ecs-entitytable-entitytable	ecs.md	engine/ecs/entity_table.h:60
+ecs::EntityTable::EntityTable(const EntityTable&)	function	ecs	ecs-entitytable-entitytable-const-entitytable-amp	ecs.md	engine/ecs/entity_table.h:61
+ecs::EntityTable::operator=(const EntityTable&)	function	ecs	ecs-entitytable-operator-eq-const-entitytable-amp	ecs.md	engine/ecs/entity_table.h:62
+ecs::EntityTable::EntityTable(EntityTable&&) noexcept	function	ecs	ecs-entitytable-entitytable-entitytable-amp-amp-noexcept	ecs.md	engine/ecs/entity_table.h:64
+ecs::EntityTable::operator=(EntityTable&&) noexcept	function	ecs	ecs-entitytable-operator-eq-entitytable-amp-amp-noexcept	ecs.md	engine/ecs/entity_table.h:70
+ecs::EntityTable::Allocate(EntityLocation)	function	ecs	ecs-entitytable-allocate-entitylocation	ecs.md	engine/ecs/entity_table.h:89
+ecs::EntityTable::Free(Entity)	function	ecs	ecs-entitytable-free-entity	ecs.md	engine/ecs/entity_table.h:95
+ecs::EntityTable::IsAlive(Entity) const	function	ecs	ecs-entitytable-isalive-entity-const	ecs.md	engine/ecs/entity_table.h:99
+ecs::EntityTable::Location(Entity)	function	ecs	ecs-entitytable-location-entity	ecs.md	engine/ecs/entity_table.h:105
+ecs::EntityTable::Location(Entity) const	function	ecs	ecs-entitytable-location-entity-const	ecs.md	engine/ecs/entity_table.h:110
+ecs::EntityTable::Stats() const	function	ecs	ecs-entitytable-stats-const	ecs.md	engine/ecs/entity_table.h:113
+ecs::EntityTable::SetMaxSlotsForTesting(u32)	function	ecs	ecs-entitytable-setmaxslotsfortesting-u32	ecs.md	engine/ecs/entity_table.h:116
+ecs::EntityTable::SetGenerationForTesting(u32,u32)	function	ecs	ecs-entitytable-setgenerationfortesting-u32-u32	ecs.md	engine/ecs/entity_table.h:119
 ui::ConnectionId	alias	ui	ui-connectionid	ui.md	engine/ui/callback.h:11
 ui::Callback	class	ui	ui-callback	ui.md	engine/ui/callback.h:20
 ui::Callback::Function	alias	ui	ui-callback-function	ui.md	engine/ui/callback.h:24

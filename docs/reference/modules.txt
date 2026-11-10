@@ -80,6 +80,12 @@ module text "Text"
   strict ownership
   strict failure
 
+module ecs "ECS"
+  header engine/ecs/*.h
+  strict thread-safety
+  strict ownership
+  strict failure
+
 module ui "The UI Toolkit"
   header engine/ui/*.h
   header engine/ui/testing/*.h

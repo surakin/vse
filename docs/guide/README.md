@@ -25,4 +25,5 @@ Concept pages, one per subsystem, plus the platform pages (`windows`).
 - [render-settings](render-settings.md)
 - [io](io.md)
 - [text](text.md)
+- [ecs](ecs.md)
 - [ui](ui.md)

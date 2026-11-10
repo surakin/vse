@@ -19,6 +19,7 @@ engine/platform     0,1,4,5,8
 engine/jobs         2,3,4,5
 engine/rhi          3,4,5
 engine/renderer     3,4,5
+engine/ecs          3,17
 shaders             4,5
 tools/docgen        3,4
 tools/shader_mint   4,5
