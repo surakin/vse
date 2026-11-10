@@ -88,8 +88,10 @@ There is no Windows ThreadSanitizer or UBSan: those flavors run on the Linux mac
 
 ## macOS: not yet supported (Phase 23)
 
-Planned for Phase 23 (Metal backend, `plans/phase-23-macos-metal.md`). The list is written when that phase is broken into days; expect Xcode or its
-command-line tools (Clang, the Metal toolchain), CMake, Ninja and `slangc` v2026.18.2.
+Planned for Phase 23 (Metal backend, `plans/phase-23-macos-metal.md`). The list is written when that phase is broken into days; expect the Xcode
+Command Line Tools (Clang), CMake, Ninja and `slangc` v2026.18.2. The Command Line Tools do not include the offline Metal compiler (`metal`,
+`metallib`), which ships only with Xcode; whether `.metallib` files can be minted through the driver instead, without Xcode, is the first
+spike of Phase 23 (`plans/phase-23-macos-metal.md`, "Shader toolchain").
 
 ## Android, iOS, consoles: not yet supported
 

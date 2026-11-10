@@ -460,7 +460,9 @@ interpretations keep it buildable — flag any that don't match intent:
       unchanged, and the GLSL sources and the `glslc` path were removed on
       Day 70. Open items for Phases 13 and 23: Metal renames an entry point
       called `main`, and no Slang flag flips clip-space Y for HLSL/Metal
-      (see `shaders/README.md`, "Other targets").
+      (see `shaders/README.md`, "Other targets"). How the Metal output becomes precompiled `.metallib` files without Xcode
+      (through the driver's compiler and `MTLDynamicLibrary.serialize`) is a spike at the start of Phase 23 (2026-11-10,
+      `plans/phase-23-macos-metal.md`).
     - The RHI already takes bytecode (`ShaderDesc` holds SPIR-V words); the
       Day 67 portability review (section 3) found that a per-backend blob
       would add a format tag to `ShaderDesc`, and that any translator must

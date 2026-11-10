@@ -41,6 +41,29 @@ engine's shader source was to be settled before Phase 5; confirm that
 decision here and that the mint emits MSL blobs for `ShaderDesc`
 before this phase's day files are written.
 
+- **Spike: mint `.metallib` files without Xcode (added 2026-11-10; becomes this phase's first day file).** Apple ships the offline
+  Metal compiler (`metal`, `metallib`) only with Xcode (since Xcode 26 as the separate download `xcodebuild -downloadComponent
+  MetalToolchain`); the Command Line Tools do not include it. The driver's own compiler does ship with macOS, and a probe on
+  2026-11-10 (the 2019 Intel MacBook Pro, Iris Plus Graphics 645, Darwin 24.6, Command Line Tools only, a throwaway Swift program)
+  showed a documented route to a file: compile MSL with `MTLCompileOptions.libraryType = .dynamic` and an `installName`, wrap it
+  with `MTLDevice.makeDynamicLibrary(library:)`, write it with `MTLDynamicLibrary.serialize(to:)`, and the 27 KB result loads back
+  through the ordinary `makeLibrary(URL:)` with the vertex entry point present and usable. The file is a fat container (magic
+  `cbfebabe`) with two slices: AIR (`__AIR_DATA`, the portable intermediate form `metal` produces) and native code for that Intel
+  GPU (`INTEL_*` sections). (The ordinary library from `makeLibrary(source:)` answers the undocumented `serializeToURL:error:`; not
+  to be used.) The idea is a small `tools/metal_mint` that runs the Slang `-target metal` output through this path on any Mac and
+  commits AIR-only `.metallib` outputs, as `shader_mint` does for `*.spv.inc`, so no machine needs Xcode. Sub-tasks:
+  - [ ] Load the minted file on an Apple Silicon Mac, and on a macOS version other than the one that minted it. **This decides the
+        spike**: if it fails, the route is rejected.
+  - [ ] Strip the container to the AIR slice (try `lipo`; the format is undocumented) and check the stripped file still loads on both
+        the Intel and the Apple Silicon Mac.
+  - [ ] Mint the same source twice, and on two machines, and compare bytes: minting must be deterministic (`PLAN.md` principles).
+  - [ ] Check what a dynamic library changes against an ordinary one for the engine's shaders: exported (mangled) helper names, the
+        install name, function constants, the `[[buffer(n)]]` bindings and the reflection the backend reads.
+  - [ ] Decide and record: `metal_mint` on the driver, or the fallback, Apple's Metal Developer Tools for Windows on the Windows
+        machine (or Xcode on the Mac). `BUILD.md` gets the macOS prerequisites that follow from the choice.
+
+  **Done:** the decision is recorded here and in `PLAN.md` assumption #18, with the load and determinism results quoted.
+
 - **From the Phase 4 portability review** (`docs/superpowers/specs/2026-11-04-rhi-portability-review.md`, section 5):
   split encoders around render passes, copies and dispatches; barriers become no-ops, `memoryBarrier` or an encoder split
   depending on resource tracking mode; threadgroup size comes from shader reflection at pipeline creation; `Managed`
