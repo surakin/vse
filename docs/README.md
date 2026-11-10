@@ -1,8 +1,10 @@
 # Engine Documentation
 
-End-user documentation for the engine. **Status: skeleton.** Every page
-below exists as an outline with pointers to its source of truth and the
-facts already known; none is written yet. See [DOC-CONVENTIONS.md](DOC-CONVENTIONS.md) for how
+End-user documentation for the engine. **New to the engine? Start with the
+[guide](guide/README.md), which lists its pages in reading order.** Most pages
+are written; the ones still outlines (`_TODO_` markers) are strings, math,
+logging and assertions, jobs, platform OS, windowing and input, and parts of
+building and testing. See [DOC-CONVENTIONS.md](DOC-CONVENTIONS.md) for how
 pages are structured and when a day's work counts as documented.
 
 Internal design history is for contributors, not engine users: the specs in
@@ -32,7 +34,7 @@ and the plans in `plans/`.
 
 | Section | What it is | Pages |
 |---|---|---|
-| [guide/](guide/README.md) | Concept pages, one per subsystem — *how it works and how to use it* | 11 |
+| [guide/](guide/README.md) | Concept pages, one per subsystem — *how it works and how to use it* | 25 |
 | [reference/](reference/README.md) | API reference, generated from header comments — *what every symbol does* | index + per-module stubs |
 | [tutorials/](tutorials/README.md) | Task-oriented walkthroughs — *do this, get that* | 4 |
 
