@@ -1,9 +1,9 @@
 # ECS: entities, components and systems
 
-Status: draft (Phase 17, Days 223-227: entities, components, storage, the world, queries; the rest of the page arrives with the days that build it).
+Status: draft (Phase 17, Days 223-228: entities, components, storage, the world, queries, command buffers, resources; the rest of the page arrives with the days that build it).
 
 **Audience:** every game and engine programmer. Read [Containers](foundation-containers.md) and [Memory](foundation-memory.md) first. This page covers only
-what is built so far (entities, components, storage, the world and queries); systems and command buffers are not documented here yet.
+what is built so far (entities, components, storage, the world, queries, command buffers and resources); systems are not documented here yet.
 
 The ECS (`engine/ecs`, namespace `ecs`) is the engine's data-oriented core: **entities** are ids, **components** are plain data stored in
 cache-friendly chunks, and **systems** are functions over all entities that have a given set of components. Design, measurements and the
@@ -24,6 +24,8 @@ with a Position" reads memory in order. The *archetype* is that group: all entit
 | to read or change a component | `world.Get<T>(e)` | pointer valid until the next structural change; null for a tag |
 | to mark an entity without data | an empty struct (a tag) | takes no space but takes part in queries |
 | to visit every entity that has certain components | `world.Query<Write<A>, Read<B>, Without<C>>()`, then `ForEach` | see "Queries"; include `ecs/query.h` |
+| to change entities while a query runs | `CommandBuffer`, then `world.Apply(buffer)` | see "Command buffers"; include `ecs/command_buffer.h` |
+| one value shared by all systems (time, settings) | `world.SetResource(value)`, `world.Resource<T>()` | see "Resources" |
 | to check the world's consistency | `world.Validate()` | for tests and debug builds |
 
 ## Entities
@@ -182,7 +184,7 @@ alive no, destroy again: DeadEntity
   (archetype, component, add or remove) to the target is cached, so a repeated transition costs one hash lookup (`Stats().graph_hits`).
 - **Pointer validity.** A pointer from `Get<T>` or a chunk span is valid until the next structural change; `Get` of a tag is null (ask `Has`).
 - **Iteration guard.** While `BeginIteration` is active (queries do this), a structural call fails an `ENGINE_ASSERT` naming the call;
-  `Set` of an existing component is allowed. Command buffers (Day 228) defer the changes to a sync point.
+  `Set` of an existing component is allowed. A command buffer defers the changes to a sync point.
 - **Cost.** `Create` is one entity-table allocation and one row; `Add`/`Remove` copy the row once (the size of the entity's components) plus one
   hash lookup; `Destroy` destroys the row and moves the last one in; `Get` is two index loads.
 - **Validation.** `Validate()` checks the invariants (locations point at their rows, no dead or duplicated entity in a row, counts add up, chunks
@@ -256,11 +258,99 @@ A query has one to 16 terms and names each component once, so `Read<T>` with `Wr
 - **The iteration guard.** While a query runs, a structural call (`Create`, `Destroy`, `Add`, `Remove`) fails an assertion, and `world.Get<T>` of a component the
   query *writes* fails one too. `world.Get<T>` of a component the query only reads is fine, and so is `Set` of an existing component.
 
+## Command buffers
+
+A structural change (create, destroy, add or remove a component) moves rows, so it is not allowed while a query runs. A **command buffer** records the
+changes and you apply them afterwards, at a **sync point**. Include `ecs/command_buffer.h`.
+
+```cpp compile run standalone
+#include "ecs/command_buffer.h"
+#include "ecs/query.h"
+#include "os/console.h"
+
+using namespace engine_placeholder;
+
+struct Health { unsigned hp; };
+struct Burning {};
+
+int main() {
+    ecs::World world;
+    for (unsigned i = 0; i < 6; ++i) {
+        world.Create(Health{i * 10});
+    }
+
+    ecs::CommandBuffer buffer;
+    auto healths = world.Query<ecs::Read<Health>>();
+    healths.ForEach([&](ecs::Entity e, const Health& h) {
+        if (h.hp == 0) {
+            buffer.Destroy(e);                 // recorded, not done: the loop is still running
+        } else if (h.hp >= 40) {
+            buffer.Add<Burning>(e, {});
+        }
+    });
+    const ecs::Entity spawned = buffer.Create(Health{99});  // a placeholder for an entity that does not exist yet
+    buffer.Add<Burning>(spawned, {});                       // later commands may name it
+
+    const ecs::PlaybackReport report = world.Apply(buffer);
+    os::Print("applied %u, ignored %u, created %u\n", report.applied, report.ignored, report.created);
+    os::Print("%u entities, the spawned one is real: %s\n", healths.Count(), world.Exists(buffer.Resolve(spawned)) ? "yes" : "no");
+    return 0;
+}
+```
+
+```output
+applied 5, ignored 0, created 1
+6 entities, the spawned one is real: yes
+```
+
+- **Placeholders.** `Create` returns an entity with a reserved generation (`Entity::IsPlaceholder()`). It is valid only with the buffer that made it; after
+  `Apply`, `buffer.Resolve(placeholder)` returns the real entity (invalid if the create did not happen).
+- **Values** are moved into the buffer when you record and moved out when it is applied. A command never applied (the buffer is cleared or destroyed)
+  destroys its values exactly once.
+- **Skipped commands.** A command whose entity died, or that cannot apply (adding a component the entity has), is skipped and counted in
+  `PlaybackReport::ignored`; playback never stops at a failure.
+- **Order.** Commands apply in the order recorded. For several buffers, apply them in an order you choose; `CommandBufferPool::ApplyAll` applies by index,
+  so with one buffer per parallel job the result does not depend on which thread ran which job.
+- **Cost.** Recording appends to storage the buffer keeps between uses, so a buffer that is cleared and reused allocates nothing after the first frames.
+  Applying during an iteration fails an assertion.
+
+## Resources
+
+A **resource** is one value of a type that belongs to the world as a whole: the frame time, the input state, a settings snapshot. There is at most one per type.
+
+```cpp compile run standalone
+#include "ecs/world.h"
+#include "os/console.h"
+
+using namespace engine_placeholder;
+
+struct Time { double delta; unsigned frame; };
+
+int main() {
+    ecs::World world;
+    world.SetResource(Time{0.016, 0});
+    world.Resource<Time>().frame += 1;                         // read or change it in place
+    os::Print("frame %u, delta %.3f\n", world.Resource<Time>().frame, world.Resource<Time>().delta);
+    os::Print("has Time: %s, has int: %s\n", world.HasResource<Time>() ? "yes" : "no", world.TryResource<int>() != nullptr ? "yes" : "no");
+    return 0;
+}
+```
+
+```output
+frame 1, delta 0.016
+has Time: yes, has int: no
+```
+
+`SetResource` of a type that already has one replaces the value in place, so a reference you hold stays valid. `Resource<T>()` of a missing type fails an
+assertion; `TryResource<T>()` returns null instead. The world destroys its resources newest first when it goes away, so a resource may refer to one made
+before it.
+
 ## Common mistakes
 
 - **Keeping a pointer from `Get<T>` across an `Add`, `Remove`, `Create` or `Destroy`.** The row may have moved; fetch the pointer again.
 - **Ignoring the returned `ecs::Status`.** `DeadEntity`, `AlreadyHas` and `Refused` are normal answers, not crashes.
-- **Changing components while iterating.** A structural call during iteration fails an `ENGINE_ASSERT`; the command buffer that defers it is not built yet (Day 228).
+- **Changing components while iterating.** A structural call during iteration fails an `ENGINE_ASSERT`; record it in a `CommandBuffer` and apply it after the loop.
+- **Using a placeholder with another buffer or after `Clear`.** It resolves to nothing; resolve it right after `Apply`.
 - **Writing a component through `Get` inside a query that writes it.** Use the argument the query gives you.
 - **Building a query every frame.** A query keeps its match; make it once and keep it.
 - **Storing a `ComponentId` on disk.** Ids depend on the order of first use; store the type's name.

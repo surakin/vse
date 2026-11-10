@@ -22,6 +22,11 @@ struct Entity {
     /// Returns whether this is not the invalid (all-zero) id; a valid-looking id can still be stale.
     /// Fails: never.
     constexpr bool IsValid() const { return generation != 0; }
+    /// The generation that marks a command-buffer placeholder; the entity table never issues it (it wraps past it to 1).
+    static constexpr u32 kPlaceholderGeneration = 0xFFFFFFFFu;
+    /// Returns whether this is a placeholder from a [[ecs::CommandBuffer]] (an entity that is created when the buffer is applied): `index` is its number in the buffer.
+    /// Fails: never.
+    constexpr bool IsPlaceholder() const { return generation == kPlaceholderGeneration; }
     /// Packs the id into 64 bits (generation in the high half), for hashing, logging and storage.
     /// Fails: never.
     constexpr u64 ToU64() const { return (static_cast<u64>(generation) << 32) | index; }

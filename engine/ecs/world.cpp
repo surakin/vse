@@ -1,8 +1,53 @@
 #include "ecs/world.h"
 
 #include "cstr/mem_ops.h"
+#include "sync/atomic.h"
 
 namespace engine_placeholder::ecs {
+
+namespace detail {
+u32 NextResourceTypeId() {
+    static Atomic<u32> next{0};
+    return next.FetchAdd(1, MemoryOrder::Relaxed);
+}
+} // namespace detail
+
+World::~World() {
+    DestroyAllResources();
+}
+
+World::ResourceSlot* World::FindResource(u32 type_id) {
+    if (type_id >= resources_.Size() || resources_[type_id].object == nullptr) {
+        return nullptr;
+    }
+    return &resources_[type_id];
+}
+
+const World::ResourceSlot* World::FindResource(u32 type_id) const {
+    return const_cast<World*>(this)->FindResource(type_id);
+}
+
+void World::DestroyResource(ResourceSlot& slot) {
+    slot.destroy(slot.object);
+    HeapAllocator::Default().Free(slot.object, slot.size, slot.align);
+    slot = ResourceSlot{};
+}
+
+void World::DestroyAllResources() {
+    // Newest first: a resource may refer to those made before it.
+    for (;;) {
+        ResourceSlot* newest = nullptr;
+        for (usize i = 0; i < resources_.Size(); ++i) {
+            if (resources_[i].object != nullptr && (newest == nullptr || resources_[i].serial > newest->serial)) {
+                newest = &resources_[i];
+            }
+        }
+        if (newest == nullptr) {
+            return;
+        }
+        DestroyResource(*newest);
+    }
+}
 
 World::World() : by_set_(HeapAllocator::Default()), edges_(HeapAllocator::Default()) {
     const u32 empty = FindOrCreateArchetype(ComponentSet{});

@@ -41,14 +41,14 @@ struct EntityTableStats {
     u32 free = 0;
     /// Allocations refused because the table was full.
     u64 refused = 0;
-    /// Times a slot's generation wrapped past the 32-bit maximum (and skipped the invalid value 0).
+    /// Times a slot's generation wrapped past the 32-bit maximum (and skipped the invalid value 0 and the placeholder value).
     u64 generation_wraps = 0;
 };
 
 /// Slots with generations: allocates and frees entity ids and remembers where each alive entity is stored.
 ///
-/// A freed slot is reused last-in first-out and its generation is incremented, so the old id no longer matches. Generation 0 is never
-/// issued: after 2^32 - 1 reuses of one slot the generation wraps to 1 (counted), and an id older than that wrap could match again, which
+/// A freed slot is reused last-in first-out and its generation is incremented, so the old id no longer matches. Generation 0 and `Entity::kPlaceholderGeneration` (0xFFFFFFFF, the mark of a
+/// command-buffer placeholder) are never issued: after 2^32 - 2 reuses of one slot the generation wraps to 1 (counted), and an id older than that wrap could match again, which
 /// is documented and accepted.
 ///
 /// Thread-safety: thread-compatible. `IsAlive`, `Location` (const) and `Stats` are safe to call concurrently with each other; `Allocate`,

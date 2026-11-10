@@ -6,6 +6,7 @@ set(ECS_TEST_SOURCES
   archetype_test.cpp
   world_test.cpp
   query_test.cpp
+  command_test.cpp
   alloc_counter.cpp
 )
 

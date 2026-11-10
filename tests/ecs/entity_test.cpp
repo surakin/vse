@@ -142,8 +142,8 @@ TEST_CASE("EntityTable: a million create and destroy cycles stay exact against a
 TEST_CASE("EntityTable: the generation wraps past zero and the wrap is counted", "[ecs][entity]") {
     EntityTable table;
     const Entity a = table.Allocate(Where());
-    table.SetGenerationForTesting(a.index, 0xFFFFFFFFu);
-    const Entity old{a.index, 0xFFFFFFFFu};
+    table.SetGenerationForTesting(a.index, 0xFFFFFFFEu); // the last generation that is issued; 0xFFFFFFFF marks command-buffer placeholders
+    const Entity old{a.index, 0xFFFFFFFEu};
     REQUIRE(table.IsAlive(old));
     REQUIRE(table.Free(old));
     CHECK(table.Stats().generation_wraps == 1);
@@ -151,7 +151,9 @@ TEST_CASE("EntityTable: the generation wraps past zero and the wrap is counted",
     CHECK(next.index == a.index);
     CHECK(next.generation == 1);
     CHECK(next.IsValid());
+    CHECK_FALSE(next.IsPlaceholder());
     CHECK_FALSE(table.IsAlive(old));
+    CHECK_FALSE(table.IsAlive(Entity{a.index, Entity::kPlaceholderGeneration}));
 }
 
 TEST_CASE("EntityTable: a moved-from table is empty and consistent", "[ecs][entity]") {

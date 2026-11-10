@@ -21,6 +21,18 @@ namespace engine_placeholder::ecs {
 
 template <class... Terms>
 class Query;
+class CommandBuffer;
+
+namespace detail {
+/// The next number of a resource type: one per type per process, in order of first use (thread-safe).
+u32 NextResourceTypeId();
+/// The number of the resource type `T`.
+template <class T>
+u32 ResourceTypeId() {
+    static const u32 id = NextResourceTypeId();
+    return id;
+}
+} // namespace detail
 
 /// The outcome of a structural call on one entity.
 enum class Status : u8 {
@@ -34,6 +46,26 @@ enum class Status : u8 {
     AlreadyHas,
     /// A limit stopped it: component or archetype limits, an unregistered type or no memory (counted in `Stats().refused`).
     Refused,
+};
+
+/// What applying a [[ecs::CommandBuffer]] did.
+///
+/// Thread-safety: thread-compatible plain data.
+struct PlaybackReport {
+    /// Commands that changed the world.
+    u32 applied = 0;
+    /// Commands that did nothing: the entity was dead, lacked or already had the component, or a limit stopped it.
+    u32 ignored = 0;
+    /// Entities created by the applied `Create` commands (also counted in `applied`).
+    u32 created = 0;
+    /// Adds another report to this one.
+    /// Fails: never.
+    PlaybackReport& operator+=(const PlaybackReport& other) {
+        applied += other.applied;
+        ignored += other.ignored;
+        created += other.created;
+        return *this;
+    }
 };
 
 /// What [[ecs::World::Validate]] found.
@@ -83,7 +115,8 @@ public:
     World();
     World(const World&) = delete;
     World& operator=(const World&) = delete;
-    ~World() = default;
+    /// Destroys the resources in reverse order of creation, then the entities and their archetypes. A resource's destructor must not use the world.
+    ~World();
 
     /// Creates an entity with no components.
     /// Returns: the entity, or the invalid entity when a limit stopped it.
@@ -189,6 +222,55 @@ public:
     template <class... Terms>
     ecs::Query<Terms...> Query();
 
+    /// Applies the recorded commands of `buffer` in recording order, at a sync point.
+    ///
+    /// A command on a dead entity, a missing or already present component, or a refused change is skipped and counted, never a crash. The buffer's
+    /// placeholders resolve to the created entities ([[ecs::CommandBuffer::Resolve]]) until the buffer is cleared. Several buffers are applied by
+    /// calling this once per buffer in the order the caller chooses.
+    ///
+    /// Param buffer: the commands; consumed (its values are moved into the world and destroyed).
+    /// Returns: how many commands changed the world, were skipped and created entities.
+    /// Aborts: the world is being iterated.
+    PlaybackReport Apply(CommandBuffer& buffer);
+
+    /// Stores the world's one resource of type `T`, replacing the previous one in place (its address does not change).
+    ///
+    /// A resource is a singleton per type that is not an entity and never matches a query. A new resource is destroyed after those created later.
+    ///
+    /// Param value: the value; moved in.
+    /// Returns: the stored resource.
+    /// Fails: never.
+    /// Ownership: the world owns the resource; the reference is valid until `RemoveResource<T>()` or the world's destruction.
+    template <class T>
+    T& SetResource(T value);
+    /// The resource of type `T`.
+    /// Aborts: there is none (ask `HasResource<T>()` or use `TryResource<T>()`).
+    template <class T>
+    T& Resource();
+    /// The resource of type `T` (const).
+    /// Aborts: there is none.
+    template <class T>
+    const T& Resource() const;
+    /// The resource of type `T`, or null.
+    /// Fails: returns null when there is none.
+    /// Ownership: the world owns the resource; the pointer is valid until it is removed or the world is destroyed.
+    template <class T>
+    T* TryResource();
+    /// The resource of type `T` (const), or null.
+    /// Fails: returns null when there is none.
+    /// Ownership: the world owns the resource; the pointer is valid until it is removed or the world is destroyed.
+    template <class T>
+    const T* TryResource() const;
+    /// Returns whether a resource of type `T` is stored.
+    /// Fails: never.
+    template <class T>
+    bool HasResource() const { return TryResource<T>() != nullptr; }
+    /// Destroys the resource of type `T`.
+    /// Returns: whether there was one.
+    /// Fails: returns false when there is none.
+    template <class T>
+    bool RemoveResource();
+
     /// The number of archetypes.
     u32 ArchetypeCount() const { return static_cast<u32>(archetypes_.Size()); }
     /// The archetype at `index`.
@@ -223,6 +305,19 @@ private:
     template <class T>
     void ConstructCell(const Archetype& a, const RowRef& r, T&& value);
 
+    // One slot per resource type number; the object lives in its own heap block so its address is stable.
+    struct ResourceSlot {
+        void* object = nullptr;
+        void (*destroy)(void*) = nullptr;
+        usize size = 0;
+        usize align = 0;
+        u64 serial = 0;
+    };
+    ResourceSlot* FindResource(u32 type_id);
+    const ResourceSlot* FindResource(u32 type_id) const;
+    void DestroyResource(ResourceSlot& slot);
+    void DestroyAllResources();
+
     // The pool is declared first so it is destroyed last: archetypes return their chunks to it.
     ChunkPool pool_;
     EntityTable table_;
@@ -231,6 +326,8 @@ private:
     HashMap<u64, u32, HeapAllocator> edges_;
     u32 iterating_ = 0;
     ComponentSet iteration_writes_;
+    Vector<ResourceSlot> resources_;
+    u64 next_resource_serial_ = 1;
     u64 migrations_ = 0;
     u64 graph_hits_ = 0;
     u64 refused_ = 0;
@@ -396,6 +493,67 @@ T* World::Get(Entity entity) {
 template <class T>
 const T* World::Get(Entity entity) const {
     return const_cast<World*>(this)->Get<T>(entity);
+}
+
+template <class T>
+T& World::SetResource(T value) {
+    static_assert(!IsReference<T> && !IsConst<T> && !IsArray<T>, "a resource type must be a plain object type");
+    const u32 id = detail::ResourceTypeId<T>();
+    if (id >= resources_.Size()) {
+        resources_.Resize(id + 1);
+    }
+    ResourceSlot& slot = resources_[id];
+    if (slot.object != nullptr) {
+        T* current = static_cast<T*>(slot.object);
+        current->~T();
+        ConstructAt<T>(current, Move(value));
+        return *current;
+    }
+    void* memory = HeapAllocator::Default().Alloc(sizeof(T), alignof(T));
+    ENGINE_ASSERT(memory != nullptr, "World::SetResource: out of memory");
+    ConstructAt<T>(memory, Move(value));
+    slot.object = memory;
+    slot.size = sizeof(T);
+    slot.align = alignof(T);
+    slot.destroy = [](void* object) { static_cast<T*>(object)->~T(); };
+    slot.serial = next_resource_serial_++;
+    return *static_cast<T*>(memory);
+}
+
+template <class T>
+T* World::TryResource() {
+    ResourceSlot* slot = FindResource(detail::ResourceTypeId<T>());
+    return slot == nullptr ? nullptr : static_cast<T*>(slot->object);
+}
+
+template <class T>
+const T* World::TryResource() const {
+    const ResourceSlot* slot = FindResource(detail::ResourceTypeId<T>());
+    return slot == nullptr ? nullptr : static_cast<const T*>(slot->object);
+}
+
+template <class T>
+T& World::Resource() {
+    T* found = TryResource<T>();
+    ENGINE_ASSERT(found != nullptr, "World::Resource: the world has no resource of this type");
+    return *found;
+}
+
+template <class T>
+const T& World::Resource() const {
+    const T* found = TryResource<T>();
+    ENGINE_ASSERT(found != nullptr, "World::Resource: the world has no resource of this type");
+    return *found;
+}
+
+template <class T>
+bool World::RemoveResource() {
+    ResourceSlot* slot = FindResource(detail::ResourceTypeId<T>());
+    if (slot == nullptr) {
+        return false;
+    }
+    DestroyResource(*slot);
+    return true;
 }
 
 } // namespace engine_placeholder::ecs

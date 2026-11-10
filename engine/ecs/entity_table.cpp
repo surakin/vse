@@ -34,7 +34,7 @@ bool EntityTable::Free(Entity entity) {
     Slot& slot = slots_[entity.index];
     slot.where = EntityLocation{};
     ++slot.generation;
-    if (slot.generation == 0) {
+    if (slot.generation == 0 || slot.generation == Entity::kPlaceholderGeneration) {
         slot.generation = 1;
         ++wraps_;
     }

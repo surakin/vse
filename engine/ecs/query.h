@@ -9,6 +9,7 @@
 #include "ecs/component.h"
 #include "ecs/component_set.h"
 #include "ecs/entity.h"
+#include "ecs/index_list.h"
 #include "ecs/world.h"
 #include "lang/traits.h"
 #include "log/assert.h"
@@ -51,15 +52,6 @@ namespace detail {
 
 template <class... Ts>
 struct TypeList {};
-
-template <usize... I>
-struct IndexList {};
-template <usize N, usize... I>
-struct MakeIndexList : MakeIndexList<N - 1, N - 1, I...> {};
-template <usize... I>
-struct MakeIndexList<0, I...> {
-    using Type = IndexList<I...>;
-};
 
 /// What a term is: its component, whether it hands the query function an argument, and how that argument is read from a column.
 template <class Term>
