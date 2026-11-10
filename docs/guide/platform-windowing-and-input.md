@@ -1,8 +1,23 @@
 # Platform: Windowing and Input
 
-> **Status:** skeleton — not yet written  
-> **Audience:** engine and game programmers  
-> **Covers:** Phase 1
+Status: written (Phases 1, 13 and 15).
+
+**Audience:** every programmer who opens a window. Read [Platform: operating system](platform-os.md) first for the console, the clock and the command line.
+
+A window is where a program meets the user: it shows what you draw and delivers what the user does. This page teaches how to open one, run the frame loop,
+read the keyboard and mouse, and hand the window to the graphics layer. The engine has its own window code for each system (Wayland, X11, Win32); your
+program talks to one interface, [[os::Window]], and never names a backend.
+
+## At a glance
+
+| I want to | Use |
+|---|---|
+| open a window | `os::PlatformWindowHost::Open` or `OpenFromEnvironment`, then `Get()` |
+| let the system deliver events | `window->PumpEvents()` once per frame |
+| know the user wants to quit | `window->ShouldClose()` |
+| know "is W held right now" | `os::InputState` (`keyboard.IsDown(os::Key::W)`) |
+| know "was W pressed since last frame", text, repeats | `window->PollEvent(&event)` after `PumpEvents` |
+| draw into the window | `GetNativeInfo()`, `IsMinimized()`, `ResizeSerial()` (see below) |
 
 
 ## Where the code lives, and what to link
@@ -34,27 +49,89 @@ Full reference: [Platform: Windowing and Input](../reference/platform-window-inp
 - [[os::Key]] — keyboard keys
 - [[os::NativeWindowInfo]] and [[os::NativeWindowKind]] — the native handles a graphics layer needs
 
-## Already known — seed material (verify against the code when writing)
-
-- `os::Window` interface; backend chosen by `--backend=` > `ENGINE_WINDOW_BACKEND` > auto (Wayland if WAYLAND_DISPLAY, else X11); a forced backend never falls back
-- Wayland uses xdg-shell and server-side decorations (xdg-decoration); resize commits a new buffer
-- Polled InputState: keyboard (layout-aware Key enum via libxkbcommon), mouse position/buttons/scroll, modifiers
-- Closing is reported through ShouldClose()
-- hello-window flags: `--run-seconds`, `--backend`, `--frame-times`, `--log-level`
-
-## Outline
-
 ### The Window interface and lifecycle
 
-_TODO_
+Two objects are involved. An [[os::InputState]] is plain data that the window fills with "what is down right now". An [[os::PlatformWindowHost]] picks the
+backend, opens the connection to the display and owns the window. `host.Get()` returns an `os::Window*`, the interface everything else uses.
+
+    os::InputState input;                                   // declared first: the host borrows it, so it must outlive the host
+    os::PlatformWindowHost host;
+    if (!host.OpenFromEnvironment("My game", 1280, 720, &input)) {
+        return 1;                                           // no backend opened; the reason was logged
+    }
+    os::Window* window = host.Get();
+    // ... the frame loop ...
+    // the host's destructor closes the window and the display connection
+
+- **The size is a request.** On Wayland the compositor may choose another size; on Windows the logical size is multiplied by the monitor's DPI. Always read
+  `window->Width()` and `Height()` after opening, and again after every resize; they are physical pixels.
+- **`Valid()`** is false for a window that failed to open or whose connection died. Check it once after opening if you opened without the host's return value.
+- **Ownership.** The host owns the window and its native surface. A graphics surface made from the window must be destroyed before the host (see the native
+  handles section).
+- **Thread.** Open the window and call every method on one thread. The calls are not synchronized. Other threads may run jobs; they must not touch the window.
+- **The title and size are all you pass.** Everything else (fullscreen, cursor, clipboard) is asked of the window afterwards, with a `Supports...` query where
+  a backend may lack it.
 
 ### Choosing a backend
 
-_TODO_
+On Linux a program can talk to a display server in two ways, and a machine may have both (X11 programs run under Wayland through Xwayland). The engine has a
+backend for each. You rarely choose: `WindowBackend::Auto` takes **Wayland if `$WAYLAND_DISPLAY` is set, else X11**. A program that wants to let the user
+override it uses `OpenFromEnvironment`, which reads `$ENGINE_WINDOW_BACKEND` (`auto`, `wayland` or `x11`; unset means `auto`). The demos add a flag on top:
+
+| Source | Precedence | Example |
+|---|---|---|
+| `--backend=x11` flag (the demo parses it with `os::ParseWindowBackend`) | highest | `hello_window --backend=wayland` |
+| `ENGINE_WINDOW_BACKEND` | middle | `ENGINE_WINDOW_BACKEND=x11 ./hello_window` |
+| automatic | lowest | Wayland, else X11 |
+
+**A forced backend never falls back.** `--backend=wayland` on a machine with no Wayland compositor fails and says so; it does not quietly open an X11 window,
+because someone who forced a backend is testing it. Only `Auto` tries the next candidate. On Windows the one backend is Win32. `window->BackendName()`
+returns `"wayland"`, `"x11"` or `"win32"` for logs and test names.
 
 ### Event pumping and the frame loop
 
-_TODO_
+A window does nothing until you ask it to. `PumpEvents()` drains everything the system has queued (key presses, pointer moves, a close request, a resize),
+without blocking, updates the `InputState`, and fills the event queue. Call it **once per frame, at the start**:
+
+    while (true) {
+        input.BeginFrame();                 // clears the per-frame deltas (scroll) so they do not pile up
+        window->PumpEvents();
+        if (window->ShouldClose()) {
+            break;                          // the user closed the window: leave the loop and clean up
+        }
+
+        os::InputEvent event;
+        while (window->PollEvent(&event)) { /* react to key presses, text, ... */ }
+
+        if (input.keyboard.IsDown(os::Key::Escape)) { break; }
+        if (window->IsMinimized()) { os::SleepNanos(16'000'000); continue; }   // nothing to draw to
+
+        // update the game, record and submit the frame
+    }
+
+The demo `hello_window` is this loop with a 60 Hz sleep, a time limit (`--run-seconds`), and a line of log output when the input changes. Three things to know:
+
+- **Pumping is what keeps the window alive.** A program that stops pumping looks frozen: the compositor asks "are you there?" and gets no answer. On Windows
+  a window drag runs a message loop of its own inside `PumpEvents`; see "Windows specifics" for the callback that keeps rendering during it.
+- **`InputState` is a snapshot of now.** It cannot tell that a key was pressed and released between two frames. If a click must never be lost, read the event
+  stream (next sections).
+- **Do not call `PumpEvents` from several places** (a nested loop in a dialog, say) unless you mean to: events are consumed by whoever pumps.
+
+### Reading the keyboard and mouse with InputState
+
+`InputState` is what most game code wants: a few cheap questions answered from the latest pump.
+
+    if (input.keyboard.IsDown(os::Key::W)) { position.z -= speed * dt; }        // held now
+    const bool shift = (input.keyboard.modifiers & os::kModShift) != 0;         // kModShift, kModCtrl, kModAlt, kModSuper, kModCapsLock, kModNumLock
+    const f64 x = input.mouse_x, y = input.mouse_y;                             // window-local, physical pixels; the last position if the pointer left
+    if (input.IsMouseDown(os::kMouseLeft)) { /* a button is held */ }
+    camera_zoom += input.scroll_dy;                                             // accumulated since BeginFrame(): positive is down/right
+
+- **Keys are layout-aware.** `os::Key::W` is the key that *types* "w" on the user's layout (through libxkbcommon on Linux), so on an AZERTY keyboard the key
+  in the Z position is `W`. A key that has no entry in the enum is `Key::Unknown`. Use the keys for commands (move, jump); use the `Text` events for typing.
+- **`pointer_inside`** tells whether the pointer is over the window; `mouse_x/y` keep the last position when it is not.
+- **Edge detection is yours.** For "pressed this frame", keep the previous frame's `KeyboardState` and compare, as `hello_window` does with its
+  `InputSnapshot`; or use the `KeyDown` event, which also catches a press that ended within the frame.
 
 ### Reading input (keys, text, mouse, modifiers)
 
@@ -137,7 +214,19 @@ Dropping onto your window and dragging out of it (Wayland, X11):
 
 ### Resize, close, focus
 
-_TODO_
+Three things the user does to a window that a program has to survive:
+
+- **Resize.** After `PumpEvents`, `Width()` and `Height()` hold the new size, `ResizeSerial()` has changed, and a `Resize` event is in the queue. A program
+  that draws remembers the serial it built its swapchain for and rebuilds when it differs (the next section). Do not rebuild on every `Resize` event
+  by hand if you already compare the serial: dragging a frame can send dozens a second, and the serial check does the work once per frame.
+- **Close.** The close button, Alt+F4 and the compositor's close all do the same: `ShouldClose()` turns true. **The window is not destroyed**, because a
+  program may want to ask "save changes?" first. There is no call to cancel the request, so a program that wants a "save changes?" question shows it and
+  keeps its own "really quit" state instead of testing `ShouldClose()` alone. To quit, leave the loop and let the host go out of scope.
+- **Focus.** Losing focus releases every held key (and, on Windows, button), so a key never stays "down" because the user switched windows. `FocusGained`
+  and `FocusLost` events tell a game to pause or to release its pointer lock. Keep rendering or not is your policy; `IsMinimized()` is the one reliable
+  "do not draw" signal.
+
+A resize or a minimize on one window changes only that window's serial; with two windows, keep one serial per swapchain.
 
 ### Native handles, minimized state and the resize serial
 
@@ -207,11 +296,37 @@ nothing changes and `IsFullscreen` stays false, so a settings layer treats the `
 
 ### Wayland specifics
 
-_TODO_
+Code: `engine/platform/linux/wayland/`. Wayland is the primary Linux backend; it is built on the reference client library `libwayland-client` and
+`libxkbcommon` for keymaps. What differs from what you may expect:
+
+- **The compositor is in charge.** The window is an `xdg_toplevel` (xdg-shell). The size you ask for is a hint; the compositor answers with a *configure*
+  and the window takes that size. Server-side decorations are requested through `xdg-decoration` (the compositor draws the title bar); a compositor that
+  refuses leaves the window undecorated.
+- **A resize commits a new buffer.** The window attaches a buffer of the new size after each configure; the graphics layer's swapchain follows through
+  `ResizeSerial()` like on any backend.
+- **No minimized or hidden state is told to a client.** `IsMinimized()` is true only for a zero-area window, so do not rely on it to save power while
+  the window is hidden.
+- **`ContentScale()` is 1.** The compositor scales the window itself on a high-density output.
+- **No key repeat from the server.** The backend creates repeats from the compositor's rate and delay inside `PumpEvents`.
+- **The clipboard needs a recent user action** (a key or button serial from your window); the pointer lock and cursor shapes need compositor protocols
+  (`zwp_pointer_constraints_v1`, `wp_cursor_shape_v1`) that most but not all compositors offer: ask `SupportsPointerLock()` and `SupportsCursorShape()`.
+- **A lost connection ends the program politely.** If the compositor goes away, `ShouldClose()` turns true instead of the program hanging.
+- **Requests go out on your calls.** All of a window's requests are made on `PumpEvents` and when you call a setter; a program that never pumps never gets its
+  fullscreen or clipboard request out.
+- **Testing.** The Wayland half is checked against a real compositor only (see Known limitations).
 
 ### X11 specifics
 
-_TODO_
+Code: `engine/platform/linux/x11/`. X11 is the fallback for machines without a Wayland session, built on `libX11` with `libXcursor`, `libXi` and `libXfixes`.
+
+- **A window manager does the decoration and the close.** The close button is the `WM_DELETE_WINDOW` protocol message, which sets `ShouldClose()`. The title
+  is written in both `WM_NAME` and `_NET_WM_NAME` (UTF-8). Without a window manager (a bare X server) there are no decorations and fullscreen is never honored.
+- **Detectable auto-repeat is turned on**, so a held key is one `KeyDown` followed by repeats flagged `repeat`, instead of the X11 default of release and press pairs.
+- **Minimized is visible** here: a window the window manager unmapped or iconified (also on a hidden desktop) makes `IsMinimized()` true.
+- **`ContentScale()` is 1**: X11 has no per-window scale.
+- **Pointer lock is a grab** with XInput 2 raw motion for the deltas. Pointer lock and the clipboard behave as on Wayland, minus the "recent click" rule.
+- **Drag images are not drawn**; the data transfer works.
+- **Under Wayland through Xwayland** an X11 window works, so `--backend=x11` is a way to test this backend on a Wayland desktop.
 
 ### Windows specifics
 

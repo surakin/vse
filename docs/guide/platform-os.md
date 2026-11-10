@@ -1,52 +1,193 @@
 # Platform: OS Layer
 
-> **Status:** skeleton — not yet written  
-> **Audience:** engine programmers  
-> **Covers:** Phase 1
+Status: written (Phase 1; Windows from Phase 13).
 
-## Source of truth
+**Audience:** engine programmers. Read [Standard types](foundation-types.md) and [Memory](foundation-memory.md) first.
 
-- `engine/foundation/os/os.h`
-- `command_line.h`
-- `gpu_driver_probe.h`
+The OS layer (`engine/foundation/os/`) is the thin set of operating-system services everything else stands on: writing to the console, the clock, reserving memory,
+loading dynamic libraries, reading the environment and the command line, and asking about the user's session. It is deliberately small. Most of what a program
+needs from the system has a better home: **files** are in [Files](io.md), **windows and input** are in [Windowing and input](platform-windowing-and-input.md), and
+**threads and locks** are in [Synchronization](foundation-sync.md).
 
-## API reference
+## Design: what is portable and what is per-platform
 
-Full reference: [Platform: OS Services](../reference/platform-os.md).
+You write against the portable headers (`os/os.h`, `os/console.h`, `os/command_line.h`, `os/session.h`). Behind each there is one implementation per platform in
+`os/linux/`, `os/windows/` and `os/macos/`, chosen by the build. You never include those directly (a gate fails the build if you do), and you never ask the compiler
+"am I on Windows?" yourself: use `#if ENGINE_PLATFORM_WINDOWS` from `build_defs.h`. Text is UTF-8 on every platform; the Windows backend converts to UTF-16 at the
+call.
 
-- [[os::CommandLine]] — command-line access
-- [[io::ReadFile(const Path&,ArenaAllocator&,u8**,usize*,u64)]] — whole-file reads (the file layer: see [io](io.md))
-- [[os::MonotonicTimeNanos]] — the monotonic clock
-- [[os::LoadLibrary]] — dynamic libraries
+## Console output
 
-## Already known — seed material (verify against the code when writing)
+Program output (not diagnostics) goes through `os/console.h`: `os::Print(format, ...)` (a `printf`-style format), `os::PrintError`, `os::PrintLine(text)`, `os::Flush()`.
+Diagnostics belong in the log ([Logging](foundation-logging-and-assert.md)). You will see `os::Print` in every sample in this guide.
 
-- os.h exposes descriptor primitives (`Read`/`Write`/`Close`, and `Open`/`CreateFileForWriting` kept for the debugging facilities) and Reserve/ReleaseMemory; files and directories go through the file layer, [io](io.md)
-- GPU driver probing loads libvulkan.so.1 via dlopen
+```cpp compile run standalone
+#include "os/console.h"
 
-## Outline
+using namespace engine_placeholder;
 
-### Design: what is portable and what is per-platform
+int main() {
+    os::Print("%s has %d lives\n", "player", 3);
+    os::PrintLine("a whole line of text");
+    os::PrintError("errors go to standard error\n");
+    return 0;
+}
+```
 
-_TODO_
+```output
+player has 3 lives
+a whole line of text
+```
 
-### Files
+## Time
 
-_TODO_
+`os::MonotonicTimeNanos()` returns nanoseconds from a clock that only moves forward and is not affected by the user changing the system time: use it for every
+duration (frame time, timeouts). It has no meaning as a date. `os::SleepNanos(n)` sleeps for at least `n` nanoseconds.
 
-### Memory reservation
+```cpp compile run standalone
+#include "os/console.h"
+#include "os/os.h"
 
-_TODO_
+using namespace engine_placeholder;
 
-### Dynamic libraries and driver probing
+int main() {
+    const u64 start = os::MonotonicTimeNanos();
+    os::SleepNanos(2'000'000);                       // 2 ms
+    const u64 elapsed = os::MonotonicTimeNanos() - start;
+    os::Print("slept at least 2 ms: %s\n", elapsed >= 2'000'000 ? "yes" : "no");
+    return 0;
+}
+```
 
-_TODO_
+```output
+slept at least 2 ms: yes
+```
 
-### Command line
+Sleeping is never early but can be late (by about half a millisecond on Windows), so code that must wait less than that spins instead. A game loop that waits for the next
+frame should use the display's own pacing ([Windowing](platform-windowing-and-input.md)), not sleep.
 
-_TODO_
+## Memory reservation
 
-### Porting notes (Windows/macOS/mobile/console)
+`os::ReserveMemory(size)` asks the system for a block of address space and returns its address (or `nullptr`); `os::ReleaseMemory(address, size)` gives it back. Pages
+are backed by real memory only when you touch them, so a large reservation is cheap. The arena, stack and pool allocators use it ([Memory](foundation-memory.md)); you rarely call it
+yourself.
+
+```cpp compile run standalone
+#include "os/console.h"
+#include "os/os.h"
+
+using namespace engine_placeholder;
+
+int main() {
+    const usize size = 16 * 1024 * 1024;                  // 16 MiB of address space
+    byte* block = static_cast<byte*>(os::ReserveMemory(size));
+    if (block == nullptr) {
+        os::Print("the system refused\n");
+        return 1;
+    }
+    block[0] = 42;                                         // touching a page makes it real
+    block[size - 1] = 7;
+    os::Print("first %d, last %d\n", block[0], block[size - 1]);
+    os::ReleaseMemory(block, size);
+    return 0;
+}
+```
+
+```output
+first 42, last 7
+```
+
+## Environment variables
+
+`os::GetEnvironment("NAME")` returns the value or `nullptr`. **Do not use it for configuration.** Anything a user can configure is a *setting*
+([Settings](settings.md)), which can come from the environment, a file or the command line; the `config_access_check` gate rejects other uses. It exists for the few
+variables that must be read before the settings system can (the window backend, the job thread count, the crash handler). `os::EnvironmentCount()` and
+`os::EnvironmentEntry()` walk the whole environment; on Windows names ignore case (`os::EnvironmentNamesIgnoreCase()`).
+
+## Command line
+
+A windowed program defines `int EngineMain(int argc, char** argv)` and writes `ENGINE_WINDOWED_PROGRAM(EngineMain)` once at global scope instead of `main`
+(`platform/entry_point.h`); the macro becomes `main` on Linux and `wWinMain` on Windows (so no console window opens), and the arguments are UTF-8 on both. A
+command-line tool just keeps `main`. Then `os::CommandLine<Allocator>::FromNative(allocator)` parses the arguments: `--name` is a flag, `--name=value` a flag with a value, and
+anything else is a positional argument.
+
+```cpp compile run standalone
+#include "mem/arena_allocator.h"
+#include "os/command_line.h"
+#include "os/console.h"
+
+using namespace engine_placeholder;
+
+int main() {
+    // Synthetic arguments, as a program started with: game --fast --level=3 map.dat
+    char a0[] = "game";
+    char a1[] = "--fast";
+    char a2[] = "--level=3";
+    char a3[] = "map.dat";
+    char* argv[] = {a0, a1, a2, a3};
+
+    ArenaAllocator arena(4096);                            // the strings are copied into the allocator
+    os::CommandLine<ArenaAllocator> command_line(arena, 4, argv);
+
+    StringView level;
+    os::Print("fast: %s\n", command_line.HasFlag("fast") ? "yes" : "no");
+    os::Print("level option: %s\n", command_line.TryGetOption("level", level) ? level.Data() : "none");
+    os::Print("positional arguments: %zu, first '%s'\n", command_line.ArgCount(), command_line.Arg(0).Data());
+    os::Print("--fast has a value: %s\n", command_line.TryGetOption("fast", level) ? "yes" : "no");
+    return 0;
+}
+```
+
+```output
+fast: yes
+level option: 3
+positional arguments: 1, first 'map.dat'
+--fast has a value: no
+```
+
+In a real program you rarely read flags yourself: declare a setting with a `flag` name and the settings system reads it ([Settings](settings.md)). `hello_window` does
+parse a few by hand, as the oldest program.
+
+## Dynamic libraries and driver probing
+
+`os::LoadLibrary(path)` opens a shared library and returns a handle (`nullptr` on failure), `os::GetSymbol(handle, "name")` finds a function in it, and
+`os::UnloadLibrary(handle)` closes it. A relative path with a directory in it is refused on Windows, and the current directory is never searched. The engine
+uses this to load the GPU driver at run time instead of linking it: `os::VulkanLoaderName()` is `libvulkan.so.1` on Linux and `vulkan-1.dll` on Windows, and
+`os::ProbeVulkanCreateInstance()` loads it and reports (to the log, step by step) whether the machine has a usable Vulkan loader. A machine without one then fails
+with a clear message instead of a loader error at start-up.
+
+```cpp
+os::DynamicLibraryHandle lib = os::LoadLibrary("libexample.so");
+if (lib != nullptr) {
+    using AddFn = int (*)(int, int);
+    AddFn add = reinterpret_cast<AddFn>(os::GetSymbol(lib, "example_add"));
+    if (add != nullptr) { /* call it */ }
+    os::UnloadLibrary(lib);
+}
+```
+
+## Session state
+
+Window tests and the demos need to know whether anyone can see a window. `os::QuerySessionState()` answers `Active`, `Locked`, `Idle`, `Inactive` or `Unknown`
+(Linux asks systemd-logind; Windows reads the session and the input desktop). `os::SessionCanShowWindows(state)` is true for `Active` and `Unknown`. Tests that open real
+windows skip, with the reason printed, when the session cannot show them; this is why two X11 tests fail while your screen is locked.
+
+## Descriptors and exiting
+
+`os::Write`, `os::Read` and `os::Close` work on file descriptors: they are for the console, pipes and the code that runs inside a crash handler, where the file layer
+may not run. For files use `io::File`. `os::Exit(code)` ends the process with an exit code, `os::ExitNow(code)` ends it at once without running exit handlers, and `os::Abort()` ends it as a crash
+so the debugger or crash handler sees it.
+
+## Common mistakes
+
+- **Using `getenv`, `printf`, `fopen` or `Sleep`/`usleep` directly.** The gates fail the build; use the wrappers above.
+- **Reading configuration from the environment.** Declare a setting.
+- **Measuring time with a wall clock.** Use `MonotonicTimeNanos`; the system clock can jump.
+- **Assuming sleeps are exact.** They are a minimum.
+- **Writing `#ifdef _WIN32` or `__linux__`.** Use `ENGINE_PLATFORM_*` from `build_defs.h`.
+- **Including a platform backend header** (`os/windows/...`) from portable code.
+
+## Porting notes (Windows, macOS, mobile, console)
 
 **Windows** (Phase 13; `engine/foundation/os/windows/`). Win32 is the platform contract; the C runtime is used where it is the plain
 choice (`std::exit`), never for descriptors.

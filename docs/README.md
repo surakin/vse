@@ -1,9 +1,8 @@
 # Engine Documentation
 
 End-user documentation for the engine. **New to the engine? Start with the
-[guide](guide/README.md), which lists its pages in reading order.** Most pages
-are written; the ones still outlines (`_TODO_` markers) are jobs, platform OS and
-windowing and input. See [DOC-CONVENTIONS.md](DOC-CONVENTIONS.md) for how
+[guide](guide/README.md), which lists its pages in reading order.** Every
+guide page is written; the four tutorials are still outlines. See [DOC-CONVENTIONS.md](DOC-CONVENTIONS.md) for how
 pages are structured and when a day's work counts as documented.
 
 Internal design history is for contributors, not engine users: the specs in
