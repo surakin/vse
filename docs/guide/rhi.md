@@ -280,7 +280,7 @@ on Windows, depending on the window ([[os::Window]]); "Vulkan on Windows" below 
 inside its interceptors), and the X11 presentation path leaks inside a library the driver unloads; see "Building and
 Testing" for how the sanitizer flavors cover this.
 
-Metal (Phase 23) is planned behind the same interface. The Phase 4 portability review,
+Metal (Phase 24) is planned behind the same interface. The Phase 4 portability review,
 `docs/superpowers/specs/2026-11-04-rhi-portability-review.md`, lists for every concept how each backend implements it
 and which shims they need; the points that shape how you write code today are the clip-space convention (Y down,
 depth 0..1, with the flip in the projection), the copy alignment above, explicit resource states, and bind groups
@@ -420,7 +420,7 @@ created on null-integrated
 ```
 
 `Device::Adapter` reports the adapter a device was created on. On a machine with one GPU everything above still works; the
-list has one entry. Direct3D 12 and Metal map onto the same struct: see the portability notes in the Phase 13 and 23 plans.
+list has one entry. Direct3D 12 and Metal map onto the same struct: see the portability notes in the Phase 13 and 24 plans.
 
 ### Lifecycle and reset
 

@@ -23,6 +23,7 @@ New module `engine/scene`: renderable components and the system that mirrors the
 
 ## Notes
 
+- Phase 18 (spatial partitioning) later adds the visibility system and a precomputed-visible overload of `RenderScene::Cull` on top of this bridge; nothing here needs to change for it, but the `RenderSync` should not assume it is the only thing that decides what is drawn.
 - (filled in as the day is worked)
 
 ## Post-implementation code review

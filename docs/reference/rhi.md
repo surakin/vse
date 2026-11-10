@@ -4693,7 +4693,7 @@ The bytecode format of a shader module ([`rhi::ShaderDesc`](#rhi-shaderdesc)); e
 |---|---|---|
 | <a id="rhi-shaderformat-spirv"></a>`Spirv` | `0` | SPIR-V words (Vulkan). |
 | <a id="rhi-shaderformat-dxil"></a>`Dxil` |  | A DXIL container (Direct3D 12). |
-| <a id="rhi-shaderformat-msl"></a>`Msl` |  | Metal Shading Language; reserved for the Metal backend (Phase 23), refused by every backend today. |
+| <a id="rhi-shaderformat-msl"></a>`Msl` |  | Metal Shading Language; reserved for the Metal backend (Phase 24), refused by every backend today. |
 
 ## `ShaderFormatName(ShaderFormat)` {#rhi-shaderformatname-shaderformat}
 

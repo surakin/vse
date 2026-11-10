@@ -110,7 +110,7 @@ so there is nothing OS- or ABI-specific anywhere in this phase.
   ready handle from the worker's deque — no OS thread ever blocks on a
   job dependency. The sub-job that decrements the counter to zero
   reschedules the waiting continuation onto some worker's deque.
-- **Async I/O** (first real consumer: Phase 21's asset streaming) uses the
+- **Async I/O** (first real consumer: Phase 22's asset streaming) uses the
   identical mechanism — `co_await LoadTextureAsync(path)` suspends until
   the I/O completes, then resumes as a scheduled job. One suspension
   primitive serves both job-graph waits and async I/O.

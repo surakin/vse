@@ -989,10 +989,10 @@ past 100000 objects.
 ### Platform notes
 
 The renderer is written and tested on Linux with the Vulkan backend (and the null device, which every non-GPU test uses), and on Windows
-with Vulkan and Direct3D 12 (Phase 13); macOS (Metal, Phase 23) is planned behind the same RHI, and every shader already compiles to
+with Vulkan and Direct3D 12 (Phase 13); macOS (Metal, Phase 24) is planned behind the same RHI, and every shader already compiles to
 Metal (`ctest -R shaders_portability`). The points that shape code are in the [renderer portability
 review](../superpowers/specs/2026-11-04-renderer-portability-review.md); a deferred G-buffer is a poor fit for tile-based mobile GPUs
-unless the passes are merged (Phase 24).
+unless the passes are merged (Phase 25).
 
 **On Direct3D 12** (Phase 13) the renderer runs unchanged; what differs is below it:
 
@@ -1012,7 +1012,7 @@ flavor runs them; see [the RHI guide](rhi.md#platform-notes).
 ### See also
 
 - [The RHI](rhi.md) and the [renderer design](../superpowers/specs/2026-11-04-renderer-design.md).
-- [Renderer portability review](../superpowers/specs/2026-11-04-renderer-portability-review.md): what Phases 13, 23 and 24 add.
+- [Renderer portability review](../superpowers/specs/2026-11-04-renderer-portability-review.md): what Phases 13, 24 and 25 add.
 - [Shaders: from Slang to a shader module](rhi-shaders.md) and [Tutorial: From a Scene to a Lit Frame](../tutorials/hello-renderer.md).
 
 ## What the renderer adds to a crash report

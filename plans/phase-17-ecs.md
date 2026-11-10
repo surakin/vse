@@ -60,5 +60,6 @@ Order reasoning: storage before API (entities, components, archetypes), the stru
   component query that yields the same `RenderObject` records), keeping the renderer unchanged: `GBufferPass::Prepare` and
   `FrameResources::WriteLights` take the scene by const reference only.
 - Culling and sorting run per frame over the scene list on one thread (0.08 us per object in `renderer_bench`); an ECS can move culling
-  into a parallel system that produces the visible list, which is the first thing the Phase 5 profile suggests.
+  into a parallel system that produces the visible list, which is the first thing the Phase 5 profile suggests. (Phase 18 does this through the
+  render spatial set: a frustum query over a BVH instead of a flat scan, with the flat scan kept as the reference.)
 - `GpuMesh` is held by pointer and must outlive the objects that use it; the ECS mesh component owns or shares the `GpuMesh`.

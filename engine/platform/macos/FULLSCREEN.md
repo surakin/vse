@@ -1,4 +1,4 @@
-# Fullscreen on macOS (checklist for Phase 23)
+# Fullscreen on macOS (checklist for Phase 24)
 
 `os::Window::SupportsFullscreen`, `SetFullscreen` and `IsFullscreen` are the interface (`engine/platform/window.h`).
 

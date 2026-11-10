@@ -3,7 +3,7 @@
 **Depends on:** Phase 0 (foundation: strings, containers, allocators, `os/`), Phase 2 (the job system, for the async side), and Phases 6-8
 (test scoping, debugging facilities, RHI reset — the debugging facilities keep their signal-safe descriptor layer, see below). Must
 complete before Phase 11 (the settings system, which reads and writes config files through this layer) and before the Windows and macOS
-ports (Phases 13 and 23): the interfaces here are part of what those ports implement.
+ports (Phases 13 and 24): the interfaces here are part of what those ports implement.
 **Goal:** one file and path layer for the whole engine, in place of the scattered `fopen`/`open`/`opendir`/`stat`/`mkdir`/`rename` calls and
 string-pasted paths that exist today. Three classes: **`io::Path`** (a value type for manipulating paths: join, split, normalize,
 relative, extension, comparison), **`io::File`** (an *interface* class: synchronous and asynchronous read and write, so a file can be backed by
@@ -17,7 +17,7 @@ backend itself, third-party code); the Windows and macOS checklists (`BACKEND.md
 `docs/guide/io.md` is complete; the full suite passes in every flavor.
 
 Every day of this phase has its own file under `plans/phase-09-file-handling/` (see `CLAUDE.md`, planning policy).
-**Status: COMPLETE (Days 115-124, 2026-11-06 to 2026-11-07).** Closing run: `ran 2914 of 2914 tests (phases: all; flavors: all; display: included; crash tests: included)`, all passing. Days 115-124 are written; `CURRENT_PHASE` changes to 8 in the commit that completes
+**Status: COMPLETE (Days 115-124, 2039-11-6 to 2039-11-7).** Closing run: `ran 2914 of 2914 tests (phases: all; flavors: all; display: included; crash tests: included)`, all passing. Days 115-124 are written; `CURRENT_PHASE` changes to 8 in the commit that completes
 Day 115's first task. Day numbers continue from Phase 8 (which ended at Day 114). What was built: `io::Path`/`PathBuilder`, `io::Error`/`Status`, the file-system operations and special folders, `io::File` with `LocalFile`, the scheme registry, asynchronous operations over an `IoExecutor` seam with `co_await` adapters, `io::Directory`/`WalkDirectory`, the `file_access_check` gate and `engine/foundation/io/BACKEND.md`; every file-access site ported except the documented exceptions. Design and numbers: `docs/superpowers/specs/2026-11-06-file-layer-design.md`; guide: `docs/guide/io.md`.
 
 ## Days
@@ -69,7 +69,7 @@ that keeps the port from rotting, the platform checklists, and closes the phase.
 9. **Platform designs ride along.** Windows (UTF-16 at the boundary, drive letters and UNC, overlapped I/O, long paths), macOS (case-insensitive
    volumes, `dispatch_io`), Android/iOS (app-private directories, asset bundles as read-only archives), consoles (title storage): the interfaces
    must not preclude any of them; each gets a section in `engine/foundation/io/BACKEND.md` on Day 124, kept in step by a test.
-10. **Phase 21's resource system builds on this.** Its pluggable storage backends (pak, filesystem, network; `PLAN.md` assumption #12) are
+10. **Phase 22's resource system builds on this.** Its pluggable storage backends (pak, filesystem, network; `PLAN.md` assumption #12) are
     `io::File` implementations plus a container reader; nothing in this phase builds the pak or network formats.
 
 ## Key deliverables (the day files hold the sub-tasks)
@@ -88,4 +88,4 @@ that keeps the port from rotting, the platform checklists, and closes the phase.
 - **Locks and sharing modes** (Windows share flags, `flock`): minimal in this phase (exclusive create, atomic replace); revisit with Phase 13.
 - **Text encodings and line endings** are the caller's concern (the layer moves bytes); the config classes in Phase 11 define their own text rules.
 - **Large directory trees** (docgen walks the repository): the iteration API must not require loading a whole directory into memory.
-- **Open-question dispositions (Day 115):** memory mapping deferred to Phase 21 planning; file watching decided by Phase 11's design; locks/sharing modes Phase 13; `log::LoadConfig` (an existing config reader) is for Phase 11 to absorb or replace. See the spec, section 7.
+- **Open-question dispositions (Day 115):** memory mapping deferred to Phase 22 planning; file watching decided by Phase 11's design; locks/sharing modes Phase 13; `log::LoadConfig` (an existing config reader) is for Phase 11 to absorb or replace. See the spec, section 7.

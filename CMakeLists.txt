@@ -25,11 +25,11 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_6
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows" AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(AMD64|x86_64)$")
   set(ENGINE_PLATFORM windows)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  message(FATAL_ERROR "macOS is ported in Phase 23 (plans/phase-23-macos-metal.md)")
+  message(FATAL_ERROR "macOS is ported in Phase 24 (plans/phase-24-macos-metal.md)")
 elseif(CMAKE_SYSTEM_NAME MATCHES "^(Android|iOS)$")
-  message(FATAL_ERROR "${CMAKE_SYSTEM_NAME} is ported in Phase 24 (plans/phase-24-android-ios.md)")
+  message(FATAL_ERROR "${CMAKE_SYSTEM_NAME} is ported in Phase 25 (plans/phase-25-android-ios.md)")
 else()
-  message(FATAL_ERROR "${CMAKE_SYSTEM_NAME} ${CMAKE_SYSTEM_PROCESSOR} is not a supported target (x86-64 Linux, x86-64 Windows; consoles: Phase 25)")
+  message(FATAL_ERROR "${CMAKE_SYSTEM_NAME} ${CMAKE_SYSTEM_PROCESSOR} is not a supported target (x86-64 Linux, x86-64 Windows; consoles: Phase 26)")
 endif()
 
 # Every executable gets a GNU build id (a hash of its contents) so a crash report and a minidump name the exact binary.

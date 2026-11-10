@@ -10,7 +10,7 @@ Day 26 for X11 fallback) passes identically under both backends.
 
 **Design note (root `PLAN.md` assumption #11):** the internal `Window`/
 input interface this phase defines (Day 26) is the seam *every* later
-platform backend plugs into (Phases 13, 23, 24 and 25, desktop and mobile/console
+platform backend plugs into (Phases 13, 24, 25 and 26, desktop and mobile/console
 alike) — keep its shape generic rather than mirroring Wayland/X11-specific
 concepts upward, so those later ports are additive backends, never a
 redesign. Concretely: the window model should have room for

@@ -10,7 +10,7 @@ Show the renderer and its shaders are not Vulkan in disguise, finish the docs, a
 - [x] A `shaders_portability` ctest (skipped without `slangc`) compiles every Slang shader to HLSL and MSL: all must produce output without errors; record clip-space Y behavior and matrix layout per target and add any needed flag to `shaders/README.md`. If `dxc` or a Metal compiler happens to be installed, run it as an optional extra check.
 - [x] Portability review of the renderer in `docs/superpowers/specs/2026-11-04-renderer-portability-review.md`: render graph barriers vs D3D12 enhanced barriers / Metal tracking, the set 0/1/2 convention vs a D3D12 root signature / Metal argument buffers, G-buffer format support, depth sampling (typeless shim), MRT count (4 + depth); a verdict (fits/shim/change) per item; cheap changes made now with tests.
 - [x] Documentation completion: `docs/guide/renderer.md` finished and marked `draft`, `docs/guide/rhi-shaders.md` reviewed, the tutorial runs, reference regenerated, lint baseline zero.
-- [x] Update notes in `plans/phase-13-windows-dx12.md`, `plans/phase-23-macos-metal.md`, `plans/phase-14-font-text-rendering.md` and `plans/phase-15-ui-system.md` with what Phase 5 gives them (graph passes, the material system for glyph atlases, pass ordering) and what they add (an overlay/forward pass after tonemap, since the main pipeline is deferred), and in `plans/phase-17-ecs.md` how the scene list is replaced.
+- [x] Update notes in `plans/phase-13-windows-dx12.md`, `plans/phase-24-macos-metal.md`, `plans/phase-14-font-text-rendering.md` and `plans/phase-15-ui-system.md` with what Phase 5 gives them (graph passes, the material system for glyph atlases, pass ordering) and what they add (an overlay/forward pass after tonemap, since the main pipeline is deferred), and in `plans/phase-17-ecs.md` how the scene list is replaced.
 - [x] Final full run: plain, ASan, TSan, docs, GPU tests with validation + sync validation, both demos on both display backends; results recorded in the day file.
 - [x] Mark Phase 5 complete in `plans/phase-05-renderer-core.md`, `PLAN.md` and `STATUS.md`; Phase 6 (Windows port + DX12) is next and needs its own day files before it starts.
 - [x] **Documentation (CLAUDE.md "Public API is documented before a day is done"):** The guide is finished and marked `draft`, and both reviews are linked from `docs/README.md`. `docgen lint` stays at zero findings, `cmake --build build --target docs` output is committed, `ctest -L docs` passes.
@@ -34,7 +34,7 @@ Show the renderer and its shaders are not Vulkan in disguise, finish the docs, a
   `docs/guide/rhi-shaders.md` reviewed (portability paragraph replaced, material-system section added, the `GetDimensions` caveat);
   both portability reviews linked from `docs/README.md`; `docs/tutorials/hello-renderer.md` runs (it is a compiled sample under `ctest -L docs`).
   `docgen lint` is at 2452/2452, 100%.
-- **Plans**: notes added to phases 6, 7, 8, 13 and 23 (what Phase 5 gives them and what they add).
+- **Plans**: notes added to phases 6, 7, 8, 13 and 24 (what Phase 5 gives them and what they add).
 - **Final full run** (2026-11-05, Release not used; the default Debug build): `ctest -j16` 1839/1839 in plain, ASan and TSan flavors (three runs; two
   had X11Window test failures from the known flake in KNOWN-ISSUES, the third passed); docs 100%; GPU tests with validation and
   sync validation on the RTX 3060 passed. Live: `renderer_demo` and `rhi_demo`, `--frames 1000 --validation`, on Wayland and on X11 (`--backend`),

@@ -8007,7 +8007,7 @@ Returns the style of (`kind`, `variant`), or null.
 class ThemeBuilder { ... }
 ```
 
-Builds a [`ui::Theme`](#ui-theme) in code (a data file loader arrives with Phase 21).
+Builds a [`ui::Theme`](#ui-theme) in code (a data file loader arrives with Phase 22).
 
 | Field | Value |
 |---|---|

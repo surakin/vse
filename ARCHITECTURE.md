@@ -33,7 +33,7 @@ From the bottom up. "Platform code" means a per-OS backend directory (`linux/`, 
 Later phases add modules above the renderer in the order `PLAN.md`'s diagram gives (text, UI, ECS, physics, audio, assets, scripting, Unreal import,
 editor); each gets its row here when its phase is broken into days.
 
-## 2. The measured graph (after Phase 12, 2026-11-07)
+## 2. The measured graph (after Phase 12, 2027-11-7)
 
 Measured by `module_deps_check` on the whole tree: **172 module edges from includes, plus the CMake link lines, 0 problems.** There is no cycle and no
 upward edge. The last two allow-listed edges (rhi/vulkan → rhi/null and renderer → rhi/vulkan) were removed by the RHI backend registry on Phase 13 Day 162;
@@ -112,6 +112,11 @@ and the wrapper functions that join `foundation/mem` (memory operations), `found
 
 `engine/ecs` is built (row in section 1; Day 223 started it). Still planned: the edge `ecs -> jobs` (Day 231) and `engine/scene` (layer 13, above `ecs` and `renderer`; nothing below includes it): `MeshRenderer`, `Light`, `Camera`, `RenderHandle` and the `RenderSync` system that mirrors entities into `renderer::RenderScene`.
 The `scene` row is added to section 1 and to `tools/module_deps_check/modules.txt` on Day 233; `docs/superpowers/specs/2026-11-10-ecs-design.md` has the reasoning.
+
+### Planned modules (Phase 18, spatial)
+
+`engine/spatial` (layer 10, beside `ecs`): the static and dynamic bounding-volume hierarchies, the spatial sets, the pair tracker and the ECS tier (bounds components, the `SpatialWorld` resource, the sync system, entity queries). It depends on `foundation` (including the geometry types in `math`, moved from the renderer on Day 238), `ecs` and `jobs`; the renderer, `scene`, physics, audio and gameplay code depend on it and it depends on none of them.
+The row is added to section 1 and to `tools/module_deps_check/modules.txt` on Day 238; `PLAN.md` assumption #24 and the spec of Day 237 have the reasoning.
 
 ## 6. Keeping this file true
 
