@@ -776,7 +776,7 @@ vertex_offset, first_instance)`. An indexed and a non-indexed draw of the same t
 - Meshes are authored counter-clockwise when seen from outside; with that projection they are front faces under
   `FrontFace::CounterClockwise`, and `CullMode::Back` removes the faces that point away.
 
-See also the [math conventions](foundation-math.md#conventions-handedness-rowcolumn-units-angle-units).
+See also the [math conventions](foundation-math.md#conventions-read-this-once).
 
 ### Textures in draws
 

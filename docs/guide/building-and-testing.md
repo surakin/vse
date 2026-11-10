@@ -1,28 +1,23 @@
 # Building and Testing
 
-> **Status:** skeleton — not yet written  
-> **Audience:** contributors and users  
-> **Covers:** Phases 0-2
+Status: written (Phases 0-17).
 
-## Source of truth
+**Audience:** everyone who changes the engine. [Getting started](getting-started.md) has the first build; this page is what you need to *check your work*:
+the flavors, how to choose and run tests, what each sanitizer catches, and how to write a test.
 
-- `CMakeLists.txt`
-- `engine/*/CMakeLists.txt`
-- `tests/*/CMakeLists.txt`
-- `STATUS.md`
+## Build targets and flavors
 
-## Already known — seed material (verify against the code when writing)
+One configure produces three *flavors* of every library and test program, so the same code is checked in three ways:
 
-- Three sanitizer flavors: plain, ASan/UBSan (`*_asan`), ThreadSanitizer (`*_tsan`, label `tsan`)
-- `ctest -L tsan` runs the TSan set; a deliberate-race canary proves TSan is active
-- Catch2 v3 vendored; production flags `-fno-exceptions -fno-rtti -fno-stack-protector` do not apply to tests
-- Known timing flake: an X11 test under heavy `ctest -j` load
+| Flavor | Target names | Compiled with | Catches |
+|---|---|---|---|
+| plain | `ecs_tests`, `foundation_base`, ... | the normal optimizer and warnings | wrong behavior; this is what ships |
+| ASan + UBSan | `*_asan` | AddressSanitizer and UndefinedBehaviorSanitizer | out-of-bounds, use-after-free, leaks, overflow, misaligned and null access |
+| TSan | `*_tsan` | ThreadSanitizer (Linux only) | data races |
 
-## Outline
-
-### Build targets and flavors
-
-_TODO_
+Useful targets: `cmake --build build` builds everything; `cmake --build build --target ecs_tests` builds one test program; `--target docs` regenerates the reference
+pages. Production code is compiled with `-fno-exceptions -fno-rtti` and **warnings as errors**; tests are not (Catch2 uses exceptions), but still build warning-free.
+The Windows build has plain and ASan only (MSVC has no ThreadSanitizer).
 
 ### Libraries and layers
 
@@ -46,11 +41,31 @@ Each library has an `_asan` and a `_tsan` variant (`foundation_io_asan`, `platfo
 
 ### Running subsets with labels and Catch2 tags
 
-_TODO_
+Each test has labels (its phase, its flavor, and groups such as `gpu`, `display`, `docs`, `crash`), and Catch2 cases have tags (`[ecs]`, `[world]`). Use whichever
+narrows the run to what you changed:
+
+```bash
+ctest --test-dir build -L '^phase17$'            # every test of one phase (the anchors stop phase1 matching phase17)
+ctest --test-dir build -L '^phase4$' -L gpu      # labels combine: both
+ctest --test-dir build -R 'World:'               # by name (a regular expression)
+build/tests/ecs/ecs_tests "[world]"              # one executable, one Catch2 tag
+build/tests/ecs/ecs_tests "World: create*"       # one executable, by name pattern
+build/tests/ecs/ecs_tests --list-tests           # what is in it
+```
+
+Running the test executable directly is the fastest loop while you work; use `scripts/test-phase.sh` (below) before you commit.
 
 ### Sanitizers: what each catches and when to use it
 
-_TODO_
+- **ASan/UBSan** (`--flavor asan`): run it on **any change that touches memory, lifetimes, containers or raw pointers**. It turns silent corruption into an immediate report
+  naming the line. UBSan also reports signed overflow, misaligned access, bad shifts and null dereference.
+- **TSan** (`--flavor tsan`): run it on **any change that touches threads, atomics, locks, the job system or anything shared**. It reports a data race even when the
+  program happened to work. A deliberate-race canary test proves TSan is really active.
+- **Plain** is always run; it is the only flavor that exercises the optimized code.
+
+A failure in a sanitizer flavor is a real bug until proven otherwise; do not suppress it. Sanitizer runs are slower, so run them on the part of the suite you changed
+(`scripts/test-phase.sh --affected --flavor asan`), and the whole suite in every flavor at the end of a phase.
+
 
 ### Writing a test (Catch2 conventions in this repo)
 
@@ -323,7 +338,19 @@ A widget test needs no window and no GPU: `ui::Harness` (`engine/ui/testing/harn
 
 ### Stress tests and replaying a failing seed (`ENGINE_STRESS_SEED`)
 
-_TODO_
+Tests that use random data take a **fixed seed**, so a run is repeatable: the same seed gives the same sequence on every machine. The job-system stress test
+(`tests/jobs/stress_test.cpp`) runs many random task graphs; when one hangs or fails, the message prints the seed, for example
+`graph seed 17 (replay: ENGINE_STRESS_SEED=17)`. Re-run that single case with the environment variable set:
+
+```bash
+ENGINE_STRESS_SEED=17 build/tests/jobs/jobs_tests "[stress]"
+```
+
+Randomized tests of other modules (the ECS model tests, for instance) hard-code their seeds in the test; to replay a failure, run the test directly and
+read the failing assertion. If you write a randomized test: use a small deterministic generator with a fixed seed (`tests/ecs/test_rng.h`), make
+the failure message name the seed or the step, and never seed from the clock.
+
+
 
 ### Documentation checks
 
@@ -406,9 +433,20 @@ itself (vswhere, the registry, the default install folders), so any terminal wor
   gates, `scripts/test-phase.sh`, shared tests) were checked on Linux once, when the phase closed (Day 174); `KNOWN-ISSUES.md` lists what
   waits for a Linux run.
 
-### CI expectations
+### What "done" means before you commit
 
-_TODO_
+There is no hosted continuous-integration service: the checks are run by you, on your machine(s), by the same scripts a CI job would call. Before a change is
+committed:
+
+1. It builds with **no warnings** in unity and in `-DENGINE_UNITY_BUILD=OFF`, with Clang and, on Linux, also GCC.
+2. `scripts/test-phase.sh --affected` passes (plain), and the `asan` and `tsan` flavors of the same selection when you touched memory or threads. Quote the
+   `ran X of Y tests` line when you report it.
+3. `ctest -L docs` passes if you changed a public header or a guide page.
+4. The gates (`std_usage_check`, `module_deps_check`, `platform_neutral_check`, ...) pass; they run with the normal tests.
+5. `STATUS.md` and, if a test fails or a check is deferred, `KNOWN-ISSUES.md` are updated in the same commit.
+6. At the end of a phase, `scripts/test-phase.sh --all --flavor all` runs everything, on every platform the project supports.
+
+Some tests need a live desktop and fail while your session is locked; `KNOWN-ISSUES.md` lists them, so a failure there is not automatically your change.
 
 ## Debugging scripts (Linux)
 
