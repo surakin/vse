@@ -39,4 +39,4 @@ the pages in the order below; each builds on the ones before it. The generated [
 ## Game objects
 
 18. [ecs](ecs.md): entities, components, archetypes and the world.
-19. [spatial](spatial.md): what is near what: shapes, bounding-volume hierarchies, spatial sets (in progress).
+19. [spatial](spatial.md): what is near what: shapes, bounding-volume hierarchies, spatial sets (Phase 18).

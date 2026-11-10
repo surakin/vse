@@ -2123,7 +2123,7 @@ Casts a ray and collects what it hits, as `mode` says.
 | Parameter `order` | for `All`: `Traversal`, or `Ordered` by distance then key; the other modes give one hit. |
 | Parameter `hits` | receives the hits (cleared first); its capacity is reused. |
 | Returns | what the query did; `results` is the number of hits. |
-| Fails | a ray or `max_t` that is not finite (or a NaN `max_t`) finds nothing and sets `refused_input`; a negative `max_t` finds nothing. |
+| Fails | a ray that is not finite or a NaN `max_t` finds nothing and sets `refused_input` (an infinite `max_t` is allowed: the ray is unbounded); a negative `max_t` finds nothing. |
 | Ownership | `hits` is borrowed for the call. |
 
 ## `SweepBox(const Tree&,const Aabb&,const Vec3&,const QueryFilter&,RayHit*)` {#spatial-sweepbox-const-tree-amp-const-aabb-amp-const-vec3-amp-const-queryfilter-amp-rayhit-star}

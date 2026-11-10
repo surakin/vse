@@ -125,7 +125,8 @@ void FillOverlaps(void* user, usize begin, usize end) {
             continue;
         }
         OverlapKeys(*b.set, b.boxes[i], *b.filter, Order::Ordered, &keys);
-        for (usize k = 0; k < keys.Size(); ++k) {
+        const usize room = b.offsets[i + 1] - b.offsets[i]; // never past the slots counted for this query, even if the set changed between the passes
+        for (usize k = 0; k < keys.Size() && k < room; ++k) {
             b.keys[b.offsets[i] + k] = keys[k];
         }
     }

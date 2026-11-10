@@ -349,3 +349,18 @@ TEST_CASE("Geometry: an empty box stays empty through a transform and is never i
     CHECK(TransformAabb(Intersection(Aabb::FromMinMax(Vec3(0, 0, 0), Vec3(1, 1, 1)), Aabb::FromMinMax(Vec3(2, 2, 2), Vec3(3, 3, 3))), m).IsEmpty());
     CHECK_FALSE(Overlaps(TransformAabb(Aabb::Empty(), m), Aabb::FromMinMax(Vec3(-100, -100, -100), Vec3(100, 100, 100))));
 }
+
+TEST_CASE("TransformBounds: the sphere covers the largest stretch of a rotation under a non-uniform scale", "[spatial][geometry]") {
+    using namespace engine_placeholder;
+    Bounds local;
+    local.box = Aabb::FromMinMax(Vec3(-1, -1, -1), Vec3(1, 1, 1));
+    local.sphere.center = Vec3(0, 0, 0);
+    local.sphere.radius = 1.0f;
+    const f32 c = 0.70710678f; // diag(2,1,1) * Rz(45 degrees): the columns are about 1.58 long but the matrix stretches by 2
+    const Mat4 m = Mat4::FromBasis(Vec3(2 * c, c, 0), Vec3(-2 * c, c, 0), Vec3(0, 0, 1), Vec3(0, 0, 0));
+    CHECK(TransformBounds(local, m).sphere.radius >= 2.0f);
+    CHECK(TransformBounds(local, m).sphere.radius < 2.001f);
+    const Mat4 uniform = Mat4::FromBasis(Vec3(3 * c, 3 * c, 0), Vec3(-3 * c, 3 * c, 0), Vec3(0, 0, 3), Vec3(5, 0, 0));
+    CHECK(TransformBounds(local, uniform).sphere.radius >= 3.0f);
+    CHECK(TransformBounds(local, uniform).sphere.radius < 3.001f);
+}

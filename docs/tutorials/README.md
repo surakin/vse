@@ -8,3 +8,4 @@ Goal-oriented walkthroughs. Every tutorial is written; each one has a program yo
 - [From a Scene to a Lit Frame with the Renderer](hello-renderer.md)
 - [Run Work in Parallel with Jobs](parallel-jobs.md)
 - [Read a File Asynchronously from a Job](async-file-io.md)
+- [Ask What Is Near Something](spatial-queries.md)

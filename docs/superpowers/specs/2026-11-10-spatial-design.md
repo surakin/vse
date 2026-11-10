@@ -24,10 +24,10 @@ Anti-goal: a structure that is fast in a benchmark but cannot be kept exact agai
 | Sets | A world has up to 8 named spatial sets (`render`, `physics`, `audio`, `gameplay`, ...); a bitmask on the entity says which sets it joins; each set has its own static and dynamic structure and its own layer mask. | The render tree must not hold invisible triggers and the reverse. |
 | Queries | Overlap with box, sphere or frustum; ray cast (closest, any, all); box sweep; nearest-k; all overlapping pairs; every query takes a layer mask and an optional filter; results come out in a documented deterministic order. | Day 241. |
 | Physics contract | A `PairTracker` keeps overlap pairs between frames and reports begin and end, deterministically; fat margins are internal; the narrow phase is Phase 22's. | Day 243. |
-| Renderer contract | A parallel `CullFrustum` yields the visible slots; `RenderScene` and its callers stay unchanged apart from taking a precomputed visible list; `renderer.culling = bvh|flat` keeps the flat scan as the reference. | Day 247. |
+| Renderer contract | **As built (Day 247):** `RenderScene::Cull` walks its own `SpatialSet` behind the unchanged interface and returns the flat scan's slots in the same order; `RenderScene::SetCullMode(Bvh|Flat)` keeps the flat scan as the reference. A parallel `CullFrustum`, a precomputed visible-list overload and the `renderer.culling` setting were not built (filed in KNOWN-ISSUES.md). | Day 247. |
 | Bounds | `SpatialBounds` (local-space box from the mesh), `WorldBounds` (computed from `WorldTransform` only when it changed), a `Static` tag that keeps an entity in the static tree, a `SpatialLayer` component. | Day 244. |
 | Determinism | The same inputs build the same tree (a parallel build equals the sequential one byte for byte); queries are read-only and thread-safe between updates; updates run as a system after transform propagation. | Replays, tests. |
-| Settings | `spatial.parallel` (bool, default true), `spatial.fat_margin` (float, fraction, default 0.25), `spatial.stats`, `spatial.debug_draw`; `renderer.culling`. | `PLAN.md` assumption #22. |
+| Settings | `spatial.parallel` (bool, default true), `spatial.fat_margin` (float, fraction, default 0.25), `spatial.stats`, `spatial.debug_draw`; (`renderer.culling` not built; `SetCullMode` is the run-time switch). | `PLAN.md` assumption #22. |
 
 ## 3. Experiments
 
@@ -134,12 +134,12 @@ AMD Ryzen 9 7950X3D (16 cores), Linux, Clang, Release (`tests/spatial/spatial_be
 
 | Condition | Target | Measured | |
 |---|---|---|---|
-| Culling gain, 100,000 / 1,000,000 items | 8x / 30x | 80x / 95x (1.09 ms flat, 0.0136 ms tree; 11.1 ms, 0.117 ms) | met |
-| Quiet scene | at most 5 percent of a flat scan | a static set costs no structure call (Day 245 test); a tiny view costs 1.2 us at 100k against 1.09 ms flat | met |
-| Moved object at 1 percent moving, 100,000 | 1.0 us | 0.70 us (`SpatialSet::Move`, tree); 0.058 us (grid). Through the ECS sync, two sets: 7.6 ms per frame = 3.8 us per entity | set met, sync above |
+| Culling gain, 100,000 / 1,000,000 items | 8x / 30x | `SpatialSet` with a rebuilt static tree against a flat box scan: 80x / 95x (1.09 ms flat, 0.0136 ms tree; 11.1 ms, 0.117 ms). Through `RenderScene` (every object in the insert-built dynamic tree, `OptimizeCulling` not called, sphere-then-box flat reference): 17x at 100,000; 1,000,000 not measured through it | met at 100,000 in both; 1,000,000 met only for the static tree |
+| Quiet scene | at most 5 percent of a flat scan | not measured as a timed ECS frame; a static set costs no structure call on a quiet frame (Day 245 counter test) | **open** |
+| Moved object at 1 percent moving, 100,000 | 1.0 us | 0.70 us (`SpatialSet::Move`, tree); 0.058 us (grid). Through the ECS sync, two sets: 7.6 ms per frame for 1,000 moved entities = 7.6 us per moved entity (3.8 us per item) | set met, sync above |
 | 100,000 all-moving agents, sync + update + pairs | 80 ms single thread; 2x faster with 8 workers | ECS sync alone 156 ms, 154 ms with 8 workers (1.0x); then 55-63 ms of pair update | **missed** |
-| Overlap and ray on a static tree, 100,000 | 2 us, 1.5 us | 0.41 us, 0.64 us (1,000,000: 0.94, 1.38) | met |
-| Memory per item | 64 B static, 128 B dynamic | static tree 67,073 nodes for 100,000 items (two per item) | met by node count; bytes not measured |
+| Overlap and ray on a static tree, 100,000 | 2 us (a 40-unit query), 1.5 us | ray 0.64 us (1,000,000: 1.38) met; overlap of a 4-unit box 0.41 us, but of the spec's 40-unit box **2.7 us** (1,000,000: 10.3 us): that query returns about 200 items at this density, so it is result-bound | ray met, 40-unit overlap missed |
+| Memory per item | 64 B static, 128 B dynamic | guide figures from the structure sizes (62 B and 128 B); not measured as allocated bytes | by calculation |
 | Exactness | equal to brute force | the random-scene tests of Days 239-247 | met |
 
 The miss: moving applies items to the sets on one thread in chunk order, and the dynamic tree re-inserts 0.8 to 0.9 us per move at this speed (agents that move 0.3 of their size a frame leave their 0.25 margin almost every frame). The render and physics sets each pay it, so the sync is two moves per agent (156 ms), and the workers cannot help because only the bounds pass is parallel. A grid moves an item in 0.1 us (10 ms for 100,000 against 87 ms) and a margin of 0.5 with the predictive extension takes the tree to 71 ms, 1.0 to 40 ms. Before this day the pair update on a grid scanned every item for each touched item (28 s for 100,000); it now goes through the grid's cells (55 ms).
@@ -147,11 +147,11 @@ The miss: moving applies items to the sets on one thread in chunk order, and the
 ## 5. Contracts the other phases rely on
 
 - **Phase 22 (physics):** consumes `PairTracker` begin/end events and the set's layer masks; fat margins never leak into pair events; the narrow phase and the shapes are its own. `plans/phase-22-physics.md` already states this and needs no change.
-- **Phase 17 Day 233 (`RenderSync`/`RenderScene`):** the bridge is unchanged; Phase 18 adds a visible-list overload of `RenderScene::Cull` and a visibility system. `RenderSync` does not assume it alone decides what is drawn (its note already says so).
+- **Phase 17 Day 233 (`RenderSync`/`RenderScene`):** the bridge is unchanged; `RenderScene::Cull` uses a spatial index of its own (Day 247). The visible-list overload and visibility system originally planned were not built. `RenderSync` does not assume it alone decides what is drawn (its note already says so).
 - **Phase 25 (3D text):** needs nothing from here; its text entities become spatial members when they carry bounds.
 
 ## 6. Open points the days settle
 
-- Day 240 decides by test whether the predictive margin (section 3.2) is added.
+- Settled on Day 240: the predictive margin is added (default 2, `docs/guide/spatial.md`).
 - Day 242 takes the grid cell size as a parameter and documents the 2x to 4x rule of thumb; the sync system chooses it from the set's declared item size.
 - Parallel build: the top-down build's recursion is split over the job scheduler above a size threshold, with the sequential order of partitions so the result equals the sequential tree byte for byte (Day 239).

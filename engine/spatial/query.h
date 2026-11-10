@@ -237,7 +237,7 @@ QueryStats OverlapKeys(const Tree& tree, const Shape& shape, const QueryFilter& 
 /// Param hits: receives the hits (cleared first); its capacity is reused.
 /// Returns: what the query did; `results` is the number of hits.
 /// Ownership: `hits` is borrowed for the call.
-/// Fails: a ray or `max_t` that is not finite (or a NaN `max_t`) finds nothing and sets `refused_input`; a negative `max_t` finds nothing.
+/// Fails: a ray that is not finite or a NaN `max_t` finds nothing and sets `refused_input` (an infinite `max_t` is allowed: the ray is unbounded); a negative `max_t` finds nothing.
 template <class Tree>
 QueryStats Raycast(const Tree& tree, const Ray& ray, f32 max_t, const QueryFilter& filter, RayMode mode, Order order, Vector<RayHit>* hits) {
     hits->Clear();

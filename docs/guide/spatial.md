@@ -10,7 +10,7 @@ queries (Day 246), the renderer's culling (Day 247), statistics, debug lines, se
 The spatial module (`engine/spatial`, namespace `spatial`) answers proximity questions once for every system, with exact, tested structures, instead of
 each system keeping a private grid. Design, the experiments that chose the structures, and the benchmark the phase must pass:
 `docs/superpowers/specs/2026-11-10-spatial-design.md`. The structures are generic over a 64-bit key (`spatial::SpatialKey`) and know nothing of the ECS;
-the ECS tier that keeps them in step with entities comes later in the phase.
+the ECS tier that keeps them in step with entities is described under "Putting entities in the spatial world".
 
 ## Shapes
 
@@ -235,7 +235,7 @@ far in one direction (jittering particles), 4 for fast straight movers.
 
 ## Queries
 
-`spatial/query.h` asks the same questions of every structure (both trees now, the spatial set of Day 242 later), as free functions:
+`spatial/query.h` asks the same questions of every structure (both trees, the hash grid and the spatial set), as free functions:
 
 | I need | Call | Results |
 |---|---|---|
@@ -516,9 +516,8 @@ The sync keeps the sets true with the cost of what changed, not of what exists.
 - **Static trees.** A set's static tree is rebuilt only in a frame in which its static items changed (an add, a removal, a tag change): a static world costs the
   `Changed` queries and no structure calls (tested: 100 frames, the counters do not move). Queries stay exact between a change and the rebuild.
 - **Cost.** Change detection is per chunk (see [ECS](ecs.md)), so a frame in which a few entities of every chunk moved still looks at every row once: 100,000
-  entities with 1 percent moving cost about 7.6 ms a frame in a Release build with two sets (transforms included), 10 percent 73 ms, 100 percent 740 ms; most
-  of the time is the dynamic tree reinserting boxes that left their margin (about 3.6 to 7 microseconds per moved item and set with a walk of 1.5 units for boxes
-  of 1 unit). A crowd of same-size agents belongs in a set made with `DynamicKind::Grid`, whose updates are about four times cheaper (Day 248 measures both).
+  entities with 1 percent moving cost about 7.6 ms a frame in a Release build with two sets (transforms included) and 100 percent about 156 ms (Day 248, after the Day 245 figures of 73 and 740 ms were re-measured with the final code); most
+  of the time is the dynamic tree reinserting boxes that left their margin (about 0.85 microseconds per moved item and set when agents move 0.3 of their size a frame). A crowd of same-size agents belongs in a set made with `DynamicKind::Grid`, whose updates are about eight times cheaper (10 ms against 87 ms for 100,000 moves, `spatial_bench`). The spec's 80 ms target for 100,000 all-moving agents is missed (design spec, section 4.1).
 
 ## Asking questions from gameplay code
 
@@ -589,12 +588,11 @@ int main() {
 visible instead of how many objects exist. The old scan over every slot stays as the reference.
 
 - **Same answer.** Both modes return the same slots in increasing order: the tree picks candidates by box, then each is tested with the same `Frustum::Visible`
-  and `kHidden` check as the scan (tested on 1,000 random scenes with moves, removals, hidden objects and objects whose box is not finite). The rendered
-  goldens did not change.
+  and `kHidden` check as the scan (tested on 1,000 random scenes with moves, removals, hidden objects and objects whose box is not finite). The goldens are unchanged because the slots and their order are identical.
 - **Choosing.** `RenderScene::SetCullMode(CullMode::Bvh)` (the default) or `CullMode::Flat`; `OptimizeCulling(budget)` rebalances the tree between frames after
   many objects moved. An object with a box the tree cannot hold (not finite) is tested one by one, as the scan does.
-- **Measured** (Release, 100,000 objects, a camera that sees 1,026 of them): 0.055 ms against 0.93 ms for the scan, 17 times faster (the spec asks for 8 times
-  or more at 100,000 objects). With a camera that sees most of the scene the tree is slower than the scan: it pays for the traversal and gains nothing.
+- **Measured** (Release, 100,000 objects added one by one, `OptimizeCulling` not called, a camera that sees 1,026 of them): 0.055 ms against 0.93 ms for the scan, 17 times faster (the spec asks for 8 times
+  or more at 100,000 objects; a rebuilt static tree in a bare `SpatialSet` reaches 80 times, design spec section 4.1). With a camera that sees most of the scene the tree is slower than the scan: it pays for the traversal and gains nothing.
 - **Not done yet.** The `renderer.culling` setting that switches the mode at run time, and culling lights through the tree (a scene holds few lights; the
   lighting pass keeps its list), are recorded in `KNOWN-ISSUES.md`.
 

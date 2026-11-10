@@ -180,7 +180,16 @@ private:
             }
             const Aabb box = TransformAabb(bounds.local, w.matrix);
             if (!FiniteSyncBox(bounds.local) || !FiniteSyncBox(box) || m.layer >= 32) {
-                ++spatial.MutableStats().refused_bounds; // the items it has stay as they were
+                ++spatial.MutableStats().refused_bounds; // nothing is added or moved, but the sets the entity no longer asks for are left (a removal needs no box)
+                const u32 want = ValidSets(spatial, m.sets, false, spatial.MutableStats());
+                u32 held = 0;
+                for (SetId id = 0; id < spatial.SetCount(); ++id) {
+                    if (proxy.handle[id] != kInvalidSetHandle && ((want >> id) & 1u) == 0) {
+                        RemoveItem(spatial, id, proxy.handle[id]);
+                    }
+                    held |= proxy.handle[id] != kInvalidSetHandle ? (1u << id) : 0u;
+                }
+                proxy.sets = static_cast<u8>(held);
                 return;
             }
             Reconcile(spatial, entity, m, proxy, box, is_static, count_unknown);
@@ -277,6 +286,10 @@ private:
                 }
                 SpatialSet* set = spatial.Set(id);
                 if (!set->IsLive(handle) || SameBox(set->ItemOf(handle).box, bounds.box)) {
+                    continue;
+                }
+                if (!FiniteSyncBox(bounds.box)) { // a WorldBounds written by hand: the sync's own are finite
+                    ++stats.refused_bounds;
                     continue;
                 }
                 ++stats.items_moved;

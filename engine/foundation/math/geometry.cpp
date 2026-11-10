@@ -163,17 +163,50 @@ Aabb TransformAabb(const Aabb& box, const Mat4& m) {
     return Aabb::FromMinMax(Vec3(c.x, c.y, c.z) - new_half, Vec3(c.x, c.y, c.z) + new_half);
 }
 
+namespace {
+// The largest singular value of the upper 3x3 of `m` (the most it stretches any vector), from the largest eigenvalue of the symmetric A = M^T M by the
+// trigonometric solution. Exact for any rotation, scale, shear or product of them (the largest column length is only exact for rotate-then-scale).
+f32 LargestStretch(const Mat4& m) {
+    f64 c[3][3];
+    for (u32 i = 0; i < 3; ++i) {
+        c[i][0] = static_cast<f64>(m.col[i].x);
+        c[i][1] = static_cast<f64>(m.col[i].y);
+        c[i][2] = static_cast<f64>(m.col[i].z);
+    }
+    f64 a[3][3];
+    for (u32 i = 0; i < 3; ++i) {
+        for (u32 j = 0; j < 3; ++j) {
+            f64 sum = 0.0;
+            for (u32 k = 0; k < 3; ++k) {
+                sum += c[i][k] * c[j][k];
+            }
+            a[i][j] = sum;
+        }
+    }
+    const f64 off = a[0][1] * a[0][1] + a[0][2] * a[0][2] + a[1][2] * a[1][2];
+    const f64 q = (a[0][0] + a[1][1] + a[2][2]) / 3.0;
+    f64 largest;
+    if (off == 0.0) {
+        largest = a[0][0] > a[1][1] ? (a[0][0] > a[2][2] ? a[0][0] : a[2][2]) : (a[1][1] > a[2][2] ? a[1][1] : a[2][2]);
+    } else {
+        const f64 d0 = a[0][0] - q, d1 = a[1][1] - q, d2 = a[2][2] - q;
+        const f64 p = Sqrt((d0 * d0 + d1 * d1 + d2 * d2 + 2.0 * off) / 6.0);
+        const f64 b00 = d0 / p, b11 = d1 / p, b22 = d2 / p, b01 = a[0][1] / p, b02 = a[0][2] / p, b12 = a[1][2] / p;
+        f64 r = (b00 * (b11 * b22 - b12 * b12) - b01 * (b01 * b22 - b12 * b02) + b02 * (b01 * b12 - b11 * b02)) / 2.0;
+        r = r < -1.0 ? -1.0 : (r > 1.0 ? 1.0 : r);
+        largest = q + 2.0 * p * Cos(Acos(r) / 3.0);
+    }
+    if (largest < 0.0) largest = 0.0;
+    return static_cast<f32>(Sqrt(largest) * (1.0 + 1e-6)); // a hair up: the sphere must never be smaller than the true one
+}
+} // namespace
+
 Bounds TransformBounds(const Bounds& local, const Mat4& m) {
     Bounds out;
     out.box = TransformAabb(local.box, m);
     const Vec4 sc = m * Vec4(local.sphere.center, 1.0f);
-    f32 scale2 = 0.0f;
-    for (u32 col = 0; col < 3; ++col) {
-        const f32 l2 = Vec3(m.col[col].x, m.col[col].y, m.col[col].z).LengthSquared();
-        if (l2 > scale2) scale2 = l2;
-    }
     out.sphere.center = Vec3(sc.x, sc.y, sc.z);
-    out.sphere.radius = local.sphere.radius * Sqrt(scale2);
+    out.sphere.radius = local.sphere.radius * LargestStretch(m);
     return out;
 }
 
@@ -242,7 +275,7 @@ bool Intersect(const Ray& ray, const Aabb& box, f32 max_t, f32* t) {
     f32 leave = max_t;
     for (u32 k = 0; k < 3; ++k) {
         const f32 o = ray.origin[k];
-        if (ray.direction[k] == 0.0f) {
+        if (ray.direction[k] == 0.0f || !IsFinite(ray.inverse_direction[k])) { // (a subnormal direction has an infinite inverse: treated as parallel)
             // Parallel to this pair of faces: the ray is inside the slab for all t, or never (0 * infinity would be NaN, so not computed).
             if (o < box.min[k] || o > box.max[k]) return false;
             continue;

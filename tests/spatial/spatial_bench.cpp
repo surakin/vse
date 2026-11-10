@@ -120,6 +120,12 @@ TEST_CASE("Spatial benchmark: culling, static queries and memory", "[.][spatial-
             Overlap(set, box, QueryFilter(), [&](const Item&) { ++sink; return true; });
         }
         Say("overlap box 4x4x4 per query", n, (NowMs() - t) * 1000.0 / queries, "us");
+        t = NowMs();
+        for (u32 q = 0; q < queries; ++q) {
+            const Aabb box = BoxAt(Vec3(rng.Float(-city.half, city.half), 1.5f, rng.Float(-city.half, city.half)), Vec3(20, 20, 20)); // the spec's 40-unit query
+            Overlap(set, box, QueryFilter(), [&](const Item&) { ++sink; return true; });
+        }
+        Say("overlap box 40x40x40 per query", n, (NowMs() - t) * 1000.0 / queries, "us");
         Vector<RayHit> hits;
         t = NowMs();
         for (u32 q = 0; q < queries; ++q) {
@@ -129,9 +135,7 @@ TEST_CASE("Spatial benchmark: culling, static queries and memory", "[.][spatial-
         }
         Say("ray closest, 50 long, per query", n, (NowMs() - t) * 1000.0 / queries, "us");
         CHECK(sink > 0);
-        const DynamicBvhStats ds = set.DynamicTree().Stats();
         Say("static tree nodes", n, static_cast<f64>(set.StaticTree().NodeCount()), "nodes");
-        (void)ds;
     }
 }
 

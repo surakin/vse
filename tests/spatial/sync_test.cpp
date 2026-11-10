@@ -298,3 +298,15 @@ TEST_CASE("Spatial sync: a member whose transform turns non-finite keeps its ite
     CHECK(rig.Items(kRenderSet).Size() == 1);
     CHECK(rig.Items(kRenderSet)[0].box.min.x == 0.5f);
 }
+
+TEST_CASE("Spatial sync: a membership edit that coincides with a box the sync refuses still removes the sets the entity no longer asks for", "[spatial][sync]") {
+    SyRig rig;
+    const ecs::Entity e = rig.Spawn(Vec3(1, 0, 0), false, 3);
+    for (u32 i = 0; i < 3; ++i) rig.Frame();
+    REQUIRE(rig.Items(kPhysicsSet).Size() == 1);
+    rig.world.Get<ecs::LocalTransform>(e)->position = Vec3(Limits<f32>::QuietNaN(), 0, 0);
+    rig.world.Get<SpatialMembership>(e)->sets = 1; // render only
+    for (u32 i = 0; i < 3; ++i) rig.Frame();
+    CHECK(rig.Items(kPhysicsSet).Size() == 0);
+    CHECK(rig.Items(kRenderSet).Size() == 1);
+}
