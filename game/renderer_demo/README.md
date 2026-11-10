@@ -122,7 +122,7 @@ is logged), so a checkout without the files still runs.
 | | |
 |---|---|
 | `main.cpp` | options, the window loop and its keys and script, the offscreen path, the cameras |
-| `demo_scene.*` | the scene: meshes, textures, materials, objects, lights (also used by the tests) |
+| `demo_scene.*` | the scene: meshes, textures, materials, and the objects, lights and camera as ECS entities (a schedule moves the lights, propagates transforms and mirrors them into the `RenderScene`; also used by the tests) |
 | `demo_frame.*` | material system, per-frame buffers, passes and `Renderer` around them (also used by the tests) |
 | `demo_assets.*`, `mint_assets.cpp` | the procedural textures and the tool that writes them |
 | `/tests/rhi/renderer_demo_gpu_test.cpp` | the golden image, draw-order independence and the crossing-planes depth test |

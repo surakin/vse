@@ -156,14 +156,14 @@ TEST_CASE("The demo frame's text overlay survives a device reset, a pipeline reb
         // A pipeline rebuild: the text overlay keeps drawing (the picture below it may change with the shader quality, so only the overlay's pixels are compared
         // against the picture without any overlay, which must differ in the same region).
         RenderSettings wanted = rig.R().Settings();
-        wanted.SetEnum(settings::kShaderQuality, 0);
+        wanted.SetEnum(renderer::settings::kShaderQuality, 0);
         const ApplyResult rebuilt = rig.R().ApplySettings(wanted);
         REQUIRE(rebuilt.ok);
         CHECK(rebuilt.performed == CostClass::PipelineRebuild);
         gpu_test::Image after_rebuild;
         shoot(&after_rebuild);
         CHECK(rig.frame.OverlayStats().glyphs_drawn > drawn);
-        wanted.SetEnum(settings::kShaderQuality, rig.initial.GetEnum(settings::kShaderQuality));
+        wanted.SetEnum(renderer::settings::kShaderQuality, rig.initial.GetEnum(renderer::settings::kShaderQuality));
         REQUIRE(rig.R().ApplySettings(wanted).ok);
 
         // A lost device: the frame reports it, the renderer recovers, and the next frame has the text again, identical to the first.

@@ -6,6 +6,10 @@
 #include "lang/scalar.h"
 
 #include "demo_assets.h"
+#include "scene/components.h"
+#include "ecs/query.h"
+#include "ecs/transform.h"
+#include "scene/render_sync.h"
 #include "rhi/rhi_log.h"
 #include "cstr/format.h"
 #include "cstr/mem_ops.h"
@@ -93,6 +97,18 @@ bool LoadTextureImage(void* user, TextureImage* out) {
     return true;
 }
 
+// The light orbit's clock, a resource of the demo world: `active` stays false until the first Animate, so a fresh scene has its lights at their base positions.
+struct DemoClock {
+    f32 seconds = 0.0f;
+    bool active = false;
+};
+
+// A point light's orbit: its base position and phase.
+struct Orbit {
+    Vec3 base;
+    f32 phase;
+};
+
 struct Placement {
     u32 mesh;     // 0 sphere, 1 cube, 2 colored sphere, 3 ground tile
     u32 material; // MaterialSlot
@@ -107,17 +123,16 @@ DemoScene::~DemoScene() { Destroy(); }
 void DemoScene::Destroy() {
     if (device_ == nullptr) return;
     device_->WaitIdle();
+    schedule_.Reset(); // the sync's references to the meshes
+    world_.Reset();    // the entities' references
     scene_.Reset();
-    sphere_.Destroy();
-    colored_sphere_.Destroy();
-    cube_.Destroy();
-    tile_.Destroy();
+    for (SharedPtr<scene::MeshAsset>* mesh : {&sphere_, &colored_sphere_, &cube_, &tile_}) {
+        if (*mesh) (*mesh)->mesh.Destroy();
+        mesh->Reset();
+    }
     for (renderer::GpuTexture& t : textures_) {
         t.Destroy();
     }
-    light_ids_.Reset();
-    light_base_.Reset();
-    light_phase_.Reset();
     screen_material_ = MaterialId();
     device_ = nullptr;
     materials_ = nullptr;
@@ -131,6 +146,11 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
     }
     device_ = device;
     materials_ = materials;
+
+    sphere_ = MakeShared<scene::MeshAsset>();
+    colored_sphere_ = MakeShared<scene::MeshAsset>();
+    cube_ = MakeShared<scene::MeshAsset>();
+    tile_ = MakeShared<scene::MeshAsset>();
 
     // Meshes.
     MeshData sphere, cube, tile, colored;
@@ -156,18 +176,18 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
         Destroy();
         return false;
     }
-    if (!sphere_.Create(device, sphere, "sphere") || !colored_sphere_.Create(device, colored, "colored sphere") || !cube_.Create(device, cube, "cube") ||
-        !tile_.Create(device, tile, "ground tile")) {
+    if (!sphere_->mesh.Create(device, sphere, "sphere") || !colored_sphere_->mesh.Create(device, colored, "colored sphere") || !cube_->mesh.Create(device, cube, "cube") ||
+        !tile_->mesh.Create(device, tile, "ground tile")) {
         rhi::RhiLogV(LogVerbosity::Error, "renderer_demo: uploading a mesh failed");
         Destroy();
         return false;
     }
     if (options.resources != nullptr) {
         // Keep the geometry so the meshes can be uploaded again after a device reset.
-        if (!sphere_.AdoptSource(options.resources, static_cast<MeshData&&>(sphere), "sphere") ||
-            !colored_sphere_.AdoptSource(options.resources, static_cast<MeshData&&>(colored), "colored sphere") ||
-            !cube_.AdoptSource(options.resources, static_cast<MeshData&&>(cube), "cube") ||
-            !tile_.AdoptSource(options.resources, static_cast<MeshData&&>(tile), "ground tile")) {
+        if (!sphere_->mesh.AdoptSource(options.resources, static_cast<MeshData&&>(sphere), "sphere") ||
+            !colored_sphere_->mesh.AdoptSource(options.resources, static_cast<MeshData&&>(colored), "colored sphere") ||
+            !cube_->mesh.AdoptSource(options.resources, static_cast<MeshData&&>(cube), "cube") ||
+            !tile_->mesh.AdoptSource(options.resources, static_cast<MeshData&&>(tile), "ground tile")) {
             rhi::RhiLogV(LogVerbosity::Error, "renderer_demo: registering the meshes failed");
             Destroy();
             return false;
@@ -183,10 +203,10 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
             return false;
         }
         list->Begin();
-        sphere_.RecordPrepare(list);
-        colored_sphere_.RecordPrepare(list);
-        cube_.RecordPrepare(list);
-        tile_.RecordPrepare(list);
+        sphere_->mesh.RecordPrepare(list);
+        colored_sphere_->mesh.RecordPrepare(list);
+        cube_->mesh.RecordPrepare(list);
+        tile_->mesh.RecordPrepare(list);
         list->End();
         rhi::CommandList* lists[] = {list};
         const bool submitted = device->Submit(lists, 1) != 0;
@@ -197,10 +217,10 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
             Destroy();
             return false;
         }
-        sphere_.MarkReady();
-        colored_sphere_.MarkReady();
-        cube_.MarkReady();
-        tile_.MarkReady();
+        sphere_->mesh.MarkReady();
+        colored_sphere_->mesh.MarkReady();
+        cube_->mesh.MarkReady();
+        tile_->mesh.MarkReady();
     }
 
     // Textures and materials.
@@ -304,89 +324,126 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
     sd.max_objects = options.objects + (options.screen ? 1u : 0u);
     sd.max_lights = light_capacity_ < kMaxLights ? light_capacity_ : kMaxLights;
     scene_ = MakeUnique<RenderScene>(sd);
-    const GpuMesh* meshes[4] = {&sphere_, &cube_, &colored_sphere_, &tile_};
+    world_ = MakeUnique<ecs::World>();
+    schedule_ = MakeUnique<ecs::Schedule>();
+    world_->SetResource(ecs::TransformReport{});
+    world_->SetResource(scene::SceneLink{scene_.Get()});
+    world_->SetResource(scene::SceneSyncReport{});
+    world_->SetResource(scene::ActiveCamera{});
+    world_->SetResource(scene::CameraOutput{});
+    world_->SetResource(DemoClock{});
+    // Objects are entities created in the order the scene adds them (the sync mirrors them in that order, which the picture and the tests rely on).
+    const SharedPtr<scene::MeshAsset> meshes[4] = {sphere_, cube_, colored_sphere_, tile_};
     for (usize i = 0; i < order.Size(); ++i) {
         const Placement& p = placements[order[i]];
-        RenderObjectDesc od;
-        od.mesh = meshes[p.mesh];
-        od.material = ids[p.material].index;
-        od.transform = p.transform;
-        if (!scene_->AddObject(od).IsValid()) {
-            rhi::RhiLogV(LogVerbosity::Error, "renderer_demo: the scene is full");
-            Destroy();
-            return false;
-        }
+        scene::MeshRenderer mr;
+        mr.mesh = meshes[p.mesh];
+        mr.material = ids[p.material].index;
+        ecs::WorldTransform placed;
+        placed.matrix = p.transform;
+        world_->Create(placed, mr);
     }
-
+    expected_objects_ = static_cast<u32>(order.Size());
     if (options.screen) { // the plane's x, normal and z become the screen's right, towards +z and down
-        RenderObjectDesc od;
-        od.mesh = &tile_;
-        od.material = screen_material_.index;
+        scene::MeshRenderer mr;
+        mr.mesh = tile_;
+        mr.material = screen_material_.index;
         const f32 sx = options.screen_width / kTileSize;
         const f32 sz = options.screen_height / kTileSize;
-        od.transform = Mat4::FromBasis(Vec3(sx, 0, 0), Vec3(0, 0, 1), Vec3(0, -sz, 0), options.screen_center);
-        if (!scene_->AddObject(od).IsValid()) {
-            rhi::RhiLogV(LogVerbosity::Error, "renderer_demo: the scene is full");
-            Destroy();
-            return false;
-        }
+        ecs::WorldTransform placed;
+        placed.matrix = Mat4::FromBasis(Vec3(sx, 0, 0), Vec3(0, 0, 1), Vec3(0, -sz, 0), options.screen_center);
+        world_->Create(placed, mr);
+        ++expected_objects_;
     }
 
-    // Lights: one sun, a little ambient, and the point lights scattered over the shapes at low height.
-    Light sun;
+    // Lights: one sun, a little ambient, and the point lights scattered over the shapes at low height. The sync adds lights archetype by archetype in creation order: the sun and
+    // the ambient light share one archetype that is made before the point lights' (which also carry an Orbit), so the render scene's light slots are 0 sun, 1 ambient, 2.. points, as before the port.
+    scene::LightSource sun;
     sun.type = LightType::Directional;
     sun.direction = Vec3(0.35f, 0.8f, 0.45f);
     sun.color = Vec3(1.0f, 0.95f, 0.85f);
     sun.intensity = 0.9f;
-    scene_->AddLight(sun);
-    Light ambient;
+    world_->Create(ecs::LocalTransform{}, ecs::WorldTransform{}, sun);
+    scene::LightSource ambient;
     ambient.type = LightType::Ambient;
     ambient.color = Vec3(0.35f, 0.4f, 0.5f);
     ambient.intensity = 0.15f;
-    scene_->AddLight(ambient);
+    world_->Create(ecs::LocalTransform{}, ecs::WorldTransform{}, ambient);
     Random lr(options.seed ^ 0x9e3779b9u);
     for (u32 i = 0; i < options.lights; ++i) {
         const f32 base_x = lr.Range(-width * 0.5f, width * 0.5f);
         const f32 base_y = lr.Range(0.8f, 2.2f);
         const f32 base_z = lr.Range(-depth * 0.5f, depth * 0.5f);
         const Vec3 base(base_x, base_y, base_z);
-        Light l;
+        scene::LightSource l;
         l.type = LightType::Point;
-        l.position = base;
         l.radius = lr.Range(3.0f, 5.5f);
         l.intensity = lr.Range(2.0f, 6.0f);
         const f32 hue = lr.Unit();
         l.color = Vec3(0.35f + 0.65f * Abs(Sin(hue * 6.2831853f)), 0.35f + 0.65f * Abs(Sin(hue * 6.2831853f + 2.0f)),
                        0.35f + 0.65f * Abs(Sin(hue * 6.2831853f + 4.0f)));
-        const LightId id = scene_->AddLight(l);
-        if (!id.IsValid()) {
-            rhi::RhiLogV(LogVerbosity::Error, "renderer_demo: the scene cannot hold %u lights", options.lights);
-            Destroy();
-            return false;
-        }
-        light_ids_.Push(id);
-        light_base_.Push(base);
         const f32 phase = lr.Range(0.0f, 6.2831853f);
-        light_phase_.Push(phase);
+        ecs::LocalTransform at;
+        at.position = base;
+        world_->Create(at, ecs::WorldTransform{}, l, Orbit{base, phase});
     }
+    expected_lights_ = options.lights + 2;
+
+    // The camera is an entity too.
+    ecs::LocalTransform eye = ecs::LookAt(Vec3(radius_ * 0.55f, radius_ * 0.5f, radius_ * 0.85f), Vec3(0, 0.5f, 0), Vec3(0, 1, 0));
+    scene::Camera lens;
+    lens.fov_y = 0.9f;
+    lens.near_plane = 0.1f;
+    lens.far_plane = radius_ * 6.0f + 60.0f;
+    world_->Resource<scene::ActiveCamera>().entity = world_->Create(eye, ecs::WorldTransform{}, lens);
+
+    // Per frame: the orbits move the lights, the transforms propagate, the sync mirrors the result.
+    schedule_->Add(ecs::MakeQuerySystem<ecs::Write<ecs::LocalTransform>, ecs::Read<Orbit>>(
+                       "light orbits",
+                       [](ecs::SystemContext& context, ecs::Query<ecs::Write<ecs::LocalTransform>, ecs::Read<Orbit>>& query) {
+                           const DemoClock clock = context.ReadResource<DemoClock>();
+                           if (!clock.active) return;
+                           query.ForEach([&](ecs::LocalTransform& t, const Orbit& o) {
+                               const f32 a = clock.seconds * 0.5f + o.phase;
+                               t.position = Vec3(o.base.x + 1.2f * Cos(a), o.base.y + 0.3f * Sin(a * 1.7f), o.base.z + 1.2f * Sin(a));
+                           });
+                       })
+                       .ReadsResource<DemoClock>()
+                       .InStage(ecs::kUpdate));
+    schedule_->Add(ecs::MakeTransformSystem("transforms").InStage(ecs::kPostUpdate));
+    schedule_->Add(scene::MakeCameraSystem("camera").InStage(ecs::kRender));
+    schedule_->Add(scene::MakeRenderSyncSystem("render sync").InStage(ecs::kRender));
+    if (!schedule_->Build().ok) {
+        rhi::RhiLogV(LogVerbosity::Error, "renderer_demo: the scene's schedule does not build");
+        Destroy();
+        return false;
+    }
+    schedule_->Run(*world_, 0.0f);
+    schedule_->Run(*world_, 0.0f); // the second frame applies the sync's handles and settles the change stamps
+    if (scene_->ObjectCount() != expected_objects_) {
+        rhi::RhiLogV(LogVerbosity::Error, "renderer_demo: the scene is full");
+        Destroy();
+        return false;
+    }
+    if (scene_->LightCount() != expected_lights_) {
+        rhi::RhiLogV(LogVerbosity::Error, "renderer_demo: the scene cannot hold %u lights", options.lights);
+        Destroy();
+        return false;
+    }
+    overview_ = world_->Resource<scene::CameraOutput>().camera;
     return true;
 }
 
 void DemoScene::Animate(f32 seconds) {
-    for (usize i = 0; i < light_ids_.Size(); ++i) {
-        Light l = *scene_->FindLight(light_ids_[i]);
-        const f32 a = seconds * 0.5f + light_phase_[i];
-        l.position = Vec3(light_base_[i].x + 1.2f * Cos(a), light_base_[i].y + 0.3f * Sin(a * 1.7f), light_base_[i].z + 1.2f * Sin(a));
-        scene_->SetLight(light_ids_[i], l);
-    }
+    DemoClock& clock = world_->Resource<DemoClock>();
+    clock.seconds = seconds;
+    clock.active = true;
+    schedule_->Run(*world_, 0.0f);
 }
 
 Camera DemoScene::OverviewCamera(f32 aspect) const {
-    Camera cam = MakeLookAtCamera(Vec3(radius_ * 0.55f, radius_ * 0.5f, radius_ * 0.85f), Vec3(0, 0.5f, 0), Vec3(0, 1, 0));
+    Camera cam = overview_;
     cam.aspect = aspect;
-    cam.fov_y = 0.9f;
-    cam.near_plane = 0.1f;
-    cam.far_plane = radius_ * 6.0f + 60.0f;
     return cam;
 }
 

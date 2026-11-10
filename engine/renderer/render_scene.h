@@ -1,6 +1,6 @@
 #pragma once
 
-//! The scene a frame is built from: a fixed-capacity list of objects and lights with stable ids; the ECS replaces it in Phase 17.
+//! The scene a frame is built from: a fixed-capacity list of objects and lights with stable ids. The renderer draws from this list; programs that use the ECS fill it with `scene::MakeRenderSyncSystem` (module `engine/scene`), which mirrors entities into it and touches it only for what changed. The renderer's own tests build it directly.
 
 #include "containers/vector.h"
 #include "math/matrix.h"

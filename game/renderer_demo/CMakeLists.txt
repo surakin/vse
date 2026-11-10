@@ -3,7 +3,7 @@
 add_library(renderer_demo_lib STATIC demo_assets.cpp demo_scene.cpp demo_frame.cpp ../common/textures.cpp)
 target_compile_options(renderer_demo_lib PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
 target_include_directories(renderer_demo_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/game/common)
-target_link_libraries(renderer_demo_lib PUBLIC renderer_passes renderer rhi foundation)
+target_link_libraries(renderer_demo_lib PUBLIC scene ecs renderer_passes renderer rhi foundation)
 
 add_executable(renderer_demo main.cpp ../common/settings_main.cpp)
 engine_split_debug_info(renderer_demo)

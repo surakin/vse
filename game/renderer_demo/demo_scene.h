@@ -4,6 +4,7 @@
 // directional light and a little ambient. Built deterministically from the options, so the demo, the golden-image tests and the
 // depth tests all see the same scene.
 
+#include "containers/shared_ptr.h"
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
 #include "renderer/camera.h"
@@ -14,6 +15,14 @@
 #include "renderer/texture.h"
 #include "rhi/rhi.h"
 #include "types.h"
+
+namespace engine_placeholder::ecs {
+class World;
+class Schedule;
+} // namespace engine_placeholder::ecs
+namespace engine_placeholder::scene {
+struct MeshAsset;
+} // namespace engine_placeholder::scene
 
 namespace renderer_demo {
 
@@ -69,7 +78,7 @@ public:
     // frame this scene was created with follow its textures by pointer: destroy the scene before the frame (declare it after).
     void Destroy();
 
-    // Moves the point lights to where they are at `seconds`.
+    // Moves the point lights to where they are at `seconds` (a system of the scene's schedule runs, so the render scene is up to date on return).
     void Animate(f32 seconds);
 
     // The material of the screen object (`SceneOptions::screen`), or an invalid id.
@@ -88,17 +97,21 @@ public:
 private:
     rhi::Device* device_ = nullptr;
     renderer::MaterialSystem* materials_ = nullptr;
-    renderer::GpuMesh sphere_;
-    renderer::GpuMesh colored_sphere_;
-    renderer::GpuMesh cube_;
-    renderer::GpuMesh tile_;
+    // The meshes are shared with the entities that draw them (scene::MeshAsset keeps one alive while a scene entry uses it).
+    SharedPtr<scene::MeshAsset> sphere_;
+    SharedPtr<scene::MeshAsset> colored_sphere_;
+    SharedPtr<scene::MeshAsset> cube_;
+    SharedPtr<scene::MeshAsset> tile_;
     renderer::GpuTexture textures_[3];
     TextureLoadInfo load_info_[3]; // how each texture is loaded again after a reset
     char asset_dir_[512] = {};
+    // The scene is built from entities: the world holds them, the schedule animates the lights, propagates transforms and mirrors everything into scene_.
     UniquePtr<renderer::RenderScene> scene_;
-    Vector<renderer::LightId> light_ids_;
-    Vector<Vec3> light_base_;
-    Vector<f32> light_phase_;
+    UniquePtr<ecs::World> world_;
+    UniquePtr<ecs::Schedule> schedule_;
+    renderer::Camera overview_;
+    u32 expected_objects_ = 0;
+    u32 expected_lights_ = 0;
     u32 light_capacity_ = 0;
     f32 radius_ = 1.0f;
     renderer::MaterialId screen_material_;

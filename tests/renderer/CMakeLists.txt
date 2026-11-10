@@ -61,7 +61,7 @@ function(engine_add_renderer_tests target suffix label spec)
   endif()
   # rhi_backends registers the backends (tests/support/register_backends.cpp calls it before the run); the renderer library
   # itself does not depend on any backend, and tests/renderer is scanned by rhi_boundary_check, so a test cannot name Vulkan.
-  target_link_libraries(${target} PRIVATE renderer_passes${flavor} renderer${flavor} rhi_backends${flavor} Catch2::Catch2WithMain Threads::Threads)
+  target_link_libraries(${target} PRIVATE scene${flavor} ecs${flavor} renderer_passes${flavor} renderer${flavor} rhi_backends${flavor} Catch2::Catch2WithMain Threads::Threads)
   target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/shaders ${CMAKE_SOURCE_DIR}/game/common ${CMAKE_SOURCE_DIR}/game/renderer_demo ${CMAKE_SOURCE_DIR}/tests/io ${CMAKE_SOURCE_DIR}/tests/support ${CMAKE_SOURCE_DIR}/tests/rhi ${CMAKE_SOURCE_DIR}/tests/text)
   target_compile_definitions(${target} PRIVATE TEXT_TEST_FONT_FILE="${CMAKE_SOURCE_DIR}/assets/fonts/LiberationSans-Regular.ttf" ENGINE_RHI_LSAN_SUPP="${CMAKE_SOURCE_DIR}/tests/rhi/lsan.supp" SETTINGS_FIXTURE_DIR="${CMAKE_SOURCE_DIR}/tests/settings/fixtures")
   engine_discover_tests(${target} TEST_SUFFIX "${suffix}" TEST_SPEC "${spec}"
