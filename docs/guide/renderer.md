@@ -71,7 +71,7 @@ Full reference: [The renderer](../reference/renderer.md).
 - [[renderer::ShaderPermutations]] — the key-to-module table of a permuted shader
 - [[renderer::FindPermutation]] — choose a shader variant by key
 - [[renderer::Camera]] — position, orientation and lens; view and projection matrices
-- [[renderer::Frustum]] — the six planes of a view-projection, with sphere and box tests
+- [[Frustum]] — the six planes of a view-projection, with sphere and box tests
 - [[renderer::MeshData]] — CPU geometry with bounds; [[renderer::MakeCubeMesh]] and friends build shapes
 - [[renderer::GpuMesh]] — a mesh's vertex and index buffers
 - [[renderer::RenderScene]] — objects and lights with generation-checked ids, and [[renderer::RenderScene::Cull]]
@@ -104,7 +104,7 @@ Shader reflection (what a compiled shader says about its own inputs) is describe
 A [[renderer::RenderScene]] is a fixed-capacity list of objects (a `GpuMesh`, a material index, a world matrix) and lights.
 `AddObject` returns an id that carries a generation, so an id outliving its object is detected rather than reused.
 `Cull` fills a caller-provided array with the slots of the objects that are not hidden and whose world-space bounds touch
-the camera's [[renderer::Frustum]]; the array must hold `SlotCount()` entries. `FrameResources::WriteObjects` then packs
+the camera's [[Frustum]]; the array must hold `SlotCount()` entries. `FrameResources::WriteObjects` then packs
 the world and normal matrices of exactly those slots into one buffer, and a draw picks its entry with `first_instance`.
 
 The conventions are right-handed, Y up, camera looking down -Z, depth 0 at the near plane and 1 at the far plane.

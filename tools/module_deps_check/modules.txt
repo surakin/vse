@@ -97,6 +97,8 @@ module engine/text/ text 10
 # 10 ecs (Phase 17 Day 223): entities, components, archetype chunks, world, queries, systems; the foundation and, from Day 231, jobs (allowed below), no renderer, RHI or platform header
 module engine/ecs/ ecs 10
 allow ecs jobs
+# 10 spatial (Phase 18 Day 238): bounding-volume hierarchies, spatial sets, queries; the foundation (the shapes of math/geometry.h) and, from later days, ecs and jobs
+module engine/spatial/ spatial 10
 # 11 ui (Phase 15 Day 184): the widget toolkit's CPU side (tree, layout, theme, input routing, draw list); text, the platform's input headers and the foundation, no RHI
 module engine/ui/ ui 11
 # 11 RHI: the neutral interface and one module per backend
@@ -206,6 +208,7 @@ target input_probe game/input_probe
 target jobs jobs
 target text text
 target ecs ecs
+target spatial spatial
 target platform platform
 target platform_input platform
 target ui ui

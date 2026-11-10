@@ -854,6 +854,66 @@ io::PathBuilder::Append(StringView)	function	foundation/io	io-pathbuilder-append
 io::PathBuilder::CStr() const	function	foundation/io	io-pathbuilder-cstr-const	foundation-io.md	engine/foundation/io/path.h:226
 io::PathBuilder::View() const	function	foundation/io	io-pathbuilder-view-const	foundation-io.md	engine/foundation/io/path.h:228
 io::PathBuilder::Style() const	function	foundation/io	io-pathbuilder-style-const	foundation-io.md	engine/foundation/io/path.h:230
+Sphere	struct	foundation/math	sphere	foundation-math.md	engine/foundation/math/geometry.h:16
+Sphere::center	variable	foundation/math	sphere-center	foundation-math.md	engine/foundation/math/geometry.h:18
+Sphere::radius	variable	foundation/math	sphere-radius	foundation-math.md	engine/foundation/math/geometry.h:20
+BoundingSphere	alias	foundation/math	boundingsphere	foundation-math.md	engine/foundation/math/geometry.h:24
+Aabb	struct	foundation/math	aabb	foundation-math.md	engine/foundation/math/geometry.h:29
+Aabb::min	variable	foundation/math	aabb-min	foundation-math.md	engine/foundation/math/geometry.h:31
+Aabb::max	variable	foundation/math	aabb-max	foundation-math.md	engine/foundation/math/geometry.h:33
+Aabb::Center() const	function	foundation/math	aabb-center-const	foundation-math.md	engine/foundation/math/geometry.h:36
+Aabb::HalfExtents() const	function	foundation/math	aabb-halfextents-const	foundation-math.md	engine/foundation/math/geometry.h:38
+Aabb::Extents() const	function	foundation/math	aabb-extents-const	foundation-math.md	engine/foundation/math/geometry.h:40
+Aabb::IsEmpty() const	function	foundation/math	aabb-isempty-const	foundation-math.md	engine/foundation/math/geometry.h:42
+Aabb::Empty()	function	foundation/math	aabb-empty	foundation-math.md	engine/foundation/math/geometry.h:45
+Aabb::FromMinMax(const Vec3&,const Vec3&)	function	foundation/math	aabb-fromminmax-const-vec3-amp-const-vec3-amp	foundation-math.md	engine/foundation/math/geometry.h:51
+Bounds	struct	foundation/math	bounds	foundation-math.md	engine/foundation/math/geometry.h:62
+Bounds::sphere	variable	foundation/math	bounds-sphere	foundation-math.md	engine/foundation/math/geometry.h:64
+Bounds::box	variable	foundation/math	bounds-box	foundation-math.md	engine/foundation/math/geometry.h:66
+Plane	struct	foundation/math	plane	foundation-math.md	engine/foundation/math/geometry.h:72
+Plane::normal	variable	foundation/math	plane-normal	foundation-math.md	engine/foundation/math/geometry.h:74
+Plane::d	variable	foundation/math	plane-d	foundation-math.md	engine/foundation/math/geometry.h:76
+Plane::Distance(const Vec3&) const	function	foundation/math	plane-distance-const-vec3-amp-const	foundation-math.md	engine/foundation/math/geometry.h:79
+Plane::FromPointNormal(const Vec3&,const Vec3&)	function	foundation/math	plane-frompointnormal-const-vec3-amp-const-vec3-amp	foundation-math.md	engine/foundation/math/geometry.h:87
+Ray	struct	foundation/math	ray	foundation-math.md	engine/foundation/math/geometry.h:94
+Ray::origin	variable	foundation/math	ray-origin	foundation-math.md	engine/foundation/math/geometry.h:96
+Ray::direction	variable	foundation/math	ray-direction	foundation-math.md	engine/foundation/math/geometry.h:98
+Ray::inverse_direction	variable	foundation/math	ray-inverse-direction	foundation-math.md	engine/foundation/math/geometry.h:100
+Ray::Make(const Vec3&,const Vec3&)	function	foundation/math	ray-make-const-vec3-amp-const-vec3-amp	foundation-math.md	engine/foundation/math/geometry.h:108
+Ray::At(f32) const	function	foundation/math	ray-at-f32-const	foundation-math.md	engine/foundation/math/geometry.h:111
+Containment	enum	foundation/math	containment	foundation-math.md	engine/foundation/math/geometry.h:115
+Containment::Outside	enumerator	foundation/math	containment-outside	foundation-math.md	engine/foundation/math/geometry.h:116
+Containment::Intersects	enumerator	foundation/math	containment-intersects	foundation-math.md	engine/foundation/math/geometry.h:117
+Containment::Inside	enumerator	foundation/math	containment-inside	foundation-math.md	engine/foundation/math/geometry.h:118
+Frustum	struct	foundation/math	frustum	foundation-math.md	engine/foundation/math/geometry.h:124
+Frustum::planes	variable	foundation/math	frustum-planes	foundation-math.md	engine/foundation/math/geometry.h:127
+Frustum::FromViewProjection(const Mat4&)	function	foundation/math	frustum-fromviewprojection-const-mat4-amp	foundation-math.md	engine/foundation/math/geometry.h:135
+Frustum::TestSphere(const Sphere&) const	function	foundation/math	frustum-testsphere-const-sphere-amp-const	foundation-math.md	engine/foundation/math/geometry.h:143
+Frustum::TestAabb(const Aabb&) const	function	foundation/math	frustum-testaabb-const-aabb-amp-const	foundation-math.md	engine/foundation/math/geometry.h:150
+Frustum::Visible(const Bounds&) const	function	foundation/math	frustum-visible-const-bounds-amp-const	foundation-math.md	engine/foundation/math/geometry.h:157
+ComputeAabb(const void*,u32,u32)	function	foundation/math	computeaabb-const-void-star-u32-u32	foundation-math.md	engine/foundation/math/geometry.h:169
+ComputeBounds(const void*,u32,u32)	function	foundation/math	computebounds-const-void-star-u32-u32	foundation-math.md	engine/foundation/math/geometry.h:182
+TransformAabb(const Aabb&,const Mat4&)	function	foundation/math	transformaabb-const-aabb-amp-const-mat4-amp	foundation-math.md	engine/foundation/math/geometry.h:192
+TransformBounds(const Bounds&,const Mat4&)	function	foundation/math	transformbounds-const-bounds-amp-const-mat4-amp	foundation-math.md	engine/foundation/math/geometry.h:203
+Center(const Aabb&)	function	foundation/math	center-const-aabb-amp	foundation-math.md	engine/foundation/math/geometry.h:206
+Union(const Aabb&,const Aabb&)	function	foundation/math	union-const-aabb-amp-const-aabb-amp	foundation-math.md	engine/foundation/math/geometry.h:209
+Union(const Aabb&,const Vec3&)	function	foundation/math	union-const-aabb-amp-const-vec3-amp	foundation-math.md	engine/foundation/math/geometry.h:212
+Intersection(const Aabb&,const Aabb&)	function	foundation/math	intersection-const-aabb-amp-const-aabb-amp	foundation-math.md	engine/foundation/math/geometry.h:215
+Expand(const Aabb&,f32)	function	foundation/math	expand-const-aabb-amp-f32	foundation-math.md	engine/foundation/math/geometry.h:218
+Contains(const Aabb&,const Vec3&)	function	foundation/math	contains-const-aabb-amp-const-vec3-amp	foundation-math.md	engine/foundation/math/geometry.h:224
+Contains(const Aabb&,const Aabb&)	function	foundation/math	contains-const-aabb-amp-const-aabb-amp	foundation-math.md	engine/foundation/math/geometry.h:229
+Contains(const Sphere&,const Vec3&)	function	foundation/math	contains-const-sphere-amp-const-vec3-amp	foundation-math.md	engine/foundation/math/geometry.h:232
+Overlaps(const Aabb&,const Aabb&)	function	foundation/math	overlaps-const-aabb-amp-const-aabb-amp	foundation-math.md	engine/foundation/math/geometry.h:235
+Overlaps(const Aabb&,const Sphere&)	function	foundation/math	overlaps-const-aabb-amp-const-sphere-amp	foundation-math.md	engine/foundation/math/geometry.h:238
+Overlaps(const Sphere&,const Sphere&)	function	foundation/math	overlaps-const-sphere-amp-const-sphere-amp	foundation-math.md	engine/foundation/math/geometry.h:241
+Overlaps(const Frustum&,const Aabb&)	function	foundation/math	overlaps-const-frustum-amp-const-aabb-amp	foundation-math.md	engine/foundation/math/geometry.h:245
+Overlaps(const Frustum&,const Sphere&)	function	foundation/math	overlaps-const-frustum-amp-const-sphere-amp	foundation-math.md	engine/foundation/math/geometry.h:248
+SurfaceArea(const Aabb&)	function	foundation/math	surfacearea-const-aabb-amp	foundation-math.md	engine/foundation/math/geometry.h:251
+Volume(const Aabb&)	function	foundation/math	volume-const-aabb-amp	foundation-math.md	engine/foundation/math/geometry.h:254
+Distance2(const Vec3&,const Aabb&)	function	foundation/math	distance2-const-vec3-amp-const-aabb-amp	foundation-math.md	engine/foundation/math/geometry.h:257
+Intersect(const Ray&,const Aabb&,f32,f32*)	function	foundation/math	intersect-const-ray-amp-const-aabb-amp-f32-f32-star	foundation-math.md	engine/foundation/math/geometry.h:267
+Intersect(const Ray&,const Sphere&,f32,f32*)	function	foundation/math	intersect-const-ray-amp-const-sphere-amp-f32-f32-star	foundation-math.md	engine/foundation/math/geometry.h:277
+Intersect(const Ray&,const Plane&,f32,f32*)	function	foundation/math	intersect-const-ray-amp-const-plane-amp-f32-f32-star	foundation-math.md	engine/foundation/math/geometry.h:287
 kPi	variable	foundation/math	kpi	foundation-math.md	engine/foundation/math/math_util.h:10
 Mat3	struct	foundation/math	mat3	foundation-math.md	engine/foundation/math/matrix.h:19
 Mat3::col	variable	foundation/math	mat3-col	foundation-math.md	engine/foundation/math/matrix.h:21
@@ -3218,6 +3278,8 @@ ecs::World::ArchetypeAt(u32) const	function	ecs	ecs-world-archetypeat-u32-const	
 ecs::World::Entities() const	function	ecs	ecs-world-entities-const	ecs.md	engine/ecs/world.h:379
 ecs::World::Stats() const	function	ecs	ecs-world-stats-const	ecs.md	engine/ecs/world.h:382
 ecs::World::Validate() const	function	ecs	ecs-world-validate-const	ecs.md	engine/ecs/world.h:388
+spatial::kMaxSpatialSets	variable	spatial	spatial-kmaxspatialsets	spatial.md	engine/spatial/spatial.h:14
+spatial::SpatialKey	alias	spatial	spatial-spatialkey	spatial.md	engine/spatial/spatial.h:17
 scene::MeshAsset	struct	scene	scene-meshasset	scene.md	engine/scene/components.h:22
 scene::MeshAsset::mesh	variable	scene	scene-meshasset-mesh	scene.md	engine/scene/components.h:24
 scene::MeshRenderer	struct	scene	scene-meshrenderer	scene.md	engine/scene/components.h:31
@@ -5692,20 +5754,6 @@ rhi::UniformRing::Flush()	function	rhi	rhi-uniformring-flush	rhi.md	engine/rhi/u
 rhi::UniformRing::BytesPerFrame() const	function	rhi	rhi-uniformring-bytesperframe-const	rhi.md	engine/rhi/uniform_ring.h:80
 rhi::UniformRing::BytesUsed() const	function	rhi	rhi-uniformring-bytesused-const	rhi.md	engine/rhi/uniform_ring.h:82
 rhi::UniformRing::Buffer() const	function	rhi	rhi-uniformring-buffer-const	rhi.md	engine/rhi/uniform_ring.h:84
-renderer::BoundingSphere	struct	renderer	renderer-boundingsphere	renderer.md	engine/renderer/bounds.h:14
-renderer::BoundingSphere::center	variable	renderer	renderer-boundingsphere-center	renderer.md	engine/renderer/bounds.h:16
-renderer::BoundingSphere::radius	variable	renderer	renderer-boundingsphere-radius	renderer.md	engine/renderer/bounds.h:18
-renderer::Aabb	struct	renderer	renderer-aabb	renderer.md	engine/renderer/bounds.h:24
-renderer::Aabb::min	variable	renderer	renderer-aabb-min	renderer.md	engine/renderer/bounds.h:26
-renderer::Aabb::max	variable	renderer	renderer-aabb-max	renderer.md	engine/renderer/bounds.h:28
-renderer::Aabb::Center() const	function	renderer	renderer-aabb-center-const	renderer.md	engine/renderer/bounds.h:31
-renderer::Aabb::HalfExtents() const	function	renderer	renderer-aabb-halfextents-const	renderer.md	engine/renderer/bounds.h:33
-renderer::Bounds	struct	renderer	renderer-bounds	renderer.md	engine/renderer/bounds.h:39
-renderer::Bounds::sphere	variable	renderer	renderer-bounds-sphere	renderer.md	engine/renderer/bounds.h:41
-renderer::Bounds::box	variable	renderer	renderer-bounds-box	renderer.md	engine/renderer/bounds.h:43
-renderer::ComputeAabb(const void*,u32,u32)	function	renderer	renderer-computeaabb-const-void-star-u32-u32	renderer.md	engine/renderer/bounds.h:55
-renderer::ComputeBounds(const void*,u32,u32)	function	renderer	renderer-computebounds-const-void-star-u32-u32	renderer.md	engine/renderer/bounds.h:68
-renderer::TransformBounds(const Bounds&,const Mat4&)	function	renderer	renderer-transformbounds-const-bounds-amp-const-mat4-amp	renderer.md	engine/renderer/bounds.h:79
 renderer::PerspectiveVulkan(f32,f32,f32,f32)	function	renderer	renderer-perspectivevulkan-f32-f32-f32-f32	renderer.md	engine/renderer/camera.h:28
 renderer::InversePerspectiveVulkan(f32,f32,f32,f32)	function	renderer	renderer-inverseperspectivevulkan-f32-f32-f32-f32	renderer.md	engine/renderer/camera.h:39
 renderer::LookAt(const Vec3&,const Vec3&,const Vec3&)	function	renderer	renderer-lookat-const-vec3-amp-const-vec3-amp-const-vec3-amp	renderer.md	engine/renderer/camera.h:49
@@ -5815,20 +5863,6 @@ renderer::FrameResources::ObjectRegion() const	function	renderer	renderer-framer
 renderer::FrameResources::LightRegion() const	function	renderer	renderer-frameresources-lightregion-const	renderer.md	engine/renderer/frame_data.h:217
 renderer::FrameResources::MaxLights() const	function	renderer	renderer-frameresources-maxlights-const	renderer.md	engine/renderer/frame_data.h:219
 renderer::FrameResources::MaxObjects() const	function	renderer	renderer-frameresources-maxobjects-const	renderer.md	engine/renderer/frame_data.h:221
-renderer::Plane	struct	renderer	renderer-plane	renderer.md	engine/renderer/frustum.h:15
-renderer::Plane::normal	variable	renderer	renderer-plane-normal	renderer.md	engine/renderer/frustum.h:17
-renderer::Plane::d	variable	renderer	renderer-plane-d	renderer.md	engine/renderer/frustum.h:19
-renderer::Plane::Distance(const Vec3&) const	function	renderer	renderer-plane-distance-const-vec3-amp-const	renderer.md	engine/renderer/frustum.h:22
-renderer::Containment	enum	renderer	renderer-containment	renderer.md	engine/renderer/frustum.h:26
-renderer::Containment::Outside	enumerator	renderer	renderer-containment-outside	renderer.md	engine/renderer/frustum.h:27
-renderer::Containment::Intersects	enumerator	renderer	renderer-containment-intersects	renderer.md	engine/renderer/frustum.h:28
-renderer::Containment::Inside	enumerator	renderer	renderer-containment-inside	renderer.md	engine/renderer/frustum.h:29
-renderer::Frustum	struct	renderer	renderer-frustum	renderer.md	engine/renderer/frustum.h:35
-renderer::Frustum::planes	variable	renderer	renderer-frustum-planes	renderer.md	engine/renderer/frustum.h:38
-renderer::Frustum::FromViewProjection(const Mat4&)	function	renderer	renderer-frustum-fromviewprojection-const-mat4-amp	renderer.md	engine/renderer/frustum.h:45
-renderer::Frustum::TestSphere(const BoundingSphere&) const	function	renderer	renderer-frustum-testsphere-const-boundingsphere-amp-const	renderer.md	engine/renderer/frustum.h:53
-renderer::Frustum::TestAabb(const Aabb&) const	function	renderer	renderer-frustum-testaabb-const-aabb-amp-const	renderer.md	engine/renderer/frustum.h:60
-renderer::Frustum::Visible(const Bounds&) const	function	renderer	renderer-frustum-visible-const-bounds-amp-const	renderer.md	engine/renderer/frustum.h:68
 renderer::kGBufferAlbedoFormat	variable	renderer	renderer-kgbufferalbedoformat	renderer.md	engine/renderer/gbuffer.h:33
 renderer::kGBufferNormalFormat	variable	renderer	renderer-kgbuffernormalformat	renderer.md	engine/renderer/gbuffer.h:35
 renderer::kGBufferMaterialFormat	variable	renderer	renderer-kgbuffermaterialformat	renderer.md	engine/renderer/gbuffer.h:37

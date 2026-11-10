@@ -149,6 +149,8 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(tests/text)
   add_subdirectory(engine/ecs)  # Phase 17 Day 223
   add_subdirectory(tests/ecs)
+  add_subdirectory(engine/spatial)  # Phase 18 Day 238
+  add_subdirectory(tests/spatial)
   add_subdirectory(engine/ui)  # Phase 15 Day 184
   add_subdirectory(engine/ui_window)  # Phase 15 Day 194
   add_subdirectory(tests/ui)
@@ -215,6 +217,7 @@ add_subdirectory(engine/platform)
 add_subdirectory(engine/jobs)
 add_subdirectory(engine/text)  # Phase 14 Day 175
 add_subdirectory(engine/ecs)  # Phase 17 Day 223
+add_subdirectory(engine/spatial)  # Phase 18 Day 238
 add_subdirectory(engine/ui)  # Phase 15 Day 184
 add_subdirectory(engine/ui_window)  # Phase 15 Day 194
 add_subdirectory(engine/rhi)
@@ -242,6 +245,7 @@ add_subdirectory(tests/sync)  # Phase 16 Day 209
 add_subdirectory(tests/cstr)  # Phase 16 Day 211
 add_subdirectory(tests/text)  # Phase 14 Day 175
 add_subdirectory(tests/ecs)  # Phase 17 Day 223
+add_subdirectory(tests/spatial)  # Phase 18 Day 238
 add_subdirectory(tests/ui)  # Phase 15 Day 184
 add_subdirectory(tests/settings)
 add_subdirectory(tests/foundation_sanitized)

@@ -35,6 +35,8 @@ flavors 16  linux: plain,asan,tsan
 flavors 16  windows: plain,asan
 flavors 17  linux: plain,asan,tsan
 flavors 17  windows: plain,asan
+flavors 18  linux: plain,asan,tsan
+flavors 18  windows: plain,asan
 flavors 15  windows: plain,asan
 # What the Windows build has of each phase (Phase 13 ports one layer per day; each day updates its phases here; `none` = no tests yet).
 # MSVC has no ThreadSanitizer, so no Windows line lists tsan.
@@ -280,4 +282,5 @@ test:ui_demo_*                                      15   # the ui_demo program: 
 
 # --- Phase 17: ECS (entities, components, archetype chunks, world, queries, systems, the scene bridge) ---
 tests/ecs/                                      17   # Phase 17 Day 223
+tests/spatial/                                  18   # Phase 18 Day 238
 tests/scene/                                    17   # Phase 17 Day 233

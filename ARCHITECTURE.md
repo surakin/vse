@@ -23,7 +23,7 @@ From the bottom up. "Platform code" means a per-OS backend directory (`linux/`, 
 | 7. Debugging | `foundation/debug` (+ `os/<platform>/debug/`) | Stack traces, crash handler, crash context and state, death tests, dumps. Layers 0-6; libbacktrace and sentry-native only in its two facade files (`library_boundary.txt`). |
 | 8. Settings | `foundation/settings` | Registry, stores, layers, the `Settings` service. Layers 0-7. |
 | 9. Platform: windows and input | `engine/platform` (`window.h`, `input.h`, `window_host.h`, `platform/<platform>/` backends) | Windows, input state, display backends (Wayland, X11, Win32), the CMake library `platform`, the only one that links the display libraries. Layers 0-8. Moved here from the foundation on Phase 12 Day 144. |
-| 10. Jobs, text, ECS | `engine/jobs`; `engine/text` (Phase 14); `engine/ecs` (Phase 17) | Jobs: scheduler, coroutines, frame pool, async I/O. Text: font faces, glyph rasterization and atlas packing, layout, cursor and hit-testing; FreeType (vendored) only in `text/font_freetype.cpp`, the CPU side only (the atlas texture and the text pass are in the renderer). Both depend on the foundation (layers 0-8) and not on each other. ECS (Phase 17 Day 223): entities, components, archetype chunks, world, queries, systems; the foundation and, from Day 231, jobs (the parallel scheduler; the one allowed same-layer edge `ecs -> jobs`), no renderer, RHI or platform header. |
+| 10. Jobs, text, ECS, spatial | `engine/jobs`; `engine/text` (Phase 14); `engine/ecs` (Phase 17); `engine/spatial` (Phase 18) | Jobs: scheduler, coroutines, frame pool, async I/O. Text: font faces, glyph rasterization and atlas packing, layout, cursor and hit-testing; FreeType (vendored) only in `text/font_freetype.cpp`, the CPU side only (the atlas texture and the text pass are in the renderer). Both depend on the foundation (layers 0-8) and not on each other. ECS (Phase 17 Day 223): entities, components, archetype chunks, world, queries, systems; the foundation and, from Day 231, jobs (the parallel scheduler; the one allowed same-layer edge `ecs -> jobs`), no renderer, RHI or platform header. Spatial (Phase 18 Day 238): bounding-volume hierarchies, spatial sets and queries over the shapes of `foundation/math/geometry.h` (moved there from the renderer the same day); the foundation and, from later days, `ecs` and `jobs` (same-layer edges allowed in `modules.txt` when they are first used); no renderer, RHI or platform header. |
 | 11. UI toolkit (CPU) | `engine/ui` (Phase 15) | Widget tree, surfaces, layout, themes, input routing and the 2D draw list; no RHI type (the renderer turns the draw list into a pass; images are opaque `ImageId`s). Depends on text, the platform's input headers (the header-only `platform_input`, no display library) and the foundation. Sits beside the RHI and depends on none of it. |
 | 11. RHI | `engine/rhi` (neutral, with the backend registry, `CreateDevice` and `DeviceHost`), `engine/rhi/null`, `engine/rhi/vulkan`, later `rhi/dx12`, `rhi/metal`; `engine/rhi/backends` | The neutral RHI, and one library per backend. Backends depend on `rhi`, jobs and foundation, never on each other; each registers with the neutral registry. `rhi/backends` (library `rhi_backends`, Phase 13 Day 162) is the only module that names every backend, to register them; programs link it, the renderer never does. Graphics API headers only inside their backend (`rhi_boundary_check`). |
 | 12. Renderer | `engine/renderer` (+ `renderer_passes`) | Render graph, materials, passes, and from Phase 14 the glyph atlas texture and the text renderer. RHI (neutral only), jobs, text (the CPU atlas and layout types), foundation including settings. |
@@ -46,6 +46,7 @@ The libraries follow the layers; each links only the ones below it (`docs/guide/
 game/*, tools/*   ->  renderer, rhi_backends, rhi, jobs, platform, foundation
 renderer          ->  rhi, jobs, text, ui (from Phase 15 Day 190), foundation (incl. settings, math)
 scene             ->  ecs, renderer (and what they use), foundation (Phase 17 Day 233)
+spatial           ->  foundation (incl. math); from later days ecs, jobs      (Phase 18 Day 238)
 ui                ->  text, platform_input (header-only), foundation
 ui_window         ->  ui, platform, foundation                               (Phase 15 Day 194)
 rhi_backends      ->  rhi/vulkan, rhi/null (in rhi), later rhi/dx12          (registers each backend; linked by programs)
@@ -115,10 +116,10 @@ and the wrapper functions that join `foundation/mem` (memory operations), `found
 `engine/ecs` is built (row in section 1; Day 223 started it). The edge `ecs -> jobs` exists since Day 231 (`allow ecs jobs`). `engine/scene` (layer 13, above `ecs` and `renderer`; nothing below includes it) is built from Day 233; the programs moved to layer 14 so they may use it.
 The `scene` row is in section 1 and in `tools/module_deps_check/modules.txt` since Day 233; `docs/superpowers/specs/2026-11-10-ecs-design.md` has the reasoning.
 
-### Planned modules (Phase 18, spatial)
+### The spatial module (Phase 18)
 
 `engine/spatial` (layer 10, beside `ecs`): the static and dynamic bounding-volume hierarchies, the spatial sets, the pair tracker and the ECS tier (bounds components, the `SpatialWorld` resource, the sync system, entity queries). It depends on `foundation` (including the geometry types in `math`, moved from the renderer on Day 238), `ecs` and `jobs`; the renderer, `scene`, physics, audio and gameplay code depend on it and it depends on none of them.
-The row is added to section 1 and to `tools/module_deps_check/modules.txt` on Day 238; `PLAN.md` assumption #24 and the spec of Day 237 have the reasoning.
+The row is in section 1 and in `tools/module_deps_check/modules.txt` since Day 238; `PLAN.md` assumption #24 and the spec of Day 237 have the reasoning.
 
 ## 6. Keeping this file true
 
