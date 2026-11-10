@@ -21,13 +21,13 @@ the unsupported formats falling back to the monochrome outline or `.notdef` in a
 230. [3D Text Meshes Through the Renderer](phase-17-3d-text-and-color-glyphs/day-230-text-3d-mesh-and-rendering.md)
 231. [Test Font Builder & COLR v0 Layers](phase-17-3d-text-and-color-glyphs/day-231-test-fonts-and-colr.md)
 232. [COLR Layers on the 2D and 3D Paths](phase-17-3d-text-and-color-glyphs/day-232-colr-on-2d-and-3d.md)
-233. [Inflate & PNG Decoder (`engine/image`)](phase-17-3d-text-and-color-glyphs/day-233-inflate-and-png.md)
-234. [`CBDT`/`CBLC` and `sbix` Bitmap Strikes](phase-17-3d-text-and-color-glyphs/day-234-color-bitmap-tables.md)
+233. [Vendor zlib & libpng, Enable PNG in FreeType](phase-17-3d-text-and-color-glyphs/day-233-vendor-libpng.md)
+234. [Color Bitmap Glyphs: `CBDT` and `sbix` through FreeType](phase-17-3d-text-and-color-glyphs/day-234-color-bitmap-glyphs.md)
 235. [RGBA Atlas Pages & Bitmap Color Glyphs on 2D and 3D](phase-17-3d-text-and-color-glyphs/day-235-rgba-atlas-and-bitmap-drawing.md)
 236. [`text3d_demo`, Settings Screen & Integration](phase-17-3d-text-and-color-glyphs/day-236-demo-and-integration.md)
 237. [Docs, Windows PC, Closing Full Run & Phase Review](phase-17-3d-text-and-color-glyphs/day-237-docs-closing-run-and-review.md)
 
-Order reasoning: geometry first, pure CPU and testable without a GPU (flatten 223, cleanup 224, triangulate 225), because both consumers share it; the large 2D path (226-227) comes before 3D because it replaces a Phase 14 stand-in and is smaller; extrusion and bevel (228-229) precede the renderer integration (230); colors start with COLR (231-232), which needs no new decoder, and the bitmap formats (233-235) come last because they need the new PNG decoder.
+Order reasoning: geometry first, pure CPU and testable without a GPU (flatten 223, cleanup 224, triangulate 225), because both consumers share it; the large 2D path (226-227) comes before 3D because it replaces a Phase 14 stand-in and is smaller; extrusion and bevel (228-229) precede the renderer integration (230); colors start with COLR (231-232), which needs no new decoder, and the bitmap formats (233-235) come last because they need libpng vendored behind FreeType.
 
 ## Key deliverables (the original list; the days above break it down)
 
@@ -54,5 +54,5 @@ Carried over unchanged from the Phase 14 plan as it stood before the split:
   units (font units or world units); contour winding rules for fonts that mix conventions. Hinting is irrelevant to the 3D path (outlines load unhinted).
 - Phase 14 must keep the seams this phase needs (recorded in its design spec): the font object exposes outline loading as well as bitmap rendering,
   the layout produces glyph ids and pen positions independent of how a glyph is drawn, and the atlas can hold an RGBA page later.
-- Day files written 2026-11-10 (Days 222-237). Day 222 settles the open questions above with the planner's defaults and experiments; **scope-bearing call flagged to the user:** `libpng` is a third-party convenience dependency FreeType would need for `CBDT`/`sbix` PNG strikes, so the plan adds an engine-owned inflate and PNG decoder (`engine/image`, Day 233) and reads the bitmap tables itself. Dropping bitmap color glyphs (COLR v0 only) is a cheap cut: delete Days 233-235 and their share of 236.
+- Day files written 2026-11-10 (Days 222-237). Day 222 settles the open questions above with the planner's defaults and experiments. **User decision (2026-11-10): vendor libpng** (with zlib) behind FreeType, so `CBDT`/`sbix` PNG strikes decode through FreeType; a deliberate exception to the zero-third-party line, written into `PLAN.md` assumption #17 and `CLAUDE.md` on Day 233.
 - Phase 16's Day 219 (Windows PC) is still open; Day 237 also needs the Windows PC, for DXIL minting and the Windows closing run.
