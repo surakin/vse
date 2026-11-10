@@ -94,8 +94,9 @@ module engine/platform/ platform 9
 module engine/jobs/ jobs 10
 # 10 text (Phase 14 Day 175): fonts, glyph atlas packing, layout and cursor; the foundation only, FreeType through one file (platform_neutral_check)
 module engine/text/ text 10
-# 10 ecs (Phase 17 Day 223): entities, components, archetype chunks, world, queries, systems; the foundation (and jobs from Day 231), no renderer, RHI or platform header
+# 10 ecs (Phase 17 Day 223): entities, components, archetype chunks, world, queries, systems; the foundation and, from Day 231, jobs (allowed below), no renderer, RHI or platform header
 module engine/ecs/ ecs 10
+allow ecs jobs
 # 11 ui (Phase 15 Day 184): the widget toolkit's CPU side (tree, layout, theme, input routing, draw list); text, the platform's input headers and the foundation, no RHI
 module engine/ui/ ui 11
 # 11 RHI: the neutral interface and one module per backend

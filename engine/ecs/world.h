@@ -199,6 +199,24 @@ public:
     /// Fails: never.
     void SetTick(u64 tick) { tick_ = tick; }
 
+    /// Begins a parallel phase: the schedule's jobs run queries of this world on several threads. Structural calls are refused (it counts as an iteration),
+    /// and queries skip their own iteration bookkeeping, which is not thread-safe. Call it on the thread that submits the jobs, before submitting.
+    /// Fails: never.
+    void BeginParallel() {
+        BeginIteration();
+        parallel_ = true;
+    }
+    /// Ends the parallel phase begun by `BeginParallel`, after every job has finished.
+    /// Aborts: no parallel phase is active.
+    void EndParallel() {
+        ENGINE_ASSERT(parallel_, "World::EndParallel without BeginParallel");
+        parallel_ = false;
+        EndIteration();
+    }
+    /// Returns whether a parallel phase is active.
+    /// Fails: never.
+    bool IsParallel() const { return parallel_; }
+
     /// Marks the start of an iteration: structural calls are refused until the matching `EndIteration`. Nestable.
     void BeginIteration() { ++iterating_; }
     /// Marks the end of an iteration.
@@ -345,6 +363,7 @@ private:
     template <class T>
     T* GetCell(Entity entity, bool mark);
     u32 iterating_ = 0;
+    bool parallel_ = false;
     u64 tick_ = 1;
     ComponentSet iteration_writes_;
     Vector<ResourceSlot> resources_;

@@ -6,11 +6,14 @@
 #include "containers/vector.h"
 #include "ecs/archetype.h"
 #include "ecs/chunk.h"
+#include "ecs/command_buffer.h"
 #include "ecs/component.h"
 #include "ecs/component_set.h"
 #include "ecs/entity.h"
 #include "ecs/index_list.h"
 #include "ecs/world.h"
+#include "jobs/parallel_for.h"
+#include "jobs/scheduler.h"
 #include "lang/traits.h"
 #include "log/assert.h"
 #include "types.h"
@@ -338,6 +341,76 @@ public:
         }
     }
 
+    /// Calls `fn(ChunkView&)` for every chunk that passes the filters, the chunks split into ranges of `grain` consecutive chunks that run as jobs.
+    ///
+    /// A chunk is the unit of work: no two jobs touch one chunk. When `scheduler` is null, has one participant, or the caller is itself a job (a worker cannot
+    /// wait), the ranges run one after another on the calling thread, in order. `fn` must not change the world's structure; record changes in a command buffer
+    /// (the overload below).
+    ///
+    /// Param scheduler: the job scheduler, or null to run inline.
+    /// Param fn: called with each chunk's view, possibly from several threads at once (on different chunks).
+    /// Param grain: chunks per job; 0 chooses a few jobs per participant.
+    /// Aborts: as for [[ecs::Query::ForEach]].
+    /// Ownership: borrows the scheduler and `fn` for the call; the jobs finish before it returns.
+    template <class Fn>
+    void ForEachChunkParallel(jobs::Scheduler* scheduler, Fn&& fn, usize grain = 0) {
+        RunChunks(scheduler, nullptr, fn, grain);
+    }
+    /// As above, and each range of chunks gets its own command buffer from `pool` (`fn(ChunkView&, CommandBuffer&)`), so the recorded commands apply in chunk
+    /// order whatever the schedule of the jobs (`pool.ApplyAll` applies them by range number).
+    ///
+    /// Param pool: at least [[ecs::Query::RangesFor]] buffers.
+    /// Aborts: `pool` has fewer buffers than ranges; as for [[ecs::Query::ForEach]].
+    /// Ownership: borrows the scheduler, `pool` and `fn` for the call; the buffers keep their commands for `pool.ApplyAll`.
+    template <class Fn>
+    void ForEachChunkParallel(jobs::Scheduler* scheduler, CommandBufferPool& pool, Fn&& fn, usize grain = 0) {
+        RunChunks(scheduler, &pool, fn, grain);
+    }
+    /// Folds one value per chunk into one result, always in chunk order, so a floating-point sum is the same whatever the number of threads.
+    ///
+    /// Param scheduler: the job scheduler, or null to run inline.
+    /// Param init: the starting value. `T` must be default-constructible and copyable.
+    /// Param per_chunk: `T(ChunkView&)`, called once per chunk that passes the filters, possibly in parallel.
+    /// Param combine: `T(T accumulated, T chunk_value)`, called in chunk order on the calling thread.
+    /// Param grain: chunks per job; 0 chooses a few jobs per participant.
+    /// Returns: the folded value.
+    /// Aborts: as for [[ecs::Query::ForEach]].
+    /// Ownership: borrows the scheduler and the functions for the call; the jobs finish before it returns.
+    template <class T, class PerChunk, class Combine>
+    T ReduceChunks(jobs::Scheduler* scheduler, T init, PerChunk&& per_chunk, Combine&& combine, usize grain = 0) {
+        Refresh();
+        IterationGuard guard(*world_, writes_);
+        Vector<ChunkRef> chunks;
+        Gather(&chunks);
+        Vector<T> partial;
+        partial.Resize(chunks.Size());
+        auto body = [&](usize begin, usize end) {
+            for (usize i = begin; i < end; ++i) {
+                ChunkView view(chunks[i].archetype, chunks[i].chunk, &readable_, &writes_, &optional_);
+                partial[i] = per_chunk(view);
+            }
+        };
+        Fan(scheduler, chunks.Size(), grain, body);
+        T result = init;
+        for (usize i = 0; i < partial.Size(); ++i) {
+            result = combine(result, partial[i]);
+        }
+        return result;
+    }
+    /// The number of ranges `ForEachChunkParallel` makes for `chunks` chunks with this grain (the buffers a pool needs).
+    /// Fails: never.
+    static usize RangesFor(usize chunks, usize grain) { return grain == 0 ? 1 : chunks / grain + (chunks % grain != 0 ? 1 : 0); }
+    /// An upper bound on the chunks a pass visits: the chunks of the matching archetypes (before the filters).
+    /// Fails: never.
+    usize ChunkCountUpperBound() {
+        Refresh();
+        usize total = 0;
+        for (u32 m = 0; m < matched_.Size(); ++m) {
+            total += world_->ArchetypeAt(matched_[m]).ChunkCount();
+        }
+        return total;
+    }
+
     /// The tick after which a chunk must have changed to pass `Changed` and `Added` filters (0 at first: everything stamped passes).
     /// Fails: never.
     u64 Since() const { return since_; }
@@ -387,13 +460,23 @@ private:
     // Holds the world's iteration guard for a scope, so an early return or a returning `false` releases it.
     class IterationGuard {
     public:
-        IterationGuard(World& world, const ComponentSet& writes) : world_(world), previous_(world.BeginIteration(writes)) {}
-        ~IterationGuard() { world_.EndIteration(previous_); }
+        // In a parallel phase the schedule holds the world's iteration and the bookkeeping below is not thread-safe, so the guard does nothing.
+        IterationGuard(World& world, const ComponentSet& writes) : world_(world), active_(!world.IsParallel()) {
+            if (active_) {
+                previous_ = world.BeginIteration(writes);
+            }
+        }
+        ~IterationGuard() {
+            if (active_) {
+                world_.EndIteration(previous_);
+            }
+        }
         IterationGuard(const IterationGuard&) = delete;
         IterationGuard& operator=(const IterationGuard&) = delete;
 
     private:
         World& world_;
+        bool active_;
         ComponentSet previous_;
     };
 
@@ -444,6 +527,87 @@ private:
     template <class... Data, usize... I>
     void BuildData(detail::TypeList<Data...>, detail::IndexList<I...>) {
         ((ids_[I] = ComponentOf<typename detail::TermTraits<Data>::Component>()), ...);
+    }
+
+    struct ChunkRef {
+        Archetype* archetype;
+        Chunk* chunk;
+    };
+
+    // The non-empty chunks that pass the filters, in iteration order; counts them and stamps the written columns. Single-threaded.
+    void Gather(Vector<ChunkRef>* out) {
+        for (u32 m = 0; m < matched_.Size(); ++m) {
+            Archetype& a = world_->ArchetypeAt(matched_[m]);
+            for (u32 c = 0; c < a.ChunkCount() && a.EntityCount() != 0; ++c) {
+                Chunk* chunk = a.ChunkAt(c);
+                if (chunk->count == 0) {
+                    continue;
+                }
+                if (!PassesChange(a, chunk)) {
+                    ++stats_.chunks_skipped;
+                    continue;
+                }
+                CountVisit(chunk);
+                MarkWrites(a, chunk);
+                out->Push(ChunkRef{&a, chunk});
+            }
+        }
+    }
+
+    // Runs `body(begin, end)` over [0, count) in ranges of `grain` as jobs, or in order on this thread when it cannot fan out.
+    template <class Body>
+    static void Fan(jobs::Scheduler* scheduler, usize count, usize grain, Body& body) {
+        const usize participants = scheduler == nullptr ? 1 : scheduler->ParticipantCount();
+        const usize g = ResolveGrain(count, grain, participants);
+        const usize ranges = RangesFor(count, g);
+        auto by_range = [&](usize first, usize last) {
+            for (usize r = first; r < last; ++r) {
+                const usize begin = r * g;
+                const usize end = begin + g < count ? begin + g : count;
+                body(begin, end);
+            }
+        };
+        const bool can_fan = scheduler != nullptr && participants > 1 && ranges > 1 && !jobs::Scheduler::InsideJob() && jobs::Scheduler::Current() == scheduler;
+        if (can_fan) {
+            jobs::ParallelForBlocking(*scheduler, ranges, 1, by_range);
+        } else {
+            by_range(usize{0}, ranges);
+        }
+    }
+
+    // The chunks per range: the caller's, or a few ranges per participant.
+    static usize ResolveGrain(usize count, usize grain, usize participants) {
+        if (grain != 0) {
+            return grain;
+        }
+        const usize wanted = participants * 4;
+        const usize g = count / wanted + (count % wanted != 0 ? 1 : 0);
+        return g == 0 ? 1 : g;
+    }
+
+    template <class Fn>
+    void RunChunks(jobs::Scheduler* scheduler, CommandBufferPool* pool, Fn& fn, usize grain) {
+        Refresh();
+        IterationGuard guard(*world_, writes_);
+        Vector<ChunkRef> chunks;
+        Gather(&chunks);
+        const usize participants = scheduler == nullptr ? 1 : scheduler->ParticipantCount();
+        const usize g = ResolveGrain(chunks.Size(), grain, participants);
+        if (pool != nullptr) {
+            ENGINE_ASSERT(pool->Count() >= RangesFor(chunks.Size(), g), "Query::ForEachChunkParallel: the pool has fewer buffers than ranges");
+        }
+        auto body = [&](usize begin, usize end) {
+            for (usize i = begin; i < end; ++i) {
+                ChunkView view(chunks[i].archetype, chunks[i].chunk, &readable_, &writes_, &optional_);
+                if constexpr (IsInvocable<Fn&, ChunkView&, CommandBuffer&>) {
+                    ENGINE_ASSERT(pool != nullptr, "Query::ForEachChunkParallel: a function that takes a CommandBuffer needs the overload with a pool");
+                    fn(view, pool->At(static_cast<u32>(begin / g)));
+                } else {
+                    fn(view);
+                }
+            }
+        };
+        Fan(scheduler, chunks.Size(), g, body);
     }
 
     // Whether the chunk passes the Changed and Added filters (all of them).

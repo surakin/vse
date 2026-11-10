@@ -1,9 +1,9 @@
 # ECS: entities, components and systems
 
-Status: draft (Phase 17, Days 223-230: entities, components, storage, the world, queries, command buffers, resources, change detection, systems and the sequential schedule; the rest of the page arrives with the days that build it).
+Status: draft (Phase 17, Days 223-230: entities, components, storage, the world, queries, command buffers, resources, change detection, systems, the schedule and parallel systems; the rest of the page arrives with the days that build it).
 
 **Audience:** every game and engine programmer. Read [Containers](foundation-containers.md) and [Memory](foundation-memory.md) first. This page covers only
-what is built so far (entities, components, storage, the world, queries, command buffers, resources, change detection, systems and the sequential schedule); parallel systems, transforms and the scene bridge are not documented here yet.
+what is built so far (entities, components, storage, the world, queries, command buffers, resources, change detection, systems, the schedule and parallel systems); transforms and the scene bridge are not documented here yet.
 
 The ECS (`engine/ecs`, namespace `ecs`) is the engine's data-oriented core: **entities** are ids, **components** are plain data stored in
 cache-friendly chunks, and **systems** are functions over all entities that have a given set of components. Design, measurements and the
@@ -485,6 +485,35 @@ frame 2: 1 entities
 - **Cost.** A system function up to 64 bytes is stored inline; a bigger one is on the heap (`Schedule::HeapFallbacks()`). With statistics off a system costs
   one predictable branch.
 
+## Parallel systems
+
+Give the schedule a job scheduler and systems that do not conflict run at the same time:
+
+```cpp
+jobs::Scheduler jobs(jobs::Scheduler::Config{});   // the frame thread is participant 0
+schedule.SetScheduler(&jobs);
+schedule.Build();
+schedule.Run(world, dt);                           // call it on the frame thread, outside any job
+```
+
+- **Waves.** `Build()` puts the systems of each stage into **waves**. Two systems conflict when one writes a component or resource the other reads or writes
+  (what each declared, or what `MakeQuerySystem` deduced). A system goes into the wave after the latest earlier system that conflicts with it or must precede
+  it (`After`/`Before`), so it never overtakes one; systems in one wave are independent and run as jobs, and the frame thread helps until the wave is done.
+  `schedule.WaveOf(position)` shows the result. Commands still apply after the stage in registration order, so structural changes do not depend on timing.
+- **Declare the truth.** The waves are only as good as the declarations. A query or resource a system touches without declaring it is counted in
+  `Stats().access_violations` (and reported once); a system that lies can race with its wave mates. Run the tests under ThreadSanitizer.
+- **Splitting one system.** A system that is alone in its wave has the frame thread to itself and may split its chunks over the workers:
+  `context.ForEachChunkParallel(query, fn)` calls `fn(ChunkView&, CommandBuffer&)` per chunk (a chunk is never shared by two jobs), and each range of chunks
+  records into its own buffer, applied in chunk order after the system. `context.ReduceChunks<T>(query, init, per_chunk, combine)` folds one value per chunk
+  in chunk order, so even a floating-point sum is the same at every worker count. In a wave with other systems the same calls run on one thread, in the same
+  order, with the same result.
+- **Off switch.** With `ecs.parallel_systems` off, or with no scheduler, every system runs on the calling thread in the sequential order.
+- **Determinism contract.** For systems whose result does not depend on the order entities are visited, a frame leaves the world in the state the sequential
+  run does, bit for bit, at every worker count. Order-sensitive reductions use `ReduceChunks`. A system that depends on the visiting order of one chunk's rows
+  still sees them in row order; one that depends on the order of chunks should use `ReduceChunks` or `ForEachChunk`.
+- **What a job may not do.** Call structural functions (the world is in a parallel phase and refuses them), wait for other jobs (a job cannot `HelpUntil`),
+  or touch undeclared data. `context.Query<>()` inside a job is fine for declared components.
+
 ## Common mistakes
 
 - **Keeping a pointer from `Get<T>` across an `Add`, `Remove`, `Create` or `Destroy`.** The row may have moved; fetch the pointer again.
@@ -492,6 +521,7 @@ frame 2: 1 entities
 - **Changing components while iterating.** A structural call during iteration fails an `ENGINE_ASSERT`; record it in a `CommandBuffer` and apply it after the loop.
 - **Using a placeholder with another buffer or after `Clear`.** It resolves to nothing; resolve it right after `Apply`.
 - **Expecting `Changed<T>` to name the changed entities.** It names chunks; every entity of a visited chunk is passed, changed or not.
+- **Declaring less than the system touches.** Parallel systems then race; the violation counter and ThreadSanitizer are the net.
 - **Calling `Build()` and forgetting to call it again after `Add`.** `Run` aborts when the order is stale.
 - **Forgetting `Finish()`.** Without it `Since()` stays put and every pass sees all the changes since the start.
 - **Writing a component through `Get` inside a query that writes it.** Use the argument the query gives you.

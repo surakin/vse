@@ -113,6 +113,12 @@ CommandBufferPool::CommandBufferPool(u32 count) {
     }
 }
 
+void CommandBufferPool::EnsureCount(u32 count) {
+    while (buffers_.Size() < count) {
+        buffers_.Push(MakeUnique<CommandBuffer>());
+    }
+}
+
 CommandBuffer& CommandBufferPool::At(u32 index) {
     ENGINE_ASSERT(index < buffers_.Size(), "CommandBufferPool::At: no such buffer");
     return *buffers_[index];

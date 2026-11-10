@@ -280,3 +280,5 @@ show something of your own in every report (a job count, a queue depth), add a c
 Files can also be read, written and flushed with `co_await` through `jobs::ReadAsync`, `WriteAsync`, `FlushAsync` and `ReadAllAsync`; see [Asynchronous I/O](io.md#asynchronous-io).
 
 `jobs::ReadFileAsync` keeps its signature but reads through `io::File` (opened and read on the I/O thread), not the removed `os::ReadFileToArena`.
+
+The ECS runs its systems and the chunks of one system as jobs through this scheduler; see "Parallel systems" in [ECS](ecs.md).

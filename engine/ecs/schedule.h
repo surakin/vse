@@ -10,6 +10,9 @@
 #include "ecs/component_set.h"
 #include "ecs/query.h"
 #include "ecs/world.h"
+#include "jobs/counter.h"
+#include "jobs/job.h"
+#include "jobs/scheduler.h"
 #include "lang/new.h"
 #include "lang/traits.h"
 #include "lang/utility.h"
@@ -58,9 +61,10 @@ public:
     ///
     /// Ownership: borrows every pointer; they must outlive the context.
     SystemContext(World* world, CommandBuffer* commands, const ComponentSet* reads, const ComponentSet* writes, const Vector<u32>* resource_reads,
-                  const Vector<u32>* resource_writes, u64* violations, f32 dt, u64 frame)
+                  const Vector<u32>* resource_writes, u64* violations, CommandBufferPool* parallel_commands, jobs::Scheduler* scheduler,
+                  f32 dt, u64 frame)
         : world_(world), commands_(commands), reads_(reads), writes_(writes), resource_reads_(resource_reads), resource_writes_(resource_writes),
-          violations_(violations), dt_(dt), frame_(frame) {}
+          violations_(violations), parallel_commands_(parallel_commands), scheduler_(scheduler), dt_(dt), frame_(frame) {}
 
     /// The time step of the frame, in seconds.
     /// Fails: never.
@@ -72,6 +76,35 @@ public:
     /// Fails: never.
     /// Ownership: owned by the schedule; valid for the call.
     CommandBuffer& Commands() { return *commands_; }
+
+    /// Calls `fn(ChunkView&, CommandBuffer&)` for each chunk of `query` that passes its filters, the chunks split into ranges that run as jobs when this system
+    /// has the frame thread to itself (it is alone in its wave and the schedule has a scheduler); otherwise the ranges run one after another. Each range records
+    /// into its own command buffer, applied after the system in chunk order, so the result does not depend on how the jobs were scheduled.
+    ///
+    /// Param query: the system's query (from `MakeQuerySystem`).
+    /// Param fn: called per chunk; must not change the world's structure except through the buffer it is given.
+    /// Param grain: chunks per range; 0 chooses a few ranges per worker.
+    /// Aborts: as for [[ecs::Query::ForEach]].
+    template <class Q, class Fn>
+    void ForEachChunkParallel(Q& query, Fn&& fn, usize grain = 0) {
+        const usize chunks = query.ChunkCountUpperBound();
+        const usize participants = scheduler_ == nullptr ? 1 : scheduler_->ParticipantCount();
+        usize g = grain;
+        if (g == 0) {
+            const usize wanted = participants * 4;
+            g = chunks / wanted + (chunks % wanted != 0 ? 1 : 0);
+            g = g == 0 ? 1 : g;
+        }
+        parallel_commands_->EnsureCount(static_cast<u32>(Q::RangesFor(chunks, g) == 0 ? 1 : Q::RangesFor(chunks, g)));
+        query.ForEachChunkParallel(scheduler_, *parallel_commands_, fn, g);
+    }
+    /// Folds one value per chunk of `query` in chunk order (see [[ecs::Query::ReduceChunks]]); parallel under the same conditions as `ForEachChunkParallel`.
+    ///
+    /// Returns: the folded value.
+    template <class T, class Q, class PerChunk, class Combine>
+    T ReduceChunks(Q& query, T init, PerChunk&& per_chunk, Combine&& combine, usize grain = 0) {
+        return query.template ReduceChunks<T>(scheduler_, init, per_chunk, combine, grain);
+    }
 
     /// Makes a query over the world. Prefer the query a `MakeQuerySystem` passes in: it is kept between frames.
     ///
@@ -143,6 +176,8 @@ private:
     const Vector<u32>* resource_reads_;
     const Vector<u32>* resource_writes_;
     u64* violations_;
+    CommandBufferPool* parallel_commands_;
+    jobs::Scheduler* scheduler_;
     f32 dt_;
     u64 frame_;
 };
@@ -501,6 +536,12 @@ public:
     /// Aborts: the settings are not registered.
     /// Ownership: borrows `registry`.
     void UseSettings(const settings::Registry& registry);
+    /// Gives the schedule a job scheduler: systems that do not conflict then run as jobs, and a system alone in its wave may split its chunks over the workers.
+    /// With none (the default), or with `ecs.parallel_systems` off, every system runs on the calling thread in the sequential order. `Run` must then be called
+    /// on the thread that owns the scheduler (participant 0), outside any job.
+    /// Param scheduler: or null.
+    /// Ownership: borrows `scheduler`, which must outlive every `Run`.
+    void SetScheduler(jobs::Scheduler* scheduler) { scheduler_ = scheduler; }
     /// Turns statistics on or off by hand (when no registry is used); takes effect at the next frame.
     void SetStatsEnabled(bool enabled) { stats_enabled_ = enabled; }
 
@@ -509,6 +550,10 @@ public:
     /// Aborts: the schedule was not built since the last `Add`, or the world is being iterated.
     void Run(World& world, f32 dt);
 
+    /// The wave of the `index`-th system in run order (after `Build`): systems of one stage with the same wave number do not conflict and may run together;
+    /// a system never runs in an earlier wave than a system before it that conflicts with it or must precede it.
+    /// Aborts: `index` is not below the count or the schedule is not built.
+    u32 WaveOf(u32 index) const;
     /// The number of systems.
     u32 SystemCount() const { return static_cast<u32>(systems_.Size()); }
     /// The names of the systems in run order (after `Build`): the name of the `index`-th system to run.
@@ -529,13 +574,24 @@ public:
 
 private:
     struct Entry {
+        Entry() : parallel_commands(1) {}
         SystemDesc desc;
         CommandBuffer commands;
+        CommandBufferPool parallel_commands;
         SystemStats stats;
+        u64 violations = 0;
     };
+
+    static bool Conflict(const SystemDesc& a, const SystemDesc& b);
+    void RunSystem(World& world, Entry& entry, f32 dt, jobs::Scheduler* fan_out, bool timed);
+    static jobs::Job SystemJob(Schedule* self, World* world, Entry* entry, f32 dt, bool timed);
+    void ApplyStage(World& world, usize begin, usize end);
 
     Vector<UniquePtr<Entry>> systems_;
     Vector<u32> order_;
+    Vector<u32> wave_of_; // per position in order_
+    Vector<u32> apply_order_; // order_ with each stage's systems sorted by registration index
+    jobs::Scheduler* scheduler_ = nullptr;
     Vector<u32> stage_order_;
     Vector<const char*> stage_names_;
     bool built_ = false;

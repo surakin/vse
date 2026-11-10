@@ -1149,6 +1149,20 @@ Makes `count` empty buffers.
 |---|---|
 | Parameter `count` | how many buffers (at least 1). |
 
+### `EnsureCount(u32)` {#ecs-commandbufferpool-ensurecount-u32}
+
+`method ecs::CommandBufferPool::EnsureCount` — defined in `engine/ecs/command_buffer.h`
+
+```cpp
+void EnsureCount(u32 count);
+```
+
+Grows the pool to at least `count` buffers (existing buffers and their contents are kept).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
 ### `Count()` {#ecs-commandbufferpool-count-const}
 
 `method ecs::CommandBufferPool::Count` — defined in `engine/ecs/command_buffer.h`
@@ -2431,6 +2445,94 @@ The view gives the entity ids and the columns as spans, the form to vectorize or
 | Parameter `fn` | the function to call per chunk. |
 | Aborts | as for [`ecs::Query::ForEach`](#ecs-query-foreach-fn-amp-amp). |
 
+### `ForEachChunkParallel(jobs::Scheduler*,Fn&&,usize)` {#ecs-query-foreachchunkparallel-jobs-scheduler-star-fn-amp-amp-usize}
+
+`method ecs::Query::ForEachChunkParallel` — defined in `engine/ecs/query.h`
+
+```cpp
+template <class Fn>
+void ForEachChunkParallel(jobs::Scheduler* scheduler, Fn&& fn, usize grain = 0);
+```
+
+Calls `fn(ChunkView&)` for every chunk that passes the filters, the chunks split into ranges of `grain` consecutive chunks that run as jobs.
+
+A chunk is the unit of work: no two jobs touch one chunk. When `scheduler` is null, has one participant, or the caller is itself a job (a worker cannot wait), the ranges run one after another on the calling thread, in order. `fn` must not change the world's structure; record changes in a command buffer (the overload below).
+
+| Field | Value |
+|---|---|
+| Parameter `scheduler` | the job scheduler, or null to run inline. |
+| Parameter `fn` | called with each chunk's view, possibly from several threads at once (on different chunks). |
+| Parameter `grain` | chunks per job; 0 chooses a few jobs per participant. |
+| Aborts | as for [`ecs::Query::ForEach`](#ecs-query-foreach-fn-amp-amp). |
+| Ownership | borrows the scheduler and `fn` for the call; the jobs finish before it returns. |
+
+### `ForEachChunkParallel(jobs::Scheduler*,CommandBufferPool&,Fn&&,usize)` {#ecs-query-foreachchunkparallel-jobs-scheduler-star-commandbufferpool-amp-fn-amp-amp-usize}
+
+`method ecs::Query::ForEachChunkParallel` — defined in `engine/ecs/query.h`
+
+```cpp
+template <class Fn>
+void ForEachChunkParallel(jobs::Scheduler* scheduler, CommandBufferPool& pool, Fn&& fn, usize grain = 0);
+```
+
+As above, and each range of chunks gets its own command buffer from `pool` (`fn(ChunkView&, CommandBuffer&)`), so the recorded commands apply in chunk order whatever the schedule of the jobs (`pool.ApplyAll` applies them by range number).
+
+| Field | Value |
+|---|---|
+| Parameter `pool` | at least [`ecs::Query::RangesFor`](#ecs-query-rangesfor-usize-usize) buffers. |
+| Aborts | `pool` has fewer buffers than ranges; as for [`ecs::Query::ForEach`](#ecs-query-foreach-fn-amp-amp). |
+| Ownership | borrows the scheduler, `pool` and `fn` for the call; the buffers keep their commands for `pool.ApplyAll`. |
+
+### `ReduceChunks(jobs::Scheduler*,T,PerChunk&&,Combine&&,usize)` {#ecs-query-reducechunks-jobs-scheduler-star-t-perchunk-amp-amp-combine-amp-amp-usize}
+
+`method ecs::Query::ReduceChunks` — defined in `engine/ecs/query.h`
+
+```cpp
+template <class T, class PerChunk, class Combine>
+T ReduceChunks(jobs::Scheduler* scheduler, T init, PerChunk&& per_chunk, Combine&& combine, usize grain = 0);
+```
+
+Folds one value per chunk into one result, always in chunk order, so a floating-point sum is the same whatever the number of threads.
+
+| Field | Value |
+|---|---|
+| Parameter `scheduler` | the job scheduler, or null to run inline. |
+| Parameter `init` | the starting value. `T` must be default-constructible and copyable. |
+| Parameter `per_chunk` | `T(ChunkView&)`, called once per chunk that passes the filters, possibly in parallel. |
+| Parameter `combine` | `T(T accumulated, T chunk_value)`, called in chunk order on the calling thread. |
+| Parameter `grain` | chunks per job; 0 chooses a few jobs per participant. |
+| Returns | the folded value. |
+| Aborts | as for [`ecs::Query::ForEach`](#ecs-query-foreach-fn-amp-amp). |
+| Ownership | borrows the scheduler and the functions for the call; the jobs finish before it returns. |
+
+### `RangesFor(usize,usize)` {#ecs-query-rangesfor-usize-usize}
+
+`method ecs::Query::RangesFor` — defined in `engine/ecs/query.h`
+
+```cpp
+static usize RangesFor(usize chunks, usize grain);
+```
+
+The number of ranges `ForEachChunkParallel` makes for `chunks` chunks with this grain (the buffers a pool needs).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `ChunkCountUpperBound()` {#ecs-query-chunkcountupperbound}
+
+`method ecs::Query::ChunkCountUpperBound` — defined in `engine/ecs/query.h`
+
+```cpp
+usize ChunkCountUpperBound();
+```
+
+An upper bound on the chunks a pass visits: the chunks of the matching archetypes (before the filters).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
 ### `Since()` {#ecs-query-since-const}
 
 `method ecs::Query::Since` — defined in `engine/ecs/query.h`
@@ -2628,12 +2730,12 @@ A query or resource outside the declared access is reported with `ENGINE_ENSURE`
 | Thread-safety | thread-compatible; one system uses it at a time. |
 | Ownership | borrows the world and the system's buffer for the duration of the call. |
 
-### `SystemContext(World*,CommandBuffer*,const ComponentSet*,const ComponentSet*,const Vector<u32>*,const Vector<u32>*,u64*,f32,u64)` {#ecs-systemcontext-systemcontext-world-star-commandbuffer-star-const-componentset-star-const-componentset-star-const-vector-lt-u32-gt-star-const-vector-lt-u32-gt-star-u64-star-f32-u64}
+### `SystemContext(World*,CommandBuffer*,const ComponentSet*,const ComponentSet*,const Vector<u32>*,const Vector<u32>*,u64*,CommandBufferPool*,jobs::Scheduler*,f32,u64)` {#ecs-systemcontext-systemcontext-world-star-commandbuffer-star-const-componentset-star-const-componentset-star-const-vector-lt-u32-gt-star-const-vector-lt-u32-gt-star-u64-star-commandbufferpool-star-jobs-scheduler-star-f32-u64}
 
 `constructor ecs::SystemContext::SystemContext` — defined in `engine/ecs/schedule.h`
 
 ```cpp
-SystemContext(World* world, CommandBuffer* commands, const ComponentSet* reads, const ComponentSet* writes, const Vector<u32>* resource_reads, const Vector<u32>* resource_writes, u64* violations, f32 dt, u64 frame);
+SystemContext(World* world, CommandBuffer* commands, const ComponentSet* reads, const ComponentSet* writes, const Vector<u32>* resource_reads, const Vector<u32>* resource_writes, u64* violations, CommandBufferPool* parallel_commands, jobs::Scheduler* scheduler, f32 dt, u64 frame);
 ```
 
 Makes a context; only the schedule does.
@@ -2684,6 +2786,39 @@ The system's command buffer: structural changes recorded here apply at the end o
 |---|---|
 | Fails | never. |
 | Ownership | owned by the schedule; valid for the call. |
+
+### `ForEachChunkParallel(Q&,Fn&&,usize)` {#ecs-systemcontext-foreachchunkparallel-q-amp-fn-amp-amp-usize}
+
+`method ecs::SystemContext::ForEachChunkParallel` — defined in `engine/ecs/schedule.h`
+
+```cpp
+template <class Q, class Fn>
+void ForEachChunkParallel(Q& query, Fn&& fn, usize grain = 0);
+```
+
+Calls `fn(ChunkView&, CommandBuffer&)` for each chunk of `query` that passes its filters, the chunks split into ranges that run as jobs when this system has the frame thread to itself (it is alone in its wave and the schedule has a scheduler); otherwise the ranges run one after another. Each range records into its own command buffer, applied after the system in chunk order, so the result does not depend on how the jobs were scheduled.
+
+| Field | Value |
+|---|---|
+| Parameter `query` | the system's query (from `MakeQuerySystem`). |
+| Parameter `fn` | called per chunk; must not change the world's structure except through the buffer it is given. |
+| Parameter `grain` | chunks per range; 0 chooses a few ranges per worker. |
+| Aborts | as for [`ecs::Query::ForEach`](#ecs-query-foreach-fn-amp-amp). |
+
+### `ReduceChunks(Q&,T,PerChunk&&,Combine&&,usize)` {#ecs-systemcontext-reducechunks-q-amp-t-perchunk-amp-amp-combine-amp-amp-usize}
+
+`method ecs::SystemContext::ReduceChunks` — defined in `engine/ecs/schedule.h`
+
+```cpp
+template <class T, class Q, class PerChunk, class Combine>
+T ReduceChunks(Q& query, T init, PerChunk&& per_chunk, Combine&& combine, usize grain = 0);
+```
+
+Folds one value per chunk of `query` in chunk order (see [`ecs::Query::ReduceChunks`](#ecs-query-reducechunks-jobs-scheduler-star-t-perchunk-amp-amp-combine-amp-amp-usize)); parallel under the same conditions as `ForEachChunkParallel`.
+
+| Field | Value |
+|---|---|
+| Returns | the folded value. |
 
 ### `Query()` {#ecs-systemcontext-query}
 
@@ -3278,6 +3413,21 @@ Reads `ecs.parallel_systems` and `ecs.stats` from `registry` at the start of eac
 | Aborts | the settings are not registered. |
 | Ownership | borrows `registry`. |
 
+### `SetScheduler(jobs::Scheduler*)` {#ecs-schedule-setscheduler-jobs-scheduler-star}
+
+`method ecs::Schedule::SetScheduler` — defined in `engine/ecs/schedule.h`
+
+```cpp
+void SetScheduler(jobs::Scheduler* scheduler);
+```
+
+Gives the schedule a job scheduler: systems that do not conflict then run as jobs, and a system alone in its wave may split its chunks over the workers. With none (the default), or with `ecs.parallel_systems` off, every system runs on the calling thread in the sequential order. `Run` must then be called on the thread that owns the scheduler (participant 0), outside any job.
+
+| Field | Value |
+|---|---|
+| Parameter `scheduler` | or null. |
+| Ownership | borrows `scheduler`, which must outlive every `Run`. |
+
 ### `SetStatsEnabled(bool)` {#ecs-schedule-setstatsenabled-bool}
 
 `method ecs::Schedule::SetStatsEnabled` — defined in `engine/ecs/schedule.h`
@@ -3302,6 +3452,20 @@ Runs one frame.
 |---|---|
 | Parameter `dt` | the time step in seconds. |
 | Aborts | the schedule was not built since the last `Add`, or the world is being iterated. |
+
+### `WaveOf(u32)` {#ecs-schedule-waveof-u32-const}
+
+`method ecs::Schedule::WaveOf` — defined in `engine/ecs/schedule.h`
+
+```cpp
+u32 WaveOf(u32 index) const;
+```
+
+The wave of the `index`-th system in run order (after `Build`): systems of one stage with the same wave number do not conflict and may run together; a system never runs in an earlier wave than a system before it that conflicts with it or must precede it.
+
+| Field | Value |
+|---|---|
+| Aborts | `index` is not below the count or the schedule is not built. |
 
 ### `SystemCount()` {#ecs-schedule-systemcount-const}
 
@@ -3860,6 +4024,48 @@ void SetTick(u64 tick);
 ```
 
 Sets the tick (tests of tick arithmetic near the largest value).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `BeginParallel()` {#ecs-world-beginparallel}
+
+`method ecs::World::BeginParallel` — defined in `engine/ecs/world.h`
+
+```cpp
+void BeginParallel();
+```
+
+Begins a parallel phase: the schedule's jobs run queries of this world on several threads. Structural calls are refused (it counts as an iteration), and queries skip their own iteration bookkeeping, which is not thread-safe. Call it on the thread that submits the jobs, before submitting.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `EndParallel()` {#ecs-world-endparallel}
+
+`method ecs::World::EndParallel` — defined in `engine/ecs/world.h`
+
+```cpp
+void EndParallel();
+```
+
+Ends the parallel phase begun by `BeginParallel`, after every job has finished.
+
+| Field | Value |
+|---|---|
+| Aborts | no parallel phase is active. |
+
+### `IsParallel()` {#ecs-world-isparallel-const}
+
+`method ecs::World::IsParallel` — defined in `engine/ecs/world.h`
+
+```cpp
+bool IsParallel() const;
+```
+
+Returns whether a parallel phase is active.
 
 | Field | Value |
 |---|---|

@@ -185,6 +185,9 @@ public:
     /// Makes `count` empty buffers.
     /// Param count: how many buffers (at least 1).
     explicit CommandBufferPool(u32 count);
+    /// Grows the pool to at least `count` buffers (existing buffers and their contents are kept).
+    /// Fails: never.
+    void EnsureCount(u32 count);
     /// The number of buffers.
     /// Fails: never.
     u32 Count() const { return static_cast<u32>(buffers_.Size()); }
