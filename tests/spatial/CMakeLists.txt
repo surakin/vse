@@ -2,6 +2,7 @@
 # ENGINE_PRODUCTION_COMPILE_OPTIONS (Catch2's macros use exceptions); the library under test is built without. One executable per sanitizer flavor.
 set(SPATIAL_TEST_SOURCES
   geometry_test.cpp
+  static_bvh_test.cpp  # Day 239
 )
 
 find_package(Threads REQUIRED)

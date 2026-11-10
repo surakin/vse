@@ -1,7 +1,7 @@
 # Spatial partitioning: what is near what
 
-Status: in progress (Phase 18). Built: the shared shapes (Day 238). Next: the static and dynamic bounding-volume hierarchies, the query vocabulary, the hash grid,
-spatial sets, the pair tracker, the ECS tier and the renderer's culling (Days 239-249).
+Status: in progress (Phase 18). Built: the shared shapes (Day 238), the static bounding-volume hierarchy (Day 239). Next: the dynamic hierarchy, the query
+vocabulary, the hash grid, spatial sets, the pair tracker, the ECS tier and the renderer's culling (Days 240-249).
 
 **Audience:** engine programmers who write a system that asks "what is near this box, ray or frustum" (physics, culling, audio, gameplay). Read
 [Math](foundation-math.md) first.
@@ -79,6 +79,82 @@ union: -1 0 -1 to 4 2 4, area 90
   `max_t` and later count: pass a large value for an unbounded ray.
 - **`TransformAabb` is exact for the box, not for the object.** It returns the box of the transformed box's corners; a rotated object's true extent can
   be smaller. Recompute from the vertices when a tight box matters.
+
+## The static BVH
+
+`spatial::StaticBvh` (`spatial/static_bvh.h`) is for things that do not move: built once from a list of `spatial::Item`s (a box, your 64-bit key and a
+layer), then queried any number of times, from any number of threads at once. Rebuild it when the set of items changes; for things that move, the dynamic
+tree (Day 240) is the one to use.
+
+```cpp compile run standalone
+#include "containers/vector.h"
+#include "os/console.h"
+#include "spatial/static_bvh.h"
+
+using namespace engine_placeholder;
+using namespace engine_placeholder::spatial;
+
+int main() {
+    // A row of ten crates, keys 0 to 9, two units apart.
+    Vector<Item> items;
+    for (u32 i = 0; i < 10; ++i) {
+        Item item;
+        item.box = Aabb::FromMinMax(Vec3(2.0f * i, 0, 0), Vec3(2.0f * i + 1, 1, 1));
+        item.key = i;
+        items.Push(item);
+    }
+    StaticBvh tree;
+    tree.Build(Span<const Item>(items.Data(), items.Size()));
+
+    // Which crates overlap a box from x = 5 to x = 9?
+    const Aabb query = Aabb::FromMinMax(Vec3(5, 0, 0), Vec3(9, 1, 1));
+    os::Print("overlapping:");
+    tree.Traverse([&](const Aabb& node) { return Overlaps(node, query) ? NodeVisit::Descend : NodeVisit::Reject; },
+                  [&](const Item& item) {
+                      if (Overlaps(item.box, query)) os::Print(" %llu", static_cast<unsigned long long>(item.key));
+                      return true;
+                  });
+    os::Print("\n");
+
+    // The first crate a ray from the left hits: lower the limit to each hit, so farther leaves are skipped.
+    const Ray ray = Ray::Make(Vec3(-5, 0.5f, 0.5f), Vec3(1, 0, 0));
+    SpatialKey first = 0;
+    f32 best = -1.0f;
+    tree.TraverseRay(ray, 100.0f, [&](const Item& item, f32& max_t) {
+        f32 t = 0.0f;
+        if (Intersect(ray, item.box, max_t, &t) && (best < 0.0f || t < best)) {
+            best = t;
+            first = item.key;
+            max_t = t;
+        }
+        return true;
+    });
+    os::Print("ray hits crate %llu at t = %.1f\n", static_cast<unsigned long long>(first), best);
+    return 0;
+}
+```
+
+```output
+overlapping: 2 3 4
+ray hits crate 0 at t = 5.0
+```
+
+How it is built and what that buys:
+
+- **Top-down, binned surface-area heuristic.** Each node is split where the expected cost of a query is lowest, judged on 16 bins along the node's longest
+  axis, down to leaves of at most 4 items. A query then tests few nodes: about 0.7 us for a 40-unit box in a city of 100,000 buildings (design spec,
+  experiment (a)).
+- **Compact and ordered.** Nodes are 32 bytes in one array in depth-first order, and the items are stored in leaf order, so all the items under a node are
+  one contiguous range. A traversal that finds a node entirely inside its query answers `NodeVisit::AcceptAll` and gets every item below it without
+  further tests. 100,000 items take about 62 bytes each, nodes included.
+- **Deterministic.** The same items in the same order build the same tree, byte for byte; ties are broken by the items' order.
+- **Bounded depth.** Items with the same center, and inputs that would make the tree very deep (sizes growing geometrically along a line), are split in the
+  middle instead, so every tree fits the traversal's fixed stack of 64 entries and no traversal allocates.
+- **Cost.** Building 100,000 boxes takes about 40 ms in a Release build on the Windows PC (the build is single-threaded).
+
+The two traversals are the building blocks the query functions of Day 241 are made of: `Traverse` takes a node test (reject, descend, or accept the whole
+subtree) and an item visitor; `TraverseRay` visits the leaves a ray reaches, nearest first, and lets the visitor shorten the ray. Both return
+`TraversalStats` (nodes tested, items visited).
 
 ## See also
 

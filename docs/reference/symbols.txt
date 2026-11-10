@@ -3280,6 +3280,45 @@ ecs::World::Stats() const	function	ecs	ecs-world-stats-const	ecs.md	engine/ecs/w
 ecs::World::Validate() const	function	ecs	ecs-world-validate-const	ecs.md	engine/ecs/world.h:388
 spatial::kMaxSpatialSets	variable	spatial	spatial-kmaxspatialsets	spatial.md	engine/spatial/spatial.h:14
 spatial::SpatialKey	alias	spatial	spatial-spatialkey	spatial.md	engine/spatial/spatial.h:17
+spatial::Item	struct	spatial	spatial-item	spatial.md	engine/spatial/static_bvh.h:18
+spatial::Item::box	variable	spatial	spatial-item-box	spatial.md	engine/spatial/static_bvh.h:20
+spatial::Item::key	variable	spatial	spatial-item-key	spatial.md	engine/spatial/static_bvh.h:22
+spatial::Item::layer	variable	spatial	spatial-item-layer	spatial.md	engine/spatial/static_bvh.h:24
+spatial::NodeVisit	enum	spatial	spatial-nodevisit	spatial.md	engine/spatial/static_bvh.h:28
+spatial::NodeVisit::Reject	enumerator	spatial	spatial-nodevisit-reject	spatial.md	engine/spatial/static_bvh.h:29
+spatial::NodeVisit::Descend	enumerator	spatial	spatial-nodevisit-descend	spatial.md	engine/spatial/static_bvh.h:30
+spatial::NodeVisit::AcceptAll	enumerator	spatial	spatial-nodevisit-acceptall	spatial.md	engine/spatial/static_bvh.h:31
+spatial::TraversalStats	struct	spatial	spatial-traversalstats	spatial.md	engine/spatial/static_bvh.h:37
+spatial::TraversalStats::nodes_tested	variable	spatial	spatial-traversalstats-nodes-tested	spatial.md	engine/spatial/static_bvh.h:39
+spatial::TraversalStats::items_visited	variable	spatial	spatial-traversalstats-items-visited	spatial.md	engine/spatial/static_bvh.h:41
+spatial::TraversalStats::refused	variable	spatial	spatial-traversalstats-refused	spatial.md	engine/spatial/static_bvh.h:43
+spatial::TraversalStats::stopped	variable	spatial	spatial-traversalstats-stopped	spatial.md	engine/spatial/static_bvh.h:45
+spatial::kTraversalStackDepth	variable	spatial	spatial-ktraversalstackdepth	spatial.md	engine/spatial/static_bvh.h:49
+spatial::kStaticBvhLeafSize	variable	spatial	spatial-kstaticbvhleafsize	spatial.md	engine/spatial/static_bvh.h:52
+spatial::kStaticBvhBins	variable	spatial	spatial-kstaticbvhbins	spatial.md	engine/spatial/static_bvh.h:55
+spatial::StaticBvh	class	spatial	spatial-staticbvh	spatial.md	engine/spatial/static_bvh.h:67
+spatial::StaticBvh::Node	struct	spatial	spatial-staticbvh-node	spatial.md	engine/spatial/static_bvh.h:72
+spatial::StaticBvh::Node::box	variable	spatial	spatial-staticbvh-node-box	spatial.md	engine/spatial/static_bvh.h:74
+spatial::StaticBvh::Node::a	variable	spatial	spatial-staticbvh-node-a	spatial.md	engine/spatial/static_bvh.h:76
+spatial::StaticBvh::Node::b	variable	spatial	spatial-staticbvh-node-b	spatial.md	engine/spatial/static_bvh.h:78
+spatial::StaticBvh::Node::IsLeaf() const	function	spatial	spatial-staticbvh-node-isleaf-const	spatial.md	engine/spatial/static_bvh.h:83
+spatial::StaticBvh::Node::ItemCount() const	function	spatial	spatial-staticbvh-node-itemcount-const	spatial.md	engine/spatial/static_bvh.h:87
+spatial::StaticBvh::kLeafBit	variable	spatial	spatial-staticbvh-kleafbit	spatial.md	engine/spatial/static_bvh.h:90
+spatial::StaticBvh::StaticBvh()	function	spatial	spatial-staticbvh-staticbvh	spatial.md	engine/spatial/static_bvh.h:92
+spatial::StaticBvh::StaticBvh(const StaticBvh&)	function	spatial	spatial-staticbvh-staticbvh-const-staticbvh-amp	spatial.md	engine/spatial/static_bvh.h:93
+spatial::StaticBvh::operator=(const StaticBvh&)	function	spatial	spatial-staticbvh-operator-eq-const-staticbvh-amp	spatial.md	engine/spatial/static_bvh.h:94
+spatial::StaticBvh::Build(Span<const Item>)	function	spatial	spatial-staticbvh-build-span-lt-const-item-gt	spatial.md	engine/spatial/static_bvh.h:100
+spatial::StaticBvh::Clear()	function	spatial	spatial-staticbvh-clear	spatial.md	engine/spatial/static_bvh.h:103
+spatial::StaticBvh::NodeCount() const	function	spatial	spatial-staticbvh-nodecount-const	spatial.md	engine/spatial/static_bvh.h:106
+spatial::StaticBvh::ItemCount() const	function	spatial	spatial-staticbvh-itemcount-const	spatial.md	engine/spatial/static_bvh.h:108
+spatial::StaticBvh::Depth() const	function	spatial	spatial-staticbvh-depth-const	spatial.md	engine/spatial/static_bvh.h:110
+spatial::StaticBvh::Bounds() const	function	spatial	spatial-staticbvh-bounds-const	spatial.md	engine/spatial/static_bvh.h:112
+spatial::StaticBvh::Nodes() const	function	spatial	spatial-staticbvh-nodes-const	spatial.md	engine/spatial/static_bvh.h:114
+spatial::StaticBvh::Items() const	function	spatial	spatial-staticbvh-items-const	spatial.md	engine/spatial/static_bvh.h:116
+spatial::StaticBvh::FirstItem(u32) const	function	spatial	spatial-staticbvh-firstitem-u32-const	spatial.md	engine/spatial/static_bvh.h:122
+spatial::StaticBvh::SahCost() const	function	spatial	spatial-staticbvh-sahcost-const	spatial.md	engine/spatial/static_bvh.h:126
+spatial::StaticBvh::Traverse(NodeTest&&,ItemVisit&&) const	function	spatial	spatial-staticbvh-traverse-nodetest-amp-amp-itemvisit-amp-amp-const	spatial.md	engine/spatial/static_bvh.h:135
+spatial::StaticBvh::TraverseRay(const Ray&,f32,ItemVisit&&) const	function	spatial	spatial-staticbvh-traverseray-const-ray-amp-f32-itemvisit-amp-amp-const	spatial.md	engine/spatial/static_bvh.h:146
 scene::MeshAsset	struct	scene	scene-meshasset	scene.md	engine/scene/components.h:22
 scene::MeshAsset::mesh	variable	scene	scene-meshasset-mesh	scene.md	engine/scene/components.h:24
 scene::MeshRenderer	struct	scene	scene-meshrenderer	scene.md	engine/scene/components.h:31
