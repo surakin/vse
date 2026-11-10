@@ -2,6 +2,7 @@
 
 //! A set of component ids as a 128-bit mask: the signature of an archetype and of a query.
 
+#include "containers/hash_map.h"
 #include "ecs/component.h"
 #include "log/assert.h"
 #include "types.h"
@@ -97,3 +98,17 @@ private:
 };
 
 } // namespace engine_placeholder::ecs
+
+namespace engine_placeholder {
+
+/// The hash of a component set, for `HashMap<ecs::ComponentSet, ...>`.
+///
+/// Thread-safety: thread-safe (stateless).
+/// Fails: never.
+template <>
+struct Hash<ecs::ComponentSet> {
+    /// Returns [[ecs::ComponentSet::Hash]].
+    usize operator()(const ecs::ComponentSet& set) const { return static_cast<usize>(set.Hash()); }
+};
+
+} // namespace engine_placeholder

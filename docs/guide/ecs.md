@@ -1,6 +1,6 @@
 # ECS: entities, components and systems
 
-Status: draft (Phase 17, Days 223-225: entities, components, storage; the rest of the page arrives with the days that build it).
+Status: draft (Phase 17, Days 223-226: entities, components, storage, the world; the rest of the page arrives with the days that build it).
 
 The ECS (`engine/ecs`, namespace `ecs`) is the engine's data-oriented core: **entities** are ids, **components** are plain data stored in
 cache-friendly chunks, and **systems** are functions over all entities that have a given set of components. Design, measurements and the
@@ -122,3 +122,49 @@ the number of rows a chunk holds (`Layout().capacity`) is the room after the hea
 - **Cost.** A row costs the sum of its components' sizes plus 8 bytes for the entity; an archetype wastes at most one partly-filled chunk
   (under 32 KiB), and a chunk header is 320 bytes. A row larger than a chunk (about 32 KB) is refused: `Valid()` is false and
   `ChunkPool::Stats().refused_layouts` counts it.
+
+## The world
+
+An `ecs::World` owns the entities, the archetypes and the chunks. Everything that changes which components an entity has is a **structural
+change**: `Create`, `Destroy`, `Add<T>`, `Remove<T>`, and `Set<T>` when it has to add the component.
+
+```cpp compile run standalone
+#include "ecs/world.h"
+#include "os/console.h"
+
+using namespace engine_placeholder;
+
+struct Position { float x, y; };
+struct Frozen {};
+
+int main() {
+    ecs::World world;
+    const ecs::Entity e = world.Create(Position{1, 2});
+    world.Add<Frozen>(e, {});
+    world.Get<Position>(e)->x = 5;
+    os::Print("x %.0f, frozen %s\n", static_cast<double>(world.Get<Position>(e)->x), world.Has<Frozen>(e) ? "yes" : "no");
+    world.Remove<Frozen>(e);
+    world.Destroy(e);
+    os::Print("alive %s, destroy again: %s\n", world.Exists(e) ? "yes" : "no",
+              world.Destroy(e) == ecs::Status::DeadEntity ? "DeadEntity" : "other");
+    return world.Validate().Ok() ? 0 : 1;
+}
+```
+
+```output
+x 5, frozen yes
+alive no, destroy again: DeadEntity
+```
+
+- **Statuses.** Calls on one entity return `ecs::Status`: `Ok`, `DeadEntity` (stale or invalid id), `MissingComponent` (`Remove`), `AlreadyHas` (`Add`;
+  `Set` overwrites instead) or `Refused` (a limit: more than 32 components, 128 types, no memory; counted in `Stats().refused`).
+- **Migration.** `Add` and `Remove` move the entity's row to the archetype of the new component set: the components both have are moved over, a
+  dropped one is destroyed, the new one is constructed, and the row swapped into the hole keeps its entity table entry correct. The edge
+  (archetype, component, add or remove) to the target is cached, so a repeated transition costs one hash lookup (`Stats().graph_hits`).
+- **Pointer validity.** A pointer from `Get<T>` or a chunk span is valid until the next structural change; `Get` of a tag is null (ask `Has`).
+- **Iteration guard.** While `BeginIteration` is active (queries do this), a structural call fails an `ENGINE_ASSERT` naming the call;
+  `Set` of an existing component is allowed. Command buffers (Day 228) defer the changes to a sync point.
+- **Cost.** `Create` is one entity-table allocation and one row; `Add`/`Remove` copy the row once (the size of the entity's components) plus one
+  hash lookup; `Destroy` destroys the row and moves the last one in; `Get` is two index loads.
+- **Validation.** `Validate()` checks the invariants (locations point at their rows, no dead or duplicated entity in a row, counts add up, chunks
+  full except the last) and is meant for tests and debug builds.

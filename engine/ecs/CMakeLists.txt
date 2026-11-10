@@ -6,6 +6,7 @@ set(ECS_SOURCES
   component.cpp
   chunk.cpp
   archetype.cpp
+  world.cpp
 )
 set(ECS_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

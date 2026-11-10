@@ -2909,17 +2909,19 @@ ecs::ComponentRegistry::Info(ComponentId) const	function	ecs	ecs-componentregist
 ecs::ComponentRegistry::Count() const	function	ecs	ecs-componentregistry-count-const	ecs.md	engine/ecs/component.h:74
 ecs::ComponentRegistry::Refused() const	function	ecs	ecs-componentregistry-refused-const	ecs.md	engine/ecs/component.h:77
 ecs::ComponentOf()	function	ecs	ecs-componentof	ecs.md	engine/ecs/component.h:138
-ecs::ComponentSet	struct	ecs	ecs-componentset	ecs.md	engine/ecs/component_set.h:15
-ecs::ComponentSet::words	variable	ecs	ecs-componentset-words	ecs.md	engine/ecs/component_set.h:17
-ecs::ComponentSet::Add(ComponentId)	function	ecs	ecs-componentset-add-componentid	ecs.md	engine/ecs/component_set.h:21
-ecs::ComponentSet::Remove(ComponentId)	function	ecs	ecs-componentset-remove-componentid	ecs.md	engine/ecs/component_set.h:27
-ecs::ComponentSet::Has(ComponentId) const	function	ecs	ecs-componentset-has-componentid-const	ecs.md	engine/ecs/component_set.h:33
-ecs::ComponentSet::IsEmpty() const	function	ecs	ecs-componentset-isempty-const	ecs.md	engine/ecs/component_set.h:38
-ecs::ComponentSet::Count() const	function	ecs	ecs-componentset-count-const	ecs.md	engine/ecs/component_set.h:41
-ecs::ComponentSet::IsSubsetOf(const ComponentSet&) const	function	ecs	ecs-componentset-issubsetof-const-componentset-amp-const	ecs.md	engine/ecs/component_set.h:44
-ecs::ComponentSet::Intersects(const ComponentSet&) const	function	ecs	ecs-componentset-intersects-const-componentset-amp-const	ecs.md	engine/ecs/component_set.h:49
-ecs::ComponentSet::Hash() const	function	ecs	ecs-componentset-hash-const	ecs.md	engine/ecs/component_set.h:54
-ecs::ComponentSet::NextFrom(u32) const	function	ecs	ecs-componentset-nextfrom-u32-const	ecs.md	engine/ecs/component_set.h:65
+ecs::ComponentSet	struct	ecs	ecs-componentset	ecs.md	engine/ecs/component_set.h:16
+ecs::ComponentSet::words	variable	ecs	ecs-componentset-words	ecs.md	engine/ecs/component_set.h:18
+ecs::ComponentSet::Add(ComponentId)	function	ecs	ecs-componentset-add-componentid	ecs.md	engine/ecs/component_set.h:22
+ecs::ComponentSet::Remove(ComponentId)	function	ecs	ecs-componentset-remove-componentid	ecs.md	engine/ecs/component_set.h:28
+ecs::ComponentSet::Has(ComponentId) const	function	ecs	ecs-componentset-has-componentid-const	ecs.md	engine/ecs/component_set.h:34
+ecs::ComponentSet::IsEmpty() const	function	ecs	ecs-componentset-isempty-const	ecs.md	engine/ecs/component_set.h:39
+ecs::ComponentSet::Count() const	function	ecs	ecs-componentset-count-const	ecs.md	engine/ecs/component_set.h:42
+ecs::ComponentSet::IsSubsetOf(const ComponentSet&) const	function	ecs	ecs-componentset-issubsetof-const-componentset-amp-const	ecs.md	engine/ecs/component_set.h:45
+ecs::ComponentSet::Intersects(const ComponentSet&) const	function	ecs	ecs-componentset-intersects-const-componentset-amp-const	ecs.md	engine/ecs/component_set.h:50
+ecs::ComponentSet::Hash() const	function	ecs	ecs-componentset-hash-const	ecs.md	engine/ecs/component_set.h:55
+ecs::ComponentSet::NextFrom(u32) const	function	ecs	ecs-componentset-nextfrom-u32-const	ecs.md	engine/ecs/component_set.h:66
+Hash<ecs::ComponentSet>	struct	ecs	hash-lt-ecs-componentset-gt	ecs.md	engine/ecs/component_set.h:108
+Hash<ecs::ComponentSet>::operator()(const ecs::ComponentSet&) const	function	ecs	hash-lt-ecs-componentset-gt-operator-call-const-ecs-componentset-amp-const	ecs.md	engine/ecs/component_set.h:111
 ecs::Entity	struct	ecs	ecs-entity	ecs.md	engine/ecs/entity.h:16
 ecs::Entity::index	variable	ecs	ecs-entity-index	ecs.md	engine/ecs/entity.h:18
 ecs::Entity::generation	variable	ecs	ecs-entity-generation	ecs.md	engine/ecs/entity.h:20
@@ -2957,6 +2959,48 @@ ecs::EntityTable::Location(Entity) const	function	ecs	ecs-entitytable-location-e
 ecs::EntityTable::Stats() const	function	ecs	ecs-entitytable-stats-const	ecs.md	engine/ecs/entity_table.h:113
 ecs::EntityTable::SetMaxSlotsForTesting(u32)	function	ecs	ecs-entitytable-setmaxslotsfortesting-u32	ecs.md	engine/ecs/entity_table.h:116
 ecs::EntityTable::SetGenerationForTesting(u32,u32)	function	ecs	ecs-entitytable-setgenerationfortesting-u32-u32	ecs.md	engine/ecs/entity_table.h:119
+ecs::Status	enum	ecs	ecs-status	ecs.md	engine/ecs/world.h:23
+ecs::Status::Ok	enumerator	ecs	ecs-status-ok	ecs.md	engine/ecs/world.h:25
+ecs::Status::DeadEntity	enumerator	ecs	ecs-status-deadentity	ecs.md	engine/ecs/world.h:27
+ecs::Status::MissingComponent	enumerator	ecs	ecs-status-missingcomponent	ecs.md	engine/ecs/world.h:29
+ecs::Status::AlreadyHas	enumerator	ecs	ecs-status-alreadyhas	ecs.md	engine/ecs/world.h:31
+ecs::Status::Refused	enumerator	ecs	ecs-status-refused	ecs.md	engine/ecs/world.h:33
+ecs::ValidationReport	struct	ecs	ecs-validationreport	ecs.md	engine/ecs/world.h:40
+ecs::ValidationReport::errors	variable	ecs	ecs-validationreport-errors	ecs.md	engine/ecs/world.h:42
+ecs::ValidationReport::first	variable	ecs	ecs-validationreport-first	ecs.md	engine/ecs/world.h:44
+ecs::ValidationReport::Ok() const	function	ecs	ecs-validationreport-ok-const	ecs.md	engine/ecs/world.h:47
+ecs::WorldStats	struct	ecs	ecs-worldstats	ecs.md	engine/ecs/world.h:54
+ecs::WorldStats::entities	variable	ecs	ecs-worldstats-entities	ecs.md	engine/ecs/world.h:56
+ecs::WorldStats::archetypes	variable	ecs	ecs-worldstats-archetypes	ecs.md	engine/ecs/world.h:58
+ecs::WorldStats::migrations	variable	ecs	ecs-worldstats-migrations	ecs.md	engine/ecs/world.h:60
+ecs::WorldStats::graph_hits	variable	ecs	ecs-worldstats-graph-hits	ecs.md	engine/ecs/world.h:62
+ecs::WorldStats::refused	variable	ecs	ecs-worldstats-refused	ecs.md	engine/ecs/world.h:64
+ecs::WorldStats::pool	variable	ecs	ecs-worldstats-pool	ecs.md	engine/ecs/world.h:66
+ecs::World	class	ecs	ecs-world	ecs.md	engine/ecs/world.h:77
+ecs::World::World()	function	ecs	ecs-world-world	ecs.md	engine/ecs/world.h:80
+ecs::World::World(const World&)	function	ecs	ecs-world-world-const-world-amp	ecs.md	engine/ecs/world.h:81
+ecs::World::operator=(const World&)	function	ecs	ecs-world-operator-eq-const-world-amp	ecs.md	engine/ecs/world.h:82
+ecs::World::~World()	function	ecs	ecs-world-tilde-world	ecs.md	engine/ecs/world.h:83
+ecs::World::Create()	function	ecs	ecs-world-create	ecs.md	engine/ecs/world.h:88
+ecs::World::Create(Ts...)	function	ecs	ecs-world-create-ts	ecs.md	engine/ecs/world.h:93
+ecs::World::CreateMany(u32,Fn&&)	function	ecs	ecs-world-createmany-u32-fn-amp-amp	ecs.md	engine/ecs/world.h:101
+ecs::World::Destroy(Entity)	function	ecs	ecs-world-destroy-entity	ecs.md	engine/ecs/world.h:107
+ecs::World::Exists(Entity) const	function	ecs	ecs-world-exists-entity-const	ecs.md	engine/ecs/world.h:111
+ecs::World::Add(Entity,T)	function	ecs	ecs-world-add-entity-t	ecs.md	engine/ecs/world.h:116
+ecs::World::Remove(Entity)	function	ecs	ecs-world-remove-entity	ecs.md	engine/ecs/world.h:122
+ecs::World::Set(Entity,T)	function	ecs	ecs-world-set-entity-t	ecs.md	engine/ecs/world.h:128
+ecs::World::Has(Entity) const	function	ecs	ecs-world-has-entity-const	ecs.md	engine/ecs/world.h:133
+ecs::World::Get(Entity)	function	ecs	ecs-world-get-entity	ecs.md	engine/ecs/world.h:139
+ecs::World::Get(Entity) const	function	ecs	ecs-world-get-entity-const	ecs.md	engine/ecs/world.h:144
+ecs::World::BeginIteration()	function	ecs	ecs-world-beginiteration	ecs.md	engine/ecs/world.h:148
+ecs::World::EndIteration()	function	ecs	ecs-world-enditeration	ecs.md	engine/ecs/world.h:151
+ecs::World::IsIterating() const	function	ecs	ecs-world-isiterating-const	ecs.md	engine/ecs/world.h:157
+ecs::World::ArchetypeCount() const	function	ecs	ecs-world-archetypecount-const	ecs.md	engine/ecs/world.h:160
+ecs::World::ArchetypeAt(u32)	function	ecs	ecs-world-archetypeat-u32	ecs.md	engine/ecs/world.h:163
+ecs::World::ArchetypeAt(u32) const	function	ecs	ecs-world-archetypeat-u32-const	ecs.md	engine/ecs/world.h:166
+ecs::World::Entities() const	function	ecs	ecs-world-entities-const	ecs.md	engine/ecs/world.h:168
+ecs::World::Stats() const	function	ecs	ecs-world-stats-const	ecs.md	engine/ecs/world.h:171
+ecs::World::Validate() const	function	ecs	ecs-world-validate-const	ecs.md	engine/ecs/world.h:177
 ui::ConnectionId	alias	ui	ui-connectionid	ui.md	engine/ui/callback.h:11
 ui::Callback	class	ui	ui-callback	ui.md	engine/ui/callback.h:20
 ui::Callback::Function	alias	ui	ui-callback-function	ui.md	engine/ui/callback.h:24
