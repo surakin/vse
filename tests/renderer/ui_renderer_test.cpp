@@ -1,8 +1,6 @@
 // Phase 15 Day 190: the UI pass. A ui::DrawList becomes one render-graph pass on a real device (Vulkan): rectangles, rounded rects with borders, images, clips,
 // layers and text land where the list says; the pass follows the target's format; a device reset and a missing image are survived.
 #include "lang/scalar.h"
-#include <cstdlib>
-#include <cstring>
 
 #include <catch2/catch_test_macros.hpp>
 

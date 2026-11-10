@@ -2,8 +2,7 @@
 // each cost class does not do, and a reset while the job scheduler is running.
 #include <catch2/catch_test_macros.hpp>
 
-#include <vector>
-
+#include "byte_vector.h"
 #include "jobs/scheduler.h"
 #include "renderer/texture.h"
 #include "reset_rig.h"
@@ -73,11 +72,12 @@ TEST_CASE("Resets during a 50-frame sequence keep the scene and the frame number
         materials->BeginFrame(1);
         materials->FlushMaterials();
         const BufferRegion region = materials->ParameterRegion(probe);
-        std::vector<unsigned char> bytes(static_cast<usize>(region.size));
-        REQUIRE(static_cast<rhi::NullDevice*>(rig.host.GetDevice())->PeekBuffer(region.buffer, region.offset, bytes.data(), bytes.size()));
+        renderer_test::ByteVector bytes;
+        bytes.Resize(static_cast<usize>(region.size));
+        REQUIRE(static_cast<rhi::NullDevice*>(rig.host.GetDevice())->PeekBuffer(region.buffer, region.offset, bytes.Data(), bytes.Size()));
         return bytes;
     };
-    const std::vector<unsigned char> parameters_before = parameters();
+    const renderer_test::ByteVector parameters_before = parameters();
     u32 resets = 0;
     for (u32 frame = 1; frame <= 50; ++frame) {
         if (frame == 7 || frame == 8 || frame == 31) {
@@ -102,7 +102,7 @@ TEST_CASE("Resets during a 50-frame sequence keep the scene and the frame number
     }
     CHECK(resets == 3);
     CHECK(rig.R().Stats().resets == 3);
-    CHECK(parameters() == parameters_before); // material parameters are identical by value after three resets
+    CHECK(renderer_test::SameBytes(parameters(), parameters_before)); // material parameters are identical by value after three resets
     CHECK(rig.R().Stats().frames_rendered == 50);
     rig.TearDown();
 }

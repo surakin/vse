@@ -3,8 +3,6 @@
 // material's texture is missing; an object's pipeline cannot be built) and checks the same three things: the frame ends with a
 // defined status, the cause is in the log or in LastError, and the renderer and the device can still be destroyed with nothing left
 // alive.
-#include <string>
-
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
 #include <catch2/generators/catch_generators_range.hpp>
@@ -138,7 +136,7 @@ TEST_CASE("A transient texture the device cannot make fails the frame, names it,
         ft.height = 1;
         ft.final_state = rhi::ResourceState::CopySrc;
         CHECK(renderer.RenderFrame(nullptr, nullptr, &ft) == FrameStatus::Failed);
-        CHECK(std::string(renderer.LastError()) == "transient texture 'mid' could not be allocated");
+        CHECK(StringView(renderer.LastError()) == StringView("transient texture 'mid' could not be allocated"));
         CHECK(renderer.Pool().Stats().textures_idle == renderer.Pool().Stats().textures_live);
         device->ResetErrors();
         device->DestroyTexture(one);
@@ -364,7 +362,7 @@ TEST_CASE("A device that cannot build the G-buffer pipelines leaves every object
     CHECK(rig.frame.GBufferStatistics().drawn_objects == 0);
     CHECK(rig.frame.GBufferStatistics().rejected == rig.frame.GBufferStatistics().visible);
     CHECK(rig.frame.GBufferStatistics().visible > 0);
-    CHECK(std::string(rig.frame.LastError()).empty()); // the frame itself did not fail; the objects were named in the pass's error
+    CHECK(StringView(rig.frame.LastError()).Empty()); // the frame itself did not fail; the objects were named in the pass's error
     CHECK(rig.TearDown());
 }
 

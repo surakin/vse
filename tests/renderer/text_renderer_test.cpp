@@ -4,8 +4,8 @@
 // made again from it after a release. On a real device: the quad of a glyph shows the atlas bitmap texel for texel (an asymmetric
 // "F", so a flipped or shifted quad fails), premultiplied blending over a colored background, the sRGB round trip, and a device reset
 // that rebuilds the atlas pages, the pipeline and the sampler so the same frame renders the same pixels.
+#include "algorithm.h"
 #include "lang/scalar.h"
-#include <cstdlib>
 #include "cstr/cstr.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -72,7 +72,7 @@ struct Target {
         gpu_test::Image image;
         image.width = width;
         image.height = height;
-        image.rgba.assign(static_cast<size_t>(width) * height * 4, 0);
+        image.rgba.assign(static_cast<usize>(width) * height * 4, 0);
         REQUIRE(device->ReadbackTexture(texture, 0, 0, image.rgba.data(), image.rgba.size(), rhi::ResourceState::ColorAttachment));
         return image;
     }
@@ -281,7 +281,7 @@ TEST_CASE("A glyph's quad shows the atlas bitmap texel for texel", "[renderer][t
                 const bool inside = dx >= 0 && dy >= 0 && dx < static_cast<int>(q.entry.rect.w) && dy < static_cast<int>(q.entry.rect.h);
                 const int expected = inside ? Coverage(atlas, q, static_cast<u32>(dx), static_cast<u32>(dy)) : 0;
                 if (expected != 0) ++inked;
-                worst = std::max({worst, Diff(p[0], expected), Diff(p[1], expected), Diff(p[2], expected)});
+                worst = Max(Max(worst, Diff(p[0], expected)), Max(Diff(p[1], expected), Diff(p[2], expected)));
                 CHECK(p[3] == 255);
             }
         }
@@ -335,7 +335,7 @@ TEST_CASE("Text blends with premultiplied alpha over a colored background", "[re
             for (u32 dx = 0; dx < q.entry.rect.w; ++dx) {
                 const u8* p = opaque.Pixel(static_cast<u32>(q.left) + dx, static_cast<u32>(q.top) + dy);
                 const int cov = Coverage(atlas, q, dx, dy);
-                worst = std::max({worst, Diff(p[0], cov), Diff(p[1], 0), Diff(p[2], 255 - cov)});
+                worst = Max(Max(worst, Diff(p[0], cov)), Max(Diff(p[1], 0), Diff(p[2], 255 - cov)));
             }
         }
         CHECK(worst <= 2);
@@ -347,7 +347,7 @@ TEST_CASE("Text blends with premultiplied alpha over a colored background", "[re
             for (u32 dx = 0; dx < q.entry.rect.w; ++dx) {
                 const u8* p = half.Pixel(static_cast<u32>(q.left) + dx, static_cast<u32>(q.top) + dy);
                 const f32 a = static_cast<f32>(Coverage(atlas, q, dx, dy)) / 255.0f * (128.0f / 255.0f);
-                worst = std::max({worst, Diff(p[0], static_cast<int>(LRound(255.0f * a))), Diff(p[2], static_cast<int>(LRound(255.0f * (1.0f - a))))});
+                worst = Max(Max(worst, Diff(p[0], static_cast<int>(LRound(255.0f * a)))), Diff(p[2], static_cast<int>(LRound(255.0f * (1.0f - a)))));
             }
         }
         CHECK(worst <= 3);

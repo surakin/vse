@@ -4,7 +4,6 @@
 // They prove the settings system assumes nothing a registry or a server could not give. (Documented in docs/guide/settings.md,
 // "Writing a store backend".)
 
-#include <chrono>
 #include "cstr/format.h"
 #include "sync/mutex.h"
 #include "sync/thread.h"

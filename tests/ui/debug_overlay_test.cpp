@@ -1,7 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "sync/atomic.h"
-#include <cstdio>
 #include "sync/thread.h"
 
 #include "font_support.h"

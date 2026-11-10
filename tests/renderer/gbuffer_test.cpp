@@ -2,10 +2,6 @@
 // real-device tests compare against the shaders; the pass is checked for its sorting, instancing and named errors on the
 // null device.
 #include "lang/scalar.h"
-#include <cstring>
-#include <string>
-#include <vector>
-
 #include <catch2/catch_test_macros.hpp>
 
 #include "renderer/camera.h"
@@ -16,6 +12,8 @@
 #include "renderer/render_scene.h"
 #include "rhi/null/null_device.h"
 #include "cstr/mem_ops.h"
+#include "containers/vector.h"
+#include "test_text.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
@@ -129,8 +127,8 @@ TEST_CASE("The device check refuses a device with too few color attachments, nam
     rhi::NullDevicePtr device = rhi::CreateNullDevice(options);
     char error[160] = "";
     CHECK_FALSE(CheckGBufferFormats(device.Get(), error, sizeof(error)));
-    CHECK(std::string(error).find("2 color attachments") != std::string::npos);
-    CHECK(std::string(error).find("writes 3") != std::string::npos);
+    CHECK(StringView(error).Contains("2 color attachments"));
+    CHECK(StringView(error).Contains("writes 3"));
     options.caps.max_color_attachments = 3;
     rhi::NullDevicePtr enough = rhi::CreateNullDevice(options);
     CHECK(CheckGBufferFormats(enough.Get(), error, sizeof(error)));
@@ -240,7 +238,7 @@ TEST_CASE("Prepare sorts, instances and counts what it draws", "[renderer][gbuff
         rig.frame->Flush();
         rig.device->EndFrame();
         stats[order] = pass.Stats();
-        CHECK(std::string(pass.LastError()).empty());
+        CHECK(StringView(pass.LastError()).Empty());
     }
     // Groups: cube/m0 x3, cube/m1 x1, sphere/m1 x3 -> 3 draws, whatever the order.
     for (const GBufferStats& s : stats) {
@@ -270,7 +268,7 @@ TEST_CASE("Prepare names every object it has to leave out", "[renderer][gbuffer]
     vc.vertex_color = true;
     const MaterialId color = CreateGBufferMaterial(rig.sys, rig.templates, vc, "color");
 
-    auto run = [&](const GpuMesh* mesh, u32 material, std::string* message, GBufferStats* stats) {
+    auto run = [&](const GpuMesh* mesh, u32 material, engine_test::Text* message, GBufferStats* stats) {
         RenderScene scene(RenderSceneDesc{});
         RenderObjectDesc od;
         od.mesh = mesh;
@@ -282,29 +280,29 @@ TEST_CASE("Prepare names every object it has to leave out", "[renderer][gbuffer]
         const bool ok = pass.Prepare(scene, WideFrustum());
         rig.frame->Flush();
         rig.device->EndFrame();
-        *message = pass.LastError();
+        *message = engine_test::MakeText(pass.LastError());
         *stats = pass.Stats();
         return ok;
     };
-    std::string msg;
+    engine_test::Text msg = engine_test::MakeText();
     GBufferStats stats;
     CHECK(run(&cube, plain.index, &msg, &stats));
     CHECK(run(&colored_cube, color.index, &msg, &stats));
 
     CHECK_FALSE(run(&colored_cube, plain.index, &msg, &stats));
-    CHECK(msg.find("vertex colors") != std::string::npos);
-    CHECK(msg.find("slot 0") != std::string::npos);
+    CHECK(msg.View().Contains("vertex colors"));
+    CHECK(msg.View().Contains("slot 0"));
     CHECK(stats.rejected == 1);
     CHECK(stats.drawn_objects == 0);
 
     CHECK_FALSE(run(&cube, color.index, &msg, &stats));
-    CHECK(msg.find("without vertex colors") != std::string::npos);
+    CHECK(msg.View().Contains("without vertex colors"));
 
     CHECK_FALSE(run(&unprepared, plain.index, &msg, &stats));
-    CHECK(msg.find("not prepared") != std::string::npos);
+    CHECK(msg.View().Contains("not prepared"));
 
     CHECK_FALSE(run(&cube, 77, &msg, &stats));
-    CHECK(msg.find("material 77") != std::string::npos);
+    CHECK(msg.View().Contains("material 77"));
 
 }
 
@@ -384,16 +382,18 @@ TEST_CASE("Only a UNorm8x4 attribute at location 4 counts as a vertex color", "[
     layout.stride = sizeof(Wide);
     MeshData plane;
     REQUIRE(MakePlaneMesh(2.0f, 2.0f, 1, 1, &plane) == nullptr);
-    std::vector<Wide> vertices(plane.VertexCount());
+    Vector<Wide> vertices;
+    vertices.Resize(plane.VertexCount());
     const StandardVertex* in = static_cast<const StandardVertex*>(plane.Vertices());
     for (u32 i = 0; i < plane.VertexCount(); ++i) {
         vertices[i].base = in[i];
         MemSet(vertices[i].extra, 0, sizeof(vertices[i].extra));
     }
-    std::vector<u32> indices(plane.IndexCount());
+    Vector<u32> indices;
+    indices.Resize(plane.IndexCount());
     for (u32 i = 0; i < plane.IndexCount(); ++i) indices[i] = plane.IndexAt(i);
     MeshData wide;
-    REQUIRE(wide.Set(layout, 0, vertices.data(), plane.VertexCount(), rhi::IndexType::UInt32, indices.data(), plane.IndexCount()) == nullptr);
+    REQUIRE(wide.Set(layout, 0, vertices.Data(), plane.VertexCount(), rhi::IndexType::UInt32, indices.Data(), plane.IndexCount()) == nullptr);
     GpuMesh mesh;
     REQUIRE(mesh.Create(rig.device.Get(), wide, "wide"));
     rig.MakeReady(&mesh);

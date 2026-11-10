@@ -1,3 +1,4 @@
+#include "lang/limits.h"
 #include "lang/scalar.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -273,7 +274,7 @@ TEST_CASE("ProgressBar: fills with the value and slides while indeterminate", "[
     CHECK(fill_width() > 2 * half - 2);
     bar->SetValue(5.0f);
     CHECK(bar->Value() == 1.0f);
-    bar->SetValue(std::nanf(""));
+    bar->SetValue(Limits<f32>::QuietNaN());
     CHECK(bar->Value() == 0.0f);
     CHECK(!bar->WantsUpdate());
 

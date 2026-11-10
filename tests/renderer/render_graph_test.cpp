@@ -1,24 +1,23 @@
 // Phase 5 Day 75: render graph declaration and compilation. Pure CPU: no device is created (resources are described, not
 // allocated; imports use a made-up handle).
-#include <algorithm>
 #include "sync/atomic.h"
-#include <chrono>
-#include <cstdio>
-#include <cstdlib>
 #include "build_defs.h"
-#if ENGINE_PLATFORM_WINDOWS
-#include <malloc.h> // _aligned_malloc, _aligned_free
-#endif
 #include "lang/new.h"
-#include <string>
-#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "algorithm.h"
+#include "catch_engine_types.h"
+#include "containers/span.h"
+#include "containers/vector.h"
+#include "os/os.h"
 #include "renderer/render_graph.h"
+#include "test_text.h"
 #include "types.h"
 #include "cstr/mem_ops.h"
 #include "os/console.h"
+
+using namespace engine_placeholder; // the allocation hooks below are global and name the engine types
 
 // Counts every heap allocation in this executable so a test can prove a region allocates none. The ThreadSanitizer runtime
 // defines its own operator new (a second definition fails to link), so that flavor skips the counting test.
@@ -40,24 +39,28 @@ bool RenderTestCountsAllocations() { return true; }
 unsigned long RenderTestHeapAllocations() { return g_heap_allocations.Load(); }
 
 #ifndef RENDER_GRAPH_TEST_NO_NEW_COUNTER
-// Every form is replaced so allocation and release always pair up (sanitizers check that). `align` is 0 for the plain forms. On
-// Windows, memory from _aligned_malloc goes back through _aligned_free, so the aligned forms always take that path there.
+// Every form is replaced so allocation and release always pair up (sanitizers check that). `align` is 0 for the plain forms. The C
+// library wrappers have no aligned allocation, so a block that needs more than the 16 bytes malloc gives is over-allocated: its start is
+// rounded up to `align` and the pointer of the underlying allocation is kept just before it, which the aligned delete forms (they are
+// told the alignment) read back. Plain and 16-byte blocks are exact-size malloc blocks, so a sanitizer sees any overrun.
+static constexpr usize kMallocAlign = 16;
 static void* CountedAlloc(usize size, usize align) {
     g_heap_allocations.FetchAdd(1, MemoryOrder::Relaxed);
     if (size == 0) size = 1;
-#if ENGINE_PLATFORM_WINDOWS
-    if (align != 0) return _aligned_malloc(size, align);
-#else
-    if (align > alignof(std::max_align_t)) return std::aligned_alloc(align, (size + align - 1) / align * align);
-#endif
-    return MemAllocate(size);
+    if (align <= kMallocAlign) return MemAllocate(size);
+    void* raw = MemAllocate(size + align + sizeof(void*));
+    if (raw == nullptr) return nullptr;
+    const usize start = (reinterpret_cast<usize>(raw) + sizeof(void*) + align - 1) / align * align;
+    void* block = reinterpret_cast<void*>(start);
+    reinterpret_cast<void**>(block)[-1] = raw;
+    return block;
 }
-static void AlignedFree(void* p) noexcept {
-#if ENGINE_PLATFORM_WINDOWS
-    _aligned_free(p);
-#else
-    MemFree(p);
-#endif
+static void AlignedFree(void* p, usize align) noexcept {
+    if (align <= kMallocAlign) {
+        MemFree(p);
+    } else if (p != nullptr) {
+        MemFree(reinterpret_cast<void**>(p)[-1]);
+    }
 }
 void* operator new(usize n) {
     if (void* p = CountedAlloc(n, 0)) return p;
@@ -85,12 +88,12 @@ void operator delete(void* p, usize) noexcept { MemFree(p); }
 void operator delete[](void* p, usize) noexcept { MemFree(p); }
 void operator delete(void* p, const NoThrowTag&) noexcept { MemFree(p); }
 void operator delete[](void* p, const NoThrowTag&) noexcept { MemFree(p); }
-void operator delete(void* p, AlignVal) noexcept { AlignedFree(p); }
-void operator delete[](void* p, AlignVal) noexcept { AlignedFree(p); }
-void operator delete(void* p, AlignVal, const NoThrowTag&) noexcept { AlignedFree(p); }
-void operator delete[](void* p, AlignVal, const NoThrowTag&) noexcept { AlignedFree(p); }
-void operator delete(void* p, usize, AlignVal) noexcept { AlignedFree(p); }
-void operator delete[](void* p, usize, AlignVal) noexcept { AlignedFree(p); }
+void operator delete(void* p, AlignVal a) noexcept { AlignedFree(p, static_cast<usize>(a)); }
+void operator delete[](void* p, AlignVal a) noexcept { AlignedFree(p, static_cast<usize>(a)); }
+void operator delete(void* p, AlignVal a, const NoThrowTag&) noexcept { AlignedFree(p, static_cast<usize>(a)); }
+void operator delete[](void* p, AlignVal a, const NoThrowTag&) noexcept { AlignedFree(p, static_cast<usize>(a)); }
+void operator delete(void* p, usize, AlignVal a) noexcept { AlignedFree(p, static_cast<usize>(a)); }
+void operator delete[](void* p, usize, AlignVal a) noexcept { AlignedFree(p, static_cast<usize>(a)); }
 #endif
 
 using namespace engine_placeholder;
@@ -131,27 +134,25 @@ struct RenderGraphTestFixture {
     }
     PassBuilder Pass(const char* name, PassFlags flags = PassFlags::None) { return graph.AddPass(name, nullptr, nullptr, flags); }
 
-    std::string Dump() const {
-        std::string text(graph.Dump(nullptr, 0), '\0');
-        graph.Dump(text.data(), text.size() + 1);
-        return text;
+    engine_test::Text Dump() const {
+        Vector<char> buffer = engine_test::Chars(graph.Dump(nullptr, 0) + 1);
+        graph.Dump(buffer.Data(), buffer.Size());
+        return engine_test::MakeText(engine_test::View(buffer, buffer.Size() - 1));
     }
-    std::string Errors() const {
-        std::string all;
+    engine_test::Text Errors() const {
+        engine_test::Text all = engine_test::MakeText();
         for (u32 i = 0; i < graph.ErrorCount(); ++i) {
-            all += graph.Error(i);
-            all += "\n";
+            all.Append(StringView(graph.Error(i)));
+            all.Append("\n");
         }
         return all;
     }
-    std::vector<std::string> Schedule() const {
-        std::vector<std::string> names;
-        for (u32 i = 0; i < graph.ScheduleCount(); ++i) names.push_back(graph.PassName(graph.Scheduled(i)));
+    engine_test::TextList Schedule() const {
+        engine_test::TextList names;
+        for (u32 i = 0; i < graph.ScheduleCount(); ++i) names.Push(StringView(graph.PassName(graph.Scheduled(i))));
         return names;
     }
 };
-
-using Names = std::vector<std::string>;
 
 } // namespace
 
@@ -164,7 +165,7 @@ TEST_CASE("A linear chain compiles to its declaration order", "[renderer][graph]
     f.Pass("second").Read(a, GraphUsage::Sampled).Write(b, GraphUsage::ColorAttachment);
     f.Pass("third").Read(b, GraphUsage::Sampled).Write(out, GraphUsage::ColorAttachment);
     REQUIRE(f.graph.Compile());
-    CHECK(f.Schedule() == Names{"first", "second", "third"});
+    CHECK(f.Schedule().SameAs({"first", "second", "third"}));
     CHECK(f.Dump() ==
           "graph passes=3 resources=3 scheduled=3 culled=0\n"
           "schedule: first, second, third\n"
@@ -195,7 +196,7 @@ TEST_CASE("A diamond keeps declaration order among independent passes", "[render
     f.Pass("right").Read(src, GraphUsage::Sampled).Write(r, GraphUsage::ColorAttachment);
     f.Pass("join").Read(l, GraphUsage::Sampled).Read(r, GraphUsage::Sampled).Write(out, GraphUsage::ColorAttachment);
     REQUIRE(f.graph.Compile());
-    CHECK(f.Schedule() == Names{"source", "left", "right", "join"});
+    CHECK(f.Schedule().SameAs({"source", "left", "right", "join"}));
     CHECK(f.graph.FirstUse(src) == 0);
     CHECK(f.graph.LastUse(src) == 2);
     CHECK(f.graph.FirstUse(l) == 1);
@@ -215,16 +216,16 @@ TEST_CASE("Passes nothing consumes are culled, unless they have side effects", "
     f.Pass("readback", PassFlags::SideEffects).Read(used, GraphUsage::Sampled).Write(probe, GraphUsage::StorageWrite);
     f.Pass("present").Read(used, GraphUsage::Sampled).Write(out, GraphUsage::ColorAttachment);
     REQUIRE(f.graph.Compile());
-    CHECK(f.Schedule() == Names{"make_used", "readback", "present"});
+    CHECK(f.Schedule().SameAs({"make_used", "readback", "present"}));
     CHECK(f.graph.IsCulled(PassId{1}));
     CHECK(f.graph.IsCulled(PassId{2}));
     CHECK(f.graph.FirstUse(dead) == kNeverUsed);
     CHECK(f.graph.LastUse(dead2) == kNeverUsed);
     CHECK(f.graph.FirstUse(probe) == 1);
-    const std::string dump = f.Dump();
-    CHECK(dump.find("graph passes=5 resources=5 scheduled=3 culled=2\n") == 0);
-    CHECK(dump.find("culled: make_dead, use_dead\n") != std::string::npos);
-    CHECK(dump.find("resource 1 \"dead\" texture transient unused\n") != std::string::npos);
+    const engine_test::Text dump = f.Dump();
+    CHECK(dump.View().StartsWith(StringView("graph passes=5 resources=5 scheduled=3 culled=2\n")));
+    CHECK(dump.View().Contains(StringView("culled: make_dead, use_dead\n")));
+    CHECK(dump.View().Contains(StringView("resource 1 \"dead\" texture transient unused\n")));
 }
 
 TEST_CASE("An overwritten result is dead; edges name write-after-write and write-after-read", "[renderer][graph]") {
@@ -236,11 +237,11 @@ TEST_CASE("An overwritten result is dead; edges name write-after-write and write
     f.Pass("blit").Read(t, GraphUsage::Sampled).Write(out, GraphUsage::ColorAttachment); // 2: RAW after 1
     f.Pass("redraw").Write(t, GraphUsage::ColorAttachment);           // 3: WAR after 2 (and nobody reads it: culled)
     REQUIRE(f.graph.Compile());
-    CHECK(f.Schedule() == Names{"draw", "blit"});
-    const std::string dump = f.Dump();
-    CHECK(dump.find("edge \"clear_old\" -> \"draw\" waw \"t\"\n") != std::string::npos);
-    CHECK(dump.find("edge \"draw\" -> \"blit\" raw \"t\"\n") != std::string::npos);
-    CHECK(dump.find("edge \"blit\" -> \"redraw\" war \"t\"\n") != std::string::npos);
+    CHECK(f.Schedule().SameAs({"draw", "blit"}));
+    const engine_test::Text dump = f.Dump();
+    CHECK(dump.View().Contains(StringView("edge \"clear_old\" -> \"draw\" waw \"t\"\n")));
+    CHECK(dump.View().Contains(StringView("edge \"draw\" -> \"blit\" raw \"t\"\n")));
+    CHECK(dump.View().Contains(StringView("edge \"blit\" -> \"redraw\" war \"t\"\n")));
 }
 
 TEST_CASE("ReadWrite keeps the earlier writer alive", "[renderer][graph]") {
@@ -251,7 +252,7 @@ TEST_CASE("ReadWrite keeps the earlier writer alive", "[renderer][graph]") {
     f.Pass("blend").ReadWrite(t, GraphUsage::ColorAttachment);
     f.Pass("present").Read(t, GraphUsage::Sampled).Write(out, GraphUsage::ColorAttachment);
     REQUIRE(f.graph.Compile());
-    CHECK(f.Schedule() == Names{"clear", "blend", "present"});
+    CHECK(f.Schedule().SameAs({"clear", "blend", "present"}));
 }
 
 TEST_CASE("Explicit dependencies reorder only what they must", "[renderer][graph]") {
@@ -264,8 +265,8 @@ TEST_CASE("Explicit dependencies reorder only what they must", "[renderer][graph
     (void)out;
     REQUIRE(f.graph.Compile());
     // b and c are ready first; the smallest index goes first, then a becomes ready.
-    CHECK(f.Schedule() == Names{"b", "c", "a"});
-    CHECK(f.Dump().find("edge \"c\" -> \"a\" after\n") != std::string::npos);
+    CHECK(f.Schedule().SameAs({"b", "c", "a"}));
+    CHECK(f.Dump().View().Contains(StringView("edge \"c\" -> \"a\" after\n")));
 }
 
 TEST_CASE("A cycle is rejected and named", "[renderer][graph]") {
@@ -279,12 +280,12 @@ TEST_CASE("A cycle is rejected and named", "[renderer][graph]") {
     f.graph.AddDependency(c, a);
     CHECK_FALSE(f.graph.Compile());
     REQUIRE(f.graph.ErrorCount() == 1);
-    const std::string e = f.Errors();
-    CHECK(e.find("dependency cycle: ") == 0);
-    CHECK(e.find("alpha") != std::string::npos);
-    CHECK(e.find("beta") != std::string::npos);
-    CHECK(e.find("gamma") != std::string::npos);
-    CHECK(e.find("bystander") == std::string::npos);
+    const engine_test::Text e = f.Errors();
+    CHECK(e.View().StartsWith(StringView("dependency cycle: ")));
+    CHECK(e.View().Contains(StringView("alpha")));
+    CHECK(e.View().Contains(StringView("beta")));
+    CHECK(e.View().Contains(StringView("gamma")));
+    CHECK_FALSE(e.View().Contains(StringView("bystander")));
 }
 
 TEST_CASE("Mistakes in a graph are reported by Compile with names", "[renderer][graph]") {
@@ -314,7 +315,7 @@ TEST_CASE("Mistakes in a graph are reported by Compile with names", "[renderer][
         const GraphResource out = f.Backbuffer();
         f.Pass("blend").ReadWrite(out, GraphUsage::ColorAttachment);
         CHECK(f.graph.Compile());
-        CHECK(f.Schedule() == Names{"blend"}); // it writes an import, so it stays
+        CHECK(f.Schedule().SameAs({"blend"})); // it writes an import, so it stays
     }
     SECTION("writing a read-only import") {
         RenderGraphTestFixture f;
@@ -382,8 +383,8 @@ TEST_CASE("Mistakes in a graph are reported by Compile with names", "[renderer][
         (void)v;
         CHECK_FALSE(f.graph.Compile());
         CHECK(f.graph.ErrorCount() == 3);
-        CHECK(f.Errors().find("resource 'u' not added") != std::string::npos);
-        CHECK(f.Errors().find("pass 'q' not added") != std::string::npos);
+        CHECK(f.Errors().View().Contains(StringView("resource 'u' not added")));
+        CHECK(f.Errors().View().Contains(StringView("pass 'q' not added")));
     }
     SECTION("errors beyond the stored limit are counted") {
         RenderGraphTestFixture f;
@@ -440,15 +441,16 @@ TEST_CASE("The dump can be measured and truncates safely; the dot file marks cul
     f.Pass("make").Write(a, GraphUsage::ColorAttachment);
     f.Pass("dead \"quoted\"").Read(a, GraphUsage::Sampled);
     f.Pass("show").Read(a, GraphUsage::Sampled).Write(out, GraphUsage::ColorAttachment);
-    CHECK(f.Dump().find("(not compiled)") != std::string::npos); // before Compile only passes and resources
+    CHECK(f.Dump().View().Contains(StringView("(not compiled)"))); // before Compile only passes and resources
     REQUIRE(f.graph.Compile());
     const usize need = f.graph.Dump(nullptr, 0);
     char small[16];
     CHECK(f.graph.Dump(small, sizeof(small)) == need);
-    CHECK(std::string(small) == std::string(f.Dump(), 0, 15));
+    CHECK(StringView(small) == f.Dump().View().Substring(0, 15));
 
-    std::string dot(f.graph.WriteDot(nullptr, 0), '\0');
-    f.graph.WriteDot(dot.data(), dot.size() + 1);
+    Vector<char> dot_chars = engine_test::Chars(f.graph.WriteDot(nullptr, 0) + 1);
+    f.graph.WriteDot(dot_chars.Data(), dot_chars.Size());
+    const engine_test::Text dot = engine_test::MakeText(engine_test::View(dot_chars, dot_chars.Size() - 1));
     CHECK(dot ==
           "digraph render_graph {\n"
           "  rankdir=LR;\n"
@@ -508,15 +510,17 @@ TEST_CASE("A 1000-pass random DAG matches an independent reference", "[renderer]
     constexpr u32 kPasses = 1000;
     Lcg rng{12345};
     // Pass i writes resource i. It reads up to three earlier passes' resources. Roughly one pass in five is a root.
-    std::vector<std::vector<u32>> reads(kPasses);
-    std::vector<bool> root(kPasses);
+    Vector<Vector<u32>> reads;
+    reads.Resize(kPasses);
+    Vector<bool> root;
+    root.Resize(kPasses);
     for (u32 i = 0; i < kPasses; ++i) {
         root[i] = rng.Next() % 5 == 0;
         if (i == 0) continue;
         const u32 n = rng.Next() % 4;
         for (u32 k = 0; k < n; ++k) {
             const u32 from = rng.Next() % i;
-            if (std::find(reads[i].begin(), reads[i].end(), from) == reads[i].end()) reads[i].push_back(from);
+            if (IndexOf(reads[i], from) == reads[i].Size()) reads[i].Push(from);
         }
     }
 
@@ -527,51 +531,57 @@ TEST_CASE("A 1000-pass random DAG matches an independent reference", "[renderer]
     desc.max_accesses = kPasses * 5;
     desc.max_dependencies = 4;
     RenderGraph graph(&arena, desc);
-    std::vector<std::string> names(kPasses);
-    std::vector<GraphResource> res(kPasses);
+    Vector<engine_test::Text> names;
+    names.Reserve(kPasses); // the graph keeps the name pointers, so the texts must not move
+    Vector<GraphResource> res;
+    res.Resize(kPasses);
     for (u32 i = 0; i < kPasses; ++i) {
-        names[i] = "r" + std::to_string(i);
-        res[i] = graph.CreateTexture(names[i].c_str(), AnyTexture());
+        names.Push(engine_test::Format("r%u", i));
+        res[i] = graph.CreateTexture(names[i].CStr(), AnyTexture());
     }
-    std::vector<std::string> pnames(kPasses);
+    Vector<engine_test::Text> pnames;
+    pnames.Reserve(kPasses);
     for (u32 i = 0; i < kPasses; ++i) {
-        pnames[i] = "p" + std::to_string(i);
-        PassBuilder b = graph.AddPass(pnames[i].c_str(), nullptr, nullptr, root[i] ? PassFlags::SideEffects : PassFlags::None);
-        for (u32 from : reads[i]) b.Read(res[from], GraphUsage::Sampled);
+        pnames.Push(engine_test::Format("p%u", i));
+        PassBuilder b = graph.AddPass(pnames[i].CStr(), nullptr, nullptr, root[i] ? PassFlags::SideEffects : PassFlags::None);
+        for (u32 from : Span<u32>(reads[i])) b.Read(res[from], GraphUsage::Sampled);
         b.Write(res[i], GraphUsage::ColorAttachment);
     }
-    const auto t0 = std::chrono::steady_clock::now();
+    const u64 t0 = os::MonotonicTimeNanos();
     REQUIRE(graph.Compile());
-    const auto t1 = std::chrono::steady_clock::now();
-    const double ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
+    const u64 t1 = os::MonotonicTimeNanos();
+    const double ms = static_cast<double>(t1 - t0) / 1e6;
     os::Print("compile of a %u-pass graph: %.3f ms, %u scheduled\n", kPasses, ms, graph.ScheduleCount());
 #ifndef RENDER_GRAPH_TEST_SANITIZED
     CHECK(ms < 100.0); // about 0.2 ms here; sanitizer builds are too slow for a wall-clock bound, the figure is printed
 #endif
 
     // Reference: liveness by reverse sweep (every dependency points backwards), then an O(n^2) stable topological sort.
-    std::vector<bool> live(root);
+    Vector<bool> live;
+    live.Resize(kPasses);
+    for (u32 i = 0; i < kPasses; ++i) live[i] = root[i];
     for (u32 i = kPasses; i-- > 0;) {
         if (!live[i]) continue;
-        for (u32 from : reads[i]) live[from] = true;
+        for (u32 from : Span<u32>(reads[i])) live[from] = true;
     }
-    std::vector<u32> expected;
-    std::vector<bool> done(kPasses, false);
+    Vector<u32> expected;
+    Vector<bool> done;
+    done.Resize(kPasses);
     for (;;) {
         u32 pick = kPasses;
         for (u32 i = 0; i < kPasses && pick == kPasses; ++i) {
             if (done[i] || !live[i]) continue;
             bool ready = true;
-            for (u32 from : reads[i]) ready = ready && done[from];
+            for (u32 from : Span<u32>(reads[i])) ready = ready && done[from];
             if (ready) pick = i;
         }
         if (pick == kPasses) break;
         done[pick] = true;
-        expected.push_back(pick);
+        expected.Push(pick);
     }
-    REQUIRE(graph.ScheduleCount() == expected.size());
+    REQUIRE(graph.ScheduleCount() == expected.Size());
     u32 mismatches = 0;
-    for (u32 pos = 0; pos < expected.size(); ++pos) {
+    for (u32 pos = 0; pos < expected.Size(); ++pos) {
         if (graph.Scheduled(pos).index != expected[pos]) ++mismatches;
     }
     CHECK(mismatches == 0);
@@ -587,18 +597,18 @@ TEST_CASE("A 1000-pass random DAG matches an independent reference", "[renderer]
 
 TEST_CASE("Long names are measured and truncated correctly in the dump", "[renderer][graph]") {
     RenderGraphTestFixture f;
-    const std::string long_name(900, 'x');
-    const GraphResource t = f.Tex(long_name.c_str());
-    f.Pass(long_name.c_str(), PassFlags::SideEffects).Write(t, GraphUsage::ColorAttachment);
+    const engine_test::Text long_name = engine_test::Repeated(900, 'x');
+    const GraphResource t = f.Tex(long_name.CStr());
+    f.Pass(long_name.CStr(), PassFlags::SideEffects).Write(t, GraphUsage::ColorAttachment);
     REQUIRE(f.graph.Compile());
     const usize need = f.graph.Dump(nullptr, 0);
-    CHECK(need > 2 * long_name.size()); // the name appears more than once; no line is cut short
-    std::string text(need, '\0');
-    CHECK(f.graph.Dump(text.data(), need + 1) == need);
-    CHECK(text.find(long_name) != std::string::npos);
+    CHECK(need > 2 * long_name.Length()); // the name appears more than once; no line is cut short
+    Vector<char> text = engine_test::Chars(need + 1);
+    CHECK(f.graph.Dump(text.Data(), need + 1) == need);
+    CHECK(engine_test::View(text, need).Contains(long_name.View()));
     char small[100];
     CHECK(f.graph.Dump(small, sizeof(small)) == need);
-    CHECK(std::string(small).size() == sizeof(small) - 1);
+    CHECK(StringView(small).Length() == sizeof(small) - 1);
 }
 
 TEST_CASE("A graph keeps its descriptors and imports; recompiling after a change refreshes the schedule", "[renderer][graph]") {
@@ -626,7 +636,7 @@ TEST_CASE("A graph keeps its descriptors and imports; recompiling after a change
     f.Pass("extra", PassFlags::SideEffects);
     REQUIRE(f.graph.Compile());
     CHECK(f.graph.ScheduleCount() == 3);
-    CHECK(f.Schedule() == Names{"make", "show", "extra"});
+    CHECK(f.Schedule().SameAs({"make", "show", "extra"}));
 }
 
 TEST_CASE("An explicit dependency does not keep its predecessor alive", "[renderer][graph]") {
@@ -635,6 +645,6 @@ TEST_CASE("An explicit dependency does not keep its predecessor alive", "[render
     const PassId work = f.Pass("work", PassFlags::SideEffects).Id();
     f.graph.AddDependency(sync, work);
     REQUIRE(f.graph.Compile());
-    CHECK(f.Schedule() == Names{"work"});
+    CHECK(f.Schedule().SameAs({"work"}));
     CHECK(f.graph.IsCulled(sync));
 }

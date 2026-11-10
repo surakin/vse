@@ -1,3 +1,4 @@
+#include "lang/limits.h"
 #include "lang/scalar.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -53,7 +54,7 @@ TEST_CASE("ValueRange: clamp, snap exactly, policies", "[ui][value]") {
     }
     CHECK(r.Snap(1000) == r.min + 1000.0 * r.step); // the last grid point not above max
     CHECK(r.Snap(-100) == r.min);
-    CHECK(r.Snap(std::nan("")) == r.min);
+    CHECK(r.Snap(Limits<f64>::QuietNaN()) == r.min);
     CHECK(r.Snap(INFINITY) == r.min + 1000.0 * r.step);
     CHECK(r.Snap(-INFINITY) == r.min);
 
@@ -85,7 +86,7 @@ TEST_CASE("ValueRange: clamp, snap exactly, policies", "[ui][value]") {
     CHECK(reject.Apply(5, 2) == 5);
     CHECK(reject.Apply(11, 2) == 2);
     CHECK(reject.Apply(-1, 2) == 2);
-    CHECK(reject.Apply(std::nan(""), 2) == 2);
+    CHECK(reject.Apply(Limits<f64>::QuietNaN(), 2) == 2);
     reject.policy = RangePolicy::Clamp;
     CHECK(reject.Apply(11, 2) == 10);
 }

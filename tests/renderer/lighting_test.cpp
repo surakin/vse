@@ -1,7 +1,6 @@
 // Phase 5 Day 80: the CPU twins of the lighting shaders, the light buffer, and the passes' construction on the null device.
 // The real-device tests (tests/rhi/vulkan_lighting_test.cpp) compare the shaders against these functions.
 #include "lang/scalar.h"
-#include <cstring>
 
 #include <catch2/catch_test_macros.hpp>
 

@@ -1,6 +1,5 @@
 // Phase 8 Day 110: Renderer::ApplySettings on the null backend: the cheapest sufficient action, the frame boundary, rollback.
 #include "cstr/cstr.h"
-#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 

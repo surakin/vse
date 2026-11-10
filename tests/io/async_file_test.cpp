@@ -1,7 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "sync/atomic.h"
-#include <chrono>
 #include "os/console.h"
 #include "sync/thread.h"
 
@@ -23,6 +22,8 @@
 #if ENGINE_SANITIZED
 #define IO_TEST_SANITIZED 1
 #endif
+
+using namespace engine_placeholder; // the allocation hooks below are global and name the engine types
 
 // --- an allocation counter (this test executable only), to prove the local completion path allocates nothing -----------------
 #ifndef IO_TEST_SANITIZED // the sanitizer runtimes define their own operator new
@@ -140,7 +141,7 @@ TEST_CASE("io::File: asynchronous reads on a local file", "[io][async]") {
     for (int i = 0; i < kN; ++i) {
         CHECK(gate.order[i] == i);
         CHECK(gate.statuses[i].Ok());
-        CHECK(StringView(bufs[i].Data(), bufs[i].Size()) == content.Substring(static_cast<size_t>(i) * 1000, 1000));
+        CHECK(StringView(bufs[i].Data(), bufs[i].Size()) == content.Substring(static_cast<usize>(i) * 1000, 1000));
     }
     // A write and a flush.
     io::FilePtr w = OpenWith(dir, "0123456789", OpenMode::ReadWrite);
@@ -177,14 +178,14 @@ TEST_CASE("io::File: a thousand concurrent reads of one file", "[io][async]") {
         gate.WaitFor(kN);
         Vector<io::Status> by_id;
         by_id.Resize(kN);
-        for (size_t k = 0; k < gate.order.Size(); ++k) by_id[static_cast<size_t>(gate.order[k])] = gate.statuses[k];
+        for (usize k = 0; k < gate.order.Size(); ++k) by_id[static_cast<usize>(gate.order[k])] = gate.statuses[k];
         int bad = 0;
         for (int i = 0; i < kN; ++i) {
-            const size_t off = static_cast<size_t>((i * 97) % 99000);
+            const usize off = static_cast<usize>((i * 97) % 99000);
             if (!by_id[i].Ok() || StringView(bufs.Data() + i * 100, 100) != content.Substring(off, 100)) ++bad;
         }
         CHECK(bad == 0);
-        CHECK(gate.order.Size() == static_cast<size_t>(kN));
+        CHECK(gate.order.Size() == static_cast<usize>(kN));
     }
 }
 

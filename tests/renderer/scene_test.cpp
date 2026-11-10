@@ -1,9 +1,9 @@
 // Phase 5 Day 73: the render scene (object and light lists, culling) and the per-frame/per-object buffers, on the null
 // device, plus a GPU leak test that creates and destroys many meshes.
-#include <chrono>
 #include "lang/new.h"
 #include "os/console.h"
-#include <vector>
+#include "os/os.h"
+#include "containers/vector.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -43,9 +43,10 @@ TEST_CASE("GpuMesh uploads vertices and indices and releases them", "[renderer][
         CHECK(mesh.IndexCount() == data.IndexCount());
         CHECK(mesh.VertexCount() == data.VertexCount());
         CHECK(f.device->Statistics().buffers == 2);
-        std::vector<unsigned char> back(data.VertexBytes());
-        REQUIRE(f.device->PeekBuffer(mesh.VertexBuffer(), 0, back.data(), back.size()));
-        CHECK(MemCompare(back.data(), data.Vertices(), back.size()) == 0);
+        Vector<u8> back;
+        back.Resize(data.VertexBytes());
+        REQUIRE(f.device->PeekBuffer(mesh.VertexBuffer(), 0, back.Data(), back.Size()));
+        CHECK(MemCompare(back.Data(), data.Vertices(), back.Size()) == 0);
 
         GpuMesh moved = static_cast<GpuMesh&&>(mesh);
         CHECK_FALSE(mesh.Valid());
@@ -136,11 +137,11 @@ TEST_CASE("Culling keeps visible objects and drops hidden, removed and off-scree
     scene.RemoveObject(removed);
     scene.SetTransform(moved, ModelMatrix(Vec3(0, 0, -20), 1.0f, 0.0f)); // brought into view
 
-    std::vector<u32> out(scene.SlotCount());
-    u32 n = scene.Cull(FrontFrustum(), out.data(), static_cast<u32>(out.size()));
-    std::vector<u32> got(out.begin(), out.begin() + n);
+    Vector<u32> out;
+    out.Resize(scene.SlotCount());
+    u32 n = scene.Cull(FrontFrustum(), out.Data(), static_cast<u32>(out.Size()));
     auto has = [&](ObjectId id) {
-        for (u32 s : got) if (s == id.index) return true;
+        for (u32 i = 0; i < n; ++i) if (out[i] == id.index) return true;
         return false;
     };
     CHECK(n == 2);
@@ -202,8 +203,10 @@ TEST_CASE("FrameResources writes per-object data into the current frame's region
     CHECK(res.FrameRegion().offset % align == 0);
 
     // Exactly the buffer's capacity fits.
-    std::vector<u32> many(16, id.index);
-    CHECK(res.WriteObjects(scene, many.data(), 16) == 16);
+    Vector<u32> many;
+    many.Resize(16);
+    for (usize i = 0; i < many.Size(); ++i) many[i] = id.index;
+    CHECK(res.WriteObjects(scene, many.Data(), 16) == 16);
     CHECK(f.device->ErrorCount() == 0);
 }
 
@@ -223,12 +226,13 @@ TEST_CASE("Culling and packing 100k objects (timing only)", "[renderer][scene][p
         d.transform = ModelMatrix(Vec3(static_cast<f32>(i % 100) * 3 - 150, 0, -static_cast<f32>(i / 100) * 3), 1.0f, 0.0f);
         REQUIRE(scene.AddObject(d).IsValid());
     }
-    std::vector<u32> out(scene.SlotCount());
+    Vector<u32> out;
+    out.Resize(scene.SlotCount());
     Frustum fr = FrontFrustum();
-    auto t0 = std::chrono::steady_clock::now();
-    u32 n = scene.Cull(fr, out.data(), static_cast<u32>(out.size()));
-    auto t1 = std::chrono::steady_clock::now();
-    os::Print("cull of 100000 objects: %u visible, %.3f ms\n", n, std::chrono::duration<double, std::milli>(t1 - t0).count());
+    const u64 t0 = os::MonotonicTimeNanos();
+    u32 n = scene.Cull(fr, out.Data(), static_cast<u32>(out.Size()));
+    const u64 t1 = os::MonotonicTimeNanos();
+    os::Print("cull of 100000 objects: %u visible, %.3f ms\n", n, static_cast<double>(t1 - t0) / 1e6);
     CHECK(n > 0);
     CHECK(n < 100000);
 }

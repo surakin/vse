@@ -1,10 +1,7 @@
 // Phase 8 Day 108: the device-resource registry and the recreatable owners (meshes, textures, samplers).
-#include <cstring>
-#include <string>
-#include <vector>
-
 #include <catch2/catch_test_macros.hpp>
 
+#include "byte_vector.h"
 #include "renderer/device_resources.h"
 #include "renderer/mesh.h"
 #include "renderer/renderer_log.h"
@@ -14,6 +11,7 @@
 #include "rhi/rhi_log.h"
 #include "cstr/cstr.h"
 #include "cstr/mem_ops.h"
+#include "test_text.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
@@ -34,7 +32,7 @@ rhi::DeviceCreateInfo NullCreate() {
 
 // An owner that records what the registry asks of it.
 struct FakeOwner final : Recreatable {
-    std::vector<std::string>* log = nullptr;
+    engine_test::TextList* log = nullptr;
     const char* name = "fake";
     bool fail_recreate = false;
     bool live = true;
@@ -47,7 +45,7 @@ struct FakeOwner final : Recreatable {
     void Release() override {
         ++releases;
         live = false;
-        log->push_back(std::string("release ") + name);
+        log->Push(engine_test::Concat("release ", name).View());
     }
     bool Recreate(rhi::Device*) override {
         if (register_during_reset != nullptr) {
@@ -59,12 +57,12 @@ struct FakeOwner final : Recreatable {
             }
         }
         if (fail_recreate) {
-            log->push_back(std::string("fail ") + name);
+            log->Push(engine_test::Concat("fail ", name).View());
             return false;
         }
         ++recreates;
         live = true;
-        log->push_back(std::string("recreate ") + name);
+        log->Push(engine_test::Concat("recreate ", name).View());
         return true;
     }
     bool Live() const override { return live; }
@@ -72,7 +70,7 @@ struct FakeOwner final : Recreatable {
 };
 
 struct ResetRig {
-    std::vector<std::string> log;
+    engine_test::TextList log;
     DeviceResources registry;
     rhi::DeviceHost host;
     ResetRig() { host.AddObserver(&registry, 0); }
@@ -95,7 +93,7 @@ TEST_CASE("Owners register and unregister, also by scope", "[device_resources]")
     }
     CHECK(rig.registry.Count() == 0); // a destroyed owner never gets a callback
     CHECK(rig.Reset());
-    CHECK(rig.log.empty());
+    CHECK(rig.log.Empty());
 }
 
 TEST_CASE("A reset releases from the highest tier down and recreates from the lowest up", "[device_resources]") {
@@ -119,14 +117,13 @@ TEST_CASE("A reset releases from the highest tier down and recreates from the lo
     REQUIRE(t1b.registration.Attach(&rig.registry, &t1b, tiers::kMeshes));
 
     REQUIRE(rig.Reset());
-    const std::vector<std::string> expected = {"release t4", "release t1b", "release t1a", "release t0",
-                                               "recreate t0", "recreate t1a", "recreate t1b", "recreate t4"};
-    CHECK(rig.log == expected);
+    CHECK(rig.log.SameAs({"release t4", "release t1b", "release t1a", "release t0",
+                          "recreate t0", "recreate t1a", "recreate t1b", "recreate t4"}));
     CHECK(rig.registry.CurrentDevice() == rig.host.GetDevice());
 
-    rig.log.clear();
+    rig.log.Clear();
     REQUIRE(rig.Reset()); // twice: each owner is released and recreated once per reset
-    CHECK(rig.log.size() == 8);
+    CHECK(rig.log.Size() == 8);
     CHECK(t0.recreates == 2);
 }
 
@@ -146,13 +143,13 @@ TEST_CASE("A failing recreate stops the sequence, releases everything and names 
     high.registration.Attach(&rig.registry, &high, 2);
 
     bad.fail_recreate = true;
-    rig.log.clear();
+    rig.log.Clear();
     CHECK_FALSE(rig.Reset());
     CHECK(CStrCompare(rig.registry.FailedOwner(), "bad") == 0);
     CHECK(rig.host.GetDevice() == nullptr);
     CHECK_FALSE(low.live); // low was built, then released again: a half-built set is never used
     CHECK(high.recreates == 0); // never reached
-    CHECK(rig.log.back() == "release low");
+    CHECK(rig.log.Back().View() == StringView("release low"));
 
     // Retry after the cause is gone: starts from released and succeeds.
     bad.fail_recreate = false;
@@ -182,8 +179,9 @@ TEST_CASE("A mesh survives a device change with identical content and the same s
     REQUIRE(rig.Create());
     MeshData data;
     REQUIRE(MakeSphereMesh(1.0f, 12, 6, &data) == nullptr);
-    std::vector<unsigned char> vertices(static_cast<usize>(data.VertexBytes()));
-    MemCopy(vertices.data(), data.Vertices(), vertices.size());
+    renderer_test::ByteVector vertices;
+    vertices.Resize(static_cast<usize>(data.VertexBytes()));
+    MemCopy(vertices.Data(), data.Vertices(), vertices.Size());
 
     SECTION("borrowed source") {
         GpuMesh mesh;
@@ -196,10 +194,11 @@ TEST_CASE("A mesh survives a device change with identical content and the same s
         CHECK(mesh.VertexBuffer() != old_vb); // the handle changed ...
         CHECK(mesh.SortId() == sort_id);      // ... the identity did not
         CHECK(mesh.VertexCount() == data.VertexCount());
-        std::vector<unsigned char> after(vertices.size());
+        renderer_test::ByteVector after;
+        after.Resize(vertices.Size());
         auto* null_device = static_cast<rhi::NullDevice*>(rig.host.GetDevice());
-        REQUIRE(null_device->PeekBuffer(mesh.VertexBuffer(), 0, after.data(), after.size()));
-        CHECK(after == vertices);
+        REQUIRE(null_device->PeekBuffer(mesh.VertexBuffer(), 0, after.Data(), after.Size()));
+        CHECK(renderer_test::SameBytes(after, vertices));
         CHECK(rig.host.GetDevice()->Resources().buffers == 2);
     }
     SECTION("owned source, moved around") {
@@ -213,10 +212,11 @@ TEST_CASE("A mesh survives a device change with identical content and the same s
         REQUIRE(rig.Reset());
         REQUIRE(moved.Valid());
         CHECK_FALSE(original.Valid());
-        std::vector<unsigned char> after(vertices.size());
+        renderer_test::ByteVector after;
+        after.Resize(vertices.Size());
         auto* null_device = static_cast<rhi::NullDevice*>(rig.host.GetDevice());
-        REQUIRE(null_device->PeekBuffer(moved.VertexBuffer(), 0, after.data(), after.size()));
-        CHECK(after == vertices);
+        REQUIRE(null_device->PeekBuffer(moved.VertexBuffer(), 0, after.Data(), after.Size()));
+        CHECK(renderer_test::SameBytes(after, vertices));
     }
     SECTION("loader source") {
         struct Loader {
@@ -453,7 +453,6 @@ TEST_CASE("An owner may unregister itself or another from inside Release or Recr
 
 TEST_CASE("An owner registered before the registry saw a device is released at the next reset", "[device_resources]") {
     ResQuietLog quiet;
-    std::vector<std::string> log;
     DeviceResources registry;
     rhi::NullDevicePtr device = rhi::CreateNullDevice();
     GpuSampler sampler;

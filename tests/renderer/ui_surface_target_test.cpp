@@ -1,6 +1,5 @@
 // Phase 15 Day 202: a UI surface drawn into a texture that another pass samples. The surface paints only when it must, keeps its picture between paints, shows the colours the
 // theme says in sRGB and UNORM, can be transparent, and is painted again after a resize or a device reset.
-#include <cstdlib>
 
 #include <catch2/catch_test_macros.hpp>
 

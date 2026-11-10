@@ -1,8 +1,8 @@
 // Phase 5 Day 73: cameras, bounds, frustum culling and the procedural meshes. Pure CPU maths, no device.
 #include "lang/scalar.h"
-#include <map>
-#include <tuple>
-#include <utility>
+#include "containers/hash_map.h"
+#include "containers/vector.h"
+#include "mem/heap_allocator.h"
 
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -189,7 +189,7 @@ TEST_CASE("LookAt does not depend on the length of up", "[renderer][camera]") {
 }
 
 TEST_CASE("MeshData::Set rejects a position that is not 4-byte aligned", "[renderer][mesh]") {
-    unsigned char vertices[16 * 3] = {};
+    u8 vertices[16 * 3] = {};
     const u16 indices[3] = {0, 1, 2};
     VertexLayoutData layout;
     layout.stride = 15;
@@ -214,24 +214,37 @@ TEST_CASE("Cube and sphere are watertight and every normal and tangent has unit 
         }
         // Weld vertices by position; in a closed surface every undirected edge is used by exactly two triangles, once in
         // each direction.
-        std::map<std::tuple<int, int, int>, u32> weld;
+        HashMap<u64, u32, HeapAllocator> weld(HeapAllocator::Default());
+        u32 welded = 0;
+        auto pack = [](f32 coordinate) { return static_cast<u64>(static_cast<i64>(LRound(coordinate * 1000)) + (1 << 20)) & 0x1FFFFFu; };
         auto id = [&](u32 index) {
             const f32* p = m->PositionAt(index);
-            auto key = std::make_tuple(static_cast<int>(LRound(p[0] * 1000)), static_cast<int>(LRound(p[1] * 1000)),
-                                       static_cast<int>(LRound(p[2] * 1000)));
-            return weld.emplace(key, static_cast<u32>(weld.size())).first->second;
+            const u64 key = (pack(p[0]) << 42) | (pack(p[1]) << 21) | pack(p[2]);
+            if (const u32* found = weld.Find(key)) return *found;
+            weld.Insert(key, welded);
+            return welded++;
         };
-        std::map<std::pair<u32, u32>, int> directed;
+        HashMap<u64, int, HeapAllocator> directed(HeapAllocator::Default()); // (from << 32 | to) -> how many triangles use that directed edge
+        Vector<u64> edges;
         for (u32 t = 0; t < m->IndexCount(); t += 3) {
             u32 w[3] = {id(m->IndexAt(t)), id(m->IndexAt(t + 1)), id(m->IndexAt(t + 2))};
             if (w[0] == w[1] || w[1] == w[2] || w[0] == w[2]) continue; // degenerate pole triangle
-            for (int e = 0; e < 3; ++e) ++directed[{w[e], w[(e + 1) % 3]}];
+            for (int e = 0; e < 3; ++e) {
+                const u64 edge = (static_cast<u64>(w[e]) << 32) | w[(e + 1) % 3];
+                if (int* count = directed.Find(edge)) {
+                    ++*count;
+                } else {
+                    directed.Insert(edge, 1);
+                    edges.Push(edge);
+                }
+            }
         }
-        for (const auto& [edge, count] : directed) {
-            CHECK(count == 1);
-            auto opposite = directed.find({edge.second, edge.first});
-            REQUIRE(opposite != directed.end());
-            CHECK(opposite->second == 1);
+        for (usize i = 0; i < edges.Size(); ++i) {
+            const u64 edge = edges[i];
+            CHECK(*directed.Find(edge) == 1);
+            const int* opposite = directed.Find((edge << 32) | (edge >> 32));
+            REQUIRE(opposite != nullptr);
+            CHECK(*opposite == 1);
         }
     }
 }

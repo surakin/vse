@@ -1,7 +1,6 @@
 // Phase 8 Day 111: a lost device recovers through the settings path, with a retry limit, a fallback adapter and reporting.
 #include "sync/atomic.h"
 #include "cstr/cstr.h"
-#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -364,6 +363,10 @@ TEST_CASE("A real device recovers from a loss at the start and at the submit of 
             RenderSettings wanted = renderer.Settings();
             wanted.SetBool(kSyncValidation, true);
             REQUIRE(renderer.ApplySettings(wanted).ok);
+            struct Drawn {
+                FrameStatus status;
+                rhi::TextureHandle texture;
+            };
             auto draw = [&]() {
                 rhi::TextureDesc td;
                 td.width = 32;
@@ -383,21 +386,21 @@ TEST_CASE("A real device recovers from a loss at the start and at the submit of 
                     // The target belongs to the device that drew it; after a recovery that device is gone, so only destroy it when
                     // the device did not change during this frame.
                 }
-                return std::pair<FrameStatus, rhi::TextureHandle>{status, target};
+                return Drawn{status, target};
             };
             auto first = draw();
-            CHECK(first.first == FrameStatus::Ok);
-            renderer.GetDevice()->DestroyTexture(first.second);
+            CHECK(first.status == FrameStatus::Ok);
+            renderer.GetDevice()->DestroyTexture(first.texture);
             // The second frame loses the device; the recovery makes a new one (the old target went with the old device).
             const u32 epoch_before = renderer.GetDevice()->Epoch(); // a pointer could be reused; the epoch is unique
             auto second = draw();
-            CHECK(second.first == FrameStatus::DeviceLost);
+            CHECK(second.status == FrameStatus::DeviceLost);
             CHECK(renderer.GetDevice() != nullptr);
             CHECK(renderer.Stats().recoveries == 1);
             CHECK(renderer.GetDevice()->Epoch() != epoch_before); // the recovery made a new device
             auto third = draw();
-            CHECK(third.first == FrameStatus::Ok);
-            renderer.GetDevice()->DestroyTexture(third.second);
+            CHECK(third.status == FrameStatus::Ok);
+            renderer.GetDevice()->DestroyTexture(third.texture);
             renderer.GetDevice()->WaitIdle();
             CHECK(renderer.GetDevice()->Resources().UserObjects() == 0);
         }

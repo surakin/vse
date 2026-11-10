@@ -1,7 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "sync/atomic.h"
-#include <chrono>
 #include "sync/thread.h"
 
 #include "catch_engine_types.h"

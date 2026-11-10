@@ -1,6 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <cstdio>
 #include "lang/limits.h"
 
 #include "font_support.h"
