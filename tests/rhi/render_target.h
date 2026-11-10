@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstring>
 
 #include "image_compare.h"
 #include "rhi/rhi.h"
@@ -37,8 +36,8 @@ public:
     bool Readback(Image* out) const {
         out->width = width_;
         out->height = height_;
-        out->rgba.assign(static_cast<size_t>(width_) * height_ * 4, 0);
-        return device_->ReadbackTexture(texture_, 0, 0, out->rgba.data(), out->rgba.size(), engine_placeholder::rhi::ResourceState::ColorAttachment);
+        out->rgba.Assign(static_cast<engine_placeholder::usize>(width_) * height_ * 4, 0);
+        return device_->ReadbackTexture(texture_, 0, 0, out->rgba.Data(), out->rgba.Size(), engine_placeholder::rhi::ResourceState::ColorAttachment);
     }
 
 private:

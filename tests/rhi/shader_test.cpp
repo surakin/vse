@@ -1,5 +1,5 @@
 #include "cstr/cstr.h"
-#include <vector>
+#include "containers/vector.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -43,8 +43,8 @@ bool Rejects(const char* message, const char* needle) {
     return false;
 }
 
-const char* Check(const std::vector<u32>& w, ShaderStage stage = ShaderStage::Vertex, const char* entry = "main") {
-    return ValidateSpirv(w.data(), w.size(), stage, entry);
+const char* Check(const Vector<u32>& w, ShaderStage stage = ShaderStage::Vertex, const char* entry = "main") {
+    return ValidateSpirv(w.Data(), w.Size(), stage, entry);
 }
 
 } // namespace
@@ -64,10 +64,10 @@ TEST_CASE("ValidateSpirv accepts the committed triangle shaders", "[rhi][spirv]"
 }
 
 TEST_CASE("ValidateSpirv rejects bad headers", "[rhi][spirv]") {
-    std::vector<u32> w = spirv_test::MinimalModule(ShaderStage::Vertex);
+    Vector<u32> w = spirv_test::MinimalModule(ShaderStage::Vertex);
     SECTION("null or tiny") {
         CHECK(Rejects(ValidateSpirv(nullptr, 0, ShaderStage::Vertex, "main"), "smaller"));
-        CHECK(Rejects(ValidateSpirv(w.data(), 4, ShaderStage::Vertex, "main"), "smaller"));
+        CHECK(Rejects(ValidateSpirv(w.Data(), 4, ShaderStage::Vertex, "main"), "smaller"));
     }
     SECTION("bad magic") {
         w[0] = 0x12345678u;
@@ -96,14 +96,14 @@ TEST_CASE("ValidateSpirv rejects bad headers", "[rhi][spirv]") {
 }
 
 TEST_CASE("ValidateSpirv rejects broken instruction streams", "[rhi][spirv]") {
-    std::vector<u32> w = spirv_test::MinimalModule(ShaderStage::Vertex);
+    Vector<u32> w = spirv_test::MinimalModule(ShaderStage::Vertex);
     SECTION("truncated mid-instruction") {
-        w.pop_back();
+        w.Pop();
         CHECK(Rejects(Check(w), "truncated"));
     }
     SECTION("every truncation point is rejected without reading out of bounds") {
-        for (usize cut = 0; cut < w.size(); ++cut) {
-            CHECK(ValidateSpirv(w.data(), cut, ShaderStage::Vertex, "main") != nullptr);
+        for (usize cut = 0; cut < w.Size(); ++cut) {
+            CHECK(ValidateSpirv(w.Data(), cut, ShaderStage::Vertex, "main") != nullptr);
         }
     }
     SECTION("zero-length instruction") {
@@ -111,7 +111,7 @@ TEST_CASE("ValidateSpirv rejects broken instruction streams", "[rhi][spirv]") {
         CHECK(Rejects(Check(w), "zero length"));
     }
     SECTION("garbage after the last instruction") {
-        w.push_back(0);
+        w.Push(0);
         CHECK(Check(w) != nullptr);
     }
 }
@@ -123,14 +123,14 @@ TEST_CASE("ValidateSpirv checks the declared stage, entry name and the supported
         CHECK(Rejects(Check(spirv_test::MinimalModule(ShaderStage::Vertex), ShaderStage::AllGraphics), "different stage"));
     }
     SECTION("entry point names") {
-        const std::vector<u32> w = spirv_test::MinimalModule(ShaderStage::Vertex, "vs_main");
+        const Vector<u32> w = spirv_test::MinimalModule(ShaderStage::Vertex, "vs_main");
         CHECK(Check(w, ShaderStage::Vertex, "vs_main") == nullptr);
         CHECK(Rejects(Check(w, ShaderStage::Vertex, "main"), "no entry point"));
         CHECK(Rejects(Check(w, ShaderStage::Vertex, "vs_mai"), "no entry point"));
         CHECK(Rejects(Check(w, ShaderStage::Vertex, "vs_main2"), "no entry point"));
         CHECK(Rejects(Check(w, ShaderStage::Vertex, ""), "empty"));
         // A name that fills whole words exactly (four bytes) still terminates.
-        const std::vector<u32> four = spirv_test::MinimalModule(ShaderStage::Vertex, "abcd");
+        const Vector<u32> four = spirv_test::MinimalModule(ShaderStage::Vertex, "abcd");
         CHECK(Check(four, ShaderStage::Vertex, "abcd") == nullptr);
         CHECK(Rejects(Check(four, ShaderStage::Vertex, "abc"), "no entry point"));
     }
@@ -140,24 +140,24 @@ TEST_CASE("ValidateSpirv checks the declared stage, entry name and the supported
     }
     SECTION("unterminated entry point name") {
         // "main" fills one word exactly; the terminator is the next word. Drop it and shrink the instruction to match.
-        std::vector<u32> cut = spirv_test::MinimalModule(ShaderStage::Vertex, "main");
-        cut.pop_back();
+        Vector<u32> cut = spirv_test::MinimalModule(ShaderStage::Vertex, "main");
+        cut.Pop();
         cut[10] = (4u << 16) | 15u; // OpEntryPoint: head, model, id, "main"
         CHECK(Rejects(Check(cut), "malformed OpEntryPoint"));
         // An interface id after an unterminated name must not be read as its terminator: 256 has a zero low byte.
         cut[10] = (5u << 16) | 15u;
-        cut.push_back(256u);
+        cut.Push(256u);
         CHECK(Rejects(Check(cut), "malformed OpEntryPoint"));
     }
     SECTION("capabilities") {
-        std::vector<u32> w = spirv_test::MinimalModule(ShaderStage::Vertex);
+        Vector<u32> w = spirv_test::MinimalModule(ShaderStage::Vertex);
         w[6] = 6; // Kernel instead of Shader
         CHECK(Rejects(Check(w), "capability"));
         w[6] = 2; // Matrix: not Shader
         CHECK(Rejects(Check(w), "capability"));
     }
     SECTION("addressing and memory model") {
-        std::vector<u32> w = spirv_test::MinimalModule(ShaderStage::Vertex);
+        Vector<u32> w = spirv_test::MinimalModule(ShaderStage::Vertex);
         w[8] = 5348; // PhysicalStorageBuffer64
         CHECK(Rejects(Check(w), "Logical"));
         w[8] = 0;
@@ -182,9 +182,10 @@ TEST_CASE("The null device checks shader contents", "[rhi][null][spirv]") {
     CHECK_FALSE(device->CreateShader(desc).IsValid());
     CHECK(device->ErrorCount() == 1);
 
-    std::vector<u32> garbage(16, 0xdeadbeefu);
+    Vector<u32> garbage;
+    for (int i = 0; i < 16; ++i) garbage.Push(0xdeadbeefu);
     desc.stage = ShaderStage::Vertex;
-    desc.SetCode(SpirvBlob(garbage.data(), garbage.size()));
+    desc.SetCode(SpirvBlob(garbage.Data(), garbage.Size()));
     CHECK_FALSE(device->CreateShader(desc).IsValid());
     CHECK(device->ErrorCount() == 2);
 
@@ -226,9 +227,10 @@ TEST_CASE("Vulkan creates shader modules from the committed triangle shaders", "
     fx.ExpectErrors(0);
     ShaderDesc wrong = fs;
     wrong.stage = ShaderStage::Vertex;
-    std::vector<u32> garbage(32, 1u);
+    Vector<u32> garbage;
+    for (int i = 0; i < 32; ++i) garbage.Push(1u);
     ShaderDesc bad = vs;
-    bad.SetCode(SpirvBlob(garbage.data(), garbage.size()));
+    bad.SetCode(SpirvBlob(garbage.Data(), garbage.Size()));
     {
         QuietLog quiet;
         CHECK_FALSE(device->CreateShader(wrong).IsValid());

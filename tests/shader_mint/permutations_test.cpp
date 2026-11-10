@@ -3,6 +3,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "catch_engine_types.h"
+#include "lang/initializer_list.h"
 #include "permutations.h"
 #include "renderer/shader_permutation.h"
 
@@ -14,7 +15,7 @@ namespace {
 const char* kSource = "// header\n// permutation-options: FOG SHADOW_MAP  ALPHA_TEST\nvoid f() {\n#ifdef FOG\n#endif\n"
                       "#if defined(SHADOW_MAP) && ALPHA_TEST\n#endif\n}\n";
 
-Vector<Text> Names(std::initializer_list<const char*> names) {
+Vector<Text> Names(InitializerList<const char*> names) {
     Vector<Text> out;
     for (const char* n : names) out.Push(MakeText(StringView(n)));
     return out;
@@ -24,7 +25,7 @@ Vector<Text> Options() { return Names({"FOG", "SHADOW_MAP", "ALPHA_TEST"}); }
 bool Contains(const Text& text, const char* needle) { return text.View().Contains(StringView(needle)); }
 
 template <typename T>
-bool SameItems(const Vector<T>& v, std::initializer_list<T> expected) {
+bool SameItems(const Vector<T>& v, InitializerList<T> expected) {
     if (v.Size() != expected.size()) return false;
     usize i = 0;
     for (const T& e : expected) {
@@ -33,7 +34,7 @@ bool SameItems(const Vector<T>& v, std::initializer_list<T> expected) {
     return true;
 }
 
-bool SameNames(const Vector<Text>& v, std::initializer_list<const char*> expected) {
+bool SameNames(const Vector<Text>& v, InitializerList<const char*> expected) {
     if (v.Size() != expected.size()) return false;
     usize i = 0;
     for (const char* e : expected) {
@@ -128,7 +129,7 @@ TEST_CASE("The declaration tolerates spacing and sits anywhere in the first 60 l
 }
 
 namespace {
-BuiltModule Module(std::initializer_list<u32> words, std::initializer_list<u8> reflection) {
+BuiltModule Module(InitializerList<u32> words, InitializerList<u8> reflection) {
     BuiltModule m;
     for (u32 w : words) m.words.Push(w);
     for (u8 r : reflection) m.reflection.Push(r);

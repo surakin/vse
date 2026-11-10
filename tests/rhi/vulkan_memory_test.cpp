@@ -1,6 +1,4 @@
-#include <cstdint>
-#include <map>
-#include <vector>
+#include "containers/vector.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -15,6 +13,34 @@ using namespace engine_placeholder::rhi;
 using namespace engine_placeholder::rhi::vulkan;
 
 namespace {
+
+// The live objects of the fake backend, by id (ids count up from 1): a size per id and a flag saying the id is live.
+class LiveObjects {
+public:
+    void Add(u64 id, u64 size) {
+        if (entries_.Size() <= id) entries_.Resize(id + 1);
+        entries_[id].size = size;
+        entries_[id].live = true;
+        ++count_;
+    }
+    bool Has(u64 id) const { return id < entries_.Size() && entries_[id].live; }
+    // Removes `id` (which must be live) and returns its size.
+    u64 Remove(u64 id) {
+        entries_[id].live = false;
+        --count_;
+        return entries_[id].size;
+    }
+    usize Size() const { return count_; }
+    bool Empty() const { return count_ == 0; }
+
+private:
+    struct Entry {
+        u64 size = 0;
+        bool live = false;
+    };
+    Vector<Entry> entries_;
+    usize count_ = 0;
+};
 
 // A fake memory backend: hands out ids, keeps host memory for mapped objects, can be told to fail.
 class FakeBackend final : public MemoryBackend {
@@ -33,22 +59,21 @@ public:
         last_dedicated_buffer = dedicated_buffer;
         last_dedicated_image = dedicated_image;
         u64 id = next_id++;
-        live[id] = size;
+        live.Add(id, size);
         live_bytes += size;
         out->handle = id;
         out->mapped = nullptr;
         if (map) {
-            storage[id].resize(size);
-            out->mapped = storage[id].data();
+            if (storage.Size() <= id) storage.Resize(id + 1);
+            storage[id].Resize(size);
+            out->mapped = storage[id].Data();
         }
         return MemoryResult::Ok;
     }
     void Free(const BackendAllocation& a) override {
-        auto it = live.find(a.handle);
-        REQUIRE(it != live.end()); // a double free of a whole object would fail here
-        live_bytes -= it->second;
-        live.erase(it);
-        storage.erase(a.handle);
+        REQUIRE(live.Has(a.handle)); // a double free of a whole object would fail here
+        live_bytes -= live.Remove(a.handle);
+        if (a.handle < storage.Size()) storage[a.handle] = Vector<char>();
         ++frees;
     }
     MemoryResult fail_next = MemoryResult::Ok;
@@ -56,8 +81,8 @@ public:
     u64 calls = 0, frees = 0, live_bytes = 0, next_id = 1;
     u32 last_type = 0;
     u64 last_dedicated_buffer = 0, last_dedicated_image = 0;
-    std::map<u64, u64> live;
-    std::map<u64, std::vector<char>> storage;
+    LiveObjects live;
+    Vector<Vector<char>> storage; // host memory of the mapped objects, by id
 };
 
 // Type 0: device-local; 1: host-visible coherent; 2: host-visible cached; 3: device-local + host-visible (BAR).
@@ -149,7 +174,7 @@ TEST_CASE("FreeList survives 100k random allocate/free cycles with its invariant
     struct Live {
         u64 offset, size;
     };
-    std::vector<Live> live;
+    Vector<Live> live;
     u64 state = 0x9E3779B97F4A7C15ull;
     auto next = [&]() {
         state ^= state << 13;
@@ -158,26 +183,26 @@ TEST_CASE("FreeList survives 100k random allocate/free cycles with its invariant
         return state;
     };
     for (int step = 0; step < 100000; ++step) {
-        if (live.empty() || (next() % 3 != 0 && live.size() < 2000)) {
+        if (live.Empty() || (next() % 3 != 0 && live.Size() < 2000)) {
             u64 size = 1 + next() % 4096;
             u64 alignment = u64(1) << (next() % 9);
             u64 offset = 0;
             if (list.Allocate(size, alignment, &offset)) {
                 REQUIRE(offset % alignment == 0);
                 REQUIRE(offset + size <= kSize);
-                live.push_back({offset, size});
+                live.Push(Live{offset, size});
             }
         } else {
-            usize i = static_cast<usize>(next() % live.size());
+            usize i = static_cast<usize>(next() % live.Size());
             REQUIRE(list.Free(live[i].offset, live[i].size));
-            live[i] = live.back();
-            live.pop_back();
+            live[i] = live[live.Size() - 1];
+            live.Pop();
         }
         if (step % 5000 == 0) {
             // Total bytes are conserved, free ranges are ordered, non-adjacent and disjoint from live ranges.
             u64 used = 0;
-            for (const Live& l : live) {
-                used += l.size;
+            for (usize li = 0; li < live.Size(); ++li) {
+                used += live[li].size;
             }
             REQUIRE(list.FreeBytes() + used == kSize);
             u64 free_sum = 0;
@@ -186,7 +211,8 @@ TEST_CASE("FreeList survives 100k random allocate/free cycles with its invariant
                 if (r > 0) {
                     REQUIRE(list.RangeOffset(r) > list.RangeOffset(r - 1) + list.RangeSize(r - 1)); // gap = a live range
                 }
-                for (const Live& l : live) {
+                for (usize li = 0; li < live.Size(); ++li) {
+                    const Live& l = live[li];
                     bool disjoint = l.offset + l.size <= list.RangeOffset(r) || list.RangeOffset(r) + list.RangeSize(r) <= l.offset;
                     REQUIRE(disjoint);
                 }
@@ -194,8 +220,8 @@ TEST_CASE("FreeList survives 100k random allocate/free cycles with its invariant
             REQUIRE(free_sum == list.FreeBytes());
         }
     }
-    for (const Live& l : live) {
-        REQUIRE(list.Free(l.offset, l.size));
+    for (usize li = 0; li < live.Size(); ++li) {
+        REQUIRE(list.Free(live[li].offset, live[li].size));
     }
     CHECK(list.RangeCount() == 1);
     CHECK(list.FreeBytes() == kSize);
@@ -211,7 +237,7 @@ TEST_CASE("MemoryAllocator suballocates small requests from shared blocks", "[rh
     MemoryRequest request;
     request.size = 1000;
     request.alignment = 256;
-    std::vector<MemoryAllocation> allocations;
+    Vector<MemoryAllocation> allocations;
     for (int i = 0; i < 1000; ++i) {
         MemoryResult r = MemoryResult::Failed;
         MemoryAllocation a = allocator.Allocate(request, &r);
@@ -220,7 +246,7 @@ TEST_CASE("MemoryAllocator suballocates small requests from shared blocks", "[rh
         CHECK(a.offset % 256 == 0);
         CHECK(a.mapped == nullptr);
         CHECK_FALSE(a.dedicated);
-        allocations.push_back(a);
+        allocations.Push(a);
     }
     // 1000 * 1024 (aligned stride) bytes ≈ 1 MiB: a handful of blocks, not 1000 objects.
     CHECK(backend.calls <= 3);
@@ -228,14 +254,14 @@ TEST_CASE("MemoryAllocator suballocates small requests from shared blocks", "[rh
     MemoryStats stats = allocator.Stats();
     CHECK(stats.heaps[0].used_bytes == 1000 * 1000);
     CHECK(stats.heaps[0].block_count >= 1);
-    CHECK(stats.live_memory_objects == backend.live.size());
+    CHECK(stats.live_memory_objects == backend.live.Size());
 
-    for (const MemoryAllocation& a : allocations) {
-        allocator.Free(a);
+    for (usize i = 0; i < allocations.Size(); ++i) {
+        allocator.Free(allocations[i]);
     }
     stats = allocator.Stats();
     CHECK(stats.heaps[0].used_bytes == 0);
-    CHECK(backend.live.size() == 1); // one empty block is kept as the spare
+    CHECK(backend.live.Size() == 1); // one empty block is kept as the spare
 }
 
 TEST_CASE("MemoryAllocator maps host-visible blocks once and gives each range its own pointer", "[rhi][memory]") {
@@ -307,7 +333,7 @@ TEST_CASE("MemoryAllocator gives large and dedicated requests their own memory o
     CHECK(stats.heaps[0].allocated_bytes == big.size + 64);
     allocator.Free(a);
     allocator.Free(b);
-    CHECK(backend.live.empty());
+    CHECK(backend.live.Empty());
     CHECK(allocator.Stats().heaps[0].dedicated_count == 0);
 }
 
@@ -357,10 +383,10 @@ TEST_CASE("MemoryAllocator tracks dedicated objects: teardown frees them", "[rhi
         request.size = 100;
         MemoryAllocation small = allocator.Allocate(request, nullptr);
         REQUIRE(small.Valid());
-        CHECK(backend.live.size() == 2);
+        CHECK(backend.live.Size() == 2);
         // Neither is freed before the allocator goes away.
     }
-    CHECK(backend.live.empty());
+    CHECK(backend.live.Empty());
 }
 
 TEST_CASE("MemoryAllocator rounds ranges in non-coherent memory to the atom size", "[rhi][memory]") {
@@ -406,9 +432,9 @@ TEST_CASE("MemoryAllocator sends a huge alignment to a dedicated object instead 
     MemoryAllocation a = allocator.Allocate(request, nullptr);
     REQUIRE(a.Valid());
     CHECK(a.dedicated);
-    CHECK(backend.live.size() == 1);
+    CHECK(backend.live.Size() == 1);
     allocator.Free(a);
-    CHECK(backend.live.empty());
+    CHECK(backend.live.Empty());
 }
 
 TEST_CASE("MemoryAllocator respects the allocation-count limit and its headroom", "[rhi][memory]") {
@@ -421,18 +447,18 @@ TEST_CASE("MemoryAllocator respects the allocation-count limit and its headroom"
     MemoryAllocator allocator(TestLayout(), config, &backend);
     MemoryRequest request;
     request.size = 600 << 10; // dedicated, one object each
-    std::vector<MemoryAllocation> held;
+    Vector<MemoryAllocation> held;
     for (int i = 0; i < 6; ++i) {
         MemoryAllocation a = allocator.Allocate(request, nullptr);
         REQUIRE(a.Valid());
-        held.push_back(a);
+        held.Push(a);
     }
     MemoryResult result = MemoryResult::Ok;
     CHECK_FALSE(allocator.Allocate(request, &result).Valid());
     CHECK(result == MemoryResult::Failed);
-    CHECK(backend.live.size() == 6);
-    allocator.Free(held.back());
-    held.pop_back();
+    CHECK(backend.live.Size() == 6);
+    allocator.Free(held[held.Size() - 1]);
+    held.Pop();
     CHECK(allocator.Allocate(request, nullptr).Valid()); // freeing makes room again
 }
 
@@ -444,15 +470,15 @@ TEST_CASE("MemoryAllocator releases emptied blocks but keeps one spare", "[rhi][
     MemoryAllocator allocator(TestLayout(), config, &backend);
     MemoryRequest request;
     request.size = 400 << 10; // two fit per 1 MiB block
-    std::vector<MemoryAllocation> held;
+    Vector<MemoryAllocation> held;
     for (int i = 0; i < 6; ++i) {
-        held.push_back(allocator.Allocate(request, nullptr));
+        held.Push(allocator.Allocate(request, nullptr));
     }
-    CHECK(backend.live.size() == 3);
-    for (const MemoryAllocation& a : held) {
-        allocator.Free(a);
+    CHECK(backend.live.Size() == 3);
+    for (usize i = 0; i < held.Size(); ++i) {
+        allocator.Free(held[i]);
     }
-    CHECK(backend.live.size() == 1); // two blocks released, one spare kept
+    CHECK(backend.live.Size() == 1); // two blocks released, one spare kept
     // The spare is reused without a new backend call.
     u64 calls_before = backend.calls;
     MemoryAllocation again = allocator.Allocate(request, nullptr);
@@ -469,9 +495,9 @@ TEST_CASE("MemoryAllocator statistics estimate fragmentation", "[rhi][memory]") 
     MemoryAllocator allocator(TestLayout(), config, &backend);
     MemoryRequest request;
     request.size = 64 << 10;
-    std::vector<MemoryAllocation> held;
+    Vector<MemoryAllocation> held;
     for (int i = 0; i < 16; ++i) {
-        held.push_back(allocator.Allocate(request, nullptr));
+        held.Push(allocator.Allocate(request, nullptr));
     }
     CHECK(allocator.Stats().heaps[0].fragmentation == 0.0f); // block is full
     for (int i = 0; i < 16; i += 2) {
@@ -546,20 +572,20 @@ TEST_CASE("Real driver: a flood of small allocations needs only a few memory obj
     MemoryRequest request;
     request.size = 256 << 10;
     request.alignment = 4096;
-    std::vector<MemoryAllocation> held;
+    Vector<MemoryAllocation> held;
     for (int i = 0; i < 2048; ++i) {
         MemoryAllocation a = memory.Allocate(request, nullptr);
         if (!a.Valid()) {
             break; // a GPU with little free memory: judge what was achieved
         }
-        held.push_back(a);
+        held.Push(a);
     }
-    REQUIRE(held.size() >= 256); // at least 64 MiB
+    REQUIRE(held.Size() >= 256); // at least 64 MiB
     const u64 objects = device->MemoryObjectsAllocated() - before;
-    CHECK(objects <= 1 + held.size() / ((64 << 20) / request.size) + 1);
+    CHECK(objects <= 1 + held.Size() / ((64 << 20) / request.size) + 1);
     CHECK(objects < 16);
-    for (const MemoryAllocation& a : held) {
-        memory.Free(a);
+    for (usize i = 0; i < held.Size(); ++i) {
+        memory.Free(held[i]);
     }
     device.Reset();
 }

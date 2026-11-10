@@ -17,7 +17,7 @@
 #else
 #include <sys/socket.h>
 
-#include <string>
+#include "test_text.h"
 
 #include "platform/linux/wayland/wayland_platform_window.h"
 #include "platform/linux/x11/x11_window.h"
@@ -40,7 +40,7 @@ public:
         const char* old = os::GetEnvironment(name);
         had_ = old != nullptr;
         if (had_) {
-            old_ = old;
+            old_ = engine_test::MakeText(old);
         }
         if (value != nullptr) {
             setenv(name, value, 1);
@@ -50,7 +50,7 @@ public:
     }
     ~ScopedEnv() {
         if (had_) {
-            setenv(name_, old_.c_str(), 1);
+            setenv(name_, old_.CStr(), 1);
         } else {
             unsetenv(name_);
         }
@@ -59,7 +59,7 @@ public:
 private:
     const char* name_;
     bool had_ = false;
-    std::string old_;
+    engine_test::Text old_ = engine_test::MakeText();
 };
 
 bool HaveEnv(const char* name) {

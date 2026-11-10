@@ -39,7 +39,7 @@ bool CreateSwitchRig(reset_rig::Rig* rig, rhi::Backend backend) {
 const gpu_test::Image& Golden() {
     static const gpu_test::Image golden = [] {
         gpu_test::Image g;
-        gpu_test::ReadPpm(gpu_test::GoldenPath("renderer_demo.ppm").c_str(), &g);
+        gpu_test::ReadPpm(gpu_test::GoldenPath("renderer_demo.ppm").CStr(), &g);
         return g;
     }();
     return golden;
@@ -58,7 +58,7 @@ void ShootAndCompare(reset_rig::Rig* rig, gpu_test::Image* image, const char* na
     co.max_edge_miss = 0.3;
     co.max_interior_miss = 0.002;
     const gpu_test::CompareResult result = gpu_test::Compare(golden, *image, co, name);
-    INFO(result.message);
+    INFO(result.message.CStr());
     CHECK(result.same);
 }
 

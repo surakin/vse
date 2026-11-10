@@ -2,7 +2,6 @@
 #if ENGINE_SANITIZER_ADDRESS
 #include <sanitizer/lsan_interface.h>
 #endif
-#include <cstring>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -112,10 +111,11 @@ TEST_CASE("Validation messages are logged, counted and reach the capture hook", 
     (void)r;
 
     CHECK(GetValidationCounts().errors == 1);
-    REQUIRE(fx.Messages().size() >= 1);
+    REQUIRE(fx.Messages().Size() >= 1);
     bool found = false;
-    for (const gpu_test::CapturedMessage& m : fx.Messages()) {
-        if (m.severity == LogVerbosity::Error && m.text.find("VUID-vkEnumeratePhysicalDevices-pPhysicalDeviceCount-parameter") != std::string::npos) {
+    for (usize i = 0; i < fx.Messages().Size(); ++i) {
+        const gpu_test::CapturedMessage& m = fx.Messages()[i];
+        if (m.severity == LogVerbosity::Error && m.text.View().Contains(StringView("VUID-vkEnumeratePhysicalDevices-pPhysicalDeviceCount-parameter"))) {
             found = true;
         }
     }
@@ -132,7 +132,7 @@ TEST_CASE("SetValidationCapture can be replaced and removed", "[rhi][vulkan][gpu
     instance.Fns().EnumeratePhysicalDevices(instance.Handle(), nullptr, nullptr);
     CHECK(seen.errors == 1);
     CHECK(CStrFind(seen.id, "VUID-vkEnumeratePhysicalDevices") != nullptr);
-    CHECK(fx.Messages().empty()); // the fixture's hook was replaced, so it saw nothing
+    CHECK(fx.Messages().Empty()); // the fixture's hook was replaced, so it saw nothing
     SetValidationCapture(nullptr, nullptr);
 }
 

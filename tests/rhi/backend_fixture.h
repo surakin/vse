@@ -1,6 +1,5 @@
 #pragma once
 
-#include <exception>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -64,7 +63,7 @@ public:
 #endif
     }
     ~BackendValidation() {
-        if (std::uncaught_exceptions() != 0) {
+        if (engine_test::TestIsUnwinding()) {
             return; // a failed REQUIRE or a SKIP is unwinding: the test reported its own cause
         }
         INFO("backend " << BackendTag(backend_));

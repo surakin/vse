@@ -1,5 +1,5 @@
 #include "cstr/cstr.h"
-#include <vector>
+#include "containers/vector.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -132,8 +132,9 @@ TEST_CASE("Vulkan device table loads every mandatory function on a real device",
     // Find a queue family with graphics+compute rather than assuming family 0.
     u32 family_count = 0;
     fns.GetPhysicalDeviceQueueFamilyProperties(physical, &family_count, nullptr);
-    std::vector<VkQueueFamilyProperties> families(family_count);
-    fns.GetPhysicalDeviceQueueFamilyProperties(physical, &family_count, families.data());
+    Vector<VkQueueFamilyProperties> families;
+    families.Resize(family_count);
+    fns.GetPhysicalDeviceQueueFamilyProperties(physical, &family_count, families.Data());
     u32 family = family_count;
     for (u32 i = 0; i < family_count; ++i) {
         if ((families[i].queueFlags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT)) ==

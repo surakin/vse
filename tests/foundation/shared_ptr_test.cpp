@@ -3,7 +3,7 @@
 #include "sync/atomic.h"
 #include "sync/thread.h"
 #include "lang/utility.h"
-#include <vector>
+#include "containers/vector.h"
 
 #include "containers/shared_ptr.h"
 #include "types.h"
@@ -96,17 +96,17 @@ TEST_CASE("SharedPtr: owners on many threads copy and release concurrently, and 
     SharedPtr<SharedPtrTestCounted> shared = MakeShared<SharedPtrTestCounted>(1);
     constexpr int kThreads = 8;
     constexpr int kRounds = 20000;
-    std::vector<engine_placeholder::Thread> threads;
+    engine_placeholder::Vector<engine_placeholder::Thread> threads;
     for (int t = 0; t < kThreads; ++t) {
-        threads.emplace_back([&shared] {
+        threads.Push(engine_placeholder::Thread([&shared] {
             for (int i = 0; i < kRounds; ++i) {
                 SharedPtr<SharedPtrTestCounted> mine = shared; // distinct pointer objects, one shared block
                 SharedPtr<SharedPtrTestCounted> other = mine;
                 (void)other;
             }
-        });
+        }));
     }
-    for (engine_placeholder::Thread& th : threads) th.Join();
+    for (usize i = 0; i < threads.Size(); ++i) threads[i].Join();
     REQUIRE(shared.UseCount() == 1);
     REQUIRE(SharedPtrTestCounted::alive == 1);
     shared.Reset();

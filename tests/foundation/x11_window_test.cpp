@@ -1,6 +1,7 @@
 #include "lang/utility.h"
-#include <vector>
+#include "containers/vector.h"
 
+#include "lang/new.h" // before the X11 headers: <X11/X.h> defines `BadAlloc`, which lang/new.h names
 #include "platform/input_event.h" // before the X11 headers: they define `None`
 #include "unity/x11_enable.h"
 #include <X11/Xlib.h>
@@ -133,13 +134,13 @@ TEST_CASE("X11Window move transfers ownership without double-close", "[x11][os]"
     REQUIRE(a.Valid());
     unsigned long native = a.NativeWindow();
 
-    X11Window b(Move(a));
+    X11Window b(engine_placeholder::Move(a));
     REQUIRE_FALSE(a.Valid());
     REQUIRE(b.Valid());
     REQUIRE(b.NativeWindow() == native);
 
     X11Window c;
-    c = Move(b);
+    c = engine_placeholder::Move(b);
     REQUIRE_FALSE(b.Valid());
     REQUIRE(c.Valid());
     REQUIRE(c.NativeWindow() == native);
@@ -150,7 +151,7 @@ TEST_CASE("X11Window move transfers ownership without double-close", "[x11][os]"
 #include <X11/keysym.h>
 
 #include "os/console.h"
-#include <string_view>
+#include "string_view.h"
 
 #include "platform/input.h"
 
@@ -410,7 +411,7 @@ TEST_CASE("X11Window input events are ignored (no crash) when no InputState is s
 TEST_CASE("X11Window yields layout-correct Keys for physical keycodes (needs ENGINE_X11_TEST_LAYOUT)",
           "[x11][input][os][layout]") {
     SKIP_IF_NO_DISPLAY_SESSION();
-    const char* layout = os::GetEnvironment("ENGINE_X11_TEST_LAYOUT");
+    const char* layout = engine_placeholder::os::GetEnvironment("ENGINE_X11_TEST_LAYOUT");
     if (layout == nullptr) {
         SKIP("ENGINE_X11_TEST_LAYOUT not set");
     }
@@ -431,7 +432,8 @@ TEST_CASE("X11Window yields layout-correct Keys for physical keycodes (needs ENG
         {58, Key::M, Key::Comma, Key::M},
     };
     for (const Phys& p : phys) {
-        Key expected = std::string_view(layout) == "fr" ? p.fr : std::string_view(layout) == "de" ? p.de : p.us;
+        Key expected = engine_placeholder::StringView(layout) == engine_placeholder::StringView("fr") ? p.fr
+                       : engine_placeholder::StringView(layout) == engine_placeholder::StringView("de") ? p.de : p.us;
         inj.Key(window.NativeWindow(), p.keycode, 0, true);
         PumpFor(window, &input);
         INFO("layout " << layout << " keycode " << p.keycode);
@@ -492,7 +494,7 @@ TEST_CASE("X11Window reports native info, and none once invalid or moved from", 
     REQUIRE(info.surface == nullptr);
     REQUIRE_FALSE(window.IsMinimized());
 
-    X11Window moved(Move(window));
+    X11Window moved(engine_placeholder::Move(window));
     REQUIRE(moved.GetNativeInfo().window_id == info.window_id);
     REQUIRE(window.GetNativeInfo().kind == NativeWindowKind::Invalid);
 }
@@ -540,7 +542,7 @@ TEST_CASE("X11Window's resize serial changes on every size change and never repe
     REQUIRE(second.Valid());
     REQUIRE(second.ResizeSerial() != window.ResizeSerial());
 
-    X11Window moved(Move(window));
+    X11Window moved(engine_placeholder::Move(window));
     REQUIRE(moved.ResizeSerial() != 0);
     REQUIRE(window.ResizeSerial() == 0);
     REQUIRE(window.IsMinimized());
@@ -592,10 +594,10 @@ using engine_placeholder::os::InputEvent;
 using engine_placeholder::os::InputEventQueue;
 using engine_placeholder::os::InputEventType;
 
-std::vector<InputEvent> PollAll(X11Window& window) {
-    std::vector<InputEvent> out;
+engine_placeholder::Vector<InputEvent> PollAll(X11Window& window) {
+    engine_placeholder::Vector<InputEvent> out;
     InputEvent e;
-    while (window.PollEvent(&e)) out.push_back(e);
+    while (window.PollEvent(&e)) out.Push(e);
     return out;
 }
 
@@ -625,7 +627,7 @@ TEST_CASE("X11Window queues key, text, pointer and wheel events in order", "[x11
     PumpFor(window, &input);
     const auto ev = PollAll(window);
 
-    REQUIRE(ev.size() >= 9);
+    REQUIRE(ev.Size() >= 9);
     CHECK(ev[0].type == InputEventType::KeyDown);
     CHECK(ev[0].key == Key::A);
     CHECK(ev[1].type == InputEventType::Text);
@@ -651,7 +653,7 @@ TEST_CASE("X11Window queues key, text, pointer and wheel events in order", "[x11
     CHECK(input.scroll_dy == 0.0);
     CHECK(input.scroll_dx == 10.0);
     CHECK(input.mouse_x == 10.0); // the last pointer position the server reported: the button events at (10, 20)
-    CHECK(PollAll(window).empty()); // nothing is delivered twice
+    CHECK(PollAll(window).Empty()); // nothing is delivered twice
 }
 
 TEST_CASE("X11Window queues KeyUp for held keys before FocusLost, and FocusGained on focus in", "[x11][input][events][os]") {
@@ -672,15 +674,15 @@ TEST_CASE("X11Window queues KeyUp for held keys before FocusLost, and FocusGaine
     inj.SendFocusOut(w, NotifyNormal, NotifyNonlinear);
     PumpFor(window, &input);
     auto ev = PollAll(window);
-    REQUIRE(ev.size() >= 2);
-    CHECK(ev[ev.size() - 2].type == InputEventType::KeyUp);
-    CHECK(ev.back().type == InputEventType::FocusLost);
+    REQUIRE(ev.Size() >= 2);
+    CHECK(ev[ev.Size() - 2].type == InputEventType::KeyUp);
+    CHECK(ev[ev.Size() - 1].type == InputEventType::FocusLost);
     CHECK_FALSE(input.keyboard.IsDown(Key::A));
     inj.SendFocusIn(w);
     PumpFor(window, &input);
     ev = PollAll(window);
-    REQUIRE_FALSE(ev.empty());
-    CHECK(ev.back().type == InputEventType::FocusGained);
+    REQUIRE_FALSE(ev.Empty());
+    CHECK(ev[ev.Size() - 1].type == InputEventType::FocusGained);
 }
 
 TEST_CASE("X11Window queues a Resize event with the new size", "[x11][input][events][os]") {
@@ -696,8 +698,9 @@ TEST_CASE("X11Window queues a Resize event with the new size", "[x11][input][eve
     InputState input;
     PumpFor(window, &input, 40);
     bool found = false;
-    for (const InputEvent& e : PollAll(window)) {
-        if (e.type == InputEventType::Resize && e.width == 411 && e.height == 273) found = true;
+    const auto resized = PollAll(window);
+    for (engine_placeholder::usize i = 0; i < resized.Size(); ++i) {
+        if (resized[i].type == InputEventType::Resize && resized[i].width == 411 && resized[i].height == 273) found = true;
     }
     CHECK(found);
 }
@@ -716,24 +719,25 @@ TEST_CASE("X11Window drops and counts events when the program never polls", "[x1
     }
     PumpFor(window, &input, 10);
     CHECK(window.DroppedEvents() > 0);
-    CHECK(PollAll(window).size() == InputEventQueue::kCapacity);
+    CHECK(PollAll(window).Size() == InputEventQueue::kCapacity);
 }
 
 // ---- Day 186: cursor shapes, custom cursor images and the pointer lock ---------------------------------
 
 namespace {
 
-std::vector<engine_placeholder::byte> CursorPixels(unsigned int w, unsigned int h) {
-    std::vector<engine_placeholder::byte> px(static_cast<size_t>(w) * h * 4);
-    for (size_t i = 0; i < px.size(); i += 4) {
+engine_placeholder::Vector<engine_placeholder::byte> CursorPixels(unsigned int w, unsigned int h) {
+    engine_placeholder::Vector<engine_placeholder::byte> px;
+    px.Resize(static_cast<engine_placeholder::usize>(w) * h * 4);
+    for (engine_placeholder::usize i = 0; i < px.Size(); i += 4) {
         px[i] = 0x40; px[i + 1] = 0x20; px[i + 2] = 0x10; px[i + 3] = 0x80; // premultiplied
     }
     return px;
 }
 
-engine_placeholder::os::CursorImage CursorImageOf(const std::vector<engine_placeholder::byte>& px, unsigned int w, unsigned int h) {
+engine_placeholder::os::CursorImage CursorImageOf(const engine_placeholder::Vector<engine_placeholder::byte>& px, unsigned int w, unsigned int h) {
     engine_placeholder::os::CursorImage image;
-    image.rgba = px.data();
+    image.rgba = px.Data();
     image.width = w;
     image.height = h;
     return image;
@@ -885,8 +889,9 @@ TEST_CASE("X11Window reports RelativeMotion only while the pointer is locked", "
     REQUIRE(inj.Valid());
     inj.Motion(window.NativeWindow(), 50, 50);
     PumpFor(window, &input);
-    for (const InputEvent& e : PollAll(window)) {
-        CHECK(e.type != InputEventType::RelativeMotion); // unlocked: never sent
+    const auto moves = PollAll(window);
+    for (engine_placeholder::usize i = 0; i < moves.Size(); ++i) {
+        CHECK(moves[i].type != InputEventType::RelativeMotion); // unlocked: never sent
     }
 }
 

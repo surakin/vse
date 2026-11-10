@@ -1,12 +1,12 @@
 #pragma once
 
 #include "os/console.h"
-#include <exception>
-#include <cstring>
-#include <string>
-#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
+
+#include "catch_engine_types.h"
+#include "containers/vector.h"
+#include "test_text.h"
 
 #include "rhi/vulkan/vk_instance.h"
 
@@ -25,8 +25,8 @@ inline bool GpuRequired() {
 
 struct CapturedMessage {
     engine_placeholder::LogVerbosity severity;
-    std::string id;
-    std::string text;
+    engine_test::Text id;
+    engine_test::Text text;
 };
 
 class GpuFixture {
@@ -54,7 +54,7 @@ public:
         instance_ = VulkanInstance{}; // destroy before the final count so messages from vkDestroyInstance are included
         SetValidationCapture(nullptr, nullptr);
         // Skip the check while a failed REQUIRE/SKIP is unwinding: the test already reported its own cause.
-        if (loader_.library != nullptr && std::uncaught_exceptions() == 0) {
+        if (loader_.library != nullptr && !engine_test::TestIsUnwinding()) {
             ValidationCounts counts = GetValidationCounts();
             CHECK(counts.errors == expected_errors_);
             ResetValidationCounts();
@@ -87,16 +87,16 @@ public:
 
     const engine_placeholder::rhi::vulkan::VulkanLoader& Loader() const { return loader_; }
     const engine_placeholder::rhi::vulkan::VulkanInstance& Instance() const { return instance_; }
-    const std::vector<CapturedMessage>& Messages() const { return messages_; }
+    const engine_placeholder::Vector<CapturedMessage>& Messages() const { return messages_; }
 
 private:
     static void Capture(void* user, engine_placeholder::LogVerbosity severity, const char* id, const char* text) {
-        static_cast<GpuFixture*>(user)->messages_.push_back({severity, id, text});
+        static_cast<GpuFixture*>(user)->messages_.Push(CapturedMessage{severity, engine_test::MakeText(engine_placeholder::StringView(id)), engine_test::MakeText(engine_placeholder::StringView(text))});
     }
 
     engine_placeholder::rhi::vulkan::VulkanLoader loader_;
     engine_placeholder::rhi::vulkan::VulkanInstance instance_;
-    std::vector<CapturedMessage> messages_;
+    engine_placeholder::Vector<CapturedMessage> messages_;
     unsigned long long expected_errors_ = 0;
 };
 

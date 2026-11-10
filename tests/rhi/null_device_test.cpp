@@ -1,5 +1,5 @@
 #include "sync/thread.h"
-#include <vector>
+#include "containers/vector.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -47,8 +47,8 @@ struct Fixture {
     ShaderHandle Shader(ShaderStage stage) {
         ShaderDesc d;
         d.stage = stage;
-        const std::vector<u32> words = spirv_test::MinimalModule(stage);
-        d.SetCode(SpirvBlob(words.data(), words.size()));
+        const Vector<u32> words = spirv_test::MinimalModule(stage);
+        d.SetCode(SpirvBlob(words.Data(), words.Size()));
         return dev->CreateShader(d);
     }
     CommandList* List() {
@@ -1005,10 +1005,10 @@ TEST_CASE("Concurrent creation, destruction and recording is safe", "[rhi][null]
     Fixture f;
     constexpr int kThreads = 4;
     constexpr int kIterations = 200;
-    std::vector<Thread> threads;
+    Vector<Thread> threads;
     CommandList* lists[kThreads] = {};
     for (int t = 0; t < kThreads; ++t) {
-        threads.emplace_back([&, t]() {
+        threads.Push(Thread([&, t]() {
             for (int i = 0; i < kIterations; ++i) {
                 BufferDesc d;
                 d.size = 64;
@@ -1031,10 +1031,10 @@ TEST_CASE("Concurrent creation, destruction and recording is safe", "[rhi][null]
             l->CopyBuffer(src, dst, 0, 0, 64);
             l->End();
             lists[t] = l;
-        });
+        }));
     }
-    for (Thread& th : threads) {
-        th.Join();
+    for (usize i = 0; i < threads.Size(); ++i) {
+        threads[i].Join();
     }
     FenceValue v = f.dev->Submit(lists, kThreads);
     CHECK(v == 1);

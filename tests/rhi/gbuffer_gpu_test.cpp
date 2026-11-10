@@ -4,7 +4,6 @@
 // values computed on the CPU. Further cases cover the vertex-color, normal-map and alpha-test permutations, draw-order
 // independence, and the debug view.
 #include "lang/scalar.h"
-#include <cstring>
 
 #include <catch2/catch_test_macros.hpp>
 

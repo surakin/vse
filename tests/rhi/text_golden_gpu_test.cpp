@@ -88,18 +88,18 @@ TEST_CASE("The text overlay matches its golden image", "[rhi][gpu][golden][text]
         REQUIRE(text.Create(device.Get(), &atlas, desc, nullptr));
         const gpu_test::Image image = DrawScene(device.Get(), &text, &f);
         if (gpu_test::UpdatingGoldens()) {
-            REQUIRE(gpu_test::WritePpm(gpu_test::GoldenPath("text_overlay.ppm").c_str(), image));
+            REQUIRE(gpu_test::WritePpm(gpu_test::GoldenPath("text_overlay.ppm").CStr(), image));
             WARN("ENGINE_RHI_UPDATE_GOLDEN=1: tests/rhi/golden/text_overlay.ppm was rewritten; inspect it before committing");
         } else {
             gpu_test::Image golden;
-            REQUIRE(gpu_test::ReadPpm(gpu_test::GoldenPath("text_overlay.ppm").c_str(), &golden));
+            REQUIRE(gpu_test::ReadPpm(gpu_test::GoldenPath("text_overlay.ppm").CStr(), &golden));
             gpu_test::CompareOptions co;
             co.tolerance = 2;
             co.edge_tolerance = 2;
             co.max_edge_miss = 0.0;
             co.max_interior_miss = 0.0;
             const gpu_test::CompareResult result = gpu_test::Compare(golden, image, co, "text_overlay_vulkan");
-            INFO(result.message);
+            INFO(result.message.CStr());
             CHECK(result.same);
         }
         device->WaitIdle();
@@ -125,7 +125,7 @@ TEST_CASE("The demo frame's text overlay survives a device reset, a pipeline reb
         };
         // The overlay region: the top 80 rows hold the greeting and the status line.
         auto top_differs = [](const gpu_test::Image& a, const gpu_test::Image& b) {
-            return MemCompare(a.rgba.data(), b.rgba.data(), static_cast<usize>(a.width) * 80 * 4) != 0;
+            return MemCompare(a.rgba.Data(), b.rgba.Data(), static_cast<usize>(a.width) * 80 * 4) != 0;
         };
         gpu_test::Image before;
         shoot(&before);

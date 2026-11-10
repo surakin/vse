@@ -1,13 +1,11 @@
 // Phase 5 Day 70: the committed Slang shaders must present the interface the RHI and the C++ structs expect: entry name
 // `main`, the right stage, compute local sizes, descriptor (set, binding) pairs, interface locations, std140 member
 // offsets, and no capability beyond what every Vulkan device guarantees. Runs without the shader compiler.
-#include <algorithm>
-#include <vector>
-
 #include <catch2/catch_test_macros.hpp>
 
 #include "rhi/enums.h"
 #include "rhi/spirv.h"
+#include "test_text.h"
 #include "types.h"
 
 #include "bindings_test.frag.spv.inc"
@@ -48,81 +46,92 @@ constexpr u32 kDecorationLocation = 30;
 constexpr u32 kDecorationBinding = 33;
 constexpr u32 kDecorationDescriptorSet = 34;
 
+// A (set, binding) or (id, number) pair, ordered by first then second.
+struct Pair {
+    u32 first;
+    u32 second;
+    bool operator==(const Pair& o) const { return first == o.first && second == o.second; }
+    bool operator<(const Pair& o) const { return first < o.first || (first == o.first && second < o.second); }
+};
+
+template <typename T>
+using List = engine_test::ValueList<T>;
+
 struct Interface {
-    std::vector<u32> locations = {};            // sorted
-    std::vector<std::pair<u32, u32>> bindings = {};  // (set, binding), sorted
+    List<u32> locations = {};            // sorted
+    List<Pair> bindings = {};  // (set, binding), sorted
     u32 local_size[3] = {0, 0, 0};
     u32 entry_points = 0;
-    std::vector<u32> capabilities;      // sorted
-    std::vector<u32> offsets;           // every member Offset decoration (uniform and push-constant layouts), sorted
-    std::vector<u32> variable_classes;  // storage class of every OpVariable, sorted
-    std::vector<u32> image_formats;     // format operand of every OpTypeImage, sorted
+    List<u32> capabilities;      // sorted
+    List<u32> offsets;           // every member Offset decoration (uniform and push-constant layouts), sorted
+    List<u32> variable_classes;  // storage class of every OpVariable, sorted
+    List<u32> image_formats;     // format operand of every OpTypeImage, sorted
     u32 non_readable = 0;
     u32 non_writable = 0;
 };
 
 Interface Reflect(const u32* words, usize count) {
     Interface out;
-    std::vector<std::pair<u32, u32>> sets;     // (id, set)
-    std::vector<std::pair<u32, u32>> binds;    // (id, binding)
+    List<Pair> sets;     // (id, set)
+    List<Pair> binds;    // (id, binding)
     for (usize i = 5; i < count;) {
         u32 op = words[i] & 0xffffu;
         u32 len = words[i] >> 16;
         if (op == kOpEntryPoint) {
             ++out.entry_points;
         } else if (op == kOpCapability) {
-            out.capabilities.push_back(words[i + 1]);
+            out.capabilities.Push(words[i + 1]);
         } else if (op == kOpTypeImage) {
-            out.image_formats.push_back(words[i + 8]);
+            out.image_formats.Push(words[i + 8]);
         } else if (op == kOpVariable) {
-            out.variable_classes.push_back(words[i + 3]);
+            out.variable_classes.Push(words[i + 3]);
         } else if (op == kOpMemberDecorate && words[i + 3] == kDecorationOffset) {
-            out.offsets.push_back(words[i + 4]);
+            out.offsets.Push(words[i + 4]);
         } else if (op == kOpExecutionMode && words[i + 2] == kLocalSize) {
             out.local_size[0] = words[i + 3];
             out.local_size[1] = words[i + 4];
             out.local_size[2] = words[i + 5];
         } else if (op == kOpDecorate) {
             if (words[i + 2] == kDecorationLocation) {
-                out.locations.push_back(words[i + 3]);
+                out.locations.Push(words[i + 3]);
             } else if (words[i + 2] == kDecorationNonReadable) {
                 ++out.non_readable;
             } else if (words[i + 2] == kDecorationNonWritable) {
                 ++out.non_writable;
             } else if (words[i + 2] == kDecorationDescriptorSet) {
-                sets.emplace_back(words[i + 1], words[i + 3]);
+                sets.Push(Pair{words[i + 1], words[i + 3]});
             } else if (words[i + 2] == kDecorationBinding) {
-                binds.emplace_back(words[i + 1], words[i + 3]);
+                binds.Push(Pair{words[i + 1], words[i + 3]});
             }
         }
         i += len;
     }
-    for (auto& [id, binding] : binds) {
-        for (auto& [sid, set] : sets) {
-            if (sid == id) {
-                out.bindings.emplace_back(set, binding);
+    for (usize b = 0; b < binds.Size(); ++b) {
+        for (usize s = 0; s < sets.Size(); ++s) {
+            if (sets[s].first == binds[b].first) {
+                out.bindings.Push(Pair{sets[s].second, binds[b].second});
             }
         }
     }
-    std::sort(out.locations.begin(), out.locations.end());
-    std::sort(out.bindings.begin(), out.bindings.end());
-    std::sort(out.capabilities.begin(), out.capabilities.end());
-    std::sort(out.offsets.begin(), out.offsets.end());
-    std::sort(out.variable_classes.begin(), out.variable_classes.end());
-    std::sort(out.image_formats.begin(), out.image_formats.end());
+    out.locations.Sort();
+    out.bindings.Sort();
+    out.capabilities.Sort();
+    out.offsets.Sort();
+    out.variable_classes.Sort();
+    out.image_formats.Sort();
     return out;
 }
 
 using namespace engine_placeholder::shaders;
 
 struct Expect {
-    std::vector<std::pair<u32, u32>> bindings = {};  // (set, binding)
-    std::vector<u32> locations = {};            // sorted
-    std::vector<u32> offsets = {};              // std140 / std430 member offsets, sorted
+    List<Pair> bindings = {};  // (set, binding)
+    List<u32> locations = {};            // sorted
+    List<u32> offsets = {};              // std140 / std430 member offsets, sorted
     u32 local_size[3] = {0, 0, 0};
     u32 non_readable = 0;
     u32 non_writable = 0;
-    std::vector<u32> image_formats = {};  // sorted; 0 = Unknown (sampled images), 4 = Rgba8
+    List<u32> image_formats = {};  // sorted; 0 = Unknown (sampled images), 4 = Rgba8
     u32 uniform_blocks = 0;
     u32 storage_buffers = 0;
     u32 push_constant_blocks = 0;
@@ -141,11 +150,12 @@ void Check(const u32* words, usize count, ShaderStage stage, const Expect& want)
     CHECK(got.non_readable == want.non_readable);
     CHECK(got.non_writable == want.non_writable);
     CHECK(got.image_formats == want.image_formats);
-    CHECK(std::count(got.variable_classes.begin(), got.variable_classes.end(), 2u) == want.uniform_blocks);
-    CHECK(std::count(got.variable_classes.begin(), got.variable_classes.end(), 12u) == want.storage_buffers);
-    CHECK(std::count(got.variable_classes.begin(), got.variable_classes.end(), 9u) == want.push_constant_blocks);
+    CHECK(got.variable_classes.Count(2u) == want.uniform_blocks);
+    CHECK(got.variable_classes.Count(12u) == want.storage_buffers);
+    CHECK(got.variable_classes.Count(9u) == want.push_constant_blocks);
     // No capability beyond what every Vulkan device guarantees: in particular not DrawParameters (SV_VertexID).
-    for (u32 capability : got.capabilities) {
+    for (usize c = 0; c < got.capabilities.Size(); ++c) {
+        const u32 capability = got.capabilities[c];
         CHECK((capability == kCapabilityMatrix || capability == kCapabilityShader || capability == kCapabilityImageQuery));
     }
 }
@@ -197,7 +207,7 @@ TEST_CASE("The committed shaders present the expected interface", "[rhi][spirv][
     }
     SECTION("lit.vert and lit.frag") {
         // Params: 2 x mat4 + 3 x vec4 = 176 bytes, every member at its std140 offset (matches LitUniforms).
-        std::vector<u32> params = {0, 64, 128, 144, 160};
+        List<u32> params = {0, 64, 128, 144, 160};
         Check(kLitVertSpv, kLitVertSpvWordCount, ShaderStage::Vertex,
               {.bindings = {{0, 0}}, .locations = {0, 0, 1, 1, 2}, .offsets = params, .uniform_blocks = 1});
         Check(kLitFragSpv, kLitFragSpvWordCount, ShaderStage::Fragment,

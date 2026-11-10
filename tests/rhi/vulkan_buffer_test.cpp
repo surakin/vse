@@ -1,9 +1,10 @@
 #include "sync/thread.h"
-#include <vector>
+#include "containers/vector.h"
 
 #include <catch2/catch_test_macros.hpp>
 
 #include "gpu_fixture.h"
+#include "test_text.h"
 #include "rhi/null/null_device.h"
 #include "rhi/rhi.h"
 #include "rhi/staging_ring.h"
@@ -16,12 +17,12 @@ using namespace engine_placeholder::rhi::vulkan;
 
 namespace {
 
-std::vector<unsigned char> Pattern(usize size, unsigned seed) {
-    std::vector<unsigned char> bytes(size);
+Vector<byte> Pattern(usize size, unsigned seed) {
+    Vector<byte> bytes = engine_test::ByteBuffer(size);
     unsigned state = seed * 2654435761u + 12345u;
     for (usize i = 0; i < size; ++i) {
         state = state * 1664525u + 1013904223u;
-        bytes[i] = static_cast<unsigned char>(state >> 24);
+        bytes[i] = static_cast<byte>(state >> 24);
     }
     return bytes;
 }
@@ -84,7 +85,7 @@ TEST_CASE("RingAllocator never hands out space still held, over 100k random oper
     struct Held {
         u64 offset, size, fence;
     };
-    std::vector<Held> held;
+    Vector<Held> held;
     u64 fence = 0, completed = 0;
     u64 state = 88172645463325252ull;
     auto next = [&]() {
@@ -102,27 +103,28 @@ TEST_CASE("RingAllocator never hands out space still held, over 100k random oper
             if (ring.Allocate(size, alignment, &off)) {
                 REQUIRE(off % alignment == 0);
                 REQUIRE(off + size <= kCap);
-                for (const Held& h : held) {
+                for (usize hi = 0; hi < held.Size(); ++hi) {
+                    const Held& h = held[hi];
                     bool disjoint = off + size <= h.offset || h.offset + h.size <= off;
                     REQUIRE(disjoint);
                 }
-                held.push_back({off, size, 0});
+                held.Push(Held{off, size, 0});
             }
         } else if (op < 8) {
             ++fence;
             ring.Retire(fence);
-            for (Held& h : held) {
-                if (h.fence == 0) {
-                    h.fence = fence;
+            for (usize hi = 0; hi < held.Size(); ++hi) {
+                if (held[hi].fence == 0) {
+                    held[hi].fence = fence;
                 }
             }
         } else if (fence > completed) {
             completed += 1 + next() % (fence - completed);
             ring.Reclaim(completed);
-            for (usize i = 0; i < held.size();) {
+            for (usize i = 0; i < held.Size();) {
                 if (held[i].fence != 0 && held[i].fence <= completed) {
-                    held[i] = held.back();
-                    held.pop_back();
+                    held[i] = held[held.Size() - 1];
+                    held.Pop();
                 } else {
                     ++i;
                 }
@@ -139,17 +141,17 @@ TEST_CASE("NullDevice upload and readback round-trip and leave the buffer in Cop
     BufferHandle buffer = device->CreateBuffer(desc);
     REQUIRE(buffer.IsValid());
 
-    std::vector<unsigned char> data = Pattern(300, 7);
-    UploadTicket ticket = device->UploadBuffer(buffer, 100, data.data(), data.size());
+    Vector<byte> data = Pattern(300, 7);
+    UploadTicket ticket = device->UploadBuffer(buffer, 100, data.Data(), data.Size());
     CHECK(ticket.fence == 0);
     CHECK(device->StateOf(buffer) == ResourceState::CopyDst);
-    std::vector<unsigned char> back(300);
-    REQUIRE(device->ReadbackBuffer(buffer, 100, back.data(), back.size()));
-    CHECK(back == data);
+    Vector<byte> back = engine_test::ByteBuffer(300);
+    REQUIRE(device->ReadbackBuffer(buffer, 100, back.Data(), back.Size()));
+    CHECK(engine_test::SameBytes(back, data));
     CHECK(device->ErrorCount() == 0);
 
     // Misuse is counted, not fatal, on the null device.
-    UploadTicket bad = device->UploadBuffer(buffer, 900, data.data(), data.size()); // past the end
+    UploadTicket bad = device->UploadBuffer(buffer, 900, data.Data(), data.Size()); // past the end
     CHECK_FALSE(bad.ok);
     CHECK(device->ErrorCount() == 1);
     device.Reset();
@@ -167,7 +169,7 @@ TEST_CASE("Vulkan buffers: create, map, write and destroy, validation-clean", "[
     desc.debug_name = "mapped uniform";
     BufferHandle buffer = device->CreateBuffer(desc);
     REQUIRE(buffer.IsValid());
-    auto* p = static_cast<unsigned char*>(device->MapBuffer(buffer));
+    auto* p = static_cast<byte*>(device->MapBuffer(buffer));
     REQUIRE(p != nullptr);
     MemSet(p, 0x5A, 4096);
     device->UnmapBuffer(buffer);
@@ -201,14 +203,14 @@ TEST_CASE("Vulkan buffer uploads round-trip at every size, including larger than
         desc.location = MemoryLocation::GpuOnly;
         BufferHandle buffer = device->CreateBuffer(desc);
         REQUIRE(buffer.IsValid());
-        std::vector<unsigned char> data = Pattern(size, static_cast<unsigned>(size));
-        UploadTicket ticket = device->UploadBuffer(buffer, 0, data.data(), data.size());
+        Vector<byte> data = Pattern(size, static_cast<unsigned>(size));
+        UploadTicket ticket = device->UploadBuffer(buffer, 0, data.Data(), data.Size());
         CHECK(ticket.ok);
         CHECK(ticket.fence != 0);
         CHECK(device->WaitFence(ticket.fence, 10ull * 1000 * 1000 * 1000));
-        std::vector<unsigned char> back(size);
-        REQUIRE(device->ReadbackBuffer(buffer, 0, back.data(), back.size()));
-        CHECK(back == data);
+        Vector<byte> back = engine_test::ByteBuffer(size);
+        REQUIRE(device->ReadbackBuffer(buffer, 0, back.Data(), back.Size()));
+        CHECK(engine_test::SameBytes(back, data));
         device->DestroyBuffer(buffer);
     }
     device->WaitIdle();
@@ -224,14 +226,14 @@ TEST_CASE("Vulkan partial uploads leave the rest of the buffer alone", "[rhi][vu
     desc.size = 1024;
     desc.usage = BufferUsage::CopyDst | BufferUsage::CopySrc;
     BufferHandle buffer = device->CreateBuffer(desc);
-    std::vector<unsigned char> base = Pattern(1024, 1);
-    device->UploadBuffer(buffer, 0, base.data(), base.size());
-    std::vector<unsigned char> patch = Pattern(100, 2);
-    device->UploadBuffer(buffer, 500, patch.data(), patch.size());
-    MemCopy(base.data() + 500, patch.data(), patch.size());
-    std::vector<unsigned char> back(1024);
-    REQUIRE(device->ReadbackBuffer(buffer, 0, back.data(), back.size()));
-    CHECK(back == base); // the second upload is ordered after the first
+    Vector<byte> base = Pattern(1024, 1);
+    device->UploadBuffer(buffer, 0, base.Data(), base.Size());
+    Vector<byte> patch = Pattern(100, 2);
+    device->UploadBuffer(buffer, 500, patch.Data(), patch.Size());
+    MemCopy(base.Data() + 500, patch.Data(), patch.Size());
+    Vector<byte> back = engine_test::ByteBuffer(1024);
+    REQUIRE(device->ReadbackBuffer(buffer, 0, back.Data(), back.Size()));
+    CHECK(engine_test::SameBytes(back, base)); // the second upload is ordered after the first
     device->DestroyBuffer(buffer);
     device.Reset();
 }
@@ -245,16 +247,16 @@ TEST_CASE("Vulkan CPU-visible buffers upload and read back through their mapping
     up.usage = BufferUsage::CopyDst | BufferUsage::CopySrc;
     up.location = MemoryLocation::CpuToGpu;
     BufferHandle buffer = device->CreateBuffer(up);
-    std::vector<unsigned char> data = Pattern(256, 3);
-    UploadTicket direct = device->UploadBuffer(buffer, 0, data.data(), data.size());
+    Vector<byte> data = Pattern(256, 3);
+    UploadTicket direct = device->UploadBuffer(buffer, 0, data.Data(), data.Size());
     CHECK(direct.fence == 0); // no GPU copy needed
     CHECK(direct.ok);
-    auto* p = static_cast<unsigned char*>(device->MapBuffer(buffer));
-    CHECK(MemCompare(p, data.data(), 256) == 0);
+    auto* p = static_cast<byte*>(device->MapBuffer(buffer));
+    CHECK(MemCompare(p, data.Data(), 256) == 0);
     device->UnmapBuffer(buffer);
-    std::vector<unsigned char> back(256);
-    REQUIRE(device->ReadbackBuffer(buffer, 0, back.data(), back.size()));
-    CHECK(back == data);
+    Vector<byte> back = engine_test::ByteBuffer(256);
+    REQUIRE(device->ReadbackBuffer(buffer, 0, back.Data(), back.Size()));
+    CHECK(engine_test::SameBytes(back, data));
     device->DestroyBuffer(buffer);
     device.Reset();
 }
@@ -266,7 +268,7 @@ TEST_CASE("Vulkan uploads from two threads serialize correctly", "[rhi][vulkan][
     constexpr int kBuffers = 8;
     constexpr usize kSize = 3 << 20; // several uploads exceed the ring together
     BufferHandle buffers[2][kBuffers];
-    std::vector<unsigned char> data[2][kBuffers];
+    Vector<byte> data[2][kBuffers];
     for (int t = 0; t < 2; ++t) {
         for (int i = 0; i < kBuffers; ++i) {
             BufferDesc desc;
@@ -281,7 +283,7 @@ TEST_CASE("Vulkan uploads from two threads serialize correctly", "[rhi][vulkan][
     for (int t = 0; t < 2; ++t) {
         threads[t] = Thread([&, t] {
             for (int i = 0; i < kBuffers; ++i) {
-                device->UploadBuffer(buffers[t][i], 0, data[t][i].data(), kSize);
+                device->UploadBuffer(buffers[t][i], 0, data[t][i].Data(), kSize);
             }
         });
     }
@@ -290,9 +292,9 @@ TEST_CASE("Vulkan uploads from two threads serialize correctly", "[rhi][vulkan][
     }
     for (int t = 0; t < 2; ++t) {
         for (int i = 0; i < kBuffers; ++i) {
-            std::vector<unsigned char> back(kSize);
-            REQUIRE(device->ReadbackBuffer(buffers[t][i], 0, back.data(), kSize));
-            CHECK(back == data[t][i]);
+            Vector<byte> back = engine_test::ByteBuffer(kSize);
+            REQUIRE(device->ReadbackBuffer(buffers[t][i], 0, back.Data(), kSize));
+            CHECK(engine_test::SameBytes(back, data[t][i]));
             device->DestroyBuffer(buffers[t][i]);
         }
     }
@@ -315,8 +317,8 @@ TEST_CASE("Vulkan retired buffers are released only after their frame completes"
 
     device->BeginFrame(); // frame 1
     BufferHandle inside = device->CreateBuffer(desc);
-    std::vector<unsigned char> data = Pattern(4096, 5);
-    UploadTicket ticket = device->UploadBuffer(inside, 0, data.data(), data.size()); // in flight
+    Vector<byte> data = Pattern(4096, 5);
+    UploadTicket ticket = device->UploadBuffer(inside, 0, data.Data(), data.Size()); // in flight
     device->DestroyBuffer(inside);                                                    // destroy while the copy may run
     CHECK(device->Counts().pending_destruction == 2);
     device->EndFrame();

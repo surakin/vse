@@ -3,7 +3,6 @@
 // Only Vulkan writes the goldens (ENGINE_RHI_UPDATE_GOLDEN=1); Direct3D 12 waits for the UI shaders' DXIL (KNOWN-ISSUES.md).
 #include <catch2/catch_test_macros.hpp>
 
-#include <cstdio>
 
 #include "backend_fixture.h"
 #include "cube_fixture.h"
@@ -197,12 +196,12 @@ TEST_CASE("The ui_demo's picture survives every kind of change and a lost device
             CHECK(ui.gpu->WorldTarget().Handle().IsValid());
             usize different = 0;
             usize first = 0;
-            for (usize i = 0; i < image.rgba.size() && i < baseline.rgba.size(); ++i) {
+            for (usize i = 0; i < image.rgba.Size() && i < baseline.rgba.Size(); ++i) {
                 if (image.rgba[i] != baseline.rgba[i] && different++ == 0) first = i / 4;
             }
             INFO("first different pixel (" << first % image.width << ", " << first / image.width << ") is " << static_cast<int>(image.rgba[first * 4]) << "," << static_cast<int>(image.rgba[first * 4 + 1]) << "," << static_cast<int>(image.rgba[first * 4 + 2]) << " and was "
                  << static_cast<int>(baseline.rgba[first * 4]) << "," << static_cast<int>(baseline.rgba[first * 4 + 1]) << "," << static_cast<int>(baseline.rgba[first * 4 + 2]));
-            CHECK(image.rgba.size() == baseline.rgba.size());
+            CHECK(image.rgba.Size() == baseline.rgba.Size());
             CHECK(different == 0);
         };
 

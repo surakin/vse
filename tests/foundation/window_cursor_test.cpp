@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include "display_session.h"
 
-#include <vector>
+#include "containers/vector.h"
 
 #include "platform/cursor.h"
 #include "platform/linux/wayland/wayland_input.h"
@@ -16,11 +16,16 @@ using namespace engine_placeholder::os;
 
 namespace {
 
-std::vector<byte> Pixels(u32 w, u32 h, byte fill = 0x80) { return std::vector<byte>(static_cast<usize>(w) * h * 4, fill); }
+Vector<byte> Pixels(u32 w, u32 h, byte fill = 0x80) {
+    Vector<byte> px;
+    px.Resize(static_cast<usize>(w) * h * 4);
+    for (usize i = 0; i < px.Size(); ++i) px[i] = fill;
+    return px;
+}
 
-CursorImage Image(const std::vector<byte>& px, u32 w, u32 h) {
+CursorImage Image(const Vector<byte>& px, u32 w, u32 h) {
     CursorImage image;
-    image.rgba = px.data();
+    image.rgba = px.Data();
     image.width = w;
     image.height = h;
     return image;

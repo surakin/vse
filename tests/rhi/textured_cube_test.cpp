@@ -224,7 +224,7 @@ TEST_CASE("An rtex file round-trips and damaged ones are refused", "[rhi][textur
     CHECK(built.data.Size() == (16 * 16 + 8 * 8 + 4 * 4 + 2 * 2 + 1) * 4);
     // A 1-texel checker averages to mid-gray from the first mip on.
     CHECK(built.data[16 * 16 * 4] == 128);
-    const engine_test::Text path_text = engine_test::MakeText(StringView(gpu_test::TempPath("roundtrip.rtex").c_str()));
+    const engine_test::Text path_text = engine_test::MakeText(StringView(gpu_test::TempPath("roundtrip.rtex").CStr()));
     const char* path = path_text.CStr();
     REQUIRE(demo::WriteRtex(io::Path(StringView(path)), built).Ok());
     demo::RtexImage back;
@@ -241,8 +241,8 @@ TEST_CASE("An rtex file round-trips and damaged ones are refused", "[rhi][textur
     // Truncated payload.
     Vector<u8> good;
     REQUIRE(io::ReadFile(io::Path(StringView(path)), &good).Ok());
-    write(gpu_test::TempPath("rhi_test_short.rtex").c_str(), good.Data(), good.Size() - 1);
-    CHECK(demo::ReadRtex(io::Path(StringView(gpu_test::TempPath("rhi_test_short.rtex").c_str())), &back).Failed());
+    write(gpu_test::TempPath("rhi_test_short.rtex").CStr(), good.Data(), good.Size() - 1);
+    CHECK(demo::ReadRtex(io::Path(StringView(gpu_test::TempPath("rhi_test_short.rtex").CStr())), &back).Failed());
     // A wrong magic, an unknown format, a mip count beyond the chain, and a huge size over a tiny file.
     Vector<u8> bad;
     auto reset_bad = [&]() {
@@ -251,21 +251,21 @@ TEST_CASE("An rtex file round-trips and damaged ones are refused", "[rhi][textur
     };
     reset_bad();
     bad[0] = 'X';
-    write(gpu_test::TempPath("rhi_test_magic.rtex").c_str(), bad.Data(), bad.Size());
-    CHECK(demo::ReadRtex(io::Path(StringView(gpu_test::TempPath("rhi_test_magic.rtex").c_str())), &back).Failed());
+    write(gpu_test::TempPath("rhi_test_magic.rtex").CStr(), bad.Data(), bad.Size());
+    CHECK(demo::ReadRtex(io::Path(StringView(gpu_test::TempPath("rhi_test_magic.rtex").CStr())), &back).Failed());
     reset_bad();
     bad[16] = 0xff;
-    write(gpu_test::TempPath("rhi_test_format.rtex").c_str(), bad.Data(), bad.Size());
-    CHECK(demo::ReadRtex(io::Path(StringView(gpu_test::TempPath("rhi_test_format.rtex").c_str())), &back).Failed());
+    write(gpu_test::TempPath("rhi_test_format.rtex").CStr(), bad.Data(), bad.Size());
+    CHECK(demo::ReadRtex(io::Path(StringView(gpu_test::TempPath("rhi_test_format.rtex").CStr())), &back).Failed());
     reset_bad();
     bad[20] = 40;
-    write(gpu_test::TempPath("rhi_test_mips.rtex").c_str(), bad.Data(), bad.Size());
-    CHECK(demo::ReadRtex(io::Path(StringView(gpu_test::TempPath("rhi_test_mips.rtex").c_str())), &back).Failed());
+    write(gpu_test::TempPath("rhi_test_mips.rtex").CStr(), bad.Data(), bad.Size());
+    CHECK(demo::ReadRtex(io::Path(StringView(gpu_test::TempPath("rhi_test_mips.rtex").CStr())), &back).Failed());
     reset_bad();
     bad[9] = 0x40; // width 16 + 0x4000
-    write(gpu_test::TempPath("rhi_test_huge.rtex").c_str(), bad.Data(), 24);
-    CHECK(demo::ReadRtex(io::Path(StringView(gpu_test::TempPath("rhi_test_huge.rtex").c_str())), &back).Failed());
-    CHECK(demo::ReadRtex(io::Path(StringView(gpu_test::TempPath("rhi_no_such.rtex").c_str())), &back).Failed());
+    write(gpu_test::TempPath("rhi_test_huge.rtex").CStr(), bad.Data(), 24);
+    CHECK(demo::ReadRtex(io::Path(StringView(gpu_test::TempPath("rhi_test_huge.rtex").CStr())), &back).Failed());
+    CHECK(demo::ReadRtex(io::Path(StringView(gpu_test::TempPath("rhi_no_such.rtex").CStr())), &back).Failed());
 }
 
 TEST_CASE("The demo asset is a valid rtex file", "[rhi][textured][image]") {

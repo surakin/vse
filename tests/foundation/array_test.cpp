@@ -32,8 +32,8 @@ TEST_CASE("Array: storage is inline, so an object is its members plus the elemen
     Holder h{};
     REQUIRE(h.values.Size() == 6);
     // The elements sit inside the holder's own bytes.
-    const unsigned char* lo = reinterpret_cast<const unsigned char*>(&h);
-    const unsigned char* p = reinterpret_cast<const unsigned char*>(h.values.Data());
+    const engine_placeholder::byte* lo = reinterpret_cast<const engine_placeholder::byte*>(&h);
+    const engine_placeholder::byte* p = reinterpret_cast<const engine_placeholder::byte*>(h.values.Data());
     REQUIRE(p >= lo);
     REQUIRE(p + 6 * sizeof(u32) <= lo + sizeof(Holder));
 }

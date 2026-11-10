@@ -109,7 +109,7 @@ TEST_CASE("UniquePtr: an empty deleter adds no size", "[containers][unique_ptr]"
 
 TEST_CASE("MakeUnique: a large object is made and freed", "[containers][unique_ptr]") {
     struct Huge {
-        unsigned char bytes[static_cast<usize>(1) << 20];
+        engine_placeholder::byte bytes[static_cast<usize>(1) << 20];
     };
     UniquePtr<Huge> p = MakeUnique<Huge>();
     REQUIRE(p);

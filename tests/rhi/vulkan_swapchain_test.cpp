@@ -1,6 +1,4 @@
 #include "os/console.h"
-#include <string>
-#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 #include "display_session.h"
@@ -13,6 +11,7 @@
 #include "rhi/vulkan/vk_swapchain_policy.h"
 #include "rhi/vulkan/vulkan_device.h"
 #include "build_defs.h"
+#include "cstr/cstr.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
@@ -227,7 +226,7 @@ void RunPresentationChecks(os::WindowBackend backend) {
     CHECK(sc->Resize(200, 150) == SwapchainStatus::Ok);
     const u32 w1 = sc->Width();
     CHECK(w1 > 0);
-    if (std::string(window->BackendName()) == "wayland") {
+    if (CStrCompare(window->BackendName(), "wayland") == 0) {
         CHECK(w1 == 200); // Wayland leaves the extent to the swapchain
         CHECK(sc->Height() == 150);
     } else {

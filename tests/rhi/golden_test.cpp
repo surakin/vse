@@ -1,7 +1,4 @@
 #include "lang/scalar.h"
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -28,8 +25,8 @@ Image Solid(unsigned w, unsigned h, u8 r, u8 g,
   Image img;
   img.width = w;
   img.height = h;
-  img.rgba.resize(static_cast<size_t>(w) * h * 4);
-  for (size_t i = 0; i < static_cast<size_t>(w) * h; ++i) {
+  img.rgba.Resize(static_cast<usize>(w) * h * 4);
+  for (usize i = 0; i < static_cast<usize>(w) * h; ++i) {
     img.rgba[i * 4 + 0] = r;
     img.rgba[i * 4 + 1] = g;
     img.rgba[i * 4 + 2] = b;
@@ -43,7 +40,7 @@ Image Split(unsigned w, unsigned h, u8 a, u8 b) {
   Image img = Solid(w, h, a, a, a);
   for (unsigned y = 0; y < h; ++y) {
     for (unsigned x = w / 2; x < w; ++x) {
-      u8 *p = &img.rgba[(static_cast<size_t>(y) * w + x) * 4];
+      u8 *p = &img.rgba[(static_cast<usize>(y) * w + x) * 4];
       p[0] = p[1] = p[2] = b;
     }
   }
@@ -190,34 +187,34 @@ TEST_CASE("Image comparison applies the interior and edge tolerances",
         gray, Solid(16, 16, 103, 100, 100), options, "unit_beyond");
     CHECK_FALSE(r.same);
     CHECK(r.interior_misses == 256);
-    CHECK(StringView(r.message.c_str()).Contains(StringView("diff image")));
+    CHECK(r.message.View().Contains(StringView("diff image")));
     gpu_test::Image diff;
-    CHECK(gpu_test::ReadPpm(gpu_test::DiffPath("unit_beyond").c_str(), &diff));
+    CHECK(gpu_test::ReadPpm(gpu_test::DiffPath("unit_beyond").CStr(), &diff));
   }
   SECTION("a differing size is reported, not compared") {
     const gpu_test::CompareResult r = gpu_test::Compare(
         gray, Solid(8, 16, 100, 100, 100), options, "unit_size");
     CHECK_FALSE(r.same);
-    CHECK(StringView(r.message.c_str()).Contains(StringView("size differs")));
+    CHECK(r.message.View().Contains(StringView("size differs")));
   }
   SECTION("edge pixels get the wider tolerance") {
     const Image golden =
         Split(16, 16, 0, 200); // the two columns at the seam are edge pixels
     Image actual = golden;
     for (unsigned y = 0; y < 16; ++y) {
-      actual.rgba[(static_cast<size_t>(y) * 16 + 7) * 4] =
+      actual.rgba[(static_cast<usize>(y) * 16 + 7) * 4] =
           40; // seam pixel off by 40: inside edge_tolerance 64
     }
     CHECK(gpu_test::Compare(golden, actual, options, "unit_edge").same);
     for (unsigned y = 0; y < 16; ++y) {
-      actual.rgba[(static_cast<size_t>(y) * 16 + 7) * 4] =
+      actual.rgba[(static_cast<usize>(y) * 16 + 7) * 4] =
           100; // off by 100 on every seam pixel: too many misses
     }
     CHECK_FALSE(
         gpu_test::Compare(golden, actual, options, "unit_edge_bad").same);
     // The same error away from any edge is an interior miss.
     actual = golden;
-    actual.rgba[(static_cast<size_t>(8) * 16 + 2) * 4] = 40;
+    actual.rgba[(static_cast<usize>(8) * 16 + 2) * 4] = 40;
     CHECK_FALSE(
         gpu_test::Compare(golden, actual, options, "unit_edge_interior").same);
   }
@@ -226,16 +223,16 @@ TEST_CASE("Image comparison applies the interior and edge tolerances",
 TEST_CASE("PPM files round-trip and malformed ones are refused",
           "[rhi][golden][image]") {
   const Image img = Split(8, 4, 10, 240);
-  REQUIRE(gpu_test::WritePpm(gpu_test::TempPath("rhi_ppm_roundtrip.ppm").c_str(), img));
+  REQUIRE(gpu_test::WritePpm(gpu_test::TempPath("rhi_ppm_roundtrip.ppm").CStr(), img));
   Image back;
-  REQUIRE(gpu_test::ReadPpm(gpu_test::TempPath("rhi_ppm_roundtrip.ppm").c_str(), &back));
+  REQUIRE(gpu_test::ReadPpm(gpu_test::TempPath("rhi_ppm_roundtrip.ppm").CStr(), &back));
   CHECK(back.width == 8);
   CHECK(back.height == 4);
   CHECK(back.rgba == img.rgba);
-  CHECK_FALSE(gpu_test::ReadPpm(gpu_test::TempPath("rhi_no_such_file.ppm").c_str(), &back));
+  CHECK_FALSE(gpu_test::ReadPpm(gpu_test::TempPath("rhi_no_such_file.ppm").CStr(), &back));
   const char bad[] = "P6\n4 4\n255\nshort";
-  REQUIRE(engine_placeholder::io::WriteFile(engine_placeholder::io::Path(engine_placeholder::StringView(gpu_test::TempPath("rhi_ppm_bad.ppm").c_str())), bad, sizeof(bad) - 1).Ok());
-  CHECK_FALSE(gpu_test::ReadPpm(gpu_test::TempPath("rhi_ppm_bad.ppm").c_str(), &back));
+  REQUIRE(engine_placeholder::io::WriteFile(engine_placeholder::io::Path(engine_placeholder::StringView(gpu_test::TempPath("rhi_ppm_bad.ppm").CStr())), bad, sizeof(bad) - 1).Ok());
+  CHECK_FALSE(gpu_test::ReadPpm(gpu_test::TempPath("rhi_ppm_bad.ppm").CStr(), &back));
 }
 
 TEST_CASE("The triangle renders offscreen and matches its golden image", "[rhi][gpu][golden]") {

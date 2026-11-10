@@ -89,22 +89,22 @@ TEST_CASE("The UI pass matches its golden image", "[rhi][gpu][golden][ui]") {
         gpu_test::Image image;
         image.width = kW;
         image.height = kH;
-        image.rgba.assign(static_cast<size_t>(kW) * kH * 4, 0);
-        REQUIRE(device->ReadbackTexture(texture, 0, 0, image.rgba.data(), image.rgba.size(), rhi::ResourceState::ColorAttachment));
+        image.rgba.Assign(static_cast<engine_placeholder::usize>(kW) * kH * 4, 0);
+        REQUIRE(device->ReadbackTexture(texture, 0, 0, image.rgba.Data(), image.rgba.Size(), rhi::ResourceState::ColorAttachment));
 
         if (gpu_test::UpdatingGoldens()) {
-            REQUIRE(gpu_test::WritePpm(gpu_test::GoldenPath("ui_scene.ppm").c_str(), image));
+            REQUIRE(gpu_test::WritePpm(gpu_test::GoldenPath("ui_scene.ppm").CStr(), image));
             WARN("ENGINE_RHI_UPDATE_GOLDEN=1: tests/rhi/golden/ui_scene.ppm was rewritten; inspect it before committing");
         } else {
             gpu_test::Image golden;
-            REQUIRE(gpu_test::ReadPpm(gpu_test::GoldenPath("ui_scene.ppm").c_str(), &golden));
+            REQUIRE(gpu_test::ReadPpm(gpu_test::GoldenPath("ui_scene.ppm").CStr(), &golden));
             gpu_test::CompareOptions co;
             co.tolerance = 2;
             co.edge_tolerance = 4;
             co.max_edge_miss = 0.0;
             co.max_interior_miss = 0.0;
             const gpu_test::CompareResult result = gpu_test::Compare(golden, image, co, "ui_scene_vulkan");
-            INFO(result.message);
+            INFO(result.message.CStr());
             CHECK(result.same);
         }
         device->WaitIdle();

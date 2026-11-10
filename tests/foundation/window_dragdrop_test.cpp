@@ -1,3 +1,4 @@
+#include "lang/new.h" // before the X11 headers: <X11/X.h> defines `BadAlloc`, which lang/new.h names
 #include "platform/input_event.h" // before the X11 headers: they define `None`
 #include "unity/x11_enable.h"
 #include <X11/Xlib.h>
@@ -122,7 +123,7 @@ struct Peer {
     }
     void MakeAware() {
         long version = 5;
-        XChangeProperty(display, window, a_aware, kXaAtom, 32, kPropModeReplace, reinterpret_cast<unsigned char*>(&version), 1);
+        XChangeProperty(display, window, a_aware, kXaAtom, 32, kPropModeReplace, reinterpret_cast<engine_placeholder::byte*>(&version), 1);
         XMapWindow(display, window);
         XFlush(display);
     }
@@ -186,7 +187,7 @@ struct Peer {
                 Atom type = 0;
                 int format = 0;
                 unsigned long count = 0, after = 0;
-                unsigned char* data = nullptr;
+                engine_placeholder::byte* data = nullptr;
                 if (XGetWindowProperty(display, window, e.xselection.property, 0, 1 << 20, 1, kAnyPropertyType, &type, &format, &count, &after, &data) == kSuccess && data != nullptr) {
                     for (unsigned long i = 0; i < count; ++i) received.Push(static_cast<byte>(data[i]));
                     XFree(data);
@@ -446,7 +447,7 @@ TEST_CASE("XDND: an offer of 1000 types is cut at the first 64", "[dragdrop][x11
             types.Push(XInternAtom(peer.display, name, 0));
         }
         types[variant == 0 ? 10 : 900] = peer.a_utf8;
-        XChangeProperty(peer.display, peer.window, peer.a_type_list, kXaAtom, 32, kPropModeReplace, reinterpret_cast<unsigned char*>(types.Data()), 1000);
+        XChangeProperty(peer.display, peer.window, peer.a_type_list, kXaAtom, 32, kPropModeReplace, reinterpret_cast<engine_placeholder::byte*>(types.Data()), 1000);
         peer.status_count = 0;
         peer.Message(target, peer.a_enter, static_cast<long>(peer.window), (5L << 24) | 1, 0, 0, 0);
         peer.SendPosition(target, 5, 5, peer.a_copy);
@@ -575,7 +576,7 @@ TEST_CASE("XDND: an XdndTypeList of the wrong format is ignored", "[dragdrop][x1
     accept.formats = kDropText;
     window.SetDropAccept(accept);
     const unsigned long target = window.NativeWindow();
-    unsigned char bytes[64] = {};
+    engine_placeholder::byte bytes[64] = {};
     XChangeProperty(peer.display, peer.window, peer.a_type_list, kXaAtom, 8, kPropModeReplace, bytes, 64);
     peer.Message(target, peer.a_enter, static_cast<long>(peer.window), (5L << 24) | 1, 0, 0, 0);
     peer.SendPosition(target, 5, 5, peer.a_copy);
