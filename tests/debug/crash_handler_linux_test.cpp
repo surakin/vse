@@ -11,17 +11,11 @@
 #include "os/os.h"
 #include "support/death_test_skip.h"
 
-#include <cerrno>
-#include <cstdio>
 #include "os/console.h"
-#include <cstring>
-#include <csignal>
-#include <dirent.h>
-#include <ftw.h>
-#include <string>
+#include "os/signal.h"
 #include <sys/stat.h>
 #include <unistd.h>
-#include <vector>
+#include "support/test_support_linux.h"
 #include "types.h"
 #include "cstr/cstr.h"
 #include "cstr/format.h"
@@ -29,6 +23,8 @@
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::debug;
+using debug_test::Cat;
+using debug_test::Text;
 
 namespace {
 
@@ -44,7 +40,7 @@ public:
     }
     ~CrashTempDir() {
         if (path_[0] != '\0') {
-            nftw(path_, &Remove, 16, FTW_DEPTH | FTW_PHYS);
+            debug_test::RemoveTree(path_);
         }
     }
     CrashTempDir(const CrashTempDir&) = delete;
@@ -52,44 +48,11 @@ public:
     const char* Path() const { return path_; }
 
 private:
-    static int Remove(const char* entry, const struct stat*, int, struct FTW*) { return ::remove(entry); }
     char path_[256];
 };
 
-void CollectEnvelopes(const std::string& directory, std::vector<std::string>* found) {
-    DIR* dir = opendir(directory.c_str());
-    if (dir == nullptr) {
-        return;
-    }
-    while (const dirent* entry = readdir(dir)) {
-        if (CStrCompare(entry->d_name, ".") == 0 || CStrCompare(entry->d_name, "..") == 0) {
-            continue;
-        }
-        const std::string path = directory + "/" + entry->d_name;
-        struct stat info;
-        if (::stat(path.c_str(), &info) != 0) {
-            continue;
-        }
-        if (S_ISDIR(info.st_mode)) {
-            CollectEnvelopes(path, found);
-        } else if (path.size() > 9 && path.compare(path.size() - 9, 9, ".envelope") == 0) {
-            found->push_back(path);
-        }
-    }
-    closedir(dir);
-}
-
-std::string ReadFile(const std::string& path) {
-    std::string content;
-    if (std::FILE* file = std::fopen(path.c_str(), "rb")) {
-        char chunk[4096];
-        usize n;
-        while ((n = std::fread(chunk, 1, sizeof(chunk), file)) > 0) {
-            content.append(chunk, n);
-        }
-        std::fclose(file);
-    }
-    return content;
+void CollectEnvelopes(const char* directory, engine_test::TextList* found) {
+    debug_test::FindFiles(directory, ".envelope", found);
 }
 
 void PutLine(const char* label, int value) {
@@ -128,15 +91,14 @@ TEST_CASE("Without a release string the envelope names the binary by its build i
     ChildOptions options;
     options.timeout_ms = 30000;
     const ChildResult r = RunInChild("dt_crash_default_release_then_fault", dir.Path(), options);
-    const std::string out(r.stdout_text, r.stdout_length);
-    const usize at = out.find("BUILD_ID=");
-    REQUIRE(at != std::string::npos);
-    const std::string id = out.substr(at + 9, out.find('\n', at) - at - 9);
-    REQUIRE(id.size() >= 8);
-    std::vector<std::string> envelopes;
+    const StringView out = debug_test::StdoutView(r);
+    REQUIRE(out.Contains("BUILD_ID="));
+    const Text id = engine_test::MakeText(debug_test::ValueAfter(out, "BUILD_ID="));
+    REQUIRE(id.Length() >= 8);
+    engine_test::TextList envelopes;
     CollectEnvelopes(dir.Path(), &envelopes);
-    REQUIRE(envelopes.size() == 1);
-    CHECK(ReadFile(envelopes[0]).find(id) != std::string::npos);
+    REQUIRE(envelopes.Size() == 1);
+    CHECK(debug_test::ReadWholeFile(envelopes[0]).View().Contains(id.View()));
 }
 
 ENGINE_DEATH_TEST_FN(dt_crash_install_twice) {
@@ -195,22 +157,22 @@ TEST_CASE("A crash with the handler installed leaves one envelope holding a mini
     ChildOptions options;
     options.timeout_ms = 30000;
     const ChildResult r = RunInChild("dt_crash_install_then_fault", dir.Path(), options);
-    INFO("child stdout: " << std::string(r.stdout_text, r.stdout_length));
+    INFO("child stdout: " << Cat(debug_test::StdoutView(r)).CStr());
     CHECK(r.StdoutContains("INSTALLED=0")); // CrashHandlerResult::Installed
     CHECK(r.terminated);
     CHECK(r.reason == CrashReason::AccessViolation);
     CHECK(r.native_code == SIGSEGV); // the original fault is still what the process dies from
 
-    std::vector<std::string> envelopes;
+    engine_test::TextList envelopes;
     CollectEnvelopes(dir.Path(), &envelopes);
-    REQUIRE(envelopes.size() == 1);
-    const std::string content = ReadFile(envelopes[0]);
+    REQUIRE(envelopes.Size() == 1);
+    const Text content = debug_test::ReadWholeFile(envelopes[0]);
     crash_extract::Minidump dump;
-    REQUIRE(crash_extract::FindMinidump(content.data(), content.size(), &dump) == crash_extract::EnvelopeResult::Ok);
+    REQUIRE(crash_extract::FindMinidump(content.CStr(), content.Length(), &dump) == crash_extract::EnvelopeResult::Ok);
     CHECK(dump.size > 1000);
     CHECK(MemCompare(dump.data, "MDMP", 4) == 0);
     // The release string given at install time travels with the dump.
-    CHECK(content.find("crash-test@1") != std::string::npos);
+    CHECK(content.View().Contains("crash-test@1"));
 }
 
 TEST_CASE("Installing the crash handler twice changes nothing the second time, and it can be uninstalled", "[crash][death][debug][linux]") {
@@ -237,9 +199,9 @@ TEST_CASE("After the crash handler is uninstalled a fault behaves as if it never
     CHECK(r.StdoutContains("INSTALLED=0"));
     CHECK(r.terminated);
     CHECK(r.native_code == SIGSEGV);
-    std::vector<std::string> envelopes;
+    engine_test::TextList envelopes;
     CollectEnvelopes(dir.Path(), &envelopes);
-    CHECK(envelopes.empty());
+    CHECK(envelopes.Empty());
 }
 
 TEST_CASE("A fault before the crash handler is installed leaves no dump and the original signal", "[crash][death][debug][linux]") {
@@ -264,8 +226,8 @@ TEST_CASE("A dump directory that cannot be created fails the install, logs, and 
 TEST_CASE("Without a directory in the options the dump goes under the user's state directory", "[crash][death][debug][linux]") {
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     CrashTempDir state_home;
-    const std::string state_env = std::string("XDG_STATE_HOME=") + state_home.Path();
-    const char* env[] = {state_env.c_str(), "ENGINE_APP_NAME=engine-crash-test"};
+    const Text state_env = Cat("XDG_STATE_HOME=", state_home.Path());
+    const char* env[] = {state_env.CStr(), "ENGINE_APP_NAME=engine-crash-test"};
     ChildOptions options;
     options.extra_env = env;
     options.extra_env_count = 2;
@@ -273,28 +235,28 @@ TEST_CASE("Without a directory in the options the dump goes under the user's sta
     const ChildResult r = RunInChild("dt_crash_default_directory_then_fault", "", options);
     CHECK(r.StdoutContains("INSTALLED=0"));
     CHECK(r.terminated);
-    std::vector<std::string> envelopes;
-    CollectEnvelopes(std::string(state_home.Path()) + "/engine-crash-test/crashes", &envelopes);
-    CHECK(envelopes.size() == 1);
+    engine_test::TextList envelopes;
+    CollectEnvelopes(Cat(state_home.Path(), "/engine-crash-test/crashes").CStr(), &envelopes);
+    CHECK(envelopes.Size() == 1);
 }
 
 TEST_CASE("The crash dump directory is created private to the user and named after the application", "[crash][death][debug][linux]") {
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     CrashTempDir state_home;
-    const std::string state_env = std::string("XDG_STATE_HOME=") + state_home.Path();
-    const char* env[] = {state_env.c_str(), "ENGINE_APP_NAME=engine-crash-test"};
+    const Text state_env = Cat("XDG_STATE_HOME=", state_home.Path());
+    const char* env[] = {state_env.CStr(), "ENGINE_APP_NAME=engine-crash-test"};
     ChildOptions options;
     options.extra_env = env;
     options.extra_env_count = 2;
     const ChildResult r = RunInChild("dt_crash_print_default_directory", "", options);
     REQUIRE(r.exited);
     CHECK(r.StdoutContains("OK=1"));
-    const std::string expected = std::string("PATH=") + state_home.Path() + "/engine-crash-test/crashes\n";
-    CHECK(r.StdoutContains(expected.c_str()));
+    const Text expected = Cat("PATH=", state_home.Path(), "/engine-crash-test/crashes\n");
+    CHECK(r.StdoutContains(expected.CStr()));
     struct stat app_info;
     struct stat crashes_info;
-    REQUIRE(::stat((std::string(state_home.Path()) + "/engine-crash-test").c_str(), &app_info) == 0);
-    REQUIRE(::stat((std::string(state_home.Path()) + "/engine-crash-test/crashes").c_str(), &crashes_info) == 0);
+    REQUIRE(::stat(Cat(state_home.Path(), "/engine-crash-test").CStr(), &app_info) == 0);
+    REQUIRE(::stat(Cat(state_home.Path(), "/engine-crash-test/crashes").CStr(), &crashes_info) == 0);
     CHECK((app_info.st_mode & 0777) == 0700);
     CHECK((crashes_info.st_mode & 0777) == 0700);
     CHECK(S_ISDIR(crashes_info.st_mode));
@@ -322,12 +284,12 @@ TEST_CASE("An application name that would leave the intended directory or be cut
     // The state directory is one level inside the temporary directory, so a name that climbed out of it would land in the
     // temporary directory (which is removed at the end) and not somewhere shared like /tmp.
     CrashTempDir outer;
-    const std::string state_home = std::string(outer.Path()) + "/state";
-    REQUIRE(::mkdir(state_home.c_str(), 0700) == 0);
-    const std::string state_env = "XDG_STATE_HOME=" + state_home;
-    const std::string too_long = "ENGINE_APP_NAME=" + std::string(300, 'a');
+    const Text state_home = Cat(outer.Path(), "/state");
+    REQUIRE(::mkdir(state_home.CStr(), 0700) == 0);
+    const Text state_env = Cat("XDG_STATE_HOME=", state_home);
+    const Text too_long = Cat("ENGINE_APP_NAME=", engine_test::Repeated(300, 'a'));
     for (const char* bad : {"ENGINE_APP_NAME=..", "ENGINE_APP_NAME=.", "ENGINE_APP_NAME=a/b", "ENGINE_APP_NAME=../x"}) {
-        const char* env[] = {state_env.c_str(), bad};
+        const char* env[] = {state_env.CStr(), bad};
         ChildOptions options;
         options.extra_env = env;
         options.extra_env_count = 2;
@@ -336,47 +298,45 @@ TEST_CASE("An application name that would leave the intended directory or be cut
         REQUIRE(r.exited);
         CHECK(r.StdoutContains("OK=0"));
     }
-    const char* env_long[] = {state_env.c_str(), too_long.c_str()};
+    const char* env_long[] = {state_env.CStr(), too_long.CStr()};
     ChildOptions long_options;
     long_options.extra_env = env_long;
     long_options.extra_env_count = 2;
     CHECK(RunInChild("dt_crash_print_default_directory", "", long_options).StdoutContains("OK=0"));
     // Nothing was created: not beside the state directory (where `..` would have put it), not inside it.
     struct stat info;
-    CHECK(::stat((std::string(outer.Path()) + "/crashes").c_str(), &info) != 0);
-    CHECK(::stat((state_home + "/crashes").c_str(), &info) != 0);
+    CHECK(::stat(Cat(outer.Path(), "/crashes").CStr(), &info) != 0);
+    CHECK(::stat(Cat(state_home, "/crashes").CStr(), &info) != 0);
 }
 
 TEST_CASE("A private directory must be a real directory owned by the user, and is tightened to the owner only", "[crash][debug][linux]") {
     CrashTempDir dir;
-    const std::string root = dir.Path();
+    const Text root = engine_test::MakeText(dir.Path());
     // An existing directory open to others is tightened.
-    const std::string open_dir = root + "/open";
-    REQUIRE(::mkdir(open_dir.c_str(), 0755) == 0);
-    REQUIRE(::chmod(open_dir.c_str(), 0755) == 0);
-    CHECK(io::CreatePrivateDirectory(io::Path(StringView(open_dir.c_str()))).Ok());
+    const Text open_dir = Cat(root, "/open");
+    REQUIRE(::mkdir(open_dir.CStr(), 0755) == 0);
+    REQUIRE(::chmod(open_dir.CStr(), 0755) == 0);
+    CHECK(io::CreatePrivateDirectory(io::Path(open_dir.View())).Ok());
     struct stat info;
-    REQUIRE(::stat(open_dir.c_str(), &info) == 0);
+    REQUIRE(::stat(open_dir.CStr(), &info) == 0);
     CHECK((info.st_mode & 0777) == 0700);
     // A trailing slash makes no difference.
-    CHECK(io::CreatePrivateDirectory(io::Path(StringView((open_dir + "/").c_str()))).Ok());
+    CHECK(io::CreatePrivateDirectory(io::Path(Cat(open_dir, "/").View())).Ok());
     // A symbolic link is refused, even one that points at a good directory, with or without a trailing slash.
-    const std::string link = root + "/link";
-    REQUIRE(::symlink(open_dir.c_str(), link.c_str()) == 0);
-    CHECK(io::CreatePrivateDirectory(io::Path(StringView(link.c_str()))).Failed());
-    CHECK(io::CreatePrivateDirectory(io::Path(StringView((link + "/").c_str()))).Failed());
+    const Text link = Cat(root, "/link");
+    REQUIRE(::symlink(open_dir.CStr(), link.CStr()) == 0);
+    CHECK(io::CreatePrivateDirectory(io::Path(link.View())).Failed());
+    CHECK(io::CreatePrivateDirectory(io::Path(Cat(link, "/").View())).Failed());
     // A file is refused.
-    const std::string file = root + "/file";
-    std::FILE* f = std::fopen(file.c_str(), "w");
-    REQUIRE(f != nullptr);
-    std::fclose(f);
-    CHECK(io::CreatePrivateDirectory(io::Path(StringView(file.c_str()))).Failed());
+    const Text file = Cat(root, "/file");
+    REQUIRE(debug_test::WriteWholeFile(file.View(), "", 0));
+    CHECK(io::CreatePrivateDirectory(io::Path(file.View())).Failed());
     // A directory the user cannot write to is refused (root can write anywhere, so the check is skipped for root).
     if (::geteuid() != 0) {
-        const std::string read_only = root + "/readonly";
-        REQUIRE(::mkdir(read_only.c_str(), 0500) == 0);
-        CHECK(io::CreatePrivateDirectory(io::Path(StringView(read_only.c_str()))).Failed());
-        ::chmod(read_only.c_str(), 0700); // so the temp directory can be removed
+        const Text read_only = Cat(root, "/readonly");
+        REQUIRE(::mkdir(read_only.CStr(), 0500) == 0);
+        CHECK(io::CreatePrivateDirectory(io::Path(read_only.View())).Failed());
+        ::chmod(read_only.CStr(), 0700); // so the temp directory can be removed
     }
 }
 
@@ -390,42 +350,40 @@ ENGINE_DEATH_TEST_FN(dt_crash_install_into) {
 TEST_CASE("The crash handler is not installed into a symbolic link or a directory that is not writable", "[crash][death][debug][linux]") {
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     CrashTempDir dir;
-    const std::string target = std::string(dir.Path()) + "/target";
-    REQUIRE(::mkdir(target.c_str(), 0700) == 0);
-    const std::string link = std::string(dir.Path()) + "/link";
-    REQUIRE(::symlink(target.c_str(), link.c_str()) == 0);
-    const ChildResult through_link = RunInChild("dt_crash_install_into", link.c_str());
+    const Text target = Cat(dir.Path(), "/target");
+    REQUIRE(::mkdir(target.CStr(), 0700) == 0);
+    const Text link = Cat(dir.Path(), "/link");
+    REQUIRE(::symlink(target.CStr(), link.CStr()) == 0);
+    const ChildResult through_link = RunInChild("dt_crash_install_into", link.CStr());
     REQUIRE(through_link.exited);
     CHECK(through_link.StdoutContains("RESULT=3")); // DirectoryFailed
     CHECK(through_link.StdoutContains("INSTALLED=0"));
     if (::geteuid() != 0) {
-        const std::string read_only = std::string(dir.Path()) + "/readonly";
-        REQUIRE(::mkdir(read_only.c_str(), 0500) == 0);
-        const ChildResult unwritable = RunInChild("dt_crash_install_into", read_only.c_str());
+        const Text read_only = Cat(dir.Path(), "/readonly");
+        REQUIRE(::mkdir(read_only.CStr(), 0500) == 0);
+        const ChildResult unwritable = RunInChild("dt_crash_install_into", read_only.CStr());
         CHECK(unwritable.StdoutContains("RESULT=3"));
-        ::chmod(read_only.c_str(), 0700);
+        ::chmod(read_only.CStr(), 0700);
     }
 }
 
 TEST_CASE("CreateDirectories creates missing parents, accepts an existing directory and refuses a file", "[crash][debug][linux]") {
     CrashTempDir dir;
-    const std::string nested = std::string(dir.Path()) + "/a/b/c";
-    CHECK(io::CreateDirectories(io::Path(StringView(nested.c_str()))).Ok());
+    const Text nested = Cat(dir.Path(), "/a/b/c");
+    CHECK(io::CreateDirectories(io::Path(nested.View())).Ok());
     struct stat info;
-    REQUIRE(::stat(nested.c_str(), &info) == 0);
+    REQUIRE(::stat(nested.CStr(), &info) == 0);
     CHECK(S_ISDIR(info.st_mode));
-    CHECK(io::CreateDirectories(io::Path(StringView(nested.c_str()))).Ok()); // already there
-    const std::string file = std::string(dir.Path()) + "/a/file";
-    std::FILE* f = std::fopen(file.c_str(), "w");
-    REQUIRE(f != nullptr);
-    std::fclose(f);
-    CHECK(io::CreateDirectories(io::Path(StringView(file.c_str()))).Failed());
-    CHECK(io::CreateDirectories(io::Path(StringView((file + "/below").c_str()))).Failed());
+    CHECK(io::CreateDirectories(io::Path(nested.View())).Ok()); // already there
+    const Text file = Cat(dir.Path(), "/a/file");
+    REQUIRE(debug_test::WriteWholeFile(file.View(), "", 0));
+    CHECK(io::CreateDirectories(io::Path(file.View())).Failed());
+    CHECK(io::CreateDirectories(io::Path(Cat(file, "/below").View())).Failed());
     CHECK(io::CreateDirectories(io::Path()).Failed());
     // A private directory's missing parents are private as well.
-    const std::string private_nested = std::string(dir.Path()) + "/p/q/r";
-    REQUIRE(io::CreatePrivateDirectory(io::Path(StringView(private_nested.c_str()))).Ok());
-    REQUIRE(::stat((std::string(dir.Path()) + "/p/q").c_str(), &info) == 0);
+    const Text private_nested = Cat(dir.Path(), "/p/q/r");
+    REQUIRE(io::CreatePrivateDirectory(io::Path(private_nested.View())).Ok());
+    REQUIRE(::stat(Cat(dir.Path(), "/p/q").CStr(), &info) == 0);
     CHECK((info.st_mode & 0777) == 0700);
 }
 
@@ -446,11 +404,11 @@ TEST_CASE("A crash dump is still there after the program is started again", "[cr
     options.timeout_ms = 30000;
     const ChildResult crashed = RunInChild("dt_crash_install_then_fault", dir.Path(), options);
     REQUIRE(crashed.terminated);
-    std::vector<std::string> before;
+    engine_test::TextList before;
     CollectEnvelopes(dir.Path(), &before);
-    REQUIRE(before.size() == 1);
-    const std::string original = ReadFile(before[0]);
-    REQUIRE(original.size() > 1000);
+    REQUIRE(before.Size() == 1);
+    const Text original = debug_test::ReadWholeFile(before[0]);
+    REQUIRE(original.Length() > 1000);
 
     // The next launch installs the handler again (twice, as a restart loop would), and must not lose the earlier dump.
     for (int launch = 0; launch < 2; ++launch) {
@@ -459,12 +417,12 @@ TEST_CASE("A crash dump is still there after the program is started again", "[cr
         CHECK(restarted.exit_code == 0);
         CHECK(restarted.StdoutContains("INSTALLED=0"));
     }
-    std::vector<std::string> after;
+    engine_test::TextList after;
     CollectEnvelopes(dir.Path(), &after);
-    REQUIRE(after.size() == 1);
-    const std::string kept = ReadFile(after[0]);
+    REQUIRE(after.Size() == 1);
+    const Text kept = debug_test::ReadWholeFile(after[0]);
     crash_extract::Minidump dump;
-    REQUIRE(crash_extract::FindMinidump(kept.data(), kept.size(), &dump) == crash_extract::EnvelopeResult::Ok);
+    REQUIRE(crash_extract::FindMinidump(kept.CStr(), kept.Length(), &dump) == crash_extract::EnvelopeResult::Ok);
     CHECK(MemCompare(dump.data, "MDMP", 4) == 0);
     CHECK(dump.size > 1000);
 }

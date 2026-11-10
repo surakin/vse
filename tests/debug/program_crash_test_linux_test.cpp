@@ -6,19 +6,17 @@
 #include "log/log.h"
 #include "support/death_test_skip.h"
 
-#include <cstdio>
 #include "cstr/number.h"
-#include <cstring>
-#include <ftw.h>
-#include <string>
 #include <sys/stat.h>
 #include <sys/wait.h>
-#include <vector>
 #include "cstr/cstr.h"
 #include "cstr/format.h"
+#include "support/test_support_linux.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::debug;
+using debug_test::Cat;
+using debug_test::Text;
 
 namespace {
 
@@ -32,40 +30,33 @@ public:
     }
     ~ProgramStateDir() {
         if (path_[0] != '\0') {
-            nftw(path_, &Remove, 16, FTW_DEPTH | FTW_PHYS);
+            debug_test::RemoveTree(path_);
         }
     }
     ProgramStateDir(const ProgramStateDir&) = delete;
     ProgramStateDir& operator=(const ProgramStateDir&) = delete;
-    std::string Path() const { return path_; }
+    Text Path() const { return engine_test::MakeText(path_); }
 
 private:
-    static int Remove(const char* entry, const struct stat*, int, struct FTW*) { return ::remove(entry); }
     char path_[64];
 };
 
 #if defined(ENGINE_PROGRAM_RHI_DEMO) // the shipped programs are built into the plain flavor only
 
 struct ProgramRun {
-    std::string output;
+    Text output = engine_test::MakeText();
     int exit_code = -1;
 };
 
-ProgramRun RunProgramCommand(const std::string& command) {
+// The pieces joined into one command; its output (standard error merged in) ends with the exit status the shell echoes.
+template <typename... Parts>
+ProgramRun RunProgramCommand(const Parts&... command) {
     ProgramRun run;
-    FILE* pipe = popen((command + " 2>&1; echo EXIT=$?").c_str(), "r");
-    if (pipe == nullptr) {
-        return run;
-    }
-    char buffer[4096];
-    usize n;
-    while ((n = std::fread(buffer, 1, sizeof(buffer), pipe)) > 0) {
-        run.output.append(buffer, n);
-    }
-    pclose(pipe);
-    const usize at = run.output.rfind("EXIT=");
-    if (at != std::string::npos) {
-        run.exit_code = CStrToInt(run.output.c_str() + at + 5);
+    debug_test::ShellRun shell = debug_test::RunShell(Cat(command..., " 2>&1; echo EXIT=$?").View());
+    run.output = static_cast<Text&&>(shell.output);
+    const usize at = debug_test::FindLast(run.output.View(), "EXIT=");
+    if (at != run.output.Length()) {
+        run.exit_code = CStrToInt(run.output.CStr() + at + 5);
     }
     return run;
 }
@@ -83,13 +74,13 @@ const ShippedProgram kPrograms[] = {
 };
 
 // The crash dump directory is under XDG_STATE_HOME, so each run gets its own and leaves nothing in the user's home.
-std::string Command(const ProgramStateDir& state, const ShippedProgram& program, const char* arguments) {
-    return "XDG_STATE_HOME='" + state.Path() + "' '" + program.path + "' " + arguments;
+Text Command(const ProgramStateDir& state, const ShippedProgram& program, const char* arguments) {
+    return Cat("XDG_STATE_HOME='", state.Path(), "' '", program.path, "' ", arguments);
 }
 
-usize CountEnvelopes(const std::string& directory) {
-    const ProgramRun run = RunProgramCommand("find '" + directory + "' -name '*.envelope' | wc -l");
-    return static_cast<usize>(CStrToInt(run.output.c_str()));
+usize CountEnvelopes(const Text& directory) {
+    const ProgramRun run = RunProgramCommand("find '", directory, "' -name '*.envelope' | wc -l");
+    return static_cast<usize>(CStrToInt(run.output.CStr()));
 }
 
 #endif // the shipped programs
@@ -103,13 +94,13 @@ TEST_CASE("Every shipped program turns --crash-test=segv into a report, a dump a
         INFO(program.name);
         ProgramStateDir state;
         const ProgramRun run = RunProgramCommand(Command(state, program, "--crash-handler=on --crash-test=segv"));
-        INFO(run.output);
+        INFO(run.output.CStr());
         CHECK(run.exit_code == 128 + 11);
-        CHECK(run.output.find("=== CRASH REPORT ===") != std::string::npos);
-        CHECK(run.output.find("reason: AccessViolation") != std::string::npos);
-        CHECK(run.output.find("RunCrashTest") != std::string::npos);
-        CHECK(run.output.find("build id: ") != std::string::npos);
-        CHECK(run.output.find("[LogBuild] INFO: build ") != std::string::npos); // the build line, first thing the program logs
+        CHECK(run.output.View().Contains("=== CRASH REPORT ==="));
+        CHECK(run.output.View().Contains("reason: AccessViolation"));
+        CHECK(run.output.View().Contains("RunCrashTest"));
+        CHECK(run.output.View().Contains("build id: "));
+        CHECK(run.output.View().Contains("[LogBuild] INFO: build ")); // the build line, first thing the program logs
         CHECK(CountEnvelopes(state.Path()) == 1);
     }
 }
@@ -121,18 +112,18 @@ TEST_CASE("Every shipped program turns --crash-test=abort and =assert into SIGAB
         {
             ProgramStateDir state;
             const ProgramRun run = RunProgramCommand(Command(state, program, "--crash-handler=on --crash-test=abort"));
-            INFO(run.output);
+            INFO(run.output.CStr());
             CHECK(run.exit_code == 128 + 6);
-            CHECK(run.output.find("reason: Abort") != std::string::npos);
+            CHECK(run.output.View().Contains("reason: Abort"));
             CHECK(CountEnvelopes(state.Path()) == 1);
         }
         {
             ProgramStateDir state;
             const ProgramRun run = RunProgramCommand(Command(state, program, "--crash-handler=on --crash-test=assert"));
-            INFO(run.output);
+            INFO(run.output.CStr());
             CHECK(run.exit_code == 128 + 6);
-            CHECK(run.output.find("ASSERT FAILED: ") != std::string::npos);
-            CHECK(run.output.find("--crash-test=assert") != std::string::npos);
+            CHECK(run.output.View().Contains("ASSERT FAILED: "));
+            CHECK(run.output.View().Contains("--crash-test=assert"));
             CHECK(CountEnvelopes(state.Path()) == 1);
         }
     }
@@ -144,10 +135,10 @@ TEST_CASE("A crash test of kind ensure reports and the program carries on", "[cr
     ProgramStateDir state;
     const ShippedProgram& program = kPrograms[1];
     const ProgramRun run = RunProgramCommand(Command(state, program, "--crash-handler=on --crash-test=ensure --not-an-option"));
-    INFO(run.output);
-    CHECK(run.output.find("ENSURE FAILED: ") != std::string::npos);
-    CHECK(run.output.find("usage:") != std::string::npos);
-    CHECK(run.output.find("=== CRASH REPORT ===") == std::string::npos);
+    INFO(run.output.CStr());
+    CHECK(run.output.View().Contains("ENSURE FAILED: "));
+    CHECK(run.output.View().Contains("usage:"));
+    CHECK_FALSE(run.output.View().Contains("=== CRASH REPORT ==="));
     CHECK(CountEnvelopes(state.Path()) == 0);
 }
 
@@ -155,17 +146,17 @@ TEST_CASE("A mistyped crash test is warned about, not silently ignored", "[crash
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     ProgramStateDir state;
     const ProgramRun run = RunProgramCommand(Command(state, kPrograms[1], "--crash-test=sgev --not-an-option"));
-    INFO(run.output);
-    CHECK(run.output.find("ignored --crash-test=sgev") != std::string::npos);
+    INFO(run.output.CStr());
+    CHECK(run.output.View().Contains("ignored --crash-test=sgev"));
 }
 
 TEST_CASE("The argument crash-handler=off leaves a fault with no report and no dump", "[crash][programs][debug][linux]") {
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     ProgramStateDir state;
     const ProgramRun run = RunProgramCommand(Command(state, kPrograms[1], "--crash-handler=off --crash-test=segv"));
-    INFO(run.output);
+    INFO(run.output.CStr());
     CHECK(run.exit_code == 128 + 11);
-    CHECK(run.output.find("=== CRASH REPORT ===") == std::string::npos);
+    CHECK_FALSE(run.output.View().Contains("=== CRASH REPORT ==="));
     CHECK(CountEnvelopes(state.Path()) == 0);
 }
 
@@ -173,13 +164,13 @@ TEST_CASE("ENGINE_CRASH_HANDLER in the environment turns the handler on, and the
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     {
         ProgramStateDir state;
-        const ProgramRun run = RunProgramCommand("ENGINE_CRASH_HANDLER=1 " + Command(state, kPrograms[1], "--crash-test=segv"));
-        CHECK(run.output.find("=== CRASH REPORT ===") != std::string::npos);
+        const ProgramRun run = RunProgramCommand("ENGINE_CRASH_HANDLER=1 ", Command(state, kPrograms[1], "--crash-test=segv"));
+        CHECK(run.output.View().Contains("=== CRASH REPORT ==="));
     }
     {
         ProgramStateDir state;
-        const ProgramRun run = RunProgramCommand("ENGINE_CRASH_HANDLER=1 " + Command(state, kPrograms[1], "--crash-handler=off --crash-test=segv"));
-        CHECK(run.output.find("=== CRASH REPORT ===") == std::string::npos);
+        const ProgramRun run = RunProgramCommand("ENGINE_CRASH_HANDLER=1 ", Command(state, kPrograms[1], "--crash-handler=off --crash-test=segv"));
+        CHECK_FALSE(run.output.View().Contains("=== CRASH REPORT ==="));
     }
 }
 

@@ -8,22 +8,23 @@
 #include "log/log.h"
 #include "os/os.h"
 
-#include <cstring>
-#include <string>
 #include "sync/atomic.h"
 #include "cstr/cstr.h"
+#include "catch_engine_types.h"
+#include "test_text.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::debug;
+using engine_test::Text;
 
 namespace {
 
 void StateSink(void* context, const char* data, usize length) {
-    static_cast<std::string*>(context)->append(data, length);
+    static_cast<Text*>(context)->AppendRawBytes(data, length);
 }
 
-std::string StateSection() {
-    std::string text;
+Text StateSection() {
+    Text text = engine_test::MakeText();
     CrashReportSink sink;
     sink.write = &StateSink;
     sink.context = &text;
@@ -32,9 +33,9 @@ std::string StateSection() {
 }
 
 long CaptureWrite(int, const void* data, usize length);
-std::string g_captured;
+Text g_captured = engine_test::MakeText();
 long CaptureWrite(int, const void* data, usize length) {
-    g_captured.append(static_cast<const char*>(data), length);
+    g_captured.AppendRawBytes(static_cast<const char*>(data), length);
     return static_cast<long>(length);
 }
 
@@ -44,11 +45,11 @@ TEST_CASE("A text entry appears in the crash report and can be replaced", "[cras
     ResetCrashStateForTesting();
     // The table of entries is per process; use names no other test uses.
     REQUIRE(SetCrashStateText("test-gpu", "Test Adapter 9000, driver 1.2.3"));
-    CHECK(StateSection().find("test-gpu: Test Adapter 9000, driver 1.2.3\n") != std::string::npos);
+    CHECK(StateSection().View().Contains("test-gpu: Test Adapter 9000, driver 1.2.3\n"));
     REQUIRE(SetCrashStateText("test-gpu", "Replaced"));
-    const std::string after = StateSection();
-    CHECK(after.find("test-gpu: Replaced\n") != std::string::npos);
-    CHECK(after.find("Test Adapter 9000") == std::string::npos);
+    const Text after = StateSection();
+    CHECK(after.View().Contains("test-gpu: Replaced\n"));
+    CHECK_FALSE(after.View().Contains("Test Adapter 9000"));
     ResetCrashStateForTesting();
 }
 
@@ -57,23 +58,24 @@ TEST_CASE("A counter entry shows its current value", "[crashstate][debug]") {
     Atomic<u64>* counter = CrashStateCounter("test-frame");
     REQUIRE(counter != nullptr);
     counter->Store(0);
-    CHECK(StateSection().find("test-frame: 0\n") != std::string::npos);
+    CHECK(StateSection().View().Contains("test-frame: 0\n"));
     counter->Store(18446744073709551615ull);
-    CHECK(StateSection().find("test-frame: 18446744073709551615\n") != std::string::npos);
+    CHECK(StateSection().View().Contains("test-frame: 18446744073709551615\n"));
     counter->Store(41231);
-    CHECK(StateSection().find("test-frame: 41231\n") != std::string::npos);
+    CHECK(StateSection().View().Contains("test-frame: 41231\n"));
     CHECK(CrashStateCounter("test-frame") == counter); // the same entry on a second call
     ResetCrashStateForTesting();
 }
 
 TEST_CASE("A long text is cut, and a name cannot be both text and counter", "[crashstate][debug]") {
     ResetCrashStateForTesting();
-    const std::string long_text(500, 'z');
-    REQUIRE(SetCrashStateText("test-long", long_text.c_str()));
-    const std::string section = StateSection();
-    const usize at = section.find("test-long: ");
-    REQUIRE(at != std::string::npos);
-    CHECK(section.find('\n', at) - at - CStrLength("test-long: ") == kCrashStateEntryTextBytes - 1);
+    const Text long_text = engine_test::Repeated(500, 'z');
+    REQUIRE(SetCrashStateText("test-long", long_text.CStr()));
+    const Text section = StateSection();
+    const usize at = section.View().Find("test-long: ");
+    REQUIRE(at != section.Length());
+    const usize line_end = at + section.View().Substring(at).IndexOf('\n');
+    CHECK(line_end - at - CStrLength("test-long: ") == kCrashStateEntryTextBytes - 1);
     CHECK(CrashStateCounter("test-long") == nullptr);
     CHECK_FALSE(SetCrashStateText(nullptr, "x"));
     CHECK(CrashStateCounter(nullptr) == nullptr);
@@ -83,20 +85,20 @@ TEST_CASE("A long text is cut, and a name cannot be both text and counter", "[cr
 TEST_CASE("With error traces on, an Error line is followed by a trace and other lines are not", "[log][debug]") {
     static LogChannel channel("LogTraceTest", LogVerbosity::Info);
     SetWriteSinkForTesting(&CaptureWrite);
-    g_captured.clear();
+    g_captured = engine_test::MakeText();
     CHECK_FALSE(LogErrorTraces());
     Log(channel, LogVerbosity::Error, "no trace please");
-    const std::string plain = g_captured;
-    g_captured.clear();
+    const Text plain = engine_test::MakeText(g_captured.View());
+    g_captured = engine_test::MakeText();
     SetLogErrorTraces(true);
     CHECK(LogErrorTraces());
     Log(channel, LogVerbosity::Warn, "a warning");
     Log(channel, LogVerbosity::Error, "with a trace");
     SetLogErrorTraces(false);
-    const std::string traced = g_captured;
+    const Text traced = engine_test::MakeText(g_captured.View());
     SetWriteSinkForTesting(&os::Write);
     CHECK(plain == "[LogTraceTest] ERROR: no trace please\n");
-    CHECK(traced.find("[LogTraceTest] WARN: a warning\n[LogTraceTest] ERROR: with a trace\n#0 ") != std::string::npos);
+    CHECK(traced.View().Contains("[LogTraceTest] WARN: a warning\n[LogTraceTest] ERROR: with a trace\n#0 "));
 }
 
 TEST_CASE("Registering a thread before the crash handler is installed sets its name and reports that nothing more was done", "[crash][debug]") {
@@ -114,22 +116,22 @@ TEST_CASE("The name of a crash state entry is copied, so the caller's string may
         REQUIRE(SetCrashStateText(name, "kept"));
         CStrCopy(name, "garbage!!!!");
     }
-    const std::string section = StateSection();
-    CHECK(section.find("test-copied: kept\n") != std::string::npos);
-    CHECK(section.find("garbage") == std::string::npos);
+    const Text section = StateSection();
+    CHECK(section.View().Contains("test-copied: kept\n"));
+    CHECK_FALSE(section.View().Contains("garbage"));
     ResetCrashStateForTesting();
 }
 
 TEST_CASE("A log message longer than the line buffer is cut but the line still ends with a newline", "[log][debug]") {
     static LogChannel channel("LogLongTest", LogVerbosity::Info);
     SetWriteSinkForTesting(&CaptureWrite);
-    g_captured.clear();
-    const std::string long_message(2000, 'm');
-    Log(channel, LogVerbosity::Info, StringView(long_message.c_str()));
+    g_captured = engine_test::MakeText();
+    const Text long_message = engine_test::Repeated(2000, 'm');
+    Log(channel, LogVerbosity::Info, long_message.View());
     Log(channel, LogVerbosity::Info, "next");
     SetWriteSinkForTesting(&os::Write);
-    const usize first_end = g_captured.find('\n');
-    REQUIRE(first_end != std::string::npos);
+    const usize first_end = g_captured.View().IndexOf('\n');
+    REQUIRE(first_end != g_captured.Length());
     CHECK(first_end == 511);                                         // 511 bytes of text, then the newline
-    CHECK(g_captured.substr(first_end + 1) == "[LogLongTest] INFO: next\n"); // not glued onto the long line
+    CHECK(g_captured.View().Substring(first_end + 1) == "[LogLongTest] INFO: next\n"); // not glued onto the long line
 }
