@@ -3350,6 +3350,34 @@ spatial::HashGrid::ForEachInRegion(const Aabb&,Exact&&,Visit&&) const	function	s
 spatial::HashGrid::ForEachOverlappingPair(Visit&&) const	function	spatial	spatial-hashgrid-foreachoverlappingpair-visit-amp-amp-const	spatial.md	engine/spatial/hash_grid.h:115
 spatial::HashGrid::Traverse(NodeTest&&,ItemVisit&&) const	function	spatial	spatial-hashgrid-traverse-nodetest-amp-amp-itemvisit-amp-amp-const	spatial.md	engine/spatial/hash_grid.h:124
 spatial::HashGrid::TraverseRay(const Ray&,f32,ItemVisit&&) const	function	spatial	spatial-hashgrid-traverseray-const-ray-amp-f32-itemvisit-amp-amp-const	spatial.md	engine/spatial/hash_grid.h:134
+spatial::PairTrackerConfig	struct	spatial	spatial-pairtrackerconfig	spatial.md	engine/spatial/pair_tracker.h:23
+spatial::PairTrackerConfig::margin	variable	spatial	spatial-pairtrackerconfig-margin	spatial.md	engine/spatial/pair_tracker.h:25
+spatial::PairTrackerConfig::meets	variable	spatial	spatial-pairtrackerconfig-meets	spatial.md	engine/spatial/pair_tracker.h:27
+spatial::PairTrackerConfig::PairTrackerConfig()	function	spatial	spatial-pairtrackerconfig-pairtrackerconfig	spatial.md	engine/spatial/pair_tracker.h:30
+spatial::PairTrackerConfig::SetMeets(u32,u32,bool)	function	spatial	spatial-pairtrackerconfig-setmeets-u32-u32-bool	spatial.md	engine/spatial/pair_tracker.h:40
+spatial::PairTrackerConfig::Meets(u32,u32) const	function	spatial	spatial-pairtrackerconfig-meets-u32-u32-const	spatial.md	engine/spatial/pair_tracker.h:45
+spatial::PairEvents	struct	spatial	spatial-pairevents	spatial.md	engine/spatial/pair_tracker.h:53
+spatial::PairEvents::begin	variable	spatial	spatial-pairevents-begin	spatial.md	engine/spatial/pair_tracker.h:55
+spatial::PairEvents::end	variable	spatial	spatial-pairevents-end	spatial.md	engine/spatial/pair_tracker.h:57
+spatial::PairEvents::Clear()	function	spatial	spatial-pairevents-clear	spatial.md	engine/spatial/pair_tracker.h:60
+spatial::PairTrackerStats	struct	spatial	spatial-pairtrackerstats	spatial.md	engine/spatial/pair_tracker.h:69
+spatial::PairTrackerStats::updates	variable	spatial	spatial-pairtrackerstats-updates	spatial.md	engine/spatial/pair_tracker.h:70
+spatial::PairTrackerStats::touched	variable	spatial	spatial-pairtrackerstats-touched	spatial.md	engine/spatial/pair_tracker.h:71
+spatial::PairTrackerStats::removed	variable	spatial	spatial-pairtrackerstats-removed	spatial.md	engine/spatial/pair_tracker.h:72
+spatial::PairTrackerStats::begun	variable	spatial	spatial-pairtrackerstats-begun	spatial.md	engine/spatial/pair_tracker.h:73
+spatial::PairTrackerStats::ended	variable	spatial	spatial-pairtrackerstats-ended	spatial.md	engine/spatial/pair_tracker.h:74
+spatial::PairTrackerStats::pairs	variable	spatial	spatial-pairtrackerstats-pairs	spatial.md	engine/spatial/pair_tracker.h:75
+spatial::PairTracker	class	spatial	spatial-pairtracker	spatial.md	engine/spatial/pair_tracker.h:88
+spatial::PairTracker::PairTracker(const PairTrackerConfig&)	function	spatial	spatial-pairtracker-pairtracker-const-pairtrackerconfig-amp	spatial.md	engine/spatial/pair_tracker.h:94
+spatial::PairTracker::Touch(SetHandle)	function	spatial	spatial-pairtracker-touch-sethandle	spatial.md	engine/spatial/pair_tracker.h:99
+spatial::PairTracker::Remove(SpatialKey)	function	spatial	spatial-pairtracker-remove-spatialkey	spatial.md	engine/spatial/pair_tracker.h:104
+spatial::PairTracker::Update(const SpatialSet&,PairEvents*)	function	spatial	spatial-pairtracker-update-const-spatialset-amp-pairevents-star	spatial.md	engine/spatial/pair_tracker.h:112
+spatial::PairTracker::Recompute(const SpatialSet&,PairEvents*)	function	spatial	spatial-pairtracker-recompute-const-spatialset-amp-pairevents-star	spatial.md	engine/spatial/pair_tracker.h:121
+spatial::PairTracker::Clear()	function	spatial	spatial-pairtracker-clear	spatial.md	engine/spatial/pair_tracker.h:124
+spatial::PairTracker::PairCount() const	function	spatial	spatial-pairtracker-paircount-const	spatial.md	engine/spatial/pair_tracker.h:127
+spatial::PairTracker::Has(SpatialKey,SpatialKey) const	function	spatial	spatial-pairtracker-has-spatialkey-spatialkey-const	spatial.md	engine/spatial/pair_tracker.h:134
+spatial::PairTracker::ForEachPair(Visit&&) const	function	spatial	spatial-pairtracker-foreachpair-visit-amp-amp-const	spatial.md	engine/spatial/pair_tracker.h:139
+spatial::PairTracker::Stats() const	function	spatial	spatial-pairtracker-stats-const	spatial.md	engine/spatial/pair_tracker.h:147
 spatial::QueryFilter	struct	spatial	spatial-queryfilter	spatial.md	engine/spatial/query.h:30
 spatial::QueryFilter::mask	variable	spatial	spatial-queryfilter-mask	spatial.md	engine/spatial/query.h:32
 spatial::QueryFilter::filter	variable	spatial	spatial-queryfilter-filter	spatial.md	engine/spatial/query.h:34

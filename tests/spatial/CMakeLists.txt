@@ -6,6 +6,7 @@ set(SPATIAL_TEST_SOURCES
   dynamic_bvh_test.cpp  # Day 240
   query_test.cpp  # Day 241
   spatial_set_test.cpp  # Day 242
+  pair_test.cpp  # Day 243
   ../ecs/alloc_counter.cpp  # the heap-allocation counter of tests/ecs (replaces operator new in this executable)
 )
 

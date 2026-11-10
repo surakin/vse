@@ -6,6 +6,7 @@ set(SPATIAL_SOURCES
   dynamic_bvh.cpp  # Day 240
   hash_grid.cpp  # Day 242
   spatial_set.cpp  # Day 242
+  pair_tracker.cpp  # Day 243
 )
 set(SPATIAL_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

@@ -1,7 +1,7 @@
 # Spatial partitioning: what is near what
 
 Status: in progress (Phase 18). Built: the shared shapes (Day 238), the static and dynamic bounding-volume hierarchies (Days 239-240), the query vocabulary
-(Day 241), the hash grid and the spatial set (Day 242). Next: the pair tracker, the ECS tier and the renderer's culling (Days 243-249).
+(Day 241), the hash grid and the spatial set (Day 242), the pair tracker (Day 243). Next: the ECS tier and the renderer's culling (Days 244-249).
 
 **Audience:** engine programmers who write a system that asks "what is near this box, ray or frustum" (physics, culling, audio, gameplay). Read
 [Math](foundation-math.md) first.
@@ -367,6 +367,75 @@ each axis), goes to an "oversized" list that every query scans: keep the cell si
 Measured on the Windows PC (Release), 100,000 agents of 1 x 2 x 1 on a 1000 x 1000 plane, cell 4: the all-pairs query takes 7 ms on the grid against
 16.6 ms on a static tree of the same boxes (2.4 times faster; the design spec's experiment found 2.1 times), and an update costs 36 ns per moved agent
 (a static tree would need a 35 ms rebuild). That is why the grid is kept, and why it is opt-in: on boxes of very different sizes and for rays it loses.
+
+## Pairs for physics
+
+`spatial::PairTracker` (`spatial/pair_tracker.h`) is the contract the physics phase builds on: after each frame's moves it says which pairs of items
+**began** and which **ended** overlapping, sorted, so the narrow phase creates and destroys its contacts from events instead of searching every frame.
+
+```cpp compile run standalone
+#include "os/console.h"
+#include "spatial/pair_tracker.h"
+
+using namespace engine_placeholder;
+using namespace engine_placeholder::spatial;
+
+namespace {
+void Show(int frame, const PairEvents& events) {
+    os::Print("frame %d:", frame);
+    for (usize i = 0; i < events.begin.Size(); ++i) os::Print(" begin(%llu,%llu)", static_cast<unsigned long long>(events.begin[i].a), static_cast<unsigned long long>(events.begin[i].b));
+    for (usize i = 0; i < events.end.Size(); ++i) os::Print(" end(%llu,%llu)", static_cast<unsigned long long>(events.end[i].a), static_cast<unsigned long long>(events.end[i].b));
+    os::Print("\n");
+}
+} // namespace
+
+int main() {
+    SpatialSet world;
+    PairTrackerConfig config;
+    config.margin = 0.0f; // a pair exists exactly while the boxes overlap
+    PairTracker pairs(config);
+    PairEvents events;
+
+    const SetHandle a = world.AddDynamic(Aabb::FromMinMax(Vec3(0, 0, 0), Vec3(2, 2, 2)), 1, 0);
+    const SetHandle b = world.AddDynamic(Aabb::FromMinMax(Vec3(5, 0, 0), Vec3(7, 2, 2)), 2, 0);
+    pairs.Touch(a); // every added item is touched once
+    pairs.Touch(b);
+    pairs.Update(world, &events);
+    Show(1, events);
+
+    world.Move(b, Aabb::FromMinMax(Vec3(1, 0, 0), Vec3(3, 2, 2))); // b moves into a
+    pairs.Touch(b);                                                  // only moved items are re-queried
+    pairs.Update(world, &events);
+    Show(2, events);
+
+    pairs.Remove(2); // b is destroyed: its pairs end in the same update
+    world.Remove(b);
+    pairs.Update(world, &events);
+    Show(3, events);
+    return 0;
+}
+```
+
+```output
+frame 1:
+frame 2: begin(1,2)
+frame 3: end(1,2)
+```
+
+- **What you tell it.** `Touch(handle)` for every item added, moved, given another layer or switched between static and dynamic; `Remove(key)` for
+  every item removed (its handle is stale by then). `Update(set, &events)` re-queries only the touched items, so a frame in which few things moved costs
+  few queries: 100,000 dynamic objects with 1 percent moving take about 4.6 ms a frame in a debug build (the test records the number; Release is faster).
+- **The events** are `KeyPair`s with the smaller key first, sorted by (first, second), whatever order the items moved in: two runs of the same inputs give
+  the same events, with a tree or with a grid behind the set. A narrow phase that applies them in order keeps a contact list that equals a brute-force
+  overlap test every frame (the test does exactly that).
+- **Layers and static items.** `PairTrackerConfig::SetMeets(a, b, false)` says that layers `a` and `b` never form pairs (physics layers are an input, not
+  hard-coded). Two static items never form a pair: they cannot start to touch.
+- **The margin.** With `margin` above 0 a pair is made when two boxes overlap and kept until the boxes, each grown by `margin` times its largest extent,
+  stop overlapping, so two objects jittering at the edge of contact do not produce a begin and an end every frame. The pairs then lie between the touching
+  pairs and the near pairs (tested); `Recompute(set, &events)` is the reference that makes pairs only where boxes overlap, and equals `Update` when the
+  margin is 0.
+- **Lifecycle.** Removing an item ends its pairs in the same update. A new key never inherits pairs. A key removed and added back between two updates
+  is the same item for pairs if it is touched: pairs that still hold produce no events.
 
 ## See also
 
