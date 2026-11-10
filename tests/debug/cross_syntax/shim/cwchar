@@ -5,13 +5,16 @@ extern "C" {
 size_t wcslen(const wchar_t*);
 int wcscmp(const wchar_t*, const wchar_t*);
 int wcsncmp(const wchar_t*, const wchar_t*, size_t);
-const wchar_t* wcsstr(const wchar_t*, const wchar_t*);
-const wchar_t* wcsrchr(const wchar_t*, wchar_t);
 wchar_t* wcscat(wchar_t*, const wchar_t*);
 wchar_t* wmemcpy(wchar_t*, const wchar_t*, size_t);
 wchar_t* wmemmove(wchar_t*, const wchar_t*, size_t);
 int swprintf(wchar_t*, size_t, const wchar_t*, ...);
 }
+// The C++ library's const and non-const overloads, as in the cstring stand-in.
+const wchar_t* wcsstr(const wchar_t*, const wchar_t*);
+wchar_t* wcsstr(wchar_t*, const wchar_t*);
+const wchar_t* wcsrchr(const wchar_t*, wchar_t);
+wchar_t* wcsrchr(wchar_t*, wchar_t);
 namespace std {
 using ::wcscat;
 using ::wcscmp;
