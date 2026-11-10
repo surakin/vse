@@ -366,6 +366,7 @@ void Schedule::Run(World& world, f32 dt) {
     }
     ++stats_.frames;
     world.Advance();
+    world.EndFrame();
 }
 
 u32 Schedule::WaveOf(u32 index) const {

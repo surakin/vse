@@ -1,9 +1,9 @@
 # ECS: entities, components and systems
 
-Status: draft (Phase 17, Days 223-232: entities, components, storage, the world, queries, command buffers, resources, change detection, systems, the schedule, parallel systems, transforms and hierarchy; the rest of the page arrives with the days that build it).
+Status: draft (Phase 17, Days 223-233: entities, components, storage, the world, queries, command buffers, resources, change detection, systems, the schedule, parallel systems, transforms and hierarchy, removal tracking and the render sync; the rest of the page arrives with the days that build it).
 
 **Audience:** every game and engine programmer. Read [Containers](foundation-containers.md) and [Memory](foundation-memory.md) first. This page covers only
-what is built so far (entities, components, storage, the world, queries, command buffers, resources, change detection, systems, the schedule, parallel systems, transforms and hierarchy); the scene bridge is not documented here yet.
+what is built so far (entities, components, storage, the world, queries, command buffers, resources, change detection, systems, the schedule, parallel systems, transforms and hierarchy, removal tracking and the scene bridge).
 
 The ECS (`engine/ecs`, namespace `ecs`) is the engine's data-oriented core: **entities** are ids, **components** are plain data stored in
 cache-friendly chunks, and **systems** are functions over all entities that have a given set of components. Design, measurements and the
@@ -29,6 +29,8 @@ with a Position" reads memory in order. The *archetype* is that group: all entit
 | to run logic every frame in a defined order | `ecs::Schedule`, `MakeQuerySystem`, `Build()`, `Run(world, dt)` | see "Systems and schedules"; include `ecs/schedule.h` |
 | one value shared by all systems (time, settings) | `world.SetResource(value)`, `world.Resource<T>()` | see "Resources" |
 | a parent-child transform hierarchy | `CreateTransformEntity`, `SetParent`, `MakeTransformSystem` | see "Transforms and hierarchy"; include `ecs/transform.h` |
+| entities drawn by the renderer | `scene::MeshRenderer`, `LightSource`, `MakeRenderSyncSystem` | see "Rendering"; include `scene/render_sync.h` |
+| to react to a component being removed | `kTrackRemoval`, `world.RemovedCount<T>()` / `RemovedAt<T>(i)` | see "Removal tracking" |
 | to check the world's consistency | `world.Validate()` | for tests and debug builds |
 
 ## Entities
@@ -570,6 +572,29 @@ turret at 20 2
   (`depth_repaired`); an entity whose chain loops keeps its previous matrix (`unresolved`). Writing `Parent` directly with `world.Set` works but is repaired a frame late.
 - **Destroying a subtree.** `DestroyRecursive(world, commands, root)` records the destruction of the root and every descendant into a command buffer and returns how many.
 - **Helpers.** `LookAt(eye, target, up)` returns a `LocalTransform` whose -Z axis points at the target; `Decompose(matrix)` splits a matrix back into position, rotation and scale.
+
+## Removal tracking
+
+A component that declares `static constexpr bool kTrackRemoval = true` (and is trivially copyable and not a tag) has every removal logged by the world: destroying an entity that has it,
+or removing the component, appends an entry with the entity, the value at that moment and a number `seq` that rises within the world. `world.RemovedCount<T>()` and `world.RemovedAt<T>(i)`
+(`context.RemovedCount<T>()` in a system, which must declare `T` read) list the entries, oldest first. They live for the frame they were made in and the next one (`World::EndFrame`, which
+`Schedule::Run` calls at the end of a frame), so a system that runs once per frame sees each exactly once if it remembers the largest `seq` it handled. Replacing a value with `Set` is not a removal.
+
+## Rendering
+
+Include `scene/render_sync.h` and link `scene` (module `engine/scene`, above `ecs` and `renderer`; neither includes it). It mirrors entities into a `renderer::RenderScene`, which is unchanged.
+
+- **Components.** `scene::MeshRenderer { SharedPtr<MeshAsset> mesh; u32 material; u32 flags; }` with the `WorldTransform` draws a mesh; `scene::MeshAsset` is the ref-counted holder of a
+  `renderer::GpuMesh` (prepare its upload barriers and `MarkReady` it, as for any mesh). `scene::LightSource` makes a light (a point light at the entity's position, a directional one pointing along
+  its `direction` turned by the entity's rotation). The `scene::Hidden` tag sets `ObjectFlags::kHidden`. An entity mirrors a mesh or a light, not both.
+- **The system.** `MakeRenderSyncSystem(name)` in `ecs::kRender` needs the resources `SceneLink { RenderScene* }` and `SceneSyncReport`. It keeps a `RenderHandle` (the object and light ids, with removal
+  tracking) on each mirrored entity and calls the scene only for what changed: `AddObject` for new entities, `SetTransform` when the matrix differs from the scene's, `SetFlags`, a remove and add
+  when the mesh or material changed, `RemoveObject`/`RemoveLight` for destroyed entities or ones that lost the component. A scene with nothing changing costs the `Changed` queries and no calls.
+- **Lifetime.** The sync holds a reference to each object's `MeshAsset`, so the geometry outlives its scene entry even if the entity was destroyed first.
+- **Limits.** A full `RenderScene` is a counted refusal (`SceneSyncReport::refused_full`), retried each frame. A missing or empty mesh, or a light the scene would abort on (a point light without a radius,
+  a value that is not finite) is skipped and counted in `invalid`. The linked scene must not change between frames.
+- **The camera.** `MakeCameraSystem(name)` builds `CameraOutput` (a `renderer::Camera`) from the `ActiveCamera` resource's entity, which carries a `scene::Camera` and a `WorldTransform`
+  (+X right, +Y up, -Z forward); `CameraOutput::valid` is false when there is none.
 
 ## Common mistakes
 

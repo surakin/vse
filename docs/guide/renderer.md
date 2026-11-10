@@ -1011,6 +1011,7 @@ flavor runs them; see [the RHI guide](rhi.md#platform-notes).
 
 ### See also
 
+- [ECS: Rendering](ecs.md#rendering): entities mirrored into a `RenderScene` by `scene::MakeRenderSyncSystem` (`engine/scene`).
 - [The RHI](rhi.md) and the [renderer design](../superpowers/specs/2026-11-04-renderer-design.md).
 - [Renderer portability review](../superpowers/specs/2026-11-04-renderer-portability-review.md): what Phases 13, 24 and 25 add.
 - [Shaders: from Slang to a shader module](rhi-shaders.md) and [Tutorial: From a Scene to a Lit Frame](../tutorials/hello-renderer.md).

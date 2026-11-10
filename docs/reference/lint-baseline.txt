@@ -2,7 +2,7 @@
 # Written by `docgen lint --baseline FILE --update-baseline`. The lint tolerates exactly these findings and fails on
 # any other, or if a module's documented/total ratio drops below its line here. Delete entries as symbols get documented.
 module	foundation/memory	22	22
-module	foundation/lang	121	121
+module	foundation/lang	126	126
 module	foundation/cstr	60	60
 module	foundation/sync	87	87
 module	foundation/containers	155	155
@@ -16,7 +16,8 @@ module	platform/os	63	63
 module	platform/window-input	642	642
 module	foundation/debug	208	208
 module	text	216	216
-module	ecs	32	32
+module	ecs	379	379
+module	scene	44	44
 module	ui	1401	1401
 module	ui_window	25	25
 module	jobs	168	168

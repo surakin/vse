@@ -28,7 +28,8 @@ From the bottom up. "Platform code" means a per-OS backend directory (`linux/`, 
 | 11. RHI | `engine/rhi` (neutral, with the backend registry, `CreateDevice` and `DeviceHost`), `engine/rhi/null`, `engine/rhi/vulkan`, later `rhi/dx12`, `rhi/metal`; `engine/rhi/backends` | The neutral RHI, and one library per backend. Backends depend on `rhi`, jobs and foundation, never on each other; each registers with the neutral registry. `rhi/backends` (library `rhi_backends`, Phase 13 Day 162) is the only module that names every backend, to register them; programs link it, the renderer never does. Graphics API headers only inside their backend (`rhi_boundary_check`). |
 | 12. Renderer | `engine/renderer` (+ `renderer_passes`) | Render graph, materials, passes, and from Phase 14 the glyph atlas texture and the text renderer. RHI (neutral only), jobs, text (the CPU atlas and layout types), foundation including settings. |
 | 12. UI window adapter | `engine/ui_window` (Phase 15 Day 194) | `WindowAdapter`: drains a window's input events into a surface (pointer positions divided by the scale, resize, focus) and sets the window's cursor from the surface. The only module naming both `ui` and `os::Window`. Depends on ui, platform and the foundation. |
-| 13. Programs | `game/*`, `tools/*`, `tests/*` | Demos, benches, tools and tests. Anything below. Neutral headers only: no `os/<platform>/` include (section 3, item 6). |
+| 13. Scene bridge | `engine/scene` (Phase 17 Day 233) | `MeshRenderer`, `LightSource`, `Camera`, `RenderHandle` and the `RenderSync` system that mirrors ECS entities into `renderer::RenderScene`, touching it only for what changed. Depends on `ecs`, `renderer` (and below); nothing in `ecs` or `renderer` includes it. |
+| 14. Programs | `game/*`, `tools/*`, `tests/*` | Demos, benches, tools and tests. Anything below. Neutral headers only: no `os/<platform>/` include (section 3, item 6). |
 
 Later phases add modules above the renderer in the order `PLAN.md`'s diagram gives (text, UI, ECS, physics, audio, assets, scripting, Unreal import,
 editor); each gets its row here when its phase is broken into days.
@@ -44,6 +45,7 @@ The libraries follow the layers; each links only the ones below it (`docs/guide/
 ```
 game/*, tools/*   ->  renderer, rhi_backends, rhi, jobs, platform, foundation
 renderer          ->  rhi, jobs, text, ui (from Phase 15 Day 190), foundation (incl. settings, math)
+scene             ->  ecs, renderer (and what they use), foundation (Phase 17 Day 233)
 ui                ->  text, platform_input (header-only), foundation
 ui_window         ->  ui, platform, foundation                               (Phase 15 Day 194)
 rhi_backends      ->  rhi/vulkan, rhi/null (in rhi), later rhi/dx12          (registers each backend; linked by programs)
@@ -110,8 +112,8 @@ and the wrapper functions that join `foundation/mem` (memory operations), `found
 
 ### Planned modules (Phase 17, ECS)
 
-`engine/ecs` is built (row in section 1; Day 223 started it). The edge `ecs -> jobs` exists since Day 231 (`allow ecs jobs`). Still planned: `engine/scene` (layer 13, above `ecs` and `renderer`; nothing below includes it): `MeshRenderer`, `Light`, `Camera`, `RenderHandle` and the `RenderSync` system that mirrors entities into `renderer::RenderScene`.
-The `scene` row is added to section 1 and to `tools/module_deps_check/modules.txt` on Day 233; `docs/superpowers/specs/2026-11-10-ecs-design.md` has the reasoning.
+`engine/ecs` is built (row in section 1; Day 223 started it). The edge `ecs -> jobs` exists since Day 231 (`allow ecs jobs`). `engine/scene` (layer 13, above `ecs` and `renderer`; nothing below includes it) is built from Day 233; the programs moved to layer 14 so they may use it.
+The `scene` row is in section 1 and in `tools/module_deps_check/modules.txt` since Day 233; `docs/superpowers/specs/2026-11-10-ecs-design.md` has the reasoning.
 
 ### Planned modules (Phase 18, spatial)
 

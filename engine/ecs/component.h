@@ -41,6 +41,8 @@ struct TypeInfo {
     void (*destroy)(void* object) = nullptr;
     /// Default-constructs an object at the address, or null when the type has no default constructor.
     void (*default_construct)(void* where) = nullptr;
+    /// True when the type declares `static constexpr bool kTrackRemoval = true`: the world keeps a short log of every removal of it (see [[ecs::World::RemovedCount]]).
+    bool track_removal = false;
     /// The type's `kComponentName` when it declares one, else "component#N".
     const char* name = nullptr;
 };
@@ -90,6 +92,9 @@ template <class T>
 concept HasComponentName = requires { static_cast<const char*>(T::kComponentName); };
 
 template <class T>
+concept HasTrackRemoval = requires { static_cast<bool>(T::kTrackRemoval); };
+
+template <class T>
 void MoveConstructComponent(void* destination, void* source) {
     ConstructAt<T>(destination, static_cast<T&&>(*static_cast<T*>(source)));
 }
@@ -119,6 +124,12 @@ ComponentId RegisterComponent() {
     info.destroy = &DestroyComponent<T>;
     if constexpr (IsDefaultConstructible<T>) {
         info.default_construct = &DefaultConstructComponent<T>;
+    }
+    if constexpr (HasTrackRemoval<T>) {
+        static_assert(!IsEmpty<T>, "a component that tracks removal must carry data (a tag has no value to keep)");
+        static_assert(IsTriviallyCopyable<T>, "a component that tracks removal must be trivially copyable: the log keeps its bytes");
+        static_assert(IsDefaultConstructible<T>, "a component that tracks removal must be default constructible: a log entry is read into a fresh value");
+        info.track_removal = T::kTrackRemoval;
     }
     if constexpr (HasComponentName<T>) {
         info.name = static_cast<const char*>(T::kComponentName);

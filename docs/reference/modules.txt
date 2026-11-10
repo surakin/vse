@@ -86,6 +86,12 @@ module ecs "ECS"
   strict ownership
   strict failure
 
+module scene "Scene bridge"
+  header engine/scene/*.h
+  strict thread-safety
+  strict ownership
+  strict failure
+
 module ui "The UI Toolkit"
   header engine/ui/*.h
   header engine/ui/testing/*.h

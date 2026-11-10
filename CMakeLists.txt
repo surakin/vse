@@ -160,8 +160,10 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(tests/settings)  # the settings layer and the registry store, Day 157
   add_subdirectory(engine/rhi)  # Day 160: the RHI and the Vulkan backend (DX12 from Day 162)
   add_subdirectory(engine/renderer)  # Day 161: the renderer and its suite (tests/rhi links it from Day 160)
+  add_subdirectory(engine/scene)  # Phase 17 Day 233
   add_subdirectory(tests/rhi)  # Day 160: the Phase 4 RHI suite through Vulkan
   add_subdirectory(tests/renderer)  # Day 161
+  add_subdirectory(tests/scene)  # Phase 17 Day 233
   add_subdirectory(game)  # hello_window (Day 158), the demos and the benchmarks (Day 161)
   add_subdirectory(tools/shader_mint)  # Day 163: the shader minter, with DXIL
   add_subdirectory(tests/shader_mint)
@@ -217,6 +219,7 @@ add_subdirectory(engine/ui)  # Phase 15 Day 184
 add_subdirectory(engine/ui_window)  # Phase 15 Day 194
 add_subdirectory(engine/rhi)
 add_subdirectory(engine/renderer)
+add_subdirectory(engine/scene)  # Phase 17 Day 233
 add_subdirectory(tools/docgen)
 add_subdirectory(tools/shader_mint)
 add_subdirectory(tools/rhi_boundary_check)
@@ -244,6 +247,7 @@ add_subdirectory(tests/settings)
 add_subdirectory(tests/foundation_sanitized)
 add_subdirectory(tests/rhi)
 add_subdirectory(tests/renderer)
+add_subdirectory(tests/scene)  # Phase 17 Day 233
 add_subdirectory(tests/debug)
 add_subdirectory(tests/shader_mint)
 add_subdirectory(shaders)

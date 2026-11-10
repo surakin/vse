@@ -11,6 +11,7 @@
 #include "ecs/component_set.h"
 #include "ecs/entity.h"
 #include "ecs/entity_table.h"
+#include "cstr/mem_ops.h"
 #include "lang/new.h"
 #include "lang/utility.h"
 #include "log/assert.h"
@@ -23,7 +24,28 @@ template <class... Terms>
 class Query;
 class CommandBuffer;
 
+/// One entry of a removal log: the entity that lost a tracked component, the value it had and the removal's sequence number (increasing within a world).
+///
+/// Thread-safety: thread-compatible plain data.
+template <class T>
+struct RemovedComponent {
+    /// The entity (destroyed, or alive without the component).
+    Entity entity;
+    /// The component's value at the moment of removal.
+    T value;
+    /// The removal's number in this world; a reader keeps the largest it has seen.
+    u64 seq = 0;
+};
+
 namespace detail {
+/// The log of one tracked component type.
+struct RemovalLog {
+    usize size = 0;
+    Vector<Entity> entities;
+    Vector<u64> seqs;
+    Vector<u64> ticks;
+    Vector<byte> bytes;
+};
 /// The next number of a resource type: one per type per process, in order of first use (thread-safe).
 u32 NextResourceTypeId();
 /// The next world number (thread-safe, never reused).
@@ -197,6 +219,24 @@ public:
     /// frames, and [[ecs::Query::Finish]] calls it so that a write made after a query ran is not lost.
     /// Fails: never.
     void Advance() { ++tick_; }
+    /// Ends a frame for the removal logs: entries logged in the frame before this one go, those of the frame just ended stay for one more frame (see
+    /// [[ecs::World::RemovedCount]]). The scheduler calls it at the end of `Schedule::Run`; a program that runs no schedule calls it itself.
+    /// Fails: never.
+    void EndFrame() {
+        ++removal_epoch_;
+        PruneRemovals();
+    }
+    /// How many removals of the tracked component `T` the log holds: those of the current and the previous frame (a component declares
+    /// `static constexpr bool kTrackRemoval = true`). A system that runs once per frame sees each removal in the frame it happened or the next; it remembers the
+    /// largest `seq` it handled and skips smaller ones.
+    /// Fails: zero for a type that does not track removal.
+    template <class T>
+    usize RemovedCount() const;
+    /// The `index`th logged removal of `T`, oldest first.
+    /// Aborts: `index` is not below `RemovedCount<T>()`.
+    template <class T>
+    RemovedComponent<T> RemovedAt(usize index) const;
+
     /// Sets the tick (tests of tick arithmetic near the largest value).
     /// Fails: never.
     void SetTick(u64 tick) { tick_ = tick; }
@@ -383,6 +423,12 @@ private:
     HashMap<u64, u32, HeapAllocator> edges_;
     template <class T>
     T* GetCell(Entity entity, bool mark);
+    void RecordRemoval(ComponentId id, const TypeInfo& info, Entity entity, const void* value);
+    void PruneRemovals();
+    const detail::RemovalLog* RemovalLogOf(ComponentId id) const;
+    Vector<UniquePtr<detail::RemovalLog>> removal_logs_;
+    u64 next_removal_seq_ = 1;
+    u64 removal_epoch_ = 1;
     u32 iterating_ = 0;
     bool parallel_ = false;
     u64 tick_ = 1;
@@ -493,6 +539,23 @@ Status World::Add(Entity entity, T value) {
     }
     ConstructCell(*archetypes_[target], row, Move(value));
     return Status::Ok;
+}
+
+template <class T>
+usize World::RemovedCount() const {
+    const detail::RemovalLog* log = RemovalLogOf(ComponentOf<T>());
+    return log == nullptr ? 0 : log->entities.Size();
+}
+
+template <class T>
+RemovedComponent<T> World::RemovedAt(usize index) const {
+    const detail::RemovalLog* log = RemovalLogOf(ComponentOf<T>());
+    ENGINE_ASSERT(log != nullptr && index < log->entities.Size(), "World::RemovedAt: no such logged removal");
+    RemovedComponent<T> out;
+    out.entity = log->entities[index];
+    out.seq = log->seqs[index];
+    MemCopy(&out.value, log->bytes.Data() + index * sizeof(T), sizeof(T));
+    return out;
 }
 
 template <class T>

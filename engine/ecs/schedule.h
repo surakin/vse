@@ -157,6 +157,22 @@ public:
         Check(reads_->Has(id) || writes_->Has(id), "SystemContext::Peek of a component the system did not declare");
         return static_cast<const World*>(world_)->Peek<T>(entity);
     }
+    /// How many removals of the tracked component `T` the world's log holds (see [[ecs::World::RemovedCount]]).
+    ///
+    /// Fails: `T` declared neither read nor written counts a violation.
+    template <class T>
+    usize RemovedCount() {
+        const ComponentId id = ComponentOf<T>();
+        Check(reads_->Has(id) || writes_->Has(id), "SystemContext::RemovedCount of a component the system did not declare");
+        return static_cast<const World*>(world_)->RemovedCount<T>();
+    }
+    /// The `index`th logged removal of `T` (see [[ecs::World::RemovedAt]]).
+    ///
+    /// Aborts: `index` is not below `RemovedCount<T>()`.
+    template <class T>
+    RemovedComponent<T> RemovedAt(usize index) const {
+        return static_cast<const World*>(world_)->RemovedAt<T>(index);
+    }
     /// One entity's component for writing without stamping (see [[ecs::World::Poke]]); call `Stamp` afterwards from one thread.
     ///
     /// Returns: the component, or null.

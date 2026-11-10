@@ -134,6 +134,15 @@ Status World::Destroy(Entity entity) {
     }
     const EntityLocation at = *where;
     Archetype& home = *archetypes_[at.archetype];
+    {
+        Chunk* chunk = home.ChunkAt(at.chunk);
+        const ArchetypeLayout& layout = home.Layout();
+        for (u32 c = 1; c < layout.column_count; ++c) {
+            if (layout.info[c]->track_removal) {
+                RecordRemoval(layout.component[c], *layout.info[c], entity, home.CellPtr(chunk, layout.component[c], at.row));
+            }
+        }
+    }
     const Entity moved = home.RemoveRow(at.chunk, at.row);
     FixMoved(moved, at.chunk, at.row);
     if (moved.IsValid()) {
@@ -163,6 +172,9 @@ bool World::Migrate(Entity entity, u32 target, RowRef* new_row) {
         void* from_cell = source.CellPtr(source_chunk, id, from.row);
         void* to_cell = dest.CellPtr(new_row->chunk, id, new_row->row);
         if (to_cell == nullptr) {
+            if (info.track_removal) {
+                RecordRemoval(id, info, entity, from_cell);
+            }
             if (!info.trivially_relocatable) {
                 info.destroy(from_cell);
             }
@@ -185,6 +197,55 @@ bool World::Migrate(Entity entity, u32 target, RowRef* new_row) {
     where->row = new_row->row;
     ++migrations_;
     return true;
+}
+
+void World::RecordRemoval(ComponentId id, const TypeInfo& info, Entity entity, const void* value) {
+    while (removal_logs_.Size() <= id) {
+        removal_logs_.Push(UniquePtr<detail::RemovalLog>());
+    }
+    if (removal_logs_[id] == nullptr) {
+        removal_logs_[id] = MakeUnique<detail::RemovalLog>();
+        removal_logs_[id]->size = info.size;
+    }
+    detail::RemovalLog& log = *removal_logs_[id];
+    log.entities.Push(entity);
+    log.seqs.Push(next_removal_seq_++);
+    log.ticks.Push(removal_epoch_);
+    const usize at = log.bytes.Size();
+    log.bytes.Resize(at + info.size);
+    MemCopy(log.bytes.Data() + at, value, info.size);
+}
+
+const detail::RemovalLog* World::RemovalLogOf(ComponentId id) const {
+    return id < removal_logs_.Size() ? removal_logs_[id].Get() : nullptr;
+}
+
+// Keeps the removals of the current and the previous frame (epoch).
+void World::PruneRemovals() {
+    for (usize i = 0; i < removal_logs_.Size(); ++i) {
+        detail::RemovalLog* log = removal_logs_[i].Get();
+        if (log == nullptr) {
+            continue;
+        }
+        usize keep_from = 0;
+        while (keep_from < log->ticks.Size() && log->ticks[keep_from] + 1 < removal_epoch_) {
+            ++keep_from;
+        }
+        if (keep_from == 0) {
+            continue;
+        }
+        const usize count = log->entities.Size() - keep_from;
+        for (usize k = 0; k < count; ++k) {
+            log->entities[k] = log->entities[keep_from + k];
+            log->seqs[k] = log->seqs[keep_from + k];
+            log->ticks[k] = log->ticks[keep_from + k];
+        }
+        MemMove(log->bytes.Data(), log->bytes.Data() + keep_from * log->size, count * log->size);
+        log->entities.Resize(count);
+        log->seqs.Resize(count);
+        log->ticks.Resize(count);
+        log->bytes.Resize(count * log->size);
+    }
 }
 
 Archetype& World::ArchetypeAt(u32 index) {

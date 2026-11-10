@@ -11,6 +11,7 @@ set(ECS_TEST_SOURCES
   schedule_test.cpp
   parallel_test.cpp
   transform_test.cpp
+  removal_test.cpp
   alloc_counter.cpp
 )
 

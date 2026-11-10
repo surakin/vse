@@ -2929,17 +2929,18 @@ ecs::TypeInfo::trivially_relocatable	variable	ecs	ecs-typeinfo-trivially-relocat
 ecs::TypeInfo::move_construct	variable	ecs	ecs-typeinfo-move-construct	ecs.md	engine/ecs/component.h:39
 ecs::TypeInfo::destroy	variable	ecs	ecs-typeinfo-destroy	ecs.md	engine/ecs/component.h:41
 ecs::TypeInfo::default_construct	variable	ecs	ecs-typeinfo-default-construct	ecs.md	engine/ecs/component.h:43
-ecs::TypeInfo::name	variable	ecs	ecs-typeinfo-name	ecs.md	engine/ecs/component.h:45
-ecs::ComponentRegistry	class	ecs	ecs-componentregistry	ecs.md	engine/ecs/component.h:53
-ecs::ComponentRegistry::ComponentRegistry()	function	ecs	ecs-componentregistry-componentregistry	ecs.md	engine/ecs/component.h:56
-ecs::ComponentRegistry::ComponentRegistry(const ComponentRegistry&)	function	ecs	ecs-componentregistry-componentregistry-const-componentregistry-amp	ecs.md	engine/ecs/component.h:57
-ecs::ComponentRegistry::operator=(const ComponentRegistry&)	function	ecs	ecs-componentregistry-operator-eq-const-componentregistry-amp	ecs.md	engine/ecs/component.h:58
-ecs::ComponentRegistry::Global()	function	ecs	ecs-componentregistry-global	ecs.md	engine/ecs/component.h:61
-ecs::ComponentRegistry::Register(const TypeInfo&)	function	ecs	ecs-componentregistry-register-const-typeinfo-amp	ecs.md	engine/ecs/component.h:67
-ecs::ComponentRegistry::Info(ComponentId) const	function	ecs	ecs-componentregistry-info-componentid-const	ecs.md	engine/ecs/component.h:71
-ecs::ComponentRegistry::Count() const	function	ecs	ecs-componentregistry-count-const	ecs.md	engine/ecs/component.h:74
-ecs::ComponentRegistry::Refused() const	function	ecs	ecs-componentregistry-refused-const	ecs.md	engine/ecs/component.h:77
-ecs::ComponentOf()	function	ecs	ecs-componentof	ecs.md	engine/ecs/component.h:138
+ecs::TypeInfo::track_removal	variable	ecs	ecs-typeinfo-track-removal	ecs.md	engine/ecs/component.h:45
+ecs::TypeInfo::name	variable	ecs	ecs-typeinfo-name	ecs.md	engine/ecs/component.h:47
+ecs::ComponentRegistry	class	ecs	ecs-componentregistry	ecs.md	engine/ecs/component.h:55
+ecs::ComponentRegistry::ComponentRegistry()	function	ecs	ecs-componentregistry-componentregistry	ecs.md	engine/ecs/component.h:58
+ecs::ComponentRegistry::ComponentRegistry(const ComponentRegistry&)	function	ecs	ecs-componentregistry-componentregistry-const-componentregistry-amp	ecs.md	engine/ecs/component.h:59
+ecs::ComponentRegistry::operator=(const ComponentRegistry&)	function	ecs	ecs-componentregistry-operator-eq-const-componentregistry-amp	ecs.md	engine/ecs/component.h:60
+ecs::ComponentRegistry::Global()	function	ecs	ecs-componentregistry-global	ecs.md	engine/ecs/component.h:63
+ecs::ComponentRegistry::Register(const TypeInfo&)	function	ecs	ecs-componentregistry-register-const-typeinfo-amp	ecs.md	engine/ecs/component.h:69
+ecs::ComponentRegistry::Info(ComponentId) const	function	ecs	ecs-componentregistry-info-componentid-const	ecs.md	engine/ecs/component.h:73
+ecs::ComponentRegistry::Count() const	function	ecs	ecs-componentregistry-count-const	ecs.md	engine/ecs/component.h:76
+ecs::ComponentRegistry::Refused() const	function	ecs	ecs-componentregistry-refused-const	ecs.md	engine/ecs/component.h:79
+ecs::ComponentOf()	function	ecs	ecs-componentof	ecs.md	engine/ecs/component.h:149
 ecs::ComponentSet	struct	ecs	ecs-componentset	ecs.md	engine/ecs/component_set.h:16
 ecs::ComponentSet::words	variable	ecs	ecs-componentset-words	ecs.md	engine/ecs/component_set.h:18
 ecs::ComponentSet::Add(ComponentId)	function	ecs	ecs-componentset-add-componentid	ecs.md	engine/ecs/component_set.h:22
@@ -3050,62 +3051,64 @@ ecs::SystemContext::WorldId() const	function	ecs	ecs-systemcontext-worldid-const
 ecs::SystemContext::DestroyedCount() const	function	ecs	ecs-systemcontext-destroyedcount-const	ecs.md	engine/ecs/schedule.h:144
 ecs::SystemContext::Tick() const	function	ecs	ecs-systemcontext-tick-const	ecs.md	engine/ecs/schedule.h:147
 ecs::SystemContext::Peek(Entity)	function	ecs	ecs-systemcontext-peek-entity	ecs.md	engine/ecs/schedule.h:154
-ecs::SystemContext::Poke(Entity)	function	ecs	ecs-systemcontext-poke-entity	ecs.md	engine/ecs/schedule.h:165
-ecs::SystemContext::Stamp(Entity)	function	ecs	ecs-systemcontext-stamp-entity	ecs.md	engine/ecs/schedule.h:172
-ecs::SystemContext::ParallelFor(usize,usize,F&)	function	ecs	ecs-systemcontext-parallelfor-usize-usize-f-amp	ecs.md	engine/ecs/schedule.h:181
-ecs::SystemDesc	class	ecs	ecs-systemdesc	ecs.md	engine/ecs/schedule.h:414
-ecs::SystemDesc::kMaxConstraints	variable	ecs	ecs-systemdesc-kmaxconstraints	ecs.md	engine/ecs/schedule.h:417
-ecs::SystemDesc::SystemDesc()	function	ecs	ecs-systemdesc-systemdesc	ecs.md	engine/ecs/schedule.h:419
-ecs::SystemDesc::SystemDesc(const char*,detail::SystemFn)	function	ecs	ecs-systemdesc-systemdesc-const-char-star-detail-systemfn	ecs.md	engine/ecs/schedule.h:423
-ecs::SystemDesc::SystemDesc(SystemDesc&&)	function	ecs	ecs-systemdesc-systemdesc-systemdesc-amp-amp	ecs.md	engine/ecs/schedule.h:424
-ecs::SystemDesc::operator=(SystemDesc&&)	function	ecs	ecs-systemdesc-operator-eq-systemdesc-amp-amp	ecs.md	engine/ecs/schedule.h:425
-ecs::SystemDesc::DeduceAccess()	function	ecs	ecs-systemdesc-deduceaccess	ecs.md	engine/ecs/schedule.h:429
-ecs::SystemDesc::Reads()	function	ecs	ecs-systemdesc-reads	ecs.md	engine/ecs/schedule.h:435
-ecs::SystemDesc::Writes()	function	ecs	ecs-systemdesc-writes	ecs.md	engine/ecs/schedule.h:442
-ecs::SystemDesc::ReadsResource()	function	ecs	ecs-systemdesc-readsresource	ecs.md	engine/ecs/schedule.h:449
-ecs::SystemDesc::WritesResource()	function	ecs	ecs-systemdesc-writesresource	ecs.md	engine/ecs/schedule.h:456
-ecs::SystemDesc::InStage(StageId)	function	ecs	ecs-systemdesc-instage-stageid	ecs.md	engine/ecs/schedule.h:463
-ecs::SystemDesc::After(const char*)	function	ecs	ecs-systemdesc-after-const-char-star	ecs.md	engine/ecs/schedule.h:469
-ecs::SystemDesc::Before(const char*)	function	ecs	ecs-systemdesc-before-const-char-star	ecs.md	engine/ecs/schedule.h:476
-ecs::SystemDesc::RunIf(bool(*)(SystemContext&))	function	ecs	ecs-systemdesc-runif-bool-star-systemcontext-amp	ecs.md	engine/ecs/schedule.h:483
-ecs::MakeSystem(const char*,Fn)	function	ecs	ecs-makesystem-const-char-star-fn	ecs.md	engine/ecs/schedule.h:508
-ecs::MakeQuerySystem(const char*,Fn)	function	ecs	ecs-makequerysystem-const-char-star-fn	ecs.md	engine/ecs/schedule.h:518
-ecs::SystemStats	struct	ecs	ecs-systemstats	ecs.md	engine/ecs/schedule.h:529
-ecs::SystemStats::name	variable	ecs	ecs-systemstats-name	ecs.md	engine/ecs/schedule.h:531
-ecs::SystemStats::runs	variable	ecs	ecs-systemstats-runs	ecs.md	engine/ecs/schedule.h:533
-ecs::SystemStats::skipped_runs	variable	ecs	ecs-systemstats-skipped-runs	ecs.md	engine/ecs/schedule.h:535
-ecs::SystemStats::last_ns	variable	ecs	ecs-systemstats-last-ns	ecs.md	engine/ecs/schedule.h:537
-ecs::SystemStats::total_ns	variable	ecs	ecs-systemstats-total-ns	ecs.md	engine/ecs/schedule.h:539
-ecs::SystemStats::entities	variable	ecs	ecs-systemstats-entities	ecs.md	engine/ecs/schedule.h:541
-ecs::SystemStats::chunks_visited	variable	ecs	ecs-systemstats-chunks-visited	ecs.md	engine/ecs/schedule.h:543
-ecs::SystemStats::chunks_skipped	variable	ecs	ecs-systemstats-chunks-skipped	ecs.md	engine/ecs/schedule.h:545
-ecs::SystemStats::AverageNanos() const	function	ecs	ecs-systemstats-averagenanos-const	ecs.md	engine/ecs/schedule.h:547
-ecs::BuildReport	struct	ecs	ecs-buildreport	ecs.md	engine/ecs/schedule.h:554
-ecs::BuildReport::ok	variable	ecs	ecs-buildreport-ok	ecs.md	engine/ecs/schedule.h:556
-ecs::BuildReport::message	variable	ecs	ecs-buildreport-message	ecs.md	engine/ecs/schedule.h:558
-ecs::ScheduleStats	struct	ecs	ecs-schedulestats	ecs.md	engine/ecs/schedule.h:565
-ecs::ScheduleStats::frames	variable	ecs	ecs-schedulestats-frames	ecs.md	engine/ecs/schedule.h:567
-ecs::ScheduleStats::access_violations	variable	ecs	ecs-schedulestats-access-violations	ecs.md	engine/ecs/schedule.h:569
-ecs::ScheduleStats::commands_applied	variable	ecs	ecs-schedulestats-commands-applied	ecs.md	engine/ecs/schedule.h:571
-ecs::ScheduleStats::commands_ignored	variable	ecs	ecs-schedulestats-commands-ignored	ecs.md	engine/ecs/schedule.h:573
-ecs::Schedule	class	ecs	ecs-schedule	ecs.md	engine/ecs/schedule.h:585
-ecs::Schedule::Schedule()	function	ecs	ecs-schedule-schedule	ecs.md	engine/ecs/schedule.h:588
-ecs::Schedule::Schedule(const Schedule&)	function	ecs	ecs-schedule-schedule-const-schedule-amp	ecs.md	engine/ecs/schedule.h:589
-ecs::Schedule::operator=(const Schedule&)	function	ecs	ecs-schedule-operator-eq-const-schedule-amp	ecs.md	engine/ecs/schedule.h:590
-ecs::Schedule::AddStage(const char*,StageId)	function	ecs	ecs-schedule-addstage-const-char-star-stageid	ecs.md	engine/ecs/schedule.h:595
-ecs::Schedule::Add(SystemDesc)	function	ecs	ecs-schedule-add-systemdesc	ecs.md	engine/ecs/schedule.h:598
-ecs::Schedule::Build()	function	ecs	ecs-schedule-build	ecs.md	engine/ecs/schedule.h:601
-ecs::Schedule::UseSettings(const settings::Registry&)	function	ecs	ecs-schedule-usesettings-const-settings-registry-amp	ecs.md	engine/ecs/schedule.h:606
-ecs::Schedule::SetScheduler(jobs::Scheduler*)	function	ecs	ecs-schedule-setscheduler-jobs-scheduler-star	ecs.md	engine/ecs/schedule.h:612
-ecs::Schedule::SetStatsEnabled(bool)	function	ecs	ecs-schedule-setstatsenabled-bool	ecs.md	engine/ecs/schedule.h:614
-ecs::Schedule::Run(World&,f32)	function	ecs	ecs-schedule-run-world-amp-f32	ecs.md	engine/ecs/schedule.h:619
-ecs::Schedule::WaveOf(u32) const	function	ecs	ecs-schedule-waveof-u32-const	ecs.md	engine/ecs/schedule.h:624
-ecs::Schedule::SystemCount() const	function	ecs	ecs-schedule-systemcount-const	ecs.md	engine/ecs/schedule.h:626
-ecs::Schedule::RunOrderName(u32) const	function	ecs	ecs-schedule-runordername-u32-const	ecs.md	engine/ecs/schedule.h:630
-ecs::Schedule::StatsOf(const char*) const	function	ecs	ecs-schedule-statsof-const-char-star-const	ecs.md	engine/ecs/schedule.h:634
-ecs::Schedule::Stats() const	function	ecs	ecs-schedule-stats-const	ecs.md	engine/ecs/schedule.h:636
-ecs::Schedule::ParallelRequested() const	function	ecs	ecs-schedule-parallelrequested-const	ecs.md	engine/ecs/schedule.h:639
-ecs::Schedule::HeapFallbacks()	function	ecs	ecs-schedule-heapfallbacks	ecs.md	engine/ecs/schedule.h:641
+ecs::SystemContext::RemovedCount()	function	ecs	ecs-systemcontext-removedcount	ecs.md	engine/ecs/schedule.h:163
+ecs::SystemContext::RemovedAt(usize) const	function	ecs	ecs-systemcontext-removedat-usize-const	ecs.md	engine/ecs/schedule.h:172
+ecs::SystemContext::Poke(Entity)	function	ecs	ecs-systemcontext-poke-entity	ecs.md	engine/ecs/schedule.h:181
+ecs::SystemContext::Stamp(Entity)	function	ecs	ecs-systemcontext-stamp-entity	ecs.md	engine/ecs/schedule.h:188
+ecs::SystemContext::ParallelFor(usize,usize,F&)	function	ecs	ecs-systemcontext-parallelfor-usize-usize-f-amp	ecs.md	engine/ecs/schedule.h:197
+ecs::SystemDesc	class	ecs	ecs-systemdesc	ecs.md	engine/ecs/schedule.h:430
+ecs::SystemDesc::kMaxConstraints	variable	ecs	ecs-systemdesc-kmaxconstraints	ecs.md	engine/ecs/schedule.h:433
+ecs::SystemDesc::SystemDesc()	function	ecs	ecs-systemdesc-systemdesc	ecs.md	engine/ecs/schedule.h:435
+ecs::SystemDesc::SystemDesc(const char*,detail::SystemFn)	function	ecs	ecs-systemdesc-systemdesc-const-char-star-detail-systemfn	ecs.md	engine/ecs/schedule.h:439
+ecs::SystemDesc::SystemDesc(SystemDesc&&)	function	ecs	ecs-systemdesc-systemdesc-systemdesc-amp-amp	ecs.md	engine/ecs/schedule.h:440
+ecs::SystemDesc::operator=(SystemDesc&&)	function	ecs	ecs-systemdesc-operator-eq-systemdesc-amp-amp	ecs.md	engine/ecs/schedule.h:441
+ecs::SystemDesc::DeduceAccess()	function	ecs	ecs-systemdesc-deduceaccess	ecs.md	engine/ecs/schedule.h:445
+ecs::SystemDesc::Reads()	function	ecs	ecs-systemdesc-reads	ecs.md	engine/ecs/schedule.h:451
+ecs::SystemDesc::Writes()	function	ecs	ecs-systemdesc-writes	ecs.md	engine/ecs/schedule.h:458
+ecs::SystemDesc::ReadsResource()	function	ecs	ecs-systemdesc-readsresource	ecs.md	engine/ecs/schedule.h:465
+ecs::SystemDesc::WritesResource()	function	ecs	ecs-systemdesc-writesresource	ecs.md	engine/ecs/schedule.h:472
+ecs::SystemDesc::InStage(StageId)	function	ecs	ecs-systemdesc-instage-stageid	ecs.md	engine/ecs/schedule.h:479
+ecs::SystemDesc::After(const char*)	function	ecs	ecs-systemdesc-after-const-char-star	ecs.md	engine/ecs/schedule.h:485
+ecs::SystemDesc::Before(const char*)	function	ecs	ecs-systemdesc-before-const-char-star	ecs.md	engine/ecs/schedule.h:492
+ecs::SystemDesc::RunIf(bool(*)(SystemContext&))	function	ecs	ecs-systemdesc-runif-bool-star-systemcontext-amp	ecs.md	engine/ecs/schedule.h:499
+ecs::MakeSystem(const char*,Fn)	function	ecs	ecs-makesystem-const-char-star-fn	ecs.md	engine/ecs/schedule.h:524
+ecs::MakeQuerySystem(const char*,Fn)	function	ecs	ecs-makequerysystem-const-char-star-fn	ecs.md	engine/ecs/schedule.h:534
+ecs::SystemStats	struct	ecs	ecs-systemstats	ecs.md	engine/ecs/schedule.h:545
+ecs::SystemStats::name	variable	ecs	ecs-systemstats-name	ecs.md	engine/ecs/schedule.h:547
+ecs::SystemStats::runs	variable	ecs	ecs-systemstats-runs	ecs.md	engine/ecs/schedule.h:549
+ecs::SystemStats::skipped_runs	variable	ecs	ecs-systemstats-skipped-runs	ecs.md	engine/ecs/schedule.h:551
+ecs::SystemStats::last_ns	variable	ecs	ecs-systemstats-last-ns	ecs.md	engine/ecs/schedule.h:553
+ecs::SystemStats::total_ns	variable	ecs	ecs-systemstats-total-ns	ecs.md	engine/ecs/schedule.h:555
+ecs::SystemStats::entities	variable	ecs	ecs-systemstats-entities	ecs.md	engine/ecs/schedule.h:557
+ecs::SystemStats::chunks_visited	variable	ecs	ecs-systemstats-chunks-visited	ecs.md	engine/ecs/schedule.h:559
+ecs::SystemStats::chunks_skipped	variable	ecs	ecs-systemstats-chunks-skipped	ecs.md	engine/ecs/schedule.h:561
+ecs::SystemStats::AverageNanos() const	function	ecs	ecs-systemstats-averagenanos-const	ecs.md	engine/ecs/schedule.h:563
+ecs::BuildReport	struct	ecs	ecs-buildreport	ecs.md	engine/ecs/schedule.h:570
+ecs::BuildReport::ok	variable	ecs	ecs-buildreport-ok	ecs.md	engine/ecs/schedule.h:572
+ecs::BuildReport::message	variable	ecs	ecs-buildreport-message	ecs.md	engine/ecs/schedule.h:574
+ecs::ScheduleStats	struct	ecs	ecs-schedulestats	ecs.md	engine/ecs/schedule.h:581
+ecs::ScheduleStats::frames	variable	ecs	ecs-schedulestats-frames	ecs.md	engine/ecs/schedule.h:583
+ecs::ScheduleStats::access_violations	variable	ecs	ecs-schedulestats-access-violations	ecs.md	engine/ecs/schedule.h:585
+ecs::ScheduleStats::commands_applied	variable	ecs	ecs-schedulestats-commands-applied	ecs.md	engine/ecs/schedule.h:587
+ecs::ScheduleStats::commands_ignored	variable	ecs	ecs-schedulestats-commands-ignored	ecs.md	engine/ecs/schedule.h:589
+ecs::Schedule	class	ecs	ecs-schedule	ecs.md	engine/ecs/schedule.h:601
+ecs::Schedule::Schedule()	function	ecs	ecs-schedule-schedule	ecs.md	engine/ecs/schedule.h:604
+ecs::Schedule::Schedule(const Schedule&)	function	ecs	ecs-schedule-schedule-const-schedule-amp	ecs.md	engine/ecs/schedule.h:605
+ecs::Schedule::operator=(const Schedule&)	function	ecs	ecs-schedule-operator-eq-const-schedule-amp	ecs.md	engine/ecs/schedule.h:606
+ecs::Schedule::AddStage(const char*,StageId)	function	ecs	ecs-schedule-addstage-const-char-star-stageid	ecs.md	engine/ecs/schedule.h:611
+ecs::Schedule::Add(SystemDesc)	function	ecs	ecs-schedule-add-systemdesc	ecs.md	engine/ecs/schedule.h:614
+ecs::Schedule::Build()	function	ecs	ecs-schedule-build	ecs.md	engine/ecs/schedule.h:617
+ecs::Schedule::UseSettings(const settings::Registry&)	function	ecs	ecs-schedule-usesettings-const-settings-registry-amp	ecs.md	engine/ecs/schedule.h:622
+ecs::Schedule::SetScheduler(jobs::Scheduler*)	function	ecs	ecs-schedule-setscheduler-jobs-scheduler-star	ecs.md	engine/ecs/schedule.h:628
+ecs::Schedule::SetStatsEnabled(bool)	function	ecs	ecs-schedule-setstatsenabled-bool	ecs.md	engine/ecs/schedule.h:630
+ecs::Schedule::Run(World&,f32)	function	ecs	ecs-schedule-run-world-amp-f32	ecs.md	engine/ecs/schedule.h:635
+ecs::Schedule::WaveOf(u32) const	function	ecs	ecs-schedule-waveof-u32-const	ecs.md	engine/ecs/schedule.h:640
+ecs::Schedule::SystemCount() const	function	ecs	ecs-schedule-systemcount-const	ecs.md	engine/ecs/schedule.h:642
+ecs::Schedule::RunOrderName(u32) const	function	ecs	ecs-schedule-runordername-u32-const	ecs.md	engine/ecs/schedule.h:646
+ecs::Schedule::StatsOf(const char*) const	function	ecs	ecs-schedule-statsof-const-char-star-const	ecs.md	engine/ecs/schedule.h:650
+ecs::Schedule::Stats() const	function	ecs	ecs-schedule-stats-const	ecs.md	engine/ecs/schedule.h:652
+ecs::Schedule::ParallelRequested() const	function	ecs	ecs-schedule-parallelrequested-const	ecs.md	engine/ecs/schedule.h:655
+ecs::Schedule::HeapFallbacks()	function	ecs	ecs-schedule-heapfallbacks	ecs.md	engine/ecs/schedule.h:657
 ecs::kMaxHierarchyDepth	variable	ecs	ecs-kmaxhierarchydepth	ecs.md	engine/ecs/transform.h:18
 ecs::LocalTransform	struct	ecs	ecs-localtransform	ecs.md	engine/ecs/transform.h:24
 ecs::LocalTransform::position	variable	ecs	ecs-localtransform-position	ecs.md	engine/ecs/transform.h:26
@@ -3140,75 +3143,126 @@ ecs::SetParent(World&,Entity,Entity)	function	ecs	ecs-setparent-world-amp-entity
 ecs::ClearParent(World&,Entity)	function	ecs	ecs-clearparent-world-amp-entity	ecs.md	engine/ecs/transform.h:131
 ecs::DestroyRecursive(World&,CommandBuffer&,Entity)	function	ecs	ecs-destroyrecursive-world-amp-commandbuffer-amp-entity	ecs.md	engine/ecs/transform.h:137
 ecs::MakeTransformSystem(const char*)	function	ecs	ecs-maketransformsystem-const-char-star	ecs.md	engine/ecs/transform.h:149
-ecs::Status	enum	ecs	ecs-status	ecs.md	engine/ecs/world.h:40
-ecs::Status::Ok	enumerator	ecs	ecs-status-ok	ecs.md	engine/ecs/world.h:42
-ecs::Status::DeadEntity	enumerator	ecs	ecs-status-deadentity	ecs.md	engine/ecs/world.h:44
-ecs::Status::MissingComponent	enumerator	ecs	ecs-status-missingcomponent	ecs.md	engine/ecs/world.h:46
-ecs::Status::AlreadyHas	enumerator	ecs	ecs-status-alreadyhas	ecs.md	engine/ecs/world.h:48
-ecs::Status::Refused	enumerator	ecs	ecs-status-refused	ecs.md	engine/ecs/world.h:50
-ecs::PlaybackReport	struct	ecs	ecs-playbackreport	ecs.md	engine/ecs/world.h:56
-ecs::PlaybackReport::applied	variable	ecs	ecs-playbackreport-applied	ecs.md	engine/ecs/world.h:58
-ecs::PlaybackReport::ignored	variable	ecs	ecs-playbackreport-ignored	ecs.md	engine/ecs/world.h:60
-ecs::PlaybackReport::created	variable	ecs	ecs-playbackreport-created	ecs.md	engine/ecs/world.h:62
-ecs::PlaybackReport::operator+=(const PlaybackReport&)	function	ecs	ecs-playbackreport-operator-plus-eq-const-playbackreport-amp	ecs.md	engine/ecs/world.h:65
-ecs::ValidationReport	struct	ecs	ecs-validationreport	ecs.md	engine/ecs/world.h:77
-ecs::ValidationReport::errors	variable	ecs	ecs-validationreport-errors	ecs.md	engine/ecs/world.h:79
-ecs::ValidationReport::first	variable	ecs	ecs-validationreport-first	ecs.md	engine/ecs/world.h:81
-ecs::ValidationReport::Ok() const	function	ecs	ecs-validationreport-ok-const	ecs.md	engine/ecs/world.h:84
-ecs::WorldStats	struct	ecs	ecs-worldstats	ecs.md	engine/ecs/world.h:91
-ecs::WorldStats::entities	variable	ecs	ecs-worldstats-entities	ecs.md	engine/ecs/world.h:93
-ecs::WorldStats::archetypes	variable	ecs	ecs-worldstats-archetypes	ecs.md	engine/ecs/world.h:95
-ecs::WorldStats::migrations	variable	ecs	ecs-worldstats-migrations	ecs.md	engine/ecs/world.h:97
-ecs::WorldStats::graph_hits	variable	ecs	ecs-worldstats-graph-hits	ecs.md	engine/ecs/world.h:99
-ecs::WorldStats::refused	variable	ecs	ecs-worldstats-refused	ecs.md	engine/ecs/world.h:101
-ecs::WorldStats::destroyed	variable	ecs	ecs-worldstats-destroyed	ecs.md	engine/ecs/world.h:103
-ecs::WorldStats::pool	variable	ecs	ecs-worldstats-pool	ecs.md	engine/ecs/world.h:105
-ecs::World	class	ecs	ecs-world	ecs.md	engine/ecs/world.h:116
-ecs::World::World()	function	ecs	ecs-world-world	ecs.md	engine/ecs/world.h:119
-ecs::World::World(const World&)	function	ecs	ecs-world-world-const-world-amp	ecs.md	engine/ecs/world.h:120
-ecs::World::operator=(const World&)	function	ecs	ecs-world-operator-eq-const-world-amp	ecs.md	engine/ecs/world.h:121
-ecs::World::Id() const	function	ecs	ecs-world-id-const	ecs.md	engine/ecs/world.h:124
-ecs::World::~World()	function	ecs	ecs-world-tilde-world	ecs.md	engine/ecs/world.h:126
-ecs::World::Create()	function	ecs	ecs-world-create	ecs.md	engine/ecs/world.h:131
-ecs::World::Create(Ts...)	function	ecs	ecs-world-create-ts	ecs.md	engine/ecs/world.h:136
-ecs::World::CreateMany(u32,Fn&&)	function	ecs	ecs-world-createmany-u32-fn-amp-amp	ecs.md	engine/ecs/world.h:144
-ecs::World::Destroy(Entity)	function	ecs	ecs-world-destroy-entity	ecs.md	engine/ecs/world.h:150
-ecs::World::Exists(Entity) const	function	ecs	ecs-world-exists-entity-const	ecs.md	engine/ecs/world.h:154
-ecs::World::Add(Entity,T)	function	ecs	ecs-world-add-entity-t	ecs.md	engine/ecs/world.h:159
-ecs::World::Remove(Entity)	function	ecs	ecs-world-remove-entity	ecs.md	engine/ecs/world.h:165
-ecs::World::Set(Entity,T)	function	ecs	ecs-world-set-entity-t	ecs.md	engine/ecs/world.h:171
-ecs::World::Has(Entity) const	function	ecs	ecs-world-has-entity-const	ecs.md	engine/ecs/world.h:176
-ecs::World::Get(Entity)	function	ecs	ecs-world-get-entity	ecs.md	engine/ecs/world.h:184
-ecs::World::Get(Entity) const	function	ecs	ecs-world-get-entity-const	ecs.md	engine/ecs/world.h:190
-ecs::World::Tick() const	function	ecs	ecs-world-tick-const	ecs.md	engine/ecs/world.h:195
-ecs::World::Advance()	function	ecs	ecs-world-advance	ecs.md	engine/ecs/world.h:199
-ecs::World::SetTick(u64)	function	ecs	ecs-world-settick-u64	ecs.md	engine/ecs/world.h:202
-ecs::World::Peek(Entity) const	function	ecs	ecs-world-peek-entity-const	ecs.md	engine/ecs/world.h:210
-ecs::World::Poke(Entity)	function	ecs	ecs-world-poke-entity	ecs.md	engine/ecs/world.h:217
-ecs::World::Stamp(Entity)	function	ecs	ecs-world-stamp-entity	ecs.md	engine/ecs/world.h:221
-ecs::World::BeginParallel()	function	ecs	ecs-world-beginparallel	ecs.md	engine/ecs/world.h:226
-ecs::World::EndParallel()	function	ecs	ecs-world-endparallel	ecs.md	engine/ecs/world.h:232
-ecs::World::IsParallel() const	function	ecs	ecs-world-isparallel-const	ecs.md	engine/ecs/world.h:239
-ecs::World::BeginIteration()	function	ecs	ecs-world-beginiteration	ecs.md	engine/ecs/world.h:242
-ecs::World::EndIteration()	function	ecs	ecs-world-enditeration	ecs.md	engine/ecs/world.h:245
-ecs::World::BeginIteration(const ComponentSet&)	function	ecs	ecs-world-beginiteration-const-componentset-amp	ecs.md	engine/ecs/world.h:254
-ecs::World::EndIteration(const ComponentSet&)	function	ecs	ecs-world-enditeration-const-componentset-amp	ecs.md	engine/ecs/world.h:266
-ecs::World::IsIterating() const	function	ecs	ecs-world-isiterating-const	ecs.md	engine/ecs/world.h:272
-ecs::World::Query()	function	ecs	ecs-world-query	ecs.md	engine/ecs/world.h:278
-ecs::World::Apply(CommandBuffer&)	function	ecs	ecs-world-apply-commandbuffer-amp	ecs.md	engine/ecs/world.h:290
-ecs::World::SetResource(T)	function	ecs	ecs-world-setresource-t	ecs.md	engine/ecs/world.h:300
-ecs::World::Resource()	function	ecs	ecs-world-resource	ecs.md	engine/ecs/world.h:304
-ecs::World::Resource() const	function	ecs	ecs-world-resource-const	ecs.md	engine/ecs/world.h:308
-ecs::World::TryResource()	function	ecs	ecs-world-tryresource	ecs.md	engine/ecs/world.h:313
-ecs::World::TryResource() const	function	ecs	ecs-world-tryresource-const	ecs.md	engine/ecs/world.h:318
-ecs::World::HasResource() const	function	ecs	ecs-world-hasresource-const	ecs.md	engine/ecs/world.h:322
-ecs::World::RemoveResource()	function	ecs	ecs-world-removeresource	ecs.md	engine/ecs/world.h:327
-ecs::World::ArchetypeCount() const	function	ecs	ecs-world-archetypecount-const	ecs.md	engine/ecs/world.h:331
-ecs::World::ArchetypeAt(u32)	function	ecs	ecs-world-archetypeat-u32	ecs.md	engine/ecs/world.h:334
-ecs::World::ArchetypeAt(u32) const	function	ecs	ecs-world-archetypeat-u32-const	ecs.md	engine/ecs/world.h:337
-ecs::World::Entities() const	function	ecs	ecs-world-entities-const	ecs.md	engine/ecs/world.h:339
-ecs::World::Stats() const	function	ecs	ecs-world-stats-const	ecs.md	engine/ecs/world.h:342
-ecs::World::Validate() const	function	ecs	ecs-world-validate-const	ecs.md	engine/ecs/world.h:348
+ecs::RemovedComponent	struct	ecs	ecs-removedcomponent	ecs.md	engine/ecs/world.h:30
+ecs::RemovedComponent::entity	variable	ecs	ecs-removedcomponent-entity	ecs.md	engine/ecs/world.h:33
+ecs::RemovedComponent::value	variable	ecs	ecs-removedcomponent-value	ecs.md	engine/ecs/world.h:35
+ecs::RemovedComponent::seq	variable	ecs	ecs-removedcomponent-seq	ecs.md	engine/ecs/world.h:37
+ecs::Status	enum	ecs	ecs-status	ecs.md	engine/ecs/world.h:62
+ecs::Status::Ok	enumerator	ecs	ecs-status-ok	ecs.md	engine/ecs/world.h:64
+ecs::Status::DeadEntity	enumerator	ecs	ecs-status-deadentity	ecs.md	engine/ecs/world.h:66
+ecs::Status::MissingComponent	enumerator	ecs	ecs-status-missingcomponent	ecs.md	engine/ecs/world.h:68
+ecs::Status::AlreadyHas	enumerator	ecs	ecs-status-alreadyhas	ecs.md	engine/ecs/world.h:70
+ecs::Status::Refused	enumerator	ecs	ecs-status-refused	ecs.md	engine/ecs/world.h:72
+ecs::PlaybackReport	struct	ecs	ecs-playbackreport	ecs.md	engine/ecs/world.h:78
+ecs::PlaybackReport::applied	variable	ecs	ecs-playbackreport-applied	ecs.md	engine/ecs/world.h:80
+ecs::PlaybackReport::ignored	variable	ecs	ecs-playbackreport-ignored	ecs.md	engine/ecs/world.h:82
+ecs::PlaybackReport::created	variable	ecs	ecs-playbackreport-created	ecs.md	engine/ecs/world.h:84
+ecs::PlaybackReport::operator+=(const PlaybackReport&)	function	ecs	ecs-playbackreport-operator-plus-eq-const-playbackreport-amp	ecs.md	engine/ecs/world.h:87
+ecs::ValidationReport	struct	ecs	ecs-validationreport	ecs.md	engine/ecs/world.h:99
+ecs::ValidationReport::errors	variable	ecs	ecs-validationreport-errors	ecs.md	engine/ecs/world.h:101
+ecs::ValidationReport::first	variable	ecs	ecs-validationreport-first	ecs.md	engine/ecs/world.h:103
+ecs::ValidationReport::Ok() const	function	ecs	ecs-validationreport-ok-const	ecs.md	engine/ecs/world.h:106
+ecs::WorldStats	struct	ecs	ecs-worldstats	ecs.md	engine/ecs/world.h:113
+ecs::WorldStats::entities	variable	ecs	ecs-worldstats-entities	ecs.md	engine/ecs/world.h:115
+ecs::WorldStats::archetypes	variable	ecs	ecs-worldstats-archetypes	ecs.md	engine/ecs/world.h:117
+ecs::WorldStats::migrations	variable	ecs	ecs-worldstats-migrations	ecs.md	engine/ecs/world.h:119
+ecs::WorldStats::graph_hits	variable	ecs	ecs-worldstats-graph-hits	ecs.md	engine/ecs/world.h:121
+ecs::WorldStats::refused	variable	ecs	ecs-worldstats-refused	ecs.md	engine/ecs/world.h:123
+ecs::WorldStats::destroyed	variable	ecs	ecs-worldstats-destroyed	ecs.md	engine/ecs/world.h:125
+ecs::WorldStats::pool	variable	ecs	ecs-worldstats-pool	ecs.md	engine/ecs/world.h:127
+ecs::World	class	ecs	ecs-world	ecs.md	engine/ecs/world.h:138
+ecs::World::World()	function	ecs	ecs-world-world	ecs.md	engine/ecs/world.h:141
+ecs::World::World(const World&)	function	ecs	ecs-world-world-const-world-amp	ecs.md	engine/ecs/world.h:142
+ecs::World::operator=(const World&)	function	ecs	ecs-world-operator-eq-const-world-amp	ecs.md	engine/ecs/world.h:143
+ecs::World::Id() const	function	ecs	ecs-world-id-const	ecs.md	engine/ecs/world.h:146
+ecs::World::~World()	function	ecs	ecs-world-tilde-world	ecs.md	engine/ecs/world.h:148
+ecs::World::Create()	function	ecs	ecs-world-create	ecs.md	engine/ecs/world.h:153
+ecs::World::Create(Ts...)	function	ecs	ecs-world-create-ts	ecs.md	engine/ecs/world.h:158
+ecs::World::CreateMany(u32,Fn&&)	function	ecs	ecs-world-createmany-u32-fn-amp-amp	ecs.md	engine/ecs/world.h:166
+ecs::World::Destroy(Entity)	function	ecs	ecs-world-destroy-entity	ecs.md	engine/ecs/world.h:172
+ecs::World::Exists(Entity) const	function	ecs	ecs-world-exists-entity-const	ecs.md	engine/ecs/world.h:176
+ecs::World::Add(Entity,T)	function	ecs	ecs-world-add-entity-t	ecs.md	engine/ecs/world.h:181
+ecs::World::Remove(Entity)	function	ecs	ecs-world-remove-entity	ecs.md	engine/ecs/world.h:187
+ecs::World::Set(Entity,T)	function	ecs	ecs-world-set-entity-t	ecs.md	engine/ecs/world.h:193
+ecs::World::Has(Entity) const	function	ecs	ecs-world-has-entity-const	ecs.md	engine/ecs/world.h:198
+ecs::World::Get(Entity)	function	ecs	ecs-world-get-entity	ecs.md	engine/ecs/world.h:206
+ecs::World::Get(Entity) const	function	ecs	ecs-world-get-entity-const	ecs.md	engine/ecs/world.h:212
+ecs::World::Tick() const	function	ecs	ecs-world-tick-const	ecs.md	engine/ecs/world.h:217
+ecs::World::Advance()	function	ecs	ecs-world-advance	ecs.md	engine/ecs/world.h:221
+ecs::World::EndFrame()	function	ecs	ecs-world-endframe	ecs.md	engine/ecs/world.h:225
+ecs::World::RemovedCount() const	function	ecs	ecs-world-removedcount-const	ecs.md	engine/ecs/world.h:233
+ecs::World::RemovedAt(usize) const	function	ecs	ecs-world-removedat-usize-const	ecs.md	engine/ecs/world.h:237
+ecs::World::SetTick(u64)	function	ecs	ecs-world-settick-u64	ecs.md	engine/ecs/world.h:242
+ecs::World::Peek(Entity) const	function	ecs	ecs-world-peek-entity-const	ecs.md	engine/ecs/world.h:250
+ecs::World::Poke(Entity)	function	ecs	ecs-world-poke-entity	ecs.md	engine/ecs/world.h:257
+ecs::World::Stamp(Entity)	function	ecs	ecs-world-stamp-entity	ecs.md	engine/ecs/world.h:261
+ecs::World::BeginParallel()	function	ecs	ecs-world-beginparallel	ecs.md	engine/ecs/world.h:266
+ecs::World::EndParallel()	function	ecs	ecs-world-endparallel	ecs.md	engine/ecs/world.h:272
+ecs::World::IsParallel() const	function	ecs	ecs-world-isparallel-const	ecs.md	engine/ecs/world.h:279
+ecs::World::BeginIteration()	function	ecs	ecs-world-beginiteration	ecs.md	engine/ecs/world.h:282
+ecs::World::EndIteration()	function	ecs	ecs-world-enditeration	ecs.md	engine/ecs/world.h:285
+ecs::World::BeginIteration(const ComponentSet&)	function	ecs	ecs-world-beginiteration-const-componentset-amp	ecs.md	engine/ecs/world.h:294
+ecs::World::EndIteration(const ComponentSet&)	function	ecs	ecs-world-enditeration-const-componentset-amp	ecs.md	engine/ecs/world.h:306
+ecs::World::IsIterating() const	function	ecs	ecs-world-isiterating-const	ecs.md	engine/ecs/world.h:312
+ecs::World::Query()	function	ecs	ecs-world-query	ecs.md	engine/ecs/world.h:318
+ecs::World::Apply(CommandBuffer&)	function	ecs	ecs-world-apply-commandbuffer-amp	ecs.md	engine/ecs/world.h:330
+ecs::World::SetResource(T)	function	ecs	ecs-world-setresource-t	ecs.md	engine/ecs/world.h:340
+ecs::World::Resource()	function	ecs	ecs-world-resource	ecs.md	engine/ecs/world.h:344
+ecs::World::Resource() const	function	ecs	ecs-world-resource-const	ecs.md	engine/ecs/world.h:348
+ecs::World::TryResource()	function	ecs	ecs-world-tryresource	ecs.md	engine/ecs/world.h:353
+ecs::World::TryResource() const	function	ecs	ecs-world-tryresource-const	ecs.md	engine/ecs/world.h:358
+ecs::World::HasResource() const	function	ecs	ecs-world-hasresource-const	ecs.md	engine/ecs/world.h:362
+ecs::World::RemoveResource()	function	ecs	ecs-world-removeresource	ecs.md	engine/ecs/world.h:367
+ecs::World::ArchetypeCount() const	function	ecs	ecs-world-archetypecount-const	ecs.md	engine/ecs/world.h:371
+ecs::World::ArchetypeAt(u32)	function	ecs	ecs-world-archetypeat-u32	ecs.md	engine/ecs/world.h:374
+ecs::World::ArchetypeAt(u32) const	function	ecs	ecs-world-archetypeat-u32-const	ecs.md	engine/ecs/world.h:377
+ecs::World::Entities() const	function	ecs	ecs-world-entities-const	ecs.md	engine/ecs/world.h:379
+ecs::World::Stats() const	function	ecs	ecs-world-stats-const	ecs.md	engine/ecs/world.h:382
+ecs::World::Validate() const	function	ecs	ecs-world-validate-const	ecs.md	engine/ecs/world.h:388
+scene::MeshAsset	struct	scene	scene-meshasset	scene.md	engine/scene/components.h:22
+scene::MeshAsset::mesh	variable	scene	scene-meshasset-mesh	scene.md	engine/scene/components.h:24
+scene::MeshRenderer	struct	scene	scene-meshrenderer	scene.md	engine/scene/components.h:31
+scene::MeshRenderer::mesh	variable	scene	scene-meshrenderer-mesh	scene.md	engine/scene/components.h:33
+scene::MeshRenderer::material	variable	scene	scene-meshrenderer-material	scene.md	engine/scene/components.h:35
+scene::MeshRenderer::flags	variable	scene	scene-meshrenderer-flags	scene.md	engine/scene/components.h:37
+scene::Hidden	struct	scene	scene-hidden	scene.md	engine/scene/components.h:43
+scene::LightSource	struct	scene	scene-lightsource	scene.md	engine/scene/components.h:48
+scene::LightSource::type	variable	scene	scene-lightsource-type	scene.md	engine/scene/components.h:50
+scene::LightSource::color	variable	scene	scene-lightsource-color	scene.md	engine/scene/components.h:52
+scene::LightSource::intensity	variable	scene	scene-lightsource-intensity	scene.md	engine/scene/components.h:54
+scene::LightSource::radius	variable	scene	scene-lightsource-radius	scene.md	engine/scene/components.h:56
+scene::LightSource::direction	variable	scene	scene-lightsource-direction	scene.md	engine/scene/components.h:58
+scene::Camera	struct	scene	scene-camera	scene.md	engine/scene/components.h:64
+scene::Camera::fov_y	variable	scene	scene-camera-fov-y	scene.md	engine/scene/components.h:66
+scene::Camera::aspect	variable	scene	scene-camera-aspect	scene.md	engine/scene/components.h:68
+scene::Camera::near_plane	variable	scene	scene-camera-near-plane	scene.md	engine/scene/components.h:70
+scene::Camera::far_plane	variable	scene	scene-camera-far-plane	scene.md	engine/scene/components.h:72
+scene::RenderHandle	struct	scene	scene-renderhandle	scene.md	engine/scene/components.h:79
+scene::RenderHandle::kTrackRemoval	variable	scene	scene-renderhandle-ktrackremoval	scene.md	engine/scene/components.h:81
+scene::RenderHandle::object	variable	scene	scene-renderhandle-object	scene.md	engine/scene/components.h:83
+scene::RenderHandle::light	variable	scene	scene-renderhandle-light	scene.md	engine/scene/components.h:85
+scene::ActiveCamera	struct	scene	scene-activecamera	scene.md	engine/scene/components.h:91
+scene::ActiveCamera::entity	variable	scene	scene-activecamera-entity	scene.md	engine/scene/components.h:93
+scene::CameraOutput	struct	scene	scene-cameraoutput	scene.md	engine/scene/components.h:99
+scene::CameraOutput::camera	variable	scene	scene-cameraoutput-camera	scene.md	engine/scene/components.h:101
+scene::CameraOutput::valid	variable	scene	scene-cameraoutput-valid	scene.md	engine/scene/components.h:103
+scene::SceneLink	struct	scene	scene-scenelink	scene.md	engine/scene/render_sync.h:17
+scene::SceneLink::scene	variable	scene	scene-scenelink-scene	scene.md	engine/scene/render_sync.h:19
+scene::SceneSyncReport	struct	scene	scene-scenesyncreport	scene.md	engine/scene/render_sync.h:25
+scene::SceneSyncReport::frames	variable	scene	scene-scenesyncreport-frames	scene.md	engine/scene/render_sync.h:27
+scene::SceneSyncReport::no_scene	variable	scene	scene-scenesyncreport-no-scene	scene.md	engine/scene/render_sync.h:29
+scene::SceneSyncReport::objects_added	variable	scene	scene-scenesyncreport-objects-added	scene.md	engine/scene/render_sync.h:31
+scene::SceneSyncReport::objects_removed	variable	scene	scene-scenesyncreport-objects-removed	scene.md	engine/scene/render_sync.h:33
+scene::SceneSyncReport::lights_added	variable	scene	scene-scenesyncreport-lights-added	scene.md	engine/scene/render_sync.h:35
+scene::SceneSyncReport::lights_removed	variable	scene	scene-scenesyncreport-lights-removed	scene.md	engine/scene/render_sync.h:37
+scene::SceneSyncReport::readded	variable	scene	scene-scenesyncreport-readded	scene.md	engine/scene/render_sync.h:39
+scene::SceneSyncReport::transforms_set	variable	scene	scene-scenesyncreport-transforms-set	scene.md	engine/scene/render_sync.h:41
+scene::SceneSyncReport::flags_set	variable	scene	scene-scenesyncreport-flags-set	scene.md	engine/scene/render_sync.h:43
+scene::SceneSyncReport::lights_set	variable	scene	scene-scenesyncreport-lights-set	scene.md	engine/scene/render_sync.h:45
+scene::SceneSyncReport::refused_full	variable	scene	scene-scenesyncreport-refused-full	scene.md	engine/scene/render_sync.h:47
+scene::SceneSyncReport::invalid	variable	scene	scene-scenesyncreport-invalid	scene.md	engine/scene/render_sync.h:49
+scene::MakeRenderSyncSystem(const char*)	function	scene	scene-makerendersyncsystem-const-char-star	scene.md	engine/scene/render_sync.h:70
+scene::MakeCameraSystem(const char*)	function	scene	scene-makecamerasystem-const-char-star	scene.md	engine/scene/render_sync.h:80
 ui::ConnectionId	alias	ui	ui-connectionid	ui.md	engine/ui/callback.h:11
 ui::Callback	class	ui	ui-callback	ui.md	engine/ui/callback.h:20
 ui::Callback::Function	alias	ui	ui-callback-function	ui.md	engine/ui/callback.h:24

@@ -1347,6 +1347,16 @@ void (*default_construct)(void* where);
 
 Default-constructs an object at the address, or null when the type has no default constructor.
 
+### `track_removal` {#ecs-typeinfo-track-removal}
+
+`variable ecs::TypeInfo::track_removal` — defined in `engine/ecs/component.h`
+
+```cpp
+bool track_removal;
+```
+
+True when the type declares `static constexpr bool kTrackRemoval = true`: the world keeps a short log of every removal of it (see [`ecs::World::RemovedCount`](#ecs-world-removedcount-const)).
+
 ### `name` {#ecs-typeinfo-name}
 
 `variable ecs::TypeInfo::name` — defined in `engine/ecs/component.h`
@@ -2972,6 +2982,36 @@ One entity's component for reading (see [`ecs::World::Peek`](#ecs-world-peek-ent
 | Fails | `T` declared neither read nor written counts a violation; returns null as described. |
 | Ownership | views the entity's row; valid until the next structural call. |
 
+### `RemovedCount()` {#ecs-systemcontext-removedcount}
+
+`method ecs::SystemContext::RemovedCount` — defined in `engine/ecs/schedule.h`
+
+```cpp
+template <class T>
+usize RemovedCount();
+```
+
+How many removals of the tracked component `T` the world's log holds (see [`ecs::World::RemovedCount`](#ecs-world-removedcount-const)).
+
+| Field | Value |
+|---|---|
+| Fails | `T` declared neither read nor written counts a violation. |
+
+### `RemovedAt(usize)` {#ecs-systemcontext-removedat-usize-const}
+
+`method ecs::SystemContext::RemovedAt` — defined in `engine/ecs/schedule.h`
+
+```cpp
+template <class T>
+RemovedComponent<T> RemovedAt(usize index) const;
+```
+
+The `index`th logged removal of `T` (see [`ecs::World::RemovedAt`](#ecs-world-removedat-usize-const)).
+
+| Field | Value |
+|---|---|
+| Aborts | `index` is not below `RemovedCount<T>()`. |
+
 ### `Poke(Entity)` {#ecs-systemcontext-poke-entity}
 
 `method ecs::SystemContext::Poke` — defined in `engine/ecs/schedule.h`
@@ -4040,6 +4080,51 @@ Roots whose local transform changed get `local.ToMatrix()`. When anything change
 | Parameter `name` | a string literal naming the system. |
 | Returns | the system; give it to [`ecs::Schedule::Add`](#ecs-schedule-add-systemdesc) (add `InStage` or `After` as needed). |
 
+## `RemovedComponent` {#ecs-removedcomponent}
+
+`struct ecs::RemovedComponent` — defined in `engine/ecs/world.h`
+
+```cpp
+template <class T>
+struct RemovedComponent { ... }
+```
+
+One entry of a removal log: the entity that lost a tracked component, the value it had and the removal's sequence number (increasing within a world).
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data. |
+
+### `entity` {#ecs-removedcomponent-entity}
+
+`variable ecs::RemovedComponent::entity` — defined in `engine/ecs/world.h`
+
+```cpp
+Entity entity;
+```
+
+The entity (destroyed, or alive without the component).
+
+### `value` {#ecs-removedcomponent-value}
+
+`variable ecs::RemovedComponent::value` — defined in `engine/ecs/world.h`
+
+```cpp
+T value;
+```
+
+The component's value at the moment of removal.
+
+### `seq` {#ecs-removedcomponent-seq}
+
+`variable ecs::RemovedComponent::seq` — defined in `engine/ecs/world.h`
+
+```cpp
+u64 seq;
+```
+
+The removal's number in this world; a reader keeps the largest it has seen.
+
 ## `Status` {#ecs-status}
 
 `enum ecs::Status` — defined in `engine/ecs/world.h`
@@ -4523,6 +4608,50 @@ Moves to the next tick; changes stamped from now on are newer than any query's `
 | Field | Value |
 |---|---|
 | Fails | never. |
+
+### `EndFrame()` {#ecs-world-endframe}
+
+`method ecs::World::EndFrame` — defined in `engine/ecs/world.h`
+
+```cpp
+void EndFrame();
+```
+
+Ends a frame for the removal logs: entries logged in the frame before this one go, those of the frame just ended stay for one more frame (see [`ecs::World::RemovedCount`](#ecs-world-removedcount-const)). The scheduler calls it at the end of `Schedule::Run`; a program that runs no schedule calls it itself.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `RemovedCount()` {#ecs-world-removedcount-const}
+
+`method ecs::World::RemovedCount` — defined in `engine/ecs/world.h`
+
+```cpp
+template <class T>
+usize RemovedCount() const;
+```
+
+How many removals of the tracked component `T` the log holds: those of the current and the previous frame (a component declares `static constexpr bool kTrackRemoval = true`). A system that runs once per frame sees each removal in the frame it happened or the next; it remembers the largest `seq` it handled and skips smaller ones.
+
+| Field | Value |
+|---|---|
+| Fails | zero for a type that does not track removal. |
+
+### `RemovedAt(usize)` {#ecs-world-removedat-usize-const}
+
+`method ecs::World::RemovedAt` — defined in `engine/ecs/world.h`
+
+```cpp
+template <class T>
+RemovedComponent<T> RemovedAt(usize index) const;
+```
+
+The `index`th logged removal of `T`, oldest first.
+
+| Field | Value |
+|---|---|
+| Aborts | `index` is not below `RemovedCount<T>()`. |
 
 ### `SetTick(u64)` {#ecs-world-settick-u64}
 
