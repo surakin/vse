@@ -3,6 +3,7 @@
 set(ECS_TEST_SOURCES
   entity_test.cpp
   component_test.cpp
+  archetype_test.cpp
 )
 
 find_package(Threads REQUIRED)

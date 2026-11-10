@@ -58,8 +58,9 @@ struct ComponentSet {
         h ^= h >> 29;
         return h;
     }
-    /// The smallest id in the set that is `>= from`, or [[ecs::kInvalidComponent]] when none: iterate with
-    /// `for (id = set.NextFrom(0); id != kInvalidComponent; id = set.NextFrom(id + 1))` (ascending id order).
+    /// The smallest id in the set that is `>= from`, or [[ecs::kInvalidComponent]] when none.
+    ///
+    /// Iterate with `for (id = set.NextFrom(0); id != kInvalidComponent; id = set.NextFrom(id + 1))` (ascending id order).
     /// Fails: never.
     ComponentId NextFrom(u32 from) const {
         for (u32 word = from >> 6; word < 2; ++word) {

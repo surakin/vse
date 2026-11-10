@@ -4,6 +4,8 @@
 set(ECS_SOURCES
   entity_table.cpp
   component.cpp
+  chunk.cpp
+  archetype.cpp
 )
 set(ECS_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

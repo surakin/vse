@@ -2820,29 +2820,95 @@ text::ShelfPacker::Place(u32,u32,Rect*)	function	text	text-shelfpacker-place-u32
 text::ShelfPacker::UsedArea() const	function	text	text-shelfpacker-usedarea-const	text.md	engine/text/shelf_packer.h:49
 text::ShelfPacker::Width() const	function	text	text-shelfpacker-width-const	text.md	engine/text/shelf_packer.h:53
 text::ShelfPacker::Height() const	function	text	text-shelfpacker-height-const	text.md	engine/text/shelf_packer.h:57
-ecs::ComponentId	alias	ecs	ecs-componentid	ecs.md	engine/ecs/component.h:15
-ecs::kInvalidComponent	variable	ecs	ecs-kinvalidcomponent	ecs.md	engine/ecs/component.h:18
-ecs::kMaxComponentTypes	variable	ecs	ecs-kmaxcomponenttypes	ecs.md	engine/ecs/component.h:21
-ecs::kMaxComponentAlign	variable	ecs	ecs-kmaxcomponentalign	ecs.md	engine/ecs/component.h:24
-ecs::TypeInfo	struct	ecs	ecs-typeinfo	ecs.md	engine/ecs/component.h:30
-ecs::TypeInfo::size	variable	ecs	ecs-typeinfo-size	ecs.md	engine/ecs/component.h:32
-ecs::TypeInfo::align	variable	ecs	ecs-typeinfo-align	ecs.md	engine/ecs/component.h:34
-ecs::TypeInfo::is_tag	variable	ecs	ecs-typeinfo-is-tag	ecs.md	engine/ecs/component.h:36
-ecs::TypeInfo::trivially_relocatable	variable	ecs	ecs-typeinfo-trivially-relocatable	ecs.md	engine/ecs/component.h:38
-ecs::TypeInfo::move_construct	variable	ecs	ecs-typeinfo-move-construct	ecs.md	engine/ecs/component.h:40
-ecs::TypeInfo::destroy	variable	ecs	ecs-typeinfo-destroy	ecs.md	engine/ecs/component.h:42
-ecs::TypeInfo::default_construct	variable	ecs	ecs-typeinfo-default-construct	ecs.md	engine/ecs/component.h:44
-ecs::TypeInfo::name	variable	ecs	ecs-typeinfo-name	ecs.md	engine/ecs/component.h:46
-ecs::ComponentRegistry	class	ecs	ecs-componentregistry	ecs.md	engine/ecs/component.h:54
-ecs::ComponentRegistry::ComponentRegistry()	function	ecs	ecs-componentregistry-componentregistry	ecs.md	engine/ecs/component.h:57
-ecs::ComponentRegistry::ComponentRegistry(const ComponentRegistry&)	function	ecs	ecs-componentregistry-componentregistry-const-componentregistry-amp	ecs.md	engine/ecs/component.h:58
-ecs::ComponentRegistry::operator=(const ComponentRegistry&)	function	ecs	ecs-componentregistry-operator-eq-const-componentregistry-amp	ecs.md	engine/ecs/component.h:59
-ecs::ComponentRegistry::Global()	function	ecs	ecs-componentregistry-global	ecs.md	engine/ecs/component.h:62
-ecs::ComponentRegistry::Register(const TypeInfo&)	function	ecs	ecs-componentregistry-register-const-typeinfo-amp	ecs.md	engine/ecs/component.h:68
-ecs::ComponentRegistry::Info(ComponentId) const	function	ecs	ecs-componentregistry-info-componentid-const	ecs.md	engine/ecs/component.h:72
-ecs::ComponentRegistry::Count() const	function	ecs	ecs-componentregistry-count-const	ecs.md	engine/ecs/component.h:75
-ecs::ComponentRegistry::Refused() const	function	ecs	ecs-componentregistry-refused-const	ecs.md	engine/ecs/component.h:78
-ecs::ComponentOf()	function	ecs	ecs-componentof	ecs.md	engine/ecs/component.h:139
+ecs::kNoColumn	variable	ecs	ecs-knocolumn	ecs.md	engine/ecs/archetype.h:18
+ecs::ArchetypeLayout	struct	ecs	ecs-archetypelayout	ecs.md	engine/ecs/archetype.h:27
+ecs::ArchetypeLayout::column_count	variable	ecs	ecs-archetypelayout-column-count	ecs.md	engine/ecs/archetype.h:29
+ecs::ArchetypeLayout::capacity	variable	ecs	ecs-archetypelayout-capacity	ecs.md	engine/ecs/archetype.h:31
+ecs::ArchetypeLayout::row_bytes	variable	ecs	ecs-archetypelayout-row-bytes	ecs.md	engine/ecs/archetype.h:33
+ecs::ArchetypeLayout::component	variable	ecs	ecs-archetypelayout-component	ecs.md	engine/ecs/archetype.h:35
+ecs::ArchetypeLayout::offset	variable	ecs	ecs-archetypelayout-offset	ecs.md	engine/ecs/archetype.h:37
+ecs::ArchetypeLayout::size	variable	ecs	ecs-archetypelayout-size	ecs.md	engine/ecs/archetype.h:39
+ecs::ArchetypeLayout::info	variable	ecs	ecs-archetypelayout-info	ecs.md	engine/ecs/archetype.h:41
+ecs::ArchetypeLayout::column_of	variable	ecs	ecs-archetypelayout-column-of	ecs.md	engine/ecs/archetype.h:43
+ecs::RowRef	struct	ecs	ecs-rowref	ecs.md	engine/ecs/archetype.h:50
+ecs::RowRef::chunk_index	variable	ecs	ecs-rowref-chunk-index	ecs.md	engine/ecs/archetype.h:52
+ecs::RowRef::row	variable	ecs	ecs-rowref-row	ecs.md	engine/ecs/archetype.h:54
+ecs::RowRef::chunk	variable	ecs	ecs-rowref-chunk	ecs.md	engine/ecs/archetype.h:56
+ecs::RowContents	enum	ecs	ecs-rowcontents	ecs.md	engine/ecs/archetype.h:60
+ecs::RowContents::Alive	enumerator	ecs	ecs-rowcontents-alive	ecs.md	engine/ecs/archetype.h:62
+ecs::RowContents::Vacated	enumerator	ecs	ecs-rowcontents-vacated	ecs.md	engine/ecs/archetype.h:64
+ecs::Archetype	class	ecs	ecs-archetype	ecs.md	engine/ecs/archetype.h:77
+ecs::Archetype::Archetype(u32,const ComponentSet&,const ComponentRegistry&,ChunkPool&)	function	ecs	ecs-archetype-archetype-u32-const-componentset-amp-const-componentregistry-amp-chunkpool-amp	ecs.md	engine/ecs/archetype.h:84
+ecs::Archetype::Archetype(const Archetype&)	function	ecs	ecs-archetype-archetype-const-archetype-amp	ecs.md	engine/ecs/archetype.h:85
+ecs::Archetype::operator=(const Archetype&)	function	ecs	ecs-archetype-operator-eq-const-archetype-amp	ecs.md	engine/ecs/archetype.h:86
+ecs::Archetype::~Archetype()	function	ecs	ecs-archetype-tilde-archetype	ecs.md	engine/ecs/archetype.h:90
+ecs::Archetype::Valid() const	function	ecs	ecs-archetype-valid-const	ecs.md	engine/ecs/archetype.h:94
+ecs::Archetype::Index() const	function	ecs	ecs-archetype-index-const	ecs.md	engine/ecs/archetype.h:96
+ecs::Archetype::Components() const	function	ecs	ecs-archetype-components-const	ecs.md	engine/ecs/archetype.h:98
+ecs::Archetype::Layout() const	function	ecs	ecs-archetype-layout-const	ecs.md	engine/ecs/archetype.h:100
+ecs::Archetype::Has(ComponentId) const	function	ecs	ecs-archetype-has-componentid-const	ecs.md	engine/ecs/archetype.h:103
+ecs::Archetype::AddRow(Entity,RowRef*)	function	ecs	ecs-archetype-addrow-entity-rowref-star	ecs.md	engine/ecs/archetype.h:112
+ecs::Archetype::RemoveRow(u32,u32,RowContents)	function	ecs	ecs-archetype-removerow-u32-u32-rowcontents	ecs.md	engine/ecs/archetype.h:119
+ecs::Archetype::ChunkCount() const	function	ecs	ecs-archetype-chunkcount-const	ecs.md	engine/ecs/archetype.h:122
+ecs::Archetype::EntityCount() const	function	ecs	ecs-archetype-entitycount-const	ecs.md	engine/ecs/archetype.h:124
+ecs::Archetype::BytesUsed() const	function	ecs	ecs-archetype-bytesused-const	ecs.md	engine/ecs/archetype.h:126
+ecs::Archetype::ChunkAt(u32) const	function	ecs	ecs-archetype-chunkat-u32-const	ecs.md	engine/ecs/archetype.h:130
+ecs::Archetype::Entities(Chunk*) const	function	ecs	ecs-archetype-entities-chunk-star-const	ecs.md	engine/ecs/archetype.h:134
+ecs::Archetype::ColumnPtr(Chunk*,ComponentId) const	function	ecs	ecs-archetype-columnptr-chunk-star-componentid-const	ecs.md	engine/ecs/archetype.h:139
+ecs::Archetype::CellPtr(Chunk*,ComponentId,u32) const	function	ecs	ecs-archetype-cellptr-chunk-star-componentid-u32-const	ecs.md	engine/ecs/archetype.h:144
+ecs::Archetype::Column(Chunk*) const	function	ecs	ecs-archetype-column-chunk-star-const	ecs.md	engine/ecs/archetype.h:149
+ecs::kChunkBytes	variable	ecs	ecs-kchunkbytes	ecs.md	engine/ecs/chunk.h:15
+ecs::kMaxArchetypeComponents	variable	ecs	ecs-kmaxarchetypecomponents	ecs.md	engine/ecs/chunk.h:18
+ecs::Chunk	struct	ecs	ecs-chunk	ecs.md	engine/ecs/chunk.h:27
+ecs::Chunk::archetype	variable	ecs	ecs-chunk-archetype	ecs.md	engine/ecs/chunk.h:29
+ecs::Chunk::count	variable	ecs	ecs-chunk-count	ecs.md	engine/ecs/chunk.h:31
+ecs::Chunk::capacity	variable	ecs	ecs-chunk-capacity	ecs.md	engine/ecs/chunk.h:33
+ecs::Chunk::reserved	variable	ecs	ecs-chunk-reserved	ecs.md	engine/ecs/chunk.h:35
+ecs::Chunk::written	variable	ecs	ecs-chunk-written	ecs.md	engine/ecs/chunk.h:37
+ecs::Chunk::added	variable	ecs	ecs-chunk-added	ecs.md	engine/ecs/chunk.h:39
+ecs::Chunk::Data()	function	ecs	ecs-chunk-data	ecs.md	engine/ecs/chunk.h:44
+ecs::Chunk::Data() const	function	ecs	ecs-chunk-data-const	ecs.md	engine/ecs/chunk.h:48
+ecs::ChunkPoolStats	struct	ecs	ecs-chunkpoolstats	ecs.md	engine/ecs/chunk.h:56
+ecs::ChunkPoolStats::chunks	variable	ecs	ecs-chunkpoolstats-chunks	ecs.md	engine/ecs/chunk.h:58
+ecs::ChunkPoolStats::bytes	variable	ecs	ecs-chunkpoolstats-bytes	ecs.md	engine/ecs/chunk.h:60
+ecs::ChunkPoolStats::pooled	variable	ecs	ecs-chunkpoolstats-pooled	ecs.md	engine/ecs/chunk.h:62
+ecs::ChunkPoolStats::reused	variable	ecs	ecs-chunkpoolstats-reused	ecs.md	engine/ecs/chunk.h:64
+ecs::ChunkPoolStats::refused_layouts	variable	ecs	ecs-chunkpoolstats-refused-layouts	ecs.md	engine/ecs/chunk.h:66
+ecs::ChunkPoolStats::refused_allocations	variable	ecs	ecs-chunkpoolstats-refused-allocations	ecs.md	engine/ecs/chunk.h:68
+ecs::ChunkPool	class	ecs	ecs-chunkpool	ecs.md	engine/ecs/chunk.h:77
+ecs::ChunkPool::ChunkPool(u32)	function	ecs	ecs-chunkpool-chunkpool-u32	ecs.md	engine/ecs/chunk.h:80
+ecs::ChunkPool::ChunkPool(const ChunkPool&)	function	ecs	ecs-chunkpool-chunkpool-const-chunkpool-amp	ecs.md	engine/ecs/chunk.h:81
+ecs::ChunkPool::operator=(const ChunkPool&)	function	ecs	ecs-chunkpool-operator-eq-const-chunkpool-amp	ecs.md	engine/ecs/chunk.h:82
+ecs::ChunkPool::~ChunkPool()	function	ecs	ecs-chunkpool-tilde-chunkpool	ecs.md	engine/ecs/chunk.h:86
+ecs::ChunkPool::Acquire(u32,u32)	function	ecs	ecs-chunkpool-acquire-u32-u32	ecs.md	engine/ecs/chunk.h:93
+ecs::ChunkPool::Release(Chunk*)	function	ecs	ecs-chunkpool-release-chunk-star	ecs.md	engine/ecs/chunk.h:98
+ecs::ChunkPool::Trim()	function	ecs	ecs-chunkpool-trim	ecs.md	engine/ecs/chunk.h:101
+ecs::ChunkPool::CountRefusedLayout()	function	ecs	ecs-chunkpool-countrefusedlayout	ecs.md	engine/ecs/chunk.h:104
+ecs::ChunkPool::Stats() const	function	ecs	ecs-chunkpool-stats-const	ecs.md	engine/ecs/chunk.h:107
+ecs::ChunkPool::Budget() const	function	ecs	ecs-chunkpool-budget-const	ecs.md	engine/ecs/chunk.h:110
+ecs::ComponentId	alias	ecs	ecs-componentid	ecs.md	engine/ecs/component.h:14
+ecs::kInvalidComponent	variable	ecs	ecs-kinvalidcomponent	ecs.md	engine/ecs/component.h:17
+ecs::kMaxComponentTypes	variable	ecs	ecs-kmaxcomponenttypes	ecs.md	engine/ecs/component.h:20
+ecs::kMaxComponentAlign	variable	ecs	ecs-kmaxcomponentalign	ecs.md	engine/ecs/component.h:23
+ecs::TypeInfo	struct	ecs	ecs-typeinfo	ecs.md	engine/ecs/component.h:29
+ecs::TypeInfo::size	variable	ecs	ecs-typeinfo-size	ecs.md	engine/ecs/component.h:31
+ecs::TypeInfo::align	variable	ecs	ecs-typeinfo-align	ecs.md	engine/ecs/component.h:33
+ecs::TypeInfo::is_tag	variable	ecs	ecs-typeinfo-is-tag	ecs.md	engine/ecs/component.h:35
+ecs::TypeInfo::trivially_relocatable	variable	ecs	ecs-typeinfo-trivially-relocatable	ecs.md	engine/ecs/component.h:37
+ecs::TypeInfo::move_construct	variable	ecs	ecs-typeinfo-move-construct	ecs.md	engine/ecs/component.h:39
+ecs::TypeInfo::destroy	variable	ecs	ecs-typeinfo-destroy	ecs.md	engine/ecs/component.h:41
+ecs::TypeInfo::default_construct	variable	ecs	ecs-typeinfo-default-construct	ecs.md	engine/ecs/component.h:43
+ecs::TypeInfo::name	variable	ecs	ecs-typeinfo-name	ecs.md	engine/ecs/component.h:45
+ecs::ComponentRegistry	class	ecs	ecs-componentregistry	ecs.md	engine/ecs/component.h:53
+ecs::ComponentRegistry::ComponentRegistry()	function	ecs	ecs-componentregistry-componentregistry	ecs.md	engine/ecs/component.h:56
+ecs::ComponentRegistry::ComponentRegistry(const ComponentRegistry&)	function	ecs	ecs-componentregistry-componentregistry-const-componentregistry-amp	ecs.md	engine/ecs/component.h:57
+ecs::ComponentRegistry::operator=(const ComponentRegistry&)	function	ecs	ecs-componentregistry-operator-eq-const-componentregistry-amp	ecs.md	engine/ecs/component.h:58
+ecs::ComponentRegistry::Global()	function	ecs	ecs-componentregistry-global	ecs.md	engine/ecs/component.h:61
+ecs::ComponentRegistry::Register(const TypeInfo&)	function	ecs	ecs-componentregistry-register-const-typeinfo-amp	ecs.md	engine/ecs/component.h:67
+ecs::ComponentRegistry::Info(ComponentId) const	function	ecs	ecs-componentregistry-info-componentid-const	ecs.md	engine/ecs/component.h:71
+ecs::ComponentRegistry::Count() const	function	ecs	ecs-componentregistry-count-const	ecs.md	engine/ecs/component.h:74
+ecs::ComponentRegistry::Refused() const	function	ecs	ecs-componentregistry-refused-const	ecs.md	engine/ecs/component.h:77
+ecs::ComponentOf()	function	ecs	ecs-componentof	ecs.md	engine/ecs/component.h:138
 ecs::ComponentSet	struct	ecs	ecs-componentset	ecs.md	engine/ecs/component_set.h:15
 ecs::ComponentSet::words	variable	ecs	ecs-componentset-words	ecs.md	engine/ecs/component_set.h:17
 ecs::ComponentSet::Add(ComponentId)	function	ecs	ecs-componentset-add-componentid	ecs.md	engine/ecs/component_set.h:21
@@ -2853,7 +2919,7 @@ ecs::ComponentSet::Count() const	function	ecs	ecs-componentset-count-const	ecs.m
 ecs::ComponentSet::IsSubsetOf(const ComponentSet&) const	function	ecs	ecs-componentset-issubsetof-const-componentset-amp-const	ecs.md	engine/ecs/component_set.h:44
 ecs::ComponentSet::Intersects(const ComponentSet&) const	function	ecs	ecs-componentset-intersects-const-componentset-amp-const	ecs.md	engine/ecs/component_set.h:49
 ecs::ComponentSet::Hash() const	function	ecs	ecs-componentset-hash-const	ecs.md	engine/ecs/component_set.h:54
-ecs::ComponentSet::NextFrom(u32) const	function	ecs	ecs-componentset-nextfrom-u32-const	ecs.md	engine/ecs/component_set.h:64
+ecs::ComponentSet::NextFrom(u32) const	function	ecs	ecs-componentset-nextfrom-u32-const	ecs.md	engine/ecs/component_set.h:65
 ecs::Entity	struct	ecs	ecs-entity	ecs.md	engine/ecs/entity.h:16
 ecs::Entity::index	variable	ecs	ecs-entity-index	ecs.md	engine/ecs/entity.h:18
 ecs::Entity::generation	variable	ecs	ecs-entity-generation	ecs.md	engine/ecs/entity.h:20

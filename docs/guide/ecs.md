@@ -1,6 +1,6 @@
 # ECS: entities, components and systems
 
-Status: draft (Phase 17, Days 223-224: entities, components; the rest of the page arrives with the days that build it).
+Status: draft (Phase 17, Days 223-225: entities, components, storage; the rest of the page arrives with the days that build it).
 
 The ECS (`engine/ecs`, namespace `ecs`) is the engine's data-oriented core: **entities** are ids, **components** are plain data stored in
 cache-friendly chunks, and **systems** are functions over all entities that have a given set of components. Design, measurements and the
@@ -102,3 +102,23 @@ set has 2 ids, same id again: yes
 - The ids are small integers assigned in order of first use, so they differ between runs that touch types in a different order. Never store
   an id on disk; store the type's name.
 - `ComponentOf<T>()` and `Info()` are thread-safe; registration takes a lock, once per type.
+
+## Storage: archetypes and chunks
+
+All entities that have exactly the same set of components form one **archetype** (`ecs::Archetype`). Its rows live in **chunks**: 32 KiB,
+64-byte aligned blocks (`ecs::Chunk`, `ecs::kChunkBytes`) with a small header and one **column** per component, so a loop over one component reads
+contiguous memory. Column 0 is always the entity ids. Inside a chunk the columns are ordered by descending alignment, so none needs padding, and
+the number of rows a chunk holds (`Layout().capacity`) is the room after the header divided by the bytes of one row. A tag has no column.
+
+- **No per-entity allocation.** Rows are added at the end of the archetype's last chunk; a new chunk is taken from the world's `ecs::ChunkPool`
+  only when that one is full. The pool keeps released chunks up to a budget (default 64 chunks, 2 MiB) and frees the rest.
+- **Removal is swap-remove.** `RemoveRow` destroys the row's components, then moves the archetype's last row into the gap, so rows stay dense
+  and only the last chunk is partly filled. It returns the entity that moved, so the caller can fix that entity's location; it returns the invalid
+  entity when nothing moved. An emptied last chunk goes back to the pool at once.
+- **Lifetimes are exact.** `AddRow` leaves the cells uninitialized and the caller constructs each one (`CellPtr`); a component with a
+  non-trivial type is moved with its `move_construct` and the source destroyed once, a trivially relocatable one with `MemCopy`. The destructor
+  destroys the components still alive.
+- **Pointers and spans are valid until the next add or remove** on that archetype.
+- **Cost.** A row costs the sum of its components' sizes plus 8 bytes for the entity; an archetype wastes at most one partly-filled chunk
+  (under 32 KiB), and a chunk header is 320 bytes. A row larger than a chunk (about 32 KB) is refused: `Valid()` is false and
+  `ChunkPool::Stats().refused_layouts` counts it.
