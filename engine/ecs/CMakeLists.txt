@@ -9,6 +9,7 @@ set(ECS_SOURCES
   world.cpp
   command_buffer.cpp
   schedule.cpp
+  transform.cpp
 )
 set(ECS_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

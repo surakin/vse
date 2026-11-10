@@ -1,9 +1,9 @@
 # ECS: entities, components and systems
 
-Status: draft (Phase 17, Days 223-230: entities, components, storage, the world, queries, command buffers, resources, change detection, systems, the schedule and parallel systems; the rest of the page arrives with the days that build it).
+Status: draft (Phase 17, Days 223-232: entities, components, storage, the world, queries, command buffers, resources, change detection, systems, the schedule, parallel systems, transforms and hierarchy; the rest of the page arrives with the days that build it).
 
 **Audience:** every game and engine programmer. Read [Containers](foundation-containers.md) and [Memory](foundation-memory.md) first. This page covers only
-what is built so far (entities, components, storage, the world, queries, command buffers, resources, change detection, systems, the schedule and parallel systems); transforms and the scene bridge are not documented here yet.
+what is built so far (entities, components, storage, the world, queries, command buffers, resources, change detection, systems, the schedule, parallel systems, transforms and hierarchy); the scene bridge is not documented here yet.
 
 The ECS (`engine/ecs`, namespace `ecs`) is the engine's data-oriented core: **entities** are ids, **components** are plain data stored in
 cache-friendly chunks, and **systems** are functions over all entities that have a given set of components. Design, measurements and the
@@ -28,6 +28,7 @@ with a Position" reads memory in order. The *archetype* is that group: all entit
 | to visit only what changed | `Changed<T>` / `Added<T>` terms, then `query.Finish()` | see "Change detection" |
 | to run logic every frame in a defined order | `ecs::Schedule`, `MakeQuerySystem`, `Build()`, `Run(world, dt)` | see "Systems and schedules"; include `ecs/schedule.h` |
 | one value shared by all systems (time, settings) | `world.SetResource(value)`, `world.Resource<T>()` | see "Resources" |
+| a parent-child transform hierarchy | `CreateTransformEntity`, `SetParent`, `MakeTransformSystem` | see "Transforms and hierarchy"; include `ecs/transform.h` |
 | to check the world's consistency | `world.Validate()` | for tests and debug builds |
 
 ## Entities
@@ -513,6 +514,62 @@ schedule.Run(world, dt);                           // call it on the frame threa
   still sees them in row order; one that depends on the order of chunks should use `ReduceChunks` or `ForEachChunk`.
 - **What a job may not do.** Call structural functions (the world is in a parallel phase and refuses them), wait for other jobs (a job cannot `HelpUntil`),
   or touch undeclared data. `context.Query<>()` inside a job is fine for declared components.
+
+## Transforms and hierarchy
+
+Include `ecs/transform.h`. An entity with a place in the world carries a **`LocalTransform`** (position, rotation, scale relative to its parent) and a
+**`WorldTransform`** (the 4x4 matrix the renderer reads). A child names its parent with **`Parent`** and carries a **`HierarchyDepth`** (0 for a root, the
+parent's depth plus one for a child); use `CreateTransformEntity`, `SetParent` and `ClearParent` and the depth is kept for you.
+
+```cpp compile run standalone
+#include "ecs/schedule.h"
+#include "ecs/transform.h"
+#include "os/console.h"
+
+using namespace engine_placeholder;
+
+int main() {
+    ecs::World world;
+    world.SetResource(ecs::TransformReport{});
+
+    ecs::LocalTransform place;
+    place.position = Vec3(10.0f, 0.0f, 0.0f);
+    const ecs::Entity ship = ecs::CreateTransformEntity(world, place);
+    place.position = Vec3(0.0f, 2.0f, 0.0f);
+    const ecs::Entity turret = ecs::CreateTransformEntity(world, place);
+    ecs::SetParent(world, turret, ship);
+
+    ecs::Schedule schedule;
+    schedule.Add(ecs::MakeTransformSystem("transforms"));
+    schedule.Build();
+    schedule.Run(world, 0.016f);
+    ecs::WorldTransform* turret_world = world.Get<ecs::WorldTransform>(turret);
+    os::Print("turret at %.0f %.0f\n", static_cast<double>(turret_world->matrix.col[3].x), static_cast<double>(turret_world->matrix.col[3].y));
+
+    world.Get<ecs::LocalTransform>(ship)->position = Vec3(20.0f, 0.0f, 0.0f);   // move the parent; the child follows
+    schedule.Run(world, 0.016f);
+    turret_world = world.Get<ecs::WorldTransform>(turret);
+    os::Print("turret at %.0f %.0f\n", static_cast<double>(turret_world->matrix.col[3].x), static_cast<double>(turret_world->matrix.col[3].y));
+    return 0;
+}
+```
+
+```output
+turret at 10 2
+turret at 20 2
+```
+
+- **The system.** `MakeTransformSystem(name)` computes `WorldTransform = parent's WorldTransform * LocalTransform`. Roots go first, then children by depth, shallowest
+  first; each depth level runs in parallel when the system is alone in its wave. It needs a `TransformReport` resource (`SetResource(TransformReport{})`), which counts
+  frames, recomputed and written matrices, and what it repaired or refused.
+- **Only real changes are written.** A matrix is stored only when it differs from the old one, and only then is its chunk stamped, so `Changed<WorldTransform>`
+  (the renderer's, the spatial index's) sees exactly the moved subtrees. A frame in which nothing moved marks nothing.
+- **Limits.** The depth is at most `kMaxHierarchyDepth` (64). `SetParent` returns `HierarchyStatus::Cycle`, `SelfParent`, `DeadEntity` or `TooDeep` and changes nothing
+  (a refusal for depth is counted in `TransformReport::refused_depth`). Reparenting moves the whole subtree, whose depths are rebased.
+- **Bad data survives.** A parent destroyed behind a child's back makes the child a root (`dangling_fixed`); a stored depth that is wrong is recomputed from the chain
+  (`depth_repaired`); an entity whose chain loops keeps its previous matrix (`unresolved`). Writing `Parent` directly with `world.Set` works but is repaired a frame late.
+- **Destroying a subtree.** `DestroyRecursive(world, commands, root)` records the destruction of the root and every descendant into a command buffer and returns how many.
+- **Helpers.** `LookAt(eye, target, up)` returns a `LocalTransform` whose -Z axis points at the target; `Decompose(matrix)` splits a matrix back into position, rotation and scale.
 
 ## Common mistakes
 

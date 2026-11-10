@@ -99,6 +99,8 @@ struct WorldStats {
     u64 graph_hits = 0;
     /// Calls refused by a limit (see [[ecs::Status::Refused]]) or entity creations that failed.
     u64 refused = 0;
+    /// Entities destroyed since the world was made (a system compares it with the value it saw last frame to learn that something was destroyed).
+    u64 destroyed = 0;
     /// The chunk pool's counters.
     ChunkPoolStats pool;
 };
@@ -199,6 +201,25 @@ public:
     /// Fails: never.
     void SetTick(u64 tick) { tick_ = tick; }
 
+    /// The entity's `T` for reading, without the check that an active query writes `T` and without stamping: for a system that reads one entity's row while
+    /// writing others' (a child reading its parent). The caller guarantees nothing writes that row meanwhile.
+    ///
+    /// Returns: the component, or null when the entity is dead or lacks `T` (also null for a tag).
+    /// Fails: returns null as described.
+    /// Ownership: the pointer views the entity's row; valid until the next structural call.
+    template <class T>
+    const T* Peek(Entity entity) const;
+    /// The entity's `T` for writing, without the active-query check and without stamping the chunk (call `Stamp` after the writes, from one thread).
+    ///
+    /// Returns: the component, or null when the entity is dead or lacks `T`.
+    /// Fails: returns null as described.
+    /// Ownership: the pointer views the entity's row; valid until the next structural call.
+    template <class T>
+    T* Poke(Entity entity);
+    /// Stamps the chunk column of the entity's `T` as written at the current tick (after writes made through `Poke`). Not thread-safe against other stamps.
+    /// Fails: does nothing for a dead entity or a missing component.
+    template <class T>
+    void Stamp(Entity entity);
     /// Begins a parallel phase: the schedule's jobs run queries of this world on several threads. Structural calls are refused (it counts as an iteration),
     /// and queries skip their own iteration bookkeeping, which is not thread-safe. Call it on the thread that submits the jobs, before submitting.
     /// Fails: never.
@@ -371,6 +392,7 @@ private:
     u64 migrations_ = 0;
     u64 graph_hits_ = 0;
     u64 refused_ = 0;
+    u64 destroyed_ = 0;
 };
 
 template <class T>
@@ -543,6 +565,30 @@ T* World::GetCell(Entity entity, bool mark) {
         a.MarkWritten(chunk, id, tick_);
     }
     return static_cast<T*>(a.CellPtr(chunk, id, where->row));
+}
+
+template <class T>
+const T* World::Peek(Entity entity) const {
+    const EntityLocation* where = table_.Location(entity);
+    if (where == nullptr) {
+        return nullptr;
+    }
+    const Archetype& a = *archetypes_[where->archetype];
+    return static_cast<const T*>(a.CellPtr(a.ChunkAt(where->chunk), ComponentOf<T>(), where->row));
+}
+
+template <class T>
+T* World::Poke(Entity entity) {
+    return const_cast<T*>(static_cast<const World*>(this)->Peek<T>(entity));
+}
+
+template <class T>
+void World::Stamp(Entity entity) {
+    const EntityLocation* where = table_.Location(entity);
+    if (where != nullptr) {
+        Archetype& a = *archetypes_[where->archetype];
+        a.MarkWritten(a.ChunkAt(where->chunk), ComponentOf<T>(), tick_);
+    }
 }
 
 template <class T>

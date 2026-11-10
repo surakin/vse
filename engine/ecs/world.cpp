@@ -140,6 +140,7 @@ Status World::Destroy(Entity entity) {
         home.MarkAllWritten(home.ChunkAt(at.chunk), tick_); // the last row now sits in the gap
     }
     table_.Free(entity);
+    ++destroyed_;
     return Status::Ok;
 }
 
@@ -203,6 +204,7 @@ WorldStats World::Stats() const {
     stats.migrations = migrations_;
     stats.graph_hits = graph_hits_;
     stats.refused = refused_;
+    stats.destroyed = destroyed_;
     stats.pool = pool_.Stats();
     return stats;
 }

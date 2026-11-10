@@ -40,6 +40,12 @@ struct Optional {};
 /// Thread-safety: thread-safe empty type; it only names a component.
 template <class T>
 struct OptionalWrite {};
+/// A query term: like [[ecs::Write]] (the function gets `T&`, the query holds `T` for writing) but visiting a chunk does not stamp it as written: the function
+/// writes only when it needs to and calls `ChunkView::MarkWritten<T>()` after a real change, so `Changed<T>` sees exact changes. `T` may not be a tag.
+///
+/// Thread-safety: thread-safe empty type; it only names a component.
+template <class T>
+struct LazyWrite {};
 /// A query term: the entities must have `T`, and the query function gets nothing for it (a filter). `T` may be a tag.
 ///
 /// Thread-safety: thread-safe empty type; it only names a component.
@@ -98,6 +104,22 @@ struct TermTraits<Write<T>> {
     static constexpr u32 kChange = 0;
     static Arg Fetch(void* column, u32 row) { return static_cast<T*>(column)[row]; }
 };
+template <class T>
+struct TermTraits<LazyWrite<T>> {
+    using Component = T;
+    using Arg = T&;
+    static constexpr bool kHasArg = true;
+    static constexpr bool kRequired = true;
+    static constexpr bool kExcluded = false;
+    static constexpr bool kWrites = true;
+    static constexpr bool kOptional = false;
+    static constexpr u32 kChange = 0;
+    static Arg Fetch(void* column, u32 row) { return static_cast<T*>(column)[row]; }
+};
+template <class Term>
+inline constexpr bool kStampsOnVisit = true;
+template <class T>
+inline constexpr bool kStampsOnVisit<LazyWrite<T>> = false;
 template <class T>
 struct TermTraits<Optional<T>> {
     using Component = T;
@@ -218,8 +240,8 @@ public:
     /// Makes a view; only queries do.
     ///
     /// Ownership: borrows the archetype, the chunk and the three sets, which must outlive the view.
-    ChunkView(const Archetype* archetype, Chunk* chunk, const ComponentSet* readable, const ComponentSet* writable, const ComponentSet* optional)
-        : archetype_(archetype), chunk_(chunk), readable_(readable), writable_(writable), optional_(optional) {}
+    ChunkView(const Archetype* archetype, Chunk* chunk, const ComponentSet* readable, const ComponentSet* writable, const ComponentSet* optional, u64 tick)
+        : archetype_(archetype), chunk_(chunk), readable_(readable), writable_(writable), optional_(optional), tick_(tick) {}
 
     /// The number of entities (rows) in the chunk.
     /// Fails: never.
@@ -255,12 +277,24 @@ public:
         return data == nullptr ? Span<T>() : Span<T>(data, chunk_->count);
     }
 
+    /// Stamps the chunk's column of `T` as written at the current tick: for a `LazyWrite` term, after the function really changed a value. Safe to call from the
+    /// job that owns this chunk.
+    ///
+    /// Aborts: `T` is not a writable term of the query.
+    template <class T>
+    void MarkWritten() const {
+        const ComponentId id = ComponentOf<T>();
+        ENGINE_ASSERT(writable_->Has(id), "ChunkView::MarkWritten of a component the query does not declare for writing");
+        archetype_->MarkWritten(chunk_, id, tick_);
+    }
+
 private:
     const Archetype* archetype_;
     Chunk* chunk_;
     const ComponentSet* readable_;
     const ComponentSet* writable_;
     const ComponentSet* optional_;
+    u64 tick_;
 };
 
 /// A cached, typed selection of the entities that have the components the terms ask for, and none that a `Without` excludes.
@@ -333,7 +367,7 @@ public:
                 }
                 CountVisit(chunk);
                 MarkWrites(a, chunk);
-                ChunkView view(&a, chunk, &readable_, &writes_, &optional_);
+                ChunkView view(&a, chunk, &readable_, &writes_, &optional_, world_->Tick());
                 if (!Proceed([&]() -> decltype(auto) { return fn(view); })) {
                     return;
                 }
@@ -386,7 +420,7 @@ public:
         partial.Resize(chunks.Size());
         auto body = [&](usize begin, usize end) {
             for (usize i = begin; i < end; ++i) {
-                ChunkView view(chunks[i].archetype, chunks[i].chunk, &readable_, &writes_, &optional_);
+                ChunkView view(chunks[i].archetype, chunks[i].chunk, &readable_, &writes_, &optional_, world_->Tick());
                 partial[i] = per_chunk(view);
             }
         };
@@ -511,7 +545,9 @@ private:
         }
         if constexpr (Traits::kWrites) {
             writes_.Add(id);
-            write_ids_[write_count_++] = id;
+            if constexpr (detail::kStampsOnVisit<Term>) {
+                write_ids_[write_count_++] = id;
+            }
         }
         if constexpr (Traits::kChange == 1) {
             changed_ids_[changed_count_++] = id;
@@ -598,7 +634,7 @@ private:
         }
         auto body = [&](usize begin, usize end) {
             for (usize i = begin; i < end; ++i) {
-                ChunkView view(chunks[i].archetype, chunks[i].chunk, &readable_, &writes_, &optional_);
+                ChunkView view(chunks[i].archetype, chunks[i].chunk, &readable_, &writes_, &optional_, world_->Tick());
                 if constexpr (IsInvocable<Fn&, ChunkView&, CommandBuffer&>) {
                     ENGINE_ASSERT(pool != nullptr, "Query::ForEachChunkParallel: a function that takes a CommandBuffer needs the overload with a pool");
                     fn(view, pool->At(static_cast<u32>(begin / g)));

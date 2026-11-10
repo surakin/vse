@@ -12,6 +12,7 @@
 #include "ecs/world.h"
 #include "jobs/counter.h"
 #include "jobs/job.h"
+#include "jobs/parallel_for.h"
 #include "jobs/scheduler.h"
 #include "lang/new.h"
 #include "lang/traits.h"
@@ -135,6 +136,73 @@ public:
     /// Returns whether `entity` is alive.
     /// Fails: never.
     bool Exists(Entity entity) const { return world_->Exists(entity); }
+    /// A number identifying the world this frame runs on (see [[ecs::World::Id]]): a system that keeps queries rebuilds them when it changes.
+    /// Fails: never.
+    u64 WorldId() const { return world_->Id(); }
+    /// The number of entities destroyed in this world so far. A system can notice that some were destroyed since its last run by comparing it with the value it saw then.
+    /// Fails: never.
+    u64 DestroyedCount() const { return world_->Stats().destroyed; }
+    /// The current change-detection tick.
+    /// Fails: never.
+    u64 Tick() const { return world_->Tick(); }
+
+    /// One entity's component for reading (see [[ecs::World::Peek]]): for a system that reads other entities' rows than the ones its query writes.
+    ///
+    /// Returns: the component, or null (dead entity, missing component).
+    /// Fails: `T` declared neither read nor written counts a violation; returns null as described.
+    /// Ownership: views the entity's row; valid until the next structural call.
+    template <class T>
+    const T* Peek(Entity entity) {
+        const ComponentId id = ComponentOf<T>();
+        Check(reads_->Has(id) || writes_->Has(id), "SystemContext::Peek of a component the system did not declare");
+        return static_cast<const World*>(world_)->Peek<T>(entity);
+    }
+    /// One entity's component for writing without stamping (see [[ecs::World::Poke]]); call `Stamp` afterwards from one thread.
+    ///
+    /// Returns: the component, or null.
+    /// Fails: `T` not declared as written counts a violation; returns null as described.
+    /// Ownership: views the entity's row; valid until the next structural call.
+    template <class T>
+    T* Poke(Entity entity) {
+        Check(writes_->Has(ComponentOf<T>()), "SystemContext::Poke of a component the system did not declare as written");
+        return world_->Poke<T>(entity);
+    }
+    /// Stamps the entity's chunk column of `T` as written now. Call from one thread at a time.
+    /// Fails: `T` not declared as written counts a violation.
+    template <class T>
+    void Stamp(Entity entity) {
+        Check(writes_->Has(ComponentOf<T>()), "SystemContext::Stamp of a component the system did not declare as written");
+        world_->Stamp<T>(entity);
+    }
+    /// Calls `fn(begin, end)` over `[0, count)` in ranges of `grain` as jobs when this system has the frame thread to itself, else one range after another.
+    ///
+    /// Param fn: an lvalue callable taking two `usize`; the ranges run concurrently, so they must not touch the same data.
+    /// Param grain: items per range; 0 chooses a few ranges per worker.
+    template <class F>
+    void ParallelFor(usize count, usize grain, F& fn) {
+        if (count == 0) {
+            return;
+        }
+        const usize participants = scheduler_ == nullptr ? 1 : scheduler_->ParticipantCount();
+        usize g = grain;
+        if (g == 0) {
+            const usize wanted = participants * 4;
+            g = count / wanted + (count % wanted != 0 ? 1 : 0);
+            g = g == 0 ? 1 : g;
+        }
+        const usize ranges = count / g + (count % g != 0 ? 1 : 0);
+        auto by_range = [&](usize first, usize last) {
+            for (usize r = first; r < last; ++r) {
+                const usize begin = r * g;
+                fn(begin, begin + g < count ? begin + g : count);
+            }
+        };
+        if (scheduler_ != nullptr && participants > 1 && ranges > 1 && !jobs::Scheduler::InsideJob() && jobs::Scheduler::Current() == scheduler_) {
+            jobs::ParallelForBlocking(*scheduler_, ranges, 1, by_range);
+        } else {
+            by_range(usize{0}, ranges);
+        }
+    }
 
 private:
     template <class Fn, class... Terms>
