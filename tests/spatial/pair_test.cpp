@@ -1,6 +1,6 @@
 // The pair tracker (Phase 18 Day 243): the incremental pairs equal a brute force after every one of 2,000 random frames (adds, removes, moves, switches
 // between static and dynamic); Begin and End are exactly the set difference; two runs give the same events; the layer matrix and the static-static rule
-// hold; a mock narrow phase fed by the events keeps the right contact list; with a margin the pairs sit between the touching and the near_pairs pairs; a removed
+// hold; a mock narrow phase fed by the events keeps the right contact list; with a margin the pairs sit between the touching and the near pairs; a removed
 // key ends its pairs in the same update. The cost on 100,000 dynamic objects with 1 percent moving is recorded, not gated.
 #include <catch2/catch_test_macros.hpp>
 
@@ -236,7 +236,7 @@ TEST_CASE("PairTracker: the same inputs give the same events, with a tree and wi
     CHECK(RunPairsExact(243003, SpatialSetConfig()) == RunPairsExact(243003, grid));
 }
 
-TEST_CASE("PairTracker: with a margin the pairs sit between the touching pairs and the near_pairs pairs", "[spatial][pairs]") {
+TEST_CASE("PairTracker: with a margin the pairs sit between the touching pairs and the near pairs", "[spatial][pairs]") {
     Rng rng(243004);
     const f32 margin = 0.25f;
     PairScene scene(PairMatrix(margin));

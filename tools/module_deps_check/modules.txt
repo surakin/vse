@@ -99,6 +99,8 @@ module engine/ecs/ ecs 10
 allow ecs jobs
 # 10 spatial (Phase 18 Day 238): bounding-volume hierarchies, spatial sets, queries; the foundation (the shapes of math/geometry.h) and, from later days, ecs and jobs
 module engine/spatial/ spatial 10
+allow spatial ecs
+allow spatial jobs
 # 11 ui (Phase 15 Day 184): the widget toolkit's CPU side (tree, layout, theme, input routing, draw list); text, the platform's input headers and the foundation, no RHI
 module engine/ui/ ui 11
 # 11 RHI: the neutral interface and one module per backend

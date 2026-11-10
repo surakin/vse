@@ -1,7 +1,8 @@
 # Spatial partitioning: what is near what
 
 Status: in progress (Phase 18). Built: the shared shapes (Day 238), the static and dynamic bounding-volume hierarchies (Days 239-240), the query vocabulary
-(Day 241), the hash grid and the spatial set (Day 242), the pair tracker (Day 243). Next: the ECS tier and the renderer's culling (Days 244-249).
+(Day 241), the hash grid and the spatial set (Day 242), the pair tracker (Day 243), the components, the `SpatialWorld` resource and the entity lifecycle (Day 244). Next: moves and the parallel sync, entity-facing
+queries and the renderer's culling (Days 245-249).
 
 **Audience:** engine programmers who write a system that asks "what is near this box, ray or frustum" (physics, culling, audio, gameplay). Read
 [Math](foundation-math.md) first.
@@ -436,6 +437,69 @@ frame 3: end(1,2)
   margin is 0.
 - **Lifecycle.** Removing an item ends its pairs in the same update. A new key never inherits pairs. A key removed and added back between two updates
   is the same item for pairs if it is touched: pairs that still hold produce no events.
+
+## Putting entities in the spatial world
+
+Systems should not keep their own copy of where things are. Give an entity the components of `spatial/components.h` and the sync system keeps it in
+the sets for you.
+
+```cpp compile run standalone
+#include "ecs/schedule.h"
+#include "ecs/transform.h"
+#include "ecs/world.h"
+#include "os/console.h"
+#include "spatial/components.h"
+#include "spatial/query.h"
+#include "spatial/spatial_sync.h"
+#include "spatial/spatial_world.h"
+
+using namespace engine_placeholder;
+using namespace engine_placeholder::spatial;
+
+int main() {
+    ecs::World world;
+    world.SetResource(ecs::TransformReport{});
+    world.SetResource(SpatialWorld()); // the sets: render, physics, audio, gameplay
+    ecs::Schedule schedule;
+    schedule.Add(ecs::MakeTransformSystem("transforms"));
+    schedule.Add(MakeSpatialSyncSystem("spatial_sync").InStage(ecs::kPostUpdate));
+    schedule.Build();
+
+    SpatialBounds bounds;
+    bounds.local = Aabb::FromMinMax(Vec3(-0.5f, -0.5f, -0.5f), Vec3(0.5f, 0.5f, 0.5f));
+    SpatialMembership membership;
+    membership.sets = (1u << kRenderSet) | (1u << kPhysicsSet); // in the render set and the physics set
+    ecs::LocalTransform at;
+    at.position = Vec3(10, 0, 0);
+    world.Create(at, ecs::WorldTransform{}, bounds, membership);
+
+    schedule.Run(world, 0.016f);
+
+    const SpatialWorld& spatial = world.Resource<SpatialWorld>();
+    Vector<SpatialKey> keys;
+    OverlapKeys(*spatial.Set(kRenderSet), Aabb::FromMinMax(Vec3(5, -1, -1), Vec3(15, 1, 1)), QueryFilter(), Order::Ordered, &keys);
+    os::Print("render set: %u item\n", static_cast<unsigned>(keys.Size()));
+    return 0;
+}
+```
+
+```output
+render set: 1 item
+```
+
+- **Components.** `SpatialBounds` (the local box, normally from the mesh), `SpatialMembership` (a bit per set and a layer), the tag `SpatialStatic` (the
+  entity does not move: its items go to each set's static tree). The sync adds `WorldBounds` (the box in world space; read it, never set it) and a hidden
+  `SpatialProxy` (the handles; it is the sync's). An entity needs `SpatialBounds`, a `WorldTransform` and `SpatialMembership` to be in a set.
+- **Sets.** `SpatialWorld` is a resource with four sets that always exist (`kRenderSet`, `kPhysicsSet`, `kAudioSet`, `kGameplaySet`) so independent systems
+  agree without coordinating, and up to four more (`CreateSet("crowd", config)`, for example a grid for a crowd); `Find(name)` looks one up.
+- **Lifecycle.** An entity joins at the next sync. Removing `SpatialBounds`, `WorldTransform` or `SpatialMembership` takes it out of every set, so does
+  destroying it (found through the removal log of `SpatialProxy`, not by scanning). Changing `SpatialMembership` (the sets or the layer) adds the item to the
+  new sets and removes it from the old ones; adding or removing `SpatialStatic` moves the items between the static and the dynamic side. After any
+  structural change the number of items in a set equals the number of entities that belong in it.
+- **Refusals.** A box that is not finite, or is empty, is counted in `SpatialWorldStats::refused_bounds` (looked at again every frame); a set bit that names no
+  set is counted in `unknown_set_bits`; a ninth set is refused (`refused_sets`).
+- **Frame order.** Register the sync after the transform propagation (a later stage, or later in the same one). A query that runs before the sync in a frame
+  sees the previous frame's sets.
 
 ## See also
 

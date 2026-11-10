@@ -7,6 +7,8 @@ set(SPATIAL_SOURCES
   hash_grid.cpp  # Day 242
   spatial_set.cpp  # Day 242
   pair_tracker.cpp  # Day 243
+  spatial_world.cpp  # Day 244
+  spatial_sync.cpp  # Day 244
 )
 set(SPATIAL_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
@@ -19,7 +21,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_library(spatial${suffix} STATIC ${SPATIAL_SOURCES})
     target_include_directories(spatial${suffix} PUBLIC ${SPATIAL_INCLUDE_ROOT})
     target_compile_options(spatial${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
-    target_link_libraries(spatial${suffix} PUBLIC foundation_base${suffix})
+    target_link_libraries(spatial${suffix} PUBLIC ecs${suffix} foundation_base${suffix})
   endforeach()
   return()
 endif()
@@ -28,5 +30,5 @@ foreach(suffix "" "_asan" "_tsan")
   add_library(spatial${suffix} STATIC ${SPATIAL_SOURCES})
   target_include_directories(spatial${suffix} PUBLIC ${SPATIAL_INCLUDE_ROOT})
   target_compile_options(spatial${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
-  target_link_libraries(spatial${suffix} PUBLIC foundation${suffix})
+  target_link_libraries(spatial${suffix} PUBLIC ecs${suffix} foundation${suffix})
 endforeach()
