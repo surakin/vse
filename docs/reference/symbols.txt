@@ -3340,6 +3340,24 @@ spatial::DynamicBvh::Stats() const	function	spatial	spatial-dynamicbvh-stats-con
 spatial::DynamicBvh::Validate() const	function	spatial	spatial-dynamicbvh-validate-const	spatial.md	engine/spatial/dynamic_bvh.h:156
 spatial::DynamicBvh::Traverse(NodeTest&&,ItemVisit&&) const	function	spatial	spatial-dynamicbvh-traverse-nodetest-amp-amp-itemvisit-amp-amp-const	spatial.md	engine/spatial/dynamic_bvh.h:165
 spatial::DynamicBvh::TraverseRay(const Ray&,f32,ItemVisit&&) const	function	spatial	spatial-dynamicbvh-traverseray-const-ray-amp-f32-itemvisit-amp-amp-const	spatial.md	engine/spatial/dynamic_bvh.h:176
+spatial::EntityHit	struct	spatial	spatial-entityhit	spatial.md	engine/spatial/entity_query.h:23
+spatial::EntityHit::entity	variable	spatial	spatial-entityhit-entity	spatial.md	engine/spatial/entity_query.h:25
+spatial::EntityHit::t	variable	spatial	spatial-entityhit-t	spatial.md	engine/spatial/entity_query.h:27
+spatial::EntityHit::point	variable	spatial	spatial-entityhit-point	spatial.md	engine/spatial/entity_query.h:29
+spatial::EntityDistance	struct	spatial	spatial-entitydistance	spatial.md	engine/spatial/entity_query.h:35
+spatial::EntityDistance::entity	variable	spatial	spatial-entitydistance-entity	spatial.md	engine/spatial/entity_query.h:37
+spatial::EntityDistance::distance	variable	spatial	spatial-entitydistance-distance	spatial.md	engine/spatial/entity_query.h:39
+spatial::OverlapEntities(const SpatialWorld&,SetId,const Aabb&,const QueryFilter&,Vector<ecs::Entity>*)	function	spatial	spatial-overlapentities-const-spatialworld-amp-setid-const-aabb-amp-const-queryfilter-amp-vector-lt-ecs-entity-gt-star	spatial.md	engine/spatial/entity_query.h:56
+spatial::RaycastEntity(const SpatialWorld&,SetId,const Ray&,f32,const QueryFilter&,EntityHit*)	function	spatial	spatial-raycastentity-const-spatialworld-amp-setid-const-ray-amp-f32-const-queryfilter-amp-entityhit-star	spatial.md	engine/spatial/entity_query.h:70
+spatial::SweepEntity(const SpatialWorld&,SetId,const Aabb&,const Vec3&,const QueryFilter&,EntityHit*)	function	spatial	spatial-sweepentity-const-spatialworld-amp-setid-const-aabb-amp-const-vec3-amp-const-queryfilter-amp-entityhit-star	spatial.md	engine/spatial/entity_query.h:84
+spatial::NearestEntities(const SpatialWorld&,SetId,const Vec3&,u32,f32,const QueryFilter&,Vector<EntityDistance>*)	function	spatial	spatial-nearestentities-const-spatialworld-amp-setid-const-vec3-amp-u32-f32-const-queryfilter-amp-vector-lt-entitydistance-gt-star	spatial.md	engine/spatial/entity_query.h:99
+spatial::ForEachIn(ecs::World&,const SpatialWorld&,SetId,const Aabb&,const QueryFilter&,Fn&&)	function	spatial	spatial-foreachin-ecs-world-amp-const-spatialworld-amp-setid-const-aabb-amp-const-queryfilter-amp-fn-amp-amp	spatial.md	engine/spatial/entity_query.h:137
+spatial::BatchRayHit	struct	spatial	spatial-batchrayhit	spatial.md	engine/spatial/entity_query.h:161
+spatial::BatchRayHit::hit	variable	spatial	spatial-batchrayhit-hit	spatial.md	engine/spatial/entity_query.h:163
+spatial::BatchRayHit::key	variable	spatial	spatial-batchrayhit-key	spatial.md	engine/spatial/entity_query.h:165
+spatial::BatchRayHit::t	variable	spatial	spatial-batchrayhit-t	spatial.md	engine/spatial/entity_query.h:167
+spatial::RaycastBatch(const SpatialWorld&,SetId,Span<const Ray>,f32,const QueryFilter&,Span<BatchRayHit>,jobs::Scheduler*)	function	spatial	spatial-raycastbatch-const-spatialworld-amp-setid-span-lt-const-ray-gt-f32-const-queryfilter-amp-span-lt-batchrayhit-gt-jobs-scheduler-star	spatial.md	engine/spatial/entity_query.h:184
+spatial::OverlapBatch(const SpatialWorld&,SetId,Span<const Aabb>,const QueryFilter&,Vector<SpatialKey>*,Vector<u32>*,jobs::Scheduler*)	function	spatial	spatial-overlapbatch-const-spatialworld-amp-setid-span-lt-const-aabb-gt-const-queryfilter-amp-vector-lt-spatialkey-gt-star-vector-lt-u32-gt-star-jobs-scheduler-star	spatial.md	engine/spatial/entity_query.h:200
 spatial::kMaxCellsPerItem	variable	spatial	spatial-kmaxcellsperitem	spatial.md	engine/spatial/hash_grid.h:21
 spatial::HashGridStats	struct	spatial	spatial-hashgridstats	spatial.md	engine/spatial/hash_grid.h:26
 spatial::HashGridStats::items	variable	spatial	spatial-hashgridstats-items	spatial.md	engine/spatial/hash_grid.h:27

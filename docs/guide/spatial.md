@@ -1,8 +1,8 @@
 # Spatial partitioning: what is near what
 
 Status: in progress (Phase 18). Built: the shared shapes (Day 238), the static and dynamic bounding-volume hierarchies (Days 239-240), the query vocabulary
-(Day 241), the hash grid and the spatial set (Day 242), the pair tracker (Day 243), the components, the `SpatialWorld` resource and the entity lifecycle (Day 244), moves and the parallel sync (Day 245). Next: entity-facing
-queries and the renderer's culling (Days 246-249).
+(Day 241), the hash grid and the spatial set (Day 242), the pair tracker (Day 243), the components, the `SpatialWorld` resource and the entity lifecycle (Day 244), moves and the parallel sync (Day 245), entity-facing and batched
+queries (Day 246). Next: the renderer's culling (Days 247-249).
 
 **Audience:** engine programmers who write a system that asks "what is near this box, ray or frustum" (physics, culling, audio, gameplay). Read
 [Math](foundation-math.md) first.
@@ -519,6 +519,68 @@ The sync keeps the sets true with the cost of what changed, not of what exists.
   entities with 1 percent moving cost about 7.6 ms a frame in a Release build with two sets (transforms included), 10 percent 73 ms, 100 percent 740 ms; most
   of the time is the dynamic tree reinserting boxes that left their margin (about 3.6 to 7 microseconds per moved item and set with a walk of 1.5 units for boxes
   of 1 unit). A crowd of same-size agents belongs in a set made with `DynamicKind::Grid`, whose updates are about four times cheaper (Day 248 measures both).
+
+## Asking questions from gameplay code
+
+`spatial/entity_query.h` asks the questions of `query.h` of a named set and answers in entities.
+
+```cpp compile run standalone
+#include "ecs/schedule.h"
+#include "ecs/transform.h"
+#include "ecs/world.h"
+#include "os/console.h"
+#include "spatial/entity_query.h"
+#include "spatial/spatial_sync.h"
+
+using namespace engine_placeholder;
+using namespace engine_placeholder::spatial;
+
+struct Health {
+    float hp = 10.0f;
+};
+
+int main() {
+    ecs::World world;
+    world.SetResource(ecs::TransformReport{});
+    world.SetResource(SpatialWorld());
+    ecs::Schedule schedule;
+    schedule.Add(ecs::MakeTransformSystem("transforms"));
+    schedule.Add(MakeSpatialSyncSystem("spatial_sync").InStage(ecs::kPostUpdate));
+    schedule.Build();
+
+    SpatialBounds bounds;
+    bounds.local = Aabb::FromMinMax(Vec3(-0.5f, -0.5f, -0.5f), Vec3(0.5f, 0.5f, 0.5f));
+    SpatialMembership membership;
+    membership.sets = 1u << kGameplaySet;
+    for (int i = 0; i < 5; ++i) {
+        ecs::LocalTransform at;
+        at.position = Vec3(static_cast<float>(i) * 2.0f, 0, 0);
+        world.Create(at, ecs::WorldTransform{}, bounds, membership, Health{});
+    }
+    schedule.Run(world, 0.016f);
+    schedule.Run(world, 0.016f);
+
+    // Everything within 3 units of x = 4 loses health: the spatial query picks the entities, the join fetches their components.
+    const Aabb blast = Aabb::FromMinMax(Vec3(1, -3, -3), Vec3(7, 3, 3));
+    const usize hit = ForEachIn<Health>(world, world.Resource<SpatialWorld>(), kGameplaySet, blast, QueryFilter(),
+                                         [](ecs::Entity, Health& h) { h.hp -= 4.0f; });
+    os::Print("%u entities hit\n", static_cast<unsigned>(hit));
+    return 0;
+}
+```
+
+```output
+3 entities hit
+```
+
+- **Entity forms.** `OverlapEntities`, `RaycastEntity`, `SweepEntity` and `NearestEntities` take the `SpatialWorld`, a set id (`kRenderSet`, ...) and the
+  arguments of the key form, and return `ecs::Entity` (a key is `Entity::ToU64`). A hit carries the entity, the ray parameter and the point. The answers are
+  those of the last sync; an entity destroyed since can still be listed until the next sync, the same rule as a pointer from `World::Get` (check `Exists`).
+- **`ForEachIn<Ts...>(world, spatial, set, region, filter, fn)`** calls `fn(entity, components...)` for the entities the spatial query returns that have all the
+  components: a `const T` is read, a plain `T` is written (and the chunk stamped, like `Get`). It visits them in entity id order and `fn` must not change
+  the world's structure. (The plan sorted hits by archetype; entity order is simpler and the lookup goes through `Get`.)
+- **Batches.** `RaycastBatch` and `OverlapBatch` answer thousands of questions at once; with a job scheduler they split over the workers and the answers
+  are in input order, identical to the sequential run (tested, also under ThreadSanitizer). Call them from the main thread outside any job, while no sync runs.
 
 ## See also
 

@@ -595,7 +595,7 @@ Include `scene/render_sync.h` and link `scene` (module `engine/scene`, above `ec
 - **The camera.** `MakeCameraSystem(name)` builds `CameraOutput` (a `renderer::Camera`) from the `ActiveCamera` resource's entity, which carries a `scene::Camera` and a `WorldTransform`
   (+X right, +Y up, -Z forward); `CameraOutput::valid` is false when there is none.
 
-- **Spatial queries.** To ask what is near an entity, give it `SpatialBounds` and `SpatialMembership` and let the spatial sync keep the sets (see [Spatial partitioning](spatial.md), "Putting entities in the spatial world"); do not write a private grid in a system.
+- **Spatial queries.** To ask what is near an entity, give it `SpatialBounds` and `SpatialMembership` and let the spatial sync keep the sets (see [Spatial partitioning](spatial.md), "Putting entities in the spatial world"); do not write a private grid in a system. `spatial::ForEachIn<Health>(world, spatial, set, region, filter, fn)` runs a function on the entities a spatial query returns, with their components ("Asking questions from gameplay code").
 
 ## Rules of thumb
 
