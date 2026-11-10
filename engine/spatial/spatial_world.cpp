@@ -50,4 +50,8 @@ void SpatialWorld::Clear() {
     }
 }
 
+void SpatialWorld::UseSettings(const settings::Registry& registry) {
+    parallel_setting_ = settings::Setting<bool>::Find(registry, StringView("spatial.parallel"));
+}
+
 } // namespace engine_placeholder::spatial

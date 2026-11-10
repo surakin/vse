@@ -10,6 +10,8 @@ set(SPATIAL_TEST_SOURCES
   world_component_test.cpp  # Day 244
   sync_test.cpp  # Day 245
   entity_query_test.cpp  # Day 246
+  debug_test.cpp  # Day 248
+  spatial_bench.cpp  # Day 248 (hidden)
   ../ecs/alloc_counter.cpp  # the heap-allocation counter of tests/ecs (replaces operator new in this executable)
 )
 

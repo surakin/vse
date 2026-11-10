@@ -157,7 +157,8 @@ void PairTracker::Gather(const SpatialSet& set, const Vector<SetHandle>& touched
         const Aabb region = Expand(self.box, self_margin + largest_margin_);
         near_.Clear();
         ++stats_.touched;
-        set.Traverse([&](const Aabb& node) { return Overlaps(node, region) ? NodeVisit::Descend : NodeVisit::Reject; },
+        // `region` reaches every partner: an item's margin is at most largest_margin_, the largest of any item ever touched.
+        set.ForEachHandleInRegion(region, // through a grid's cells when the set has one: a scan of every item would make the update quadratic
                      [&](SetHandle other, const Item& item) {
                          if (other == handle || item.key == self.key) return true;
                          if (!config_.Meets(self.layer, item.layer)) return true;

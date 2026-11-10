@@ -5,6 +5,8 @@
 
 #include "containers/array.h"
 #include "containers/unique_ptr.h"
+#include "settings/registry.h"
+#include "settings/setting.h"
 #include "spatial/spatial_set.h"
 #include "string_view.h"
 #include "types.h"
@@ -93,9 +95,14 @@ public:
 
     /// Whether the sync computes `WorldBounds` as jobs (when its system has the frame thread to itself). On by default; off runs it on the calling thread.
     /// Fails: never.
-    bool Parallel() const { return parallel_; }
-    /// Sets whether the sync computes `WorldBounds` as jobs.
+    /// With [[spatial::SpatialWorld::UseSettings]] it reads `spatial.parallel` each time (so the setting changes it at run time).
+    bool Parallel() const { return parallel_setting_.IsBound() ? parallel_setting_.Get() : parallel_; }
+    /// Sets whether the sync computes `WorldBounds` as jobs (ignored while a setting is used).
     void SetParallel(bool parallel) { parallel_ = parallel; }
+    /// Makes the world follow the `spatial.parallel` setting declared by [[spatial::RegisterSpatialSettings]].
+    /// Param registry: the registry that holds it; it must outlive the world.
+    /// Aborts: the setting is not registered.
+    void UseSettings(const settings::Registry& registry);
 
     /// What the sync has done.
     const SpatialWorldStats& Stats() const { return stats_; }
@@ -107,6 +114,7 @@ private:
     Array<Array<char, kMaxSetNameLength + 1>, kMaxSpatialSets> names_;
     u32 count_ = 0;
     bool parallel_ = true;
+    settings::Setting<bool> parallel_setting_;
     SpatialWorldStats stats_;
 };
 

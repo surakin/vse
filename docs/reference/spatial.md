@@ -3238,6 +3238,24 @@ Visits each item whose box overlaps `region` and passes `exact`, once each, usin
 | Returns | what the walk did. |
 | Fails | never. |
 
+### `ForEachHandleInRegion(const Aabb&,Visit&&)` {#spatial-spatialset-foreachhandleinregion-const-aabb-amp-visit-amp-amp-const}
+
+`method spatial::SpatialSet::ForEachHandleInRegion` — defined in `engine/spatial/spatial_set.h`
+
+```cpp
+template <class Visit>
+TraversalStats ForEachHandleInRegion(const Aabb& region, Visit&& visit) const;
+```
+
+As [`spatial::SpatialSet::ForEachInRegion`](#spatial-spatialset-foreachinregion-const-aabb-amp-exact-amp-amp-visit-amp-amp-const) with no extra test, passing each item's handle too (what the pair tracker needs).
+
+| Field | Value |
+|---|---|
+| Parameter `region` | the box to look in. |
+| Parameter `visit` | `bool(SetHandle, const Item&)`; returns false to stop. |
+| Returns | what the walk did. |
+| Fails | never. |
+
 ## `MakeSpatialSyncSystem(const char*)` {#spatial-makespatialsyncsystem-const-char-star}
 
 `function spatial::MakeSpatialSyncSystem` — defined in `engine/spatial/spatial_sync.h`
@@ -3641,6 +3659,8 @@ bool Parallel() const;
 
 Whether the sync computes `WorldBounds` as jobs (when its system has the frame thread to itself). On by default; off runs it on the calling thread.
 
+With [`spatial::SpatialWorld::UseSettings`](#spatial-spatialworld-usesettings-const-settings-registry-amp) it reads `spatial.parallel` each time (so the setting changes it at run time).
+
 | Field | Value |
 |---|---|
 | Fails | never. |
@@ -3653,7 +3673,22 @@ Whether the sync computes `WorldBounds` as jobs (when its system has the frame t
 void SetParallel(bool parallel);
 ```
 
-Sets whether the sync computes `WorldBounds` as jobs.
+Sets whether the sync computes `WorldBounds` as jobs (ignored while a setting is used).
+
+### `UseSettings(const settings::Registry&)` {#spatial-spatialworld-usesettings-const-settings-registry-amp}
+
+`method spatial::SpatialWorld::UseSettings` — defined in `engine/spatial/spatial_world.h`
+
+```cpp
+void UseSettings(const settings::Registry& registry);
+```
+
+Makes the world follow the `spatial.parallel` setting declared by [`spatial::RegisterSpatialSettings`](#spatial-registerspatialsettings-settings-registry-star).
+
+| Field | Value |
+|---|---|
+| Parameter `registry` | the registry that holds it; it must outlive the world. |
+| Aborts | the setting is not registered. |
 
 ### `Stats()` {#spatial-spatialworld-stats-const}
 

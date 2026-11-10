@@ -42,6 +42,13 @@ void AppendBoxLines(const Aabb& box, u32 color, Vector<DebugLine>* out) {
 usize DebugLines(const SpatialSet& set, const DebugOptions& options, Vector<DebugLine>* out) {
     out->Clear();
     auto room = [&]() { return out->Size() + 12 <= options.max_lines; };
+    if (options.has_query && room()) {
+        AppendBoxLines(options.query, kDebugQueryColor, out);
+    }
+    for (usize i = 0; i < options.hits.Size() && room(); ++i) {
+        AppendBoxLines(options.hits[i], kDebugHitColor, out);
+    }
+    // The query and its hits come first: they are what the caller most wants to see when the structure fills the cap.
     if (options.nodes) {
         set.Traverse(
             [&](const Aabb& node) {
@@ -59,12 +66,6 @@ usize DebugLines(const SpatialSet& set, const DebugOptions& options, Vector<Debu
                          if (room()) AppendBoxLines(item.box, kDebugItemColor, out);
                          return room();
                      });
-    }
-    if (options.has_query && room()) {
-        AppendBoxLines(options.query, kDebugQueryColor, out);
-    }
-    for (usize i = 0; i < options.hits.Size() && room(); ++i) {
-        AppendBoxLines(options.hits[i], kDebugHitColor, out);
     }
     return out->Size();
 }

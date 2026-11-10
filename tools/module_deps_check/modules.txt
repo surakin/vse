@@ -150,6 +150,7 @@ module game/renderer_bench/ game/renderer_bench 14
 module game/renderer_demo/ game/renderer_demo 14
 module game/rhi_bench/ game/rhi_bench 14
 module game/ecs_bench/ game/ecs_bench 14
+module game/spatial_demo/ game/spatial_demo 14
 module game/rhi_demo/ game/rhi_demo 14
 module game/ui_demo/ game/ui_demo 14
 module tools/crash_extract/ tools/crash_extract 14
@@ -225,6 +226,7 @@ target scene scene
 target rhi_demo game/rhi_demo
 target rhi_bench game/rhi_bench
 target ecs_bench game/ecs_bench
+target spatial_demo game/spatial_demo
 target renderer_demo_lib game/renderer_demo
 target renderer_demo game/renderer_demo
 target renderer_demo_mint game/renderer_demo

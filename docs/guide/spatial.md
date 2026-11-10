@@ -2,7 +2,7 @@
 
 Status: in progress (Phase 18). Built: the shared shapes (Day 238), the static and dynamic bounding-volume hierarchies (Days 239-240), the query vocabulary
 (Day 241), the hash grid and the spatial set (Day 242), the pair tracker (Day 243), the components, the `SpatialWorld` resource and the entity lifecycle (Day 244), moves and the parallel sync (Day 245), entity-facing and batched
-queries (Day 246), the renderer's culling (Day 247). Next: debug draw, statistics and the closing benchmarks (Days 248-249).
+queries (Day 246), the renderer's culling (Day 247), statistics, debug lines, settings, the benchmark and the demo (Day 248). Next: the closing run and review (Day 249).
 
 **Audience:** engine programmers who write a system that asks "what is near this box, ray or frustum" (physics, culling, audio, gameplay). Read
 [Math](foundation-math.md) first.
@@ -597,6 +597,16 @@ visible instead of how many objects exist. The old scan over every slot stays as
   or more at 100,000 objects). With a camera that sees most of the scene the tree is slower than the scan: it pays for the traversal and gains nothing.
 - **Not done yet.** The `renderer.culling` setting that switches the mode at run time, and culling lights through the tree (a scene holds few lights; the
   lighting pass keeps its list), are recorded in `KNOWN-ISSUES.md`.
+
+## Measuring and debugging
+
+`spatial::DescribeSet(set)` returns a `SpatialStats`: the item counts, the nodes and depth of the static tree, the nodes, height and SAH cost of the dynamic tree (against its cost right after the last full build: a ratio near the rebuild threshold of 1.3 means `Optimize` is due), the moves and how many re-inserted, and the memory of the dynamic side. `SpatialWorld::Stats()` counts what the sync did per frame.
+
+`spatial::DebugLines(set, options, &lines)` produces `DebugLine` segments (two points and a color) for the node boxes, the item boxes, one query volume and the boxes it found, stopping at `max_lines`; the module draws nothing, so a program with a line pass draws them (the `spatial_demo` prints their count).
+
+Four settings are declared by `spatial::RegisterSpatialSettings(&registry)`: `spatial.parallel` (the sync's bounds pass as jobs; `SpatialWorld::UseSettings(registry)` makes the world follow it at run time), `spatial.fat_margin` (read by `spatial::SetConfigFromSettings` when a set is made), `spatial.stats` and `spatial.debug_draw` (for programs). Each has an environment variable (`ENGINE_SPATIAL_PARALLEL`, ...) and a flag (`--spatial-parallel`, ...).
+
+The benchmark is `tests/spatial/spatial_bench.cpp`: run `spatial_tests "[spatial-bench]"` from a Release build; it prints the culling gain, the static queries, the moving-agent cost with a tree and with a grid, the sync with 1 to 8 workers and the margin sweep. Results against the pass conditions are in the design spec, section 4.1. `game/spatial_demo` (`--stats`, `--debug-draw`, `--frames`, `--entities`, `--serial`) runs 50,000 entities through the sync with a culling query, the contacts of the physics set, a ray pick and a neighbor query each frame.
 
 ## See also
 

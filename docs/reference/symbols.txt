@@ -1566,14 +1566,15 @@ settings::Setting	class	foundation/settings	settings-setting	foundation-settings
 settings::Setting::Setting()	function	foundation/settings	settings-setting-setting	foundation-settings.md	engine/foundation/settings/setting.h:61
 settings::Setting::Setting(const Registry&,SettingId)	function	foundation/settings	settings-setting-setting-const-registry-amp-settingid	foundation-settings.md	engine/foundation/settings/setting.h:68
 settings::Setting::Find(const Registry&,StringView)	function	foundation/settings	settings-setting-find-const-registry-amp-stringview	foundation-settings.md	engine/foundation/settings/setting.h:78
-settings::Setting::Get() const	function	foundation/settings	settings-setting-get-const	foundation-settings.md	engine/foundation/settings/setting.h:83
-settings::Setting::Default() const	function	foundation/settings	settings-setting-default-const	foundation-settings.md	engine/foundation/settings/setting.h:90
-settings::Setting::Desc() const	function	foundation/settings	settings-setting-desc-const	foundation-settings.md	engine/foundation/settings/setting.h:94
-settings::Setting::Id() const	function	foundation/settings	settings-setting-id-const	foundation-settings.md	engine/foundation/settings/setting.h:99
-settings::TextSetting	class	foundation/settings	settings-textsetting	foundation-settings.md	engine/foundation/settings/setting.h:111
-settings::TextSetting::TextSetting(const Registry&,SettingId)	function	foundation/settings	settings-textsetting-textsetting-const-registry-amp-settingid	foundation-settings.md	engine/foundation/settings/setting.h:116
-settings::TextSetting::Get(char*,usize) const	function	foundation/settings	settings-textsetting-get-char-star-usize-const	foundation-settings.md	engine/foundation/settings/setting.h:121
-settings::TextSetting::Id() const	function	foundation/settings	settings-textsetting-id-const	foundation-settings.md	engine/foundation/settings/setting.h:123
+settings::Setting::IsBound() const	function	foundation/settings	settings-setting-isbound-const	foundation-settings.md	engine/foundation/settings/setting.h:81
+settings::Setting::Get() const	function	foundation/settings	settings-setting-get-const	foundation-settings.md	engine/foundation/settings/setting.h:86
+settings::Setting::Default() const	function	foundation/settings	settings-setting-default-const	foundation-settings.md	engine/foundation/settings/setting.h:93
+settings::Setting::Desc() const	function	foundation/settings	settings-setting-desc-const	foundation-settings.md	engine/foundation/settings/setting.h:97
+settings::Setting::Id() const	function	foundation/settings	settings-setting-id-const	foundation-settings.md	engine/foundation/settings/setting.h:102
+settings::TextSetting	class	foundation/settings	settings-textsetting	foundation-settings.md	engine/foundation/settings/setting.h:114
+settings::TextSetting::TextSetting(const Registry&,SettingId)	function	foundation/settings	settings-textsetting-textsetting-const-registry-amp-settingid	foundation-settings.md	engine/foundation/settings/setting.h:119
+settings::TextSetting::Get(char*,usize) const	function	foundation/settings	settings-textsetting-get-char-star-usize-const	foundation-settings.md	engine/foundation/settings/setting.h:124
+settings::TextSetting::Id() const	function	foundation/settings	settings-textsetting-id-const	foundation-settings.md	engine/foundation/settings/setting.h:126
 settings::Change	struct	foundation/settings	settings-change	foundation-settings.md	engine/foundation/settings/settings.h:30
 settings::Change::id	variable	foundation/settings	settings-change-id	foundation-settings.md	engine/foundation/settings/settings.h:32
 settings::Change::old_value	variable	foundation/settings	settings-change-old-value	foundation-settings.md	engine/foundation/settings/settings.h:34
@@ -3532,44 +3533,46 @@ spatial::SpatialSet::Grid() const	function	spatial	spatial-spatialset-grid-const
 spatial::SpatialSet::Traverse(NodeTest&&,ItemVisit&&) const	function	spatial	spatial-spatialset-traverse-nodetest-amp-amp-itemvisit-amp-amp-const	spatial.md	engine/spatial/spatial_set.h:172
 spatial::SpatialSet::TraverseRay(const Ray&,f32,ItemVisit&&) const	function	spatial	spatial-spatialset-traverseray-const-ray-amp-f32-itemvisit-amp-amp-const	spatial.md	engine/spatial/spatial_set.h:182
 spatial::SpatialSet::ForEachInRegion(const Aabb&,Exact&&,Visit&&) const	function	spatial	spatial-spatialset-foreachinregion-const-aabb-amp-exact-amp-amp-visit-amp-amp-const	spatial.md	engine/spatial/spatial_set.h:192
+spatial::SpatialSet::ForEachHandleInRegion(const Aabb&,Visit&&) const	function	spatial	spatial-spatialset-foreachhandleinregion-const-aabb-amp-visit-amp-amp-const	spatial.md	engine/spatial/spatial_set.h:201
 spatial::MakeSpatialSyncSystem(const char*)	function	spatial	spatial-makespatialsyncsystem-const-char-star	spatial.md	engine/spatial/spatial_sync.h:33
-spatial::SetId	alias	spatial	spatial-setid	spatial.md	engine/spatial/spatial_world.h:15
-spatial::kInvalidSetId	variable	spatial	spatial-kinvalidsetid	spatial.md	engine/spatial/spatial_world.h:18
-spatial::kRenderSet	variable	spatial	spatial-krenderset	spatial.md	engine/spatial/spatial_world.h:20
-spatial::kPhysicsSet	variable	spatial	spatial-kphysicsset	spatial.md	engine/spatial/spatial_world.h:22
-spatial::kAudioSet	variable	spatial	spatial-kaudioset	spatial.md	engine/spatial/spatial_world.h:24
-spatial::kGameplaySet	variable	spatial	spatial-kgameplayset	spatial.md	engine/spatial/spatial_world.h:26
-spatial::kMaxSetNameLength	variable	spatial	spatial-kmaxsetnamelength	spatial.md	engine/spatial/spatial_world.h:29
-spatial::SpatialWorldStats	struct	spatial	spatial-spatialworldstats	spatial.md	engine/spatial/spatial_world.h:34
-spatial::SpatialWorldStats::frames	variable	spatial	spatial-spatialworldstats-frames	spatial.md	engine/spatial/spatial_world.h:35
-spatial::SpatialWorldStats::joined	variable	spatial	spatial-spatialworldstats-joined	spatial.md	engine/spatial/spatial_world.h:36
-spatial::SpatialWorldStats::left	variable	spatial	spatial-spatialworldstats-left	spatial.md	engine/spatial/spatial_world.h:37
-spatial::SpatialWorldStats::items_added	variable	spatial	spatial-spatialworldstats-items-added	spatial.md	engine/spatial/spatial_world.h:38
-spatial::SpatialWorldStats::items_removed	variable	spatial	spatial-spatialworldstats-items-removed	spatial.md	engine/spatial/spatial_world.h:39
-spatial::SpatialWorldStats::moved_between	variable	spatial	spatial-spatialworldstats-moved-between	spatial.md	engine/spatial/spatial_world.h:40
-spatial::SpatialWorldStats::refused_bounds	variable	spatial	spatial-spatialworldstats-refused-bounds	spatial.md	engine/spatial/spatial_world.h:41
-spatial::SpatialWorldStats::refused_full	variable	spatial	spatial-spatialworldstats-refused-full	spatial.md	engine/spatial/spatial_world.h:42
-spatial::SpatialWorldStats::unknown_set_bits	variable	spatial	spatial-spatialworldstats-unknown-set-bits	spatial.md	engine/spatial/spatial_world.h:43
-spatial::SpatialWorldStats::bounds_written	variable	spatial	spatial-spatialworldstats-bounds-written	spatial.md	engine/spatial/spatial_world.h:44
-spatial::SpatialWorldStats::items_moved	variable	spatial	spatial-spatialworldstats-items-moved	spatial.md	engine/spatial/spatial_world.h:45
-spatial::SpatialWorldStats::items_reinserted	variable	spatial	spatial-spatialworldstats-items-reinserted	spatial.md	engine/spatial/spatial_world.h:46
-spatial::SpatialWorldStats::static_rebuilds	variable	spatial	spatial-spatialworldstats-static-rebuilds	spatial.md	engine/spatial/spatial_world.h:47
-spatial::SpatialWorldStats::refused_sets	variable	spatial	spatial-spatialworldstats-refused-sets	spatial.md	engine/spatial/spatial_world.h:48
-spatial::SpatialWorld	class	spatial	spatial-spatialworld	spatial.md	engine/spatial/spatial_world.h:56
-spatial::SpatialWorld::SpatialWorld()	function	spatial	spatial-spatialworld-spatialworld	spatial.md	engine/spatial/spatial_world.h:59
-spatial::SpatialWorld::SpatialWorld(SpatialWorld&&)	function	spatial	spatial-spatialworld-spatialworld-spatialworld-amp-amp	spatial.md	engine/spatial/spatial_world.h:61
-spatial::SpatialWorld::operator=(SpatialWorld&&)	function	spatial	spatial-spatialworld-operator-eq-spatialworld-amp-amp	spatial.md	engine/spatial/spatial_world.h:62
-spatial::SpatialWorld::CreateSet(StringView,const SpatialSetConfig&)	function	spatial	spatial-spatialworld-createset-stringview-const-spatialsetconfig-amp	spatial.md	engine/spatial/spatial_world.h:70
-spatial::SpatialWorld::SetCount() const	function	spatial	spatial-spatialworld-setcount-const	spatial.md	engine/spatial/spatial_world.h:72
-spatial::SpatialWorld::Set(SetId)	function	spatial	spatial-spatialworld-set-setid	spatial.md	engine/spatial/spatial_world.h:77
-spatial::SpatialWorld::Set(SetId) const	function	spatial	spatial-spatialworld-set-setid-const	spatial.md	engine/spatial/spatial_world.h:82
-spatial::SpatialWorld::Find(StringView) const	function	spatial	spatial-spatialworld-find-stringview-const	spatial.md	engine/spatial/spatial_world.h:85
-spatial::SpatialWorld::NameOf(SetId) const	function	spatial	spatial-spatialworld-nameof-setid-const	spatial.md	engine/spatial/spatial_world.h:89
-spatial::SpatialWorld::Clear()	function	spatial	spatial-spatialworld-clear	spatial.md	engine/spatial/spatial_world.h:92
-spatial::SpatialWorld::Parallel() const	function	spatial	spatial-spatialworld-parallel-const	spatial.md	engine/spatial/spatial_world.h:96
-spatial::SpatialWorld::SetParallel(bool)	function	spatial	spatial-spatialworld-setparallel-bool	spatial.md	engine/spatial/spatial_world.h:98
-spatial::SpatialWorld::Stats() const	function	spatial	spatial-spatialworld-stats-const	spatial.md	engine/spatial/spatial_world.h:101
-spatial::SpatialWorld::MutableStats()	function	spatial	spatial-spatialworld-mutablestats	spatial.md	engine/spatial/spatial_world.h:103
+spatial::SetId	alias	spatial	spatial-setid	spatial.md	engine/spatial/spatial_world.h:17
+spatial::kInvalidSetId	variable	spatial	spatial-kinvalidsetid	spatial.md	engine/spatial/spatial_world.h:20
+spatial::kRenderSet	variable	spatial	spatial-krenderset	spatial.md	engine/spatial/spatial_world.h:22
+spatial::kPhysicsSet	variable	spatial	spatial-kphysicsset	spatial.md	engine/spatial/spatial_world.h:24
+spatial::kAudioSet	variable	spatial	spatial-kaudioset	spatial.md	engine/spatial/spatial_world.h:26
+spatial::kGameplaySet	variable	spatial	spatial-kgameplayset	spatial.md	engine/spatial/spatial_world.h:28
+spatial::kMaxSetNameLength	variable	spatial	spatial-kmaxsetnamelength	spatial.md	engine/spatial/spatial_world.h:31
+spatial::SpatialWorldStats	struct	spatial	spatial-spatialworldstats	spatial.md	engine/spatial/spatial_world.h:36
+spatial::SpatialWorldStats::frames	variable	spatial	spatial-spatialworldstats-frames	spatial.md	engine/spatial/spatial_world.h:37
+spatial::SpatialWorldStats::joined	variable	spatial	spatial-spatialworldstats-joined	spatial.md	engine/spatial/spatial_world.h:38
+spatial::SpatialWorldStats::left	variable	spatial	spatial-spatialworldstats-left	spatial.md	engine/spatial/spatial_world.h:39
+spatial::SpatialWorldStats::items_added	variable	spatial	spatial-spatialworldstats-items-added	spatial.md	engine/spatial/spatial_world.h:40
+spatial::SpatialWorldStats::items_removed	variable	spatial	spatial-spatialworldstats-items-removed	spatial.md	engine/spatial/spatial_world.h:41
+spatial::SpatialWorldStats::moved_between	variable	spatial	spatial-spatialworldstats-moved-between	spatial.md	engine/spatial/spatial_world.h:42
+spatial::SpatialWorldStats::refused_bounds	variable	spatial	spatial-spatialworldstats-refused-bounds	spatial.md	engine/spatial/spatial_world.h:43
+spatial::SpatialWorldStats::refused_full	variable	spatial	spatial-spatialworldstats-refused-full	spatial.md	engine/spatial/spatial_world.h:44
+spatial::SpatialWorldStats::unknown_set_bits	variable	spatial	spatial-spatialworldstats-unknown-set-bits	spatial.md	engine/spatial/spatial_world.h:45
+spatial::SpatialWorldStats::bounds_written	variable	spatial	spatial-spatialworldstats-bounds-written	spatial.md	engine/spatial/spatial_world.h:46
+spatial::SpatialWorldStats::items_moved	variable	spatial	spatial-spatialworldstats-items-moved	spatial.md	engine/spatial/spatial_world.h:47
+spatial::SpatialWorldStats::items_reinserted	variable	spatial	spatial-spatialworldstats-items-reinserted	spatial.md	engine/spatial/spatial_world.h:48
+spatial::SpatialWorldStats::static_rebuilds	variable	spatial	spatial-spatialworldstats-static-rebuilds	spatial.md	engine/spatial/spatial_world.h:49
+spatial::SpatialWorldStats::refused_sets	variable	spatial	spatial-spatialworldstats-refused-sets	spatial.md	engine/spatial/spatial_world.h:50
+spatial::SpatialWorld	class	spatial	spatial-spatialworld	spatial.md	engine/spatial/spatial_world.h:58
+spatial::SpatialWorld::SpatialWorld()	function	spatial	spatial-spatialworld-spatialworld	spatial.md	engine/spatial/spatial_world.h:61
+spatial::SpatialWorld::SpatialWorld(SpatialWorld&&)	function	spatial	spatial-spatialworld-spatialworld-spatialworld-amp-amp	spatial.md	engine/spatial/spatial_world.h:63
+spatial::SpatialWorld::operator=(SpatialWorld&&)	function	spatial	spatial-spatialworld-operator-eq-spatialworld-amp-amp	spatial.md	engine/spatial/spatial_world.h:64
+spatial::SpatialWorld::CreateSet(StringView,const SpatialSetConfig&)	function	spatial	spatial-spatialworld-createset-stringview-const-spatialsetconfig-amp	spatial.md	engine/spatial/spatial_world.h:72
+spatial::SpatialWorld::SetCount() const	function	spatial	spatial-spatialworld-setcount-const	spatial.md	engine/spatial/spatial_world.h:74
+spatial::SpatialWorld::Set(SetId)	function	spatial	spatial-spatialworld-set-setid	spatial.md	engine/spatial/spatial_world.h:79
+spatial::SpatialWorld::Set(SetId) const	function	spatial	spatial-spatialworld-set-setid-const	spatial.md	engine/spatial/spatial_world.h:84
+spatial::SpatialWorld::Find(StringView) const	function	spatial	spatial-spatialworld-find-stringview-const	spatial.md	engine/spatial/spatial_world.h:87
+spatial::SpatialWorld::NameOf(SetId) const	function	spatial	spatial-spatialworld-nameof-setid-const	spatial.md	engine/spatial/spatial_world.h:91
+spatial::SpatialWorld::Clear()	function	spatial	spatial-spatialworld-clear	spatial.md	engine/spatial/spatial_world.h:94
+spatial::SpatialWorld::Parallel() const	function	spatial	spatial-spatialworld-parallel-const	spatial.md	engine/spatial/spatial_world.h:99
+spatial::SpatialWorld::SetParallel(bool)	function	spatial	spatial-spatialworld-setparallel-bool	spatial.md	engine/spatial/spatial_world.h:101
+spatial::SpatialWorld::UseSettings(const settings::Registry&)	function	spatial	spatial-spatialworld-usesettings-const-settings-registry-amp	spatial.md	engine/spatial/spatial_world.h:105
+spatial::SpatialWorld::Stats() const	function	spatial	spatial-spatialworld-stats-const	spatial.md	engine/spatial/spatial_world.h:108
+spatial::SpatialWorld::MutableStats()	function	spatial	spatial-spatialworld-mutablestats	spatial.md	engine/spatial/spatial_world.h:110
 spatial::Item	struct	spatial	spatial-item	spatial.md	engine/spatial/static_bvh.h:18
 spatial::Item::box	variable	spatial	spatial-item-box	spatial.md	engine/spatial/static_bvh.h:20
 spatial::Item::key	variable	spatial	spatial-item-key	spatial.md	engine/spatial/static_bvh.h:22

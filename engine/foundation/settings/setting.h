@@ -77,6 +77,9 @@ public:
     /// Aborts: no such key, or the declared type differs from `T`.
     static Setting Find(const Registry& registry, StringView key) { return Setting(registry, registry.Find(key)); }
 
+    /// Returns whether the handle names a setting (a default-constructed one does not).
+    bool IsBound() const { return cell_ != nullptr; }
+
     /// Returns the current value: one relaxed atomic load.
     ///
     /// Aborts: the handle is empty.

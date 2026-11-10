@@ -192,6 +192,15 @@ public:
     template <class Exact, class Visit>
     TraversalStats ForEachInRegion(const Aabb& region, Exact&& exact, Visit&& visit) const;
 
+    /// As [[spatial::SpatialSet::ForEachInRegion]] with no extra test, passing each item's handle too (what the pair tracker needs).
+    ///
+    /// Param region: the box to look in.
+    /// Param visit: `bool(SetHandle, const Item&)`; returns false to stop.
+    /// Returns: what the walk did.
+    /// Fails: never.
+    template <class Visit>
+    TraversalStats ForEachHandleInRegion(const Aabb& region, Visit&& visit) const;
+
 private:
     static constexpr u32 kNull = 0xFFFFFFFFu;
     static constexpr u32 kLiveBit = 0x100u;
@@ -314,28 +323,36 @@ TraversalStats SpatialSet::TraverseRay(const Ray& ray, f32 max_t, ItemVisit&& it
 
 template <class Exact, class Visit>
 TraversalStats SpatialSet::ForEachInRegion(const Aabb& region, Exact&& exact, Visit&& visit) const {
+    return ForEachHandleInRegion(region, [&](SetHandle, const Item& item) { return !exact(item) || visit(item); });
+}
+
+template <class Visit>
+TraversalStats SpatialSet::ForEachHandleInRegion(const Aabb& region, Visit&& visit) const {
     if (config_.dynamic == DynamicKind::Bvh) {
         return Traverse([&](const Aabb& node) { return Overlaps(node, region) ? NodeVisit::Descend : NodeVisit::Reject; },
-                        [&](SetHandle, const Item& item) { return !Overlaps(item.box, region) || !exact(item) || visit(item); });
+                        [&](SetHandle handle, const Item& item) { return !Overlaps(item.box, region) || visit(handle, item); });
     }
     // The static parts through the tree and the pending list; the grid through its cells.
     TraversalStats total = static_.Traverse([&](const Aabb& node) { return Overlaps(node, region) ? NodeVisit::Descend : NodeVisit::Reject; },
                                             [&](const Item& entry) {
                                                 if (!TreeEntryLive(entry.key)) return true;
-                                                const Item& item = slots_[static_cast<usize>(entry.key)].item;
-                                                return !Overlaps(item.box, region) || !exact(item) || visit(item);
+                                                const u32 slot = static_cast<u32>(entry.key);
+                                                const Item& item = slots_[slot].item;
+                                                return !Overlaps(item.box, region) || visit(HandleOf(slot), item);
                                             });
     if (total.stopped) return total;
     for (usize i = 0; i < pending_.Size(); ++i) {
         const Item& item = slots_[pending_[i]].item;
         ++total.nodes_tested;
-        if (Overlaps(item.box, region) && exact(item) && !visit(item)) {
+        if (Overlaps(item.box, region) && !visit(HandleOf(pending_[i]), item)) {
             total.stopped = true;
             return total;
         }
     }
-    const TraversalStats grid = grid_.ForEachInRegion(region, [&](const Item& entry) { return exact(slots_[static_cast<usize>(entry.key)].item); },
-                                                      [&](const Item& entry) { return visit(slots_[static_cast<usize>(entry.key)].item); });
+    const TraversalStats grid = grid_.ForEachInRegion(region, [](const Item&) { return true; }, [&](const Item& entry) {
+        const u32 slot = static_cast<u32>(entry.key);
+        return visit(HandleOf(slot), slots_[slot].item);
+    });
     total.nodes_tested += grid.nodes_tested;
     total.items_visited += grid.items_visited;
     total.stopped = grid.stopped;

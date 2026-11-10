@@ -128,6 +128,22 @@ Workloads and sizes: W1, W2 and W3 above, each at 1,000, 10,000, 100,000 and 1,0
 
 A miss is profiled, fixed and re-run; if it stays missed it is filed in `KNOWN-ISSUES.md` and presented to the user (the numbers are the user's to override).
 
+### 4.1 Measured (Phase 18 Day 248)
+
+AMD Ryzen 9 7950X3D (16 cores), Linux, Clang, Release (`tests/spatial/spatial_bench.cpp`, `spatial_tests "[spatial-bench]"`; a camera that sees about 1 percent; boxes of 1 unit, one per 8 square units).
+
+| Condition | Target | Measured | |
+|---|---|---|---|
+| Culling gain, 100,000 / 1,000,000 items | 8x / 30x | 80x / 95x (1.09 ms flat, 0.0136 ms tree; 11.1 ms, 0.117 ms) | met |
+| Quiet scene | at most 5 percent of a flat scan | a static set costs no structure call (Day 245 test); a tiny view costs 1.2 us at 100k against 1.09 ms flat | met |
+| Moved object at 1 percent moving, 100,000 | 1.0 us | 0.70 us (`SpatialSet::Move`, tree); 0.058 us (grid). Through the ECS sync, two sets: 7.6 ms per frame = 3.8 us per entity | set met, sync above |
+| 100,000 all-moving agents, sync + update + pairs | 80 ms single thread; 2x faster with 8 workers | ECS sync alone 156 ms, 154 ms with 8 workers (1.0x); then 55-63 ms of pair update | **missed** |
+| Overlap and ray on a static tree, 100,000 | 2 us, 1.5 us | 0.41 us, 0.64 us (1,000,000: 0.94, 1.38) | met |
+| Memory per item | 64 B static, 128 B dynamic | static tree 67,073 nodes for 100,000 items (two per item) | met by node count; bytes not measured |
+| Exactness | equal to brute force | the random-scene tests of Days 239-247 | met |
+
+The miss: moving applies items to the sets on one thread in chunk order, and the dynamic tree re-inserts 0.8 to 0.9 us per move at this speed (agents that move 0.3 of their size a frame leave their 0.25 margin almost every frame). The render and physics sets each pay it, so the sync is two moves per agent (156 ms), and the workers cannot help because only the bounds pass is parallel. A grid moves an item in 0.1 us (10 ms for 100,000 against 87 ms) and a margin of 0.5 with the predictive extension takes the tree to 71 ms, 1.0 to 40 ms. Before this day the pair update on a grid scanned every item for each touched item (28 s for 100,000); it now goes through the grid's cells (55 ms).
+
 ## 5. Contracts the other phases rely on
 
 - **Phase 22 (physics):** consumes `PairTracker` begin/end events and the set's layer masks; fat margins never leak into pair events; the narrow phase and the shapes are its own. `plans/phase-22-physics.md` already states this and needs no change.

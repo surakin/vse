@@ -3834,6 +3834,16 @@ Makes a handle for a setting found by key.
 |---|---|
 | Aborts | no such key, or the declared type differs from `T`. |
 
+### `IsBound()` {#settings-setting-isbound-const}
+
+`method settings::Setting::IsBound` — defined in `engine/foundation/settings/setting.h`
+
+```cpp
+bool IsBound() const;
+```
+
+Returns whether the handle names a setting (a default-constructed one does not).
+
 ### `Get()` {#settings-setting-get-const}
 
 `method settings::Setting::Get` — defined in `engine/foundation/settings/setting.h`

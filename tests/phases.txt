@@ -165,6 +165,7 @@ testopt:shaders_portability                     5   # only with slangc
 test:renderer_demo_screenshot                   5
 test:renderer_demo_gbuffer_layers               5
 test:renderer_demo_device_loss_screenshot       5
+test:spatial_demo_runs                        18
 test:renderer_demo_device_loss_trace            5
 test:renderer_demo_oom_later                    5
 test:renderer_demo_oom_device                   5
