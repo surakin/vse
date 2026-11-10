@@ -27,7 +27,7 @@ data-oriented layout actually wins.
 
 Order reasoning: storage before API (entities, components, archetypes), the structural API before queries, queries before commands (commands exist because queries forbid structural change), change detection before systems because the scheduler's statistics and the render sync use it, sequential scheduling before parallel so the parallel result has a reference to equal, transforms before the scene bridge because the bridge reads `WorldTransform`, the demo port after the bridge, and the benchmark last so it measures the finished design. The 3D text phase (18) follows and builds on `engine/scene`.
 
-**Status: built and closed on Linux (2026-11-10, Days 222-236); the Windows PC run (Day 236) is outstanding and listed in `KNOWN-ISSUES.md`, so the phase is complete only when it is done.** Moved ahead of 3D text on 2026-11-10 (the user's decision); the phases were renumbered (ECS 17, 3D text 18, everything after unchanged).
+**Status: complete (2026-11-10, Days 222-236), on Linux and on the Windows PC (the Windows half of Day 236).** Moved ahead of 3D text on 2026-11-10 (the user's decision); the phases were renumbered (ECS 17, 3D text 18, everything after unchanged).
 
 ## Key deliverables (the original list; the days above break it down)
 

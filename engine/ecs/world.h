@@ -409,8 +409,9 @@ private:
         usize align = 0;
         u64 serial = 0;
     };
-    ResourceSlot* FindResource(u32 type_id);
-    const ResourceSlot* FindResource(u32 type_id) const;
+    // Not "FindResource": windows.h defines that name as a macro (FindResourceW), which would rename the call in a file that includes it.
+    ResourceSlot* FindResourceSlot(u32 type_id);
+    const ResourceSlot* FindResourceSlot(u32 type_id) const;
     void DestroyResource(ResourceSlot& slot);
     void DestroyAllResources();
 
@@ -681,13 +682,13 @@ T& World::SetResource(T value) {
 
 template <class T>
 T* World::TryResource() {
-    ResourceSlot* slot = FindResource(detail::ResourceTypeId<T>());
+    ResourceSlot* slot = FindResourceSlot(detail::ResourceTypeId<T>());
     return slot == nullptr ? nullptr : static_cast<T*>(slot->object);
 }
 
 template <class T>
 const T* World::TryResource() const {
-    const ResourceSlot* slot = FindResource(detail::ResourceTypeId<T>());
+    const ResourceSlot* slot = FindResourceSlot(detail::ResourceTypeId<T>());
     return slot == nullptr ? nullptr : static_cast<const T*>(slot->object);
 }
 
@@ -707,7 +708,7 @@ const T& World::Resource() const {
 
 template <class T>
 bool World::RemoveResource() {
-    ResourceSlot* slot = FindResource(detail::ResourceTypeId<T>());
+    ResourceSlot* slot = FindResourceSlot(detail::ResourceTypeId<T>());
     if (slot == nullptr) {
         return false;
     }

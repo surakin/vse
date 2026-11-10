@@ -20,15 +20,15 @@ World::~World() {
     DestroyAllResources();
 }
 
-World::ResourceSlot* World::FindResource(u32 type_id) {
+World::ResourceSlot* World::FindResourceSlot(u32 type_id) {
     if (type_id >= resources_.Size() || resources_[type_id].object == nullptr) {
         return nullptr;
     }
     return &resources_[type_id];
 }
 
-const World::ResourceSlot* World::FindResource(u32 type_id) const {
-    return const_cast<World*>(this)->FindResource(type_id);
+const World::ResourceSlot* World::FindResourceSlot(u32 type_id) const {
+    return const_cast<World*>(this)->FindResourceSlot(type_id);
 }
 
 void World::DestroyResource(ResourceSlot& slot) {

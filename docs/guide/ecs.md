@@ -635,6 +635,9 @@ Run it yourself with `ecs_bench [--entities N] [--frames N] [--threads N] [--csv
 - **Churn and hierarchy are slower than the baseline's equivalent.** A structural change moves a row between chunks (and a destroy swaps the last row in); the baseline replaces a pointer. Propagation recomputes
   every world matrix of a changed tree, parent before child, in depth order across chunks; the baseline walks its tree once. Both are listed in `KNOWN-ISSUES.md`.
 - A sparse set was **not** added: the sparse case is 200x faster than the baseline, far from the 2x slower that the spec set as the threshold.
+- **On Windows** (AMD Ryzen AI 7 350, 8 cores, MSVC Release; Phase 17 Day 236): iteration at 100k 0.40 ms against 9.1 ms (22.7x), sparse access 119x, 4 workers at
+  96 percent efficiency, 110 bytes per entity (baseline 232). Churn (1.45x) and hierarchy propagation (3.8x) beat the baseline there, because its heap allocations
+  cost more with that system's allocator (155 ns a create against 35 ns on Linux). The full table is in `plans/phase-17-ecs/day-236-docs-closing-run-and-review.md`.
 
 ## Common mistakes
 
