@@ -1,10 +1,30 @@
 # Fonts and text
 
-Status: complete (Phase 14, Days 175-183). The demo (`renderer_demo --text`, F11) shows the overlay; the benchmark numbers are at the end.
+Games show text everywhere: menus, names above heads, debug overlays. This page shows how the engine turns a font file and a string into pixels on the screen. It does so in
+three steps, and each step has its own types:
+
+1. **Open a font and look up glyphs** (`text::Font`). A *glyph* is the drawn shape of one character.
+2. **Lay the string out** (`text::Layout`): decide where each glyph goes, where the lines break and where the caret can stand.
+3. **Draw it**: rasterize the glyphs once into a texture atlas (`text::GlyphAtlas`), then draw quads from that atlas (`renderer::TextRenderer`). *Rasterizing* means turning a
+   shape into a grid of pixel coverage values; an *atlas* is one big texture that holds many small images, so one draw can use all of them.
+
+**Audience:** anyone who puts text on screen or edits text. Steps 1 and 2 run on the CPU and need no window or GPU, which is why the samples below run anywhere. Most game
+code never calls these directly: the UI toolkit ([The UI toolkit](ui.md)) draws its labels and text fields through them.
 
 The text layer lives in `engine/text/` (namespace `engine_placeholder::text`). Design and reasons: `docs/superpowers/specs/2026-11-08-text-design.md`.
 FreeType 2.15.0 (vendored, `third_party/freetype/`) reads and rasterizes the fonts; it is named in one file, `engine/text/font_freetype.cpp`, and every
-block it allocates comes from the engine's heap.
+block it allocates comes from the engine's heap. The demo (`renderer_demo --text`, F11) shows the overlay; the benchmark numbers are at the end.
+
+## At a glance
+
+| I need | Use | Notes |
+|---|---|---|
+| to open a font | `FontLibrary`, then `Font::Open` / `Font::OpenFile` | the library must outlive its fonts; check the returned `text::Status` |
+| a glyph and its size | `Font::FindGlyph`, `Font::Metrics` | pixels; a missing character gives glyph 0 (the box), not an error |
+| positions for a string | `text::Layout(utf8, style, options, &layout)` | wraps, handles tabs and newlines; no shaping |
+| a caret, a click position, a selection | `text/cursor.h` (`PositionOfOffset`, `OffsetAtPoint`, `SelectionRects`) | offsets are grapheme boundaries |
+| glyph bitmaps in a texture | `GlyphAtlas::GetOrAdd` | CPU pages; no eviction; sizes up to `kMaxAtlasPixelSize` (128) |
+| text on the screen | `renderer::TextRenderer` | `BeginFrame`, `Draw`, `AddToGraph` once per frame |
 
 ## The model
 
@@ -112,7 +132,7 @@ cluster (a combining mark, flag, ZWJ sequence or Hangul syllable is one step); `
 keep the column through lines of different length when the caller keeps `preferred_x`. `SelectionRects(begin, end)` returns one rectangle per line covered.
 
 Limits: there is no caret affinity, so the offset where a soft-wrapped line ends is the start of the next line; the end of a wrapped line is before its trailing spaces.
-Word movement is not here (Phase 15).
+Word movement (Ctrl+arrow) is not in `text/cursor.h`; the UI toolkit adds it (`ui/text_words.h`).
 
 ## Drawing text
 
@@ -147,7 +167,16 @@ and, outside the graph, `Record(list, width, height)` inside their own rendering
 - Text above `kMaxAtlasPixelSize` (128 px) is laid out at the requested size but rasterized at 128 px and drawn with scaled quads (blurry, correctly placed); `Stats().scaled_large_glyphs`
   counts such glyphs and the first use of each size is logged. Phase 18 draws large text as outline meshes.
 - One frame draws at most `max_glyphs` glyphs (8192 by default); the rest are dropped, counted in `DroppedGlyphs()` and logged once per frame, and a full atlas drops glyphs the same way.
-- Only SPIR-V is minted for the text shaders so far, so `Create` on a Direct3D 12 device fails with a logged error until the Windows PC mints DXIL (`KNOWN-ISSUES.md`).
+
+## Common mistakes
+
+- **Destroying the `FontLibrary` before its fonts.** The library must outlive every `Font` opened from it.
+- **Sharing a library or a font between threads.** FreeType is not thread-safe: give each thread its own library and fonts.
+- **Ignoring the returned `text::Status`.** Opening or rendering can fail (`NotAFont`, `Corrupt`, `TooLarge`, `AtlasFull`); nothing is thrown.
+- **Passing logical sizes.** Sizes and positions are device pixels. On a 2x display ask for twice the size.
+- **Expecting complex scripts to shape.** There is no shaping, bidirectional or vertical text (see "Layout").
+- **Rasterizing above 128 px.** `Font::Render` and the atlas refuse sizes above `kMaxAtlasPixelSize`; `TextRenderer` scales such text up from 128 px (it looks soft).
+- **Drawing more than `max_glyphs` per frame, or filling the atlas.** The surplus glyphs are dropped and counted (`DroppedGlyphs()`, `Stats().failures`), not drawn.
 
 ## Hinting
 
@@ -164,7 +193,7 @@ size). `None`, `Normal` and `Bytecode` are the others. The choice is made per fo
 
 ## Cost
 
-`renderer_bench --section text` (Day 183; this machine, the default unoptimized configuration with debug info, so read the numbers as an upper bound; nothing asserts them):
+`renderer_bench --section text` (this machine, the default unoptimized configuration with debug info, so read the numbers as an upper bound; nothing asserts them):
 
 | Measurement | Result |
 |---|---|

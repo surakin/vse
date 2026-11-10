@@ -1,8 +1,39 @@
 # The Render Hardware Interface (RHI)
 
-> **Status:** draft  
-> **Audience:** engine and renderer programmers  
-> **Covers:** Phase 4
+Status: written (Phase 4; Direct3D 12 backend added in Phase 13).
+
+**Audience:** engine and renderer programmers. Read [Standard types](foundation-types.md) and [Containers](foundation-containers.md) first. If you only want to
+draw things with materials, start with the [renderer guide](renderer.md): the renderer sits on top of the RHI and hides most of this page. You come here
+when you write a renderer pass, a tool or a test that talks to the GPU directly.
+
+The GPU is a second computer with its own memory, and you talk to it through a driver API (Vulkan, Direct3D 12, Metal) that is long, explicit and
+different on each platform. The **RHI** (Render Hardware Interface) is the engine's one small interface over those APIs: you create buffers, textures and
+pipelines, record drawing commands into a list, submit the list, and show the result in a window. Code above the RHI never names Vulkan or Direct3D, so the
+same code runs on every backend, and the `null` backend runs it with no GPU at all, which is how most tests work.
+
+## At a glance
+
+| I need | Use | Notes |
+|---|---|---|
+| a device (the GPU connection) | `rhi::CreateDevice(DeviceCreateInfo)` | call `rhi::RegisterCompiledBackends()` once first; `Backend::Null` needs no GPU |
+| a buffer or texture | `device->CreateBuffer` / `CreateTexture` | returns a handle; an invalid handle means failure (see the log) |
+| to fill a GPU-only buffer or texture | `UploadBuffer` / `UploadTexture` | then `Barrier` to the state the first use needs |
+| to draw or copy | `device->CreateCommandList()`, record, `Submit` | one list per thread; valid for one frame |
+| to order GPU work | `list->Barrier(resource, before, after)` | you state the states; the RHI does not track them for you |
+| a window to draw into | `device->CreateSwapchain`, then `Acquire` / `Present` | handle `Recreated` and `Minimized` |
+| shaders | [Shaders](rhi-shaders.md), `CreateShader` | compiled offline; the RHI takes bytecode |
+| to rebuild everything on a setting change | `rhi::DeviceHost` and `DeviceObserver` | see "Lifecycle and reset" |
+
+## Where to start reading
+
+This page is long because it is also the reference for the backends. You do not need all of it.
+
+1. **Read first, in order:** Overview, Words you will meet, Handles and descriptors, Devices, command lists and lifetimes, Rules & contracts, Common mistakes.
+2. **Then, to draw something:** Backends and the registry, Creating a device, Uploading data, Recording and submitting, Presenting to a window, The frame loop,
+   Pipelines, Binding resources. The [hello-rhi tutorial](../tutorials/hello-rhi.md) walks through exactly these.
+3. **When you need it:** Textures and samplers, Depth and indexed draws, Textures in draws, Compute, Choosing a GPU, Presentation, Lifecycle and reset.
+4. **Contributors and curious readers only:** GPU memory, Vulkan backend notes, Validation layers (worth reading if you debug), Vulkan on Windows, The DX12 backend,
+   Performance notes.
 
 ## Source of truth
 
@@ -46,7 +77,7 @@ Full reference: [The Render Hardware Interface](../reference/rhi.md).
 
 The RHI is the only way the engine talks to the GPU. Code above it - the renderer, the demo, tools - holds
 `Device`, `CommandList` and `Swapchain` objects and opaque, generation-checked handles; it never includes Vulkan
-(DX12 and Metal backends will sit behind the same interface). Where to read next:
+(Vulkan and Direct3D 12 are the backends built today; Metal will sit behind the same interface). Where to read next:
 
 | To do this | Read |
 |---|---|
@@ -61,6 +92,26 @@ The RHI is the only way the engine talks to the GPU. Code above it - the rendere
 The demo (`game/rhi_demo`) is the reference client: a textured, lit, depth-tested cube with an orbit camera, written
 only against `rhi/*.h` plus the one backend header needed to create the device. Everything it builds on - the
 projection, the cube mesh, the textures, the `UniformRing` - is renderer-side code, not part of the RHI.
+
+### Words you will meet
+
+| Word | Meaning |
+|---|---|
+| **backend** | the code that implements the RHI on one API: `Vulkan`, `Dx12` (Windows), `Null` (checks everything, draws nothing) |
+| **handle** | an opaque eight-byte id for a GPU object; the all-zero value is invalid (next section) |
+| **descriptor struct** | a plain struct (`BufferDesc`, `TextureDesc`, ...) that says what to create; not to be confused with a shader "descriptor" below |
+| **command list** | a recording of GPU work (copies, draws, dispatches); nothing runs until you `Submit` it |
+| **barrier** | a command that tells the GPU "this resource was used one way and will now be used another way", so it finishes the earlier work and changes the memory layout first |
+| **resource state** | the way a resource is being used right now (`CopyDst`, `ShaderRead`, `ColorAttachment`, `Present`, ...); you name it in every barrier |
+| **swapchain** | the queue of images that belong to a window; you draw into one, then present it to the screen |
+| **frame in flight** | a frame the CPU has handed over that the GPU has not finished; the CPU may run one to three frames ahead |
+| **fence** | a counter that grows when the GPU finishes a submission; waiting on a value waits for that work |
+| **shader** | a program that runs on the GPU (vertex, fragment or compute); see [Shaders](rhi-shaders.md) |
+| **pipeline** | (often "PSO", pipeline state object) the shaders plus all fixed state of a draw (vertex layout, blending, depth test, target formats), created once and bound per draw |
+| **bind group** | a set of buffers, textures and samplers handed to shaders together (a Vulkan descriptor set, a Direct3D descriptor table); its **layout** says the shape |
+| **push constants** | a few bytes sent with each draw, the cheapest way to pass small per-draw values |
+| **pass (rendering)** | the span between `BeginRendering` and `EndRendering`, in which draws write into the attachments (color and depth textures) you name |
+| **compute** | general GPU work with no drawing: a compute shader run over a grid of work groups with `Dispatch` |
 
 ### Handles and descriptors
 
@@ -215,16 +266,21 @@ demo with exit code 3 and a message, a failed allocation with exit code 1.
 - **Tuning on a Debug build with validation on.** The numbers in "Performance notes" are Release without validation;
   validation costs more than the engine does.
 - **Naming Vulkan outside `engine/rhi/vulkan/`.** The `rhi_boundary_check` ctest will fail the build.
+- **Forgetting `rhi::RegisterCompiledBackends()`.** Without it no backend exists and `CreateDevice` fails with "backend is not registered".
+- **Rendering after `Acquire` returned `Minimized`.** No image was acquired: skip the frame (but still pair `BeginFrame` with `EndFrame`).
+  `Recreated` is not a failure; an image was acquired, but size-dependent resources such as a depth texture need rebuilding.
+- **Keeping one copy of CPU-rewritten data.** A buffer the GPU may still be reading from last frame needs one copy per frame in flight; a `UniformRing` does this for you.
+- **Using a texture before it is in the right state.** A sampled texture must be in `ShaderRead` while a draw runs; `UploadTexture` leaves it there, a render target does not.
 
 ### Platform notes
 
-The Vulkan backend is the only one built. It needs Vulkan 1.3 with dynamic rendering, synchronization2 and timeline
+Vulkan (Linux and Windows) and Direct3D 12 (Windows) are the built backends, plus the `null` test backend; see "The DX12 backend" below. The Vulkan backend needs Vulkan 1.3 with dynamic rendering, synchronization2 and timeline
 semaphores, and presents through `VK_KHR_wayland_surface` or `VK_KHR_xlib_surface` on Linux and `VK_KHR_win32_surface`
 on Windows, depending on the window ([[os::Window]]); "Vulkan on Windows" below has the Windows details. With the NVIDIA proprietary driver, ThreadSanitizer cannot run GPU tests (the driver's threads crash
 inside its interceptors), and the X11 presentation path leaks inside a library the driver unloads; see "Building and
 Testing" for how the sanitizer flavors cover this.
 
-Direct3D 12 (Phase 13) and Metal (Phase 23) are planned behind the same interface. The Phase 4 portability review,
+Metal (Phase 23) is planned behind the same interface. The Phase 4 portability review,
 `docs/superpowers/specs/2026-11-04-rhi-portability-review.md`, lists for every concept how each backend implements it
 and which shims they need; the points that shape how you write code today are the clip-space convention (Y down,
 depth 0..1, with the flip in the projection), the copy alignment above, explicit resource states, and bind groups
@@ -251,15 +307,6 @@ Recording is thread-compatible per list, so scale by recording lists on several 
 itself at 8%, and the rest spread across the list's own methods. Per-draw transient bind groups are therefore the
 first thing to drop when draw counts grow: put per-object data in one buffer and index it, or bind it once per group of
 draws. See the Phase 5 notes in `plans/phase-05-renderer-core.md`.
-
-### See also
-
-- [Shaders: from Slang to a shader module](rhi-shaders.md) - writing and building shaders.
-- [Tutorial: From a Cleared Window to a Lit Cube](../tutorials/hello-rhi.md).
-- [Building and Testing](building-and-testing.md) - GPU tests, golden images, sanitizers and the boundary gate.
-- [Open a Window](../tutorials/hello-window.md) and [Windowing and input](platform-windowing-and-input.md) - the platform
-  layer under the swapchain.
-- `docs/superpowers/specs/2026-11-04-rhi-design.md` and `2026-11-04-rhi-portability-review.md` - why it is shaped this way.
 
 ### Backends and the registry
 
@@ -586,6 +633,7 @@ SwapchainStatus s = swapchain->Acquire();         // Ok, Recreated, Minimized or
 if (s == SwapchainStatus::Ok || s == SwapchainStatus::Recreated) {
     // list: Barrier(image, Undefined, ColorAttachment) ... draw ... Barrier(image, ColorAttachment, Present)
     device->Submit(lists, count);
+    // device->EndFrame() goes here; the demo then calls Present (see "The frame loop")
     swapchain->Present();                          // Ok, Recreated or Lost
 }
 ```
@@ -1018,10 +1066,19 @@ Direct3D 12 is the native backend on Windows (Phase 13, Days 164-172), library `
   G-buffer pipeline from 0.10 to 0.06 ms. The library is kept for drivers or machines without that cache; first-ever compiles (with the
   driver's cache empty) were not measured.
 
-## What the RHI reports when something goes wrong
+### What the RHI reports when something goes wrong
 
 The Vulkan device registers the adapter, its driver version and the API version as the `gpu` line of every crash report. A lost
 device (real, or injected with `--inject-device-loss`) and the first validation error each print a trace of where they were
 noticed, through an `ENGINE_ENSURE` that reports once per site; the frame still ends as `DeviceLost`. The traces use the same
 mechanism as any ensure and need no Vulkan names outside `engine/rhi/vulkan`. To add device state to the report, call
 [[debug::SetCrashStateText]] from the backend.
+
+### See also
+
+- [Shaders: from Slang to a shader module](rhi-shaders.md) - writing and building shaders.
+- [Tutorial: From a Cleared Window to a Lit Cube](../tutorials/hello-rhi.md).
+- [Building and Testing](building-and-testing.md) - GPU tests, golden images, sanitizers and the boundary gate.
+- [Open a Window](../tutorials/hello-window.md) and [Windowing and input](platform-windowing-and-input.md) - the platform
+  layer under the swapchain.
+- `docs/superpowers/specs/2026-11-04-rhi-design.md` and `2026-11-04-rhi-portability-review.md` - why it is shaped this way.

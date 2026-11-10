@@ -1,7 +1,37 @@
 # Shaders: from Slang to a shader module
 
-> **Audience:** engine and renderer programmers writing shaders  
-> **Covers:** Phase 4, Day 58; Phase 5, Days 69-84 (Slang, reflection, permutations, material and deferred shaders, portability)
+Status: written (Phase 4 Day 58; Phase 5 Days 69-84; DXIL added in Phase 13).
+
+**Audience:** engine and renderer programmers who write or load shaders. Read [The RHI](rhi.md) first (at least its "Words you will meet" table).
+
+A **shader** is a small program that runs on the GPU: a vertex shader places each corner of a triangle, a fragment shader colors each pixel, a compute shader does
+general work. The engine never compiles shaders while the game runs. You write them in the **Slang** language, a build step turns them into bytecode (**SPIR-V** for
+Vulkan, **DXIL** for Direct3D 12), and the bytecode is committed to the repository as `.inc` files that the program embeds. At run time you hand that bytecode to the RHI
+and get a shader handle. You touch this page when you add or change a `.slang` file, or load a shader in C++.
+
+## At a glance
+
+| I need | Do | Notes |
+|---|---|---|
+| to add a shader | put `<name>.<vert\|frag\|comp>.slang` in `shaders/`, add the name to `ENGINE_SHADERS` | entry point is `main`; the stage comes from the file name |
+| to rebuild after editing | `cmake --build build --target shaders` | needs `slangc`; without it your edit is silently ignored |
+| to create a module in C++ | `ShaderDesc` + `Device::CreateShader`, or `CreateShaderFromSet` | a bad module gives an invalid handle and a logged reason |
+| a bind group layout or vertex layout | `renderer::BuildBindGroupLayout` / `BuildVertexLayout` from reflection | do not write layouts by hand |
+| variants (normal map, alpha test, ...) | permutations: a `.perm` manifest and `MakePermutationKey` / `FindPermutation` | only listed combinations exist |
+| a C++ struct that matches a uniform block | `static_assert` against the generated `k<Name>...Size` and `...Offset` constants | mind std140 padding |
+
+## Words you will meet
+
+| Word | Meaning |
+|---|---|
+| **Slang** | the shader language the engine uses (HLSL-like syntax); the only one: no GLSL, no hand-written bytecode |
+| **SPIR-V / DXIL** | the compiled forms of a shader for Vulkan / Direct3D 12; a device accepts only its own (`DeviceCaps::shader_format`) |
+| **minting** | the offline step (`shader_mint`) that turns `slangc` output into the committed `.inc` files; the engine says "mint", not "cook" |
+| **reflection** | facts about a shader (its bindings, block sizes, vertex inputs) recorded at mint time so C++ can read them instead of repeating them |
+| **bind group / set** | the group of buffers, textures and samplers a shader reads together; the second number in `[[vk::binding(binding, set)]]` is the group index |
+| **uniform block, std140 / std430** | a buffer of constants read by a shader, and the rules for how its members are laid out in memory; your C++ struct must match them |
+| **permutation** | one compiled variant of a shader source with some options switched on |
+| **push constants** | a few bytes sent with each draw (see [The RHI](rhi.md)) |
 
 ## Source of truth
 
@@ -65,7 +95,7 @@ Pitfalls that cost time and how the sources avoid them (each is explained in `sh
 `-matrix-layout-column-major` so a `Mat4` copied into a uniform block is not transposed.
 
 The RHI takes precompiled bytecode in [[rhi::ShaderDesc]]. Slang also produces HLSL and Metal from the same
-sources, which is how the DX12 and Metal backends will get their shaders, and `ctest -R shaders_portability` proves it
+sources, which is how the DX12 backend gets its shaders today and the Metal backend will, and `ctest -R shaders_portability` proves it
 today: every shader and every permutation key compiles to both. Four things to handle then, all recorded in
 `shaders/README.md`: the clip-space Y flip (the RHI follows Vulkan's convention, and the flip lives in the projection),
 Metal's renaming of an entry point called `main`, Metal's flattening of descriptor sets to buffer slots, and the missing
@@ -343,8 +373,8 @@ One module holds one stage.
 
 ## Writing shaders for the engine
 
-Start every file with a header comment that lists the interface: locations, bindings and push constants. The rules
-the next days rely on:
+Start every file with a header comment that lists the interface: locations, bindings and push constants. The rules every
+shader follows:
 
 - **Vertex inputs and varyings** use explicit `[[vk::location(N)]]`. The location numbers must match the
   pipeline's vertex layout and the stage before or after.
@@ -390,6 +420,17 @@ cofactor matrix of the model's upper 3x3, so normals stay perpendicular to surfa
 ## Common mistakes
 
 - Editing a `.spv.inc` by hand: it is overwritten the next time the `shaders` target runs.
-- Changing a `.slang` file and forgetting to regenerate: `shaders_check` fails when `slangc` is installed.
+- Changing a `.slang` file and forgetting to regenerate: `shaders_check` fails when `slangc` is installed. Without `slangc` the edit is silently ignored.
+- Committing the `.slang` file without both generated `.inc` files (and the `.dxil.inc` / `.perm.inc` where they exist).
 - Declaring the wrong stage in [[rhi::ShaderDesc]]: the module is refused with "implements a different stage".
+- Handing a device a module in the wrong format (SPIR-V to a Direct3D 12 device): it is refused with an error naming both formats; create from a `ShaderBlobSet` instead.
 - A `vec3` in a uniform block with a tightly packed C++ struct: std140 pads it to 16 bytes.
+- Using `SV_VertexID` instead of `SV_VulkanVertexID`, or leaving out the explicit `[[vk::binding]]` / `[[vk::location]]`.
+- Asking for a permutation key that is not in the `.perm` manifest: `FindPermutation` returns an error, never a fallback. Add the key and regenerate.
+- Sharing one layout across the modules of a permuted shader: each module has its own reflection, so build one layout per module.
+
+## See also
+
+- [The RHI](rhi.md) - devices, pipelines and bind groups that consume these modules.
+- [Renderer](renderer.md) - materials and the passes that pick permutations.
+- `shaders/README.md` - compiler flags and pitfalls.

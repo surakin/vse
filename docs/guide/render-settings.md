@@ -1,9 +1,29 @@
 # Render settings
 
-Everything a user can change about rendering without restarting the program is a **setting**. This page covers what a
-setting is, what changing one costs, how to add one, and the file format. The header is `engine/renderer/render_settings.h`.
-Since Phase 11 the same settings also live in the engine-wide settings system (see "Rendering settings in the shared system" below);
-the rest of this page describes `RenderSettings`, the value type the renderer works with.
+Status: written (Phase 8; shared settings system from Phase 11).
+
+**Audience:** renderer programmers, and anyone who adds a rendering option or a settings screen. Read [Renderer](renderer.md) and [The RHI](rhi.md) ("Lifecycle and reset")
+first if the terms below are new.
+
+A game has options the player changes while playing: vertical sync, window size, fullscreen, HDR, graphics quality. Some are cheap (read a new number next frame); some
+force the engine to rebuild big things (the swapchain, the pipelines, even the GPU connection). A **render setting** is one such option, declared once with a type, a default
+and a **cost class** that says how much a change costs. The engine can then compare "what is running" with "what was requested" and do only the cheapest work that is enough,
+without restarting the program. You touch this page when you add an option, build a settings screen, or wonder why a change made the screen flicker.
+
+Two layers exist, and this page covers both. `RenderSettings` (header `engine/renderer/render_settings.h`) is the value type the renderer works with. The engine-wide
+settings system (Phase 11, see "Rendering settings in the shared system" below) stores the same options in the user's settings file and applies them through the renderer.
+If you only read or change settings from game code, go to the shared-system section.
+
+## At a glance
+
+| I need | Use | Notes |
+|---|---|---|
+| to know what a change will cost | `DiffSettings(current, wanted, capabilities)` | the cost is the largest class among the changes |
+| to drop changes the machine cannot do | `ResolveSettings(current, requested, capabilities)` | puts back values whose capability is missing |
+| to add an option | fill a `SettingDesc`, `registry.Register(desc)` at start-up | strings must be literals; max 64 settings |
+| to read or write one value | `RenderSettings::SetBool` / `SetInt` / `SetEnum` / ... with the `SettingId` | the default policy clamps out-of-range values |
+| to save and load | the shared system (`[renderer]` section), or `SerializeSettings` / `ParseSettings` for schema 1 | unknown key: warning; malformed text: error, nothing applied |
+| to apply a change at run time | `settings.Apply(requests, count, &renderer::ApplySharedChange, &renderer)` | ends in `Renderer::ApplySettings` |
 
 ## Concepts
 
@@ -17,7 +37,8 @@ the rest of this page describes `RenderSettings`, the value type the renderer wo
 
 ### Cost classes
 
-A larger class includes the actions of every smaller one, so the cost of a change set is its largest class.
+The names refer to renderer objects explained in [The RHI](rhi.md) and [Renderer](renderer.md): the **swapchain** is the set of images shown in the window, a **pipeline**
+(PSO) is the compiled bundle of shaders and fixed state for a draw, and the **device** is the connection to the GPU that owns every GPU object. A larger class includes the actions of every smaller one, so the cost of a change set is its largest class.
 
 | Class | Meaning | Built-in examples |
 |---|---|---|
@@ -142,6 +163,11 @@ adapter =
 
 ## Common mistakes
 
+- Picking a cost class by what the change *usually* does instead of what it *forces*: a too-small class leaves stale GPU objects, a too-large one stalls the player.
+- Passing a string that is not a literal to `SettingDesc` (names and enum choices are borrowed, not copied).
+- Persisting `SettingId`s: they depend on registration order. Persist keys.
+- Expecting a `backend` change to take effect at run time: it is stored for the next start (`restart` in `SettingsChange`).
+- Expecting an unsupported setting (no fullscreen, no HDR) to appear in `changed`: it is counted as unsupported and put back by `ResolveSettings`.
 - Registering a setting after a `RenderSettings` exists is allowed (the old object reads the default for it), but registering
   from two threads is not.
 - Comparing settings that follow different registries aborts.

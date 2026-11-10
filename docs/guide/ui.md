@@ -1,6 +1,28 @@
 # The UI toolkit
 
-Status: complete for Phase 15 (Days 184-206). The model, the draw list and renderer, themes, layout, input, every widget family, popups and modality, drag and drop, the clipboard, the viewport, surfaces in the world, the settings screen, the debug overlay, the demo, the limits and the benchmark are all below. Design and reasons: `docs/superpowers/specs/2026-11-10-ui-design.md`.
+The UI toolkit is the engine's own set of menus, buttons, sliders, text fields, dialogs and more, used for in-game screens, debug tools and the editor. It is a **retained-mode**
+toolkit: you build a tree of widget objects once, the toolkit remembers it, and each frame it works out what changed and redraws. (The opposite, *immediate mode*, re-describes the
+whole screen with calls every frame.) A widget is one element of the tree; a parent widget owns its children, and children are drawn on top of their parent.
+
+**Audience:** game and tool programmers who build screens. Read [Fonts and text](text.md) first if you will edit text; read [The Renderer](renderer.md) if you will draw the UI on
+screen. Sections "The model" to "Input" are the ones everybody needs; the widget sections after them are a reference you look things up in.
+
+Design and reasons: `docs/superpowers/specs/2026-11-10-ui-design.md`.
+
+## At a glance
+
+| I need | Use | Section |
+|---|---|---|
+| a place to put widgets | `ui::Surface` (its `Root()` is the top widget) | "The widget tree, the surface and the test harness" |
+| to test a screen without a window or GPU | `ui::Harness` | same |
+| a window to drive a surface | `ui::WindowAdapter` (`ui_window/window_adapter.h`) | "Input: focus, capture, Tab and the window" |
+| to put a surface on screen | `ui::DrawListCanvas` into a `ui::DrawList`, then `renderer::UiRenderer` | "Drawing: the canvas and the draw list", "Drawing on the GPU" |
+| to arrange widgets | `BoxLayout`, `StackLayout`, `AnchorLayout`, `GridLayout` | "Layout" |
+| a button, label, slider, list, text field | `Button`, `Label`, `Slider`, `ListBox`, `TextField` | "Widgets", "Value widgets", "The text field" |
+| menus, combo boxes, tooltips, dialogs | `Menu`, `MenuBar`, `ComboBox`, `Dialog`, `ShowMessageBox` | "Popups, menus...", "Tab views, splitters, windows and modal dialogs" |
+| to change colours and sizes | a `ui::Theme` in the surface's `ThemeSet` | "Themes" |
+| a 3D world inside the UI, or a UI inside the world | `ui::Viewport`; `renderer::UiSurfaceTarget` | "The viewport", "Surfaces in the world" |
+| a settings screen or a debug overlay | `SettingsView`, `DebugOverlay` | "The settings screen and the debug overlay" |
 
 ## The model
 
@@ -47,7 +69,7 @@ the 1x1 white texture that textureless commands bind; it keeps nothing but CPU-s
 - **Images** are drawn through an `ImageSource`: register it with `SetImage(id, &source)`; the renderer asks for the texture handle every frame and never keeps it. A command whose image has no source or no texture is skipped and counted in
   `Stats().dropped_commands`.
 - **Budget:** `UiRendererDesc::max_vertices` / `max_indices` size the per-frame-slot buffers; commands past them are dropped and counted, with a warning in the log.
-- **Shaders** are `shaders/ui.vert.slang` and `ui.frag.slang`, minted to SPIR-V; the DXIL for Direct3D 12 arrives with Day 205 (`KNOWN-ISSUES.md`).
+- **Shaders** are `shaders/ui.vert.slang` and `ui.frag.slang`, minted to SPIR-V and DXIL, so the UI draws on both backends.
 
 ```cpp
 renderer::UiRenderer ui_renderer;
@@ -91,7 +113,7 @@ draw list if anything looks different or the list is empty (it returns whether i
   (`SetFocus`, which sends `FocusLost`/`FocusGained`). An event a widget does not mark `handled` bubbles to its parents; it arrives with its position in the receiving widget's local space. Enter, leave and focus events go to one widget only. A
   disabled widget takes an event and does nothing with it.
 - **Removal is safe in a handler:** while the surface dispatches, `RemoveChild`/`RemoveFromParent` queue the removal and the widget dies when the dispatch ends. Destroying a widget clears the focus, capture and hover references to it first.
-- **Layout** is a hook only here: `Widget::Arrange()` runs parent before children when layout is dirty (Day 193 adds the containers).
+- **Layout** is a hook only here: `Widget::Arrange()` runs parent before children when layout is dirty; the containers in "Layout" place their children in it.
 
 **`ui::Harness`** (`ui/testing/harness.h`) is the offscreen surface every widget test uses: a font provider serving one TrueType file, a glyph atlas, the last draw list, input helpers (`PointerMove`, `Click`, `Key`, `TypeText`, `Wheel`; each runs a frame),
 `Find`/`RectOf`, and `Render`, which draws the list with a small software rasteriser that follows the UI shader (rectangles, rounded boxes, rings, shadows, glyphs; images are skipped). A widget test compares rectangles or pixels without a GPU.
@@ -197,7 +219,7 @@ All of these draw from the theme (`ThemeSet::Resolve` for their kind, variant an
 - **`ProgressBar`**: value 0 to 1, or indeterminate (a segment sliding with the surface clock; only an indeterminate bar asks for `Update`, so a still bar costs nothing). **`Separator`**: a line in the border color. **`Panel`**: a `StackLayout` drawing the `panel` style.
 - **`Button`**: text and/or an icon; clicks when the left button is released inside it after being pressed inside (a drag out cancels), or on Space or Enter while focused; `OnClick()` is a `Callback<Button*>`; `SetDefault` marks the default button of a dialog. **`ToggleButton`**, **`CheckBox`** (optional tri-state), **`RadioButton`** inside a **`RadioGroup`** (one selected, arrow keys move the selection and the focus, only the selected one is a Tab stop).
 - **`Callback<Args...>`** (`ui/callback.h`): function pointer plus user pointer, several listeners, `Connect` returns a token for `Disconnect`; a listener may disconnect another while it runs.
-- Every widget has a `Name()`, an optional `Description()` and a `Tooltip()` text (the tooltip popup is Day 198).
+- Every widget has a `Name()`, an optional `Description()` and a `Tooltip()` text (see "Tooltips" below).
 
 ```cpp
 ui::Button* ok = AddButton(root, "ok", "OK");           // however your code makes widgets
@@ -209,7 +231,7 @@ ok->OnClick().Connect([](void* user, ui::Button*) { static_cast<Dialog*>(user)->
 
 - **`ValueRange`** (`ui/widgets/range.h`): `min`, `max`, `step`, `integer` and a `RangePolicy`. `Snap` puts a value on the grid as `min + k * step` with `k` rounded once (never by adding the step repeatedly, so 1,000 steps of 0.1 land exactly on the grid points); a maximum that is not on the grid is not reached, the last grid point below it is. NaN becomes `min`. `RangePolicy::Clamp` pulls an out-of-range value to the nearest end, `Reject` keeps the old value.
 - **`Slider`**: horizontal (minimum left) or vertical (minimum at the bottom). A press on the track jumps to that point, or pages toward it with `SetTrackPages`; a press on the thumb keeps the grab offset; the pointer is captured while dragging. `OnChanged()` runs on every change, `OnCommit()` when a drag ends or a key changes the value. Keys: arrows, PageUp/PageDown (a tenth of the range), Home/End. The wheel is off until `SetWheel(true)`. `SetTicks(n)` draws marks.
-- **`SpinBox`**: a number with up/down buttons, the wheel and the keys; `SetDecimals` formats the text. Typing arrives with the text field (Day 197).
+- **`SpinBox`**: a number with up/down buttons, the wheel and the keys; `SetDecimals` formats the text. Typing goes through the text field it embeds (see "The text field").
 - **`ScrollBar`**: the thumb is `track * view / content`, not smaller than the minimum hit size, and flush with the end at the maximum value; a content smaller than the view fills the track and the value stays 0. A track press pages by one view, a thumb drag is captured, arrows (`SetArrows`) move by `SetLineStep`. `SetAutoHide` draws the bar only while it is hovered, dragged or just changed.
 - **`ScrollView`**: one content widget larger than the view, a vertical and a horizontal bar by policy (`Auto`, `Always`, `Never`), the offset clamped to the content. The wheel scrolls by a line step and is handled only when it moved, so an inner view at its end passes the wheel to the outer one. `ScrollTo(rect)` takes a rectangle in the coordinates the view's bounds are in and moves the least; a widget that takes the focus inside the content is scrolled into view. There is no scroll inertia.
 - **`ListBox`**: items come from a `ListModel` (`ItemCount`, `ItemText`). Single or multiple selection (Ctrl toggles, Shift selects a range from the anchor, Shift+arrows extend, Ctrl+A selects all), arrow, page, Home/End keys, Enter activates, and typing a letter jumps to the next item starting with it (more letters within a second extend the prefix, the same letter again cycles). Only the rows in view are laid out and drawn, from a ring of cached text runs, so 100,000 items cost what 100 do. `ModelChanged()` after the model changes clears the selection and clamps the scroll.
@@ -231,7 +253,7 @@ list->OnActivate().Connect([](void* user, ui::ListBox* l) { Open(static_cast<App
 - **Display:** the text scrolls sideways to keep the caret in view with a margin; the selection comes from `SelectionRects`; the caret blinks from the surface clock and restarts on every input; an unfocused field draws no caret; the placeholder shows while the field is empty and unfocused.
 - **Rules:** `SetMaxLength` counts clusters (a longer insertion is cut), `SetValidator` sees the whole proposed text and can refuse it, `SetReadOnly` keeps caret, selection and copy, `SetPassword` draws a bullet per cluster and refuses copy and cut. One path applies them to every edit.
 - **Undo:** a bounded history (`kMaxUndo`); typing is one step per run of letters or of spaces, a run of Backspace or of Delete is one step, moving the caret ends a run; a new edit drops the redo history.
-- **Clipboard:** `ui::Clipboard` (`ui/clipboard.h`) has `SetText`, `HasText`, `RequestPaste(function, user)` and `CancelPaste`. Paste is asynchronous in shape: the function runs before `RequestPaste` returns (the in-process `LocalClipboard`, which every surface starts with) or later (the OS clipboard of Day 200); the field cancels a pending request when it is destroyed. `Surface::SetClipboard` swaps the implementation. A pasted text is cut at its first line break.
+- **Clipboard:** `ui::Clipboard` (`ui/clipboard.h`) has `SetText`, `HasText`, `RequestPaste(function, user)` and `CancelPaste`. Paste is asynchronous in shape: the function runs before `RequestPaste` returns (the in-process `LocalClipboard`, which every surface starts with) or later (the OS clipboard); the field cancels a pending request when it is destroyed. `Surface::SetClipboard` swaps the implementation. A pasted text is cut at its first line break.
 - **`SpinBox`** embeds a field with a numeric validator: digits, a sign when the range has negatives, a point when it has decimals. Enter and losing the focus commit (a text that is not a number goes back to the value, a value the range refuses too), Escape reverts, the buttons and the wheel change the value and the text together.
 
 ```cpp
@@ -310,7 +332,7 @@ Limitations: a drag from a list box to a list box (other than itself) is not bui
 
 ### On Windows
 
-The toolkit is the same on Windows (Phase 15 Day 205): `ui::WindowAdapter` reads the Win32 window's event stream, cursor requests become the system cursors, the
+The toolkit is the same on Windows: `ui::WindowAdapter` reads the Win32 window's event stream, cursor requests become the system cursors, the
 clipboard is the Windows clipboard and the OS drag bridge is OLE (`docs/guide/windows.md`, "Input, the cursor, the clipboard and drag and drop"). Two differences
 a program may notice: a drag out of the window to another program is modal (the frame loop pauses; the window's modal-loop callback still runs, and the adapter hands the drag to the OS
 when it starts, through `os::DragSource::started`), and the clipboard's
@@ -362,13 +384,24 @@ A change is written with `Settings::Apply`, passing the apply function given to 
 
 **Run and test.** Options: `--backend`, `--frames`, `--screenshot`, `--script`, `--scale 1|1.25|2`, `--gpu`, `--rhi`, `--validation`; the script words (`click:`, `type:`, `key:`, `menu:`, `drag:`, `drop:`, `paste:`, `theme:`, `resize:`, `set:`, `reset`, `loss`, `shot:`, ...) are in `ui_script.h`, and drops and pastes are played by a fake OS peer on the surface. `rhi_tests "[ui_demo]"` holds six golden pictures (`tests/rhi/golden/ui_demo_*.ppm`: 1x, 2x, dark, a menu open, the About box, the in-world screen after a ray-cast click) and the check that the picture is byte-identical after a dynamic change, a pipeline rebuild, a device reset, a forced reset and a lost device. **View > Rendering settings...** is the live settings example: present mode, render scale and shader quality through `RenderSettingsHost`, which the program implements with the settings system and `Renderer::ApplySettings`, with the cost class of each beside its control.
 
+## Common mistakes
+
+- **Touching widgets from another thread.** Everything is main-thread only.
+- **Posting events to a surface and never calling `Frame`.** Events are queued and applied inside `Frame(dt, &list, &atlas)`; nothing changes until it runs.
+- **Mixing logical units and pixels.** Widgets, bounds and themes are in logical units; the canvas converts with the surface scale. Text is laid out in physical pixels (logical size times `Scale()`).
+- **Forgetting `DrawList::SortLayers()` before the renderer draws the list**, so a popup is drawn under the widgets it should cover.
+- **Letting a model or menu die before its view.** A `ListBox` keeps a pointer to its `ListModel` and a `MenuView` to its `Menu`; the caller keeps both alive.
+- **Hard-coding colours or sizes in a widget.** A widget asks the theme (a gate fails on a hex colour in `engine/ui/widgets/*.cpp`).
+- **Keeping a GPU handle across frames.** Hold the owner (`UiRenderer`, `ViewportTarget`, `UiSurfaceTarget`) and read the handle when recording (see "Reset and loss").
+- **Putting a `WindowFrame` inside a layout container.** The container moves it; put it at the root or in a layer.
+
 ## Reset and loss
 
 The toolkit holds no GPU object. What owns them is `renderer::UiRenderer` (buffers, pipeline, the white texture), `GlyphAtlasTexture` (one texture per atlas page), `ViewportTarget` and `UiSurfaceTarget` (the colour and depth textures), and each is a `Recreatable` that keeps its CPU-side source (the draw list, the atlas bitmaps, the size) and registers with `DeviceResources`. A device reset (any `ApplySettings` that costs `DeviceReset`, a GPU switch, a lost device) therefore rebuilds all of them, and the next frame draws the same picture: `ui_demo`'s tests compare the screenshot byte for byte after a dynamic change, a pipeline rebuild, a reset, a forced reset and a lost device. Rules for a program: hold the owner and read its handle when recording, never keep a handle across a frame (an in-world screen rebinds its texture to the material every frame for that reason); a surface that was painted into a texture is empty after a reset, and `NeedsPaint()` says so until the next `AddToGraph`. A window resize needs no reset: the adapter changes the surface size, the viewport target `Resize`s, and the UI pass takes the swapchain's size every frame.
 
 ## Cost
 
-`game/renderer_bench --section ui` measures the CPU side without a GPU (Release, AMD Ryzen 9 7950X3D, Linux, Liberation Sans; recorded Day 206; the numbers are not asserted by any test). Rows of ten buttons in a vertical box, the surface as tall as the tree so nothing is culled:
+`game/renderer_bench --section ui` measures the CPU side without a GPU (Release, AMD Ryzen 9 7950X3D, Linux, Liberation Sans; the numbers are not asserted by any test). Rows of ten buttons in a vertical box, the surface as tall as the tree so nothing is culled:
 
 | | 1,000 widgets | 5,000 widgets |
 |---|---|---|

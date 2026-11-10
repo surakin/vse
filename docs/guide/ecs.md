@@ -2,10 +2,28 @@
 
 Status: draft (Phase 17, Days 223-226: entities, components, storage, the world; the rest of the page arrives with the days that build it).
 
+**Audience:** every game and engine programmer. Read [Containers](foundation-containers.md) and [Memory](foundation-memory.md) first. This page covers only
+what is built so far (entities, components, storage and the world); queries, systems and command buffers are not documented here yet.
+
 The ECS (`engine/ecs`, namespace `ecs`) is the engine's data-oriented core: **entities** are ids, **components** are plain data stored in
 cache-friendly chunks, and **systems** are functions over all entities that have a given set of components. Design, measurements and the
 benchmark the phase must pass: `docs/superpowers/specs/2026-11-10-ecs-design.md`. The ECS includes no renderer, RHI or platform header;
 the bridge to the renderer is the `engine/scene` module (Day 233).
+
+In plain words: instead of a `Monster` object that owns its position, health and sprite, you have an id (the entity) and separate small records of data
+(the components) attached to it. Entities with the same set of components are stored together, one array per component, so a loop over "every entity
+with a Position" reads memory in order. The *archetype* is that group: all entities with exactly the same component set.
+
+## At a glance
+
+| I need | Use | Notes |
+|---|---|---|
+| a thing in the world | `world.Create(components...)` returns an `ecs::Entity` | a plain 64-bit value; copy and compare freely |
+| to ask whether an entity still exists | `world.Exists(e)` | a destroyed entity's id never matches a later one |
+| to give an entity a new component | `world.Add<T>(e, value)` | returns `ecs::Status`; moves the entity's row |
+| to read or change a component | `world.Get<T>(e)` | pointer valid until the next structural change; null for a tag |
+| to mark an entity without data | an empty struct (a tag) | takes no space but takes part in queries |
+| to check the world's consistency | `world.Validate()` | for tests and debug builds |
 
 ## Entities
 
@@ -168,3 +186,15 @@ alive no, destroy again: DeadEntity
   hash lookup; `Destroy` destroys the row and moves the last one in; `Get` is two index loads.
 - **Validation.** `Validate()` checks the invariants (locations point at their rows, no dead or duplicated entity in a row, counts add up, chunks
   full except the last) and is meant for tests and debug builds.
+
+## Common mistakes
+
+- **Keeping a pointer from `Get<T>` across an `Add`, `Remove`, `Create` or `Destroy`.** The row may have moved; fetch the pointer again.
+- **Ignoring the returned `ecs::Status`.** `DeadEntity`, `AlreadyHas` and `Refused` are normal answers, not crashes.
+- **Changing components while iterating.** A structural call during iteration fails an `ENGINE_ASSERT`; the command buffer that defers it is not built yet.
+- **Storing a `ComponentId` on disk.** Ids depend on the order of first use; store the type's name.
+- **Using an `Entity` as if it owned the entity.** It is only an id; destroying it is the world's job.
+
+## See also
+
+[Containers](foundation-containers.md), [Jobs](jobs.md) (the systems will run on them), `docs/superpowers/specs/2026-11-10-ecs-design.md`.

@@ -1,9 +1,26 @@
 # Settings
 
-Status: complete (Phase 11, Days 131-139: keys to the demos, the platform checklist and the configuration check).
+Status: written (Phase 11).
 
-The settings system is one registry that every module declares its settings in, and handles that read them cheaply. Where values come from (files, the environment, the command line) and how they
-are saved arrive later in this phase. Design and reasons: `docs/superpowers/specs/2026-11-07-settings-design.md`.
+**Audience:** every engine and game programmer who adds an option a user can change (a resolution, a volume, a log level), or who reads one.
+
+A **setting** is one named option with a type, a default and a description. Instead of each module reading the environment or parsing its own `--flag`, every
+module *declares* its settings once in a shared **registry**; the settings system then fills the values in from the places a user can set them (files, the
+environment, the command line) and hands you a cheap **handle** to read each one. Users get the same behavior everywhere: `--help` lists every option, `--set KEY=VALUE`
+changes any of them, and a changed value can be saved for the next run.
+
+Design and reasons: `docs/superpowers/specs/2026-11-07-settings-design.md`.
+
+## At a glance
+
+| Step | What you do | Where |
+|---|---|---|
+| declare | `registry.Register(settings::MakeInt("renderer.width", 1280, 0, 16384))`, then `Freeze()` | "Declaring a setting" |
+| read | build a `Setting<T>` handle once, call `Get()` (a relaxed atomic read, any thread) | "Reading a setting" |
+| change | `Settings::Set`, `SetText` or `Apply` | "Loading, changing and saving" |
+| react | `Settings::AddListener` with a key prefix | "Reacting to a change" |
+| keep | `Settings::Save`, or the `SaveOnExit` guard | "Loading, changing and saving" |
+| users set it | settings file, `ENGINE_SETTING_<KEY>`, `--set KEY=VALUE`, or the flag the setting declares | "Environment and command line" |
 
 ## Which API do I use?
 
@@ -84,7 +101,7 @@ std::printf("%lld %lld\n", static_cast<long long>(width_setting.Get()), static_c
 
 The settings system never touches a file directly: it reads and writes through a `settings::ConfigStore`, an abstract class like `io::File`. A store holds `key -> value` entries and knows nothing about
 the registry, so the same system runs over a text file, the Windows registry, `NSUserDefaults`, Android `SharedPreferences`, console save data, a server, or memory. The stores built in the foundation
-are `MemoryConfigStore` (everything the interface offers, in memory), `ReadOnlyConfigStore` (the defaults a game ships, as an array of text entries) and, on Day 133, the file-backed store.
+are `MemoryConfigStore` (everything the interface offers, in memory), `ReadOnlyConfigStore` (the defaults a game ships, as an array of text entries) and `FileConfigStore`, the file-backed store.
 
 The contract in a few lines:
 
@@ -374,7 +391,7 @@ Every program built this way understands the same options, and `--help` prints t
 
 The engine's own settings are `platform.window_backend`, `rhi.pipeline_cache` and `rhi.pipeline_cache_dir`
 (`settings::RegisterEngineSettings`), the 14 rendering settings (`renderer::RegisterSharedSettings`), and, for every log channel that exists, `log.<channel>.verbosity` and `log.<channel>.enabled`
-(`settings::RegisterLogSettings` and `AttachLogSettings`, which applies them to the channels and keeps them in step). The old `log::LoadConfig` file form (`Channel.verbosity=Info` lines) was retired in Phase 12 Day 143: nothing in the engine called it; use `--set log.<channel>.verbosity=Info`, a settings file or the environment (`ENGINE_SETTING_<KEY>`)..
+(`settings::RegisterLogSettings` and `AttachLogSettings`, which applies them to the channels and keeps them in step). The old `log::LoadConfig` file form (`Channel.verbosity=Info` lines) was retired in Phase 12: nothing in the engine called it; use `--set log.<channel>.verbosity=Info`, a settings file or the environment (`ENGINE_SETTING_<KEY>`).
 
 ## Keeping configuration in one place
 
@@ -382,3 +399,18 @@ Anything a user can configure is a setting: declared once, read through `Setting
 `"--flag"` string outside its allow list (`tools/config_access_check/allowlist.txt`, a reason on every line, a stale entry fails). The exceptions are variables read before any `Settings` can exist (the window host, the job
 scheduler, the crash handler, the Vulkan loader and validation switches), the death-test child protocol, and the launch-only options of the demos and benchmarks (frame counts, scenes, fault injection). A new exception needs a
 reason that says why the value cannot be a setting.
+
+## Common mistakes
+
+- **Reading the environment or parsing `--flag` yourself.** Declare a setting with its `env` and `flag` names instead; `config_access_check` fails the build otherwise.
+- **Registering a setting after the registry is frozen.** Declare everything during setup, then `Freeze()`.
+- **Making a handle of the wrong type** (a `Setting<bool>` for an integer setting). It aborts at creation.
+- **Reading a text setting every frame.** `TextSetting` copies under a lock and is for configuration code; use a typed `Setting<T>` on a hot path.
+- **Reading several settings through separate handles and expecting them to agree.** For a consistent set, use one `Settings::Snapshot()`.
+- **Keys with capital letters or more than three segments.** Check a name with `settings::Key::Parse`.
+- **Expecting `--set` values to be saved.** They are not written to the user's file unless `SaveOptions::include_command_line` is set.
+- **Forgetting to save.** Changes live in memory until `Save()`, `SaveIfChanged()` or a `SaveOnExit` guard writes them.
+
+## See also
+
+[Paths, files and directories](io.md) (the file layer the settings files use), [Containers](foundation-containers.md), [Jobs](jobs.md).

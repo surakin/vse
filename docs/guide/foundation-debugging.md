@@ -1,8 +1,39 @@
 # Foundation: Debugging
 
-> **Status:** complete for Phases 7 and 13 (Linux and Windows implemented; macOS is ready, see [porting](porting-debugging.md))  
-> **Audience:** engine programmers  
-> **Covers:** Phase 7
+Status: written (Phase 7 on Linux; Phase 13 added Windows; macOS is ready, see [porting](porting-debugging.md)).
+
+**Audience:** every engine programmer who has to find out why a program crashed, or who writes a test for code that is supposed to crash. Read
+[Logging and Assertions](foundation-logging-and-assert.md) first: assertions are where most crashes start.
+
+When a program dies you want three things: *what* went wrong, *where* in the code, and *whether you are looking at the right build*. The
+debugging facilities give you a **crash report** (text), a **minidump** (a small file holding every thread's registers and stack memory, which a
+debugger such as `lldb` or WinDbg can open) and, if you ask, a **core dump** (the whole process memory). **Symbolication** means turning the raw
+addresses in a trace into function names, files and lines; it needs the **debug information** of the exact build that crashed, and the **build
+id** (a hash stored in the binary) is how a dump is matched to that build. Nothing here ever sends a dump anywhere.
+
+## Something went wrong: where do I look?
+
+| What happened | Look at | Section |
+|---|---|---|
+| A program crashed and left a report on the screen | the first frame of the stack trace and the `reason:` line | "What a crash report contains" |
+| The report has no file and line numbers | build with RelWithDebInfo, or use a symbol store | "Release builds", "Keeping symbols for release builds" |
+| I have an `.envelope` file and need every thread | `scripts/crash-report.sh` (Linux), `scripts/crash-report.ps1` (Windows) | "Turning a dump into a trace" |
+| I need heap or object state | a core dump | "Core dumps on Linux" |
+| An assertion fired | the message, then the trace under it | "Assert, ensure or verify" |
+| No report and no dump at all | the handler was off (Release default), a stack overflow on an unregistered thread, or a Windows fast fail | "Installing the crash handler", "Stack overflow and other threads" |
+| I want to test that code crashes | a death test | "Testing code that crashes" |
+| I want a trace of my own, without a crash | [[debug::CaptureStackTrace]] | "Capturing and reading a stack trace" |
+
+## At a glance
+
+| I need | Use | Notes |
+|---|---|---|
+| to start a program with crash handling | [[debug::StartProgramDebugging]] first in `main` | handler on in Debug and RelWithDebInfo, off in Release |
+| to cause a crash on purpose and check the path | `--crash-test=segv\|abort\|assert\|ensure` | all demos and benches take it |
+| a stack trace of the current thread | [[debug::CaptureStackTrace]] + [[debug::FormatStackTrace]] | call [[debug::InitDebugFacilities]] once at start |
+| my subsystem's state in the report | [[debug::SetCrashStateText]], [[debug::CrashStateCounter]] | a provider only when the text must be computed |
+| a test for code that must crash | `ENGINE_DEATH_TEST_FN` + [[debug::RunInChild]] | the child is a fresh process, not a `fork` |
+| a compiler builtin or attribute | a macro from `debug/compiler.h` | never write `__attribute__` yourself |
 
 ## Debugging a crash: a checklist
 
@@ -315,7 +346,7 @@ Where the core goes is the system's choice (`/proc/sys/kernel/core_pattern`):
 | starts with `|` and names another program | wherever that program puts it | see that program |
 
 Changing `core_pattern` needs root (`sudo sysctl kernel.core_pattern=...`); the engine never does it. Two scripts (Linux shell
-scripts; Windows has its own tooling in Phase 13) take the work out of the common case:
+scripts; Windows has its own tooling, see "Reading a crash on Windows") take the work out of the common case:
 
 ```text
 scripts/find-core.sh  [--pid PID] [--wait SECONDS] [--output FILE] <program>
@@ -482,6 +513,17 @@ child and closes every descriptor it opened.
 A fault shows up as an exit status, and a stack overflow is an access violation as far as the status can tell, so a death
 test that wants [[debug::CrashReason::StackOverflow]] checks for [[debug::CrashReason::AccessViolation]].
 
+## Common mistakes
+
+- **Not calling [[debug::StartProgramDebugging]]** (or calling it late): the handler is not installed, and a crash before it leaves nothing.
+- **Expecting a Release program to crash with a handler.** The default is off in Release; pass `--crash-handler=on` or set `ENGINE_CRASH_HANDLER=1`.
+- **Reading a dump with the wrong build's symbols.** The trace names the wrong functions. Compare the build ids; the scripts refuse a mismatch (exit status 3).
+- **Installing your own signal handler before `InstallCrashHandler`.** It is replaced and never runs; install it after and call the one it returns.
+- **Forgetting [[debug::RegisterThreadForCrashHandling]]** on a thread that may recurse deeply: its stack overflow leaves no report.
+- **A state provider that allocates, locks or reads freed memory.** It runs inside a crashing process; keep it to atomics and copies.
+- **Attaching a dump or core to a public bug report.** Both hold process memory, possibly keys and passwords.
+- **Naming a signal or exception code in a death test.** Compare with [[debug::CrashReason]] so the test runs on every platform.
+
 ## Compiler-specific constructs (`compiler.h`)
 
 Code that needs a compiler builtin, an attribute or inline assembly uses a macro from `debug/compiler.h` instead, so the same source
@@ -502,4 +544,9 @@ builds with GCC and Clang on Linux and with MSVC and clang-cl on Windows. Do not
 Two of these were found by building with MSVC (Phase 13 Day 148), and both fail silently: MSVC ignores `[[msvc::noinline]]` placed
 between a lambda's parameters and its `->` and inlines the lambda anyway, and both MSVC and clang-cl ignore the standard
 `[[no_unique_address]]`, which made a `UniquePtr` twice the size of a pointer.
+
+## See also
+
+[Logging and Assertions](foundation-logging-and-assert.md), [Porting the debugging facilities](porting-debugging.md), [Windows](windows.md),
+[Building and testing](building-and-testing.md) (sanitizers, death tests in a test target).
 

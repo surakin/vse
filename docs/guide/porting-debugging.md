@@ -1,9 +1,23 @@
 # Porting the debugging facilities to another platform
 
-The debugging facilities (stack traces, the assert family, the crash report, crash handling, core dumps, the scripts) are
-written once and run on every platform; a port supplies a handful of thin functions. This page is for the person doing the
-Windows port (Phase 13) or the macOS port (Phase 23). Linux is the reference. Mobile and consoles are designed in (an
-`Unsupported` answer, skipped death tests) and have no work here.
+Status: written (Linux is the reference; Windows was ported in Phase 13; macOS is designed in and waits for Phase 23).
+
+**Audience:** the engineer bringing the debugging facilities to a new platform (today: macOS). Read [Foundation: Debugging](foundation-debugging.md) first;
+it explains what each facility does for the person using it. Ordinary engine programmers do not need this page.
+
+The debugging facilities (stack traces, the assert family, the crash report, crash handling, core dumps, the scripts) are written once and run on every
+platform; a port supplies a handful of thin functions, called the **backend**, and a checklist file (`BACKEND.md`) lists them. Mobile and consoles are
+designed in (an `Unsupported` answer, skipped death tests) and have no work here. A **minidump** is the small crash file the crash library writes
+(registers, stack memory and module list of every thread); an **envelope** is the library's wrapper around it.
+
+## At a glance
+
+| Platform | State | Checklist |
+|---|---|---|
+| Linux | reference implementation | `engine/foundation/os/linux/debug/` |
+| Windows | done (Phase 13 Days 154-156) | `engine/foundation/os/windows/debug/BACKEND.md` |
+| macOS | checklist written, not built (Phase 23) | `engine/foundation/os/macos/debug/BACKEND.md` |
+| iOS, consoles | designed in: `Unsupported`, death tests skip | none |
 
 Read, in order: this page; the checklist for your platform (`engine/foundation/os/windows/debug/BACKEND.md` or
 `engine/foundation/os/macos/debug/BACKEND.md`); the conformance list (`tests/debug/BACKEND-CONFORMANCE.md`); and the audit in
@@ -90,6 +104,13 @@ Symbols         DWARF in a dSYM next to the binary (libbacktrace needs it for fi
 The traps: the hardened runtime and notarization restrict what a handler may do; `dsymutil` and `strip` replace `objcopy`; the
 symbol store holds dSYM bundles named by UUID.
 
+## Common mistakes
+
+- **Adding a platform function without its `Backend:` label** or without an entry in both `BACKEND.md` files: `debug_backend_lists` fails.
+- **Calling DbgHelp or allocating inside the crash hook** (Windows), or taking a lock a crashed thread may hold: the report then hangs or double-faults.
+- **Deleting a test that cannot hold on your platform.** It skips with a printed reason instead.
+- **Putting a compilable fence in this page** that cannot compile on Linux: `ctest -L docs` compiles every tagged block.
+
 ## Where a test expectation differs by platform
 
 See the table in `tests/debug/BACKEND-CONFORMANCE.md`: the `CrashReason` for a stack overflow on macOS is `AccessViolation`
@@ -100,3 +121,7 @@ that cannot hold on a platform skips with a printed reason; it is never deleted.
 
 Code blocks above that cannot compile on Linux are plain fences on purpose. Keep it that way, or `ctest -L docs` will try to
 compile them.
+
+## See also
+
+[Foundation: Debugging](foundation-debugging.md), [Windows](windows.md), `tests/debug/BACKEND-CONFORMANCE.md`.

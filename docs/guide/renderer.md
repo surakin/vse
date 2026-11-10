@@ -1,8 +1,42 @@
 # The Renderer
 
-> **Status:** draft  
-> **Audience:** engine and game programmers  
-> **Covers:** Phase 5 and Phase 8 (resetting the device at run time)
+**Audience:** engine and game programmers who draw things. Read [The RHI](rhi.md) first for the device, buffers and command lists this page builds on.
+**Covers:** the renderer core (Phase 5), resetting the device at run time (Phase 8) and the Direct3D 12 notes (Phase 13).
+
+The renderer turns a description of a world (objects with a mesh, a material and a position, plus lights, seen by a camera) into a picture. You do not call
+Vulkan or Direct3D: you fill a scene, give the renderer a callback that says which passes to run, and it does the rest each frame.
+
+A few words used throughout:
+
+- A **pass** is one step of drawing a frame (fill the geometry targets, light them, map the result to the screen).
+- A **render graph** is the list of passes for one frame, each saying which images it reads and writes. The renderer sorts them, drops the ones nobody needs and
+  inserts the GPU synchronization (barriers) for you.
+- A **G-buffer** is a set of images in which the geometry pass stores each pixel's material data (colour, normal, roughness, depth) so a later pass can light it.
+  Drawing this way is called **deferred** rendering.
+- **HDR** (high dynamic range) light may be brighter than 1.0. The **tonemap** pass squeezes it into the 0-1 range a screen can show.
+- A **transient** resource is an image that exists for one frame only; the graph supplies it from a pool.
+
+## At a glance
+
+| I need | Use | Section |
+|---|---|---|
+| to draw a frame | `Renderer::RenderFrame` with a build callback | "Frames, parallel recording and the swapchain" |
+| a mesh on the GPU | `MeshData` (CPU) and `GpuMesh` (GPU) | "Meshes, cameras and the scene" |
+| objects and lights to draw | `RenderScene` | "Meshes, cameras and the scene" |
+| a look for a surface | `MaterialSystem`: a template, then materials | "Materials" |
+| the standard lit pipeline | `GBufferPass`, `LightingPass`, `TonemapPass` | "The G-buffer geometry pass", "Deferred lighting and the tonemap" |
+| my own pass | `RenderGraph::AddPass` | "The render graph" |
+| to change a graphics setting while running | `Renderer::ApplySettings` | "Changing settings at run time" |
+| my own GPU-owning type to survive a device reset | `Recreatable` plus a registration | "Making my type survive a reset" |
+
+## Reading order
+
+- **Start here:** this introduction, "Overview", "Meshes, cameras and the scene", "Materials", "Frames, parallel recording and the swapchain", then
+  "Rules & contracts", "Common mistakes" and the tutorial [From a Scene to a Lit Frame](../tutorials/hello-renderer.md).
+- **When you write a pass:** "The render graph" and "The G-buffer geometry pass".
+- **When you own GPU objects or change settings:** the reset checklist below, "Surviving a reset", "Changing settings at run time", "Device loss and recovery".
+- **Reference and internals** (skip on a first read): "Deferred lighting and the tonemap" (the maths), "Point lights", "Vertex colors and primitive topology",
+  "Barriers, imports and transient resources", "Failure behavior", "Performance notes", "Platform notes".
 
 ## Making my type survive a reset (checklist)
 
@@ -57,13 +91,13 @@ Full reference: [The renderer](../reference/renderer.md).
 The renderer turns a [[renderer::RenderScene]] (objects with a mesh, a material and a transform, plus lights) and a
 [[renderer::Camera]] into a picture on the RHI. Each frame, [[renderer::Renderer]] begins the device frame, calls your frame
 callback to declare passes on a [[renderer::RenderGraph]], compiles the graph (which orders the passes, culls the unused ones and
-inserts the barriers), records every pass, submits once and presents. The shipped pipeline is **deferred**: a geometry pass fills a
+inserts the barriers), records every pass, submits once and presents. The shipped pipeline is **deferred** (geometry first, lighting afterwards): a geometry pass fills a
 G-buffer (albedo, normal, material parameters, depth), a lighting pass shades it from the lights (a full-screen pass for ambient and
 directional light, one scissored sphere per point light), and a tonemap pass maps the HDR result to the target. Materials come from
 Slang shaders described by reflection, so a material is a template plus parameters and textures, and its pipelines are built on
 demand and cached. Nothing here names Vulkan; a D3D12 or Metal backend plugs in under the RHI.
 
-Shader reflection (Phase 5 Day 71) is described in [Shaders](rhi-shaders.md#reflection-shaders-describe-themselves), and shader variants (Day 72) in [Shaders](rhi-shaders.md#permutations-one-source-several-modules).
+Shader reflection (what a compiled shader says about its own inputs) is described in [Shaders](rhi-shaders.md#reflection-shaders-describe-themselves), and shader variants in [Shaders](rhi-shaders.md#permutations-one-source-several-modules).
 
 ### Meshes, cameras and the scene
 
@@ -446,7 +480,7 @@ A pipeline asks for restart only on a strip topology; `rhi::PipelineDesc` reject
 Per-vertex colors are a fifth attribute in a separate layout, `ColorVertexLayout` (location 4, `UNorm8x4`, 52 bytes per
 vertex), so a mesh without colors pays nothing. `MakeColoredMesh` adds a color array to a standard-layout mesh and
 `MakeUniformColoredMesh` gives every vertex one color; the colors are 8-bit sRGB-encoded values and the shader
-converts them to linear (Day 79). The color is interleaved with the other attributes rather than in a second stream, which
+converts them to linear. The color is interleaved with the other attributes rather than in a second stream, which
 keeps one vertex buffer per mesh.
 
 `MakePlaneStripMesh` builds the same grid as `MakePlaneMesh` as one strip with a restart between rows, which needs about
@@ -584,7 +618,7 @@ phase can change it. For a unit normal `N`, view vector `V` and light vector `L`
 - the ambient light adds `albedo (1 - metallic) * ambient * occlusion`, and emission adds `albedo * emissive_scale`.
 
 The diffuse BRDF is the albedo itself: the `1/pi` of a Lambertian surface is folded into the intensity, so a white surface
-facing a light of intensity 1 comes out at 1 (the same convention as the Phase 4 forward shader), and the specular lobe carries
+facing a light of intensity 1 comes out at 1 (the same convention as the older forward shader), and the specular lobe carries
 a factor `pi` to match.
 
 `TonemapPass` reads the accumulation target and writes a display target: `x = hdr * exposure`, then Narkowicz's ACES fit
@@ -631,7 +665,7 @@ It is 1 at the light, behaves like an inverse square over most of its range (the
 reach exactly 0 at `d = R` with zero slope, staying 0 beyond. So the sphere of radius `R` is a true bound: a pixel outside it
 receives exactly nothing, which is what lets the renderer light only the pixels the sphere covers.
 
-Per frame, `WriteLights` leaves out every point light whose sphere is entirely outside the view frustum (the Day 73 sphere test,
+Per frame, `WriteLights` leaves out every point light whose sphere is entirely outside the view frustum (the same sphere test as `Frustum`,
 `LightSummary::point_culled`) and sorts the rest nearest-first by squared distance from the camera, ties broken by the light's
 slot, so the order is the same on every run. The lights go into one storage buffer, directional lights first. There is no
 per-light bind group or pipeline: the volume pass binds one pipeline and the G-buffer group once and draws one light volume per
@@ -681,14 +715,10 @@ d = 12.0  attenuation 0.00000
 ### Surviving a reset
 
 The device can be destroyed and created again while the program runs (a settings change, a lost device; see the RHI guide, "Lifecycle and
-reset"). Everything in the renderer that owns device objects must therefore be able to make them again. The rule for an owner:
-
-1. **Keep the CPU-side source** (pixels, mesh data, descriptors, or a loader that produces them), never only the GPU object.
-2. **Register** with the [[renderer::DeviceResources]] registry at your tier (the `renderer::tiers` constants), with a [[renderer::ScopedRegistration]]
-   member, so a destroyed owner is never called and a moved one follows its move.
-3. **Implement** [[renderer::Recreatable]]: `Release` destroys your device objects and keeps the source; `Recreate` makes them again.
-4. **Never keep a handle past a frame** for anyone else: handles change at every reset. Hold the owner (a `GpuMesh*`, a `GpuTexture*`)
-   and read `Handle()` when you record.
+reset"). Everything in the renderer that owns device objects must therefore be able to make them again. The four rules are the checklist at the top
+of this page; the types involved are [[renderer::DeviceResources]] (the registry, with the tier constants in `renderer::tiers`),
+[[renderer::ScopedRegistration]] (a member that registers the owner, so a destroyed owner is never called and a moved one follows its move) and
+[[renderer::Recreatable]] (`Release` and `Recreate`).
 
 The registry is the device host's observer: `OnDeviceReleasing` releases owners from the highest tier down, `OnDeviceCreated` recreates
 them from the lowest up (0 textures and samplers, 1 meshes, 2 layouts and shaders, 3 materials and pipelines, 4 passes and per-frame
@@ -853,7 +883,7 @@ A lost device is not terminal any more. When a frame ends `DeviceLost` and the r
   returns null. `max_attempts = 0` turns recovery off.
 
 A **lost surface** on a healthy device (the swapchain returns `Lost` but `DeviceLost` is false) is repaired first with
-`DeviceHost::RecreateSurface`, which keeps the device. Each attempt logs on `LogRenderer`, calls the reset callbacks with the stage name
+`DeviceHost::RecreateSurface`, which keeps the device. Each attempt logs on `LogRender`, calls the reset callbacks with the stage name
 `"recovery"` (so the application can show a message and rebind its own pointers from `GetDevice` when the end callback reports
 success), counts in `RendererStats::recoveries` and `recovery_failures`, and shows `recovering (attempt N)` in the crash report. A
 settings change asked for during the lost frame is applied at the first frame boundary after the recovery, not lost.
@@ -864,7 +894,7 @@ tell the user and offer to restart the program (a driver that cannot create a de
 
 ### The renderer demo
 
-`renderer_demo` goes through `Renderer::ApplySettings`: with a window open, F1-F10 change settings live (vsync, validation, GPU, fullscreen, swapchain format, shader quality, a forced reset, a simulated device loss), `--gpu` and `--list-gpus` choose the GPU, and `--script` drives the same paths without a keyboard (`game/renderer_demo/README.md` lists the keys and the script words). The demos have no settings file or generic `--set` option: the engine has no settings system yet (`KNOWN-ISSUES.md`).
+`renderer_demo` goes through `Renderer::ApplySettings`: with a window open, F1-F10 change settings live (vsync, validation, GPU, fullscreen, swapchain format, shader quality, a forced reset, a simulated device loss), `--gpu` and `--list-gpus` choose the GPU, and `--script` drives the same paths without a keyboard (`game/renderer_demo/README.md` lists the keys and the script words). The demo is built on the settings system, so it also accepts `--set KEY=VALUE`, `--settings FILE` and `--list-settings` (see its README and the [settings guide](settings.md)).
 
 `game/renderer_demo` puts the pieces together: a scene of 540 objects in eight materials, 300 point lights, a sun and ambient
 light, drawn by `Renderer::RenderFrame` through the G-buffer, lighting (with light volumes) and tonemap passes, in a window or
@@ -964,7 +994,7 @@ Metal (`ctest -R shaders_portability`). The points that shape code are in the [r
 review](../superpowers/specs/2026-11-04-renderer-portability-review.md); a deferred G-buffer is a poor fit for tile-based mobile GPUs
 unless the passes are merged (Phase 24).
 
-**On Direct3D 12** (Phase 13 Day 171) the renderer runs unchanged; what differs is below it:
+**On Direct3D 12** (Phase 13) the renderer runs unchanged; what differs is below it:
 
 - **Projection.** The projection functions keep Vulkan's clip space; the D3D12 build of each shader negates clip-space Y
   (`ENGINE_CLIP`, `shaders/target_common.slang`), so the same matrices, viewports and winding work on both.

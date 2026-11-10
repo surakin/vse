@@ -1,9 +1,27 @@
 # Foundation: Standard Types
 
-Status: draft (Phase 10, Day 126: the types; the container rule arrives with the gate on Day 129).
+Status: written (Phases 10 and 16).
+
+**Audience:** every engine programmer; read this page first. It is the vocabulary the other foundation pages assume.
+
+The engine does not use the C++ standard library. Instead it has its own names for the same things: `u32` instead of `uint32_t`, `Vector` instead of
+`std::vector`, `Move` instead of `std::move`, and so on. They behave the way you already know; the point is that each one has a single home in the engine
+(so a new platform or a faster version changes one place) and that the engine controls its allocation and error behavior. This page lists the names, shows
+which header each lives in, and explains the byte and 128-bit types.
 
 The engine has one vocabulary of types, declared in `engine/foundation/types.h`, `int128.h` and `containers/span.h`. Code the project owns uses these names, never the raw standard ones (`unsigned char`, `uint8_t`, `long long`).
 Design and reasons: `docs/superpowers/specs/2026-11-07-types-and-containers-design.md`.
+
+## At a glance
+
+| Question | Answer |
+|---|---|
+| Which integer types? | `i8` `i16` `i32` `i64`, `u8` `u16` `u32` `u64` (and `i128`, `u128`); `usize` for sizes and indexes, `isize` for pointer differences |
+| Which float types? | `f32` and `f64` |
+| What is a byte? | `byte`, the same type as `u8` |
+| How do I look at a run of items I do not own? | `Span<T>` (a pointer and a length); `ByteSpan` for bytes |
+| Can I write `std::something`? | No. Find the engine name in "Which wrapper do I use?" below; if it is missing, add the wrapper first |
+| How do I ask for the platform or compiler? | the `ENGINE_PLATFORM_*` and `ENGINE_COMPILER_*` macros in `build_defs.h`, with `#if` |
 
 ## Which type do I use?
 
@@ -20,7 +38,7 @@ Design and reasons: `docs/superpowers/specs/2026-11-07-types-and-containers-desi
 
 ## Which wrapper do I use? (the standard library is not used directly)
 
-Code in `engine/`, `game/`, `tools/` and `tests/` never includes a standard header or spells `std::`; every facility has an engine name (gate: `std_usage_check`, section "Always use the wrapped types, never `std`" in `CLAUDE.md`). If the name you need is missing, add it to the module of its category first.
+Code in `engine/`, `game/`, `tools/` and `tests/` never includes a standard header or spells `std::`; every facility has an engine name (the `std_usage_check` test fails the build otherwise; section "Always use the wrapped types, never `std`" in `CLAUDE.md`). If the name you need is missing, add it to the module of its category first.
 
 | The standard spelling | Use | Header (under `engine/foundation/`) |
 |---|---|---|
@@ -48,7 +66,7 @@ Code in `engine/`, `game/`, `tools/` and `tests/` never includes a standard head
 | `std::string`, `string_view`, `vector`, `array`, `map`, `unique_ptr`, `shared_ptr`, `sort`, `min`, `max` | `String`, `StringView`, `Vector`, `Array`, `HashMap`, `UniquePtr`, `SharedPtr`, `Sort`, `Min`, `Max` | the Phase 10 types below |
 | files and directories | `io::File`, `io::Path`, `io::Directory` | `io/` |
 
-Details per category: `foundation-sync.md`, `foundation-cstr.md`, `foundation-math.md`.
+Details per category: [Synchronization](foundation-sync.md), [C strings, memory, formatting and the console](foundation-cstr.md), [Math](foundation-math.md), [Containers](foundation-containers.md), [Strings](foundation-strings.md).
 
 ## Bytes and spans
 
@@ -130,3 +148,17 @@ exempt from the gate: `tests/windows/discovery/` (toolchain probes built outside
 
 Phase 16 wraps the standard library's language-support headers in `engine/foundation/lang/` (layer 0): `utility.h` (`Move`, `Forward`, `Exchange`, `Swap`, `AsConst`, `Declval`), `traits.h` (`IsSame<A, B>`, `IsConvertible`, `IsIntegral`, `EnableIf`, `Conditional`, `RemoveReference`, `Decay`, ...: variable templates for the `_v` forms, aliases for the `_t` forms), `limits.h` (`Limits<T>::Max()`, `Min()`, `Lowest()`, `Epsilon()`, `Infinity()`, `QuietNaN()`), `ordering.h` (`Ordering`, the result of `operator<=>`), `initializer_list.h` (`InitializerList<T>`) and `new.h` (`AlignVal`, `NoThrowTag`, `kNoThrow`, `ConstructAt`, `Launder`, `AlignedNew`). Where the compiler requires the standard type by name (`std::initializer_list`, `std::strong_ordering`, `std::align_val_t`), the engine name is an alias of it.
 
+## Common mistakes
+
+- **Writing `std::` anything, or including a standard header.** Use the engine name from the table above; `std_usage_check` fails the build.
+- **Spelling `unsigned char`, `uint8_t` or `long long`.** Use `byte`, `u8`, `i64`.
+- **Using `#ifdef ENGINE_PLATFORM_WINDOWS`.** Every such macro is always defined as `1` or `0`; write `#if`.
+- **Testing `_WIN32`, `__linux__` or `__clang__` directly.** Ask `build_defs.h`.
+- **Writing `5` where a `u128` is wanted.** Write `5u`; a `u128` converts implicitly only from unsigned integers.
+- **Keeping a `Span` after the `Vector` it views grows or is destroyed.** A span owns nothing.
+- **Assuming `Vector`'s `operator[]` checks its index.** It does not; `Span`'s does.
+
+## See also
+
+[Containers](foundation-containers.md), [Strings](foundation-strings.md), [Memory](foundation-memory.md), [Synchronization](foundation-sync.md),
+[C strings and the console](foundation-cstr.md).

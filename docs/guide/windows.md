@@ -1,6 +1,24 @@
 # Windows
 
-How to build, test and debug the engine on Windows x64 (Phase 13). Everything in the other guides applies; this page is what is different.
+Status: written (Phase 13; input, clipboard and drag and drop from Phase 15 Day 205).
+
+**Audience:** anyone who builds, runs or debugs the engine on Windows x64. Read [Getting started](getting-started.md) and
+[Building and testing](building-and-testing.md) first: everything in the other guides applies, and this page is only what is different on Windows.
+
+Windows runs the same code as Linux with two graphics backends (Vulkan and Direct3D 12). The build finds the compilers by itself, so the most common
+mistake is starting from the wrong shell.
+
+## At a glance
+
+| I want to | Do this |
+|---|---|
+| build | `cmake --preset windows-msvc` then `cmake --build --preset windows-msvc`, from plain PowerShell or Git Bash |
+| check the second compiler | the `windows-clang-cl` preset |
+| run tests | `scripts/test-phase.sh --affected` from Git Bash (plain and asan; no ThreadSanitizer) |
+| pick the graphics API | `--rhi vulkan\|dx12` at start (not changeable while running) |
+| turn on GPU validation | `--validation` (needs "Graphics Tools" for DX12) |
+| read a crash | `scripts/crash-report.ps1 <envelope> <program> <symbol store>` |
+| find user files | `%APPDATA%\<app>` (settings), `%LOCALAPPDATA%\<app>` (cache, state, crashes) |
 
 ## Source of truth
 
@@ -123,6 +141,20 @@ out of the window is modal (`BeginDrag` returns when it ends), so keep a modal-l
 
 Paths are UTF-16 at the system boundary and UTF-8 everywhere in the engine; the file layer adds the `\\?\` prefix past 248 characters, so long
 paths work without the system's long-path setting (`docs/guide/io.md`).
+
+## Common mistakes
+
+- **Configuring from a Developer Command Prompt** or after `vcvars*.bat`: the configure stops if that prompt names a different MSVC. Use plain PowerShell or Git Bash.
+- **Reading a crash without the symbol store of that build.** File the PDB with `store-symbols.ps1` for every build you ship; `crash-report.ps1` refuses a different build.
+- **Expecting a run-time switch of the graphics API.** `--rhi` is read at start; only `--gpu` can change while running.
+- **Running GPU tests by hand without `ENGINE_RHI_CACHE_DIR`**: the pipeline cache lands in your profile.
+- **Expecting a report from a fast fail** (`__fastfail`, `/GS` checks): exit code `0xC0000409`, no report, no dump.
+- **Expecting ThreadSanitizer.** MSVC has none; tsan runs on Linux.
+
+## See also
+
+[Foundation: Debugging](foundation-debugging.md), [Porting the debugging facilities](porting-debugging.md), [Settings](settings.md), [io](io.md),
+[RHI](rhi.md), [Platform: windowing and input](platform-windowing-and-input.md).
 
 ## Known gaps
 

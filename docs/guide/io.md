@@ -1,9 +1,26 @@
 # Paths, files and directories
 
-Status: draft (Phase 9 complete, Days 115-124).
+Status: written (Phase 9).
+
+**Audience:** every engine, game and tool programmer. All access to files and directories goes through this layer; engine code never calls `fopen`,
+`open`, `stat` or the like (the `file_access_check` gate fails the build if it does).
+
+The layer has three parts. A **path** (`io::Path`) is just text with rules; it never touches the disk. A **file** (`io::File`) is an interface for reading
+and writing bytes at offsets, so the same calls work for a local file today and a pak entry or a network file later. A **directory** (`io::Directory`) lists
+what is inside a folder. Nothing throws: every operation returns an `io::Status` that you check.
 
 The file layer lives in `engine/foundation/io/` (namespace `engine_placeholder::io`). Design and reasons:
 `docs/superpowers/specs/2026-11-06-file-layer-design.md`.
+
+## At a glance
+
+| Part | Type | Remember |
+|---|---|---|
+| a path | `io::Path` | lexical only (no disk access); `/` is the separator; build with `/` |
+| a whole-file read or write | `io::ReadFile`, `io::WriteFile`, `io::WriteFileAtomic` | the atomic one for config and caches |
+| part of a file, or several threads | `io::File` | reads and writes take an offset; short reads are normal |
+| a folder's contents | `io::Directory`, `io::ListDirectory`, `io::WalkDirectory` | the raw order is the file system's, not sorted |
+| a result | `io::Status` | branch on `s.Is(io::Error::NotFound)`; log with `io::ErrorName` |
 
 ## Which API do I use?
 
@@ -21,7 +38,8 @@ The file layer lives in `engine/foundation/io/` (namespace `engine_placeholder::
 | read from a pak or a server | an `io::File` backend registered with `RegisterFileScheme`, opened with `File::OpenLocation` |
 | write a crash report from a fault handler, or print to the console | the raw descriptor primitives in `os.h` (`os::Write`, `os::CreateFileForWriting`): the documented exceptions |
 
-The rule, and what the `file_access_check` gate allows, is in `CLAUDE.md`. Everything below is the detail.
+The rule, and what the `file_access_check` gate allows, is in `CLAUDE.md`. Everything below is the detail; the section "Common mistakes" near the end lists the
+traps that catch beginners.
 
 ## Paths
 
@@ -34,7 +52,7 @@ operation is a function of the text, so it is cheap, thread-compatible and testa
   roots such as `//server/share`). The default is the style of the platform. A path built with the other style is a
   different type of value: operations between mixed styles abort, and ordering puts the styles apart.
 - **Lexical only.** Symbolic links are not considered by `Normalize`, `RelativeTo` or `IsInside`; the file-system helpers
-  (Day 117) resolve those.
+  (`Canonical`, `ReadLink`, below) resolve those.
 - **Limits.** A path holds at most `kMaxPathBytes` (4096). Untrusted text goes through `Path::Parse` and `TryJoin`, which
   report failure; the constructor and `Join` are for literals and abort.
 - **No heap?** `PathBuilder<N>` holds a path in `N` bytes of inline storage and reports failure when it does not fit.
@@ -370,3 +388,21 @@ io::RemoveAll(scratch);
 src/main.cpp
 src/util/strings.cpp
 ```
+
+## Common mistakes
+
+- **Ignoring the returned `io::Status`.** A failed open or write is a normal event (missing file, full disk, permissions); check it and decide what to do.
+- **Assuming one `Read` returns everything.** A short read is normal. Use `ReadExact`, `ReadAll` or `ReadFile` when you need all the bytes.
+- **Writing a config or cache with a plain `WriteFile`.** A crash mid-write leaves half a file; use `WriteFileAtomic`.
+- **Printing `Path::View()` with `%s`.** The view is not NUL-terminated; print with its length, or use `ToNative` for a terminated copy.
+- **Keeping a `View()` of a temporary `Path`.** Keep the `Path` alive while its view is used.
+- **Relying on directory order.** `Directory` returns entries in the file system's order; use `ListDirectory(path, true, ...)` or `WalkOptions::sorted` when the order matters.
+- **Freeing a request or buffer before its completion has run** (asynchronous I/O). Both must stay valid and unmoved until the completion is called.
+- **Pasting path strings with backslashes or building paths by concatenating text.** Use `Path` and `/`; user-supplied text goes through `Path::Parse` and `TryJoin`.
+- **Calling `fopen`, `open` or `std::ifstream` directly.** The gate fails the build.
+- **Expecting special-folder functions to create the folder.** They only return a path; create it yourself.
+
+## See also
+
+[Settings](settings.md) (built on this layer), [Jobs](jobs.md) (asynchronous reads in coroutines), [Containers](foundation-containers.md),
+[Strings](foundation-strings.md).
