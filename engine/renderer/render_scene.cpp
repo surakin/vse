@@ -1,9 +1,13 @@
 #include "renderer/render_scene.h"
 
+#include "algorithm.h"
+#include "containers/span.h"
 #include "lang/scalar.h"
 #include "lang/new.h"
 
 #include "log/assert.h"
+#include "spatial/query.h"
+#include "spatial/spatial_set.h"
 
 namespace engine_placeholder::renderer {
 
@@ -30,7 +34,53 @@ RenderScene::RenderScene(const RenderSceneDesc& desc) {
     lights_.Resize(light_capacity_);
 }
 
-RenderScene::~RenderScene() = default;
+struct RenderScene::CullIndex {
+    spatial::SpatialSet set;
+    Vector<spatial::SetHandle> handle; // per object slot
+};
+
+RenderScene::~RenderScene() = default; // after CullIndex is complete: the UniquePtr deleter needs the full type
+
+namespace {
+bool UsableBox(const Aabb& box) {
+    return IsFinite(box.min.x) && IsFinite(box.min.y) && IsFinite(box.min.z) && IsFinite(box.max.x) && IsFinite(box.max.y) && IsFinite(box.max.z) && !box.IsEmpty();
+}
+} // namespace
+
+void RenderScene::IndexObject(u32 slot) {
+    if (cull_index_ == nullptr) {
+        cull_index_ = MakeUnique<CullIndex>();
+    }
+    CullIndex& index = *cull_index_;
+    if (index.handle.Size() <= slot) {
+        const usize old = index.handle.Size();
+        index.handle.Resize(slot + 1);
+        for (usize i = old; i < index.handle.Size(); ++i) {
+            index.handle[i] = spatial::kInvalidSetHandle;
+        }
+    }
+    const Aabb& box = objects_[slot].object.bounds.box;
+    index.handle[slot] = UsableBox(box) ? index.set.AddDynamic(box, slot, 0) : spatial::kInvalidSetHandle;
+    if (index.handle[slot] == spatial::kInvalidSetHandle) { // an unusable box, or a full set: the object is tested one by one
+        ++unindexed_;
+    }
+}
+
+void RenderScene::UnindexObject(u32 slot) {
+    CullIndex& index = *cull_index_;
+    if (index.handle[slot] != spatial::kInvalidSetHandle) {
+        index.set.Remove(index.handle[slot]);
+        index.handle[slot] = spatial::kInvalidSetHandle;
+    } else {
+        --unindexed_;
+    }
+}
+
+void RenderScene::OptimizeCulling(u32 budget) {
+    if (cull_mode_ == CullMode::Bvh && cull_index_ != nullptr) {
+        cull_index_->set.Optimize(budget);
+    }
+}
 
 ObjectId RenderScene::AddObject(const RenderObjectDesc& desc) {
     ENGINE_ASSERT(desc.mesh != nullptr && desc.mesh->Valid(), "AddObject: the mesh is null or empty");
@@ -51,11 +101,13 @@ ObjectId RenderScene::AddObject(const RenderObjectDesc& desc) {
     s.object.flags = desc.flags;
     s.object.bounds = TransformBounds(desc.mesh->GetBounds(), desc.transform);
     ++object_count_;
+    IndexObject(slot);
     return ObjectId{slot, s.generation};
 }
 
 void RenderScene::RemoveObject(ObjectId id) {
     ENGINE_ASSERT(FindObject(id) != nullptr, "RemoveObject: the id is invalid or stale");
+    UnindexObject(id.index);
     ObjectSlot& s = objects_[id.index];
     s.alive = false;
     s.object = RenderObject();
@@ -70,6 +122,13 @@ void RenderScene::SetTransform(ObjectId id, const Mat4& transform) {
     RenderObject& o = objects_[id.index].object;
     o.transform = transform;
     o.bounds = TransformBounds(o.mesh->GetBounds(), transform);
+    CullIndex& index = *cull_index_;
+    if (index.handle[id.index] != spatial::kInvalidSetHandle && UsableBox(o.bounds.box)) {
+        index.set.Move(index.handle[id.index], o.bounds.box);
+    } else {
+        UnindexObject(id.index);
+        IndexObject(id.index);
+    }
 }
 
 void RenderScene::SetFlags(ObjectId id, u32 flags) {
@@ -150,6 +209,39 @@ const Light& RenderScene::LightAt(u32 slot) const {
 
 u32 RenderScene::Cull(const Frustum& frustum, u32* out_slots, u32 capacity) const {
     ENGINE_ASSERT(out_slots != nullptr && capacity >= slots_used_, "Cull: the output array is null or smaller than the slot count");
+    if (cull_mode_ == CullMode::Bvh && cull_index_ != nullptr) {
+        return CullBvh(frustum, out_slots);
+    }
+    return CullFlat(frustum, out_slots);
+}
+
+u32 RenderScene::CullBvh(const Frustum& frustum, u32* out_slots) const {
+    u32 count = 0;
+    const spatial::QueryStats stats = spatial::Overlap(cull_index_->set, frustum, spatial::QueryFilter(), [&](const spatial::Item& item) {
+        const u32 slot = static_cast<u32>(item.key);
+        const ObjectSlot& s = objects_[slot];
+        if ((s.object.flags & ObjectFlags::kHidden) == 0 && frustum.Visible(s.object.bounds)) {
+            out_slots[count++] = slot;
+        }
+        return true;
+    });
+    if (stats.refused_input) { // a frustum the tree refuses (a plane that is not finite): the flat scan decides, so both modes agree
+        return CullFlat(frustum, out_slots);
+    }
+    if (unindexed_ != 0) { // objects with a box the hierarchy cannot hold are tested one by one, as the flat scan does
+        for (u32 slot = 0; slot < slots_used_; ++slot) {
+            const ObjectSlot& s = objects_[slot];
+            if (s.alive && cull_index_->handle[slot] == spatial::kInvalidSetHandle && (s.object.flags & ObjectFlags::kHidden) == 0 && frustum.Visible(s.object.bounds)) {
+                out_slots[count++] = slot;
+            }
+        }
+    }
+    // Slots in increasing order, as the flat scan gives them.
+    Sort(Span<u32>(out_slots, count), [](u32 a, u32 b) { return a < b; });
+    return count;
+}
+
+u32 RenderScene::CullFlat(const Frustum& frustum, u32* out_slots) const {
     u32 count = 0;
     for (u32 slot = 0; slot < slots_used_; ++slot) {
         const ObjectSlot& s = objects_[slot];

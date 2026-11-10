@@ -7478,6 +7478,64 @@ Finds the objects that may be visible: live, not hidden, and not culled by the f
 | Aborts | `out_slots` is null or `capacity` is below the slot count. |
 | Ownership | `out_slots` is borrowed for the call. |
 
+### `CullMode` {#renderer-renderscene-cullmode}
+
+`enum renderer::RenderScene::CullMode` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+enum class CullMode : u8 { ... }
+```
+
+How [`renderer::RenderScene::Cull`](#renderer-renderscene-cull-const-frustum-amp-u32-star-u32-const) finds the visible objects.
+
+| Enumerator | Value | Description |
+|---|---|---|
+| <a id="renderer-renderscene-cullmode-bvh"></a>`Bvh` | `0` | Through a bounding-volume hierarchy of the objects' boxes (the default): cost follows what is visible. |
+| <a id="renderer-renderscene-cullmode-flat"></a>`Flat` |  | A scan of every slot: the reference, kept to compare the two paths. |
+
+### `SetCullMode(CullMode)` {#renderer-renderscene-setcullmode-cullmode}
+
+`method renderer::RenderScene::SetCullMode` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+void SetCullMode(CullMode mode);
+```
+
+Chooses how `Cull` works. Both give the same slots in the same (increasing) order.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `GetCullMode()` {#renderer-renderscene-getcullmode-const}
+
+`method renderer::RenderScene::GetCullMode` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+CullMode GetCullMode() const;
+```
+
+The current cull mode.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `OptimizeCulling(u32)` {#renderer-renderscene-optimizeculling-u32}
+
+`method renderer::RenderScene::OptimizeCulling` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+void OptimizeCulling(u32 budget);
+```
+
+Rebalances the culling hierarchy a little (call between frames when many objects moved); a no-op in `Flat` mode.
+
+| Field | Value |
+|---|---|
+| Parameter `budget` | how much work to do (see [`spatial::SpatialSet::Optimize`](spatial.md#spatial-spatialset-optimize-u32)). |
+| Fails | never. |
+
 ## `kMaxSettings` {#renderer-kmaxsettings}
 
 `variable renderer::kMaxSettings` — defined in `engine/renderer/render_settings.h`

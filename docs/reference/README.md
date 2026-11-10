@@ -22,12 +22,12 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Debugging](foundation-debug.md) | 15 | 208 |
 | [Text](text.md) | 6 | 221 |
 | [ECS](ecs.md) | 12 | 398 |
-| [Spatial Partitioning](spatial.md) | 11 | 296 |
+| [Spatial Partitioning](spatial.md) | 12 | 331 |
 | [Scene bridge](scene.md) | 2 | 44 |
 | [The UI Toolkit](ui.md) | 46 | 1420 |
 | [The UI Window Adapter](ui_window.md) | 2 | 25 |
 | [The Job System](jobs.md) | 12 | 193 |
 | [The Render Hardware Interface](rhi.md) | 21 | 792 |
-| [The renderer](renderer.md) | 25 | 1096 |
+| [The renderer](renderer.md) | 25 | 1102 |
 | [The Vulkan backend (loader, function tables, result helpers)](rhi-vulkan.md) | 17 | 440 |
 | [The Direct3D 12 backend (Windows)](rhi-dx12.md) | 12 | 319 |

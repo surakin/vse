@@ -10,6 +10,7 @@ set(SPATIAL_SOURCES
   spatial_world.cpp  # Day 244
   spatial_sync.cpp  # Day 244
   entity_query.cpp  # Day 246
+  spatial_debug.cpp  # Day 248
 )
 set(SPATIAL_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

@@ -3457,6 +3457,38 @@ spatial::Overlap(const SpatialSet&,const Sphere&,const QueryFilter&,Visit&&)	fun
 spatial::ForEachPair(const HashGrid&,u32,u32,const QueryFilter&,Visit&&)	function	spatial	spatial-foreachpair-const-hashgrid-amp-u32-u32-const-queryfilter-amp-visit-amp-amp	spatial.md	engine/spatial/query.h:565
 spatial::kMaxSpatialSets	variable	spatial	spatial-kmaxspatialsets	spatial.md	engine/spatial/spatial.h:14
 spatial::SpatialKey	alias	spatial	spatial-spatialkey	spatial.md	engine/spatial/spatial.h:17
+spatial::SpatialStats	struct	spatial	spatial-spatialstats	spatial.md	engine/spatial/spatial_debug.h:20
+spatial::SpatialStats::set	variable	spatial	spatial-spatialstats-set	spatial.md	engine/spatial/spatial_debug.h:21
+spatial::SpatialStats::static_nodes	variable	spatial	spatial-spatialstats-static-nodes	spatial.md	engine/spatial/spatial_debug.h:22
+spatial::SpatialStats::static_depth	variable	spatial	spatial-spatialstats-static-depth	spatial.md	engine/spatial/spatial_debug.h:23
+spatial::SpatialStats::dynamic_nodes	variable	spatial	spatial-spatialstats-dynamic-nodes	spatial.md	engine/spatial/spatial_debug.h:24
+spatial::SpatialStats::dynamic_height	variable	spatial	spatial-spatialstats-dynamic-height	spatial.md	engine/spatial/spatial_debug.h:25
+spatial::SpatialStats::dynamic_sah_cost	variable	spatial	spatial-spatialstats-dynamic-sah-cost	spatial.md	engine/spatial/spatial_debug.h:26
+spatial::SpatialStats::dynamic_built_sah_cost	variable	spatial	spatial-spatialstats-dynamic-built-sah-cost	spatial.md	engine/spatial/spatial_debug.h:27
+spatial::SpatialStats::moves	variable	spatial	spatial-spatialstats-moves	spatial.md	engine/spatial/spatial_debug.h:28
+spatial::SpatialStats::reinserts	variable	spatial	spatial-spatialstats-reinserts	spatial.md	engine/spatial/spatial_debug.h:29
+spatial::SpatialStats::full_rebuilds	variable	spatial	spatial-spatialstats-full-rebuilds	spatial.md	engine/spatial/spatial_debug.h:30
+spatial::SpatialStats::memory_bytes	variable	spatial	spatial-spatialstats-memory-bytes	spatial.md	engine/spatial/spatial_debug.h:31
+spatial::DescribeSet(const SpatialSet&)	function	spatial	spatial-describeset-const-spatialset-amp	spatial.md	engine/spatial/spatial_debug.h:39
+spatial::DebugLine	struct	spatial	spatial-debugline	spatial.md	engine/spatial/spatial_debug.h:44
+spatial::DebugLine::a	variable	spatial	spatial-debugline-a	spatial.md	engine/spatial/spatial_debug.h:45
+spatial::DebugLine::b	variable	spatial	spatial-debugline-b	spatial.md	engine/spatial/spatial_debug.h:46
+spatial::DebugLine::color	variable	spatial	spatial-debugline-color	spatial.md	engine/spatial/spatial_debug.h:47
+spatial::kDebugNodeColor	variable	spatial	spatial-kdebugnodecolor	spatial.md	engine/spatial/spatial_debug.h:51
+spatial::kDebugItemColor	variable	spatial	spatial-kdebugitemcolor	spatial.md	engine/spatial/spatial_debug.h:52
+spatial::kDebugQueryColor	variable	spatial	spatial-kdebugquerycolor	spatial.md	engine/spatial/spatial_debug.h:53
+spatial::kDebugHitColor	variable	spatial	spatial-kdebughitcolor	spatial.md	engine/spatial/spatial_debug.h:54
+spatial::DebugOptions	struct	spatial	spatial-debugoptions	spatial.md	engine/spatial/spatial_debug.h:59
+spatial::DebugOptions::nodes	variable	spatial	spatial-debugoptions-nodes	spatial.md	engine/spatial/spatial_debug.h:60
+spatial::DebugOptions::items	variable	spatial	spatial-debugoptions-items	spatial.md	engine/spatial/spatial_debug.h:61
+spatial::DebugOptions::max_lines	variable	spatial	spatial-debugoptions-max-lines	spatial.md	engine/spatial/spatial_debug.h:62
+spatial::DebugOptions::has_query	variable	spatial	spatial-debugoptions-has-query	spatial.md	engine/spatial/spatial_debug.h:63
+spatial::DebugOptions::query	variable	spatial	spatial-debugoptions-query	spatial.md	engine/spatial/spatial_debug.h:64
+spatial::DebugOptions::hits	variable	spatial	spatial-debugoptions-hits	spatial.md	engine/spatial/spatial_debug.h:65
+spatial::AppendBoxLines(const Aabb&,u32,Vector<DebugLine>*)	function	spatial	spatial-appendboxlines-const-aabb-amp-u32-vector-lt-debugline-gt-star	spatial.md	engine/spatial/spatial_debug.h:75
+spatial::DebugLines(const SpatialSet&,const DebugOptions&,Vector<DebugLine>*)	function	spatial	spatial-debuglines-const-spatialset-amp-const-debugoptions-amp-vector-lt-debugline-gt-star	spatial.md	engine/spatial/spatial_debug.h:85
+spatial::RegisterSpatialSettings(settings::Registry*)	function	spatial	spatial-registerspatialsettings-settings-registry-star	spatial.md	engine/spatial/spatial_debug.h:94
+spatial::SetConfigFromSettings(const settings::Registry&)	function	spatial	spatial-setconfigfromsettings-const-settings-registry-amp	spatial.md	engine/spatial/spatial_debug.h:101
 spatial::DynamicKind	enum	spatial	spatial-dynamickind	spatial.md	engine/spatial/spatial_set.h:18
 spatial::DynamicKind::Bvh	enumerator	spatial	spatial-dynamickind-bvh	spatial.md	engine/spatial/spatial_set.h:19
 spatial::DynamicKind::Grid	enumerator	spatial	spatial-dynamickind-grid	spatial.md	engine/spatial/spatial_set.h:20
@@ -3494,9 +3526,12 @@ spatial::SpatialSet::ItemOf(SetHandle) const	function	spatial	spatial-spatialset
 spatial::SpatialSet::ItemCount() const	function	spatial	spatial-spatialset-itemcount-const	spatial.md	engine/spatial/spatial_set.h:151
 spatial::SpatialSet::Kind() const	function	spatial	spatial-spatialset-kind-const	spatial.md	engine/spatial/spatial_set.h:153
 spatial::SpatialSet::Stats() const	function	spatial	spatial-spatialset-stats-const	spatial.md	engine/spatial/spatial_set.h:155
-spatial::SpatialSet::Traverse(NodeTest&&,ItemVisit&&) const	function	spatial	spatial-spatialset-traverse-nodetest-amp-amp-itemvisit-amp-amp-const	spatial.md	engine/spatial/spatial_set.h:163
-spatial::SpatialSet::TraverseRay(const Ray&,f32,ItemVisit&&) const	function	spatial	spatial-spatialset-traverseray-const-ray-amp-f32-itemvisit-amp-amp-const	spatial.md	engine/spatial/spatial_set.h:173
-spatial::SpatialSet::ForEachInRegion(const Aabb&,Exact&&,Visit&&) const	function	spatial	spatial-spatialset-foreachinregion-const-aabb-amp-exact-amp-amp-visit-amp-amp-const	spatial.md	engine/spatial/spatial_set.h:183
+spatial::SpatialSet::StaticTree() const	function	spatial	spatial-spatialset-statictree-const	spatial.md	engine/spatial/spatial_set.h:158
+spatial::SpatialSet::DynamicTree() const	function	spatial	spatial-spatialset-dynamictree-const	spatial.md	engine/spatial/spatial_set.h:161
+spatial::SpatialSet::Grid() const	function	spatial	spatial-spatialset-grid-const	spatial.md	engine/spatial/spatial_set.h:164
+spatial::SpatialSet::Traverse(NodeTest&&,ItemVisit&&) const	function	spatial	spatial-spatialset-traverse-nodetest-amp-amp-itemvisit-amp-amp-const	spatial.md	engine/spatial/spatial_set.h:172
+spatial::SpatialSet::TraverseRay(const Ray&,f32,ItemVisit&&) const	function	spatial	spatial-spatialset-traverseray-const-ray-amp-f32-itemvisit-amp-amp-const	spatial.md	engine/spatial/spatial_set.h:182
+spatial::SpatialSet::ForEachInRegion(const Aabb&,Exact&&,Visit&&) const	function	spatial	spatial-spatialset-foreachinregion-const-aabb-amp-exact-amp-amp-visit-amp-amp-const	spatial.md	engine/spatial/spatial_set.h:192
 spatial::MakeSpatialSyncSystem(const char*)	function	spatial	spatial-makespatialsyncsystem-const-char-star	spatial.md	engine/spatial/spatial_sync.h:33
 spatial::SetId	alias	spatial	spatial-setid	spatial.md	engine/spatial/spatial_world.h:15
 spatial::kInvalidSetId	variable	spatial	spatial-kinvalidsetid	spatial.md	engine/spatial/spatial_world.h:18
@@ -6566,69 +6601,75 @@ renderer::RenderGraph::ResolvedTexture(GraphResource) const	function	renderer	re
 renderer::RenderGraph::ResolvedBuffer(GraphResource) const	function	renderer	renderer-rendergraph-resolvedbuffer-graphresource-const	renderer.md	engine/renderer/render_graph.h:517
 renderer::RenderGraph::Dump(char*,usize) const	function	renderer	renderer-rendergraph-dump-char-star-usize-const	renderer.md	engine/renderer/render_graph.h:534
 renderer::RenderGraph::WriteDot(char*,usize) const	function	renderer	renderer-rendergraph-writedot-char-star-usize-const	renderer.md	engine/renderer/render_graph.h:543
-renderer::ObjectId	struct	renderer	renderer-objectid	renderer.md	engine/renderer/render_scene.h:19
-renderer::ObjectId::index	variable	renderer	renderer-objectid-index	renderer.md	engine/renderer/render_scene.h:21
-renderer::ObjectId::generation	variable	renderer	renderer-objectid-generation	renderer.md	engine/renderer/render_scene.h:23
-renderer::ObjectId::IsValid() const	function	renderer	renderer-objectid-isvalid-const	renderer.md	engine/renderer/render_scene.h:27
-renderer::ObjectId::operator==(const ObjectId&) const	function	renderer	renderer-objectid-operator-eq-eq-const-objectid-amp-const	renderer.md	engine/renderer/render_scene.h:29
-renderer::ObjectId::operator!=(const ObjectId&) const	function	renderer	renderer-objectid-operator-not-eq-const-objectid-amp-const	renderer.md	engine/renderer/render_scene.h:31
-renderer::LightId	struct	renderer	renderer-lightid	renderer.md	engine/renderer/render_scene.h:37
-renderer::LightId::index	variable	renderer	renderer-lightid-index	renderer.md	engine/renderer/render_scene.h:39
-renderer::LightId::generation	variable	renderer	renderer-lightid-generation	renderer.md	engine/renderer/render_scene.h:41
-renderer::LightId::IsValid() const	function	renderer	renderer-lightid-isvalid-const	renderer.md	engine/renderer/render_scene.h:45
-renderer::LightId::operator==(const LightId&) const	function	renderer	renderer-lightid-operator-eq-eq-const-lightid-amp-const	renderer.md	engine/renderer/render_scene.h:47
-renderer::LightId::operator!=(const LightId&) const	function	renderer	renderer-lightid-operator-not-eq-const-lightid-amp-const	renderer.md	engine/renderer/render_scene.h:49
-renderer::ObjectFlags::kHidden	variable	renderer	renderer-objectflags-khidden	renderer.md	engine/renderer/render_scene.h:55
-renderer::RenderObjectDesc	struct	renderer	renderer-renderobjectdesc	renderer.md	engine/renderer/render_scene.h:62
-renderer::RenderObjectDesc::mesh	variable	renderer	renderer-renderobjectdesc-mesh	renderer.md	engine/renderer/render_scene.h:64
-renderer::RenderObjectDesc::material	variable	renderer	renderer-renderobjectdesc-material	renderer.md	engine/renderer/render_scene.h:66
-renderer::RenderObjectDesc::transform	variable	renderer	renderer-renderobjectdesc-transform	renderer.md	engine/renderer/render_scene.h:68
-renderer::RenderObjectDesc::flags	variable	renderer	renderer-renderobjectdesc-flags	renderer.md	engine/renderer/render_scene.h:70
-renderer::RenderObject	struct	renderer	renderer-renderobject	renderer.md	engine/renderer/render_scene.h:77
-renderer::RenderObject::mesh	variable	renderer	renderer-renderobject-mesh	renderer.md	engine/renderer/render_scene.h:79
-renderer::RenderObject::material	variable	renderer	renderer-renderobject-material	renderer.md	engine/renderer/render_scene.h:81
-renderer::RenderObject::transform	variable	renderer	renderer-renderobject-transform	renderer.md	engine/renderer/render_scene.h:83
-renderer::RenderObject::flags	variable	renderer	renderer-renderobject-flags	renderer.md	engine/renderer/render_scene.h:85
-renderer::RenderObject::bounds	variable	renderer	renderer-renderobject-bounds	renderer.md	engine/renderer/render_scene.h:87
-renderer::LightType	enum	renderer	renderer-lighttype	renderer.md	engine/renderer/render_scene.h:91
-renderer::LightType::Directional	enumerator	renderer	renderer-lighttype-directional	renderer.md	engine/renderer/render_scene.h:92
-renderer::LightType::Point	enumerator	renderer	renderer-lighttype-point	renderer.md	engine/renderer/render_scene.h:93
-renderer::LightType::Ambient	enumerator	renderer	renderer-lighttype-ambient	renderer.md	engine/renderer/render_scene.h:94
-renderer::Light	struct	renderer	renderer-light	renderer.md	engine/renderer/render_scene.h:101
-renderer::Light::type	variable	renderer	renderer-light-type	renderer.md	engine/renderer/render_scene.h:103
-renderer::Light::color	variable	renderer	renderer-light-color	renderer.md	engine/renderer/render_scene.h:105
-renderer::Light::intensity	variable	renderer	renderer-light-intensity	renderer.md	engine/renderer/render_scene.h:107
-renderer::Light::direction	variable	renderer	renderer-light-direction	renderer.md	engine/renderer/render_scene.h:109
-renderer::Light::position	variable	renderer	renderer-light-position	renderer.md	engine/renderer/render_scene.h:111
-renderer::Light::radius	variable	renderer	renderer-light-radius	renderer.md	engine/renderer/render_scene.h:113
-renderer::kMaxLights	variable	renderer	renderer-kmaxlights	renderer.md	engine/renderer/render_scene.h:120
-renderer::RenderSceneDesc	struct	renderer	renderer-renderscenedesc	renderer.md	engine/renderer/render_scene.h:125
-renderer::RenderSceneDesc::max_objects	variable	renderer	renderer-renderscenedesc-max-objects	renderer.md	engine/renderer/render_scene.h:127
-renderer::RenderSceneDesc::max_lights	variable	renderer	renderer-renderscenedesc-max-lights	renderer.md	engine/renderer/render_scene.h:129
-renderer::RenderScene	class	renderer	renderer-renderscene	renderer.md	engine/renderer/render_scene.h:140
-renderer::RenderScene::RenderScene(const RenderSceneDesc&)	function	renderer	renderer-renderscene-renderscene-const-renderscenedesc-amp	renderer.md	engine/renderer/render_scene.h:146
-renderer::RenderScene::~RenderScene()	function	renderer	renderer-renderscene-tilde-renderscene	renderer.md	engine/renderer/render_scene.h:148
-renderer::RenderScene::RenderScene(const RenderScene&)	function	renderer	renderer-renderscene-renderscene-const-renderscene-amp	renderer.md	engine/renderer/render_scene.h:149
-renderer::RenderScene::operator=(const RenderScene&)	function	renderer	renderer-renderscene-operator-eq-const-renderscene-amp	renderer.md	engine/renderer/render_scene.h:150
-renderer::RenderScene::AddObject(const RenderObjectDesc&)	function	renderer	renderer-renderscene-addobject-const-renderobjectdesc-amp	renderer.md	engine/renderer/render_scene.h:158
-renderer::RenderScene::RemoveObject(ObjectId)	function	renderer	renderer-renderscene-removeobject-objectid	renderer.md	engine/renderer/render_scene.h:164
-renderer::RenderScene::SetTransform(ObjectId,const Mat4&)	function	renderer	renderer-renderscene-settransform-objectid-const-mat4-amp	renderer.md	engine/renderer/render_scene.h:171
-renderer::RenderScene::SetFlags(ObjectId,u32)	function	renderer	renderer-renderscene-setflags-objectid-u32	renderer.md	engine/renderer/render_scene.h:178
-renderer::RenderScene::FindObject(ObjectId) const	function	renderer	renderer-renderscene-findobject-objectid-const	renderer.md	engine/renderer/render_scene.h:186
-renderer::RenderScene::ObjectCount() const	function	renderer	renderer-renderscene-objectcount-const	renderer.md	engine/renderer/render_scene.h:189
-renderer::RenderScene::ObjectCapacity() const	function	renderer	renderer-renderscene-objectcapacity-const	renderer.md	engine/renderer/render_scene.h:191
-renderer::RenderScene::SlotCount() const	function	renderer	renderer-renderscene-slotcount-const	renderer.md	engine/renderer/render_scene.h:194
-renderer::RenderScene::SlotAlive(u32) const	function	renderer	renderer-renderscene-slotalive-u32-const	renderer.md	engine/renderer/render_scene.h:197
-renderer::RenderScene::ObjectAt(u32) const	function	renderer	renderer-renderscene-objectat-u32-const	renderer.md	engine/renderer/render_scene.h:200
-renderer::RenderScene::AddLight(const Light&)	function	renderer	renderer-renderscene-addlight-const-light-amp	renderer.md	engine/renderer/render_scene.h:208
-renderer::RenderScene::RemoveLight(LightId)	function	renderer	renderer-renderscene-removelight-lightid	renderer.md	engine/renderer/render_scene.h:214
-renderer::RenderScene::SetLight(LightId,const Light&)	function	renderer	renderer-renderscene-setlight-lightid-const-light-amp	renderer.md	engine/renderer/render_scene.h:221
-renderer::RenderScene::FindLight(LightId) const	function	renderer	renderer-renderscene-findlight-lightid-const	renderer.md	engine/renderer/render_scene.h:229
-renderer::RenderScene::LightCount() const	function	renderer	renderer-renderscene-lightcount-const	renderer.md	engine/renderer/render_scene.h:232
-renderer::RenderScene::LightSlotCount() const	function	renderer	renderer-renderscene-lightslotcount-const	renderer.md	engine/renderer/render_scene.h:234
-renderer::RenderScene::LightSlotAlive(u32) const	function	renderer	renderer-renderscene-lightslotalive-u32-const	renderer.md	engine/renderer/render_scene.h:237
-renderer::RenderScene::LightAt(u32) const	function	renderer	renderer-renderscene-lightat-u32-const	renderer.md	engine/renderer/render_scene.h:240
-renderer::RenderScene::Cull(const Frustum&,u32*,u32) const	function	renderer	renderer-renderscene-cull-const-frustum-amp-u32-star-u32-const	renderer.md	engine/renderer/render_scene.h:250
+renderer::ObjectId	struct	renderer	renderer-objectid	renderer.md	engine/renderer/render_scene.h:20
+renderer::ObjectId::index	variable	renderer	renderer-objectid-index	renderer.md	engine/renderer/render_scene.h:22
+renderer::ObjectId::generation	variable	renderer	renderer-objectid-generation	renderer.md	engine/renderer/render_scene.h:24
+renderer::ObjectId::IsValid() const	function	renderer	renderer-objectid-isvalid-const	renderer.md	engine/renderer/render_scene.h:28
+renderer::ObjectId::operator==(const ObjectId&) const	function	renderer	renderer-objectid-operator-eq-eq-const-objectid-amp-const	renderer.md	engine/renderer/render_scene.h:30
+renderer::ObjectId::operator!=(const ObjectId&) const	function	renderer	renderer-objectid-operator-not-eq-const-objectid-amp-const	renderer.md	engine/renderer/render_scene.h:32
+renderer::LightId	struct	renderer	renderer-lightid	renderer.md	engine/renderer/render_scene.h:38
+renderer::LightId::index	variable	renderer	renderer-lightid-index	renderer.md	engine/renderer/render_scene.h:40
+renderer::LightId::generation	variable	renderer	renderer-lightid-generation	renderer.md	engine/renderer/render_scene.h:42
+renderer::LightId::IsValid() const	function	renderer	renderer-lightid-isvalid-const	renderer.md	engine/renderer/render_scene.h:46
+renderer::LightId::operator==(const LightId&) const	function	renderer	renderer-lightid-operator-eq-eq-const-lightid-amp-const	renderer.md	engine/renderer/render_scene.h:48
+renderer::LightId::operator!=(const LightId&) const	function	renderer	renderer-lightid-operator-not-eq-const-lightid-amp-const	renderer.md	engine/renderer/render_scene.h:50
+renderer::ObjectFlags::kHidden	variable	renderer	renderer-objectflags-khidden	renderer.md	engine/renderer/render_scene.h:56
+renderer::RenderObjectDesc	struct	renderer	renderer-renderobjectdesc	renderer.md	engine/renderer/render_scene.h:63
+renderer::RenderObjectDesc::mesh	variable	renderer	renderer-renderobjectdesc-mesh	renderer.md	engine/renderer/render_scene.h:65
+renderer::RenderObjectDesc::material	variable	renderer	renderer-renderobjectdesc-material	renderer.md	engine/renderer/render_scene.h:67
+renderer::RenderObjectDesc::transform	variable	renderer	renderer-renderobjectdesc-transform	renderer.md	engine/renderer/render_scene.h:69
+renderer::RenderObjectDesc::flags	variable	renderer	renderer-renderobjectdesc-flags	renderer.md	engine/renderer/render_scene.h:71
+renderer::RenderObject	struct	renderer	renderer-renderobject	renderer.md	engine/renderer/render_scene.h:78
+renderer::RenderObject::mesh	variable	renderer	renderer-renderobject-mesh	renderer.md	engine/renderer/render_scene.h:80
+renderer::RenderObject::material	variable	renderer	renderer-renderobject-material	renderer.md	engine/renderer/render_scene.h:82
+renderer::RenderObject::transform	variable	renderer	renderer-renderobject-transform	renderer.md	engine/renderer/render_scene.h:84
+renderer::RenderObject::flags	variable	renderer	renderer-renderobject-flags	renderer.md	engine/renderer/render_scene.h:86
+renderer::RenderObject::bounds	variable	renderer	renderer-renderobject-bounds	renderer.md	engine/renderer/render_scene.h:88
+renderer::LightType	enum	renderer	renderer-lighttype	renderer.md	engine/renderer/render_scene.h:92
+renderer::LightType::Directional	enumerator	renderer	renderer-lighttype-directional	renderer.md	engine/renderer/render_scene.h:93
+renderer::LightType::Point	enumerator	renderer	renderer-lighttype-point	renderer.md	engine/renderer/render_scene.h:94
+renderer::LightType::Ambient	enumerator	renderer	renderer-lighttype-ambient	renderer.md	engine/renderer/render_scene.h:95
+renderer::Light	struct	renderer	renderer-light	renderer.md	engine/renderer/render_scene.h:102
+renderer::Light::type	variable	renderer	renderer-light-type	renderer.md	engine/renderer/render_scene.h:104
+renderer::Light::color	variable	renderer	renderer-light-color	renderer.md	engine/renderer/render_scene.h:106
+renderer::Light::intensity	variable	renderer	renderer-light-intensity	renderer.md	engine/renderer/render_scene.h:108
+renderer::Light::direction	variable	renderer	renderer-light-direction	renderer.md	engine/renderer/render_scene.h:110
+renderer::Light::position	variable	renderer	renderer-light-position	renderer.md	engine/renderer/render_scene.h:112
+renderer::Light::radius	variable	renderer	renderer-light-radius	renderer.md	engine/renderer/render_scene.h:114
+renderer::kMaxLights	variable	renderer	renderer-kmaxlights	renderer.md	engine/renderer/render_scene.h:121
+renderer::RenderSceneDesc	struct	renderer	renderer-renderscenedesc	renderer.md	engine/renderer/render_scene.h:126
+renderer::RenderSceneDesc::max_objects	variable	renderer	renderer-renderscenedesc-max-objects	renderer.md	engine/renderer/render_scene.h:128
+renderer::RenderSceneDesc::max_lights	variable	renderer	renderer-renderscenedesc-max-lights	renderer.md	engine/renderer/render_scene.h:130
+renderer::RenderScene	class	renderer	renderer-renderscene	renderer.md	engine/renderer/render_scene.h:141
+renderer::RenderScene::RenderScene(const RenderSceneDesc&)	function	renderer	renderer-renderscene-renderscene-const-renderscenedesc-amp	renderer.md	engine/renderer/render_scene.h:147
+renderer::RenderScene::~RenderScene()	function	renderer	renderer-renderscene-tilde-renderscene	renderer.md	engine/renderer/render_scene.h:149
+renderer::RenderScene::RenderScene(const RenderScene&)	function	renderer	renderer-renderscene-renderscene-const-renderscene-amp	renderer.md	engine/renderer/render_scene.h:150
+renderer::RenderScene::operator=(const RenderScene&)	function	renderer	renderer-renderscene-operator-eq-const-renderscene-amp	renderer.md	engine/renderer/render_scene.h:151
+renderer::RenderScene::AddObject(const RenderObjectDesc&)	function	renderer	renderer-renderscene-addobject-const-renderobjectdesc-amp	renderer.md	engine/renderer/render_scene.h:159
+renderer::RenderScene::RemoveObject(ObjectId)	function	renderer	renderer-renderscene-removeobject-objectid	renderer.md	engine/renderer/render_scene.h:165
+renderer::RenderScene::SetTransform(ObjectId,const Mat4&)	function	renderer	renderer-renderscene-settransform-objectid-const-mat4-amp	renderer.md	engine/renderer/render_scene.h:172
+renderer::RenderScene::SetFlags(ObjectId,u32)	function	renderer	renderer-renderscene-setflags-objectid-u32	renderer.md	engine/renderer/render_scene.h:179
+renderer::RenderScene::FindObject(ObjectId) const	function	renderer	renderer-renderscene-findobject-objectid-const	renderer.md	engine/renderer/render_scene.h:187
+renderer::RenderScene::ObjectCount() const	function	renderer	renderer-renderscene-objectcount-const	renderer.md	engine/renderer/render_scene.h:190
+renderer::RenderScene::ObjectCapacity() const	function	renderer	renderer-renderscene-objectcapacity-const	renderer.md	engine/renderer/render_scene.h:192
+renderer::RenderScene::SlotCount() const	function	renderer	renderer-renderscene-slotcount-const	renderer.md	engine/renderer/render_scene.h:195
+renderer::RenderScene::SlotAlive(u32) const	function	renderer	renderer-renderscene-slotalive-u32-const	renderer.md	engine/renderer/render_scene.h:198
+renderer::RenderScene::ObjectAt(u32) const	function	renderer	renderer-renderscene-objectat-u32-const	renderer.md	engine/renderer/render_scene.h:201
+renderer::RenderScene::AddLight(const Light&)	function	renderer	renderer-renderscene-addlight-const-light-amp	renderer.md	engine/renderer/render_scene.h:209
+renderer::RenderScene::RemoveLight(LightId)	function	renderer	renderer-renderscene-removelight-lightid	renderer.md	engine/renderer/render_scene.h:215
+renderer::RenderScene::SetLight(LightId,const Light&)	function	renderer	renderer-renderscene-setlight-lightid-const-light-amp	renderer.md	engine/renderer/render_scene.h:222
+renderer::RenderScene::FindLight(LightId) const	function	renderer	renderer-renderscene-findlight-lightid-const	renderer.md	engine/renderer/render_scene.h:230
+renderer::RenderScene::LightCount() const	function	renderer	renderer-renderscene-lightcount-const	renderer.md	engine/renderer/render_scene.h:233
+renderer::RenderScene::LightSlotCount() const	function	renderer	renderer-renderscene-lightslotcount-const	renderer.md	engine/renderer/render_scene.h:235
+renderer::RenderScene::LightSlotAlive(u32) const	function	renderer	renderer-renderscene-lightslotalive-u32-const	renderer.md	engine/renderer/render_scene.h:238
+renderer::RenderScene::LightAt(u32) const	function	renderer	renderer-renderscene-lightat-u32-const	renderer.md	engine/renderer/render_scene.h:241
+renderer::RenderScene::Cull(const Frustum&,u32*,u32) const	function	renderer	renderer-renderscene-cull-const-frustum-amp-u32-star-u32-const	renderer.md	engine/renderer/render_scene.h:251
+renderer::RenderScene::CullMode	enum	renderer	renderer-renderscene-cullmode	renderer.md	engine/renderer/render_scene.h:254
+renderer::RenderScene::CullMode::Bvh	enumerator	renderer	renderer-renderscene-cullmode-bvh	renderer.md	engine/renderer/render_scene.h:255
+renderer::RenderScene::CullMode::Flat	enumerator	renderer	renderer-renderscene-cullmode-flat	renderer.md	engine/renderer/render_scene.h:256
+renderer::RenderScene::SetCullMode(CullMode)	function	renderer	renderer-renderscene-setcullmode-cullmode	renderer.md	engine/renderer/render_scene.h:260
+renderer::RenderScene::GetCullMode() const	function	renderer	renderer-renderscene-getcullmode-const	renderer.md	engine/renderer/render_scene.h:263
+renderer::RenderScene::OptimizeCulling(u32)	function	renderer	renderer-renderscene-optimizeculling-u32	renderer.md	engine/renderer/render_scene.h:267
 renderer::kMaxSettings	variable	renderer	renderer-kmaxsettings	renderer.md	engine/renderer/render_settings.h:18
 renderer::kSettingTextBytes	variable	renderer	renderer-ksettingtextbytes	renderer.md	engine/renderer/render_settings.h:20
 renderer::kMaxCapabilities	variable	renderer	renderer-kmaxcapabilities	renderer.md	engine/renderer/render_settings.h:22

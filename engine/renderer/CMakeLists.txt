@@ -39,7 +39,7 @@ function(engine_add_renderer_lib suffix)
   target_include_directories(renderer${suffix} PUBLIC ${RENDERER_INCLUDE_ROOT})
   target_compile_options(renderer${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
   # Only the neutral RHI: devices come through the backend registry, and the program links rhi_backends (Phase 13 Day 162).
-  target_link_libraries(renderer${suffix} PUBLIC rhi${suffix} jobs${suffix} text${suffix} ui${suffix} foundation${suffix}) # ui: the draw list the UI pass draws (Phase 15 Day 190); text: the CPU glyph atlas the GPU copy follows (Phase 14 Day 180)
+  target_link_libraries(renderer${suffix} PUBLIC rhi${suffix} jobs${suffix} text${suffix} ui${suffix} spatial${suffix} foundation${suffix}) # spatial: the culling hierarchy of RenderScene (Phase 18 Day 247); ui: the draw list the UI pass draws (Phase 15 Day 190); text: the CPU glyph atlas the GPU copy follows (Phase 14 Day 180)
   add_library(renderer_passes${suffix} STATIC ${RENDERER_PASS_SOURCES})
   target_include_directories(renderer_passes${suffix} PRIVATE ${CMAKE_SOURCE_DIR}/shaders)
   target_compile_options(renderer_passes${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})

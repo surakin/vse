@@ -153,6 +153,15 @@ public:
     DynamicKind Kind() const { return config_.dynamic; }
     /// Returns the counts.
     SpatialSetStats Stats() const;
+    /// The static tree (for statistics and debug drawing).
+    /// Ownership: valid for the life of the set.
+    const StaticBvh& StaticTree() const { return static_; }
+    /// The dynamic tree, empty when the dynamic side is a grid.
+    /// Ownership: valid for the life of the set.
+    const DynamicBvh& DynamicTree() const { return dynamic_; }
+    /// The grid, empty when the dynamic side is a tree.
+    /// Ownership: valid for the life of the set.
+    const HashGrid& Grid() const { return grid_; }
 
     /// Visits the items as [[spatial::StaticBvh::Traverse]] does, over the static tree, the pending static items and the dynamic side in that order.
     ///

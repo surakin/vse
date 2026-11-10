@@ -2,6 +2,7 @@
 
 //! The scene a frame is built from: a fixed-capacity list of objects and lights with stable ids. The renderer draws from this list; programs that use the ECS fill it with `scene::MakeRenderSyncSystem` (module `engine/scene`), which mirrors entities into it and touches it only for what changed. The renderer's own tests build it directly.
 
+#include "containers/unique_ptr.h"
 #include "containers/vector.h"
 #include "math/matrix.h"
 #include "math/vector.h"
@@ -249,6 +250,22 @@ public:
     /// Ownership: `out_slots` is borrowed for the call.
     u32 Cull(const Frustum& frustum, u32* out_slots, u32 capacity) const;
 
+    /// How [[renderer::RenderScene::Cull]] finds the visible objects.
+    enum class CullMode : u8 {
+        Bvh = 0, ///< Through a bounding-volume hierarchy of the objects' boxes (the default): cost follows what is visible.
+        Flat,    ///< A scan of every slot: the reference, kept to compare the two paths.
+    };
+    /// Chooses how `Cull` works. Both give the same slots in the same (increasing) order.
+    /// Fails: never.
+    void SetCullMode(CullMode mode) { cull_mode_ = mode; }
+    /// The current cull mode.
+    /// Fails: never.
+    CullMode GetCullMode() const { return cull_mode_; }
+    /// Rebalances the culling hierarchy a little (call between frames when many objects moved); a no-op in `Flat` mode.
+    /// Param budget: how much work to do (see [[spatial::SpatialSet::Optimize]]).
+    /// Fails: never.
+    void OptimizeCulling(u32 budget);
+
 private:
     struct ObjectSlot {
         RenderObject object;
@@ -263,6 +280,11 @@ private:
         bool alive = false;
     };
     static constexpr u32 kNoSlot = 0xffffffffu;
+    struct CullIndex;
+    void IndexObject(u32 slot);
+    void UnindexObject(u32 slot);
+    u32 CullFlat(const Frustum& frustum, u32* out_slots) const;
+    u32 CullBvh(const Frustum& frustum, u32* out_slots) const;
 
     Vector<ObjectSlot> objects_;
     Vector<LightSlot> lights_;
@@ -274,6 +296,9 @@ private:
     u32 light_slots_used_ = 0;
     u32 free_object_ = kNoSlot;
     u32 free_light_ = kNoSlot;
+    CullMode cull_mode_ = CullMode::Bvh;
+    UniquePtr<CullIndex> cull_index_;
+    u32 unindexed_ = 0; // live objects whose box could not go in the hierarchy (not finite): Cull looks at them one by one
 };
 
 } // namespace engine_placeholder::renderer

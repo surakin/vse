@@ -2,7 +2,7 @@
 
 Status: in progress (Phase 18). Built: the shared shapes (Day 238), the static and dynamic bounding-volume hierarchies (Days 239-240), the query vocabulary
 (Day 241), the hash grid and the spatial set (Day 242), the pair tracker (Day 243), the components, the `SpatialWorld` resource and the entity lifecycle (Day 244), moves and the parallel sync (Day 245), entity-facing and batched
-queries (Day 246). Next: the renderer's culling (Days 247-249).
+queries (Day 246), the renderer's culling (Day 247). Next: debug draw, statistics and the closing benchmarks (Days 248-249).
 
 **Audience:** engine programmers who write a system that asks "what is near this box, ray or frustum" (physics, culling, audio, gameplay). Read
 [Math](foundation-math.md) first.
@@ -581,6 +581,22 @@ int main() {
   the world's structure. (The plan sorted hits by archetype; entity order is simpler and the lookup goes through `Get`.)
 - **Batches.** `RaycastBatch` and `OverlapBatch` answer thousands of questions at once; with a job scheduler they split over the workers and the answers
   are in input order, identical to the sequential run (tested, also under ThreadSanitizer). Call them from the main thread outside any job, while no sync runs.
+
+## Culling for the renderer
+
+`renderer::RenderScene::Cull` finds the objects a camera may see. Since Phase 18 Day 247 it keeps each object's world box in a `spatial::SpatialSet`
+(the dynamic tree; the scene updates it in `AddObject`, `RemoveObject` and `SetTransform`) and walks the tree with the frustum, so the cost follows what is
+visible instead of how many objects exist. The old scan over every slot stays as the reference.
+
+- **Same answer.** Both modes return the same slots in increasing order: the tree picks candidates by box, then each is tested with the same `Frustum::Visible`
+  and `kHidden` check as the scan (tested on 1,000 random scenes with moves, removals, hidden objects and objects whose box is not finite). The rendered
+  goldens did not change.
+- **Choosing.** `RenderScene::SetCullMode(CullMode::Bvh)` (the default) or `CullMode::Flat`; `OptimizeCulling(budget)` rebalances the tree between frames after
+  many objects moved. An object with a box the tree cannot hold (not finite) is tested one by one, as the scan does.
+- **Measured** (Release, 100,000 objects, a camera that sees 1,026 of them): 0.055 ms against 0.93 ms for the scan, 17 times faster (the spec asks for 8 times
+  or more at 100,000 objects). With a camera that sees most of the scene the tree is slower than the scan: it pays for the traversal and gains nothing.
+- **Not done yet.** The `renderer.culling` setting that switches the mode at run time, and culling lights through the tree (a scene holds few lights; the
+  lighting pass keeps its list), are recorded in `KNOWN-ISSUES.md`.
 
 ## See also
 

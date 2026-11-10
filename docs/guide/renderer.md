@@ -1009,7 +1009,9 @@ unless the passes are merged (Phase 27).
   7.1 on Vulkan; 16000 point-light volume draws 4.4 ms against 3.15 (0.27 against 0.19 us a draw), the D3D12 draw call's own cost. Sanitizers: the TSan flavor excludes the `[gpu]` tests (the proprietary NVIDIA driver's threads crash it), the ASan
 flavor runs them; see [the RHI guide](rhi.md#platform-notes).
 
-### See also
+#Culling through a bounding-volume hierarchy (`RenderScene::SetCullMode`): see [Spatial partitioning](spatial.md), "Culling for the renderer".
+
+## See also
 
 - [ECS: Rendering](ecs.md#rendering): entities mirrored into a `RenderScene` by `scene::MakeRenderSyncSystem` (`engine/scene`); the renderer demo's scene is built that way since Phase 17 Day 234 (`DemoScene` keeps its interface), and the renderer's own tests still fill a `RenderScene` directly.
 - Culling 100k objects costs 0.57 ms on one thread in a Release build (5.7 ns an object), 0.08 ms with eight workers as a chunk-parallel frustum test over an ECS bounds component (`scene_tests "[cost]"`); `GBufferPass::Prepare` keeps its single-thread path, and a precomputed visible list arrives with the spatial module (Phase 18).

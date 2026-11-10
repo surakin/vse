@@ -4,6 +4,7 @@ set(SCENE_TEST_SOURCES
   scene_sync_test.cpp
   scene_render_test.cpp
   scene_cost_test.cpp
+  visibility_test.cpp  # Phase 18 Day 247
   ${CMAKE_SOURCE_DIR}/game/renderer_demo/demo_frame.cpp
 )
 
