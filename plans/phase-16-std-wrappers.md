@@ -1,6 +1,6 @@
 # Phase 16 — Standard-Library Wrappers
 
-**Status: planned (2026-11-09), not started.** `CURRENT_PHASE` changes to 16 in the commit that completes Day 207's first task. Days 207-221. Inserted after Phase 15 (UI system) and before 3D text (now Phase 17); Phases 16-29 of the earlier plan are renumbered 17-30.
+**Status: complete on Linux (2026-11-10); the Windows PC day (219) and its repeat of the closing run are open.** `CURRENT_PHASE` changes to 16 in the commit that completes Day 207's first task. Days 207-221. Inserted after Phase 15 (UI system) and before 3D text (now Phase 17); Phases 16-29 of the earlier plan are renumbered 17-30.
 
 **Depends on:** Phase 10 (the type vocabulary and container gate, which this phase extends), Phase 12 (module layering: wrappers must respect `ARCHITECTURE.md`), Phase 13 (the Windows files, ported on the Windows PC), Phase 15 (the code to port is complete).
 **Goal:** every use of the C++ standard library — and of the C library through `std::` — sits inside a wrapper module of its own category (`lang`, `sync`, `mem`, `cstr`, `os`, `jobs`, existing containers/strings). No other file includes a standard header or spells `std::`; a gate enforces it, tests included. Design and audit: `docs/superpowers/specs/2026-11-09-std-wrappers-design.md`.

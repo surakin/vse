@@ -134,8 +134,13 @@ inline int RemoveTreeEntry(const char* entry, const struct stat*, int type, stru
     return (type == FTW_DP || type == FTW_D || type == FTW_DNR) ? ::rmdir(entry) : ::unlink(entry);
 }
 
-/// Removes `path` and everything under it.
-inline void RemoveTree(const char* path) { nftw(path, &RemoveTreeEntry, 16, FTW_DEPTH | FTW_PHYS); }
+/// Removes `path` and everything under it; an empty path or the root is refused (a test that builds the path from an unset variable must not wipe a disk).
+inline void RemoveTree(const char* path) {
+    if (path == nullptr || path[0] == '\0' || (path[0] == '/' && path[1] == '\0')) {
+        return;
+    }
+    nftw(path, &RemoveTreeEntry, 16, FTW_DEPTH | FTW_PHYS);
+}
 
 /// Appends the path of every file under `directory` (recursively) whose name ends with `suffix`.
 inline void FindFiles(const char* directory, StringView suffix, engine_test::TextList* found) {
@@ -149,7 +154,7 @@ inline void FindFiles(const char* directory, StringView suffix, engine_test::Tex
         }
         const Text path = Cat(directory, "/", entry->d_name);
         struct stat info;
-        if (::stat(path.CStr(), &info) != 0) {
+        if (::lstat(path.CStr(), &info) != 0) { // links are not followed, so a link cycle cannot recurse forever
             continue;
         }
         if (S_ISDIR(info.st_mode)) {

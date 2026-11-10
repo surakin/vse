@@ -648,7 +648,7 @@ template <class T, EnableIf<IsIntegral<T> && IsSigned<T>, int> = 0>
 inline T Abs(T value) noexcept;
 ```
 
-The absolute value of a signed integer (`abs`); the most negative value has no result (undefined, as for `abs`).
+The absolute value of a signed integer (`abs`); the most negative value has no positive counterpart, so `Abs(Limits<i32>::Min())` overflows and is undefined (as for `abs`).
 
 ## `FMin(f32,f32)` {#fmin-f32-f32-noexcept}
 

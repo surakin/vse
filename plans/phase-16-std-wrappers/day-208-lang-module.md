@@ -19,5 +19,5 @@ A layer-0 module `engine/foundation/lang/` wrapping the language-support headers
 
 ## Result
 
-- `engine/foundation/lang/` (`utility`, `traits`, `limits`, `ordering`, `initializer_list`, `new`; module `base`, layer 0), `tests/lang` in three flavors, shims extended for the cross-syntax checks. `scripts/std-port.py lang` ported 54 files. The scalar math header `lang/scalar.h` is written (ported on Day 214).
+- `engine/foundation/lang/` (`utility`, `traits`, `limits`, `ordering`, `initializer_list`, `new`; module `base`, layer 0), `tests/lang` in three flavors, shims extended for the cross-syntax checks. `scripts/std-port.py lang` ported 54 files (the one-shot script was removed on Day 221). The scalar math header `lang/scalar.h` is written (ported on Day 214).
 - Post-implementation code review (days 208-210 together): an independent read-only reviewer found no high-severity bug; fixed: huge timed-wait durations (clamped to about 100 years, regression test), `Thread` constructor constrained, `Exchange`/`Swap` conditional `noexcept`, scalar `Log` renamed `Ln`. Declined: shim fidelity (syntax checks only), raw-string edge case of the port script (none in the tree).

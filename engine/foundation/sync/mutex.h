@@ -77,6 +77,13 @@ private:
     std::lock_guard<typename M::Native> guard_;
 };
 
+/// The tag that asks a [[UniqueLock]] not to lock its mutex yet.
+struct DeferLockTag {
+    explicit DeferLockTag() = default;
+};
+/// The value of [[DeferLockTag]]: `UniqueLock<Mutex> lock(mutex, DeferLock);`.
+inline constexpr DeferLockTag DeferLock{};
+
 /// A lock holder that can unlock early, relock, and wait on a [[ConditionVariable]] (`std::unique_lock`).
 ///
 /// Thread-safety: thread-compatible. The holder belongs to one thread.
@@ -87,10 +94,8 @@ public:
     UniqueLock() noexcept = default;
     /// Locks `mutex`, which must outlive the holder.
     explicit UniqueLock(M& mutex) : lock_(mutex.NativeMutex()) {}
-    /// Associates with `mutex` without locking it.
-    UniqueLock(M& mutex, bool lock_now) : lock_(mutex.NativeMutex(), std::defer_lock) {
-        if (lock_now) lock_.lock();
-    }
+    /// Associates with `mutex` without locking it; pass [[DeferLock]].
+    UniqueLock(M& mutex, DeferLockTag) : lock_(mutex.NativeMutex(), std::defer_lock) {}
     UniqueLock(UniqueLock&& other) noexcept = default;
     UniqueLock& operator=(UniqueLock&& other) noexcept = default;
 

@@ -241,8 +241,8 @@ Atomic::operator++() noexcept	function	foundation/sync	atomic-operator-plus-plus
 Atomic::operator++(int) noexcept	function	foundation/sync	atomic-operator-plus-plus-int-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:144
 Atomic::operator--() noexcept	function	foundation/sync	atomic-operator-minus-minus-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:146
 Atomic::operator--(int) noexcept	function	foundation/sync	atomic-operator-minus-minus-int-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:148
-AtomicThreadFence(MemoryOrder) noexcept	function	foundation/sync	atomicthreadfence-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:156
-AtomicSignalFence(MemoryOrder) noexcept	function	foundation/sync	atomicsignalfence-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:161
+AtomicThreadFence(MemoryOrder) noexcept	function	foundation/sync	atomicthreadfence-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:159
+AtomicSignalFence(MemoryOrder) noexcept	function	foundation/sync	atomicsignalfence-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:164
 Mutex	class	foundation/sync	mutex	foundation-sync.md	engine/foundation/sync/mutex.h:18
 Mutex::Native	alias	foundation/sync	mutex-native	foundation-sync.md	engine/foundation/sync/mutex.h:21
 Mutex::Mutex() noexcept	function	foundation/sync	mutex-mutex-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:23
@@ -265,33 +265,36 @@ LockGuard	class	foundation/sync	lockguard	foundation-sync.md	engine/foundation/s
 LockGuard::LockGuard(M&)	function	foundation/sync	lockguard-lockguard-m-amp	foundation-sync.md	engine/foundation/sync/mutex.h:72
 LockGuard::LockGuard(const LockGuard&)	function	foundation/sync	lockguard-lockguard-const-lockguard-amp	foundation-sync.md	engine/foundation/sync/mutex.h:73
 LockGuard::operator=(const LockGuard&)	function	foundation/sync	lockguard-operator-eq-const-lockguard-amp	foundation-sync.md	engine/foundation/sync/mutex.h:74
-UniqueLock	class	foundation/sync	uniquelock	foundation-sync.md	engine/foundation/sync/mutex.h:83
-UniqueLock::UniqueLock() noexcept	function	foundation/sync	uniquelock-uniquelock-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:87
-UniqueLock::UniqueLock(M&)	function	foundation/sync	uniquelock-uniquelock-m-amp	foundation-sync.md	engine/foundation/sync/mutex.h:89
-UniqueLock::UniqueLock(M&,bool)	function	foundation/sync	uniquelock-uniquelock-m-amp-bool	foundation-sync.md	engine/foundation/sync/mutex.h:91
-UniqueLock::UniqueLock(UniqueLock&&) noexcept	function	foundation/sync	uniquelock-uniquelock-uniquelock-amp-amp-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:94
-UniqueLock::operator=(UniqueLock&&) noexcept	function	foundation/sync	uniquelock-operator-eq-uniquelock-amp-amp-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:95
-UniqueLock::Lock()	function	foundation/sync	uniquelock-lock	foundation-sync.md	engine/foundation/sync/mutex.h:98
-UniqueLock::TryLock()	function	foundation/sync	uniquelock-trylock	foundation-sync.md	engine/foundation/sync/mutex.h:100
-UniqueLock::Unlock()	function	foundation/sync	uniquelock-unlock	foundation-sync.md	engine/foundation/sync/mutex.h:102
-UniqueLock::OwnsLock() const noexcept	function	foundation/sync	uniquelock-ownslock-const-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:104
-UniqueLock::NativeLock()	function	foundation/sync	uniquelock-nativelock	foundation-sync.md	engine/foundation/sync/mutex.h:106
-ConditionVariable	class	foundation/sync	conditionvariable	foundation-sync.md	engine/foundation/sync/mutex.h:117
-ConditionVariable::ConditionVariable()	function	foundation/sync	conditionvariable-conditionvariable	foundation-sync.md	engine/foundation/sync/mutex.h:119
-ConditionVariable::ConditionVariable(const ConditionVariable&)	function	foundation/sync	conditionvariable-conditionvariable-const-conditionvariable-amp	foundation-sync.md	engine/foundation/sync/mutex.h:120
-ConditionVariable::operator=(const ConditionVariable&)	function	foundation/sync	conditionvariable-operator-eq-const-conditionvariable-amp	foundation-sync.md	engine/foundation/sync/mutex.h:121
-ConditionVariable::Wait(UniqueLock<Mutex>&)	function	foundation/sync	conditionvariable-wait-uniquelock-lt-mutex-gt-amp	foundation-sync.md	engine/foundation/sync/mutex.h:124
-ConditionVariable::Wait(UniqueLock<Mutex>&,Predicate)	function	foundation/sync	conditionvariable-wait-uniquelock-lt-mutex-gt-amp-predicate	foundation-sync.md	engine/foundation/sync/mutex.h:126
-ConditionVariable::WaitForMilliseconds(UniqueLock<Mutex>&,u64,Predicate)	function	foundation/sync	conditionvariable-waitformilliseconds-uniquelock-lt-mutex-gt-amp-u64-predicate	foundation-sync.md	engine/foundation/sync/mutex.h:131
-ConditionVariable::WaitForMilliseconds(UniqueLock<Mutex>&,u64)	function	foundation/sync	conditionvariable-waitformilliseconds-uniquelock-lt-mutex-gt-amp-u64	foundation-sync.md	engine/foundation/sync/mutex.h:136
-ConditionVariable::NotifyOne() noexcept	function	foundation/sync	conditionvariable-notifyone-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:140
-ConditionVariable::NotifyAll() noexcept	function	foundation/sync	conditionvariable-notifyall-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:142
-OnceFlag	class	foundation/sync	onceflag	foundation-sync.md	engine/foundation/sync/mutex.h:149
-OnceFlag::OnceFlag() noexcept	function	foundation/sync	onceflag-onceflag-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:151
-OnceFlag::OnceFlag(const OnceFlag&)	function	foundation/sync	onceflag-onceflag-const-onceflag-amp	foundation-sync.md	engine/foundation/sync/mutex.h:152
-OnceFlag::operator=(const OnceFlag&)	function	foundation/sync	onceflag-operator-eq-const-onceflag-amp	foundation-sync.md	engine/foundation/sync/mutex.h:153
-OnceFlag::NativeFlag()	function	foundation/sync	onceflag-nativeflag	foundation-sync.md	engine/foundation/sync/mutex.h:155
-CallOnce(OnceFlag&,F&&,Args&&...)	function	foundation/sync	callonce-onceflag-amp-f-amp-amp-args-amp-amp	foundation-sync.md	engine/foundation/sync/mutex.h:162
+DeferLockTag	struct	foundation/sync	deferlocktag	foundation-sync.md	engine/foundation/sync/mutex.h:81
+DeferLockTag::DeferLockTag()	function	foundation/sync	deferlocktag-deferlocktag	foundation-sync.md	engine/foundation/sync/mutex.h:82
+DeferLock	variable	foundation/sync	deferlock	foundation-sync.md	engine/foundation/sync/mutex.h:85
+UniqueLock	class	foundation/sync	uniquelock	foundation-sync.md	engine/foundation/sync/mutex.h:90
+UniqueLock::UniqueLock() noexcept	function	foundation/sync	uniquelock-uniquelock-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:94
+UniqueLock::UniqueLock(M&)	function	foundation/sync	uniquelock-uniquelock-m-amp	foundation-sync.md	engine/foundation/sync/mutex.h:96
+UniqueLock::UniqueLock(M&,DeferLockTag)	function	foundation/sync	uniquelock-uniquelock-m-amp-deferlocktag	foundation-sync.md	engine/foundation/sync/mutex.h:98
+UniqueLock::UniqueLock(UniqueLock&&) noexcept	function	foundation/sync	uniquelock-uniquelock-uniquelock-amp-amp-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:99
+UniqueLock::operator=(UniqueLock&&) noexcept	function	foundation/sync	uniquelock-operator-eq-uniquelock-amp-amp-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:100
+UniqueLock::Lock()	function	foundation/sync	uniquelock-lock	foundation-sync.md	engine/foundation/sync/mutex.h:103
+UniqueLock::TryLock()	function	foundation/sync	uniquelock-trylock	foundation-sync.md	engine/foundation/sync/mutex.h:105
+UniqueLock::Unlock()	function	foundation/sync	uniquelock-unlock	foundation-sync.md	engine/foundation/sync/mutex.h:107
+UniqueLock::OwnsLock() const noexcept	function	foundation/sync	uniquelock-ownslock-const-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:109
+UniqueLock::NativeLock()	function	foundation/sync	uniquelock-nativelock	foundation-sync.md	engine/foundation/sync/mutex.h:111
+ConditionVariable	class	foundation/sync	conditionvariable	foundation-sync.md	engine/foundation/sync/mutex.h:122
+ConditionVariable::ConditionVariable()	function	foundation/sync	conditionvariable-conditionvariable	foundation-sync.md	engine/foundation/sync/mutex.h:124
+ConditionVariable::ConditionVariable(const ConditionVariable&)	function	foundation/sync	conditionvariable-conditionvariable-const-conditionvariable-amp	foundation-sync.md	engine/foundation/sync/mutex.h:125
+ConditionVariable::operator=(const ConditionVariable&)	function	foundation/sync	conditionvariable-operator-eq-const-conditionvariable-amp	foundation-sync.md	engine/foundation/sync/mutex.h:126
+ConditionVariable::Wait(UniqueLock<Mutex>&)	function	foundation/sync	conditionvariable-wait-uniquelock-lt-mutex-gt-amp	foundation-sync.md	engine/foundation/sync/mutex.h:129
+ConditionVariable::Wait(UniqueLock<Mutex>&,Predicate)	function	foundation/sync	conditionvariable-wait-uniquelock-lt-mutex-gt-amp-predicate	foundation-sync.md	engine/foundation/sync/mutex.h:131
+ConditionVariable::WaitForMilliseconds(UniqueLock<Mutex>&,u64,Predicate)	function	foundation/sync	conditionvariable-waitformilliseconds-uniquelock-lt-mutex-gt-amp-u64-predicate	foundation-sync.md	engine/foundation/sync/mutex.h:136
+ConditionVariable::WaitForMilliseconds(UniqueLock<Mutex>&,u64)	function	foundation/sync	conditionvariable-waitformilliseconds-uniquelock-lt-mutex-gt-amp-u64	foundation-sync.md	engine/foundation/sync/mutex.h:141
+ConditionVariable::NotifyOne() noexcept	function	foundation/sync	conditionvariable-notifyone-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:145
+ConditionVariable::NotifyAll() noexcept	function	foundation/sync	conditionvariable-notifyall-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:147
+OnceFlag	class	foundation/sync	onceflag	foundation-sync.md	engine/foundation/sync/mutex.h:154
+OnceFlag::OnceFlag() noexcept	function	foundation/sync	onceflag-onceflag-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:156
+OnceFlag::OnceFlag(const OnceFlag&)	function	foundation/sync	onceflag-onceflag-const-onceflag-amp	foundation-sync.md	engine/foundation/sync/mutex.h:157
+OnceFlag::operator=(const OnceFlag&)	function	foundation/sync	onceflag-operator-eq-const-onceflag-amp	foundation-sync.md	engine/foundation/sync/mutex.h:158
+OnceFlag::NativeFlag()	function	foundation/sync	onceflag-nativeflag	foundation-sync.md	engine/foundation/sync/mutex.h:160
+CallOnce(OnceFlag&,F&&,Args&&...)	function	foundation/sync	callonce-onceflag-amp-f-amp-amp-args-amp-amp	foundation-sync.md	engine/foundation/sync/mutex.h:167
 ThreadId	class	foundation/sync	threadid	foundation-sync.md	engine/foundation/sync/thread.h:17
 ThreadId::ThreadId() noexcept	function	foundation/sync	threadid-threadid-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:20
 ThreadId::ThreadId(std::thread::id) noexcept	function	foundation/sync	threadid-threadid-std-thread-id-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:22

@@ -192,7 +192,7 @@ Replaces the value with `desired` if it equals `expected`; otherwise loads the c
 | Field | Value |
 |---|---|
 | Parameter `success` | the order when the exchange happens. |
-| Parameter `failure` | the order of the load when it does not; it must not be `Release` or `AcqRel`. |
+| Parameter `failure` | the order of the load when it does not; a `Release` or `AcqRel` (invalid for a load) is lowered to `Relaxed` or `Acquire`. |
 | Returns | true when the value was replaced. |
 
 ### `CompareExchangeWeak(T&,T,MemoryOrder)` {#atomic-compareexchangeweak-t-amp-t-memoryorder-noexcept}
@@ -346,6 +346,8 @@ inline void AtomicThreadFence(MemoryOrder order) noexcept;
 ```
 
 Orders the memory accesses around it between threads without touching a variable (`std::atomic_thread_fence`).
+
+GCC's libstdc++ rejects this call at compile time under `-fsanitize=thread` (`-Werror=tsan`: ThreadSanitizer does not model fences), so code that must build in the GCC tsan flavor uses an atomic operation with the order it needs instead.
 
 ## `AtomicSignalFence(MemoryOrder)` {#atomicsignalfence-memoryorder-noexcept}
 
@@ -591,6 +593,36 @@ LockGuard& operator=(const LockGuard&) = delete;
 
 _Deleted._
 
+## `DeferLockTag` {#deferlocktag}
+
+`struct DeferLockTag` — defined in `engine/foundation/sync/mutex.h`
+
+```cpp
+struct DeferLockTag { ... }
+```
+
+The tag that asks a [`UniqueLock`](#uniquelock) not to lock its mutex yet.
+
+### `DeferLockTag()` {#deferlocktag-deferlocktag}
+
+`constructor DeferLockTag::DeferLockTag` — defined in `engine/foundation/sync/mutex.h`
+
+```cpp
+explicit DeferLockTag() = default;
+```
+
+_Defaulted._
+
+## `DeferLock` {#deferlock}
+
+`variable DeferLock` — defined in `engine/foundation/sync/mutex.h`
+
+```cpp
+inline constexpr DeferLockTag DeferLock;
+```
+
+The value of [`DeferLockTag`](#deferlocktag): `UniqueLock<Mutex> lock(mutex, DeferLock);`.
+
 ## `UniqueLock` {#uniquelock}
 
 `class UniqueLock` — defined in `engine/foundation/sync/mutex.h`
@@ -626,15 +658,15 @@ explicit UniqueLock(M& mutex);
 
 Locks `mutex`, which must outlive the holder.
 
-### `UniqueLock(M&,bool)` {#uniquelock-uniquelock-m-amp-bool}
+### `UniqueLock(M&,DeferLockTag)` {#uniquelock-uniquelock-m-amp-deferlocktag}
 
 `constructor UniqueLock::UniqueLock` — defined in `engine/foundation/sync/mutex.h`
 
 ```cpp
-UniqueLock(M& mutex, bool lock_now);
+UniqueLock(M& mutex, DeferLockTag);
 ```
 
-Associates with `mutex` without locking it.
+Associates with `mutex` without locking it; pass [`DeferLock`](#deferlock).
 
 ### `UniqueLock(UniqueLock&&)` {#uniquelock-uniquelock-uniquelock-amp-amp-noexcept}
 

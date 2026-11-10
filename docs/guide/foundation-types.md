@@ -18,6 +18,38 @@ Design and reasons: `docs/superpowers/specs/2026-11-07-types-and-containers-desi
 | floating point | `f32`, `f64` |
 | true or false | `bool` |
 
+## Which wrapper do I use? (the standard library is not used directly)
+
+Code in `engine/`, `game/`, `tools/` and `tests/` never includes a standard header or spells `std::`; every facility has an engine name (gate: `std_usage_check`, section "Always use the wrapped types, never `std`" in `CLAUDE.md`). If the name you need is missing, add it to the module of its category first.
+
+| The standard spelling | Use | Header (under `engine/foundation/`) |
+|---|---|---|
+| `std::move`, `forward`, `swap`, `exchange` | `Move`, `Forward`, `Swap`, `Exchange` | `lang/utility.h` |
+| `<type_traits>` (`is_same`, `enable_if`, `is_trivially_copyable`, ...) | `IsSame`, `EnableIf`, `IsTriviallyCopyable`, ... | `lang/traits.h` |
+| `numeric_limits<T>` | `Limits<T>` | `lang/limits.h` |
+| `std::strong_ordering`, `<=>` | `Ordering` | `lang/ordering.h` |
+| `std::initializer_list` | `InitializerList` | `lang/initializer_list.h` |
+| placement `new`, `std::launder`, `align_val_t`, `offsetof` | `ConstructAt`, `kMaxAlign`, `ENGINE_OFFSET_OF` | `lang/new.h` |
+| `<cmath>` (`sqrt`, `floor`, `sin`, `isnan`, ...) | `Sqrt`, `Floor`, `Sin`, `IsNaN`, ... | `lang/scalar.h` |
+| `std::atomic<T>`, `memory_order` | `Atomic<T>`, `MemoryOrder` | `sync/atomic.h` |
+| `std::mutex`, `lock_guard`, `unique_lock` | `Mutex`, `LockGuard`, `UniqueLock` (`DeferLock` to start unlocked) | `sync/mutex.h` |
+| `std::condition_variable` | `ConditionVariable` | `sync/mutex.h` |
+| `std::thread`, `this_thread` | `Thread`, `ThisThread` | `sync/thread.h` |
+| `memcpy`, `memmove`, `memset`, `memcmp`, `qsort` | `MemCopy`, `MemMove`, `MemSet`, `MemCompare`, `SortRaw` | `cstr/mem_ops.h` |
+| `strlen`, `strcmp`, `strstr`, `strchr`, wide forms | `CStrLength`, `CStrCompare`, `CStrFind`, `CStrFindChar`, `WStrLength` | `cstr/cstr.h` |
+| `snprintf`, `vsnprintf` | `FormatTo`, `VFormatTo` | `cstr/format.h` |
+| `strtod`, `strtoll`, `to_chars` | `ParseDoubleExact`, `FormatShortest`, the number parsers | `cstr/number.h` |
+| `va_list`, `va_start` | `VarArgs`, `ENGINE_VA_START` | `cstr/varargs.h` |
+| `printf`, `fprintf(stderr, ...)`, `puts`, `fflush`, `abort`, `_Exit`, `getenv` | `os::Print`, `os::PrintError`, `os::PrintLine`, `os::Flush`, `os::Abort`, `os::ExitNow`, `os::GetEnvironment` | `os/console.h` |
+| `errno` | `os::LastError`, `os::SetLastError` | `os/last_error.h` |
+| `signal`, `sigaction` | `os::SetSignalHandler` | `os/signal.h` |
+| `exit`, clocks, sleeping | `os::Exit`, `os::MonotonicTimeNanos`, `os::SleepNanos` | `os/os.h` |
+| `<coroutine>` | `CoroutineHandle`, `SuspendAlways`, `SuspendNever` | `engine/jobs/coroutine.h` |
+| `std::string`, `string_view`, `vector`, `array`, `map`, `unique_ptr`, `shared_ptr`, `sort`, `min`, `max` | `String`, `StringView`, `Vector`, `Array`, `HashMap`, `UniquePtr`, `SharedPtr`, `Sort`, `Min`, `Max` | the Phase 10 types below |
+| files and directories | `io::File`, `io::Path`, `io::Directory` | `io/` |
+
+Details per category: `foundation-sync.md`, `foundation-cstr.md`, `foundation-math.md`.
+
 ## Bytes and spans
 
 `byte` is the same type as `u8`, so a byte buffer can be handed to any API that takes `unsigned char`. A `Span<T>` is a pointer and a length: it owns nothing and costs nothing to pass by value. It converts implicitly from a `Vector`,

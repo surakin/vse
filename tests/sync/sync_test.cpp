@@ -161,7 +161,7 @@ TEST_CASE("UniqueLock locks, unlocks early and relocks", "[sync]") {
     mutex.Unlock();
     lock.Lock();
     CHECK(lock.OwnsLock());
-    UniqueLock<Mutex> deferred(mutex, false);
+    UniqueLock<Mutex> deferred(mutex, DeferLock);
     CHECK(!deferred.OwnsLock());
     lock.Unlock();
     CHECK(deferred.TryLock());

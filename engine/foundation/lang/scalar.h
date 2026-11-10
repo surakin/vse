@@ -86,7 +86,7 @@ inline f64 LdExp(f64 value, int exponent) noexcept { return std::ldexp(value, ex
 inline f32 Abs(f32 value) noexcept { return std::fabs(value); }
 /// The absolute value (`fabs`).
 inline f64 Abs(f64 value) noexcept { return std::fabs(value); }
-/// The absolute value of a signed integer (`abs`); the most negative value has no result (undefined, as for `abs`).
+/// The absolute value of a signed integer (`abs`); the most negative value has no positive counterpart, so `Abs(Limits<i32>::Min())` overflows and is undefined (as for `abs`).
 template <class T, EnableIf<IsIntegral<T> && IsSigned<T>, int> = 0>
 inline T Abs(T value) noexcept { return value < 0 ? static_cast<T>(-value) : value; }
 

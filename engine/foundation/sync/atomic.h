@@ -96,10 +96,10 @@ public:
     /// Replaces the value with `desired` if it equals `expected`; otherwise loads the current value into `expected`. May fail spuriously.
     ///
     /// Param success: the order when the exchange happens.
-    /// Param failure: the order of the load when it does not; it must not be `Release` or `AcqRel`.
+    /// Param failure: the order of the load when it does not; a `Release` or `AcqRel` (invalid for a load) is lowered to `Relaxed` or `Acquire`.
     /// Returns: true when the value was replaced.
     bool CompareExchangeWeak(T& expected, T desired, MemoryOrder success, MemoryOrder failure) noexcept {
-        return value_.compare_exchange_weak(expected, desired, detail_sync::ToStd(success), detail_sync::ToStd(failure));
+        return value_.compare_exchange_weak(expected, desired, detail_sync::ToStd(success), detail_sync::ToStd(detail_sync::FailureOrder(failure)));
     }
     /// As above with one order; the failure order is the strongest valid one.
     bool CompareExchangeWeak(T& expected, T desired, MemoryOrder order = MemoryOrder::SeqCst) noexcept {
@@ -107,7 +107,7 @@ public:
     }
     /// As `CompareExchangeWeak` but never fails spuriously.
     bool CompareExchangeStrong(T& expected, T desired, MemoryOrder success, MemoryOrder failure) noexcept {
-        return value_.compare_exchange_strong(expected, desired, detail_sync::ToStd(success), detail_sync::ToStd(failure));
+        return value_.compare_exchange_strong(expected, desired, detail_sync::ToStd(success), detail_sync::ToStd(detail_sync::FailureOrder(failure)));
     }
     /// As above with one order; the failure order is the strongest valid one.
     bool CompareExchangeStrong(T& expected, T desired, MemoryOrder order = MemoryOrder::SeqCst) noexcept {
@@ -153,6 +153,9 @@ private:
 };
 
 /// Orders the memory accesses around it between threads without touching a variable (`std::atomic_thread_fence`).
+///
+/// GCC's libstdc++ rejects this call at compile time under `-fsanitize=thread` (`-Werror=tsan`: ThreadSanitizer does not model fences), so code
+/// that must build in the GCC tsan flavor uses an atomic operation with the order it needs instead.
 inline void AtomicThreadFence(MemoryOrder order) noexcept {
     std::atomic_thread_fence(detail_sync::ToStd(order));
 }

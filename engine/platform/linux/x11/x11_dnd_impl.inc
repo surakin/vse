@@ -137,7 +137,7 @@ void DndSetAccept(_XDisplay* display, unsigned long window, X11DndState& dnd, co
     }
     if (t.accept_formats != 0) {
         const long version = 5;
-        XChangeProperty(display, window, dnd.atom_aware, XA_ATOM, 32, PropModeReplace, reinterpret_cast<const unsigned char*>(&version), 1);
+        XChangeProperty(display, window, dnd.atom_aware, XA_ATOM, 32, PropModeReplace, reinterpret_cast<const byte*>(&version), 1);
     } else {
         XDeleteProperty(display, window, dnd.atom_aware); // not aware: other programs refuse the drag at once
     }
@@ -224,7 +224,7 @@ void HandleEnter(Display* display, unsigned long window, X11ClipboardState& csta
         int format = 0;
         unsigned long count = 0;
         unsigned long after = 0;
-        unsigned char* data = nullptr;
+        byte* data = nullptr;
         if (XGetWindowProperty(display, t.source, dnd.atom_type_list, 0, kMaxDragTypes, False, XA_ATOM, &type, &format, &count, &after, &data) == Success && data != nullptr) {
             // Only a 32-bit ATOM list is read as longs; another format from a hostile source would be read past its end.
             if (type == XA_ATOM && format == 32) {
@@ -300,7 +300,7 @@ bool IsAware(Display* display, X11DndState& dnd, unsigned long window, int* vers
     int format = 0;
     unsigned long count = 0;
     unsigned long after = 0;
-    unsigned char* data = nullptr;
+    byte* data = nullptr;
     bool aware = false;
     if (XGetWindowProperty(display, window, dnd.atom_aware, 0, 1, False, XA_ATOM, &type, &format, &count, &after, &data) == Success && data != nullptr) {
         if (type == XA_ATOM && format == 32 && count >= 1) {
@@ -330,7 +330,7 @@ bool FindTarget(Display* display, X11DndState& dnd, int rx, int ry, unsigned lon
             int format = 0;
             unsigned long count = 0;
             unsigned long after = 0;
-            unsigned char* data = nullptr;
+            byte* data = nullptr;
             if (XGetWindowProperty(display, w, dnd.atom_proxy, 0, 1, False, XA_WINDOW, &type, &format, &count, &after, &data) == Success && data != nullptr) {
                 if (type == XA_WINDOW && format == 32 && count >= 1) {
                     const unsigned long proxy = *reinterpret_cast<unsigned long*>(data);
@@ -447,7 +447,7 @@ bool DndBegin(_XDisplay* display, unsigned long window, X11ClipboardState& cstat
             types[type_count++] = o.custom_atom;
         }
     }
-    XChangeProperty(display, window, dnd.atom_type_list, XA_ATOM, 32, PropModeReplace, reinterpret_cast<const unsigned char*>(types), type_count);
+    XChangeProperty(display, window, dnd.atom_type_list, XA_ATOM, 32, PropModeReplace, reinterpret_cast<const byte*>(types), type_count);
     XFlush(display);
     return true;
 }

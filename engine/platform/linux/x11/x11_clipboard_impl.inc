@@ -142,13 +142,13 @@ void HandleSelectionRequest(Display* display, unsigned long own_window, X11Clipb
                 atoms[count++] = owned.custom_atom;
             }
         }
-        XChangeProperty(display, request.requestor, property, XA_ATOM, 32, PropModeReplace, reinterpret_cast<const unsigned char*>(atoms), count);
+        XChangeProperty(display, request.requestor, property, XA_ATOM, 32, PropModeReplace, reinterpret_cast<const byte*>(atoms), count);
         SendNotify(display, request, property);
         return;
     }
     if (request.target == state.atom_timestamp) {
         long time = static_cast<long>(request.time);
-        XChangeProperty(display, request.requestor, property, XA_INTEGER, 32, PropModeReplace, reinterpret_cast<const unsigned char*>(&time), 1);
+        XChangeProperty(display, request.requestor, property, XA_INTEGER, 32, PropModeReplace, reinterpret_cast<const byte*>(&time), 1);
         SendNotify(display, request, property);
         return;
     }
@@ -190,7 +190,7 @@ void HandleSelectionRequest(Display* display, unsigned long own_window, X11Clipb
         XSelectInput(display, request.requestor, PropertyChangeMask); // to see the requestor delete the property
     }
     long size = static_cast<long>(slot->data.Size());
-    XChangeProperty(display, request.requestor, property, state.atom_incr, 32, PropModeReplace, reinterpret_cast<const unsigned char*>(&size), 1);
+    XChangeProperty(display, request.requestor, property, state.atom_incr, 32, PropModeReplace, reinterpret_cast<const byte*>(&size), 1);
     SendNotify(display, request, property);
 }
 
@@ -291,7 +291,7 @@ bool ReadProperty(Display* display, unsigned long window, unsigned long property
         int actual_format = 0;
         unsigned long count = 0;
         unsigned long after = 0;
-        unsigned char* data = nullptr;
+        byte* data = nullptr;
         if (XGetWindowProperty(display, window, property, offset, 262144, True, AnyPropertyType, &actual_type, &actual_format, &count, &after, &data) != Success) {
             return false;
         }

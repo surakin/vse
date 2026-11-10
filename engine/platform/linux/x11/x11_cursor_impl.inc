@@ -68,7 +68,7 @@ void Apply(Display* display, ::Window window, X11CursorState& state) {
 
 void SelectRaw(Display* display, bool on, X11CursorState& state) {
     if (!state.xi_ready) return;
-    unsigned char bits[XIMaskLen(XI_LASTEVENT)] = {};
+    byte bits[XIMaskLen(XI_LASTEVENT)] = {};
     XIEventMask mask;
     mask.deviceid = XIAllMasterDevices;
     mask.mask_len = sizeof(bits);
@@ -184,7 +184,7 @@ void CursorHandleGeneric(_XDisplay* display, X11CursorState& state, void* event,
     if (!state.xi_ready || xevent->xcookie.extension != state.xi_opcode || !XGetEventData(display, &xevent->xcookie)) return;
     if (xevent->xcookie.evtype == XI_RawMotion && state.lock.Active()) {
         const XIRawEvent* raw = static_cast<const XIRawEvent*>(xevent->xcookie.data);
-        const unsigned char* mask = raw->valuators.mask;
+        const byte* mask = raw->valuators.mask;
         const int mask_len = raw->valuators.mask_len;
         f64 dx = 0.0;
         f64 dy = 0.0;
