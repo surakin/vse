@@ -1,6 +1,6 @@
 #include "sync/atomic.h"
-#include <chrono>
 #include "cstr/format.h"
+#include "os/os.h"
 #include "sync/thread.h"
 #include "build_defs.h"
 
@@ -223,9 +223,9 @@ TEST_CASE("Compute jobs keep running while a slow read blocks the I/O thread", "
         // (with N=1 main must run it: it sits below the compute jobs in
         // the deque otherwise).
         struct Clock {
-            std::chrono::steady_clock::time_point until;
-        } clock{std::chrono::steady_clock::now() + std::chrono::milliseconds(100)};
-        s->HelpUntil([](void* u) { return std::chrono::steady_clock::now() >= static_cast<Clock*>(u)->until; },
+            u64 until;
+        } clock{os::MonotonicTimeNanos() + 100'000'000ull};
+        s->HelpUntil([](void* u) { return os::MonotonicTimeNanos() >= static_cast<Clock*>(u)->until; },
                      &clock);
 
         // Unrelated compute work completes while the read is in flight.
@@ -245,9 +245,10 @@ TEST_CASE("Compute jobs keep running while a slow read blocks the I/O thread", "
             wfd = open(fifo.CStr(), O_WRONLY | O_NONBLOCK);
             if (wfd < 0) {
                 // Let main run the read job if it hasn't yet.
-                Clock slice{std::chrono::steady_clock::now() + std::chrono::milliseconds(2)};
-                s->HelpUntil([](void* u) { return std::chrono::steady_clock::now() >= static_cast<Clock*>(u)->until; },
+                Clock slice{os::MonotonicTimeNanos() + 2'000'000ull};
+                s->HelpUntil([](void* u) { return os::MonotonicTimeNanos() >= static_cast<Clock*>(u)->until; },
                              &slice);
+
             }
         }
         REQUIRE(wfd >= 0);

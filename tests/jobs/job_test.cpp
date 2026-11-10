@@ -1,7 +1,7 @@
 #include "sync/atomic.h"
 #include "sync/thread.h"
 #include "lang/utility.h"
-#include <vector>
+#include "containers/vector.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -39,7 +39,7 @@ Job BigFrame(int* checksum) {
     for (int i = 0; i < 4096; ++i) buf[i] = static_cast<char>(i);
     co_await SuspendAlways{};
     int sum = 0;
-    for (int i = 0; i < 4096; ++i) sum += static_cast<unsigned char>(buf[i]);
+    for (int i = 0; i < 4096; ++i) sum += static_cast<engine_placeholder::byte>(buf[i]);
     *checksum = sum;
 }
 
@@ -190,7 +190,7 @@ TEST_CASE("A frame bigger than the top size class takes the counted fallback and
     REQUIRE(checksum == 0); // not finished yet
     h.resume();
     int expected = 0;
-    for (int i = 0; i < 4096; ++i) expected += static_cast<unsigned char>(static_cast<char>(i));
+    for (int i = 0; i < 4096; ++i) expected += static_cast<engine_placeholder::byte>(static_cast<char>(i));
     REQUIRE(checksum == expected);
     FramePool::Stats finished = Snap();
     REQUIRE(finished.fallback_frees == before.fallback_frees + 1);
@@ -203,17 +203,18 @@ TEST_CASE("Jobs created on one thread can finish on another with balanced frame 
     constexpr int kJobs = 2000;
     Atomic<int> ran{0};
 
-    std::vector<CoroutineHandle<>> handles;
+    Vector<CoroutineHandle<>> handles;
     static bool flags[kJobs];
     for (bool& f : flags) f = false;
     for (int i = 0; i < kJobs; ++i) {
         Job j = SetFlag(&flags[i]);
-        handles.push_back(j.Release());
+        handles.Push(j.Release());
     }
     REQUIRE(Snap().Live() == before.Live() + kJobs);
 
     Thread runner([&] {
-        for (auto h : handles) {
+        for (usize i = 0; i < handles.Size(); ++i) {
+            CoroutineHandle<> h = handles[i];
             h.resume();
             ran.FetchAdd(1);
         }

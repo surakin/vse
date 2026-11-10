@@ -7,6 +7,8 @@
 #include "lang/initializer_list.h"
 #include "cstr/format.h"
 
+#include "algorithm.h"
+#include "containers/span.h"
 #include "containers/vector.h"
 #include "debug/compiler.h"
 #include "mem/heap_allocator.h"
@@ -67,9 +69,74 @@ inline Vector<char> Chars(usize count) {
     return buffer;
 }
 
+/// A buffer of `count` bytes, all `fill`.
+inline Vector<engine_placeholder::byte> ByteBuffer(usize count, engine_placeholder::byte fill = 0) {
+    Vector<engine_placeholder::byte> buffer;
+    buffer.Resize(count);
+    for (usize i = 0; i < count; ++i) buffer[i] = fill;
+    return buffer;
+}
+
+/// True if the two byte buffers have the same size and the same bytes.
+inline bool SameBytes(const Vector<engine_placeholder::byte>& a, const Vector<engine_placeholder::byte>& b) {
+    if (a.Size() != b.Size()) return false;
+    for (usize i = 0; i < a.Size(); ++i) {
+        if (a[i] != b[i]) return false;
+    }
+    return true;
+}
+
 /// A view of the first `count` characters of a buffer.
 inline StringView View(const Vector<char>& buffer, usize count) { return StringView(buffer.Data(), count); }
 inline StringView View(const char* data, usize count) { return StringView(data, count); }
+
+/// A copyable list of plain values with a braced-list constructor (`{1, 2, 3}`), so a test struct can carry expected values in a designated
+/// initializer. Compares element by element; `Sort` orders it ascending with `operator<`.
+template <typename T>
+class ValueList {
+public:
+    ValueList() = default;
+    ValueList(engine_placeholder::InitializerList<T> items) {
+        for (const T& item : items) items_.Push(item);
+    }
+    ValueList(const ValueList& other) { CopyFrom(other); }
+    ValueList& operator=(const ValueList& other) {
+        if (this != &other) {
+            items_.Clear();
+            CopyFrom(other);
+        }
+        return *this;
+    }
+    ValueList(ValueList&&) noexcept = default;
+    ValueList& operator=(ValueList&&) noexcept = default;
+
+    void Push(const T& value) { items_.Push(value); }
+    usize Size() const { return items_.Size(); }
+    bool Empty() const { return items_.Empty(); }
+    T& operator[](usize i) { return items_[i]; }
+    const T& operator[](usize i) const { return items_[i]; }
+    /// How many entries equal `value`.
+    usize Count(const T& value) const {
+        usize n = 0;
+        for (usize i = 0; i < items_.Size(); ++i) n += items_[i] == value ? 1 : 0;
+        return n;
+    }
+    /// Orders the entries ascending by `operator<`.
+    void Sort() { engine_placeholder::Sort(engine_placeholder::Span<T>(items_.Data(), items_.Size())); }
+    bool operator==(const ValueList& other) const {
+        if (items_.Size() != other.items_.Size()) return false;
+        for (usize i = 0; i < items_.Size(); ++i) {
+            if (!(items_[i] == other.items_[i])) return false;
+        }
+        return true;
+    }
+
+private:
+    void CopyFrom(const ValueList& other) {
+        for (usize i = 0; i < other.items_.Size(); ++i) items_.Push(other.items_[i]);
+    }
+    Vector<T> items_;
+};
 
 /// An ordered list of owned texts (what a test records while it walks something).
 class TextList {

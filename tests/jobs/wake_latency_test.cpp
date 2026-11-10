@@ -2,8 +2,8 @@
 // A measurement, not a check: hidden ([.]), run by hand on each machine and recorded in the day file:
 //   jobs_tests "[latency]"
 #include "sync/atomic.h"
-#include <chrono>
 #include "os/console.h"
+#include "os/os.h"
 #include "sync/thread.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -20,7 +20,8 @@ using namespace engine_placeholder::jobs;
 namespace {
 
 i64 NowNs() {
-    return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+    return static_cast<i64>(os::MonotonicTimeNanos());
+
 }
 
 Job Stamp(Atomic<i64>* started) {
@@ -49,7 +50,7 @@ TEST_CASE("Wake latency of an idle worker: median and 99th percentile of 10000 w
     const double median_us = static_cast<double>(waits[kSamples / 2]) / 1000.0;
     const double p99_us = static_cast<double>(waits[kSamples * 99 / 100]) / 1000.0;
     const double max_us = static_cast<double>(waits[kSamples - 1]) / 1000.0;
-    os::Print("wake latency over %zu wake-ups: median %.1f us, p99 %.1f us, max %.1f us\n", static_cast<size_t>(kSamples), median_us,
+    os::Print("wake latency over %zu wake-ups: median %.1f us, p99 %.1f us, max %.1f us\n", static_cast<usize>(kSamples), median_us,
                 p99_us, max_us);
     CHECK(median_us > 0.0);
 }

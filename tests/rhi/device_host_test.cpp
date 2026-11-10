@@ -1,11 +1,9 @@
-#include <cstring>
-#include <string>
 #include "sync/thread.h"
-#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 
 #include "gpu_fixture.h"
+#include "test_text.h"
 #include "log/assert.h"
 #include "rhi/device_host.h"
 #include "rhi/handle_pool.h"
@@ -33,7 +31,7 @@ DeviceCreateInfo NullCreate() {
 
 // Records observer calls into a shared log.
 struct Recorder final : DeviceObserver {
-    std::vector<std::string>* log = nullptr;
+    engine_test::TextList* log = nullptr;
     const char* name = "";
     bool fail_create = false;
     u32 last_epoch = 0;
@@ -45,7 +43,7 @@ struct Recorder final : DeviceObserver {
     void OnDeviceReleasing(u32 epoch) override {
         (void)epoch;
         ++released;
-        log->push_back(std::string("release ") + name);
+        log->Push(engine_test::Concat("release ", name).View());
         if (buffer.IsValid() && device != nullptr) {
             device->DestroyBuffer(buffer);
         }
@@ -56,11 +54,11 @@ struct Recorder final : DeviceObserver {
         last_epoch = epoch;
         device = created_device;
         if (fail_create) {
-            log->push_back(std::string("fail ") + name);
+            log->Push(engine_test::Concat("fail ", name).View());
             return false;
         }
         ++created;
-        log->push_back(std::string("create ") + name);
+        log->Push(engine_test::Concat("create ", name).View());
         BufferDesc d;
         d.size = 64;
         d.usage = BufferUsage::Uniform;
@@ -72,11 +70,11 @@ struct Recorder final : DeviceObserver {
 };
 
 struct AssertThrown {
-    std::string message;
+    engine_test::Text message;
 };
 
 AssertAction ThrowingHandler(const AssertInfo& info) {
-    throw AssertThrown{info.message != nullptr ? info.message : ""};
+    throw AssertThrown{engine_test::MakeText(StringView(info.message != nullptr ? info.message : ""))};
 }
 
 struct ThrowingAsserts {
@@ -200,7 +198,7 @@ TEST_CASE("ResourceCounts follow creation, destruction and Quiesce", "[rhi][host
 
 TEST_CASE("DeviceHost creates, recreates 100 times and leaves nothing behind", "[rhi][host]") {
     HostQuietLog quiet;
-    std::vector<std::string> log; // observers outlive the host
+    engine_test::TextList log; // observers outlive the host
     Recorder observer;
     DeviceHost host;
     observer.log = &log;
@@ -238,7 +236,7 @@ TEST_CASE("DeviceHost creates, recreates 100 times and leaves nothing behind", "
 
 TEST_CASE("DeviceHost calls observers in tier order, once each", "[rhi][host]") {
     HostQuietLog quiet;
-    std::vector<std::string> log;
+    engine_test::TextList log;
     Recorder low;
     Recorder mid_first;
     Recorder mid_second;
@@ -259,20 +257,18 @@ TEST_CASE("DeviceHost calls observers in tier order, once each", "[rhi][host]") 
 
     const DeviceCreateInfo info = NullCreate();
     REQUIRE(host.Create(info, SwapchainDesc{}));
-    const std::vector<std::string> created = {"create low", "create mid1", "create mid2", "create high"};
-    CHECK(log == created);
+    CHECK(log.SameAs({"create low", "create mid1", "create mid2", "create high"}));
 
-    log.clear();
+    log.Clear();
     REQUIRE(host.Recreate(info, SwapchainDesc{}));
-    const std::vector<std::string> expected = {"release high", "release mid2", "release mid1", "release low",
-                                               "create low",   "create mid1",  "create mid2",  "create high"};
-    CHECK(log == expected);
+    CHECK(log.SameAs({"release high", "release mid2", "release mid1", "release low",
+                      "create low",   "create mid1",  "create mid2",  "create high"}));
     host.Destroy();
 }
 
 TEST_CASE("A failing create leaves the host empty and says why", "[rhi][host]") {
     HostQuietLog quiet;
-    std::vector<std::string> log; // observers outlive the host: its destructor notifies them
+    engine_test::TextList log; // observers outlive the host: its destructor notifies them
     Recorder observer;
     DeviceHost host;
     observer.log = &log;
@@ -297,7 +293,7 @@ TEST_CASE("A failing create leaves the host empty and says why", "[rhi][host]") 
 
     // An observer that cannot rebuild fails the whole call and everything is released again.
     observer.fail_create = true;
-    log.clear();
+    log.Clear();
     CHECK_FALSE(host.Recreate(good, SwapchainDesc{}));
     CHECK(host.GetDevice() == nullptr);
     CHECK(CStrFind(host.LastError(), "obs") != nullptr);
@@ -320,7 +316,7 @@ TEST_CASE("DeviceHost refuses Recreate inside a frame or off the owning thread",
         host.Recreate(info, SwapchainDesc{});
     } catch (const AssertThrown& e) {
         threw = true;
-        CHECK(e.message.find("BeginFrame") != std::string::npos);
+        CHECK(e.message.View().Contains(StringView("BeginFrame")));
     }
     CHECK(threw);
     CHECK(host.Epoch() == epoch); // untouched
@@ -331,7 +327,7 @@ TEST_CASE("DeviceHost refuses Recreate inside a frame or off the owning thread",
         try {
             host.Recreate(info, SwapchainDesc{});
         } catch (const AssertThrown& e) {
-            other_threw = e.message.find("thread") != std::string::npos;
+            other_threw = e.message.View().Contains(StringView("thread"));
         }
     });
     other.Join();
@@ -359,7 +355,7 @@ TEST_CASE("Adding or removing an observer during a reset is rejected", "[rhi][ho
         }
         const char* ObserverName() const override { return "meddler"; }
     } meddler;
-    std::vector<std::string> log;
+    engine_test::TextList log;
     Recorder other;
     other.log = &log;
     meddler.host = &host;
@@ -372,7 +368,7 @@ TEST_CASE("Adding or removing an observer during a reset is rejected", "[rhi][ho
 
 TEST_CASE("An observer added to a live host is told about the device at once", "[rhi][host]") {
     HostQuietLog quiet;
-    std::vector<std::string> log;
+    engine_test::TextList log;
     Recorder late;
     DeviceHost host;
     REQUIRE(host.Create(NullCreate(), SwapchainDesc{}));
@@ -394,7 +390,7 @@ TEST_CASE("Vulkan devices are destroyed and recreated with nothing left over", "
     DeviceCreateInfo info;
     info.application_name = "host-test";
     info.validation = ValidationSetting::On;
-    std::vector<std::string> log;
+    engine_test::TextList log;
     Recorder observer;
     DeviceHost host;
     observer.log = &log;
@@ -450,7 +446,7 @@ TEST_CASE("A stale Vulkan buffer handle is not valid on the next device", "[rhi]
 
 TEST_CASE("Removing an observer that holds objects releases them first", "[rhi][host]") {
     HostQuietLog quiet;
-    std::vector<std::string> log;
+    engine_test::TextList log;
     Recorder observer;
     DeviceHost host;
     observer.log = &log;

@@ -1,6 +1,6 @@
 #include "sync/atomic.h"
 #include "sync/thread.h"
-#include <vector>
+#include "containers/vector.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -22,9 +22,9 @@ u64 IdOf(CoroutineHandle<> h) { return (reinterpret_cast<u64>(h.address()) / 16)
 // into the tally and the main thread asserts afterwards.
 Atomic<u64> g_bad_ids{0}; // out-of-range / garbage handles seen
 
-void RecordRaw(std::vector<Atomic<u32>>& counts, CoroutineHandle<> h) {
+void RecordRaw(Vector<Atomic<u32>>& counts, CoroutineHandle<> h) {
     u64 id = IdOf(h);
-    if (id < counts.size()) counts[id].FetchAdd(1, MemoryOrder::Relaxed);
+    if (id < counts.Size()) counts[id].FetchAdd(1, MemoryOrder::Relaxed);
     else g_bad_ids.FetchAdd(1, MemoryOrder::Relaxed);
 }
 
@@ -39,14 +39,15 @@ struct Outcome {
 
 Outcome RunSession(usize total, usize thieves, u32 pop_every) {
     WorkStealingDeque dq;
-    std::vector<Atomic<u32>> counts(total);
-    for (auto& c : counts) c.Store(0, MemoryOrder::Relaxed);
+    Vector<Atomic<u32>> counts; // sized once while empty, so the atomics never move
+    counts.Resize(total);
+    for (usize i = 0; i < counts.Size(); ++i) counts[i].Store(0, MemoryOrder::Relaxed);
     Atomic<bool> producer_done{false};
     Atomic<u64> stolen{0};
 
-    std::vector<Thread> ts;
+    Vector<Thread> ts;
     for (usize i = 0; i < thieves; ++i) {
-        ts.emplace_back([&] {
+        ts.Push(Thread([&] {
             for (;;) {
                 CoroutineHandle<> h;
                 StealStatus st = dq.StealTop(h);
@@ -62,7 +63,7 @@ Outcome RunSession(usize total, usize thieves, u32 pop_every) {
                 }
                 // Lost: retry immediately.
             }
-        });
+        }));
     }
 
     u64 rng = 0x9E3779B97F4A7C15ull;
@@ -84,12 +85,12 @@ Outcome RunSession(usize total, usize thieves, u32 pop_every) {
         RecordRaw(counts, h);
     }
     producer_done.Store(true, MemoryOrder::Release);
-    for (auto& t : ts) t.Join();
+    for (usize i = 0; i < ts.Size(); ++i) ts[i].Join();
 
     Outcome out;
     out.stolen = stolen.Load();
-    for (auto& c : counts) {
-        u32 v = c.Load();
+    for (usize i = 0; i < counts.Size(); ++i) {
+        u32 v = counts[i].Load();
         if (v == 0) ++out.missing;
         if (v > 1) ++out.duplicated;
     }
@@ -158,13 +159,14 @@ TEST_CASE("Deque: single-element contention between PopBottom and four thieves",
     // the owner's pop and four thieves (the last-element race).
     constexpr usize kRounds = 300'000;
     WorkStealingDeque dq;
-    std::vector<Atomic<u32>> counts(kRounds);
-    for (auto& c : counts) c.Store(0, MemoryOrder::Relaxed);
+    Vector<Atomic<u32>> counts;
+    counts.Resize(kRounds);
+    for (usize i = 0; i < counts.Size(); ++i) counts[i].Store(0, MemoryOrder::Relaxed);
     Atomic<bool> done{false};
     Atomic<u64> steals{0};
-    std::vector<Thread> ts;
+    Vector<Thread> ts;
     for (int i = 0; i < 4; ++i) {
-        ts.emplace_back([&] {
+        ts.Push(Thread([&] {
             while (!done.Load(MemoryOrder::Acquire)) {
                 CoroutineHandle<> h;
                 if (dq.StealTop(h) == StealStatus::Success) {
@@ -172,7 +174,7 @@ TEST_CASE("Deque: single-element contention between PopBottom and four thieves",
                     steals.FetchAdd(1, MemoryOrder::Relaxed);
                 }
             }
-        });
+        }));
     }
     for (usize id = 0; id < kRounds; ++id) {
         REQUIRE(dq.PushBottom(MakeHandle(id)));
@@ -182,11 +184,12 @@ TEST_CASE("Deque: single-element contention between PopBottom and four thieves",
     // Anything still sitting in the deque after the loop is taken here.
     for (auto h = dq.PopBottom(); h; h = dq.PopBottom()) RecordRaw(counts, h);
     done.Store(true, MemoryOrder::Release);
-    for (auto& t : ts) t.Join();
+    for (usize i = 0; i < ts.Size(); ++i) ts[i].Join();
     // A thief may have stolen the final element between our last pop and
     // the stop flag; either way every id must be consumed exactly once.
     usize bad = 0;
-    for (auto& c : counts) bad += c.Load() != 1;
+    for (usize i = 0; i < counts.Size(); ++i) bad += counts[i].Load() != 1;
+
     REQUIRE(bad == 0);
     REQUIRE(g_bad_ids.Load() == 0);
     REQUIRE(steals.Load() > 0);

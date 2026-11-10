@@ -1,6 +1,5 @@
 // Compute through the RHI on every GPU backend (Phase 13 Day 170, from vulkan_compute_test.cpp): a fill and a saxpy dispatch with a
 // barrier between them, and a storage texture written and read back. The Vulkan-only checks (the SPIR-V module check) stay there.
-#include <cstring>
 
 #include <catch2/catch_test_macros.hpp>
 

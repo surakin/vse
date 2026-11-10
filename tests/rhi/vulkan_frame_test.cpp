@@ -1,5 +1,6 @@
 #include "os/console.h"
-#include <vector>
+#include "containers/vector.h"
+#include "test_text.h"
 
 #include <catch2/catch_test_macros.hpp>
 #include "display_session.h"
@@ -61,10 +62,10 @@ TEST_CASE("BeginRendering clears an offscreen color attachment", "[rhi][vulkan][
     REQUIRE(device->Submit(lists, 1) != 0);
     device->EndFrame();
 
-    std::vector<unsigned char> back(32 * 16 * 4);
-    REQUIRE(device->ReadbackTexture(tex, 0, 0, back.data(), back.size(), ResourceState::ColorAttachment));
+    Vector<byte> back = engine_test::ByteBuffer(32 * 16 * 4);
+    REQUIRE(device->ReadbackTexture(tex, 0, 0, back.Data(), back.Size(), ResourceState::ColorAttachment));
     bool all_red = true;
-    for (usize i = 0; i < back.size(); i += 4) {
+    for (usize i = 0; i < back.Size(); i += 4) {
         all_red = all_red && back[i] == 255 && back[i + 1] == 0 && back[i + 2] == 0 && back[i + 3] == 255;
     }
     CHECK(all_red);

@@ -1,9 +1,7 @@
 // Phase 5 Day 80: deferred lighting and tonemapping on a real device with validation and synchronization validation on.
 // A G-buffer frame is lit by LightingPass and tonemapped by TonemapPass; the HDR accumulation target and the display
 // target are read back and compared with the CPU twins of the shader code at probe pixels.
-#include <chrono>
 #include "lang/scalar.h"
-#include <cstdio>
 #include "lang/initializer_list.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -12,6 +10,7 @@
 #include "gbuffer_rig.h"
 #include "renderer/lighting.h"
 #include "os/console.h"
+#include "os/os.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
@@ -678,7 +677,7 @@ ScaleResult MeasureLights(Rig& rig, const RenderScene& scene, const Camera& came
     double total = 0.0;
     // One warm-up frame, then `frames` timed ones.
     for (u32 i = 0; i <= frames; ++i) {
-        const auto start = std::chrono::steady_clock::now();
+        const u64 start = os::MonotonicTimeNanos();
         const u64 f = rig.frame_index++;
         rig.device->BeginFrame();
         rig.sys->BeginFrame(f);
@@ -707,7 +706,7 @@ ScaleResult MeasureLights(Rig& rig, const RenderScene& scene, const Camera& came
         }
         rig.device->EndFrame();
         rig.device->WaitIdle();
-        const double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count();
+        const double ms = static_cast<double>(os::MonotonicTimeNanos() - start) / 1e6;
         if (i > 0) total += ms;
         result.draws = lighting.PointDrawsRecorded();
         result.culled = summary.point_culled;

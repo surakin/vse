@@ -1,5 +1,5 @@
-#include <map>
-#include <vector>
+#include "algorithm.h"
+#include "containers/vector.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -125,10 +125,10 @@ TEST_CASE("CollectRetired releases oldest first and stops at the first unfinishe
     pool.Retire(b, 2);
     pool.Retire(c, 2);
 
-    std::vector<int> order;
-    CHECK(pool.CollectRetired(1, [&](Tracked& t) { order.push_back(t.id); }) == 1);
-    CHECK(pool.CollectRetired(5, [&](Tracked& t) { order.push_back(t.id); }) == 2);
-    REQUIRE(order.size() == 3);
+    Vector<int> order;
+    CHECK(pool.CollectRetired(1, [&](Tracked& t) { order.Push(t.id); }) == 1);
+    CHECK(pool.CollectRetired(5, [&](Tracked& t) { order.Push(t.id); }) == 2);
+    REQUIRE(order.Size() == 3);
     CHECK(order[0] == 1);
     CHECK(order[1] == 2);
     CHECK(order[2] == 3);
@@ -145,12 +145,12 @@ TEST_CASE("CollectAllRetired drains everything", "[rhi][pool]") {
 
 TEST_CASE("The pool grows past one chunk and keeps pointers stable", "[rhi][pool]") {
     Pool pool;
-    std::vector<TestHandle> handles;
-    std::vector<Tracked*> pointers;
+    Vector<TestHandle> handles;
+    Vector<Tracked*> pointers;
     for (int i = 0; i < 1000; ++i) {
-        handles.push_back(pool.Allocate(Tracked(i)));
-        REQUIRE(handles.back().IsValid());
-        pointers.push_back(pool.Get(handles.back()));
+        handles.Push(pool.Allocate(Tracked(i)));
+        REQUIRE(handles[handles.Size() - 1].IsValid());
+        pointers.Push(pool.Get(handles[handles.Size() - 1]));
     }
     CHECK(pool.Capacity() >= 1000);
     for (int i = 0; i < 1000; ++i) {
@@ -158,10 +158,14 @@ TEST_CASE("The pool grows past one chunk and keeps pointers stable", "[rhi][pool
         CHECK(pointers[static_cast<usize>(i)]->id == i);
     }
     // All handles are distinct.
-    std::map<u64, int> seen;
-    for (TestHandle h : handles) {
-        CHECK(seen.emplace((static_cast<u64>(h.index) << 32) | h.generation, 1).second);
+    Vector<u64> keys;
+    for (usize i = 0; i < handles.Size(); ++i) {
+        keys.Push((static_cast<u64>(handles[i].index) << 32) | handles[i].generation);
     }
+    Sort(engine_placeholder::Span<u64>(keys.Data(), keys.Size()));
+    usize repeated = 0;
+    for (usize i = 1; i < keys.Size(); ++i) repeated += keys[i] == keys[i - 1] ? 1 : 0;
+    CHECK(repeated == 0);
 }
 
 TEST_CASE("Allocation fails cleanly at the capacity limit", "[rhi][pool]") {
@@ -213,8 +217,8 @@ TEST_CASE("Random allocate/free/retire/collect matches a reference model", "[rhi
             TestHandle h;
             int id;
         };
-        std::vector<Entry> live;
-        std::vector<TestHandle> dead;
+        Vector<Entry> live;
+        Vector<TestHandle> dead;
         u64 frame = 1;
         u64 completed = 0;
         u64 rng = 0x2545F4914F6CDD1Dull;
@@ -232,25 +236,25 @@ TEST_CASE("Random allocate/free/retire/collect matches a reference model", "[rhi
                 int id = next_id++;
                 TestHandle h = pool.Allocate(Tracked(id));
                 REQUIRE(h.IsValid());
-                live.push_back({h, id});
+                live.Push(Entry{h, id});
                 break;
             }
             case 2:
-                if (!live.empty()) {
-                    usize i = next() % live.size();
+                if (!live.Empty()) {
+                    usize i = next() % live.Size();
                     REQUIRE(pool.Free(live[i].h));
-                    dead.push_back(live[i].h);
-                    live[i] = live.back();
-                    live.pop_back();
+                    dead.Push(live[i].h);
+                    live[i] = live[live.Size() - 1];
+                    live.Pop();
                 }
                 break;
             case 3:
-                if (!live.empty()) {
-                    usize i = next() % live.size();
+                if (!live.Empty()) {
+                    usize i = next() % live.Size();
                     REQUIRE(pool.Retire(live[i].h, frame));
-                    dead.push_back(live[i].h);
-                    live[i] = live.back();
-                    live.pop_back();
+                    dead.Push(live[i].h);
+                    live[i] = live[live.Size() - 1];
+                    live.Pop();
                 }
                 break;
             case 4:
@@ -264,16 +268,16 @@ TEST_CASE("Random allocate/free/retire/collect matches a reference model", "[rhi
                 break;
             }
             // Spot-check the model.
-            if (!live.empty()) {
-                const Entry& e = live[next() % live.size()];
+            if (!live.Empty()) {
+                const Entry& e = live[next() % live.Size()];
                 REQUIRE(pool.Get(e.h) != nullptr);
                 CHECK(pool.Get(e.h)->id == e.id);
             }
-            if (!dead.empty()) {
-                CHECK(pool.Get(dead[next() % dead.size()]) == nullptr);
+            if (!dead.Empty()) {
+                CHECK(pool.Get(dead[next() % dead.Size()]) == nullptr);
             }
         }
-        CHECK(pool.LiveCount() == live.size());
+        CHECK(pool.LiveCount() == live.Size());
     }
     CHECK(g_live_values == 0);
 }

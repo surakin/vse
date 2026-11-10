@@ -72,8 +72,8 @@ DemoShot RenderDemo(rhi::Device* device, const renderer_demo::SceneOptions& opti
         device->WaitIdle();
         shot.image.width = kShotW;
         shot.image.height = kShotH;
-        shot.image.rgba.resize(static_cast<size_t>(kShotW) * kShotH * 4);
-        REQUIRE(device->ReadbackTexture(target, 0, 0, shot.image.rgba.data(), shot.image.rgba.size(), rhi::ResourceState::CopySrc));
+        shot.image.rgba.Resize(static_cast<engine_placeholder::usize>(kShotW) * kShotH * 4);
+        REQUIRE(device->ReadbackTexture(target, 0, 0, shot.image.rgba.Data(), shot.image.rgba.Size(), rhi::ResourceState::CopySrc));
     }
     device->DestroyTexture(target);
     return shot;
@@ -142,8 +142,8 @@ TEST_CASE("The picture does not depend on the order objects were added", "[rhi][
                 REQUIRE(shuffled.ok);
                 // The same draws (same visible count) and exactly the same picture, pixel for pixel.
                 CHECK(shuffled.stats.visible == natural.stats.visible);
-                size_t differing = 0;
-                for (size_t i = 0; i < natural.image.rgba.size(); i += 4) {
+                engine_placeholder::usize differing = 0;
+                for (engine_placeholder::usize i = 0; i < natural.image.rgba.Size(); i += 4) {
                     if (MemCompare(&natural.image.rgba[i], &shuffled.image.rgba[i], 3) != 0) ++differing;
                 }
                 INFO("seed " << seed << ": " << differing << " of " << kShotW * kShotH << " pixels differ");
@@ -266,7 +266,7 @@ TEST_CASE("The bump normal map holds unit normals that tilt with the distance fr
     const demo::Pixels p = renderer_demo::MakeBumpNormalPixels();
     REQUIRE(p.width == 256);
     auto normal = [&p](u32 x, u32 y, f32* n) {
-        const unsigned char* px = &p.rgba[(static_cast<size_t>(y) * p.width + x) * 4];
+        const engine_placeholder::byte* px = &p.rgba[(static_cast<engine_placeholder::usize>(y) * p.width + x) * 4];
         for (int c = 0; c < 3; ++c) n[c] = static_cast<f32>(px[c]) / 255.0f * 2.0f - 1.0f;
     };
     // Every texel decodes to a unit vector facing the viewer (z >= 0), to within the 8-bit rounding.

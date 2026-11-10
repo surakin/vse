@@ -1,7 +1,6 @@
 // Phase 8 Day 114: the lifecycle conformance suite. Every backend must pass it; a new backend (DX12, Metal) runs it by adding one
 // factory to the list at the bottom. See engine/rhi/BACKEND-LIFECYCLE.md.
 #include "cstr/cstr.h"
-#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 

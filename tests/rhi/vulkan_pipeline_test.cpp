@@ -1,6 +1,7 @@
 #include "cstr/format.h"
 #include "cstr/cstr.h"
-#include <vector>
+#include "containers/vector.h"
+#include "test_text.h"
 #include "build_defs.h"
 
 #if !ENGINE_PLATFORM_WINDOWS
@@ -46,11 +47,17 @@ PipelineCacheIdentity Identity() {
 }
 
 // A well-formed version-one header for Identity(), followed by `extra` payload bytes.
-std::vector<unsigned char> CacheBlob(usize extra = 8) {
+Vector<byte> CopyOf(const Vector<byte>& bytes) {
+    Vector<byte> copy = engine_test::ByteBuffer(bytes.Size());
+    MemCopy(copy.Data(), bytes.Data(), bytes.Size());
+    return copy;
+}
+
+Vector<byte> CacheBlob(usize extra = 8) {
     const PipelineCacheIdentity id = Identity();
-    std::vector<unsigned char> b(32 + extra, 0x5a);
+    Vector<byte> b = engine_test::ByteBuffer(32 + extra, 0x5a);
     auto put = [&](usize at, u32 v) {
-        for (int i = 0; i < 4; ++i) b[at + i] = static_cast<unsigned char>(v >> (8 * i));
+        for (int i = 0; i < 4; ++i) b[at + i] = static_cast<byte>(v >> (8 * i));
     };
     put(0, 32);
     put(4, 1);
@@ -98,31 +105,31 @@ TEST_CASE("Pipeline state converts to the matching Vulkan enums", "[rhi][vulkan]
 
 TEST_CASE("CheckPipelineCacheHeader accepts only a blob for this device and driver", "[rhi][vulkan][pipeline][policy]") {
     const PipelineCacheIdentity id = Identity();
-    std::vector<unsigned char> blob = CacheBlob();
-    CHECK(CheckPipelineCacheHeader(blob.data(), blob.size(), id) == nullptr);
+    Vector<byte> blob = CacheBlob();
+    CHECK(CheckPipelineCacheHeader(blob.Data(), blob.Size(), id) == nullptr);
     CHECK(CheckPipelineCacheHeader(nullptr, 0, id) != nullptr);
-    CHECK(Contains(CheckPipelineCacheHeader(blob.data(), 31, id), "smaller"));
+    CHECK(Contains(CheckPipelineCacheHeader(blob.Data(), 31, id), "smaller"));
     SECTION("each header field is checked") {
-        std::vector<unsigned char> b = blob;
+        Vector<byte> b = CopyOf(blob);
         b[0] = 16; // header size below 32
-        CHECK(Contains(CheckPipelineCacheHeader(b.data(), b.size(), id), "header size"));
-        b = blob;
+        CHECK(Contains(CheckPipelineCacheHeader(b.Data(), b.Size(), id), "header size"));
+        b = CopyOf(blob);
         b[4] = 2;
-        CHECK(Contains(CheckPipelineCacheHeader(b.data(), b.size(), id), "version"));
-        b = blob;
+        CHECK(Contains(CheckPipelineCacheHeader(b.Data(), b.Size(), id), "version"));
+        b = CopyOf(blob);
         b[8] ^= 1;
-        CHECK(Contains(CheckPipelineCacheHeader(b.data(), b.size(), id), "vendor"));
-        b = blob;
+        CHECK(Contains(CheckPipelineCacheHeader(b.Data(), b.Size(), id), "vendor"));
+        b = CopyOf(blob);
         b[12] ^= 1;
-        CHECK(Contains(CheckPipelineCacheHeader(b.data(), b.size(), id), "device"));
-        b = blob;
+        CHECK(Contains(CheckPipelineCacheHeader(b.Data(), b.Size(), id), "device"));
+        b = CopyOf(blob);
         b[31] ^= 1;
-        CHECK(Contains(CheckPipelineCacheHeader(b.data(), b.size(), id), "driver"));
+        CHECK(Contains(CheckPipelineCacheHeader(b.Data(), b.Size(), id), "driver"));
     }
     SECTION("the file is matched against the identity it is asked about") {
         PipelineCacheIdentity other = id;
         other.vendor_id = 0x1002;
-        CHECK(CheckPipelineCacheHeader(blob.data(), blob.size(), other) != nullptr);
+        CHECK(CheckPipelineCacheHeader(blob.Data(), blob.Size(), other) != nullptr);
     }
 }
 
@@ -467,8 +474,8 @@ TEST_CASE("The triangle pipeline draws a triangle into an offscreen target", "[r
     REQUIRE(t.device->Submit(lists, 1) != 0);
     t.device->EndFrame();
 
-    std::vector<unsigned char> pixels(kSize * kSize * 4);
-    REQUIRE(t.device->ReadbackTexture(target, 0, 0, pixels.data(), pixels.size(), ResourceState::ColorAttachment));
+    Vector<byte> pixels = engine_test::ByteBuffer(kSize * kSize * 4);
+    REQUIRE(t.device->ReadbackTexture(target, 0, 0, pixels.Data(), pixels.Size(), ResourceState::ColorAttachment));
     auto at = [&](u32 x, u32 y) { return &pixels[(y * kSize + x) * 4]; };
     // The triangle's interior is red; the corner outside it keeps the blue clear color.
     CHECK(at(32, 40)[0] == 255);
@@ -590,7 +597,7 @@ TEST_CASE("The pipeline cache is written at shutdown, reused, and ignored when d
     SECTION("a file for another device is ignored") {
         io::FilePtr f;
         REQUIRE(io::File::Open(io::Path(StringView(file)), io::OpenMode::ReadWrite, io::kOpenNone, &f).Ok());
-        const unsigned char bogus[4] = {0xde, 0xad, 0xbe, 0xef};
+        const byte bogus[4] = {0xde, 0xad, 0xbe, 0xef};
         REQUIRE(f->Write(bogus, 4, 8).Ok()); // the vendor id
         REQUIRE(f->Close().Ok());
         VulkanPipelineTestQuietLog quiet;
@@ -601,7 +608,7 @@ TEST_CASE("The pipeline cache is written at shutdown, reused, and ignored when d
     SECTION("garbage with a plausible header is survived") {
         io::FilePtr f;
         REQUIRE(io::File::Open(io::Path(StringView(file)), io::OpenMode::ReadWrite, io::kOpenNone, &f).Ok());
-        const unsigned char junk[64] = {0xff};
+        const byte junk[64] = {0xff};
         REQUIRE(f->Write(junk, sizeof(junk), 40).Ok());
         REQUIRE(f->Close().Ok());
         VulkanPipelineTestQuietLog quiet;

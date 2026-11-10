@@ -1,5 +1,5 @@
 #include "sync/atomic.h"
-#include <memory>
+#include "containers/unique_ptr.h"
 #include "sync/thread.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -28,10 +28,10 @@ Job SpawnChildren(Atomic<int>* counter, int fanout) {
 
 u64 SchedulerTestLive() { return FramePool::Global().GetStats().Live(); }
 
-std::unique_ptr<Scheduler> SchedulerTestMakeScheduler(usize n) {
+UniquePtr<Scheduler> SchedulerTestMakeScheduler(usize n) {
     Scheduler::Config cfg;
     cfg.participants = n; // 0 = default
-    return std::make_unique<Scheduler>(cfg);
+    return MakeUnique<Scheduler>(cfg);
 }
 
 void RunBurst(Scheduler& s, int jobs) {
@@ -50,7 +50,7 @@ TEST_CASE("10,000 trivial jobs complete exactly once for N = 1, 2 and the defaul
         RunBurst(*s, 10'000);
         REQUIRE(s->Shutdown() == 0); // quiesce: stats are exact once workers are joined
         REQUIRE(s->TotalResumes() == 10'000);
-        s.reset();
+        s.Reset();
         REQUIRE(SchedulerTestLive() == live_before);
     }
 }
@@ -128,7 +128,7 @@ TEST_CASE("Shutdown right after a burst loses nothing: ran + destroyed == submit
 TEST_CASE("Scheduler::Current is set on participants only", "[jobs][scheduler]") {
     REQUIRE(Scheduler::Current() == nullptr);
     auto s = SchedulerTestMakeScheduler(2);
-    REQUIRE(Scheduler::Current() == s.get());
+    REQUIRE(Scheduler::Current() == s.Get());
     Scheduler* seen = reinterpret_cast<Scheduler*>(1);
     Thread t([&] { seen = Scheduler::Current(); });
     t.Join();

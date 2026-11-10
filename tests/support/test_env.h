@@ -1,7 +1,7 @@
 #pragma once
 
-#include <cstdlib>
 #include "build_defs.h"
+#include "os/console.h" // brings in the C library header that declares setenv/unsetenv/_putenv_s (the engine has no wrapper that changes the environment)
 
 // Sets and removes process environment variables in tests, on every platform: POSIX setenv/unsetenv on Linux, and on Windows the
 // UCRT's _putenv_s, which also updates the environment block the Windows backend reads (GetEnvironmentStringsW). Phase 13 Day 149.

@@ -1,9 +1,6 @@
 // Phase 2 Day 35: stress & throughput suite for the whole job system.
 #include "sync/atomic.h"
-#include <chrono>
 #include "os/console.h"
-#include <memory>
-#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -12,12 +9,23 @@
 #include "jobs/scheduler.h"
 #include "jobs/topology.h"
 #include "build_defs.h"
+#include "containers/unique_ptr.h"
+#include "containers/vector.h"
+#include "os/os.h"
 #include "cstr/format.h"
 #include "cstr/number.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::jobs;
-using Clock = std::chrono::steady_clock;
+
+// The monotonic clock in nanoseconds (os::MonotonicTimeNanos).
+struct Clock {
+    using time_point = u64;
+    static time_point now() { return os::MonotonicTimeNanos(); }
+    static u64 Seconds(int seconds) { return static_cast<u64>(seconds) * 1'000'000'000ull; }
+    static double ToMicros(u64 nanos) { return static_cast<double>(nanos) / 1e3; }
+    static double ToSeconds(u64 nanos) { return static_cast<double>(nanos) / 1e9; }
+};
 
 #if ENGINE_SANITIZER_THREAD
 #define JOBS_TSAN 1
@@ -42,10 +50,10 @@ inline constexpr bool kSanitized = false;
 
 namespace {
 
-std::unique_ptr<Scheduler> MakeScheduler(usize n) {
+UniquePtr<Scheduler> MakeScheduler(usize n) {
     Scheduler::Config cfg;
     cfg.participants = n;
-    return std::make_unique<Scheduler>(cfg);
+    return MakeUnique<Scheduler>(cfg);
 }
 
 u64 NextRand(u64& s) {
@@ -62,7 +70,7 @@ struct PoolWatch {
         FramePool::Stats now = FramePool::Global().GetStats();
         os::Print("[frame sizes] %s:", what);
         for (usize c = 0; c < FramePool::kClassCount; ++c) {
-            os::Print("  <=%zuB: %llu", static_cast<size_t>(FramePool::kBlockSizes[c] - FramePool::kHeaderBytes),
+            os::Print("  <=%zuB: %llu", static_cast<usize>(FramePool::kBlockSizes[c] - FramePool::kHeaderBytes),
                         static_cast<unsigned long long>(now.pooled_allocs[c] - before.pooled_allocs[c]));
         }
         os::Print("  fallback: %llu\n", static_cast<unsigned long long>(now.fallback_allocs - before.fallback_allocs));
@@ -79,10 +87,10 @@ struct GraphNode {
 };
 
 struct Graph {
-    std::vector<GraphNode> nodes;
-    std::vector<u32> children; // child ids, referenced by ranges
-    std::unique_ptr<Atomic<u32>[]> exec;
-    std::unique_ptr<Atomic<u32>[]> post;
+    Vector<GraphNode> nodes;
+    Vector<u32> children; // child ids, referenced by ranges
+    Vector<Atomic<u32>> exec; // sized once while empty, so the atomics never move
+    Vector<Atomic<u32>> post;
     Atomic<u32> violations{0};
 };
 
@@ -93,42 +101,45 @@ void BuildGraph(Graph& g, u64 seed, u32 max_nodes) {
     const u32 max_fan = 1 + static_cast<u32>(NextRand(rng) % 6);       // 1..6
     const u32 max_depth = 2 + static_cast<u32>(NextRand(rng) % 40);    // 2..41
     max_nodes = 20 + static_cast<u32>(NextRand(rng) % (max_nodes - 19));
-    g.nodes.clear();
-    g.children.clear();
-    g.nodes.push_back({});
+    g.nodes.Clear();
+    g.children.Clear();
+    g.nodes.Push(GraphNode{});
     struct Item {
         u32 id, depth;
     };
-    std::vector<Item> queue{{0, 0}};
-    for (usize qi = 0; qi < queue.size(); ++qi) {
+    Vector<Item> queue;
+    queue.Push(Item{0, 0});
+    for (usize qi = 0; qi < queue.Size(); ++qi) {
         Item it = queue[qi];
         u32 fan_a = it.depth < max_depth ? static_cast<u32>(NextRand(rng) % (max_fan + 1)) : 0;
         u32 fan_b = it.depth < max_depth ? static_cast<u32>(NextRand(rng) % (max_fan / 2 + 1)) : 0;
-        if (g.nodes.size() + fan_a + fan_b > max_nodes) fan_a = fan_b = 0;
+        if (g.nodes.Size() + fan_a + fan_b > max_nodes) fan_a = fan_b = 0;
         GraphNode& n = g.nodes[it.id];
         n.spin = static_cast<u32>(NextRand(rng) % 200);
-        n.first_a = static_cast<u32>(g.children.size());
+        n.first_a = static_cast<u32>(g.children.Size());
         n.count_a = fan_a;
         for (u32 i = 0; i < fan_a; ++i) {
-            u32 cid = static_cast<u32>(g.nodes.size());
-            g.nodes.push_back({});
-            g.children.push_back(cid);
-            queue.push_back({cid, it.depth + 1});
+            u32 cid = static_cast<u32>(g.nodes.Size());
+            g.nodes.Push(GraphNode{});
+            g.children.Push(cid);
+            queue.Push(Item{cid, it.depth + 1});
         }
         // (g.nodes may have reallocated: re-fetch before touching n again)
         GraphNode& n2 = g.nodes[it.id];
-        n2.first_b = static_cast<u32>(g.children.size());
+        n2.first_b = static_cast<u32>(g.children.Size());
         n2.count_b = fan_b;
         for (u32 i = 0; i < fan_b; ++i) {
-            u32 cid = static_cast<u32>(g.nodes.size());
-            g.nodes.push_back({});
-            g.children.push_back(cid);
-            queue.push_back({cid, it.depth + 1});
+            u32 cid = static_cast<u32>(g.nodes.Size());
+            g.nodes.Push(GraphNode{});
+            g.children.Push(cid);
+            queue.Push(Item{cid, it.depth + 1});
         }
     }
-    g.exec = std::make_unique<Atomic<u32>[]>(g.nodes.size());
-    g.post = std::make_unique<Atomic<u32>[]>(g.nodes.size());
-    for (usize i = 0; i < g.nodes.size(); ++i) {
+    g.exec.Clear();
+    g.post.Clear();
+    g.exec.Resize(g.nodes.Size());
+    g.post.Resize(g.nodes.Size());
+    for (usize i = 0; i < g.nodes.Size(); ++i) {
         g.exec[i].Store(0);
         g.post[i].Store(0);
     }
@@ -181,7 +192,7 @@ struct WaitCtx {
 };
 
 void HelpOrAbort(Scheduler& s, bool (*done)(void*), void* user, int seconds, const char* what) {
-    WaitCtx w{done, user, Clock::now() + std::chrono::seconds(seconds)};
+    WaitCtx w{done, user, Clock::now() + Clock::Seconds(seconds)};
     s.HelpUntil(
         [](void* u) {
             auto* c = static_cast<WaitCtx*>(u);
@@ -201,13 +212,17 @@ void HelpOrAbort(Scheduler& s, bool (*done)(void*), void* user, int seconds, con
 }
 
 bool CounterZero(void* c) { return static_cast<Counter*>(c)->IsZero(); }
+struct AtLeast {
+    Atomic<int>* first;
+    int second;
+};
 bool AtomicAtLeast(void* p) {
-    auto* pr = static_cast<std::pair<Atomic<int>*, int>*>(p);
+    auto* pr = static_cast<AtLeast*>(p);
     return pr->first->Load(MemoryOrder::Acquire) >= pr->second;
 }
 void HelpCounter(Scheduler& s, Counter& c, int seconds, const char* what) { HelpOrAbort(s, CounterZero, &c, seconds, what); }
 void HelpAtLeast(Scheduler& s, Atomic<int>& v, int target, int seconds, const char* what) {
-    std::pair<Atomic<int>*, int> pr{&v, target};
+    AtLeast pr{&v, target};
     HelpOrAbort(s, AtomicAtLeast, &pr, seconds, what);
 }
 
@@ -246,7 +261,7 @@ u64 Calibrate(u64 micros) {
     for (int attempt = 0; attempt < 5; ++attempt) {
         auto t0 = Clock::now();
         g_sink = g_sink ^ Burn(iters);
-        double us = std::chrono::duration<double, std::micro>(Clock::now() - t0).count();
+        double us = Clock::ToMicros(Clock::now() - t0);
         if (us > 2000) return static_cast<u64>(static_cast<double>(iters) * micros / us) + 1;
         iters *= 4;
     }
@@ -274,8 +289,8 @@ Job ProducerJob(SkewCtx ctx, int jobs) {
 
 struct SkewRun {
     double seconds = 0;
-    std::vector<u64> resumes; // per participant
-    std::vector<u64> steals;
+    Vector<u64> resumes; // per participant
+    Vector<u64> steals;
     i32 producer = -1;
 };
 
@@ -289,11 +304,11 @@ SkewRun RunSkew(usize participants, int jobs, u64 iters) {
     Spawn(c, ProducerJob(ctx, jobs));
     HelpCounter(*s, c, 120, "skewed-load run");
     SkewRun r;
-    r.seconds = std::chrono::duration<double>(Clock::now() - t0).count();
+    r.seconds = Clock::ToSeconds(Clock::now() - t0);
     s->Shutdown(); // quiesce so the stats are exact
     for (usize i = 0; i < s->ParticipantCount(); ++i) {
-        r.resumes.push_back(s->ResumesBy(i));
-        r.steals.push_back(s->StealsBy(i));
+        r.resumes.Push(s->ResumesBy(i));
+        r.steals.Push(s->StealsBy(i));
     }
     r.producer = producer.Load();
     return r;
@@ -354,19 +369,19 @@ TEST_CASE("Randomized dependency graphs: exactly-once, ordered joins, no deadloc
         auto s = MakeScheduler(n);
         for (int i = 0; i < kGraphSeeds; ++i) {
             const u64 seed = base + static_cast<u64>(i);
-            auto g = std::make_unique<Graph>();
+            auto g = MakeUnique<Graph>();
             BuildGraph(*g, seed, 4000);
-            INFO("replay with ENGINE_STRESS_SEED=" << seed << " (graph of " << g->nodes.size() << " nodes, N=" << s->ParticipantCount() << ")");
-            RunGraph(*s, g.get(), seed);
+            INFO("replay with ENGINE_STRESS_SEED=" << seed << " (graph of " << g->nodes.Size() << " nodes, N=" << s->ParticipantCount() << ")");
+            RunGraph(*s, g.Get(), seed);
             u32 bad_exec = 0, bad_post = 0;
-            for (usize k = 0; k < g->nodes.size(); ++k) {
+            for (usize k = 0; k < g->nodes.Size(); ++k) {
                 bad_exec += g->exec[k].Load() != 1;
                 bad_post += g->post[k].Load() != 1;
             }
             REQUIRE(bad_exec == 0);
             REQUIRE(bad_post == 0);
             REQUIRE(g->violations.Load() == 0);
-            total_jobs += g->nodes.size();
+            total_jobs += g->nodes.Size();
         }
         s->Shutdown();
     }
@@ -388,12 +403,12 @@ TEST_CASE("Skewed load: other participants execute stolen work", "[jobs][stress]
         SkewRun r = RunSkew(n, kJobs, iters);
         REQUIRE(r.producer >= 0);
         u64 total = 0;
-        for (u64 v : r.resumes) total += v;
+        for (usize i = 0; i < r.resumes.Size(); ++i) total += r.resumes[i];
         // All jobs + the producer itself ran, each exactly once (no job
         // suspends, so resumes == jobs).
         REQUIRE(total == static_cast<u64>(kJobs) + 1);
         u64 steals = 0;
-        for (usize i = 0; i < r.resumes.size(); ++i) {
+        for (usize i = 0; i < r.resumes.Size(); ++i) {
             steals += r.steals[i];
             if (static_cast<i32>(i) != r.producer) {
                 INFO("participant " << i << " of " << n << " (producer was " << r.producer << ")");
@@ -413,29 +428,30 @@ TEST_CASE("Throughput scales with participant count", "[jobs][stress][throughput
     const u64 iters = Calibrate(60);
     constexpr int kJobs = 3000;
 
-    std::vector<usize> configs;
+    Vector<usize> configs;
     for (usize n : {usize{1}, usize{2}, usize{4}}) {
-        if (n <= allowed) configs.push_back(n);
+        if (n <= allowed) configs.Push(n);
     }
-    if (allowed > 4) configs.push_back(allowed);
+    if (allowed > 4) configs.Push(allowed);
 
     // Timing on a shared machine is noisy: measure up to 3 rounds (best of
     // 5 each) and accept the first round whose speedups meet the bound.
     bool ok = false;
     for (int round = 0; round < 3 && !ok; ++round) {
-        std::vector<double> best(configs.size(), 1e30);
-        for (usize ci = 0; ci < configs.size(); ++ci) {
+        Vector<double> best;
+        for (usize ci = 0; ci < configs.Size(); ++ci) best.Push(1e30);
+        for (usize ci = 0; ci < configs.Size(); ++ci) {
             for (int rep = 0; rep < 5; ++rep) {
                 SkewRun r = RunSkew(configs[ci], kJobs, iters);
                 if (r.seconds < best[ci]) best[ci] = r.seconds;
             }
         }
         os::Print("\n[throughput] round %d: %d CPU-bound jobs (~60us each), best of 5\n  N   seconds   speedup\n", round + 1, kJobs);
-        for (usize ci = 0; ci < configs.size(); ++ci) {
-            os::Print("  %-3zu %-9.4f %.2fx\n", static_cast<size_t>(configs[ci]), best[ci], best[0] / best[ci]);
+        for (usize ci = 0; ci < configs.Size(); ++ci) {
+            os::Print("  %-3zu %-9.4f %.2fx\n", static_cast<usize>(configs[ci]), best[ci], best[0] / best[ci]);
         }
         ok = true;
-        for (usize ci = 0; ci < configs.size(); ++ci) {
+        for (usize ci = 0; ci < configs.Size(); ++ci) {
             usize n = configs[ci];
             if (n != 2 && n != 4) continue; // larger N: logged only (SMT siblings make 0.5*N unreliable)
             if (best[0] / best[ci] < 0.5 * static_cast<double>(n)) ok = false;
@@ -452,15 +468,16 @@ TEST_CASE("Nested co_await chain of 5 dependent steps keeps strict order, 10,000
         u64 rng = 77 + n;
         for (int b = 0; b < kPipelineBatches; ++b) {
             constexpr int kPerBatch = 100;
-            std::vector<std::unique_ptr<Pipeline>> ps;
+            Vector<UniquePtr<Pipeline>> ps;
             Atomic<int> done{0};
             for (int i = 0; i < kPerBatch; ++i) {
-                ps.push_back(std::make_unique<Pipeline>());
-                s->Submit(PipelineJob(ps.back().get(), static_cast<u32>(NextRand(rng)), &done));
+                ps.Push(MakeUnique<Pipeline>());
+                s->Submit(PipelineJob(ps[ps.Size() - 1].Get(), static_cast<u32>(NextRand(rng)), &done));
             }
             HelpAtLeast(*s, done, kPerBatch, 60, "co_await pipeline batch");
             u32 bad = 0;
-            for (auto& p : ps) {
+            for (usize pi = 0; pi < ps.Size(); ++pi) {
+                const UniquePtr<Pipeline>& p = ps[pi];
                 bad += p->bad.Load();
                 // Strict order: step k's sequence stamp precedes step k+1's.
                 for (int step = 1; step < 5; ++step) bad += !(p->seq[step - 1].Load() < p->seq[step].Load());

@@ -339,7 +339,7 @@ TEST_CASE("Vector: Resize on a vector holding elements grows geometrically", "[c
 }
 
 TEST_CASE("Vector: TryResizeUninitialized sizes a byte buffer without touching it", "[containers][vector_container]") {
-    Vector<unsigned char> v;
+    Vector<engine_placeholder::byte> v;
     REQUIRE(v.TryResizeUninitialized(64));
     REQUIRE(v.Size() == 64);
     v[63] = 9;

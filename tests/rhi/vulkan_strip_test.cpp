@@ -2,7 +2,7 @@
 // strip, as an indexed strip, two strips in one indexed draw split by a restart index, and the same two strips joined by
 // degenerate triangles on a pipeline without restart. Back-face culling is on, so a wrong winding alternation would drop
 // the second triangle of a strip.
-#include <vector>
+#include "containers/vector.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -30,11 +30,11 @@ struct Vertex {
 // Two quads, each as the strip (top-left, bottom-left, top-right, bottom-right) in clip space (+Y is down on screen); the
 // first triangle is counter-clockwise on screen, a front face for the pipeline's default winding.
 // The left quad covers x -0.9..-0.1, the right quad x 0.1..0.9, both y -0.5..0.5.
-void Quad(float x0, float x1, std::vector<Vertex>* out) {
-    out->push_back({x0, -0.5f, 1, 0, 0});
-    out->push_back({x0, 0.5f, 1, 0, 0});
-    out->push_back({x1, -0.5f, 1, 0, 0});
-    out->push_back({x1, 0.5f, 1, 0, 0});
+void Quad(float x0, float x1, Vector<Vertex>* out) {
+    out->Push(Vertex{x0, -0.5f, 1, 0, 0});
+    out->Push(Vertex{x0, 0.5f, 1, 0, 0});
+    out->Push(Vertex{x1, -0.5f, 1, 0, 0});
+    out->Push(Vertex{x1, 0.5f, 1, 0, 0});
 }
 
 struct StripScene {
@@ -86,14 +86,14 @@ struct StripScene {
         device.Reset();
     }
 
-    void Upload(const std::vector<Vertex>& vertices, const u16* indices, u32 index_count) {
+    void Upload(const Vector<Vertex>& vertices, const u16* indices, u32 index_count) {
         BufferDesc bd;
-        bd.size = vertices.size() * sizeof(Vertex);
+        bd.size = vertices.Size() * sizeof(Vertex);
         bd.usage = BufferUsage::Vertex | BufferUsage::CopyDst;
         bd.location = MemoryLocation::GpuOnly;
         vb = device->CreateBuffer(bd);
         REQUIRE(vb.IsValid());
-        REQUIRE(device->UploadBuffer(vb, 0, vertices.data(), bd.size).ok);
+        REQUIRE(device->UploadBuffer(vb, 0, vertices.Data(), bd.size).ok);
         if (index_count != 0) {
             bd.size = index_count * sizeof(u16);
             bd.usage = BufferUsage::Index | BufferUsage::CopyDst;
@@ -142,12 +142,12 @@ struct StripScene {
 };
 
 bool IsRed(const Image& image, u32 x, u32 y) {
-    const unsigned char* p = &image.rgba[(static_cast<size_t>(y) * image.width + x) * 4];
+    const engine_placeholder::byte* p = &image.rgba[(static_cast<engine_placeholder::usize>(y) * image.width + x) * 4];
     return p[0] > 200 && p[1] < 50 && p[2] < 50;
 }
 
 bool IsBackground(const Image& image, u32 x, u32 y) {
-    const unsigned char* p = &image.rgba[(static_cast<size_t>(y) * image.width + x) * 4];
+    const engine_placeholder::byte* p = &image.rgba[(static_cast<engine_placeholder::usize>(y) * image.width + x) * 4];
     return p[0] > 40 && p[0] < 70 && p[1] > 40 && p[1] < 70; // 0.2 * 255 = 51
 }
 
@@ -168,7 +168,7 @@ void CheckQuad(const Image& image, bool left, bool expect_filled) {
 TEST_CASE("A quad drawn as a four-vertex strip fills both triangles with back-face culling on", "[rhi][vulkan][gpu][strip]") {
     StripScene s;
     s.fx.ExpectErrors(0);
-    std::vector<Vertex> v;
+    Vector<Vertex> v;
     Quad(-0.9f, -0.1f, &v);
     s.Upload(v, nullptr, 0);
     const Image image = s.Draw(s.plain, 4, 0);
@@ -179,7 +179,7 @@ TEST_CASE("A quad drawn as a four-vertex strip fills both triangles with back-fa
 TEST_CASE("An indexed strip draws the same quad", "[rhi][vulkan][gpu][strip]") {
     StripScene s;
     s.fx.ExpectErrors(0);
-    std::vector<Vertex> v;
+    Vector<Vertex> v;
     Quad(-0.9f, -0.1f, &v);
     const u16 indices[4] = {0, 1, 2, 3};
     s.Upload(v, indices, 4);
@@ -189,7 +189,7 @@ TEST_CASE("An indexed strip draws the same quad", "[rhi][vulkan][gpu][strip]") {
 TEST_CASE("A restart index splits one indexed draw into two strips", "[rhi][vulkan][gpu][strip]") {
     StripScene s;
     s.fx.ExpectErrors(0);
-    std::vector<Vertex> v;
+    Vector<Vertex> v;
     Quad(-0.9f, -0.1f, &v);
     Quad(0.1f, 0.9f, &v);
     const u16 indices[9] = {0, 1, 2, 3, 0xFFFF, 4, 5, 6, 7};
@@ -206,7 +206,7 @@ TEST_CASE("A restart index splits one indexed draw into two strips", "[rhi][vulk
 TEST_CASE("Degenerate triangles join two strips on a pipeline without restart", "[rhi][vulkan][gpu][strip]") {
     StripScene s;
     s.fx.ExpectErrors(0);
-    std::vector<Vertex> v;
+    Vector<Vertex> v;
     Quad(-0.9f, -0.1f, &v);
     Quad(0.1f, 0.9f, &v);
     // 0 1 2 3 | 3 4 (the join) | 4 5 6 7: the second strip must start at an even position, so 3 4 plus one more 4 would be

@@ -124,8 +124,8 @@ TEST_CASE("Indexed and non-indexed draws of the same cube give identical images"
         const Mat4 model = demo::ModelMatrix(Vec3(0, 0, 0), 1.0f, 0.4f);
         const Image a = scene.Render({{&indexed, model}});
         const Image b = scene.Render({{&expanded, model}});
-        REQUIRE(a.rgba.size() == b.rgba.size());
-        CHECK(MemCompare(a.rgba.data(), b.rgba.data(), a.rgba.size()) == 0);
+        REQUIRE(a.rgba.Size() == b.rgba.Size());
+        CHECK(MemCompare(a.rgba.Data(), b.rgba.Data(), a.rgba.Size()) == 0);
         scene.device->WaitIdle();
     }
 }

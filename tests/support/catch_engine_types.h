@@ -6,6 +6,7 @@
 // std type is used here.)
 
 #include <catch2/catch_tostring.hpp>
+#include <catch2/internal/catch_uncaught_exceptions.hpp>
 
 #include <string>
 
@@ -18,6 +19,10 @@
 namespace engine_test {
 
 inline std::string ToStd(engine_placeholder::StringView view) { return std::string(view.Data(), view.Length()); }
+
+/// True while a failed REQUIRE or a SKIP is unwinding the test (Catch2 reports them by throwing). A fixture destructor asks this to skip
+/// its own checks then: the test has already reported its cause. (The replacement of `std::uncaught_exceptions()`.)
+inline bool TestIsUnwinding() { return Catch::uncaught_exceptions(); }
 
 } // namespace engine_test
 

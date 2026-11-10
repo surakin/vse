@@ -1,6 +1,6 @@
 // The child d3d12_conventions_test.cpp starts through shader_mint's RunProcess: writes each argument after the first, one per line,
 // into the file the first argument names; `--exit-3` alone exits with status 3 instead.
-#include <cstring>
+#include "cstr/cstr.h"
 
 #include "io/file.h"
 #include "io/file_system.h"
@@ -11,7 +11,7 @@
 using namespace engine_placeholder;
 
 int main(int argc, char** argv) {
-    if (argc == 2 && std::strcmp(argv[1], "--exit-3") == 0) {
+    if (argc == 2 && CStrCompare(argv[1], "--exit-3") == 0) {
         return 3;
     }
     if (argc < 2) {

@@ -7,7 +7,7 @@
 
 #include "build_defs.h"
 #if ENGINE_SANITIZER_ADDRESS
-#include <cstdlib>
+#include "os/console.h" // declares setenv (the engine has no wrapper that changes the environment)
 
 namespace {
 __attribute__((constructor(101))) void KeepDriverLoadedForLeakChecks() {

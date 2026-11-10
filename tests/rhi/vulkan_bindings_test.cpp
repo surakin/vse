@@ -1,6 +1,7 @@
-#include <memory>
+#include "containers/unique_ptr.h"
 #include "sync/thread.h"
-#include <vector>
+#include "containers/vector.h"
+#include "test_text.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -41,7 +42,7 @@ TEST_CASE("UniformRing offsets respect the alignment and never overlap", "[rhi][
     NullDevicePtr device = CreateNullDevice();
     const u64 alignment = device->Caps().min_uniform_buffer_offset_alignment;
     REQUIRE(alignment > 1);
-    auto ring_owner = std::make_unique<UniformRing>(device.Get(), 64 * 1024);
+    auto ring_owner = MakeUnique<UniformRing>(device.Get(), 64 * 1024);
     UniformRing& ring = *ring_owner;
     REQUIRE(ring.Valid());
     device->BeginFrame();
@@ -51,7 +52,7 @@ TEST_CASE("UniformRing offsets respect the alignment and never overlap", "[rhi][
         u64 begin;
         u64 end;
     };
-    std::vector<Span64> spans;
+    Vector<Span64> spans;
     u32 state = 12345;
     for (int i = 0; i < 200; ++i) {
         state = state * 1664525u + 1013904223u;
@@ -63,17 +64,17 @@ TEST_CASE("UniformRing offsets respect the alignment and never overlap", "[rhi][
         CHECK(a.offset % alignment == 0);
         CHECK(a.size == size);
         CHECK(a.buffer == ring.Buffer());
-        spans.push_back({a.offset, a.offset + size});
+        spans.Push(Span64{a.offset, a.offset + size});
         MemSet(a.data, static_cast<int>(i), size); // the whole range is writable
     }
-    REQUIRE(spans.size() > 20);
-    for (usize i = 0; i < spans.size(); ++i) {
-        for (usize j = i + 1; j < spans.size(); ++j) {
+    REQUIRE(spans.Size() > 20);
+    for (usize i = 0; i < spans.Size(); ++i) {
+        for (usize j = i + 1; j < spans.Size(); ++j) {
             CHECK((spans[i].end <= spans[j].begin || spans[j].end <= spans[i].begin));
         }
     }
     device->EndFrame();
-    ring_owner.reset(); // before the device it uses
+    ring_owner.Reset(); // before the device it uses
     device.Reset();
 }
 
@@ -81,7 +82,7 @@ TEST_CASE("UniformRing is full at its capacity, resets each frame and rotates re
     NullDevicePtr device = CreateNullDevice();
     QuietLog quiet;
     const u64 alignment = device->Caps().min_uniform_buffer_offset_alignment;
-    auto ring_owner = std::make_unique<UniformRing>(device.Get(), alignment * 4);
+    auto ring_owner = MakeUnique<UniformRing>(device.Get(), alignment * 4);
     UniformRing& ring = *ring_owner;
     REQUIRE(ring.Valid());
     CHECK(ring.BytesPerFrame() == alignment * 4);
@@ -104,30 +105,32 @@ TEST_CASE("UniformRing is full at its capacity, resets each frame and rotates re
     CHECK(first_offset[0] != first_offset[1]);
     CHECK(first_offset[1] != first_offset[2]);
     CHECK(first_offset[0] == first_offset[3]);
-    ring_owner.reset(); // before the device it uses
+    ring_owner.Reset(); // before the device it uses
     device.Reset();
 }
 
 TEST_CASE("UniformRing allocations from several threads are disjoint", "[rhi][null][uniform-ring]") {
     NullDevicePtr device = CreateNullDevice();
-    auto ring_owner = std::make_unique<UniformRing>(device.Get(), 512 * 1024);
+    auto ring_owner = MakeUnique<UniformRing>(device.Get(), 512 * 1024);
     UniformRing& ring = *ring_owner;
     device->BeginFrame();
     ring.BeginFrame();
     constexpr int kThreads = 4;
     constexpr int kPerThread = 300;
-    std::vector<UniformAllocation> results(kThreads * kPerThread);
-    std::vector<Thread> threads;
+    Vector<UniformAllocation> results;
+    results.Resize(kThreads * kPerThread);
+    Vector<Thread> threads;
     for (int t = 0; t < kThreads; ++t) {
-        threads.emplace_back([&, t]() {
+        threads.Push(Thread([&, t]() {
             for (int i = 0; i < kPerThread; ++i) {
                 results[t * kPerThread + i] = ring.Allocate(16 + static_cast<u64>((i * 7 + t) % 100));
             }
-        });
+        }));
     }
-    for (Thread& th : threads) th.Join();
-    std::vector<unsigned char> seen(ring.BytesPerFrame() * UniformRing::kSlots, 0);
-    for (const UniformAllocation& a : results) {
+    for (usize i = 0; i < threads.Size(); ++i) threads[i].Join();
+    Vector<byte> seen = engine_test::ByteBuffer(ring.BytesPerFrame() * UniformRing::kSlots, 0);
+    for (usize ri = 0; ri < results.Size(); ++ri) {
+        const UniformAllocation& a = results[ri];
         REQUIRE(a.Valid());
         for (u64 b = 0; b < a.size; ++b) {
             REQUIRE(seen[a.offset + b] == 0); // no byte handed out twice
@@ -135,7 +138,7 @@ TEST_CASE("UniformRing allocations from several threads are disjoint", "[rhi][nu
         }
     }
     device->EndFrame();
-    ring_owner.reset(); // before the device it uses
+    ring_owner.Reset(); // before the device it uses
     device.Reset();
 }
 
@@ -237,14 +240,14 @@ TEST_CASE("A uniform, texture and sampler bind group and a push constant reach t
     td.usage = TextureUsage::Sampled | TextureUsage::CopyDst;
     const TextureHandle texture = device->CreateTexture(td);
     REQUIRE(texture.IsValid());
-    std::vector<unsigned char> texels(4 * 4 * 4);
-    for (usize i = 0; i < texels.size(); i += 4) {
+    Vector<byte> texels = engine_test::ByteBuffer(4 * 4 * 4);
+    for (usize i = 0; i < texels.Size(); i += 4) {
         texels[i] = 200;
         texels[i + 1] = 100;
         texels[i + 2] = 40;
         texels[i + 3] = 255;
     }
-    REQUIRE(device->UploadTexture(texture, 0, 0, texels.data(), 0).ok);
+    REQUIRE(device->UploadTexture(texture, 0, 0, texels.Data(), 0).ok);
 
     SamplerDesc sd;
     sd.mag_filter = FilterMode::Nearest;
@@ -345,11 +348,11 @@ TEST_CASE("A uniform, texture and sampler bind group and a push constant reach t
     REQUIRE(device->Submit(lists, 1) != 0);
     device->EndFrame();
 
-    std::vector<unsigned char> pixels(kSize * kSize * 4);
-    REQUIRE(device->ReadbackTexture(target, 0, 0, pixels.data(), pixels.size(), ResourceState::ColorAttachment));
+    Vector<byte> pixels = engine_test::ByteBuffer(kSize * kSize * 4);
+    REQUIRE(device->ReadbackTexture(target, 0, 0, pixels.Data(), pixels.Size(), ResourceState::ColorAttachment));
     auto near = [](int a, int b) { return a - b <= 2 && b - a <= 2; };
-    const unsigned char* left = &pixels[(4 * kSize + 1) * 4];
-    const unsigned char* right = &pixels[(4 * kSize + 6) * 4];
+    const byte* left = &pixels[(4 * kSize + 1) * 4];
+    const byte* right = &pixels[(4 * kSize + 6) * 4];
     CHECK(near(left[0], 100));  // 200 * 0.5 from the uniform buffer
     CHECK(near(left[1], 100));  // 100 * 1.0
     CHECK(near(left[2], 40));   // 40 + no bias
@@ -441,14 +444,14 @@ TEST_CASE("Persistent bind groups are recycled and a large array gets a pool of 
     // Create and destroy far more groups over time than one pool holds: freed sets are reused.
     usize peak_pools = 0;
     for (int round = 0; round < 20; ++round) {
-        std::vector<BindGroupHandle> groups;
+        Vector<BindGroupHandle> groups;
         for (int i = 0; i < 40; ++i) {
-            groups.push_back(device->CreateBindGroup(gd));
-            REQUIRE(groups.back().IsValid());
+            groups.Push(device->CreateBindGroup(gd));
+            REQUIRE(groups[groups.Size() - 1].IsValid());
         }
         const usize pools = t.device->Counts().descriptor_pools;
         if (pools > peak_pools) peak_pools = pools;
-        for (BindGroupHandle g : groups) device->DestroyBindGroup(g);
+        for (usize gi = 0; gi < groups.Size(); ++gi) device->DestroyBindGroup(groups[gi]);
         t.Cycle(3);
     }
     CHECK(peak_pools <= 4);
@@ -460,7 +463,8 @@ TEST_CASE("Persistent bind groups are recycled and a large array gets a pool of 
     const BindGroupLayoutHandle big_layout = device->CreateBindGroupLayout(ld);
     REQUIRE(big_layout.IsValid());
     const SamplerHandle sampler = device->CreateSampler(SamplerDesc{});
-    std::vector<BindGroupEntry> entries(200);
+    Vector<BindGroupEntry> entries;
+    entries.Resize(200);
     for (u32 i = 0; i < 200; ++i) {
         entries[i].binding = 0;
         entries[i].array_element = i;
@@ -468,7 +472,7 @@ TEST_CASE("Persistent bind groups are recycled and a large array gets a pool of 
     }
     BindGroupDesc bg;
     bg.layout = big_layout;
-    bg.entries = rhi::Span<BindGroupEntry>(entries.data(), entries.size());
+    bg.entries = rhi::Span<BindGroupEntry>(entries.Data(), entries.Size());
     const BindGroupHandle big_group = device->CreateBindGroup(bg);
     CHECK(big_group.IsValid());
     device->DestroyBindGroup(big_group);

@@ -1,9 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include "display_session.h"
 
-#include <string>
-#include <utility>
-#include <vector>
 
 #include "platform/input.h"
 #include "platform/input_event.h"
@@ -13,6 +10,9 @@
 #include "platform/linux/wayland/wayland_platform_window.h"
 #include "platform/window.h"
 #include "os/os.h"
+#include "containers/vector.h"
+#include "catch_engine_types.h"
+#include "test_text.h"
 
 #include "platform/linux/x11/x11_window.h"
 
@@ -38,31 +38,32 @@ constexpr u32 kLeftCtrl = 29;
 constexpr u32 kRightAlt = 100;
 constexpr u64 kMs = 1'000'000ull;
 
-std::vector<InputEvent> Poll(os::Window& window) {
-    std::vector<InputEvent> out;
+Vector<InputEvent> Poll(os::Window& window) {
+    Vector<InputEvent> out;
     InputEvent e;
-    while (window.PollEvent(&e)) out.push_back(e);
+    while (window.PollEvent(&e)) out.Push(e);
     return out;
 }
 
-std::vector<InputEvent> Drain(InputEventQueue& q) {
-    std::vector<InputEvent> out;
+Vector<InputEvent> Drain(InputEventQueue& q) {
+    Vector<InputEvent> out;
     InputEvent e;
-    while (q.Pop(&e)) out.push_back(e);
+    while (q.Pop(&e)) out.Push(e);
     return out;
 }
 
-std::string TextOf(const std::vector<InputEvent>& events) {
-    std::string s;
-    for (const InputEvent& e : events) {
-        if (e.type == InputEventType::Text) s.append(e.text, e.text_length);
+engine_test::Text TextOf(const Vector<InputEvent>& events) {
+    engine_test::Text s = engine_test::MakeText();
+    for (usize i = 0; i < events.Size(); ++i) {
+        const InputEvent& e = events[i];
+        if (e.type == InputEventType::Text) s.AppendRawBytes(e.text, e.text_length);
     }
     return s;
 }
 
-usize Count(const std::vector<InputEvent>& events, InputEventType t) {
+usize Count(const Vector<InputEvent>& events, InputEventType t) {
     usize n = 0;
-    for (const InputEvent& e : events) n += e.type == t ? 1 : 0;
+    for (usize i = 0; i < events.Size(); ++i) n += events[i].type == t ? 1 : 0;
     return n;
 }
 
@@ -148,21 +149,21 @@ TEST_CASE("KeyboardEvents: letters produce a KeyDown and Text; Ctrl and Enter pr
     Rig rig("us");
     rig.Press(kA, 1);
     auto ev = Drain(rig.queue);
-    REQUIRE(ev.size() == 2);
+    REQUIRE(ev.Size() == 2);
     CHECK(ev[0].type == InputEventType::KeyDown);
     CHECK(ev[0].key == Key::A);
     CHECK_FALSE(ev[0].repeat);
     CHECK(TextOf(ev) == "a");
     rig.Release(kA, 2);
     ev = Drain(rig.queue);
-    REQUIRE(ev.size() == 1);
+    REQUIRE(ev.Size() == 1);
     CHECK(ev[0].type == InputEventType::KeyUp);
 
     rig.Press(kLeftShift);
     rig.Press(kA);
     ev = Drain(rig.queue);
     CHECK(TextOf(ev) == "A");
-    CHECK((ev.back().modifiers & kModShift) != 0);
+    CHECK((ev[ev.Size() - 1].modifiers & kModShift) != 0);
     rig.Release(kA);
     rig.Release(kLeftShift);
     Drain(rig.queue);
@@ -218,7 +219,7 @@ TEST_CASE("KeyboardEvents: German layout gives ß, € on AltGr and é through a
     rig.Release(kS);
     rig.Press(kA);
     ev = Drain(rig.queue);
-    CHECK(TextOf(ev).size() > 0);
+    CHECK(TextOf(ev).Length() > 0);
     rig.Release(kA);
 }
 
@@ -245,7 +246,7 @@ TEST_CASE("KeyboardEvents: repeat starts after the delay, runs at the rate and s
     CHECK(rig.queue.Size() == 0);
     rig.events.Tick(500 * kMs);
     auto ev = Drain(rig.queue);
-    REQUIRE(ev.size() == 2);
+    REQUIRE(ev.Size() == 2);
     CHECK(ev[0].type == InputEventType::KeyDown);
     CHECK(ev[0].repeat);
     CHECK(TextOf(ev) == "a"); // a repeat types again
@@ -272,8 +273,8 @@ TEST_CASE("KeyboardEvents: the last pressed key repeats and a modifier never doe
     rig.events.Tick(700 * kMs);
     auto ev = Drain(rig.queue);
     REQUIRE(Count(ev, InputEventType::KeyDown) >= 1);
-    for (const InputEvent& e : ev) {
-        if (e.type == InputEventType::KeyDown) CHECK(e.key == Key::E);
+    for (usize i = 0; i < ev.Size(); ++i) {
+        if (ev[i].type == InputEventType::KeyDown) CHECK(ev[i].key == Key::E);
     }
     // Releasing the first key does not stop the second key's repeat.
     rig.Release(kA, 710 * kMs);
@@ -302,10 +303,10 @@ TEST_CASE("KeyboardEvents: losing focus releases held keys, then reports FocusLo
     rig.Press(kLeftShift);
     rig.Press(kA);
     auto ev = Drain(rig.queue);
-    CHECK(ev.front().type == InputEventType::FocusGained);
+    CHECK(ev[0].type == InputEventType::FocusGained);
     rig.events.FocusLost(10);
     ev = Drain(rig.queue);
-    REQUIRE(ev.size() == 3);
+    REQUIRE(ev.Size() == 3);
     CHECK(ev[0].type == InputEventType::KeyUp);
     CHECK(ev[1].type == InputEventType::KeyUp);
     CHECK(ev[2].type == InputEventType::FocusLost);
@@ -346,7 +347,8 @@ TEST_CASE("WaylandPlatformWindow reports a Resize event once it is open", "[wayl
         SleepNanos(5'000'000);
     }
     const auto ev = Poll(window);
-    for (const InputEvent& e : ev) {
+    for (usize i = 0; i < ev.Size(); ++i) {
+        const InputEvent& e = ev[i];
         if (e.type == InputEventType::Resize) {
             CHECK(e.width > 0);
             CHECK(e.height > 0);

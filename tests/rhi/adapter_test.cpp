@@ -1,6 +1,5 @@
 #include "os/console.h"
-#include <cstring>
-#include <string>
+#include "test_text.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -319,11 +318,11 @@ TEST_CASE("Real adapters are listed and a device is created on each presentable 
         create.adapter = list.items[i].id;
         // The explicit request wins over the environment.
         const char* saved = os::GetEnvironment("ENGINE_RHI_GPU");
-        const std::string saved_copy = saved != nullptr ? saved : "";
+        const engine_test::Text saved_copy = engine_test::MakeText(StringView(saved != nullptr ? saved : ""));
         test_support::SetEnv("ENGINE_RHI_GPU", "no-such-gpu-name");
         DevicePtr device = CreateDevice(create);
         if (saved != nullptr) {
-            test_support::SetEnv("ENGINE_RHI_GPU", saved_copy.c_str());
+            test_support::SetEnv("ENGINE_RHI_GPU", saved_copy.CStr());
         } else {
             test_support::UnsetEnv("ENGINE_RHI_GPU");
         }

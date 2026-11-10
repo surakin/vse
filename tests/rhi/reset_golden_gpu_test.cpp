@@ -1,7 +1,6 @@
 // Phase 8 Day 112: the reset on a real device: the picture before and after a reset is identical and still matches the blessed
 // golden image, and a loop of resets leaves nothing behind.
 
-#include <cstdio>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -60,7 +59,7 @@ TEST_CASE("The demo picture is identical before and after a device reset and sti
 
         // And both match the blessed golden within its existing tolerance.
         gpu_test::Image golden;
-        REQUIRE(gpu_test::ReadPpm(gpu_test::GoldenPath("renderer_demo.ppm").c_str(), &golden));
+        REQUIRE(gpu_test::ReadPpm(gpu_test::GoldenPath("renderer_demo.ppm").CStr(), &golden));
         gpu_test::CompareOptions co;
         co.tolerance = 6;
         co.edge_tolerance = 90;
@@ -68,9 +67,9 @@ TEST_CASE("The demo picture is identical before and after a device reset and sti
         co.max_interior_miss = 0.002;
         const gpu_test::CompareResult against_before = gpu_test::Compare(golden, before, co, "reset_before");
         const gpu_test::CompareResult against_after = gpu_test::Compare(golden, after, co, "reset_after");
-        INFO(against_before.message);
+        INFO(against_before.message.CStr());
         CHECK(against_before.same);
-        INFO(against_after.message);
+        INFO(against_after.message.CStr());
         CHECK(against_after.same);
 
         rig.TearDown();

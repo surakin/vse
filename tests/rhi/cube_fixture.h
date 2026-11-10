@@ -2,7 +2,6 @@
 
 #include "lang/scalar.h"
 #include "cstr/format.h"
-#include <cstdlib>
 #include "lang/initializer_list.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -144,17 +143,17 @@ inline int CheckGolden(const Image& image, const char* golden_file, const char* 
     if (gpu_test::UpdatingGoldens()) {
         // Only Vulkan writes goldens: the images were blessed through it, and Direct3D 12 is checked against them (decision 11).
         if (backend == Backend::Vulkan) {
-            REQUIRE(gpu_test::WritePpm(gpu_test::GoldenPath(golden_file).c_str(), image));
+            REQUIRE(gpu_test::WritePpm(gpu_test::GoldenPath(golden_file).CStr(), image));
             WARN("ENGINE_RHI_UPDATE_GOLDEN=1: tests/rhi/golden/" << golden_file << " was rewritten; inspect it before committing");
         }
         return 0;
     }
     Image golden;
-    REQUIRE(gpu_test::ReadPpm(gpu_test::GoldenPath(golden_file).c_str(), &golden));
+    REQUIRE(gpu_test::ReadPpm(gpu_test::GoldenPath(golden_file).CStr(), &golden));
     char diff_name[96];
     FormatTo(diff_name, sizeof(diff_name), "%s_%s", name, gpu_test::BackendTag(backend));
     const gpu_test::CompareResult result = gpu_test::Compare(golden, image, options, diff_name);
-    INFO(gpu_test::BackendTag(backend) << ": " << result.message);
+    INFO(gpu_test::BackendTag(backend) << ": " << result.message.CStr());
     CHECK(result.same);
     // ENGINE_RHI_GOLDEN_REPORT=1: say how far the image is from the golden and from the other backend's image of the same test (both
     // run in one process), which separates a driver's differences from a backend's.
@@ -163,12 +162,12 @@ inline int CheckGolden(const Image& image, const char* golden_file, const char* 
         char own[96], other[96];
         FormatTo(own, sizeof(own), "golden_%s_%s.ppm", name, gpu_test::BackendTag(backend));
         FormatTo(other, sizeof(other), "golden_%s_%s.ppm", name, backend == Backend::Vulkan ? "dx12" : "vulkan");
-        gpu_test::WritePpm(gpu_test::TempPath(own).c_str(), image);
+        gpu_test::WritePpm(gpu_test::TempPath(own).CStr(), image);
         int between = -1;
         Image theirs;
-        if (gpu_test::ReadPpm(gpu_test::TempPath(other).c_str(), &theirs) && theirs.width == image.width && theirs.height == image.height) {
+        if (gpu_test::ReadPpm(gpu_test::TempPath(other).CStr(), &theirs) && theirs.width == image.width && theirs.height == image.height) {
             between = 0;
-            for (usize i = 0; i < image.rgba.size(); ++i) {
+            for (usize i = 0; i < image.rgba.Size(); ++i) {
                 const int d = Abs(static_cast<int>(image.rgba[i]) - static_cast<int>(theirs.rgba[i]));
                 between = d > between ? d : between;
             }

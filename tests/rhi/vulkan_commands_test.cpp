@@ -1,6 +1,6 @@
-#include <memory>
 #include "sync/thread.h"
-#include <vector>
+#include "containers/vector.h"
+#include "test_text.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -19,12 +19,12 @@ using namespace engine_placeholder::rhi::vulkan;
 
 namespace {
 
-std::vector<unsigned char> VulkanCommandsTestPattern(usize size, unsigned seed) {
-    std::vector<unsigned char> bytes(size);
+Vector<byte> VulkanCommandsTestPattern(usize size, unsigned seed) {
+    Vector<byte> bytes = engine_test::ByteBuffer(size);
     unsigned state = seed * 2654435761u + 12345u;
     for (usize i = 0; i < size; ++i) {
         state = state * 1664525u + 1013904223u;
-        bytes[i] = static_cast<unsigned char>(state >> 24);
+        bytes[i] = static_cast<byte>(state >> 24);
     }
     return bytes;
 }
@@ -145,8 +145,8 @@ TEST_CASE("Vulkan: record, submit and verify a buffer copy", "[rhi][vulkan][gpu]
     constexpr u64 kSize = 64 * 1024;
     BufferHandle src = MakeBuffer(device.Get(), kSize);
     BufferHandle dst = MakeBuffer(device.Get(), kSize);
-    const std::vector<unsigned char> data = VulkanCommandsTestPattern(kSize, 1);
-    REQUIRE(device->UploadBuffer(src, 0, data.data(), kSize).ok);
+    const Vector<byte> data = VulkanCommandsTestPattern(kSize, 1);
+    REQUIRE(device->UploadBuffer(src, 0, data.Data(), kSize).ok);
 
     device->BeginFrame();
     CommandList* list = device->CreateCommandList();
@@ -159,9 +159,9 @@ TEST_CASE("Vulkan: record, submit and verify a buffer copy", "[rhi][vulkan][gpu]
     CHECK(device->CompletedFence() >= fence);
     device->EndFrame();
 
-    std::vector<unsigned char> back(kSize);
-    REQUIRE(device->ReadbackBuffer(dst, 0, back.data(), kSize));
-    CHECK(back == data);
+    Vector<byte> back = engine_test::ByteBuffer(kSize);
+    REQUIRE(device->ReadbackBuffer(dst, 0, back.Data(), kSize));
+    CHECK(engine_test::SameBytes(back, data));
 
     device->DestroyBuffer(src);
     device->DestroyBuffer(dst);
@@ -175,8 +175,8 @@ TEST_CASE("Vulkan fences: values increase, waiting times out when never signaled
 
     BufferHandle a = MakeBuffer(device.Get(), 4096);
     BufferHandle b = MakeBuffer(device.Get(), 4096);
-    const std::vector<unsigned char> data = VulkanCommandsTestPattern(4096, 2);
-    device->UploadBuffer(a, 0, data.data(), data.size());
+    const Vector<byte> data = VulkanCommandsTestPattern(4096, 2);
+    device->UploadBuffer(a, 0, data.Data(), data.Size());
 
     device->BeginFrame();
     FenceValue previous = 0;
@@ -212,8 +212,8 @@ TEST_CASE("Vulkan: many frames reuse the per-thread pools", "[rhi][vulkan][gpu][
 
     BufferHandle src = MakeBuffer(device.Get(), 1024);
     BufferHandle dst = MakeBuffer(device.Get(), 1024);
-    const std::vector<unsigned char> data = VulkanCommandsTestPattern(1024, 3);
-    device->UploadBuffer(src, 0, data.data(), data.size());
+    const Vector<byte> data = VulkanCommandsTestPattern(1024, 3);
+    device->UploadBuffer(src, 0, data.Data(), data.Size());
 
     FenceValue last = 0;
     for (int frame = 0; frame < 20; ++frame) {
@@ -235,10 +235,10 @@ TEST_CASE("Vulkan: many frames reuse the per-thread pools", "[rhi][vulkan][gpu][
     device->WaitIdle();
     CHECK(device->CompletedFence() >= last);
 
-    std::vector<unsigned char> back(1024);
+    Vector<byte> back = engine_test::ByteBuffer(1024);
     // dst is left in CopyDst; the readback path orders itself after the earlier work.
-    REQUIRE(device->ReadbackBuffer(dst, 0, back.data(), 1024));
-    CHECK(back == data);
+    REQUIRE(device->ReadbackBuffer(dst, 0, back.Data(), 1024));
+    CHECK(engine_test::SameBytes(back, data));
     device->DestroyBuffer(src);
     device->DestroyBuffer(dst);
     device.Reset();
@@ -253,12 +253,12 @@ TEST_CASE("Vulkan: command lists are recorded on many job threads and submitted 
     constexpr u64 kSize = 16 * 1024;
     BufferHandle src[kLists];
     BufferHandle dst[kLists];
-    std::vector<unsigned char> data[kLists];
+    Vector<byte> data[kLists];
     for (usize i = 0; i < kLists; ++i) {
         src[i] = MakeBuffer(device.Get(), kSize);
         dst[i] = MakeBuffer(device.Get(), kSize);
         data[i] = VulkanCommandsTestPattern(kSize, static_cast<unsigned>(10 + i));
-        REQUIRE(device->UploadBuffer(src[i], 0, data[i].data(), kSize).ok);
+        REQUIRE(device->UploadBuffer(src[i], 0, data[i].Data(), kSize).ok);
     }
 
     jobs::Scheduler::Config cfg;
@@ -292,9 +292,9 @@ TEST_CASE("Vulkan: command lists are recorded on many job threads and submitted 
     device->EndFrame();
 
     for (usize i = 0; i < kLists; ++i) {
-        std::vector<unsigned char> back(kSize);
-        REQUIRE(device->ReadbackBuffer(dst[i], 0, back.data(), kSize));
-        CHECK(back == data[i]);
+        Vector<byte> back = engine_test::ByteBuffer(kSize);
+        REQUIRE(device->ReadbackBuffer(dst[i], 0, back.Data(), kSize));
+        CHECK(engine_test::SameBytes(back, data[i]));
         device->DestroyBuffer(src[i]);
         device->DestroyBuffer(dst[i]);
     }
@@ -307,8 +307,8 @@ TEST_CASE("Vulkan: plain threads can record, and thread slots are recycled", "[r
     VulkanDevicePtr device = VulkanCommandsTestMakeDevice();
 
     BufferHandle src = MakeBuffer(device.Get(), 1024);
-    const std::vector<unsigned char> data = VulkanCommandsTestPattern(1024, 4);
-    device->UploadBuffer(src, 0, data.data(), data.size());
+    const Vector<byte> data = VulkanCommandsTestPattern(1024, 4);
+    device->UploadBuffer(src, 0, data.Data(), data.Size());
     constexpr int kThreads = 3;
     BufferHandle dst[kThreads];
     for (int t = 0; t < kThreads; ++t) {
@@ -361,8 +361,8 @@ TEST_CASE("Vulkan: a lost device makes submission and list creation fail without
 
     BufferHandle a = MakeBuffer(device.Get(), 1024);
     BufferHandle b = MakeBuffer(device.Get(), 1024);
-    const std::vector<unsigned char> data = VulkanCommandsTestPattern(1024, 5);
-    device->UploadBuffer(a, 0, data.data(), data.size());
+    const Vector<byte> data = VulkanCommandsTestPattern(1024, 5);
+    device->UploadBuffer(a, 0, data.Data(), data.Size());
 
     device->BeginFrame();
     CommandList* list = device->CreateCommandList();
@@ -375,9 +375,9 @@ TEST_CASE("Vulkan: a lost device makes submission and list creation fail without
 
     // Everything after is a no-op that reports failure.
     CHECK(device->CreateCommandList() == nullptr);
-    CHECK(device->UploadBuffer(a, 0, data.data(), data.size()).ok == false);
-    std::vector<unsigned char> back(1024);
-    CHECK_FALSE(device->ReadbackBuffer(a, 0, back.data(), 1024));
+    CHECK(device->UploadBuffer(a, 0, data.Data(), data.Size()).ok == false);
+    Vector<byte> back = engine_test::ByteBuffer(1024);
+    CHECK_FALSE(device->ReadbackBuffer(a, 0, back.Data(), 1024));
     device->EndFrame();
     device->BeginFrame(); // a frame still begins and ends
     device->EndFrame();
@@ -408,12 +408,12 @@ TEST_CASE("Null device: command lists recorded on job threads submit in order (r
     constexpr u64 kSize = 256;
     BufferHandle src[kLists];
     BufferHandle dst[kLists];
-    std::vector<unsigned char> data[kLists];
+    Vector<byte> data[kLists];
     for (usize i = 0; i < kLists; ++i) {
         src[i] = MakeBuffer(device.Get(), kSize);
         dst[i] = MakeBuffer(device.Get(), kSize);
         data[i] = VulkanCommandsTestPattern(kSize, static_cast<unsigned>(50 + i));
-        REQUIRE(device->UploadBuffer(src[i], 0, data[i].data(), kSize).ok);
+        REQUIRE(device->UploadBuffer(src[i], 0, data[i].Data(), kSize).ok);
     }
 
     jobs::Scheduler::Config cfg;
@@ -439,9 +439,9 @@ TEST_CASE("Null device: command lists recorded on job threads submit in order (r
     device->EndFrame();
     CHECK(device->ErrorCount() == 0);
     for (usize i = 0; i < kLists; ++i) {
-        unsigned char back[kSize];
+        byte back[kSize];
         REQUIRE(device->PeekBuffer(dst[i], 0, back, kSize));
-        CHECK(MemCompare(back, data[i].data(), kSize) == 0);
+        CHECK(MemCompare(back, data[i].Data(), kSize) == 0);
     }
     device.Reset();
 }

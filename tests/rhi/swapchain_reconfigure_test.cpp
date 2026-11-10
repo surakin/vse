@@ -1,7 +1,4 @@
 // Phase 8 Day 107: swapchain reconfiguration, format and HDR choice, surface re-creation.
-#include <cstring>
-#include <string>
-#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 #include "display_session.h"
