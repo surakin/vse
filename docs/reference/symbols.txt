@@ -4278,11 +4278,14 @@ jobs::ReadFileAwaitable::ReadFileAwaitable(const ReadFileAwaitable&)	function	jo
 jobs::ReadFileAwaitable::operator=(const ReadFileAwaitable&)	function	jobs	jobs-readfileawaitable-operator-eq-const-readfileawaitable-amp	jobs.md	engine/jobs/async_io.h:177
 jobs::ReadFileAwaitable::~ReadFileAwaitable()	function	jobs	jobs-readfileawaitable-tilde-readfileawaitable	jobs.md	engine/jobs/async_io.h:182
 jobs::ReadFileAwaitable::await_ready() const noexcept	function	jobs	jobs-readfileawaitable-await-ready-const-noexcept	jobs.md	engine/jobs/async_io.h:187
-jobs::ReadFileAwaitable::await_suspend(std::coroutine_handle<>) noexcept	function	jobs	jobs-readfileawaitable-await-suspend-std-coroutine-handle-lt-gt-noexcept	jobs.md	engine/jobs/async_io.h:193
+jobs::ReadFileAwaitable::await_suspend(CoroutineHandle<>) noexcept	function	jobs	jobs-readfileawaitable-await-suspend-coroutinehandle-lt-gt-noexcept	jobs.md	engine/jobs/async_io.h:193
 jobs::ReadFileAwaitable::await_resume() noexcept	function	jobs	jobs-readfileawaitable-await-resume-noexcept	jobs.md	engine/jobs/async_io.h:200
 jobs::kDefaultMaxReadBytes	variable	jobs	jobs-kdefaultmaxreadbytes	jobs.md	engine/jobs/async_io.h:210
 jobs::kMaxAsyncPathBytes	variable	jobs	jobs-kmaxasyncpathbytes	jobs.md	engine/jobs/async_io.h:213
 jobs::ReadFileAsync(Scheduler&,StringView,usize)	function	jobs	jobs-readfileasync-scheduler-amp-stringview-usize	jobs.md	engine/jobs/async_io.h:227
+CoroutineHandle	alias	jobs	coroutinehandle	jobs.md	engine/jobs/coroutine.h:13
+SuspendAlways	alias	jobs	suspendalways	jobs.md	engine/jobs/coroutine.h:17
+SuspendNever	alias	jobs	suspendnever	jobs.md	engine/jobs/coroutine.h:20
 jobs::Counter	class	jobs	jobs-counter	jobs.md	engine/jobs/counter.h:51
 jobs::Counter::Counter(Scheduler&)	function	jobs	jobs-counter-counter-scheduler-amp	jobs.md	engine/jobs/counter.h:55
 jobs::Counter::Counter()	function	jobs	jobs-counter-counter	jobs.md	engine/jobs/counter.h:59
@@ -4301,7 +4304,7 @@ jobs::Counter::DecrementThunk(void*)	function	jobs	jobs-counter-decrementthunk-v
 jobs::Counter::Awaitable	struct	jobs	jobs-counter-awaitable	jobs.md	engine/jobs/counter.h:141
 jobs::Counter::Awaitable::counter	variable	jobs	jobs-counter-awaitable-counter	jobs.md	engine/jobs/counter.h:143
 jobs::Counter::Awaitable::await_ready() const noexcept	function	jobs	jobs-counter-awaitable-await-ready-const-noexcept	jobs.md	engine/jobs/counter.h:148
-jobs::Counter::Awaitable::await_suspend(std::coroutine_handle<>) noexcept	function	jobs	jobs-counter-awaitable-await-suspend-std-coroutine-handle-lt-gt-noexcept	jobs.md	engine/jobs/counter.h:155
+jobs::Counter::Awaitable::await_suspend(CoroutineHandle<>) noexcept	function	jobs	jobs-counter-awaitable-await-suspend-coroutinehandle-lt-gt-noexcept	jobs.md	engine/jobs/counter.h:155
 jobs::Counter::Awaitable::await_resume() noexcept	function	jobs	jobs-counter-awaitable-await-resume-noexcept	jobs.md	engine/jobs/counter.h:174
 jobs::Counter::operator co_await()	function	jobs	jobs-counter-operator-co-await	jobs.md	engine/jobs/counter.h:184
 jobs::Spawn(Counter&,Job&&)	function	jobs	jobs-spawn-counter-amp-job-amp-amp	jobs.md	engine/jobs/counter.h:216
@@ -4315,15 +4318,15 @@ jobs::WorkStealingDeque::WorkStealingDeque()	function	jobs	jobs-workstealingdequ
 jobs::WorkStealingDeque::WorkStealingDeque(const WorkStealingDeque&)	function	jobs	jobs-workstealingdeque-workstealingdeque-const-workstealingdeque-amp	jobs.md	engine/jobs/deque.h:61
 jobs::WorkStealingDeque::operator=(const WorkStealingDeque&)	function	jobs	jobs-workstealingdeque-operator-eq-const-workstealingdeque-amp	jobs.md	engine/jobs/deque.h:62
 jobs::WorkStealingDeque::Capacity()	function	jobs	jobs-workstealingdeque-capacity	jobs.md	engine/jobs/deque.h:67
-jobs::WorkStealingDeque::PushBottom(std::coroutine_handle<>)	function	jobs	jobs-workstealingdeque-pushbottom-std-coroutine-handle-lt-gt	jobs.md	engine/jobs/deque.h:76
+jobs::WorkStealingDeque::PushBottom(CoroutineHandle<>)	function	jobs	jobs-workstealingdeque-pushbottom-coroutinehandle-lt-gt	jobs.md	engine/jobs/deque.h:76
 jobs::WorkStealingDeque::PopBottom()	function	jobs	jobs-workstealingdeque-popbottom	jobs.md	engine/jobs/deque.h:96
-jobs::WorkStealingDeque::StealTop(std::coroutine_handle<>&)	function	jobs	jobs-workstealingdeque-stealtop-std-coroutine-handle-lt-gt-amp	jobs.md	engine/jobs/deque.h:127
+jobs::WorkStealingDeque::StealTop(CoroutineHandle<>&)	function	jobs	jobs-workstealingdeque-stealtop-coroutinehandle-lt-gt-amp	jobs.md	engine/jobs/deque.h:127
 jobs::WorkStealingDeque::ApproxSize() const	function	jobs	jobs-workstealingdeque-approxsize-const	jobs.md	engine/jobs/deque.h:149
 jobs::FileIoAwaitable	class	jobs	jobs-fileioawaitable	jobs.md	engine/jobs/file_async.h:25
 jobs::FileIoAwaitable::FileIoAwaitable(const FileIoAwaitable&)	function	jobs	jobs-fileioawaitable-fileioawaitable-const-fileioawaitable-amp	jobs.md	engine/jobs/file_async.h:27
 jobs::FileIoAwaitable::operator=(const FileIoAwaitable&)	function	jobs	jobs-fileioawaitable-operator-eq-const-fileioawaitable-amp	jobs.md	engine/jobs/file_async.h:28
 jobs::FileIoAwaitable::await_ready() const noexcept	function	jobs	jobs-fileioawaitable-await-ready-const-noexcept	jobs.md	engine/jobs/file_async.h:33
-jobs::FileIoAwaitable::await_suspend(std::coroutine_handle<>) noexcept	function	jobs	jobs-fileioawaitable-await-suspend-std-coroutine-handle-lt-gt-noexcept	jobs.md	engine/jobs/file_async.h:37
+jobs::FileIoAwaitable::await_suspend(CoroutineHandle<>) noexcept	function	jobs	jobs-fileioawaitable-await-suspend-coroutinehandle-lt-gt-noexcept	jobs.md	engine/jobs/file_async.h:37
 jobs::FileIoAwaitable::await_resume() noexcept	function	jobs	jobs-fileioawaitable-await-resume-noexcept	jobs.md	engine/jobs/file_async.h:41
 jobs::ReadAsync(Scheduler&,io::File&,void*,usize,u64)	function	jobs	jobs-readasync-scheduler-amp-io-file-amp-void-star-usize-u64	jobs.md	engine/jobs/file_async.h:66
 jobs::WriteAsync(Scheduler&,io::File&,const void*,usize,u64)	function	jobs	jobs-writeasync-scheduler-amp-io-file-amp-const-void-star-usize-u64	jobs.md	engine/jobs/file_async.h:68
@@ -4335,7 +4338,7 @@ jobs::FileReadAllAwaitable	class	jobs	jobs-filereadallawaitable	jobs.md	engine/j
 jobs::FileReadAllAwaitable::FileReadAllAwaitable(const FileReadAllAwaitable&)	function	jobs	jobs-filereadallawaitable-filereadallawaitable-const-filereadallawaitable-amp	jobs.md	engine/jobs/file_async.h:87
 jobs::FileReadAllAwaitable::operator=(const FileReadAllAwaitable&)	function	jobs	jobs-filereadallawaitable-operator-eq-const-filereadallawaitable-amp	jobs.md	engine/jobs/file_async.h:88
 jobs::FileReadAllAwaitable::await_ready() const noexcept	function	jobs	jobs-filereadallawaitable-await-ready-const-noexcept	jobs.md	engine/jobs/file_async.h:93
-jobs::FileReadAllAwaitable::await_suspend(std::coroutine_handle<>) noexcept	function	jobs	jobs-filereadallawaitable-await-suspend-std-coroutine-handle-lt-gt-noexcept	jobs.md	engine/jobs/file_async.h:97
+jobs::FileReadAllAwaitable::await_suspend(CoroutineHandle<>) noexcept	function	jobs	jobs-filereadallawaitable-await-suspend-coroutinehandle-lt-gt-noexcept	jobs.md	engine/jobs/file_async.h:97
 jobs::FileReadAllAwaitable::await_resume() noexcept	function	jobs	jobs-filereadallawaitable-await-resume-noexcept	jobs.md	engine/jobs/file_async.h:101
 jobs::ReadAllAsync(Scheduler&,io::File&,u64)	function	jobs	jobs-readallasync-scheduler-amp-io-file-amp-u64	jobs.md	engine/jobs/file_async.h:124
 jobs::FramePool	class	jobs	jobs-framepool	jobs.md	engine/jobs/frame_pool.h:46
@@ -4395,7 +4398,7 @@ jobs::Scheduler::~Scheduler()	function	jobs	jobs-scheduler-tilde-scheduler	jobs.
 jobs::Scheduler::Scheduler(const Scheduler&)	function	jobs	jobs-scheduler-scheduler-const-scheduler-amp	jobs.md	engine/jobs/scheduler.h:102
 jobs::Scheduler::operator=(const Scheduler&)	function	jobs	jobs-scheduler-operator-eq-const-scheduler-amp	jobs.md	engine/jobs/scheduler.h:103
 jobs::Scheduler::Submit(Job&&)	function	jobs	jobs-scheduler-submit-job-amp-amp	jobs.md	engine/jobs/scheduler.h:115
-jobs::Scheduler::Schedule(std::coroutine_handle<>)	function	jobs	jobs-scheduler-schedule-std-coroutine-handle-lt-gt	jobs.md	engine/jobs/scheduler.h:128
+jobs::Scheduler::Schedule(CoroutineHandle<>)	function	jobs	jobs-scheduler-schedule-coroutinehandle-lt-gt	jobs.md	engine/jobs/scheduler.h:128
 jobs::Scheduler::HelpUntil(bool(*)(void*),void*)	function	jobs	jobs-scheduler-helpuntil-bool-star-void-star-void-star	jobs.md	engine/jobs/scheduler.h:140
 jobs::Scheduler::HelpUntil(Counter&)	function	jobs	jobs-scheduler-helpuntil-counter-amp	jobs.md	engine/jobs/scheduler.h:147
 jobs::Scheduler::HelpUntil(const Atomic<int>&,int)	function	jobs	jobs-scheduler-helpuntil-const-atomic-lt-int-gt-amp-int	jobs.md	engine/jobs/scheduler.h:155

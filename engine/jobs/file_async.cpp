@@ -18,7 +18,7 @@ void FileIoAwaitable::OnDone(void* user, const io::AsyncResult& result) {
     self->counter_.Decrement();
 }
 
-bool FileIoAwaitable::await_suspend(std::coroutine_handle<> h) noexcept {
+bool FileIoAwaitable::await_suspend(CoroutineHandle<> h) noexcept {
     counter_.Increment();
     switch (kind_) {
     case io::AsyncKind::Read: file_->ReadAsync(&request_, buffer_, length_, offset_, &OnDone, this); break;
@@ -68,7 +68,7 @@ void FileReadAllAwaitable::OnChunk(void* user, const io::AsyncResult& result) {
     self->counter_.Decrement(); // finished: the last touch
 }
 
-bool FileReadAllAwaitable::await_suspend(std::coroutine_handle<> h) noexcept {
+bool FileReadAllAwaitable::await_suspend(CoroutineHandle<> h) noexcept {
     u64 hint = 0;
     if (file_->Size(&hint).Ok() && hint > 0 && hint <= max_bytes_) {
         bytes_.TryReserve(static_cast<usize>(hint)); // a hint only: failure just means the vector grows as it reads

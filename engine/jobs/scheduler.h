@@ -2,7 +2,7 @@
 
 #include "sync/atomic.h"
 #include "sync/mutex.h"
-#include <coroutine>
+#include "jobs/coroutine.h"
 
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
@@ -125,7 +125,7 @@ public:
     /// Aborts: `h` is null; the scheduler has completed shutdown; both queues are full and the caller is not participant 0 outside a job.
     /// Ownership: takes responsibility for resuming `h` exactly once, or destroying it if shutdown drops it unrun.
     /// Thread-safety: thread-safe. Any thread.
-    void Schedule(std::coroutine_handle<> h);
+    void Schedule(CoroutineHandle<> h);
 
     /// Runs jobs on the calling thread until a predicate becomes true.
     ///
@@ -255,15 +255,15 @@ private:
     void WorkerLoop(Participant& self);
 
     // One acquisition round for participant `index`; null handle if none.
-    std::coroutine_handle<> FindWork(usize index);
-    std::coroutine_handle<> PopInjection();
-    bool PushInjection(std::coroutine_handle<> h);
-    std::coroutine_handle<> TrySteal(usize index);
-    std::coroutine_handle<> SweepAll(usize index);
+    CoroutineHandle<> FindWork(usize index);
+    CoroutineHandle<> PopInjection();
+    bool PushInjection(CoroutineHandle<> h);
+    CoroutineHandle<> TrySteal(usize index);
+    CoroutineHandle<> SweepAll(usize index);
     void MakeRoom();
     u32 NextRandom(Lane& lane);
 
-    void Run(usize index, std::coroutine_handle<> h);
+    void Run(usize index, CoroutineHandle<> h);
     void NotifyWork();
     bool IsMainThread() const;
     int OwnIndex() const; // participant index on this scheduler, or -1
@@ -275,7 +275,7 @@ private:
 
     // Injection queue (ring), guarded by injection_mutex_.
     Mutex injection_mutex_;
-    std::coroutine_handle<> injection_[kInjectionCapacity];
+    CoroutineHandle<> injection_[kInjectionCapacity];
     usize injection_head_ = 0;
     usize injection_count_ = 0;
     Atomic<usize> injection_hint_{0}; // lock-free "maybe non-empty"

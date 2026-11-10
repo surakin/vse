@@ -10,6 +10,7 @@
 #include <thread>
 #include <vector>
 
+#include "build_defs.h"
 #include "sync/atomic.h"
 #include "sync/mutex.h"
 #include "sync/thread.h"
@@ -115,8 +116,10 @@ TEST_CASE("Atomic fetch operations are atomic under contention", "[sync]") {
 }
 
 TEST_CASE("Fences compile and run", "[sync]") {
+#if !ENGINE_SANITIZER_THREAD // GCC rejects atomic_thread_fence under -fsanitize=thread (-Werror=tsan)
     AtomicThreadFence(MemoryOrder::SeqCst);
     AtomicThreadFence(MemoryOrder::AcqRel);
+#endif
     AtomicSignalFence(MemoryOrder::Release);
     SUCCEED();
 }

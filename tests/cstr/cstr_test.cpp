@@ -150,13 +150,24 @@ TEST_CASE("Wide string functions match the C library", "[cstr]") {
     CHECK(std::wcscmp(copy, L"aabcd") == 0);
 }
 
+namespace {
+// The oracle goes through vsnprintf so GCC cannot see the constant arguments and warn (-Wformat-truncation) about the small capacities this test tries on purpose.
+int OracleSnprintf(char* buffer, usize capacity, const char* format, ...) {
+    VarArgs args;
+    ENGINE_VA_START(args, format);
+    const int length = std::vsnprintf(buffer, capacity, format, args);
+    ENGINE_VA_END(args);
+    return length;
+}
+} // namespace
+
 TEST_CASE("FormatTo matches snprintf for every conversion the tree uses and every capacity", "[cstr]") {
     char got[64], want[64];
     for (usize capacity = 0; capacity <= 20; ++capacity) {
         MemSet(got, 'g', 64);
         MemSet(want, 'g', 64);
         const int n = FormatTo(got, capacity, "%d|%s|%5.2f|%x|%llu", -42, "txt", 3.14159, 255u, 123456789012ull);
-        const int m = std::snprintf(want, capacity, "%d|%s|%5.2f|%x|%llu", -42, "txt", 3.14159, 255u, 123456789012ull);
+        const int m = OracleSnprintf(want, capacity, "%d|%s|%5.2f|%x|%llu", -42, "txt", 3.14159, 255u, 123456789012ull);
         CHECK(n == m);
         CHECK(std::memcmp(got, want, 64) == 0);
     }

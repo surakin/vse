@@ -254,7 +254,7 @@ TEST_CASE("Awaitable protocol, both orderings driven by hand", "[jobs][counter]"
         c.Decrement(); // no waiter yet: must not schedule anything
         bool dummy_done = false;
         Job j = SetFlagJob(&dummy_done, 0);
-        std::coroutine_handle<> h = j.Release();
+        CoroutineHandle<> h = j.Release();
         REQUIRE_FALSE(aw.await_suspend(h)); // finished already: continue inline
         aw.await_resume();
         REQUIRE(s->InjectionQueueSizeForTesting() == 0);
@@ -268,7 +268,7 @@ TEST_CASE("Awaitable protocol, both orderings driven by hand", "[jobs][counter]"
         c.Increment();
         bool ran = false;
         Job j = SetFlagJob(&ran, 0);
-        std::coroutine_handle<> h = j.Release();
+        CoroutineHandle<> h = j.Release();
         auto aw = c.operator co_await();
         REQUIRE_FALSE(aw.await_ready());
         REQUIRE(aw.await_suspend(h)); // parked

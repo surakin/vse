@@ -1,7 +1,7 @@
 #pragma once
 
 #include "sync/mutex.h"
-#include <coroutine>
+#include "jobs/coroutine.h"
 #include "lang/utility.h"
 #include "sync/thread.h"
 
@@ -190,7 +190,7 @@ public:
     ///
     /// Param h: the awaiting coroutine's handle.
     /// Returns: `false` if the coroutine should continue inline, which happens when the path is too long, the I/O thread is shut down, or the read already finished; `true` if it was parked and will be resumed on a participant.
-    bool await_suspend(std::coroutine_handle<> h) noexcept;
+    bool await_suspend(CoroutineHandle<> h) noexcept;
 
     /// Collects the outcome of the read.
     ///

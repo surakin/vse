@@ -1,6 +1,6 @@
 #pragma once
 
-#include <coroutine>
+#include "jobs/coroutine.h"
 
 #include "containers/vector.h"
 #include "io/file.h"
@@ -34,7 +34,7 @@ public:
     /// Starts the operation and parks the coroutine until it completes.
     ///
     /// Returns: false when it already finished (continue inline), true when parked.
-    bool await_suspend(std::coroutine_handle<> h) noexcept;
+    bool await_suspend(CoroutineHandle<> h) noexcept;
     /// Collects the result.
     ///
     /// Aborts: resumed on a thread that is not a scheduler participant.
@@ -94,7 +94,7 @@ public:
     /// Starts the first read and parks the coroutine.
     ///
     /// Returns: false when it already finished (continue inline), true when parked.
-    bool await_suspend(std::coroutine_handle<> h) noexcept;
+    bool await_suspend(CoroutineHandle<> h) noexcept;
     /// Collects the bytes.
     ///
     /// Aborts: resumed on a thread that is not a scheduler participant.

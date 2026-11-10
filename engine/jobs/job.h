@@ -1,6 +1,6 @@
 #pragma once
 
-#include <coroutine>
+#include "jobs/coroutine.h"
 #include "lang/new.h"
 
 #include "debug/compiler.h"
@@ -57,7 +57,7 @@ public:
     struct promise_type;
 
     /// Typed coroutine handle to a job frame.
-    using Handle = std::coroutine_handle<promise_type>;
+    using Handle = CoroutineHandle<promise_type>;
 
     /// Coroutine promise for [[jobs::Job]].
     ///
@@ -70,7 +70,7 @@ public:
         Job get_return_object() { return Job(Handle::from_promise(*this)); }
 
         // Start suspended; the scheduler decides when and where to run.
-        std::suspend_always initial_suspend() noexcept { return {}; }
+        SuspendAlways initial_suspend() noexcept { return {}; }
 
         // Runs when the body finishes: frees the frame, then notifies.
         struct FinalAwaiter {
@@ -179,9 +179,9 @@ public:
     /// Returns: the owning handle to the not-yet-started frame.
     /// Aborts: the job is empty.
     /// Ownership: the caller takes over the frame; it is freed when the body finishes.
-    std::coroutine_handle<> Release() {
+    CoroutineHandle<> Release() {
         ENGINE_ASSERT(handle_, "Job::Release on an empty Job");
-        std::coroutine_handle<> h = handle_;
+        CoroutineHandle<> h = handle_;
         handle_ = nullptr;
         return h;
     }

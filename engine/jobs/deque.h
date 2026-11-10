@@ -1,7 +1,7 @@
 #pragma once
 
 #include "sync/atomic.h"
-#include <coroutine>
+#include "jobs/coroutine.h"
 
 #include "log/assert.h"
 #include "types.h"
@@ -73,7 +73,7 @@ public:
     /// Fails: returns `false` and stores nothing if the deque is full.
     /// Aborts: `h` is a null handle.
     /// Thread-safety: owner-thread-only.
-    bool PushBottom(std::coroutine_handle<> h) {
+    bool PushBottom(CoroutineHandle<> h) {
         ENGINE_ASSERT(h.address() != nullptr, "WorkStealingDeque: null handle");
         const i64 b = bottom_.Load(MemoryOrder::Relaxed);
         // acquire is enough: a stale (smaller) top only makes the deque look
@@ -93,7 +93,7 @@ public:
     ///
     /// Returns: the handle, or a null handle if the deque is empty or a thief won the race for the last entry.
     /// Thread-safety: owner-thread-only.
-    std::coroutine_handle<> PopBottom() {
+    CoroutineHandle<> PopBottom() {
         const i64 b = bottom_.Load(MemoryOrder::Relaxed) - 1;
         // seq_cst store then seq_cst load of top_: the Dekker-style pair
         // that makes the owner and a thief agree on who gets the last
@@ -116,7 +116,7 @@ public:
             }
             bottom_.Store(b + 1, MemoryOrder::SeqCst); // release: see above
         }
-        return std::coroutine_handle<>::from_address(addr);
+        return CoroutineHandle<>::from_address(addr);
     }
 
     /// Tries to take the oldest handle from the top.
@@ -124,7 +124,7 @@ public:
     /// Param out: receives the handle on `Success`; left untouched otherwise.
     /// Returns: `Success`, `Empty` (nothing to steal) or `Lost` (raced with another thief or the owner; worth retrying).
     /// Thread-safety: thread-safe. Any thread.
-    StealStatus StealTop(std::coroutine_handle<>& out) {
+    StealStatus StealTop(CoroutineHandle<>& out) {
         i64 t = top_.Load(MemoryOrder::SeqCst);
         const i64 b = bottom_.Load(MemoryOrder::SeqCst);
         if (t >= b) {
@@ -136,7 +136,7 @@ public:
         if (!top_.CompareExchangeStrong(t, t + 1, MemoryOrder::SeqCst, MemoryOrder::Relaxed)) {
             return StealStatus::Lost;
         }
-        out = std::coroutine_handle<>::from_address(addr);
+        out = CoroutineHandle<>::from_address(addr);
         return StealStatus::Success;
     }
 

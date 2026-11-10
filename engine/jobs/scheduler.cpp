@@ -69,7 +69,7 @@ u32 Scheduler::NextRandom(Lane& lane) {
     return x;
 }
 
-bool Scheduler::PushInjection(std::coroutine_handle<> h) {
+bool Scheduler::PushInjection(CoroutineHandle<> h) {
     LockGuard<Mutex> lock(injection_mutex_);
     if (injection_count_ == kInjectionCapacity) return false;
     injection_[(injection_head_ + injection_count_) % kInjectionCapacity] = h;
@@ -78,11 +78,11 @@ bool Scheduler::PushInjection(std::coroutine_handle<> h) {
     return true;
 }
 
-std::coroutine_handle<> Scheduler::PopInjection() {
+CoroutineHandle<> Scheduler::PopInjection() {
     if (injection_hint_.Load(MemoryOrder::SeqCst) == 0) return {};
     LockGuard<Mutex> lock(injection_mutex_);
     if (injection_count_ == 0) return {};
-    std::coroutine_handle<> h = injection_[injection_head_];
+    CoroutineHandle<> h = injection_[injection_head_];
     injection_head_ = (injection_head_ + 1) % kInjectionCapacity;
     --injection_count_;
     injection_hint_.Store(injection_count_, MemoryOrder::SeqCst);
@@ -94,7 +94,7 @@ usize Scheduler::InjectionQueueSizeForTesting() {
     return injection_count_;
 }
 
-std::coroutine_handle<> Scheduler::TrySteal(usize index) {
+CoroutineHandle<> Scheduler::TrySteal(usize index) {
     if (count_ < 2) return {};
     Lane& me = lanes_[index];
     const usize attempts = 2 * count_;
@@ -102,7 +102,7 @@ std::coroutine_handle<> Scheduler::TrySteal(usize index) {
         // Uniform over the other count_-1 participants.
         usize victim = NextRandom(me) % (count_ - 1);
         if (victim >= index) ++victim;
-        std::coroutine_handle<> h;
+        CoroutineHandle<> h;
         StealStatus st = lanes_[victim].deque.StealTop(h);
         if (st == StealStatus::Success) {
             me.steals.FetchAdd(1, MemoryOrder::Relaxed);
@@ -112,15 +112,15 @@ std::coroutine_handle<> Scheduler::TrySteal(usize index) {
     return {};
 }
 
-std::coroutine_handle<> Scheduler::FindWork(usize index) {
-    std::coroutine_handle<> h = lanes_[index].deque.PopBottom();
+CoroutineHandle<> Scheduler::FindWork(usize index) {
+    CoroutineHandle<> h = lanes_[index].deque.PopBottom();
     if (h) return h;
     h = PopInjection();
     if (h) return h;
     return TrySteal(index);
 }
 
-void Scheduler::Run(usize index, std::coroutine_handle<> h) {
+void Scheduler::Run(usize index, CoroutineHandle<> h) {
     ++tls_job_depth;
     h.resume(); // may destroy the frame; do not touch `h` afterwards
     --tls_job_depth;
@@ -139,11 +139,11 @@ void Scheduler::NotifyWork() {
 
 void Scheduler::Submit(Job&& job) { Schedule(job.Release()); }
 
-std::coroutine_handle<> Scheduler::SweepAll(usize index) {
+CoroutineHandle<> Scheduler::SweepAll(usize index) {
     for (usize v = 0; v < count_; ++v) {
         if (v == index) continue;
         for (;;) {
-            std::coroutine_handle<> h;
+            CoroutineHandle<> h;
             StealStatus st = lanes_[v].deque.StealTop(h);
             if (st == StealStatus::Success) {
                 lanes_[index].steals.FetchAdd(1, MemoryOrder::Relaxed);
@@ -164,7 +164,7 @@ void Scheduler::MakeRoom() {
             LockGuard<Mutex> lock(injection_mutex_);
             if (kInjectionCapacity - injection_count_ >= kBackpressureSlack) return;
         }
-        std::coroutine_handle<> w = PopInjection();
+        CoroutineHandle<> w = PopInjection();
         if (!w) w = FindWork(0);
         if (w) {
             Run(0, w);
@@ -174,7 +174,7 @@ void Scheduler::MakeRoom() {
     }
 }
 
-void Scheduler::Schedule(std::coroutine_handle<> h) {
+void Scheduler::Schedule(CoroutineHandle<> h) {
     ENGINE_ASSERT(h.address() != nullptr, "Scheduler::Schedule: null handle");
     ENGINE_ASSERT(!drained_.Load(MemoryOrder::Acquire), "Scheduler::Schedule after Shutdown completed");
     const int own = OwnIndex();
@@ -203,7 +203,7 @@ void Scheduler::HelpUntil(bool (*done)(void* user), void* user) {
     ENGINE_ASSERT(IsMainThread(), "Scheduler::HelpUntil is only for participant 0 (the main thread)");
     ENGINE_ASSERT(tls_job_depth == 0, "Scheduler::HelpUntil called from inside a job (jobs wait with co_await)");
     while (!done(user)) {
-        std::coroutine_handle<> h = FindWork(0);
+        CoroutineHandle<> h = FindWork(0);
         if (h) {
             Run(0, h);
         } else {
@@ -231,7 +231,7 @@ void Scheduler::WorkerLoop(Participant& self) {
     const usize index = self.index;
     while (!shutdown_.Load(MemoryOrder::Acquire)) {
         const u64 seq = submit_seq_.Load(MemoryOrder::SeqCst);
-        std::coroutine_handle<> h = FindWork(index);
+        CoroutineHandle<> h = FindWork(index);
         if (h) {
             Run(index, h);
             continue;
@@ -282,14 +282,14 @@ usize Scheduler::Shutdown() {
     // Workers are gone: destroy whatever never ran.
     usize dropped = 0;
     for (;;) {
-        std::coroutine_handle<> h = PopInjection();
+        CoroutineHandle<> h = PopInjection();
         if (!h) break;
         h.destroy();
         ++dropped;
     }
     for (usize i = 0; i < count_; ++i) {
         for (;;) {
-            std::coroutine_handle<> h; // reset every pass: a Lost steal leaves it null
+            CoroutineHandle<> h; // reset every pass: a Lost steal leaves it null
             if (i == 0 && IsMainThread()) {
                 h = lanes_[0].deque.PopBottom();
                 if (!h) break;

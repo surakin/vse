@@ -13,16 +13,16 @@ namespace {
 
 // Sentinel handles: non-null addresses that encode an id. They are never
 // resumed, only compared.
-std::coroutine_handle<> MakeHandle(u64 id) {
-    return std::coroutine_handle<>::from_address(reinterpret_cast<void*>((id + 1) * 16));
+CoroutineHandle<> MakeHandle(u64 id) {
+    return CoroutineHandle<>::from_address(reinterpret_cast<void*>((id + 1) * 16));
 }
-u64 IdOf(std::coroutine_handle<> h) { return (reinterpret_cast<u64>(h.address()) / 16) - 1; }
+u64 IdOf(CoroutineHandle<> h) { return (reinterpret_cast<u64>(h.address()) / 16) - 1; }
 
 // Thief threads must not use Catch macros (not thread-safe); they record
 // into the tally and the main thread asserts afterwards.
 Atomic<u64> g_bad_ids{0}; // out-of-range / garbage handles seen
 
-void RecordRaw(std::vector<Atomic<u32>>& counts, std::coroutine_handle<> h) {
+void RecordRaw(std::vector<Atomic<u32>>& counts, CoroutineHandle<> h) {
     u64 id = IdOf(h);
     if (id < counts.size()) counts[id].FetchAdd(1, MemoryOrder::Relaxed);
     else g_bad_ids.FetchAdd(1, MemoryOrder::Relaxed);
@@ -48,7 +48,7 @@ Outcome RunSession(usize total, usize thieves, u32 pop_every) {
     for (usize i = 0; i < thieves; ++i) {
         ts.emplace_back([&] {
             for (;;) {
-                std::coroutine_handle<> h;
+                CoroutineHandle<> h;
                 StealStatus st = dq.StealTop(h);
                 if (st == StealStatus::Success) {
                     RecordRaw(counts, h);
@@ -101,7 +101,7 @@ Outcome RunSession(usize total, usize thieves, u32 pop_every) {
 TEST_CASE("Deque single-threaded LIFO from the owner, FIFO for thieves", "[jobs][deque]") {
     WorkStealingDeque dq;
     REQUIRE_FALSE(dq.PopBottom());
-    std::coroutine_handle<> out;
+    CoroutineHandle<> out;
     REQUIRE(dq.StealTop(out) == StealStatus::Empty);
 
     for (u64 i = 0; i < 4; ++i) REQUIRE(dq.PushBottom(MakeHandle(i)));
@@ -122,7 +122,7 @@ TEST_CASE("Deque reports full at capacity without losing or overwriting anything
     REQUIRE_FALSE(dq.PushBottom(MakeHandle(cap + 1)));
 
     // Steal one: frees a slot, push succeeds again (wraps the ring).
-    std::coroutine_handle<> out;
+    CoroutineHandle<> out;
     REQUIRE(dq.StealTop(out) == StealStatus::Success);
     REQUIRE(IdOf(out) == 0);
     REQUIRE(dq.PushBottom(MakeHandle(cap)));
@@ -166,7 +166,7 @@ TEST_CASE("Deque: single-element contention between PopBottom and four thieves",
     for (int i = 0; i < 4; ++i) {
         ts.emplace_back([&] {
             while (!done.Load(MemoryOrder::Acquire)) {
-                std::coroutine_handle<> h;
+                CoroutineHandle<> h;
                 if (dq.StealTop(h) == StealStatus::Success) {
                     RecordRaw(counts, h);
                     steals.FetchAdd(1, MemoryOrder::Relaxed);

@@ -26,9 +26,9 @@ Job SetFlag(bool* flag) {
 
 Job CountResumes(int* counter) {
     ++*counter;
-    co_await std::suspend_always{};
+    co_await SuspendAlways{};
     ++*counter;
-    co_await std::suspend_always{};
+    co_await SuspendAlways{};
     ++*counter;
 }
 
@@ -37,7 +37,7 @@ Job CountResumes(int* counter) {
 Job BigFrame(int* checksum) {
     volatile char buf[4096];
     for (int i = 0; i < 4096; ++i) buf[i] = static_cast<char>(i);
-    co_await std::suspend_always{};
+    co_await SuspendAlways{};
     int sum = 0;
     for (int i = 0; i < 4096; ++i) sum += static_cast<unsigned char>(buf[i]);
     *checksum = sum;
@@ -74,7 +74,7 @@ TEST_CASE("Job Example() { co_return; } compiles, runs, and its frame came from 
     REQUIRE(created.fallback_allocs == before.fallback_allocs);
     REQUIRE(created.Live() == before.Live() + 1);
 
-    std::coroutine_handle<> h = job.Release();
+    CoroutineHandle<> h = job.Release();
     REQUIRE_FALSE(job.Valid()); // ownership moved out
     REQUIRE_FALSE(h.done());
     h.resume(); // runs to completion; the frame frees itself
@@ -87,7 +87,7 @@ TEST_CASE("A Job does not run until it is resumed", "[jobs][job]") {
     bool flag = false;
     Job job = SetFlag(&flag);
     REQUIRE_FALSE(flag); // initial_suspend = suspend_always
-    std::coroutine_handle<> h = job.Release();
+    CoroutineHandle<> h = job.Release();
     REQUIRE_FALSE(flag);
     h.resume();
     REQUIRE(flag);
@@ -138,7 +138,7 @@ TEST_CASE("A multi-suspend job completes and frees its frame only on the final r
     const FramePool::Stats before = Snap();
     int counter = 0;
     Job job = CountResumes(&counter);
-    std::coroutine_handle<> h = job.Release();
+    CoroutineHandle<> h = job.Release();
 
     h.resume();
     REQUIRE(counter == 1);
@@ -157,7 +157,7 @@ TEST_CASE("The completion hook runs exactly once, after the frame is already fre
 
     Job job = Example();
     job.SetCompletion(RecordingHook, &rec);
-    std::coroutine_handle<> h = job.Release();
+    CoroutineHandle<> h = job.Release();
     REQUIRE(rec.calls == 0);
     h.resume();
 
@@ -185,7 +185,7 @@ TEST_CASE("A frame bigger than the top size class takes the counted fallback and
     REQUIRE(created.fallback_allocs == before.fallback_allocs + 1);
     REQUIRE(created.TotalPooledAllocs() == before.TotalPooledAllocs());
 
-    std::coroutine_handle<> h = job.Release();
+    CoroutineHandle<> h = job.Release();
     h.resume();
     REQUIRE(checksum == 0); // not finished yet
     h.resume();
@@ -203,7 +203,7 @@ TEST_CASE("Jobs created on one thread can finish on another with balanced frame 
     constexpr int kJobs = 2000;
     Atomic<int> ran{0};
 
-    std::vector<std::coroutine_handle<>> handles;
+    std::vector<CoroutineHandle<>> handles;
     static bool flags[kJobs];
     for (bool& f : flags) f = false;
     for (int i = 0; i < kJobs; ++i) {
@@ -230,7 +230,7 @@ TEST_CASE("Jobs created on one thread can finish on another with balanced frame 
 namespace {
 Job SuspendOnce(Atomic<int>* stage) {
     stage->Store(1, MemoryOrder::Relaxed);
-    co_await std::suspend_always{};
+    co_await SuspendAlways{};
     stage->Store(2, MemoryOrder::Relaxed);
 }
 } // namespace
@@ -241,7 +241,7 @@ TEST_CASE("A job started on one thread, resumed on another, fires its hook once"
     HookRecord rec;
     Job job = SuspendOnce(&stage);
     job.SetCompletion(RecordingHook, &rec);
-    std::coroutine_handle<> h = job.Release();
+    CoroutineHandle<> h = job.Release();
 
     Thread first([&] { h.resume(); });
     first.Join();
@@ -253,4 +253,38 @@ TEST_CASE("A job started on one thread, resumed on another, fires its hook once"
     REQUIRE(stage.Load() == 2);
     REQUIRE(rec.calls == 1);
     REQUIRE(Snap().Live() == before.Live());
+}
+
+namespace {
+
+struct Probe {
+    struct promise_type {
+        int steps = 0;
+        Probe get_return_object() { return Probe{CoroutineHandle<promise_type>::from_promise(*this)}; }
+        SuspendAlways initial_suspend() noexcept { return {}; }
+        SuspendAlways final_suspend() noexcept { return {}; }
+        void return_void() {}
+        void unhandled_exception() {}
+    };
+    CoroutineHandle<promise_type> handle;
+};
+
+Probe TwoSteps() {
+    co_await SuspendAlways{};
+    co_return;
+}
+
+} // namespace
+
+TEST_CASE("CoroutineHandle resumes, reports done, round-trips its address and destroys", "[jobs][job]") {
+    Probe probe = TwoSteps();
+    CHECK(static_cast<bool>(probe.handle));
+    CHECK(!probe.handle.done());
+    probe.handle.resume();
+    CHECK(!probe.handle.done());
+    CoroutineHandle<> erased = probe.handle;
+    CHECK(CoroutineHandle<Probe::promise_type>::from_address(erased.address()).address() == erased.address());
+    erased.resume();
+    CHECK(probe.handle.done());
+    probe.handle.destroy();
 }

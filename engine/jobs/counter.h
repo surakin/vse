@@ -1,7 +1,7 @@
 #pragma once
 
 #include "sync/atomic.h"
-#include <coroutine>
+#include "jobs/coroutine.h"
 #include "lang/utility.h"
 
 #include "jobs/job.h"
@@ -91,7 +91,7 @@ public:
             // wake-up. The awaiter cannot proceed (or free *this) until
             // we schedule it, so reading slot_ here is safe; nothing of
             // *this is touched after Schedule.
-            std::coroutine_handle<> h = std::coroutine_handle<>::from_address(slot_);
+            CoroutineHandle<> h = CoroutineHandle<>::from_address(slot_);
             Scheduler* s = scheduler_;
             s->Schedule(h);
         }
@@ -152,7 +152,7 @@ public:
         /// Param h: the awaiting coroutine's handle.
         /// Returns: `false` if the count reached zero first and the coroutine continues inline; `true` if it was parked and the decrementer that reaches zero will schedule it.
         /// Aborts: another coroutine is already awaiting this counter.
-        bool await_suspend(std::coroutine_handle<> h) noexcept {
+        bool await_suspend(CoroutineHandle<> h) noexcept {
             // Check BEFORE touching slot_: a second awaiter must not
             // clobber the first one's handle (ENGINE_ASSERT is always on).
             ENGINE_ASSERT((counter->state_.Load(MemoryOrder::Acquire) & 1) == 0,

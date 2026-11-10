@@ -156,7 +156,7 @@ ReadFileAwaitable::ReadFileAwaitable(ReadFileAwaitable&& other) noexcept : state
 
 ReadFileAwaitable::~ReadFileAwaitable() = default;
 
-bool ReadFileAwaitable::await_suspend(std::coroutine_handle<> h) noexcept {
+bool ReadFileAwaitable::await_suspend(CoroutineHandle<> h) noexcept {
     ReadState* st = state_.Get();
     if (st->path_too_long) {
         return false; // fail inline: ok stays false
