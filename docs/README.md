@@ -24,7 +24,8 @@ Internal design history is for contributors, not engine users: the specs in
 [Windows port and DX12](superpowers/specs/2026-11-07-windows-port-design.md),
 [text](superpowers/specs/2026-11-08-text-design.md),
 [UI toolkit](superpowers/specs/2026-11-10-ui-design.md),
-[standard-library wrappers](superpowers/specs/2026-11-09-std-wrappers-design.md) —
+[standard-library wrappers](superpowers/specs/2026-11-09-std-wrappers-design.md),
+[ECS](superpowers/specs/2026-11-10-ecs-design.md) —
 and the plans in `plans/`.
 
 ## Map

@@ -108,6 +108,12 @@ The numbers are the items of the original table; the plan is `plans/phase-12-mod
 and the wrapper functions that join `foundation/mem` (memory operations), `foundation/os` (console output, process, environment, signals, time) and `engine/jobs` (`CoroutineHandle`). Each row is added to section 1 and to
 `tools/module_deps_check/modules.txt` on the day that builds it (Days 208-215); `docs/superpowers/specs/2026-11-09-std-wrappers-design.md` has the layer reasoning.
 
+### Planned modules (Phase 17, ECS; not built yet)
+
+`engine/ecs` (layer 10, beside `jobs` and `text`; depends on `foundation` and `jobs` with the edge `ecs -> jobs` allowed; no renderer, RHI or platform header): entities, component registry, archetype chunks, world, queries, command buffers, change detection, systems and the
+parallel scheduler, transforms and hierarchy. `engine/scene` (layer 13, above `ecs` and `renderer`; nothing below includes it): `MeshRenderer`, `Light`, `Camera`, `RenderHandle` and the `RenderSync` system that mirrors entities into `renderer::RenderScene`.
+Each row is added to section 1 and to `tools/module_deps_check/modules.txt` on the day that builds it (Day 223 for `ecs`, Day 233 for `scene`); `docs/superpowers/specs/2026-11-10-ecs-design.md` has the reasoning.
+
 ## 6. Keeping this file true
 
 A change that adds a module, moves one between layers or adds an allowed edge updates this file in the same commit. The gate **`module_deps_check`**
