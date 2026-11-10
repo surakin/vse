@@ -1,6 +1,6 @@
-# Phase 19 / Day 257 — Beveled Extrusion
+# Phase 25 / Day 257 — Beveled Extrusion
 
-**Phase:** [Phase 19 — 3D Text, Large 2D Text & Colored Glyphs](../phase-19-3d-text-and-color-glyphs.md)
+**Phase:** [Phase 25 — 3D Text, Large 2D Text & Colored Glyphs](../phase-25-3d-text-and-color-glyphs.md)
 **Depends on:** Day 256.
 
 Optional bevel on the front and back edges: chamfer or rounded profile, correct at concave corners and thin strokes.

@@ -1,6 +1,6 @@
-# Phase 19 / Day 256 — Extruding Glyph Geometry
+# Phase 25 / Day 256 — Extruding Glyph Geometry
 
-**Phase:** [Phase 19 — 3D Text, Large 2D Text & Colored Glyphs](../phase-19-3d-text-and-color-glyphs.md)
+**Phase:** [Phase 25 — 3D Text, Large 2D Text & Colored Glyphs](../phase-25-3d-text-and-color-glyphs.md)
 **Depends on:** Day 253.
 
 Turn the triangulated glyph into a solid: front face, back face and side walls, with normals, tangents and UVs. CPU only.

@@ -121,7 +121,7 @@ struct EnableFlagOperators<ShaderStage> {
 enum class ShaderFormat : u8 {
     Spirv = 0, ///< SPIR-V words (Vulkan).
     Dxil,      ///< A DXIL container (Direct3D 12).
-    Msl,       ///< Metal Shading Language; reserved for the Metal backend (Phase 24), refused by every backend today.
+    Msl,       ///< Metal Shading Language; reserved for the Metal backend (Phase 26), refused by every backend today.
 };
 
 /// Returns the lowercase name of a shader format (`spirv`, `dxil`, `msl`), for logs.

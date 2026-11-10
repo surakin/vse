@@ -10,7 +10,7 @@ Dear ImGui, etc. are all out under the zero-third-party-convenience-
 dependencies rule) — with the commonly used widget set and, in
 particular, a **viewport widget** that hosts a rendered 3D world inside
 the widget tree. This is the shared UI layer that in-game HUDs/menus,
-debug tooling (profiler, console, job-system stats), and the Phase 29
+debug tooling (profiler, console, job-system stats), and the Phase 31
 editor all build on, instead of each hand-rolling its own.
 **Definition of done:** a resizable application window whose entire
 contents are widgets: a menu bar with submenus and a context menu,
@@ -106,7 +106,7 @@ texture is shown on a quad in a 3D scene (an in-world screen).
   - Widget **variants** (e.g. primary/danger button, heading label) are
     named style entries in the theme, not subclasses.
   - Themes load from an engine data file (the format belongs to the
-    Phase 22 asset pipeline; until then a theme is built in code), and
+    Phase 21 asset pipeline; until then a theme is built in code), and
     scale with the surface's DPI/scale factor.
   - Custom widgets read the same theme, so game UIs and the editor
     share one styling mechanism.
@@ -119,7 +119,7 @@ texture is shown on a quad in a 3D scene (an in-world screen).
   and selection by grapheme cluster via the Phase 14/foundation string
   support; multi-line text is a stretch), **combobox** (dropdown).
 - Lists and scrolling: **scrollbar**, scroll view/container, list box;
-  tree view if the editor needs it (may land in Phase 29).
+  tree view if the editor needs it (may land in Phase 31).
 - Menus: **menu bar**, **menus with submenus**, **context menus**,
   keyboard accelerators/mnemonics.
 - Containers: panel, tab view, splitter, dialog/window frame, dockable

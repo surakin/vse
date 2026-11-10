@@ -1,5 +1,5 @@
 # Compiles every engine shader (and every permutation key of the permuted ones) to HLSL and Metal Shading Language with slangc,
-# the proof that the sources are not Vulkan in disguise (Phases 13 and 24 take the D3D12 and Metal backends from these same sources).
+# the proof that the sources are not Vulkan in disguise (Phases 13 and 26 take the D3D12 and Metal backends from these same sources).
 # Run through ctest as `shaders_portability`; arguments: SLANGC, SHADER_DIR, WORK_DIR, SHADERS (a ;-list), DXC (optional),
 # DXC_REQUIRED (ON on Windows with the SDK's dxc: a rejected HLSL then fails the test). The HLSL is built with the D3D12 target
 # define (shaders/target_common.slang), as the minted DXIL is.
@@ -11,7 +11,7 @@ include(${SHADER_DIR}/names.cmake)
 # the list) or if any other shader does not.
 #   fill.comp, saxpy.comp (Metal): both call `RWStructuredBuffer.GetDimensions`, and Metal Shading Language cannot ask a buffer
 #   for its length ("unavailable features in entry point"). They are RHI compute test shaders, not renderer shaders; the Metal
-#   backend (Phase 24) passes the element count in a constant and these two get that change then.
+#   backend (Phase 26) passes the element count in a constant and these two get that change then.
 set(KNOWN_UNAVAILABLE metal:fill.comp metal:saxpy.comp)
 file(MAKE_DIRECTORY ${WORK_DIR})
 set(compiled 0)

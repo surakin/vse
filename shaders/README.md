@@ -63,7 +63,7 @@ is the D3D12 baseline (`docs/superpowers/specs/2026-11-07-windows-port-design.md
   slot 1 by the G-buffer pass and slot 0 by the light volume); D3D12 fetches it at `StartInstanceLocation + SV_InstanceID`, so the
   renderer still draws object `i` with `first_instance = i`. A device says it needs this with `DeviceCaps::object_index_stream`.
   SPIR-V keeps `SV_VulkanInstanceID` (decided on Day 163: the Vulkan output stays byte for byte as it was, so no Vulkan draw cost
-  was measured; Metal, Phase 24, is expected to use the stream too).
+  was measured; Metal, Phase 26, is expected to use the stream too).
 
 Two rules every shader follows, which `shader_mint` checks:
 
@@ -115,7 +115,7 @@ compute local size, descriptor (set, binding) pairs, interface locations, std140
 is 176 bytes, matching the C++ struct), `NonReadable`, push-constant blocks and that no capability beyond
 Matrix/Shader/ImageQuery is used; it also runs `rhi::ValidateSpirv`.
 
-## Other targets (checked by `shaders_portability`, for Phases 13 and 24)
+## Other targets (checked by `shaders_portability`, for Phases 13 and 26)
 
 `ctest -R shaders_portability` (skipped without `slangc`; `portability.cmake`) compiles every shader and every permutation
 key with `-target hlsl` (with the D3D12 define) and `-target metal`, using the same entry, stage and `-matrix-layout-column-major`
@@ -126,7 +126,7 @@ Two compute test shaders, `fill.comp` and `saxpy.comp`, do not compile to Metal 
 test fails if one of them starts to compile. Per target:
 
 - **Clip-space Y.** Vulkan's clip space has Y down, D3D12 and Metal have Y up, and `-fvk-invert-y` only applies to SPIR-V. The
-  D3D12 build flips it with `ENGINE_CLIP` (above); the Metal output is still unflipped (Phase 24). Depth is 0..1 on all three.
+  D3D12 build flips it with `ENGINE_CLIP` (above); the Metal output is still unflipped (Phase 26). Depth is 0..1 on all three.
 - **Matrix layout is the same bytes on all three.** With `-matrix-layout-column-major` the HLSL starts with
   `#pragma pack_matrix(column_major)` and keeps `mul(M, v)`; the Metal output declares column-major storage structs
   (`_MatrixStorage_float4x4_ColMajor...`). `row-major` flips both (`#pragma pack_matrix(row_major)`) and would transpose every

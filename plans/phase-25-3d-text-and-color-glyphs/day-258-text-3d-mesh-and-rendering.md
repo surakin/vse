@@ -1,6 +1,6 @@
-# Phase 19 / Day 258 — 3D Text Meshes Through the Renderer
+# Phase 25 / Day 258 — 3D Text Meshes Through the Renderer
 
-**Phase:** [Phase 19 — 3D Text, Large 2D Text & Colored Glyphs](../phase-19-3d-text-and-color-glyphs.md)
+**Phase:** [Phase 25 — 3D Text, Large 2D Text & Colored Glyphs](../phase-25-3d-text-and-color-glyphs.md)
 **Depends on:** Days 256-257; Phase 5 `MeshData`/`GpuMesh`, materials and the Phase 15 viewport; Phase 17 (ECS and the scene bridge).
 
 A string becomes one `MeshData` that draws like any other mesh.

@@ -1,6 +1,6 @@
-# Phase 19 / Day 252 — Contour Orientation, Nesting & Overlap Removal
+# Phase 25 / Day 252 — Contour Orientation, Nesting & Overlap Removal
 
-**Phase:** [Phase 19 — 3D Text, Large 2D Text & Colored Glyphs](../phase-19-3d-text-and-color-glyphs.md)
+**Phase:** [Phase 25 — 3D Text, Large 2D Text & Colored Glyphs](../phase-25-3d-text-and-color-glyphs.md)
 **Depends on:** Day 251.
 
 Make the flattened contours safe for triangulation and extrusion: known orientation, outer/hole classification, and no overlaps or self-intersections.

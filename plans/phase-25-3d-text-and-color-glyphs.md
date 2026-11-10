@@ -1,4 +1,4 @@
-# Phase 19 — 3D Text, Large 2D Text & Colored Glyphs
+# Phase 25 — 3D Text, Large 2D Text & Colored Glyphs
 
 **Depends on:** Phase 14 (Font & Text: FreeType, text layout, the 2D text path) and Phase 5 (Renderer core: `MeshData`/`GpuMesh`, the material
 system, vertex colors and triangle strips from Phase 5 Day 78). Phase 17 (ECS and its scene bridge, which 3D text entities use). Phase 15 (UI) does not need it and does not wait for it.
@@ -10,22 +10,22 @@ the unsupported formats falling back to the monochrome outline or `.notdef` in a
 
 ## Days
 
-237. [Design Spec, Decisions & Phase Setup](phase-19-3d-text-and-color-glyphs/day-250-design-spec-and-setup.md)
-238. [Flattening Glyph Outlines](phase-19-3d-text-and-color-glyphs/day-251-flatten-outlines.md)
-239. [Contour Orientation, Nesting & Overlap Removal](phase-19-3d-text-and-color-glyphs/day-252-contour-cleanup.md)
-240. [Triangulating Polygons with Holes](phase-19-3d-text-and-color-glyphs/day-253-triangulation.md)
-241. [Large 2D Glyph Meshes: Cache & Edge Ramp](phase-19-3d-text-and-color-glyphs/day-254-large-2d-glyph-meshes.md)
-242. [Large 2D Text on the GPU](phase-19-3d-text-and-color-glyphs/day-255-large-2d-text-rendering.md)
-243. [Extruding Glyph Geometry](phase-19-3d-text-and-color-glyphs/day-256-extrusion.md)
-244. [Beveled Extrusion](phase-19-3d-text-and-color-glyphs/day-257-bevel.md)
-245. [3D Text Meshes Through the Renderer](phase-19-3d-text-and-color-glyphs/day-258-text-3d-mesh-and-rendering.md)
-246. [Test Font Builder & COLR v0 Layers](phase-19-3d-text-and-color-glyphs/day-259-test-fonts-and-colr.md)
-247. [COLR Layers on the 2D and 3D Paths](phase-19-3d-text-and-color-glyphs/day-260-colr-on-2d-and-3d.md)
-248. [Vendor zlib & libpng, Enable PNG in FreeType](phase-19-3d-text-and-color-glyphs/day-261-vendor-libpng.md)
-249. [Color Bitmap Glyphs: `CBDT` and `sbix` through FreeType](phase-19-3d-text-and-color-glyphs/day-262-color-bitmap-glyphs.md)
-250. [RGBA Atlas Pages & Bitmap Color Glyphs on 2D and 3D](phase-19-3d-text-and-color-glyphs/day-263-rgba-atlas-and-bitmap-drawing.md)
-251. [`text3d_demo`, Settings Screen & Integration](phase-19-3d-text-and-color-glyphs/day-264-demo-and-integration.md)
-252. [Docs, Windows PC, Closing Full Run & Phase Review](phase-19-3d-text-and-color-glyphs/day-265-docs-closing-run-and-review.md)
+237. [Design Spec, Decisions & Phase Setup](phase-25-3d-text-and-color-glyphs/day-250-design-spec-and-setup.md)
+238. [Flattening Glyph Outlines](phase-25-3d-text-and-color-glyphs/day-251-flatten-outlines.md)
+239. [Contour Orientation, Nesting & Overlap Removal](phase-25-3d-text-and-color-glyphs/day-252-contour-cleanup.md)
+240. [Triangulating Polygons with Holes](phase-25-3d-text-and-color-glyphs/day-253-triangulation.md)
+241. [Large 2D Glyph Meshes: Cache & Edge Ramp](phase-25-3d-text-and-color-glyphs/day-254-large-2d-glyph-meshes.md)
+242. [Large 2D Text on the GPU](phase-25-3d-text-and-color-glyphs/day-255-large-2d-text-rendering.md)
+243. [Extruding Glyph Geometry](phase-25-3d-text-and-color-glyphs/day-256-extrusion.md)
+244. [Beveled Extrusion](phase-25-3d-text-and-color-glyphs/day-257-bevel.md)
+245. [3D Text Meshes Through the Renderer](phase-25-3d-text-and-color-glyphs/day-258-text-3d-mesh-and-rendering.md)
+246. [Test Font Builder & COLR v0 Layers](phase-25-3d-text-and-color-glyphs/day-259-test-fonts-and-colr.md)
+247. [COLR Layers on the 2D and 3D Paths](phase-25-3d-text-and-color-glyphs/day-260-colr-on-2d-and-3d.md)
+248. [Vendor zlib & libpng, Enable PNG in FreeType](phase-25-3d-text-and-color-glyphs/day-261-vendor-libpng.md)
+249. [Color Bitmap Glyphs: `CBDT` and `sbix` through FreeType](phase-25-3d-text-and-color-glyphs/day-262-color-bitmap-glyphs.md)
+250. [RGBA Atlas Pages & Bitmap Color Glyphs on 2D and 3D](phase-25-3d-text-and-color-glyphs/day-263-rgba-atlas-and-bitmap-drawing.md)
+251. [`text3d_demo`, Settings Screen & Integration](phase-25-3d-text-and-color-glyphs/day-264-demo-and-integration.md)
+252. [Docs, Windows PC, Closing Full Run & Phase Review](phase-25-3d-text-and-color-glyphs/day-265-docs-closing-run-and-review.md)
 
 Order reasoning: geometry first, pure CPU and testable without a GPU (flatten 223, cleanup 224, triangulate 225), because both consumers share it; the large 2D path (226-227) comes before 3D because it replaces a Phase 14 stand-in and is smaller; extrusion and bevel (228-229) precede the renderer integration (230); colors start with COLR (231-232), which needs no new decoder, and the bitmap formats (233-235) come last because they need libpng vendored behind FreeType.
 

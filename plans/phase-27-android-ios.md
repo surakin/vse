@@ -1,11 +1,11 @@
-# Phase 25 — Android and iOS Ports
+# Phase 27 — Android and iOS Ports
 
 **Depends on:** Phase 4 (Vulkan RHI) for Android — reuses the Vulkan
-backend directly; Phase 24 (the Metal backend) for iOS. Neither needs the
+backend directly; Phase 26 (the Metal backend) for iOS. Neither needs the
 DX12 work from Phase 13.
 **Goal:** the engine running on Android and on iOS.
 **Definition of done:** the Vulkan RHI backend runs unmodified on Android,
-and the Metal RHI backend from Phase 24 runs on iOS; new platform layers
+and the Metal RHI backend from Phase 26 runs on iOS; new platform layers
 handle each OS's app lifecycle and touch input.
 
 ## Key deliverables (to be expanded into day-by-day tasks when started)
@@ -20,16 +20,16 @@ handle each OS's app lifecycle and touch input.
 
 - iOS platform layer: UIKit window, touch input, app lifecycle (moved here
   from the old macOS/iOS phase on 2026-11-05).
-- iOS build config for Phase 23's LuaJIT backend: JIT mode is disallowed
+- iOS build config for Phase 24's LuaJIT backend: JIT mode is disallowed
   on iOS App Store builds, so this is where the interpreter-only fallback
   (root `PLAN.md` assumption #13) actually gets wired up.
-- Audio output backends for the Phase 21 mixer: AAudio on Android and
+- Audio output backends for the Phase 23 mixer: AAudio on Android and
   CoreAudio on iOS (shared with the macOS backend where the API matches),
   plus audio session handling (interruptions, route changes, pausing in the
   background). The mixer itself is unchanged.
 - Apple Silicon / tile-based-GPU behavior in the Metal backend
   (memoryless attachments, shared storage) that the Intel Mac used for
-  Phase 24 could not verify; `AddressMode::ClampToBorder` is unavailable
+  Phase 26 could not verify; `AddressMode::ClampToBorder` is unavailable
   on iOS GPU families (portability review).
 
 ## Notes / open questions

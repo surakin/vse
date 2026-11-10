@@ -1,6 +1,6 @@
 # Porting the debugging facilities to another platform
 
-Status: written (Linux is the reference; Windows was ported in Phase 13; macOS is designed in and waits for Phase 24).
+Status: written (Linux is the reference; Windows was ported in Phase 13; macOS is designed in and waits for Phase 26).
 
 **Audience:** the engineer bringing the debugging facilities to a new platform (today: macOS). Read [Foundation: Debugging](foundation-debugging.md) first;
 it explains what each facility does for the person using it. Ordinary engine programmers do not need this page.
@@ -16,7 +16,7 @@ designed in (an `Unsupported` answer, skipped death tests) and have no work here
 |---|---|---|
 | Linux | reference implementation | `engine/foundation/os/linux/debug/` |
 | Windows | done (Phase 13 Days 154-156) | `engine/foundation/os/windows/debug/BACKEND.md` |
-| macOS | checklist written, not built (Phase 24) | `engine/foundation/os/macos/debug/BACKEND.md` |
+| macOS | checklist written, not built (Phase 26) | `engine/foundation/os/macos/debug/BACKEND.md` |
 | iOS, consoles | designed in: `Unsupported`, death tests skip | none |
 
 Read, in order: this page; the checklist for your platform (`engine/foundation/os/windows/debug/BACKEND.md` or

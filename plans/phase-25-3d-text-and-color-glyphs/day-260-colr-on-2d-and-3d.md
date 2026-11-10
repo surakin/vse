@@ -1,6 +1,6 @@
-# Phase 19 / Day 260 — COLR Layers on the 2D and 3D Paths
+# Phase 25 / Day 260 — COLR Layers on the 2D and 3D Paths
 
-**Phase:** [Phase 19 — 3D Text, Large 2D Text & Colored Glyphs](../phase-19-3d-text-and-color-glyphs.md)
+**Phase:** [Phase 25 — 3D Text, Large 2D Text & Colored Glyphs](../phase-25-3d-text-and-color-glyphs.md)
 **Depends on:** Day 259; Days 255 and 258.
 
 Draw layered color glyphs everywhere text draws.

@@ -54,12 +54,12 @@ store, the memory stores, the environment and command-line layers and everything
   policy holds cannot be changed by the program (`SetError::Enforced`). The default user store on Windows stays the file
   (`<user config directory>/<app>/settings.cfg`, as on Linux: one format, comments, `--settings` files); a program that wants the registry adds a
   `RegistryConfigStore` layer itself.
-- **macOS (Phase 24):** `NSUserDefaults` (a suite named after the application) or a plist file through the file store; `NSUserDefaultsDidChangeNotification`
+- **macOS (Phase 26):** `NSUserDefaults` (a suite named after the application) or a plist file through the file store; `NSUserDefaultsDidChangeNotification`
   for changes; the application bundle's defaults as the read-only `System` layer.
-- **Android (Phase 25):** `SharedPreferences`; `apply()` is asynchronous and `commit()` synchronous, so `Commit` calls `commit()` and reports its result;
+- **Android (Phase 27):** `SharedPreferences`; `apply()` is asynchronous and `commit()` synchronous, so `Commit` calls `commit()` and reports its result;
   `OnSharedPreferenceChangeListener` for notifications.
-- **iOS (Phase 25):** `NSUserDefaults` as on macOS.
-- **Consoles (Phase 26):** the platform's save-data API behind the same store; mind size limits and commit latency (`Commit` may be slow: the service
+- **iOS (Phase 27):** `NSUserDefaults` as on macOS.
+- **Consoles (Phase 28):** the platform's save-data API behind the same store; mind size limits and commit latency (`Commit` may be slow: the service
   never calls it from a frame).
 - **The environment** (`EnvironmentSnapshot::Capture`) is the one other platform-bound piece: Windows reads `GetEnvironmentStringsW` (UTF-16 to UTF-8), macOS
   `_NSGetEnviron`; consoles may return an empty snapshot. Windows variable names ignore case (`os::EnvironmentNamesIgnoreCase`): the snapshot holds

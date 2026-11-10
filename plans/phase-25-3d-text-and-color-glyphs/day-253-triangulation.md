@@ -1,6 +1,6 @@
-# Phase 19 / Day 253 — Triangulating Polygons with Holes
+# Phase 25 / Day 253 — Triangulating Polygons with Holes
 
-**Phase:** [Phase 19 — 3D Text, Large 2D Text & Colored Glyphs](../phase-19-3d-text-and-color-glyphs.md)
+**Phase:** [Phase 25 — 3D Text, Large 2D Text & Colored Glyphs](../phase-25-3d-text-and-color-glyphs.md)
 **Depends on:** Day 252.
 
 Own ear-clipping triangulator with hole bridging; the shared core of the large 2D text and the 3D faces. No third-party tessellator.

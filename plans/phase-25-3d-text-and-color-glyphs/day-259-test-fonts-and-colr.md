@@ -1,6 +1,6 @@
-# Phase 19 / Day 259 — Test Font Builder & COLR v0 Layers
+# Phase 25 / Day 259 — Test Font Builder & COLR v0 Layers
 
-**Phase:** [Phase 19 — 3D Text, Large 2D Text & Colored Glyphs](../phase-19-3d-text-and-color-glyphs.md)
+**Phase:** [Phase 25 — 3D Text, Large 2D Text & Colored Glyphs](../phase-25-3d-text-and-color-glyphs.md)
 **Depends on:** Days 251-258; FreeType color API (`FT_Palette_Select`, `FT_Get_Color_Glyph_Layer`).
 
 Build the fonts the color tests need, and read layered color glyphs.

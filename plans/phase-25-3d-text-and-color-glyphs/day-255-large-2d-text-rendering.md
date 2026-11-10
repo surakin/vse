@@ -1,6 +1,6 @@
-# Phase 19 / Day 255 — Large 2D Text on the GPU
+# Phase 25 / Day 255 — Large 2D Text on the GPU
 
-**Phase:** [Phase 19 — 3D Text, Large 2D Text & Colored Glyphs](../phase-19-3d-text-and-color-glyphs.md)
+**Phase:** [Phase 25 — 3D Text, Large 2D Text & Colored Glyphs](../phase-25-3d-text-and-color-glyphs.md)
 **Depends on:** Day 254; `renderer::TextRenderer` (Phase 14 Days 180-181).
 
 Draw the Day 254 meshes in the overlay pass and remove Phase 14's scaled-raster stand-in.

@@ -1,6 +1,6 @@
-# Phase 19 / Day 263 — RGBA Atlas Pages & Bitmap Color Glyphs on 2D and 3D
+# Phase 25 / Day 263 — RGBA Atlas Pages & Bitmap Color Glyphs on 2D and 3D
 
-**Phase:** [Phase 19 — 3D Text, Large 2D Text & Colored Glyphs](../phase-19-3d-text-and-color-glyphs.md)
+**Phase:** [Phase 25 — 3D Text, Large 2D Text & Colored Glyphs](../phase-25-3d-text-and-color-glyphs.md)
 **Depends on:** Days 260 and 262.
 
 Draw bitmap color glyphs: an RGBA page type in the atlas for the 2D path, a textured quad for the 3D path.

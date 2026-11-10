@@ -1,13 +1,13 @@
-# Phase 19 / Day 250 — Design Spec, Decisions & Phase Setup
+# Phase 25 / Day 250 — Design Spec, Decisions & Phase Setup
 
-**Phase:** [Phase 19 — 3D Text, Large 2D Text & Colored Glyphs](../phase-19-3d-text-and-color-glyphs.md)
+**Phase:** [Phase 25 — 3D Text, Large 2D Text & Colored Glyphs](../phase-25-3d-text-and-color-glyphs.md)
 **Depends on:** Phase 14 complete (Days 175-183), Phase 16 closed on Linux.
 
 Settle the questions PLAN left open, write the design spec, and set up the phase (`CURRENT_PHASE`, module rows, baselines) before any geometry code.
 
 ## Tasks
 
-- [ ] **`CURRENT_PHASE` becomes 18** in the commit that completes this day's first task, together with the `tests/phases.txt` line for phase 19 and `flavors 18`.
+- [ ] **`CURRENT_PHASE` becomes 18** in the commit that completes this day's first task, together with the `tests/phases.txt` line for phase 25 and `flavors 18`.
 - [ ] **Spec** `docs/superpowers/specs/2026-11-NN-outline-text-design.md` recording, with the experiment that justifies each, the decisions below (the planner's defaults are in brackets; an experiment that disproves one amends the day files that depend on it in the same commit):
       - 2D edge antialiasing [**coverage ramp**: every outline edge gets a one-pixel fringe whose outer vertices carry alpha 0 and a unit outward normal; the vertex shader moves them by `fringe_px` pixels, so one cached mesh serves every size; MSAA is not used because the overlay pass has no multisampled target];
       - where the mesh path takes over [above `kMaxAtlasPixelSize` (128 px); `TextRendererDesc::mesh_min_pixel_size` can lower it; Day 255 measures quality and cost at 96-160 px to confirm];
@@ -22,7 +22,7 @@ Settle the questions PLAN left open, write the design spec, and set up the phase
 - [ ] **Test fonts:** no emoji font is committed (licenses, size, and COLR v1/PNG formats we do not read). A deterministic builder `tests/text/font_builder.h` writes minimal TrueType files (square, triangle and ring glyphs, `cmap`, `COLR`/`CPAL` v0, a `COLR` v1 table for the fallback test, `CBLC`/`CBDT` and `sbix` with PNG strikes written with stored deflate blocks); Day 259 builds it. Record this in the spec.
 - [ ] **Experiments:** (a) flatten and triangulate every glyph of Liberation Sans with a throwaway script and record vertex/triangle counts and time per glyph at the three tolerance buckets, to set the cache budget; (b) draw one large glyph as a filled mesh with and without the fringe into a PGM by a software rasterizer in the scratchpad, to confirm the ramp width; (c) list which glyphs of Liberation Sans have overlapping contours (composites, `Q`, `%`), to size Day 252.
 - [ ] **Baselines** (Debug and release, Linux): `renderer_bench --section ui` and the text pass numbers from Phase 14/15 (`docs/guide/text.md`, "Cost"), recorded in the spec so Day 265 can show no regression for atlas text.
-- [ ] **Plan check:** read Days 251-265 against the spec; amend any day the decisions changed; `PLAN.md` assumption #17 gets libpng and zlib (Day 261 writes the text) and a new assumption records the outline-mesh decisions; `KNOWN-ISSUES.md` gets "Phase 19 DXIL shaders wait for the Windows PC" as an expected item.
+- [ ] **Plan check:** read Days 251-265 against the spec; amend any day the decisions changed; `PLAN.md` assumption #17 gets libpng and zlib (Day 261 writes the text) and a new assumption records the outline-mesh decisions; `KNOWN-ISSUES.md` gets "Phase 25 DXIL shaders wait for the Windows PC" as an expected item.
 - [ ] **Runs (CLAUDE.md "Tests run by phase"):** `scripts/test-phase.sh --affected` plain; then the asan and tsan flavors if the day touched lifetime, memory or concurrency code; quote each run's final `ran X of Y tests (phases ...)` line in this file. `ctest -L docs` when a public header or a guide changed. Build clean (warnings are errors) with Clang and GCC, unity on and off. New code uses the engine's wrappers and types, never `std` (`std_usage_check`).
 - [ ] **Day review (CLAUDE.md, required):** `/code-review high` over the day's diff after the scoped tests; verify, fix (with a regression test that fails without the fix) or decline each finding with a reason; record the count and outcome under "Post-implementation code review" below and in `STATUS.md`.
 - [ ] `STATUS.md` and `KNOWN-ISSUES.md` updated in the same commit; commit and push.

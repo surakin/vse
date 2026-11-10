@@ -16,16 +16,16 @@ GPU setting needs a list to show and an explicit choice to pass in.
 - [x] Capabilities for Day 104: `AdapterCount`, and `Capabilities` filled from the adapter list.
 - [x] Tests: null-backend enumeration; id match by id, by name substring and by index; precedence over `ENGINE_RHI_GPU`; unknown id fails with the reason; the id is identical on two enumerations; a pure-policy test for the new unsuitable-reason strings. A GPU test (label `gpu`, skips without a GPU) lists real adapters and creates a device on each presentable one, rendering one frame to a texture; on a single-adapter machine it runs once and says so.
 - [x] **Documentation:** `///` comments with contract labels; `docs/guide/rhi.md` gets an "Choosing a GPU" section with a tagged sample; Vulkan-only names stay out of `adapter.h` (the boundary gate passes); reference regenerated and committed; `docgen lint` zero; `ctest -L docs`.
-- [x] Portability note in the day's result: how DX12 (`IDXGIFactory6::EnumAdapterByGpuPreference`, LUID as id) and Metal (`MTLCopyAllDevices`, registry id) map to `AdapterInfo`; copy into the Phase 13 and 24 plan files.
+- [x] Portability note in the day's result: how DX12 (`IDXGIFactory6::EnumAdapterByGpuPreference`, LUID as id) and Metal (`MTLCopyAllDevices`, registry id) map to `AdapterInfo`; copy into the Phase 13 and 26 plan files.
 - [x] Run `scripts/test-phase.sh --affected`; quote the line.
 - [x] **End-of-day review (CLAUDE.md):** `/code-review high`; record it.
 - [x] Update `STATUS.md`; commit.
 
-**Done:** a caller can list adapters, pick one by id when creating a device, and get a precise failure if it cannot be used; the null backend makes this testable without a GPU; the guide section and Phases 13 and 24 notes are committed.
+**Done:** a caller can list adapters, pick one by id when creating a device, and get a precise failure if it cannot be used; the null backend makes this testable without a GPU; the guide section and Phases 13 and 26 notes are committed.
 
 ## Result
 
-Added `engine/rhi/adapter.h/.cpp` (`AdapterInfo`, `AdapterList`, `EnumerateAdapters`, `MatchAdapter`, null-backend list and `SetNullAdapters` hook), `DeviceCreateInfo::adapter`, `Device::Adapter()`, Vulkan ids (`vk-<vendor>-<device>-<uuid>`), `SelectPhysicalDeviceFor`, `Capabilities::SetAdapterCount`. Tests: `tests/rhi/adapter_test.cpp` (12 cases incl. GPU) + 1 in render_settings_test. Guide: `rhi.md` "Choosing a GPU" (docs sample links `rhi_vulkan` now). Portability notes appended to the Phase 13 and 24 plans.
+Added `engine/rhi/adapter.h/.cpp` (`AdapterInfo`, `AdapterList`, `EnumerateAdapters`, `MatchAdapter`, null-backend list and `SetNullAdapters` hook), `DeviceCreateInfo::adapter`, `Device::Adapter()`, Vulkan ids (`vk-<vendor>-<device>-<uuid>`), `SelectPhysicalDeviceFor`, `Capabilities::SetAdapterCount`. Tests: `tests/rhi/adapter_test.cpp` (12 cases incl. GPU) + 1 in render_settings_test. Guide: `rhi.md` "Choosing a GPU" (docs sample links `rhi_vulkan` now). Portability notes appended to the Phase 13 and 26 plans.
 Scoped runs: plain `ran 937 of 2477 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`, asan `ran 668 of 2477 ... flavors: asan`, tsan `ran 400 of 2477 ... flavors: tsan`; all pass (re-run after review fixes: `ran 33 of 2480 tests (phases: 7; flavors: plain ...)`). `ctest -L docs` 4/4.
 
 ## Post-implementation code review

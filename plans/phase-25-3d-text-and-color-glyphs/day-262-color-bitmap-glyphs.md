@@ -1,6 +1,6 @@
-# Phase 19 / Day 262 — Color Bitmap Glyphs: `CBDT` and `sbix` through FreeType
+# Phase 25 / Day 262 — Color Bitmap Glyphs: `CBDT` and `sbix` through FreeType
 
-**Phase:** [Phase 19 — 3D Text, Large 2D Text & Colored Glyphs](../phase-19-3d-text-and-color-glyphs.md)
+**Phase:** [Phase 25 — 3D Text, Large 2D Text & Colored Glyphs](../phase-25-3d-text-and-color-glyphs.md)
 **Depends on:** Days 259 and 261.
 
 Load embedded color bitmaps with FreeType (`FT_LOAD_COLOR`, BGRA), pick the strike, scale to the request, and fall back in a counted way.

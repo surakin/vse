@@ -207,7 +207,7 @@ interpretations keep it buildable — flag any that don't match intent:
    license terms, not permissively-licensed open source, and has its own
    rules about how UE code can be used and redistributed. Given this
    project's stated mission is to build a competing engine, the EULA
-   terms need an actual review before Phase 27 work starts — don't assume
+   terms need an actual review before Phase 29 work starts — don't assume
    this is fine by default.
 7. **First target CPU/ABI: x86-64 Linux, System V ABI.** Since Phase 13 also **Windows x64** (the Microsoft x64 calling convention,
    MSVC and `clang-cl` with the MSVC ABI). ARM64 is handled when a platform phase needs it (no Windows ARM64 build yet). **First target Unreal version: UE 5.3+** (property serialization
@@ -241,7 +241,7 @@ interpretations keep it buildable — flag any that don't match intent:
     that's a build-order decision, not a design-scope one: the
     platform-layer and engine-facing interfaces (window, input, threads,
     files, time — see architecture layers below; windows and input are `engine/platform/`) must be shaped so that
-    *no* later platform backend (Phases 13, 24, 25 and 26) ever forces a redesign of
+    *no* later platform backend (Phases 13, 26, 27 and 28) ever forces a redesign of
     already-built engine layers, mobile/console included. Concretely,
     this means anticipating things Linux/desktop alone wouldn't surface
     even before those backends are implemented: touch/gamepad input
@@ -258,12 +258,12 @@ interpretations keep it buildable — flag any that don't match intent:
     **Order (changed 2026-11-05):** the Windows and macOS ports (Phases
     12 and 13) now come right after the renderer core, so the RHI and the
     platform seams are tested against a second and third backend while
-    they are still small. **Open, not decided:** how Phases 14-23 (text,
+    they are still small. **Open, not decided:** how Phases 14-25 (text,
     UI, ECS, physics, audio, assets, scripting) keep the Windows and
     macOS builds working — a closing day in each phase that ports its
     platform-dependent parts, or a periodic catch-up phase. Decide when
-    Phase 24 completes; record the answer here.
-12. **The resource system (Phase 22) has pluggable storage backends and
+    Phase 26 completes; record the answer here.
+12. **The resource system (Phase 21) has pluggable storage backends and
     versioned per-type binary formats.** Resources are loaded through a
     backend abstraction — pak-file (packed archive), filesystem (loose
     files, for fast dev iteration without repacking), and network
@@ -273,7 +273,7 @@ interpretations keep it buildable — flag any that don't match intent:
     material, level, ...) owns its own binary format with an explicit
     version header; the runtime loader supports old versions rather than
     breaking previously-minted content when a format changes — this is
-    the resolution to the versioning/migration question Phase 22 already
+    the resolution to the versioning/migration question Phase 21 already
     flagged as open. Binary is the default and required format
     engine-wide; a parallel text format is optional per type, added only
     where it earns its keep (chiefly where hand-editing or VCS-friendly
@@ -292,21 +292,21 @@ interpretations keep it buildable — flag any that don't match intent:
     ships inside the runtime engine/game binary — unlike CMake or the
     Unreal DLL, which are dev-time/import-tool-only — but its license
     (MIT) imposes no meaningful restriction, unlike the Unreal EULA
-    question in assumption #6. Phase 23's scripting subsystem is designed
+    question in assumption #6. Phase 24's scripting subsystem is designed
     with a pluggable language-backend seam (matching the pattern already
     used for the RHI, resource, and window backends) so more "well-known
     languages" can be added later as additive backends, not a redesign.
-    Phase 28's Blueprint importer targets this scripting subsystem
+    Phase 30's Blueprint importer targets this scripting subsystem
     (transpiling Blueprint graphs into Lua) instead of a custom VM.
     **Open note, not yet resolved:** LuaJIT's JIT (runtime code
     generation) is disallowed on iOS App Store builds and typically on
     console certification; LuaJIT has an interpreter-only fallback mode
-    for those. Phase 23's embedding should keep JIT-vs-interpreter a
+    for those. Phase 24's embedding should keep JIT-vs-interpreter a
     platform-config choice, not an API change (ties to assumption #11) —
-    exact handling is deferred to Phases 24/25.
-14. **Unreal import (Phases 27-28) is sequenced after multiplatform
-    support (Phases 13, 24, 25 and 26), not immediately after the asset pipeline
-    (Phase 21).** Originally Phases 13 and 14 in an earlier draft's
+    exact handling is deferred to Phases 26/27.
+14. **Unreal import (Phases 29-30) is sequenced after multiplatform
+    support (Phases 13, 26, 27 and 28), not immediately after the asset pipeline
+    (Phase 23).** Originally Phases 13 and 14 in an earlier draft's
     numbering (superseded by this reordering itself, not part of the
     current roadmap); moved so the engine reaches
     Linux+Windows+macOS/iOS+Android+console viability first, with Unreal
@@ -315,7 +315,7 @@ interpretations keep it buildable — flag any that don't match intent:
     porting work. Assumption #11's "no platform ever forces a redesign"
     guarantee already meant this reordering needed no interface changes
     to the phases that existed then; it's a pure roadmap-order change.
-    (The Windows and macOS ports were later pulled forward to Phases 13 and 14, and on 2026-11-08 the macOS port was postponed to Phase 24,
+    (The Windows and macOS ports were later pulled forward to Phases 13 and 14, and on 2026-11-08 the macOS port was postponed to Phase 26,
     right after the renderer core — see the 2026-11-05 progress-log
     entry; Android, iOS and consoles stay after Scripting, with Unreal
     import after them.)
@@ -346,7 +346,7 @@ interpretations keep it buildable — flag any that don't match intent:
     returns control to the scheduler without blocking the OS thread. This
     is pure standard C++ — nothing OS- or ABI-specific anywhere in this
     phase — and the same mechanism doubles as the async-I/O primitive
-    (Phase 22's asset streaming), rather than needing a second suspension
+    (Phase 21's asset streaming), rather than needing a second suspension
     mechanism alongside fibers. Coroutine-frame allocation is routed
     through a Foundation pool allocator (via `promise_type::operator
     new/delete`) rather than the global default `new`, keeping the
@@ -401,9 +401,9 @@ interpretations keep it buildable — flag any that don't match intent:
     targets), FreeType is a portable third-party library that happens
     to often be preinstalled on desktop Linux, but isn't guaranteed
     present the same way on every platform in this project's roadmap
-    (Android, iOS, consoles — Phases 25-26) — the same reasoning that
+    (Android, iOS, consoles — Phases 27-28) — the same reasoning that
     put LuaJIT under vendored/embedded rather than system-linked.
-    **Amendment (2026-11-10, the user's decision): libpng and zlib are vendored with FreeType from Phase 19 Day 261** (source under `third_party/libpng/` and `third_party/zlib/`, pinned by version and SHA-256 on that day, portable C only), used only by FreeType (`FT_CONFIG_OPTION_USE_PNG`) so the PNG strikes of `CBDT`/`sbix` colored-glyph fonts decode; nothing else in the engine includes their headers. Same justification as FreeType (a solved problem with a long security history); any other use (Phase 22's image importer) needs its own entry.
+    **Amendment (2026-11-10, the user's decision): libpng and zlib are vendored with FreeType from Phase 25 Day 261** (source under `third_party/libpng/` and `third_party/zlib/`, pinned by version and SHA-256 on that day, portable C only), used only by FreeType (`FT_CONFIG_OPTION_USE_PNG`) so the PNG strikes of `CBDT`/`sbix` colored-glyph fonts decode; nothing else in the engine includes their headers. Same justification as FreeType (a solved problem with a long security history); any other use (Phase 21's image importer) needs its own entry.
     **Pinned (Phase 14 Day 175): FreeType 2.15.0** (`freetype-2.15.0.tar.xz`, SHA-256 `93cd47eb719c325107f2d3cf087d06299e944c3b48a40b55537302304dea1dd5`),
     used under the **FreeType License (FTL, BSD-style with a credit clause; the license text is `third_party/freetype/docs/FTL.TXT`; the credit line goes into the notices file a first release adds, filed in `KNOWN-ISSUES.md`)**, not the GPLv2
     alternative. The engine builds TrueType and OpenType/CFF outlines, the smooth rasterizer and the auto-hinter only (no Type 1, PCF, BDF, SVG, WOFF/zlib,
@@ -426,7 +426,7 @@ interpretations keep it buildable — flag any that don't match intent:
     needed).
 
 18. **Shader toolchain: Slang via `slangc` (GLSL retired on Phase 5 Day 70).** Shaders are never compiled at runtime in a shipped
-    build: the engine loads precompiled bytecode (SPIR-V, and DXIL since Phase 13; MSL in Phase 24), so no shader compiler is linked
+    build: the engine loads precompiled bytecode (SPIR-V, and DXIL since Phase 13; MSL in Phase 26), so no shader compiler is linked
     into the engine/game binary. **Phase 13:** `slangc` mints DXIL from the same sources (with `dxc`'s `dxcompiler.dll` and `dxil.dll` from
     the Windows SDK), committed as `*.dxil.inc` beside `*.spv.inc`; shaders carry one blob per format (`rhi::ShaderBlobSet`) and a device
     takes the one its `DeviceCaps::shader_format` names; the D3D12 build of each shader negates clip-space Y (`ENGINE_CLIP`), and D3D12
@@ -443,7 +443,7 @@ interpretations keep it buildable — flag any that don't match intent:
       was never used.
     - **Settled 2026-11-04 (for Phase 5 on): Slang.** The long-term source
       language is Slang, compiled offline by `slangc` to SPIR-V now and to
-      DXIL/HLSL and MSL when Phases 13 and 24 need them, with Slang's reflection
+      DXIL/HLSL and MSL when Phases 13 and 26 need them, with Slang's reflection
       and specialization feeding the material system. Chosen for
       platform portability: one source for Vulkan, D3D12/Xbox, Metal and
       Android, with HLSL/GLSL output for console vendor compilers, built-in
@@ -459,11 +459,11 @@ interpretations keep it buildable — flag any that don't match intent:
       Phase 5 Days 69-70 (`slangc` v2026.18.2, flags and pitfalls in
       `shaders/README.md`); the Slang output reproduced every golden image
       unchanged, and the GLSL sources and the `glslc` path were removed on
-      Day 70. Open items for Phases 13 and 24: Metal renames an entry point
+      Day 70. Open items for Phases 13 and 26: Metal renames an entry point
       called `main`, and no Slang flag flips clip-space Y for HLSL/Metal
       (see `shaders/README.md`, "Other targets"). How the Metal output becomes precompiled `.metallib` files without Xcode
-      (through the driver's compiler and `MTLDynamicLibrary.serialize`) is a spike at the start of Phase 24 (2026-11-10,
-      `plans/phase-24-macos-metal.md`).
+      (through the driver's compiler and `MTLDynamicLibrary.serialize`) is a spike at the start of Phase 26 (2026-11-10,
+      `plans/phase-26-macos-metal.md`).
     - The RHI already takes bytecode (`ShaderDesc` holds SPIR-V words); the
       Day 67 portability review (section 3) found that a per-backend blob
       would add a format tag to `ShaderDesc`, and that any translator must
@@ -514,7 +514,7 @@ interpretations keep it buildable — flag any that don't match intent:
     developer's disk, and a test fails if a binary links libcurl, a TLS library or winhttp. What stays hand-written because it is engine-specific or small: the
     assert/ensure/verify family, the crash context and recent-log ring buffer, the death-test helper (Catch2 has none), the
     core-dump setup and scripts, and a small dev tool that extracts the minidump from sentry's envelope. Windows and macOS
-    (Phases 13 and 24) reuse sentry-native with Breakpad. **Phase 13 decided the symbol gap:** libbacktrace reads DWARF only, so on
+    (Phases 13 and 26) reuse sentry-native with Breakpad. **Phase 13 decided the symbol gap:** libbacktrace reads DWARF only, so on
     Windows the facade resolves names and lines with **DbgHelp** from the PDBs (the operating system's own symbol library, not a third-party
     one; Day 154), and libbacktrace is not built there; the minidump scripts are PowerShell and read only a local symbol store. Any further third-party library
     still needs its own justified entry here.
@@ -544,7 +544,9 @@ interpretations keep it buildable — flag any that don't match intent:
     headers each may include. Names the compiler requires (`std::coroutine_traits`, `std::initializer_list`, `std::strong_ordering`, `std::align_val_t`) stay in the wrapper modules; `third_party/`, the Catch2 printers and the nlohmann/json boundary
     of `shader_mint` are the other exceptions. **Standing policy (the user, 2026-11-09): code always uses the wrapped types, never `std`, from now on** - a new module that needs a facility with no wrapper adds the wrapper to the module of its category first, and `std_usage_check` (allow list `path|headers|reason`, a stale entry fails) keeps it so. Decided with the user on 2026-11-09 (everything, tests included; wrappers by category). Design: `docs/superpowers/specs/2026-11-09-std-wrappers-design.md`; plan: `plans/phase-16-std-wrappers.md`.
 
-24. **Spatial partitioning is one module that every system shares (Phase 18, `engine/spatial`).** Physics' broad phase, the renderer's culling, audio emitter lookup, gameplay proximity and ray queries, and tools all use the same structures and the same query vocabulary instead of private ones. Two tiers: generic structures over a `u64` key (a static BVH built with the surface-area heuristic, an incrementally updated dynamic BVH with fat margins, a hash grid only if measured to win) that know nothing of the ECS; and an ECS tier (bounds components, named spatial sets for render, physics, audio and gameplay, a sync system that costs what moved, entity-facing queries that join with ECS queries). Shapes (`Aabb`, `Sphere`, `Ray`, `Frustum`) live in `foundation/math` below both the renderer and the module. Builds and queries are deterministic and reads are thread-safe; the narrow phase and collision shapes stay Phase 20's. Design, experiments and the benchmark pass condition: `docs/superpowers/specs/2026-11-10-spatial-design.md` (Day 237): the grid is kept for same-size crowds, the loose octree is rejected, the dynamic BVH gets a bulk rebuild and `Optimize` because an insert-built tree queries 1.8x to 3.3x slower, the fat margin is a fraction of the item size (default 0.25).
+24. **Spatial partitioning is one module that every system shares (Phase 18, `engine/spatial`).** Physics' broad phase, the renderer's culling, audio emitter lookup, gameplay proximity and ray queries, and tools all use the same structures and the same query vocabulary instead of private ones. Two tiers: generic structures over a `u64` key (a static BVH built with the surface-area heuristic, an incrementally updated dynamic BVH with fat margins, a hash grid only if measured to win) that know nothing of the ECS; and an ECS tier (bounds components, named spatial sets for render, physics, audio and gameplay, a sync system that costs what moved, entity-facing queries that join with ECS queries). Shapes (`Aabb`, `Sphere`, `Ray`, `Frustum`) live in `foundation/math` below both the renderer and the module. Builds and queries are deterministic and reads are thread-safe; the narrow phase and collision shapes stay Phase 22's. Design, experiments and the benchmark pass condition: `docs/superpowers/specs/2026-11-10-spatial-design.md` (Day 237): the grid is kept for same-size crowds, the loose octree is rejected, the dynamic BVH gets a bulk rebuild and `Optimize` because an insert-built tree queries 1.8x to 3.3x slower, the fat margin is a fraction of the item size (default 0.25).
+25. **Entity persistence goes through one storage interface, on a database interface whose first implementation is SQLite (Phase 19).** The user asked for a generic storage interface that saves and loads entities, an initial SQL-based implementation, and a database interface in between whose first implementation is SQLite. Layers: a component serialization registry (stable names and ids, versions, upgrade chains, entity keys instead of entity ids), `storage::Store` (save, load, incremental saves from the ECS change stamps, transactional), `database::` (connections, prepared statements, transactions, typed values, errors as values) with SQLite and an in-memory double behind it, and `storage::SqlStore` on top. **SQLite is a deliberate, individually justified exception to the third-party-dependency line** (same category as FreeType, assumption #17, and LuaJIT, #13): a correct, crash-safe transactional SQL engine is not engine-differentiating work. It is public domain, vendored as source under `third_party/sqlite/` (the amalgamation, pinned by version and hash, built without extension loading or the shell), ships inside programs that use storage, and only its implementation file includes its header (a boundary gate like the debugging facade's); its file access goes through the file layer (assumption #21) or a documented allow-list entry. Storage is mutable runtime state; assets (Phase 21) are minted, immutable and versioned per type, and the two share the serialization registry, not the formats. Plan: `plans/phase-19-storage.md`.
+26. **Networking is one socket and transport layer for the whole engine (Phase 20); sockets are the operating system's API, QUIC and TLS are an open decision.** TCP and UDP (IPv4 and IPv6, non-blocking, readiness through the job system's I/O, errors as values) from the first day, behind a `Transport` interface with reliable and unreliable channels, implemented on TCP, on UDP with a reliability layer written here, and on an in-process simulated transport that every higher layer's tests use. Raw socket calls live only in per-OS backend directories (a gate enforces it, like the file layer's). **QUIC is decided by a spike at the start of the phase and the decision is the user's:** it needs TLS 1.3, which means a vendored library (ngtcp2, quiche, msquic or similar) as an individually justified exception, the operating system's own (Windows ships MsQuic; Linux has none), TLS on the TCP transport instead, or deferral; whichever is chosen adds its entry here. Encryption and authentication are decided with it; custom cryptography is never written. Out of scope: replication and prediction, matchmaking, NAT traversal, HTTP and WebSocket. Plan: `plans/phase-20-networking.md`.
 
 ## Guiding principles
 
@@ -574,7 +576,7 @@ interpretations keep it buildable — flag any that don't match intent:
   the same tool version must produce byte-identical outputs, with no
   timestamps, absolute paths, hash-map iteration order or thread-timing
   dependence in the result. `shaders_check` already enforces this for
-  shaders by recompiling and comparing bytes; every Phase 22 minter gets
+  shaders by recompiling and comparing bytes; every Phase 21 minter gets
   an equivalent determinism test.
  A day that adds or changes public API
   (headers named by `docs/reference/modules.txt`) ships its `///` comments,
@@ -694,19 +696,21 @@ PLAN.md
 | 16 | **Standard-library wrappers** | Linux, Windows | [plans/phase-16-std-wrappers.md](plans/phase-16-std-wrappers.md) | Every use of the C++ standard library (and the C library) sits inside one wrapper module per category; a gate fails any other file that includes a standard header |
 | 17 | ECS | Linux, Windows | [plans/phase-17-ecs.md](plans/phase-17-ecs.md) | Thousands of entities updated per frame, benchmarked vs. naive OOP baseline |
 | 18 | **Spatial partitioning** | Linux | [plans/phase-18-spatial-partitioning.md](plans/phase-18-spatial-partitioning.md) | One ECS-based spatial system (static and dynamic BVH, queries, pair feed) that physics, the renderer, audio and gameplay share; renderer culling through it matches the flat scan and beats it on large scenes |
-| 19 | **3D text, large 2D text & colored glyphs** | Linux | [plans/phase-19-3d-text-and-color-glyphs.md](plans/phase-19-3d-text-and-color-glyphs.md) | Text above Phase 14's maximum raster size draws sharp as filled 2D outline meshes, and text laid out by Phase 14 becomes an extruded, optionally beveled 3D mesh from the vector glyph outlines (own flattening, triangulation with holes, extrusion; no third-party tessellator) that draws through the Phase 5 renderer; colored glyphs (`COLR` v0 layers, `CBDT`/`sbix` bitmaps) on the 2D and 3D paths. Split out of Phase 14 on 2026-11-08 |
-| 20 | Physics | Linux | [plans/phase-20-physics.md](plans/phase-20-physics.md) | Rigid body sim: gravity, collision, resolution for boxes/spheres/capsules |
-| 21 | Audio | Linux, Windows (macOS once Phase 24 lands; mobile in Phase 25) | [plans/phase-21-audio.md](plans/phase-21-audio.md) | Custom mixer plays hand-decoded WAV, positional 3D audio, on Linux and Windows through one device interface (macOS joins in Phase 24) |
-| 22 | Asset pipeline & resource system | Linux | [plans/phase-22-asset-pipeline.md](plans/phase-22-asset-pipeline.md) | Offline mint → versioned per-type binary formats, loaded at runtime through pak/filesystem resource backends |
-| 23 | Scripting (Lua/LuaJIT) | Linux | [plans/phase-23-scripting.md](plans/phase-23-scripting.md) | LuaJIT runs a gameplay script that spawns/moves an entity via engine API bindings |
-| 24 | macOS port + Metal backend (postponed 2026-11-08, moved from 14) | macOS | [plans/phase-24-macos-metal.md](plans/phase-24-macos-metal.md) | Phases 1-5's functionality running on macOS through the Metal RHI backend; the same golden images and scene tests pass |
-| 25 | Android + iOS ports | Android, iOS | [plans/phase-25-android-ios.md](plans/phase-25-android-ios.md) | Android reuses the Vulkan backend, iOS the Metal backend from Phase 24; touch input and app-lifecycle platform layers |
-| 26 | Console ports | Xbox, PS5 | [plans/phase-26-consoles.md](plans/phase-26-consoles.md) | Gated on dev kit/NDA access; same RHI, new platform layer |
-| 27 | **Unreal asset & level import** | Linux | [plans/phase-27-unreal-asset-import.md](plans/phase-27-unreal-asset-import.md) | A real UE5 project's meshes/textures/materials/one level import and render in-engine |
-| 28 | **Unreal Blueprint import** | Linux | [plans/phase-28-unreal-blueprint-import.md](plans/phase-28-unreal-blueprint-import.md) | A simple real Blueprint's logic runs correctly, transpiled to Lua and executed via Phase 23's scripting subsystem |
-| 29 | Editor tooling | Linux first | [plans/phase-29-editor.md](plans/phase-29-editor.md) | In-engine editor: scene view, entity inspector, asset browser |
-| 30 | First playable demo | Linux, Windows | [plans/phase-30-first-playable-demo.md](plans/phase-30-first-playable-demo.md) | A small real game built with the engine, dogfooding every system |
-| 31 | Feature-parity push | all | [plans/phase-31-feature-parity.md](plans/phase-31-feature-parity.md) | Ongoing: advanced rendering, world streaming, networking — scoped when reached |
+| 19 | **Storage (entity persistence, SQL database interface)** | Linux, Windows | [plans/phase-19-storage.md](plans/phase-19-storage.md) | A generic storage interface saves and loads entities (round trip exact, versioned, incremental); a database interface with a SQLite first implementation backs a SQL storage implementation |
+| 20 | **Networking (TCP, UDP, QUIC)** | Linux, Windows | [plans/phase-20-networking.md](plans/phase-20-networking.md) | One socket layer with TCP and UDP (and a QUIC transport if the spike justifies it) behind a transport interface, tested for loss, reordering and partial I/O on loopback |
+| 21 | Asset pipeline & resource system | Linux | [plans/phase-21-asset-pipeline.md](plans/phase-21-asset-pipeline.md) | Offline mint → versioned per-type binary formats, loaded at runtime through pak/filesystem resource backends |
+| 22 | Physics | Linux | [plans/phase-22-physics.md](plans/phase-22-physics.md) | Rigid body sim: gravity, collision, resolution for boxes/spheres/capsules |
+| 23 | Audio | Linux, Windows (macOS once Phase 26 lands; mobile in Phase 27) | [plans/phase-23-audio.md](plans/phase-23-audio.md) | Custom mixer plays hand-decoded WAV, positional 3D audio, on Linux and Windows through one device interface (macOS joins in Phase 26) |
+| 24 | Scripting (Lua/LuaJIT) | Linux | [plans/phase-24-scripting.md](plans/phase-24-scripting.md) | LuaJIT runs a gameplay script that spawns/moves an entity via engine API bindings |
+| 25 | **3D text, large 2D text & colored glyphs** | Linux | [plans/phase-25-3d-text-and-color-glyphs.md](plans/phase-25-3d-text-and-color-glyphs.md) | Text above Phase 14's maximum raster size draws sharp as filled 2D outline meshes, and text laid out by Phase 14 becomes an extruded, optionally beveled 3D mesh from the vector glyph outlines (own flattening, triangulation with holes, extrusion; no third-party tessellator) that draws through the Phase 5 renderer; colored glyphs (`COLR` v0 layers, `CBDT`/`sbix` bitmaps) on the 2D and 3D paths. Split out of Phase 14 on 2026-11-08 |
+| 26 | macOS port + Metal backend (postponed 2026-11-08, moved from 14) | macOS | [plans/phase-26-macos-metal.md](plans/phase-26-macos-metal.md) | Phases 1-5's functionality running on macOS through the Metal RHI backend; the same golden images and scene tests pass |
+| 27 | Android + iOS ports | Android, iOS | [plans/phase-27-android-ios.md](plans/phase-27-android-ios.md) | Android reuses the Vulkan backend, iOS the Metal backend from Phase 26; touch input and app-lifecycle platform layers |
+| 28 | Console ports | Xbox, PS5 | [plans/phase-28-consoles.md](plans/phase-28-consoles.md) | Gated on dev kit/NDA access; same RHI, new platform layer |
+| 29 | **Unreal asset & level import** | Linux | [plans/phase-29-unreal-asset-import.md](plans/phase-29-unreal-asset-import.md) | A real UE5 project's meshes/textures/materials/one level import and render in-engine |
+| 30 | **Unreal Blueprint import** | Linux | [plans/phase-30-unreal-blueprint-import.md](plans/phase-30-unreal-blueprint-import.md) | A simple real Blueprint's logic runs correctly, transpiled to Lua and executed via Phase 24's scripting subsystem |
+| 31 | Editor tooling | Linux first | [plans/phase-31-editor.md](plans/phase-31-editor.md) | In-engine editor: scene view, entity inspector, asset browser |
+| 32 | First playable demo | Linux, Windows | [plans/phase-32-first-playable-demo.md](plans/phase-32-first-playable-demo.md) | A small real game built with the engine, dogfooding every system |
+| 33 | Feature-parity push | all | [plans/phase-33-feature-parity.md](plans/phase-33-feature-parity.md) | Ongoing: advanced rendering, world streaming, replication on top of Phase 20's transport — scoped when reached |
 
 ## Progress log
 
@@ -938,3 +942,6 @@ that changed from the plan and why.)_
 - **2026-11-10 — Phase 18 inserted: spatial partitioning (Days 237-249; the user's request).** A generic, ECS-based spatial system for physics, rendering and every other consumer: shared shapes in `math`, static and dynamic BVHs, one query vocabulary (overlap, ray, sweep, nearest, pairs, layers, filters), named spatial sets, a pair tracker for physics, ECS components with an incremental parallel sync, entity-facing and batched queries, renderer frustum culling through it behind the unchanged `RenderScene`, benchmarks against baselines fixed on Day 237, a demo. Assumption #24 states the design. 3D text and everything after moved down one: old Phases 18-30 are now 19-31, and the 3D text phase's days 237-252 are now 250-265 (plan files, directories, day numbers, `PLAN.md`, `STATUS.md`, `CLAUDE.md`, the memory notes and the comments that name them were renumbered in the same commit). Day files written; nothing started, `CURRENT_PHASE` stays 17.
 - **2026-11-10 — Phase 16 (standard-library wrappers) complete, Days 207-221 (Day 219 on the Windows PC).** Every use of the C++ and C standard library in `engine/`, `game/`, `tools/` and `tests/` goes through a wrapper module of its category (`lang`, `sync`, `cstr`, `os`, `jobs/coroutine.h`, the Phase 10 types); `std_usage_check` enforces it with no Windows exception left. Closing runs: Linux `ran 5055 of 5055 tests`, Windows `ran 3477 of 3477 tests`. Next: Phase 19 (3D text and colored glyphs).
 - **2026-11-10 — Phase 17 (ECS) complete, Days 222-236 (the Windows half of Day 236 on the Windows PC).** Archetype and chunk storage, queries with change filters, command buffers, systems with sequential and parallel scheduling, transforms and hierarchy, the scene bridge into `RenderScene`, and `ecs_bench` against an object-oriented baseline. Closing runs: Linux `ran 5472 of 5472 tests`, Windows `ran 3755 of 3755 tests`. Next: Phase 18 (spatial partitioning).
+
+- **2026-11-10 — Phases storage (19) and networking (20) added; asset pipeline moved before physics and audio; 3D text moved after scripting (the user's request).** New order from Phase 19: 19 storage (entity persistence: a generic storage interface, a database interface with SQLite as its first implementation, a SQL store; assumption #25), 20 networking (TCP, UDP, QUIC as a spike-gated decision; assumption #26), 21 asset pipeline (was 22), 22 physics (was 20), 23 audio (was 21), 24 scripting (was 23), 25 3D text, large 2D text and colored glyphs (was 19; its Days 250-265 keep their numbers until the phases before it are broken into days, when they shift), 26 macOS + Metal (was 24), 27 Android + iOS (was 25), 28 consoles (was 26), 29 Unreal asset and level import (was 27), 30 Unreal Blueprint import (was 28), 31 editor (was 29), 32 first playable demo (was 30), 33 feature parity (was 31). Plan files, directories, roadmap, assumptions, `CLAUDE.md`, the memory notes, docs and the code comments that name a phase were renumbered in the same commit; progress-log and `STATUS.md` entries written before this date keep the numbers they were written with. The asset pipeline now precedes physics and audio (they can load minted assets) and follows storage (it reuses the component serialization registry) and networking (its network backend sits on the transport layer). `CURRENT_PHASE` stays 18; both new phases are plan files only, not split into days.
+

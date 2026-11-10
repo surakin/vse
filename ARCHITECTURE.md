@@ -121,6 +121,10 @@ The `scene` row is in section 1 and in `tools/module_deps_check/modules.txt` sin
 `engine/spatial` (layer 10, beside `ecs`): the static and dynamic bounding-volume hierarchies, the spatial sets, the pair tracker and the ECS tier (bounds components, the `SpatialWorld` resource, the sync system, entity queries). It depends on `foundation` (including the geometry types in `math`, moved from the renderer on Day 238), `ecs` and `jobs`; the renderer, `scene`, physics, audio and gameplay code depend on it and it depends on none of them.
 The row is in section 1 and in `tools/module_deps_check/modules.txt` since Day 238; `PLAN.md` assumption #24 and the spec of Day 237 have the reasoning.
 
+### Planned modules (Phase 19, storage; Phase 20, networking)
+
+Not built, layers settled on each phase's first day. Storage: `engine/database` (the interface, the in-memory double and a SQLite implementation library; only the SQLite file includes its header) and `engine/storage` (the serialization registry, `Store`, the SQL store), above `foundation` and `io`, and `storage` above `ecs`; nothing below includes either. Networking: `engine/net` (addresses, sockets with `linux/` and `windows/` backends, the transport interface and implementations), above `foundation` and `jobs`; the resource system and a network store depend on it, it depends on neither. `PLAN.md` assumptions #25 and #26 have the reasoning.
+
 ## 6. Keeping this file true
 
 A change that adds a module, moves one between layers or adds an allowed edge updates this file in the same commit. The gate **`module_deps_check`**

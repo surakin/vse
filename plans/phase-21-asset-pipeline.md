@@ -1,9 +1,9 @@
-# Phase 22 — Asset Pipeline & Resource System
+# Phase 21 — Asset Pipeline & Resource System
 
-**Depends on:** Phase 17 (ECS), Phase 5 (Renderer core).
+**Depends on:** Phase 17 (ECS), Phase 5 (Renderer core), Phase 19 (storage: the component serialization registry and entity keys that the level format reuses), Phase 20 (networking: the network backend is a user of the transport layer), Phase 9 (file layer). Placed before physics (22) and audio (23) so both load minted assets.
 **Goal:** a resource system with pluggable storage backends, versioned
 per-type binary formats, offline tooling to produce them, and a runtime
-loader — the foundation Phase 27 (Unreal import) targets when converting
+loader — the foundation Phase 29 (Unreal import) targets when converting
 external content into engine-native form. See root `PLAN.md` assumption
 #12 for the settled design decisions this phase implements.
 **Definition of done:** an offline mint converts source assets (in our
@@ -38,7 +38,7 @@ editor/tool code linked into the game binary. Minting is deterministic
   offline re-mint step vs. both) is a day-level design decision when this
   phase starts.
   - Custom mesh format (vertex/index buffers, LODs, material slot
-    references) — also the target format Phase 27's Unreal mesh importer
+    references) — also the target format Phase 29's Unreal mesh importer
     writes into.
   - Custom texture format (wraps GPU-native compressed payloads —
     BCn/ASTC — per assumption #4).

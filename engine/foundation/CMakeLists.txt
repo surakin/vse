@@ -8,7 +8,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   )
 
   # Phase 7: the per-platform half of the debugging facilities (debug/*.h are the neutral interfaces). Windows and macOS
-  # add os/<platform>/debug/ in Phases 13 and 24 (see the BACKEND.md checklists there).
+  # add os/<platform>/debug/ in Phases 13 and 26 (see the BACKEND.md checklists there).
   set(FOUNDATION_DEBUG_PLATFORM_SOURCES
     debug/stack_trace_backtrace.cpp
     os/linux/debug/death_test.cpp
@@ -64,7 +64,7 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     io/windows/directory.cpp
   )
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  message(FATAL_ERROR "macOS is implemented in Phase 24 (the debugging backend: os/macos/debug/BACKEND.md)")
+  message(FATAL_ERROR "macOS is implemented in Phase 26 (the debugging backend: os/macos/debug/BACKEND.md)")
 else()
   message(FATAL_ERROR "No foundation os.h implementation for this platform yet")
 endif()

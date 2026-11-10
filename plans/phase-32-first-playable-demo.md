@@ -1,10 +1,10 @@
-# Phase 30 — First Playable Demo
+# Phase 32 — First Playable Demo
 
-**Depends on:** Phases 0-23 at minimum (core engine, physics, audio,
+**Depends on:** Phases 0-25 at minimum (core engine, physics, audio,
 scripting), plus Phase 13 (Windows port) since the definition of done below
-requires running on Windows too; Phase 29 (editor) helps but isn't
+requires running on Windows too; Phase 31 (editor) helps but isn't
 strictly required if content is still hand-authored via the asset
-pipeline. Doesn't need Unreal import (Phases 27-28) — this demo is
+pipeline. Doesn't need Unreal import (Phases 29-30) — this demo is
 hand-authored content, not an Unreal-sourced one.
 **Goal:** a small real game built with the engine — the first genuine
 dogfooding of every system, surfacing real bugs and API ergonomics
@@ -24,7 +24,7 @@ Windows.
 
 ## Notes / open questions
 
-- Full day-by-day breakdown deferred until Phase 23 (and ideally 18) are
+- Full day-by-day breakdown deferred until Phase 24 (and ideally 18) are
   complete.
 - This phase is expected to feed back into earlier phases' plans (bug
   fixes, API changes) — that's the point of it existing.

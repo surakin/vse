@@ -46,7 +46,7 @@ Deviations from the plan above:
   crash handler uses it for every dump directory, default or given.
 - The vendored tree keeps all of sentry's `src/`, the whole libunwind source, and for Breakpad the source files named by
   sentry's CMake for every platform plus the headers the Linux build includes (Windows and macOS private headers must be
-  re-vendored in Phases 13 and 24).
+  re-vendored in Phases 13 and 26).
 - The tests run the crash flows in all three flavors: the child's sanitizers are told not to handle faults, so Breakpad's
   handler runs, and the dump is written and valid in the ASan and TSan flavors too.
 - The `debug_no_network_*` check covers the test binaries and `crash_extract`; the shipped demos and benches get theirs

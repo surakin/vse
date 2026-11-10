@@ -97,7 +97,7 @@ The seven calls made when the phase was planned, confirmed or amended:
    `GpuMesh` gets a source it keeps (an owning wrapper of `MeshData` for procedural meshes, a loader callback for assets);
    textures become `GpuTexture` objects with pixels or a loader; materials bind textures by owner reference, not by raw handle.
 4. **`backend` is a setting** (confirmed). Null to Vulkan is a tested transition. Vulkan to DX12 or Metal is deferred to
-   Phases 13 and 24 (no second real backend exists); filed in `KNOWN-ISSUES.md`.
+   Phases 13 and 26 (no second real backend exists); filed in `KNOWN-ISSUES.md`.
 5. **Fullscreen** needs a window API that does not exist (`os::Window` has a resize serial and no fullscreen call). Day 107
    adds it for Wayland and X11 and the checklists for Windows and macOS; a platform that cannot do it reports the capability
    unsupported and the setting is unavailable.
