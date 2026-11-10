@@ -3323,6 +3323,43 @@ spatial::DynamicBvh::Stats() const	function	spatial	spatial-dynamicbvh-stats-con
 spatial::DynamicBvh::Validate() const	function	spatial	spatial-dynamicbvh-validate-const	spatial.md	engine/spatial/dynamic_bvh.h:156
 spatial::DynamicBvh::Traverse(NodeTest&&,ItemVisit&&) const	function	spatial	spatial-dynamicbvh-traverse-nodetest-amp-amp-itemvisit-amp-amp-const	spatial.md	engine/spatial/dynamic_bvh.h:165
 spatial::DynamicBvh::TraverseRay(const Ray&,f32,ItemVisit&&) const	function	spatial	spatial-dynamicbvh-traverseray-const-ray-amp-f32-itemvisit-amp-amp-const	spatial.md	engine/spatial/dynamic_bvh.h:176
+spatial::QueryFilter	struct	spatial	spatial-queryfilter	spatial.md	engine/spatial/query.h:27
+spatial::QueryFilter::mask	variable	spatial	spatial-queryfilter-mask	spatial.md	engine/spatial/query.h:29
+spatial::QueryFilter::filter	variable	spatial	spatial-queryfilter-filter	spatial.md	engine/spatial/query.h:31
+spatial::QueryFilter::user	variable	spatial	spatial-queryfilter-user	spatial.md	engine/spatial/query.h:33
+spatial::QueryFilter::Accepts(const Item&) const	function	spatial	spatial-queryfilter-accepts-const-item-amp-const	spatial.md	engine/spatial/query.h:38
+spatial::Order	enum	spatial	spatial-order	spatial.md	engine/spatial/query.h:42
+spatial::Order::Traversal	enumerator	spatial	spatial-order-traversal	spatial.md	engine/spatial/query.h:43
+spatial::Order::Ordered	enumerator	spatial	spatial-order-ordered	spatial.md	engine/spatial/query.h:44
+spatial::RayMode	enum	spatial	spatial-raymode	spatial.md	engine/spatial/query.h:48
+spatial::RayMode::Closest	enumerator	spatial	spatial-raymode-closest	spatial.md	engine/spatial/query.h:49
+spatial::RayMode::Any	enumerator	spatial	spatial-raymode-any	spatial.md	engine/spatial/query.h:50
+spatial::RayMode::All	enumerator	spatial	spatial-raymode-all	spatial.md	engine/spatial/query.h:51
+spatial::RayHit	struct	spatial	spatial-rayhit	spatial.md	engine/spatial/query.h:57
+spatial::RayHit::key	variable	spatial	spatial-rayhit-key	spatial.md	engine/spatial/query.h:59
+spatial::RayHit::t	variable	spatial	spatial-rayhit-t	spatial.md	engine/spatial/query.h:61
+spatial::NearestHit	struct	spatial	spatial-nearesthit	spatial.md	engine/spatial/query.h:67
+spatial::NearestHit::key	variable	spatial	spatial-nearesthit-key	spatial.md	engine/spatial/query.h:69
+spatial::NearestHit::distance	variable	spatial	spatial-nearesthit-distance	spatial.md	engine/spatial/query.h:71
+spatial::KeyPair	struct	spatial	spatial-keypair	spatial.md	engine/spatial/query.h:77
+spatial::KeyPair::a	variable	spatial	spatial-keypair-a	spatial.md	engine/spatial/query.h:79
+spatial::KeyPair::b	variable	spatial	spatial-keypair-b	spatial.md	engine/spatial/query.h:81
+spatial::QueryStats	struct	spatial	spatial-querystats	spatial.md	engine/spatial/query.h:87
+spatial::QueryStats::nodes_tested	variable	spatial	spatial-querystats-nodes-tested	spatial.md	engine/spatial/query.h:89
+spatial::QueryStats::items_tested	variable	spatial	spatial-querystats-items-tested	spatial.md	engine/spatial/query.h:91
+spatial::QueryStats::results	variable	spatial	spatial-querystats-results	spatial.md	engine/spatial/query.h:93
+spatial::QueryStats::stopped	variable	spatial	spatial-querystats-stopped	spatial.md	engine/spatial/query.h:95
+spatial::QueryStats::refused_input	variable	spatial	spatial-querystats-refused-input	spatial.md	engine/spatial/query.h:97
+spatial::detail_query::Count(QueryStats*,const TraversalStats&)	function	spatial	spatial-detail-query-count-querystats-star-const-traversalstats-amp	spatial.md	engine/spatial/query.h:109
+spatial::Overlap(const Tree&,const Aabb&,const QueryFilter&,Visit&&)	function	spatial	spatial-overlap-const-tree-amp-const-aabb-amp-const-queryfilter-amp-visit-amp-amp	spatial.md	engine/spatial/query.h:125
+spatial::Overlap(const Tree&,const Sphere&,const QueryFilter&,Visit&&)	function	spatial	spatial-overlap-const-tree-amp-const-sphere-amp-const-queryfilter-amp-visit-amp-amp	spatial.md	engine/spatial/query.h:151
+spatial::Overlap(const Tree&,const Frustum&,const QueryFilter&,Visit&&)	function	spatial	spatial-overlap-const-tree-amp-const-frustum-amp-const-queryfilter-amp-visit-amp-amp	spatial.md	engine/spatial/query.h:178
+spatial::OverlapKeys(const Tree&,const Shape&,const QueryFilter&,Order,Vector<SpatialKey>*)	function	spatial	spatial-overlapkeys-const-tree-amp-const-shape-amp-const-queryfilter-amp-order-vector-lt-spatialkey-gt-star	spatial.md	engine/spatial/query.h:215
+spatial::Raycast(const Tree&,const Ray&,f32,const QueryFilter&,RayMode,Order,Vector<RayHit>*)	function	spatial	spatial-raycast-const-tree-amp-const-ray-amp-f32-const-queryfilter-amp-raymode-order-vector-lt-rayhit-gt-star	spatial.md	engine/spatial/query.h:238
+spatial::SweepBox(const Tree&,const Aabb&,const Vec3&,const QueryFilter&,RayHit*)	function	spatial	spatial-sweepbox-const-tree-amp-const-aabb-amp-const-vec3-amp-const-queryfilter-amp-rayhit-star	spatial.md	engine/spatial/query.h:291
+spatial::Nearest(const Tree&,const Vec3&,u32,f32,const QueryFilter&,Vector<NearestHit>*)	function	spatial	spatial-nearest-const-tree-amp-const-vec3-amp-u32-f32-const-queryfilter-amp-vector-lt-nearesthit-gt-star	spatial.md	engine/spatial/query.h:343
+spatial::ForEachPair(const Tree&,u32,u32,const QueryFilter&,Visit&&)	function	spatial	spatial-foreachpair-const-tree-amp-u32-u32-const-queryfilter-amp-visit-amp-amp	spatial.md	engine/spatial/query.h:388
+spatial::PairKeys(const Tree&,u32,u32,const QueryFilter&,Order,Vector<KeyPair>*)	function	spatial	spatial-pairkeys-const-tree-amp-u32-u32-const-queryfilter-amp-order-vector-lt-keypair-gt-star	spatial.md	engine/spatial/query.h:428
 spatial::kMaxSpatialSets	variable	spatial	spatial-kmaxspatialsets	spatial.md	engine/spatial/spatial.h:14
 spatial::SpatialKey	alias	spatial	spatial-spatialkey	spatial.md	engine/spatial/spatial.h:17
 spatial::Item	struct	spatial	spatial-item	spatial.md	engine/spatial/static_bvh.h:18

@@ -10,14 +10,14 @@
 #include "os/os.h"
 #include "spatial/dynamic_bvh.h"
 #include "spatial_test_rng.h"
+#include "spatial_test_util.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::spatial;
+using spatial_test::BoxAt;
 using spatial_test::Rng;
 
 namespace {
-
-Aabb BoxAt(const Vec3& c, const Vec3& h) { return Aabb::FromMinMax(c - h, c + h); }
 
 Aabb RandomBox(Rng& rng, f32 extent) { return BoxAt(rng.Point(-extent, extent), Vec3(rng.Float(0.1f, 3), rng.Float(0.1f, 3), rng.Float(0.1f, 3))); }
 

@@ -11,10 +11,12 @@
 #include "os/os.h"
 #include "spatial/static_bvh.h"
 #include "spatial_test_rng.h"
+#include "spatial_test_util.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::spatial;
 using spatial_test::Rng;
+using spatial_test::SortKeys;
 
 namespace {
 
@@ -61,10 +63,6 @@ void MakeScene(Rng& rng, u32 kind, Vector<Item>* out) {
     default:
         break;
     }
-}
-
-void SortKeys(Vector<SpatialKey>* keys) {
-    Sort(Span<SpatialKey>(keys->Data(), keys->Size()), [](SpatialKey a, SpatialKey b) { return a < b; });
 }
 
 bool SameKeys(Vector<SpatialKey>& a, Vector<SpatialKey>& b) {

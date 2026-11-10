@@ -1,7 +1,7 @@
 # Spatial partitioning: what is near what
 
-Status: in progress (Phase 18). Built: the shared shapes (Day 238), the static and dynamic bounding-volume hierarchies (Days 239-240). Next: the query
-vocabulary, the hash grid, spatial sets, the pair tracker, the ECS tier and the renderer's culling (Days 241-249).
+Status: in progress (Phase 18). Built: the shared shapes (Day 238), the static and dynamic bounding-volume hierarchies (Days 239-240), the query vocabulary
+(Day 241). Next: the hash grid, spatial sets, the pair tracker, the ECS tier and the renderer's culling (Days 242-249).
 
 **Audience:** engine programmers who write a system that asks "what is near this box, ray or frustum" (physics, culling, audio, gameplay). Read
 [Math](foundation-math.md) first.
@@ -231,6 +231,81 @@ How it stays fast while things move:
 
 Prediction pays where motion keeps its direction and costs almost nothing where it does not, so the default is 2; set it to 0 for items that never move
 far in one direction (jittering particles), 4 for fast straight movers.
+
+## Queries
+
+`spatial/query.h` asks the same questions of every structure (both trees now, the spatial set of Day 242 later), as free functions:
+
+| I need | Call | Results |
+|---|---|---|
+| what overlaps a box, sphere or frustum | `Overlap(tree, shape, filter, visit)` or `OverlapKeys(tree, shape, filter, order, &keys)` | each item; a frustum is conservative |
+| what a ray hits | `Raycast(tree, ray, max_t, filter, mode, order, &hits)` | `RayMode::Closest`, `Any` (line of sight) or `All`; `RayHit { key, t }` |
+| where a moving box first touches something | `SweepBox(tree, box, motion, filter, &hit)` | `t` is the fraction of `motion`; 0 when already touching |
+| the k nearest items | `Nearest(tree, point, k, max_distance, filter, &out)` | `NearestHit { key, distance }`, always nearest first |
+| every overlapping pair | `ForEachPair(tree, mask_a, mask_b, filter, visit)` or `PairKeys(...)` | each pair once, the smaller key first |
+
+```cpp compile run standalone
+#include "containers/vector.h"
+#include "os/console.h"
+#include "spatial/query.h"
+
+using namespace engine_placeholder;
+using namespace engine_placeholder::spatial;
+
+bool NotTheShooter(SpatialKey key, void*) { return key != 1; }
+
+int main() {
+    DynamicBvh tree;
+    tree.Insert(Aabb::FromMinMax(Vec3(0, 0, 0), Vec3(1, 2, 1)), 1, 0); // the shooter, layer 0 (characters)
+    tree.Insert(Aabb::FromMinMax(Vec3(4, 0, 0), Vec3(5, 2, 1)), 2, 0); // an enemy
+    tree.Insert(Aabb::FromMinMax(Vec3(8, 0, 0), Vec3(9, 3, 1)), 3, 1); // a wall, layer 1 (scenery)
+
+    // The first thing a shot from the shooter hits, ignoring the shooter itself.
+    QueryFilter shot;
+    shot.filter = &NotTheShooter;
+    Vector<RayHit> hits;
+    Raycast(tree, Ray::Make(Vec3(0.5f, 1, 0.5f), Vec3(1, 0, 0)), 100.0f, shot, RayMode::Closest, Order::Traversal, &hits);
+    os::Print("shot hits key %llu at %.1f\n", static_cast<unsigned long long>(hits[0].key), hits[0].t);
+
+    // Only scenery: the same ray with a mask of layer 1.
+    QueryFilter scenery;
+    scenery.mask = 1u << 1;
+    Raycast(tree, Ray::Make(Vec3(0.5f, 1, 0.5f), Vec3(1, 0, 0)), 100.0f, scenery, RayMode::Closest, Order::Traversal, &hits);
+    os::Print("scenery hit: key %llu\n", static_cast<unsigned long long>(hits[0].key));
+
+    // The two items nearest a point, nearest first.
+    Vector<NearestHit> near;
+    Nearest(tree, Vec3(6, 1, 0.5f), 2, 50.0f, QueryFilter(), &near);
+    os::Print("nearest: %llu (%.1f), %llu (%.1f)\n", static_cast<unsigned long long>(near[0].key), near[0].distance,
+              static_cast<unsigned long long>(near[1].key), near[1].distance);
+    return 0;
+}
+```
+
+```output
+shot hits key 2 at 3.5
+scenery hit: key 3
+nearest: 2 (1.0), 3 (2.0)
+```
+
+Rules:
+
+- **Layers and filters.** An item's `layer` is a bit index 0 to 31; a `QueryFilter` has a `mask` (one bit per layer, all by default) and an optional
+  `bool filter(SpatialKey, void* user)` with its `user` pointer (no `std::function`, no capture: pass what it needs through `user`). An item whose
+  layer is 32 or more matches no mask. `ForEachPair` takes two masks instead: a pair counts when one item is in `mask_a` and the other in `mask_b`.
+- **Order.** The visitor forms deliver results in traversal order: deterministic for one tree, but it changes when the tree is rebuilt or an item
+  moves. The collecting forms take an `Order`: `Order::Ordered` sorts the (small) result: overlaps by key, ray hits by distance then key, pairs by
+  first key then second. `Nearest` is always nearest first, and every tie is broken by the smaller key.
+- **Stopping.** A visitor returns false to stop; `QueryStats::stopped` then says so. `RayMode::Any` stops at its first hit by design.
+- **Bad input.** A query whose input has a NaN (or a ray, sweep or point that is not finite) answers nothing and sets `QueryStats::refused_input`;
+  an infinite box is allowed (it finds everything). An empty box, a negative radius or a negative distance finds nothing.
+- **Exactness.** Overlap, rays and sweeps test the items' tight boxes (the dynamic tree's fat boxes only steer the search); the frustum test is
+  conservative like the renderer's. `SweepBox` is exact for a box against boxes: a ray from the box's center against each box grown by its half extents.
+- **Cost and threads.** No query allocates, except to grow the result vector you pass (keep it between queries and it stops growing). Queries are
+  `const` and safe from any number of threads at once, as long as nobody changes the structure meanwhile (8 threads are tested against the
+  single-threaded answers). `Nearest` is a depth-first search that skips every node farther than the k-th best so far, for a small `k` (each candidate costs up to
+  `k` steps); `ForEachPair` runs one overlap
+  query per item, so it costs about n times an overlap query.
 
 ## See also
 
