@@ -1,5 +1,6 @@
 
 #include <catch2/catch_test_macros.hpp>
+#include "os/console.h"
 #include "display_session.h"
 
 #include "log/log.h"
@@ -51,7 +52,7 @@ TEST_CASE("WaylandConnection::Connect binds compositor/xdg_wm_base/seat/shm agai
 
 TEST_CASE("WaylandConnection::Connect fails gracefully (no crash) when no compositor is reachable",
           "[wayland][os]") {
-    const char* previous = ::getenv("WAYLAND_DISPLAY");
+    const char* previous = engine_placeholder::os::GetEnvironment("WAYLAND_DISPLAY");
     ::setenv("WAYLAND_DISPLAY", "engine-test-nonexistent-socket", 1);
 
     WaylandConnection conn = WaylandConnection::Connect();

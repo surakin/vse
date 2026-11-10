@@ -202,11 +202,25 @@ or format with the C library (`tools/signal_safety_check` enforces it).
 New modules are added to `docs/reference/modules.txt` in the same day.
 Planning-only commits are exempt, as are days that change no public header.
 
-## Phase 16 changes the standard-library rule (planned, 2026-11-09)
+## Always use the wrapped types, never `std` (required, Phase 16)
 
-Phase 16 (`plans/phase-16-std-wrappers.md`) wraps every use of the C++ and C standard library in the wrapper module of its category (`lang`, `sync`, `mem`, `cstr`, `os`, `jobs`), so only those modules include standard headers
-(`PLAN.md` assumption #23). **Until the phase's gate (Day 220) lands, the permissive text below still applies** ("the concurrency primitives, `<cmath>`, the C library through `std::` … are used directly"); new code should
-already prefer a wrapper once its module exists, and Day 220 rewrites this section and that text.
+Code in `engine/`, `game/`, `tools/` and `tests/` includes no standard header, spells no `std::` name, calls no unqualified C library function (`strlen`, `memcpy`, `printf`, `qsort`, ...) and spells no raw `unsigned char` / `(std::)u?int(8|16|32|64)_t`.
+Every facility has an engine wrapper in the module of its category (`PLAN.md` assumption #23); the wrappers are inline and zero-cost, so there is no reason to go around them:
+
+| I need | Header | Use |
+|---|---|---|
+| traits, `Move`/`Forward`/`Swap`, `Limits`, `Ordering`, `InitializerList`, placement `new`, scalar math | `lang/*.h` | `IsSame<A,B>`, `Move(x)`, `Limits<T>::Max()`, `ConstructAt<T>(p, ...)`, `Sqrt`, `Floor`, `Abs`, `IsNaN` |
+| atomics, mutexes, condition variables, threads | `sync/*.h` | `Atomic<T>` + `MemoryOrder`, `Mutex`, `LockGuard`, `ConditionVariable`, `Thread`, `ThisThread` |
+| raw memory, C strings, formatting, number parsing, variable arguments | `cstr/*.h` | `MemCopy`, `MemSet`, `CStrLength`, `FormatTo`, `ParseDoubleExact`, `SortRaw`, `ENGINE_VA_START` |
+| console, abort/exit, environment, errno, signals, clocks | `os/*.h` | `os::Print`, `os::PrintError`, `os::Abort`, `os::GetEnvironment`, `os::LastError`, `os::SetSignalHandler`, `os::MonotonicTimeNanos` |
+| coroutines | `jobs/coroutine.h` | `CoroutineHandle`, `SuspendAlways` |
+| strings, sequences, maps, owned pointers, views, sorting, fixed-width integers | Phase 10 types | `String`/`StringView`/`StringBuilder`, `Vector`, `Array`, `HashMap`, `UniquePtr`/`SharedPtr`, `Span`, `Sort`/`Min`/`Max`, `byte`, `u8`..`u128` |
+
+**If a facility has no wrapper yet, add the wrapper to the module of its category first** (with `///` docs, a test and, for the rare oracle test, a line in the allow list), then use it; never include the standard header at the use site.
+The gate `std_usage_check` (`tools/std_usage_check`, ctest `std_usage_check`) fails on every violation; its allow list `tools/std_usage_check/allowlist.txt` has one `path|headers|reason` line per exception (the wrapper modules with the headers each may include, `types.h`,
+`tools/shader_mint/reflect_json.cpp` and its test for nlohmann/json, `tests/support/catch_engine_types.h` for Catch2, oracle tests that compare a wrapper with the standard function it forwards to, and the Windows-only files until their port), and a stale entry fails.
+Names the compiler requires stay inside the wrapper modules (`std::initializer_list`, `std::strong_ordering`, `std::align_val_t`, `std::nothrow_t`, the coroutine names). Third-party code under `third_party/` is not touched. The POSIX and OS headers (`<time.h>`, `<signal.h>` types, `<unistd.h>`, X11, Wayland, Vulkan) are not the standard library.
+See `docs/guide/foundation-cstr.md`, `foundation-sync.md`, `foundation-types.md` and `docs/guide/building-and-testing.md`.
 
 ## What this project is
 
@@ -227,32 +241,12 @@ table in `PLAN.md`.
   itself" vs. "third-party convenience/abstraction library built on top of
   one" — see `PLAN.md`'s "Assumptions & scope notes" for the precise
   reasoning on each boundary.
-- **Foundation layer still hand-rolls its own core.** Custom allocators,
-  containers, and string handling instead of reaching for
-  malloc/printf/string.h/the C++ STL — for control, performance, and as a
-  learning exercise, not because linking libc is banned outright. Scalar
-  math functions (`sqrt`/`sin`/`cos`/`acos`/`atan2`/etc.) and concurrency
-  primitives (`std::thread`, `std::mutex`, `std::condition_variable`,
-  `std::atomic`, C++20 coroutines) are used directly rather than being
-  hand-rolled or wrapped in a custom engine type — solved problems, and
-  (for concurrency) already-portable across every target platform, with
-  no control/performance/learning upside to reinventing or re-wrapping
-  them; the vector/matrix/quaternion *types* built on top of `<cmath>`
-  are still hand-rolled. See `PLAN.md` assumption #2. Exceptions and RTTI
-  remain disabled.
-- **The standard library's containers, strings, smart pointers, function wrappers, algorithms and streams are not used** in
-  `engine/`, `game/`, `tools/` or the tests (Phase 10). Use `String`/`StringView`/`StringBuilder`, `Vector`, `Array`, `HashMap`,
-  `UniquePtr`/`SharedPtr`, `Span`/`ByteSpan` (`containers/span.h`), `Sort`/`StableSort`/`Min`/`Max`/`Clamp`/`IndexOf`
-  (`algorithm.h`), and the fixed-width vocabulary of `engine/foundation/types.h`: `byte` (= `u8`), `i8`..`i64`, `u8`..`u64`,
-  the portable 128-bit `i128`/`u128` (`int128.h`), `usize`/`isize`, `f32`/`f64`. Never spell `unsigned char`, `signed char` or
-  `(std::)u?int(8|16|32|64)_t`. Allowed: the concurrency primitives, the C library through `std::` (`std::memcpy`, `std::snprintf`),
-  `<cmath>`, `<chrono>`, `<type_traits>`, `<utility>`, `<limits>`, `<new>`, `<initializer_list>`. Exceptions: `engine/foundation/types.h`
-  (it defines the aliases), `tools/shader_mint/reflect_json.cpp` and its test (the nlohmann/json boundary, `PLAN.md` assumption
-  #19), `tests/support/catch_engine_types.h` (Catch2 returns `std::string`); the older test directories are allow-listed with their
-  counts. The ctest `std_container_check` (`tools/std_container_check`, allow list `allowlist.txt` with a reason per entry, a
-  stale entry fails) enforces it; a new test directory is scanned from its first file. Test helpers: `tests/support/test_text.h`,
-  `tests/support/catch_engine_types.h`; see `docs/guide/building-and-testing.md` ("Writing a test") and
-  `docs/guide/foundation-types.md`. Convert an older test file when a day touches it and lower its directory's count.
+- **Foundation layer still hand-rolls its own core.** Custom allocators, containers, and string handling instead of reaching for the C++ STL; the facilities that are solved problems (scalar
+  math, concurrency primitives, C++20 coroutines, the C library's memory and string functions) are not re-implemented but are used **only through the engine's wrapper modules** (`lang`, `sync`, `cstr`, `os`,
+  `jobs/coroutine.h`; section "Always use the wrapped types, never `std`" above, `PLAN.md` assumptions #2 and #23), so each has one place to port, replace or optimize. The vector/matrix/quaternion
+  *types* built on top of scalar math are hand-rolled. Exceptions and RTTI remain disabled.
+- **The standard library is not used outside the wrapper modules** (Phase 10 for containers and strings, Phase 16 for everything else): see the section "Always use the wrapped types, never `std`" above for the wrapper of each facility
+  and the `std_usage_check` gate. Test helpers: `tests/support/test_text.h`, `tests/support/catch_engine_types.h`; see `docs/guide/building-and-testing.md` ("Writing a test") and `docs/guide/foundation-types.md`.
 - **The engine is heavily multithreaded, through one job system — not ad
   hoc thread pools per subsystem.** Phase 2 defines a portable
   work-stealing job scheduler that every later multithreaded subsystem

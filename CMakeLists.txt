@@ -165,7 +165,7 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(tests/shader_mint)
   add_subdirectory(shaders)  # the `shaders` target and shaders_check / shaders_portability, when slangc is found
   # The source gates are CMake scripts over the tree, the same on every platform (Day 150).
-  foreach(gate rhi_boundary_check raw_new_check file_access_check std_container_check settings_fixtures_check config_access_check
+  foreach(gate rhi_boundary_check raw_new_check file_access_check std_usage_check settings_fixtures_check config_access_check
                signal_safety_check platform_neutral_check module_deps_check ui_widget_style_check)
     add_subdirectory(tools/${gate})
   endforeach()
@@ -219,7 +219,7 @@ add_subdirectory(tools/shader_mint)
 add_subdirectory(tools/rhi_boundary_check)
 add_subdirectory(tools/raw_new_check)
 add_subdirectory(tools/file_access_check)
-add_subdirectory(tools/std_container_check)
+add_subdirectory(tools/std_usage_check)
 add_subdirectory(tools/settings_fixtures_check)
 add_subdirectory(tools/config_access_check)
 add_subdirectory(tools/signal_safety_check)

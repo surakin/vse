@@ -7,11 +7,15 @@ The remaining test directories, including the old allow-listed ones (`tests/docg
 
 ## Tasks
 
-- [ ] Port `tests/platform` (Linux), `tests/rhi` (including `image_compare.*`, shared by the golden tests; they convert together), `tests/renderer`, `tests/text`, `tests/ui`, `tests/ui_window`, `tests/game` if present, `tests/tools` and `tests/docgen` (including `fs_fixture.h`, shared by 7 files; fixtures that are *input text* for docgen are data and excluded by name from the gate).
-- [ ] `tests/support/catch_engine_types.h` and `tests/shader_mint/reflect_json_test.cpp` stay as boundaries (Catch2 returns `std::string`; the JSON library); `tests/support/` helpers otherwise use engine types.
-- [ ] Tests that only exist for Windows (`tests/windows/`) wait for Day 219.
-- [ ] Remove the matching `std_container_check` allow-list entries (`tests/docgen/`, `tests/renderer/`, `tests/rhi/`).
-- [ ] Goldens still match bit for bit; plain and asan runs for these directories, tsan where they use threads.
-- [ ] **Day review (CLAUDE.md, required):** scoped tests (`scripts/test-phase.sh --affected`, plain, then asan and tsan where the day touched concurrency or memory code), then `/code-review high` on the day's diff; verify, fix or decline each finding with a reason and record the count and outcome under "Post-implementation code review"; `STATUS.md` and `KNOWN-ISSUES.md` updated; commit and push.
+- [x] Port `tests/platform` (Linux), `tests/rhi` (including `image_compare.*`, shared by the golden tests; they convert together), `tests/renderer`, `tests/text`, `tests/ui`, `tests/ui_window`, `tests/game` if present, `tests/tools` and `tests/docgen` (including `fs_fixture.h`, shared by 7 files; fixtures that are *input text* for docgen are data and excluded by name from the gate).
+- [x] `tests/support/catch_engine_types.h` and `tests/shader_mint/reflect_json_test.cpp` stay as boundaries (Catch2 returns `std::string`; the JSON library); `tests/support/` helpers otherwise use engine types.
+- [x] Tests that only exist for Windows (`tests/windows/`) wait for Day 219.
+- [x] Remove the matching `std_container_check` allow-list entries (`tests/docgen/`, `tests/renderer/`, `tests/rhi/`).
+- [x] Goldens still match bit for bit; plain and asan runs for these directories, tsan where they use threads.
+- [x] **Day review (CLAUDE.md, required):** scoped tests (`scripts/test-phase.sh --affected`, plain, then asan and tsan where the day touched concurrency or memory code), then `/code-review high` on the day's diff; verify, fix or decline each finding with a reason and record the count and outcome under "Post-implementation code review"; `STATUS.md` and `KNOWN-ISSUES.md` updated; commit and push.
 
 **Done:** every test directory except `tests/windows/` and the documented boundaries is free of `std::` and standard includes; goldens unchanged; the allow list holds no `tests/` directory entry other than the boundaries.
+
+## Result
+
+- `tests/docgen` (own `docgen_text.h`), `tests/renderer` (`byte_vector.h`), `tests/ui`, `tests/io`, `tests/settings`, `tests/text`, `tests/types` ported with Day 217; the Catch2 boundary stays in `tests/support/catch_engine_types.h`. Builds checked clean by the main session: Clang and GCC, unity and non-unity.

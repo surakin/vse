@@ -154,7 +154,7 @@ module tools/raw_new_check/ tools/gates 13
 module tools/rhi_boundary_check/ tools/gates 13
 module tools/settings_fixtures_check/ tools/gates 13
 module tools/signal_safety_check/ tools/gates 13
-module tools/std_container_check/ tools/gates 13
+module tools/std_usage_check/ tools/gates 13
 same-layer-ok 13
 
 # --- per-platform code -------------------------------------------------------------------------------------------------

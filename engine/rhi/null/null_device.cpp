@@ -272,7 +272,7 @@ void NullDeviceState::Error(const char* fmt, ...) {
     errors.FetchAdd(1, MemoryOrder::Relaxed);
     {
         LockGuard<Mutex> lock(err_mu);
-        usize n = strnlen(buf, sizeof(buf) - 1);
+        usize n = CStrLength(buf);
         MemCopy(last_error, buf, n);
         last_error[n] = '\0';
     }

@@ -66,10 +66,7 @@ Tests use the engine's own types, like the code they test: `String`, `StringView
 - Use the wrappers of `sync/`: `Thread`, `Mutex`, `ConditionVariable` and `Atomic<T>` (Phase 16; [Synchronization](foundation-sync.md)), not the `std::` ones.
 - Where Catch2 itself needs `std::` (the text it returns from a printer, `GENERATE` ranges), the use stays local and has a comment.
 
-The `std_container_check` gate (ctest `std_container_check`, added by Phase 10 Day 129) fails on a banned `std::` name in `engine/`, `game/`, `tools/` and the test
-every directory under `tests/`, so a new test directory is checked from its first file; its allow list
-(`tools/std_container_check/allowlist.txt`) names every exception with a reason, and the older test directories are one entry each with
-their count, so the list only shrinks. Convert an old test file when a day touches it.
+The `std_usage_check` gate (ctest `std_usage_check`; Phase 16 Day 220, it replaced `std_container_check`) fails on any `#include` of a standard header, any `std::` name, any unqualified C library call (`strlen(`, `memcpy(`, `printf(`, ...) and any raw `unsigned char`/`uint8_t` spelling in `engine/`, `game/`, `tools/` and `tests/`. Its allow list (`tools/std_usage_check/allowlist.txt`) has one line per exception, `path|headers|reason`: the wrapper modules (`lang`, `sync`, `cstr`, the `os` console, error-number and signal headers, `jobs/coroutine.h`) with the standard headers each may include, the documented boundaries (`types.h`, the nlohmann/json files, `tests/support/catch_engine_types.h`) and the oracle tests of the wrappers. An entry that covers no use, or lists a header nobody includes, is stale and fails, so the list only shrinks. A test never needs the standard library: use the wrappers (Windows-only files are listed until Phase 16 Day 219).
 
 ### Test phases and scoped runs
 

@@ -217,7 +217,7 @@ tests/cstr/                                     16   # the cstr module, scalar m
 tests/sync/                                     16   # the sync module: Atomic, Mutex, ConditionVariable, Thread (Phase 16 Day 209)
 tests/lang/                                     16   # the lang module: traits, Move, Limits, Ordering, new helpers (Phase 16 Day 208)
 test:types_cross_syntax_*                       10
-test:std_container_check*                        10
+test:std_usage_check*                        10
 test:settings_fixtures*                          11
 test:config_access_check*                        11
 test:settings_backend_lists*                     11

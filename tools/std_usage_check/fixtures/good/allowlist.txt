@@ -1,0 +1,2 @@
+# path|headers|reason
+engine/foundation/lang/|<utility>|the language-support wrapper module

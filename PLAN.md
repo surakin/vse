@@ -112,7 +112,7 @@ interpretations keep it buildable — flag any that don't match intent:
    like libc on Linux (Phase 13; the phase file's earlier "no CRT" wording was wrong). **Amendment 2026-11-07 (Phase 10):** the C++ standard library's
    containers, strings, smart pointers, `std::function`, algorithms and streams are not used in `engine/`, `game/`, `tools/` or tests; the
    engine's `String`, `Vector`, `HashMap`, `UniquePtr`, `Span`, `Sort` and the `byte`/`u8`..`u128` vocabulary replace them, and the
-   `std_container_check` gate enforces it (exceptions: the nlohmann/json boundary of `tools/shader_mint`, the aliases in `types.h`,
+   `std_container_check` gate (replaced by `std_usage_check` in Phase 16, assumption #23, which extends the rule to the whole standard and C library) enforces it (exceptions: the nlohmann/json boundary of `tools/shader_mint`, the aliases in `types.h`,
    Catch2's printers, and the older test directories, allow-listed with counts). **Amendment 2026-11-03:** `memcpy`/`memset`/`memmove`/`strlen`
    are no longer hand-rolled — the Phase 0 Day 3 `mem/mem.cpp` overrides of
    libc's own symbols were removed in favor of `<cstring>`, since they
@@ -536,10 +536,10 @@ interpretations keep it buildable — flag any that don't match intent:
 
 23. **The C++ and C standard library are used only through wrapper modules, one per category (Phase 16).** Amends assumption #2, which let concurrency primitives, `<cmath>`, `<chrono>`, `<type_traits>`, `<utility>`
     and the C library through `std::` be used directly. From Phase 16, `engine/`, `game/`, `tools/` and `tests/` include no standard header and spell no `std::` name (or unqualified C-library name); the facilities are wrapped by
-    inline zero-cost engine types in the module of their category: `lang` (traits, `Move`, `Limits`, `Ordering`, scalar math), `sync` (`Atomic<T>`, `Mutex`, `LockGuard`, `ConditionVariable`, `Thread`), `mem` (memory operations), `cstr` (C strings, formatting,
-    number parsing), `os` (console output, process, environment, signals, time), `jobs` (`CoroutineHandle`), and the Phase 10 containers. Several modules include the standard library, each its own category; the gate `std_usage_check` lists the
+    inline zero-cost engine types in the module of their category: `lang` (traits, `Move`, `Limits`, `Ordering`, scalar math), `sync` (`Atomic<T>`, `Mutex`, `LockGuard`, `ConditionVariable`, `Thread`), `cstr` (raw memory, C strings, formatting,
+    number parsing; layer 0 like `lang` and `sync`, because `types.h` needs them), `os` (console output, `abort`/`exit`, environment, error number, signals, clocks), `jobs` (`CoroutineHandle`), and the Phase 10 containers. Several modules include the standard library, each its own category; the gate `std_usage_check` lists the
     headers each may include. Names the compiler requires (`std::coroutine_traits`, `std::initializer_list`, `std::strong_ordering`, `std::align_val_t`) stay in the wrapper modules; `third_party/`, the Catch2 printers and the nlohmann/json boundary
-    of `shader_mint` are the other exceptions. Decided with the user on 2026-11-09 (everything, tests included; wrappers by category). Design: `docs/superpowers/specs/2026-11-09-std-wrappers-design.md`; plan: `plans/phase-16-std-wrappers.md`.
+    of `shader_mint` are the other exceptions. **Standing policy (the user, 2026-11-09): code always uses the wrapped types, never `std`, from now on** - a new module that needs a facility with no wrapper adds the wrapper to the module of its category first, and `std_usage_check` (allow list `path|headers|reason`, a stale entry fails) keeps it so. Decided with the user on 2026-11-09 (everything, tests included; wrappers by category). Design: `docs/superpowers/specs/2026-11-09-std-wrappers-design.md`; plan: `plans/phase-16-std-wrappers.md`.
 
 ## Guiding principles
 

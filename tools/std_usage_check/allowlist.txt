@@ -1,0 +1,49 @@
+# path|headers|reason - the only places that may use the C++/C standard library (Phase 16 Day 220; gate: tools/std_usage_check/check.cmake).
+# A covered file may spell `std::` and call C library names; it may include only the standard headers listed for it (`-` = none).
+# An entry that covers no use, or lists a header no covered file includes, is stale and fails the gate. Every entry has a reason.
+# The rule: CLAUDE.md ("The standard library is used only through the wrapper modules"), PLAN.md assumption #23, docs/guide/foundation-cstr.md.
+
+# --- the wrapper modules ---------------------------------------------------------------------------------------------------------
+engine/foundation/lang/|<utility>,<type_traits>,<limits>,<new>,<initializer_list>,<compare>,<cstddef>,<cmath>|Language support wrapper module (traits, Move/Forward, Limits, Ordering, new helpers, scalar math): the one place that spells these standard facilities.
+engine/foundation/sync/|<atomic>,<mutex>,<condition_variable>,<thread>,<chrono>|Concurrency wrapper module (Atomic, Mutex, ConditionVariable, Thread): the one place that spells the standard concurrency types.
+engine/foundation/cstr/|<cstring>,<cwchar>,<cstdio>,<cstdarg>,<cstdlib>,<charconv>|C string, memory, formatting and number wrapper module: the one place that calls the C library for them.
+engine/foundation/os/console.h|<cstdio>,<cstdlib>|Console output, abort, _Exit and environment wrappers over the C library.
+engine/foundation/os/last_error.h|<cerrno>|The errno wrapper (errno is a macro, so only a header can name it; the E* constants arrive through it).
+engine/foundation/os/signal.h|<csignal>|The signal-handler wrapper (the SIG* constants arrive through it).
+engine/jobs/coroutine.h|<coroutine>|The coroutine wrapper: the compiler looks coroutine machinery up by the standard names.
+
+# --- documented boundaries ---------------------------------------------------------------------------------------------------------
+engine/foundation/types.h|<cstdint>,<cstddef>|Defines the fixed-width aliases (u8..u64, usize, ...) and the byte type from the standard ones; everything else spells the aliases.
+engine/foundation/os/linux/os.cpp|-|The Linux implementation of os::Exit calls the C library's exit.
+tools/shader_mint/reflect_json.cpp|<vector>,<cstring>,<cstdio>,<algorithm>|The nlohmann/json boundary (PLAN.md assumption #19): the library is built on std::string and std::vector; the file converts to engine types at its edge.
+tests/shader_mint/reflect_json_test.cpp|<string>,<vector>|Tests the nlohmann/json boundary file above, which takes and returns standard strings and vectors.
+tests/support/catch_engine_types.h|<string>|Catch2 returns std::string at its boundary; this header adapts the engine's types to it.
+
+# --- Windows-only code that waits for the Windows PC (Phase 16 Day 219) ------------------------------------------------------------
+engine/foundation/os/windows/|<atomic>,<csignal>,<cstdio>,<cstdlib>,<cstring>,<ctime>,<cwchar>,<mutex>|Windows-only code, ported on the Windows PC on Phase 16 Day 219 (cannot be built or tested on Linux); remove this entry then.
+engine/foundation/io/windows/|<cstdio>,<cstdlib>,<cstring>,<cwchar>|Windows-only code, ported on the Windows PC on Phase 16 Day 219 (cannot be built or tested on Linux); remove this entry then.
+engine/foundation/settings/windows/|<atomic>,<cstdio>,<cwchar>,<mutex>,<thread>|Windows-only code, ported on the Windows PC on Phase 16 Day 219 (cannot be built or tested on Linux); remove this entry then.
+engine/rhi/dx12/|<atomic>,<cstdio>,<cstdlib>,<cstring>,<mutex>|Windows-only code, ported on the Windows PC on Phase 16 Day 219 (cannot be built or tested on Linux); remove this entry then.
+engine/platform/windows/|<cstdio>,<cstdlib>,<cstring>,<cwchar>,<mutex>|Windows-only code, ported on the Windows PC on Phase 16 Day 219 (cannot be built or tested on Linux); remove this entry then.
+engine/jobs/windows/|<cstddef>,<cstring>|Windows-only code, ported on the Windows PC on Phase 16 Day 219 (cannot be built or tested on Linux); remove this entry then.
+tools/crash_extract/windows/|<cstdio>,<cstring>|Windows-only code, ported on the Windows PC on Phase 16 Day 219 (cannot be built or tested on Linux); remove this entry then.
+tools/shader_mint/windows/|<cstdio>|Windows-only code, ported on the Windows PC on Phase 16 Day 219 (cannot be built or tested on Linux); remove this entry then.
+
+# --- oracle tests: compare a wrapper with the standard facility it forwards to ----------------------------------------------------
+tests/lang/|<cstdint>,<limits>,<type_traits>,<utility>|Oracle test of the lang wrappers (traits, limits, utility, math) against <type_traits>, <limits>, <utility>, <cmath>.
+tests/sync/|<atomic>,<chrono>,<cstdio>,<mutex>,<thread>,<vector>|Oracle test of the sync wrappers against std::atomic, std::mutex, std::thread, std::chrono.
+tests/cstr/|<cmath>,<cstdint>,<cstdio>,<cstdlib>,<cstring>,<cwchar>|Oracle test of the cstr/os wrappers against the C library functions they forward to.
+
+# --- Windows-only tests that wait for the Windows PC (Phase 16 Day 219) -----------------------------------------------------------
+tests/windows/|<cstdio>,<cstdlib>,<cstring>,<cwchar>,<initializer_list>|Windows-only tests, ported on the Windows PC on Phase 16 Day 219; remove this entry then.
+tests/debug/crash_alloc_windows_test.cpp|<atomic>,<cstdio>,<cstdlib>|Windows-only test, ported on the Windows PC on Phase 16 Day 219; remove this entry then.
+tests/debug/crash_end_to_end_windows_test.cpp|<atomic>,<cstdio>,<cstdlib>,<cstring>,<thread>|Windows-only test, ported on the Windows PC on Phase 16 Day 219; remove this entry then.
+tests/debug/crash_report_script_windows_test.cpp|<cstdio>,<cstdlib>,<cstring>|Windows-only test, ported on the Windows PC on Phase 16 Day 219; remove this entry then.
+tests/debug/death_test_windows_test.cpp|<cstdio>,<cstdlib>,<cstring>|Windows-only test, ported on the Windows PC on Phase 16 Day 219; remove this entry then.
+tests/debug/post_mortem_windows_test.cpp|<cstdio>,<cstring>,<cwchar>|Windows-only test, ported on the Windows PC on Phase 16 Day 219; remove this entry then.
+tests/debug/stack_trace_windows_test.cpp|<cstring>,<cwchar>,<thread>|Windows-only test, ported on the Windows PC on Phase 16 Day 219; remove this entry then.
+tests/io/io_windows_test.cpp|<cstdlib>,<cwchar>|Windows-only test, ported on the Windows PC on Phase 16 Day 219; remove this entry then.
+tests/jobs/topology_windows_test.cpp|<cstddef>,<cstring>,<cwchar>,<thread>|Windows-only test, ported on the Windows PC on Phase 16 Day 219; remove this entry then.
+tests/rhi/dx12_pipeline_test.cpp|<chrono>|Windows-only test, ported on the Windows PC on Phase 16 Day 219; remove this entry then.
+tests/rhi/dx12_swapchain_test.cpp|<chrono>|Windows-only test, ported on the Windows PC on Phase 16 Day 219; remove this entry then.
+tests/settings/registry_store_windows_test.cpp|<atomic>,<chrono>,<cstdio>,<cstdlib>,<thread>|Windows-only test, ported on the Windows PC on Phase 16 Day 219; remove this entry then.

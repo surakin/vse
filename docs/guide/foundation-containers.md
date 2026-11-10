@@ -4,7 +4,7 @@
 > **Audience:** engine programmers  
 > **Covers:** Phase 0, Phase 10
 
-The engine has its own containers and does not use the standard library's; the table "Which type do I use?" in [Standard types](foundation-types.md) says which one to reach for (bytes, text, sequences, maps, owned pointers, views, 128-bit integers). The `std_container_check` test enforces it.
+The engine has its own containers and does not use the standard library's; the table "Which type do I use?" in [Standard types](foundation-types.md) says which one to reach for (bytes, text, sequences, maps, owned pointers, views, 128-bit integers). The `std_usage_check` test enforces it.
 
 ## Source of truth
 
