@@ -1,9 +1,8 @@
 # ECS: entities, components and systems
 
-Status: draft (Phase 17, Days 223-233: entities, components, storage, the world, queries, command buffers, resources, change detection, systems, the schedule, parallel systems, transforms and hierarchy, removal tracking and the render sync; the rest of the page arrives with the days that build it).
+Status: complete for Phase 17 (Days 223-235: entities, components, storage, the world, queries, command buffers, resources, change detection, systems, the schedule, parallel systems, transforms and hierarchy, removal tracking, the render sync and the measured cost). Not built: serialization, events, more than 128 component types.
 
-**Audience:** every game and engine programmer. Read [Containers](foundation-containers.md) and [Memory](foundation-memory.md) first. This page covers only
-what is built so far (entities, components, storage, the world, queries, command buffers, resources, change detection, systems, the schedule, parallel systems, transforms and hierarchy, removal tracking and the scene bridge).
+**Audience:** every game and engine programmer. Read [Containers](foundation-containers.md) and [Memory](foundation-memory.md) first.
 
 The ECS (`engine/ecs`, namespace `ecs`) is the engine's data-oriented core: **entities** are ids, **components** are plain data stored in
 cache-friendly chunks, and **systems** are functions over all entities that have a given set of components. Design, measurements and the
@@ -595,6 +594,17 @@ Include `scene/render_sync.h` and link `scene` (module `engine/scene`, above `ec
   a value that is not finite) is skipped and counted in `invalid`. The linked scene must not change between frames.
 - **The camera.** `MakeCameraSystem(name)` builds `CameraOutput` (a `renderer::Camera`) from the `ActiveCamera` resource's entity, which carries a `scene::Camera` and a `WorldTransform`
   (+X right, +Y up, -Z forward); `CameraOutput::valid` is false when there is none.
+
+## Rules of thumb
+
+- **Tag or data?** Use an empty struct (a tag) for a yes/no fact that queries filter on (`Frozen`, `Hidden`, `Active`). Adding or removing it moves the entity to another archetype, so it suits states that
+  change rarely or in bulk, not a flag toggled for every entity every frame (churn costs more than in an object layout; see "Measured cost"). A per-frame flag belongs in a data component.
+- **When to filter with `Changed<T>`.** When a system's work per row is larger than a load and a compare, and writes are clustered (a few chunks change, not a few rows in every chunk). Random writes touch
+  most chunks and the filter saves little.
+- **When to use a command buffer.** Whenever a system creates, destroys, adds or removes while it iterates: record into the buffer, apply after the loop. A direct structural change inside `ForEach` is refused.
+- **Split components by how they change.** Data written every frame and data written rarely should be separate components, so stamping and `Changed<T>` stay precise and the hot loop reads less memory.
+- **Keep queries.** Build a query once and reuse it; a kept query refreshes almost for free.
+- **Parallelize heavy systems.** A system whose per-row work is around 100 ns or more scales to about 85 percent efficiency at 4 workers; a trivial loop is memory-bound and gains little.
 
 ## Measured cost
 

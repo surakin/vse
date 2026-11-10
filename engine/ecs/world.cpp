@@ -146,7 +146,7 @@ Status World::Destroy(Entity entity) {
     const Entity moved = home.RemoveRow(at.chunk, at.row);
     FixMoved(moved, at.chunk, at.row);
     if (moved.IsValid()) {
-        home.MarkAllWritten(home.ChunkAt(at.chunk), tick_); // the last row now sits in the gap
+        home.MarkArrived(home.ChunkAt(at.chunk), tick_); // the last row now sits in the gap: written, and added, since it may be a row created after a reader's last pass
     }
     table_.Free(entity);
     ++destroyed_;
@@ -188,7 +188,7 @@ bool World::Migrate(Entity entity, u32 target, RowRef* new_row) {
     const Entity moved = source.RemoveRow(from.chunk, from.row, RowContents::Vacated);
     FixMoved(moved, from.chunk, from.row);
     if (moved.IsValid()) {
-        source.MarkAllWritten(source.ChunkAt(from.chunk), tick_);
+        source.MarkArrived(source.ChunkAt(from.chunk), tick_);
     }
     // The table slot may have been touched by FixMoved only for another entity; re-fetch ours.
     where = table_.Location(entity);

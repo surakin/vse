@@ -270,3 +270,24 @@ TEST_CASE("Change: ticks near the largest 64-bit value compare correctly", "[ecs
     q.ForEach([&](const VA&) { ++n; });
     CHECK(n == 0);
 }
+
+// Regression (Phase 17 review): destroying a row moves the archetype's last row into the gap, which can be in an earlier chunk; that chunk must be stamped as added too,
+// or an `Added` reader that already passed it never sees the entity created since.
+TEST_CASE("Change: Added still reports an entity that a destroy moved into an earlier chunk", "[ecs][change]") {
+    World world;
+    Vector<Entity> ids;
+    for (u32 i = 0; i < 8; ++i) {
+        ids.Push(world.Create(ChangeBig{i, {}}));
+    }
+    auto added = world.Query<Added<ChangeBig>, Read<ChangeBig>>();
+    added.ForEach([](const ChangeBig&) {});
+    added.Finish();
+    world.Advance();
+    const Entity fresh = world.Create(ChangeBig{100, {}}); // lands in the last chunk
+    world.Advance();
+    REQUIRE(world.Destroy(ids[0]) == Status::Ok);           // the last row (fresh) moves into chunk 0
+    bool seen = false;
+    added.ForEach([&](const ChangeBig& b) { seen = seen || b.v == 100; });
+    CHECK(seen);
+    CHECK(world.Exists(fresh));
+}

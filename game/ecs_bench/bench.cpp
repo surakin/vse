@@ -569,8 +569,9 @@ Lifecycle RunLifecycle(Impl impl, const Options& options) {
         const u64 t2 = os::MonotonicTimeNanos();
         out.create_ns = static_cast<double>(t1 - t0) / n;
         out.destroy_ns = static_cast<double>(t2 - t1) / n;
-        // An estimate: the object, its spring component, the owning pointer slots, and about 16 bytes of allocator header for each of the two heap blocks.
-        out.bytes_per_entity = static_cast<double>(sizeof(GameObject) + sizeof(SpringComponent) + 2 * sizeof(void*) + 2 * 16);
+        // An estimate: the object, its spring component, the owning pointer slots (the visit list and the extras buffer's one slot), and about 16 bytes of allocator header for each of the
+        // three heap blocks (object, spring, extras buffer).
+        out.bytes_per_entity = static_cast<double>(sizeof(GameObject) + sizeof(SpringComponent) + 2 * sizeof(void*) + sizeof(void*) + 3 * 16);
         return out;
     }
     ecs::World world;

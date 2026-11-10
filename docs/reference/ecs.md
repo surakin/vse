@@ -473,21 +473,6 @@ Stamps every component column of `chunk` as written and added at `tick`: a row a
 | Fails | never. |
 | Ownership | writes the chunk's header; the chunk belongs to the archetype. |
 
-### `MarkAllWritten(Chunk*,u64)` {#ecs-archetype-markallwritten-chunk-star-u64-const}
-
-`method ecs::Archetype::MarkAllWritten` — defined in `engine/ecs/archetype.h`
-
-```cpp
-void MarkAllWritten(Chunk* chunk, u64 tick) const;
-```
-
-Stamps every component column of `chunk` as written at `tick`: a row moved inside the chunk.
-
-| Field | Value |
-|---|---|
-| Fails | never. |
-| Ownership | writes the chunk's header; the chunk belongs to the archetype. |
-
 ### `MarkWritten(Chunk*,ComponentId,u64)` {#ecs-archetype-markwritten-chunk-star-componentid-u64-const}
 
 `method ecs::Archetype::MarkWritten` — defined in `engine/ecs/archetype.h`

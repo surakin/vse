@@ -2858,10 +2858,9 @@ ecs::Archetype::ColumnPtr(Chunk*,ComponentId) const	function	ecs	ecs-archetype-c
 ecs::Archetype::CellPtr(Chunk*,ComponentId,u32) const	function	ecs	ecs-archetype-cellptr-chunk-star-componentid-u32-const	ecs.md	engine/ecs/archetype.h:144
 ecs::Archetype::Column(Chunk*) const	function	ecs	ecs-archetype-column-chunk-star-const	ecs.md	engine/ecs/archetype.h:149
 ecs::Archetype::MarkArrived(Chunk*,u64) const	function	ecs	ecs-archetype-markarrived-chunk-star-u64-const	ecs.md	engine/ecs/archetype.h:159
-ecs::Archetype::MarkAllWritten(Chunk*,u64) const	function	ecs	ecs-archetype-markallwritten-chunk-star-u64-const	ecs.md	engine/ecs/archetype.h:163
-ecs::Archetype::MarkWritten(Chunk*,ComponentId,u64) const	function	ecs	ecs-archetype-markwritten-chunk-star-componentid-u64-const	ecs.md	engine/ecs/archetype.h:167
-ecs::Archetype::WrittenTick(const Chunk*,ComponentId) const	function	ecs	ecs-archetype-writtentick-const-chunk-star-componentid-const	ecs.md	engine/ecs/archetype.h:170
-ecs::Archetype::AddedTick(const Chunk*,ComponentId) const	function	ecs	ecs-archetype-addedtick-const-chunk-star-componentid-const	ecs.md	engine/ecs/archetype.h:173
+ecs::Archetype::MarkWritten(Chunk*,ComponentId,u64) const	function	ecs	ecs-archetype-markwritten-chunk-star-componentid-u64-const	ecs.md	engine/ecs/archetype.h:163
+ecs::Archetype::WrittenTick(const Chunk*,ComponentId) const	function	ecs	ecs-archetype-writtentick-const-chunk-star-componentid-const	ecs.md	engine/ecs/archetype.h:166
+ecs::Archetype::AddedTick(const Chunk*,ComponentId) const	function	ecs	ecs-archetype-addedtick-const-chunk-star-componentid-const	ecs.md	engine/ecs/archetype.h:169
 ecs::kChunkBytes	variable	ecs	ecs-kchunkbytes	ecs.md	engine/ecs/chunk.h:15
 ecs::kMaxArchetypeComponents	variable	ecs	ecs-kmaxarchetypecomponents	ecs.md	engine/ecs/chunk.h:18
 ecs::Chunk	struct	ecs	ecs-chunk	ecs.md	engine/ecs/chunk.h:27

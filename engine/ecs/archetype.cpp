@@ -174,12 +174,6 @@ void Archetype::MarkArrived(Chunk* chunk, u64 tick) const {
     }
 }
 
-void Archetype::MarkAllWritten(Chunk* chunk, u64 tick) const {
-    for (u32 c = 1; c < layout_.column_count; ++c) {
-        chunk->written[c - 1] = tick;
-    }
-}
-
 void Archetype::MarkWritten(Chunk* chunk, ComponentId id, u64 tick) const {
     const u32 column = id < kMaxComponentTypes ? layout_.column_of[id] : kNoColumn;
     if (column != kNoColumn) {

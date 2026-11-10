@@ -157,10 +157,6 @@ public:
     /// Fails: never.
     /// Ownership: writes the chunk's header; the chunk belongs to the archetype.
     void MarkArrived(Chunk* chunk, u64 tick) const;
-    /// Stamps every component column of `chunk` as written at `tick`: a row moved inside the chunk.
-    /// Fails: never.
-    /// Ownership: writes the chunk's header; the chunk belongs to the archetype.
-    void MarkAllWritten(Chunk* chunk, u64 tick) const;
     /// Stamps the column of `id` in `chunk` as written at `tick`; does nothing for a tag or an absent component.
     /// Fails: never.
     /// Ownership: writes the chunk's header; the chunk belongs to the archetype.
