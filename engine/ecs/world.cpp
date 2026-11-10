@@ -10,6 +10,10 @@ u32 NextResourceTypeId() {
     static Atomic<u32> next{0};
     return next.FetchAdd(1, MemoryOrder::Relaxed);
 }
+u64 NextWorldId() {
+    static Atomic<u64> next{1};
+    return next.FetchAdd(1, MemoryOrder::Relaxed);
+}
 } // namespace detail
 
 World::~World() {
@@ -49,7 +53,7 @@ void World::DestroyAllResources() {
     }
 }
 
-World::World() : by_set_(HeapAllocator::Default()), edges_(HeapAllocator::Default()) {
+World::World() : id_(detail::NextWorldId()), by_set_(HeapAllocator::Default()), edges_(HeapAllocator::Default()) {
     const u32 empty = FindOrCreateArchetype(ComponentSet{});
     ENGINE_ASSERT(empty == 0, "the empty archetype is archetype 0");
 }

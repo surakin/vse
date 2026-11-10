@@ -1,9 +1,9 @@
 # ECS: entities, components and systems
 
-Status: draft (Phase 17, Days 223-229: entities, components, storage, the world, queries, command buffers, resources, change detection; the rest of the page arrives with the days that build it).
+Status: draft (Phase 17, Days 223-230: entities, components, storage, the world, queries, command buffers, resources, change detection, systems and the sequential schedule; the rest of the page arrives with the days that build it).
 
 **Audience:** every game and engine programmer. Read [Containers](foundation-containers.md) and [Memory](foundation-memory.md) first. This page covers only
-what is built so far (entities, components, storage, the world, queries, command buffers, resources and change detection); systems are not documented here yet.
+what is built so far (entities, components, storage, the world, queries, command buffers, resources, change detection, systems and the sequential schedule); parallel systems, transforms and the scene bridge are not documented here yet.
 
 The ECS (`engine/ecs`, namespace `ecs`) is the engine's data-oriented core: **entities** are ids, **components** are plain data stored in
 cache-friendly chunks, and **systems** are functions over all entities that have a given set of components. Design, measurements and the
@@ -26,6 +26,7 @@ with a Position" reads memory in order. The *archetype* is that group: all entit
 | to visit every entity that has certain components | `world.Query<Write<A>, Read<B>, Without<C>>()`, then `ForEach` | see "Queries"; include `ecs/query.h` |
 | to change entities while a query runs | `CommandBuffer`, then `world.Apply(buffer)` | see "Command buffers"; include `ecs/command_buffer.h` |
 | to visit only what changed | `Changed<T>` / `Added<T>` terms, then `query.Finish()` | see "Change detection" |
+| to run logic every frame in a defined order | `ecs::Schedule`, `MakeQuerySystem`, `Build()`, `Run(world, dt)` | see "Systems and schedules"; include `ecs/schedule.h` |
 | one value shared by all systems (time, settings) | `world.SetResource(value)`, `world.Resource<T>()` | see "Resources" |
 | to check the world's consistency | `world.Validate()` | for tests and debug builds |
 
@@ -405,6 +406,85 @@ visited. A query is told about chunks, not rows; if you need exactness, store a 
 - **Cost.** Marking is one 8-byte store per written column per chunk visited (a chunk of 4,000 rows costs one store, not 4,000), and a filter is one load and
   compare per chunk. The measured overhead on the 1M-entity benchmark is recorded on Day 235.
 
+## Systems and schedules
+
+A **system** is a function that runs once per frame over the world. A **schedule** holds the systems, puts them in order and runs a frame. Include
+`ecs/schedule.h`.
+
+```cpp compile run standalone
+#include "ecs/schedule.h"
+#include "os/console.h"
+
+using namespace engine_placeholder;
+
+struct Position { float x, y; };
+struct Velocity { float x, y; };
+struct Lifetime { unsigned frames_left; };
+
+int main() {
+    ecs::World world;
+    for (unsigned i = 0; i < 4; ++i) {
+        world.Create(Position{0, 0}, Velocity{1, 0}, Lifetime{i});
+    }
+
+    ecs::Schedule schedule;
+    // The access (reads Velocity, writes Position) is deduced from the query's terms.
+    schedule.Add(ecs::MakeQuerySystem<ecs::Write<Position>, ecs::Read<Velocity>>(
+        "move", [](ecs::SystemContext& context, ecs::Query<ecs::Write<Position>, ecs::Read<Velocity>>& query) {
+            const float dt = context.Dt();
+            query.ForEach([dt](Position& p, const Velocity& v) { p.x += v.x * dt; });
+        }));
+    // A system cannot destroy entities while it iterates: it records the change, which applies at the end of the stage.
+    schedule.Add(ecs::MakeQuerySystem<ecs::Write<Lifetime>>(
+                     "expire",
+                     [](ecs::SystemContext& context, ecs::Query<ecs::Write<Lifetime>>& query) {
+                         query.ForEach([&](ecs::Entity e, Lifetime& l) {
+                             if (l.frames_left == 0) {
+                                 context.Commands().Destroy(e);
+                             } else {
+                                 --l.frames_left;
+                             }
+                         });
+                     })
+                     .After("move"));
+
+    const ecs::BuildReport report = schedule.Build();
+    os::Print("built: %s\n", report.ok ? "yes" : report.message);
+    for (int frame = 0; frame < 3; ++frame) {
+        schedule.Run(world, 0.5f);
+        os::Print("frame %d: %u entities\n", frame, world.Query<ecs::Read<Position>>().Count());
+    }
+    return 0;
+}
+```
+
+```output
+built: yes
+frame 0: 3 entities
+frame 1: 2 entities
+frame 2: 1 entities
+```
+
+- **Making a system.** `MakeQuerySystem<Terms...>(name, fn)` makes a system whose function gets the `SystemContext` and a query over the terms (the query is made
+  once and kept). `MakeSystem(name, fn)` makes one with only the context; declare what it touches with `Reads<...>()`, `Writes<...>()`,
+  `ReadsResource<...>()` and `WritesResource<...>()`. The name is a string literal.
+- **Order.** `InStage(stage)` picks the stage (`kPreUpdate`, `kUpdate` (the default), `kPostUpdate`, `kRender`; `schedule.AddStage(name, after)` makes more).
+  Within a stage, `After("name")` and `Before("name")` order systems; everything else runs in registration order. `Build()` makes the order once and
+  returns a report: a cycle is rejected with its path, an unknown or duplicated name and a constraint that goes against the stage order are rejected too.
+- **The context.** `Dt()`, `Frame()`, `Commands()` (the system's own command buffer), `Query<...>()` for extra queries, `Resource<T>()` (needs
+  `WritesResource`) and `ReadResource<T>()`. The context has no structural calls: record them in `Commands()`.
+- **Commands.** After each stage the schedule applies its systems' command buffers in **registration order** (not run order), so the result does not depend on
+  constraints that exist only for data. A later system's command on an entity an earlier one destroyed is skipped and counted
+  (`Stats().commands_ignored`). At the end of the frame the schedule calls `World::Advance()`.
+- **Declared access.** A query or resource the system did not declare is reported (`ENGINE_ENSURE`) and counted in `Stats().access_violations`. Today it is a
+  check; the parallel scheduler (Day 231) relies on it to decide which systems may run at once.
+- **Run condition.** `RunIf(fn)` with a `bool(SystemContext&)` function skips the system in frames where it returns false.
+- **Statistics and settings.** With the setting `ecs.stats` (environment `ENGINE_ECS_STATS`, flag `--ecs-stats`; or `schedule.SetStatsEnabled(true)`), each
+  system's run time, entities visited and chunks skipped by `Changed`/`Added` are in `schedule.StatsOf("name")`. `RegisterEcsSettings` declares
+  `ecs.stats` and `ecs.parallel_systems`; `UseSettings(registry)` reads them at the start of each frame.
+- **Cost.** A system function up to 64 bytes is stored inline; a bigger one is on the heap (`Schedule::HeapFallbacks()`). With statistics off a system costs
+  one predictable branch.
+
 ## Common mistakes
 
 - **Keeping a pointer from `Get<T>` across an `Add`, `Remove`, `Create` or `Destroy`.** The row may have moved; fetch the pointer again.
@@ -412,6 +492,7 @@ visited. A query is told about chunks, not rows; if you need exactness, store a 
 - **Changing components while iterating.** A structural call during iteration fails an `ENGINE_ASSERT`; record it in a `CommandBuffer` and apply it after the loop.
 - **Using a placeholder with another buffer or after `Clear`.** It resolves to nothing; resolve it right after `Apply`.
 - **Expecting `Changed<T>` to name the changed entities.** It names chunks; every entity of a visited chunk is passed, changed or not.
+- **Calling `Build()` and forgetting to call it again after `Add`.** `Run` aborts when the order is stale.
 - **Forgetting `Finish()`.** Without it `Since()` stays put and every pass sees all the changes since the start.
 - **Writing a component through `Get` inside a query that writes it.** Use the argument the query gives you.
 - **Building a query every frame.** A query keeps its match; make it once and keep it.

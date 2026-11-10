@@ -26,6 +26,8 @@ class CommandBuffer;
 namespace detail {
 /// The next number of a resource type: one per type per process, in order of first use (thread-safe).
 u32 NextResourceTypeId();
+/// The next world number (thread-safe, never reused).
+u64 NextWorldId();
 /// The number of the resource type `T`.
 template <class T>
 u32 ResourceTypeId() {
@@ -115,6 +117,9 @@ public:
     World();
     World(const World&) = delete;
     World& operator=(const World&) = delete;
+    /// A number no other world of this program has had (never reused), for objects that cache something about a world.
+    /// Fails: never.
+    u64 Id() const { return id_; }
     /// Destroys the resources in reverse order of creation, then the entities and their archetypes. A resource's destructor must not use the world.
     ~World();
 
@@ -334,6 +339,7 @@ private:
     ChunkPool pool_;
     EntityTable table_;
     Vector<UniquePtr<Archetype>> archetypes_;
+    u64 id_;
     HashMap<ComponentSet, u32, HeapAllocator> by_set_;
     HashMap<u64, u32, HeapAllocator> edges_;
     template <class T>

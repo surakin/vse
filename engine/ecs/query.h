@@ -193,6 +193,19 @@ struct FilterData<TypeList<Out...>, T, Rest...>
 
 } // namespace detail
 
+/// What a query visited since its counters were last reset.
+///
+/// Thread-safety: thread-compatible plain data.
+/// Ownership: owns nothing.
+struct QueryStats {
+    /// Entities in the chunks that passed the filters.
+    u64 entities = 0;
+    /// Chunks that passed the filters and were visited.
+    u64 chunks_visited = 0;
+    /// Non-empty chunks that a `Changed` or `Added` filter skipped.
+    u64 chunks_skipped = 0;
+};
+
 /// One chunk of a query's archetype, as the function of [[ecs::Query::ForEachChunk]] sees it: the entity ids and the columns the query declared.
 ///
 /// Thread-safety: thread-compatible.
@@ -308,9 +321,14 @@ public:
             Archetype& a = world_->ArchetypeAt(matched_[m]);
             for (u32 c = 0; c < a.ChunkCount() && a.EntityCount() != 0; ++c) {
                 Chunk* chunk = a.ChunkAt(c);
-                if (chunk->count == 0 || !PassesChange(a, chunk)) {
+                if (chunk->count == 0) {
                     continue;
                 }
+                if (!PassesChange(a, chunk)) {
+                    ++stats_.chunks_skipped;
+                    continue;
+                }
+                CountVisit(chunk);
                 MarkWrites(a, chunk);
                 ChunkView view(&a, chunk, &readable_, &writes_, &optional_);
                 if (!Proceed([&]() -> decltype(auto) { return fn(view); })) {
@@ -336,6 +354,13 @@ public:
         since_ = world_->Tick();
         world_->Advance();
     }
+
+    /// What `ForEach` and `ForEachChunk` visited since the last `ResetStats`.
+    /// Fails: never.
+    const QueryStats& Stats() const { return stats_; }
+    /// Zeroes the counters.
+    /// Fails: never.
+    void ResetStats() { stats_ = QueryStats(); }
 
     /// Returns how many entities match right now (the `Changed` and `Added` filters are not applied: this counts by archetype).
     /// Fails: never.
@@ -436,6 +461,11 @@ private:
         return true;
     }
 
+    void CountVisit(const Chunk* chunk) {
+        ++stats_.chunks_visited;
+        stats_.entities += chunk->count;
+    }
+
     // Stamps the columns the query writes in a chunk it is about to visit (the whole chunk, whatever the function does with it).
     void MarkWrites(const Archetype& a, Chunk* chunk) const {
         for (u32 i = 0; i < write_count_; ++i) {
@@ -471,9 +501,14 @@ private:
             for (u32 c = 0; c < a.ChunkCount() && a.EntityCount() != 0; ++c) {
                 Chunk* chunk = a.ChunkAt(c);
                 const u32 rows = chunk->count;
-                if (rows == 0 || !PassesChange(a, chunk)) {
+                if (rows == 0) {
                     continue;
                 }
+                if (!PassesChange(a, chunk)) {
+                    ++stats_.chunks_skipped;
+                    continue;
+                }
+                CountVisit(chunk);
                 MarkWrites(a, chunk);
                 ((columns[I] = a.ColumnPtr(chunk, ids_[I])), ...);
                 const Span<Entity> entities = a.Entities(chunk);
@@ -506,6 +541,7 @@ private:
     u32 changed_count_ = 0;
     u32 added_count_ = 0;
     u64 since_ = 0;
+    QueryStats stats_;
     bool impossible_ = false;
     u32 seen_ = 0;
     Vector<u32> matched_;
