@@ -1,6 +1,6 @@
 # Phase 28 — Editor Tooling
 
-**Depends on:** Phase 15 (UI system), Phase 18 (ECS), Phase 21 (Asset pipeline), Phase 22
+**Depends on:** Phase 15 (UI system), Phase 17 (ECS), Phase 21 (Asset pipeline), Phase 22
 (Scripting: Lua/LuaJIT) — the editor is built using the engine's own
 renderer/ECS and Phase 15's UI system, not a separate GUI toolkit.
 **Goal:** an in-engine editor for building content without hand-writing

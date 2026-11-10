@@ -44,7 +44,7 @@ Resources are virtual: a transient texture or buffer exists only as a descriptor
 
 Semantics follow declaration order: a read sees the most recent earlier write, and a write replaces it. From that the graph derives read-after-write, write-after-write and write-after-read edges, orders the passes topologically with the smallest declaration index first among those ready (so the order is stable), and drops passes whose results nothing uses. All storage comes from the arena the graph is given, so building and compiling a frame allocates nothing from the heap.
 
-The scene a frame is built from: a fixed-capacity list of objects and lights with stable ids; the ECS replaces it in Phase 18.
+The scene a frame is built from: a fixed-capacity list of objects and lights with stable ids; the ECS replaces it in Phase 17.
 
 Rendering settings the user can change at run time, what each change costs, and how two sets of settings become the cheapest sufficient action.
 

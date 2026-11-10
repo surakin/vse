@@ -2,7 +2,7 @@
 
 **Depends on:** Phase 21 (Asset pipeline) — this importer's job is to
 produce Phase 21's engine-native formats from Unreal source data. Also
-benefits from Phase 5 (Renderer) and Phase 18 (ECS) being real, since the
+benefits from Phase 5 (Renderer) and Phase 17 (ECS) being real, since the
 definition of done requires an imported level to actually render.
 Deliberately sequenced after Phases 13, 23, 24 and 25 (Windows/macOS/iOS/Android/
 console ports) rather than right after Phase 21 — Unreal import starts
@@ -83,7 +83,7 @@ kind:
    material rather than a failed import.
 6. **Level/world export.** Read a loaded `.umap`'s `UWorld`/`AActor`
    placement data (transform, mesh reference, component data) via UE's
-   own objects and translate into Phase 18 ECS entities.
+   own objects and translate into Phase 17 ECS entities.
 
 ## Explicitly out of scope for this phase
 

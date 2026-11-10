@@ -168,7 +168,7 @@ bool TextRenderer::Add(const text::TextLayout& layout, const text::TextStyle& st
     ENGINE_ASSERT(style.font != nullptr && style.font->IsOpen(), "TextRenderer::Add: the style has no open font");
     ENGINE_ASSERT(atlas_ != nullptr, "TextRenderer::Add: the object does not exist");
     // Above the atlas maximum the glyph is rasterized at the maximum and its quad is scaled up (blurry but present and placed by the layout, which ran at the
-    // requested size) until Phase 17 draws such text as outline meshes.
+    // requested size) until Phase 18 draws such text as outline meshes.
     const bool large = style.pixel_size > text::kMaxAtlasPixelSize;
     const u32 raster_size = large ? text::kMaxAtlasPixelSize : style.pixel_size;
     const f32 scale = large ? static_cast<f32>(style.pixel_size) / static_cast<f32>(text::kMaxAtlasPixelSize) : 1.0f;

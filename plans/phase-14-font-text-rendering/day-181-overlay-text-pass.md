@@ -14,7 +14,7 @@ The one call a program makes to put text on the screen, drawn after the tonemap.
       barrier) when nothing was drawn that frame; works when the renderer has no text at all (the graph is unchanged).
 - [x] **Glyph quad building:** from `PositionedGlyph` + `GlyphEntry` to four vertices (pixel coordinates to clip space with the target size, snapped to whole pixels so hinted text stays crisp), index buffer
       shared and static; 100k glyphs per frame capacity before a documented split into several draws; overflow is a counted drop, never memory corruption.
-- [x] **Sizes above the atlas maximum (interim, until Phase 17's outline-mesh path):** layout runs at the requested size; each glyph's raster comes from the maximum size and its quad is scaled up by the
+- [x] **Sizes above the atlas maximum (interim, until Phase 18's outline-mesh path):** layout runs at the requested size; each glyph's raster comes from the maximum size and its quad is scaled up by the
       ratio (blurry but present and correctly placed), counted in `Stats` (`scaled_large_glyphs`) and logged once per size; a test draws 64 px, the maximum and 2x the maximum, checks the 2x text is as wide as the
       layout says and that the atlas holds no glyph larger than the maximum.
 - [x] **Resize and format:** target resize and `ApplySettings` changes (resolution, present mode) rebuild what depends on them; the pass supports the renderer's target formats (sRGB and linear), and the

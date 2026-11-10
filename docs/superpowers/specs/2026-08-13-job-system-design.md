@@ -10,7 +10,7 @@ has raw OS thread primitives (Phase 1 Day 20: `clone()`-based thread
 creation, futex mutex/condvar). There is no portable job/task
 abstraction, no work-stealing scheduler, and no coroutine support
 anywhere in the plan. This gap was already flagged implicitly in
-`plans/phase-18-ecs.md`'s note that "multithreaded system scheduling
+`plans/phase-17-ecs.md`'s note that "multithreaded system scheduling
 depends on Phase 1's threading primitives; confirm they're sufficient or
 need extending" — they are not sufficient on their own; every consumer
 (ECS parallel system scheduling, renderer command recording, physics,

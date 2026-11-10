@@ -332,7 +332,7 @@ A Unicode scalar value (U+0000..U+10FFFF, no surrogates).
 constexpr u32 kMaxAtlasPixelSize;
 ```
 
-The largest pixel size the atlas rasterizes (`Font::Render` and the glyph atlas refuse more with `Error::TooLarge`). Larger text is Phase 17's outline meshes.
+The largest pixel size the atlas rasterizes (`Font::Render` and the glyph atlas refuse more with `Error::TooLarge`). Larger text is Phase 18's outline meshes.
 
 ## `kMaxPixelSize` {#text-kmaxpixelsize}
 
@@ -766,7 +766,7 @@ Vector<byte> pixels;
 struct Outline { ... }
 ```
 
-A glyph outline: closed contours of points, unscaled (the Phase 17 mesh builder's input).
+A glyph outline: closed contours of points, unscaled (the Phase 18 mesh builder's input).
 
 | Field | Value |
 |---|---|

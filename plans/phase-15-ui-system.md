@@ -191,7 +191,7 @@ a monitor, a wrist display).
 - Out of scope here: curved or tessellated screens beyond what a normal
   UV-mapped mesh gives, VR/world-space interaction rays, and mipmapping
   or filtering policy beyond what the renderer already offers for any
-  texture. Placing a surface on an entity needs Phase 18 (ECS); this
+  texture. Placing a surface on an entity needs Phase 17 (ECS); this
   phase demonstrates it on a hand-placed quad.
 
 ## Notes / open questions
