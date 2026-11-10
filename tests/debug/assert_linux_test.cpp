@@ -11,7 +11,7 @@
 #include "os/os.h"
 #include "support/death_test_skip.h"
 
-#include <csignal>
+#include "os/signal.h"
 #include <link.h>
 #include "cstr/cstr.h"
 #include <sys/ptrace.h>
@@ -34,14 +34,14 @@ void LinTrapHandler(int) {
 
 // Stands in for a debugger: a SIGTRAP handler that records the break and lets the program go on.
 ENGINE_DEATH_TEST_FN(dt_linux_debug_break) {
-    std::signal(SIGTRAP, &LinTrapHandler);
+    os::SetSignalHandler(SIGTRAP, &LinTrapHandler);
     os::Write(1, "BEFORE\n", 7);
     ENGINE_DEBUG_BREAK();
     os::Write(1, "AFTER\n", 6);
 }
 
 ENGINE_DEATH_TEST_FN(dt_linux_assert_breaks_then_resumes) {
-    std::signal(SIGTRAP, &LinTrapHandler);
+    os::SetSignalHandler(SIGTRAP, &LinTrapHandler);
     SetAssertHandler(&LinBreakHandler);
     ENGINE_ASSERT(false, "break please");
     os::Write(1, "RESUMED-AFTER-ASSERT\n", 21);
@@ -51,7 +51,7 @@ ENGINE_DEATH_TEST_FN(dt_linux_assert_breaks_then_resumes) {
 
 // A debugger that resumes after the break must not get to run on past a place declared unreachable.
 ENGINE_DEATH_TEST_FN(dt_linux_unreachable_breaks_then_aborts) {
-    std::signal(SIGTRAP, &LinTrapHandler);
+    os::SetSignalHandler(SIGTRAP, &LinTrapHandler);
     SetAssertHandler(&LinBreakHandler);
     ENGINE_UNREACHABLE("cannot get here");
     os::Write(1, "RAN-PAST-UNREACHABLE\n", 21);
@@ -142,7 +142,7 @@ struct LinModuleCheck {
     int missing = 0;
 };
 
-int LinCheckObject(struct dl_phdr_info* info, size_t, void* data) {
+int LinCheckObject(struct dl_phdr_info* info, usize, void* data) {
     LinModuleCheck* check = static_cast<LinModuleCheck*>(data);
     for (int i = 0; i < info->dlpi_phnum; ++i) {
         if (info->dlpi_phdr[i].p_type == PT_LOAD) {

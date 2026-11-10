@@ -9,8 +9,7 @@
 #include "support/death_test_skip.h"
 
 #include "sync/atomic.h"
-#include <cstring>
-#include <string>
+#include "string_view.h"
 #include "sync/thread.h"
 #include "cstr/cstr.h"
 #include "cstr/mem_ops.h"
@@ -385,7 +384,7 @@ TEST_CASE("A failed ENGINE_ASSERT with the default handler prints one line and d
     REQUIRE(first_frame != nullptr);
     const char* end_of_line = CStrFindChar(first_frame, '\n');
     REQUIRE(end_of_line != nullptr);
-    CHECK(std::string(first_frame, end_of_line).find("dt_family_assert_false") != std::string::npos);
+    CHECK(StringView(first_frame, static_cast<usize>(end_of_line - first_frame)).Contains("dt_family_assert_false"));
     CHECK(guard.Clean());
 }
 
@@ -432,7 +431,7 @@ TEST_CASE("A failed ENGINE_ENSURE prints once and the program goes on", "[ensure
     // The trace starts at the function that holds the ensure, not at the machinery behind the macro.
     const char* end_of_line = CStrFindChar(frame, '\n');
     REQUIRE(end_of_line != nullptr);
-    CHECK(std::string(frame, end_of_line).find("FamilyEnsureSiteA") != std::string::npos);
+    CHECK(StringView(frame, static_cast<usize>(end_of_line - frame)).Contains("FamilyEnsureSiteA"));
 }
 
 TEST_CASE("An ensure site whose failure count wraps is not reported or linked a second time", "[ensure][debug]") {

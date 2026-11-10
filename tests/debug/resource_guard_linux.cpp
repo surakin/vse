@@ -1,9 +1,10 @@
 // Linux implementation of ChildResourceGuard: counts /proc/self/fd and asks waitpid whether any child is left.
 #include "resource_guard.h"
 
-#include <cerrno>
 #include <dirent.h>
 #include <sys/wait.h>
+
+#include "os/last_error.h"
 
 namespace {
 
@@ -26,6 +27,6 @@ ChildResourceGuard::ChildResourceGuard() : descriptors_before_(CountOpenDescript
 
 bool ChildResourceGuard::Clean() const {
     // -1/ECHILD means no child at all, running or zombie.
-    const bool no_children = waitpid(-1, nullptr, WNOHANG) == -1 && errno == ECHILD;
+    const bool no_children = waitpid(-1, nullptr, WNOHANG) == -1 && engine_placeholder::os::LastError() == ECHILD;
     return no_children && CountOpenDescriptors() == descriptors_before_;
 }

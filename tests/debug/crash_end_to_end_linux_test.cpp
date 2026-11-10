@@ -14,24 +14,18 @@
 #include "support/death_test_skip.h"
 
 #include "sync/atomic.h"
-#include <csignal>
-#include <cstdio>
-#include <cctype>
 #include "os/console.h"
-#include <cstring>
-#include <dirent.h>
+#include "os/signal.h"
 #include <fcntl.h>
-#include <ftw.h>
-#include <string>
 #include <sys/stat.h>
 #include "sync/thread.h"
 #include <unistd.h>
-#include <vector>
 #include "build_defs.h"
 #include "cstr/cstr.h"
 #include "cstr/format.h"
 #include "cstr/mem_ops.h"
 #include "cstr/number.h"
+#include "support/test_support_linux.h"
 
 #if ENGINE_SANITIZER_THREAD
 #define E2E_UNDER_TSAN 1
@@ -39,6 +33,8 @@
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::debug;
+using debug_test::Cat;
+using debug_test::Text;
 
 namespace {
 
@@ -55,7 +51,7 @@ public:
     }
     ~TempDir() {
         if (path_[0] != '\0') {
-            nftw(path_, &Remove, 16, FTW_DEPTH | FTW_PHYS);
+            debug_test::RemoveTree(path_);
         }
     }
     TempDir(const TempDir&) = delete;
@@ -63,60 +59,8 @@ public:
     const char* Path() const { return path_; }
 
 private:
-    static int Remove(const char* entry, const struct stat*, int, struct FTW*) { return ::remove(entry); }
     char path_[256];
 };
-
-void FindFiles(const std::string& directory, const char* suffix, std::vector<std::string>* found) {
-    DIR* dir = opendir(directory.c_str());
-    if (dir == nullptr) {
-        return;
-    }
-    const usize suffix_length = CStrLength(suffix);
-    while (const dirent* entry = readdir(dir)) {
-        if (CStrCompare(entry->d_name, ".") == 0 || CStrCompare(entry->d_name, "..") == 0) {
-            continue;
-        }
-        const std::string path = directory + "/" + entry->d_name;
-        struct stat info;
-        if (::stat(path.c_str(), &info) != 0) {
-            continue;
-        }
-        if (S_ISDIR(info.st_mode)) {
-            FindFiles(path, suffix, found);
-        } else if (path.size() >= suffix_length && path.compare(path.size() - suffix_length, suffix_length, suffix) == 0) {
-            found->push_back(path);
-        }
-    }
-    closedir(dir);
-}
-
-std::string ReadWholeFile(const std::string& path) {
-    std::string text;
-    FILE* f = std::fopen(path.c_str(), "rb");
-    if (f == nullptr) {
-        return text;
-    }
-    char buffer[4096];
-    usize n;
-    while ((n = std::fread(buffer, 1, sizeof(buffer), f)) > 0) {
-        text.append(buffer, n);
-    }
-    std::fclose(f);
-    return text;
-}
-
-usize CountOf(const std::string& text, const char* needle) {
-    usize count = 0;
-    for (usize at = text.find(needle); at != std::string::npos; at = text.find(needle, at + 1)) {
-        ++count;
-    }
-    return count;
-}
-
-std::string Stderr(const ChildResult& r) {
-    return std::string(r.stderr_text, r.stderr_length);
-}
 
 void InstallInto(const char* directory) {
     CrashHandlerOptions options;
@@ -136,27 +80,27 @@ ChildResult RunCrashChild(const char* name, const char* directory) {
 
 // The checks every crash shares: the report on standard error, one envelope with a minidump, the report file beside it.
 void CheckReportAndDump(const ChildResult& r, const char* directory, const char* reason_name) {
-    const std::string err = Stderr(r);
-    INFO("child stderr: " << err);
-    CHECK(err.find("=== CRASH REPORT ===") != std::string::npos);
-    CHECK(err.find(std::string("reason: ") + reason_name) != std::string::npos);
-    CHECK(err.find("--- stack trace ---") != std::string::npos);
-    CHECK(err.find("build id: ") != std::string::npos);
-    CHECK(err.find("logged-before-the-crash") != std::string::npos);
-    CHECK(err.find("=== END OF REPORT ===") != std::string::npos);
+    const StringView err = debug_test::StderrView(r);
+    INFO("child stderr: " << Cat(err).CStr());
+    CHECK(err.Contains("=== CRASH REPORT ==="));
+    CHECK(err.Contains(Cat("reason: ", reason_name).View()));
+    CHECK(err.Contains("--- stack trace ---"));
+    CHECK(err.Contains("build id: "));
+    CHECK(err.Contains("logged-before-the-crash"));
+    CHECK(err.Contains("=== END OF REPORT ==="));
 
-    std::vector<std::string> envelopes;
-    FindFiles(directory, ".envelope", &envelopes);
-    REQUIRE(envelopes.size() == 1);
-    const std::string content = ReadWholeFile(envelopes[0]);
+    engine_test::TextList envelopes;
+    debug_test::FindFiles(directory, ".envelope", &envelopes);
+    REQUIRE(envelopes.Size() == 1);
+    const Text content = debug_test::ReadWholeFile(envelopes[0]);
     crash_extract::Minidump dump;
-    REQUIRE(crash_extract::FindMinidump(content.data(), content.size(), &dump) == crash_extract::EnvelopeResult::Ok);
+    REQUIRE(crash_extract::FindMinidump(content.CStr(), content.Length(), &dump) == crash_extract::EnvelopeResult::Ok);
     CHECK(MemCompare(dump.data, "MDMP", 4) == 0);
     // The report travels in the envelope too (attached), and sits beside the dump.
-    CHECK(content.find("=== CRASH REPORT ===") != std::string::npos);
-    const std::string file = ReadWholeFile(std::string(directory) + "/crash-report.txt");
-    CHECK(file.find("=== CRASH REPORT ===") != std::string::npos);
-    CHECK(file.find(std::string("reason: ") + reason_name) != std::string::npos);
+    CHECK(content.View().Contains("=== CRASH REPORT ==="));
+    const Text file = debug_test::ReadWholeFile(Cat(directory, "/crash-report.txt").View());
+    CHECK(file.View().Contains("=== CRASH REPORT ==="));
+    CHECK(file.View().Contains(Cat("reason: ", reason_name).View()));
 }
 
 } // namespace
@@ -191,12 +135,11 @@ TEST_CASE("A null write prints the report, leaves a dump and the process dies fr
     CHECK(r.reason == CrashReason::AccessViolation);
     CHECK(r.native_code == SIGSEGV);
     CheckReportAndDump(r, dir.Path(), "AccessViolation at 0x");
-    const std::string err = Stderr(r);
-    CHECK(err.find("\"main-thread\"") != std::string::npos);
+    const StringView err = debug_test::StderrView(r);
+    CHECK(err.Contains("\"main-thread\""));
     // The first frame is the function that faulted, not the recorder.
-    const usize frame = err.find("#0 ");
-    REQUIRE(frame != std::string::npos);
-    CHECK(err.substr(frame, err.find('\n', frame) - frame).find("Recorder") == std::string::npos);
+    REQUIRE(err.Contains("#0 "));
+    CHECK_FALSE(debug_test::ValueAfter(err, "#0 ").Contains("Recorder"));
 }
 
 TEST_CASE("An illegal instruction, a divide by zero and an abort each report their reason", "[crash][crashreport][death][debug][linux]") {
@@ -262,9 +205,9 @@ TEST_CASE("A fault on another thread names that thread and the dump holds every 
     const ChildResult r = RunCrashChild("dt_e2e_worker_fault", dir.Path());
     CHECK(r.reason == CrashReason::AccessViolation);
     CheckReportAndDump(r, dir.Path(), "AccessViolation at 0x");
-    const std::string err = Stderr(r);
-    CHECK(err.find("\"worker-7\"") != std::string::npos);
-    CHECK(err.find("\"main-thread\"") == std::string::npos); // the main thread did not fault
+    const StringView err = debug_test::StderrView(r);
+    CHECK(err.Contains("\"worker-7\""));
+    CHECK_FALSE(err.Contains("\"main-thread\"")); // the main thread did not fault
 }
 
 TEST_CASE("A stack overflow on a registered worker thread still produces a report and a dump", "[crash][crashreport][death][debug][linux]") {
@@ -273,7 +216,7 @@ TEST_CASE("A stack overflow on a registered worker thread still produces a repor
     const ChildResult r = RunCrashChild("dt_e2e_worker_stack_overflow", dir.Path());
     CHECK(r.terminated);
     CheckReportAndDump(r, dir.Path(), "StackOverflow");
-    CHECK(Stderr(r).find("\"worker-7\"") != std::string::npos);
+    CHECK(debug_test::StderrView(r).Contains("\"worker-7\""));
 }
 
 ENGINE_DEATH_TEST_FN(dt_e2e_two_threads_fault) {
@@ -298,7 +241,7 @@ TEST_CASE("Two threads faulting at once produce one report and one dump", "[cras
     const ChildResult r = RunCrashChild("dt_e2e_two_threads_fault", dir.Path());
     CHECK(r.terminated);
     CheckReportAndDump(r, dir.Path(), "AccessViolation");
-    CHECK(CountOf(Stderr(r), "=== CRASH REPORT ===") == 1);
+    CHECK(debug_test::CountOf(debug_test::StderrView(r), "=== CRASH REPORT ===") == 1);
 }
 
 namespace {
@@ -329,9 +272,9 @@ TEST_CASE("A second thread faulting while the first is writing the report does n
     TempDir dir;
     const ChildResult r = RunCrashChild("dt_e2e_second_fault_during_report", dir.Path());
     CheckReportAndDump(r, dir.Path(), "AccessViolation");
-    const std::string err = Stderr(r);
-    CHECK(err.find("slow: slow but done") != std::string::npos);
-    CHECK(CountOf(err, "=== CRASH REPORT ===") == 1);
+    const StringView err = debug_test::StderrView(r);
+    CHECK(err.Contains("slow: slow but done"));
+    CHECK(debug_test::CountOf(err, "=== CRASH REPORT ===") == 1);
 }
 
 // ---- when things go wrong in the report ------------------------------------------------------------------------------------------
@@ -352,17 +295,17 @@ TEST_CASE("A state provider that faults prints double fault, and the dump is sti
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     TempDir dir;
     const ChildResult r = RunCrashChild("dt_e2e_provider_faults", dir.Path());
-    const std::string err = Stderr(r);
-    INFO("child stderr: " << err);
+    const StringView err = debug_test::StderrView(r);
+    INFO("child stderr: " << Cat(err).CStr());
     CHECK(r.terminated);
     CHECK(r.native_code == SIGSEGV);
-    CHECK(CountOf(err, "=== CRASH REPORT ===") == 1);
+    CHECK(debug_test::CountOf(err, "=== CRASH REPORT ===") == 1);
 #if !defined(E2E_UNDER_TSAN)
     // (Under ThreadSanitizer a fault inside a signal handler kills the process before our recorder sees it again; see KNOWN-ISSUES.)
-    CHECK(err.find("double fault") != std::string::npos);
-    std::vector<std::string> envelopes;
-    FindFiles(dir.Path(), ".envelope", &envelopes);
-    CHECK(envelopes.size() == 1);
+    CHECK(err.Contains("double fault"));
+    engine_test::TextList envelopes;
+    debug_test::FindFiles(dir.Path(), ".envelope", &envelopes);
+    CHECK(envelopes.Size() == 1);
 #endif
 }
 
@@ -382,10 +325,10 @@ TEST_CASE("A failed assert prints its report, aborts, and the crash report and a
     CHECK(r.StdoutContains("--- build ---"));
     CHECK(r.StderrContains("=== CRASH REPORT ==="));
     CHECK(r.StderrContains("reason: Abort"));
-    std::vector<std::string> envelopes;
-    FindFiles(dir.Path(), ".envelope", &envelopes);
-    CHECK(envelopes.size() == 1);
-    CHECK(ReadWholeFile(std::string(dir.Path()) + "/crash-report.txt").find("=== CRASH REPORT ===") != std::string::npos);
+    engine_test::TextList envelopes;
+    debug_test::FindFiles(dir.Path(), ".envelope", &envelopes);
+    CHECK(envelopes.Size() == 1);
+    CHECK(debug_test::ReadWholeFile(Cat(dir.Path(), "/crash-report.txt").View()).View().Contains("=== CRASH REPORT ==="));
 }
 
 // ---- handlers of the application and uninstalling ---------------------------------------------------------------------------------
@@ -429,14 +372,14 @@ TEST_CASE("A handler the application installs after the crash handler runs first
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     TempDir dir;
     const ChildResult r = RunCrashChild("dt_e2e_app_handler_after", dir.Path());
-    const std::string err = Stderr(r);
-    INFO("child stderr: " << err);
-    CHECK(err.find("APP-HANDLER-RAN") != std::string::npos);
-    CHECK(err.find("APP-HANDLER-RAN") < err.find("=== CRASH REPORT ==="));
+    const StringView err = debug_test::StderrView(r);
+    INFO("child stderr: " << Cat(err).CStr());
+    CHECK(err.Contains("APP-HANDLER-RAN"));
+    CHECK(err.Find("APP-HANDLER-RAN") < err.Find("=== CRASH REPORT ===")); // (both are Length() when missing)
     CHECK(r.native_code == SIGSEGV);
-    std::vector<std::string> envelopes;
-    FindFiles(dir.Path(), ".envelope", &envelopes);
-    CHECK(envelopes.size() == 1);
+    engine_test::TextList envelopes;
+    debug_test::FindFiles(dir.Path(), ".envelope", &envelopes);
+    CHECK(envelopes.Size() == 1);
 }
 
 ENGINE_DEATH_TEST_FN(dt_e2e_app_handler_before) {
@@ -449,11 +392,11 @@ TEST_CASE("A handler installed before the crash handler is replaced by the libra
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     TempDir dir;
     const ChildResult r = RunCrashChild("dt_e2e_app_handler_before", dir.Path());
-    const std::string err = Stderr(r);
-    INFO("child stderr: " << err);
+    const StringView err = debug_test::StderrView(r);
+    INFO("child stderr: " << Cat(err).CStr());
     // The documented rule: install your own handler after InstallCrashHandler and chain to the previous one.
-    CHECK(err.find("=== CRASH REPORT ===") != std::string::npos);
-    CHECK(err.find("APP-HANDLER-RAN") == std::string::npos);
+    CHECK(err.Contains("=== CRASH REPORT ==="));
+    CHECK_FALSE(err.Contains("APP-HANDLER-RAN"));
     CHECK(r.native_code == SIGSEGV);
 }
 
@@ -469,9 +412,9 @@ TEST_CASE("After the crash handler is uninstalled a fault prints no report and l
     const ChildResult r = RunCrashChild("dt_e2e_uninstall_then_fault", dir.Path());
     CHECK(r.native_code == SIGSEGV);
     CHECK_FALSE(r.StderrContains("=== CRASH REPORT ==="));
-    std::vector<std::string> envelopes;
-    FindFiles(dir.Path(), ".envelope", &envelopes);
-    CHECK(envelopes.empty());
+    engine_test::TextList envelopes;
+    debug_test::FindFiles(dir.Path(), ".envelope", &envelopes);
+    CHECK(envelopes.Empty());
 }
 
 // ---- the dump opens in a debugger ----------------------------------------------------------------------------------------------
@@ -488,66 +431,53 @@ ENGINE_DEATH_TEST_FN(dt_e2e_for_debugger) {
 namespace {
 
 // Runs a shell command and returns everything it printed (standard error included).
-std::string RunCommand(const std::string& command) {
-    std::string output;
-    FILE* pipe = popen((command + " 2>&1").c_str(), "r");
-    if (pipe == nullptr) {
-        return output;
-    }
-    char buffer[4096];
-    usize n;
-    while ((n = std::fread(buffer, 1, sizeof(buffer), pipe)) > 0) {
-        output.append(buffer, n);
-    }
-    pclose(pipe);
-    return output;
+Text RunCommand(StringView command) {
+    debug_test::ShellRun run = debug_test::RunShell(Cat(command, " 2>&1").View());
+    return static_cast<Text&&>(run.output);
 }
 
 } // namespace
 
 TEST_CASE("The extracted dump opens in lldb: the faulting function, the other threads and the module with its build id", "[crash][crashreport][death][debug][linux]") {
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
-    if (RunCommand("command -v lldb").find("lldb") == std::string::npos) {
+    if (!RunCommand("command -v lldb").View().Contains("lldb")) {
         SKIP("lldb is not installed; this check opens the dump with it");
     }
     TempDir dir;
     const ChildResult r = RunCrashChild("dt_e2e_for_debugger", dir.Path());
-    const std::string out(r.stdout_text, r.stdout_length);
-    const usize id_at = out.find("BUILD_ID=");
-    REQUIRE(id_at != std::string::npos);
-    const std::string build_id = out.substr(id_at + 9, out.find('\n', id_at) - id_at - 9);
-    std::vector<std::string> envelopes;
-    FindFiles(dir.Path(), ".envelope", &envelopes);
-    REQUIRE(envelopes.size() == 1);
-    const std::string content = ReadWholeFile(envelopes[0]);
+    const StringView out = debug_test::StdoutView(r);
+    REQUIRE(out.Contains("BUILD_ID="));
+    const StringView build_id = debug_test::ValueAfter(out, "BUILD_ID=");
+    engine_test::TextList envelopes;
+    debug_test::FindFiles(dir.Path(), ".envelope", &envelopes);
+    REQUIRE(envelopes.Size() == 1);
+    const Text content = debug_test::ReadWholeFile(envelopes[0]);
     crash_extract::Minidump dump;
-    REQUIRE(crash_extract::FindMinidump(content.data(), content.size(), &dump) == crash_extract::EnvelopeResult::Ok);
-    const std::string dump_path = std::string(dir.Path()) + "/crash.dmp";
-    FILE* f = std::fopen(dump_path.c_str(), "wb");
-    REQUIRE(f != nullptr);
-    std::fwrite(dump.data, 1, dump.size, f);
-    std::fclose(f);
+    REQUIRE(crash_extract::FindMinidump(content.CStr(), content.Length(), &dump) == crash_extract::EnvelopeResult::Ok);
+    const Text dump_path = Cat(dir.Path(), "/crash.dmp");
+    REQUIRE(debug_test::WriteWholeFile(dump_path.View(), dump.data, dump.size));
 
     // DEBUGINFOD_URLS empty: the debugger must not go to the network to look for symbols.
-    const std::string output = RunCommand("DEBUGINFOD_URLS= lldb --no-lldbinit -b -c '" + dump_path +
-                                          "' -o 'thread list' -o 'bt all' -o 'image list'");
-    INFO(output);
-    CHECK(output.find("stop reason = signal SIGSEGV") != std::string::npos);
-    CHECK(output.find("InjectFault") != std::string::npos);
-    CHECK(output.find("thread #1") != std::string::npos);
-    CHECK(output.find("thread #2") != std::string::npos);
+    const Text output = RunCommand(Cat("DEBUGINFOD_URLS= lldb --no-lldbinit -b -c '", dump_path, "' -o 'thread list' -o 'bt all' -o 'image list'").View());
+    INFO(output.CStr());
+    CHECK(output.View().Contains("stop reason = signal SIGSEGV"));
+    CHECK(output.View().Contains("InjectFault"));
+    CHECK(output.View().Contains("thread #1"));
+    CHECK(output.View().Contains("thread #2"));
     // The module list names the program with the id of its build (lldb prints the first 16 bytes as a GUID).
-    std::string guid;
-    for (char c : build_id.substr(0, 32)) {
-        guid += static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+    Text guid = engine_test::MakeText();
+    const StringView id_prefix = build_id.Substring(0, build_id.Length() < 32 ? build_id.Length() : 32);
+    for (usize i = 0; i < id_prefix.Length(); ++i) {
+        const char c = id_prefix[i];
+        guid.Append(c >= 'a' && c <= 'z' ? static_cast<char>(c - 'a' + 'A') : c);
     }
-    std::string flat;
-    for (char c : output) {
-        if (c != '-') {
-            flat += c;
+    Text flat = engine_test::MakeText();
+    for (usize i = 0; i < output.Length(); ++i) {
+        if (output.CStr()[i] != '-') {
+            flat.AppendRawBytes(output.CStr() + i, 1);
         }
     }
-    CHECK(flat.find(guid) != std::string::npos);
+    CHECK(flat.View().Contains(guid.View()));
 }
 
 // ---- review fixes ---------------------------------------------------------------------------------------------------------------
@@ -565,11 +495,11 @@ TEST_CASE("Installing the crash handler prepares the stack-trace facilities, so 
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     TempDir dir;
     const ChildResult r = RunCrashChild("dt_e2e_install_without_init", dir.Path());
-    const std::string err = Stderr(r);
-    INFO(err);
-    CHECK(err.find("InjectFault") != std::string::npos);
-    CHECK(err.find("build id: ") != std::string::npos);
-    CHECK(err.find("=== END OF REPORT ===") != std::string::npos);
+    const StringView err = debug_test::StderrView(r);
+    INFO(Cat(err).CStr());
+    CHECK(err.Contains("InjectFault"));
+    CHECK(err.Contains("build id: "));
+    CHECK(err.Contains("=== END OF REPORT ==="));
 }
 
 ENGINE_DEATH_TEST_FN(dt_e2e_install_and_exit_cleanly) {
@@ -583,11 +513,11 @@ TEST_CASE("A crash report left by an earlier run is emptied when the handler is 
     TempDir dir;
     const ChildResult first = RunCrashChild("dt_e2e_null_write", dir.Path());
     CHECK(first.terminated);
-    const std::string report_path = std::string(dir.Path()) + "/crash-report.txt";
-    REQUIRE(ReadWholeFile(report_path).find("=== CRASH REPORT ===") != std::string::npos);
+    const Text report_path = Cat(dir.Path(), "/crash-report.txt");
+    REQUIRE(debug_test::ReadWholeFile(report_path.View()).View().Contains("=== CRASH REPORT ==="));
     const ChildResult second = RunCrashChild("dt_e2e_install_and_exit_cleanly", dir.Path());
     CHECK(second.exited);
-    CHECK(ReadWholeFile(report_path).empty());
+    CHECK(debug_test::ReadWholeFile(report_path.View()).Length() == 0);
 }
 
 ENGINE_DEATH_TEST_FN(dt_e2e_post_mortem_option) {
@@ -602,11 +532,11 @@ TEST_CASE("With post-mortem dumps requested the crash report says where the core
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     TempDir dir;
     const ChildResult r = RunCrashChild("dt_e2e_post_mortem_option", dir.Path());
-    const std::string err = Stderr(r);
-    INFO(err);
-    CHECK(err.find("core dumps: none will be written: ") != std::string::npos);
-    CHECK(err.find("hard core size limit is 0") != std::string::npos); // the warning at install time
-    CHECK(err.find("=== END OF REPORT ===") != std::string::npos);
+    const StringView err = debug_test::StderrView(r);
+    INFO(Cat(err).CStr());
+    CHECK(err.Contains("core dumps: none will be written: "));
+    CHECK(err.Contains("hard core size limit is 0")); // the warning at install time
+    CHECK(err.Contains("=== END OF REPORT ==="));
 }
 
 ENGINE_DEATH_TEST_FN(dt_e2e_alternate_stack_size) {
@@ -616,7 +546,7 @@ ENGINE_DEATH_TEST_FN(dt_e2e_alternate_stack_size) {
     stack_t current;
     sigaltstack(nullptr, &current);
     char line[64];
-    const int n = FormatTo(line, sizeof(line), "ALTSTACK=%zu\n", static_cast<size_t>(current.ss_size));
+    const int n = FormatTo(line, sizeof(line), "ALTSTACK=%zu\n", static_cast<usize>(current.ss_size));
     os::Write(1, line, static_cast<usize>(n));
 }
 
@@ -624,11 +554,11 @@ TEST_CASE("Installing the crash handler leaves the installing thread a signal st
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     TempDir dir;
     const ChildResult r = RunCrashChild("dt_e2e_alternate_stack_size", dir.Path());
-    const std::string out(r.stdout_text, r.stdout_length);
-    const usize at = out.find("ALTSTACK=");
-    REQUIRE(at != std::string::npos);
+    const StringView out = debug_test::StdoutView(r);
+    REQUIRE(out.Contains("ALTSTACK="));
+    const Text size = engine_test::MakeText(debug_test::ValueAfter(out, "ALTSTACK="));
     // The library's own stack is 16 KiB, which the report (an 8 KiB trace buffer and more) does not fit on.
-    CHECK(CStrToULongLong(out.c_str() + at + 9, nullptr, 10) >= 64 * 1024);
+    CHECK(CStrToULongLong(size.CStr(), nullptr, 10) >= 64 * 1024);
 }
 
 TEST_CASE("Writing to a pipe whose reader has stopped gives up after the timeout instead of hanging", "[crash][crashreport][debug][linux]") {

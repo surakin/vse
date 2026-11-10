@@ -10,9 +10,8 @@
 #include "support/death_test_skip.h"
 
 #include "sync/atomic.h"
-#include <cstdlib>
-#include <cstring>
-#include <string>
+#include "catch_engine_types.h"
+#include "support/test_support_linux.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::debug;
@@ -50,15 +49,14 @@ TEST_CASE("An assert inside a job reports the worker's name and a trace that inc
     ChildOptions options;
     options.timeout_ms = 60000;
     const ChildResult r = RunInChild("dt_job_assert", directory, options);
-    const std::string out(r.stdout_text, r.stdout_length);
-    const std::string err(r.stderr_text, r.stderr_length);
-    INFO(out << err);
+    const StringView out = debug_test::StdoutView(r);
+    const StringView err = debug_test::StderrView(r);
+    INFO(debug_test::Cat(out, err).CStr());
     CHECK(r.reason == CrashReason::Abort);
-    CHECK(out.find("ASSERT FAILED: ") != std::string::npos);
-    CHECK(out.find("AssertingJob") != std::string::npos); // the assert's own trace
-    CHECK(err.find("=== CRASH REPORT ===") != std::string::npos);
-    CHECK(err.find("\"worker-") != std::string::npos);     // the crash report names the thread
-    CHECK(err.find("AssertingJob") != std::string::npos);  // and its trace includes the job
-    std::string cleanup = std::string("rm -rf '") + directory + "'";
-    CHECK(std::system(cleanup.c_str()) == 0);
+    CHECK(out.Contains("ASSERT FAILED: "));
+    CHECK(out.Contains("AssertingJob")); // the assert's own trace
+    CHECK(err.Contains("=== CRASH REPORT ==="));
+    CHECK(err.Contains("\"worker-"));     // the crash report names the thread
+    CHECK(err.Contains("AssertingJob"));  // and its trace includes the job
+    CHECK(debug_test::RunShell(debug_test::Cat("rm -rf '", directory, "'").View()).ExitCode() == 0);
 }

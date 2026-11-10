@@ -12,7 +12,7 @@
 #include "support/death_test_skip.h"
 
 #include "sync/atomic.h"
-#include <csignal>
+#include "os/signal.h"
 #include "cstr/format.h"
 
 using namespace engine_placeholder;
@@ -25,18 +25,18 @@ Atomic<unsigned long> g_allocations{0};
 } // namespace
 
 extern "C" {
-void* __real_malloc(size_t size);
-void* __real_calloc(size_t count, size_t size);
-void* __real_realloc(void* pointer, size_t size);
-void* __wrap_malloc(size_t size) {
+void* __real_malloc(usize size);
+void* __real_calloc(usize count, usize size);
+void* __real_realloc(void* pointer, usize size);
+void* __wrap_malloc(usize size) {
     g_allocations.FetchAdd(1, MemoryOrder::Relaxed);
     return __real_malloc(size);
 }
-void* __wrap_calloc(size_t count, size_t size) {
+void* __wrap_calloc(usize count, usize size) {
     g_allocations.FetchAdd(1, MemoryOrder::Relaxed);
     return __real_calloc(count, size);
 }
-void* __wrap_realloc(void* pointer, size_t size) {
+void* __wrap_realloc(void* pointer, usize size) {
     g_allocations.FetchAdd(1, MemoryOrder::Relaxed);
     return __real_realloc(pointer, size);
 }
@@ -56,13 +56,13 @@ void TraceInHandler(int) {
     const unsigned long after = g_allocations.Load(MemoryOrder::Relaxed);
     char line[96];
     const int n = FormatTo(line, sizeof(line), "ALLOCS=%lu FRAMES=%u ENTRIES=%zu TEXT=%zu\n", after - before, trace.count,
-                                static_cast<size_t>(entries), static_cast<size_t>(length));
+                                static_cast<usize>(entries), static_cast<usize>(length));
     os::Write(1, line, static_cast<usize>(n));
     os::Write(1, g_handler_text, length);
 }
 
 ENGINE_NOINLINE void RaiseTheSignal() {
-    std::raise(SIGUSR1);
+    ::raise(SIGUSR1);
     ENGINE_COMPILER_BARRIER();
 }
 
@@ -70,7 +70,7 @@ ENGINE_NOINLINE void RaiseTheSignal() {
 
 ENGINE_DEATH_TEST_FN(dt_alloc_trace_in_signal_handler) {
     InitDebugFacilities(); // everything that may allocate happens here
-    std::signal(SIGUSR1, &TraceInHandler);
+    os::SetSignalHandler(SIGUSR1, &TraceInHandler);
     RaiseTheSignal();
 }
 
@@ -117,7 +117,7 @@ ENGINE_DEATH_TEST_FN(dt_alloc_crash_report) {
     WriteCrashReport(sink, info);
     const unsigned long after = g_allocations.Load(MemoryOrder::Relaxed);
     char line[64];
-    const int n = FormatTo(line, sizeof(line), "REPORT_ALLOCS=%lu BYTES=%zu\n", after - before, static_cast<size_t>(written));
+    const int n = FormatTo(line, sizeof(line), "REPORT_ALLOCS=%lu BYTES=%zu\n", after - before, static_cast<usize>(written));
     os::Write(1, line, static_cast<usize>(n));
 }
 

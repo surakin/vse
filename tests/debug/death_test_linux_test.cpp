@@ -8,11 +8,11 @@
 #include "resource_guard.h"
 #include "support/death_test_skip.h"
 
-#include <cerrno>
-#include <csignal>
 #include <fcntl.h>
-#include <cstdio>
 #include "os/console.h"
+#include "os/last_error.h"
+#include "os/signal.h"
+#include "support/test_support_linux.h"
 #include "cstr/cstr.h"
 #include <sys/types.h>
 #include <unistd.h>
@@ -97,7 +97,7 @@ TEST_CASE("A timeout kills the child's whole process group", "[death][debug][lin
     // The grandchild was killed with the group; give the kernel a moment to finish tearing it down.
     bool gone = false;
     for (int i = 0; i < 100 && !gone; ++i) {
-        gone = (kill(grandchild, 0) != 0 && errno == ESRCH);
+        gone = (kill(grandchild, 0) != 0 && os::LastError() == ESRCH);
         if (!gone) {
             usleep(10 * 1000);
         }
@@ -141,13 +141,9 @@ TEST_CASE("A child's own child dies with it when its parent is killed", "[death]
 
     pid_t grandchild = 0;
     for (int i = 0; i < 100 && grandchild <= 1; ++i) {
-        std::FILE* f = std::fopen(path, "r");
-        if (f != nullptr) {
-            int pid = 0;
-            if (std::fscanf(f, "%d", &pid) == 1) {
-                grandchild = static_cast<pid_t>(pid);
-            }
-            std::fclose(f);
+        const debug_test::Text recorded = debug_test::ReadWholeFile(path);
+        if (recorded.Length() != 0) {
+            grandchild = static_cast<pid_t>(CStrToInt(recorded.CStr()));
         }
         if (grandchild <= 1) {
             usleep(10 * 1000);
@@ -157,7 +153,7 @@ TEST_CASE("A child's own child dies with it when its parent is killed", "[death]
     REQUIRE(grandchild > 1);
     bool gone = false;
     for (int i = 0; i < 200 && !gone; ++i) {
-        gone = (kill(grandchild, 0) != 0 && errno == ESRCH);
+        gone = (kill(grandchild, 0) != 0 && os::LastError() == ESRCH);
         if (!gone) {
             usleep(10 * 1000);
         }
