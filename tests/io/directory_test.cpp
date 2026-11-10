@@ -143,7 +143,7 @@ TEST_CASE("io::Directory: names with spaces, newlines and Unicode; many entries"
         const engine_test::Text n = engine_test::Format("file%d", i);
         REQUIRE(io_test::WriteText(big / n.View(), ""));
     }
-    CHECK(Names(big.Path()).Size() == static_cast<size_t>(kN));
+    CHECK(Names(big.Path()).Size() == static_cast<usize>(kN));
     Vector<io::DirectoryItem> items;
     REQUIRE(io::ListDirectory(big.Path(), true, &items).Ok());
     REQUIRE(items.Size() == static_cast<usize>(kN));

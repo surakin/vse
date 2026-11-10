@@ -1,6 +1,5 @@
 // Phase 15 Day 201: the offscreen target of a UI viewport. The world is drawn into it (a clear pass in the UI frame's own graph, or the Phase 5 lit cube in a frame of its own), the UI pass
 // shows it as an image inside a panel, a resize keeps the picture and frees the old textures, and a device reset makes it again.
-#include <cstdlib>
 
 #include <catch2/catch_test_macros.hpp>
 

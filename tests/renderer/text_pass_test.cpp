@@ -3,9 +3,8 @@
 // On a real device (Vulkan): "Hello, world!" is drawn over a background by one graph pass and only inside its bounds; a second call overlays the first in
 // call order; a frame without text declares no pass; the pipeline follows a change of the target's format; text above the atlas maximum is scaled from the
 // maximum raster and is as wide as its layout says. Without a GPU: nothing is allocated per glyph in a steady frame.
+#include "algorithm.h"
 #include "lang/scalar.h"
-#include <cstdlib>
-#include <cstring>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -259,8 +258,8 @@ TEST_CASE("Text above the atlas maximum is scaled from the maximum raster and is
             for (u32 y = 0; y < frame.height; ++y) {
                 for (u32 x = 0; x < frame.width; ++x) {
                     if (image.Pixel(x, y)[0] > 127) {
-                        ink_left = std::min(ink_left, static_cast<int>(x));
-                        ink_right = std::max(ink_right, static_cast<int>(x));
+                        ink_left = Min(ink_left, static_cast<int>(x));
+                        ink_right = Max(ink_right, static_cast<int>(x));
                     }
                 }
             }

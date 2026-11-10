@@ -119,7 +119,7 @@ TEST_CASE("Memory stores sharing a backing merge commits and notify each other f
     };
     REQUIRE(b.SetChangeListener(listener, &seen_by_b).Ok());
     REQUIRE(a.SetChangeListener(listener, &seen_by_a).Ok());
-    Atomic<int> writer_failures{0}; // Catch2 assertions stay on the main thread: a REQUIRE that throws in a std::thread would terminate
+    Atomic<int> writer_failures{0}; // Catch2 assertions stay on the main thread: a REQUIRE that throws in a worker thread would terminate
     Thread writer([&] {
         StoredValue sv;
         if (ToStored(d.i, Value::FromInt(1), true, &sv) != StoreError::None) writer_failures++;

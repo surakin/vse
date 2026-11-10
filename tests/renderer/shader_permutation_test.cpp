@@ -1,10 +1,10 @@
 // Phase 5 Day 72: shader permutations. The table for permute_test.frag is committed (permute_test.frag.perm.inc); these
 // tests check lookup, the error for a key that was not built, module sharing, table validation, and (on a GPU) that the
 // module chosen by a key really draws the colour its options describe.
-#include <cstdlib>
-#include <cstring>
-
 #include <catch2/catch_test_macros.hpp>
+
+#include "cstr/cstr.h"
+#include "string_view.h"
 
 #include "backend_fixture.h"
 
@@ -69,15 +69,19 @@ TEST_CASE("Keys are built from option names and found by lookup", "[renderer][pe
     // Every built key resolves to a module whose words and reflection are usable.
     for (const char* key_names : {"", "INVERT", "HALF", "INVERT HALF", "TINT", "DEBUG"}) {
         Vector<const char*> names;
-        char buffer[64];
-        CStrCopyN(buffer, key_names, sizeof(buffer) - 1);
-        buffer[sizeof(buffer) - 1] = '\0';
-        for (char* word = std::strtok(buffer, " "); word != nullptr; word = std::strtok(nullptr, " ")) {
-            for (u32 i = 0; i < Table().option_count; ++i) {
-                if (CStrCompare(word, Table().options[i]) == 0) {
-                    names.Push(Table().options[i]);
+        const StringView all(key_names);
+        for (usize pos = 0; pos < all.Length();) {
+            usize end = pos;
+            while (end < all.Length() && all[end] != ' ') ++end;
+            if (end > pos) {
+                const StringView word = all.Substring(pos, end - pos);
+                for (u32 i = 0; i < Table().option_count; ++i) {
+                    if (word == StringView(Table().options[i])) {
+                        names.Push(Table().options[i]);
+                    }
                 }
             }
+            pos = end + 1;
         }
         PermutationKey key;
         ReflectionError error;

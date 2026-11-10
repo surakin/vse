@@ -35,15 +35,15 @@ io::FilePtr MakeLocal(TempDir& dir, StringView content, bool writable) {
     return f;
 }
 
-size_t CountEntries(const Path& dir) {
+usize CountEntries(const Path& dir) {
 #if ENGINE_PLATFORM_WINDOWS
-    size_t n = 0;
+    usize n = 0;
     io_test::ForEachEntry(io_test::WinPath(dir).text, [&](const wchar_t*, DWORD) { ++n; });
     return n;
 #else
     char p[io::kMaxPathBytes + 1];
     dir.ToNative(p, sizeof(p));
-    size_t n = 0;
+    usize n = 0;
     if (DIR* d = ::opendir(p)) {
         while (const dirent* e = ::readdir(d)) {
             if (StringView(e->d_name) != StringView(".") && StringView(e->d_name) != StringView("..")) ++n;

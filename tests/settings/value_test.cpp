@@ -1,7 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "lang/scalar.h"
-#include <cstring>
 
 #include "catch_engine_types.h"
 #include "settings/desc.h"

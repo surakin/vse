@@ -1,10 +1,10 @@
 // Phase 5 Day 76: the render graph's barrier plan, `Execute`, and the transient pool. The plan tests are pure CPU (the
 // expected barrier list is compared as text); the execution tests run on the null device, which validates every
 // `before` state against the state it tracks and counts a mismatch as an error.
-#include <string>
-#include <vector>
-
 #include <catch2/catch_test_macros.hpp>
+
+#include "catch_engine_types.h"
+#include "test_text.h"
 
 #include "renderer/render_graph.h"
 #include "renderer/transient_pool.h"
@@ -44,17 +44,18 @@ struct Plan {
     }
     PassBuilder Pass(const char* name, PassFlags flags = PassFlags::None) { return graph.AddPass(name, nullptr, nullptr, flags); }
 
-    std::string Barriers() {
+    engine_test::Text Barriers() {
         REQUIRE(graph.Compile());
-        std::string text(graph.DumpBarriers(nullptr, 0), '\0');
-        graph.DumpBarriers(text.data(), text.size() + 1);
-        return text;
+        const usize length = graph.DumpBarriers(nullptr, 0);
+        Vector<char> buffer = engine_test::Chars(length + 1);
+        graph.DumpBarriers(buffer.Data(), buffer.Size());
+        return engine_test::MakeText(engine_test::View(buffer, length));
     }
-    std::string Errors() const {
-        std::string all;
+    engine_test::Text Errors() const {
+        engine_test::Text all = engine_test::MakeText();
         for (u32 i = 0; i < graph.ErrorCount(); ++i) {
-            all += graph.Error(i);
-            all += "\n";
+            all.Append(StringView(graph.Error(i)));
+            all.Append("\n");
         }
         return all;
     }
@@ -120,12 +121,12 @@ TEST_CASE("Consecutive reads in one state share it and need no barrier", "[rende
     p.Pass("read2").Read(t, GraphUsage::Sampled).Write(b, GraphUsage::ColorAttachment);
     p.Pass("read3").Read(t, GraphUsage::StorageRead).Read(a, GraphUsage::Sampled).Write(c, GraphUsage::ColorAttachment);
     p.Pass("copy").Read(t, GraphUsage::CopySrc).Read(b, GraphUsage::Sampled).Read(c, GraphUsage::Sampled).Write(p.Import("out", rhi::ResourceState::Undefined, rhi::ResourceState::CopySrc), GraphUsage::CopyDst);
-    const std::string text = p.Barriers();
+    const engine_test::Text text = p.Barriers();
     // "t" is written once and read in shader-read three times (sampled, sampled, storage-read) with one barrier, then once
     // more as a copy source.
-    CHECK(text.find("\"t\" undefined -> color") != std::string::npos);
-    CHECK(text.find("\"t\" color -> shader-read") != std::string::npos);
-    CHECK(text.find("\"t\" shader-read -> copy-src") != std::string::npos);
+    CHECK(text.View().Contains(StringView("\"t\" undefined -> color")));
+    CHECK(text.View().Contains(StringView("\"t\" color -> shader-read")));
+    CHECK(text.View().Contains(StringView("\"t\" shader-read -> copy-src")));
     u32 t_barriers = 0;
     for (u32 i = 0; i < p.graph.BarrierCount(); ++i) t_barriers += p.graph.BarrierAt(i).resource.index == t.index ? 1 : 0;
     CHECK(t_barriers == 3);
@@ -352,7 +353,7 @@ TEST_CASE("Execute reports a transient it cannot allocate and puts the pool back
         // `a` is used by p1 and p2 and is back in the pool, in ShaderRead, when p3's `b` cannot be created.
         CHECK_FALSE(graph.Execute(&pool, list));
         CHECK(graph.ErrorCount() == 0); // a runtime failure is not a declaration error
-        CHECK(std::string(graph.ExecuteError()) == "transient texture 'b' could not be allocated");
+        CHECK(StringView(graph.ExecuteError()) == StringView("transient texture 'b' could not be allocated"));
         CHECK(pool.Stats().textures_live == 1);
         CHECK(pool.Stats().textures_idle == 1); // a went back to the pool
         CHECK(device->ErrorCount() == 1);      // the device refused the zero-size texture

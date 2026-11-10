@@ -287,7 +287,7 @@ inline bool WriteText(const io::Path& path, const char* text) {
     if (!path.ToNative(p, sizeof(p))) return false;
     const int fd = ::open(p, O_WRONLY | O_CREAT | O_TRUNC, 0644);
     if (fd < 0) return false;
-    const size_t n = CStrLength(text);
+    const usize n = CStrLength(text);
     const bool ok = ::write(fd, text, n) == static_cast<ssize_t>(n);
     ::close(fd);
     return ok;
@@ -302,7 +302,7 @@ inline engine_test::Text ReadText(const io::Path& path) {
     char buf[4096];
     const ssize_t n = ::read(fd, buf, sizeof(buf));
     ::close(fd);
-    return engine_test::MakeText(StringView(buf, n > 0 ? static_cast<size_t>(n) : 0));
+    return engine_test::MakeText(StringView(buf, n > 0 ? static_cast<usize>(n) : 0));
 }
 
 /// Gives the owner full access to a tree (not following links) so it can be removed after a test made parts read-only.

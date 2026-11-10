@@ -2,7 +2,6 @@
 // that is committed now. A shader changed and re-minted on a machine without dxc keeps its old DXIL; the FNV-1a hash that
 // shader_mint recorded beside the DXIL then differs from the hash of the committed SPIR-V, and this test names the shader.
 // A new shader is added to the list below; a permuted shader whose module count changes fails the static_asserts.
-#include <cstdio>
 
 #include <catch2/catch_test_macros.hpp>
 

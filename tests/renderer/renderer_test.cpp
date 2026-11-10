@@ -2,8 +2,7 @@
 // barrier's `before` state against the lists submitted so far, in order) and counts live objects; a GPU test compares
 // serial and parallel recording pixel for pixel and sweeps allocation failures.
 #include "sync/atomic.h"
-#include <chrono>
-#include <cstdlib>
+#include "os/os.h"
 #include "sync/thread.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -211,8 +210,8 @@ void RecordThread(const PassExecuteContext& context, void* user) {
     pass->log->ids[pass->index] = ThisThread::Id();
     pass->log->counts.FetchAdd(1);
     // A little work so the other participants get to steal passes.
-    const auto until = std::chrono::steady_clock::now() + std::chrono::microseconds(300);
-    while (std::chrono::steady_clock::now() < until) {
+    const u64 until = os::MonotonicTimeNanos() + 300 * 1000;
+    while (os::MonotonicTimeNanos() < until) {
     }
     (void)context;
 }

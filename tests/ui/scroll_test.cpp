@@ -1,14 +1,9 @@
 #include "sync/atomic.h"
-#include <cmath>
-#include <cstdlib>
 #include "lang/new.h"
 
 #include <catch2/catch_test_macros.hpp>
 
 #include "build_defs.h"
-#if ENGINE_PLATFORM_WINDOWS
-#include <malloc.h> // _aligned_malloc, _aligned_free
-#endif
 #include "font_support.h"
 #include "ui/layout.h"
 #include "ui/surface.h"
@@ -20,30 +15,35 @@
 #include "cstr/mem_ops.h"
 #include "os/console.h"
 
+using namespace engine_placeholder; // the allocation hooks below are global and name the engine types
+
 // --- an allocation counter (this test executable only), to prove that scrolling a long list allocates nothing once warm ---------------
 #if !ENGINE_SANITIZED // the sanitizer runtimes define their own operator new
 namespace {
 Atomic<long> g_ui_allocs{0};
 Atomic<bool> g_ui_counting{false};
-// Every form is replaced so allocation and release always pair up. `align` is 0 for the plain forms. Windows' C library has no
-// aligned_alloc: memory from _aligned_malloc goes back through _aligned_free, so the aligned forms take that path there (as in
-// tests/renderer/render_graph_test.cpp).
+// Every form is replaced so allocation and release always pair up. `align` is 0 for the plain forms. The C library wrappers have no
+// aligned allocation, so a block that needs more than the 16 bytes malloc gives is over-allocated: its start is rounded up to
+// `align` and the pointer of the underlying allocation is kept just before it, which the aligned delete forms (they are told the
+// alignment) read back. Plain and 16-byte blocks are exact-size malloc blocks.
+constexpr usize kMallocAlign = 16;
 void* UiCountedAlloc(usize n, usize align) {
     if (g_ui_counting.Load(MemoryOrder::Relaxed)) g_ui_allocs.FetchAdd(1, MemoryOrder::Relaxed);
     if (n == 0) n = 1;
-#if ENGINE_PLATFORM_WINDOWS
-    if (align != 0) return _aligned_malloc(n, align);
-#else
-    if (align != 0) return std::aligned_alloc(align, (n + align - 1) / align * align);
-#endif
-    return MemAllocate(n);
+    if (align <= kMallocAlign) return MemAllocate(n);
+    void* raw = MemAllocate(n + align + sizeof(void*));
+    if (raw == nullptr) return nullptr;
+    const usize start = (reinterpret_cast<usize>(raw) + sizeof(void*) + align - 1) / align * align;
+    void* block = reinterpret_cast<void*>(start);
+    reinterpret_cast<void**>(block)[-1] = raw;
+    return block;
 }
-void UiAlignedFree(void* p) noexcept {
-#if ENGINE_PLATFORM_WINDOWS
-    _aligned_free(p);
-#else
-    MemFree(p);
-#endif
+void UiAlignedFree(void* p, usize align) noexcept {
+    if (align <= kMallocAlign) {
+        MemFree(p);
+    } else if (p != nullptr) {
+        MemFree(reinterpret_cast<void**>(p)[-1]);
+    }
 }
 } // namespace
 void* operator new(usize n) {
@@ -62,11 +62,11 @@ void operator delete(void* p) noexcept { MemFree(p); }
 void operator delete[](void* p) noexcept { MemFree(p); }
 void operator delete(void* p, usize) noexcept { MemFree(p); }
 void operator delete[](void* p, usize) noexcept { MemFree(p); }
-void operator delete(void* p, AlignVal) noexcept { UiAlignedFree(p); }
-void operator delete(void* p, usize, AlignVal) noexcept { UiAlignedFree(p); }
-void operator delete[](void* p, AlignVal) noexcept { UiAlignedFree(p); }
-void operator delete[](void* p, usize, AlignVal) noexcept { UiAlignedFree(p); }
-void operator delete(void* p, AlignVal, const NoThrowTag&) noexcept { UiAlignedFree(p); }
+void operator delete(void* p, AlignVal a) noexcept { UiAlignedFree(p, static_cast<usize>(a)); }
+void operator delete(void* p, usize, AlignVal a) noexcept { UiAlignedFree(p, static_cast<usize>(a)); }
+void operator delete[](void* p, AlignVal a) noexcept { UiAlignedFree(p, static_cast<usize>(a)); }
+void operator delete[](void* p, usize, AlignVal a) noexcept { UiAlignedFree(p, static_cast<usize>(a)); }
+void operator delete(void* p, AlignVal a, const NoThrowTag&) noexcept { UiAlignedFree(p, static_cast<usize>(a)); }
 void operator delete(void* p, const NoThrowTag&) noexcept { MemFree(p); }
 #endif
 

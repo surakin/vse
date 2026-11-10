@@ -1,11 +1,10 @@
 // Phase 8 Day 109: materials, passes, frame buffers and the transient pool across a device reset.
-#include <algorithm>
-#include <cstring>
-#include <vector>
-
 #include <catch2/catch_test_macros.hpp>
 
 #include "backend_fixture.h"
+#include "byte_vector.h"
+#include "algorithm.h"
+#include "containers/vector.h"
 #include "demo_frame.h"
 #include "demo_scene.h"
 #include "renderer/device_resources.h"
@@ -102,12 +101,13 @@ struct RendererResetRig {
 };
 
 // The first bytes of a material's parameter block as the GPU will read them in the current frame slot.
-std::vector<unsigned char> ParameterBytes(rhi::NullDevice* device, MaterialSystem* materials, MaterialId id, u64 frame) {
+renderer_test::ByteVector ParameterBytes(rhi::NullDevice* device, MaterialSystem* materials, MaterialId id, u64 frame) {
     materials->BeginFrame(frame);
     materials->FlushMaterials();
     const BufferRegion region = materials->ParameterRegion(id);
-    std::vector<unsigned char> bytes(static_cast<usize>(region.size));
-    REQUIRE(device->PeekBuffer(region.buffer, region.offset, bytes.data(), bytes.size()));
+    renderer_test::ByteVector bytes;
+    bytes.Resize(static_cast<usize>(region.size));
+    REQUIRE(device->PeekBuffer(region.buffer, region.offset, bytes.Data(), bytes.Size()));
     return bytes;
 }
 
@@ -148,17 +148,17 @@ TEST_CASE("Material parameters and bindings are identical after a reset; a bound
         }
     }
     REQUIRE(bumps.IsValid());
-    std::vector<u32> unbound; // materials whose albedo slot holds no texture of their own
+    Vector<u32> unbound; // materials whose albedo slot holds no texture of their own
     for (u32 i = 0; i < 16; ++i) {
         const MaterialId id = materials->MaterialAtIndex(i);
-        if (id.IsValid() && materials->EffectiveTexture(id, "albedo_tex") == materials->GetDefaultTexture(DefaultTexture::White)) unbound.push_back(i);
+        if (id.IsValid() && materials->EffectiveTexture(id, "albedo_tex") == materials->GetDefaultTexture(DefaultTexture::White)) unbound.Push(i);
     }
-    const std::vector<unsigned char> params_before = ParameterBytes(rig.Null(), materials, bumps, 1);
+    const renderer_test::ByteVector params_before = ParameterBytes(rig.Null(), materials, bumps, 1);
     const rhi::TextureHandle bound_before = materials->EffectiveTexture(bumps, "normal_tex");
 
     REQUIRE(rig.Reset());
-    const std::vector<unsigned char> params_after = ParameterBytes(rig.Null(), materials, bumps, 1);
-    CHECK(params_after == params_before);
+    const renderer_test::ByteVector params_after = ParameterBytes(rig.Null(), materials, bumps, 1);
+    CHECK(renderer_test::SameBytes(params_after, params_before));
     const rhi::TextureHandle bound_after = materials->EffectiveTexture(bumps, "normal_tex");
     CHECK(bound_after != bound_before);       // it follows the texture owner's new handle ...
     CHECK(bound_after.IsValid());
@@ -167,13 +167,13 @@ TEST_CASE("Material parameters and bindings are identical after a reset; a bound
     u32 checked = 0;
     for (u32 i = 0; i < 16; ++i) {
         const MaterialId id = materials->MaterialAtIndex(i);
-        if (id.IsValid() && std::find(unbound.begin(), unbound.end(), i) != unbound.end()) {
+        if (id.IsValid() && IndexOf(unbound, i) != unbound.Size()) {
             CHECK(materials->EffectiveTexture(id, "albedo_tex") == materials->GetDefaultTexture(DefaultTexture::White));
             ++checked;
         }
     }
-    CHECK(checked == unbound.size());
-    CHECK(!unbound.empty());
+    CHECK(checked == unbound.Size());
+    CHECK(!unbound.Empty());
     CHECK(materials->Stats().rebuilds == 1);
     CHECK(rig.Render() == FrameStatus::Ok);
     rig.TearDown();
@@ -253,20 +253,21 @@ TEST_CASE("An offscreen frame is pixel-identical before and after a reset on a r
             rig.host.Destroy();
             SKIP("no suitable " << gpu_test::BackendTag(backend) << " device");
         }
-        auto render_and_read = [&](std::vector<unsigned char>* out) {
+        auto render_and_read = [&](renderer_test::ByteVector* out) {
             REQUIRE(rig.Render() == FrameStatus::Ok);
             rig.host.GetDevice()->WaitIdle();
-            out->assign(static_cast<usize>(kTargetWidth) * kTargetHeight * 4, 0);
-            REQUIRE(rig.host.GetDevice()->ReadbackTexture(rig.target, 0, 0, out->data(), out->size(), rhi::ResourceState::CopySrc));
+            out->Clear();
+            out->Resize(static_cast<usize>(kTargetWidth) * kTargetHeight * 4);
+            REQUIRE(rig.host.GetDevice()->ReadbackTexture(rig.target, 0, 0, out->Data(), out->Size(), rhi::ResourceState::CopySrc));
         };
-        std::vector<unsigned char> before;
-        std::vector<unsigned char> after;
+        renderer_test::ByteVector before;
+        renderer_test::ByteVector after;
         render_and_read(&before);
         REQUIRE(rig.Reset());
         render_and_read(&after);
-        CHECK(before == after);
+        CHECK(renderer_test::SameBytes(before, after));
         bool any_lit = false;
-        for (usize i = 0; i + 3 < before.size() && !any_lit; i += 4) any_lit = before[i] != 0 || before[i + 1] != 0 || before[i + 2] != 0;
+        for (usize i = 0; i + 3 < before.Size() && !any_lit; i += 4) any_lit = before[i] != 0 || before[i + 1] != 0 || before[i + 2] != 0;
         CHECK(any_lit);
         rig.TearDown();
     }

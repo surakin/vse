@@ -3,10 +3,10 @@
 // without reading outside its input (this binary also runs under ASan).
 #include "os/console.h"
 #include "cstr/cstr.h"
-#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "byte_vector.h"
 #include "renderer/frame_data.h"
 #include "renderer/shader_reflection.h"
 #include "rhi/device.h"
@@ -65,7 +65,12 @@ ShaderReflection Load(const Blob& blob) {
 #define LOAD(base) Load(BLOB(base, #base))
 
 // A heap copy of exactly `size` bytes, so AddressSanitizer flags any read past the end.
-std::vector<u8> Copy(const u8* data, usize size) { return std::vector<u8>(data, data + size); }
+renderer_test::ByteVector Copy(const u8* data, usize size) {
+    renderer_test::ByteVector bytes;
+    bytes.Resize(size);
+    if (size != 0) MemCopy(bytes.Data(), data, size);
+    return bytes;
+}
 
 } // namespace
 
@@ -73,9 +78,10 @@ TEST_CASE("Every committed reflection blob parses and round-trips", "[renderer][
     for (const Blob& blob : kAllBlobs) {
         ShaderReflection r = Load(blob);
         CHECK(CStrCompare(r.entry, "main") == 0);
-        std::vector<u8> again(blob.size);
-        CHECK(SerializeShaderReflection(r, again.data(), again.size()) == blob.size);
-        CHECK(MemCompare(again.data(), blob.data, blob.size) == 0);
+        renderer_test::ByteVector again;
+        again.Resize(blob.size);
+        CHECK(SerializeShaderReflection(r, again.Data(), again.Size()) == blob.size);
+        CHECK(MemCompare(again.Data(), blob.data, blob.size) == 0);
         CHECK(SerializeShaderReflection(r, nullptr, 0) == blob.size);
     }
 }
@@ -367,23 +373,23 @@ TEST_CASE("Malformed blobs are rejected with a message", "[renderer][reflection]
     ShaderReflection scratch;
 
     SECTION("bad magic") {
-        std::vector<u8> bytes = Copy(lit.data, lit.size);
+        renderer_test::ByteVector bytes = Copy(lit.data, lit.size);
         bytes[0] ^= 0xff;
-        const char* problem = ParseShaderReflection(bytes.data(), bytes.size(), &scratch);
+        const char* problem = ParseShaderReflection(bytes.Data(), bytes.Size(), &scratch);
         REQUIRE(problem != nullptr);
         CHECK(CStrFind(problem, "magic") != nullptr);
     }
     SECTION("bad version") {
-        std::vector<u8> bytes = Copy(lit.data, lit.size);
+        renderer_test::ByteVector bytes = Copy(lit.data, lit.size);
         bytes[4] = static_cast<u8>(kReflectionVersion + 1);
-        const char* problem = ParseShaderReflection(bytes.data(), bytes.size(), &scratch);
+        const char* problem = ParseShaderReflection(bytes.Data(), bytes.Size(), &scratch);
         REQUIRE(problem != nullptr);
         CHECK(CStrFind(problem, "version") != nullptr);
     }
     SECTION("unknown stage") {
-        std::vector<u8> bytes = Copy(lit.data, lit.size);
+        renderer_test::ByteVector bytes = Copy(lit.data, lit.size);
         bytes[8] = 0x40;
-        const char* problem = ParseShaderReflection(bytes.data(), bytes.size(), &scratch);
+        const char* problem = ParseShaderReflection(bytes.Data(), bytes.Size(), &scratch);
         REQUIRE(problem != nullptr);
         CHECK(CStrFind(problem, "stage") != nullptr);
     }
@@ -394,17 +400,17 @@ TEST_CASE("Malformed blobs are rejected with a message", "[renderer][reflection]
         // magic, version, stage (12 bytes), entry (1 + len), local size (12), binding count (4), then the first binding:
         // name (1 + len), set (4), binding (4), type.
         const usize type_offset = 12 + 1 + CStrLength(r.entry) + 12 + 4 + 1 + CStrLength(r.bindings[0].name) + 4 + 4;
-        std::vector<u8> bytes = Copy(bt.data, bt.size);
+        renderer_test::ByteVector bytes = Copy(bt.data, bt.size);
         REQUIRE(bytes[type_offset] == static_cast<u8>(r.bindings[0].type));
         bytes[type_offset] = static_cast<u8>(BindingType::Count);
-        const char* problem = ParseShaderReflection(bytes.data(), bytes.size(), &scratch);
+        const char* problem = ParseShaderReflection(bytes.Data(), bytes.Size(), &scratch);
         REQUIRE(problem != nullptr);
         CHECK(CStrFind(problem, "binding type") != nullptr);
     }
     SECTION("trailing bytes") {
-        std::vector<u8> bytes = Copy(lit.data, lit.size);
-        bytes.push_back(0);
-        const char* problem = ParseShaderReflection(bytes.data(), bytes.size(), &scratch);
+        renderer_test::ByteVector bytes = Copy(lit.data, lit.size);
+        bytes.Push(0);
+        const char* problem = ParseShaderReflection(bytes.Data(), bytes.Size(), &scratch);
         REQUIRE(problem != nullptr);
         CHECK(CStrFind(problem, "trailing") != nullptr);
     }
@@ -419,10 +425,10 @@ TEST_CASE("Malformed blobs are rejected with a message", "[renderer][reflection]
 TEST_CASE("Every truncation of every blob is rejected without reading out of bounds", "[renderer][reflection][asan]") {
     for (const Blob& blob : kAllBlobs) {
         for (usize length = 0; length < blob.size; ++length) {
-            std::vector<u8> bytes = Copy(blob.data, length); // exact-size heap allocation: ASan sees any overread
+            renderer_test::ByteVector bytes = Copy(blob.data, length); // exact-size heap allocation: ASan sees any overread
             ShaderReflection scratch;
             INFO(blob.name << " truncated to " << length);
-            CHECK(ParseShaderReflection(bytes.data(), bytes.size(), &scratch) != nullptr);
+            CHECK(ParseShaderReflection(bytes.Data(), bytes.Size(), &scratch) != nullptr);
         }
     }
 }
@@ -437,20 +443,21 @@ TEST_CASE("Random damage never crashes the parser and never yields an inconsiste
     u32 rejected = 0;
     for (const Blob& blob : kAllBlobs) {
         for (u32 trial = 0; trial < 400; ++trial) {
-            std::vector<u8> bytes = Copy(blob.data, blob.size);
+            renderer_test::ByteVector bytes = Copy(blob.data, blob.size);
             const u32 flips = 1 + next() % 3;
             for (u32 f = 0; f < flips; ++f) {
-                bytes[next() % bytes.size()] = static_cast<u8>(next());
+                bytes[next() % bytes.Size()] = static_cast<u8>(next());
             }
             ShaderReflection r;
-            const char* problem = ParseShaderReflection(bytes.data(), bytes.size(), &r);
+            const char* problem = ParseShaderReflection(bytes.Data(), bytes.Size(), &r);
             if (problem == nullptr) {
                 ++accepted;
                 CHECK(ValidateShaderReflection(r) == nullptr);
                 // A reflection the parser accepts serializes back to the same bytes.
-                std::vector<u8> again(bytes.size());
-                CHECK(SerializeShaderReflection(r, again.data(), again.size()) == bytes.size());
-                CHECK(again == bytes);
+                renderer_test::ByteVector again;
+                again.Resize(bytes.Size());
+                CHECK(SerializeShaderReflection(r, again.Data(), again.Size()) == bytes.Size());
+                CHECK(renderer_test::SameBytes(again, bytes));
             } else {
                 ++rejected;
             }
@@ -461,8 +468,9 @@ TEST_CASE("Random damage never crashes the parser and never yields an inconsiste
 
 TEST_CASE("Serialization refuses an invalid or oversized reflection", "[renderer][reflection]") {
     ShaderReflection r = LOAD(kLitVert);
-    std::vector<u8> tiny(8);
-    CHECK(SerializeShaderReflection(r, tiny.data(), tiny.size()) == 0);
+    renderer_test::ByteVector tiny;
+    tiny.Resize(8);
+    CHECK(SerializeShaderReflection(r, tiny.Data(), tiny.Size()) == 0);
     r.bindings[0].type = BindingType::Count;
     CHECK(ValidateShaderReflection(r) != nullptr);
     CHECK(SerializeShaderReflection(r, nullptr, 0) == 0);

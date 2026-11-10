@@ -2,9 +2,8 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "cstr/format.h"
-#include <cstring>
 #include "lang/limits.h"
-#include <string>
+#include "test_text.h"
 
 #include "renderer/render_settings.h"
 #include "cstr/cstr.h"
@@ -143,10 +142,10 @@ TEST_CASE("typed setters validate type, range and text", "[render_settings]") {
     CHECK(CStrCompare(s.GetText(settings::kAdapter), "10de:2504") == 0);
     CHECK(s.SetText(settings::kAdapter, "tab\there") == SetStatus::BadText);
     CHECK(s.SetText(settings::kAdapter, "line\nbreak") == SetStatus::BadText);
-    const std::string too_long(kSettingTextBytes, 'x');
-    CHECK(s.SetText(settings::kAdapter, too_long.c_str()) == SetStatus::BadText);
-    const std::string longest(kSettingTextBytes - 1, 'x');
-    CHECK(s.SetText(settings::kAdapter, longest.c_str()) == SetStatus::Ok);
+    const engine_test::Text too_long = engine_test::Repeated(kSettingTextBytes, 'x');
+    CHECK(s.SetText(settings::kAdapter, too_long.CStr()) == SetStatus::BadText);
+    const engine_test::Text longest = engine_test::Repeated(kSettingTextBytes - 1, 'x');
+    CHECK(s.SetText(settings::kAdapter, longest.CStr()) == SetStatus::Ok);
     CHECK(s.SetText(settings::kAdapter, nullptr) == SetStatus::Ok);
     CHECK(CStrCompare(s.GetText(settings::kAdapter), "") == 0);
     // Wrong-type reads return the neutral value.
@@ -470,9 +469,10 @@ TEST_CASE("parsing tolerates empty and null input and over-long lines", "[render
     CHECK(ParseSettings(nullptr, 0, &s, nullptr));
     CHECK(ParseSettings("", 0, &s, nullptr));
     CHECK(ParseSettings("no newline at the end = x", 0, &s, nullptr)); // length 0 reads nothing
-    const std::string long_line = "width = " + std::string(400, '1') + "\n";
+    const engine_test::Text ones = engine_test::Repeated(400, '1');
+    const engine_test::Text long_line = engine_test::Concat("width = ", ones.View(), "\n");
     SettingsParseReport report;
-    CHECK_FALSE(ParseSettings(long_line.c_str(), long_line.size(), &s, &report));
+    CHECK_FALSE(ParseSettings(long_line.CStr(), long_line.Length(), &s, &report));
     CHECK(report.error_count == 1);
     const char* last = "width = 33"; // final line without a newline
     CHECK(ParseSettings(last, CStrLength(last), &s, &report));
@@ -480,11 +480,11 @@ TEST_CASE("parsing tolerates empty and null input and over-long lines", "[render
 }
 
 TEST_CASE("many errors are counted but only the first are recorded", "[render_settings]") {
-    std::string text;
-    for (int i = 0; i < 20; ++i) text += "nonsense\n";
+    engine_test::Text text = engine_test::MakeText();
+    for (int i = 0; i < 20; ++i) text.Append("nonsense\n");
     RenderSettings s;
     SettingsParseReport report;
-    CHECK_FALSE(ParseSettings(text.c_str(), text.size(), &s, &report));
+    CHECK_FALSE(ParseSettings(text.CStr(), text.Length(), &s, &report));
     CHECK(report.error_count == 20);
     CHECK(report.errors[kMaxParseProblems - 1].line == kMaxParseProblems);
 }

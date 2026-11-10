@@ -1,8 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <cerrno>
+#include "os/last_error.h"
 #include "os/console.h"
-#include <cstring>
 #include "build_defs.h"
 #if !ENGINE_PLATFORM_WINDOWS
 #include <fcntl.h>

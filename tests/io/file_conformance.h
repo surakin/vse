@@ -12,9 +12,9 @@ using namespace engine_placeholder;
 /// A `make(StringView content, bool writable)` callable returns an open `io::FilePtr` holding `content`; `writable` asks for
 /// a file that also accepts writes (a backend that cannot write is only run through the read half).
 
-inline engine_test::Text PatternBytes(size_t n) {
+inline engine_test::Text PatternBytes(usize n) {
     engine_test::Text s = engine_test::MakeText();
-    for (size_t i = 0; i < n; ++i) s.Append(static_cast<char>((i * 31 + 7) & 0xFF));
+    for (usize i = 0; i < n; ++i) s.Append(static_cast<char>((i * 31 + 7) & 0xFF));
     return s;
 }
 

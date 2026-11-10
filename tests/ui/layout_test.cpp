@@ -1,5 +1,4 @@
 #include "lang/scalar.h"
-#include <cstdio>
 
 #include <catch2/catch_test_macros.hpp>
 

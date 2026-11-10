@@ -1,7 +1,6 @@
 #pragma once
 
 #include "sync/atomic.h"
-#include <chrono>
 #include "sync/mutex.h"
 #include "sync/thread.h"
 
