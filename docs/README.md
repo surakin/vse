@@ -25,7 +25,8 @@ Internal design history is for contributors, not engine users: the specs in
 [text](superpowers/specs/2026-11-08-text-design.md),
 [UI toolkit](superpowers/specs/2026-11-10-ui-design.md),
 [standard-library wrappers](superpowers/specs/2026-11-09-std-wrappers-design.md),
-[ECS](superpowers/specs/2026-11-10-ecs-design.md) —
+[ECS](superpowers/specs/2026-11-10-ecs-design.md),
+[spatial partitioning](superpowers/specs/2026-11-10-spatial-design.md) —
 and the plans in `plans/`.
 
 ## Map
