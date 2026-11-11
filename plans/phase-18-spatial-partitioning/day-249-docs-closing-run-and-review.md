@@ -34,6 +34,10 @@ Close the phase: complete guide, the Windows run, every flavor, and the uncapped
   everything touched 99.6 ms (tree) and 85.1 ms (grid); the ECS sync of 100,000 all-moving agents 259 to 264 ms with 1, 2, 4 and 8 workers alike (the
   open pass condition the Linux run filed, 156 ms there); the tree's margin sweep 374 ms a frame without margin, 116 ms at 0.25 with predictive 2 (the
   default), 57 ms at 1.0.
+- **Windows PC, after 6ba686c7** (each set's moves as their own job; 2026-11-11): the four Windows trees build it clean; `--affected` plain
+  `ran 2007 of 3918 tests (phases: all; flavors: plain; display: included; crash tests: excluded) in 313 s` (five clipboard and drag-and-drop tests failed opening the clipboard while the user was on Remote Control,
+  then passed 3 times in 3: filed), asan `ran 1644 of 3918 tests (phases: all; flavors: asan; display: included; crash tests: excluded) in 136 s`, all passed. The sync benchmark (Release, two runs): 240 ms
+  with 1 worker, 131 to 132 ms with 2, 4 and 8 (before: 259 to 264 ms at every count); the 80 ms target stays missed.
 - **Windows PC: originally not done** (Day 249 ran on the Linux machine). The Linux-side entries for Days 237-248 stay open in `KNOWN-ISSUES.md` until the Windows PC builds `windows-msvc` (plain, asan) and `windows-clang-cl` in both unity modes and runs `tests/spatial`, `tests/scene` and `spatial_demo_runs`. The phase is complete on Linux; it is not closed until that run.
 - Closing full run, Linux: `ran 5719 of 5719 tests (phases: all; flavors: all; display: included; crash tests: included) in 204 s`; failures: the two known X11 window tests and the tsan hardware-GPU scene test (both in KNOWN-ISSUES.md). `ctest -L docs` 7 of 7; docs 7675/7675, lint at zero. Clang and GCC non-unity builds clean.
 - Plan follow-through: `plans/phase-22-physics.md` already names Phase 18 as its broad phase; the open items are filed in KNOWN-ISSUES.md (tile light lists, GPU culling, streaming cells in Phase 33, parallel static build).
