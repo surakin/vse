@@ -135,6 +135,29 @@ TEST_CASE("Statement cache: a finished read releases its lock so a writer can pr
     CHECK(Scalar(*a, "SELECT count(*) FROM t") == 2);
 }
 
+TEST_CASE("Sync mode: the default is NORMAL with the write-ahead log and FULL with a rollback journal", "[database][sqlite]") {
+    database_test::TempDir dir;
+    SqliteDatabase db;
+    struct Case {
+        JournalMode journal;
+        SyncMode sync;
+        i64 expected; // PRAGMA synchronous: 1 NORMAL, 2 FULL
+    };
+    const Case cases[] = {{JournalMode::WriteAhead, SyncMode::Default, 1}, {JournalMode::Delete, SyncMode::Default, 2},
+                          {JournalMode::Truncate, SyncMode::Default, 2}, {JournalMode::Delete, SyncMode::Normal, 1}};
+    usize n = 0;
+    for (const Case& c : cases) {
+        const io::Path path = dir / StringView(n == 0 ? "s0.db" : n == 1 ? "s1.db" : n == 2 ? "s2.db" : "s3.db");
+        ++n;
+        OpenOptions options = FileAt(path);
+        options.journal_mode = c.journal;
+        options.sync_mode = c.sync;
+        UniquePtr<Connection> connection;
+        REQUIRE(db.Open(options, &connection).Ok());
+        CHECK(Scalar(*connection, "PRAGMA synchronous") == c.expected);
+    }
+}
+
 // --- the integrity check -------------------------------------------------------------------------------------------------------------------------
 
 TEST_CASE("Integrity check: a sound file opens, a damaged one is Corrupt", "[database][sqlite][integrity]") {

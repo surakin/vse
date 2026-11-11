@@ -1758,10 +1758,10 @@ bytes::ByteWriter::WriteF64(f64)	function	foundation/bytes	bytes-bytewriter-writ
 bytes::ByteWriter::WriteBool(bool)	function	foundation/bytes	bytes-bytewriter-writebool-bool	foundation-bytes.md	engine/foundation/bytes/byte_writer.h:54
 bytes::ByteWriter::WriteVarint(u64)	function	foundation/bytes	bytes-bytewriter-writevarint-u64	foundation-bytes.md	engine/foundation/bytes/byte_writer.h:56
 bytes::ByteWriter::WriteBytes(ByteSpan)	function	foundation/bytes	bytes-bytewriter-writebytes-bytespan	foundation-bytes.md	engine/foundation/bytes/byte_writer.h:64
-bytes::ByteWriter::Bytes() const	function	foundation/bytes	bytes-bytewriter-bytes-const	foundation-bytes.md	engine/foundation/bytes/byte_writer.h:72
-bytes::ByteWriter::Size() const	function	foundation/bytes	bytes-bytewriter-size-const	foundation-bytes.md	engine/foundation/bytes/byte_writer.h:74
-bytes::ByteWriter::Clear()	function	foundation/bytes	bytes-bytewriter-clear	foundation-bytes.md	engine/foundation/bytes/byte_writer.h:76
-bytes::ByteWriter::Truncate(usize)	function	foundation/bytes	bytes-bytewriter-truncate-usize	foundation-bytes.md	engine/foundation/bytes/byte_writer.h:79
+bytes::ByteWriter::Bytes() const	function	foundation/bytes	bytes-bytewriter-bytes-const	foundation-bytes.md	engine/foundation/bytes/byte_writer.h:77
+bytes::ByteWriter::Size() const	function	foundation/bytes	bytes-bytewriter-size-const	foundation-bytes.md	engine/foundation/bytes/byte_writer.h:79
+bytes::ByteWriter::Clear()	function	foundation/bytes	bytes-bytewriter-clear	foundation-bytes.md	engine/foundation/bytes/byte_writer.h:81
+bytes::ByteWriter::Truncate(usize)	function	foundation/bytes	bytes-bytewriter-truncate-usize	foundation-bytes.md	engine/foundation/bytes/byte_writer.h:84
 os::StashNativeCommandLine(int,char**)	function	platform/os	os-stashnativecommandline-int-char-star-star	platform-os.md	engine/foundation/os/command_line.h:21
 os::CommandLine	class	platform/os	os-commandline	platform-os.md	engine/foundation/os/command_line.h:39
 os::CommandLine::CommandLine(Allocator&,int,char**)	function	platform/os	os-commandline-commandline-allocator-amp-int-char-star-star	platform-os.md	engine/foundation/os/command_line.h:50
@@ -3716,35 +3716,35 @@ database::Statement::ClearBindings()	function	database	database-statement-clearb
 database::Statement::Reset()	function	database	database-statement-reset	database.md	engine/database/database.h:120
 database::Statement::Step(bool*)	function	database	database-statement-step-bool-star	database.md	engine/database/database.h:128
 database::Statement::ColumnCount() const	function	database	database-statement-columncount-const	database.md	engine/database/database.h:132
-database::Statement::Column(u32) const	function	database	database-statement-column-u32-const	database.md	engine/database/database.h:137
-database::Connection	class	database	database-connection	database.md	engine/database/database.h:147
-database::Connection::~Connection()	function	database	database-connection-tilde-connection	database.md	engine/database/database.h:149
-database::Connection::Supports(Feature) const	function	database	database-connection-supports-feature-const	database.md	engine/database/database.h:153
-database::Connection::Prepare(SqlText,UniquePtr<Statement>*)	function	database	database-connection-prepare-sqltext-uniqueptr-lt-statement-gt-star	database.md	engine/database/database.h:161
-database::Connection::Execute(SqlText)	function	database	database-connection-execute-sqltext	database.md	engine/database/database.h:165
-database::Connection::Begin(TransactionKind)	function	database	database-connection-begin-transactionkind	database.md	engine/database/database.h:170
-database::Connection::Commit()	function	database	database-connection-commit	database.md	engine/database/database.h:173
-database::Connection::Rollback()	function	database	database-connection-rollback	database.md	engine/database/database.h:176
-database::Connection::InTransaction() const	function	database	database-connection-intransaction-const	database.md	engine/database/database.h:179
-database::Connection::Savepoint(StringView)	function	database	database-connection-savepoint-stringview	database.md	engine/database/database.h:185
-database::Connection::ReleaseSavepoint(StringView)	function	database	database-connection-releasesavepoint-stringview	database.md	engine/database/database.h:188
-database::Connection::RollbackToSavepoint(StringView)	function	database	database-connection-rollbacktosavepoint-stringview	database.md	engine/database/database.h:191
-database::Connection::LastInsertRowId() const	function	database	database-connection-lastinsertrowid-const	database.md	engine/database/database.h:195
-database::Connection::ChangedRows() const	function	database	database-connection-changedrows-const	database.md	engine/database/database.h:198
-database::Connection::SchemaVersion(i64*)	function	database	database-connection-schemaversion-i64-star	database.md	engine/database/database.h:203
-database::Connection::WriteSchemaVersion(i64)	function	database	database-connection-writeschemaversion-i64	database.md	engine/database/database.h:206
-database::Database	class	database	database-database	database.md	engine/database/database.h:213
-database::Database::~Database()	function	database	database-database-tilde-database	database.md	engine/database/database.h:215
-database::Database::Name() const	function	database	database-database-name-const	database.md	engine/database/database.h:220
-database::Database::Supports(Feature) const	function	database	database-database-supports-feature-const	database.md	engine/database/database.h:223
-database::Database::Open(const OpenOptions&,UniquePtr<Connection>*)	function	database	database-database-open-const-openoptions-amp-uniqueptr-lt-connection-gt-star	database.md	engine/database/database.h:230
-database::Transaction	class	database	database-transaction	database.md	engine/database/database.h:237
-database::Transaction::Transaction(Connection&,TransactionKind)	function	database	database-transaction-transaction-connection-amp-transactionkind	database.md	engine/database/database.h:240
-database::Transaction::~Transaction()	function	database	database-transaction-tilde-transaction	database.md	engine/database/database.h:242
-database::Transaction::Transaction(const Transaction&)	function	database	database-transaction-transaction-const-transaction-amp	database.md	engine/database/database.h:243
-database::Transaction::operator=(const Transaction&)	function	database	database-transaction-operator-eq-const-transaction-amp	database.md	engine/database/database.h:244
-database::Transaction::BeginStatus() const	function	database	database-transaction-beginstatus-const	database.md	engine/database/database.h:248
-database::Transaction::Commit()	function	database	database-transaction-commit	database.md	engine/database/database.h:252
+database::Statement::Column(u32) const	function	database	database-statement-column-u32-const	database.md	engine/database/database.h:138
+database::Connection	class	database	database-connection	database.md	engine/database/database.h:148
+database::Connection::~Connection()	function	database	database-connection-tilde-connection	database.md	engine/database/database.h:150
+database::Connection::Supports(Feature) const	function	database	database-connection-supports-feature-const	database.md	engine/database/database.h:154
+database::Connection::Prepare(SqlText,UniquePtr<Statement>*)	function	database	database-connection-prepare-sqltext-uniqueptr-lt-statement-gt-star	database.md	engine/database/database.h:162
+database::Connection::Execute(SqlText)	function	database	database-connection-execute-sqltext	database.md	engine/database/database.h:166
+database::Connection::Begin(TransactionKind)	function	database	database-connection-begin-transactionkind	database.md	engine/database/database.h:171
+database::Connection::Commit()	function	database	database-connection-commit	database.md	engine/database/database.h:174
+database::Connection::Rollback()	function	database	database-connection-rollback	database.md	engine/database/database.h:177
+database::Connection::InTransaction() const	function	database	database-connection-intransaction-const	database.md	engine/database/database.h:180
+database::Connection::Savepoint(StringView)	function	database	database-connection-savepoint-stringview	database.md	engine/database/database.h:186
+database::Connection::ReleaseSavepoint(StringView)	function	database	database-connection-releasesavepoint-stringview	database.md	engine/database/database.h:189
+database::Connection::RollbackToSavepoint(StringView)	function	database	database-connection-rollbacktosavepoint-stringview	database.md	engine/database/database.h:192
+database::Connection::LastInsertRowId() const	function	database	database-connection-lastinsertrowid-const	database.md	engine/database/database.h:196
+database::Connection::ChangedRows() const	function	database	database-connection-changedrows-const	database.md	engine/database/database.h:199
+database::Connection::SchemaVersion(i64*)	function	database	database-connection-schemaversion-i64-star	database.md	engine/database/database.h:204
+database::Connection::WriteSchemaVersion(i64)	function	database	database-connection-writeschemaversion-i64	database.md	engine/database/database.h:207
+database::Database	class	database	database-database	database.md	engine/database/database.h:214
+database::Database::~Database()	function	database	database-database-tilde-database	database.md	engine/database/database.h:216
+database::Database::Name() const	function	database	database-database-name-const	database.md	engine/database/database.h:221
+database::Database::Supports(Feature) const	function	database	database-database-supports-feature-const	database.md	engine/database/database.h:224
+database::Database::Open(const OpenOptions&,UniquePtr<Connection>*)	function	database	database-database-open-const-openoptions-amp-uniqueptr-lt-connection-gt-star	database.md	engine/database/database.h:231
+database::Transaction	class	database	database-transaction	database.md	engine/database/database.h:238
+database::Transaction::Transaction(Connection&,TransactionKind)	function	database	database-transaction-transaction-connection-amp-transactionkind	database.md	engine/database/database.h:241
+database::Transaction::~Transaction()	function	database	database-transaction-tilde-transaction	database.md	engine/database/database.h:243
+database::Transaction::Transaction(const Transaction&)	function	database	database-transaction-transaction-const-transaction-amp	database.md	engine/database/database.h:244
+database::Transaction::operator=(const Transaction&)	function	database	database-transaction-operator-eq-const-transaction-amp	database.md	engine/database/database.h:245
+database::Transaction::BeginStatus() const	function	database	database-transaction-beginstatus-const	database.md	engine/database/database.h:249
+database::Transaction::Commit()	function	database	database-transaction-commit	database.md	engine/database/database.h:253
 database::RegisterDatabaseSettings(settings::Registry*)	function	database	database-registerdatabasesettings-settings-registry-star	database.md	engine/database/database_settings.h:17
 database::OptionsFromSettings(const settings::Registry&,StringView)	function	database	database-optionsfromsettings-const-settings-registry-amp-stringview	database.md	engine/database/database_settings.h:26
 database::SqlText	class	database	database-sqltext	database.md	engine/database/sql_text.h:19

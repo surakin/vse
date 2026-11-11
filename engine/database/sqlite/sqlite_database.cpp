@@ -513,7 +513,13 @@ Status SqliteDatabase::Open(const OpenOptions& options, UniquePtr<Connection>* o
     bool wal = false;
     if (!memory) {
         // Opening reads nothing yet: the first statement finds out whether the file is a database at all (a foreign file is NOTADB, `Corrupt`).
-        const char* sync = options.sync_mode == SyncMode::Off ? "OFF" : options.sync_mode == SyncMode::Full ? "FULL" : "NORMAL";
+        // NORMAL keeps a write-ahead log intact, but SQLite documents that a rollback journal needs FULL to survive a power loss: the default follows the journal mode.
+        const bool rollback_journal = options.journal_mode == JournalMode::Delete || options.journal_mode == JournalMode::Truncate;
+        const char* sync = options.sync_mode == SyncMode::Off      ? "OFF"
+                           : options.sync_mode == SyncMode::Full   ? "FULL"
+                           : options.sync_mode == SyncMode::Normal ? "NORMAL"
+                           : rollback_journal                      ? "FULL"
+                                                                   : "NORMAL";
         char pragma[64];
         FormatTo(pragma, sizeof(pragma), "PRAGMA synchronous = %s", sync);
         int step = sqlite3_exec(handle->db, pragma, nullptr, nullptr, nullptr);

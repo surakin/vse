@@ -49,7 +49,7 @@ enum class JournalMode : u8 {
 
 /// How hard a commit is pushed to the storage device. `Default` leaves the backend's own choice.
 enum class SyncMode : u8 {
-    Default, ///< The backend's default.
+    Default, ///< The backend's default (the SQLite backend: `Normal` with the write-ahead log, `Full` with a rollback journal).
     Off,     ///< No syncs: a crash can lose or damage the database.
     Normal,  ///< Sync at the points that keep the database intact; the latest commits can be lost in a crash.
     Full,    ///< Sync at every commit.
@@ -67,8 +67,8 @@ enum class IntegrityCheck : u8 {
 /// Thread-safety: thread-compatible plain data.
 /// Ownership: `location` borrows its text; the caller keeps it alive for the `Open` call.
 struct OpenOptions {
-    /// The database to open: a path in the engine's portable form, or the name of an in-memory database. Connections opened with the same
-    /// non-empty location share one database; an empty location is a private database that lives as long as its connection.
+    /// The database to open: a path in the engine's portable form, or `":memory:"` for an in-memory database. An empty location is a private database that
+    /// lives as long as its connection; so is `":memory:"` (the SQLite backend has no shared named in-memory database, and any other text is a file path).
     StringView location;
     OpenMode mode = OpenMode::Create;        ///< Read-write, read-only or create.
     u32 busy_timeout_ms = 5000;              ///< How long a lock wait lasts before the operation returns [[database::ErrorCode::Busy]]; 0 fails at once.
@@ -116,7 +116,7 @@ public:
     virtual Status ClearBindings() = 0;
     /// Rewinds the statement so `Step` starts again; bindings are kept. Also releases the locks a read statement holds.
     ///
-    /// Fails: reports the error of the previous `Step`, if it failed (the statement is reset regardless).
+    /// Fails: never; the error of a failed `Step` was reported by that `Step`.
     virtual Status Reset() = 0;
 
     /// Runs the statement to its next row or to its end.
@@ -133,7 +133,8 @@ public:
     /// The value of column `index` of the current row, as the type it was stored with. Text and blob views are valid until the next `Step` or `Reset`.
     ///
     /// Param index: the column, from 0.
-    /// Aborts: `index` is out of range, or there is no current row.
+    /// Aborts: `index` is out of range.
+    /// Fails: with no current row (before the first `Step`, or after one that reported done) the value is null.
     virtual ValueView Column(u32 index) const = 0;
 };
 

@@ -460,7 +460,7 @@ Appends `value` as an unsigned LEB128 varint (seven bits per byte, low group fir
 void WriteBytes(ByteSpan bytes);
 ```
 
-Appends the bytes as they are.
+Appends the bytes as they are. The bytes may be a view of this writer's own `Bytes()` (they are appended as they were before the call).
 
 ### `Bytes()` {#bytes-bytewriter-bytes-const}
 

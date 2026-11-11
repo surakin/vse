@@ -126,6 +126,23 @@ Everything Extreme() {
     return e;
 }
 
+TEST_CASE("ByteWriter: WriteBytes of a view of its own bytes appends them as they were, also when the buffer grows", "[storage][encoding]") {
+    bytes::ByteWriter w;
+    for (u32 i = 0; i < 4; ++i) {
+        w.WriteU8(static_cast<u8>(i + 1));
+    }
+    for (u32 round = 0; round < 12; ++round) { // doubles the content each time, so the buffer reallocates
+        const usize before = w.Size();
+        w.WriteBytes(w.Bytes());
+        REQUIRE(w.Size() == before * 2);
+        for (usize i = 0; i < before; ++i) {
+            REQUIRE(w.Bytes()[before + i] == w.Bytes()[i]);
+        }
+    }
+    CHECK(w.Bytes()[0] == 1);
+    CHECK(w.Bytes()[3] == 4);
+}
+
 TEST_CASE("Encoding: every field kind round trips bit-exact", "[storage][encoding]") {
     ComponentRegistry registry;
     REQUIRE(RegisterAll(&registry).Ok());

@@ -454,6 +454,9 @@ int VfsOpen(sqlite3_vfs*, sqlite3_filename name, sqlite3_file* file, int flags, 
         return fail(SQLITE_CANTOPEN);
     }
     if (io::File::Open(self->path, mode, open_flags, &self->file).Failed()) {
+        if (name == nullptr) {
+            static_cast<void>(io::Remove(self->path)); // the temporary file was created above and nobody will close it
+        }
         return fail(SQLITE_CANTOPEN);
     }
     self->sync_directory = !existed && ((flags & (SQLITE_OPEN_MAIN_JOURNAL | SQLITE_OPEN_WAL)) != 0);

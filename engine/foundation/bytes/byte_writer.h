@@ -60,11 +60,16 @@ public:
         }
         WriteU8(static_cast<u8>(value));
     }
-    /// Appends the bytes as they are.
+    /// Appends the bytes as they are. The bytes may be a view of this writer's own `Bytes()` (they are appended as they were before the call).
     void WriteBytes(ByteSpan bytes) {
-        buffer_.Reserve(buffer_.Size() + bytes.Size());
-        for (usize i = 0; i < bytes.Size(); ++i) {
-            buffer_.Push(bytes[i]);
+        const usize count = bytes.Size();
+        const usize begin = reinterpret_cast<usize>(buffer_.Data());
+        const usize at = reinterpret_cast<usize>(bytes.Data());
+        const bool own = count != 0 && at >= begin && at < begin + buffer_.Size();
+        const usize offset = own ? at - begin : 0; // the buffer may move when it grows: remember where in it the bytes were
+        buffer_.Reserve(buffer_.Size() + count);
+        for (usize i = 0; i < count; ++i) {
+            buffer_.Push(own ? buffer_.Data()[offset + i] : bytes[i]);
         }
     }
 

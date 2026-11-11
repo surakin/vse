@@ -16,7 +16,7 @@ sqlite_boundary_test(sqlite_boundary_check_planted ${SQLITE_BOUNDARY_FIXTURES}/b
 set_tests_properties(sqlite_boundary_check_planted PROPERTIES WILL_FAIL TRUE)
 sqlite_boundary_test(sqlite_boundary_check_planted_count ${SQLITE_BOUNDARY_FIXTURES}/bad ${SQLITE_BOUNDARY_FIXTURES}/good/allowlist.txt)
 set_tests_properties(sqlite_boundary_check_planted_count PROPERTIES
-  PASS_REGULAR_EXPRESSION "engine/CMakeLists.txt:2:.*engine/leak.cpp:1:.*engine/leak.cpp:2:.*engine/leak.cpp:3:.*engine/other/macro.h:1:.*tests/leak_test.cpp:1:.*6 problem")
+  PASS_REGULAR_EXPRESSION "engine/CMakeLists.txt:2:.*engine/CMakeLists.txt:6:.*engine/leak.cpp:1:.*engine/leak.cpp:2:.*engine/leak.cpp:3:.*engine/other/macro.h:1:.*tests/leak_test.cpp:1:.*7 problem")
 
 # A clean tree passes: the SQLite directory may name SQLite; comments, strings and a similarly named public header are not violations.
 sqlite_boundary_test(sqlite_boundary_check_clean ${SQLITE_BOUNDARY_FIXTURES}/good ${SQLITE_BOUNDARY_FIXTURES}/good/allowlist.txt)

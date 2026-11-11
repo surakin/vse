@@ -13,7 +13,7 @@ set_tests_properties(database_sql_check PROPERTIES LABELS database)
 database_sql_test(database_sql_check_planted ${DATABASE_SQL_FIXTURES}/bad ${DATABASE_SQL_FIXTURES}/good/allowlist.txt)
 set_tests_properties(database_sql_check_planted PROPERTIES WILL_FAIL TRUE)
 database_sql_test(database_sql_check_planted_message ${DATABASE_SQL_FIXTURES}/bad ${DATABASE_SQL_FIXTURES}/good/allowlist.txt)
-set_tests_properties(database_sql_check_planted_message PROPERTIES PASS_REGULAR_EXPRESSION "engine/leak.cpp:2:.*2 problem")
+set_tests_properties(database_sql_check_planted_message PROPERTIES PASS_REGULAR_EXPRESSION "engine/leak.cpp:2:.*engine/leak.cpp:4:.*3 problem")
 
 database_sql_test(database_sql_check_clean ${DATABASE_SQL_FIXTURES}/good ${DATABASE_SQL_FIXTURES}/good/allowlist.txt)
 database_sql_test(database_sql_check_stale ${DATABASE_SQL_FIXTURES}/good ${DATABASE_SQL_FIXTURES}/good/stale_allowlist.txt)

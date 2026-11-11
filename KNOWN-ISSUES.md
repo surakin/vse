@@ -346,5 +346,32 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
 - Phase 19 Days 251-263 on the Windows PC (2026-11-11): three shared changes were built and tested on the Windows PC; the Linux machine has since built them with Clang and GCC (Day 264) and only the Mac's `test_phase_script` run is open: `engine/storage/component_registry.h` (the `fields` and `upgrades` defaults are `InitializerList<T>()`, not `{}`: MSVC C2797), `engine/storage/field.h` (the enum branch of `detail::EncodeValue` no longer returns: MSVC C4702 unreachable code), `tests/test_phase_script/CMakeLists.txt` (`affected_side_phase_wrong_flavor` uses `--flavor asan`; Windows refuses tsan). Also from the Windows PC, the Phase 19 close: the tutorial sample `docs/tutorials/saving-a-world.md` checks the results of `Autosaver::Update` and `Flush` (MSVC C4834), open until the Linux machine runs `ctest -L docs`.
 - Phase 19 Day 264 (2026-11-11, Linux machine): (b) The storage demo does not compare a render-scene draw list: `MeshRenderer` holds a GPU mesh with no stored form until Phase 21. (c) A save holds the encoded records of the whole selection in memory until the write (each is freed as it is written); measure on Day 265. (d) `SaveAsync` encodes inside the call (on the workers), so the caller waits for the encoding of the changed entities; only the writes are in the background. (e) `SaveAsync` and `Autosaver` must be used from the scheduler's main thread.
 - Phase 19 Day 265 (2026-11-11, Linux machine): **pass condition missed:** an incremental save of 1 percent of 1,000,000 entities written at random takes 1.23 s against 0.25 s, because the change stamps are per chunk (a chunk holds about 260 entities, so 1 percent at random touches 93 percent of them and 928,297 entities are encoded; only 9,951 records are written). With the changes in neighbouring entities it takes 128 ms. Options: (a) accept, since games write in clusters; (b) a per-entity dirty bit set by a write hook (cost on every write); (c) a sub-chunk stamp (a stamp per 16 rows, a few percent more memory per chunk); (d) hash only, skipping the encode with a cheaper component-level hash. No decision. On the Windows PC (2026-11-11, Release, Ryzen AI 7 350, two runs) the random case took 1,490-1,498 ms, and the neighbouring case **also missed**: 381-392 ms (1,075 ms with columns), against 128 ms on Linux; the other figures are in the Day 265 file.
-- Phase 19 Day 265 (2026-11-11): end-of-phase review findings **filed, not fixed** (storage core): (a) a child is not relinked when its parent's key changes; (b) `Load` with `Replace`/`Merge` is not atomic when it fails part-way; (c) `KeyIndex` goes stale after two `EndFrame`s without a refresh; (d) duplicate keys in a world block saves; (e) `Save` does not check the store header; (f) one entity that cannot be encoded aborts the whole save; (g) a forgotten entity's old key is not removed from the session in an incremental plan; (h) pieces are ordered by registration order; (i) the upgrade-step output limit is not enforced per step; (j) SQL identifiers are not quoted and names differing only in case collide; (k) column-layout staleness cases 2-4; (l) one bad record blocks `Open` of a column store (the refill fails); (m) `SqlStore::FailAfter` lives in the production class; (n) `VerifyColumns` treats -0.0 as equal to 0.0; (o) index-name collisions; (p) test gaps for `FindKeys` edge cases.
-- Phase 19 Day 265 (2026-11-11): end-of-phase review findings **filed, not fixed** (database module): (a) a second process is not excluded from a WAL database (locks and the WAL index are in process memory only); (b) `VfsOpen` has no read-only fallback, and a read-only open of a WAL database creates an empty `-wal` file; (c) `SyncMode::Default` is `synchronous=NORMAL` also for rollback-journal modes; (d) the crash model never drops unsynced data, so it proves call order, not durability; (e) `PRAGMA journal_mode` may silently not take effect while other connections hold the file; (f) `OpenOptions::location` documents shared named in-memory databases that the backend does not provide; (g) two spellings of one path may get separate lock tables; (h) `sqlite_boundary_check` misses a multi-line `target_link_libraries`; (i) `database_sql_check` mis-reads lines after an unbalanced `[`; (j) a temp file leaks when its open fails; (k) `VfsAccess` ignores its flags; (l) `Statement::Reset` and `Column` do not match their documented contracts; (m) `Commit`'s "still open on failure" is not true for every SQLite code; (n) the TSAN suppressions cover only two functions and SQLite is not instrumented; (o) `ByteWriter::WriteBytes` with a span into its own buffer; (p) statement-cache lookups are linear and miss text with trailing blanks; (q) static-destruction order and orphaned temp files; (r) fault-injection state is global.
+- Phase 19 Day 265 (2026-11-11): end-of-phase review findings **filed, not fixed**, storage core:
+  - a child is not relinked when its parent's key changes
+  - `Load` with `Replace`/`Merge` is not atomic when it fails part-way
+  - `KeyIndex` goes stale after two `EndFrame`s without a refresh
+  - duplicate keys in a world block saves
+  - `Save` does not check the store header
+  - one entity that cannot be encoded aborts the whole save
+  - a forgotten entity's old key is not removed from the session in an incremental plan
+  - pieces are ordered by registration order
+  - the upgrade-step output limit is not enforced per step
+  - SQL identifiers are not quoted and names differing only in case collide
+  - column-layout staleness cases 2-4
+  - one bad record blocks `Open` of a column store (the refill fails)
+  - `SqlStore::FailAfter` lives in the production class
+  - `VerifyColumns` treats -0.0 as equal to 0.0
+  - index-name collisions
+  - test gaps for `FindKeys` edge cases
+- Phase 19 Day 265 (2026-11-11): end-of-phase review findings **filed, not fixed**, database module (the gate, temp-file, sync-mode, `ByteWriter` and documentation findings of the same review were fixed in the triage pass):
+  - a second process is not excluded from a WAL database (locks and the WAL index are in process memory only)
+  - `VfsOpen` has no read-only fallback, and a read-only open of a WAL database creates an empty `-wal` file
+  - the crash model never drops unsynced data, so it proves call order, not durability
+  - `PRAGMA journal_mode` may silently not take effect while other connections hold the file
+  - two spellings of one path may get separate lock tables
+  - `VfsAccess` ignores its flags (an empty `-wal` counts as existing)
+  - `Commit`'s "still open on failure" is not true for every SQLite code
+  - the TSAN suppressions cover only two functions and SQLite is not instrumented
+  - statement-cache lookups are linear and miss text with trailing blanks
+  - static-destruction order, and temp files orphaned when the process dies
+  - fault-injection state is global

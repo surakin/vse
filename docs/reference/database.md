@@ -102,7 +102,7 @@ How hard a commit is pushed to the storage device. `Default` leaves the backend'
 
 | Enumerator | Value | Description |
 |---|---|---|
-| <a id="database-syncmode-default"></a>`Default` |  | The backend's default. |
+| <a id="database-syncmode-default"></a>`Default` |  | The backend's default (the SQLite backend: `Normal` with the write-ahead log, `Full` with a rollback journal). |
 | <a id="database-syncmode-off"></a>`Off` |  | No syncs: a crash can lose or damage the database. |
 | <a id="database-syncmode-normal"></a>`Normal` |  | Sync at the points that keep the database intact; the latest commits can be lost in a crash. |
 | <a id="database-syncmode-full"></a>`Full` |  | Sync at every commit. |
@@ -146,7 +146,7 @@ Everything `Database::Open` needs, as plain fields.
 StringView location;
 ```
 
-The database to open: a path in the engine's portable form, or the name of an in-memory database. Connections opened with the same non-empty location share one database; an empty location is a private database that lives as long as its connection.
+The database to open: a path in the engine's portable form, or `":memory:"` for an in-memory database. An empty location is a private database that lives as long as its connection; so is `":memory:"` (the SQLite backend has no shared named in-memory database, and any other text is a file path).
 
 ### `mode` {#database-openoptions-mode}
 
@@ -331,7 +331,7 @@ Rewinds the statement so `Step` starts again; bindings are kept. Also releases t
 
 | Field | Value |
 |---|---|
-| Fails | reports the error of the previous `Step`, if it failed (the statement is reset regardless). |
+| Fails | never; the error of a failed `Step` was reported by that `Step`. |
 
 ### `Step(bool*)` {#database-statement-step-bool-star}
 
@@ -378,7 +378,8 @@ The value of column `index` of the current row, as the type it was stored with. 
 | Field | Value |
 |---|---|
 | Parameter `index` | the column, from 0. |
-| Aborts | `index` is out of range, or there is no current row. |
+| Fails | with no current row (before the first `Step`, or after one that reported done) the value is null. |
+| Aborts | `index` is out of range. |
 
 ## `Connection` {#database-connection}
 
