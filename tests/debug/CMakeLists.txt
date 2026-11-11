@@ -143,9 +143,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   return()
 endif()
 
-# macOS (Phase 26 Day 306): the shared test files in three flavors, as Windows began on its Day 154. Today's backend has stack traces, the module list
-# and the crash context; the crash handler, death tests, fault injection and the debugger check answer "unsupported" until Day 307
-# (os/macos/debug/not_yet_ported.cpp), so their cases skip with that reason. The macOS-only cases arrive with their days.
+# macOS (Phase 26 Days 306-307): the shared test files in three flavors, with the macOS-only cases in macos/ (stack traces and the crash context,
+# Day 306; the crash handler on Breakpad's Mach exceptions, death tests and the parent-watch pipe, Day 307).
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   set(_debug_macos_sources
     death_test_registry_test.cpp
@@ -159,6 +158,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     install_hooks.cpp
     resource_guard_macos.cpp
     macos/stack_trace_macos_test.cpp
+    macos/crash_end_to_end_macos_test.cpp
+    macos/debugger_macos_test.cpp
     saved_dumps_test.cpp
     core_dump_test.cpp
     crash_extract_test.cpp
@@ -208,6 +209,24 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   set_tests_properties(debug_backend_lists_planted_count PROPERTIES
     PASS_REGULAR_EXPRESSION "windows: BACKEND.md lists `Stale`.*windows: BACKEND.md has no section heading for `Forgotten`.*macos: BACKEND.md lists `Stale`.*macos: BACKEND.md has no section heading for `Forgotten`.*4 problem")
   engine_label_tests(debug_backend_lists debug_backend_lists_clean debug_backend_lists_planted debug_backend_lists_planted_count)
+  # Nothing can upload (PLAN.md assumption #20): no built binary links or imports networking (check_no_network_macos.cmake: otool -L, nm -u).
+  foreach(binary debug_tests debug_tests_asan debug_tests_tsan debug_checks_off_tests crash_extract)
+    add_test(NAME debug_no_network_${binary}
+      COMMAND ${CMAKE_COMMAND} -DBINARY=$<TARGET_FILE:${binary}> -P ${CMAKE_CURRENT_SOURCE_DIR}/check_no_network_macos.cmake)
+    set_tests_properties(debug_no_network_${binary} PROPERTIES LABELS "debug" SKIP_REGULAR_EXPRESSION "otool or nm not found")
+    engine_label_tests(debug_no_network_${binary})
+  endforeach()
+  foreach(case "clean|otool_nm_clean.txt" "planted_library|otool_nm_with_curl.txt" "planted_class|otool_nm_with_nsurlsession.txt")
+    string(REPLACE "|" ";" parts "${case}")
+    list(GET parts 0 name)
+    list(GET parts 1 fixture)
+    add_test(NAME debug_no_network_check_macos_${name}
+      COMMAND ${CMAKE_COMMAND} -DTOOL_TEXT_FILE=${CMAKE_CURRENT_SOURCE_DIR}/fixtures/${fixture} -P ${CMAKE_CURRENT_SOURCE_DIR}/check_no_network_macos.cmake)
+    set_tests_properties(debug_no_network_check_macos_${name} PROPERTIES LABELS "debug")
+    engine_label_tests(debug_no_network_check_macos_${name})
+  endforeach()
+  set_tests_properties(debug_no_network_check_macos_planted_library PROPERTIES PASS_REGULAR_EXPRESSION "network[ \n]+library:[ \n]+libcurl.4.dylib")
+  set_tests_properties(debug_no_network_check_macos_planted_class PROPERTIES PASS_REGULAR_EXPRESSION "network[ \n]+function:[ \n]+_OBJC_CLASS_\\$_NSURLSession")
   return()
 endif()
 

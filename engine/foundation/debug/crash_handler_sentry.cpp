@@ -146,6 +146,13 @@ sentry_value_t OnLibraryCrash(const sentry_ucontext_t* context, sentry_value_t e
     if (context != nullptr) detail::ReportCrashFromExceptionPointers(&context->exception_ptrs);
     return event;
 }
+#elif ENGINE_PLATFORM_MACOS
+// macOS: the library calls this after it wrote the dump, with the crashed thread's register context (and no signal information: only
+// `user_context` is set); the platform builds the CrashEvent from it (os/macos/debug/crash_hook.cpp). Keeping the event keeps the envelope.
+sentry_value_t OnLibraryCrash(const sentry_ucontext_t* context, sentry_value_t event, sentry_hint_t*, void*) {
+    if (context != nullptr) detail::ReportCrashFromMachContext(context->user_context);
+    return event;
+}
 #endif
 
 // SIGNAL-SAFE-END
@@ -244,6 +251,8 @@ CrashHandlerResult InstallCrashHandler(const CrashHandlerOptions& options) {
 #if ENGINE_PLATFORM_WINDOWS
     sentry_options_set_on_crash(sentry, &OnLibraryCrash, nullptr); // the report on Windows (above)
     detail::PrepareCrashEventHook(); // the crash gate goes under the library's filter (crash_hook.cpp)
+#elif ENGINE_PLATFORM_MACOS
+    sentry_options_set_on_crash(sentry, &OnLibraryCrash, nullptr); // the report on macOS (above)
 #endif
 
     if (sentry_init(sentry) != 0) { // takes ownership of `sentry`

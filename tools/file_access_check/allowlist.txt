@@ -12,7 +12,7 @@ engine/foundation/os/linux/debug/module_list.cpp|E1: reads the executable path w
 engine/foundation/os/linux/debug/crash_context.cpp|E2: InitCrashContext reads /proc and the executable path with the raw descriptor primitives because the assert-failure handler can call it lazily while the heap may be inconsistent; the file layer allocates.
 engine/foundation/os/windows/debug/death_test.cpp|E3: opens the NUL device (CreateFileW) for a death-test child's standard input and unused output; it is a device, not a path (Linux names /dev/null in posix_spawn_file_actions_addopen).
 tools/docgen/src/windows/child_process_windows.cpp|E3: opens a sample runner child's standard handles with CreateFileW: the NUL device and the files its output goes to, inheritable, which CreateProcessW needs and the file layer's handles are not (Linux names them in posix_spawn_file_actions_addopen).
-engine/foundation/os/linux/debug/fault_injection.cpp|E3: memfd_create makes anonymous memory for the fault-injection helper; it is not a path.
+engine/foundation/os/linux/debug/posix_debug_hooks.cpp|E3: memfd_create makes anonymous memory for the fault-injection helper (TriggerBusError); it is not a path.
 engine/platform/linux/wayland/wayland_window.cpp|E3: memfd_create makes the shared-memory buffer shared with the compositor; it is not a path.
 engine/platform/linux/wayland/wayland_cursor.cpp|E3: memfd_create makes the shared-memory buffer of the cursor image shared with the compositor; it is not a path.
 tests/io/|E4: the tests of the file layer plant files, links, permissions and temporary trees with the operating system directly, so they do not depend on the code under test.

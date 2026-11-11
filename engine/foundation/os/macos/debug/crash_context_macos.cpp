@@ -2,6 +2,7 @@
 // path, where the heap may be inconsistent: nothing here allocates (sysctl into fixed buffers, the main image's load commands in memory).
 #include "debug/crash_context_platform.h"
 #include "debug/thread_info.h"
+#include "os/macos/debug/thread_id_macos.h"
 
 #include "cstr/cstr.h"
 #include "cstr/mem_ops.h"
@@ -20,8 +21,7 @@ u64 CurrentThreadId() {
     // worker reads the same in a crash report and in the job logs. The full id counts up from boot and stays below 2^31 for years of uptime.
     u64 id = 0;
     if (::pthread_threadid_np(nullptr, &id) != 0) return 1;
-    const u64 low = id & 0x7FFFFFFFu;
-    return low != 0 ? low : 1;
+    return macos::ThreadNumber(id);
 }
 
 namespace detail {

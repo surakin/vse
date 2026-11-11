@@ -32,7 +32,16 @@ Dropped: `tests/`, `examples/`, `fuzzing-examples/`, `ndk/`, `toolchains/`, `ext
 **Phase 13 Day 154 (Windows):** the two private headers the Windows build includes were copied from the same release asset (its
 SHA-256 checked against the one above), unmodified: `external/breakpad/src/client/windows/common/ipc_protocol.h` and
 `external/breakpad/src/common/windows/string_utils-inl.h` (found by building the `sentry` target until no include was missing).
-**Phase 14 (macOS):** the macOS private headers are still to re-vendor the same way.
+**Phase 26 Day 307 (macOS):** the four private headers the macOS build includes were copied from the same release asset (downloaded
+again from the 0.17.6 release on 2026-11-11, its SHA-256 checked against the one above), unmodified, found by building the `sentry` target
+until no include was missing:
+
+| File | SHA-256 |
+|---|---|
+| `external/breakpad/src/client/mac/crash_generation/crash_generation_server.h` | `5ba7970812768cf8533656b8d829c7f071681cb502cfb27ff2f869c39a5d8f53` |
+| `external/breakpad/src/common/mac/byteswap.h` | `4565ea05ff4b2ea5f864cfc11e4ae7838161ae24858acd58fcbc9fcd8f626261` |
+| `external/breakpad/src/common/mac/MachIPC.h` | `41f6ba2a4af80ccc4d797032b1cdeceec9e617ea5ab248ef739a9ce72aa49d56` |
+| `external/breakpad/src/common/mac/scoped_task_suspend-inl.h` | `49fd5393fe88ca0e0b9b21d05643951851df0d98e16c07850e0685cceeb88573` |
 
 ## Added by this repository
 

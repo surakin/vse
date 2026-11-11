@@ -1,10 +1,11 @@
+// Fault injection on POSIX, Linux and macOS (Phase 26 Day 307: moved from os/linux/debug/fault_injection.cpp): the same signals, with the bus
+// error from each system's hook (posix::TriggerBusError).
 #include "debug/fault_injection.h"
+#include "os/posix/debug/posix_debug.h"
 
 #include "log/assert.h"
 
 #include "os/console.h"
-#include <sys/mman.h>
-#include <unistd.h>
 #include "build_defs.h"
 
 namespace engine_placeholder::debug {
@@ -24,19 +25,6 @@ volatile unsigned g_fault_depth = 0;
     frame[0] = static_cast<char>(n);
     g_fault_depth = g_fault_depth + 1;
     return FaultRecurse(n + 1) + static_cast<unsigned>(frame[0]);
-}
-
-[[gnu::noinline]] void FaultBusError() {
-    const int fd = memfd_create("engine-fault", 0);
-    if (fd < 0) {
-        return;
-    }
-    // A mapping of a file with no content: the first touch of the page raises SIGBUS.
-    void* page = mmap(nullptr, 4096, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    if (page == MAP_FAILED) {
-        return;
-    }
-    *static_cast<volatile char*>(page) = 1;
 }
 
 } // namespace
@@ -83,7 +71,7 @@ void InjectFault(FaultKind kind) {
         FaultRecurse(0);
         break;
     case FaultKind::BusError:
-        FaultBusError();
+        posix::TriggerBusError();
         break;
     }
     // The fault did not end the process (it should have): make sure this function never returns.

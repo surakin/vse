@@ -199,6 +199,22 @@ for an address or an account, and ctests (`debug_no_network_*`) fail if a test b
 imports their functions (on Windows: imports one of `winhttp`, `wininet`, `ws2_32` and the like, or names one in its data) (the demos and benches that install the handler are added to that check when they are wired in). Sending a dump, if a project ever wants
 to, is its own tool that reads the file.
 
+
+### On macOS
+
+The crash handler is the same library and the same report (Phase 26 Day 307), with these differences:
+
+- **Mach exceptions, not signals.** Breakpad catches a fault as a Mach exception on its own thread while the crashed thread is suspended; an abort
+  comes through its `SIGABRT` handler. The report is built from the crashed thread's registers, so it names that thread, its reason and its stack,
+  and a stack overflow needs no alternate stack.
+- **The process ends with an exit code.** After the dump Breakpad calls `_exit` with the Mach exception type (1 for a bad access): a parent sees an
+  exit code, not a signal, and the system's crash reporter (`ReportCrash`) writes nothing to `~/Library/Logs/DiagnosticReports` for it. Without the
+  handler a fault ends the process by signal and `ReportCrash` writes its report. On the development Mac a crashing child ended in about 260 ms with
+  the handler (the dump) and 40 ms without.
+- **Core files** are written to `/cores` only when it is writable by the user (`EnablePostMortemDumps` reports `Limited` otherwise, with the fix).
+- **Under a debugger** sentry installs no exception ports, so `lldb` sees the fault itself.
+- **ASan:** the handler's object suppresses one ASan report, on Breakpad's copy of the crashed stack into the dump (`__asan_default_suppressions`).
+
 ## What a crash report contains
 
 A crash report (and the extra output of a failed `ENGINE_ASSERT`, `ENGINE_VERIFY`, or `ENGINE_UNREACHABLE`) has the same

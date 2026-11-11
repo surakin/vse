@@ -37,6 +37,13 @@ bool CrashReportInProgress();
 // Removes the recorder if it is still the current handler; if something was installed over it, it stays but passes through.
 void RemoveCrashEventHook();
 
+#if ENGINE_PLATFORM_MACOS
+// macOS (Phase 26 Day 307): the crash library calls its `on_crash` hook with the crashed thread's register context (a ucontext_t, ucontext64_t on
+// arm64), on Breakpad's exception thread for a hardware fault or on the crashing thread for an abort; crash_handler_sentry.cpp passes it here, which
+// builds the CrashEvent from it (os/macos/debug/crash_hook.cpp) and calls the hook InstallCrashEventHook installed. Signal-safe.
+void ReportCrashFromMachContext(const void* user_context);
+#endif
+
 #if ENGINE_PLATFORM_WINDOWS
 // Windows: called before the library is initialized, so the platform's crash gate (crash_hook.cpp) is the filter the library replaces.
 void PrepareCrashEventHook();

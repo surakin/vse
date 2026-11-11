@@ -15,7 +15,7 @@
 #include "os/signal.h"
 #include <sys/stat.h>
 #include <unistd.h>
-#include "support/test_support_linux.h"
+#include "support/test_support_posix.h"
 #include "types.h"
 #include "cstr/cstr.h"
 #include "cstr/format.h"

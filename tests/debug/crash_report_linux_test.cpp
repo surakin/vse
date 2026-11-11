@@ -6,7 +6,7 @@
 #include "test_text.h"
 
 #include "cstr/cstr.h"
-#include "support/test_support_linux.h"
+#include "support/test_support_posix.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::debug;

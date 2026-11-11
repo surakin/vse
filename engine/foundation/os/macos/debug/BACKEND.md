@@ -1,7 +1,7 @@
 # macOS debugging backend (Phase 26)
 
-What Phase 26 implements to bring up the debugging facilities on macOS (Day 306: stack traces, the module list, the crash context; Days 307-308
-the rest); Linux is the reference
+What Phase 26 implements to bring up the debugging facilities on macOS (Day 306: stack traces, the module list, the crash context; Day 307: the
+crash handler, death tests, fault injection, the debugger check, post-mortem dumps; Day 308: dumps and scripts); Linux is the reference
 (`engine/foundation/os/linux/debug/`). Everything else is shared: the facade, the assert family, the report writer, the log ring,
 the crash state, the tests. `posix_spawn`, `setrlimit`, signals and `sigaltstack` are the same calls as on Linux, so most of the
 Linux files compile with small changes. See `docs/guide/porting-debugging.md` and `tests/debug/BACKEND-CONFORMANCE.md`.
@@ -26,9 +26,16 @@ As built (Day 306, `os/macos/debug/crash_context_macos.cpp`): as described, noth
 (`sysctl kern.coredump`), so report `Limited` with that note; the system also writes crash reports to
 `~/Library/Logs/DiagnosticReports` (name that in the destination). Groups: *post-mortem*.
 
+As built (Day 307, brought forward from Day 308; `os/macos/debug/core_dump_macos.cpp`): the limit raised as on Linux; the destination names
+`kern.corefile` and `~/Library/Logs/DiagnosticReports`; `Limited` with how to lift it when `kern.coredump` is 0 or the corefile directory is not
+writable by the user (`/cores` is root's, 755, by default: on the development Mac the result is `Limited`).
+
 ### `FaultSupported` and `InjectFault`
 As Linux (same signals). Integer divide by zero does not trap on arm64: `FaultSupported(DivideByZero)` is false there.
 `IllegalInstruction`: `brk`/`udf` on arm64. Expected reasons as Linux. Groups: *fault injection*.
+
+As built (Day 307, `os/macos/debug/fault_injection.cpp`): Linux's, except `BusError`, which writes into a page mapped `PROT_NONE` (macOS
+delivers a protection fault on a mapped page as SIGBUS; it has no `memfd_create`).
 
 ### `IsDebuggerAttached`
 `sysctl` with `CTL_KERN, KERN_PROC, KERN_PROC_PID, getpid()` and test `kp_proc.p_flag & P_TRACED`. Groups: *assert*.
@@ -37,9 +44,15 @@ As Linux (same signals). Integer divide by zero does not trap on arm64: `FaultSu
 `~/Library/Application Support/<app>/crashes` (from `NSSearchPathForDirectoriesInDomains` or `$HOME`), created 0700.
 Sandboxed apps: the container directory. Groups: *dump directory*.
 
+As built (Day 307, `os/macos/debug/debugger.cpp`): as described, cached for a second as on Linux; true under `lldb` (checked by hand) and in a
+child that called `ptrace(PT_TRACE_ME)` (tested).
+
 ### `RegisterThreadForCrashHandling`
 `sigaltstack` on the thread is still useful for signal-based handlers, but the library uses Mach exception ports, which do
 not need it: set the name and return true. Groups: *threads*.
+
+As built (Day 307, `os/macos/debug/crash_hook.cpp`): sets the engine's crash name and the thread's pthread name (the report reads the latter from
+Breakpad's thread), returns whether the handler is installed. A stack overflow on a registered worker is reported (tested).
 
 ### `InitDebugFacilities` and `ReloadDebugModules`
 The module list from `_dyld_image_count`, `_dyld_get_image_name`, `_dyld_get_image_header`, and
@@ -66,7 +79,20 @@ As built (Day 306): the low 31 bits, never 0, so the crash report and the job sy
 `posix_spawn` shared with Linux; `PR_SET_PDEATHSIG` does not exist on macOS: the child watches a pipe from the parent and exits when it closes (a pipe
 reaches EOF even if the parent is killed; an `atexit` handler would not run then). `RLIMIT_CORE` and signal decoding as Linux. Groups: *death tests*.
 
+As built (Day 307): Linux's backend moved to `os/posix/debug/death_test_posix.cpp` with the hooks of `posix_debug.h` (the pipe, the program's path,
+the environment, dying with the parent). The watch pipe's read end reaches the child as descriptor 3; a thread there kills the child at end of file.
+A child whose parent is killed with SIGKILL is gone within moments (tested).
+
 ## Pieces without a neutral label
+
+**As built (Day 307), the crash handler:** sentry's Breakpad backend with `SENTRY_TRANSPORT=none` (four Breakpad private headers re-vendored,
+`third_party/sentry_native/VENDORED.md`). Breakpad takes hardware faults as Mach exceptions on its own thread and aborts through a SIGABRT
+handler; sentry calls `on_crash` with the crashed thread's register context only, and `os/macos/debug/crash_hook.cpp` builds the report from it:
+the abort path when the context's stack pointer lies on the current thread's stack, otherwise the crashed thread found among the task's threads
+by its registers, the reason from that thread's exception state (`x86_EXCEPTION_STATE64`: the context's own exception part is zero), the stack
+walked from the frame pointer through `vm_read_overwrite`. After the dump Breakpad ends the process with `_exit(<exception type>)` (exit code 1
+for `EXC_BAD_ACCESS`), not a signal; without the handler a fault ends it by signal. ASan builds suppress ASan's write-interceptor report on
+Breakpad's stack copy into the dump (`__asan_default_suppressions`).
 
 - **Crash handler build:** `SENTRY_BACKEND=breakpad`, `SENTRY_TRANSPORT=none`. The library's `on_crash` hook receives a
   `ucontext` on macOS (unlike Linux Breakpad, where it is null); write the report from the hook and do not install the Linux

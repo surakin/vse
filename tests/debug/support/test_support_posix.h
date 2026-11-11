@@ -1,6 +1,6 @@
 #pragma once
 
-// Helpers shared by the Linux tests of tests/debug (Phase 16 Day 217): text concatenation, a shell command run with its output
+// Helpers shared by the POSIX tests of tests/debug, Linux and macOS (Phase 16 Day 217; shared as test_support_posix.h since Phase 26 Day 307): text concatenation, a shell command run with its output
 // captured (what `popen` did), removing a directory tree (what `remove` inside `nftw` did), finding files under a directory and
 // reading a whole file. They exist so the tests need no `std::string`, no `<cstdio>` and no `<cstdlib>`; the POSIX calls they make
 // (`posix_spawn`, `waitpid`, `nftw`, `opendir`) are not part of the C++ standard library.
@@ -12,6 +12,9 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
+
+// POSIX leaves the declaration of the environment array to the program (glibc declares it under _GNU_SOURCE; macOS does not).
+extern "C" char** environ;
 
 #include "containers/vector.h"
 #include "cstr/cstr.h"
@@ -95,7 +98,13 @@ inline ShellRun RunShell(StringView command) {
     ShellRun run;
     const Text owned = engine_test::MakeText(command); // NUL-terminated
     int fds[2];
-    if (::pipe2(fds, O_CLOEXEC) != 0) {
+    // pipe, then close-on-exec on both ends (macOS has no pipe2; Phase 26 Day 307 made this header shared as test_support_posix.h).
+    if (::pipe(fds) != 0) {
+        return run;
+    }
+    if (::fcntl(fds[0], F_SETFD, FD_CLOEXEC) != 0 || ::fcntl(fds[1], F_SETFD, FD_CLOEXEC) != 0) {
+        engine_placeholder::os::Close(fds[0]);
+        engine_placeholder::os::Close(fds[1]);
         return run;
     }
     posix_spawn_file_actions_t actions;

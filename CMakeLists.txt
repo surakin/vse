@@ -168,17 +168,11 @@ endif()
 if(ENGINE_PLATFORM STREQUAL "windows")
   # sentry-native for the crash handler (Phase 13 Days 154-156), configured as on Linux (below) and added before the engine's own options,
   # so it keeps its own. libbacktrace is not built on Windows: stack traces resolve through DbgHelp (os/windows/debug/BACKEND.md).
-  set(SENTRY_BACKEND breakpad CACHE STRING "" FORCE)
-  set(SENTRY_TRANSPORT none CACHE STRING "" FORCE)
-  set(SENTRY_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
-  set(SENTRY_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-  set(SENTRY_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-  set(SENTRY_BUILD_BENCHMARKS OFF CACHE BOOL "" FORCE)
-  set(SENTRY_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
   # The engine sets each thread's stack guarantee itself (RegisterThreadForCrashHandling, os/windows/debug/BACKEND.md); the library's own
   # setting at sentry_init would be a second, smaller one that only logs a warning when ours is already there.
   set(SENTRY_THREAD_STACK_GUARANTEE_AUTO_INIT OFF CACHE BOOL "" FORCE)
-  add_subdirectory(third_party/sentry_native)
+  include(cmake/EngineSentry.cmake)
+  engine_add_sentry()
   # sentry-native builds itself with -Werror -Wall under clang-cl, where -Wall means -Weverything: a newer clang than the pinned release
   # was tested with (23 here) stops on warnings the release predates (-Wc++-keyword, -Wpadded in vendor/mpack.h, ...). Warnings off for
   # that vendored target only (its warnings are not ours to fix, and the sources stay unmodified).
@@ -263,6 +257,9 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   include(cmake/EngineTestPhases.cmake)
   # Third-party code first, before the engine's warning options, so it keeps its own flags (as on Linux). libbacktrace: Mach-O, Day 306.
   add_subdirectory(third_party/libbacktrace)
+  # sentry-native for the crash handler (Day 307), configured as on Linux: the Breakpad backend (Mach exception ports on macOS), no transport.
+  include(cmake/EngineSentry.cmake)
+  engine_add_sentry(C11)
   option(ENGINE_UNITY_BUILD "Compile each target's sources as merged unity translation units" ON)
   set(CMAKE_UNITY_BUILD ${ENGINE_UNITY_BUILD})
   set(CMAKE_UNITY_BUILD_BATCH_SIZE 16)
@@ -299,18 +296,9 @@ add_subdirectory(third_party/libbacktrace)
 
 # sentry-native (third_party/sentry_native, PLAN.md assumption #20): crash capture and minidumps only, Breakpad backend, no
 # transport (nothing can be uploaded). Configured here, before add_subdirectory, so its options are not left to defaults.
-set(SENTRY_BACKEND breakpad CACHE STRING "" FORCE)
-set(SENTRY_TRANSPORT none CACHE STRING "" FORCE)
-set(SENTRY_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
-set(SENTRY_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(SENTRY_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(SENTRY_BUILD_BENCHMARKS OFF CACHE BOOL "" FORCE)
-set(SENTRY_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
-# sentry-native sets C99 when no standard is given; glibc's memchr/strchr macros use _Generic, so every call warned (-Wc11-extensions, 16 of
-# them on Clang). C11 for this library only: the variable is restored after the subdirectory so no other C target changes.
-set(CMAKE_C_STANDARD 11)
-add_subdirectory(third_party/sentry_native)
-unset(CMAKE_C_STANDARD)
+# (cmake/EngineSentry.cmake: the same configuration on every platform; C11 for the library's C, as glibc's macros need.)
+include(cmake/EngineSentry.cmake)
+engine_add_sentry(C11)
 include(cmake/EngineTestPhases.cmake)
 include(cmake/EngineDeathTests.cmake)
 

@@ -12,7 +12,7 @@
 #include "os/console.h"
 #include "os/last_error.h"
 #include "os/signal.h"
-#include "support/test_support_linux.h"
+#include "support/test_support_posix.h"
 #include "cstr/cstr.h"
 #include <sys/types.h>
 #include <unistd.h>

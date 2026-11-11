@@ -1,5 +1,8 @@
+// The POSIX death-test backend, shared by Linux and macOS (Phase 26 Day 307: moved from os/linux/debug/death_test.cpp); each system supplies the
+// hooks of os/posix/debug/posix_debug.h (the pipe, the program's path, the environment, dying with the parent).
 #include "debug/death_test.h"
 #include "debug/death_test_platform.h"
+#include "os/posix/debug/posix_debug.h"
 
 #include "containers/vector.h"
 #include "log/assert.h"
@@ -12,14 +15,11 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <spawn.h>
-#include <sys/prctl.h>
 #include <sys/resource.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include "cstr/mem_ops.h"
 #include "cstr/number.h"
-
-extern char** environ;
 
 namespace engine_placeholder::debug {
 
@@ -29,6 +29,7 @@ constexpr const char* kChildNameVariable = "ENGINE_DEATH_TEST_CHILD";
 constexpr const char* kChildArgumentVariable = "ENGINE_DEATH_TEST_ARG";
 constexpr const char* kNoCoreVariable = "ENGINE_DEATH_TEST_NOCORE";
 constexpr const char* kParentVariable = "ENGINE_DEATH_TEST_PARENT";
+constexpr const char* kWatchVariable = "ENGINE_DEATH_TEST_WATCH"; // macOS: the child finds its parent-watch pipe on posix::kParentWatchFd
 constexpr u32 kDefaultTimeoutMs = 10000;
 constexpr u32 kPollSliceMs = 10;
 constexpr usize kEnvStorageBytes = 16 * 1024;
@@ -109,6 +110,7 @@ bool KeyOfExtraMatches(const char* entry, const char* extra) {
 struct SpawnResources {
     int out_pipe[2] = {-1, -1};
     int err_pipe[2] = {-1, -1};
+    int watch_pipe[2] = {-1, -1}; // macOS: the child reads [0] as posix::kParentWatchFd; the parent keeps [1] open, unwritten, until it has reaped
     posix_spawn_file_actions_t actions;
     posix_spawnattr_t attr;
     bool actions_ready = false;
@@ -119,6 +121,8 @@ struct SpawnResources {
         CloseFd(out_pipe[1]);
         CloseFd(err_pipe[0]);
         CloseFd(err_pipe[1]);
+        CloseFd(watch_pipe[0]);
+        CloseFd(watch_pipe[1]);
         if (actions_ready) {
             posix_spawn_file_actions_destroy(&actions);
         }
@@ -172,8 +176,22 @@ void DrainPipe(int& fd, char* buffer, usize& length, bool& truncated) {
 }
 
 bool PrepareSpawn(SpawnResources& res, const ChildOptions& options) {
-    if (::pipe2(res.out_pipe, O_CLOEXEC) != 0 || ::pipe2(res.err_pipe, O_CLOEXEC) != 0) {
+    if (!posix::MakeCloexecPipe(res.out_pipe) || !posix::MakeCloexecPipe(res.err_pipe)) {
         return false;
+    }
+    if (posix::ChildNeedsParentWatch()) {
+        if (!posix::MakeCloexecPipe(res.watch_pipe)) {
+            return false;
+        }
+        // dup2 onto the same number keeps close-on-exec set, so the read end must not already be kParentWatchFd: move it above it.
+        if (res.watch_pipe[0] == posix::kParentWatchFd) {
+            const int moved = ::fcntl(res.watch_pipe[0], F_DUPFD_CLOEXEC, posix::kParentWatchFd + 1);
+            if (moved < 0) {
+                return false;
+            }
+            ::close(res.watch_pipe[0]);
+            res.watch_pipe[0] = moved;
+        }
     }
     for (int fd : {res.out_pipe[0], res.err_pipe[0]}) {
         const int flags = ::fcntl(fd, F_GETFL);
@@ -195,6 +213,10 @@ bool PrepareSpawn(SpawnResources& res, const ChildOptions& options) {
     if (posix_spawn_file_actions_adddup2(&res.actions, res.err_pipe[1], 2) != 0) {
         return false;
     }
+    // dup2 clears close-on-exec on the copy, so the child keeps the watch pipe's read end (and only that) open across the exec.
+    if (res.watch_pipe[0] >= 0 && posix_spawn_file_actions_adddup2(&res.actions, res.watch_pipe[0], posix::kParentWatchFd) != 0) {
+        return false;
+    }
     if (posix_spawnattr_init(&res.attr) != 0) {
         return false;
     }
@@ -207,9 +229,13 @@ bool PrepareSpawn(SpawnResources& res, const ChildOptions& options) {
     sigdelset(&all, SIGKILL);
     sigdelset(&all, SIGSTOP);
     sigemptyset(&none);
+    const short extra_flags = posix::PrepareSpawnFlags(&res.actions);
+    if (extra_flags < 0) {
+        return false;
+    }
     if (posix_spawnattr_setpgroup(&res.attr, 0) != 0 || posix_spawnattr_setsigdefault(&res.attr, &all) != 0 ||
         posix_spawnattr_setsigmask(&res.attr, &none) != 0 ||
-        posix_spawnattr_setflags(&res.attr, POSIX_SPAWN_SETPGROUP | POSIX_SPAWN_SETSIGDEF | POSIX_SPAWN_SETSIGMASK) != 0) {
+        posix_spawnattr_setflags(&res.attr, static_cast<short>(POSIX_SPAWN_SETPGROUP | POSIX_SPAWN_SETSIGDEF | POSIX_SPAWN_SETSIGMASK | extra_flags)) != 0) {
         return false;
     }
     return true;
@@ -226,18 +252,19 @@ bool IsSanitizerKey(const char* entry) {
 }
 
 bool BuildEnvironment(EnvironmentBlock& env, const char* name, const char* argument, const ChildOptions& options) {
+    char** const environ_array = posix::ProcessEnvironment();
     usize parent_count = 0;
-    for (char** e = environ; e != nullptr && *e != nullptr; ++e) {
+    for (char** e = environ_array; e != nullptr && *e != nullptr; ++e) {
         ++parent_count;
     }
     if (!env.Reserve(parent_count + options.extra_env_count + 8)) {
         return false;
     }
     const char* const sanitizer_keys[] = {"ASAN_OPTIONS", "TSAN_OPTIONS", "UBSAN_OPTIONS", "LSAN_OPTIONS"};
-    for (char** e = environ; e != nullptr && *e != nullptr; ++e) {
+    for (char** e = environ_array; e != nullptr && *e != nullptr; ++e) {
         const char* entry = *e;
         if (KeyMatches(entry, kChildNameVariable) || KeyMatches(entry, kChildArgumentVariable) ||
-            KeyMatches(entry, kNoCoreVariable) || KeyMatches(entry, kParentVariable)) {
+            KeyMatches(entry, kNoCoreVariable) || KeyMatches(entry, kParentVariable) || KeyMatches(entry, kWatchVariable)) {
             continue;
         }
         bool replaced = false;
@@ -284,6 +311,9 @@ bool BuildEnvironment(EnvironmentBlock& env, const char* name, const char* argum
         return false;
     }
     if (options.disable_core_dumps && !env.Add("ENGINE_DEATH_TEST_NOCORE=1")) {
+        return false;
+    }
+    if (posix::ChildNeedsParentWatch() && !env.Add("ENGINE_DEATH_TEST_WATCH=1")) {
         return false;
     }
     if (options.sanitizers_pass_faults) {
@@ -340,7 +370,7 @@ void PlatformPrepareChild() {
     }
     // Die with the parent: if the test program is killed (Ctrl-C, a ctest timeout) while a child runs, the child is in its
     // own process group and would otherwise outlive it. The parent might already be gone, so check after arming.
-    ::prctl(PR_SET_PDEATHSIG, SIGKILL);
+    posix::ArmDieWithParent(os::GetEnvironment(kWatchVariable) != nullptr ? posix::kParentWatchFd : -1);
     const char* parent = os::GetEnvironment(kParentVariable);
     if (parent != nullptr && static_cast<long>(::getppid()) != CStrToLong(parent)) {
         ::_exit(kUnknownDeathTestExitCode);
@@ -358,8 +388,11 @@ ChildResult PlatformRunChild(const char* name, const char* argument, const Child
     if (!argv.TryReserve(extra_argument_count + 2)) {
         return result;
     }
-    // Executed through /proc/self/exe itself, so a test binary that was rebuilt or deleted while running still starts.
-    static char kExecutable[] = "/proc/self/exe";
+    char executable_buffer[1024];
+    const char* const kExecutable = posix::SelfExecutablePath(executable_buffer, sizeof(executable_buffer));
+    if (kExecutable == nullptr) {
+        return result;
+    }
     static char kProgramName[] = "death-test-child";
     argv.Push(kProgramName);
     for (usize i = 0; i < extra_argument_count; ++i) {
@@ -382,9 +415,11 @@ ChildResult PlatformRunChild(const char* name, const char* argument, const Child
         return result;
     }
     result.started = true;
-    // The parent keeps only the read ends; closing the write ends is what lets the pipes report end of file.
+    // The parent keeps only the read ends; closing the write ends is what lets the pipes report end of file. Of the watch pipe it keeps the
+    // write end (the child holds the read end) until `res` goes out of scope, after the child is reaped.
     SpawnResources::CloseFd(res.out_pipe[1]);
     SpawnResources::CloseFd(res.err_pipe[1]);
+    SpawnResources::CloseFd(res.watch_pipe[0]);
 
     int out_fd = options.capture_stdout ? res.out_pipe[0] : -1;
     int err_fd = res.err_pipe[0];

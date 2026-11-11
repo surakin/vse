@@ -1,0 +1,5 @@
+debug_tests:
+	/usr/lib/libcurl.4.dylib (compatibility version 7.0.0, current version 9.0.0)
+	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1351.0.0)
+_curl_easy_perform
+_write

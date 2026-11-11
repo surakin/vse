@@ -25,7 +25,7 @@
 #include "cstr/format.h"
 #include "cstr/mem_ops.h"
 #include "cstr/number.h"
-#include "support/test_support_linux.h"
+#include "support/test_support_posix.h"
 
 #if ENGINE_SANITIZER_THREAD
 #define E2E_UNDER_TSAN 1

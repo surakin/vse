@@ -14,13 +14,14 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   # add os/<platform>/debug/ in Phases 13 and 26 (see the BACKEND.md checklists there).
   set(FOUNDATION_DEBUG_PLATFORM_SOURCES
     debug/stack_trace_backtrace.cpp
-    os/linux/debug/death_test.cpp
+    os/posix/debug/death_test_posix.cpp
+    os/linux/debug/posix_debug_hooks.cpp
     os/linux/debug/debugger.cpp
     os/linux/debug/module_list.cpp
     os/linux/debug/crash_context.cpp
     os/linux/debug/crash_signal.cpp
     os/linux/debug/core_dump.cpp
-    os/linux/debug/fault_injection.cpp
+    os/posix/debug/fault_injection_posix.cpp
   )
   # The file layer: the POSIX part shared with macOS (io/posix/, Phase 26 Day 303) and Linux's own.
   set(FOUNDATION_IO_PLATFORM_SOURCES
@@ -87,14 +88,19 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     io/macos/posix_hooks.cpp
     io/macos/special_folders.mm
   )
-  # Day 306: the debugging backend's first third (os/macos/debug/BACKEND.md): stack traces through libbacktrace on Mach-O, the module list, the
-  # crash context. TEMPORARY until Days 307-308: not_yet_ported.cpp answers "unsupported" for the crash handler, death tests, fault injection,
-  # the debugger check and post-mortem dumps, and crash_handler_sentry.cpp is left out (sentry needs Breakpad's macOS headers, Day 307).
+  # The debugging backend (os/macos/debug/BACKEND.md): stack traces through libbacktrace on Mach-O, the module list, the crash context (Day 306);
+  # the crash hook on Breakpad's on_crash, death tests (shared with Linux in os/posix/debug/), fault injection, the debugger check (Day 307).
+  # Post-mortem dumps (core_dump_macos.cpp) too, brought forward from Day 308.
   set(FOUNDATION_DEBUG_PLATFORM_SOURCES
     debug/stack_trace_backtrace.cpp
     os/macos/debug/module_list.cpp
     os/macos/debug/crash_context_macos.cpp
-    os/macos/debug/not_yet_ported.cpp
+    os/macos/debug/crash_hook.cpp
+    os/macos/debug/debugger.cpp
+    os/posix/debug/fault_injection_posix.cpp
+    os/posix/debug/death_test_posix.cpp
+    os/macos/debug/posix_debug_hooks.cpp
+    os/macos/debug/core_dump_macos.cpp
   )
 else()
   message(FATAL_ERROR "No foundation os.h implementation for this platform yet")
@@ -255,10 +261,8 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     engine_add_foundation_layer(foundation_io "${suffix}" ${FOUNDATION_IO_SOURCES})
     # The user directories (io/macos/special_folders.mm) ask Foundation (NSSearchPathForDirectoriesInDomains).
     target_link_libraries(foundation_io${suffix} PUBLIC foundation_base${suffix} "-framework Foundation")
-    set(_macos_debug_sources ${FOUNDATION_DEBUG_SOURCES})
-    list(REMOVE_ITEM _macos_debug_sources debug/crash_handler_sentry.cpp) # TEMPORARY until Day 307 (above)
-    engine_add_foundation_layer(foundation_debug "${suffix}" ${_macos_debug_sources})
-    target_link_libraries(foundation_debug${suffix} PUBLIC foundation_io${suffix} PRIVATE backtrace)
+    engine_add_foundation_layer(foundation_debug "${suffix}" ${FOUNDATION_DEBUG_SOURCES})
+    target_link_libraries(foundation_debug${suffix} PUBLIC foundation_io${suffix} PRIVATE backtrace sentry)
   endforeach()
 else()
   engine_add_foundation_libs("")

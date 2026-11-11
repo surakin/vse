@@ -89,6 +89,7 @@ module engine/foundation/debug/ debug 7
 module engine/foundation/os/linux/debug/ debug 7
 module engine/foundation/os/windows/debug/ debug 7
 module engine/foundation/os/macos/debug/ debug 7
+module engine/foundation/os/posix/debug/ debug 7
 # 8 settings
 module engine/foundation/settings/ settings 8
 # 9 platform: windows and input
@@ -188,6 +189,8 @@ platform-dir engine/foundation/os/windows/ engine/foundation/os/,engine/foundati
 platform-dir engine/foundation/os/macos/ engine/foundation/os/
 # The half of the os backend Linux and macOS share (Phase 26 Day 301): only their own directories use it.
 platform-dir engine/foundation/os/posix/ engine/foundation/os/linux/,engine/foundation/os/macos/
+# The death-test backend Linux and macOS share (Phase 26 Day 307): only their debug directories use it.
+platform-dir engine/foundation/os/posix/debug/ engine/foundation/os/linux/debug/,engine/foundation/os/macos/debug/
 platform-dir engine/foundation/io/linux/ engine/foundation/io/
 # The file layer's POSIX backend, shared by Linux and macOS (Phase 26 Day 303): only their own directories use it.
 platform-dir engine/foundation/io/posix/ engine/foundation/io/linux/,engine/foundation/io/macos/

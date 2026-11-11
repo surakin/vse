@@ -10,7 +10,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include "cstr/format.h"
-#include "support/test_support_linux.h"
+#include "support/test_support_posix.h"
 
 using namespace engine_placeholder;
 using debug_test::Cat;

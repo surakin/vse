@@ -11,7 +11,7 @@ Minidumps, core files, the dSYM symbol store and the shell scripts on macOS: the
       platform branch resolves a macOS report's frames through the dSYM, with `atos` as a cross-check in the test when present.
 - [ ] **Minidumps:** Breakpad writes a minidump on macOS into `CrashDumpDirectory()`; `crash_extract` reads it (the module list carries the `LC_UUID`s) and
       resolves frames through the store; a test crashes a child and checks the dump's modules and the resolved top frame.
-- [ ] **`EnablePostMortemDumps`:** `setrlimit(RLIMIT_CORE)` as Linux; report `Limited` naming `/cores` and `kern.coredump` (normally off) and the
+- [x] **`EnablePostMortemDumps`:** (done on Day 307, which needed it for the post-mortem death tests that began to run there; `os/macos/debug/core_dump_macos.cpp`) `setrlimit(RLIMIT_CORE)` as Linux; report `Limited` naming `/cores` and `kern.coredump` (normally off) and the
       DiagnosticReports directory; the *post-mortem* group checks the reported destination, never that a core appeared (it is the system's setting).
 - [ ] **Symbol store:** `scripts/store-symbols.sh` on macOS stores dSYM bundles under `<store>/<name>/<UUID>/<name>.dSYM` (the UUID from
       `dwarfdump --uuid`), so `lldb`'s `target symbols add` and `crash_extract` find them; `split-debug.sh` uses `dsymutil` and `strip -S` instead of

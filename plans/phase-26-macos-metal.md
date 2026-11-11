@@ -10,7 +10,8 @@ drop, fullscreen, session); the Phase 4 golden images and the Phase 5 scene test
 on Metal; every gate and `ctest -L docs` pass on macOS; and the Linux machine and the Windows PC still pass their full suites in every flavor they have.
 
 **Status: started (2026-11-10), Days 298-327: Day 298 (the `.metallib` spike; interim route, pending), Day 299 (spec, inventory, setup), Day 300 (CMake, Apple clang, the base layer) Day 301 (the `os` backend, `os/posix/`) Day 302 (test tooling, side phases, gates) Day 303 (file layer I: `io/posix/`, local files, errors) Day 304 (file layer II: `Copy`, standard directories, async measured) Day 305 (the job
-system) and Day 306 (debugging I: stack traces, modules, crash context) done on the Mac; next Day 307.** Day numbers continue after Phase 25 (Day 297). Phases 19-24 have no day files yet;
+system) Day 306 (debugging I: stack traces, modules, crash context) and Day 307 (debugging II: crash handler, death tests) done on the Mac;
+next Day 308.** Day numbers continue after Phase 25 (Day 297). Phases 19-24 have no day files yet;
 when they get them, Phases 25 and 26 renumber in the same commit (CLAUDE.md, "Phases are whole numbers").
 
 **Hardware (checked 2026-11-10).** The developer's 2019 MacBook Pro 13" (`MacBookPro15,4`): quad-core Intel Core i5 at 1.4 GHz, 8 GB RAM, **Intel Iris Plus
