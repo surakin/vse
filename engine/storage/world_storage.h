@@ -1,7 +1,7 @@
 #pragma once
 
-//! [[storage::WorldStorage]]: saves a world's entities to a [[storage::Store]] and loads them back (Phase 19). Declared on Day 259 so the options and results
-//! are fixed; `Save` and `Load` are implemented on Day 260, the incremental form on Day 261 and the asynchronous forms on Day 264. Until then `Save` and `Load` return `Other`.
+//! [[storage::WorldStorage]]: saves a world's entities to a [[storage::Store]] and loads them back (Phase 19). `Save` and `Load` of whole worlds (Day 260); the incremental form
+//! arrives on Day 261 and the asynchronous forms on Day 264.
 
 #include "ecs/world.h"
 #include "storage/component_registry.h"
@@ -24,23 +24,33 @@ public:
     /// Ownership: both borrowed.
     WorldStorage(const ComponentRegistry& registry, Store& store) : registry_(&registry), store_(&store) {}
 
-    /// Saves the selected entities as one store batch (Day 260).
+    /// Sets the bounds every encode and decode uses (the default is [[storage::CodecLimits]] as declared; `LimitsFromSettings` reads them from the settings).
+    ///
+    /// Param limits: the bounds.
+    /// Fails: never.
+    void SetLimits(const CodecLimits& limits) { limits_ = limits; }
+
+    /// Saves the selected entities as one store batch: one record per entity, in key order, holding its stored components (the derived ones that ask for it as
+    /// presence only), its parent as a key and its unknown components unchanged. A `Full` save of every keyed entity also removes the records of entities that
+    /// are gone.
     ///
     /// Param world: the world to read; needs an up-to-date `KeyIndex`.
     /// Param index: the keys of `world`.
     /// Param options: what and how to save.
     /// Param report: receives counts; may be null.
-    /// Returns: success, or `Cancelled`, `Io`, `Busy`, `LimitExceeded`.
-    /// Fails: those codes (`Other` until Day 260); on any failure the store holds the state before the save.
+    /// Returns: success, or `Cancelled`, `Io`, `Busy`, `LimitExceeded`, `Invalid`, `Duplicate`.
+    /// Fails: those codes (`Invalid` also for `SaveMode::Incremental`, which arrives on Day 261, and for an empty registry); on any failure the store holds the state before the save.
     /// Ownership: all borrowed for the call.
     Status Save(ecs::World& world, KeyIndex& index, const SaveOptions& options, Report* report);
-    /// Loads stored entities into `world`, all or nothing (Day 260).
+    /// Loads stored entities into `world`. Every record is decoded and checked first; the world changes only when all of them are good, so a corrupt, truncated,
+    /// unknown (under `Fail`), cancelled or dangling-reference load leaves it as it was. Entities are created in key order. Derived state is not stored: run the
+    /// transform and spatial systems once afterwards.
     ///
     /// Param world: the world to fill.
     /// Param index: the keys of `world`; updated.
     /// Param options: what and how to load.
     /// Param report: receives counts; may be null.
-    /// Returns: success, or `Corrupt`, `TooNew`, `TooOld`, `NotFound`, `MissingReference`, `Cancelled`, `Io`.
+    /// Returns: success, or `Corrupt`, `TooNew`, `TooOld`, `NotFound`, `Exists`, `MissingReference`, `Mismatch`, `LimitExceeded`, `Cancelled`, `Io`, `Duplicate`.
     /// Fails: those codes; on any failure the world is as it was.
     /// Ownership: all borrowed for the call.
     Status Load(ecs::World& world, KeyIndex& index, const LoadOptions& options, Report* report);
@@ -62,6 +72,7 @@ public:
 private:
     const ComponentRegistry* registry_;
     Store* store_;
+    CodecLimits limits_;
 };
 
 } // namespace engine_placeholder::storage

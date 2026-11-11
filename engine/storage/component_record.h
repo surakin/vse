@@ -38,6 +38,15 @@ struct OpaqueComponent {
     static OpaqueComponent From(const ComponentRecord& record);
 };
 
+/// The unknown components of one entity, kept by `UnknownPolicy::KeepOpaque` so that the next save writes them back unchanged. A component of the world;
+/// registered with id [[storage::kOpaqueComponentsId]], never stored by its own record.
+///
+/// Thread-safety: thread-compatible.
+/// Ownership: owns the bytes.
+struct OpaqueComponents {
+    Vector<OpaqueComponent> items; ///< One entry per unknown component, in the order they were stored.
+};
+
 /// Appends `record` to `out` as `id` (4 bytes), `version` (4 bytes), the byte count (varint) and the bytes.
 ///
 /// Param record: the record to frame.

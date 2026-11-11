@@ -367,6 +367,44 @@ public:
     template <class T>
     bool RemoveResource();
 
+    /// Makes sure the archetype for exactly the components in `set` exists, so that [[ecs::World::CreateFromSet]] of it cannot fail for want of an archetype.
+    ///
+    /// Returns: true when the archetype exists after the call; false when a limit stopped it (counted in `Stats().refused`).
+    /// Fails: returns false as described.
+    /// Aborts: the world is being iterated.
+    bool EnsureArchetype(const ComponentSet& set);
+    /// Creates an entity with exactly the components in `set`, each default-constructed (a type-erased `Create`, for loaders that know
+    /// component ids but not types).
+    ///
+    /// Returns: the entity, or the invalid entity when a limit stopped it or a component that is not a tag has no default constructor (nothing is made then).
+    /// Fails: returns the invalid entity as described.
+    /// Aborts: the world is being iterated.
+    Entity CreateFromSet(const ComponentSet& set);
+    /// Adds the component `id` to a live entity that lacks it, default-constructed (a type-erased `Add`).
+    ///
+    /// Returns: `Ok`, `DeadEntity`, `AlreadyHas`, or `Refused` (a limit, an unregistered id, or a type with no default constructor).
+    /// Aborts: the world is being iterated.
+    Status AddDefault(Entity entity, ComponentId id);
+    /// Removes the component `id` (a type-erased `Remove`).
+    ///
+    /// Returns: `Ok`, `DeadEntity`, `MissingComponent` or `Refused`.
+    /// Aborts: the world is being iterated.
+    Status RemoveById(Entity entity, ComponentId id);
+    /// Returns whether a live entity has the component `id` (also for a tag; false for a dead entity).
+    /// Fails: never.
+    bool HasById(Entity entity, ComponentId id) const;
+    /// The entity's component `id` as raw memory, or null when the entity is dead, lacks it, or it is a tag. The non-const form stamps the component as
+    /// written.
+    ///
+    /// Fails: returns null as described.
+    /// Ownership: the pointer views the entity's row; valid until the next structural call.
+    void* CellOf(Entity entity, ComponentId id);
+    /// As the non-const form, for reading, without stamping.
+    ///
+    /// Fails: returns null as described.
+    /// Ownership: the pointer views the entity's row; valid until the next structural call.
+    const void* CellOf(Entity entity, ComponentId id) const;
+
     /// The number of archetypes.
     u32 ArchetypeCount() const { return static_cast<u32>(archetypes_.Size()); }
     /// The archetype at `index`.

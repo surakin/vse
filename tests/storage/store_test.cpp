@@ -50,7 +50,7 @@ TEST_CASE("Store: a cancel token stays set until reset; options start as a full 
     CHECK(load.missing == MissingPolicy::Fail);
 }
 
-TEST_CASE("Store: WorldStorage lists and deletes through the store; save and load wait for Day 260", "[storage][store]") {
+TEST_CASE("Store: WorldStorage lists and deletes through the store; with no registered component save and load are Invalid", "[storage][store]") {
     ComponentRegistry registry;
     MemoryStore store;
     WorldStorage storage(registry, store);
@@ -69,7 +69,7 @@ TEST_CASE("Store: WorldStorage lists and deletes through the store; save and loa
     KeyIndex index;
     Report report;
     CHECK(storage.Save(world, index, SaveOptions(), &report).Is(ErrorCode::Invalid)); // an empty registry
-    CHECK(storage.Load(world, index, LoadOptions(), &report).Is(ErrorCode::Other));
+    CHECK(storage.Load(world, index, LoadOptions(), &report).Is(ErrorCode::Invalid));
 }
 
 TEST_CASE("Store: a failed Delete leaves the store as it was", "[storage][store]") {

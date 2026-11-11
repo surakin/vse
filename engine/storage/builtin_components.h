@@ -15,6 +15,7 @@ enum BuiltinComponentId : u32 {
     kHierarchyDepthId = 4,      ///< `ecs::HierarchyDepth`: derived by `ecs::SetParent`.
     kEntityKeyId = 5,           ///< `storage::EntityKeyComponent`: the durable identity of an entity.
     kParentLinkId = 6,          ///< `storage::ParentLink`: the stored form of `ecs::Parent`, a key.
+    kOpaqueComponentsId = 7,    ///< `storage::OpaqueComponents`: records of unknown components kept by `KeepOpaque`; saved back unchanged.
     kSpatialBoundsId = 10,      ///< `spatial::SpatialBounds`: stored.
     kSpatialMembershipId = 11,  ///< `spatial::SpatialMembership`: stored.
     kSpatialStaticId = 12,      ///< `spatial::SpatialStatic`: a stored tag.

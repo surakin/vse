@@ -118,6 +118,8 @@ struct Report {
     usize unknown_kept = 0;   ///< Records of unknown components carried opaquely (`KeepOpaque`).
     usize nulled = 0;         ///< References turned into null references.
     usize missing_keys = 0;   ///< Keys named by `Selection::Keys` that nothing has.
+    usize unkeyed_parents = 0; ///< Entities whose parent has no key: saved without a parent link.
+    usize parents_rejected = 0; ///< Parent links not applied on a load: in a cycle, or deeper than the limit.
     u64 bytes = 0;            ///< Bytes written to or read from the store.
 };
 

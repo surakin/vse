@@ -26,7 +26,7 @@ The storage settings (Phase 19 Day 257): [`storage::RegisterStorageSettings`](#s
 
 The record store (Phase 19 Day 259): [`storage::Store`](#storage-store) keeps one [`storage::EntityRecord`](#storage-entityrecord) per [`storage::EntityKey`](#storage-entitykey), in key order, with all-or-nothing batches and small named metadata. It knows nothing of components: a record is a key and the bytes the entity container (Day 260) built. Backends: [`storage::MemoryStore`](#storage-memorystore) (the reference) and, from Day 262, the SQL store.
 
-[`storage::WorldStorage`](#storage-worldstorage): saves a world's entities to a [`storage::Store`](#storage-store) and loads them back (Phase 19). Declared on Day 259 so the options and results are fixed; `Save` and `Load` are implemented on Day 260, the incremental form on Day 261 and the asynchronous forms on Day 264. Until then `Save` and `Load` return `Other`.
+[`storage::WorldStorage`](#storage-worldstorage): saves a world's entities to a [`storage::Store`](#storage-store) and loads them back (Phase 19). `Save` and `Load` of whole worlds (Day 260); the incremental form arrives on Day 261 and the asynchronous forms on Day 264.
 
 ## `BuiltinComponentId` {#storage-builtincomponentid}
 
@@ -46,6 +46,7 @@ The stable ids of the engine's components. Never change or reuse one.
 | <a id="storage-khierarchydepthid"></a>`kHierarchyDepthId` | `4` | `ecs::HierarchyDepth`: derived by `ecs::SetParent`. |
 | <a id="storage-kentitykeyid"></a>`kEntityKeyId` | `5` | `storage::EntityKeyComponent`: the durable identity of an entity. |
 | <a id="storage-kparentlinkid"></a>`kParentLinkId` | `6` | `storage::ParentLink`: the stored form of `ecs::Parent`, a key. |
+| <a id="storage-kopaquecomponentsid"></a>`kOpaqueComponentsId` | `7` | `storage::OpaqueComponents`: records of unknown components kept by `KeepOpaque`; saved back unchanged. |
 | <a id="storage-kspatialboundsid"></a>`kSpatialBoundsId` | `10` | `spatial::SpatialBounds`: stored. |
 | <a id="storage-kspatialmembershipid"></a>`kSpatialMembershipId` | `11` | `spatial::SpatialMembership`: stored. |
 | <a id="storage-kspatialstaticid"></a>`kSpatialStaticId` | `12` | `spatial::SpatialStatic`: a stored tag. |
@@ -178,6 +179,31 @@ static OpaqueComponent From(const ComponentRecord& record);
 
 Returns an owning copy of `record`.
 
+## `OpaqueComponents` {#storage-opaquecomponents}
+
+`struct storage::OpaqueComponents` — defined in `engine/storage/component_record.h`
+
+```cpp
+struct OpaqueComponents { ... }
+```
+
+The unknown components of one entity, kept by `UnknownPolicy::KeepOpaque` so that the next save writes them back unchanged. A component of the world; registered with id [`storage::kOpaqueComponentsId`](#storage-kopaquecomponentsid), never stored by its own record.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible. |
+| Ownership | owns the bytes. |
+
+### `items` {#storage-opaquecomponents-items}
+
+`variable storage::OpaqueComponents::items` — defined in `engine/storage/component_record.h`
+
+```cpp
+Vector<OpaqueComponent> items;
+```
+
+One entry per unknown component, in the order they were stored.
+
 ## `WriteComponentRecord(const ComponentRecord&,const CodecLimits&,bytes::ByteWriter&)` {#storage-writecomponentrecord-const-componentrecord-amp-const-codeclimits-amp-bytes-bytewriter-amp}
 
 `function storage::WriteComponentRecord` — defined in `engine/storage/component_record.h`
@@ -228,6 +254,7 @@ How the registry treats a component type.
 | <a id="storage-kcomponentstored"></a>`kComponentStored` | `0` | Its fields are written and read. |
 | <a id="storage-kcomponentderived"></a>`kComponentDerived` | `1` | Rebuilt after a load from other data (a world transform, a spatial proxy): never stored. |
 | <a id="storage-kcomponentskip"></a>`kComponentSkip` | `2` | Runtime-only and never stored, by explicit choice. |
+| <a id="storage-kcomponentpresence"></a>`kComponentPresence` | `4` | With `kComponentDerived`: whether an entity has it is stored (an empty record) and a load adds it default-constructed, for the system that fills it. |
 
 ## `UpgradeStep` {#storage-upgradestep}
 
@@ -2489,6 +2516,26 @@ usize missing_keys;
 
 Keys named by `Selection::Keys` that nothing has.
 
+### `unkeyed_parents` {#storage-report-unkeyed-parents}
+
+`variable storage::Report::unkeyed_parents` — defined in `engine/storage/storage_options.h`
+
+```cpp
+usize unkeyed_parents;
+```
+
+Entities whose parent has no key: saved without a parent link.
+
+### `parents_rejected` {#storage-report-parents-rejected}
+
+`variable storage::Report::parents_rejected` — defined in `engine/storage/storage_options.h`
+
+```cpp
+usize parents_rejected;
+```
+
+Parent links not applied on a load: in a cycle, or deeper than the limit.
+
 ### `bytes` {#storage-report-bytes}
 
 `variable storage::Report::bytes` — defined in `engine/storage/storage_options.h`
@@ -3014,6 +3061,21 @@ Binds a registry and a store.
 | Parameter `store` | where the records go. |
 | Ownership | both borrowed. |
 
+### `SetLimits(const CodecLimits&)` {#storage-worldstorage-setlimits-const-codeclimits-amp}
+
+`method storage::WorldStorage::SetLimits` — defined in `engine/storage/world_storage.h`
+
+```cpp
+void SetLimits(const CodecLimits& limits);
+```
+
+Sets the bounds every encode and decode uses (the default is [`storage::CodecLimits`](#storage-codeclimits) as declared; `LimitsFromSettings` reads them from the settings).
+
+| Field | Value |
+|---|---|
+| Parameter `limits` | the bounds. |
+| Fails | never. |
+
 ### `Save(ecs::World&,KeyIndex&,const SaveOptions&,Report*)` {#storage-worldstorage-save-ecs-world-amp-keyindex-amp-const-saveoptions-amp-report-star}
 
 `method storage::WorldStorage::Save` — defined in `engine/storage/world_storage.h`
@@ -3022,7 +3084,7 @@ Binds a registry and a store.
 Status Save(ecs::World& world, KeyIndex& index, const SaveOptions& options, Report* report);
 ```
 
-Saves the selected entities as one store batch (Day 260).
+Saves the selected entities as one store batch: one record per entity, in key order, holding its stored components (the derived ones that ask for it as presence only), its parent as a key and its unknown components unchanged. A `Full` save of every keyed entity also removes the records of entities that are gone.
 
 | Field | Value |
 |---|---|
@@ -3030,8 +3092,8 @@ Saves the selected entities as one store batch (Day 260).
 | Parameter `index` | the keys of `world`. |
 | Parameter `options` | what and how to save. |
 | Parameter `report` | receives counts; may be null. |
-| Returns | success, or `Cancelled`, `Io`, `Busy`, `LimitExceeded`. |
-| Fails | those codes (`Other` until Day 260); on any failure the store holds the state before the save. |
+| Returns | success, or `Cancelled`, `Io`, `Busy`, `LimitExceeded`, `Invalid`, `Duplicate`. |
+| Fails | those codes (`Invalid` also for `SaveMode::Incremental`, which arrives on Day 261, and for an empty registry); on any failure the store holds the state before the save. |
 | Ownership | all borrowed for the call. |
 
 ### `Load(ecs::World&,KeyIndex&,const LoadOptions&,Report*)` {#storage-worldstorage-load-ecs-world-amp-keyindex-amp-const-loadoptions-amp-report-star}
@@ -3042,7 +3104,7 @@ Saves the selected entities as one store batch (Day 260).
 Status Load(ecs::World& world, KeyIndex& index, const LoadOptions& options, Report* report);
 ```
 
-Loads stored entities into `world`, all or nothing (Day 260).
+Loads stored entities into `world`. Every record is decoded and checked first; the world changes only when all of them are good, so a corrupt, truncated, unknown (under `Fail`), cancelled or dangling-reference load leaves it as it was. Entities are created in key order. Derived state is not stored: run the transform and spatial systems once afterwards.
 
 | Field | Value |
 |---|---|
@@ -3050,7 +3112,7 @@ Loads stored entities into `world`, all or nothing (Day 260).
 | Parameter `index` | the keys of `world`; updated. |
 | Parameter `options` | what and how to load. |
 | Parameter `report` | receives counts; may be null. |
-| Returns | success, or `Corrupt`, `TooNew`, `TooOld`, `NotFound`, `MissingReference`, `Cancelled`, `Io`. |
+| Returns | success, or `Corrupt`, `TooNew`, `TooOld`, `NotFound`, `Exists`, `MissingReference`, `Mismatch`, `LimitExceeded`, `Cancelled`, `Io`, `Duplicate`. |
 | Fails | those codes; on any failure the world is as it was. |
 | Ownership | all borrowed for the call. |
 

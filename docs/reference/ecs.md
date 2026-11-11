@@ -4955,6 +4955,112 @@ Destroys the resource of type `T`.
 | Returns | whether there was one. |
 | Fails | returns false when there is none. |
 
+### `EnsureArchetype(const ComponentSet&)` {#ecs-world-ensurearchetype-const-componentset-amp}
+
+`method ecs::World::EnsureArchetype` — defined in `engine/ecs/world.h`
+
+```cpp
+bool EnsureArchetype(const ComponentSet& set);
+```
+
+Makes sure the archetype for exactly the components in `set` exists, so that [`ecs::World::CreateFromSet`](#ecs-world-createfromset-const-componentset-amp) of it cannot fail for want of an archetype.
+
+| Field | Value |
+|---|---|
+| Returns | true when the archetype exists after the call; false when a limit stopped it (counted in `Stats().refused`). |
+| Fails | returns false as described. |
+| Aborts | the world is being iterated. |
+
+### `CreateFromSet(const ComponentSet&)` {#ecs-world-createfromset-const-componentset-amp}
+
+`method ecs::World::CreateFromSet` — defined in `engine/ecs/world.h`
+
+```cpp
+Entity CreateFromSet(const ComponentSet& set);
+```
+
+Creates an entity with exactly the components in `set`, each default-constructed (a type-erased `Create`, for loaders that know component ids but not types).
+
+| Field | Value |
+|---|---|
+| Returns | the entity, or the invalid entity when a limit stopped it or a component that is not a tag has no default constructor (nothing is made then). |
+| Fails | returns the invalid entity as described. |
+| Aborts | the world is being iterated. |
+
+### `AddDefault(Entity,ComponentId)` {#ecs-world-adddefault-entity-componentid}
+
+`method ecs::World::AddDefault` — defined in `engine/ecs/world.h`
+
+```cpp
+Status AddDefault(Entity entity, ComponentId id);
+```
+
+Adds the component `id` to a live entity that lacks it, default-constructed (a type-erased `Add`).
+
+| Field | Value |
+|---|---|
+| Returns | `Ok`, `DeadEntity`, `AlreadyHas`, or `Refused` (a limit, an unregistered id, or a type with no default constructor). |
+| Aborts | the world is being iterated. |
+
+### `RemoveById(Entity,ComponentId)` {#ecs-world-removebyid-entity-componentid}
+
+`method ecs::World::RemoveById` — defined in `engine/ecs/world.h`
+
+```cpp
+Status RemoveById(Entity entity, ComponentId id);
+```
+
+Removes the component `id` (a type-erased `Remove`).
+
+| Field | Value |
+|---|---|
+| Returns | `Ok`, `DeadEntity`, `MissingComponent` or `Refused`. |
+| Aborts | the world is being iterated. |
+
+### `HasById(Entity,ComponentId)` {#ecs-world-hasbyid-entity-componentid-const}
+
+`method ecs::World::HasById` — defined in `engine/ecs/world.h`
+
+```cpp
+bool HasById(Entity entity, ComponentId id) const;
+```
+
+Returns whether a live entity has the component `id` (also for a tag; false for a dead entity).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `CellOf(Entity,ComponentId)` {#ecs-world-cellof-entity-componentid}
+
+`method ecs::World::CellOf` — defined in `engine/ecs/world.h`
+
+```cpp
+void* CellOf(Entity entity, ComponentId id);
+```
+
+The entity's component `id` as raw memory, or null when the entity is dead, lacks it, or it is a tag. The non-const form stamps the component as written.
+
+| Field | Value |
+|---|---|
+| Fails | returns null as described. |
+| Ownership | the pointer views the entity's row; valid until the next structural call. |
+
+### `CellOf(Entity,ComponentId)` {#ecs-world-cellof-entity-componentid-const}
+
+`method ecs::World::CellOf` — defined in `engine/ecs/world.h`
+
+```cpp
+const void* CellOf(Entity entity, ComponentId id) const;
+```
+
+As the non-const form, for reading, without stamping.
+
+| Field | Value |
+|---|---|
+| Fails | returns null as described. |
+| Ownership | the pointer views the entity's row; valid until the next structural call. |
+
 ### `ArchetypeCount()` {#ecs-world-archetypecount-const}
 
 `method ecs::World::ArchetypeCount` — defined in `engine/ecs/world.h`

@@ -22,6 +22,7 @@ enum ComponentFlags : u32 {
     kComponentStored = 0,   ///< Its fields are written and read.
     kComponentDerived = 1,  ///< Rebuilt after a load from other data (a world transform, a spatial proxy): never stored.
     kComponentSkip = 2,     ///< Runtime-only and never stored, by explicit choice.
+    kComponentPresence = 4, ///< With `kComponentDerived`: whether an entity has it is stored (an empty record) and a load adds it default-constructed, for the system that fills it.
 };
 
 /// One step of an upgrade chain: turns the bytes of version `from_version` into the bytes of `from_version + 1`.

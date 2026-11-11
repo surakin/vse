@@ -112,6 +112,133 @@ Entity World::CreateIn(u32 archetype, RowRef* row) {
     return entity;
 }
 
+bool World::EnsureArchetype(const ComponentSet& set) {
+    NotIterating("World::EnsureArchetype during iteration");
+    if (FindOrCreateArchetype(set) == kNone) {
+        ++refused_;
+        return false;
+    }
+    return true;
+}
+
+namespace {
+
+bool DefaultConstructible(const ComponentSet& set, const ComponentRegistry& registry) {
+    for (ComponentId id = set.NextFrom(0); id != kInvalidComponent; id = set.NextFrom(static_cast<u32>(id) + 1u)) {
+        const TypeInfo& info = registry.Info(id);
+        if (!info.is_tag && info.default_construct == nullptr) {
+            return false;
+        }
+    }
+    return true;
+}
+
+} // namespace
+
+Entity World::CreateFromSet(const ComponentSet& set) {
+    NotIterating("World::CreateFromSet during iteration");
+    const ComponentRegistry& registry = ComponentRegistry::Global();
+    if (!DefaultConstructible(set, registry)) {
+        ++refused_;
+        return Entity{};
+    }
+    const u32 archetype = FindOrCreateArchetype(set);
+    if (archetype == kNone) {
+        ++refused_;
+        return Entity{};
+    }
+    RowRef row;
+    const Entity entity = CreateIn(archetype, &row);
+    if (entity.IsValid()) {
+        const Archetype& a = *archetypes_[archetype];
+        for (ComponentId id = set.NextFrom(0); id != kInvalidComponent; id = set.NextFrom(static_cast<u32>(id) + 1u)) {
+            void* cell = a.CellPtr(row.chunk, id, row.row);
+            if (cell != nullptr) {
+                registry.Info(id).default_construct(cell);
+            }
+        }
+    }
+    return entity;
+}
+
+Status World::AddDefault(Entity entity, ComponentId id) {
+    NotIterating("World::AddDefault during iteration");
+    const EntityLocation* where = table_.Location(entity);
+    if (where == nullptr) {
+        return Status::DeadEntity;
+    }
+    if (id == kInvalidComponent || id >= ComponentRegistry::Global().Count()) {
+        ++refused_;
+        return Status::Refused;
+    }
+    if (archetypes_[where->archetype]->Has(id)) {
+        return Status::AlreadyHas;
+    }
+    const TypeInfo& info = ComponentRegistry::Global().Info(id);
+    if (!info.is_tag && info.default_construct == nullptr) {
+        ++refused_;
+        return Status::Refused;
+    }
+    const u32 target = Transition(where->archetype, id, true);
+    if (target == kNone) {
+        ++refused_;
+        return Status::Refused;
+    }
+    RowRef row;
+    if (!Migrate(entity, target, &row)) {
+        ++refused_;
+        return Status::Refused;
+    }
+    void* cell = archetypes_[target]->CellPtr(row.chunk, id, row.row);
+    if (cell != nullptr) {
+        info.default_construct(cell);
+    }
+    return Status::Ok;
+}
+
+Status World::RemoveById(Entity entity, ComponentId id) {
+    NotIterating("World::RemoveById during iteration");
+    const EntityLocation* where = table_.Location(entity);
+    if (where == nullptr) {
+        return Status::DeadEntity;
+    }
+    if (id == kInvalidComponent || !archetypes_[where->archetype]->Has(id)) {
+        return Status::MissingComponent;
+    }
+    const u32 target = Transition(where->archetype, id, false);
+    RowRef row;
+    if (target == kNone || !Migrate(entity, target, &row)) {
+        ++refused_;
+        return Status::Refused;
+    }
+    return Status::Ok;
+}
+
+bool World::HasById(Entity entity, ComponentId id) const {
+    const EntityLocation* where = table_.Location(entity);
+    return where != nullptr && id != kInvalidComponent && archetypes_[where->archetype]->Has(id);
+}
+
+void* World::CellOf(Entity entity, ComponentId id) {
+    const EntityLocation* where = table_.Location(entity);
+    if (where == nullptr || id == kInvalidComponent || !archetypes_[where->archetype]->Has(id)) {
+        return nullptr;
+    }
+    Archetype& a = *archetypes_[where->archetype];
+    Chunk* chunk = a.ChunkAt(where->chunk);
+    a.MarkWritten(chunk, id, tick_);
+    return a.CellPtr(chunk, id, where->row);
+}
+
+const void* World::CellOf(Entity entity, ComponentId id) const {
+    const EntityLocation* where = table_.Location(entity);
+    if (where == nullptr || id == kInvalidComponent || !archetypes_[where->archetype]->Has(id)) {
+        return nullptr;
+    }
+    const Archetype& a = *archetypes_[where->archetype];
+    return a.CellPtr(a.ChunkAt(where->chunk), id, where->row);
+}
+
 Entity World::Create() {
     NotIterating("World::Create during iteration");
     RowRef row;

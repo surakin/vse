@@ -180,3 +180,65 @@ A record whose bytes no longer match their hash is `Corrupt` on `Get` and `Scan`
 `SaveOptions` (mode `Full` or `Incremental`, a `Selection`, a label, batch size), `LoadOptions` (`Create`, `Replace` or `Merge`, the `UnknownPolicy`, the
 `MissingPolicy`), a `Report` of counts, a `ProgressFn` and a `CancelToken` that is checked between steps. `WorldStorage::Save` and `Load` take them and arrive on
 Day 260; `Delete` and `List` work now.
+
+## Saving and loading a world
+
+`WorldStorage` binds a registry and a store. `Save` writes one record per selected entity, in key order, in one batch; `Load` reads them back into a world.
+
+```cpp compile run standalone
+#include "ecs/transform.h"
+#include "os/console.h"
+#include "storage/builtin_components.h"
+#include "storage/memory_store.h"
+#include "storage/world_storage.h"
+
+using namespace engine_placeholder;
+using namespace engine_placeholder::storage;
+
+int main() {
+    ComponentRegistry registry;
+    if (RegisterBuiltinComponents(&registry).Failed()) return 1;
+
+    // A world of three keyed entities with a transform each.
+    ecs::World world;
+    KeyIndex index;
+    KeyGenerator keys = KeyGenerator::Seeded(1);
+    for (u32 i = 0; i < 3; ++i) {
+        ecs::LocalTransform t;
+        t.position = Vec3(static_cast<f32>(i), 0, 0);
+        world.Create(EntityKeyComponent{keys.Next()}, t);
+    }
+
+    MemoryStore store;
+    WorldStorage storage(registry, store);
+    Report saved;
+    if (storage.Save(world, index, SaveOptions(), &saved).Failed()) return 1;
+
+    // Into an empty world: entities appear in key order, with the stored components.
+    ecs::World loaded_world;
+    KeyIndex loaded_index;
+    Report loaded;
+    if (storage.Load(loaded_world, loaded_index, LoadOptions(), &loaded).Failed()) return 1;
+    os::Print("saved %u, loaded %u, keys %u\n", static_cast<u32>(saved.created), static_cast<u32>(loaded.created), static_cast<u32>(loaded_index.Size()));
+    return 0;
+}
+```
+```output
+saved 3, loaded 3, keys 3
+```
+
+**What is stored.** The stored components of the entity (`kComponentStored`), its parent as a key (`ParentLink`), the presence of derived components that ask for it
+(`WorldTransform`, `WorldBounds`: stored as an empty record and added back default-constructed) and the unknown components it carries (`OpaqueComponents`). The key
+is the record's key. Nothing else: a resource, a spatial proxy and the hierarchy depth are rebuilt, so **run the transform and spatial systems once after a load**.
+
+**Selections.** `Selection::All()` saves every keyed entity and a `Full` save also removes the records of entities that are gone. `Selection::Keys` (a key set) and
+`Selection::Filter` (required ECS components plus an optional callback) save only those and remove nothing. A load takes `All` or `Keys`.
+
+**A load is all or nothing for the world.** Pass one decodes and checks every record (version and upgrades, unknown components by policy, limits, parent targets,
+the manifest and format version in the store); the world is not touched. Pass two creates the entities in key order, grouped by archetype, and sets the parents.
+`Create` refuses a key that is in the world (`Exists`), `Replace` destroys the world's keyed entities first, `Merge` replaces the stored components of an entity
+that has the key and keeps its entity id. Cancellation is checked in pass one only: once the world is being changed the load finishes.
+
+**References.** A parent whose entity is not in the load or the world is `MissingReference` under `MissingPolicy::Fail` and a root plus a count in `Report::nulled`
+under `NullReference`. An `EntityRef` field of your own component keeps the key; look the entity up with `KeyIndex::Find`.
+
