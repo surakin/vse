@@ -1,7 +1,7 @@
 # Phase 19 / Day 254 — SQLite Backend I: the File-Layer VFS & Open
 
 **Phase:** [Phase 19 — Storage](../phase-19-storage.md)
-**Depends on:** Days 251-253; Phase 9 (`io::File`, `io::Path`, atomic writes); the Day 250 VFS decision.
+**Depends on:** Days 251-253 (Day 253 holds the minimal VFS and the in-memory open path, which this day completes with files and locks); Phase 9 (`io::File`, `io::Path`, atomic writes); the Day 250 VFS decision.
 
 SQLite reaches the disk through the engine's file layer, so the `file_access_check` rules hold and a new platform backend is the only place that touches the operating system.
 
@@ -10,7 +10,7 @@ SQLite reaches the disk through the engine's file layer, so the `file_access_che
 - [ ] **VFS `engine/database/sqlite/sqlite_vfs.cpp`** (the VFS route chosen on Day 250; if the spike chose the fallback instead, this task is the allow-list entry and its reasons, and the next two bullets are replaced by the fallback's checks): `xOpen`, `xClose`, `xRead` (short reads zero-filled as SQLite requires), `xWrite`, `xTruncate`, `xSync` (`File::Sync`, and `SyncDirectory` after creating a journal), `xFileSize`, `xDelete`, `xAccess`, `xFullPathname` through `io::Path`, `xRandomness` (the engine's randomness wrapper, added to `os/` first if missing), `xSleep`, `xCurrentTime`; device characteristics and sector size reported honestly.
 - [ ] **Locking and WAL index (Day 250 spike (a): the VFS route works):** a version-2 VFS (a version-1 VFS silently refuses WAL); in-process lock tables keyed by file identity implementing the real shared/reserved/pending/exclusive rules for several connections; a lock file that refuses a second process (documented); the WAL index as heap-backed shared-memory regions freed when the last connection closes; WAL is the default journal mode, `DELETE` and `TRUNCATE` stay selectable.
 - [ ] **Link order:** `sqlite3_os_init`, `sqlite3_os_end` and the code that first calls SQLite (`SqliteDatabase::Open`, `SqliteVersion`) stay in one translation unit (Day 251: a static archive is searched once, in link order, so the object that pulls in `sqlite3.c` must carry the functions it asks for); a non-unity link test is part of the day's builds.
-- [ ] **`database::SqliteDatabase::Open`** (only the open path, `Close` and one `Execute`): the engine's `io::Path`, create, read-only and in-memory (`:memory:`) modes; the VFS registered once, thread-safely; the connection options mapped to pragmas (`journal_mode`, `synchronous`, `foreign_keys=ON`, `busy_timeout`).
+- [ ] **`SqliteDatabase::Open` for files:** the engine's `io::Path`, create and read-only modes (the `:memory:` path exists from Day 253); a named location is a file; the connection options mapped to pragmas (`journal_mode`, `synchronous`, `busy_timeout`). The conformance cases that Day 253 skipped (a second connection to one database) run now on a file fixture, with `kSharedLocation = true`.
 - [ ] **Crash-safety test** (`tests/database/sqlite_crash_test.cpp`): a fault-injecting `io::File` wrapper makes the Nth write, sync or truncate fail or stop (every N from 0 to the end of a 200-row transaction, for `Write`, `Sync` and `Truncate` failures, in `DELETE` and `WAL` (the spike's sweep did 202 and 208 runs with writes only)); after each, the database reopens, passes `PRAGMA integrity_check`, and holds either the old rows or all the new rows, never a mix.
 - [ ] **Tests** (`tests/database/sqlite_open_test.cpp`): create, reopen and read back a file under the test temp directory (through the file layer, never raw paths); read-only refuses a write with `ReadOnly`; a missing file with no create flag is `NotFound`; a path with Unicode and spaces; the same on a `PathStyle` that is not the host's is rejected cleanly.
 - [ ] **`file_access_check`:** passes with no new allow-list entry (or with the one documented entry of the fallback route).
@@ -21,4 +21,4 @@ SQLite reaches the disk through the engine's file layer, so the `file_access_che
 - [ ] **Day review (CLAUDE.md, required):** `/code-review high` over the day's diff after the scoped tests; verify, fix (with a regression test that fails without the fix) or decline each finding with a reason; record the count and outcome under "Post-implementation code review" below and in `STATUS.md`.
 - [ ] `STATUS.md` and `KNOWN-ISSUES.md` updated in the same commit; commit and push.
 
-**Done:** a SQLite database is created, reopened and recovered after an injected crash through the engine's file layer.
+**Done:** a SQLite database is created, reopened and recovered after an injected crash through the engine's file layer, and the multi-connection conformance cases pass on files.

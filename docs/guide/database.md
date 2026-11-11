@@ -1,14 +1,14 @@
 # The database interface: SQL behind one door
 
-Status: in progress (Phase 19). Built: the SQLite library (Day 251), the interface and its conformance suite (Day 252). Next: the in-memory database
-(Day 253), the SQLite file system and locks (Day 254), the SQLite backend (Day 255).
+Status: in progress (Phase 19). Built: the SQLite library (Day 251), the interface and its conformance suite (Day 252). Next: the SQLite backend on `:memory:`
+(Day 253), its file system and locks (Day 254), settings, cache and concurrency (Day 255).
 
 **Audience:** engine programmers who keep structured data in tables (the storage layer, a game's save index, tools). Design and the portable SQL subset:
 `docs/superpowers/specs/2026-11-11-storage-design.md`.
 
 The module `engine/database` (namespace `database`) is the only place SQL is spoken. Code above it holds a `database::Database`, opens
-`database::Connection`s, prepares `database::Statement`s and never names a backend. Two backends implement it (the in-memory database, Day 253, and
-SQLite, Day 255); both pass the same conformance suite, so a program that works on one works on the other.
+`database::Connection`s, prepares `database::Statement`s and never names a backend. SQLite (in memory or on a file) is the one backend; there is no second, because it would need its own SQL parser. The conformance suite defines what a
+backend must do, and the portable statement subset of the spec keeps another backend possible.
 
 ## The vocabulary
 
