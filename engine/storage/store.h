@@ -79,6 +79,7 @@ public:
 namespace metadata {
 inline constexpr const char* kFormatVersion = "format_version";     ///< The layout of the store's records; written by the first save.
 inline constexpr const char* kSchemaVersion = "schema_version";     ///< The version of the store's own schema (a backend's).
+inline constexpr const char* kManifest = "manifest";               ///< The components and versions the last save wrote.
 inline constexpr const char* kLastSaveLabel = "last_save_label";    ///< The label of the last save (`SaveOptions::label`).
 } // namespace metadata
 

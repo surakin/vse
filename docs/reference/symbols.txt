@@ -3829,6 +3829,33 @@ database::Value::From(const ValueView&)	function	database	database-value-from-co
 database::Value::View() const	function	database	database-value-view-const	database.md	engine/database/value.h:120
 database::Value::Type() const	function	database	database-value-type-const	database.md	engine/database/value.h:122
 database::Value::operator==(const Value&) const	function	database	database-value-operator-eq-eq-const-value-amp-const	database.md	engine/database/value.h:124
+storage::AsyncSave	class	storage	storage-asyncsave	storage.md	engine/storage/async_storage.h:23
+storage::AsyncSave::AsyncSave(WorldStorage&,jobs::Scheduler&,SaveSession*,UniquePtr<detail::SavePlan>)	function	storage	storage-asyncsave-asyncsave-worldstorage-amp-jobs-scheduler-amp-savesession-star-uniqueptr-lt-detail-saveplan-gt	storage.md	engine/storage/async_storage.h:28
+storage::AsyncSave::~AsyncSave()	function	storage	storage-asyncsave-tilde-asyncsave	storage.md	engine/storage/async_storage.h:30
+storage::AsyncSave::AsyncSave(const AsyncSave&)	function	storage	storage-asyncsave-asyncsave-const-asyncsave-amp	storage.md	engine/storage/async_storage.h:31
+storage::AsyncSave::operator=(const AsyncSave&)	function	storage	storage-asyncsave-operator-eq-const-asyncsave-amp	storage.md	engine/storage/async_storage.h:32
+storage::AsyncSave::IsDone() const	function	storage	storage-asyncsave-isdone-const	storage.md	engine/storage/async_storage.h:37
+storage::AsyncSave::Wait(Report*)	function	storage	storage-asyncsave-wait-report-star	storage.md	engine/storage/async_storage.h:45
+storage::AsyncSave::Finish(Report*)	function	storage	storage-asyncsave-finish-report-star	storage.md	engine/storage/async_storage.h:52
+storage::AsyncSave::Run()	function	storage	storage-asyncsave-run	storage.md	engine/storage/async_storage.h:54
+storage::AsyncLoad	class	storage	storage-asyncload	storage.md	engine/storage/async_storage.h:70
+storage::AsyncLoad::AsyncLoad(WorldStorage&,jobs::Scheduler&,const LoadOptions&)	function	storage	storage-asyncload-asyncload-worldstorage-amp-jobs-scheduler-amp-const-loadoptions-amp	storage.md	engine/storage/async_storage.h:73
+storage::AsyncLoad::~AsyncLoad()	function	storage	storage-asyncload-tilde-asyncload	storage.md	engine/storage/async_storage.h:75
+storage::AsyncLoad::AsyncLoad(const AsyncLoad&)	function	storage	storage-asyncload-asyncload-const-asyncload-amp	storage.md	engine/storage/async_storage.h:76
+storage::AsyncLoad::operator=(const AsyncLoad&)	function	storage	storage-asyncload-operator-eq-const-asyncload-amp	storage.md	engine/storage/async_storage.h:77
+storage::AsyncLoad::IsDone() const	function	storage	storage-asyncload-isdone-const	storage.md	engine/storage/async_storage.h:82
+storage::AsyncLoad::Wait(ecs::World&,KeyIndex&,Report*)	function	storage	storage-asyncload-wait-ecs-world-amp-keyindex-amp-report-star	storage.md	engine/storage/async_storage.h:91
+storage::AsyncLoad::Finish(ecs::World&,KeyIndex&,Report*)	function	storage	storage-asyncload-finish-ecs-world-amp-keyindex-amp-report-star	storage.md	engine/storage/async_storage.h:99
+storage::AsyncLoad::Run()	function	storage	storage-asyncload-run	storage.md	engine/storage/async_storage.h:101
+storage::Autosaver	class	storage	storage-autosaver	storage.md	engine/storage/async_storage.h:118
+storage::Autosaver::Autosaver(WorldStorage&,jobs::Scheduler&,ecs::World&,KeyIndex&,f64)	function	storage	storage-autosaver-autosaver-worldstorage-amp-jobs-scheduler-amp-ecs-world-amp-keyindex-amp-f64	storage.md	engine/storage/async_storage.h:128
+storage::Autosaver::~Autosaver()	function	storage	storage-autosaver-tilde-autosaver	storage.md	engine/storage/async_storage.h:130
+storage::Autosaver::Autosaver(const Autosaver&)	function	storage	storage-autosaver-autosaver-const-autosaver-amp	storage.md	engine/storage/async_storage.h:131
+storage::Autosaver::operator=(const Autosaver&)	function	storage	storage-autosaver-operator-eq-const-autosaver-amp	storage.md	engine/storage/async_storage.h:132
+storage::Autosaver::Update(f64)	function	storage	storage-autosaver-update-f64	storage.md	engine/storage/async_storage.h:140
+storage::Autosaver::SaveNow()	function	storage	storage-autosaver-savenow	storage.md	engine/storage/async_storage.h:145
+storage::Autosaver::Flush()	function	storage	storage-autosaver-flush	storage.md	engine/storage/async_storage.h:151
+storage::Autosaver::Completed() const	function	storage	storage-autosaver-completed-const	storage.md	engine/storage/async_storage.h:154
 storage::BuiltinComponentId	enum	storage	storage-builtincomponentid	storage.md	engine/storage/builtin_components.h:11
 storage::kLocalTransformId	enumerator	storage	storage-klocaltransformid	storage.md	engine/storage/builtin_components.h:12
 storage::kWorldTransformId	enumerator	storage	storage-kworldtransformid	storage.md	engine/storage/builtin_components.h:13
@@ -4006,6 +4033,16 @@ storage::ParentReport::rejected	variable	storage	storage-parentreport-rejected	s
 storage::ParentReport::references	variable	storage	storage-parentreport-references	storage.md	engine/storage/identity.h:166
 storage::CaptureParents(ecs::World&,const KeyIndex&,ParentReport*)	function	storage	storage-captureparents-ecs-world-amp-const-keyindex-amp-parentreport-star	storage.md	engine/storage/identity.h:178
 storage::ApplyParents(ecs::World&,const KeyIndex&,MissingPolicy,ParentReport*)	function	storage	storage-applyparents-ecs-world-amp-const-keyindex-amp-missingpolicy-parentreport-star	storage.md	engine/storage/identity.h:192
+storage::LocalStorage	class	storage	storage-localstorage	storage.md	engine/storage/local_storage.h:17
+storage::LocalStorage::OpenFromSettings(database::Database&,const settings::Registry&,const ComponentRegistry&,UniquePtr<LocalStorage>*)	function	storage	storage-localstorage-openfromsettings-database-database-amp-const-settings-registry-amp-const-componentregistry-amp-uniqueptr-lt-localstorage-gt-star	storage.md	engine/storage/local_storage.h:28
+storage::LocalStorage::LocalStorage()	function	storage	storage-localstorage-localstorage	storage.md	engine/storage/local_storage.h:30
+storage::LocalStorage::LocalStorage(const LocalStorage&)	function	storage	storage-localstorage-localstorage-const-localstorage-amp	storage.md	engine/storage/local_storage.h:31
+storage::LocalStorage::operator=(const LocalStorage&)	function	storage	storage-localstorage-operator-eq-const-localstorage-amp	storage.md	engine/storage/local_storage.h:32
+storage::LocalStorage::Worlds()	function	storage	storage-localstorage-worlds	storage.md	engine/storage/local_storage.h:36
+storage::LocalStorage::Records()	function	storage	storage-localstorage-records	storage.md	engine/storage/local_storage.h:39
+storage::LocalStorage::Connection()	function	storage	storage-localstorage-connection	storage.md	engine/storage/local_storage.h:42
+storage::LocalStorage::AutosaveSeconds() const	function	storage	storage-localstorage-autosaveseconds-const	storage.md	engine/storage/local_storage.h:45
+storage::LocalStorage::Path() const	function	storage	storage-localstorage-path-const	storage.md	engine/storage/local_storage.h:48
 storage::MemoryStore	class	storage	storage-memorystore	storage.md	engine/storage/memory_store.h:18
 storage::MemoryStore::MemoryStore()	function	storage	storage-memorystore-memorystore	storage.md	engine/storage/memory_store.h:21
 storage::MemoryStore::Name() const	function	storage	storage-memorystore-name-const	storage.md	engine/storage/memory_store.h:26
@@ -4028,46 +4065,46 @@ storage::SaveSession::operator=(const SaveSession&)	function	storage	storage-sav
 storage::SaveSession::Reset()	function	storage	storage-savesession-reset	storage.md	engine/storage/save_session.h:33
 storage::SaveSession::HasBaseline() const	function	storage	storage-savesession-hasbaseline-const	storage.md	engine/storage/save_session.h:36
 storage::SaveSession::TrackedRecords() const	function	storage	storage-savesession-trackedrecords-const	storage.md	engine/storage/save_session.h:39
-storage::CompareOp	enum	storage	storage-compareop	storage.md	engine/storage/sql_store.h:18
-storage::CompareOp::Equal	enumerator	storage	storage-compareop-equal	storage.md	engine/storage/sql_store.h:19
-storage::CompareOp::NotEqual	enumerator	storage	storage-compareop-notequal	storage.md	engine/storage/sql_store.h:20
-storage::CompareOp::Less	enumerator	storage	storage-compareop-less	storage.md	engine/storage/sql_store.h:21
-storage::CompareOp::LessOrEqual	enumerator	storage	storage-compareop-lessorequal	storage.md	engine/storage/sql_store.h:22
-storage::CompareOp::Greater	enumerator	storage	storage-compareop-greater	storage.md	engine/storage/sql_store.h:23
-storage::CompareOp::GreaterOrEqual	enumerator	storage	storage-compareop-greaterorequal	storage.md	engine/storage/sql_store.h:24
-storage::IndexRequest	struct	storage	storage-indexrequest	storage.md	engine/storage/sql_store.h:31
-storage::IndexRequest::component	variable	storage	storage-indexrequest-component	storage.md	engine/storage/sql_store.h:32
-storage::IndexRequest::column	variable	storage	storage-indexrequest-column	storage.md	engine/storage/sql_store.h:33
-storage::SqlStoreOptions	struct	storage	storage-sqlstoreoptions	storage.md	engine/storage/sql_store.h:40
-storage::SqlStoreOptions::registry	variable	storage	storage-sqlstoreoptions-registry	storage.md	engine/storage/sql_store.h:42
-storage::SqlStoreOptions::columns	variable	storage	storage-sqlstoreoptions-columns	storage.md	engine/storage/sql_store.h:44
-storage::SqlStoreOptions::limits	variable	storage	storage-sqlstoreoptions-limits	storage.md	engine/storage/sql_store.h:46
-storage::SqlStoreOptions::indexes	variable	storage	storage-sqlstoreoptions-indexes	storage.md	engine/storage/sql_store.h:48
-storage::SqlStoreOptions::index_count	variable	storage	storage-sqlstoreoptions-index-count	storage.md	engine/storage/sql_store.h:50
-storage::SqlStore	class	storage	storage-sqlstore	storage.md	engine/storage/sql_store.h:78
-storage::SqlStore::kSchemaVersion	variable	storage	storage-sqlstore-kschemaversion	storage.md	engine/storage/sql_store.h:81
-storage::SqlStore::Open(database::Connection&,UniquePtr<SqlStore>*)	function	storage	storage-sqlstore-open-database-connection-amp-uniqueptr-lt-sqlstore-gt-star	storage.md	engine/storage/sql_store.h:89
-storage::SqlStore::Open(database::Connection&,UniquePtr<SqlStore>*,const SqlStoreOptions&)	function	storage	storage-sqlstore-open-database-connection-amp-uniqueptr-lt-sqlstore-gt-star-const-sqlstoreoptions-amp	storage.md	engine/storage/sql_store.h:95
-storage::SqlStore::SqlStore(database::Connection&)	function	storage	storage-sqlstore-sqlstore-database-connection-amp	storage.md	engine/storage/sql_store.h:101
-storage::SqlStore::~SqlStore()	function	storage	storage-sqlstore-tilde-sqlstore	storage.md	engine/storage/sql_store.h:103
-storage::SqlStore::SqlStore(const SqlStore&)	function	storage	storage-sqlstore-sqlstore-const-sqlstore-amp	storage.md	engine/storage/sql_store.h:104
-storage::SqlStore::operator=(const SqlStore&)	function	storage	storage-sqlstore-operator-eq-const-sqlstore-amp	storage.md	engine/storage/sql_store.h:105
-storage::SqlStore::Name() const	function	storage	storage-sqlstore-name-const	storage.md	engine/storage/sql_store.h:110
-storage::SqlStore::Put(const EntityRecord&)	function	storage	storage-sqlstore-put-const-entityrecord-amp	storage.md	engine/storage/sql_store.h:111
-storage::SqlStore::PutMany(Span<const EntityRecord>)	function	storage	storage-sqlstore-putmany-span-lt-const-entityrecord-gt	storage.md	engine/storage/sql_store.h:113
-storage::SqlStore::Get(EntityKey,EntityRecord*) const	function	storage	storage-sqlstore-get-entitykey-entityrecord-star-const	storage.md	engine/storage/sql_store.h:114
-storage::SqlStore::Remove(EntityKey)	function	storage	storage-sqlstore-remove-entitykey	storage.md	engine/storage/sql_store.h:115
-storage::SqlStore::Scan(const KeyRange&,RecordVisitor&) const	function	storage	storage-sqlstore-scan-const-keyrange-amp-recordvisitor-amp-const	storage.md	engine/storage/sql_store.h:116
-storage::SqlStore::Count(usize*) const	function	storage	storage-sqlstore-count-usize-star-const	storage.md	engine/storage/sql_store.h:117
-storage::SqlStore::Begin()	function	storage	storage-sqlstore-begin	storage.md	engine/storage/sql_store.h:118
-storage::SqlStore::Commit()	function	storage	storage-sqlstore-commit	storage.md	engine/storage/sql_store.h:119
-storage::SqlStore::Rollback()	function	storage	storage-sqlstore-rollback	storage.md	engine/storage/sql_store.h:120
-storage::SqlStore::GetMetadata(StringView,String<HeapAllocator>*) const	function	storage	storage-sqlstore-getmetadata-stringview-string-lt-heapallocator-gt-star-const	storage.md	engine/storage/sql_store.h:121
-storage::SqlStore::SetMetadata(StringView,StringView)	function	storage	storage-sqlstore-setmetadata-stringview-stringview	storage.md	engine/storage/sql_store.h:122
-storage::SqlStore::FindKeys(StringView,StringView,CompareOp,const database::ValueView&,Vector<EntityKey>*) const	function	storage	storage-sqlstore-findkeys-stringview-stringview-compareop-const-database-valueview-amp-vector-lt-entitykey-gt-star-const	storage.md	engine/storage/sql_store.h:133
-storage::SqlStore::CountWhere(StringView,StringView,CompareOp,const database::ValueView&,usize*) const	function	storage	storage-sqlstore-countwhere-stringview-stringview-compareop-const-database-valueview-amp-usize-star-const	storage.md	engine/storage/sql_store.h:139
-storage::SqlStore::VerifyColumns(usize*) const	function	storage	storage-sqlstore-verifycolumns-usize-star-const	storage.md	engine/storage/sql_store.h:145
-storage::SqlStore::FailAfter(u32)	function	storage	storage-sqlstore-failafter-u32	storage.md	engine/storage/sql_store.h:151
+storage::CompareOp	enum	storage	storage-compareop	storage.md	engine/storage/sql_store.h:24
+storage::CompareOp::Equal	enumerator	storage	storage-compareop-equal	storage.md	engine/storage/sql_store.h:25
+storage::CompareOp::NotEqual	enumerator	storage	storage-compareop-notequal	storage.md	engine/storage/sql_store.h:26
+storage::CompareOp::Less	enumerator	storage	storage-compareop-less	storage.md	engine/storage/sql_store.h:27
+storage::CompareOp::LessOrEqual	enumerator	storage	storage-compareop-lessorequal	storage.md	engine/storage/sql_store.h:28
+storage::CompareOp::Greater	enumerator	storage	storage-compareop-greater	storage.md	engine/storage/sql_store.h:29
+storage::CompareOp::GreaterOrEqual	enumerator	storage	storage-compareop-greaterorequal	storage.md	engine/storage/sql_store.h:30
+storage::IndexRequest	struct	storage	storage-indexrequest	storage.md	engine/storage/sql_store.h:37
+storage::IndexRequest::component	variable	storage	storage-indexrequest-component	storage.md	engine/storage/sql_store.h:38
+storage::IndexRequest::column	variable	storage	storage-indexrequest-column	storage.md	engine/storage/sql_store.h:39
+storage::SqlStoreOptions	struct	storage	storage-sqlstoreoptions	storage.md	engine/storage/sql_store.h:46
+storage::SqlStoreOptions::registry	variable	storage	storage-sqlstoreoptions-registry	storage.md	engine/storage/sql_store.h:48
+storage::SqlStoreOptions::columns	variable	storage	storage-sqlstoreoptions-columns	storage.md	engine/storage/sql_store.h:50
+storage::SqlStoreOptions::limits	variable	storage	storage-sqlstoreoptions-limits	storage.md	engine/storage/sql_store.h:52
+storage::SqlStoreOptions::indexes	variable	storage	storage-sqlstoreoptions-indexes	storage.md	engine/storage/sql_store.h:54
+storage::SqlStoreOptions::index_count	variable	storage	storage-sqlstoreoptions-index-count	storage.md	engine/storage/sql_store.h:56
+storage::SqlStore	class	storage	storage-sqlstore	storage.md	engine/storage/sql_store.h:84
+storage::SqlStore::kSchemaVersion	variable	storage	storage-sqlstore-kschemaversion	storage.md	engine/storage/sql_store.h:87
+storage::SqlStore::Open(database::Connection&,UniquePtr<SqlStore>*)	function	storage	storage-sqlstore-open-database-connection-amp-uniqueptr-lt-sqlstore-gt-star	storage.md	engine/storage/sql_store.h:95
+storage::SqlStore::Open(database::Connection&,UniquePtr<SqlStore>*,const SqlStoreOptions&)	function	storage	storage-sqlstore-open-database-connection-amp-uniqueptr-lt-sqlstore-gt-star-const-sqlstoreoptions-amp	storage.md	engine/storage/sql_store.h:101
+storage::SqlStore::SqlStore(database::Connection&)	function	storage	storage-sqlstore-sqlstore-database-connection-amp	storage.md	engine/storage/sql_store.h:107
+storage::SqlStore::~SqlStore()	function	storage	storage-sqlstore-tilde-sqlstore	storage.md	engine/storage/sql_store.h:109
+storage::SqlStore::SqlStore(const SqlStore&)	function	storage	storage-sqlstore-sqlstore-const-sqlstore-amp	storage.md	engine/storage/sql_store.h:110
+storage::SqlStore::operator=(const SqlStore&)	function	storage	storage-sqlstore-operator-eq-const-sqlstore-amp	storage.md	engine/storage/sql_store.h:111
+storage::SqlStore::Name() const	function	storage	storage-sqlstore-name-const	storage.md	engine/storage/sql_store.h:116
+storage::SqlStore::Put(const EntityRecord&)	function	storage	storage-sqlstore-put-const-entityrecord-amp	storage.md	engine/storage/sql_store.h:117
+storage::SqlStore::PutMany(Span<const EntityRecord>)	function	storage	storage-sqlstore-putmany-span-lt-const-entityrecord-gt	storage.md	engine/storage/sql_store.h:119
+storage::SqlStore::Get(EntityKey,EntityRecord*) const	function	storage	storage-sqlstore-get-entitykey-entityrecord-star-const	storage.md	engine/storage/sql_store.h:120
+storage::SqlStore::Remove(EntityKey)	function	storage	storage-sqlstore-remove-entitykey	storage.md	engine/storage/sql_store.h:121
+storage::SqlStore::Scan(const KeyRange&,RecordVisitor&) const	function	storage	storage-sqlstore-scan-const-keyrange-amp-recordvisitor-amp-const	storage.md	engine/storage/sql_store.h:122
+storage::SqlStore::Count(usize*) const	function	storage	storage-sqlstore-count-usize-star-const	storage.md	engine/storage/sql_store.h:123
+storage::SqlStore::Begin()	function	storage	storage-sqlstore-begin	storage.md	engine/storage/sql_store.h:124
+storage::SqlStore::Commit()	function	storage	storage-sqlstore-commit	storage.md	engine/storage/sql_store.h:125
+storage::SqlStore::Rollback()	function	storage	storage-sqlstore-rollback	storage.md	engine/storage/sql_store.h:126
+storage::SqlStore::GetMetadata(StringView,String<HeapAllocator>*) const	function	storage	storage-sqlstore-getmetadata-stringview-string-lt-heapallocator-gt-star-const	storage.md	engine/storage/sql_store.h:127
+storage::SqlStore::SetMetadata(StringView,StringView)	function	storage	storage-sqlstore-setmetadata-stringview-stringview	storage.md	engine/storage/sql_store.h:128
+storage::SqlStore::FindKeys(StringView,StringView,CompareOp,const database::ValueView&,Vector<EntityKey>*) const	function	storage	storage-sqlstore-findkeys-stringview-stringview-compareop-const-database-valueview-amp-vector-lt-entitykey-gt-star-const	storage.md	engine/storage/sql_store.h:139
+storage::SqlStore::CountWhere(StringView,StringView,CompareOp,const database::ValueView&,usize*) const	function	storage	storage-sqlstore-countwhere-stringview-stringview-compareop-const-database-valueview-amp-usize-star-const	storage.md	engine/storage/sql_store.h:145
+storage::SqlStore::VerifyColumns(usize*) const	function	storage	storage-sqlstore-verifycolumns-usize-star-const	storage.md	engine/storage/sql_store.h:151
+storage::SqlStore::FailAfter(u32)	function	storage	storage-sqlstore-failafter-u32	storage.md	engine/storage/sql_store.h:157
 storage::ErrorCode	enum	storage	storage-errorcode	storage.md	engine/storage/status.h:12
 storage::ErrorCode::Ok	enumerator	storage	storage-errorcode-ok	storage.md	engine/storage/status.h:13
 storage::ErrorCode::NotFound	enumerator	storage	storage-errorcode-notfound	storage.md	engine/storage/status.h:14
@@ -4150,8 +4187,14 @@ storage::Report::reconciled	variable	storage	storage-report-reconciled	storage.m
 storage::Report::unkeyed_parents	variable	storage	storage-report-unkeyed-parents	storage.md	engine/storage/storage_options.h:128
 storage::Report::parents_rejected	variable	storage	storage-report-parents-rejected	storage.md	engine/storage/storage_options.h:129
 storage::Report::bytes	variable	storage	storage-report-bytes	storage.md	engine/storage/storage_options.h:130
-storage::RegisterStorageSettings(settings::Registry*)	function	storage	storage-registerstoragesettings-settings-registry-star	storage.md	engine/storage/storage_settings.h:17
-storage::LimitsFromSettings(const settings::Registry&)	function	storage	storage-limitsfromsettings-const-settings-registry-amp	storage.md	engine/storage/storage_settings.h:24
+storage::StorageLayout	enum	storage	storage-storagelayout	storage.md	engine/storage/storage_settings.h:14
+storage::StorageLayout::Blob	enumerator	storage	storage-storagelayout-blob	storage.md	engine/storage/storage_settings.h:15
+storage::StorageLayout::Columns	enumerator	storage	storage-storagelayout-columns	storage.md	engine/storage/storage_settings.h:16
+storage::RegisterStorageSettings(settings::Registry*)	function	storage	storage-registerstoragesettings-settings-registry-star	storage.md	engine/storage/storage_settings.h:26
+storage::LimitsFromSettings(const settings::Registry&)	function	storage	storage-limitsfromsettings-const-settings-registry-amp	storage.md	engine/storage/storage_settings.h:33
+storage::PathFromSettings(const settings::Registry&)	function	storage	storage-pathfromsettings-const-settings-registry-amp	storage.md	engine/storage/storage_settings.h:40
+storage::ColumnsFromSettings(const settings::Registry&)	function	storage	storage-columnsfromsettings-const-settings-registry-amp	storage.md	engine/storage/storage_settings.h:47
+storage::AutosaveSecondsFromSettings(const settings::Registry&)	function	storage	storage-autosavesecondsfromsettings-const-settings-registry-amp	storage.md	engine/storage/storage_settings.h:54
 storage::HashBytes(ByteSpan)	function	storage	storage-hashbytes-bytespan	storage.md	engine/storage/store.h:26
 storage::EntityRecord	struct	storage	storage-entityrecord	storage.md	engine/storage/store.h:32
 storage::EntityRecord::key	variable	storage	storage-entityrecord-key	storage.md	engine/storage/store.h:33
@@ -4170,29 +4213,32 @@ storage::RecordVisitor::~RecordVisitor()	function	storage	storage-recordvisitor-
 storage::RecordVisitor::Visit(const EntityRecord&)	function	storage	storage-recordvisitor-visit-const-entityrecord-amp	storage.md	engine/storage/store.h:75
 storage::metadata::kFormatVersion	variable	storage	storage-metadata-kformatversion	storage.md	engine/storage/store.h:80
 storage::metadata::kSchemaVersion	variable	storage	storage-metadata-kschemaversion	storage.md	engine/storage/store.h:81
-storage::metadata::kLastSaveLabel	variable	storage	storage-metadata-klastsavelabel	storage.md	engine/storage/store.h:82
-storage::Store	class	storage	storage-store	storage.md	engine/storage/store.h:96
-storage::Store::~Store()	function	storage	storage-store-tilde-store	storage.md	engine/storage/store.h:98
-storage::Store::Name() const	function	storage	storage-store-name-const	storage.md	engine/storage/store.h:103
-storage::Store::Put(const EntityRecord&)	function	storage	storage-store-put-const-entityrecord-amp	storage.md	engine/storage/store.h:110
-storage::Store::PutMany(Span<const EntityRecord>)	function	storage	storage-store-putmany-span-lt-const-entityrecord-gt	storage.md	engine/storage/store.h:117
-storage::Store::Get(EntityKey,EntityRecord*) const	function	storage	storage-store-get-entitykey-entityrecord-star-const	storage.md	engine/storage/store.h:128
-storage::Store::Remove(EntityKey)	function	storage	storage-store-remove-entitykey	storage.md	engine/storage/store.h:132
-storage::Store::Scan(const KeyRange&,RecordVisitor&) const	function	storage	storage-store-scan-const-keyrange-amp-recordvisitor-amp-const	storage.md	engine/storage/store.h:139
-storage::Store::Count(usize*) const	function	storage	storage-store-count-usize-star-const	storage.md	engine/storage/store.h:145
-storage::Store::Begin()	function	storage	storage-store-begin	storage.md	engine/storage/store.h:149
-storage::Store::Commit()	function	storage	storage-store-commit	storage.md	engine/storage/store.h:152
-storage::Store::Rollback()	function	storage	storage-store-rollback	storage.md	engine/storage/store.h:155
-storage::Store::GetMetadata(StringView,String<HeapAllocator>*) const	function	storage	storage-store-getmetadata-stringview-string-lt-heapallocator-gt-star-const	storage.md	engine/storage/store.h:163
-storage::Store::SetMetadata(StringView,StringView)	function	storage	storage-store-setmetadata-stringview-stringview	storage.md	engine/storage/store.h:170
-storage::ListKeys(const Store&,const KeyRange&,usize,Vector<EntityKey>*)	function	storage	storage-listkeys-const-store-amp-const-keyrange-amp-usize-vector-lt-entitykey-gt-star	storage.md	engine/storage/store.h:181
-storage::WorldStorage	class	storage	storage-worldstorage	storage.md	engine/storage/world_storage.h:19
-storage::WorldStorage::WorldStorage(const ComponentRegistry&,Store&)	function	storage	storage-worldstorage-worldstorage-const-componentregistry-amp-store-amp	storage.md	engine/storage/world_storage.h:26
-storage::WorldStorage::SetLimits(const CodecLimits&)	function	storage	storage-worldstorage-setlimits-const-codeclimits-amp	storage.md	engine/storage/world_storage.h:32
-storage::WorldStorage::Save(ecs::World&,KeyIndex&,const SaveOptions&,Report*)	function	storage	storage-worldstorage-save-ecs-world-amp-keyindex-amp-const-saveoptions-amp-report-star	storage.md	engine/storage/world_storage.h:45
-storage::WorldStorage::Load(ecs::World&,KeyIndex&,const LoadOptions&,Report*)	function	storage	storage-worldstorage-load-ecs-world-amp-keyindex-amp-const-loadoptions-amp-report-star	storage.md	engine/storage/world_storage.h:57
-storage::WorldStorage::Delete(Span<const EntityKey>)	function	storage	storage-worldstorage-delete-span-lt-const-entitykey-gt	storage.md	engine/storage/world_storage.h:63
-storage::WorldStorage::List(const KeyRange&,usize,Vector<EntityKey>*) const	function	storage	storage-worldstorage-list-const-keyrange-amp-usize-vector-lt-entitykey-gt-star-const	storage.md	engine/storage/world_storage.h:71
+storage::metadata::kManifest	variable	storage	storage-metadata-kmanifest	storage.md	engine/storage/store.h:82
+storage::metadata::kLastSaveLabel	variable	storage	storage-metadata-klastsavelabel	storage.md	engine/storage/store.h:83
+storage::Store	class	storage	storage-store	storage.md	engine/storage/store.h:97
+storage::Store::~Store()	function	storage	storage-store-tilde-store	storage.md	engine/storage/store.h:99
+storage::Store::Name() const	function	storage	storage-store-name-const	storage.md	engine/storage/store.h:104
+storage::Store::Put(const EntityRecord&)	function	storage	storage-store-put-const-entityrecord-amp	storage.md	engine/storage/store.h:111
+storage::Store::PutMany(Span<const EntityRecord>)	function	storage	storage-store-putmany-span-lt-const-entityrecord-gt	storage.md	engine/storage/store.h:118
+storage::Store::Get(EntityKey,EntityRecord*) const	function	storage	storage-store-get-entitykey-entityrecord-star-const	storage.md	engine/storage/store.h:129
+storage::Store::Remove(EntityKey)	function	storage	storage-store-remove-entitykey	storage.md	engine/storage/store.h:133
+storage::Store::Scan(const KeyRange&,RecordVisitor&) const	function	storage	storage-store-scan-const-keyrange-amp-recordvisitor-amp-const	storage.md	engine/storage/store.h:140
+storage::Store::Count(usize*) const	function	storage	storage-store-count-usize-star-const	storage.md	engine/storage/store.h:146
+storage::Store::Begin()	function	storage	storage-store-begin	storage.md	engine/storage/store.h:150
+storage::Store::Commit()	function	storage	storage-store-commit	storage.md	engine/storage/store.h:153
+storage::Store::Rollback()	function	storage	storage-store-rollback	storage.md	engine/storage/store.h:156
+storage::Store::GetMetadata(StringView,String<HeapAllocator>*) const	function	storage	storage-store-getmetadata-stringview-string-lt-heapallocator-gt-star-const	storage.md	engine/storage/store.h:164
+storage::Store::SetMetadata(StringView,StringView)	function	storage	storage-store-setmetadata-stringview-stringview	storage.md	engine/storage/store.h:171
+storage::ListKeys(const Store&,const KeyRange&,usize,Vector<EntityKey>*)	function	storage	storage-listkeys-const-store-amp-const-keyrange-amp-usize-vector-lt-entitykey-gt-star	storage.md	engine/storage/store.h:182
+storage::WorldStorage	class	storage	storage-worldstorage	storage.md	engine/storage/world_storage.h:32
+storage::WorldStorage::WorldStorage(const ComponentRegistry&,Store&)	function	storage	storage-worldstorage-worldstorage-const-componentregistry-amp-store-amp	storage.md	engine/storage/world_storage.h:39
+storage::WorldStorage::SetLimits(const CodecLimits&)	function	storage	storage-worldstorage-setlimits-const-codeclimits-amp	storage.md	engine/storage/world_storage.h:45
+storage::WorldStorage::Save(ecs::World&,KeyIndex&,const SaveOptions&,Report*)	function	storage	storage-worldstorage-save-ecs-world-amp-keyindex-amp-const-saveoptions-amp-report-star	storage.md	engine/storage/world_storage.h:58
+storage::WorldStorage::Load(ecs::World&,KeyIndex&,const LoadOptions&,Report*)	function	storage	storage-worldstorage-load-ecs-world-amp-keyindex-amp-const-loadoptions-amp-report-star	storage.md	engine/storage/world_storage.h:70
+storage::WorldStorage::SaveAsync(jobs::Scheduler&,ecs::World&,KeyIndex&,const SaveOptions&,UniquePtr<AsyncSave>*)	function	storage	storage-worldstorage-saveasync-jobs-scheduler-amp-ecs-world-amp-keyindex-amp-const-saveoptions-amp-uniqueptr-lt-asyncsave-gt-star	storage.md	engine/storage/world_storage.h:87
+storage::WorldStorage::LoadAsync(jobs::Scheduler&,const LoadOptions&,UniquePtr<AsyncLoad>*)	function	storage	storage-worldstorage-loadasync-jobs-scheduler-amp-const-loadoptions-amp-uniqueptr-lt-asyncload-gt-star	storage.md	engine/storage/world_storage.h:97
+storage::WorldStorage::Delete(Span<const EntityKey>)	function	storage	storage-worldstorage-delete-span-lt-const-entitykey-gt	storage.md	engine/storage/world_storage.h:104
+storage::WorldStorage::List(const KeyRange&,usize,Vector<EntityKey>*) const	function	storage	storage-worldstorage-list-const-keyrange-amp-usize-vector-lt-entitykey-gt-star-const	storage.md	engine/storage/world_storage.h:112
 scene::MeshAsset	struct	scene	scene-meshasset	scene.md	engine/scene/components.h:22
 scene::MeshAsset::mesh	variable	scene	scene-meshasset-mesh	scene.md	engine/scene/components.h:24
 scene::MeshRenderer	struct	scene	scene-meshrenderer	scene.md	engine/scene/components.h:31

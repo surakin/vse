@@ -326,3 +326,41 @@ written without columns is refilled the same way the next time it is opened with
 
 On 100,000 entities with ten fields each (file database, debug build): blob only saves in about 0.45 s, with columns in about 0.93 s (1.0 s with an index), and both load in about 0.6 s; a query for
 one integer field answers 18,268 hits in 6.8 ms without an index and 0.5 ms with one.
+
+## Settings and opening the storage
+
+Every knob is a setting (`RegisterStorageSettings`, with `database::RegisterDatabaseSettings` for the connection): `storage.path` (the database file; empty keeps a private in-memory database),
+`storage.layout` (`blob` or `columns`), `storage.autosave_seconds` (0 is off), the four limits `storage.max_record_bytes`, `storage.max_string_bytes`, `storage.max_array_elements` and
+`storage.max_components_per_entity`, and the `database.*` group. Each has an environment variable (`ENGINE_STORAGE_*`) and a flag (`--storage-*`). `LocalStorage::OpenFromSettings(backend, settings,
+components, &storage)` opens the connection, the SQL store and the `WorldStorage` from them; `storage` itself names no database backend, so the program passes the one it links.
+
+## Asynchronous saves and loads
+
+`WorldStorage::SaveAsync(scheduler, world, index, options, &handle)` is the same save as `Save`, split in two at the point where the world stops being read:
+
+1. **The snapshot** runs before the call returns, on the calling thread (which must be the main thread of the scheduler): the entities to write (all of them, or for an incremental save the changed ones) are
+   encoded into memory by the scheduler's workers, in rounds of `batch_size` entities, each worker filling its own slots. The stored state therefore does not depend on the number of workers or on how
+   they were scheduled: records are written in key order, and the tests compare an asynchronous save with a synchronous one byte for byte over 100 random worlds with 1 to 8 participants.
+2. **The write** is one job: it opens the store's batch, writes the records, removes the records of entities that are gone, writes the metadata and commits. It is the only user of the store until it
+   has finished, so a second `SaveAsync` (or `Save`) on the same `WorldStorage` returns `Busy` until the first handle has been collected.
+
+Because the world is not read after the call returns, **it may change freely while the writer works**: what is stored is the world as the call found it (a test changes the world five times while the
+writer runs, under ThreadSanitizer). The handle is collected with `Wait` (main thread; it helps run jobs) or `Finish` once `IsDone` is true; `Finish` is also where an incremental save's `SaveSession`
+learns the outcome, so call it before the next save with that session. The clocks of the session are those of the snapshot, and the world is advanced at the snapshot, so a write made after the call is
+seen by the next incremental save. A handle destroyed without `Finish` waits for the writer and drops the session update: the next incremental save then does extra work, never less.
+
+`SaveOptions::cancel` is checked between rounds of the snapshot and between groups of the write; a cancelled save leaves the store as it was (a cancel that arrives after the commit is a success).
+`progress` is called from the calling thread during the snapshot and once from the writer job at the end.
+
+`LoadAsync(scheduler, options, &handle)` runs the part that waits for the disk on a job: it copies the stored records (and the metadata the check needs) into memory. `AsyncLoad::Finish(world, index,
+&report)` then decodes them and fills the world exactly as `Load` does, on the caller's thread, which owns the world; **the world is not touched until `Finish`**, and a failed or cancelled load leaves it as
+it was. (The decoding itself stays on the calling thread: it creates entities.)
+
+### Autosave
+
+`Autosaver autosaver(storage, scheduler, world, index, seconds)` and `autosaver.Update(dt)` once a frame, from the main thread, at a point where no system is writing components. Every `seconds` it
+starts an incremental `SaveAsync` with its own session; the cost on the frame is the encoding of the entities written since the last save (nothing for an idle world), and the writing happens on a job.
+`Update` collects the previous save when it has finished and returns its error, if any; the next save is tried at the next interval. `SaveNow` and `Flush` start and collect one explicitly. The interval
+is the caller's: read `storage.autosave_seconds` (`LocalStorage::AutosaveSeconds`), where 0 means the program does not autosave.
+
+The tutorial [Save a World Without Stalling the Frame](../tutorials/saving-a-world.md) walks through all of this, and `game/storage_demo` runs it on a city with the spatial sets and compares the loaded world with the original.

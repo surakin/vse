@@ -7,9 +7,14 @@
 #include "ecs/transform.h"
 #include "storage/builtin_components.h"
 #include "storage/component_record.h"
+#include "jobs/parallel_for.h"
+#include "storage/save_plan.h"
 #include "storage/save_session.h"
 
 namespace engine_placeholder::storage {
+
+using detail::Chosen;
+using detail::Encoded;
 
 namespace {
 
@@ -37,7 +42,7 @@ private:
 };
 
 constexpr u32 kStoredFormat = 1;
-constexpr const char* kManifestName = "manifest";
+constexpr const char* kManifestName = metadata::kManifest;
 
 // Components that are never written by their own record: the key is the record's key, the parent link is made from `ecs::Parent`, the opaque components are
 // appended as the records they hold.
@@ -50,18 +55,12 @@ ecs::ComponentId EcsIdOf(const ComponentRegistry& registry, u32 id) {
     return c != nullptr ? c->EcsId() : ecs::kInvalidComponent;
 }
 
-struct Candidate {
-    EntityKey key;
-    ecs::Entity entity;
-    friend bool operator<(const Candidate& a, const Candidate& b) { return a.key < b.key; }
-};
-
-Status CollectCandidates(ecs::World& world, const KeyIndex& index, const Selection& selection, Vector<Candidate>* out, Report* report) {
+Status CollectChosens(ecs::World& world, const KeyIndex& index, const Selection& selection, Vector<Chosen>* out, Report* report) {
     if (selection.kind == Selection::Kind::Keys) {
         for (usize i = 0; i < selection.keys.Size(); ++i) {
             const ecs::Entity e = index.Find(selection.keys[i]);
             if (e.IsValid()) {
-                out->Push(Candidate{selection.keys[i], e});
+                out->Push(Chosen{selection.keys[i], e});
             } else {
                 ++report->missing_keys;
             }
@@ -82,10 +81,10 @@ Status CollectCandidates(ecs::World& world, const KeyIndex& index, const Selecti
                     return;
                 }
             }
-            out->Push(Candidate{c.key, e});
+            out->Push(Chosen{c.key, e});
         });
     }
-    Sort(Span<Candidate>(out->Data(), out->Size()));
+    Sort(Span<Chosen>(out->Data(), out->Size()));
     // A key named twice is one entity.
     usize kept = 0;
     for (usize i = 0; i < out->Size(); ++i) {
@@ -280,16 +279,6 @@ public:
     Vector<u64> hashes;
 };
 
-Status WriteSaveMetadata(Store& store, const ComponentRegistry& registry, const SaveOptions& options) {
-    ENGINE_TRY(store.SetMetadata(metadata::kFormatVersion, "1"));
-    const String<HeapAllocator> manifest = ManifestText(registry);
-    ENGINE_TRY(store.SetMetadata(kManifestName, manifest.View()));
-    if (options.label.Length() != 0) {
-        ENGINE_TRY(store.SetMetadata(metadata::kLastSaveLabel, options.label.View()));
-    }
-    return Status::Success();
-}
-
 // The largest removal number the key component's log holds.
 u64 LargestRemovalSeq(const ecs::World& world, u64 floor) {
     u64 largest = floor;
@@ -303,9 +292,50 @@ u64 LargestRemovalSeq(const ecs::World& world, u64 floor) {
 
 } // namespace
 
-Status WorldStorage::Save(ecs::World& world, KeyIndex& index, const SaveOptions& options, Report* report) {
-    Report local;
-    Report& r = report != nullptr ? *report : local;
+namespace {
+
+// Encodes the entities `entities[begin, end)` into `out[begin, end)`, on the workers of `scheduler` when there is one. Each slot is written by one task only, so
+// the result does not depend on the schedule.
+struct EncodeJob {
+    const ComponentRegistry* registry;
+    const ecs::World* world;
+    const KeyIndex* index;
+    const CodecLimits* limits;
+    const Chosen* chosen;
+    Encoded* out;
+    usize offset;
+    void operator()(usize from, usize to) const {
+        for (usize i = from; i < to; ++i) {
+            Encoded& slot = out[offset + i];
+            Report local;
+            slot.status = EncodeEntity(*registry, *world, *index, chosen[offset + i].entity, *limits, &local, slot.blob);
+            slot.unkeyed = local.unkeyed_parents;
+            if (slot.status.Ok()) {
+                slot.hash = HashBytes(slot.blob.Bytes());
+            }
+        }
+    }
+};
+
+void EncodeSlots(const EncodeJob& job, usize count, jobs::Scheduler* scheduler) {
+    if (count == 0) {
+        return;
+    }
+    if (scheduler == nullptr) {
+        job(0, count);
+        return;
+    }
+    EncodeJob copy = job;
+    const usize workers = scheduler->ParticipantCount();
+    usize chunk = count / (workers * 4);
+    chunk = chunk < 16 ? 16 : chunk;
+    jobs::ParallelForBlocking(*scheduler, count, chunk, copy);
+}
+
+} // namespace
+
+Status WorldStorage::Plan(ecs::World& world, KeyIndex& index, const SaveOptions& options, jobs::Scheduler* scheduler, detail::SavePlan* plan) {
+    Report& r = plan->report;
     r = Report();
     if (registry_->Count() == 0) {
         return Status::Make(ErrorCode::Invalid, "no component is registered, so nothing can be stored");
@@ -325,75 +355,133 @@ Status WorldStorage::Save(ecs::World& world, KeyIndex& index, const SaveOptions&
         session->Reset();
     }
     ENGINE_TRY(index.Sync(world));
+    plan->step = options.batch_size == 0 ? 1 : options.batch_size;
+    plan->label = String<HeapAllocator>(HeapAllocator::Default(), options.label.View());
+    plan->cancel = options.cancel;
+    plan->progress = options.progress;
+    plan->user = options.user;
+    plan->track_session = session != nullptr;
+    plan->all_keyed = options.selection.kind == Selection::Kind::AllKeyed;
+    plan->world_id = world.Id();
     if (incremental && session->baseline_ && world.RemovalEpoch() <= session->removal_epoch_ + 1) {
-        return SaveChanged(world, index, options, r);
+        return PlanChanged(world, index, options, scheduler, plan);
     }
     // A full save, or an incremental one with nothing to go on (a new session, or removals the log no longer holds): compare with the store by hash.
-    const bool reconcile = incremental;
-    r.reconciled = reconcile ? 1 : 0;
+    plan->reconcile = incremental;
+    r.reconciled = incremental ? 1 : 0;
 
-    Vector<Candidate> chosen;
-    ENGINE_TRY(CollectCandidates(world, index, options.selection, &chosen, &r));
+    ENGINE_TRY(CollectChosens(world, index, options.selection, &plan->chosen, &r));
+    const usize total = plan->chosen.Size();
+    plan->encoded.Resize(total);
+    const ecs::World& view = world;
+    const EncodeJob job{registry_, &view, &index, &limits_, plan->chosen.Data(), plan->encoded.Data(), 0};
+    for (usize begin = 0; begin < total; begin += plan->step) {
+        if (options.cancel != nullptr && options.cancel->IsCancelled()) {
+            return Status::Make(ErrorCode::Cancelled, "the save was cancelled");
+        }
+        ReportProgress(options.progress, begin, total, options.user);
+        const usize count = total - begin < plan->step ? total - begin : plan->step;
+        EncodeJob batch = job;
+        batch.offset = begin;
+        EncodeSlots(batch, count, scheduler);
+        for (usize i = begin; i < begin + count; ++i) {
+            r.unkeyed_parents += plan->encoded[i].unkeyed;
+            ENGINE_TRY(plan->encoded[i].status);
+            ++r.encoded;
+        }
+    }
+    if (plan->track_session) {
+        plan->tick = world.Tick();
+        plan->removal_epoch = world.RemovalEpoch();
+        plan->largest_removal_seq = LargestRemovalSeq(world, 0);
+        world.Advance(); // a write after this snapshot is stamped later than the save
+    }
+    return Status::Success();
+}
 
+Status WorldStorage::Write(detail::SavePlan& plan) {
+    Report& r = plan.report;
+    const auto cancelled = [&]() { return plan.cancel != nullptr && plan.cancel->IsCancelled(); };
+    if (cancelled()) {
+        return Status::Make(ErrorCode::Cancelled, "the save was cancelled");
+    }
     // The records already stored, to count replacements, to skip what is unchanged (reconcile) and to find the records of entities that are gone.
     StoredHashes stored;
-    ENGINE_TRY(store_->Scan(KeyRange(), stored));
-
+    if (!plan.changed_style) {
+        ENGINE_TRY(store_->Scan(KeyRange(), stored));
+    }
     ENGINE_TRY(store_->Begin());
-    const usize step = options.batch_size == 0 ? 1 : options.batch_size;
     Status failure = Status::Success();
-    Vector<u64> hashes; // of each chosen entity, for a session
     PutQueue queue(*store_);
-    usize s = 0;        // position in `stored`
-    for (usize i = 0; i < chosen.Size() && failure.Ok(); ++i) {
-        if (i % step == 0) {
-            if (options.cancel != nullptr && options.cancel->IsCancelled()) {
+    if (plan.changed_style) {
+        for (usize i = 0; i < plan.puts.Size() && failure.Ok(); ++i) {
+            if (i % plan.step == 0 && cancelled()) {
                 failure = Status::Make(ErrorCode::Cancelled, "the save was cancelled");
                 break;
             }
-            ReportProgress(options.progress, i, chosen.Size(), options.user);
+            failure = queue.Add(plan.puts[i].key, plan.puts[i].blob.Bytes());
         }
-        bytes::ByteWriter blob;
-        failure = EncodeEntity(*registry_, world, index, chosen[i].entity, limits_, &r, blob);
-        if (failure.Failed()) {
-            break;
+        if (failure.Ok()) {
+            failure = queue.Flush();
         }
-        ++r.encoded;
-        const u64 hash = HashBytes(blob.Bytes());
-        hashes.Push(hash);
-        while (s < stored.keys.Size() && stored.keys[s] < chosen[i].key) {
-            ++s;
-        }
-        const bool existed = s < stored.keys.Size() && stored.keys[s] == chosen[i].key;
-        if (reconcile && existed && stored.hashes[s] == hash) {
-            continue;
-        }
-        failure = queue.Add(chosen[i].key, blob.Bytes());
-        if (failure.Failed()) {
-            break;
-        }
-        ++(existed ? r.replaced : r.created);
-        r.bytes += blob.Size();
-    }
-    if (failure.Ok()) {
-        failure = queue.Flush();
-    }
-    if (failure.Ok() && options.selection.kind == Selection::Kind::AllKeyed) {
-        // Records of entities that no longer exist (or lost their key). Both lists are in key order.
-        usize c = 0;
-        for (usize i = 0; i < stored.keys.Size() && failure.Ok(); ++i) {
-            while (c < chosen.Size() && chosen[c].key < stored.keys[i]) {
-                ++c;
+        for (usize i = 0; i < plan.removes.Size() && failure.Ok(); ++i) {
+            failure = store_->Remove(plan.removes[i]);
+            if (failure.Failed() && failure.Code() == ErrorCode::NotFound) {
+                failure = Status::Success(); // somebody else took it
             }
-            if (c < chosen.Size() && chosen[c].key == stored.keys[i]) {
-                continue;
-            }
-            failure = store_->Remove(stored.keys[i]);
             ++r.removed;
         }
+    } else {
+        usize s = 0; // position in `stored`
+        for (usize i = 0; i < plan.chosen.Size() && failure.Ok(); ++i) {
+            if (i % plan.step == 0 && cancelled()) {
+                failure = Status::Make(ErrorCode::Cancelled, "the save was cancelled");
+                break;
+            }
+            const Chosen& c = plan.chosen[i];
+            detail::Encoded& e = plan.encoded[i];
+            while (s < stored.keys.Size() && stored.keys[s] < c.key) {
+                ++s;
+            }
+            const bool existed = s < stored.keys.Size() && stored.keys[s] == c.key;
+            if (plan.reconcile && existed && stored.hashes[s] == e.hash) {
+                continue;
+            }
+            failure = queue.Add(c.key, e.blob.Bytes());
+            if (failure.Failed()) {
+                break;
+            }
+            ++(existed ? r.replaced : r.created);
+            r.bytes += e.blob.Size();
+            e.blob = bytes::ByteWriter(); // the queue holds a copy; give the memory back as the write goes on
+        }
+        if (failure.Ok()) {
+            failure = queue.Flush();
+        }
+        if (failure.Ok() && plan.all_keyed) {
+            // Records of entities that no longer exist (or lost their key). Both lists are in key order.
+            usize c = 0;
+            for (usize i = 0; i < stored.keys.Size() && failure.Ok(); ++i) {
+                while (c < plan.chosen.Size() && plan.chosen[c].key < stored.keys[i]) {
+                    ++c;
+                }
+                if (c < plan.chosen.Size() && plan.chosen[c].key == stored.keys[i]) {
+                    continue;
+                }
+                failure = store_->Remove(stored.keys[i]);
+                ++r.removed;
+            }
+        }
     }
     if (failure.Ok()) {
-        failure = WriteSaveMetadata(*store_, *registry_, options);
+        failure = store_->SetMetadata(metadata::kFormatVersion, "1");
+    }
+    if (failure.Ok()) {
+        const String<HeapAllocator> manifest = ManifestText(*registry_);
+        failure = store_->SetMetadata(kManifestName, manifest.View());
+    }
+    if (failure.Ok() && plan.label.Length() != 0) {
+        failure = store_->SetMetadata(metadata::kLastSaveLabel, plan.label.View());
     }
     if (failure.Ok()) {
         failure = store_->Commit();
@@ -402,25 +490,62 @@ Status WorldStorage::Save(ecs::World& world, KeyIndex& index, const SaveOptions&
         static_cast<void>(store_->Rollback()); // the failure being returned is the cause; a batch we opened is open, so this cannot add to it
         return failure;
     }
-    if (session != nullptr) {
-        session->Reset();
-        for (usize i = 0; i < chosen.Size(); ++i) {
-            session->hash_of_->Insert(chosen[i].key, hashes[i]);
-            session->key_of_->Insert(chosen[i].entity, chosen[i].key);
-        }
-        session->baseline_ = true;
-        session->world_id_ = world.Id();
-        session->since_ = world.Tick();
-        session->removal_epoch_ = world.RemovalEpoch();
-        session->last_removal_seq_ = LargestRemovalSeq(world, 0);
-        world.Advance(); // a write after this save is stamped later than the save
-    }
-    ReportProgress(options.progress, chosen.Size(), chosen.Size(), options.user);
+    ReportProgress(plan.progress, r.encoded, r.encoded, plan.user);
     return Status::Success();
 }
 
-Status WorldStorage::SaveChanged(ecs::World& world, KeyIndex& index, const SaveOptions& options, Report& r) {
+void WorldStorage::Adopt(SaveSession& session, detail::SavePlan& plan) {
+    if (plan.changed_style) {
+        for (usize i = 0; i < plan.removes.Size(); ++i) {
+            session.hash_of_->Remove(plan.removes[i]);
+        }
+        for (usize i = 0; i < plan.forgotten.Size(); ++i) {
+            session.key_of_->Remove(plan.forgotten[i]);
+        }
+        for (usize i = 0; i < plan.puts.Size(); ++i) {
+            session.hash_of_->Insert(plan.puts[i].key, plan.puts[i].hash);
+        }
+        for (usize i = 0; i < plan.rekeyed.Size(); ++i) {
+            session.key_of_->Insert(plan.rekeyed[i].entity, plan.rekeyed[i].key);
+        }
+    } else {
+        session.Reset();
+        for (usize i = 0; i < plan.chosen.Size(); ++i) {
+            session.hash_of_->Insert(plan.chosen[i].key, plan.encoded[i].hash);
+            session.key_of_->Insert(plan.chosen[i].entity, plan.chosen[i].key);
+        }
+        session.baseline_ = true;
+        session.world_id_ = plan.world_id;
+    }
+    session.since_ = plan.tick;
+    session.removal_epoch_ = plan.removal_epoch;
+    session.last_removal_seq_ = plan.largest_removal_seq;
+}
+
+Status WorldStorage::Save(ecs::World& world, KeyIndex& index, const SaveOptions& options, Report* report) {
+    Report local;
+    Report& r = report != nullptr ? *report : local;
+    r = Report();
+    if (!BeginWriter()) {
+        return Status::Make(ErrorCode::Busy, "an asynchronous save is still running");
+    }
+    detail::SavePlan plan;
+    Status s = Plan(world, index, options, nullptr, &plan);
+    if (s.Ok()) {
+        s = Write(plan);
+    }
+    if (s.Ok() && options.session != nullptr) {
+        Adopt(*options.session, plan);
+    }
+    EndWriter();
+    r = plan.report;
+    return s;
+}
+
+Status WorldStorage::PlanChanged(ecs::World& world, KeyIndex& index, const SaveOptions& options, jobs::Scheduler* scheduler, detail::SavePlan* plan) {
     SaveSession& session = *options.session;
+    Report& r = plan->report;
+    plan->changed_style = true;
     const ecs::World& view = world;
     const ecs::ComponentId key_column = ecs::ComponentOf<EntityKeyComponent>();
 
@@ -433,19 +558,11 @@ Status WorldStorage::SaveChanged(ecs::World& world, KeyIndex& index, const SaveO
         }
     }
 
-    struct Put {
-        EntityKey key;
-        ecs::Entity entity;
-        u64 hash;
-    };
-    Vector<Put> puts;
-    Vector<EntityKey> removes;
-    Vector<ecs::Entity> forgotten; // entities whose key mapping goes
     HashMap<EntityKey, u32, HeapAllocator> queued(HeapAllocator::Default());
     const auto queue_remove = [&](EntityKey key) {
         if (session.hash_of_->Find(key) != nullptr && queued.Find(key) == nullptr) {
             queued.Insert(key, 1);
-            removes.Push(key);
+            plan->removes.Push(key);
         }
     };
 
@@ -458,26 +575,20 @@ Status WorldStorage::SaveChanged(ecs::World& world, KeyIndex& index, const SaveO
             continue;
         }
         largest = entry.seq > largest ? entry.seq : largest;
-        forgotten.Push(entry.entity);
+        plan->forgotten.Push(entry.entity);
         if (!entry.value.key.IsNull() && !index.Find(entry.value.key).IsValid()) {
             queue_remove(entry.value.key);
         }
     }
 
-    ENGINE_TRY(store_->Begin());
-    const usize step = options.batch_size == 0 ? 1 : options.batch_size;
-    Status failure = Status::Success();
+    // The entities in the chunks written since the last save.
     const u64 since = session.since_;
-    const u64 now = world.Tick();
-    usize encoded_here = 0;
-    PutQueue queue(*store_);
-    Vector<Put> rekeyed; // entities seen in a changed chunk, with the key they have now
-    for (u32 a = 0; a < view.ArchetypeCount() && failure.Ok(); ++a) {
+    for (u32 a = 0; a < view.ArchetypeCount(); ++a) {
         const ecs::Archetype& archetype = view.ArchetypeAt(a);
         if (!archetype.Has(key_column)) {
             continue;
         }
-        for (u32 c = 0; c < archetype.ChunkCount() && failure.Ok(); ++c) {
+        for (u32 c = 0; c < archetype.ChunkCount(); ++c) {
             ecs::Chunk* chunk = archetype.ChunkAt(c);
             bool dirty = false;
             for (usize t = 0; t < triggers.Size() && !dirty; ++t) {
@@ -489,82 +600,62 @@ Status WorldStorage::SaveChanged(ecs::World& world, KeyIndex& index, const SaveO
             }
             ++r.chunks_visited;
             const Span<ecs::Entity> entities = archetype.Entities(chunk);
-            for (usize row = 0; row < entities.Size() && failure.Ok(); ++row) {
+            for (usize row = 0; row < entities.Size(); ++row) {
                 const ecs::Entity e = entities[row];
                 const EntityKey key = index.KeyOf(e);
                 if (key.IsNull() || index.Find(key) != e) {
                     continue;
                 }
-                if (encoded_here % step == 0) {
-                    if (options.cancel != nullptr && options.cancel->IsCancelled()) {
-                        failure = Status::Make(ErrorCode::Cancelled, "the save was cancelled");
-                        break;
-                    }
-                    ReportProgress(options.progress, encoded_here, encoded_here, options.user);
-                }
-                ++encoded_here;
-                bytes::ByteWriter blob;
-                failure = EncodeEntity(*registry_, view, index, e, limits_, &r, blob);
-                if (failure.Failed()) {
-                    break;
-                }
-                ++r.encoded;
-                const u64 hash = HashBytes(blob.Bytes());
-                const u64* old = session.hash_of_->Find(key);
-                if (old == nullptr || *old != hash) {
-                    failure = queue.Add(key, blob.Bytes());
-                    if (failure.Failed()) {
-                        break;
-                    }
-                    ++(old != nullptr ? r.replaced : r.created);
-                    r.bytes += blob.Size();
-                    puts.Push(Put{key, e, hash});
-                }
-                const EntityKey* previous = session.key_of_->Find(e);
-                if (previous != nullptr && !(*previous == key) && !previous->IsNull() && !index.Find(*previous).IsValid()) {
-                    queue_remove(*previous); // the entity changed its key: the record under the old one goes
-                }
-                rekeyed.Push(Put{key, e, 0});
+                plan->chosen.Push(Chosen{key, e});
             }
         }
     }
-    if (failure.Ok()) {
-        failure = queue.Flush();
-    }
-    for (usize i = 0; i < removes.Size() && failure.Ok(); ++i) {
-        failure = store_->Remove(removes[i]);
-        if (failure.Failed() && failure.Code() == ErrorCode::NotFound) {
-            failure = Status::Success(); // somebody else took it
+
+    const usize total = plan->chosen.Size();
+    plan->encoded.Resize(total);
+    const EncodeJob job{registry_, &view, &index, &limits_, plan->chosen.Data(), plan->encoded.Data(), 0};
+    for (usize begin = 0; begin < total; begin += plan->step) {
+        if (options.cancel != nullptr && options.cancel->IsCancelled()) {
+            return Status::Make(ErrorCode::Cancelled, "the save was cancelled");
         }
-        ++r.removed;
+        ReportProgress(options.progress, begin, total, options.user);
+        const usize count = total - begin < plan->step ? total - begin : plan->step;
+        EncodeJob batch = job;
+        batch.offset = begin;
+        EncodeSlots(batch, count, scheduler);
+        for (usize i = begin; i < begin + count; ++i) {
+            r.unkeyed_parents += plan->encoded[i].unkeyed;
+            ENGINE_TRY(plan->encoded[i].status);
+            ++r.encoded;
+        }
     }
-    if (failure.Ok()) {
-        failure = WriteSaveMetadata(*store_, *registry_, options);
+    // What changed: a record whose hash differs from the one the session wrote.
+    for (usize i = 0; i < total; ++i) {
+        const Chosen& c = plan->chosen[i];
+        detail::Encoded& e = plan->encoded[i];
+        const u64* old = session.hash_of_->Find(c.key);
+        if (old == nullptr || *old != e.hash) {
+            ++(old != nullptr ? r.replaced : r.created);
+            r.bytes += e.blob.Size();
+            detail::PutOp put;
+            put.key = c.key;
+            put.entity = c.entity;
+            put.hash = e.hash;
+            put.blob = Move(e.blob);
+            plan->puts.Push(Move(put));
+        }
+        const EntityKey* previous = session.key_of_->Find(c.entity);
+        if (previous != nullptr && !(*previous == c.key) && !previous->IsNull() && !index.Find(*previous).IsValid()) {
+            queue_remove(*previous); // the entity changed its key: the record under the old one goes
+        }
+        plan->rekeyed.Push(detail::KeyedEntity{c.key, c.entity});
     }
-    if (failure.Ok()) {
-        failure = store_->Commit();
-    }
-    if (failure.Failed()) {
-        static_cast<void>(store_->Rollback());
-        return failure;
-    }
-    for (usize i = 0; i < removes.Size(); ++i) {
-        session.hash_of_->Remove(removes[i]);
-    }
-    for (usize i = 0; i < forgotten.Size(); ++i) {
-        session.key_of_->Remove(forgotten[i]);
-    }
-    for (usize i = 0; i < puts.Size(); ++i) {
-        session.hash_of_->Insert(puts[i].key, puts[i].hash);
-    }
-    for (usize i = 0; i < rekeyed.Size(); ++i) {
-        session.key_of_->Insert(rekeyed[i].entity, rekeyed[i].key);
-    }
-    session.since_ = now;
-    session.removal_epoch_ = world.RemovalEpoch();
-    session.last_removal_seq_ = largest;
-    world.Advance();
-    ReportProgress(options.progress, encoded_here, encoded_here, options.user);
+    plan->encoded.Clear();
+    plan->chosen.Clear();
+    plan->tick = world.Tick();
+    plan->removal_epoch = world.RemovalEpoch();
+    plan->largest_removal_seq = largest;
+    world.Advance(); // a write after this snapshot is stamped later than the save
     return Status::Success();
 }
 

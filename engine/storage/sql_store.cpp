@@ -8,14 +8,8 @@
 
 namespace engine_placeholder::storage {
 
-namespace {
-
-using database::Connection;
-using database::Statement;
-using database::ValueView;
-
-// The error a database failure becomes. The database's own message stays in its Status; the store's is a fixed phrase per code.
-Status Map(const database::Status& s) {
+namespace detail {
+Status MapDatabaseStatus(const database::Status& s) {
     switch (s.Code()) {
     case database::ErrorCode::Ok:
         return Status::Success();
@@ -33,6 +27,17 @@ Status Map(const database::Status& s) {
     default:
         return Status::Make(ErrorCode::Other, "the database reported an error");
     }
+}
+} // namespace detail
+
+namespace {
+
+using database::Connection;
+using database::Statement;
+using database::ValueView;
+
+Status Map(const database::Status& s) {
+    return detail::MapDatabaseStatus(s);
 }
 
 // Runs `expr` (a database status) and returns the mapped failure.

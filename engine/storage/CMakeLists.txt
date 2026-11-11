@@ -13,6 +13,8 @@ set(STORAGE_SOURCES
   world_storage.cpp  # Day 259
   save_session.cpp   # Day 261
   sql_store.cpp  # Day 262
+  async_storage.cpp  # Day 264
+  local_storage.cpp  # Day 264
 )
 set(STORAGE_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

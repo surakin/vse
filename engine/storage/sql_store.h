@@ -12,6 +12,12 @@ namespace engine_placeholder::storage {
 
 namespace detail {
 struct SqlLayout;
+/// The storage error a database failure becomes (`Busy`, `Corrupt`, `LimitExceeded`, `Io` or `Other`).
+///
+/// Param status: the database's status.
+/// Returns: the storage status.
+/// Fails: never.
+Status MapDatabaseStatus(const database::Status& status);
 } // namespace detail
 
 /// How a field value is compared in [[storage::SqlStore::FindKeys]].

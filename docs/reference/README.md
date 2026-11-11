@@ -25,7 +25,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [ECS](ecs.md) | 12 | 406 |
 | [Spatial Partitioning](spatial.md) | 12 | 333 |
 | [Database](database.md) | 9 | 161 |
-| [Storage](storage.md) | 14 | 364 |
+| [Storage](storage.md) | 17 | 410 |
 | [Scene bridge](scene.md) | 2 | 44 |
 | [The UI Toolkit](ui.md) | 46 | 1420 |
 | [The UI Window Adapter](ui_window.md) | 2 | 25 |

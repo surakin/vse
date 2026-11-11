@@ -50,6 +50,7 @@ add_subdirectory(renderer_demo)
 add_subdirectory(renderer_bench)
 add_subdirectory(ecs_bench)
 add_subdirectory(spatial_demo)
+add_subdirectory(storage_demo)
 add_subdirectory(ui_demo)
 
 # The README's "Settings options" block must be the settings part of --help (so the documentation cannot drift from the registry).
