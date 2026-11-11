@@ -22,7 +22,7 @@
 
 Order reasoning: the shared shapes come first because both the renderer and the new module need them below `ecs`; the static tree before the dynamic one (it is simpler and gives the dynamic tree a reference); queries once both trees exist so one vocabulary is written once; the set and the optional grid after the queries, then the pair tracker, which needs the set; the ECS tier (components, then the sync system, then entity-facing queries) once the structures are exact; the renderer integration after the entity queries because it reuses the sync; stats, benchmarks and the demo last so they measure the finished design. Storage (Phase 19), networking (Phase 20), the asset pipeline (21) and physics (Phase 22) follow; 3D text (Phase 25) needs nothing from this phase, but its text entities become spatial members for free.
 
-**Status: complete on the Linux machine (2026-11-10), Days 237-249; the Windows PC build and test of Days 237-249 are open in `KNOWN-ISSUES.md`, and three spatial pass conditions are missed or open (design spec section 4.1, for the user); `CURRENT_PHASE` stays 18 until Phase 19's first day.** Inserted after the ECS on 2026-11-10 (the user's request); phases 18-30 became 19-31.
+**Status: complete (Days 237-249) on the Linux machine (2026-11-10) and the Windows PC (2026-11-11); three spatial pass conditions are missed or open (design spec section 4.1, for the user); `CURRENT_PHASE` stays 18 until Phase 19's first day.** Inserted after the ECS on 2026-11-10 (the user's request); phases 18-30 became 19-31.
 
 ## Why a phase of its own
 
