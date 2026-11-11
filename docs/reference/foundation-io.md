@@ -1090,7 +1090,7 @@ A FIFO opened for reading blocks until a writer appears; a terminal device does 
 | Parameter `flags` | [`io::OpenFlag`](#io-openflag) bits. |
 | Parameter `out` | receives the file; unchanged on failure. |
 | Fails | `NotFound`, `PermissionDenied`, `IsADirectory` (also when the path names a directory and the mode is `Read`), `AlreadyExists` (`kOpenCreateNew`), `Invalid` (`OpenMode::Read` with `kOpenCreate`, `kOpenCreateNew` or `kOpenTruncate`; on Windows also a reserved device name, a name ending in a dot or a space, or a colon in a name), `NotADirectory`, `TooManyOpenFiles`, `SymlinkLoop`, `TooLong`, `Busy` (Windows: another program opened the file without sharing). |
-| Backend | Windows: CreateFileW, asynchronous work on the executor as on Linux (BACKEND.md, Open); macOS: open with O_CLOEXEC and dispatch_io for asynchronous work. |
+| Backend | Windows: CreateFileW, asynchronous work on the executor as on Linux (BACKEND.md, Open); macOS: open with O_CLOEXEC, asynchronous work on the executor as on Linux (dispatch_io measured slower, Phase 26 Day 288). |
 
 ### `OpenLocation(StringView,OpenMode,u32,FilePtr*)` {#io-file-openlocation-stringview-openmode-u32-fileptr-star}
 
@@ -1746,7 +1746,7 @@ Copies the bytes of the regular file `from` to `to`, keeping the permission bits
 |---|---|
 | Parameter `overwrite` | when false an existing `to` is an error; when true it is truncated and rewritten. |
 | Fails | `NotFound`, `AlreadyExists`, `IsADirectory`, `NoSpace`, `PermissionDenied`. |
-| Backend | Windows: CopyFile2; macOS: copyfile or a read/write loop. |
+| Backend | Windows: CopyFile2; macOS: fcopyfile(COPYFILE_DATA) on the descriptors (no clone: it would keep the times). |
 
 ## `SetPermissions(const Path&,u32)` {#io-setpermissions-const-path-amp-u32}
 
@@ -1943,7 +1943,7 @@ The directory for temporary files: `$TMPDIR` when absolute, else `/tmp` on Linux
 
 | Field | Value |
 |---|---|
-| Backend | Windows: GetTempPath2W; macOS: NSTemporaryDirectory or $TMPDIR. |
+| Backend | Windows: GetTempPath2W; macOS: $TMPDIR when absolute, else confstr(_CS_DARWIN_USER_TEMP_DIR). |
 
 ## `ExecutablePath(Path*)` {#io-executablepath-path-star}
 
@@ -1988,7 +1988,7 @@ The per-user configuration directory for an application: `$XDG_CONFIG_HOME/<app>
 |---|---|
 | Parameter `app_name` | one path component (no separators, not `.` or `..`). |
 | Fails | `Invalid` (a bad app name), `NotFound` (no home directory is known). |
-| Backend | Windows: `%APPDATA%\<app>` when the variable holds an absolute path, else FOLDERID_RoamingAppData; macOS: ~/Library/Application Support (or the sandbox container's). |
+| Backend | Windows: `%APPDATA%\<app>` when the variable holds an absolute path, else FOLDERID_RoamingAppData; macOS: `$HOME/Library/Application Support/<app>` when $HOME is absolute, else NSSearchPathForDirectoriesInDomains (the container's in a sandbox). |
 
 ## `UserCacheDirectory(StringView,Path*)` {#io-usercachedirectory-stringview-path-star}
 
@@ -2003,7 +2003,7 @@ The per-user cache directory: `$XDG_CACHE_HOME/<app>` or `<home>/.cache/<app>` o
 | Field | Value |
 |---|---|
 | Fails | as [`io::UserConfigDirectory`](#io-userconfigdirectory-stringview-path-star). |
-| Backend | Windows: `%LOCALAPPDATA%` (when absolute) or FOLDERID_LocalAppData, then `<app>\cache`; macOS: ~/Library/Caches. |
+| Backend | Windows: `%LOCALAPPDATA%` (when absolute) or FOLDERID_LocalAppData, then `<app>\cache`; macOS: `<home>/Library/Caches/<app>`, the home found as for UserConfigDirectory. |
 
 ## `UserDataDirectory(StringView,Path*)` {#io-userdatadirectory-stringview-path-star}
 
@@ -2018,7 +2018,7 @@ The per-user data directory: `$XDG_DATA_HOME/<app>` or `<home>/.local/share/<app
 | Field | Value |
 |---|---|
 | Fails | as [`io::UserConfigDirectory`](#io-userconfigdirectory-stringview-path-star). |
-| Backend | Windows: `%LOCALAPPDATA%` (when absolute) or FOLDERID_LocalAppData, then `<app>`; macOS: ~/Library/Application Support. |
+| Backend | Windows: `%LOCALAPPDATA%` (when absolute) or FOLDERID_LocalAppData, then `<app>`; macOS: `<home>/Library/Application Support/<app>`, as UserConfigDirectory. |
 
 ## `UserStateDirectory(StringView,Path*)` {#io-userstatedirectory-stringview-path-star}
 
@@ -2033,7 +2033,7 @@ The per-user state directory: `$XDG_STATE_HOME/<app>` or `<home>/.local/state/<a
 | Field | Value |
 |---|---|
 | Fails | as [`io::UserConfigDirectory`](#io-userconfigdirectory-stringview-path-star). |
-| Backend | Windows: `%LOCALAPPDATA%` (when absolute) or FOLDERID_LocalAppData, then `<app>\state`; macOS: ~/Library/Application Support/<app>/state. |
+| Backend | Windows: `%LOCALAPPDATA%` (when absolute) or FOLDERID_LocalAppData, then `<app>\state`; macOS: `<home>/Library/Application Support/<app>/state`, as UserConfigDirectory. |
 
 ## `CrashDumpDirectory(Path*)` {#io-crashdumpdirectory-path-star}
 
@@ -2050,7 +2050,7 @@ The directory where this program writes crash dumps, created (and made private t
 | Parameter `out` | receives the directory. |
 | Fails | `NotFound` (neither `$XDG_STATE_HOME` nor `$HOME` is set to an absolute path, or the executable cannot be found), `Invalid` (an unusable application name: `.`, `..`, empty after trimming, containing a slash or longer than 200 bytes), the errors of [`io::CreatePrivateDirectory`](#io-createprivatedirectory-const-path-amp). |
 | Thread-safety | thread-safe, except that it reads the environment, so another thread must not change it (`setenv`) at the same time. |
-| Backend | Windows: %LOCALAPPDATA%/<app>/crashes; macOS: ~/Library/Application Support/<app>/crashes; Android and iOS: the app-private files directory. |
+| Backend | Windows: %LOCALAPPDATA%/<app>/crashes; macOS: `$HOME/Library/Application Support/<app>/crashes` (none without an absolute $HOME); Android and iOS: the app-private files directory. |
 
 ## `PathStyle` {#io-pathstyle}
 
