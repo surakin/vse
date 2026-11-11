@@ -12,7 +12,7 @@ cd "$root"
 staged=()
 while IFS= read -r -d '' f; do
     case "$f" in
-        *.h|*.hpp|*.cpp|*.cc|*.c|*.mm|*.m) staged+=("$f") ;;
+        *.h|*.hpp|*.cpp|*.cc|*.c|*.mm|*.m|*.inc) staged+=("$f") ;;
     esac
 done < <(git diff --cached --name-only --diff-filter=ACMR -z)
 [ ${#staged[@]} -gt 0 ] || exit 0

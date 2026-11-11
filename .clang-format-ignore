@@ -1,11 +1,15 @@
 # Files clang-format must not touch (scripts/format.sh, the pre-commit hook). Patterns are gitignore-like; `**` crosses directories.
 # Vendored code keeps its own style.
 third_party/**
-# Generated code and data tables.
+# Generated code and data tables (shader blobs, the Vulkan function table).
 engine/platform/linux/wayland/generated/**
 engine/foundation/string/generated/**
 shaders/**
-**/*.inc
+engine/rhi/vulkan/vk_functions.inc
+tests/io/path_table.inc
+# Planted violations and X-macro or data tables; the x11 *_impl.inc files are code and are formatted.
+tests/macos/header_uses_planted.inc
+tests/windows/header_uses.inc
 # Test data: planted violations and golden inputs whose exact text, line numbers or spelling is the point.
 **/fixtures/**
 tests/macos/production_options_planted.mm

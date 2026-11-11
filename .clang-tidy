@@ -1,0 +1,54 @@
+# clang-tidy for the engine (CLAUDE.md, "Code style"; scripts/tidy.sh). A curated set: checks that found real defects or that enforce a rule of the
+# project. A finding is fixed, or suppressed on its line with `// NOLINT(check-name): the reason`. Not in the commit hook.
+#
+# Left out, with the reason:
+#   bugprone-easily-swappable-parameters   every function with two integers of the same type
+#   bugprone-signed-bitwise                fires on every `x & 0xff` and `1 << n` with an int literal (780 sites, none a bug)
+#   bugprone-multi-level-implicit-pointer-conversion   Vector<T*> stores pointers through void* storage by design
+#   bugprone-throwing-static-initialization, bugprone-std-exception-baseclass   exceptions are off in this codebase
+#   performance-enum-size                  enum base types are chosen for the ABI and for Vulkan, not for size
+#   clang-analyzer-cplusplus.PlacementNew  Vector's growth path: the analyzer cannot see that capacity was checked
+#   misc-const-correctness, misc-no-recursion, misc-explicit-constructor, misc-include-cleaner, misc-non-private-member-variables-in-classes
+#   readability-identifier-naming          needs a tuned config (the u8/usize aliases, the k-constants); its own step
+#   cppcoreguidelines-*, google-*, llvm-*, hicpp-*, fuchsia-*, abseil-*   conflict with the engine's own types and its no-exceptions, no-RTTI rules
+Checks: >
+  -*,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-signed-bitwise,
+  -bugprone-multi-level-implicit-pointer-conversion,
+  -bugprone-throwing-static-initialization,
+  -bugprone-std-exception-baseclass,
+  performance-*,
+  -performance-enum-size,
+  clang-analyzer-core.*,
+  clang-analyzer-cplusplus.NewDelete,
+  clang-analyzer-cplusplus.NewDeleteLeaks,
+  clang-analyzer-deadcode.DeadStores,
+  clang-analyzer-unix.*,
+  misc-redundant-expression,
+  misc-unused-alias-decls,
+  misc-unused-using-decls,
+  misc-misplaced-const,
+  misc-definitions-in-headers,
+  misc-static-assert,
+  modernize-use-nullptr,
+  modernize-use-override,
+  modernize-use-equals-default,
+  modernize-use-equals-delete,
+  modernize-redundant-void-arg,
+  readability-braces-around-statements,
+  readability-else-after-return,
+  readability-redundant-control-flow,
+  readability-redundant-declaration,
+  readability-redundant-member-init,
+  readability-redundant-string-init,
+  readability-simplify-boolean-expr,
+  readability-container-size-empty,
+  readability-delete-null-pointer
+WarningsAsErrors: ''
+HeaderFilterRegex: '/(engine|game|tools|tests)/'
+ExcludeHeaderFilterRegex: 'generated'
+CheckOptions:
+  readability-simplify-boolean-expr.SimplifyDeMorgan: false
+  readability-braces-around-statements.ShortStatementLines: 0

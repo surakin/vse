@@ -33,7 +33,7 @@ if [ "${version:-0}" -lt 18 ]; then
 fi
 
 if [ ${#files[@]} -eq 0 ]; then
-    while IFS= read -r f; do files+=("$f"); done < <(git ls-files '*.h' '*.hpp' '*.cpp' '*.cc' '*.c' '*.mm' '*.m')
+    while IFS= read -r f; do files+=("$f"); done < <(git ls-files '*.h' '*.hpp' '*.cpp' '*.cc' '*.c' '*.mm' '*.m' '*.inc')
 fi
 [ ${#files[@]} -gt 0 ] || exit 0
 

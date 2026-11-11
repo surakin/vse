@@ -73,7 +73,7 @@ TEST_CASE("An X11 window follows the desktop's Xft.dpi scale, and a logical size
     int format = 0;
     unsigned long count = 0;
     unsigned long after = 0;
-    byte* data = nullptr;
+    engine_placeholder::byte* data = nullptr;
     float expected = 1.0f;
     if (XGetWindowProperty(display, RootWindow(display, DefaultScreen(display)),
                            XInternAtom(display, "RESOURCE_MANAGER", False), 0, 16384, False, XA_STRING, &type, &format,
