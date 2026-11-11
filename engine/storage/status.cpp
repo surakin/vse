@@ -9,6 +9,7 @@ const char* ErrorCodeName(ErrorCode code) {
     case ErrorCode::Exists: return "exists";
     case ErrorCode::Corrupt: return "corrupt";
     case ErrorCode::TooNew: return "too new";
+    case ErrorCode::TooOld: return "too old";
     case ErrorCode::LimitExceeded: return "limit exceeded";
     case ErrorCode::Mismatch: return "mismatch";
     case ErrorCode::Invalid: return "invalid";

@@ -24,6 +24,29 @@ enum ComponentFlags : u32 {
     kComponentSkip = 2,     ///< Runtime-only and never stored, by explicit choice.
 };
 
+/// One step of an upgrade chain: turns the bytes of version `from_version` into the bytes of `from_version + 1`.
+///
+/// `run` reads the whole old record from `in` and writes the whole new record to `out`; the registry checks that `in` is used up, bounds the size of
+/// `out`, and chains the steps. A step is a plain function (it has no state) and must treat `in` as untrusted: every read returns an error to pass on.
+///
+/// Thread-safety: thread-compatible plain data.
+struct UpgradeStep {
+    u32 from_version = 0;  ///< The version this step reads.
+    /// Converts one record. Returns a failed status (`Corrupt` for bad input) or success.
+    Status (*run)(bytes::ByteReader& in, bytes::ByteWriter& out, const CodecLimits& limits) = nullptr;
+};
+
+/// A hand-written save and load for a type whose members the field list cannot describe (a handle that stores a name, a union). It follows the same rules as a
+/// field codec: the reader is bounds-checked and every length it reads is held to the [[storage::CodecLimits]].
+///
+/// Thread-safety: thread-compatible plain data.
+struct CustomCodec {
+    /// Writes the component at `component`. On failure the registry cuts the writer back.
+    Status (*save)(const void* component, bytes::ByteWriter& out, const CodecLimits& limits) = nullptr;
+    /// Reads into the constructed component at `component`. On failure the component may be partly written.
+    Status (*load)(bytes::ByteReader& in, void* component, const CodecLimits& limits) = nullptr;
+};
+
 /// The registration of one component type: pass it to [[storage::ComponentRegistry::Register]].
 ///
 /// Thread-safety: thread-compatible plain data.
@@ -31,9 +54,12 @@ enum ComponentFlags : u32 {
 struct ComponentDesc {
     u32 id = 0;                         ///< The stable id, written in code and never reused. Must be nonzero and unique. Ids below 1000 belong to the engine's own components.
     const char* name = "";              ///< The stable name, unique, not empty, a string literal.
-    u32 version = 1;                    ///< The version of the stored form; raise it when the fields change (upgrades come on Day 257).
+    u32 version = 1;                    ///< The version of the stored form; raise it when the fields change, and add an [[storage::UpgradeStep]] for the old one.
+    u32 oldest_version = 1;             ///< The oldest stored version that still loads. `upgrades` must hold one step for each version from here up to `version - 1`.
     u32 flags = kComponentStored;       ///< [[storage::ComponentFlags]].
-    InitializerList<FieldDesc> fields = {};  ///< The fields in storage order. Empty for a tag, a derived or a skipped component.
+    InitializerList<FieldDesc> fields = {};  ///< The fields in storage order. Empty for a tag, a derived or a skipped component, or one with a `custom` codec.
+    InitializerList<UpgradeStep> upgrades = {};  ///< The steps from `oldest_version` to `version`, in any order, one per version.
+    CustomCodec custom = {};            ///< Set both functions for a type the fields cannot describe; then `fields` is empty.
 };
 
 /// A registered component: read-only after registration.
@@ -51,6 +77,8 @@ public:
     const char* Name() const { return name_; }
     /// The version of the stored form.
     u32 Version() const { return version_; }
+    /// The oldest stored version that loads (through the upgrade chain).
+    u32 OldestVersion() const { return oldest_version_; }
     /// The [[storage::ComponentFlags]].
     u32 Flags() const { return flags_; }
     /// Returns true when the fields are written and read (not derived, not skipped).
@@ -80,16 +108,43 @@ public:
     /// Ownership: `component` is written during the call only.
     /// Fails: `Corrupt` (truncated, an invalid value, a count that does not match, an enum outside its range, text that is not UTF-8); `LimitExceeded`; the component is not stored: `Invalid`.
     Status Decode(bytes::ByteReader& in, void* component, const CodecLimits& limits) const;
+    /// Loads a whole stored record: checks the version, runs the upgrade chain from `stored_version` to the current layout, decodes, and requires that every
+    /// byte was used.
+    ///
+    /// Param stored_version: the version the record was written with.
+    /// Param bytes: the record's bytes (untrusted).
+    /// Param component: a constructed object of the registered type; on failure it may be partly written and must be discarded.
+    /// Param limits: the record, string and array bounds.
+    /// Ownership: `bytes` and `component` are used during the call only.
+    /// Fails: `TooNew` (above the registered version); `TooOld` (below `OldestVersion`, or 0); `LimitExceeded` (the record, or an upgrade step's output, is above `max_record_bytes`; a string or array above its limit); `Corrupt` (the bytes do not decode, or bytes are left over); anything an upgrade step returns; `Invalid` (the component is not stored).
+    Status DecodeRecord(u32 stored_version, ByteSpan bytes, void* component, const CodecLimits& limits) const;
 
 private:
     friend class ComponentRegistry;
     u32 id_ = 0;
     const char* name_ = "";
     u32 version_ = 1;
+    u32 oldest_version_ = 1;
     u32 flags_ = 0;
+    CustomCodec custom_;
+    Vector<UpgradeStep> upgrades_;
     ecs::ComponentId ecs_id_ = ecs::kInvalidComponent;
     bool is_tag_ = false;
     Vector<FieldDesc> fields_;
+};
+
+/// What to do with a stored record whose component id is not registered in this process.
+enum class UnknownPolicy : u8 {
+    Fail,          ///< The load fails with `NotFound`.
+    SkipAndReport, ///< The record is dropped and counted; the caller reports the count.
+    KeepOpaque,    ///< The record's bytes are kept as they are and written back on the next save, so an older program does not destroy a newer program's data.
+};
+
+/// What the loader does with one record, as decided by [[storage::ComponentRegistry::Resolve]].
+enum class RecordAction : u8 {
+    Decode,     ///< Decode it with the returned registration.
+    Skip,       ///< Drop it (a derived or skipped component, or an unknown one under `SkipAndReport`).
+    KeepOpaque, ///< Keep its bytes unchanged.
 };
 
 /// A recorded (id, name, version) triple: what a store remembers about the registrations that wrote it. See [[storage::ComponentRegistry::CheckManifest]].
@@ -150,6 +205,16 @@ public:
     u32 Count() const { return static_cast<u32>(components_.Size()); }
     /// The registration at `index` (registration order). Aborts: `index` is not below `Count()`.
     const RegisteredComponent& At(u32 index) const;
+
+    /// Decides what to do with a stored record of component `id`.
+    ///
+    /// Param id: the id read from the record.
+    /// Param policy: what to do when `id` is not registered.
+    /// Param component: receives the registration for `Decode`, null for the other actions.
+    /// Param action: receives the decision.
+    /// Ownership: `component` points into the registry and stays valid for its life.
+    /// Fails: `NotFound` (unknown id under `Fail`). A registered but derived or skipped component is `Skip` and never an error.
+    Status Resolve(u32 id, UnknownPolicy policy, const RegisteredComponent** component, RecordAction* action) const;
 
     /// Appends one manifest entry per registration, in registration order, to `out`: the record a store keeps of what wrote it.
     ///

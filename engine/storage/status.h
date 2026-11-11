@@ -15,6 +15,7 @@ enum class ErrorCode : u8 {
     Exists,        ///< An id, a name or a type is registered already.
     Corrupt,       ///< Stored bytes are damaged: truncated, a value outside its declared range, text that is not UTF-8, a count that does not match.
     TooNew,        ///< A record was written by a newer version of a component than is registered.
+    TooOld,        ///< A record was written by a version older than the oldest the registry can upgrade from.
     LimitExceeded, ///< A length or count is above a configured limit (on write or on read).
     Mismatch,      ///< A registration disagrees with the manifest recorded in a store: an id now has another name, or a name another id.
     Invalid,       ///< The caller broke a rule: an empty name, id 0, a component without fields that is not flagged, an enum field without a range.

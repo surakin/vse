@@ -5,6 +5,8 @@ set(STORAGE_SOURCES
   status.cpp  # Day 256
   component_registry.cpp  # Day 256
   builtin_components.cpp  # Day 256
+  component_record.cpp  # Day 257
+  storage_settings.cpp  # Day 257
 )
 set(STORAGE_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
@@ -17,7 +19,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_library(storage${suffix} STATIC ${STORAGE_SOURCES})
     target_include_directories(storage${suffix} PUBLIC ${STORAGE_INCLUDE_ROOT})
     target_compile_options(storage${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
-    target_link_libraries(storage${suffix} PUBLIC ecs${suffix} spatial${suffix} foundation_base${suffix})
+    target_link_libraries(storage${suffix} PUBLIC ecs${suffix} spatial${suffix} foundation_base${suffix} foundation_settings${suffix})
   endforeach()
   return()
 endif()

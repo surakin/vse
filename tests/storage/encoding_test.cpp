@@ -67,6 +67,7 @@ Status RegisterAll(ComponentRegistry* r) {
     return r->Register<Golden>({.id = 1002,
                                 .name = "golden",
                                 .version = 3,
+                                .oldest_version = 3,
                                 .fields = {Field<&Golden::a>("a"), Field<&Golden::b>("b"), Field<&Golden::c>("c"), Field<&Golden::d>("d"),
                                            Field<&Golden::mode>("mode", kModeRange), Field<&Golden::s>("s"), Field<&Golden::arr>("arr")}});
 }

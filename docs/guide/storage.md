@@ -1,7 +1,7 @@
 # Storage: components that survive a save
 
-Status: Phase 19. Built: the component registry and the canonical encoding (Day 256). Next: versions, upgrades and hostile-input tests (Day 257), stable
-identities (258), the record store (259), saving and loading a world (260-261), the SQL store (262-263). Design:
+Status: Phase 19. Built: the component registry and the canonical encoding (Day 256), versions, upgrades, custom codecs, limits and hostile-input tests
+(Day 257). Next: stable identities (258), the record store (259), saving and loading a world (260-261), the SQL store (262-263). Design:
 `docs/superpowers/specs/2026-11-11-storage-design.md`.
 
 **Audience:** engine and game programmers who make a component type saveable, and anyone who reads or writes the bytes.
@@ -82,3 +82,55 @@ field means raising the component's `version` (and, from Day 257, registering an
 A store remembers which `(id, name, version)` wrote it. `registry.Manifest(&out)` produces the list; `registry.CheckManifest(recorded)` refuses a registry
 in which an id now has another name or a name another id (`Mismatch`), and a recorded version above the registered one (`TooNew`). A recorded component
 that is not registered now is fine here; the load policy (Day 260) decides what happens to its data.
+
+## Versions and upgrades
+
+A component has a `version` (starts at 1). When its fields change, **raise the version and add an `UpgradeStep` that turns the old bytes into the new
+layout**; never edit the bytes an old version wrote.
+
+```cpp
+Status V1ToV2(bytes::ByteReader& in, bytes::ByteWriter& out, const CodecLimits&) {
+    f32 x = 0, y = 0;
+    // read the old record completely (every read returns an error to pass on) ...
+    // ... then write the new one: the old fields and a default for the new z
+}
+
+registry.Register<Mover>({.id = 3000, .name = "mover", .version = 2,
+                          .fields = {Field<&Mover::x>("x"), Field<&Mover::y>("y"), Field<&Mover::z>("z")},
+                          .upgrades = {{1, &V1ToV2}}});
+```
+
+`registered->DecodeRecord(stored_version, bytes, &component, limits)` loads a whole stored record: it refuses a version above the registered one (`TooNew`)
+or below `oldest_version` (`TooOld`), runs the steps from the stored version up to the current one, decodes, and requires that every byte was used. The
+chain must be complete: `Register` fails with `Invalid` unless there is exactly one step for each version from `oldest_version` to `version - 1`. A step
+reads its whole input (the registry checks) and its output is bounded by `max_record_bytes`.
+
+### Records the process does not know
+
+A stored record is `ComponentRecord { id, version, bytes }`, framed by `WriteComponentRecord` / `ReadComponentRecord` (4-byte id, 4-byte version, a varint
+count, the bytes). `registry.Resolve(id, policy, &component, &action)` tells a loader what to do with one:
+
+| `UnknownPolicy` | An unregistered id |
+|---|---|
+| `Fail` | `NotFound` |
+| `SkipAndReport` | `RecordAction::Skip`; the loader counts it |
+| `KeepOpaque` | `RecordAction::KeepOpaque`; keep an `OpaqueComponent` and write it back unchanged on the next save, so an older program does not destroy a newer program's data |
+
+A registered but derived or skipped component is always `Skip` (an old file may hold one; it is rebuilt or ignored).
+
+### A hand-written codec
+
+For a type the field list cannot describe (a handle that stores a name, a union) register `.custom = {&Save, &Load}` instead of fields. The functions get the
+same `CodecLimits` and a bounds-checked reader; the same rules apply (every length bounded, every error returned).
+
+## Limits
+
+`RegisterStorageSettings(&registry)` declares `storage.max_record_bytes`, `storage.max_string_bytes`, `storage.max_array_elements` and
+`storage.max_components_per_entity`; `LimitsFromSettings(registry)` turns them into the `CodecLimits` every encode and decode takes. A length above a limit is
+`LimitExceeded` and nothing is allocated for it. (`max_components_per_entity` is enforced by the entity container of Day 260.)
+
+## Hostile input is tested
+
+`tests/storage/registry_fuzz_test.cpp` mutates valid encodings of every field kind (bit flips, truncation, length-byte overwrites, duplication, random bytes),
+100,000 cases per kind in the plain and AddressSanitizer runs. Each result must be a `Corrupt` or `LimitExceeded` status or a value whose re-encoding equals
+the bytes consumed (the encoding is canonical); a planted bug (a decoder that accepts a bool of 2) fails it.

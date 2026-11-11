@@ -11,6 +11,13 @@ Status RegisteredComponent::Encode(const void* component, bytes::ByteWriter& out
         return Status::Make(ErrorCode::Invalid, "the component is derived or skipped and has no stored form");
     }
     const usize start = out.Size();
+    if (custom_.save != nullptr) {
+        const Status s = custom_.save(component, out, limits);
+        if (s.Failed()) {
+            out.Truncate(start);
+        }
+        return s;
+    }
     for (usize i = 0; i < fields_.Size(); ++i) {
         const FieldDesc& f = fields_[i];
         const Status s = f.encode(f, component, out, limits);
@@ -26,12 +33,68 @@ Status RegisteredComponent::Decode(bytes::ByteReader& in, void* component, const
     if (!IsStored()) {
         return Status::Make(ErrorCode::Invalid, "the component is derived or skipped and has no stored form");
     }
+    if (custom_.load != nullptr) {
+        return custom_.load(in, component, limits);
+    }
     for (usize i = 0; i < fields_.Size(); ++i) {
         const FieldDesc& f = fields_[i];
         const Status s = f.decode(f, in, component, limits);
         if (s.Failed()) {
             return s;
         }
+    }
+    return Status::Success();
+}
+
+Status RegisteredComponent::DecodeRecord(u32 stored_version, ByteSpan bytes, void* component, const CodecLimits& limits) const {
+    if (!IsStored()) {
+        return Status::Make(ErrorCode::Invalid, "the component is derived or skipped and has no stored form");
+    }
+    if (stored_version > version_) {
+        return Status::Make(ErrorCode::TooNew, "the record was written by a newer version of the component");
+    }
+    if (stored_version < oldest_version_ || stored_version == 0) {
+        return Status::Make(ErrorCode::TooOld, "the record is older than the oldest version that can be upgraded");
+    }
+    if (bytes.Size() > limits.max_record_bytes) {
+        return Status::Make(ErrorCode::LimitExceeded, "the record is larger than the record limit");
+    }
+    ByteSpan current = bytes;
+    bytes::ByteWriter buffers[2];
+    u32 next = 0;
+    for (u32 v = stored_version; v < version_; ++v) {
+        const UpgradeStep* step = nullptr;
+        for (usize i = 0; i < upgrades_.Size(); ++i) {
+            if (upgrades_[i].from_version == v) {
+                step = &upgrades_[i];
+            }
+        }
+        if (step == nullptr) { // registration guarantees a step for every version; this is a defensive refusal
+            return Status::Make(ErrorCode::Other, "the upgrade chain has a gap");
+        }
+        bytes::ByteReader in(current);
+        bytes::ByteWriter& out = buffers[next];
+        out.Clear();
+        const Status s = step->run(in, out, limits);
+        if (s.Failed()) {
+            return s;
+        }
+        if (!in.AtEnd()) {
+            return Status::Make(ErrorCode::Corrupt, "an upgrade step left bytes unread");
+        }
+        if (out.Size() > limits.max_record_bytes) {
+            return Status::Make(ErrorCode::LimitExceeded, "an upgrade step produced more than the record limit");
+        }
+        current = out.Bytes();
+        next ^= 1;
+    }
+    bytes::ByteReader in(current);
+    const Status s = Decode(in, component, limits);
+    if (s.Failed()) {
+        return s;
+    }
+    if (!in.AtEnd()) {
+        return Status::Make(ErrorCode::Corrupt, "the record has bytes left after its last field");
     }
     return Status::Success();
 }
@@ -48,10 +111,35 @@ Status ComponentRegistry::RegisterEntry(const ComponentDesc& desc, ecs::Componen
     }
     const bool stored = (desc.flags & (kComponentDerived | kComponentSkip)) == 0;
     const usize field_count = desc.fields.size();
+    const bool has_custom = desc.custom.save != nullptr || desc.custom.load != nullptr;
+    if (has_custom && (desc.custom.save == nullptr || desc.custom.load == nullptr)) {
+        return Status::Make(ErrorCode::Invalid, "a custom codec needs both save and load");
+    }
+    if (has_custom && (field_count != 0 || !stored || is_tag)) {
+        return Status::Make(ErrorCode::Invalid, "a custom codec belongs to a stored component with data and no field list");
+    }
+    if (desc.oldest_version == 0 || desc.oldest_version > desc.version) {
+        return Status::Make(ErrorCode::Invalid, "the oldest version must be between 1 and the version");
+    }
+    if (desc.upgrades.size() != desc.version - desc.oldest_version) {
+        return Status::Make(ErrorCode::Invalid, "the upgrade chain needs exactly one step for each version from the oldest up to the current one");
+    }
+    for (const UpgradeStep& step : desc.upgrades) {
+        if (step.run == nullptr || step.from_version < desc.oldest_version || step.from_version >= desc.version) {
+            return Status::Make(ErrorCode::Invalid, "an upgrade step has no function or a version outside the chain");
+        }
+        usize same = 0;
+        for (const UpgradeStep& other : desc.upgrades) {
+            same += other.from_version == step.from_version ? 1 : 0;
+        }
+        if (same != 1) {
+            return Status::Make(ErrorCode::Invalid, "two upgrade steps read one version (the chain has a gap)");
+        }
+    }
     if (!stored && field_count != 0) {
         return Status::Make(ErrorCode::Invalid, "a derived or skipped component has no fields");
     }
-    if (stored && !is_tag && field_count == 0) {
+    if (stored && !is_tag && field_count == 0 && !has_custom) {
         return Status::Make(ErrorCode::Invalid, "a stored component with data needs fields (or flag it derived or skip)");
     }
     if (is_tag && field_count != 0) {
@@ -90,6 +178,11 @@ Status ComponentRegistry::RegisterEntry(const ComponentDesc& desc, ecs::Componen
     entry->id_ = desc.id;
     entry->name_ = desc.name;
     entry->version_ = desc.version;
+    entry->oldest_version_ = desc.oldest_version;
+    entry->custom_ = desc.custom;
+    for (const UpgradeStep& step : desc.upgrades) {
+        entry->upgrades_.Push(step);
+    }
     entry->flags_ = desc.flags;
     entry->ecs_id_ = ecs_id;
     entry->is_tag_ = is_tag;
@@ -98,6 +191,27 @@ Status ComponentRegistry::RegisterEntry(const ComponentDesc& desc, ecs::Componen
     }
     components_.Push(Move(entry));
     return Status::Success();
+}
+
+Status ComponentRegistry::Resolve(u32 id, UnknownPolicy policy, const RegisteredComponent** component, RecordAction* action) const {
+    const RegisteredComponent* found = FindById(id);
+    *component = nullptr;
+    *action = RecordAction::Skip; // defined on every path, including a failure
+    if (found != nullptr) {
+        if (found->IsStored()) {
+            *component = found;
+            *action = RecordAction::Decode;
+        } else {
+            *action = RecordAction::Skip; // a derived or skipped component is rebuilt or ignored, whatever an old file holds
+        }
+        return Status::Success();
+    }
+    switch (policy) {
+    case UnknownPolicy::Fail: return Status::Make(ErrorCode::NotFound, "a record names a component that is not registered");
+    case UnknownPolicy::SkipAndReport: *action = RecordAction::Skip; return Status::Success();
+    case UnknownPolicy::KeepOpaque: *action = RecordAction::KeepOpaque; return Status::Success();
+    }
+    return Status::Make(ErrorCode::Invalid, "an unknown policy");
 }
 
 const RegisteredComponent* ComponentRegistry::FindById(u32 id) const {

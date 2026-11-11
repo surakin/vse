@@ -20,13 +20,15 @@
 
 namespace engine_placeholder::storage {
 
-/// The upper bounds a decode (and an encode) holds every length to, so a damaged or hostile record cannot ask for unbounded memory. Day 264 reads them from
-/// the settings `storage.max_string_bytes` and `storage.max_array_elements`.
+/// The upper bounds a decode (and an encode) holds every length to, so a damaged or hostile record cannot ask for unbounded memory. [[storage::LimitsFromSettings]] reads them from
+/// the settings `storage.max_record_bytes`, `storage.max_string_bytes`, `storage.max_array_elements` and `storage.max_components_per_entity`.
 ///
 /// Thread-safety: thread-compatible plain data.
 struct CodecLimits {
-    u64 max_string_bytes = 1u << 20;   ///< The most bytes of one string field.
-    u64 max_array_elements = 1u << 16; ///< The most elements of one array field.
+    u64 max_record_bytes = 16u << 20;       ///< The most bytes of one component record (checked before anything is decoded or upgraded).
+    u64 max_string_bytes = 1u << 20;        ///< The most bytes of one string field.
+    u64 max_array_elements = 1u << 16;      ///< The most elements of one array field.
+    u64 max_components_per_entity = 128;    ///< The most component records of one entity (checked by the entity container, Day 260).
 };
 
 /// The kinds of field the registry can store.

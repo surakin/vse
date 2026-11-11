@@ -3832,45 +3832,77 @@ storage::kSpatialStaticId	enumerator	storage	storage-kspatialstaticid	storage.md
 storage::kWorldBoundsId	enumerator	storage	storage-kworldboundsid	storage.md	engine/storage/builtin_components.h:19
 storage::kSpatialProxyId	enumerator	storage	storage-kspatialproxyid	storage.md	engine/storage/builtin_components.h:20
 storage::RegisterBuiltinComponents(ComponentRegistry*)	function	storage	storage-registerbuiltincomponents-componentregistry-star	storage.md	engine/storage/builtin_components.h:28
+storage::ComponentRecord	struct	storage	storage-componentrecord	storage.md	engine/storage/component_record.h:20
+storage::ComponentRecord::id	variable	storage	storage-componentrecord-id	storage.md	engine/storage/component_record.h:21
+storage::ComponentRecord::version	variable	storage	storage-componentrecord-version	storage.md	engine/storage/component_record.h:22
+storage::ComponentRecord::bytes	variable	storage	storage-componentrecord-bytes	storage.md	engine/storage/component_record.h:23
+storage::OpaqueComponent	struct	storage	storage-opaquecomponent	storage.md	engine/storage/component_record.h:30
+storage::OpaqueComponent::id	variable	storage	storage-opaquecomponent-id	storage.md	engine/storage/component_record.h:31
+storage::OpaqueComponent::version	variable	storage	storage-opaquecomponent-version	storage.md	engine/storage/component_record.h:32
+storage::OpaqueComponent::bytes	variable	storage	storage-opaquecomponent-bytes	storage.md	engine/storage/component_record.h:33
+storage::OpaqueComponent::View() const	function	storage	storage-opaquecomponent-view-const	storage.md	engine/storage/component_record.h:36
+storage::OpaqueComponent::From(const ComponentRecord&)	function	storage	storage-opaquecomponent-from-const-componentrecord-amp	storage.md	engine/storage/component_record.h:38
+storage::WriteComponentRecord(const ComponentRecord&,const CodecLimits&,bytes::ByteWriter&)	function	storage	storage-writecomponentrecord-const-componentrecord-amp-const-codeclimits-amp-bytes-bytewriter-amp	storage.md	engine/storage/component_record.h:47
+storage::ReadComponentRecord(bytes::ByteReader&,const CodecLimits&,ComponentRecord*)	function	storage	storage-readcomponentrecord-bytes-bytereader-amp-const-codeclimits-amp-componentrecord-star	storage.md	engine/storage/component_record.h:56
 storage::ComponentFlags	enum	storage	storage-componentflags	storage.md	engine/storage/component_registry.h:21
 storage::kComponentStored	enumerator	storage	storage-kcomponentstored	storage.md	engine/storage/component_registry.h:22
 storage::kComponentDerived	enumerator	storage	storage-kcomponentderived	storage.md	engine/storage/component_registry.h:23
 storage::kComponentSkip	enumerator	storage	storage-kcomponentskip	storage.md	engine/storage/component_registry.h:24
-storage::ComponentDesc	struct	storage	storage-componentdesc	storage.md	engine/storage/component_registry.h:31
-storage::ComponentDesc::id	variable	storage	storage-componentdesc-id	storage.md	engine/storage/component_registry.h:32
-storage::ComponentDesc::name	variable	storage	storage-componentdesc-name	storage.md	engine/storage/component_registry.h:33
-storage::ComponentDesc::version	variable	storage	storage-componentdesc-version	storage.md	engine/storage/component_registry.h:34
-storage::ComponentDesc::flags	variable	storage	storage-componentdesc-flags	storage.md	engine/storage/component_registry.h:35
-storage::ComponentDesc::fields	variable	storage	storage-componentdesc-fields	storage.md	engine/storage/component_registry.h:36
-storage::RegisteredComponent	class	storage	storage-registeredcomponent	storage.md	engine/storage/component_registry.h:43
-storage::RegisteredComponent::Id() const	function	storage	storage-registeredcomponent-id-const	storage.md	engine/storage/component_registry.h:46
-storage::RegisteredComponent::Name() const	function	storage	storage-registeredcomponent-name-const	storage.md	engine/storage/component_registry.h:51
-storage::RegisteredComponent::Version() const	function	storage	storage-registeredcomponent-version-const	storage.md	engine/storage/component_registry.h:53
-storage::RegisteredComponent::Flags() const	function	storage	storage-registeredcomponent-flags-const	storage.md	engine/storage/component_registry.h:55
-storage::RegisteredComponent::IsStored() const	function	storage	storage-registeredcomponent-isstored-const	storage.md	engine/storage/component_registry.h:58
-storage::RegisteredComponent::EcsId() const	function	storage	storage-registeredcomponent-ecsid-const	storage.md	engine/storage/component_registry.h:60
-storage::RegisteredComponent::IsTag() const	function	storage	storage-registeredcomponent-istag-const	storage.md	engine/storage/component_registry.h:63
-storage::RegisteredComponent::Fields() const	function	storage	storage-registeredcomponent-fields-const	storage.md	engine/storage/component_registry.h:65
-storage::RegisteredComponent::Encode(const void*,bytes::ByteWriter&,const CodecLimits&) const	function	storage	storage-registeredcomponent-encode-const-void-star-bytes-bytewriter-amp-const-codeclimits-amp-const	storage.md	engine/storage/component_registry.h:74
-storage::RegisteredComponent::Decode(bytes::ByteReader&,void*,const CodecLimits&) const	function	storage	storage-registeredcomponent-decode-bytes-bytereader-amp-void-star-const-codeclimits-amp-const	storage.md	engine/storage/component_registry.h:82
-storage::ManifestEntry	struct	storage	storage-manifestentry	storage.md	engine/storage/component_registry.h:99
-storage::ManifestEntry::id	variable	storage	storage-manifestentry-id	storage.md	engine/storage/component_registry.h:100
-storage::ManifestEntry::name	variable	storage	storage-manifestentry-name	storage.md	engine/storage/component_registry.h:101
-storage::ManifestEntry::version	variable	storage	storage-manifestentry-version	storage.md	engine/storage/component_registry.h:102
-storage::ComponentRegistry	class	storage	storage-componentregistry	storage.md	engine/storage/component_registry.h:109
-storage::ComponentRegistry::ComponentRegistry()	function	storage	storage-componentregistry-componentregistry	storage.md	engine/storage/component_registry.h:112
-storage::ComponentRegistry::ComponentRegistry(const ComponentRegistry&)	function	storage	storage-componentregistry-componentregistry-const-componentregistry-amp	storage.md	engine/storage/component_registry.h:113
-storage::ComponentRegistry::operator=(const ComponentRegistry&)	function	storage	storage-componentregistry-operator-eq-const-componentregistry-amp	storage.md	engine/storage/component_registry.h:114
-storage::ComponentRegistry::Register(const ComponentDesc&)	function	storage	storage-componentregistry-register-const-componentdesc-amp	storage.md	engine/storage/component_registry.h:121
-storage::ComponentRegistry::FindById(u32) const	function	storage	storage-componentregistry-findbyid-u32-const	storage.md	engine/storage/component_registry.h:130
-storage::ComponentRegistry::FindByName(StringView) const	function	storage	storage-componentregistry-findbyname-stringview-const	storage.md	engine/storage/component_registry.h:135
-storage::ComponentRegistry::FindByEcsId(ecs::ComponentId) const	function	storage	storage-componentregistry-findbyecsid-ecs-componentid-const	storage.md	engine/storage/component_registry.h:140
-storage::ComponentRegistry::Find() const	function	storage	storage-componentregistry-find-const	storage.md	engine/storage/component_registry.h:145
-storage::ComponentRegistry::Count() const	function	storage	storage-componentregistry-count-const	storage.md	engine/storage/component_registry.h:150
-storage::ComponentRegistry::At(u32) const	function	storage	storage-componentregistry-at-u32-const	storage.md	engine/storage/component_registry.h:152
-storage::ComponentRegistry::Manifest(Vector<ManifestEntry>*) const	function	storage	storage-componentregistry-manifest-vector-lt-manifestentry-gt-star-const	storage.md	engine/storage/component_registry.h:158
-storage::ComponentRegistry::CheckManifest(Span<const ManifestEntry>) const	function	storage	storage-componentregistry-checkmanifest-span-lt-const-manifestentry-gt-const	storage.md	engine/storage/component_registry.h:165
-storage::ComponentRegistry::UnregisteredWithData(const ecs::World&,Vector<ecs::ComponentId>*) const	function	storage	storage-componentregistry-unregisteredwithdata-const-ecs-world-amp-vector-lt-ecs-componentid-gt-star-const	storage.md	engine/storage/component_registry.h:174
+storage::UpgradeStep	struct	storage	storage-upgradestep	storage.md	engine/storage/component_registry.h:33
+storage::UpgradeStep::from_version	variable	storage	storage-upgradestep-from-version	storage.md	engine/storage/component_registry.h:34
+storage::UpgradeStep::run	variable	storage	storage-upgradestep-run	storage.md	engine/storage/component_registry.h:36
+storage::CustomCodec	struct	storage	storage-customcodec	storage.md	engine/storage/component_registry.h:43
+storage::CustomCodec::save	variable	storage	storage-customcodec-save	storage.md	engine/storage/component_registry.h:45
+storage::CustomCodec::load	variable	storage	storage-customcodec-load	storage.md	engine/storage/component_registry.h:47
+storage::ComponentDesc	struct	storage	storage-componentdesc	storage.md	engine/storage/component_registry.h:54
+storage::ComponentDesc::id	variable	storage	storage-componentdesc-id	storage.md	engine/storage/component_registry.h:55
+storage::ComponentDesc::name	variable	storage	storage-componentdesc-name	storage.md	engine/storage/component_registry.h:56
+storage::ComponentDesc::version	variable	storage	storage-componentdesc-version	storage.md	engine/storage/component_registry.h:57
+storage::ComponentDesc::oldest_version	variable	storage	storage-componentdesc-oldest-version	storage.md	engine/storage/component_registry.h:58
+storage::ComponentDesc::flags	variable	storage	storage-componentdesc-flags	storage.md	engine/storage/component_registry.h:59
+storage::ComponentDesc::fields	variable	storage	storage-componentdesc-fields	storage.md	engine/storage/component_registry.h:60
+storage::ComponentDesc::upgrades	variable	storage	storage-componentdesc-upgrades	storage.md	engine/storage/component_registry.h:61
+storage::ComponentDesc::custom	variable	storage	storage-componentdesc-custom	storage.md	engine/storage/component_registry.h:62
+storage::RegisteredComponent	class	storage	storage-registeredcomponent	storage.md	engine/storage/component_registry.h:69
+storage::RegisteredComponent::Id() const	function	storage	storage-registeredcomponent-id-const	storage.md	engine/storage/component_registry.h:72
+storage::RegisteredComponent::Name() const	function	storage	storage-registeredcomponent-name-const	storage.md	engine/storage/component_registry.h:77
+storage::RegisteredComponent::Version() const	function	storage	storage-registeredcomponent-version-const	storage.md	engine/storage/component_registry.h:79
+storage::RegisteredComponent::OldestVersion() const	function	storage	storage-registeredcomponent-oldestversion-const	storage.md	engine/storage/component_registry.h:81
+storage::RegisteredComponent::Flags() const	function	storage	storage-registeredcomponent-flags-const	storage.md	engine/storage/component_registry.h:83
+storage::RegisteredComponent::IsStored() const	function	storage	storage-registeredcomponent-isstored-const	storage.md	engine/storage/component_registry.h:86
+storage::RegisteredComponent::EcsId() const	function	storage	storage-registeredcomponent-ecsid-const	storage.md	engine/storage/component_registry.h:88
+storage::RegisteredComponent::IsTag() const	function	storage	storage-registeredcomponent-istag-const	storage.md	engine/storage/component_registry.h:91
+storage::RegisteredComponent::Fields() const	function	storage	storage-registeredcomponent-fields-const	storage.md	engine/storage/component_registry.h:93
+storage::RegisteredComponent::Encode(const void*,bytes::ByteWriter&,const CodecLimits&) const	function	storage	storage-registeredcomponent-encode-const-void-star-bytes-bytewriter-amp-const-codeclimits-amp-const	storage.md	engine/storage/component_registry.h:102
+storage::RegisteredComponent::Decode(bytes::ByteReader&,void*,const CodecLimits&) const	function	storage	storage-registeredcomponent-decode-bytes-bytereader-amp-void-star-const-codeclimits-amp-const	storage.md	engine/storage/component_registry.h:110
+storage::RegisteredComponent::DecodeRecord(u32,ByteSpan,void*,const CodecLimits&) const	function	storage	storage-registeredcomponent-decoderecord-u32-bytespan-void-star-const-codeclimits-amp-const	storage.md	engine/storage/component_registry.h:120
+storage::UnknownPolicy	enum	storage	storage-unknownpolicy	storage.md	engine/storage/component_registry.h:137
+storage::UnknownPolicy::Fail	enumerator	storage	storage-unknownpolicy-fail	storage.md	engine/storage/component_registry.h:138
+storage::UnknownPolicy::SkipAndReport	enumerator	storage	storage-unknownpolicy-skipandreport	storage.md	engine/storage/component_registry.h:139
+storage::UnknownPolicy::KeepOpaque	enumerator	storage	storage-unknownpolicy-keepopaque	storage.md	engine/storage/component_registry.h:140
+storage::RecordAction	enum	storage	storage-recordaction	storage.md	engine/storage/component_registry.h:144
+storage::RecordAction::Decode	enumerator	storage	storage-recordaction-decode	storage.md	engine/storage/component_registry.h:145
+storage::RecordAction::Skip	enumerator	storage	storage-recordaction-skip	storage.md	engine/storage/component_registry.h:146
+storage::RecordAction::KeepOpaque	enumerator	storage	storage-recordaction-keepopaque	storage.md	engine/storage/component_registry.h:147
+storage::ManifestEntry	struct	storage	storage-manifestentry	storage.md	engine/storage/component_registry.h:154
+storage::ManifestEntry::id	variable	storage	storage-manifestentry-id	storage.md	engine/storage/component_registry.h:155
+storage::ManifestEntry::name	variable	storage	storage-manifestentry-name	storage.md	engine/storage/component_registry.h:156
+storage::ManifestEntry::version	variable	storage	storage-manifestentry-version	storage.md	engine/storage/component_registry.h:157
+storage::ComponentRegistry	class	storage	storage-componentregistry	storage.md	engine/storage/component_registry.h:164
+storage::ComponentRegistry::ComponentRegistry()	function	storage	storage-componentregistry-componentregistry	storage.md	engine/storage/component_registry.h:167
+storage::ComponentRegistry::ComponentRegistry(const ComponentRegistry&)	function	storage	storage-componentregistry-componentregistry-const-componentregistry-amp	storage.md	engine/storage/component_registry.h:168
+storage::ComponentRegistry::operator=(const ComponentRegistry&)	function	storage	storage-componentregistry-operator-eq-const-componentregistry-amp	storage.md	engine/storage/component_registry.h:169
+storage::ComponentRegistry::Register(const ComponentDesc&)	function	storage	storage-componentregistry-register-const-componentdesc-amp	storage.md	engine/storage/component_registry.h:176
+storage::ComponentRegistry::FindById(u32) const	function	storage	storage-componentregistry-findbyid-u32-const	storage.md	engine/storage/component_registry.h:185
+storage::ComponentRegistry::FindByName(StringView) const	function	storage	storage-componentregistry-findbyname-stringview-const	storage.md	engine/storage/component_registry.h:190
+storage::ComponentRegistry::FindByEcsId(ecs::ComponentId) const	function	storage	storage-componentregistry-findbyecsid-ecs-componentid-const	storage.md	engine/storage/component_registry.h:195
+storage::ComponentRegistry::Find() const	function	storage	storage-componentregistry-find-const	storage.md	engine/storage/component_registry.h:200
+storage::ComponentRegistry::Count() const	function	storage	storage-componentregistry-count-const	storage.md	engine/storage/component_registry.h:205
+storage::ComponentRegistry::At(u32) const	function	storage	storage-componentregistry-at-u32-const	storage.md	engine/storage/component_registry.h:207
+storage::ComponentRegistry::Resolve(u32,UnknownPolicy,const RegisteredComponent**,RecordAction*) const	function	storage	storage-componentregistry-resolve-u32-unknownpolicy-const-registeredcomponent-star-star-recordaction-star-const	storage.md	engine/storage/component_registry.h:217
+storage::ComponentRegistry::Manifest(Vector<ManifestEntry>*) const	function	storage	storage-componentregistry-manifest-vector-lt-manifestentry-gt-star-const	storage.md	engine/storage/component_registry.h:223
+storage::ComponentRegistry::CheckManifest(Span<const ManifestEntry>) const	function	storage	storage-componentregistry-checkmanifest-span-lt-const-manifestentry-gt-const	storage.md	engine/storage/component_registry.h:230
+storage::ComponentRegistry::UnregisteredWithData(const ecs::World&,Vector<ecs::ComponentId>*) const	function	storage	storage-componentregistry-unregisteredwithdata-const-ecs-world-amp-vector-lt-ecs-componentid-gt-star-const	storage.md	engine/storage/component_registry.h:239
 storage::EntityKey	struct	storage	storage-entitykey	storage.md	engine/storage/entity_ref.h:13
 storage::EntityKey::high	variable	storage	storage-entitykey-high	storage.md	engine/storage/entity_ref.h:14
 storage::EntityKey::low	variable	storage	storage-entitykey-low	storage.md	engine/storage/entity_ref.h:15
@@ -3878,66 +3910,71 @@ storage::EntityKey::IsNull() const	function	storage	storage-entitykey-isnull-con
 storage::EntityRef	struct	storage	storage-entityref	storage.md	engine/storage/entity_ref.h:29
 storage::EntityRef::key	variable	storage	storage-entityref-key	storage.md	engine/storage/entity_ref.h:30
 storage::CodecLimits	struct	storage	storage-codeclimits	storage.md	engine/storage/field.h:27
-storage::CodecLimits::max_string_bytes	variable	storage	storage-codeclimits-max-string-bytes	storage.md	engine/storage/field.h:28
-storage::CodecLimits::max_array_elements	variable	storage	storage-codeclimits-max-array-elements	storage.md	engine/storage/field.h:29
-storage::FieldKind	enum	storage	storage-fieldkind	storage.md	engine/storage/field.h:33
-storage::FieldKind::U8	enumerator	storage	storage-fieldkind-u8	storage.md	engine/storage/field.h:34
-storage::FieldKind::U16	enumerator	storage	storage-fieldkind-u16	storage.md	engine/storage/field.h:35
-storage::FieldKind::U32	enumerator	storage	storage-fieldkind-u32	storage.md	engine/storage/field.h:36
-storage::FieldKind::U64	enumerator	storage	storage-fieldkind-u64	storage.md	engine/storage/field.h:37
-storage::FieldKind::I8	enumerator	storage	storage-fieldkind-i8	storage.md	engine/storage/field.h:38
-storage::FieldKind::I16	enumerator	storage	storage-fieldkind-i16	storage.md	engine/storage/field.h:39
-storage::FieldKind::I32	enumerator	storage	storage-fieldkind-i32	storage.md	engine/storage/field.h:40
-storage::FieldKind::I64	enumerator	storage	storage-fieldkind-i64	storage.md	engine/storage/field.h:41
-storage::FieldKind::F32	enumerator	storage	storage-fieldkind-f32	storage.md	engine/storage/field.h:42
-storage::FieldKind::F64	enumerator	storage	storage-fieldkind-f64	storage.md	engine/storage/field.h:43
-storage::FieldKind::Bool	enumerator	storage	storage-fieldkind-bool	storage.md	engine/storage/field.h:44
-storage::FieldKind::Vec2	enumerator	storage	storage-fieldkind-vec2	storage.md	engine/storage/field.h:45
-storage::FieldKind::Vec3	enumerator	storage	storage-fieldkind-vec3	storage.md	engine/storage/field.h:46
-storage::FieldKind::Vec4	enumerator	storage	storage-fieldkind-vec4	storage.md	engine/storage/field.h:47
-storage::FieldKind::Quat	enumerator	storage	storage-fieldkind-quat	storage.md	engine/storage/field.h:48
-storage::FieldKind::Mat4	enumerator	storage	storage-fieldkind-mat4	storage.md	engine/storage/field.h:49
-storage::FieldKind::Aabb	enumerator	storage	storage-fieldkind-aabb	storage.md	engine/storage/field.h:50
-storage::FieldKind::Enum	enumerator	storage	storage-fieldkind-enum	storage.md	engine/storage/field.h:51
-storage::FieldKind::String	enumerator	storage	storage-fieldkind-string	storage.md	engine/storage/field.h:52
-storage::FieldKind::Array	enumerator	storage	storage-fieldkind-array	storage.md	engine/storage/field.h:53
-storage::FieldKind::EntityRef	enumerator	storage	storage-fieldkind-entityref	storage.md	engine/storage/field.h:54
-storage::FieldOptions	struct	storage	storage-fieldoptions	storage.md	engine/storage/field.h:60
-storage::FieldOptions::has_range	variable	storage	storage-fieldoptions-has-range	storage.md	engine/storage/field.h:61
-storage::FieldOptions::range_min	variable	storage	storage-fieldoptions-range-min	storage.md	engine/storage/field.h:62
-storage::FieldOptions::range_max	variable	storage	storage-fieldoptions-range-max	storage.md	engine/storage/field.h:63
-storage::FieldOptions::max_bytes	variable	storage	storage-fieldoptions-max-bytes	storage.md	engine/storage/field.h:64
-storage::FieldOptions::Enum(i64,i64)	function	storage	storage-fieldoptions-enum-i64-i64	storage.md	engine/storage/field.h:67
-storage::FieldOptions::Text(u64)	function	storage	storage-fieldoptions-text-u64	storage.md	engine/storage/field.h:75
-storage::FieldDesc	struct	storage	storage-fielddesc	storage.md	engine/storage/field.h:204
-storage::FieldDesc::name	variable	storage	storage-fielddesc-name	storage.md	engine/storage/field.h:205
-storage::FieldDesc::kind	variable	storage	storage-fielddesc-kind	storage.md	engine/storage/field.h:206
-storage::FieldDesc::options	variable	storage	storage-fielddesc-options	storage.md	engine/storage/field.h:207
-storage::FieldDesc::memory_size	variable	storage	storage-fielddesc-memory-size	storage.md	engine/storage/field.h:208
-storage::FieldDesc::needs_range	variable	storage	storage-fielddesc-needs-range	storage.md	engine/storage/field.h:209
-storage::FieldDesc::encode	variable	storage	storage-fielddesc-encode	storage.md	engine/storage/field.h:211
-storage::FieldDesc::decode	variable	storage	storage-fielddesc-decode	storage.md	engine/storage/field.h:213
-storage::Field(const char*,FieldOptions)	function	storage	storage-field-const-char-star-fieldoptions	storage.md	engine/storage/field.h:404
+storage::CodecLimits::max_record_bytes	variable	storage	storage-codeclimits-max-record-bytes	storage.md	engine/storage/field.h:28
+storage::CodecLimits::max_string_bytes	variable	storage	storage-codeclimits-max-string-bytes	storage.md	engine/storage/field.h:29
+storage::CodecLimits::max_array_elements	variable	storage	storage-codeclimits-max-array-elements	storage.md	engine/storage/field.h:30
+storage::CodecLimits::max_components_per_entity	variable	storage	storage-codeclimits-max-components-per-entity	storage.md	engine/storage/field.h:31
+storage::FieldKind	enum	storage	storage-fieldkind	storage.md	engine/storage/field.h:35
+storage::FieldKind::U8	enumerator	storage	storage-fieldkind-u8	storage.md	engine/storage/field.h:36
+storage::FieldKind::U16	enumerator	storage	storage-fieldkind-u16	storage.md	engine/storage/field.h:37
+storage::FieldKind::U32	enumerator	storage	storage-fieldkind-u32	storage.md	engine/storage/field.h:38
+storage::FieldKind::U64	enumerator	storage	storage-fieldkind-u64	storage.md	engine/storage/field.h:39
+storage::FieldKind::I8	enumerator	storage	storage-fieldkind-i8	storage.md	engine/storage/field.h:40
+storage::FieldKind::I16	enumerator	storage	storage-fieldkind-i16	storage.md	engine/storage/field.h:41
+storage::FieldKind::I32	enumerator	storage	storage-fieldkind-i32	storage.md	engine/storage/field.h:42
+storage::FieldKind::I64	enumerator	storage	storage-fieldkind-i64	storage.md	engine/storage/field.h:43
+storage::FieldKind::F32	enumerator	storage	storage-fieldkind-f32	storage.md	engine/storage/field.h:44
+storage::FieldKind::F64	enumerator	storage	storage-fieldkind-f64	storage.md	engine/storage/field.h:45
+storage::FieldKind::Bool	enumerator	storage	storage-fieldkind-bool	storage.md	engine/storage/field.h:46
+storage::FieldKind::Vec2	enumerator	storage	storage-fieldkind-vec2	storage.md	engine/storage/field.h:47
+storage::FieldKind::Vec3	enumerator	storage	storage-fieldkind-vec3	storage.md	engine/storage/field.h:48
+storage::FieldKind::Vec4	enumerator	storage	storage-fieldkind-vec4	storage.md	engine/storage/field.h:49
+storage::FieldKind::Quat	enumerator	storage	storage-fieldkind-quat	storage.md	engine/storage/field.h:50
+storage::FieldKind::Mat4	enumerator	storage	storage-fieldkind-mat4	storage.md	engine/storage/field.h:51
+storage::FieldKind::Aabb	enumerator	storage	storage-fieldkind-aabb	storage.md	engine/storage/field.h:52
+storage::FieldKind::Enum	enumerator	storage	storage-fieldkind-enum	storage.md	engine/storage/field.h:53
+storage::FieldKind::String	enumerator	storage	storage-fieldkind-string	storage.md	engine/storage/field.h:54
+storage::FieldKind::Array	enumerator	storage	storage-fieldkind-array	storage.md	engine/storage/field.h:55
+storage::FieldKind::EntityRef	enumerator	storage	storage-fieldkind-entityref	storage.md	engine/storage/field.h:56
+storage::FieldOptions	struct	storage	storage-fieldoptions	storage.md	engine/storage/field.h:62
+storage::FieldOptions::has_range	variable	storage	storage-fieldoptions-has-range	storage.md	engine/storage/field.h:63
+storage::FieldOptions::range_min	variable	storage	storage-fieldoptions-range-min	storage.md	engine/storage/field.h:64
+storage::FieldOptions::range_max	variable	storage	storage-fieldoptions-range-max	storage.md	engine/storage/field.h:65
+storage::FieldOptions::max_bytes	variable	storage	storage-fieldoptions-max-bytes	storage.md	engine/storage/field.h:66
+storage::FieldOptions::Enum(i64,i64)	function	storage	storage-fieldoptions-enum-i64-i64	storage.md	engine/storage/field.h:69
+storage::FieldOptions::Text(u64)	function	storage	storage-fieldoptions-text-u64	storage.md	engine/storage/field.h:77
+storage::FieldDesc	struct	storage	storage-fielddesc	storage.md	engine/storage/field.h:206
+storage::FieldDesc::name	variable	storage	storage-fielddesc-name	storage.md	engine/storage/field.h:207
+storage::FieldDesc::kind	variable	storage	storage-fielddesc-kind	storage.md	engine/storage/field.h:208
+storage::FieldDesc::options	variable	storage	storage-fielddesc-options	storage.md	engine/storage/field.h:209
+storage::FieldDesc::memory_size	variable	storage	storage-fielddesc-memory-size	storage.md	engine/storage/field.h:210
+storage::FieldDesc::needs_range	variable	storage	storage-fielddesc-needs-range	storage.md	engine/storage/field.h:211
+storage::FieldDesc::encode	variable	storage	storage-fielddesc-encode	storage.md	engine/storage/field.h:213
+storage::FieldDesc::decode	variable	storage	storage-fielddesc-decode	storage.md	engine/storage/field.h:215
+storage::Field(const char*,FieldOptions)	function	storage	storage-field-const-char-star-fieldoptions	storage.md	engine/storage/field.h:406
 storage::ErrorCode	enum	storage	storage-errorcode	storage.md	engine/storage/status.h:12
 storage::ErrorCode::Ok	enumerator	storage	storage-errorcode-ok	storage.md	engine/storage/status.h:13
 storage::ErrorCode::NotFound	enumerator	storage	storage-errorcode-notfound	storage.md	engine/storage/status.h:14
 storage::ErrorCode::Exists	enumerator	storage	storage-errorcode-exists	storage.md	engine/storage/status.h:15
 storage::ErrorCode::Corrupt	enumerator	storage	storage-errorcode-corrupt	storage.md	engine/storage/status.h:16
 storage::ErrorCode::TooNew	enumerator	storage	storage-errorcode-toonew	storage.md	engine/storage/status.h:17
-storage::ErrorCode::LimitExceeded	enumerator	storage	storage-errorcode-limitexceeded	storage.md	engine/storage/status.h:18
-storage::ErrorCode::Mismatch	enumerator	storage	storage-errorcode-mismatch	storage.md	engine/storage/status.h:19
-storage::ErrorCode::Invalid	enumerator	storage	storage-errorcode-invalid	storage.md	engine/storage/status.h:20
-storage::ErrorCode::Other	enumerator	storage	storage-errorcode-other	storage.md	engine/storage/status.h:21
-storage::ErrorCodeName(ErrorCode)	function	storage	storage-errorcodename-errorcode	storage.md	engine/storage/status.h:28
-storage::Status	class	storage	storage-status	storage.md	engine/storage/status.h:34
-storage::Status::Status()	function	storage	storage-status-status	storage.md	engine/storage/status.h:37
-storage::Status::Success()	function	storage	storage-status-success	storage.md	engine/storage/status.h:40
-storage::Status::Make(ErrorCode,const char*)	function	storage	storage-status-make-errorcode-const-char-star	storage.md	engine/storage/status.h:44
-storage::Status::Ok() const	function	storage	storage-status-ok-const	storage.md	engine/storage/status.h:53
-storage::Status::Failed() const	function	storage	storage-status-failed-const	storage.md	engine/storage/status.h:56
-storage::Status::Is(ErrorCode) const	function	storage	storage-status-is-errorcode-const	storage.md	engine/storage/status.h:59
-storage::Status::Code() const	function	storage	storage-status-code-const	storage.md	engine/storage/status.h:61
-storage::Status::Message() const	function	storage	storage-status-message-const	storage.md	engine/storage/status.h:66
+storage::ErrorCode::TooOld	enumerator	storage	storage-errorcode-tooold	storage.md	engine/storage/status.h:18
+storage::ErrorCode::LimitExceeded	enumerator	storage	storage-errorcode-limitexceeded	storage.md	engine/storage/status.h:19
+storage::ErrorCode::Mismatch	enumerator	storage	storage-errorcode-mismatch	storage.md	engine/storage/status.h:20
+storage::ErrorCode::Invalid	enumerator	storage	storage-errorcode-invalid	storage.md	engine/storage/status.h:21
+storage::ErrorCode::Other	enumerator	storage	storage-errorcode-other	storage.md	engine/storage/status.h:22
+storage::ErrorCodeName(ErrorCode)	function	storage	storage-errorcodename-errorcode	storage.md	engine/storage/status.h:29
+storage::Status	class	storage	storage-status	storage.md	engine/storage/status.h:35
+storage::Status::Status()	function	storage	storage-status-status	storage.md	engine/storage/status.h:38
+storage::Status::Success()	function	storage	storage-status-success	storage.md	engine/storage/status.h:41
+storage::Status::Make(ErrorCode,const char*)	function	storage	storage-status-make-errorcode-const-char-star	storage.md	engine/storage/status.h:45
+storage::Status::Ok() const	function	storage	storage-status-ok-const	storage.md	engine/storage/status.h:54
+storage::Status::Failed() const	function	storage	storage-status-failed-const	storage.md	engine/storage/status.h:57
+storage::Status::Is(ErrorCode) const	function	storage	storage-status-is-errorcode-const	storage.md	engine/storage/status.h:60
+storage::Status::Code() const	function	storage	storage-status-code-const	storage.md	engine/storage/status.h:62
+storage::Status::Message() const	function	storage	storage-status-message-const	storage.md	engine/storage/status.h:67
+storage::RegisterStorageSettings(settings::Registry*)	function	storage	storage-registerstoragesettings-settings-registry-star	storage.md	engine/storage/storage_settings.h:17
+storage::LimitsFromSettings(const settings::Registry&)	function	storage	storage-limitsfromsettings-const-settings-registry-amp	storage.md	engine/storage/storage_settings.h:24
 scene::MeshAsset	struct	scene	scene-meshasset	scene.md	engine/scene/components.h:22
 scene::MeshAsset::mesh	variable	scene	scene-meshasset-mesh	scene.md	engine/scene/components.h:24
 scene::MeshRenderer	struct	scene	scene-meshrenderer	scene.md	engine/scene/components.h:31
