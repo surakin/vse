@@ -88,10 +88,10 @@ int main() {
         if (frame == 5) {
             world.Query<ecs::Write<ecs::LocalTransform>>().ForEach([](ecs::Entity, ecs::LocalTransform& t) { t.position.y = 1.0f; });
         }
-        autosaver.Update(1.0 / 60.0);
+        if (autosaver.Update(1.0 / 60.0).Failed()) return 1;
         world.EndFrame();
     }
-    autosaver.Flush();
+    if (autosaver.Flush().Failed()) return 1;
     os::Print("autosaves: %s\n", autosaver.Completed() >= 2 ? "at least two" : "fewer than two");
 
     io::RemoveAll(scratch);

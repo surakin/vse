@@ -5897,30 +5897,30 @@ jobs::DefaultParticipantCount()	function	jobs	jobs-defaultparticipantcount	jobs.
 jobs::Participant	struct	jobs	jobs-participant	jobs.md	engine/jobs/worker_pool.h:23
 jobs::Participant::index	variable	jobs	jobs-participant-index	jobs.md	engine/jobs/worker_pool.h:25
 jobs::Participant::cpu	variable	jobs	jobs-participant-cpu	jobs.md	engine/jobs/worker_pool.h:27
-jobs::Participant::tid	variable	jobs	jobs-participant-tid	jobs.md	engine/jobs/worker_pool.h:29
-jobs::Participant::owner	variable	jobs	jobs-participant-owner	jobs.md	engine/jobs/worker_pool.h:31
-jobs::WorkerPool	class	jobs	jobs-workerpool	jobs.md	engine/jobs/worker_pool.h:47
-jobs::WorkerPool::WorkerFn	alias	jobs	jobs-workerpool-workerfn	jobs.md	engine/jobs/worker_pool.h:53
-jobs::WorkerPool::Config	struct	jobs	jobs-workerpool-config	jobs.md	engine/jobs/worker_pool.h:58
-jobs::WorkerPool::Config::participants	variable	jobs	jobs-workerpool-config-participants	jobs.md	engine/jobs/worker_pool.h:60
-jobs::WorkerPool::Config::pin	variable	jobs	jobs-workerpool-config-pin	jobs.md	engine/jobs/worker_pool.h:62
-jobs::WorkerPool::Config::worker_fn	variable	jobs	jobs-workerpool-config-worker-fn	jobs.md	engine/jobs/worker_pool.h:64
-jobs::WorkerPool::Config::user	variable	jobs	jobs-workerpool-config-user	jobs.md	engine/jobs/worker_pool.h:66
-jobs::WorkerPool::WorkerPool(const Config&)	function	jobs	jobs-workerpool-workerpool-const-config-amp	jobs.md	engine/jobs/worker_pool.h:72
-jobs::WorkerPool::~WorkerPool()	function	jobs	jobs-workerpool-tilde-workerpool	jobs.md	engine/jobs/worker_pool.h:78
-jobs::WorkerPool::WorkerPool(const WorkerPool&)	function	jobs	jobs-workerpool-workerpool-const-workerpool-amp	jobs.md	engine/jobs/worker_pool.h:80
-jobs::WorkerPool::operator=(const WorkerPool&)	function	jobs	jobs-workerpool-operator-eq-const-workerpool-amp	jobs.md	engine/jobs/worker_pool.h:81
-jobs::WorkerPool::User() const	function	jobs	jobs-workerpool-user-const	jobs.md	engine/jobs/worker_pool.h:87
-jobs::WorkerPool::WorkerFunction() const	function	jobs	jobs-workerpool-workerfunction-const	jobs.md	engine/jobs/worker_pool.h:91
-jobs::WorkerPool::ParticipantCount() const	function	jobs	jobs-workerpool-participantcount-const	jobs.md	engine/jobs/worker_pool.h:95
-jobs::WorkerPool::SpawnedWorkerCount() const	function	jobs	jobs-workerpool-spawnedworkercount-const	jobs.md	engine/jobs/worker_pool.h:99
-jobs::WorkerPool::GetParticipant(usize) const	function	jobs	jobs-workerpool-getparticipant-usize-const	jobs.md	engine/jobs/worker_pool.h:105
-jobs::WorkerPool::RequestStop()	function	jobs	jobs-workerpool-requeststop	jobs.md	engine/jobs/worker_pool.h:114
-jobs::WorkerPool::StopRequested() const	function	jobs	jobs-workerpool-stoprequested-const	jobs.md	engine/jobs/worker_pool.h:119
-jobs::WorkerPool::Join()	function	jobs	jobs-workerpool-join	jobs.md	engine/jobs/worker_pool.h:131
-jobs::WorkerPool::Current()	function	jobs	jobs-workerpool-current	jobs.md	engine/jobs/worker_pool.h:137
-jobs::WorkerPool::IsParticipantThread()	function	jobs	jobs-workerpool-isparticipantthread	jobs.md	engine/jobs/worker_pool.h:142
-jobs::WorkerPool::CurrentParticipantIndex()	function	jobs	jobs-workerpool-currentparticipantindex	jobs.md	engine/jobs/worker_pool.h:146
+jobs::Participant::tid	variable	jobs	jobs-participant-tid	jobs.md	engine/jobs/worker_pool.h:30
+jobs::Participant::owner	variable	jobs	jobs-participant-owner	jobs.md	engine/jobs/worker_pool.h:32
+jobs::WorkerPool	class	jobs	jobs-workerpool	jobs.md	engine/jobs/worker_pool.h:48
+jobs::WorkerPool::WorkerFn	alias	jobs	jobs-workerpool-workerfn	jobs.md	engine/jobs/worker_pool.h:54
+jobs::WorkerPool::Config	struct	jobs	jobs-workerpool-config	jobs.md	engine/jobs/worker_pool.h:59
+jobs::WorkerPool::Config::participants	variable	jobs	jobs-workerpool-config-participants	jobs.md	engine/jobs/worker_pool.h:61
+jobs::WorkerPool::Config::pin	variable	jobs	jobs-workerpool-config-pin	jobs.md	engine/jobs/worker_pool.h:63
+jobs::WorkerPool::Config::worker_fn	variable	jobs	jobs-workerpool-config-worker-fn	jobs.md	engine/jobs/worker_pool.h:65
+jobs::WorkerPool::Config::user	variable	jobs	jobs-workerpool-config-user	jobs.md	engine/jobs/worker_pool.h:67
+jobs::WorkerPool::WorkerPool(const Config&)	function	jobs	jobs-workerpool-workerpool-const-config-amp	jobs.md	engine/jobs/worker_pool.h:73
+jobs::WorkerPool::~WorkerPool()	function	jobs	jobs-workerpool-tilde-workerpool	jobs.md	engine/jobs/worker_pool.h:79
+jobs::WorkerPool::WorkerPool(const WorkerPool&)	function	jobs	jobs-workerpool-workerpool-const-workerpool-amp	jobs.md	engine/jobs/worker_pool.h:81
+jobs::WorkerPool::operator=(const WorkerPool&)	function	jobs	jobs-workerpool-operator-eq-const-workerpool-amp	jobs.md	engine/jobs/worker_pool.h:82
+jobs::WorkerPool::User() const	function	jobs	jobs-workerpool-user-const	jobs.md	engine/jobs/worker_pool.h:88
+jobs::WorkerPool::WorkerFunction() const	function	jobs	jobs-workerpool-workerfunction-const	jobs.md	engine/jobs/worker_pool.h:92
+jobs::WorkerPool::ParticipantCount() const	function	jobs	jobs-workerpool-participantcount-const	jobs.md	engine/jobs/worker_pool.h:96
+jobs::WorkerPool::SpawnedWorkerCount() const	function	jobs	jobs-workerpool-spawnedworkercount-const	jobs.md	engine/jobs/worker_pool.h:100
+jobs::WorkerPool::GetParticipant(usize) const	function	jobs	jobs-workerpool-getparticipant-usize-const	jobs.md	engine/jobs/worker_pool.h:106
+jobs::WorkerPool::RequestStop()	function	jobs	jobs-workerpool-requeststop	jobs.md	engine/jobs/worker_pool.h:115
+jobs::WorkerPool::StopRequested() const	function	jobs	jobs-workerpool-stoprequested-const	jobs.md	engine/jobs/worker_pool.h:120
+jobs::WorkerPool::Join()	function	jobs	jobs-workerpool-join	jobs.md	engine/jobs/worker_pool.h:132
+jobs::WorkerPool::Current()	function	jobs	jobs-workerpool-current	jobs.md	engine/jobs/worker_pool.h:138
+jobs::WorkerPool::IsParticipantThread()	function	jobs	jobs-workerpool-isparticipantthread	jobs.md	engine/jobs/worker_pool.h:143
+jobs::WorkerPool::CurrentParticipantIndex()	function	jobs	jobs-workerpool-currentparticipantindex	jobs.md	engine/jobs/worker_pool.h:147
 rhi::kMaxAdapters	variable	rhi	rhi-kmaxadapters	rhi.md	engine/rhi/adapter.h:13
 rhi::kAdapterIdBytes	variable	rhi	rhi-kadapteridbytes	rhi.md	engine/rhi/adapter.h:15
 rhi::kAdapterNameBytes	variable	rhi	rhi-kadapternamebytes	rhi.md	engine/rhi/adapter.h:17
