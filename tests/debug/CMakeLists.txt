@@ -143,6 +143,74 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   return()
 endif()
 
+# macOS (Phase 26 Day 306): the shared test files in three flavors, as Windows began on its Day 154. Today's backend has stack traces, the module list
+# and the crash context; the crash handler, death tests, fault injection and the debugger check answer "unsupported" until Day 307
+# (os/macos/debug/not_yet_ported.cpp), so their cases skip with that reason. The macOS-only cases arrive with their days.
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  set(_debug_macos_sources
+    death_test_registry_test.cpp
+    death_test_run_test.cpp
+    assert_family_test.cpp
+    stack_trace_test.cpp
+    crash_handler_test.cpp
+    crash_report_test.cpp
+    crash_state_test.cpp
+    failure_hooks_test.cpp
+    install_hooks.cpp
+    resource_guard_macos.cpp
+    macos/stack_trace_macos_test.cpp
+    saved_dumps_test.cpp
+    core_dump_test.cpp
+    crash_extract_test.cpp
+    minidump_test.cpp
+    ${CMAKE_SOURCE_DIR}/tools/crash_extract/envelope.cpp
+    ${CMAKE_SOURCE_DIR}/tools/crash_extract/minidump.cpp
+    ${CMAKE_SOURCE_DIR}/tools/crash_extract/resolve.cpp
+  )
+  # The stack-trace tests load it at run time; with a dSYM, so its frames have file and line too. SHARED (a dylib), not MODULE: CMake makes a
+  # MODULE an MH_BUNDLE on macOS, which libbacktrace does not read (macho.c takes executables, dylibs and dSYMs), so its frames were unnamed.
+  add_library(debug_test_plugin SHARED plugin.cpp)
+  target_include_directories(debug_test_plugin PRIVATE ${CMAKE_SOURCE_DIR}/engine/foundation)
+  set_target_properties(debug_test_plugin PROPERTIES UNITY_BUILD OFF)
+  engine_dsym(debug_test_plugin)
+  foreach(suffix "" "_asan" "_tsan")
+    add_executable(debug_tests${suffix} ${_debug_macos_sources})
+    engine_enable_death_tests(debug_tests${suffix})
+    target_link_libraries(debug_tests${suffix} PRIVATE foundation_debug${suffix} jobs${suffix} Catch2::Catch2WithMain Threads::Threads)
+    add_dependencies(debug_tests${suffix} debug_test_plugin crash_extract)
+    target_compile_definitions(debug_tests${suffix} PRIVATE DEBUG_TEST_PLUGIN_PATH="$<TARGET_FILE:debug_test_plugin>" ENGINE_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
+      ENGINE_CRASH_EXTRACT_PATH="$<TARGET_FILE:crash_extract>" ENGINE_DEBUG_CHECKS=1 ENGINE_SLOW_CHECKS=1)
+    target_include_directories(debug_tests${suffix} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tests/support ${CMAKE_SOURCE_DIR}/tools/crash_extract)
+    engine_dsym(debug_tests${suffix})
+  endforeach()
+  engine_discover_tests(debug_tests TEST_SUFFIX "" PROPERTIES LABELS "debug;crash")
+  engine_discover_tests(debug_tests_asan TEST_SUFFIX " [asan]" PROPERTIES LABELS "asan;crash")
+  engine_discover_tests(debug_tests_tsan TEST_SUFFIX " [tsan]" PROPERTIES LABELS "tsan;crash")
+  add_executable(debug_checks_off_tests assert_checks_off_test.cpp)
+  target_link_libraries(debug_checks_off_tests PRIVATE foundation_debug Catch2::Catch2WithMain Threads::Threads)
+  target_compile_definitions(debug_checks_off_tests PRIVATE ENGINE_DEBUG_CHECKS=0 ENGINE_SLOW_CHECKS=0)
+  engine_discover_tests(debug_checks_off_tests TEST_SUFFIX " [checks off]" PROPERTIES LABELS "debug;crash")
+  # A trace without a dSYM: this one executable skips engine_dsym, so its frames have names and no file or line.
+  add_executable(debug_no_dsym_tests macos/no_dsym_macos_test.cpp)
+  target_link_libraries(debug_no_dsym_tests PRIVATE foundation_debug Catch2::Catch2WithMain Threads::Threads)
+  engine_discover_tests(debug_no_dsym_tests TEST_SUFFIX " [no dSYM]" PROPERTIES LABELS "debug")
+  # The backend checklists stay in step with the headers (CMake scripts, as on the other systems).
+  foreach(case "debug_backend_lists|${CMAKE_SOURCE_DIR}" "debug_backend_lists_clean|${CMAKE_CURRENT_SOURCE_DIR}/fixtures/backend_lists/good"
+               "debug_backend_lists_planted|${CMAKE_CURRENT_SOURCE_DIR}/fixtures/backend_lists/bad"
+               "debug_backend_lists_planted_count|${CMAKE_CURRENT_SOURCE_DIR}/fixtures/backend_lists/bad")
+    string(REPLACE "|" ";" parts "${case}")
+    list(GET parts 0 name)
+    list(GET parts 1 root)
+    add_test(NAME ${name} COMMAND ${CMAKE_COMMAND} -DROOT=${root} -P ${CMAKE_CURRENT_SOURCE_DIR}/check_backend_lists.cmake)
+    set_tests_properties(${name} PROPERTIES LABELS "debug")
+  endforeach()
+  set_tests_properties(debug_backend_lists_planted PROPERTIES WILL_FAIL TRUE)
+  set_tests_properties(debug_backend_lists_planted_count PROPERTIES
+    PASS_REGULAR_EXPRESSION "windows: BACKEND.md lists `Stale`.*windows: BACKEND.md has no section heading for `Forgotten`.*macos: BACKEND.md lists `Stale`.*macos: BACKEND.md has no section heading for `Forgotten`.*4 problem")
+  engine_label_tests(debug_backend_lists debug_backend_lists_clean debug_backend_lists_planted debug_backend_lists_planted_count)
+  return()
+endif()
+
 # Every Catch2 test of this directory carries the label `crash`: the suite crashes processes on purpose (death tests, the demos'
 # --crash-test), which makes systemd-coredump and desktop crash reporters notify the user. scripts/test-phase.sh leaves the label
 # out unless it runs --all or is given --crashes; plain ctest runs it.

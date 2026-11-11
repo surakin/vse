@@ -1,6 +1,7 @@
 # macOS debugging backend (Phase 26)
 
-What Phase 26 implements to bring up the debugging facilities on macOS. Nothing here exists yet; Linux is the reference
+What Phase 26 implements to bring up the debugging facilities on macOS (Day 306: stack traces, the module list, the crash context; Days 307-308
+the rest); Linux is the reference
 (`engine/foundation/os/linux/debug/`). Everything else is shared: the facade, the assert family, the report writer, the log ring,
 the crash state, the tests. `posix_spawn`, `setrlimit`, signals and `sigaltstack` are the same calls as on Linux, so most of the
 Linux files compile with small changes. See `docs/guide/porting-debugging.md` and `tests/debug/BACKEND-CONFORMANCE.md`.
@@ -14,8 +15,11 @@ notarization restrict some of what a crash handler may do.
 
 ### `InitCrashContext`
 Build id: the `LC_UUID` load command of the main image (`_dyld_get_image_header(0)`), hex. OS name and version:
-`sysctlbyname("kern.osproductversion")`. CPU brand: `machdep.cpu.brand_string` (absent on Apple silicon: use `hw.model`
-and say so); count: `hw.logicalcpu`; memory: `hw.memsize`. Executable: `_NSGetExecutablePath`. Groups: *crash context*.
+`sysctlbyname("kern.osproductversion")`. CPU brand: `machdep.cpu.brand_string` (Apple silicon has it too, `Apple M1` and so on: no fallback
+needed, checked on Day 306's review); count: `hw.logicalcpu`; memory: `hw.memsize`. Executable: `_NSGetExecutablePath`. Groups: *crash context*.
+
+As built (Day 306, `os/macos/debug/crash_context_macos.cpp`): as described, nothing allocated (the context may be filled on the assert path); the executable is
+`_NSGetExecutablePath`'s path without `realpath`. Compared with `sysctl -n` by `tests/debug/macos/stack_trace_macos_test.cpp`.
 
 ### `EnablePostMortemDumps`
 `setrlimit(RLIMIT_CORE)` as on Linux; cores are written to `/cores` (`kern.corefile`), which is normally disabled
@@ -41,11 +45,22 @@ not need it: set the name and return true. Groups: *threads*.
 The module list from `_dyld_image_count`, `_dyld_get_image_name`, `_dyld_get_image_header`, and
 `_dyld_register_func_for_add_image` for changes. Groups: *stack trace*.
 
+As built (Day 306, `os/macos/debug/module_list.cpp`; libbacktrace on Mach-O, `third_party/libbacktrace`): each image's range is its `__TEXT` segment
+plus the slide, not the span of its segments (in the shared cache those overlap other images: Day 306 saw libobjc claim libsystem_pthread's frames).
+The images come from `_dyld_register_func_for_add_image` and `..._remove_image` into a registry under a mutex (walking dyld's list by index races with
+`dlclose`: indices shift, and a header can be unmapped mid-walk); a refresh copies the registry, and is still explicit, as on Linux
+(`ReloadDebugModules` after `dlopen`). libbacktrace skips `MH_BUNDLE`
+images; plug-ins are dylibs. File and line need the dSYM (`engine_dsym`).
+
 ### `DemangleSymbol`
 `abi::__cxa_demangle`. Groups: *stack trace*.
 
+As built (Day 306): the shared `stack_trace_backtrace.cpp`, unchanged.
+
 ### `CurrentThreadId`
 `pthread_threadid_np(nullptr, &id)`. Groups: *crash report*.
+
+As built (Day 306): the low 31 bits, never 0, so the crash report and the job system's logs (`jobs/macos/thread_platform.cpp`) print one number.
 
 ### `DeathTestsSupported` and `RunInChild`
 `posix_spawn` shared with Linux; `PR_SET_PDEATHSIG` does not exist on macOS: the child watches a pipe from the parent and exits when it closes (a pipe

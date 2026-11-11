@@ -2,22 +2,27 @@
 # assumption #20. Upstream builds with autotools; this file replaces that for the platforms we build on. It produces one
 # static library, `backtrace`, built once with plain flags and linked into the plain, ASan and TSan flavors alike.
 #
-# Only the ELF/Linux configuration exists so far: macOS (Mach-O, `macho.c`) adds a branch on Phase 26 Day 290. Windows does not build it:
-# stack traces resolve through DbgHelp there (Phase 13 Day 154, os/windows/debug/BACKEND.md).
+# Two configurations: ELF on Linux (`elf.c`) and Mach-O on macOS (`macho.c`, Phase 26 Day 306; file and line come from the dSYM next to the
+# binary). Windows does not build it: stack traces resolve through DbgHelp there (Phase 13 Day 154, os/windows/debug/BACKEND.md).
 cmake_minimum_required(VERSION 3.20)
 
 include(CheckCSourceCompiles)
 include(CheckIncludeFile)
 include(CheckSymbolExists)
 
-if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
-  message(FATAL_ERROR "libbacktrace is configured for Linux only so far; macOS (Mach-O) is Phase 26 Day 290, and Windows uses DbgHelp instead (see third_party/libbacktrace/VENDORED.md)")
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  set(BACKTRACE_FORMAT_FILE elf.c)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  set(BACKTRACE_FORMAT_FILE macho.c)
+else()
+  message(FATAL_ERROR "libbacktrace is configured for Linux (ELF) and macOS (Mach-O); Windows uses DbgHelp instead (see third_party/libbacktrace/VENDORED.md)")
 endif()
 
 # --- the feature checks the sources test (what autoconf's configure.ac does) -----------------------------------------------
 set(CMAKE_REQUIRED_DEFINITIONS -D_GNU_SOURCE)
 check_include_file(link.h HAVE_LINK_H)
 check_include_file(sys/link.h HAVE_SYS_LINK_H)
+check_include_file(mach-o/dyld.h HAVE_MACH_O_DYLD_H)
 check_symbol_exists(dl_iterate_phdr "link.h" HAVE_DL_ITERATE_PHDR)
 check_symbol_exists(readlink "unistd.h" HAVE_READLINK)
 check_symbol_exists(lstat "sys/stat.h" HAVE_LSTAT)
@@ -55,19 +60,27 @@ math(EXPR BACKTRACE_ELF_SIZE "${CMAKE_SIZEOF_VOID_P} * 8")
 # backtrace-supported.h: unwinding through the compiler's unwinder (_Unwind_Backtrace), memory from mmap (so the
 # resolving calls never call malloc and can run in a signal handler once the first call is made), threads supported,
 # symbol lookup for data available (ELF).
-if(NOT HAVE_DL_ITERATE_PHDR OR NOT HAVE_GETIPINFO)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND (NOT HAVE_DL_ITERATE_PHDR OR NOT HAVE_GETIPINFO))
   message(FATAL_ERROR "libbacktrace: dl_iterate_phdr and _Unwind_GetIPInfo are required on Linux")
+endif()
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND (NOT HAVE_MACH_O_DYLD_H OR NOT HAVE_GETIPINFO))
+  message(FATAL_ERROR "libbacktrace: <mach-o/dyld.h> and _Unwind_GetIPInfo are required on macOS")
 endif()
 set(BACKTRACE_SUPPORTED 1)
 set(BACKTRACE_USES_MALLOC 0)
 set(BACKTRACE_SUPPORTS_THREADS 1)
-set(BACKTRACE_SUPPORTS_DATA 1)
+# Symbol lookup for data addresses: ELF only (upstream's configure sets it off for Mach-O).
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  set(BACKTRACE_SUPPORTS_DATA 1)
+else()
+  set(BACKTRACE_SUPPORTS_DATA 0)
+endif()
 
 set(BACKTRACE_GENERATED_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated)
 configure_file(config.h.in ${BACKTRACE_GENERATED_DIR}/config.h)
 configure_file(backtrace-supported.h.in ${BACKTRACE_GENERATED_DIR}/backtrace-supported.h @ONLY)
 
-# ELF format, unwinder-based backtrace, mmap-based memory and file views.
+# The object format of the platform, unwinder-based backtrace, mmap-based memory and file views.
 add_library(backtrace STATIC
   atomic.c
   dwarf.c
@@ -78,7 +91,7 @@ add_library(backtrace STATIC
   state.c
   backtrace.c
   simple.c
-  elf.c
+  ${BACKTRACE_FORMAT_FILE}
   mmap.c
   mmapio.c
 )

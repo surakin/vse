@@ -104,6 +104,20 @@ Symbols         DWARF in a dSYM next to the binary (libbacktrace needs it for fi
 The traps: the hardened runtime and notarization restrict what a handler may do; `dsymutil` and `strip` replace `objcopy`; the
 symbol store holds dSYM bundles named by UUID.
 
+**As built (Phase 26 Day 306; the crash handler, death tests and dumps follow on Days 307-308):**
+
+- **dSYMs.** The linker leaves the DWARF in the object files; `engine_dsym(<target>)` (root `CMakeLists.txt`, on by default as `ENGINE_DSYM`)
+  runs `dsymutil` after linking and puts `<binary>.dSYM` next to the binary, where libbacktrace looks. Without it a frame names its function
+  (from the symbol table) and has no file or line (`debug_no_dsym_tests` shows it). Keep the dSYM with the binary when copying it; `atos -o
+  <binary> -l <load address> <address>` reads the same dSYM by hand.
+- **Plug-ins are dylibs.** libbacktrace does not read `MH_BUNDLE` images (a CMake `MODULE`), whose frames stay unnamed; build a plug-in `SHARED`.
+- **The module list** is each image's `__TEXT` segment plus its slide, from dyld's add-image and remove-image callbacks, not the span of
+  all its segments: in the shared cache those span the neighbours. `ReloadDebugModules` after `dlopen`, as on Linux. A system library's frame
+  is named by its module only (the shared cache has no file for libbacktrace to read).
+- **Thread ids** are `pthread_threadid_np`'s low 31 bits, never 0: the same number the job system logs.
+- **Crash context:** build id = the main image's `LC_UUID` (32 hex digits), `kern.osproductversion`, `machdep.cpu.brand_string` (`Apple M1` and so
+  on, on Apple silicon), `hw.logicalcpu`, `hw.memsize`, `_NSGetExecutablePath` (no `realpath`: the context may be filled on the assert path).
+
 ## Common mistakes
 
 - **Adding a platform function without its `Backend:` label** or without an entry in both `BACKEND.md` files: `debug_backend_lists` fails.

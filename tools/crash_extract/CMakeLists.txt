@@ -8,6 +8,8 @@ target_compile_options(crash_extract PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   target_sources(crash_extract PRIVATE windows/resolve.cpp)
   target_link_libraries(crash_extract PRIVATE foundation_io dbghelp) # the file layer is all it needs (the settings layer arrives on Day 157)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  target_link_libraries(crash_extract PRIVATE foundation_io) # the file layer is all it needs (Phase 26; the aggregate arrives on Day 309)
 else()
   target_link_libraries(crash_extract PRIVATE foundation)
 endif()

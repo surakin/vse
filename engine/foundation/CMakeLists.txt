@@ -24,10 +24,10 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   )
   # The file layer: the POSIX part shared with macOS (io/posix/, Phase 26 Day 303) and Linux's own.
   set(FOUNDATION_IO_PLATFORM_SOURCES
-    io/posix/error.cpp
+    io/posix/posix_error.cpp
     io/posix/file_system.cpp
     io/posix/local_file.cpp
-    io/posix/directory.cpp
+    io/posix/posix_directory.cpp
     io/linux/posix_hooks.cpp
     io/linux/special_folders.cpp
   )
@@ -80,12 +80,21 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   )
   # Day 303: the file layer, the POSIX part shared with Linux (io/posix/) and macOS's own (io/macos/).
   set(FOUNDATION_IO_PLATFORM_SOURCES
-    io/posix/error.cpp
+    io/posix/posix_error.cpp
     io/posix/file_system.cpp
     io/posix/local_file.cpp
-    io/posix/directory.cpp
+    io/posix/posix_directory.cpp
     io/macos/posix_hooks.cpp
     io/macos/special_folders.mm
+  )
+  # Day 306: the debugging backend's first third (os/macos/debug/BACKEND.md): stack traces through libbacktrace on Mach-O, the module list, the
+  # crash context. TEMPORARY until Days 307-308: not_yet_ported.cpp answers "unsupported" for the crash handler, death tests, fault injection,
+  # the debugger check and post-mortem dumps, and crash_handler_sentry.cpp is left out (sentry needs Breakpad's macOS headers, Day 307).
+  set(FOUNDATION_DEBUG_PLATFORM_SOURCES
+    debug/stack_trace_backtrace.cpp
+    os/macos/debug/module_list.cpp
+    os/macos/debug/crash_context_macos.cpp
+    os/macos/debug/not_yet_ported.cpp
   )
 else()
   message(FATAL_ERROR "No foundation os.h implementation for this platform yet")
@@ -171,6 +180,19 @@ set(FOUNDATION_SETTINGS_SOURCES
 # foundation_base_tsan) and reach every library above it by linking: ASan/UBSan and TSan need the whole binary instrumented
 # consistently, and TSan only gives trustworthy answers when every library that touches shared memory is instrumented too.
 function(engine_add_foundation_layer name suffix)
+  # On macOS a static archive keeps only the base name of each object, and dsymutil skips a second object of the same name in the debug map,
+  # so its frames lose file and line (Phase 26 Day 306: io/error.cpp and io/posix/error.cpp were one). Two sources of one library may not share
+  # a file name there; the platform file takes a prefix or suffix (posix_error.cpp, crash_context_macos.cpp).
+  if(APPLE)
+    set(_seen "")
+    foreach(_source IN LISTS ARGN)
+      get_filename_component(_base "${_source}" NAME) # the object is <name>.o: session.cpp and session.mm do not collide
+      if(_base IN_LIST _seen)
+        message(FATAL_ERROR "${name}${suffix}: two sources are named ${_base}; on macOS the archive and dsymutil keep one of them (rename one)")
+      endif()
+      list(APPEND _seen "${_base}")
+    endforeach()
+  endif()
   add_library(${name}${suffix} STATIC ${ARGN})
   target_include_directories(${name}${suffix} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
   target_compile_options(${name}${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
@@ -224,8 +246,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_link_libraries(foundation${suffix} INTERFACE foundation_settings${suffix} foundation_debug${suffix} foundation_io${suffix} foundation_base${suffix})
   endforeach()
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  # The base layer and the file layer (Day 303) in the three flavors (Apple clang has ASan, UBSan and TSan); the layers above them join as
-  # their macOS backends arrive (jobs on Day 305, debugging on Days 306-308).
+  # The base layer, the file layer (Day 303) and the debugging layer (Day 306) in the three flavors (Apple clang has ASan, UBSan and TSan); the layers
+  # above them join as their macOS backends arrive (jobs on Day 305, the rest of debugging on Days 307-308).
   foreach(suffix "" "_asan" "_tsan")
     engine_add_foundation_layer(foundation_base "${suffix}" ${FOUNDATION_BASE_SOURCES})
     # The session query (os/macos/session.mm) reads the window server's session dictionary.
@@ -233,6 +255,10 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     engine_add_foundation_layer(foundation_io "${suffix}" ${FOUNDATION_IO_SOURCES})
     # The user directories (io/macos/special_folders.mm) ask Foundation (NSSearchPathForDirectoriesInDomains).
     target_link_libraries(foundation_io${suffix} PUBLIC foundation_base${suffix} "-framework Foundation")
+    set(_macos_debug_sources ${FOUNDATION_DEBUG_SOURCES})
+    list(REMOVE_ITEM _macos_debug_sources debug/crash_handler_sentry.cpp) # TEMPORARY until Day 307 (above)
+    engine_add_foundation_layer(foundation_debug "${suffix}" ${_macos_debug_sources})
+    target_link_libraries(foundation_debug${suffix} PUBLIC foundation_io${suffix} PRIVATE backtrace)
   endforeach()
 else()
   engine_add_foundation_libs("")

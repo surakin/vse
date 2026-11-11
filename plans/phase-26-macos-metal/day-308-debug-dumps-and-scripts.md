@@ -7,6 +7,8 @@ Minidumps, core files, the dSYM symbol store and the shell scripts on macOS: the
 
 ## Tasks
 
+- [ ] **`crash_extract`'s macOS resolver** (moved from Day 306, which had no macOS crash report to resolve yet): `tools/crash_extract/resolve.cpp`'s
+      platform branch resolves a macOS report's frames through the dSYM, with `atos` as a cross-check in the test when present.
 - [ ] **Minidumps:** Breakpad writes a minidump on macOS into `CrashDumpDirectory()`; `crash_extract` reads it (the module list carries the `LC_UUID`s) and
       resolves frames through the store; a test crashes a child and checks the dump's modules and the resolved top frame.
 - [ ] **`EnablePostMortemDumps`:** `setrlimit(RLIMIT_CORE)` as Linux; report `Limited` naming `/cores` and `kern.coredump` (normally off) and the

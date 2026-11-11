@@ -1,6 +1,7 @@
 # Foundation: Debugging
 
-Status: written (Phase 7 on Linux; Phase 13 added Windows; macOS is ready, see [porting](porting-debugging.md)).
+Status: written (Phase 7 on Linux; Phase 13 added Windows; macOS from Phase 26: stack traces and the crash context on Day 306, the crash handler and
+death tests on Day 307, dumps on Day 308; see [porting](porting-debugging.md)).
 
 **Audience:** every engine programmer who has to find out why a program crashed, or who writes a test for code that is supposed to crash. Read
 [Logging and Assertions](foundation-logging-and-assert.md) first: assertions are where most crashes start.
@@ -128,6 +129,10 @@ What to know:
   script, a debugger or a test parent). On Windows
   the PDB stores function names readable already (`engine::Foo`, without the parameter list), so `demangle` changes nothing there;
   an MSVC-decorated name (`?Foo@@YAXH@Z`) passed to [[debug::DemangleSymbol]] is undecorated with `UnDecorateSymbolName`.
+
+On **macOS** file and line come from the dSYM next to the binary: the build makes one for each test and program (`engine_dsym`, on by default as
+`ENGINE_DSYM`; it needs `dsymutil` from the Command Line Tools). Without it a frame names its function only. Load a plug-in as a dylib (`SHARED`):
+libbacktrace cannot read a bundle (`MODULE`). [Porting](porting-debugging.md) has the details.
 
 ## Installing the crash handler
 

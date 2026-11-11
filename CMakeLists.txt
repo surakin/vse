@@ -68,17 +68,48 @@ endif()
 # Release symbols (Phase 7 Day 99): with this on, every build keeps debug information (-g) and the demos and benches have it split
 # out after linking (scripts/split-debug.sh: <program>.debug beside a stripped program that keeps its build id and links to the
 # debug file). Put the .debug files in a symbol store with scripts/store-symbols.sh to read crash dumps from stripped builds.
-option(ENGINE_SPLIT_DEBUG_INFO "Build with -g and split the debug information out of the demos and benches (Linux)" OFF)
+option(ENGINE_SPLIT_DEBUG_INFO "Build with -g and split the debug information out of the demos and benches (Linux; macOS: see engine_dsym)" OFF)
 if(ENGINE_SPLIT_DEBUG_INFO AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
   add_compile_options(-g)
 endif()
-# engine_split_debug_info(<executable>): the per-program half of the option above.
+# macOS (Phase 26 Day 306): the linker leaves the DWARF in the object files and only a debug map in the binary, and libbacktrace reads file and line
+# from a dSYM bundle next to the binary. engine_dsym(<target>) runs dsymutil after linking (<binary>.dSYM beside <binary>); without dsymutil, or with
+# ENGINE_DSYM off, traces name functions only (from the symbol table). Nothing is stripped: the dSYM is the debug information, the binary keeps its
+# symbols.
+if(APPLE)
+  option(ENGINE_DSYM "macOS: make a dSYM next to the binaries that call engine_dsym (dsymutil) so their stack traces have file and line" ON)
+  if(ENGINE_DSYM)
+    execute_process(COMMAND xcrun --find dsymutil OUTPUT_VARIABLE ENGINE_DSYMUTIL OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+    if(NOT ENGINE_DSYMUTIL)
+      message(STATUS "dsymutil not found (xcode-select --install): no dSYMs, so stack traces name functions without file and line")
+    endif()
+  endif()
+endif()
+function(engine_dsym target)
+  if(NOT APPLE)
+    return()
+  endif()
+  # Only a build with debug information has DWARF to collect (Debug, RelWithDebInfo); otherwise, and with the option off, an old dSYM is removed
+  # after each link, so a stale bundle never sits beside a rebuilt binary.
+  if(ENGINE_DSYM AND ENGINE_DSYMUTIL AND CMAKE_BUILD_TYPE MATCHES "^(Debug|RelWithDebInfo)$")
+    add_custom_command(TARGET ${target} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E rm -rf $<TARGET_FILE:${target}>.dSYM
+      COMMAND ${ENGINE_DSYMUTIL} $<TARGET_FILE:${target}> -o $<TARGET_FILE:${target}>.dSYM
+      COMMENT "Writing the dSYM of ${target}")
+  else()
+    add_custom_command(TARGET ${target} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E rm -rf $<TARGET_FILE:${target}>.dSYM)
+  endif()
+endfunction()
+
+# engine_split_debug_info(<executable>): the per-program half of the option above. On macOS it is the dSYM (engine_dsym).
 function(engine_split_debug_info target)
   if(ENGINE_SPLIT_DEBUG_INFO AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
     add_custom_command(TARGET ${target} POST_BUILD
       COMMAND ${CMAKE_SOURCE_DIR}/scripts/split-debug.sh $<TARGET_FILE:${target}>
       COMMENT "Splitting the debug information of ${target}")
   endif()
+  engine_dsym(${target})
 endfunction()
 
 # Whether programs install the crash handler by default (debug/program_setup.h): on in Debug and RelWithDebInfo, off in Release
@@ -228,6 +259,8 @@ endif()
 # the "not yet ported" message shrinks with it and is gone on Day 326 (plans/phase-26-macos-metal.md).
 if(ENGINE_PLATFORM STREQUAL "macos")
   include(cmake/EngineTestPhases.cmake)
+  # Third-party code first, before the engine's warning options, so it keeps its own flags (as on Linux). libbacktrace: Mach-O, Day 306.
+  add_subdirectory(third_party/libbacktrace)
   option(ENGINE_UNITY_BUILD "Compile each target's sources as merged unity translation units" ON)
   set(CMAKE_UNITY_BUILD ${ENGINE_UNITY_BUILD})
   set(CMAKE_UNITY_BUILD_BATCH_SIZE 16)
@@ -239,6 +272,9 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(tests/foundation)  # the base-layer tests (foundation_base_tests), Day 301; the file-layer and window ones need later days
   add_subdirectory(tests/foundation_sanitized)
   add_subdirectory(tests/io)  # the file layer, Days 303-305
+  add_subdirectory(tools/crash_extract)  # Day 306: the dump reader (the resolver's macOS branch is Day 308)
+  include(cmake/EngineDeathTests.cmake)
+  add_subdirectory(tests/debug)  # Day 306: stack traces and the crash context; the rest of the backend on Days 307-308
   add_subdirectory(tests/types)
   add_subdirectory(tests/lang)
   add_subdirectory(tests/sync)
@@ -251,8 +287,8 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   endforeach()
   add_subdirectory(tests/phase_labels)
   add_subdirectory(tests/test_phase_script)
-  message(STATUS "macOS (Phase 26 Day 305): building the base and file layers of the foundation, the job system and their tests, the gates and the test tooling. Not "
-                 "yet ported, so not configured: docgen (Day 309), debugging (Days 306-308), settings (Day 309), text, UI, ECS and "
+  message(STATUS "macOS (Phase 26 Day 306): building the base, file and debugging layers of the foundation, the job system and their tests, the gates and the test tooling. Not "
+                 "yet ported, so not configured: docgen (Day 309), the crash handler, death tests and post-mortem dumps (Days 307-308), settings (Day 309), text, UI, ECS and "
                  "spatial (Day 310), the platform layer (Days 311-313), the RHI and renderer (Days 314-325), the demos and tools (Day 326).")
   return()
 endif()

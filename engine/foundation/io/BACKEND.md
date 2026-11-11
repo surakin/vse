@@ -340,7 +340,7 @@ file is `IsADirectory` (`AlreadyExists` with `kOpenCreateNew`, as `O_EXCL` says)
 run on the executor as on Linux: `dispatch_io` was measured on Day 304 and lost (warm cache, the development Mac: 1,000 random 4 KiB reads 13-16 ms on the
 executor against 232-239 ms through a `DISPATCH_IO_RANDOM` channel; one 64 MiB read 50-55 ms against 70-75 ms). It cannot read into the caller's
 buffer (the data arrives as `dispatch_data_t` and is copied) and pays its scheduling per read; `LocalFile` does not claim `kCapNativelyAsync`.
-`Directory::Open`, `Next`, `Info` and `Close` are the shared POSIX ones (`io/posix/directory.cpp`), with `st_mtimespec` through the hook.
+`Directory::Open`, `Next`, `Info` and `Close` are the shared POSIX ones (`io/posix/posix_directory.cpp`), with `st_mtimespec` through the hook.
 
 
 ### `Next`
@@ -371,7 +371,7 @@ Windows, as built (Day 151): `io/windows/error.cpp`, tested by `tests/io/io_wind
 `ERROR_HANDLE_EOF` `EndOfFile`; `ERROR_NOT_READY`, `ERROR_BROKEN_PIPE`, `ERROR_IO_PENDING` and the device errors are `Io`. A message is the
 engine's text and the number (`Status::os_code`); `FormatMessageW` is not called.
 
-macOS, as built (Day 303): Linux's errno table, shared (`io/posix/error.cpp`), with what Darwin adds: `EOPNOTSUPP` is a number of its own (102; `ENOTSUP`
+macOS, as built (Day 303): Linux's errno table, shared (`io/posix/posix_error.cpp`), with what Darwin adds: `EOPNOTSUPP` is a number of its own (102; `ENOTSUP`
 is 45; on Linux they are one) and is `Unsupported`; `EAUTH` and `ENEEDAUTH` are `PermissionDenied`, `EFTYPE` `Invalid`, `ENOATTR` `NotFound`. Tested
 by `tests/io/io_macos_test.cpp`.
 
