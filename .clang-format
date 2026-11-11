@@ -26,7 +26,8 @@ SortIncludes: Never
 IncludeBlocks: Preserve
 IndentPPDirectives: None
 BreakStringLiterals: false
-ReflowComments: true
+# false: reflow joins a doc-comment label line (`Fails: never.`) onto the line before it. Long comments are wrapped by scripts/wrap_comments.py, which knows the labels.
+ReflowComments: false
 MaxEmptyLinesToKeep: 1
 KeepEmptyLines:
   AtStartOfBlock: false
