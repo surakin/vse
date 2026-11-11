@@ -24,6 +24,7 @@ enum class ErrorCode : u8 {
     Cancelled,     ///< A [[storage::CancelToken]] was set; the operation stopped between batches and changed nothing that was committed.
     MissingReference, ///< A reference names a key that is in no stored set and no world.
     Duplicate,     ///< Two entities carry one key.
+    Unsupported,   ///< The store or the component does not offer this (a query on a store without the column layout, or on a component that is not queryable).
     Other,         ///< Anything else.
 };
 

@@ -108,6 +108,18 @@ public:
     /// Ownership: `record` is copied; it is read during the call only.
     /// Fails: `Invalid` (null key); `Busy` (a batch belongs to another thread); `Io`; `LimitExceeded`.
     virtual Status Put(const EntityRecord& record) = 0;
+    /// Stores every record of `records`, in order, as if `Put` had been called for each; a backend overrides it to write them faster (the SQL store sends several rows
+    /// in one statement). A failure leaves the earlier records of the span stored (inside a batch the caller rolls it back).
+    ///
+    /// Param records: the records, each as `Put` requires.
+    /// Ownership: borrowed; read during the call only.
+    /// Fails: those of `Put`.
+    virtual Status PutMany(Span<const EntityRecord> records) {
+        for (usize i = 0; i < records.Size(); ++i) {
+            ENGINE_TRY(Put(records[i]));
+        }
+        return Status::Success();
+    }
     /// Copies the record with `key` into `out`.
     ///
     /// Param out: receives the record on success; unchanged on failure.

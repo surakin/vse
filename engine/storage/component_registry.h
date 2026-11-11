@@ -22,6 +22,7 @@ enum ComponentFlags : u32 {
     kComponentStored = 0,   ///< Its fields are written and read.
     kComponentDerived = 1,  ///< Rebuilt after a load from other data (a world transform, a spatial proxy): never stored.
     kComponentSkip = 2,     ///< Runtime-only and never stored, by explicit choice.
+    kComponentQueryable = 8, ///< With the stored kind: a SQL store in column layout also keeps its scalar and vector fields in a table of their own, so that tools can query them (strings, arrays, matrices, boxes and references stay in the blob).
     kComponentPresence = 4, ///< With `kComponentDerived`: whether an entity has it is stored (an empty record) and a load adds it default-constructed, for the system that fills it.
 };
 
@@ -85,6 +86,9 @@ public:
     /// Returns true when the fields are written and read (not derived, not skipped).
     /// Fails: never.
     bool IsStored() const { return (flags_ & (kComponentDerived | kComponentSkip)) == 0; }
+    /// Returns true when the component is stored and flagged `kComponentQueryable`.
+    /// Fails: never.
+    bool IsQueryable() const { return IsStored() && (flags_ & kComponentQueryable) != 0; }
     /// The ECS type this registration describes ([[ecs::kInvalidComponent]] when the ECS registry was full).
     ecs::ComponentId EcsId() const { return ecs_id_; }
     /// Returns true when the ECS type is a tag (no data, only presence).

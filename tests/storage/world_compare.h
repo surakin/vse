@@ -5,6 +5,8 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "ecs/query.h"
+#include "ecs/transform.h"
 #include "ecs/world.h"
 #include "storage/component_registry.h"
 #include "storage/identity.h"

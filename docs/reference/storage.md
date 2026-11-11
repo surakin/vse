@@ -258,6 +258,7 @@ How the registry treats a component type.
 | <a id="storage-kcomponentstored"></a>`kComponentStored` | `0` | Its fields are written and read. |
 | <a id="storage-kcomponentderived"></a>`kComponentDerived` | `1` | Rebuilt after a load from other data (a world transform, a spatial proxy): never stored. |
 | <a id="storage-kcomponentskip"></a>`kComponentSkip` | `2` | Runtime-only and never stored, by explicit choice. |
+| <a id="storage-kcomponentqueryable"></a>`kComponentQueryable` | `8` | With the stored kind: a SQL store in column layout also keeps its scalar and vector fields in a table of their own, so that tools can query them (strings, arrays, matrices, boxes and references stay in the blob). |
 | <a id="storage-kcomponentpresence"></a>`kComponentPresence` | `4` | With `kComponentDerived`: whether an entity has it is stored (an empty record) and a load adds it default-constructed, for the system that fills it. |
 
 ## `UpgradeStep` {#storage-upgradestep}
@@ -504,6 +505,20 @@ bool IsStored() const;
 ```
 
 Returns true when the fields are written and read (not derived, not skipped).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `IsQueryable()` {#storage-registeredcomponent-isqueryable-const}
+
+`method storage::RegisteredComponent::IsQueryable` — defined in `engine/storage/component_registry.h`
+
+```cpp
+bool IsQueryable() const;
+```
+
+Returns true when the component is stored and flagged `kComponentQueryable`.
 
 | Field | Value |
 |---|---|
@@ -2003,6 +2018,125 @@ The number of records the session believes the store holds.
 |---|---|
 | Fails | never. |
 
+## `CompareOp` {#storage-compareop}
+
+`enum storage::CompareOp` — defined in `engine/storage/sql_store.h`
+
+```cpp
+enum class CompareOp : u8 { ... }
+```
+
+How a field value is compared in [`storage::SqlStore::FindKeys`](#storage-sqlstore-findkeys-stringview-stringview-compareop-const-database-valueview-amp-vector-lt-entitykey-gt-star-const).
+
+| Enumerator | Value | Description |
+|---|---|---|
+| <a id="storage-compareop-equal"></a>`Equal` |  | Equal to the value. |
+| <a id="storage-compareop-notequal"></a>`NotEqual` |  | Not equal to the value. |
+| <a id="storage-compareop-less"></a>`Less` |  | Less than the value. |
+| <a id="storage-compareop-lessorequal"></a>`LessOrEqual` |  | Less than or equal to the value. |
+| <a id="storage-compareop-greater"></a>`Greater` |  | Greater than the value. |
+| <a id="storage-compareop-greaterorequal"></a>`GreaterOrEqual` |  | Greater than or equal to the value. |
+
+## `IndexRequest` {#storage-indexrequest}
+
+`struct storage::IndexRequest` — defined in `engine/storage/sql_store.h`
+
+```cpp
+struct IndexRequest { ... }
+```
+
+A column to index in the column layout, named as `FindKeys` names it.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data. |
+| Ownership | borrows its names (string literals). |
+
+### `component` {#storage-indexrequest-component}
+
+`variable storage::IndexRequest::component` — defined in `engine/storage/sql_store.h`
+
+```cpp
+const char* component;
+```
+
+The registered name of a queryable component.
+
+### `column` {#storage-indexrequest-column}
+
+`variable storage::IndexRequest::column` — defined in `engine/storage/sql_store.h`
+
+```cpp
+const char* column;
+```
+
+A column of its table (a field name, or `<field>_x` for a vector part).
+
+## `SqlStoreOptions` {#storage-sqlstoreoptions}
+
+`struct storage::SqlStoreOptions` — defined in `engine/storage/sql_store.h`
+
+```cpp
+struct SqlStoreOptions { ... }
+```
+
+What a [`storage::SqlStore`](#storage-sqlstore) does beyond keeping blobs.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data. |
+| Ownership | `registry` is borrowed and must outlive the store. |
+
+### `registry` {#storage-sqlstoreoptions-registry}
+
+`variable storage::SqlStoreOptions::registry` — defined in `engine/storage/sql_store.h`
+
+```cpp
+const ComponentRegistry* registry;
+```
+
+The registry that names the queryable components; needed for `columns`.
+
+### `columns` {#storage-sqlstoreoptions-columns}
+
+`variable storage::SqlStoreOptions::columns` — defined in `engine/storage/sql_store.h`
+
+```cpp
+bool columns;
+```
+
+Keep a table `c_<name>` for every component flagged `kComponentQueryable`, written alongside the entity row and used by `FindKeys`.
+
+### `limits` {#storage-sqlstoreoptions-limits}
+
+`variable storage::SqlStoreOptions::limits` — defined in `engine/storage/sql_store.h`
+
+```cpp
+CodecLimits limits;
+```
+
+The bounds used to decode the blobs for the column tables.
+
+### `indexes` {#storage-sqlstoreoptions-indexes}
+
+`variable storage::SqlStoreOptions::indexes` — defined in `engine/storage/sql_store.h`
+
+```cpp
+const IndexRequest* indexes;
+```
+
+Columns to index (`CREATE INDEX IF NOT EXISTS`) when `columns` is set; an unknown component or column makes `Open` return `Invalid`.
+
+### `index_count` {#storage-sqlstoreoptions-index-count}
+
+`variable storage::SqlStoreOptions::index_count` — defined in `engine/storage/sql_store.h`
+
+```cpp
+usize index_count;
+```
+
+How many requests `indexes` holds.
+
 ## `SqlStore` {#storage-sqlstore}
 
 `class storage::SqlStore` — defined in `engine/storage/sql_store.h`
@@ -2011,12 +2145,14 @@ The number of records the session believes the store holds.
 class SqlStore final : public Store { ... }
 ```
 
-The record store on a [`database::Connection`](database.md#database-connection): one table holds the records, one the metadata.
+The record store on a [`database::Connection`](database.md#database-connection): one table holds the records, one the metadata, and, in column layout, one table per queryable component.
 
 - `entity(key BLOB PRIMARY KEY, seq INTEGER NOT NULL, hash BLOB NOT NULL, data BLOB NOT NULL)`: the key as 16 bytes big-endian (so the database's order is key order), the number of the write that stored it, the content hash as 8 bytes big-endian, and the record's bytes;
 - `meta(key TEXT PRIMARY KEY, value BLOB)`.
 
 (A database migrated in place by `ALTER TABLE ... ADD COLUMN` has `seq` without `NOT NULL`, the rebuild path has it with; the store does not depend on the difference.)
+
+**Column layout.** With `SqlStoreOptions::columns`, a component flagged `kComponentQueryable` also gets `c_<name>(key BLOB PRIMARY KEY REFERENCES entity(key) ON DELETE CASCADE, one column per scalar or vector field)`: integers, booleans and enums are `INTEGER` (a `u64` as its bit pattern), `f32`/`f64` are `REAL` (a NaN is stored as NULL), a `Vec2`/`Vec3`/`Vec4`/`Quaternion` is one `REAL` column per part (`<field>_x`, `_y`, `_z`, `_w`); strings, arrays, matrices, boxes and references stay in the blob only. The blob remains the source of truth: a load reads it alone, so both layouts load the same world. The tables follow the registry: a new field is added with `ALTER TABLE ADD COLUMN` where the connection supports it, otherwise the table is rebuilt, and in both cases refilled from the blobs inside the transaction `Open` makes. Opening a database that was last written without columns refills every table from the blobs. Table and column names come from the registry and must be plain identifiers (`Open` returns `Invalid` otherwise); they are the only SQL text not written as a literal, and all values are bound.
 
 Only the portable statement subset of the storage design (section 4c) is used, every statement is prepared once when the store opens and data is only bound. The schema version is the connection's (`Connection::SchemaVersion`) and is also written to the metadata (`schema_version`); `Open` applies the missing migration steps in one transaction, and a database with a newer schema than this program knows is refused with `TooNew` and left as it was.
 
@@ -2054,6 +2190,22 @@ Opens the store on `connection`: creates or migrates the schema and prepares the
 | Fails | `TooNew` (the database has a newer schema; nothing changed); `Corrupt`, `Busy`, `Io`, `Invalid` (a transaction is open); the database's own failures mapped to these. |
 | Ownership | `connection` is borrowed and must outlive the store; `out` owns the store. |
 
+### `Open(database::Connection&,UniquePtr<SqlStore>*,const SqlStoreOptions&)` {#storage-sqlstore-open-database-connection-amp-uniqueptr-lt-sqlstore-gt-star-const-sqlstoreoptions-amp}
+
+`method storage::SqlStore::Open` — defined in `engine/storage/sql_store.h`
+
+```cpp
+static Status Open(database::Connection& connection, UniquePtr<SqlStore>* out, const SqlStoreOptions& options);
+```
+
+As the other `Open`, with the layout choices of `options`.
+
+| Field | Value |
+|---|---|
+| Parameter `options` | the registry and whether to keep column tables. |
+| Fails | as the other `Open`; `Invalid` (columns without a registry, a queryable component or field whose name is not a plain identifier). |
+| Ownership | `connection` and `options.registry` are borrowed and must outlive the store. |
+
 ### `SqlStore(database::Connection&)` {#storage-sqlstore-sqlstore-database-connection-amp}
 
 `constructor storage::SqlStore::SqlStore` — defined in `engine/storage/sql_store.h`
@@ -2062,7 +2214,7 @@ Opens the store on `connection`: creates or migrates the schema and prepares the
 explicit SqlStore(database::Connection& connection);
 ```
 
-Borrows `connection` without touching it; use [`storage::SqlStore::Open`](#storage-sqlstore-open-database-connection-amp-uniqueptr-lt-sqlstore-gt-star), which makes the schema and prepares the statements (the constructor is public only so that `MakeUnique` can reach it).
+Borrows `connection` without touching it; use `SqlStore::Open`, which makes the schema and prepares the statements (the constructor is public only so that `MakeUnique` can reach it).
 
 | Field | Value |
 |---|---|
@@ -2125,6 +2277,16 @@ Status Put(const EntityRecord& record) override;
 Stores `record`, replacing the record with its key.
 
 _Inherited from [`storage::Store::Put(const EntityRecord&)`](#storage-store-put-const-entityrecord-amp)._
+
+### `PutMany(Span<const EntityRecord>)` {#storage-sqlstore-putmany-span-lt-const-entityrecord-gt}
+
+`method storage::SqlStore::PutMany` — defined in `engine/storage/sql_store.h`
+
+```cpp
+Status PutMany(Span<const EntityRecord> records) override;
+```
+
+Writes the records with multi-row statements (sixteen rows at a time), then their column rows.
 
 ### `Get(EntityKey,EntityRecord*)` {#storage-sqlstore-get-entitykey-entityrecord-star-const}
 
@@ -2234,6 +2396,58 @@ Writes a metadata value, replacing the old one.
 
 _Inherited from [`storage::Store::SetMetadata(StringView,StringView)`](#storage-store-setmetadata-stringview-stringview)._
 
+### `FindKeys(StringView,StringView,CompareOp,const database::ValueView&,Vector<EntityKey>*)` {#storage-sqlstore-findkeys-stringview-stringview-compareop-const-database-valueview-amp-vector-lt-entitykey-gt-star-const}
+
+`method storage::SqlStore::FindKeys` — defined in `engine/storage/sql_store.h`
+
+```cpp
+Status FindKeys(StringView component, StringView column, CompareOp op, const database::ValueView& value, Vector<EntityKey>* out) const;
+```
+
+Returns the keys of the entities whose `component` has a `column` that compares true with `value`, in key order. Answers from the column table; no blob is read.
+
+| Field | Value |
+|---|---|
+| Parameter `component` | the registered name of a queryable component. |
+| Parameter `column` | a column of its table (a field name, or `<field>_x` for a vector part). |
+| Parameter `op` | the comparison, `column op value`. |
+| Parameter `value` | an integer for an integer column, an integer or a real for a real one. |
+| Parameter `out` | receives the keys (cleared first). |
+| Fails | `Unsupported` (the store has no column layout, or the component is not queryable); `NotFound` (no such component or column); `Invalid` (the value has the wrong type); `Busy`; `Io`; `Corrupt`. |
+| Ownership | all borrowed for the call. |
+
+### `CountWhere(StringView,StringView,CompareOp,const database::ValueView&,usize*)` {#storage-sqlstore-countwhere-stringview-stringview-compareop-const-database-valueview-amp-usize-star-const}
+
+`method storage::SqlStore::CountWhere` — defined in `engine/storage/sql_store.h`
+
+```cpp
+Status CountWhere(StringView component, StringView column, CompareOp op, const database::ValueView& value, usize* out) const;
+```
+
+Counts the entities `FindKeys` would return.
+
+| Field | Value |
+|---|---|
+| Parameter `out` | receives the count. |
+| Fails | as `FindKeys`. |
+| Ownership | all borrowed for the call. |
+
+### `VerifyColumns(usize*)` {#storage-sqlstore-verifycolumns-usize-star-const}
+
+`method storage::SqlStore::VerifyColumns` — defined in `engine/storage/sql_store.h`
+
+```cpp
+Status VerifyColumns(usize* mismatches) const;
+```
+
+Checks the column tables against the blobs: every queryable component of every entity has exactly the row its blob gives, and no row is left over. For tests and tools.
+
+| Field | Value |
+|---|---|
+| Parameter `mismatches` | receives the number of rows that are missing, extra or different. |
+| Fails | `Unsupported` (no column layout); `Busy`; `Io`; `Corrupt`. |
+| Ownership | `mismatches` is written during the call only. |
+
 ### `FailAfter(u32)` {#storage-sqlstore-failafter-u32}
 
 `method storage::SqlStore::FailAfter` — defined in `engine/storage/sql_store.h`
@@ -2275,6 +2489,7 @@ What went wrong.
 | <a id="storage-errorcode-cancelled"></a>`Cancelled` |  | A [`storage::CancelToken`](#storage-canceltoken) was set; the operation stopped between batches and changed nothing that was committed. |
 | <a id="storage-errorcode-missingreference"></a>`MissingReference` |  | A reference names a key that is in no stored set and no world. |
 | <a id="storage-errorcode-duplicate"></a>`Duplicate` |  | Two entities carry one key. |
+| <a id="storage-errorcode-unsupported"></a>`Unsupported` |  | The store or the component does not offer this (a query on a store without the column layout, or on a component that is not queryable). |
 | <a id="storage-errorcode-other"></a>`Other` |  | Anything else. |
 
 ## `ErrorCodeName(ErrorCode)` {#storage-errorcodename-errorcode}
@@ -3260,6 +3475,22 @@ Stores `record`, replacing the record with its key.
 | Parameter `record` | a non-null key, a blob within the record limit. |
 | Fails | `Invalid` (null key); `Busy` (a batch belongs to another thread); `Io`; `LimitExceeded`. |
 | Ownership | `record` is copied; it is read during the call only. |
+
+### `PutMany(Span<const EntityRecord>)` {#storage-store-putmany-span-lt-const-entityrecord-gt}
+
+`method storage::Store::PutMany` — defined in `engine/storage/store.h`
+
+```cpp
+virtual Status PutMany(Span<const EntityRecord> records);
+```
+
+Stores every record of `records`, in order, as if `Put` had been called for each; a backend overrides it to write them faster (the SQL store sends several rows in one statement). A failure leaves the earlier records of the span stored (inside a batch the caller rolls it back).
+
+| Field | Value |
+|---|---|
+| Parameter `records` | the records, each as `Put` requires. |
+| Fails | those of `Put`. |
+| Ownership | borrowed; read during the call only. |
 
 ### `Get(EntityKey,EntityRecord*)` {#storage-store-get-entitykey-entityrecord-star-const}
 

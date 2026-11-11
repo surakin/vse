@@ -18,6 +18,7 @@ const char* ErrorCodeName(ErrorCode code) {
     case ErrorCode::Cancelled: return "cancelled";
     case ErrorCode::MissingReference: return "missing reference";
     case ErrorCode::Duplicate: return "duplicate";
+    case ErrorCode::Unsupported: return "unsupported";
     case ErrorCode::Other: return "other";
     }
     return "other";

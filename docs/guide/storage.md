@@ -299,3 +299,30 @@ int main() {
 ```output
 sql holds 1 record
 ```
+
+### Column layout and queries
+
+A component flagged `kComponentQueryable` in its registration also gets a table of its own when the store is opened with `SqlStoreOptions::columns`: `c_<name>(key, one column per scalar or
+vector field)`. Integers, booleans and enums are `INTEGER` (a `u64` as its bit pattern, so ordering above 2^63 is signed), `f32` and `f64` are `REAL` (a NaN is NULL, which no comparison matches),
+and a `Vec2`, `Vec3`, `Vec4` or `Quaternion` is one `REAL` column per part, named `<field>_x`, `_y`, `_z`, `_w`. Strings, arrays, matrices, boxes and references stay in the blob only. The
+entity row is still the source of truth: a load reads it and nothing else, so both layouts load the same world, and `VerifyColumns` checks the tables against the blobs.
+
+```cpp
+SqlStoreOptions options;
+options.registry = &registry;
+options.columns = true;
+const IndexRequest hp_index[] = {{"actor", "hp"}};   // optional: an index for the column
+options.indexes = hp_index;
+options.index_count = 1;
+SqlStore::Open(connection, &store, options);
+
+Vector<EntityKey> hurt;
+store->FindKeys("actor", "hp", CompareOp::Less, database::ValueView::Integer(10), &hurt);  // keys in key order, no blob read
+```
+
+`FindKeys` and `CountWhere` answer from the table; a component that is not queryable is `Unsupported`, a name nobody registered is `NotFound`. When a registration gains a field, `Open` adds the column
+with `ALTER TABLE ADD COLUMN` if the connection can and rebuilds the table otherwise, then refills it from the blobs (through the component's upgrade chain) inside one transaction. A database last
+written without columns is refilled the same way the next time it is opened with them. Saves go to the store in groups (`Store::PutMany`); the SQL store sends sixteen rows per statement.
+
+On 100,000 entities with ten fields each (file database, debug build): blob only saves in about 0.45 s, with columns in about 0.93 s (1.0 s with an index), and both load in about 0.6 s; a query for
+one integer field answers 18,268 hits in 6.8 ms without an index and 0.5 ms with one.

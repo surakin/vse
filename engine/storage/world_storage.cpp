@@ -13,6 +13,29 @@ namespace engine_placeholder::storage {
 
 namespace {
 
+// Collects records and hands them to the store in groups, so that a store with a faster multi-record write can use it.
+class PutQueue {
+public:
+    explicit PutQueue(Store& store) : store_(&store) {}
+    Status Add(EntityKey key, ByteSpan bytes) {
+        pending_.Push(EntityRecord::Make(key, bytes));
+        return pending_.Size() >= kGroup ? Flush() : Status::Success();
+    }
+    Status Flush() {
+        if (pending_.Empty()) {
+            return Status::Success();
+        }
+        const Status s = store_->PutMany(Span<const EntityRecord>(pending_.Data(), pending_.Size()));
+        pending_.Clear();
+        return s;
+    }
+
+private:
+    static constexpr usize kGroup = 256;
+    Store* store_;
+    Vector<EntityRecord> pending_;
+};
+
 constexpr u32 kStoredFormat = 1;
 constexpr const char* kManifestName = "manifest";
 
@@ -320,6 +343,7 @@ Status WorldStorage::Save(ecs::World& world, KeyIndex& index, const SaveOptions&
     const usize step = options.batch_size == 0 ? 1 : options.batch_size;
     Status failure = Status::Success();
     Vector<u64> hashes; // of each chosen entity, for a session
+    PutQueue queue(*store_);
     usize s = 0;        // position in `stored`
     for (usize i = 0; i < chosen.Size() && failure.Ok(); ++i) {
         if (i % step == 0) {
@@ -344,12 +368,15 @@ Status WorldStorage::Save(ecs::World& world, KeyIndex& index, const SaveOptions&
         if (reconcile && existed && stored.hashes[s] == hash) {
             continue;
         }
-        failure = store_->Put(EntityRecord::Make(chosen[i].key, blob.Bytes()));
+        failure = queue.Add(chosen[i].key, blob.Bytes());
         if (failure.Failed()) {
             break;
         }
         ++(existed ? r.replaced : r.created);
         r.bytes += blob.Size();
+    }
+    if (failure.Ok()) {
+        failure = queue.Flush();
     }
     if (failure.Ok() && options.selection.kind == Selection::Kind::AllKeyed) {
         // Records of entities that no longer exist (or lost their key). Both lists are in key order.
@@ -443,6 +470,7 @@ Status WorldStorage::SaveChanged(ecs::World& world, KeyIndex& index, const SaveO
     const u64 since = session.since_;
     const u64 now = world.Tick();
     usize encoded_here = 0;
+    PutQueue queue(*store_);
     Vector<Put> rekeyed; // entities seen in a changed chunk, with the key they have now
     for (u32 a = 0; a < view.ArchetypeCount() && failure.Ok(); ++a) {
         const ecs::Archetype& archetype = view.ArchetypeAt(a);
@@ -484,7 +512,7 @@ Status WorldStorage::SaveChanged(ecs::World& world, KeyIndex& index, const SaveO
                 const u64 hash = HashBytes(blob.Bytes());
                 const u64* old = session.hash_of_->Find(key);
                 if (old == nullptr || *old != hash) {
-                    failure = store_->Put(EntityRecord::Make(key, blob.Bytes()));
+                    failure = queue.Add(key, blob.Bytes());
                     if (failure.Failed()) {
                         break;
                     }
@@ -499,6 +527,9 @@ Status WorldStorage::SaveChanged(ecs::World& world, KeyIndex& index, const SaveO
                 rekeyed.Push(Put{key, e, 0});
             }
         }
+    }
+    if (failure.Ok()) {
+        failure = queue.Flush();
     }
     for (usize i = 0; i < removes.Size() && failure.Ok(); ++i) {
         failure = store_->Remove(removes[i]);

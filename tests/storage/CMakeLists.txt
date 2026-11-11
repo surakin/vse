@@ -11,6 +11,7 @@ set(STORAGE_TEST_SOURCES
   incremental_test.cpp  # Day 261
   sql_store_test.cpp  # Day 262
   old_schema.cpp  # Day 262
+  sql_layout_test.cpp  # Day 263
 )
 
 find_package(Threads REQUIRED)

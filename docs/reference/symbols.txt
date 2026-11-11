@@ -3861,62 +3861,64 @@ storage::ComponentFlags	enum	storage	storage-componentflags	storage.md	engine/st
 storage::kComponentStored	enumerator	storage	storage-kcomponentstored	storage.md	engine/storage/component_registry.h:22
 storage::kComponentDerived	enumerator	storage	storage-kcomponentderived	storage.md	engine/storage/component_registry.h:23
 storage::kComponentSkip	enumerator	storage	storage-kcomponentskip	storage.md	engine/storage/component_registry.h:24
-storage::kComponentPresence	enumerator	storage	storage-kcomponentpresence	storage.md	engine/storage/component_registry.h:25
-storage::UpgradeStep	struct	storage	storage-upgradestep	storage.md	engine/storage/component_registry.h:34
-storage::UpgradeStep::from_version	variable	storage	storage-upgradestep-from-version	storage.md	engine/storage/component_registry.h:35
-storage::UpgradeStep::run	variable	storage	storage-upgradestep-run	storage.md	engine/storage/component_registry.h:37
-storage::CustomCodec	struct	storage	storage-customcodec	storage.md	engine/storage/component_registry.h:44
-storage::CustomCodec::save	variable	storage	storage-customcodec-save	storage.md	engine/storage/component_registry.h:46
-storage::CustomCodec::load	variable	storage	storage-customcodec-load	storage.md	engine/storage/component_registry.h:48
-storage::ComponentDesc	struct	storage	storage-componentdesc	storage.md	engine/storage/component_registry.h:55
-storage::ComponentDesc::id	variable	storage	storage-componentdesc-id	storage.md	engine/storage/component_registry.h:56
-storage::ComponentDesc::name	variable	storage	storage-componentdesc-name	storage.md	engine/storage/component_registry.h:57
-storage::ComponentDesc::version	variable	storage	storage-componentdesc-version	storage.md	engine/storage/component_registry.h:58
-storage::ComponentDesc::oldest_version	variable	storage	storage-componentdesc-oldest-version	storage.md	engine/storage/component_registry.h:59
-storage::ComponentDesc::flags	variable	storage	storage-componentdesc-flags	storage.md	engine/storage/component_registry.h:60
-storage::ComponentDesc::fields	variable	storage	storage-componentdesc-fields	storage.md	engine/storage/component_registry.h:61
-storage::ComponentDesc::upgrades	variable	storage	storage-componentdesc-upgrades	storage.md	engine/storage/component_registry.h:62
-storage::ComponentDesc::custom	variable	storage	storage-componentdesc-custom	storage.md	engine/storage/component_registry.h:63
-storage::RegisteredComponent	class	storage	storage-registeredcomponent	storage.md	engine/storage/component_registry.h:70
-storage::RegisteredComponent::Id() const	function	storage	storage-registeredcomponent-id-const	storage.md	engine/storage/component_registry.h:73
-storage::RegisteredComponent::Name() const	function	storage	storage-registeredcomponent-name-const	storage.md	engine/storage/component_registry.h:78
-storage::RegisteredComponent::Version() const	function	storage	storage-registeredcomponent-version-const	storage.md	engine/storage/component_registry.h:80
-storage::RegisteredComponent::OldestVersion() const	function	storage	storage-registeredcomponent-oldestversion-const	storage.md	engine/storage/component_registry.h:82
-storage::RegisteredComponent::Flags() const	function	storage	storage-registeredcomponent-flags-const	storage.md	engine/storage/component_registry.h:84
-storage::RegisteredComponent::IsStored() const	function	storage	storage-registeredcomponent-isstored-const	storage.md	engine/storage/component_registry.h:87
-storage::RegisteredComponent::EcsId() const	function	storage	storage-registeredcomponent-ecsid-const	storage.md	engine/storage/component_registry.h:89
-storage::RegisteredComponent::IsTag() const	function	storage	storage-registeredcomponent-istag-const	storage.md	engine/storage/component_registry.h:92
-storage::RegisteredComponent::Fields() const	function	storage	storage-registeredcomponent-fields-const	storage.md	engine/storage/component_registry.h:94
-storage::RegisteredComponent::Encode(const void*,bytes::ByteWriter&,const CodecLimits&) const	function	storage	storage-registeredcomponent-encode-const-void-star-bytes-bytewriter-amp-const-codeclimits-amp-const	storage.md	engine/storage/component_registry.h:103
-storage::RegisteredComponent::Decode(bytes::ByteReader&,void*,const CodecLimits&) const	function	storage	storage-registeredcomponent-decode-bytes-bytereader-amp-void-star-const-codeclimits-amp-const	storage.md	engine/storage/component_registry.h:111
-storage::RegisteredComponent::DecodeRecord(u32,ByteSpan,void*,const CodecLimits&) const	function	storage	storage-registeredcomponent-decoderecord-u32-bytespan-void-star-const-codeclimits-amp-const	storage.md	engine/storage/component_registry.h:121
-storage::UnknownPolicy	enum	storage	storage-unknownpolicy	storage.md	engine/storage/component_registry.h:138
-storage::UnknownPolicy::Fail	enumerator	storage	storage-unknownpolicy-fail	storage.md	engine/storage/component_registry.h:139
-storage::UnknownPolicy::SkipAndReport	enumerator	storage	storage-unknownpolicy-skipandreport	storage.md	engine/storage/component_registry.h:140
-storage::UnknownPolicy::KeepOpaque	enumerator	storage	storage-unknownpolicy-keepopaque	storage.md	engine/storage/component_registry.h:141
-storage::RecordAction	enum	storage	storage-recordaction	storage.md	engine/storage/component_registry.h:145
-storage::RecordAction::Decode	enumerator	storage	storage-recordaction-decode	storage.md	engine/storage/component_registry.h:146
-storage::RecordAction::Skip	enumerator	storage	storage-recordaction-skip	storage.md	engine/storage/component_registry.h:147
-storage::RecordAction::KeepOpaque	enumerator	storage	storage-recordaction-keepopaque	storage.md	engine/storage/component_registry.h:148
-storage::ManifestEntry	struct	storage	storage-manifestentry	storage.md	engine/storage/component_registry.h:155
-storage::ManifestEntry::id	variable	storage	storage-manifestentry-id	storage.md	engine/storage/component_registry.h:156
-storage::ManifestEntry::name	variable	storage	storage-manifestentry-name	storage.md	engine/storage/component_registry.h:157
-storage::ManifestEntry::version	variable	storage	storage-manifestentry-version	storage.md	engine/storage/component_registry.h:158
-storage::ComponentRegistry	class	storage	storage-componentregistry	storage.md	engine/storage/component_registry.h:165
-storage::ComponentRegistry::ComponentRegistry()	function	storage	storage-componentregistry-componentregistry	storage.md	engine/storage/component_registry.h:168
-storage::ComponentRegistry::ComponentRegistry(const ComponentRegistry&)	function	storage	storage-componentregistry-componentregistry-const-componentregistry-amp	storage.md	engine/storage/component_registry.h:169
-storage::ComponentRegistry::operator=(const ComponentRegistry&)	function	storage	storage-componentregistry-operator-eq-const-componentregistry-amp	storage.md	engine/storage/component_registry.h:170
-storage::ComponentRegistry::Register(const ComponentDesc&)	function	storage	storage-componentregistry-register-const-componentdesc-amp	storage.md	engine/storage/component_registry.h:177
-storage::ComponentRegistry::FindById(u32) const	function	storage	storage-componentregistry-findbyid-u32-const	storage.md	engine/storage/component_registry.h:186
-storage::ComponentRegistry::FindByName(StringView) const	function	storage	storage-componentregistry-findbyname-stringview-const	storage.md	engine/storage/component_registry.h:191
-storage::ComponentRegistry::FindByEcsId(ecs::ComponentId) const	function	storage	storage-componentregistry-findbyecsid-ecs-componentid-const	storage.md	engine/storage/component_registry.h:196
-storage::ComponentRegistry::Find() const	function	storage	storage-componentregistry-find-const	storage.md	engine/storage/component_registry.h:201
-storage::ComponentRegistry::Count() const	function	storage	storage-componentregistry-count-const	storage.md	engine/storage/component_registry.h:206
-storage::ComponentRegistry::At(u32) const	function	storage	storage-componentregistry-at-u32-const	storage.md	engine/storage/component_registry.h:208
-storage::ComponentRegistry::Resolve(u32,UnknownPolicy,const RegisteredComponent**,RecordAction*) const	function	storage	storage-componentregistry-resolve-u32-unknownpolicy-const-registeredcomponent-star-star-recordaction-star-const	storage.md	engine/storage/component_registry.h:218
-storage::ComponentRegistry::Manifest(Vector<ManifestEntry>*) const	function	storage	storage-componentregistry-manifest-vector-lt-manifestentry-gt-star-const	storage.md	engine/storage/component_registry.h:224
-storage::ComponentRegistry::CheckManifest(Span<const ManifestEntry>) const	function	storage	storage-componentregistry-checkmanifest-span-lt-const-manifestentry-gt-const	storage.md	engine/storage/component_registry.h:231
-storage::ComponentRegistry::UnregisteredWithData(const ecs::World&,Vector<ecs::ComponentId>*) const	function	storage	storage-componentregistry-unregisteredwithdata-const-ecs-world-amp-vector-lt-ecs-componentid-gt-star-const	storage.md	engine/storage/component_registry.h:240
+storage::kComponentQueryable	enumerator	storage	storage-kcomponentqueryable	storage.md	engine/storage/component_registry.h:25
+storage::kComponentPresence	enumerator	storage	storage-kcomponentpresence	storage.md	engine/storage/component_registry.h:26
+storage::UpgradeStep	struct	storage	storage-upgradestep	storage.md	engine/storage/component_registry.h:35
+storage::UpgradeStep::from_version	variable	storage	storage-upgradestep-from-version	storage.md	engine/storage/component_registry.h:36
+storage::UpgradeStep::run	variable	storage	storage-upgradestep-run	storage.md	engine/storage/component_registry.h:38
+storage::CustomCodec	struct	storage	storage-customcodec	storage.md	engine/storage/component_registry.h:45
+storage::CustomCodec::save	variable	storage	storage-customcodec-save	storage.md	engine/storage/component_registry.h:47
+storage::CustomCodec::load	variable	storage	storage-customcodec-load	storage.md	engine/storage/component_registry.h:49
+storage::ComponentDesc	struct	storage	storage-componentdesc	storage.md	engine/storage/component_registry.h:56
+storage::ComponentDesc::id	variable	storage	storage-componentdesc-id	storage.md	engine/storage/component_registry.h:57
+storage::ComponentDesc::name	variable	storage	storage-componentdesc-name	storage.md	engine/storage/component_registry.h:58
+storage::ComponentDesc::version	variable	storage	storage-componentdesc-version	storage.md	engine/storage/component_registry.h:59
+storage::ComponentDesc::oldest_version	variable	storage	storage-componentdesc-oldest-version	storage.md	engine/storage/component_registry.h:60
+storage::ComponentDesc::flags	variable	storage	storage-componentdesc-flags	storage.md	engine/storage/component_registry.h:61
+storage::ComponentDesc::fields	variable	storage	storage-componentdesc-fields	storage.md	engine/storage/component_registry.h:62
+storage::ComponentDesc::upgrades	variable	storage	storage-componentdesc-upgrades	storage.md	engine/storage/component_registry.h:63
+storage::ComponentDesc::custom	variable	storage	storage-componentdesc-custom	storage.md	engine/storage/component_registry.h:64
+storage::RegisteredComponent	class	storage	storage-registeredcomponent	storage.md	engine/storage/component_registry.h:71
+storage::RegisteredComponent::Id() const	function	storage	storage-registeredcomponent-id-const	storage.md	engine/storage/component_registry.h:74
+storage::RegisteredComponent::Name() const	function	storage	storage-registeredcomponent-name-const	storage.md	engine/storage/component_registry.h:79
+storage::RegisteredComponent::Version() const	function	storage	storage-registeredcomponent-version-const	storage.md	engine/storage/component_registry.h:81
+storage::RegisteredComponent::OldestVersion() const	function	storage	storage-registeredcomponent-oldestversion-const	storage.md	engine/storage/component_registry.h:83
+storage::RegisteredComponent::Flags() const	function	storage	storage-registeredcomponent-flags-const	storage.md	engine/storage/component_registry.h:85
+storage::RegisteredComponent::IsStored() const	function	storage	storage-registeredcomponent-isstored-const	storage.md	engine/storage/component_registry.h:88
+storage::RegisteredComponent::IsQueryable() const	function	storage	storage-registeredcomponent-isqueryable-const	storage.md	engine/storage/component_registry.h:91
+storage::RegisteredComponent::EcsId() const	function	storage	storage-registeredcomponent-ecsid-const	storage.md	engine/storage/component_registry.h:93
+storage::RegisteredComponent::IsTag() const	function	storage	storage-registeredcomponent-istag-const	storage.md	engine/storage/component_registry.h:96
+storage::RegisteredComponent::Fields() const	function	storage	storage-registeredcomponent-fields-const	storage.md	engine/storage/component_registry.h:98
+storage::RegisteredComponent::Encode(const void*,bytes::ByteWriter&,const CodecLimits&) const	function	storage	storage-registeredcomponent-encode-const-void-star-bytes-bytewriter-amp-const-codeclimits-amp-const	storage.md	engine/storage/component_registry.h:107
+storage::RegisteredComponent::Decode(bytes::ByteReader&,void*,const CodecLimits&) const	function	storage	storage-registeredcomponent-decode-bytes-bytereader-amp-void-star-const-codeclimits-amp-const	storage.md	engine/storage/component_registry.h:115
+storage::RegisteredComponent::DecodeRecord(u32,ByteSpan,void*,const CodecLimits&) const	function	storage	storage-registeredcomponent-decoderecord-u32-bytespan-void-star-const-codeclimits-amp-const	storage.md	engine/storage/component_registry.h:125
+storage::UnknownPolicy	enum	storage	storage-unknownpolicy	storage.md	engine/storage/component_registry.h:142
+storage::UnknownPolicy::Fail	enumerator	storage	storage-unknownpolicy-fail	storage.md	engine/storage/component_registry.h:143
+storage::UnknownPolicy::SkipAndReport	enumerator	storage	storage-unknownpolicy-skipandreport	storage.md	engine/storage/component_registry.h:144
+storage::UnknownPolicy::KeepOpaque	enumerator	storage	storage-unknownpolicy-keepopaque	storage.md	engine/storage/component_registry.h:145
+storage::RecordAction	enum	storage	storage-recordaction	storage.md	engine/storage/component_registry.h:149
+storage::RecordAction::Decode	enumerator	storage	storage-recordaction-decode	storage.md	engine/storage/component_registry.h:150
+storage::RecordAction::Skip	enumerator	storage	storage-recordaction-skip	storage.md	engine/storage/component_registry.h:151
+storage::RecordAction::KeepOpaque	enumerator	storage	storage-recordaction-keepopaque	storage.md	engine/storage/component_registry.h:152
+storage::ManifestEntry	struct	storage	storage-manifestentry	storage.md	engine/storage/component_registry.h:159
+storage::ManifestEntry::id	variable	storage	storage-manifestentry-id	storage.md	engine/storage/component_registry.h:160
+storage::ManifestEntry::name	variable	storage	storage-manifestentry-name	storage.md	engine/storage/component_registry.h:161
+storage::ManifestEntry::version	variable	storage	storage-manifestentry-version	storage.md	engine/storage/component_registry.h:162
+storage::ComponentRegistry	class	storage	storage-componentregistry	storage.md	engine/storage/component_registry.h:169
+storage::ComponentRegistry::ComponentRegistry()	function	storage	storage-componentregistry-componentregistry	storage.md	engine/storage/component_registry.h:172
+storage::ComponentRegistry::ComponentRegistry(const ComponentRegistry&)	function	storage	storage-componentregistry-componentregistry-const-componentregistry-amp	storage.md	engine/storage/component_registry.h:173
+storage::ComponentRegistry::operator=(const ComponentRegistry&)	function	storage	storage-componentregistry-operator-eq-const-componentregistry-amp	storage.md	engine/storage/component_registry.h:174
+storage::ComponentRegistry::Register(const ComponentDesc&)	function	storage	storage-componentregistry-register-const-componentdesc-amp	storage.md	engine/storage/component_registry.h:181
+storage::ComponentRegistry::FindById(u32) const	function	storage	storage-componentregistry-findbyid-u32-const	storage.md	engine/storage/component_registry.h:190
+storage::ComponentRegistry::FindByName(StringView) const	function	storage	storage-componentregistry-findbyname-stringview-const	storage.md	engine/storage/component_registry.h:195
+storage::ComponentRegistry::FindByEcsId(ecs::ComponentId) const	function	storage	storage-componentregistry-findbyecsid-ecs-componentid-const	storage.md	engine/storage/component_registry.h:200
+storage::ComponentRegistry::Find() const	function	storage	storage-componentregistry-find-const	storage.md	engine/storage/component_registry.h:205
+storage::ComponentRegistry::Count() const	function	storage	storage-componentregistry-count-const	storage.md	engine/storage/component_registry.h:210
+storage::ComponentRegistry::At(u32) const	function	storage	storage-componentregistry-at-u32-const	storage.md	engine/storage/component_registry.h:212
+storage::ComponentRegistry::Resolve(u32,UnknownPolicy,const RegisteredComponent**,RecordAction*) const	function	storage	storage-componentregistry-resolve-u32-unknownpolicy-const-registeredcomponent-star-star-recordaction-star-const	storage.md	engine/storage/component_registry.h:222
+storage::ComponentRegistry::Manifest(Vector<ManifestEntry>*) const	function	storage	storage-componentregistry-manifest-vector-lt-manifestentry-gt-star-const	storage.md	engine/storage/component_registry.h:228
+storage::ComponentRegistry::CheckManifest(Span<const ManifestEntry>) const	function	storage	storage-componentregistry-checkmanifest-span-lt-const-manifestentry-gt-const	storage.md	engine/storage/component_registry.h:235
+storage::ComponentRegistry::UnregisteredWithData(const ecs::World&,Vector<ecs::ComponentId>*) const	function	storage	storage-componentregistry-unregisteredwithdata-const-ecs-world-amp-vector-lt-ecs-componentid-gt-star-const	storage.md	engine/storage/component_registry.h:244
 storage::EntityKey	struct	storage	storage-entitykey	storage.md	engine/storage/entity_ref.h:17
 storage::EntityKey::high	variable	storage	storage-entitykey-high	storage.md	engine/storage/entity_ref.h:18
 storage::EntityKey::low	variable	storage	storage-entitykey-low	storage.md	engine/storage/entity_ref.h:19
@@ -4026,25 +4028,46 @@ storage::SaveSession::operator=(const SaveSession&)	function	storage	storage-sav
 storage::SaveSession::Reset()	function	storage	storage-savesession-reset	storage.md	engine/storage/save_session.h:33
 storage::SaveSession::HasBaseline() const	function	storage	storage-savesession-hasbaseline-const	storage.md	engine/storage/save_session.h:36
 storage::SaveSession::TrackedRecords() const	function	storage	storage-savesession-trackedrecords-const	storage.md	engine/storage/save_session.h:39
-storage::SqlStore	class	storage	storage-sqlstore	storage.md	engine/storage/sql_store.h:29
-storage::SqlStore::kSchemaVersion	variable	storage	storage-sqlstore-kschemaversion	storage.md	engine/storage/sql_store.h:32
-storage::SqlStore::Open(database::Connection&,UniquePtr<SqlStore>*)	function	storage	storage-sqlstore-open-database-connection-amp-uniqueptr-lt-sqlstore-gt-star	storage.md	engine/storage/sql_store.h:40
-storage::SqlStore::SqlStore(database::Connection&)	function	storage	storage-sqlstore-sqlstore-database-connection-amp	storage.md	engine/storage/sql_store.h:46
-storage::SqlStore::~SqlStore()	function	storage	storage-sqlstore-tilde-sqlstore	storage.md	engine/storage/sql_store.h:48
-storage::SqlStore::SqlStore(const SqlStore&)	function	storage	storage-sqlstore-sqlstore-const-sqlstore-amp	storage.md	engine/storage/sql_store.h:49
-storage::SqlStore::operator=(const SqlStore&)	function	storage	storage-sqlstore-operator-eq-const-sqlstore-amp	storage.md	engine/storage/sql_store.h:50
-storage::SqlStore::Name() const	function	storage	storage-sqlstore-name-const	storage.md	engine/storage/sql_store.h:55
-storage::SqlStore::Put(const EntityRecord&)	function	storage	storage-sqlstore-put-const-entityrecord-amp	storage.md	engine/storage/sql_store.h:56
-storage::SqlStore::Get(EntityKey,EntityRecord*) const	function	storage	storage-sqlstore-get-entitykey-entityrecord-star-const	storage.md	engine/storage/sql_store.h:57
-storage::SqlStore::Remove(EntityKey)	function	storage	storage-sqlstore-remove-entitykey	storage.md	engine/storage/sql_store.h:58
-storage::SqlStore::Scan(const KeyRange&,RecordVisitor&) const	function	storage	storage-sqlstore-scan-const-keyrange-amp-recordvisitor-amp-const	storage.md	engine/storage/sql_store.h:59
-storage::SqlStore::Count(usize*) const	function	storage	storage-sqlstore-count-usize-star-const	storage.md	engine/storage/sql_store.h:60
-storage::SqlStore::Begin()	function	storage	storage-sqlstore-begin	storage.md	engine/storage/sql_store.h:61
-storage::SqlStore::Commit()	function	storage	storage-sqlstore-commit	storage.md	engine/storage/sql_store.h:62
-storage::SqlStore::Rollback()	function	storage	storage-sqlstore-rollback	storage.md	engine/storage/sql_store.h:63
-storage::SqlStore::GetMetadata(StringView,String<HeapAllocator>*) const	function	storage	storage-sqlstore-getmetadata-stringview-string-lt-heapallocator-gt-star-const	storage.md	engine/storage/sql_store.h:64
-storage::SqlStore::SetMetadata(StringView,StringView)	function	storage	storage-sqlstore-setmetadata-stringview-stringview	storage.md	engine/storage/sql_store.h:65
-storage::SqlStore::FailAfter(u32)	function	storage	storage-sqlstore-failafter-u32	storage.md	engine/storage/sql_store.h:71
+storage::CompareOp	enum	storage	storage-compareop	storage.md	engine/storage/sql_store.h:18
+storage::CompareOp::Equal	enumerator	storage	storage-compareop-equal	storage.md	engine/storage/sql_store.h:19
+storage::CompareOp::NotEqual	enumerator	storage	storage-compareop-notequal	storage.md	engine/storage/sql_store.h:20
+storage::CompareOp::Less	enumerator	storage	storage-compareop-less	storage.md	engine/storage/sql_store.h:21
+storage::CompareOp::LessOrEqual	enumerator	storage	storage-compareop-lessorequal	storage.md	engine/storage/sql_store.h:22
+storage::CompareOp::Greater	enumerator	storage	storage-compareop-greater	storage.md	engine/storage/sql_store.h:23
+storage::CompareOp::GreaterOrEqual	enumerator	storage	storage-compareop-greaterorequal	storage.md	engine/storage/sql_store.h:24
+storage::IndexRequest	struct	storage	storage-indexrequest	storage.md	engine/storage/sql_store.h:31
+storage::IndexRequest::component	variable	storage	storage-indexrequest-component	storage.md	engine/storage/sql_store.h:32
+storage::IndexRequest::column	variable	storage	storage-indexrequest-column	storage.md	engine/storage/sql_store.h:33
+storage::SqlStoreOptions	struct	storage	storage-sqlstoreoptions	storage.md	engine/storage/sql_store.h:40
+storage::SqlStoreOptions::registry	variable	storage	storage-sqlstoreoptions-registry	storage.md	engine/storage/sql_store.h:42
+storage::SqlStoreOptions::columns	variable	storage	storage-sqlstoreoptions-columns	storage.md	engine/storage/sql_store.h:44
+storage::SqlStoreOptions::limits	variable	storage	storage-sqlstoreoptions-limits	storage.md	engine/storage/sql_store.h:46
+storage::SqlStoreOptions::indexes	variable	storage	storage-sqlstoreoptions-indexes	storage.md	engine/storage/sql_store.h:48
+storage::SqlStoreOptions::index_count	variable	storage	storage-sqlstoreoptions-index-count	storage.md	engine/storage/sql_store.h:50
+storage::SqlStore	class	storage	storage-sqlstore	storage.md	engine/storage/sql_store.h:78
+storage::SqlStore::kSchemaVersion	variable	storage	storage-sqlstore-kschemaversion	storage.md	engine/storage/sql_store.h:81
+storage::SqlStore::Open(database::Connection&,UniquePtr<SqlStore>*)	function	storage	storage-sqlstore-open-database-connection-amp-uniqueptr-lt-sqlstore-gt-star	storage.md	engine/storage/sql_store.h:89
+storage::SqlStore::Open(database::Connection&,UniquePtr<SqlStore>*,const SqlStoreOptions&)	function	storage	storage-sqlstore-open-database-connection-amp-uniqueptr-lt-sqlstore-gt-star-const-sqlstoreoptions-amp	storage.md	engine/storage/sql_store.h:95
+storage::SqlStore::SqlStore(database::Connection&)	function	storage	storage-sqlstore-sqlstore-database-connection-amp	storage.md	engine/storage/sql_store.h:101
+storage::SqlStore::~SqlStore()	function	storage	storage-sqlstore-tilde-sqlstore	storage.md	engine/storage/sql_store.h:103
+storage::SqlStore::SqlStore(const SqlStore&)	function	storage	storage-sqlstore-sqlstore-const-sqlstore-amp	storage.md	engine/storage/sql_store.h:104
+storage::SqlStore::operator=(const SqlStore&)	function	storage	storage-sqlstore-operator-eq-const-sqlstore-amp	storage.md	engine/storage/sql_store.h:105
+storage::SqlStore::Name() const	function	storage	storage-sqlstore-name-const	storage.md	engine/storage/sql_store.h:110
+storage::SqlStore::Put(const EntityRecord&)	function	storage	storage-sqlstore-put-const-entityrecord-amp	storage.md	engine/storage/sql_store.h:111
+storage::SqlStore::PutMany(Span<const EntityRecord>)	function	storage	storage-sqlstore-putmany-span-lt-const-entityrecord-gt	storage.md	engine/storage/sql_store.h:113
+storage::SqlStore::Get(EntityKey,EntityRecord*) const	function	storage	storage-sqlstore-get-entitykey-entityrecord-star-const	storage.md	engine/storage/sql_store.h:114
+storage::SqlStore::Remove(EntityKey)	function	storage	storage-sqlstore-remove-entitykey	storage.md	engine/storage/sql_store.h:115
+storage::SqlStore::Scan(const KeyRange&,RecordVisitor&) const	function	storage	storage-sqlstore-scan-const-keyrange-amp-recordvisitor-amp-const	storage.md	engine/storage/sql_store.h:116
+storage::SqlStore::Count(usize*) const	function	storage	storage-sqlstore-count-usize-star-const	storage.md	engine/storage/sql_store.h:117
+storage::SqlStore::Begin()	function	storage	storage-sqlstore-begin	storage.md	engine/storage/sql_store.h:118
+storage::SqlStore::Commit()	function	storage	storage-sqlstore-commit	storage.md	engine/storage/sql_store.h:119
+storage::SqlStore::Rollback()	function	storage	storage-sqlstore-rollback	storage.md	engine/storage/sql_store.h:120
+storage::SqlStore::GetMetadata(StringView,String<HeapAllocator>*) const	function	storage	storage-sqlstore-getmetadata-stringview-string-lt-heapallocator-gt-star-const	storage.md	engine/storage/sql_store.h:121
+storage::SqlStore::SetMetadata(StringView,StringView)	function	storage	storage-sqlstore-setmetadata-stringview-stringview	storage.md	engine/storage/sql_store.h:122
+storage::SqlStore::FindKeys(StringView,StringView,CompareOp,const database::ValueView&,Vector<EntityKey>*) const	function	storage	storage-sqlstore-findkeys-stringview-stringview-compareop-const-database-valueview-amp-vector-lt-entitykey-gt-star-const	storage.md	engine/storage/sql_store.h:133
+storage::SqlStore::CountWhere(StringView,StringView,CompareOp,const database::ValueView&,usize*) const	function	storage	storage-sqlstore-countwhere-stringview-stringview-compareop-const-database-valueview-amp-usize-star-const	storage.md	engine/storage/sql_store.h:139
+storage::SqlStore::VerifyColumns(usize*) const	function	storage	storage-sqlstore-verifycolumns-usize-star-const	storage.md	engine/storage/sql_store.h:145
+storage::SqlStore::FailAfter(u32)	function	storage	storage-sqlstore-failafter-u32	storage.md	engine/storage/sql_store.h:151
 storage::ErrorCode	enum	storage	storage-errorcode	storage.md	engine/storage/status.h:12
 storage::ErrorCode::Ok	enumerator	storage	storage-errorcode-ok	storage.md	engine/storage/status.h:13
 storage::ErrorCode::NotFound	enumerator	storage	storage-errorcode-notfound	storage.md	engine/storage/status.h:14
@@ -4060,17 +4083,18 @@ storage::ErrorCode::Io	enumerator	storage	storage-errorcode-io	storage.md	engine
 storage::ErrorCode::Cancelled	enumerator	storage	storage-errorcode-cancelled	storage.md	engine/storage/status.h:24
 storage::ErrorCode::MissingReference	enumerator	storage	storage-errorcode-missingreference	storage.md	engine/storage/status.h:25
 storage::ErrorCode::Duplicate	enumerator	storage	storage-errorcode-duplicate	storage.md	engine/storage/status.h:26
-storage::ErrorCode::Other	enumerator	storage	storage-errorcode-other	storage.md	engine/storage/status.h:27
-storage::ErrorCodeName(ErrorCode)	function	storage	storage-errorcodename-errorcode	storage.md	engine/storage/status.h:34
-storage::Status	class	storage	storage-status	storage.md	engine/storage/status.h:40
-storage::Status::Status()	function	storage	storage-status-status	storage.md	engine/storage/status.h:43
-storage::Status::Success()	function	storage	storage-status-success	storage.md	engine/storage/status.h:46
-storage::Status::Make(ErrorCode,const char*)	function	storage	storage-status-make-errorcode-const-char-star	storage.md	engine/storage/status.h:50
-storage::Status::Ok() const	function	storage	storage-status-ok-const	storage.md	engine/storage/status.h:59
-storage::Status::Failed() const	function	storage	storage-status-failed-const	storage.md	engine/storage/status.h:62
-storage::Status::Is(ErrorCode) const	function	storage	storage-status-is-errorcode-const	storage.md	engine/storage/status.h:65
-storage::Status::Code() const	function	storage	storage-status-code-const	storage.md	engine/storage/status.h:67
-storage::Status::Message() const	function	storage	storage-status-message-const	storage.md	engine/storage/status.h:72
+storage::ErrorCode::Unsupported	enumerator	storage	storage-errorcode-unsupported	storage.md	engine/storage/status.h:27
+storage::ErrorCode::Other	enumerator	storage	storage-errorcode-other	storage.md	engine/storage/status.h:28
+storage::ErrorCodeName(ErrorCode)	function	storage	storage-errorcodename-errorcode	storage.md	engine/storage/status.h:35
+storage::Status	class	storage	storage-status	storage.md	engine/storage/status.h:41
+storage::Status::Status()	function	storage	storage-status-status	storage.md	engine/storage/status.h:44
+storage::Status::Success()	function	storage	storage-status-success	storage.md	engine/storage/status.h:47
+storage::Status::Make(ErrorCode,const char*)	function	storage	storage-status-make-errorcode-const-char-star	storage.md	engine/storage/status.h:51
+storage::Status::Ok() const	function	storage	storage-status-ok-const	storage.md	engine/storage/status.h:60
+storage::Status::Failed() const	function	storage	storage-status-failed-const	storage.md	engine/storage/status.h:63
+storage::Status::Is(ErrorCode) const	function	storage	storage-status-is-errorcode-const	storage.md	engine/storage/status.h:66
+storage::Status::Code() const	function	storage	storage-status-code-const	storage.md	engine/storage/status.h:68
+storage::Status::Message() const	function	storage	storage-status-message-const	storage.md	engine/storage/status.h:73
 storage::CancelToken	class	storage	storage-canceltoken	storage.md	engine/storage/storage_options.h:23
 storage::CancelToken::Cancel()	function	storage	storage-canceltoken-cancel	storage.md	engine/storage/storage_options.h:27
 storage::CancelToken::IsCancelled() const	function	storage	storage-canceltoken-iscancelled-const	storage.md	engine/storage/storage_options.h:30
@@ -4151,16 +4175,17 @@ storage::Store	class	storage	storage-store	storage.md	engine/storage/store.h:96
 storage::Store::~Store()	function	storage	storage-store-tilde-store	storage.md	engine/storage/store.h:98
 storage::Store::Name() const	function	storage	storage-store-name-const	storage.md	engine/storage/store.h:103
 storage::Store::Put(const EntityRecord&)	function	storage	storage-store-put-const-entityrecord-amp	storage.md	engine/storage/store.h:110
-storage::Store::Get(EntityKey,EntityRecord*) const	function	storage	storage-store-get-entitykey-entityrecord-star-const	storage.md	engine/storage/store.h:116
-storage::Store::Remove(EntityKey)	function	storage	storage-store-remove-entitykey	storage.md	engine/storage/store.h:120
-storage::Store::Scan(const KeyRange&,RecordVisitor&) const	function	storage	storage-store-scan-const-keyrange-amp-recordvisitor-amp-const	storage.md	engine/storage/store.h:127
-storage::Store::Count(usize*) const	function	storage	storage-store-count-usize-star-const	storage.md	engine/storage/store.h:133
-storage::Store::Begin()	function	storage	storage-store-begin	storage.md	engine/storage/store.h:137
-storage::Store::Commit()	function	storage	storage-store-commit	storage.md	engine/storage/store.h:140
-storage::Store::Rollback()	function	storage	storage-store-rollback	storage.md	engine/storage/store.h:143
-storage::Store::GetMetadata(StringView,String<HeapAllocator>*) const	function	storage	storage-store-getmetadata-stringview-string-lt-heapallocator-gt-star-const	storage.md	engine/storage/store.h:151
-storage::Store::SetMetadata(StringView,StringView)	function	storage	storage-store-setmetadata-stringview-stringview	storage.md	engine/storage/store.h:158
-storage::ListKeys(const Store&,const KeyRange&,usize,Vector<EntityKey>*)	function	storage	storage-listkeys-const-store-amp-const-keyrange-amp-usize-vector-lt-entitykey-gt-star	storage.md	engine/storage/store.h:169
+storage::Store::PutMany(Span<const EntityRecord>)	function	storage	storage-store-putmany-span-lt-const-entityrecord-gt	storage.md	engine/storage/store.h:117
+storage::Store::Get(EntityKey,EntityRecord*) const	function	storage	storage-store-get-entitykey-entityrecord-star-const	storage.md	engine/storage/store.h:128
+storage::Store::Remove(EntityKey)	function	storage	storage-store-remove-entitykey	storage.md	engine/storage/store.h:132
+storage::Store::Scan(const KeyRange&,RecordVisitor&) const	function	storage	storage-store-scan-const-keyrange-amp-recordvisitor-amp-const	storage.md	engine/storage/store.h:139
+storage::Store::Count(usize*) const	function	storage	storage-store-count-usize-star-const	storage.md	engine/storage/store.h:145
+storage::Store::Begin()	function	storage	storage-store-begin	storage.md	engine/storage/store.h:149
+storage::Store::Commit()	function	storage	storage-store-commit	storage.md	engine/storage/store.h:152
+storage::Store::Rollback()	function	storage	storage-store-rollback	storage.md	engine/storage/store.h:155
+storage::Store::GetMetadata(StringView,String<HeapAllocator>*) const	function	storage	storage-store-getmetadata-stringview-string-lt-heapallocator-gt-star-const	storage.md	engine/storage/store.h:163
+storage::Store::SetMetadata(StringView,StringView)	function	storage	storage-store-setmetadata-stringview-stringview	storage.md	engine/storage/store.h:170
+storage::ListKeys(const Store&,const KeyRange&,usize,Vector<EntityKey>*)	function	storage	storage-listkeys-const-store-amp-const-keyrange-amp-usize-vector-lt-entitykey-gt-star	storage.md	engine/storage/store.h:181
 storage::WorldStorage	class	storage	storage-worldstorage	storage.md	engine/storage/world_storage.h:19
 storage::WorldStorage::WorldStorage(const ComponentRegistry&,Store&)	function	storage	storage-worldstorage-worldstorage-const-componentregistry-amp-store-amp	storage.md	engine/storage/world_storage.h:26
 storage::WorldStorage::SetLimits(const CodecLimits&)	function	storage	storage-worldstorage-setlimits-const-codeclimits-amp	storage.md	engine/storage/world_storage.h:32
