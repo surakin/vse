@@ -10,7 +10,6 @@ using namespace docgen;
 using docgen_test::Num;
 using docgen_test::Str;
 using docgen_test::StrList;
-using docgen_test::StrPairList;
 
 namespace
 {

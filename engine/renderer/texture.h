@@ -48,9 +48,9 @@ public:
     /// Releases everything this object owns.
     ~GpuTexture() override { Destroy(); }
     /// Takes over `other`, which is left empty.
-    GpuTexture(GpuTexture&& other);
+    GpuTexture(GpuTexture&& other) noexcept;
     /// Destroys this texture, then takes over `other`, which is left empty.
-    GpuTexture& operator=(GpuTexture&& other);
+    GpuTexture& operator=(GpuTexture&& other) noexcept;
     GpuTexture(const GpuTexture&) = delete;
     GpuTexture& operator=(const GpuTexture&) = delete;
 
@@ -125,9 +125,9 @@ public:
     /// Releases everything this object owns.
     ~GpuSampler() override { Destroy(); }
     /// Takes over `other`, which is left empty.
-    GpuSampler(GpuSampler&& other);
+    GpuSampler(GpuSampler&& other) noexcept;
     /// Destroys this sampler, then takes over `other`, which is left empty.
-    GpuSampler& operator=(GpuSampler&& other);
+    GpuSampler& operator=(GpuSampler&& other) noexcept;
     GpuSampler(const GpuSampler&) = delete;
     GpuSampler& operator=(const GpuSampler&) = delete;
 

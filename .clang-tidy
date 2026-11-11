@@ -6,6 +6,7 @@
 #   bugprone-signed-bitwise                fires on every `x & 0xff` and `1 << n` with an int literal (780 sites, none a bug)
 #   bugprone-multi-level-implicit-pointer-conversion   Vector<T*> stores pointers through void* storage by design
 #   bugprone-throwing-static-initialization, bugprone-std-exception-baseclass   exceptions are off in this codebase
+#   readability-redundant-member-init     `= {}` on an aggregate's member is what -Wmissing-designated-field-initializers (an error here) needs
 #   performance-enum-size                  enum base types are chosen for the ABI and for Vulkan, not for size
 #   clang-analyzer-cplusplus.PlacementNew  Vector's growth path: the analyzer cannot see that capacity was checked
 #   misc-const-correctness, misc-no-recursion, misc-explicit-constructor, misc-include-cleaner, misc-non-private-member-variables-in-classes
@@ -41,7 +42,6 @@ Checks: >
   readability-else-after-return,
   readability-redundant-control-flow,
   readability-redundant-declaration,
-  readability-redundant-member-init,
   readability-redundant-string-init,
   readability-simplify-boolean-expr,
   readability-container-size-empty,

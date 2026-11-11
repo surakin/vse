@@ -212,7 +212,6 @@ TEST_CASE("X11Window move transfers ownership without double-close", "[x11][os]"
 
 using engine_placeholder::os::InputState;
 using engine_placeholder::os::Key;
-using engine_placeholder::os::KeyFromKeysym;
 
 namespace
 {

@@ -147,3 +147,12 @@
 #endif
 
 #define ENGINE_SANITIZED (ENGINE_SANITIZER_ADDRESS || ENGINE_SANITIZER_THREAD)
+
+// ENGINE_STATIC_ANALYSIS is 1 while the Clang static analyzer (clang-tidy's clang-analyzer-* checks, scripts/tidy.sh)
+// reads the code, else 0. The assert macros use it to tell the analyzer that a failed assertion does not continue, as
+// it does not in a normal build (the handler aborts).
+#if defined(__clang_analyzer__)
+#define ENGINE_STATIC_ANALYSIS 1
+#else
+#define ENGINE_STATIC_ANALYSIS 0
+#endif

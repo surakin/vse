@@ -40,7 +40,9 @@ TEST_CASE("SharedPtr: copies and releases from eight threads leave no object beh
             {
                 for (int i = 0; i < kRounds; ++i)
                 {
+                    // NOLINTNEXTLINE(performance-unnecessary-copy-initialization): the copy is what the test counts
                     SharedPtr<Counted> mine = shared;  // copy: increment
+                    // NOLINTNEXTLINE(performance-unnecessary-copy-initialization): the copy is what the test counts
                     SharedPtr<Counted> other = mine;
                     if (other->value != 7)
                     {

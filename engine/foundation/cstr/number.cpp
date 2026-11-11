@@ -61,7 +61,7 @@ bool StartsWithNoCase(const char* p, const char* last, const char* word)
 
 locale_t CLocale()
 {
-    static const locale_t locale = ::newlocale(LC_ALL_MASK, "C", static_cast<locale_t>(0));
+    static const locale_t locale = ::newlocale(LC_ALL_MASK, "C", static_cast<locale_t>(nullptr));
     return locale;
 }
 
@@ -258,7 +258,7 @@ ParseDoubleResult ParseDoubleWithoutFromChars(const char* first, const char* las
     text[n] = '\0';
 
     const locale_t locale = CLocale();
-    if (locale == static_cast<locale_t>(0))
+    if (locale == static_cast<locale_t>(nullptr))
     {
         return Fail(first);
     }

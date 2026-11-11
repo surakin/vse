@@ -211,7 +211,7 @@ VulkanInstance::~VulkanInstance()
     Destroy();
 }
 
-VulkanInstance::VulkanInstance(VulkanInstance&& other)
+VulkanInstance::VulkanInstance(VulkanInstance&& other) noexcept
     : loader_(other.loader_), instance_(other.instance_), fns_(other.fns_), messenger_(other.messenger_),
       validation_enabled_(other.validation_enabled_), presentable_(other.presentable_)
 {
@@ -220,7 +220,7 @@ VulkanInstance::VulkanInstance(VulkanInstance&& other)
     other.fns_ = VkInstanceFns{};
 }
 
-VulkanInstance& VulkanInstance::operator=(VulkanInstance&& other)
+VulkanInstance& VulkanInstance::operator=(VulkanInstance&& other) noexcept
 {
     if (this != &other)
     {

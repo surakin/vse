@@ -40,7 +40,7 @@ const RendererDesc& Checked(const RendererDesc& desc)
 }  // namespace
 
 Renderer::Renderer(const RendererDesc& desc)
-    : desc_(Checked(desc)), settings_(), pending_(), arena_(desc.arena_bytes), pool_(desc.device, desc.pool)
+    : desc_(Checked(desc)), arena_(desc.arena_bytes), pool_(desc.device, desc.pool)
 {
     if (desc.initial_settings != nullptr)
     {

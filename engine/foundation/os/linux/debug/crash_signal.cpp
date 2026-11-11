@@ -110,7 +110,7 @@ void Recorder(int signal_number, siginfo_t* info, void* user_context)
             ::sigaction(signal_number, &dfl, nullptr);
             return;
         }
-        else if (owner == thread)
+        if (owner == thread)
         {
             // A fault inside the report this thread is writing: no second report, but the library still gets the fault.
             static const char kText[] = "double fault: the crash report itself faulted; continuing to the crash dump\n";

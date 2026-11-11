@@ -73,13 +73,11 @@ struct ComponentDesc
                              ///< [[storage::UpgradeStep]] for the old one.
     u32 oldest_version = 1;  ///< The oldest stored version that still loads. `upgrades` must hold one step for each
                              ///< version from here up to `version - 1`.
-    u32 flags = kComponentStored;  ///< [[storage::ComponentFlags]].
-    InitializerList<FieldDesc>
-        fields = InitializerList<FieldDesc>();  ///< The fields in storage order. Empty for a tag, a derived or a
-                                                ///< skipped component, or one with a `custom` codec.
-    InitializerList<UpgradeStep>
-        upgrades = InitializerList<UpgradeStep>();  ///< The steps from `oldest_version` to `version`, in any order, one
-                                                    ///< per version.
+    u32 flags = kComponentStored;                ///< [[storage::ComponentFlags]].
+    InitializerList<FieldDesc> fields = {};      ///< The fields in storage order. Empty for a tag, a derived or a
+                                                 ///< skipped component, or one with a `custom` codec.
+    InitializerList<UpgradeStep> upgrades = {};  ///< The steps from `oldest_version` to `version`, in any order, one
+                                                 ///< per version.
     CustomCodec custom = {};  ///< Set both functions for a type the fields cannot describe; then `fields` is empty.
 };
 

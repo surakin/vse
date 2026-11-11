@@ -1216,6 +1216,12 @@ void RenderGraph::ClearResolved()
 // original state.
 void RenderGraph::RollbackTransients(TransientPool* pool)
 {
+    if (pool == nullptr)
+    {
+        // Execute was given no pool: nothing was acquired from it, so there is nothing to give back.
+        ClearResolved();
+        return;
+    }
     for (u32 r = 0; r < resource_count_; ++r)
     {
         if (resources_[r].held)

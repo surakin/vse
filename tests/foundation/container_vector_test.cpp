@@ -12,10 +12,8 @@ using engine_placeholder::ArenaAllocator;
 using engine_placeholder::AssertAction;
 using engine_placeholder::AssertInfo;
 using engine_placeholder::SetAssertHandler;
-using engine_placeholder::SetWriteSinkForTesting;
 using engine_placeholder::usize;
 using engine_placeholder::Vector;
-using engine_placeholder::os::Write;
 
 TEST_CASE("Vector: 100k pushes stay correct at every resize boundary and at the end", "[containers][vector_container]")
 {
@@ -75,11 +73,7 @@ struct TrackedValue
         ++constructions;
         ++moves;
     }
-    TrackedValue& operator=(const TrackedValue& other)
-    {
-        value = other.value;
-        return *this;
-    }
+    TrackedValue& operator=(const TrackedValue& other) = default;
     TrackedValue& operator=(TrackedValue&& other) noexcept
     {
         value = other.value;
@@ -406,11 +400,7 @@ struct VectorAliasProbe
     explicit VectorAliasProbe(int v) : value(v) {}
     VectorAliasProbe(const VectorAliasProbe& other) : value(other.value) {}
     VectorAliasProbe(VectorAliasProbe&& other) noexcept : value(other.value) {}
-    VectorAliasProbe& operator=(const VectorAliasProbe& other)
-    {
-        value = other.value;
-        return *this;
-    }
+    VectorAliasProbe& operator=(const VectorAliasProbe& other) = default;
     VectorAliasProbe& operator=(VectorAliasProbe&& other) noexcept
     {
         value = other.value;

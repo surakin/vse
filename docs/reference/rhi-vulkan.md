@@ -1499,22 +1499,22 @@ Constructs an invalid instance; use [`rhi::vulkan::VulkanInstance::Create`](#rhi
 
 Destroys the debug messenger and the instance, if valid.
 
-### `VulkanInstance(VulkanInstance&&)` {#rhi-vulkan-vulkaninstance-vulkaninstance-vulkaninstance-amp-amp}
+### `VulkanInstance(VulkanInstance&&)` {#rhi-vulkan-vulkaninstance-vulkaninstance-vulkaninstance-amp-amp-noexcept}
 
 `constructor rhi::vulkan::VulkanInstance::VulkanInstance` — defined in `engine/rhi/vulkan/vk_instance.h`
 
 ```cpp
-VulkanInstance(VulkanInstance&& other);
+VulkanInstance(VulkanInstance&& other) noexcept;
 ```
 
 Takes ownership from `other`, which becomes invalid.
 
-### `operator=(VulkanInstance&&)` {#rhi-vulkan-vulkaninstance-operator-eq-vulkaninstance-amp-amp}
+### `operator=(VulkanInstance&&)` {#rhi-vulkan-vulkaninstance-operator-eq-vulkaninstance-amp-amp-noexcept}
 
 `operator rhi::vulkan::VulkanInstance::operator=` — defined in `engine/rhi/vulkan/vk_instance.h`
 
 ```cpp
-VulkanInstance& operator=(VulkanInstance&& other);
+VulkanInstance& operator=(VulkanInstance&& other) noexcept;
 ```
 
 Destroys this instance, then takes ownership from `other`, which becomes invalid.

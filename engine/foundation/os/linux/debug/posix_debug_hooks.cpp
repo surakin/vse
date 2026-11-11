@@ -11,8 +11,6 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-extern char** environ;
-
 namespace engine_placeholder::debug::posix
 {
 

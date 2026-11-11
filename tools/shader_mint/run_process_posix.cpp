@@ -6,8 +6,6 @@
 
 #include "run_process.h"
 
-extern char** environ;
-
 namespace engine_placeholder::shader_mint
 {
 

@@ -12,15 +12,10 @@
 #include "scene/render_sync.h"
 
 using namespace engine_placeholder;
-using scene::ActiveCamera;
-using scene::CameraOutput;
-using scene::Hidden;
 using scene::LightSource;
-using scene::MakeCameraSystem;
 using scene::MakeRenderSyncSystem;
 using scene::MeshAsset;
 using scene::MeshRenderer;
-using scene::RenderHandle;
 using scene::SceneLink;
 using scene::SceneSyncReport;
 

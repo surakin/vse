@@ -42,12 +42,12 @@ MeshData::~MeshData()
     Release();
 }
 
-MeshData::MeshData(MeshData&& other)
+MeshData::MeshData(MeshData&& other) noexcept
 {
     *this = static_cast<MeshData&&>(other);
 }
 
-MeshData& MeshData::operator=(MeshData&& other)
+MeshData& MeshData::operator=(MeshData&& other) noexcept
 {
     if (this != &other)
     {
@@ -764,12 +764,12 @@ const char* ListToStrip(const MeshData& list, StripJoin join, MeshData* out)
 
 // ---- GpuMesh ----
 
-GpuMesh::GpuMesh(GpuMesh&& other)
+GpuMesh::GpuMesh(GpuMesh&& other) noexcept
 {
     MoveFrom(other);
 }
 
-GpuMesh& GpuMesh::operator=(GpuMesh&& other)
+GpuMesh& GpuMesh::operator=(GpuMesh&& other) noexcept
 {
     if (this != &other)
     {

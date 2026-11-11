@@ -93,6 +93,7 @@ TEST_CASE("LocalSharedPtr: the non-atomic policy counts the same way", "[contain
 {
     LocalSharedPtr<SharedPtrTestCounted> a = MakeShared<SharedPtrTestCounted, PlainRefCount>(9);
     {
+        // NOLINTNEXTLINE(performance-unnecessary-copy-initialization): the copy is what the test counts
         LocalSharedPtr<SharedPtrTestCounted> b = a;
         REQUIRE(a.UseCount() == 2);
     }
@@ -115,7 +116,9 @@ TEST_CASE("SharedPtr: owners on many threads copy and release concurrently, and 
             {
                 for (int i = 0; i < kRounds; ++i)
                 {
+                    // NOLINTNEXTLINE(performance-unnecessary-copy-initialization): the copy is what the test counts
                     SharedPtr<SharedPtrTestCounted> mine = shared;  // distinct pointer objects, one shared block
+                    // NOLINTNEXTLINE(performance-unnecessary-copy-initialization): the copy is what the test counts
                     SharedPtr<SharedPtrTestCounted> other = mine;
                     (void)other;
                 }

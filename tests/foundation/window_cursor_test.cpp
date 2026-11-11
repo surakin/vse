@@ -240,11 +240,7 @@ namespace
 // Opens a Wayland window, or skips the test when there is no Wayland session.
 bool OpenWayland(wayland::WaylandPlatformWindow& window, InputState& input)
 {
-    if (!window.Open("cursor test", 320, 240, &input))
-    {
-        return false;
-    }
-    return true;
+    return window.Open("cursor test", 320, 240, &input);
 }
 
 }  // namespace

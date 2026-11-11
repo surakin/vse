@@ -12,9 +12,9 @@ namespace engine_placeholder::ui
 
 // ---- Menu ----
 
-Menu::Menu() {}
+Menu::Menu() = default;
 
-Menu::~Menu() {}
+Menu::~Menu() = default;
 
 usize Menu::AddItem(StringView text, MenuAction action, void* user)
 {

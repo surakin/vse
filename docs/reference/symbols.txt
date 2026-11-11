@@ -1013,48 +1013,48 @@ Vec4::Length() const	function	foundation/math	vec4-length-const	foundation-math.
 Vec4::Normalized() const	function	foundation/math	vec4-normalized-const	foundation-math.md	engine/foundation/math/vector.h:217
 Vec4::operator==(const Vec4&) const	function	foundation/math	vec4-operator-eq-eq-const-vec4-amp-const	foundation-math.md	engine/foundation/math/vector.h:225
 Vec4::operator!=(const Vec4&) const	function	foundation/math	vec4-operator-not-eq-const-vec4-amp-const	foundation-math.md	engine/foundation/math/vector.h:227
-ENGINE_DEBUG_CHECKS	macro	foundation/log	engine-debug-checks	foundation-log.md	engine/foundation/log/assert.h:27
-ENGINE_SLOW_CHECKS	macro	foundation/log	engine-slow-checks	foundation-log.md	engine/foundation/log/assert.h:39
-WriteSinkFn	alias	foundation/log	writesinkfn	foundation-log.md	engine/foundation/log/assert.h:50
-SetWriteSinkForTesting(WriteSinkFn)	function	foundation/log	setwritesinkfortesting-writesinkfn	foundation-log.md	engine/foundation/log/assert.h:57
-AssertKind	enum	foundation/log	assertkind	foundation-log.md	engine/foundation/log/assert.h:60
-AssertKind::Assert	enumerator	foundation/log	assertkind-assert	foundation-log.md	engine/foundation/log/assert.h:62
-AssertKind::Ensure	enumerator	foundation/log	assertkind-ensure	foundation-log.md	engine/foundation/log/assert.h:63
-AssertKind::Verify	enumerator	foundation/log	assertkind-verify	foundation-log.md	engine/foundation/log/assert.h:64
-AssertKind::Unreachable	enumerator	foundation/log	assertkind-unreachable	foundation-log.md	engine/foundation/log/assert.h:65
-AssertKind::NotImplemented	enumerator	foundation/log	assertkind-notimplemented	foundation-log.md	engine/foundation/log/assert.h:66
-AssertInfo	struct	foundation/log	assertinfo	foundation-log.md	engine/foundation/log/assert.h:73
-AssertInfo::kind	variable	foundation/log	assertinfo-kind	foundation-log.md	engine/foundation/log/assert.h:76
-AssertInfo::file	variable	foundation/log	assertinfo-file	foundation-log.md	engine/foundation/log/assert.h:78
-AssertInfo::line	variable	foundation/log	assertinfo-line	foundation-log.md	engine/foundation/log/assert.h:80
-AssertInfo::function	variable	foundation/log	assertinfo-function	foundation-log.md	engine/foundation/log/assert.h:82
-AssertInfo::condition	variable	foundation/log	assertinfo-condition	foundation-log.md	engine/foundation/log/assert.h:84
-AssertInfo::message	variable	foundation/log	assertinfo-message	foundation-log.md	engine/foundation/log/assert.h:86
-AssertAction	enum	foundation/log	assertaction	foundation-log.md	engine/foundation/log/assert.h:90
-AssertAction::Abort	enumerator	foundation/log	assertaction-abort	foundation-log.md	engine/foundation/log/assert.h:92
-AssertAction::Continue	enumerator	foundation/log	assertaction-continue	foundation-log.md	engine/foundation/log/assert.h:93
-AssertAction::Break	enumerator	foundation/log	assertaction-break	foundation-log.md	engine/foundation/log/assert.h:95
-AssertHandler	alias	foundation/log	asserthandler	foundation-log.md	engine/foundation/log/assert.h:99
-DefaultAssertHandler(const AssertInfo&)	function	foundation/log	defaultasserthandler-const-assertinfo-amp	foundation-log.md	engine/foundation/log/assert.h:115
-SetAssertHandler(AssertHandler)	function	foundation/log	setasserthandler-asserthandler	foundation-log.md	engine/foundation/log/assert.h:125
-AssertFail(const char*,int,const char*)	function	foundation/log	assertfail-const-char-star-int-const-char-star	foundation-log.md	engine/foundation/log/assert.h:138
-EnsureSiteInfo	struct	foundation/log	ensuresiteinfo	foundation-log.md	engine/foundation/log/assert.h:144
-EnsureSiteInfo::file	variable	foundation/log	ensuresiteinfo-file	foundation-log.md	engine/foundation/log/assert.h:147
-EnsureSiteInfo::line	variable	foundation/log	ensuresiteinfo-line	foundation-log.md	engine/foundation/log/assert.h:149
-EnsureSiteInfo::function	variable	foundation/log	ensuresiteinfo-function	foundation-log.md	engine/foundation/log/assert.h:151
-EnsureSiteInfo::condition	variable	foundation/log	ensuresiteinfo-condition	foundation-log.md	engine/foundation/log/assert.h:153
-EnsureSiteInfo::message	variable	foundation/log	ensuresiteinfo-message	foundation-log.md	engine/foundation/log/assert.h:155
-EnsureSiteInfo::failure_count	variable	foundation/log	ensuresiteinfo-failure-count	foundation-log.md	engine/foundation/log/assert.h:157
-EnsureVisitor	alias	foundation/log	ensurevisitor	foundation-log.md	engine/foundation/log/assert.h:161
-ForEachFailedEnsure(EnsureVisitor,void*)	function	foundation/log	foreachfailedensure-ensurevisitor-void-star	foundation-log.md	engine/foundation/log/assert.h:168
-EnsureFailedSiteCount()	function	foundation/log	ensurefailedsitecount	foundation-log.md	engine/foundation/log/assert.h:172
-ResetEnsureStateForTesting()	function	foundation/log	resetensurestatefortesting	foundation-log.md	engine/foundation/log/assert.h:176
-ENGINE_ASSERT	macro	foundation/log	engine-assert	foundation-log.md	engine/foundation/log/assert.h:220
-ENGINE_ENSURE	macro	foundation/log	engine-ensure	foundation-log.md	engine/foundation/log/assert.h:244
-ENGINE_VERIFY	macro	foundation/log	engine-verify	foundation-log.md	engine/foundation/log/assert.h:286
-ENGINE_CHECK_SLOW	macro	foundation/log	engine-check-slow	foundation-log.md	engine/foundation/log/assert.h:311
-ENGINE_UNREACHABLE	macro	foundation/log	engine-unreachable	foundation-log.md	engine/foundation/log/assert.h:334
-ENGINE_NOT_IMPLEMENTED	macro	foundation/log	engine-not-implemented	foundation-log.md	engine/foundation/log/assert.h:340
+ENGINE_DEBUG_CHECKS	macro	foundation/log	engine-debug-checks	foundation-log.md	engine/foundation/log/assert.h:28
+ENGINE_SLOW_CHECKS	macro	foundation/log	engine-slow-checks	foundation-log.md	engine/foundation/log/assert.h:40
+WriteSinkFn	alias	foundation/log	writesinkfn	foundation-log.md	engine/foundation/log/assert.h:51
+SetWriteSinkForTesting(WriteSinkFn)	function	foundation/log	setwritesinkfortesting-writesinkfn	foundation-log.md	engine/foundation/log/assert.h:58
+AssertKind	enum	foundation/log	assertkind	foundation-log.md	engine/foundation/log/assert.h:61
+AssertKind::Assert	enumerator	foundation/log	assertkind-assert	foundation-log.md	engine/foundation/log/assert.h:63
+AssertKind::Ensure	enumerator	foundation/log	assertkind-ensure	foundation-log.md	engine/foundation/log/assert.h:64
+AssertKind::Verify	enumerator	foundation/log	assertkind-verify	foundation-log.md	engine/foundation/log/assert.h:65
+AssertKind::Unreachable	enumerator	foundation/log	assertkind-unreachable	foundation-log.md	engine/foundation/log/assert.h:66
+AssertKind::NotImplemented	enumerator	foundation/log	assertkind-notimplemented	foundation-log.md	engine/foundation/log/assert.h:67
+AssertInfo	struct	foundation/log	assertinfo	foundation-log.md	engine/foundation/log/assert.h:74
+AssertInfo::kind	variable	foundation/log	assertinfo-kind	foundation-log.md	engine/foundation/log/assert.h:77
+AssertInfo::file	variable	foundation/log	assertinfo-file	foundation-log.md	engine/foundation/log/assert.h:79
+AssertInfo::line	variable	foundation/log	assertinfo-line	foundation-log.md	engine/foundation/log/assert.h:81
+AssertInfo::function	variable	foundation/log	assertinfo-function	foundation-log.md	engine/foundation/log/assert.h:83
+AssertInfo::condition	variable	foundation/log	assertinfo-condition	foundation-log.md	engine/foundation/log/assert.h:85
+AssertInfo::message	variable	foundation/log	assertinfo-message	foundation-log.md	engine/foundation/log/assert.h:87
+AssertAction	enum	foundation/log	assertaction	foundation-log.md	engine/foundation/log/assert.h:91
+AssertAction::Abort	enumerator	foundation/log	assertaction-abort	foundation-log.md	engine/foundation/log/assert.h:93
+AssertAction::Continue	enumerator	foundation/log	assertaction-continue	foundation-log.md	engine/foundation/log/assert.h:94
+AssertAction::Break	enumerator	foundation/log	assertaction-break	foundation-log.md	engine/foundation/log/assert.h:96
+AssertHandler	alias	foundation/log	asserthandler	foundation-log.md	engine/foundation/log/assert.h:100
+DefaultAssertHandler(const AssertInfo&)	function	foundation/log	defaultasserthandler-const-assertinfo-amp	foundation-log.md	engine/foundation/log/assert.h:116
+SetAssertHandler(AssertHandler)	function	foundation/log	setasserthandler-asserthandler	foundation-log.md	engine/foundation/log/assert.h:126
+AssertFail(const char*,int,const char*)	function	foundation/log	assertfail-const-char-star-int-const-char-star	foundation-log.md	engine/foundation/log/assert.h:139
+EnsureSiteInfo	struct	foundation/log	ensuresiteinfo	foundation-log.md	engine/foundation/log/assert.h:145
+EnsureSiteInfo::file	variable	foundation/log	ensuresiteinfo-file	foundation-log.md	engine/foundation/log/assert.h:148
+EnsureSiteInfo::line	variable	foundation/log	ensuresiteinfo-line	foundation-log.md	engine/foundation/log/assert.h:150
+EnsureSiteInfo::function	variable	foundation/log	ensuresiteinfo-function	foundation-log.md	engine/foundation/log/assert.h:152
+EnsureSiteInfo::condition	variable	foundation/log	ensuresiteinfo-condition	foundation-log.md	engine/foundation/log/assert.h:154
+EnsureSiteInfo::message	variable	foundation/log	ensuresiteinfo-message	foundation-log.md	engine/foundation/log/assert.h:156
+EnsureSiteInfo::failure_count	variable	foundation/log	ensuresiteinfo-failure-count	foundation-log.md	engine/foundation/log/assert.h:158
+EnsureVisitor	alias	foundation/log	ensurevisitor	foundation-log.md	engine/foundation/log/assert.h:162
+ForEachFailedEnsure(EnsureVisitor,void*)	function	foundation/log	foreachfailedensure-ensurevisitor-void-star	foundation-log.md	engine/foundation/log/assert.h:169
+EnsureFailedSiteCount()	function	foundation/log	ensurefailedsitecount	foundation-log.md	engine/foundation/log/assert.h:173
+ResetEnsureStateForTesting()	function	foundation/log	resetensurestatefortesting	foundation-log.md	engine/foundation/log/assert.h:177
+ENGINE_ASSERT	macro	foundation/log	engine-assert	foundation-log.md	engine/foundation/log/assert.h:230
+ENGINE_ENSURE	macro	foundation/log	engine-ensure	foundation-log.md	engine/foundation/log/assert.h:255
+ENGINE_VERIFY	macro	foundation/log	engine-verify	foundation-log.md	engine/foundation/log/assert.h:298
+ENGINE_CHECK_SLOW	macro	foundation/log	engine-check-slow	foundation-log.md	engine/foundation/log/assert.h:324
+ENGINE_UNREACHABLE	macro	foundation/log	engine-unreachable	foundation-log.md	engine/foundation/log/assert.h:347
+ENGINE_NOT_IMPLEMENTED	macro	foundation/log	engine-not-implemented	foundation-log.md	engine/foundation/log/assert.h:353
 FailureReportHooks	struct	foundation/log	failurereporthooks	foundation-log.md	engine/foundation/log/diagnostics_hooks.h:27
 FailureReportHooks::append_stack_trace	variable	foundation/log	failurereporthooks-append-stack-trace	foundation-log.md	engine/foundation/log/diagnostics_hooks.h:32
 FailureReportHooks::write_crash_context	variable	foundation/log	failurereporthooks-write-crash-context	foundation-log.md	engine/foundation/log/diagnostics_hooks.h:35
@@ -4045,49 +4045,49 @@ storage::ComponentDesc::version	variable	storage	storage-componentdesc-version	s
 storage::ComponentDesc::oldest_version	variable	storage	storage-componentdesc-oldest-version	storage.md	engine/storage/component_registry.h:74
 storage::ComponentDesc::flags	variable	storage	storage-componentdesc-flags	storage.md	engine/storage/component_registry.h:76
 storage::ComponentDesc::fields	variable	storage	storage-componentdesc-fields	storage.md	engine/storage/component_registry.h:77
-storage::ComponentDesc::upgrades	variable	storage	storage-componentdesc-upgrades	storage.md	engine/storage/component_registry.h:80
-storage::ComponentDesc::custom	variable	storage	storage-componentdesc-custom	storage.md	engine/storage/component_registry.h:83
-storage::RegisteredComponent	class	storage	storage-registeredcomponent	storage.md	engine/storage/component_registry.h:90
-storage::RegisteredComponent::Id() const	function	storage	storage-registeredcomponent-id-const	storage.md	engine/storage/component_registry.h:94
-storage::RegisteredComponent::Name() const	function	storage	storage-registeredcomponent-name-const	storage.md	engine/storage/component_registry.h:99
-storage::RegisteredComponent::Version() const	function	storage	storage-registeredcomponent-version-const	storage.md	engine/storage/component_registry.h:101
-storage::RegisteredComponent::OldestVersion() const	function	storage	storage-registeredcomponent-oldestversion-const	storage.md	engine/storage/component_registry.h:103
-storage::RegisteredComponent::Flags() const	function	storage	storage-registeredcomponent-flags-const	storage.md	engine/storage/component_registry.h:105
-storage::RegisteredComponent::IsStored() const	function	storage	storage-registeredcomponent-isstored-const	storage.md	engine/storage/component_registry.h:108
-storage::RegisteredComponent::IsQueryable() const	function	storage	storage-registeredcomponent-isqueryable-const	storage.md	engine/storage/component_registry.h:111
-storage::RegisteredComponent::EcsId() const	function	storage	storage-registeredcomponent-ecsid-const	storage.md	engine/storage/component_registry.h:113
-storage::RegisteredComponent::IsTag() const	function	storage	storage-registeredcomponent-istag-const	storage.md	engine/storage/component_registry.h:116
-storage::RegisteredComponent::Fields() const	function	storage	storage-registeredcomponent-fields-const	storage.md	engine/storage/component_registry.h:118
-storage::RegisteredComponent::Encode(const void*,bytes::ByteWriter&,const CodecLimits&) const	function	storage	storage-registeredcomponent-encode-const-void-star-bytes-bytewriter-amp-const-codeclimits-amp-const	storage.md	engine/storage/component_registry.h:128
-storage::RegisteredComponent::Decode(bytes::ByteReader&,void*,const CodecLimits&) const	function	storage	storage-registeredcomponent-decode-bytes-bytereader-amp-void-star-const-codeclimits-amp-const	storage.md	engine/storage/component_registry.h:138
-storage::RegisteredComponent::DecodeRecord(u32,ByteSpan,void*,const CodecLimits&) const	function	storage	storage-registeredcomponent-decoderecord-u32-bytespan-void-star-const-codeclimits-amp-const	storage.md	engine/storage/component_registry.h:152
-storage::UnknownPolicy	enum	storage	storage-unknownpolicy	storage.md	engine/storage/component_registry.h:169
-storage::UnknownPolicy::Fail	enumerator	storage	storage-unknownpolicy-fail	storage.md	engine/storage/component_registry.h:171
-storage::UnknownPolicy::SkipAndReport	enumerator	storage	storage-unknownpolicy-skipandreport	storage.md	engine/storage/component_registry.h:172
-storage::UnknownPolicy::KeepOpaque	enumerator	storage	storage-unknownpolicy-keepopaque	storage.md	engine/storage/component_registry.h:173
-storage::RecordAction	enum	storage	storage-recordaction	storage.md	engine/storage/component_registry.h:178
-storage::RecordAction::Decode	enumerator	storage	storage-recordaction-decode	storage.md	engine/storage/component_registry.h:180
-storage::RecordAction::Skip	enumerator	storage	storage-recordaction-skip	storage.md	engine/storage/component_registry.h:181
-storage::RecordAction::KeepOpaque	enumerator	storage	storage-recordaction-keepopaque	storage.md	engine/storage/component_registry.h:182
-storage::ManifestEntry	struct	storage	storage-manifestentry	storage.md	engine/storage/component_registry.h:190
-storage::ManifestEntry::id	variable	storage	storage-manifestentry-id	storage.md	engine/storage/component_registry.h:192
-storage::ManifestEntry::name	variable	storage	storage-manifestentry-name	storage.md	engine/storage/component_registry.h:193
-storage::ManifestEntry::version	variable	storage	storage-manifestentry-version	storage.md	engine/storage/component_registry.h:194
-storage::ComponentRegistry	class	storage	storage-componentregistry	storage.md	engine/storage/component_registry.h:202
-storage::ComponentRegistry::ComponentRegistry()	function	storage	storage-componentregistry-componentregistry	storage.md	engine/storage/component_registry.h:206
-storage::ComponentRegistry::ComponentRegistry(const ComponentRegistry&)	function	storage	storage-componentregistry-componentregistry-const-componentregistry-amp	storage.md	engine/storage/component_registry.h:207
-storage::ComponentRegistry::operator=(const ComponentRegistry&)	function	storage	storage-componentregistry-operator-eq-const-componentregistry-amp	storage.md	engine/storage/component_registry.h:208
-storage::ComponentRegistry::Register(const ComponentDesc&)	function	storage	storage-componentregistry-register-const-componentdesc-amp	storage.md	engine/storage/component_registry.h:217
-storage::ComponentRegistry::FindById(u32) const	function	storage	storage-componentregistry-findbyid-u32-const	storage.md	engine/storage/component_registry.h:226
-storage::ComponentRegistry::FindByName(StringView) const	function	storage	storage-componentregistry-findbyname-stringview-const	storage.md	engine/storage/component_registry.h:231
-storage::ComponentRegistry::FindByEcsId(ecs::ComponentId) const	function	storage	storage-componentregistry-findbyecsid-ecs-componentid-const	storage.md	engine/storage/component_registry.h:236
-storage::ComponentRegistry::Find() const	function	storage	storage-componentregistry-find-const	storage.md	engine/storage/component_registry.h:241
-storage::ComponentRegistry::Count() const	function	storage	storage-componentregistry-count-const	storage.md	engine/storage/component_registry.h:243
-storage::ComponentRegistry::At(u32) const	function	storage	storage-componentregistry-at-u32-const	storage.md	engine/storage/component_registry.h:245
-storage::ComponentRegistry::Resolve(u32,UnknownPolicy,const RegisteredComponent**,RecordAction*) const	function	storage	storage-componentregistry-resolve-u32-unknownpolicy-const-registeredcomponent-star-star-recordaction-star-const	storage.md	engine/storage/component_registry.h:256
-storage::ComponentRegistry::Manifest(Vector<ManifestEntry>*) const	function	storage	storage-componentregistry-manifest-vector-lt-manifestentry-gt-star-const	storage.md	engine/storage/component_registry.h:263
-storage::ComponentRegistry::CheckManifest(Span<const ManifestEntry>) const	function	storage	storage-componentregistry-checkmanifest-span-lt-const-manifestentry-gt-const	storage.md	engine/storage/component_registry.h:271
-storage::ComponentRegistry::UnregisteredWithData(const ecs::World&,Vector<ecs::ComponentId>*) const	function	storage	storage-componentregistry-unregisteredwithdata-const-ecs-world-amp-vector-lt-ecs-componentid-gt-star-const	storage.md	engine/storage/component_registry.h:281
+storage::ComponentDesc::upgrades	variable	storage	storage-componentdesc-upgrades	storage.md	engine/storage/component_registry.h:79
+storage::ComponentDesc::custom	variable	storage	storage-componentdesc-custom	storage.md	engine/storage/component_registry.h:81
+storage::RegisteredComponent	class	storage	storage-registeredcomponent	storage.md	engine/storage/component_registry.h:88
+storage::RegisteredComponent::Id() const	function	storage	storage-registeredcomponent-id-const	storage.md	engine/storage/component_registry.h:92
+storage::RegisteredComponent::Name() const	function	storage	storage-registeredcomponent-name-const	storage.md	engine/storage/component_registry.h:97
+storage::RegisteredComponent::Version() const	function	storage	storage-registeredcomponent-version-const	storage.md	engine/storage/component_registry.h:99
+storage::RegisteredComponent::OldestVersion() const	function	storage	storage-registeredcomponent-oldestversion-const	storage.md	engine/storage/component_registry.h:101
+storage::RegisteredComponent::Flags() const	function	storage	storage-registeredcomponent-flags-const	storage.md	engine/storage/component_registry.h:103
+storage::RegisteredComponent::IsStored() const	function	storage	storage-registeredcomponent-isstored-const	storage.md	engine/storage/component_registry.h:106
+storage::RegisteredComponent::IsQueryable() const	function	storage	storage-registeredcomponent-isqueryable-const	storage.md	engine/storage/component_registry.h:109
+storage::RegisteredComponent::EcsId() const	function	storage	storage-registeredcomponent-ecsid-const	storage.md	engine/storage/component_registry.h:111
+storage::RegisteredComponent::IsTag() const	function	storage	storage-registeredcomponent-istag-const	storage.md	engine/storage/component_registry.h:114
+storage::RegisteredComponent::Fields() const	function	storage	storage-registeredcomponent-fields-const	storage.md	engine/storage/component_registry.h:116
+storage::RegisteredComponent::Encode(const void*,bytes::ByteWriter&,const CodecLimits&) const	function	storage	storage-registeredcomponent-encode-const-void-star-bytes-bytewriter-amp-const-codeclimits-amp-const	storage.md	engine/storage/component_registry.h:126
+storage::RegisteredComponent::Decode(bytes::ByteReader&,void*,const CodecLimits&) const	function	storage	storage-registeredcomponent-decode-bytes-bytereader-amp-void-star-const-codeclimits-amp-const	storage.md	engine/storage/component_registry.h:136
+storage::RegisteredComponent::DecodeRecord(u32,ByteSpan,void*,const CodecLimits&) const	function	storage	storage-registeredcomponent-decoderecord-u32-bytespan-void-star-const-codeclimits-amp-const	storage.md	engine/storage/component_registry.h:150
+storage::UnknownPolicy	enum	storage	storage-unknownpolicy	storage.md	engine/storage/component_registry.h:167
+storage::UnknownPolicy::Fail	enumerator	storage	storage-unknownpolicy-fail	storage.md	engine/storage/component_registry.h:169
+storage::UnknownPolicy::SkipAndReport	enumerator	storage	storage-unknownpolicy-skipandreport	storage.md	engine/storage/component_registry.h:170
+storage::UnknownPolicy::KeepOpaque	enumerator	storage	storage-unknownpolicy-keepopaque	storage.md	engine/storage/component_registry.h:171
+storage::RecordAction	enum	storage	storage-recordaction	storage.md	engine/storage/component_registry.h:176
+storage::RecordAction::Decode	enumerator	storage	storage-recordaction-decode	storage.md	engine/storage/component_registry.h:178
+storage::RecordAction::Skip	enumerator	storage	storage-recordaction-skip	storage.md	engine/storage/component_registry.h:179
+storage::RecordAction::KeepOpaque	enumerator	storage	storage-recordaction-keepopaque	storage.md	engine/storage/component_registry.h:180
+storage::ManifestEntry	struct	storage	storage-manifestentry	storage.md	engine/storage/component_registry.h:188
+storage::ManifestEntry::id	variable	storage	storage-manifestentry-id	storage.md	engine/storage/component_registry.h:190
+storage::ManifestEntry::name	variable	storage	storage-manifestentry-name	storage.md	engine/storage/component_registry.h:191
+storage::ManifestEntry::version	variable	storage	storage-manifestentry-version	storage.md	engine/storage/component_registry.h:192
+storage::ComponentRegistry	class	storage	storage-componentregistry	storage.md	engine/storage/component_registry.h:200
+storage::ComponentRegistry::ComponentRegistry()	function	storage	storage-componentregistry-componentregistry	storage.md	engine/storage/component_registry.h:204
+storage::ComponentRegistry::ComponentRegistry(const ComponentRegistry&)	function	storage	storage-componentregistry-componentregistry-const-componentregistry-amp	storage.md	engine/storage/component_registry.h:205
+storage::ComponentRegistry::operator=(const ComponentRegistry&)	function	storage	storage-componentregistry-operator-eq-const-componentregistry-amp	storage.md	engine/storage/component_registry.h:206
+storage::ComponentRegistry::Register(const ComponentDesc&)	function	storage	storage-componentregistry-register-const-componentdesc-amp	storage.md	engine/storage/component_registry.h:215
+storage::ComponentRegistry::FindById(u32) const	function	storage	storage-componentregistry-findbyid-u32-const	storage.md	engine/storage/component_registry.h:224
+storage::ComponentRegistry::FindByName(StringView) const	function	storage	storage-componentregistry-findbyname-stringview-const	storage.md	engine/storage/component_registry.h:229
+storage::ComponentRegistry::FindByEcsId(ecs::ComponentId) const	function	storage	storage-componentregistry-findbyecsid-ecs-componentid-const	storage.md	engine/storage/component_registry.h:234
+storage::ComponentRegistry::Find() const	function	storage	storage-componentregistry-find-const	storage.md	engine/storage/component_registry.h:239
+storage::ComponentRegistry::Count() const	function	storage	storage-componentregistry-count-const	storage.md	engine/storage/component_registry.h:241
+storage::ComponentRegistry::At(u32) const	function	storage	storage-componentregistry-at-u32-const	storage.md	engine/storage/component_registry.h:243
+storage::ComponentRegistry::Resolve(u32,UnknownPolicy,const RegisteredComponent**,RecordAction*) const	function	storage	storage-componentregistry-resolve-u32-unknownpolicy-const-registeredcomponent-star-star-recordaction-star-const	storage.md	engine/storage/component_registry.h:254
+storage::ComponentRegistry::Manifest(Vector<ManifestEntry>*) const	function	storage	storage-componentregistry-manifest-vector-lt-manifestentry-gt-star-const	storage.md	engine/storage/component_registry.h:261
+storage::ComponentRegistry::CheckManifest(Span<const ManifestEntry>) const	function	storage	storage-componentregistry-checkmanifest-span-lt-const-manifestentry-gt-const	storage.md	engine/storage/component_registry.h:269
+storage::ComponentRegistry::UnregisteredWithData(const ecs::World&,Vector<ecs::ComponentId>*) const	function	storage	storage-componentregistry-unregisteredwithdata-const-ecs-world-amp-vector-lt-ecs-componentid-gt-star-const	storage.md	engine/storage/component_registry.h:279
 storage::EntityKey	struct	storage	storage-entitykey	storage.md	engine/storage/entity_ref.h:19
 storage::EntityKey::high	variable	storage	storage-entitykey-high	storage.md	engine/storage/entity_ref.h:21
 storage::EntityKey::low	variable	storage	storage-entitykey-low	storage.md	engine/storage/entity_ref.h:22
@@ -7203,8 +7203,8 @@ renderer::ColorVertexLayout()	function	renderer	renderer-colorvertexlayout	rende
 renderer::MeshData	class	renderer	renderer-meshdata	renderer.md	engine/renderer/mesh.h:75
 renderer::MeshData::MeshData()	function	renderer	renderer-meshdata-meshdata	renderer.md	engine/renderer/mesh.h:78
 renderer::MeshData::~MeshData()	function	renderer	renderer-meshdata-tilde-meshdata	renderer.md	engine/renderer/mesh.h:80
-renderer::MeshData::MeshData(MeshData&&)	function	renderer	renderer-meshdata-meshdata-meshdata-amp-amp	renderer.md	engine/renderer/mesh.h:82
-renderer::MeshData::operator=(MeshData&&)	function	renderer	renderer-meshdata-operator-eq-meshdata-amp-amp	renderer.md	engine/renderer/mesh.h:84
+renderer::MeshData::MeshData(MeshData&&) noexcept	function	renderer	renderer-meshdata-meshdata-meshdata-amp-amp-noexcept	renderer.md	engine/renderer/mesh.h:82
+renderer::MeshData::operator=(MeshData&&) noexcept	function	renderer	renderer-meshdata-operator-eq-meshdata-amp-amp-noexcept	renderer.md	engine/renderer/mesh.h:84
 renderer::MeshData::MeshData(const MeshData&)	function	renderer	renderer-meshdata-meshdata-const-meshdata-amp	renderer.md	engine/renderer/mesh.h:85
 renderer::MeshData::operator=(const MeshData&)	function	renderer	renderer-meshdata-operator-eq-const-meshdata-amp	renderer.md	engine/renderer/mesh.h:86
 renderer::MeshData::Set(const VertexLayoutData&,u32,const void*,u32,rhi::IndexType,const void*,u32,rhi::PrimitiveTopology)	function	renderer	renderer-meshdata-set-const-vertexlayoutdata-amp-u32-const-void-star-u32-rhi-indextype-const-void-star-u32-rhi-primitivetopology	renderer.md	engine/renderer/mesh.h:108
@@ -7237,8 +7237,8 @@ renderer::ListToStrip(const MeshData&,StripJoin,MeshData*)	function	renderer	ren
 renderer::GpuMesh	class	renderer	renderer-gpumesh	renderer.md	engine/renderer/mesh.h:302
 renderer::GpuMesh::GpuMesh()	function	renderer	renderer-gpumesh-gpumesh	renderer.md	engine/renderer/mesh.h:305
 renderer::GpuMesh::~GpuMesh()	function	renderer	renderer-gpumesh-tilde-gpumesh	renderer.md	engine/renderer/mesh.h:307
-renderer::GpuMesh::GpuMesh(GpuMesh&&)	function	renderer	renderer-gpumesh-gpumesh-gpumesh-amp-amp	renderer.md	engine/renderer/mesh.h:309
-renderer::GpuMesh::operator=(GpuMesh&&)	function	renderer	renderer-gpumesh-operator-eq-gpumesh-amp-amp	renderer.md	engine/renderer/mesh.h:311
+renderer::GpuMesh::GpuMesh(GpuMesh&&) noexcept	function	renderer	renderer-gpumesh-gpumesh-gpumesh-amp-amp-noexcept	renderer.md	engine/renderer/mesh.h:309
+renderer::GpuMesh::operator=(GpuMesh&&) noexcept	function	renderer	renderer-gpumesh-operator-eq-gpumesh-amp-amp-noexcept	renderer.md	engine/renderer/mesh.h:311
 renderer::GpuMesh::GpuMesh(const GpuMesh&)	function	renderer	renderer-gpumesh-gpumesh-const-gpumesh-amp	renderer.md	engine/renderer/mesh.h:312
 renderer::GpuMesh::operator=(const GpuMesh&)	function	renderer	renderer-gpumesh-operator-eq-const-gpumesh-amp	renderer.md	engine/renderer/mesh.h:313
 renderer::GpuMesh::Create(rhi::Device*,const MeshData&,const char*)	function	renderer	renderer-gpumesh-create-rhi-device-star-const-meshdata-amp-const-char-star	renderer.md	engine/renderer/mesh.h:324
@@ -7813,8 +7813,8 @@ renderer::TextureLoader	alias	renderer	renderer-textureloader	renderer.md	engine
 renderer::GpuTexture	class	renderer	renderer-gputexture	renderer.md	engine/renderer/texture.h:44
 renderer::GpuTexture::GpuTexture()	function	renderer	renderer-gputexture-gputexture	renderer.md	engine/renderer/texture.h:47
 renderer::GpuTexture::~GpuTexture()	function	renderer	renderer-gputexture-tilde-gputexture	renderer.md	engine/renderer/texture.h:49
-renderer::GpuTexture::GpuTexture(GpuTexture&&)	function	renderer	renderer-gputexture-gputexture-gputexture-amp-amp	renderer.md	engine/renderer/texture.h:51
-renderer::GpuTexture::operator=(GpuTexture&&)	function	renderer	renderer-gputexture-operator-eq-gputexture-amp-amp	renderer.md	engine/renderer/texture.h:53
+renderer::GpuTexture::GpuTexture(GpuTexture&&) noexcept	function	renderer	renderer-gputexture-gputexture-gputexture-amp-amp-noexcept	renderer.md	engine/renderer/texture.h:51
+renderer::GpuTexture::operator=(GpuTexture&&) noexcept	function	renderer	renderer-gputexture-operator-eq-gputexture-amp-amp-noexcept	renderer.md	engine/renderer/texture.h:53
 renderer::GpuTexture::GpuTexture(const GpuTexture&)	function	renderer	renderer-gputexture-gputexture-const-gputexture-amp	renderer.md	engine/renderer/texture.h:54
 renderer::GpuTexture::operator=(const GpuTexture&)	function	renderer	renderer-gputexture-operator-eq-const-gputexture-amp	renderer.md	engine/renderer/texture.h:55
 renderer::GpuTexture::Create(rhi::Device*,TextureImage&&,DeviceResources*,const char*)	function	renderer	renderer-gputexture-create-rhi-device-star-textureimage-amp-amp-deviceresources-star-const-char-star	renderer.md	engine/renderer/texture.h:70
@@ -7830,8 +7830,8 @@ renderer::GpuTexture::Desc() const	function	renderer	renderer-gputexture-desc-co
 renderer::GpuSampler	class	renderer	renderer-gpusampler	renderer.md	engine/renderer/texture.h:121
 renderer::GpuSampler::GpuSampler()	function	renderer	renderer-gpusampler-gpusampler	renderer.md	engine/renderer/texture.h:124
 renderer::GpuSampler::~GpuSampler()	function	renderer	renderer-gpusampler-tilde-gpusampler	renderer.md	engine/renderer/texture.h:126
-renderer::GpuSampler::GpuSampler(GpuSampler&&)	function	renderer	renderer-gpusampler-gpusampler-gpusampler-amp-amp	renderer.md	engine/renderer/texture.h:128
-renderer::GpuSampler::operator=(GpuSampler&&)	function	renderer	renderer-gpusampler-operator-eq-gpusampler-amp-amp	renderer.md	engine/renderer/texture.h:130
+renderer::GpuSampler::GpuSampler(GpuSampler&&) noexcept	function	renderer	renderer-gpusampler-gpusampler-gpusampler-amp-amp-noexcept	renderer.md	engine/renderer/texture.h:128
+renderer::GpuSampler::operator=(GpuSampler&&) noexcept	function	renderer	renderer-gpusampler-operator-eq-gpusampler-amp-amp-noexcept	renderer.md	engine/renderer/texture.h:130
 renderer::GpuSampler::GpuSampler(const GpuSampler&)	function	renderer	renderer-gpusampler-gpusampler-const-gpusampler-amp	renderer.md	engine/renderer/texture.h:131
 renderer::GpuSampler::operator=(const GpuSampler&)	function	renderer	renderer-gpusampler-operator-eq-const-gpusampler-amp	renderer.md	engine/renderer/texture.h:132
 renderer::GpuSampler::Create(rhi::Device*,const rhi::SamplerDesc&,DeviceResources*,const char*)	function	renderer	renderer-gpusampler-create-rhi-device-star-const-rhi-samplerdesc-amp-deviceresources-star-const-char-star	renderer.md	engine/renderer/texture.h:144
@@ -8087,8 +8087,8 @@ rhi::vulkan::SetValidationCapture(ValidationCaptureFn,void*)	function	rhi-vulkan
 rhi::vulkan::VulkanInstance	class	rhi-vulkan	rhi-vulkan-vulkaninstance	rhi-vulkan.md	engine/rhi/vulkan/vk_instance.h:112
 rhi::vulkan::VulkanInstance::VulkanInstance()	function	rhi-vulkan	rhi-vulkan-vulkaninstance-vulkaninstance	rhi-vulkan.md	engine/rhi/vulkan/vk_instance.h:116
 rhi::vulkan::VulkanInstance::~VulkanInstance()	function	rhi-vulkan	rhi-vulkan-vulkaninstance-tilde-vulkaninstance	rhi-vulkan.md	engine/rhi/vulkan/vk_instance.h:118
-rhi::vulkan::VulkanInstance::VulkanInstance(VulkanInstance&&)	function	rhi-vulkan	rhi-vulkan-vulkaninstance-vulkaninstance-vulkaninstance-amp-amp	rhi-vulkan.md	engine/rhi/vulkan/vk_instance.h:120
-rhi::vulkan::VulkanInstance::operator=(VulkanInstance&&)	function	rhi-vulkan	rhi-vulkan-vulkaninstance-operator-eq-vulkaninstance-amp-amp	rhi-vulkan.md	engine/rhi/vulkan/vk_instance.h:122
+rhi::vulkan::VulkanInstance::VulkanInstance(VulkanInstance&&) noexcept	function	rhi-vulkan	rhi-vulkan-vulkaninstance-vulkaninstance-vulkaninstance-amp-amp-noexcept	rhi-vulkan.md	engine/rhi/vulkan/vk_instance.h:120
+rhi::vulkan::VulkanInstance::operator=(VulkanInstance&&) noexcept	function	rhi-vulkan	rhi-vulkan-vulkaninstance-operator-eq-vulkaninstance-amp-amp-noexcept	rhi-vulkan.md	engine/rhi/vulkan/vk_instance.h:122
 rhi::vulkan::VulkanInstance::VulkanInstance(const VulkanInstance&)	function	rhi-vulkan	rhi-vulkan-vulkaninstance-vulkaninstance-const-vulkaninstance-amp	rhi-vulkan.md	engine/rhi/vulkan/vk_instance.h:123
 rhi::vulkan::VulkanInstance::operator=(const VulkanInstance&)	function	rhi-vulkan	rhi-vulkan-vulkaninstance-operator-eq-const-vulkaninstance-amp	rhi-vulkan.md	engine/rhi/vulkan/vk_instance.h:124
 rhi::vulkan::VulkanInstance::Create(const VulkanLoader&,const VulkanInstanceDesc&)	function	rhi-vulkan	rhi-vulkan-vulkaninstance-create-const-vulkanloader-amp-const-vulkaninstancedesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vk_instance.h:137

@@ -35,12 +35,12 @@ void CopyName(char* dst, usize cap, const char* name, const char* fallback)
 
 // ---- GpuTexture -------------------------------------------------------------------------------------------------
 
-GpuTexture::GpuTexture(GpuTexture&& other)
+GpuTexture::GpuTexture(GpuTexture&& other) noexcept
 {
     MoveFrom(other);
 }
 
-GpuTexture& GpuTexture::operator=(GpuTexture&& other)
+GpuTexture& GpuTexture::operator=(GpuTexture&& other) noexcept
 {
     if (this != &other)
     {
@@ -264,12 +264,12 @@ void GpuTexture::Destroy()
 
 // ---- GpuSampler -------------------------------------------------------------------------------------------------
 
-GpuSampler::GpuSampler(GpuSampler&& other)
+GpuSampler::GpuSampler(GpuSampler&& other) noexcept
 {
     MoveFrom(other);
 }
 
-GpuSampler& GpuSampler::operator=(GpuSampler&& other)
+GpuSampler& GpuSampler::operator=(GpuSampler&& other) noexcept
 {
     if (this != &other)
     {

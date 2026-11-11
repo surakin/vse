@@ -79,9 +79,9 @@ public:
     /// Frees the copied geometry.
     ~MeshData();
     /// Takes the geometry from `other`, which is left empty.
-    MeshData(MeshData&& other);
+    MeshData(MeshData&& other) noexcept;
     /// Frees this mesh's geometry, then takes it from `other`, which is left empty.
-    MeshData& operator=(MeshData&& other);
+    MeshData& operator=(MeshData&& other) noexcept;
     MeshData(const MeshData&) = delete;
     MeshData& operator=(const MeshData&) = delete;
 
@@ -306,9 +306,9 @@ public:
     /// Destroys the buffers, as [[renderer::GpuMesh::Destroy]] does.
     ~GpuMesh() override { Destroy(); }
     /// Takes the buffers from `other`, which is left empty.
-    GpuMesh(GpuMesh&& other);
+    GpuMesh(GpuMesh&& other) noexcept;
     /// Destroys this mesh's buffers, then takes them from `other`, which is left empty.
-    GpuMesh& operator=(GpuMesh&& other);
+    GpuMesh& operator=(GpuMesh&& other) noexcept;
     GpuMesh(const GpuMesh&) = delete;
     GpuMesh& operator=(const GpuMesh&) = delete;
 

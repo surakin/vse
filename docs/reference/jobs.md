@@ -149,7 +149,7 @@ Starts the I/O thread.
 `destructor jobs::IoThread::~IoThread` — defined in `engine/jobs/async_io.h`
 
 ```cpp
-~IoThread();
+~IoThread() override;
 ```
 
 Drains queued requests and joins the thread, as [`jobs::IoThread::Shutdown`](#jobs-iothread-shutdown) does.

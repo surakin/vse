@@ -4624,22 +4624,22 @@ _Defaulted._
 
 Frees the copied geometry.
 
-### `MeshData(MeshData&&)` {#renderer-meshdata-meshdata-meshdata-amp-amp}
+### `MeshData(MeshData&&)` {#renderer-meshdata-meshdata-meshdata-amp-amp-noexcept}
 
 `constructor renderer::MeshData::MeshData` — defined in `engine/renderer/mesh.h`
 
 ```cpp
-MeshData(MeshData&& other);
+MeshData(MeshData&& other) noexcept;
 ```
 
 Takes the geometry from `other`, which is left empty.
 
-### `operator=(MeshData&&)` {#renderer-meshdata-operator-eq-meshdata-amp-amp}
+### `operator=(MeshData&&)` {#renderer-meshdata-operator-eq-meshdata-amp-amp-noexcept}
 
 `operator renderer::MeshData::operator=` — defined in `engine/renderer/mesh.h`
 
 ```cpp
-MeshData& operator=(MeshData&& other);
+MeshData& operator=(MeshData&& other) noexcept;
 ```
 
 Frees this mesh's geometry, then takes it from `other`, which is left empty.
@@ -5097,22 +5097,22 @@ _Defaulted._
 
 Destroys the buffers, as [`renderer::GpuMesh::Destroy`](#renderer-gpumesh-destroy) does.
 
-### `GpuMesh(GpuMesh&&)` {#renderer-gpumesh-gpumesh-gpumesh-amp-amp}
+### `GpuMesh(GpuMesh&&)` {#renderer-gpumesh-gpumesh-gpumesh-amp-amp-noexcept}
 
 `constructor renderer::GpuMesh::GpuMesh` — defined in `engine/renderer/mesh.h`
 
 ```cpp
-GpuMesh(GpuMesh&& other);
+GpuMesh(GpuMesh&& other) noexcept;
 ```
 
 Takes the buffers from `other`, which is left empty.
 
-### `operator=(GpuMesh&&)` {#renderer-gpumesh-operator-eq-gpumesh-amp-amp}
+### `operator=(GpuMesh&&)` {#renderer-gpumesh-operator-eq-gpumesh-amp-amp-noexcept}
 
 `operator renderer::GpuMesh::operator=` — defined in `engine/renderer/mesh.h`
 
 ```cpp
-GpuMesh& operator=(GpuMesh&& other);
+GpuMesh& operator=(GpuMesh&& other) noexcept;
 ```
 
 Destroys this mesh's buffers, then takes them from `other`, which is left empty.
@@ -11785,22 +11785,22 @@ _Defaulted._
 
 Releases everything this object owns.
 
-### `GpuTexture(GpuTexture&&)` {#renderer-gputexture-gputexture-gputexture-amp-amp}
+### `GpuTexture(GpuTexture&&)` {#renderer-gputexture-gputexture-gputexture-amp-amp-noexcept}
 
 `constructor renderer::GpuTexture::GpuTexture` — defined in `engine/renderer/texture.h`
 
 ```cpp
-GpuTexture(GpuTexture&& other);
+GpuTexture(GpuTexture&& other) noexcept;
 ```
 
 Takes over `other`, which is left empty.
 
-### `operator=(GpuTexture&&)` {#renderer-gputexture-operator-eq-gputexture-amp-amp}
+### `operator=(GpuTexture&&)` {#renderer-gputexture-operator-eq-gputexture-amp-amp-noexcept}
 
 `operator renderer::GpuTexture::operator=` — defined in `engine/renderer/texture.h`
 
 ```cpp
-GpuTexture& operator=(GpuTexture&& other);
+GpuTexture& operator=(GpuTexture&& other) noexcept;
 ```
 
 Destroys this texture, then takes over `other`, which is left empty.
@@ -11995,22 +11995,22 @@ _Defaulted._
 
 Releases everything this object owns.
 
-### `GpuSampler(GpuSampler&&)` {#renderer-gpusampler-gpusampler-gpusampler-amp-amp}
+### `GpuSampler(GpuSampler&&)` {#renderer-gpusampler-gpusampler-gpusampler-amp-amp-noexcept}
 
 `constructor renderer::GpuSampler::GpuSampler` — defined in `engine/renderer/texture.h`
 
 ```cpp
-GpuSampler(GpuSampler&& other);
+GpuSampler(GpuSampler&& other) noexcept;
 ```
 
 Takes over `other`, which is left empty.
 
-### `operator=(GpuSampler&&)` {#renderer-gpusampler-operator-eq-gpusampler-amp-amp}
+### `operator=(GpuSampler&&)` {#renderer-gpusampler-operator-eq-gpusampler-amp-amp-noexcept}
 
 `operator renderer::GpuSampler::operator=` — defined in `engine/renderer/texture.h`
 
 ```cpp
-GpuSampler& operator=(GpuSampler&& other);
+GpuSampler& operator=(GpuSampler&& other) noexcept;
 ```
 
 Destroys this sampler, then takes over `other`, which is left empty.

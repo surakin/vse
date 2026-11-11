@@ -363,11 +363,11 @@ TEST_CASE("u128 and i128: the three-way comparison agrees with the six operators
     // literal 0 through Catch2's operator templates to the ordering types' literal-zero comparison (C7595, found on
     // Phase 13 Day 149).
     const u128 small = u128::FromParts(0, 1), big = u128::FromParts(1, 0);
-    CHECK(((small <=> big) < 0));
-    CHECK(((big <=> small) > 0));
-    CHECK(((small <=> small) == 0));
+    CHECK(((small <=> big) < nullptr));
+    CHECK(((big <=> small) > nullptr));
+    CHECK(((small <=> small) == nullptr));
     const i128 neg(i64{-5}), pos(i64{3});
-    CHECK(((neg <=> pos) < 0));
-    CHECK(((pos <=> neg) > 0));
-    CHECK(((neg <=> neg) == 0));
+    CHECK(((neg <=> pos) < nullptr));
+    CHECK(((pos <=> neg) > nullptr));
+    CHECK(((neg <=> neg) == nullptr));
 }

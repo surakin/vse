@@ -11,7 +11,6 @@
 #include "lang/utility.h"
 #include "cstr/mem_ops.h"
 
-using engine_placeholder::Log;
 using engine_placeholder::LogPlatform;
 using engine_placeholder::LogVerbosity;
 using engine_placeholder::SetWriteSinkForTesting;

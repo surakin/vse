@@ -30,7 +30,7 @@ public:
     using Ticket = u32;
 
     /// Destroys the clipboard.
-    virtual ~Clipboard() {}
+    virtual ~Clipboard() = default;
 
     /// Replaces the clipboard's text.
     /// - Param text: UTF-8 text; copied.

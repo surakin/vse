@@ -205,11 +205,7 @@ bool ParseItemHeader(const char* line, engine_placeholder::usize length, ItemHea
             continue;
         }
         SkipSpace(line, length, i);
-        if (i < length && line[i] == '}')
-        {
-            return true;
-        }
-        return false;
+        return i < length && line[i] == '}';
     }
 }
 

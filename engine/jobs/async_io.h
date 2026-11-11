@@ -70,7 +70,7 @@ public:
     /// Drains queued requests and joins the thread, as [[jobs::IoThread::Shutdown]] does.
     ///
     /// - Ownership: joins and releases the I/O thread.
-    ~IoThread();
+    ~IoThread() override;
 
     IoThread(const IoThread&) = delete;
     IoThread& operator=(const IoThread&) = delete;

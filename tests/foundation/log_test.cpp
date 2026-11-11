@@ -12,15 +12,12 @@ using engine_placeholder::AssertAction;
 using engine_placeholder::AssertHandler;
 using engine_placeholder::AssertInfo;
 using engine_placeholder::Log;
-using engine_placeholder::LogChannel;
 using engine_placeholder::LogCore;
 using engine_placeholder::LogVerbosity;
 using engine_placeholder::SetAssertHandler;
 using engine_placeholder::SetWriteSinkForTesting;
 using engine_placeholder::StringView;
 using engine_placeholder::usize;
-using engine_placeholder::os::Close;
-using engine_placeholder::os::Open;
 using engine_placeholder::os::Write;
 
 namespace

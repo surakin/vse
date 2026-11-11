@@ -117,9 +117,9 @@ public:
     /// Destroys the debug messenger and the instance, if valid.
     ~VulkanInstance();
     /// Takes ownership from `other`, which becomes invalid.
-    VulkanInstance(VulkanInstance&& other);
+    VulkanInstance(VulkanInstance&& other) noexcept;
     /// Destroys this instance, then takes ownership from `other`, which becomes invalid.
-    VulkanInstance& operator=(VulkanInstance&& other);
+    VulkanInstance& operator=(VulkanInstance&& other) noexcept;
     VulkanInstance(const VulkanInstance&) = delete;
     VulkanInstance& operator=(const VulkanInstance&) = delete;
 

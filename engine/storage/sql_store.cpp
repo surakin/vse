@@ -551,6 +551,10 @@ i64 SignExtend(u64 v, usize bytes)
     {
         return static_cast<i64>(v);
     }
+    if (bytes == 0)
+    {
+        return 0;  // no bytes, no value (the shift below would be by -1)
+    }
     const u64 sign = u64(1) << (bytes * 8 - 1);
     return static_cast<i64>((v ^ sign) - sign);
 }

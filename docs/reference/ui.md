@@ -560,7 +560,7 @@ Names a pending request; 0 means none is pending.
 `destructor ui::Clipboard::~Clipboard` — defined in `engine/ui/clipboard.h`
 
 ```cpp
-virtual ~Clipboard();
+virtual ~Clipboard() = default;
 ```
 
 Destroys the clipboard.

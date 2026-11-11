@@ -1,5 +1,6 @@
 #pragma once
 
+#include "build_defs.h"
 #include "debug/compiler.h"
 #include "types.h"
 
@@ -208,6 +209,15 @@ ENGINE_NOINLINE ENGINE_COLD AssertAction EnsureFailed(EnsureSite& site, const ch
 
 }  // namespace engine_placeholder
 
+// For the static analyzer a failed assertion ends the path (the default handler aborts), so it does not report the code
+// after an assert as reachable with the asserted condition false. The handler can be replaced to continue (tests do);
+// that is a test's choice, not a path the analyzer should follow.
+#if ENGINE_STATIC_ANALYSIS
+#define ENGINE_ASSUME_ASSERT_HELD_() __builtin_unreachable()
+#else
+#define ENGINE_ASSUME_ASSERT_HELD_() static_cast<void>(0)
+#endif
+
 /// Checks `cond` in every build configuration; if it is false, reports the failure and, by default, aborts.
 ///
 /// Use it for a contract the code relies on: a precondition whose violation is a bug in the caller. The failure goes to
@@ -228,6 +238,7 @@ ENGINE_NOINLINE ENGINE_COLD AssertAction EnsureFailed(EnsureSite& site, const ch
             {                                                                                                          \
                 ENGINE_DEBUG_BREAK();                                                                                  \
             }                                                                                                          \
+            ENGINE_ASSUME_ASSERT_HELD_();                                                                              \
         }                                                                                                              \
     } while (false)
 
@@ -264,6 +275,7 @@ ENGINE_NOINLINE ENGINE_COLD AssertAction EnsureFailed(EnsureSite& site, const ch
             {                                                                                                          \
                 ENGINE_DEBUG_BREAK();                                                                                  \
             }                                                                                                          \
+            ENGINE_ASSUME_ASSERT_HELD_();                                                                              \
         }                                                                                                              \
     } while (false)
 #define ENGINE_VERIFY_IMPL_0_(expr, msg) static_cast<void>(expr)
@@ -296,6 +308,7 @@ ENGINE_NOINLINE ENGINE_COLD AssertAction EnsureFailed(EnsureSite& site, const ch
             {                                                                                                          \
                 ENGINE_DEBUG_BREAK();                                                                                  \
             }                                                                                                          \
+            ENGINE_ASSUME_ASSERT_HELD_();                                                                              \
         }                                                                                                              \
     } while (false)
 // Off: the condition is still parsed and type-checked, but never evaluated.
