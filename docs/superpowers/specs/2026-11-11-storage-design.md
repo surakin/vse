@@ -77,7 +77,7 @@ Conclusions: (1) the entity blob is the default: 3.2x faster to insert and 4x fa
 - `UPDATE t SET col = value [, ...] [WHERE ...]`, `DELETE FROM t [WHERE ...]`, `DROP TABLE t` (added Day 262 for the schema migration that rebuilds a table; there is no rename).
 - `BEGIN`, `COMMIT`, `ROLLBACK`, `SAVEPOINT s`, `RELEASE s`, `ROLLBACK TO s`.
 - A schema version through `Connection` (`SchemaVersion()` / `WriteSchemaVersion()`, backed by `PRAGMA user_version` on SQLite and the backend's own field): no `PRAGMA` text in `SqlStore`.
-- `ALTER TABLE t ADD COLUMN ...` is **not** in the subset: a column layout change on a database without `Supports(AddColumn)` rebuilds the table from the blobs.
+- `ALTER TABLE t ADD COLUMN ...` is in the subset **only behind `Connection::Supports(Feature::AddColumn)`** (Day 262 amendment: `SqlStore` migrations use it when the backend has it, in place); without it a column layout change rebuilds the table through a scratch table (`DROP TABLE` is in the subset, a rename is not).
 
 Joins are not needed: the entity blob layout loads with one ordered scan, and the optional column tables are read by key range, one table at a time.
 

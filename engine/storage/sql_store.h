@@ -15,6 +15,8 @@ namespace engine_placeholder::storage {
 ///   key order), the number of the write that stored it, the content hash as 8 bytes big-endian, and the record's bytes;
 /// - `meta(key TEXT PRIMARY KEY, value BLOB)`.
 ///
+/// (A database migrated in place by `ALTER TABLE ... ADD COLUMN` has `seq` without `NOT NULL`, the rebuild path has it with; the store does not depend on the difference.)
+///
 /// Only the portable statement subset of the storage design (section 4c) is used, every statement is prepared once when the store opens and data is only bound.
 /// The schema version is the connection's (`Connection::SchemaVersion`) and is also written to the metadata (`schema_version`); `Open` applies the missing
 /// migration steps in one transaction, and a database with a newer schema than this program knows is refused with `TooNew` and left as it was.

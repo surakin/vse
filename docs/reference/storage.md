@@ -2016,6 +2016,8 @@ The record store on a [`database::Connection`](database.md#database-connection):
 - `entity(key BLOB PRIMARY KEY, seq INTEGER NOT NULL, hash BLOB NOT NULL, data BLOB NOT NULL)`: the key as 16 bytes big-endian (so the database's order is key order), the number of the write that stored it, the content hash as 8 bytes big-endian, and the record's bytes;
 - `meta(key TEXT PRIMARY KEY, value BLOB)`.
 
+(A database migrated in place by `ALTER TABLE ... ADD COLUMN` has `seq` without `NOT NULL`, the rebuild path has it with; the store does not depend on the difference.)
+
 Only the portable statement subset of the storage design (section 4c) is used, every statement is prepared once when the store opens and data is only bound. The schema version is the connection's (`Connection::SchemaVersion`) and is also written to the metadata (`schema_version`); `Open` applies the missing migration steps in one transaction, and a database with a newer schema than this program knows is refused with `TooNew` and left as it was.
 
 A store borrows its connection and uses it alone: while a batch is open, every call from another thread returns `Busy` (one connection cannot show committed state to readers while it holds a transaction); without a batch any thread may call, one at a time.

@@ -269,7 +269,7 @@ Limits: a session follows the whole world (`AllKeyed` only); a record of a child
 bytes), and the metadata in `meta(key TEXT PRIMARY KEY, value BLOB)`. It uses only the portable statement subset of the design (no `PRAGMA`, no SQLite-only form), prepares each
 statement once and binds all data, so another database backend can run it. `Begin`, `Commit` and `Rollback` are database transactions.
 
-The schema version is `Connection::SchemaVersion()` (also kept in the metadata as `schema_version`). `Open` applies the missing migration steps in one transaction; a database with a
+The schema version is `Connection::SchemaVersion()` (also kept in the metadata as `schema_version`). `Open` applies the missing migration steps in one transaction (adding a column in place with `ALTER TABLE` when the connection supports `Feature::AddColumn`, otherwise rebuilding the table through a scratch table); a database with a
 newer schema is refused with `TooNew` and left as it was. One connection serves the store, so **while a batch is open every call from another thread is `Busy`** (the memory store
 shows readers the committed state instead). It passes the same conformance suite as `MemoryStore`, on SQLite in memory and in a file, and a failure injected at every write and sync of
 a batch leaves the old or the new state.

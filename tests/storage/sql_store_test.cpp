@@ -100,6 +100,39 @@ private:
 
 STORE_CONFORMANCE_CASES(SqlFileStoreFixture)
 
+// A connection that says it cannot add a column, to take the migration's rebuild path on SQLite.
+class NoAlterConnection final : public database::Connection {
+public:
+    explicit NoAlterConnection(database::Connection& inner) : inner_(&inner) {}
+    bool Supports(database::Feature f) const override { return f != database::Feature::AddColumn && inner_->Supports(f); }
+    database::Status Prepare(database::SqlText sql, UniquePtr<database::Statement>* out) override {
+        if (sql.View().StartsWith(StringView("ALTER"))) {
+            return database::Status::Of(database::ErrorCode::Unsupported);
+        }
+        return inner_->Prepare(sql, out);
+    }
+    database::Status Execute(database::SqlText sql) override {
+        if (sql.View().StartsWith(StringView("ALTER"))) {
+            return database::Status::Of(database::ErrorCode::Unsupported);
+        }
+        return inner_->Execute(sql);
+    }
+    database::Status Begin(database::TransactionKind k) override { return inner_->Begin(k); }
+    database::Status Commit() override { return inner_->Commit(); }
+    database::Status Rollback() override { return inner_->Rollback(); }
+    bool InTransaction() const override { return inner_->InTransaction(); }
+    database::Status Savepoint(StringView n) override { return inner_->Savepoint(n); }
+    database::Status ReleaseSavepoint(StringView n) override { return inner_->ReleaseSavepoint(n); }
+    database::Status RollbackToSavepoint(StringView n) override { return inner_->RollbackToSavepoint(n); }
+    i64 LastInsertRowId() const override { return inner_->LastInsertRowId(); }
+    i64 ChangedRows() const override { return inner_->ChangedRows(); }
+    database::Status SchemaVersion(i64* out) override { return inner_->SchemaVersion(out); }
+    database::Status WriteSchemaVersion(i64 v) override { return inner_->WriteSchemaVersion(v); }
+
+private:
+    database::Connection* inner_;
+};
+
 Vector<EntityRecord> Records(u64 count) {
     Vector<EntityRecord> out;
     for (u64 k = 1; k <= count; ++k) {
@@ -145,6 +178,34 @@ TEST_CASE("SqlStore: a version-1 database is migrated and keeps every record", "
         REQUIRE(store->GetMetadata(metadata::kSchemaVersion, &value).Ok());
         CHECK(value.View() == StringView("2"));
         REQUIRE(store->Put(conformance::Rec(1000, 1)).Ok()); // and the new layout takes writes
+    }
+}
+
+TEST_CASE("SqlStore: the migration also works on a backend that cannot add a column", "[storage][store][sql]") {
+    database::SqliteDatabase db;
+    for (const bool can_alter : {true, false}) {
+        UniquePtr<database::Connection> raw;
+        REQUIRE(db.Open(database::OpenOptions(), &raw).Ok());
+        const Vector<EntityRecord> records = Records(40);
+        REQUIRE(test::BuildSchemaOne(*raw, records).Ok());
+        NoAlterConnection restricted(*raw);
+        database::Connection& c = can_alter ? *raw : static_cast<database::Connection&>(restricted);
+        CHECK(c.Supports(database::Feature::AddColumn) == can_alter);
+        UniquePtr<SqlStore> store;
+        REQUIRE(SqlStore::Open(c, &store).Ok());
+        usize count = 0;
+        REQUIRE(store->Count(&count).Ok());
+        CHECK(count == 40);
+        for (usize i = 0; i < records.Size(); ++i) {
+            EntityRecord got;
+            REQUIRE(store->Get(records[i].key, &got).Ok());
+            CHECK(got.hash == records[i].hash);
+        }
+        REQUIRE(store->Put(conformance::Rec(5000, 1)).Ok());
+        i64 version = 0;
+        REQUIRE(c.SchemaVersion(&version).Ok());
+        CHECK(version == SqlStore::kSchemaVersion);
+        store.Reset();
     }
 }
 

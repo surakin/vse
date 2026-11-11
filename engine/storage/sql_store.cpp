@@ -105,8 +105,16 @@ database::Status StepOne(Connection& c) {
     return c.Execute("CREATE TABLE entity (key BLOB NOT NULL PRIMARY KEY, hash BLOB NOT NULL, data BLOB NOT NULL)");
 }
 
-// The second layout adds `seq`. The portable subset has no ALTER and no rename, so the rows go through a scratch table.
+// The second layout adds `seq`. A backend that can add a column does it in place (the old rows get 0); otherwise the rows go through a scratch table,
+// because the portable subset has no rename.
 database::Status StepTwo(Connection& c) {
+    if (c.Supports(database::Feature::AddColumn)) {
+        database::Status added = c.Execute("ALTER TABLE entity ADD COLUMN seq INTEGER");
+        if (added.Failed()) {
+            return added;
+        }
+        return c.Execute("UPDATE entity SET seq = 0");
+    }
     database::Status s = c.Execute("CREATE TABLE entity_scratch (key BLOB NOT NULL PRIMARY KEY, hash BLOB NOT NULL, data BLOB NOT NULL)");
     if (s.Failed()) {
         return s;
