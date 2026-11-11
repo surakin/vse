@@ -3971,7 +3971,7 @@ storage::FieldDesc::memory_size	variable	storage	storage-fielddesc-memory-size	s
 storage::FieldDesc::needs_range	variable	storage	storage-fielddesc-needs-range	storage.md	engine/storage/field.h:211
 storage::FieldDesc::encode	variable	storage	storage-fielddesc-encode	storage.md	engine/storage/field.h:213
 storage::FieldDesc::decode	variable	storage	storage-fielddesc-decode	storage.md	engine/storage/field.h:215
-storage::Field(const char*,FieldOptions)	function	storage	storage-field-const-char-star-fieldoptions	storage.md	engine/storage/field.h:416
+storage::Field(const char*,FieldOptions)	function	storage	storage-field-const-char-star-fieldoptions	storage.md	engine/storage/field.h:417
 storage::KeyGenerator	class	storage	storage-keygenerator	storage.md	engine/storage/identity.h:23
 storage::KeyGenerator::KeyGenerator()	function	storage	storage-keygenerator-keygenerator	storage.md	engine/storage/identity.h:27
 storage::KeyGenerator::Seeded(u64)	function	storage	storage-keygenerator-seeded-u64	storage.md	engine/storage/identity.h:32

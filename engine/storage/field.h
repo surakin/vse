@@ -228,7 +228,8 @@ Status EncodeValue(const V& value, const FieldDesc& desc, bytes::ByteWriter& out
         if (static_cast<i64>(raw) < desc.options.range_min || static_cast<i64>(raw) > desc.options.range_max) {
             return Status::Make(ErrorCode::Invalid, "an enum value is outside its declared range");
         }
-        return EncodeValue<U>(raw, desc, out, limits);
+        const Status s = EncodeValue<U>(raw, desc, out, limits);
+        if (s.Failed()) return s;
     } else if constexpr (IsIntegral<V>) {
         constexpr FieldKind k = IntegerKind<V>();
         if constexpr (k == FieldKind::U8) out.WriteU8(value);

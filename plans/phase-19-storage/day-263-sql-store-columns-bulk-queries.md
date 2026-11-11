@@ -32,6 +32,25 @@ Make the SQL store fast, and let tools and servers ask questions of stored data.
 - **Measurements** (100,000 entities, ten fields each of which seven are columns, file database, debug test build, includes the ECS encode and entity creation): blob only save 449-481 ms, load 594-596 ms; with columns save 931 ms (1.9x, the spike measured about 2x), load 591 ms (unchanged: the load reads blobs); with columns and an index on `hp` save 1,021 ms; query `hp > 100` (18,268 hits) 6.8 ms without an index, 0.5 ms with one (spike: 0.35 ms on 10,076 hits). The spike's raw insert of 100,000 blob rows was 293 ms, 9 ms to read; the difference to the figures above is the world encode and decode.
 - Runs: plain `ran 2480 of 6509 tests (phases: all; flavors: plain; display: included; crash tests: excluded)` (two known X11 failures); asan `ran 1925 of 6509`; tsan `ran 1607 of 6509` (only the known Day 235 failure). GCC and Clang non-unity builds clean (they found two missing includes in `world_compare.h`, fixed); the `docs` target and `ctest -L docs` pass.
 
+## Windows PC (2026-11-11): Days 251-263
+
+The Windows half of Days 251-263 (Day 265's Windows task covers what comes after): built in all four Windows trees (`build-msvc` plain and asan,
+`build-clang-cl`, `build-windows-msvc-nounity`, `build-windows-clang-cl-nounity`), clean after three fixes:
+
+- MSVC C2797 on `ComponentDesc::fields` and `upgrades` (`= {}` on an `InitializerList` member is list initialization in a member default, which MSVC
+  does not implement): the defaults are `InitializerList<T>()`.
+- MSVC C4702 (unreachable code) in `detail::EncodeValue`: the enum branch returned, so the final `return Status::Success()` was dead for enums; the
+  branch now returns only on failure.
+- `test_phase_script_affected_side_phase_wrong_flavor` (Mac Day 286) passed `--flavor tsan`, which the script refuses on Windows; it uses asan, with
+  the same meaning (phase 6 has plain tests only on every platform).
+
+Runs (`--affected --since aa1fe1fc`, which selects everything): plain `ran 2294 of 4455 tests (phases: all; flavors: plain; display: included; crash tests: excluded) in 249 s`, asan `ran 1894 of 4455 tests (phases: all; flavors: asan; display: included; crash tests: excluded) in 157 s`. Plain had three
+failures: the `field.h` line shift left `docs/reference/symbols.txt` out of date (regenerated), the script test above (fixed), and the known DX12
+device-creation flake (passed 3 of 3, filed). The 510 phase 19 tests (243 of them asan) pass, among them the SQLite VFS on the Windows file backend,
+the fault-injection crash tests, the threaded database tests and `old_schema`; the conformance cases of the stub fixture and the two-connection cases on
+`:memory:` skip by design, as on Linux. The 21 registry fuzz cases take at most 4.5 s each under asan. `ctest -L docs` 7 of 7. Review: `/code-review high`
+over the three fixes, no findings.
+
 ## Post-implementation code review
 
 `/code-review high`: 3 findings. (1) The in-place `ADD COLUMN` branch counted the old columns wrongly: fixed (counted from the signature's commas; the field-added test covers it). (2) The explicit delete of a column row for a record without the component was hidden by the foreign-key cascade: tested now with foreign keys off (confirmed to fail without the delete). (3) A `u64` column compares as signed above 2^63: declined, documented in the header and guide.
