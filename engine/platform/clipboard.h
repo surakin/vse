@@ -46,8 +46,8 @@ inline constexpr u64 kClipboardTimeoutNs = 2'000'000'000ull;
 ///
 /// `Text` bytes are UTF-8 (invalid sequences are replaced before they are offered). `FileList` bytes are absolute paths separated by `\\n`. `Custom` needs `custom_name`.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: borrows `data` and `custom_name`.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: borrows `data` and `custom_name`.
 struct ClipboardOffer {
     ClipboardFormat format = ClipboardFormat::Text; ///< What the bytes are.
     StringView custom_name;                         ///< `Custom`: the MIME type or atom name.
@@ -57,8 +57,8 @@ struct ClipboardOffer {
 
 /// The finished answer to a request.
 ///
-/// Thread-safety: thread-compatible.
-/// Ownership: owns `bytes`.
+/// - Thread-safety: thread-compatible.
+/// - Ownership: owns `bytes`.
 struct ClipboardResult {
     ClipboardStatus status = ClipboardStatus::Failed; ///< How the request ended.
     ClipboardKind kind = ClipboardKind::Clipboard;    ///< Which selection was asked.
@@ -69,27 +69,27 @@ struct ClipboardResult {
 };
 
 /// Makes the UTF-8 text valid: each invalid sequence (a stray continuation byte, an overlong form, a surrogate, a value above U+10FFFF, a truncated sequence) becomes U+FFFD.
-/// Param in: the bytes.
-/// Param size: their count.
-/// Param out: receives the valid text (cleared first).
-/// Param replaced: if non-null, receives how many sequences were replaced.
+/// - Param in: the bytes.
+/// - Param size: their count.
+/// - Param out: receives the valid text (cleared first).
+/// - Param replaced: if non-null, receives how many sequences were replaced.
 void SanitizeUtf8(const byte* in, usize size, Vector<byte>& out, u32* replaced);
 
 /// Converts Latin-1 bytes to UTF-8 (the X11 `STRING` target).
 void Latin1ToUtf8(const byte* in, usize size, Vector<byte>& out);
 
 /// Converts UTF-8 to Latin-1 if every scalar is U+00FF or below.
-/// Returns: false, leaving `out` unspecified, if some scalar does not fit (then the `STRING` target is refused rather than made lossy).
+/// - Returns: false, leaving `out` unspecified, if some scalar does not fit (then the `STRING` target is refused rather than made lossy).
 bool Utf8ToLatin1(const byte* in, usize size, Vector<byte>& out);
 
 /// Reads a `text/uri-list` into absolute local paths.
 ///
 /// Lines starting with `#` are comments. An entry is accepted only if it is `file://` with an empty host or `localhost`, a percent-decoded path that is absolute, has no NUL or
 /// control byte and no `..` segment; everything else (`http:`, relative paths, other hosts) is rejected and counted. No network URI is ever followed.
-/// Param in: the list.
-/// Param size: its byte count.
-/// Param out: receives the accepted paths separated by `\n` (cleared first).
-/// Param rejected: if non-null, receives the count of rejected entries.
+/// - Param in: the list.
+/// - Param size: its byte count.
+/// - Param out: receives the accepted paths separated by `\n` (cleared first).
+/// - Param rejected: if non-null, receives the count of rejected entries.
 void ParseUriList(const byte* in, usize size, Vector<byte>& out, u32* rejected);
 
 /// Builds a `text/uri-list` (`file://` URIs, percent-encoded, CRLF-terminated) from paths separated by `\n`.
@@ -100,8 +100,8 @@ void BuildUriList(const byte* paths, usize size, Vector<byte>& out);
 /// A request completes once (the first of its answer and its timeout). At most [[os::ClipboardRequests::kMaxInFlight]] requests are open and
 /// [[os::ClipboardRequests::kMaxUnread]] finished results are kept; when more finish unread the oldest is dropped. Time is passed in by the caller, so a test drives it with a fake clock.
 ///
-/// Thread-safety: not-thread-safe; owner-thread only.
-/// Ownership: owns pending requests and finished results; borrows the queue, which must outlive it.
+/// - Thread-safety: not-thread-safe; owner-thread only.
+/// - Ownership: owns pending requests and finished results; borrows the queue, which must outlive it.
 class ClipboardRequests {
 public:
     /// The most requests open at once.
@@ -113,8 +113,8 @@ public:
     void Init(InputEventQueue* queue) { queue_ = queue; }
 
     /// Opens a request.
-    /// Returns: its id (never 0), or 0 if [[os::ClipboardRequests::kMaxInFlight]] are already open.
-    /// Param type: the event queued when the request finishes (`ClipboardData`, or `DropData` for a drop).
+    /// - Returns: its id (never 0), or 0 if [[os::ClipboardRequests::kMaxInFlight]] are already open.
+    /// - Param type: the event queued when the request finishes (`ClipboardData`, or `DropData` for a drop).
     u32 Begin(ClipboardKind kind, ClipboardFormat format, u64 now_ns, InputEventType type = InputEventType::ClipboardData);
 
     /// Returns whether the request is open.
@@ -130,18 +130,18 @@ public:
     bool Fail(u32 id, ClipboardStatus status, u64 now_ns) { return Complete(id, status, Vector<byte>(), 0, 0, now_ns); }
 
     /// Finishes every open request whose timeout has passed with `Timeout`.
-    /// Returns: how many.
+    /// - Returns: how many.
     u32 Expire(u64 now_ns);
 
     /// Finishes every open request with `status` (the window is closing, or the transfer machinery was reset).
     void FailAll(ClipboardStatus status, u64 now_ns);
 
     /// Hands over a finished result once.
-    /// Returns: false if the id has no unread result.
+    /// - Returns: false if the id has no unread result.
     bool Take(u32 id, ClipboardResult* out);
 
     /// Returns the kind and format of an open request (for the backend to choose a target).
-    /// Returns: false if the id is not open.
+    /// - Returns: false if the id is not open.
     bool Describe(u32 id, ClipboardKind* kind, ClipboardFormat* format) const;
 
     /// Returns the number of open requests.

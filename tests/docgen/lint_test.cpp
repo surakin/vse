@@ -87,7 +87,7 @@ TEST_CASE("Lint: a trailing ///< comment documents an enumerator; an undocumente
 }
 
 TEST_CASE("Lint: thread-safety is required on classes of strict modules only", "[docgen][lint]") {
-    const Str h = "/// Documented.\nstruct S {};\n/// Documented too.\n/// Thread-safety: thread-safe. Anywhere.\nstruct T {};\n";
+    const Str h = "/// Documented.\nstruct S {};\n/// Documented too.\n/// - Thread-safety: thread-safe. Anywhere.\nstruct T {};\n";
     Linted strict(h, "  strict thread-safety\n");
     CHECK(strict.Findings() == StrList{"thread-safety S"});
     Linted lax(h);
@@ -101,7 +101,7 @@ TEST_CASE("Lint: ownership is required for raw non-const pointers, pointer retur
              "/// Takes a pointer.\nvoid Take(int* p);\n"
              "/// Takes a const pointer.\nvoid Read(const char* s);\n"
              "/// Takes a callback.\nvoid Call(void (*fn)(int));\n"
-             "/// Documented.\n/// Ownership: the caller frees it.\nint* Made();\n",
+             "/// Documented.\n/// - Ownership: the caller frees it.\nint* Made();\n",
              "  strict ownership\n");
     CHECK(l.Has("ownership Owner"));
     CHECK(l.Has("ownership Make()"));
@@ -114,7 +114,7 @@ TEST_CASE("Lint: ownership is required for raw non-const pointers, pointer retur
 }
 
 TEST_CASE("Lint: failure labels are required for bool, pointer and nodiscard functions", "[docgen][lint]") {
-    Linted l("/// A.\nbool Try();\n/// B.\n/// Returns: true on success.\nbool Tried();\n/// C.\nint* Find();\n/// D.\n/// Fails: returns null.\nint* Found();\n"
+    Linted l("/// A.\nbool Try();\n/// B.\n/// - Returns: true on success.\nbool Tried();\n/// C.\nint* Find();\n/// D.\n/// - Fails: returns null.\nint* Found();\n"
              "/// E.\n[[nodiscard]] int Count();\n/// F.\nvoid Fine();\n/// G.\nint Plain();\n"
              "/// H.\nstruct S {\n  /// I.\n  S();\n  /// J.\n  bool operator==(const S&) const;\n};\n",
              "  strict failure\n");
@@ -244,8 +244,8 @@ TEST_CASE("Lint baseline: [review] renamed, removed and new modules, and an over
 }
 
 TEST_CASE("Lint: [review] Aborts satisfies the failure rule; an inheriting override needs no labels of its own", "[docgen][lint]") {
-    Linted l("/// A.\n/// Aborts: the pool is empty.\nint* Take();\n"
-             "/// Base.\nstruct B {\n  /// Go.\n  /// Returns: true when done.\n  virtual bool Go();\n};\n"
+    Linted l("/// A.\n/// - Aborts: the pool is empty.\nint* Take();\n"
+             "/// Base.\nstruct B {\n  /// Go.\n  /// - Returns: true when done.\n  virtual bool Go();\n};\n"
              "/// Derived 2.\nstruct E : B {\n  bool Go() override;\n};\n",
              "  strict failure\n");
     CHECK(l.Findings().Empty());

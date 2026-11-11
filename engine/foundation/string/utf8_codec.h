@@ -17,13 +17,13 @@ struct DecodedCodepoint {
 /// Malformed input never stops progress: it yields `{0xFFFD, 1}` so a caller
 /// advancing by `byte_length` always moves forward.
 ///
-/// Param data: start of the buffer; not retained.
-/// Param length: buffer size in bytes.
-/// Param offset: byte index where the sequence starts.
-/// Param out_valid: if non-null, always written: true for a well-formed
+/// - Param data: start of the buffer; not retained.
+/// - Param length: buffer size in bytes.
+/// - Param offset: byte index where the sequence starts.
+/// - Param out_valid: if non-null, always written: true for a well-formed
 ///   sequence, false for a malformed one.
-/// Returns: the codepoint and its encoded length.
-/// Fails: malformed sequences are reported through `out_valid` and the
+/// - Returns: the codepoint and its encoded length.
+/// - Fails: malformed sequences are reported through `out_valid` and the
 ///   replacement result.
 DecodedCodepoint DecodeUtf8At(const char* data, usize length, usize offset, bool* out_valid = nullptr);
 
@@ -31,9 +31,9 @@ DecodedCodepoint DecodeUtf8At(const char* data, usize length, usize offset, bool
 ///
 /// A surrogate or a value above 0x10FFFF is encoded as U+FFFD instead.
 ///
-/// Param codepoint: Unicode scalar value to encode.
-/// Param out: buffer of at least 4 bytes; not NUL-terminated.
-/// Returns: number of bytes written.
+/// - Param codepoint: Unicode scalar value to encode.
+/// - Param out: buffer of at least 4 bytes; not NUL-terminated.
+/// - Returns: number of bytes written.
 usize EncodeUtf8(u32 codepoint, char out[4]);
 
 } // namespace engine_placeholder

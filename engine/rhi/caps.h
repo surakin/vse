@@ -14,7 +14,7 @@ namespace engine_placeholder::rhi {
 /// Default values are the minimums the RHI guarantees on every backend, so code written against the
 /// defaults works on any device and on the null backend.
 ///
-/// Thread-safety: thread-compatible plain data; a device returns it by const reference and never changes it.
+/// - Thread-safety: thread-compatible plain data; a device returns it by const reference and never changes it.
 struct DeviceCaps {
     /// Largest width or height of a 2D texture, in texels.
     u32 max_texture_dimension_2d = 4096;

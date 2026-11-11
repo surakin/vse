@@ -17,8 +17,8 @@ inline constexpr u32 kNoArchetype = 0xFFFFFFFFu;
 
 /// Where an alive entity's components are stored.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: owns nothing.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns nothing.
 struct EntityLocation {
     /// The archetype's index in the world, never [[ecs::kNoArchetype]] for an alive entity.
     u32 archetype = kNoArchetype;
@@ -30,8 +30,8 @@ struct EntityLocation {
 
 /// Counters of an [[ecs::EntityTable]].
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: owns nothing.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns nothing.
 struct EntityTableStats {
     /// Entities alive now.
     u32 alive = 0;
@@ -51,9 +51,9 @@ struct EntityTableStats {
 /// command-buffer placeholder) are never issued: after 2^32 - 2 reuses of one slot the generation wraps to 1 (counted), and an id older than that wrap could match again, which
 /// is documented and accepted.
 ///
-/// Thread-safety: thread-compatible. `IsAlive`, `Location` (const) and `Stats` are safe to call concurrently with each other; `Allocate`,
+/// - Thread-safety: thread-compatible. `IsAlive`, `Location` (const) and `Stats` are safe to call concurrently with each other; `Allocate`,
 ///   `Free` and the mutable `Location` are exclusive (the world calls them at sync points or through its command buffer).
-/// Ownership: owns its slots. A pointer from `Location` is valid until the next `Allocate`.
+/// - Ownership: owns its slots. A pointer from `Location` is valid until the next `Allocate`.
 class EntityTable {
 public:
     /// Creates an empty table.
@@ -82,31 +82,31 @@ public:
 
     /// Allocates an entity at `where`.
     ///
-    /// Param where: the entity's initial location; its archetype must not be [[ecs::kNoArchetype]].
-    /// Returns: the new id, or the invalid id when the table is full (counted in `Stats().refused`).
-    /// Aborts: `where.archetype` is [[ecs::kNoArchetype]].
-    /// Fails: returns the invalid id when all [[ecs::kMaxEntitySlots]] slots are alive, or the memory for a new slot cannot be allocated.
+    /// - Param where: the entity's initial location; its archetype must not be [[ecs::kNoArchetype]].
+    /// - Returns: the new id, or the invalid id when the table is full (counted in `Stats().refused`).
+    /// - Aborts: `where.archetype` is [[ecs::kNoArchetype]].
+    /// - Fails: returns the invalid id when all [[ecs::kMaxEntitySlots]] slots are alive, or the memory for a new slot cannot be allocated.
     Entity Allocate(EntityLocation where);
 
     /// Frees `entity` if it is alive; its slot becomes reusable with a new generation.
     ///
-    /// Returns: true when the entity was alive.
-    /// Fails: returns false for a dead, stale or invalid id; nothing changes.
+    /// - Returns: true when the entity was alive.
+    /// - Fails: returns false for a dead, stale or invalid id; nothing changes.
     bool Free(Entity entity);
 
     /// Returns whether `entity` names an alive entity.
-    /// Fails: never; an invalid, stale or out-of-range id is simply not alive.
+    /// - Fails: never; an invalid, stale or out-of-range id is simply not alive.
     bool IsAlive(Entity entity) const;
 
     /// The location of `entity`, or null when it is not alive.
     ///
-    /// Fails: returns null for a dead, stale or invalid id.
-    /// Ownership: the pointer is borrowed from the table and valid until the next `Allocate`.
+    /// - Fails: returns null for a dead, stale or invalid id.
+    /// - Ownership: the pointer is borrowed from the table and valid until the next `Allocate`.
     EntityLocation* Location(Entity entity);
     /// The location of `entity`, or null when it is not alive.
     ///
-    /// Fails: returns null for a dead, stale or invalid id.
-    /// Ownership: the pointer is borrowed from the table and valid until the next `Allocate`.
+    /// - Fails: returns null for a dead, stale or invalid id.
+    /// - Ownership: the pointer is borrowed from the table and valid until the next `Allocate`.
     const EntityLocation* Location(Entity entity) const;
 
     /// The counters.

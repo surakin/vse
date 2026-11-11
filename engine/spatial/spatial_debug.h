@@ -16,7 +16,7 @@ namespace engine_placeholder::spatial {
 
 /// What a set holds and how good its structures are.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct SpatialStats {
     SpatialSetStats set;           ///< The set's own counts.
     u32 static_nodes = 0;          ///< Nodes of the static tree.
@@ -33,14 +33,14 @@ struct SpatialStats {
 
 /// Collects the statistics of one set.
 ///
-/// Param set: the set.
-/// Returns: the numbers.
-/// Fails: never.
+/// - Param set: the set.
+/// - Returns: the numbers.
+/// - Fails: never.
 SpatialStats DescribeSet(const SpatialSet& set);
 
 /// A line segment of the debug drawing, with a packed 0xAABBGGRR color.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct DebugLine {
     Vec3 a;          ///< One end.
     Vec3 b;          ///< The other end.
@@ -55,7 +55,7 @@ inline constexpr u32 kDebugHitColor = 0xFF20E0FFu;   ///< The items a query foun
 
 /// What `DebugLines` draws.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct DebugOptions {
     bool nodes = true;               ///< The boxes of the tree nodes.
     bool items = true;               ///< The boxes of the items.
@@ -67,37 +67,37 @@ struct DebugOptions {
 
 /// Appends the 12 edges of a box.
 ///
-/// Param box: the box.
-/// Param color: the color.
-/// Param out: receives the lines.
-/// Fails: never.
-/// Ownership: `out` is borrowed for the call.
+/// - Param box: the box.
+/// - Param color: the color.
+/// - Param out: receives the lines.
+/// - Fails: never.
+/// - Ownership: `out` is borrowed for the call.
 void AppendBoxLines(const Aabb& box, u32 color, Vector<DebugLine>* out);
 
 /// Produces line segments that show a set: the node boxes, the item boxes, a query volume and its hits.
 ///
-/// Param set: the set.
-/// Param options: what to draw.
-/// Param out: receives the lines (cleared first).
-/// Returns: how many lines were produced.
-/// Fails: stops at `options.max_lines`.
-/// Ownership: `out` is borrowed for the call.
+/// - Param set: the set.
+/// - Param options: what to draw.
+/// - Param out: receives the lines (cleared first).
+/// - Returns: how many lines were produced.
+/// - Fails: stops at `options.max_lines`.
+/// - Ownership: `out` is borrowed for the call.
 usize DebugLines(const SpatialSet& set, const DebugOptions& options, Vector<DebugLine>* out);
 
 /// Declares `spatial.parallel` (bool, default true), `spatial.fat_margin` (float, the dynamic trees' margin as a fraction of item size, default 0.25),
 /// `spatial.stats` (bool, default false: time the phases of the sync) and `spatial.debug_draw` (bool, default false: for programs that draw the structure).
 /// Each has an environment variable and a flag.
 ///
-/// Param registry: the registry to declare them in.
-/// Fails: a key already registered is left as it is.
-/// Ownership: borrows `registry` for the call; the descriptions are string literals.
+/// - Param registry: the registry to declare them in.
+/// - Fails: a key already registered is left as it is.
+/// - Ownership: borrows `registry` for the call; the descriptions are string literals.
 void RegisterSpatialSettings(settings::Registry* registry);
 
 /// The configuration of a set made from the settings (`spatial.fat_margin`).
 ///
-/// Param registry: the registry the settings were declared in.
-/// Returns: a configuration with the margin set; the other fields are the defaults.
-/// Fails: a missing setting leaves the default.
+/// - Param registry: the registry the settings were declared in.
+/// - Returns: a configuration with the margin set; the other fields are the defaults.
+/// - Fails: a missing setting leaves the default.
 SpatialSetConfig SetConfigFromSettings(const settings::Registry& registry);
 
 } // namespace engine_placeholder::spatial

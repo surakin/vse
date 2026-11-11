@@ -8,8 +8,8 @@ namespace engine_placeholder::text {
 
 /// A rectangle of pixels in a page.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: owns nothing.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns nothing.
 struct Rect {
     u32 x = 0; ///< Left column.
     u32 y = 0; ///< Top row.
@@ -22,38 +22,38 @@ struct Rect {
 /// Shelves have a height class (rounded up to a multiple of 4); a rectangle goes on the shelf of the smallest class that fits it and has room, otherwise a new shelf opens.
 /// The result depends only on the sequence of requests. After construction the packer allocates only to grow its list of shelves.
 ///
-/// Thread-safety: thread-compatible.
-/// Ownership: owns its shelf list.
+/// - Thread-safety: thread-compatible.
+/// - Ownership: owns its shelf list.
 class ShelfPacker {
 public:
     /// Creates a packer for a page of `width` x `height` pixels.
     ///
-    /// Param width: page width in pixels.
-    /// Param height: page height in pixels.
-    /// Param padding: empty pixels kept around each rectangle.
+    /// - Param width: page width in pixels.
+    /// - Param height: page height in pixels.
+    /// - Param padding: empty pixels kept around each rectangle.
     ShelfPacker(u32 width, u32 height, u32 padding);
 
     /// Places a `w` x `h` rectangle.
     ///
-    /// Param w: width in pixels, at least 1.
-    /// Param h: height in pixels, at least 1.
-    /// Param out: receives the position; unchanged on failure.
-    /// Returns: true when it fit.
-    /// Ownership: nothing is retained.
-    /// Fails: returns false, placing nothing, when the rectangle with its padding is larger than the page or no shelf has room.
+    /// - Param w: width in pixels, at least 1.
+    /// - Param h: height in pixels, at least 1.
+    /// - Param out: receives the position; unchanged on failure.
+    /// - Returns: true when it fit.
+    /// - Ownership: nothing is retained.
+    /// - Fails: returns false, placing nothing, when the rectangle with its padding is larger than the page or no shelf has room.
     bool Place(u32 w, u32 h, Rect* out);
 
     /// Returns the area in pixels of all rectangles placed (padding not counted).
     ///
-    /// Fails: never.
+    /// - Fails: never.
     u64 UsedArea() const { return used_area_; }
     /// Returns the page width.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     u32 Width() const { return width_; }
     /// Returns the page height.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     u32 Height() const { return height_; }
 
 private:

@@ -13,13 +13,13 @@ namespace engine_placeholder::storage {
 
 /// A 128-bit entity identity that survives processes and machines.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct EntityKey {
     u64 high = 0; ///< The high 64 bits.
     u64 low = 0;  ///< The low 64 bits.
 
     /// Returns true when both halves are zero: the null key, which refers to no entity.
-    /// Fails: never.
+    /// - Fails: never.
     constexpr bool IsNull() const { return high == 0 && low == 0; }
     /// Returns true when both keys are equal.
     friend constexpr bool operator==(const EntityKey& a, const EntityKey& b) { return a.high == b.high && a.low == b.low; }
@@ -28,21 +28,21 @@ struct EntityKey {
     /// Orders keys by `high`, then `low`: a stable order for sorting and ranges, with no other meaning.
     friend constexpr bool operator<(const EntityKey& a, const EntityKey& b) { return a.high != b.high ? a.high < b.high : a.low < b.low; }
     /// The key as 32 lower-case hexadecimal digits, `high` first.
-    /// Fails: never.
+    /// - Fails: never.
     String<HeapAllocator> ToText() const;
     /// Reads the text form of [[storage::EntityKey::ToText]] (32 hexadecimal digits, either case).
     ///
-    /// Param text: exactly 32 hexadecimal digits.
-    /// Param out: receives the key on success; unchanged on failure.
-    /// Returns: false when the text has another length or a character that is not a hexadecimal digit.
-    /// Ownership: `text` is read during the call only.
-    /// Fails: returns false as described.
+    /// - Param text: exactly 32 hexadecimal digits.
+    /// - Param out: receives the key on success; unchanged on failure.
+    /// - Returns: false when the text has another length or a character that is not a hexadecimal digit.
+    /// - Ownership: `text` is read during the call only.
+    /// - Fails: returns false as described.
     static bool FromText(StringView text, EntityKey* out);
 };
 
 /// A component field that refers to another entity. Stored as the target's key (the null key for no target); resolved to an entity after a load.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct EntityRef {
     EntityKey key; ///< The target's key, or the null key.
 };
@@ -53,9 +53,9 @@ namespace engine_placeholder {
 
 /// Hash function for [[storage::EntityKey]] keys of a [[HashMap]].
 ///
-/// Thread-safety: thread-safe, a pure function.
-/// Ownership: owns nothing.
-/// Fails: never.
+/// - Thread-safety: thread-safe, a pure function.
+/// - Ownership: owns nothing.
+/// - Fails: never.
 template <>
 struct Hash<storage::EntityKey> {
     /// Returns a hash that mixes both halves.

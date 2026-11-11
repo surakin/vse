@@ -23,15 +23,15 @@ namespace engine_placeholder {
 /// invalidates references and pointers to elements. This replaces a hand-paired
 /// `new T[n]` / `delete[]`: use `Resize` for a runtime-sized table.
 ///
-/// Thread-safety: not-thread-safe. Synchronize externally if shared.
-/// Ownership: the vector destroys its elements. It frees storage only when the
+/// - Thread-safety: not-thread-safe. Synchronize externally if shared.
+/// - Ownership: the vector destroys its elements. It frees storage only when the
 ///   allocator has `Free`; the allocator must outlive the vector.
 template <typename T, typename Allocator = HeapAllocator>
 class Vector {
 public:
     /// Creates an empty array that allocates from `allocator`.
     ///
-    /// Param allocator: allocator to draw storage from; held by pointer and
+    /// - Param allocator: allocator to draw storage from; held by pointer and
     ///   must outlive the array. No memory is allocated until the first growth.
     explicit Vector(Allocator& allocator) : allocator_(&allocator) {}
 
@@ -82,16 +82,16 @@ public:
     /// Does nothing if the capacity is already sufficient. Invalidates element
     /// references when it grows.
     ///
-    /// Param new_capacity: required capacity in elements.
-    /// Aborts: the allocator returns nullptr (out of memory).
+    /// - Param new_capacity: required capacity in elements.
+    /// - Aborts: the allocator returns nullptr (out of memory).
     void Reserve(usize new_capacity) {
         ENGINE_ASSERT(TryReserve(new_capacity), "Vector::Reserve: allocator out of memory (or an element type that cannot move was grown)");
     }
 
     /// Like `Reserve`, but reports allocator exhaustion instead of aborting.
     ///
-    /// Param new_capacity: required capacity in elements.
-    /// Returns: true if the capacity is now sufficient; false if the allocator is
+    /// - Param new_capacity: required capacity in elements.
+    /// - Returns: true if the capacity is now sufficient; false if the allocator is
     ///   out of memory, the byte size overflows, or `T` cannot be moved and the vector
     ///   already holds elements (the vector is unchanged in every case).
     bool TryReserve(usize new_capacity) {
@@ -128,16 +128,16 @@ public:
     /// `new_size` capacity (a table sized once); one that already holds elements grows
     /// at least geometrically, so repeated `Resize(Size() + k)` is not quadratic.
     ///
-    /// Param new_size: the new element count.
-    /// Aborts: growth is needed and the allocator is out of memory.
+    /// - Param new_size: the new element count.
+    /// - Aborts: growth is needed and the allocator is out of memory.
     void Resize(usize new_size) {
         ENGINE_ASSERT(TryResize(new_size), "Vector::Resize: allocator out of memory (or an element type that cannot move was grown)");
     }
 
     /// Like `Resize`, but reports failure instead of aborting.
     ///
-    /// Param new_size: the new element count.
-    /// Returns: true on success; false if the allocator is out of memory, or `T` cannot be moved
+    /// - Param new_size: the new element count.
+    /// - Returns: true on success; false if the allocator is out of memory, or `T` cannot be moved
     ///   and the vector already holds elements (the vector is unchanged).
     bool TryResize(usize new_size) {
         if (new_size <= size_) {
@@ -158,8 +158,8 @@ public:
     /// Like `TryResize`, but new elements are left uninitialized: for byte buffers and other
     /// trivial types that are about to be overwritten, where zero-filling first is wasted work.
     ///
-    /// Param new_size: the new element count.
-    /// Returns: true on success; false if the allocator is out of memory (the vector is unchanged).
+    /// - Param new_size: the new element count.
+    /// - Returns: true on success; false if the allocator is out of memory (the vector is unchanged).
     bool TryResizeUninitialized(usize new_size) {
         static_assert(IsTriviallyDefaultConstructible<T> && IsTriviallyDestructible<T>,
                       "Vector::TryResizeUninitialized: only trivial element types may be left uninitialized");
@@ -191,8 +191,8 @@ public:
 
     /// Appends a copy of `value`, growing if full.
     ///
-    /// Param value: element to copy; it may be an element of this vector.
-    /// Aborts: growth is needed and the allocator is out of memory.
+    /// - Param value: element to copy; it may be an element of this vector.
+    /// - Aborts: growth is needed and the allocator is out of memory.
     void Push(const T& value) {
         if (size_ == capacity_ && InStorage(&value)) {
             // `value` may be an element of this vector (`v.Push(v[0])`), which growing frees: copy it first.
@@ -208,8 +208,8 @@ public:
 
     /// Appends `value` by move, growing if full.
     ///
-    /// Param value: element to move from; it may be an element of this vector.
-    /// Aborts: growth is needed and the allocator is out of memory.
+    /// - Param value: element to move from; it may be an element of this vector.
+    /// - Aborts: growth is needed and the allocator is out of memory.
     void Push(T&& value) {
         if (size_ == capacity_ && InStorage(&value)) {
             T moved(Move(value)); // as above: `value` may live in the storage growing frees
@@ -224,7 +224,7 @@ public:
 
     /// Destroys the last element.
     ///
-    /// Aborts: the array is empty.
+    /// - Aborts: the array is empty.
     void Pop() {
         ENGINE_ASSERT(size_ > 0, "Vector::Pop: called on an empty vector");
         --size_;
@@ -234,10 +234,10 @@ public:
     /// Inserts a copy of `value` before position `index`, shifting later
     /// elements up by one.
     ///
-    /// Param index: destination position; `Size()` appends. Must be at most
+    /// - Param index: destination position; `Size()` appends. Must be at most
     ///   `Size()` (not checked).
-    /// Param value: element to copy; it may be an element of this vector.
-    /// Aborts: growth is needed and the allocator is out of memory.
+    /// - Param value: element to copy; it may be an element of this vector.
+    /// - Aborts: growth is needed and the allocator is out of memory.
     void Insert(usize index, const T& value) {
         // `value` may be an element of this vector: growing would free it and the shift below would move it, so copy it first.
         T copy(value);
@@ -256,9 +256,9 @@ public:
 
     /// Inserts `value` by move before position `index`, shifting later elements up by one.
     ///
-    /// Param index: destination position; `Size()` appends.
-    /// Param value: element to move in (the value is moved into a local first, so it may alias an element).
-    /// Aborts: `index` is greater than `Size()`, or growth is needed and the allocator is out of memory.
+    /// - Param index: destination position; `Size()` appends.
+    /// - Param value: element to move in (the value is moved into a local first, so it may alias an element).
+    /// - Aborts: `index` is greater than `Size()`, or growth is needed and the allocator is out of memory.
     void Insert(usize index, T&& value) {
         ENGINE_ASSERT(index <= size_, "Vector::Insert: index is past the end");
         T moved(Move(value));
@@ -277,7 +277,7 @@ public:
 
     /// Removes the element at `index`, shifting later elements down by one.
     ///
-    /// Param index: position to remove; must be less than `Size()` (not checked).
+    /// - Param index: position to remove; must be less than `Size()` (not checked).
     void Remove(usize index) {
         for (usize i = index; i + 1 < size_; ++i) {
             data_[i] = Move(data_[i + 1]);
@@ -288,9 +288,9 @@ public:
 
     /// Removes `count` elements starting at `first`, shifting later elements down once (one pass, unlike `count` calls of `Remove`).
     ///
-    /// Param first: position of the first element to remove.
-    /// Param count: how many to remove; `first + count` must be at most `Size()`.
-    /// Aborts: `first + count` is greater than `Size()`.
+    /// - Param first: position of the first element to remove.
+    /// - Param count: how many to remove; `first + count` must be at most `Size()`.
+    /// - Aborts: `first + count` is greater than `Size()`.
     void RemoveRange(usize first, usize count) {
         ENGINE_ASSERT(first <= size_ && count <= size_ - first, "Vector::RemoveRange: the range is past the end");
         if (count == 0) return;
@@ -303,11 +303,11 @@ public:
 
     /// Returns a reference to the element at `index`.
     ///
-    /// Param index: element position; must be less than `Size()` (not checked).
+    /// - Param index: element position; must be less than `Size()` (not checked).
     T& operator[](usize index) { return data_[index]; }
     /// Returns a const reference to the element at `index`.
     ///
-    /// Param index: element position; must be less than `Size()` (not checked).
+    /// - Param index: element position; must be less than `Size()` (not checked).
     const T& operator[](usize index) const { return data_[index]; }
 
     /// Returns a pointer to the first element; null while the capacity is zero. Invalidated by growth.

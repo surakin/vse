@@ -1,5 +1,5 @@
 #pragma once
 
 /// Does a thing.
-/// Returns: nothing useful.
+/// - Returns: nothing useful.
 void DoThing();

@@ -9,7 +9,7 @@ namespace engine_placeholder {
 
 /// Casts `value` to an rvalue reference (`std::move`).
 ///
-/// Thread-safety: thread-safe. Pure; no state.
+/// - Thread-safety: thread-safe. Pure; no state.
 template <class T>
 constexpr decltype(auto) Move(T&& value) noexcept {
     return std::move(value);
@@ -17,7 +17,7 @@ constexpr decltype(auto) Move(T&& value) noexcept {
 
 /// Forwards `value` with the value category it was passed with (`std::forward`).
 ///
-/// Thread-safety: thread-safe. Pure; no state.
+/// - Thread-safety: thread-safe. Pure; no state.
 template <class T, class U>
 constexpr T&& Forward(U&& value) noexcept {
     return static_cast<T&&>(value);
@@ -25,7 +25,7 @@ constexpr T&& Forward(U&& value) noexcept {
 
 /// Replaces `target` with `value` and returns the old value (`std::exchange`).
 ///
-/// Thread-safety: thread-compatible. Not safe on the same `target` from two threads.
+/// - Thread-safety: thread-compatible. Not safe on the same `target` from two threads.
 template <class T, class U = T>
 constexpr T Exchange(T& target, U&& value) noexcept(std::is_nothrow_move_constructible_v<T> && std::is_nothrow_assignable_v<T&, U>) {
     T old = std::move(target);
@@ -35,7 +35,7 @@ constexpr T Exchange(T& target, U&& value) noexcept(std::is_nothrow_move_constru
 
 /// Swaps two objects (`std::swap`).
 ///
-/// Thread-safety: thread-compatible. Not safe on the same objects from two threads.
+/// - Thread-safety: thread-compatible. Not safe on the same objects from two threads.
 template <class T>
 constexpr void Swap(T& a, T& b) noexcept(std::is_nothrow_move_constructible_v<T> && std::is_nothrow_move_assignable_v<T>) {
     T tmp = std::move(a);

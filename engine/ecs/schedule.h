@@ -28,9 +28,9 @@ namespace engine_placeholder::ecs {
 /// Declares `ecs.parallel_systems` (bool, default true: used by the parallel scheduler) and `ecs.stats` (bool, default false: per-system statistics).
 /// Each has an environment variable and a flag.
 ///
-/// Param registry: the registry to declare them in.
-/// Fails: a key already registered is left as it is.
-/// Ownership: borrows `registry` for the call; the descriptions are string literals.
+/// - Param registry: the registry to declare them in.
+/// - Fails: a key already registered is left as it is.
+/// - Ownership: borrows `registry` for the call; the descriptions are string literals.
 void RegisterEcsSettings(settings::Registry* registry);
 
 /// A stage of the frame; systems run stage by stage, in the order the stages were made.
@@ -54,13 +54,13 @@ class QueryRunner;
 ///
 /// A query or resource outside the declared access is reported with `ENGINE_ENSURE` and counted in `ScheduleStats::access_violations`.
 ///
-/// Thread-safety: thread-compatible; one system uses it at a time.
-/// Ownership: borrows the world and the system's buffer for the duration of the call.
+/// - Thread-safety: thread-compatible; one system uses it at a time.
+/// - Ownership: borrows the world and the system's buffer for the duration of the call.
 class SystemContext {
 public:
     /// Makes a context; only the schedule does.
     ///
-    /// Ownership: borrows every pointer; they must outlive the context.
+    /// - Ownership: borrows every pointer; they must outlive the context.
     SystemContext(World* world, CommandBuffer* commands, const ComponentSet* reads, const ComponentSet* writes, const Vector<u32>* resource_reads,
                   const Vector<u32>* resource_writes, u64* violations, CommandBufferPool* parallel_commands, jobs::Scheduler* scheduler,
                   f32 dt, u64 frame)
@@ -68,24 +68,24 @@ public:
           violations_(violations), parallel_commands_(parallel_commands), scheduler_(scheduler), dt_(dt), frame_(frame) {}
 
     /// The time step of the frame, in seconds.
-    /// Fails: never.
+    /// - Fails: never.
     f32 Dt() const { return dt_; }
     /// The frame number (0 for the first `Schedule::Run`).
-    /// Fails: never.
+    /// - Fails: never.
     u64 Frame() const { return frame_; }
     /// The system's command buffer: structural changes recorded here apply at the end of the stage, in registration order.
-    /// Fails: never.
-    /// Ownership: owned by the schedule; valid for the call.
+    /// - Fails: never.
+    /// - Ownership: owned by the schedule; valid for the call.
     CommandBuffer& Commands() { return *commands_; }
 
     /// Calls `fn(ChunkView&, CommandBuffer&)` for each chunk of `query` that passes its filters, the chunks split into ranges that run as jobs when this system
     /// has the frame thread to itself (it is alone in its wave and the schedule has a scheduler); otherwise the ranges run one after another. Each range records
     /// into its own command buffer, applied after the system in chunk order, so the result does not depend on how the jobs were scheduled.
     ///
-    /// Param query: the system's query (from `MakeQuerySystem`).
-    /// Param fn: called per chunk; must not change the world's structure except through the buffer it is given.
-    /// Param grain: chunks per range; 0 chooses a few ranges per worker.
-    /// Aborts: as for [[ecs::Query::ForEach]].
+    /// - Param query: the system's query (from `MakeQuerySystem`).
+    /// - Param fn: called per chunk; must not change the world's structure except through the buffer it is given.
+    /// - Param grain: chunks per range; 0 chooses a few ranges per worker.
+    /// - Aborts: as for [[ecs::Query::ForEach]].
     template <class Q, class Fn>
     void ForEachChunkParallel(Q& query, Fn&& fn, usize grain = 0) {
         const usize chunks = query.ChunkCountUpperBound();
@@ -101,7 +101,7 @@ public:
     }
     /// Folds one value per chunk of `query` in chunk order (see [[ecs::Query::ReduceChunks]]); parallel under the same conditions as `ForEachChunkParallel`.
     ///
-    /// Returns: the folded value.
+    /// - Returns: the folded value.
     template <class T, class Q, class PerChunk, class Combine>
     T ReduceChunks(Q& query, T init, PerChunk&& per_chunk, Combine&& combine, usize grain = 0) {
         return query.template ReduceChunks<T>(scheduler_, init, per_chunk, combine, grain);
@@ -109,7 +109,7 @@ public:
 
     /// Makes a query over the world. Prefer the query a `MakeQuerySystem` passes in: it is kept between frames.
     ///
-    /// Fails: a `Write` of a component not declared as written, or a read of one not declared, counts a violation (`ENGINE_ENSURE`).
+    /// - Fails: a `Write` of a component not declared as written, or a read of one not declared, counts a violation (`ENGINE_ENSURE`).
     template <class... Terms>
     ecs::Query<Terms...> Query() {
         (CheckTerm<Terms>(), ...);
@@ -117,16 +117,16 @@ public:
     }
 
     /// The world's resource of type `T`, for writing.
-    /// Fails: `T` was not declared with `WritesResource` counts a violation.
-    /// Aborts: the world has no such resource.
+    /// - Fails: `T` was not declared with `WritesResource` counts a violation.
+    /// - Aborts: the world has no such resource.
     template <class T>
     T& Resource() {
         Check(Declared(*resource_writes_, detail::ResourceTypeId<T>()), "SystemContext::Resource: the system did not declare WritesResource for this type");
         return world_->Resource<T>();
     }
     /// The world's resource of type `T`, for reading.
-    /// Fails: `T` was declared with neither `ReadsResource` nor `WritesResource` counts a violation.
-    /// Aborts: the world has no such resource.
+    /// - Fails: `T` was declared with neither `ReadsResource` nor `WritesResource` counts a violation.
+    /// - Aborts: the world has no such resource.
     template <class T>
     const T& ReadResource() {
         const u32 id = detail::ResourceTypeId<T>();
@@ -134,23 +134,23 @@ public:
         return static_cast<const World*>(world_)->Resource<T>();
     }
     /// Returns whether `entity` is alive.
-    /// Fails: never.
+    /// - Fails: never.
     bool Exists(Entity entity) const { return world_->Exists(entity); }
     /// A number identifying the world this frame runs on (see [[ecs::World::Id]]): a system that keeps queries rebuilds them when it changes.
-    /// Fails: never.
+    /// - Fails: never.
     u64 WorldId() const { return world_->Id(); }
     /// The number of entities destroyed in this world so far. A system can notice that some were destroyed since its last run by comparing it with the value it saw then.
-    /// Fails: never.
+    /// - Fails: never.
     u64 DestroyedCount() const { return world_->Stats().destroyed; }
     /// The current change-detection tick.
-    /// Fails: never.
+    /// - Fails: never.
     u64 Tick() const { return world_->Tick(); }
 
     /// One entity's component for reading (see [[ecs::World::Peek]]): for a system that reads other entities' rows than the ones its query writes.
     ///
-    /// Returns: the component, or null (dead entity, missing component).
-    /// Fails: `T` declared neither read nor written counts a violation; returns null as described.
-    /// Ownership: views the entity's row; valid until the next structural call.
+    /// - Returns: the component, or null (dead entity, missing component).
+    /// - Fails: `T` declared neither read nor written counts a violation; returns null as described.
+    /// - Ownership: views the entity's row; valid until the next structural call.
     template <class T>
     const T* Peek(Entity entity) {
         const ComponentId id = ComponentOf<T>();
@@ -159,7 +159,7 @@ public:
     }
     /// How many removals of the tracked component `T` the world's log holds (see [[ecs::World::RemovedCount]]).
     ///
-    /// Fails: `T` declared neither read nor written counts a violation.
+    /// - Fails: `T` declared neither read nor written counts a violation.
     template <class T>
     usize RemovedCount() {
         const ComponentId id = ComponentOf<T>();
@@ -168,23 +168,23 @@ public:
     }
     /// The `index`th logged removal of `T` (see [[ecs::World::RemovedAt]]).
     ///
-    /// Aborts: `index` is not below `RemovedCount<T>()`.
+    /// - Aborts: `index` is not below `RemovedCount<T>()`.
     template <class T>
     RemovedComponent<T> RemovedAt(usize index) const {
         return static_cast<const World*>(world_)->RemovedAt<T>(index);
     }
     /// One entity's component for writing without stamping (see [[ecs::World::Poke]]); call `Stamp` afterwards from one thread.
     ///
-    /// Returns: the component, or null.
-    /// Fails: `T` not declared as written counts a violation; returns null as described.
-    /// Ownership: views the entity's row; valid until the next structural call.
+    /// - Returns: the component, or null.
+    /// - Fails: `T` not declared as written counts a violation; returns null as described.
+    /// - Ownership: views the entity's row; valid until the next structural call.
     template <class T>
     T* Poke(Entity entity) {
         Check(writes_->Has(ComponentOf<T>()), "SystemContext::Poke of a component the system did not declare as written");
         return world_->Poke<T>(entity);
     }
     /// Stamps the entity's chunk column of `T` as written now. Call from one thread at a time.
-    /// Fails: `T` not declared as written counts a violation.
+    /// - Fails: `T` not declared as written counts a violation.
     template <class T>
     void Stamp(Entity entity) {
         Check(writes_->Has(ComponentOf<T>()), "SystemContext::Stamp of a component the system did not declare as written");
@@ -192,8 +192,8 @@ public:
     }
     /// Calls `fn(begin, end)` over `[0, count)` in ranges of `grain` as jobs when this system has the frame thread to itself, else one range after another.
     ///
-    /// Param fn: an lvalue callable taking two `usize`; the ranges run concurrently, so they must not touch the same data.
-    /// Param grain: items per range; 0 chooses a few ranges per worker.
+    /// - Param fn: an lvalue callable taking two `usize`; the ranges run concurrently, so they must not touch the same data.
+    /// - Param grain: items per range; 0 chooses a few ranges per worker.
     template <class F>
     void ParallelFor(usize count, usize grain, F& fn) {
         if (count == 0) {
@@ -424,8 +424,8 @@ void DeclareTerm(ComponentSet* reads, ComponentSet* writes) {
 /// A system: a name, a function, what it reads and writes, its stage, ordering constraints and an optional run condition. Built by [[ecs::MakeSystem]]
 /// or [[ecs::MakeQuerySystem]], refined with the chained calls, and given to [[ecs::Schedule::Add]].
 ///
-/// Thread-safety: thread-compatible.
-/// Ownership: owns its function (`MakeSystem` moves the callable in); the name and the names given to `After` and `Before` are borrowed and must outlive
+/// - Thread-safety: thread-compatible.
+/// - Ownership: owns its function (`MakeSystem` moves the callable in); the name and the names given to `After` and `Before` are borrowed and must outlive
 ///   the schedule (use string literals).
 class SystemDesc {
 public:
@@ -435,67 +435,67 @@ public:
     SystemDesc() = default;
     /// Makes a system from a name and a stored function; use [[ecs::MakeSystem]] or [[ecs::MakeQuerySystem]].
     ///
-    /// Ownership: takes the function; borrows `name`.
+    /// - Ownership: takes the function; borrows `name`.
     SystemDesc(const char* name, detail::SystemFn fn) : name_(name), fn_(Move(fn)) {}
     SystemDesc(SystemDesc&&) = default;
     SystemDesc& operator=(SystemDesc&&) = default;
 
     /// Declares the access of a query's terms (what `MakeQuerySystem` does).
-    /// Fails: never.
+    /// - Fails: never.
     template <class... Terms>
     void DeduceAccess() {
         (detail::DeclareTerm<Terms>(&reads_, &writes_), ...);
     }
     /// Declares components the system reads.
-    /// Fails: never.
+    /// - Fails: never.
     template <class... Ts>
     SystemDesc&& Reads() && {
         (reads_.Add(ComponentOf<Ts>()), ...);
         return Move(*this);
     }
     /// Declares components the system writes (a write includes reading).
-    /// Fails: never.
+    /// - Fails: never.
     template <class... Ts>
     SystemDesc&& Writes() && {
         (writes_.Add(ComponentOf<Ts>()), ...);
         return Move(*this);
     }
     /// Declares resources the system reads.
-    /// Fails: never.
+    /// - Fails: never.
     template <class... Ts>
     SystemDesc&& ReadsResource() && {
         (resource_reads_.Push(detail::ResourceTypeId<Ts>()), ...);
         return Move(*this);
     }
     /// Declares resources the system writes.
-    /// Fails: never.
+    /// - Fails: never.
     template <class... Ts>
     SystemDesc&& WritesResource() && {
         (resource_writes_.Push(detail::ResourceTypeId<Ts>()), ...);
         return Move(*this);
     }
     /// Puts the system in a stage (the default is [[ecs::kUpdate]]).
-    /// Fails: never.
+    /// - Fails: never.
     SystemDesc&& InStage(StageId stage) && {
         stage_ = stage;
         return Move(*this);
     }
     /// Runs the system after the named system of the same stage.
-    /// Aborts: more than [[ecs::SystemDesc::kMaxConstraints]] names.
+    /// - Aborts: more than [[ecs::SystemDesc::kMaxConstraints]] names.
     SystemDesc&& After(const char* name) && {
         ENGINE_ASSERT(after_count_ < kMaxConstraints, "SystemDesc::After: too many constraints");
         after_[after_count_++] = name;
         return Move(*this);
     }
     /// Runs the system before the named system of the same stage.
-    /// Aborts: more than [[ecs::SystemDesc::kMaxConstraints]] names.
+    /// - Aborts: more than [[ecs::SystemDesc::kMaxConstraints]] names.
     SystemDesc&& Before(const char* name) && {
         ENGINE_ASSERT(before_count_ < kMaxConstraints, "SystemDesc::Before: too many constraints");
         before_[before_count_++] = name;
         return Move(*this);
     }
     /// Runs the system only in frames where `condition` returns true.
-    /// Fails: never.
+    /// - Fails: never.
     SystemDesc&& RunIf(bool (*condition)(SystemContext&)) && {
         condition_ = condition;
         return Move(*this);
@@ -519,8 +519,8 @@ private:
 
 /// Makes a system from a function `void(SystemContext&)`; declare what it touches with `Reads`, `Writes`, `ReadsResource`, `WritesResource`.
 ///
-/// Param name: a string literal naming the system.
-/// Param fn: a callable; moved into the system.
+/// - Param name: a string literal naming the system.
+/// - Param fn: a callable; moved into the system.
 template <class Fn>
 SystemDesc MakeSystem(const char* name, Fn fn) {
     return SystemDesc(name, detail::SystemFn(Move(fn)));
@@ -529,8 +529,8 @@ SystemDesc MakeSystem(const char* name, Fn fn) {
 /// Makes a system from a function `void(SystemContext&, Query<Terms...>&)`; the access is deduced from the terms (`Read`, `Optional`, `Changed` and `Added` are
 /// reads, `Write` and `OptionalWrite` are writes) and the query is made once and kept.
 ///
-/// Param name: a string literal naming the system.
-/// Param fn: a callable; moved into the system.
+/// - Param name: a string literal naming the system.
+/// - Param fn: a callable; moved into the system.
 template <class... Terms, class Fn>
 SystemDesc MakeQuerySystem(const char* name, Fn fn) {
     SystemDesc desc(name, detail::SystemFn(detail::QueryRunner<Fn, Terms...>(Move(fn))));
@@ -540,8 +540,8 @@ SystemDesc MakeQuerySystem(const char* name, Fn fn) {
 
 /// The counters of one system.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: owns nothing (`name` is the borrowed literal).
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns nothing (`name` is the borrowed literal).
 struct SystemStats {
     /// The system's name.
     const char* name = nullptr;
@@ -565,8 +565,8 @@ struct SystemStats {
 
 /// What `Build` says.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: owns nothing.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns nothing.
 struct BuildReport {
     /// True when the order was made.
     bool ok = false;
@@ -576,8 +576,8 @@ struct BuildReport {
 
 /// Schedule-wide counters.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: owns nothing.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns nothing.
 struct ScheduleStats {
     /// Frames run.
     u64 frames = 0;
@@ -596,8 +596,8 @@ struct ScheduleStats {
 /// order; the frame ends with `World::Advance`. A system that records `Destroy` of an entity another system `Add`s to in the same stage: the buffers apply
 /// in registration order, so the earlier system's commands take effect first and a later command on the dead entity is skipped and counted.
 ///
-/// Thread-safety: thread-compatible.
-/// Ownership: owns the systems and their buffers; borrows the settings registry given to `UseSettings`.
+/// - Thread-safety: thread-compatible.
+/// - Ownership: owns the systems and their buffers; borrows the settings registry given to `UseSettings`.
 class Schedule {
 public:
     /// Makes a schedule with the four default stages.
@@ -606,52 +606,52 @@ public:
     Schedule& operator=(const Schedule&) = delete;
 
     /// Adds a stage after `after` and returns its id (stages run in list order).
-    /// Param name: a string literal.
-    /// Aborts: `after` is not a stage.
+    /// - Param name: a string literal.
+    /// - Aborts: `after` is not a stage.
     StageId AddStage(const char* name, StageId after);
     /// Adds a system.
-    /// Aborts: its stage does not exist, or it has no function.
+    /// - Aborts: its stage does not exist, or it has no function.
     void Add(SystemDesc system);
     /// Orders the systems. Must succeed before `Run`; call again after `Add`.
-    /// Returns: the report; on failure the previous order (if any) stays.
+    /// - Returns: the report; on failure the previous order (if any) stays.
     BuildReport Build();
 
     /// Reads `ecs.parallel_systems` and `ecs.stats` from `registry` at the start of each frame (see [[ecs::RegisterEcsSettings]]).
-    /// Aborts: the settings are not registered.
-    /// Ownership: borrows `registry`.
+    /// - Aborts: the settings are not registered.
+    /// - Ownership: borrows `registry`.
     void UseSettings(const settings::Registry& registry);
     /// Gives the schedule a job scheduler: systems that do not conflict then run as jobs, and a system alone in its wave may split its chunks over the workers.
     /// With none (the default), or with `ecs.parallel_systems` off, every system runs on the calling thread in the sequential order. `Run` must then be called
     /// on the thread that owns the scheduler (participant 0), outside any job.
-    /// Param scheduler: or null.
-    /// Ownership: borrows `scheduler`, which must outlive every `Run`.
+    /// - Param scheduler: or null.
+    /// - Ownership: borrows `scheduler`, which must outlive every `Run`.
     void SetScheduler(jobs::Scheduler* scheduler) { scheduler_ = scheduler; }
     /// Turns statistics on or off by hand (when no registry is used); takes effect at the next frame.
     void SetStatsEnabled(bool enabled) { stats_enabled_ = enabled; }
 
     /// Runs one frame.
-    /// Param dt: the time step in seconds.
-    /// Aborts: the schedule was not built since the last `Add`, or the world is being iterated.
+    /// - Param dt: the time step in seconds.
+    /// - Aborts: the schedule was not built since the last `Add`, or the world is being iterated.
     void Run(World& world, f32 dt);
 
     /// The wave of the `index`-th system in run order (after `Build`): systems of one stage with the same wave number do not conflict and may run together;
     /// a system never runs in an earlier wave than a system before it that conflicts with it or must precede it.
-    /// Aborts: `index` is not below the count or the schedule is not built.
+    /// - Aborts: `index` is not below the count or the schedule is not built.
     u32 WaveOf(u32 index) const;
     /// The number of systems.
     u32 SystemCount() const { return static_cast<u32>(systems_.Size()); }
     /// The names of the systems in run order (after `Build`): the name of the `index`-th system to run.
-    /// Aborts: `index` is not below the count or the schedule is not built.
-    /// Ownership: the name is the literal given to the system.
+    /// - Aborts: `index` is not below the count or the schedule is not built.
+    /// - Ownership: the name is the literal given to the system.
     const char* RunOrderName(u32 index) const;
     /// The counters of the system with this name, or null.
-    /// Fails: returns null when there is none.
-    /// Ownership: the pointer views the schedule's counters; valid until the next `Add`.
+    /// - Fails: returns null when there is none.
+    /// - Ownership: the pointer views the schedule's counters; valid until the next `Add`.
     const SystemStats* StatsOf(const char* name) const;
     /// The schedule-wide counters.
     const ScheduleStats& Stats() const { return stats_; }
     /// Whether the `ecs.parallel_systems` setting asked for parallel systems at the last frame (used by the parallel scheduler; the sequential one ignores it).
-    /// Fails: never.
+    /// - Fails: never.
     bool ParallelRequested() const { return parallel_requested_; }
     /// The number of system functions stored on the heap because they did not fit the inline buffer (since the program started).
     static u64 HeapFallbacks() { return detail::SystemFn::Fallbacks(); }

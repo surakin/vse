@@ -22,8 +22,8 @@ inline constexpr u32 kNoColumn = 0xFFFFFFFFu;
 /// Column 0 is the entity column; the others are the non-tag components in ascending id order. In memory the columns are ordered by
 /// descending alignment, so none needs padding, and the capacity is the chunk's room divided by the bytes of one row.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: `info` points into the component registry, which outlives it.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: `info` points into the component registry, which outlives it.
 struct ArchetypeLayout {
     /// The columns, entity column included.
     u32 column_count = 0;
@@ -45,8 +45,8 @@ struct ArchetypeLayout {
 
 /// Where a row is.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: owns nothing; valid until the next structural change of the archetype.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns nothing; valid until the next structural change of the archetype.
 struct RowRef {
     /// The chunk's index in the archetype.
     u32 chunk_index = 0;
@@ -71,26 +71,26 @@ enum class RowContents : u8 {
 /// The archetype never allocates per entity. Row positions change on a removal: the caller keeps its entity table in step (it is told
 /// which entity moved).
 ///
-/// Thread-safety: thread-compatible. Reading columns from several threads is safe while no thread adds or removes rows.
-/// Ownership: owns its chunks (returned to the pool by the destructor, which destroys the live components). The pool and the registry
+/// - Thread-safety: thread-compatible. Reading columns from several threads is safe while no thread adds or removes rows.
+/// - Ownership: owns its chunks (returned to the pool by the destructor, which destroys the live components). The pool and the registry
 ///   must outlive it.
 class Archetype {
 public:
     /// Creates an archetype for `components`, computing its layout. Check [[ecs::Archetype::Valid]].
     ///
-    /// Param index: this archetype's index in its world (stored in its chunks).
-    /// Param components: the set; at most [[ecs::kMaxArchetypeComponents]] ids, each registered.
-    /// Aborts: `components` holds more than the maximum, or an id that is not registered.
+    /// - Param index: this archetype's index in its world (stored in its chunks).
+    /// - Param components: the set; at most [[ecs::kMaxArchetypeComponents]] ids, each registered.
+    /// - Aborts: `components` holds more than the maximum, or an id that is not registered.
     Archetype(u32 index, const ComponentSet& components, const ComponentRegistry& registry, ChunkPool& pool);
     Archetype(const Archetype&) = delete;
     Archetype& operator=(const Archetype&) = delete;
     /// Destroys the components still alive and returns every chunk to the pool.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     ~Archetype();
 
     /// Returns whether the layout fits: false (and counted in the pool) when one row is larger than a chunk, in which case no row can be added.
-    /// Fails: never.
+    /// - Fails: never.
     bool Valid() const { return layout_.capacity != 0; }
     /// The index given at creation.
     u32 Index() const { return index_; }
@@ -99,23 +99,23 @@ public:
     /// The chunk layout.
     const ArchetypeLayout& Layout() const { return layout_; }
     /// Returns whether the archetype has `id` (a tag included).
-    /// Fails: never.
+    /// - Fails: never.
     bool Has(ComponentId id) const { return components_.Has(id); }
 
     /// Adds a row at the end and returns where it is.
     ///
     /// The component cells are uninitialized: the caller constructs every one (`CellPtr`) before the next structural change; the entity column is set.
     ///
-    /// Returns: false when the archetype is not valid or the pool could not supply a chunk (the pool counts it); `row` is then untouched.
-    /// Fails: out of memory.
-    /// Ownership: the row's cells belong to the archetype; `row->chunk` is valid until the next add or remove.
+    /// - Returns: false when the archetype is not valid or the pool could not supply a chunk (the pool counts it); `row` is then untouched.
+    /// - Fails: out of memory.
+    /// - Ownership: the row's cells belong to the archetype; `row->chunk` is valid until the next add or remove.
     bool AddRow(Entity entity, RowRef* row);
 
     /// Removes a row. Its components are destroyed (for `Alive`), then the last row of the last chunk moves into the gap.
     ///
-    /// Returns: the entity of the row that moved into the gap (the caller updates its location to `chunk_index`/`row`), or the invalid
+    /// - Returns: the entity of the row that moved into the gap (the caller updates its location to `chunk_index`/`row`), or the invalid
     ///   entity when nothing moved (the removed row was the last).
-    /// Aborts: the row does not exist.
+    /// - Aborts: the row does not exist.
     Entity RemoveRow(u32 chunk_index, u32 row, RowContents contents = RowContents::Alive);
 
     /// The number of chunks.
@@ -125,27 +125,27 @@ public:
     /// The bytes of the chunks held.
     usize BytesUsed() const { return chunks_.Size() * kChunkBytes; }
     /// The chunk at `index`.
-    /// Aborts: `index` is not below `ChunkCount()`.
-    /// Ownership: the chunk belongs to the archetype and is valid until the next add or remove.
+    /// - Aborts: `index` is not below `ChunkCount()`.
+    /// - Ownership: the chunk belongs to the archetype and is valid until the next add or remove.
     Chunk* ChunkAt(u32 chunk_index) const;
 
     /// The entities of a chunk, in row order.
-    /// Ownership: the span views the chunk; valid until the next add or remove.
+    /// - Ownership: the span views the chunk; valid until the next add or remove.
     Span<Entity> Entities(Chunk* chunk) const;
 
     /// The start of the column of `id` in `chunk`, or null for a tag or a component the archetype lacks.
-    /// Fails: returns null when there is no column.
-    /// Ownership: the pointer views the chunk; valid until the next add or remove.
+    /// - Fails: returns null when there is no column.
+    /// - Ownership: the pointer views the chunk; valid until the next add or remove.
     void* ColumnPtr(Chunk* chunk, ComponentId id) const;
 
     /// The address of one cell: the column of `id` at `row`; null for a tag or absent component.
-    /// Fails: returns null when there is no column.
-    /// Ownership: the pointer views the chunk; valid until the next add or remove.
+    /// - Fails: returns null when there is no column.
+    /// - Ownership: the pointer views the chunk; valid until the next add or remove.
     void* CellPtr(Chunk* chunk, ComponentId id, u32 row) const;
 
     /// The column of component type `T` in `chunk` as a span of the chunk's rows.
-    /// Aborts: the archetype has no column for `T` (it lacks it, or it is a tag).
-    /// Ownership: the span views the chunk; valid until the next add or remove.
+    /// - Aborts: the archetype has no column for `T` (it lacks it, or it is a tag).
+    /// - Ownership: the span views the chunk; valid until the next add or remove.
     template <class T>
     Span<T> Column(Chunk* chunk) const {
         T* data = static_cast<T*>(ColumnPtr(chunk, ComponentOf<T>()));
@@ -154,18 +154,18 @@ public:
     }
 
     /// Stamps every component column of `chunk` as written and added at `tick`: a row arrived (created, or migrated in).
-    /// Fails: never.
-    /// Ownership: writes the chunk's header; the chunk belongs to the archetype.
+    /// - Fails: never.
+    /// - Ownership: writes the chunk's header; the chunk belongs to the archetype.
     void MarkArrived(Chunk* chunk, u64 tick) const;
     /// Stamps the column of `id` in `chunk` as written at `tick`; does nothing for a tag or an absent component.
-    /// Fails: never.
-    /// Ownership: writes the chunk's header; the chunk belongs to the archetype.
+    /// - Fails: never.
+    /// - Ownership: writes the chunk's header; the chunk belongs to the archetype.
     void MarkWritten(Chunk* chunk, ComponentId id, u64 tick) const;
     /// The tick of the last write of the column of `id` in `chunk`, or 0 when there is no column.
-    /// Fails: returns 0 when there is no column.
+    /// - Fails: returns 0 when there is no column.
     u64 WrittenTick(const Chunk* chunk, ComponentId id) const;
     /// The tick of the last addition to the column of `id` in `chunk`, or 0 when there is no column.
-    /// Fails: returns 0 when there is no column.
+    /// - Fails: returns 0 when there is no column.
     u64 AddedTick(const Chunk* chunk, ComponentId id) const;
 
 private:

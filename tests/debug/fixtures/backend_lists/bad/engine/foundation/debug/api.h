@@ -1,10 +1,10 @@
 /// Does a thing.
-/// Backend: Windows: X; macOS: Y.
+/// - Backend: Windows: X; macOS: Y.
 bool DoThing(int x);
 
 /// Plain function, no label.
 void Other();
 
 /// Another one.
-/// Backend: Windows: X.
+/// - Backend: Windows: X.
 void Forgotten();

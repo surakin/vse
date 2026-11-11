@@ -31,8 +31,8 @@ enum class GraphemeBreakProperty : u8 {
 /// Looks up the grapheme-break property of `codepoint` with a binary search over
 /// the generated table.
 ///
-/// Param codepoint: Unicode scalar value.
-/// Returns: its property, or `GraphemeBreakProperty::Other` if it is not listed.
+/// - Param codepoint: Unicode scalar value.
+/// - Returns: its property, or `GraphemeBreakProperty::Other` if it is not listed.
 GraphemeBreakProperty LookupGraphemeBreakProperty(u32 codepoint);
 
 /// Forward iterator over the grapheme clusters of a UTF-8 [[StringView]].
@@ -40,15 +40,15 @@ GraphemeBreakProperty LookupGraphemeBreakProperty(u32 codepoint);
 /// Each element is a view of one cluster. Obtain iterators from
 /// [[GraphemeClusters]] rather than constructing them directly.
 ///
-/// Thread-safety: thread-compatible.
-/// Ownership: holds a view; the underlying text must outlive the iterator and
+/// - Thread-safety: thread-compatible.
+/// - Ownership: holds a view; the underlying text must outlive the iterator and
 ///   the cluster views it yields.
 class GraphemeClusterIterator {
 public:
     /// Creates an iterator positioned at byte `offset` of `sv`.
     ///
-    /// Param sv: text to iterate.
-    /// Param offset: byte index of a cluster start, or `sv.Length()` for the end.
+    /// - Param sv: text to iterate.
+    /// - Param offset: byte index of a cluster start, or `sv.Length()` for the end.
     GraphemeClusterIterator(StringView sv, usize offset) : sv_(sv), offset_(offset) {
         if (offset_ < sv_.Length()) {
             cluster_end_ = FindNextBoundary(offset_);
@@ -82,13 +82,13 @@ private:
 
 /// Range adaptor that makes the grapheme clusters of a string usable in a range-for loop.
 ///
-/// Thread-safety: thread-compatible.
-/// Ownership: holds a view; the underlying text must outlive the range.
+/// - Thread-safety: thread-compatible.
+/// - Ownership: holds a view; the underlying text must outlive the range.
 class GraphemeClusterRange {
 public:
     /// Creates a range over `sv`.
     ///
-    /// Param sv: UTF-8 text to segment.
+    /// - Param sv: UTF-8 text to segment.
     explicit GraphemeClusterRange(StringView sv) : sv_(sv) {}
 
     /// Returns an iterator at the first cluster.
@@ -102,15 +102,15 @@ private:
 
 /// Returns a range over the grapheme clusters of `sv`, for use in a range-for loop.
 ///
-/// Param sv: UTF-8 text; must outlive the returned range.
+/// - Param sv: UTF-8 text; must outlive the returned range.
 inline GraphemeClusterRange GraphemeClusters(StringView sv) {
     return GraphemeClusterRange(sv);
 }
 
 /// Counts the grapheme clusters in `sv`.
 ///
-/// Param sv: UTF-8 text.
-/// Returns: the number of clusters; 0 for empty text.
+/// - Param sv: UTF-8 text.
+/// - Returns: the number of clusters; 0 for empty text.
 usize GraphemeClusterCount(StringView sv);
 
 } // namespace engine_placeholder

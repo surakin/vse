@@ -35,8 +35,8 @@ inline constexpr u32 kMaxCursorImageScale = 4;
 /// bytes). `scale` is the pixel density the image was drawn for: the cursor is shown `width / scale` logical units wide, so one image for a scale-2 display is
 /// 64x64 pixels with `scale` 2 and a hotspot given in pixels.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: borrows `rgba`; the pointer must stay valid for the call that receives the image.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: borrows `rgba`; the pointer must stay valid for the call that receives the image.
 struct CursorImage {
     const byte* rgba = nullptr; ///< `width * height * 4` bytes of premultiplied RGBA.
     u32 width = 0;              ///< Width in pixels, 1 to [[os::kMaxCursorImageSize]].
@@ -57,8 +57,8 @@ enum class CursorImageError : u8 {
 };
 
 /// Checks a cursor image.
-/// Param image: the image to check.
-/// Returns: [[os::CursorImageError::Ok]] if a backend may use it, else the first problem found.
+/// - Param image: the image to check.
+/// - Returns: [[os::CursorImageError::Ok]] if a backend may use it, else the first problem found.
 inline CursorImageError ValidateCursorImage(const CursorImage& image) {
     if (image.rgba == nullptr) return CursorImageError::NoPixels;
     if (image.width == 0 || image.height == 0) return CursorImageError::Empty;
@@ -71,8 +71,8 @@ inline CursorImageError ValidateCursorImage(const CursorImage& image) {
 }
 
 /// Hashes everything that makes an image look different (size, hotspot, scale, pixels), so a backend can tell that it already has the cursor.
-/// Param image: a valid image.
-/// Returns: a 64-bit FNV-1a hash; equal images give equal hashes.
+/// - Param image: a valid image.
+/// - Returns: a 64-bit FNV-1a hash; equal images give equal hashes.
 inline u64 HashCursorImage(const CursorImage& image) {
     u64 hash = 1469598103934665603ull;
     auto mix = [&hash](u64 value) {
@@ -100,7 +100,7 @@ inline u64 HashCursorImage(const CursorImage& image) {
 /// changed. Each call that can change what should hold returns the [[os::PointerLockState::Action]] the backend must carry out; the state counts the lock as
 /// pending from the moment it returns `Acquire` until the backend reports `Granted` or `Failed`.
 ///
-/// Thread-safety: not-thread-safe; owner-thread only.
+/// - Thread-safety: not-thread-safe; owner-thread only.
 class PointerLockState {
 public:
     /// What the backend has to do after a call.

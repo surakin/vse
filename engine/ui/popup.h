@@ -20,8 +20,8 @@ enum class Placement : u8 {
 
 /// How a popup opens and closes.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: `owner` is borrowed.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: `owner` is borrowed.
 struct PopupOptions {
     Placement placement = Placement::Below; ///< The preferred side; the opposite one is used when this one does not fit and that one does.
     bool consume_outside_click = true;      ///< A press outside the popups closes them and goes no further (false: it closes them and is delivered as usual).
@@ -31,14 +31,14 @@ struct PopupOptions {
 
 /// A key and the modifiers that must be held with it (only Ctrl, Shift and Alt count).
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct KeyChord {
     Key key = Key::Unknown; ///< The key.
     u32 modifiers = 0;      ///< A mask of `os::kModCtrl`, `os::kModShift` and `os::kModAlt`.
 
     /// Returns whether both fields are equal.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool operator==(const KeyChord& o) const { return key == o.key && modifiers == o.modifiers; }
 };
 
@@ -47,20 +47,20 @@ struct KeyChord {
 /// The preferred side is used when the popup fits there; otherwise the opposite side when it fits, otherwise the preferred side. Then the popup is shifted along the anchor's
 /// edge to stay inside `bounds`, and finally clamped so that it starts inside `bounds` even when it is larger.
 ///
-/// Param size: the popup's size.
-/// Param anchor: the anchor rectangle, in surface coordinates (a context menu passes an empty rectangle at the pointer).
-/// Param placement: the preferred side.
-/// Param bounds: the area to stay in (the surface).
-/// Returns: the popup's rectangle.
-/// Fails: never.
+/// - Param size: the popup's size.
+/// - Param anchor: the anchor rectangle, in surface coordinates (a context menu passes an empty rectangle at the pointer).
+/// - Param placement: the preferred side.
+/// - Param bounds: the area to stay in (the surface).
+/// - Returns: the popup's rectangle.
+/// - Fails: never.
 Rect PlacePopup(Size size, const Rect& anchor, Placement placement, const Rect& bounds);
 
 /// Returns the text of a chord, such as "Ctrl+Shift+S" or "F10" (modifiers in the order Ctrl, Shift, Alt).
 ///
-/// Param chord: the chord.
-/// Returns: the text; letters are upper case.
-/// Ownership: the caller owns the string.
-/// Fails: `OutOfMemory` aborts like any string.
+/// - Param chord: the chord.
+/// - Returns: the text; letters are upper case.
+/// - Ownership: the caller owns the string.
+/// - Fails: `OutOfMemory` aborts like any string.
 String<HeapAllocator> ChordText(const KeyChord& chord);
 
 } // namespace engine_placeholder::ui

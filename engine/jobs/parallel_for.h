@@ -50,10 +50,10 @@ inline constexpr usize kMaxChunks = 2048;
 /// raised if needed to respect [[jobs::kMaxChunks]]. Callers that index
 /// per-chunk result slots by `begin / chunk` should use this value.
 ///
-/// Param count: total number of iterations.
-/// Param requested: the chunk size asked for, or 0 for the default.
-/// Returns: the chunk size in iterations.
-/// Thread-safety: thread-safe. A pure function.
+/// - Param count: total number of iterations.
+/// - Param requested: the chunk size asked for, or 0 for the default.
+/// - Returns: the chunk size in iterations.
+/// - Thread-safety: thread-safe. A pure function.
 inline usize EffectiveChunkSize(usize count, usize requested) {
     usize chunk = requested == 0 ? kDefaultChunkSize : requested;
     if (count > 0) {
@@ -96,13 +96,13 @@ void Trampoline(void* user, usize begin, usize end) {
 /// [[jobs::Spawn]]. A `count` of 0 completes immediately. Nothing runs until
 /// the returned job is submitted.
 ///
-/// Param count: total number of iterations.
-/// Param chunk_size: iterations per chunk, or 0 for [[jobs::kDefaultChunkSize]]; raised if the chunk count would exceed [[jobs::kMaxChunks]].
-/// Param fn: the work function; called once per chunk.
-/// Param user: context passed to `fn`; it and everything it points to must outlive the join.
-/// Aborts: the job runs on a thread that is not a scheduler participant, or the queues overflow (see [[jobs::Scheduler::Submit]]).
-/// Thread-safety: thread-safe. The returned job is a normal job; chunks run concurrently on participants.
-/// Ownership: `user` is borrowed, not owned; the caller keeps it alive until the join.
+/// - Param count: total number of iterations.
+/// - Param chunk_size: iterations per chunk, or 0 for [[jobs::kDefaultChunkSize]]; raised if the chunk count would exceed [[jobs::kMaxChunks]].
+/// - Param fn: the work function; called once per chunk.
+/// - Param user: context passed to `fn`; it and everything it points to must outlive the join.
+/// - Aborts: the job runs on a thread that is not a scheduler participant, or the queues overflow (see [[jobs::Scheduler::Submit]]).
+/// - Thread-safety: thread-safe. The returned job is a normal job; chunks run concurrently on participants.
+/// - Ownership: `user` is borrowed, not owned; the caller keeps it alive until the join.
 inline Job ParallelFor(usize count, usize chunk_size, ParallelForFn fn, void* user) {
     if (count == 0) co_return;
     const usize chunk = EffectiveChunkSize(count, chunk_size);
@@ -116,14 +116,14 @@ inline Job ParallelFor(usize count, usize chunk_size, ParallelForFn fn, void* us
 /// For callers that are not jobs: it submits the chunk jobs, then helps run
 /// work until they have all completed. A `count` of 0 returns immediately.
 ///
-/// Param scheduler: the scheduler that runs the chunks.
-/// Param count: total number of iterations.
-/// Param chunk_size: iterations per chunk, or 0 for [[jobs::kDefaultChunkSize]]; raised if the chunk count would exceed [[jobs::kMaxChunks]].
-/// Param fn: the work function; called once per chunk.
-/// Param user: context passed to `fn`; it and everything it points to must outlive the call.
-/// Aborts: not called from participant 0 (the main thread) outside any job, or the queues overflow (see [[jobs::Scheduler::HelpUntil(Counter&)]]).
-/// Thread-safety: owner-thread-only. Only participant 0, outside a job.
-/// Ownership: `user` is borrowed, not owned; the call joins before returning.
+/// - Param scheduler: the scheduler that runs the chunks.
+/// - Param count: total number of iterations.
+/// - Param chunk_size: iterations per chunk, or 0 for [[jobs::kDefaultChunkSize]]; raised if the chunk count would exceed [[jobs::kMaxChunks]].
+/// - Param fn: the work function; called once per chunk.
+/// - Param user: context passed to `fn`; it and everything it points to must outlive the call.
+/// - Aborts: not called from participant 0 (the main thread) outside any job, or the queues overflow (see [[jobs::Scheduler::HelpUntil(Counter&)]]).
+/// - Thread-safety: owner-thread-only. Only participant 0, outside a job.
+/// - Ownership: `user` is borrowed, not owned; the call joins before returning.
 inline void ParallelForBlocking(Scheduler& scheduler, usize count, usize chunk_size, ParallelForFn fn, void* user) {
     if (count == 0) return;
     const usize chunk = EffectiveChunkSize(count, chunk_size);
@@ -139,12 +139,12 @@ inline void ParallelForBlocking(Scheduler& scheduler, usize count, usize chunk_s
 /// rule in [[jobs::Job]]). The callable is referenced, not copied, and
 /// outlives the call because the call joins.
 ///
-/// Param scheduler: the scheduler that runs the chunks.
-/// Param count: total number of iterations.
-/// Param chunk_size: iterations per chunk, or 0 for [[jobs::kDefaultChunkSize]].
-/// Param callable: invoked concurrently as `callable(begin, end)` for each chunk; must be safe to call from several threads.
-/// Aborts: same preconditions as the function-pointer overload: participant 0 outside a job, and the queues must not overflow.
-/// Thread-safety: owner-thread-only. Only participant 0, outside a job.
+/// - Param scheduler: the scheduler that runs the chunks.
+/// - Param count: total number of iterations.
+/// - Param chunk_size: iterations per chunk, or 0 for [[jobs::kDefaultChunkSize]].
+/// - Param callable: invoked concurrently as `callable(begin, end)` for each chunk; must be safe to call from several threads.
+/// - Aborts: same preconditions as the function-pointer overload: participant 0 outside a job, and the queues must not overflow.
+/// - Thread-safety: owner-thread-only. Only participant 0, outside a job.
 template <typename F>
 void ParallelForBlocking(Scheduler& scheduler, usize count, usize chunk_size, F& callable) {
     ParallelForBlocking(scheduler, count, chunk_size, &detail::Trampoline<F>, &callable);

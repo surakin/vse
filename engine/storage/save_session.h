@@ -19,8 +19,8 @@ namespace engine_placeholder::storage {
 /// there). A session is for one world and one store: a save of another world resets it, and so does [[storage::SaveSession::Reset]]. If the store is
 /// changed by anything else, call `Reset`.
 ///
-/// Thread-safety: thread-compatible; used by one save at a time.
-/// Ownership: owns its tables; stores entity ids, not pointers into the world.
+/// - Thread-safety: thread-compatible; used by one save at a time.
+/// - Ownership: owns its tables; stores entity ids, not pointers into the world.
 class SaveSession {
 public:
     /// Creates an empty session.
@@ -29,13 +29,13 @@ public:
     SaveSession& operator=(const SaveSession&) = delete;
 
     /// Forgets everything: the next incremental save compares the world with the store.
-    /// Fails: never.
+    /// - Fails: never.
     void Reset();
     /// Returns true when a save has run, so that the next incremental save can use the change stamps.
-    /// Fails: never.
+    /// - Fails: never.
     bool HasBaseline() const { return baseline_; }
     /// The number of records the session believes the store holds.
-    /// Fails: never.
+    /// - Fails: never.
     usize TrackedRecords() const { return hash_of_->Size(); }
 
 private:

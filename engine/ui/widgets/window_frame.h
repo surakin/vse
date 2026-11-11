@@ -14,8 +14,8 @@ namespace engine_placeholder::ui {
 /// over them), down to a minimum and up to the parent's bounds. The frame is positioned by its bounds, so put it in a parent that leaves the bounds of its children alone (the root, the
 /// popup or modal layer, a plain widget), not in a layout container. The close button, when shown, calls `CloseRequested`, which runs `OnCloseRequested`; the frame does not remove itself.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: owns its content and footer.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: owns its content and footer.
 class WindowFrame : public Widget {
 public:
     /// The width of the resize band along each edge, in logical units.
@@ -28,36 +28,36 @@ public:
     static constexpr f32 kMinWidthIcons = 8.0f;
 
     /// Makes a frame.
-    /// Param name: the widget name.
-    /// Param title: the title text.
+    /// - Param name: the widget name.
+    /// - Param title: the title text.
     explicit WindowFrame(StringView name = StringView(), StringView title = StringView());
     /// Sets the title; marks layout dirty.
     void SetTitle(StringView title);
     /// Returns the title.
     StringView Title() const { return title_.Text(); }
     /// Sets the content (replacing the old one, which is destroyed).
-    /// Param content: the widget; may be null for none.
-    /// Ownership: the frame owns the content.
+    /// - Param content: the widget; may be null for none.
+    /// - Ownership: the frame owns the content.
     void SetContent(UniquePtr<Widget> content);
     /// Returns the content, or null.
     ///
-    /// Ownership: borrowed; the frame owns it.
-    /// Fails: never.
+    /// - Ownership: borrowed; the frame owns it.
+    /// - Fails: never.
     Widget* Content() const { return content_; }
     /// Sets the footer (a row of buttons, for example), shown under the content; replaces the old one.
-    /// Param footer: the widget; may be null for none.
-    /// Ownership: the frame owns the footer.
+    /// - Param footer: the widget; may be null for none.
+    /// - Ownership: the frame owns the footer.
     void SetFooter(UniquePtr<Widget> footer);
     /// Returns the footer, or null.
     ///
-    /// Ownership: borrowed; the frame owns it.
-    /// Fails: never.
+    /// - Ownership: borrowed; the frame owns it.
+    /// - Fails: never.
     Widget* Footer() const { return footer_; }
     /// Shows a close button in the title bar (default off); marks layout dirty.
     void SetClosable(bool closable);
     /// Returns whether the close button shows.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool Closable() const { return closable_; }
     /// Lets the title bar move the frame (default on).
     void SetMovable(bool movable) { movable_ = movable; }

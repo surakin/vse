@@ -39,10 +39,10 @@ struct ChildEnd {
 /// in the program's own and the current directory before `PATH`, so pass an absolute path there (the build always does). Standard input is the
 /// null device; standard output goes to `out_path`, created or truncated; standard error goes to `err_path`, or to the same file when `err_path`
 /// is empty.
-/// Param working_dir: the child's working directory, or empty for the caller's.
-/// Param arena: scratch for the conversion of the arguments.
-/// Returns: true and fills `out` if the child started.
-/// Fails: returns false if a file cannot be opened or the program cannot be started.
+/// - Param working_dir: the child's working directory, or empty for the caller's.
+/// - Param arena: scratch for the conversion of the arguments.
+/// - Returns: true and fills `out` if the child started.
+/// - Fails: returns false if a file cannot be opened or the program cannot be started.
 bool StartChild(const Vector<StringView, ArenaAllocator>& args, StringView out_path, StringView err_path, StringView working_dir, ArenaAllocator& arena,
                 ChildProcess* out);
 

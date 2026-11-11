@@ -25,7 +25,7 @@ constexpr usize kMaxFrameModuleBytes = 128;
 
 /// A captured call stack: return addresses, innermost first.
 ///
-/// Thread-safety: thread-compatible. A plain value.
+/// - Thread-safety: thread-compatible. A plain value.
 struct StackTrace {
     /// The addresses, innermost call first; `count` of them are valid.
     u64 frames[kMaxStackFrames] = {};
@@ -37,7 +37,7 @@ struct StackTrace {
 
 /// What is known about one frame (one address, or one function inlined at that address).
 ///
-/// Thread-safety: thread-compatible. A plain value.
+/// - Thread-safety: thread-compatible. A plain value.
 struct FrameInfo {
     /// The address of the frame, as captured.
     u64 address = 0;
@@ -59,7 +59,7 @@ struct FrameInfo {
 
 /// How [[debug::FormatStackTrace]] writes names.
 ///
-/// Thread-safety: thread-compatible. A plain value.
+/// - Thread-safety: thread-compatible. A plain value.
 struct FormatOptions {
     /// Turn mangled C++ names into readable ones. It allocates, so use it only where heap use is allowed (not in a signal
     /// handler).
@@ -72,8 +72,8 @@ struct FormatOptions {
 /// also takes and resolves one trace, which primes the stack unwinder and the debug information of the code on that path.
 /// Without it the first trace does the same work then. Safe to call more than once.
 ///
-/// Thread-safety: thread-safe. Not async-signal-safe: it allocates and reads files.
-/// Backend: the loaded-module walk. Windows: EnumProcessModules; macOS: _dyld_image_count and _dyld_get_image_header.
+/// - Thread-safety: thread-safe. Not async-signal-safe: it allocates and reads files.
+/// - Backend: the loaded-module walk. Windows: EnumProcessModules; macOS: _dyld_image_count and _dyld_get_image_header.
 void InitDebugFacilities();
 
 /// Reads the debug information and the list of loaded modules again, to pick up libraries loaded since the last call.
@@ -81,20 +81,20 @@ void InitDebugFacilities();
 /// Libraries loaded after [[debug::InitDebugFacilities]] are not symbolized until this runs. Each call keeps a small amount
 /// of memory for the life of the program (the library cannot free what it read).
 ///
-/// Thread-safety: thread-safe. Not async-signal-safe. A lookup that runs at the same time may mix the old and the new
+/// - Thread-safety: thread-safe. Not async-signal-safe. A lookup that runs at the same time may mix the old and the new
 ///   information for that one call.
-/// Backend: as InitDebugFacilities, run again after a library is loaded or unloaded.
+/// - Backend: as InitDebugFacilities, run again after a library is loaded or unloaded.
 void ReloadDebugModules();
 
 /// Captures the call stack of the current thread.
 ///
-/// Param trace: receives the frames, innermost first; any previous content is replaced.
-/// Param skip_frames: how many frames to leave out, counting from the caller of this function: 0 starts with the function
+/// - Param trace: receives the frames, innermost first; any previous content is replaced.
+/// - Param skip_frames: how many frames to leave out, counting from the caller of this function: 0 starts with the function
 ///   that called [[debug::CaptureStackTrace]]. A frame the compiler removed (an inlined function, a tail call) is not there
 ///   to skip, so keep the functions you skip out of line.
-/// Returns: true if at least one frame was captured.
-/// Fails: returns false if the stack could not be walked or `skip_frames` covers it all.
-/// Thread-safety: thread-safe. Async-signal-safe once [[debug::InitDebugFacilities]] has run (it never calls `malloc`).
+/// - Returns: true if at least one frame was captured.
+/// - Fails: returns false if the stack could not be walked or `skip_frames` covers it all.
+/// - Thread-safety: thread-safe. Async-signal-safe once [[debug::InitDebugFacilities]] has run (it never calls `malloc`).
 bool CaptureStackTrace(StackTrace& trace, u32 skip_frames = 0);
 
 /// Looks up function, file, line and module for every frame of a trace.
@@ -102,12 +102,12 @@ bool CaptureStackTrace(StackTrace& trace, u32 skip_frames = 0);
 /// A frame with inlined functions produces several entries, innermost first, all with the frame's address; every entry but
 /// the last has `inlined` set. The result is truncated at `capacity`.
 ///
-/// Param trace: the frames to look up.
-/// Param out: receives the entries; at least `capacity` of them; borrowed for the call.
-/// Param capacity: number of entries `out` holds.
-/// Returns: the number of entries written (at least one per frame, unless `capacity` ran out).
-/// Ownership: `out` stays the caller's; the strings inside the entries are copies, not pointers into the library.
-/// Thread-safety: thread-safe. Async-signal-safe once [[debug::InitDebugFacilities]] has run (it never calls `malloc`).
+/// - Param trace: the frames to look up.
+/// - Param out: receives the entries; at least `capacity` of them; borrowed for the call.
+/// - Param capacity: number of entries `out` holds.
+/// - Returns: the number of entries written (at least one per frame, unless `capacity` ran out).
+/// - Ownership: `out` stays the caller's; the strings inside the entries are copies, not pointers into the library.
+/// - Thread-safety: thread-safe. Async-signal-safe once [[debug::InitDebugFacilities]] has run (it never calls `malloc`).
 usize ResolveStackTrace(const StackTrace& trace, FrameInfo* out, usize capacity);
 
 /// Writes a trace as text, one line per frame, to a buffer.
@@ -117,26 +117,26 @@ usize ResolveStackTrace(const StackTrace& trace, FrameInfo* out, usize capacity)
 /// `file:line` is left out when unknown; when the function is unknown the module and offset take its place
 /// (`/path/lib.so+0xOFFSET`), or `??` when even the module is unknown. A trace that was cut ends with `  ... more frames`.
 ///
-/// Param trace: the trace to write.
-/// Param out: the buffer; borrowed for the call.
-/// Param capacity: size of `out`; the text is cut to fit and always ends with a null byte if `capacity` is not 0.
-/// Param options: how to write names.
-/// Returns: the number of bytes written, not counting the null byte.
-/// Ownership: `out` stays the caller's; nothing is retained after the call.
-/// Thread-safety: thread-safe. Async-signal-safe once [[debug::InitDebugFacilities]] has run (it never calls `malloc`),
+/// - Param trace: the trace to write.
+/// - Param out: the buffer; borrowed for the call.
+/// - Param capacity: size of `out`; the text is cut to fit and always ends with a null byte if `capacity` is not 0.
+/// - Param options: how to write names.
+/// - Returns: the number of bytes written, not counting the null byte.
+/// - Ownership: `out` stays the caller's; nothing is retained after the call.
+/// - Thread-safety: thread-safe. Async-signal-safe once [[debug::InitDebugFacilities]] has run (it never calls `malloc`),
 ///   unless `options.demangle`.
 usize FormatStackTrace(const StackTrace& trace, char* out, usize capacity, const FormatOptions& options = FormatOptions());
 
 /// Turns a mangled C++ name into a readable one.
 ///
-/// Param mangled: a mangled name; borrowed for the call.
-/// Param out: receives the readable name, null-terminated; borrowed for the call.
-/// Param capacity: size of `out`.
-/// Returns: true if `mangled` was a mangled name and the result fit.
-/// Fails: returns false, leaving `out` empty, for a name that is not mangled or too long for `out`.
-/// Ownership: `out` stays the caller's; nothing is retained after the call.
-/// Thread-safety: thread-safe. Allocates; not async-signal-safe.
-/// Backend: Windows: UnDecorateSymbolName for MSVC names, the Itanium demangler for clang; macOS: abi::__cxa_demangle.
+/// - Param mangled: a mangled name; borrowed for the call.
+/// - Param out: receives the readable name, null-terminated; borrowed for the call.
+/// - Param capacity: size of `out`.
+/// - Returns: true if `mangled` was a mangled name and the result fit.
+/// - Fails: returns false, leaving `out` empty, for a name that is not mangled or too long for `out`.
+/// - Ownership: `out` stays the caller's; nothing is retained after the call.
+/// - Thread-safety: thread-safe. Allocates; not async-signal-safe.
+/// - Backend: Windows: UnDecorateSymbolName for MSVC names, the Itanium demangler for clang; macOS: abi::__cxa_demangle.
 bool DemangleSymbol(const char* mangled, char* out, usize capacity);
 
 } // namespace engine_placeholder::debug

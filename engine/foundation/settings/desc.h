@@ -31,8 +31,8 @@ inline constexpr usize kMaxEnumNameBytes = 31;
 
 /// The declaration of one setting. Plain data; the strings are borrowed and must outlive the registry (use string literals).
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: borrows every string.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: borrows every string.
 struct SettingDesc {
     /// The setting's key, for example `renderer.present_mode`; see [[settings::Key]].
     const char* key = nullptr;
@@ -104,19 +104,19 @@ enum class ValueError : u8 {
 
 /// Returns a short name for a value error (`none`, `clamped`, `empty`, `bad_bool`, `bad_number`, `out_of_range`, `not_in_enum`, `too_long`, `bad_escape`).
 ///
-/// Returns: a static string.
-/// Fails: never.
-/// Ownership: the string is static and never freed.
+/// - Returns: a static string.
+/// - Fails: never.
+/// - Ownership: the string is static and never freed.
 const char* ValueErrorName(ValueError error);
 
 /// Checks a typed value against its declaration: a number outside the range is clamped or refused by the declaration's policy, an enum
 /// index outside the names is refused, a value of another type is refused.
 ///
-/// Param desc: the declaration.
-/// Param value: the candidate.
-/// Param out: receives the (possibly clamped) value; unchanged on failure.
-/// Returns: `None`, `Clamped`, `OutOfRange`, `NotInEnum`, or `BadNumber` for a value of another type.
-/// Fails: reports the reason as the return value.
+/// - Param desc: the declaration.
+/// - Param value: the candidate.
+/// - Param out: receives the (possibly clamped) value; unchanged on failure.
+/// - Returns: `None`, `Clamped`, `OutOfRange`, `NotInEnum`, or `BadNumber` for a value of another type.
+/// - Fails: reports the reason as the return value.
 ValueError ValidateValue(const SettingDesc& desc, const Value& value, Value* out);
 
 /// The most bytes [[settings::FormatValue]] writes, including the terminator.
@@ -127,23 +127,23 @@ inline constexpr usize kMaxValueTextBytes = 2100;
 /// The forms: `true`/`false` (also `yes`, `no`, `on`, `off`, `1`, `0`) for a bool; a decimal or `0x` hexadecimal integer; a
 /// decimal float with an optional exponent; an enum name; text, bare or double-quoted with the escapes `\"`, `\\`, `\n`, `\t` and `\xHH`.
 ///
-/// Param desc: the declaration; its range, policy and enum names apply.
-/// Param text: the value text, without surrounding blanks.
-/// Param out: receives the value; unchanged on failure.
-/// Returns: `None` or `Clamped` (the value was stored), or the reason it was refused.
-/// Fails: reports the reason as the return value; never aborts.
+/// - Param desc: the declaration; its range, policy and enum names apply.
+/// - Param text: the value text, without surrounding blanks.
+/// - Param out: receives the value; unchanged on failure.
+/// - Returns: `None` or `Clamped` (the value was stored), or the reason it was refused.
+/// - Fails: reports the reason as the return value; never aborts.
 ValueError ParseValue(const SettingDesc& desc, StringView text, Value* out);
 
 /// Writes the canonical text of `value` for the setting `desc` declares: `true`/`false`; a decimal integer; the shortest decimal float
 /// that reads back as the same number (always with a `.` or an exponent); an enum name; text in double quotes with escapes. Reading it
 /// back with [[settings::ParseValue]] gives an equal value.
 ///
-/// Param value: a value of the type `desc` declares.
-/// Param out: destination; at least [[settings::kMaxValueTextBytes]] bytes recommended.
-/// Param capacity: size of `out`.
-/// Returns: the number of bytes written, excluding the terminator; 0 if `capacity` is too small (then `out[0]` is NUL when `capacity` is not 0).
-/// Fails: returns 0 when the buffer is too small.
-/// Aborts: the value's type differs from `desc.type`, or an enum index is outside the names.
+/// - Param value: a value of the type `desc` declares.
+/// - Param out: destination; at least [[settings::kMaxValueTextBytes]] bytes recommended.
+/// - Param capacity: size of `out`.
+/// - Returns: the number of bytes written, excluding the terminator; 0 if `capacity` is too small (then `out[0]` is NUL when `capacity` is not 0).
+/// - Fails: returns 0 when the buffer is too small.
+/// - Aborts: the value's type differs from `desc.type`, or an enum index is outside the names.
 usize FormatValue(const SettingDesc& desc, const Value& value, char* out, usize capacity);
 
 } // namespace engine_placeholder::settings

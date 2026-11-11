@@ -26,10 +26,10 @@ enum class CrashReason : u8 {
 };
 
 /// Returns a short stable name for a reason, for logs and test messages.
-/// Param reason: the value to name.
-/// Returns: a static string such as `"AccessViolation"`; never null.
-/// Ownership: the string has static storage; the caller does not free it.
-/// Thread-safety: thread-safe.
+/// - Param reason: the value to name.
+/// - Returns: a static string such as `"AccessViolation"`; never null.
+/// - Ownership: the string has static storage; the caller does not free it.
+/// - Thread-safety: thread-safe.
 const char* CrashReasonName(CrashReason reason);
 
 } // namespace engine_placeholder::debug

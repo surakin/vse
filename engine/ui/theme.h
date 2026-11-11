@@ -44,27 +44,27 @@ constexpr WidgetKind kDropMarker = 17; ///< The insertion line drawn where a dra
 ///
 /// A name is never forgotten, so register a fixed set of names (literals), not text that varies.
 ///
-/// Param name: 1 to 63 bytes.
-/// Returns: the id, or 0 if the name is empty or too long.
-/// Thread-safety: thread-safe.
+/// - Param name: 1 to 63 bytes.
+/// - Returns: the id, or 0 if the name is empty or too long.
+/// - Thread-safety: thread-safe.
 WidgetKind RegisterWidgetKind(StringView name);
 /// Returns the name registered for `kind`, or an empty string for an unknown id.
 ///
-/// Thread-safety: thread-safe.
+/// - Thread-safety: thread-safe.
 String<HeapAllocator> WidgetKindName(WidgetKind kind);
 /// Returns the id of the variant called `name`, registering it on first use; the empty name is variant 0, the kind's default style.
 ///
-/// Returns: the id, or 0 for the empty name and for a name longer than 63 bytes.
-/// Thread-safety: thread-safe.
+/// - Returns: the id, or 0 for the empty name and for a name longer than 63 bytes.
+/// - Thread-safety: thread-safe.
 VariantId RegisterVariant(StringView name);
 /// Returns the name registered for `variant`, or an empty string for 0 and unknown ids.
 ///
-/// Thread-safety: thread-safe.
+/// - Thread-safety: thread-safe.
 String<HeapAllocator> VariantName(VariantId variant);
 
 /// A value of a theme that may be left unset, so that a lower level of the chain supplies it.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 template <typename T>
 struct Opt {
     T value{};         ///< The value, meaningful when `set`.
@@ -110,7 +110,7 @@ enum class FontId : u8 {
 ///
 /// The surface's font provider turns the key into a font. The size is in logical units in a theme, physical pixels in a resolved style.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct FontRef {
     u32 family = 0;  ///< Key of the family in the font provider.
     f32 size = 14.0f; ///< Size.
@@ -141,7 +141,7 @@ constexpr u32 kStateDragOver = 32; ///< A drag it would accept is over the widge
 
 /// The look of one widget in one state; every field may be unset.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct StateStyle {
     Opt<u32> background;    ///< Fill color.
     Opt<u32> border_color;  ///< Border color.
@@ -154,7 +154,7 @@ struct StateStyle {
 
 /// The style of one (kind, variant): a table over the states and a font.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct Style {
     StateStyle states[static_cast<usize>(StateKind::Count)]; ///< Indexed by [[ui::StateKind]]; `Normal` applies in every state, the others on top of it.
     Opt<FontRef> font;                                       ///< The font of the widget's text.
@@ -166,7 +166,7 @@ struct Style {
 
 /// A style entry of a theme.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct StyleEntry {
     WidgetKind kind = 0;   ///< The widget kind.
     VariantId variant = 0; ///< The variant, 0 for the kind's default.
@@ -175,8 +175,8 @@ struct StyleEntry {
 
 /// Plain theme data: a full set of values for a base theme, or just the few a widget's override changes.
 ///
-/// Thread-safety: thread-compatible; do not change a theme while a [[ui::ThemeSet]] resolves from it (call `SetTheme` again afterwards).
-/// Ownership: owns its entries.
+/// - Thread-safety: thread-compatible; do not change a theme while a [[ui::ThemeSet]] resolves from it (call `SetTheme` again afterwards).
+/// - Ownership: owns its entries.
 struct Theme {
     Opt<u32> colors[static_cast<usize>(ColorId::Count)];    ///< Named colors.
     Opt<f32> metrics[static_cast<usize>(MetricId::Count)];  ///< Named metrics.
@@ -185,15 +185,15 @@ struct Theme {
 
     /// Returns the style of (`kind`, `variant`), or null.
     ///
-    /// Ownership: borrowed from this theme; valid until the theme changes.
-    /// Fails: returns null when the theme has no such entry.
+    /// - Ownership: borrowed from this theme; valid until the theme changes.
+    /// - Fails: returns null when the theme has no such entry.
     const Style* FindStyle(WidgetKind kind, VariantId variant) const;
 };
 
 /// Builds a [[ui::Theme]] in code (a data file loader arrives with Phase 21).
 ///
-/// Thread-safety: thread-compatible.
-/// Ownership: owns the theme until `Build`.
+/// - Thread-safety: thread-compatible.
+/// - Ownership: owns the theme until `Build`.
 class ThemeBuilder {
 public:
     /// Sets a named color.
@@ -213,21 +213,21 @@ private:
 
 /// The built-in light theme. Ordinary data, no special mode.
 ///
-/// Thread-safety: thread-safe; a constant.
+/// - Thread-safety: thread-safe; a constant.
 const Theme& DefaultLightTheme();
 /// The built-in dark theme.
 ///
-/// Thread-safety: thread-safe; a constant.
+/// - Thread-safety: thread-safe; a constant.
 const Theme& DefaultDarkTheme();
 
 /// The contrast ratio of two colors as WCAG defines it (1 to 21), ignoring alpha.
 ///
-/// Thread-safety: thread-safe.
+/// - Thread-safety: thread-safe.
 f32 ContrastRatio(u32 abgr_a, u32 abgr_b);
 
 /// A style resolved for a state and a scale: every value is set, sizes are in physical pixels.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct ResolvedStyle {
     u32 background = 0;    ///< Fill color.
     u32 border_color = 0;  ///< Border color.
@@ -241,7 +241,7 @@ struct ResolvedStyle {
 
 /// Counters of a [[ui::ThemeSet]].
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct ThemeStats {
     u64 resolves = 0;       ///< Calls of `Resolve`.
     u64 cache_hits = 0;     ///< Of those, answered from the cache.
@@ -255,31 +255,31 @@ struct ThemeStats {
 /// For each theme the kind's default style is laid over the result, then the variant's. A style with overrides is not cached; the one without is, keyed by kind, variant, state and
 /// scale, and the cache is dropped by `SetTheme`.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: borrows the surface theme, which must outlive its use here.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: borrows the surface theme, which must outlive its use here.
 class ThemeSet {
 public:
     /// Uses `theme` as the surface's theme and bumps the revision; the cache is dropped. Passing the same pointer again after the theme was edited forces a re-resolve.
     ///
-    /// Param theme: the theme, or null for the built-in default alone.
-    /// Returns: whether any metric or font differs from the previous theme, so the caller marks layout dirty.
+    /// - Param theme: the theme, or null for the built-in default alone.
+    /// - Returns: whether any metric or font differs from the previous theme, so the caller marks layout dirty.
     bool SetTheme(const Theme* theme);
     /// Returns the surface's theme, or null.
     ///
-    /// Ownership: borrowed; the application owns it.
-    /// Fails: returns null when no theme was set.
+    /// - Ownership: borrowed; the application owns it.
+    /// - Fails: returns null when no theme was set.
     const Theme* GetTheme() const { return theme_; }
     /// Returns a counter that changes on every `SetTheme`; a widget re-resolves when it differs from the one it saw.
     u64 Revision() const { return revision_; }
 
     /// Resolves the style of a widget.
     ///
-    /// Param kind: the widget kind.
-    /// Param variant: the variant, 0 for the default.
-    /// Param state: `kState*` bits.
-    /// Param scale: the surface's scale factor, above 0.
-    /// Param overrides: override themes, least specific first (may be empty); each borrowed for the call.
-    /// Aborts: `scale` is not above 0.
+    /// - Param kind: the widget kind.
+    /// - Param variant: the variant, 0 for the default.
+    /// - Param state: `kState*` bits.
+    /// - Param scale: the surface's scale factor, above 0.
+    /// - Param overrides: override themes, least specific first (may be empty); each borrowed for the call.
+    /// - Aborts: `scale` is not above 0.
     ResolvedStyle Resolve(WidgetKind kind, VariantId variant, u32 state, f32 scale, Span<const Theme* const> overrides = {});
     /// Like the first overload with the variant given by name (registered if new). A name no theme defines logs once and counts in `Stats().missing_styles`.
     ResolvedStyle Resolve(WidgetKind kind, StringView variant, u32 state, f32 scale, Span<const Theme* const> overrides = {});
@@ -294,7 +294,7 @@ public:
     /// Starts a subtree override: until the matching `PopOverride`, every call that is given no `overrides` uses `theme` after the overrides already pushed (an inner subtree's theme wins). A widget with
     /// `Widget::SetThemeOverride` is wrapped in a push and a pop while it is measured and drawn, so its whole subtree is styled by it. A style resolved under an override is not cached.
     ///
-    /// Param theme: the theme, not null; borrowed until the pop.
+    /// - Param theme: the theme, not null; borrowed until the pop.
     void PushOverride(const Theme* theme) { active_.Push(theme); }
     /// Ends the innermost `PushOverride`.
     void PopOverride() {
@@ -302,7 +302,7 @@ public:
     }
     /// Returns how many overrides are pushed now.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     usize ActiveOverrides() const { return active_.Size(); }
 
     /// Returns the counters.

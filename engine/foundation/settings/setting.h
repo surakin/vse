@@ -52,8 +52,8 @@ u64 Encode(const Value& value);
 
 /// A typed, cheap-to-read handle on one registered setting.
 ///
-/// Thread-safety: thread-safe; any thread may copy it and call `Get`.
-/// Ownership: borrows the registry, which must outlive the handle.
+/// - Thread-safety: thread-safe; any thread may copy it and call `Get`.
+/// - Ownership: borrows the registry, which must outlive the handle.
 template <typename T>
 class Setting {
 public:
@@ -62,9 +62,9 @@ public:
 
     /// Makes a handle for a registered setting.
     ///
-    /// Param registry: the registry that holds it.
-    /// Param id: the setting.
-    /// Aborts: `id` is not registered, or its declared type differs from `T`.
+    /// - Param registry: the registry that holds it.
+    /// - Param id: the setting.
+    /// - Aborts: `id` is not registered, or its declared type differs from `T`.
     Setting(const Registry& registry, SettingId id) : registry_(&registry), id_(id) {
         const SettingDesc* d = registry.Desc(id);
         ENGINE_ASSERT(d != nullptr, "settings::Setting: the id is not registered");
@@ -74,7 +74,7 @@ public:
 
     /// Makes a handle for a setting found by key.
     ///
-    /// Aborts: no such key, or the declared type differs from `T`.
+    /// - Aborts: no such key, or the declared type differs from `T`.
     static Setting Find(const Registry& registry, StringView key) { return Setting(registry, registry.Find(key)); }
 
     /// Returns whether the handle names a setting (a default-constructed one does not).
@@ -82,18 +82,18 @@ public:
 
     /// Returns the current value: one relaxed atomic load.
     ///
-    /// Aborts: the handle is empty.
+    /// - Aborts: the handle is empty.
     T Get() const {
         ENGINE_ASSERT(cell_ != nullptr, "settings::Setting::Get: empty handle");
         return detail::Decode<T>(cell_->bits.Load(MemoryOrder::Relaxed));
     }
     /// Returns the default.
     ///
-    /// Aborts: the handle is empty.
+    /// - Aborts: the handle is empty.
     T Default() const { return detail::Decode<T>(detail::Encode(Desc().default_value)); }
     /// Returns the declaration.
     ///
-    /// Aborts: the handle is empty.
+    /// - Aborts: the handle is empty.
     const SettingDesc& Desc() const {
         ENGINE_ASSERT(registry_ != nullptr, "settings::Setting::Desc: empty handle");
         return *registry_->Desc(id_);
@@ -109,13 +109,13 @@ private:
 
 /// A handle on a text setting. Reading copies under a lock, so it is for configuration code, not for a hot path.
 ///
-/// Thread-safety: thread-safe.
-/// Ownership: borrows the registry.
+/// - Thread-safety: thread-safe.
+/// - Ownership: borrows the registry.
 class TextSetting {
 public:
     /// Makes a handle.
     ///
-    /// Aborts: `id` is not registered or is not a text setting.
+    /// - Aborts: `id` is not registered or is not a text setting.
     TextSetting(const Registry& registry, SettingId id) : registry_(&registry), id_(id) {
         const SettingDesc* d = registry.Desc(id);
         ENGINE_ASSERT(d != nullptr && d->type == Type::Text, "settings::TextSetting: not a registered text setting");

@@ -12,19 +12,19 @@ namespace engine_placeholder::ui {
 
 /// The rows of a [[ui::ListBox]].
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: the model is owned by the program; the list box borrows it.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: the model is owned by the program; the list box borrows it.
 class ListModel {
 public:
     virtual ~ListModel() = default;
     /// Returns how many items there are.
     virtual usize ItemCount() const = 0;
     /// Returns the text of item `index`. The view must stay valid until the next call of this function or of `ItemCount`.
-    /// Aborts: `index` is not below `ItemCount()`.
+    /// - Aborts: `index` is not below `ItemCount()`.
     virtual StringView ItemText(usize index) = 0;
     /// Moves items for a drag that reorders the list (`ListBox::SetReorderable`): the items at `indices` (ascending, distinct) go together, in their order, to the place before item `to` of the
     /// list as it was (`to` equal to `ItemCount()` means the end). The default refuses.
-    /// Returns: whether the items were moved; on true the list box refreshes its rows and selects the moved items.
+    /// - Returns: whether the items were moved; on true the list box refreshes its rows and selects the moved items.
     virtual bool MoveItems(const usize*, usize, usize) { return false;
     }
 };
@@ -42,8 +42,8 @@ enum class SelectionMode : u8 {
 /// in multiple mode), the arrow keys, PageUp, PageDown, Home and End move the current item and select it, Space selects it, Enter runs `OnActivate`; typing letters selects the next item whose text starts with what was typed
 /// (typed quickly, the letters make a prefix; the same letter repeated cycles through the items starting with it). After the model changes call `ModelChanged`.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: borrows the model; owns the selection and the row cache.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: borrows the model; owns the selection and the row cache.
 class ListBox : public Widget {
 public:
     /// The wheel moves this many rows per notch.
@@ -59,7 +59,7 @@ public:
     explicit ListBox(StringView name = StringView());
     /// Uses `model` (null for none); clears the selection and the scroll position.
     ///
-    /// Ownership: borrows `model`, which must outlive its use here.
+    /// - Ownership: borrows `model`, which must outlive its use here.
     void SetModel(ListModel* model);
     /// Tells the list box that the model's items or their count changed; the selection is cleared when the count changed, and the scroll position clamped.
     void ModelChanged();
@@ -67,15 +67,15 @@ public:
     void SetMode(SelectionMode mode);
     /// Returns whether item `index` is selected.
     ///
-    /// Fails: returns false for an index outside the list.
+    /// - Fails: returns false for an index outside the list.
     bool IsSelected(usize index) const;
     /// Returns how many items are selected.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     usize SelectedCount() const { return selected_count_; }
     /// Returns the current item: where the keyboard is (the last one clicked or moved to), or `kNone`.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     usize Current() const { return current_; }
     /// The value of "no item".
     static constexpr usize kNone = static_cast<usize>(-1);
@@ -85,24 +85,24 @@ public:
     void ScrollToIndex(usize index);
     /// Returns the scroll offset in logical units.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     f32 Offset() const { return offset_; }
     /// Sets the scroll offset in logical units, clamped to the content (the scroll bar follows).
     void SetOffset(f32 offset);
     /// Returns the height of a row in logical units (0 before the first layout).
     ///
-    /// Fails: never.
+    /// - Fails: never.
     f32 RowHeight() const { return row_height_; }
     /// Returns the index range in view as the first index and one past the last (empty when there is no model).
     ///
-    /// Ownership: writes the two indices; both pointers must be non-null.
+    /// - Ownership: writes the two indices; both pointers must be non-null.
     void VisibleRange(usize* first, usize* end) const;
     /// Returns how many rows were laid out (not found in the cache) since the box was made, so a test can see that scrolling only lays out new rows.
     u64 RowLayouts() const { return row_layouts_; }
     /// Makes a click (the pointer going up on the row it went down on) run `OnActivate`, as a drop-down list needs (default off).
     void SetActivateOnClick(bool activate) { activate_on_click_ = activate; }
     /// Sets how many rows the preferred height holds (default `kPreferredRows`); marks layout dirty.
-    /// Param rows: at least 1.
+    /// - Param rows: at least 1.
     void SetVisibleRows(usize rows);
     /// The tag of the pointer entry a drag started by a list box carries.
     static constexpr char kDragTag[] = "ui.listbox.items";
@@ -123,7 +123,7 @@ public:
     /// Ends the press that started the drag.
     void OnDragEnded(DragAction action) override;
     /// Scrolls while the pointer rests near the top or bottom edge.
-    /// Fails: never.
+    /// - Fails: never.
     bool DragAutoScroll(Point position, f32 dt) override;
     /// Returns the listeners called when the selection changes (with the box).
     Callback<ListBox*>& OnSelectionChanged() { return on_selection_; }

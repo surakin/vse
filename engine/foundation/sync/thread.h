@@ -13,7 +13,7 @@ namespace engine_placeholder {
 
 /// Identifies a thread for comparison and hashing (`std::thread::id`).
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 class ThreadId {
 public:
     /// The id that names no thread.
@@ -35,8 +35,8 @@ private:
 ///
 /// A joinable `Thread` must be joined or detached before it is destroyed; destroying a joinable thread terminates the program.
 ///
-/// Thread-safety: thread-compatible. One thread owns a `Thread` object.
-/// Ownership: movable, not copyable; the object owns the right to join.
+/// - Thread-safety: thread-compatible. One thread owns a `Thread` object.
+/// - Ownership: movable, not copyable; the object owns the right to join.
 class Thread {
 public:
     /// A thread object that runs nothing.

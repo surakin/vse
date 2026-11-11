@@ -57,8 +57,8 @@ void PortableDivMod(Parts n, Parts d, Parts* quotient, Parts* remainder);
 
 /// An unsigned 128-bit integer.
 ///
-/// Thread-safety: thread-compatible plain data (immutable values may be shared freely).
-/// Ownership: a value; owns nothing.
+/// - Thread-safety: thread-compatible plain data (immutable values may be shared freely).
+/// - Ownership: a value; owns nothing.
 struct alignas(16) u128 {
     /// The low 64 bits.
     u64 lo = 0;
@@ -129,19 +129,19 @@ struct alignas(16) u128 {
 
     /// Writes the value as text in `base` (2 to 16, digits `0-9a-f`) with a terminating NUL.
     ///
-    /// Param out: destination; at least `kMaxTextBytes` bytes always suffices.
-    /// Param capacity: size of `out`.
-    /// Param base: 2 to 16.
-    /// Returns: the number of characters written, excluding the NUL.
-    /// Fails: returns 0 and writes an empty string (when `capacity` is not 0) if the text does not fit or `base` is not 2 to 16.
+    /// - Param out: destination; at least `kMaxTextBytes` bytes always suffices.
+    /// - Param capacity: size of `out`.
+    /// - Param base: 2 to 16.
+    /// - Returns: the number of characters written, excluding the NUL.
+    /// - Fails: returns 0 and writes an empty string (when `capacity` is not 0) if the text does not fit or `base` is not 2 to 16.
     usize ToText(char* out, usize capacity, u32 base = 10) const;
     /// Reads unsigned digits in `base` (2 to 16, either letter case, no sign, no prefix, no separators).
     ///
-    /// Param text: the digits.
-    /// Param base: 2 to 16.
-    /// Param out: receives the value; unchanged on failure.
-    /// Returns: true if `text` is a non-empty run of digits whose value fits.
-    /// Fails: returns false for empty text, a character that is not a digit of `base`, or a value over 2^128 - 1.
+    /// - Param text: the digits.
+    /// - Param base: 2 to 16.
+    /// - Param out: receives the value; unchanged on failure.
+    /// - Returns: true if `text` is a non-empty run of digits whose value fits.
+    /// - Fails: returns false for empty text, a character that is not a digit of `base`, or a value over 2^128 - 1.
     static bool FromText(StringView text, u32 base, u128* out);
 
     /// Adds `other`, wrapping modulo 2^128.
@@ -172,11 +172,11 @@ struct alignas(16) u128 {
     }
     /// Divides by `other`, truncating.
     ///
-    /// Aborts: `other` is zero.
+    /// - Aborts: `other` is zero.
     u128& operator/=(u128 other);
     /// Replaces the value by its remainder when divided by `other`.
     ///
-    /// Aborts: `other` is zero.
+    /// - Aborts: `other` is zero.
     u128& operator%=(u128 other);
     /// Shifts left by `count` bits; 128 or more gives 0.
     constexpr u128& operator<<=(u32 count) {
@@ -257,11 +257,11 @@ struct alignas(16) u128 {
     friend u128 operator*(u128 a, u128 b) { return a *= b; }
     /// Returns the quotient, truncated.
     ///
-    /// Aborts: `b` is zero.
+    /// - Aborts: `b` is zero.
     friend u128 operator/(u128 a, u128 b) { return a /= b; }
     /// Returns the remainder.
     ///
-    /// Aborts: `b` is zero.
+    /// - Aborts: `b` is zero.
     friend u128 operator%(u128 a, u128 b) { return a %= b; }
     /// Returns `a` shifted left.
     friend constexpr u128 operator<<(u128 a, u32 count) { return a <<= count; }
@@ -336,8 +336,8 @@ private:
 ///
 /// Arithmetic wraps (signed overflow is defined), division truncates toward zero, and `>>` is arithmetic.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: a value; owns nothing.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: a value; owns nothing.
 struct alignas(16) i128 {
     /// The low 64 bits of the two's complement representation.
     u64 lo = 0;
@@ -392,19 +392,19 @@ struct alignas(16) i128 {
 
     /// Writes the value in `base` (2 to 16) with a leading `-` when negative and a terminating NUL.
     ///
-    /// Param out: destination; at least `kMaxTextBytes` bytes always suffices.
-    /// Param capacity: size of `out`.
-    /// Param base: 2 to 16.
-    /// Returns: the number of characters written, excluding the NUL.
-    /// Fails: returns 0 and writes an empty string (when `capacity` is not 0) if the text does not fit or `base` is not 2 to 16.
+    /// - Param out: destination; at least `kMaxTextBytes` bytes always suffices.
+    /// - Param capacity: size of `out`.
+    /// - Param base: 2 to 16.
+    /// - Returns: the number of characters written, excluding the NUL.
+    /// - Fails: returns 0 and writes an empty string (when `capacity` is not 0) if the text does not fit or `base` is not 2 to 16.
     usize ToText(char* out, usize capacity, u32 base = 10) const;
     /// Reads digits in `base` with an optional leading `-` (or `+`).
     ///
-    /// Param text: the digits.
-    /// Param base: 2 to 16.
-    /// Param out: receives the value; unchanged on failure.
-    /// Returns: true if `text` is a non-empty run of digits (after the sign) whose value fits.
-    /// Fails: returns false for empty text, a bad character, or a value outside -2^127 .. 2^127 - 1.
+    /// - Param text: the digits.
+    /// - Param base: 2 to 16.
+    /// - Param out: receives the value; unchanged on failure.
+    /// - Returns: true if `text` is a non-empty run of digits (after the sign) whose value fits.
+    /// - Fails: returns false for empty text, a bad character, or a value outside -2^127 .. 2^127 - 1.
     static bool FromText(StringView text, u32 base, i128* out);
 
     /// Adds `other`, wrapping.
@@ -415,11 +415,11 @@ struct alignas(16) i128 {
     i128& operator*=(i128 other) { return *this = i128(ToBits() * other.ToBits()); }
     /// Divides by `other`, truncating toward zero (the minimum value divided by -1 wraps to the minimum).
     ///
-    /// Aborts: `other` is zero.
+    /// - Aborts: `other` is zero.
     i128& operator/=(i128 other);
     /// Replaces the value by its remainder, which has the sign of the dividend.
     ///
-    /// Aborts: `other` is zero.
+    /// - Aborts: `other` is zero.
     i128& operator%=(i128 other);
     /// Shifts left; 128 or more gives 0.
     constexpr i128& operator<<=(u32 count) { return *this = i128(ToBits() << count); }
@@ -467,11 +467,11 @@ struct alignas(16) i128 {
     friend i128 operator*(i128 a, i128 b) { return a *= b; }
     /// Returns the quotient, truncated toward zero.
     ///
-    /// Aborts: `b` is zero.
+    /// - Aborts: `b` is zero.
     friend i128 operator/(i128 a, i128 b) { return a /= b; }
     /// Returns the remainder.
     ///
-    /// Aborts: `b` is zero.
+    /// - Aborts: `b` is zero.
     friend i128 operator%(i128 a, i128 b) { return a %= b; }
     /// Returns `a` shifted left.
     friend constexpr i128 operator<<(i128 a, u32 count) { return a <<= count; }

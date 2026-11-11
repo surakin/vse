@@ -4,7 +4,7 @@
 #define ENGINE_VERSION 3
 
 /// A function-like macro.
-/// Param x: the value to square.
+/// - Param x: the value to square.
 #define ENGINE_SQUARE(x) ((x) * (x))
 
 // Undocumented macro (private helper): ignored, no diagnostic.

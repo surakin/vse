@@ -17,8 +17,8 @@ namespace engine_placeholder::ui {
 /// highlights the first title (the mnemonic letters are underlined), Left and Right move, Down, Enter and Space open the menu, a letter opens the title with that mnemonic,
 /// Escape (or F10 / Alt again) leaves the bar. Alt with a letter opens the matching menu from anywhere. Leaving the bar (or closing its menu) gives the focus back to the widget that had it.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: borrows the menus; owns its title layouts. A menu must outlive the bar.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: borrows the menus; owns its title layouts. A menu must outlive the bar.
 class MenuBar : public Widget {
 public:
     /// No title.
@@ -27,24 +27,24 @@ public:
     /// Makes an empty bar.
     explicit MenuBar(StringView name = StringView());
     /// Adds a title that opens `menu`.
-    /// Param text: the title, with an optional `&` mnemonic.
-    /// Param menu: the menu; borrowed, must outlive the bar.
-    /// Returns: the title's index.
-    /// Ownership: `menu` is borrowed.
+    /// - Param text: the title, with an optional `&` mnemonic.
+    /// - Param menu: the menu; borrowed, must outlive the bar.
+    /// - Returns: the title's index.
+    /// - Ownership: `menu` is borrowed.
     usize AddMenu(StringView text, Menu* menu);
     /// Returns how many titles there are.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     usize MenuCount() const { return titles_.Size(); }
     /// Returns the title that is highlighted or open, or `kNone`.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     usize Active() const { return active_; }
     /// Opens menu `index` below its title and highlights its first item (does nothing for an index out of range).
     void OpenMenu(usize index);
     /// Returns whether one of the bar's menus is open.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool MenuOpen() const;
     /// Closes the open menu, if any.
     void CloseMenu();
@@ -58,7 +58,7 @@ public:
     void Update(f32 dt) override;
     /// Returns whether a menu is open.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool WantsUpdate() const override { return open_ != kNone; }
 
 private:

@@ -110,20 +110,20 @@ struct Hash<T*> {
 /// Growth invalidates pointers returned by `Find`. There is no iteration
 /// support.
 ///
-/// Thread-safety: not-thread-safe. Synchronize externally if shared, including
+/// - Thread-safety: not-thread-safe. Synchronize externally if shared, including
 ///   concurrent `Find` calls with a writer.
-/// Ownership: the allocator owns all storage and must outlive the map; the map
+/// - Ownership: the allocator owns all storage and must outlive the map; the map
 ///   never frees memory.
 template <typename K, typename V, typename Allocator>
 class HashMap {
 public:
     /// Creates an empty map and allocates its initial table.
     ///
-    /// Param allocator: allocator for table storage; held by pointer and must
+    /// - Param allocator: allocator for table storage; held by pointer and must
     ///   outlive the map.
-    /// Param initial_capacity: initial slot count; values below 8 are raised
+    /// - Param initial_capacity: initial slot count; values below 8 are raised
     ///   to 8.
-    /// Aborts: the allocator is out of memory.
+    /// - Aborts: the allocator is out of memory.
     explicit HashMap(Allocator& allocator, usize initial_capacity = 16)
         : allocator_(&allocator), slots_(allocator) {
         Rehash(initial_capacity < 8 ? 8 : initial_capacity);
@@ -137,9 +137,9 @@ public:
     ///
     /// May rehash, which invalidates pointers returned by `Find`.
     ///
-    /// Param key: key to copy in.
-    /// Param value: value to copy in.
-    /// Aborts: growth is needed and the allocator is out of memory.
+    /// - Param key: key to copy in.
+    /// - Param value: value to copy in.
+    /// - Aborts: growth is needed and the allocator is out of memory.
     void Insert(const K& key, const V& value) {
         if (NeedsGrow()) {
             // Double only when the live entries need the room; when the load is mostly tombstones (insert/remove churn),
@@ -152,10 +152,10 @@ public:
 
     /// Looks up the value stored for `key`.
     ///
-    /// Param key: key to search for.
-    /// Returns: a pointer to the stored value, valid until the next `Insert`,
+    /// - Param key: key to search for.
+    /// - Returns: a pointer to the stored value, valid until the next `Insert`,
     ///   or nullptr if `key` is absent.
-    /// Fails: reports an absent key by returning nullptr.
+    /// - Fails: reports an absent key by returning nullptr.
     V* Find(const K& key) {
         usize index;
         if (!FindSlotForLookup(key, index)) {
@@ -166,10 +166,10 @@ public:
 
     /// Looks up the value stored for `key` in a const map.
     ///
-    /// Param key: key to search for.
-    /// Returns: a pointer to the stored value, valid until the next `Insert`,
+    /// - Param key: key to search for.
+    /// - Returns: a pointer to the stored value, valid until the next `Insert`,
     ///   or nullptr if `key` is absent.
-    /// Fails: reports an absent key by returning nullptr.
+    /// - Fails: reports an absent key by returning nullptr.
     const V* Find(const K& key) const {
         usize index;
         if (!FindSlotForLookup(key, index)) {
@@ -180,8 +180,8 @@ public:
 
     /// Removes `key` if present, leaving a tombstone until the next rehash.
     ///
-    /// Param key: key to remove.
-    /// Returns: true if the key was present and has been removed, false if it
+    /// - Param key: key to remove.
+    /// - Returns: true if the key was present and has been removed, false if it
     ///   was absent.
     bool Remove(const K& key) {
         usize index;
@@ -204,8 +204,8 @@ public:
 
     /// Returns the number of slots holding a removed entry's tombstone, which the next rehash clears.
     ///
-    /// Returns: the tombstone count.
-    /// Thread-safety: thread-compatible.
+    /// - Returns: the tombstone count.
+    /// - Thread-safety: thread-compatible.
     usize TombstoneCount() const { return tombstone_count_; }
 
 private:

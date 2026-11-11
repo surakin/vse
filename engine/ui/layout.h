@@ -22,13 +22,13 @@ enum class Orientation : u8 {
 /// A container that gives every shown child a cell along one axis: preferred sizes first, then free space to the children with a weight (up to their maximum), or, when there is
 /// too little room, each child shrinks towards its minimum in proportion to how far above it is. Across the axis a child follows its alignment.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: owns its children.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: owns its children.
 class BoxLayout : public Widget {
 public:
     /// Makes a box.
-    /// Param orientation: the main axis.
-    /// Param name: the widget name.
+    /// - Param orientation: the main axis.
+    /// - Param name: the widget name.
     explicit BoxLayout(Orientation orientation, StringView name = StringView());
     /// Sets the gap between children along the main axis; marks layout dirty.
     void SetSpacing(f32 spacing);
@@ -49,12 +49,12 @@ private:
 
 /// A container that puts every child in the whole content box, one over the other (the last on top), each aligned by its own properties.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: owns its children.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: owns its children.
 class StackLayout : public Widget {
 public:
     /// Makes a stack.
-    /// Param name: the widget name.
+    /// - Param name: the widget name.
     explicit StackLayout(StringView name = StringView());
     /// Sets the space between the edge and the children; marks layout dirty.
     void SetPadding(const Insets& padding);
@@ -69,12 +69,12 @@ private:
 
 /// A container that places each child by edges given as fractions of the content box plus offsets (`LayoutProps::anchor`).
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: owns its children.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: owns its children.
 class AnchorLayout : public Widget {
 public:
     /// Makes an anchor layout.
-    /// Param name: the widget name.
+    /// - Param name: the widget name.
     explicit AnchorLayout(StringView name = StringView());
     /// Places each child by its anchors.
     void Arrange(const Rect& rect) override;
@@ -82,7 +82,7 @@ public:
 
 /// How a row or column of a [[ui::GridLayout]] gets its size.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct TrackSize {
     /// The kinds of track.
     enum class Kind : u8 {
@@ -94,24 +94,24 @@ struct TrackSize {
     f32 value = 0;          ///< The size (`Fixed`) or the weight (`Weight`).
 
     /// Returns a fixed track.
-    /// Param size: its size in logical units.
+    /// - Param size: its size in logical units.
     static TrackSize Fixed(f32 size) { return TrackSize{Kind::Fixed, size}; }
     /// Returns an auto track.
     static TrackSize Auto() { return TrackSize{Kind::Auto, 0}; }
     /// Returns a weighted track.
-    /// Param weight: its share of the free space.
+    /// - Param weight: its share of the free space.
     static TrackSize Weight(f32 weight) { return TrackSize{Kind::Weight, weight}; }
 };
 
 /// A container with rows and columns. A child names its cell (`column`, `row`) and span in its `LayoutProps`; tracks that were not declared are `Auto`. Children that span several
 /// tracks do not take part in sizing an `Auto` track: they fill the cells they cover.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: owns its children.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: owns its children.
 class GridLayout : public Widget {
 public:
     /// Makes a grid.
-    /// Param name: the widget name.
+    /// - Param name: the widget name.
     explicit GridLayout(StringView name = StringView());
     /// Declares the next column; marks layout dirty.
     void AddColumn(TrackSize size);
@@ -143,12 +143,12 @@ private:
 
 /// An empty widget with weight 1: it takes the free space in a [[ui::BoxLayout]] and draws nothing.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: owns nothing by itself.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: owns nothing by itself.
 class Spacer : public Widget {
 public:
     /// Makes a spacer.
-    /// Param weight: its share of the free space.
+    /// - Param weight: its share of the free space.
     explicit Spacer(f32 weight = 1.0f);
 };
 

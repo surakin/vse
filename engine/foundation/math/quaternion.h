@@ -17,7 +17,7 @@ namespace engine_placeholder {
 /// automatically, so call `Normalized` after accumulating many products. The
 /// default value is the identity rotation.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct Quaternion {
     /// X component of the vector part.
     f32 x = 0.0f;
@@ -39,9 +39,9 @@ struct Quaternion {
     /// Builds the rotation of `radians` about `axis`, counter-clockwise looking
     /// down the axis toward the origin (right-handed).
     ///
-    /// Param axis: rotation axis; need not be unit length.
-    /// Param radians: rotation angle in radians.
-    /// Aborts: `axis` has zero length.
+    /// - Param axis: rotation axis; need not be unit length.
+    /// - Param radians: rotation angle in radians.
+    /// - Aborts: `axis` has zero length.
     static Quaternion FromAxisAngle(const Vec3& axis, f32 radians) {
         Vec3 n = axis.Normalized();
         f32 half = radians * 0.5f;
@@ -56,7 +56,7 @@ struct Quaternion {
 
     /// Returns the quaternion scaled to unit magnitude.
     ///
-    /// Aborts: the magnitude is zero.
+    /// - Aborts: the magnitude is zero.
     Quaternion Normalized() const {
         f32 len = Length();
         ENGINE_ASSERT(len > 0.0f, "Normalized() of a zero-length Quaternion");
@@ -70,7 +70,7 @@ struct Quaternion {
 
     /// Returns the multiplicative inverse (conjugate divided by squared magnitude).
     ///
-    /// Aborts: the magnitude is zero.
+    /// - Aborts: the magnitude is zero.
     Quaternion Inverse() const {
         f32 len_sq = LengthSquared();
         ENGINE_ASSERT(len_sq > 0.0f, "Inverse() of a zero-length Quaternion");
@@ -83,8 +83,8 @@ struct Quaternion {
 
     /// Rotates `v` by this quaternion, computing `q * (v, 0) * conjugate(q)`.
     ///
-    /// Param v: vector to rotate.
-    /// Returns: the rotated vector. Assumes a unit quaternion.
+    /// - Param v: vector to rotate.
+    /// - Returns: the rotated vector. Assumes a unit quaternion.
     Vec3 RotateVector(const Vec3& v) const {
         Vec3 qv(x, y, z);
         Vec3 t = qv.Cross(v) * 2.0f;
@@ -115,9 +115,9 @@ struct Quaternion {
     /// diagonal entry) so the divisor stays well away from zero for every
     /// rotation. The chosen component is not always the largest of w, x, y, z.
     ///
-    /// Param m: a proper rotation matrix (orthonormal, determinant +1);
+    /// - Param m: a proper rotation matrix (orthonormal, determinant +1);
     ///   other matrices give an unspecified result.
-    /// Returns: a unit quaternion; it may be the negation of the quaternion that
+    /// - Returns: a unit quaternion; it may be the negation of the quaternion that
     ///   built `m`, which represents the same rotation.
     static Quaternion FromMat3(const Mat3& m) {
         f32 m00 = m.col[0].x, m01 = m.col[1].x, m02 = m.col[2].x;
@@ -158,11 +158,11 @@ inline Quaternion operator*(const Quaternion& a, const Quaternion& b) {
 /// way round is taken. Nearly parallel inputs fall back to a normalized linear
 /// interpolation to avoid dividing by a near-zero sine.
 ///
-/// Param a: start rotation (result at `t` = 0); must be unit length.
-/// Param b: end rotation (result at `t` = 1); must be unit length.
-/// Param t: interpolation factor, normally in [0, 1]; values outside
+/// - Param a: start rotation (result at `t` = 0); must be unit length.
+/// - Param b: end rotation (result at `t` = 1); must be unit length.
+/// - Param t: interpolation factor, normally in [0, 1]; values outside
 ///   extrapolate.
-/// Returns: the interpolated rotation.
+/// - Returns: the interpolated rotation.
 inline Quaternion Slerp(const Quaternion& a, const Quaternion& b, f32 t) {
     f32 cos_theta = a.Dot(b);
     Quaternion b_adjusted = b;

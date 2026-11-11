@@ -25,9 +25,9 @@ enum BuiltinComponentId : u32 {
 
 /// Registers the engine's components in `registry`: the stored ones with their fields, the derived ones flagged `kComponentDerived`.
 ///
-/// Param registry: the registry to fill; a registration that exists already is reported, not replaced.
-/// Ownership: `registry` is borrowed for the call.
-/// Fails: `Exists` when any of these ids, names or types is registered already (the registry then holds the ones before it).
+/// - Param registry: the registry to fill; a registration that exists already is reported, not replaced.
+/// - Ownership: `registry` is borrowed for the call.
+/// - Fails: `Exists` when any of these ids, names or types is registered already (the registry then holds the ones before it).
 Status RegisterBuiltinComponents(ComponentRegistry* registry);
 
 } // namespace engine_placeholder::storage

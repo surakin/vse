@@ -26,7 +26,7 @@ constexpr const T& Max(const T& a, const T& b) {
 
 /// Returns `value` limited to the range from `low` to `high`.
 ///
-/// Param low: smallest result; must not be greater than `high`.
+/// - Param low: smallest result; must not be greater than `high`.
 template <typename T>
 constexpr T Clamp(T value, T low, T high) {
     return value < low ? low : (high < value ? high : value);
@@ -34,7 +34,7 @@ constexpr T Clamp(T value, T low, T high) {
 
 /// Returns the position of the first element equal to `value`, or the size when there is none.
 ///
-/// Param items: a [[Span]], [[Vector]] or anything else with `Data()` and `Size()`.
+/// - Param items: a [[Span]], [[Vector]] or anything else with `Data()` and `Size()`.
 template <typename C, typename V>
 constexpr usize IndexOf(const C& items, const V& value) {
     for (usize i = 0; i < items.Size(); ++i) {
@@ -133,7 +133,7 @@ void IntroSortItems(T* p, usize n, int depth, Less less) {
 /// Sorts the span in place so that `less(b, a)` is false for every earlier `a` and later `b`. Not stable. Introsort: quick sort with a
 /// median-of-three pivot, heap sort when it degrades, insertion sort for small runs; O(n log n) worst case, no allocation.
 ///
-/// Param less: a strict weak ordering, `bool less(const T&, const T&)`.
+/// - Param less: a strict weak ordering, `bool less(const T&, const T&)`.
 template <typename T, typename Less>
 void Sort(Span<T> items, Less less) {
     const usize n = items.Size();
@@ -150,7 +150,7 @@ void Sort(Span<T> items) {
 
 /// Sorts like `Sort`, but elements that compare equal keep their order.
 ///
-/// Fails: the scratch buffer cannot be allocated; the span is then sorted by insertion, which is stable and slow.
+/// - Fails: the scratch buffer cannot be allocated; the span is then sorted by insertion, which is stable and slow.
 template <typename T, typename Less>
 void StableSort(Span<T> items, Less less) {
     static_assert(IsTriviallyCopyable<T>, "StableSort: elements are moved through raw scratch memory");

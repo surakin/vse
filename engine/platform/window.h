@@ -29,8 +29,8 @@ enum class NativeWindowKind : u8 {
 /// This is how the RHI's swapchain gets at the window without including any platform header: the
 /// `kind` says which fields are meaningful, and the pointers are opaque here. Unused fields are null or 0.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: every pointer is borrowed from the window that returned it and is valid until that window is
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: every pointer is borrowed from the window that returned it and is valid until that window is
 ///   destroyed (or, for Wayland, closed); a graphics surface made from it must be destroyed first.
 struct NativeWindowInfo {
     /// The windowing system; decides which of the other fields are meaningful.
@@ -47,8 +47,8 @@ struct NativeWindowInfo {
 ///
 /// Input is delivered into the `InputState` the backend was bound to when the window was opened.
 ///
-/// Thread-safety: thread-compatible. Calls are not synchronized; use one window from one thread at a time.
-/// Ownership: the window owns its native surface and releases it on destruction.
+/// - Thread-safety: thread-compatible. Calls are not synchronized; use one window from one thread at a time.
+/// - Ownership: the window owns its native surface and releases it on destruction.
 class Window {
 public:
     virtual ~Window() = default;
@@ -64,8 +64,8 @@ public:
     /// `PumpEvents` queues the events (key down, up and repeat, text, pointer, wheel, focus, resize) in the order the server delivered them, up to
     /// [[os::InputEventQueue::kCapacity]]; call this in a loop after it until it returns false. `InputState` is updated as before and is not affected.
     /// The default queues nothing, for a backend without an event stream.
-    /// Param out: receives the event.
-    /// Returns: true if `out` holds an event.
+    /// - Param out: receives the event.
+    /// - Returns: true if `out` holds an event.
     virtual bool PollEvent([[maybe_unused]] InputEvent* out) { return false; }
 
     /// Returns how many events were dropped because the queue was full (a program that does not poll loses the newest events, visibly), since the window opened.
@@ -87,13 +87,13 @@ public:
     virtual f32 ContentScale() const { return 1.0f; }
 
     /// Returns the stable lowercase backend id (`"wayland"`, `"x11"`, `"win32"`), for logs and tests.
-    /// Ownership: the string is static and is never freed by the caller.
+    /// - Ownership: the string is static and is never freed by the caller.
     virtual const char* BackendName() const = 0;
 
     /// Returns the native handles a graphics layer needs to create a presentation surface for this window.
     ///
-    /// Returns: the handles; `kind` is `Invalid` and the rest empty if the window is invalid or closed.
-    /// Ownership: the pointers are borrowed from this window; see [[os::NativeWindowInfo]].
+    /// - Returns: the handles; `kind` is `Invalid` and the rest empty if the window is invalid or closed.
+    /// - Ownership: the pointers are borrowed from this window; see [[os::NativeWindowInfo]].
     virtual NativeWindowInfo GetNativeInfo() const = 0;
 
     /// Returns whether there is nothing to draw to: the window is not open, has no area, or is reported hidden.
@@ -115,18 +115,18 @@ public:
     virtual bool SupportsCursorShape() const { return false; }
 
     /// Shows a standard cursor shape while the pointer is over the window. A custom image set by [[os::Window::SetCursorImage]] hides the shape until it is cleared.
-    /// Param shape: the shape; [[os::CursorShape::Hidden]] shows no cursor.
-    /// Returns: true if the shape is in effect or will be as soon as the pointer is over the window; setting the shape already shown is a no-op that returns true.
-    /// Fails: returns false, changing nothing, if the window is invalid, `shape` is out of range or cursor shapes are unsupported (`Hidden` may still work where the other shapes do not).
+    /// - Param shape: the shape; [[os::CursorShape::Hidden]] shows no cursor.
+    /// - Returns: true if the shape is in effect or will be as soon as the pointer is over the window; setting the shape already shown is a no-op that returns true.
+    /// - Fails: returns false, changing nothing, if the window is invalid, `shape` is out of range or cursor shapes are unsupported (`Hidden` may still work where the other shapes do not).
     virtual bool SetCursor([[maybe_unused]] CursorShape shape) { return false; }
 
     /// Returns whether [[os::Window::SetCursorImage]] works on this window (the default is false).
     virtual bool SupportsCursorImage() const { return false; }
 
     /// Shows a custom cursor image; it replaces the shape until [[os::Window::ClearCursorImage]]. The window copies the pixels.
-    /// Param image: a valid image: see [[os::ValidateCursorImage]].
-    /// Returns: true if the image is in effect or will be as soon as the pointer is over the window.
-    /// Fails: returns false, changing nothing, if the image is invalid (too large, hotspot outside, bad scale), the window is invalid or images are unsupported.
+    /// - Param image: a valid image: see [[os::ValidateCursorImage]].
+    /// - Returns: true if the image is in effect or will be as soon as the pointer is over the window.
+    /// - Fails: returns false, changing nothing, if the image is invalid (too large, hotspot outside, bad scale), the window is invalid or images are unsupported.
     virtual bool SetCursorImage([[maybe_unused]] const CursorImage& image) { return false; }
 
     /// Removes the custom cursor image; the last shape set by [[os::Window::SetCursor]] (the arrow at first) shows again. A no-op without an image.
@@ -139,9 +139,9 @@ public:
     ///
     /// The lock holds only while the window has focus: it is released on focus loss and asked for again on focus gain while the program still wants it, and a request made
     /// while unfocused takes effect when focus arrives. A second request for the same state is a no-op. Destroying the window releases the lock.
-    /// Param locked: true to lock, false to release.
-    /// Returns: true if the request was accepted (the lock may take effect a moment later: see [[os::Window::PointerLocked]]).
-    /// Fails: returns false, changing nothing, if the window is invalid or the lock is unsupported.
+    /// - Param locked: true to lock, false to release.
+    /// - Returns: true if the request was accepted (the lock may take effect a moment later: see [[os::Window::PointerLocked]]).
+    /// - Fails: returns false, changing nothing, if the window is invalid or the lock is unsupported.
     virtual bool SetPointerLock([[maybe_unused]] bool locked) { return false; }
 
     /// Returns whether the pointer is locked right now (the request was granted and focus is held).
@@ -154,27 +154,27 @@ public:
     ///
     /// The window copies the bytes and serves other programs' requests for them from later `PumpEvents` calls, in pieces if they are large, so keep pumping. The contents vanish
     /// with the window (no clipboard manager keeps them). Text is made valid UTF-8 first. On Wayland the compositor accepts the offer only after a recent key press or click in the window.
-    /// Param kind: which selection.
-    /// Param offer: the format and bytes; at most [[os::kMaxClipboardBytes]].
-    /// Returns: true if the selection was taken.
-    /// Fails: returns false, changing nothing, if the window is invalid, the kind is unsupported, the offer is empty or too large, or a custom format has no name.
+    /// - Param kind: which selection.
+    /// - Param offer: the format and bytes; at most [[os::kMaxClipboardBytes]].
+    /// - Returns: true if the selection was taken.
+    /// - Fails: returns false, changing nothing, if the window is invalid, the kind is unsupported, the offer is empty or too large, or a custom format has no name.
     virtual bool SetClipboard([[maybe_unused]] ClipboardKind kind, [[maybe_unused]] const ClipboardOffer& offer) { return false; }
 
     /// Asks the owner of a selection for its contents.
     ///
     /// The answer is asynchronous: a later `PumpEvents` queues a [[os::InputEventType::ClipboardData]] event with the returned id, and [[os::Window::TakeClipboardResult]] returns the bytes. A request nobody
     /// answers ends with `Timeout` after two seconds. Text from other programs is made valid UTF-8; file lists keep only absolute local `file://` entries.
-    /// Param kind: which selection.
-    /// Param format: what to ask for.
-    /// Param custom_name: `Custom`: the MIME type or atom name.
-    /// Returns: the request id (never 0).
-    /// Fails: returns 0 if the window is invalid, the kind is unsupported or too many requests are open.
+    /// - Param kind: which selection.
+    /// - Param format: what to ask for.
+    /// - Param custom_name: `Custom`: the MIME type or atom name.
+    /// - Returns: the request id (never 0).
+    /// - Fails: returns 0 if the window is invalid, the kind is unsupported or too many requests are open.
     virtual u32 RequestClipboard([[maybe_unused]] ClipboardKind kind, [[maybe_unused]] ClipboardFormat format, [[maybe_unused]] StringView custom_name) { return 0; }
 
     /// Hands over the result of a finished request, once.
-    /// Param request_id: the id from [[os::Window::RequestClipboard]].
-    /// Param out: receives the result.
-    /// Returns: false if there is no unread result for that id (not finished yet, already taken, or dropped because more than a few were left unread).
+    /// - Param request_id: the id from [[os::Window::RequestClipboard]].
+    /// - Param out: receives the result.
+    /// - Returns: false if there is no unread result for that id (not finished yet, already taken, or dropped because more than a few were left unread).
     virtual bool TakeClipboardResult([[maybe_unused]] u32 request_id, [[maybe_unused]] ClipboardResult* out) { return false; }
 
     /// Returns whether the selection currently offers a format, as far as the last `ClipboardChanged` told (for enabling a Paste command).
@@ -185,36 +185,36 @@ public:
 
     /// Sets what drags from other programs the window accepts; the default accepts none.
     ///
-    /// Param accept: the formats wanted; `formats == 0` refuses every drag. The name is copied.
+    /// - Param accept: the formats wanted; `formats == 0` refuses every drag. The name is copied.
     virtual void SetDropAccept([[maybe_unused]] const DropAccept& accept) {}
 
     /// Answers the drag over the window with the action the program would take (feeds the cursor the user sees); call it after a `DragEnter` or `DragOver` event.
     ///
     /// Until it is called the backend answers `Copy` when a format matches and the source allows it, else `Nothing`.
-    /// Param action: `Nothing` refuses the drop at this position.
+    /// - Param action: `Nothing` refuses the drop at this position.
     virtual void SetDropAction([[maybe_unused]] DragAction action) {}
 
     /// Reads one format of the data being dropped; call it after a `Drop` event.
     ///
     /// The answer is asynchronous like [[os::Window::RequestClipboard]]: a `DropData` event with the returned id, then [[os::Window::TakeClipboardResult]]. The same safety rules apply
     /// (valid UTF-8, local `file://` paths only, a file list cut at [[os::kMaxDropFileEntries]] entries with the rest counted in `rejected_entries`).
-    /// Param format: what to read.
-    /// Param custom_name: `Custom`: the MIME type or atom name.
-    /// Returns: the request id (never 0).
-    /// Fails: returns 0 if no drop is waiting or too many requests are open.
+    /// - Param format: what to read.
+    /// - Param custom_name: `Custom`: the MIME type or atom name.
+    /// - Returns: the request id (never 0).
+    /// - Fails: returns 0 if no drop is waiting or too many requests are open.
     virtual u32 RequestDropData([[maybe_unused]] ClipboardFormat format, [[maybe_unused]] StringView custom_name) { return 0; }
 
     /// Tells the source that the drop has been handled (the data was read, or is not wanted). Without it the drop ends by itself after [[os::kDropSessionTimeoutNs]].
-    /// Param taken: what the program did with the data; `Nothing` reports that it was refused.
+    /// - Param taken: what the program did with the data; `Nothing` reports that it was refused.
     virtual void FinishDrop([[maybe_unused]] DragAction taken) {}
 
     /// Starts dragging data out of the window; the drag follows the pointer until the button is released.
     ///
     /// Call it from the handler of a button press or a pointer move with the button held (Wayland needs that input's serial). The bytes are copied. The end is reported by a
     /// `DragEnded` event.
-    /// Param source: the offered formats, allowed actions and optional image.
-    /// Returns: true if the drag started.
-    /// Fails: returns false if drag and drop is unsupported, a drag is already running, there are no offers or too many, or (X11) the pointer could not be grabbed.
+    /// - Param source: the offered formats, allowed actions and optional image.
+    /// - Returns: true if the drag started.
+    /// - Fails: returns false if drag and drop is unsupported, a drag is already running, there are no offers or too many, or (X11) the pointer could not be grabbed.
     virtual bool BeginDrag([[maybe_unused]] const DragSource& source) { return false; }
 
     /// Cancels the drag this window started; a `DragEnded` event with `Nothing` follows.
@@ -234,9 +234,9 @@ public:
     /// The change is a request: the window manager or compositor answers with a new size, which shows up as a change of
     /// [[os::Window::ResizeSerial]] after `PumpEvents`. Some compositors refuse; then nothing changes.
     ///
-    /// Param fullscreen: the state wanted.
-    /// Returns: true if the request was sent.
-    /// Fails: returns false, changing nothing, if the window is invalid or fullscreen is unsupported.
+    /// - Param fullscreen: the state wanted.
+    /// - Returns: true if the request was sent.
+    /// - Fails: returns false, changing nothing, if the window is invalid or fullscreen is unsupported.
     virtual bool SetFullscreen(bool fullscreen) {
         (void)fullscreen;
         return false;
@@ -252,8 +252,8 @@ public:
     /// resizes the window by its frame (or has its system menu open), about every 10 ms; on Linux there is no such loop and it is never called.
     ///
     /// The default ignores it. A program renders a frame from the callback and reads the window's size there as usual.
-    /// Param callback: the function, or null to stop; it must not close or destroy the window.
-    /// Param user: passed to `callback`.
+    /// - Param callback: the function, or null to stop; it must not close or destroy the window.
+    /// - Param user: passed to `callback`.
     virtual void SetModalLoopCallback(ModalLoopCallback callback, void* user) {
         (void)callback;
         (void)user;
@@ -278,12 +278,12 @@ enum class WindowBackend : u8 {
 ///
 /// Anything else, including an empty string, yields `WindowBackend::Invalid`, so callers can tell an
 /// unrecognized name from `"auto"`.
-/// Param name: backend name, case-sensitive.
+/// - Param name: backend name, case-sensitive.
 WindowBackend ParseWindowBackend(StringView name);
 
 /// Ordered list of backends to try when opening a window.
 ///
-/// Thread-safety: thread-compatible. A plain value type.
+/// - Thread-safety: thread-compatible. A plain value type.
 struct BackendPlan {
     /// Backends in the order to try; only the first `count` entries are meaningful.
     WindowBackend candidates[2] = {WindowBackend::Invalid, WindowBackend::Invalid};
@@ -299,16 +299,16 @@ struct BackendPlan {
 /// With `Auto`, Wayland comes first when its environment is set, then X11 when its environment is set, so a
 /// Wayland failure falls through to X11. A forced backend yields exactly that one candidate regardless
 /// of the environment, with no fallback. `Win32` and `Invalid` yield an empty plan (`Win32` with its `refusal`).
-/// Param requested: the backend asked for.
-/// Param wayland_env_set: whether `$WAYLAND_DISPLAY` is set.
-/// Param x11_env_set: whether `$DISPLAY` is set.
-/// Returns: the plan; `count` is 0 when no backend is eligible.
+/// - Param requested: the backend asked for.
+/// - Param wayland_env_set: whether `$WAYLAND_DISPLAY` is set.
+/// - Param x11_env_set: whether `$DISPLAY` is set.
+/// - Returns: the plan; `count` is 0 when no backend is eligible.
 BackendPlan PlanWindowBackends(WindowBackend requested, bool wayland_env_set, bool x11_env_set);
 
 /// Builds the list of backends to try on Windows: `Auto` and `Win32` yield Win32, `Wayland` and `X11` an empty plan with its `refusal`.
 ///
-/// Param requested: the backend asked for.
-/// Returns: the plan; `count` is 0 when no backend is eligible.
+/// - Param requested: the backend asked for.
+/// - Returns: the plan; `count` is 0 when no backend is eligible.
 BackendPlan PlanWin32WindowBackends(WindowBackend requested);
 
 } // namespace engine_placeholder::os

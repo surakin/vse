@@ -12,8 +12,8 @@ namespace engine_placeholder {
 /// Each malformed byte sequence counts as one (replacement) codepoint, so the
 /// count is well defined for invalid input.
 ///
-/// Param sv: UTF-8 text.
-/// Returns: the number of codepoints.
+/// - Param sv: UTF-8 text.
+/// - Returns: the number of codepoints.
 inline usize CodepointCount(StringView sv) {
     usize count = 0;
     usize offset = 0;
@@ -27,8 +27,8 @@ inline usize CodepointCount(StringView sv) {
 
 /// Reports whether `sv` is entirely well-formed UTF-8.
 ///
-/// Param sv: text to check.
-/// Returns: true if every sequence decodes validly, false at the first
+/// - Param sv: text to check.
+/// - Returns: true if every sequence decodes validly, false at the first
 ///   malformed one.
 inline bool IsValidUtf8(StringView sv) {
     usize offset = 0;
@@ -48,14 +48,14 @@ inline bool IsValidUtf8(StringView sv) {
 /// Malformed bytes are yielded as U+FFFD, one per bad byte. Obtain iterators
 /// from [[Utf8Codepoints]] rather than constructing them directly.
 ///
-/// Thread-safety: thread-compatible.
-/// Ownership: holds a view; the underlying text must outlive the iterator.
+/// - Thread-safety: thread-compatible.
+/// - Ownership: holds a view; the underlying text must outlive the iterator.
 class Utf8CodepointIterator {
 public:
     /// Creates an iterator positioned at byte `offset` of `sv`.
     ///
-    /// Param sv: text to iterate.
-    /// Param offset: byte index of a codepoint start, or `sv.Length()` for the end.
+    /// - Param sv: text to iterate.
+    /// - Param offset: byte index of a codepoint start, or `sv.Length()` for the end.
     Utf8CodepointIterator(StringView sv, usize offset) : sv_(sv), offset_(offset) {}
 
     /// Returns the codepoint at the current position; must not be called at the end.
@@ -81,13 +81,13 @@ private:
 
 /// Range adaptor that makes the codepoints of a string usable in a range-for loop.
 ///
-/// Thread-safety: thread-compatible.
-/// Ownership: holds a view; the underlying text must outlive the range.
+/// - Thread-safety: thread-compatible.
+/// - Ownership: holds a view; the underlying text must outlive the range.
 class Utf8CodepointRange {
 public:
     /// Creates a range over `sv`.
     ///
-    /// Param sv: UTF-8 text to iterate.
+    /// - Param sv: UTF-8 text to iterate.
     explicit Utf8CodepointRange(StringView sv) : sv_(sv) {}
 
     /// Returns an iterator at the first codepoint.
@@ -101,7 +101,7 @@ private:
 
 /// Returns a range over the codepoints of `sv`, for use in a range-for loop.
 ///
-/// Param sv: UTF-8 text; must outlive the returned range.
+/// - Param sv: UTF-8 text; must outlive the returned range.
 inline Utf8CodepointRange Utf8Codepoints(StringView sv) {
     return Utf8CodepointRange(sv);
 }

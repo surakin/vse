@@ -11,8 +11,8 @@ namespace engine_placeholder::renderer {
 
 /// The CPU side of a texture: its description and its pixels.
 ///
-/// Thread-safety: thread-compatible.
-/// Ownership: owns the pixels.
+/// - Thread-safety: thread-compatible.
+/// - Ownership: owns the pixels.
 struct TextureImage {
     /// The description of the finished texture. `usage` gets `CopyDst` added; `debug_name` is ignored (the owner's name is used).
     rhi::TextureDesc desc;
@@ -33,8 +33,8 @@ using TextureLoader = bool (*)(void* user, TextureImage* out);
 /// It holds either its pixels (`Create`) or a loader (`CreateFromLoader`), registers with a [[renderer::DeviceResources]] at the
 /// texture tier, and rebuilds itself in `Recreate`. The handle changes after a reset: read `Handle()` each frame, never keep it.
 ///
-/// Thread-safety: owner-thread-only. Move-only.
-/// Ownership: owns the texture and the pixels. The device and the registry must outlive it.
+/// - Thread-safety: owner-thread-only. Move-only.
+/// - Ownership: owns the texture and the pixels. The device and the registry must outlive it.
 class GpuTexture final : public Recreatable {
 public:
     GpuTexture() = default;
@@ -49,28 +49,28 @@ public:
 
     /// Creates the texture from `image` and keeps `image` as the source.
     ///
-    /// Param device: the device.
-    /// Param image: the description and pixels; moved in.
-    /// Param resources: the registry, or null for a texture that does not need to survive a reset (the pixels are then not kept).
-    /// Param debug_name: a label; copied, may be null.
-    /// Returns: true on success.
-    /// Fails: returns false, logging the reason, if the description is invalid, exceeds the device limits, the format is
+    /// - Param device: the device.
+    /// - Param image: the description and pixels; moved in.
+    /// - Param resources: the registry, or null for a texture that does not need to survive a reset (the pixels are then not kept).
+    /// - Param debug_name: a label; copied, may be null.
+    /// - Returns: true on success.
+    /// - Fails: returns false, logging the reason, if the description is invalid, exceeds the device limits, the format is
     ///   not supported, or the upload fails.
-    /// Aborts: the texture already exists.
-    /// Ownership: borrowed for the call; nothing is kept unless the description above says so.
+    /// - Aborts: the texture already exists.
+    /// - Ownership: borrowed for the call; nothing is kept unless the description above says so.
     bool Create(rhi::Device* device, TextureImage&& image, DeviceResources* resources, const char* debug_name);
 
     /// Creates the texture from `loader` and keeps only the loader; the pixels are read again at every recreate.
     ///
-    /// Param device: the device.
-    /// Param loader: produces the image.
-    /// Param user: passed to `loader`; borrowed, must outlive the texture.
-    /// Param resources: the registry, or null.
-    /// Param debug_name: a label; copied, may be null.
-    /// Returns: true on success.
-    /// Fails: as for [[renderer::GpuTexture::Create]], and when the loader fails.
-    /// Aborts: the texture already exists.
-    /// Ownership: borrowed for the call; nothing is kept unless the description above says so.
+    /// - Param device: the device.
+    /// - Param loader: produces the image.
+    /// - Param user: passed to `loader`; borrowed, must outlive the texture.
+    /// - Param resources: the registry, or null.
+    /// - Param debug_name: a label; copied, may be null.
+    /// - Returns: true on success.
+    /// - Fails: as for [[renderer::GpuTexture::Create]], and when the loader fails.
+    /// - Aborts: the texture already exists.
+    /// - Ownership: borrowed for the call; nothing is kept unless the description above says so.
     bool CreateFromLoader(rhi::Device* device, TextureLoader loader, void* user, DeviceResources* resources, const char* debug_name);
 
     /// Destroys the texture and forgets the source and the registration.
@@ -82,7 +82,7 @@ public:
     const char* RecreatableName() const override { return name_; }
 
     /// Returns whether the texture exists on a device.
-    /// Fails: never.
+    /// - Fails: never.
     bool Valid() const { return handle_.IsValid(); }
     /// Returns the current handle; changes after a reset, so read it each frame.
     rhi::TextureHandle Handle() const { return handle_; }
@@ -106,8 +106,8 @@ private:
 
 /// A sampler that survives a device reset.
 ///
-/// Thread-safety: owner-thread-only. Move-only.
-/// Ownership: owns the sampler. The device and the registry must outlive it.
+/// - Thread-safety: owner-thread-only. Move-only.
+/// - Ownership: owns the sampler. The device and the registry must outlive it.
 class GpuSampler final : public Recreatable {
 public:
     GpuSampler() = default;
@@ -122,14 +122,14 @@ public:
 
     /// Creates the sampler.
     ///
-    /// Param device: the device.
-    /// Param desc: the description; kept.
-    /// Param resources: the registry, or null.
-    /// Param debug_name: a label; copied, may be null.
-    /// Returns: true on success.
-    /// Fails: returns false, logging the reason, if the device refuses the description.
-    /// Aborts: the sampler already exists.
-    /// Ownership: borrowed for the call; nothing is kept unless the description above says so.
+    /// - Param device: the device.
+    /// - Param desc: the description; kept.
+    /// - Param resources: the registry, or null.
+    /// - Param debug_name: a label; copied, may be null.
+    /// - Returns: true on success.
+    /// - Fails: returns false, logging the reason, if the device refuses the description.
+    /// - Aborts: the sampler already exists.
+    /// - Ownership: borrowed for the call; nothing is kept unless the description above says so.
     bool Create(rhi::Device* device, const rhi::SamplerDesc& desc, DeviceResources* resources, const char* debug_name);
 
     /// Destroys the sampler and forgets the registration.
@@ -141,7 +141,7 @@ public:
     const char* RecreatableName() const override { return name_; }
 
     /// Returns whether the sampler exists on a device.
-    /// Fails: never.
+    /// - Fails: never.
     bool Valid() const { return handle_.IsValid(); }
     /// Returns the current handle; changes after a reset.
     rhi::SamplerHandle Handle() const { return handle_; }

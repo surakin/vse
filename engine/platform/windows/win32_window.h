@@ -37,9 +37,9 @@ struct Win32DndAccess; // its window-side handlers
 /// a relative path and anything else are refused, so no file list makes the program open a network share: the Windows form of the rules
 /// [[os::ParseUriList]] applies to `file://` lists on Linux.
 ///
-/// Param utf8_path: the path, UTF-8, with `\` or `/` separators.
-/// Returns: true if it may be handed to the program.
-/// Thread-safety: thread-safe. A pure function.
+/// - Param utf8_path: the path, UTF-8, with `\` or `/` separators.
+/// - Returns: true if it may be handed to the program.
+/// - Thread-safety: thread-safe. A pure function.
 bool AcceptLocalPath(StringView utf8_path);
 
 /// A top-level Win32 window, as an [[os::Window]].
@@ -47,8 +47,8 @@ bool AcceptLocalPath(StringView utf8_path);
 /// The window procedure finds the object through the window's user data, so the object cannot move: it is neither copyable nor movable,
 /// and a holder keeps it in place (the window host holds it by value).
 ///
-/// Thread-safety: owner-thread-only. Open, pump and destroy it on one thread: Windows delivers a window's messages to the thread that made it.
-/// Ownership: owns the `HWND`; destroying the object destroys the window. The window class is registered once per process and never
+/// - Thread-safety: owner-thread-only. Open, pump and destroy it on one thread: Windows delivers a window's messages to the thread that made it.
+/// - Ownership: owns the `HWND`; destroying the object destroys the window. The window class is registered once per process and never
 ///   unregistered (the system removes it at exit), so no window can outlive its class.
 class Win32Window final : public Window {
 public:
@@ -64,12 +64,12 @@ public:
     /// by the monitor's DPI over 96 ([[os::win32::Win32Window::ScaleForDpi]]), so a window is as large on a high-DPI display as on any
     /// other. [[os::Window::Width]] and `Height` report the physical pixels, which is what a swapchain needs.
     ///
-    /// Param title: the title bar text (UTF-8; cut at 511 UTF-16 code units).
-    /// Param width: client width in logical pixels (at least 1).
-    /// Param height: client height in logical pixels (at least 1).
-    /// Param input: receives keyboard and pointer state, or null to ignore input; not owned, must outlive the window.
-    /// Returns: true if the window opened.
-    /// Fails: returns false (logged on `LogPlatform`), leaving the object invalid, if it is already open, a size is 0, or the class or the
+    /// - Param title: the title bar text (UTF-8; cut at 511 UTF-16 code units).
+    /// - Param width: client width in logical pixels (at least 1).
+    /// - Param height: client height in logical pixels (at least 1).
+    /// - Param input: receives keyboard and pointer state, or null to ignore input; not owned, must outlive the window.
+    /// - Returns: true if the window opened.
+    /// - Fails: returns false (logged on `LogPlatform`), leaving the object invalid, if it is already open, a size is 0, or the class or the
     ///   window cannot be created.
     bool Open(StringView title, u32 width, u32 height, InputState* input);
 
@@ -105,17 +105,17 @@ public:
     ///
     /// A minimized window is restored first.
     ///
-    /// Param fullscreen: the state wanted.
-    /// Returns: true if the change was made (or the window is already in that state).
-    /// Fails: returns false, changing nothing, if the window is not open.
+    /// - Param fullscreen: the state wanted.
+    /// - Returns: true if the change was made (or the window is already in that state).
+    /// - Fails: returns false, changing nothing, if the window is not open.
     bool SetFullscreen(bool fullscreen) override;
     /// Returns whether the window is fullscreen: asked for, and its client area covers its monitor.
     bool IsFullscreen() const override { return hwnd_ != nullptr && fullscreen_; }
     /// Removes the oldest queued input event (Phase 15 Day 205): keys, text from `WM_CHAR`, the pointer, buttons, the wheel, focus and resize,
     /// in the order the window procedure saw them (`platform/BACKEND.md`).
     ///
-    /// Param out: receives the event.
-    /// Returns: true if an event was removed.
+    /// - Param out: receives the event.
+    /// - Returns: true if an event was removed.
     bool PollEvent(InputEvent* out) override { return events_.Pop(out); }
     /// Returns how many events were dropped because the queue was full.
     u64 DroppedEvents() const override { return events_.Dropped(); }
@@ -123,18 +123,18 @@ public:
     bool SupportsCursorShape() const override { return hwnd_ != nullptr; }
     /// Shows a standard shape while the pointer is over the client area (applied on `WM_SETCURSOR`, and at once when the pointer is inside).
     ///
-    /// Param shape: the shape; `Hidden` shows none.
-    /// Returns: true if the shape is set.
-    /// Fails: returns false, changing nothing, if the window is not open or `shape` is out of range.
+    /// - Param shape: the shape; `Hidden` shows none.
+    /// - Returns: true if the shape is set.
+    /// - Fails: returns false, changing nothing, if the window is not open or `shape` is out of range.
     bool SetCursor(CursorShape shape) override;
     /// Returns true for an open window.
     bool SupportsCursorImage() const override { return hwnd_ != nullptr; }
     /// Shows a custom image, made with `CreateIconIndirect` from a 32-bit top-down DIB (the premultiplied pixels made straight, as Windows
     /// draws cursor alpha). The image keeps its pixel size: Windows does not scale a cursor by the window's DPI, so `scale` is not applied.
     ///
-    /// Param image: a valid image ([[os::ValidateCursorImage]]); an image equal to the one showing is not made again.
-    /// Returns: true if the image shows (or will, once the pointer is over the window).
-    /// Fails: returns false, changing nothing, if the window is not open, the image is invalid or the system cannot make the cursor.
+    /// - Param image: a valid image ([[os::ValidateCursorImage]]); an image equal to the one showing is not made again.
+    /// - Returns: true if the image shows (or will, once the pointer is over the window).
+    /// - Fails: returns false, changing nothing, if the window is not open, the image is invalid or the system cannot make the cursor.
     bool SetCursorImage(const CursorImage& image) override;
     /// Removes the custom image and destroys its cursor; the last shape shows again.
     void ClearCursorImage() override;
@@ -143,9 +143,9 @@ public:
     /// Asks for the pointer lock on or off; the rules are [[os::PointerLockState]] (held only while focused). While locked, `WM_INPUT` relative
     /// mouse motion arrives as `RelativeMotion` events.
     ///
-    /// Param locked: true to lock.
-    /// Returns: true if the request was accepted.
-    /// Fails: returns false if the window is not open.
+    /// - Param locked: true to lock.
+    /// - Returns: true if the request was accepted.
+    /// - Fails: returns false if the window is not open.
     bool SetPointerLock(bool locked) override;
     /// Returns whether the lock is in effect now.
     bool PointerLocked() const override { return lock_.Active(); }
@@ -157,20 +157,20 @@ public:
     /// registered under `custom_name` (`RegisterClipboardFormat`) for custom bytes. Unlike X11 and Wayland, the system keeps a copy: the
     /// contents stay on the clipboard after the window closes.
     ///
-    /// Param kind: `Clipboard` (the only kind).
-    /// Param offer: the format and bytes; at most [[os::kMaxClipboardBytes]].
-    /// Returns: true if the clipboard was set.
-    /// Fails: returns false, changing nothing, if the window is not open, the kind is unsupported, the offer is empty or too large, a custom
+    /// - Param kind: `Clipboard` (the only kind).
+    /// - Param offer: the format and bytes; at most [[os::kMaxClipboardBytes]].
+    /// - Returns: true if the clipboard was set.
+    /// - Fails: returns false, changing nothing, if the window is not open, the kind is unsupported, the offer is empty or too large, a custom
     ///   format has no name, a file list holds a path [[os::win32::AcceptLocalPath]] refuses, or another program holds the clipboard open.
     bool SetClipboard(ClipboardKind kind, const ClipboardOffer& offer) override;
     /// Reads the clipboard at once (Win32 is synchronous) and queues the `ClipboardData` event for the next [[os::Window::PollEvent]], so the
     /// program sees the same asynchronous shape as on Linux.
     ///
-    /// Param kind: `Clipboard`.
-    /// Param format: what to read; a file list keeps only the paths [[os::win32::AcceptLocalPath]] accepts and counts the rest.
-    /// Param custom_name: `Custom`: the registered format's name.
-    /// Returns: the request id (never 0).
-    /// Fails: returns 0 if the window is not open, the kind is unsupported or too many results are open.
+    /// - Param kind: `Clipboard`.
+    /// - Param format: what to read; a file list keeps only the paths [[os::win32::AcceptLocalPath]] accepts and counts the rest.
+    /// - Param custom_name: `Custom`: the registered format's name.
+    /// - Returns: the request id (never 0).
+    /// - Fails: returns 0 if the window is not open, the kind is unsupported or too many results are open.
     u32 RequestClipboard(ClipboardKind kind, ClipboardFormat format, StringView custom_name) override;
     /// Hands over a finished request's result, once.
     bool TakeClipboardResult(u32 request_id, ClipboardResult* out) override { return clipboard_requests_.Take(request_id, out); }
@@ -185,19 +185,19 @@ public:
     /// Reads one format of the last drop. OLE's data object is valid only during its `Drop` call, so every accepted format was read then; the
     /// answer comes from that copy as a `DropData` event.
     ///
-    /// Param format: what to read.
-    /// Param custom_name: `Custom`: the accepted custom name.
-    /// Returns: the request id (never 0).
-    /// Fails: returns 0 if no drop is waiting or too many results are open.
+    /// - Param format: what to read.
+    /// - Param custom_name: `Custom`: the accepted custom name.
+    /// - Returns: the request id (never 0).
+    /// - Fails: returns 0 if no drop is waiting or too many results are open.
     u32 RequestDropData(ClipboardFormat format, StringView custom_name) override;
     /// Drops the copy of the last drop's data (OLE already took the answer when the drop happened).
     void FinishDrop(DragAction taken) override;
     /// Drags data out of the window with OLE's `DoDragDrop`, which is modal: the call returns when the drag is over, after queueing `DragEnded`.
     /// The modal-loop callback keeps running meanwhile.
     ///
-    /// Param source: the offers (copied), allowed actions; the image is not drawn on Windows.
-    /// Returns: true if the drag ran.
-    /// Fails: returns false if drag and drop is unsupported, a drag is running, the offers are missing, too many or bad, or no mouse button is
+    /// - Param source: the offers (copied), allowed actions; the image is not drawn on Windows.
+    /// - Returns: true if the drag ran.
+    /// - Fails: returns false if drag and drop is unsupported, a drag is running, the offers are missing, too many or bad, or no mouse button is
     ///   down (OLE would drop at once on whatever window is under the cursor).
     bool BeginDrag(const DragSource& source) override;
     /// Cancels the running drag (from the modal-loop callback); `DragEnded` with `Nothing` follows.
@@ -207,13 +207,13 @@ public:
     /// Returns the window's OLE drop target (an `IDropTarget*`, untyped so this header needs no OLE type), or null without drag and drop. For
     /// tests, which play OLE's part with a data object of their own: a real OLE drag needs the user's mouse.
     ///
-    /// Ownership: borrowed; the window owns it.
+    /// - Ownership: borrowed; the window owns it.
     void* DropTargetForTest() const;
     /// Calls `callback` about every 10 ms while Windows runs a move, resize or menu loop of its own (the user dragging the frame).
     ///
-    /// Param callback: the function, or null to stop; it must not close or destroy the window. A call to `PumpEvents` of any window from
+    /// - Param callback: the function, or null to stop; it must not close or destroy the window. A call to `PumpEvents` of any window from
     ///   it returns at once (the platform's loop is the one pumping), and no window's callback is entered while one runs on the thread.
-    /// Param user: passed to `callback`.
+    /// - Param user: passed to `callback`.
     void SetModalLoopCallback(ModalLoopCallback callback, void* user) override;
 
     /// Returns the window's DPI (96 is 100%), as Windows last reported it; 0 if not open.
@@ -221,14 +221,14 @@ public:
 
     /// Converts a size in logical pixels to physical pixels at a DPI, rounding to nearest, never below 1.
     ///
-    /// Param logical: the size at 100% scaling.
-    /// Param dpi: the DPI (96 is 100%); 0 counts as 96.
-    /// Returns: the size in physical pixels.
-    /// Thread-safety: thread-safe. A pure function.
+    /// - Param logical: the size at 100% scaling.
+    /// - Param dpi: the DPI (96 is 100%); 0 counts as 96.
+    /// - Returns: the size in physical pixels.
+    /// - Thread-safety: thread-safe. A pure function.
     static u32 ScaleForDpi(u32 logical, u32 dpi);
     /// Returns the `HWND`, or null if not open.
     ///
-    /// Ownership: borrowed; the window owns it.
+    /// - Ownership: borrowed; the window owns it.
     HWND__* NativeHandle() const { return hwnd_; }
 
 private:

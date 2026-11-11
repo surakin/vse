@@ -19,7 +19,7 @@ namespace engine_placeholder::spatial {
 /// while two objects jitter at the edge of contact (the same idea as the dynamic tree's fat boxes); with a margin of 0 a pair exists exactly while the
 /// boxes overlap.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct PairTrackerConfig {
     /// The end margin, as a fraction of an item's largest extent; 0 or more, finite.
     f32 margin = 0.1f;
@@ -33,15 +33,15 @@ struct PairTrackerConfig {
 
     /// Sets whether layers `a` and `b` meet (symmetric).
     ///
-    /// Param a: a layer, 0 to 31.
-    /// Param b: a layer, 0 to 31.
-    /// Param value: whether items of the two layers form pairs.
-    /// Aborts: a layer is 32 or more.
+    /// - Param a: a layer, 0 to 31.
+    /// - Param b: a layer, 0 to 31.
+    /// - Param value: whether items of the two layers form pairs.
+    /// - Aborts: a layer is 32 or more.
     void SetMeets(u32 a, u32 b, bool value);
 
     /// Returns whether items of the two layers form pairs; a layer of 32 or more meets nothing.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool Meets(u32 a, u32 b) const {
         return a < 32 && b < 32 && (meets[a] & (1u << b)) != 0;
     }
@@ -49,7 +49,7 @@ struct PairTrackerConfig {
 
 /// The pairs that began and ended in one update, each with the smaller key first, sorted by (first, second).
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct PairEvents {
     /// Pairs that exist now and did not before.
     Vector<KeyPair> begin;
@@ -65,7 +65,7 @@ struct PairEvents {
 
 /// What a [[spatial::PairTracker]] has done.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct PairTrackerStats {
     u64 updates = 0;  ///< Calls of `Update` and `Recompute`.
     u64 touched = 0;  ///< Items re-queried by `Update`.
@@ -83,41 +83,41 @@ struct PairTrackerStats {
 /// and touched again keeps the pairs that still hold (no events for them) and ends the others; a key that is removed and not touched again loses all its
 /// pairs; a new key never inherits pairs.
 ///
-/// Thread-safety: thread-compatible; `Update` reads the set, which must not change during the call.
-/// Ownership: owns its pair list; the set is borrowed for the call.
+/// - Thread-safety: thread-compatible; `Update` reads the set, which must not change during the call.
+/// - Ownership: owns its pair list; the set is borrowed for the call.
 class PairTracker {
 public:
     /// Makes an empty tracker.
     ///
-    /// Param config: the margin and the layer matrix; copied.
-    /// Aborts: the margin is negative or not finite.
+    /// - Param config: the margin and the layer matrix; copied.
+    /// - Aborts: the margin is negative or not finite.
     explicit PairTracker(const PairTrackerConfig& config = PairTrackerConfig());
 
     /// Notes that an item was added or changed; it is re-queried at the next `Update`. A stale handle at that time is skipped.
     ///
-    /// Param handle: the item's handle in the set given to `Update`.
+    /// - Param handle: the item's handle in the set given to `Update`.
     void Touch(SetHandle handle) { touched_.Push(handle); }
 
     /// Notes that an item was removed from the set; its pairs end at the next `Update`.
     ///
-    /// Param key: the item's key.
+    /// - Param key: the item's key.
     void Remove(SpatialKey key) { removed_.Push(key); }
 
     /// Brings the pairs in line with the set for the items touched and removed since the last update.
     ///
-    /// Param set: the set the handles belong to.
-    /// Param events: receives what began and ended (cleared first); not null.
-    /// Aborts: `events` is null.
-    /// Ownership: the set and `events` are borrowed for the call.
+    /// - Param set: the set the handles belong to.
+    /// - Param events: receives what began and ended (cleared first); not null.
+    /// - Aborts: `events` is null.
+    /// - Ownership: the set and `events` are borrowed for the call.
     void Update(const SpatialSet& set, PairEvents* events);
 
     /// Recomputes every pair from scratch, creating pairs only where boxes overlap (no margin), and reports the difference from the pairs held. The
     /// tests use it as the reference; with a margin of 0 it gives the same pairs as `Update`.
     ///
-    /// Param set: the set.
-    /// Param events: receives the difference (cleared first); not null.
-    /// Aborts: `events` is null.
-    /// Ownership: the set and `events` are borrowed for the call.
+    /// - Param set: the set.
+    /// - Param events: receives the difference (cleared first); not null.
+    /// - Aborts: `events` is null.
+    /// - Ownership: the set and `events` are borrowed for the call.
     void Recompute(const SpatialSet& set, PairEvents* events);
 
     /// Forgets every pair and every pending note.
@@ -128,14 +128,14 @@ public:
 
     /// Returns whether the pair exists.
     ///
-    /// Param a: one key.
-    /// Param b: the other key (either order).
-    /// Fails: never.
+    /// - Param a: one key.
+    /// - Param b: the other key (either order).
+    /// - Fails: never.
     bool Has(SpatialKey a, SpatialKey b) const;
 
     /// Calls `visit(KeyPair)` for every pair, sorted.
     ///
-    /// Param visit: called with each pair, the smaller key first.
+    /// - Param visit: called with each pair, the smaller key first.
     template <class Visit>
     void ForEachPair(Visit&& visit) const {
         for (usize i = 0; i < adjacent_.Size(); ++i) {

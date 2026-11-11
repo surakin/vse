@@ -33,7 +33,7 @@ enum class LoaderStatus : u8 {
 };
 
 /// Returns a short stable name for a loader status, for logs and tests.
-/// Ownership: the string is static.
+/// - Ownership: the string is static.
 const char* LoaderStatusName(LoaderStatus status);
 
 /// A Vulkan loader library that has been opened.
@@ -44,7 +44,7 @@ const char* LoaderStatusName(LoaderStatus status);
 /// has no owner and no destructor. Opening the same library again returns the
 /// same mapping, so repeated loads do not accumulate.
 ///
-/// Thread-safety: thread-compatible plain data; the function pointer is immutable once set.
+/// - Thread-safety: thread-compatible plain data; the function pointer is immutable once set.
 struct VulkanLoader {
     /// The `dlopen` handle of the loader library, or null if not loaded.
     os::DynamicLibraryHandle library = nullptr;
@@ -59,10 +59,10 @@ struct VulkanLoader {
 /// how tests simulate a machine without Vulkan. The override is a development aid and grants nothing the
 /// process environment does not already (`LD_PRELOAD` and `VK_ICD_FILENAMES` redirect the loader the same way). The reason for a failure is logged on `LogRhi`.
 ///
-/// Param out: receives the loader on success; left untouched otherwise. Must not be null.
-/// Returns: `LoaderStatus::Ok` on success.
-/// Fails: `NoLoader` if the library cannot be opened; `BadLoader` if it lacks `vkGetInstanceProcAddr`.
-/// Thread-safety: thread-safe against other calls; it reads the environment, so do not change the environment
+/// - Param out: receives the loader on success; left untouched otherwise. Must not be null.
+/// - Returns: `LoaderStatus::Ok` on success.
+/// - Fails: `NoLoader` if the library cannot be opened; `BadLoader` if it lacks `vkGetInstanceProcAddr`.
+/// - Thread-safety: thread-safe against other calls; it reads the environment, so do not change the environment
 ///   concurrently. May be called repeatedly.
 LoaderStatus LoadVulkanLoader(VulkanLoader* out);
 

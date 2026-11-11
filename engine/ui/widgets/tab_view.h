@@ -19,8 +19,8 @@ namespace engine_placeholder::ui {
 ///
 /// `Select` and the other setters run no listener; the user's actions (mouse and keys) run `OnSelectionChanged`.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: owns its pages (as children) and its header layouts.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: owns its pages (as children) and its header layouts.
 class TabView : public Widget {
 public:
     /// Builds a page when a lazy tab is first selected; return null for no page.
@@ -39,56 +39,56 @@ public:
     /// Makes an empty view.
     explicit TabView(StringView name = StringView());
     /// Adds a tab with a ready page.
-    /// Param title: the header text.
-    /// Param page: the page; may be null for an empty tab.
-    /// Returns: the tab's index. The first tab added is selected.
-    /// Ownership: the view owns the page.
+    /// - Param title: the header text.
+    /// - Param page: the page; may be null for an empty tab.
+    /// - Returns: the tab's index. The first tab added is selected.
+    /// - Ownership: the view owns the page.
     usize AddTab(StringView title, UniquePtr<Widget> page);
     /// Adds a tab whose page is built by `factory` the first time the tab is selected (once).
-    /// Param factory: what builds the page.
-    /// Param user: passed to it; borrowed.
-    /// Returns: the tab's index.
-    /// Ownership: `user` is borrowed.
+    /// - Param factory: what builds the page.
+    /// - Param user: passed to it; borrowed.
+    /// - Returns: the tab's index.
+    /// - Ownership: `user` is borrowed.
     usize AddLazyTab(StringView title, PageFactory factory, void* user);
     /// Shows `image` (an icon of the theme's icon size) left of the title; 0 for none.
-    /// Aborts: `index` is out of range.
+    /// - Aborts: `index` is out of range.
     void SetTabImage(usize index, ImageId image);
     /// Gives the tab a close button (or takes it away); new tabs follow `SetClosable`.
-    /// Aborts: `index` is out of range.
+    /// - Aborts: `index` is out of range.
     void SetTabClosable(usize index, bool closable);
     /// Makes the tabs added from now on closable (default off).
     void SetClosable(bool closable) { closable_ = closable; }
     /// Changes a header text.
-    /// Aborts: `index` is out of range.
+    /// - Aborts: `index` is out of range.
     void SetTabTitle(usize index, StringView title);
     /// Returns how many tabs there are.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     usize TabCount() const { return tabs_.Size(); }
     /// Returns the selected tab, or `kNone` when there are no tabs.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     usize Selected() const { return selected_; }
     /// Selects tab `index` (building its lazy page) and scrolls it into view. Runs no listener.
-    /// Param index: a tab; an index out of range is ignored.
+    /// - Param index: a tab; an index out of range is ignored.
     void Select(usize index);
     /// Returns the page of a tab.
-    /// Ownership: borrowed; the view owns it.
-    /// Fails: returns null for an index out of range, an empty tab and a lazy page not built yet.
+    /// - Ownership: borrowed; the view owns it.
+    /// - Fails: returns null for an index out of range, an empty tab and a lazy page not built yet.
     Widget* Page(usize index) const;
     /// Removes tab `index` and destroys its page (the removal is deferred while an event is delivered). The selection moves to the neighbour when the selected tab goes. Runs no listener.
-    /// Param index: a tab; an index out of range is ignored.
+    /// - Param index: a tab; an index out of range is ignored.
     void CloseTab(usize index);
     /// Returns whether the headers are wider than the view (the arrows show).
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool HeaderOverflows();
     /// Returns how far the headers are scrolled, in logical units.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     f32 HeaderScroll() const { return scroll_; }
     /// Returns the rectangle of header `index` in surface coordinates (it may lie partly or wholly outside the visible span when the headers are scrolled).
-    /// Fails: returns an empty rectangle for an index out of range.
+    /// - Fails: returns an empty rectangle for an index out of range.
     Rect TabRect(usize index);
     /// Returns the rectangle the selected page gets, in surface coordinates.
     Rect ContentRect();
@@ -111,10 +111,10 @@ public:
     /// Ends the press that started the drag.
     void OnDragEnded(DragAction action) override;
     /// Scrolls the headers while the pointer rests near an end of them.
-    /// Fails: never.
+    /// - Fails: never.
     bool DragAutoScroll(Point position, f32 dt) override;
     /// Selects the tab under the pointer after a drag has rested over it (as a click would, so `OnSelectionChanged` runs).
-    /// Fails: never.
+    /// - Fails: never.
     bool OnDragHoverDelay(Point position) override;
     /// Returns the listeners called when the user changes the selection (with the view).
     Callback<TabView*>& OnSelectionChanged() { return on_selection_; }

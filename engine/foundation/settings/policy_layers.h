@@ -9,10 +9,10 @@ namespace engine_placeholder::settings::detail {
 
 /// Adds the platform's policy layers to `stack`, lowest first, each with the role [[settings::LayerRole::Policy]].
 ///
-/// Param options: the load options (`app_name`, `policy_name`, `policy_path`).
-/// Param stack: the stack being built.
-/// Fails: never; a policy key that does not exist is an empty layer.
-/// Backend: Windows: two read-only registry stores, `HKCU` and then `HKLM` `Software\Policies\<name>`; Linux and macOS: none yet.
+/// - Param options: the load options (`app_name`, `policy_name`, `policy_path`).
+/// - Param stack: the stack being built.
+/// - Fails: never; a policy key that does not exist is an empty layer.
+/// - Backend: Windows: two read-only registry stores, `HKCU` and then `HKLM` `Software\Policies\<name>`; Linux and macOS: none yet.
 void AddPolicyLayers(const LoadOptions& options, LayerStack* stack);
 
 } // namespace engine_placeholder::settings::detail

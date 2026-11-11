@@ -29,7 +29,7 @@ enum class AdapterKind : u8 {
 
 /// One adapter.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct AdapterInfo {
     /// A stable id, null-terminated: the same string for the same GPU and driver on every run on one machine, and not an
     /// enumeration index, so a saved setting survives another GPU being added. Vulkan builds it from the vendor id, the
@@ -58,7 +58,7 @@ struct AdapterInfo {
 
 /// A fixed-capacity list of adapters.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct AdapterList {
     /// The adapters; only the first `count` are valid.
     AdapterInfo items[kMaxAdapters];
@@ -75,13 +75,13 @@ struct AdapterList {
 /// While a device is live call [[rhi::Device::ListAdapters]] instead: destroying the throwaway instance breaks a live Vulkan
 /// device's swapchain on Wayland with the NVIDIA driver.
 ///
-/// Param info: the backend, validation settings and window to test presentability against.
-/// Param out: receives the list; cleared first.
-/// Returns: true if the list was read (it may be empty); false if the backend could not be started.
-/// Fails: returns false with an empty list, logging the reason, if the backend is not registered in this program or not
+/// - Param info: the backend, validation settings and window to test presentability against.
+/// - Param out: receives the list; cleared first.
+/// - Returns: true if the list was read (it may be empty); false if the backend could not be started.
+/// - Fails: returns false with an empty list, logging the reason, if the backend is not registered in this program or not
 ///   available here ([[rhi::ResolveBackend]]), or the Vulkan loader is missing or the instance cannot be created.
-/// Ownership: `out` belongs to the caller; nothing is retained after the call.
-/// Thread-safety: thread-safe.
+/// - Ownership: `out` belongs to the caller; nothing is retained after the call.
+/// - Thread-safety: thread-safe.
 bool EnumerateAdapters(const DeviceCreateInfo& info, AdapterList* out);
 
 /// Finds the adapter a request names.
@@ -92,24 +92,24 @@ bool EnumerateAdapters(const DeviceCreateInfo& info, AdapterList* out);
 /// a LUID only: it never falls through to the index or the name, so a LUID saved before a reboot fails instead of picking
 /// another GPU. A null or empty request matches nothing.
 ///
-/// Param items: the adapters.
-/// Param count: number of adapters.
-/// Param request: the text to match.
-/// Returns: the index of the adapter, or -1.
-/// Thread-safety: thread-safe.
+/// - Param items: the adapters.
+/// - Param count: number of adapters.
+/// - Param request: the text to match.
+/// - Returns: the index of the adapter, or -1.
+/// - Thread-safety: thread-safe.
 int MatchAdapter(const AdapterInfo* items, usize count, const char* request);
 
 /// Replaces the adapters the null backend reports, for tests; null restores the two default fake adapters.
 ///
-/// Param list: the list to report, copied; null for the default.
-/// Thread-safety: thread-safe.
+/// - Param list: the list to report, copied; null for the default.
+/// - Thread-safety: thread-safe.
 void SetNullAdapters(const AdapterList* list);
 
 /// Returns the null backend's default list: a discrete adapter `null-discrete` (LUID `00000000000a0001`), then an integrated
 /// one `null-integrated` (LUID `00000000000a0002`).
 ///
-/// Param out: receives the list.
-/// Ownership: `out` belongs to the caller.
+/// - Param out: receives the list.
+/// - Ownership: `out` belongs to the caller.
 void DefaultNullAdapters(AdapterList* out);
 
 } // namespace engine_placeholder::rhi

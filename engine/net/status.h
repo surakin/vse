@@ -29,15 +29,15 @@ enum class ErrorCode : u8 {
 
 /// Returns a stable lower-case name for `code` (`"would_block"`), for logs and tests; never null.
 ///
-/// Ownership: the string is static.
-/// Fails: never.
+/// - Ownership: the string is static.
+/// - Fails: never.
 const char* ErrorCodeName(ErrorCode code);
 
 /// The result of an operation that returns nothing else: a portable [[net::ErrorCode]] and the operating system's own error number.
 ///
 /// The type allocates nothing.
 ///
-/// Thread-safety: immutable value.
+/// - Thread-safety: immutable value.
 class [[nodiscard]] Status {
 public:
     /// Creates a success status.
@@ -51,13 +51,13 @@ public:
     static constexpr Status Make(ErrorCode code, i32 os_error) { return Status(code, os_error); }
 
     /// Returns true on success.
-    /// Fails: never.
+    /// - Fails: never.
     constexpr bool Ok() const { return code_ == ErrorCode::Ok; }
     /// Returns true on failure.
-    /// Fails: never.
+    /// - Fails: never.
     constexpr bool Failed() const { return code_ != ErrorCode::Ok; }
     /// Returns true when the status is exactly `code`.
-    /// Fails: never.
+    /// - Fails: never.
     constexpr bool Is(ErrorCode code) const { return code_ == code; }
     /// The portable code.
     constexpr ErrorCode Code() const { return code_; }

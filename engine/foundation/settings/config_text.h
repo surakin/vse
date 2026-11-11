@@ -35,7 +35,7 @@ inline constexpr usize kMaxProblemMessageBytes = 80;
 
 /// A problem found while parsing: a 1-based line and column and a message.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct ConfigProblem {
     /// The 1-based line.
     u32 line = 0;
@@ -47,7 +47,7 @@ struct ConfigProblem {
 
 /// What a parse found.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct ConfigReport {
     /// The first errors (lines that were not understood and are kept verbatim).
     ConfigProblem errors[kMaxConfigProblems];
@@ -61,8 +61,8 @@ struct ConfigReport {
 
 /// A settings file as a list of lines that can be queried and edited in place.
 ///
-/// Thread-safety: thread-compatible.
-/// Ownership: owns its lines.
+/// - Thread-safety: thread-compatible.
+/// - Ownership: owns its lines.
 class ConfigDocument {
 public:
     /// Creates an empty document.
@@ -76,29 +76,29 @@ public:
 
     /// Replaces the contents by parsing `text`. A line that cannot be understood is kept verbatim and reported; the rest is read.
     ///
-    /// Param text: the file's bytes.
-    /// Param report: receives the problems; may be null.
-    /// Fails: reports problems in `report`; never fails as a whole.
+    /// - Param text: the file's bytes.
+    /// - Param report: receives the problems; may be null.
+    /// - Fails: reports problems in `report`; never fails as a whole.
     void Parse(StringView text, ConfigReport* report);
 
     /// Finds the value of `key` (the last entry for it wins). The view is the value as written: a quoted text keeps its quotes.
     ///
-    /// Param key: a valid key.
-    /// Param value: receives a view valid until the document is changed.
-    /// Returns: whether the key is present.
+    /// - Param key: a valid key.
+    /// - Param value: receives a view valid until the document is changed.
+    /// - Returns: whether the key is present.
     bool Find(StringView key, StringView* value) const;
 
     /// Sets the value of `key`: the last entry for it is edited in place (its trailing comment stays); otherwise a new line goes at the end of
     /// the key's section (the section is added if it is missing).
     ///
-    /// Param key: a valid key.
-    /// Param value: the value as it will be written; see [[settings::ConfigDocument::IsValidValue]].
-    /// Returns: false (and nothing changes) if `value` is not a valid value text.
+    /// - Param key: a valid key.
+    /// - Param value: the value as it will be written; see [[settings::ConfigDocument::IsValidValue]].
+    /// - Returns: false (and nothing changes) if `value` is not a valid value text.
     bool Set(StringView key, StringView value);
 
     /// Removes every entry line for `key`. Comments around them stay: only a person writes comments.
     ///
-    /// Returns: whether anything was removed.
+    /// - Returns: whether anything was removed.
     bool Remove(StringView key);
 
     /// Returns the 1-based line of the entry that wins for `key`, or 0 if there is none.
@@ -117,7 +117,7 @@ public:
 
     /// Writes the document back as bytes (the byte order mark, if there was one, included).
     ///
-    /// Param skip_unreadable: leave out the lines [[settings::ConfigDocument::Parse]] reported as errors.
+    /// - Param skip_unreadable: leave out the lines [[settings::ConfigDocument::Parse]] reported as errors.
     void Serialize(Vector<char>* out, bool skip_unreadable = false) const;
 
     /// Returns the number of lines.

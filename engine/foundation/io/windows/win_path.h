@@ -50,7 +50,7 @@ private:
 
 /// Converts `path` for a Win32 file function by the rules above. With `extended`, rule 4 applies whatever the length: the result is
 /// absolute and prefixed, so names appended to it stay valid past MAX_PATH (a walk down a tree).
-/// Fails: `Invalid` (rule 2), `TooLong` (the result does not fit), or the error GetFullPathNameW reports.
+/// - Fails: `Invalid` (rule 2), `TooLong` (the result does not fit), or the error GetFullPathNameW reports.
 Status ToWin32(const Path& path, WidePath* out, bool extended = false);
 
 /// Returns true when `name` (one component, UTF-8) is a reserved device name by rule 2: the part before the first dot, with trailing

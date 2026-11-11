@@ -12,31 +12,31 @@ namespace engine_placeholder {
 
 /// The number of characters before the terminating NUL (`strlen`).
 ///
-/// Param text: must not be null.
-/// Thread-safety: thread-compatible. The text must not be written by another thread meanwhile.
+/// - Param text: must not be null.
+/// - Thread-safety: thread-compatible. The text must not be written by another thread meanwhile.
 inline usize CStrLength(const char* text) noexcept {
     return std::strlen(text);
 }
 
 /// Compares two strings as unsigned characters (`strcmp`).
 ///
-/// Returns: negative, zero or positive as `a` sorts before, equal to or after `b`.
-/// Thread-safety: thread-compatible.
+/// - Returns: negative, zero or positive as `a` sorts before, equal to or after `b`.
+/// - Thread-safety: thread-compatible.
 inline int CStrCompare(const char* a, const char* b) noexcept {
     return std::strcmp(a, b);
 }
 
 /// Compares at most `count` characters (`strncmp`).
 ///
-/// Thread-safety: thread-compatible.
+/// - Thread-safety: thread-compatible.
 inline int CStrCompareN(const char* a, const char* b, usize count) noexcept {
     return std::strncmp(a, b, count);
 }
 
 /// Finds the first occurrence of `needle` in `haystack` (`strstr`).
 ///
-/// Returns: a pointer into `haystack`, or null.
-/// Thread-safety: thread-compatible.
+/// - Returns: a pointer into `haystack`, or null.
+/// - Thread-safety: thread-compatible.
 inline const char* CStrFind(const char* haystack, const char* needle) noexcept {
     return std::strstr(haystack, needle);
 }
@@ -47,8 +47,8 @@ inline char* CStrFind(char* haystack, const char* needle) noexcept {
 
 /// Finds the first occurrence of the character `c` (`strchr`); `c == '\0'` finds the terminator.
 ///
-/// Returns: a pointer into `text`, or null.
-/// Thread-safety: thread-compatible.
+/// - Returns: a pointer into `text`, or null.
+/// - Thread-safety: thread-compatible.
 inline const char* CStrFindChar(const char* text, int c) noexcept {
     return std::strchr(text, c);
 }
@@ -59,8 +59,8 @@ inline char* CStrFindChar(char* text, int c) noexcept {
 
 /// Finds the last occurrence of the character `c` (`strrchr`).
 ///
-/// Returns: a pointer into `text`, or null.
-/// Thread-safety: thread-compatible.
+/// - Returns: a pointer into `text`, or null.
+/// - Thread-safety: thread-compatible.
 inline const char* CStrFindLastChar(const char* text, int c) noexcept {
     return std::strrchr(text, c);
 }
@@ -71,7 +71,7 @@ inline char* CStrFindLastChar(char* text, int c) noexcept {
 
 /// Finds the first character of `text` that is in `set` (`strpbrk`).
 ///
-/// Thread-safety: thread-compatible.
+/// - Thread-safety: thread-compatible.
 inline const char* CStrFindAny(const char* text, const char* set) noexcept {
     return std::strpbrk(text, set);
 }
@@ -79,30 +79,30 @@ inline const char* CStrFindAny(const char* text, const char* set) noexcept {
 /// Copies the terminated string `source` including the terminator (`strcpy`); `destination` must be big enough.
 ///
 /// Prefer [[CStrCopyTo]], which cannot overflow.
-/// Thread-safety: thread-compatible.
+/// - Thread-safety: thread-compatible.
 inline char* CStrCopy(char* destination, const char* source) noexcept {
     return std::strcpy(destination, source);
 }
 
 /// Copies at most `count` characters and pads with NULs up to `count` (`strncpy`); the result is not terminated when `source` has `count` or more characters.
 ///
-/// Thread-safety: thread-compatible.
+/// - Thread-safety: thread-compatible.
 inline char* CStrCopyN(char* destination, const char* source, usize count) noexcept {
     return std::strncpy(destination, source, count);
 }
 
 /// Appends `source` to the terminated string `destination` (`strcat`); the buffer must be big enough.
 ///
-/// Thread-safety: thread-compatible.
+/// - Thread-safety: thread-compatible.
 inline char* CStrAppend(char* destination, const char* source) noexcept {
     return std::strcat(destination, source);
 }
 
 /// Copies `source` into a buffer of `capacity` bytes and always terminates it (truncating when needed).
 ///
-/// Param capacity: the size of `destination`; zero writes nothing.
-/// Returns: the length of `source`, so a result of `capacity` or more means the text was cut.
-/// Thread-safety: thread-compatible.
+/// - Param capacity: the size of `destination`; zero writes nothing.
+/// - Returns: the length of `source`, so a result of `capacity` or more means the text was cut.
+/// - Thread-safety: thread-compatible.
 inline usize CStrCopyTo(char* destination, usize capacity, const char* source) noexcept {
     const usize length = std::strlen(source);
     if (capacity != 0) {

@@ -33,17 +33,17 @@ using CrashStateFn = void (*)(void* context, char* out, usize capacity);
 /// Register during startup, once per subsystem (the RHI adds the adapter, the renderer the frame number, the window layer the
 /// backend). The table is append-only and holds [[debug::kMaxCrashStateProviders]] entries.
 ///
-/// Param name: a short label such as `"gpu"`; must outlive the program (a literal).
-/// Param fn: the provider; see [[debug::CrashStateFn]] for what it may do.
-/// Param context: passed to `fn`; must stay valid for the life of the program.
-/// Returns: true if the provider was added.
-/// Fails: returns false if the table is full or `name` or `fn` is null.
-/// Ownership: the table stores the pointers; it owns none of what they point at.
-/// Thread-safety: thread-safe.
+/// - Param name: a short label such as `"gpu"`; must outlive the program (a literal).
+/// - Param fn: the provider; see [[debug::CrashStateFn]] for what it may do.
+/// - Param context: passed to `fn`; must stay valid for the life of the program.
+/// - Returns: true if the provider was added.
+/// - Fails: returns false if the table is full or `name` or `fn` is null.
+/// - Ownership: the table stores the pointers; it owns none of what they point at.
+/// - Thread-safety: thread-safe.
 bool RegisterCrashStateProvider(const char* name, CrashStateFn fn, void* context);
 
 /// Removes every registered provider. For tests.
-/// Thread-safety: not-thread-safe. Call only while no report is being written.
+/// - Thread-safety: not-thread-safe. Call only while no report is being written.
 void ResetCrashStateProvidersForTesting();
 
 /// Receives a piece of report text.
@@ -54,7 +54,7 @@ using CrashWriteFn = void (*)(void* context, const char* data, usize length);
 
 /// Where a report goes: a function and the pointer it gets.
 ///
-/// Thread-safety: thread-compatible. A plain value.
+/// - Thread-safety: thread-compatible. A plain value.
 struct CrashReportSink {
     /// Called with each piece of the report, in order.
     CrashWriteFn write = nullptr;
@@ -64,7 +64,7 @@ struct CrashReportSink {
 
 /// What a crash report is about.
 ///
-/// Thread-safety: thread-compatible. A plain value; the pointers are borrowed for the [[debug::WriteCrashReport]] call.
+/// - Thread-safety: thread-compatible. A plain value; the pointers are borrowed for the [[debug::WriteCrashReport]] call.
 struct CrashReportInfo {
     /// Why the process is being reported.
     CrashReason reason = CrashReason::None;
@@ -89,17 +89,17 @@ struct CrashReportInfo {
 
 /// Writes the whole report: a header with the reason and the thread, the stack trace, then [[debug::WriteCrashContext]].
 ///
-/// Param sink: where the text goes.
-/// Param info: what to report.
-/// Thread-safety: thread-safe. Async-signal-safe once [[debug::InitDebugFacilities]] and [[debug::InitCrashContext]] have run
+/// - Param sink: where the text goes.
+/// - Param info: what to report.
+/// - Thread-safety: thread-safe. Async-signal-safe once [[debug::InitDebugFacilities]] and [[debug::InitCrashContext]] have run
 ///   (it never calls `malloc` and takes no lock of its own).
 void WriteCrashReport(const CrashReportSink& sink, const CrashReportInfo& info);
 
 /// Writes the sections that describe the program and its surroundings: the build, the platform, the state providers and the
 /// most recent log lines. [[debug::WriteCrashReport]] ends with this; an assertion failure prints it after its own message.
 ///
-/// Param sink: where the text goes.
-/// Thread-safety: thread-safe. Async-signal-safe once [[debug::InitCrashContext]] has run.
+/// - Param sink: where the text goes.
+/// - Thread-safety: thread-safe. Async-signal-safe once [[debug::InitCrashContext]] has run.
 void WriteCrashContext(const CrashReportSink& sink);
 
 /// How many of the most recent log lines a report includes.

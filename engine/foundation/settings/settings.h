@@ -26,7 +26,7 @@ namespace engine_placeholder::settings {
 
 /// One setting that changed: its id and the values before and after.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct Change {
     /// The setting.
     SettingId id;
@@ -38,7 +38,7 @@ struct Change {
 
 /// The changes of one `Set` or `Apply` call, handed to listeners and to the apply function together.
 ///
-/// Thread-safety: thread-compatible; valid only during the call it is passed to.
+/// - Thread-safety: thread-compatible; valid only during the call it is passed to.
 struct ChangeEvent {
     /// The registry the ids belong to.
     const Registry* registry = nullptr;
@@ -81,7 +81,7 @@ enum class SetError : u8 {
 
 /// The result of `Set`, `SetText` or `Apply`.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct SetResult {
     /// What went wrong.
     SetError error = SetError::None;
@@ -161,7 +161,7 @@ struct SaveOptions {
 
 /// A snapshot of every setting's value, consistent at one instant.
 ///
-/// Thread-safety: thread-safe; immutable once published, so any thread may read it.
+/// - Thread-safety: thread-safe; immutable once published, so any thread may read it.
 struct SettingsSnapshot {
     /// The values, indexed by `SettingId::value - 1`. Each is immutable and shared with the snapshots before and after this one, so a change
     /// copies a table of pointers, not every value.
@@ -170,18 +170,18 @@ struct SettingsSnapshot {
     u64 generation = 0;
     /// Returns a setting's value.
     ///
-    /// Aborts: `id` is not in the snapshot.
+    /// - Aborts: `id` is not in the snapshot.
     const Value& Get(SettingId id) const;
 };
 
 /// The settings of one application: registry, layers, current values, listeners and saving.
 ///
-/// Thread-safety: thread-safe. `Set`, `Apply`, `Save`, `Load`, `Provenance` and listener registration are serialized by one recursive lock that
+/// - Thread-safety: thread-safe. `Set`, `Apply`, `Save`, `Load`, `Provenance` and listener registration are serialized by one recursive lock that
 ///   is held while the apply function and the listeners run, so changes are announced in the order they were published, a rejected batch is
 ///   rolled back before anyone else can change anything, and a listener or the apply function may call `Set` again on its own thread (up to 8
 ///   deep). A listener must not wait for another thread that is itself waiting to change a setting. Typed handles and
 ///   [[settings::Settings::Snapshot]] never wait and may be read from any thread at any time.
-/// Ownership: borrows the registry, which must outlive it; owns its layers.
+/// - Ownership: borrows the registry, which must outlive it; owns its layers.
 class Settings {
 public:
     /// Makes a service over `registry` and freezes it.
@@ -198,8 +198,8 @@ public:
     /// every layer, resolves every setting and publishes the values. Replaces earlier layers and drops staged changes. A problem in one layer
     /// never stops the others; all are in the report.
     ///
-    /// Param options: see [[settings::LoadOptions]].
-    /// Returns: the report.
+    /// - Param options: see [[settings::LoadOptions]].
+    /// - Returns: the report.
     LoadReport Load(const LoadOptions& options);
 
     /// Reads the layers already in [[settings::Settings::Layers]] (added by hand, for tests or a custom stack), resolves every setting and
@@ -218,9 +218,9 @@ public:
 
     /// Sets one setting.
     ///
-    /// Param id: the setting.
-    /// Param value: checked against the declaration (range policy, enum, capability).
-    /// Returns: what happened; on success the value is published and listeners have run.
+    /// - Param id: the setting.
+    /// - Param value: checked against the declaration (range policy, enum, capability).
+    /// - Returns: what happened; on success the value is published and listeners have run.
     SetResult Set(SettingId id, const Value& value);
     /// Sets a setting from its text form (`1920`, `mailbox`, `"quoted"`), found by key or deprecated key.
     SetResult SetText(StringView key, StringView text);
@@ -228,26 +228,26 @@ public:
     /// `origin` as its source, and is not written to the user's file), and is published like any change. For programs that keep an old flag
     /// (`--no-vsync`) next to the settings options. An explicit `--set` of the same key wins and nothing changes.
     ///
-    /// Param key: the setting's key.
-    /// Param text: the value in its text form.
-    /// Param origin: shown as the source, for example `--no-vsync`.
-    /// Returns: as [[settings::Settings::Set]]; with no command-line layer (a hand-built stack) it is `SetText`.
+    /// - Param key: the setting's key.
+    /// - Param text: the value in its text form.
+    /// - Param origin: shown as the source, for example `--no-vsync`.
+    /// - Returns: as [[settings::Settings::Set]]; with no command-line layer (a hand-built stack) it is `SetText`.
     SetResult SetFromCommandLine(StringView key, StringView text, StringView origin);
     /// Sets several settings as one change: all are checked first and written to the write layer, then `apply` (if any) is called with the whole
     /// batch (the handles and the snapshot still show the old values during the call: the event carries the new ones); if it returns false the
     /// write layer is restored and nothing is published or announced. Otherwise the values are published together and the listeners see the
     /// batch together.
     ///
-    /// Param requests: the changes.
-    /// Param count: how many.
-    /// Param apply: the consumer that acts on the change, or null.
-    /// Param user: passed to `apply`.
+    /// - Param requests: the changes.
+    /// - Param count: how many.
+    /// - Param apply: the consumer that acts on the change, or null.
+    /// - Param user: passed to `apply`.
     SetResult Apply(const ChangeRequest* requests, usize count, ApplyFn apply, void* user);
 
     /// Subscribes to changes. A listener is called, in the order added, with the changes whose key equals `prefix` or lies below it
     /// (an empty prefix matches everything).
     ///
-    /// Returns: an id for `RemoveListener`.
+    /// - Returns: an id for `RemoveListener`.
     u32 AddListener(StringView prefix, SettingsListener listener, void* user);
     /// Removes a subscription; a call already under way may still happen.
     void RemoveListener(u32 id);
@@ -261,7 +261,7 @@ public:
 
     /// Writes the user's file: only the write layer, atomically, with a `.bak`. The layers above it are not written (unless asked).
     ///
-    /// Returns: success, or why not (`Damaged`, `PermissionDenied`, `Io`, ...); the in-memory values are unaffected by a failure.
+    /// - Returns: success, or why not (`Damaged`, `PermissionDenied`, `Io`, ...); the in-memory values are unaffected by a failure.
     Status Save(const SaveOptions& options = SaveOptions());
     /// Returns the result of the most recent `Save` (including the ones `SaveIfChanged`, `SaveOnExit` and autosave make), so an application can tell the
     /// user that saving is failing (`TooNew`, `PermissionDenied`, ...). Success until a save has failed.
@@ -277,7 +277,7 @@ public:
     void SetAutosaveQuietSeconds(double seconds);
     /// Saves if autosave is on, there are unsaved changes and the last change is old enough. Call it now and then (once a frame is fine).
     ///
-    /// Returns: whether a save was attempted and succeeded.
+    /// - Returns: whether a save was attempted and succeeded.
     bool PollAutosave();
 
 private:
@@ -313,7 +313,7 @@ private:
 
 /// Saves at the end of a scope if anything changed.
 ///
-/// Thread-safety: thread-compatible.
+/// - Thread-safety: thread-compatible.
 class SaveOnExit {
 public:
     /// Watches `settings`, which must outlive the guard.

@@ -11,9 +11,9 @@ namespace engine_placeholder::rhi {
 /// [[rhi::DeviceHost]]; calling it again changes nothing. Registration is explicit, never a global constructor, so a
 /// program that does not link a backend cannot pick it by accident and one that forgets the call fails with a clear error.
 ///
-/// Returns: true if every backend registered.
-/// Fails: returns false (each failure logged) when one did not register.
-/// Thread-safety: thread-safe.
+/// - Returns: true if every backend registered.
+/// - Fails: returns false (each failure logged) when one did not register.
+/// - Thread-safety: thread-safe.
 bool RegisterCompiledBackends();
 
 } // namespace engine_placeholder::rhi

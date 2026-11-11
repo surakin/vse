@@ -35,7 +35,7 @@ enum class ValidationSetting : u8 {
 /// counts each committed resource as one allocation, Vulkan each memory block); the null backend honors `lose_device_at_frame`
 /// (it also has `SimulateDeviceLoss`) and ignores `fail_allocations_from`, since it has no device memory.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct FaultInjection {
     /// Report the device lost at the start of this frame (1 is the first `BeginFrame`), as if the driver returned
     /// `VK_ERROR_DEVICE_LOST`; 0 never does. From then on submissions are ignored and `Device::DeviceLost` is true.
@@ -64,7 +64,7 @@ struct FaultInjection {
 ///
 /// The device is headless unless a presentation window is supplied (added with the swapchain on Day 56).
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct DeviceCreateInfo {
     /// The backend to create; `Auto` picks the preferred registered backend that is available here.
     Backend backend = Backend::Auto;
@@ -117,12 +117,12 @@ void NullAdapters(AdapterList* out);
 /// and a graphics+compute queue. `ENGINE_RHI_GPU=<index or name substring>` overrides the choice; the full ranking
 /// is logged on [[rhi::LogRhi]]. `DeviceCreateInfo::adapter` overrides both.
 ///
-/// Param info: what to create.
-/// Returns: the device, or an empty pointer.
-/// Fails: returns an empty pointer, logging the reason, if the backend is not registered in this program or not available
+/// - Param info: what to create.
+/// - Returns: the device, or an empty pointer.
+/// - Fails: returns an empty pointer, logging the reason, if the backend is not registered in this program or not available
 ///   here, there is no Vulkan loader, no suitable GPU, the override matches nothing suitable, or device creation fails.
-/// Ownership: the caller owns the device through the returned [[rhi::DevicePtr]].
-/// Thread-safety: thread-safe.
+/// - Ownership: the caller owns the device through the returned [[rhi::DevicePtr]].
+/// - Thread-safety: thread-safe.
 DevicePtr CreateDevice(const DeviceCreateInfo& info);
 
 } // namespace engine_placeholder::rhi

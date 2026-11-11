@@ -17,8 +17,8 @@ namespace engine_placeholder {
 /// was made by [[MakeUnique]] (heap storage), `Base` is the first (or only) base so the pointers
 /// coincide, and `Derived` is not aligned beyond 16 bytes.
 ///
-/// Thread-safety: thread-safe; stateless.
-/// Ownership: takes the pointer it is given.
+/// - Thread-safety: thread-safe; stateless.
+/// - Ownership: takes the pointer it is given.
 template <typename T>
 struct DefaultDelete {
     /// Creates the deleter.
@@ -33,8 +33,8 @@ struct DefaultDelete {
 
     /// Destroys `ptr` and frees its storage.
     ///
-    /// Param ptr: object made by [[MakeUnique]], or null (ignored).
-    /// Ownership: takes the object; it is destroyed and its storage freed.
+    /// - Param ptr: object made by [[MakeUnique]], or null (ignored).
+    /// - Ownership: takes the object; it is destroyed and its storage freed.
     void operator()(T* ptr) const {
         if (ptr != nullptr) {
             ptr->~T();
@@ -49,8 +49,8 @@ struct DefaultDelete {
 /// the destructor); an empty deleter adds no size. A pointer type with a custom deleter should get its
 /// own `using` alias, such as `DevicePtr`, so call sites do not spell the deleter out.
 ///
-/// Thread-safety: not-thread-safe. Synchronize externally if shared.
-/// Ownership: owns the object; it is destroyed by `Reset`, by assignment and by the destructor.
+/// - Thread-safety: not-thread-safe. Synchronize externally if shared.
+/// - Ownership: owns the object; it is destroyed by `Reset`, by assignment and by the destructor.
 template <typename T, typename Deleter = DefaultDelete<T>>
 class UniquePtr {
 public:
@@ -61,8 +61,8 @@ public:
 
     /// Takes ownership of `ptr`, which `deleter` must be able to release.
     ///
-    /// Param ptr: object to own, or null.
-    /// Param deleter: releases the object; copied into the pointer.
+    /// - Param ptr: object to own, or null.
+    /// - Param deleter: releases the object; copied into the pointer.
     explicit UniquePtr(T* ptr, Deleter deleter = Deleter()) : deleter_(Move(deleter)), ptr_(ptr) {}
 
     /// Destroys the owned object, if any.
@@ -104,7 +104,7 @@ public:
     T* Get() const { return ptr_; }
     /// Returns the owned object.
     ///
-    /// Aborts: never checked; the pointer must not be empty.
+    /// - Aborts: never checked; the pointer must not be empty.
     T* operator->() const { return ptr_; }
     /// Returns the owned object; the pointer must not be empty (not checked).
     T& operator*() const { return *ptr_; }
@@ -120,7 +120,7 @@ public:
 
     /// Destroys the owned object (if any) and takes ownership of `ptr`.
     ///
-    /// Param ptr: new object to own, or null to just release the old one.
+    /// - Param ptr: new object to own, or null to just release the old one.
     void Reset(T* ptr = nullptr) {
         T* old = ptr_;
         ptr_ = ptr;
@@ -144,8 +144,8 @@ private:
 /// `Deleter` must release heap storage obtained this way (the default does). If the constructor is
 /// private, make `MakeUnique` a friend or give the class a public constructor.
 ///
-/// Param args: forwarded to the constructor.
-/// Returns: the owning pointer, or an empty one if the heap is exhausted.
+/// - Param args: forwarded to the constructor.
+/// - Returns: the owning pointer, or an empty one if the heap is exhausted.
 template <typename T, typename Deleter = DefaultDelete<T>, typename... Args>
 UniquePtr<T, Deleter> MakeUnique(Args&&... args) {
     void* mem = HeapAllocator::Default().Alloc(sizeof(T), alignof(T));

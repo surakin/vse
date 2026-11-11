@@ -26,12 +26,12 @@ namespace detail {
 /// Runs a windowed program: gives standard output and error somewhere to go, stashes the UTF-8 arguments
 /// ([[os::StashNativeCommandLine]]) and returns `entry`'s result. Called by [[ENGINE_WINDOWED_PROGRAM]]'s expansion only.
 ///
-/// Param argc: `main`'s count on Linux; ignored on Windows, which reads the command line itself (`GetCommandLineW`).
-/// Param argv: `main`'s arguments on Linux; ignored on Windows, which converts its wide arguments to UTF-8.
-/// Param entry: the program's own entry point.
-/// Returns: `entry`'s result.
-/// Fails: on Windows, returns 1 without calling `entry` if the command line cannot be read or the arguments cannot be stored.
-/// Backend: `platform/<os>/entry_point_<os>.cpp`.
+/// - Param argc: `main`'s count on Linux; ignored on Windows, which reads the command line itself (`GetCommandLineW`).
+/// - Param argv: `main`'s arguments on Linux; ignored on Windows, which converts its wide arguments to UTF-8.
+/// - Param entry: the program's own entry point.
+/// - Returns: `entry`'s result.
+/// - Fails: on Windows, returns 1 without calling `entry` if the command line cannot be read or the arguments cannot be stored.
+/// - Backend: `platform/<os>/entry_point_<os>.cpp`.
 int RunWindowedProgram(int argc, char** argv, WindowedProgramEntry entry);
 
 } // namespace detail

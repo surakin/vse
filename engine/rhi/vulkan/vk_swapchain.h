@@ -16,8 +16,8 @@ class VulkanDevice;
 /// `Present` to `ColorAttachment` and back to `Present`). `Acquire` and `Present` each submit an empty batch that
 /// carries the binary semaphores presentation needs, so the application's command lists only use the timeline fence.
 ///
-/// Thread-safety: owner-thread-only, and not to be used while another thread submits to the same device.
-/// Ownership: created by [[rhi::Device::CreateSwapchain]], destroyed with [[rhi::Device::DestroySwapchain]].
+/// - Thread-safety: owner-thread-only, and not to be used while another thread submits to the same device.
+/// - Ownership: created by [[rhi::Device::CreateSwapchain]], destroyed with [[rhi::Device::DestroySwapchain]].
 class VulkanSwapchain final : public Swapchain {
 public:
     /// Constructs an empty swapchain; use [[rhi::vulkan::VulkanSwapchain::Create]].
@@ -39,11 +39,11 @@ public:
 
     /// Creates a swapchain for the device's window.
     ///
-    /// Param device: the device; must have been created with a window.
-    /// Param desc: the presentation mode and initial size.
-    /// Returns: the swapchain, or an empty pointer.
-    /// Fails: returns an empty pointer, logging the reason, if the surface offers no usable format or cannot be rendered to.
-    /// Ownership: the caller owns the result.
+    /// - Param device: the device; must have been created with a window.
+    /// - Param desc: the presentation mode and initial size.
+    /// - Returns: the swapchain, or an empty pointer.
+    /// - Fails: returns an empty pointer, logging the reason, if the surface offers no usable format or cannot be rendered to.
+    /// - Ownership: the caller owns the result.
     static UniquePtr<VulkanSwapchain> Create(VulkanDevice* device, const SwapchainDesc& desc);
 
 private:

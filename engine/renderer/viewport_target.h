@@ -13,7 +13,7 @@ namespace engine_placeholder::renderer {
 
 /// What a [[renderer::ViewportTarget]] is made of.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct ViewportTargetDesc {
     /// The colour format; the world's last pass (the tonemap) writes it and the UI pass samples it. Must be usable as a colour attachment and as a sampled texture.
     rhi::Format color_format = rhi::Format::RGBA8_UNorm;
@@ -35,8 +35,8 @@ struct ViewportTargetDesc {
 /// It registers with a [[renderer::DeviceResources]] at the textures tier. After a reset or a loss `Recreate` makes textures of the same size again; their contents are lost until the
 /// next frame draws the world (the UI shows nothing for an image whose texture is missing, and the picture returns one frame after the reset).
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: owns its textures; the device and the registry must outlive it.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: owns its textures; the device and the registry must outlive it.
 class ViewportTarget final : public Recreatable, public ImageSource {
 public:
     ViewportTarget() = default;
@@ -47,16 +47,16 @@ public:
 
     /// Creates the textures.
     ///
-    /// Param device: the device.
-    /// Param desc: the formats.
-    /// Param width: width in pixels; at least 1.
-    /// Param height: height in pixels; at least 1.
-    /// Param resources: the registry, or null for a target that does not need to survive a reset.
-    /// Param debug_name: a name for debuggers; copied.
-    /// Returns: true on success.
-    /// Fails: returns false, logging the reason, if a size is 0 or above the device limit, the format cannot be used so, or memory runs out; nothing stays allocated.
-    /// Aborts: the object already exists or `device` is null.
-    /// Ownership: the device and the registry are borrowed.
+    /// - Param device: the device.
+    /// - Param desc: the formats.
+    /// - Param width: width in pixels; at least 1.
+    /// - Param height: height in pixels; at least 1.
+    /// - Param resources: the registry, or null for a target that does not need to survive a reset.
+    /// - Param debug_name: a name for debuggers; copied.
+    /// - Returns: true on success.
+    /// - Fails: returns false, logging the reason, if a size is 0 or above the device limit, the format cannot be used so, or memory runs out; nothing stays allocated.
+    /// - Aborts: the object already exists or `device` is null.
+    /// - Ownership: the device and the registry are borrowed.
     bool Create(rhi::Device* device, const ViewportTargetDesc& desc, u32 width, u32 height, DeviceResources* resources, const char* debug_name);
 
     /// Destroys the textures and forgets the registration.
@@ -64,53 +64,53 @@ public:
 
     /// Gives the target a new size: makes the new textures, then destroys the old ones. The same size again does nothing and returns true. Between a `Release` and the `Recreate` after it only the size is recorded, and the recreate uses it.
     ///
-    /// Returns: true when the target has the requested size afterwards.
-    /// Fails: returns false, keeping the old textures and size, when a size is 0, above the device limit, or the new textures cannot be made.
-    /// Aborts: the object does not exist.
+    /// - Returns: true when the target has the requested size afterwards.
+    /// - Fails: returns false, keeping the old textures and size, when a size is 0, above the device limit, or the new textures cannot be made.
+    /// - Aborts: the object does not exist.
     bool Resize(u32 width, u32 height);
 
     /// Returns the colour texture, or an invalid handle after a reset released it. The [[renderer::ImageSource]] answer.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     rhi::TextureHandle Handle() const override { return color_; }
     /// Returns the depth texture, or an invalid handle when the target has none or after a reset released it.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     rhi::TextureHandle DepthHandle() const { return depth_; }
     /// Returns the width in pixels.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     u32 Width() const { return width_; }
     /// Returns the height in pixels.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     u32 Height() const { return height_; }
     /// Returns the colour format.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     rhi::Format ColorFormat() const { return desc_.color_format; }
     /// Returns how many times `Resize` changed the size.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     u64 ResizeCount() const { return resizes_; }
 
     /// Brings the colour texture into `graph` for this frame. The graph leaves it in the sampled state, which is also where the next frame finds it. The target records that new state
     /// at import, so the graph must be executed: a frame abandoned after the import (the build callback returns false) leaves the record wrong; call `Resize` to the same size plus one
     /// pixel and back, or recreate the target, to reset it.
     ///
-    /// Returns: the graph resource the world's last pass writes (as `ColorAttachment`) and the UI pass reads (in `sampled`).
-    /// Aborts: `graph` is null or the object holds no texture.
-    /// Ownership: borrows `graph`; the resource is valid until the graph is executed.
+    /// - Returns: the graph resource the world's last pass writes (as `ColorAttachment`) and the UI pass reads (in `sampled`).
+    /// - Aborts: `graph` is null or the object holds no texture.
+    /// - Ownership: borrows `graph`; the resource is valid until the graph is executed.
     GraphResource ImportColor(RenderGraph* graph);
     /// Brings the depth texture into `graph` for this frame; it is left in its depth-attachment state.
     ///
-    /// Aborts: `graph` is null, or the target has no depth texture.
-    /// Ownership: borrows `graph`; the resource is valid until the graph is executed.
+    /// - Aborts: `graph` is null, or the target has no depth texture.
+    /// - Ownership: borrows `graph`; the resource is valid until the graph is executed.
     GraphResource ImportDepth(RenderGraph* graph);
 
     /// Describes the colour texture as the target of `Renderer::RenderFrame` when the world is drawn in a frame of its own (its own submission): the frame leaves it ready to sample.
     ///
-    /// Aborts: the object holds no texture.
+    /// - Aborts: the object holds no texture.
     FrameTarget AsFrameTarget();
 
     void Release() override;

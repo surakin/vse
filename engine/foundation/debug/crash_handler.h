@@ -17,7 +17,7 @@ namespace engine_placeholder::debug {
 ///
 /// There is deliberately no field for a server address or an account: the handler only writes files.
 ///
-/// Thread-safety: thread-compatible. A plain value; the strings are borrowed for the [[debug::InstallCrashHandler]] call.
+/// - Thread-safety: thread-compatible. A plain value; the strings are borrowed for the [[debug::InstallCrashHandler]] call.
 struct CrashHandlerOptions {
     /// Directory the dumps go to; null means [[io::CrashDumpDirectory]]. Created if missing. Never the working directory.
     const char* dump_directory = nullptr;
@@ -41,11 +41,11 @@ struct CrashHandlerOptions {
 
 /// Deletes the oldest `*.envelope` files of a directory so that at most `keep` remain.
 ///
-/// Param saved: the directory holding the saved dumps; a missing one is not an error.
-/// Param keep: how many of the newest to keep; 0 deletes nothing.
-/// Returns: how many files were deleted.
-/// Fails: returns 0 when the directory cannot be listed; a file that cannot be deleted is skipped.
-/// Thread-safety: thread-compatible. Not signal-safe; called when the handler is installed, not from the crash path.
+/// - Param saved: the directory holding the saved dumps; a missing one is not an error.
+/// - Param keep: how many of the newest to keep; 0 deletes nothing.
+/// - Returns: how many files were deleted.
+/// - Fails: returns 0 when the directory cannot be listed; a file that cannot be deleted is skipped.
+/// - Thread-safety: thread-compatible. Not signal-safe; called when the handler is installed, not from the crash path.
 u32 PruneSavedDumps(const io::Path& saved, u32 keep);
 
 /// What [[debug::InstallCrashHandler]] did.
@@ -66,17 +66,17 @@ enum class CrashHandlerResult : u8 {
 /// On Windows, while it is installed, `abort()` neither shows the C runtime's "abort() has been called" dialog (Debug builds) nor calls
 /// Windows Error Reporting: the handler writes the report and the dump, and nothing waits for a click.
 ///
-/// Param options: how to set it up.
-/// Returns: what happened; on anything but `Installed` or `AlreadyInstalled` the program runs on without a handler.
-/// Fails: see [[debug::CrashHandlerResult]]; a failure is logged as a warning, never fatal.
-/// Thread-safety: thread-safe. Not async-signal-safe.
+/// - Param options: how to set it up.
+/// - Returns: what happened; on anything but `Installed` or `AlreadyInstalled` the program runs on without a handler.
+/// - Fails: see [[debug::CrashHandlerResult]]; a failure is logged as a warning, never fatal.
+/// - Thread-safety: thread-safe. Not async-signal-safe.
 CrashHandlerResult InstallCrashHandler(const CrashHandlerOptions& options);
 
 /// Removes the crash handler and restores the previous signal handling.
 ///
 /// A fault after this call behaves as if the handler had never been installed. Does nothing if none is installed.
 ///
-/// Thread-safety: thread-safe. Not async-signal-safe.
+/// - Thread-safety: thread-safe. Not async-signal-safe.
 void UninstallCrashHandler();
 
 /// Gives the calling thread room to handle a fault, so a stack overflow on it still produces a report and a dump.
@@ -85,17 +85,17 @@ void UninstallCrashHandler();
 /// this for the thread that calls it; call this once at the start of every other thread that may run deep (job workers, the
 /// I/O thread). The memory is 128 KiB of address space per thread, released when the thread ends.
 ///
-/// Param name: a short name for the thread, shown in crash reports (`"worker-3"`); copied. Null leaves the name as it is.
-/// Returns: true if the thread can now handle a stack overflow.
-/// Fails: returns false if the crash handler is not installed yet (only the name is set; call this again after installing, or
+/// - Param name: a short name for the thread, shown in crash reports (`"worker-3"`); copied. Null leaves the name as it is.
+/// - Returns: true if the thread can now handle a stack overflow.
+/// - Fails: returns false if the crash handler is not installed yet (only the name is set; call this again after installing, or
 ///   install first) or if the memory or the platform call is refused; the thread still produces reports for other faults.
-/// Thread-safety: thread-safe; it affects only the calling thread. Not async-signal-safe.
-/// Backend: Windows: SetThreadStackGuarantee so a stack overflow can be handled; macOS: the name only (the library takes Mach exceptions, which need no alternate stack).
+/// - Thread-safety: thread-safe; it affects only the calling thread. Not async-signal-safe.
+/// - Backend: Windows: SetThreadStackGuarantee so a stack overflow can be handled; macOS: the name only (the library takes Mach exceptions, which need no alternate stack).
 bool RegisterThreadForCrashHandling(const char* name = nullptr);
 
 /// Reports whether the crash handler is installed.
-/// Returns: true between a successful [[debug::InstallCrashHandler]] and [[debug::UninstallCrashHandler]].
-/// Thread-safety: thread-safe.
+/// - Returns: true between a successful [[debug::InstallCrashHandler]] and [[debug::UninstallCrashHandler]].
+/// - Thread-safety: thread-safe.
 bool CrashHandlerInstalled();
 
 } // namespace engine_placeholder::debug

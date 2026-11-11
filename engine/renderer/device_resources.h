@@ -30,7 +30,7 @@ inline constexpr u32 kPasses = 4;
 /// device and re-uploads; neither caches a handle past a frame for anyone else. Both are called on the owning thread, with the
 /// device idle.
 ///
-/// Thread-safety: owner-thread-only.
+/// - Thread-safety: owner-thread-only.
 class Recreatable {
 public:
     virtual ~Recreatable() = default;
@@ -40,23 +40,23 @@ public:
 
     /// Makes the device objects again.
     ///
-    /// Param device: the new device.
-    /// Returns: true on success; on failure nothing stays allocated.
-    /// Fails: returns false, logging the reason, if the source is gone or the device cannot hold the object (limits, memory).
-    /// Ownership: the device is borrowed; it outlives the objects until the next `Release`.
+    /// - Param device: the new device.
+    /// - Returns: true on success; on failure nothing stays allocated.
+    /// - Fails: returns false, logging the reason, if the source is gone or the device cannot hold the object (limits, memory).
+    /// - Ownership: the device is borrowed; it outlives the objects until the next `Release`.
     virtual bool Recreate(rhi::Device* device) = 0;
 
     /// Returns whether the owner currently holds its device objects. The registry asks when the owner registers, so an owner
     /// that registers after it made its objects is released at the next reset.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     virtual bool Live() const = 0;
 
     /// Returns a short name for logs and failure reports.
     ///
-    /// Returns: a string that stays valid as long as the owner.
-    /// Fails: never.
-    /// Ownership: the string belongs to the owner.
+    /// - Returns: a string that stays valid as long as the owner.
+    /// - Fails: never.
+    /// - Ownership: the string belongs to the owner.
     virtual const char* RecreatableName() const = 0;
 };
 
@@ -67,8 +67,8 @@ public:
 /// built (a half-built set is never used), remembers the owner and returns false so the host fails the reset (the caller rolls
 /// back). Calling it again starts from released.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: borrows the owners; an owner must unregister (see [[renderer::ScopedRegistration]]) before it is destroyed.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: borrows the owners; an owner must unregister (see [[renderer::ScopedRegistration]]) before it is destroyed.
 ///   The registry must outlive every registration.
 class DeviceResources final : public rhi::DeviceObserver {
 public:
@@ -84,23 +84,23 @@ public:
     /// The owner counts as live if `Live()` says it holds its objects now; one that does not is recreated at the next
     /// `OnDeviceCreated`.
     ///
-    /// Param owner: borrowed; must stay alive until `Unregister`.
-    /// Param tier: its order, see the `tiers` namespace.
-    /// Returns: true if registered.
-    /// Fails: returns false, logging the reason, if the table is full or a reset is running.
-    /// Ownership: borrowed for the call; nothing is kept unless the description above says so.
+    /// - Param owner: borrowed; must stay alive until `Unregister`.
+    /// - Param tier: its order, see the `tiers` namespace.
+    /// - Returns: true if registered.
+    /// - Fails: returns false, logging the reason, if the table is full or a reset is running.
+    /// - Ownership: borrowed for the call; nothing is kept unless the description above says so.
     bool Register(Recreatable* owner, u32 tier);
 
     /// Removes an owner; unknown owners are ignored. Does not release the owner's objects: the owner does that itself.
     /// During a reset the entry is only marked dead and removed when the reset step ends, so an owner may unregister itself or
     /// another from inside `Release` or `Recreate`.
-    /// Ownership: borrowed for the call; nothing is kept unless the description above says so.
+    /// - Ownership: borrowed for the call; nothing is kept unless the description above says so.
     void Unregister(Recreatable* owner);
 
     /// Replaces a registered owner by another at the same tier and state (an owner that moved).
-    /// Param from: the old address.
-    /// Param to: the new address.
-    /// Ownership: borrowed for the call; nothing is kept unless the description above says so.
+    /// - Param from: the old address.
+    /// - Param to: the new address.
+    /// - Ownership: borrowed for the call; nothing is kept unless the description above says so.
     void Rebind(Recreatable* from, Recreatable* to);
 
     /// Returns the number of registered owners.
@@ -109,43 +109,43 @@ public:
     /// Releases the live owners at `first_tier` and above, highest first, leaving the lower tiers alone (a pipeline rebuild
     /// releases tiers 3 and 4 only). `CurrentDevice` is unchanged.
     ///
-    /// Param first_tier: the lowest tier to release.
+    /// - Param first_tier: the lowest tier to release.
     void ReleaseFrom(u32 first_tier);
 
     /// Recreates the released owners at `first_tier` and above, lowest first, on the current device.
     ///
-    /// Param first_tier: the lowest tier to recreate.
-    /// Returns: false if an owner failed; the owners at `first_tier` and above are released again and `FailedOwner` names it.
-    /// Aborts: there is no current device (the registry is fully released).
+    /// - Param first_tier: the lowest tier to recreate.
+    /// - Returns: false if an owner failed; the owners at `first_tier` and above are released again and `FailedOwner` names it.
+    /// - Aborts: there is no current device (the registry is fully released).
     bool RecreateFrom(u32 first_tier);
 
     /// Returns the name of the owner whose `Recreate` failed last, or null.
     ///
-    /// Ownership: the string belongs to the registry (a copy of the owner's name) and is valid until the next reset.
-    /// Fails: returns null when nothing failed.
+    /// - Ownership: the string belongs to the registry (a copy of the owner's name) and is valid until the next reset.
+    /// - Fails: returns null when nothing failed.
     const char* FailedOwner() const { return failed_name_[0] != '\0' ? failed_name_ : nullptr; }
 
     /// Returns the device the registry last recreated on, or null while released.
-    /// Fails: never.
-    /// Ownership: the returned pointer is borrowed from the owner.
+    /// - Fails: never.
+    /// - Ownership: the returned pointer is borrowed from the owner.
     rhi::Device* CurrentDevice() const { return device_; }
 
     /// Releases every live owner, highest tier first (the first half of a reset; the host calls it).
     ///
-    /// Param epoch: the serial of the device being released.
+    /// - Param epoch: the serial of the device being released.
     void OnDeviceReleasing(u32 epoch) override;
 
     /// Recreates every released owner, lowest tier first.
     ///
-    /// Param device: the new device.
-    /// Param epoch: its serial.
-    /// Returns: false if an owner failed; everything is released again and `FailedOwner` names it.
-    /// Ownership: borrowed for the call; nothing is kept unless the description above says so.
+    /// - Param device: the new device.
+    /// - Param epoch: its serial.
+    /// - Returns: false if an owner failed; everything is released again and `FailedOwner` names it.
+    /// - Ownership: borrowed for the call; nothing is kept unless the description above says so.
     bool OnDeviceCreated(rhi::Device* device, u32 epoch) override;
 
     /// Returns "device-resources".
-    /// Fails: never.
-    /// Ownership: the returned pointer is borrowed from the owner.
+    /// - Fails: never.
+    /// - Ownership: the returned pointer is borrowed from the owner.
     const char* ObserverName() const override { return "device-resources"; }
 
 private:
@@ -174,8 +174,8 @@ private:
 /// Put one in each owner. It moves with the owner (call `Rebind` from the owner's move operations) and unregisters in its
 /// destructor, so a destroyed owner never gets a callback.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: borrows the registry and the owner.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: borrows the registry and the owner.
 class ScopedRegistration {
 public:
     ScopedRegistration() = default;
@@ -186,12 +186,12 @@ public:
 
     /// Registers `owner` with `registry` (or does nothing if `registry` is null).
     ///
-    /// Param registry: the registry; may be null for an owner that does not need to survive a reset.
-    /// Param owner: the owner.
-    /// Param tier: its tier.
-    /// Returns: true if registered or `registry` is null.
-    /// Fails: returns false if the registry refused.
-    /// Ownership: borrowed for the call; nothing is kept unless the description above says so.
+    /// - Param registry: the registry; may be null for an owner that does not need to survive a reset.
+    /// - Param owner: the owner.
+    /// - Param tier: its tier.
+    /// - Returns: true if registered or `registry` is null.
+    /// - Fails: returns false if the registry refused.
+    /// - Ownership: borrowed for the call; nothing is kept unless the description above says so.
     bool Attach(DeviceResources* registry, Recreatable* owner, u32 tier) {
         Reset();
         if (registry == nullptr) {
@@ -206,7 +206,7 @@ public:
     }
 
     /// Takes over the registration of `other`, whose owner moved to `new_owner`; `other` is left unregistered.
-    /// Ownership: borrowed for the call; nothing is kept unless the description above says so.
+    /// - Ownership: borrowed for the call; nothing is kept unless the description above says so.
     void Adopt(ScopedRegistration* other, Recreatable* new_owner) {
         Reset();
         if (other->registry_ != nullptr) {
@@ -228,7 +228,7 @@ public:
     }
 
     /// Returns whether an owner is registered through this object.
-    /// Fails: never.
+    /// - Fails: never.
     bool Registered() const { return registry_ != nullptr; }
 
 private:

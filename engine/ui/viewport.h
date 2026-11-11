@@ -32,7 +32,7 @@ enum class ViewportInputType : u8 {
 ///
 /// Positions are in the viewport's own pixel space (physical pixels, the top-left corner is the origin), not in logical units: multiply a logical distance by `scale` to compare.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct ViewportInput {
     ViewportInputType type = ViewportInputType::PointerMove; ///< What happened.
     bool handled = false;   ///< The binding sets it to stop the event from bubbling to the viewport's ancestors (keys and the wheel only; pointer events are always taken).
@@ -52,7 +52,7 @@ struct ViewportInput {
 
 /// What the viewport tells the binding about a frame.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct ViewportFrame {
     u32 width = 0;   ///< The viewport's width in physical pixels.
     u32 height = 0;  ///< The viewport's height in physical pixels.
@@ -63,16 +63,16 @@ struct ViewportFrame {
 
 /// Returns the aspect ratio (width over height) of a viewport size, for a camera.
 ///
-/// Param width: width in pixels.
-/// Param height: height in pixels.
-/// Returns: `width / height`, or 1 when either is 0 (a collapsed viewport has no shape; its camera is left alone).
-/// Fails: never.
+/// - Param width: width in pixels.
+/// - Param height: height in pixels.
+/// - Returns: `width / height`, or 1 when either is 0 (a collapsed viewport has no shape; its camera is left alone).
+/// - Fails: never.
 inline f32 AspectOf(u32 width, u32 height) { return (width == 0 || height == 0) ? 1.0f : static_cast<f32>(width) / static_cast<f32>(height); }
 
 /// The application's side of a viewport: it owns the render target and the camera.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: owns nothing by itself; the viewport borrows the binding.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: owns nothing by itself; the viewport borrows the binding.
 class ViewportBinding {
 public:
     virtual ~ViewportBinding() = default;
@@ -83,7 +83,7 @@ public:
     virtual void Render(const ViewportFrame& frame) = 0;
     /// Returns the image the viewport draws in its rectangle, or 0 for none yet (nothing is drawn).
     ///
-    /// Fails: never.
+    /// - Fails: never.
     virtual ImageId Image() const = 0;
     /// Receives input; set `input.handled` to take a key or wheel event.
     virtual void OnInput(ViewportInput& input) = 0;
@@ -102,49 +102,49 @@ public:
 /// `Look` deltas; where the pointer cannot be locked the viewport falls back to the captured absolute motion, as differences between positions, and logs a warning once.
 /// Releasing the button, losing the focus, being hidden or removed ends the look.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: borrows the binding, which must outlive the viewport or be cleared with `SetBinding(nullptr)`.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: borrows the binding, which must outlive the viewport or be cleared with `SetBinding(nullptr)`.
 class Viewport : public Widget {
 public:
     /// Makes a viewport with no binding; mouse look is on the right button.
     explicit Viewport(StringView name = StringView());
     /// Sets the binding (null for none: the viewport draws nothing and ignores input). The next frame calls `OnResize` again with the current size.
-    /// Ownership: borrowed.
+    /// - Ownership: borrowed.
     void SetBinding(ViewportBinding* binding);
     /// Returns the binding.
     ///
-    /// Ownership: borrowed.
-    /// Fails: returns null when there is none.
+    /// - Ownership: borrowed.
+    /// - Fails: returns null when there is none.
     ViewportBinding* Binding() const { return binding_; }
     /// Names the button that starts mouse look (an `os::MouseButtonBit`); 0 turns mouse look off. Default: the right button.
     void SetLookButton(u32 button);
     /// Returns the look button.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     u32 LookButton() const { return look_button_; }
     /// Returns whether mouse look is going on.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool Looking() const { return looking_; }
     /// Returns whether mouse look holds a pointer lock (false when it runs on captured absolute motion).
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool LookLocked() const { return look_locked_; }
     /// Returns the width in physical pixels the binding was last told, 0 before the first call.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     u32 PixelWidth() const { return pixel_w_; }
     /// Returns the height in physical pixels the binding was last told, 0 before the first call.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     u32 PixelHeight() const { return pixel_h_; }
     /// Returns how many times `Render` was called on the binding.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     u64 RenderCount() const { return render_count_; }
     /// Returns how many times `OnResize` was called on the binding.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     u64 ResizeCount() const { return resize_count_; }
     /// Returns the size of the bounds as the widget's preferred size: 0 x 0, the viewport fills the space it is given.
     Size Measure(const Constraints& constraints) override;
@@ -156,7 +156,7 @@ public:
     void Update(f32 dt) override;
     /// Returns true: the viewport redraws every frame.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool WantsUpdate() const override { return true; }
 
 private:

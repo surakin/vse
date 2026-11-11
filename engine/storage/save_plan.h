@@ -43,8 +43,8 @@ struct KeyedEntity {
 /// Everything a save read from the world: the encoded records and the bookkeeping its session needs. Built by `WorldStorage` on the thread that owns the world,
 /// written to the store by `WorldStorage` (possibly on another thread), and adopted by the session afterwards. Reads no world after it is built.
 ///
-/// Thread-safety: thread-compatible; handed from the building thread to the writing thread and back by the caller.
-/// Ownership: owns everything it holds; `cancel`, `progress` and `user` are borrowed from the options.
+/// - Thread-safety: thread-compatible; handed from the building thread to the writing thread and back by the caller.
+/// - Ownership: owns everything it holds; `cancel`, `progress` and `user` are borrowed from the options.
 struct SavePlan {
     bool changed_style = false;       ///< Built from the change stamps (an incremental save with a baseline) rather than from the whole selection.
     bool reconcile = false;           ///< Records whose stored hash equals the new one are not written again.

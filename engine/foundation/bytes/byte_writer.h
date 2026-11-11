@@ -14,15 +14,15 @@ namespace engine_placeholder::bytes {
 /// Appends values to a growing buffer in the canonical encoding: every integer little-endian at its own width; `f32` and `f64` as the bit pattern of the
 /// value (a NaN payload, `-0` and denormals survive); `bool` as one byte (0 or 1); lengths as unsigned LEB128 varints in their shortest form.
 ///
-/// Thread-safety: not-thread-safe; synchronize externally if shared.
-/// Ownership: owns the buffer; `Bytes()` views it until the next write or `Clear`.
+/// - Thread-safety: not-thread-safe; synchronize externally if shared.
+/// - Ownership: owns the buffer; `Bytes()` views it until the next write or `Clear`.
 class ByteWriter {
 public:
     /// Creates an empty writer.
     ByteWriter() = default;
 
     /// Appends one byte.
-    /// Aborts: the allocator is out of memory (as every append).
+    /// - Aborts: the allocator is out of memory (as every append).
     void WriteU8(u8 value) { buffer_.Push(static_cast<byte>(value)); }
     /// Appends two bytes, low first.
     void WriteU16(u16 value) { WriteLittleEndian(value, 2); }
@@ -80,7 +80,7 @@ public:
     /// Forgets everything written (keeps the capacity).
     void Clear() { buffer_.Clear(); }
     /// Cuts the buffer back to `size` bytes, which must not exceed `Size()` (to undo a partly written value).
-    /// Aborts: `size` is above `Size()`.
+    /// - Aborts: `size` is above `Size()`.
     void Truncate(usize size) {
         ENGINE_ASSERT(size <= buffer_.Size(), "ByteWriter::Truncate: the size is above the written size");
         buffer_.Resize(size);

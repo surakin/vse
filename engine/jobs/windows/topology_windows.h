@@ -11,7 +11,7 @@ namespace engine_placeholder::jobs::detail {
 /// GetProcessAffinityMask) also restricts that group, so `start /affinity` and job objects are honoured.
 ///
 /// Param buffer, size: the RelationGroup records; a malformed record (a size that does not fit) ends the parse.
-/// Returns: the number of ids written to `out` (at most `capacity`).
+/// - Returns: the number of ids written to `out` (at most `capacity`).
 usize CpusFromGroupRecords(const void* buffer, usize size, const u16* process_groups, usize group_count, u64 primary_mask, u32* out,
                            usize capacity);
 

@@ -19,13 +19,13 @@ namespace engine_placeholder::ui {
 /// object); an unchanged block does not lay out again. The default color is the theme's `Text`, the default font the theme's `Body`; a block with a style kind (a [[ui::Label]]) takes both from
 /// its style in the theme instead, in the widget's state (so a disabled label uses the disabled color).
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: owns its text and the cached layout; borrows the font from the surface's font provider.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: owns its text and the cached layout; borrows the font from the surface's font provider.
 class TextBlock : public Widget {
 public:
     /// Makes a block.
-    /// Param name: the widget name.
-    /// Param text: the UTF-8 text.
+    /// - Param name: the widget name.
+    /// - Param text: the UTF-8 text.
     explicit TextBlock(StringView name = StringView(), StringView text = StringView());
     /// Sets the text; marks layout dirty when it changes.
     void SetText(StringView text);

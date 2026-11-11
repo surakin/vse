@@ -19,32 +19,32 @@ enum class CharClass : u8 {
 };
 
 /// Returns the class of a code point.
-/// Param codepoint: a Unicode scalar value.
-/// Returns: its class.
-/// Fails: never.
+/// - Param codepoint: a Unicode scalar value.
+/// - Returns: its class.
+/// - Fails: never.
 CharClass ClassOf(u32 codepoint);
 
 /// Returns where Ctrl+Left goes from `offset`: the start of the word before it (white space before `offset` is skipped first); 0 at the start.
-/// Param text: UTF-8 text.
-/// Param offset: a byte offset on a code point start; clamped to the text.
-/// Returns: a byte offset on a code point start.
-/// Fails: never.
+/// - Param text: UTF-8 text.
+/// - Param offset: a byte offset on a code point start; clamped to the text.
+/// - Returns: a byte offset on a code point start.
+/// - Fails: never.
 u32 WordStart(StringView text, u32 offset);
 
 /// Returns where Ctrl+Right goes from `offset`: the end of the word after it (white space at `offset` is skipped first); the length at the end.
-/// Param text: UTF-8 text.
-/// Param offset: a byte offset on a code point start; clamped to the text.
-/// Returns: a byte offset on a code point start.
-/// Fails: never.
+/// - Param text: UTF-8 text.
+/// - Param offset: a byte offset on a code point start; clamped to the text.
+/// - Returns: a byte offset on a code point start.
+/// - Fails: never.
 u32 WordEnd(StringView text, u32 offset);
 
 /// Finds the run of characters of one class around `offset`, what a double click selects.
-/// Param text: UTF-8 text.
-/// Param offset: a byte offset; the run is the one that starts at it, or at the end of the text the last one.
-/// Param begin: receives the start of the run.
-/// Param end: receives the end of the run.
-/// Ownership: writes through `begin` and `end`, which must be non-null.
-/// Fails: never; an empty text gives 0 and 0.
+/// - Param text: UTF-8 text.
+/// - Param offset: a byte offset; the run is the one that starts at it, or at the end of the text the last one.
+/// - Param begin: receives the start of the run.
+/// - Param end: receives the end of the run.
+/// - Ownership: writes through `begin` and `end`, which must be non-null.
+/// - Fails: never; an empty text gives 0 and 0.
 void WordRangeAt(StringView text, u32 offset, u32* begin, u32* end);
 
 } // namespace engine_placeholder::ui

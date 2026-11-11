@@ -22,7 +22,7 @@ inline constexpr u32 kMaxMemoryHeaps = 16;
 
 /// One memory type of the device, as plain data.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct MemoryTypeInfo {
     /// Index of the heap this type allocates from.
     u32 heap_index = 0;
@@ -38,7 +38,7 @@ struct MemoryTypeInfo {
 
 /// One memory heap of the device, as plain data.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct MemoryHeapInfo {
     /// Heap size in bytes.
     u64 size = 0;
@@ -48,7 +48,7 @@ struct MemoryHeapInfo {
 
 /// The device's memory layout, as plain data.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct MemoryLayout {
     /// The memory types; only the first `type_count` are valid.
     MemoryTypeInfo types[kMaxMemoryTypes];
@@ -67,11 +67,11 @@ struct MemoryLayout {
 /// device-local, then host-visible coherent device-local memory (resizable BAR), then any host-visible memory;
 /// `GpuToCpu` takes host-visible cached coherent, then cached, then coherent, then any host-visible memory.
 ///
-/// Param layout: the device's memory types.
-/// Param location: where the resource should live.
-/// Param type_bits: the resource's `memoryTypeBits`; bit `i` set means type `i` is allowed.
-/// Returns: the type index, or -1 if no allowed type satisfies even the weakest preference.
-/// Fails: returns -1 for a `CpuToGpu` or `GpuToCpu` request when no allowed type is host-visible.
+/// - Param layout: the device's memory types.
+/// - Param location: where the resource should live.
+/// - Param type_bits: the resource's `memoryTypeBits`; bit `i` set means type `i` is allowed.
+/// - Returns: the type index, or -1 if no allowed type satisfies even the weakest preference.
+/// - Fails: returns -1 for a `CpuToGpu` or `GpuToCpu` request when no allowed type is host-visible.
 int SelectMemoryType(const MemoryLayout& layout, MemoryLocation location, u32 type_bits);
 
 /// The outcome of a memory allocation attempt.
@@ -84,7 +84,7 @@ enum class MemoryResult : u8 {
 
 /// What a [[rhi::vulkan::MemoryBackend]] allocates for.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct BackendAllocation {
     /// Backend-specific handle of the memory object; opaque to the allocator.
     u64 handle = 0;
@@ -94,32 +94,32 @@ struct BackendAllocation {
 
 /// The allocator's source of real memory objects.
 ///
-/// Thread-safety: thread-compatible; the allocator serializes its calls, so an implementation needs no locking of its own.
+/// - Thread-safety: thread-compatible; the allocator serializes its calls, so an implementation needs no locking of its own.
 class MemoryBackend {
 public:
     virtual ~MemoryBackend() = default;
 
     /// Allocates one memory object.
     ///
-    /// Param memory_type: the memory type index.
-    /// Param size: bytes.
-    /// Param map: whether to map the whole object persistently.
-    /// Param dedicated_buffer: a buffer the object is dedicated to (as an opaque handle), or 0.
-    /// Param dedicated_image: an image the object is dedicated to (as an opaque handle), or 0.
-    /// Param out: receives the handle and mapping on success.
-    /// Returns: the outcome; `out` is only valid for `Ok`.
+    /// - Param memory_type: the memory type index.
+    /// - Param size: bytes.
+    /// - Param map: whether to map the whole object persistently.
+    /// - Param dedicated_buffer: a buffer the object is dedicated to (as an opaque handle), or 0.
+    /// - Param dedicated_image: an image the object is dedicated to (as an opaque handle), or 0.
+    /// - Param out: receives the handle and mapping on success.
+    /// - Returns: the outcome; `out` is only valid for `Ok`.
     virtual MemoryResult Allocate(u32 memory_type, u64 size, bool map, u64 dedicated_buffer, u64 dedicated_image,
                                   BackendAllocation* out) = 0;
 
     /// Frees an object returned by `Allocate`, unmapping it if it was mapped.
     ///
-    /// Param allocation: the object.
+    /// - Param allocation: the object.
     virtual void Free(const BackendAllocation& allocation) = 0;
 };
 
 /// A range of memory handed out by the allocator.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct MemoryAllocation {
     /// Backend handle of the memory object containing the range; 0 for an empty allocation.
     u64 memory = 0;
@@ -146,7 +146,7 @@ struct MemoryAllocation {
 
 /// What to allocate.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct MemoryRequest {
     /// Bytes needed.
     u64 size = 0;
@@ -169,7 +169,7 @@ struct MemoryRequest {
 
 /// Tunables of the allocator.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct MemoryAllocatorConfig {
     /// Size of a block, in bytes.
     u64 block_size = 64ull << 20;
@@ -191,7 +191,7 @@ struct MemoryAllocatorConfig {
 
 /// Usage numbers for one heap.
 ///
-/// Thread-safety: thread-compatible plain data (a snapshot).
+/// - Thread-safety: thread-compatible plain data (a snapshot).
 struct HeapStats {
     /// Bytes in memory objects allocated from the heap (blocks and dedicated objects).
     u64 allocated_bytes = 0;
@@ -211,7 +211,7 @@ struct HeapStats {
 
 /// A snapshot of the allocator's state.
 ///
-/// Thread-safety: thread-compatible plain data (a snapshot).
+/// - Thread-safety: thread-compatible plain data (a snapshot).
 struct MemoryStats {
     /// Per-heap numbers; the first `heap_count` entries are valid.
     HeapStats heaps[kMaxMemoryHeaps];
@@ -225,7 +225,7 @@ struct MemoryStats {
 
 /// The free ranges of one memory block, with coalescing; the core of the allocator, exposed for testing.
 ///
-/// Thread-safety: thread-compatible. Not synchronized.
+/// - Thread-safety: thread-compatible. Not synchronized.
 class FreeList {
 public:
     /// Creates a list with one free range covering `[0, size)`.
@@ -233,19 +233,19 @@ public:
 
     /// Takes `size` bytes aligned to `alignment` from the best-fitting free range (the smallest that fits).
     ///
-    /// Param size: bytes to take; must be non-zero.
-    /// Param alignment: a power of two.
-    /// Param out_offset: receives the offset of the range.
-    /// Returns: true on success.
-    /// Fails: returns false if no free range is big enough.
+    /// - Param size: bytes to take; must be non-zero.
+    /// - Param alignment: a power of two.
+    /// - Param out_offset: receives the offset of the range.
+    /// - Returns: true on success.
+    /// - Fails: returns false if no free range is big enough.
     bool Allocate(u64 size, u64 alignment, u64* out_offset);
 
     /// Returns a range to the list, merging it with free neighbors.
     ///
-    /// Param offset: the offset returned by `Allocate`.
-    /// Param size: the size passed to `Allocate`.
-    /// Returns: true on success.
-    /// Fails: returns false, changing nothing, if the range overlaps free space already in the list (a double free) or
+    /// - Param offset: the offset returned by `Allocate`.
+    /// - Param size: the size passed to `Allocate`.
+    /// - Returns: true on success.
+    /// - Fails: returns false, changing nothing, if the range overlaps free space already in the list (a double free) or
     ///   lies outside the block.
     bool Free(u64 offset, u64 size);
 
@@ -283,15 +283,15 @@ private:
 /// whether the device or the host ran out of memory, so the resource creation above it can fail with a log line.
 /// Freeing an allocation twice, or one that is not from this allocator, is a programming error and aborts.
 ///
-/// Thread-safety: thread-safe. Calls are serialized by an internal mutex, including the backend's.
-/// Ownership: borrows the backend, which must outlive it; frees every block on destruction.
+/// - Thread-safety: thread-safe. Calls are serialized by an internal mutex, including the backend's.
+/// - Ownership: borrows the backend, which must outlive it; frees every block on destruction.
 class MemoryAllocator {
 public:
     /// Creates an allocator over `layout` using `backend`.
     ///
-    /// Param layout: the device's memory types and heaps.
-    /// Param config: tunables.
-    /// Param backend: where memory objects come from; must outlive the allocator.
+    /// - Param layout: the device's memory types and heaps.
+    /// - Param config: tunables.
+    /// - Param backend: where memory objects come from; must outlive the allocator.
     MemoryAllocator(const MemoryLayout& layout, const MemoryAllocatorConfig& config, MemoryBackend* backend);
     /// Frees every block and dedicated object still held.
     ~MemoryAllocator();
@@ -300,17 +300,17 @@ public:
 
     /// Allocates memory for a resource.
     ///
-    /// Param request: what is needed. In non-coherent host-visible memory the returned range is rounded up to the atom size.
-    /// Param result: receives the outcome; may be null.
-    /// Returns: the allocation, empty on failure.
-    /// Fails: an empty allocation, with the reason logged on `LogRhi` and given in `result`: no allowed memory type, the
+    /// - Param request: what is needed. In non-coherent host-visible memory the returned range is rounded up to the atom size.
+    /// - Param result: receives the outcome; may be null.
+    /// - Returns: the allocation, empty on failure.
+    /// - Fails: an empty allocation, with the reason logged on `LogRhi` and given in `result`: no allowed memory type, the
     ///   allocation-count limit, or the backend failing. Exhaustion logs the per-heap breakdown.
     MemoryAllocation Allocate(const MemoryRequest& request, MemoryResult* result);
 
     /// Returns an allocation's range.
     ///
-    /// Param allocation: an allocation returned by `Allocate`; empty ones are ignored.
-    /// Aborts: the range was already freed or is not from this allocator.
+    /// - Param allocation: an allocation returned by `Allocate`; empty ones are ignored.
+    /// - Aborts: the range was already freed or is not from this allocator.
     void Free(const MemoryAllocation& allocation);
 
     /// Returns a snapshot of the allocator's usage.

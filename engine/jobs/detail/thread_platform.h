@@ -9,7 +9,7 @@ namespace engine_placeholder::jobs::detail {
 /// Writes the logical CPU ids this process may run on, ascending, up to `capacity`.
 /// Linux: the affinity mask. Windows: `group * 64 + bit` over the processor groups the process may use (jobs/windows/thread_platform.cpp).
 /// macOS: `0` to `hw.activecpu - 1` (no per-process mask).
-/// Returns: the number written; 0 when the query failed.
+/// - Returns: the number written; 0 when the query failed.
 usize QueryAllowedCpus(u32* out, usize capacity);
 
 /// Returns the calling thread's OS id (Linux: the kernel tid; Windows: GetCurrentThreadId; macOS: pthread_threadid_np's low 31 bits), for logs and tests.

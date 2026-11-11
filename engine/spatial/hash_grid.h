@@ -22,7 +22,7 @@ inline constexpr u32 kMaxCellsPerItem = 64;
 
 /// What a [[spatial::HashGrid]] holds and what it has done.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct HashGridStats {
     u32 items = 0;            ///< Items in the grid.
     u32 cells = 0;            ///< Cells ever used (a cell stays once made, empty or not, so a moving crowd allocates nothing).
@@ -41,41 +41,41 @@ struct HashGridStats {
 /// the item's overlap with the query); the other queries of `spatial/query.h` (frustum, rays, sweeps, nearest) scan the items. Choose the cell size 2 to 4
 /// times the items' size: the design spec measured 17.4, 10.3 and 13.4 ms for the all-pairs query of 100,000 agents of 1 x 2 x 1 at cells of 2, 4 and 8.
 ///
-/// Thread-safety: thread-compatible. Changes need exclusive access; the const queries may run on any number of threads at once between changes.
-/// Ownership: owns its cells and items.
+/// - Thread-safety: thread-compatible. Changes need exclusive access; the const queries may run on any number of threads at once between changes.
+/// - Ownership: owns its cells and items.
 class HashGrid {
 public:
     /// Makes an empty grid.
     ///
-    /// Param cell_size: the edge of a cell, above 0 and finite.
-    /// Aborts: `cell_size` is not above 0 or not finite.
+    /// - Param cell_size: the edge of a cell, above 0 and finite.
+    /// - Aborts: `cell_size` is not above 0 or not finite.
     explicit HashGrid(f32 cell_size);
     HashGrid(const HashGrid&) = delete;
     HashGrid& operator=(const HashGrid&) = delete;
 
     /// Adds an item.
     ///
-    /// Param box: its box; not empty, corners finite.
-    /// Param key: the caller's key.
-    /// Param layer: the caller's layer value.
-    /// Returns: its handle (the same kind as [[spatial::DynamicBvh]]'s), or [[spatial::kInvalidProxy]] when the grid holds
+    /// - Param box: its box; not empty, corners finite.
+    /// - Param key: the caller's key.
+    /// - Param layer: the caller's layer value.
+    /// - Returns: its handle (the same kind as [[spatial::DynamicBvh]]'s), or [[spatial::kInvalidProxy]] when the grid holds
     ///   [[spatial::kMaxDynamicProxies]] items.
-    /// Aborts: `box` is empty or not finite.
+    /// - Aborts: `box` is empty or not finite.
     ProxyId Insert(const Aabb& box, SpatialKey key, u32 layer);
 
     /// Removes an item.
     ///
-    /// Param proxy: its handle.
-    /// Returns: false for a handle whose item is gone (counted).
-    /// Fails: as the return says.
+    /// - Param proxy: its handle.
+    /// - Returns: false for a handle whose item is gone (counted).
+    /// - Fails: as the return says.
     bool Remove(ProxyId proxy);
 
     /// Gives an item a new box.
     ///
-    /// Param proxy: its handle.
-    /// Param box: the new box; not empty, corners finite.
-    /// Returns: whether its cells changed (false when it stayed in the same cells, or for a stale handle, counted).
-    /// Aborts: `box` is empty or not finite.
+    /// - Param proxy: its handle.
+    /// - Param box: the new box; not empty, corners finite.
+    /// - Returns: whether its cells changed (false when it stayed in the same cells, or for a stale handle, counted).
+    /// - Aborts: `box` is empty or not finite.
     bool Move(ProxyId proxy, const Aabb& box);
 
     /// Removes every item; the cells stay (empty) and every handle becomes stale.
@@ -83,12 +83,12 @@ public:
 
     /// Returns whether `proxy` names a live item.
     ///
-    /// Fails: never; a stale or invalid handle gives false.
+    /// - Fails: never; a stale or invalid handle gives false.
     bool IsLive(ProxyId proxy) const;
     /// Returns a live handle's item.
     ///
-    /// Aborts: `proxy` is not live.
-    /// Ownership: the reference is valid until the next `Insert` or `Clear`.
+    /// - Aborts: `proxy` is not live.
+    /// - Ownership: the reference is valid until the next `Insert` or `Clear`.
     const Item& ItemOf(ProxyId proxy) const;
     /// Returns the number of items.
     u32 ProxyCount() const { return count_; }
@@ -99,38 +99,38 @@ public:
 
     /// Visits each item whose box overlaps `region` and passes `exact(const Item&)`, once each, using the cells the region touches.
     ///
-    /// Param region: the box to look in (for a sphere query, its bounding box).
-    /// Param exact: `bool(const Item&)`, the query's own test (it must imply an overlap with `region`).
-    /// Param visit: `bool(const Item&)`; returns false to stop.
-    /// Returns: what the walk did (`nodes_tested` counts the cells looked at).
-    /// Fails: never.
+    /// - Param region: the box to look in (for a sphere query, its bounding box).
+    /// - Param exact: `bool(const Item&)`, the query's own test (it must imply an overlap with `region`).
+    /// - Param visit: `bool(const Item&)`; returns false to stop.
+    /// - Returns: what the walk did (`nodes_tested` counts the cells looked at).
+    /// - Fails: never.
     template <class Exact, class Visit>
     TraversalStats ForEachInRegion(const Aabb& region, Exact&& exact, Visit&& visit) const;
 
     /// Visits every pair of items whose boxes overlap, once each (the smaller key first), using the cells.
     ///
-    /// Param visit: `bool(const Item& a, const Item& b)` with `a.key < b.key`; returns false to stop.
-    /// Returns: what the walk did.
-    /// Fails: never.
+    /// - Param visit: `bool(const Item& a, const Item& b)` with `a.key < b.key`; returns false to stop.
+    /// - Returns: what the walk did.
+    /// - Fails: never.
     template <class Visit>
     TraversalStats ForEachOverlappingPair(Visit&& visit) const;
 
     /// Visits the items as [[spatial::DynamicBvh::Traverse]] does, by scanning them (the node test sees each item's box): the generic queries use it.
     ///
-    /// Param node_test: `NodeVisit(const Aabb&)`.
-    /// Param item_visit: `bool(ProxyId, const Item&)`; returns false to stop.
-    /// Returns: what the scan did.
-    /// Fails: never.
+    /// - Param node_test: `NodeVisit(const Aabb&)`.
+    /// - Param item_visit: `bool(ProxyId, const Item&)`; returns false to stop.
+    /// - Returns: what the scan did.
+    /// - Fails: never.
     template <class NodeTest, class ItemVisit>
     TraversalStats Traverse(NodeTest&& node_test, ItemVisit&& item_visit) const;
 
     /// Visits the items a ray reaches, as [[spatial::DynamicBvh::TraverseRay]] does, by scanning them in slot order (not nearest first).
     ///
-    /// Param ray: the ray.
-    /// Param max_t: the farthest parameter to consider.
-    /// Param item_visit: `bool(ProxyId, const Item&, f32& max_t)`; may lower `max_t`, returns false to stop.
-    /// Returns: what the scan did.
-    /// Fails: never.
+    /// - Param ray: the ray.
+    /// - Param max_t: the farthest parameter to consider.
+    /// - Param item_visit: `bool(ProxyId, const Item&, f32& max_t)`; may lower `max_t`, returns false to stop.
+    /// - Returns: what the scan did.
+    /// - Fails: never.
     template <class ItemVisit>
     TraversalStats TraverseRay(const Ray& ray, f32 max_t, ItemVisit&& item_visit) const;
 

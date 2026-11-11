@@ -50,9 +50,9 @@ using WriteSinkFn = long (*)(int fd, const void* buf, usize len);
 /// Replaces the output sink shared by the default assert handler and [[Log]], so tests can
 /// capture output without redirecting file descriptors.
 ///
-/// Param sink: replacement function; pass the default OS write function to
+/// - Param sink: replacement function; pass the default OS write function to
 ///   restore normal behavior. Not for production use.
-/// Thread-safety: not-thread-safe. Call only while no thread logs or asserts.
+/// - Thread-safety: not-thread-safe. Call only while no thread logs or asserts.
 void SetWriteSinkForTesting(WriteSinkFn sink);
 
 /// Which macro reported a failure.
@@ -66,8 +66,8 @@ enum class AssertKind : u8 {
 
 /// Everything known about a failed check; passed to the assert handler.
 ///
-/// Thread-safety: thread-compatible. A plain value that lives for the duration of the handler call.
-/// Ownership: every string is borrowed: literals from the macro expansion, valid for the whole program.
+/// - Thread-safety: thread-compatible. A plain value that lives for the duration of the handler call.
+/// - Ownership: every string is borrowed: literals from the macro expansion, valid for the whole program.
 struct AssertInfo {
     /// Which macro reported it.
     AssertKind kind;
@@ -104,9 +104,9 @@ using AssertHandler = AssertAction (*)(const AssertInfo& info);
 /// are left mangled because demangling allocates. Called through a wrapper, the first lines of the trace are the wrapper's
 /// frames. A custom handler can call it to keep the printed report and then choose its own action.
 ///
-/// Param info: the failure.
-/// Returns: the action described above.
-/// Thread-safety: thread-safe. Formats into a stack buffer; output goes through the shared write sink.
+/// - Param info: the failure.
+/// - Returns: the action described above.
+/// - Thread-safety: thread-safe. Formats into a stack buffer; output goes through the shared write sink.
 AssertAction DefaultAssertHandler(const AssertInfo& info);
 
 /// Replaces the assert handler.
@@ -114,27 +114,27 @@ AssertAction DefaultAssertHandler(const AssertInfo& info);
 /// The handler is called on the thread that failed, with no lock held, so it may be called concurrently. Handlers that
 /// unwind (throw) or jump out are allowed; the library keeps no state that needs cleanup across the call.
 ///
-/// Param handler: the new handler, or `nullptr` to restore [[DefaultAssertHandler]].
-/// Returns: the handler that was installed before.
-/// Thread-safety: thread-safe. The handler pointer is atomic; a failure on another thread sees the new handler.
+/// - Param handler: the new handler, or `nullptr` to restore [[DefaultAssertHandler]].
+/// - Returns: the handler that was installed before.
+/// - Thread-safety: thread-safe. The handler pointer is atomic; a failure on another thread sees the new handler.
 AssertHandler SetAssertHandler(AssertHandler handler);
 
 /// Reports an assertion failure through the handler chain and then aborts, whatever the handler returns.
 ///
 /// Kept for code that wants to fail without a condition (the RHI null device uses it); prefer the macros.
 ///
-/// Param file: source file name, usually `__FILE__`.
-/// Param line: source line number.
-/// Param message: explanation text.
-/// Aborts: always; this function never returns. The process ends with `abort()`, so it dies with SIGABRT (earlier versions
+/// - Param file: source file name, usually `__FILE__`.
+/// - Param line: source line number.
+/// - Param message: explanation text.
+/// - Aborts: always; this function never returns. The process ends with `abort()`, so it dies with SIGABRT (earlier versions
 ///   ended with exit code 1).
-/// Thread-safety: thread-safe.
+/// - Thread-safety: thread-safe.
 [[noreturn]] void AssertFail(const char* file, int line, const char* message);
 
 /// One [[ENGINE_ENSURE]] call site that has failed at least once.
 ///
-/// Thread-safety: thread-compatible. A plain value passed to an [[EnsureVisitor]].
-/// Ownership: the strings are literals with program lifetime.
+/// - Thread-safety: thread-compatible. A plain value passed to an [[EnsureVisitor]].
+/// - Ownership: the strings are literals with program lifetime.
 struct EnsureSiteInfo {
     /// Source file of the call site.
     const char* file;
@@ -155,17 +155,17 @@ using EnsureVisitor = void (*)(const EnsureSiteInfo& site, void* context);
 
 /// Calls `visitor` for every [[ENGINE_ENSURE]] call site that has failed, most recently first reported first.
 ///
-/// Param visitor: called once per site.
-/// Param context: passed through to `visitor`; borrowed for the call.
-/// Thread-safety: thread-safe. Sites that fail while it runs may or may not be visited; counts are read atomically.
+/// - Param visitor: called once per site.
+/// - Param context: passed through to `visitor`; borrowed for the call.
+/// - Thread-safety: thread-safe. Sites that fail while it runs may or may not be visited; counts are read atomically.
 void ForEachFailedEnsure(EnsureVisitor visitor, void* context);
 
 /// Returns how many distinct [[ENGINE_ENSURE]] call sites have failed.
-/// Thread-safety: thread-safe.
+/// - Thread-safety: thread-safe.
 u32 EnsureFailedSiteCount();
 
 /// Forgets every recorded ensure failure, so the next failure at each site is reported again. For tests.
-/// Thread-safety: not-thread-safe. Call only while no thread is inside an [[ENGINE_ENSURE]].
+/// - Thread-safety: not-thread-safe. Call only while no thread is inside an [[ENGINE_ENSURE]].
 void ResetEnsureStateForTesting();
 
 namespace detail {
@@ -204,9 +204,9 @@ ENGINE_NOINLINE ENGINE_COLD AssertAction EnsureFailed(EnsureSite& site, const ch
 /// the assert handler ([[SetAssertHandler]]); the default handler prints a line and aborts the process (or breaks into an
 /// attached debugger).
 ///
-/// Param cond: expression that must be true; evaluated exactly once.
-/// Param msg: `const char*` message describing the violated condition; a string literal in practice.
-/// Aborts: `cond` evaluates to false (unless a test handler chose to continue).
+/// - Param cond: expression that must be true; evaluated exactly once.
+/// - Param msg: `const char*` message describing the violated condition; a string literal in practice.
+/// - Aborts: `cond` evaluates to false (unless a test handler chose to continue).
 #define ENGINE_ASSERT(cond, msg)                                                                                      \
     do {                                                                                                              \
         if (!(cond)) [[unlikely]] {                                                                                   \
@@ -224,9 +224,9 @@ ENGINE_NOINLINE ENGINE_COLD AssertAction EnsureFailed(EnsureSite& site, const ch
 /// The first failure at each call site goes to the assert handler (the default handler prints a line and the program
 /// goes on); later failures there are only counted. See [[ForEachFailedEnsure]]. Not usable in a `constexpr` function.
 ///
-/// Param cond: expression; evaluated exactly once.
-/// Param msg: a string literal describing the condition.
-/// Returns: the value of `cond`.
+/// - Param cond: expression; evaluated exactly once.
+/// - Param msg: a string literal describing the condition.
+/// - Returns: the value of `cond`.
 #define ENGINE_ENSURE(cond, msg)                                                                                      \
     (static_cast<bool>(cond) ||                                                                                       \
      [](const char* engine_ensure_function_) ENGINE_NOINLINE_LAMBDA -> bool {                                                                \
@@ -262,9 +262,9 @@ ENGINE_NOINLINE ENGINE_COLD AssertAction EnsureFailed(EnsureSite& site, const ch
 /// For a call that must run for its effect but whose result should be true: `ENGINE_VERIFY(Init(), "init failed")`. In a
 /// build without debug checks the expression still runs and the result is ignored.
 ///
-/// Param expr: expression; evaluated exactly once in every configuration.
-/// Param msg: a string literal describing the failure.
-/// Aborts: debug checks are on and `expr` evaluates to false.
+/// - Param expr: expression; evaluated exactly once in every configuration.
+/// - Param msg: a string literal describing the failure.
+/// - Aborts: debug checks are on and `expr` evaluates to false.
 #define ENGINE_VERIFY(expr, msg) ENGINE_PASTE3_(ENGINE_VERIFY_IMPL_, ENGINE_DEBUG_CHECKS, _)(expr, msg)
 
 #define ENGINE_CHECK_SLOW_IMPL_1_(cond, msg)                                                                          \
@@ -284,9 +284,9 @@ ENGINE_NOINLINE ENGINE_COLD AssertAction EnsureFailed(EnsureSite& site, const ch
 ///
 /// When off, the condition is not evaluated (it is only type-checked), so it may be as slow as needed.
 ///
-/// Param cond: expression that must be true; evaluated once when on, never when off.
-/// Param msg: a string literal describing the violated condition.
-/// Aborts: slow checks are on and `cond` evaluates to false.
+/// - Param cond: expression that must be true; evaluated once when on, never when off.
+/// - Param msg: a string literal describing the violated condition.
+/// - Aborts: slow checks are on and `cond` evaluates to false.
 #define ENGINE_CHECK_SLOW(cond, msg) ENGINE_PASTE3_(ENGINE_CHECK_SLOW_IMPL_, ENGINE_SLOW_CHECKS, _)(cond, msg)
 
 #define ENGINE_UNREACHABLE_IMPL_1_(msg)                                                                               \
@@ -305,13 +305,13 @@ ENGINE_NOINLINE ENGINE_COLD AssertAction EnsureFailed(EnsureSite& site, const ch
 /// With debug checks on ([[ENGINE_DEBUG_CHECKS]] is 1) reaching it reports the failure and aborts (a handler cannot make
 /// it continue, and a debugger that resumes after the break is followed by the abort). With them off it tells the compiler the place is unreachable, which is undefined behavior if it is not.
 ///
-/// Param msg: a string literal saying why it cannot happen.
-/// Aborts: debug checks are on and the place is reached.
+/// - Param msg: a string literal saying why it cannot happen.
+/// - Aborts: debug checks are on and the place is reached.
 #define ENGINE_UNREACHABLE(msg) ENGINE_PASTE3_(ENGINE_UNREACHABLE_IMPL_, ENGINE_DEBUG_CHECKS, _)(msg)
 
 /// Marks code that has not been written yet; reaching it reports the failure and, by default, aborts, in every configuration.
 ///
-/// Aborts: the code is reached (unless a test handler chose to continue).
+/// - Aborts: the code is reached (unless a test handler chose to continue).
 #define ENGINE_NOT_IMPLEMENTED()                                                                                      \
     do {                                                                                                              \
         if (::engine_placeholder::detail::AssertFailed(::engine_placeholder::AssertKind::NotImplemented, __FILE__,   \

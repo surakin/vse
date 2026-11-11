@@ -20,8 +20,8 @@ namespace engine_placeholder::ui {
 /// With `SetEditable(true)` the box holds a [[ui::TextField]]: choosing an item puts its text in the field, and typing text equal to an item selects that item (any other text selects
 /// none), so the text and the selection never disagree. Down in the field opens the list.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: borrows the model; owns its text field and, while it is open, hands the drop-down list to the surface.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: borrows the model; owns its text field and, while it is open, hands the drop-down list to the surface.
 class ComboBox : public Widget {
 public:
     /// The most rows the drop-down list shows before it scrolls.
@@ -38,7 +38,7 @@ public:
     /// Makes a combo box with no model.
     explicit ComboBox(StringView name = StringView());
     /// Uses `model` (null for none) and clears the selection.
-    /// Ownership: borrows `model`, which must outlive its use here.
+    /// - Ownership: borrows `model`, which must outlive its use here.
     void SetModel(ListModel* model);
     /// Tells the box the model changed: the selection is cleared when it is no longer a valid index, the text is refreshed.
     void ModelChanged();
@@ -46,14 +46,14 @@ public:
     void SetEditable(bool editable);
     /// Returns whether the box is editable.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool Editable() const { return editable_; }
     /// Returns the selected item's index, or `kNone`.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     usize Selected() const { return selected_; }
     /// Selects item `index` (`kNone` for none) and shows its text. Runs no listener.
-    /// Param index: an item, or `kNone`; an index past the end selects none.
+    /// - Param index: an item, or `kNone`; an index past the end selects none.
     void Select(usize index);
     /// Returns the text shown: the field's text when editable, else the selected item's text (empty for none).
     String<HeapAllocator> Text() const;
@@ -61,8 +61,8 @@ public:
     void SetWheelSelects(bool wheel) { wheel_selects_ = wheel; }
     /// Returns the embedded text field (always present; hidden unless editable).
     ///
-    /// Ownership: borrowed; the box owns it.
-    /// Fails: never.
+    /// - Ownership: borrowed; the box owns it.
+    /// - Fails: never.
     TextField* Field() const { return field_; }
     /// Opens the drop-down list (does nothing when it is open or the model is empty).
     void Open();
@@ -70,12 +70,12 @@ public:
     void Close();
     /// Returns whether the drop-down list is open.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool IsOpen() const;
     /// Returns the open drop-down list, or null.
     ///
-    /// Ownership: borrowed; the surface owns it.
-    /// Fails: returns null when the list is closed.
+    /// - Ownership: borrowed; the surface owns it.
+    /// - Fails: returns null when the list is closed.
     ListBox* DropDown() const { return IsOpen() ? list_ : nullptr; }
     /// Returns the listeners called when the user changes the selection (with the box).
     Callback<ComboBox*>& OnSelectionChanged() { return on_selection_; }

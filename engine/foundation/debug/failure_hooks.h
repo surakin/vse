@@ -11,8 +11,8 @@ namespace engine_placeholder::debug {
 /// Called by [[debug::InitDebugFacilities]], so a program that calls [[debug::StartProgramDebugging]] needs nothing else. Before it runs, an
 /// assert prints its message line and aborts (an ensure prints and continues) and threads start unregistered. Calling it again is harmless.
 ///
-/// Fails: never.
-/// Thread-safety: thread-safe. Each hook is one atomic store, so a failure on another thread during installation sees the old or the new
+/// - Fails: never.
+/// - Thread-safety: thread-safe. Each hook is one atomic store, so a failure on another thread during installation sees the old or the new
 ///   behavior, each complete.
 void InstallDiagnosticsHooks();
 

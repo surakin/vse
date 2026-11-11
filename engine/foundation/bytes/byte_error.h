@@ -16,8 +16,8 @@ enum class [[nodiscard]] ByteError : u8 {
 
 /// Returns a stable lower-case name for `error` (`"truncated"`); never null.
 ///
-/// Ownership: the string is static.
-/// Fails: never.
+/// - Ownership: the string is static.
+/// - Fails: never.
 inline const char* ByteErrorName(ByteError error) {
     switch (error) {
     case ByteError::Ok: return "ok";

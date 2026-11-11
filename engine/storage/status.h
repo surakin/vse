@@ -30,14 +30,14 @@ enum class ErrorCode : u8 {
 
 /// Returns a stable lower-case name for `code` (`"corrupt"`); never null.
 ///
-/// Ownership: the string is static.
-/// Fails: never.
+/// - Ownership: the string is static.
+/// - Fails: never.
 const char* ErrorCodeName(ErrorCode code);
 
 /// The result of an operation that returns nothing else: a portable [[storage::ErrorCode]] and a short message.
 ///
-/// Thread-safety: immutable value.
-/// Ownership: the message is a string with static lifetime (a literal); the type allocates nothing.
+/// - Thread-safety: immutable value.
+/// - Ownership: the message is a string with static lifetime (a literal); the type allocates nothing.
 class [[nodiscard]] Status {
 public:
     /// Creates a success status.
@@ -47,7 +47,7 @@ public:
     static constexpr Status Success() { return Status(); }
     /// Returns a failure with `code` and `message`.
     ///
-    /// Param message: a string literal (or other static string); never null.
+    /// - Param message: a string literal (or other static string); never null.
     static constexpr Status Make(ErrorCode code, const char* message) {
         Status s;
         s.code_ = code;
@@ -56,20 +56,20 @@ public:
     }
 
     /// Returns true on success.
-    /// Fails: never.
+    /// - Fails: never.
     constexpr bool Ok() const { return code_ == ErrorCode::Ok; }
     /// Returns true on failure.
-    /// Fails: never.
+    /// - Fails: never.
     constexpr bool Failed() const { return code_ != ErrorCode::Ok; }
     /// Returns true when the status is exactly `code`.
-    /// Fails: never.
+    /// - Fails: never.
     constexpr bool Is(ErrorCode code) const { return code_ == code; }
     /// The portable code.
     constexpr ErrorCode Code() const { return code_; }
     /// The message; empty for success.
     ///
-    /// Ownership: the string has static lifetime.
-    /// Fails: never.
+    /// - Ownership: the string has static lifetime.
+    /// - Fails: never.
     constexpr const char* Message() const { return message_; }
 
 private:

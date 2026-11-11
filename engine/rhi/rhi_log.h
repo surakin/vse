@@ -19,9 +19,9 @@ extern LogChannel LogRhi;
 /// diagnostics, never per-draw events. Output longer than the buffer is
 /// truncated, and nothing is formatted when the level is filtered out.
 ///
-/// Param level: verbosity of the message.
-/// Param fmt: printf format string; the arguments follow it.
-/// Thread-safety: thread-safe. Formats into a stack buffer and logs through the shared sink.
+/// - Param level: verbosity of the message.
+/// - Param fmt: printf format string; the arguments follow it.
+/// - Thread-safety: thread-safe. Formats into a stack buffer and logs through the shared sink.
 void RhiLogV(LogVerbosity level, const char* fmt, ...) ENGINE_PRINTF_FORMAT(2, 3);
 inline void RhiLogV(LogVerbosity level, const char* fmt, ...) {
     if (!LogRhi.ShouldLog(level)) {
@@ -41,7 +41,7 @@ inline void RhiLogV(LogVerbosity level, const char* fmt, ...) {
 
 /// Logs a printf-style message on the RHI channel; expands to a call of [[rhi::RhiLogV]].
 ///
-/// Param level: verbosity of the message.
+/// - Param level: verbosity of the message.
 #define RhiLog(level, ...) ::engine_placeholder::rhi::RhiLogV(level, __VA_ARGS__)
 
 } // namespace engine_placeholder::rhi

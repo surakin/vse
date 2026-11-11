@@ -277,7 +277,7 @@ TEST_CASE("Unresolved and ambiguous references in comments are errors at their l
                 "#pragma once\n"
                 "/// Fine, see [[Real]].\nvoid Real();\n"
                 "/// Bad ref to [[Missing]].\nvoid A();\n"
-                "/// Two of them.\n/// See: [[Dup]]\nvoid B();\n"
+                "/// Two of them.\n/// - See: [[Dup]]\nvoid B();\n"
                 "namespace x { /// Dup.\n void Dup(); }\n"
                 "namespace y { /// Dup.\n void Dup(); }\n"}},
               "module m \"M\"\n header h/a.h\n");

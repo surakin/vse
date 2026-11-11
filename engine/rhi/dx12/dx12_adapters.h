@@ -12,7 +12,7 @@ namespace engine_placeholder::rhi::dx12 {
 /// The facts about one DXGI adapter that [[rhi::dx12::MakeAdapterInfo]] turns into an [[rhi::AdapterInfo]]; plain data so the
 /// rule is testable without a GPU.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct AdapterFacts {
     /// The adapter's name from `DXGI_ADAPTER_DESC1::Description`, UTF-8.
     char name[kAdapterNameBytes] = {};
@@ -48,16 +48,16 @@ struct AdapterFacts {
 /// cards in one machine would share it, as on Vulkan without a UUID), the LUID the second id form; `Software` for WARP, `Integrated`
 /// for a UMA adapter, else `Discrete`; suitable when the baseline feature level and resource binding tier 2 are available.
 ///
-/// Param facts: the adapter.
-/// Param presentable: whether a window was given (D3D12 presents through the queue, so every suitable adapter can present).
-/// Returns: the description.
-/// Fails: never.
-/// Thread-safety: thread-safe.
+/// - Param facts: the adapter.
+/// - Param presentable: whether a window was given (D3D12 presents through the queue, so every suitable adapter can present).
+/// - Returns: the description.
+/// - Fails: never.
+/// - Thread-safety: thread-safe.
 AdapterInfo MakeAdapterInfo(const AdapterFacts& facts, bool presentable);
 
 /// The adapters of one factory, in the order the device picks from: DXGI's high-performance order, WARP last.
 ///
-/// Thread-safety: thread-compatible.
+/// - Thread-safety: thread-compatible.
 struct AdapterSet {
     /// The adapters; only the first `count` are valid.
     ComRef<IDXGIAdapter1> adapters[kMaxAdapters];
@@ -74,24 +74,24 @@ struct AdapterSet {
 /// feature level (D3D12 hands back the existing device when the process already has one on that adapter, so a live device is not
 /// disturbed) and released before returning.
 ///
-/// Param factory: a DXGI factory.
-/// Param presentable: whether a window was given.
-/// Param out: receives the set; cleared first.
-/// Returns: true if the enumeration ran (the list may be empty).
-/// Fails: returns false if the factory is null.
-/// Thread-safety: thread-safe.
+/// - Param factory: a DXGI factory.
+/// - Param presentable: whether a window was given.
+/// - Param out: receives the set; cleared first.
+/// - Returns: true if the enumeration ran (the list may be empty).
+/// - Fails: returns false if the factory is null.
+/// - Thread-safety: thread-safe.
 bool ListAdapters(IDXGIFactory6* factory, bool presentable, AdapterSet* out);
 
 /// Picks the adapter a device is created on: the request matched by [[rhi::MatchAdapter]] if there is one, else the first
 /// suitable hardware adapter, else WARP if it is suitable.
 ///
-/// Param set: the adapters.
-/// Param request: `DeviceCreateInfo::adapter`, or null.
-/// Param reason: receives why none was picked; `reason_size` bytes.
-/// Param reason_size: the size of `reason`.
-/// Returns: the index, or -1.
-/// Fails: -1 with the reason when the request matches nothing or an unsuitable adapter, or nothing is suitable.
-/// Thread-safety: thread-safe.
+/// - Param set: the adapters.
+/// - Param request: `DeviceCreateInfo::adapter`, or null.
+/// - Param reason: receives why none was picked; `reason_size` bytes.
+/// - Param reason_size: the size of `reason`.
+/// - Returns: the index, or -1.
+/// - Fails: -1 with the reason when the request matches nothing or an unsuitable adapter, or nothing is suitable.
+/// - Thread-safety: thread-safe.
 int PickAdapter(const AdapterSet& set, const char* request, char* reason, usize reason_size);
 
 } // namespace engine_placeholder::rhi::dx12

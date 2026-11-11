@@ -14,7 +14,7 @@ using namespace engine_placeholder;
 
 /// What the program does for the words the script cannot do on the surface alone.
 ///
-/// Thread-safety: owner-thread-only.
+/// - Thread-safety: owner-thread-only.
 class ScriptHost {
 public:
     virtual ~ScriptHost() = default;
@@ -34,8 +34,8 @@ public:
 /// `wheel:name:n` turns the wheel n notches over the widget; `drop:text:...` and `drop:file:/path` drop text or a file on the widget under the middle of the left panel's text field;
 /// `paste:text` puts text on the clipboard and presses Ctrl+V; `shot:path` saves a picture; `quit`.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: owns the words; borrows the app, the surface and the host.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: owns the words; borrows the app, the surface and the host.
 class UiScript {
 public:
     /// Splits `text` into words at spaces. Returns the number of words.

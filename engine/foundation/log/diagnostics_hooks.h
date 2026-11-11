@@ -18,8 +18,8 @@ namespace engine_placeholder {
 /// Every callback may run while the process is in a bad state (a failed assert can come from inside the allocator), so each must not
 /// allocate or take a lock that ordinary code can hold.
 ///
-/// Thread-safety: thread-compatible. A table installed with [[SetFailureReportHooks]] must not change afterwards.
-/// Ownership: the table is borrowed and must have static storage duration.
+/// - Thread-safety: thread-compatible. A table installed with [[SetFailureReportHooks]] must not change afterwards.
+/// - Ownership: the table is borrowed and must have static storage duration.
 struct FailureReportHooks {
     /// Appends a stack trace of the calling thread to `buffer` (room for `capacity` bytes), leaving out `skip_frames` frames counted from the
     /// caller of the hook (the hook's own frame is not counted). Returns the number of bytes appended; 0 if no trace could be taken.
@@ -32,14 +32,14 @@ struct FailureReportHooks {
 
 /// Installs the table [[DefaultAssertHandler]] and the error trace of [[Log]] use to complete their reports.
 ///
-/// Param hooks: the table, or null to go back to the bare report; borrowed, static storage duration.
-/// Returns: the table installed before, or null.
-/// Ownership: the table stays owned by the caller.
-/// Thread-safety: thread-safe. One atomic store; a failure on another thread meanwhile sees the old or the new table, both complete.
+/// - Param hooks: the table, or null to go back to the bare report; borrowed, static storage duration.
+/// - Returns: the table installed before, or null.
+/// - Ownership: the table stays owned by the caller.
+/// - Thread-safety: thread-safe. One atomic store; a failure on another thread meanwhile sees the old or the new table, both complete.
 const FailureReportHooks* SetFailureReportHooks(const FailureReportHooks* hooks);
 
 /// Returns the installed [[FailureReportHooks]], or null.
-/// Thread-safety: thread-safe.
+/// - Thread-safety: thread-safe.
 const FailureReportHooks* GetFailureReportHooks();
 
 /// The function a new thread's entry calls through [[NotifyThreadStart]]; it receives a short thread name (for crash reports), borrowed for the call, which may be null.
@@ -50,15 +50,15 @@ using ThreadStartHook = void (*)(const char* name);
 /// A thread that started before the hook was installed is not registered later: registration with the crash handler only succeeds
 /// once the handler is installed, so such a thread was never covered either.
 ///
-/// Param hook: the function, or null to remove it.
-/// Returns: the hook installed before, or null.
-/// Thread-safety: thread-safe. One atomic store.
+/// - Param hook: the function, or null to remove it.
+/// - Returns: the hook installed before, or null.
+/// - Thread-safety: thread-safe. One atomic store.
 ThreadStartHook SetThreadStartHook(ThreadStartHook hook);
 
 /// Called first thing on a new thread (the I/O thread, the job workers) with the thread's name. Does nothing until a hook is installed.
 ///
-/// Param name: a short name for the thread; borrowed for the call.
-/// Thread-safety: thread-safe.
+/// - Param name: a short name for the thread; borrowed for the call.
+/// - Thread-safety: thread-safe.
 void NotifyThreadStart(const char* name);
 
 } // namespace engine_placeholder

@@ -116,7 +116,7 @@ enum ModifierBit : u32 {
 
 /// Per-key down state plus the modifier mask; part of [[os::InputState]].
 ///
-/// Thread-safety: thread-compatible. Written by the backend during event pumping and read by the owner;
+/// - Thread-safety: thread-compatible. Written by the backend during event pumping and read by the owner;
 /// the caller must synchronize if those happen on different threads.
 struct KeyboardState {
     /// Number of tracked keys, including `Key::Unknown` at index 0.
@@ -124,15 +124,15 @@ struct KeyboardState {
     static_assert(kKeyCount <= 128, "KeyboardState::down_bits_ holds 128 keys");
 
     /// Returns whether `key` is currently held down; `Key::Unknown` and out-of-range keys are never down.
-    /// Param key: the key to query.
+    /// - Param key: the key to query.
     bool IsDown(Key key) const {
         usize i = static_cast<usize>(key);
         return i < kKeyCount && (down_bits_[i / 64] >> (i % 64) & 1u) != 0;
     }
 
     /// Records `key` as down or up; `Key::Unknown` and out-of-range keys are ignored.
-    /// Param key: the key to update.
-    /// Param down: true if the key is now held down.
+    /// - Param key: the key to update.
+    /// - Param down: true if the key is now held down.
     void SetDown(Key key, bool down) {
         usize i = static_cast<usize>(key);
         if (i == 0 || i >= kKeyCount) {
@@ -172,7 +172,7 @@ enum MouseButtonBit : u32 {
 ///
 /// Written by the active window backend while it pumps events, and polled by upper layers.
 ///
-/// Thread-safety: thread-compatible. Written during [[os::Window::PumpEvents]] and read by the owner;
+/// - Thread-safety: thread-compatible. Written during [[os::Window::PumpEvents]] and read by the owner;
 /// the caller must synchronize if those happen on different threads.
 struct InputState {
     /// Keyboard key and modifier state.
@@ -193,7 +193,7 @@ struct InputState {
     f64 scroll_dy = 0.0;
 
     /// Returns whether any button in `button_bit` is held.
-    /// Param button_bit: a [[os::MouseButtonBit]] value or a mask of them.
+    /// - Param button_bit: a [[os::MouseButtonBit]] value or a mask of them.
     bool IsMouseDown(u32 button_bit) const { return (mouse_buttons & button_bit) != 0; }
 
     /// Resets per-frame deltas (scroll).

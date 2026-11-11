@@ -14,8 +14,8 @@ class VulkanDevice;
 /// Copies, barriers, rendering passes, graphics pipelines and draws are recorded today; the commands that need bind
 /// groups, push constants or compute pipelines log an error and record nothing until those exist (Days 60 and 62).
 ///
-/// Thread-safety: thread-compatible; record from one thread, different lists on different threads at once.
-/// Ownership: owned by the [[rhi::vulkan::VulkanDevice]] that made it; use it only within the frame it was created in.
+/// - Thread-safety: thread-compatible; record from one thread, different lists on different threads at once.
+/// - Ownership: owned by the [[rhi::vulkan::VulkanDevice]] that made it; use it only within the frame it was created in.
 class VulkanCommandList final : public CommandList {
 public:
     /// Where a list is in its life.
@@ -29,15 +29,15 @@ public:
 
     /// Creates a list that records into `buffer`.
     ///
-    /// Param device: the owning device; must outlive the list.
-    /// Param buffer: a primary command buffer from a pool owned by the device.
+    /// - Param device: the owning device; must outlive the list.
+    /// - Param buffer: a primary command buffer from a pool owned by the device.
     VulkanCommandList(VulkanDevice* device, VkCommandBuffer buffer);
 
     /// Does nothing; the command buffer belongs to its pool.
     ~VulkanCommandList() override = default;
 
     /// Makes the list ready for a new recording, tagged with the frame it belongs to; its pool must have been reset.
-    /// Param frame: the frame number current when the list is handed out.
+    /// - Param frame: the frame number current when the list is handed out.
     void Recycle(u64 frame);
 
     /// Returns whether a Vulkan call on this list failed, so the list must not be submitted.
@@ -45,7 +45,7 @@ public:
     /// Returns the list's phase.
     Phase GetPhase() const { return phase_; }
     /// Sets the list's phase; used by `Submit`.
-    /// Param phase: the new phase.
+    /// - Param phase: the new phase.
     void SetPhase(Phase phase) { phase_ = phase; }
     /// Returns the frame the list was handed out in.
     u64 Frame() const { return frame_; }

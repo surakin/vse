@@ -14,7 +14,7 @@ namespace engine_placeholder::rhi {
 ///
 /// Register one with [[rhi::DeviceHost::AddObserver]] and a tier; the renderer's resource registry is the usual observer.
 ///
-/// Thread-safety: owner-thread-only: called on the host's owning thread.
+/// - Thread-safety: owner-thread-only: called on the host's owning thread.
 class DeviceObserver {
 public:
     virtual ~DeviceObserver() = default;
@@ -23,17 +23,17 @@ public:
     ///
     /// Called in descending tier order, with the device still alive; the host has waited for it to go idle first.
     ///
-    /// Param epoch: the serial of the device being released.
+    /// - Param epoch: the serial of the device being released.
     virtual void OnDeviceReleasing(u32 epoch) = 0;
 
     /// A new device (and swapchain, if the host has a window) exists: recreate and re-upload what you released.
     ///
     /// Called in ascending tier order. Also called by `DeviceHost::Create` for observers registered before it.
     ///
-    /// Param device: the new device.
-    /// Param epoch: its serial.
-    /// Ownership: the device belongs to the host; do not keep the pointer past `OnDeviceReleasing`.
-    /// Returns: false if you could not rebuild; the host then releases every observer again and fails the call.
+    /// - Param device: the new device.
+    /// - Param epoch: its serial.
+    /// - Ownership: the device belongs to the host; do not keep the pointer past `OnDeviceReleasing`.
+    /// - Returns: false if you could not rebuild; the host then releases every observer again and fails the call.
     virtual bool OnDeviceCreated(Device* device, u32 epoch) = 0;
 
     /// The swapchain was rebuilt with a different image format or color space (anything built against the old format, such
@@ -41,21 +41,21 @@ public:
     ///
     /// The default does nothing.
     ///
-    /// Param swapchain: the swapchain, with its new format.
-    /// Ownership: the swapchain belongs to the host.
+    /// - Param swapchain: the swapchain, with its new format.
+    /// - Ownership: the swapchain belongs to the host.
     virtual void OnSwapchainChanged(Swapchain* swapchain) { (void)swapchain; }
 
     /// Returns a short name for logs and failure reports.
     ///
-    /// Returns: a static string.
-    /// Fails: never.
-    /// Ownership: the string is static.
+    /// - Returns: a static string.
+    /// - Fails: never.
+    /// - Ownership: the string is static.
     virtual const char* ObserverName() const = 0;
 };
 
 /// Where the time of the last `Recreate` went, in milliseconds.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct ResetTimings {
     /// Observers releasing their device objects (`OnDeviceReleasing`, all of them).
     double release_ms = 0.0;
@@ -77,8 +77,8 @@ struct ResetTimings {
 /// renderer rolls back to its previous settings that way). Handles of the old device are always invalid on the new one:
 /// each device seeds its handle generations from its serial.
 ///
-/// Thread-safety: owner-thread-only: every call comes from the thread that called `Create`, outside `BeginFrame`/`EndFrame`.
-/// Ownership: owns the device and the swapchain; observers are borrowed and must outlive their registration (the
+/// - Thread-safety: owner-thread-only: every call comes from the thread that called `Create`, outside `BeginFrame`/`EndFrame`.
+/// - Ownership: owns the device and the swapchain; observers are borrowed and must outlive their registration (the
 ///   destructor still notifies them). Defined in the neutral `rhi` library; devices come from the backends the program
 ///   registered ([[rhi::RegisterCompiledBackends]]).
 class DeviceHost {
@@ -97,21 +97,21 @@ public:
 
     /// Creates the device, and the swapchain when `info.window` is set.
     ///
-    /// Param info: what to create; copied. `info.window` and `info.adapter` must stay valid as long as the host may
+    /// - Param info: what to create; copied. `info.window` and `info.adapter` must stay valid as long as the host may
     ///   `Recreate` with the same info (the host does not keep the strings; pass them again to `Recreate`).
-    /// Param swapchain: the swapchain description, used only with a window.
-    /// Returns: true on success.
-    /// Fails: returns false with `LastError` set and the host empty if the device, the swapchain or an observer fails.
-    /// Aborts: the host already holds a device.
+    /// - Param swapchain: the swapchain description, used only with a window.
+    /// - Returns: true on success.
+    /// - Fails: returns false with `LastError` set and the host empty if the device, the swapchain or an observer fails.
+    /// - Aborts: the host already holds a device.
     bool Create(const DeviceCreateInfo& info, const SwapchainDesc& swapchain);
 
     /// Replaces the device and swapchain; see the class description for the sequence.
     ///
-    /// Param info: the new device description.
-    /// Param swapchain: the new swapchain description.
-    /// Returns: true on success.
-    /// Fails: returns false with `LastError` set and the host empty (observers have released); `Create` again to roll back.
-    /// Aborts: called off the owning thread, or between `BeginFrame` and `EndFrame`.
+    /// - Param info: the new device description.
+    /// - Param swapchain: the new swapchain description.
+    /// - Returns: true on success.
+    /// - Fails: returns false with `LastError` set and the host empty (observers have released); `Create` again to roll back.
+    /// - Aborts: called off the owning thread, or between `BeginFrame` and `EndFrame`.
     bool Recreate(const DeviceCreateInfo& info, const SwapchainDesc& swapchain);
 
     /// Changes the swapchain's present mode, size, format or HDR mode without touching the device.
@@ -119,10 +119,10 @@ public:
     /// Observers hear `OnSwapchainChanged` when the image format or color space changed. A request the surface cannot
     /// grant falls back (see [[rhi::Swapchain::Reconfigure]]).
     ///
-    /// Param swapchain: the new description.
-    /// Returns: the status of [[rhi::Swapchain::Reconfigure]]; `Lost` if the host has no swapchain.
-    /// Fails: `Lost` as described.
-    /// Aborts: called off the owning thread or between `BeginFrame` and `EndFrame`.
+    /// - Param swapchain: the new description.
+    /// - Returns: the status of [[rhi::Swapchain::Reconfigure]]; `Lost` if the host has no swapchain.
+    /// - Fails: `Lost` as described.
+    /// - Aborts: called off the owning thread or between `BeginFrame` and `EndFrame`.
     SwapchainStatus ReconfigureSwapchain(const SwapchainDesc& swapchain);
 
     /// Replaces the presentation surface, keeping the device when the adapter can present to the new one.
@@ -131,11 +131,11 @@ public:
     /// again; if the device cannot, it does a full `Recreate` with the description of the last `Create` or `Recreate`
     /// (`SurfaceFallbackCount` counts those).
     ///
-    /// Param window: the window to present to; must outlive the host's device.
-    /// Param swapchain: the swapchain description.
-    /// Returns: true on success.
-    /// Fails: returns false with `LastError` set and the host empty if even the full reset fails.
-    /// Aborts: called off the owning thread or between `BeginFrame` and `EndFrame`.
+    /// - Param window: the window to present to; must outlive the host's device.
+    /// - Param swapchain: the swapchain description.
+    /// - Returns: true on success.
+    /// - Fails: returns false with `LastError` set and the host empty if even the full reset fails.
+    /// - Aborts: called off the owning thread or between `BeginFrame` and `EndFrame`.
     bool RecreateSurface(const os::Window* window, const SwapchainDesc& swapchain);
 
     /// Returns how many device objects were still alive, after every observer released, when devices were destroyed. Any is a leak
@@ -148,48 +148,48 @@ public:
 
     /// Notifies observers, then destroys the swapchain and the device; the host is empty afterwards.
     ///
-    /// Aborts: called off the owning thread or between `BeginFrame` and `EndFrame`.
+    /// - Aborts: called off the owning thread or between `BeginFrame` and `EndFrame`.
     void Destroy();
 
     /// Returns the device, or null when the host is empty.
     ///
-    /// Fails: returns null when the host is empty.
-    /// Ownership: the host owns the device; the pointer is invalid after `Recreate` or `Destroy`.
+    /// - Fails: returns null when the host is empty.
+    /// - Ownership: the host owns the device; the pointer is invalid after `Recreate` or `Destroy`.
     Device* GetDevice() const { return device_.Get(); }
     /// Returns the swapchain, or null when there is none.
     ///
-    /// Fails: returns null without a window or when the host is empty.
-    /// Ownership: the host owns the swapchain; the pointer is invalid after `Recreate` or `Destroy`.
+    /// - Fails: returns null without a window or when the host is empty.
+    /// - Ownership: the host owns the swapchain; the pointer is invalid after `Recreate` or `Destroy`.
     Swapchain* GetSwapchain() const { return swapchain_; }
     /// Returns the current device's serial, or 0 when the host is empty.
     u32 Epoch() const { return device_ ? device_->Epoch() : 0; }
     /// Returns how many times `Recreate` succeeded.
     u32 ResetCount() const { return reset_count_; }
     /// Returns where the time of the last `Create` or `Recreate` went.
-    /// Fails: never.
+    /// - Fails: never.
     const ResetTimings& LastTimings() const { return timings_; }
 
     /// Returns the reason the last `Create` or `Recreate` failed, or an empty string.
     ///
-    /// Fails: never.
-    /// Ownership: the string belongs to the host and changes on the next call.
+    /// - Fails: never.
+    /// - Ownership: the string belongs to the host and changes on the next call.
     const char* LastError() const { return error_; }
 
     /// Registers an observer.
     ///
-    /// Param observer: borrowed; must stay alive until `RemoveObserver`.
-    /// Param tier: its order; 0 is created first and released last.
-    /// Returns: true if registered.
-    /// Fails: returns false when the table is full.
-    /// Aborts: called while a reset is running.
-    /// Ownership: the host borrows the observer.
+    /// - Param observer: borrowed; must stay alive until `RemoveObserver`.
+    /// - Param tier: its order; 0 is created first and released last.
+    /// - Returns: true if registered.
+    /// - Fails: returns false when the table is full.
+    /// - Aborts: called while a reset is running.
+    /// - Ownership: the host borrows the observer.
     bool AddObserver(DeviceObserver* observer, u32 tier);
 
     /// Unregisters an observer; unknown observers are ignored. An observer that holds device objects is told
     /// `OnDeviceReleasing` first, so it never leaves objects behind.
     ///
-    /// Aborts: called while a reset is running.
-    /// Ownership: the host stops borrowing the observer.
+    /// - Aborts: called while a reset is running.
+    /// - Ownership: the host stops borrowing the observer.
     void RemoveObserver(DeviceObserver* observer);
 
 private:

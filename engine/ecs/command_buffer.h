@@ -58,8 +58,8 @@ constexpr PackLayout<Ts...> ComputePackLayout() {
 /// The buffer keeps its memory between uses (`Clear` releases no storage), so a system that records every frame allocates only on the first frames.
 /// A buffer is not tied to a world: it holds no world pointer.
 ///
-/// Thread-safety: thread-compatible. One writer at a time; give each parallel job its own buffer ([[ecs::CommandBufferPool]]).
-/// Ownership: owns the recorded values until they are applied or cleared. A placeholder is valid only with the buffer that made it.
+/// - Thread-safety: thread-compatible. One writer at a time; give each parallel job its own buffer ([[ecs::CommandBufferPool]]).
+/// - Ownership: owns the recorded values until they are applied or cleared. A placeholder is valid only with the buffer that made it.
 class CommandBuffer {
 public:
     /// The number of bytes of one payload block; one command's values must fit in a block (a row can never be larger than a chunk, so they do).
@@ -75,58 +75,58 @@ public:
     ~CommandBuffer();
 
     /// Records the creation of an entity with no components.
-    /// Returns: the placeholder entity.
-    /// Fails: never.
+    /// - Returns: the placeholder entity.
+    /// - Fails: never.
     Entity Create();
     /// Records the creation of an entity with the given components (moved into the buffer).
     ///
-    /// Returns: the placeholder entity, or the invalid entity if the values do not fit one payload block (counted in `Refused()`).
-    /// Aborts: a component type is listed twice (checked when applied, by `World::Create`).
+    /// - Returns: the placeholder entity, or the invalid entity if the values do not fit one payload block (counted in `Refused()`).
+    /// - Aborts: a component type is listed twice (checked when applied, by `World::Create`).
     template <class... Ts>
     Entity Create(Ts... values);
     /// Records the destruction of an entity or a placeholder.
-    /// Fails: never; a dead entity is skipped when applied.
+    /// - Fails: never; a dead entity is skipped when applied.
     void Destroy(Entity entity);
     /// Records adding component `T` to an entity or placeholder.
     ///
-    /// Param value: moved into the buffer.
-    /// Fails: a value that does not fit a payload block is dropped and counted in `Refused()`.
+    /// - Param value: moved into the buffer.
+    /// - Fails: a value that does not fit a payload block is dropped and counted in `Refused()`.
     template <class T>
     void Add(Entity entity, T value);
     /// Records removing component `T` from an entity or placeholder.
-    /// Fails: never; a missing component is skipped when applied.
+    /// - Fails: never; a missing component is skipped when applied.
     template <class T>
     void Remove(Entity entity);
     /// Records setting component `T` (an overwrite, or an add if absent).
     ///
-    /// Param value: moved into the buffer.
-    /// Fails: as for `Add`.
+    /// - Param value: moved into the buffer.
+    /// - Fails: as for `Add`.
     template <class T>
     void Set(Entity entity, T value);
 
     /// The real entity a placeholder became when the buffer was applied.
     ///
-    /// Param entity: a placeholder of this buffer, or any entity.
-    /// Returns: the created entity; `entity` itself when it is not a placeholder; the invalid entity when the placeholder's `Create` has not been applied
+    /// - Param entity: a placeholder of this buffer, or any entity.
+    /// - Returns: the created entity; `entity` itself when it is not a placeholder; the invalid entity when the placeholder's `Create` has not been applied
     ///   yet, was skipped, or the placeholder is not from this buffer.
-    /// Fails: returns the invalid entity as described.
+    /// - Fails: returns the invalid entity as described.
     Entity Resolve(Entity entity) const;
 
     /// The number of commands recorded and not yet applied.
-    /// Fails: never.
+    /// - Fails: never.
     usize Size() const { return commands_.Size(); }
     /// Returns whether no command is waiting to be applied.
-    /// Fails: never.
+    /// - Fails: never.
     bool IsEmpty() const { return commands_.Size() == 0; }
     /// The number of commands refused because their values did not fit a payload block.
-    /// Fails: never.
+    /// - Fails: never.
     u64 Refused() const { return refused_; }
     /// The bytes of payload storage in use plus reserved (it only grows).
-    /// Fails: never.
+    /// - Fails: never.
     usize BytesReserved() const { return blocks_.Size() * kBlockBytes; }
 
     /// Drops the commands that were not applied (destroying their values) and forgets the placeholders; keeps the storage.
-    /// Fails: never.
+    /// - Fails: never.
     void Clear();
 
 private:
@@ -178,28 +178,28 @@ private:
 
 /// One command buffer per worker, so parallel jobs record without sharing, applied in a fixed order afterwards.
 ///
-/// Thread-safety: thread-compatible. Distinct buffers may be written by different threads at once; `ApplyAll` and `ClearAll` are exclusive.
-/// Ownership: owns its buffers.
+/// - Thread-safety: thread-compatible. Distinct buffers may be written by different threads at once; `ApplyAll` and `ClearAll` are exclusive.
+/// - Ownership: owns its buffers.
 class CommandBufferPool {
 public:
     /// Makes `count` empty buffers.
-    /// Param count: how many buffers (at least 1).
+    /// - Param count: how many buffers (at least 1).
     explicit CommandBufferPool(u32 count);
     /// Grows the pool to at least `count` buffers (existing buffers and their contents are kept).
-    /// Fails: never.
+    /// - Fails: never.
     void EnsureCount(u32 count);
     /// The number of buffers.
-    /// Fails: never.
+    /// - Fails: never.
     u32 Count() const { return static_cast<u32>(buffers_.Size()); }
     /// The buffer with number `index` (a worker's number).
-    /// Aborts: `index` is not below `Count()`.
+    /// - Aborts: `index` is not below `Count()`.
     CommandBuffer& At(u32 index);
     /// Applies the buffers to `world` in index order.
-    /// Returns: the reports added together.
-    /// Aborts: the world is being iterated.
+    /// - Returns: the reports added together.
+    /// - Aborts: the world is being iterated.
     PlaybackReport ApplyAll(World& world);
     /// Clears every buffer; keeps their storage.
-    /// Fails: never.
+    /// - Fails: never.
     void ClearAll();
 
 private:

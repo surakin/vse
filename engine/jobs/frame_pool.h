@@ -37,12 +37,12 @@ namespace engine_placeholder::jobs {
 /// every pooled block must be freed before then; the global pool is never
 /// destroyed.
 ///
-/// Thread-safety: thread-safe. Allocation and deallocation may run on any
+/// - Thread-safety: thread-safe. Allocation and deallocation may run on any
 ///   thread concurrently; the central pool is guarded by one mutex.
-/// Ownership: owns the reserved slabs of every size class and releases them
+/// - Ownership: owns the reserved slabs of every size class and releases them
 ///   in the destructor. Blocks returned by allocation belong to the caller
 ///   until passed back to [[jobs::FramePool::Deallocate]].
-/// See: [[jobs::Job]]
+/// - See: [[jobs::Job]]
 class FramePool {
 public:
     /// Number of size classes.
@@ -56,7 +56,7 @@ public:
 
     /// Pool construction parameters.
     ///
-    /// Thread-safety: not-thread-safe. A plain value type.
+    /// - Thread-safety: not-thread-safe. A plain value type.
     struct Config {
         /// Number of blocks reserved for each size class.
         usize slots_per_class[kClassCount] = {16384, 8192, 4096, 2048, 1024};
@@ -72,7 +72,7 @@ public:
     ///
     /// Pooled blocks came from a size class; fallback blocks came from libc `malloc`.
     ///
-    /// Thread-safety: not-thread-safe. A plain value copy; each counter was read atomically but the set is not a consistent cut.
+    /// - Thread-safety: not-thread-safe. A plain value copy; each counter was read atomically but the set is not a consistent cut.
     struct Stats {
         /// Pooled allocations per size class.
         u64 pooled_allocs[kClassCount] = {};
@@ -85,24 +85,24 @@ public:
 
         /// Sums pooled allocations over all classes.
         ///
-        /// Returns: the total pooled allocation count.
+        /// - Returns: the total pooled allocation count.
         u64 TotalPooledAllocs() const;
 
         /// Sums pooled deallocations over all classes.
         ///
-        /// Returns: the total pooled deallocation count.
+        /// - Returns: the total pooled deallocation count.
         u64 TotalPooledFrees() const;
 
         /// Counts blocks allocated and not yet freed, pooled and fallback together.
         ///
-        /// Returns: allocations minus deallocations.
+        /// - Returns: allocations minus deallocations.
         u64 Live() const;
     };
 
     /// Per-thread free-list heads and counts.
     ///
-    /// Thread-safety: owner-thread-only. Each instance belongs to one thread.
-    /// Internal: public only so the implementation's `thread_local` can name the type.
+    /// - Thread-safety: owner-thread-only. Each instance belongs to one thread.
+    /// - Internal: public only so the implementation's `thread_local` can name the type.
     struct ThreadCache {
         FramePool* owner = nullptr;
         void* head[kClassCount] = {};
@@ -116,13 +116,13 @@ public:
     ///
     /// A class whose reservation fails gets zero slots, and its requests use the fallback.
     ///
-    /// Param config: slots per class and the thread-cache switch.
-    /// Aborts: `config.thread_caches` is set while another pool already uses thread caches.
+    /// - Param config: slots per class and the thread-cache switch.
+    /// - Aborts: `config.thread_caches` is set while another pool already uses thread caches.
     explicit FramePool(const Config& config);
 
     /// Releases every slab, after flushing the calling thread's cache.
     ///
-    /// Ownership: frees the reserved slabs; pooled blocks still outstanding become dangling.
+    /// - Ownership: frees the reserved slabs; pooled blocks still outstanding become dangling.
     ~FramePool();
 
     FramePool(const FramePool&) = delete;
@@ -130,11 +130,11 @@ public:
 
     /// Allocates a block for a coroutine frame.
     ///
-    /// Param size: requested size in bytes.
-    /// Returns: a 16-byte-aligned block of at least `size` bytes; never null.
-    /// Aborts: even the `malloc` fallback fails.
-    /// Ownership: the caller owns the block and must give it back with [[jobs::FramePool::Deallocate]] on this pool.
-    /// Thread-safety: thread-safe.
+    /// - Param size: requested size in bytes.
+    /// - Returns: a 16-byte-aligned block of at least `size` bytes; never null.
+    /// - Aborts: even the `malloc` fallback fails.
+    /// - Ownership: the caller owns the block and must give it back with [[jobs::FramePool::Deallocate]] on this pool.
+    /// - Thread-safety: thread-safe.
     void* Allocate(usize size);
 
     /// Returns a block to the pool.
@@ -142,16 +142,16 @@ public:
     /// The block may be freed on a different thread than the one that
     /// allocated it.
     ///
-    /// Param ptr: a pointer obtained from [[jobs::FramePool::Allocate]] on this pool and not freed since.
-    /// Aborts: `ptr` is null, or it does not carry a valid block header (not from a pool, or a double free).
-    /// Ownership: takes back ownership of the block; it must not be used afterwards.
-    /// Thread-safety: thread-safe.
+    /// - Param ptr: a pointer obtained from [[jobs::FramePool::Allocate]] on this pool and not freed since.
+    /// - Aborts: `ptr` is null, or it does not carry a valid block header (not from a pool, or a double free).
+    /// - Ownership: takes back ownership of the block; it must not be used afterwards.
+    /// - Thread-safety: thread-safe.
     void Deallocate(void* ptr);
 
     /// Reads the allocation counters.
     ///
-    /// Returns: a snapshot of the counters, exact once the pool is quiescent.
-    /// Thread-safety: thread-safe.
+    /// - Returns: a snapshot of the counters, exact once the pool is quiescent.
+    /// - Thread-safety: thread-safe.
     Stats GetStats() const;
 
     /// Counts the blocks the central pool could still hand out for a class.
@@ -160,9 +160,9 @@ public:
     /// all frames are freed and all caches flushed this equals the class's
     /// slot count, so a shortfall is a leaked block.
     ///
-    /// Param class_index: size class in `[0, kClassCount)`.
-    /// Returns: the number of available blocks in the central pool.
-    /// Thread-safety: thread-safe.
+    /// - Param class_index: size class in `[0, kClassCount)`.
+    /// - Returns: the number of available blocks in the central pool.
+    /// - Thread-safety: thread-safe.
     usize CentralAvailableForTesting(usize class_index);
 
     /// Gives the process-wide pool used by job frames.
@@ -171,8 +171,8 @@ public:
     /// Created on first use and intentionally never destroyed, so thread-exit
     /// cache flushes and late frees always find it alive.
     ///
-    /// Returns: a reference valid for the rest of the process.
-    /// Thread-safety: thread-safe.
+    /// - Returns: a reference valid for the rest of the process.
+    /// - Thread-safety: thread-safe.
     static FramePool& Global();
 
 private:

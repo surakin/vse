@@ -7,8 +7,8 @@
 /// when the enclosing function returns that same type (`database::Status`, `storage::Status`). It hides a `return`: use it only for pure propagation, and
 /// keep an explicit `if` where the function must clean up before it returns.
 ///
-/// Param expr: an expression whose value is a status.
-/// Fails: returns the status of `expr` from the enclosing function when it failed.
+/// - Param expr: an expression whose value is a status.
+/// - Fails: returns the status of `expr` from the enclosing function when it failed.
 #define ENGINE_TRY(expr)                                    \
     do {                                                    \
         const auto engine_try_status_ = (expr);             \

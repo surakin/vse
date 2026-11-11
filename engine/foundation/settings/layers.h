@@ -28,9 +28,9 @@ enum class LayerRole : u8 {
 
 /// Returns a role's name (`system`, `user`, `project`, `custom`, `environment`, `command-line`, `policy`).
 ///
-/// Returns: a static string.
-/// Fails: never.
-/// Ownership: the string is static and never freed.
+/// - Returns: a static string.
+/// - Fails: never.
+/// - Ownership: the string is static and never freed.
 const char* LayerRoleName(LayerRole role);
 
 /// How a layer fared when it was loaded.
@@ -44,7 +44,7 @@ enum class LayerState : u8 {
 
 /// A problem found while loading or resolving: the layer, the key if there is one, and a message.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct LayerProblem {
     /// The layer's name, NUL-terminated and cut to fit.
     char layer[128] = {};
@@ -56,7 +56,7 @@ struct LayerProblem {
 
 /// The answer of [[settings::LayerStack::Resolve]]: a value and where it came from.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct Resolution {
     /// The value.
     Value value;
@@ -72,8 +72,8 @@ struct Resolution {
 
 /// An ordered list of named layers, each a store with a role.
 ///
-/// Thread-safety: thread-compatible.
-/// Ownership: owns its stores.
+/// - Thread-safety: thread-compatible.
+/// - Ownership: owns its stores.
 class LayerStack {
 public:
     /// Creates an empty stack.
@@ -85,10 +85,10 @@ public:
 
     /// Adds a layer above the layers of lower or equal role.
     ///
-    /// Param name: shown in provenance and reports.
-    /// Param role: where it sits in the order.
-    /// Param store: the store; the stack owns it.
-    /// Returns: the layer's index (indices of higher layers shift when a layer is inserted below them).
+    /// - Param name: shown in provenance and reports.
+    /// - Param role: where it sits in the order.
+    /// - Param store: the store; the stack owns it.
+    /// - Returns: the layer's index (indices of higher layers shift when a layer is inserted below them).
     usize AddLayer(StringView name, LayerRole role, ConfigStorePtr store);
     /// Removes every layer.
     void Clear();
@@ -107,16 +107,16 @@ public:
 
     /// Loads every layer. A layer that fails is reported and skipped; the others still load.
     ///
-    /// Param problems: receives one entry per layer that was damaged or failed; may be null.
+    /// - Param problems: receives one entry per layer that was damaged or failed; may be null.
     void LoadAll(Vector<LayerProblem>* problems);
 
     /// Resolves one setting through the layers, highest first. A value that does not convert (a bad number in the environment) is reported in
     /// `problems` with the layer, the key and where in the layer it came from, and the next lower layer is tried.
     ///
-    /// Param registry: where the declaration is.
-    /// Param id: the setting.
-    /// Param out: receives the value and its provenance.
-    /// Param problems: receives the problems found; may be null.
+    /// - Param registry: where the declaration is.
+    /// - Param id: the setting.
+    /// - Param out: receives the value and its provenance.
+    /// - Param problems: receives the problems found; may be null.
     void Resolve(const Registry& registry, SettingId id, Resolution* out, Vector<LayerProblem>* problems);
 
     /// Resolves the value the layers *below* `layer` give (to decide whether a write is needed).
@@ -126,17 +126,17 @@ public:
     usize WriteLayer() const;
     /// Chooses the written layer.
     ///
-    /// Aborts: `layer` is not less than `Size()`.
+    /// - Aborts: `layer` is not less than `Size()`.
     void SetWriteLayer(usize layer);
 
     /// Sets a value in the write layer. With `minimal` a value equal to what the lower layers already give is not written, and an earlier
     /// entry for the key is removed instead, so the file does not fill with defaults.
     ///
-    /// Fails: `NotFound` (no write layer), `ReadOnly`, `TooLong`, and the store's own errors.
+    /// - Fails: `NotFound` (no write layer), `ReadOnly`, `TooLong`, and the store's own errors.
     Status Set(const Registry& registry, SettingId id, const Value& value, bool minimal);
     /// Removes the key from the write layer so a lower layer shows again.
     ///
-    /// Returns: `Ok` also when the key was not there.
+    /// - Returns: `Ok` also when the key was not there.
     Status Unset(const Registry& registry, SettingId id);
 
 private:
@@ -153,10 +153,10 @@ private:
 
 /// Finds the registered key closest to `text` (by edit distance), for "did you mean".
 ///
-/// Param registry: the keys to search (deprecated keys are not offered).
-/// Param text: what was typed.
-/// Param out: receives the suggestion.
-/// Returns: whether a key is close enough to be worth suggesting (distance at most a third of the length, at least 3).
+/// - Param registry: the keys to search (deprecated keys are not offered).
+/// - Param text: what was typed.
+/// - Param out: receives the suggestion.
+/// - Returns: whether a key is close enough to be worth suggesting (distance at most a third of the length, at least 3).
 bool SuggestKey(const Registry& registry, StringView text, Key* out);
 
 } // namespace engine_placeholder::settings

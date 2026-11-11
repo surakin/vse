@@ -13,7 +13,7 @@ namespace engine_placeholder::rhi {
 /// `Reclaim(completed)` frees every group whose fence is at most `completed`. Groups are freed in the order they were
 /// retired, so fence values passed to `Retire` must not decrease.
 ///
-/// Thread-safety: thread-compatible. Not synchronized.
+/// - Thread-safety: thread-compatible. Not synchronized.
 class RingAllocator {
 public:
     /// Creates a ring of `capacity` bytes.
@@ -21,24 +21,24 @@ public:
 
     /// Takes `size` bytes at `alignment` from the ring.
     ///
-    /// Param size: bytes; must be non-zero.
-    /// Param alignment: a power of two.
-    /// Param out_offset: receives the offset of the range.
-    /// Returns: true on success.
-    /// Fails: returns false if the ring has no contiguous room now; reclaim completed groups and try again.
-    /// Aborts: `size` is zero or `alignment` is not a power of two.
-    /// Ownership: the range belongs to the caller until the group it falls in is retired and reclaimed.
+    /// - Param size: bytes; must be non-zero.
+    /// - Param alignment: a power of two.
+    /// - Param out_offset: receives the offset of the range.
+    /// - Returns: true on success.
+    /// - Fails: returns false if the ring has no contiguous room now; reclaim completed groups and try again.
+    /// - Aborts: `size` is zero or `alignment` is not a power of two.
+    /// - Ownership: the range belongs to the caller until the group it falls in is retired and reclaimed.
     bool Allocate(u64 size, u64 alignment, u64* out_offset);
 
     /// Tags everything allocated since the last call with `fence`.
     ///
-    /// Param fence: the fence value reached when the GPU has finished with those ranges; at least the previous value.
-    /// Aborts: `fence` is lower than the previous value.
+    /// - Param fence: the fence value reached when the GPU has finished with those ranges; at least the previous value.
+    /// - Aborts: `fence` is lower than the previous value.
     void Retire(u64 fence);
 
     /// Frees every retired group whose fence is at most `completed`.
     ///
-    /// Param completed: the highest fence value the GPU has reached.
+    /// - Param completed: the highest fence value the GPU has reached.
     void Reclaim(u64 completed);
 
     /// Returns the fence of the oldest retired group still held, or 0 if none.

@@ -19,13 +19,13 @@ class RadioGroup;
 /// disabled; a toggle's checked state too) and a variant such as `primary`; a state change repaints the widget and does not touch layout. A disabled button gets no input.
 /// The default-button flag only marks the button a dialog should press on Enter; the dialog (Day 203) acts on it.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: owns its text; borrows the icon's image.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: owns its text; borrows the icon's image.
 class Button : public Widget {
 public:
     /// Makes a button.
-    /// Param name: the widget name; also what a test finds it by.
-    /// Param text: the UTF-8 label, may be empty (an icon button).
+    /// - Param name: the widget name; also what a test finds it by.
+    /// - Param text: the UTF-8 label, may be empty (an icon button).
     explicit Button(StringView name = StringView(), StringView text = StringView());
     /// Sets the text; marks layout dirty when it changes.
     void SetText(StringView text);
@@ -39,7 +39,7 @@ public:
     void SetDefault(bool is_default) { default_ = is_default; }
     /// Returns the default-button flag.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool IsDefault() const { return default_; }
     /// Returns the listeners called after a click (with the button).
     Callback<Button*>& OnClick() { return on_click_; }
@@ -82,8 +82,8 @@ private:
 
 /// A button that stays down: each click flips its checked state.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: as [[ui::Button]].
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: as [[ui::Button]].
 class ToggleButton : public Button {
 public:
     /// Makes a toggle button, unchecked.
@@ -92,7 +92,7 @@ public:
     void SetOn(bool on) { SetChecked(on); }
     /// Returns whether the button is down.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool On() const { return Checked(); }
     /// Returns the listeners called when a click changes the state (with the button).
     Callback<ToggleButton*>& OnToggled() { return on_toggled_; }
@@ -117,8 +117,8 @@ enum class CheckState : u8 {
 /// A click cycles unchecked, checked and, in tri-state mode, indeterminate. The box is the theme's icon size; its colors come from the `checkbox` style (the checked state fills with the
 /// accent) and the mark from the window background color.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: as [[ui::Button]].
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: as [[ui::Button]].
 class CheckBox : public Button {
 public:
     /// Makes an unchecked check box.
@@ -127,7 +127,7 @@ public:
     void SetTriState(bool tri_state);
     /// Returns whether the indeterminate state is part of the cycle.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool TriState() const { return tri_state_; }
     /// Sets the state without running the listeners; marks the draw dirty.
     void SetCheckState(CheckState state);
@@ -159,20 +159,20 @@ private:
 /// Clicking selects it (and deselects the others of its group); the arrow keys move the selection (and the focus) within the group, wrapping at the ends. Without a group ancestor it
 /// only turns itself on. Its look is the `radio` style of the theme.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: as [[ui::Button]].
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: as [[ui::Button]].
 class RadioButton : public Button {
 public:
     /// Makes a radio button, not selected.
     explicit RadioButton(StringView name = StringView(), StringView text = StringView());
     /// Returns whether this button is the selected one of its group.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool Selected() const { return Checked(); }
     /// Returns the group this button belongs to (its nearest ancestor that is a group), or null.
     ///
-    /// Ownership: borrowed; the tree owns it.
-    /// Fails: returns null when there is none.
+    /// - Ownership: borrowed; the tree owns it.
+    /// - Fails: returns null when there is none.
     RadioGroup* Group() const;
     /// Moves the selection with the arrow keys; other events as [[ui::Button]].
     void OnEvent(Event& event) override;
@@ -194,8 +194,8 @@ protected:
 ///
 /// A vertical [[ui::BoxLayout]]. Once a button is selected only it is a Tab stop (the others have `TabIndex` -1), so Tab enters the group once and the arrow keys move inside it.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: owns its children.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: owns its children.
 class RadioGroup : public BoxLayout {
 public:
     /// The role tag of a group (see [[ui::Widget::Role]]).
@@ -205,16 +205,16 @@ public:
     /// Makes an empty group.
     explicit RadioGroup(StringView name = StringView());
     /// Selects `button` (one of the group's descendants; any other button is ignored) and deselects the rest; null clears the selection. Runs the `OnChanged` listeners when the selection changes.
-    /// Param button: the button, or null.
-    /// Ownership: borrows `button`; it stays owned by the tree.
+    /// - Param button: the button, or null.
+    /// - Ownership: borrows `button`; it stays owned by the tree.
     void Select(RadioButton* button);
     /// Returns the selected button, or null.
     ///
-    /// Ownership: borrowed; the tree owns it.
-    /// Fails: returns null when none is selected.
+    /// - Ownership: borrowed; the tree owns it.
+    /// - Fails: returns null when none is selected.
     RadioButton* Selected() const;
     /// Moves the selection from `from` by one enabled, shown button (`delta` -1 or 1), wrapping, and gives it the focus.
-    /// Ownership: borrows `from`; it stays owned by the tree.
+    /// - Ownership: borrows `from`; it stays owned by the tree.
     void Step(RadioButton* from, int delta);
     /// Returns the listeners called when the selection changes (with the group).
     Callback<RadioGroup*>& OnChanged() { return on_changed_; }

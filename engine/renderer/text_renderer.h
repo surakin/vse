@@ -17,7 +17,7 @@ namespace engine_placeholder::renderer {
 
 /// What a [[renderer::TextRenderer]] is made for.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct TextRendererDesc {
     /// The format of the color target the text is drawn into; the pipeline is made for it. For an sRGB format the vertex colors (written as sRGB bytes) are decoded to linear
     /// and the hardware encodes them again, so the text shows the color the application wrote.
@@ -28,7 +28,7 @@ struct TextRendererDesc {
 
 /// Counters of a [[renderer::TextRenderer]], for tests and the benchmark.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct TextStats {
     /// Glyph quads drawn by `Record` since creation.
     u64 glyphs_drawn = 0;
@@ -50,8 +50,8 @@ struct TextStats {
 /// reset `Recreate` makes them again and the CPU-side quads of the frame in progress are kept. Only SPIR-V is minted for the text shaders so far, so a Direct3D 12 device refuses
 /// `Create` with a logged error (`KNOWN-ISSUES.md`).
 ///
-/// Thread-safety: owner-thread-only, and not safe to use while another thread adds glyphs to the atlas.
-/// Ownership: borrows the atlas (and the fonts the styles name, for the duration of `Add`); owns its GPU objects. The device and the registry must outlive it.
+/// - Thread-safety: owner-thread-only, and not safe to use while another thread adds glyphs to the atlas.
+/// - Ownership: borrows the atlas (and the fonts the styles name, for the duration of `Add`); owns its GPU objects. The device and the registry must outlive it.
 class TextRenderer final : public Recreatable {
 public:
     TextRenderer() = default;
@@ -62,15 +62,15 @@ public:
 
     /// Creates the pipeline, sampler, vertex memory and the GPU atlas pages.
     ///
-    /// Param device: the device.
-    /// Param atlas: the CPU atlas; borrowed, must outlive this object.
-    /// Param desc: the target format and the glyph budget.
-    /// Param resources: the registry, or null for an object that does not need to survive a reset.
-    /// Returns: true on success.
-    /// Fails: returns false, logging the reason, if the device has no shader in its format, the format cannot be a color target, memory runs out or the atlas textures cannot
+    /// - Param device: the device.
+    /// - Param atlas: the CPU atlas; borrowed, must outlive this object.
+    /// - Param desc: the target format and the glyph budget.
+    /// - Param resources: the registry, or null for an object that does not need to survive a reset.
+    /// - Returns: true on success.
+    /// - Fails: returns false, logging the reason, if the device has no shader in its format, the format cannot be a color target, memory runs out or the atlas textures cannot
     ///   be made; nothing stays allocated.
-    /// Aborts: the object already exists, or `device` or `atlas` is null, or `desc.max_glyphs` is 0.
-    /// Ownership: the device, the atlas and the registry are borrowed.
+    /// - Aborts: the object already exists, or `device` or `atlas` is null, or `desc.max_glyphs` is 0.
+    /// - Ownership: the device, the atlas and the registry are borrowed.
     bool Create(rhi::Device* device, text::GlyphAtlas* atlas, const TextRendererDesc& desc, DeviceResources* resources);
 
     /// Destroys everything and forgets the registration.
@@ -83,43 +83,43 @@ public:
     ///
     /// Each glyph is looked up in the atlas (and rasterized into it on first use) at the style's font and size. Glyphs without pixels (spaces) are skipped.
     ///
-    /// Param layout: the layout of the text, made with `style`'s font and size.
-    /// Param style: the font, size and color (packed RGBA, red in the lowest byte); the font's pixel size is set to the style's.
-    /// Param x: target pixel the layout's left edge (x = 0) lands on.
-    /// Param y: target pixel the layout's top edge (the first line's top) lands on.
-    /// Returns: true when every glyph was added.
-    /// Fails: returns false, logging once per frame, when the frame's glyph budget or the atlas ran out; the glyphs that did not fit are counted in
+    /// - Param layout: the layout of the text, made with `style`'s font and size.
+    /// - Param style: the font, size and color (packed RGBA, red in the lowest byte); the font's pixel size is set to the style's.
+    /// - Param x: target pixel the layout's left edge (x = 0) lands on.
+    /// - Param y: target pixel the layout's top edge (the first line's top) lands on.
+    /// - Returns: true when every glyph was added.
+    /// - Fails: returns false, logging once per frame, when the frame's glyph budget or the atlas ran out; the glyphs that did not fit are counted in
     ///   [[renderer::TextRenderer::DroppedGlyphs]] and the rest are kept.
-    /// Aborts: the style has no open font.
-    /// Ownership: nothing of `layout` or `style` is retained.
+    /// - Aborts: the style has no open font.
+    /// - Ownership: nothing of `layout` or `style` is retained.
     bool Add(const text::TextLayout& layout, const text::TextStyle& style, f32 x, f32 y);
 
     /// Sends changed atlas pages, writes this frame's quads and records the draws.
     ///
     /// Call it inside a rendering pass whose only color attachment has the format given at creation. Does nothing when no glyph was added.
     ///
-    /// Param list: the command list that is recording the pass.
-    /// Param target_width: the pass's width in pixels.
-    /// Param target_height: the pass's height in pixels.
-    /// Returns: true when everything was recorded.
-    /// Fails: returns false, logging the reason, if an atlas page cannot be sent (nothing is drawn) or a bind group cannot be made; whatever was recorded stays valid.
-    /// Aborts: the object does not hold its GPU objects, the call is outside a frame, or it is the second call in one frame (the frame's vertex region is written once).
-    /// Ownership: borrows the list for the call.
+    /// - Param list: the command list that is recording the pass.
+    /// - Param target_width: the pass's width in pixels.
+    /// - Param target_height: the pass's height in pixels.
+    /// - Returns: true when everything was recorded.
+    /// - Fails: returns false, logging the reason, if an atlas page cannot be sent (nothing is drawn) or a bind group cannot be made; whatever was recorded stays valid.
+    /// - Aborts: the object does not hold its GPU objects, the call is outside a frame, or it is the second call in one frame (the frame's vertex region is written once).
+    /// - Ownership: borrows the list for the call.
     bool Record(rhi::CommandList* list, u32 target_width, u32 target_height);
 
     /// Lays out `utf8` and adds it: the convenience call a program makes each frame.
     ///
     /// The layout is kept in the renderer and reused, so a steady frame allocates nothing per glyph.
     ///
-    /// Param utf8: the text.
-    /// Param style: font, size and color.
-    /// Param options: wrapping, line height, tabs, alignment.
-    /// Param x: target pixel of the layout's left edge.
-    /// Param y: target pixel of the layout's top edge.
-    /// Returns: true when the text was laid out and every glyph was added.
-    /// Fails: returns false, as [[text::Layout]] and [[renderer::TextRenderer::Add]] fail.
-    /// Aborts: the style has no open font.
-    /// Ownership: nothing is retained.
+    /// - Param utf8: the text.
+    /// - Param style: font, size and color.
+    /// - Param options: wrapping, line height, tabs, alignment.
+    /// - Param x: target pixel of the layout's left edge.
+    /// - Param y: target pixel of the layout's top edge.
+    /// - Returns: true when the text was laid out and every glyph was added.
+    /// - Fails: returns false, as [[text::Layout]] and [[renderer::TextRenderer::Add]] fail.
+    /// - Aborts: the style has no open font.
+    /// - Ownership: nothing is retained.
     bool Draw(StringView utf8, const text::TextStyle& style, const text::LayoutOptions& options, f32 x, f32 y);
 
     /// Declares the text pass in a frame's graph, after the passes that wrote `target`.
@@ -127,28 +127,28 @@ public:
     /// Declares nothing (no pass, no barrier, no cost) when no glyph was added this frame. Otherwise the pass blends the quads into `target` without clearing it.
     /// A format different from the current one rebuilds the pipeline here, on the frame's thread.
     ///
-    /// Param graph: the frame's graph.
-    /// Param target: the display target, already written by an earlier pass (the tonemap); accessed as a color attachment, read and written.
-    /// Param format: the target's format.
-    /// Param width: the target's width in pixels.
-    /// Param height: the target's height in pixels.
-    /// Fails: the pass logs and draws nothing if the pipeline for `format` cannot be made.
-    /// Aborts: `graph` is null, `format` is undefined, a size is 0, or the object holds no GPU objects.
-    /// Ownership: the pass keeps a pointer to this object until the graph is executed.
+    /// - Param graph: the frame's graph.
+    /// - Param target: the display target, already written by an earlier pass (the tonemap); accessed as a color attachment, read and written.
+    /// - Param format: the target's format.
+    /// - Param width: the target's width in pixels.
+    /// - Param height: the target's height in pixels.
+    /// - Fails: the pass logs and draws nothing if the pipeline for `format` cannot be made.
+    /// - Aborts: `graph` is null, `format` is undefined, a size is 0, or the object holds no GPU objects.
+    /// - Ownership: the pass keeps a pointer to this object until the graph is executed.
     void AddToGraph(RenderGraph* graph, GraphResource target, rhi::Format format, u32 width, u32 height);
 
     /// Returns the counters.
-    /// Fails: never.
+    /// - Fails: never.
     TextStats Stats() const;
 
     /// Returns the glyph quads waiting for `Record`.
-    /// Fails: never.
+    /// - Fails: never.
     u32 QueuedGlyphs() const { return queued_; }
     /// Returns the glyphs dropped since creation (budget or atlas).
-    /// Fails: never.
+    /// - Fails: never.
     u64 DroppedGlyphs() const { return dropped_; }
     /// Returns the GPU atlas pages.
-    /// Fails: never.
+    /// - Fails: never.
     const GlyphAtlasTexture& Pages() const { return pages_; }
 
     void Release() override;

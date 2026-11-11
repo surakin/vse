@@ -8,7 +8,7 @@
 namespace engine_placeholder::os::posix {
 
 /// Copies `path` into `buffer` with a terminator, for a POSIX call that takes a C string; nullptr when it does not fit (never truncated).
-/// Thread-safety: thread-safe. Async-signal-safe (the crash report's CreateFileForWriting uses it).
+/// - Thread-safety: thread-safe. Async-signal-safe (the crash report's CreateFileForWriting uses it).
 const char* ToCPath(StringView path, char (&buffer)[kMaxPathBytes]);
 
 /// The process environment array (`environ` on Linux, `*_NSGetEnviron()` on macOS, where a library cannot name `environ`); may be null.

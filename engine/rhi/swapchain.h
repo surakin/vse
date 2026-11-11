@@ -39,7 +39,7 @@ enum class ColorSpace : u8 {
 
 /// What a swapchain on a given window can do, so a settings screen can grey out what is unavailable.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct SwapchainCaps {
     /// Whether each [[rhi::PresentMode]] (by value) is really offered; `Fifo` is always true.
     bool present_mode_supported[3] = {true, false, false};
@@ -55,7 +55,7 @@ struct SwapchainCaps {
 
 /// What to create a [[rhi::Swapchain]] for.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct SwapchainDesc {
     /// The preferred presentation mode; falls back to `Fifo` when the system does not offer it.
     PresentMode present_mode = PresentMode::Fifo;
@@ -76,8 +76,8 @@ struct SwapchainDesc {
 /// [[rhi::Device::CreateSwapchain]]. Render into `CurrentTexture()` after moving it to `ColorAttachment` with a
 /// barrier, move it to `Present`, submit, then `Present`.
 ///
-/// Thread-safety: owner-thread-only. Use one swapchain from the thread that owns its window.
-/// Ownership: created by a device; destroy it with [[rhi::Device::DestroySwapchain]] before the device is destroyed.
+/// - Thread-safety: owner-thread-only. Use one swapchain from the thread that owns its window.
+/// - Ownership: created by a device; destroy it with [[rhi::Device::DestroySwapchain]] before the device is destroyed.
 ///   The textures it exposes are valid only until the next `Acquire` or `Resize`.
 class Swapchain {
 public:
@@ -89,17 +89,17 @@ public:
     /// minimized) times out after half a second and counts as `Minimized`. If the window changed size, or the
     /// surface is out of date, the swapchain is recreated first and the call still acquires an image.
     ///
-    /// Returns: `Ok`, or `Recreated`, `Minimized` or `Lost` as described for [[rhi::SwapchainStatus]].
-    /// Fails: a status other than `Ok` means no image was acquired, except `Recreated`, after which an image is acquired.
-    /// Aborts: the previously acquired image was not presented.
+    /// - Returns: `Ok`, or `Recreated`, `Minimized` or `Lost` as described for [[rhi::SwapchainStatus]].
+    /// - Fails: a status other than `Ok` means no image was acquired, except `Recreated`, after which an image is acquired.
+    /// - Aborts: the previously acquired image was not presented.
     virtual SwapchainStatus Acquire() = 0;
 
     /// Presents the current image to the window.
     ///
-    /// Returns: `Ok`, `Recreated` (the surface changed: the image may not have been shown, and the swapchain is rebuilt by
+    /// - Returns: `Ok`, `Recreated` (the surface changed: the image may not have been shown, and the swapchain is rebuilt by
     ///   the next `Acquire`), or `Lost`.
-    /// Fails: `Lost` means the image was not presented.
-    /// Aborts: no image has been acquired.
+    /// - Fails: `Lost` means the image was not presented.
+    /// - Aborts: no image has been acquired.
     virtual SwapchainStatus Present() = 0;
 
     /// Changes the present mode, size, format and HDR mode in one call, reusing the old swapchain where the API allows.
@@ -108,10 +108,10 @@ public:
     /// `ImageFormat` and `GetColorSpace`. A zero width or height is remembered (the swapchain is rebuilt with the rest of the
     /// request when the window has an area again). The images and textures from before are invalid afterwards.
     ///
-    /// Param desc: the new description; `width` and `height` of 0 mean the window's current size.
-    /// Returns: `Ok` (rebuilt), `Minimized` (nothing to draw to yet), or `Lost`.
-    /// Fails: `Lost` when the swapchain cannot be rebuilt.
-    /// Aborts: an image is still acquired and not presented.
+    /// - Param desc: the new description; `width` and `height` of 0 mean the window's current size.
+    /// - Returns: `Ok` (rebuilt), `Minimized` (nothing to draw to yet), or `Lost`.
+    /// - Fails: `Lost` when the swapchain cannot be rebuilt.
+    /// - Aborts: an image is still acquired and not presented.
     virtual SwapchainStatus Reconfigure(const SwapchainDesc& desc) = 0;
 
     /// Returns the present mode really in use (a request for `Mailbox` or `Immediate` may have fallen back to `Fifo`).
@@ -122,15 +122,15 @@ public:
 
     /// Returns what the surface and device offer.
     ///
-    /// Returns: the capabilities, read when the swapchain was last built.
+    /// - Returns: the capabilities, read when the swapchain was last built.
     virtual SwapchainCaps Capabilities() const = 0;
 
     /// Recreates the images for a new window size, keeping the other settings; `Reconfigure` with a new size.
     ///
-    /// Param width: new width in pixels.
-    /// Param height: new height in pixels; zero in either dimension is treated as minimized.
-    /// Returns: `Ok`, `Minimized`, or `Lost`.
-    /// Fails: `Lost` when the swapchain cannot be recreated.
+    /// - Param width: new width in pixels.
+    /// - Param height: new height in pixels; zero in either dimension is treated as minimized.
+    /// - Returns: `Ok`, `Minimized`, or `Lost`.
+    /// - Fails: `Lost` when the swapchain cannot be recreated.
     virtual SwapchainStatus Resize(u32 width, u32 height) = 0;
 
     /// Returns the format of the swapchain images.
@@ -144,8 +144,8 @@ public:
 
     /// Returns the texture for the most recently acquired image.
     ///
-    /// Returns: the invalid handle before the first successful `Acquire`.
-    /// Ownership: the handle is owned by the swapchain; do not destroy it.
+    /// - Returns: the invalid handle before the first successful `Acquire`.
+    /// - Ownership: the handle is owned by the swapchain; do not destroy it.
     virtual TextureHandle CurrentTexture() const = 0;
 };
 

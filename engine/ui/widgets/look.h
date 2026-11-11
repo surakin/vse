@@ -10,22 +10,22 @@ namespace engine_placeholder::ui {
 
 /// Returns whether a packed `0xAABBGGRR` color is not fully transparent.
 ///
-/// Fails: never.
+/// - Fails: never.
 inline bool IsVisibleColor(u32 abgr) { return (abgr >> 24) != 0; }
 
 /// Returns whether `c` is an ASCII digit.
 ///
-/// Fails: never.
+/// - Fails: never.
 inline bool IsAsciiDigit(char c) { return c >= '0' && c <= '9'; }
 
 /// Returns `c` in lower case when it is an ASCII capital.
 ///
-/// Fails: never.
+/// - Fails: never.
 inline char AsciiLower(char c) { return (c >= 'A' && c <= 'Z') ? static_cast<char>(c - 'A' + 'a') : c; }
 
 /// Returns the lower-case letter a key stands for, or 0 when it is not a letter key.
 ///
-/// Fails: never.
+/// - Fails: never.
 inline char KeyLetter(Key key) {
     const u32 k = static_cast<u32>(key);
     const u32 a = static_cast<u32>(Key::A);
@@ -44,7 +44,7 @@ constexpr f32 kDropMarkerThickness = 2.0f;
 
 /// Returns how far a drag at `along` (0 to `length`) scrolls in `dt` seconds: negative near the start, positive near the end, 0 elsewhere; it grows with the depth into the band.
 ///
-/// Fails: never.
+/// - Fails: never.
 inline f32 DragScrollDelta(f32 along, f32 length, f32 dt) {
     if (length <= kDragScrollBand * 2) return 0.0f; // a view too small for two bands does not scroll under a drag
     if (along < kDragScrollBand) {
@@ -60,7 +60,7 @@ inline f32 DragScrollDelta(f32 along, f32 length, f32 dt) {
 
 /// Returns the style's corner radius in logical units.
 ///
-/// Fails: never.
+/// - Fails: never.
 inline f32 StyleRadius(const ResolvedStyle& style, f32 scale) { return style.radius / scale; }
 
 /// Draws the background and the border of `style` in `rect`; a transparent background and a zero border width draw nothing.

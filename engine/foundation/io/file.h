@@ -54,7 +54,7 @@ using FilePtr = UniquePtr<File>;
 /// A unit of work queued on an [[io::IoExecutor]]; embed it as the first member of the request type. The queue owns `next` while
 /// the work is queued.
 ///
-/// Thread-safety: thread-compatible. Ownership: owned by the submitter, which keeps it valid until `run` has returned.
+/// - Thread-safety: thread-compatible. Ownership: owned by the submitter, which keeps it valid until `run` has returned.
 struct IoWork {
     IoWork* next = nullptr;                 ///< Managed by the executor.
     void (*run)(IoWork* self) = nullptr;    ///< Called once on an executor thread; it may free the work as its last action.
@@ -66,7 +66,7 @@ struct IoWork {
 /// The executor promises that work accepted by `Submit` is always run, in submission order per executor thread, even during shutdown (drain). After
 /// shutdown `Submit` returns false and the caller completes the work itself.
 ///
-/// Thread-safety: thread-safe.
+/// - Thread-safety: thread-safe.
 class IoExecutor {
 public:
     virtual ~IoExecutor() = default;
@@ -77,7 +77,7 @@ public:
 /// Sets the executor files use for asynchronous operations when the backend is not natively asynchronous. `nullptr` restores the
 /// built-in single-thread executor, which is created on first use. The executor must outlive every file with requests in flight.
 ///
-/// Thread-safety: thread-safe.
+/// - Thread-safety: thread-safe.
 void SetDefaultExecutor(IoExecutor* executor);
 /// Clears the default executor if it is `executor` (an executor calls this before it goes away, so the process never keeps a
 /// pointer to a dead one). Does nothing when another executor is installed.
@@ -116,7 +116,7 @@ enum AsyncState : u8 {
 /// [[io::File::ReadAsync]], [[io::File::WriteAsync]] or [[io::File::FlushAsync]]; it, and the buffer it names, must stay valid and
 /// unmoved until the completion has been called. Do not reuse it before then.
 ///
-/// Thread-safety: thread-compatible; the file layer owns the fields from the start call until the completion.
+/// - Thread-safety: thread-compatible; the file layer owns the fields from the start call until the completion.
 struct AsyncRequest {
     IoWork work;                    ///< First member: executors see the request as plain work.
     File* file = nullptr;           ///< The file; set by the start call.
@@ -139,8 +139,8 @@ struct AsyncRequest {
 /// After `Close`, every operation except `Close` fails with `Invalid`; `Close` is idempotent. The destructor closes the file
 /// and logs a failed close (it cannot report it): call `Close` yourself where the result matters.
 ///
-/// Thread-safety: thread-compatible; offset reads and writes may run concurrently, everything else needs external synchronization.
-/// Ownership: owned through `FilePtr`; not copyable.
+/// - Thread-safety: thread-compatible; offset reads and writes may run concurrently, everything else needs external synchronization.
+/// - Ownership: owned through `FilePtr`; not copyable.
 class File {
 public:
     File() = default;
@@ -151,26 +151,26 @@ public:
 
     /// Opens the local file `path` (the path is never read as a URL; see [[io::File::OpenLocation]]).
     ///
-    /// Param path: the file.
-    /// Param mode: how to open it.
-    /// Param flags: [[io::OpenFlag]] bits.
-    /// Param out: receives the file; unchanged on failure.
+    /// - Param path: the file.
+    /// - Param mode: how to open it.
+    /// - Param flags: [[io::OpenFlag]] bits.
+    /// - Param out: receives the file; unchanged on failure.
     /// A FIFO opened for reading blocks until a writer appears; a terminal device does not become the controlling terminal.
     /// Nothing is locked: the same file can be open any number of times at once, in any modes, and renamed, replaced or removed while
     /// open (engine/foundation/io/BACKEND.md, "Sharing").
     ///
-    /// Fails: `NotFound`, `PermissionDenied`, `IsADirectory` (also when the path names a directory and the mode is `Read`), `AlreadyExists`
+    /// - Fails: `NotFound`, `PermissionDenied`, `IsADirectory` (also when the path names a directory and the mode is `Read`), `AlreadyExists`
     ///   (`kOpenCreateNew`), `Invalid` (`OpenMode::Read` with `kOpenCreate`, `kOpenCreateNew` or `kOpenTruncate`; on Windows also a reserved
     ///   device name, a name ending in a dot or a space, or a colon in a name), `NotADirectory`, `TooManyOpenFiles`, `SymlinkLoop`, `TooLong`,
     ///   `Busy` (Windows: another program opened the file without sharing).
-    /// Backend: Windows: CreateFileW, asynchronous work on the executor as on Linux (BACKEND.md, Open); macOS: open with O_CLOEXEC, asynchronous work on the executor as on Linux (dispatch_io measured slower, Phase 26 Day 304).
+    /// - Backend: Windows: CreateFileW, asynchronous work on the executor as on Linux (BACKEND.md, Open); macOS: open with O_CLOEXEC, asynchronous work on the executor as on Linux (dispatch_io measured slower, Phase 26 Day 304).
     static Status Open(const Path& path, OpenMode mode, u32 flags, FilePtr* out);
     /// Opens `location`, which is either a local path or `scheme://rest`. `file:///abs/path` (percent escapes such as `%20` are
     /// decoded; no query or fragment) and a text without a scheme are local files;
     /// other schemes go to the backend registered with [[io::RegisterFileScheme]].
     ///
-    /// Param location: path text or URL.
-    /// Fails: `Unsupported` for a scheme nobody registered, `Invalid` for a malformed percent escape or an encoded NUL byte, plus the errors of [[io::File::Open]].
+    /// - Param location: path text or URL.
+    /// - Fails: `Unsupported` for a scheme nobody registered, `Invalid` for a malformed percent escape or an encoded NUL byte, plus the errors of [[io::File::Open]].
     static Status OpenLocation(StringView location, OpenMode mode, u32 flags, FilePtr* out);
 
     /// Returns true until the file is closed.
@@ -179,22 +179,22 @@ public:
     virtual u32 Capabilities() const = 0;
     /// Returns the size in bytes.
     ///
-    /// Fails: `Unsupported` when the size is not known (see `kCapSizeKnown`), `Invalid` after `Close`.
+    /// - Fails: `Unsupported` when the size is not known (see `kCapSizeKnown`), `Invalid` after `Close`.
     virtual Status Size(u64* out) = 0;
     /// Reads up to `length` bytes at `offset`. Returns fewer bytes than asked only at the end of the file or for a reason the
     /// backend has; zero bytes mean the end. A short read is not an error: use [[io::ReadExact]] when you need all of it.
     ///
-    /// Param buffer: destination, at least `length` bytes.
-    /// Param bytes_read: receives the count (also on failure after a partial transfer: zero).
-    /// Fails: `Invalid` (closed, or not readable), `Io`, `Interrupted`.
+    /// - Param buffer: destination, at least `length` bytes.
+    /// - Param bytes_read: receives the count (also on failure after a partial transfer: zero).
+    /// - Fails: `Invalid` (closed, or not readable), `Io`, `Interrupted`.
     virtual Status Read(void* buffer, usize length, u64 offset, usize* bytes_read) = 0;
     /// Writes all `length` bytes at `offset`, completing partial writes.
     ///
-    /// Fails: `Invalid` (closed or not writable), `Unsupported` (an `Append`-mode file), `NoSpace`, `Io`.
+    /// - Fails: `Invalid` (closed or not writable), `Unsupported` (an `Append`-mode file), `NoSpace`, `Io`.
     virtual Status Write(const void* data, usize length, u64 offset) = 0;
     /// Writes all `length` bytes at the end of the file. Only files opened with `OpenMode::Append` support it.
     ///
-    /// Fails: `Unsupported` (not opened for appending), `Invalid`, `NoSpace`, `Io`.
+    /// - Fails: `Unsupported` (not opened for appending), `Invalid`, `NoSpace`, `Io`.
     virtual Status Append(const void* data, usize length) = 0;
     /// Pushes data the backend buffers to the operating system. A local file has no user-space buffer, so this succeeds.
     virtual Status Flush() = 0;
@@ -203,20 +203,20 @@ public:
     /// On macOS the local file uses `fcntl(F_FULLFSYNC)`: `fsync` there only hands the data to the drive, whose cache can still lose it. A file
     /// system that refuses `F_FULLFSYNC` (some network and FAT volumes) gets `fsync`. It costs far more: 18 ms against 0.4 ms for 4 KiB on the
     /// development Mac's SSD.
-    /// Fails: `Unsupported`, `Io`, `NoSpace`.
+    /// - Fails: `Unsupported`, `Io`, `NoSpace`.
     virtual Status Sync() = 0;
     /// Sets the size, cutting data off or extending with zeros.
     ///
-    /// Fails: `Invalid` (closed or not writable), `Unsupported`, `NoSpace`.
+    /// - Fails: `Invalid` (closed or not writable), `Unsupported`, `NoSpace`.
     virtual Status Truncate(u64 size) = 0;
     /// Closes the file. Idempotent: later calls succeed and do nothing.
     ///
-    /// Fails: `Io` or `NoSpace` when the system reports a deferred write error at close.
+    /// - Fails: `Io` or `NoSpace` when the system reports a deferred write error at close.
     virtual Status Close() = 0;
 
     /// Moves the stream position (used by the offset-less `Read` and `Write`).
     ///
-    /// Fails: `Unsupported` without `kCapSeekable`, `Invalid` after `Close`.
+    /// - Fails: `Unsupported` without `kCapSeekable`, `Invalid` after `Close`.
     Status Seek(u64 position);
     /// Returns the stream position.
     u64 Tell() const { return position_; }
@@ -233,17 +233,17 @@ public:
     /// allowed, zero is the end). Returns at once. The buffer and `request` must stay valid until `done` has run. Many requests may
     /// be in flight on one file; they may complete in any order (an in-order backend completes them in order).
     ///
-    /// Param request: caller-owned; must not be in flight.
-    /// Param done: called exactly once with `user`; must not be null.
-    /// Aborts: `request` or `done` is null.
+    /// - Param request: caller-owned; must not be in flight.
+    /// - Param done: called exactly once with `user`; must not be null.
+    /// - Aborts: `request` or `done` is null.
     void ReadAsync(AsyncRequest* request, void* buffer, usize length, u64 offset, Completion done, void* user);
     /// Starts writing all `length` bytes at `offset`; the data must stay valid until `done` has run. `Write` rules apply.
     ///
-    /// Aborts: `request` or `done` is null.
+    /// - Aborts: `request` or `done` is null.
     void WriteAsync(AsyncRequest* request, const void* data, usize length, u64 offset, Completion done, void* user);
     /// Starts a [[io::File::Flush]].
     ///
-    /// Aborts: `request` or `done` is null.
+    /// - Aborts: `request` or `done` is null.
     void FlushAsync(AsyncRequest* request, Completion done, void* user);
     /// Asks for `request` not to run. Best effort: it succeeds only while the request has not started, and the request still completes
     /// (exactly once) with `Interrupted`. Returns false when the request is already running or finished. Call it only while the request is certainly not complete
@@ -283,44 +283,44 @@ using FileFactory = Status (*)(StringView location, OpenMode mode, u32 flags, Fi
 
 /// Registers a backend for `scheme` (lower case letters, digits, `+`, `-`, `.`; first a letter).
 ///
-/// Param scheme: for example `pak` or `http`; `file` is reserved.
-/// Fails: `Invalid` (a bad or reserved scheme, a null factory), `AlreadyExists`, `OutOfMemory` (the registry holds 16).
-/// Thread-safety: thread-safe.
+/// - Param scheme: for example `pak` or `http`; `file` is reserved.
+/// - Fails: `Invalid` (a bad or reserved scheme, a null factory), `AlreadyExists`, `OutOfMemory` (the registry holds 16).
+/// - Thread-safety: thread-safe.
 Status RegisterFileScheme(StringView scheme, FileFactory factory);
 /// Removes a registration; unknown schemes are ignored. Files already opened are unaffected.
 void UnregisterFileScheme(StringView scheme);
 
 /// Reads exactly `length` bytes at `offset`, looping over short reads.
 ///
-/// Fails: `EndOfFile` when the file ends first (`buffer` holds what was read), plus the errors of [[io::File::Read(void*,usize,u64,usize*)]].
+/// - Fails: `EndOfFile` when the file ends first (`buffer` holds what was read), plus the errors of [[io::File::Read(void*,usize,u64,usize*)]].
 Status ReadExact(File& file, void* buffer, usize length, u64 offset);
 /// Reads from `offset 0` to the end into `out` (replacing its contents), trusting no size: it reads until a read returns zero.
 ///
-/// Param max_bytes: refuse files longer than this.
-/// Fails: `OutOfMemory` when the vector cannot grow, `TooLong` when `max_bytes` is exceeded, plus the errors of [[io::File::Read(void*,usize,u64,usize*)]].
+/// - Param max_bytes: refuse files longer than this.
+/// - Fails: `OutOfMemory` when the vector cannot grow, `TooLong` when `max_bytes` is exceeded, plus the errors of [[io::File::Read(void*,usize,u64,usize*)]].
 Status ReadAll(File& file, Vector<u8>* out, u64 max_bytes = u64{1} << 32);
 /// Like the vector overload but allocates the contents from `arena` (the replacement of `os::ReadFileToArena`).
 ///
-/// Param data: receives the arena block; `size` the byte count. A zero-length file gives a valid pointer and size 0.
-/// Fails: `OutOfMemory` when the arena is full, `TooLong` above `max_bytes`, plus the errors of [[io::File::Read(void*,usize,u64,usize*)]].
-/// Ownership: the block belongs to `arena`.
+/// - Param data: receives the arena block; `size` the byte count. A zero-length file gives a valid pointer and size 0.
+/// - Fails: `OutOfMemory` when the arena is full, `TooLong` above `max_bytes`, plus the errors of [[io::File::Read(void*,usize,u64,usize*)]].
+/// - Ownership: the block belongs to `arena`.
 Status ReadAll(File& file, ArenaAllocator& arena, u8** data, usize* size, u64 max_bytes = u64{1} << 32);
 
 /// Opens `path`, reads it whole into `out`, closes it.
 ///
-/// Fails: the errors of [[io::File::Open]] and [[io::ReadAll(File&,Vector<u8>*,u64)]].
+/// - Fails: the errors of [[io::File::Open]] and [[io::ReadAll(File&,Vector<u8>*,u64)]].
 Status ReadFile(const Path& path, Vector<u8>* out, u64 max_bytes = u64{1} << 32);
 /// Opens `path`, reads it whole into the arena, closes it (the path-based replacement of `os::ReadFileToArena`).
 ///
-/// Fails: as [[io::ReadFile(const Path&,Vector<u8>*,u64)]].
+/// - Fails: as [[io::ReadFile(const Path&,Vector<u8>*,u64)]].
 Status ReadFile(const Path& path, ArenaAllocator& arena, u8** data, usize* size, u64 max_bytes = u64{1} << 32);
 /// Reads a whole text file into `out`. The bytes are not validated as UTF-8.
 ///
-/// Fails: as [[io::ReadFile(const Path&,Vector<u8>*,u64)]].
+/// - Fails: as [[io::ReadFile(const Path&,Vector<u8>*,u64)]].
 Status ReadTextFile(const Path& path, String<HeapAllocator>* out, u64 max_bytes = u64{1} << 28);
 /// Creates or truncates `path` and writes `length` bytes. Not atomic: a failure can leave a partial file; see [[io::WriteFileAtomic(const Path&,const void*,usize,u32)]].
 ///
-/// Fails: the errors of [[io::File::Open]] and [[io::File::Write(const void*,usize,u64)]].
+/// - Fails: the errors of [[io::File::Open]] and [[io::File::Write(const void*,usize,u64)]].
 Status WriteFile(const Path& path, const void* data, usize length);
 /// Like [[io::WriteFile(const Path&,const void*,usize)]] for a span of bytes.
 inline Status WriteFile(const Path& path, ByteSpan data) { return WriteFile(path, data.Data(), data.Size()); }
@@ -331,9 +331,9 @@ inline Status WriteFile(const Path& path, ByteSpan data) { return WriteFile(path
 /// followed (the file it points to is replaced, the link stays). The replacement is a new file: a replaced file keeps its permission bits, but its owner, hard links, ACLs and extended attributes are not carried over (the writing user owns the result). A new file gets `new_file_permissions` (private to the owner by default: pass 0644 for
 /// ordinary generated files).
 ///
-/// Param path: the target; its directory must exist.
-/// Param new_file_permissions: the permission bits of a file that did not exist.
-/// Fails: `NotFound` (no directory), `PermissionDenied`, `NoSpace`, `IsADirectory` (the target is a directory), `Io`; the old content is intact.
+/// - Param path: the target; its directory must exist.
+/// - Param new_file_permissions: the permission bits of a file that did not exist.
+/// - Fails: `NotFound` (no directory), `PermissionDenied`, `NoSpace`, `IsADirectory` (the target is a directory), `Io`; the old content is intact.
 Status WriteFileAtomic(const Path& path, const void* data, usize length, u32 new_file_permissions = 0600);
 /// Like [[io::WriteFileAtomic(const Path&,const void*,usize,u32)]] for a span of bytes.
 inline Status WriteFileAtomic(const Path& path, ByteSpan data, u32 new_file_permissions = 0600) {

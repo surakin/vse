@@ -21,8 +21,8 @@ namespace engine_placeholder::os::wayland {
 /// keymap through [[os::XkbKeyboard]], and tracks pointer position, button mask and scroll.
 /// Not movable or copyable, because the listeners capture `this`; call `Init` on an in-place object.
 ///
-/// Thread-safety: owner-thread-only. Listener callbacks run on the thread that dispatches the connection's events, which must be the one that calls `Init` and `Shutdown`.
-/// Ownership: owns the keyboard and pointer proxies; the seat belongs to the connection and
+/// - Thread-safety: owner-thread-only. Listener callbacks run on the thread that dispatches the connection's events, which must be the one that calls `Init` and `Shutdown`.
+/// - Ownership: owns the keyboard and pointer proxies; the seat belongs to the connection and
 ///   the `InputState` is borrowed from the caller.
 class WaylandInput {
 public:
@@ -41,10 +41,10 @@ public:
     ///
     /// A seat lacking a keyboard or pointer is not a failure; check
     /// [[os::wayland::WaylandInput::HasKeyboard]] and [[os::wayland::WaylandInput::HasPointer]].
-    /// Param connection: connection whose seat to listen to; must stay valid until `Shutdown`.
-    /// Param input_state: state to fill; must outlive this object.
-    /// Returns: `true` if the seat was hooked.
-    /// Fails: returns `false` (logged) if the connection is invalid.
+    /// - Param connection: connection whose seat to listen to; must stay valid until `Shutdown`.
+    /// - Param input_state: state to fill; must outlive this object.
+    /// - Returns: `true` if the seat was hooked.
+    /// - Fails: returns `false` (logged) if the connection is invalid.
     bool Init(WaylandConnection& connection, InputState* input_state);
 
     /// Destroys the keyboard and pointer proxies and detaches from the seat.

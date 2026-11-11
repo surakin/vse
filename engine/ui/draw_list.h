@@ -23,8 +23,8 @@ inline constexpr u32 kFlagShadow = 8; ///< With `kModeRect`: the distance fades 
 
 /// One vertex, 40 bytes.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: owns nothing.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns nothing.
 struct Vertex {
     f32 x = 0;        ///< Position in physical pixels.
     f32 y = 0;        ///< Position in physical pixels.
@@ -48,8 +48,8 @@ enum class TextureKind : u8 {
 
 /// A texture a command binds.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: owns nothing.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns nothing.
 struct TextureRef {
     TextureKind kind = TextureKind::None; ///< Which kind of texture.
     u32 id = 0;                           ///< Atlas page or image id.
@@ -65,8 +65,8 @@ enum class BlendMode : u8 {
 
 /// One draw call: a range of indices drawn with one clip rectangle and one texture.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: owns nothing.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns nothing.
 struct DrawCommand {
     u32 first_index = 0;                    ///< Offset of the first index in `DrawList::indices`.
     u32 index_count = 0;                    ///< Number of indices.
@@ -78,8 +78,8 @@ struct DrawCommand {
 
 /// Counters of what a [[ui::DrawListCanvas]] did, for tests and the benchmark.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: owns nothing.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns nothing.
 struct DrawListStats {
     u64 culled = 0;               ///< Draws dropped before any vertex was made: outside the clip, empty, or fully transparent.
     u64 overflowed = 0;           ///< Draws dropped because the vertex count would pass `DrawList::max_vertices`.
@@ -91,8 +91,8 @@ struct DrawListStats {
 ///
 /// `Clear` keeps the capacity, so a steady frame allocates nothing. Indices are 32-bit and relative to the whole vertex array.
 ///
-/// Thread-safety: thread-compatible.
-/// Ownership: owns its three arrays.
+/// - Thread-safety: thread-compatible.
+/// - Ownership: owns its three arrays.
 struct DrawList {
     Vector<Vertex> vertices;          ///< All vertices, in draw order.
     Vector<u32> indices;              ///< Triangle indices into `vertices`.
@@ -102,7 +102,7 @@ struct DrawList {
 
     /// Empties the list and its counters, keeping the capacity.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     void Clear() {
         vertices.Clear();
         indices.Clear();
@@ -113,7 +113,7 @@ struct DrawList {
     /// Orders the commands by layer, keeping call order inside a layer (a stable insertion sort that allocates nothing; a frame has a handful of commands, and an
     /// already ordered list costs one pass). The index data stays where it is: a command names its own range.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     void SortLayers() {
         for (usize i = 1; i < commands.Size(); ++i) {
             const DrawCommand value = commands[i];

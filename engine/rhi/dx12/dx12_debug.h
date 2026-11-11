@@ -10,7 +10,7 @@ namespace engine_placeholder::rhi::dx12 {
 
 /// Running totals of debug-layer messages since process start or the last [[rhi::dx12::ResetDebugMessageCounts]].
 ///
-/// Thread-safety: thread-compatible plain data (a snapshot).
+/// - Thread-safety: thread-compatible plain data (a snapshot).
 struct DebugMessageCounts {
     /// `CORRUPTION` and `ERROR` messages.
     u64 errors = 0;
@@ -22,12 +22,12 @@ struct DebugMessageCounts {
 
 /// Returns the totals.
 ///
-/// Thread-safety: thread-safe.
+/// - Thread-safety: thread-safe.
 DebugMessageCounts GetDebugMessageCounts();
 
 /// Sets the totals to zero.
 ///
-/// Thread-safety: thread-safe.
+/// - Thread-safety: thread-safe.
 void ResetDebugMessageCounts();
 
 /// A test's hook for every debug-layer message: called with the pointer given to [[rhi::dx12::SetDebugMessageCapture]], the
@@ -36,22 +36,22 @@ using DebugMessageCaptureFn = void (*)(void* user, LogVerbosity severity, u32 id
 
 /// Installs a capture hook, or removes it with null.
 ///
-/// Param fn: the hook, or null.
-/// Param user: passed back to it.
-/// Thread-safety: thread-safe; the hook may be called from any thread the D3D12 runtime reports on.
+/// - Param fn: the hook, or null.
+/// - Param user: passed back to it.
+/// - Thread-safety: thread-safe; the hook may be called from any thread the D3D12 runtime reports on.
 void SetDebugMessageCapture(DebugMessageCaptureFn fn, void* user);
 
 /// Records one message: counts it, logs it on `LogRhi` and passes it to the capture hook. Used by the device's info-queue callback.
 ///
-/// Param severity: the D3D12 severity.
-/// Param id: the message id.
-/// Param text: the message.
-/// Thread-safety: thread-safe.
+/// - Param severity: the D3D12 severity.
+/// - Param id: the message id.
+/// - Param text: the message.
+/// - Thread-safety: thread-safe.
 void RecordDebugMessage(D3D12_MESSAGE_SEVERITY severity, D3D12_MESSAGE_ID id, const char* text);
 
 /// Notes that the device's live-object report named something besides the device: counted in `live_objects`.
 ///
-/// Thread-safety: thread-safe.
+/// - Thread-safety: thread-safe.
 void NoteLiveObject();
 
 } // namespace engine_placeholder::rhi::dx12

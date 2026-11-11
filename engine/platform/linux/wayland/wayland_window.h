@@ -19,8 +19,8 @@ namespace engine_placeholder::os::wayland {
 /// surface, xdg surface, toplevel, optional decoration object and buffer, but not the event loop.
 /// Movable, not copyable.
 ///
-/// Thread-safety: owner-thread-only. Listener callbacks run on the thread that dispatches the connection's events, which must also call its methods.
-/// Ownership: owns the surface, xdg objects and buffer; the connection is borrowed and must outlive the window.
+/// - Thread-safety: owner-thread-only. Listener callbacks run on the thread that dispatches the connection's events, which must also call its methods.
+/// - Ownership: owns the surface, xdg objects and buffer; the connection is borrowed and must outlive the window.
 class WaylandWindow {
 public:
     /// Creates a toplevel on `connection`, blocks until the compositor's initial configure is acknowledged, then maps it.
@@ -30,13 +30,13 @@ public:
     /// `width_hint` and `height_hint` give the size used when the compositor suggests none,
     /// and the size restored when it sends a 0x0 configure (for example on leaving maximized)
     /// with nothing better known.
-    /// Param connection: valid connection; must outlive the returned window.
-    /// Param title: window title.
-    /// Param app_id: application id the compositor uses to group and identify the window.
-    /// Param width_hint: fallback width in pixels; 0 means the built-in 1280x720 default.
-    /// Param height_hint: fallback height in pixels; 0 means the built-in 1280x720 default.
-    /// Returns: the window; check [[os::wayland::WaylandWindow::Valid]].
-    /// Fails: returns an invalid window (logged via `LogPlatform`) on any failure.
+    /// - Param connection: valid connection; must outlive the returned window.
+    /// - Param title: window title.
+    /// - Param app_id: application id the compositor uses to group and identify the window.
+    /// - Param width_hint: fallback width in pixels; 0 means the built-in 1280x720 default.
+    /// - Param height_hint: fallback height in pixels; 0 means the built-in 1280x720 default.
+    /// - Returns: the window; check [[os::wayland::WaylandWindow::Valid]].
+    /// - Fails: returns an invalid window (logged via `LogPlatform`) on any failure.
     static WaylandWindow Create(WaylandConnection& connection, StringView title, StringView app_id,
                                 u32 width_hint = 0, u32 height_hint = 0);
 
@@ -68,7 +68,7 @@ public:
     /// The window does not actually resize until this happens. A burst of configures,
     /// such as an interactive drag, is coalesced into one buffer. The event pump calls
     /// this after dispatching.
-    /// Returns: `true` if a new buffer was committed.
+    /// - Returns: `true` if a new buffer was committed.
     bool CommitPendingResize();
 
     /// Records that the surface was given to a graphics layer (a Vulkan swapchain), which then owns the surface's buffers.
@@ -79,15 +79,15 @@ public:
 
     /// Returns the `wl_surface`, or null if invalid.
     ///
-    /// Ownership: borrowed; owned by this window.
+    /// - Ownership: borrowed; owned by this window.
     wl_surface* Surface() const { return surface_; }
     /// Returns the `xdg_surface`, or null if invalid.
     ///
-    /// Ownership: borrowed; owned by this window.
+    /// - Ownership: borrowed; owned by this window.
     xdg_surface* XdgSurface() const { return xdg_surface_; }
     /// Returns the `xdg_toplevel`, or null if invalid.
     ///
-    /// Ownership: borrowed; owned by this window.
+    /// - Ownership: borrowed; owned by this window.
     xdg_toplevel* XdgToplevel() const { return xdg_toplevel_; }
     /// Returns whether the compositor agreed to draw the window decorations (titlebar, close button, resize edges).
     ///
@@ -101,9 +101,9 @@ public:
     u64 ResizeSerial() const { return resize_serial_; }
     /// Asks the compositor to make the toplevel fullscreen (`xdg_toplevel_set_fullscreen`) or to leave fullscreen.
     ///
-    /// Param fullscreen: the state wanted.
-    /// Returns: true if the request was sent.
-    /// Fails: returns false on an invalid window.
+    /// - Param fullscreen: the state wanted.
+    /// - Returns: true if the request was sent.
+    /// - Fails: returns false on an invalid window.
     bool SetFullscreen(bool fullscreen);
     /// Returns whether the latest toplevel configure listed the fullscreen state.
     bool IsFullscreen() const { return fullscreen_; }

@@ -246,11 +246,12 @@ private:
         }
 
         if (!indented) {
-            // A label is a list item (`- Fails: never.`), which survives clang-format's comment reflow; the bare form (`Fails: never.`) is still read.
+            // A label is a list item (`- Fails: never.`), the form clang-format's comment reflow leaves on a line of its own. The bare form is an error.
             const bool dashed = t.Length() > 2 && t[0] == '-' && t[1] == ' ';
             const StringView candidate = dashed ? Trim(StringView(t.Data() + 2, t.Length() - 2)) : t;
             LabelMatch m;
             if (MatchLabel(candidate, m)) {
+                if (!dashed && m.known) Diag(Severity::Error, no, "label is not a list item: write it as '- Label: text' (docs/DOC-CONVENTIONS.md)");
                 FlushPara();
                 FlushList();
                 EndLabel();
@@ -688,6 +689,7 @@ void EmitDoc(const ParsedDoc& doc, StringBuilder<ArenaAllocator>& out) {
     if (doc.labels.Size() > 0) gap();
     for (usize i = 0; i < doc.labels.Size(); ++i) {
         const Label& l = doc.labels[i];
+        out.Append(StringView("- "));
         out.Append(StringView(LabelName(l.kind)));
         if (l.kind == LabelKind::Param) {
             out.Append(' ');

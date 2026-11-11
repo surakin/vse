@@ -22,29 +22,29 @@ inline constexpr u32 kRendererSchemaVersion = 2;
 
 /// Declares the built-in rendering settings in `registry` as `renderer.<name>` and gives the `renderer` section its schema version.
 ///
-/// Param registry: an unfrozen registry that holds no `renderer.` settings yet.
-/// Aborts: the registry is frozen, or already holds one of the keys.
-/// Ownership: the registry borrows the setting names (static strings of the renderer).
-/// Thread-safety: not-thread-safe; call at start-up before any other thread uses the registry.
+/// - Param registry: an unfrozen registry that holds no `renderer.` settings yet.
+/// - Aborts: the registry is frozen, or already holds one of the keys.
+/// - Ownership: the registry borrows the setting names (static strings of the renderer).
+/// - Thread-safety: not-thread-safe; call at start-up before any other thread uses the registry.
 void RegisterSharedSettings(::engine_placeholder::settings::Registry* registry);
 
 /// Adds the migration from the flat-key file of schema 1 (`width = 1920`, no section) to the `renderer.` keys.
 ///
-/// Ownership: the steps borrow static strings.
-/// Thread-safety: not-thread-safe; call before the settings are loaded.
+/// - Ownership: the steps borrow static strings.
+/// - Thread-safety: not-thread-safe; call before the settings are loaded.
 void AddRendererMigrations(::engine_placeholder::settings::MigrationSet* migrations);
 
 /// Reads the current values of the `renderer.*` settings into a [[renderer::RenderSettings]].
 ///
-/// Param registry: the registry [[renderer::RegisterSharedSettings]] filled.
-/// Param snapshot: the values to read.
-/// Returns: the settings; any that is not registered keeps its default.
+/// - Param registry: the registry [[renderer::RegisterSharedSettings]] filled.
+/// - Param snapshot: the values to read.
+/// - Returns: the settings; any that is not registered keeps its default.
 RenderSettings RenderSettingsFromSnapshot(const ::engine_placeholder::settings::Registry& registry, const ::engine_placeholder::settings::SettingsSnapshot& snapshot);
 
 /// Appends a request for each rendering setting in `settings` that is registered, for [[settings::Settings::Apply]].
 ///
-/// Ownership: the requests hold values only.
-/// Thread-safety: thread-compatible.
+/// - Ownership: the requests hold values only.
+/// - Thread-safety: thread-compatible.
 void RenderSettingsToChanges(const RenderSettings& settings, const ::engine_placeholder::settings::Registry& registry, Vector<::engine_placeholder::settings::ChangeRequest>* out);
 
 /// The apply function for the `renderer.*` settings: it builds the requested [[renderer::RenderSettings]] from the renderer's current ones plus
@@ -56,27 +56,27 @@ void RenderSettingsToChanges(const RenderSettings& settings, const ::engine_plac
 /// The requested settings are the values the settings system holds (including changes it accepted earlier that the renderer has queued) plus this
 /// batch, so a second change made before the first was applied does not replace it.
 ///
-/// Returns: false if the renderer could not apply the change (it restored its previous settings), so the settings system rolls the batch back.
-/// Fails: reports the renderer's refusal as false.
-/// Ownership: borrows the renderer for the call.
-/// Thread-safety: owner-thread-only, as [[renderer::Renderer::ApplySettings]].
+/// - Returns: false if the renderer could not apply the change (it restored its previous settings), so the settings system rolls the batch back.
+/// - Fails: reports the renderer's refusal as false.
+/// - Ownership: borrows the renderer for the call.
+/// - Thread-safety: owner-thread-only, as [[renderer::Renderer::ApplySettings]].
 bool ApplySharedChange(void* renderer, const ::engine_placeholder::settings::ChangeEvent& event);
 
 /// Brings the settings system back in line with the renderer after a queued change failed at the frame boundary: if the renderer's settings in
 /// force differ from the values the settings system holds, the renderer's become the settings system's (no apply function runs, listeners are told).
 /// Call it after `RenderFrame` in an application that changes settings inside frames.
 ///
-/// Returns: whether a correction was needed.
-/// Ownership: borrows both for the call.
-/// Thread-safety: owner-thread-only.
+/// - Returns: whether a correction was needed.
+/// - Ownership: borrows both for the call.
+/// - Thread-safety: owner-thread-only.
 bool SyncSharedFromRenderer(Renderer* renderer, ::engine_placeholder::settings::Settings* settings);
 
 /// A [[settings::CapabilityFn]] that asks the renderer's [[renderer::Capabilities]] (`user` is the [[renderer::Renderer]]).
 ///
-/// Returns: whether the renderer reports the capability.
-/// Fails: never.
-/// Ownership: borrows the renderer for the call.
-/// Thread-safety: owner-thread-only.
+/// - Returns: whether the renderer reports the capability.
+/// - Fails: never.
+/// - Ownership: borrows the renderer for the call.
+/// - Thread-safety: owner-thread-only.
 bool RendererCapability(void* renderer, const char* capability);
 
 } // namespace engine_placeholder::renderer

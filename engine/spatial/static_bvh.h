@@ -14,7 +14,7 @@ namespace engine_placeholder::spatial {
 
 /// One item of a spatial structure: its box, the caller's key and a layer (a bit index or a mask, the caller's choice; queries filter by it).
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct Item {
     /// The item's box; may have zero size, must not be empty, and its corners must be finite.
     Aabb box;
@@ -33,7 +33,7 @@ enum class NodeVisit : u8 {
 
 /// What one traversal did: the node and item counts, and how many subtrees it had to skip because its fixed stack was full.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct TraversalStats {
     /// Nodes whose box was tested.
     u32 nodes_tested = 0;
@@ -62,13 +62,13 @@ inline constexpr u32 kStaticBvhBins = 16;
 /// the next node), and the items are kept in leaf order, so the items of any subtree are one contiguous range. The same items in the same order always
 /// build the same tree: every tie is broken by the items' order, never by an address.
 ///
-/// Thread-safety: thread-compatible. `Build` and `Clear` need exclusive access; the const traversals may run on any number of threads at once.
-/// Ownership: owns its nodes and its copy of the items; `Build` copies the span and keeps nothing of it.
+/// - Thread-safety: thread-compatible. `Build` and `Clear` need exclusive access; the const traversals may run on any number of threads at once.
+/// - Ownership: owns its nodes and its copy of the items; `Build` copies the span and keeps nothing of it.
 class StaticBvh {
 public:
     /// One node: its box, and two numbers whose meaning depends on the kind (use the accessors).
     ///
-    /// Thread-safety: thread-compatible plain data.
+    /// - Thread-safety: thread-compatible plain data.
     struct Node {
         /// The box enclosing every item below the node.
         Aabb box;
@@ -79,11 +79,11 @@ public:
 
         /// Returns whether the node is a leaf.
         ///
-        /// Fails: never.
+        /// - Fails: never.
         bool IsLeaf() const { return (b & kLeafBit) != 0; }
         /// Returns the number of items below the node.
         ///
-        /// Fails: never.
+        /// - Fails: never.
         u32 ItemCount() const { return b & ~kLeafBit; }
     };
     /// The bit of [[spatial::StaticBvh::Node::b]] that marks a leaf.
@@ -95,8 +95,8 @@ public:
 
     /// Builds the tree over `items`, replacing any earlier tree.
     ///
-    /// Param items: the items; copied. An empty span gives an empty tree.
-    /// Aborts: more than 2^31 - 1 items, or an item whose box is empty or not finite (a NaN or infinite corner).
+    /// - Param items: the items; copied. An empty span gives an empty tree.
+    /// - Aborts: more than 2^31 - 1 items, or an item whose box is empty or not finite (a NaN or infinite corner).
     void Build(Span<const Item> items);
 
     /// Removes every node and item.
@@ -117,8 +117,8 @@ public:
 
     /// Returns the first item index of the subtree under `node` (its items are this index and the next `ItemCount()`).
     ///
-    /// Param node: a node index below [[spatial::StaticBvh::NodeCount]].
-    /// Aborts: `node` is out of range.
+    /// - Param node: a node index below [[spatial::StaticBvh::NodeCount]].
+    /// - Aborts: `node` is out of range.
     u32 FirstItem(u32 node) const;
 
     /// Returns the tree's surface-area-heuristic cost, a quality measure: the expected number of node and item tests of a query, per the root's area
@@ -128,21 +128,21 @@ public:
     /// Visits the tree depth first with an explicit stack: `node_test(const Aabb&)` returns a [[spatial::NodeVisit]] for each node reached, and
     /// `item_visit(const Item&)` is called for each item of an accepted leaf or subtree; it returns false to stop.
     ///
-    /// Param node_test: the node test.
-    /// Param item_visit: the item visitor.
-    /// Returns: what the traversal did.
-    /// Fails: never; a subtree that does not fit the stack is skipped and counted in `refused` (no tree `Build` makes has one).
+    /// - Param node_test: the node test.
+    /// - Param item_visit: the item visitor.
+    /// - Returns: what the traversal did.
+    /// - Fails: never; a subtree that does not fit the stack is skipped and counted in `refused` (no tree `Build` makes has one).
     template <class NodeTest, class ItemVisit>
     TraversalStats Traverse(NodeTest&& node_test, ItemVisit&& item_visit) const;
 
     /// Visits the leaves a ray reaches, nearest child first: `item_visit(const Item&, f32& max_t)` is called for each item of each leaf whose box the
     /// ray enters before `max_t`; it may lower `max_t` (a closest-hit search) and returns false to stop.
     ///
-    /// Param ray: the ray ([[Ray::Make]]).
-    /// Param max_t: the farthest parameter to consider.
-    /// Param item_visit: the item visitor.
-    /// Returns: what the traversal did.
-    /// Fails: never; as [[spatial::StaticBvh::Traverse]].
+    /// - Param ray: the ray ([[Ray::Make]]).
+    /// - Param max_t: the farthest parameter to consider.
+    /// - Param item_visit: the item visitor.
+    /// - Returns: what the traversal did.
+    /// - Fails: never; as [[spatial::StaticBvh::Traverse]].
     template <class ItemVisit>
     TraversalStats TraverseRay(const Ray& ray, f32 max_t, ItemVisit&& item_visit) const;
 

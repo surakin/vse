@@ -12,7 +12,7 @@ namespace engine_placeholder::spatial {
 
 /// The entity's box in its own space, normally copied from its mesh. The sync transforms it by the entity's `WorldTransform`.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct SpatialBounds {
     /// The local-space box; finite, not empty. A box that is not is refused and counted ([[spatial::SpatialWorldStats::refused_bounds]]).
     Aabb local;
@@ -21,7 +21,7 @@ struct SpatialBounds {
 /// The entity's box in world space: derived from `SpatialBounds` and `WorldTransform` by the sync, never set by hand. Systems may read it (it is the box the
 /// sets hold, without the dynamic tree's margin).
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct WorldBounds {
     /// The world-space box.
     Aabb box;
@@ -29,7 +29,7 @@ struct WorldBounds {
 
 /// Which sets an entity is in and on which layer. An entity needs `SpatialBounds`, a `WorldTransform` and this to be in a set.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct SpatialMembership {
     /// A bit per set id (bit `kRenderSet` is the render set, ...): the entity is in every set whose bit is set. A bit of a set that does not exist is ignored and
     /// counted (a set created later does not pick the entity up until its membership changes) ([[spatial::SpatialWorldStats::unknown_set_bits]]).
@@ -41,13 +41,13 @@ struct SpatialMembership {
 /// A tag: the entity does not move. Its items go into each set's static tree. Adding or removing the tag moves the items between the static and the
 /// dynamic side (`SpatialSet::MakeStatic` and `MakeDynamic`).
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct SpatialStatic {};
 
 /// What the sync keeps on an entity that is in the sets: one handle per set. Owned by the sync system; do not add, change or remove it. The world logs its
 /// removal, which is how the sync learns that an entity was destroyed.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct SpatialProxy {
     /// The world logs removals of this component (see [[ecs::World::RemovedCount]]).
     static constexpr bool kTrackRemoval = true;

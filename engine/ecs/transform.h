@@ -19,8 +19,8 @@ inline constexpr u32 kMaxHierarchyDepth = 64;
 
 /// An entity's place relative to its parent (or to the world for a root): scale, then rotate, then translate.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: owns nothing.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns nothing.
 struct LocalTransform {
     /// Translation, applied last.
     Vec3 position;
@@ -30,14 +30,14 @@ struct LocalTransform {
     Vec3 scale = Vec3(1.0f, 1.0f, 1.0f);
 
     /// The matrix that scales, then rotates, then translates (column-vector convention, as in `math/transform.h`).
-    /// Fails: never.
+    /// - Fails: never.
     Mat4 ToMatrix() const;
 };
 
 /// An entity's place in the world: its parents' matrices times its own. Written by the propagation system; read by everything else.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: owns nothing.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns nothing.
 struct WorldTransform {
     /// The local-to-world matrix.
     Mat4 matrix = Mat4::Identity();
@@ -45,8 +45,8 @@ struct WorldTransform {
 
 /// Makes an entity a child of `entity`. Set it with [[ecs::SetParent]], not with a raw `Set<Parent>` (which the propagation then has to repair).
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: owns nothing; the parent is an id, destroying the parent does not destroy the child.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns nothing; the parent is an id, destroying the parent does not destroy the child.
 struct Parent {
     /// The parent.
     Entity entity;
@@ -54,8 +54,8 @@ struct Parent {
 
 /// The number of parents above an entity (a child of a root has 1). Kept by [[ecs::SetParent]] and [[ecs::ClearParent]]; a root has none.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: owns nothing.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns nothing.
 struct HierarchyDepth {
     /// The depth.
     u32 depth = 0;
@@ -63,8 +63,8 @@ struct HierarchyDepth {
 
 /// What the propagation did, as a world resource ([[ecs::World::SetResource]] it before running [[ecs::MakeTransformSystem]]).
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: owns nothing.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns nothing.
 struct TransformReport {
     /// Frames the propagation ran.
     u64 frames = 0;
@@ -100,40 +100,40 @@ enum class HierarchyStatus : u8 {
 
 /// The local matrix as a decomposed transform (position, rotation, scale from the lengths of the basis vectors). Shear is dropped.
 ///
-/// Param matrix: an affine matrix.
-/// Returns: the transform; a basis with a zero axis gives scale 0 on it and the identity rotation.
-/// Fails: never.
+/// - Param matrix: an affine matrix.
+/// - Returns: the transform; a basis with a zero axis gives scale 0 on it and the identity rotation.
+/// - Fails: never.
 LocalTransform Decompose(const Mat4& matrix);
 /// A transform at `eye` whose -Z axis points at `target`, with `up` as the approximate up direction (the camera convention; use the opposite for a body that
 /// faces +Z).
 ///
-/// Returns: the transform with unit scale; the identity rotation when `eye == target` or `up` is parallel to the view direction.
-/// Fails: never.
+/// - Returns: the transform with unit scale; the identity rotation when `eye == target` or `up` is parallel to the view direction.
+/// - Fails: never.
 LocalTransform LookAt(const Vec3& eye, const Vec3& target, const Vec3& up);
 /// Creates an entity with a [[ecs::LocalTransform]] and a [[ecs::WorldTransform]] (the world matrix is filled in by the propagation).
 ///
-/// Returns: the entity, or the invalid entity when the world refused.
-/// Aborts: the world is being iterated.
+/// - Returns: the entity, or the invalid entity when the world refused.
+/// - Aborts: the world is being iterated.
 Entity CreateTransformEntity(World& world, const LocalTransform& local);
 
 /// Makes `parent` the parent of `child`, keeping the depths of the child and of all its descendants right.
 ///
 /// The cost is one pass over every entity that has a `Parent` per level of the child's subtree; reparenting is rare, a per-frame change is a smell.
 ///
-/// Param parent: the new parent; it need not have transforms.
-/// Returns: the status; nothing changes unless it is `Ok`.
-/// Aborts: the world is being iterated.
+/// - Param parent: the new parent; it need not have transforms.
+/// - Returns: the status; nothing changes unless it is `Ok`.
+/// - Aborts: the world is being iterated.
 HierarchyStatus SetParent(World& world, Entity child, Entity parent);
 /// Makes `child` a root again (removes `Parent` and `HierarchyDepth`) and fixes its descendants' depths. Its world matrix is recomputed from its local one.
 ///
-/// Returns: `Ok`, also when it had no parent; `DeadEntity` for a dead child.
-/// Aborts: the world is being iterated.
+/// - Returns: `Ok`, also when it had no parent; `DeadEntity` for a dead child.
+/// - Aborts: the world is being iterated.
 HierarchyStatus ClearParent(World& world, Entity child);
 /// Records the destruction of `root` and of every entity below it into `commands` (a parent's destruction alone leaves its children as roots).
 ///
-/// Param commands: the buffer to record into; apply it at a sync point.
-/// Returns: the number of destroy commands recorded.
-/// Aborts: the world is being iterated by a query that writes `Parent` (it reads `Parent`).
+/// - Param commands: the buffer to record into; apply it at a sync point.
+/// - Returns: the number of destroy commands recorded.
+/// - Aborts: the world is being iterated by a query that writes `Parent` (it reads `Parent`).
 u32 DestroyRecursive(World& world, CommandBuffer& commands, Entity root);
 
 /// The propagation as a system: reads `LocalTransform`, `Parent` and `HierarchyDepth`, writes `WorldTransform`, and writes the [[ecs::TransformReport]] resource.
@@ -144,8 +144,8 @@ u32 DestroyRecursive(World& world, CommandBuffer& commands, Entity root);
 /// child in a cycle, or deeper than 64, keeps its previous matrix (counted); a stored depth that disagrees with the parent's (a raw `Set<Parent>`) is recomputed
 /// from the chain, the child is processed at the right depth at once, and its own descendants catch up the next frame.
 ///
-/// Param name: a string literal naming the system.
-/// Returns: the system; give it to [[ecs::Schedule::Add]] (add `InStage` or `After` as needed).
+/// - Param name: a string literal naming the system.
+/// - Returns: the system; give it to [[ecs::Schedule::Add]] (add `InStage` or `After` as needed).
 SystemDesc MakeTransformSystem(const char* name);
 
 } // namespace engine_placeholder::ecs

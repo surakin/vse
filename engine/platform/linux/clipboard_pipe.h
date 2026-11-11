@@ -12,8 +12,8 @@ namespace engine_placeholder::os {
 /// A peer that reads slowly leaves the pipe full; `Pump` then returns and tries again on the next call. The transfer ends with `Done`, `Failed` (the peer closed early) or
 /// `TimedOut` (no byte moved for the timeout), and the descriptor is closed on every ending and on destruction.
 ///
-/// Thread-safety: not-thread-safe; owner-thread only.
-/// Ownership: owns the descriptor and a copy of the bytes.
+/// - Thread-safety: not-thread-safe; owner-thread only.
+/// - Ownership: owns the descriptor and a copy of the bytes.
 class PipeWriter {
 public:
     /// The state of the transfer.
@@ -27,11 +27,11 @@ public:
     PipeWriter& operator=(PipeWriter&& other) noexcept;
 
     /// Starts a transfer; takes ownership of `fd` (closed on any ending). The descriptor is made non-blocking.
-    /// Param fd: the write end of a pipe.
-    /// Param bytes: the data; copied.
-    /// Param size: its count.
-    /// Param now_ns: the time, for the timeout.
-    /// Param timeout_ns: how long without progress ends the transfer.
+    /// - Param fd: the write end of a pipe.
+    /// - Param bytes: the data; copied.
+    /// - Param size: its count.
+    /// - Param now_ns: the time, for the timeout.
+    /// - Param timeout_ns: how long without progress ends the transfer.
     void Start(int fd, const byte* bytes, usize size, u64 now_ns, u64 timeout_ns);
 
     /// Writes what the pipe takes now. Returns the state afterwards.
@@ -56,8 +56,8 @@ private:
 ///
 /// Ends with `Done` (end of file; the bytes are in `Bytes`), `TooLarge` (more than the cap arrived), `Failed` (a read error) or `TimedOut` (no byte arrived for the timeout).
 ///
-/// Thread-safety: not-thread-safe; owner-thread only.
-/// Ownership: owns the descriptor and the bytes read so far.
+/// - Thread-safety: not-thread-safe; owner-thread only.
+/// - Ownership: owns the descriptor and the bytes read so far.
 class PipeReader {
 public:
     /// The state of the transfer.
@@ -71,10 +71,10 @@ public:
     PipeReader& operator=(PipeReader&& other) noexcept;
 
     /// Starts a transfer; takes ownership of `fd` (closed on any ending). The descriptor is made non-blocking.
-    /// Param fd: the read end of a pipe.
-    /// Param cap: the most bytes accepted.
-    /// Param now_ns: the time, for the timeout.
-    /// Param timeout_ns: how long without a byte ends the transfer.
+    /// - Param fd: the read end of a pipe.
+    /// - Param cap: the most bytes accepted.
+    /// - Param now_ns: the time, for the timeout.
+    /// - Param timeout_ns: how long without a byte ends the transfer.
     void Start(int fd, usize cap, u64 now_ns, u64 timeout_ns);
 
     /// Reads what the pipe holds now. Returns the state afterwards.

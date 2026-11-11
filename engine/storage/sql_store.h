@@ -14,9 +14,9 @@ namespace detail {
 struct SqlLayout;
 /// The storage error a database failure becomes (`Busy`, `Corrupt`, `LimitExceeded`, `Io` or `Other`).
 ///
-/// Param status: the database's status.
-/// Returns: the storage status.
-/// Fails: never.
+/// - Param status: the database's status.
+/// - Returns: the storage status.
+/// - Fails: never.
 Status MapDatabaseStatus(const database::Status& status);
 } // namespace detail
 
@@ -32,8 +32,8 @@ enum class CompareOp : u8 {
 
 /// A column to index in the column layout, named as `FindKeys` names it.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: borrows its names (string literals).
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: borrows its names (string literals).
 struct IndexRequest {
     const char* component = ""; ///< The registered name of a queryable component.
     const char* column = "";    ///< A column of its table (a field name, or `<field>_x` for a vector part).
@@ -41,8 +41,8 @@ struct IndexRequest {
 
 /// What a [[storage::SqlStore]] does beyond keeping blobs.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: `registry` is borrowed and must outlive the store.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: `registry` is borrowed and must outlive the store.
 struct SqlStoreOptions {
     /// The registry that names the queryable components; needed for `columns`.
     const ComponentRegistry* registry = nullptr;
@@ -79,8 +79,8 @@ struct SqlStoreOptions {
 /// A store borrows its connection and uses it alone: while a batch is open, every call from another thread returns `Busy` (one connection cannot show
 /// committed state to readers while it holds a transaction); without a batch any thread may call, one at a time.
 ///
-/// Thread-safety: thread-safe; one internal lock around the connection.
-/// Ownership: borrows the connection, which must outlive the store; owns its prepared statements.
+/// - Thread-safety: thread-safe; one internal lock around the connection.
+/// - Ownership: borrows the connection, which must outlive the store; owns its prepared statements.
 class SqlStore final : public Store {
 public:
     /// The schema version this program writes and reads.
@@ -88,22 +88,22 @@ public:
 
     /// Opens the store on `connection`: creates or migrates the schema and prepares the statements.
     ///
-    /// Param connection: an open read-write connection with no transaction open.
-    /// Param out: receives the store on success; unchanged on failure.
-    /// Ownership: `connection` is borrowed and must outlive the store; `out` owns the store.
-    /// Fails: `TooNew` (the database has a newer schema; nothing changed); `Corrupt`, `Busy`, `Io`, `Invalid` (a transaction is open); the database's own failures mapped to these.
+    /// - Param connection: an open read-write connection with no transaction open.
+    /// - Param out: receives the store on success; unchanged on failure.
+    /// - Ownership: `connection` is borrowed and must outlive the store; `out` owns the store.
+    /// - Fails: `TooNew` (the database has a newer schema; nothing changed); `Corrupt`, `Busy`, `Io`, `Invalid` (a transaction is open); the database's own failures mapped to these.
     static Status Open(database::Connection& connection, UniquePtr<SqlStore>* out);
     /// As the other `Open`, with the layout choices of `options`.
     ///
-    /// Param options: the registry and whether to keep column tables.
-    /// Ownership: `connection` and `options.registry` are borrowed and must outlive the store.
-    /// Fails: as the other `Open`; `Invalid` (columns without a registry, a queryable component or field whose name is not a plain identifier).
+    /// - Param options: the registry and whether to keep column tables.
+    /// - Ownership: `connection` and `options.registry` are borrowed and must outlive the store.
+    /// - Fails: as the other `Open`; `Invalid` (columns without a registry, a queryable component or field whose name is not a plain identifier).
     static Status Open(database::Connection& connection, UniquePtr<SqlStore>* out, const SqlStoreOptions& options);
 
     /// Borrows `connection` without touching it; use `SqlStore::Open`, which makes the schema and prepares the statements (the constructor is public only so that `MakeUnique` can reach it).
     ///
-    /// Param connection: an open connection.
-    /// Ownership: borrowed; must outlive the store.
+    /// - Param connection: an open connection.
+    /// - Ownership: borrowed; must outlive the store.
     explicit SqlStore(database::Connection& connection);
     /// Rolls back an open batch.
     ~SqlStore() override;
@@ -111,8 +111,8 @@ public:
     SqlStore& operator=(const SqlStore&) = delete;
 
     /// Returns `"sql"`.
-    /// Ownership: the string is static.
-    /// Fails: never.
+    /// - Ownership: the string is static.
+    /// - Fails: never.
     const char* Name() const override;
     Status Put(const EntityRecord& record) override;
     /// Writes the records with multi-row statements (sixteen rows at a time), then their column rows.
@@ -129,31 +129,31 @@ public:
 
     /// Returns the keys of the entities whose `component` has a `column` that compares true with `value`, in key order. Answers from the column table; no blob is read.
     ///
-    /// Param component: the registered name of a queryable component.
-    /// Param column: a column of its table (a field name, or `<field>_x` for a vector part).
-    /// Param op: the comparison, `column op value`.
-    /// Param value: an integer for an integer column, an integer or a real for a real one.
-    /// Param out: receives the keys (cleared first).
-    /// Ownership: all borrowed for the call.
-    /// Fails: `Unsupported` (the store has no column layout, or the component is not queryable); `NotFound` (no such component or column); `Invalid` (the value has the wrong type); `Busy`; `Io`; `Corrupt`.
+    /// - Param component: the registered name of a queryable component.
+    /// - Param column: a column of its table (a field name, or `<field>_x` for a vector part).
+    /// - Param op: the comparison, `column op value`.
+    /// - Param value: an integer for an integer column, an integer or a real for a real one.
+    /// - Param out: receives the keys (cleared first).
+    /// - Ownership: all borrowed for the call.
+    /// - Fails: `Unsupported` (the store has no column layout, or the component is not queryable); `NotFound` (no such component or column); `Invalid` (the value has the wrong type); `Busy`; `Io`; `Corrupt`.
     Status FindKeys(StringView component, StringView column, CompareOp op, const database::ValueView& value, Vector<EntityKey>* out) const;
     /// Counts the entities `FindKeys` would return.
     ///
-    /// Param out: receives the count.
-    /// Ownership: all borrowed for the call.
-    /// Fails: as `FindKeys`.
+    /// - Param out: receives the count.
+    /// - Ownership: all borrowed for the call.
+    /// - Fails: as `FindKeys`.
     Status CountWhere(StringView component, StringView column, CompareOp op, const database::ValueView& value, usize* out) const;
     /// Checks the column tables against the blobs: every queryable component of every entity has exactly the row its blob gives, and no row is left over. For tests and tools.
     ///
-    /// Param mismatches: receives the number of rows that are missing, extra or different.
-    /// Ownership: `mismatches` is written during the call only.
-    /// Fails: `Unsupported` (no column layout); `Busy`; `Io`; `Corrupt`.
+    /// - Param mismatches: receives the number of rows that are missing, extra or different.
+    /// - Ownership: `mismatches` is written during the call only.
+    /// - Fails: `Unsupported` (no column layout); `Busy`; `Io`; `Corrupt`.
     Status VerifyColumns(usize* mismatches) const;
 
     /// Makes the `n`th next mutation, `Begin` or `Commit` fail with `Io` (1 is the next); that one only. 0 clears a pending injection. For tests.
     ///
-    /// Param n: the operation number.
-    /// Fails: never.
+    /// - Param n: the operation number.
+    /// - Fails: never.
     void FailAfter(u32 n);
 
 private:

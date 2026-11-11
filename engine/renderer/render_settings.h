@@ -36,10 +36,10 @@ enum class CostClass : u8 {
 
 /// Returns a cost class's name (`none`, `dynamic`, `swapchain`, `pipeline-rebuild`, `device-reset`).
 ///
-/// Param cost: any class.
-/// Returns: a static string.
-/// Fails: never.
-/// Ownership: the string is static and never freed.
+/// - Param cost: any class.
+/// - Returns: a static string.
+/// - Fails: never.
+/// - Ownership: the string is static and never freed.
 const char* CostClassName(CostClass cost);
 
 /// The kind of value a setting holds.
@@ -59,12 +59,12 @@ enum class RangePolicy : u8 {
 
 /// How a setting is identified. Small integers handed out by the registry in registration order; 0 is never valid.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct SettingId {
     /// The value; 0 means no setting.
     u16 value = 0;
     /// Returns whether this names a setting.
-    /// Fails: never.
+    /// - Fails: never.
     constexpr bool IsValid() const { return value != 0; }
     /// Returns whether two ids are the same.
     constexpr bool operator==(const SettingId& other) const { return value == other.value; }
@@ -74,7 +74,7 @@ struct SettingId {
 
 /// The declaration of one setting.
 ///
-/// Thread-safety: thread-compatible plain data. The strings must outlive the registry (use string literals).
+/// - Thread-safety: thread-compatible plain data. The strings must outlive the registry (use string literals).
 struct SettingDesc {
     /// The setting's key: lowercase letters, digits and `_`, 1 to 31 characters, unique in the registry.
     const char* name = nullptr;
@@ -120,41 +120,41 @@ struct SettingDesc {
 /// A registry is filled at start-up and then only read. [[renderer::SettingsRegistry::Builtin]] is the process-wide one that
 /// the renderer uses; a test builds its own with [[renderer::RegisterBuiltinSettings]] plus whatever it wants to add.
 ///
-/// Thread-safety: thread-compatible. Register only before any thread reads the registry.
-/// Ownership: borrows the strings in each [[renderer::SettingDesc]].
+/// - Thread-safety: thread-compatible. Register only before any thread reads the registry.
+/// - Ownership: borrows the strings in each [[renderer::SettingDesc]].
 class SettingsRegistry {
 public:
     /// Registers a setting.
     ///
-    /// Param desc: the declaration; copied (the strings are borrowed).
-    /// Returns: the new id, or an invalid id after logging the reason.
-    /// Fails: the registry is full, the name is empty, too long, uses other characters or is already taken, an `Enum` has no
+    /// - Param desc: the declaration; copied (the strings are borrowed).
+    /// - Returns: the new id, or an invalid id after logging the reason.
+    /// - Fails: the registry is full, the name is empty, too long, uses other characters or is already taken, an `Enum` has no
     ///   or too many names or a default outside them, an `Int` or `Float` has `min` above `max` or a default outside its range,
     ///   a `Float` bound is not finite, a `Text` default is too long or has edge blanks, an `Enum` name is empty, null, longer than 31 characters or has a blank, `=` or `#`.
     SettingId Register(const SettingDesc& desc);
 
     /// Returns the number of registered settings.
-    /// Fails: never.
+    /// - Fails: never.
     u32 Count() const { return count_; }
 
     /// Returns a setting's declaration.
     ///
-    /// Param id: any id.
-    /// Returns: the declaration, or null if `id` is not registered.
-    /// Fails: never.
-    /// Ownership: borrowed; valid for the registry's lifetime.
+    /// - Param id: any id.
+    /// - Returns: the declaration, or null if `id` is not registered.
+    /// - Fails: never.
+    /// - Ownership: borrowed; valid for the registry's lifetime.
     const SettingDesc* Find(SettingId id) const;
 
     /// Looks a setting up by key.
     ///
-    /// Param name: the key; may be null.
-    /// Returns: the id, or an invalid id if there is none.
-    /// Fails: never.
+    /// - Param name: the key; may be null.
+    /// - Returns: the id, or an invalid id if there is none.
+    /// - Fails: never.
     SettingId FindByName(const char* name) const;
 
     /// Returns the process-wide registry, with the built-in settings registered on first use.
-    /// Fails: never.
-    /// Thread-safety: thread-safe to obtain; see the class for registering into it.
+    /// - Fails: never.
+    /// - Thread-safety: thread-safe to obtain; see the class for registering into it.
     static SettingsRegistry& Builtin();
 
 private:
@@ -196,9 +196,9 @@ inline constexpr SettingId kRenderScale{14};
 
 /// Registers the built-in settings (the ids in the `settings` namespace) into an empty registry, in id order.
 ///
-/// Param registry: must be empty.
-/// Aborts: `registry` is null or not empty.
-/// Ownership: `registry` is borrowed for the call.
+/// - Param registry: must be empty.
+/// - Aborts: `registry` is null or not empty.
+/// - Ownership: `registry` is borrowed for the call.
 void RegisterBuiltinSettings(SettingsRegistry* registry);
 
 /// What a call that sets a value reports.
@@ -216,102 +216,102 @@ enum class SetStatus : u8 {
 /// A plain value type (about 5 KiB, no heap): copy it freely. Equality ignores `Generation`. A setting registered after this
 /// object was made reads as its default until it is set.
 ///
-/// Thread-safety: thread-compatible.
-/// Ownership: borrows the registry, which must outlive it.
+/// - Thread-safety: thread-compatible.
+/// - Ownership: borrows the registry, which must outlive it.
 class RenderSettings {
 public:
     /// Creates settings with every value at its default.
     ///
-    /// Param registry: the registry to follow; defaults to [[renderer::SettingsRegistry::Builtin]].
+    /// - Param registry: the registry to follow; defaults to [[renderer::SettingsRegistry::Builtin]].
     explicit RenderSettings(const SettingsRegistry& registry = SettingsRegistry::Builtin());
 
     /// Returns the registry this follows.
-    /// Fails: never.
+    /// - Fails: never.
     const SettingsRegistry& Registry() const { return *registry_; }
 
     /// Returns a `Bool` setting.
-    /// Param id: the setting.
-    /// Returns: its value.
-    /// Fails: a wrong type or unknown id returns false.
+    /// - Param id: the setting.
+    /// - Returns: its value.
+    /// - Fails: a wrong type or unknown id returns false.
     bool GetBool(SettingId id) const;
     /// Returns an `Int` setting.
-    /// Param id: the setting.
-    /// Returns: its value.
-    /// Fails: a wrong type or unknown id returns 0.
+    /// - Param id: the setting.
+    /// - Returns: its value.
+    /// - Fails: a wrong type or unknown id returns 0.
     i64 GetInt(SettingId id) const;
     /// Returns an `Enum` setting's index.
-    /// Param id: the setting.
-    /// Returns: the index into the setting's names.
-    /// Fails: a wrong type or unknown id returns 0.
+    /// - Param id: the setting.
+    /// - Returns: the index into the setting's names.
+    /// - Fails: a wrong type or unknown id returns 0.
     u32 GetEnum(SettingId id) const;
     /// Returns a `Float` setting.
-    /// Param id: the setting.
-    /// Returns: its value.
-    /// Fails: a wrong type or unknown id returns 0.
+    /// - Param id: the setting.
+    /// - Returns: its value.
+    /// - Fails: a wrong type or unknown id returns 0.
     f32 GetFloat(SettingId id) const;
     /// Returns a `Text` setting.
-    /// Param id: the setting.
-    /// Returns: its value, never null.
-    /// Fails: a wrong type or unknown id returns the empty string.
-    /// Ownership: borrowed; valid until the settings are changed or destroyed.
+    /// - Param id: the setting.
+    /// - Returns: its value, never null.
+    /// - Fails: a wrong type or unknown id returns the empty string.
+    /// - Ownership: borrowed; valid until the settings are changed or destroyed.
     const char* GetText(SettingId id) const;
 
     /// Sets a `Bool` setting.
-    /// Param id: the setting.
-    /// Param value: the new value.
-    /// Returns: `Ok`, or `WrongType` / `UnknownId`.
+    /// - Param id: the setting.
+    /// - Param value: the new value.
+    /// - Returns: `Ok`, or `WrongType` / `UnknownId`.
     SetStatus SetBool(SettingId id, bool value);
     /// Sets an `Int` setting, applying its range policy.
-    /// Param id: the setting.
-    /// Param value: the new value.
-    /// Returns: `Ok`, `Clamped`, `OutOfRange`, `WrongType` or `UnknownId`.
+    /// - Param id: the setting.
+    /// - Param value: the new value.
+    /// - Returns: `Ok`, `Clamped`, `OutOfRange`, `WrongType` or `UnknownId`.
     SetStatus SetInt(SettingId id, i64 value);
     /// Sets an `Enum` setting by index.
-    /// Param id: the setting.
-    /// Param index: the index; it must be below the setting's name count (an enum never clamps).
-    /// Returns: `Ok`, `OutOfRange`, `WrongType` or `UnknownId`.
+    /// - Param id: the setting.
+    /// - Param index: the index; it must be below the setting's name count (an enum never clamps).
+    /// - Returns: `Ok`, `OutOfRange`, `WrongType` or `UnknownId`.
     SetStatus SetEnum(SettingId id, u32 index);
     /// Sets a `Float` setting, applying its range policy.
-    /// Param id: the setting.
-    /// Param value: the new value; NaN and infinities are `OutOfRange` whatever the policy.
-    /// Returns: `Ok`, `Clamped`, `OutOfRange`, `WrongType` or `UnknownId`.
+    /// - Param id: the setting.
+    /// - Param value: the new value; NaN and infinities are `OutOfRange` whatever the policy.
+    /// - Returns: `Ok`, `Clamped`, `OutOfRange`, `WrongType` or `UnknownId`.
     SetStatus SetFloat(SettingId id, f32 value);
     /// Sets a `Text` setting.
-    /// Param id: the setting.
-    /// Param value: printable ASCII (32 to 126) without a leading or trailing blank, fewer than [[renderer::kSettingTextBytes]]
+    /// - Param id: the setting.
+    /// - Param value: printable ASCII (32 to 126) without a leading or trailing blank, fewer than [[renderer::kSettingTextBytes]]
     ///   characters; null means empty.
-    /// Returns: `Ok`, `BadText`, `WrongType` or `UnknownId`.
+    /// - Returns: `Ok`, `BadText`, `WrongType` or `UnknownId`.
     SetStatus SetText(SettingId id, const char* value);
 
     /// Sets a setting from its text form, the one the file format uses: `true`/`false`, an enum name, a number, or the text.
-    /// Param id: the setting.
-    /// Param text: the value text, trimmed by the caller.
-    /// Returns: as the typed setter for the setting's type; `OutOfRange` for text that is not a valid value of the type.
+    /// - Param id: the setting.
+    /// - Param text: the value text, trimmed by the caller.
+    /// - Returns: as the typed setter for the setting's type; `OutOfRange` for text that is not a valid value of the type.
     SetStatus SetFromString(SettingId id, const char* text);
 
     /// Writes a setting's value in its text form.
-    /// Param id: the setting.
-    /// Param out: the buffer.
-    /// Param capacity: its size in bytes.
-    /// Returns: the length the text needs (not counting the terminator); the output is truncated and terminated when it does
+    /// - Param id: the setting.
+    /// - Param out: the buffer.
+    /// - Param capacity: its size in bytes.
+    /// - Returns: the length the text needs (not counting the terminator); the output is truncated and terminated when it does
     ///   not fit, and 0 with an empty output for an unknown id.
-    /// Ownership: `out` is borrowed for the call.
+    /// - Ownership: `out` is borrowed for the call.
     usize ValueToString(SettingId id, char* out, usize capacity) const;
 
     /// Returns how many times these settings were applied by the renderer. Not part of equality.
-    /// Fails: never.
+    /// - Fails: never.
     u64 Generation() const { return generation_; }
     /// Sets the generation; the renderer calls it after a successful apply.
-    /// Param generation: the new value.
+    /// - Param generation: the new value.
     void SetGeneration(u64 generation) { generation_ = generation; }
 
     /// Returns whether every setting has the same value in both.
-    /// Param other: the settings to compare with; they must follow the same registry.
-    /// Returns: true if equal. `Generation` is ignored.
-    /// Aborts: `other` follows a different registry.
+    /// - Param other: the settings to compare with; they must follow the same registry.
+    /// - Returns: true if equal. `Generation` is ignored.
+    /// - Aborts: `other` follows a different registry.
     bool operator==(const RenderSettings& other) const;
     /// Returns whether any setting differs.
-    /// Param other: the settings to compare with.
+    /// - Param other: the settings to compare with.
     bool operator!=(const RenderSettings& other) const { return !(*this == other); }
 
 private:
@@ -334,22 +334,22 @@ private:
 /// Filled by the layer that knows (the adapter list, the swapchain and window queries). The names are the ones settings
 /// declare in [[renderer::SettingDesc::capability]], for example `fullscreen` and `hdr`.
 ///
-/// Thread-safety: thread-compatible.
+/// - Thread-safety: thread-compatible.
 class Capabilities {
 public:
     /// Adds a capability.
-    /// Param name: a static string; duplicates are ignored.
-    /// Returns: false if the list is full.
+    /// - Param name: a static string; duplicates are ignored.
+    /// - Returns: false if the list is full.
     bool Add(const char* name);
     /// Returns whether a capability is present.
-    /// Param name: the capability; null means none needed and is always present.
-    /// Returns: true if present.
+    /// - Param name: the capability; null means none needed and is always present.
+    /// - Returns: true if present.
     bool Has(const char* name) const;
 
     /// Records how many suitable adapters the machine has (from [[rhi::EnumerateAdapters]]).
     ///
     /// With two or more the `multi_adapter` capability is present, which a settings screen can use to offer a choice.
-    /// Param count: the number of suitable adapters.
+    /// - Param count: the number of suitable adapters.
     void SetAdapterCount(u32 count);
     /// Returns the count given to `SetAdapterCount`; 0 until then.
     u32 AdapterCount() const { return adapter_count_; }
@@ -362,7 +362,7 @@ private:
 
 /// A requested change that cannot be done.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct UnsupportedSetting {
     /// The setting.
     SettingId id;
@@ -372,7 +372,7 @@ struct UnsupportedSetting {
 
 /// What changing from one set of settings to another involves.
 ///
-/// Thread-safety: thread-compatible plain data (about 1.2 KiB).
+/// - Thread-safety: thread-compatible plain data (about 1.2 KiB).
 struct SettingsChange {
     /// The highest cost class among the supported changes; `None` when nothing (or only `None`-class settings) changed.
     CostClass cost = CostClass::None;
@@ -392,28 +392,28 @@ struct SettingsChange {
     SettingId restart[kMaxSettings];
 
     /// Returns whether anything supported changed.
-    /// Fails: never.
+    /// - Fails: never.
     bool Any() const { return changed_count != 0; }
 };
 
 /// Compares two sets of settings.
 ///
-/// Param from: the current settings.
-/// Param to: the requested settings.
-/// Param capabilities: what the device and window can do.
-/// Returns: the changed settings, the cheapest sufficient cost class, the changes that need a missing capability, and the changes that
+/// - Param from: the current settings.
+/// - Param to: the requested settings.
+/// - Param capabilities: what the device and window can do.
+/// - Returns: the changed settings, the cheapest sufficient cost class, the changes that need a missing capability, and the changes that
 ///   wait for the next start.
-/// Aborts: the two follow different registries.
+/// - Aborts: the two follow different registries.
 SettingsChange DiffSettings(const RenderSettings& from, const RenderSettings& to, const Capabilities& capabilities);
 
 /// Returns `requested` with every unsupported change, and every change to a setting that takes effect only at start, put back to its value
 /// in `current`.
 ///
-/// Param current: the settings now in force.
-/// Param requested: what was asked for.
-/// Param capabilities: what is possible.
-/// Returns: the settings that can be applied.
-/// Aborts: the two follow different registries.
+/// - Param current: the settings now in force.
+/// - Param requested: what was asked for.
+/// - Param capabilities: what is possible.
+/// - Returns: the settings that can be applied.
+/// - Aborts: the two follow different registries.
 RenderSettings ResolveSettings(const RenderSettings& current, const RenderSettings& requested, const Capabilities& capabilities);
 
 /// Writes settings in the text format.
@@ -421,16 +421,16 @@ RenderSettings ResolveSettings(const RenderSettings& current, const RenderSettin
 /// The output is a comment line, `version = 1`, then one `key = value` line per registered setting in id order. The same
 /// settings always give the same bytes.
 ///
-/// Param settings: the settings.
-/// Param out: the buffer, or null to only measure.
-/// Param capacity: its size in bytes.
-/// Returns: the length needed, not counting the terminator; when `out` is too small the output is truncated and terminated.
-/// Ownership: `out` is borrowed for the call.
+/// - Param settings: the settings.
+/// - Param out: the buffer, or null to only measure.
+/// - Param capacity: its size in bytes.
+/// - Returns: the length needed, not counting the terminator; when `out` is too small the output is truncated and terminated.
+/// - Ownership: `out` is borrowed for the call.
 usize SerializeSettings(const RenderSettings& settings, char* out, usize capacity);
 
 /// One thing found wrong in a settings text.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct SettingsProblem {
     /// The 1-based line.
     u32 line = 0;
@@ -440,7 +440,7 @@ struct SettingsProblem {
 
 /// What [[renderer::ParseSettings]] found.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct SettingsParseReport {
     /// The version the text declared (0 if it declared none).
     u32 version = 0;
@@ -465,14 +465,14 @@ using SettingsKeyMigrationFn = const char* (*)(u32 file_version, const char* key
 /// are not registered are warnings and skipped. A malformed line, a bad value or a repeated key is an error. When there is
 /// any error `settings` is left unchanged, so a half-read file is never applied.
 ///
-/// Param text: the text.
-/// Param length: its length in bytes.
-/// Param settings: the settings to change; keys the text omits keep their value.
-/// Param report: receives the findings; may be null.
-/// Param migrate: renames keys of older versions, or null.
-/// Returns: true if there were no errors.
-/// Fails: returns false and records the line and reason in `report`; a version newer than [[renderer::kSettingsFormatVersion]] is an error.
-/// Ownership: `text`, `settings`, `report` and `migrate` are borrowed for the call.
+/// - Param text: the text.
+/// - Param length: its length in bytes.
+/// - Param settings: the settings to change; keys the text omits keep their value.
+/// - Param report: receives the findings; may be null.
+/// - Param migrate: renames keys of older versions, or null.
+/// - Returns: true if there were no errors.
+/// - Fails: returns false and records the line and reason in `report`; a version newer than [[renderer::kSettingsFormatVersion]] is an error.
+/// - Ownership: `text`, `settings`, `report` and `migrate` are borrowed for the call.
 bool ParseSettings(const char* text, usize length, RenderSettings* settings, SettingsParseReport* report, SettingsKeyMigrationFn migrate = nullptr);
 
 } // namespace engine_placeholder::renderer

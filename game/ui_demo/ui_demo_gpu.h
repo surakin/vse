@@ -26,8 +26,8 @@ constexpr ui::ImageId kViewportImage = 1;
 
 /// Everything the demo draws with.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: owns the font, the atlas, the GPU objects and the draw list; borrows the device, the registry, the frame, the scene and the app.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: owns the font, the atlas, the GPU objects and the draw list; borrows the device, the registry, the frame, the scene and the app.
 class UiDemoGpu final : public ui::FontProvider {
 public:
     UiDemoGpu() = default;
@@ -36,20 +36,20 @@ public:
     UiDemoGpu& operator=(const UiDemoGpu&) = delete;
 
     /// Creates the font, the pages, the renderer and the viewport target, and installs the compose hooks on `frame`.
-    /// Param device: the device; borrowed.
-    /// Param resources: the registry that makes everything survive a reset; borrowed.
-    /// Param frame: the renderer demo's frame; borrowed.
-    /// Param scene: the scene drawn in the viewport; borrowed.
-    /// Param font_file: a TrueType file.
-    /// Param ui_format: the format of the frame's target (the swapchain's or the offscreen texture's).
-    /// Returns: false, logging why, if a part could not be made.
+    /// - Param device: the device; borrowed.
+    /// - Param resources: the registry that makes everything survive a reset; borrowed.
+    /// - Param frame: the renderer demo's frame; borrowed.
+    /// - Param scene: the scene drawn in the viewport; borrowed.
+    /// - Param font_file: a TrueType file.
+    /// - Param ui_format: the format of the frame's target (the swapchain's or the offscreen texture's).
+    /// - Returns: false, logging why, if a part could not be made.
     bool Create(rhi::Device* device, renderer::DeviceResources* resources, renderer_demo::DemoFrame* frame, renderer_demo::DemoScene* scene, const char* font_file, rhi::Format ui_format);
     /// Releases everything; idle the device first.
     void Destroy();
     /// Points the object at the app whose viewport it follows (the app registers its image). Call once after both exist.
     void Attach(UiDemoApp* app, ui::Surface* surface);
     /// Runs the surface's frame, resizes the viewport's texture to the size the viewport asked for and keeps the draw list.
-    /// Returns: whether the draw list was rebuilt.
+    /// - Returns: whether the draw list was rebuilt.
     bool Update(f32 dt);
     /// The camera for this frame, from the app's orbit camera.
     renderer::Camera MakeCamera() const;

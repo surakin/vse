@@ -40,7 +40,7 @@ enum class InputEventType : u8 {
 ///
 /// A plain value (no pointers, trivially copyable); which fields mean something depends on `type`, the others are zero.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct InputEvent {
     // The small fields come first so that the struct stays within 64 bytes.
     InputEventType type = InputEventType::None; ///< What happened.
@@ -71,17 +71,17 @@ static_assert(sizeof(InputEvent) <= 64, "an input event stays small: the queue h
 /// When the queue is full the **newest** event is dropped and counted, never an older one, so what a program does read stays in order and a stalled program loses events
 /// visibly instead of growing memory.
 ///
-/// Thread-safety: thread-compatible; the backend pushes and the owner pops, both on the window's thread.
-/// Ownership: owns its storage inline.
+/// - Thread-safety: thread-compatible; the backend pushes and the owner pops, both on the window's thread.
+/// - Ownership: owns its storage inline.
 class InputEventQueue {
 public:
     /// The most events the queue holds.
     static constexpr usize kCapacity = 1024;
 
     /// Appends `event` if there is room.
-    /// Param event: the event to queue.
-    /// Returns: true if queued.
-    /// Fails: returns false and counts a drop when the queue is full.
+    /// - Param event: the event to queue.
+    /// - Returns: true if queued.
+    /// - Fails: returns false and counts a drop when the queue is full.
     bool Push(const InputEvent& event) {
         if (count_ == kCapacity) {
             ++dropped_;
@@ -93,8 +93,8 @@ public:
     }
 
     /// Removes the oldest event into `out`.
-    /// Param out: receives the event; untouched when the queue is empty.
-    /// Returns: true if an event was removed.
+    /// - Param out: receives the event; untouched when the queue is empty.
+    /// - Returns: true if an event was removed.
     bool Pop(InputEvent* out) {
         if (count_ == 0) {
             return false;

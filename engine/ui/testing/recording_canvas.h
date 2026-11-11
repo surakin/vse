@@ -22,8 +22,8 @@ enum class CanvasCallKind : u8 {
 
 /// One recorded drawing call, in the logical units the widget passed.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: owns nothing.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns nothing.
 struct CanvasCall {
     CanvasCallKind kind = CanvasCallKind::Rect; ///< Which operation.
     Rect rect;                                  ///< The rectangle (`DrawRect`, `DrawRoundedRect`, `DrawBorder`, `DrawImage`, `DrawShadow`); for text the origin in `x`, `y`.
@@ -42,21 +42,21 @@ struct CanvasCall {
 
 /// A [[ui::Canvas]] that appends a [[ui::CanvasCall]] per drawing call and draws nothing.
 ///
-/// Thread-safety: not-thread-safe; owner-thread only.
-/// Ownership: owns the recorded calls.
+/// - Thread-safety: not-thread-safe; owner-thread only.
+/// - Ownership: owns the recorded calls.
 class RecordingCanvas final : public Canvas {
 public:
     /// Makes a recording canvas.
-    /// Param scale: the value `Scale()` returns.
+    /// - Param scale: the value `Scale()` returns.
     explicit RecordingCanvas(f32 scale = 1.0f) : scale_(scale) {}
 
     /// Returns the calls recorded so far, in call order.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     const Vector<CanvasCall>& Calls() const { return calls_; }
     /// Forgets the recorded calls and resets the clip and layer state.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     void Clear() {
         calls_.Clear();
         clip_depths_.Clear();

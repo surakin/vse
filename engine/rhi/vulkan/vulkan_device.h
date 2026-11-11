@@ -33,9 +33,9 @@ using VulkanDevicePtr = UniquePtr<VulkanDevice, DeviceDeleter>;
 /// Created by [[rhi::CreateDevice]] (or [[rhi::vulkan::VulkanDevice::Create]]). All work, including uploads, runs
 /// on the single graphics queue; a dedicated transfer family is recorded in the queue plan but unused in Phase 4.
 ///
-/// Thread-safety: thread-safe for creation, destruction and mapping, as for [[rhi::Device]]; `Submit`, `BeginFrame`,
+/// - Thread-safety: thread-safe for creation, destruction and mapping, as for [[rhi::Device]]; `Submit`, `BeginFrame`,
 ///   `EndFrame` and `WaitIdle` belong to one submission thread.
-/// Ownership: the caller owns the device through a [[rhi::vulkan::VulkanDevicePtr]]; it owns the Vulkan instance.
+/// - Ownership: the caller owns the device through a [[rhi::vulkan::VulkanDevicePtr]]; it owns the Vulkan instance.
 class VulkanDevice final : public Device {
 public:
     /// Constructs an uninitialized device; use [[rhi::vulkan::VulkanDevice::Create]] or [[rhi::CreateDevice]].
@@ -43,17 +43,17 @@ public:
 
     /// Creates a Vulkan device.
     ///
-    /// Param info: what to create; the backend field is ignored.
-    /// Returns: the device, or an empty pointer.
-    /// Fails: as for [[rhi::CreateDevice]].
-    /// Ownership: the caller owns the result through the returned pointer.
+    /// - Param info: what to create; the backend field is ignored.
+    /// - Returns: the device, or an empty pointer.
+    /// - Fails: as for [[rhi::CreateDevice]].
+    /// - Ownership: the caller owns the result through the returned pointer.
     static VulkanDevicePtr Create(const DeviceCreateInfo& info);
 
     /// Lists the physical devices, as [[rhi::EnumerateAdapters]] does for this backend.
     ///
-    /// Param info: validation settings and the window to test presentability against.
-    /// Param out: receives the list.
-    /// Returns: false if the loader or the instance could not be created.
+    /// - Param info: validation settings and the window to test presentability against.
+    /// - Param out: receives the list.
+    /// - Returns: false if the loader or the instance could not be created.
     static bool EnumerateAdapters(const DeviceCreateInfo& info, AdapterList* out);
 
     /// How many frames of command pools exist; a pool is reset only after the frame that used it has finished.
@@ -116,7 +116,7 @@ public:
     bool DeviceLost() const override;
 
     /// Returns the name of the GPU in use, as reported by the driver.
-    /// Ownership: the string lives as long as the device.
+    /// - Ownership: the string lives as long as the device.
     const char* GpuName() const { return gpu_info_.name; }
 
     /// Returns the description of the GPU in use.
@@ -141,7 +141,7 @@ public:
     const VkPhysicalDeviceProperties& Properties() const { return properties_; }
 
     /// Returns the GPU memory suballocator.
-    /// Ownership: borrowed; valid for the life of the device.
+    /// - Ownership: borrowed; valid for the life of the device.
     MemoryAllocator& Memory() { return *memory_; }
 
     /// Returns how many times `vkAllocateMemory` has succeeded, for tests of the suballocator.
@@ -149,16 +149,16 @@ public:
 
     /// Reads the driver's budget and current usage of a memory heap, if `VK_EXT_memory_budget` is available.
     ///
-    /// Param heap: the heap index.
-    /// Param budget: receives the bytes this process may use; must not be null.
-    /// Param usage: receives the bytes this process currently uses; must not be null.
-    /// Returns: true if the extension is enabled and `heap` exists.
-    /// Fails: returns false if `VK_EXT_memory_budget` is not enabled or `heap` is out of range.
+    /// - Param heap: the heap index.
+    /// - Param budget: receives the bytes this process may use; must not be null.
+    /// - Param usage: receives the bytes this process currently uses; must not be null.
+    /// - Returns: true if the extension is enabled and `heap` exists.
+    /// - Fails: returns false if `VK_EXT_memory_budget` is not enabled or `heap` is out of range.
     bool HeapBudget(u32 heap, u64* budget, u64* usage) const;
 
     /// Counts of the device's live Vulkan objects, for leak checks in tests.
     ///
-    /// Thread-safety: thread-compatible plain data (a snapshot).
+    /// - Thread-safety: thread-compatible plain data (a snapshot).
     struct ObjectCounts {
         /// Live buffers owned by the user (not internal staging).
         usize buffers = 0;
@@ -201,7 +201,7 @@ public:
 
     /// Objects that were still alive, or were never released, when devices were destroyed.
     ///
-    /// Thread-safety: thread-compatible plain data (a snapshot).
+    /// - Thread-safety: thread-compatible plain data (a snapshot).
     struct LeakCounts {
         /// Buffers, textures, samplers and swapchains the application did not destroy before the device (they are freed,
         /// with a warning).
@@ -211,7 +211,7 @@ public:
     };
 
     /// Returns the process-wide totals of objects found leaked by destroyed devices since the last reset.
-    /// Thread-safety: thread-safe.
+    /// - Thread-safety: thread-safe.
     static LeakCounts GetLeakCounts();
 
     /// Sets both leak totals to zero. Thread-safe.
@@ -219,16 +219,16 @@ public:
 
     /// Looks up a live buffer for command recording.
     ///
-    /// Param buffer: the handle.
-    /// Param vk_buffer: receives the `VkBuffer`; must not be null.
-    /// Param desc: receives the creation descriptor; must not be null.
-    /// Returns: true if the handle is live.
-    /// Fails: returns false for an invalid or stale handle.
+    /// - Param buffer: the handle.
+    /// - Param vk_buffer: receives the `VkBuffer`; must not be null.
+    /// - Param desc: receives the creation descriptor; must not be null.
+    /// - Returns: true if the handle is live.
+    /// - Fails: returns false for an invalid or stale handle.
     bool LookupBuffer(BufferHandle buffer, VkBuffer* vk_buffer, BufferDesc* desc) const;
 
     /// What command recording needs to know about a texture.
     ///
-    /// Thread-safety: thread-compatible plain data (a snapshot).
+    /// - Thread-safety: thread-compatible plain data (a snapshot).
     struct TextureInfo {
         /// The image.
         VkImage image = nullptr;
@@ -244,16 +244,16 @@ public:
 
     /// Looks up a live texture for command recording.
     ///
-    /// Param texture: the handle.
-    /// Param info: receives the snapshot; must not be null.
-    /// Returns: true if the handle is live.
-    /// Fails: returns false for an invalid or stale handle.
+    /// - Param texture: the handle.
+    /// - Param info: receives the snapshot; must not be null.
+    /// - Returns: true if the handle is live.
+    /// - Fails: returns false for an invalid or stale handle.
     bool LookupTexture(TextureHandle texture, TextureInfo* info) const;
 
     /// A snapshot of a live shader module, for pipeline creation.
     ///
-    /// Thread-safety: thread-compatible plain data (a snapshot).
-    /// Ownership: `module` and `entry` are borrowed from the device and stay valid until the shader is destroyed and
+    /// - Thread-safety: thread-compatible plain data (a snapshot).
+    /// - Ownership: `module` and `entry` are borrowed from the device and stay valid until the shader is destroyed and
     ///   its frame has completed.
     struct ShaderInfo {
         /// The `VkShaderModule`.
@@ -266,26 +266,26 @@ public:
 
     /// Looks up a sampler by handle.
     ///
-    /// Param sampler: the handle.
-    /// Param vk_sampler: receives the `VkSampler` when the handle is live.
-    /// Returns: true if the handle is live.
-    /// Fails: returns false for an invalid or stale handle.
-    /// Thread-safety: thread-safe.
+    /// - Param sampler: the handle.
+    /// - Param vk_sampler: receives the `VkSampler` when the handle is live.
+    /// - Returns: true if the handle is live.
+    /// - Fails: returns false for an invalid or stale handle.
+    /// - Thread-safety: thread-safe.
     bool LookupSampler(SamplerHandle sampler, VkSampler* vk_sampler) const;
 
     /// Looks up a shader by handle.
     ///
-    /// Param shader: the handle.
-    /// Param info: receives the snapshot when the handle is live.
-    /// Returns: true if the handle is live.
-    /// Fails: returns false for an invalid or stale handle.
-    /// Thread-safety: thread-safe.
+    /// - Param shader: the handle.
+    /// - Param info: receives the snapshot when the handle is live.
+    /// - Returns: true if the handle is live.
+    /// - Fails: returns false for an invalid or stale handle.
+    /// - Thread-safety: thread-safe.
     bool LookupShader(ShaderHandle shader, ShaderInfo* info) const;
 
     /// A snapshot of a live pipeline, for the command list.
     ///
-    /// Thread-safety: thread-compatible plain data (a snapshot).
-    /// Ownership: the Vulkan handles are borrowed; the pipeline layout lives as long as the device.
+    /// - Thread-safety: thread-compatible plain data (a snapshot).
+    /// - Ownership: the Vulkan handles are borrowed; the pipeline layout lives as long as the device.
     struct PipelineInfo {
         /// The pipeline.
         VkPipeline pipeline = nullptr;
@@ -311,8 +311,8 @@ public:
 
     /// A snapshot of a live bind group, for the command list.
     ///
-    /// Thread-safety: thread-compatible plain data (a snapshot).
-    /// Ownership: `set` is borrowed from the device; it stays valid until the group is destroyed (persistent) or its frame
+    /// - Thread-safety: thread-compatible plain data (a snapshot).
+    /// - Ownership: `set` is borrowed from the device; it stays valid until the group is destroyed (persistent) or its frame
     ///   has finished (transient).
     struct BindGroupInfo {
         /// The descriptor set.
@@ -329,25 +329,25 @@ public:
 
     /// Looks up a bind group by handle and checks that the resources it refers to are still alive.
     ///
-    /// Param group: the handle.
-    /// Param info: receives the snapshot when the handle is live.
-    /// Returns: true if the handle is live.
-    /// Fails: returns false for an invalid or stale handle.
-    /// Thread-safety: thread-safe.
+    /// - Param group: the handle.
+    /// - Param info: receives the snapshot when the handle is live.
+    /// - Returns: true if the handle is live.
+    /// - Fails: returns false for an invalid or stale handle.
+    /// - Thread-safety: thread-safe.
     bool LookupBindGroup(BindGroupHandle group, BindGroupInfo* info) const;
 
     /// Looks up a pipeline by handle.
     ///
-    /// Param pipeline: the handle.
-    /// Param info: receives the snapshot when the handle is live.
-    /// Returns: true if the handle is live.
-    /// Fails: returns false for an invalid or stale handle.
-    /// Thread-safety: thread-safe.
+    /// - Param pipeline: the handle.
+    /// - Param info: receives the snapshot when the handle is live.
+    /// - Returns: true if the handle is live.
+    /// - Fails: returns false for an invalid or stale handle.
+    /// - Thread-safety: thread-safe.
     bool LookupPipeline(PipelineHandle pipeline, PipelineInfo* info) const;
 
     /// What the on-disk pipeline cache did for this device.
     ///
-    /// Thread-safety: thread-compatible plain data (a snapshot).
+    /// - Thread-safety: thread-compatible plain data (a snapshot).
     struct PipelineCacheStats {
         /// Whether a cache is in use (it is not when disabled or when no directory could be chosen).
         bool enabled = false;
@@ -365,9 +365,9 @@ public:
     /// Writes the pipeline cache to disk now, as the destructor does, so a long session or one that may crash does not
     /// lose what it compiled.
     ///
-    /// Returns: true if a file was written.
-    /// Fails: returns false if the cache is disabled, empty, or the file cannot be written (logged).
-    /// Thread-safety: thread-safe; concurrent calls in one process write one after the other.
+    /// - Returns: true if a file was written.
+    /// - Fails: returns false if the cache is disabled, empty, or the file cannot be written (logged).
+    /// - Thread-safety: thread-safe; concurrent calls in one process write one after the other.
     bool SavePipelineCache();
 
     /// Returns the pipeline cache file path, or an empty string if no cache is in use.
@@ -376,13 +376,13 @@ public:
     /// Notes the result of a Vulkan call made while recording: a lost device sets the sticky lost state, and any
     /// other failure is logged.
     ///
-    /// Param result: the `VkResult` to examine.
+    /// - Param result: the `VkResult` to examine.
     void ReportResult(VkResult result);
 
     /// Makes the next `Submit` fail with `result` instead of reaching the driver, once; for testing the
     /// device-lost and error paths. Pass `VK_SUCCESS` to clear a pending fault.
     ///
-    /// Param result: the result the next submission reports, such as `VK_ERROR_DEVICE_LOST`.
+    /// - Param result: the result the next submission reports, such as `VK_ERROR_DEVICE_LOST`.
     void InjectSubmitFailure(VkResult result) { inject_submit_result_.Store(static_cast<i32>(result), MemoryOrder::Relaxed); }
 
     /// Returns how many command pools exist, for tests of the per-thread pool policy.

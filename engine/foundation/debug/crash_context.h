@@ -20,7 +20,7 @@ constexpr usize kMaxContextText = 96;
 ///
 /// Every text field is null-terminated and may be empty when the platform has nothing to say.
 ///
-/// Thread-safety: immutable. Written once by [[debug::InitCrashContext]]; read from any thread and from signal handlers.
+/// - Thread-safety: immutable. Written once by [[debug::InitCrashContext]]; read from any thread and from signal handlers.
 struct CrashContext {
     /// The executable's build id as lowercase hex (the GNU build-id note on Linux); empty if the binary has none. It ties a
     /// dump to the exact binary and its symbol file.
@@ -56,29 +56,29 @@ struct CrashContext {
 ///
 /// Call it once, early in `main`, before the crash handler is installed. Later calls do nothing.
 ///
-/// Param argc: number of arguments, or 0 if the program has no command line.
-/// Param argv: the arguments; borrowed for the call; null if the program has none.
+/// - Param argc: number of arguments, or 0 if the program has no command line.
+/// - Param argv: the arguments; borrowed for the call; null if the program has none.
 /// The first call fills the context. A later call changes nothing, except that it supplies the command line if the first call
 /// had none (the crash handler and a failed assert initialize without arguments when the program has not).
-/// Thread-safety: thread-safe. Not async-signal-safe: it reads files.
-/// Backend: the system-information reads. Windows: build id from the PE CodeView record (GUID and age), OS from RtlGetVersion, memory from GlobalMemoryStatusEx; macOS: build id from LC_UUID, OS and CPU from sysctl.
+/// - Thread-safety: thread-safe. Not async-signal-safe: it reads files.
+/// - Backend: the system-information reads. Windows: build id from the PE CodeView record (GUID and age), OS from RtlGetVersion, memory from GlobalMemoryStatusEx; macOS: build id from LC_UUID, OS and CPU from sysctl.
 void InitCrashContext(int argc, const char* const* argv);
 
 /// Records where a core dump will go (from [[debug::EnablePostMortemDumps]]), to be printed in every crash report.
-/// Param text: a sentence for a person; copied (and cut to fit); null or empty clears it.
-/// Thread-safety: thread-safe against other callers and [[debug::InitCrashContext]]; call during startup, because a crash report
+/// - Param text: a sentence for a person; copied (and cut to fit); null or empty clears it.
+/// - Thread-safety: thread-safe against other callers and [[debug::InitCrashContext]]; call during startup, because a crash report
 ///   reads it without a lock.
 void SetCoreDumpDescription(const char* text);
 
 /// Reports whether [[debug::InitCrashContext]] has run.
-/// Thread-safety: thread-safe. Async-signal-safe.
-/// Fails: never; returns false until initialized.
+/// - Thread-safety: thread-safe. Async-signal-safe.
+/// - Fails: never; returns false until initialized.
 bool CrashContextInitialized();
 
 /// Returns the crash context; all fields are empty or zero until [[debug::InitCrashContext]] has run.
-/// Returns: the process-wide context.
-/// Ownership: the context is static; do not free it.
-/// Thread-safety: thread-safe. Async-signal-safe.
+/// - Returns: the process-wide context.
+/// - Ownership: the context is static; do not free it.
+/// - Thread-safety: thread-safe. Async-signal-safe.
 const CrashContext& GetCrashContext();
 
 } // namespace engine_placeholder::debug

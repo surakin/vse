@@ -26,7 +26,7 @@ class CommandBuffer;
 
 /// One entry of a removal log: the entity that lost a tracked component, the value it had and the removal's sequence number (increasing within a world).
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 template <class T>
 struct RemovedComponent {
     /// The entity (destroyed, or alive without the component).
@@ -74,7 +74,7 @@ enum class Status : u8 {
 
 /// What applying a [[ecs::CommandBuffer]] did.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct PlaybackReport {
     /// Commands that changed the world.
     u32 applied = 0;
@@ -83,7 +83,7 @@ struct PlaybackReport {
     /// Entities created by the applied `Create` commands (also counted in `applied`).
     u32 created = 0;
     /// Adds another report to this one.
-    /// Fails: never.
+    /// - Fails: never.
     PlaybackReport& operator+=(const PlaybackReport& other) {
         applied += other.applied;
         ignored += other.ignored;
@@ -94,22 +94,22 @@ struct PlaybackReport {
 
 /// What [[ecs::World::Validate]] found.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: `first` is a string literal.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: `first` is a string literal.
 struct ValidationReport {
     /// The number of broken invariants.
     u32 errors = 0;
     /// A description of the first one, or null.
     const char* first = nullptr;
     /// Returns whether nothing is broken.
-    /// Fails: never.
+    /// - Fails: never.
     bool Ok() const { return errors == 0; }
 };
 
 /// Counters of a [[ecs::World]].
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: owns nothing.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns nothing.
 struct WorldStats {
     /// Entities alive.
     u32 entities = 0;
@@ -133,8 +133,8 @@ struct WorldStats {
 /// until the next structural call. They may not be made while the world is being iterated (`BeginIteration` / `EndIteration`, used by queries); a
 /// command buffer (Day 228) defers them.
 ///
-/// Thread-safety: thread-compatible. Const members may run on several threads while no thread makes a structural call.
-/// Ownership: owns the entity table, archetypes and chunks; destroying the world destroys every component.
+/// - Thread-safety: thread-compatible. Const members may run on several threads while no thread makes a structural call.
+/// - Ownership: owns the entity table, archetypes and chunks; destroying the world destroys every component.
 class World {
 public:
     /// Creates an empty world with the empty archetype.
@@ -142,150 +142,150 @@ public:
     World(const World&) = delete;
     World& operator=(const World&) = delete;
     /// A number no other world of this program has had (never reused), for objects that cache something about a world.
-    /// Fails: never.
+    /// - Fails: never.
     u64 Id() const { return id_; }
     /// Destroys the resources in reverse order of creation, then the entities and their archetypes. A resource's destructor must not use the world.
     ~World();
 
     /// Creates an entity with no components.
-    /// Returns: the entity, or the invalid entity when a limit stopped it.
-    /// Aborts: the world is being iterated.
+    /// - Returns: the entity, or the invalid entity when a limit stopped it.
+    /// - Aborts: the world is being iterated.
     Entity Create();
 
     /// Creates an entity with the given components.
-    /// Returns: the entity, or the invalid entity when a limit stopped it (nothing is left behind).
-    /// Aborts: the world is being iterated, or a type is listed twice.
+    /// - Returns: the entity, or the invalid entity when a limit stopped it (nothing is left behind).
+    /// - Aborts: the world is being iterated, or a type is listed twice.
     template <class... Ts>
     Entity Create(Ts... values);
 
     /// Creates `count` entities with default-constructed `Ts`, filled in by `fn`.
     ///
     /// Calls `fn(index, Ts&...)` for each. Looks the archetype up once. Stops early if a limit stops it.
-    /// Returns: how many were created.
-    /// Aborts: the world is being iterated.
+    /// - Returns: how many were created.
+    /// - Aborts: the world is being iterated.
     template <class... Ts, class Fn>
     u32 CreateMany(u32 count, Fn&& fn);
 
     /// Destroys an entity and its components.
-    /// Returns: [[ecs::Status::Ok]], or `DeadEntity`.
-    /// Aborts: the world is being iterated.
+    /// - Returns: [[ecs::Status::Ok]], or `DeadEntity`.
+    /// - Aborts: the world is being iterated.
     Status Destroy(Entity entity);
 
     /// Returns whether `entity` is alive.
-    /// Fails: never.
+    /// - Fails: never.
     bool Exists(Entity entity) const { return table_.IsAlive(entity); }
 
     /// Adds component `T` to a live entity that lacks it, moving it to another archetype.
-    /// Returns: `Ok`, `DeadEntity`, `AlreadyHas` or `Refused`.
-    /// Aborts: the world is being iterated.
+    /// - Returns: `Ok`, `DeadEntity`, `AlreadyHas` or `Refused`.
+    /// - Aborts: the world is being iterated.
     template <class T>
     Status Add(Entity entity, T value);
 
     /// Removes component `T`, moving the entity to another archetype.
-    /// Returns: `Ok`, `DeadEntity` or `MissingComponent`.
-    /// Aborts: the world is being iterated.
+    /// - Returns: `Ok`, `DeadEntity` or `MissingComponent`.
+    /// - Aborts: the world is being iterated.
     template <class T>
     Status Remove(Entity entity);
 
     /// Sets component `T`: overwrites it, or adds it when absent.
-    /// Returns: `Ok`, `DeadEntity` or `Refused`.
-    /// Aborts: the world is being iterated and the entity lacks `T` (overwriting is allowed).
+    /// - Returns: `Ok`, `DeadEntity` or `Refused`.
+    /// - Aborts: the world is being iterated and the entity lacks `T` (overwriting is allowed).
     template <class T>
     Status Set(Entity entity, T value);
 
     /// Returns whether a live entity has `T` (false for a dead entity).
-    /// Fails: never.
+    /// - Fails: never.
     template <class T>
     bool Has(Entity entity) const;
 
     /// The entity's `T`, or null when the entity is dead or lacks `T` (also null for a tag: ask `Has`). The non-const form stamps the chunk's `T` column as
     /// written at the current tick, since the caller may write through the pointer.
-    /// Fails: returns null as described.
-    /// Aborts: an active query (`BeginIteration(writes)`) writes `T`; read components the query only reads, or use the query's own arguments.
-    /// Ownership: the pointer views the entity's row; valid until the next structural call.
+    /// - Fails: returns null as described.
+    /// - Aborts: an active query (`BeginIteration(writes)`) writes `T`; read components the query only reads, or use the query's own arguments.
+    /// - Ownership: the pointer views the entity's row; valid until the next structural call.
     template <class T>
     T* Get(Entity entity);
     /// The entity's `T` (const), or null as above.
-    /// Fails: returns null as described.
-    /// Aborts: as for the non-const form.
-    /// Ownership: the pointer views the entity's row; valid until the next structural call.
+    /// - Fails: returns null as described.
+    /// - Aborts: as for the non-const form.
+    /// - Ownership: the pointer views the entity's row; valid until the next structural call.
     template <class T>
     const T* Get(Entity entity) const;
 
     /// The current change-detection tick (starts at 1). Writes, additions and arrivals are stamped with it.
-    /// Fails: never.
+    /// - Fails: never.
     u64 Tick() const { return tick_; }
     /// Moves to the next tick; changes stamped from now on are newer than any query's `since` taken before. The scheduler calls it between
     /// frames, and [[ecs::Query::Finish]] calls it so that a write made after a query ran is not lost.
-    /// Fails: never.
+    /// - Fails: never.
     void Advance() { ++tick_; }
     /// Ends a frame for the removal logs: entries logged in the frame before this one go, those of the frame just ended stay for one more frame (see
     /// [[ecs::World::RemovedCount]]). The scheduler calls it at the end of `Schedule::Run`; a program that runs no schedule calls it itself.
-    /// Fails: never.
+    /// - Fails: never.
     void EndFrame() {
         ++removal_epoch_;
         PruneRemovals();
     }
     /// The number of frames ended so far, plus one (starts at 1): the clock of the removal logs. A reader that handled the logs at epoch `e` can rely on
     /// them to hold every removal since while this is at most `e + 1`; beyond that entries may have been dropped.
-    /// Fails: never.
+    /// - Fails: never.
     u64 RemovalEpoch() const { return removal_epoch_; }
     /// How many removals of the tracked component `T` the log holds: those of the current and the previous frame (a component declares
     /// `static constexpr bool kTrackRemoval = true`). A system that runs once per frame sees each removal in the frame it happened or the next; it remembers the
     /// largest `seq` it handled and skips smaller ones.
-    /// Fails: zero for a type that does not track removal.
+    /// - Fails: zero for a type that does not track removal.
     template <class T>
     usize RemovedCount() const;
     /// The `index`th logged removal of `T`, oldest first.
-    /// Aborts: `index` is not below `RemovedCount<T>()`.
+    /// - Aborts: `index` is not below `RemovedCount<T>()`.
     template <class T>
     RemovedComponent<T> RemovedAt(usize index) const;
 
     /// Sets the tick (tests of tick arithmetic near the largest value).
-    /// Fails: never.
+    /// - Fails: never.
     void SetTick(u64 tick) { tick_ = tick; }
 
     /// The entity's `T` for reading, without the check that an active query writes `T` and without stamping: for a system that reads one entity's row while
     /// writing others' (a child reading its parent). The caller guarantees nothing writes that row meanwhile.
     ///
-    /// Returns: the component, or null when the entity is dead or lacks `T` (also null for a tag).
-    /// Fails: returns null as described.
-    /// Ownership: the pointer views the entity's row; valid until the next structural call.
+    /// - Returns: the component, or null when the entity is dead or lacks `T` (also null for a tag).
+    /// - Fails: returns null as described.
+    /// - Ownership: the pointer views the entity's row; valid until the next structural call.
     template <class T>
     const T* Peek(Entity entity) const;
     /// The entity's `T` for writing, without the active-query check and without stamping the chunk (call `Stamp` after the writes, from one thread).
     ///
-    /// Returns: the component, or null when the entity is dead or lacks `T`.
-    /// Fails: returns null as described.
-    /// Ownership: the pointer views the entity's row; valid until the next structural call.
+    /// - Returns: the component, or null when the entity is dead or lacks `T`.
+    /// - Fails: returns null as described.
+    /// - Ownership: the pointer views the entity's row; valid until the next structural call.
     template <class T>
     T* Poke(Entity entity);
     /// Stamps the chunk column of the entity's `T` as written at the current tick (after writes made through `Poke`). Not thread-safe against other stamps.
-    /// Fails: does nothing for a dead entity or a missing component.
+    /// - Fails: does nothing for a dead entity or a missing component.
     template <class T>
     void Stamp(Entity entity);
     /// Begins a parallel phase: the schedule's jobs run queries of this world on several threads. Structural calls are refused (it counts as an iteration),
     /// and queries skip their own iteration bookkeeping, which is not thread-safe. Call it on the thread that submits the jobs, before submitting.
-    /// Fails: never.
+    /// - Fails: never.
     void BeginParallel() {
         BeginIteration();
         parallel_ = true;
     }
     /// Ends the parallel phase begun by `BeginParallel`, after every job has finished.
-    /// Aborts: no parallel phase is active.
+    /// - Aborts: no parallel phase is active.
     void EndParallel() {
         ENGINE_ASSERT(parallel_, "World::EndParallel without BeginParallel");
         parallel_ = false;
         EndIteration();
     }
     /// Returns whether a parallel phase is active.
-    /// Fails: never.
+    /// - Fails: never.
     bool IsParallel() const { return parallel_; }
 
     /// Marks the start of an iteration: structural calls are refused until the matching `EndIteration`. Nestable.
     void BeginIteration() { ++iterating_; }
     /// Marks the end of an iteration.
-    /// Aborts: no iteration is active.
+    /// - Aborts: no iteration is active.
     void EndIteration() {
         ENGINE_ASSERT(iterating_ != 0, "World::EndIteration without BeginIteration");
         --iterating_;
@@ -293,8 +293,8 @@ public:
     /// Marks the start of an iteration that writes the components in `writes`: like the no-argument form, and in addition `World::Get` of
     /// one of those components aborts until the matching `EndIteration` (the iteration holds them for writing). Queries use this.
     ///
-    /// Param writes: the component ids the iteration writes.
-    /// Returns: the write set of the enclosing iteration, to pass back to `EndIteration(const ComponentSet&)`.
+    /// - Param writes: the component ids the iteration writes.
+    /// - Returns: the write set of the enclosing iteration, to pass back to `EndIteration(const ComponentSet&)`.
     ComponentSet BeginIteration(const ComponentSet& writes) {
         ++iterating_;
         const ComponentSet previous = iteration_writes_;
@@ -305,14 +305,14 @@ public:
     }
     /// Marks the end of an iteration begun with `BeginIteration(const ComponentSet&)`.
     ///
-    /// Param previous: the value `BeginIteration` returned.
-    /// Aborts: no iteration is active.
+    /// - Param previous: the value `BeginIteration` returned.
+    /// - Aborts: no iteration is active.
     void EndIteration(const ComponentSet& previous) {
         EndIteration();
         iteration_writes_ = previous;
     }
     /// Returns whether an iteration is active.
-    /// Fails: never.
+    /// - Fails: never.
     bool IsIterating() const { return iterating_ != 0; }
 
     /// Makes a [[ecs::Query]] over this world with the given terms (`Read<T>`, `Write<T>`, `Optional<T>`, `OptionalWrite<T>`, `With<T>`, `Without<T>`).
@@ -328,94 +328,94 @@ public:
     /// placeholders resolve to the created entities ([[ecs::CommandBuffer::Resolve]]) until the buffer is cleared. Several buffers are applied by
     /// calling this once per buffer in the order the caller chooses.
     ///
-    /// Param buffer: the commands; consumed (its values are moved into the world and destroyed).
-    /// Returns: how many commands changed the world, were skipped and created entities.
-    /// Aborts: the world is being iterated.
+    /// - Param buffer: the commands; consumed (its values are moved into the world and destroyed).
+    /// - Returns: how many commands changed the world, were skipped and created entities.
+    /// - Aborts: the world is being iterated.
     PlaybackReport Apply(CommandBuffer& buffer);
 
     /// Stores the world's one resource of type `T`, replacing the previous one in place (its address does not change).
     ///
     /// A resource is a singleton per type that is not an entity and never matches a query. A new resource is destroyed after those created later.
     ///
-    /// Param value: the value; moved in.
-    /// Returns: the stored resource.
-    /// Fails: never.
-    /// Ownership: the world owns the resource; the reference is valid until `RemoveResource<T>()` or the world's destruction.
+    /// - Param value: the value; moved in.
+    /// - Returns: the stored resource.
+    /// - Fails: never.
+    /// - Ownership: the world owns the resource; the reference is valid until `RemoveResource<T>()` or the world's destruction.
     template <class T>
     T& SetResource(T value);
     /// The resource of type `T`.
-    /// Aborts: there is none (ask `HasResource<T>()` or use `TryResource<T>()`).
+    /// - Aborts: there is none (ask `HasResource<T>()` or use `TryResource<T>()`).
     template <class T>
     T& Resource();
     /// The resource of type `T` (const).
-    /// Aborts: there is none.
+    /// - Aborts: there is none.
     template <class T>
     const T& Resource() const;
     /// The resource of type `T`, or null.
-    /// Fails: returns null when there is none.
-    /// Ownership: the world owns the resource; the pointer is valid until it is removed or the world is destroyed.
+    /// - Fails: returns null when there is none.
+    /// - Ownership: the world owns the resource; the pointer is valid until it is removed or the world is destroyed.
     template <class T>
     T* TryResource();
     /// The resource of type `T` (const), or null.
-    /// Fails: returns null when there is none.
-    /// Ownership: the world owns the resource; the pointer is valid until it is removed or the world is destroyed.
+    /// - Fails: returns null when there is none.
+    /// - Ownership: the world owns the resource; the pointer is valid until it is removed or the world is destroyed.
     template <class T>
     const T* TryResource() const;
     /// Returns whether a resource of type `T` is stored.
-    /// Fails: never.
+    /// - Fails: never.
     template <class T>
     bool HasResource() const { return TryResource<T>() != nullptr; }
     /// Destroys the resource of type `T`.
-    /// Returns: whether there was one.
-    /// Fails: returns false when there is none.
+    /// - Returns: whether there was one.
+    /// - Fails: returns false when there is none.
     template <class T>
     bool RemoveResource();
 
     /// Makes sure the archetype for exactly the components in `set` exists, so that [[ecs::World::CreateFromSet]] of it cannot fail for want of an archetype.
     ///
-    /// Returns: true when the archetype exists after the call; false when a limit stopped it (counted in `Stats().refused`).
-    /// Fails: returns false as described.
-    /// Aborts: the world is being iterated.
+    /// - Returns: true when the archetype exists after the call; false when a limit stopped it (counted in `Stats().refused`).
+    /// - Fails: returns false as described.
+    /// - Aborts: the world is being iterated.
     bool EnsureArchetype(const ComponentSet& set);
     /// Creates an entity with exactly the components in `set`, each default-constructed (a type-erased `Create`, for loaders that know
     /// component ids but not types).
     ///
-    /// Returns: the entity, or the invalid entity when a limit stopped it or a component that is not a tag has no default constructor (nothing is made then).
-    /// Fails: returns the invalid entity as described.
-    /// Aborts: the world is being iterated.
+    /// - Returns: the entity, or the invalid entity when a limit stopped it or a component that is not a tag has no default constructor (nothing is made then).
+    /// - Fails: returns the invalid entity as described.
+    /// - Aborts: the world is being iterated.
     Entity CreateFromSet(const ComponentSet& set);
     /// Adds the component `id` to a live entity that lacks it, default-constructed (a type-erased `Add`).
     ///
-    /// Returns: `Ok`, `DeadEntity`, `AlreadyHas`, or `Refused` (a limit, an unregistered id, or a type with no default constructor).
-    /// Aborts: the world is being iterated.
+    /// - Returns: `Ok`, `DeadEntity`, `AlreadyHas`, or `Refused` (a limit, an unregistered id, or a type with no default constructor).
+    /// - Aborts: the world is being iterated.
     Status AddDefault(Entity entity, ComponentId id);
     /// Removes the component `id` (a type-erased `Remove`).
     ///
-    /// Returns: `Ok`, `DeadEntity`, `MissingComponent` or `Refused`.
-    /// Aborts: the world is being iterated.
+    /// - Returns: `Ok`, `DeadEntity`, `MissingComponent` or `Refused`.
+    /// - Aborts: the world is being iterated.
     Status RemoveById(Entity entity, ComponentId id);
     /// Returns whether a live entity has the component `id` (also for a tag; false for a dead entity).
-    /// Fails: never.
+    /// - Fails: never.
     bool HasById(Entity entity, ComponentId id) const;
     /// The entity's component `id` as raw memory, or null when the entity is dead, lacks it, or it is a tag. The non-const form stamps the component as
     /// written.
     ///
-    /// Fails: returns null as described.
-    /// Ownership: the pointer views the entity's row; valid until the next structural call.
+    /// - Fails: returns null as described.
+    /// - Ownership: the pointer views the entity's row; valid until the next structural call.
     void* CellOf(Entity entity, ComponentId id);
     /// As the non-const form, for reading, without stamping.
     ///
-    /// Fails: returns null as described.
-    /// Ownership: the pointer views the entity's row; valid until the next structural call.
+    /// - Fails: returns null as described.
+    /// - Ownership: the pointer views the entity's row; valid until the next structural call.
     const void* CellOf(Entity entity, ComponentId id) const;
 
     /// The number of archetypes.
     u32 ArchetypeCount() const { return static_cast<u32>(archetypes_.Size()); }
     /// The archetype at `index`.
-    /// Aborts: `index` is not below `ArchetypeCount()`.
+    /// - Aborts: `index` is not below `ArchetypeCount()`.
     Archetype& ArchetypeAt(u32 index);
     /// The archetype at `index`.
-    /// Aborts: `index` is not below `ArchetypeCount()`.
+    /// - Aborts: `index` is not below `ArchetypeCount()`.
     const Archetype& ArchetypeAt(u32 index) const;
     /// The entity table.
     const EntityTable& Entities() const { return table_; }

@@ -31,15 +31,15 @@ enum class KeyError : u8 {
 
 /// Returns a short name for a key error (`none`, `empty`, `too_long`, `bad_character`, `empty_segment`, `too_many_segments`, `segment_too_long`).
 ///
-/// Returns: a static string.
-/// Fails: never.
-/// Ownership: the string is static and never freed.
+/// - Returns: a static string.
+/// - Fails: never.
+/// - Ownership: the string is static and never freed.
 const char* KeyErrorName(KeyError error);
 
 /// A validated setting key, stored inline (no allocation).
 ///
-/// Thread-safety: thread-compatible plain data; a const key may be read from many threads.
-/// Ownership: a value; owns its bytes.
+/// - Thread-safety: thread-compatible plain data; a const key may be read from many threads.
+/// - Ownership: a value; owns its bytes.
 class Key {
 public:
     /// Creates the empty, invalid key.
@@ -47,10 +47,10 @@ public:
 
     /// Checks `text` and, if it is a valid key, stores it in `*out`.
     ///
-    /// Param text: the candidate.
-    /// Param out: receives the key; unchanged on failure. May be null to only check.
-    /// Returns: `KeyError::None` or the first problem found.
-    /// Fails: reports the reason as the return value.
+    /// - Param text: the candidate.
+    /// - Param out: receives the key; unchanged on failure. May be null to only check.
+    /// - Returns: `KeyError::None` or the first problem found.
+    /// - Fails: reports the reason as the return value.
     static KeyError Parse(StringView text, Key* out);
 
     /// Returns the key's text.

@@ -36,12 +36,12 @@ const char* ErrorName(Error error);
 
 /// Maps an operating system error code (`errno` on POSIX, `GetLastError()` on Windows) to an [[io::Error]]; the table is one
 /// function per platform. Codes not listed in [[io::Error]] collapse into [[io::Error::Io]]. Zero maps to [[io::Error::None]].
-/// Backend: Windows: GetLastError() codes (ERROR_FILE_NOT_FOUND, ERROR_ACCESS_DENIED, ERROR_ALREADY_EXISTS, ERROR_DISK_FULL, ...); macOS: errno as on Linux.
+/// - Backend: Windows: GetLastError() codes (ERROR_FILE_NOT_FOUND, ERROR_ACCESS_DENIED, ERROR_ALREADY_EXISTS, ERROR_DISK_FULL, ...); macOS: errno as on Linux.
 Error ErrorFromOsCode(i32 os_code);
 
 /// The result of an operation that returns nothing else: an [[io::Error]] plus the OS code behind it, for logs only.
 ///
-/// Thread-safety: immutable value.
+/// - Thread-safety: immutable value.
 struct Status {
     Error error = Error::None; ///< What went wrong; [[io::Error::None]] means success.
     i32 os_code = 0;           ///< The platform's own code, for logs; never branch on it.

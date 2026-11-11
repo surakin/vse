@@ -20,25 +20,25 @@ namespace engine_placeholder::renderer {
 /// An owner of an image implements this and registers itself with [[renderer::UiRenderer::SetImage]]. The renderer never keeps the handle: it asks for it every frame, so an
 /// owner that rebuilds its texture after a device reset (a [[renderer::GpuTexture]], a render target) keeps working.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: owns nothing by itself.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: owns nothing by itself.
 class ImageSource {
 public:
     virtual ~ImageSource() = default;
     /// Returns the current texture handle, or an invalid handle when the image has no texture now (the commands that name it draw nothing).
     ///
-    /// Fails: never.
+    /// - Fails: never.
     virtual rhi::TextureHandle Handle() const = 0;
 };
 
 /// An [[renderer::ImageSource]] over a [[renderer::GpuTexture]].
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: borrows the texture, which must outlive this object.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: borrows the texture, which must outlive this object.
 class GpuTextureImage final : public ImageSource {
 public:
     /// Makes a source that reads `texture`.
-    /// Param texture: the texture; borrowed.
+    /// - Param texture: the texture; borrowed.
     explicit GpuTextureImage(const GpuTexture* texture) : texture_(texture) {}
     rhi::TextureHandle Handle() const override { return texture_->Handle(); }
 
@@ -48,7 +48,7 @@ private:
 
 /// What a [[renderer::UiRenderer]] is made for.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct UiRendererDesc {
     /// The format of the colour target the pass draws into; the pipeline is made for it. For an sRGB format the vertex colours are decoded to linear and the hardware encodes
     /// them again, so the UI shows the colours the application wrote.
@@ -61,7 +61,7 @@ struct UiRendererDesc {
 
 /// Counters of a [[renderer::UiRenderer]], for tests and the benchmark.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct UiStats {
     /// Frames that declared the pass.
     u64 passes = 0;
@@ -86,8 +86,8 @@ struct UiStats {
 /// It registers with a [[renderer::DeviceResources]] at the materials tier; after a reset `Recreate` makes the pipeline and buffers again. The draw list is the caller's and is
 /// rebuilt every frame anyway.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: borrows the glyph page owner, the draw list given to `AddToGraph` (until the graph is executed) and the registered image sources; owns its GPU objects. The device
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: borrows the glyph page owner, the draw list given to `AddToGraph` (until the graph is executed) and the registered image sources; owns its GPU objects. The device
 ///   and the registry must outlive it.
 class UiRenderer final : public Recreatable {
 public:
@@ -99,14 +99,14 @@ public:
 
     /// Creates the pipeline, the buffers and the sampler.
     ///
-    /// Param device: the device.
-    /// Param pages: the GPU glyph pages the draw list's atlas commands name; borrowed, must outlive this object; may be null for a UI without text.
-    /// Param desc: the target format and the budgets.
-    /// Param resources: the registry, or null for an object that does not need to survive a reset.
-    /// Returns: true on success.
-    /// Fails: returns false, logging the reason, if the device has no shader in its format, the format cannot be a colour target or memory runs out; nothing stays allocated.
-    /// Aborts: the object already exists, `device` is null, or a budget is 0.
-    /// Ownership: the device, the pages and the registry are borrowed.
+    /// - Param device: the device.
+    /// - Param pages: the GPU glyph pages the draw list's atlas commands name; borrowed, must outlive this object; may be null for a UI without text.
+    /// - Param desc: the target format and the budgets.
+    /// - Param resources: the registry, or null for an object that does not need to survive a reset.
+    /// - Returns: true on success.
+    /// - Fails: returns false, logging the reason, if the device has no shader in its format, the format cannot be a colour target or memory runs out; nothing stays allocated.
+    /// - Aborts: the object already exists, `device` is null, or a budget is 0.
+    /// - Ownership: the device, the pages and the registry are borrowed.
     bool Create(rhi::Device* device, GlyphAtlasTexture* pages, const UiRendererDesc& desc, DeviceResources* resources);
 
     /// Destroys everything and forgets the registration.
@@ -114,13 +114,13 @@ public:
 
     /// Names the owner of image `id`, replacing an earlier registration.
     ///
-    /// Param id: a non-zero [[ui::ImageId]].
-    /// Param source: the owner; borrowed until `ClearImage` or `Destroy`; null clears the image.
-    /// Aborts: `id` is 0.
+    /// - Param id: a non-zero [[ui::ImageId]].
+    /// - Param source: the owner; borrowed until `ClearImage` or `Destroy`; null clears the image.
+    /// - Aborts: `id` is 0.
     void SetImage(ui::ImageId id, const ImageSource* source);
     /// Forgets image `id`; commands that name it draw nothing.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     void ClearImage(ui::ImageId id);
 
     /// Declares the UI pass in a frame's graph, after the passes that wrote `target`.
@@ -128,23 +128,23 @@ public:
     /// Declares nothing (no pass, no barrier, no cost) when the list has no command. One pass per frame per renderer: the pass reads the list, target and size of the *last* call
     /// before the graph runs, and the per-frame buffers hold one list, so two calls in a frame would draw the second list twice; use one renderer per surface or merge the lists. A format different from the current one rebuilds the pipeline here, on the frame's thread.
     ///
-    /// Param graph: the frame's graph.
-    /// Param list: the sorted draw list; borrowed until the graph is executed.
-    /// Param target: the display target, already written by an earlier pass; accessed as a colour attachment, read and written.
-    /// Param format: the target's format.
-    /// Param width: the target's width in pixels.
-    /// Param height: the target's height in pixels.
-    /// Param sampled: graph resources that earlier passes of this frame write and the list's images sample (a viewport's target imported into the graph); the pass reads them as
+    /// - Param graph: the frame's graph.
+    /// - Param list: the sorted draw list; borrowed until the graph is executed.
+    /// - Param target: the display target, already written by an earlier pass; accessed as a colour attachment, read and written.
+    /// - Param format: the target's format.
+    /// - Param width: the target's width in pixels.
+    /// - Param height: the target's height in pixels.
+    /// - Param sampled: graph resources that earlier passes of this frame write and the list's images sample (a viewport's target imported into the graph); the pass reads them as
     ///   sampled textures, so the graph orders it after their writers and leaves them in the right state. Default: none (images that live outside the graph).
-    /// Fails: the pass logs and draws nothing if the pipeline for `format` cannot be made.
-    /// Aborts: `graph` or `list` is null, `format` is undefined, a size is 0, or the object holds no GPU objects.
-    /// Ownership: the pass keeps pointers to this object and to `list` until the graph is executed.
+    /// - Fails: the pass logs and draws nothing if the pipeline for `format` cannot be made.
+    /// - Aborts: `graph` or `list` is null, `format` is undefined, a size is 0, or the object holds no GPU objects.
+    /// - Ownership: the pass keeps pointers to this object and to `list` until the graph is executed.
     void AddToGraph(RenderGraph* graph, const ui::DrawList* list, GraphResource target, rhi::Format format, u32 width, u32 height,
                     Span<const GraphResource> sampled = Span<const GraphResource>());
 
     /// Returns the counters.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     UiStats Stats() const { return stats_; }
 
     void Release() override;

@@ -14,19 +14,19 @@ namespace engine_placeholder::database {
 /// A backend that must generate a statement from a validated identifier (a savepoint name) uses [[database::SqlText::Unchecked]]; the gate
 /// `database_sql_check` allows that only under `engine/database/` and in tests.
 ///
-/// Thread-safety: immutable value.
-/// Ownership: borrows the literal, which lives for the whole program.
+/// - Thread-safety: immutable value.
+/// - Ownership: borrows the literal, which lives for the whole program.
 class SqlText {
 public:
     /// Wraps a string literal (or any other constant-evaluated `const char*`).
     ///
-    /// Param literal: NUL-terminated text known at compile time.
+    /// - Param literal: NUL-terminated text known at compile time.
     consteval SqlText(const char* literal) : text_(literal, Measure(literal)) {}
 
     /// Wraps text that is not a literal. Not for engine or game code: see the class comment.
     ///
-    /// Param text: the SQL; must outlive every use of the result.
-    /// Ownership: borrows `text`.
+    /// - Param text: the SQL; must outlive every use of the result.
+    /// - Ownership: borrows `text`.
     static SqlText Unchecked(StringView text) { return SqlText(text); }
 
     /// The SQL text.

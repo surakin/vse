@@ -13,9 +13,9 @@ namespace engine_placeholder::debug {
 /// Any tracer counts, not only an interactive debugger: on Linux a process run under `strace` or `rr` reports true too,
 /// and an assert failure then breaks (SIGTRAP) instead of aborting.
 ///
-/// Returns: true if a debugger (or another tracer) is attached; false if none is or the platform cannot tell.
-/// Thread-safety: thread-safe.
-/// Backend: Windows: IsDebuggerPresent; macOS: sysctl kern.proc.pid with the P_TRACED flag.
+/// - Returns: true if a debugger (or another tracer) is attached; false if none is or the platform cannot tell.
+/// - Thread-safety: thread-safe.
+/// - Backend: Windows: IsDebuggerPresent; macOS: sysctl kern.proc.pid with the P_TRACED flag.
 bool IsDebuggerAttached();
 
 } // namespace engine_placeholder::debug

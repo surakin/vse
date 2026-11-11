@@ -18,53 +18,53 @@ namespace engine_placeholder::renderer {
 
 /// A perspective projection for a right-handed view space and Vulkan clip space (Y down, depth 0..1).
 ///
-/// Param fov_y: vertical field of view in radians, in (0, pi).
-/// Param aspect: width / height, greater than zero.
-/// Param near_plane: distance to the near plane, greater than zero.
-/// Param far_plane: distance to the far plane, greater than `near_plane`.
-/// Returns: the projection matrix.
-/// Aborts: any argument is outside the range above.
-/// Thread-safety: thread-safe. A pure function of its arguments.
+/// - Param fov_y: vertical field of view in radians, in (0, pi).
+/// - Param aspect: width / height, greater than zero.
+/// - Param near_plane: distance to the near plane, greater than zero.
+/// - Param far_plane: distance to the far plane, greater than `near_plane`.
+/// - Returns: the projection matrix.
+/// - Aborts: any argument is outside the range above.
+/// - Thread-safety: thread-safe. A pure function of its arguments.
 Mat4 PerspectiveVulkan(f32 fov_y, f32 aspect, f32 near_plane, f32 far_plane);
 
 /// The exact inverse of [[renderer::PerspectiveVulkan]] for the same arguments, computed analytically.
 ///
-/// Param fov_y: as for [[renderer::PerspectiveVulkan]].
-/// Param aspect: as for [[renderer::PerspectiveVulkan]].
-/// Param near_plane: as for [[renderer::PerspectiveVulkan]].
-/// Param far_plane: as for [[renderer::PerspectiveVulkan]].
-/// Returns: the matrix that maps clip space back to view space (homogeneous: divide by w afterwards).
-/// Aborts: as for [[renderer::PerspectiveVulkan]].
-/// Thread-safety: thread-safe. A pure function of its arguments.
+/// - Param fov_y: as for [[renderer::PerspectiveVulkan]].
+/// - Param aspect: as for [[renderer::PerspectiveVulkan]].
+/// - Param near_plane: as for [[renderer::PerspectiveVulkan]].
+/// - Param far_plane: as for [[renderer::PerspectiveVulkan]].
+/// - Returns: the matrix that maps clip space back to view space (homogeneous: divide by w afterwards).
+/// - Aborts: as for [[renderer::PerspectiveVulkan]].
+/// - Thread-safety: thread-safe. A pure function of its arguments.
 Mat4 InversePerspectiveVulkan(f32 fov_y, f32 aspect, f32 near_plane, f32 far_plane);
 
 /// A view matrix for a camera at `eye` looking at `target`, with `up` as the approximate up direction.
 ///
-/// Param eye: the camera position.
-/// Param target: the point looked at; different from `eye`.
-/// Param up: the approximate up direction; not parallel to the view direction.
-/// Returns: the view matrix.
-/// Aborts: `target` equals `eye` or `up` is parallel to the view direction (no unique orientation).
-/// Thread-safety: thread-safe. A pure function of its arguments.
+/// - Param eye: the camera position.
+/// - Param target: the point looked at; different from `eye`.
+/// - Param up: the approximate up direction; not parallel to the view direction.
+/// - Returns: the view matrix.
+/// - Aborts: `target` equals `eye` or `up` is parallel to the view direction (no unique orientation).
+/// - Thread-safety: thread-safe. A pure function of its arguments.
 Mat4 LookAt(const Vec3& eye, const Vec3& target, const Vec3& up);
 
 /// Translation, uniform scale and rotation about Y, applied in the order scale, rotate, translate.
 ///
-/// Param position: where the model's origin goes.
-/// Param scale: uniform scale factor.
-/// Param yaw_radians: rotation about the Y axis.
-/// Returns: the model matrix.
-/// Fails: never.
-/// Thread-safety: thread-safe. A pure function of its arguments.
+/// - Param position: where the model's origin goes.
+/// - Param scale: uniform scale factor.
+/// - Param yaw_radians: rotation about the Y axis.
+/// - Returns: the model matrix.
+/// - Fails: never.
+/// - Thread-safety: thread-safe. A pure function of its arguments.
 Mat4 ModelMatrix(const Vec3& position, f32 scale, f32 yaw_radians);
 
 /// The matrix that carries normals with `model`: the inverse transpose of its upper 3x3 up to a positive scale (the cofactor
 /// matrix divided by the sign of the determinant, so a mirroring model does not turn normals inside out), in a Mat4.
 ///
-/// Param model: an affine model matrix.
-/// Returns: the normal matrix; normalize transformed normals in the shader.
-/// Fails: never.
-/// Thread-safety: thread-safe. A pure function of its argument.
+/// - Param model: an affine model matrix.
+/// - Returns: the normal matrix; normalize transformed normals in the shader.
+/// - Fails: never.
+/// - Thread-safety: thread-safe. A pure function of its argument.
 Mat4 NormalMatrix(const Mat4& model);
 
 /// A perspective camera: a position, an orientation and the projection parameters.
@@ -72,7 +72,7 @@ Mat4 NormalMatrix(const Mat4& model);
 /// The orientation is an orthonormal basis stored as three columns: right, up and back (the camera looks along minus
 /// back). Everything else is derived, so a camera never holds a matrix that can go stale.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct Camera {
     /// The camera position in world space.
     Vec3 position = Vec3(0, 0, 0);
@@ -89,10 +89,10 @@ struct Camera {
 
     /// Points the camera from `eye` at `target`, keeping the projection parameters.
     ///
-    /// Param eye: the new position.
-    /// Param target: the point looked at.
-    /// Param up: the approximate up direction.
-    /// Aborts: as for [[renderer::LookAt]].
+    /// - Param eye: the new position.
+    /// - Param target: the point looked at.
+    /// - Param up: the approximate up direction.
+    /// - Aborts: as for [[renderer::LookAt]].
     void SetLookAt(const Vec3& eye, const Vec3& target, const Vec3& up);
 
     /// Returns the viewing direction (a unit vector).
@@ -107,27 +107,27 @@ struct Camera {
     /// Returns the inverse of the view matrix: view space to world space (the camera's own transform).
     Mat4 InverseView() const;
     /// Returns the projection matrix ([[renderer::PerspectiveVulkan]] of this camera's parameters).
-    /// Aborts: the projection parameters are out of range.
+    /// - Aborts: the projection parameters are out of range.
     Mat4 Projection() const;
     /// Returns the inverse projection matrix ([[renderer::InversePerspectiveVulkan]]).
-    /// Aborts: the projection parameters are out of range.
+    /// - Aborts: the projection parameters are out of range.
     Mat4 InverseProjection() const;
     /// Returns projection times view: world space to clip space.
-    /// Aborts: the projection parameters are out of range.
+    /// - Aborts: the projection parameters are out of range.
     Mat4 ViewProjection() const;
     /// Returns the inverse of the view-projection: clip space to world space (homogeneous).
-    /// Aborts: the projection parameters are out of range.
+    /// - Aborts: the projection parameters are out of range.
     Mat4 InverseViewProjection() const;
 };
 
 /// Builds a camera at `eye` looking at `target`.
 ///
-/// Param eye: the position.
-/// Param target: the point looked at.
-/// Param up: the approximate up direction.
-/// Returns: the camera with default projection parameters; set `fov_y`, `aspect` and the planes afterwards.
-/// Aborts: as for [[renderer::LookAt]].
-/// Thread-safety: thread-safe. A pure function of its arguments.
+/// - Param eye: the position.
+/// - Param target: the point looked at.
+/// - Param up: the approximate up direction.
+/// - Returns: the camera with default projection parameters; set `fov_y`, `aspect` and the planes afterwards.
+/// - Aborts: as for [[renderer::LookAt]].
+/// - Thread-safety: thread-safe. A pure function of its arguments.
 Camera MakeLookAtCamera(const Vec3& eye, const Vec3& target, const Vec3& up);
 
 } // namespace engine_placeholder::renderer

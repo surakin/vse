@@ -28,8 +28,8 @@ inline constexpr u8 kDropCustom = 4; ///< The custom format named in [[os::DropA
 
 /// What a window is willing to receive; nothing set refuses every drag.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: borrows `custom_name` for the call; the window copies it.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: borrows `custom_name` for the call; the window copies it.
 struct DropAccept {
     u8 formats = 0;         ///< `kDropText | kDropFiles | kDropCustom`.
     StringView custom_name; ///< `kDropCustom`: the MIME type or atom name.
@@ -37,8 +37,8 @@ struct DropAccept {
 
 /// A small image drawn next to the pointer while dragging (RGBA8, premultiplied, up to 128x128).
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: borrows `rgba` for the call.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: borrows `rgba` for the call.
 struct DragImage {
     const byte* rgba = nullptr; ///< `width * height * 4` bytes, or null for no image.
     u32 width = 0;              ///< Width in pixels.
@@ -49,8 +49,8 @@ struct DragImage {
 
 /// What a program drags out of its window.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: borrows everything for the call; the window copies the bytes.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: borrows everything for the call; the window copies the bytes.
 struct DragSource {
     const ClipboardOffer* offers = nullptr; ///< The formats offered (at most [[os::kMaxDragOffers]]).
     usize offer_count = 0;                  ///< Their count.
@@ -74,9 +74,9 @@ inline constexpr u64 kDropSessionTimeoutNs = 5'000'000'000ull;
 inline constexpr u64 kDragTargetTimeoutNs = 1'000'000'000ull;
 
 /// Keeps the first `max_entries` paths of a `\n`-separated list.
-/// Param paths: the list, edited in place.
-/// Param max_entries: the most to keep.
-/// Returns: how many entries were removed.
+/// - Param paths: the list, edited in place.
+/// - Param max_entries: the most to keep.
+/// - Returns: how many entries were removed.
 u32 LimitPathList(Vector<byte>& paths, usize max_entries);
 
 } // namespace engine_placeholder::os

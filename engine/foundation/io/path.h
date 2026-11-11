@@ -22,7 +22,7 @@ enum class PathStyle : u8 {
 };
 
 /// Returns the style of the platform the program was built for.
-/// Backend: Windows: PathStyle::Windows; macOS, Android, iOS and consoles: PathStyle::Posix.
+/// - Backend: Windows: PathStyle::Windows; macOS, Android, iOS and consoles: PathStyle::Posix.
 constexpr PathStyle NativePathStyle() {
 #if ENGINE_PLATFORM_WINDOWS
     return PathStyle::Windows;
@@ -44,8 +44,8 @@ constexpr usize kMaxPathBytes = 4096;
 /// Memory comes from the default heap allocator; copying, `Parent`, `Normalize` and the builders allocate and abort when the
 /// allocator is out of memory. For code that cannot allocate use [[PathBuilder]].
 ///
-/// Thread-safety: thread-compatible. Const operations are safe from many threads.
-/// Ownership: owns its text.
+/// - Thread-safety: thread-compatible. Const operations are safe from many threads.
+/// - Ownership: owns its text.
 class Path {
 public:
     /// Creates an empty path in the native style.
@@ -55,9 +55,9 @@ public:
 
     /// Creates a path from literal or trusted text.
     ///
-    /// Param text: UTF-8 path text; separators of the style are accepted.
-    /// Param style: grammar to read it with.
-    /// Aborts: `text` is longer than [[io::kMaxPathBytes]] or contains a NUL byte. Use [[Path::Parse]] for text from outside.
+    /// - Param text: UTF-8 path text; separators of the style are accepted.
+    /// - Param style: grammar to read it with.
+    /// - Aborts: `text` is longer than [[io::kMaxPathBytes]] or contains a NUL byte. Use [[Path::Parse]] for text from outside.
     Path(StringView text, PathStyle style = NativePathStyle());
 
     /// Copies the path (allocates).
@@ -69,10 +69,10 @@ public:
 
     /// Builds a path from untrusted text.
     ///
-    /// Param text: UTF-8 path text.
-    /// Param style: grammar to read it with.
-    /// Param out: receives the path; unchanged on failure.
-    /// Fails: returns false when `text` is longer than [[io::kMaxPathBytes]] (after canonicalization) or contains a NUL byte.
+    /// - Param text: UTF-8 path text.
+    /// - Param style: grammar to read it with.
+    /// - Param out: receives the path; unchanged on failure.
+    /// - Fails: returns false when `text` is longer than [[io::kMaxPathBytes]] (after canonicalization) or contains a NUL byte.
     static bool Parse(StringView text, PathStyle style, Path* out);
 
     /// Returns the grammar this path follows.
@@ -82,9 +82,9 @@ public:
     StringView View() const { return StringView(text_.Size() == 0 ? "" : text_.Data(), text_.Size()); }
     /// Returns a NUL-terminated copy of the canonical text in `buffer`, with `\` separators on Windows style.
     ///
-    /// Param buffer: destination; at least `View().Length() + 1` bytes.
-    /// Param capacity: size of `buffer`.
-    /// Fails: returns false, writing nothing, when `capacity` is too small.
+    /// - Param buffer: destination; at least `View().Length() + 1` bytes.
+    /// - Param capacity: size of `buffer`.
+    /// - Fails: returns false, writing nothing, when `capacity` is too small.
     bool ToNative(char* buffer, usize capacity) const;
 
     /// Returns true when the path has no text.
@@ -115,7 +115,7 @@ public:
     public:
         /// Writes the next component to `out`.
         ///
-        /// Returns: false when there are no more.
+        /// - Returns: false when there are no more.
         bool Next(StringView* out);
 
     private:
@@ -129,14 +129,14 @@ public:
     /// replaces it too; a rooted `right` without a drive keeps this path's root name (Windows); empty operands are
     /// identities. `.` and `..` are kept as written.
     ///
-    /// Aborts: the result would be longer than [[io::kMaxPathBytes]]. Use [[Path::TryJoin]] for untrusted input.
+    /// - Aborts: the result would be longer than [[io::kMaxPathBytes]]. Use [[Path::TryJoin]] for untrusted input.
     Path Join(const Path& right) const;
     /// Like [[Path::Join(const Path&)]] with a text operand read in this path's style.
     Path Join(StringView right) const;
     /// Like [[Path::Join(const Path&)]], reporting a too-long result instead of aborting.
     ///
-    /// Aborts: the styles of the two paths differ.
-    /// Fails: returns false and leaves `out` unchanged when the result would be longer than [[io::kMaxPathBytes]].
+    /// - Aborts: the styles of the two paths differ.
+    /// - Fails: returns false and leaves `out` unchanged when the result would be longer than [[io::kMaxPathBytes]].
     bool TryJoin(const Path& right, Path* out) const;
     /// Same as [[Path::Join(const Path&)]].
     Path operator/(const Path& right) const { return Join(right); }
@@ -144,17 +144,17 @@ public:
     Path operator/(StringView right) const { return Join(right); }
     /// Replaces `*this` with `Join(right)`.
     ///
-    /// Aborts: as [[Path::Join(StringView)]].
+    /// - Aborts: as [[Path::Join(StringView)]].
     void Append(StringView right);
 
     /// Returns the path with its last component replaced by `name` (appended when there is none).
     ///
-    /// Param name: a single component; must not contain a separator, nor a colon on Windows (`D:x` would be read as a drive).
-    /// Aborts: `name` contains a separator (or a colon on Windows), or the result is longer than [[io::kMaxPathBytes]].
+    /// - Param name: a single component; must not contain a separator, nor a colon on Windows (`D:x` would be read as a drive).
+    /// - Aborts: `name` contains a separator (or a colon on Windows), or the result is longer than [[io::kMaxPathBytes]].
     Path WithFileName(StringView name) const;
     /// Returns the path with its extension replaced. `extension` may start with a dot or not; empty removes it.
     ///
-    /// Aborts: the path has no file name (or its name is `.` or `..`), `extension` contains a separator (or a colon on Windows), or the result is longer than [[io::kMaxPathBytes]].
+    /// - Aborts: the path has no file name (or its name is `.` or `..`), `extension` contains a separator (or a colon on Windows), or the result is longer than [[io::kMaxPathBytes]].
     Path WithExtension(StringView extension) const;
     /// Returns the path with its extension removed; a path without one is returned unchanged.
     Path WithoutExtension() const;
@@ -165,10 +165,10 @@ public:
     /// Writes to `out` the relative path that, joined to `base`, names this path; both are normalized first and symbolic
     /// links are not considered.
     ///
-    /// Param base: the directory to be relative to; same style as this path.
-    /// Param out: receives the result (`.` for the same path); unchanged on failure.
-    /// Aborts: the styles differ.
-    /// Fails: returns false when the roots differ (different drive, UNC share, or one absolute and one not), when
+    /// - Param base: the directory to be relative to; same style as this path.
+    /// - Param out: receives the result (`.` for the same path); unchanged on failure.
+    /// - Aborts: the styles differ.
+    /// - Fails: returns false when the roots differ (different drive, UNC share, or one absolute and one not), when
     ///   `base` still has `..` components the path does not share, or when the result is longer than [[io::kMaxPathBytes]].
     bool RelativeTo(const Path& base, Path* out) const;
     /// Returns true when this path is `base` or below it, lexically (both normalized, compared by component). False for
@@ -204,8 +204,8 @@ private:
 /// `Set` and `Append` use temporary arrays of `Capacity` bytes on the stack (two for `Append`) besides the member buffer, so a
 /// large capacity costs stack; pick the smallest that fits.
 ///
-/// Thread-safety: thread-compatible.
-/// Ownership: owns its buffer (inline).
+/// - Thread-safety: thread-compatible.
+/// - Ownership: owns its buffer (inline).
 template <usize Capacity>
 class PathBuilder {
 public:
@@ -216,11 +216,11 @@ public:
 
     /// Replaces the contents with `text` (canonicalized).
     ///
-    /// Fails: returns false, leaving the contents unchanged, when the canonical text does not fit or `text` has a NUL.
+    /// - Fails: returns false, leaving the contents unchanged, when the canonical text does not fit or `text` has a NUL.
     bool Set(StringView text) { return SetImpl(text); }
     /// Joins `right` as [[Path::Join(const Path&)]] does.
     ///
-    /// Fails: returns false, leaving the contents unchanged, when the result does not fit.
+    /// - Fails: returns false, leaving the contents unchanged, when the result does not fit.
     bool Append(StringView right) { return AppendImpl(right); }
     /// Returns the canonical, NUL-terminated text.
     const char* CStr() const { return buffer_; }

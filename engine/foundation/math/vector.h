@@ -14,7 +14,7 @@ namespace engine_placeholder {
 ///
 /// Components default to 0. Equality compares components exactly.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct Vec2 {
     /// X component.
     f32 x = 0.0f;
@@ -28,11 +28,11 @@ struct Vec2 {
 
     /// Returns a reference to component `i` (0 = x, 1 = y).
     ///
-    /// Param i: component index; any value above 1 returns `y` (not checked).
+    /// - Param i: component index; any value above 1 returns `y` (not checked).
     f32& operator[](usize i) { return i == 0 ? x : y; }
     /// Returns the value of component `i` (0 = x, 1 = y).
     ///
-    /// Param i: component index; any value above 1 returns `y` (not checked).
+    /// - Param i: component index; any value above 1 returns `y` (not checked).
     f32 operator[](usize i) const { return i == 0 ? x : y; }
 
     /// Returns the component-wise sum.
@@ -52,7 +52,7 @@ struct Vec2 {
 
     /// Returns the vector scaled to unit length.
     ///
-    /// Aborts: the length is zero.
+    /// - Aborts: the length is zero.
     Vec2 Normalized() const {
         f32 len = Length();
         ENGINE_ASSERT(len > 0.0f, "Normalized() of a zero-length Vec2");
@@ -69,7 +69,7 @@ struct Vec2 {
 ///
 /// Components default to 0. Equality compares components exactly.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct Vec3 {
     /// X component.
     f32 x = 0.0f;
@@ -85,7 +85,7 @@ struct Vec3 {
 
     /// Returns a reference to component `i` (0 = x, 1 = y, 2 = z).
     ///
-    /// Param i: component index; any value above 2 returns `z` (not checked).
+    /// - Param i: component index; any value above 2 returns `z` (not checked).
     f32& operator[](usize i) {
         switch (i) {
             case 0:
@@ -98,7 +98,7 @@ struct Vec3 {
     }
     /// Returns the value of component `i` (0 = x, 1 = y, 2 = z).
     ///
-    /// Param i: component index; any value above 2 returns `z` (not checked).
+    /// - Param i: component index; any value above 2 returns `z` (not checked).
     f32 operator[](usize i) const {
         switch (i) {
             case 0:
@@ -130,7 +130,7 @@ struct Vec3 {
 
     /// Returns the vector scaled to unit length.
     ///
-    /// Aborts: the length is zero.
+    /// - Aborts: the length is zero.
     Vec3 Normalized() const {
         f32 len = Length();
         ENGINE_ASSERT(len > 0.0f, "Normalized() of a zero-length Vec3");
@@ -147,7 +147,7 @@ struct Vec3 {
 ///
 /// Components default to 0. Equality compares components exactly.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct Vec4 {
     /// X component.
     f32 x = 0.0f;
@@ -167,7 +167,7 @@ struct Vec4 {
 
     /// Returns a reference to component `i` (0 = x, 1 = y, 2 = z, 3 = w).
     ///
-    /// Param i: component index; any value above 3 returns `w` (not checked).
+    /// - Param i: component index; any value above 3 returns `w` (not checked).
     f32& operator[](usize i) {
         switch (i) {
             case 0:
@@ -182,7 +182,7 @@ struct Vec4 {
     }
     /// Returns the value of component `i` (0 = x, 1 = y, 2 = z, 3 = w).
     ///
-    /// Param i: component index; any value above 3 returns `w` (not checked).
+    /// - Param i: component index; any value above 3 returns `w` (not checked).
     f32 operator[](usize i) const {
         switch (i) {
             case 0:
@@ -213,7 +213,7 @@ struct Vec4 {
 
     /// Returns the vector scaled to unit length.
     ///
-    /// Aborts: the length is zero.
+    /// - Aborts: the length is zero.
     Vec4 Normalized() const {
         f32 len = Length();
         ENGINE_ASSERT(len > 0.0f, "Normalized() of a zero-length Vec4");

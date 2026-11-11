@@ -21,10 +21,10 @@ const char* SessionStateName(SessionState state);
 
 /// Combines what a platform could read into a state. Locked wins over idle, idle over inactive.
 ///
-/// Param known: whether the platform answered at all; false gives `Unknown` whatever the other flags are.
-/// Param active: the session is in the foreground.
-/// Param locked: the screen is locked.
-/// Param idle: the session is idle.
+/// - Param known: whether the platform answered at all; false gives `Unknown` whatever the other flags are.
+/// - Param active: the session is in the foreground.
+/// - Param locked: the screen is locked.
+/// - Param idle: the session is idle.
 SessionState SessionStateFromFlags(bool known, bool active, bool locked, bool idle);
 
 /// Returns whether a window can be expected to appear: true for `Active` and `Unknown` (an unknown state never hides a failure).
@@ -37,9 +37,9 @@ bool SessionCanShowWindows(SessionState state);
 /// input desktop's name (not `Default` is `Locked`) and never reports `Idle`. macOS reads the window server's session dictionary
 /// (`CGSessionCopyCurrentDictionary`: off the console is `Inactive`, a locked screen `Locked`, a sleeping main display `Idle`); a process
 /// outside a window-server session (started over ssh) has none and reports `Unknown`.
-/// Returns: the state, `Unknown` when the platform cannot say.
-/// Fails: reports `Unknown`; never aborts and waits at most a few seconds (a session manager that does not answer gives `Unknown`).
-/// Thread-safety: thread-safe.
+/// - Returns: the state, `Unknown` when the platform cannot say.
+/// - Fails: reports `Unknown`; never aborts and waits at most a few seconds (a session manager that does not answer gives `Unknown`).
+/// - Thread-safety: thread-safe.
 SessionState QuerySessionState();
 
 } // namespace engine_placeholder::os

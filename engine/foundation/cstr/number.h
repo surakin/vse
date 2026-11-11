@@ -39,7 +39,7 @@ struct FormatShortestResult {
 
 /// Writes the shortest decimal text that parses back to exactly `value` into `[first, last)`, without a terminator (`std::to_chars`).
 ///
-/// Thread-safety: thread-safe.
+/// - Thread-safety: thread-safe.
 inline FormatShortestResult FormatShortest(char* first, char* last, f64 value) noexcept {
     const std::to_chars_result r = std::to_chars(first, last, value);
     return {r.ptr, r.ec == std::errc()};
@@ -66,9 +66,9 @@ namespace detail {
 /// `end` after the number, as `std::from_chars` reports it. Built on POSIX systems (on Linux it is the oracle's twin:
 /// `tests/cstr/parse_double_test.cpp` compares the two); not on Windows.
 ///
-/// Fails: `ok` is false, with `end` at `first`, when no number starts there (or the C locale cannot be made), and with `end` after the
+/// - Fails: `ok` is false, with `end` at `first`, when no number starts there (or the C locale cannot be made), and with `end` after the
 /// number when it is out of range; `value` is 0 then.
-/// Thread-safety: thread-safe (the C locale is made once, on first use).
+/// - Thread-safety: thread-safe (the C locale is made once, on first use).
 ParseDoubleResult ParseDoubleWithoutFromChars(const char* first, const char* last) noexcept;
 
 } // namespace detail
@@ -79,7 +79,7 @@ ParseDoubleResult ParseDoubleWithoutFromChars(const char* first, const char* las
 ///
 /// On macOS and iOS this is `detail::ParseDoubleWithoutFromChars` (Apple's libc++ has no `from_chars` for `double`), with the same
 /// results.
-/// Thread-safety: thread-safe.
+/// - Thread-safety: thread-safe.
 inline ParseDoubleResult ParseDoubleExact(const char* first, const char* last) noexcept {
 #if ENGINE_PLATFORM_MACOS || ENGINE_PLATFORM_IOS
     return detail::ParseDoubleWithoutFromChars(first, last);

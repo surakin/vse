@@ -35,14 +35,14 @@ struct FileStoreOptions {
 ///
 /// Two stores over one file do not merge: the last `Commit` wins as a whole, and a reader never sees a torn file.
 ///
-/// Thread-safety: thread-compatible.
-/// Ownership: owns its document; the file belongs to the file system.
+/// - Thread-safety: thread-compatible.
+/// - Ownership: owns its document; the file belongs to the file system.
 class FileConfigStore final : public ConfigStore {
 public:
     /// Makes a store over `path`; nothing is read until `Load`.
     ///
-    /// Param path: the settings file.
-    /// Param options: see [[settings::FileStoreOptions]].
+    /// - Param path: the settings file.
+    /// - Param options: see [[settings::FileStoreOptions]].
     explicit FileConfigStore(const io::Path& path, const FileStoreOptions& options = FileStoreOptions());
 
     u32 Capabilities() const override;

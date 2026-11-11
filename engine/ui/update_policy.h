@@ -18,7 +18,7 @@ enum class UpdatePolicy : u8 {
 
 /// What one call of [[ui::SurfaceUpdater::Frame]] did.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct UpdateResult {
     bool ran = false;     ///< The surface ran a frame.
     bool rebuilt = false; ///< The draw list was rebuilt: the picture changed and the surface's texture must be drawn again.
@@ -29,34 +29,34 @@ struct UpdateResult {
 /// The time of skipped frames is not lost: the next frame that runs is given the sum, so animations keep their speed. The draw list keeps its last contents between updates, and the
 /// texture it was drawn into keeps its last picture.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: borrows the surface, which must outlive this object.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: borrows the surface, which must outlive this object.
 class SurfaceUpdater {
 public:
     /// Makes an updater for `surface` (every frame).
-    /// Param surface: the surface; borrowed.
-    /// Ownership: borrows `surface`.
+    /// - Param surface: the surface; borrowed.
+    /// - Ownership: borrows `surface`.
     explicit SurfaceUpdater(Surface* surface) : surface_(surface) {}
     /// Sets the policy; `rate` is the frames a second for `FixedRate` (at least 1; ignored by the others).
     void SetPolicy(UpdatePolicy policy, f32 rate = 10.0f);
     /// Returns the policy.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     UpdatePolicy Policy() const { return policy_; }
     /// Calls the surface's `Frame` when the policy says so, with the time gathered since it last ran.
-    /// Param dt: seconds since the caller's last call.
-    /// Param list: the draw list to fill, or null to run only the logic.
-    /// Param atlas: the glyph atlas for text.
-    /// Returns: whether a frame ran and whether the list was rebuilt.
-    /// Ownership: borrowed; the caller keeps ownership and it must outlive its use here.
+    /// - Param dt: seconds since the caller's last call.
+    /// - Param list: the draw list to fill, or null to run only the logic.
+    /// - Param atlas: the glyph atlas for text.
+    /// - Returns: whether a frame ran and whether the list was rebuilt.
+    /// - Ownership: borrowed; the caller keeps ownership and it must outlive its use here.
     UpdateResult Frame(f32 dt, DrawList* list, text::GlyphAtlas* atlas);
     /// Returns the frames run.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     u64 FramesRun() const { return run_; }
     /// Returns the calls that ran nothing.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     u64 FramesSkipped() const { return skipped_; }
 
 private:

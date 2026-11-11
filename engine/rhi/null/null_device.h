@@ -18,7 +18,7 @@ struct NullDeviceState;
 
 /// Options for [[rhi::CreateNullDevice]].
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct NullDeviceOptions {
     /// Creates options with the RHI-guaranteed minimum limits, except that the sampler anisotropy limit is 16.
     NullDeviceOptions() { caps.max_sampler_anisotropy = 16.0f; }
@@ -59,7 +59,7 @@ struct NullDeviceOptions {
 
 /// Counts of the null device's resources, for tests and leak checks.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct NullDeviceStats {
     /// Live buffers.
     usize buffers = 0;
@@ -93,14 +93,14 @@ using NullDevicePtr = UniquePtr<NullDevice, DeviceDeleter>;
 /// [[rhi::NullDeviceOptions::abort_on_error]] is set. Resource state is validated when work is submitted,
 /// because only then is the order of lists known.
 ///
-/// Thread-safety: thread-safe for creation, destruction, mapping and inspection; `Submit`, `BeginFrame`,
+/// - Thread-safety: thread-safe for creation, destruction, mapping and inspection; `Submit`, `BeginFrame`,
 ///   `EndFrame` and `WaitIdle` belong to one submission thread, as for [[rhi::Device]].
-/// Ownership: created by [[rhi::CreateNullDevice]], which returns a [[rhi::NullDevicePtr]].
+/// - Ownership: created by [[rhi::CreateNullDevice]], which returns a [[rhi::NullDevicePtr]].
 class NullDevice final : public Device {
 public:
     /// Creates the device; use [[rhi::CreateNullDevice]].
     ///
-    /// Param options: limits and behavior.
+    /// - Param options: limits and behavior.
     explicit NullDevice(const NullDeviceOptions& options);
 
     /// Releases every resource, including those still waiting for deferred destruction.
@@ -154,10 +154,10 @@ public:
 
     /// Copies the most recent error message into `out`, truncating and always terminating it.
     ///
-    /// Param out: destination buffer.
-    /// Param capacity: size of `out` in bytes; 0 writes nothing.
-    /// Returns: the length of the message copied, 0 if there has been no error.
-    /// Ownership: `out` is borrowed for the call; the device keeps no reference to it.
+    /// - Param out: destination buffer.
+    /// - Param capacity: size of `out` in bytes; 0 writes nothing.
+    /// - Returns: the length of the message copied, 0 if there has been no error.
+    /// - Ownership: `out` is borrowed for the call; the device keeps no reference to it.
     usize LastError(char* out, usize capacity) const;
 
     /// Clears the error count and the last message.
@@ -168,32 +168,32 @@ public:
 
     /// Copies bytes out of a buffer's host storage regardless of its memory location, for test inspection.
     ///
-    /// Param buffer: a live buffer.
-    /// Param offset: byte offset to read from.
-    /// Param out: destination for `size` bytes.
-    /// Param size: bytes to read.
-    /// Returns: true if the range was copied.
-    /// Fails: returns false for a stale handle or a range outside the buffer.
-    /// Ownership: `out` is borrowed for the call; the device keeps no reference to it.
+    /// - Param buffer: a live buffer.
+    /// - Param offset: byte offset to read from.
+    /// - Param out: destination for `size` bytes.
+    /// - Param size: bytes to read.
+    /// - Returns: true if the range was copied.
+    /// - Fails: returns false for a stale handle or a range outside the buffer.
+    /// - Ownership: `out` is borrowed for the call; the device keeps no reference to it.
     bool PeekBuffer(BufferHandle buffer, u64 offset, void* out, u64 size) const;
 
     /// Returns the tracked state of a buffer, for test inspection.
     ///
-    /// Param buffer: a live buffer.
-    /// Returns: its state, or `Undefined` for a stale handle.
+    /// - Param buffer: a live buffer.
+    /// - Returns: its state, or `Undefined` for a stale handle.
     ResourceState StateOf(BufferHandle buffer) const;
 
     /// Returns the tracked state of a texture, for test inspection.
     ///
-    /// Param texture: a live texture.
-    /// Returns: its state, or `Undefined` for a stale handle.
+    /// - Param texture: a live texture.
+    /// - Returns: its state, or `Undefined` for a stale handle.
     ResourceState StateOf(TextureHandle texture) const;
 
     /// Makes the device behave as lost: later submits fail and `DeviceLost()` reports true.
     void SimulateDeviceLoss();
 
     /// Counts a swapchain present and loses the device if the injected present number has come.
-    /// Returns: true if the device is lost now.
+    /// - Returns: true if the device is lost now.
     bool CountPresent();
 
     /// Makes the swapchain report `Lost` from now on, as if the window's surface had been taken away.
@@ -209,19 +209,19 @@ private:
 
 /// Creates a null device.
 ///
-/// Param options: limits and behavior; the defaults are the RHI-guaranteed minimums.
-/// Returns: the device; never empty.
-/// Aborts: the host is out of memory.
-/// Ownership: the caller owns the device through the returned pointer.
+/// - Param options: limits and behavior; the defaults are the RHI-guaranteed minimums.
+/// - Returns: the device; never empty.
+/// - Aborts: the host is out of memory.
+/// - Ownership: the caller owns the device through the returned pointer.
 NullDevicePtr CreateNullDevice(const NullDeviceOptions& options = NullDeviceOptions());
 
 /// Registers the null backend (`Backend::Null`, name `null`) with the backend registry; `Auto` never picks it.
 ///
 /// Called by [[rhi::RegisterCompiledBackends]]; calling it again changes nothing.
 ///
-/// Returns: true if the backend is registered.
-/// Fails: returns false when the registry is full.
-/// Thread-safety: thread-safe.
+/// - Returns: true if the backend is registered.
+/// - Fails: returns false when the registry is full.
+/// - Thread-safety: thread-safe.
 bool RegisterNullBackend();
 
 } // namespace engine_placeholder::rhi

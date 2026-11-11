@@ -18,8 +18,8 @@ namespace engine_placeholder::os::wayland {
 /// Only owns the connection and the globals; surfaces, input and the event
 /// loop live in other types. Movable, not copyable.
 ///
-/// Thread-safety: not-thread-safe. libwayland objects here are used from one thread.
-/// Ownership: owns the `wl_display` and every bound global and releases them on
+/// - Thread-safety: not-thread-safe. libwayland objects here are used from one thread.
+/// - Ownership: owns the `wl_display` and every bound global and releases them on
 ///   destruction. The accessors return borrowed pointers valid until then.
 class WaylandConnection {
 public:
@@ -27,8 +27,8 @@ public:
     ///
     /// Binds `wl_compositor`, `xdg_wm_base`, `wl_seat` and `wl_shm` with a registry
     /// roundtrip, plus `zxdg_decoration_manager_v1`, `wp_cursor_shape_manager_v1`, `zwp_pointer_constraints_v1` and `zwp_relative_pointer_manager_v1`, `wl_data_device_manager` and `zwp_primary_selection_device_manager_v1` when offered.
-    /// Returns: the connection; check [[os::wayland::WaylandConnection::Valid]].
-    /// Fails: returns an invalid connection (logged via `LogPlatform`) if no compositor is running or a required global is missing.
+    /// - Returns: the connection; check [[os::wayland::WaylandConnection::Valid]].
+    /// - Fails: returns an invalid connection (logged via `LogPlatform`) if no compositor is running or a required global is missing.
     static WaylandConnection Connect();
 
     /// Constructs an invalid connection that owns nothing.

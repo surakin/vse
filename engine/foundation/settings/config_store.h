@@ -38,14 +38,14 @@ enum class StoreError : u8 {
 
 /// Returns a short name for a store error (`none`, `not_found`, `type_mismatch`, `read_only`, `damaged`, `io`, `unsupported`, `too_long`, `invalid`, `permission_denied`, `interrupted`, `too_new`).
 ///
-/// Returns: a static string.
-/// Fails: never.
-/// Ownership: the string is static and never freed.
+/// - Returns: a static string.
+/// - Fails: never.
+/// - Ownership: the string is static and never freed.
 const char* StoreErrorName(StoreError error);
 
 /// The result of a store call: an error value plus, for `Commit`, how far it got.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct Status {
     /// What went wrong; `None` means success.
     StoreError error = StoreError::None;
@@ -69,7 +69,7 @@ struct Status {
 /// A text-only store receives and returns `Text` values holding the value's canonical text; [[settings::ToStored]] and
 /// [[settings::FromStored]] are the one place that converts between a typed [[settings::Value]] and either form.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct StoredValue {
     /// True if `value` is a typed value; false if it is the text of a value of a type the store does not record.
     bool typed = false;
@@ -98,99 +98,99 @@ using ChangeListener = void (*)(void* user);
 
 /// Converts a typed value into the form a store holds.
 ///
-/// Param desc: the declaration of the setting.
-/// Param value: a value of the declared type.
-/// Param typed: true for a store with [[settings::kCapTypedValues]], false for a text store (the value is written as its canonical text).
-/// Param out: receives the value to pass to `Set`; unchanged on failure.
-/// Returns: `None`, or `TooLong` when the canonical text of a text-store value (quotes and escapes included) exceeds 511 bytes.
-/// Fails: reports `TooLong` as the return value.
-/// Aborts: the value's type differs from `desc.type`.
+/// - Param desc: the declaration of the setting.
+/// - Param value: a value of the declared type.
+/// - Param typed: true for a store with [[settings::kCapTypedValues]], false for a text store (the value is written as its canonical text).
+/// - Param out: receives the value to pass to `Set`; unchanged on failure.
+/// - Returns: `None`, or `TooLong` when the canonical text of a text-store value (quotes and escapes included) exceeds 511 bytes.
+/// - Fails: reports `TooLong` as the return value.
+/// - Aborts: the value's type differs from `desc.type`.
 StoreError ToStored(const SettingDesc& desc, const Value& value, bool typed, StoredValue* out);
 
 /// Converts a stored value into a typed one for the setting `desc` declares.
 ///
-/// Param desc: the declaration; its range and enum names apply to text.
-/// Param stored: what `Get` returned.
-/// Param out: receives the value; unchanged on failure.
-/// Returns: `None` or `Clamped` (stored), or why the stored value is not acceptable.
-/// Fails: a typed stored value of another type than `desc.type` returns `ValueError::BadNumber`, and one outside the range or the enum is checked by
+/// - Param desc: the declaration; its range and enum names apply to text.
+/// - Param stored: what `Get` returned.
+/// - Param out: receives the value; unchanged on failure.
+/// - Returns: `None` or `Clamped` (stored), or why the stored value is not acceptable.
+/// - Fails: a typed stored value of another type than `desc.type` returns `ValueError::BadNumber`, and one outside the range or the enum is checked by
 ///   [[settings::ValidateValue]]; text is parsed by [[settings::ParseValue]].
 ValueError FromStored(const SettingDesc& desc, const StoredValue& stored, Value* out);
 
 /// A store of setting values. Abstract; see the file comment for the staging rules.
 ///
-/// Thread-safety: thread-compatible. One thread at a time per instance, except that a change listener may be called from any thread.
-/// Ownership: the caller owns the store (see [[settings::ConfigStorePtr]]).
+/// - Thread-safety: thread-compatible. One thread at a time per instance, except that a change listener may be called from any thread.
+/// - Ownership: the caller owns the store (see [[settings::ConfigStorePtr]]).
 class ConfigStore {
 public:
     virtual ~ConfigStore() = default;
 
     /// Returns the store's [[settings::StoreCapability]] bits.
     ///
-    /// Backend: Windows: the registry store reports kCapWritable | kCapPerKeyWrites | kCapNotifies (values are REG_SZ text, not typed); macOS: NSUserDefaults reports kCapWritable | kCapTypedValues | kCapNotifies.
+    /// - Backend: Windows: the registry store reports kCapWritable | kCapPerKeyWrites | kCapNotifies (values are REG_SZ text, not typed); macOS: NSUserDefaults reports kCapWritable | kCapTypedValues | kCapNotifies.
     virtual u32 Capabilities() const = 0;
 
     /// Writes a short description for logs into `out` (a path, `memory`, `registry HKCU\Software\app`), NUL-terminated and cut to fit.
     ///
-    /// Backend: Windows: `registry HKCU\Software\<app>`; macOS: the defaults domain or the plist path.
+    /// - Backend: Windows: `registry HKCU\Software\<app>`; macOS: the defaults domain or the plist path.
     virtual void Describe(char* out, usize capacity) const = 0;
 
     /// Reads the durable state, discarding any staged changes. Call it once before using the store, and again to pick up external changes.
     ///
-    /// Returns: success, or why the state could not be read. A store whose medium does not exist yet loads as empty and succeeds.
-    /// Fails: `Damaged` (the content is unreadable as a whole; reads still see what could be parsed), `Io`, `PermissionDenied`.
+    /// - Returns: success, or why the state could not be read. A store whose medium does not exist yet loads as empty and succeeds.
+    /// - Fails: `Damaged` (the content is unreadable as a whole; reads still see what could be parsed), `Io`, `PermissionDenied`.
     ///
-    /// Backend: Windows: RegOpenKeyEx (a missing key loads as empty) and a read of all values; macOS: synchronize the defaults domain.
+    /// - Backend: Windows: RegOpenKeyEx (a missing key loads as empty) and a read of all values; macOS: synchronize the defaults domain.
     virtual Status Load() = 0;
 
     /// Reads one entry (staged changes included).
     ///
-    /// Param key: a valid key.
-    /// Param out: receives the value.
-    /// Fails: `NotFound`, `Invalid` (not a valid key).
+    /// - Param key: a valid key.
+    /// - Param out: receives the value.
+    /// - Fails: `NotFound`, `Invalid` (not a valid key).
     ///
-    /// Backend: Windows: RegQueryValueEx of a REG_SZ (another type is TypeMismatch); macOS: objectForKey.
+    /// - Backend: Windows: RegQueryValueEx of a REG_SZ (another type is TypeMismatch); macOS: objectForKey.
     virtual Status Get(StringView key, StoredValue* out) = 0;
 
     /// Sets one entry.
     ///
-    /// Param key: a valid key.
-    /// Param value: the value; typed only when the store has [[settings::kCapTypedValues]] (use [[settings::ToStored]]).
-    /// Returns: success; staged until `Commit` unless the store has [[settings::kCapPerKeyWrites]].
-    /// Fails: `ReadOnly`, `Invalid`, `TooLong`, `Io` (a per-key store).
+    /// - Param key: a valid key.
+    /// - Param value: the value; typed only when the store has [[settings::kCapTypedValues]] (use [[settings::ToStored]]).
+    /// - Returns: success; staged until `Commit` unless the store has [[settings::kCapPerKeyWrites]].
+    /// - Fails: `ReadOnly`, `Invalid`, `TooLong`, `Io` (a per-key store).
     ///
-    /// Backend: Windows: RegSetValueEx at once (a per-key store); macOS: setObject:forKey:.
+    /// - Backend: Windows: RegSetValueEx at once (a per-key store); macOS: setObject:forKey:.
     virtual Status Set(StringView key, const StoredValue& value) = 0;
 
     /// Removes one entry.
     ///
-    /// Fails: `NotFound` (nothing changes), `ReadOnly`, `Invalid`, `Io` (a per-key store).
+    /// - Fails: `NotFound` (nothing changes), `ReadOnly`, `Invalid`, `Io` (a per-key store).
     ///
-    /// Backend: Windows: RegDeleteValue; macOS: removeObjectForKey.
+    /// - Backend: Windows: RegDeleteValue; macOS: removeObjectForKey.
     virtual Status Remove(StringView key) = 0;
 
     /// Appends the keys under `prefix` to `out`: the keys equal to `prefix` or starting with `prefix.`; an empty prefix means every key.
     /// The order is unspecified unless the store has [[settings::kCapPreservesOrder]] (callers that need an order sort).
     ///
-    /// Fails: `Invalid` (a non-empty prefix that is not a valid key), `Io`.
+    /// - Fails: `Invalid` (a non-empty prefix that is not a valid key), `Io`.
     ///
-    /// Backend: Windows: RegEnumValue and RegEnumKeyEx under the subkey the prefix names; macOS: dictionaryRepresentation filtered by the prefix.
+    /// - Backend: Windows: RegEnumValue and RegEnumKeyEx under the subkey the prefix names; macOS: dictionaryRepresentation filtered by the prefix.
     virtual Status Enumerate(StringView prefix, Vector<Key>* out) = 0;
 
     /// Makes the staged changes durable.
     ///
-    /// Param options: see [[settings::CommitOptions]].
-    /// Returns: success; with nothing staged it succeeds and does nothing.
-    /// Fails: `ReadOnly`, `Damaged` (unless `replace_damaged`), `Io`, `PermissionDenied`. With [[settings::kCapAtomicCommit]] a failure leaves the
+    /// - Param options: see [[settings::CommitOptions]].
+    /// - Returns: success; with nothing staged it succeeds and does nothing.
+    /// - Fails: `ReadOnly`, `Damaged` (unless `replace_damaged`), `Io`, `PermissionDenied`. With [[settings::kCapAtomicCommit]] a failure leaves the
     ///   durable state as it was and the changes staged (retry is allowed); a store without it reports in `Status::done` how many changes landed.
     ///
-    /// Backend: Windows: nothing to do for a per-key store, or RegFlushKey; macOS: synchronize.
+    /// - Backend: Windows: nothing to do for a per-key store, or RegFlushKey; macOS: synchronize.
     virtual Status Commit(const CommitOptions& options) = 0;
 
     /// Writes where the entry for `key` came from inside this store, for provenance messages (`line 12`, `$ENGINE_RHI_GPU`, `--gpu`); an
     /// empty string when the store has nothing to say. Default: empty.
     ///
-    /// Backend: none needed: a registry key has no line; write the value name when it helps.
+    /// - Backend: none needed: a registry key has no line; write the value name when it helps.
     virtual void Origin(StringView key, char* out, usize capacity) const {
         (void)key;
         if (capacity != 0) out[0] = '\0';
@@ -198,18 +198,18 @@ public:
 
     /// Returns whether the backing medium exists (a file that has not been written yet is absent). Default: true.
     ///
-    /// Backend: Windows: whether the registry key exists; macOS: whether the domain has any value.
+    /// - Backend: Windows: whether the registry key exists; macOS: whether the domain has any value.
     virtual bool IsPresent() const { return true; }
 
     /// Registers a function to call when another writer changes the durable state. Replaces any earlier listener; a null function removes it.
     ///
-    /// Param listener: the function; called on an unspecified thread, never from inside a call on this store by the same thread. It should only
+    /// - Param listener: the function; called on an unspecified thread, never from inside a call on this store by the same thread. It should only
 ///   record that a change happened (set a flag, queue work): it must not block on locks other threads hold while they use stores, and must not create or
 ///   destroy stores.
-    /// Param user: passed back to `listener`.
-    /// Fails: `Unsupported` (no [[settings::kCapNotifies]]).
+    /// - Param user: passed back to `listener`.
+    /// - Fails: `Unsupported` (no [[settings::kCapNotifies]]).
     ///
-    /// Backend: Windows: RegNotifyChangeKeyValue on a thread; macOS: NSUserDefaultsDidChangeNotification.
+    /// - Backend: Windows: RegNotifyChangeKeyValue on a thread; macOS: NSUserDefaultsDidChangeNotification.
     virtual Status SetChangeListener(ChangeListener listener, void* user) {
         (void)listener;
         (void)user;

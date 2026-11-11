@@ -13,8 +13,8 @@ namespace engine_placeholder::os::wayland {
 ///
 /// Not movable or copyable, because the input listeners capture addresses.
 ///
-/// Thread-safety: owner-thread-only. Open, pump and close on one thread; listener callbacks run inside `PumpEvents` on that thread.
-/// Ownership: owns the connection, window and input; the `InputState` passed to
+/// - Thread-safety: owner-thread-only. Open, pump and close on one thread; listener callbacks run inside `PumpEvents` on that thread.
+/// - Ownership: owns the connection, window and input; the `InputState` passed to
 ///   `Open` is borrowed and must outlive this object.
 class WaylandPlatformWindow final : public Window {
 public:
@@ -22,12 +22,12 @@ public:
     WaylandPlatformWindow() = default;
 
     /// Connects to the compositor, maps a window and hooks input into `input`.
-    /// Param title: window title.
-    /// Param width: requested width in pixels; a hint the compositor may override with its suggested size.
-    /// Param height: requested height in pixels; a hint the compositor may override.
-    /// Param input: receives keyboard and pointer state; must outlive this object.
-    /// Returns: `true` if the window is open.
-    /// Fails: returns `false` (logged) on any failure, leaving the object invalid with nothing open.
+    /// - Param title: window title.
+    /// - Param width: requested width in pixels; a hint the compositor may override with its suggested size.
+    /// - Param height: requested height in pixels; a hint the compositor may override.
+    /// - Param input: receives keyboard and pointer state; must outlive this object.
+    /// - Returns: `true` if the window is open.
+    /// - Fails: returns `false` (logged) on any failure, leaving the object invalid with nothing open.
     bool Open(StringView title, u32 width, u32 height, InputState* input);
 
     /// Tears everything down in the safe order: input proxies, window, then the connection.
@@ -104,7 +104,7 @@ public:
     bool ConnectionLost() const { return connection_lost_; }
     /// Returns the underlying `wl_display`, or null if not open.
     ///
-    /// Ownership: borrowed; owned by this window's connection and valid until [[os::wayland::WaylandPlatformWindow::Close]].
+    /// - Ownership: borrowed; owned by this window's connection and valid until [[os::wayland::WaylandPlatformWindow::Close]].
     wl_display* NativeDisplay() const { return connection_.Display(); }
     /// Returns the current window width in pixels.
     u32 Width() const override { return window_.Width(); }
@@ -130,8 +130,8 @@ public:
     /// Returns true on an open window: fullscreen is part of xdg-shell, which every compositor with a window has.
     bool SupportsFullscreen() const override { return Valid(); }
     /// Asks the compositor for fullscreen on or off; see [[os::wayland::WaylandWindow::SetFullscreen]].
-    /// Param fullscreen: the state wanted.
-    /// Returns: true if the request was sent.
+    /// - Param fullscreen: the state wanted.
+    /// - Returns: true if the request was sent.
     bool SetFullscreen(bool fullscreen) override {
         return Valid() && window_.SetFullscreen(fullscreen); // sent with the next PumpEvents
     }

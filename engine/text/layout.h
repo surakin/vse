@@ -13,8 +13,8 @@ namespace engine_placeholder::text {
 
 /// How a run of text is drawn: which font, at what size and in what color.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: borrows the font, which must outlive the call (and is not touched afterwards).
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: borrows the font, which must outlive the call (and is not touched afterwards).
 struct TextStyle {
     Font* font = nullptr;     ///< The font; [[text::Layout]] sets its pixel size to `pixel_size`.
     u32 pixel_size = 16;      ///< Size in device pixels (the caller applies any display scale).
@@ -30,8 +30,8 @@ enum class Align : u8 {
 
 /// Options of [[text::Layout]].
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: owns nothing.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns nothing.
 struct LayoutOptions {
     f32 max_width = 0;               ///< Soft wrap width in pixels; 0 means no wrapping.
     f32 line_height_scale = 1.0f;    ///< Multiplies the font's line height.
@@ -41,8 +41,8 @@ struct LayoutOptions {
 
 /// One glyph with the pen position it is drawn from.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: owns nothing.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns nothing.
 struct PositionedGlyph {
     GlyphId glyph = 0;              ///< The glyph id (`.notdef` for a code point the font lacks).
     f32 x = 0;                      ///< Pen position: the glyph's origin on the baseline.
@@ -63,8 +63,8 @@ enum class ClusterKind : u8 {
 
 /// One grapheme cluster: the unit the cursor moves by.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: owns nothing.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns nothing.
 struct ClusterInfo {
     u32 byte_begin = 0;     ///< First byte of the cluster in the input.
     u32 byte_end = 0;       ///< One past its last byte.
@@ -78,8 +78,8 @@ struct ClusterInfo {
 
 /// One line of the layout.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: owns nothing.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns nothing.
 struct LineInfo {
     u32 first_cluster = 0;  ///< Index of its first cluster in [[text::TextLayout::clusters]].
     u32 cluster_count = 0;  ///< Its clusters, including the line break that ends it (0 for the empty last line).
@@ -94,8 +94,8 @@ struct LineInfo {
 
 /// The result of [[text::Layout]].
 ///
-/// Thread-safety: thread-compatible.
-/// Ownership: owns its vectors.
+/// - Thread-safety: thread-compatible.
+/// - Ownership: owns its vectors.
 struct TextLayout {
     Vector<PositionedGlyph> glyphs;  ///< All glyphs in reading order.
     Vector<ClusterInfo> clusters;    ///< All grapheme clusters in order (their byte ranges tile the input).
@@ -113,12 +113,12 @@ struct TextLayout {
 /// `\\r\\n` and `\\r` end a line; a tab advances to the next tab stop; with `max_width` above 0 a line wraps after the last space (U+0020; the only break opportunities are a space and a tab, so other whitespace such as U+00A0 or U+3000 never breaks) that fits, or between clusters when a word is
 /// wider than the line (never inside a cluster). Trailing spaces never trigger a wrap and do not count towards the width.
 ///
-/// Param utf8: the text; malformed sequences become U+FFFD and are counted.
-/// Param style: the font and size.
-/// Param options: wrapping, line height, tabs, alignment.
-/// Param out: receives the layout; cleared first.
-/// Ownership: nothing is retained; `out` does not refer to `utf8` or the font.
-/// Fails: `InvalidArgument` for a style with no open font, a pixel size the font refuses, a `line_height_scale` not in (0, 100] or a negative or non-finite `max_width`, text longer than 4 GiB (offsets are 32-bit); `OutOfMemory`; `out` is left empty.
+/// - Param utf8: the text; malformed sequences become U+FFFD and are counted.
+/// - Param style: the font and size.
+/// - Param options: wrapping, line height, tabs, alignment.
+/// - Param out: receives the layout; cleared first.
+/// - Ownership: nothing is retained; `out` does not refer to `utf8` or the font.
+/// - Fails: `InvalidArgument` for a style with no open font, a pixel size the font refuses, a `line_height_scale` not in (0, 100] or a negative or non-finite `max_width`, text longer than 4 GiB (offsets are 32-bit); `OutOfMemory`; `out` is left empty.
 Status Layout(StringView utf8, const TextStyle& style, const LayoutOptions& options, TextLayout* out);
 
 } // namespace engine_placeholder::text

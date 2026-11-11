@@ -16,35 +16,35 @@ class Surface;
 /// The layout depends on the text, the alignment, the font object, the pixel size, the wrap width and the surface scale. `Fit` gives the layout that fits a width: the full one, or
 /// the text cut at a cluster boundary with an ellipsis (U+2026) appended when it is wider; the cut layout is cached too.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: owns the text and the layouts; borrows the font only during `Ensure`.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: owns the text and the layouts; borrows the font only during `Ensure`.
 class TextRun {
 public:
     /// Makes a run with no text.
     TextRun() = default;
     /// Sets the text; a different text invalidates the layouts. Returns whether it changed.
-    /// Fails: never.
+    /// - Fails: never.
     bool SetText(StringView text);
     /// Returns the text.
     StringView Text() const { return StringView(text_.Data(), text_.Size()); }
     /// Sets the alignment of the lines inside the wrap width; a change invalidates the layouts. Returns whether it changed.
-    /// Fails: never.
+    /// - Fails: never.
     bool SetAlign(text::Align align);
 
     /// Makes the full layout current for the given font and sizes.
     ///
-    /// Param face: the font; its pixel size is set here.
-    /// Param family: the font's family key (part of the cache key).
-    /// Param size_px: the pixel size, at least 1.
-    /// Param wrap_px: the wrap width in pixels, 0 for no wrapping.
-    /// Param scale: the surface scale (part of the cache key; `Width`/`Height` divide by it).
-    /// Returns: whether the layout is usable.
-    /// Ownership: borrows `face` for the call only.
-    /// Fails: returns false for a null font or a font the layout refuses.
+    /// - Param face: the font; its pixel size is set here.
+    /// - Param family: the font's family key (part of the cache key).
+    /// - Param size_px: the pixel size, at least 1.
+    /// - Param wrap_px: the wrap width in pixels, 0 for no wrapping.
+    /// - Param scale: the surface scale (part of the cache key; `Width`/`Height` divide by it).
+    /// - Returns: whether the layout is usable.
+    /// - Ownership: borrows `face` for the call only.
+    /// - Fails: returns false for a null font or a font the layout refuses.
     bool Ensure(text::Font* face, u32 family, f32 size_px, f32 wrap_px, f32 scale);
     /// Like `Ensure`, with the font taken from a resolved style (size in physical pixels, rounded to whole pixels) and the face from the surface's font provider.
-    /// Ownership: borrows `surface` for the call only.
-    /// Returns: whether the layout is usable; false without a surface, a font provider or a face for the style's family.
+    /// - Ownership: borrows `surface` for the call only.
+    /// - Returns: whether the layout is usable; false without a surface, a font provider or a face for the style's family.
     bool EnsureForStyle(Surface* surface, const ResolvedStyle& style, f32 wrap_px);
     /// Returns the full layout from the last successful `Ensure`.
     const text::TextLayout& Full() const { return full_; }

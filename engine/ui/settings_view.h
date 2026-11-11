@@ -32,8 +32,8 @@ namespace engine_placeholder::ui {
 /// that an environment variable, the command line or a policy layer decides is shown disabled with its source as a tooltip. The widgets show the current values, refreshed when a
 /// settings listener reports a change (from any thread) and never by polling: an idle screen reads nothing from the settings.
 ///
-/// Thread-safety: owner-thread-only; the settings listener only sets a flag, so settings may change on any thread.
-/// Ownership: borrows the settings, which must outlive the view; owns its rows.
+/// - Thread-safety: owner-thread-only; the settings listener only sets a flag, so settings may change on any thread.
+/// - Ownership: borrows the settings, which must outlive the view; owns its rows.
 class SettingsView : public BoxLayout {
 public:
     /// The heading of a setting that names no group.
@@ -52,10 +52,10 @@ public:
     static constexpr int kFloatDecimals = 2;
 
     /// Makes the screen and builds its rows.
-    /// Param settings: the settings; borrowed.
-    /// Param prefix: only settings whose key starts with it get a row (empty for all).
-    /// Param name: the widget name.
-    /// Ownership: borrows `settings`.
+    /// - Param settings: the settings; borrowed.
+    /// - Param prefix: only settings whose key starts with it get a row (empty for all).
+    /// - Param name: the widget name.
+    /// - Ownership: borrows `settings`.
     SettingsView(settings::Settings* settings, StringView prefix = StringView(), StringView name = StringView());
     /// Removes the settings listener.
     ~SettingsView() override;
@@ -63,8 +63,8 @@ public:
     SettingsView& operator=(const SettingsView&) = delete;
 
     /// Sets the apply function every change is passed to (the renderer's `ApplySettings` glue), or null for none. Returning false from it rejects the change.
-    /// Param user: passed to it; borrowed.
-    /// Ownership: `user` is borrowed until it is replaced.
+    /// - Param user: passed to it; borrowed.
+    /// - Ownership: `user` is borrowed until it is replaced.
     void SetApply(settings::ApplyFn apply, void* user);
     /// Removes the rows and makes them again from the registry; the message and the restart note are cleared.
     void Rebuild();
@@ -72,44 +72,44 @@ public:
     void Refresh();
     /// Returns why the last change was refused, empty when it was not (cleared by the next accepted change).
     ///
-    /// Fails: never.
+    /// - Fails: never.
     StringView Message() const { return message_.View(); }
     /// Returns whether a setting that needs a restart was changed since the screen was built.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool RestartPending() const { return restart_pending_; }
     /// Returns the number of rows (shown or collapsed).
     ///
-    /// Fails: never.
+    /// - Fails: never.
     usize RowCount() const { return rows_.Size(); }
     /// Returns the row of a setting, or null for a setting with none (hidden, or outside the prefix).
     ///
-    /// Ownership: borrowed; the view keeps it and it stays valid until `Rebuild`.
-    /// Fails: returns null when there is none.
+    /// - Ownership: borrowed; the view keeps it and it stays valid until `Rebuild`.
+    /// - Fails: returns null when there is none.
     Widget* RowOf(settings::SettingId id) const;
     /// Returns the widget that edits a setting (the slider for a number, the check box, combo box or text field), or null.
     ///
-    /// Ownership: borrowed; the view keeps it and it stays valid until `Rebuild`.
-    /// Fails: returns null when there is none.
+    /// - Ownership: borrowed; the view keeps it and it stays valid until `Rebuild`.
+    /// - Fails: returns null when there is none.
     Widget* ControlOf(settings::SettingId id) const;
     /// Returns the spin box of a numeric setting, or null.
     ///
-    /// Ownership: borrowed; the view keeps it and it stays valid until `Rebuild`.
-    /// Fails: returns null when there is none.
+    /// - Ownership: borrowed; the view keeps it and it stays valid until `Rebuild`.
+    /// - Fails: returns null when there is none.
     SpinBox* SpinOf(settings::SettingId id) const;
     /// Returns the restart note of a setting, or null when it needs none.
     ///
-    /// Ownership: borrowed; the view keeps it and it stays valid until `Rebuild`.
-    /// Fails: returns null when there is none.
+    /// - Ownership: borrowed; the view keeps it and it stays valid until `Rebuild`.
+    /// - Fails: returns null when there is none.
     Label* RestartNoteOf(settings::SettingId id) const;
     /// Returns the check box that shows the advanced rows, or null when there are none.
     ///
-    /// Ownership: borrowed; the view keeps it and it stays valid until `Rebuild`.
-    /// Fails: returns null when there is none.
+    /// - Ownership: borrowed; the view keeps it and it stays valid until `Rebuild`.
+    /// - Fails: returns null when there is none.
     CheckBox* AdvancedBox() const { return advanced_box_; }
     /// Returns how many times the rows were refreshed from the settings.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     u64 Refreshes() const { return refreshes_; }
     /// Called after a change that needs a restart is accepted.
     Callback<SettingsView*>& OnRestartNeeded() { return on_restart_; }
@@ -117,7 +117,7 @@ public:
     void Update(f32 dt) override;
     /// Returns true only while a change waits to be shown, so an idle screen costs nothing.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool WantsUpdate() const override { return changed_.Load(MemoryOrder::Relaxed); }
 
 private:

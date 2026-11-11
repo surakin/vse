@@ -22,7 +22,7 @@ enum class DynamicKind : u8 {
 
 /// How a [[spatial::SpatialSet]] is made.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct SpatialSetConfig {
     /// The moving side's structure.
     DynamicKind dynamic = DynamicKind::Bvh;
@@ -41,7 +41,7 @@ inline constexpr SetHandle kInvalidSetHandle = 0xFFFFFFFFu;
 
 /// What a [[spatial::SpatialSet]] holds and what it has done.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct SpatialSetStats {
     u32 static_items = 0;         ///< Live static items, in the tree or waiting.
     u32 pending_static = 0;       ///< Static items added (or made static) since the last `RebuildStatic`: queries scan them.
@@ -60,63 +60,63 @@ struct SpatialSetStats {
 /// baked as static and now opens) without changing its handle. A visitor of the composed traversal sees the static tree first, then the pending static
 /// items, then the dynamic side.
 ///
-/// Thread-safety: thread-compatible. Changes need exclusive access; the const queries may run on any number of threads at once between changes.
-/// Ownership: owns its structures and items.
+/// - Thread-safety: thread-compatible. Changes need exclusive access; the const queries may run on any number of threads at once between changes.
+/// - Ownership: owns its structures and items.
 class SpatialSet {
 public:
     /// Makes an empty set.
     ///
-    /// Param config: the dynamic side's kind and settings; copied.
-    /// Aborts: `dynamic` is `Grid` and the grid cell size is not above 0 and finite (it is not checked for a tree).
+    /// - Param config: the dynamic side's kind and settings; copied.
+    /// - Aborts: `dynamic` is `Grid` and the grid cell size is not above 0 and finite (it is not checked for a tree).
     explicit SpatialSet(const SpatialSetConfig& config = SpatialSetConfig());
     SpatialSet(const SpatialSet&) = delete;
     SpatialSet& operator=(const SpatialSet&) = delete;
 
     /// Adds an item that does not move; it joins the static tree at the next `RebuildStatic`.
     ///
-    /// Param box: its box; not empty, corners finite.
-    /// Param key: the caller's key.
-    /// Param layer: the caller's layer (a bit index 0 to 31 for the query masks).
-    /// Returns: its handle, or [[spatial::kInvalidSetHandle]] when the set holds [[spatial::kMaxDynamicProxies]] items.
-    /// Aborts: `box` is empty or not finite.
+    /// - Param box: its box; not empty, corners finite.
+    /// - Param key: the caller's key.
+    /// - Param layer: the caller's layer (a bit index 0 to 31 for the query masks).
+    /// - Returns: its handle, or [[spatial::kInvalidSetHandle]] when the set holds [[spatial::kMaxDynamicProxies]] items.
+    /// - Aborts: `box` is empty or not finite.
     SetHandle AddStatic(const Aabb& box, SpatialKey key, u32 layer);
 
     /// Adds an item that moves.
     ///
-    /// Param box: its box; not empty, corners finite.
-    /// Param key: the caller's key.
-    /// Param layer: the caller's layer.
-    /// Returns: its handle, or [[spatial::kInvalidSetHandle]] when the set (or its dynamic structure) is full.
-    /// Aborts: `box` is empty or not finite.
+    /// - Param box: its box; not empty, corners finite.
+    /// - Param key: the caller's key.
+    /// - Param layer: the caller's layer.
+    /// - Returns: its handle, or [[spatial::kInvalidSetHandle]] when the set (or its dynamic structure) is full.
+    /// - Aborts: `box` is empty or not finite.
     SetHandle AddDynamic(const Aabb& box, SpatialKey key, u32 layer);
 
     /// Removes an item.
     ///
-    /// Param handle: its handle.
-    /// Returns: false for a handle whose item is gone (counted).
-    /// Fails: as the return says.
+    /// - Param handle: its handle.
+    /// - Returns: false for a handle whose item is gone (counted).
+    /// - Fails: as the return says.
     bool Remove(SetHandle handle);
 
     /// Gives a dynamic item a new box.
     ///
-    /// Param handle: its handle.
-    /// Param box: the new box; not empty, corners finite.
-    /// Returns: whether the dynamic structure changed; false for a stale handle, and for a static item (refused and counted: make it dynamic first).
-    /// Aborts: `box` is empty or not finite.
+    /// - Param handle: its handle.
+    /// - Param box: the new box; not empty, corners finite.
+    /// - Returns: whether the dynamic structure changed; false for a stale handle, and for a static item (refused and counted: make it dynamic first).
+    /// - Aborts: `box` is empty or not finite.
     bool Move(SetHandle handle, const Aabb& box);
 
     /// Makes a static item dynamic (it leaves the static side at once; its tree entry is skipped until the next `RebuildStatic`).
     ///
-    /// Param handle: its handle.
-    /// Returns: false for a stale handle; true when the item is now dynamic (also when it already was).
-    /// Fails: as the return says.
+    /// - Param handle: its handle.
+    /// - Returns: false for a stale handle; true when the item is now dynamic (also when it already was).
+    /// - Fails: as the return says.
     bool MakeDynamic(SetHandle handle);
 
     /// Makes a dynamic item static (it waits in the pending list until the next `RebuildStatic`).
     ///
-    /// Param handle: its handle.
-    /// Returns: false for a stale handle; true when the item is now static (also when it already was).
-    /// Fails: as the return says.
+    /// - Param handle: its handle.
+    /// - Returns: false for a stale handle; true when the item is now static (also when it already was).
+    /// - Fails: as the return says.
     bool MakeStatic(SetHandle handle);
 
     /// Rebuilds the static tree from the live static items, in slot order (the same items give the same tree), and empties the pending list.
@@ -124,7 +124,7 @@ public:
 
     /// Improves the dynamic tree a little ([[spatial::DynamicBvh::Optimize]]); does nothing for a grid.
     ///
-    /// Param budget: about how many leaves one call rebuilds.
+    /// - Param budget: about how many leaves one call rebuilds.
     void Optimize(u32 budget);
 
     /// Removes every item; every handle becomes stale.
@@ -132,20 +132,20 @@ public:
 
     /// Returns whether a `RebuildStatic` would change what the static tree holds: static items wait in the pending list, or tree entries are stale. Constant time.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool NeedsRebuild() const { return !pending_.Empty() || stale_tree_ != 0; }
     /// Returns whether `handle` names a live item.
     ///
-    /// Fails: never; a stale or invalid handle gives false.
+    /// - Fails: never; a stale or invalid handle gives false.
     bool IsLive(SetHandle handle) const;
     /// Returns whether a live item is static.
     ///
-    /// Aborts: `handle` is not live.
+    /// - Aborts: `handle` is not live.
     bool IsStatic(SetHandle handle) const;
     /// Returns a live item (its box, key and layer).
     ///
-    /// Aborts: `handle` is not live.
-    /// Ownership: the reference is valid until the next `AddStatic`, `AddDynamic` or `Clear`.
+    /// - Aborts: `handle` is not live.
+    /// - Ownership: the reference is valid until the next `AddStatic`, `AddDynamic` or `Clear`.
     const Item& ItemOf(SetHandle handle) const;
     /// Returns the number of live items.
     u32 ItemCount() const { return count_; }
@@ -154,50 +154,50 @@ public:
     /// Returns the counts.
     SpatialSetStats Stats() const;
     /// The static tree (for statistics and debug drawing).
-    /// Ownership: valid for the life of the set.
+    /// - Ownership: valid for the life of the set.
     const StaticBvh& StaticTree() const { return static_; }
     /// The dynamic tree, empty when the dynamic side is a grid.
-    /// Ownership: valid for the life of the set.
+    /// - Ownership: valid for the life of the set.
     const DynamicBvh& DynamicTree() const { return dynamic_; }
     /// The grid, empty when the dynamic side is a tree.
-    /// Ownership: valid for the life of the set.
+    /// - Ownership: valid for the life of the set.
     const HashGrid& Grid() const { return grid_; }
 
     /// Visits the items as [[spatial::StaticBvh::Traverse]] does, over the static tree, the pending static items and the dynamic side in that order.
     ///
-    /// Param node_test: `NodeVisit(const Aabb&)`.
-    /// Param item_visit: `bool(SetHandle, const Item&)`; returns false to stop.
-    /// Returns: what the traversal did.
-    /// Fails: never.
+    /// - Param node_test: `NodeVisit(const Aabb&)`.
+    /// - Param item_visit: `bool(SetHandle, const Item&)`; returns false to stop.
+    /// - Returns: what the traversal did.
+    /// - Fails: never.
     template <class NodeTest, class ItemVisit>
     TraversalStats Traverse(NodeTest&& node_test, ItemVisit&& item_visit) const;
 
     /// Visits the items a ray reaches over all three parts, as [[spatial::StaticBvh::TraverseRay]] does; a `max_t` lowered by the visitor carries over.
     ///
-    /// Param ray: the ray.
-    /// Param max_t: the farthest parameter to consider.
-    /// Param item_visit: `bool(SetHandle, const Item&, f32& max_t)`; may lower `max_t`, returns false to stop.
-    /// Returns: what the traversal did.
-    /// Fails: never.
+    /// - Param ray: the ray.
+    /// - Param max_t: the farthest parameter to consider.
+    /// - Param item_visit: `bool(SetHandle, const Item&, f32& max_t)`; may lower `max_t`, returns false to stop.
+    /// - Returns: what the traversal did.
+    /// - Fails: never.
     template <class ItemVisit>
     TraversalStats TraverseRay(const Ray& ray, f32 max_t, ItemVisit&& item_visit) const;
 
     /// Visits each item whose box overlaps `region` and passes `exact`, once each, using the grid's cells when the dynamic side is a grid.
     ///
-    /// Param region: the box to look in.
-    /// Param exact: `bool(const Item&)`, the query's own test (it must imply an overlap with `region`).
-    /// Param visit: `bool(const Item&)`; returns false to stop.
-    /// Returns: what the walk did.
-    /// Fails: never.
+    /// - Param region: the box to look in.
+    /// - Param exact: `bool(const Item&)`, the query's own test (it must imply an overlap with `region`).
+    /// - Param visit: `bool(const Item&)`; returns false to stop.
+    /// - Returns: what the walk did.
+    /// - Fails: never.
     template <class Exact, class Visit>
     TraversalStats ForEachInRegion(const Aabb& region, Exact&& exact, Visit&& visit) const;
 
     /// As [[spatial::SpatialSet::ForEachInRegion]] with no extra test, passing each item's handle too (what the pair tracker needs).
     ///
-    /// Param region: the box to look in.
-    /// Param visit: `bool(SetHandle, const Item&)`; returns false to stop.
-    /// Returns: what the walk did.
-    /// Fails: never.
+    /// - Param region: the box to look in.
+    /// - Param visit: `bool(SetHandle, const Item&)`; returns false to stop.
+    /// - Returns: what the walk did.
+    /// - Fails: never.
     template <class Visit>
     TraversalStats ForEachHandleInRegion(const Aabb& region, Visit&& visit) const;
 

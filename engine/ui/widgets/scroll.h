@@ -17,8 +17,8 @@ namespace engine_placeholder::ui {
 /// shown) moves by one line. With content not larger than the view the value is 0 and the thumb fills the track. The auto-hide variant draws nothing unless the pointer is over it, it
 /// is being dragged, or it changed within the last `kFadeSeconds`.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: owns nothing.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: owns nothing.
 class ScrollBar : public Widget {
 public:
     /// The seconds an auto-hide bar stays visible after its value changed.
@@ -27,33 +27,33 @@ public:
     static constexpr f32 kLineFraction = 0.1f;
 
     /// Makes a bar.
-    /// Param vertical: whether the bar runs top to bottom.
+    /// - Param vertical: whether the bar runs top to bottom.
     explicit ScrollBar(StringView name = StringView(), bool vertical = true) : Widget(name), vertical_(vertical) {}
     /// Sets the content and the view length in content units; the value is clamped to the new range; marks the draw dirty.
     void SetRange(f64 content, f64 view);
     /// Returns the content length.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     f64 Content() const { return content_; }
     /// Returns the view length.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     f64 View() const { return view_; }
     /// Returns the largest value: the content minus the view, or 0.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     f64 MaxValue() const { return content_ > view_ ? content_ - view_ : 0.0; }
     /// Sets the value (the offset of the view's start in content units), clamped to 0..`MaxValue()`, without running the listeners; marks the draw dirty.
     void SetValue(f64 value);
     /// Returns the value.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     f64 Value() const { return value_; }
     /// Sets how far an arrow press and a wheel notch move, in content units; 0 (the default) means a tenth of the view.
     void SetLineStep(f64 step) { line_step_ = step; }
     /// Returns the line step in content units (a tenth of the view when none was set).
     ///
-    /// Fails: never.
+    /// - Fails: never.
     f64 LineStep() const { return line_step_ > 0 ? line_step_ : view_ * kLineFraction; }
     /// Shows arrow buttons at the ends of the track (default off); marks layout dirty.
     void SetArrows(bool arrows);
@@ -61,7 +61,7 @@ public:
     void SetAutoHide(bool auto_hide);
     /// Returns the thumb's rectangle in surface coordinates, for tests and for a view that draws over the bar.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     Rect ThumbRect() const;
     /// Returns the listeners called when the user moves the bar (with the bar); not when `SetValue` or `SetRange` change it.
     Callback<ScrollBar*>& OnChanged() { return on_changed_; }
@@ -75,7 +75,7 @@ public:
     void Update(f32) override { MarkDirty(kDrawDirty); }
     /// Returns whether an auto-hide bar is fading.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool WantsUpdate() const override;
 
 private:
@@ -118,21 +118,21 @@ enum class ScrollPolicy : u8 {
 /// handled only when it moved something, so a wheel at the end of the content bubbles on to an outer view; a focus change inside the content scrolls the focused widget into view. There
 /// is no inertia or elastic overscroll.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: owns the content and the bars.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: owns the content and the bars.
 class ScrollView : public Widget {
 public:
     /// Makes a view with no content.
     explicit ScrollView(StringView name = StringView());
     /// Sets the content, replacing the old one; marks layout dirty.
-    /// Param content: the widget to scroll.
-    /// Returns: the content, owned by the view.
-    /// Ownership: the view takes ownership of `content`.
+    /// - Param content: the widget to scroll.
+    /// - Returns: the content, owned by the view.
+    /// - Ownership: the view takes ownership of `content`.
     Widget* SetContent(UniquePtr<Widget> content);
     /// Returns the content, or null.
     ///
-    /// Ownership: borrowed; the view owns it.
-    /// Fails: returns null when there is none.
+    /// - Ownership: borrowed; the view owns it.
+    /// - Fails: returns null when there is none.
     Widget* Content() const { return content_; }
     /// Sets when each bar is shown; marks layout dirty.
     void SetPolicy(ScrollPolicy horizontal, ScrollPolicy vertical);
@@ -140,36 +140,36 @@ public:
     void SetLineStep(f32 step) { line_step_ = step; }
     /// Returns the scroll offset: how far the content has moved up and to the left.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     Point Offset() const { return offset_; }
     /// Scrolls to `offset`, clamped to the content; marks layout dirty.
     void SetOffset(Point offset);
     /// Returns the size of the content after the last layout.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     Size ContentSize() const { return content_size_; }
     /// Returns the rectangle the content is seen through (the bounds without the bars) after the last layout.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     Rect Viewport() const { return viewport_; }
     /// Scrolls the least that makes `rect` (surface coordinates) fully visible; a rectangle larger than the view shows its start. Returns whether the offset changed.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool ScrollTo(const Rect& rect);
     /// Brings `widget` into view (see the rectangle overload). Returns whether the offset changed.
     ///
-    /// Fails: a null widget changes nothing and returns false.
-    /// Ownership: borrows `widget` for the call.
+    /// - Fails: a null widget changes nothing and returns false.
+    /// - Ownership: borrows `widget` for the call.
     bool ScrollTo(const Widget* widget);
     /// Returns the vertical bar.
     ///
-    /// Fails: never.
-    /// Ownership: borrowed; the view owns it.
+    /// - Fails: never.
+    /// - Ownership: borrowed; the view owns it.
     ScrollBar* VerticalBar() const { return vbar_; }
     /// Returns the horizontal bar.
     ///
-    /// Fails: never.
-    /// Ownership: borrowed; the view owns it.
+    /// - Fails: never.
+    /// - Ownership: borrowed; the view owns it.
     ScrollBar* HorizontalBar() const { return hbar_; }
     /// Returns nothing: the view takes the space it is given.
     Size Measure(const Constraints& constraints) override;
@@ -179,10 +179,10 @@ public:
     void OnEvent(Event& event) override;
     /// Scrolls a widget that took the focus into view.
     ///
-    /// Ownership: borrows the widget for the call.
+    /// - Ownership: borrows the widget for the call.
     void OnDescendantFocused(Widget* widget) override;
     /// Scrolls while a drag rests near an edge of the viewport (see [[ui::Widget::DragAutoScroll]]).
-    /// Fails: never.
+    /// - Fails: never.
     bool DragAutoScroll(Point position, f32 dt) override;
 
 private:

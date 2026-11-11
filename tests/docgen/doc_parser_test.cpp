@@ -101,7 +101,7 @@ void DocParserTestListFiles(const Str& dir, const char* suffix, StrList& out) {
 }
 
 bool DocOwns(const Str& message) {
-    static const char* prefixes[] = {"unknown label", "duplicate label", "Param name does not match", "Returns on a void",
+    static const char* prefixes[] = {"unknown label", "label is not a list item", "duplicate label", "Param name does not match", "Returns on a void",
                                      "missing summary", "empty label", "invalid thread-safety", "malformed", "unterminated code",
                                      "doc comment is not attached", "summary"};
     for (const char* p : prefixes)
@@ -217,7 +217,7 @@ TEST_CASE("Lists, code blocks and inline markup", "[docgen][docs]") {
 }
 
 TEST_CASE("Labels continue on indented lines and end at a blank line", "[docgen][docs]") {
-    Parsed p(Fn("Summary.\nReturns: the value,\n  or zero\n  on failure.\nFails: never.\n\nTrailing paragraph."));
+    Parsed p(Fn("Summary.\n- Returns: the value,\n  or zero\n  on failure.\n- Fails: never.\n\nTrailing paragraph."));
     REQUIRE(p.Diags() == 0);
     const ParsedDoc& d = p.Doc();
     REQUIRE(d.labels.Size() == 2);
@@ -243,7 +243,7 @@ TEST_CASE("A label written as a list item is a label, and its flush continuation
 }
 
 TEST_CASE("The list-item form and the bare form read the same", "[docgen][docs]") {
-    Parsed bare(Fn("Summary.\nReturns: r,\n  more.\nFails: never.\nThread-safety: thread-safe.\nOwnership: borrowed."));
+    Parsed bare(Fn("Summary.\n- Returns: r,\n  more.\n- Fails: never.\n- Thread-safety: thread-safe.\n- Ownership: borrowed."));
     Parsed dashed(Fn("Summary.\n- Returns: r,\nmore.\n- Fails: never.\n- Thread-safety: thread-safe.\n- Ownership: borrowed."));
     REQUIRE(bare.Diags() == 0);
     REQUIRE(dashed.Diags() == 0);
@@ -277,8 +277,15 @@ TEST_CASE("An ordinary list item continues on flush lines; a blank line ends it"
     REQUIRE(DocParserTestStr(d.blocks[1].text) == "After.");
 }
 
+TEST_CASE("A label that is not a list item is an error that says how to fix it", "[docgen][docs]") {
+    Parsed p(Fn("Summary.\nFails: never.\n- Returns: ok."));
+    REQUIRE(p.Diags() == 1);
+    REQUIRE(p.Diag(0).Compare(0, 40, "2: error: label is not a list item: writ") == 0);
+    REQUIRE(p.Doc().labels.Size() == 2);  // still read, so one mistake is one error
+}
+
 TEST_CASE("Example takes an immediately following fenced block", "[docgen][docs]") {
-    Parsed p(Fn("Summary.\nExample: basic use.\n```cpp compile\nf(1, 2);\n```\nSee: [[f]]"));
+    Parsed p(Fn("Summary.\n- Example: basic use.\n```cpp compile\nf(1, 2);\n```\n- See: [[f]]"));
     REQUIRE(p.Diags() == 0);
     const Label* ex = p.Doc().Find(LabelKind::Example);
     REQUIRE(ex != nullptr);
@@ -298,7 +305,7 @@ TEST_CASE("Prose that merely contains a colon is not a label", "[docgen][docs]")
 // ---- label errors ---------------------------------------------------------------------------
 
 TEST_CASE("Unknown labels are errors at their line and swallow their continuation", "[docgen][docs]") {
-    Parsed p(Fn("Summary.\nFrobnicates: not real,\n  and continues.\nReturns: ok."));
+    Parsed p(Fn("Summary.\nFrobnicates: not real,\n  and continues.\n- Returns: ok."));
     REQUIRE(p.Diags() == 1);
     REQUIRE(p.Diag(0) == "2: error: unknown label 'Frobnicates'");
     REQUIRE(p.Doc().labels.Size() == 1);
@@ -306,29 +313,29 @@ TEST_CASE("Unknown labels are errors at their line and swallow their continuatio
 
 TEST_CASE("Duplicate labels are errors; Param is per parameter", "[docgen][docs]") {
     {
-        Parsed p(Fn("Summary.\nReturns: a.\nReturns: b."));
+        Parsed p(Fn("Summary.\n- Returns: a.\n- Returns: b."));
         REQUIRE(p.Diags() == 1);
         REQUIRE(p.Diag(0) == "3: error: duplicate label 'Returns'");
     }
     {
-        Parsed p(Fn("Summary.\nParam a: one.\nParam b: two."));
+        Parsed p(Fn("Summary.\n- Param a: one.\n- Param b: two."));
         REQUIRE(p.Diags() == 0);
     }
     {
-        Parsed p(Fn("Summary.\nParam a: one.\nParam a: again."));
+        Parsed p(Fn("Summary.\n- Param a: one.\n- Param a: again."));
         REQUIRE(p.Diags() == 1);
         REQUIRE(p.Diag(0) == "3: error: duplicate label 'a'");
     }
 }
 
 TEST_CASE("The Backend label is known and keeps its text", "[docgen][docs]") {
-    Parsed p(Fn("Summary.\nBackend: Windows IsDebuggerPresent; macOS sysctl P_TRACED."));
+    Parsed p(Fn("Summary.\n- Backend: Windows IsDebuggerPresent; macOS sysctl P_TRACED."));
     REQUIRE(p.Diags() == 0);
     REQUIRE(Str(LabelName(LabelKind::Backend)) == "Backend");
 }
 
 TEST_CASE("Empty labels are errors", "[docgen][docs]") {
-    Parsed p(Fn("Summary.\nReturns:\nInternal:\nExample:"));
+    Parsed p(Fn("Summary.\n- Returns:\n- Internal:\n- Example:"));
     REQUIRE(p.Diags() == 3);
     REQUIRE(p.Diag(0) == "2: error: empty label 'Returns'");
     REQUIRE(p.Diag(1) == "3: error: empty label 'Internal'");
@@ -337,20 +344,20 @@ TEST_CASE("Empty labels are errors", "[docgen][docs]") {
 
 TEST_CASE("Thread-safety must start with a known category", "[docgen][docs]") {
     for (const char* c : {"immutable", "thread-safe", "thread-compatible", "owner-thread-only", "single-consumer", "not-thread-safe"}) {
-        Parsed p(Fn(Str("Summary.\nThread-safety: ") + c + ". Details."));
+        Parsed p(Fn(Str("Summary.\n- Thread-safety: ") + c + ". Details."));
         INFO(c);
         REQUIRE(p.Diags() == 0);
     }
-    Parsed bad(Fn("Summary.\nThread-safety: safe-ish."));
+    Parsed bad(Fn("Summary.\n- Thread-safety: safe-ish."));
     REQUIRE(bad.Diags() == 1);
     REQUIRE(bad.Diag(0) == "2: error: invalid thread-safety category 'safe-ish'");
-    Parsed caps(Fn("Summary.\nThread-safety: Thread-safe."));
+    Parsed caps(Fn("Summary.\n- Thread-safety: Thread-safe."));
     REQUIRE(caps.Diags() == 1);
 }
 
 TEST_CASE("See needs a reference; malformed references are errors", "[docgen][docs]") {
     {
-        Parsed p(Fn("Summary.\nSee: the other function."));
+        Parsed p(Fn("Summary.\n- See: the other function."));
         REQUIRE(p.Diags() == 1);
         REQUIRE(p.Diag(0).Compare(0, 24, "2: error: malformed labe") == 0);
     }
@@ -381,7 +388,7 @@ TEST_CASE("An unterminated code fence is an error at the fence", "[docgen][docs]
 
 TEST_CASE("Summary rules", "[docgen][docs]") {
     {
-        Parsed p(Fn("\nParam a: only a label."));
+        Parsed p(Fn("\n- Param a: only a label."));
         REQUIRE(p.HasDiag("1: error: missing summary"));
         REQUIRE_FALSE(p.Doc().has_summary);
     }
@@ -405,21 +412,21 @@ TEST_CASE("Summary rules", "[docgen][docs]") {
 
 TEST_CASE("Param names must match real parameters", "[docgen][docs]") {
     {
-        Parsed p(Fn("Adds.\nParam a: first.\nParam b: second."));
+        Parsed p(Fn("Adds.\n- Param a: first.\n- Param b: second."));
         REQUIRE(p.Diags() == 0);
     }
     {
-        Parsed p(Fn("Adds.\nParam c: nope."));
+        Parsed p(Fn("Adds.\n- Param c: nope."));
         REQUIRE(p.Diags() == 1);
         REQUIRE(p.Diag(0) == "2: error: Param name does not match a parameter: 'c'");
     }
     {
-        Parsed p(Fn("Adds.\nParam: no name."));
+        Parsed p(Fn("Adds.\n- Param: no name."));
         REQUIRE(p.Diags() == 1);
         REQUIRE(p.Diag(0).Compare(0, 40, "2: error: malformed label: Param needs a") == 0);
     }
     { // typo: case matters
-        Parsed p(Fn("Adds.\nParam A: x."));
+        Parsed p(Fn("Adds.\n- Param A: x."));
         REQUIRE(p.Diags() == 1);
     }
 }
@@ -440,39 +447,39 @@ TEST_CASE("Parameter names are extracted from every declarator form", "[docgen][
 
 TEST_CASE("Param works on macros; other declarations have no parameters", "[docgen][docs]") {
     {
-        Parsed p("/// Squares.\n/// Param x: the value.\n#define SQ(x) ((x) * (x))\n");
+        Parsed p("/// Squares.\n/// - Param x: the value.\n#define SQ(x) ((x) * (x))\n");
         REQUIRE(p.Diags() == 0);
     }
     {
-        Parsed p("/// Squares.\n/// Param y: oops.\n#define SQ(x) ((x) * (x))\n");
+        Parsed p("/// Squares.\n/// - Param y: oops.\n#define SQ(x) ((x) * (x))\n");
         REQUIRE(p.Diags() == 1);
     }
     {
-        Parsed p("/// A class.\n/// Param x: classes have none.\nclass C {};\n");
+        Parsed p("/// A class.\n/// - Param x: classes have none.\nclass C {};\n");
         REQUIRE(p.Diags() == 1);
     }
 }
 
 TEST_CASE("Returns on a void function is a warning", "[docgen][docs]") {
     {
-        Parsed p(Fn("Does.\nReturns: nothing.", "void f();"));
+        Parsed p(Fn("Does.\n- Returns: nothing.", "void f();"));
         REQUIRE(p.Diags() == 1);
         REQUIRE(p.Diag(0) == "2: warning: Returns on a void function");
     }
     {
-        Parsed p(Fn("Does.\nReturns: ok.", "static inline void f();"));
+        Parsed p(Fn("Does.\n- Returns: ok.", "static inline void f();"));
         REQUIRE(p.Diags() == 1);
     }
     {
-        Parsed p(Fn("Does.\nReturns: nothing.", "auto f() -> void;"));
+        Parsed p(Fn("Does.\n- Returns: nothing.", "auto f() -> void;"));
         REQUIRE(p.Diags() == 1);
     }
     {
-        Parsed p("struct S {\n/// Makes one.\n/// Returns: nothing.\nS();\n/// Destroys.\n/// Returns: nothing.\n~S();\n};\n");
+        Parsed p("struct S {\n/// Makes one.\n/// - Returns: nothing.\nS();\n/// Destroys.\n/// - Returns: nothing.\n~S();\n};\n");
         REQUIRE(p.Diags() == 2);
     }
     for (const char* decl : {"int f();", "void* f();", "const void* f();", "auto f() -> void*;", "void_t f();", "std::vector<void> f();"}) {
-        Parsed p(Fn("Does.\nReturns: a value.", decl));
+        Parsed p(Fn("Does.\n- Returns: a value.", decl));
         INFO(decl);
         REQUIRE(p.Diags() == 0);
     }
@@ -570,11 +577,11 @@ TEST_CASE("Emit then parse then emit is stable", "[docgen][docs][roundtrip]") {
 
 TEST_CASE("Round trip preserves a rich comment exactly", "[docgen][docs][roundtrip]") {
     Parsed p(Fn("Summary line.\n\nDetails with [[Ref]] and `code`.\n\n- a\n- b\n  more\n\n```cpp\nx;\n\ny;\n```\n\n"
-                "Param a: first,\n  continued.\nReturns: r.\nExample: e.\n```cpp\nz;\n```\nSee: [[A]]"));
+                "- Param a: first,\n  continued.\n- Returns: r.\n- Example: e.\n```cpp\nz;\n```\n- See: [[A]]"));
     Str e1 = p.Emit();
     REQUIRE(e1 ==
             "Summary line.\n\nDetails with [[Ref]] and `code`.\n\n- a\n- b more\n\n```cpp\nx;\n\ny;\n```\n\n"
-            "Param a: first, continued.\nReturns: r.\nExample: e.\n```cpp\nz;\n```\nSee: [[A]]\n");
+            "- Param a: first, continued.\n- Returns: r.\n- Example: e.\n```cpp\nz;\n```\n- See: [[A]]\n");
     Parsed q(Fn(e1.Substr(0, e1.Size() - 1)));
     REQUIRE(q.Emit() == e1);
 }
@@ -632,14 +639,14 @@ TEST_CASE("[review] overrides inherit even when parameter names differ from the 
 
 TEST_CASE("[review] pointer-to-member parameters are named; trailing const is not a name", "[docgen][docs][review]") {
     Parsed p(
-        "/// F.\n/// Param pm: the member.\n/// Param n: count.\nvoid F(void (S::*pm)(int), int n);\n"
+        "/// F.\n/// - Param pm: the member.\n/// - Param n: count.\nvoid F(void (S::*pm)(int), int n);\n"
         "/// G.\nvoid G(int const, Foo const&, int const x);\n");
     REQUIRE(p.Diags() == 0);
     REQUIRE(p.Find("F")->param_count == 2);
     REQUIRE(p.Find("G")->param_count == 3);
     REQUIRE(p.Find("G")->params.Size() == 1);
     REQUIRE(DocParserTestStr(p.Find("G")->params[0]) == "x");
-    Parsed q("/// G.\n/// Param const: bogus.\nvoid G(int const);\n");
+    Parsed q("/// G.\n/// - Param const: bogus.\nvoid G(int const);\n");
     REQUIRE(q.Diags() == 1);
 }
 
@@ -658,7 +665,7 @@ TEST_CASE("[review] comments on forward declarations, definitions and friends ar
 }
 
 TEST_CASE("[review] macro parameters: GNU named variadics and cut-off signatures", "[docgen][docs][review]") {
-    Parsed p("/// M.\n/// Param x: x.\n/// Param y: rest.\n#define M(x, y...) x\n/// N.\n/// Param z: z.\n#define N(z, ...) z\n");
+    Parsed p("/// M.\n/// - Param x: x.\n/// - Param y: rest.\n#define M(x, y...) x\n/// N.\n/// - Param z: z.\n#define N(z, ...) z\n");
     REQUIRE(p.Diags() == 0);
     REQUIRE(p.Find("M")->param_count == 2);
     REQUIRE(p.Find("N")->param_count == 2);
@@ -677,6 +684,6 @@ TEST_CASE("[review] a reference may wrap across comment lines", "[docgen][docs][
     Parsed q(Fn("Summary.\n\nFirst line.\nSecond [[Broken line."));
     REQUIRE(q.HasDiag("4: error: malformed reference: missing ]]"));
     // A See: label whose reference wraps still counts it.
-    Parsed r(Fn("Summary.\nSee: [[a::\n  b]]"));
+    Parsed r(Fn("Summary.\n- See: [[a::\n  b]]"));
     REQUIRE(r.Diags() == 0);
 }

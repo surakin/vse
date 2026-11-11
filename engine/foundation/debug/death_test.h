@@ -22,7 +22,7 @@ using DeathTestFn = void (*)(const char* argument);
 
 /// One registered death test; created by [[ENGINE_DEATH_TEST_FN]], not by hand.
 ///
-/// Thread-safety: not-thread-safe. The registry is built during static initialization and only read afterwards.
+/// - Thread-safety: not-thread-safe. The registry is built during static initialization and only read afterwards.
 struct DeathTestEntry {
     /// The function's name, as passed to [[debug::RunInChild]].
     const char* name;
@@ -34,26 +34,26 @@ struct DeathTestEntry {
 
 /// Adds a [[debug::DeathTestEntry]] to the registry when constructed; used by [[ENGINE_DEATH_TEST_FN]].
 ///
-/// Thread-safety: not-thread-safe. Registration happens during static initialization.
-/// Ownership: the registry stores a pointer to the entry; the entry must outlive the program (static storage).
+/// - Thread-safety: not-thread-safe. Registration happens during static initialization.
+/// - Ownership: the registry stores a pointer to the entry; the entry must outlive the program (static storage).
 class DeathTestRegistrar {
 public:
     /// Registers `entry`.
-    /// Param entry: an entry with static storage duration; borrowed for the life of the program.
+    /// - Param entry: an entry with static storage duration; borrowed for the life of the program.
     explicit DeathTestRegistrar(DeathTestEntry& entry);
 };
 
 /// Looks up a registered death test by name.
-/// Param name: the function name.
-/// Returns: the entry, or `nullptr` if none has that name.
-/// Fails: returns `nullptr` for an unknown name.
-/// Ownership: the entry belongs to the registry.
-/// Thread-safety: thread-safe once static initialization is over.
+/// - Param name: the function name.
+/// - Returns: the entry, or `nullptr` if none has that name.
+/// - Fails: returns `nullptr` for an unknown name.
+/// - Ownership: the entry belongs to the registry.
+/// - Thread-safety: thread-safe once static initialization is over.
 const DeathTestEntry* FindDeathTest(const char* name);
 
 /// How a child is started and watched.
 ///
-/// Thread-safety: thread-compatible. A plain value; the pointers it holds are borrowed for the [[debug::RunInChild]] call.
+/// - Thread-safety: thread-compatible. A plain value; the pointers it holds are borrowed for the [[debug::RunInChild]] call.
 struct ChildOptions {
     /// Milliseconds before the child (and its process group) is killed; 0 means the default of 10000.
     u32 timeout_ms = 0;
@@ -76,7 +76,7 @@ struct ChildOptions {
 
 /// What happened to a child process.
 ///
-/// Thread-safety: thread-compatible. A plain value, about 64 KB, normally returned by value into a local.
+/// - Thread-safety: thread-compatible. A plain value, about 64 KB, normally returned by value into a local.
 struct ChildResult {
     /// False if the platform cannot start a process; nothing else is meaningful then.
     bool supported = false;
@@ -108,19 +108,19 @@ struct ChildResult {
     bool stderr_truncated = false;
 
     /// Reports whether the captured standard error contains `text`.
-    /// Param text: a null-terminated string; borrowed for the call.
-    /// Returns: true if it occurs in the captured bytes.
+    /// - Param text: a null-terminated string; borrowed for the call.
+    /// - Returns: true if it occurs in the captured bytes.
     bool StderrContains(const char* text) const;
     /// Reports whether the captured standard output contains `text`.
-    /// Param text: a null-terminated string; borrowed for the call.
-    /// Returns: true if it occurs in the captured bytes.
+    /// - Param text: a null-terminated string; borrowed for the call.
+    /// - Returns: true if it occurs in the captured bytes.
     bool StdoutContains(const char* text) const;
 };
 
 /// Reports whether this platform can start child processes, so death tests can skip where it cannot.
-/// Returns: true where [[debug::RunInChild]] works.
-/// Thread-safety: thread-safe.
-/// Backend: Windows: true (CreateProcess); macOS: true (posix_spawn, shared with Linux).
+/// - Returns: true where [[debug::RunInChild]] works.
+/// - Thread-safety: thread-safe.
+/// - Backend: Windows: true (CreateProcess); macOS: true (posix_spawn, shared with Linux).
 bool DeathTestsSupported();
 
 /// Starts the running program as a child, runs the registered death test `name` in it, and reports what happened.
@@ -128,16 +128,16 @@ bool DeathTestsSupported();
 /// The child inherits the environment (plus `options.extra_env`) and nothing else: no threads, locks or memory of the
 /// caller. Every path reaps the child and closes every descriptor it opened.
 ///
-/// Param name: the registered function to run in the child.
-/// Param argument: a short string the function receives; larger inputs go in a file whose name is the argument.
-/// Param options: how to start and watch the child.
-/// Returns: the result; `supported` is false where the platform cannot start a process.
-/// Fails: `started` is false if the process could not be started; `timed_out` is set if it had to be killed. If the
+/// - Param name: the registered function to run in the child.
+/// - Param argument: a short string the function receives; larger inputs go in a file whose name is the argument.
+/// - Param options: how to start and watch the child.
+/// - Returns: the result; `supported` is false where the platform cannot start a process.
+/// - Fails: `started` is false if the process could not be started; `timed_out` is set if it had to be killed. If the
 ///   platform never reported how the child ended (its status was reaped by someone else), `started` is true and both
 ///   `exited` and `terminated` are false.
-/// Thread-safety: thread-safe. Each call owns its child and its pipes. The child's environment is built from the
+/// - Thread-safety: thread-safe. Each call owns its child and its pipes. The child's environment is built from the
 ///   process environment, so do not change it (`setenv`) from another thread while a call is running.
-/// Backend: Windows: CreateProcess with a job object, exit codes decoded from NTSTATUS; macOS: posix_spawn, signals decoded as on Linux.
+/// - Backend: Windows: CreateProcess with a job object, exit codes decoded from NTSTATUS; macOS: posix_spawn, signals decoded as on Linux.
 ChildResult RunInChild(const char* name, const char* argument = "", const ChildOptions& options = ChildOptions());
 
 /// Makes the program act as a death-test child if the parent asked for it, otherwise returns.
@@ -145,18 +145,18 @@ ChildResult RunInChild(const char* name, const char* argument = "", const ChildO
 /// When the environment says this process is a child, it runs the requested function and ends the process without
 /// returning (exit code 0, or [[debug::kUnknownDeathTestExitCode]] for an unknown name); otherwise it returns false.
 ///
-/// Returns: false when this process is not a death-test child.
-/// Thread-safety: owner-thread-only. Call it from the main thread, before other threads start.
+/// - Returns: false when this process is not a death-test child.
+/// - Thread-safety: owner-thread-only. Call it from the main thread, before other threads start.
 bool RunDeathTestChildIfRequested();
 
 /// Ends the process now, without running exit handlers or static destructors.
-/// Param code: the exit code.
-/// Thread-safety: thread-safe. It ends the whole process.
+/// - Param code: the exit code.
+/// - Thread-safety: thread-safe. It ends the whole process.
 [[noreturn]] void ExitChildProcess(int code);
 
 /// Makes [[debug::RunInChild]] report an unsupported platform, for testing the skip path.
-/// Param supported: false to simulate a platform that cannot start processes, true to restore.
-/// Thread-safety: not-thread-safe. Call while no other thread uses the helper.
+/// - Param supported: false to simulate a platform that cannot start processes, true to restore.
+/// - Thread-safety: not-thread-safe. Call while no other thread uses the helper.
 void SetDeathTestSupportForTesting(bool supported);
 
 } // namespace engine_placeholder::debug
@@ -166,7 +166,7 @@ void SetDeathTestSupportForTesting(bool supported);
 /// Use it like a function definition: `ENGINE_DEATH_TEST_FN(crash_on_null) { ... }`. The function receives the parameter
 /// `argument` (a `const char*`) from [[debug::RunInChild]]. The name must be unique in the program.
 ///
-/// Param fn_name: the function's name, also the registered name.
+/// - Param fn_name: the function's name, also the registered name.
 #define ENGINE_DEATH_TEST_FN(fn_name)                                                                              \
     static void fn_name(const char* argument);                                                                     \
     static ::engine_placeholder::debug::DeathTestEntry fn_name##_death_entry{#fn_name, &fn_name};                  \

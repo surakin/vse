@@ -11,7 +11,7 @@ namespace engine_placeholder::ui {
 
 /// A ray: where it starts and which way it goes (the direction need not be a unit vector).
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct Ray3 {
     f32 origin[3] = {0, 0, 0};    ///< The start.
     f32 direction[3] = {0, 0, 1}; ///< The direction.
@@ -23,7 +23,7 @@ struct Ray3 {
 /// The front face is the side from which `edge_u` points to the right and `edge_v` points down. The two edges need not be at right angles or of equal length to the surface's shape:
 /// the hit is returned as a fraction of each edge.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct SurfaceQuad {
     f32 corner[3] = {0, 0, 0}; ///< The top-left corner.
     f32 edge_u[3] = {1, 0, 0}; ///< From the top-left to the top-right corner.
@@ -32,7 +32,7 @@ struct SurfaceQuad {
 
 /// Where a ray met a quad.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct SurfaceHit {
     bool hit = false;       ///< The ray crossed the front face inside the quad: `u` and `v` are set.
     bool back_face = false; ///< The ray crossed the quad inside its edges but from behind: `hit` is false.
@@ -43,10 +43,10 @@ struct SurfaceHit {
 
 /// Finds where a ray crosses a quad. Math only: no scene type is involved.
 ///
-/// Param ray: the ray; a zero direction hits nothing.
-/// Param quad: the quad; a degenerate one (edges parallel or of length 0) hits nothing.
-/// Returns: the hit; a ray parallel to the quad, pointing away from it, or crossing outside it misses.
-/// Fails: reported through the result (`hit` false), never by aborting.
+/// - Param ray: the ray; a zero direction hits nothing.
+/// - Param quad: the quad; a degenerate one (edges parallel or of length 0) hits nothing.
+/// - Returns: the hit; a ray parallel to the quad, pointing away from it, or crossing outside it misses.
+/// - Fails: reported through the result (`hit` false), never by aborting.
 SurfaceHit RayToSurfacePoint(const Ray3& ray, const SurfaceQuad& quad);
 
 /// Feeds a surface the events a window adapter would, from pointer positions in the surface's own pixels.
@@ -54,19 +54,19 @@ SurfaceHit RayToSurfacePoint(const Ray3& ray, const SurfaceQuad& quad);
 /// A surface with input off (the default) is display-only: every call is ignored. An interactive one reacts like any other: hover and pressed states, capture and focus work per
 /// surface. `Lost` ends what a vanished pointer leaves behind: buttons still held are released and the hover is cleared.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: borrows the surface, which must outlive this object.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: borrows the surface, which must outlive this object.
 class SurfaceInput {
 public:
     /// Makes an input for `surface`, display-only.
-    /// Param surface: the surface; borrowed.
-    /// Ownership: borrows `surface`.
+    /// - Param surface: the surface; borrowed.
+    /// - Ownership: borrows `surface`.
     explicit SurfaceInput(Surface* surface) : surface_(surface) {}
     /// Turns input on or off; turning it off first does what `Lost` does.
     void SetInteractive(bool interactive);
     /// Returns whether input is accepted.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool Interactive() const { return interactive_; }
     /// Moves the pointer to (`x`, `y`) in surface pixels (the surface's logical units times its scale).
     void PointerMove(f32 x, f32 y, u32 modifiers = 0);
@@ -88,7 +88,7 @@ public:
     void Lost();
     /// Returns the mask of buttons this input holds down.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     u32 ButtonsDown() const { return buttons_; }
 
 private:

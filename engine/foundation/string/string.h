@@ -19,8 +19,8 @@ namespace engine_placeholder {
 /// left with no storage and must not be used except for assignment or
 /// destruction.
 ///
-/// Thread-safety: not-thread-safe. Synchronize externally if shared.
-/// Ownership: the allocator owns the memory and must outlive the string; the
+/// - Thread-safety: not-thread-safe. Synchronize externally if shared.
+/// - Ownership: the allocator owns the memory and must outlive the string; the
 ///   string never frees it. Views and C-string pointers are invalidated by any
 ///   append.
 template <typename Allocator>
@@ -28,17 +28,17 @@ class String {
 public:
     /// Creates an empty string, allocating space for the terminator.
     ///
-    /// Param allocator: allocator for the characters; must outlive the string.
-    /// Aborts: the allocator is out of memory.
+    /// - Param allocator: allocator for the characters; must outlive the string.
+    /// - Aborts: the allocator is out of memory.
     explicit String(Allocator& allocator) : chars_(allocator) {
         chars_.Push('\0');
     }
 
     /// Creates a string holding a copy of `sv`.
     ///
-    /// Param allocator: allocator for the characters; must outlive the string.
-    /// Param sv: text to copy; need not be NUL-terminated.
-    /// Aborts: the allocator is out of memory.
+    /// - Param allocator: allocator for the characters; must outlive the string.
+    /// - Param sv: text to copy; need not be NUL-terminated.
+    /// - Aborts: the allocator is out of memory.
     String(Allocator& allocator, StringView sv) : chars_(allocator) {
         chars_.Reserve(sv.Length() + 1);
         for (usize i = 0; i < sv.Length(); ++i) {
@@ -55,9 +55,9 @@ public:
 
     /// Appends a copy of `sv`.
     ///
-    /// Param sv: text to append; must not view this string's own storage
+    /// - Param sv: text to append; must not view this string's own storage
     ///   because growth may invalidate it.
-    /// Aborts: growth is needed and the allocator is out of memory.
+    /// - Aborts: growth is needed and the allocator is out of memory.
     void Append(StringView sv) {
         chars_.Pop(); // drop the trailing '\0'
         for (usize i = 0; i < sv.Length(); ++i) {
@@ -68,10 +68,10 @@ public:
 
     /// Appends one ASCII character.
     ///
-    /// Param c: character to append; must be ASCII (below 0x80) because a lone
+    /// - Param c: character to append; must be ASCII (below 0x80) because a lone
     ///   non-ASCII byte would make the string malformed UTF-8 (not checked).
     ///   Use [[StringBuilder::AppendCodepoint]] for other codepoints.
-    /// Aborts: growth is needed and the allocator is out of memory.
+    /// - Aborts: growth is needed and the allocator is out of memory.
     void Append(char c) {
         chars_.Pop();
         chars_.Push(c);
@@ -83,9 +83,9 @@ public:
     /// Unlike `Append(char)`, the bytes may be part of a multi-byte UTF-8
     /// sequence; the caller is responsible for keeping the string well formed.
     ///
-    /// Param bytes: first byte to append.
-    /// Param count: number of bytes.
-    /// Aborts: growth is needed and the allocator is out of memory.
+    /// - Param bytes: first byte to append.
+    /// - Param count: number of bytes.
+    /// - Aborts: growth is needed and the allocator is out of memory.
     void AppendRawBytes(const char* bytes, usize count) {
         chars_.Pop();
         for (usize i = 0; i < count; ++i) {
@@ -124,23 +124,23 @@ private:
 /// No printf-style formatting is used; the number formatters are hand-written.
 /// Memory behavior is that of the underlying [[String]].
 ///
-/// Thread-safety: not-thread-safe. Synchronize externally if shared.
-/// Ownership: the allocator owns the memory and must outlive the builder; the
+/// - Thread-safety: not-thread-safe. Synchronize externally if shared.
+/// - Ownership: the allocator owns the memory and must outlive the builder; the
 ///   views and C-string pointers it returns are invalidated by any append.
 template <typename Allocator>
 class StringBuilder {
 public:
     /// Creates an empty builder.
     ///
-    /// Param allocator: allocator for the characters; must outlive the builder.
-    /// Aborts: the allocator is out of memory.
+    /// - Param allocator: allocator for the characters; must outlive the builder.
+    /// - Aborts: the allocator is out of memory.
     explicit StringBuilder(Allocator& allocator) : str_(allocator) {}
 
     /// Appends the text `sv`.
     ///
-    /// Param sv: text to append.
-    /// Returns: this builder.
-    /// Aborts: growth is needed and the allocator is out of memory.
+    /// - Param sv: text to append.
+    /// - Returns: this builder.
+    /// - Aborts: growth is needed and the allocator is out of memory.
     StringBuilder& Append(StringView sv) {
         str_.Append(sv);
         return *this;
@@ -148,9 +148,9 @@ public:
 
     /// Appends one ASCII character.
     ///
-    /// Param c: character to append; must be below 0x80 (not checked).
-    /// Returns: this builder.
-    /// Aborts: growth is needed and the allocator is out of memory.
+    /// - Param c: character to append; must be below 0x80 (not checked).
+    /// - Returns: this builder.
+    /// - Aborts: growth is needed and the allocator is out of memory.
     StringBuilder& Append(char c) {
         str_.Append(c);
         return *this;
@@ -158,10 +158,10 @@ public:
 
     /// Appends a Unicode codepoint encoded as UTF-8.
     ///
-    /// Param codepoint: scalar value to encode; surrogates and values above
+    /// - Param codepoint: scalar value to encode; surrogates and values above
     ///   0x10FFFF are replaced by U+FFFD.
-    /// Returns: this builder.
-    /// Aborts: growth is needed and the allocator is out of memory.
+    /// - Returns: this builder.
+    /// - Aborts: growth is needed and the allocator is out of memory.
     StringBuilder& AppendCodepoint(u32 codepoint) {
         char buf[4];
         usize len = EncodeUtf8(codepoint, buf);
@@ -173,9 +173,9 @@ public:
     ///
     /// Handles the full `i64` range.
     ///
-    /// Param value: number to format.
-    /// Returns: this builder.
-    /// Aborts: growth is needed and the allocator is out of memory.
+    /// - Param value: number to format.
+    /// - Returns: this builder.
+    /// - Aborts: growth is needed and the allocator is out of memory.
     StringBuilder& AppendInt(i64 value) {
         if (value == 0) {
             return Append('0');
@@ -192,9 +192,9 @@ public:
 
     /// Appends an unsigned integer in decimal.
     ///
-    /// Param value: number to format.
-    /// Returns: this builder.
-    /// Aborts: growth is needed and the allocator is out of memory.
+    /// - Param value: number to format.
+    /// - Returns: this builder.
+    /// - Aborts: growth is needed and the allocator is out of memory.
     StringBuilder& AppendUInt(u64 value) {
         if (value == 0) {
             return Append('0');
@@ -207,11 +207,11 @@ public:
     ///
     /// Always emits at least one digit, so 0 becomes `0`.
     ///
-    /// Param value: number to format.
-    /// Param min_digits: minimum digit count; the output is zero-padded on the
+    /// - Param value: number to format.
+    /// - Param min_digits: minimum digit count; the output is zero-padded on the
     ///   left, and values above 16 are treated as 16.
-    /// Returns: this builder.
-    /// Aborts: growth is needed and the allocator is out of memory.
+    /// - Returns: this builder.
+    /// - Aborts: growth is needed and the allocator is out of memory.
     StringBuilder& AppendHex(u64 value, int min_digits = 1) {
         char digits[16];
         int n = 0;
@@ -239,10 +239,10 @@ public:
     /// value is held in a `u64`, so very large magnitudes, NaN, infinities and
     /// a `precision` above 18 give unspecified output.
     ///
-    /// Param value: number to format.
-    /// Param precision: digits after the decimal point; 0 omits the point.
-    /// Returns: this builder.
-    /// Aborts: growth is needed and the allocator is out of memory.
+    /// - Param value: number to format.
+    /// - Param precision: digits after the decimal point; 0 omits the point.
+    /// - Returns: this builder.
+    /// - Aborts: growth is needed and the allocator is out of memory.
     StringBuilder& AppendFloat(f64 value, int precision = 6) {
         if (value < 0) {
             Append('-');

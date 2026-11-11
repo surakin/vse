@@ -22,8 +22,8 @@ namespace engine_placeholder::os::wayland {
 /// [[os::wayland::WaylandClipboard::Set]] fails before the first. Data is sent to a peer and received from it through pipes that [[os::wayland::WaylandClipboard::Tick]]
 /// advances without blocking (a peer that never reads or writes costs only its timeout). Not movable: the listeners capture `this`.
 ///
-/// Thread-safety: owner-thread-only (the thread that dispatches the connection).
-/// Ownership: owns the data devices, the sources and offers it creates, and the pipes; the managers belong to the connection.
+/// - Thread-safety: owner-thread-only (the thread that dispatches the connection).
+/// - Ownership: owns the data devices, the sources and offers it creates, and the pipes; the managers belong to the connection.
 class WaylandClipboard {
 public:
     WaylandClipboard() = default;
@@ -33,7 +33,7 @@ public:
     WaylandClipboard& operator=(const WaylandClipboard&) = delete;
 
     /// Creates the data devices on the connection's seat. Events go to `queue`.
-    /// Returns: false if the compositor offers no `wl_data_device_manager` (then nothing is supported).
+    /// - Returns: false if the compositor offers no `wl_data_device_manager` (then nothing is supported).
     bool Init(WaylandConnection& connection, InputEventQueue* queue);
 
     /// Destroys everything this object created, while the display is still connected. Idempotent.

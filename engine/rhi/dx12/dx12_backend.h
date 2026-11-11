@@ -10,9 +10,9 @@ namespace engine_placeholder::rhi {
 /// that can make a device at feature level 12_0. Until the backend passes the Phase 4 and Phase 5 suites (Phase 13 Day 172), `Auto`
 /// never picks it (rank 0, like the null backend): it is used only when asked for by name.
 ///
-/// Returns: true if the backend is registered.
-/// Fails: returns false when the registry is full.
-/// Thread-safety: thread-safe.
+/// - Returns: true if the backend is registered.
+/// - Fails: returns false when the registry is full.
+/// - Thread-safety: thread-safe.
 bool RegisterDx12Backend();
 
 } // namespace engine_placeholder::rhi

@@ -11,47 +11,47 @@ namespace engine_placeholder::ecs {
 
 /// A set of [[ecs::ComponentId]]s below [[ecs::kMaxComponentTypes]], stored as two 64-bit words.
 ///
-/// Thread-safety: thread-compatible value.
-/// Ownership: owns nothing.
+/// - Thread-safety: thread-compatible value.
+/// - Ownership: owns nothing.
 struct ComponentSet {
     /// The two words; bit `id % 64` of word `id / 64`.
     u64 words[2] = {0, 0};
 
     /// Adds `id`.
-    /// Aborts: `id` is not below [[ecs::kMaxComponentTypes]].
+    /// - Aborts: `id` is not below [[ecs::kMaxComponentTypes]].
     void Add(ComponentId id) {
         ENGINE_ASSERT(id < kMaxComponentTypes, "ComponentSet::Add: the id is out of range");
         words[id >> 6] |= u64{1} << (id & 63u);
     }
     /// Removes `id` (no effect when absent).
-    /// Aborts: `id` is not below [[ecs::kMaxComponentTypes]].
+    /// - Aborts: `id` is not below [[ecs::kMaxComponentTypes]].
     void Remove(ComponentId id) {
         ENGINE_ASSERT(id < kMaxComponentTypes, "ComponentSet::Remove: the id is out of range");
         words[id >> 6] &= ~(u64{1} << (id & 63u));
     }
     /// Returns whether `id` is in the set (false for an id out of range).
-    /// Fails: never.
+    /// - Fails: never.
     bool Has(ComponentId id) const {
         return id < kMaxComponentTypes && ((words[id >> 6] >> (id & 63u)) & 1u) != 0;
     }
     /// Returns whether the set is empty.
-    /// Fails: never.
+    /// - Fails: never.
     bool IsEmpty() const { return (words[0] | words[1]) == 0; }
     /// The number of ids in the set.
-    /// Fails: never.
+    /// - Fails: never.
     u32 Count() const { return Popcount(words[0]) + Popcount(words[1]); }
     /// Returns whether every id of this set is in `other`.
-    /// Fails: never.
+    /// - Fails: never.
     bool IsSubsetOf(const ComponentSet& other) const {
         return (words[0] & ~other.words[0]) == 0 && (words[1] & ~other.words[1]) == 0;
     }
     /// Returns whether the two sets share an id.
-    /// Fails: never.
+    /// - Fails: never.
     bool Intersects(const ComponentSet& other) const {
         return ((words[0] & other.words[0]) | (words[1] & other.words[1])) != 0;
     }
     /// A hash of the set.
-    /// Fails: never.
+    /// - Fails: never.
     u64 Hash() const {
         u64 h = words[0] * 0x9E3779B97F4A7C15ull;
         h ^= h >> 32;
@@ -62,7 +62,7 @@ struct ComponentSet {
     /// The smallest id in the set that is `>= from`, or [[ecs::kInvalidComponent]] when none.
     ///
     /// Iterate with `for (id = set.NextFrom(0); id != kInvalidComponent; id = set.NextFrom(id + 1))` (ascending id order).
-    /// Fails: never.
+    /// - Fails: never.
     ComponentId NextFrom(u32 from) const {
         for (u32 word = from >> 6; word < 2; ++word) {
             u64 bits = words[word];
@@ -103,8 +103,8 @@ namespace engine_placeholder {
 
 /// The hash of a component set, for `HashMap<ecs::ComponentSet, ...>`.
 ///
-/// Thread-safety: thread-safe (stateless).
-/// Fails: never.
+/// - Thread-safety: thread-safe (stateless).
+/// - Fails: never.
 template <>
 struct Hash<ecs::ComponentSet> {
     /// Returns [[ecs::ComponentSet::Hash]].

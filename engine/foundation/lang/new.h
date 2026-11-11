@@ -23,7 +23,7 @@ inline constexpr usize kMaxAlign = alignof(std::max_align_t);
 
 /// Constructs a `T` in the storage at `where` with `args` (placement new); the storage must be suitably aligned and big enough.
 ///
-/// Thread-safety: thread-compatible. Not safe on the same storage from two threads.
+/// - Thread-safety: thread-compatible. Not safe on the same storage from two threads.
 template <class T, class... Args>
 T* ConstructAt(void* where, Args&&... args) {
     return ::new (where) T(static_cast<Args&&>(args)...);

@@ -17,7 +17,7 @@ enum class ValidationMode : u8 {
 
 /// What to create a [[rhi::vulkan::VulkanInstance]] for.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct VulkanInstanceDesc {
     /// Application name reported to the driver; a static string. Must not be null.
     const char* application_name = "engine";
@@ -35,7 +35,7 @@ struct VulkanInstanceDesc {
 
 /// The outcome of resolving a [[rhi::vulkan::VulkanInstanceDesc]] against the environment.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct ValidationPolicy {
     /// Whether to ask for the validation layer.
     bool enable = false;
@@ -50,18 +50,18 @@ struct ValidationPolicy {
 /// `ENGINE_RHI_VALIDATION` is consulted only for `ValidationMode::Auto`; a value of `"1"` means on and `"0"` off.
 /// The sync and best-practices variables override the descriptor whenever they are set to `"1"` or `"0"`.
 ///
-/// Param desc: the instance descriptor.
-/// Param env_validation: value of `ENGINE_RHI_VALIDATION`, or null if unset.
-/// Param env_sync: value of `ENGINE_RHI_VALIDATION_SYNC`, or null if unset.
-/// Param env_best_practices: value of `ENGINE_RHI_VALIDATION_BEST_PRACTICES`, or null if unset.
-/// Param debug_build: whether this is a Debug build, the default for `Auto` with no environment value.
-/// Returns: the resolved policy. Sync and best-practices are false when validation is not enabled.
+/// - Param desc: the instance descriptor.
+/// - Param env_validation: value of `ENGINE_RHI_VALIDATION`, or null if unset.
+/// - Param env_sync: value of `ENGINE_RHI_VALIDATION_SYNC`, or null if unset.
+/// - Param env_best_practices: value of `ENGINE_RHI_VALIDATION_BEST_PRACTICES`, or null if unset.
+/// - Param debug_build: whether this is a Debug build, the default for `Auto` with no environment value.
+/// - Returns: the resolved policy. Sync and best-practices are false when validation is not enabled.
 ValidationPolicy ResolveValidationPolicy(const VulkanInstanceDesc& desc, const char* env_validation, const char* env_sync,
                                          const char* env_best_practices, bool debug_build);
 
 /// Running totals of validation messages since process start or the last [[rhi::vulkan::ResetValidationCounts]].
 ///
-/// Thread-safety: thread-compatible plain data (a snapshot).
+/// - Thread-safety: thread-compatible plain data (a snapshot).
 struct ValidationCounts {
     /// Messages at `ERROR` severity.
     u64 errors = 0;
@@ -70,7 +70,7 @@ struct ValidationCounts {
 };
 
 /// Returns a snapshot of the validation message counters. The counters are process-wide.
-/// Thread-safety: thread-safe.
+/// - Thread-safety: thread-safe.
 ValidationCounts GetValidationCounts();
 
 /// Sets both validation counters to zero. Thread-safe.
@@ -90,16 +90,16 @@ using ValidationCaptureFn = void (*)(void* user, LogVerbosity severity, const ch
 /// call Vulkan; but a call already in flight on another thread can still finish after this function returns, so
 /// remove the hook only once no Vulkan call is running. Tests use it to assert on message ids.
 ///
-/// Param fn: the hook, or null to remove it.
-/// Param user: passed through to the hook.
+/// - Param fn: the hook, or null to remove it.
+/// - Param user: passed through to the hook.
 void SetValidationCapture(ValidationCaptureFn fn, void* user);
 
 /// A Vulkan instance with the extensions its purpose needs and, when wanted and installed, the validation layer.
 ///
 /// Move-only; the destructor destroys the debug messenger and the instance.
 ///
-/// Thread-safety: thread-compatible. The tables it exposes are immutable after creation.
-/// Ownership: owns the `VkInstance` and debug messenger. It keeps a copy of the loader it was created from (the
+/// - Thread-safety: thread-compatible. The tables it exposes are immutable after creation.
+/// - Ownership: owns the `VkInstance` and debug messenger. It keeps a copy of the loader it was created from (the
 ///   library itself is never unloaded), so the loader passed to `Create` need not outlive it.
 class VulkanInstance {
 public:
@@ -120,10 +120,10 @@ public:
     /// wanted but `VK_LAYER_KHRONOS_validation` is not installed, one warning is logged for the process and the
     /// instance is created without it. `ENGINE_RHI_VALIDATION_FATAL=1` makes any validation error abort the process.
     ///
-    /// Param loader: an opened loader; copied.
-    /// Param desc: what the instance is for.
-    /// Returns: the instance; check [[rhi::vulkan::VulkanInstance::Valid]].
-    /// Fails: returns an invalid instance, logging the reason, if the loader is older than 1.3, a required
+    /// - Param loader: an opened loader; copied.
+    /// - Param desc: what the instance is for.
+    /// - Returns: the instance; check [[rhi::vulkan::VulkanInstance::Valid]].
+    /// - Fails: returns an invalid instance, logging the reason, if the loader is older than 1.3, a required
     ///   extension (the surface extensions when `presentable`) is missing, or `vkCreateInstance` fails.
     static VulkanInstance Create(const VulkanLoader& loader, const VulkanInstanceDesc& desc);
 

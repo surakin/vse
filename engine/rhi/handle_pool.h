@@ -22,8 +22,8 @@ namespace engine_placeholder::rhi {
 ///
 /// The pool holds at most [[rhi::HandlePool::kMaxCapacity]] slots; `Allocate` fails past that.
 ///
-/// Thread-safety: not-thread-safe. The owning device serializes access behind its mutex.
-/// Ownership: owns the stored values and the chunk memory (libc `malloc`); both are released by the
+/// - Thread-safety: not-thread-safe. The owning device serializes access behind its mutex.
+/// - Ownership: owns the stored values and the chunk memory (libc `malloc`); both are released by the
 ///   destructor, which also destroys live and retired values without calling any cleanup hook.
 template <typename T, typename Tag>
 class HandlePool {
@@ -61,8 +61,8 @@ public:
     ///
     /// A device calls this once, right after construction, with `GenerationSeed(serial)`. Generation 0 stays invalid.
     ///
-    /// Param generation: the first generation of new slots; 0 is replaced by 1.
-    /// Aborts: the pool already allocated a slot.
+    /// - Param generation: the first generation of new slots; 0 is replaced by 1.
+    /// - Aborts: the pool already allocated a slot.
     void SeedGeneration(u32 generation) {
         ENGINE_ASSERT(chunk_count_ == 0, "HandlePool::SeedGeneration: the pool already allocated slots");
         initial_generation_ = generation == 0 ? 1 : generation;
@@ -70,10 +70,10 @@ public:
 
     /// Stores `value` in a free slot and returns its handle.
     ///
-    /// Param value: moved into the pool.
-    /// Returns: a valid handle, or the invalid handle if the pool already holds [[rhi::HandlePool::kMaxCapacity]] slots
+    /// - Param value: moved into the pool.
+    /// - Returns: a valid handle, or the invalid handle if the pool already holds [[rhi::HandlePool::kMaxCapacity]] slots
     ///   or memory is exhausted.
-    /// Fails: reported through the return value; `value` is left untouched in that case.
+    /// - Fails: reported through the return value; `value` is left untouched in that case.
     HandleType Allocate(T&& value) {
         if (free_head_ == kNone && !AddChunk()) {
             return HandleType{};
@@ -90,9 +90,9 @@ public:
 
     /// Returns a pointer to the value `handle` refers to, or null if the handle is invalid, stale or retired.
     ///
-    /// Param handle: any handle, including a garbage one.
-    /// Returns: a pointer valid until the slot is freed or retired.
-    /// Ownership: the pool keeps ownership of the value.
+    /// - Param handle: any handle, including a garbage one.
+    /// - Returns: a pointer valid until the slot is freed or retired.
+    /// - Ownership: the pool keeps ownership of the value.
     T* Get(HandleType handle) {
         Slot* s = Find(handle);
         return s != nullptr ? ValuePtr(*s) : nullptr;
@@ -100,9 +100,9 @@ public:
 
     /// Const overload of `Get`.
     ///
-    /// Param handle: any handle, including a garbage one.
-    /// Returns: a pointer valid until the slot is freed or retired, or null.
-    /// Ownership: the pool keeps ownership of the value.
+    /// - Param handle: any handle, including a garbage one.
+    /// - Returns: a pointer valid until the slot is freed or retired, or null.
+    /// - Ownership: the pool keeps ownership of the value.
     const T* Get(HandleType handle) const {
         const Slot* s = const_cast<HandlePool*>(this)->Find(handle);
         return s != nullptr ? ValuePtr(*s) : nullptr;
@@ -112,9 +112,9 @@ public:
     ///
     /// Use for resources the GPU can never be using. Resources the GPU may still read go through `Retire`.
     ///
-    /// Param handle: the handle to free.
-    /// Returns: true if the handle was live and has been freed.
-    /// Fails: returns false, changing nothing, for an invalid, stale or already retired handle.
+    /// - Param handle: the handle to free.
+    /// - Returns: true if the handle was live and has been freed.
+    /// - Fails: returns false, changing nothing, for an invalid, stale or already retired handle.
     bool Free(HandleType handle) {
         Slot* s = Find(handle);
         if (s == nullptr) {
@@ -128,12 +128,12 @@ public:
 
     /// Invalidates the handle at once but keeps the value alive until `CollectRetired` is told `frame` has completed.
     ///
-    /// Param handle: the handle to retire.
-    /// Param frame: the frame number during which the resource was last possibly used; must not decrease
+    /// - Param handle: the handle to retire.
+    /// - Param frame: the frame number during which the resource was last possibly used; must not decrease
     ///   between calls.
-    /// Returns: true if the handle was live and has been retired.
-    /// Fails: returns false, changing nothing, for an invalid, stale or already retired handle.
-    /// Aborts: `frame` is lower than the frame passed to the previous `Retire`.
+    /// - Returns: true if the handle was live and has been retired.
+    /// - Fails: returns false, changing nothing, for an invalid, stale or already retired handle.
+    /// - Aborts: `frame` is lower than the frame passed to the previous `Retire`.
     bool Retire(HandleType handle, u64 frame) {
         Slot* s = Find(handle);
         if (s == nullptr) {
@@ -161,9 +161,9 @@ public:
     /// For each one `on_release(T&)` is called with the value still alive, so the caller can destroy the
     /// GPU object it describes; the value is then destroyed and the slot recycled.
     ///
-    /// Param completed_frame: the newest frame the GPU has finished.
-    /// Param on_release: callable taking `T&`.
-    /// Returns: the number of values released.
+    /// - Param completed_frame: the newest frame the GPU has finished.
+    /// - Param on_release: callable taking `T&`.
+    /// - Returns: the number of values released.
     template <typename F>
     usize CollectRetired(u64 completed_frame, F&& on_release) {
         usize released = 0;
@@ -191,8 +191,8 @@ public:
 
     /// Releases every retired value regardless of frame; use after the GPU is idle.
     ///
-    /// Param on_release: callable taking `T&`, as for [[rhi::HandlePool::CollectRetired]].
-    /// Returns: the number of values released.
+    /// - Param on_release: callable taking `T&`, as for [[rhi::HandlePool::CollectRetired]].
+    /// - Returns: the number of values released.
     template <typename F>
     usize CollectAllRetired(F&& on_release) {
         return CollectRetired(~0ull, Forward<F>(on_release));
@@ -200,7 +200,7 @@ public:
 
     /// Calls `fn(HandleType, T&)` for every live value, in slot order.
     ///
-    /// Param fn: callable; it must not allocate, free or retire in this pool.
+    /// - Param fn: callable; it must not allocate, free or retire in this pool.
     template <typename F>
     void ForEachLive(F&& fn) {
         for (u32 c = 0; c < chunk_count_; ++c) {
@@ -215,7 +215,7 @@ public:
 
     /// Const overload of `ForEachLive`; `fn(HandleType, const T&)`.
     ///
-    /// Param fn: callable; it must not allocate, free or retire in this pool.
+    /// - Param fn: callable; it must not allocate, free or retire in this pool.
     template <typename F>
     void ForEachLive(F&& fn) const {
         for (u32 c = 0; c < chunk_count_; ++c) {

@@ -17,8 +17,8 @@ namespace engine_placeholder::ui {
 /// page, Home and End to the ends; the wheel only when switched on. `OnChanged` runs whenever the user changes the value (while dragging too), `OnCommit` when a drag ends or a key
 /// changed it. `SetValue` changes the value without running either.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: owns nothing.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: owns nothing.
 class Slider : public Widget {
 public:
     /// The page as a fraction of the range when none was set.
@@ -33,7 +33,7 @@ public:
     static constexpr f32 kLengthInThumbs = 8.0f;
 
     /// Makes a slider over 0..1.
-    /// Param vertical: whether the track runs bottom to top.
+    /// - Param vertical: whether the track runs bottom to top.
     explicit Slider(StringView name = StringView(), bool vertical = false) : Widget(name), vertical_(vertical) { SetFocusable(true); }
     /// Sets the range (and the step and policy in it) and applies it to the current value.
     void SetRange(const ValueRange& range);
@@ -43,7 +43,7 @@ public:
     void SetValue(f64 value);
     /// Returns the value.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     f64 Value() const { return value_; }
     /// Sets the distance of a page (PageUp, a track press with `SetTrackPages`); 0 means a tenth of the range.
     void SetPage(f64 page) { page_ = page; }
@@ -95,8 +95,8 @@ private:
 /// digits, a sign (when the range has negative values) and a decimal point (when `SetDecimals` is above 0) and nothing else; Enter, and losing the focus, commit the text (a text that
 /// is not a number, or that the range rejects, goes back to the value), and Escape reverts it. Home and End move the caret in the field.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: owns its text field.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: owns its text field.
 class SpinBox : public Widget {
 public:
     /// The width of the button column as a multiple of the theme's icon size.
@@ -122,7 +122,7 @@ public:
     void SetValue(f64 value);
     /// Returns the value.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     f64 Value() const { return value_; }
     /// Sets how many digits follow the decimal point in the text (0 to 9); marks layout dirty.
     void SetDecimals(int decimals);
@@ -132,8 +132,8 @@ public:
     String<HeapAllocator> ValueText() const;
     /// Returns the embedded text field (to focus it, or to read what is typed).
     ///
-    /// Fails: never.
-    /// Ownership: borrowed; the box owns it.
+    /// - Fails: never.
+    /// - Ownership: borrowed; the box owns it.
     TextField* Field() const { return field_; }
     /// Reads the field's text as the value: applies it through the range (and runs `OnChanged` when the value changed) when it is a number, else puts the value's text back.
     void Commit();

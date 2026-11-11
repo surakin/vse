@@ -14,8 +14,8 @@ class MemoryConfigStore;
 /// The durable state of memory stores. Two stores that share one backing see each other's committed changes (and are told about them),
 /// which models two processes or two threads using one configuration; a store made without a backing has its own.
 ///
-/// Thread-safety: thread-safe.
-/// Ownership: shared by the stores that use it (see [[settings::MemoryBackingPtr]]).
+/// - Thread-safety: thread-safe.
+/// - Ownership: shared by the stores that use it (see [[settings::MemoryBackingPtr]]).
 class MemoryBacking {
 public:
     /// One committed entry.
@@ -49,8 +49,8 @@ MemoryBackingPtr MakeMemoryBacking();
 
 /// A full-featured store in memory: typed values, staged writes with an atomic `Commit`, insertion order, change notification.
 ///
-/// Thread-safety: thread-compatible per instance; the backing it uses is thread-safe.
-/// Ownership: owns its working copy; shares the backing.
+/// - Thread-safety: thread-compatible per instance; the backing it uses is thread-safe.
+/// - Ownership: owns its working copy; shares the backing.
 class MemoryConfigStore final : public ConfigStore {
 public:
     /// Makes a store over a private empty backing.
@@ -95,13 +95,13 @@ struct DefaultEntry {
 
 /// A store over a fixed array of text entries: the defaults a game ships. It cannot be written; `Load` always succeeds.
 ///
-/// Thread-safety: thread-safe (immutable after construction).
-/// Ownership: borrows the array, which must outlive the store.
+/// - Thread-safety: thread-safe (immutable after construction).
+/// - Ownership: borrows the array, which must outlive the store.
 class ReadOnlyConfigStore final : public ConfigStore {
 public:
     /// Makes a store over `entries[0..count)`.
     ///
-    /// Param entries: the entries; an entry with a null key or text, or a key that is not a valid [[settings::Key]], is skipped, and the first
+    /// - Param entries: the entries; an entry with a null key or text, or a key that is not a valid [[settings::Key]], is skipped, and the first
     ///   entry for a repeated key wins.
     ReadOnlyConfigStore(const DefaultEntry* entries, usize count);
 

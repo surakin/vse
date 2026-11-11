@@ -31,7 +31,7 @@ inline constexpr UINT_PTR kWin32ModalTimerId = 1;
 class Win32DataObject final : public IDataObject {
 public:
     /// Replaces the offers with copies of `offers`.
-    /// Returns: false if an offer is empty, too large, unnamed (custom) or holds a refused path (files); then nothing is kept.
+    /// - Returns: false if an offer is empty, too large, unnamed (custom) or holds a refused path (files); then nothing is kept.
     bool Set(const ClipboardOffer* offers, usize count);
     /// Drops the offers.
     void Clear();

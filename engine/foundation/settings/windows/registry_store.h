@@ -26,7 +26,7 @@ enum class RegistryHive : u8 {
 
 /// Where a [[settings::RegistryConfigStore]] keeps its values.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct RegistryStoreOptions {
     /// The hive.
     RegistryHive hive = RegistryHive::CurrentUser;
@@ -38,15 +38,15 @@ struct RegistryStoreOptions {
 
 /// The registry key of an application's own settings: `Software\<app>`.
 ///
-/// Param app: the application's name (one path component).
-/// Param out: receives the path; NUL-terminated and cut to fit.
-/// Fails: never.
+/// - Param app: the application's name (one path component).
+/// - Param out: receives the path; NUL-terminated and cut to fit.
+/// - Fails: never.
 void RegistrySettingsPath(StringView app, char* out, usize capacity);
 
 /// A [[settings::ConfigStore]] over one registry key (see the file comment for the layout).
 ///
-/// Thread-safety: thread-compatible, as every store; the change listener runs on the store's own watch thread.
-/// Ownership: the caller owns the store; destroying it stops the watch thread before it returns.
+/// - Thread-safety: thread-compatible, as every store; the change listener runs on the store's own watch thread.
+/// - Ownership: the caller owns the store; destroying it stops the watch thread before it returns.
 class RegistryConfigStore final : public ConfigStore {
 public:
     /// Makes a store over `options.path` in `options.hive`; nothing is opened until the first call.
@@ -78,7 +78,7 @@ public:
     bool IsPresent() const override;
     /// Starts (or, with null, stops) the watch thread; the listener is called on it for another writer's change, never for this store's own.
     ///
-    /// Fails: `Invalid` when called from the listener itself (stopping the thread would wait for the call in progress); `Io` if the thread's
+    /// - Fails: `Invalid` when called from the listener itself (stopping the thread would wait for the call in progress); `Io` if the thread's
     ///   event cannot be made. A listener must not destroy its store either.
     Status SetChangeListener(ChangeListener listener, void* user) override;
 

@@ -21,7 +21,7 @@ enum class CrashTestKind : u8 {
 
 /// What [[debug::StartProgramDebugging]] decided and did.
 ///
-/// Thread-safety: thread-compatible. A plain value.
+/// - Thread-safety: thread-compatible. A plain value.
 struct ProgramDebugSetup {
     /// True if the crash handler was installed.
     bool crash_handler_installed = false;
@@ -31,7 +31,7 @@ struct ProgramDebugSetup {
 
 /// What the command line and environment asked for, before anything is installed. Separate so it can be tested.
 ///
-/// Thread-safety: thread-compatible. A plain value.
+/// - Thread-safety: thread-compatible. A plain value.
 struct ProgramDebugRequest {
     /// Whether to install the crash handler.
     bool crash_handler = false;
@@ -46,21 +46,21 @@ struct ProgramDebugRequest {
 /// Unknown arguments are ignored (the program parses its own). An unknown value for a known flag is ignored too, leaving the
 /// setting from the lower-priority source.
 ///
-/// Param argc: number of arguments; 0 for a program with no command line.
-/// Param argv: the arguments; borrowed for the call; may be null.
-/// Param environment_value: the text of `ENGINE_CRASH_HANDLER`, or null if unset; borrowed for the call.
-/// Param build_default: what to do when neither is given.
-/// Returns: the decisions.
-/// Fails: never.
-/// Thread-safety: thread-safe.
+/// - Param argc: number of arguments; 0 for a program with no command line.
+/// - Param argv: the arguments; borrowed for the call; may be null.
+/// - Param environment_value: the text of `ENGINE_CRASH_HANDLER`, or null if unset; borrowed for the call.
+/// - Param build_default: what to do when neither is given.
+/// - Returns: the decisions.
+/// - Fails: never.
+/// - Thread-safety: thread-safe.
 ProgramDebugRequest ParseProgramDebugRequest(int argc, const char* const* argv, const char* environment_value, bool build_default);
 
 /// Reports whether `argument` is one of the arguments [[debug::StartProgramDebugging]] handles, so a program's own argument
 /// parser can skip it instead of rejecting it as unknown.
-/// Param argument: one command-line argument; borrowed for the call.
-/// Returns: true for `--crash-handler=...` and `--crash-test=...`.
-/// Fails: never.
-/// Thread-safety: thread-safe.
+/// - Param argument: one command-line argument; borrowed for the call.
+/// - Returns: true for `--crash-handler=...` and `--crash-test=...`.
+/// - Fails: never.
+/// - Thread-safety: thread-safe.
 bool IsProgramDebugArgument(const char* argument);
 
 /// Prepares the debugging facilities for this program and installs the crash handler if wanted. Call first thing in `main`.
@@ -68,11 +68,11 @@ bool IsProgramDebugArgument(const char* argument);
 /// Runs [[debug::InitDebugFacilities]] and [[debug::InitCrashContext]], logs one `build ...` line (build id, platform,
 /// configuration) on its own `LogBuild` channel (always at Info), and installs the crash handler as described at the top of this header.
 ///
-/// Param argc: number of arguments; 0 for a program with no command line.
-/// Param argv: the arguments; borrowed for the call; may be null.
-/// Returns: what was decided; a failed install is logged and reported as `crash_handler_installed == false`.
-/// Fails: never aborts; see [[debug::InstallCrashHandler]] for the failures it logs.
-/// Thread-safety: thread-safe; call once, before other threads start.
+/// - Param argc: number of arguments; 0 for a program with no command line.
+/// - Param argv: the arguments; borrowed for the call; may be null.
+/// - Returns: what was decided; a failed install is logged and reported as `crash_handler_installed == false`.
+/// - Fails: never aborts; see [[debug::InstallCrashHandler]] for the failures it logs.
+/// - Thread-safety: thread-safe; call once, before other threads start.
 ProgramDebugSetup StartProgramDebugging(int argc, const char* const* argv);
 
 /// Causes the fault asked for with `--crash-test=...`; does nothing for [[debug::CrashTestKind::None]].
@@ -80,9 +80,9 @@ ProgramDebugSetup StartProgramDebugging(int argc, const char* const* argv);
 /// Call it right after [[debug::StartProgramDebugging]], before the program creates a window or a device, so the crash path can
 /// be checked without a display or a GPU. Does not return for every kind except `Ensure`.
 ///
-/// Param kind: the fault to cause.
-/// Fails: by design, the program dies from the fault (`Ensure` returns after reporting).
-/// Thread-safety: thread-safe.
+/// - Param kind: the fault to cause.
+/// - Fails: by design, the program dies from the fault (`Ensure` returns after reporting).
+/// - Thread-safety: thread-safe.
 void RunCrashTest(CrashTestKind kind);
 
 } // namespace engine_placeholder::debug

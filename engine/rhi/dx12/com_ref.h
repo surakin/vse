@@ -9,7 +9,7 @@ namespace engine_placeholder::rhi::dx12 {
 /// `Put()` hands out the address of the raw pointer for the `void**`/`T**` out-parameters of COM calls, releasing what was held
 /// first; `Get()` borrows. Copies are deliberately impossible: a second owner takes a reference with `Share()`.
 ///
-/// Thread-safety: thread-compatible; the referenced object follows its own COM rules.
+/// - Thread-safety: thread-compatible; the referenced object follows its own COM rules.
 template <typename T>
 class ComRef {
 public:
@@ -17,7 +17,7 @@ public:
     ComRef() = default;
     /// Takes over a reference the caller owns (does not add one).
     ///
-    /// Param raw: an owned reference, or null.
+    /// - Param raw: an owned reference, or null.
     explicit ComRef(T* raw) : raw_(raw) {}
     ComRef(const ComRef&) = delete;
     ComRef& operator=(const ComRef&) = delete;
@@ -45,7 +45,7 @@ public:
     }
     /// Returns a new owner of the same object (adds a reference).
     ///
-    /// Returns: an owner, or an empty one when this holds nothing.
+    /// - Returns: an owner, or an empty one when this holds nothing.
     ComRef Share() const {
         if (raw_ != nullptr) {
             raw_->AddRef();
@@ -54,7 +54,7 @@ public:
     }
     /// Gives up the reference without releasing it.
     ///
-    /// Returns: the raw pointer; the caller owns its reference.
+    /// - Returns: the raw pointer; the caller owns its reference.
     T* Detach() {
         T* raw = raw_;
         raw_ = nullptr;
@@ -62,14 +62,14 @@ public:
     }
     /// Releases what is held and returns the address to receive a new reference (for COM out-parameters).
     ///
-    /// Returns: the address of the raw pointer.
+    /// - Returns: the address of the raw pointer.
     T** Put() {
         Reset();
         return &raw_;
     }
     /// Like `Put`, typed for `QueryInterface`-style `void**` parameters.
     ///
-    /// Returns: the address of the raw pointer as `void**`.
+    /// - Returns: the address of the raw pointer as `void**`.
     void** PutVoid() { return reinterpret_cast<void**>(Put()); }
     /// Returns the raw pointer, still owned by this.
     T* Get() const { return raw_; }

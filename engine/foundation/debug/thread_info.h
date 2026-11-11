@@ -9,20 +9,20 @@ namespace engine_placeholder::debug {
 constexpr usize kMaxThreadNameBytes = 32;
 
 /// Returns the operating system's id for the calling thread (the number a debugger and `top` show).
-/// Thread-safety: thread-safe. Async-signal-safe.
-/// Backend: Windows: GetCurrentThreadId; macOS: pthread_threadid_np.
+/// - Thread-safety: thread-safe. Async-signal-safe.
+/// - Backend: Windows: GetCurrentThreadId; macOS: pthread_threadid_np.
 u64 CurrentThreadId();
 
 /// Gives the calling thread a name to appear in crash reports (for example `"worker 3"`), cut at [[debug::kMaxThreadNameBytes]] - 1 bytes.
 ///
-/// Param name: a null-terminated string, or null to clear the name; borrowed for the call.
-/// Thread-safety: thread-safe; it changes only the calling thread's name.
+/// - Param name: a null-terminated string, or null to clear the name; borrowed for the call.
+/// - Thread-safety: thread-safe; it changes only the calling thread's name.
 void SetCrashThreadName(const char* name);
 
 /// Returns the name the calling thread gave itself, or an empty string.
-/// Returns: a null-terminated string that stays valid for the life of the thread.
-/// Ownership: the string belongs to the thread; do not free it or keep it past the thread's end.
-/// Thread-safety: thread-safe. Async-signal-safe.
+/// - Returns: a null-terminated string that stays valid for the life of the thread.
+/// - Ownership: the string belongs to the thread; do not free it or keep it past the thread's end.
+/// - Thread-safety: thread-safe. Async-signal-safe.
 const char* CrashThreadName();
 
 } // namespace engine_placeholder::debug

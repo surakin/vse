@@ -22,38 +22,38 @@ namespace engine_placeholder::ecs {
 
 /// A query term: the entities must have `T`; the query function gets it as `const T&`. `T` may not be a tag (use [[ecs::With]]).
 ///
-/// Thread-safety: thread-safe empty type; it only names a component.
+/// - Thread-safety: thread-safe empty type; it only names a component.
 template <class T>
 struct Read {};
 /// A query term: the entities must have `T`; the query function gets it as `T&`, and the query holds `T` for writing. `T` may not be a tag.
 ///
-/// Thread-safety: thread-safe empty type; it only names a component.
+/// - Thread-safety: thread-safe empty type; it only names a component.
 template <class T>
 struct Write {};
 /// A query term: the entities may have `T`; the query function gets a `const T*`, null when the archetype lacks it. `T` may not be a tag.
 ///
-/// Thread-safety: thread-safe empty type; it only names a component.
+/// - Thread-safety: thread-safe empty type; it only names a component.
 template <class T>
 struct Optional {};
 /// A query term: like [[ecs::Optional]] but writable: the query function gets a `T*`, null when the archetype lacks it.
 ///
-/// Thread-safety: thread-safe empty type; it only names a component.
+/// - Thread-safety: thread-safe empty type; it only names a component.
 template <class T>
 struct OptionalWrite {};
 /// A query term: like [[ecs::Write]] (the function gets `T&`, the query holds `T` for writing) but visiting a chunk does not stamp it as written: the function
 /// writes only when it needs to and calls `ChunkView::MarkWritten<T>()` after a real change, so `Changed<T>` sees exact changes. `T` may not be a tag.
 ///
-/// Thread-safety: thread-safe empty type; it only names a component.
+/// - Thread-safety: thread-safe empty type; it only names a component.
 template <class T>
 struct LazyWrite {};
 /// A query term: the entities must have `T`, and the query function gets nothing for it (a filter). `T` may be a tag.
 ///
-/// Thread-safety: thread-safe empty type; it only names a component.
+/// - Thread-safety: thread-safe empty type; it only names a component.
 template <class T>
 struct With {};
 /// A query term: the entities must not have `T` (a filter, no argument). `T` may be a tag.
 ///
-/// Thread-safety: thread-safe empty type; it only names a component.
+/// - Thread-safety: thread-safe empty type; it only names a component.
 template <class T>
 struct Without {};
 
@@ -61,13 +61,13 @@ struct Without {};
 /// query's `since` tick are visited. The query function gets nothing for it; combine it with `Read<T>`/`Write<T>` for the data. `T` may not be a tag.
 /// The precision is a chunk: one write marks every row of its chunk.
 ///
-/// Thread-safety: thread-safe empty type; it only names a component.
+/// - Thread-safety: thread-safe empty type; it only names a component.
 template <class T>
 struct Changed {};
 /// A query filter: the entities must have `T`, and only chunks that received a row with `T` (a created entity, or one that gained `T` or migrated in)
 /// after the query's `since` tick are visited. No function argument. `T` may not be a tag. The precision is a chunk.
 ///
-/// Thread-safety: thread-safe empty type; it only names a component.
+/// - Thread-safety: thread-safe empty type; it only names a component.
 template <class T>
 struct Added {};
 
@@ -220,8 +220,8 @@ struct FilterData<TypeList<Out...>, T, Rest...>
 
 /// What a query visited since its counters were last reset.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: owns nothing.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns nothing.
 struct QueryStats {
     /// Entities in the chunks that passed the filters.
     u64 entities = 0;
@@ -233,27 +233,27 @@ struct QueryStats {
 
 /// One chunk of a query's archetype, as the function of [[ecs::Query::ForEachChunk]] sees it: the entity ids and the columns the query declared.
 ///
-/// Thread-safety: thread-compatible.
-/// Ownership: borrows the chunk; the spans are valid until the next structural change of the world (the iteration guard prevents one while the query runs).
+/// - Thread-safety: thread-compatible.
+/// - Ownership: borrows the chunk; the spans are valid until the next structural change of the world (the iteration guard prevents one while the query runs).
 class ChunkView {
 public:
     /// Makes a view; only queries do.
     ///
-    /// Ownership: borrows the archetype, the chunk and the three sets, which must outlive the view.
+    /// - Ownership: borrows the archetype, the chunk and the three sets, which must outlive the view.
     ChunkView(const Archetype* archetype, Chunk* chunk, const ComponentSet* readable, const ComponentSet* writable, const ComponentSet* optional, u64 tick)
         : archetype_(archetype), chunk_(chunk), readable_(readable), writable_(writable), optional_(optional), tick_(tick) {}
 
     /// The number of entities (rows) in the chunk.
-    /// Fails: never.
+    /// - Fails: never.
     u32 Count() const { return chunk_->count; }
     /// The entity ids of the rows, in row order.
-    /// Fails: never.
+    /// - Fails: never.
     Span<Entity> Entities() const { return archetype_->Entities(chunk_); }
 
     /// The chunk's column of `T` for reading: a `Read`, `Write` or optional term of the query.
     ///
-    /// Returns: the column, or an empty span when `T` is optional and the archetype lacks it.
-    /// Aborts: `T` is not a data term of the query.
+    /// - Returns: the column, or an empty span when `T` is optional and the archetype lacks it.
+    /// - Aborts: `T` is not a data term of the query.
     template <class T>
     Span<const T> Read() const {
         static_assert(!IsEmpty<T>, "ChunkView::Read: a tag has no column");
@@ -265,8 +265,8 @@ public:
     }
     /// The chunk's column of `T` for writing: a `Write` or `OptionalWrite` term of the query.
     ///
-    /// Returns: the column, or an empty span when `T` is an `OptionalWrite` term and the archetype lacks it.
-    /// Aborts: `T` is not a writable term of the query.
+    /// - Returns: the column, or an empty span when `T` is an `OptionalWrite` term and the archetype lacks it.
+    /// - Aborts: `T` is not a writable term of the query.
     template <class T>
     Span<T> Write() const {
         static_assert(!IsEmpty<T>, "ChunkView::Write: a tag has no column");
@@ -280,7 +280,7 @@ public:
     /// Stamps the chunk's column of `T` as written at the current tick: for a `LazyWrite` term, after the function really changed a value. Safe to call from the
     /// job that owns this chunk.
     ///
-    /// Aborts: `T` is not a writable term of the query.
+    /// - Aborts: `T` is not a writable term of the query.
     template <class T>
     void MarkWritten() const {
         const ComponentId id = ComponentOf<T>();
@@ -307,10 +307,10 @@ private:
 /// archetypes made since, so keeping a query across frames is cheap. An archetype that has no entities stays in the list and is skipped
 /// while iterating.
 ///
-/// Thread-safety: thread-compatible. A query object has one user at a time. Running two queries of one world on different threads is not
+/// - Thread-safety: thread-compatible. A query object has one user at a time. Running two queries of one world on different threads is not
 /// supported yet: starting an iteration updates the world's (unsynchronized) iteration counter and write set; the parallel scheduler of Day 231
 /// makes that safe.
-/// Ownership: borrows the world, which must outlive the query; owns its list of archetype indices.
+/// - Ownership: borrows the world, which must outlive the query; owns its list of archetype indices.
 template <class... Terms>
 class Query {
     static_assert(sizeof...(Terms) >= 1, "a query needs at least one term");
@@ -325,7 +325,7 @@ class Query {
 public:
     /// Makes a query over `world`; `world.Query<Terms...>()` does the same.
     ///
-    /// Ownership: borrows `world`.
+    /// - Ownership: borrows `world`.
     explicit Query(World& world) : world_(&world) {
         (Collect<Terms>(), ...);
         BuildData(DataTerms{}, typename detail::MakeIndexList<kDataCount>::Type{});
@@ -336,8 +336,8 @@ public:
     /// `fn` takes the data terms in order, each as the term says (`const T&`, `T&`, `const T*`, `T*`; filters give nothing), and may take an
     /// [[ecs::Entity]] before them. If `fn` returns `bool`, returning false stops the iteration. Structural calls on the world abort while it runs.
     ///
-    /// Param fn: the function to call per entity.
-    /// Aborts: `fn` changes the world's structure (`Create`, `Destroy`, `Add`, `Remove`), or calls `World::Get` of a component the query writes.
+    /// - Param fn: the function to call per entity.
+    /// - Aborts: `fn` changes the world's structure (`Create`, `Destroy`, `Add`, `Remove`), or calls `World::Get` of a component the query writes.
     template <class Fn>
     void ForEach(Fn&& fn) {
         ForEachImpl(fn, DataTerms{}, typename detail::MakeIndexList<kDataCount>::Type{});
@@ -348,8 +348,8 @@ public:
     /// The view gives the entity ids and the columns as spans, the form to vectorize or to split across jobs. If `fn` returns `bool`,
     /// returning false stops the iteration.
     ///
-    /// Param fn: the function to call per chunk.
-    /// Aborts: as for [[ecs::Query::ForEach]].
+    /// - Param fn: the function to call per chunk.
+    /// - Aborts: as for [[ecs::Query::ForEach]].
     template <class Fn>
     void ForEachChunk(Fn&& fn) {
         Refresh();
@@ -381,11 +381,11 @@ public:
     /// wait), the ranges run one after another on the calling thread, in order. `fn` must not change the world's structure; record changes in a command buffer
     /// (the overload below).
     ///
-    /// Param scheduler: the job scheduler, or null to run inline.
-    /// Param fn: called with each chunk's view, possibly from several threads at once (on different chunks).
-    /// Param grain: chunks per job; 0 chooses a few jobs per participant.
-    /// Aborts: as for [[ecs::Query::ForEach]].
-    /// Ownership: borrows the scheduler and `fn` for the call; the jobs finish before it returns.
+    /// - Param scheduler: the job scheduler, or null to run inline.
+    /// - Param fn: called with each chunk's view, possibly from several threads at once (on different chunks).
+    /// - Param grain: chunks per job; 0 chooses a few jobs per participant.
+    /// - Aborts: as for [[ecs::Query::ForEach]].
+    /// - Ownership: borrows the scheduler and `fn` for the call; the jobs finish before it returns.
     template <class Fn>
     void ForEachChunkParallel(jobs::Scheduler* scheduler, Fn&& fn, usize grain = 0) {
         RunChunks(scheduler, nullptr, fn, grain);
@@ -393,23 +393,23 @@ public:
     /// As above, and each range of chunks gets its own command buffer from `pool` (`fn(ChunkView&, CommandBuffer&)`), so the recorded commands apply in chunk
     /// order whatever the schedule of the jobs (`pool.ApplyAll` applies them by range number).
     ///
-    /// Param pool: at least [[ecs::Query::RangesFor]] buffers.
-    /// Aborts: `pool` has fewer buffers than ranges; as for [[ecs::Query::ForEach]].
-    /// Ownership: borrows the scheduler, `pool` and `fn` for the call; the buffers keep their commands for `pool.ApplyAll`.
+    /// - Param pool: at least [[ecs::Query::RangesFor]] buffers.
+    /// - Aborts: `pool` has fewer buffers than ranges; as for [[ecs::Query::ForEach]].
+    /// - Ownership: borrows the scheduler, `pool` and `fn` for the call; the buffers keep their commands for `pool.ApplyAll`.
     template <class Fn>
     void ForEachChunkParallel(jobs::Scheduler* scheduler, CommandBufferPool& pool, Fn&& fn, usize grain = 0) {
         RunChunks(scheduler, &pool, fn, grain);
     }
     /// Folds one value per chunk into one result, always in chunk order, so a floating-point sum is the same whatever the number of threads.
     ///
-    /// Param scheduler: the job scheduler, or null to run inline.
-    /// Param init: the starting value. `T` must be default-constructible and copyable.
-    /// Param per_chunk: `T(ChunkView&)`, called once per chunk that passes the filters, possibly in parallel.
-    /// Param combine: `T(T accumulated, T chunk_value)`, called in chunk order on the calling thread.
-    /// Param grain: chunks per job; 0 chooses a few jobs per participant.
-    /// Returns: the folded value.
-    /// Aborts: as for [[ecs::Query::ForEach]].
-    /// Ownership: borrows the scheduler and the functions for the call; the jobs finish before it returns.
+    /// - Param scheduler: the job scheduler, or null to run inline.
+    /// - Param init: the starting value. `T` must be default-constructible and copyable.
+    /// - Param per_chunk: `T(ChunkView&)`, called once per chunk that passes the filters, possibly in parallel.
+    /// - Param combine: `T(T accumulated, T chunk_value)`, called in chunk order on the calling thread.
+    /// - Param grain: chunks per job; 0 chooses a few jobs per participant.
+    /// - Returns: the folded value.
+    /// - Aborts: as for [[ecs::Query::ForEach]].
+    /// - Ownership: borrows the scheduler and the functions for the call; the jobs finish before it returns.
     template <class T, class PerChunk, class Combine>
     T ReduceChunks(jobs::Scheduler* scheduler, T init, PerChunk&& per_chunk, Combine&& combine, usize grain = 0) {
         Refresh();
@@ -432,10 +432,10 @@ public:
         return result;
     }
     /// The number of ranges `ForEachChunkParallel` makes for `chunks` chunks with this grain (the buffers a pool needs).
-    /// Fails: never.
+    /// - Fails: never.
     static usize RangesFor(usize chunks, usize grain) { return grain == 0 ? 1 : chunks / grain + (chunks % grain != 0 ? 1 : 0); }
     /// An upper bound on the chunks a pass visits: the chunks of the matching archetypes (before the filters).
-    /// Fails: never.
+    /// - Fails: never.
     usize ChunkCountUpperBound() {
         Refresh();
         usize total = 0;
@@ -446,31 +446,31 @@ public:
     }
 
     /// The tick after which a chunk must have changed to pass `Changed` and `Added` filters (0 at first: everything stamped passes).
-    /// Fails: never.
+    /// - Fails: never.
     u64 Since() const { return since_; }
     /// Sets the `since` tick explicitly (tests, or a system that keeps its own).
-    /// Fails: never.
+    /// - Fails: never.
     void SetSince(u64 tick) { since_ = tick; }
     /// Marks the changes seen so far as handled: later passes see only what is stamped after this call.
     ///
     /// Sets `since` to the world's tick and then advances the world's tick, so a write made after this call (by a system that runs later in the same
     /// frame) is newer than `since` and is seen by the next pass; the query's own writes are not. Call it right after the pass, at a point where no other
     /// writer runs (a write made by another job between the pass and this call, in the same tick, would be missed).
-    /// Fails: never.
+    /// - Fails: never.
     void Finish() {
         since_ = world_->Tick();
         world_->Advance();
     }
 
     /// What `ForEach` and `ForEachChunk` visited since the last `ResetStats`.
-    /// Fails: never.
+    /// - Fails: never.
     const QueryStats& Stats() const { return stats_; }
     /// Zeroes the counters.
-    /// Fails: never.
+    /// - Fails: never.
     void ResetStats() { stats_ = QueryStats(); }
 
     /// Returns how many entities match right now (the `Changed` and `Added` filters are not applied: this counts by archetype).
-    /// Fails: never.
+    /// - Fails: never.
     u32 Count() {
         Refresh();
         u32 total = 0;
@@ -480,11 +480,11 @@ public:
         return total;
     }
     /// Returns whether no entity matches right now.
-    /// Fails: never.
+    /// - Fails: never.
     bool IsEmpty() { return Count() == 0; }
 
     /// Returns how many archetypes match (including empty ones), after looking at the archetypes made since the last use.
-    /// Fails: never.
+    /// - Fails: never.
     u32 MatchedArchetypes() {
         Refresh();
         return static_cast<u32>(matched_.Size());

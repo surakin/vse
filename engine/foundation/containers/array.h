@@ -14,8 +14,8 @@ namespace engine_placeholder {
 /// (`Array<int, 3> a = {{1, 2, 3}};`) and unmentioned elements are value-initialized. Indexing is not
 /// bounds-checked, like [[Vector]].
 ///
-/// Thread-safety: not-thread-safe. Synchronize externally if shared.
-/// Ownership: owns its elements, which are destroyed with it.
+/// - Thread-safety: not-thread-safe. Synchronize externally if shared.
+/// - Ownership: owns its elements, which are destroyed with it.
 template <typename T, usize N>
 struct Array {
     static_assert(N > 0, "Array: a zero-length array has no storage; use Vector or omit it");
@@ -25,11 +25,11 @@ struct Array {
 
     /// Returns a reference to the element at `index`.
     ///
-    /// Param index: element position; must be less than `N` (not checked).
+    /// - Param index: element position; must be less than `N` (not checked).
     T& operator[](usize index) { return items[index]; }
     /// Returns a const reference to the element at `index`.
     ///
-    /// Param index: element position; must be less than `N` (not checked).
+    /// - Param index: element position; must be less than `N` (not checked).
     const T& operator[](usize index) const { return items[index]; }
 
     /// Returns a pointer to the first element.

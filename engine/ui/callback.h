@@ -15,8 +15,8 @@ using ConnectionId = u32;
 /// A listener is a plain function `void (*)(void* user, Args...)` and the `user` pointer given when it was connected. Listeners are called in the order they were connected.
 /// A listener may connect or disconnect (itself or another) while the callback runs: the call goes on over a snapshot, and a listener disconnected during the call is not called.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: owns the list; the user pointers are borrowed and must outlive the connection.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: owns the list; the user pointers are borrowed and must outlive the connection.
 template <typename... Args>
 class Callback {
 public:
@@ -24,10 +24,10 @@ public:
     using Function = void (*)(void* user, Args... args);
 
     /// Adds a listener.
-    /// Param function: the function to call; must not be null.
-    /// Param user: passed to it as the first argument.
-    /// Returns: the token for `Disconnect`.
-    /// Ownership: borrows `user`, which must outlive the connection.
+    /// - Param function: the function to call; must not be null.
+    /// - Param user: passed to it as the first argument.
+    /// - Returns: the token for `Disconnect`.
+    /// - Ownership: borrows `user`, which must outlive the connection.
     ConnectionId Connect(Function function, void* user) {
         Entry e;
         e.function = function;
@@ -38,8 +38,8 @@ public:
     }
 
     /// Removes the listener `id`.
-    /// Returns: whether it was connected.
-    /// Fails: returns false for an unknown or already disconnected token.
+    /// - Returns: whether it was connected.
+    /// - Fails: returns false for an unknown or already disconnected token.
     bool Disconnect(ConnectionId id) {
         for (usize i = 0; i < entries_.Size(); ++i) {
             if (entries_[i].id == id) {

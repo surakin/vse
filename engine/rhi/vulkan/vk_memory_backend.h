@@ -32,15 +32,15 @@ inline H HandleFromU64(u64 value) {
 
 /// Allocates and frees `VkDeviceMemory` for the allocator, mapping host-visible objects once.
 ///
-/// Thread-safety: thread-compatible; the allocator serializes calls. The counters are atomic.
-/// Ownership: borrows the device table and device, which must outlive it.
+/// - Thread-safety: thread-compatible; the allocator serializes calls. The counters are atomic.
+/// - Ownership: borrows the device table and device, which must outlive it.
 class VulkanMemoryBackend final : public MemoryBackend {
 public:
     /// Creates a backend for `device`.
     ///
-    /// Param fns: the device function table; must outlive the backend.
-    /// Param device: the logical device.
-    /// Param device_lost: set to true when an allocation reports a lost device; may be null.
+    /// - Param fns: the device function table; must outlive the backend.
+    /// - Param device: the logical device.
+    /// - Param device_lost: set to true when an allocation reports a lost device; may be null.
     VulkanMemoryBackend(const VkDeviceFns* fns, VkDevice device, Atomic<bool>* device_lost);
 
     MemoryResult Allocate(u32 memory_type, u64 size, bool map, u64 dedicated_buffer, u64 dedicated_image,

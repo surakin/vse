@@ -19,8 +19,8 @@ class Dx12Device;
 /// which fails while any reference remains. Present modes: `Fifo` is a sync interval of 1, `Immediate` an interval of 0 with tearing
 /// when the system allows it, `Mailbox` falls back to `Fifo`. Fullscreen is the window's borderless mode, so DXGI's Alt+Enter is off.
 ///
-/// Thread-safety: owner-thread-only, as every [[rhi::Swapchain]].
-/// Ownership: owned by its device; destroyed with [[rhi::Device::DestroySwapchain]] before the device.
+/// - Thread-safety: owner-thread-only, as every [[rhi::Swapchain]].
+/// - Ownership: owned by its device; destroyed with [[rhi::Device::DestroySwapchain]] before the device.
 class Dx12Swapchain final : public Swapchain {
 public:
     /// The number of buffers.
@@ -28,15 +28,15 @@ public:
 
     /// Creates the swap chain for the device's window.
     ///
-    /// Param device: the device; its window is a Win32 window.
-    /// Param desc: what is asked for.
-    /// Returns: the swapchain, or null.
-    /// Fails: null (logged) if DXGI refuses; a window with no area gets a swapchain whose `Acquire` reports `Minimized` until it has one.
+    /// - Param device: the device; its window is a Win32 window.
+    /// - Param desc: what is asked for.
+    /// - Returns: the swapchain, or null.
+    /// - Fails: null (logged) if DXGI refuses; a window with no area gets a swapchain whose `Acquire` reports `Minimized` until it has one.
     static UniquePtr<Dx12Swapchain> Create(Dx12Device* device, const SwapchainDesc& desc);
 
     /// Use `Create`.
     ///
-    /// Param device: the device.
+    /// - Param device: the device.
     explicit Dx12Swapchain(Dx12Device* device) : device_(device) {}
     /// Waits for the GPU, then releases the buffers, the swap chain and the latency object.
     ~Dx12Swapchain() override;

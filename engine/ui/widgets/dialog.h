@@ -24,34 +24,34 @@ constexpr int kNo = 4;     ///< No.
 /// it is modal (the focus goes back to its previous owner), else from its parent. Removal is deferred while an event is delivered, so a button handler may close its own dialog; do not use
 /// the dialog after `OnClosed` returns, the surface destroys it.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: owns its buttons and its content.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: owns its buttons and its content.
 class Dialog : public WindowFrame {
 public:
     /// The gap between the buttons, in logical units.
     static constexpr f32 kButtonGap = 8.0f;
 
     /// Makes a dialog with no buttons.
-    /// Param name: the widget name.
-    /// Param title: the title text.
+    /// - Param name: the widget name.
+    /// - Param title: the title text.
     explicit Dialog(StringView name = StringView(), StringView title = StringView());
     /// Adds a button at the right end of the row.
-    /// Param text: the button's text.
-    /// Param result: what `Close` gets when it is pressed.
-    /// Param is_default: whether Enter presses it (a later call with true takes the flag from the earlier button).
-    /// Returns: the button, for the program to name or disable.
-    /// Ownership: borrowed; the dialog owns it.
+    /// - Param text: the button's text.
+    /// - Param result: what `Close` gets when it is pressed.
+    /// - Param is_default: whether Enter presses it (a later call with true takes the flag from the earlier button).
+    /// - Returns: the button, for the program to name or disable.
+    /// - Ownership: borrowed; the dialog owns it.
     Button* AddButton(StringView text, int result, bool is_default = false);
     /// Returns the default button, or null.
     ///
-    /// Ownership: borrowed; the dialog owns it.
-    /// Fails: never.
+    /// - Ownership: borrowed; the dialog owns it.
+    /// - Fails: never.
     Button* DefaultButton() const { return default_; }
     /// Sets the result of Escape and the close button.
     void SetCancelResult(int result) { cancel_result_ = result; }
     /// Returns the result the dialog closed with (`dialog_result::kNone` before).
     ///
-    /// Fails: never.
+    /// - Fails: never.
     int Result() const { return result_; }
     /// Closes the dialog with `result`: stores it, runs `OnClosed`, removes the dialog. Does nothing the second time.
     void Close(int result);

@@ -51,47 +51,47 @@ enum class GBufferLayer : u8 {
 /// attachments (the geometry pass writes three). Call it once at start-up, before creating templates and passes: the passes
 /// themselves do not repeat it, and on a device that fails it every object would be left out with a log line per pipeline.
 ///
-/// Param device: the device to ask.
-/// Param error: receives a message naming the first unsupported format and usage, or the attachment limit; may be null.
-/// Param error_capacity: size of `error` in bytes.
-/// Returns: true when all formats are supported.
-/// Fails: returns false and fills `error`; nothing is logged or aborted.
-/// Ownership: `error` is borrowed for the call.
+/// - Param device: the device to ask.
+/// - Param error: receives a message naming the first unsupported format and usage, or the attachment limit; may be null.
+/// - Param error_capacity: size of `error` in bytes.
+/// - Returns: true when all formats are supported.
+/// - Fails: returns false and fills `error`; nothing is logged or aborted.
+/// - Ownership: `error` is borrowed for the call.
 bool CheckGBufferFormats(const rhi::Device* device, char* error, usize error_capacity);
 
 /// Returns the attachment formats a G-buffer pipeline renders to (three colors and depth).
 ///
-/// Fails: never.
+/// - Fails: never.
 PipelineTarget GBufferPipelineTarget();
 
 /// Encodes a unit vector as two octahedral coordinates in [-1, 1]; the CPU twin of `OctEncode` in `gbuffer_common.slang`.
 ///
-/// Param n: a unit vector (a longer or shorter one is projected as it is, so the result still lies in [-1, 1]).
-/// Returns: the coordinates.
-/// Fails: never. A zero vector gives NaN.
+/// - Param n: a unit vector (a longer or shorter one is projected as it is, so the result still lies in [-1, 1]).
+/// - Returns: the coordinates.
+/// - Fails: never. A zero vector gives NaN.
 Vec2 OctEncode(const Vec3& n);
 
 /// Decodes two octahedral coordinates to a unit vector; the CPU twin of `OctDecode` in `gbuffer_common.slang`.
 ///
-/// Param f: coordinates in [-1, 1].
-/// Returns: a unit vector.
-/// Fails: never.
+/// - Param f: coordinates in [-1, 1].
+/// - Returns: a unit vector.
+/// - Fails: never.
 Vec3 OctDecode(const Vec2& f);
 
 /// Converts an sRGB-encoded channel in [0, 1] to linear light; the CPU twin of `SrgbToLinear` in `gbuffer_common.slang`.
 ///
-/// Param c: the encoded value.
-/// Returns: the linear value.
-/// Fails: never.
+/// - Param c: the encoded value.
+/// - Returns: the linear value.
+/// - Fails: never.
 f32 SrgbToLinear(f32 c);
 
 /// Converts a depth-buffer value (0 at the near plane, 1 at the far plane) to the distance along the view axis.
 ///
-/// Param depth: a depth value in [0, 1].
-/// Param near_plane: the camera's near distance, positive.
-/// Param far_plane: the camera's far distance, greater than `near_plane`.
-/// Returns: the view-space distance in [near_plane, far_plane].
-/// Fails: never.
+/// - Param depth: a depth value in [0, 1].
+/// - Param near_plane: the camera's near distance, positive.
+/// - Param far_plane: the camera's far distance, greater than `near_plane`.
+/// - Returns: the view-space distance in [near_plane, far_plane].
+/// - Fails: never.
 f32 LinearizeDepth(f32 depth, f32 near_plane, f32 far_plane);
 
 /// Sets a camera's near and far planes to enclose every visible-or-not object of the scene.
@@ -99,16 +99,16 @@ f32 LinearizeDepth(f32 depth, f32 near_plane, f32 far_plane);
 /// The planes come from the world-space bounding spheres projected on the camera's forward axis, with the near plane
 /// never below `min_near` and the far plane at least twice the near one. A scene without objects leaves the camera as it was.
 ///
-/// Param scene: the scene.
-/// Param camera: the camera to change; its position and rotation must be set.
-/// Param min_near: the smallest near distance allowed, positive.
-/// Ownership: `camera` is borrowed for the call.
-/// Aborts: `camera` is null or `min_near` is not positive.
+/// - Param scene: the scene.
+/// - Param camera: the camera to change; its position and rotation must be set.
+/// - Param min_near: the smallest near distance allowed, positive.
+/// - Ownership: `camera` is borrowed for the call.
+/// - Aborts: `camera` is null or `min_near` is not positive.
 void FitCameraDepthRange(const RenderScene& scene, Camera* camera, f32 min_near);
 
 /// Options of a G-buffer material, which select the shader modules.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct GBufferOptions {
     /// Perturb the normal with the `normal_tex` slot (tangent space).
     bool normal_map = false;
@@ -120,7 +120,7 @@ struct GBufferOptions {
 
 /// The two material templates of the G-buffer shaders: for meshes without and with per-vertex colors.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct GBufferTemplates {
     /// The template for standard-layout meshes.
     TemplateId plain;
@@ -130,11 +130,11 @@ struct GBufferTemplates {
 
 /// Creates the G-buffer material templates.
 ///
-/// Param materials: the system to create them in; must be valid.
-/// Returns: both template ids; invalid ids when the shaders did not match the material conventions (logged).
-/// Fails: reported through invalid ids.
-/// Ownership: the templates belong to `materials`.
-/// Aborts: `materials` is null.
+/// - Param materials: the system to create them in; must be valid.
+/// - Returns: both template ids; invalid ids when the shaders did not match the material conventions (logged).
+/// - Fails: reported through invalid ids.
+/// - Ownership: the templates belong to `materials`.
+/// - Aborts: `materials` is null.
 GBufferTemplates CreateGBufferTemplates(MaterialSystem* materials);
 
 /// Creates a G-buffer material with the options' shader modules and sensible parameters.
@@ -143,19 +143,19 @@ GBufferTemplates CreateGBufferTemplates(MaterialSystem* materials);
 /// change them with the material system's setters (`base_color`, `roughness`, `metallic`, `emissive_scale`, `alpha_cutoff`,
 /// `occlusion`, `flags`), and the textures `albedo_tex` and `normal_tex`.
 ///
-/// Param materials: the system.
-/// Param templates: from [[renderer::CreateGBufferTemplates]].
-/// Param options: which permutation to use.
-/// Param name: a debug name; may be null.
-/// Returns: the material, or an invalid id when the template is invalid or the permutation does not exist (logged).
-/// Fails: reported through the invalid id.
-/// Ownership: the material belongs to `materials`.
-/// Aborts: `materials` is null.
+/// - Param materials: the system.
+/// - Param templates: from [[renderer::CreateGBufferTemplates]].
+/// - Param options: which permutation to use.
+/// - Param name: a debug name; may be null.
+/// - Returns: the material, or an invalid id when the template is invalid or the permutation does not exist (logged).
+/// - Fails: reported through the invalid id.
+/// - Ownership: the material belongs to `materials`.
+/// - Aborts: `materials` is null.
 MaterialId CreateGBufferMaterial(MaterialSystem* materials, const GBufferTemplates& templates, const GBufferOptions& options, const char* name);
 
 /// The graph resources of the G-buffer targets.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct GBufferTargets {
     /// Albedo and baked occlusion.
     GraphResource albedo;
@@ -169,7 +169,7 @@ struct GBufferTargets {
 
 /// What a prepared G-buffer pass will draw, and what went wrong.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct GBufferStats {
     /// Objects inside the frustum.
     u32 visible = 0;
@@ -187,18 +187,18 @@ struct GBufferStats {
 
 /// Draws the scene's visible objects into the G-buffer.
 ///
-/// Thread-safety: thread-compatible. `Prepare` and `AddToGraph` run on the frame's thread; the recorded callback reads the
+/// - Thread-safety: thread-compatible. `Prepare` and `AddToGraph` run on the frame's thread; the recorded callback reads the
 /// draw list only, so it may run on a scheduler participant while nothing prepares.
-/// Ownership: borrows the device, the material system and the frame resources, which must outlive it.
+/// - Ownership: borrows the device, the material system and the frame resources, which must outlive it.
 class GBufferPass {
 public:
     /// Creates the pass.
     ///
-    /// Param device: the device.
-    /// Param materials: the material system the scene's materials live in.
-    /// Param frame: the frame resources the per-frame and per-object data are written to.
-    /// Ownership: all three are borrowed.
-    /// Aborts: `device`, `materials` or `frame` is null.
+    /// - Param device: the device.
+    /// - Param materials: the material system the scene's materials live in.
+    /// - Param frame: the frame resources the per-frame and per-object data are written to.
+    /// - Ownership: all three are borrowed.
+    /// - Aborts: `device`, `materials` or `frame` is null.
     GBufferPass(rhi::Device* device, MaterialSystem* materials, FrameResources* frame);
     /// Frees the draw list.
     ~GBufferPass();
@@ -213,21 +213,21 @@ public:
     /// named in `LastError` when its mesh is missing or not prepared, its material does not exist, a pipeline cannot be
     /// built for the mesh, or the mesh and the material disagree about per-vertex colors.
     ///
-    /// Param scene: the scene.
-    /// Param frustum: the camera's frustum.
-    /// Returns: true when every visible object was accepted.
-    /// Fails: returns false when any object was rejected (the rest is still drawn); the first message is in `LastError`.
-    /// Ownership: `scene` is borrowed until the pass has been recorded.
+    /// - Param scene: the scene.
+    /// - Param frustum: the camera's frustum.
+    /// - Returns: true when every visible object was accepted.
+    /// - Fails: returns false when any object was rejected (the rest is still drawn); the first message is in `LastError`.
+    /// - Ownership: `scene` is borrowed until the pass has been recorded.
     bool Prepare(const RenderScene& scene, const Frustum& frustum);
 
     /// Declares the G-buffer targets as transients and the pass that renders them.
     ///
-    /// Param graph: the frame's graph.
-    /// Param width: the target width in pixels.
-    /// Param height: the target height in pixels.
-    /// Returns: the targets; the pass writes all four.
-    /// Aborts: called twice since the last `Prepare` (one pass object serves one view per frame; make one per view).
-    /// Ownership: `graph` is borrowed for the call; the pass keeps a pointer to this object until the graph is executed.
+    /// - Param graph: the frame's graph.
+    /// - Param width: the target width in pixels.
+    /// - Param height: the target height in pixels.
+    /// - Returns: the targets; the pass writes all four.
+    /// - Aborts: called twice since the last `Prepare` (one pass object serves one view per frame; make one per view).
+    /// - Ownership: `graph` is borrowed for the call; the pass keeps a pointer to this object until the graph is executed.
     GBufferTargets AddToGraph(RenderGraph* graph, u32 width, u32 height);
 
     /// Adds usage flags to the G-buffer textures that the next `AddToGraph` declares.
@@ -235,16 +235,16 @@ public:
     /// For tools and tests, for example `CopySrc` to read a layer back. The default is none beyond what the pass and the
     /// lighting need.
     ///
-    /// Param usage: flags to add to the four textures.
-    /// Fails: never.
+    /// - Param usage: flags to add to the four textures.
+    /// - Fails: never.
     void SetExtraTargetUsage(rhi::TextureUsage usage) { extra_usage_ = usage; }
 
     /// Returns the first error of the last `Prepare`, or an empty string.
-    /// Fails: never.
-    /// Ownership: the string belongs to the pass and stays valid until the next `Prepare` or the pass's destruction.
+    /// - Fails: never.
+    /// - Ownership: the string belongs to the pass and stays valid until the next `Prepare` or the pass's destruction.
     const char* LastError() const { return error_; }
     /// Returns the counts of the last `Prepare`.
-    /// Fails: never.
+    /// - Fails: never.
     GBufferStats Stats() const { return stats_; }
 
 private:
@@ -283,15 +283,15 @@ private:
 ///
 /// It creates one pipeline per output format and a bind group per frame (a tool, not part of the per-frame cost budget).
 ///
-/// Thread-safety: thread-compatible.
-/// Ownership: borrows the device, which must outlive it; owns its shaders, sampler, layout and pipeline.
+/// - Thread-safety: thread-compatible.
+/// - Ownership: borrows the device, which must outlive it; owns its shaders, sampler, layout and pipeline.
 class GBufferDebugView final : public Recreatable {
 public:
     /// Creates the view's shaders and sampler.
     ///
-    /// Param device: the device.
-    /// Ownership: borrowed.
-    /// Aborts: `device` is null.
+    /// - Param device: the device.
+    /// - Ownership: borrowed.
+    /// - Aborts: `device` is null.
     explicit GBufferDebugView(rhi::Device* device);
     /// Destroys the pipelines, shaders and sampler.
     ~GBufferDebugView() override;
@@ -300,10 +300,10 @@ public:
 
     /// Registers the debug view with a registry so it survives a device reset.
     ///
-    /// Param resources: the registry; null does nothing.
-    /// Returns: true if registered or `resources` is null.
-    /// Fails: returns false if the registry refused.
-    /// Ownership: the registry is borrowed.
+    /// - Param resources: the registry; null does nothing.
+    /// - Returns: true if registered or `resources` is null.
+    /// - Fails: returns false if the registry refused.
+    /// - Ownership: the registry is borrowed.
     bool RegisterWith(DeviceResources* resources) { return registration_.Attach(resources, this, tiers::kPasses); }
 
     /// Destroys the shaders, layout, sampler and pipelines; nothing else is kept on the device.
@@ -311,22 +311,22 @@ public:
 
     /// Makes the shaders, layout, sampler and (on first use) pipelines again.
     ///
-    /// Param device: the new device.
-    /// Returns: true if the objects were made.
-    /// Fails: returns false, logging the reason, if the device refuses one of them.
-    /// Ownership: the device is borrowed.
+    /// - Param device: the new device.
+    /// - Returns: true if the objects were made.
+    /// - Fails: returns false, logging the reason, if the device refuses one of them.
+    /// - Ownership: the device is borrowed.
     bool Recreate(rhi::Device* device) override;
     bool Live() const override { return device_ != nullptr && vertex_.IsValid(); }
     const char* RecreatableName() const override { return "gbuffer debug view"; }
 
     /// Returns whether the shaders and sampler were created.
-    /// Fails: never.
+    /// - Fails: never.
     bool Valid() const;
 
     /// Sets the matrix the `WorldPosition` layer uses to rebuild positions: [[renderer::FrameData::inverse_view_projection]].
     ///
-    /// Param inverse_view_projection: the inverse of the camera's view-projection (including the projection's Y flip).
-    /// Fails: never.
+    /// - Param inverse_view_projection: the inverse of the camera's view-projection (including the projection's Y flip).
+    /// - Fails: never.
     void SetInverseViewProjection(const Mat4& inverse_view_projection) {
         params_.inverse_view_projection = inverse_view_projection;
         has_inverse_view_projection_ = true;
@@ -334,19 +334,19 @@ public:
 
     /// Declares a pass that shows `layer` in `output`.
     ///
-    /// Param graph: the frame's graph.
-    /// Param targets: the G-buffer targets the pass reads, all as `Sampled` (a depth texture read through a sampler is `Sampled`,
+    /// - Param graph: the frame's graph.
+    /// - Param targets: the G-buffer targets the pass reads, all as `Sampled` (a depth texture read through a sampler is `Sampled`,
     ///   `DepthRead` is for the depth test without writes).
-    /// Param layer: what to show.
-    /// Param output: a color texture resource the pass writes (written as `ColorAttachment`, cleared); its extent must equal the
+    /// - Param layer: what to show.
+    /// - Param output: a color texture resource the pass writes (written as `ColorAttachment`, cleared); its extent must equal the
     /// G-buffer's.
-    /// Param output_format: the format of `output` (an import carries no description, so the pass cannot read it).
-    /// Param near_plane: the camera's near plane, for `GBufferLayer::Depth`.
-    /// Param far_plane: the camera's far plane, for `GBufferLayer::Depth`.
-    /// Fails: an invalid resource is reported by `RenderGraph::Compile`; a pipeline the device cannot create is logged and the
+    /// - Param output_format: the format of `output` (an import carries no description, so the pass cannot read it).
+    /// - Param near_plane: the camera's near plane, for `GBufferLayer::Depth`.
+    /// - Param far_plane: the camera's far plane, for `GBufferLayer::Depth`.
+    /// - Fails: an invalid resource is reported by `RenderGraph::Compile`; a pipeline the device cannot create is logged and the
     ///   pass then draws nothing.
-    /// Aborts: `layer` is `WorldPosition` and `SetInverseViewProjection` was not called since the last `AddToGraph`.
-    /// Ownership: the pass keeps a pointer to this object until the graph is executed.
+    /// - Aborts: `layer` is `WorldPosition` and `SetInverseViewProjection` was not called since the last `AddToGraph`.
+    /// - Ownership: the pass keeps a pointer to this object until the graph is executed.
     void AddToGraph(RenderGraph* graph, const GBufferTargets& targets, GBufferLayer layer, GraphResource output, rhi::Format output_format, f32 near_plane, f32 far_plane);
 
 private:

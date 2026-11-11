@@ -16,7 +16,7 @@ enum class VkResultClass : u8 {
 };
 
 /// Returns the enumerator name of `result` (`"VK_ERROR_DEVICE_LOST"`), or `"VK_RESULT_UNKNOWN"` for a value it does not know.
-/// Ownership: the string is static.
+/// - Ownership: the string is static.
 const char* VkResultName(VkResult result);
 
 /// Classifies a `VkResult`; see [[rhi::vulkan::VkResultClass]].
@@ -30,11 +30,11 @@ VkResultClass ClassifyVkResult(VkResult result);
 /// `Suboptimal` and `Recoverable` results are logged at `Debug` (they are routine on resize), the rest at `Error`.
 /// Normally invoked through `ENGINE_VK_CHECK`.
 ///
-/// Param result: the value returned by a Vulkan call.
-/// Param call_text: the call as source text, for the log; must not be null.
-/// Param file: source file; must not be null.
-/// Param line: source line.
-/// Returns: the classification of `result`.
+/// - Param result: the value returned by a Vulkan call.
+/// - Param call_text: the call as source text, for the log; must not be null.
+/// - Param file: source file; must not be null.
+/// - Param line: source line.
+/// - Returns: the classification of `result`.
 VkResultClass CheckVkResult(VkResult result, const char* call_text, const char* file, int line);
 
 } // namespace engine_placeholder::rhi::vulkan

@@ -17,8 +17,8 @@ extern LogChannel LogJobs;
 /// never on a hot path. Output longer than the buffer is truncated, and
 /// nothing is formatted when the level is filtered out.
 ///
-/// Param level: verbosity of the message.
-/// Param fmt: printf format string; the arguments follow it.
+/// - Param level: verbosity of the message.
+/// - Param fmt: printf format string; the arguments follow it.
 void JobsLogV(LogVerbosity level, const char* fmt, ...) ENGINE_PRINTF_FORMAT(2, 3);
 inline void JobsLogV(LogVerbosity level, const char* fmt, ...) {
     if (!LogJobs.ShouldLog(level)) {
@@ -38,7 +38,7 @@ inline void JobsLogV(LogVerbosity level, const char* fmt, ...) {
 
 /// Logs a printf-style message on the job-system channel; expands to a call of [[jobs::JobsLogV]].
 ///
-/// Param level: verbosity of the message.
+/// - Param level: verbosity of the message.
 #define JobsLog(level, ...) ::engine_placeholder::jobs::JobsLogV(level, __VA_ARGS__)
 
 } // namespace engine_placeholder::jobs

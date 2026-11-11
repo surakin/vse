@@ -25,7 +25,7 @@ inline constexpr u32 kMaxDynamicProxies = 0x00FFFFFFu;
 
 /// How a [[spatial::DynamicBvh]] trades update cost against query cost.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct DynamicBvhConfig {
     /// The fat margin, as a fraction of the item's largest extent: a leaf stores the box grown by this much on every side, and a move that stays inside it
     /// changes nothing (`spatial.fat_margin`; 0.25 from the spatial design spec, experiment (b)). An item of zero size gets no margin.
@@ -39,7 +39,7 @@ struct DynamicBvhConfig {
 
 /// What a [[spatial::DynamicBvh]] holds and what it has done.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct DynamicBvhStats {
     u32 proxies = 0;               ///< Items in the tree.
     u32 nodes = 0;                 ///< Nodes in use (leaves and inner nodes).
@@ -67,46 +67,46 @@ struct DynamicBvhStats {
 /// small subtree per call and the whole tree when its quality has degraded. Nodes live in one pool with a free list: after the pool has grown to its
 /// working size, `Insert`, `Remove`, `Move` and the queries allocate nothing.
 ///
-/// Thread-safety: thread-compatible. Changes need exclusive access; the const queries may run on any number of threads at once between changes.
-/// Ownership: owns its nodes and items; it keeps no pointer to what it was given.
+/// - Thread-safety: thread-compatible. Changes need exclusive access; the const queries may run on any number of threads at once between changes.
+/// - Ownership: owns its nodes and items; it keeps no pointer to what it was given.
 class DynamicBvh {
 public:
     /// Makes an empty tree.
     ///
-    /// Param config: margins and the rebuild threshold; copied.
+    /// - Param config: margins and the rebuild threshold; copied.
     explicit DynamicBvh(const DynamicBvhConfig& config = DynamicBvhConfig());
     DynamicBvh(const DynamicBvh&) = delete;
     DynamicBvh& operator=(const DynamicBvh&) = delete;
 
     /// Adds an item.
     ///
-    /// Param box: the item's box (tight); must not be empty, its corners finite.
-    /// Param key: the caller's key.
-    /// Param layer: the caller's layer value.
-    /// Returns: the item's handle, or [[spatial::kInvalidProxy]] when the tree is full (counted in `refused_full`).
-    /// Aborts: `box` is empty or not finite.
+    /// - Param box: the item's box (tight); must not be empty, its corners finite.
+    /// - Param key: the caller's key.
+    /// - Param layer: the caller's layer value.
+    /// - Returns: the item's handle, or [[spatial::kInvalidProxy]] when the tree is full (counted in `refused_full`).
+    /// - Aborts: `box` is empty or not finite.
     ProxyId Insert(const Aabb& box, SpatialKey key, u32 layer);
 
     /// Removes an item.
     ///
-    /// Param proxy: its handle.
-    /// Returns: false for a handle whose item is gone (counted in `stale_refused`).
-    /// Fails: as the return says.
+    /// - Param proxy: its handle.
+    /// - Returns: false for a handle whose item is gone (counted in `stale_refused`).
+    /// - Fails: as the return says.
     bool Remove(ProxyId proxy);
 
     /// Gives an item a new box.
     ///
-    /// Param proxy: its handle.
-    /// Param box: the new tight box; must not be empty, its corners finite.
-    /// Returns: whether the tree changed (the leaf was re-inserted); false when the box stayed inside the fat box, or for a stale handle (counted).
-    /// Aborts: `box` is empty or not finite.
+    /// - Param proxy: its handle.
+    /// - Param box: the new tight box; must not be empty, its corners finite.
+    /// - Returns: whether the tree changed (the leaf was re-inserted); false when the box stayed inside the fat box, or for a stale handle (counted).
+    /// - Aborts: `box` is empty or not finite.
     bool Move(ProxyId proxy, const Aabb& box);
 
     /// Replaces the whole tree with these items, built top-down.
     ///
-    /// Param items: the items; copied.
-    /// Param proxies: receives each item's handle, in the order of `items`; at least as long as `items`.
-    /// Aborts: `proxies` is too short, more than [[spatial::kMaxDynamicProxies]] items, or a box empty or not finite.
+    /// - Param items: the items; copied.
+    /// - Param proxies: receives each item's handle, in the order of `items`; at least as long as `items`.
+    /// - Aborts: `proxies` is too short, more than [[spatial::kMaxDynamicProxies]] items, or a box empty or not finite.
     void Build(Span<const Item> items, Span<ProxyId> proxies);
 
     /// Rebuilds the tree top-down from the items it holds; their handles and fat boxes stay.
@@ -116,7 +116,7 @@ public:
     /// grown past `rebuild_threshold` times the cost after the last full build. Costs one pass over the nodes to measure the tree, plus the rebuild;
     /// returns at once, costing nothing, when nothing was inserted, removed or re-inserted since the last call (a quiet scene).
     ///
-    /// Param budget: about how many leaves one call rebuilds; 0 only measures.
+    /// - Param budget: about how many leaves one call rebuilds; 0 only measures.
     void Optimize(u32 budget);
 
     /// Removes every item and node; every handle becomes stale.
@@ -124,17 +124,17 @@ public:
 
     /// Returns whether `proxy` names a live item.
     ///
-    /// Fails: never; a stale or invalid handle gives false.
+    /// - Fails: never; a stale or invalid handle gives false.
     bool IsLive(ProxyId proxy) const;
     /// Returns the item of a live handle (its tight box, key and layer).
     ///
-    /// Aborts: `proxy` is not live.
-    /// Ownership: the reference is valid until the next `Insert`, `Build` or `Clear` (they may move the item slots).
+    /// - Aborts: `proxy` is not live.
+    /// - Ownership: the reference is valid until the next `Insert`, `Build` or `Clear` (they may move the item slots).
     const Item& ItemOf(ProxyId proxy) const;
     /// Returns the fat box a live handle's leaf stores.
     ///
-    /// Aborts: `proxy` is not live.
-    /// Ownership: the reference is valid until the next change of the tree (any call that is not const).
+    /// - Aborts: `proxy` is not live.
+    /// - Ownership: the reference is valid until the next change of the tree (any call that is not const).
     const Aabb& FatBox(ProxyId proxy) const;
 
     /// Returns the number of items.
@@ -151,28 +151,28 @@ public:
     /// Checks every invariant: parent and child links agree, each node's box encloses its children and each leaf's fat box its tight box, heights are
     /// right, every live item has exactly one leaf, and the free list holds exactly the nodes not in the tree.
     ///
-    /// Returns: whether all hold.
-    /// Fails: returns false at the first broken invariant.
+    /// - Returns: whether all hold.
+    /// - Fails: returns false at the first broken invariant.
     bool Validate() const;
 
     /// Visits the tree depth first, as [[spatial::StaticBvh::Traverse]]: `node_test(const Aabb&)` sees the inner boxes and each leaf's fat box and returns
     /// a [[spatial::NodeVisit]]; `item_visit(ProxyId, const Item&)` sees each accepted leaf's item (with its tight box) and returns false to stop.
     ///
-    /// Param node_test: the node test.
-    /// Param item_visit: the item visitor.
-    /// Returns: what the traversal did.
-    /// Fails: never; a subtree that does not fit the stack is skipped and counted in `refused`.
+    /// - Param node_test: the node test.
+    /// - Param item_visit: the item visitor.
+    /// - Returns: what the traversal did.
+    /// - Fails: never; a subtree that does not fit the stack is skipped and counted in `refused`.
     template <class NodeTest, class ItemVisit>
     TraversalStats Traverse(NodeTest&& node_test, ItemVisit&& item_visit) const;
 
     /// Visits the leaves a ray reaches, nearest child first, as [[spatial::StaticBvh::TraverseRay]]: `item_visit(ProxyId, const Item&, f32& max_t)` may
     /// lower `max_t` and returns false to stop.
     ///
-    /// Param ray: the ray ([[Ray::Make]]).
-    /// Param max_t: the farthest parameter to consider.
-    /// Param item_visit: the item visitor.
-    /// Returns: what the traversal did.
-    /// Fails: never; as [[spatial::DynamicBvh::Traverse]].
+    /// - Param ray: the ray ([[Ray::Make]]).
+    /// - Param max_t: the farthest parameter to consider.
+    /// - Param item_visit: the item visitor.
+    /// - Returns: what the traversal did.
+    /// - Fails: never; as [[spatial::DynamicBvh::Traverse]].
     template <class ItemVisit>
     TraversalStats TraverseRay(const Ray& ray, f32 max_t, ItemVisit&& item_visit) const;
 

@@ -20,35 +20,35 @@ enum class WakeMode : unsigned char {
 /// - The count never goes below zero.
 /// - At most one waiter at a time.
 ///
-/// Thread-safety: thread-safe. Any thread may call [[demo::Counter::Increment]]
+/// - Thread-safety: thread-safe. Any thread may call [[demo::Counter::Increment]]
 ///   and [[demo::Counter::Decrement]].
-/// Ownership: must outlive every pending decrement.
-/// Example: counting two jobs.
+/// - Ownership: must outlive every pending decrement.
+/// - Example: counting two jobs.
 /// ```cpp
 /// Counter c;
 /// c.Increment(2);
 /// ```
-/// See: [[Shape]], [[demo::Counter::Counter]]
+/// - See: [[Shape]], [[demo::Counter::Counter]]
 class Counter {
 public:
     /// Creates a counter at zero.
     Counter();
 
     /// Adds `n` outstanding units of work.
-    /// Param n: how many units to add.
+    /// - Param n: how many units to add.
     void Increment(unsigned long n = 1);
 
     /// Marks one unit done.
-    /// Aborts: the count is already zero.
+    /// - Aborts: the count is already zero.
     void Decrement();
 
     /// Returns the current count.
-    /// Returns: the number of outstanding units.
+    /// - Returns: the number of outstanding units.
     unsigned long Count() const;
 
     /// Returns the count after adding `n`, without changing it.
-    /// Param n: units to add.
-    /// Returns: the hypothetical count.
+    /// - Param n: units to add.
+    /// - Returns: the hypothetical count.
     unsigned long Peek(unsigned long n) const;
 
     /// A nested helper type.
@@ -62,12 +62,12 @@ private:
 };
 
 /// Creates a counter with a starting value.
-/// Param start: the initial count.
-/// Returns: a new counter.
+/// - Param start: the initial count.
+/// - Returns: a new counter.
 Counter MakeCounter(unsigned long start);
 
 /// A documented macro.
-/// Param x: the value.
+/// - Param x: the value.
 #define DEMO_SQUARE(x) ((x) * (x))
 
 /// An alias for the count type.

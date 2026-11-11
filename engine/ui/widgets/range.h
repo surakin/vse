@@ -19,8 +19,8 @@ enum class RangePolicy : u8 {
 /// A value snaps to the grid `min + k * step` for a whole number `k`, computed as one multiplication from the minimum, so a thousand steps drift by nothing; the grid stops at the
 /// last point not above `max`. In integer mode the step is at least 1. Without a step (0) the value is only clamped. A NaN becomes the minimum.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: owns nothing.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns nothing.
 struct ValueRange {
     f64 min = 0;                          ///< The smallest value.
     f64 max = 1;                          ///< The largest value; a maximum below the minimum is taken as the minimum.
@@ -30,12 +30,12 @@ struct ValueRange {
 
     /// Returns the effective step: `step`, or 1 in integer mode when that is larger.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     f64 EffectiveStep() const { return (integer && step < 1) ? 1.0 : step; }
 
     /// Returns `value` clamped to the range and snapped to the grid.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     f64 Snap(f64 value) const {
         if (!(value == value)) return min;
         const f64 lo = min;
@@ -52,7 +52,7 @@ struct ValueRange {
 
     /// Applies the policy to `value` against the current value `current`: `Clamp` gives `Snap(value)`, `Reject` gives `current` when `value` is outside the range and `Snap(value)` otherwise.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     f64 Apply(f64 value, f64 current) const {
         if (policy == RangePolicy::Reject && (!(value == value) || value < min || value > (max < min ? min : max))) return current;
         return Snap(value);

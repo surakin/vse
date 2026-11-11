@@ -71,8 +71,8 @@ inline constexpr u64 kMaxWaitMicroseconds = kMaxWaitMilliseconds * 1000;
 /// `T` is a trivially copyable type: an integer, a pointer, `bool`, an enumeration or a float. Every operation takes a
 /// [[MemoryOrder]] (default `SeqCst`); the arithmetic operations exist for integers and pointers (and `FetchAdd`/`FetchSub` for floats).
 ///
-/// Thread-safety: thread-safe. Every member may be called from any thread at once.
-/// Ownership: the object owns its value; it is neither copyable nor movable.
+/// - Thread-safety: thread-safe. Every member may be called from any thread at once.
+/// - Ownership: the object owns its value; it is neither copyable nor movable.
 template <class T>
 class Atomic {
 public:
@@ -95,9 +95,9 @@ public:
 
     /// Replaces the value with `desired` if it equals `expected`; otherwise loads the current value into `expected`. May fail spuriously.
     ///
-    /// Param success: the order when the exchange happens.
-    /// Param failure: the order of the load when it does not; a `Release` or `AcqRel` (invalid for a load) is lowered to `Relaxed` or `Acquire`.
-    /// Returns: true when the value was replaced.
+    /// - Param success: the order when the exchange happens.
+    /// - Param failure: the order of the load when it does not; a `Release` or `AcqRel` (invalid for a load) is lowered to `Relaxed` or `Acquire`.
+    /// - Returns: true when the value was replaced.
     bool CompareExchangeWeak(T& expected, T desired, MemoryOrder success, MemoryOrder failure) noexcept {
         return value_.compare_exchange_weak(expected, desired, detail_sync::ToStd(success), detail_sync::ToStd(detail_sync::FailureOrder(failure)));
     }

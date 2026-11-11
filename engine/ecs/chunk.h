@@ -22,8 +22,8 @@ inline constexpr u32 kMaxArchetypeComponents = 32;
 /// `written` and `added` hold the world tick of the last write and of the last addition for each component column (indexed by column
 /// number minus one), the change-detection data (see "Change detection" in the ECS guide). A chunk is `kChunkBytes` long and 64-byte aligned.
 ///
-/// Thread-safety: thread-compatible; a chunk is touched by one job at a time.
-/// Ownership: the chunk is owned by an archetype and drawn from a [[ecs::ChunkPool]].
+/// - Thread-safety: thread-compatible; a chunk is touched by one job at a time.
+/// - Ownership: the chunk is owned by an archetype and drawn from a [[ecs::ChunkPool]].
 struct alignas(64) Chunk {
     /// The index of the archetype in its world.
     u32 archetype = 0;
@@ -39,20 +39,20 @@ struct alignas(64) Chunk {
     Array<u64, kMaxArchetypeComponents> added;
 
     /// The first byte after the header.
-    /// Fails: never.
-    /// Ownership: views the chunk's own memory.
+    /// - Fails: never.
+    /// - Ownership: views the chunk's own memory.
     byte* Data() { return reinterpret_cast<byte*>(this) + sizeof(Chunk); }
     /// The first byte after the header.
-    /// Fails: never.
-    /// Ownership: views the chunk's own memory.
+    /// - Fails: never.
+    /// - Ownership: views the chunk's own memory.
     const byte* Data() const { return reinterpret_cast<const byte*>(this) + sizeof(Chunk); }
 };
 static_assert(sizeof(Chunk) % 64 == 0, "the columns after the header start 64-byte aligned");
 
 /// Counters of a [[ecs::ChunkPool]].
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: owns nothing.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns nothing.
 struct ChunkPoolStats {
     /// Chunks handed out and not yet released.
     u32 chunks = 0;
@@ -72,8 +72,8 @@ struct ChunkPoolStats {
 ///
 /// No chunk is ever allocated per entity: only when an archetype's last chunk is full.
 ///
-/// Thread-safety: thread-compatible; the world owns one and uses it at sync points.
-/// Ownership: owns the kept chunks; a chunk handed out belongs to the caller until `Release`. Every chunk must be released before the pool is destroyed.
+/// - Thread-safety: thread-compatible; the world owns one and uses it at sync points.
+/// - Ownership: owns the kept chunks; a chunk handed out belongs to the caller until `Release`. Every chunk must be released before the pool is destroyed.
 class ChunkPool {
 public:
     /// Creates a pool that keeps at most `budget` released chunks (the rest go back to the heap).
@@ -82,19 +82,19 @@ public:
     ChunkPool& operator=(const ChunkPool&) = delete;
     /// Frees the kept chunks.
     ///
-    /// Aborts: a chunk handed out was not released.
+    /// - Aborts: a chunk handed out was not released.
     ~ChunkPool();
 
     /// Hands out a chunk with a zeroed header (`archetype` set, `count` 0, `capacity` as given) and unspecified column bytes.
     ///
-    /// Returns: the chunk, or null when the heap is exhausted (counted in `refused_allocations`).
-    /// Fails: out of memory.
-    /// Ownership: the caller owns the chunk until it passes it to `Release`.
+    /// - Returns: the chunk, or null when the heap is exhausted (counted in `refused_allocations`).
+    /// - Fails: out of memory.
+    /// - Ownership: the caller owns the chunk until it passes it to `Release`.
     Chunk* Acquire(u32 archetype, u32 capacity);
 
     /// Takes a chunk back: kept when fewer than the budget are kept, else freed.
-    /// Aborts: `chunk` was not handed out by this pool or was already released (detected only by the live count).
-    /// Ownership: the pool owns the chunk again; the caller must not use it.
+    /// - Aborts: `chunk` was not handed out by this pool or was already released (detected only by the live count).
+    /// - Ownership: the pool owns the chunk again; the caller must not use it.
     void Release(Chunk* chunk);
 
     /// Frees every kept chunk.

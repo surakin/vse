@@ -44,13 +44,13 @@ enum class StealStatus : u8 {
 /// The object is about 34 KB: allocate it on the heap or inside the
 /// scheduler, not on a thread stack. It cannot be copied.
 ///
-/// Thread-safety: thread-safe under a role split. One owner thread calls
+/// - Thread-safety: thread-safe under a role split. One owner thread calls
 ///   [[jobs::WorkStealingDeque::PushBottom]] and [[jobs::WorkStealingDeque::PopBottom]];
 ///   any thread may call [[jobs::WorkStealingDeque::StealTop]] concurrently
 ///   with them. Calling the owner operations from two threads is a bug.
-/// Ownership: stores handles without owning them; whoever pops or steals one
+/// - Ownership: stores handles without owning them; whoever pops or steals one
 ///   becomes responsible for resuming or destroying it.
-/// See: [[jobs::Scheduler]]
+/// - See: [[jobs::Scheduler]]
 class WorkStealingDeque {
 public:
     /// Number of handles the deque holds; a power of two.
@@ -63,16 +63,16 @@ public:
 
     /// Gives the fixed capacity.
     ///
-    /// Returns: the maximum number of handles held at once.
+    /// - Returns: the maximum number of handles held at once.
     static constexpr usize Capacity() { return kDefaultCapacity; }
 
     /// Pushes a handle at the bottom.
     ///
-    /// Param h: the handle to store; must not be null.
-    /// Returns: `true` if stored.
-    /// Fails: returns `false` and stores nothing if the deque is full.
-    /// Aborts: `h` is a null handle.
-    /// Thread-safety: owner-thread-only.
+    /// - Param h: the handle to store; must not be null.
+    /// - Returns: `true` if stored.
+    /// - Fails: returns `false` and stores nothing if the deque is full.
+    /// - Aborts: `h` is a null handle.
+    /// - Thread-safety: owner-thread-only.
     bool PushBottom(CoroutineHandle<> h) {
         ENGINE_ASSERT(h.address() != nullptr, "WorkStealingDeque: null handle");
         const i64 b = bottom_.Load(MemoryOrder::Relaxed);
@@ -91,8 +91,8 @@ public:
 
     /// Pops the most recently pushed handle from the bottom.
     ///
-    /// Returns: the handle, or a null handle if the deque is empty or a thief won the race for the last entry.
-    /// Thread-safety: owner-thread-only.
+    /// - Returns: the handle, or a null handle if the deque is empty or a thief won the race for the last entry.
+    /// - Thread-safety: owner-thread-only.
     CoroutineHandle<> PopBottom() {
         const i64 b = bottom_.Load(MemoryOrder::Relaxed) - 1;
         // seq_cst store then seq_cst load of top_: the Dekker-style pair
@@ -121,9 +121,9 @@ public:
 
     /// Tries to take the oldest handle from the top.
     ///
-    /// Param out: receives the handle on `Success`; left untouched otherwise.
-    /// Returns: `Success`, `Empty` (nothing to steal) or `Lost` (raced with another thief or the owner; worth retrying).
-    /// Thread-safety: thread-safe. Any thread.
+    /// - Param out: receives the handle on `Success`; left untouched otherwise.
+    /// - Returns: `Success`, `Empty` (nothing to steal) or `Lost` (raced with another thief or the owner; worth retrying).
+    /// - Thread-safety: thread-safe. Any thread.
     StealStatus StealTop(CoroutineHandle<>& out) {
         i64 t = top_.Load(MemoryOrder::SeqCst);
         const i64 b = bottom_.Load(MemoryOrder::SeqCst);
@@ -144,8 +144,8 @@ public:
     ///
     /// The value is racy and meant for heuristics and tests only.
     ///
-    /// Returns: an approximate entry count, never negative.
-    /// Thread-safety: thread-safe.
+    /// - Returns: an approximate entry count, never negative.
+    /// - Thread-safety: thread-safe.
     i64 ApproxSize() const {
         const i64 b = bottom_.Load(MemoryOrder::Relaxed);
         const i64 t = top_.Load(MemoryOrder::Relaxed);

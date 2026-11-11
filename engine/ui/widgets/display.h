@@ -23,8 +23,8 @@ enum class ImageFit : u8 {
 /// The id is opaque to the toolkit (the renderer's texture registry resolves it); the natural size is given with the image. `Measure` reports the natural size. Cutting is done by
 /// narrowing the texture coordinates, so nothing is drawn outside the bounds.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: owns nothing; the image is borrowed from whoever registered it.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: owns nothing; the image is borrowed from whoever registered it.
 class Image : public Widget {
 public:
     /// Makes an image widget with no picture.
@@ -54,8 +54,8 @@ private:
 /// The colors and corner radius come from the `panel` style (the track) and the theme's accent color (the fill). The indeterminate segment moves with the surface clock, one pass per
 /// `kProgressPeriod` seconds, and the widget asks for `Update` only while it is indeterminate so that a still bar costs nothing.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: owns nothing.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: owns nothing.
 class ProgressBar : public Widget {
 public:
     /// The seconds one pass of the indeterminate segment takes.
@@ -75,7 +75,7 @@ public:
     void SetIndeterminate(bool indeterminate);
     /// Returns whether the bar is indeterminate.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool Indeterminate() const { return indeterminate_; }
     /// Returns the preferred size: a length of `kLengthInIcons` icons and half an icon of height.
     Size Measure(const Constraints& constraints) override;
@@ -85,7 +85,7 @@ public:
     void Update(f32) override { MarkDirty(kDrawDirty); }
     /// Returns whether the bar is indeterminate.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool WantsUpdate() const override { return indeterminate_; }
 
 private:
@@ -95,12 +95,12 @@ private:
 
 /// A line that divides a layout: horizontal or vertical, in the theme's border color and thickness.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: owns nothing.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: owns nothing.
 class Separator : public Widget {
 public:
     /// Makes a separator.
-    /// Param vertical: whether the line is vertical (it divides a row) instead of horizontal.
+    /// - Param vertical: whether the line is vertical (it divides a row) instead of horizontal.
     explicit Separator(StringView name = StringView(), bool vertical = false) : Widget(name), vertical_(vertical) {}
     /// Returns the thickness on one axis and nothing on the other.
     Size Measure(const Constraints& constraints) override;
@@ -113,8 +113,8 @@ private:
 
 /// A container with a background and a border from the `panel` style: a [[ui::StackLayout]] that paints itself.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: owns its children.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: owns its children.
 class Panel : public StackLayout {
 public:
     /// Makes a panel.

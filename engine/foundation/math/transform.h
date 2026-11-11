@@ -11,7 +11,7 @@ namespace engine_placeholder {
 
 /// Position, rotation and scale of an object relative to its parent space.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct Transform {
     /// Translation, applied last.
     Vec3 position;
@@ -38,9 +38,9 @@ struct Transform {
 /// component-wise. This is the usual simplified TRS composition and is not
 /// exact for a non-uniform parent scale combined with a rotated child.
 ///
-/// Param parent: outer transform.
-/// Param child: transform relative to `parent`.
-/// Returns: the combined transform.
+/// - Param parent: outer transform.
+/// - Param child: transform relative to `parent`.
+/// - Returns: the combined transform.
 inline Transform Compose(const Transform& parent, const Transform& child) {
     Transform result;
     result.scale = Vec3(parent.scale.x * child.scale.x, parent.scale.y * child.scale.y, parent.scale.z * child.scale.z);

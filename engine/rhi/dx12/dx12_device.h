@@ -32,9 +32,9 @@ using Dx12DevicePtr = UniquePtr<Dx12Device, DeviceDeleter>;
 /// layer's messages go to [[rhi::LogRhi]] through `ID3D12InfoQueue1`'s callback and are counted ([[rhi::dx12::GetDebugMessageCounts]]).
 /// Every wait on the GPU is bounded: it waits in slices and checks for a removed device between them.
 ///
-/// Thread-safety: thread-safe, as [[rhi::Device]] is: resource creation and destruction from any thread; `Submit`, `BeginFrame`,
+/// - Thread-safety: thread-safe, as [[rhi::Device]] is: resource creation and destruction from any thread; `Submit`, `BeginFrame`,
 ///   `EndFrame` and `WaitIdle` belong to one submission thread.
-/// Ownership: the caller owns the device through a [[rhi::dx12::Dx12DevicePtr]]; it owns the factory, the adapter and the queue.
+/// - Ownership: the caller owns the device through a [[rhi::dx12::Dx12DevicePtr]]; it owns the factory, the adapter and the queue.
 class Dx12Device final : public Device {
 public:
     /// Constructs an uninitialized device; use [[rhi::dx12::Dx12Device::Create]].
@@ -42,17 +42,17 @@ public:
 
     /// Creates a device.
     ///
-    /// Param info: what to create; the backend field is ignored.
-    /// Returns: the device, or an empty pointer.
-    /// Fails: as for [[rhi::CreateDevice]]; also when validation is `On` and the debug layer (the Graphics Tools feature) is missing.
-    /// Ownership: the caller owns the result.
+    /// - Param info: what to create; the backend field is ignored.
+    /// - Returns: the device, or an empty pointer.
+    /// - Fails: as for [[rhi::CreateDevice]]; also when validation is `On` and the debug layer (the Graphics Tools feature) is missing.
+    /// - Ownership: the caller owns the result.
     static Dx12DevicePtr Create(const DeviceCreateInfo& info);
 
     /// Lists the adapters, as [[rhi::EnumerateAdapters]] does for this backend.
     ///
-    /// Param info: the window (presentability) is read from it.
-    /// Param out: receives the list.
-    /// Returns: false if no DXGI factory could be created.
+    /// - Param info: the window (presentability) is read from it.
+    /// - Param out: receives the list.
+    /// - Returns: false if no DXGI factory could be created.
     static bool EnumerateAdapters(const DeviceCreateInfo& info, AdapterList* out);
 
     /// How many frames of fences the device remembers; frames further behind than this are waited for.
@@ -133,30 +133,30 @@ public:
     /// Notes the result of a D3D12 or DXGI call: a device-loss code sets the sticky lost state (reading
     /// `GetDeviceRemovedReason` for the log), any other failure is logged with `what`.
     ///
-    /// Param result: the code.
-    /// Param what: the call, for the log.
-    /// Returns: true if `result` succeeded.
+    /// - Param result: the code.
+    /// - Param what: the call, for the log.
+    /// - Returns: true if `result` succeeded.
     bool Check(HRESULT result, const char* what);
 
     /// Waits until the queue's fence reaches `value`, in slices of [[rhi::dx12::Dx12Device::kWaitSliceMs]] with a device-removed check
     /// between them, for at most `timeout_ns` (`~0` for no limit).
     ///
-    /// Param value: a fence value; 0 is reached at once.
-    /// Param timeout_ns: the longest wait.
-    /// Returns: true if the value was reached.
-    /// Fails: false on timeout or when the device is removed (the lost state is set).
+    /// - Param value: a fence value; 0 is reached at once.
+    /// - Param timeout_ns: the longest wait.
+    /// - Returns: true if the value was reached.
+    /// - Fails: false on timeout or when the device is removed (the lost state is set).
     bool WaitForValue(u64 value, u64 timeout_ns);
 
     /// Signals the queue's fence with the next value (after the work already on the queue) and returns it.
     ///
-    /// Returns: the value, or 0 if the signal failed (the device is lost).
-    /// Thread-safety: not-thread-safe: call with the submission lock held (Submit and the internal upload path do).
+    /// - Returns: the value, or 0 if the signal failed (the device is lost).
+    /// - Thread-safety: not-thread-safe: call with the submission lock held (Submit and the internal upload path do).
     u64 SignalLocked();
 
     /// What command recording needs to know about a live buffer.
     ///
-    /// Thread-safety: thread-compatible plain data (a snapshot).
-    /// Ownership: `resource` is borrowed; it stays valid until the buffer is destroyed and its frame has completed.
+    /// - Thread-safety: thread-compatible plain data (a snapshot).
+    /// - Ownership: `resource` is borrowed; it stays valid until the buffer is destroyed and its frame has completed.
     struct BufferInfo {
         /// The resource.
         ID3D12Resource* resource = nullptr;
@@ -167,17 +167,17 @@ public:
     };
     /// Looks up a live buffer.
     ///
-    /// Param buffer: the handle.
-    /// Param out: receives the snapshot.
-    /// Returns: true if the handle is live.
-    /// Fails: false for an invalid or stale handle.
-    /// Thread-safety: thread-safe.
+    /// - Param buffer: the handle.
+    /// - Param out: receives the snapshot.
+    /// - Returns: true if the handle is live.
+    /// - Fails: false for an invalid or stale handle.
+    /// - Thread-safety: thread-safe.
     bool LookupBuffer(BufferHandle buffer, BufferInfo* out) const;
 
     /// What command recording needs to know about a live texture.
     ///
-    /// Thread-safety: thread-compatible plain data (a snapshot).
-    /// Ownership: the resource and descriptors are borrowed; valid until the texture is destroyed and its frame has completed.
+    /// - Thread-safety: thread-compatible plain data (a snapshot).
+    /// - Ownership: the resource and descriptors are borrowed; valid until the texture is destroyed and its frame has completed.
     struct TextureInfo {
         /// The resource.
         ID3D12Resource* resource = nullptr;
@@ -196,33 +196,33 @@ public:
     };
     /// Looks up a live texture.
     ///
-    /// Param texture: the handle.
-    /// Param out: receives the snapshot.
-    /// Returns: true if the handle is live.
-    /// Fails: false for an invalid or stale handle.
-    /// Thread-safety: thread-safe.
+    /// - Param texture: the handle.
+    /// - Param out: receives the snapshot.
+    /// - Returns: true if the handle is live.
+    /// - Fails: false for an invalid or stale handle.
+    /// - Thread-safety: thread-safe.
     bool LookupTexture(TextureHandle texture, TextureInfo* out) const;
 
     /// Returns the D3D12 state a texture is in after everything submitted so far (D3D12 has no "undefined" before-state, so the
     /// device keeps this: uploads, readbacks and, from Day 168, each submitted command list update it).
     ///
-    /// Param texture: a live texture.
-    /// Returns: the state; `COMMON` for an unknown handle.
-    /// Fails: `COMMON`, as described.
-    /// Thread-safety: thread-safe.
+    /// - Param texture: a live texture.
+    /// - Returns: the state; `COMMON` for an unknown handle.
+    /// - Fails: `COMMON`, as described.
+    /// - Thread-safety: thread-safe.
     D3D12_RESOURCE_STATES TextureState(TextureHandle texture) const;
 
     /// Records the state a texture is in after work just submitted.
     ///
-    /// Param texture: a live texture; an unknown handle is ignored.
-    /// Param state: the state.
-    /// Thread-safety: thread-safe.
+    /// - Param texture: a live texture; an unknown handle is ignored.
+    /// - Param state: the state.
+    /// - Thread-safety: thread-safe.
     void SetTextureState(TextureHandle texture, D3D12_RESOURCE_STATES state);
 
     /// A GPU-only buffer a bind group reads or writes, and the state that use needs; the command list tracks buffer states with it.
     ///
-    /// Thread-safety: thread-compatible plain data.
-    /// Ownership: `resource` is borrowed, valid while the group's buffer lives.
+    /// - Thread-safety: thread-compatible plain data.
+    /// - Ownership: `resource` is borrowed, valid while the group's buffer lives.
     struct GroupBufferUse {
         /// The buffer's resource.
         ID3D12Resource* resource = nullptr;
@@ -232,8 +232,8 @@ public:
 
     /// What command recording needs to know about a live bind group.
     ///
-    /// Thread-safety: thread-compatible plain data (a snapshot).
-    /// Ownership: the descriptors are borrowed; valid until the group is destroyed (persistent) or its frame has finished (transient).
+    /// - Thread-safety: thread-compatible plain data (a snapshot).
+    /// - Ownership: the descriptors are borrowed; valid until the group is destroyed (persistent) or its frame has finished (transient).
     struct BindGroupInfo {
         /// The group's CBV/SRV/UAV descriptors, contiguous in a CPU heap; copied into the frame's ring at `SetBindGroup`.
         D3D12_CPU_DESCRIPTOR_HANDLE views{};
@@ -258,17 +258,17 @@ public:
     };
     /// Looks up a bind group and checks that the resources it refers to are still alive.
     ///
-    /// Param group: the handle.
-    /// Param out: receives the snapshot.
-    /// Returns: true if the handle is live.
-    /// Fails: false for an invalid or stale handle.
-    /// Thread-safety: thread-safe.
+    /// - Param group: the handle.
+    /// - Param out: receives the snapshot.
+    /// - Returns: true if the handle is live.
+    /// - Fails: false for an invalid or stale handle.
+    /// - Thread-safety: thread-safe.
     bool LookupBindGroup(BindGroupHandle group, BindGroupInfo* out) const;
 
     /// A root signature and where each bind group and the push constants sit in it.
     ///
-    /// Thread-safety: thread-compatible plain data.
-    /// Ownership: `signature` is borrowed; the device keeps every root signature it made until it is destroyed.
+    /// - Thread-safety: thread-compatible plain data.
+    /// - Ownership: `signature` is borrowed; the device keeps every root signature it made until it is destroyed.
     struct RootLayout {
         /// The root signature.
         ID3D12RootSignature* signature = nullptr;
@@ -292,21 +292,21 @@ public:
     /// table per bind group, registers `b`/`t`/`u`/`s` numbered as the bindings in `space<slot>`, and the push constants as root
     /// constants at `b0, space15`. Serialized as root signature 1.1 and cached by the layouts' identities and the push range.
     ///
-    /// Param layouts: the bind group layouts, in slot order; each live.
-    /// Param count: how many, at most [[rhi::kMaxBindGroups]].
-    /// Param push_bytes: the push-constant range, at most [[rhi::kMaxPushConstantBytes]].
-    /// Param push_stages: the stages that see it.
-    /// Param compute: true for a compute pipeline (every parameter visible to all stages; no input layout).
-    /// Param out: receives the layout.
-    /// Returns: true on success.
-    /// Fails: false, logging the reason, for a stale layout handle or a root signature D3D12 rejects.
-    /// Thread-safety: thread-safe.
+    /// - Param layouts: the bind group layouts, in slot order; each live.
+    /// - Param count: how many, at most [[rhi::kMaxBindGroups]].
+    /// - Param push_bytes: the push-constant range, at most [[rhi::kMaxPushConstantBytes]].
+    /// - Param push_stages: the stages that see it.
+    /// - Param compute: true for a compute pipeline (every parameter visible to all stages; no input layout).
+    /// - Param out: receives the layout.
+    /// - Returns: true on success.
+    /// - Fails: false, logging the reason, for a stale layout handle or a root signature D3D12 rejects.
+    /// - Thread-safety: thread-safe.
     bool RootSignatureFor(const BindGroupLayoutHandle* layouts, u32 count, u32 push_bytes, ShaderStage push_stages, bool compute, RootLayout* out);
 
     /// What command recording needs to know about a live pipeline (Day 168 records with it).
     ///
-    /// Thread-safety: thread-compatible plain data (a snapshot).
-    /// Ownership: the D3D12 objects are borrowed; valid until the pipeline is destroyed and its frame has finished.
+    /// - Thread-safety: thread-compatible plain data (a snapshot).
+    /// - Ownership: the D3D12 objects are borrowed; valid until the pipeline is destroyed and its frame has finished.
     struct PipelineInfo {
         /// The pipeline state.
         ID3D12PipelineState* state = nullptr;
@@ -333,16 +333,16 @@ public:
     };
     /// Looks up a pipeline.
     ///
-    /// Param pipeline: the handle.
-    /// Param out: receives the snapshot.
-    /// Returns: true if the handle is live.
-    /// Fails: false for an invalid or stale handle.
-    /// Thread-safety: thread-safe.
+    /// - Param pipeline: the handle.
+    /// - Param out: receives the snapshot.
+    /// - Returns: true if the handle is live.
+    /// - Fails: false for an invalid or stale handle.
+    /// - Thread-safety: thread-safe.
     bool LookupPipeline(PipelineHandle pipeline, PipelineInfo* out) const;
 
     /// What the on-disk pipeline cache (an `ID3D12PipelineLibrary`) did for this device.
     ///
-    /// Thread-safety: thread-compatible plain data (a snapshot).
+    /// - Thread-safety: thread-compatible plain data (a snapshot).
     struct PipelineCacheStats {
         /// Whether a cache is in use (not when disabled, without a directory, or when D3D12 cannot make a library).
         bool enabled = false;
@@ -359,13 +359,13 @@ public:
     };
     /// Returns what the pipeline cache did so far.
     ///
-    /// Thread-safety: thread-safe.
+    /// - Thread-safety: thread-safe.
     PipelineCacheStats PipelineCache() const;
     /// Writes the pipeline cache to disk now, as the destructor does, if it holds pipelines the file does not.
     ///
-    /// Returns: true if a file was written.
-    /// Fails: false when the cache is disabled, unchanged since it was loaded or saved, or cannot be written (logged).
-    /// Thread-safety: thread-safe.
+    /// - Returns: true if a file was written.
+    /// - Fails: false when the cache is disabled, unchanged since it was loaded or saved, or cannot be written (logged).
+    /// - Thread-safety: thread-safe.
     bool SavePipelineCache();
     /// Returns the pipeline cache file's path, or an empty string when no cache is in use.
     const char* PipelineCachePath() const { return cache_path_; }
@@ -373,8 +373,8 @@ public:
     /// The compute pipeline `GenerateMips` runs (shaders/mipgen.comp), with its own root signature: a table of the source level's
     /// view and the written level's storage view, a static linear clamp sampler, and four root constants.
     ///
-    /// Thread-safety: thread-compatible plain data.
-    /// Ownership: borrowed; the device keeps both for its life.
+    /// - Thread-safety: thread-compatible plain data.
+    /// - Ownership: borrowed; the device keeps both for its life.
     struct MipPipeline {
         /// The root signature.
         ID3D12RootSignature* root = nullptr;
@@ -383,62 +383,62 @@ public:
     };
     /// Returns the mip pipeline, making it on first use.
     ///
-    /// Param out: receives it.
-    /// Returns: true on success.
-    /// Fails: false (logged) if D3D12 refuses the root signature or the pipeline.
-    /// Thread-safety: thread-safe.
+    /// - Param out: receives it.
+    /// - Returns: true on success.
+    /// - Fails: false (logged) if D3D12 refuses the root signature or the pipeline.
+    /// - Thread-safety: thread-safe.
     bool MipPipelineFor(MipPipeline* out);
     /// Returns whether a texture of this description is created so `GenerateMips` can write its levels: `Sampled`, `CopySrc` and
     /// `CopyDst` usage, more than one level, 2D, one sample, and a format [[rhi::Device::CanGenerateMips]] accepts. Such a texture gets
     /// unordered access, through a typeless resource for an sRGB format.
     ///
-    /// Param desc: the texture's description.
-    /// Returns: true if it qualifies.
-    /// Thread-safety: thread-safe.
+    /// - Param desc: the texture's description.
+    /// - Returns: true if it qualifies.
+    /// - Thread-safety: thread-safe.
     bool MipGenCapable(const TextureDesc& desc) const;
     /// Returns the format of the storage view `GenerateMips` writes a level through: the format itself, or its linear twin for sRGB.
     ///
-    /// Param format: the texture's format.
-    /// Returns: the DXGI format.
-    /// Thread-safety: thread-safe. A pure function.
+    /// - Param format: the texture's format.
+    /// - Returns: the DXGI format.
+    /// - Thread-safety: thread-safe. A pure function.
     static DXGI_FORMAT MipStorageFormat(Format format);
 
     /// Waits until the GPU has finished everything submitted so far, without freeing what was destroyed (unlike `WaitIdle`): what the open
     /// frame destroyed may still be used by its lists that are not submitted yet. For the swapchain, which must not hold a buffer the GPU
     /// still reads.
     ///
-    /// Thread-safety: thread-safe.
+    /// - Thread-safety: thread-safe.
     void WaitForGpu();
     /// Returns the window the device presents to, or null. Ownership: borrowed.
     const os::Window* Window() const { return window_; }
     /// Makes a swap chain buffer a device texture: a render-target view in `format` (the sRGB view of a linear buffer), external (the
     /// swap chain owns it), in `PRESENT`.
     ///
-    /// Param buffer: the buffer; the texture holds a reference until released.
-    /// Param format: the RHI format of the view.
-    /// Param width: its width.
-    /// Param height: its height.
-    /// Returns: the handle, or invalid when out of descriptors or handles.
-    /// Fails: an invalid handle (logged by the pools).
-    /// Thread-safety: thread-safe.
+    /// - Param buffer: the buffer; the texture holds a reference until released.
+    /// - Param format: the RHI format of the view.
+    /// - Param width: its width.
+    /// - Param height: its height.
+    /// - Returns: the handle, or invalid when out of descriptors or handles.
+    /// - Fails: an invalid handle (logged by the pools).
+    /// - Thread-safety: thread-safe.
     TextureHandle RegisterSwapchainImage(ComRef<ID3D12Resource> buffer, Format format, u32 width, u32 height);
     /// Frees a swap chain image's texture at once, with its reference to the buffer; the GPU must be done with it.
     ///
-    /// Param texture: from `RegisterSwapchainImage`.
-    /// Thread-safety: thread-safe.
+    /// - Param texture: from `RegisterSwapchainImage`.
+    /// - Thread-safety: thread-safe.
     void ReleaseSwapchainImage(TextureHandle texture);
     /// Counts a present for the fault injection (`FaultInjection::lose_device_at_present`).
     ///
-    /// Returns: true if the device is lost (now or before).
-    /// Thread-safety: thread-safe.
+    /// - Returns: true if the device is lost (now or before).
+    /// - Thread-safety: thread-safe.
     bool CountPresent();
     /// Presents a swap chain under the submission lock, so it is ordered with the queue's work; a device-loss result marks the device lost.
     ///
-    /// Param swapchain: the swap chain.
-    /// Param interval: the sync interval.
-    /// Param flags: the present flags.
-    /// Returns: the result of `IDXGISwapChain::Present`.
-    /// Thread-safety: thread-safe.
+    /// - Param swapchain: the swap chain.
+    /// - Param interval: the sync interval.
+    /// - Param flags: the present flags.
+    /// - Returns: the result of `IDXGISwapChain::Present`.
+    /// - Thread-safety: thread-safe.
     HRESULT PresentSwapchain(IDXGISwapChain3* swapchain, UINT interval, UINT flags);
 
     /// Returns the shader-visible view ring. Ownership: borrowed.
@@ -452,7 +452,7 @@ public:
 
     /// Objects found alive by destroyed devices.
     ///
-    /// Thread-safety: thread-compatible plain data (a snapshot).
+    /// - Thread-safety: thread-compatible plain data (a snapshot).
     struct LeakCounts {
         /// Application objects (buffers, textures, ...) left when the device was destroyed.
         u64 user_objects = 0;
@@ -460,7 +460,7 @@ public:
         u64 live_d3d12_objects = 0;
     };
     /// Returns the process-wide totals since the last reset.
-    /// Thread-safety: thread-safe.
+    /// - Thread-safety: thread-safe.
     static LeakCounts GetLeakCounts();
     /// Sets the totals to zero. Thread-safe.
     static void ResetLeakCounts();

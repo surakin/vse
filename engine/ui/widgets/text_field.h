@@ -30,8 +30,8 @@ using TextValidator = bool (*)(void* user, const TextField* field, StringView pr
 /// nothing is not recorded. Consecutive typing, and consecutive Backspace or Delete presses, are one undo step. A password field draws bullets, refuses copy and cut, moves and edits by
 /// cluster, and treats its whole text as one word (word movement, word deletion and a double click go to the ends), so the spaces do not show.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: owns its text, its undo history and its layouts; borrows the validator's user pointer and the surface's clipboard.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: owns its text, its undo history and its layouts; borrows the validator's user pointer and the surface's clipboard.
 class TextField : public Widget {
 public:
     /// The preferred width, as a multiple of the theme's icon size.
@@ -61,12 +61,12 @@ public:
     ~TextField() override;
 
     /// Replaces the text without running a listener or the validator; the caret goes to the end, the selection is dropped and the undo history is cleared.
-    /// Param text: UTF-8 text; cut to the maximum length.
-    /// Fails: never.
+    /// - Param text: UTF-8 text; cut to the maximum length.
+    /// - Fails: never.
     void SetText(StringView text);
     /// Returns the text.
     ///
-    /// Ownership: borrowed; valid until the next edit.
+    /// - Ownership: borrowed; valid until the next edit.
     StringView Text() const { return StringView(text_.Data(), text_.Size()); }
     /// Sets the text shown while the field is empty and not focused.
     void SetPlaceholder(StringView text);
@@ -74,22 +74,22 @@ public:
     void SetReadOnly(bool read_only) { read_only_ = read_only; }
     /// Returns whether edits are refused.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool ReadOnly() const { return read_only_; }
     /// Sets whether the field draws bullets and refuses copy and cut.
     void SetPassword(bool password);
     /// Returns whether the field is a password field.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool Password() const { return password_; }
     /// Sets the most clusters the text may have (0 for no limit); text already longer is kept until edited.
     void SetMaxLength(usize clusters) { max_length_ = clusters; }
     /// Returns the maximum length in clusters.
     usize MaxLength() const { return max_length_; }
     /// Sets the validator (null removes it).
-    /// Param function: the check.
-    /// Param user: passed to it; borrowed.
-    /// Ownership: `user` is borrowed until the validator is replaced or the field is destroyed.
+    /// - Param function: the check.
+    /// - Param user: passed to it; borrowed.
+    /// - Ownership: `user` is borrowed until the validator is replaced or the field is destroyed.
     void SetValidator(TextValidator function, void* user) {
         validator_ = function;
         validator_user_ = user;
@@ -102,7 +102,7 @@ public:
     u32 Anchor() const { return anchor_; }
     /// Returns whether text is selected.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool HasSelection() const { return caret_ != anchor_; }
     /// Selects from `anchor` to `caret`; both are snapped to grapheme boundaries and clamped to the text.
     void SetSelection(u32 anchor, u32 caret);
@@ -112,19 +112,19 @@ public:
     StringView SelectedText() const;
     /// Undoes the last edit step; returns whether there was one.
     ///
-    /// Fails: returns false when there is nothing to undo.
+    /// - Fails: returns false when there is nothing to undo.
     bool Undo();
     /// Redoes the last undone step; returns whether there was one.
     ///
-    /// Fails: returns false when there is nothing to redo.
+    /// - Fails: returns false when there is nothing to redo.
     bool Redo();
     /// Returns whether `Undo` has a step.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool CanUndo() const { return !undo_.Empty(); }
     /// Returns whether `Redo` has a step.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool CanRedo() const { return !redo_.Empty(); }
     /// Returns the caret rectangle in surface coordinates (what is drawn when it is on), after the last layout of the text; empty before the first.
     Rect CaretRect();
@@ -132,7 +132,7 @@ public:
     f32 ScrollX() const { return scroll_x_; }
     /// Returns whether the caret is in the on part of its blink at the surface's time.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool CaretOn() const;
     /// Returns the listeners called after the user (or undo) changed the text.
     Callback<TextField*>& OnChanged() { return on_changed_; }
@@ -155,7 +155,7 @@ public:
     /// A move to another widget removes the dragged text from this field.
     void OnDragEnded(DragAction action) override;
     /// Returns whether Cut, Copy, Paste or Select All can run now.
-    /// Fails: never.
+    /// - Fails: never.
     bool CanEdit(EditCommand command) const override;
     /// Runs Cut, Copy, Paste or Select All.
     void RunEdit(EditCommand command) override;
@@ -169,7 +169,7 @@ public:
     void Update(f32 dt) override;
     /// Returns whether the field has the focus (the caret blinks).
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool WantsUpdate() const override;
 
 private:

@@ -15,7 +15,7 @@ class Directory;
 
 /// One entry returned by [[io::Directory::Next]].
 ///
-/// Thread-safety: thread-compatible. Ownership: `name` and the entry itself are valid until the next call to `Next` on the same
+/// - Thread-safety: thread-compatible. Ownership: `name` and the entry itself are valid until the next call to `Next` on the same
 /// [[io::Directory]] and while that directory is open (moving the `Directory` does not invalidate them).
 struct DirectoryEntry {
     StringView name;                 ///< The entry's name (one component, never `.` or `..`).
@@ -23,8 +23,8 @@ struct DirectoryEntry {
 
     /// Describes the entry now (`lstat`: a link is described, not its target); lazy because most callers only need `name` and `type`.
     ///
-    /// Fails: `NotFound` (removed since it was listed), `PermissionDenied`.
-    /// Backend: Windows: the attributes the find call already returned, plus GetFileInformationByHandle for the rest; macOS: fstatat with AT_SYMLINK_NOFOLLOW.
+    /// - Fails: `NotFound` (removed since it was listed), `PermissionDenied`.
+    /// - Backend: Windows: the attributes the find call already returned, plus GetFileInformationByHandle for the rest; macOS: fstatat with AT_SYMLINK_NOFOLLOW.
     Status Info(FileInfo* out) const;
 
 private:
@@ -38,7 +38,7 @@ private:
 /// for example in tools whose output must be reproducible. Entries created or removed while iterating may or may not be seen, and an
 /// entry is never returned twice; nothing crashes.
 ///
-/// Thread-safety: thread-compatible; one thread iterates one directory. Ownership: owns the open directory; closes it on destruction. Move-only.
+/// - Thread-safety: thread-compatible; one thread iterates one directory. Ownership: owns the open directory; closes it on destruction. Move-only.
 class Directory {
 public:
     Directory() = default;
@@ -53,9 +53,9 @@ public:
 
     /// Opens `path` for listing.
     ///
-    /// Param out: receives the open directory (closing a previous one); unchanged on failure.
-    /// Fails: `NotFound`, `NotADirectory`, `PermissionDenied`, `TooManyOpenFiles`, `TooLong`.
-    /// Backend: Windows: FindFirstFileExW(FindExInfoBasic, FIND_FIRST_EX_LARGE_FETCH) on `<path>\*`; macOS: opendir.
+    /// - Param out: receives the open directory (closing a previous one); unchanged on failure.
+    /// - Fails: `NotFound`, `NotADirectory`, `PermissionDenied`, `TooManyOpenFiles`, `TooLong`.
+    /// - Backend: Windows: FindFirstFileExW(FindExInfoBasic, FIND_FIRST_EX_LARGE_FETCH) on `<path>\*`; macOS: opendir.
     static Status Open(const Path& path, Directory* out);
 
     /// Returns true while the directory is open.
@@ -64,13 +64,13 @@ public:
     const Path& GetPath() const { return path_; }
     /// Reads the next entry, skipping `.` and `..`.
     ///
-    /// Param entry: receives the entry when `*found` is true.
-    /// Param found: set to false at the end of the directory.
-    /// Fails: `Invalid` (closed), `Io` (a read error; the position is then undefined).
-    /// Backend: Windows: FindNextFileW, skipping the dot entries, the type from the attributes and reparse tag (as Lstat); macOS: readdir.
+    /// - Param entry: receives the entry when `*found` is true.
+    /// - Param found: set to false at the end of the directory.
+    /// - Fails: `Invalid` (closed), `Io` (a read error; the position is then undefined).
+    /// - Backend: Windows: FindNextFileW, skipping the dot entries, the type from the attributes and reparse tag (as Lstat); macOS: readdir.
     Status Next(DirectoryEntry* entry, bool* found);
     /// Closes the directory; idempotent.
-    /// Backend: Windows: FindClose; macOS: closedir.
+    /// - Backend: Windows: FindClose; macOS: closedir.
     void Close();
 
     /// Creates a directory ([[io::CreateDirectory]]).
@@ -83,7 +83,7 @@ public:
     static Status RemoveAll(const Path& path) { return io::RemoveAll(path); }
     /// Reports whether the directory has no entries.
     ///
-    /// Fails: as [[io::Directory::Open]].
+    /// - Fails: as [[io::Directory::Open]].
     static Status IsEmpty(const Path& path, bool* empty);
 
 private:
@@ -101,8 +101,8 @@ struct DirectoryItem {
 /// Reads all entries of one directory. With `sorted` they are ordered bytewise by name, which makes the result the same on every
 /// file system and run.
 ///
-/// Param out: receives the items (replacing its contents); unchanged on failure.
-/// Fails: as [[io::Directory::Open]] and [[io::Directory::Next]]; `OutOfMemory`.
+/// - Param out: receives the items (replacing its contents); unchanged on failure.
+/// - Fails: as [[io::Directory::Open]] and [[io::Directory::Next]]; `OutOfMemory`.
 Status ListDirectory(const Path& path, bool sorted, Vector<DirectoryItem>* out);
 
 /// Returns true when `name` matches `pattern`: `*` matches any run of characters (including none), `?` exactly one character (a whole
@@ -142,11 +142,11 @@ using WalkVisitor = WalkAction (*)(void* user, const WalkEntry& entry);
 /// Walks the tree below `root` depth first. The root itself is not reported. An entry that cannot be examined or entered (an unreadable
 /// subdirectory, a loop) is reported to the visitor with `error` set, and the walk continues unless the visitor returns `Stop`.
 ///
-/// Param root: the directory to walk.
-/// Param options: depth, links, order, filter.
-/// Param visitor: called per entry; must not be null.
-/// Param user: passed to the visitor.
-/// Fails: the errors of opening `root` (`NotFound`, `NotADirectory`, `PermissionDenied`); `Invalid` for `max_depth` of 0 or over 128, or a null visitor.
+/// - Param root: the directory to walk.
+/// - Param options: depth, links, order, filter.
+/// - Param visitor: called per entry; must not be null.
+/// - Param user: passed to the visitor.
+/// - Fails: the errors of opening `root` (`NotFound`, `NotADirectory`, `PermissionDenied`); `Invalid` for `max_depth` of 0 or over 128, or a null visitor.
 Status WalkDirectory(const Path& root, const WalkOptions& options, WalkVisitor visitor, void* user);
 
 } // namespace engine_placeholder::io

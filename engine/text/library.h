@@ -11,8 +11,8 @@ namespace engine_placeholder::text {
 
 /// The version of the FreeType library the engine was built with.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: owns nothing.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns nothing.
 struct LibraryVersion {
     /// The major number (2 in 2.15.0).
     u32 major = 0;
@@ -24,8 +24,8 @@ struct LibraryVersion {
 
 /// The heap traffic of one FreeType library session, as counted by the engine's allocator hook.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: owns nothing.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns nothing.
 struct LibraryAllocationStats {
     /// Blocks allocated (a reallocation counts as a free and an allocation).
     u64 allocations = 0;
@@ -39,12 +39,12 @@ struct LibraryAllocationStats {
 
 /// Starts a FreeType library with the engine's allocator and its module list, reads the version and shuts it down.
 ///
-/// Param version: receives the library's version; may be null.
-/// Param stats: receives the session's allocation counts; may be null.
-/// Returns: true when the library started and shut down cleanly; false when FreeType refused to start or reported an error while shutting down.
-/// Thread-safety: thread-safe; every call is its own library instance.
-/// Ownership: nothing is retained; the library is destroyed before the call returns.
-/// Fails: returns false, leaving `version` and `stats` unchanged, when FreeType reports an error at startup (out of memory is the realistic cause); an error while shutting down also returns false, with both outputs filled in.
+/// - Param version: receives the library's version; may be null.
+/// - Param stats: receives the session's allocation counts; may be null.
+/// - Returns: true when the library started and shut down cleanly; false when FreeType refused to start or reported an error while shutting down.
+/// - Thread-safety: thread-safe; every call is its own library instance.
+/// - Ownership: nothing is retained; the library is destroyed before the call returns.
+/// - Fails: returns false, leaving `version` and `stats` unchanged, when FreeType reports an error at startup (out of memory is the realistic cause); an error while shutting down also returns false, with both outputs filled in.
 bool ProbeLibrary(LibraryVersion* version, LibraryAllocationStats* stats);
 
 } // namespace engine_placeholder::text

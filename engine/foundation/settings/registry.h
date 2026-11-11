@@ -19,7 +19,7 @@ namespace engine_placeholder::settings {
 
 /// How a setting is identified: small integers handed out in registration order; 0 is never valid.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct SettingId {
     /// The value; 0 means no setting.
     u16 value = 0;
@@ -48,16 +48,16 @@ enum class RegisterError : u8 {
 
 /// Returns a short name for a registration error (`none`, `bad_key`, `duplicate`, `bad_default`, `bad_range`, `bad_enum`, `bad_deprecated`, `full`).
 ///
-/// Returns: a static string.
-/// Fails: never.
-/// Ownership: the string is static and never freed.
+/// - Returns: a static string.
+/// - Fails: never.
+/// - Ownership: the string is static and never freed.
 const char* RegisterErrorName(RegisterError error);
 
 /// The settings that exist and the current value of each.
 ///
-/// Thread-safety: thread-compatible. `Register` and `Freeze` belong before any other thread uses the registry; every other
+/// - Thread-safety: thread-compatible. `Register` and `Freeze` belong before any other thread uses the registry; every other
 ///   function may then be called from any thread, and `Publish` and typed reads are safe together.
-/// Ownership: owns copies of the declarations (the strings in them are borrowed and must outlive the registry).
+/// - Ownership: owns copies of the declarations (the strings in them are borrowed and must outlive the registry).
 class Registry {
 public:
     /// One setting's storage; public so a handle can point at it.
@@ -75,18 +75,18 @@ public:
 
     /// Returns the process-wide registry that engine modules register their settings with.
     ///
-    /// Returns: a registry that lives for the whole process.
-    /// Fails: never.
-    /// Thread-safety: thread-safe.
+    /// - Returns: a registry that lives for the whole process.
+    /// - Fails: never.
+    /// - Thread-safety: thread-safe.
     static Registry& Global();
 
     /// Registers a setting; its current value starts at the default.
     ///
-    /// Param desc: the declaration (copied; its strings are borrowed).
-    /// Param error: receives the reason on failure (may be null).
-    /// Returns: the new id, or an invalid id on failure.
-    /// Fails: see [[settings::RegisterError]]; the registry is unchanged.
-    /// Aborts: the registry is frozen.
+    /// - Param desc: the declaration (copied; its strings are borrowed).
+    /// - Param error: receives the reason on failure (may be null).
+    /// - Returns: the new id, or an invalid id on failure.
+    /// - Fails: see [[settings::RegisterError]]; the registry is unchanged.
+    /// - Aborts: the registry is frozen.
     SettingId Register(const SettingDesc& desc, RegisterError* error = nullptr);
 
     /// Ends registration; later `Register` calls abort. Calling it twice does nothing.
@@ -98,9 +98,9 @@ public:
 
     /// Finds a setting by its key or by one of its deprecated keys.
     ///
-    /// Param key: the key text.
-    /// Returns: its id, or an invalid id.
-    /// Fails: reports absence by returning an invalid id.
+    /// - Param key: the key text.
+    /// - Returns: its id, or an invalid id.
+    /// - Fails: reports absence by returning an invalid id.
     SettingId Find(StringView key) const;
     /// Returns whether `key` is one of the setting's *deprecated* keys rather than its current one.
     bool IsDeprecatedKey(StringView key) const;
@@ -109,7 +109,7 @@ public:
     /// they were written with (`<section>.schema`), and migrations upgrade older ones. A section without a declared version is version 1 and has
     /// no migrations.
     ///
-    /// Aborts: the registry is frozen, `section` is not a valid key, or `version` is 0.
+    /// - Aborts: the registry is frozen, `section` is not a valid key, or `version` is 0.
     void SetSchemaVersion(StringView section, u32 version);
     /// Returns the declared schema version of `section`, or 0 if none was declared.
     u32 SchemaVersion(StringView section) const;
@@ -124,26 +124,26 @@ public:
     const Key& KeyOf(SettingId id) const;
     /// Returns the id of the `index`th setting in key order (bytewise); `index` must be less than `Count()`.
     ///
-    /// Aborts: `index` is not less than `Count()`.
+    /// - Aborts: `index` is not less than `Count()`.
     SettingId SortedAt(u32 index) const;
 
     /// Returns a setting's current value.
     ///
-    /// Aborts: `id` is not registered.
+    /// - Aborts: `id` is not registered.
     Value Current(SettingId id) const;
     /// Makes `value` the setting's current value: later reads through a handle see it. The value is not validated against the range
     /// (the settings service does that); it must have the declared type.
     ///
-    /// Aborts: `id` is not registered, the value has another type than the declaration, or an enum index is outside the names.
+    /// - Aborts: `id` is not registered, the value has another type than the declaration, or an enum index is outside the names.
     void Publish(SettingId id, const Value& value);
     /// Returns a setting's storage, for [[settings::Setting]]; null if `id` is not registered.
     const Cell* CellOf(SettingId id) const;
     /// Copies a text setting's current value into `out`.
     ///
-    /// Param out: destination of the text and a NUL.
-    /// Param capacity: size of `out`.
-    /// Returns: the length of the text; if it does not fit (`capacity` too small) nothing is written and the needed length is returned.
-    /// Aborts: `id` is not registered or is not a text setting.
+    /// - Param out: destination of the text and a NUL.
+    /// - Param capacity: size of `out`.
+    /// - Returns: the length of the text; if it does not fit (`capacity` too small) nothing is written and the needed length is returned.
+    /// - Aborts: `id` is not registered or is not a text setting.
     usize CurrentText(SettingId id, char* out, usize capacity) const;
 
 private:

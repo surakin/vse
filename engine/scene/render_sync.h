@@ -12,8 +12,8 @@ namespace engine_placeholder::scene {
 
 /// The resource that tells the sync which scene to mirror into.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: `scene` is borrowed; it outlives the world's schedule and is not replaced once the sync has run.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: `scene` is borrowed; it outlives the world's schedule and is not replaced once the sync has run.
 struct SceneLink {
     /// The render scene; null makes the sync do nothing (counted in `SceneSyncReport::no_scene`).
     renderer::RenderScene* scene = nullptr;
@@ -21,7 +21,7 @@ struct SceneLink {
 
 /// What the sync did, accumulated over its frames (a resource the caller sets with `SetResource(SceneSyncReport{})`).
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct SceneSyncReport {
     /// Frames the sync ran.
     u64 frames = 0;
@@ -62,21 +62,21 @@ struct SceneSyncReport {
 /// Needs the resources [[scene::SceneLink]] and [[scene::SceneSyncReport]] in the world. Register it in `ecs::kRender`; an entity does not mirror both a mesh and a light.
 /// The sync holds a reference to each object's mesh asset, so the geometry outlives its scene entry.
 ///
-/// Param name: the system's name, copied by the schedule.
-/// Returns: the system description to `Schedule::Add`.
-/// Aborts: the linked scene changes between frames; a needed resource is missing.
-/// Thread-safety: thread-compatible; it writes the render scene, so it must not run while the renderer reads it.
-/// Ownership: the system owns its queries and the references it keeps; the scene is borrowed.
+/// - Param name: the system's name, copied by the schedule.
+/// - Returns: the system description to `Schedule::Add`.
+/// - Aborts: the linked scene changes between frames; a needed resource is missing.
+/// - Thread-safety: thread-compatible; it writes the render scene, so it must not run while the renderer reads it.
+/// - Ownership: the system owns its queries and the references it keeps; the scene is borrowed.
 ecs::SystemDesc MakeRenderSyncSystem(const char* name);
 
 /// The camera system: builds [[scene::CameraOutput]] from the [[scene::ActiveCamera]] entity's `Camera` and `WorldTransform` every frame.
 ///
 /// Needs the resources `ActiveCamera` and `CameraOutput`.
 ///
-/// Param name: the system's name.
-/// Returns: the system description to `Schedule::Add`.
-/// Aborts: a needed resource is missing.
-/// Thread-safety: thread-compatible.
+/// - Param name: the system's name.
+/// - Returns: the system description to `Schedule::Add`.
+/// - Aborts: a needed resource is missing.
+/// - Thread-safety: thread-compatible.
 ecs::SystemDesc MakeCameraSystem(const char* name);
 
 } // namespace engine_placeholder::scene

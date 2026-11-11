@@ -9,8 +9,8 @@ namespace engine_placeholder::ui {
 
 /// A bubble with wrapped text, drawn in the `tooltip` style. It never takes the pointer (the pointer goes through it).
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: owns its text.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: owns its text.
 class TooltipBubble : public Widget {
 public:
     /// The widest the text may be before it wraps, as a multiple of the theme's icon size.

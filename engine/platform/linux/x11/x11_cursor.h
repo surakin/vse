@@ -32,11 +32,11 @@ struct X11CursorState {
 void CursorInit(_XDisplay* display, X11CursorState& state);
 
 /// Shows a standard shape (see [[os::Window::SetCursor]]); applies it at once.
-/// Returns: false for an out-of-range shape.
+/// - Returns: false for an out-of-range shape.
 bool CursorSetShape(_XDisplay* display, unsigned long window, X11CursorState& state, CursorShape shape);
 
 /// Shows a custom image (see [[os::Window::SetCursorImage]]); an image equal to the one showing is not made again.
-/// Returns: false if the image is invalid or the server could not make the cursor; then nothing changes.
+/// - Returns: false if the image is invalid or the server could not make the cursor; then nothing changes.
 bool CursorSetImage(_XDisplay* display, unsigned long window, X11CursorState& state, const CursorImage& image);
 
 /// Removes the custom image and frees its cursor.

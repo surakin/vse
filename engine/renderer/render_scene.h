@@ -16,7 +16,7 @@ namespace engine_placeholder::renderer {
 /// A generation-checked reference to an object in a [[renderer::RenderScene]], like an RHI handle: the all-zero value is
 /// invalid, and an id whose object was removed no longer matches even if its slot is reused.
 ///
-/// Thread-safety: thread-safe plain value.
+/// - Thread-safety: thread-safe plain value.
 struct ObjectId {
     /// The slot in the scene.
     u32 index = 0;
@@ -24,7 +24,7 @@ struct ObjectId {
     u32 generation = 0;
 
     /// Returns whether this is not the invalid (all-zero) id; a valid-looking id can still be stale.
-    /// Fails: never.
+    /// - Fails: never.
     constexpr bool IsValid() const { return generation != 0; }
     /// Returns whether both ids name the same object.
     constexpr bool operator==(const ObjectId& o) const { return index == o.index && generation == o.generation; }
@@ -34,7 +34,7 @@ struct ObjectId {
 
 /// A generation-checked reference to a light in a [[renderer::RenderScene]]; see [[renderer::ObjectId]].
 ///
-/// Thread-safety: thread-safe plain value.
+/// - Thread-safety: thread-safe plain value.
 struct LightId {
     /// The slot in the scene.
     u32 index = 0;
@@ -42,7 +42,7 @@ struct LightId {
     u32 generation = 0;
 
     /// Returns whether this is not the invalid (all-zero) id.
-    /// Fails: never.
+    /// - Fails: never.
     constexpr bool IsValid() const { return generation != 0; }
     /// Returns whether both ids name the same light.
     constexpr bool operator==(const LightId& o) const { return index == o.index && generation == o.generation; }
@@ -58,8 +58,8 @@ inline constexpr u32 kHidden = 1u << 0;
 
 /// What to give [[renderer::RenderScene::AddObject]].
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: `mesh` is borrowed and must outlive the object.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: `mesh` is borrowed and must outlive the object.
 struct RenderObjectDesc {
     /// The geometry; must not be null.
     const GpuMesh* mesh = nullptr;
@@ -73,8 +73,8 @@ struct RenderObjectDesc {
 
 /// One object in a scene, as stored.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: `mesh` is borrowed.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: `mesh` is borrowed.
 struct RenderObject {
     /// The geometry.
     const GpuMesh* mesh = nullptr;
@@ -98,7 +98,7 @@ enum class LightType : u8 {
 /// A light. Directional and ambient lights are lit by the fullscreen part of the deferred lighting pass, point lights by
 /// light volumes (see [[renderer::LightingPass]]).
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct Light {
     /// Directional, point or ambient.
     LightType type = LightType::Directional;
@@ -122,7 +122,7 @@ inline constexpr u32 kMaxLights = 16384;
 
 /// How many objects and lights a scene can hold.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct RenderSceneDesc {
     /// Capacity for objects, at least 1.
     u32 max_objects = 1024;
@@ -136,14 +136,14 @@ struct RenderSceneDesc {
 /// numbers stay valid for the life of an object. Objects are found by [[renderer::ObjectId]]; the frame iterates slots
 /// (see [[renderer::RenderScene::SlotCount]]) and skips the dead ones.
 ///
-/// Thread-safety: thread-compatible; reading from several threads at once is fine while nobody writes.
-/// Ownership: owns its storage; the meshes the objects point at are borrowed and must outlive them.
+/// - Thread-safety: thread-compatible; reading from several threads at once is fine while nobody writes.
+/// - Ownership: owns its storage; the meshes the objects point at are borrowed and must outlive them.
 class RenderScene {
 public:
     /// Allocates the storage.
     ///
-    /// Param desc: capacities; both at least 1.
-    /// Aborts: a capacity is 0.
+    /// - Param desc: capacities; both at least 1.
+    /// - Aborts: a capacity is 0.
     explicit RenderScene(const RenderSceneDesc& desc);
     /// Frees the object and light lists.
     ~RenderScene();
@@ -152,38 +152,38 @@ public:
 
     /// Adds an object and computes its world bounds.
     ///
-    /// Param desc: the object.
-    /// Returns: its id, or the invalid id (nothing added) if the scene is full.
-    /// Fails: reported through the return value.
-    /// Aborts: `desc.mesh` is null or empty.
+    /// - Param desc: the object.
+    /// - Returns: its id, or the invalid id (nothing added) if the scene is full.
+    /// - Fails: reported through the return value.
+    /// - Aborts: `desc.mesh` is null or empty.
     ObjectId AddObject(const RenderObjectDesc& desc);
 
     /// Removes an object; its id and every copy of it become stale.
     ///
-    /// Param id: a live object.
-    /// Aborts: `id` is invalid or stale.
+    /// - Param id: a live object.
+    /// - Aborts: `id` is invalid or stale.
     void RemoveObject(ObjectId id);
 
     /// Moves an object and recomputes its world bounds.
     ///
-    /// Param id: a live object.
-    /// Param transform: the new object-space to world-space transform; affine.
-    /// Aborts: `id` is invalid or stale.
+    /// - Param id: a live object.
+    /// - Param transform: the new object-space to world-space transform; affine.
+    /// - Aborts: `id` is invalid or stale.
     void SetTransform(ObjectId id, const Mat4& transform);
 
     /// Replaces an object's flag bits.
     ///
-    /// Param id: a live object.
-    /// Param flags: `ObjectFlags` bits.
-    /// Aborts: `id` is invalid or stale.
+    /// - Param id: a live object.
+    /// - Param flags: `ObjectFlags` bits.
+    /// - Aborts: `id` is invalid or stale.
     void SetFlags(ObjectId id, u32 flags);
 
     /// Looks an object up.
     ///
-    /// Param id: any id.
-    /// Returns: the object, or null if `id` is invalid or stale. The pointer stays valid until the object is removed.
-    /// Fails: reported through the return value.
-    /// Ownership: borrowed from the scene.
+    /// - Param id: any id.
+    /// - Returns: the object, or null if `id` is invalid or stale. The pointer stays valid until the object is removed.
+    /// - Fails: reported through the return value.
+    /// - Ownership: borrowed from the scene.
     const RenderObject* FindObject(ObjectId id) const;
 
     /// Returns the number of live objects.
@@ -194,39 +194,39 @@ public:
     /// [[renderer::RenderScene::SlotAlive]]).
     u32 SlotCount() const { return slots_used_; }
     /// Returns whether a slot holds a live object.
-    /// Aborts: `slot` is not below [[renderer::RenderScene::SlotCount]].
+    /// - Aborts: `slot` is not below [[renderer::RenderScene::SlotCount]].
     bool SlotAlive(u32 slot) const;
     /// Returns the object in a live slot.
-    /// Aborts: `slot` is out of range or dead.
+    /// - Aborts: `slot` is out of range or dead.
     const RenderObject& ObjectAt(u32 slot) const;
 
     /// Adds a light.
     ///
-    /// Param light: the light; a point light needs a positive radius.
-    /// Returns: its id, or the invalid id if the scene is full.
-    /// Fails: reported through the return value.
-    /// Aborts: a point light has a radius that is not positive, or an intensity below zero, or any value of the light is not finite.
+    /// - Param light: the light; a point light needs a positive radius.
+    /// - Returns: its id, or the invalid id if the scene is full.
+    /// - Fails: reported through the return value.
+    /// - Aborts: a point light has a radius that is not positive, or an intensity below zero, or any value of the light is not finite.
     LightId AddLight(const Light& light);
 
     /// Removes a light; its id becomes stale.
     ///
-    /// Param id: a live light.
-    /// Aborts: `id` is invalid or stale.
+    /// - Param id: a live light.
+    /// - Aborts: `id` is invalid or stale.
     void RemoveLight(LightId id);
 
     /// Replaces a light.
     ///
-    /// Param id: a live light.
-    /// Param light: the new values, checked as for [[renderer::RenderScene::AddLight]].
-    /// Aborts: `id` is invalid or stale, or `light` is invalid.
+    /// - Param id: a live light.
+    /// - Param light: the new values, checked as for [[renderer::RenderScene::AddLight]].
+    /// - Aborts: `id` is invalid or stale, or `light` is invalid.
     void SetLight(LightId id, const Light& light);
 
     /// Looks a light up.
     ///
-    /// Param id: any id.
-    /// Returns: the light, or null if `id` is invalid or stale.
-    /// Fails: reported through the return value.
-    /// Ownership: borrowed from the scene; valid until the light is removed.
+    /// - Param id: any id.
+    /// - Returns: the light, or null if `id` is invalid or stale.
+    /// - Fails: reported through the return value.
+    /// - Ownership: borrowed from the scene; valid until the light is removed.
     const Light* FindLight(LightId id) const;
 
     /// Returns the number of live lights.
@@ -234,20 +234,20 @@ public:
     /// Returns the number of light slots ever used.
     u32 LightSlotCount() const { return light_slots_used_; }
     /// Returns whether a light slot is live.
-    /// Aborts: `slot` is not below [[renderer::RenderScene::LightSlotCount]].
+    /// - Aborts: `slot` is not below [[renderer::RenderScene::LightSlotCount]].
     bool LightSlotAlive(u32 slot) const;
     /// Returns the light in a live slot.
-    /// Aborts: `slot` is out of range or dead.
+    /// - Aborts: `slot` is out of range or dead.
     const Light& LightAt(u32 slot) const;
 
     /// Finds the objects that may be visible: live, not hidden, and not culled by the frustum.
     ///
-    /// Param frustum: the view volume, in world space.
-    /// Param out_slots: receives the slot numbers in increasing order.
-    /// Param capacity: size of `out_slots`; at least [[renderer::RenderScene::SlotCount]].
-    /// Returns: the number of slots written.
-    /// Aborts: `out_slots` is null or `capacity` is below the slot count.
-    /// Ownership: `out_slots` is borrowed for the call.
+    /// - Param frustum: the view volume, in world space.
+    /// - Param out_slots: receives the slot numbers in increasing order.
+    /// - Param capacity: size of `out_slots`; at least [[renderer::RenderScene::SlotCount]].
+    /// - Returns: the number of slots written.
+    /// - Aborts: `out_slots` is null or `capacity` is below the slot count.
+    /// - Ownership: `out_slots` is borrowed for the call.
     u32 Cull(const Frustum& frustum, u32* out_slots, u32 capacity) const;
 
     /// How [[renderer::RenderScene::Cull]] finds the visible objects.
@@ -256,14 +256,14 @@ public:
         Flat,    ///< A scan of every slot: the reference, kept to compare the two paths.
     };
     /// Chooses how `Cull` works. Both give the same slots in the same (increasing) order.
-    /// Fails: never.
+    /// - Fails: never.
     void SetCullMode(CullMode mode) { cull_mode_ = mode; }
     /// The current cull mode.
-    /// Fails: never.
+    /// - Fails: never.
     CullMode GetCullMode() const { return cull_mode_; }
     /// Rebalances the culling hierarchy a little (call between frames when many objects moved); a no-op in `Flat` mode.
-    /// Param budget: how much work to do (see [[spatial::SpatialSet::Optimize]]).
-    /// Fails: never.
+    /// - Param budget: how much work to do (see [[spatial::SpatialSet::Optimize]]).
+    /// - Fails: never.
     void OptimizeCulling(u32 budget);
 
 private:

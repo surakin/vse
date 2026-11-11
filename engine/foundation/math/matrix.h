@@ -15,7 +15,7 @@ namespace engine_placeholder {
 /// The default-constructed matrix has all-zero columns; use `Identity` for the
 /// identity.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct Mat3 {
     /// The columns; `col[j][i]` is the element in row `i`, column `j`.
     Vec3 col[3];
@@ -31,9 +31,9 @@ struct Mat3 {
 
     /// Builds a matrix whose columns are the three given axes.
     ///
-    /// Param x_axis: first column.
-    /// Param y_axis: second column.
-    /// Param z_axis: third column.
+    /// - Param x_axis: first column.
+    /// - Param y_axis: second column.
+    /// - Param z_axis: third column.
     static Mat3 FromBasis(const Vec3& x_axis, const Vec3& y_axis, const Vec3& z_axis) {
         Mat3 m;
         m.col[0] = x_axis;
@@ -67,7 +67,7 @@ inline Mat3 operator*(const Mat3& a, const Mat3& b) {
 /// The default-constructed matrix has all-zero columns; use `Identity` for the
 /// identity.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct Mat4 {
     /// The columns; `col[j][i]` is the element in row `i`, column `j`.
     Vec4 col[4];
@@ -84,10 +84,10 @@ struct Mat4 {
 
     /// Builds an affine matrix from three axes (w = 0) and a translation (w = 1).
     ///
-    /// Param x_axis: first column.
-    /// Param y_axis: second column.
-    /// Param z_axis: third column.
-    /// Param translation: fourth column.
+    /// - Param x_axis: first column.
+    /// - Param y_axis: second column.
+    /// - Param z_axis: third column.
+    /// - Param translation: fourth column.
     static Mat4 FromBasis(const Vec3& x_axis, const Vec3& y_axis, const Vec3& z_axis, const Vec3& translation) {
         Mat4 m;
         m.col[0] = Vec4(x_axis, 0);
@@ -99,10 +99,10 @@ struct Mat4 {
 
     /// Builds a matrix directly from four columns.
     ///
-    /// Param c0: first column.
-    /// Param c1: second column.
-    /// Param c2: third column.
-    /// Param c3: fourth column.
+    /// - Param c0: first column.
+    /// - Param c1: second column.
+    /// - Param c2: third column.
+    /// - Param c3: fourth column.
     static Mat4 FromColumns(const Vec4& c0, const Vec4& c1, const Vec4& c2, const Vec4& c3) {
         Mat4 m;
         m.col[0] = c0;

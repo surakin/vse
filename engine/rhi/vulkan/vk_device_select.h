@@ -23,7 +23,7 @@ enum class GpuKind : u8 {
 
 /// One queue family of a physical device.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct QueueFamilyInfo {
     /// Number of queues in the family.
     u32 queue_count = 0;
@@ -41,7 +41,7 @@ struct QueueFamilyInfo {
 
 /// Everything the selection policy needs to know about one physical device.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct PhysicalDeviceInfo {
     /// The device name as reported by the driver, null-terminated.
     char name[256] = {};
@@ -89,26 +89,26 @@ struct PhysicalDeviceInfo {
 /// timeline semaphores, or has no queue family with graphics and compute (and, when `presentable`, one that
 /// also presents and a swapchain extension).
 ///
-/// Param info: the device description.
-/// Param presentable: whether the device must be able to present to a window.
-/// Returns: a static explanation, or null if suitable.
-/// Ownership: the string is static.
+/// - Param info: the device description.
+/// - Param presentable: whether the device must be able to present to a window.
+/// - Returns: a static explanation, or null if suitable.
+/// - Ownership: the string is static.
 const char* RejectionReason(const PhysicalDeviceInfo& info, bool presentable);
 
 /// Builds the stable adapter id of a physical device: `vk-<vendor>-<device>-<uuid>`, lowercase hex.
 ///
 /// The id does not depend on the enumeration order, so a saved setting survives another GPU being added.
 ///
-/// Param info: the device description.
-/// Param out: receives the null-terminated id.
-/// Param capacity: size of `out` in bytes; at least `kAdapterIdBytes`.
+/// - Param info: the device description.
+/// - Param out: receives the null-terminated id.
+/// - Param capacity: size of `out` in bytes; at least `kAdapterIdBytes`.
 void MakeAdapterId(const PhysicalDeviceInfo& info, char* out, usize capacity);
 
 /// Describes a physical device as an adapter.
 ///
-/// Param info: the device description.
-/// Param presentable: whether the device must be able to present (the enumeration was given a window).
-/// Returns: the adapter; `suitable` and `unsuitable_reason` come from [[rhi::vulkan::RejectionReason]].
+/// - Param info: the device description.
+/// - Param presentable: whether the device must be able to present (the enumeration was given a window).
+/// - Returns: the adapter; `suitable` and `unsuitable_reason` come from [[rhi::vulkan::RejectionReason]].
 AdapterInfo MakeAdapterInfo(const PhysicalDeviceInfo& info, bool presentable);
 
 /// Chooses the physical device to use.
@@ -119,23 +119,23 @@ AdapterInfo MakeAdapterInfo(const PhysicalDeviceInfo& info, bool presentable);
 /// device whose name contains it, ignoring case; the text is first tried as an adapter id (see
 /// [[rhi::MatchAdapter]]). The override must match a suitable device or selection fails. The whole ranking and every rejection reason is logged on `LogRhi`.
 ///
-/// Param devices: the candidate devices.
-/// Param count: number of candidates; at most `kMaxPhysicalDevices` are considered.
-/// Param presentable: whether the device must be able to present.
-/// Param override_text: the value of `ENGINE_RHI_GPU`, or null/empty for none.
-/// Returns: the index of the chosen device, or -1.
-/// Fails: returns -1 if no device is suitable or the override matches no suitable device.
+/// - Param devices: the candidate devices.
+/// - Param count: number of candidates; at most `kMaxPhysicalDevices` are considered.
+/// - Param presentable: whether the device must be able to present.
+/// - Param override_text: the value of `ENGINE_RHI_GPU`, or null/empty for none.
+/// - Returns: the index of the chosen device, or -1.
+/// - Fails: returns -1 if no device is suitable or the override matches no suitable device.
 int SelectPhysicalDevice(const PhysicalDeviceInfo* devices, usize count, bool presentable, const char* override_text);
 
 /// As [[rhi::vulkan::SelectPhysicalDevice]] (see there), naming where the request came from in the log lines.
 ///
-/// Param source: a static label such as `"DeviceCreateInfo::adapter"` or `"ENGINE_RHI_GPU"`.
+/// - Param source: a static label such as `"DeviceCreateInfo::adapter"` or `"ENGINE_RHI_GPU"`.
 int SelectPhysicalDeviceFor(const PhysicalDeviceInfo* devices, usize count, bool presentable, const char* override_text,
                             const char* source);
 
 /// The queue families chosen for a device.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct QueuePlan {
     /// The family used for graphics, compute and presentation; `-1` if none is usable.
     int graphics_family = -1;
@@ -149,9 +149,9 @@ struct QueuePlan {
 /// Plans the queues for a device: the first family that supports graphics and compute (and presenting, when
 /// `presentable`), and a dedicated transfer family if one exists.
 ///
-/// Param info: the device description.
-/// Param presentable: whether the graphics family must be able to present.
-/// Returns: the plan; `graphics_family` is -1 if the device has no usable family.
+/// - Param info: the device description.
+/// - Param presentable: whether the graphics family must be able to present.
+/// - Returns: the plan; `graphics_family` is -1 if the device has no usable family.
 QueuePlan PlanQueues(const PhysicalDeviceInfo& info, bool presentable);
 
 } // namespace engine_placeholder::rhi::vulkan

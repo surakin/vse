@@ -32,7 +32,7 @@ enum class MigrationOp : u8 {
 
 /// One step: it upgrades `section` from schema version `from_version` to `from_version + 1`.
 ///
-/// Thread-safety: thread-compatible plain data; the strings are borrowed (use literals).
+/// - Thread-safety: thread-compatible plain data; the strings are borrowed (use literals).
 struct MigrationStep {
     /// The section (a valid key such as `renderer`).
     const char* section = nullptr;
@@ -56,7 +56,7 @@ struct MigrationStep {
 
 /// What a migration run did, one line per step applied.
 ///
-/// Thread-safety: thread-compatible.
+/// - Thread-safety: thread-compatible.
 struct MigrationReport {
     /// A line for each step that changed something, and for each failure.
     Vector<String<HeapAllocator>> notes;
@@ -72,13 +72,13 @@ struct MigrationReport {
 
 /// The steps an application registers, applied to a store on load.
 ///
-/// Thread-safety: thread-compatible.
-/// Ownership: copies the steps (the strings in them are borrowed).
+/// - Thread-safety: thread-compatible.
+/// - Ownership: copies the steps (the strings in them are borrowed).
 class MigrationSet {
 public:
     /// Adds a step.
     ///
-    /// Aborts: `section` or `key` is null, or the section is not a valid key.
+    /// - Aborts: `section` or `key` is null, or the section is not a valid key.
     void Add(const MigrationStep& step);
     /// Returns the number of steps.
     usize Size() const { return steps_.Size(); }
@@ -86,9 +86,9 @@ public:
     /// Upgrades `store` (already loaded) from the versions it records to the versions `registry` declares, and records the new versions
     /// (`<section>.schema`) in it. Steps run in order of `from_version`, then registration order. Running it again does nothing.
     ///
-    /// Param registry: the declared schema versions.
-    /// Param store: the writable store to upgrade (normally the user's file).
-    /// Param report: receives what was done; may be null.
+    /// - Param registry: the declared schema versions.
+    /// - Param store: the writable store to upgrade (normally the user's file).
+    /// - Param report: receives what was done; may be null.
     void Migrate(const Registry& registry, ConfigStore& store, MigrationReport* report) const;
 
 private:

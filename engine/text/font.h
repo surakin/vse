@@ -42,8 +42,8 @@ enum class Error : u8 {
 
 /// The result of a text operation: an [[text::Error]] and a short message that names the cause.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: `message` points at a string literal; owns nothing.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: `message` points at a string literal; owns nothing.
 struct Status {
     Error error = Error::None;     ///< What went wrong; [[text::Error::None]] means success.
     const char* message = "";      ///< The cause in words, for logs.
@@ -51,13 +51,13 @@ struct Status {
 
     /// Returns true on success.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool Ok() const { return error == Error::None; }
     /// Returns a failure with `e` and `message`.
     ///
-    /// Param e: the error.
-    /// Param message: a string literal (or other string that outlives the status) naming the cause.
-    /// Fails: never.
+    /// - Param e: the error.
+    /// - Param message: a string literal (or other string that outlives the status) naming the cause.
+    /// - Fails: never.
     static Status Of(Error e, const char* message) {
         Status status;
         status.error = e;
@@ -66,7 +66,7 @@ struct Status {
     }
     /// Returns true when the status is exactly `e`.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool Is(Error e) const { return error == e; }
 };
 
@@ -80,8 +80,8 @@ enum class Hinting : u8 {
 
 /// Options of [[text::Font::Open]].
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: owns nothing.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns nothing.
 struct FontOptions {
     u32 face_index = 0;             ///< Which face of a collection to open (0 for a plain font file).
     Hinting hinting = Hinting::Light; ///< The hinting mode of every size of this font.
@@ -89,8 +89,8 @@ struct FontOptions {
 
 /// The vertical metrics of a font at its current pixel size, in pixels.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: owns nothing.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns nothing.
 struct FontMetrics {
     f32 ascent = 0;          ///< Distance from the baseline up to the top of the line (positive).
     f32 descent = 0;         ///< Distance from the baseline down to the bottom of the line (positive).
@@ -100,8 +100,8 @@ struct FontMetrics {
 
 /// The metrics of one glyph at the font's current pixel size, in pixels (y grows up).
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: owns nothing.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns nothing.
 struct GlyphMetrics {
     f32 advance = 0;     ///< Horizontal distance to the next pen position (vertical layout is out of scope).
     f32 bearing_x = 0;   ///< Distance from the pen to the left edge of the glyph's box.
@@ -112,8 +112,8 @@ struct GlyphMetrics {
 
 /// One point of a glyph outline, in font units.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: owns nothing.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns nothing.
 struct OutlinePoint {
     i32 x = 0;             ///< Horizontal position in font units.
     i32 y = 0;             ///< Vertical position in font units (y grows up).
@@ -123,8 +123,8 @@ struct OutlinePoint {
 
 /// A rasterized glyph: 8-bit coverage, one byte per pixel, rows top to bottom with no padding (the pitch is `width`).
 ///
-/// Thread-safety: thread-compatible.
-/// Ownership: owns its pixels.
+/// - Thread-safety: thread-compatible.
+/// - Ownership: owns its pixels.
 struct GlyphBitmap {
     u32 width = 0;        ///< Columns; 0 for a glyph with no outline (a space).
     u32 height = 0;       ///< Rows; 0 for a glyph with no outline.
@@ -136,8 +136,8 @@ struct GlyphBitmap {
 
 /// A glyph outline: closed contours of points, unscaled (the Phase 25 mesh builder's input).
 ///
-/// Thread-safety: thread-compatible.
-/// Ownership: owns its vectors.
+/// - Thread-safety: thread-compatible.
+/// - Ownership: owns its vectors.
 struct Outline {
     Vector<OutlinePoint> points;   ///< All points, contour after contour.
     Vector<u32> contour_ends;      ///< Index of the last point of each contour.
@@ -152,26 +152,26 @@ struct Outline {
 /// A program normally has one. FreeType's library and faces are not thread-safe, so two threads that work in parallel use two libraries.
 /// The library must outlive its fonts; the destructor aborts when a font is still open.
 ///
-/// Thread-safety: thread-compatible; `Stats` and `FailAllocationsAfter` are safe to call while a font of this library is used on another thread.
-/// Ownership: owns the FreeType library; not copyable and not movable (fonts point at it).
+/// - Thread-safety: thread-compatible; `Stats` and `FailAllocationsAfter` are safe to call while a font of this library is used on another thread.
+/// - Ownership: owns the FreeType library; not copyable and not movable (fonts point at it).
 class FontLibrary {
 public:
     /// Creates a library that is not initialized; call [[text::FontLibrary::Initialize]].
     FontLibrary();
     /// Destroys the library.
     ///
-    /// Aborts: a [[text::Font]] opened from this library is still alive.
+    /// - Aborts: a [[text::Font]] opened from this library is still alive.
     ~FontLibrary();
     FontLibrary(const FontLibrary&) = delete;
     FontLibrary& operator=(const FontLibrary&) = delete;
 
     /// Starts FreeType with the engine's allocator and module list.
     ///
-    /// Fails: `OutOfMemory` when FreeType could not start; the library stays unusable.
+    /// - Fails: `OutOfMemory` when FreeType could not start; the library stays unusable.
     Status Initialize();
     /// Returns true after a successful [[text::FontLibrary::Initialize]].
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool IsInitialized() const;
     /// Returns the version of the FreeType library.
     LibraryVersion Version() const;
@@ -179,7 +179,7 @@ public:
     LibraryAllocationStats Stats() const;
     /// A test aid: the allocation number `count` from now (0 = the next one) and every later one fail, until reset with `~u64{0}`.
     ///
-    /// Param count: allocations that still succeed; `~u64{0}` turns the injection off.
+    /// - Param count: allocations that still succeed; `~u64{0}` turns the injection off.
     void FailAllocationsAfter(u64 count);
 
 private:
@@ -195,8 +195,8 @@ private:
 /// at once is not supported (`FT_Face` is not thread-safe), **including the const calls**: `Metrics`, `FindGlyph`, `Kerning` and `LoadOutline` load into the face's
 /// shared glyph slot. Use one `Font` per thread or an external lock.
 ///
-/// Thread-safety: thread-compatible.
-/// Ownership: owns the face and the font bytes; borrows the [[text::FontLibrary]], which must outlive it.
+/// - Thread-safety: thread-compatible.
+/// - Ownership: owns the face and the font bytes; borrows the [[text::FontLibrary]], which must outlive it.
 class Font {
 public:
     /// Creates a font that is not open.
@@ -213,23 +213,23 @@ public:
     /// Opens the face in `data` (a TrueType, OpenType or other FreeType-readable font file); the bytes are copied.
     ///
     /// The pixel size starts at 16.
-    /// Param library: an initialized library that outlives the font.
-    /// Param data: the whole font file.
-    /// Param options: face index and hinting.
-    /// Param out: receives the font; must not be null.
-    /// Ownership: `out` owns a copy of `data`; the library is borrowed and must outlive it.
-    /// Fails: `Empty` for zero bytes, `NotAFont` for data that is no font, `Corrupt` for a damaged or truncated font, `Unsupported` for a face index out of range or a font without
+    /// - Param library: an initialized library that outlives the font.
+    /// - Param data: the whole font file.
+    /// - Param options: face index and hinting.
+    /// - Param out: receives the font; must not be null.
+    /// - Ownership: `out` owns a copy of `data`; the library is borrowed and must outlive it.
+    /// - Fails: `Empty` for zero bytes, `NotAFont` for data that is no font, `Corrupt` for a damaged or truncated font, `Unsupported` for a face index out of range or a font without
     ///   scalable outlines, `OutOfMemory`, `InvalidArgument` for an uninitialized library; `out` is left not open.
     static Status Open(FontLibrary& library, ByteSpan data, const FontOptions& options, Font* out);
     /// Reads the file at `path` through the file layer and opens it as [[text::Font::Open]] does.
     ///
-    /// Ownership: as [[text::Font::Open]]; the file is read whole and closed before the call returns.
-    /// Fails: `NotFound` (with the file layer's error in `io_error`) when the file cannot be read, plus the errors of [[text::Font::Open]].
+    /// - Ownership: as [[text::Font::Open]]; the file is read whole and closed before the call returns.
+    /// - Fails: `NotFound` (with the file layer's error in `io_error`) when the file cannot be read, plus the errors of [[text::Font::Open]].
     static Status OpenFile(FontLibrary& library, const io::Path& path, const FontOptions& options, Font* out);
 
     /// Returns true when a face is open.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool IsOpen() const;
     /// Closes the face; harmless on a font that is not open.
     void Close();
@@ -237,7 +237,7 @@ public:
     /// Sets the pixel size (the size of the em square in pixels). Metrics, advances and outlines use it from now on.
     ///
     /// Sizes above [[text::kMaxAtlasPixelSize]] are accepted (only rasterization refuses them).
-    /// Fails: `InvalidArgument` for 0, above [[text::kMaxPixelSize]], or on a font that is not open; the size is unchanged.
+    /// - Fails: `InvalidArgument` for 0, above [[text::kMaxPixelSize]], or on a font that is not open; the size is unchanged.
     Status SetPixelSize(u32 pixels);
     /// Returns the current pixel size (0 when not open).
     u32 PixelSize() const;
@@ -252,30 +252,30 @@ public:
 
     /// Returns the glyph for `codepoint` through the character map.
     ///
-    /// Returns: `.notdef` (0) when the font has no glyph, and for invalid code points (surrogates, above U+10FFFF).
+    /// - Returns: `.notdef` (0) when the font has no glyph, and for invalid code points (surrogates, above U+10FFFF).
     GlyphId FindGlyph(char32 codepoint) const;
     /// Returns true when the font has a real glyph for `codepoint`.
     ///
-    /// Fails: never; an invalid code point has no glyph.
+    /// - Fails: never; an invalid code point has no glyph.
     bool HasGlyph(char32 codepoint) const;
     /// Returns the metrics of `glyph` at the current size (all zero for a glyph id out of range or a font that is not open).
     GlyphMetrics Metrics(GlyphId glyph) const;
     /// Returns the kerning adjustment in pixels between two glyphs.
     ///
-    /// Returns: the amount to add to the advance of `left` when `right` follows (negative pulls them together); 0 when the font has no such pair.
+    /// - Returns: the amount to add to the advance of `left` when `right` follows (negative pulls them together); 0 when the font has no such pair.
     ///
     /// Only the font's `kern` table is read (`FT_Get_Kerning`); GPOS pair adjustment is not (the guide lists the limit).
     f32 Kerning(GlyphId left, GlyphId right) const;
     /// Rasterizes `glyph` at the current size with the font's hinting mode into 8-bit coverage.
     ///
-    /// Ownership: `out` owns its pixels.
-    /// Fails: `TooLarge` when the pixel size is above [[text::kMaxAtlasPixelSize]] (nothing is rendered), `InvalidArgument` for a glyph id out of range or a font that is not
+    /// - Ownership: `out` owns its pixels.
+    /// - Fails: `TooLarge` when the pixel size is above [[text::kMaxAtlasPixelSize]] (nothing is rendered), `InvalidArgument` for a glyph id out of range or a font that is not
     ///   open, `OutOfMemory`; `out` is cleared first.
     Status Render(GlyphId glyph, GlyphBitmap* out) const;
     /// Loads the unscaled outline of `glyph` in font units.
     ///
-    /// Ownership: `out` owns the points and contours; they stay valid after the font closes.
-    /// Fails: `InvalidArgument` for a glyph id out of range, `Unsupported` for a glyph with no outline data (a bitmap-only glyph), `OutOfMemory`; `out` is cleared.
+    /// - Ownership: `out` owns the points and contours; they stay valid after the font closes.
+    /// - Fails: `InvalidArgument` for a glyph id out of range, `Unsupported` for a glyph with no outline data (a bitmap-only glyph), `OutOfMemory`; `out` is cleared.
     Status LoadOutline(GlyphId glyph, Outline* out) const;
 
 private:

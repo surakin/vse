@@ -7,7 +7,7 @@ namespace demo {
 class Shape {
 public:
     /// Returns the area.
-    /// Returns: the area in square units.
+    /// - Returns: the area in square units.
     virtual double Area() const;
     /// Draws the shape.
     virtual void Draw();
@@ -22,7 +22,7 @@ public:
 };
 
 /// An internal-only helper.
-/// Internal: exposed so tests can reach it.
+/// - Internal: exposed so tests can reach it.
 void HelperForTests();
 
 } // namespace demo

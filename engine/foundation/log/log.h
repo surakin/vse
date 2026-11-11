@@ -27,16 +27,16 @@ enum class LogVerbosity : u8 {
 /// [[LogChannel::Find]]), so channels are meant to be long-lived globals and
 /// must never be destroyed while the program can still look them up.
 ///
-/// Thread-safety: not-thread-safe. Construct channels during static
+/// - Thread-safety: not-thread-safe. Construct channels during static
 ///   initialization; the verbosity and enable setters are unsynchronized.
-/// Ownership: does not own `name`; the string must outlive the channel.
+/// - Ownership: does not own `name`; the string must outlive the channel.
 class LogChannel {
 public:
     /// Creates a channel, enabled, and adds it to the global registry.
     ///
-    /// Param name: channel name used in output and in the settings keys (`log.<name>.verbosity`); must be a
+    /// - Param name: channel name used in output and in the settings keys (`log.<name>.verbosity`); must be a
     ///   string that outlives the channel (typically a literal).
-    /// Param default_verbosity: initial threshold.
+    /// - Param default_verbosity: initial threshold.
     explicit LogChannel(const char* name, LogVerbosity default_verbosity = LogVerbosity::Warn);
 
     /// Returns the channel name as passed to the constructor.
@@ -53,23 +53,23 @@ public:
 
     /// Reports whether a message of severity `level` would be emitted.
     ///
-    /// Param level: severity of the candidate message.
-    /// Returns: true if the channel is enabled and `level` is at most the
+    /// - Param level: severity of the candidate message.
+    /// - Returns: true if the channel is enabled and `level` is at most the
     ///   channel's verbosity.
     bool ShouldLog(LogVerbosity level) const { return enabled_ && level <= verbosity_; }
 
     /// Looks up a registered channel by name, for config-file overrides.
     ///
-    /// Param name: exact, case-sensitive channel name.
-    /// Returns: the channel, or nullptr if none has that name.
-    /// Fails: reports an unknown name by returning nullptr.
-    /// Ownership: the channel is owned by whoever constructed it.
+    /// - Param name: exact, case-sensitive channel name.
+    /// - Returns: the channel, or nullptr if none has that name.
+    /// - Fails: reports an unknown name by returning nullptr.
+    /// - Ownership: the channel is owned by whoever constructed it.
     static LogChannel* Find(StringView name);
 
     /// Returns the first channel of the global registry (the most recently constructed), or null; `Next` walks the rest.
     ///
-    /// Fails: never.
-    /// Thread-safety: not-thread-safe against channel construction.
+    /// - Fails: never.
+    /// - Thread-safety: not-thread-safe against channel construction.
     static LogChannel* First() { return head_; }
     /// Returns the channel constructed before this one, or null at the end of the registry.
     LogChannel* Next() const { return next_; }
@@ -98,40 +98,40 @@ using RecentLogLineFn = void (*)(const char* line, usize length, void* context);
 /// that is being overwritten while it is read is skipped, so every line delivered is whole. Reads no file and allocates
 /// nothing.
 ///
-/// Param callback: called once per line.
-/// Param context: passed through to `callback`; borrowed for the call.
-/// Param max_lines: deliver at most this many of the newest lines (0 means no limit beyond the ring size).
-/// Thread-safety: thread-safe and async-signal-safe: lock-free, concurrent with any number of [[Log]] calls.
+/// - Param callback: called once per line.
+/// - Param context: passed through to `callback`; borrowed for the call.
+/// - Param max_lines: deliver at most this many of the newest lines (0 means no limit beyond the ring size).
+/// - Thread-safety: thread-safe and async-signal-safe: lock-free, concurrent with any number of [[Log]] calls.
 void ReadRecentLogLines(RecentLogLineFn callback, void* context, usize max_lines = 0);
 
 /// Returns how many lines have been logged so far (the number [[ReadLogLinesSince]] returns once it has read them all), so a reader can start from now.
 ///
-/// Thread-safety: thread-safe and async-signal-safe.
+/// - Thread-safety: thread-safe and async-signal-safe.
 u64 LogLinesWritten();
 
 /// Calls `callback` for the lines logged since `next`, oldest first, and returns the number to pass next time. A first call with 0 delivers what the ring still holds; lines the
 /// ring has already overwritten (more than [[kLogRingSlots]] since the last call) are not delivered, and the caller can see the gap from the returned numbers.
 ///
-/// Param next: the value an earlier call returned, or 0.
-/// Param callback: called once per whole line.
-/// Param context: passed through to `callback`; borrowed for the call.
-/// Returns: the number to pass as `next` to the following call: the count of lines logged so far, or less when a line was still being written by another thread (it is delivered by the next call).
-/// Thread-safety: thread-safe and async-signal-safe, like [[ReadRecentLogLines]].
+/// - Param next: the value an earlier call returned, or 0.
+/// - Param callback: called once per whole line.
+/// - Param context: passed through to `callback`; borrowed for the call.
+/// - Returns: the number to pass as `next` to the following call: the count of lines logged so far, or less when a line was still being written by another thread (it is delivered by the next call).
+/// - Thread-safety: thread-safe and async-signal-safe, like [[ReadRecentLogLines]].
 u64 ReadLogLinesSince(u64 next, RecentLogLineFn callback, void* context);
 
 /// Empties the ring of recent log lines. For tests.
-/// Thread-safety: not-thread-safe. Call only while no thread logs.
+/// - Thread-safety: not-thread-safe. Call only while no thread logs.
 void ResetLogRingForTesting();
 
 /// Makes every `Error` line carry a short stack trace under it, to find where an error came from. Off by default;
 /// [[debug::StartProgramDebugging]] turns it on in Debug builds. The output of lines at other levels does not change.
-/// Param enabled: true to add traces.
-/// Thread-safety: thread-safe.
+/// - Param enabled: true to add traces.
+/// - Thread-safety: thread-safe.
 void SetLogErrorTraces(bool enabled);
 
 /// Reports whether `Error` lines carry a trace.
-/// Returns: the setting made by [[SetLogErrorTraces]].
-/// Thread-safety: thread-safe.
+/// - Returns: the setting made by [[SetLogErrorTraces]].
+/// - Thread-safety: thread-safe.
 bool LogErrorTraces();
 
 /// Channel for core engine and foundation messages.
@@ -144,11 +144,11 @@ extern LogChannel LogPlatform;
 /// Writes `[Channel] LEVEL: message` plus a newline to the write sink (standard
 /// output by default) if the channel allows `level`.
 ///
-/// Param channel: channel to log on.
-/// Param level: severity of this message.
-/// Param message: text to print. The whole line is formatted into a 512-byte
+/// - Param channel: channel to log on.
+/// - Param level: severity of this message.
+/// - Param message: text to print. The whole line is formatted into a 512-byte
 ///   buffer, so overlong messages are cut; the line always ends with its newline.
-/// Thread-safety: thread-compatible. Formatting uses a stack buffer, but the
+/// - Thread-safety: thread-compatible. Formatting uses a stack buffer, but the
 ///   channel state it reads is unsynchronized.
 void Log(LogChannel& channel, LogVerbosity level, StringView message);
 

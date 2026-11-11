@@ -12,7 +12,7 @@ namespace engine_placeholder {
 
 /// A sphere.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct Sphere {
     /// The center.
     Vec3 center = Vec3(0, 0, 0);
@@ -25,7 +25,7 @@ using BoundingSphere = Sphere;
 
 /// An axis-aligned box. A box with `min` above `max` on some axis is empty ([[Aabb::Empty]], [[Aabb::IsEmpty]]).
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct Aabb {
     /// The corner with the smallest coordinates.
     Vec3 min = Vec3(0, 0, 0);
@@ -45,9 +45,9 @@ struct Aabb {
     static Aabb Empty();
     /// Returns the box with these corners.
     ///
-    /// Param min: the smallest corner.
-    /// Param max: the largest corner.
-    /// Returns: the box (not checked: `min` above `max` gives an empty box).
+    /// - Param min: the smallest corner.
+    /// - Param max: the largest corner.
+    /// - Returns: the box (not checked: `min` above `max` gives an empty box).
     static Aabb FromMinMax(const Vec3& min, const Vec3& max) {
         Aabb box;
         box.min = min;
@@ -58,7 +58,7 @@ struct Aabb {
 
 /// A sphere and a box for the same object: the sphere is tested first and the box refines the result.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct Bounds {
     /// The enclosing sphere.
     Sphere sphere;
@@ -68,7 +68,7 @@ struct Bounds {
 
 /// A plane `dot(normal, p) + d = 0`; points with a non-negative value are on the inside (the side the normal points to).
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct Plane {
     /// The unit normal, pointing to the inside.
     Vec3 normal = Vec3(0, 1, 0);
@@ -80,17 +80,17 @@ struct Plane {
 
     /// Returns the plane through `point` with the normal `normal`.
     ///
-    /// Param normal: the normal; normalized here.
-    /// Param point: a point on the plane.
-    /// Returns: the plane.
-    /// Aborts: `normal` has zero length.
+    /// - Param normal: the normal; normalized here.
+    /// - Param point: a point on the plane.
+    /// - Returns: the plane.
+    /// - Aborts: `normal` has zero length.
     static Plane FromPointNormal(const Vec3& point, const Vec3& normal);
 };
 
 /// A ray: the points `origin + t * direction` for `t` from 0 up. `direction` need not have unit length; distances along the ray are in units of its
 /// length. The inverse direction is kept for the box (slab) test of `Intersect`, so make rays with [[Ray::Make]].
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct Ray {
     /// Where the ray starts.
     Vec3 origin = Vec3(0, 0, 0);
@@ -101,10 +101,10 @@ struct Ray {
 
     /// Returns the ray from `origin` along `direction`, its inverse direction filled in.
     ///
-    /// Param origin: the start point.
-    /// Param direction: the direction; any length but zero.
-    /// Returns: the ray.
-    /// Aborts: `direction` is zero.
+    /// - Param origin: the start point.
+    /// - Param direction: the direction; any length but zero.
+    /// - Returns: the ray.
+    /// - Aborts: `direction` is zero.
     static Ray Make(const Vec3& origin, const Vec3& direction);
 
     /// Returns the point at parameter `t`.
@@ -120,7 +120,7 @@ enum class Containment : u8 {
 
 /// Six planes bounding a visible volume, built from a view-projection matrix.
 ///
-/// Thread-safety: thread-compatible plain data; the tests are thread-safe.
+/// - Thread-safety: thread-compatible plain data; the tests are thread-safe.
 struct Frustum {
     /// Left, right, bottom, top, near, far. The vertical flip of the projection only swaps which of bottom and top is on screen, so the names are a
     /// convention.
@@ -129,66 +129,66 @@ struct Frustum {
     /// Extracts the planes of the volume that `view_projection` maps to clip space (x and y in -w..w, z in 0..w: Vulkan's depth range, the one
     /// `renderer::PerspectiveVulkan` builds).
     ///
-    /// Param view_projection: the matrix.
-    /// Returns: the frustum, planes normalized.
-    /// Aborts: a plane is degenerate, as with a zero or non-finite matrix.
+    /// - Param view_projection: the matrix.
+    /// - Returns: the frustum, planes normalized.
+    /// - Aborts: a plane is degenerate, as with a zero or non-finite matrix.
     static Frustum FromViewProjection(const Mat4& view_projection);
 
     /// Tests a sphere.
     ///
-    /// Param sphere: the sphere in the frustum's space.
-    /// Returns: `Outside` only if the sphere is entirely beyond one plane. Exact for single planes; near an edge of the frustum a sphere can be
+    /// - Param sphere: the sphere in the frustum's space.
+    /// - Returns: `Outside` only if the sphere is entirely beyond one plane. Exact for single planes; near an edge of the frustum a sphere can be
     ///   reported `Intersects` although it is outside (conservative).
-    /// Fails: never.
+    /// - Fails: never.
     Containment TestSphere(const Sphere& sphere) const;
 
     /// Tests an axis-aligned box.
     ///
-    /// Param box: the box in the frustum's space.
-    /// Returns: `Outside` only if the box is entirely beyond one plane (conservative near frustum corners).
-    /// Fails: never.
+    /// - Param box: the box in the frustum's space.
+    /// - Returns: `Outside` only if the box is entirely beyond one plane (conservative near frustum corners).
+    /// - Fails: never.
     Containment TestAabb(const Aabb& box) const;
 
     /// Decides whether an object with these bounds may be visible: the sphere first, and the box only when the sphere straddles a plane.
     ///
-    /// Param bounds: the object's bounds in the frustum's space.
-    /// Returns: false if the object can be culled.
-    /// Fails: never.
+    /// - Param bounds: the object's bounds in the frustum's space.
+    /// - Returns: false if the object can be culled.
+    /// - Fails: never.
     bool Visible(const Bounds& bounds) const;
 };
 
 /// Returns the smallest box around a set of points.
 ///
-/// Param points: `count` points of `stride_bytes` bytes apart, each starting with three `f32`.
-/// Param count: number of points; at least 1.
-/// Param stride_bytes: distance between points in bytes, at least 12.
-/// Returns: the box.
-/// Aborts: `points` is null, `count` is 0 or `stride_bytes` is below 12.
-/// Ownership: `points` is borrowed for the call.
-/// Thread-safety: thread-safe. A pure function of its arguments.
+/// - Param points: `count` points of `stride_bytes` bytes apart, each starting with three `f32`.
+/// - Param count: number of points; at least 1.
+/// - Param stride_bytes: distance between points in bytes, at least 12.
+/// - Returns: the box.
+/// - Aborts: `points` is null, `count` is 0 or `stride_bytes` is below 12.
+/// - Ownership: `points` is borrowed for the call.
+/// - Thread-safety: thread-safe. A pure function of its arguments.
 Aabb ComputeAabb(const void* points, u32 count, u32 stride_bytes);
 
 /// Returns bounds for a set of points: their box, and the sphere around the box center that reaches the farthest point.
 ///
 /// The sphere encloses every point but is not the smallest possible one.
 ///
-/// Param points: as for [[ComputeAabb]].
-/// Param count: number of points; at least 1.
-/// Param stride_bytes: distance between points in bytes, at least 12.
-/// Returns: the bounds.
-/// Aborts: as for [[ComputeAabb]].
-/// Ownership: `points` is borrowed for the call.
-/// Thread-safety: thread-safe. A pure function of its arguments.
+/// - Param points: as for [[ComputeAabb]].
+/// - Param count: number of points; at least 1.
+/// - Param stride_bytes: distance between points in bytes, at least 12.
+/// - Returns: the bounds.
+/// - Aborts: as for [[ComputeAabb]].
+/// - Ownership: `points` is borrowed for the call.
+/// - Thread-safety: thread-safe. A pure function of its arguments.
 Bounds ComputeBounds(const void* points, u32 count, u32 stride_bytes);
 
 /// Returns the box around a box after a transform: exactly the box of the eight transformed corners (Arvo's method). An empty box stays empty.
 ///
 /// Named `TransformAabb`, not `Transform`, because `math/transform.h` has a type of that name.
 ///
-/// Param box: the box in its own space.
-/// Param transform: an affine transform (the last row is 0 0 0 1).
-/// Returns: the box in the transformed space.
-/// Thread-safety: thread-safe. A pure function of its arguments.
+/// - Param box: the box in its own space.
+/// - Param transform: an affine transform (the last row is 0 0 0 1).
+/// - Returns: the box in the transformed space.
+/// - Thread-safety: thread-safe. A pure function of its arguments.
 Aabb TransformAabb(const Aabb& box, const Mat4& transform);
 
 /// Returns the bounds of an object after a transform.
@@ -196,10 +196,10 @@ Aabb TransformAabb(const Aabb& box, const Mat4& transform);
 /// The box is [[TransformAabb]] of the box (exact for rotations by multiples of 90 degrees, otherwise larger than the object); the sphere keeps its
 /// center transformed and its radius scaled by the largest axis scale.
 ///
-/// Param local: bounds in the object's own space.
-/// Param transform: an affine transform (the last row is 0 0 0 1).
-/// Returns: bounds in the transformed space.
-/// Thread-safety: thread-safe. A pure function of its arguments.
+/// - Param local: bounds in the object's own space.
+/// - Param transform: an affine transform (the last row is 0 0 0 1).
+/// - Returns: bounds in the transformed space.
+/// - Thread-safety: thread-safe. A pure function of its arguments.
 Bounds TransformBounds(const Bounds& local, const Mat4& transform);
 
 /// Returns the center of a box.
@@ -258,32 +258,32 @@ f32 Distance2(const Vec3& point, const Aabb& box);
 
 /// Finds where a ray enters a box (the slab test).
 ///
-/// Param ray: the ray, made with [[Ray::Make]].
-/// Param box: the box.
-/// Param max_t: the farthest parameter that counts (use a large value for an unbounded ray).
-/// Param t: receives the parameter at which the ray enters the box, 0 when it starts inside; may be null.
-/// Returns: whether the ray meets the box between parameter 0 and `max_t` (a graze of a face or an edge counts).
-/// Fails: returns false for an empty box, a box entirely behind the origin, or one beyond `max_t`.
+/// - Param ray: the ray, made with [[Ray::Make]].
+/// - Param box: the box.
+/// - Param max_t: the farthest parameter that counts (use a large value for an unbounded ray).
+/// - Param t: receives the parameter at which the ray enters the box, 0 when it starts inside; may be null.
+/// - Returns: whether the ray meets the box between parameter 0 and `max_t` (a graze of a face or an edge counts).
+/// - Fails: returns false for an empty box, a box entirely behind the origin, or one beyond `max_t`.
 bool Intersect(const Ray& ray, const Aabb& box, f32 max_t, f32* t);
 
 /// Finds where a ray first meets a sphere.
 ///
-/// Param ray: the ray.
-/// Param sphere: the sphere.
-/// Param max_t: the farthest parameter that counts.
-/// Param t: receives the parameter of the first point of the sphere on the ray, 0 when the ray starts inside; may be null.
-/// Returns: whether the ray meets the sphere between 0 and `max_t` (a tangent counts).
-/// Fails: returns false when it does not.
+/// - Param ray: the ray.
+/// - Param sphere: the sphere.
+/// - Param max_t: the farthest parameter that counts.
+/// - Param t: receives the parameter of the first point of the sphere on the ray, 0 when the ray starts inside; may be null.
+/// - Returns: whether the ray meets the sphere between 0 and `max_t` (a tangent counts).
+/// - Fails: returns false when it does not.
 bool Intersect(const Ray& ray, const Sphere& sphere, f32 max_t, f32* t);
 
 /// Finds where a ray crosses a plane.
 ///
-/// Param ray: the ray.
-/// Param plane: the plane.
-/// Param max_t: the farthest parameter that counts.
-/// Param t: receives the parameter of the crossing; may be null.
-/// Returns: whether the ray crosses the plane between 0 and `max_t`.
-/// Fails: returns false for a ray parallel to the plane (even one lying in it) or one that crosses it behind the origin or beyond `max_t`.
+/// - Param ray: the ray.
+/// - Param plane: the plane.
+/// - Param max_t: the farthest parameter that counts.
+/// - Param t: receives the parameter of the crossing; may be null.
+/// - Returns: whether the ray crosses the plane between 0 and `max_t`.
+/// - Fails: returns false for a ray parallel to the plane (even one lying in it) or one that crosses it behind the origin or beyond `max_t`.
 bool Intersect(const Ray& ray, const Plane& plane, f32 max_t, f32* t);
 
 } // namespace engine_placeholder

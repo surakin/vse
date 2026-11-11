@@ -12,7 +12,7 @@ inline constexpr f32 kUnbounded = 3.0e38f;
 
 /// What a widget is asked to fit in when it is measured: a smallest and a largest size per axis, in logical units. A maximum of `kUnbounded` means "as large as you like".
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct Constraints {
     f32 min_w = 0;           ///< Smallest width.
     f32 max_w = kUnbounded;  ///< Largest width.
@@ -21,7 +21,7 @@ struct Constraints {
 
     /// Returns `size` limited to these constraints (the maximum wins over the minimum if they cross).
     ///
-    /// Fails: never.
+    /// - Fails: never.
     Size Clamp(Size size) const {
         Size out = size;
         if (out.w < min_w) out.w = min_w;
@@ -32,7 +32,7 @@ struct Constraints {
     }
     /// Returns whether all four limits are equal.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool operator==(const Constraints& o) const { return min_w == o.min_w && max_w == o.max_w && min_h == o.min_h && max_h == o.max_h; }
 };
 
@@ -47,7 +47,7 @@ enum class Align : u8 {
 /// How a [[ui::AnchorLayout]] places a child: the edges are fractions of the content box plus offsets in logical units. When a minimum equals its maximum on an axis, the child
 /// has its preferred size there and `offset_min` moves its start edge.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct AnchorSpec {
     f32 min_x = 0;       ///< Left edge as a fraction of the content width.
     f32 min_y = 0;       ///< Top edge as a fraction of the content height.
@@ -64,7 +64,7 @@ struct AnchorSpec {
 /// A width or height of -1 means "from the content" (`Widget::Measure`); any other value is the preferred size, which a container uses to size the widget when it is not
 /// stretched (`Align::Stretch` fills the cell instead, so set `min` and `max` equal, or an alignment other than `Stretch`, for a fixed size). The size is always limited to `[min, max]`.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct LayoutProps {
     Size min;                                  ///< Smallest size; the container never makes the widget smaller unless it overflows.
     Size max = Size{kUnbounded, kUnbounded};   ///< Largest size.

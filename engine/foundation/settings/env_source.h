@@ -8,8 +8,8 @@ namespace engine_placeholder::settings {
 
 /// A copy of the process environment (or a made-up one in a test).
 ///
-/// Thread-safety: thread-compatible.
-/// Ownership: owns copies of the names and values.
+/// - Thread-safety: thread-compatible.
+/// - Ownership: owns copies of the names and values.
 class EnvironmentSnapshot {
 public:
     /// An empty snapshot. With `ignore_case`, names that differ only in ASCII case are one variable, as on Windows: a later `Add` replaces an
@@ -29,7 +29,7 @@ public:
     const String<HeapAllocator>* Find(StringView name) const;
     /// Copies the process environment.
     ///
-    /// Backend: Windows: GetEnvironmentStringsW converted to UTF-8; macOS: the environ array from _NSGetEnviron.
+    /// - Backend: Windows: GetEnvironmentStringsW converted to UTF-8; macOS: the environ array from _NSGetEnviron.
     static EnvironmentSnapshot Capture();
     /// Returns the number of variables.
     usize Size() const { return vars_.Size(); }
@@ -48,14 +48,14 @@ inline constexpr usize kMaxEnvNameBytes = 128;
 /// Writes the standard variable name of a key: `ENGINE_SETTING_` plus the key in upper case with each `.` replaced by `__`
 /// (`renderer.present_mode` is `ENGINE_SETTING_RENDERER__PRESENT_MODE`).
 ///
-/// Param key: a valid key.
-/// Param out: destination of at least [[settings::kMaxEnvNameBytes]] bytes.
+/// - Param key: a valid key.
+/// - Param out: destination of at least [[settings::kMaxEnvNameBytes]] bytes.
 void EnvironmentVariableFor(const Key& key, char* out, usize capacity);
 
 /// A read-only store over a list of `key -> text` entries, each with a note on where it came from. The base of the environment and command-line layers.
 ///
-/// Thread-safety: thread-compatible.
-/// Ownership: owns its entries.
+/// - Thread-safety: thread-compatible.
+/// - Ownership: owns its entries.
 class TextEntryStore : public ConfigStore {
 public:
     u32 Capabilities() const override { return kCapPreservesOrder; }
@@ -85,8 +85,8 @@ private:
 /// [[settings::EnvironmentVariableFor]]) or by the variable its declaration names in `env` (`ENGINE_RHI_GPU`); the standard name wins when both
 /// are set. Values are text; the layer stack converts them by the setting's type and reports a bad one with the variable's name.
 ///
-/// Thread-safety: thread-compatible.
-/// Ownership: copies what it needs; the registry need not outlive it.
+/// - Thread-safety: thread-compatible.
+/// - Ownership: copies what it needs; the registry need not outlive it.
 class EnvironmentSource final : public TextEntryStore {
 public:
     /// Reads the variables that apply to the registered settings.
@@ -97,7 +97,7 @@ public:
 
 /// What the command line asked for.
 ///
-/// Thread-safety: thread-compatible.
+/// - Thread-safety: thread-compatible.
 struct CommandLineResult {
     /// Arguments the settings system does not own, in order, for the application (the program name is not included).
     Vector<String<HeapAllocator>> rest;
@@ -120,15 +120,15 @@ struct CommandLineResult {
 /// a separate value), and `--settings FILE`, `--list-settings`, `--save-settings[=FILE]` and `--help`, which are recorded for the application.
 /// Everything else is left in [[settings::CommandLineResult::rest]]. A bare `--` ends the options: it and everything after it go to `rest` untouched.
 ///
-/// Thread-safety: thread-compatible.
-/// Ownership: copies what it needs.
+/// - Thread-safety: thread-compatible.
+/// - Ownership: copies what it needs.
 class CommandLineSource final : public TextEntryStore {
 public:
     /// Parses the arguments.
     ///
-    /// Param registry: the settings (for key checks and flag aliases).
-    /// Param argc: the argument count including the program name.
-    /// Param argv: the arguments; `argv[0]` is skipped.
+    /// - Param registry: the settings (for key checks and flag aliases).
+    /// - Param argc: the argument count including the program name.
+    /// - Param argv: the arguments; `argv[0]` is skipped.
     CommandLineSource(const Registry& registry, int argc, const char* const* argv);
 
     /// Returns what the parse found.
@@ -136,10 +136,10 @@ public:
 
     /// Adds a value the program derived from its own command line (an old flag such as `--no-vsync`), unless the arguments already gave the key.
     ///
-    /// Param key: the setting's key.
-    /// Param text: the value in its text form.
-    /// Param origin: what to show as the source, for example `--no-vsync`.
-    /// Returns: false if the key was already given, in which case nothing changes (an explicit `--set` wins over an old flag).
+    /// - Param key: the setting's key.
+    /// - Param text: the value in its text form.
+    /// - Param origin: what to show as the source, for example `--no-vsync`.
+    /// - Returns: false if the key was already given, in which case nothing changes (an explicit `--set` wins over an old flag).
     bool AddFromProgram(const Key& key, StringView text, StringView origin);
 
     void Describe(char* out, usize capacity) const override;

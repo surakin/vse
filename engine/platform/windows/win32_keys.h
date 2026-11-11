@@ -16,7 +16,7 @@ namespace engine_placeholder::os::win32 {
 
 /// What a `WM_KEYDOWN`, `WM_KEYUP`, `WM_SYSKEYDOWN` or `WM_SYSKEYUP` says about the key, with the character the layout gives it.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct Win32KeyMessage {
     /// The virtual-key code (`wParam`).
     u32 virtual_key = 0;
@@ -30,7 +30,7 @@ struct Win32KeyMessage {
 
 /// Returns the [[os::Key]] a key message names; `Key::Unknown` for keys the enum does not have.
 ///
-/// Param message: the key message and its character.
+/// - Param message: the key message and its character.
 Key KeyFromWin32(const Win32KeyMessage& message);
 
 /// The number of distinct [[os::win32::Win32KeyIndex]] values.
@@ -38,8 +38,8 @@ inline constexpr u32 kWin32KeyIndexCount = 512;
 
 /// Returns an index that tells physical keys apart: the scan code with the extended flag as bit 8 (below [[os::win32::kWin32KeyIndexCount]]).
 ///
-/// Param scan_code: the scan code (only the low 8 bits are used).
-/// Param extended: the extended-key flag.
+/// - Param scan_code: the scan code (only the low 8 bits are used).
+/// - Param extended: the extended-key flag.
 inline u32 Win32KeyIndex(u32 scan_code, bool extended) { return (scan_code & 0xFFu) | (extended ? 0x100u : 0u); }
 
 } // namespace engine_placeholder::os::win32

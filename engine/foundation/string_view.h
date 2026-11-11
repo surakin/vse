@@ -13,21 +13,21 @@ namespace engine_placeholder {
 /// The view does not require NUL termination and never copies; it is valid only
 /// while the viewed memory is. Comparison and searching are bytewise.
 ///
-/// Thread-safety: thread-compatible. Reading is safe from many threads while
+/// - Thread-safety: thread-compatible. Reading is safe from many threads while
 ///   the viewed memory is unchanged.
-/// Ownership: does not own the characters; the caller keeps them alive.
+/// - Ownership: does not own the characters; the caller keeps them alive.
 class StringView {
 public:
     /// Creates an empty view with a null data pointer.
     constexpr StringView() = default;
     /// Creates a view of `length` chars starting at `data`.
     ///
-    /// Param data: first character; not copied.
-    /// Param length: number of chars in the view.
+    /// - Param data: first character; not copied.
+    /// - Param length: number of chars in the view.
     constexpr StringView(const char* data, usize length) : data_(data), length_(length) {}
     /// Creates a view of a NUL-terminated string, excluding the terminator.
     ///
-    /// Param c_str: NUL-terminated string; must not be null.
+    /// - Param c_str: NUL-terminated string; must not be null.
     StringView(const char* c_str) : data_(c_str), length_(CStrLength(c_str)) {}
 
     /// Returns the pointer to the first char (not necessarily NUL-terminated).
@@ -39,7 +39,7 @@ public:
 
     /// Returns the byte at `index`.
     ///
-    /// Param index: byte position; must be less than `Length()` (not checked).
+    /// - Param index: byte position; must be less than `Length()` (not checked).
     char operator[](usize index) const { return data_[index]; }
 
     /// Returns true if both views have the same length and bytes.
@@ -59,8 +59,8 @@ public:
 
     /// Compares bytewise (as unsigned chars), shorter-prefix first.
     ///
-    /// Param other: view to compare against.
-    /// Returns: a negative value if this view sorts before `other`, zero if
+    /// - Param other: view to compare against.
+    /// - Returns: a negative value if this view sorts before `other`, zero if
     ///   equal, positive if after.
     int Compare(const StringView& other) const {
         usize min_len = length_ < other.length_ ? length_ : other.length_;
@@ -81,8 +81,8 @@ public:
 
     /// Returns the sub-range of `count` bytes starting at `start`, sharing the same memory.
     ///
-    /// Param start: first byte of the sub-range.
-    /// Param count: number of bytes; `start + count` must not exceed
+    /// - Param start: first byte of the sub-range.
+    /// - Param count: number of bytes; `start + count` must not exceed
     ///   `Length()` (not checked).
     StringView Substring(usize start, usize count) const {
         return StringView(data_ + start, count);
@@ -90,9 +90,9 @@ public:
 
     /// Finds the first occurrence of the byte `c`.
     ///
-    /// Param c: byte to look for.
-    /// Returns: its index, or `Length()` if it does not occur.
-    /// Fails: reports absence by returning `Length()`.
+    /// - Param c: byte to look for.
+    /// - Returns: its index, or `Length()` if it does not occur.
+    /// - Fails: reports absence by returning `Length()`.
     usize IndexOf(char c) const {
         for (usize i = 0; i < length_; ++i) {
             if (data_[i] == c) {
@@ -104,10 +104,10 @@ public:
 
     /// Finds the first occurrence of `pattern` as a substring.
     ///
-    /// Param pattern: bytes to search for.
-    /// Returns: the start index of the first match, or `Length()` if there is
+    /// - Param pattern: bytes to search for.
+    /// - Returns: the start index of the first match, or `Length()` if there is
     ///   none or `pattern` is empty.
-    /// Fails: reports absence by returning `Length()`.
+    /// - Fails: reports absence by returning `Length()`.
     usize Find(StringView pattern) const {
         if (pattern.length_ == 0 || pattern.length_ > length_) {
             return length_;
@@ -130,14 +130,14 @@ public:
 
     /// Returns the sub-range from `start` to the end, sharing the same memory.
     ///
-    /// Param start: first byte of the sub-range; must not exceed `Length()` (not checked).
+    /// - Param start: first byte of the sub-range; must not exceed `Length()` (not checked).
     StringView Substring(usize start) const { return StringView(data_ + start, length_ - start); }
 
     /// Finds the last occurrence of the byte `c`.
     ///
-    /// Param c: byte to look for.
-    /// Returns: its index, or `Length()` if it does not occur.
-    /// Fails: reports absence by returning `Length()`.
+    /// - Param c: byte to look for.
+    /// - Returns: its index, or `Length()` if it does not occur.
+    /// - Fails: reports absence by returning `Length()`.
     usize LastIndexOf(char c) const {
         for (usize i = length_; i > 0; --i) {
             if (data_[i - 1] == c) {

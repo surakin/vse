@@ -9,7 +9,7 @@ namespace engine_placeholder::net {
 
 /// Text of an endpoint in canonical form (`1.2.3.4:80`, `[::1]:80`). Same shape as [[net::AddressText]], with room for the brackets and the port.
 ///
-/// Thread-safety: immutable value.
+/// - Thread-safety: immutable value.
 struct EndpointText {
     /// The most characters an endpoint can take.
     static constexpr usize kCapacity = 71;
@@ -22,14 +22,14 @@ struct EndpointText {
     StringView View() const { return StringView(chars.Data(), length); }
     /// The text as a C string.
     ///
-    /// Ownership: borrowed from this value; valid while it lives.
-    /// Fails: never.
+    /// - Ownership: borrowed from this value; valid while it lives.
+    /// - Fails: never.
     const char* CStr() const { return chars.Data(); }
 };
 
 /// An [[net::Address]] and a port number (host order; port 0 means "any port" when binding).
 ///
-/// Thread-safety: immutable value.
+/// - Thread-safety: immutable value.
 class Endpoint {
 public:
     /// Creates an endpoint with no address and port 0.
@@ -42,9 +42,9 @@ public:
     /// The brackets are required (a bare IPv6 address is ambiguous and refused). The host is an address, not a name (names go through
     /// the resolver). The port is decimal, 0 to 65535, with no sign, no leading zeros and no spaces.
     ///
-    /// Ownership: `text` is only read during the call; nothing is retained.
-    /// Param out: receives the endpoint on success; untouched on failure.
-    /// Fails: [[net::ErrorCode::Invalid]] for anything else; `*out` is not written.
+    /// - Ownership: `text` is only read during the call; nothing is retained.
+    /// - Param out: receives the endpoint on success; untouched on failure.
+    /// - Fails: [[net::ErrorCode::Invalid]] for anything else; `*out` is not written.
     static Status Parse(StringView text, Endpoint* out);
 
     /// The address.
@@ -55,7 +55,7 @@ public:
     Endpoint WithPort(u16 port) const { return Endpoint(address_, port); }
 
     /// Formats the canonical text. An endpoint with no address formats as `:port`, which is for logs: [[net::Endpoint::Parse]] refuses it.
-    /// Fails: never.
+    /// - Fails: never.
     EndpointText Format() const;
 
     /// A well-mixed hash of the address and port.
@@ -75,7 +75,7 @@ private:
 
 /// A bounded list of endpoints, the shape of a resolver's answer. Order is the order added (the resolver puts the preferred family first).
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 class EndpointSet {
 public:
     /// The most endpoints a set holds.
@@ -83,7 +83,7 @@ public:
 
     /// Adds `endpoint` at the end. Returns false, adding nothing, when the set is full.
     ///
-    /// Fails: returns false when the set holds [[net::EndpointSet::kCapacity]] endpoints.
+    /// - Fails: returns false when the set holds [[net::EndpointSet::kCapacity]] endpoints.
     bool Add(const Endpoint& endpoint) {
         if (count_ >= kCapacity) return false;
         items_[count_++] = endpoint;
@@ -93,11 +93,11 @@ public:
     usize Count() const { return count_; }
     /// True when the set holds none.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool Empty() const { return count_ == 0; }
     /// The endpoint at `index`.
     ///
-    /// Aborts: `index` is not below [[net::EndpointSet::Count]] (checked in debug builds).
+    /// - Aborts: `index` is not below [[net::EndpointSet::Count]] (checked in debug builds).
     const Endpoint& operator[](usize index) const {
         ENGINE_ASSERT(index < count_, "EndpointSet::operator[]: the index is not below Count()");
         return items_[index];
@@ -116,7 +116,7 @@ namespace engine_placeholder {
 
 /// Hash function for [[net::Endpoint]] keys.
 ///
-/// Thread-safety: thread-safe.
+/// - Thread-safety: thread-safe.
 template <>
 struct Hash<net::Endpoint> {
     /// Returns [[net::Endpoint::HashValue]].

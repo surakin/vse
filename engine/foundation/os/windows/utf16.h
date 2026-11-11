@@ -15,18 +15,18 @@
 namespace engine_placeholder::os::windows {
 
 /// Converts UTF-8 to UTF-16.
-/// Returns: the number of `wchar_t` the whole result needs, not counting the terminator.
+/// - Returns: the number of `wchar_t` the whole result needs, not counting the terminator.
 usize Utf8ToUtf16(StringView utf8, wchar_t* out, usize capacity, usize* replaced = nullptr);
 
 /// Converts `length` UTF-16 code units to UTF-8.
-/// Returns: the number of bytes the whole result needs, not counting the terminator.
+/// - Returns: the number of bytes the whole result needs, not counting the terminator.
 usize Utf16ToUtf8(const wchar_t* utf16, usize length, char* out, usize capacity, usize* replaced = nullptr);
 
 /// Converts a UTF-8 path to the UTF-16 form a Win32 file function takes: '/' becomes '\', and an absolute path (`C:\...` or `\\server\share`)
 /// that does not fit in MAX_PATH - 1 gets the `\\?\` (or `\\?\UNC\`) prefix, which lifts the limit whatever `LongPathsEnabled` says.
 /// A path that already starts with `\\?\` or `\\.\` is kept as it is. Relative paths are never prefixed (the prefix turns off the
 /// relative-path rules).
-/// Returns: the number of `wchar_t` the whole result needs, not counting the terminator; if it is >= `capacity`, nothing usable was written.
+/// - Returns: the number of `wchar_t` the whole result needs, not counting the terminator; if it is >= `capacity`, nothing usable was written.
 usize PathToWin32(StringView utf8_path, wchar_t* out, usize capacity, usize* replaced = nullptr);
 
 } // namespace engine_placeholder::os::windows

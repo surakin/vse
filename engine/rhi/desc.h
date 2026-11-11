@@ -17,16 +17,16 @@ namespace engine_placeholder::rhi {
 
 /// Returns the number of mip levels in a full chain for an image of the given extent: `floor(log2(max)) + 1`.
 ///
-/// Param width: width in texels; must be at least 1.
-/// Param height: height in texels; must be at least 1.
-/// Param depth: depth in texels (1 for 2D); must be at least 1.
-/// Returns: the full chain length, at least 1; 0 if any extent is 0.
+/// - Param width: width in texels; must be at least 1.
+/// - Param height: height in texels; must be at least 1.
+/// - Param depth: depth in texels (1 for 2D); must be at least 1.
+/// - Returns: the full chain length, at least 1; 0 if any extent is 0.
 u32 MaxMipLevels(u32 width, u32 height, u32 depth = 1);
 
 /// Describes a buffer to create.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: `debug_name` is borrowed for the duration of the call; the device copies it.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: `debug_name` is borrowed for the duration of the call; the device copies it.
 struct BufferDesc {
     /// Size in bytes; must be non-zero.
     u64 size = 0;
@@ -39,9 +39,9 @@ struct BufferDesc {
 
     /// Checks the descriptor without a device.
     ///
-    /// Returns: null if the descriptor is acceptable, else the first problem.
-    /// Fails: reported through the return value, never by aborting.
-    /// Ownership: the returned string is static and is never freed by the caller.
+    /// - Returns: null if the descriptor is acceptable, else the first problem.
+    /// - Fails: reported through the return value, never by aborting.
+    /// - Ownership: the returned string is static and is never freed by the caller.
     ///
     /// A `GpuToCpu` buffer may only be a copy destination, because Direct3D 12 readback memory cannot be
     /// used for anything else.
@@ -50,8 +50,8 @@ struct BufferDesc {
 
 /// Describes a texture to create.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: `debug_name` is borrowed for the duration of the call; the device copies it.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: `debug_name` is borrowed for the duration of the call; the device copies it.
 struct TextureDesc {
     /// 2D, 3D or (reserved) cube.
     TextureDimension dimension = TextureDimension::Tex2D;
@@ -76,16 +76,16 @@ struct TextureDesc {
 
     /// Checks the descriptor without a device.
     ///
-    /// Returns: null if the descriptor is acceptable, else the first problem.
-    /// Fails: reported through the return value, never by aborting.
-    /// Ownership: the returned string is static and is never freed by the caller.
+    /// - Returns: null if the descriptor is acceptable, else the first problem.
+    /// - Fails: reported through the return value, never by aborting.
+    /// - Ownership: the returned string is static and is never freed by the caller.
     const char* Validate() const;
 };
 
 /// Describes a sampler to create.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: `debug_name` is borrowed for the duration of the call; the device copies it.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: `debug_name` is borrowed for the duration of the call; the device copies it.
 struct SamplerDesc {
     /// Filter used when magnifying.
     FilterMode mag_filter = FilterMode::Linear;
@@ -116,16 +116,16 @@ struct SamplerDesc {
 
     /// Checks the descriptor without a device.
     ///
-    /// Returns: null if the descriptor is acceptable, else the first problem.
-    /// Fails: reported through the return value, never by aborting.
-    /// Ownership: the returned string is static and is never freed by the caller.
+    /// - Returns: null if the descriptor is acceptable, else the first problem.
+    /// - Fails: reported through the return value, never by aborting.
+    /// - Ownership: the returned string is static and is never freed by the caller.
     const char* Validate() const;
 };
 
 /// One shader module's bytecode in one format: a pointer and a size, normally into a minted `*.spv.inc` or `*.dxil.inc`.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: `bytes` is borrowed; minted blobs are static.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: `bytes` is borrowed; minted blobs are static.
 struct ShaderBlob {
     /// The format of `bytes`.
     ShaderFormat format = ShaderFormat::Spirv;
@@ -136,35 +136,35 @@ struct ShaderBlob {
 
     /// Returns whether the blob holds no bytecode.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     constexpr bool Empty() const { return bytes == nullptr || size == 0; }
 };
 
 /// Returns the blob of a SPIR-V module given as 32-bit words.
 ///
-/// Param words: the words; borrowed.
-/// Param word_count: number of words.
-/// Returns: a SPIR-V blob of `word_count * 4` bytes.
-/// Fails: never.
-/// Thread-safety: thread-safe.
+/// - Param words: the words; borrowed.
+/// - Param word_count: number of words.
+/// - Returns: a SPIR-V blob of `word_count * 4` bytes.
+/// - Fails: never.
+/// - Thread-safety: thread-safe.
 constexpr ShaderBlob SpirvBlob(const u32* words, usize word_count) {
     return ShaderBlob{ShaderFormat::Spirv, words, word_count * sizeof(u32)};
 }
 
 /// Returns the blob of a DXIL container given as bytes.
 ///
-/// Param bytes: the container; borrowed.
-/// Param size: its size in bytes.
-/// Returns: a DXIL blob.
-/// Fails: never.
-/// Thread-safety: thread-safe.
+/// - Param bytes: the container; borrowed.
+/// - Param size: its size in bytes.
+/// - Returns: a DXIL blob.
+/// - Fails: never.
+/// - Thread-safety: thread-safe.
 constexpr ShaderBlob DxilBlob(const u8* bytes, usize size) { return ShaderBlob{ShaderFormat::Dxil, bytes, size}; }
 
 /// One shader in every format it was minted in; code that creates shaders names the set once and picks the device's
 /// format with `For` (`device->Caps().shader_format`).
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: the blobs and `name` are borrowed; minted sets are static.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: the blobs and `name` are borrowed; minted sets are static.
 struct ShaderBlobSet {
     /// The shader's file name (for example `lighting.frag`), for the error when a format is missing.
     const char* name = "";
@@ -175,9 +175,9 @@ struct ShaderBlobSet {
 
     /// Returns the blob of one format.
     ///
-    /// Param format: the format the device takes.
-    /// Returns: the blob, or an empty blob of that format when the set has none (always for `Msl` today).
-    /// Fails: an empty blob, as described.
+    /// - Param format: the format the device takes.
+    /// - Returns: the blob, or an empty blob of that format when the set has none (always for `Msl` today).
+    /// - Fails: an empty blob, as described.
     constexpr ShaderBlob For(ShaderFormat format) const {
         // The returned blob always carries `format`, even when a member was initialized with `{}`.
         switch (format) {
@@ -194,8 +194,8 @@ struct ShaderBlobSet {
 /// The engine compiles shaders offline and never at runtime (`PLAN.md` assumption #18). A backend refuses a module in
 /// another format than its [[rhi::DeviceCaps::shader_format]] with an error naming both.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: `bytes` and `entry` are borrowed for the duration of the call; the device copies what it keeps.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: `bytes` and `entry` are borrowed for the duration of the call; the device copies what it keeps.
 struct ShaderDesc {
     /// The single stage this module's entry point implements.
     ShaderStage stage = ShaderStage::None;
@@ -212,8 +212,8 @@ struct ShaderDesc {
 
     /// Sets `format`, `bytes` and `size` from a blob.
     ///
-    /// Param blob: the module; borrowed like `bytes`.
-    /// Fails: never.
+    /// - Param blob: the module; borrowed like `bytes`.
+    /// - Fails: never.
     void SetCode(const ShaderBlob& blob) {
         format = blob.format;
         bytes = blob.bytes;
@@ -222,9 +222,9 @@ struct ShaderDesc {
 
     /// Checks the descriptor without a device.
     ///
-    /// Returns: null if the descriptor is acceptable, else the first problem.
-    /// Fails: reported through the return value, never by aborting.
-    /// Ownership: the returned string is static and is never freed by the caller.
+    /// - Returns: null if the descriptor is acceptable, else the first problem.
+    /// - Fails: reported through the return value, never by aborting.
+    /// - Ownership: the returned string is static and is never freed by the caller.
     ///
     /// Checks the stage, the entry name (at most 63 bytes) and the module's shape for its format: SPIR-V is 4-byte aligned, a
     /// whole number of words and at least a header (its contents are checked by [[rhi::ValidateSpirv]] when the shader is
@@ -235,7 +235,7 @@ struct ShaderDesc {
 
 /// One binding in a bind group layout.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct BindingDesc {
     /// Binding index within the group; unique in the layout.
     u32 binding = 0;
@@ -253,8 +253,8 @@ struct BindingDesc {
 
 /// Describes a bind group layout: the shape of a set of resource bindings.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: `entries` is borrowed for the duration of the call; the device copies it.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: `entries` is borrowed for the duration of the call; the device copies it.
 struct BindGroupLayoutDesc {
     /// The bindings; at most [[rhi::kMaxBindingsPerLayout]].
     Span<BindingDesc> entries;
@@ -263,15 +263,15 @@ struct BindGroupLayoutDesc {
 
     /// Checks the descriptor without a device.
     ///
-    /// Returns: null if the descriptor is acceptable, else the first problem.
-    /// Fails: reported through the return value, never by aborting.
-    /// Ownership: the returned string is static and is never freed by the caller.
+    /// - Returns: null if the descriptor is acceptable, else the first problem.
+    /// - Fails: reported through the return value, never by aborting.
+    /// - Ownership: the returned string is static and is never freed by the caller.
     const char* Validate() const;
 };
 
 /// One resource bound at a binding of a bind group; set the field that matches the binding's type.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct BindGroupEntry {
     /// The binding index in the layout.
     u32 binding = 0;
@@ -294,8 +294,8 @@ struct BindGroupEntry {
 /// A group is either persistent (the default: it lives until `DestroyBindGroup`) or transient (it is released by the
 /// device when the frame it was created in has finished on the GPU, so a per-draw group needs no bookkeeping).
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: `entries` and `debug_name` are borrowed for the duration of the call. The group does not
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: `entries` and `debug_name` are borrowed for the duration of the call. The group does not
 ///   keep the bound resources alive; destroying one invalidates the group.
 struct BindGroupDesc {
     /// The layout this group follows; required.
@@ -310,15 +310,15 @@ struct BindGroupDesc {
 
     /// Checks the descriptor without a device; whether the entries match the layout is checked at creation.
     ///
-    /// Returns: null if the descriptor is acceptable, else the first problem.
-    /// Fails: reported through the return value, never by aborting.
-    /// Ownership: the returned string is static and is never freed by the caller.
+    /// - Returns: null if the descriptor is acceptable, else the first problem.
+    /// - Fails: reported through the return value, never by aborting.
+    /// - Ownership: the returned string is static and is never freed by the caller.
     const char* Validate() const;
 };
 
 /// One vertex buffer binding: how fast the buffer advances.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct VertexBindingDesc {
     /// Distance in bytes between consecutive elements; must be non-zero.
     u32 stride = 0;
@@ -328,7 +328,7 @@ struct VertexBindingDesc {
 
 /// One vertex attribute: where a shader input comes from.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct VertexAttributeDesc {
     /// The shader input location.
     u32 location = 0;
@@ -342,7 +342,7 @@ struct VertexAttributeDesc {
 
 /// Blending for one color attachment.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct BlendState {
     /// Whether blending is enabled; when false the other fields are ignored.
     bool enable = false;
@@ -362,7 +362,7 @@ struct BlendState {
 
 /// One color attachment a pipeline writes.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct ColorTargetDesc {
     /// Attachment format; a color format.
     Format format = Format::Undefined;
@@ -376,8 +376,8 @@ struct ColorTargetDesc {
 ///
 /// Viewport and scissor are dynamic state set on the command list.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: spans and `debug_name` are borrowed for the duration of the call; the device copies what it keeps.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: spans and `debug_name` are borrowed for the duration of the call; the device copies what it keeps.
 ///   The shader and layout handles are borrowed, not consumed.
 struct GraphicsPipelineDesc {
     /// The vertex shader; required.
@@ -428,16 +428,16 @@ struct GraphicsPipelineDesc {
 
     /// Checks the descriptor without a device.
     ///
-    /// Returns: null if the descriptor is acceptable, else the first problem.
-    /// Fails: reported through the return value, never by aborting.
-    /// Ownership: the returned string is static and is never freed by the caller.
+    /// - Returns: null if the descriptor is acceptable, else the first problem.
+    /// - Fails: reported through the return value, never by aborting.
+    /// - Ownership: the returned string is static and is never freed by the caller.
     const char* Validate() const;
 };
 
 /// Describes a compute pipeline. Its push constants are visible to the compute stage.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: `debug_name` is borrowed for the duration of the call. The shader and layout handles are
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: `debug_name` is borrowed for the duration of the call. The shader and layout handles are
 ///   borrowed, not consumed.
 struct ComputePipelineDesc {
     /// The compute shader; required.
@@ -453,9 +453,9 @@ struct ComputePipelineDesc {
 
     /// Checks the descriptor without a device.
     ///
-    /// Returns: null if the descriptor is acceptable, else the first problem.
-    /// Fails: reported through the return value, never by aborting.
-    /// Ownership: the returned string is static and is never freed by the caller.
+    /// - Returns: null if the descriptor is acceptable, else the first problem.
+    /// - Fails: reported through the return value, never by aborting.
+    /// - Ownership: the returned string is static and is never freed by the caller.
     const char* Validate() const;
 };
 

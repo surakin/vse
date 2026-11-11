@@ -20,8 +20,8 @@ class Scheduler;
 
 /// Awaitable for one read, write or flush; awaiting yields the [[io::AsyncResult]].
 ///
-/// Thread-safety: not-thread-safe; belongs to the awaiting coroutine.
-/// Ownership: borrows the file and the buffer, which must stay valid until the await returns.
+/// - Thread-safety: not-thread-safe; belongs to the awaiting coroutine.
+/// - Ownership: borrows the file and the buffer, which must stay valid until the await returns.
 class FileIoAwaitable {
 public:
     FileIoAwaitable(const FileIoAwaitable&) = delete;
@@ -29,15 +29,15 @@ public:
 
     /// Tells the coroutine machinery whether suspension can be skipped.
     ///
-    /// Returns: always false; the operation is started in `await_suspend`.
+    /// - Returns: always false; the operation is started in `await_suspend`.
     bool await_ready() const noexcept { return false; }
     /// Starts the operation and parks the coroutine until it completes.
     ///
-    /// Returns: false when it already finished (continue inline), true when parked.
+    /// - Returns: false when it already finished (continue inline), true when parked.
     bool await_suspend(CoroutineHandle<> h) noexcept;
     /// Collects the result.
     ///
-    /// Aborts: resumed on a thread that is not a scheduler participant.
+    /// - Aborts: resumed on a thread that is not a scheduler participant.
     io::AsyncResult await_resume() noexcept;
 
 private:
@@ -61,8 +61,8 @@ private:
 
 /// Reads up to `length` bytes at `offset` (`io::File::Read` rules: fewer is allowed, zero is the end).
 ///
-/// Ownership: borrows the file and the buffer until the await returns.
-/// Thread-safety: thread-safe. Await it from a job.
+/// - Ownership: borrows the file and the buffer until the await returns.
+/// - Thread-safety: thread-safe. Await it from a job.
 FileIoAwaitable ReadAsync(Scheduler& scheduler, io::File& file, void* buffer, usize length, u64 offset);
 /// Writes all `length` bytes at `offset`.
 FileIoAwaitable WriteAsync(Scheduler& scheduler, io::File& file, const void* data, usize length, u64 offset);
@@ -71,8 +71,8 @@ FileIoAwaitable FlushAsync(Scheduler& scheduler, io::File& file);
 
 /// What [[jobs::ReadAllAsync]] produces.
 ///
-/// Thread-safety: not-thread-safe; a value owned by the awaiting coroutine.
-/// Ownership: owns the bytes.
+/// - Thread-safety: not-thread-safe; a value owned by the awaiting coroutine.
+/// - Ownership: owns the bytes.
 struct FileReadAllResult {
     io::Status status;  ///< Success, or why the read stopped; `bytes` holds what was read before an error.
     Vector<u8> bytes;   ///< The file contents from offset 0 to the end.
@@ -81,7 +81,7 @@ struct FileReadAllResult {
 /// Awaitable that reads a whole file in chunks, asynchronously, and yields a [[jobs::FileReadAllResult]]. The size is never
 /// trusted: it reads until a read returns zero.
 ///
-/// Thread-safety: not-thread-safe; belongs to the awaiting coroutine. Not movable once created.
+/// - Thread-safety: not-thread-safe; belongs to the awaiting coroutine. Not movable once created.
 class FileReadAllAwaitable {
 public:
     FileReadAllAwaitable(const FileReadAllAwaitable&) = delete;
@@ -89,15 +89,15 @@ public:
 
     /// Tells the coroutine machinery whether suspension can be skipped.
     ///
-    /// Returns: always false.
+    /// - Returns: always false.
     bool await_ready() const noexcept { return false; }
     /// Starts the first read and parks the coroutine.
     ///
-    /// Returns: false when it already finished (continue inline), true when parked.
+    /// - Returns: false when it already finished (continue inline), true when parked.
     bool await_suspend(CoroutineHandle<> h) noexcept;
     /// Collects the bytes.
     ///
-    /// Aborts: resumed on a thread that is not a scheduler participant.
+    /// - Aborts: resumed on a thread that is not a scheduler participant.
     FileReadAllResult await_resume() noexcept;
 
 private:
@@ -119,8 +119,8 @@ private:
 
 /// Reads the whole of `file` asynchronously.
 ///
-/// Param max_bytes: stop with `TooLong` beyond this size.
-/// Thread-safety: thread-safe. Await it from a job.
+/// - Param max_bytes: stop with `TooLong` beyond this size.
+/// - Thread-safety: thread-safe. Await it from a job.
 FileReadAllAwaitable ReadAllAsync(Scheduler& scheduler, io::File& file, u64 max_bytes = u64{1} << 30);
 
 } // namespace engine_placeholder::jobs

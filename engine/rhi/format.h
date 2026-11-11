@@ -45,7 +45,7 @@ enum class Format : u8 {
 
 /// Static layout facts about one [[rhi::Format]].
 ///
-/// Thread-safety: immutable. Values come from a constant table.
+/// - Thread-safety: immutable. Values come from a constant table.
 struct FormatProperties {
     /// Lowercase printable name, for logs and tests.
     const char* name;
@@ -103,9 +103,9 @@ inline constexpr FormatProperties kFormatTable[static_cast<usize>(Format::Count)
 
 /// Returns the layout facts for `format`.
 ///
-/// Param format: any value below `Format::Count`.
-/// Returns: a reference to a static table entry, valid for the life of the program.
-/// Aborts: `format` is `Format::Count` or larger.
+/// - Param format: any value below `Format::Count`.
+/// - Returns: a reference to a static table entry, valid for the life of the program.
+/// - Aborts: `format` is `Format::Count` or larger.
 inline const FormatProperties& FormatInfo(Format format) {
     ENGINE_ASSERT(static_cast<usize>(format) < static_cast<usize>(Format::Count), "rhi::FormatInfo: format out of range");
     return detail::kFormatTable[static_cast<usize>(format)];
@@ -113,9 +113,9 @@ inline const FormatProperties& FormatInfo(Format format) {
 
 /// Returns the number of bytes in one row of `width` texels of `format`, rounding a partial block up.
 ///
-/// Param format: the texel format; must not be `Undefined`.
-/// Param width: row width in texels.
-/// Aborts: `format` is out of range.
+/// - Param format: the texel format; must not be `Undefined`.
+/// - Param width: row width in texels.
+/// - Aborts: `format` is out of range.
 inline u64 FormatRowBytes(Format format, u32 width) {
     const FormatProperties& p = FormatInfo(format);
     u64 blocks = (static_cast<u64>(width) + p.block_width - 1) / p.block_width;
@@ -124,10 +124,10 @@ inline u64 FormatRowBytes(Format format, u32 width) {
 
 /// Returns the number of bytes in one `width` by `height` image slice of `format`, rounding partial blocks up.
 ///
-/// Param format: the texel format; must not be `Undefined`.
-/// Param width: slice width in texels.
-/// Param height: slice height in texels.
-/// Aborts: `format` is out of range.
+/// - Param format: the texel format; must not be `Undefined`.
+/// - Param width: slice width in texels.
+/// - Param height: slice height in texels.
+/// - Aborts: `format` is out of range.
 inline u64 FormatSliceBytes(Format format, u32 width, u32 height) {
     const FormatProperties& p = FormatInfo(format);
     u64 block_rows = (static_cast<u64>(height) + p.block_height - 1) / p.block_height;

@@ -10,8 +10,8 @@ namespace engine_placeholder::rhi {
 
 /// One allocation from a [[rhi::UniformRing]].
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: `data` points into the ring's mapped buffer and is valid for the frame the allocation was made in.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: `data` points into the ring's mapped buffer and is valid for the frame the allocation was made in.
 struct UniformAllocation {
     /// The ring's buffer; invalid if the allocation failed. Use it as the `buffer` of a bind group entry.
     BufferHandle buffer;
@@ -23,7 +23,7 @@ struct UniformAllocation {
     void* data = nullptr;
 
     /// Returns whether the allocation succeeded.
-    /// Fails: never; a failed allocation is the one for which this returns false.
+    /// - Fails: never; a failed allocation is the one for which this returns false.
     bool Valid() const { return data != nullptr; }
 };
 
@@ -35,9 +35,9 @@ struct UniformAllocation {
 /// before the CPU writes it again. Put an allocation in a bind group entry with `offset` and `size`, or bind the whole
 /// buffer once and use the offsets in your own shader indexing.
 ///
-/// Thread-safety: thread-compatible. `Allocate` is thread-safe and lock-free; `BeginFrame` and the destructor must not run
+/// - Thread-safety: thread-compatible. `Allocate` is thread-safe and lock-free; `BeginFrame` and the destructor must not run
 ///   concurrently with anything else.
-/// Ownership: the ring owns its buffer and destroys it in the destructor; the device must outlive the ring.
+/// - Ownership: the ring owns its buffer and destroys it in the destructor; the device must outlive the ring.
 class UniformRing {
 public:
     /// The number of per-frame regions; at least the largest frames-in-flight the device allows.
@@ -45,9 +45,9 @@ public:
 
     /// Creates the buffer.
     ///
-    /// Param device: the device; must outlive the ring.
-    /// Param bytes_per_frame: capacity of one frame's region in bytes; rounded up to the offset alignment.
-    /// Ownership: the ring creates and owns its buffer; check [[rhi::UniformRing::Valid]].
+    /// - Param device: the device; must outlive the ring.
+    /// - Param bytes_per_frame: capacity of one frame's region in bytes; rounded up to the offset alignment.
+    /// - Ownership: the ring creates and owns its buffer; check [[rhi::UniformRing::Valid]].
     UniformRing(Device* device, u64 bytes_per_frame);
     /// Unmaps and destroys the buffer.
     ~UniformRing();
@@ -55,19 +55,19 @@ public:
     UniformRing& operator=(const UniformRing&) = delete;
 
     /// Returns whether the buffer was created and mapped.
-    /// Fails: never; false means creation failed (logged) and every allocation will fail.
+    /// - Fails: never; false means creation failed (logged) and every allocation will fail.
     bool Valid() const { return mapped_ != nullptr; }
 
     /// Starts the current frame's region: call it once per frame, after `Device::BeginFrame` and before any `Allocate`.
-    /// Aborts: no frame is open.
+    /// - Aborts: no frame is open.
     void BeginFrame();
 
     /// Reserves `size` bytes, aligned to the device's uniform buffer offset alignment.
     ///
-    /// Param size: bytes wanted, greater than zero.
-    /// Returns: the allocation, or an invalid one if the region is full (logged once per frame) or the ring is not valid.
-    /// Fails: returns an invalid allocation; nothing is reserved.
-    /// Thread-safety: thread-safe.
+    /// - Param size: bytes wanted, greater than zero.
+    /// - Returns: the allocation, or an invalid one if the region is full (logged once per frame) or the ring is not valid.
+    /// - Fails: returns an invalid allocation; nothing is reserved.
+    /// - Thread-safety: thread-safe.
     UniformAllocation Allocate(u64 size);
 
     /// Makes this frame's writes visible to the GPU: call it once per frame, after the last `Allocate` was written and

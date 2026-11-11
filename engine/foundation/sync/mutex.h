@@ -13,8 +13,8 @@ namespace engine_placeholder {
 
 /// A lock that one thread at a time can hold (`std::mutex`). Not recursive: locking it twice from one thread deadlocks.
 ///
-/// Thread-safety: thread-safe. `Unlock` must come from the thread that locked.
-/// Ownership: neither copyable nor movable.
+/// - Thread-safety: thread-safe. `Unlock` must come from the thread that locked.
+/// - Ownership: neither copyable nor movable.
 class Mutex {
 public:
     /// The standard type that implements this lock; used by [[LockGuard]], [[UniqueLock]] and [[ConditionVariable]] only.
@@ -39,7 +39,7 @@ private:
 
 /// A lock the same thread may take again (`std::recursive_mutex`); it must be unlocked as many times as it was locked.
 ///
-/// Thread-safety: thread-safe, as [[Mutex]].
+/// - Thread-safety: thread-safe, as [[Mutex]].
 class RecursiveMutex {
 public:
     /// The standard type that implements this lock.
@@ -64,7 +64,7 @@ private:
 
 /// Holds a lock for the length of a scope (`std::lock_guard`): locks in the constructor, unlocks in the destructor.
 ///
-/// Thread-safety: thread-compatible. The guard belongs to one thread.
+/// - Thread-safety: thread-compatible. The guard belongs to one thread.
 template <class M>
 class LockGuard {
 public:
@@ -86,7 +86,7 @@ inline constexpr DeferLockTag DeferLock{};
 
 /// A lock holder that can unlock early, relock, and wait on a [[ConditionVariable]] (`std::unique_lock`).
 ///
-/// Thread-safety: thread-compatible. The holder belongs to one thread.
+/// - Thread-safety: thread-compatible. The holder belongs to one thread.
 template <class M>
 class UniqueLock {
 public:
@@ -118,7 +118,7 @@ private:
 ///
 /// Waits can wake without a signal: use the predicate forms, or re-check the condition in a loop.
 ///
-/// Thread-safety: thread-safe. The lock passed to a wait must be held by the calling thread.
+/// - Thread-safety: thread-safe. The lock passed to a wait must be held by the calling thread.
 class ConditionVariable {
 public:
     ConditionVariable() = default;

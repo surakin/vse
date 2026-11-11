@@ -30,15 +30,15 @@ enum class ErrorCode : u8 {
 
 /// Returns a stable lower-case name for `code` (`"busy"`), for logs and tests; never null.
 ///
-/// Ownership: the string is static.
-/// Fails: never.
+/// - Ownership: the string is static.
+/// - Fails: never.
 const char* ErrorCodeName(ErrorCode code);
 
 /// The result of an operation that returns nothing else: a portable [[database::ErrorCode]], the backend's own code and a short message copied into the value.
 ///
 /// A message longer than [[database::Status::kMaxMessageBytes]] is cut. The type allocates nothing.
 ///
-/// Thread-safety: immutable value.
+/// - Thread-safety: immutable value.
 class [[nodiscard]] Status {
 public:
     /// The most message bytes a status keeps.
@@ -59,13 +59,13 @@ public:
     static Status Make(ErrorCode code, i32 backend_code, StringView message);
 
     /// Returns true on success.
-    /// Fails: never.
+    /// - Fails: never.
     bool Ok() const { return code_ == ErrorCode::Ok; }
     /// Returns true on failure.
-    /// Fails: never.
+    /// - Fails: never.
     bool Failed() const { return code_ != ErrorCode::Ok; }
     /// Returns true when the status is exactly `code`.
-    /// Fails: never.
+    /// - Fails: never.
     bool Is(ErrorCode code) const { return code_ == code; }
     /// The portable code.
     ErrorCode Code() const { return code_; }

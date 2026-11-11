@@ -25,8 +25,8 @@ namespace engine_placeholder::spatial {
 ///
 /// An item's `layer` is a bit index from 0 to 31; an item whose layer is 32 or more matches no mask.
 ///
-/// Thread-safety: thread-compatible plain data; the filter is called on the querying thread and must be safe to call from every thread that queries.
-/// Ownership: `user` is borrowed for the query.
+/// - Thread-safety: thread-compatible plain data; the filter is called on the querying thread and must be safe to call from every thread that queries.
+/// - Ownership: `user` is borrowed for the query.
 struct QueryFilter {
     /// One bit per layer; all layers by default.
     u32 mask = 0xFFFFFFFFu;
@@ -37,7 +37,7 @@ struct QueryFilter {
 
     /// Returns whether the item passes the mask and the filter.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool Accepts(const Item& item) const { return item.layer < 32 && (mask & (1u << item.layer)) != 0 && (filter == nullptr || filter(item.key, user)); }
 };
 
@@ -56,7 +56,7 @@ enum class RayMode : u8 {
 
 /// One ray or sweep hit: the item's key and the ray parameter (or the sweep's fraction of the motion) where it was met.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct RayHit {
     /// The item's key.
     SpatialKey key = 0;
@@ -66,7 +66,7 @@ struct RayHit {
 
 /// One result of [[spatial::Nearest]].
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct NearestHit {
     /// The item's key.
     SpatialKey key = 0;
@@ -76,7 +76,7 @@ struct NearestHit {
 
 /// Two items whose boxes overlap, the smaller key first.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct KeyPair {
     /// The smaller key.
     SpatialKey a = 0;
@@ -86,7 +86,7 @@ struct KeyPair {
 
 /// What one query did.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct QueryStats {
     /// Nodes whose box was tested.
     u32 nodes_tested = 0;
@@ -105,10 +105,10 @@ namespace detail_query {
 
 /// Adds a traversal's counts to a query's (an internal helper of the query functions).
 ///
-/// Param stats: the query's counts.
-/// Param t: the traversal's.
-/// Fails: never.
-/// Ownership: `stats` is borrowed for the call.
+/// - Param stats: the query's counts.
+/// - Param t: the traversal's.
+/// - Fails: never.
+/// - Ownership: `stats` is borrowed for the call.
 inline void Count(QueryStats* stats, const TraversalStats& t) {
     stats->nodes_tested += t.nodes_tested;
     stats->stopped = stats->stopped || t.stopped;
@@ -118,12 +118,12 @@ inline void Count(QueryStats* stats, const TraversalStats& t) {
 
 /// Visits every item whose box overlaps `box`, in traversal order.
 ///
-/// Param tree: the structure ([[spatial::StaticBvh]], [[spatial::DynamicBvh]]).
-/// Param box: the query box; a zero-size box is a point.
-/// Param filter: which items count.
-/// Param visit: `bool(const Item&)`, called for each overlapping item that passes the filter; returns false to stop.
-/// Returns: what the query did.
-/// Fails: an empty box finds nothing; a box with a NaN finds nothing and sets `refused_input` (infinite corners are allowed: a box from minus to plus
+/// - Param tree: the structure ([[spatial::StaticBvh]], [[spatial::DynamicBvh]]).
+/// - Param box: the query box; a zero-size box is a point.
+/// - Param filter: which items count.
+/// - Param visit: `bool(const Item&)`, called for each overlapping item that passes the filter; returns false to stop.
+/// - Returns: what the query did.
+/// - Fails: an empty box finds nothing; a box with a NaN finds nothing and sets `refused_input` (infinite corners are allowed: a box from minus to plus
 ///   infinity finds everything).
 template <class Tree, class Visit>
 QueryStats Overlap(const Tree& tree, const Aabb& box, const QueryFilter& filter, Visit&& visit) {
@@ -145,12 +145,12 @@ QueryStats Overlap(const Tree& tree, const Aabb& box, const QueryFilter& filter,
 
 /// Visits every item whose box overlaps `sphere`, in traversal order.
 ///
-/// Param tree: the structure.
-/// Param sphere: the query sphere.
-/// Param filter: which items count.
-/// Param visit: `bool(const Item&)`; returns false to stop.
-/// Returns: what the query did.
-/// Fails: a negative radius finds nothing; a sphere whose center is not finite, or whose radius is a NaN, finds nothing and sets `refused_input`.
+/// - Param tree: the structure.
+/// - Param sphere: the query sphere.
+/// - Param filter: which items count.
+/// - Param visit: `bool(const Item&)`; returns false to stop.
+/// - Returns: what the query did.
+/// - Fails: a negative radius finds nothing; a sphere whose center is not finite, or whose radius is a NaN, finds nothing and sets `refused_input`.
 template <class Tree, class Visit>
 QueryStats Overlap(const Tree& tree, const Sphere& sphere, const QueryFilter& filter, Visit&& visit) {
     QueryStats stats;
@@ -172,12 +172,12 @@ QueryStats Overlap(const Tree& tree, const Sphere& sphere, const QueryFilter& fi
 /// Visits every item whose box may be inside `frustum` (conservative, as [[Frustum::TestAabb]]), in traversal order. Below a node entirely inside the
 /// frustum no node is tested; each item's own box still is (one plane test per item).
 ///
-/// Param tree: the structure.
-/// Param frustum: the view volume.
-/// Param filter: which items count.
-/// Param visit: `bool(const Item&)`; returns false to stop.
-/// Returns: what the query did.
-/// Fails: a frustum with a plane that is not finite finds nothing and sets `refused_input`.
+/// - Param tree: the structure.
+/// - Param frustum: the view volume.
+/// - Param filter: which items count.
+/// - Param visit: `bool(const Item&)`; returns false to stop.
+/// - Returns: what the query did.
+/// - Fails: a frustum with a plane that is not finite finds nothing and sets `refused_input`.
 template <class Tree, class Visit>
 QueryStats Overlap(const Tree& tree, const Frustum& frustum, const QueryFilter& filter, Visit&& visit) {
     QueryStats stats;
@@ -207,14 +207,14 @@ QueryStats Overlap(const Tree& tree, const Frustum& frustum, const QueryFilter& 
 
 /// Collects the keys of the items an overlap query finds (any shape `Overlap` takes), in the order asked for.
 ///
-/// Param tree: the structure.
-/// Param shape: an `Aabb`, a `Sphere` or a `Frustum`.
-/// Param filter: which items count.
-/// Param order: `Traversal`, or `Ordered` for ascending keys.
-/// Param out: receives the keys (cleared first); its capacity is reused, so a warm vector makes the query allocate nothing.
-/// Returns: what the query did.
-/// Fails: as `Overlap` for the shape.
-/// Ownership: `out` is borrowed for the call.
+/// - Param tree: the structure.
+/// - Param shape: an `Aabb`, a `Sphere` or a `Frustum`.
+/// - Param filter: which items count.
+/// - Param order: `Traversal`, or `Ordered` for ascending keys.
+/// - Param out: receives the keys (cleared first); its capacity is reused, so a warm vector makes the query allocate nothing.
+/// - Returns: what the query did.
+/// - Fails: as `Overlap` for the shape.
+/// - Ownership: `out` is borrowed for the call.
 template <class Tree, class Shape>
 QueryStats OverlapKeys(const Tree& tree, const Shape& shape, const QueryFilter& filter, Order order, Vector<SpatialKey>* out) {
     out->Clear();
@@ -228,16 +228,16 @@ QueryStats OverlapKeys(const Tree& tree, const Shape& shape, const QueryFilter& 
 
 /// Casts a ray and collects what it hits, as `mode` says.
 ///
-/// Param tree: the structure.
-/// Param ray: the ray ([[Ray::Make]]).
-/// Param max_t: the farthest parameter that counts (in units of the direction's length).
-/// Param filter: which items count.
-/// Param mode: `Closest` (one hit: the nearest, the smaller key on a tie), `Any` (one hit, the first found) or `All`.
-/// Param order: for `All`: `Traversal`, or `Ordered` by distance then key; the other modes give one hit.
-/// Param hits: receives the hits (cleared first); its capacity is reused.
-/// Returns: what the query did; `results` is the number of hits.
-/// Ownership: `hits` is borrowed for the call.
-/// Fails: a ray that is not finite or a NaN `max_t` finds nothing and sets `refused_input` (an infinite `max_t` is allowed: the ray is unbounded); a negative `max_t` finds nothing.
+/// - Param tree: the structure.
+/// - Param ray: the ray ([[Ray::Make]]).
+/// - Param max_t: the farthest parameter that counts (in units of the direction's length).
+/// - Param filter: which items count.
+/// - Param mode: `Closest` (one hit: the nearest, the smaller key on a tie), `Any` (one hit, the first found) or `All`.
+/// - Param order: for `All`: `Traversal`, or `Ordered` by distance then key; the other modes give one hit.
+/// - Param hits: receives the hits (cleared first); its capacity is reused.
+/// - Returns: what the query did; `results` is the number of hits.
+/// - Ownership: `hits` is borrowed for the call.
+/// - Fails: a ray that is not finite or a NaN `max_t` finds nothing and sets `refused_input` (an infinite `max_t` is allowed: the ray is unbounded); a negative `max_t` finds nothing.
 template <class Tree>
 QueryStats Raycast(const Tree& tree, const Ray& ray, f32 max_t, const QueryFilter& filter, RayMode mode, Order order, Vector<RayHit>* hits) {
     hits->Clear();
@@ -283,14 +283,14 @@ QueryStats Raycast(const Tree& tree, const Ray& ray, f32 max_t, const QueryFilte
 /// Sweeps a box along `motion` and finds the first item it would touch: the item whose box the moving box meets at the smallest fraction of the motion
 /// (on a tie, the smaller key). Exact for boxes against boxes (a ray against each box grown by the moving box's half extents).
 ///
-/// Param tree: the structure.
-/// Param box: the box at the start.
-/// Param motion: the whole movement; zero finds what the box overlaps where it stands.
-/// Param filter: which items count.
-/// Param hit: receives the first contact: the key, and `t` as the fraction of the motion (0 for an item the box already overlaps).
-/// Returns: what the query did; `results` is 1 for a hit, 0 for none.
-/// Fails: an empty box finds nothing; a box or motion that is not finite finds nothing and sets `refused_input`.
-/// Ownership: `hit` is borrowed for the call; it is written only when there is a hit.
+/// - Param tree: the structure.
+/// - Param box: the box at the start.
+/// - Param motion: the whole movement; zero finds what the box overlaps where it stands.
+/// - Param filter: which items count.
+/// - Param hit: receives the first contact: the key, and `t` as the fraction of the motion (0 for an item the box already overlaps).
+/// - Returns: what the query did; `results` is 1 for a hit, 0 for none.
+/// - Fails: an empty box finds nothing; a box or motion that is not finite finds nothing and sets `refused_input`.
+/// - Ownership: `hit` is borrowed for the call; it is written only when there is a hit.
 template <class Tree>
 QueryStats SweepBox(const Tree& tree, const Aabb& box, const Vec3& motion, const QueryFilter& filter, RayHit* hit) {
     QueryStats stats;
@@ -334,15 +334,15 @@ QueryStats SweepBox(const Tree& tree, const Aabb& box, const Vec3& motion, const
 /// the k-th best found so far (or than `max_distance`). The results are kept sorted by insertion, so each candidate costs up to `k` steps: meant for a
 /// small `k` (a few dozen); for many results use an overlap query and sort.
 ///
-/// Param tree: the structure.
-/// Param point: the query point.
-/// Param k: how many items at most; 0 finds nothing.
-/// Param max_distance: items farther than this do not count.
-/// Param filter: which items count.
-/// Param out: receives up to `k` results, always ordered (cleared first); its capacity is reused.
-/// Returns: what the query did.
-/// Ownership: `out` is borrowed for the call.
-/// Fails: a point or distance that is not finite (an infinite `max_distance` is allowed) finds nothing and sets `refused_input`.
+/// - Param tree: the structure.
+/// - Param point: the query point.
+/// - Param k: how many items at most; 0 finds nothing.
+/// - Param max_distance: items farther than this do not count.
+/// - Param filter: which items count.
+/// - Param out: receives up to `k` results, always ordered (cleared first); its capacity is reused.
+/// - Returns: what the query did.
+/// - Ownership: `out` is borrowed for the call.
+/// - Fails: a point or distance that is not finite (an infinite `max_distance` is allowed) finds nothing and sets `refused_input`.
 template <class Tree>
 QueryStats Nearest(const Tree& tree, const Vec3& point, u32 k, f32 max_distance, const QueryFilter& filter, Vector<NearestHit>* out) {
     out->Clear();
@@ -381,13 +381,13 @@ QueryStats Nearest(const Tree& tree, const Vec3& point, u32 k, f32 max_distance,
 /// Visits every pair of items whose boxes overlap, once each, the smaller key first: a pair counts when one item's layer is in `mask_a` and the other's
 /// in `mask_b` (either way round), and both pass the filter's function. An item is never paired with itself. Keys must be unique in the structure.
 ///
-/// Param tree: the structure.
-/// Param mask_a: the layers of one side.
-/// Param mask_b: the layers of the other side (the same mask pairs a group with itself).
-/// Param filter: its `filter` function applies to both items; its `mask` is not used (the two masks above are).
-/// Param visit: `bool(const Item& a, const Item& b)` with `a.key < b.key`; returns false to stop.
-/// Returns: what the query did; `results` is the number of pairs delivered.
-/// Fails: never.
+/// - Param tree: the structure.
+/// - Param mask_a: the layers of one side.
+/// - Param mask_b: the layers of the other side (the same mask pairs a group with itself).
+/// - Param filter: its `filter` function applies to both items; its `mask` is not used (the two masks above are).
+/// - Param visit: `bool(const Item& a, const Item& b)` with `a.key < b.key`; returns false to stop.
+/// - Returns: what the query did; `results` is the number of pairs delivered.
+/// - Fails: never.
 template <class Tree, class Visit>
 QueryStats ForEachPair(const Tree& tree, u32 mask_a, u32 mask_b, const QueryFilter& filter, Visit&& visit) {
     QueryStats stats;
@@ -419,15 +419,15 @@ QueryStats ForEachPair(const Tree& tree, u32 mask_a, u32 mask_b, const QueryFilt
 
 /// Collects the overlapping pairs of `ForEachPair`, in the order asked for.
 ///
-/// Param tree: the structure.
-/// Param mask_a: the layers of one side.
-/// Param mask_b: the layers of the other side.
-/// Param filter: as for `ForEachPair`.
-/// Param order: `Traversal`, or `Ordered` by first key then second.
-/// Param out: receives the pairs (cleared first); its capacity is reused.
-/// Returns: what the query did.
-/// Fails: never.
-/// Ownership: `out` is borrowed for the call.
+/// - Param tree: the structure.
+/// - Param mask_a: the layers of one side.
+/// - Param mask_b: the layers of the other side.
+/// - Param filter: as for `ForEachPair`.
+/// - Param order: `Traversal`, or `Ordered` by first key then second.
+/// - Param out: receives the pairs (cleared first); its capacity is reused.
+/// - Returns: what the query did.
+/// - Fails: never.
+/// - Ownership: `out` is borrowed for the call.
 template <class Tree>
 QueryStats PairKeys(const Tree& tree, u32 mask_a, u32 mask_b, const QueryFilter& filter, Order order, Vector<KeyPair>* out) {
     out->Clear();
@@ -446,12 +446,12 @@ QueryStats PairKeys(const Tree& tree, u32 mask_a, u32 mask_b, const QueryFilter&
 
 /// The box overlap of [[spatial::HashGrid]]: through its cells, each item once.
 ///
-/// Param grid: the grid.
-/// Param box: the query box.
-/// Param filter: which items count.
-/// Param visit: `bool(const Item&)`; returns false to stop.
-/// Returns: what the query did.
-/// Fails: as `Overlap` for a box.
+/// - Param grid: the grid.
+/// - Param box: the query box.
+/// - Param filter: which items count.
+/// - Param visit: `bool(const Item&)`; returns false to stop.
+/// - Returns: what the query did.
+/// - Fails: as `Overlap` for a box.
 template <class Visit>
 QueryStats Overlap(const HashGrid& grid, const Aabb& box, const QueryFilter& filter, Visit&& visit) {
     QueryStats stats;
@@ -472,12 +472,12 @@ QueryStats Overlap(const HashGrid& grid, const Aabb& box, const QueryFilter& fil
 
 /// The sphere overlap of [[spatial::HashGrid]]: through the cells of the sphere's box, each item once.
 ///
-/// Param grid: the grid.
-/// Param sphere: the query sphere.
-/// Param filter: which items count.
-/// Param visit: `bool(const Item&)`; returns false to stop.
-/// Returns: what the query did.
-/// Fails: as `Overlap` for a sphere.
+/// - Param grid: the grid.
+/// - Param sphere: the query sphere.
+/// - Param filter: which items count.
+/// - Param visit: `bool(const Item&)`; returns false to stop.
+/// - Returns: what the query did.
+/// - Fails: as `Overlap` for a sphere.
 template <class Visit>
 QueryStats Overlap(const HashGrid& grid, const Sphere& sphere, const QueryFilter& filter, Visit&& visit) {
     QueryStats stats;
@@ -500,12 +500,12 @@ QueryStats Overlap(const HashGrid& grid, const Sphere& sphere, const QueryFilter
 
 /// The box overlap of [[spatial::SpatialSet]]: the static parts and the dynamic side (through a grid's cells when it is one), each item once.
 ///
-/// Param set: the set.
-/// Param box: the query box.
-/// Param filter: which items count.
-/// Param visit: `bool(const Item&)`; returns false to stop.
-/// Returns: what the query did.
-/// Fails: as `Overlap` for a box.
+/// - Param set: the set.
+/// - Param box: the query box.
+/// - Param filter: which items count.
+/// - Param visit: `bool(const Item&)`; returns false to stop.
+/// - Returns: what the query did.
+/// - Fails: as `Overlap` for a box.
 template <class Visit>
 QueryStats Overlap(const SpatialSet& set, const Aabb& box, const QueryFilter& filter, Visit&& visit) {
     QueryStats stats;
@@ -526,12 +526,12 @@ QueryStats Overlap(const SpatialSet& set, const Aabb& box, const QueryFilter& fi
 
 /// The sphere overlap of [[spatial::SpatialSet]], as its box overlap with the sphere's box and the exact sphere test.
 ///
-/// Param set: the set.
-/// Param sphere: the query sphere.
-/// Param filter: which items count.
-/// Param visit: `bool(const Item&)`; returns false to stop.
-/// Returns: what the query did.
-/// Fails: as `Overlap` for a sphere.
+/// - Param set: the set.
+/// - Param sphere: the query sphere.
+/// - Param filter: which items count.
+/// - Param visit: `bool(const Item&)`; returns false to stop.
+/// - Returns: what the query did.
+/// - Fails: as `Overlap` for a sphere.
 template <class Visit>
 QueryStats Overlap(const SpatialSet& set, const Sphere& sphere, const QueryFilter& filter, Visit&& visit) {
     QueryStats stats;
@@ -555,13 +555,13 @@ QueryStats Overlap(const SpatialSet& set, const Sphere& sphere, const QueryFilte
 /// The all-pairs query of [[spatial::HashGrid]]: through its cells, each pair once (the smaller key first), with the masks and filter of
 /// `ForEachPair`.
 ///
-/// Param grid: the grid.
-/// Param mask_a: the layers of one side.
-/// Param mask_b: the layers of the other side.
-/// Param filter: its function applies to both items; its mask is not used.
-/// Param visit: `bool(const Item& a, const Item& b)`; returns false to stop.
-/// Returns: what the query did.
-/// Fails: never.
+/// - Param grid: the grid.
+/// - Param mask_a: the layers of one side.
+/// - Param mask_b: the layers of the other side.
+/// - Param filter: its function applies to both items; its mask is not used.
+/// - Param visit: `bool(const Item& a, const Item& b)`; returns false to stop.
+/// - Returns: what the query did.
+/// - Fails: never.
 template <class Visit>
 QueryStats ForEachPair(const HashGrid& grid, u32 mask_a, u32 mask_b, const QueryFilter& filter, Visit&& visit) {
     QueryStats stats;

@@ -12,7 +12,7 @@
 namespace engine_placeholder::os::wayland {
 
 /// Builds a premultiplied ARGB8888 `wl_shm` buffer from RGBA8 pixels (a cursor image, a drag icon). Returns null on failure.
-/// Ownership: the caller destroys the buffer.
+/// - Ownership: the caller destroys the buffer.
 wl_buffer* CreateArgbShmBuffer(wl_shm* shm, const byte* rgba, u32 width, u32 height);
 
 /// Everything about the mouse cursor on one Wayland seat: the standard shapes (`wp_cursor_shape_v1`), a custom image (a `wl_shm` buffer on a cursor surface), and the
@@ -21,8 +21,8 @@ wl_buffer* CreateArgbShmBuffer(wl_shm* shm, const byte* rgba, u32 width, u32 hei
 /// The cursor is set with the serial of the last `wl_pointer.enter`, and the compositor forgets it when the pointer leaves, so the current cursor is applied again on
 /// every enter. A compositor that lacks a protocol makes the matching operation report false; nothing else changes.
 ///
-/// Thread-safety: not-thread-safe; owner-thread only, on the thread that dispatches the connection.
-/// Ownership: owns the shape device, the relative pointer, the locked pointer, the cursor surface and its buffer; borrows the connection and the queue, which must outlive it.
+/// - Thread-safety: not-thread-safe; owner-thread only, on the thread that dispatches the connection.
+/// - Ownership: owns the shape device, the relative pointer, the locked pointer, the cursor surface and its buffer; borrows the connection and the queue, which must outlive it.
 class WaylandCursor {
 public:
     /// Attaches the connection (for the globals, the compositor and `wl_shm`) and the queue that receives `RelativeMotion`.

@@ -20,8 +20,8 @@ enum class ValueType : u8 {
 
 /// Returns a stable lower-case name for `type` (`"integer"`); never null.
 ///
-/// Ownership: the string is static.
-/// Fails: never.
+/// - Ownership: the string is static.
+/// - Fails: never.
 const char* ValueTypeName(ValueType type);
 
 /// A value that borrows its text or bytes: what a statement binds and what a column getter returns.
@@ -29,8 +29,8 @@ const char* ValueTypeName(ValueType type);
 /// Two views are equal when their types match and the contents are bitwise equal (a real compares by its bit pattern, so `-0` differs from `0` and
 /// a NaN equals the same NaN). There are no implicit conversions between types: `Integer(1)` and `Real(1.0)` differ.
 ///
-/// Thread-safety: immutable value.
-/// Ownership: borrows the text or bytes; they must outlive the view.
+/// - Thread-safety: immutable value.
+/// - Ownership: borrows the text or bytes; they must outlive the view.
 class ValueView {
 public:
     /// Creates a null view.
@@ -70,7 +70,7 @@ public:
     /// The type of the value.
     constexpr ValueType Type() const { return type_; }
     /// Returns true for a null value.
-    /// Fails: never.
+    /// - Fails: never.
     constexpr bool IsNull() const { return type_ == ValueType::Null; }
     /// The integer. Aborts: the type is not `Integer`.
     i64 AsInteger() const;
@@ -96,8 +96,8 @@ private:
 
 /// A value that owns its text or bytes, for results that must outlive the statement step that produced them.
 ///
-/// Thread-safety: not-thread-safe; synchronize externally if shared.
-/// Ownership: owns a copy of the text or bytes.
+/// - Thread-safety: not-thread-safe; synchronize externally if shared.
+/// - Ownership: owns a copy of the text or bytes.
 class Value {
 public:
     /// Creates a null value.

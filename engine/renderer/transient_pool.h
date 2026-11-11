@@ -16,7 +16,7 @@ namespace engine_placeholder::renderer {
 
 /// Capacities and aging of a [[renderer::TransientPool]].
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct TransientPoolDesc {
     /// Most textures the pool holds, in use or idle.
     u32 max_textures = 128;
@@ -28,7 +28,7 @@ struct TransientPoolDesc {
 
 /// A texture taken from the pool and the state it is in.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct PooledTexture {
     /// The texture; invalid if the request failed.
     rhi::TextureHandle handle;
@@ -38,7 +38,7 @@ struct PooledTexture {
 
 /// A buffer taken from the pool and the state it is in.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct PooledBuffer {
     /// The buffer; invalid if the request failed.
     rhi::BufferHandle handle;
@@ -48,7 +48,7 @@ struct PooledBuffer {
 
 /// What the pool has done, for tests and tools.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct TransientPoolStats {
     /// Textures created over the pool's life.
     u32 textures_created = 0;
@@ -79,17 +79,17 @@ struct TransientPoolStats {
 /// Two descriptions are equal when every field but the debug name matches. Use per frame is `BeginFrame`, any number of
 /// acquire and release calls (the render graph makes them), `EndFrame`.
 ///
-/// Thread-safety: thread-compatible.
-/// Ownership: borrows the device, which must outlive the pool; owns the resources it created and destroys them through
+/// - Thread-safety: thread-compatible.
+/// - Ownership: borrows the device, which must outlive the pool; owns the resources it created and destroys them through
 ///   the device (so the GPU may still be using them) when it is destroyed or they age out.
 class TransientPool final : public Recreatable {
 public:
     /// Creates an empty pool.
     ///
-    /// Param device: the device; must not be null.
-    /// Param desc: capacities, each at least 1.
-    /// Aborts: `device` is null or a capacity is 0.
-    /// Ownership: `device` is borrowed.
+    /// - Param device: the device; must not be null.
+    /// - Param desc: capacities, each at least 1.
+    /// - Aborts: `device` is null or a capacity is 0.
+    /// - Ownership: `device` is borrowed.
     TransientPool(rhi::Device* device, const TransientPoolDesc& desc);
     /// Destroys every pooled resource.
     ~TransientPool() override;
@@ -98,29 +98,29 @@ public:
 
     /// Registers the pool with a registry so it survives a device reset.
     ///
-    /// Param resources: the registry; null does nothing.
-    /// Returns: true if registered or `resources` is null.
-    /// Fails: returns false if the registry refused.
-    /// Ownership: the registry is borrowed.
+    /// - Param resources: the registry; null does nothing.
+    /// - Returns: true if registered or `resources` is null.
+    /// - Fails: returns false if the registry refused.
+    /// - Ownership: the registry is borrowed.
     bool RegisterWith(DeviceResources* resources) { return registration_.Attach(resources, this, tiers::kPasses); }
 
     /// Destroys every pooled texture and buffer and empties the free lists. Contents are per frame, so nothing is kept.
-    /// Aborts: a resource is still in use (a frame is running).
+    /// - Aborts: a resource is still in use (a frame is running).
     void Release() override;
 
     /// Points the pool at the new device; resources are made again on demand by the next frame.
     ///
-    /// Param device: the new device.
-    /// Returns: true.
-    /// Fails: never.
-    /// Ownership: the device is borrowed.
+    /// - Param device: the new device.
+    /// - Returns: true.
+    /// - Fails: never.
+    /// - Ownership: the device is borrowed.
     bool Recreate(rhi::Device* device) override;
     bool Live() const override { return !released_; }
     const char* RecreatableName() const override { return "transient pool"; }
 
     /// Starts a frame; resources idle for more than `max_idle_frames` frames are destroyed at `EndFrame`.
     ///
-    /// Param frame_index: the frame number, increasing.
+    /// - Param frame_index: the frame number, increasing.
     void BeginFrame(u64 frame_index);
 
     /// Destroys the idle resources that went unused for too long.
@@ -130,53 +130,53 @@ public:
     ///
     /// When the pool is full, the idle texture unused for longest is destroyed to make room.
     ///
-    /// Param desc: the description; its `debug_name` is used only when a texture is created.
-    /// Param out: receives the texture and its state.
-    /// Returns: true on success.
-    /// Fails: the pool is full or the device could not create the texture; logged, and `out` is left invalid.
-    /// Aborts: `out` is null.
-    /// Ownership: the texture stays owned by the pool; hand it back with `ReleaseTexture`, never destroy it.
+    /// - Param desc: the description; its `debug_name` is used only when a texture is created.
+    /// - Param out: receives the texture and its state.
+    /// - Returns: true on success.
+    /// - Fails: the pool is full or the device could not create the texture; logged, and `out` is left invalid.
+    /// - Aborts: `out` is null.
+    /// - Ownership: the texture stays owned by the pool; hand it back with `ReleaseTexture`, never destroy it.
     bool AcquireTexture(const rhi::TextureDesc& desc, PooledTexture* out);
 
     /// Gives a texture back, remembering the state it was left in.
     ///
-    /// Param texture: a texture acquired from this pool.
-    /// Param state: the state it is in now.
-    /// Aborts: the texture is not in use from this pool.
+    /// - Param texture: a texture acquired from this pool.
+    /// - Param state: the state it is in now.
+    /// - Aborts: the texture is not in use from this pool.
     void ReleaseTexture(rhi::TextureHandle texture, rhi::ResourceState state);
 
     /// Takes a buffer with the given description; see [[renderer::TransientPool::AcquireTexture]].
     ///
-    /// Param desc: the description.
-    /// Param out: receives the buffer and its state.
-    /// Returns: true on success.
-    /// Fails: the pool is full or the device could not create the buffer; logged.
-    /// Aborts: `out` is null.
-    /// Ownership: the buffer stays owned by the pool; hand it back with `ReleaseBuffer`, never destroy it.
+    /// - Param desc: the description.
+    /// - Param out: receives the buffer and its state.
+    /// - Returns: true on success.
+    /// - Fails: the pool is full or the device could not create the buffer; logged.
+    /// - Aborts: `out` is null.
+    /// - Ownership: the buffer stays owned by the pool; hand it back with `ReleaseBuffer`, never destroy it.
     bool AcquireBuffer(const rhi::BufferDesc& desc, PooledBuffer* out);
 
     /// Gives a buffer back, remembering the state it was left in.
     ///
-    /// Param buffer: a buffer acquired from this pool.
-    /// Param state: the state it is in now.
-    /// Aborts: the buffer is not in use from this pool.
+    /// - Param buffer: a buffer acquired from this pool.
+    /// - Param state: the state it is in now.
+    /// - Aborts: the buffer is not in use from this pool.
     void ReleaseBuffer(rhi::BufferHandle buffer, rhi::ResourceState state);
 
     /// Overwrites the state remembered for an idle texture; used to undo a recording that was never submitted.
     ///
-    /// Param texture: a texture of this pool; ignored if it is in use or unknown.
-    /// Param state: the state to remember.
-    /// Fails: never.
+    /// - Param texture: a texture of this pool; ignored if it is in use or unknown.
+    /// - Param state: the state to remember.
+    /// - Fails: never.
     void SetTextureState(rhi::TextureHandle texture, rhi::ResourceState state);
     /// Overwrites the state remembered for an idle buffer; see [[renderer::TransientPool::SetTextureState]].
     ///
-    /// Param buffer: a buffer of this pool; ignored if it is in use or unknown.
-    /// Param state: the state to remember.
-    /// Fails: never.
+    /// - Param buffer: a buffer of this pool; ignored if it is in use or unknown.
+    /// - Param state: the state to remember.
+    /// - Fails: never.
     void SetBufferState(rhi::BufferHandle buffer, rhi::ResourceState state);
 
     /// Returns the counters.
-    /// Fails: never.
+    /// - Fails: never.
     TransientPoolStats Stats() const;
 
 private:

@@ -12,7 +12,7 @@ namespace engine_placeholder::rhi {
 
 /// Opt-in trait: specialize with `value = true` to give a `u32` scoped enum the flag operators.
 ///
-/// Thread-safety: immutable. A compile-time trait.
+/// - Thread-safety: immutable. A compile-time trait.
 template <typename E>
 struct EnableFlagOperators {
     /// Whether `E` is a flag enum.
@@ -21,8 +21,8 @@ struct EnableFlagOperators {
 
 /// Returns the union of two flag values.
 ///
-/// Param a: first flag set.
-/// Param b: second flag set.
+/// - Param a: first flag set.
+/// - Param b: second flag set.
 template <typename E>
     requires(EnableFlagOperators<E>::value)
 constexpr E operator|(E a, E b) {
@@ -31,8 +31,8 @@ constexpr E operator|(E a, E b) {
 
 /// Returns the flags set in both operands.
 ///
-/// Param a: first flag set.
-/// Param b: second flag set.
+/// - Param a: first flag set.
+/// - Param b: second flag set.
 template <typename E>
     requires(EnableFlagOperators<E>::value)
 constexpr E operator&(E a, E b) {
@@ -41,9 +41,9 @@ constexpr E operator&(E a, E b) {
 
 /// Returns whether every flag in `flags` is also set in `value`.
 ///
-/// Param value: the flag set to test.
-/// Param flags: the flags that must all be present; an empty `flags` is trivially contained.
-/// Returns: true when every bit of `flags` is set in `value`.
+/// - Param value: the flag set to test.
+/// - Param flags: the flags that must all be present; an empty `flags` is trivially contained.
+/// - Returns: true when every bit of `flags` is set in `value`.
 template <typename E>
     requires(EnableFlagOperators<E>::value)
 constexpr bool Has(E value, E flags) {
@@ -52,8 +52,8 @@ constexpr bool Has(E value, E flags) {
 
 /// Returns whether any bit is set in `value`.
 ///
-/// Param value: the flag set to test.
-/// Returns: true when `value` is non-zero.
+/// - Param value: the flag set to test.
+/// - Returns: true when `value` is non-zero.
 template <typename E>
     requires(EnableFlagOperators<E>::value)
 constexpr bool Any(E value) {
@@ -73,7 +73,7 @@ enum class BufferUsage : u32 {
 };
 /// Enables the flag operators for [[rhi::BufferUsage]].
 ///
-/// Thread-safety: immutable. A compile-time trait.
+/// - Thread-safety: immutable. A compile-time trait.
 template <>
 struct EnableFlagOperators<BufferUsage> {
     /// Always true.
@@ -92,7 +92,7 @@ enum class TextureUsage : u32 {
 };
 /// Enables the flag operators for [[rhi::TextureUsage]].
 ///
-/// Thread-safety: immutable. A compile-time trait.
+/// - Thread-safety: immutable. A compile-time trait.
 template <>
 struct EnableFlagOperators<TextureUsage> {
     /// Always true.
@@ -110,7 +110,7 @@ enum class ShaderStage : u32 {
 };
 /// Enables the flag operators for [[rhi::ShaderStage]].
 ///
-/// Thread-safety: immutable. A compile-time trait.
+/// - Thread-safety: immutable. A compile-time trait.
 template <>
 struct EnableFlagOperators<ShaderStage> {
     /// Always true.
@@ -126,11 +126,11 @@ enum class ShaderFormat : u8 {
 
 /// Returns the lowercase name of a shader format (`spirv`, `dxil`, `msl`), for logs.
 ///
-/// Param format: the format.
-/// Returns: a static string; `unknown` for a value outside the enum.
-/// Fails: never.
-/// Ownership: the string is static.
-/// Thread-safety: thread-safe.
+/// - Param format: the format.
+/// - Returns: a static string; `unknown` for a value outside the enum.
+/// - Fails: never.
+/// - Ownership: the string is static.
+/// - Thread-safety: thread-safe.
 const char* ShaderFormatName(ShaderFormat format);
 
 /// Which color channels a render target write updates. Combine with `|`.
@@ -144,7 +144,7 @@ enum class ColorWriteMask : u32 {
 };
 /// Enables the flag operators for [[rhi::ColorWriteMask]].
 ///
-/// Thread-safety: immutable. A compile-time trait.
+/// - Thread-safety: immutable. A compile-time trait.
 template <>
 struct EnableFlagOperators<ColorWriteMask> {
     /// Always true.
@@ -298,7 +298,7 @@ enum class VertexFormat : u8 {
 
 /// Returns the size in bytes of one attribute of `format`.
 ///
-/// Param format: a value below `VertexFormat::Count`; any other value returns 0.
+/// - Param format: a value below `VertexFormat::Count`; any other value returns 0.
 constexpr u32 VertexFormatSize(VertexFormat format) {
     switch (format) {
     case VertexFormat::Float1:

@@ -25,11 +25,11 @@ namespace engine_placeholder::spatial {
 /// Needs the resource [[spatial::SpatialWorld]] in the world. Register it after the transform propagation and before any system that queries the sets: a query
 /// that runs before the sync in a frame sees the previous frame's sets (documented, not an error).
 ///
-/// Param name: the system's name, copied by the schedule.
-/// Returns: the system description to `Schedule::Add`.
-/// Aborts: the `SpatialWorld` resource is missing.
-/// Thread-safety: thread-compatible; it writes the sets, so no query may run on them meanwhile.
-/// Ownership: the system owns its queries; the sets belong to the `SpatialWorld`.
+/// - Param name: the system's name, copied by the schedule.
+/// - Returns: the system description to `Schedule::Add`.
+/// - Aborts: the `SpatialWorld` resource is missing.
+/// - Thread-safety: thread-compatible; it writes the sets, so no query may run on them meanwhile.
+/// - Ownership: the system owns its queries; the sets belong to the `SpatialWorld`.
 ecs::SystemDesc MakeSpatialSyncSystem(const char* name);
 
 } // namespace engine_placeholder::spatial

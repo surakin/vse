@@ -8,8 +8,8 @@ namespace engine_placeholder::ui {
 
 /// A full-surface widget that shades what lies beneath a modal dialog and stops the pointer from reaching it. The surface adds one under each modal dialog.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: owns nothing.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: owns nothing.
 class ModalDim : public Widget {
 public:
     /// Makes a dim layer that fills its parent.

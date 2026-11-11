@@ -13,7 +13,7 @@ namespace engine_placeholder::os {
 ///
 /// Upper- and lower-case letters map to the same key. Anything not in the enum, including non-Latin
 /// letters, yields `Key::Unknown`.
-/// Param keysym: keysym value; X11 and XKB share the same numbering.
+/// - Param keysym: keysym value; X11 and XKB share the same numbering.
 Key KeyFromKeysym(u32 keysym);
 
 } // namespace engine_placeholder::os

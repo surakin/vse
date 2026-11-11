@@ -32,7 +32,7 @@ inline constexpr usize kMaxSetNameLength = 31;
 
 /// What the sync did, accumulated over its frames.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct SpatialWorldStats {
     u64 frames = 0;           ///< Frames the sync ran.
     u64 joined = 0;           ///< Entities that got a proxy.
@@ -53,8 +53,8 @@ struct SpatialWorldStats {
 /// The world's spatial sets, by id and by name. Create it with `world.SetResource(SpatialWorld())`; it starts with the four well-known sets (`kRenderSet`,
 /// `kPhysicsSet`, `kAudioSet`, `kGameplaySet`, named "render", "physics", "audio", "gameplay"), and `CreateSet` adds up to four more.
 ///
-/// Thread-safety: thread-compatible; queries on a set are thread-safe against each other, a write (the sync) is not against anything.
-/// Ownership: owns the sets.
+/// - Thread-safety: thread-compatible; queries on a set are thread-safe against each other, a write (the sync) is not against anything.
+/// - Ownership: owns the sets.
 class SpatialWorld {
 public:
     /// Creates the world with the four well-known sets, each with the default configuration.
@@ -65,43 +65,43 @@ public:
 
     /// Adds a set.
     ///
-    /// Param name: the set's name, at most `kMaxSetNameLength` characters (cut beyond); a name already used is allowed, `Find` returns the first.
-    /// Param config: how the set is made (for example a grid for a crowd).
-    /// Returns: the id, or `kInvalidSetId` when `kMaxSpatialSets` sets exist (counted in `Stats().refused_sets`).
-    /// Fails: as described.
+    /// - Param name: the set's name, at most `kMaxSetNameLength` characters (cut beyond); a name already used is allowed, `Find` returns the first.
+    /// - Param config: how the set is made (for example a grid for a crowd).
+    /// - Returns: the id, or `kInvalidSetId` when `kMaxSpatialSets` sets exist (counted in `Stats().refused_sets`).
+    /// - Fails: as described.
     SetId CreateSet(StringView name, const SpatialSetConfig& config = SpatialSetConfig());
     /// Returns the number of sets.
     u32 SetCount() const { return count_; }
     /// The set with this id.
-    /// Returns: the set, or null for an id that names none.
-    /// Fails: returns null as described.
-    /// Ownership: valid until the world is destroyed or moved from.
+    /// - Returns: the set, or null for an id that names none.
+    /// - Fails: returns null as described.
+    /// - Ownership: valid until the world is destroyed or moved from.
     SpatialSet* Set(SetId id) { return id < count_ ? sets_[id].Get() : nullptr; }
     /// The set with this id (const).
-    /// Returns: the set, or null for an id that names none.
-    /// Fails: returns null as described.
-    /// Ownership: valid until the world is destroyed or moved from.
+    /// - Returns: the set, or null for an id that names none.
+    /// - Fails: returns null as described.
+    /// - Ownership: valid until the world is destroyed or moved from.
     const SpatialSet* Set(SetId id) const { return id < count_ ? sets_[id].Get() : nullptr; }
     /// The id of the first set with this name.
-    /// Returns: the id, or `kInvalidSetId` when there is none.
+    /// - Returns: the id, or `kInvalidSetId` when there is none.
     SetId Find(StringView name) const;
     /// The name of a set.
-    /// Returns: the name, empty for an id that names none.
-    /// Ownership: valid until the world is destroyed.
+    /// - Returns: the name, empty for an id that names none.
+    /// - Ownership: valid until the world is destroyed.
     StringView NameOf(SetId id) const;
     /// Empties every set (the sets and their names stay). The entities keep their proxies, so call it only together with removing the `SpatialProxy`
     /// components, or when the world is being torn down.
     void Clear();
 
     /// Whether the sync computes `WorldBounds` as jobs (when its system has the frame thread to itself). On by default; off runs it on the calling thread.
-    /// Fails: never.
+    /// - Fails: never.
     /// With [[spatial::SpatialWorld::UseSettings]] it reads `spatial.parallel` each time (so the setting changes it at run time).
     bool Parallel() const { return parallel_setting_.IsBound() ? parallel_setting_.Get() : parallel_; }
     /// Sets whether the sync computes `WorldBounds` as jobs (ignored while a setting is used).
     void SetParallel(bool parallel) { parallel_ = parallel; }
     /// Makes the world follow the `spatial.parallel` setting declared by [[spatial::RegisterSpatialSettings]].
-    /// Param registry: the registry that holds it; it must outlive the world.
-    /// Aborts: the setting is not registered.
+    /// - Param registry: the registry that holds it; it must outlive the world.
+    /// - Aborts: the setting is not registered.
     void UseSettings(const settings::Registry& registry);
 
     /// What the sync has done.

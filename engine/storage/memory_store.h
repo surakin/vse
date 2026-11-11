@@ -13,16 +13,16 @@ namespace engine_placeholder::storage {
 ///
 /// For tests it can inject a failure: [[storage::MemoryStore::FailAfter]] makes the nth following mutation (or commit) return `Io`.
 ///
-/// Thread-safety: thread-safe as [[storage::Store]] describes; one internal lock.
-/// Ownership: owns the records.
+/// - Thread-safety: thread-safe as [[storage::Store]] describes; one internal lock.
+/// - Ownership: owns the records.
 class MemoryStore final : public Store {
 public:
     /// Creates an empty store.
     MemoryStore();
 
     /// Returns `"memory"`.
-    /// Ownership: the string is static.
-    /// Fails: never.
+    /// - Ownership: the string is static.
+    /// - Fails: never.
     const char* Name() const override;
     Status Put(const EntityRecord& record) override;
     Status Get(EntityKey key, EntityRecord* out) const override;
@@ -37,13 +37,13 @@ public:
 
     /// Makes the `n`th next mutation or commit fail with `Io` (1 is the next); that one only. 0 clears a pending injection.
     ///
-    /// Param n: the operation number.
-    /// Fails: never.
+    /// - Param n: the operation number.
+    /// - Fails: never.
     void FailAfter(u32 n);
     /// Damages the stored bytes of `key` (flips one bit, keeping the stored hash) so that reading it is `Corrupt`; for tests.
     ///
-    /// Returns: false when there is no such record.
-    /// Fails: returns false as described.
+    /// - Returns: false when there is no such record.
+    /// - Fails: returns false as described.
     bool CorruptRecord(EntityKey key);
 
 private:

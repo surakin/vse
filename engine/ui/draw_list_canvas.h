@@ -16,29 +16,29 @@ namespace engine_placeholder::ui {
 /// keep their capacity. A draw whose rectangle does not meet the current clip, or that is fully transparent, makes no vertex. Consecutive draws with the same clip, layer and
 /// texture share a command; a draw that needs no texture joins any command.
 ///
-/// Thread-safety: not-thread-safe; owner-thread only.
-/// Ownership: borrows the draw list and the glyph atlas, which must outlive it.
+/// - Thread-safety: not-thread-safe; owner-thread only.
+/// - Ownership: borrows the draw list and the glyph atlas, which must outlive it.
 class DrawListCanvas final : public Canvas {
 public:
     /// Makes a canvas that appends to `list` and takes glyphs from `atlas`.
-    /// Param list: the draw list to build; borrowed.
-    /// Param atlas: the glyph atlas for text; borrowed; null makes every glyph count as dropped.
-    /// Aborts: `list` is null.
-    /// Ownership: the list and the atlas are borrowed.
+    /// - Param list: the draw list to build; borrowed.
+    /// - Param atlas: the glyph atlas for text; borrowed; null makes every glyph count as dropped.
+    /// - Aborts: `list` is null.
+    /// - Ownership: the list and the atlas are borrowed.
     DrawListCanvas(DrawList* list, text::GlyphAtlas* atlas);
 
     /// Points the canvas at another list and atlas, keeping its stacks' storage (so a surface that draws every frame allocates nothing in steady state).
-    /// Param list: the draw list to build; borrowed.
-    /// Param atlas: the glyph atlas for text; borrowed; null makes every glyph count as dropped.
-    /// Aborts: `list` is null.
-    /// Ownership: the list and the atlas are borrowed.
+    /// - Param list: the draw list to build; borrowed.
+    /// - Param atlas: the glyph atlas for text; borrowed; null makes every glyph count as dropped.
+    /// - Aborts: `list` is null.
+    /// - Ownership: the list and the atlas are borrowed.
     void Rebind(DrawList* list, text::GlyphAtlas* atlas);
 
     /// Starts a frame: sets the scale and the surface size and resets the clip and layer stacks (the draw list is the caller's to `Clear`).
-    /// Param scale: physical pixels per logical unit; must be above 0.
-    /// Param width: the surface width in physical pixels.
-    /// Param height: the surface height in physical pixels.
-    /// Aborts: `scale` is not above 0.
+    /// - Param scale: physical pixels per logical unit; must be above 0.
+    /// - Param width: the surface width in physical pixels.
+    /// - Param height: the surface height in physical pixels.
+    /// - Aborts: `scale` is not above 0.
     void Begin(f32 scale, u32 width, u32 height);
 
     /// Returns the scale given to `Begin`.
@@ -58,7 +58,7 @@ public:
 
     /// Returns the current clip in physical pixels.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     PixelRect CurrentClip() const { return clips_[clips_.Size() - 1]; }
 
 private:

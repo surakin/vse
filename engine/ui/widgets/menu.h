@@ -27,8 +27,8 @@ enum class MenuItemKind : u8 {
 
 /// One item of a [[ui::Menu]].
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: owns its text and its submenu.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns its text and its submenu.
 struct MenuItem {
     String<HeapAllocator> text = String<HeapAllocator>(HeapAllocator::Default(), StringView()); ///< The text; `&` before a letter marks it as the mnemonic, `&&` is a literal `&`.
     MenuItemKind kind = MenuItemKind::Normal;                                                    ///< What the item is.
@@ -42,8 +42,8 @@ struct MenuItem {
 
 /// A list of items. It is a model, not a widget: a [[ui::MenuView]] shows it, and a menu may be shown any number of times.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: owns its items and their submenus. A menu must outlive the views that show it.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: owns its items and their submenus. A menu must outlive the views that show it.
 class Menu {
 public:
     /// Makes an empty menu.
@@ -51,48 +51,48 @@ public:
     /// Destroys the items and their submenus.
     ~Menu();
     /// Adds a plain item.
-    /// Param text: the text, with an optional `&` mnemonic.
-    /// Param action: run when chosen; may be null.
-    /// Param user: passed to it; borrowed.
-    /// Returns: the item's index.
-    /// Ownership: `user` is borrowed; the menu copies the text.
+    /// - Param text: the text, with an optional `&` mnemonic.
+    /// - Param action: run when chosen; may be null.
+    /// - Param user: passed to it; borrowed.
+    /// - Returns: the item's index.
+    /// - Ownership: `user` is borrowed; the menu copies the text.
     usize AddItem(StringView text, MenuAction action = nullptr, void* user = nullptr);
     /// Adds an item with a check mark.
-    /// Param checked: the initial state.
-    /// Ownership: `user` is borrowed.
+    /// - Param checked: the initial state.
+    /// - Ownership: `user` is borrowed.
     usize AddCheck(StringView text, bool checked, MenuAction action = nullptr, void* user = nullptr);
     /// Adds a radio item (see [[ui::MenuItemKind]]).
-    /// Ownership: `user` is borrowed.
+    /// - Ownership: `user` is borrowed.
     usize AddRadio(StringView text, bool checked, MenuAction action = nullptr, void* user = nullptr);
     /// Adds an item that opens `submenu`.
-    /// Param submenu: the menu to open; the item owns it.
-    /// Ownership: ownership passes to the menu.
+    /// - Param submenu: the menu to open; the item owns it.
+    /// - Ownership: ownership passes to the menu.
     usize AddSubmenu(StringView text, UniquePtr<Menu> submenu);
     /// Adds a separator line.
     usize AddSeparator();
     /// Returns how many items there are.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     usize ItemCount() const { return items_.Size(); }
     /// Returns an item.
-    /// Aborts: `index` is out of range.
+    /// - Aborts: `index` is out of range.
     const MenuItem& Item(usize index) const;
     /// Enables or disables an item.
-    /// Aborts: `index` is out of range.
+    /// - Aborts: `index` is out of range.
     void SetItemEnabled(usize index, bool enabled);
     /// Checks or unchecks an item; checking a radio item unchecks its neighbours in the run.
-    /// Aborts: `index` is out of range.
+    /// - Aborts: `index` is out of range.
     void SetItemChecked(usize index, bool checked);
     /// Shows the chord of surface accelerator `id` at the right of the item, and dims the item while that accelerator is off.
-    /// Param id: an id from [[ui::Surface::RegisterAccelerator]].
-    /// Aborts: `index` is out of range.
+    /// - Param id: an id from [[ui::Surface::RegisterAccelerator]].
+    /// - Aborts: `index` is out of range.
     void SetItemAccelerator(usize index, u32 id);
     /// Returns the submenu of an item, or null.
-    /// Ownership: borrowed; the menu owns it.
-    /// Fails: returns null for an item without a submenu.
+    /// - Ownership: borrowed; the menu owns it.
+    /// - Fails: returns null for an item without a submenu.
     Menu* Submenu(usize index) const;
     /// Runs the state change and the action of item `index` as choosing it does (a check toggles, a radio selects), without closing any popup. Returns whether anything ran.
-    /// Fails: returns false for a disabled item, a separator or a submenu item.
+    /// - Fails: returns false for a disabled item, a separator or a submenu item.
     bool Choose(usize index);
 
 private:
@@ -100,10 +100,10 @@ private:
 };
 
 /// Adds the Edit commands Cut, Copy, Paste and Select All (with a separator before Select All) to `menu`; choosing one runs it on `surface->EditTarget()`.
-/// Param menu: the menu to add to.
-/// Param surface: the surface whose focus owner is edited; borrowed, it must outlive the menu.
-/// Returns: the index of the Cut item (Copy, Paste follow, then the separator and Select All).
-/// Ownership: borrows `surface`.
+/// - Param menu: the menu to add to.
+/// - Param surface: the surface whose focus owner is edited; borrowed, it must outlive the menu.
+/// - Returns: the index of the Cut item (Copy, Paste follow, then the separator and Select All).
+/// - Ownership: borrows `surface`.
 usize AddEditItems(Menu& menu, Surface* surface);
 /// The offsets of the four items `AddEditItems` adds from the Cut item (a separator lies between Paste and Select All), and their count.
 constexpr usize kEditItemOffsets[] = {0, 1, 2, 4};
@@ -112,16 +112,16 @@ constexpr usize kEditItemCount = sizeof(kEditItemOffsets) / sizeof(kEditItemOffs
 
 /// Enables or disables the four items `AddEditItems` added, from what the edit target can do now (`Widget::CanEdit`); call it when the menu is about to show. A target that cannot edit
 /// disables all four.
-/// Param first: the index `AddEditItems` returned.
+/// - Param first: the index `AddEditItems` returned.
 void RefreshEditItems(Menu& menu, usize first, const Surface& surface);
 
 /// Splits `text` at its mnemonic marker: copies it without the `&` markers into `label` and returns the mnemonic letter in lower case (0 for none).
-/// Param text: the text as given to the menu.
-/// Param label: receives the text to display; cleared first.
-/// Param offset: receives the byte offset of the mnemonic letter in `label` (unchanged when there is none).
-/// Returns: the mnemonic, lower case, or 0.
-/// Ownership: `label` and `offset` are written; both must be non-null.
-/// Fails: never.
+/// - Param text: the text as given to the menu.
+/// - Param label: receives the text to display; cleared first.
+/// - Param offset: receives the byte offset of the mnemonic letter in `label` (unchanged when there is none).
+/// - Returns: the mnemonic, lower case, or 0.
+/// - Ownership: `label` and `offset` are written; both must be non-null.
+/// - Fails: never.
 char SplitMnemonic(StringView text, Vector<char>* label, u32* offset);
 
 /// The popup that shows a [[ui::Menu]]: a column of rows with a highlight that follows the pointer and the arrow keys.
@@ -130,8 +130,8 @@ char SplitMnemonic(StringView text, Vector<char>* label, u32* offset);
 /// moves into it), Left closes a submenu; hovering a submenu item opens it after `kSubmenuDelay`. Choosing a leaf item runs its action and closes every popup. A left or right arrow
 /// that the menu cannot use goes to `OnEdge` (the menu bar switches menus there). Escape and clicks outside are the surface's popup rules.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: borrows or owns its menu (see the constructors); owns nothing else.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: borrows or owns its menu (see the constructors); owns nothing else.
 class MenuView : public Widget {
 public:
     /// Seconds the pointer must rest on a submenu item before the submenu opens.
@@ -148,20 +148,20 @@ public:
     static constexpr usize kNone = static_cast<usize>(-1);
 
     /// Shows `menu`, which the caller keeps alive for as long as the view exists.
-    /// Param menu: the menu; borrowed.
-    /// Ownership: borrowed; the menu must outlive the view.
+    /// - Param menu: the menu; borrowed.
+    /// - Ownership: borrowed; the menu must outlive the view.
     explicit MenuView(Menu* menu);
     /// Shows `menu` and owns it (a context menu built for one use).
-    /// Param menu: the menu; ownership passes to the view.
+    /// - Param menu: the menu; ownership passes to the view.
     explicit MenuView(UniquePtr<Menu> menu);
     /// Returns the menu shown.
     ///
-    /// Ownership: borrowed.
-    /// Fails: never.
+    /// - Ownership: borrowed.
+    /// - Fails: never.
     Menu* GetMenu() const { return menu_; }
     /// Returns the highlighted item, or `kNone`.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     usize Highlight() const { return highlight_; }
     /// Highlights item `index` when it can be chosen (otherwise nothing changes); `kNone` clears the highlight.
     void SetHighlight(usize index);
@@ -171,7 +171,7 @@ public:
     Rect RowRect(usize index) const;
     /// Returns whether a submenu opened from this view is open.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool SubmenuOpen() const;
     /// Returns the listeners called with -1 or +1 for a Left or Right key this view could not use itself.
     Callback<MenuView*, int>& OnEdge() { return on_edge_; }
@@ -185,7 +185,7 @@ public:
     void Update(f32 dt) override;
     /// Returns whether a submenu is about to open.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool WantsUpdate() const override { return pending_ != kNone; }
 
 private:

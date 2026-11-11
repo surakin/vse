@@ -59,10 +59,10 @@ struct SharedBlock {
 /// own pointers concurrently; [[PlainRefCount]] is cheaper for pointers confined to one thread. The
 /// pointed-to object itself is not synchronized by either. There are no weak pointers.
 ///
-/// Thread-safety: thread-safe for copying and destroying distinct pointers that share one object when
+/// - Thread-safety: thread-safe for copying and destroying distinct pointers that share one object when
 ///   `Count` is `AtomicRefCount`; not-thread-safe with `PlainRefCount`. One `SharedPtr` object is never safe to
 ///   modify from two threads.
-/// Ownership: shares ownership of the object; it is destroyed when the last owner is released.
+/// - Ownership: shares ownership of the object; it is destroyed when the last owner is released.
 template <typename T, typename Count = AtomicRefCount>
 class SharedPtr {
 public:
@@ -111,9 +111,9 @@ public:
 
     /// Adopts a freshly made object and its block; only [[MakeShared]] can call it (it needs the passkey).
     ///
-    /// Param key: the passkey.
-    /// Param ptr: the object, inside the block's storage.
-    /// Param block: its control block, with a count of one.
+    /// - Param key: the passkey.
+    /// - Param ptr: the object, inside the block's storage.
+    /// - Param block: its control block, with a count of one.
     SharedPtr(detail::SharedAdopt key, T* ptr, SharedBlock<Count>* block) : ptr_(ptr), block_(block) { (void)key; }
 
     /// Releases this share.
@@ -192,8 +192,8 @@ struct SharedStorage : SharedBlock<Count> {
 
 /// Allocates a `T` and its control block together on the heap and returns the first owner.
 ///
-/// Param args: forwarded to the constructor.
-/// Returns: the owning pointer, or an empty one if the heap is exhausted.
+/// - Param args: forwarded to the constructor.
+/// - Returns: the owning pointer, or an empty one if the heap is exhausted.
 template <typename T, typename Count = AtomicRefCount, typename... Args>
 SharedPtr<T, Count> MakeShared(Args&&... args) {
     using Storage = detail::SharedStorage<T, Count>;

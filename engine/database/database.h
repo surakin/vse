@@ -28,8 +28,8 @@ enum class Feature : u8 {
 
 /// Returns a stable lower-case name for `feature` (`"savepoints"`); never null.
 ///
-/// Fails: never.
-/// Ownership: the returned string is static.
+/// - Fails: never.
+/// - Ownership: the returned string is static.
 const char* FeatureName(Feature feature);
 
 /// How a connection opens its database.
@@ -64,8 +64,8 @@ enum class IntegrityCheck : u8 {
 
 /// Everything `Database::Open` needs, as plain fields.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: `location` borrows its text; the caller keeps it alive for the `Open` call.
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: `location` borrows its text; the caller keeps it alive for the `Open` call.
 struct OpenOptions {
     /// The database to open: a path in the engine's portable form, or `":memory:"` for an in-memory database. An empty location is a private database that
     /// lives as long as its connection; so is `":memory:"` (the SQLite backend has no shared named in-memory database, and any other text is a file path).
@@ -90,51 +90,51 @@ enum class TransactionKind : u8 {
 /// Parameters are numbered from 1, columns from 0. After `Step` returns a row, the column getters read it; a text or blob view stays valid until
 /// the next `Step`, `Reset` or destruction. Bind before the first `Step` or after `Reset`.
 ///
-/// Thread-safety: not-thread-safe; one thread at a time, and the thread that uses the connection.
-/// Ownership: made by [[database::Connection::Prepare]]; it must be destroyed before its connection.
+/// - Thread-safety: not-thread-safe; one thread at a time, and the thread that uses the connection.
+/// - Ownership: made by [[database::Connection::Prepare]]; it must be destroyed before its connection.
 class Statement {
 public:
     virtual ~Statement() = default;
 
     /// The number of parameters (the highest parameter number).
-    /// Fails: never.
+    /// - Fails: never.
     virtual u32 ParameterCount() const = 0;
     /// The number of the parameter named `name` including its prefix (`":id"`), for binding by name.
     ///
-    /// Param name: the parameter as written in the SQL, with its `:` prefix.
-    /// Param index: receives the number (from 1).
-    /// Fails: `NotFound` when the statement has no such parameter; `Unsupported` without [[database::Feature::NamedParameters]].
-    /// Ownership: `index` is written during the call only.
+    /// - Param name: the parameter as written in the SQL, with its `:` prefix.
+    /// - Param index: receives the number (from 1).
+    /// - Fails: `NotFound` when the statement has no such parameter; `Unsupported` without [[database::Feature::NamedParameters]].
+    /// - Ownership: `index` is written during the call only.
     virtual Status ParameterIndex(StringView name, u32* index) const = 0;
 
     /// Binds `value` to parameter `index` (from 1), replacing an earlier binding. Text and blob contents are copied before the call returns.
     ///
-    /// Fails: `Misuse` when `index` is 0 or above [[database::Statement::ParameterCount]]; `TooBig` when the value exceeds the backend's limit.
+    /// - Fails: `Misuse` when `index` is 0 or above [[database::Statement::ParameterCount]]; `TooBig` when the value exceeds the backend's limit.
     virtual Status Bind(u32 index, const ValueView& value) = 0;
     /// Binds null to every parameter.
-    /// Fails: never for a healthy statement.
+    /// - Fails: never for a healthy statement.
     virtual Status ClearBindings() = 0;
     /// Rewinds the statement so `Step` starts again; bindings are kept. Also releases the locks a read statement holds.
     ///
-    /// Fails: never; the error of a failed `Step` was reported by that `Step`.
+    /// - Fails: never; the error of a failed `Step` was reported by that `Step`.
     virtual Status Reset() = 0;
 
     /// Runs the statement to its next row or to its end.
     ///
-    /// Param has_row: receives true when a row is ready to read, false when the statement is done.
-    /// Fails: `Constraint`, `Busy`, `Locked`, `ReadOnly`, `Full`, `Io`, `Corrupt` and the others of [[database::ErrorCode]]; a failed write statement changed nothing;
+    /// - Param has_row: receives true when a row is ready to read, false when the statement is done.
+    /// - Fails: `Constraint`, `Busy`, `Locked`, `ReadOnly`, `Full`, `Io`, `Corrupt` and the others of [[database::ErrorCode]]; a failed write statement changed nothing;
     /// `Misuse` for a `Step` after the statement reported done and before `Reset`.
-    /// Ownership: `has_row` is written during the call only; a row's column views stay valid until the next `Step` or `Reset`.
+    /// - Ownership: `has_row` is written during the call only; a row's column views stay valid until the next `Step` or `Reset`.
     virtual Status Step(bool* has_row) = 0;
 
     /// The number of columns of the result (0 for a statement that returns no rows).
-    /// Fails: never.
+    /// - Fails: never.
     virtual u32 ColumnCount() const = 0;
     /// The value of column `index` of the current row, as the type it was stored with. Text and blob views are valid until the next `Step` or `Reset`.
     ///
-    /// Param index: the column, from 0.
-    /// Aborts: `index` is out of range.
-    /// Fails: with no current row (before the first `Step`, or after one that reported done) the value is null.
+    /// - Param index: the column, from 0.
+    /// - Aborts: `index` is out of range.
+    /// - Fails: with no current row (before the first `Step`, or after one that reported done) the value is null.
     virtual ValueView Column(u32 index) const = 0;
 };
 
@@ -142,99 +142,99 @@ public:
 ///
 /// A connection is in one of two states, outside or inside a transaction. A statement outside a transaction commits on its own.
 ///
-/// Thread-safety: not-thread-safe; one thread at a time (a connection may move between threads between calls). Separate connections to one database
+/// - Thread-safety: not-thread-safe; one thread at a time (a connection may move between threads between calls). Separate connections to one database
 /// are safe to use from separate threads; writes are serialized by the backend and a writer that waits longer than the busy timeout gets `Busy`.
-/// Ownership: made by [[database::Database::Open]]; closing it (destruction) rolls back an open transaction.
+/// - Ownership: made by [[database::Database::Open]]; closing it (destruction) rolls back an open transaction.
 class Connection {
 public:
     virtual ~Connection() = default;
 
     /// Returns true when the backend supports `feature`.
-    /// Fails: never.
+    /// - Fails: never.
     virtual bool Supports(Feature feature) const = 0;
 
     /// Compiles `sql` into a statement.
     ///
-    /// Param sql: one statement; a literal, so no data is formatted into it.
-    /// Param out: receives the statement on success; unchanged on failure.
-    /// Fails: `Syntax` for text the backend cannot parse; `Unsupported` for a form it lacks; `Misuse` for more than one statement.
-    /// Ownership: a statement used after its connection was destroyed fails with `Misuse`; destroy statements first.
+    /// - Param sql: one statement; a literal, so no data is formatted into it.
+    /// - Param out: receives the statement on success; unchanged on failure.
+    /// - Fails: `Syntax` for text the backend cannot parse; `Unsupported` for a form it lacks; `Misuse` for more than one statement.
+    /// - Ownership: a statement used after its connection was destroyed fails with `Misuse`; destroy statements first.
     virtual Status Prepare(SqlText sql, UniquePtr<Statement>* out) = 0;
     /// Runs one statement that has no parameters and returns no rows that matter (schema changes, transaction control, pragmas of a backend).
     ///
-    /// Fails: as `Prepare` and `Step`.
+    /// - Fails: as `Prepare` and `Step`.
     virtual Status Execute(SqlText sql) = 0;
 
     /// Starts a transaction.
     ///
-    /// Fails: `Misuse` inside a transaction (they do not nest; use savepoints); `Busy` for `Immediate` when another writer holds the lock.
+    /// - Fails: `Misuse` inside a transaction (they do not nest; use savepoints); `Busy` for `Immediate` when another writer holds the lock.
     virtual Status Begin(TransactionKind kind) = 0;
     /// Makes the transaction's changes durable and ends it.
-    /// Fails: `Misuse` outside a transaction; `Busy`, `Io`, `Full`, `Constraint` (a deferred foreign key); on failure the transaction is still open.
+    /// - Fails: `Misuse` outside a transaction; `Busy`, `Io`, `Full`, `Constraint` (a deferred foreign key); on failure the transaction is still open.
     virtual Status Commit() = 0;
     /// Undoes the transaction's changes and ends it.
-    /// Fails: `Misuse` outside a transaction.
+    /// - Fails: `Misuse` outside a transaction.
     virtual Status Rollback() = 0;
     /// Returns true inside a transaction.
-    /// Fails: never.
+    /// - Fails: never.
     virtual bool InTransaction() const = 0;
 
     /// Marks a point inside the transaction (starting one if none is open) that `RollbackToSavepoint` can return to. Savepoints nest.
     ///
-    /// Param name: an identifier (a letter or underscore, then letters, digits and underscores).
-    /// Fails: `Unsupported` without [[database::Feature::Savepoints]]; `Misuse` for a name that is not an identifier.
+    /// - Param name: an identifier (a letter or underscore, then letters, digits and underscores).
+    /// - Fails: `Unsupported` without [[database::Feature::Savepoints]]; `Misuse` for a name that is not an identifier.
     virtual Status Savepoint(StringView name) = 0;
     /// Forgets the savepoint `name` and those inside it, keeping their changes.
-    /// Fails: `Misuse` when no such savepoint is open; `Unsupported` without [[database::Feature::Savepoints]].
+    /// - Fails: `Misuse` when no such savepoint is open; `Unsupported` without [[database::Feature::Savepoints]].
     virtual Status ReleaseSavepoint(StringView name) = 0;
     /// Undoes the changes made since the savepoint `name`; the savepoint stays open.
-    /// Fails: `Misuse` when no such savepoint is open; `Unsupported` without [[database::Feature::Savepoints]].
+    /// - Fails: `Misuse` when no such savepoint is open; `Unsupported` without [[database::Feature::Savepoints]].
     virtual Status RollbackToSavepoint(StringView name) = 0;
 
     /// The key of the row most recently inserted on this connection into a table with an `INTEGER PRIMARY KEY` (0 when none was).
-    /// Fails: never.
+    /// - Fails: never.
     virtual i64 LastInsertRowId() const = 0;
     /// The number of rows the most recent `INSERT`, `UPDATE` or `DELETE` on this connection changed.
-    /// Fails: never.
+    /// - Fails: never.
     virtual i64 ChangedRows() const = 0;
 
     /// Reads the schema version, a number the application owns (0 in a new database), so no backend-specific statement is needed to track migrations.
-    /// Fails: `Busy`, `Io`, `Corrupt`.
-    /// Ownership: `out` is written during the call only.
+    /// - Fails: `Busy`, `Io`, `Corrupt`.
+    /// - Ownership: `out` is written during the call only.
     virtual Status SchemaVersion(i64* out) = 0;
     /// Writes the schema version; inside a transaction it commits with it.
-    /// Fails: `ReadOnly`, `Busy`, `Io`.
+    /// - Fails: `ReadOnly`, `Busy`, `Io`.
     virtual Status WriteSchemaVersion(i64 version) = 0;
 };
 
 /// A backend: opens connections to its databases.
 ///
-/// Thread-safety: thread-safe. `Open` may be called from any thread; the connections it made follow [[database::Connection]]'s rules.
-/// Ownership: the database object must outlive the connections it opened.
+/// - Thread-safety: thread-safe. `Open` may be called from any thread; the connections it made follow [[database::Connection]]'s rules.
+/// - Ownership: the database object must outlive the connections it opened.
 class Database {
 public:
     virtual ~Database() = default;
 
     /// A short stable name for logs and tests (`"memory"`, `"sqlite"`); never null.
-    /// Fails: never.
-    /// Ownership: the returned string is static.
+    /// - Fails: never.
+    /// - Ownership: the returned string is static.
     virtual const char* Name() const = 0;
     /// Returns true when the backend supports `feature` (what the backend can do for some database; a connection's own `Supports` is exact for its database).
-    /// Fails: never.
+    /// - Fails: never.
     virtual bool Supports(Feature feature) const = 0;
     /// Opens a connection.
     ///
-    /// Param options: what to open and how.
-    /// Param out: receives the connection on success; unchanged on failure.
-    /// Fails: `NotFound` for a missing database with a mode other than `Create`; `Corrupt`, `Io`, `Busy`, `ReadOnly`, `Unsupported` (a journal mode the backend lacks).
-    /// Ownership: `options.location` is read during the call only; the connection must be destroyed before the database.
+    /// - Param options: what to open and how.
+    /// - Param out: receives the connection on success; unchanged on failure.
+    /// - Fails: `NotFound` for a missing database with a mode other than `Create`; `Corrupt`, `Io`, `Busy`, `ReadOnly`, `Unsupported` (a journal mode the backend lacks).
+    /// - Ownership: `options.location` is read during the call only; the connection must be destroyed before the database.
     virtual Status Open(const OpenOptions& options, UniquePtr<Connection>* out) = 0;
 };
 
 /// A transaction that rolls back unless committed: begin at construction, `Commit` to keep the changes, destruction rolls back.
 ///
-/// Thread-safety: not-thread-safe; the thread that uses the connection.
-/// Ownership: borrows the connection, which must outlive the guard.
+/// - Thread-safety: not-thread-safe; the thread that uses the connection.
+/// - Ownership: borrows the connection, which must outlive the guard.
 class Transaction {
 public:
     /// Begins a transaction on `connection`; check [[database::Transaction::BeginStatus]].
@@ -245,11 +245,11 @@ public:
     Transaction& operator=(const Transaction&) = delete;
 
     /// The result of the `Begin` made by the constructor.
-    /// Fails: never.
+    /// - Fails: never.
     const Status& BeginStatus() const { return begin_; }
     /// Commits. After a successful commit the destructor does nothing; after a failed one the transaction is still open and the destructor rolls it back.
     ///
-    /// Fails: the connection's `Commit` failure; `Misuse` when `Begin` failed or the transaction was already committed.
+    /// - Fails: the connection's `Commit` failure; `Misuse` when `Begin` failed or the transaction was already committed.
     Status Commit();
 
 private:

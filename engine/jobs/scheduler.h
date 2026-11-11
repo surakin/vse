@@ -61,19 +61,19 @@ class IoThread;
 /// cannot be copied, and it must be destroyed on the constructing thread.
 /// Join all outstanding work before destroying it.
 ///
-/// Thread-safety: thread-safe for [[jobs::Scheduler::Submit]],
+/// - Thread-safety: thread-safe for [[jobs::Scheduler::Submit]],
 ///   [[jobs::Scheduler::Schedule]], the accessors and the statistics, which any
 ///   thread may call. [[jobs::Scheduler::HelpUntil(Counter&)]] is limited to participant 0
 ///   outside a job, and [[jobs::Scheduler::Shutdown]] and destruction to the owning thread.
-/// Ownership: owns the worker pool, the per-participant deques and the I/O
+/// - Ownership: owns the worker pool, the per-participant deques and the I/O
 ///   thread. Frames of submitted jobs belong to the scheduler until they run to
 ///   completion or [[jobs::Scheduler::Shutdown]] destroys them unrun.
-/// See: [[jobs::Counter]], [[jobs::Spawn]], [[jobs::WorkerPool]]
+/// - See: [[jobs::Counter]], [[jobs::Spawn]], [[jobs::WorkerPool]]
 class Scheduler {
 public:
     /// Scheduler construction parameters.
     ///
-    /// Thread-safety: not-thread-safe. A plain value type.
+    /// - Thread-safety: not-thread-safe. A plain value type.
     struct Config {
         /// Number of participants including main; 0 selects the default.
         ///
@@ -88,15 +88,15 @@ public:
     ///
     /// The calling thread becomes participant 0 and must also destroy the scheduler.
     ///
-    /// Param config: participant count and pinning.
+    /// - Param config: participant count and pinning.
     explicit Scheduler(const Config& config);
 
     /// Shuts the scheduler down (see [[jobs::Scheduler::Shutdown]]) and releases all its resources.
     ///
     /// Join outstanding work first, or suspended frames leak and queued jobs are destroyed unrun.
     ///
-    /// Aborts: not called on the thread that constructed the scheduler.
-    /// Ownership: destroys the I/O thread, the worker pool and the deques.
+    /// - Aborts: not called on the thread that constructed the scheduler.
+    /// - Ownership: destroys the I/O thread, the worker pool and the deques.
     ~Scheduler();
 
     Scheduler(const Scheduler&) = delete;
@@ -108,10 +108,10 @@ public:
     /// which leaves `job` empty. See the class overview for what happens when
     /// the queues are full.
     ///
-    /// Param job: the job to run; must be non-empty. It is moved from.
-    /// Aborts: `job` is empty; the scheduler has completed shutdown; both queues are full and the caller is not participant 0 outside a job.
-    /// Ownership: takes ownership of the job's frame, which destroys itself on completion.
-    /// Thread-safety: thread-safe. Any thread.
+    /// - Param job: the job to run; must be non-empty. It is moved from.
+    /// - Aborts: `job` is empty; the scheduler has completed shutdown; both queues are full and the caller is not participant 0 outside a job.
+    /// - Ownership: takes ownership of the job's frame, which destroys itself on completion.
+    /// - Thread-safety: thread-safe. Any thread.
     void Submit(Job&& job);
 
     /// Queues an already-suspended coroutine to be resumed on a participant.
@@ -121,10 +121,10 @@ public:
     /// deque, falling back to the injection queue; other threads use the
     /// injection queue.
     ///
-    /// Param h: the suspended coroutine to resume; must not be null and must not be queued already.
-    /// Aborts: `h` is null; the scheduler has completed shutdown; both queues are full and the caller is not participant 0 outside a job.
-    /// Ownership: takes responsibility for resuming `h` exactly once, or destroying it if shutdown drops it unrun.
-    /// Thread-safety: thread-safe. Any thread.
+    /// - Param h: the suspended coroutine to resume; must not be null and must not be queued already.
+    /// - Aborts: `h` is null; the scheduler has completed shutdown; both queues are full and the caller is not participant 0 outside a job.
+    /// - Ownership: takes responsibility for resuming `h` exactly once, or destroying it if shutdown drops it unrun.
+    /// - Thread-safety: thread-safe. Any thread.
     void Schedule(CoroutineHandle<> h);
 
     /// Runs jobs on the calling thread until a predicate becomes true.
@@ -132,26 +132,26 @@ public:
     /// Uses the same acquisition order as a worker, then returns. Jobs wait
     /// with `co_await`; this is how the main thread waits.
     ///
-    /// Param done: predicate polled between jobs; returns `true` when the wait is over.
-    /// Param user: passed to `done` unchanged.
-    /// Aborts: not called from participant 0 (the main thread), or called from inside a running job.
-    /// Ownership: `user` is borrowed, not owned.
-    /// Thread-safety: owner-thread-only. Participant 0, outside any job.
+    /// - Param done: predicate polled between jobs; returns `true` when the wait is over.
+    /// - Param user: passed to `done` unchanged.
+    /// - Aborts: not called from participant 0 (the main thread), or called from inside a running job.
+    /// - Ownership: `user` is borrowed, not owned.
+    /// - Thread-safety: owner-thread-only. Participant 0, outside any job.
     void HelpUntil(bool (*done)(void* user), void* user);
 
     /// Runs jobs on the calling thread until a counter reaches zero.
     ///
-    /// Param counter: the counter to wait on; must outlive the call.
-    /// Aborts: not called from participant 0 (the main thread), or called from inside a running job.
-    /// Thread-safety: owner-thread-only. Participant 0, outside any job.
+    /// - Param counter: the counter to wait on; must outlive the call.
+    /// - Aborts: not called from participant 0 (the main thread), or called from inside a running job.
+    /// - Thread-safety: owner-thread-only. Participant 0, outside any job.
     void HelpUntil(Counter& counter);
 
     /// Runs jobs on the calling thread until an atomic reaches a target value.
     ///
-    /// Param value: the atomic to watch; read with acquire ordering.
-    /// Param target: the wait ends once `value >= target`.
-    /// Aborts: not called from participant 0 (the main thread), or called from inside a running job.
-    /// Thread-safety: owner-thread-only. Participant 0, outside any job.
+    /// - Param value: the atomic to watch; read with acquire ordering.
+    /// - Param target: the wait ends once `value >= target`.
+    /// - Aborts: not called from participant 0 (the main thread), or called from inside a running job.
+    /// - Thread-safety: owner-thread-only. Participant 0, outside any job.
     void HelpUntil(const Atomic<int>& value, int target);
 
     /// Stops the I/O thread and the workers and destroys jobs that never ran.
@@ -165,9 +165,9 @@ public:
     /// destructor. Coroutines parked in a counter await are in no queue and are
     /// not freed, so join outstanding work first.
     ///
-    /// Returns: the number of queued handles destroyed without running; 0 on any call after the first.
-    /// Ownership: destroys the frames of every queued job that never ran.
-    /// Thread-safety: owner-thread-only. Do not call it concurrently with submissions or from several threads.
+    /// - Returns: the number of queued handles destroyed without running; 0 on any call after the first.
+    /// - Ownership: destroys the frames of every queued job that never ran.
+    /// - Thread-safety: owner-thread-only. Do not call it concurrently with submissions or from several threads.
     usize Shutdown();
 
     /// Gives the dedicated, non-participant I/O thread.
@@ -175,68 +175,68 @@ public:
     /// It is started with the scheduler and stopped by
     /// [[jobs::Scheduler::Shutdown]] before the workers.
     ///
-    /// Returns: the I/O thread, valid for the scheduler's lifetime.
-    /// Thread-safety: thread-safe.
+    /// - Returns: the I/O thread, valid for the scheduler's lifetime.
+    /// - Thread-safety: thread-safe.
     IoThread& Io() { return *io_; }
 
     /// Gives the number of participants, including main.
     ///
-    /// Returns: the participant count, at least 1.
+    /// - Returns: the participant count, at least 1.
     usize ParticipantCount() const { return pool_->ParticipantCount(); }
     /// Gives the worker pool behind the participants.
     ///
-    /// Returns: the pool, valid for the scheduler's lifetime.
+    /// - Returns: the pool, valid for the scheduler's lifetime.
     const WorkerPool& Pool() const { return *pool_; }
 
     /// Finds the scheduler the calling thread participates in.
     ///
-    /// Returns: the scheduler, or null on a thread that is not a participant of any scheduler.
-    /// Ownership: not transferred; the pointer is valid while the scheduler lives.
-    /// Thread-safety: thread-safe.
+    /// - Returns: the scheduler, or null on a thread that is not a participant of any scheduler.
+    /// - Ownership: not transferred; the pointer is valid while the scheduler lives.
+    /// - Thread-safety: thread-safe.
     static Scheduler* Current();
 
     /// Tells whether the calling thread is inside a job's resume.
     ///
-    /// Returns: `true` while a job runs on the calling thread.
-    /// Thread-safety: thread-safe.
+    /// - Returns: `true` while a job runs on the calling thread.
+    /// - Thread-safety: thread-safe.
     static bool InsideJob();
 
     /// Counts the coroutine resumes performed by one participant.
     ///
     /// Statistics use relaxed counters and are exact once the system is quiescent.
     ///
-    /// Param participant: participant index, which must be below [[jobs::Scheduler::ParticipantCount]]; not checked.
-    /// Returns: number of resumes so far.
-    /// Thread-safety: thread-safe.
+    /// - Param participant: participant index, which must be below [[jobs::Scheduler::ParticipantCount]]; not checked.
+    /// - Returns: number of resumes so far.
+    /// - Thread-safety: thread-safe.
     u64 ResumesBy(usize participant) const;
 
     /// Counts the successful steals performed by one participant.
     ///
-    /// Param participant: participant index, which must be below [[jobs::Scheduler::ParticipantCount]]; not checked.
-    /// Returns: number of steals so far.
-    /// Thread-safety: thread-safe.
+    /// - Param participant: participant index, which must be below [[jobs::Scheduler::ParticipantCount]]; not checked.
+    /// - Returns: number of steals so far.
+    /// - Thread-safety: thread-safe.
     u64 StealsBy(usize participant) const;
 
     /// Counts the coroutine resumes across all participants.
     ///
-    /// Returns: the sum of the per-participant resume counts.
-    /// Thread-safety: thread-safe.
+    /// - Returns: the sum of the per-participant resume counts.
+    /// - Thread-safety: thread-safe.
     u64 TotalResumes() const;
 
     /// Counts the workers currently parked on the idle condition variable; a testing aid.
     ///
-    /// Returns: number of parked workers at the moment of the call.
-    /// Thread-safety: thread-safe.
+    /// - Returns: number of parked workers at the moment of the call.
+    /// - Thread-safety: thread-safe.
     u32 ParkedWorkersForTesting() const { return parked_.Load(MemoryOrder::SeqCst); }
     /// Counts the entries in the injection queue; a testing aid.
     ///
-    /// Returns: the current queue length.
-    /// Thread-safety: thread-safe. Takes the queue lock.
+    /// - Returns: the current queue length.
+    /// - Thread-safety: thread-safe. Takes the queue lock.
     usize InjectionQueueSizeForTesting();
 
     /// Gives the capacity of the injection queue.
     ///
-    /// Returns: the maximum number of handles it holds.
+    /// - Returns: the maximum number of handles it holds.
     static constexpr usize InjectionCapacity() { return kInjectionCapacity; }
 
 private:

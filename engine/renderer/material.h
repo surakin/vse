@@ -37,7 +37,7 @@ inline constexpr u32 kMaxMaterialSamplers = 4;
 
 /// A material template. The generation makes a stale id detectable; the all-zero id is invalid.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct TemplateId {
     /// Slot in the system's template list.
     u32 index = 0;
@@ -45,13 +45,13 @@ struct TemplateId {
     u32 generation = 0;
 
     /// Returns whether this is not the invalid (all-zero) id; a valid-looking id can still be stale.
-    /// Fails: never.
+    /// - Fails: never.
     constexpr bool IsValid() const { return generation != 0; }
 };
 
 /// A material. The generation makes a stale id detectable; the all-zero id is invalid.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct MaterialId {
     /// Slot in the system's material list.
     u32 index = 0;
@@ -59,13 +59,13 @@ struct MaterialId {
     u32 generation = 0;
 
     /// Returns whether this is not the invalid (all-zero) id; a valid-looking id can still be stale.
-    /// Fails: never.
+    /// - Fails: never.
     constexpr bool IsValid() const { return generation != 0; }
 };
 
 /// The fixed-function state a template draws with.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct MaterialRenderState {
     /// Which faces are culled.
     rhi::CullMode cull = rhi::CullMode::Back;
@@ -94,8 +94,8 @@ inline constexpr u32 kMaxObjectIndices = 65536;
 
 /// Names the default texture of one texture slot, overriding the name-based choice.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: `slot` is borrowed for the call to [[renderer::MaterialSystem::CreateTemplate]].
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: `slot` is borrowed for the call to [[renderer::MaterialSystem::CreateTemplate]].
 struct TextureDefault {
     /// The shader's texture variable name.
     const char* slot = "";
@@ -108,8 +108,8 @@ struct TextureDefault {
 /// The vertex stage is a single module. The fragment stage is either a single module (`fragment`) or a permuted shader
 /// (`fragment_permutations`); each material then picks a [[renderer::PermutationKey]] for it.
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: the shader words, reflection blobs, permutation table and name are borrowed and must outlive the system
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: the shader words, reflection blobs, permutation table and name are borrowed and must outlive the system
 ///   (they are normally static generated data).
 struct MaterialTemplateDesc {
     /// Debug name, at most 47 characters.
@@ -131,7 +131,7 @@ struct MaterialTemplateDesc {
 
 /// What a pipeline renders into; part of the pipeline cache key.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct PipelineTarget {
     /// Formats of the color attachments, the first `color_count` of them.
     rhi::Format color_formats[rhi::kMaxColorAttachments] = {};
@@ -143,7 +143,7 @@ struct PipelineTarget {
 
 /// A pipeline found or created by [[renderer::MaterialSystem::GetPipeline]].
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct PipelineLookup {
     /// The pipeline, or invalid if it could not be created.
     rhi::PipelineHandle pipeline;
@@ -153,7 +153,7 @@ struct PipelineLookup {
 
 /// What the system has done, for tests and tools.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct MaterialStats {
     /// Pipeline lookups served from the cache.
     u32 pipeline_hits = 0;
@@ -171,7 +171,7 @@ struct MaterialStats {
 
 /// Capacities of a [[renderer::MaterialSystem]].
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct MaterialSystemDesc {
     /// Most live templates.
     u32 max_templates = 32;
@@ -191,11 +191,11 @@ struct MaterialSystemDesc {
 /// Sorting by this key groups draws that share a pipeline and, within it, a material, so pipeline and material bind
 /// groups change as rarely as possible.
 ///
-/// Param pipeline_index: [[renderer::PipelineLookup::index]]; below 65536.
-/// Param material_index: [[renderer::MaterialId::index]]; below 2^24.
-/// Param mesh_index: any stable small number for the mesh (for example its slot); below 2^24.
-/// Returns: the key; compare keys with `<`.
-/// Aborts: an argument is out of range.
+/// - Param pipeline_index: [[renderer::PipelineLookup::index]]; below 65536.
+/// - Param material_index: [[renderer::MaterialId::index]]; below 2^24.
+/// - Param mesh_index: any stable small number for the mesh (for example its slot); below 2^24.
+/// - Returns: the key; compare keys with `<`.
+/// - Aborts: an argument is out of range.
 u64 MakeDrawSortKey(u32 pipeline_index, u32 material_index, u32 mesh_index);
 
 /// Templates, materials, default textures, bind groups and the pipeline cache.
@@ -212,18 +212,18 @@ u64 MakeDrawSortKey(u32 pipeline_index, u32 material_index, u32 mesh_index);
 /// or list them.
 /// Samplers left unset use a linear, repeating sampler.
 ///
-/// Thread-safety: thread-compatible.
-/// Ownership: borrows the device, which must outlive it; owns the shaders, layouts, buffers, bind groups, pipelines and
+/// - Thread-safety: thread-compatible.
+/// - Ownership: borrows the device, which must outlive it; owns the shaders, layouts, buffers, bind groups, pipelines and
 ///   default textures it creates. Textures and samplers given to a material belong to the caller and must outlive it.
 class MaterialSystem final : public Recreatable {
 public:
     /// Creates the system, the frame and object layouts, the default textures and the default sampler.
     ///
-    /// Param device: the device; must not be null.
-    /// Param desc: capacities; each at least 1, at most 2^24 materials and 65536 pipelines (the draw sort key's range).
-    /// Fails: creating a default resource fails; [[renderer::MaterialSystem::Valid]] then returns false.
-    /// Aborts: `device` is null or a capacity is 0 or too large.
-    /// Ownership: `device` is borrowed.
+    /// - Param device: the device; must not be null.
+    /// - Param desc: capacities; each at least 1, at most 2^24 materials and 65536 pipelines (the draw sort key's range).
+    /// - Fails: creating a default resource fails; [[renderer::MaterialSystem::Valid]] then returns false.
+    /// - Aborts: `device` is null or a capacity is 0 or too large.
+    /// - Ownership: `device` is borrowed.
     MaterialSystem(rhi::Device* device, const MaterialSystemDesc& desc);
     /// Destroys every material, template, pipeline and default resource. The GPU may still be using them; the device
     /// defers the actual release.
@@ -232,23 +232,23 @@ public:
     MaterialSystem& operator=(const MaterialSystem&) = delete;
 
     /// Returns whether the default resources were created.
-    /// Fails: never.
+    /// - Fails: never.
     bool Valid() const;
 
     /// Creates a template.
     ///
-    /// Param desc: the shaders and state.
-    /// Returns: the template, or an invalid id after logging the reason.
-    /// Fails: the reflection blobs do not parse or are for the wrong stage, the vertex shader uses a descriptor set other
+    /// - Param desc: the shaders and state.
+    /// - Returns: the template, or an invalid id after logging the reason.
+    /// - Fails: the reflection blobs do not parse or are for the wrong stage, the vertex shader uses a descriptor set other
     ///   than 0 to 2, set 0 is not one uniform buffer at binding 0, set 2 is not one storage buffer at binding 0, more
     ///   `texture_defaults` are listed than there are slots, or the template list is full.
-    /// Aborts: the system is not valid (see [[renderer::MaterialSystem::Valid]]).
+    /// - Aborts: the system is not valid (see [[renderer::MaterialSystem::Valid]]).
     TemplateId CreateTemplate(const MaterialTemplateDesc& desc);
 
     /// Destroys a template and its pipelines.
     ///
-    /// Param id: a live template.
-    /// Aborts: `id` is invalid or stale, or a material still uses the template.
+    /// - Param id: a live template.
+    /// - Aborts: `id` is invalid or stale, or a material still uses the template.
     void DestroyTemplate(TemplateId id);
 
     /// Creates a material.
@@ -256,32 +256,32 @@ public:
     /// The set-1 bindings of the chosen fragment module and the vertex module are merged into a layout; the parameter
     /// block starts zeroed and every texture and sampler slot starts on its default.
     ///
-    /// Param tmpl: a live template.
-    /// Param key: the fragment permutation; ignored (use the default key) for a template without a permuted fragment.
-    /// Param name: debug name, at most 47 characters; may be null.
-    /// Returns: the material, or an invalid id after logging the reason.
-    /// Fails: the key was not built, the fragment shader breaks the set conventions, the set-1 bindings do not merge, the parameter block exceeds
+    /// - Param tmpl: a live template.
+    /// - Param key: the fragment permutation; ignored (use the default key) for a template without a permuted fragment.
+    /// - Param name: debug name, at most 47 characters; may be null.
+    /// - Returns: the material, or an invalid id after logging the reason.
+    /// - Fails: the key was not built, the fragment shader breaks the set conventions, the set-1 bindings do not merge, the parameter block exceeds
     ///   [[renderer::kMaxMaterialParamBytes]], there are more textures or samplers than the limits allow, a binding is an
     ///   array or an unsupported type, the vertex and fragment shaders declare different parameter blocks, or the
     ///   material list is full or a GPU object could not be created.
-    /// Aborts: `tmpl` is invalid or stale.
-    /// Ownership: `name` is copied.
+    /// - Aborts: `tmpl` is invalid or stale.
+    /// - Ownership: `name` is copied.
     MaterialId CreateMaterial(TemplateId tmpl, PermutationKey key, const char* name);
 
     /// Destroys a material and its GPU objects (the device defers the release).
     ///
-    /// Param id: a live material.
-    /// Aborts: `id` is invalid or stale.
+    /// - Param id: a live material.
+    /// - Aborts: `id` is invalid or stale.
     void DestroyMaterial(MaterialId id);
 
     /// Returns whether `id` names a live material.
-    /// Fails: never.
+    /// - Fails: never.
     bool IsAlive(MaterialId id) const;
     /// Returns the live material that has slot `index`, or an invalid id when the slot is free or out of range.
     ///
     /// A scene object stores only the slot index (`RenderObject::material`); this recovers the id with its generation.
-    /// Fails: never.
-    /// Thread-safety: thread-compatible; concurrent calls are fine while nothing creates or destroys materials.
+    /// - Fails: never.
+    /// - Thread-safety: thread-compatible; concurrent calls are fine while nothing creates or destroys materials.
     MaterialId MaterialAtIndex(u32 index) const;
     /// Returns the bind group that binds `region` of a buffer as the set-0 frame uniform ([[renderer::FrameData]]).
     ///
@@ -289,222 +289,222 @@ public:
     /// [[renderer::FrameResources]] cost three creations in total. The system holds up to 8 such groups; past that the
     /// oldest is destroyed (through the device's deferred destruction), so recreating the frame resources does not exhaust it.
     ///
-    /// Param region: the frame region from [[renderer::FrameResources::FrameRegion]].
-    /// Returns: the group, or an invalid handle when the device cannot create it (logged).
-    /// Ownership: the system owns the group; it lives until it is evicted or the system is destroyed, which is fine after
+    /// - Param region: the frame region from [[renderer::FrameResources::FrameRegion]].
+    /// - Returns: the group, or an invalid handle when the device cannot create it (logged).
+    /// - Ownership: the system owns the group; it lives until it is evicted or the system is destroyed, which is fine after
     ///   the buffer itself was destroyed.
-    /// Thread-safety: thread-compatible; call from one thread (the one preparing the frame).
+    /// - Thread-safety: thread-compatible; call from one thread (the one preparing the frame).
     rhi::BindGroupHandle FrameBindGroup(const BufferRegion& region);
     /// Returns the bind group that binds `region` of a buffer as the set-2 per-object storage buffer; cached like
     /// [[renderer::MaterialSystem::FrameBindGroup]].
     ///
-    /// Param region: the object region from [[renderer::FrameResources::ObjectRegion]].
-    /// Returns: the group, or an invalid handle when the device cannot create it (logged).
-    /// Ownership: as for [[renderer::MaterialSystem::FrameBindGroup]].
-    /// Thread-safety: thread-compatible; call from one thread (the one preparing the frame).
+    /// - Param region: the object region from [[renderer::FrameResources::ObjectRegion]].
+    /// - Returns: the group, or an invalid handle when the device cannot create it (logged).
+    /// - Ownership: as for [[renderer::MaterialSystem::FrameBindGroup]].
+    /// - Thread-safety: thread-compatible; call from one thread (the one preparing the frame).
     rhi::BindGroupHandle ObjectBindGroup(const BufferRegion& region);
     /// Returns whether the material's vertex shader reads the vertex attribute at `location`.
     ///
-    /// Param id: a live material.
-    /// Param location: a vertex input location.
-    /// Aborts: `id` is invalid or stale.
-    /// Thread-safety: thread-compatible; concurrent calls are fine while nothing creates or destroys materials.
+    /// - Param id: a live material.
+    /// - Param location: a vertex input location.
+    /// - Aborts: `id` is invalid or stale.
+    /// - Thread-safety: thread-compatible; concurrent calls are fine while nothing creates or destroys materials.
     bool ReadsVertexInput(MaterialId id, u32 location) const;
 
     /// Sets a scalar float member of the parameter block.
     ///
-    /// Param id: a live material.
-    /// Param name: the member name.
-    /// Param value: the value.
-    /// Returns: true if set.
-    /// Fails: no such member, or it is not a single float; the reason is logged.
-    /// Aborts: `id` is invalid or stale.
+    /// - Param id: a live material.
+    /// - Param name: the member name.
+    /// - Param value: the value.
+    /// - Returns: true if set.
+    /// - Fails: no such member, or it is not a single float; the reason is logged.
+    /// - Aborts: `id` is invalid or stale.
     bool SetFloat(MaterialId id, const char* name, f32 value);
     /// Sets a scalar signed integer member; see [[renderer::MaterialSystem::SetFloat]].
     ///
-    /// Param id: a live material.
-    /// Param name: the member name.
-    /// Param value: the value.
-    /// Returns: true if set.
-    /// Fails: no such member, or it is not a single int; the reason is logged.
-    /// Aborts: `id` is invalid or stale.
+    /// - Param id: a live material.
+    /// - Param name: the member name.
+    /// - Param value: the value.
+    /// - Returns: true if set.
+    /// - Fails: no such member, or it is not a single int; the reason is logged.
+    /// - Aborts: `id` is invalid or stale.
     bool SetInt(MaterialId id, const char* name, i32 value);
     /// Sets a scalar unsigned integer member; see [[renderer::MaterialSystem::SetFloat]].
     ///
-    /// Param id: a live material.
-    /// Param name: the member name.
-    /// Param value: the value.
-    /// Returns: true if set.
-    /// Fails: no such member, or it is not a single uint; the reason is logged.
-    /// Aborts: `id` is invalid or stale.
+    /// - Param id: a live material.
+    /// - Param name: the member name.
+    /// - Param value: the value.
+    /// - Returns: true if set.
+    /// - Fails: no such member, or it is not a single uint; the reason is logged.
+    /// - Aborts: `id` is invalid or stale.
     bool SetUInt(MaterialId id, const char* name, u32 value);
     /// Sets a float2 member; see [[renderer::MaterialSystem::SetFloat]].
     ///
-    /// Param id: a live material.
-    /// Param name: the member name.
-    /// Param value: the value.
-    /// Returns: true if set.
-    /// Fails: no such member, or it is not a float2; the reason is logged.
-    /// Aborts: `id` is invalid or stale.
+    /// - Param id: a live material.
+    /// - Param name: the member name.
+    /// - Param value: the value.
+    /// - Returns: true if set.
+    /// - Fails: no such member, or it is not a float2; the reason is logged.
+    /// - Aborts: `id` is invalid or stale.
     bool SetVec2(MaterialId id, const char* name, const Vec2& value);
     /// Sets a float3 member; see [[renderer::MaterialSystem::SetFloat]].
     ///
-    /// Param id: a live material.
-    /// Param name: the member name.
-    /// Param value: the value.
-    /// Returns: true if set.
-    /// Fails: no such member, or it is not a float3; the reason is logged.
-    /// Aborts: `id` is invalid or stale.
+    /// - Param id: a live material.
+    /// - Param name: the member name.
+    /// - Param value: the value.
+    /// - Returns: true if set.
+    /// - Fails: no such member, or it is not a float3; the reason is logged.
+    /// - Aborts: `id` is invalid or stale.
     bool SetVec3(MaterialId id, const char* name, const Vec3& value);
     /// Sets a float4 member; see [[renderer::MaterialSystem::SetFloat]].
     ///
-    /// Param id: a live material.
-    /// Param name: the member name.
-    /// Param value: the value.
-    /// Returns: true if set.
-    /// Fails: no such member, or it is not a float4; the reason is logged.
-    /// Aborts: `id` is invalid or stale.
+    /// - Param id: a live material.
+    /// - Param name: the member name.
+    /// - Param value: the value.
+    /// - Returns: true if set.
+    /// - Fails: no such member, or it is not a float4; the reason is logged.
+    /// - Aborts: `id` is invalid or stale.
     bool SetVec4(MaterialId id, const char* name, const Vec4& value);
     /// Sets a float4x4 member; see [[renderer::MaterialSystem::SetFloat]].
     ///
-    /// Param id: a live material.
-    /// Param name: the member name.
-    /// Param value: the value.
-    /// Returns: true if set.
-    /// Fails: no such member, or it is not a float4x4; the reason is logged.
-    /// Aborts: `id` is invalid or stale.
+    /// - Param id: a live material.
+    /// - Param name: the member name.
+    /// - Param value: the value.
+    /// - Returns: true if set.
+    /// - Fails: no such member, or it is not a float4x4; the reason is logged.
+    /// - Aborts: `id` is invalid or stale.
     bool SetMat4(MaterialId id, const char* name, const Mat4& value);
 
     /// Sets a texture slot. The bind groups are rebuilt at the next flush.
     ///
-    /// Param id: a live material.
-    /// Param name: the shader's texture variable name.
-    /// Param texture: a 2D texture in `ShaderRead` state while drawing, or an invalid handle to go back to the default.
-    /// Returns: true if set.
-    /// Fails: no such texture slot; logged.
-    /// Aborts: `id` is invalid or stale.
-    /// Ownership: `texture` is borrowed; it must outlive the material's use of it.
+    /// - Param id: a live material.
+    /// - Param name: the shader's texture variable name.
+    /// - Param texture: a 2D texture in `ShaderRead` state while drawing, or an invalid handle to go back to the default.
+    /// - Returns: true if set.
+    /// - Fails: no such texture slot; logged.
+    /// - Aborts: `id` is invalid or stale.
+    /// - Ownership: `texture` is borrowed; it must outlive the material's use of it.
     bool SetTexture(MaterialId id, const char* name, rhi::TextureHandle texture);
 
     /// Binds a texture owner: the material follows the owner's handle through a device reset. Preferred over the raw handle.
     ///
-    /// Param id: the material.
-    /// Param name: the texture slot's name.
-    /// Param texture: the owner, or null to unbind; borrowed, must outlive the material or be unbound first.
-    /// Returns: true if the slot exists.
-    /// Fails: returns false, logging the reason, if the material has no such slot.
-    /// Aborts: `id` is invalid or stale.
-    /// Ownership: the owner is borrowed.
+    /// - Param id: the material.
+    /// - Param name: the texture slot's name.
+    /// - Param texture: the owner, or null to unbind; borrowed, must outlive the material or be unbound first.
+    /// - Returns: true if the slot exists.
+    /// - Fails: returns false, logging the reason, if the material has no such slot.
+    /// - Aborts: `id` is invalid or stale.
+    /// - Ownership: the owner is borrowed.
     bool SetTexture(MaterialId id, const char* name, const GpuTexture* texture);
 
     /// Binds a sampler owner; see the texture overload.
     ///
-    /// Param id: the material.
-    /// Param name: the sampler slot's name.
-    /// Param sampler: the owner, or null to unbind; borrowed.
-    /// Returns: true if the slot exists.
-    /// Fails: returns false, logging the reason, if the material has no such slot.
-    /// Aborts: `id` is invalid or stale.
-    /// Ownership: the owner is borrowed.
+    /// - Param id: the material.
+    /// - Param name: the sampler slot's name.
+    /// - Param sampler: the owner, or null to unbind; borrowed.
+    /// - Returns: true if the slot exists.
+    /// - Fails: returns false, logging the reason, if the material has no such slot.
+    /// - Aborts: `id` is invalid or stale.
+    /// - Ownership: the owner is borrowed.
     bool SetSampler(MaterialId id, const char* name, const GpuSampler* sampler);
 
     /// Sets a sampler slot. The bind groups are rebuilt at the next flush.
     ///
-    /// Param id: a live material.
-    /// Param name: the shader's sampler variable name.
-    /// Param sampler: the sampler, or an invalid handle to go back to the default.
-    /// Returns: true if set.
-    /// Fails: no such sampler slot; logged.
-    /// Aborts: `id` is invalid or stale.
-    /// Ownership: `sampler` is borrowed; it must outlive the material's use of it.
+    /// - Param id: a live material.
+    /// - Param name: the shader's sampler variable name.
+    /// - Param sampler: the sampler, or an invalid handle to go back to the default.
+    /// - Returns: true if set.
+    /// - Fails: no such sampler slot; logged.
+    /// - Aborts: `id` is invalid or stale.
+    /// - Ownership: `sampler` is borrowed; it must outlive the material's use of it.
     bool SetSampler(MaterialId id, const char* name, rhi::SamplerHandle sampler);
 
     /// Starts a frame: selects the per-frame region the parameter blocks are written to.
     ///
-    /// Param frame_index: the frame number; regions rotate every three frames, as in [[renderer::FrameResources]].
+    /// - Param frame_index: the frame number; regions rotate every three frames, as in [[renderer::FrameResources]].
     void BeginFrame(u64 frame_index);
 
     /// Rebuilds the bind groups of materials whose textures or samplers changed and copies changed parameter blocks to
     /// the GPU. Call once per frame after `BeginFrame` and before recording draws.
     ///
-    /// Aborts: `BeginFrame` was not called.
+    /// - Aborts: `BeginFrame` was not called.
     void FlushMaterials();
 
     /// Returns the bind group (set 1) to bind for a material.
     ///
-    /// Param id: a live material.
-    /// Returns: the group of the current frame region.
-    /// Aborts: `id` is invalid or stale, or the material changed since the last flush.
-    /// Ownership: borrowed from the system.
+    /// - Param id: a live material.
+    /// - Returns: the group of the current frame region.
+    /// - Aborts: `id` is invalid or stale, or the material changed since the last flush.
+    /// - Ownership: borrowed from the system.
     rhi::BindGroupHandle MaterialBindGroup(MaterialId id) const;
 
     /// Returns the GPU buffer range holding a material's parameter block for the current frame (for tests and tools).
     ///
-    /// Param id: a live material.
-    /// Returns: the range, or an invalid buffer if the material has no parameter block.
-    /// Aborts: `id` is invalid or stale, or `BeginFrame` was not called.
+    /// - Param id: a live material.
+    /// - Returns: the range, or an invalid buffer if the material has no parameter block.
+    /// - Aborts: `id` is invalid or stale, or `BeginFrame` was not called.
     BufferRegion ParameterRegion(MaterialId id) const;
 
     /// Returns the layout of the frame uniform group (set 0).
-    /// Fails: never.
+    /// - Fails: never.
     rhi::BindGroupLayoutHandle FrameLayout() const;
     /// Returns the layout of the object storage group (set 2).
-    /// Fails: never.
+    /// - Fails: never.
     rhi::BindGroupLayoutHandle ObjectLayout() const;
 
     /// Returns the object index stream: a vertex buffer holding the indices `0 .. kMaxObjectIndices - 1` as `u32`, which a pass binds
     /// at [[renderer::MaterialSystem::ObjectIndexSlot]] once before drawing objects, on a device whose shaders read the index from an
     /// instance-rate attribute ([[rhi::DeviceCaps::object_index_stream]], Direct3D 12). Draw `i` with `first_instance = i` then reads `i`.
     ///
-    /// Returns: the buffer, or an invalid handle on a device that does not need it (Vulkan reads `gl_InstanceIndex`).
-    /// Fails: an invalid handle, as described.
-    /// Ownership: the system owns the buffer and rebuilds it with the device.
+    /// - Returns: the buffer, or an invalid handle on a device that does not need it (Vulkan reads `gl_InstanceIndex`).
+    /// - Fails: an invalid handle, as described.
+    /// - Ownership: the system owns the buffer and rebuilds it with the device.
     rhi::BufferHandle ObjectIndexStream() const { return object_index_stream_; }
 
     /// Returns the vertex-buffer slot the object index stream uses in the material pipelines: 1, after the mesh at slot 0.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     static constexpr u32 ObjectIndexSlot() { return 1; }
 
     /// Adds the object index attribute to a pipeline's vertex input when the device needs it: binding `slot`, instance rate, 4-byte
     /// stride, attribute location [[renderer::kObjectIndexLocation]] as `UInt1`. Does nothing when
     /// [[rhi::DeviceCaps::object_index_stream]] is false.
     ///
-    /// Param device: the device the pipeline is for.
-    /// Param bindings: the pipeline's vertex bindings; `*binding_count` of them are used, and one is appended at index `slot`.
-    /// Param binding_count: in and out.
-    /// Param binding_capacity: the size of `bindings`.
-    /// Param attributes: the pipeline's attributes; `*attribute_count` used, one appended.
-    /// Param attribute_count: in and out.
-    /// Param attribute_capacity: the size of `attributes`.
-    /// Param slot: the vertex-buffer slot, which must equal `*binding_count` (bindings are dense).
-    /// Returns: true if the attribute was added or not needed.
-    /// Fails: returns false when `slot` is not the next binding or an array is full.
-    /// Ownership: the arrays belong to the caller.
+    /// - Param device: the device the pipeline is for.
+    /// - Param bindings: the pipeline's vertex bindings; `*binding_count` of them are used, and one is appended at index `slot`.
+    /// - Param binding_count: in and out.
+    /// - Param binding_capacity: the size of `bindings`.
+    /// - Param attributes: the pipeline's attributes; `*attribute_count` used, one appended.
+    /// - Param attribute_count: in and out.
+    /// - Param attribute_capacity: the size of `attributes`.
+    /// - Param slot: the vertex-buffer slot, which must equal `*binding_count` (bindings are dense).
+    /// - Returns: true if the attribute was added or not needed.
+    /// - Fails: returns false when `slot` is not the next binding or an array is full.
+    /// - Ownership: the arrays belong to the caller.
     static bool AddObjectIndexAttribute(const rhi::Device& device, rhi::VertexBindingDesc* bindings, u32* binding_count, u32 binding_capacity,
                                         rhi::VertexAttributeDesc* attributes, u32* attribute_count, u32 attribute_capacity, u32 slot);
     /// Returns the set-1 layout of a material.
     ///
-    /// Param id: a live material.
-    /// Aborts: `id` is invalid or stale.
+    /// - Param id: a live material.
+    /// - Aborts: `id` is invalid or stale.
     rhi::BindGroupLayoutHandle MaterialLayout(MaterialId id) const;
 
     /// Returns the texture a material's slot currently shows: the one set, or the slot's default.
     ///
-    /// Param id: a live material.
-    /// Param name: the shader's texture variable name.
-    /// Returns: the texture, or an invalid handle if there is no such slot.
-    /// Fails: reported through the return value.
-    /// Aborts: `id` is invalid or stale.
-    /// Ownership: borrowed.
+    /// - Param id: a live material.
+    /// - Param name: the shader's texture variable name.
+    /// - Returns: the texture, or an invalid handle if there is no such slot.
+    /// - Fails: reported through the return value.
+    /// - Aborts: `id` is invalid or stale.
+    /// - Ownership: borrowed.
     rhi::TextureHandle EffectiveTexture(MaterialId id, const char* name) const;
 
     /// Returns a default texture.
     ///
-    /// Param kind: which one.
-    /// Returns: the texture, in `ShaderRead`.
-    /// Fails: never.
-    /// Ownership: borrowed from the system.
+    /// - Param kind: which one.
+    /// - Returns: the texture, in `ShaderRead`.
+    /// - Fails: never.
+    /// - Ownership: borrowed from the system.
     rhi::TextureHandle GetDefaultTexture(DefaultTexture kind) const;
 
     /// Returns the pipeline a material draws with into a target and with a vertex layout, creating it on a miss.
@@ -513,39 +513,39 @@ public:
     /// template and key share one; a strip mesh and a list mesh with the same material get separate pipelines. Creation happens here, never while recording: call this (or [[renderer::MaterialSystem::Warmup]]) before the
     /// frame's recording starts.
     ///
-    /// Param id: a live material.
-    /// Param target: the attachment formats.
-    /// Param vertex_layout: the mesh layout; every vertex input of the vertex shader must be present with the same format.
-    /// Param topology: the mesh's topology ([[renderer::MeshData::Topology]]); a triangle list by default.
-    /// Param primitive_restart: whether the mesh has restart markers ([[renderer::MeshData::HasPrimitiveRestart]]).
-    /// Returns: the pipeline and its cache index, or an invalid pipeline after logging.
-    /// Fails: the layout lacks or mismatches a vertex shader input, the target is invalid, restart is asked for with a
+    /// - Param id: a live material.
+    /// - Param target: the attachment formats.
+    /// - Param vertex_layout: the mesh layout; every vertex input of the vertex shader must be present with the same format.
+    /// - Param topology: the mesh's topology ([[renderer::MeshData::Topology]]); a triangle list by default.
+    /// - Param primitive_restart: whether the mesh has restart markers ([[renderer::MeshData::HasPrimitiveRestart]]).
+    /// - Returns: the pipeline and its cache index, or an invalid pipeline after logging.
+    /// - Fails: the layout lacks or mismatches a vertex shader input, the target is invalid, restart is asked for with a
     ///   topology that is not a strip, the cache is full, or the device cannot create the pipeline.
-    /// Aborts: `id` is invalid or stale.
+    /// - Aborts: `id` is invalid or stale.
     PipelineLookup GetPipeline(MaterialId id, const PipelineTarget& target, const VertexLayoutData& vertex_layout,
                                rhi::PrimitiveTopology topology = rhi::PrimitiveTopology::TriangleList, bool primitive_restart = false);
 
     /// Creates the pipeline for a material ahead of use; the same as `GetPipeline` without the result.
     ///
-    /// Param id: a live material.
-    /// Param target: the attachment formats.
-    /// Param vertex_layout: the mesh layout.
-    /// Param topology: the mesh's topology.
-    /// Param primitive_restart: whether the mesh has restart markers.
-    /// Returns: whether the pipeline exists afterwards.
-    /// Fails: as for [[renderer::MaterialSystem::GetPipeline]].
-    /// Aborts: `id` is invalid or stale.
+    /// - Param id: a live material.
+    /// - Param target: the attachment formats.
+    /// - Param vertex_layout: the mesh layout.
+    /// - Param topology: the mesh's topology.
+    /// - Param primitive_restart: whether the mesh has restart markers.
+    /// - Returns: whether the pipeline exists afterwards.
+    /// - Fails: as for [[renderer::MaterialSystem::GetPipeline]].
+    /// - Aborts: `id` is invalid or stale.
     bool Warmup(MaterialId id, const PipelineTarget& target, const VertexLayoutData& vertex_layout,
                 rhi::PrimitiveTopology topology = rhi::PrimitiveTopology::TriangleList, bool primitive_restart = false);
 
     /// Returns how many times this material's bind groups were rebuilt after creation.
     ///
-    /// Param id: a live material.
-    /// Aborts: `id` is invalid or stale.
+    /// - Param id: a live material.
+    /// - Aborts: `id` is invalid or stale.
     u32 BindGroupRebuilds(MaterialId id) const;
 
     /// Returns the counters.
-    /// Fails: never.
+    /// - Fails: never.
     MaterialStats Stats() const;
 
     /// Destroys every device object (layouts, shaders, default textures, parameter buffers, bind groups, pipelines) and keeps
@@ -555,10 +555,10 @@ public:
 
     /// Rebuilds everything on `device` in dependency order; pipelines lazily, or eagerly with `prewarm_pipelines`.
     ///
-    /// Param device: the new device.
-    /// Returns: true on success.
-    /// Fails: returns false, logging the reason, with nothing left allocated if any object cannot be made.
-    /// Ownership: the device is borrowed.
+    /// - Param device: the new device.
+    /// - Returns: true on success.
+    /// - Fails: returns false, logging the reason, with nothing left allocated if any object cannot be made.
+    /// - Ownership: the device is borrowed.
     bool Recreate(rhi::Device* device) override;
     bool Live() const override { return valid_ && !released_; }
     const char* RecreatableName() const override { return "materials"; }

@@ -36,15 +36,15 @@ enum class FrameStatus : u8 {
 
 /// Returns a status's name (`ok`, `skipped`, `device-lost`, `failed`).
 ///
-/// Param status: any status.
-/// Returns: a static string.
-/// Fails: never.
-/// Ownership: the string is static and never freed.
+/// - Param status: any status.
+/// - Returns: a static string.
+/// - Fails: never.
+/// - Ownership: the string is static and never freed.
 const char* FrameStatusName(FrameStatus status);
 
 /// The texture a frame renders to when there is no swapchain.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct FrameTarget {
     /// The texture; must be valid and created with `ColorAttachment` usage.
     rhi::TextureHandle texture;
@@ -62,7 +62,7 @@ struct FrameTarget {
 
 /// What the frame callback is given.
 ///
-/// Thread-safety: thread-compatible plain data; valid only during the callback.
+/// - Thread-safety: thread-compatible plain data; valid only during the callback.
 struct FrameContext {
     /// The graph to declare the passes on; it is empty except for the imported target.
     RenderGraph* graph = nullptr;
@@ -92,7 +92,7 @@ using FrameBuildFn = bool (*)(const FrameContext& context, void* user);
 /// Needs a [[renderer::RendererDesc::host]]; without one a loss stays terminal. Attempts and delays are counted in frames, not
 /// seconds, so tests are deterministic.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct RecoveryPolicy {
     /// The most reset attempts for one loss; 0 turns recovery off (the loss is terminal, as before Phase 8).
     u32 max_attempts = 3;
@@ -107,7 +107,7 @@ struct RecoveryPolicy {
 
 /// What a [[renderer::Renderer]] is made of.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct RendererDesc {
     /// The device; must not be null.
     rhi::Device* device = nullptr;
@@ -146,7 +146,7 @@ struct RendererDesc {
 
 /// What the renderer has done.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct RendererStats {
     /// Frames that ended `Ok`.
     u64 frames_rendered = 0;
@@ -177,22 +177,22 @@ struct RendererStats {
 /// Builds the description a device is created with from settings: backend, adapter, validation, sync validation and frames in flight
 /// come from `settings`, everything else from `base`.
 ///
-/// Param settings: the settings.
-/// Param base: the rest of the description (window, application name, faults).
-/// Param adapter_buffer: at least 64 bytes; holds the adapter text that `out->adapter` points to.
-/// Param out: receives the description.
-/// Ownership: `out->adapter` points into `adapter_buffer`, which must outlive the use of `out`.
+/// - Param settings: the settings.
+/// - Param base: the rest of the description (window, application name, faults).
+/// - Param adapter_buffer: at least 64 bytes; holds the adapter text that `out->adapter` points to.
+/// - Param out: receives the description.
+/// - Ownership: `out->adapter` points into `adapter_buffer`, which must outlive the use of `out`.
 void MakeDeviceCreateInfo(const RenderSettings& settings, const rhi::DeviceCreateInfo& base, char* adapter_buffer, rhi::DeviceCreateInfo* out);
 
 /// Builds the swapchain description from settings: present mode, size, format and HDR.
 ///
-/// Param settings: the settings.
-/// Returns: the description.
+/// - Param settings: the settings.
+/// - Returns: the description.
 rhi::SwapchainDesc MakeSwapchainDesc(const RenderSettings& settings);
 
 /// What `Renderer::ApplySettings` did.
 ///
-/// Thread-safety: thread-compatible plain data (about 1.5 KB).
+/// - Thread-safety: thread-compatible plain data (about 1.5 KB).
 struct ApplyResult {
     /// The settings are in force (or were already).
     bool ok = false;
@@ -230,17 +230,17 @@ using ResetEndFn = void (*)(void* user, bool ok);
 
 /// Renders frames.
 ///
-/// Thread-safety: owner-thread-only. Call from the thread that owns the swapchain and, when it has a scheduler, from its
+/// - Thread-safety: owner-thread-only. Call from the thread that owns the swapchain and, when it has a scheduler, from its
 ///   participant 0.
-/// Ownership: borrows the device, swapchain and scheduler, all of which must outlive it; owns the transient pool (and so
+/// - Ownership: borrows the device, swapchain and scheduler, all of which must outlive it; owns the transient pool (and so
 ///   the pooled textures, destroyed with it) and the frame arena.
 class Renderer {
 public:
     /// Creates the renderer.
     ///
-    /// Param desc: what to render with.
-    /// Aborts: the device or the callback is null.
-    /// Ownership: nothing in `desc` is taken over.
+    /// - Param desc: what to render with.
+    /// - Aborts: the device or the callback is null.
+    /// - Ownership: nothing in `desc` is taken over.
     explicit Renderer(const RendererDesc& desc);
     Renderer(const Renderer&) = delete;
     Renderer& operator=(const Renderer&) = delete;
@@ -249,10 +249,10 @@ public:
     /// handle between frames: its transient pool is rebuilt through the registry, and the per-frame state is rebuilt by the
     /// next `RenderFrame`.
     ///
-    /// Param device: the new device.
-    /// Param swapchain: the new swapchain, or null for offscreen rendering.
-    /// Ownership: both are borrowed.
-    /// Aborts: `device` is null, or the renderer was built without `RendererDesc::resources` (its pool could not follow the device).
+    /// - Param device: the new device.
+    /// - Param swapchain: the new swapchain, or null for offscreen rendering.
+    /// - Ownership: both are borrowed.
+    /// - Aborts: `device` is null, or the renderer was built without `RendererDesc::resources` (its pool could not follow the device).
     void Rebind(rhi::Device* device, rhi::Swapchain* swapchain);
 
     /// Changes the rendering settings at run time, doing the cheapest sufficient thing.
@@ -267,38 +267,38 @@ public:
     /// start of the next `RenderFrame`; a newer request replaces a pending one, also one made later outside a frame. Call from the
     /// owning thread only (never from a job); workers that record must be idle.
     ///
-    /// Param requested: the settings wanted.
-    /// Returns: what happened; `queued` if it waits for the frame boundary.
-    /// Fails: `ok` is false with `reason` set; `rolled_back` or `device_lost` say what state the renderer is in.
+    /// - Param requested: the settings wanted.
+    /// - Returns: what happened; `queued` if it waits for the frame boundary.
+    /// - Fails: `ok` is false with `reason` set; `rolled_back` or `device_lost` say what state the renderer is in.
     ApplyResult ApplySettings(const RenderSettings& requested);
 
     /// Replaces the device with one made from the settings in force, although nothing changed (a reset on request).
     ///
     /// Same sequence, thread rule and failure handling as a device-reset change in `ApplySettings`.
     ///
-    /// Returns: what happened; `performed` is `DeviceReset` on success.
-    /// Fails: as for `ApplySettings`.
+    /// - Returns: what happened; `performed` is `DeviceReset` on success.
+    /// - Fails: as for `ApplySettings`.
     ApplyResult ForceDeviceReset();
 
     /// Returns the settings in force.
-    /// Fails: never.
+    /// - Fails: never.
     const RenderSettings& Settings() const { return settings_; }
 
     /// Returns what the last `ApplySettings` (also one applied at a frame boundary) did.
-    /// Fails: never.
+    /// - Fails: never.
     const ApplyResult& LastApply() const { return last_apply_; }
 
     /// Returns what the device and window can do now, as the settings layer sees it.
-    /// Fails: never.
+    /// - Fails: never.
     const Capabilities& GetCapabilities() const { return caps_; }
 
     /// Sets the functions called around a settings change that touches the GPU, so the application can show a message, pause
     /// audio or drop its own GPU caches.
     ///
-    /// Param begin: called with the stage name; may be null.
-    /// Param end: called with the outcome; may be null.
-    /// Param user: passed to both.
-    /// Ownership: `user` is borrowed.
+    /// - Param begin: called with the stage name; may be null.
+    /// - Param end: called with the outcome; may be null.
+    /// - Param user: passed to both.
+    /// - Ownership: `user` is borrowed.
     void SetResetCallbacks(ResetBeginFn begin, ResetEndFn end, void* user) {
         reset_begin_ = begin;
         reset_end_ = end;
@@ -307,21 +307,21 @@ public:
 
     /// Returns the device the renderer draws on now. After a reset or a rollback it is a new device: rebind your own pointers
     /// from this (also when the end callback reports failure, since a rollback creates the previous device again).
-    /// Fails: returns null once the renderer is broken (a failed change could not be undone).
-    /// Ownership: borrowed from the host.
+    /// - Fails: returns null once the renderer is broken (a failed change could not be undone).
+    /// - Ownership: borrowed from the host.
     rhi::Device* GetDevice() const { return desc_.device; }
 
     /// Returns the swapchain the renderer presents to now, or null.
-    /// Fails: returns null without a swapchain or once the renderer is broken.
-    /// Ownership: borrowed from the host.
+    /// - Fails: returns null without a swapchain or once the renderer is broken.
+    /// - Ownership: borrowed from the host.
     rhi::Swapchain* GetSwapchain() const { return desc_.swapchain; }
 
     /// Returns whether the renderer is working to recover from a loss (frames return `Skipped` while it waits between attempts).
-    /// Fails: never.
+    /// - Fails: never.
     bool IsRecovering() const { return recovering_; }
 
     /// Returns whether a failed change left the renderer without a device (every frame returns `DeviceLost`).
-    /// Fails: never.
+    /// - Fails: never.
     bool IsBroken() const { return broken_; }
 
     /// Renders one frame.
@@ -330,30 +330,30 @@ public:
     /// callback, compiles and records it, submits once, closes the frame and presents. With a swapchain, every path that
     /// acquired an image also presents it, so a failed frame does not leave the swapchain stuck.
     ///
-    /// Param scene: passed to the callback; may be null.
-    /// Param camera: passed to the callback; may be null.
-    /// Param offscreen: the target when there is no swapchain; ignored with one.
-    /// Returns: how the frame ended.
-    /// Fails: `Skipped` when the swapchain is minimized; `DeviceLost` when the device or surface is lost; `Failed` for
+    /// - Param scene: passed to the callback; may be null.
+    /// - Param camera: passed to the callback; may be null.
+    /// - Param offscreen: the target when there is no swapchain; ignored with one.
+    /// - Returns: how the frame ended.
+    /// - Fails: `Skipped` when the swapchain is minimized; `DeviceLost` when the device or surface is lost; `Failed` for
     ///   anything else (the reason is in `LastError`).
-    /// Aborts: there is no swapchain and `offscreen` is null or has an invalid texture.
+    /// - Aborts: there is no swapchain and `offscreen` is null or has an invalid texture.
     FrameStatus RenderFrame(const RenderScene* scene, const Camera* camera, const FrameTarget* offscreen);
 
     /// Returns why the last frame failed (empty if it did not).
-    /// Fails: never.
-    /// Ownership: borrowed; valid until the next frame.
+    /// - Fails: never.
+    /// - Ownership: borrowed; valid until the next frame.
     const char* LastError() const { return error_; }
 
     /// Returns the counters.
-    /// Fails: never.
+    /// - Fails: never.
     RendererStats Stats() const { return stats_; }
 
     /// Returns the transient pool, for its counters.
-    /// Fails: never.
+    /// - Fails: never.
     const TransientPool& Pool() const { return pool_; }
 
     /// Returns the number of frames begun (the next frame's index minus 1).
-    /// Fails: never.
+    /// - Fails: never.
     u64 FrameIndex() const { return frame_; }
 
 private:

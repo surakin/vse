@@ -23,7 +23,7 @@ namespace engine_placeholder::storage {
 /// The upper bounds a decode (and an encode) holds every length to, so a damaged or hostile record cannot ask for unbounded memory. [[storage::LimitsFromSettings]] reads them from
 /// the settings `storage.max_record_bytes`, `storage.max_string_bytes`, `storage.max_array_elements` and `storage.max_components_per_entity`.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct CodecLimits {
     u64 max_record_bytes = 16u << 20;       ///< The most bytes of one component record (checked before anything is decoded or upgraded).
     u64 max_string_bytes = 1u << 20;        ///< The most bytes of one string field.
@@ -58,7 +58,7 @@ enum class FieldKind : u8 {
 
 /// Per-field settings that the type alone does not give.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct FieldOptions {
     bool has_range = false; ///< Whether `range_min` and `range_max` were declared (required for an enum field, ignored for others).
     i64 range_min = 0;      ///< The smallest valid value of an enum field.
@@ -201,8 +201,8 @@ inline Status DecodeVec4(Vec4* v, bytes::ByteReader& in) {
 /// One described member of a component: its name, kind, options and the two functions that move it between the component's memory and the encoding.
 /// Made by [[storage::Field]].
 ///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: `name` is borrowed from static storage (a string literal).
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: `name` is borrowed from static storage (a string literal).
 struct FieldDesc {
     const char* name = "";                     ///< The field's name.
     FieldKind kind = FieldKind::U8;            ///< What the field is.
@@ -410,10 +410,10 @@ struct MemberTraits<V C::*> {
 ///
 /// The member is a template argument, not a run-time value, so the encode and decode functions are plain function pointers with the member baked in.
 ///
-/// Param name: the field's name, a string literal.
-/// Param options: required for an enum field ([[storage::FieldOptions::Enum]]), optional bound for a string ([[storage::FieldOptions::Text]]).
-/// Ownership: `name` is borrowed; pass a literal.
-/// Fails: never at run time; a member without a stored form does not compile.
+/// - Param name: the field's name, a string literal.
+/// - Param options: required for an enum field ([[storage::FieldOptions::Enum]]), optional bound for a string ([[storage::FieldOptions::Text]]).
+/// - Ownership: `name` is borrowed; pass a literal.
+/// - Fails: never at run time; a member without a stored form does not compile.
 template <auto Member>
 FieldDesc Field(const char* name, FieldOptions options = FieldOptions()) {
     using Traits = detail::MemberTraits<decltype(Member)>;

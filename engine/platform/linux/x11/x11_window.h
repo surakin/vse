@@ -25,17 +25,17 @@ namespace engine_placeholder::os::x11 {
 /// Events are polled rather than delivered through callbacks capturing `this`,
 /// so the type is movable.
 ///
-/// Thread-safety: owner-thread-only. Create, pump and destroy it on one thread.
-/// Ownership: owns the X display connection, window, and input method and context;
+/// - Thread-safety: owner-thread-only. Create, pump and destroy it on one thread.
+/// - Ownership: owns the X display connection, window, and input method and context;
 ///   all are released on destruction. A moved-from window is invalid.
 class X11Window final : public Window {
 public:
     /// Opens the display named by `$DISPLAY`, creates and maps a toplevel window, and registers `WM_DELETE_WINDOW`.
-    /// Param title: window title.
-    /// Param width: initial client width in pixels.
-    /// Param height: initial client height in pixels.
-    /// Returns: the window; check [[os::x11::X11Window::Valid]].
-    /// Fails: returns an invalid window (logged via `LogPlatform`) if the display cannot be opened or a request fails.
+    /// - Param title: window title.
+    /// - Param width: initial client width in pixels.
+    /// - Param height: initial client height in pixels.
+    /// - Returns: the window; check [[os::x11::X11Window::Valid]].
+    /// - Fails: returns an invalid window (logged via `LogPlatform`) if the display cannot be opened or a request fails.
     static X11Window Create(StringView title, u32 width, u32 height);
 
     /// Constructs an invalid window that owns nothing.
@@ -59,14 +59,14 @@ public:
     ///
     /// Handles Expose, ConfigureNotify and ClientMessage (close request), and,
     /// when `input` is non-null, key, button and motion events.
-    /// Param input: input state to update, or null to handle events but ignore input.
+    /// - Param input: input state to update, or null to handle events but ignore input.
     void PumpEvents(InputState* input);
 
     /// Drains pending events into the `InputState` set by [[os::x11::X11Window::SetInputState]], if any.
     void PumpEvents() override { PumpEvents(input_); }
     /// Sets the input state that [[os::x11::X11Window::PumpEvents()]] fills.
     ///
-    /// Param input: state to fill, or null to ignore input; not owned and must outlive its use here.
+    /// - Param input: state to fill, or null to ignore input; not owned and must outlive its use here.
     void SetInputState(InputState* input) { input_ = input; }
     /// Removes the oldest queued input event; see [[os::Window::PollEvent]]. Events are queued by every `PumpEvents`, whether or not an `InputState` is set.
     bool PollEvent(InputEvent* out) override { return events_.Pop(out); }
@@ -98,8 +98,8 @@ public:
     /// may still refuse.
     bool SupportsFullscreen() const override { return display_ != nullptr; }
     /// Sends the `_NET_WM_STATE` client message to the root window that adds or removes fullscreen.
-    /// Param fullscreen: the state wanted.
-    /// Returns: true if the message was sent; false on an invalid window.
+    /// - Param fullscreen: the state wanted.
+    /// - Returns: true if the message was sent; false on an invalid window.
     bool SetFullscreen(bool fullscreen) override;
     /// Returns whether `_NET_WM_STATE` currently lists fullscreen (read from the window manager's property).
     bool IsFullscreen() const override;
@@ -158,11 +158,11 @@ public:
 
     /// Returns the underlying Xlib `Display*`, or null if invalid.
     ///
-    /// Ownership: borrowed; owned by this window and closed with it.
+    /// - Ownership: borrowed; owned by this window and closed with it.
     _XDisplay* NativeDisplay() const { return display_; }
     /// Returns the underlying X window id (an XID), or 0 if invalid.
     ///
-    /// Ownership: borrowed; owned by this window and destroyed with it.
+    /// - Ownership: borrowed; owned by this window and destroyed with it.
     unsigned long NativeWindow() const { return window_; }
 
 private:

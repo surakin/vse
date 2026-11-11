@@ -20,7 +20,7 @@ enum class AddressFamily : u8 {
 
 /// A fixed-capacity text buffer holding an address or an endpoint in canonical form. No allocation.
 ///
-/// Thread-safety: immutable value.
+/// - Thread-safety: immutable value.
 struct AddressText {
     /// The most characters an address can take: 39 for the longest IPv6 form, 1 for `%`, 15 for a scope name, with room to spare.
     static constexpr usize kCapacity = 63;
@@ -33,8 +33,8 @@ struct AddressText {
     StringView View() const { return StringView(chars.Data(), length); }
     /// The text as a C string.
     ///
-    /// Ownership: borrowed from this value; valid while it lives.
-    /// Fails: never.
+    /// - Ownership: borrowed from this value; valid while it lives.
+    /// - Fails: never.
     const char* CStr() const { return chars.Data(); }
 };
 
@@ -49,7 +49,7 @@ struct AddressText {
 /// the whole address is accepted; nothing may follow. Formatting is the canonical form of RFC 5952 (lower case, no leading zeros, the longest run of two
 /// or more zero groups compressed, the first on a tie, an IPv4-mapped address as `::ffff:a.b.c.d`).
 ///
-/// Thread-safety: immutable value.
+/// - Thread-safety: immutable value.
 class Address {
 public:
     /// The most characters of a scope name.
@@ -69,24 +69,24 @@ public:
 
     /// Parses `text` (forms in the class comment) into `*out`.
     ///
-    /// Param out: receives the address on success; untouched on failure.
-    /// Ownership: `text` is only read during the call; nothing is retained.
-    /// Fails: [[net::ErrorCode::Invalid]] for any text that is not exactly one address; `*out` is not written. Never aborts, whatever the bytes.
+    /// - Param out: receives the address on success; untouched on failure.
+    /// - Ownership: `text` is only read during the call; nothing is retained.
+    /// - Fails: [[net::ErrorCode::Invalid]] for any text that is not exactly one address; `*out` is not written. Never aborts, whatever the bytes.
     static Status Parse(StringView text, Address* out);
 
     /// The family.
     AddressFamily Family() const { return family_; }
     /// True for IPv4.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool IsV4() const { return family_ == AddressFamily::V4; }
     /// True for IPv6 (including IPv4-mapped).
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool IsV6() const { return family_ == AddressFamily::V6; }
     /// True unless the address has no family.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool IsValid() const { return family_ != AddressFamily::None; }
 
     /// The address bytes in network order: four used for IPv4 (the rest zero), sixteen for IPv6.
@@ -97,40 +97,40 @@ public:
     StringView ScopeName() const { return StringView(scope_name_.Data(), scope_name_length_); }
     /// Returns a copy with the numeric scope `scope_id` (the name is cleared).
     ///
-    /// Fails: never. A scope on an IPv4 address is ignored.
+    /// - Fails: never. A scope on an IPv4 address is ignored.
     Address WithScopeId(u32 scope_id) const;
     /// Writes to `*out` a copy with the scope name `name` (the id is cleared).
     ///
     /// Returns false, with the copy unscoped, when `name` is empty, longer than [[net::Address::kMaxScopeNameLength]], has a character outside letters,
     /// digits, `_`, `-` and `.`, or this is not IPv6.
     ///
-    /// Ownership: `name` is copied; `*out` is written in both cases.
-    /// Fails: returns false as described; never aborts.
+    /// - Ownership: `name` is copied; `*out` is written in both cases.
+    /// - Fails: returns false as described; never aborts.
     bool WithScopeName(StringView name, Address* out) const;
 
     /// True for `0.0.0.0` and `::`.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool IsAny() const;
     /// True for `127.0.0.0/8`, `::1` and an IPv4-mapped loopback.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool IsLoopback() const;
     /// True for `169.254.0.0/16` and `fe80::/10`.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool IsLinkLocal() const;
     /// True for `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16` and the unique-local `fc00::/7` (an IPv4-mapped private address too).
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool IsPrivate() const;
     /// True for `224.0.0.0/4` and `ff00::/8`.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool IsMulticast() const;
     /// True for an IPv6 address of the form `::ffff:a.b.c.d`.
     ///
-    /// Fails: never.
+    /// - Fails: never.
     bool IsV4Mapped() const;
     /// Returns the IPv4 address inside an IPv4-mapped address, or this address unchanged when it is not one.
     Address Unmapped() const;
@@ -138,7 +138,7 @@ public:
     Address Mapped() const;
 
     /// Formats the canonical text (class comment), with `%scope` appended for a scoped IPv6 address. An address with no family formats as an empty text.
-    /// Fails: never.
+    /// - Fails: never.
     AddressText Format() const;
 
     /// A well-mixed hash of the family, bytes and scope.
@@ -165,7 +165,7 @@ namespace engine_placeholder {
 
 /// Hash function for [[net::Address]] keys.
 ///
-/// Thread-safety: thread-safe.
+/// - Thread-safety: thread-safe.
 template <>
 struct Hash<net::Address> {
     /// Returns [[net::Address::HashValue]].

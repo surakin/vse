@@ -24,8 +24,8 @@ inline constexpr usize kMaxComponentAlign = 64;
 
 /// What the storage needs to know about a component type.
 ///
-/// Thread-safety: thread-compatible plain data; the entries of the registry are immutable after registration.
-/// Ownership: `name` is borrowed from static storage.
+/// - Thread-safety: thread-compatible plain data; the entries of the registry are immutable after registration.
+/// - Ownership: `name` is borrowed from static storage.
 struct TypeInfo {
     /// `sizeof(T)`, 0 for a tag.
     usize size = 0;
@@ -49,9 +49,9 @@ struct TypeInfo {
 
 /// The process-wide table of component types, filled when a type is first used.
 ///
-/// Thread-safety: thread-safe. `Register` serializes; `Info` and `Count` may be called while another thread registers (an entry is
+/// - Thread-safety: thread-safe. `Register` serializes; `Info` and `Count` may be called while another thread registers (an entry is
 ///   published before the count that covers it).
-/// Ownership: owns the entries and their names; references from `Info` stay valid for the life of the registry.
+/// - Ownership: owns the entries and their names; references from `Info` stay valid for the life of the registry.
 class ComponentRegistry {
 public:
     /// An empty registry (tests use their own; programs use `Global()`).
@@ -64,12 +64,12 @@ public:
 
     /// Adds a type and returns its id.
     ///
-    /// Param info: the type; `name` may be null (then "component#N" is made).
-    /// Returns: the new id, or [[ecs::kInvalidComponent]] when [[ecs::kMaxComponentTypes]] types are registered (counted in `Refused`).
+    /// - Param info: the type; `name` may be null (then "component#N" is made).
+    /// - Returns: the new id, or [[ecs::kInvalidComponent]] when [[ecs::kMaxComponentTypes]] types are registered (counted in `Refused`).
     ComponentId Register(const TypeInfo& info);
 
     /// The entry for `id`.
-    /// Aborts: `id` is not a registered id.
+    /// - Aborts: `id` is not a registered id.
     const TypeInfo& Info(ComponentId id) const;
 
     /// The number of registered types.
@@ -144,8 +144,8 @@ ComponentId RegisterComponent() {
 /// `T` must be move constructible and destructible, not a reference, array, const or volatile type, and aligned to at most 64 bytes
 /// (each is a compile-time error). An empty type is a tag. A type may declare `static constexpr const char* kComponentName` to be named in logs.
 ///
-/// Returns: the id, or [[ecs::kInvalidComponent]] when the registry was full when `T` was first used (the same answer every time).
-/// Thread-safety: thread-safe.
+/// - Returns: the id, or [[ecs::kInvalidComponent]] when the registry was full when `T` was first used (the same answer every time).
+/// - Thread-safety: thread-safe.
 template <class T>
 ComponentId ComponentOf() {
     static const ComponentId id = detail::RegisterComponent<T>();

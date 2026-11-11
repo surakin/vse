@@ -35,7 +35,7 @@ enum class EventType : u8 {
 /// Posted to a surface with `position` in surface coordinates (logical units); a widget receives it with `position` in its own local space (its top-left corner is the origin).
 /// A widget that handles an event sets `handled`; otherwise it bubbles to the parent, up to the root. Enter, leave and focus events go to one widget only.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct Event {
     EventType type = EventType::None; ///< What happened.
     bool handled = false;             ///< Set by a widget that dealt with the event; stops bubbling.

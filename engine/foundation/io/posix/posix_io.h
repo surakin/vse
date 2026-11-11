@@ -36,12 +36,12 @@ bool ValidAppName(StringView name);
 /// The environment variable `name` when it holds an absolute path, else empty.
 StringView AbsoluteEnv(const char* name);
 /// `$HOME` when absolute, else the password database's home of the effective user.
-/// Fails: `NotFound` when neither gives an absolute path.
+/// - Fails: `NotFound` when neither gives an absolute path.
 Status HomeDirectory(Path* out);
 /// Parses `text` as a POSIX path. Fails: `TooLong`.
 Status FromPath(StringView text, Path* out);
 /// The application name the crash dump directory is named after: `ENGINE_APP_NAME` when set, else the executable's file name; NUL-terminated.
-/// Fails: `Invalid` (`ENGINE_APP_NAME` over 200 bytes), `NotFound` (no usable executable name), or `ExecutablePath`'s error.
+/// - Fails: `Invalid` (`ENGINE_APP_NAME` over 200 bytes), `NotFound` (no usable executable name), or `ExecutablePath`'s error.
 Status CrashAppName(char (&app)[256]);
 
 } // namespace engine_placeholder::io::posix

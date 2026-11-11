@@ -34,7 +34,7 @@ using namespace engine_placeholder;
 
 /// An orbit camera around the origin that the viewport's input turns: dragging with the look button changes the angles, the wheel the distance.
 ///
-/// Thread-safety: owner-thread-only.
+/// - Thread-safety: owner-thread-only.
 class OrbitCamera {
 public:
     /// The vertical field of view of the demo's camera, in radians.
@@ -60,7 +60,7 @@ public:
         out[2] = 0;
     }
     /// Makes the world ray through the point (`x`, `y`) of a `width` by `height` picture.
-    /// Returns: false when the size is 0.
+    /// - Returns: false when the size is 0.
     bool MakeRay(f32 x, f32 y, u32 width, u32 height, f32 scene_scale, ui::Ray3* out) const;
 
 private:
@@ -76,8 +76,8 @@ constexpr f32 kWorldScreenHeight = 3.0f;
 
 /// The second surface of the demo: a small screen (a counter button and a label, a theme of its own) that the 3D scene shows on a quad and the viewport's pointer reaches by a ray cast.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: owns its surface, its widgets and its input.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: owns its surface, its widgets and its input.
 class WorldScreen {
 public:
     static constexpr f32 kWidth = 320.0f;  ///< The surface's width in logical units.
@@ -119,7 +119,7 @@ private:
 
 /// What the program does with a change made in the rendering settings dialog (the renderer's `ApplySettings` through the settings system), and what each setting costs.
 ///
-/// Thread-safety: owner-thread-only.
+/// - Thread-safety: owner-thread-only.
 class RenderSettingsHost {
 public:
     virtual ~RenderSettingsHost() = default;
@@ -153,15 +153,15 @@ public:
 /// The tree: a menu bar (File, Edit, View, Help), a toolbar, a splitter with a left panel of controls and the viewport, and a status bar that stays dark whatever the theme. The viewport
 /// is bound to this object, which keeps the size the viewport asks for and an orbit camera; the renderer's side reads them each frame.
 ///
-/// Thread-safety: owner-thread-only.
-/// Ownership: borrows the surface; owns its menus and models; the surface owns the widgets.
+/// - Thread-safety: owner-thread-only.
+/// - Ownership: borrows the surface; owns its menus and models; the surface owns the widgets.
 class UiDemoApp final : public ui::ViewportBinding {
 public:
     static constexpr usize kItemCount = 1000;
     static constexpr const char kStatusReady[] = "Ready";
 
     /// Builds the tree under `surface`'s root.
-    /// Ownership: borrows `surface`, which must outlive this object.
+    /// - Ownership: borrows `surface`, which must outlive this object.
     explicit UiDemoApp(ui::Surface* surface);
     ~UiDemoApp() override;
     UiDemoApp(const UiDemoApp&) = delete;
@@ -201,7 +201,7 @@ public:
     u64 ViewportRenders() const { return renders_; }
     u64 ViewportResizes() const { return resizes_; }
     /// Gives the program's side of the rendering settings dialog (View > Rendering settings...); null removes it (the dialog then reports that it has no renderer).
-    /// Ownership: borrowed until it is replaced; must outlive its use here.
+    /// - Ownership: borrowed until it is replaced; must outlive its use here.
     void SetRenderSettingsHost(RenderSettingsHost* host) { render_host_ = host; }
     /// Opens the rendering settings dialog: present mode, render scale and shader quality, each with the cost class of changing it beside the control.
     void ShowRenderingSettings();

@@ -19,8 +19,8 @@ namespace engine_placeholder::rhi::dx12 {
 /// the tracked state; textures keep their state between lists, so a list records the state its first barrier on each texture needs, and
 /// the device transitions the texture into it before the list runs (a prologue list built at submit from the states it recorded).
 ///
-/// Thread-safety: not-thread-safe: one thread records a list; different lists record on different threads at once.
-/// Ownership: owned by its device; the application borrows it from `CreateCommandList` until the frame ends.
+/// - Thread-safety: not-thread-safe: one thread records a list; different lists record on different threads at once.
+/// - Ownership: owned by its device; the application borrows it from `CreateCommandList` until the frame ends.
 class Dx12CommandList final : public CommandList {
 public:
     /// Where a list is in its life.
@@ -34,7 +34,7 @@ public:
 
     /// What a list needs of one texture when it starts, and leaves it in.
     ///
-    /// Thread-safety: thread-compatible plain data.
+    /// - Thread-safety: thread-compatible plain data.
     struct TextureUse {
         /// The texture.
         TextureHandle texture;
@@ -48,9 +48,9 @@ public:
 
     /// Wraps an allocator and a closed list.
     ///
-    /// Param device: the owner.
-    /// Param allocator: the list's own allocator.
-    /// Param list: a closed list.
+    /// - Param device: the owner.
+    /// - Param allocator: the list's own allocator.
+    /// - Param list: a closed list.
     Dx12CommandList(Dx12Device* device, ComRef<ID3D12CommandAllocator> allocator, ComRef<ID3D12GraphicsCommandList> list);
     ~Dx12CommandList() override = default;
     Dx12CommandList(const Dx12CommandList&) = delete;
@@ -58,16 +58,16 @@ public:
 
     /// Makes the list ready for a new frame; its allocator's last use must have finished on the GPU.
     ///
-    /// Param frame: the frame it is handed out in.
-    /// Returns: true on success.
-    /// Fails: false if the allocator cannot be reset (the device is lost).
+    /// - Param frame: the frame it is handed out in.
+    /// - Returns: true on success.
+    /// - Fails: false if the allocator cannot be reset (the device is lost).
     bool Recycle(u64 frame);
 
     /// Returns the phase.
     Phase GetPhase() const { return phase_; }
     /// Sets the phase (the device, at submit).
     ///
-    /// Param phase: the new phase.
+    /// - Param phase: the new phase.
     void SetPhase(Phase phase) { phase_ = phase; }
     /// Returns the frame the list was handed out in.
     u64 Frame() const { return frame_; }

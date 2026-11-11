@@ -18,18 +18,18 @@ namespace engine_placeholder::storage {
 /// A flag that asks a running save or load to stop. Checked between batches, so a stop takes effect after the batch in progress; nothing committed is undone
 /// and the world a load was building is left as it was.
 ///
-/// Thread-safety: thread-safe; `Cancel` may be called from any thread.
-/// Ownership: owned by the caller; must outlive the operation it is given to.
+/// - Thread-safety: thread-safe; `Cancel` may be called from any thread.
+/// - Ownership: owned by the caller; must outlive the operation it is given to.
 class CancelToken {
 public:
     /// Asks for a stop. Stays set.
-    /// Fails: never.
+    /// - Fails: never.
     void Cancel() { flag_.Store(true); }
     /// Returns true once `Cancel` was called.
-    /// Fails: never.
+    /// - Fails: never.
     bool IsCancelled() const { return flag_.Load(); }
     /// Clears the flag so the token can be used again.
-    /// Fails: never.
+    /// - Fails: never.
     void Reset() { flag_.Store(false); }
 
 private:
@@ -38,8 +38,8 @@ private:
 
 /// Which entities a save looks at.
 ///
-/// Thread-safety: thread-compatible.
-/// Ownership: owns its key list; `filter` and `user` are borrowed and must outlive the operation.
+/// - Thread-safety: thread-compatible.
+/// - Ownership: owns its key list; `filter` and `user` are borrowed and must outlive the operation.
 struct Selection {
     /// How the entities are chosen.
     enum class Kind : u8 {
@@ -59,7 +59,7 @@ struct Selection {
     void* user = nullptr;
 
     /// Selects every keyed entity.
-    /// Fails: never.
+    /// - Fails: never.
     static Selection All() { return Selection(); }
 };
 
@@ -76,8 +76,8 @@ using ProgressFn = void (*)(usize done, usize total, void* user);
 
 /// How to save.
 ///
-/// Thread-safety: thread-compatible.
-/// Ownership: `label` is owned; `cancel`, `progress` and `user` are borrowed for the operation.
+/// - Thread-safety: thread-compatible.
+/// - Ownership: `label` is owned; `cancel`, `progress` and `user` are borrowed for the operation.
 struct SaveOptions {
     SaveMode mode = SaveMode::Full;      ///< Full or incremental.
     Selection selection;                 ///< The entities to save.
@@ -98,8 +98,8 @@ enum class LoadMode : u8 {
 
 /// How to load.
 ///
-/// Thread-safety: thread-compatible.
-/// Ownership: `cancel`, `progress` and `user` are borrowed for the operation.
+/// - Thread-safety: thread-compatible.
+/// - Ownership: `cancel`, `progress` and `user` are borrowed for the operation.
 struct LoadOptions {
     LoadMode mode = LoadMode::Create;                       ///< What to do with entities already there.
     Selection selection;                                    ///< The stored entities to load (`Filter` is not available on a load).
@@ -112,7 +112,7 @@ struct LoadOptions {
 
 /// What a save or load did.
 ///
-/// Thread-safety: thread-compatible plain data.
+/// - Thread-safety: thread-compatible plain data.
 struct Report {
     usize created = 0;        ///< Entities created in the world (load) or records added to the store (save).
     usize replaced = 0;       ///< Entities or records overwritten.
