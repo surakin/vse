@@ -73,8 +73,9 @@ Every test carries one phase label (`tests/phases.txt`, enforced by `test_phase_
 phase in progress. Day to day, run only what the work can have affected:
 
 - `scripts/test-phase.sh --affected` (plain flavor) runs the current phase plus the phases of every module the work
-  touched; it runs everything by itself when a `CMakeLists.txt`, `cmake/`, `third_party/`, an `engine/foundation`
-  header or the phase map changed. Before the end-of-day review, also run the sanitizer flavors of the same selection
+  touched; it runs everything by itself when `cmake/`, `third_party/` or an `engine/foundation` header changed, or when a
+  `CMakeLists.txt`, the phase map or the module map had a line edited or removed (a change that only adds lines, such as a new module
+  or test, selects just its own phases). Before the end-of-day review, also run the sanitizer flavors of the same selection
   (`--affected --flavor asan`, then `--flavor tsan`) when the day touched concurrency, lifetime or memory code.
 - **A reduced run is reported as what it was**: the day file and `STATUS.md` quote the script's final line
   (`ran X of Y tests (phases ...)`) and never say "all tests pass" for a run that left tests out.

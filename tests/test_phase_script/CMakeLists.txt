@@ -103,6 +103,18 @@ phase_script_case(affected_cmake_file PHASES all ARGS --affected --current-phase
   --diff-from-file ${FIX}/diff_cmake.txt CTEST ${PLAIN})
 phase_script_case(affected_phase_map PHASES all ARGS --affected --current-phase-file ${FIX}/phase5.txt
   --diff-from-file ${FIX}/diff_map.txt CTEST ${PLAIN})
+# A build or map file whose change only adds lines does not widen the run (a new module or test must not cost a full run); the same file
+# without the additive mark does (affected_cmake_file, affected_phase_map above). tools/docgen/CMakeLists.txt is never a reason.
+phase_script_case(affected_additive_phase_map PHASES "5 6" ARGS --affected --current-phase-file ${FIX}/phase5.txt
+  --diff-from-file ${FIX}/diff_map.txt --additive-from-file ${FIX}/additive_map.txt CTEST -L "^(phase5|phase6)$" ${PLAIN_NO_DISPLAY})
+phase_script_case(affected_additive_cmake_file PHASES "4 5" ARGS --affected --current-phase-file ${FIX}/phase5.txt
+  --diff-from-file ${FIX}/diff_cmake.txt --additive-from-file ${FIX}/additive_cmake.txt CTEST -L "^(phase4|phase5)$" ${PLAIN_NO_DISPLAY})
+phase_script_case(affected_additive_root_cmake PHASES "5 6" ARGS --affected --current-phase-file ${FIX}/phase5.txt
+  --diff-from-file ${FIX}/diff_root_cmake.txt --additive-from-file ${FIX}/diff_root_cmake.txt CTEST -L "^(phase5|phase6)$" ${PLAIN_NO_DISPLAY})
+phase_script_case(affected_root_cmake_not_additive PHASES all ARGS --affected --current-phase-file ${FIX}/phase5.txt
+  --diff-from-file ${FIX}/diff_root_cmake.txt CTEST ${PLAIN})
+phase_script_case(affected_docgen_cmake PHASES "3 4 5" ARGS --affected --current-phase-file ${FIX}/phase5.txt
+  --diff-from-file ${FIX}/diff_docgen_cmake.txt CTEST -L "^(phase3|phase4|phase5)$" ${PLAIN_NO_DISPLAY})
 # Side phases (Phase 26 Day 302): --affected adds a side phase this build has tests of, marked "(side)"; one it has none of is not added; one
 # already selected is not marked; --current does not add them. Phase 6 stands in for the side phase: every platform builds its tests.
 phase_script_case(affected_side_phase PHASES "5 6 (side)" SIDE ${FIX}/side_6.txt ARGS --affected --current-phase-file ${FIX}/phase5.txt

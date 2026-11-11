@@ -10,7 +10,10 @@
 #              side phase in SIDE_PHASES that this build has tests of (the summary marks it "(side)").
 #              Runs everything when a CMakeLists.txt, cmake/, CMakePresets.json, third_party/, a header under
 #              engine/foundation, tests/phases.txt or tests/module_map.txt changed, or when a changed path is in no
-#              line of tests/module_map.txt.
+#              line of tests/module_map.txt. Exception: a CMakeLists.txt, tests/phases.txt or tests/module_map.txt whose
+#              change only ADDS lines (a new library, a new test, a new map line) does not widen the run; for the root
+#              CMakeLists.txt the added lines must be add_subdirectory calls or comments. (A new file is only added lines.)
+#              tools/docgen/CMakeLists.txt is never a reason (it is the docs tool's; the map sends it to phase 3).
 #   --all      every test; with --flavor all and nothing left out, also records how long it took in
 #              <build>/.last-full-run
 #
@@ -26,6 +29,7 @@
 #   --dry-run                      print what would run and stop
 #   --since REF                    base commit for --affected
 #   --diff-from-file FILE          read the changed paths from FILE (one per line) instead of git; for tests
+#   --additive-from-file FILE      with --diff-from-file: the paths in FILE (a subset of the changed ones) only had lines added; for tests
 #   --current-phase-file FILE      read the current phase from FILE instead of CURRENT_PHASE; for tests
 #   --side-phases-file FILE        read the side phases from FILE instead of SIDE_PHASES; for tests
 #
@@ -57,6 +61,7 @@ dry=0
 do_build=1
 since=""
 diff_file=""
+additive_file=""
 phase_file="$root/CURRENT_PHASE"
 side_file="$root/SIDE_PHASES"
 
@@ -78,6 +83,7 @@ while [ $# -gt 0 ]; do
         --dry-run) dry=1 ;;
         --since) since="${2:?--since needs a commit}"; shift ;;
         --diff-from-file) diff_file="${2:?--diff-from-file needs a file}"; shift ;;
+        --additive-from-file) additive_file="${2:?--additive-from-file needs a file}"; shift ;;
         --current-phase-file) phase_file="${2:?--current-phase-file needs a file}"; shift ;;
         --side-phases-file) side_file="${2:?--side-phases-file needs a file}"; shift ;;
         -h|--help) usage; exit 0 ;;
@@ -146,9 +152,42 @@ module_phases() {
         END { print (best ? out : "?") }' "$modules"
 }
 
+# The base commit --affected compares with (set once, by base_commit).
+diff_base=""
+base_commit() {
+    [ -z "$diff_base" ] || return 0
+    diff_base="$since"
+    if [ -z "$diff_base" ]; then
+        diff_base="$(git -C "$root" log -1 --format=%H -- CURRENT_PHASE 2>/dev/null || true)"
+        [ -n "$diff_base" ] || diff_base=HEAD
+    fi
+}
+
+# True when the change to $1 only added lines (a new file counts), and, for the root CMakeLists.txt, only add_subdirectory calls,
+# comments and blank lines. A widening rule that fires on every new test or module would defeat the phases (CLAUDE.md, "Tests run by phase").
+only_additions() {
+    if [ -n "$diff_file" ]; then
+        [ -n "$additive_file" ] && grep -qxF "$1" "$additive_file"
+        return
+    fi
+    base_commit
+    if ! git -C "$root" ls-files --error-unmatch -- "$1" >/dev/null 2>&1; then
+        return 0   # untracked: a new file
+    fi
+    local patch
+    patch="$(git -C "$root" diff -U0 --no-renames "$diff_base" -- "$1")" || return 1
+    if printf '%s\n' "$patch" | grep -q '^-[^-]'; then return 1; fi
+    if [ "$1" = CMakeLists.txt ]; then
+        if printf '%s\n' "$patch" | grep '^+[^+]' | grep -qvE '^\+[[:space:]]*(add_subdirectory\(|#|$)'; then return 1; fi
+    fi
+    return 0
+}
+
 forces_all() {
     case "$1" in
-        CMakeLists.txt|*/CMakeLists.txt|cmake/*|CMakePresets.json|third_party/*|tests/phases.txt|tests/module_map.txt) return 0 ;;
+        tools/docgen/CMakeLists.txt) return 1 ;;
+        CMakeLists.txt|*/CMakeLists.txt|tests/phases.txt|tests/module_map.txt) only_additions "$1" && return 1; return 0 ;;
+        cmake/*|CMakePresets.json|third_party/*) return 0 ;;
         engine/foundation/*.h) return 0 ;;
     esac
     return 1

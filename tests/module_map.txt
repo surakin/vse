@@ -77,6 +77,9 @@ STATUS.md           -
 KNOWN-ISSUES.md     -
 UNICODE_VERSION     -
 scripts             6
+CMakeLists.txt     6    # only an additive change gets here (scripts/test-phase.sh forces a full run for any other)
+tests/phases.txt   6    # likewise
+tests/module_map.txt 6  # likewise
 CURRENT_PHASE       6    # test_phase_labels reads it (Phase 26 Day 302)
 SIDE_PHASES         6    # read by scripts/test-phase.sh and test_phase_labels
 ARCHITECTURE.md     -

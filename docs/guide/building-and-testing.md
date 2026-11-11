@@ -147,7 +147,11 @@ working tree, plus new files) and adds the phases listed for each directory in `
 the RHI and renderer tests and the docs checks, `engine/foundation` almost everything. It runs everything when a
 `CMakeLists.txt`, `cmake/`, `third_party/`, a header under `engine/foundation`, `tests/phases.txt` or
 `tests/module_map.txt` changed, or when a changed path is in no line of the module map, so a new directory is never skipped
-silently.
+silently. A `CMakeLists.txt`, `tests/phases.txt` or `tests/module_map.txt` whose change only **adds** lines (a new library, a new
+test file, a new map line; in the root `CMakeLists.txt` only `add_subdirectory` calls and comments) does not widen the run, so a day
+that adds a module or a test costs its own phases, not the suite. Editing or removing an existing line there still runs everything.
+`tools/docgen/CMakeLists.txt` never widens it (the map sends it to phase 3). Because the diff reaches back to the start of the
+phase, one non-additive edit widens every later day of the phase too: keep such edits to the day that needs them.
 
 #### What it saves
 
