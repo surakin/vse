@@ -74,7 +74,7 @@ Conclusions: (1) the entity blob is the default: 3.2x faster to insert and 4x fa
 - `CREATE TABLE [IF NOT EXISTS] t (col TYPE [NOT NULL] [PRIMARY KEY] [UNIQUE] [REFERENCES t(col) [ON DELETE CASCADE]], ..., [PRIMARY KEY (c1, c2)])` with `TYPE` in `INTEGER`, `REAL`, `TEXT`, `BLOB`; `CREATE [UNIQUE] INDEX [IF NOT EXISTS] i ON t(c1 [, c2])`.
 - `INSERT INTO t (cols) VALUES (...) [, (...)...]` and `INSERT OR REPLACE INTO ...`; values are `?`, `:name` or an integer, real, text or `NULL` literal.
 - `SELECT cols | * | count(*) FROM t [WHERE cond [AND cond ...]] [ORDER BY col [ASC|DESC]] [LIMIT n [OFFSET m]]` with `cond` of the form `col op value` (`=`, `<>`, `<`, `<=`, `>`, `>=`, `IS NULL`, `IS NOT NULL`); no joins, no subqueries, no expressions.
-- `UPDATE t SET col = value [, ...] [WHERE ...]`, `DELETE FROM t [WHERE ...]`.
+- `UPDATE t SET col = value [, ...] [WHERE ...]`, `DELETE FROM t [WHERE ...]`, `DROP TABLE t` (added Day 262 for the schema migration that rebuilds a table; there is no rename).
 - `BEGIN`, `COMMIT`, `ROLLBACK`, `SAVEPOINT s`, `RELEASE s`, `ROLLBACK TO s`.
 - A schema version through `Connection` (`SchemaVersion()` / `WriteSchemaVersion()`, backed by `PRAGMA user_version` on SQLite and the backend's own field): no `PRAGMA` text in `SqlStore`.
 - `ALTER TABLE t ADD COLUMN ...` is **not** in the subset: a column layout change on a database without `Supports(AddColumn)` rebuilds the table from the blobs.

@@ -12,6 +12,7 @@ set(STORAGE_SOURCES
   memory_store.cpp  # Day 259
   world_storage.cpp  # Day 259
   save_session.cpp   # Day 261
+  sql_store.cpp  # Day 262
 )
 set(STORAGE_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
@@ -24,7 +25,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_library(storage${suffix} STATIC ${STORAGE_SOURCES})
     target_include_directories(storage${suffix} PUBLIC ${STORAGE_INCLUDE_ROOT})
     target_compile_options(storage${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
-    target_link_libraries(storage${suffix} PUBLIC ecs${suffix} spatial${suffix} foundation_base${suffix} foundation_settings${suffix})
+    target_link_libraries(storage${suffix} PUBLIC ecs${suffix} spatial${suffix} database${suffix} foundation_base${suffix} foundation_settings${suffix})
   endforeach()
   return()
 endif()
@@ -33,5 +34,5 @@ foreach(suffix "" "_asan" "_tsan")
   add_library(storage${suffix} STATIC ${STORAGE_SOURCES})
   target_include_directories(storage${suffix} PUBLIC ${STORAGE_INCLUDE_ROOT})
   target_compile_options(storage${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
-  target_link_libraries(storage${suffix} PUBLIC ecs${suffix} spatial${suffix} foundation${suffix})
+  target_link_libraries(storage${suffix} PUBLIC ecs${suffix} spatial${suffix} database${suffix} foundation${suffix})
 endforeach()

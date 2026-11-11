@@ -261,3 +261,41 @@ the session unchanged, so the next save still sees everything that changed. A `F
 `chunks_skipped` show what a save cost; an idle world encodes nothing and visits no chunk.
 
 Limits: a session follows the whole world (`AllKeyed` only); a record of a child is not rewritten when only its parent gains or loses a key (call `Reset`); if something else changes the store, call `Reset`.
+
+## The SQL store
+
+`SqlStore` is the record store on a database connection (`SqlStore::Open(connection, &store)`; the connection is borrowed and outlives the store). It keeps one row per entity,
+`entity(key BLOB PRIMARY KEY, seq INTEGER NOT NULL, hash BLOB NOT NULL, data BLOB NOT NULL)` (the key as 16 big-endian bytes so the database's order is key order, the hash as 8
+bytes), and the metadata in `meta(key TEXT PRIMARY KEY, value BLOB)`. It uses only the portable statement subset of the design (no `PRAGMA`, no SQLite-only form), prepares each
+statement once and binds all data, so another database backend can run it. `Begin`, `Commit` and `Rollback` are database transactions.
+
+The schema version is `Connection::SchemaVersion()` (also kept in the metadata as `schema_version`). `Open` applies the missing migration steps in one transaction; a database with a
+newer schema is refused with `TooNew` and left as it was. One connection serves the store, so **while a batch is open every call from another thread is `Busy`** (the memory store
+shows readers the committed state instead). It passes the same conformance suite as `MemoryStore`, on SQLite in memory and in a file, and a failure injected at every write and sync of
+a batch leaves the old or the new state.
+
+```cpp compile run standalone
+#include "database/sqlite/sqlite_database.h"
+#include "os/console.h"
+#include "storage/sql_store.h"
+
+using namespace engine_placeholder;
+using namespace engine_placeholder::storage;
+
+int main() {
+    database::SqliteDatabase db;
+    UniquePtr<database::Connection> connection;
+    if (db.Open(database::OpenOptions(), &connection).Failed()) return 1; // a private in-memory database
+    UniquePtr<SqlStore> store;
+    if (SqlStore::Open(*connection, &store).Failed()) return 1;
+    const byte bytes[] = {1, 2, 3};
+    if (store->Put(EntityRecord::Make(EntityKey{0, 42}, ByteSpan(bytes, 3))).Failed()) return 1;
+    usize count = 0;
+    if (store->Count(&count).Failed()) return 1;
+    os::Print("%s holds %u record\n", store->Name(), static_cast<u32>(count));
+    return 0;
+}
+```
+```output
+sql holds 1 record
+```

@@ -9,6 +9,8 @@ set(STORAGE_TEST_SOURCES
   store_test.cpp  # Day 259
   world_roundtrip_test.cpp  # Day 260
   incremental_test.cpp  # Day 261
+  sql_store_test.cpp  # Day 262
+  old_schema.cpp  # Day 262
 )
 
 find_package(Threads REQUIRED)
@@ -16,8 +18,9 @@ include(Catch)
 
 function(engine_add_storage_tests target storage_lib suffix label)
   add_executable(${target} ${STORAGE_TEST_SOURCES})
-  target_link_libraries(${target} PRIVATE ${storage_lib} Catch2::Catch2WithMain Threads::Threads)
-  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+  string(REPLACE storage database_sqlite _database_lib ${storage_lib})
+  target_link_libraries(${target} PRIVATE ${storage_lib} ${_database_lib} Catch2::Catch2WithMain Threads::Threads)
+  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tests/database)
   if(label STREQUAL "asan")
     engine_asan_runtime(${target})
   endif()

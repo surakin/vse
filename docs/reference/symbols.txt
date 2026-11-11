@@ -4026,6 +4026,25 @@ storage::SaveSession::operator=(const SaveSession&)	function	storage	storage-sav
 storage::SaveSession::Reset()	function	storage	storage-savesession-reset	storage.md	engine/storage/save_session.h:33
 storage::SaveSession::HasBaseline() const	function	storage	storage-savesession-hasbaseline-const	storage.md	engine/storage/save_session.h:36
 storage::SaveSession::TrackedRecords() const	function	storage	storage-savesession-trackedrecords-const	storage.md	engine/storage/save_session.h:39
+storage::SqlStore	class	storage	storage-sqlstore	storage.md	engine/storage/sql_store.h:27
+storage::SqlStore::kSchemaVersion	variable	storage	storage-sqlstore-kschemaversion	storage.md	engine/storage/sql_store.h:30
+storage::SqlStore::Open(database::Connection&,UniquePtr<SqlStore>*)	function	storage	storage-sqlstore-open-database-connection-amp-uniqueptr-lt-sqlstore-gt-star	storage.md	engine/storage/sql_store.h:38
+storage::SqlStore::SqlStore(database::Connection&)	function	storage	storage-sqlstore-sqlstore-database-connection-amp	storage.md	engine/storage/sql_store.h:44
+storage::SqlStore::~SqlStore()	function	storage	storage-sqlstore-tilde-sqlstore	storage.md	engine/storage/sql_store.h:46
+storage::SqlStore::SqlStore(const SqlStore&)	function	storage	storage-sqlstore-sqlstore-const-sqlstore-amp	storage.md	engine/storage/sql_store.h:47
+storage::SqlStore::operator=(const SqlStore&)	function	storage	storage-sqlstore-operator-eq-const-sqlstore-amp	storage.md	engine/storage/sql_store.h:48
+storage::SqlStore::Name() const	function	storage	storage-sqlstore-name-const	storage.md	engine/storage/sql_store.h:53
+storage::SqlStore::Put(const EntityRecord&)	function	storage	storage-sqlstore-put-const-entityrecord-amp	storage.md	engine/storage/sql_store.h:54
+storage::SqlStore::Get(EntityKey,EntityRecord*) const	function	storage	storage-sqlstore-get-entitykey-entityrecord-star-const	storage.md	engine/storage/sql_store.h:55
+storage::SqlStore::Remove(EntityKey)	function	storage	storage-sqlstore-remove-entitykey	storage.md	engine/storage/sql_store.h:56
+storage::SqlStore::Scan(const KeyRange&,RecordVisitor&) const	function	storage	storage-sqlstore-scan-const-keyrange-amp-recordvisitor-amp-const	storage.md	engine/storage/sql_store.h:57
+storage::SqlStore::Count(usize*) const	function	storage	storage-sqlstore-count-usize-star-const	storage.md	engine/storage/sql_store.h:58
+storage::SqlStore::Begin()	function	storage	storage-sqlstore-begin	storage.md	engine/storage/sql_store.h:59
+storage::SqlStore::Commit()	function	storage	storage-sqlstore-commit	storage.md	engine/storage/sql_store.h:60
+storage::SqlStore::Rollback()	function	storage	storage-sqlstore-rollback	storage.md	engine/storage/sql_store.h:61
+storage::SqlStore::GetMetadata(StringView,String<HeapAllocator>*) const	function	storage	storage-sqlstore-getmetadata-stringview-string-lt-heapallocator-gt-star-const	storage.md	engine/storage/sql_store.h:62
+storage::SqlStore::SetMetadata(StringView,StringView)	function	storage	storage-sqlstore-setmetadata-stringview-stringview	storage.md	engine/storage/sql_store.h:63
+storage::SqlStore::FailAfter(u32)	function	storage	storage-sqlstore-failafter-u32	storage.md	engine/storage/sql_store.h:69
 storage::ErrorCode	enum	storage	storage-errorcode	storage.md	engine/storage/status.h:12
 storage::ErrorCode::Ok	enumerator	storage	storage-errorcode-ok	storage.md	engine/storage/status.h:13
 storage::ErrorCode::NotFound	enumerator	storage	storage-errorcode-notfound	storage.md	engine/storage/status.h:14

@@ -11,6 +11,7 @@ namespace {
 struct MemoryStoreFixture {
     static constexpr bool kInjectsFailure = true;
     static constexpr bool kCanCorrupt = true;
+    static constexpr bool kReadersSeeCommitted = true;
     static const char* Name() { return "memory"; }
     Store& Db() { return store_; }
     void FailAfter(u32 n) { store_.FailAfter(n); }

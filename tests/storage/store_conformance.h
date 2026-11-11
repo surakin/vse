@@ -7,6 +7,7 @@
 //   void FailAfter(u32 n);                  (only used when kInjectsFailure)
 //   bool Corrupt(EntityKey key);            (damage a record; only used when kCanCorrupt)
 //   static constexpr bool kCanCorrupt;
+//   static constexpr bool kReadersSeeCommitted;  (true when a reader on another thread sees the committed state while a batch is open; false: it is Busy)
 // and instantiates the cases with STORE_CONFORMANCE_CASES(Fixture).
 
 #include <catch2/catch_test_macros.hpp>
@@ -225,6 +226,7 @@ inline u64 Fingerprint(const Store& s) {
         }                                                                                                                                                     \
     }                                                                                                                                                         \
     TEST_CASE("Store conformance: readers on other threads see the old state until commit [" #Fixture "]", "[storage][store]") {                              \
+        if constexpr (Fixture::kReadersSeeCommitted) {                                                                                                        \
         Fixture f;                                                                                                                                            \
         Store& s = f.Db();                                                                                                                                    \
         using namespace conformance;                                                                                                                          \
@@ -251,4 +253,5 @@ inline u64 Fingerprint(const Store& s) {
         CHECK(CountOf(s) == 3);                                                                                                                               \
         EntityRecord r;                                                                                                                                       \
         CHECK(s.Get(EntityKey{0, 99}, &r).Is(ErrorCode::NotFound));                                                                                           \
+        }                                                                                                                                                     \
     }
