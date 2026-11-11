@@ -1,0 +1,3 @@
+# path|reason
+engine/app/allowed.cpp|a documented exception
+engine/app/gone.cpp|stale: nothing here calls a socket function

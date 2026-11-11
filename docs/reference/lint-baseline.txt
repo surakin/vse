@@ -19,7 +19,7 @@ module	foundation/debug	208	208
 module	text	216	216
 module	ecs	386	386
 module	spatial	322	322
-module	net	95	95
+module	net	129	129
 module	database	153	153
 module	storage	390	390
 module	scene	44	44

@@ -6,6 +6,17 @@ set(NET_SOURCES
   address.cpp  # Day 267
   endpoint.cpp  # Day 267
 )
+# The socket backend (Day 268): the shared POSIX half and the operating system's hooks. The Windows backend arrives on Day 278.
+set(NET_POSIX_SOURCES
+  posix/posix_error.cpp  # Day 268
+  posix/socket_posix.cpp  # Day 268
+)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  list(APPEND NET_POSIX_SOURCES linux/linux_hooks.cpp)  # Day 268
+endif()
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  list(APPEND NET_SOURCES ${NET_POSIX_SOURCES})
+endif()
 set(NET_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")

@@ -1,0 +1,6 @@
+# path|reason - files (or directories, with a trailing /) allowed to name the operating system's socket API outside the backends of engine/net.
+# An entry that no longer exempts anything fails the gate (remove it). The rule: CLAUDE.md ("Network traffic goes through the networking layer") and
+# docs/superpowers/specs/2026-11-11-networking-design.md.
+engine/rhi/vulkan/vk_memory.cpp|Not a socket: `accept` is a local lambda that picks a Vulkan memory type.
+tests/foundation/window_backend_test.cpp|The test severs the Wayland connection by shutting down the display's descriptor (wl_display_get_fd) to prove the window layer survives a dead compositor; the descriptor belongs to libwayland, not to net.
+tests/foundation/x11_window_test.cpp|Not a socket: `send` is a local helper that sends an X11 event.

@@ -3737,6 +3737,43 @@ net::EndpointSet::operator[](usize) const	function	net	net-endpointset-operator-
 net::EndpointSet::Clear()	function	net	net-endpointset-clear	net.md	engine/net/endpoint.h:106
 Hash<net::Endpoint>	struct	net	hash-lt-net-endpoint-gt	net.md	engine/net/endpoint.h:120
 Hash<net::Endpoint>::operator()(const net::Endpoint&) const	function	net	hash-lt-net-endpoint-gt-operator-call-const-net-endpoint-amp-const	net.md	engine/net/endpoint.h:123
+net::ShutdownMode	enum	net	net-shutdownmode	net.md	engine/net/socket.h:13
+net::ShutdownMode::Read	enumerator	net	net-shutdownmode-read	net.md	engine/net/socket.h:14
+net::ShutdownMode::Write	enumerator	net	net-shutdownmode-write	net.md	engine/net/socket.h:15
+net::ShutdownMode::Both	enumerator	net	net-shutdownmode-both	net.md	engine/net/socket.h:16
+net::Socket	class	net	net-socket	net.md	engine/net/socket.h:32
+net::Socket::Socket()	function	net	net-socket-socket	net.md	engine/net/socket.h:35
+net::Socket::~Socket()	function	net	net-socket-tilde-socket	net.md	engine/net/socket.h:37
+net::Socket::Socket(const Socket&)	function	net	net-socket-socket-const-socket-amp	net.md	engine/net/socket.h:39
+net::Socket::operator=(const Socket&)	function	net	net-socket-operator-eq-const-socket-amp	net.md	engine/net/socket.h:40
+net::Socket::Socket(Socket&&) noexcept	function	net	net-socket-socket-socket-amp-amp-noexcept	net.md	engine/net/socket.h:42
+net::Socket::operator=(Socket&&) noexcept	function	net	net-socket-operator-eq-socket-amp-amp-noexcept	net.md	engine/net/socket.h:44
+net::Socket::OpenTcp(AddressFamily,Socket*)	function	net	net-socket-opentcp-addressfamily-socket-star	net.md	engine/net/socket.h:52
+net::Socket::OpenUdp(AddressFamily,Socket*)	function	net	net-socket-openudp-addressfamily-socket-star	net.md	engine/net/socket.h:58
+net::Socket::IsOpen() const	function	net	net-socket-isopen-const	net.md	engine/net/socket.h:62
+net::Socket::Family() const	function	net	net-socket-family-const	net.md	engine/net/socket.h:65
+net::Socket::IsDatagram() const	function	net	net-socket-isdatagram-const	net.md	engine/net/socket.h:68
+net::Socket::NativeHandle() const	function	net	net-socket-nativehandle-const	net.md	engine/net/socket.h:71
+net::Socket::Bind(const Endpoint&)	function	net	net-socket-bind-const-endpoint-amp	net.md	engine/net/socket.h:78
+net::Socket::Listen(i32)	function	net	net-socket-listen-i32	net.md	engine/net/socket.h:83
+net::Socket::Accept(Socket*,Endpoint*)	function	net	net-socket-accept-socket-star-endpoint-star	net.md	engine/net/socket.h:90
+net::Socket::Connect(const Endpoint&)	function	net	net-socket-connect-const-endpoint-amp	net.md	engine/net/socket.h:99
+net::Socket::FinishConnect()	function	net	net-socket-finishconnect	net.md	engine/net/socket.h:106
+net::Socket::Send(ByteSpan,usize*)	function	net	net-socket-send-bytespan-usize-star	net.md	engine/net/socket.h:114
+net::Socket::Receive(MutableByteSpan,usize*)	function	net	net-socket-receive-mutablebytespan-usize-star	net.md	engine/net/socket.h:124
+net::Socket::SendTo(ByteSpan,const Endpoint&,usize*)	function	net	net-socket-sendto-bytespan-const-endpoint-amp-usize-star	net.md	engine/net/socket.h:130
+net::Socket::ReceiveFrom(MutableByteSpan,usize*,Endpoint*)	function	net	net-socket-receivefrom-mutablebytespan-usize-star-endpoint-star	net.md	engine/net/socket.h:138
+net::Socket::Shutdown(ShutdownMode)	function	net	net-socket-shutdown-shutdownmode	net.md	engine/net/socket.h:144
+net::Socket::Close()	function	net	net-socket-close	net.md	engine/net/socket.h:149
+net::Socket::LocalEndpoint(Endpoint*) const	function	net	net-socket-localendpoint-endpoint-star-const	net.md	engine/net/socket.h:156
+net::Socket::PeerEndpoint(Endpoint*) const	function	net	net-socket-peerendpoint-endpoint-star-const	net.md	engine/net/socket.h:162
+net::Socket::SetReuseAddress(bool)	function	net	net-socket-setreuseaddress-bool	net.md	engine/net/socket.h:167
+net::Socket::SetNoDelay(bool)	function	net	net-socket-setnodelay-bool	net.md	engine/net/socket.h:171
+net::Socket::SetKeepAlive(bool)	function	net	net-socket-setkeepalive-bool	net.md	engine/net/socket.h:175
+net::Socket::SetReceiveBuffer(usize,usize*)	function	net	net-socket-setreceivebuffer-usize-usize-star	net.md	engine/net/socket.h:181
+net::Socket::SetSendBuffer(usize,usize*)	function	net	net-socket-setsendbuffer-usize-usize-star	net.md	engine/net/socket.h:186
+net::Socket::SetDualStack(bool)	function	net	net-socket-setdualstack-bool	net.md	engine/net/socket.h:190
+net::Socket::SetBroadcast(bool)	function	net	net-socket-setbroadcast-bool	net.md	engine/net/socket.h:194
 net::ErrorCode	enum	net	net-errorcode	net.md	engine/net/status.h:10
 net::ErrorCode::Ok	enumerator	net	net-errorcode-ok	net.md	engine/net/status.h:11
 net::ErrorCode::WouldBlock	enumerator	net	net-errorcode-wouldblock	net.md	engine/net/status.h:12

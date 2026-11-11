@@ -1,14 +1,15 @@
-# Networking: addresses, endpoints and errors
+# Networking: addresses, endpoints, errors and sockets
 
-Status: Phase 20. Built: addresses, endpoints and the error type (Day 267). Next: the Linux socket backend (Day 268), the reactor (Day 269), the transports (Days 273-277).
+Status: Phase 20. Built: addresses, endpoints and the error type (Day 267), the socket interface with its Linux backend and the access gate (Day 268). Next: the reactor (Day 269), the transports (Days 273-277).
 
 **Audience:** engine programmers who talk to another machine or process. Design, spikes and the benchmark pass conditions:
 `docs/superpowers/specs/2026-11-11-networking-design.md`.
 
 **Trust:** until the encryption outcome of Day 280 is built, the engine's transports are for trusted networks only. Nothing here hides or authenticates data.
 
-The module `engine/net` (namespace `net`) is the only place that will call the operating system's socket API (a gate from Day 268 enforces it). This page covers the
-part with no system calls at all: values that name a peer, and the way failures are reported. Because they make no syscalls they behave the same on every
+The module `engine/net` (namespace `net`) is the only place that calls the operating system's socket API (the gate `net_access_check` fails on a socket call or a socket
+header anywhere else). The first half of this page covers the part with no system calls at all: values that name a peer, and the way failures are reported.
+The second half is `net::Socket`. Because they make no syscalls they behave the same on every
 platform and are tested exhaustively on any machine, Windows scope-id rules included.
 
 ## The vocabulary
@@ -91,3 +92,64 @@ Branch on the code, never on `OsError()`; the number (`errno` or the Winsock cod
 codes lives in the backends (Days 268 and 278) and is tested against a table of the numbers.
 
 `ENGINE_TRY(expr)` returns a failed `Status` from the enclosing function in one line, as it does for `database::Status`.
+
+## Sockets
+
+`net::Socket` is a move-only handle to a TCP stream, a TCP listener or a UDP socket. It is the whole socket API of the engine; the transports of later days
+are built on it.
+
+- **Everything is non-blocking**, from the moment the socket exists; accepted sockets too. A call that cannot finish returns `WouldBlock` and has done
+  nothing. Until the reactor of Day 269 exists, a test waits by calling again; the reactor will turn the same calls into `co_await`s.
+- **Partial reads and writes are results.** `Send` reports how many bytes the system took, `Receive` how many arrived; a count below the request is not an
+  error. On a stream, `Receive` reports the end of the stream (the peer shut down its writing half) as `Closed`, after all the data.
+- **A connect is two steps.** `Connect` returns success if the connection is made at once and `WouldBlock` if it is under way; when the socket is writable,
+  `FinishConnect` reports the outcome, once (`Refused`, `TimedOut`, `Unreachable`, or success).
+- **Datagrams are whole.** `SendTo` sends one datagram or none; `ReceiveFrom` returns one datagram and its sender, and drops (and reports as `MessageTooLarge`)
+  a datagram larger than the buffer, so a short buffer is never mistaken for a short datagram.
+- **No signals.** Writing to a vanished peer reports `Closed` or `Reset`; the process is never sent `SIGPIPE`.
+- **Families.** A socket has the family it was opened with. An IPv6 socket accepts IPv4 endpoints (as IPv4-mapped addresses) and `SetDualStack(true)`
+  lets an IPv6 listener take IPv4 peers; an IPv4-mapped peer address is reported as IPv4. A scope name in an address (`fe80::1%eth0`) is turned into an
+  interface index when the endpoint is used.
+- **Misuse is a value.** A closed, moved-from or never-opened socket answers `Invalid` to every call, and closing twice reports `Invalid` the second time;
+  nothing crashes. The destructor closes the handle.
+
+```cpp compile standalone
+#include "net/socket.h"
+
+using namespace engine_placeholder;
+using namespace engine_placeholder::net;
+
+// Starts a loopback connection and returns true if it is made or under way, and the listener sees it once it is pending.
+bool StartLoopbackConnection() {
+    Socket listener;
+    Endpoint at;
+    if (Socket::OpenTcp(AddressFamily::V4, &listener).Failed() ||
+        listener.Bind(Endpoint(Address::Loopback(AddressFamily::V4), 0)).Failed() ||  // port 0: the system picks a free port
+        listener.Listen().Failed() || listener.LocalEndpoint(&at).Failed()) {
+        return false;
+    }
+    Socket client;
+    if (Socket::OpenTcp(AddressFamily::V4, &client).Failed()) {
+        return false;
+    }
+    const Status connect = client.Connect(at);  // success, or WouldBlock: wait until writable, then FinishConnect()
+    Socket accepted;
+    Endpoint peer;
+    const Status accept = listener.Accept(&accepted, &peer);  // WouldBlock until the connection is pending
+    return (connect.Ok() || connect.Is(ErrorCode::WouldBlock)) && (accept.Ok() || accept.Is(ErrorCode::WouldBlock));
+}
+```
+
+Options are methods of the socket: `SetReuseAddress`, `SetNoDelay` (TCP only), `SetKeepAlive`, `SetReceiveBuffer` and `SetSendBuffer` (they report what the
+system granted: Linux doubles the request and caps it at `net.core.rmem_max`), `SetDualStack` (IPv6 only) and `SetBroadcast` (off by default).
+
+### Porting
+
+`engine/net/BACKEND.md` is the checklist for a new platform: every `Socket` operation with its rules, the error table, and the quirks of Windows, macOS,
+mobile and consoles. The test `net_backend_lists` keeps it in step with the header. Linux and macOS share `engine/net/posix/`; Windows gets its own
+directory on Day 278.
+
+### Tests that use real sockets
+
+Tests with real sockets are tagged `[network]`, live in the executable `net_tests_sockets` (ctest label `network`) and use loopback with ports the system
+chooses. A machine that cannot bind loopback skips them with a printed reason, so a sandbox without networking does not fail the suite.

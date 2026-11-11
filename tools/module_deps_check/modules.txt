@@ -170,6 +170,7 @@ module tools/shader_mint/ tools/shader_mint 14
 module tools/unicode_data_gen/ tools/unicode_data_gen 14
 module tools/config_access_check/ tools/gates 14
 module tools/file_access_check/ tools/gates 14
+module tools/net_access_check/ tools/gates 14
 module tools/sqlite_boundary_check/ tools/gates 14
 module tools/database_sql_check/ tools/gates 14
 module tools/module_deps_check/ tools/gates 14

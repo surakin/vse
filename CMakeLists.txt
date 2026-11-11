@@ -242,6 +242,7 @@ if(ENGINE_PLATFORM STREQUAL "windows")
                signal_safety_check platform_neutral_check module_deps_check ui_widget_style_check sqlite_boundary_check database_sql_check)
     add_subdirectory(tools/${gate})
   endforeach()
+  add_subdirectory(tools/net_access_check)  # Phase 20 Day 268 (its own line: editing the gate list above would widen scripts/test-phase.sh --affected)
   add_subdirectory(tests/phase_labels)
   add_subdirectory(tests/test_phase_script)
   message(STATUS "Windows (Phase 13): building the foundation, jobs, the platform layer, the RHI with its Vulkan backend, the renderer, "
@@ -284,6 +285,7 @@ if(ENGINE_PLATFORM STREQUAL "macos")
                signal_safety_check platform_neutral_check module_deps_check ui_widget_style_check sqlite_boundary_check database_sql_check)
     add_subdirectory(tools/${gate})
   endforeach()
+  add_subdirectory(tools/net_access_check)  # Phase 20 Day 268 (its own line: editing the gate list above would widen scripts/test-phase.sh --affected)
   add_subdirectory(tests/phase_labels)
   add_subdirectory(tests/test_phase_script)
   message(STATUS "macOS (Phase 26 Day 306): building the base, file and debugging layers of the foundation, the job system and their tests, the gates and the test tooling. Not "
@@ -340,6 +342,7 @@ add_subdirectory(tools/module_deps_check)
 add_subdirectory(tools/ui_widget_style_check)  # Phase 15 Day 195
 add_subdirectory(tools/sqlite_boundary_check)  # Phase 19 Day 251
 add_subdirectory(tools/database_sql_check)  # Phase 19 Day 252
+add_subdirectory(tools/net_access_check)  # Phase 20 Day 268
 add_subdirectory(tools/crash_extract)
 add_subdirectory(tests/foundation)
 add_subdirectory(tests/jobs)
