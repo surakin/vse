@@ -1761,16 +1761,18 @@ os::Close(int)	function	platform/os	os-close-int	platform-os.md	engine/foundatio
 os::ReserveMemory(usize)	function	platform/os	os-reservememory-usize	platform-os.md	engine/foundation/os/os.h:89
 os::ReleaseMemory(void*,usize)	function	platform/os	os-releasememory-void-star-usize	platform-os.md	engine/foundation/os/os.h:94
 os::MonotonicTimeNanos()	function	platform/os	os-monotonictimenanos	platform-os.md	engine/foundation/os/os.h:102
-os::SleepNanos(u64)	function	platform/os	os-sleepnanos-u64	platform-os.md	engine/foundation/os/os.h:109
-os::ResidentMemoryKiB()	function	platform/os	os-residentmemorykib	platform-os.md	engine/foundation/os/os.h:119
-os::OpenHandleCount()	function	platform/os	os-openhandlecount	platform-os.md	engine/foundation/os/os.h:128
-os::DynamicLibraryHandle	alias	platform/os	os-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:131
-os::LoadLibrary(StringView)	function	platform/os	os-loadlibrary-stringview	platform-os.md	engine/foundation/os/os.h:141
-os::GetSymbol(DynamicLibraryHandle,const char*)	function	platform/os	os-getsymbol-dynamiclibraryhandle-const-char-star	platform-os.md	engine/foundation/os/os.h:149
-os::UnloadLibrary(DynamicLibraryHandle)	function	platform/os	os-unloadlibrary-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:153
-os::EnvironmentCount()	function	platform/os	os-environmentcount	platform-os.md	engine/foundation/os/os.h:156
-os::EnvironmentNamesIgnoreCase()	function	platform/os	os-environmentnamesignorecase	platform-os.md	engine/foundation/os/os.h:162
-os::EnvironmentEntry(usize,char*,usize,usize*)	function	platform/os	os-environmententry-usize-char-star-usize-usize-star	platform-os.md	engine/foundation/os/os.h:176
+os::WallClockUnixMillis()	function	platform/os	os-wallclockunixmillis	platform-os.md	engine/foundation/os/os.h:110
+os::FillRandomBytes(void*,usize)	function	platform/os	os-fillrandombytes-void-star-usize	platform-os.md	engine/foundation/os/os.h:116
+os::SleepNanos(u64)	function	platform/os	os-sleepnanos-u64	platform-os.md	engine/foundation/os/os.h:123
+os::ResidentMemoryKiB()	function	platform/os	os-residentmemorykib	platform-os.md	engine/foundation/os/os.h:133
+os::OpenHandleCount()	function	platform/os	os-openhandlecount	platform-os.md	engine/foundation/os/os.h:142
+os::DynamicLibraryHandle	alias	platform/os	os-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:145
+os::LoadLibrary(StringView)	function	platform/os	os-loadlibrary-stringview	platform-os.md	engine/foundation/os/os.h:155
+os::GetSymbol(DynamicLibraryHandle,const char*)	function	platform/os	os-getsymbol-dynamiclibraryhandle-const-char-star	platform-os.md	engine/foundation/os/os.h:163
+os::UnloadLibrary(DynamicLibraryHandle)	function	platform/os	os-unloadlibrary-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:167
+os::EnvironmentCount()	function	platform/os	os-environmentcount	platform-os.md	engine/foundation/os/os.h:170
+os::EnvironmentNamesIgnoreCase()	function	platform/os	os-environmentnamesignorecase	platform-os.md	engine/foundation/os/os.h:176
+os::EnvironmentEntry(usize,char*,usize,usize*)	function	platform/os	os-environmententry-usize-char-star-usize-usize-star	platform-os.md	engine/foundation/os/os.h:190
 os::SessionState	enum	platform/os	os-sessionstate	platform-os.md	engine/foundation/os/session.h:11
 os::SessionState::Active	enumerator	platform/os	os-sessionstate-active	platform-os.md	engine/foundation/os/session.h:12
 os::SessionState::Locked	enumerator	platform/os	os-sessionstate-locked	platform-os.md	engine/foundation/os/session.h:13
@@ -3687,12 +3689,20 @@ database::SqlText	class	database	database-sqltext	database.md	engine/database/sq
 database::SqlText::SqlText(const char*)	function	database	database-sqltext-sqltext-const-char-star	database.md	engine/database/sql_text.h:24
 database::SqlText::Unchecked(StringView)	function	database	database-sqltext-unchecked-stringview	database.md	engine/database/sql_text.h:30
 database::SqlText::View() const	function	database	database-sqltext-view-const	database.md	engine/database/sql_text.h:33
-database::SqliteDatabase	class	database	database-sqlitedatabase	database.md	engine/database/sqlite/sqlite_database.h:17
-database::SqliteDatabase::Name() const	function	database	database-sqlitedatabase-name-const	database.md	engine/database/sqlite/sqlite_database.h:22
-database::SqliteDatabase::Supports(Feature) const	function	database	database-sqlitedatabase-supports-feature-const	database.md	engine/database/sqlite/sqlite_database.h:25
-database::SqliteDatabase::Open(const OpenOptions&,UniquePtr<Connection>*)	function	database	database-sqlitedatabase-open-const-openoptions-amp-uniqueptr-lt-connection-gt-star	database.md	engine/database/sqlite/sqlite_database.h:32
+database::SqliteDatabase	class	database	database-sqlitedatabase	database.md	engine/database/sqlite/sqlite_database.h:19
+database::SqliteDatabase::Name() const	function	database	database-sqlitedatabase-name-const	database.md	engine/database/sqlite/sqlite_database.h:24
+database::SqliteDatabase::Supports(Feature) const	function	database	database-sqlitedatabase-supports-feature-const	database.md	engine/database/sqlite/sqlite_database.h:29
+database::SqliteDatabase::Open(const OpenOptions&,UniquePtr<Connection>*)	function	database	database-sqlitedatabase-open-const-openoptions-amp-uniqueptr-lt-connection-gt-star	database.md	engine/database/sqlite/sqlite_database.h:38
 database::sqlite_detail::InitializeSqlite()	function	database	database-sqlite-detail-initializesqlite	database.md	engine/database/sqlite/sqlite_os.h:13
+database::sqlite_detail::FileFaultOp	enum	database	database-sqlite-detail-filefaultop	database.md	engine/database/sqlite/sqlite_os.h:16
+database::sqlite_detail::kFaultWrite	enumerator	database	database-sqlite-detail-kfaultwrite	database.md	engine/database/sqlite/sqlite_os.h:17
+database::sqlite_detail::kFaultSync	enumerator	database	database-sqlite-detail-kfaultsync	database.md	engine/database/sqlite/sqlite_os.h:18
+database::sqlite_detail::kFaultTruncate	enumerator	database	database-sqlite-detail-kfaulttruncate	database.md	engine/database/sqlite/sqlite_os.h:19
+database::sqlite_detail::SetFileFaults(unsigned,long long,bool)	function	database	database-sqlite-detail-setfilefaults-unsigned-long-long-bool	database.md	engine/database/sqlite/sqlite_os.h:27
+database::sqlite_detail::ClearFileFaults()	function	database	database-sqlite-detail-clearfilefaults	database.md	engine/database/sqlite/sqlite_os.h:32
+database::sqlite_detail::FileFaultOpsSeen()	function	database	database-sqlite-detail-filefaultopsseen	database.md	engine/database/sqlite/sqlite_os.h:38
 database::SqliteVersion()	function	database	database-sqliteversion	database.md	engine/database/sqlite/sqlite_version.h:13
+database::sqlite_detail::EngineVfs()	function	database	database-sqlite-detail-enginevfs	database.md	engine/database/sqlite/sqlite_vfs.h:14
 database::ErrorCode	enum	database	database-errorcode	database.md	engine/database/status.h:12
 database::ErrorCode::Ok	enumerator	database	database-errorcode-ok	database.md	engine/database/status.h:13
 database::ErrorCode::Busy	enumerator	database	database-errorcode-busy	database.md	engine/database/status.h:14

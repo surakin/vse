@@ -5,6 +5,8 @@ set(DATABASE_TEST_SOURCES
   conformance_stub_test.cpp  # Day 252
   interface_test.cpp  # Day 252
   sqlite_memory_test.cpp  # Day 253
+  sqlite_file_test.cpp  # Day 254
+  sqlite_crash_test.cpp  # Day 254
 )
 
 find_package(Threads REQUIRED)

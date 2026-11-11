@@ -101,6 +101,20 @@ void ReleaseMemory(void* addr, usize size);
 /// Thread-safety: thread-safe.
 u64 MonotonicTimeNanos();
 
+/// Returns the wall-clock time in milliseconds since 1970-01-01 00:00:00 UTC (the Unix epoch).
+///
+/// The clock follows the system time, so it can jump when the user or a time service changes it: use it for dates and file stamps, and
+/// [[os::MonotonicTimeNanos]] for durations.
+///
+/// Thread-safety: thread-safe.
+u64 WallClockUnixMillis();
+
+/// Fills `count` bytes at `buffer` from the operating system's cryptographically secure random source.
+///
+/// Thread-safety: thread-safe.
+/// Aborts: the operating system cannot supply random bytes.
+void FillRandomBytes(void* buffer, usize count);
+
 /// Blocks the calling thread for at least `nanos` nanoseconds.
 ///
 /// May sleep longer under scheduler contention; interrupted sleeps are resumed, so it never returns early. On Windows the wait is a

@@ -65,11 +65,21 @@ DATABASE_CONFORMANCE_CASES(MyFixture)
 
 ## The SQLite backend
 
-`database::SqliteDatabase` (`database/sqlite/sqlite_database.h`) is the backend. Until the file-layer VFS exists (Day 254) it opens private in-memory
-databases: `OpenOptions::location` empty or `":memory:"`. Each belongs to the connection that opened it, so two connections never share one; the
-conformance cases that need two connections skip on this fixture and run on files later.
+`database::SqliteDatabase` (`database/sqlite/sqlite_database.h`) is the backend. An empty `OpenOptions::location` or `":memory:"` is a private in-memory
+database that belongs to its connection (two connections never share one, so the cases that need two skip on that fixture); any other location is a file.
 
+- **Files go through the file layer.** SQLite's virtual file system (`engine/database/sqlite/sqlite_vfs.cpp`) opens, reads, writes, syncs, truncates and
+  deletes only through `io::File` and `io::Path`; temporary files, the clock (`os::WallClockUnixMillis`) and randomness (`os::FillRandomBytes`) come from the
+  engine as well. A new platform needs no SQLite port.
+- **Write-ahead log by default.** A file opens in `WAL` mode, so readers do not block the writer (`Supports(ConcurrentReaders)`); `JournalMode::Delete` and
+  `Truncate` select a rollback journal. `sync_mode` `Default` is `Normal`; `Full` syncs on every commit.
+- **One process per file.** The file locks and the write-ahead log's index are kept in this process, shared by its connections, with SQLite's real rules. A
+  second process is not excluded: do not open one database file from two programs at once (`KNOWN-ISSUES.md`).
+- **Crash safety is tested**, not assumed: `tests/database/sqlite_crash_test.cpp` fails the Nth write, sync or truncation of a 200-row transaction, or stops
+  all file operations there as a crash would, for every N in the rollback-journal and write-ahead-log modes; the file always reopens, passes SQLite's own
+  integrity check, and holds either the old rows or all the new ones.
 - A savepoint outside a transaction starts one, as in SQLite; releasing the outermost savepoint commits it.
 - `SchemaVersion` is `PRAGMA user_version`, inside the backend only.
 - A statement used after its connection was destroyed fails with `Misuse`; the connection's memory lives until the last statement is gone.
 - SQLite reports a syntax error and an unknown table both as one code; the backend tells them apart by the message (`Syntax`, `NotFound`).
+- A file that is not a database is `Corrupt` at open; a missing file without `OpenMode::Create` is `NotFound`.

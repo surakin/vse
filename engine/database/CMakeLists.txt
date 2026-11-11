@@ -10,6 +10,7 @@ set(DATABASE_SOURCES
 set(DATABASE_SQLITE_SOURCES
   sqlite/sqlite_version.cpp  # Day 251
   sqlite/sqlite_os.cpp  # Day 253
+  sqlite/sqlite_vfs.cpp  # Day 254
   sqlite/sqlite_database.cpp  # Day 253
 )
 set(DATABASE_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
@@ -23,11 +24,11 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_library(database${suffix} STATIC ${DATABASE_SOURCES})
     target_include_directories(database${suffix} PUBLIC ${DATABASE_INCLUDE_ROOT})
     target_compile_options(database${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
-    target_link_libraries(database${suffix} PUBLIC foundation_base${suffix})
+    target_link_libraries(database${suffix} PUBLIC foundation_base${suffix} foundation_io${suffix})
     add_library(database_sqlite${suffix} STATIC ${DATABASE_SQLITE_SOURCES})
     target_include_directories(database_sqlite${suffix} PUBLIC ${DATABASE_INCLUDE_ROOT})
     target_compile_options(database_sqlite${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
-    target_link_libraries(database_sqlite${suffix} PUBLIC database${suffix} foundation_base${suffix} PRIVATE sqlite3)
+    target_link_libraries(database_sqlite${suffix} PUBLIC database${suffix} foundation_base${suffix} foundation_io${suffix} PRIVATE sqlite3)
   endforeach()
   return()
 endif()

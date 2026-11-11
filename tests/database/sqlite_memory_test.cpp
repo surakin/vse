@@ -27,15 +27,16 @@ TEST_CASE("SQLite backend: identity and features", "[database][sqlite]") {
     CHECK(StringView(db.Name()) == StringView("sqlite"));
     CHECK(db.Supports(Feature::Savepoints));
     CHECK(db.Supports(Feature::ForeignKeys));
-    CHECK_FALSE(db.Supports(Feature::WriteAheadLog));
+    CHECK(db.Supports(Feature::WriteAheadLog)); // for a file; an in-memory connection reports its own answer
+    UniquePtr<Connection> memory;
+    REQUIRE(db.Open(OpenOptions(), &memory).Ok());
+    CHECK_FALSE(memory->Supports(Feature::WriteAheadLog));
+    CHECK_FALSE(memory->Supports(Feature::ConcurrentReaders));
 }
 
-TEST_CASE("SQLite backend: a file, a read-only mode and the write-ahead log are refused until the file layer exists", "[database][sqlite]") {
+TEST_CASE("SQLite backend: an in-memory database is never read-only and has no write-ahead log", "[database][sqlite]") {
     SqliteDatabase db;
     UniquePtr<Connection> conn;
-    OpenOptions file;
-    file.location = StringView("a.db");
-    CHECK(db.Open(file, &conn).Is(ErrorCode::Unsupported));
     OpenOptions read_only;
     read_only.mode = OpenMode::ReadOnly;
     CHECK(db.Open(read_only, &conn).Is(ErrorCode::Unsupported));

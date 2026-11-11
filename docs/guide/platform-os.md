@@ -43,6 +43,12 @@ a whole line of text
 
 `os::MonotonicTimeNanos()` returns nanoseconds from a clock that only moves forward and is not affected by the user changing the system time: use it for every
 duration (frame time, timeouts). It has no meaning as a date. `os::SleepNanos(n)` sleeps for at least `n` nanoseconds.
+`os::WallClockUnixMillis()` is the date: milliseconds since 1970-01-01 UTC. It follows the system clock and can jump, so use it for stamps and calendars, never for durations.
+
+## Random bytes
+
+`os::FillRandomBytes(buffer, count)` fills a buffer from the operating system's secure random source (`getrandom`, `BCryptGenRandom`). It is for identifiers,
+nonces and seeds that must not be guessable; a game's gameplay random numbers want a seeded generator instead.
 
 ```cpp compile run standalone
 #include "os/console.h"

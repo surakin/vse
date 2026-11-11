@@ -12,4 +12,29 @@ namespace engine_placeholder::database::sqlite_detail {
 /// Returns: 0 (`SQLITE_OK`) or the SQLite result code of the failure.
 int InitializeSqlite();
 
+/// The file operations a test can make fail ([[database::sqlite_detail::SetFileFaults]]), combined with `|`.
+enum FileFaultOp : unsigned {
+    kFaultWrite = 1,    ///< A write to a file.
+    kFaultSync = 2,     ///< A sync of a file (and of its directory).
+    kFaultTruncate = 4, ///< A truncation.
+};
+
+/// Makes the `fail_at`-th (counting from 0) operation of the kinds in `ops`, from now on, fail with an I/O error: a crash test's fault injector. With
+/// `crash` set, that operation and every file operation after it fails too (a write, sync, truncation, deletion or creation), so nothing more reaches
+/// the disk, as after a power loss. Replaces an earlier plan and resets [[database::sqlite_detail::FileFaultOpsSeen]]. For tests only.
+///
+/// Thread-safety: thread-safe.
+void SetFileFaults(unsigned ops, long long fail_at, bool crash);
+
+/// Removes the fault plan.
+///
+/// Thread-safety: thread-safe.
+void ClearFileFaults();
+
+/// The number of operations of the planned kinds seen since [[database::sqlite_detail::SetFileFaults]]: run a workload with a `fail_at` it never reaches
+/// to learn how many operations it makes.
+///
+/// Thread-safety: thread-safe.
+long long FileFaultOpsSeen();
+
 } // namespace engine_placeholder::database::sqlite_detail

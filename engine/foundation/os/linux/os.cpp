@@ -1,6 +1,7 @@
 #include "../os.h"
 
 #include "os/last_error.h"
+#include "os/console.h"
 #include "cstr/format.h"
 #include "cstr/cstr.h"
 #include <time.h>
@@ -9,6 +10,7 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <sys/mman.h>
+#include <sys/random.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include "cstr/mem_ops.h"
@@ -132,6 +134,27 @@ u64 MonotonicTimeNanos() {
     struct timespec ts;
     ::clock_gettime(CLOCK_MONOTONIC, &ts);
     return static_cast<u64>(ts.tv_sec) * 1'000'000'000ULL + static_cast<u64>(ts.tv_nsec);
+}
+
+u64 WallClockUnixMillis() {
+    struct timespec ts;
+    ::clock_gettime(CLOCK_REALTIME, &ts);
+    return static_cast<u64>(ts.tv_sec) * 1000ULL + static_cast<u64>(ts.tv_nsec) / 1'000'000ULL;
+}
+
+void FillRandomBytes(void* buffer, usize count) {
+    char* out = static_cast<char*>(buffer);
+    usize done = 0;
+    while (done < count) {
+        const isize got = ::getrandom(out + done, count - done, 0);
+        if (got < 0) {
+            if (os::LastError() == EINTR) {
+                continue;
+            }
+            os::Abort();
+        }
+        done += static_cast<usize>(got);
+    }
 }
 
 void SleepNanos(u64 nanos) {

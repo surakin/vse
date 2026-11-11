@@ -694,6 +694,37 @@ The clock has no defined epoch, so differences between two calls are meaningful 
 |---|---|
 | Thread-safety | thread-safe. |
 
+## `WallClockUnixMillis()` {#os-wallclockunixmillis}
+
+`function os::WallClockUnixMillis` — defined in `engine/foundation/os/os.h`
+
+```cpp
+u64 WallClockUnixMillis();
+```
+
+Returns the wall-clock time in milliseconds since 1970-01-01 00:00:00 UTC (the Unix epoch).
+
+The clock follows the system time, so it can jump when the user or a time service changes it: use it for dates and file stamps, and [`os::MonotonicTimeNanos`](#os-monotonictimenanos) for durations.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-safe. |
+
+## `FillRandomBytes(void*,usize)` {#os-fillrandombytes-void-star-usize}
+
+`function os::FillRandomBytes` — defined in `engine/foundation/os/os.h`
+
+```cpp
+void FillRandomBytes(void* buffer, usize count);
+```
+
+Fills `count` bytes at `buffer` from the operating system's cryptographically secure random source.
+
+| Field | Value |
+|---|---|
+| Aborts | the operating system cannot supply random bytes. |
+| Thread-safety | thread-safe. |
+
 ## `SleepNanos(u64)` {#os-sleepnanos-u64}
 
 `function os::SleepNanos` — defined in `engine/foundation/os/os.h`

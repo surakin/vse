@@ -1,5 +1,6 @@
 #include "os/os.h"
 
+#include "os/console.h"
 #include "sync/atomic.h"
 #include <fcntl.h> // the POSIX-named open flags callers pass (_O_RDONLY, ...), from the UCRT
 
@@ -7,6 +8,7 @@
 #include "os/windows/win32.h"
 
 #include "unity/windows_enable.h"
+#include <bcrypt.h> // BCryptGenRandom (bcrypt.lib)
 #include <psapi.h> // GetProcessMemoryInfo (K32GetProcessMemoryInfo in kernel32, PSAPI_VERSION 2)
 #include "unity/windows_disable.h"
 
@@ -266,6 +268,26 @@ u64 MonotonicTimeNanos() {
     const u64 ticks = static_cast<u64>(now.QuadPart);
     // Whole seconds and the remainder separately, so `ticks * 1e9` cannot overflow.
     return (ticks / frequency) * 1'000'000'000ULL + (ticks % frequency) * 1'000'000'000ULL / frequency;
+}
+
+u64 WallClockUnixMillis() {
+    FILETIME ft;
+    GetSystemTimePreciseAsFileTime(&ft);
+    const u64 ticks = (static_cast<u64>(ft.dwHighDateTime) << 32) | ft.dwLowDateTime; // 100 ns since 1601-01-01
+    constexpr u64 kTicksAtUnixEpoch = 116444736000000000ULL;
+    return (ticks - kTicksAtUnixEpoch) / 10'000ULL;
+}
+
+void FillRandomBytes(void* buffer, usize count) {
+    u8* out = static_cast<u8*>(buffer);
+    while (count > 0) {
+        const ULONG chunk = count > 0x40000000u ? 0x40000000u : static_cast<ULONG>(count);
+        if (BCryptGenRandom(nullptr, out, chunk, BCRYPT_USE_SYSTEM_PREFERRED_RNG) != 0) {
+            Abort();
+        }
+        out += chunk;
+        count -= chunk;
+    }
 }
 
 void SleepNanos(u64 nanos) {

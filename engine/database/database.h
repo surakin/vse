@@ -209,7 +209,7 @@ public:
     /// Fails: never.
     /// Ownership: the returned string is static.
     virtual const char* Name() const = 0;
-    /// Returns true when the backend supports `feature` (the same answer as `Connection::Supports`).
+    /// Returns true when the backend supports `feature` (what the backend can do for some database; a connection's own `Supports` is exact for its database).
     /// Fails: never.
     virtual bool Supports(Feature feature) const = 0;
     /// Opens a connection.

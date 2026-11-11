@@ -196,7 +196,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     engine_add_foundation_layer(foundation_base "${suffix}" ${FOUNDATION_BASE_SOURCES})
     target_include_directories(foundation_base${suffix} SYSTEM PUBLIC "${ENGINE_VULKAN_HEADERS_DIR}")
     # WTSQuerySessionInformation (os/windows/session.cpp); user32 for the input desktop.
-    target_link_libraries(foundation_base${suffix} PUBLIC wtsapi32 user32)
+    target_link_libraries(foundation_base${suffix} PUBLIC wtsapi32 user32 bcrypt)
     engine_add_foundation_layer(foundation_io "${suffix}" ${FOUNDATION_IO_SOURCES})
     # advapi32: ACLs (FileInfo::read_only, private directories); bcrypt: random temporary names; shell32 and ole32: the known folders.
     target_link_libraries(foundation_io${suffix} PUBLIC foundation_base${suffix} advapi32 bcrypt shell32 ole32)

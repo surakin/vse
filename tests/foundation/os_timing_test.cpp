@@ -76,3 +76,27 @@ TEST_CASE("os::EnvironmentEntry lists the process environment as NAME=value", "[
     CHECK(none[0] == '\0');
     test_support::UnsetEnv("RE_ENVIRONMENT_ENTRY_TEST");
 }
+
+TEST_CASE("WallClockUnixMillis is the Unix time: after 2024, and it advances", "[os][timing]") {
+    const engine_placeholder::u64 now = engine_placeholder::os::WallClockUnixMillis();
+    CHECK(now > 1'704'067'200'000ULL); // 2024-01-01
+    CHECK(now < 4'102'444'800'000ULL); // 2100-01-01
+    engine_placeholder::os::SleepNanos(3'000'000);
+    CHECK(engine_placeholder::os::WallClockUnixMillis() >= now);
+}
+
+TEST_CASE("FillRandomBytes fills the whole buffer and does not repeat", "[os][timing]") {
+    engine_placeholder::u8 a[64] = {};
+    engine_placeholder::u8 b[64] = {};
+    engine_placeholder::os::FillRandomBytes(a, sizeof(a));
+    engine_placeholder::os::FillRandomBytes(b, sizeof(b));
+    bool differ = false;
+    engine_placeholder::u32 zeros = 0;
+    for (engine_placeholder::usize i = 0; i < sizeof(a); ++i) {
+        differ = differ || a[i] != b[i];
+        zeros += a[i] == 0 ? 1 : 0;
+    }
+    CHECK(differ);
+    CHECK(zeros < 16); // 64 random bytes: sixteen zeros has probability below 1e-12
+    engine_placeholder::os::FillRandomBytes(a, 0); // nothing to do
+}

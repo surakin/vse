@@ -7,6 +7,8 @@
 #include "cstr/cstr.h"
 #include "cstr/format.h"
 #include "database/sqlite/sqlite_os.h"
+#include "io/file_system.h"
+#include "io/path.h"
 #include "lang/scalar.h"
 #include "log/assert.h"
 
@@ -37,6 +39,14 @@ ErrorCode MapResultCode(int rc) {
     case SQLITE_RANGE: return ErrorCode::Misuse;
     default: return ErrorCode::Other;
     }
+}
+
+// sqlite3_exec callback of PRAGMA journal_mode: remembers whether the answer is "wal".
+int NoteJournalMode(void* user, int columns, char** values, char**) {
+    if (columns > 0 && values[0] != nullptr) {
+        *static_cast<bool*>(user) = CStrCompare(values[0], "wal") == 0;
+    }
+    return 0;
 }
 
 Status StatusFromDb(sqlite3* db, int rc) {
@@ -225,7 +235,7 @@ bool IsSavepointName(StringView name) {
 
 class SqliteConnection final : public Connection {
 public:
-    explicit SqliteConnection(SharedPtr<SqliteHandle> handle) : handle_(Move(handle)) {}
+    SqliteConnection(SharedPtr<SqliteHandle> handle, bool file, bool wal) : handle_(Move(handle)), file_(file), wal_(wal) {}
 
     ~SqliteConnection() override {
         if (InTransaction()) {
@@ -241,8 +251,8 @@ public:
         case Feature::AddColumn:
         case Feature::NamedParameters:
         case Feature::ForeignKeys: return true;
-        case Feature::ConcurrentReaders:
-        case Feature::WriteAheadLog: return false;
+        case Feature::ConcurrentReaders: return wal_;
+        case Feature::WriteAheadLog: return file_;
         }
         return false;
     }
@@ -361,6 +371,8 @@ private:
     }
 
     SharedPtr<SqliteHandle> handle_;
+    bool file_;
+    bool wal_;
 };
 
 } // namespace
@@ -373,22 +385,35 @@ bool SqliteDatabase::Supports(Feature feature) const {
     case Feature::WithoutRowId:
     case Feature::AddColumn:
     case Feature::NamedParameters:
-    case Feature::ForeignKeys: return true;
+    case Feature::ForeignKeys:
     case Feature::ConcurrentReaders:
-    case Feature::WriteAheadLog: return false;
+    case Feature::WriteAheadLog: return true;
     }
     return false;
 }
 
 Status SqliteDatabase::Open(const OpenOptions& options, UniquePtr<Connection>* out) {
-    if (options.location.Length() != 0 && options.location != StringView(":memory:")) {
-        return Failure(ErrorCode::Unsupported, "only in-memory databases can be opened until the file-layer VFS exists");
-    }
-    if (options.mode == OpenMode::ReadOnly) {
+    const bool memory = options.location.Length() == 0 || options.location == StringView(":memory:");
+    if (memory && options.mode == OpenMode::ReadOnly) {
         return Failure(ErrorCode::Unsupported, "an in-memory database cannot be read-only");
     }
-    if (options.journal_mode == JournalMode::WriteAhead) {
+    if (memory && options.journal_mode == JournalMode::WriteAhead) {
         return Failure(ErrorCode::Unsupported, "an in-memory database has no write-ahead log");
+    }
+    char name[1024];
+    if (memory) {
+        CStrCopyTo(name, sizeof(name), ":memory:");
+    } else {
+        if (options.location.Length() >= sizeof(name)) {
+            return Failure(ErrorCode::TooBig, "the database location is too long");
+        }
+        for (usize i = 0; i < options.location.Length(); ++i) {
+            name[i] = options.location.Data()[i];
+        }
+        name[options.location.Length()] = '\0';
+        if (options.mode != OpenMode::Create && !io::Exists(io::Path(options.location))) {
+            return Failure(ErrorCode::NotFound, "the database does not exist");
+        }
     }
     const int started = sqlite_detail::InitializeSqlite();
     if (started != SQLITE_OK) {
@@ -398,17 +423,41 @@ Status SqliteDatabase::Open(const OpenOptions& options, UniquePtr<Connection>* o
     if (handle.Get() == nullptr) {
         return Failure(ErrorCode::Other, "out of memory");
     }
-    const int rc = sqlite3_open_v2(":memory:", &handle->db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_NOMUTEX, "engine");
+    const int access = options.mode == OpenMode::ReadOnly ? SQLITE_OPEN_READONLY : options.mode == OpenMode::Create ? (SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE) : SQLITE_OPEN_READWRITE;
+    const int rc = sqlite3_open_v2(name, &handle->db, access | SQLITE_OPEN_NOMUTEX, "engine");
     if (rc != SQLITE_OK) {
         return StatusFromDb(handle->db, rc); // the handle closes whatever was allocated
     }
     sqlite3_extended_result_codes(handle->db, 1);
     sqlite3_busy_timeout(handle->db, options.busy_timeout_ms > 0x7fffffffu ? 0x7fffffff : static_cast<int>(options.busy_timeout_ms));
-    const int pragma = sqlite3_exec(handle->db, options.foreign_keys ? "PRAGMA foreign_keys = ON" : "PRAGMA foreign_keys = OFF", nullptr, nullptr, nullptr);
-    if (pragma != SQLITE_OK) {
-        return StatusFromDb(handle->db, pragma);
+
+    bool wal = false;
+    if (!memory) {
+        // Opening reads nothing yet: the first statement finds out whether the file is a database at all (a foreign file is NOTADB, `Corrupt`).
+        const char* sync = options.sync_mode == SyncMode::Off ? "OFF" : options.sync_mode == SyncMode::Full ? "FULL" : "NORMAL";
+        char pragma[64];
+        FormatTo(pragma, sizeof(pragma), "PRAGMA synchronous = %s", sync);
+        int step = sqlite3_exec(handle->db, pragma, nullptr, nullptr, nullptr);
+        if (step == SQLITE_OK) {
+            // Asking for the mode with no argument reads it; setting it needs write access, and a database that is already in the write-ahead log keeps it.
+            if (options.mode != OpenMode::ReadOnly) {
+                const bool want_wal = options.journal_mode == JournalMode::Default || options.journal_mode == JournalMode::WriteAhead;
+                const char* journal = want_wal ? "WAL" : options.journal_mode == JournalMode::Truncate ? "TRUNCATE" : "DELETE";
+                FormatTo(pragma, sizeof(pragma), "PRAGMA journal_mode = %s", journal);
+            } else {
+                FormatTo(pragma, sizeof(pragma), "PRAGMA journal_mode");
+            }
+            step = sqlite3_exec(handle->db, pragma, NoteJournalMode, &wal, nullptr);
+        }
+        if (step != SQLITE_OK) {
+            return StatusFromDb(handle->db, step);
+        }
     }
-    *out = MakeUnique<SqliteConnection>(Move(handle));
+    const int fk = sqlite3_exec(handle->db, options.foreign_keys ? "PRAGMA foreign_keys = ON" : "PRAGMA foreign_keys = OFF", nullptr, nullptr, nullptr);
+    if (fk != SQLITE_OK) {
+        return StatusFromDb(handle->db, fk);
+    }
+    *out = MakeUnique<SqliteConnection>(Move(handle), !memory, wal);
     return Status::Success();
 }
 
