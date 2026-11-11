@@ -39,6 +39,8 @@ flavors 18  linux: plain,asan,tsan
 flavors 18  windows: plain,asan
 flavors 19  linux: plain,asan,tsan
 flavors 19  windows: plain,asan
+flavors 20  linux: plain,asan,tsan
+flavors 20  windows: plain,asan
 flavors 15  windows: plain,asan
 # What the Windows build has of each phase (Phase 13 ports one layer per day; each day updates its phases here; `none` = no tests yet).
 # MSVC has no ThreadSanitizer, so no Windows line lists tsan.
@@ -325,3 +327,6 @@ tests/scene/scene_sync_test.cpp                     17   # Phase 17 Day 233
 tests/scene/scene_render_test.cpp                   17   # Phase 17 Day 233
 tests/scene/scene_cost_test.cpp                     17   # Phase 17 Day 233
 tests/scene/CMakeLists.txt                      17
+
+# --- Phase 20: networking ---
+tests/net/                                      20   # Phase 20 Day 267

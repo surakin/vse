@@ -108,6 +108,8 @@ allow spatial jobs
 module engine/database/ database 10
 # 11 storage (Phase 19 Day 256): the component registry and the canonical encoding; later the record store and its backends. The foundation, ecs, spatial (the builtin components), jobs and, since Day 262, database (layer 10, below: no allow line needed)
 module engine/storage/ storage 11
+# 11 net (Phase 20 Day 267): addresses, endpoints and the error type; later the socket backends (linux/, windows/), the reactor, the transports. The foundation and, from Day 269, jobs; no ECS, storage or renderer type
+module engine/net/ net 11
 # 11 ui (Phase 15 Day 184): the widget toolkit's CPU side (tree, layout, theme, input routing, draw list); text, the platform's input headers and the foundation, no RHI
 module engine/ui/ ui 11
 # 11 RHI: the neutral interface and one module per backend
@@ -229,6 +231,7 @@ target ecs ecs
 target spatial spatial
 target database database
 target storage storage
+target net net
 target database_sqlite database
 target platform platform
 target platform_input platform

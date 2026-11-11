@@ -17,10 +17,11 @@ module	platform/os	65	65
 module	platform/window-input	642	642
 module	foundation/debug	208	208
 module	text	216	216
-module	ecs	378	378
+module	ecs	386	386
 module	spatial	322	322
+module	net	95	95
 module	database	153	153
-module	storage	113	113
+module	storage	390	390
 module	scene	44	44
 module	ui	1401	1401
 module	ui_window	25	25

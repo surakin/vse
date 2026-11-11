@@ -26,6 +26,7 @@ engine/rhi          3,4,5
 engine/renderer     3,4,5
 engine/ecs          3,17
 engine/database     3,19
+engine/net          3,20
 shaders             4,5
 tools/docgen        3,4
 tools/shader_mint   4,5
@@ -57,6 +58,7 @@ tests/sync          16
 tests/cstr          16
 tests/settings      11
 tests/database      19
+tests/net           20
 tests/debug         7
 tests/docgen        3
 tests/rhi           4,5

@@ -98,6 +98,12 @@ module spatial "Spatial Partitioning"
   strict ownership
   strict failure
 
+module net "Networking"
+  header engine/net/*.h
+  strict thread-safety
+  strict ownership
+  strict failure
+
 module database "Database"
   header engine/database/*.h
   header engine/database/sqlite/*.h
