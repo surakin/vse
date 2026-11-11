@@ -244,6 +244,8 @@ TEST_CASE("Spatial sync: the parallel path gives the same sets as the sequential
     CHECK(sequential.Matches(a));
     CHECK(parallel.Matches(b));
     CHECK(sequential.Spatial().Stats().items_moved == parallel.Spatial().Stats().items_moved);
+    CHECK(sequential.Spatial().Stats().items_reinserted == parallel.Spatial().Stats().items_reinserted);
+    CHECK(parallel.Spatial().Stats().items_moved > 0); // the script moves items, so the per-set pass had work
 }
 
 TEST_CASE("Spatial sync: the cost for 100,000 entities with 1, 10 and 100 percent moving is recorded", "[spatial][sync][benchmark]") {

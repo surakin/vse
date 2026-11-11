@@ -272,32 +272,64 @@ private:
         }
     }
 
-    // Moves the items whose WorldBounds changed, on one thread in chunk order (the structures are not written concurrently, which keeps them deterministic).
-    void ApplyMoves(SpatialWorld& spatial) {
+    // Moves the items whose WorldBounds changed. The moved entities are listed in chunk order on one thread, then each set applies the list to itself as one job
+    // (a set is written by one thread only, in list order, so the result does not depend on the schedule; sets run side by side).
+    void ApplyMoves(ecs::SystemContext& context, SpatialWorld& spatial) {
         SpatialWorldStats& stats = spatial.MutableStats();
+        moves_.Clear();
         moved_->ForEach([&](const WorldBounds& bounds, const SpatialProxy& proxy) {
             if (proxy.leaving) {
                 return;
             }
-            for (SetId id = 0; id < spatial.SetCount(); ++id) {
-                const SetHandle handle = proxy.handle[id];
-                if (handle == kInvalidSetHandle) {
-                    continue;
+            if (!FiniteSyncBox(bounds.box)) { // a WorldBounds written by hand: the sync's own are finite
+                for (SetId id = 0; id < spatial.SetCount(); ++id) {
+                    if (proxy.handle[id] != kInvalidSetHandle) {
+                        ++stats.refused_bounds; // one per item it would have moved
+                    }
                 }
-                SpatialSet* set = spatial.Set(id);
-                if (!set->IsLive(handle) || SameBox(set->ItemOf(handle).box, bounds.box)) {
-                    continue;
-                }
-                if (!FiniteSyncBox(bounds.box)) { // a WorldBounds written by hand: the sync's own are finite
-                    ++stats.refused_bounds;
-                    continue;
-                }
-                ++stats.items_moved;
-                if (set->Move(handle, bounds.box)) {
-                    ++stats.items_reinserted;
-                }
+                return;
             }
+            MoveEntry entry;
+            entry.box = bounds.box;
+            for (SetId id = 0; id < kMaxSpatialSets; ++id) {
+                entry.handle[id] = id < spatial.SetCount() ? proxy.handle[id] : kInvalidSetHandle;
+            }
+            moves_.Push(entry);
         });
+        if (moves_.Size() == 0) {
+            return;
+        }
+        Array<u64, kMaxSpatialSets> moved{};
+        Array<u64, kMaxSpatialSets> reinserted{};
+        auto by_set = [&](usize first, usize last) {
+            for (usize set_index = first; set_index < last; ++set_index) {
+                const SetId id = static_cast<SetId>(set_index);
+                SpatialSet* set = spatial.Set(id);
+                u64 moves = 0;
+                u64 reinserts = 0;
+                for (usize i = 0; i < moves_.Size(); ++i) {
+                    const SetHandle handle = moves_[i].handle[id];
+                    if (handle == kInvalidSetHandle || !set->IsLive(handle) || SameBox(set->ItemOf(handle).box, moves_[i].box)) {
+                        continue;
+                    }
+                    ++moves;
+                    if (set->Move(handle, moves_[i].box)) {
+                        ++reinserts;
+                    }
+                }
+                moved[id] = moves;
+                reinserted[id] = reinserts;
+            }
+        };
+        if (spatial.Parallel()) {
+            context.ParallelFor(spatial.SetCount(), 1, by_set);
+        } else {
+            by_set(usize{0}, static_cast<usize>(spatial.SetCount()));
+        }
+        for (SetId id = 0; id < spatial.SetCount(); ++id) {
+            stats.items_moved += moved[id];
+            stats.items_reinserted += reinserted[id];
+        }
     }
 
     void Sync(ecs::SystemContext& context, SpatialWorld& spatial) {
@@ -338,7 +370,7 @@ private:
         ComputeBounds(context, spatial, *by_local_, written, refused);
         stats.bounds_written += written.Load(MemoryOrder::Relaxed);
         stats.refused_bounds += refused.Load(MemoryOrder::Relaxed);
-        ApplyMoves(spatial);
+        ApplyMoves(context, spatial);
 
         // 5. New entities.
         JoinNew(context, spatial, yes_);
@@ -377,6 +409,11 @@ private:
     UniquePtr<BoundsByTransform> by_transform_;
     UniquePtr<BoundsByLocal> by_local_;
     UniquePtr<MovedBounds> moved_;
+    struct MoveEntry {
+        Aabb box;
+        Array<SetHandle, kMaxSpatialSets> handle;
+    };
+    Vector<MoveEntry> moves_; // reused between frames
     UniquePtr<NoBounds> no_bounds_;
     UniquePtr<NoTransform> no_transform_;
     UniquePtr<NoMembership> no_membership_;

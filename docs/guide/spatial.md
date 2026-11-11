@@ -509,15 +509,15 @@ The sync keeps the sets true with the cost of what changed, not of what exists.
   before the sync in a frame sees the previous frame's sets (documented, not an error).
 - **Moves.** The sync recomputes `WorldBounds` (`TransformAabb` of `SpatialBounds::local` by the `WorldTransform`) for the chunks whose transform or local box changed,
   and writes a value only when it differs, so `Changed<WorldBounds>` filters in other systems stay exact. It then calls `SpatialSet::Move` for the entities whose box
-  differs from their item, in chunk order on one thread: the structures are never written concurrently, so the result does not depend on how jobs were scheduled.
+  differs from their item: the moved entities are listed in chunk order, then each set applies the list to itself as one job (a set is written by one thread, in list order, and sets are independent), so the result does not depend on how jobs were scheduled; with k sets the speedup is at most k.
   A static entity does not move; if one does, the set counts a refused move (`SpatialSetStats::static_moves_refused`) and keeps the old box.
 - **Parallel.** The box computation is a chunk loop that runs as jobs when the sync system is alone in its wave and the schedule has a job scheduler;
   `SpatialWorld::SetParallel(false)` runs it on the calling thread. Both give the same sets (tested, also under ThreadSanitizer).
 - **Static trees.** A set's static tree is rebuilt only in a frame in which its static items changed (an add, a removal, a tag change): a static world costs the
   `Changed` queries and no structure calls (tested: 100 frames, the counters do not move). Queries stay exact between a change and the rebuild.
 - **Cost.** Change detection is per chunk (see [ECS](ecs.md)), so a frame in which a few entities of every chunk moved still looks at every row once: 100,000
-  entities with 1 percent moving cost about 7.6 ms a frame in a Release build with two sets (transforms included) and 100 percent about 156 ms (Day 248, after the Day 245 figures of 73 and 740 ms were re-measured with the final code); most
-  of the time is the dynamic tree reinserting boxes that left their margin (about 0.85 microseconds per moved item and set when agents move 0.3 of their size a frame). A crowd of same-size agents belongs in a set made with `DynamicKind::Grid`, whose updates are about eight times cheaper (10 ms against 87 ms for 100,000 moves, `spatial_bench`). The spec's 80 ms target for 100,000 all-moving agents is missed (design spec, section 4.1).
+  entities with 1 percent moving cost about 7.6 ms a frame in a Release build with two sets (transforms included) and 100 percent about 175 ms on one thread and 93 ms with 8 workers (after Day 249; Day 248, after the Day 245 figures of 73 and 740 ms were re-measured with the final code); most
+  of the time is the dynamic tree reinserting boxes that left their margin (about 0.85 microseconds per moved item and set when agents move 0.3 of their size a frame). A crowd of same-size agents belongs in a set made with `DynamicKind::Grid`, whose updates are about eight times cheaper (10 ms against 87 ms for 100,000 moves, `spatial_bench`). The spec's 80 ms single-thread target for 100,000 all-moving agents is missed (design spec, section 4.1).
 
 ## Asking questions from gameplay code
 
