@@ -13,6 +13,8 @@ const char* ErrorCodeName(ErrorCode code) {
     case ErrorCode::LimitExceeded: return "limit exceeded";
     case ErrorCode::Mismatch: return "mismatch";
     case ErrorCode::Invalid: return "invalid";
+    case ErrorCode::MissingReference: return "missing_reference";
+    case ErrorCode::Duplicate: return "duplicate";
     case ErrorCode::Other: return "other";
     }
     return "other";

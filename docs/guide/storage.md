@@ -1,7 +1,7 @@
 # Storage: components that survive a save
 
 Status: Phase 19. Built: the component registry and the canonical encoding (Day 256), versions, upgrades, custom codecs, limits and hostile-input tests
-(Day 257). Next: stable identities (258), the record store (259), saving and loading a world (260-261), the SQL store (262-263). Design:
+(Day 257). stable identities and references (Day 258). Next: the record store (259), the record store (259), saving and loading a world (260-261), the SQL store (262-263). Design:
 `docs/superpowers/specs/2026-11-11-storage-design.md`.
 
 **Audience:** engine and game programmers who make a component type saveable, and anyone who reads or writes the bytes.
@@ -134,3 +134,21 @@ same `CodecLimits` and a bounds-checked reader; the same rules apply (every leng
 `tests/storage/registry_fuzz_test.cpp` mutates valid encodings of every field kind (bit flips, truncation, length-byte overwrites, duplication, random bytes),
 100,000 cases per kind in the plain and AddressSanitizer runs. Each result must be a `Corrupt` or `LimitExceeded` status or a value whose re-encoding equals
 the bytes consumed (the encoding is canonical); a planted bug (a decoder that accepts a bool of 2) fails it.
+
+## Identities and references
+
+An entity that is saved needs a name that survives the process: an `EntityKey` (128 bits). Give an entity one with `KeyIndex::Assign(world, entity, key)`, which refuses a
+key another entity has, or set an `EntityKeyComponent` yourself. `KeyGenerator` draws keys from the operating system; `KeyGenerator::Seeded(seed)` repeats the same
+keys every run (tests). `ToText()` / `FromText()` give 32 hexadecimal digits.
+
+`KeyIndex` maps key to entity and back. `Sync(world)` reads what changed (the change stamps) and what was removed (the removal log), so it costs what changed;
+call it once a frame and before a lookup that must see this frame. Two entities with one key are never both indexed: `Sync` returns `Duplicate` and
+`DuplicateCount()` says how many are left out, until one of them changes key or goes.
+
+A reference between entities is stored as the target's key (`EntityRef`, the null key for none). After a load every entity exists before any reference is
+resolved: `ResolveReference(index, key, policy, &report, &entity)` turns a key into an entity. A missing target is `MissingReference` under
+`MissingPolicy::Fail`, or a null reference counted in the `ReferenceReport` under `NullReference`; the report keeps the first 8 missing keys.
+
+`ecs::Parent` holds an entity id, which means nothing in a file, so its stored form is `ParentLink` (a key). `CaptureParents(world, index)` writes the links before a
+save; `ApplyParents(world, index, policy)` sets the parents after a load, parents first, with the cycle and depth checks of `ecs::SetParent` (a cycle is refused and counted in
+`ParentReport::rejected`), and removes the links. Under `Fail` nothing changes when any parent is missing.

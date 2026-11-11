@@ -3826,12 +3826,14 @@ storage::kLocalTransformId	enumerator	storage	storage-klocaltransformid	storage.
 storage::kWorldTransformId	enumerator	storage	storage-kworldtransformid	storage.md	engine/storage/builtin_components.h:13
 storage::kParentId	enumerator	storage	storage-kparentid	storage.md	engine/storage/builtin_components.h:14
 storage::kHierarchyDepthId	enumerator	storage	storage-khierarchydepthid	storage.md	engine/storage/builtin_components.h:15
-storage::kSpatialBoundsId	enumerator	storage	storage-kspatialboundsid	storage.md	engine/storage/builtin_components.h:16
-storage::kSpatialMembershipId	enumerator	storage	storage-kspatialmembershipid	storage.md	engine/storage/builtin_components.h:17
-storage::kSpatialStaticId	enumerator	storage	storage-kspatialstaticid	storage.md	engine/storage/builtin_components.h:18
-storage::kWorldBoundsId	enumerator	storage	storage-kworldboundsid	storage.md	engine/storage/builtin_components.h:19
-storage::kSpatialProxyId	enumerator	storage	storage-kspatialproxyid	storage.md	engine/storage/builtin_components.h:20
-storage::RegisterBuiltinComponents(ComponentRegistry*)	function	storage	storage-registerbuiltincomponents-componentregistry-star	storage.md	engine/storage/builtin_components.h:28
+storage::kEntityKeyId	enumerator	storage	storage-kentitykeyid	storage.md	engine/storage/builtin_components.h:16
+storage::kParentLinkId	enumerator	storage	storage-kparentlinkid	storage.md	engine/storage/builtin_components.h:17
+storage::kSpatialBoundsId	enumerator	storage	storage-kspatialboundsid	storage.md	engine/storage/builtin_components.h:18
+storage::kSpatialMembershipId	enumerator	storage	storage-kspatialmembershipid	storage.md	engine/storage/builtin_components.h:19
+storage::kSpatialStaticId	enumerator	storage	storage-kspatialstaticid	storage.md	engine/storage/builtin_components.h:20
+storage::kWorldBoundsId	enumerator	storage	storage-kworldboundsid	storage.md	engine/storage/builtin_components.h:21
+storage::kSpatialProxyId	enumerator	storage	storage-kspatialproxyid	storage.md	engine/storage/builtin_components.h:22
+storage::RegisterBuiltinComponents(ComponentRegistry*)	function	storage	storage-registerbuiltincomponents-componentregistry-star	storage.md	engine/storage/builtin_components.h:30
 storage::ComponentRecord	struct	storage	storage-componentrecord	storage.md	engine/storage/component_record.h:20
 storage::ComponentRecord::id	variable	storage	storage-componentrecord-id	storage.md	engine/storage/component_record.h:21
 storage::ComponentRecord::version	variable	storage	storage-componentrecord-version	storage.md	engine/storage/component_record.h:22
@@ -3903,12 +3905,16 @@ storage::ComponentRegistry::Resolve(u32,UnknownPolicy,const RegisteredComponent*
 storage::ComponentRegistry::Manifest(Vector<ManifestEntry>*) const	function	storage	storage-componentregistry-manifest-vector-lt-manifestentry-gt-star-const	storage.md	engine/storage/component_registry.h:223
 storage::ComponentRegistry::CheckManifest(Span<const ManifestEntry>) const	function	storage	storage-componentregistry-checkmanifest-span-lt-const-manifestentry-gt-const	storage.md	engine/storage/component_registry.h:230
 storage::ComponentRegistry::UnregisteredWithData(const ecs::World&,Vector<ecs::ComponentId>*) const	function	storage	storage-componentregistry-unregisteredwithdata-const-ecs-world-amp-vector-lt-ecs-componentid-gt-star-const	storage.md	engine/storage/component_registry.h:239
-storage::EntityKey	struct	storage	storage-entitykey	storage.md	engine/storage/entity_ref.h:13
-storage::EntityKey::high	variable	storage	storage-entitykey-high	storage.md	engine/storage/entity_ref.h:14
-storage::EntityKey::low	variable	storage	storage-entitykey-low	storage.md	engine/storage/entity_ref.h:15
-storage::EntityKey::IsNull() const	function	storage	storage-entitykey-isnull-const	storage.md	engine/storage/entity_ref.h:19
-storage::EntityRef	struct	storage	storage-entityref	storage.md	engine/storage/entity_ref.h:29
-storage::EntityRef::key	variable	storage	storage-entityref-key	storage.md	engine/storage/entity_ref.h:30
+storage::EntityKey	struct	storage	storage-entitykey	storage.md	engine/storage/entity_ref.h:17
+storage::EntityKey::high	variable	storage	storage-entitykey-high	storage.md	engine/storage/entity_ref.h:18
+storage::EntityKey::low	variable	storage	storage-entitykey-low	storage.md	engine/storage/entity_ref.h:19
+storage::EntityKey::IsNull() const	function	storage	storage-entitykey-isnull-const	storage.md	engine/storage/entity_ref.h:23
+storage::EntityKey::ToText() const	function	storage	storage-entitykey-totext-const	storage.md	engine/storage/entity_ref.h:32
+storage::EntityKey::FromText(StringView,EntityKey*)	function	storage	storage-entitykey-fromtext-stringview-entitykey-star	storage.md	engine/storage/entity_ref.h:40
+storage::EntityRef	struct	storage	storage-entityref	storage.md	engine/storage/entity_ref.h:46
+storage::EntityRef::key	variable	storage	storage-entityref-key	storage.md	engine/storage/entity_ref.h:47
+Hash<storage::EntityKey>	struct	storage	hash-lt-storage-entitykey-gt	storage.md	engine/storage/entity_ref.h:59
+Hash<storage::EntityKey>::operator()(const storage::EntityKey&) const	function	storage	hash-lt-storage-entitykey-gt-operator-call-const-storage-entitykey-amp-const	storage.md	engine/storage/entity_ref.h:62
 storage::CodecLimits	struct	storage	storage-codeclimits	storage.md	engine/storage/field.h:27
 storage::CodecLimits::max_record_bytes	variable	storage	storage-codeclimits-max-record-bytes	storage.md	engine/storage/field.h:28
 storage::CodecLimits::max_string_bytes	variable	storage	storage-codeclimits-max-string-bytes	storage.md	engine/storage/field.h:29
@@ -3951,7 +3957,41 @@ storage::FieldDesc::memory_size	variable	storage	storage-fielddesc-memory-size	s
 storage::FieldDesc::needs_range	variable	storage	storage-fielddesc-needs-range	storage.md	engine/storage/field.h:211
 storage::FieldDesc::encode	variable	storage	storage-fielddesc-encode	storage.md	engine/storage/field.h:213
 storage::FieldDesc::decode	variable	storage	storage-fielddesc-decode	storage.md	engine/storage/field.h:215
-storage::Field(const char*,FieldOptions)	function	storage	storage-field-const-char-star-fieldoptions	storage.md	engine/storage/field.h:406
+storage::Field(const char*,FieldOptions)	function	storage	storage-field-const-char-star-fieldoptions	storage.md	engine/storage/field.h:416
+storage::KeyGenerator	class	storage	storage-keygenerator	storage.md	engine/storage/identity.h:23
+storage::KeyGenerator::KeyGenerator()	function	storage	storage-keygenerator-keygenerator	storage.md	engine/storage/identity.h:27
+storage::KeyGenerator::Seeded(u64)	function	storage	storage-keygenerator-seeded-u64	storage.md	engine/storage/identity.h:32
+storage::KeyGenerator::Next()	function	storage	storage-keygenerator-next	storage.md	engine/storage/identity.h:35
+storage::EntityKeyComponent	struct	storage	storage-entitykeycomponent	storage.md	engine/storage/identity.h:46
+storage::EntityKeyComponent::kTrackRemoval	variable	storage	storage-entitykeycomponent-ktrackremoval	storage.md	engine/storage/identity.h:48
+storage::EntityKeyComponent::key	variable	storage	storage-entitykeycomponent-key	storage.md	engine/storage/identity.h:50
+storage::ParentLink	struct	storage	storage-parentlink	storage.md	engine/storage/identity.h:57
+storage::ParentLink::parent	variable	storage	storage-parentlink-parent	storage.md	engine/storage/identity.h:59
+storage::MissingPolicy	enum	storage	storage-missingpolicy	storage.md	engine/storage/identity.h:63
+storage::MissingPolicy::Fail	enumerator	storage	storage-missingpolicy-fail	storage.md	engine/storage/identity.h:64
+storage::MissingPolicy::NullReference	enumerator	storage	storage-missingpolicy-nullreference	storage.md	engine/storage/identity.h:65
+storage::ReferenceReport	struct	storage	storage-referencereport	storage.md	engine/storage/identity.h:71
+storage::ReferenceReport::kMaxReported	variable	storage	storage-referencereport-kmaxreported	storage.md	engine/storage/identity.h:73
+storage::ReferenceReport::missing	variable	storage	storage-referencereport-missing	storage.md	engine/storage/identity.h:75
+storage::ReferenceReport::nulled	variable	storage	storage-referencereport-nulled	storage.md	engine/storage/identity.h:77
+storage::ReferenceReport::first_missing	variable	storage	storage-referencereport-first-missing	storage.md	engine/storage/identity.h:79
+storage::KeyIndex	class	storage	storage-keyindex	storage.md	engine/storage/identity.h:90
+storage::KeyIndex::KeyIndex()	function	storage	storage-keyindex-keyindex	storage.md	engine/storage/identity.h:93
+storage::KeyIndex::Sync(ecs::World&)	function	storage	storage-keyindex-sync-ecs-world-amp	storage.md	engine/storage/identity.h:104
+storage::KeyIndex::Assign(ecs::World&,ecs::Entity,EntityKey)	function	storage	storage-keyindex-assign-ecs-world-amp-ecs-entity-entitykey	storage.md	engine/storage/identity.h:115
+storage::KeyIndex::Find(EntityKey) const	function	storage	storage-keyindex-find-entitykey-const	storage.md	engine/storage/identity.h:119
+storage::KeyIndex::KeyOf(ecs::Entity) const	function	storage	storage-keyindex-keyof-ecs-entity-const	storage.md	engine/storage/identity.h:122
+storage::KeyIndex::Size() const	function	storage	storage-keyindex-size-const	storage.md	engine/storage/identity.h:125
+storage::KeyIndex::DuplicateCount() const	function	storage	storage-keyindex-duplicatecount-const	storage.md	engine/storage/identity.h:128
+storage::ResolveReference(const KeyIndex&,EntityKey,MissingPolicy,ReferenceReport*,ecs::Entity*)	function	storage	storage-resolvereference-const-keyindex-amp-entitykey-missingpolicy-referencereport-star-ecs-entity-star	storage.md	engine/storage/identity.h:151
+storage::ParentReport	struct	storage	storage-parentreport	storage.md	engine/storage/identity.h:156
+storage::ParentReport::captured	variable	storage	storage-parentreport-captured	storage.md	engine/storage/identity.h:158
+storage::ParentReport::unkeyed	variable	storage	storage-parentreport-unkeyed	storage.md	engine/storage/identity.h:160
+storage::ParentReport::applied	variable	storage	storage-parentreport-applied	storage.md	engine/storage/identity.h:162
+storage::ParentReport::rejected	variable	storage	storage-parentreport-rejected	storage.md	engine/storage/identity.h:164
+storage::ParentReport::references	variable	storage	storage-parentreport-references	storage.md	engine/storage/identity.h:166
+storage::CaptureParents(ecs::World&,const KeyIndex&,ParentReport*)	function	storage	storage-captureparents-ecs-world-amp-const-keyindex-amp-parentreport-star	storage.md	engine/storage/identity.h:178
+storage::ApplyParents(ecs::World&,const KeyIndex&,MissingPolicy,ParentReport*)	function	storage	storage-applyparents-ecs-world-amp-const-keyindex-amp-missingpolicy-parentreport-star	storage.md	engine/storage/identity.h:192
 storage::ErrorCode	enum	storage	storage-errorcode	storage.md	engine/storage/status.h:12
 storage::ErrorCode::Ok	enumerator	storage	storage-errorcode-ok	storage.md	engine/storage/status.h:13
 storage::ErrorCode::NotFound	enumerator	storage	storage-errorcode-notfound	storage.md	engine/storage/status.h:14
@@ -3962,17 +4002,19 @@ storage::ErrorCode::TooOld	enumerator	storage	storage-errorcode-tooold	storage.m
 storage::ErrorCode::LimitExceeded	enumerator	storage	storage-errorcode-limitexceeded	storage.md	engine/storage/status.h:19
 storage::ErrorCode::Mismatch	enumerator	storage	storage-errorcode-mismatch	storage.md	engine/storage/status.h:20
 storage::ErrorCode::Invalid	enumerator	storage	storage-errorcode-invalid	storage.md	engine/storage/status.h:21
-storage::ErrorCode::Other	enumerator	storage	storage-errorcode-other	storage.md	engine/storage/status.h:22
-storage::ErrorCodeName(ErrorCode)	function	storage	storage-errorcodename-errorcode	storage.md	engine/storage/status.h:29
-storage::Status	class	storage	storage-status	storage.md	engine/storage/status.h:35
-storage::Status::Status()	function	storage	storage-status-status	storage.md	engine/storage/status.h:38
-storage::Status::Success()	function	storage	storage-status-success	storage.md	engine/storage/status.h:41
-storage::Status::Make(ErrorCode,const char*)	function	storage	storage-status-make-errorcode-const-char-star	storage.md	engine/storage/status.h:45
-storage::Status::Ok() const	function	storage	storage-status-ok-const	storage.md	engine/storage/status.h:54
-storage::Status::Failed() const	function	storage	storage-status-failed-const	storage.md	engine/storage/status.h:57
-storage::Status::Is(ErrorCode) const	function	storage	storage-status-is-errorcode-const	storage.md	engine/storage/status.h:60
-storage::Status::Code() const	function	storage	storage-status-code-const	storage.md	engine/storage/status.h:62
-storage::Status::Message() const	function	storage	storage-status-message-const	storage.md	engine/storage/status.h:67
+storage::ErrorCode::MissingReference	enumerator	storage	storage-errorcode-missingreference	storage.md	engine/storage/status.h:22
+storage::ErrorCode::Duplicate	enumerator	storage	storage-errorcode-duplicate	storage.md	engine/storage/status.h:23
+storage::ErrorCode::Other	enumerator	storage	storage-errorcode-other	storage.md	engine/storage/status.h:24
+storage::ErrorCodeName(ErrorCode)	function	storage	storage-errorcodename-errorcode	storage.md	engine/storage/status.h:31
+storage::Status	class	storage	storage-status	storage.md	engine/storage/status.h:37
+storage::Status::Status()	function	storage	storage-status-status	storage.md	engine/storage/status.h:40
+storage::Status::Success()	function	storage	storage-status-success	storage.md	engine/storage/status.h:43
+storage::Status::Make(ErrorCode,const char*)	function	storage	storage-status-make-errorcode-const-char-star	storage.md	engine/storage/status.h:47
+storage::Status::Ok() const	function	storage	storage-status-ok-const	storage.md	engine/storage/status.h:56
+storage::Status::Failed() const	function	storage	storage-status-failed-const	storage.md	engine/storage/status.h:59
+storage::Status::Is(ErrorCode) const	function	storage	storage-status-is-errorcode-const	storage.md	engine/storage/status.h:62
+storage::Status::Code() const	function	storage	storage-status-code-const	storage.md	engine/storage/status.h:64
+storage::Status::Message() const	function	storage	storage-status-message-const	storage.md	engine/storage/status.h:69
 storage::RegisterStorageSettings(settings::Registry*)	function	storage	storage-registerstoragesettings-settings-registry-star	storage.md	engine/storage/storage_settings.h:17
 storage::LimitsFromSettings(const settings::Registry&)	function	storage	storage-limitsfromsettings-const-settings-registry-amp	storage.md	engine/storage/storage_settings.h:24
 scene::MeshAsset	struct	scene	scene-meshasset	scene.md	engine/scene/components.h:22

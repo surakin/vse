@@ -1,6 +1,7 @@
 #include "storage/builtin_components.h"
 
 #include "ecs/transform.h"
+#include "storage/identity.h"
 #include "spatial/components.h"
 
 namespace engine_placeholder::storage {
@@ -13,6 +14,8 @@ Status RegisterBuiltinComponents(ComponentRegistry* registry) {
                                                                    Field<&ecs::LocalTransform::scale>("scale")}}));
     ENGINE_TRY(registry->Register<ecs::WorldTransform>({.id = kWorldTransformId, .name = "world_transform", .flags = kComponentDerived}));
     ENGINE_TRY(registry->Register<ecs::Parent>({.id = kParentId, .name = "parent", .flags = kComponentSkip}));
+    ENGINE_TRY(registry->Register<EntityKeyComponent>({.id = kEntityKeyId, .name = "entity_key", .fields = {Field<&EntityKeyComponent::key>("key")}}));
+    ENGINE_TRY(registry->Register<ParentLink>({.id = kParentLinkId, .name = "parent_link", .fields = {Field<&ParentLink::parent>("parent")}}));
     ENGINE_TRY(registry->Register<ecs::HierarchyDepth>({.id = kHierarchyDepthId, .name = "hierarchy_depth", .flags = kComponentDerived}));
     ENGINE_TRY(registry->Register<spatial::SpatialBounds>(
         {.id = kSpatialBoundsId, .name = "spatial_bounds", .fields = {Field<&spatial::SpatialBounds::local>("local")}}));

@@ -3,6 +3,10 @@
 //! The stored identity of an entity, as a field type: [[storage::EntityKey]] (128 bits) and [[storage::EntityRef]] (a reference to another entity by key).
 //! Day 256 declares the types and their encoding (16 bytes); Day 258 adds key generation, the key index and the resolution of references on load.
 
+#include "containers/hash_map.h"
+#include "mem/heap_allocator.h"
+#include "string/string.h"
+#include "string_view.h"
 #include "types.h"
 
 namespace engine_placeholder::storage {
@@ -21,6 +25,19 @@ struct EntityKey {
     friend constexpr bool operator==(const EntityKey& a, const EntityKey& b) { return a.high == b.high && a.low == b.low; }
     /// Returns true when the keys differ.
     friend constexpr bool operator!=(const EntityKey& a, const EntityKey& b) { return !(a == b); }
+    /// Orders keys by `high`, then `low`: a stable order for sorting and ranges, with no other meaning.
+    friend constexpr bool operator<(const EntityKey& a, const EntityKey& b) { return a.high != b.high ? a.high < b.high : a.low < b.low; }
+    /// The key as 32 lower-case hexadecimal digits, `high` first.
+    /// Fails: never.
+    String<HeapAllocator> ToText() const;
+    /// Reads the text form of [[storage::EntityKey::ToText]] (32 hexadecimal digits, either case).
+    ///
+    /// Param text: exactly 32 hexadecimal digits.
+    /// Param out: receives the key on success; unchanged on failure.
+    /// Returns: false when the text has another length or a character that is not a hexadecimal digit.
+    /// Ownership: `text` is read during the call only.
+    /// Fails: returns false as described.
+    static bool FromText(StringView text, EntityKey* out);
 };
 
 /// A component field that refers to another entity. Stored as the target's key (the null key for no target); resolved to an entity after a load.
@@ -31,3 +48,18 @@ struct EntityRef {
 };
 
 } // namespace engine_placeholder::storage
+
+namespace engine_placeholder {
+
+/// Hash function for [[storage::EntityKey]] keys of a [[HashMap]].
+///
+/// Thread-safety: thread-safe, a pure function.
+/// Ownership: owns nothing.
+/// Fails: never.
+template <>
+struct Hash<storage::EntityKey> {
+    /// Returns a hash that mixes both halves.
+    usize operator()(const storage::EntityKey& k) const { return Hash<u64>{}(k.high ^ (k.low * 0x9E3779B97F4A7C15ull)); }
+};
+
+} // namespace engine_placeholder

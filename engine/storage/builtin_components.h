@@ -11,8 +11,10 @@ namespace engine_placeholder::storage {
 enum BuiltinComponentId : u32 {
     kLocalTransformId = 1,      ///< `ecs::LocalTransform`: stored.
     kWorldTransformId = 2,      ///< `ecs::WorldTransform`: derived by the propagation system.
-    kParentId = 3,              ///< `ecs::Parent`: skipped until Day 258 stores it as an entity reference.
+    kParentId = 3,              ///< `ecs::Parent`: skipped; its stored form is `ParentLink` (`CaptureParents` before a save, `ApplyParents` after a load).
     kHierarchyDepthId = 4,      ///< `ecs::HierarchyDepth`: derived by `ecs::SetParent`.
+    kEntityKeyId = 5,           ///< `storage::EntityKeyComponent`: the durable identity of an entity.
+    kParentLinkId = 6,          ///< `storage::ParentLink`: the stored form of `ecs::Parent`, a key.
     kSpatialBoundsId = 10,      ///< `spatial::SpatialBounds`: stored.
     kSpatialMembershipId = 11,  ///< `spatial::SpatialMembership`: stored.
     kSpatialStaticId = 12,      ///< `spatial::SpatialStatic`: a stored tag.

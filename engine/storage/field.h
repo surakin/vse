@@ -144,7 +144,7 @@ constexpr FieldKind KindOf() {
     else if constexpr (IsEnum<V>) return FieldKind::Enum;
     else if constexpr (kIsString<V>) return FieldKind::String;
     else if constexpr (IsArrayField<V>::value) return FieldKind::Array;
-    else if constexpr (IsSame<V, EntityRef>) return FieldKind::EntityRef;
+    else if constexpr (IsSame<V, EntityRef> || IsSame<V, EntityKey>) return FieldKind::EntityRef;
     else {
         static_assert(kAlwaysFalse<V>, "storage::Field: this member type has no stored form (see storage::FieldKind); give it a supported type or leave the component to a custom codec");
         return FieldKind::U8;
@@ -273,6 +273,9 @@ Status EncodeValue(const V& value, const FieldDesc& desc, bytes::ByteWriter& out
             const Status s = EncodeValue(value[i], desc, out, limits);
             if (s.Failed()) return s;
         }
+    } else if constexpr (IsSame<V, EntityKey>) {
+        out.WriteU64(value.high);
+        out.WriteU64(value.low);
     } else if constexpr (IsSame<V, EntityRef>) {
         out.WriteU64(value.key.high);
         out.WriteU64(value.key.low);
@@ -371,6 +374,13 @@ Status DecodeValue(V* value, const FieldDesc& desc, bytes::ByteReader& in, const
             if (s.Failed()) return s;
         }
         return Status::Success();
+    } else if constexpr (IsSame<V, EntityKey>) {
+        EntityKey k;
+        bytes::ByteError e = in.ReadU64(&k.high);
+        if (e == bytes::ByteError::Ok) e = in.ReadU64(&k.low);
+        if (e != bytes::ByteError::Ok) return FromByteError(e);
+        *value = k;
+        return Status::Success();
     } else if constexpr (IsSame<V, EntityRef>) {
         EntityRef r;
         bytes::ByteError e = in.ReadU64(&r.key.high);
@@ -395,7 +405,7 @@ struct MemberTraits<V C::*> {
 } // namespace detail
 
 /// Describes the member `Member` of a component (`Field<&Health::current>("current")`). The member's type decides the kind: integers, floats, `bool`, `Vec2`,
-/// `Vec3`, `Vec4`, `Quaternion`, `Mat4`, `Aabb`, enums, `String<HeapAllocator>`, `Array<T, N>` of those and [[storage::EntityRef]]. Any other type is a compile error.
+/// `Vec3`, `Vec4`, `Quaternion`, `Mat4`, `Aabb`, enums, `String<HeapAllocator>`, `Array<T, N>` of those, [[storage::EntityRef]] and [[storage::EntityKey]]. Any other type is a compile error.
 ///
 /// The member is a template argument, not a run-time value, so the encode and decode functions are plain function pointers with the member baked in.
 ///

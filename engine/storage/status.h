@@ -19,6 +19,8 @@ enum class ErrorCode : u8 {
     LimitExceeded, ///< A length or count is above a configured limit (on write or on read).
     Mismatch,      ///< A registration disagrees with the manifest recorded in a store: an id now has another name, or a name another id.
     Invalid,       ///< The caller broke a rule: an empty name, id 0, a component without fields that is not flagged, an enum field without a range.
+    MissingReference, ///< A reference names a key that is in no stored set and no world.
+    Duplicate,     ///< Two entities carry one key.
     Other,         ///< Anything else.
 };
 

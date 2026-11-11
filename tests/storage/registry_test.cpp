@@ -113,7 +113,9 @@ TEST_CASE("Registry: the manifest check keeps ids and names stable", "[storage][
 TEST_CASE("Registry: the builtin components register once and flag the derived ones", "[storage][registry]") {
     ComponentRegistry r;
     REQUIRE(RegisterBuiltinComponents(&r).Ok());
-    CHECK(r.Count() == 9);
+    CHECK(r.Count() == 11);
+    CHECK(r.FindById(kEntityKeyId)->IsStored());
+    CHECK(r.FindById(kParentLinkId)->IsStored());
     CHECK(r.FindById(kLocalTransformId)->IsStored());
     CHECK(r.FindById(kLocalTransformId)->Fields().Size() == 3);
     CHECK_FALSE(r.FindById(kWorldTransformId)->IsStored());
