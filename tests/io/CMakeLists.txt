@@ -40,13 +40,13 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   return()
 endif()
 
-# macOS (Phase 26): the file layer from Day 287, without the asynchronous tests, which need the job system (Day 289), and with the
-# macOS-only cases (io_macos_test.cpp). The directory backend is the shared POSIX one, so directory_test runs too.
+# macOS (Phase 26): the file layer from Day 287, the asynchronous tests from Day 289 (with the job system), and the macOS-only cases
+# (io_macos_test.cpp).
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  set(_io_macos_sources path_test.cpp file_system_test.cpp file_test.cpp directory_test.cpp share_test.cpp io_macos_test.cpp)
+  set(_io_macos_sources ${IO_TEST_SOURCES} io_macos_test.cpp)
   foreach(flavor "" "_asan" "_tsan")
     add_executable(io_tests${flavor} ${_io_macos_sources})
-    target_link_libraries(io_tests${flavor} PRIVATE foundation_io${flavor} Catch2::Catch2WithMain Threads::Threads)
+    target_link_libraries(io_tests${flavor} PRIVATE jobs${flavor} foundation_io${flavor} Catch2::Catch2WithMain Threads::Threads)
     target_include_directories(io_tests${flavor} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tests/support)
   endforeach()
   engine_discover_tests(io_tests TEST_SUFFIX "" PROPERTIES LABELS "io")

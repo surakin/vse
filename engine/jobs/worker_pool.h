@@ -25,7 +25,8 @@ struct Participant {
     u32 index = 0;
     /// CPU id the thread is pinned to, or -1 for main or an unpinned worker.
     i32 cpu = -1;
-    /// OS thread id (Linux: the kernel tid, for `/proc`; Windows: GetCurrentThreadId).
+    /// OS thread id (Linux: the kernel tid, for `/proc`; Windows: GetCurrentThreadId; macOS: the low 31 bits of `pthread_threadid_np`, never 0,
+    /// for logs and tests only: no OS call takes it, and after 2^31 threads since boot two can share it).
     i32 tid = 0;
     /// The [[jobs::WorkerPool]] this participant belongs to, type-erased.
     void* owner = nullptr;

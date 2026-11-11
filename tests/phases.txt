@@ -59,7 +59,7 @@ flavors 12  windows: plain
 # `none` = no tests yet). Apple clang has ASan, UBSan and TSan, so the macOS lines list all three where a layer is built.
 flavors 0   macos: plain,asan,tsan # tests/foundation (base tests), foundation_sanitized (Day 285)
 flavors 1   macos: plain           # tests/foundation (Day 285)
-flavors 2   macos: none
+flavors 2   macos: plain,asan,tsan # tests/jobs (Day 289)
 flavors 3   macos: none
 flavors 4   macos: plain           # the gates (Day 286)
 flavors 5   macos: plain           # the gates (Day 286)

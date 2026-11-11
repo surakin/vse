@@ -432,7 +432,7 @@ TEST_CASE("jobs: co_await file reads inside jobs on a scheduler", "[io][async][j
     }
 }
 
-#if !ENGINE_PLATFORM_WINDOWS // (only the /proc case below uses these)
+#if ENGINE_PLATFORM_LINUX // (only the /proc case below uses these)
 namespace {
 struct ProcOut {
     Atomic<int> done{0};
@@ -449,8 +449,8 @@ jobs::Job ReadProcJob(jobs::Scheduler* s, ProcOut* out) {
 #endif
 
 TEST_CASE("jobs::ReadFileAsync reads files whose reported size is wrong (/proc)", "[io][async][jobs]") {
-#if ENGINE_PLATFORM_WINDOWS
-    SKIP("Windows has no file whose reported size is wrong (Linux: /proc)");
+#if !ENGINE_PLATFORM_LINUX
+    SKIP("only Linux has a file whose reported size is wrong (/proc); a pipe or FIFO has no size, which ReadFileAsync refuses");
 #else
     jobs::Scheduler::Config cfg;
     cfg.participants = 2;

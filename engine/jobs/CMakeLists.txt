@@ -15,6 +15,8 @@ set(JOBS_SOURCES
 # The per-platform half (jobs/detail/thread_platform.h; Phase 13 Day 153): CPU list, thread id, pinning, naming.
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   list(APPEND JOBS_SOURCES windows/thread_platform.cpp)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  list(APPEND JOBS_SOURCES macos/thread_platform.cpp)  # Phase 26 Day 289
 else()
   list(APPEND JOBS_SOURCES linux/thread_platform.cpp)
 endif()
@@ -22,12 +24,15 @@ endif()
 # Headers are included as "jobs/<name>.h", rooted at engine/.
 set(JOBS_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-  # Windows (Phase 13): plain and ASan. The job system uses the base and file layers only, so it links foundation_io until the
-  # foundation aggregate exists there (the debugging and settings layers, Days 154-157).
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  # A platform being ported a layer at a time: the job system uses the base and file layers only, so it links foundation_io until the
+  # foundation aggregate exists there (Windows, Phase 13: plain and ASan; macOS, Phase 26 Day 289 until Day 293: plain, ASan and TSan).
   set(_jobs_flavors "")
   if(ENGINE_HAVE_ASAN)
     list(APPEND _jobs_flavors "_asan")
+  endif()
+  if(ENGINE_HAVE_TSAN)
+    list(APPEND _jobs_flavors "_tsan")
   endif()
   foreach(suffix "" ${_jobs_flavors})
     add_library(jobs${suffix} STATIC ${JOBS_SOURCES})

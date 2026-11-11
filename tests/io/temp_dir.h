@@ -1,6 +1,8 @@
 #pragma once
 
 #include "sync/atomic.h"
+#include "os/last_error.h"
+#include "os/os.h"
 #include "os/console.h"
 #include "cstr/cstr.h"
 #include "build_defs.h"
@@ -297,6 +299,35 @@ struct EnvGuard { // restores an environment variable at scope exit
         else ::unsetenv(name.CStr());
     }
 };
+
+// Writes 30,000 bytes into the FIFO at `path` once a reader opens it. The open does not block (O_NONBLOCK, retried while no reader is there,
+// for at most five seconds), so a reader that never comes fails the test instead of hanging it; SIGPIPE is ignored by the caller, so a reader
+// that stops early is a short write here, not the end of the test process.
+inline void FeedFifo(const io::Path& path) {
+    const u64 deadline = os::MonotonicTimeNanos() + 5'000'000'000ull;
+    int fd = -1;
+    while (fd < 0 && os::MonotonicTimeNanos() < deadline) {
+        fd = ::open(Str(path.View()).CStr(), O_WRONLY | O_NONBLOCK | O_CLOEXEC);
+        if (fd < 0 && os::LastError() != ENXIO && os::LastError() != EINTR) return; // ENXIO: no reader yet
+        if (fd < 0) os::SleepNanos(1'000'000);
+    }
+    if (fd < 0) return;
+    ::fcntl(fd, F_SETFL, ::fcntl(fd, F_GETFL) & ~O_NONBLOCK); // the writes may wait for the reader
+    char block[300];
+    for (usize i = 0; i < sizeof block; ++i) block[i] = static_cast<char>('0' + i % 10);
+    for (int i = 0; i < 100; ++i) {
+        for (usize done = 0; done < sizeof block;) {
+            const ssize_t n = ::write(fd, block + done, sizeof block - done);
+            if (n < 0 && os::LastError() == EINTR) continue;
+            if (n <= 0) { // the reader is gone (EPIPE): the size check fails
+                ::close(fd);
+                return;
+            }
+            done += static_cast<usize>(n);
+        }
+    }
+    ::close(fd);
+}
 
 /// Writes `text` to `path` through the POSIX API (these helpers are independent of the code under test).
 inline bool WriteText(const io::Path& path, const char* text) {

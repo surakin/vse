@@ -72,6 +72,8 @@ usize QueryAllowedCpus(u32* out, usize capacity) {
 
 i32 CurrentThreadId() { return static_cast<i32>(GetCurrentThreadId()); }
 
+bool CanPinThreads() { return true; }
+
 bool PinCurrentThread(u32 cpu) {
     GROUP_AFFINITY affinity{};
     affinity.Group = static_cast<WORD>(cpu / 64);

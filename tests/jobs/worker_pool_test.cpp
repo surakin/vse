@@ -16,6 +16,7 @@
 #include "io/directory.h"
 #include "io/file.h"
 #include "jobs/topology.h"
+#include "jobs/detail/thread_platform.h"
 #include "jobs/worker_pool.h"
 
 using namespace engine_placeholder;
@@ -24,7 +25,7 @@ using namespace engine_placeholder::jobs;
 namespace {
 
 // True when the OS says thread `tid` may run on CPU `cpu` alone.
-bool ThreadPinnedTo(i32 tid, i32 cpu) {
+bool ThreadPinnedTo([[maybe_unused]] i32 tid, [[maybe_unused]] i32 cpu) { // both unused on macOS
 #if ENGINE_PLATFORM_WINDOWS
     // CPU ids are group * 64 + bit (jobs/windows/thread_platform.cpp).
     const HANDLE thread = OpenThread(THREAD_QUERY_LIMITED_INFORMATION, FALSE, static_cast<DWORD>(tid));
@@ -33,7 +34,7 @@ bool ThreadPinnedTo(i32 tid, i32 cpu) {
     const BOOL got = GetThreadGroupAffinity(thread, &affinity);
     CloseHandle(thread);
     return got && affinity.Group == static_cast<WORD>(cpu / 64) && affinity.Mask == (KAFFINITY{1} << (cpu % 64));
-#else
+#elif ENGINE_PLATFORM_LINUX
     // The Cpus_allowed_list line of /proc/self/task/<tid>/status: exactly one CPU, so the list is that single number.
     char path[64];
     FormatTo(path, sizeof(path), "/proc/self/task/%d/status", tid);
@@ -53,6 +54,9 @@ bool ThreadPinnedTo(i32 tid, i32 cpu) {
         const int n = FormatTo(expected, sizeof(expected), "%d", cpu);
         return line == StringView(expected, static_cast<usize>(n));
     }
+    return false;
+#else
+    // macOS: no affinity API, so no thread is ever pinned (the pinning test checks that no worker reports a CPU).
     return false;
 #endif
 }
@@ -185,6 +189,14 @@ TEST_CASE("Spawned workers are each pinned to one distinct CPU", "[jobs][pool]")
     usize n = allowed < 8 ? allowed : 8; // workers = n-1 <= allowed-1: all distinct
     auto pool = MakeUnique<WorkerPool>(WorkerPool::Config{n});
     REQUIRE(pool->SpawnedWorkerCount() == n - 1);
+    if (!jobs::detail::CanPinThreads()) {
+        // A platform without an affinity API (macOS, Phase 26 Day 289): no worker is pinned, and none is reported as pinned.
+        for (usize i = 1; i < n; ++i) {
+            REQUIRE(pool->GetParticipant(i).tid > 0);
+            CHECK(pool->GetParticipant(i).cpu == -1);
+        }
+        return;
+    }
 
     i32 seen_cpu[kMaxParticipants];
     for (usize i = 1; i < n; ++i) {

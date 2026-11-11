@@ -30,6 +30,9 @@ crash context. Linux's `os/linux/debug/` is the reference; what is the same POSI
 - [ ] **Documentation:** `os/macos/debug/BACKEND.md` sections get "as built (Day 290)" notes; `docs/guide/foundation-debugging.md` and
       `porting-debugging.md` macOS sections (dSYM placement, `atos`); `debug_backend_lists` and `debug_cross_syntax_macos` pass; `docgen lint` zero.
 - [ ] **Runs:** `scripts/test-phase.sh --affected --flavor all` (quote); shared-file runs filed.
+- [ ] **One thread id on macOS** (added on Day 289 by its review): `debug::CurrentThreadId` and `jobs::detail::CurrentThreadId` (Day 289: the low 31 bits
+      of `pthread_threadid_np`, never 0) must print the same number for a thread, or the crash report names the job system's form beside its own, so a
+      worker reads the same in a crash report and in the job logs.
 - [ ] **End-of-day review:** `/code-review high`. Extra scrutiny: the module list's lifetime against images added from another thread, the resolver's
       behavior without a dSYM, anything that allocates on a path the crash report uses.
 - [ ] Update `STATUS.md`, `KNOWN-ISSUES.md`; commit and push.

@@ -96,6 +96,9 @@ worker.Join();
 - A condition variable's wait needs a [[UniqueLock]] that you hold. [[ConditionVariable]] works with [[Mutex]] only.
 - `Thread` passes copies of its arguments to the function. Pass a pointer if the thread must change something of yours, and make sure it outlives the thread.
 - `AtomicThreadFence` does not build under GCC with ThreadSanitizer; use an atomic operation with the order you need instead.
+- On macOS a [[Thread]] gets the default stack of a secondary thread, 512 KiB (Linux: 8 MiB): keep large buffers off the stack. A thread's name can
+  only be set from inside it there (`pthread_setname_np` takes no thread); the job system's workers do so (Phase 26 Day 289, [Jobs](jobs.md)).
+- Under the sanitizers on macOS a report aborts the process (`abort_on_error` defaults to 1 there, 0 on Linux).
 
 ## Common mistakes
 

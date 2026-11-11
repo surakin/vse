@@ -234,9 +234,11 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_compile_options(${ENGINE_WARNING_COMPILE_OPTIONS} ${ENGINE_MACOS_COMPILE_OPTIONS})
   add_compile_definitions(${ENGINE_MACOS_DEFINITIONS})
   add_subdirectory(engine/foundation)
+  add_subdirectory(engine/jobs)  # Day 289
+  add_subdirectory(tests/jobs)
   add_subdirectory(tests/foundation)  # the base-layer tests (foundation_base_tests), Day 285; the file-layer and window ones need later days
   add_subdirectory(tests/foundation_sanitized)
-  add_subdirectory(tests/io)  # the file layer, Day 287 (the asynchronous tests wait for jobs, Day 289)
+  add_subdirectory(tests/io)  # the file layer, Days 287-289
   add_subdirectory(tests/types)
   add_subdirectory(tests/lang)
   add_subdirectory(tests/sync)
@@ -249,8 +251,8 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   endforeach()
   add_subdirectory(tests/phase_labels)
   add_subdirectory(tests/test_phase_script)
-  message(STATUS "macOS (Phase 26 Day 287): building the base layer and the file layer of the foundation and their tests, the gates and the test tooling. Not "
-                 "yet ported, so not configured: docgen (Day 293), the file layer's asynchronous I/O (Day 288), jobs (Day 289), debugging (Days 290-292), settings (Day 293), text, UI, ECS and "
+  message(STATUS "macOS (Phase 26 Day 289): building the base and file layers of the foundation, the job system and their tests, the gates and the test tooling. Not "
+                 "yet ported, so not configured: docgen (Day 293), debugging (Days 290-292), settings (Day 293), text, UI, ECS and "
                  "spatial (Day 294), the platform layer (Days 295-297), the RHI and renderer (Days 298-309), the demos and tools (Day 310).")
   return()
 endif()

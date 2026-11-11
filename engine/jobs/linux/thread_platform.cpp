@@ -22,6 +22,8 @@ usize QueryAllowedCpus(u32* out, usize capacity) {
 
 i32 CurrentThreadId() { return static_cast<i32>(::syscall(SYS_gettid)); }
 
+bool CanPinThreads() { return true; }
+
 bool PinCurrentThread(u32 cpu) {
     cpu_set_t set;
     CPU_ZERO(&set);

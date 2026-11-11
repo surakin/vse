@@ -9,8 +9,8 @@ drop, fullscreen, session); the Phase 4 golden images and the Phase 5 scene test
 **Metal** backend with Metal API validation silent; the Metal backend passes the lifecycle conformance suite and recovers from an injected device loss; the demos run
 on Metal; every gate and `ctest -L docs` pass on macOS; and the Linux machine and the Windows PC still pass their full suites in every flavor they have.
 
-**Status: started (2026-11-10), Days 282-311: Day 282 (the `.metallib` spike; interim route, pending), Day 283 (spec, inventory, setup), Day 284 (CMake, Apple clang, the base layer) Day 285 (the `os` backend, `os/posix/`) Day 286 (test tooling, side phases, gates) Day 287 (file layer I: `io/posix/`, local files, errors) and Day 288 (file layer II: `Copy`, standard directories, async measured) done on the
-Mac; next Day 289.** Day numbers continue after Phase 25 (Day 281). Phases 19-24 have no day files yet;
+**Status: started (2026-11-10), Days 282-311: Day 282 (the `.metallib` spike; interim route, pending), Day 283 (spec, inventory, setup), Day 284 (CMake, Apple clang, the base layer) Day 285 (the `os` backend, `os/posix/`) Day 286 (test tooling, side phases, gates) Day 287 (file layer I: `io/posix/`, local files, errors) Day 288 (file layer II: `Copy`, standard directories, async measured) and Day 289 (the job
+system) done on the Mac; next Day 290.** Day numbers continue after Phase 25 (Day 281). Phases 19-24 have no day files yet;
 when they get them, Phases 25 and 26 renumber in the same commit (CLAUDE.md, "Phases are whole numbers").
 
 **Hardware (checked 2026-11-10).** The developer's 2019 MacBook Pro 13" (`MacBookPro15,4`): quad-core Intel Core i5 at 1.4 GHz, 8 GB RAM, **Intel Iris Plus

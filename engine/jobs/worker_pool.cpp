@@ -49,15 +49,16 @@ WorkerPool::WorkerPool(const Config& config) : config_(config) {
     // With a single allowed CPU everyone shares it.
     usize workers = count_ - 1;
     usize pool_cpus = allowed_count_ > 1 ? allowed_count_ - 1 : 1;
+    const bool pin = config_.pin && detail::CanPinThreads(); // macOS cannot pin: the pool does not try
     for (usize i = 1; i < count_; ++i) {
         participants_[i].index = static_cast<u32>(i);
         participants_[i].owner = this;
-        if (config_.pin) {
+        if (pin) {
             usize slot = (i - 1) % pool_cpus;
             participants_[i].cpu = static_cast<i32>(allowed_count_ > 1 ? allowed_[1 + slot] : allowed_[0]);
         }
     }
-    if (config_.pin && workers > pool_cpus) {
+    if (pin && workers > pool_cpus) {
         JobsLog(LogVerbosity::Warn, "%zu workers share %zu CPUs: pinning is shared", static_cast<size_t>(workers),
                 static_cast<size_t>(pool_cpus));
     }
