@@ -19,6 +19,16 @@ i64 ModifiedUnixNs(const struct stat& st);
 /// the drive's cache, falling back to `fsync` when the file system refuses it. Returns 0, or -1 with the error in `errno`; retries `EINTR`.
 int SyncDescriptor(int fd);
 
+/// Copies the rest of `in` to `out`, both open descriptors (`Copy` has opened them, refused the same file twice and truncated `out`): `CopyLoop` on
+/// Linux; on macOS `fcopyfile(COPYFILE_DATA)` for a regular-file source (the data only: `Copy` sets the permission bits itself and keeps no times or
+/// attributes) and `CopyLoop` for anything else, or when `fcopyfile` is interrupted or refuses (both descriptors rewound, `out` emptied first).
+/// Returns 0, or -1 with the error in `errno`.
+int CopyData(int in, int out);
+
+/// Copies the rest of `in` to `out` with `read` and `write`, retrying `EINTR` and short writes (defined in io/posix/file_system.cpp).
+/// Returns 0, or -1 with the error in `errno`.
+int CopyLoop(int in, int out);
+
 // Shared by the systems' special-folder files (defined in io/posix/file_system.cpp).
 
 /// True for an application name that is one path component of at most 200 bytes (not `.`, `..`, no `/` or NUL).

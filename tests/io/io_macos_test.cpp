@@ -4,7 +4,9 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <fcntl.h>
+#include <pwd.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <unistd.h>
 
 #include "io/error.h"
@@ -218,4 +220,54 @@ TEST_CASE("io on macOS: a source whose size is not its content (a FIFO) reads wh
         CHECK(size == 30000);
     }
     os::SetSignalHandler(SIGPIPE, old_pipe);
+}
+
+TEST_CASE("io on macOS: Copy copies the data and the mode with fcopyfile, not the times (no clone)", "[io][fs][macos]") {
+    TempDir dir;
+    const Path from = dir / "from.bin";
+    const Path to = dir / "to.bin";
+    REQUIRE(io::WriteFile(from, "copied bytes", 12).Ok());
+    REQUIRE(::chmod(Str(from.View()).CStr(), 0640) == 0);
+    struct timeval old_times[2] = {{1'000'000'000, 0}, {1'000'000'000, 0}}; // 2001
+    REQUIRE(::utimes(Str(from.View()).CStr(), old_times) == 0);
+    REQUIRE(io::Copy(from, to, false).Ok());
+    CHECK(io_test::ReadText(to).View() == StringView("copied bytes"));
+    io::FileInfo info;
+    REQUIRE(io::Stat(to, &info).Ok());
+    CHECK(info.permissions == 0640);
+    CHECK(info.modified_unix_ns > 1'700'000'000LL * 1'000'000'000LL); // now, not the source's 2001: an APFS clone would have kept it
+    CHECK(io::Copy(from, to, false).Is(Error::AlreadyExists));
+    REQUIRE(io::WriteFile(from, "new", 3).Ok());
+    REQUIRE(io::Copy(from, to, true).Ok());
+    CHECK(io_test::ReadText(to).View() == StringView("new")); // overwritten, truncated
+}
+
+TEST_CASE("io on macOS: without HOME the user directories come from Foundation (the account's home)", "[io][fs][macos]") {
+    EnvGuard home("HOME");
+    ::unsetenv("HOME");
+    struct passwd* pw = ::getpwuid(::geteuid());
+    REQUIRE(pw != nullptr);
+    const Path account(pw->pw_dir);
+    Path p;
+    REQUIRE(io::UserConfigDirectory("app", &p).Ok());
+    CHECK(p == account.Join("Library/Application Support/app"));
+    REQUIRE(io::UserCacheDirectory("app", &p).Ok());
+    CHECK(p == account.Join("Library/Caches/app"));
+    CHECK(io::CrashDumpDirectory(&p).Is(Error::NotFound)); // the crash handler does not guess without HOME
+}
+
+TEST_CASE("io on macOS: Copy from a FIFO copies what it delivers, as on Linux", "[io][fs][macos]") {
+    // fcopyfile refuses a source that is not a regular file (ENOTSUP); Copy must still copy it, through the read/write loop (Day 288 review).
+    const os::SignalHandler old_pipe = os::SetSignalHandler(SIGPIPE, SIG_IGN);
+    TempDir dir;
+    const Path fifo = dir / "fifo";
+    REQUIRE(::mkfifo(Str(fifo.View()).CStr(), 0600) == 0);
+    Thread writer([&] { FeedFifo(fifo); });
+    const io::Status s = io::Copy(fifo, dir / "copy.bin", false);
+    writer.Join();
+    os::SetSignalHandler(SIGPIPE, old_pipe);
+    REQUIRE(s.Ok());
+    io::FileInfo info;
+    REQUIRE(io::Stat(dir / "copy.bin", &info).Ok());
+    CHECK(info.size == 30000);
 }

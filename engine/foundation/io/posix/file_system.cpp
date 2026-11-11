@@ -143,6 +143,26 @@ Status FromPath(StringView text, Path* out) {
     return Status::Success();
 }
 
+int CopyLoop(int in, int out) {
+    char buffer[64 * 1024];
+    for (;;) {
+        const ssize_t n = ::read(in, buffer, sizeof(buffer));
+        if (n < 0) {
+            if (os::LastError() == EINTR) continue;
+            return -1;
+        }
+        if (n == 0) return 0;
+        for (ssize_t done = 0; done < n;) {
+            const ssize_t w = ::write(out, buffer + done, static_cast<usize>(n - done));
+            if (w < 0) {
+                if (os::LastError() == EINTR) continue;
+                return -1;
+            }
+            done += w;
+        }
+    }
+}
+
 Status CrashAppName(char (&app)[256]) {
     const char* configured = os::GetEnvironment("ENGINE_APP_NAME");
     if (configured != nullptr && configured[0] != '\0') {
@@ -248,27 +268,7 @@ Status Copy(const Path& from, const Path& to, bool overwrite) {
         ::close(out);
         return setup;
     }
-    Status result;
-    char buffer[64 * 1024];
-    for (;;) {
-        const ssize_t n = ::read(in, buffer, sizeof(buffer));
-        if (n < 0) {
-            if (os::LastError() == EINTR) continue;
-            result = Errno();
-            break;
-        }
-        if (n == 0) break;
-        for (ssize_t done = 0; done < n;) {
-            const ssize_t w = ::write(out, buffer + done, static_cast<usize>(n - done));
-            if (w < 0) {
-                if (os::LastError() == EINTR) continue;
-                result = Errno();
-                break;
-            }
-            done += w;
-        }
-        if (result.Failed()) break;
-    }
+    Status result = posix::CopyData(in, out) == 0 ? Status::Success() : Errno();
     if (result.Ok() && ::fchmod(out, st.st_mode & 0777) != 0) result = Errno();
     ::close(in);
     if (::close(out) != 0 && result.Ok()) result = Errno();

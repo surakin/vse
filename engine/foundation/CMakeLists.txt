@@ -85,7 +85,7 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     io/posix/local_file.cpp
     io/posix/directory.cpp
     io/macos/posix_hooks.cpp
-    io/macos/special_folders.cpp
+    io/macos/special_folders.mm
   )
 else()
   message(FATAL_ERROR "No foundation os.h implementation for this platform yet")
@@ -231,7 +231,8 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     # The session query (os/macos/session.mm) reads the window server's session dictionary.
     target_link_libraries(foundation_base${suffix} PUBLIC ${CMAKE_DL_LIBS} "-framework CoreGraphics" "-framework Foundation")
     engine_add_foundation_layer(foundation_io "${suffix}" ${FOUNDATION_IO_SOURCES})
-    target_link_libraries(foundation_io${suffix} PUBLIC foundation_base${suffix})
+    # The user directories (io/macos/special_folders.mm) ask Foundation (NSSearchPathForDirectoriesInDomains).
+    target_link_libraries(foundation_io${suffix} PUBLIC foundation_base${suffix} "-framework Foundation")
   endforeach()
 else()
   engine_add_foundation_libs("")

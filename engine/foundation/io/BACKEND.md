@@ -30,8 +30,9 @@ the file-time and durable-sync hooks of `io/posix/posix_io.h`, the executable pa
 - **Windows (Phase 13):** UTF-8 to UTF-16 at the boundary; drive letters, UNC and `\\?\` long paths (Path's `PathStyle::Windows` parses all of them
   already); `CreateFileW`, overlapped I/O (`kCapNativelyAsync`), `MoveFileExW` for atomic replace, known folders through `SHGetKnownFolderPath`.
   A registry-backed settings store is Phase 11/12's, not this layer's.
-- **macOS (Phase 26):** case-insensitive default volumes, `dispatch_io` for native asynchronous reads, application sandbox containers for the
-  user directories, `NSFileManager` for the locations POSIX does not give.
+- **macOS (Phase 26, built on Days 287-288):** the POSIX backend shared with Linux (`io/posix/`); case- and normalization-insensitive default
+  volumes (the layer does not fold); `F_FULLFSYNC` for durability; `fcopyfile`; the default executor for asynchronous work (`dispatch_io` measured
+  slower); `~/Library` user directories from `$HOME` or `NSSearchPathForDirectoriesInDomains`.
 - **Android and iOS (Phase 27):** app-private directories as the user directories; the asset bundle is a read-only archive opened as a `File` backend
   with a scheme (`RegisterFileScheme`), not a path; no `Writable` capability there.
 - **Consoles (Phase 28):** title storage and save-data APIs behind the same `File`; the install directory is read-only; asynchronous requests map to the
@@ -135,10 +136,14 @@ onto a directory is `IsADirectory`, a directory onto a non-empty one `NotEmpty`,
 
 ### `Copy`
 
-Windows: CopyFile2; macOS: copyfile or a read/write loop.
+Windows: CopyFile2; macOS: fcopyfile(COPYFILE_DATA) on the descriptors (no clone: it would keep the times).
 
 Windows, as built (Day 152): `CopyFile2` (`COPY_FILE_FAIL_IF_EXISTS` unless overwriting), which copies the read-only attribute as the mode is copied
 on Linux. The same file under two names (a hard link) is detected by volume serial and 128-bit file id first and refused with `Invalid`.
+
+macOS, as built (Day 288): the shared POSIX `Copy` (descriptors, the same-file refusal by `st_dev`/`st_ino`, truncation only after it, the mode set with
+`fchmod`), with the data moved by `fcopyfile(COPYFILE_DATA)` on those descriptors. Not `COPYFILE_CLONE`: an APFS clone keeps the source's times and
+extended attributes, which `Copy` promises not to copy, and it needs the path-based call, reopening the race the descriptor check closes.
 
 ### `SetPermissions`
 
@@ -240,7 +245,7 @@ Windows, as built (Day 152): the print name of a symbolic link (relative as writ
 
 ### `TempDirectory`
 
-Windows: GetTempPath2W; macOS: NSTemporaryDirectory or $TMPDIR.
+Windows: GetTempPath2W; macOS: $TMPDIR when absolute, else confstr(_CS_DARWIN_USER_TEMP_DIR).
 
 macOS, as built (Day 287): `$TMPDIR` when absolute (launchd sets the per-user directory under `/var/folders`), else `confstr(_CS_DARWIN_USER_TEMP_DIR)`
 (the same directory, for a process started without the user's environment), and `/tmp`, which every user shares, only when both fail.
@@ -251,7 +256,7 @@ macOS, as built (Day 287): `$TMPDIR` when absolute (launchd sets the per-user di
 Windows: GetModuleFileNameW; macOS: _NSGetExecutablePath resolved with realpath.
 
 macOS, as built (Day 287): `_NSGetExecutablePath` gives the path the program was started by (it may hold a link or `..`); `realpath` makes it the file
-itself, as Linux's `/proc/self/exe` is. `io/macos/special_folders.cpp`.
+itself, as Linux's `/proc/self/exe` is. `io/macos/special_folders.mm`.
 
 
 ### `ExecutableDirectory`
@@ -261,22 +266,22 @@ Windows and macOS: the parent of ExecutablePath.
 
 ### `UserConfigDirectory`
 
-Windows: `%APPDATA%\<app>` when the variable holds an absolute path, else FOLDERID_RoamingAppData; macOS: ~/Library/Application Support (or the sandbox container's).
+Windows: `%APPDATA%\<app>` when the variable holds an absolute path, else FOLDERID_RoamingAppData; macOS: `$HOME/Library/Application Support/<app>` when $HOME is absolute, else NSSearchPathForDirectoriesInDomains (the container's in a sandbox).
 
 
 ### `UserCacheDirectory`
 
-Windows: `%LOCALAPPDATA%` (when absolute) or FOLDERID_LocalAppData, then `<app>\cache`; macOS: ~/Library/Caches.
+Windows: `%LOCALAPPDATA%` (when absolute) or FOLDERID_LocalAppData, then `<app>\cache`; macOS: `<home>/Library/Caches/<app>`, the home found as for UserConfigDirectory.
 
 
 ### `UserDataDirectory`
 
-Windows: `%LOCALAPPDATA%` (when absolute) or FOLDERID_LocalAppData, then `<app>`; macOS: ~/Library/Application Support.
+Windows: `%LOCALAPPDATA%` (when absolute) or FOLDERID_LocalAppData, then `<app>`; macOS: `<home>/Library/Application Support/<app>`, as UserConfigDirectory.
 
 
 ### `UserStateDirectory`
 
-Windows: `%LOCALAPPDATA%` (when absolute) or FOLDERID_LocalAppData, then `<app>\state`; macOS: ~/Library/Application Support/<app>/state.
+Windows: `%LOCALAPPDATA%` (when absolute) or FOLDERID_LocalAppData, then `<app>\state`; macOS: `<home>/Library/Application Support/<app>/state`, as UserConfigDirectory.
 
 Windows, as built (Day 152): `SHGetKnownFolderPath`; configuration `RoamingAppData\<app>`, data `LocalAppData\<app>`, cache `LocalAppData\<app>\cache`, state
 `LocalAppData\<app>\state` (grouped per application, the Windows convention). Nothing is created. An application name that Windows cannot keep
@@ -286,11 +291,14 @@ directory follows `%LOCALAPPDATA%` too.
 
 macOS, as built (Day 287, interim): `$HOME` (absolute, else the password database) then `Library/Application Support/<app>` for configuration and data,
 `Library/Caches/<app>` for the cache and `Library/Application Support/<app>/state` for state; the `XDG_*` variables are not read. Nothing is created.
-Day 288 asks `NSSearchPathForDirectoriesInDomains` first (a sandboxed process gets its container's folders), with this as the fallback.
+Day 288: `$HOME` stays first, as `$XDG_*` and `%APPDATA%` come first on Linux and Windows (a test or a launcher can point it elsewhere; a sandboxed
+process has `$HOME` set to its container). Without an absolute `$HOME`, `NSSearchPathForDirectoriesInDomains` (`NSApplicationSupportDirectory`,
+`NSCachesDirectory`; it does not read `$HOME`, checked), then the password database. The plan had Foundation first; it changed so the three systems
+agree on the environment override (`io/macos/special_folders.mm`).
 
 ### `CrashDumpDirectory`
 
-Windows: %LOCALAPPDATA%/<app>/crashes; macOS: ~/Library/Application Support/<app>/crashes; Android and iOS: the app-private files directory.
+Windows: %LOCALAPPDATA%/<app>/crashes; macOS: `$HOME/Library/Application Support/<app>/crashes` (none without an absolute $HOME); Android and iOS: the app-private files directory.
 
 
 Do not guess a location without the user's profile. Create it private to the user (Windows: an ACL for the current user only).
@@ -310,7 +318,7 @@ Windows: the attributes the find call already returned, plus GetFileInformationB
 
 Windows: FindFirstFileExW (or NtQueryDirectoryFile) over a handle opened with FILE_FLAG_BACKUP_SEMANTICS; macOS: opendir.
 
-Windows: CreateFileW with FILE_FLAG_OVERLAPPED (so the file is NativelyAsync); macOS: open with O_CLOEXEC and dispatch_io for asynchronous work.
+Windows: CreateFileW with FILE_FLAG_OVERLAPPED (so the file is NativelyAsync); macOS: open with O_CLOEXEC, asynchronous work on the executor as on Linux (dispatch_io measured slower, Phase 26 Day 288).
 
 
 `File::Open` and `Directory::Open` share this section. A file backend implements every pure virtual of `File` (see "The File interface" below) and must pass the conformance suite.
@@ -327,6 +335,12 @@ writes at the offset `0xFFFFFFFF'FFFFFFFF`, which is Win32's atomic append. `Flu
 `FlushFileBuffers`. `Truncate` that grows a file first marks it sparse (`FSCTL_SET_SPARSE`), so the new part is a hole as on Linux and not
 gigabytes of zeros written by the next write past the old end; a file system without sparse files grows it plainly. A directory opened as a
 file is `IsADirectory` (`AlreadyExists` with `kOpenCreateNew`, as `O_EXCL` says).
+
+`File::Open` on macOS, as built (Days 287-288): the shared POSIX local file (`io/posix/local_file.cpp`), `Sync` through `F_FULLFSYNC`. Asynchronous requests
+run on the executor as on Linux: `dispatch_io` was measured on Day 288 and lost (warm cache, the development Mac: 1,000 random 4 KiB reads 13-16 ms on the
+executor against 232-239 ms through a `DISPATCH_IO_RANDOM` channel; one 64 MiB read 50-55 ms against 70-75 ms). It cannot read into the caller's
+buffer (the data arrives as `dispatch_data_t` and is copied) and pays its scheduling per read; `LocalFile` does not claim `kCapNativelyAsync`.
+`Directory::Open`, `Next`, `Info` and `Close` are the shared POSIX ones (`io/posix/directory.cpp`), with `st_mtimespec` through the hook.
 
 
 ### `Next`

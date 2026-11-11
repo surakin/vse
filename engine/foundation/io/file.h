@@ -163,7 +163,7 @@ public:
     ///   (`kOpenCreateNew`), `Invalid` (`OpenMode::Read` with `kOpenCreate`, `kOpenCreateNew` or `kOpenTruncate`; on Windows also a reserved
     ///   device name, a name ending in a dot or a space, or a colon in a name), `NotADirectory`, `TooManyOpenFiles`, `SymlinkLoop`, `TooLong`,
     ///   `Busy` (Windows: another program opened the file without sharing).
-    /// Backend: Windows: CreateFileW, asynchronous work on the executor as on Linux (BACKEND.md, Open); macOS: open with O_CLOEXEC and dispatch_io for asynchronous work.
+    /// Backend: Windows: CreateFileW, asynchronous work on the executor as on Linux (BACKEND.md, Open); macOS: open with O_CLOEXEC, asynchronous work on the executor as on Linux (dispatch_io measured slower, Phase 26 Day 288).
     static Status Open(const Path& path, OpenMode mode, u32 flags, FilePtr* out);
     /// Opens `location`, which is either a local path or `scheme://rest`. `file:///abs/path` (percent escapes such as `%20` are
     /// decoded; no query or fragment) and a text without a scheme are local files;

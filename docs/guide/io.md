@@ -392,8 +392,7 @@ src/util/strings.cpp
 
 ## On macOS
 
-The backend is the POSIX one Linux uses (`io/posix/`, directories included), with a few macOS rules (Phase 26 Day 287; `Copy` with `copyfile`,
-the user directories from `NSSearchPathForDirectoriesInDomains` and native asynchronous reads follow on Day 288):
+The backend is the POSIX one Linux uses (`io/posix/`, directories included), with a few macOS rules (Phase 26 Days 287-288):
 
 - **Names are compared by the volume, not by `Path`.** The default APFS volume is case-insensitive: `Case.txt` and `case.txt` are one file, and a
   rename that changes only the case is a real rename. It is also normalization-insensitive: a name written in NFC (`é` as one code point) opens by
@@ -407,12 +406,16 @@ the user directories from `NSSearchPathForDirectoriesInDomains` and native async
 
   | Function | macOS |
   |---|---|
-  | `UserConfigDirectory`, `UserDataDirectory` | `~/Library/Application Support/<app>` |
-  | `UserCacheDirectory` | `~/Library/Caches/<app>` |
-  | `UserStateDirectory` | `~/Library/Application Support/<app>/state` |
-  | `CrashDumpDirectory` | `~/Library/Application Support/<app>/crashes` (created private) |
+  | `UserConfigDirectory`, `UserDataDirectory` | `<home>/Library/Application Support/<app>` |
+  | `UserCacheDirectory` | `<home>/Library/Caches/<app>` |
+  | `UserStateDirectory` | `<home>/Library/Application Support/<app>/state` |
+  | `CrashDumpDirectory` | `$HOME/Library/Application Support/<app>/crashes` (created private; none without `$HOME`) |
 
-  The `XDG_*` variables are Linux's and are not read. `ExecutablePath` is the real file (`_NSGetExecutablePath` and `realpath`).
+  `<home>` is `$HOME` when absolute (in a sandbox, the container), else Foundation's answer (`NSSearchPathForDirectoriesInDomains`, which ignores
+  `$HOME`). The `XDG_*` variables are Linux's and are not read. `ExecutablePath` is the real file (`_NSGetExecutablePath` and `realpath`).
+- **`Copy`** moves the data with `fcopyfile`; it is not an APFS clone (a clone would keep the source's times).
+- **Asynchronous I/O** runs on the same executor as on Linux. `dispatch_io` was measured and is much slower for this layer's requests: 1,000
+  random 4 KiB reads took 13 ms on the executor and 235 ms through `dispatch_io` (it cannot read into your buffer, so it copies).
 
 ## Common mistakes
 

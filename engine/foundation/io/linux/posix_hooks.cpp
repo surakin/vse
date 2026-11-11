@@ -16,4 +16,6 @@ int SyncDescriptor(int fd) {
     }
 }
 
+int CopyData(int in, int out) { return CopyLoop(in, out); }
+
 } // namespace engine_placeholder::io::posix

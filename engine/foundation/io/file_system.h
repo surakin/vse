@@ -79,7 +79,7 @@ Status Rename(const Path& from, const Path& to);
 ///
 /// Param overwrite: when false an existing `to` is an error; when true it is truncated and rewritten.
 /// Fails: `NotFound`, `AlreadyExists`, `IsADirectory`, `NoSpace`, `PermissionDenied`.
-/// Backend: Windows: CopyFile2; macOS: copyfile or a read/write loop.
+/// Backend: Windows: CopyFile2; macOS: fcopyfile(COPYFILE_DATA) on the descriptors (no clone: it would keep the times).
 Status Copy(const Path& from, const Path& to, bool overwrite);
 
 /// Sets the permission bits of `path` (following links); platforms without them map the owner-write bit to the read-only attribute.
@@ -153,7 +153,7 @@ Status Canonical(const Path& path, Path* out);
 Status ReadLink(const Path& path, Path* out);
 
 /// The directory for temporary files: `$TMPDIR` when absolute, else `/tmp` on Linux. Creates nothing.
-/// Backend: Windows: GetTempPath2W; macOS: NSTemporaryDirectory or $TMPDIR.
+/// Backend: Windows: GetTempPath2W; macOS: $TMPDIR when absolute, else confstr(_CS_DARWIN_USER_TEMP_DIR).
 Status TempDirectory(Path* out);
 /// Returns the path of the running executable.
 ///
@@ -168,22 +168,22 @@ Status ExecutableDirectory(Path* out);
 ///
 /// Param app_name: one path component (no separators, not `.` or `..`).
 /// Fails: `Invalid` (a bad app name), `NotFound` (no home directory is known).
-/// Backend: Windows: `%APPDATA%\<app>` when the variable holds an absolute path, else FOLDERID_RoamingAppData; macOS: ~/Library/Application Support (or the sandbox container's).
+/// Backend: Windows: `%APPDATA%\<app>` when the variable holds an absolute path, else FOLDERID_RoamingAppData; macOS: `$HOME/Library/Application Support/<app>` when $HOME is absolute, else NSSearchPathForDirectoriesInDomains (the container's in a sandbox).
 Status UserConfigDirectory(StringView app_name, Path* out);
 /// The per-user cache directory: `$XDG_CACHE_HOME/<app>` or `<home>/.cache/<app>` on Linux. Creates nothing.
 ///
 /// Fails: as [[io::UserConfigDirectory]].
-/// Backend: Windows: `%LOCALAPPDATA%` (when absolute) or FOLDERID_LocalAppData, then `<app>\cache`; macOS: ~/Library/Caches.
+/// Backend: Windows: `%LOCALAPPDATA%` (when absolute) or FOLDERID_LocalAppData, then `<app>\cache`; macOS: `<home>/Library/Caches/<app>`, the home found as for UserConfigDirectory.
 Status UserCacheDirectory(StringView app_name, Path* out);
 /// The per-user data directory: `$XDG_DATA_HOME/<app>` or `<home>/.local/share/<app>` on Linux. Creates nothing.
 ///
 /// Fails: as [[io::UserConfigDirectory]].
-/// Backend: Windows: `%LOCALAPPDATA%` (when absolute) or FOLDERID_LocalAppData, then `<app>`; macOS: ~/Library/Application Support.
+/// Backend: Windows: `%LOCALAPPDATA%` (when absolute) or FOLDERID_LocalAppData, then `<app>`; macOS: `<home>/Library/Application Support/<app>`, as UserConfigDirectory.
 Status UserDataDirectory(StringView app_name, Path* out);
 /// The per-user state directory: `$XDG_STATE_HOME/<app>` or `<home>/.local/state/<app>` on Linux. Creates nothing.
 ///
 /// Fails: as [[io::UserConfigDirectory]].
-/// Backend: Windows: `%LOCALAPPDATA%` (when absolute) or FOLDERID_LocalAppData, then `<app>\state`; macOS: ~/Library/Application Support/<app>/state.
+/// Backend: Windows: `%LOCALAPPDATA%` (when absolute) or FOLDERID_LocalAppData, then `<app>\state`; macOS: `<home>/Library/Application Support/<app>/state`, as UserConfigDirectory.
 Status UserStateDirectory(StringView app_name, Path* out);
 
 /// The directory where this program writes crash dumps, created (and made private to this user) if needed: `<user state directory>/<app>/crashes`
@@ -194,7 +194,7 @@ Status UserStateDirectory(StringView app_name, Path* out);
 /// Fails: `NotFound` (neither `$XDG_STATE_HOME` nor `$HOME` is set to an absolute path, or the executable cannot be found), `Invalid` (an unusable application name: `.`, `..`,
 ///   empty after trimming, containing a slash or longer than 200 bytes), the errors of [[io::CreatePrivateDirectory]].
 /// Thread-safety: thread-safe, except that it reads the environment, so another thread must not change it (`setenv`) at the same time.
-/// Backend: Windows: %LOCALAPPDATA%/<app>/crashes; macOS: ~/Library/Application Support/<app>/crashes; Android and iOS: the app-private files directory.
+/// Backend: Windows: %LOCALAPPDATA%/<app>/crashes; macOS: `$HOME/Library/Application Support/<app>/crashes` (none without an absolute $HOME); Android and iOS: the app-private files directory.
 Status CrashDumpDirectory(Path* out);
 
 } // namespace engine_placeholder::io
