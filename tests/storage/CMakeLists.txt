@@ -6,6 +6,7 @@ set(STORAGE_TEST_SOURCES
   upgrade_test.cpp  # Day 257
   registry_fuzz_test.cpp  # Day 257
   identity_test.cpp  # Day 258
+  store_test.cpp  # Day 259
 )
 
 find_package(Threads REQUIRED)

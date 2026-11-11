@@ -152,3 +152,31 @@ resolved: `ResolveReference(index, key, policy, &report, &entity)` turns a key i
 `ecs::Parent` holds an entity id, which means nothing in a file, so its stored form is `ParentLink` (a key). `CaptureParents(world, index)` writes the links before a
 save; `ApplyParents(world, index, policy)` sets the parents after a load, parents first, with the cycle and depth checks of `ecs::SetParent` (a cycle is refused and counted in
 `ParentReport::rejected`), and removes the links. Under `Fail` nothing changes when any parent is missing.
+
+## The record store
+
+A `Store` keeps one `EntityRecord` (key, container bytes, `HashBytes` of the bytes) per `EntityKey`, in key order: `Put`, `Get`, `Remove`, `Scan(range, visitor)`,
+`Count`, `GetMetadata` / `SetMetadata` (the well-known names are in `storage::metadata`) and `Begin` / `Commit` / `Rollback`. It knows nothing of components;
+`WorldStorage` (Day 260) builds the bytes. All errors are `storage::Status` values.
+
+A batch is all or nothing: what is `Put`, `Remove`d or set after `Begin` becomes visible together at `Commit`, and not at all after `Rollback`. A mutation that
+fails inside a batch leaves it open for the caller to roll back. One thread writes at a time; while its batch is open another thread's mutation is `Busy`. Readers
+on any thread see the last committed state (the batch's owner sees its own changes).
+
+```cpp
+MemoryStore store;
+store.Begin();
+store.Put(EntityRecord::Make(key, bytes));
+store.SetMetadata(metadata::kLastSaveLabel, "autosave");
+store.Commit();
+```
+
+`MemoryStore` is the reference: a sorted vector, a batch works on a copy and replaces the committed set at `Commit`. `FailAfter(n)` makes the nth next operation
+return `Io`, which is how the conformance suite (`tests/storage/store_conformance.h`, used by every store) checks that a failure at any step leaves the old state.
+A record whose bytes no longer match their hash is `Corrupt` on `Get` and `Scan`.
+
+## Options
+
+`SaveOptions` (mode `Full` or `Incremental`, a `Selection`, a label, batch size), `LoadOptions` (`Create`, `Replace` or `Merge`, the `UnknownPolicy`, the
+`MissingPolicy`), a `Report` of counts, a `ProgressFn` and a `CancelToken` that is checked between steps. `WorldStorage::Save` and `Load` take them and arrive on
+Day 260; `Delete` and `List` work now.

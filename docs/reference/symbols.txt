@@ -3992,6 +3992,21 @@ storage::ParentReport::rejected	variable	storage	storage-parentreport-rejected	s
 storage::ParentReport::references	variable	storage	storage-parentreport-references	storage.md	engine/storage/identity.h:166
 storage::CaptureParents(ecs::World&,const KeyIndex&,ParentReport*)	function	storage	storage-captureparents-ecs-world-amp-const-keyindex-amp-parentreport-star	storage.md	engine/storage/identity.h:178
 storage::ApplyParents(ecs::World&,const KeyIndex&,MissingPolicy,ParentReport*)	function	storage	storage-applyparents-ecs-world-amp-const-keyindex-amp-missingpolicy-parentreport-star	storage.md	engine/storage/identity.h:192
+storage::MemoryStore	class	storage	storage-memorystore	storage.md	engine/storage/memory_store.h:18
+storage::MemoryStore::MemoryStore()	function	storage	storage-memorystore-memorystore	storage.md	engine/storage/memory_store.h:21
+storage::MemoryStore::Name() const	function	storage	storage-memorystore-name-const	storage.md	engine/storage/memory_store.h:26
+storage::MemoryStore::Put(const EntityRecord&)	function	storage	storage-memorystore-put-const-entityrecord-amp	storage.md	engine/storage/memory_store.h:27
+storage::MemoryStore::Get(EntityKey,EntityRecord*) const	function	storage	storage-memorystore-get-entitykey-entityrecord-star-const	storage.md	engine/storage/memory_store.h:28
+storage::MemoryStore::Remove(EntityKey)	function	storage	storage-memorystore-remove-entitykey	storage.md	engine/storage/memory_store.h:29
+storage::MemoryStore::Scan(const KeyRange&,RecordVisitor&) const	function	storage	storage-memorystore-scan-const-keyrange-amp-recordvisitor-amp-const	storage.md	engine/storage/memory_store.h:30
+storage::MemoryStore::Count(usize*) const	function	storage	storage-memorystore-count-usize-star-const	storage.md	engine/storage/memory_store.h:31
+storage::MemoryStore::Begin()	function	storage	storage-memorystore-begin	storage.md	engine/storage/memory_store.h:32
+storage::MemoryStore::Commit()	function	storage	storage-memorystore-commit	storage.md	engine/storage/memory_store.h:33
+storage::MemoryStore::Rollback()	function	storage	storage-memorystore-rollback	storage.md	engine/storage/memory_store.h:34
+storage::MemoryStore::GetMetadata(StringView,String<HeapAllocator>*) const	function	storage	storage-memorystore-getmetadata-stringview-string-lt-heapallocator-gt-star-const	storage.md	engine/storage/memory_store.h:35
+storage::MemoryStore::SetMetadata(StringView,StringView)	function	storage	storage-memorystore-setmetadata-stringview-stringview	storage.md	engine/storage/memory_store.h:36
+storage::MemoryStore::FailAfter(u32)	function	storage	storage-memorystore-failafter-u32	storage.md	engine/storage/memory_store.h:42
+storage::MemoryStore::CorruptRecord(EntityKey)	function	storage	storage-memorystore-corruptrecord-entitykey	storage.md	engine/storage/memory_store.h:47
 storage::ErrorCode	enum	storage	storage-errorcode	storage.md	engine/storage/status.h:12
 storage::ErrorCode::Ok	enumerator	storage	storage-errorcode-ok	storage.md	engine/storage/status.h:13
 storage::ErrorCode::NotFound	enumerator	storage	storage-errorcode-notfound	storage.md	engine/storage/status.h:14
@@ -4002,21 +4017,111 @@ storage::ErrorCode::TooOld	enumerator	storage	storage-errorcode-tooold	storage.m
 storage::ErrorCode::LimitExceeded	enumerator	storage	storage-errorcode-limitexceeded	storage.md	engine/storage/status.h:19
 storage::ErrorCode::Mismatch	enumerator	storage	storage-errorcode-mismatch	storage.md	engine/storage/status.h:20
 storage::ErrorCode::Invalid	enumerator	storage	storage-errorcode-invalid	storage.md	engine/storage/status.h:21
-storage::ErrorCode::MissingReference	enumerator	storage	storage-errorcode-missingreference	storage.md	engine/storage/status.h:22
-storage::ErrorCode::Duplicate	enumerator	storage	storage-errorcode-duplicate	storage.md	engine/storage/status.h:23
-storage::ErrorCode::Other	enumerator	storage	storage-errorcode-other	storage.md	engine/storage/status.h:24
-storage::ErrorCodeName(ErrorCode)	function	storage	storage-errorcodename-errorcode	storage.md	engine/storage/status.h:31
-storage::Status	class	storage	storage-status	storage.md	engine/storage/status.h:37
-storage::Status::Status()	function	storage	storage-status-status	storage.md	engine/storage/status.h:40
-storage::Status::Success()	function	storage	storage-status-success	storage.md	engine/storage/status.h:43
-storage::Status::Make(ErrorCode,const char*)	function	storage	storage-status-make-errorcode-const-char-star	storage.md	engine/storage/status.h:47
-storage::Status::Ok() const	function	storage	storage-status-ok-const	storage.md	engine/storage/status.h:56
-storage::Status::Failed() const	function	storage	storage-status-failed-const	storage.md	engine/storage/status.h:59
-storage::Status::Is(ErrorCode) const	function	storage	storage-status-is-errorcode-const	storage.md	engine/storage/status.h:62
-storage::Status::Code() const	function	storage	storage-status-code-const	storage.md	engine/storage/status.h:64
-storage::Status::Message() const	function	storage	storage-status-message-const	storage.md	engine/storage/status.h:69
+storage::ErrorCode::Busy	enumerator	storage	storage-errorcode-busy	storage.md	engine/storage/status.h:22
+storage::ErrorCode::Io	enumerator	storage	storage-errorcode-io	storage.md	engine/storage/status.h:23
+storage::ErrorCode::Cancelled	enumerator	storage	storage-errorcode-cancelled	storage.md	engine/storage/status.h:24
+storage::ErrorCode::MissingReference	enumerator	storage	storage-errorcode-missingreference	storage.md	engine/storage/status.h:25
+storage::ErrorCode::Duplicate	enumerator	storage	storage-errorcode-duplicate	storage.md	engine/storage/status.h:26
+storage::ErrorCode::Other	enumerator	storage	storage-errorcode-other	storage.md	engine/storage/status.h:27
+storage::ErrorCodeName(ErrorCode)	function	storage	storage-errorcodename-errorcode	storage.md	engine/storage/status.h:34
+storage::Status	class	storage	storage-status	storage.md	engine/storage/status.h:40
+storage::Status::Status()	function	storage	storage-status-status	storage.md	engine/storage/status.h:43
+storage::Status::Success()	function	storage	storage-status-success	storage.md	engine/storage/status.h:46
+storage::Status::Make(ErrorCode,const char*)	function	storage	storage-status-make-errorcode-const-char-star	storage.md	engine/storage/status.h:50
+storage::Status::Ok() const	function	storage	storage-status-ok-const	storage.md	engine/storage/status.h:59
+storage::Status::Failed() const	function	storage	storage-status-failed-const	storage.md	engine/storage/status.h:62
+storage::Status::Is(ErrorCode) const	function	storage	storage-status-is-errorcode-const	storage.md	engine/storage/status.h:65
+storage::Status::Code() const	function	storage	storage-status-code-const	storage.md	engine/storage/status.h:67
+storage::Status::Message() const	function	storage	storage-status-message-const	storage.md	engine/storage/status.h:72
+storage::CancelToken	class	storage	storage-canceltoken	storage.md	engine/storage/storage_options.h:23
+storage::CancelToken::Cancel()	function	storage	storage-canceltoken-cancel	storage.md	engine/storage/storage_options.h:27
+storage::CancelToken::IsCancelled() const	function	storage	storage-canceltoken-iscancelled-const	storage.md	engine/storage/storage_options.h:30
+storage::CancelToken::Reset()	function	storage	storage-canceltoken-reset	storage.md	engine/storage/storage_options.h:33
+storage::Selection	struct	storage	storage-selection	storage.md	engine/storage/storage_options.h:43
+storage::Selection::Kind	enum	storage	storage-selection-kind	storage.md	engine/storage/storage_options.h:45
+storage::Selection::Kind::AllKeyed	enumerator	storage	storage-selection-kind-allkeyed	storage.md	engine/storage/storage_options.h:46
+storage::Selection::Kind::Keys	enumerator	storage	storage-selection-kind-keys	storage.md	engine/storage/storage_options.h:47
+storage::Selection::Kind::Filter	enumerator	storage	storage-selection-kind-filter	storage.md	engine/storage/storage_options.h:48
+storage::Selection::kind	variable	storage	storage-selection-kind-2	storage.md	engine/storage/storage_options.h:51
+storage::Selection::keys	variable	storage	storage-selection-keys	storage.md	engine/storage/storage_options.h:53
+storage::Selection::require	variable	storage	storage-selection-require	storage.md	engine/storage/storage_options.h:55
+storage::Selection::filter	variable	storage	storage-selection-filter	storage.md	engine/storage/storage_options.h:57
+storage::Selection::user	variable	storage	storage-selection-user	storage.md	engine/storage/storage_options.h:59
+storage::Selection::All()	function	storage	storage-selection-all	storage.md	engine/storage/storage_options.h:63
+storage::SaveMode	enum	storage	storage-savemode	storage.md	engine/storage/storage_options.h:67
+storage::SaveMode::Full	enumerator	storage	storage-savemode-full	storage.md	engine/storage/storage_options.h:68
+storage::SaveMode::Incremental	enumerator	storage	storage-savemode-incremental	storage.md	engine/storage/storage_options.h:69
+storage::ProgressFn	alias	storage	storage-progressfn	storage.md	engine/storage/storage_options.h:73
+storage::SaveOptions	struct	storage	storage-saveoptions	storage.md	engine/storage/storage_options.h:79
+storage::SaveOptions::mode	variable	storage	storage-saveoptions-mode	storage.md	engine/storage/storage_options.h:80
+storage::SaveOptions::selection	variable	storage	storage-saveoptions-selection	storage.md	engine/storage/storage_options.h:81
+storage::SaveOptions::label	variable	storage	storage-saveoptions-label	storage.md	engine/storage/storage_options.h:82
+storage::SaveOptions::batch_size	variable	storage	storage-saveoptions-batch-size	storage.md	engine/storage/storage_options.h:83
+storage::SaveOptions::cancel	variable	storage	storage-saveoptions-cancel	storage.md	engine/storage/storage_options.h:84
+storage::SaveOptions::progress	variable	storage	storage-saveoptions-progress	storage.md	engine/storage/storage_options.h:85
+storage::SaveOptions::user	variable	storage	storage-saveoptions-user	storage.md	engine/storage/storage_options.h:86
+storage::LoadMode	enum	storage	storage-loadmode	storage.md	engine/storage/storage_options.h:90
+storage::LoadMode::Create	enumerator	storage	storage-loadmode-create	storage.md	engine/storage/storage_options.h:91
+storage::LoadMode::Replace	enumerator	storage	storage-loadmode-replace	storage.md	engine/storage/storage_options.h:92
+storage::LoadMode::Merge	enumerator	storage	storage-loadmode-merge	storage.md	engine/storage/storage_options.h:93
+storage::LoadOptions	struct	storage	storage-loadoptions	storage.md	engine/storage/storage_options.h:100
+storage::LoadOptions::mode	variable	storage	storage-loadoptions-mode	storage.md	engine/storage/storage_options.h:101
+storage::LoadOptions::selection	variable	storage	storage-loadoptions-selection	storage.md	engine/storage/storage_options.h:102
+storage::LoadOptions::unknown	variable	storage	storage-loadoptions-unknown	storage.md	engine/storage/storage_options.h:103
+storage::LoadOptions::missing	variable	storage	storage-loadoptions-missing	storage.md	engine/storage/storage_options.h:104
+storage::LoadOptions::cancel	variable	storage	storage-loadoptions-cancel	storage.md	engine/storage/storage_options.h:105
+storage::LoadOptions::progress	variable	storage	storage-loadoptions-progress	storage.md	engine/storage/storage_options.h:106
+storage::LoadOptions::user	variable	storage	storage-loadoptions-user	storage.md	engine/storage/storage_options.h:107
+storage::Report	struct	storage	storage-report	storage.md	engine/storage/storage_options.h:113
+storage::Report::created	variable	storage	storage-report-created	storage.md	engine/storage/storage_options.h:114
+storage::Report::replaced	variable	storage	storage-report-replaced	storage.md	engine/storage/storage_options.h:115
+storage::Report::removed	variable	storage	storage-report-removed	storage.md	engine/storage/storage_options.h:116
+storage::Report::skipped	variable	storage	storage-report-skipped	storage.md	engine/storage/storage_options.h:117
+storage::Report::unknown_kept	variable	storage	storage-report-unknown-kept	storage.md	engine/storage/storage_options.h:118
+storage::Report::nulled	variable	storage	storage-report-nulled	storage.md	engine/storage/storage_options.h:119
+storage::Report::missing_keys	variable	storage	storage-report-missing-keys	storage.md	engine/storage/storage_options.h:120
+storage::Report::bytes	variable	storage	storage-report-bytes	storage.md	engine/storage/storage_options.h:121
 storage::RegisterStorageSettings(settings::Registry*)	function	storage	storage-registerstoragesettings-settings-registry-star	storage.md	engine/storage/storage_settings.h:17
 storage::LimitsFromSettings(const settings::Registry&)	function	storage	storage-limitsfromsettings-const-settings-registry-amp	storage.md	engine/storage/storage_settings.h:24
+storage::HashBytes(ByteSpan)	function	storage	storage-hashbytes-bytespan	storage.md	engine/storage/store.h:26
+storage::EntityRecord	struct	storage	storage-entityrecord	storage.md	engine/storage/store.h:32
+storage::EntityRecord::key	variable	storage	storage-entityrecord-key	storage.md	engine/storage/store.h:33
+storage::EntityRecord::blob	variable	storage	storage-entityrecord-blob	storage.md	engine/storage/store.h:34
+storage::EntityRecord::hash	variable	storage	storage-entityrecord-hash	storage.md	engine/storage/store.h:35
+storage::EntityRecord::Clone() const	function	storage	storage-entityrecord-clone-const	storage.md	engine/storage/store.h:39
+storage::EntityRecord::Make(EntityKey,ByteSpan)	function	storage	storage-entityrecord-make-entitykey-bytespan	storage.md	engine/storage/store.h:44
+storage::EntityRecord::HashMatches() const	function	storage	storage-entityrecord-hashmatches-const	storage.md	engine/storage/store.h:47
+storage::KeyRange	struct	storage	storage-keyrange	storage.md	engine/storage/store.h:53
+storage::KeyRange::first	variable	storage	storage-keyrange-first	storage.md	engine/storage/store.h:54
+storage::KeyRange::end	variable	storage	storage-keyrange-end	storage.md	engine/storage/store.h:55
+storage::KeyRange::unbounded	variable	storage	storage-keyrange-unbounded	storage.md	engine/storage/store.h:56
+storage::KeyRange::Contains(EntityKey) const	function	storage	storage-keyrange-contains-entitykey-const	storage.md	engine/storage/store.h:60
+storage::RecordVisitor	class	storage	storage-recordvisitor	storage.md	engine/storage/store.h:66
+storage::RecordVisitor::~RecordVisitor()	function	storage	storage-recordvisitor-tilde-recordvisitor	storage.md	engine/storage/store.h:68
+storage::RecordVisitor::Visit(const EntityRecord&)	function	storage	storage-recordvisitor-visit-const-entityrecord-amp	storage.md	engine/storage/store.h:75
+storage::metadata::kFormatVersion	variable	storage	storage-metadata-kformatversion	storage.md	engine/storage/store.h:80
+storage::metadata::kSchemaVersion	variable	storage	storage-metadata-kschemaversion	storage.md	engine/storage/store.h:81
+storage::metadata::kLastSaveLabel	variable	storage	storage-metadata-klastsavelabel	storage.md	engine/storage/store.h:82
+storage::Store	class	storage	storage-store	storage.md	engine/storage/store.h:96
+storage::Store::~Store()	function	storage	storage-store-tilde-store	storage.md	engine/storage/store.h:98
+storage::Store::Name() const	function	storage	storage-store-name-const	storage.md	engine/storage/store.h:103
+storage::Store::Put(const EntityRecord&)	function	storage	storage-store-put-const-entityrecord-amp	storage.md	engine/storage/store.h:110
+storage::Store::Get(EntityKey,EntityRecord*) const	function	storage	storage-store-get-entitykey-entityrecord-star-const	storage.md	engine/storage/store.h:116
+storage::Store::Remove(EntityKey)	function	storage	storage-store-remove-entitykey	storage.md	engine/storage/store.h:120
+storage::Store::Scan(const KeyRange&,RecordVisitor&) const	function	storage	storage-store-scan-const-keyrange-amp-recordvisitor-amp-const	storage.md	engine/storage/store.h:127
+storage::Store::Count(usize*) const	function	storage	storage-store-count-usize-star-const	storage.md	engine/storage/store.h:133
+storage::Store::Begin()	function	storage	storage-store-begin	storage.md	engine/storage/store.h:137
+storage::Store::Commit()	function	storage	storage-store-commit	storage.md	engine/storage/store.h:140
+storage::Store::Rollback()	function	storage	storage-store-rollback	storage.md	engine/storage/store.h:143
+storage::Store::GetMetadata(StringView,String<HeapAllocator>*) const	function	storage	storage-store-getmetadata-stringview-string-lt-heapallocator-gt-star-const	storage.md	engine/storage/store.h:151
+storage::Store::SetMetadata(StringView,StringView)	function	storage	storage-store-setmetadata-stringview-stringview	storage.md	engine/storage/store.h:158
+storage::ListKeys(const Store&,const KeyRange&,usize,Vector<EntityKey>*)	function	storage	storage-listkeys-const-store-amp-const-keyrange-amp-usize-vector-lt-entitykey-gt-star	storage.md	engine/storage/store.h:169
+storage::WorldStorage	class	storage	storage-worldstorage	storage.md	engine/storage/world_storage.h:18
+storage::WorldStorage::WorldStorage(const ComponentRegistry&,Store&)	function	storage	storage-worldstorage-worldstorage-const-componentregistry-amp-store-amp	storage.md	engine/storage/world_storage.h:25
+storage::WorldStorage::Save(ecs::World&,KeyIndex&,const SaveOptions&,Report*)	function	storage	storage-worldstorage-save-ecs-world-amp-keyindex-amp-const-saveoptions-amp-report-star	storage.md	engine/storage/world_storage.h:36
+storage::WorldStorage::Load(ecs::World&,KeyIndex&,const LoadOptions&,Report*)	function	storage	storage-worldstorage-load-ecs-world-amp-keyindex-amp-const-loadoptions-amp-report-star	storage.md	engine/storage/world_storage.h:46
+storage::WorldStorage::Delete(Span<const EntityKey>)	function	storage	storage-worldstorage-delete-span-lt-const-entitykey-gt	storage.md	engine/storage/world_storage.h:52
+storage::WorldStorage::List(const KeyRange&,usize,Vector<EntityKey>*) const	function	storage	storage-worldstorage-list-const-keyrange-amp-usize-vector-lt-entitykey-gt-star-const	storage.md	engine/storage/world_storage.h:60
 scene::MeshAsset	struct	scene	scene-meshasset	scene.md	engine/scene/components.h:22
 scene::MeshAsset::mesh	variable	scene	scene-meshasset-mesh	scene.md	engine/scene/components.h:24
 scene::MeshRenderer	struct	scene	scene-meshrenderer	scene.md	engine/scene/components.h:31

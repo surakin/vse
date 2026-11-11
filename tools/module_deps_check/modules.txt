@@ -106,7 +106,7 @@ allow spatial ecs
 allow spatial jobs
 # 10 database (Phase 19 Day 251): the database interface, the in-memory implementation and, under sqlite/, the SQLite library (the only files that include sqlite3.h); the foundation only
 module engine/database/ database 10
-# 11 storage (Phase 19 Day 256): the component registry and the canonical encoding; later the record store and its backends. The foundation, ecs, spatial (the builtin components), jobs and, from Day 259, database
+# 11 storage (Phase 19 Day 256): the component registry and the canonical encoding; later the record store and its backends. The foundation, ecs, spatial (the builtin components), jobs and, from Day 262, database
 module engine/storage/ storage 11
 # 11 ui (Phase 15 Day 184): the widget toolkit's CPU side (tree, layout, theme, input routing, draw list); text, the platform's input headers and the foundation, no RHI
 module engine/ui/ ui 11

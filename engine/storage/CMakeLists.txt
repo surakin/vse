@@ -8,6 +8,9 @@ set(STORAGE_SOURCES
   component_record.cpp  # Day 257
   storage_settings.cpp  # Day 257
   identity.cpp  # Day 258
+  store.cpp  # Day 259
+  memory_store.cpp  # Day 259
+  world_storage.cpp  # Day 259
 )
 set(STORAGE_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
