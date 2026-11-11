@@ -25,7 +25,7 @@
 
 Order reasoning: the spec and its spikes first, because the VFS answer, the storage layout and the in-memory database's statement set change the later days; SQLite is vendored and fenced (Day 251) before the interface is written so the boundary gate exists from the start; the interface and its conformance suite (252) come before any backend, and the in-memory backend (253) before SQLite (254-255) so the suite is proven on a backend that cannot leak SQLite; the registry and encoding (256-257) and identities (258) are independent of the database and could run in parallel with 252-255, but are placed after so a day never waits on a half-built layer; the record store interface (259) needs the registry, the world save and load (260) need the interface, incremental saves (261) need the full path; the SQL store (262-263) joins the two halves; integration, asynchronous forms and the demo (264) need everything; benchmarks, hostile files, docs, the Windows PC and the closing review last (265).
 
-**Status: planned in full (2026-11-11), Days 250-265; nothing started. `CURRENT_PHASE` stays 18 until Day 250.** Phase 25 (3D text) and Phase 26 (macOS) day numbers moved up by 16 in the same commit (Phase 25 is now Days 266-281, Phase 26 Days 282-311).
+**Status: in progress (2026-11-11): Day 250 (spec and spikes) done; Day 251 next. `CURRENT_PHASE` is 19.** Phase 25 (3D text) and Phase 26 (macOS) day numbers moved up by 16 in the same commit (Phase 25 is now Days 266-281, Phase 26 Days 282-311).
 
 ## Key deliverables
 
