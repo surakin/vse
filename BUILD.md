@@ -92,7 +92,7 @@ Planned for Phase 26 (Metal backend, `plans/phase-26-macos-metal.md`). The list 
 Command Line Tools (Clang), CMake, Ninja and `slangc` v2026.18.2. The Command Line Tools do not include the offline Metal compiler (`metal`,
 `metallib`), which ships only with Xcode. **Interim (pending, the user's decision of 2026-11-10):** `.metallib` files are minted through the
 driver's compiler with an undocumented Metal call, so no Xcode is needed for now; the route is decided again when the user has a new Mac
-(Phase 26 Day 266, `KNOWN-ISSUES.md`). Day 267 writes this section in full.
+(Phase 26 Day 282, `KNOWN-ISSUES.md`). Day 283 writes this section in full.
 
 ## Android, iOS, consoles: not yet supported
 

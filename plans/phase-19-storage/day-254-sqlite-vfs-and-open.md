@@ -1,0 +1,23 @@
+# Phase 19 / Day 254 — SQLite Backend I: the File-Layer VFS & Open
+
+**Phase:** [Phase 19 — Storage](../phase-19-storage.md)
+**Depends on:** Days 251-253; Phase 9 (`io::File`, `io::Path`, atomic writes); the Day 250 VFS decision.
+
+SQLite reaches the disk through the engine's file layer, so the `file_access_check` rules hold and a new platform backend is the only place that touches the operating system.
+
+## Tasks
+
+- [ ] **VFS `engine/database/sqlite/sqlite_vfs.cpp`** (the VFS route chosen on Day 250; if the spike chose the fallback instead, this task is the allow-list entry and its reasons, and the next two bullets are replaced by the fallback's checks): `xOpen`, `xClose`, `xRead` (short reads zero-filled as SQLite requires), `xWrite`, `xTruncate`, `xSync` (`File::Sync`, and `SyncDirectory` after creating a journal), `xFileSize`, `xDelete`, `xAccess`, `xFullPathname` through `io::Path`, `xRandomness` (the engine's randomness wrapper, added to `os/` first if missing), `xSleep`, `xCurrentTime`; device characteristics and sector size reported honestly.
+- [ ] **Locking and WAL index:** file locks are in-process (a table keyed by file identity; a second process opening the same file is refused by a lock file, documented); the WAL index is heap-backed through the shared-memory methods or WAL is off for the default if Day 250 said so.
+- [ ] **`database::SqliteDatabase::Open`** (only the open path, `Close` and one `Execute`): the engine's `io::Path`, create, read-only and in-memory (`:memory:`) modes; the VFS registered once, thread-safely; the connection options mapped to pragmas (`journal_mode`, `synchronous`, `foreign_keys=ON`, `busy_timeout`).
+- [ ] **Crash-safety test** (`tests/database/sqlite_crash_test.cpp`): a fault-injecting `io::File` wrapper makes the Nth write, sync or truncate fail or stop (every N from 1 to the end of a 200-row transaction, both journal modes the defaults allow); after each, the database reopens, passes `PRAGMA integrity_check`, and holds either the old rows or all the new rows, never a mix.
+- [ ] **Tests** (`tests/database/sqlite_open_test.cpp`): create, reopen and read back a file under the test temp directory (through the file layer, never raw paths); read-only refuses a write with `ReadOnly`; a missing file with no create flag is `NotFound`; a path with Unicode and spaces; the same on a `PathStyle` that is not the host's is rejected cleanly.
+- [ ] **`file_access_check`:** passes with no new allow-list entry (or with the one documented entry of the fallback route).
+- [ ] **Runs (CLAUDE.md "Tests run by phase"):** `scripts/test-phase.sh --affected` plain; then the asan and tsan flavors when the day touched concurrency, lifetime or memory code (most days of this phase do); quote each run's final `ran X of Y tests (phases ...)` line in this file and never say "all tests pass" for a reduced run. `ctest -L docs` when a public header or a guide changed. Build clean (warnings are errors) with Clang and GCC, unity on and off. New code uses the engine's wrappers and types, never `std` (`std_usage_check`).
+- [ ] **Two machines (CLAUDE.md "Windows is a supported platform"):** the code is portable; it is built and tested on the Windows PC no later than Day 265, and until then the day is listed as "open until the other machine runs it" in `KNOWN-ISSUES.md`.
+- [ ] **Documentation (CLAUDE.md "Public API is documented before a day is done"):** public headers carry `///` comments with the contract labels (`docs/DOC-CONVENTIONS.md`); `docgen lint` stays at zero; `cmake --build build --target docs` output committed; new modules are added to `docs/reference/modules.txt`; the guide page named in the day is updated or created and its tagged samples compile and run.
+- [ ] **Module rules (CLAUDE.md "Module dependencies follow ARCHITECTURE.md"):** a new module or edge updates `ARCHITECTURE.md`, `tools/module_deps_check/modules.txt` and the CMake targets (with `_asan`/`_tsan` flavors) in the same commit; no upward edge, no cycle; every new test file has its line in `tests/phases.txt` (phase 19).
+- [ ] **Day review (CLAUDE.md, required):** `/code-review high` over the day's diff after the scoped tests; verify, fix (with a regression test that fails without the fix) or decline each finding with a reason; record the count and outcome under "Post-implementation code review" below and in `STATUS.md`.
+- [ ] `STATUS.md` and `KNOWN-ISSUES.md` updated in the same commit; commit and push.
+
+**Done:** a SQLite database is created, reopened and recovered after an injected crash through the engine's file layer.

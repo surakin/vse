@@ -4,7 +4,30 @@
 **Goal:** one generic way to save and load entities, independent of where the bytes go, so that save games, persistent worlds, editor scenes, server state and tools all use the same interface; a SQL database interface under it, with SQLite as the first implementation.
 **Definition of done:** a `storage` interface saves a selection of entities of a `World` (components, hierarchy, stable identities) and loads them back into a world, exactly (round trip is bit-exact for every stored component, tested), versioned (an older stored version loads through registered upgrades), and incremental (a save writes what changed since the last one, using the ECS change stamps). A `database` interface (connections, statements, transactions, typed values, errors as values) has a first implementation on SQLite and an in-memory test double; a SQL storage implementation sits on the database interface. No SQL type reaches code above the database interface and no storage type reaches code that only uses the ECS.
 
-## Key deliverables (to be expanded into day-by-day tasks when started)
+## Days
+
+250. [Design Spec, Spikes & Phase Setup](phase-19-storage/day-250-design-spec-and-setup.md)
+251. [Vendoring SQLite & the Boundary Gate](phase-19-storage/day-251-vendor-sqlite-and-boundary.md)
+252. [The Database Interface & the Conformance Suite](phase-19-storage/day-252-database-interface.md)
+253. [The In-Memory Database](phase-19-storage/day-253-memory-database.md)
+254. [SQLite Backend I: the File-Layer VFS & Open](phase-19-storage/day-254-sqlite-vfs-and-open.md)
+255. [SQLite Backend II: Statements, Transactions, Errors & Concurrency](phase-19-storage/day-255-sqlite-backend-complete.md)
+256. [Component Registry I: Identities, Fields & the Canonical Encoding](phase-19-storage/day-256-component-registry-fields-and-encoding.md)
+257. [Component Registry II: Versions, Upgrades & Hostile Input](phase-19-storage/day-257-component-registry-versions-and-hostile-input.md)
+258. [Stable Identities & Entity References](phase-19-storage/day-258-stable-identities.md)
+259. [The Storage Interface & the Reference Store](phase-19-storage/day-259-store-interface.md)
+260. [Saving & Loading a World (Full)](phase-19-storage/day-260-full-save-and-load.md)
+261. [Incremental Saves](phase-19-storage/day-261-incremental-saves.md)
+262. [SqlStore I: Schema, Blob Layout & Migrations](phase-19-storage/day-262-sql-store-schema.md)
+263. [SqlStore II: Column Layout, Bulk Paths & Queries](phase-19-storage/day-263-sql-store-columns-bulk-queries.md)
+264. [Settings, Asynchronous Saves, Autosave & the Demo](phase-19-storage/day-264-settings-async-demo.md)
+265. [Benchmarks, Hostile Files, Docs, Windows PC, Closing Full Run & Phase Review](phase-19-storage/day-265-docs-hardening-closing-run-and-review.md)
+
+Order reasoning: the spec and its spikes first, because the VFS answer, the storage layout and the in-memory database's statement set change the later days; SQLite is vendored and fenced (Day 251) before the interface is written so the boundary gate exists from the start; the interface and its conformance suite (252) come before any backend, and the in-memory backend (253) before SQLite (254-255) so the suite is proven on a backend that cannot leak SQLite; the registry and encoding (256-257) and identities (258) are independent of the database and could run in parallel with 252-255, but are placed after so a day never waits on a half-built layer; the record store interface (259) needs the registry, the world save and load (260) need the interface, incremental saves (261) need the full path; the SQL store (262-263) joins the two halves; integration, asynchronous forms and the demo (264) need everything; benchmarks, hostile files, docs, the Windows PC and the closing review last (265).
+
+**Status: planned in full (2026-11-11), Days 250-265; nothing started. `CURRENT_PHASE` stays 18 until Day 250.** Phase 25 (3D text) and Phase 26 (macOS) day numbers moved up by 16 in the same commit (Phase 25 is now Days 266-281, Phase 26 Days 282-311).
+
+## Key deliverables
 
 - **Component serialization registry.** Today the ECS has no serialization (a Phase 17 limit). This phase adds, outside `ecs` and without changing its hot paths, a registry that describes how each component type is stored: a stable name and numeric id (never the in-memory type id, which changes between builds), a version, a field description (scalars, vectors and quaternions, fixed arrays, `String`, entity references, enums) or a custom save/load pair, and a chain of upgrade functions between versions. A component not in the registry is not stored (and a debug check lists the ones that carry data but are not registered, so a new component cannot be forgotten silently). The registry is the piece Phase 21 (asset pipeline) reuses for its level format.
 - **Stable identities.** An `EntityKey` (a 128-bit id, generated once and stored with the entity through a component) names an entity across saves, processes and machines; entity ids of a world are never stored. Entity references inside components (`Parent`, user references) are stored as keys and remapped on load; a reference to an entity that is not in the stored set is an error value, not a dangling id.
@@ -26,4 +49,4 @@
 - Threading: one writer at a time per database; reads run on worker jobs; the interface documents what is thread-safe.
 - Security: a stored file is untrusted input on load (a save game from the internet). Every length is bounded, every decode is checked, and a corrupted or hostile file produces an error value and never an out-of-bounds read (fuzzed and sanitizer-tested).
 - Windows and Linux are both supported from the start (the SQLite VFS and the file layer already have both backends); macOS is designed in.
-- The full day-by-day breakdown is written when Phase 18 is complete and before this phase starts (CLAUDE.md, "Planning policy").
+- The day-by-day breakdown is written (Days 250-265); Day 250's spikes may amend the later days before they start.
