@@ -101,6 +101,7 @@ IsInf(f32) noexcept	function	foundation/lang	isinf-f32-noexcept	foundation-lang.
 IsInf(f64) noexcept	function	foundation/lang	isinf-f64-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:113
 SignBit(f32) noexcept	function	foundation/lang	signbit-f32-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:115
 SignBit(f64) noexcept	function	foundation/lang	signbit-f64-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:117
+ENGINE_TRY	macro	foundation/lang	engine-try	foundation-lang.md	engine/foundation/lang/status_try.h:12
 IntegralConstant	alias	foundation/lang	integralconstant	foundation-lang.md	engine/foundation/lang/traits.h:10
 TrueType	alias	foundation/lang	truetype	foundation-lang.md	engine/foundation/lang/traits.h:13
 FalseType	alias	foundation/lang	falsetype	foundation-lang.md	engine/foundation/lang/traits.h:15
@@ -3758,35 +3759,35 @@ database::sqlite_detail::ClearFileFaults()	function	database	database-sqlite-det
 database::sqlite_detail::FileFaultOpsSeen()	function	database	database-sqlite-detail-filefaultopsseen	database.md	engine/database/sqlite/sqlite_os.h:49
 database::SqliteVersion()	function	database	database-sqliteversion	database.md	engine/database/sqlite/sqlite_version.h:13
 database::sqlite_detail::EngineVfs()	function	database	database-sqlite-detail-enginevfs	database.md	engine/database/sqlite/sqlite_vfs.h:14
-database::ErrorCode	enum	database	database-errorcode	database.md	engine/database/status.h:12
-database::ErrorCode::Ok	enumerator	database	database-errorcode-ok	database.md	engine/database/status.h:13
-database::ErrorCode::Busy	enumerator	database	database-errorcode-busy	database.md	engine/database/status.h:14
-database::ErrorCode::Locked	enumerator	database	database-errorcode-locked	database.md	engine/database/status.h:15
-database::ErrorCode::Constraint	enumerator	database	database-errorcode-constraint	database.md	engine/database/status.h:16
-database::ErrorCode::NotFound	enumerator	database	database-errorcode-notfound	database.md	engine/database/status.h:17
-database::ErrorCode::Corrupt	enumerator	database	database-errorcode-corrupt	database.md	engine/database/status.h:18
-database::ErrorCode::Full	enumerator	database	database-errorcode-full	database.md	engine/database/status.h:19
-database::ErrorCode::ReadOnly	enumerator	database	database-errorcode-readonly	database.md	engine/database/status.h:20
-database::ErrorCode::Misuse	enumerator	database	database-errorcode-misuse	database.md	engine/database/status.h:21
-database::ErrorCode::Syntax	enumerator	database	database-errorcode-syntax	database.md	engine/database/status.h:22
-database::ErrorCode::Io	enumerator	database	database-errorcode-io	database.md	engine/database/status.h:23
-database::ErrorCode::TooBig	enumerator	database	database-errorcode-toobig	database.md	engine/database/status.h:24
-database::ErrorCode::Unsupported	enumerator	database	database-errorcode-unsupported	database.md	engine/database/status.h:25
-database::ErrorCode::Interrupted	enumerator	database	database-errorcode-interrupted	database.md	engine/database/status.h:26
-database::ErrorCode::Other	enumerator	database	database-errorcode-other	database.md	engine/database/status.h:27
-database::ErrorCodeName(ErrorCode)	function	database	database-errorcodename-errorcode	database.md	engine/database/status.h:34
-database::Status	class	database	database-status	database.md	engine/database/status.h:41
-database::Status::kMaxMessageBytes	variable	database	database-status-kmaxmessagebytes	database.md	engine/database/status.h:44
-database::Status::Status()	function	database	database-status-status	database.md	engine/database/status.h:47
-database::Status::Success()	function	database	database-status-success	database.md	engine/database/status.h:50
-database::Status::Of(ErrorCode)	function	database	database-status-of-errorcode	database.md	engine/database/status.h:52
-database::Status::Make(ErrorCode,i32,StringView)	function	database	database-status-make-errorcode-i32-stringview	database.md	engine/database/status.h:58
-database::Status::Ok() const	function	database	database-status-ok-const	database.md	engine/database/status.h:62
-database::Status::Failed() const	function	database	database-status-failed-const	database.md	engine/database/status.h:65
-database::Status::Is(ErrorCode) const	function	database	database-status-is-errorcode-const	database.md	engine/database/status.h:68
-database::Status::Code() const	function	database	database-status-code-const	database.md	engine/database/status.h:70
-database::Status::BackendCode() const	function	database	database-status-backendcode-const	database.md	engine/database/status.h:72
-database::Status::Message() const	function	database	database-status-message-const	database.md	engine/database/status.h:74
+database::ErrorCode	enum	database	database-errorcode	database.md	engine/database/status.h:13
+database::ErrorCode::Ok	enumerator	database	database-errorcode-ok	database.md	engine/database/status.h:14
+database::ErrorCode::Busy	enumerator	database	database-errorcode-busy	database.md	engine/database/status.h:15
+database::ErrorCode::Locked	enumerator	database	database-errorcode-locked	database.md	engine/database/status.h:16
+database::ErrorCode::Constraint	enumerator	database	database-errorcode-constraint	database.md	engine/database/status.h:17
+database::ErrorCode::NotFound	enumerator	database	database-errorcode-notfound	database.md	engine/database/status.h:18
+database::ErrorCode::Corrupt	enumerator	database	database-errorcode-corrupt	database.md	engine/database/status.h:19
+database::ErrorCode::Full	enumerator	database	database-errorcode-full	database.md	engine/database/status.h:20
+database::ErrorCode::ReadOnly	enumerator	database	database-errorcode-readonly	database.md	engine/database/status.h:21
+database::ErrorCode::Misuse	enumerator	database	database-errorcode-misuse	database.md	engine/database/status.h:22
+database::ErrorCode::Syntax	enumerator	database	database-errorcode-syntax	database.md	engine/database/status.h:23
+database::ErrorCode::Io	enumerator	database	database-errorcode-io	database.md	engine/database/status.h:24
+database::ErrorCode::TooBig	enumerator	database	database-errorcode-toobig	database.md	engine/database/status.h:25
+database::ErrorCode::Unsupported	enumerator	database	database-errorcode-unsupported	database.md	engine/database/status.h:26
+database::ErrorCode::Interrupted	enumerator	database	database-errorcode-interrupted	database.md	engine/database/status.h:27
+database::ErrorCode::Other	enumerator	database	database-errorcode-other	database.md	engine/database/status.h:28
+database::ErrorCodeName(ErrorCode)	function	database	database-errorcodename-errorcode	database.md	engine/database/status.h:35
+database::Status	class	database	database-status	database.md	engine/database/status.h:42
+database::Status::kMaxMessageBytes	variable	database	database-status-kmaxmessagebytes	database.md	engine/database/status.h:45
+database::Status::Status()	function	database	database-status-status	database.md	engine/database/status.h:48
+database::Status::Success()	function	database	database-status-success	database.md	engine/database/status.h:51
+database::Status::Of(ErrorCode)	function	database	database-status-of-errorcode	database.md	engine/database/status.h:53
+database::Status::Make(ErrorCode,i32,StringView)	function	database	database-status-make-errorcode-i32-stringview	database.md	engine/database/status.h:59
+database::Status::Ok() const	function	database	database-status-ok-const	database.md	engine/database/status.h:63
+database::Status::Failed() const	function	database	database-status-failed-const	database.md	engine/database/status.h:66
+database::Status::Is(ErrorCode) const	function	database	database-status-is-errorcode-const	database.md	engine/database/status.h:69
+database::Status::Code() const	function	database	database-status-code-const	database.md	engine/database/status.h:71
+database::Status::BackendCode() const	function	database	database-status-backendcode-const	database.md	engine/database/status.h:73
+database::Status::Message() const	function	database	database-status-message-const	database.md	engine/database/status.h:75
 database::ValueType	enum	database	database-valuetype	database.md	engine/database/value.h:13
 database::ValueType::Null	enumerator	database	database-valuetype-null	database.md	engine/database/value.h:14
 database::ValueType::Integer	enumerator	database	database-valuetype-integer	database.md	engine/database/value.h:15
@@ -3917,26 +3918,26 @@ storage::FieldDesc::needs_range	variable	storage	storage-fielddesc-needs-range	s
 storage::FieldDesc::encode	variable	storage	storage-fielddesc-encode	storage.md	engine/storage/field.h:211
 storage::FieldDesc::decode	variable	storage	storage-fielddesc-decode	storage.md	engine/storage/field.h:213
 storage::Field(const char*,FieldOptions)	function	storage	storage-field-const-char-star-fieldoptions	storage.md	engine/storage/field.h:404
-storage::ErrorCode	enum	storage	storage-errorcode	storage.md	engine/storage/status.h:11
-storage::ErrorCode::Ok	enumerator	storage	storage-errorcode-ok	storage.md	engine/storage/status.h:12
-storage::ErrorCode::NotFound	enumerator	storage	storage-errorcode-notfound	storage.md	engine/storage/status.h:13
-storage::ErrorCode::Exists	enumerator	storage	storage-errorcode-exists	storage.md	engine/storage/status.h:14
-storage::ErrorCode::Corrupt	enumerator	storage	storage-errorcode-corrupt	storage.md	engine/storage/status.h:15
-storage::ErrorCode::TooNew	enumerator	storage	storage-errorcode-toonew	storage.md	engine/storage/status.h:16
-storage::ErrorCode::LimitExceeded	enumerator	storage	storage-errorcode-limitexceeded	storage.md	engine/storage/status.h:17
-storage::ErrorCode::Mismatch	enumerator	storage	storage-errorcode-mismatch	storage.md	engine/storage/status.h:18
-storage::ErrorCode::Invalid	enumerator	storage	storage-errorcode-invalid	storage.md	engine/storage/status.h:19
-storage::ErrorCode::Other	enumerator	storage	storage-errorcode-other	storage.md	engine/storage/status.h:20
-storage::ErrorCodeName(ErrorCode)	function	storage	storage-errorcodename-errorcode	storage.md	engine/storage/status.h:27
-storage::Status	class	storage	storage-status	storage.md	engine/storage/status.h:33
-storage::Status::Status()	function	storage	storage-status-status	storage.md	engine/storage/status.h:36
-storage::Status::Success()	function	storage	storage-status-success	storage.md	engine/storage/status.h:39
-storage::Status::Make(ErrorCode,const char*)	function	storage	storage-status-make-errorcode-const-char-star	storage.md	engine/storage/status.h:43
-storage::Status::Ok() const	function	storage	storage-status-ok-const	storage.md	engine/storage/status.h:52
-storage::Status::Failed() const	function	storage	storage-status-failed-const	storage.md	engine/storage/status.h:55
-storage::Status::Is(ErrorCode) const	function	storage	storage-status-is-errorcode-const	storage.md	engine/storage/status.h:58
-storage::Status::Code() const	function	storage	storage-status-code-const	storage.md	engine/storage/status.h:60
-storage::Status::Message() const	function	storage	storage-status-message-const	storage.md	engine/storage/status.h:65
+storage::ErrorCode	enum	storage	storage-errorcode	storage.md	engine/storage/status.h:12
+storage::ErrorCode::Ok	enumerator	storage	storage-errorcode-ok	storage.md	engine/storage/status.h:13
+storage::ErrorCode::NotFound	enumerator	storage	storage-errorcode-notfound	storage.md	engine/storage/status.h:14
+storage::ErrorCode::Exists	enumerator	storage	storage-errorcode-exists	storage.md	engine/storage/status.h:15
+storage::ErrorCode::Corrupt	enumerator	storage	storage-errorcode-corrupt	storage.md	engine/storage/status.h:16
+storage::ErrorCode::TooNew	enumerator	storage	storage-errorcode-toonew	storage.md	engine/storage/status.h:17
+storage::ErrorCode::LimitExceeded	enumerator	storage	storage-errorcode-limitexceeded	storage.md	engine/storage/status.h:18
+storage::ErrorCode::Mismatch	enumerator	storage	storage-errorcode-mismatch	storage.md	engine/storage/status.h:19
+storage::ErrorCode::Invalid	enumerator	storage	storage-errorcode-invalid	storage.md	engine/storage/status.h:20
+storage::ErrorCode::Other	enumerator	storage	storage-errorcode-other	storage.md	engine/storage/status.h:21
+storage::ErrorCodeName(ErrorCode)	function	storage	storage-errorcodename-errorcode	storage.md	engine/storage/status.h:28
+storage::Status	class	storage	storage-status	storage.md	engine/storage/status.h:34
+storage::Status::Status()	function	storage	storage-status-status	storage.md	engine/storage/status.h:37
+storage::Status::Success()	function	storage	storage-status-success	storage.md	engine/storage/status.h:40
+storage::Status::Make(ErrorCode,const char*)	function	storage	storage-status-make-errorcode-const-char-star	storage.md	engine/storage/status.h:44
+storage::Status::Ok() const	function	storage	storage-status-ok-const	storage.md	engine/storage/status.h:53
+storage::Status::Failed() const	function	storage	storage-status-failed-const	storage.md	engine/storage/status.h:56
+storage::Status::Is(ErrorCode) const	function	storage	storage-status-is-errorcode-const	storage.md	engine/storage/status.h:59
+storage::Status::Code() const	function	storage	storage-status-code-const	storage.md	engine/storage/status.h:61
+storage::Status::Message() const	function	storage	storage-status-message-const	storage.md	engine/storage/status.h:66
 scene::MeshAsset	struct	scene	scene-meshasset	scene.md	engine/scene/components.h:22
 scene::MeshAsset::mesh	variable	scene	scene-meshasset-mesh	scene.md	engine/scene/components.h:24
 scene::MeshRenderer	struct	scene	scene-meshrenderer	scene.md	engine/scene/components.h:31

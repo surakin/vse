@@ -7,7 +7,7 @@
 namespace engine_placeholder::bytes {
 
 /// Why a read failed. A failed read leaves the reader where it was.
-enum class ByteError : u8 {
+enum class [[nodiscard]] ByteError : u8 {
     Ok,        ///< The read succeeded.
     Truncated, ///< The input ends before the value does.
     TooLong,   ///< A length or count is above the limit the caller gave.

@@ -873,7 +873,7 @@ Returns a stable lower-case name for `code` (`"corrupt"`); never null.
 `class storage::Status` — defined in `engine/storage/status.h`
 
 ```cpp
-class Status { ... }
+class [[nodiscard]] Status { ... }
 ```
 
 The result of an operation that returns nothing else: a portable [`storage::ErrorCode`](#storage-errorcode) and a short message.

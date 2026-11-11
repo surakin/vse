@@ -310,7 +310,7 @@ public:
 
     ~SqliteConnection() override {
         if (InTransaction()) {
-            Execute("ROLLBACK");
+            static_cast<void>(Execute("ROLLBACK")); // nowhere to report a failure; SQLite discards the transaction when the connection closes
         }
         handle_->open = false; // statements that outlive the connection fail with Misuse
         handle_->ClearIdle();

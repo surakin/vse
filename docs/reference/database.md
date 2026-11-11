@@ -1099,7 +1099,7 @@ Returns a stable lower-case name for `code` (`"busy"`), for logs and tests; neve
 `class database::Status` — defined in `engine/database/status.h`
 
 ```cpp
-class Status { ... }
+class [[nodiscard]] Status { ... }
 ```
 
 The result of an operation that returns nothing else: a portable [`database::ErrorCode`](#database-errorcode), the backend's own code and a short message copied into the value.

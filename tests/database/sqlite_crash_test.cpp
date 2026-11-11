@@ -42,14 +42,16 @@ void WriteTransaction(Database& db, const OpenOptions& options) {
         return;
     }
     for (i64 i = 1; i <= kNewRows; ++i) {
-        ins->Reset();
-        ins->Bind(1, ValueView::Integer(kOldRows + i));
+        static_cast<void>(ins->Reset());
+        if (ins->Bind(1, ValueView::Integer(kOldRows + i)).Failed()) {
+            return;
+        }
         bool row = false;
         if (ins->Step(&row).Failed()) {
             return;
         }
     }
-    tx.Commit();
+    static_cast<void>(tx.Commit()); // under a fault plan the commit may fail; the test looks at the file afterwards
 }
 
 // One run: a database of kOldRows rows, a transaction under the fault plan, then a fresh look at the file.
@@ -66,8 +68,8 @@ long long RunScenario(JournalMode mode, unsigned ops, long long fail_at, bool cr
         REQUIRE(tx.BeginStatus().Ok());
         UniquePtr<Statement> ins = Prep(*c, "INSERT INTO t (k, v) VALUES (?, zeroblob(100))");
         for (i64 i = 1; i <= kOldRows; ++i) {
-            ins->Reset();
-            ins->Bind(1, ValueView::Integer(i));
+            REQUIRE(ins->Reset().Ok());
+            REQUIRE(ins->Bind(1, ValueView::Integer(i)).Ok());
             REQUIRE(conformance::StepToEnd(*ins).Ok());
         }
         REQUIRE(tx.Commit().Ok());

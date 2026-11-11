@@ -7,7 +7,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | Module | Headers | Symbols |
 |---|---|---|
 | [Foundation: Memory](foundation-memory.md) | 4 | 28 |
-| [Foundation: Language support](foundation-lang.md) | 7 | 126 |
+| [Foundation: Language support](foundation-lang.md) | 8 | 127 |
 | [Foundation: C library](foundation-cstr.md) | 5 | 60 |
 | [Foundation: Synchronization](foundation-sync.md) | 3 | 113 |
 | [Foundation: Containers](foundation-containers.md) | 7 | 166 |

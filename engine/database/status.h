@@ -4,6 +4,7 @@
 
 #include "containers/array.h"
 #include "string_view.h"
+#include "lang/status_try.h"
 #include "types.h"
 
 namespace engine_placeholder::database {
@@ -38,7 +39,7 @@ const char* ErrorCodeName(ErrorCode code);
 /// A message longer than [[database::Status::kMaxMessageBytes]] is cut. The type allocates nothing.
 ///
 /// Thread-safety: immutable value.
-class Status {
+class [[nodiscard]] Status {
 public:
     /// The most message bytes a status keeps.
     static constexpr usize kMaxMessageBytes = 119;

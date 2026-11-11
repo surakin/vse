@@ -39,3 +39,9 @@ Describe how each component type is stored, and write the byte encoding. Outside
 ## Post-implementation code review
 
 Inline review of the day's diff (not the `/code-review` skill): 3 findings, all fixed. (1) The integer decode reinterpret-cast the member to a fixed-width pointer, wrong for `long` versus `long long`; it now reads into the fixed-width type and converts. (2) `WriteBytes` grew the buffer one byte at a time; it reserves first. (3) The golden test's string length cut a literal short; corrected. Declined: nothing.
+
+## Follow-up (same day, at the user's request)
+
+- `ENGINE_TRY(expr)` (`lang/status_try.h`): returns a failed status from the enclosing function in one line; `RegisterBuiltinComponents` and the test setup use it instead of `if (s.Ok())` chains.
+- `database::Status`, `storage::Status` and `bytes::ByteError` are `[[nodiscard]]`: an ignored result is a build error. Fixed 9 sites: destructors that cannot report (`Transaction`, `SqliteConnection`) and the fault-injection write path discard on purpose with `static_cast<void>` and a comment; setup steps in the crash test now `REQUIRE` their result.
+- Runs: plain `ran 2363 of 6180 tests (phases: all; flavors: plain; display: included; crash tests: excluded)` (the known X11Window failures; the timing benchmark of `KNOWN-ISSUES.md` failed once and passed alone), asan `ran 1819 of 6180`, tsan `ran 1501 of 6180`; Clang non-unity and GCC build clean; docs 7 of 7.

@@ -15,7 +15,7 @@ The result of a read from a [`bytes::ByteReader`](#bytes-bytereader).
 `enum bytes::ByteError` — defined in `engine/foundation/bytes/byte_error.h`
 
 ```cpp
-enum class ByteError : u8 { ... }
+enum class [[nodiscard]] ByteError : u8 { ... }
 ```
 
 Why a read failed. A failed read leaves the reader where it was.

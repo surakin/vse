@@ -3,6 +3,7 @@
 //! Errors of the storage layer, reported as values: [[storage::ErrorCode]] and [[storage::Status]]. No storage failure aborts, and no input, however
 //! damaged, is a reason to abort.
 
+#include "lang/status_try.h"
 #include "types.h"
 
 namespace engine_placeholder::storage {
@@ -30,7 +31,7 @@ const char* ErrorCodeName(ErrorCode code);
 ///
 /// Thread-safety: immutable value.
 /// Ownership: the message is a string with static lifetime (a literal); the type allocates nothing.
-class Status {
+class [[nodiscard]] Status {
 public:
     /// Creates a success status.
     constexpr Status() = default;

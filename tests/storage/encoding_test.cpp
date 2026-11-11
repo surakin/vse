@@ -53,7 +53,7 @@ struct Golden {
 constexpr FieldOptions kModeRange = FieldOptions::Enum(0, 2);
 
 Status RegisterAll(ComponentRegistry* r) {
-    Status s = r->Register<Everything>({.id = 1001,
+    ENGINE_TRY(r->Register<Everything>({.id = 1001,
                                         .name = "everything",
                                         .fields = {Field<&Everything::u8v>("u8"), Field<&Everything::u16v>("u16"), Field<&Everything::u32v>("u32"),
                                                    Field<&Everything::u64v>("u64"), Field<&Everything::i8v>("i8"), Field<&Everything::i16v>("i16"),
@@ -63,15 +63,12 @@ Status RegisterAll(ComponentRegistry* r) {
                                                    Field<&Everything::m>("m"), Field<&Everything::box>("box"), Field<&Everything::mode>("mode", kModeRange),
                                                    Field<&Everything::wide>("wide", FieldOptions::Enum(-5, 5)),
                                                    Field<&Everything::name>("name", FieldOptions::Text(64)), Field<&Everything::counts>("counts"),
-                                                   Field<&Everything::modes>("modes", kModeRange), Field<&Everything::ref>("ref")}});
-    if (s.Ok()) {
-        s = r->Register<Golden>({.id = 1002,
-                                 .name = "golden",
-                                 .version = 3,
-                                 .fields = {Field<&Golden::a>("a"), Field<&Golden::b>("b"), Field<&Golden::c>("c"), Field<&Golden::d>("d"),
-                                            Field<&Golden::mode>("mode", kModeRange), Field<&Golden::s>("s"), Field<&Golden::arr>("arr")}});
-    }
-    return s;
+                                                   Field<&Everything::modes>("modes", kModeRange), Field<&Everything::ref>("ref")}}));
+    return r->Register<Golden>({.id = 1002,
+                                .name = "golden",
+                                .version = 3,
+                                .fields = {Field<&Golden::a>("a"), Field<&Golden::b>("b"), Field<&Golden::c>("c"), Field<&Golden::d>("d"),
+                                           Field<&Golden::mode>("mode", kModeRange), Field<&Golden::s>("s"), Field<&Golden::arr>("arr")}});
 }
 
 u32 BitsOf(f32 v) {

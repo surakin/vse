@@ -22,7 +22,7 @@ Transaction::Transaction(Connection& connection, TransactionKind kind) : connect
 
 Transaction::~Transaction() {
     if (open_) {
-        connection_.Rollback(); // a failed rollback leaves the backend to discard the transaction when the connection closes
+        static_cast<void>(connection_.Rollback()); // a failed rollback leaves the backend to discard the transaction when the connection closes
     }
 }
 

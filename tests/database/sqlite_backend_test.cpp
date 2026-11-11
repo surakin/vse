@@ -251,7 +251,7 @@ TEST_CASE("Concurrency: one writer thread and several reader threads", "[databas
             if (c->Prepare("INSERT INTO t (k) VALUES (?)", &insert).Failed() || insert->Bind(1, ValueView::Integer(k)).Failed() || insert->Step(&row).Failed() ||
                 c->Commit().Failed()) {
                 failures.FetchAdd(1);
-                c->Rollback();
+                static_cast<void>(c->Rollback()); // already counted as a failure
             }
         }
         stop.Store(true);
@@ -319,7 +319,7 @@ TEST_CASE("Concurrency: writers on separate connections queue behind the busy ti
                 st->Bind(1, ValueView::Integer(who)).Failed() || st->Step(&row).Failed() || c->Commit().Failed()) {
                 failures.FetchAdd(1);
                 if (c->InTransaction()) {
-                    c->Rollback();
+                    static_cast<void>(c->Rollback()); // already counted as a failure
                 }
             }
         }
