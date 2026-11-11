@@ -44,7 +44,9 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/names.cmake)
 # Slang sources that shaders include (not compiled alone); a change to one rebuilds every shader.
 file(GLOB SHADER_COMMON_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/*_common.slang)
 
-# slangc: ENGINE_SLANGC (a cache or environment variable), then PATH, then the location BUILD.md records for the Windows PC.
+# slangc: ENGINE_SLANGC (a cache or environment variable), then the locations BUILD.md records (the Windows PC's C:/Tools, the Mac's
+# ~/tools; find_program searches HINTS before PATH), then PATH. A program that answers -v with something other than a Slang version is refused
+# and the committed outputs are used: on the Mac, kitty (the terminal) puts an unrelated `slangc` on PATH (Phase 26 Day 284).
 # DXIL (Phase 13 Day 163): the directory with dxcompiler.dll and dxil.dll, from ENGINE_DXC (a dxc executable or its directory), else
 # the Windows SDK the toolchain found (ENGINE_SDK_BIN); never the first dxc on PATH, which may be the Vulkan SDK's older build.
 if(NOT ENGINE_SLANGC AND DEFINED ENV{ENGINE_SLANGC})
@@ -54,7 +56,24 @@ set(ENGINE_SLANGC "${ENGINE_SLANGC}" CACHE FILEPATH "slangc to mint shaders with
 if(ENGINE_SLANGC)
   set(SLANGC "${ENGINE_SLANGC}")
 else()
-  find_program(SLANGC slangc HINTS "C:/Tools/slang-2026.18.2/bin")
+  find_program(SLANGC slangc HINTS "C:/Tools/slang-2026.18.2/bin" "$ENV{HOME}/tools/slang-2026.18.2/bin")
+endif()
+if(SLANGC)
+  # The program may be an unrelated one (above): it gets no input and 10 seconds, so one that waits cannot stop the configure.
+  if(CMAKE_HOST_WIN32)
+    set(_slangc_null NUL)
+  else()
+    set(_slangc_null /dev/null)
+  endif()
+  execute_process(COMMAND ${SLANGC} -v OUTPUT_VARIABLE SLANGC_VERSION_TEXT ERROR_VARIABLE SLANGC_VERSION_ERR INPUT_FILE ${_slangc_null}
+                  TIMEOUT 10 OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_STRIP_TRAILING_WHITESPACE)
+  string(REGEX REPLACE "[\r\n].*" "" SLANGC_VERSION "${SLANGC_VERSION_TEXT}${SLANGC_VERSION_ERR}")  # the first line, CRLF or LF
+  # A Slang version is a year, a release and an optional patch: "v2026.18.2" (Linux), "2026.18.2" (Windows, macOS).
+  if(NOT SLANGC_VERSION MATCHES "^v?20[0-9][0-9]\\.[0-9]+(\\.[0-9]+)?$")
+    message(WARNING "${SLANGC} is not the Slang compiler (it answered -v with '${SLANGC_VERSION}'); the committed shader outputs are used as "
+                    "they are. Set ENGINE_SLANGC to the slangc of BUILD.md.")
+    set(SLANGC "")
+  endif()
 endif()
 find_program(SPIRV_VAL spirv-val)
 if(NOT ENGINE_DXC AND DEFINED ENV{ENGINE_DXC})
@@ -87,9 +106,6 @@ if(DXIL_DIR)
 endif()
 
 if(SLANGC)
-  execute_process(COMMAND ${SLANGC} -v OUTPUT_VARIABLE SLANGC_VERSION_TEXT ERROR_VARIABLE SLANGC_VERSION_ERR
-                  OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_STRIP_TRAILING_WHITESPACE)
-  string(REGEX REPLACE "\n.*" "" SLANGC_VERSION "${SLANGC_VERSION_TEXT}${SLANGC_VERSION_ERR}")
   # The Linux build prints "v2026.18.2", the Windows build "2026.18.2": recorded as "v<version>" on both, so the minted files match.
   string(REGEX REPLACE "^v" "" SLANGC_VERSION "${SLANGC_VERSION}")
   set(SLANGC_VERSION "v${SLANGC_VERSION}")

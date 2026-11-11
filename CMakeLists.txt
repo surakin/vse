@@ -17,15 +17,43 @@ if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux" AND NOT CMAKE_CROSSCOMPILING AND NOT 
   endif()
 endif()
 
-project(engine_placeholder CXX C)
+# macOS (Phase 26 Day 284): Apple clang from the Command Line Tools is the only compiler (Phase 26 rules), found through xcrun so that a
+# MacPorts or Homebrew clang first on PATH is never picked up by accident; same conditions as the Linux choice above. The deployment target
+# is macOS 13.3: Apple's libc++ has floating-point std::to_chars from 13.3 (cstr/number.h), and Metal 3 needs 13.0
+# (docs/superpowers/specs/2026-11-11-macos-port-design.md, decision 1). Both must be decided before project().
+if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin" AND NOT CMAKE_CROSSCOMPILING AND NOT CMAKE_TOOLCHAIN_FILE
+   AND NOT CMAKE_CXX_COMPILER AND NOT CMAKE_C_COMPILER AND NOT DEFINED ENV{CXX} AND NOT DEFINED ENV{CC})
+  execute_process(COMMAND xcrun --find clang++ OUTPUT_VARIABLE _engine_xcrun_clangxx OUTPUT_STRIP_TRAILING_WHITESPACE
+                  ERROR_VARIABLE _engine_xcrun_error RESULT_VARIABLE _engine_xcrun_result)
+  execute_process(COMMAND xcrun --find clang OUTPUT_VARIABLE _engine_xcrun_clang OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+  if(NOT _engine_xcrun_result EQUAL 0 OR NOT EXISTS "${_engine_xcrun_clangxx}" OR NOT EXISTS "${_engine_xcrun_clang}")
+    message(FATAL_ERROR "No Apple clang found through xcrun (${_engine_xcrun_error}). Install the Command Line Tools with "
+                        "`xcode-select --install`; see BUILD.md (macOS).")
+  endif()
+  set(CMAKE_CXX_COMPILER "${_engine_xcrun_clangxx}")
+  set(CMAKE_C_COMPILER "${_engine_xcrun_clang}")
+endif()
+if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin" AND NOT CMAKE_TOOLCHAIN_FILE AND NOT CMAKE_SYSTEM_NAME)  # not for a cross build (iOS, Phase 27)
+  set(CMAKE_OSX_DEPLOYMENT_TARGET "13.3" CACHE STRING "Minimum macOS version (13.3: floating-point std::to_chars; Metal 3 needs 13.0)")
+endif()
 
-# Supported targets: x86-64 Linux, and x86-64 Windows (being ported in Phase 13). Anything else names the phase that ports it.
+project(engine_placeholder CXX C)
+if(APPLE)
+  # Objective-C++ (.mm files with ARC) is how the macOS backends talk to AppKit, Metal and QuartzCore (Phase 26 decision 3).
+  enable_language(OBJCXX)
+endif()
+
+# Supported targets: x86-64 Linux, x86-64 Windows (Phase 13), and x86-64 macOS (being ported in Phase 26, a side phase on the Mac; arm64 macOS gets a
+# compile-only configuration on Phase 26 Day 310). Anything else names the phase that ports it.
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
   set(ENGINE_PLATFORM linux)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows" AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(AMD64|x86_64)$")
   set(ENGINE_PLATFORM windows)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64" AND NOT CMAKE_OSX_ARCHITECTURES MATCHES "arm64")
+  set(ENGINE_PLATFORM macos)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  message(FATAL_ERROR "macOS is ported in Phase 26 (plans/phase-26-macos-metal.md)")
+  message(FATAL_ERROR "macOS on ${CMAKE_SYSTEM_PROCESSOR} (${CMAKE_OSX_ARCHITECTURES}): only x86-64 is ported so far; the arm64 compile-only "
+                      "configuration is Phase 26 Day 310 (plans/phase-26-macos-metal.md)")
 elseif(CMAKE_SYSTEM_NAME MATCHES "^(Android|iOS)$")
   message(FATAL_ERROR "${CMAKE_SYSTEM_NAME} is ported in Phase 27 (plans/phase-27-android-ios.md)")
 else()
@@ -61,6 +89,9 @@ add_compile_definitions($<IF:$<CONFIG:Release,MinSizeRel>,ENGINE_CRASH_HANDLER_D
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_OBJCXX_STANDARD 20)  # macOS: the .mm files are C++20 as well
+set(CMAKE_OBJCXX_STANDARD_REQUIRED ON)
+set(CMAKE_OBJCXX_EXTENSIONS OFF)
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug)
@@ -90,8 +121,12 @@ enable_testing()
 set(ENGINE_TEST_TMP_DIR "${CMAKE_BINARY_DIR}/test-tmp")
 file(MAKE_DIRECTORY "${ENGINE_TEST_TMP_DIR}/pipeline-cache" "${ENGINE_TEST_TMP_DIR}/screenshots")
 add_subdirectory(third_party/catch2)
-add_subdirectory(third_party/freetype)  # Phase 14 Day 175: FreeType, vendored (PLAN.md assumption #17)
-add_subdirectory(third_party/sqlite)  # Phase 19 Day 251: SQLite, vendored (PLAN.md assumption #25), used only behind engine/database/sqlite/
+# macOS (Phase 26) adds these with the layers that use them (text on Day 294; storage when it is ported), not before: nothing configured
+# there links them yet, and building them would only cost time on the Mac.
+if(NOT ENGINE_PLATFORM STREQUAL "macos")
+  add_subdirectory(third_party/freetype)  # Phase 14 Day 175: FreeType, vendored (PLAN.md assumption #17)
+  add_subdirectory(third_party/sqlite)  # Phase 19 Day 251: SQLite, vendored (PLAN.md assumption #25), used only behind engine/database/sqlite/
+endif()
 # Catch2's REQUIRE/CHECK throw: exceptions on for Catch2 and, through PUBLIC, every test executable that links it.
 if(ENGINE_EXCEPTIONS_COMPILE_OPTIONS)
   target_compile_options(Catch2 PUBLIC ${ENGINE_EXCEPTIONS_COMPILE_OPTIONS})
@@ -183,6 +218,30 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   message(STATUS "Windows (Phase 13): building the foundation, jobs, the platform layer, the RHI with its Vulkan backend, the renderer, "
                  "hello_window, the demos and the benchmarks, docgen, crash_extract, shader_mint and the shaders, the gates and their tests. Not yet "
                  "ported, so not configured: DX12 (Days 164-172). See plans/phase-13-windows-dx12.md.")
+  return()
+endif()
+
+# macOS (Phase 26, a side phase on the Mac) builds one layer more each day, in dependency order (ARCHITECTURE.md), as Windows did in Phase 13:
+# Day 284 the base layer and its tests (types, lang, sync, cstr) and the macOS-only checks. Each later day moves its directories into this list;
+# the "not yet ported" message shrinks with it and is gone on Day 310 (plans/phase-26-macos-metal.md).
+if(ENGINE_PLATFORM STREQUAL "macos")
+  include(cmake/EngineTestPhases.cmake)
+  option(ENGINE_UNITY_BUILD "Compile each target's sources as merged unity translation units" ON)
+  set(CMAKE_UNITY_BUILD ${ENGINE_UNITY_BUILD})
+  set(CMAKE_UNITY_BUILD_BATCH_SIZE 16)
+  add_compile_options(${ENGINE_WARNING_COMPILE_OPTIONS} ${ENGINE_MACOS_COMPILE_OPTIONS})
+  add_compile_definitions(${ENGINE_MACOS_DEFINITIONS})
+  add_subdirectory(engine/foundation)
+  add_subdirectory(tests/types)
+  add_subdirectory(tests/lang)
+  add_subdirectory(tests/sync)
+  add_subdirectory(tests/cstr)
+  add_subdirectory(tests/macos)  # the macOS-only checks (phase 26): build_defs.h on Apple clang, the headers beside AppKit and Metal
+  add_subdirectory(tests/phase_labels)
+  message(STATUS "macOS (Phase 26 Day 284): building the base layer of the foundation and its tests. Not yet ported, so not configured: "
+                 "the os backend (Day 285; the base layer builds the Linux os.cpp and session.cpp until then), the test tooling and gates "
+                 "(Day 286), the file layer (Days 287-288), jobs (Day 289), debugging (Days 290-292), settings (Day 293), text, UI, ECS and "
+                 "spatial (Day 294), the platform layer (Days 295-297), the RHI and renderer (Days 298-309), the demos and tools (Day 310).")
   return()
 endif()
 

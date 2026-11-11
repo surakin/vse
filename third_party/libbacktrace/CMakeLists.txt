@@ -2,7 +2,8 @@
 # assumption #20. Upstream builds with autotools; this file replaces that for the platforms we build on. It produces one
 # static library, `backtrace`, built once with plain flags and linked into the plain, ASan and TSan flavors alike.
 #
-# Only the ELF/Linux configuration exists so far: macOS (Mach-O, Phase 9) and Windows (PE/COFF, Phase 8) add a branch.
+# Only the ELF/Linux configuration exists so far: macOS (Mach-O, `macho.c`) adds a branch on Phase 26 Day 290. Windows does not build it:
+# stack traces resolve through DbgHelp there (Phase 13 Day 154, os/windows/debug/BACKEND.md).
 cmake_minimum_required(VERSION 3.20)
 
 include(CheckCSourceCompiles)
@@ -10,7 +11,7 @@ include(CheckIncludeFile)
 include(CheckSymbolExists)
 
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
-  message(FATAL_ERROR "libbacktrace is configured for Linux only so far; macOS is Phase 9 and Windows Phase 8 (see third_party/libbacktrace/VENDORED.md)")
+  message(FATAL_ERROR "libbacktrace is configured for Linux only so far; macOS (Mach-O) is Phase 26 Day 290, and Windows uses DbgHelp instead (see third_party/libbacktrace/VENDORED.md)")
 endif()
 
 # --- the feature checks the sources test (what autoconf's configure.ac does) -----------------------------------------------

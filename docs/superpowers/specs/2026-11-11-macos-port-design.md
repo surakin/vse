@@ -123,7 +123,7 @@ helpers). Each move edits, in the same commit, `tools/module_deps_check/modules.
 (`file_access_check`, `config_access_check`, `std_usage_check`) and `platform_neutral_check`'s test-name rule (`_posix` beside `_linux`, `_windows`,
 `_macos`).
 
-## 6. The side-phase rule (proposed; the user confirms)
+## 6. The side-phase rule (confirmed by the user, 2026-11-11)
 
 Phase 26 runs on the Mac beside the main line, so `CURRENT_PHASE` keeps naming the main line's phase. A `SIDE_PHASES` file lists open side phases (one
 number per line); `scripts/test-phase.sh --affected` adds them on a machine that builds their tests, and the summary names them. Their tests carry their

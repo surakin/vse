@@ -9,7 +9,7 @@ drop, fullscreen, session); the Phase 4 golden images and the Phase 5 scene test
 **Metal** backend with Metal API validation silent; the Metal backend passes the lifecycle conformance suite and recovers from an injected device loss; the demos run
 on Metal; every gate and `ctest -L docs` pass on macOS; and the Linux machine and the Windows PC still pass their full suites in every flavor they have.
 
-**Status: started (2026-11-10), Days 282-311: Day 282 (the `.metallib` spike; interim route, pending) and Day 283 (spec, inventory, setup) done on the Mac; next Day 284.** Day numbers continue after Phase 25 (Day 281). Phases 19-24 have no day files yet;
+**Status: started (2026-11-10), Days 282-311: Day 282 (the `.metallib` spike; interim route, pending), Day 283 (spec, inventory, setup) and Day 284 (CMake, Apple clang, the base layer) done on the Mac; next Day 285.** Day numbers continue after Phase 25 (Day 281). Phases 19-24 have no day files yet;
 when they get them, Phases 25 and 26 renumber in the same commit (CLAUDE.md, "Phases are whole numbers").
 
 **Hardware (checked 2026-11-10).** The developer's 2019 MacBook Pro 13" (`MacBookPro15,4`): quad-core Intel Core i5 at 1.4 GHz, 8 GB RAM, **Intel Iris Plus
@@ -28,7 +28,7 @@ order. The user asked to start with the foundation (Days 284-293) and then plan 
 
 - **`CURRENT_PHASE` does not change** for this phase: it keeps naming the main line's phase. Phase 26's tests carry the label `phase26`. Day 286 teaches
   `scripts/test-phase.sh` a side phase (a `SIDE_PHASES` file listing `26`, added to `--affected` runs), and Day 283 adds the rule to CLAUDE.md
-  ("Tests run by phase") **as a proposal for the user to confirm**.
+  ("Tests run by phase"); the user confirmed it on 2026-11-11.
 - **It ports what exists on `master` when each day runs.** Each day starts by pulling `master`. A module a main-line phase adds before this phase
   closes gets its macOS port inside the day of its layer if that day has not run yet, or on Day 310 if it has. After this phase closes, every phase gets
   a macOS day the way it gets a Windows PC day today; Day 311 writes that answer into `PLAN.md` assumption #11 (proposed; the user confirms).
@@ -199,8 +199,8 @@ Present on 2026-11-10: the Command Line Tools (Apple clang 17.0.0), CMake 4.4.4 
 ## Notes / open questions
 
 - **Pending, the user's decision (2026-11-10):** the `.metallib` minting route is the undocumented `-[MTLLibrary serializeToURL:error:]` until the user has a new Mac; then it is decided again, and the new Mac also runs the spike's open task (loading on Apple silicon and another macOS version).
-- **Proposed, for the user to confirm when reviewing this plan:** the side-phase rule in CLAUDE.md and `scripts/test-phase.sh` (Day 283, Day 286);
-  the answer to `PLAN.md` assumption #11 (a macOS day in every later phase, Day 311); not building Vulkan on macOS (decision 8).
+- **Confirmed by the user (2026-11-11):** the side-phase rule (CLAUDE.md, written on Day 283; the tooling is Day 286). **Still proposed:** the answer
+  to `PLAN.md` assumption #11 (a macOS day in every later phase, Day 311); not building Vulkan on macOS (decision 8).
 - The iOS platform layer (UIKit, touch) and the LuaJIT interpreter-only build for iOS are Phase 27, which reuses this phase's Metal backend.
 - **HDR:** EDR (`wantsExtendedDynamicRangeContent`, `RGBA16Float`, extended linear sRGB) maps `HdrMode::ScRgbLinear`; the MacBook's built-in display is not
   an EDR display, so HDR stays checked by the policy tests only (Day 305 records it).

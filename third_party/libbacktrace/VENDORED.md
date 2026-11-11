@@ -9,8 +9,8 @@ Per `PLAN.md` assumption #20 this is a source vendor (not a submodule, not `Fetc
 reproducible. It provides stack unwinding (through the compiler's unwinder, no frame pointers needed), function names, and
 file and line from DWARF, for ELF (Linux, Android), Mach-O (macOS, iOS) and PE/COFF (Windows). Its resolving calls are
 documented async-signal-safe once the first call has been made (the first call walks the loaded objects with
-`dl_iterate_phdr`); measured on Phase 6 Day 91 at zero `malloc` calls inside a signal handler. It reads **DWARF only**, not
-PDB: Windows builds need clang with DWARF or a DbgHelp resolver in the facade (Phase 8 decision).
+`dl_iterate_phdr`); measured on Phase 7 Day 91 at zero `malloc` calls inside a signal handler. It reads **DWARF only**, not
+PDB: Windows resolves through DbgHelp instead and does not build this library (Phase 13 Day 154).
 
 ## Kept from the upstream archive
 

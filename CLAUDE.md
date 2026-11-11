@@ -81,7 +81,7 @@ phase in progress. Day to day, run only what the work can have affected:
 - **A phase's last day runs the whole suite in every flavor**: `scripts/test-phase.sh --all --flavor all`, plus
   `ctest -L docs` and the demos the phase ships, and records the line in the day file. A phase is not complete without
   it. `CURRENT_PHASE` changes only in the commit that starts the next phase.
-- **Side phases (proposed 2026-11-11, Phase 26 Day 283; waiting for the user's confirmation):** a phase the user runs beside the main line, on
+- **Side phases (confirmed by the user, 2026-11-11; Phase 26 Day 283):** a phase the user runs beside the main line, on
   another machine (Phase 26, the macOS port), is listed in `SIDE_PHASES` and does not change `CURRENT_PHASE`. Its tests carry its own label;
   `scripts/test-phase.sh --affected` adds every side phase on a machine that builds its tests (Phase 26 Day 286), and its days quote their own
   `ran X of Y` line. Its last day closes it with the full run like any phase, and removes it from `SIDE_PHASES`.

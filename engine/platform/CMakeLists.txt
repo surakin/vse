@@ -73,7 +73,7 @@ target_include_directories(platform_input INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/
 function(engine_add_platform_lib suffix foundation_lib)
   add_library(platform${suffix} STATIC ${PLATFORM_SOURCES})
   target_include_directories(platform${suffix} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
-  target_compile_options(platform${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
+  target_compile_options(platform${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
   target_link_libraries(platform${suffix} PUBLIC ${foundation_lib} ${PLATFORM_DISPLAY_LIBS})
 endfunction()
 

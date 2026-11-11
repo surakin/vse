@@ -3,6 +3,7 @@
 #include <charconv>
 #include <cstdlib>
 
+#include "build_defs.h"
 #include "types.h"
 
 //! Number conversion (Phase 16): the engine's spelling of `atoi`, `atol`, `strtoul`, `strtod` and `to_chars`. Each forwards to the C
@@ -54,15 +55,40 @@ struct ParseDoubleResult {
     bool ok;
 };
 
+#if !ENGINE_PLATFORM_WINDOWS
+namespace detail {
+
+/// [[ParseDoubleExact]] without `std::from_chars`, for a standard library that lacks it for `double` (Apple's libc++, where it is a
+/// deleted function): reads the same grammar itself (an optional `-`; decimal digits with an optional `.` and at least one digit, then
+/// an exponent only if one is complete; `inf`, `infinity`, `nan`, `nan(` letters, digits and `_` `)`, in any case), so `end` is the
+/// same, and converts a normalized copy of at most 780 significant digits plus a sticky digit with `strtod_l` in the C locale, which
+/// keeps the rounding exact. A result out of the range of `f64` (it would be infinite, or zero from nonzero digits) is not `ok`, with
+/// `end` after the number, as `std::from_chars` reports it. Built on POSIX systems (on Linux it is the oracle's twin:
+/// `tests/cstr/parse_double_test.cpp` compares the two); not on Windows.
+///
+/// Fails: `ok` is false, with `end` at `first`, when no number starts there (or the C locale cannot be made), and with `end` after the
+/// number when it is out of range; `value` is 0 then.
+/// Thread-safety: thread-safe (the C locale is made once, on first use).
+ParseDoubleResult ParseDoubleWithoutFromChars(const char* first, const char* last) noexcept;
+
+} // namespace detail
+#endif
+
 /// Parses a decimal number at the start of `[first, last)`, independent of the process locale, with no leading `+` or space and
 /// hex form (`std::from_chars`). `nan` and `inf` are read as such; a caller that needs a finite number checks the value.
 ///
+/// On macOS and iOS this is [[detail::ParseDoubleWithoutFromChars]] (Apple's libc++ has no `from_chars` for `double`), with the same
+/// results.
 /// Thread-safety: thread-safe.
 inline ParseDoubleResult ParseDoubleExact(const char* first, const char* last) noexcept {
+#if ENGINE_PLATFORM_MACOS || ENGINE_PLATFORM_IOS
+    return detail::ParseDoubleWithoutFromChars(first, last);
+#else
     f64 value = 0;
     const std::from_chars_result r = std::from_chars(first, last, value);
     const bool ok = r.ec == std::errc();
     return {ok ? value : 0.0, r.ptr, ok};
+#endif
 }
 
 } // namespace engine_placeholder

@@ -8,6 +8,8 @@
 #                                      tools that use a library which throws, such as nlohmann/json in tools/shader_mint)
 #   ENGINE_WINDOWS_COMPILE_OPTIONS, ENGINE_WINDOWS_DEFINITIONS  the engine's own options on Windows; the root CMakeLists.txt applies
 #                                      them after the vendored libraries are added, so third-party code keeps its own settings
+#   ENGINE_MACOS_COMPILE_OPTIONS, ENGINE_MACOS_DEFINITIONS  the same on macOS (Phase 26 Day 284): ARC for Objective-C++, and Apple's
+#                                      AssertMacros.h kept to its underscored names
 #   ENGINE_HAVE_ASAN, ENGINE_HAVE_TSAN whether the sanitizer flavors exist with this compiler
 #   ENGINE_ASAN_COMPILE_OPTIONS, ENGINE_ASAN_LINK_OPTIONS, ENGINE_TSAN_COMPILE_OPTIONS, ENGINE_TSAN_LINK_OPTIONS
 # and the build-wide options every target gets on Windows.
@@ -30,14 +32,23 @@ function(engine_asan_runtime target)
 endfunction()
 
 if(NOT ENGINE_MSVC_LIKE)
-  # GCC and Clang (Linux). The sanitizer flags are unchanged from Phase 7: -fno-sanitize=vptr because the engine libraries are built
-  # -fno-rtti while the Catch2 executables are not (see engine/foundation/CMakeLists.txt).
+  # GCC and Clang (Linux), and Apple clang (macOS, Phase 26: the same flags measured clean on Day 283). The sanitizer flags are unchanged
+  # from Phase 7: -fno-sanitize=vptr because the engine libraries are built -fno-rtti while the Catch2 executables are not (see
+  # engine/foundation/CMakeLists.txt). Apple clang has no LeakSanitizer: the asan flavor there is ASan and UBSan only, and a test must not
+  # ask for detect_leaks=1, which aborts the process on macOS (KNOWN-ISSUES.md).
   set(ENGINE_PRODUCTION_COMPILE_OPTIONS -fno-exceptions -fno-rtti -fno-stack-protector)
   set(ENGINE_EXCEPTIONS_COMPILE_OPTIONS "")  # GCC and Clang have exceptions on unless told otherwise
   set(ENGINE_WINDOWS_COMPILE_OPTIONS "")
   set(ENGINE_WINDOWS_DEFINITIONS "")
   # Warnings are errors (CLAUDE.md, "Warnings are errors"): every target of ours, tests and tools included, never the vendored libraries.
-  set(ENGINE_WARNING_COMPILE_OPTIONS "$<$<COMPILE_LANGUAGE:C,CXX>:-Wall>" "$<$<COMPILE_LANGUAGE:C,CXX>:-Wextra>" "$<$<COMPILE_LANGUAGE:C,CXX>:-Werror>")
+  # OBJCXX is enabled only on macOS; on Linux the generator expression never matches it.
+  set(ENGINE_WARNING_COMPILE_OPTIONS "$<$<COMPILE_LANGUAGE:C,CXX,OBJCXX>:-Wall>" "$<$<COMPILE_LANGUAGE:C,CXX,OBJCXX>:-Wextra>"
+      "$<$<COMPILE_LANGUAGE:C,CXX,OBJCXX>:-Werror>")
+  # macOS: Objective-C++ files use ARC (Phase 26 decision 3). __ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORES is already 0 in the macOS
+  # 15.5 SDK; pinning it keeps a later SDK from defining check(), verify() and require() as macros in every file that includes a framework
+  # (tests/macos: macos_header_planted shows what they break).
+  set(ENGINE_MACOS_COMPILE_OPTIONS "$<$<COMPILE_LANGUAGE:OBJCXX>:-fobjc-arc>")
+  set(ENGINE_MACOS_DEFINITIONS __ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORES=0)
   set(ENGINE_HAVE_ASAN TRUE)
   set(ENGINE_HAVE_TSAN TRUE)
   set(ENGINE_ASAN_COMPILE_OPTIONS -fsanitize=address,undefined -fno-sanitize=vptr -fno-omit-frame-pointer -g)

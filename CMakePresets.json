@@ -26,16 +26,26 @@
       "toolchainFile": "${sourceDir}/cmake/toolchains/windows-clang-cl.cmake",
       "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" },
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
+    },
+    {
+      "name": "macos-clang",
+      "displayName": "macOS, Apple clang from the Command Line Tools (build-macos/); x86-64, deployment target 13.3",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-macos",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug", "CMAKE_OSX_DEPLOYMENT_TARGET": "13.3", "CMAKE_OSX_ARCHITECTURES": "x86_64" },
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Darwin" }
     }
   ],
   "buildPresets": [
     { "name": "linux", "configurePreset": "linux" },
     { "name": "windows-msvc", "configurePreset": "windows-msvc" },
-    { "name": "windows-clang-cl", "configurePreset": "windows-clang-cl" }
+    { "name": "windows-clang-cl", "configurePreset": "windows-clang-cl" },
+    { "name": "macos-clang", "configurePreset": "macos-clang" }
   ],
   "testPresets": [
     { "name": "linux", "configurePreset": "linux", "output": { "outputOnFailure": true } },
     { "name": "windows-msvc", "configurePreset": "windows-msvc", "output": { "outputOnFailure": true } },
-    { "name": "windows-clang-cl", "configurePreset": "windows-clang-cl", "output": { "outputOnFailure": true } }
+    { "name": "windows-clang-cl", "configurePreset": "windows-clang-cl", "output": { "outputOnFailure": true } },
+    { "name": "macos-clang", "configurePreset": "macos-clang", "output": { "outputOnFailure": true } }
   ]
 }

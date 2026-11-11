@@ -50,7 +50,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   foreach(suffix "" ${_ui_flavors})
     add_library(ui${suffix} STATIC ${UI_SOURCES})
     target_include_directories(ui${suffix} PUBLIC ${UI_INCLUDE_ROOT})
-    target_compile_options(ui${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
+    target_compile_options(ui${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
     # text links only foundation_io here (on Linux the foundation aggregate); the settings screen (settings_view.cpp) needs the settings layer.
     target_link_libraries(ui${suffix} PUBLIC text${suffix} foundation_settings${suffix} platform_input)
   endforeach()

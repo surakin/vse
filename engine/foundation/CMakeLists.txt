@@ -1,9 +1,11 @@
-# Per-platform implementation of os/os.h: os/linux/ and, being ported in Phase 13, os/windows/ (PLAN.md assumption #11). This
-# selection is where a later os/macos/os.cpp plugs in additively.
+# Per-platform implementation of os/os.h: os/linux/, os/windows/ (Phase 13) and, being ported in Phase 26, os/macos/ (PLAN.md
+# assumption #11). The GPU driver probe (os/gpu_driver_probe.h) is Vulkan-only and pulls the Vulkan headers into this layer, so it is in
+# the platform lists of the platforms that have Vulkan, not in macOS's (Phase 26 decision 8).
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   set(FOUNDATION_PLATFORM_SOURCES
     os/linux/os.cpp
     os/linux/session.cpp
+    os/gpu_driver_probe.cpp
     os/linux/vulkan_loader_name.cpp
   )
 
@@ -35,6 +37,7 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     os/windows/os.cpp
     os/windows/utf16.cpp
     os/windows/session.cpp
+    os/gpu_driver_probe.cpp
     os/windows/vulkan_loader_name.cpp
   )
   # Day 154: stack traces through DbgHelp, the module list, the crash context; Day 155: the crash hook, death tests, fault injection;
@@ -64,7 +67,13 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     io/windows/directory.cpp
   )
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  message(FATAL_ERROR "macOS is implemented in Phase 26 (the debugging backend: os/macos/debug/BACKEND.md)")
+  # Phase 26 ports one layer per day (ARCHITECTURE.md order). Day 284: the base layer only. TEMPORARY until Day 285, which splits them into
+  # os/posix/ and os/macos/: the Linux os.cpp and session.cpp, which compile on macOS unchanged and serve the layer-0 tests (Day 283 Spike A;
+  # their /proc reads and the logind query fail at run time there, KNOWN-ISSUES.md). No GPU driver probe on macOS (decision 8).
+  set(FOUNDATION_PLATFORM_SOURCES
+    os/linux/os.cpp
+    os/linux/session.cpp
+  )
 else()
   message(FATAL_ERROR "No foundation os.h implementation for this platform yet")
 endif()
@@ -80,11 +89,11 @@ set(FOUNDATION_BASE_SOURCES
   foundation.cpp
   os/session.cpp
   os/command_line.cpp
-  os/gpu_driver_probe.cpp
   mem/arena_allocator.cpp
   mem/pool_allocator.cpp
   mem/stack_allocator.cpp
   log/log.cpp
+  cstr/number.cpp
   int128.cpp
   math/geometry.cpp
   string/utf8_codec.cpp
@@ -141,7 +150,8 @@ set(FOUNDATION_SETTINGS_SOURCES
 # ENGINE_PRODUCTION_COMPILE_OPTIONS (-fno-exceptions etc) is applied PRIVATE, not PUBLIC: PUBLIC compile options are a usage
 # requirement that would leak into every consumer that links these targets, including the Catch2-based test executables, which
 # need exceptions. Production executables (game/hello_window) that want the same hardening declare it themselves.
-# ENGINE_PRODUCTION_COMPILE_OPTIONS is C++-only, so it is scoped to CXX translation units by a generator expression.
+# ENGINE_PRODUCTION_COMPILE_OPTIONS is for C++ and Objective-C++ (the macOS .mm files, Phase 26), so it is scoped to CXX and OBJCXX
+# translation units by a generator expression (the C sources of vendored code keep their own flags); tests/macos checks that a .mm gets it.
 #
 # Sanitized variants are separate targets built from the same sources, not a build-wide flag, so the plain and sanitized binaries
 # exist side by side from one configure. The sanitizer flags are PUBLIC on the lowest library of a flavor (foundation_base_asan,
@@ -150,7 +160,7 @@ set(FOUNDATION_SETTINGS_SOURCES
 function(engine_add_foundation_layer name suffix)
   add_library(${name}${suffix} STATIC ${ARGN})
   target_include_directories(${name}${suffix} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-  target_compile_options(${name}${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
+  target_compile_options(${name}${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
 endfunction()
 
 function(engine_add_foundation_libs suffix)
@@ -199,6 +209,13 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_link_libraries(foundation_settings${suffix} PUBLIC foundation_debug${suffix} advapi32)
     add_library(foundation${suffix} INTERFACE)
     target_link_libraries(foundation${suffix} INTERFACE foundation_settings${suffix} foundation_debug${suffix} foundation_io${suffix} foundation_base${suffix})
+  endforeach()
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  # The base layer in the three flavors (Apple clang has ASan, UBSan and TSan); the layers above it join as their macOS backends arrive
+  # (the file layer on Day 287).
+  foreach(suffix "" "_asan" "_tsan")
+    engine_add_foundation_layer(foundation_base "${suffix}" ${FOUNDATION_BASE_SOURCES})
+    target_link_libraries(foundation_base${suffix} PUBLIC ${CMAKE_DL_LIBS})
   endforeach()
 else()
   engine_add_foundation_libs("")
