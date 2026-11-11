@@ -1,0 +1,3 @@
+# Formatting-only commits: git blame skips them (scripts/install-git-hooks.sh sets blame.ignoreRevsFile).
+# Whole-tree format pass, 2026-11-11
+d47e5684612123c070dc0c9081debcfd45ae7e16
