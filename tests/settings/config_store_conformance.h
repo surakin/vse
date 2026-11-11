@@ -1,8 +1,8 @@
 #pragma once
 
-// The checks every ConfigStore must pass. A store test calls RunStoreConformance with a factory: a callable returning a new
-// ConfigStorePtr over the same durable backing each time it is called (a second instance models a restart). The suite reads
-// Capabilities() and checks what the store claims, so a store that overstates what it does fails here.
+// The checks every ConfigStore must pass. A store test calls RunStoreConformance with a factory: a callable returning a
+// new ConfigStorePtr over the same durable backing each time it is called (a second instance models a restart). The
+// suite reads Capabilities() and checks what the store claims, so a store that overstates what it does fails here.
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -10,7 +10,8 @@
 #include "settings/config_store.h"
 #include "test_text.h"
 
-namespace settings_test {
+namespace settings_test
+{
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::settings;
@@ -18,7 +19,8 @@ using namespace engine_placeholder::settings;
 inline const char* const kConformanceModes[] = {"fifo", "mailbox", "immediate"};
 
 /// A float, int, bool, enum and text declaration used by the suite.
-struct ConformanceDescs {
+struct ConformanceDescs
+{
     SettingDesc b = MakeBool("c.flag", false);
     SettingDesc i = MakeInt("c.count", 0, -1000000, 1000000);
     SettingDesc f = MakeFloat("c.scale", 1.0, -1e6, 1e6);
@@ -26,34 +28,44 @@ struct ConformanceDescs {
     SettingDesc t = MakeText("c.name", "");
 };
 
-inline StoredValue Stored(const ConfigStore& store, const SettingDesc& desc, const Value& v) {
+inline StoredValue Stored(const ConfigStore& store, const SettingDesc& desc, const Value& v)
+{
     StoredValue out;
     REQUIRE(ToStored(desc, v, (store.Capabilities() & kCapTypedValues) != 0, &out) == StoreError::None);
     return out;
 }
 
-inline bool Has(ConfigStore& store, StringView key, const SettingDesc& desc, const Value& expected) {
+inline bool Has(ConfigStore& store, StringView key, const SettingDesc& desc, const Value& expected)
+{
     StoredValue sv;
-    if (store.Get(key, &sv).Failed()) return false;
+    if (store.Get(key, &sv).Failed())
+    {
+        return false;
+    }
     Value got;
     return FromStored(desc, sv, &got) == ValueError::None && got == expected;
 }
 
-inline usize CountKeys(ConfigStore& store, StringView prefix = StringView()) {
+inline usize CountKeys(ConfigStore& store, StringView prefix = StringView())
+{
     Vector<Key> keys;
     REQUIRE(store.Enumerate(prefix, &keys).Ok());
     return keys.Size();
 }
 
-inline void ClearStore(ConfigStore& store) {
+inline void ClearStore(ConfigStore& store)
+{
     Vector<Key> keys;
     REQUIRE(store.Enumerate(StringView(), &keys).Ok());
-    for (usize k = 0; k < keys.Size(); ++k) REQUIRE(store.Remove(keys[k].View()).Ok());
+    for (usize k = 0; k < keys.Size(); ++k)
+    {
+        REQUIRE(store.Remove(keys[k].View()).Ok());
+    }
     REQUIRE(store.Commit(CommitOptions()).Ok());
 }
 
-template <typename Factory>
-void RunWritableConformance(Factory&& make) {
+template <typename Factory> void RunWritableConformance(Factory&& make)
+{
     const ConformanceDescs d;
     ConfigStorePtr store = make();
     REQUIRE(store->Load().Ok());
@@ -88,7 +100,8 @@ void RunWritableConformance(Factory&& make) {
     CHECK(CountKeys(*store) == 4);
 
     // Invalid keys are refused everywhere.
-    for (const char* bad : {"", "Bad", "a..b", "a b", "a.b.c.d"}) {
+    for (const char* bad : {"", "Bad", "a..b", "a b", "a.b.c.d"})
+    {
         INFO(bad);
         CHECK(store->Get(bad, &sv).Is(StoreError::Invalid));
         CHECK(store->Set(bad, Stored(*store, d.i, Value::FromInt(1))).Is(StoreError::Invalid));
@@ -109,11 +122,14 @@ void RunWritableConformance(Factory&& make) {
 
     // Every legal key character, the longest segment and the longest key.
     const char* const odd[] = {"a", "a.b", "a.b.c", "z9_.x", "x_y_z9.q_1"};
-    for (const char* k : odd) {
+    for (const char* k : odd)
+    {
         REQUIRE(store->Set(k, Stored(*store, d.i, Value::FromInt(5))).Ok());
         CHECK(Has(*store, k, d.i, Value::FromInt(5)));
     }
-    const engine_test::Text longest = engine_test::Concat(engine_test::Repeated(31, 'a').View(), ".", engine_test::Concat(engine_test::Repeated(31, 'b').View(), ".", engine_test::Repeated(31, 'c').View()).View());
+    const engine_test::Text longest = engine_test::Concat(
+        engine_test::Repeated(31, 'a').View(), ".",
+        engine_test::Concat(engine_test::Repeated(31, 'b').View(), ".", engine_test::Repeated(31, 'c').View()).View());
     REQUIRE(store->Set(longest.View(), Stored(*store, d.i, Value::FromInt(9))).Ok());
     CHECK(Has(*store, longest.View(), d.i, Value::FromInt(9)));
 
@@ -123,8 +139,8 @@ void RunWritableConformance(Factory&& make) {
     CHECK(idle->Commit(CommitOptions()).Ok());
 }
 
-template <typename Factory>
-void RunDurabilityConformance(Factory&& make) {
+template <typename Factory> void RunDurabilityConformance(Factory&& make)
+{
     const ConformanceDescs d;
     ConfigStorePtr store = make();
     REQUIRE(store->Load().Ok());
@@ -136,10 +152,13 @@ void RunDurabilityConformance(Factory&& make) {
     {
         ConfigStorePtr other = make();
         REQUIRE(other->Load().Ok());
-        if ((caps & kCapPerKeyWrites) != 0) {
-            CHECK(CountKeys(*other) == 2); // durable at once
-        } else {
-            CHECK(CountKeys(*other) == 0); // still staged
+        if ((caps & kCapPerKeyWrites) != 0)
+        {
+            CHECK(CountKeys(*other) == 2);  // durable at once
+        }
+        else
+        {
+            CHECK(CountKeys(*other) == 0);  // still staged
         }
     }
     const Status commit = store->Commit(CommitOptions());
@@ -157,7 +176,8 @@ void RunDurabilityConformance(Factory&& make) {
     CHECK(Has(*store, "d.three", d.i, Value::FromInt(3)));
     StoredValue sv;
     CHECK(store->Get("d.one", &sv).Is(StoreError::NotFound));
-    if ((caps & kCapPerKeyWrites) == 0) {
+    if ((caps & kCapPerKeyWrites) == 0)
+    {
         REQUIRE(store->Load().Ok());
         CHECK(Has(*store, "d.one", d.i, Value::FromInt(1)));
         CHECK(store->Get("d.three", &sv).Is(StoreError::NotFound));
@@ -170,7 +190,8 @@ void RunDurabilityConformance(Factory&& make) {
     CHECK(other->Get("d.two", &sv).Is(StoreError::NotFound));
     // A thousand keys survive a commit and a reload.
     ClearStore(*store);
-    for (int n = 0; n < 1000; ++n) {
+    for (int n = 0; n < 1000; ++n)
+    {
         const engine_test::Text key = engine_test::Format("many.k%d", n);
         REQUIRE(store->Set(key.View(), Stored(*store, d.i, Value::FromInt(n))).Ok());
     }
@@ -181,37 +202,50 @@ void RunDurabilityConformance(Factory&& make) {
     CHECK(Has(*reloaded, "many.k999", d.i, Value::FromInt(999)));
 }
 
-template <typename Factory>
-void RunCapabilityConformance(Factory&& make) {
+template <typename Factory> void RunCapabilityConformance(Factory&& make)
+{
     const ConformanceDescs d;
     ConfigStorePtr store = make();
     REQUIRE(store->Load().Ok());
     ClearStore(*store);
     const u32 caps = store->Capabilities();
-    if ((caps & kCapPreservesOrder) != 0) {
+    if ((caps & kCapPreservesOrder) != 0)
+    {
         const char* const order[] = {"z.last", "a.first", "m.middle", "b.second"};
-        for (const char* k : order) REQUIRE(store->Set(k, Stored(*store, d.i, Value::FromInt(1))).Ok());
+        for (const char* k : order)
+        {
+            REQUIRE(store->Set(k, Stored(*store, d.i, Value::FromInt(1))).Ok());
+        }
         Vector<Key> keys;
         REQUIRE(store->Enumerate(StringView(), &keys).Ok());
         REQUIRE(keys.Size() == 4);
-        for (usize i = 0; i < 4; ++i) CHECK(keys[i].View() == StringView(order[i])); // the order they were first stored in
-        REQUIRE(store->Set("z.last", Stored(*store, d.i, Value::FromInt(2))).Ok()); // an overwrite keeps its place
+        for (usize i = 0; i < 4; ++i)
+        {
+            CHECK(keys[i].View() == StringView(order[i]));  // the order they were first stored in
+        }
+        REQUIRE(store->Set("z.last", Stored(*store, d.i, Value::FromInt(2))).Ok());  // an overwrite keeps its place
         Vector<Key> again;
         REQUIRE(store->Enumerate(StringView(), &again).Ok());
         CHECK(again[0].View() == "z.last");
     }
-    if ((caps & kCapNotifies) == 0) {
+    if ((caps & kCapNotifies) == 0)
+    {
         CHECK(store->SetChangeListener(nullptr, nullptr).Is(StoreError::Unsupported));
-    } else {
+    }
+    else
+    {
         CHECK(store->SetChangeListener(nullptr, nullptr).Ok());
     }
-    if ((caps & kCapTypedValues) != 0) {
+    if ((caps & kCapTypedValues) != 0)
+    {
         REQUIRE(store->Set("t.n", Stored(*store, d.i, Value::FromInt(3))).Ok());
         StoredValue sv;
         REQUIRE(store->Get("t.n", &sv).Ok());
         CHECK(sv.typed);
         CHECK(sv.value.GetType() == Type::Int);
-    } else {
+    }
+    else
+    {
         REQUIRE(store->Set("t.n", Stored(*store, d.i, Value::FromInt(3))).Ok());
         StoredValue sv;
         REQUIRE(store->Get("t.n", &sv).Ok());
@@ -222,7 +256,8 @@ void RunCapabilityConformance(Factory&& make) {
 
 /// For a store that cannot be written: reads work, every write says ReadOnly, nothing changes.
 template <typename Factory>
-void RunReadOnlyConformance(Factory&& make, StringView known_key, const SettingDesc& desc, const Value& expected) {
+void RunReadOnlyConformance(Factory&& make, StringView known_key, const SettingDesc& desc, const Value& expected)
+{
     ConfigStorePtr store = make();
     const u32 caps = store->Capabilities();
     CHECK((caps & kCapWritable) == 0);
@@ -240,4 +275,4 @@ void RunReadOnlyConformance(Factory&& make, StringView known_key, const SettingD
     CHECK(store->Get("Bad", &sv).Is(StoreError::Invalid));
 }
 
-} // namespace settings_test
+}  // namespace settings_test

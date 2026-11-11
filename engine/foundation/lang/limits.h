@@ -5,13 +5,14 @@
 #include "types.h"
 
 //! Numeric limits (Phase 16): the engine's spelling of `<limits>`.
-namespace engine_placeholder {
+namespace engine_placeholder
+{
 
 /// The limits of the arithmetic type `T` (`std::numeric_limits<T>`).
 ///
 /// Every function is `constexpr` and returns the standard's value for `T`.
-template <class T>
-struct Limits {
+template <class T> struct Limits
+{
     /// True when the limits of `T` are specialized (it is an arithmetic type).
     static constexpr bool kSpecialized = std::numeric_limits<T>::is_specialized;
     /// True when `T` is a signed type.
@@ -41,4 +42,4 @@ struct Limits {
     static constexpr T DenormMin() noexcept { return std::numeric_limits<T>::denorm_min(); }
 };
 
-} // namespace engine_placeholder
+}  // namespace engine_placeholder

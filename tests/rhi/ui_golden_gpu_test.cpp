@@ -1,5 +1,6 @@
-// Phase 15 Day 190: the golden image of the UI pass. The scene is a shadow, a rounded button with a ring, a disc and a word, drawn from a ui::DrawList through the
-// render graph. Only Vulkan writes the golden (ENGINE_RHI_UPDATE_GOLDEN=1); Direct3D 12 is checked against it (DXIL since Phase 15 Day 205).
+// Phase 15 Day 190: the golden image of the UI pass. The scene is a shadow, a rounded button with a ring, a disc and a
+// word, drawn from a ui::DrawList through the render graph. Only Vulkan writes the golden (ENGINE_RHI_UPDATE_GOLDEN=1);
+// Direct3D 12 is checked against it (DXIL since Phase 15 Day 205).
 #include <catch2/catch_test_macros.hpp>
 
 #include "backend_fixture.h"
@@ -17,12 +18,14 @@
 
 using namespace engine_placeholder;
 
-namespace {
+namespace
+{
 
 constexpr u32 kW = 160;
 constexpr u32 kH = 100;
 
-void ClearPass(const renderer::PassExecuteContext& ctx, void* user) {
+void ClearPass(const renderer::PassExecuteContext& ctx, void* user)
+{
     rhi::RenderingDesc rd;
     rd.color_count = 1;
     rd.color[0].texture = ctx.graph->ImportedTexture(*static_cast<renderer::GraphResource*>(user));
@@ -30,16 +33,19 @@ void ClearPass(const renderer::PassExecuteContext& ctx, void* user) {
     ctx.list->EndRendering();
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("The UI pass matches its golden image", "[rhi][gpu][golden][ui]") {
-    FOR_EACH_GPU_BACKEND(backend) {
+TEST_CASE("The UI pass matches its golden image", "[rhi][gpu][golden][ui]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = gpu_test::CreateTestDevice(backend);
         text::FontLibrary library;
         text::Font font;
         REQUIRE(library.Initialize().Ok());
-        REQUIRE(text::Font::OpenFile(library, io::Path(StringView(ENGINE_TEXT_FONT_FILE)), text::FontOptions{}, &font).Ok());
+        REQUIRE(text::Font::OpenFile(library, io::Path(StringView(ENGINE_TEXT_FONT_FILE)), text::FontOptions{}, &font)
+                    .Ok());
         text::GlyphAtlas atlas;
         renderer::GlyphAtlasTexture pages;
         REQUIRE(pages.Create(device.Get(), &atlas, nullptr));
@@ -73,7 +79,8 @@ TEST_CASE("The UI pass matches its golden image", "[rhi][gpu][golden][ui]") {
         pool.BeginFrame(0);
         ArenaAllocator arena(4u << 20);
         renderer::RenderGraph graph(&arena, renderer::RenderGraphDesc{});
-        renderer::GraphResource target = graph.ImportTexture("target", texture, rhi::ResourceState::Undefined, rhi::ResourceState::ColorAttachment, false);
+        renderer::GraphResource target = graph.ImportTexture("target", texture, rhi::ResourceState::Undefined,
+                                                             rhi::ResourceState::ColorAttachment, false);
         graph.AddPass("clear", &ClearPass, &target).Write(target, renderer::GraphUsage::ColorAttachment);
         ui_renderer.AddToGraph(&graph, &list, target, td.format, kW, kH);
         device->BeginFrame();
@@ -90,12 +97,17 @@ TEST_CASE("The UI pass matches its golden image", "[rhi][gpu][golden][ui]") {
         image.width = kW;
         image.height = kH;
         image.rgba.Assign(static_cast<engine_placeholder::usize>(kW) * kH * 4, 0);
-        REQUIRE(device->ReadbackTexture(texture, 0, 0, image.rgba.Data(), image.rgba.Size(), rhi::ResourceState::ColorAttachment));
+        REQUIRE(device->ReadbackTexture(texture, 0, 0, image.rgba.Data(), image.rgba.Size(),
+                                        rhi::ResourceState::ColorAttachment));
 
-        if (gpu_test::UpdatingGoldens()) {
+        if (gpu_test::UpdatingGoldens())
+        {
             REQUIRE(gpu_test::WritePpm(gpu_test::GoldenPath("ui_scene.ppm").CStr(), image));
-            WARN("ENGINE_RHI_UPDATE_GOLDEN=1: tests/rhi/golden/ui_scene.ppm was rewritten; inspect it before committing");
-        } else {
+            WARN(
+                "ENGINE_RHI_UPDATE_GOLDEN=1: tests/rhi/golden/ui_scene.ppm was rewritten; inspect it before committing");
+        }
+        else
+        {
             gpu_test::Image golden;
             REQUIRE(gpu_test::ReadPpm(gpu_test::GoldenPath("ui_scene.ppm").CStr(), &golden));
             gpu_test::CompareOptions co;

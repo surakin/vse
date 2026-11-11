@@ -6,13 +6,15 @@
 
 //! A per-frame bump allocator for small, frequently changing uniform data.
 
-namespace engine_placeholder::rhi {
+namespace engine_placeholder::rhi
+{
 
 /// One allocation from a [[rhi::UniformRing]].
 ///
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: `data` points into the ring's mapped buffer and is valid for the frame the allocation was made in.
-struct UniformAllocation {
+struct UniformAllocation
+{
     /// The ring's buffer; invalid if the allocation failed. Use it as the `buffer` of a bind group entry.
     BufferHandle buffer;
     /// Byte offset of the allocation in `buffer`; a multiple of the device's uniform offset alignment.
@@ -30,15 +32,17 @@ struct UniformAllocation {
 /// Hands out aligned slices of a persistently mapped `CpuToGpu` buffer, a fresh region each frame.
 ///
 /// The ring owns one buffer of `kSlots` equal regions. [[rhi::UniformRing::BeginFrame]] picks the region for the
-/// current frame (`FrameNumber() % kSlots`) and empties it; `Allocate` then bumps a pointer through it. Because a region is
-/// reused only every `kSlots` frames and a device runs at most three frames in flight, the GPU is done with a region
-/// before the CPU writes it again. Put an allocation in a bind group entry with `offset` and `size`, or bind the whole
-/// buffer once and use the offsets in your own shader indexing.
+/// current frame (`FrameNumber() % kSlots`) and empties it; `Allocate` then bumps a pointer through it. Because a
+/// region is reused only every `kSlots` frames and a device runs at most three frames in flight, the GPU is done with a
+/// region before the CPU writes it again. Put an allocation in a bind group entry with `offset` and `size`, or bind the
+/// whole buffer once and use the offsets in your own shader indexing.
 ///
-/// - Thread-safety: thread-compatible. `Allocate` is thread-safe and lock-free; `BeginFrame` and the destructor must not run
+/// - Thread-safety: thread-compatible. `Allocate` is thread-safe and lock-free; `BeginFrame` and the destructor must
+/// not run
 ///   concurrently with anything else.
 /// - Ownership: the ring owns its buffer and destroys it in the destructor; the device must outlive the ring.
-class UniformRing {
+class UniformRing
+{
 public:
     /// The number of per-frame regions; at least the largest frames-in-flight the device allows.
     static constexpr u32 kSlots = 3;
@@ -65,7 +69,8 @@ public:
     /// Reserves `size` bytes, aligned to the device's uniform buffer offset alignment.
     ///
     /// - Param size: bytes wanted, greater than zero.
-    /// - Returns: the allocation, or an invalid one if the region is full (logged once per frame) or the ring is not valid.
+    /// - Returns: the allocation, or an invalid one if the region is full (logged once per frame) or the ring is not
+    /// valid.
     /// - Fails: returns an invalid allocation; nothing is reserved.
     /// - Thread-safety: thread-safe.
     UniformAllocation Allocate(u64 size);
@@ -94,4 +99,4 @@ private:
     Atomic<bool> reported_full_{false};
 };
 
-} // namespace engine_placeholder::rhi
+}  // namespace engine_placeholder::rhi

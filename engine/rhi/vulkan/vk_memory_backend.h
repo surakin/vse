@@ -8,24 +8,31 @@
 
 //! The Vulkan source of memory objects for [[rhi::vulkan::MemoryAllocator]].
 
-namespace engine_placeholder::rhi::vulkan {
+namespace engine_placeholder::rhi::vulkan
+{
 
 /// Converts a non-dispatchable Vulkan handle to the opaque 64-bit value the allocator stores.
-template <typename H>
-inline u64 HandleToU64(H handle) {
-    if constexpr (sizeof(H) == sizeof(u64) && !IsPointer<H>) {
+template <typename H> inline u64 HandleToU64(H handle)
+{
+    if constexpr (sizeof(H) == sizeof(u64) && !IsPointer<H>)
+    {
         return static_cast<u64>(handle);
-    } else {
+    }
+    else
+    {
         return static_cast<u64>(reinterpret_cast<uintptr_t>(handle));
     }
 }
 
 /// Converts the allocator's opaque value back to a non-dispatchable Vulkan handle.
-template <typename H>
-inline H HandleFromU64(u64 value) {
-    if constexpr (sizeof(H) == sizeof(u64) && !IsPointer<H>) {
+template <typename H> inline H HandleFromU64(u64 value)
+{
+    if constexpr (sizeof(H) == sizeof(u64) && !IsPointer<H>)
+    {
         return static_cast<H>(value);
-    } else {
+    }
+    else
+    {
         return reinterpret_cast<H>(static_cast<uintptr_t>(value));
     }
 }
@@ -34,7 +41,8 @@ inline H HandleFromU64(u64 value) {
 ///
 /// - Thread-safety: thread-compatible; the allocator serializes calls. The counters are atomic.
 /// - Ownership: borrows the device table and device, which must outlive it.
-class VulkanMemoryBackend final : public MemoryBackend {
+class VulkanMemoryBackend final : public MemoryBackend
+{
 public:
     /// Creates a backend for `device`.
     ///
@@ -66,4 +74,4 @@ private:
     Atomic<u64> live_{0};
 };
 
-} // namespace engine_placeholder::rhi::vulkan
+}  // namespace engine_placeholder::rhi::vulkan

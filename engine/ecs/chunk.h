@@ -9,7 +9,8 @@
 #include "mem/heap_allocator.h"
 #include "types.h"
 
-namespace engine_placeholder::ecs {
+namespace engine_placeholder::ecs
+{
 
 /// The size of a chunk in bytes (header and columns). Chosen by experiment on Day 222; a compile-time constant.
 inline constexpr usize kChunkBytes = 32 * 1024;
@@ -19,12 +20,14 @@ inline constexpr u32 kMaxArchetypeComponents = 32;
 
 /// The header at the start of every chunk; the columns follow it.
 ///
-/// `written` and `added` hold the world tick of the last write and of the last addition for each component column (indexed by column
-/// number minus one), the change-detection data (see "Change detection" in the ECS guide). A chunk is `kChunkBytes` long and 64-byte aligned.
+/// `written` and `added` hold the world tick of the last write and of the last addition for each component column
+/// (indexed by column number minus one), the change-detection data (see "Change detection" in the ECS guide). A chunk
+/// is `kChunkBytes` long and 64-byte aligned.
 ///
 /// - Thread-safety: thread-compatible; a chunk is touched by one job at a time.
 /// - Ownership: the chunk is owned by an archetype and drawn from a [[ecs::ChunkPool]].
-struct alignas(64) Chunk {
+struct alignas(64) Chunk
+{
     /// The index of the archetype in its world.
     u32 archetype = 0;
     /// The rows in use.
@@ -53,7 +56,8 @@ static_assert(sizeof(Chunk) % 64 == 0, "the columns after the header start 64-by
 ///
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: owns nothing.
-struct ChunkPoolStats {
+struct ChunkPoolStats
+{
     /// Chunks handed out and not yet released.
     u32 chunks = 0;
     /// Bytes of those chunks.
@@ -68,13 +72,16 @@ struct ChunkPoolStats {
     u64 refused_allocations = 0;
 };
 
-/// The supplier of chunks: 64-byte aligned `kChunkBytes` blocks from the heap, with released chunks kept for reuse up to a budget.
+/// The supplier of chunks: 64-byte aligned `kChunkBytes` blocks from the heap, with released chunks kept for reuse up
+/// to a budget.
 ///
 /// No chunk is ever allocated per entity: only when an archetype's last chunk is full.
 ///
 /// - Thread-safety: thread-compatible; the world owns one and uses it at sync points.
-/// - Ownership: owns the kept chunks; a chunk handed out belongs to the caller until `Release`. Every chunk must be released before the pool is destroyed.
-class ChunkPool {
+/// - Ownership: owns the kept chunks; a chunk handed out belongs to the caller until `Release`. Every chunk must be
+/// released before the pool is destroyed.
+class ChunkPool
+{
 public:
     /// Creates a pool that keeps at most `budget` released chunks (the rest go back to the heap).
     explicit ChunkPool(u32 budget = 64) : budget_(budget) {}
@@ -85,7 +92,8 @@ public:
     /// - Aborts: a chunk handed out was not released.
     ~ChunkPool();
 
-    /// Hands out a chunk with a zeroed header (`archetype` set, `count` 0, `capacity` as given) and unspecified column bytes.
+    /// Hands out a chunk with a zeroed header (`archetype` set, `count` 0, `capacity` as given) and unspecified column
+    /// bytes.
     ///
     /// - Returns: the chunk, or null when the heap is exhausted (counted in `refused_allocations`).
     /// - Fails: out of memory.
@@ -115,4 +123,4 @@ private:
     ChunkPoolStats stats_;
 };
 
-} // namespace engine_placeholder::ecs
+}  // namespace engine_placeholder::ecs

@@ -1,16 +1,20 @@
 #pragma once
 
-//! [[net::Endpoint]] (an address and a port) and [[net::EndpointSet]] (a bounded list of them, for resolver results). Values; no syscalls, no allocation.
+//! [[net::Endpoint]] (an address and a port) and [[net::EndpointSet]] (a bounded list of them, for resolver results).
+//! Values; no syscalls, no allocation.
 
 #include "log/assert.h"
 #include "net/address.h"
 
-namespace engine_placeholder::net {
+namespace engine_placeholder::net
+{
 
-/// Text of an endpoint in canonical form (`1.2.3.4:80`, `[::1]:80`). Same shape as [[net::AddressText]], with room for the brackets and the port.
+/// Text of an endpoint in canonical form (`1.2.3.4:80`, `[::1]:80`). Same shape as [[net::AddressText]], with room for
+/// the brackets and the port.
 ///
 /// - Thread-safety: immutable value.
-struct EndpointText {
+struct EndpointText
+{
     /// The most characters an endpoint can take.
     static constexpr usize kCapacity = 71;
     /// The characters, followed by a terminating zero.
@@ -30,7 +34,8 @@ struct EndpointText {
 /// An [[net::Address]] and a port number (host order; port 0 means "any port" when binding).
 ///
 /// - Thread-safety: immutable value.
-class Endpoint {
+class Endpoint
+{
 public:
     /// Creates an endpoint with no address and port 0.
     constexpr Endpoint() = default;
@@ -39,8 +44,8 @@ public:
 
     /// Parses `host:port` for IPv4 and `[host]:port` for IPv6.
     ///
-    /// The brackets are required (a bare IPv6 address is ambiguous and refused). The host is an address, not a name (names go through
-    /// the resolver). The port is decimal, 0 to 65535, with no sign, no leading zeros and no spaces.
+    /// The brackets are required (a bare IPv6 address is ambiguous and refused). The host is an address, not a name
+    /// (names go through the resolver). The port is decimal, 0 to 65535, with no sign, no leading zeros and no spaces.
     ///
     /// - Ownership: `text` is only read during the call; nothing is retained.
     /// - Param out: receives the endpoint on success; untouched on failure.
@@ -54,7 +59,8 @@ public:
     /// Returns a copy with `port`.
     Endpoint WithPort(u16 port) const { return Endpoint(address_, port); }
 
-    /// Formats the canonical text. An endpoint with no address formats as `:port`, which is for logs: [[net::Endpoint::Parse]] refuses it.
+    /// Formats the canonical text. An endpoint with no address formats as `:port`, which is for logs:
+    /// [[net::Endpoint::Parse]] refuses it.
     /// - Fails: never.
     EndpointText Format() const;
 
@@ -73,10 +79,12 @@ private:
     u16 port_ = 0;
 };
 
-/// A bounded list of endpoints, the shape of a resolver's answer. Order is the order added (the resolver puts the preferred family first).
+/// A bounded list of endpoints, the shape of a resolver's answer. Order is the order added (the resolver puts the
+/// preferred family first).
 ///
 /// - Thread-safety: thread-compatible plain data.
-class EndpointSet {
+class EndpointSet
+{
 public:
     /// The most endpoints a set holds.
     static constexpr usize kCapacity = 16;
@@ -84,8 +92,12 @@ public:
     /// Adds `endpoint` at the end. Returns false, adding nothing, when the set is full.
     ///
     /// - Fails: returns false when the set holds [[net::EndpointSet::kCapacity]] endpoints.
-    bool Add(const Endpoint& endpoint) {
-        if (count_ >= kCapacity) return false;
+    bool Add(const Endpoint& endpoint)
+    {
+        if (count_ >= kCapacity)
+        {
+            return false;
+        }
         items_[count_++] = endpoint;
         return true;
     }
@@ -98,7 +110,8 @@ public:
     /// The endpoint at `index`.
     ///
     /// - Aborts: `index` is not below [[net::EndpointSet::Count]] (checked in debug builds).
-    const Endpoint& operator[](usize index) const {
+    const Endpoint& operator[](usize index) const
+    {
         ENGINE_ASSERT(index < count_, "EndpointSet::operator[]: the index is not below Count()");
         return items_[index];
     }
@@ -110,17 +123,18 @@ private:
     usize count_ = 0;
 };
 
-} // namespace engine_placeholder::net
+}  // namespace engine_placeholder::net
 
-namespace engine_placeholder {
+namespace engine_placeholder
+{
 
 /// Hash function for [[net::Endpoint]] keys.
 ///
 /// - Thread-safety: thread-safe.
-template <>
-struct Hash<net::Endpoint> {
+template <> struct Hash<net::Endpoint>
+{
     /// Returns [[net::Endpoint::HashValue]].
     usize operator()(const net::Endpoint& e) const { return e.HashValue(); }
 };
 
-} // namespace engine_placeholder
+}  // namespace engine_placeholder

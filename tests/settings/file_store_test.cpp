@@ -2,7 +2,7 @@
 #include "build_defs.h"
 
 #if !ENGINE_PLATFORM_WINDOWS
-#include <unistd.h> // geteuid: the read-only directory case below is POSIX-only
+#include <unistd.h>  // geteuid: the read-only directory case below is POSIX-only
 #endif
 
 #include "catch_engine_types.h"
@@ -18,25 +18,35 @@ using namespace engine_placeholder;
 using namespace engine_placeholder::settings;
 using namespace settings_test;
 
-namespace {
+namespace
+{
 
-engine_test::Text Slurp(const io::Path& path) {
+engine_test::Text Slurp(const io::Path& path)
+{
     Vector<u8> bytes;
-    if (io::ReadFile(path, &bytes).Failed()) return engine_test::MakeText("<missing>");
+    if (io::ReadFile(path, &bytes).Failed())
+    {
+        return engine_test::MakeText("<missing>");
+    }
     return engine_test::MakeText(StringView(reinterpret_cast<const char*>(bytes.Data()), bytes.Size()));
 }
 
-void Write(const io::Path& path, StringView text) { REQUIRE(io::WriteFile(path, text.Data(), text.Length()).Ok()); }
+void Write(const io::Path& path, StringView text)
+{
+    REQUIRE(io::WriteFile(path, text.Data(), text.Length()).Ok());
+}
 
-StoredValue Text(const char* text) {
+StoredValue Text(const char* text)
+{
     StoredValue sv;
     sv.value = Value::FromText(StringView(text));
     return sv;
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("ConfigStore conformance: FileConfigStore", "[settings][file][conformance]") {
+TEST_CASE("ConfigStore conformance: FileConfigStore", "[settings][file][conformance]")
+{
     io_test::TempDir dir;
     const io::Path path = dir / "settings.cfg";
     auto make = [&] { return ConfigStorePtr(MakeUnique<FileConfigStore>(path)); };
@@ -45,7 +55,9 @@ TEST_CASE("ConfigStore conformance: FileConfigStore", "[settings][file][conforma
     RunCapabilityConformance(make);
 }
 
-TEST_CASE("FileConfigStore: a missing file is an empty store, and the first commit creates it with the chosen mode", "[settings][file]") {
+TEST_CASE("FileConfigStore: a missing file is an empty store, and the first commit creates it with the chosen mode",
+          "[settings][file]")
+{
     io_test::TempDir dir;
     const io::Path path = dir / "new.cfg";
     FileStoreOptions options;
@@ -59,41 +71,53 @@ TEST_CASE("FileConfigStore: a missing file is an empty store, and the first comm
     REQUIRE(s.Ok());
     CHECK(s.done == 1);
     CHECK(Slurp(path).View() == "[a]\nb = 1\n");
-#if !ENGINE_PLATFORM_WINDOWS // Windows has no file modes: the store's permissions option does not apply there (io/BACKEND.md, SetPermissions)
+#if !ENGINE_PLATFORM_WINDOWS  // Windows has no file modes: the store's permissions option does not apply there
+                              // (io/BACKEND.md, SetPermissions)
     io::FileInfo info;
     REQUIRE(io::Stat(path, &info).Ok());
     CHECK((info.permissions & 0777) == 0640);
 #endif
 }
 
-TEST_CASE("FileConfigStore: what a person wrote survives a save", "[settings][file]") {
+TEST_CASE("FileConfigStore: what a person wrote survives a save", "[settings][file]")
+{
     io_test::TempDir dir;
     const io::Path path = dir / "settings.cfg";
-    const char* original = "# my settings\nversion = 1\n\n[renderer]\n# fast\npresent_mode = mailbox   # fifo | mailbox\nwidth = 1280\nlegacy = 3 ; unknown key\n";
+    const char* original =
+        "# my settings\nversion = 1\n\n[renderer]\n# fast\npresent_mode = mailbox   # fifo | mailbox\nwidth = 1280\nlegacy = 3 ; unknown key\n";
     Write(path, original);
     FileConfigStore store(path);
     REQUIRE(store.Load().Ok());
     REQUIRE(store.Set("renderer.width", Text("1920")).Ok());
     REQUIRE(store.Set("renderer.hdr", Text("off")).Ok());
     REQUIRE(store.Commit(CommitOptions()).Ok());
-    CHECK(Slurp(path).View() == "# my settings\nversion = 1\n\n[renderer]\n# fast\npresent_mode = mailbox   # fifo | mailbox\nwidth = 1920\nlegacy = 3 ; unknown key\nhdr = off\n");
+    CHECK(
+        Slurp(path).View() ==
+        "# my settings\nversion = 1\n\n[renderer]\n# fast\npresent_mode = mailbox   # fifo | mailbox\nwidth = 1920\nlegacy = 3 ; unknown key\nhdr = off\n");
     // The previous file is the backup.
     CHECK(Slurp(dir / "settings.cfg.bak").View() == StringView(original));
 }
 
-TEST_CASE("FileConfigStore: BOM and CRLF are kept, a large file loads, and invalid UTF-8 damages the store", "[settings][file]") {
+TEST_CASE("FileConfigStore: BOM and CRLF are kept, a large file loads, and invalid UTF-8 damages the store",
+          "[settings][file]")
+{
     io_test::TempDir dir;
     const io::Path path = dir / "a.cfg";
-    Write(path, "\xEF\xBB\xBF" "a = 1\r\nb = 2\r\n");
+    Write(path, "\xEF\xBB\xBF"
+                "a = 1\r\nb = 2\r\n");
     FileConfigStore store(path);
     REQUIRE(store.Load().Ok());
     REQUIRE(store.Set("b", Text("3")).Ok());
     REQUIRE(store.Set("c", Text("4")).Ok());
     REQUIRE(store.Commit(CommitOptions()).Ok());
-    CHECK(Slurp(path).View() == StringView("\xEF\xBB\xBF" "a = 1\r\nb = 3\r\nc = 4\r\n"));
+    CHECK(Slurp(path).View() == StringView("\xEF\xBB\xBF"
+                                           "a = 1\r\nb = 3\r\nc = 4\r\n"));
 
     engine_test::Text big = engine_test::MakeText();
-    for (int i = 0; i < 30000; ++i) big.Append(engine_test::Format("section%d.key_%d = value_%d   # a trailing comment\n", i % 50, i, i).View());
+    for (int i = 0; i < 30000; ++i)
+    {
+        big.Append(engine_test::Format("section%d.key_%d = value_%d   # a trailing comment\n", i % 50, i, i).View());
+    }
     REQUIRE(big.Length() > (1u << 20));
     const io::Path big_path = dir / "big.cfg";
     Write(big_path, big.View());
@@ -110,10 +134,11 @@ TEST_CASE("FileConfigStore: BOM and CRLF are kept, a large file loads, and inval
     CHECK(bad.Load().Is(StoreError::Damaged));
     CHECK(bad.Damaged());
     CHECK(bad.Report().error_count == 1);
-    CHECK(CountKeys(bad) == 1); // the readable line is available
+    CHECK(CountKeys(bad) == 1);  // the readable line is available
 }
 
-TEST_CASE("FileConfigStore: a damaged file is never overwritten by accident", "[settings][file][damaged]") {
+TEST_CASE("FileConfigStore: a damaged file is never overwritten by accident", "[settings][file][damaged]")
+{
     io_test::TempDir dir;
     const io::Path path = dir / "settings.cfg";
     const char* damaged = "version = 1\nthis line is garbage\n[renderer]\nwidth = 1280\nbroken = \"oops\n";
@@ -128,7 +153,7 @@ TEST_CASE("FileConfigStore: a damaged file is never overwritten by accident", "[
     const Status refused = store.Commit(CommitOptions());
     CHECK(refused.Is(StoreError::Damaged));
     CHECK(refused.done == 0);
-    CHECK(Slurp(path).View() == StringView(damaged)); // byte for byte
+    CHECK(Slurp(path).View() == StringView(damaged));  // byte for byte
     CHECK_FALSE(io::Exists(dir / "settings.cfg.bak"));
     // The explicit replace: the damaged text goes to the backup, the lines that could not be read are dropped.
     CommitOptions replace;
@@ -139,13 +164,15 @@ TEST_CASE("FileConfigStore: a damaged file is never overwritten by accident", "[
     CHECK_FALSE(store.Damaged());
 }
 
-TEST_CASE("FileConfigStore: failures leave the old file and the staged changes", "[settings][file][failure]") {
+TEST_CASE("FileConfigStore: failures leave the old file and the staged changes", "[settings][file][failure]")
+{
     io_test::TempDir dir;
     const io::Path path = dir / "settings.cfg";
     Write(path, "a = 1\n");
     FileStoreOptions options;
-    options.keep_backup = false; // so the injected failure hits the write of the settings file itself
-    for (int step = 1; step <= 4; ++step) {
+    options.keep_backup = false;  // so the injected failure hits the write of the settings file itself
+    for (int step = 1; step <= 4; ++step)
+    {
         INFO("failure step " << step);
         FileConfigStore store(path, options);
         REQUIRE(store.Load().Ok());
@@ -179,20 +206,23 @@ TEST_CASE("FileConfigStore: failures leave the old file and the staged changes",
     CHECK(Slurp(path).View() == "a = 1\n");
 }
 
-TEST_CASE("FileConfigStore: read-only files and directories, and missing directories", "[settings][file][permissions]") {
+TEST_CASE("FileConfigStore: read-only files and directories, and missing directories", "[settings][file][permissions]")
+{
     io_test::TempDir dir;
-#if !ENGINE_PLATFORM_WINDOWS // a directory without write permission refuses the commit; on Windows a directory's read-only attribute does not stop writes
-    if (::geteuid() != 0) { // (root writes anywhere)
-    REQUIRE(io::CreateDirectory(dir / "ro").Ok());
-    Write(dir / "ro/settings.cfg", "a = 1\n");
-    REQUIRE(io::SetPermissions(dir / "ro", 0500).Ok());
-    FileConfigStore store(dir / "ro/settings.cfg");
-    REQUIRE(store.Load().Ok());
-    REQUIRE(store.Set("a", Text("2")).Ok());
-    const Status refused = store.Commit(CommitOptions());
-    CHECK((refused.Is(StoreError::PermissionDenied) || refused.Is(StoreError::ReadOnly)));
-    CHECK(Slurp(dir / "ro/settings.cfg").View() == "a = 1\n");
-    REQUIRE(io::SetPermissions(dir / "ro", 0700).Ok());
+#if !ENGINE_PLATFORM_WINDOWS  // a directory without write permission refuses the commit; on Windows a directory's
+                              // read-only attribute does not stop writes
+    if (::geteuid() != 0)
+    {  // (root writes anywhere)
+        REQUIRE(io::CreateDirectory(dir / "ro").Ok());
+        Write(dir / "ro/settings.cfg", "a = 1\n");
+        REQUIRE(io::SetPermissions(dir / "ro", 0500).Ok());
+        FileConfigStore store(dir / "ro/settings.cfg");
+        REQUIRE(store.Load().Ok());
+        REQUIRE(store.Set("a", Text("2")).Ok());
+        const Status refused = store.Commit(CommitOptions());
+        CHECK((refused.Is(StoreError::PermissionDenied) || refused.Is(StoreError::ReadOnly)));
+        CHECK(Slurp(dir / "ro/settings.cfg").View() == "a = 1\n");
+        REQUIRE(io::SetPermissions(dir / "ro", 0700).Ok());
     }
 #endif
     // A missing directory is created only when the options say so.
@@ -210,7 +240,9 @@ TEST_CASE("FileConfigStore: read-only files and directories, and missing directo
     CHECK(Slurp(dir / "deep/er/settings.cfg").View() == "a = 1\n");
 }
 
-TEST_CASE("FileConfigStore: two stores on one file: the last commit wins and the file is never torn", "[settings][file]") {
+TEST_CASE("FileConfigStore: two stores on one file: the last commit wins and the file is never torn",
+          "[settings][file]")
+{
     io_test::TempDir dir;
     const io::Path path = dir / "settings.cfg";
     Write(path, "a = 1\nb = 2\n");
@@ -222,7 +254,7 @@ TEST_CASE("FileConfigStore: two stores on one file: the last commit wins and the
     REQUIRE(first.Commit(CommitOptions()).Ok());
     CHECK(Slurp(path).View() == "a = 10\nb = 2\n");
     REQUIRE(second.Commit(CommitOptions()).Ok());
-    CHECK(Slurp(path).View() == "a = 1\nb = 20\n"); // the whole file is the second store's view
+    CHECK(Slurp(path).View() == "a = 1\nb = 20\n");  // the whole file is the second store's view
     // A text store takes text only.
     StoredValue typed;
     typed.typed = true;
@@ -231,22 +263,26 @@ TEST_CASE("FileConfigStore: two stores on one file: the last commit wins and the
     CHECK(first.Set("c", Text("two\nlines")).Is(StoreError::Invalid));
 }
 
-TEST_CASE("FileConfigStore: a Load that cannot read the file keeps staged changes and blocks Commit", "[settings][file][regression]") {
+TEST_CASE("FileConfigStore: a Load that cannot read the file keeps staged changes and blocks Commit",
+          "[settings][file][regression]")
+{
     io_test::TempDir dir;
     const io::Path path = dir / "settings.cfg";
     Write(path, engine_test::Repeated(200, 'x').View());
     FileStoreOptions options;
-    options.max_bytes = 100; // the file is over the cap: it cannot be read
+    options.max_bytes = 100;  // the file is over the cap: it cannot be read
     FileConfigStore store(path, options);
     REQUIRE(store.Set("a", Text("1")).Ok());
     CHECK(store.Load().Is(StoreError::TooLong));
     StoredValue sv;
-    CHECK(store.Get("a", &sv).Ok()); // the staged change is still there
-    CHECK(store.Commit(CommitOptions()).Is(StoreError::TooLong)); // and the unreadable file is not overwritten
+    CHECK(store.Get("a", &sv).Ok());                               // the staged change is still there
+    CHECK(store.Commit(CommitOptions()).Is(StoreError::TooLong));  // and the unreadable file is not overwritten
     CHECK(Slurp(path).Length() == 200);
 }
 
-TEST_CASE("FileConfigStore: a failed replace of a damaged file leaves the store as it was", "[settings][file][regression]") {
+TEST_CASE("FileConfigStore: a failed replace of a damaged file leaves the store as it was",
+          "[settings][file][regression]")
+{
     io_test::TempDir dir;
     const io::Path path = dir / "settings.cfg";
     const char* damaged = "a = 1\ngarbage line\n";
@@ -261,9 +297,9 @@ TEST_CASE("FileConfigStore: a failed replace of a damaged file leaves the store 
     io::detail::SetAtomicWriteFailureStep(1);
     CHECK(store.Commit(replace).Is(StoreError::Io));
     io::detail::SetAtomicWriteFailureStep(0);
-    CHECK(store.Damaged());                                              // still damaged
-    CHECK(store.Commit(CommitOptions()).Is(StoreError::Damaged));         // still refused without the flag
+    CHECK(store.Damaged());                                        // still damaged
+    CHECK(store.Commit(CommitOptions()).Is(StoreError::Damaged));  // still refused without the flag
     CHECK(Slurp(path).View() == StringView(damaged));
-    CHECK(store.Commit(replace).Ok());                                    // the retry writes what was prepared
+    CHECK(store.Commit(replace).Ok());  // the retry writes what was prepared
     CHECK(Slurp(path).View() == "a = 2\n");
 }

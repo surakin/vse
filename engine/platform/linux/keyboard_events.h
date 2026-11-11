@@ -4,20 +4,26 @@
 #include "platform/linux/xkb_keyboard.h"
 #include "types.h"
 
-//! Keyboard events for the Linux backends that get raw evdev key transitions (Wayland): key down and up, text, and client-side key repeat.
+//! Keyboard events for the Linux backends that get raw evdev key transitions (Wayland): key down and up, text, and
+//! client-side key repeat.
 
-namespace engine_placeholder::os {
+namespace engine_placeholder::os
+{
 
-/// Turns evdev key presses and releases into [[os::InputEvent]]s: `KeyDown`/`KeyUp`, the `Text` a press produces, and the auto-repeat the Wayland compositor does not send.
+/// Turns evdev key presses and releases into [[os::InputEvent]]s: `KeyDown`/`KeyUp`, the `Text` a press produces, and
+/// the auto-repeat the Wayland compositor does not send.
 ///
-/// Independent of Wayland types and of any clock: the caller passes the time, so a test drives repeat with a fake clock. Only the most recently pressed repeating key repeats, as
-/// keyboards do; a modifier never does. A key that is held when focus is lost is released with a `KeyUp` before `FocusLost`.
+/// Independent of Wayland types and of any clock: the caller passes the time, so a test drives repeat with a fake
+/// clock. Only the most recently pressed repeating key repeats, as keyboards do; a modifier never does. A key that is
+/// held when focus is lost is released with a `KeyUp` before `FocusLost`.
 ///
 /// - Thread-safety: not-thread-safe; owner-thread only.
 /// - Ownership: borrows the keyboard and the queue, which must outlive it.
-class KeyboardEvents {
+class KeyboardEvents
+{
 public:
-    /// The most repeats one [[os::KeyboardEvents::Tick]] queues, so a program that stalled for seconds is not flooded when it wakes.
+    /// The most repeats one [[os::KeyboardEvents::Tick]] queues, so a program that stalled for seconds is not flooded
+    /// when it wakes.
     static constexpr u32 kMaxRepeatsPerTick = 4;
 
     /// Constructs an unattached object; call [[os::KeyboardEvents::Init]].
@@ -26,7 +32,8 @@ public:
     /// Attaches the keyboard and the queue.
     /// - Param keyboard: the keymap and state; must outlive this object.
     /// - Param queue: where events go; must outlive this object.
-    void Init(XkbKeyboard* keyboard, InputEventQueue* queue) {
+    void Init(XkbKeyboard* keyboard, InputEventQueue* queue)
+    {
         keyboard_ = keyboard;
         queue_ = queue;
     }
@@ -38,14 +45,16 @@ public:
 
     /// Reports a key press or release.
     ///
-    /// The modifier state of the keyboard must already include the key's own modifier effect (a Wayland `modifiers` event arrives before the `key` event it belongs to... for a
-    /// modifier key itself the order is not guaranteed, which does not matter: modifier keys produce no text).
+    /// The modifier state of the keyboard must already include the key's own modifier effect (a Wayland `modifiers`
+    /// event arrives before the `key` event it belongs to... for a modifier key itself the order is not guaranteed,
+    /// which does not matter: modifier keys produce no text).
     /// - Param evdev_code: the evdev keycode.
     /// - Param pressed: true for a press.
     /// - Param now_ns: the monotonic time of the event.
     void Key(u32 evdev_code, bool pressed, u64 now_ns);
 
-    /// Reports that the window got keyboard focus. Call [[os::KeyboardEvents::KeyAlreadyDown]] afterwards for each key the compositor says is held.
+    /// Reports that the window got keyboard focus. Call [[os::KeyboardEvents::KeyAlreadyDown]] afterwards for each key
+    /// the compositor says is held.
     /// - Param now_ns: the monotonic time of the event.
     void FocusGained(u64 now_ns);
 
@@ -54,7 +63,8 @@ public:
     /// - Param now_ns: the monotonic time of the event.
     void KeyAlreadyDown(u32 evdev_code, u64 now_ns);
 
-    /// Reports that the window lost keyboard focus: queues a `KeyUp` for every held key, then `FocusLost`, and stops repeat and any compose sequence.
+    /// Reports that the window lost keyboard focus: queues a `KeyUp` for every held key, then `FocusLost`, and stops
+    /// repeat and any compose sequence.
     void FocusLost(u64 now_ns);
 
     /// Forgets every held key without queueing anything (a new keymap makes the old translations meaningless).
@@ -84,4 +94,4 @@ private:
     u8 text_length_ = 0;
 };
 
-} // namespace engine_placeholder::os
+}  // namespace engine_placeholder::os

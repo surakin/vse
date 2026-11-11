@@ -7,7 +7,8 @@ using engine_placeholder::PoolAllocator;
 using engine_placeholder::u32;
 using engine_placeholder::usize;
 
-TEST_CASE("PoolAllocator: random alloc/free churn never aliases two live allocations", "[mem][pool]") {
+TEST_CASE("PoolAllocator: random alloc/free churn never aliases two live allocations", "[mem][pool]")
+{
     constexpr usize kSlotSize = 32;
     constexpr usize kSlotCount = 64;
     constexpr usize kIterations = 10000;
@@ -20,7 +21,8 @@ TEST_CASE("PoolAllocator: random alloc/free churn never aliases two live allocat
     // Small deterministic xorshift32 PRNG — reproducible across
     // platforms without depending on libc's rand() implementation.
     u32 rng_state = 0x12345678u;
-    auto NextRand = [&rng_state]() -> u32 {
+    auto NextRand = [&rng_state]() -> u32
+    {
         rng_state ^= rng_state << 13;
         rng_state ^= rng_state >> 17;
         rng_state ^= rng_state << 5;
@@ -28,24 +30,31 @@ TEST_CASE("PoolAllocator: random alloc/free churn never aliases two live allocat
     };
 
     bool no_alias = true;
-    for (usize iter = 0; iter < kIterations && no_alias; ++iter) {
+    for (usize iter = 0; iter < kIterations && no_alias; ++iter)
+    {
         usize idx = NextRand() % kSlotCount;
-        if (!live_flag[idx]) {
+        if (!live_flag[idx])
+        {
             void* p = pool.Alloc();
-            if (p == nullptr) {
+            if (p == nullptr)
+            {
                 // Pool momentarily full (every logical slot live); skip
                 // this iteration rather than treating it as failure.
                 continue;
             }
-            for (usize j = 0; j < kSlotCount; ++j) {
-                if (live_flag[j] && live[j] == p) {
+            for (usize j = 0; j < kSlotCount; ++j)
+            {
+                if (live_flag[j] && live[j] == p)
+                {
                     no_alias = false;
                     break;
                 }
             }
             live[idx] = p;
             live_flag[idx] = true;
-        } else {
+        }
+        else
+        {
             pool.Free(live[idx]);
             live_flag[idx] = false;
             live[idx] = nullptr;

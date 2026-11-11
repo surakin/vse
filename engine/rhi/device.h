@@ -13,7 +13,8 @@
 
 //! The device: creates and destroys GPU resources and submits recorded work.
 
-namespace engine_placeholder::rhi {
+namespace engine_placeholder::rhi
+{
 
 /// A point on the device's timeline; later submissions have larger values. 0 means none.
 using FenceValue = u64;
@@ -21,9 +22,10 @@ using FenceValue = u64;
 /// Identifies an upload so the caller can wait for it to finish on the GPU.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct UploadTicket {
-    /// The device fence value reached when the upload has finished; 0 means it had already finished when the call returned.
-    /// If `ok` is false, it is the fence of the last part that was submitted before the failure (or 0).
+struct UploadTicket
+{
+    /// The device fence value reached when the upload has finished; 0 means it had already finished when the call
+    /// returned. If `ok` is false, it is the fence of the last part that was submitted before the failure (or 0).
     FenceValue fence = 0;
     /// False if the upload failed (lost device, staging memory that never freed up); the destination then holds only
     /// the parts that were submitted, and the failure was logged.
@@ -32,11 +34,12 @@ struct UploadTicket {
 
 /// How many objects of each kind a device holds, for leak checks.
 ///
-/// Counts live objects only; resources already destroyed but waiting for the GPU (deferred destruction) are not counted,
-/// so call [[rhi::Device::Quiesce]] first for an exact answer.
+/// Counts live objects only; resources already destroyed but waiting for the GPU (deferred destruction) are not
+/// counted, so call [[rhi::Device::Quiesce]] first for an exact answer.
 ///
 /// - Thread-safety: thread-compatible plain data (a snapshot).
-struct ResourceCounts {
+struct ResourceCounts
+{
     /// Live buffers.
     usize buffers = 0;
     /// Live textures, including swapchain images.
@@ -53,7 +56,8 @@ struct ResourceCounts {
     usize pipelines = 0;
     /// Live swapchains (0 or 1).
     usize swapchains = 0;
-    /// Command lists handed out and not yet recycled (null backend; the Vulkan backend recycles its lists per frame and reports 0).
+    /// Command lists handed out and not yet recycled (null backend; the Vulkan backend recycles its lists per frame and
+    /// reports 0).
     usize command_lists = 0;
     /// Backend-internal objects the application cannot see (staging buffers, rings); 0 on the null backend.
     usize internal_objects = 0;
@@ -62,8 +66,10 @@ struct ResourceCounts {
 
     /// Returns the sum of the counts of objects an application creates (buffers to swapchains and command lists).
     /// - Fails: never.
-    usize UserObjects() const {
-        return buffers + textures + samplers + shaders + bind_group_layouts + bind_groups + pipelines + swapchains + command_lists;
+    usize UserObjects() const
+    {
+        return buffers + textures + samplers + shaders + bind_group_layouts + bind_groups + pipelines + swapchains +
+               command_lists;
     }
 };
 
@@ -80,7 +86,10 @@ u32 AllocateDeviceSerial();
 ///
 /// - Param serial: from [[rhi::AllocateDeviceSerial]].
 /// - Returns: the seed for `HandlePool::SeedGeneration`.
-constexpr u32 GenerationSeed(u32 serial) { return ((serial & 0xFFFu) << 20) | 1u; }
+constexpr u32 GenerationSeed(u32 serial)
+{
+    return ((serial & 0xFFFu) << 20) | 1u;
+}
 
 /// The GPU device: owner of every resource, factory of command lists, and the submission point.
 ///
@@ -96,7 +105,8 @@ constexpr u32 GenerationSeed(u32 serial) { return ((serial & 0xFFFu) << 20) | 1u
 ///   thread at a time (the submission thread).
 /// - Ownership: the caller owns the device through a [[rhi::DevicePtr]], which waits for the GPU to go
 ///   idle and destroys it; drop every command list first.
-class Device {
+class Device
+{
 public:
     virtual ~Device() = default;
 
@@ -113,15 +123,18 @@ public:
 
     /// Lists the adapters (GPUs) the device's backend can use, as they were when the device was created.
     ///
-    /// Use this, not [[rhi::EnumerateAdapters]], while a device is live: the Vulkan backend's `EnumerateAdapters` makes and destroys a
-    /// second Vulkan instance, and destroying it breaks the live device's swapchain on Wayland with the NVIDIA driver (the next
-    /// `vkAcquireNextImageKHR` calls a null function). This reads a list the device already holds.
+    /// Use this, not [[rhi::EnumerateAdapters]], while a device is live: the Vulkan backend's `EnumerateAdapters` makes
+    /// and destroys a second Vulkan instance, and destroying it breaks the live device's swapchain on Wayland with the
+    /// NVIDIA driver (the next `vkAcquireNextImageKHR` calls a null function). This reads a list the device already
+    /// holds.
     ///
     /// - Param out: receives the list; cleared first.
     /// - Returns: true if the list was read (it may be empty).
     /// - Ownership: the list is copied into `out`; nothing is retained.
-    /// - Fails: returns false and leaves `out` empty for a backend that keeps no list; the caller may fall back to [[rhi::EnumerateAdapters]].
-    virtual bool ListAdapters(AdapterList* out) const {
+    /// - Fails: returns false and leaves `out` empty for a backend that keeps no list; the caller may fall back to
+    /// [[rhi::EnumerateAdapters]].
+    virtual bool ListAdapters(AdapterList* out) const
+    {
         *out = AdapterList{};
         return false;
     }
@@ -150,7 +163,8 @@ public:
     ///
     /// - Param desc: the description; must pass `Validate()` and fit the device limits.
     /// - Returns: the texture handle, or the invalid handle on failure.
-    /// - Fails: an invalid description, an unsupported format or an out-of-memory condition is logged and returns the invalid handle.
+    /// - Fails: an invalid description, an unsupported format or an out-of-memory condition is logged and returns the
+    /// invalid handle.
     virtual TextureHandle CreateTexture(const TextureDesc& desc) = 0;
     /// Destroys a texture; the handle is invalid immediately and the memory is released after the GPU is done.
     ///
@@ -216,13 +230,15 @@ public:
     ///
     /// - Param desc: the description; arrays are copied before the call returns.
     /// - Returns: the pipeline handle, or the invalid handle on failure.
-    /// - Fails: an invalid description, a stale shader or layout, or a driver rejection is logged and returns the invalid handle.
+    /// - Fails: an invalid description, a stale shader or layout, or a driver rejection is logged and returns the
+    /// invalid handle.
     virtual PipelineHandle CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) = 0;
     /// Creates a compute pipeline.
     ///
     /// - Param desc: the description.
     /// - Returns: the pipeline handle, or the invalid handle on failure.
-    /// - Fails: an invalid description, a stale shader or layout, or a driver rejection is logged and returns the invalid handle.
+    /// - Fails: an invalid description, a stale shader or layout, or a driver rejection is logged and returns the
+    /// invalid handle.
     virtual PipelineHandle CreateComputePipeline(const ComputePipelineDesc& desc) = 0;
     /// Destroys a pipeline of either kind.
     ///
@@ -253,7 +269,8 @@ public:
     /// - Fails: returns false for `Format::Undefined` or an unsupported combination.
     virtual bool FormatSupport(Format format, TextureUsage usage) const = 0;
 
-    /// Tells whether [[rhi::CommandList::GenerateMips]] works for a format: the device must blit it with linear filtering.
+    /// Tells whether [[rhi::CommandList::GenerateMips]] works for a format: the device must blit it with linear
+    /// filtering.
     ///
     /// - Param format: the texel format.
     /// - Returns: true if mips can be generated; otherwise upload precomputed mips with `UploadTexture`.
@@ -278,12 +295,14 @@ public:
     /// - Returns: a ticket; see [[rhi::Device::UploadBuffer]].
     /// - Fails: a lost device or staging memory running out logs and returns a ticket with `ok` false; the texture is
     ///   then left in `ShaderRead` with the level only partly written.
-    /// - Aborts: `dst` is invalid or stale, lacks usage, `mip` or `layer` is out of range, `data` is null, `row_pitch` is
+    /// - Aborts: `dst` is invalid or stale, lacks usage, `mip` or `layer` is out of range, `data` is null, `row_pitch`
+    /// is
     ///   invalid, or the texture is in another state.
     /// - Ownership: `data` is borrowed for the call only; it must hold the level's rows at `row_pitch`.
     virtual UploadTicket UploadTexture(TextureHandle dst, u32 mip, u32 layer, const void* data, u32 row_pitch) = 0;
 
-    /// Copies one mip level of one layer of a texture back to the CPU and waits (a synchronous helper for tests and tools).
+    /// Copies one mip level of one layer of a texture back to the CPU and waits (a synchronous helper for tests and
+    /// tools).
     ///
     /// You say which state the texture is in (the device cannot see barriers recorded in command lists); it is moved to
     /// `CopySrc` for the copy and back, so it is left in the same state. Rows are tightly packed in `dst`.
@@ -296,10 +315,12 @@ public:
     /// - Param state: the state the texture is in now; not `Undefined`.
     /// - Returns: true on success.
     /// - Fails: returns false, logging the reason, if the device is lost or memory is exhausted.
-    /// - Aborts: `src` is invalid or stale, lacks `CopySrc`, `mip` or `layer` is out of range, `dst` is null or too small,
+    /// - Aborts: `src` is invalid or stale, lacks `CopySrc`, `mip` or `layer` is out of range, `dst` is null or too
+    /// small,
     ///   `state` is `Undefined` or not a texture state, or (on the null backend) the texture is not in `state`.
     /// - Ownership: `dst` is borrowed for the call only.
-    virtual bool ReadbackTexture(TextureHandle src, u32 mip, u32 layer, void* dst, u64 dst_size, ResourceState state) = 0;
+    virtual bool ReadbackTexture(TextureHandle src, u32 mip, u32 layer, void* dst, u64 dst_size,
+                                 ResourceState state) = 0;
 
     /// Maps a CPU-visible buffer and returns a pointer to its first byte.
     ///
@@ -325,7 +346,8 @@ public:
     /// - Param offset: first byte of the written range.
     /// - Param size: bytes written; the range must lie inside the buffer.
     /// - Aborts: `buffer` is invalid or stale, or the range lies outside the buffer.
-    virtual void FlushMappedBuffer(BufferHandle buffer, u64 offset, u64 size) {
+    virtual void FlushMappedBuffer(BufferHandle buffer, u64 offset, u64 size)
+    {
         (void)buffer;
         (void)offset;
         (void)size;
@@ -346,7 +368,8 @@ public:
     /// no ordering against work already submitted, and it keeps its fixed state. Do not overwrite data the GPU may
     /// still be reading (use a buffer per frame in flight).
     ///
-    /// - Returns: a ticket; pass its `fence` to `WaitFence` to know when the GPU has finished, and check its `ok`. A failed
+    /// - Returns: a ticket; pass its `fence` to `WaitFence` to know when the GPU has finished, and check its `ok`. A
+    /// failed
     ///   upload logs the reason and returns `ok` false.
     /// - Fails: a lost device, or staging memory running out, logs and copies nothing.
     /// - Aborts: `dst` is invalid or stale, lacks `CopyDst` usage, `data` is null, or the range is outside the buffer.
@@ -381,7 +404,8 @@ public:
     /// Submits recorded lists for execution in the given order.
     ///
     /// Submissions are serialized and run on one queue in call order, so a later `Submit` needs no explicit wait on an
-    /// earlier one. Call it from one thread at a time (it takes a mutex, but the order of calls is the order of execution).
+    /// earlier one. Call it from one thread at a time (it takes a mutex, but the order of calls is the order of
+    /// execution).
     ///
     /// - Param lists: lists obtained this frame and ended; none may repeat.
     /// - Param count: number of lists; 0 submits nothing and returns the latest fence value.
@@ -422,7 +446,8 @@ public:
     ///
     /// - Param window: the window to present to; usually the one the device was created with.
     /// - Returns: true if there is a new surface. The swapchain must be created again.
-    /// - Fails: returns false, logging the reason, if the surface cannot be created or the adapter cannot present to it.
+    /// - Fails: returns false, logging the reason, if the surface cannot be created or the adapter cannot present to
+    /// it.
     /// - Aborts: the swapchain still exists, or a frame is open.
     virtual bool RecreateSurface(const os::Window* window) = 0;
 
@@ -444,7 +469,8 @@ public:
     /// - Thread-safety: thread-safe.
     virtual bool InFrame() const = 0;
 
-    /// Makes the device behave as lost, as if the driver had reported it: later submissions are ignored and `DeviceLost` is true.
+    /// Makes the device behave as lost, as if the driver had reported it: later submissions are ignored and
+    /// `DeviceLost` is true.
     ///
     /// A development and test aid (the demos use it to exercise recovery). The default does nothing.
     virtual void InjectDeviceLoss() {}
@@ -461,13 +487,16 @@ public:
 ///
 /// - Thread-safety: not-thread-safe; the thread that submits to the device must call it.
 /// - Ownership: takes the device; it, its command lists and every handle are invalid afterwards.
-struct DeviceDeleter {
+struct DeviceDeleter
+{
     /// Waits for `device` to go idle and destroys it.
     ///
     /// - Param device: the device, or null for no effect.
     /// - Ownership: takes the device; it is destroyed and its storage freed.
-    void operator()(Device* device) const {
-        if (device != nullptr) {
+    void operator()(Device* device) const
+    {
+        if (device != nullptr)
+        {
             device->WaitIdle();
             device->~Device();
             HeapAllocator::Default().Free(static_cast<void*>(device), sizeof(Device), alignof(Device));
@@ -485,9 +514,11 @@ using DevicePtr = UniquePtr<Device, DeviceDeleter>;
 /// - Param stage: the module's stage.
 /// - Param debug_name: the name shown in debuggers and logs; null for `set.name`.
 /// - Returns: the shader, or an invalid handle.
-/// - Fails: returns an invalid handle, logging an error that names the shader and the format, when the set has no blob in the
+/// - Fails: returns an invalid handle, logging an error that names the shader and the format, when the set has no blob
+/// in the
 ///   device's format; otherwise as `Device::CreateShader`.
 /// - Thread-safety: thread-safe, as `Device::CreateShader` is.
-ShaderHandle CreateShaderFromSet(Device& device, const ShaderBlobSet& set, ShaderStage stage, const char* debug_name = nullptr);
+ShaderHandle CreateShaderFromSet(Device& device, const ShaderBlobSet& set, ShaderStage stage,
+                                 const char* debug_name = nullptr);
 
-} // namespace engine_placeholder::rhi
+}  // namespace engine_placeholder::rhi

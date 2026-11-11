@@ -44,7 +44,8 @@
 //! FIFO queue, so a slow request delays the ones behind it (head-of-line
 //! blocking); a pool of I/O threads can replace it later without changing the
 //! awaitable.
-namespace engine_placeholder::jobs {
+namespace engine_placeholder::jobs
+{
 
 /// Intrusive node for work queued on the [[jobs::IoThread]]: the foundation's [[io::IoWork]], so the thread is also an
 /// [[io::IoExecutor]]. Embed it as the first base of a request type.
@@ -60,7 +61,8 @@ using IoRequest = io::IoWork;
 /// - Ownership: owns the I/O thread and joins it on destruction; queued
 ///   requests stay owned by their creators.
 /// - See: [[jobs::ReadFileAsync]]
-class IoThread final : public io::IoExecutor {
+class IoThread final : public io::IoExecutor
+{
 public:
     /// Starts the I/O thread.
     IoThread();
@@ -79,12 +81,14 @@ public:
     ///
     /// - Param request: the request to queue; must not already be queued.
     /// - Returns: `true` if queued.
-    /// - Fails: returns `false` if the thread is shutting down or already stopped; the request is not queued, its `run` is never called, and the caller must complete it itself.
+    /// - Fails: returns `false` if the thread is shutting down or already stopped; the request is not queued, its `run`
+    /// is never called, and the caller must complete it itself.
     /// - Ownership: the thread borrows the request until `run` returns; ownership stays with the caller.
     /// - Thread-safety: thread-safe. Any thread.
     [[nodiscard]] bool Enqueue(IoRequest* request);
 
-    /// The [[io::IoExecutor]] interface: the same as [[jobs::IoThread::Enqueue]], so files can run their asynchronous operations here
+    /// The [[io::IoExecutor]] interface: the same as [[jobs::IoThread::Enqueue]], so files can run their asynchronous
+    /// operations here
     /// (`io::SetDefaultExecutor(&scheduler.Io())`).
     ///
     /// - Returns: `true` if queued.
@@ -109,7 +113,7 @@ public:
 private:
     void Loop();
 
-    Mutex shutdown_mutex_; // serializes Shutdown() callers through the join
+    Mutex shutdown_mutex_;  // serializes Shutdown() callers through the join
     Mutex mutex_;
     ConditionVariable cv_;
     IoRequest* head_ = nullptr;
@@ -120,7 +124,7 @@ private:
     engine_placeholder::ThreadId thread_id_;
 };
 
-struct ReadState; // heap-allocated per request (defined in async_io.cpp)
+struct ReadState;  // heap-allocated per request (defined in async_io.cpp)
 
 /// Result of an asynchronous file read; owns the bytes read.
 ///
@@ -129,7 +133,8 @@ struct ReadState; // heap-allocated per request (defined in async_io.cpp)
 /// - Thread-safety: not-thread-safe. A value owned by the awaiting coroutine.
 /// - Ownership: owns the buffer behind `data` (an arena) and frees it on destruction; a moved-from result is empty.
 /// - See: [[jobs::ReadFileAsync]]
-class FileReadResult {
+class FileReadResult
+{
 public:
     FileReadResult() = default;
 
@@ -148,7 +153,8 @@ public:
     FileReadResult(const FileReadResult&) = delete;
     FileReadResult& operator=(const FileReadResult&) = delete;
 
-    /// `true` if the whole file was read; `false` for a missing or unreadable file, an oversize file or path, or a shut-down I/O thread.
+    /// `true` if the whole file was read; `false` for a missing or unreadable file, an oversize file or path, or a
+    /// shut-down I/O thread.
     bool ok = false;
     /// The file contents; valid while this object lives. Null when `ok` is false.
     const u8* data = nullptr;
@@ -168,7 +174,8 @@ private:
 /// - Thread-safety: not-thread-safe. Belongs to the coroutine that awaits it.
 /// - Ownership: owns the per-request state until `await_resume` hands it to the result.
 /// - See: [[jobs::IoThread]]
-class ReadFileAwaitable {
+class ReadFileAwaitable
+{
 public:
     /// Takes over the pending request of `other`, which becomes empty.
     /// - Param other: the awaitable to move from.
@@ -189,7 +196,8 @@ public:
     /// Queues the read on the I/O thread and parks the coroutine until it completes.
     ///
     /// - Param h: the awaiting coroutine's handle.
-    /// - Returns: `false` if the coroutine should continue inline, which happens when the path is too long, the I/O thread is shut down, or the read already finished; `true` if it was parked and will be resumed on a participant.
+    /// - Returns: `false` if the coroutine should continue inline, which happens when the path is too long, the I/O
+    /// thread is shut down, or the read already finished; `true` if it was parked and will be resumed on a participant.
     bool await_suspend(CoroutineHandle<> h) noexcept;
 
     /// Collects the outcome of the read.
@@ -219,11 +227,12 @@ inline constexpr usize kMaxAsyncPathBytes = 1023;
 /// missing or unreadable files all yield a result with `ok == false`. The
 /// path is copied before the call returns.
 ///
-/// - Param scheduler: the scheduler whose I/O thread performs the read and whose participant resumes the awaiter; must outlive the read.
+/// - Param scheduler: the scheduler whose I/O thread performs the read and whose participant resumes the awaiter; must
+/// outlive the read.
 /// - Param path: file to read; copied.
 /// - Param max_bytes: largest acceptable file size in bytes.
 /// - Returns: an awaitable that produces a [[jobs::FileReadResult]].
 /// - Thread-safety: thread-safe. Await it from a job.
 ReadFileAwaitable ReadFileAsync(Scheduler& scheduler, StringView path, usize max_bytes = kDefaultMaxReadBytes);
 
-} // namespace engine_placeholder::jobs
+}  // namespace engine_placeholder::jobs

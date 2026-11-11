@@ -3,23 +3,25 @@
 //! Deferred lighting for directional, ambient and point light, and the tonemap that brings the result to the display.
 //!
 //! [[renderer::LightingPass]] reads the G-buffer ([[renderer::GBufferPass]]) and writes linear HDR light into an
-//! `RGBA16_Float` accumulation target. One fullscreen triangle sums the ambient term and every directional light: per pixel
-//! it rebuilds the world position from depth and the inverse view-projection, decodes the surface, and applies the lighting
-//! model in `lighting_common.slang` (Lambert diffuse, GGX specular, metallic-roughness). Background pixels (depth 1.0) are
-//! skipped. Then every visible point light is drawn as a light volume (see below), adding to the same target.
-//! [[renderer::TonemapPass]] then applies an exposure and Narkowicz's ACES fit and writes the target, whose sRGB format does
-//! the final encoding.
+//! `RGBA16_Float` accumulation target. One fullscreen triangle sums the ambient term and every directional light: per
+//! pixel it rebuilds the world position from depth and the inverse view-projection, decodes the surface, and applies
+//! the lighting model in `lighting_common.slang` (Lambert diffuse, GGX specular, metallic-roughness). Background pixels
+//! (depth 1.0) are skipped. Then every visible point light is drawn as a light volume (see below), adding to the same
+//! target.
+//! [[renderer::TonemapPass]] then applies an exposure and Narkowicz's ACES fit and writes the target, whose sRGB format
+//! does the final encoding.
 //!
 //! Point lights. A point light has a position and a radius; its contribution is `color * intensity *
-//! PointLightAttenuation(distance, radius)` shaded by the same model with the light vector pointing at the position. The
-//! attenuation reaches exactly zero at the radius, so the sphere of that radius bounds the light. The light volume pass draws,
-//! for each point light that survives frustum culling, a sphere of triangles (generated in the vertex shader from the vertex
-//! index, [[renderer::kLightVolumeVertexCount]] vertices) with additive blending, front faces culled so that a camera inside
-//! the sphere still draws its far side, no depth test, and the scissor set to the light's screen bounds. Every draw uses one
-//! pipeline and one bind group; the light is picked by the instance index into the light storage buffer.
+//! PointLightAttenuation(distance, radius)` shaded by the same model with the light vector pointing at the position.
+//! The attenuation reaches exactly zero at the radius, so the sphere of that radius bounds the light. The light volume
+//! pass draws, for each point light that survives frustum culling, a sphere of triangles (generated in the vertex
+//! shader from the vertex index, [[renderer::kLightVolumeVertexCount]] vertices) with additive blending, front faces
+//! culled so that a camera inside the sphere still draws its far side, no depth test, and the scissor set to the
+//! light's screen bounds. Every draw uses one pipeline and one bind group; the light is picked by the instance index
+//! into the light storage buffer.
 //!
-//! The functions below are the CPU twins of the shader code, used by tests and tools; the real-device tests compare them with
-//! the GPU output.
+//! The functions below are the CPU twins of the shader code, used by tests and tools; the real-device tests compare
+//! them with the GPU output.
 #include "sync/atomic.h"
 
 #include "containers/vector.h"
@@ -33,7 +35,8 @@
 #include "rhi/rhi.h"
 #include "types.h"
 
-namespace engine_placeholder::renderer {
+namespace engine_placeholder::renderer
+{
 
 /// The light accumulation target's format (linear HDR).
 inline constexpr rhi::Format kLightAccumFormat = rhi::Format::RGBA16_Float;
@@ -41,7 +44,8 @@ inline constexpr rhi::Format kLightAccumFormat = rhi::Format::RGBA16_Float;
 /// The surface the lighting model shades: what the G-buffer holds, decoded.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct SurfacePoint {
+struct SurfacePoint
+{
     /// Linear base color.
     Vec3 albedo = Vec3(1, 1, 1);
     /// Perceptual roughness in [0, 1]; the shader clamps it to at least 0.045.
@@ -58,9 +62,9 @@ struct SurfacePoint {
 
 /// Returns one light's contribution to a surface: `(diffuse + specular) * radiance * max(dot(N, L), 0)`.
 ///
-/// The diffuse BRDF is the albedo times `1 - metallic` (the 1/pi of a Lambertian surface is folded into the intensity) and the
-/// specular lobe is GGX with height-correlated Smith visibility and Schlick Fresnel, multiplied by pi to match. The exact formulas
-/// are in `lighting_common.slang`, which this mirrors.
+/// The diffuse BRDF is the albedo times `1 - metallic` (the 1/pi of a Lambertian surface is folded into the intensity)
+/// and the specular lobe is GGX with height-correlated Smith visibility and Schlick Fresnel, multiplied by pi to match.
+/// The exact formulas are in `lighting_common.slang`, which this mirrors.
 ///
 /// - Param surface: the decoded surface.
 /// - Param view: unit vector from the surface toward the viewer.
@@ -92,17 +96,19 @@ f32 TonemapAces(f32 x);
 /// - Param depth: the depth value in [0, 1].
 /// - Param width: the target width in pixels.
 /// - Param height: the target height in pixels.
-/// - Param inverse_view_projection: [[renderer::FrameData::inverse_view_projection]] (it already undoes the projection's Y flip).
+/// - Param inverse_view_projection: [[renderer::FrameData::inverse_view_projection]] (it already undoes the
+/// projection's Y flip).
 /// - Returns: the world-space position.
 /// - Fails: never.
-Vec3 ReconstructWorldPosition(u32 pixel_x, u32 pixel_y, f32 depth, u32 width, u32 height, const Mat4& inverse_view_projection);
+Vec3 ReconstructWorldPosition(u32 pixel_x, u32 pixel_y, f32 depth, u32 width, u32 height,
+                              const Mat4& inverse_view_projection);
 
-/// Returns a point light's attenuation at a distance: `saturate(1 - (d / R)^4)^2 / (d^2 + 1)` with `d` the distance and `R`
-/// the radius.
+/// Returns a point light's attenuation at a distance: `saturate(1 - (d / R)^4)^2 / (d^2 + 1)` with `d` the distance and
+/// `R` the radius.
 ///
-/// It is 1 at the light, falls like an inverse square (the `+ 1` keeps it finite) over most of the range, and is smoothly
-/// windowed to exactly 0 at `d = R` with zero slope there, staying 0 beyond. The shader multiplies the light's radiance by it.
-/// The CPU twin of `PointAttenuation` in `lighting_common.slang`.
+/// It is 1 at the light, falls like an inverse square (the `+ 1` keeps it finite) over most of the range, and is
+/// smoothly windowed to exactly 0 at `d = R` with zero slope there, staying 0 beyond. The shader multiplies the light's
+/// radiance by it. The CPU twin of `PointAttenuation` in `lighting_common.slang`.
 ///
 /// - Param distance: the distance from the light, not negative.
 /// - Param radius: the light's radius, greater than zero.
@@ -123,7 +129,8 @@ inline constexpr u32 kLightVolumeVertexCount = kLightVolumeSegments * kLightVolu
 /// - Fails: never.
 f32 LightVolumeScale();
 
-/// Returns vertex `index` of the light volume, relative to the light's position, in units of its radius, scale included.
+/// Returns vertex `index` of the light volume, relative to the light's position, in units of its radius, scale
+/// included.
 ///
 /// The CPU twin of the vertex generation in `point_light.vert`. Triangles are counter-clockwise seen from outside.
 ///
@@ -134,8 +141,8 @@ Vec3 LightVolumeVertex(u32 index);
 
 /// Computes the pixel rectangle that bounds a point light's sphere on screen, for the scissor.
 ///
-/// A sphere that reaches the camera's plane (any corner of its bounding box is not in front of the camera) gets the whole
-/// target; otherwise the rectangle is the projection of the box, clamped to the target.
+/// A sphere that reaches the camera's plane (any corner of its bounding box is not in front of the camera) gets the
+/// whole target; otherwise the rectangle is the projection of the box, clamped to the target.
 ///
 /// - Param view: the frame block ([[renderer::FrameData::view_projection]] is used).
 /// - Param center: the light's position.
@@ -147,14 +154,17 @@ Vec3 LightVolumeVertex(u32 index);
 /// - Fails: reported through the return value.
 /// - Ownership: `out` is borrowed for the call.
 /// - Aborts: `out` is null, the target size is zero or `radius` is not positive.
-bool LightScreenRect(const FrameData& view, const Vec3& center, f32 radius, u32 width, u32 height, rhi::ScissorRect* out);
+bool LightScreenRect(const FrameData& view, const Vec3& center, f32 radius, u32 width, u32 height,
+                     rhi::ScissorRect* out);
 
 /// Lights the G-buffer with the scene's ambient, directional and point lights.
 ///
 /// - Thread-safety: thread-compatible; `Prepare` and `AddToGraph` run on the frame's thread.
-/// - Ownership: borrows the device, the material system (for the frame bind group) and the frame resources, which must outlive it;
+/// - Ownership: borrows the device, the material system (for the frame bind group) and the frame resources, which must
+/// outlive it;
 ///   owns its shaders and pipelines.
-class LightingPass final : public Recreatable {
+class LightingPass final : public Recreatable
+{
 public:
     /// Creates the shaders, the bind group layout and the pipeline.
     ///
@@ -194,15 +204,17 @@ public:
     /// - Fails: never.
     bool Valid() const { return pipeline_.IsValid(); }
 
-    /// Writes the scene's lights for this frame and plans the light volume draws. Call after `FrameResources::BeginFrame`,
-    /// before `Flush`.
+    /// Writes the scene's lights for this frame and plans the light volume draws. Call after
+    /// `FrameResources::BeginFrame`, before `Flush`.
     ///
     /// Point lights outside the frustum, or whose screen rectangle is empty, get no draw.
     ///
     /// - Param scene: the scene.
-    /// - Param view: the frame block of the view being lit (the one given to `FrameResources::WriteFrameData`); its viewport
+    /// - Param view: the frame block of the view being lit (the one given to `FrameResources::WriteFrameData`); its
+    /// viewport
     ///   size is the target size and must match the size given to `AddToGraph`.
-    /// - Returns: what was written (ambient sum and counts); see [[renderer::FrameResources::WriteLights]] for lights that
+    /// - Returns: what was written (ambient sum and counts); see [[renderer::FrameResources::WriteLights]] for lights
+    /// that
     ///   did not fit.
     /// - Aborts: `view`'s viewport size is below 1 pixel.
     /// - Ownership: `scene` and `view` are borrowed for the call.
@@ -222,12 +234,14 @@ public:
     /// - Param width: the target width in pixels (the G-buffer's).
     /// - Param height: the target height in pixels.
     /// - Returns: the `RGBA16_Float` accumulation resource, written as a color attachment.
-    /// - Aborts: called twice since the last `Prepare`, `graph` is null, or the size differs from the viewport given to `Prepare`.
+    /// - Aborts: called twice since the last `Prepare`, `graph` is null, or the size differs from the viewport given to
+    /// `Prepare`.
     /// - Ownership: `graph` is borrowed; the pass keeps a pointer to this object until the graph is executed.
     GraphResource AddToGraph(RenderGraph* graph, const GBufferTargets& targets, u32 width, u32 height);
 
 private:
-    struct Push {
+    struct Push
+    {
         Vec4 ambient;
         u32 directional_count = 0;
         u32 pad[3] = {};
@@ -239,7 +253,8 @@ private:
     rhi::Device* device_ = nullptr;
     MaterialSystem* materials_ = nullptr;
     FrameResources* frame_ = nullptr;
-    struct PointDraw {
+    struct PointDraw
+    {
         u32 light_index;
         rhi::ScissorRect rect;
     };
@@ -251,7 +266,7 @@ private:
     rhi::PipelineHandle pipeline_;
     rhi::PipelineHandle volume_pipeline_;
     rhi::BindGroupHandle frame_group_;
-    rhi::BufferHandle object_index_stream_; // MaterialSystem::ObjectIndexStream of this frame; invalid on Vulkan
+    rhi::BufferHandle object_index_stream_;  // MaterialSystem::ObjectIndexStream of this frame; invalid on Vulkan
     BufferRegion lights_;
     Vector<PointDraw> point_draws_;
     Atomic<u32> point_draws_recorded_{0};
@@ -269,7 +284,8 @@ private:
 ///
 /// - Thread-safety: thread-compatible.
 /// - Ownership: borrows the device; owns its shaders, layout and the pipeline for the last output format.
-class TonemapPass final : public Recreatable {
+class TonemapPass final : public Recreatable
+{
 public:
     /// Creates the shaders and the bind group layout.
     ///
@@ -282,7 +298,8 @@ public:
     TonemapPass(const TonemapPass&) = delete;
     TonemapPass& operator=(const TonemapPass&) = delete;
 
-    /// Registers the tonemap pass with a registry so it survives a device reset. Its pipeline follows the output format, so a swapchain format change is handled by the next `AddToGraph`.
+    /// Registers the tonemap pass with a registry so it survives a device reset. Its pipeline follows the output
+    /// format, so a swapchain format change is handled by the next `AddToGraph`.
     ///
     /// - Param resources: the registry; null does nothing.
     /// - Returns: true if registered or `resources` is null.
@@ -311,16 +328,20 @@ public:
     ///
     /// - Param graph: the frame's graph.
     /// - Param hdr: the light accumulation resource; read as `Sampled`.
-    /// - Param output: the display target (the swapchain image or an offscreen color target), written as a color attachment
+    /// - Param output: the display target (the swapchain image or an offscreen color target), written as a color
+    /// attachment
     ///   and cleared; its extent must equal the accumulation target's.
-    /// - Param output_format: the format of `output` (an import carries no description); use an `*_SRGB` format for the display.
+    /// - Param output_format: the format of `output` (an import carries no description); use an `*_SRGB` format for the
+    /// display.
     /// - Param exposure: the scale applied to the HDR value before the operator; positive.
     /// - Aborts: `graph` is null or `output_format` is undefined.
     /// - Ownership: the pass keeps a pointer to this object until the graph is executed.
-    void AddToGraph(RenderGraph* graph, GraphResource hdr, GraphResource output, rhi::Format output_format, f32 exposure);
+    void AddToGraph(RenderGraph* graph, GraphResource hdr, GraphResource output, rhi::Format output_format,
+                    f32 exposure);
 
 private:
-    struct Push {
+    struct Push
+    {
         f32 exposure = 1.0f;
         f32 pad[3] = {};
     };
@@ -340,4 +361,4 @@ private:
     Push push_;
 };
 
-} // namespace engine_placeholder::renderer
+}  // namespace engine_placeholder::renderer

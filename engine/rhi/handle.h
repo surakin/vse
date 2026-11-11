@@ -7,7 +7,8 @@
 //! A handle is a plain 8-byte value. The device validates it on every use, so a handle to a
 //! destroyed resource is detected rather than dereferenced.
 
-namespace engine_placeholder::rhi {
+namespace engine_placeholder::rhi
+{
 
 /// A generation-checked reference to one device-owned resource of the kind named by `Tag`.
 ///
@@ -19,8 +20,8 @@ namespace engine_placeholder::rhi {
 /// - Thread-safety: thread-safe. An immutable-style plain value; copying and comparing need no synchronization.
 /// - Ownership: a handle does not own the resource; the resource lives until the device's `Destroy*` call
 ///   and the GPU has finished with it.
-template <typename Tag>
-struct Handle {
+template <typename Tag> struct Handle
+{
     /// Slot index inside the device's pool for this resource kind.
     u32 index = 0;
     /// Generation of the slot when the handle was created; 0 means invalid.
@@ -32,7 +33,8 @@ struct Handle {
     constexpr bool IsValid() const { return generation != 0; }
 
     /// Returns whether both handles have the same index and generation.
-    constexpr bool operator==(const Handle& other) const {
+    constexpr bool operator==(const Handle& other) const
+    {
         return index == other.index && generation == other.generation;
     }
     /// Returns whether the handles differ in index or generation.
@@ -42,31 +44,45 @@ struct Handle {
 /// Tag type distinguishing [[rhi::BufferHandle]] from the other handle kinds.
 ///
 /// - Thread-safety: immutable. An empty type.
-struct BufferTag {};
+struct BufferTag
+{
+};
 /// Tag type distinguishing [[rhi::TextureHandle]] from the other handle kinds.
 ///
 /// - Thread-safety: immutable. An empty type.
-struct TextureTag {};
+struct TextureTag
+{
+};
 /// Tag type distinguishing [[rhi::SamplerHandle]] from the other handle kinds.
 ///
 /// - Thread-safety: immutable. An empty type.
-struct SamplerTag {};
+struct SamplerTag
+{
+};
 /// Tag type distinguishing [[rhi::ShaderHandle]] from the other handle kinds.
 ///
 /// - Thread-safety: immutable. An empty type.
-struct ShaderTag {};
+struct ShaderTag
+{
+};
 /// Tag type distinguishing [[rhi::PipelineHandle]] from the other handle kinds.
 ///
 /// - Thread-safety: immutable. An empty type.
-struct PipelineTag {};
+struct PipelineTag
+{
+};
 /// Tag type distinguishing [[rhi::BindGroupLayoutHandle]] from the other handle kinds.
 ///
 /// - Thread-safety: immutable. An empty type.
-struct BindGroupLayoutTag {};
+struct BindGroupLayoutTag
+{
+};
 /// Tag type distinguishing [[rhi::BindGroupHandle]] from the other handle kinds.
 ///
 /// - Thread-safety: immutable. An empty type.
-struct BindGroupTag {};
+struct BindGroupTag
+{
+};
 
 /// Handle to a GPU buffer.
 using BufferHandle = Handle<BufferTag>;
@@ -83,4 +99,4 @@ using BindGroupLayoutHandle = Handle<BindGroupLayoutTag>;
 /// Handle to a bind group.
 using BindGroupHandle = Handle<BindGroupTag>;
 
-} // namespace engine_placeholder::rhi
+}  // namespace engine_placeholder::rhi

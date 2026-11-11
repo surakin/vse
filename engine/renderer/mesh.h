@@ -9,7 +9,8 @@
 #include "rhi/rhi.h"
 #include "types.h"
 
-namespace engine_placeholder::renderer {
+namespace engine_placeholder::renderer
+{
 
 /// The vertex the procedural meshes use: position, normal, tangent (xyz plus handedness in w) and one UV set. 48 bytes,
 /// interleaved in one stream.
@@ -18,7 +19,8 @@ namespace engine_placeholder::renderer {
 /// grows along the bitangent.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct StandardVertex {
+struct StandardVertex
+{
     /// Object-space position.
     f32 position[3];
     /// Unit normal.
@@ -38,16 +40,17 @@ static_assert(sizeof(StandardVertex) == 48, "StandardVertex is 48 bytes");
 /// - Thread-safety: thread-safe. A pure function.
 VertexLayoutData StandardVertexLayout();
 
-/// A [[renderer::StandardVertex]] with a per-vertex color: the same fields plus four bytes of RGBA, 52 bytes, in the same
-/// interleaved stream.
+/// A [[renderer::StandardVertex]] with a per-vertex color: the same fields plus four bytes of RGBA, 52 bytes, in the
+/// same interleaved stream.
 ///
 /// The color is stored as authored sRGB bytes (not linear): the geometry shader converts it to linear light, so a color
-/// picked in an image editor reads as expected. Alpha is linear coverage. A material that does not declare the vertex-color
-/// permutation ignores the attribute; a shader that reads it needs a mesh that has it (the material system reports a
-/// mismatch when it builds the pipeline).
+/// picked in an image editor reads as expected. Alpha is linear coverage. A material that does not declare the
+/// vertex-color permutation ignores the attribute; a shader that reads it needs a mesh that has it (the material system
+/// reports a mismatch when it builds the pipeline).
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct ColorVertex {
+struct ColorVertex
+{
     /// The standard attributes.
     StandardVertex base;
     /// Red, green, blue, alpha, 0 to 255.
@@ -69,7 +72,8 @@ VertexLayoutData ColorVertexLayout();
 ///
 /// - Thread-safety: thread-compatible. Move-only.
 /// - Ownership: owns copies of the vertex and index data it was given.
-class MeshData {
+class MeshData
+{
 public:
     MeshData() = default;
     /// Frees the copied geometry.
@@ -91,16 +95,19 @@ public:
     /// - Param indices: `index_count` indices of `index_type`.
     /// - Param index_count: number of indices; for a list topology a positive multiple of the primitive size (3 for
     ///   `TriangleList`, 2 for `LineList`), for a strip at least 3 (`TriangleStrip`) or 2 (`LineStrip`).
-    /// - Param topology: how the indices form primitives; defaults to a triangle list. In the strip topologies an index with
-    ///   every bit set (0xFFFF or 0xFFFFFFFF) is a restart marker, not a vertex: it ends the strip and starts the next one
-    ///   (see [[renderer::MeshData::HasPrimitiveRestart]]).
+    /// - Param topology: how the indices form primitives; defaults to a triangle list. In the strip topologies an index
+    /// with
+    ///   every bit set (0xFFFF or 0xFFFFFFFF) is a restart marker, not a vertex: it ends the strip and starts the next
+    ///   one (see [[renderer::MeshData::HasPrimitiveRestart]]).
     /// - Returns: null on success, otherwise a static message naming the problem (this mesh is then empty).
-    /// - Fails: a zero or oversized stride, a stride or position offset that is not a multiple of 4, a position outside the vertex, no vertices or indices, an index count that does not fit the
-    ///   topology, 16-bit indices with more than 65536 vertices (65535 for a strip, whose last index value is the restart
-    ///   marker), an index at or past `vertex_count`, or a non-finite position.
+    /// - Fails: a zero or oversized stride, a stride or position offset that is not a multiple of 4, a position outside
+    /// the vertex, no vertices or indices, an index count that does not fit the
+    ///   topology, 16-bit indices with more than 65536 vertices (65535 for a strip, whose last index value is the
+    ///   restart marker), an index at or past `vertex_count`, or a non-finite position.
     /// - Ownership: `vertices` and `indices` are borrowed for the call and copied.
-    const char* Set(const VertexLayoutData& layout, u32 position_offset, const void* vertices, u32 vertex_count, rhi::IndexType index_type,
-                    const void* indices, u32 index_count, rhi::PrimitiveTopology topology = rhi::PrimitiveTopology::TriangleList);
+    const char* Set(const VertexLayoutData& layout, u32 position_offset, const void* vertices, u32 vertex_count,
+                    rhi::IndexType index_type, const void* indices, u32 index_count,
+                    rhi::PrimitiveTopology topology = rhi::PrimitiveTopology::TriangleList);
 
     /// Returns whether the mesh holds geometry.
     /// - Fails: never.
@@ -182,7 +189,8 @@ const char* MakeCubeMesh(f32 edge, MeshData* out);
 /// - Param out: receives the mesh; must not be null.
 /// - Returns: null on success, otherwise a static message.
 /// - Ownership: `out` is borrowed for the call; the message is static.
-/// - Fails: an argument out of range, or more vertices than 16-bit indices can address (then 32-bit indices are used, so
+/// - Fails: an argument out of range, or more vertices than 16-bit indices can address (then 32-bit indices are used,
+/// so
 ///   this only fails for absurd sizes).
 /// - Aborts: `out` is null.
 /// - Thread-safety: thread-safe.
@@ -203,10 +211,10 @@ const char* MakeSphereMesh(f32 radius, u32 segments, u32 rings, MeshData* out);
 /// - Thread-safety: thread-safe.
 const char* MakePlaneMesh(f32 width, f32 depth, u32 x_segments, u32 z_segments, MeshData* out);
 
-/// Builds the same grid as [[renderer::MakePlaneMesh]] with the same vertices, but as triangle strips: one strip per row of
-/// cells, ended by a restart index, so the index count is about two thirds of the list version's. The triangles are the
-/// same set with the same winding (counter-clockwise seen from above), so the mesh draws identically; its topology is
-/// `TriangleStrip` and it has restart markers, so it needs a pipeline with `primitive_restart`.
+/// Builds the same grid as [[renderer::MakePlaneMesh]] with the same vertices, but as triangle strips: one strip per
+/// row of cells, ended by a restart index, so the index count is about two thirds of the list version's. The triangles
+/// are the same set with the same winding (counter-clockwise seen from above), so the mesh draws identically; its
+/// topology is `TriangleStrip` and it has restart markers, so it needs a pipeline with `primitive_restart`.
 /// - Param width: size along X, greater than zero.
 /// - Param depth: size along Z, greater than zero.
 /// - Param x_segments: cells along X, at least 1.
@@ -219,12 +227,13 @@ const char* MakePlaneMesh(f32 width, f32 depth, u32 x_segments, u32 z_segments, 
 /// - Thread-safety: thread-safe.
 const char* MakePlaneStripMesh(f32 width, f32 depth, u32 x_segments, u32 z_segments, MeshData* out);
 
-/// Copies a mesh built with [[renderer::StandardVertexLayout]] into one with [[renderer::ColorVertexLayout]], giving each
-/// vertex its own color.
+/// Copies a mesh built with [[renderer::StandardVertexLayout]] into one with [[renderer::ColorVertexLayout]], giving
+/// each vertex its own color.
 /// - Param source: a valid mesh whose layout is the standard one.
 /// - Param colors: `color_count` RGBA colors, four bytes each (sRGB bytes, see [[renderer::ColorVertex]]).
 /// - Param color_count: must equal the source's vertex count.
-/// - Param out: receives the colored mesh, which keeps the source's indices, topology and bounds; must not be null and not
+/// - Param out: receives the colored mesh, which keeps the source's indices, topology and bounds; must not be null and
+/// not
 ///   be `source`.
 /// - Returns: null on success, otherwise a static message.
 /// - Fails: the source is empty or not in the standard layout, or `color_count` differs from its vertex count.
@@ -245,14 +254,15 @@ const char* MakeColoredMesh(const MeshData& source, const u8* colors, u32 color_
 const char* MakeUniformColoredMesh(const MeshData& source, const u8 rgba[4], MeshData* out);
 
 /// How [[renderer::ListToStrip]] joins strips that cannot be continued.
-enum class StripJoin : u8 {
-    Restart = 0, ///< Put a restart index between strips; the result needs a pipeline with `primitive_restart`.
-    Degenerate,  ///< Join with repeated vertices (degenerate triangles); works on a plain strip pipeline.
+enum class StripJoin : u8
+{
+    Restart = 0,  ///< Put a restart index between strips; the result needs a pipeline with `primitive_restart`.
+    Degenerate,   ///< Join with repeated vertices (degenerate triangles); works on a plain strip pipeline.
 };
 
-/// Converts a triangle-strip mesh to a triangle list: the same vertices, one triangle per strip position, restart markers
-/// honored, degenerate triangles (two equal indices) dropped, winding alternation undone so every triangle keeps the
-/// orientation it is drawn with.
+/// Converts a triangle-strip mesh to a triangle list: the same vertices, one triangle per strip position, restart
+/// markers honored, degenerate triangles (two equal indices) dropped, winding alternation undone so every triangle
+/// keeps the orientation it is drawn with.
 /// - Param strip: a valid mesh with topology `TriangleStrip`.
 /// - Param out: receives the list mesh; must not be null and not be `strip`.
 /// - Returns: null on success, otherwise a static message.
@@ -262,15 +272,17 @@ enum class StripJoin : u8 {
 /// - Thread-safety: thread-safe.
 const char* StripToList(const MeshData& strip, MeshData* out);
 
-/// Converts a triangle-list mesh to triangle strips by greedy edge walking: each strip is extended through the edge shared
-/// with an unused neighbor of the right orientation until none is left, then the next strip starts, joined as `join` says.
-/// The set of triangles, and every triangle's winding, is preserved; the number of indices is usually well below the list's
-/// (three per triangle) and never above six per triangle (a lone triangle joined by degenerate vertices).
+/// Converts a triangle-list mesh to triangle strips by greedy edge walking: each strip is extended through the edge
+/// shared with an unused neighbor of the right orientation until none is left, then the next strip starts, joined as
+/// `join` says. The set of triangles, and every triangle's winding, is preserved; the number of indices is usually well
+/// below the list's (three per triangle) and never above six per triangle (a lone triangle joined by degenerate
+/// vertices).
 /// - Param list: a valid mesh with topology `TriangleList`.
 /// - Param join: how to join the strips.
 /// - Param out: receives the strip mesh (topology `TriangleStrip`); must not be null and not be `list`.
 /// - Returns: null on success, otherwise a static message.
-/// - Fails: the mesh is empty or not a triangle list. A list with exactly 65536 vertices gets 32-bit strip indices, because
+/// - Fails: the mesh is empty or not a triangle list. A list with exactly 65536 vertices gets 32-bit strip indices,
+/// because
 ///   0xFFFF is the restart marker.
 /// - Ownership: `out` is borrowed for the call.
 /// - Aborts: `out` is null or is the source list.
@@ -280,13 +292,15 @@ const char* ListToStrip(const MeshData& list, StripJoin join, MeshData* out);
 /// A mesh on the GPU: a vertex buffer and an index buffer with the draw information.
 ///
 /// `Create` uploads through the device's staging ring and leaves the buffers in the `CopyDst` state; record
-/// [[renderer::GpuMesh::RecordPrepare]] in every command list that draws it until a list containing it has been submitted
-/// and [[renderer::GpuMesh::MarkReady]] was called, so the buffers move to their read states once.
+/// [[renderer::GpuMesh::RecordPrepare]] in every command list that draws it until a list containing it has been
+/// submitted and [[renderer::GpuMesh::MarkReady]] was called, so the buffers move to their read states once.
 ///
 /// - Thread-safety: thread-compatible. Move-only.
-/// - Ownership: owns its two buffers; the device must outlive it and be idle (or at least done with the buffers' frames)
+/// - Ownership: owns its two buffers; the device must outlive it and be idle (or at least done with the buffers'
+/// frames)
 ///   for a clean exit. Destruction goes through the device's deferred destruction.
-class GpuMesh final : public Recreatable {
+class GpuMesh final : public Recreatable
+{
 public:
     GpuMesh() = default;
     /// Destroys the buffers, as [[renderer::GpuMesh::Destroy]] does.
@@ -309,15 +323,16 @@ public:
     /// - Ownership: `data` is read during the call only.
     bool Create(rhi::Device* device, const MeshData& data, const char* debug_name);
 
-    /// Destroys the buffers through the device and forgets the source and the registration. Safe on an empty mesh and called
-    /// by the destructor.
+    /// Destroys the buffers through the device and forgets the source and the registration. Safe on an empty mesh and
+    /// called by the destructor.
     void Destroy();
 
     /// How a mesh gets its geometry again after a device reset.
     ///
     /// - Thread-safety: thread-compatible plain data.
     /// - Ownership: `borrowed` is not owned; `load` and `user` are borrowed.
-    struct Source {
+    struct Source
+    {
         /// Geometry the caller keeps alive for as long as the mesh is registered, or null.
         const MeshData* borrowed = nullptr;
         /// Or a function that loads the geometry into `*out` (called at every recreate), or null.
@@ -328,7 +343,8 @@ public:
 
     /// Makes this mesh survive a device reset: records where the geometry comes from and registers with `resources`.
     ///
-    /// After this, `Release` and `Recreate` work and the registry calls them on every reset. Call after a successful `Create`.
+    /// After this, `Release` and `Recreate` work and the registry calls them on every reset. Call after a successful
+    /// `Create`.
     ///
     /// - Param resources: the registry; null records the source but registers nothing.
     /// - Param source: where to get the geometry again; `borrowed` or `load` must be set.
@@ -349,8 +365,8 @@ public:
     /// - Ownership: borrowed for the call; nothing is kept unless the description above says so.
     bool AdoptSource(DeviceResources* resources, MeshData&& data, const char* debug_name);
 
-    /// Destroys the buffers and keeps everything else (the source, the bounds, the sort id). The mesh reads as not `Valid`
-    /// until `Recreate`. Safe on a released mesh.
+    /// Destroys the buffers and keeps everything else (the source, the bounds, the sort id). The mesh reads as not
+    /// `Valid` until `Recreate`. Safe on a released mesh.
     void Release() override;
 
     /// Uploads the geometry again on `device`; the buffer handles change, the sort id does not.
@@ -391,13 +407,13 @@ public:
     bool HasPrimitiveRestart() const { return has_restart_; }
     /// Returns the object-space bounds.
     const Bounds& GetBounds() const { return bounds_; }
-    /// Returns a number from 1 to 2^24 - 1 that differs between meshes created one after another, for [[renderer::MakeDrawSortKey]].
-    /// It repeats only after 16 million meshes were created. 0 for an empty mesh.
+    /// Returns a number from 1 to 2^24 - 1 that differs between meshes created one after another, for
+    /// [[renderer::MakeDrawSortKey]]. It repeats only after 16 million meshes were created. 0 for an empty mesh.
     /// - Fails: never.
     u32 SortId() const { return sort_id_; }
 
-    /// Records the barriers that move the buffers out of their upload state; does nothing once [[renderer::GpuMesh::MarkReady]]
-    /// was called. Call outside a render pass.
+    /// Records the barriers that move the buffers out of their upload state; does nothing once
+    /// [[renderer::GpuMesh::MarkReady]] was called. Call outside a render pass.
     ///
     /// - Param list: the command list being recorded.
     /// - Ownership: `list` is borrowed for the call.
@@ -411,9 +427,9 @@ public:
     /// - Fails: never.
     bool Ready() const { return ready_; }
 
-    /// Binds the buffers and draws all indices for `instance_count` instances starting at `first_instance`. Call inside a
-    /// pass, with a pipeline whose vertex layout matches [[renderer::GpuMesh::Layout]] bound. The prepare barriers must
-    /// have been recorded, in this list before the pass or in an earlier submitted one.
+    /// Binds the buffers and draws all indices for `instance_count` instances starting at `first_instance`. Call inside
+    /// a pass, with a pipeline whose vertex layout matches [[renderer::GpuMesh::Layout]] bound. The prepare barriers
+    /// must have been recorded, in this list before the pass or in an earlier submitted one.
     ///
     /// - Param list: the command list being recorded.
     /// - Param instance_count: number of instances, at least 1.
@@ -423,14 +439,15 @@ public:
     void Draw(rhi::CommandList* list, u32 instance_count, u32 first_instance) const;
 
 private:
-    bool Upload(rhi::Device* device, const MeshData& data, const char* debug_name, rhi::BufferHandle* vb, rhi::BufferHandle* ib);
+    bool Upload(rhi::Device* device, const MeshData& data, const char* debug_name, rhi::BufferHandle* vb,
+                rhi::BufferHandle* ib);
     void MoveFrom(GpuMesh& other);
 
     Source source_;
     MeshData owned_;
     char name_[48] = "mesh";
     bool recreatable_ = false;
-    bool was_ready_ = false; // the buffers were in their read states when released; Recreate restores that
+    bool was_ready_ = false;  // the buffers were in their read states when released; Recreate restores that
     ScopedRegistration registration_;
     rhi::Device* device_ = nullptr;
     rhi::BufferHandle vertex_buffer_;
@@ -443,8 +460,8 @@ private:
     VertexLayoutData layout_;
     Bounds bounds_;
     u32 sort_id_ = 0;
-    bool prepared_ = false; // RecordPrepare was called, in a list that may not be submitted yet
+    bool prepared_ = false;  // RecordPrepare was called, in a list that may not be submitted yet
     bool ready_ = false;
 };
 
-} // namespace engine_placeholder::renderer
+}  // namespace engine_placeholder::renderer

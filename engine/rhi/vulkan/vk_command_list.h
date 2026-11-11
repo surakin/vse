@@ -5,7 +5,8 @@
 
 //! The Vulkan implementation of [[rhi::CommandList]].
 
-namespace engine_placeholder::rhi::vulkan {
+namespace engine_placeholder::rhi::vulkan
+{
 
 class VulkanDevice;
 
@@ -15,16 +16,19 @@ class VulkanDevice;
 /// groups, push constants or compute pipelines log an error and record nothing until those exist (Days 60 and 62).
 ///
 /// - Thread-safety: thread-compatible; record from one thread, different lists on different threads at once.
-/// - Ownership: owned by the [[rhi::vulkan::VulkanDevice]] that made it; use it only within the frame it was created in.
-class VulkanCommandList final : public CommandList {
+/// - Ownership: owned by the [[rhi::vulkan::VulkanDevice]] that made it; use it only within the frame it was created
+/// in.
+class VulkanCommandList final : public CommandList
+{
 public:
     /// Where a list is in its life.
-    enum class Phase : u8 {
-        Initial,    ///< Created or recycled; `Begin` has not been called.
-        Recording,  ///< Between `Begin` and `End`.
-        Ended,      ///< `End` was called; ready to submit.
-        Submitting, ///< Being checked by `Submit` (detects a list passed twice).
-        Submitted,  ///< Handed to the GPU.
+    enum class Phase : u8
+    {
+        Initial,     ///< Created or recycled; `Begin` has not been called.
+        Recording,   ///< Between `Begin` and `End`.
+        Ended,       ///< `End` was called; ready to submit.
+        Submitting,  ///< Being checked by `Submit` (detects a list passed twice).
+        Submitted,   ///< Handed to the GPU.
     };
 
     /// Creates a list that records into `buffer`.
@@ -72,7 +76,8 @@ public:
     void SetVertexBuffer(u32 slot, BufferHandle buffer, u64 offset) override;
     void SetIndexBuffer(BufferHandle buffer, u64 offset, IndexType type) override;
     void Draw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance) override;
-    void DrawIndexed(u32 index_count, u32 instance_count, u32 first_index, i32 vertex_offset, u32 first_instance) override;
+    void DrawIndexed(u32 index_count, u32 instance_count, u32 first_index, i32 vertex_offset,
+                     u32 first_instance) override;
     void Dispatch(u32 x, u32 y, u32 z) override;
     void PushDebugLabel(const char* name) override;
     void PopDebugLabel() override;
@@ -110,4 +115,4 @@ private:
     void FlushBindGroups(const char* what);
 };
 
-} // namespace engine_placeholder::rhi::vulkan
+}  // namespace engine_placeholder::rhi::vulkan

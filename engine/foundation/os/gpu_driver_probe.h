@@ -4,12 +4,15 @@
 
 //! Loader smoke test that locates the Vulkan driver and resolves `vkCreateInstance`; not the RHI.
 //!
-//! Built only where the engine has a Vulkan backend (Linux, Windows): macOS has no Vulkan (Phase 26 decision 8: MoltenVK is a third-party
-//! layer), so this file and its source are not part of the macOS build, and nothing there may include it.
+//! Built only where the engine has a Vulkan backend (Linux, Windows): macOS has no Vulkan (Phase 26 decision 8:
+//! MoltenVK is a third-party layer), so this file and its source are not part of the macOS build, and nothing there may
+//! include it.
 
-namespace engine_placeholder::os {
+namespace engine_placeholder::os
+{
 
-/// Returns the file name of this platform's Vulkan loader library: `libvulkan.so.1` on Linux, `vulkan-1.dll` on Windows.
+/// Returns the file name of this platform's Vulkan loader library: `libvulkan.so.1` on Linux, `vulkan-1.dll` on
+/// Windows.
 ///
 /// The one place the name is chosen; the GPU driver probe and the Vulkan backend's loader both use it.
 /// - Ownership: a static string, never freed.
@@ -24,4 +27,4 @@ const char* VulkanLoaderName();
 /// - Ownership: the driver library is deliberately left loaded, so the returned pointer stays valid.
 PFN_vkVoidFunction ProbeVulkanCreateInstance();
 
-} // namespace engine_placeholder::os
+}  // namespace engine_placeholder::os

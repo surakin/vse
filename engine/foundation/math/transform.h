@@ -7,12 +7,14 @@
 //! Position, rotation and scale (TRS) and composition of two of them.
 //!
 //! Uses the same column-vector convention as matrix.h and quaternion.h.
-namespace engine_placeholder {
+namespace engine_placeholder
+{
 
 /// Position, rotation and scale of an object relative to its parent space.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct Transform {
+struct Transform
+{
     /// Translation, applied last.
     Vec3 position;
     /// Orientation, applied after scale.
@@ -24,7 +26,8 @@ struct Transform {
     static Transform Identity() { return Transform{}; }
 
     /// Builds the 4x4 matrix that scales, then rotates, then translates (column-vector convention).
-    Mat4 ToMatrix() const {
+    Mat4 ToMatrix() const
+    {
         Mat3 rot = rotation.ToMat3();
         return Mat4::FromBasis(rot.col[0] * scale.x, rot.col[1] * scale.y, rot.col[2] * scale.z, position);
     }
@@ -41,14 +44,15 @@ struct Transform {
 /// - Param parent: outer transform.
 /// - Param child: transform relative to `parent`.
 /// - Returns: the combined transform.
-inline Transform Compose(const Transform& parent, const Transform& child) {
+inline Transform Compose(const Transform& parent, const Transform& child)
+{
     Transform result;
     result.scale = Vec3(parent.scale.x * child.scale.x, parent.scale.y * child.scale.y, parent.scale.z * child.scale.z);
     result.rotation = parent.rotation * child.rotation;
     Vec3 scaled_child_position(child.position.x * parent.scale.x, child.position.y * parent.scale.y,
-                                child.position.z * parent.scale.z);
+                               child.position.z * parent.scale.z);
     result.position = parent.position + parent.rotation.RotateVector(scaled_child_position);
     return result;
 }
 
-} // namespace engine_placeholder
+}  // namespace engine_placeholder

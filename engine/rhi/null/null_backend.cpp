@@ -3,37 +3,50 @@
 #include "rhi/rhi.h"
 #include "rhi/rhi_log.h"
 
-namespace engine_placeholder::rhi {
+namespace engine_placeholder::rhi
+{
 
-namespace {
+namespace
+{
 
-DevicePtr CreateNullBackendDevice(const DeviceCreateInfo& info) {
+DevicePtr CreateNullBackendDevice(const DeviceCreateInfo& info)
+{
     NullDeviceOptions options;
     AdapterList adapters;
     detail::NullAdapters(&adapters);
-    if (info.adapter != nullptr && info.adapter[0] != '\0') {
+    if (info.adapter != nullptr && info.adapter[0] != '\0')
+    {
         const int match = MatchAdapter(adapters.items, adapters.count, info.adapter);
-        if (match < 0) {
-            RhiLog(LogVerbosity::Error, "CreateDevice: DeviceCreateInfo::adapter='%s' matches none of the %u null adapters", info.adapter,
+        if (match < 0)
+        {
+            RhiLog(LogVerbosity::Error,
+                   "CreateDevice: DeviceCreateInfo::adapter='%s' matches none of the %u null adapters", info.adapter,
                    adapters.count);
             return DevicePtr();
         }
-        if (!adapters.items[match].suitable) {
-            RhiLog(LogVerbosity::Error, "CreateDevice: DeviceCreateInfo::adapter='%s' selects '%s', which %s", info.adapter,
-                   adapters.items[match].name,
-                   adapters.items[match].unsuitable_reason != nullptr ? adapters.items[match].unsuitable_reason : "is unsuitable");
+        if (!adapters.items[match].suitable)
+        {
+            RhiLog(LogVerbosity::Error, "CreateDevice: DeviceCreateInfo::adapter='%s' selects '%s', which %s",
+                   info.adapter, adapters.items[match].name,
+                   adapters.items[match].unsuitable_reason != nullptr ? adapters.items[match].unsuitable_reason
+                                                                      : "is unsuitable");
             return DevicePtr();
         }
         options.adapter = adapters.items[match];
-    } else {
+    }
+    else
+    {
         bool found = false;
-        for (u32 i = 0; i < adapters.count && !found; ++i) {
-            if (adapters.items[i].suitable) {
+        for (u32 i = 0; i < adapters.count && !found; ++i)
+        {
+            if (adapters.items[i].suitable)
+            {
                 options.adapter = adapters.items[i];
                 found = true;
             }
         }
-        if (!found) {
+        if (!found)
+        {
             RhiLog(LogVerbosity::Error, "CreateDevice: none of the %u null adapters is suitable", adapters.count);
             return DevicePtr();
         }
@@ -47,14 +60,16 @@ DevicePtr CreateNullBackendDevice(const DeviceCreateInfo& info) {
     return CreateNullDevice(options);
 }
 
-bool EnumerateNullAdapters(const DeviceCreateInfo&, AdapterList* out) {
+bool EnumerateNullAdapters(const DeviceCreateInfo&, AdapterList* out)
+{
     detail::NullAdapters(out);
     return true;
 }
 
-} // namespace
+}  // namespace
 
-bool RegisterNullBackend() {
+bool RegisterNullBackend()
+{
     BackendDescriptor d;
     d.backend = Backend::Null;
     d.name = "null";
@@ -65,4 +80,4 @@ bool RegisterNullBackend() {
     return RegisterBackend(d);
 }
 
-} // namespace engine_placeholder::rhi
+}  // namespace engine_placeholder::rhi

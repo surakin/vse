@@ -12,16 +12,18 @@ using namespace engine_placeholder::debug;
 
 ENGINE_DEATH_TEST_FN(dt_registry_marker) {}
 
-TEST_CASE("A registered death test is found by name and an unknown one is not", "[death][debug]") {
+TEST_CASE("A registered death test is found by name and an unknown one is not", "[death][debug]")
+{
     const DeathTestEntry* entry = FindDeathTest("dt_registry_marker");
     REQUIRE(entry != nullptr);
     CHECK(CStrCompare(entry->name, "dt_registry_marker") == 0);
     CHECK(entry->fn != nullptr);
     CHECK(FindDeathTest("no_such_death_test") == nullptr);
-    CHECK(FindDeathTest("dt_registry_mark") == nullptr); // a prefix is not a match
+    CHECK(FindDeathTest("dt_registry_mark") == nullptr);  // a prefix is not a match
 }
 
-TEST_CASE("Asking a child for an unregistered death test ends with the unknown-test exit code", "[death][debug]") {
+TEST_CASE("Asking a child for an unregistered death test ends with the unknown-test exit code", "[death][debug]")
+{
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     ChildResourceGuard guard;
     const ChildResult r = RunInChild("no_such_death_test");
@@ -33,7 +35,8 @@ TEST_CASE("Asking a child for an unregistered death test ends with the unknown-t
     CHECK(guard.Clean());
 }
 
-TEST_CASE("RunInChild reports an unsupported platform without starting anything", "[death][debug]") {
+TEST_CASE("RunInChild reports an unsupported platform without starting anything", "[death][debug]")
+{
     ChildResourceGuard guard;
     SetDeathTestSupportForTesting(false);
     CHECK_FALSE(DeathTestsSupported());
@@ -46,7 +49,8 @@ TEST_CASE("RunInChild reports an unsupported platform without starting anything"
     CHECK(guard.Clean());
 }
 
-TEST_CASE("Crash reasons have stable names", "[debug]") {
+TEST_CASE("Crash reasons have stable names", "[debug]")
+{
     CHECK(CStrCompare(CrashReasonName(CrashReason::None), "None") == 0);
     CHECK(CStrCompare(CrashReasonName(CrashReason::AccessViolation), "AccessViolation") == 0);
     CHECK(CStrCompare(CrashReasonName(CrashReason::BusError), "BusError") == 0);

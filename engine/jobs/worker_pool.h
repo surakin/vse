@@ -14,19 +14,22 @@
 //! pinned to distinct allowed CPUs. One participant spawns no threads. Each
 //! participant thread has a thread-local identity so any code can ask which
 //! participant, if any, it is running on.
-namespace engine_placeholder::jobs {
+namespace engine_placeholder::jobs
+{
 
 /// Identity of one job-system participant thread.
 ///
 /// - Thread-safety: immutable. Written once during pool construction, before any worker body runs.
 /// - Ownership: owned by its [[jobs::WorkerPool]]; references stay valid for the pool's lifetime.
-struct Participant {
+struct Participant
+{
     /// Position of this participant in the pool; 0 is the main thread.
     u32 index = 0;
     /// CPU id the thread is pinned to, or -1 for main or an unpinned worker.
     i32 cpu = -1;
-    /// OS thread id (Linux: the kernel tid, for `/proc`; Windows: GetCurrentThreadId; macOS: the low 31 bits of `pthread_threadid_np`, never 0,
-    /// for logs and tests only: no OS call takes it, and after 2^31 threads since boot two can share it).
+    /// OS thread id (Linux: the kernel tid, for `/proc`; Windows: GetCurrentThreadId; macOS: the low 31 bits of
+    /// `pthread_threadid_np`, never 0, for logs and tests only: no OS call takes it, and after 2^31 threads since boot
+    /// two can share it).
     i32 tid = 0;
     /// The [[jobs::WorkerPool]] this participant belongs to, type-erased.
     void* owner = nullptr;
@@ -45,7 +48,8 @@ struct Participant {
 /// - Ownership: owns and joins the spawned worker threads; the destructor
 ///   requests stop and joins them.
 /// - See: [[jobs::Scheduler]]
-class WorkerPool {
+class WorkerPool
+{
 public:
     /// Body run by each spawned worker after it registered itself.
     ///
@@ -56,7 +60,8 @@ public:
     /// Pool construction parameters.
     ///
     /// - Thread-safety: not-thread-safe. A plain value type.
-    struct Config {
+    struct Config
+    {
         /// Number of participants including main; clamped to `[1, kMaxParticipants]`.
         usize participants = 1;
         /// Pin each spawned worker to a distinct allowed CPU.
@@ -158,11 +163,11 @@ private:
 
     Mutex mutex_;
     ConditionVariable cv_;
-    usize registered_ = 0; // guarded by mutex_
+    usize registered_ = 0;  // guarded by mutex_
     Atomic<bool> stop_{false};
     Atomic<bool> joined_{false};
     ThreadId constructor_thread_;
     const Participant* saved_main_identity_ = nullptr;
 };
 
-} // namespace engine_placeholder::jobs
+}  // namespace engine_placeholder::jobs

@@ -1,5 +1,6 @@
-// Closes the region opened by unity/windows_enable.h: restores every name it saved, which removes the macros <windows.h> defined
-// under those names, so the rest of the file and of the unity batch sees plain C++. Intentionally has no include guard.
+// Closes the region opened by unity/windows_enable.h: restores every name it saved, which removes the macros
+// <windows.h> defined under those names, so the rest of the file and of the unity batch sees plain C++. Intentionally
+// has no include guard.
 #pragma pop_macro("LoadLibrary")
 #pragma pop_macro("CreateDirectory")
 #pragma pop_macro("SetCurrentDirectory")

@@ -8,43 +8,51 @@
 
 //! The list box (Phase 15, Day 196): a virtualized list of text rows with single or multiple selection.
 
-namespace engine_placeholder::ui {
+namespace engine_placeholder::ui
+{
 
 /// The rows of a [[ui::ListBox]].
 ///
 /// - Thread-safety: owner-thread-only.
 /// - Ownership: the model is owned by the program; the list box borrows it.
-class ListModel {
+class ListModel
+{
 public:
     virtual ~ListModel() = default;
     /// Returns how many items there are.
     virtual usize ItemCount() const = 0;
-    /// Returns the text of item `index`. The view must stay valid until the next call of this function or of `ItemCount`.
+    /// Returns the text of item `index`. The view must stay valid until the next call of this function or of
+    /// `ItemCount`.
     /// - Aborts: `index` is not below `ItemCount()`.
     virtual StringView ItemText(usize index) = 0;
-    /// Moves items for a drag that reorders the list (`ListBox::SetReorderable`): the items at `indices` (ascending, distinct) go together, in their order, to the place before item `to` of the
-    /// list as it was (`to` equal to `ItemCount()` means the end). The default refuses.
+    /// Moves items for a drag that reorders the list (`ListBox::SetReorderable`): the items at `indices` (ascending,
+    /// distinct) go together, in their order, to the place before item `to` of the list as it was (`to` equal to
+    /// `ItemCount()` means the end). The default refuses.
     /// - Returns: whether the items were moved; on true the list box refreshes its rows and selects the moved items.
-    virtual bool MoveItems(const usize*, usize, usize) { return false;
-    }
+    virtual bool MoveItems(const usize*, usize, usize) { return false; }
 };
 
 /// How many items a [[ui::ListBox]] can select.
-enum class SelectionMode : u8 {
-    Single,   ///< At most one.
-    Multiple, ///< Any number: Ctrl+click toggles, Shift+click and Shift+arrows select a range from the anchor.
+enum class SelectionMode : u8
+{
+    Single,    ///< At most one.
+    Multiple,  ///< Any number: Ctrl+click toggles, Shift+click and Shift+arrows select a range from the anchor.
 };
 
 /// A scrolling list of text items from a model.
 ///
-/// The list is virtual: rows are all one height, so the item under a point and the range in view come from arithmetic, and only the rows in view are laid out and drawn (a ring of cached
-/// text layouts re-used as the list scrolls); 100,000 items cost the same per frame as 100. The list scrolls with its own vertical bar and with the wheel. Click selects (with Ctrl or Shift
-/// in multiple mode), the arrow keys, PageUp, PageDown, Home and End move the current item and select it, Space selects it, Enter runs `OnActivate`; typing letters selects the next item whose text starts with what was typed
-/// (typed quickly, the letters make a prefix; the same letter repeated cycles through the items starting with it). After the model changes call `ModelChanged`.
+/// The list is virtual: rows are all one height, so the item under a point and the range in view come from arithmetic,
+/// and only the rows in view are laid out and drawn (a ring of cached text layouts re-used as the list scrolls);
+/// 100,000 items cost the same per frame as 100. The list scrolls with its own vertical bar and with the wheel. Click
+/// selects (with Ctrl or Shift in multiple mode), the arrow keys, PageUp, PageDown, Home and End move the current item
+/// and select it, Space selects it, Enter runs `OnActivate`; typing letters selects the next item whose text starts
+/// with what was typed (typed quickly, the letters make a prefix; the same letter repeated cycles through the items
+/// starting with it). After the model changes call `ModelChanged`.
 ///
 /// - Thread-safety: owner-thread-only.
 /// - Ownership: borrows the model; owns the selection and the row cache.
-class ListBox : public Widget {
+class ListBox : public Widget
+{
 public:
     /// The wheel moves this many rows per notch.
     static constexpr f32 kWheelRows = 3.0f;
@@ -61,9 +69,11 @@ public:
     ///
     /// - Ownership: borrows `model`, which must outlive its use here.
     void SetModel(ListModel* model);
-    /// Tells the list box that the model's items or their count changed; the selection is cleared when the count changed, and the scroll position clamped.
+    /// Tells the list box that the model's items or their count changed; the selection is cleared when the count
+    /// changed, and the scroll position clamped.
     void ModelChanged();
-    /// Sets the selection mode (default single); clears the selection when it becomes single and more than one is selected.
+    /// Sets the selection mode (default single); clears the selection when it becomes single and more than one is
+    /// selected.
     void SetMode(SelectionMode mode);
     /// Returns whether item `index` is selected.
     ///
@@ -79,7 +89,8 @@ public:
     usize Current() const { return current_; }
     /// The value of "no item".
     static constexpr usize kNone = static_cast<usize>(-1);
-    /// Selects only item `index` (`kNone` clears the selection), makes it current and scrolls to it. Runs the `OnSelectionChanged` listeners when the selection changed.
+    /// Selects only item `index` (`kNone` clears the selection), makes it current and scrolls to it. Runs the
+    /// `OnSelectionChanged` listeners when the selection changed.
     void Select(usize index);
     /// Scrolls the least that makes item `index` fully visible.
     void ScrollToIndex(usize index);
@@ -97,18 +108,22 @@ public:
     ///
     /// - Ownership: writes the two indices; both pointers must be non-null.
     void VisibleRange(usize* first, usize* end) const;
-    /// Returns how many rows were laid out (not found in the cache) since the box was made, so a test can see that scrolling only lays out new rows.
+    /// Returns how many rows were laid out (not found in the cache) since the box was made, so a test can see that
+    /// scrolling only lays out new rows.
     u64 RowLayouts() const { return row_layouts_; }
-    /// Makes a click (the pointer going up on the row it went down on) run `OnActivate`, as a drop-down list needs (default off).
+    /// Makes a click (the pointer going up on the row it went down on) run `OnActivate`, as a drop-down list needs
+    /// (default off).
     void SetActivateOnClick(bool activate) { activate_on_click_ = activate; }
     /// Sets how many rows the preferred height holds (default `kPreferredRows`); marks layout dirty.
     /// - Param rows: at least 1.
     void SetVisibleRows(usize rows);
     /// The tag of the pointer entry a drag started by a list box carries.
     static constexpr char kDragTag[] = "ui.listbox.items";
-    /// Lets the user reorder the items by dragging the selected ones within this box (default off); needs a model that implements `ListModel::MoveItems`.
+    /// Lets the user reorder the items by dragging the selected ones within this box (default off); needs a model that
+    /// implements `ListModel::MoveItems`.
     void SetReorderable(bool reorderable) { reorderable_ = reorderable; }
-    /// Lets the user drag the selected items out as text (their texts, one per line), to a text field or another program (default off).
+    /// Lets the user drag the selected items out as text (their texts, one per line), to a text field or another
+    /// program (default off).
     void SetDragOut(bool drag_out) { drag_out_ = drag_out; }
     /// Returns the insertion index the drag shows now (`kNone` when none), for a test.
     usize DropIndex() const { return drop_index_; }
@@ -139,7 +154,8 @@ public:
     void OnEvent(Event& event) override;
 
 private:
-    struct Slot {
+    struct Slot
+    {
         usize index = kNone;
         u64 revision = 0;
         TextRun run;
@@ -165,8 +181,9 @@ private:
     ListModel* model_ = nullptr;
     bool reorderable_ = false;
     bool drag_out_ = false;
-    usize scroll_pending_ = kNone; // an index to scroll to once the row height is known
-    bool press_pending_ = false; // the press landed on a selected item: the selection waits for the release, so the whole selection can be dragged
+    usize scroll_pending_ = kNone;  // an index to scroll to once the row height is known
+    bool press_pending_ = false;    // the press landed on a selected item: the selection waits for the release, so the
+                                    // whole selection can be dragged
     Point press_position_;
     usize drop_index_ = kNone;
     bool activate_on_click_ = false;
@@ -192,4 +209,4 @@ private:
     Callback<ListBox*> on_activate_;
 };
 
-} // namespace engine_placeholder::ui
+}  // namespace engine_placeholder::ui

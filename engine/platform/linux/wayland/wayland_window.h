@@ -9,7 +9,8 @@
 
 //! Wayland window: a `wl_surface` wrapped as a mapped xdg-shell toplevel.
 
-namespace engine_placeholder::os::wayland {
+namespace engine_placeholder::os::wayland
+{
 
 /// A `wl_surface` wrapped as an xdg-shell toplevel window with a solid-fill `wl_shm` buffer so it maps.
 ///
@@ -19,11 +20,14 @@ namespace engine_placeholder::os::wayland {
 /// surface, xdg surface, toplevel, optional decoration object and buffer, but not the event loop.
 /// Movable, not copyable.
 ///
-/// - Thread-safety: owner-thread-only. Listener callbacks run on the thread that dispatches the connection's events, which must also call its methods.
+/// - Thread-safety: owner-thread-only. Listener callbacks run on the thread that dispatches the connection's events,
+/// which must also call its methods.
 /// - Ownership: owns the surface, xdg objects and buffer; the connection is borrowed and must outlive the window.
-class WaylandWindow {
+class WaylandWindow
+{
 public:
-    /// Creates a toplevel on `connection`, blocks until the compositor's initial configure is acknowledged, then maps it.
+    /// Creates a toplevel on `connection`, blocks until the compositor's initial configure is acknowledged, then maps
+    /// it.
     ///
     /// Sets `title` and `app_id`, waits with `wl_display_roundtrip`, then attaches a solid-fill
     /// buffer sized to the compositor's suggested size (or the hint, or a default) and commits.
@@ -37,8 +41,8 @@ public:
     /// - Param height_hint: fallback height in pixels; 0 means the built-in 1280x720 default.
     /// - Returns: the window; check [[os::wayland::WaylandWindow::Valid]].
     /// - Fails: returns an invalid window (logged via `LogPlatform`) on any failure.
-    static WaylandWindow Create(WaylandConnection& connection, StringView title, StringView app_id,
-                                u32 width_hint = 0, u32 height_hint = 0);
+    static WaylandWindow Create(WaylandConnection& connection, StringView title, StringView app_id, u32 width_hint = 0,
+                                u32 height_hint = 0);
 
     /// Constructs an invalid window that owns nothing.
     WaylandWindow() = default;
@@ -71,10 +75,11 @@ public:
     /// - Returns: `true` if a new buffer was committed.
     bool CommitPendingResize();
 
-    /// Records that the surface was given to a graphics layer (a Vulkan swapchain), which then owns the surface's buffers.
+    /// Records that the surface was given to a graphics layer (a Vulkan swapchain), which then owns the surface's
+    /// buffers.
     ///
-    /// After this, a resize only updates the size and the resize serial; attaching this window's own shared-memory buffer
-    /// would race the driver's buffers (with explicit sync the compositor kills the connection).
+    /// After this, a resize only updates the size and the resize serial; attaching this window's own shared-memory
+    /// buffer would race the driver's buffers (with explicit sync the compositor kills the connection).
     void MarkSurfaceExported() const { surface_exported_ = true; }
 
     /// Returns the `wl_surface`, or null if invalid.
@@ -114,8 +119,7 @@ private:
     // instance state directly via the `data` pointer without a friend
     // declaration.
     static void HandleXdgSurfaceConfigure(void* data, xdg_surface* surface, u32 serial);
-    static void HandleToplevelConfigure(void* data, xdg_toplevel* toplevel, i32 width, i32 height,
-                                         wl_array* states);
+    static void HandleToplevelConfigure(void* data, xdg_toplevel* toplevel, i32 width, i32 height, wl_array* states);
     static void HandleToplevelClose(void* data, xdg_toplevel* toplevel);
     static void HandleDecorationConfigure(void* data, zxdg_toplevel_decoration_v1* decoration, u32 mode);
 
@@ -143,7 +147,7 @@ private:
     zxdg_toplevel_decoration_v1* decoration_ = nullptr;
     bool server_side_decorated_ = false;
     wl_buffer* buffer_ = nullptr;
-    wl_shm* shm_ = nullptr; // not owned; the connection's
+    wl_shm* shm_ = nullptr;  // not owned; the connection's
     void* shm_data_ = nullptr;
     usize shm_size_ = 0;
     u32 width_ = 0;
@@ -167,9 +171,10 @@ private:
     u32 floating_width_ = 0;
     u32 floating_height_ = 0;
     bool buffer_stale_ = false;
-    // Set once the surface was handed to a graphics layer: from then on that layer attaches the buffers, and this window must not.
+    // Set once the surface was handed to a graphics layer: from then on that layer attaches the buffers, and this
+    // window must not.
     mutable bool surface_exported_ = false;
     bool should_close_ = false;
 };
 
-} // namespace engine_placeholder::os::wayland
+}  // namespace engine_placeholder::os::wayland

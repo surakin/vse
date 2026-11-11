@@ -9,33 +9,38 @@
 
 //! The Direct3D 12 command list (Phase 13 Day 168).
 
-namespace engine_placeholder::rhi::dx12 {
+namespace engine_placeholder::rhi::dx12
+{
 
 /// A [[rhi::CommandList]] recording into one `ID3D12GraphicsCommandList` with its own command allocator.
 ///
-/// The device keeps the lists of each frame slot and hands them out again once that slot's frame has finished, so an allocator is reset
-/// only after the GPU is done with it. States: buffers are tracked within the list from `COMMON` (D3D12 returns every buffer there after
-/// each `ExecuteCommandLists`, and the device executes each list on its own), promoted implicitly on use and transitioned explicitly from
-/// the tracked state; textures keep their state between lists, so a list records the state its first barrier on each texture needs, and
-/// the device transitions the texture into it before the list runs (a prologue list built at submit from the states it recorded).
+/// The device keeps the lists of each frame slot and hands them out again once that slot's frame has finished, so an
+/// allocator is reset only after the GPU is done with it. States: buffers are tracked within the list from `COMMON`
+/// (D3D12 returns every buffer there after each `ExecuteCommandLists`, and the device executes each list on its own),
+/// promoted implicitly on use and transitioned explicitly from the tracked state; textures keep their state between
+/// lists, so a list records the state its first barrier on each texture needs, and the device transitions the texture
+/// into it before the list runs (a prologue list built at submit from the states it recorded).
 ///
 /// - Thread-safety: not-thread-safe: one thread records a list; different lists record on different threads at once.
 /// - Ownership: owned by its device; the application borrows it from `CreateCommandList` until the frame ends.
-class Dx12CommandList final : public CommandList {
+class Dx12CommandList final : public CommandList
+{
 public:
     /// Where a list is in its life.
-    enum class Phase : u8 {
-        Initial,    ///< Handed out, not begun.
-        Recording,  ///< Between `Begin` and `End`.
-        Ended,      ///< Ended, not submitted.
-        Submitting, ///< Inside `Submit`.
-        Submitted,  ///< Submitted (or dropped by a failed submit).
+    enum class Phase : u8
+    {
+        Initial,     ///< Handed out, not begun.
+        Recording,   ///< Between `Begin` and `End`.
+        Ended,       ///< Ended, not submitted.
+        Submitting,  ///< Inside `Submit`.
+        Submitted,   ///< Submitted (or dropped by a failed submit).
     };
 
     /// What a list needs of one texture when it starts, and leaves it in.
     ///
     /// - Thread-safety: thread-compatible plain data.
-    struct TextureUse {
+    struct TextureUse
+    {
         /// The texture.
         TextureHandle texture;
         /// Its resource.
@@ -51,7 +56,8 @@ public:
     /// - Param device: the owner.
     /// - Param allocator: the list's own allocator.
     /// - Param list: a closed list.
-    Dx12CommandList(Dx12Device* device, ComRef<ID3D12CommandAllocator> allocator, ComRef<ID3D12GraphicsCommandList> list);
+    Dx12CommandList(Dx12Device* device, ComRef<ID3D12CommandAllocator> allocator,
+                    ComRef<ID3D12GraphicsCommandList> list);
     ~Dx12CommandList() override = default;
     Dx12CommandList(const Dx12CommandList&) = delete;
     Dx12CommandList& operator=(const Dx12CommandList&) = delete;
@@ -77,7 +83,8 @@ public:
     bool Failed() const { return failed_; }
     /// Returns the D3D12 list. Ownership: borrowed.
     ID3D12GraphicsCommandList* List() const { return list_.Get(); }
-    /// Returns the textures the list transitions, with the state each must start in. Ownership: borrowed until the next `Recycle`.
+    /// Returns the textures the list transitions, with the state each must start in. Ownership: borrowed until the next
+    /// `Recycle`.
     const Vector<TextureUse>& TextureUses() const { return textures_; }
 
     void Begin() override;
@@ -98,18 +105,21 @@ public:
     void SetVertexBuffer(u32 slot, BufferHandle buffer, u64 offset) override;
     void SetIndexBuffer(BufferHandle buffer, u64 offset, IndexType type) override;
     void Draw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance) override;
-    void DrawIndexed(u32 index_count, u32 instance_count, u32 first_index, i32 vertex_offset, u32 first_instance) override;
+    void DrawIndexed(u32 index_count, u32 instance_count, u32 first_index, i32 vertex_offset,
+                     u32 first_instance) override;
     void Dispatch(u32 x, u32 y, u32 z) override;
     void PushDebugLabel(const char* name) override;
     void PopDebugLabel() override;
 
 private:
-    struct BufferState {
+    struct BufferState
+    {
         ID3D12Resource* resource = nullptr;
         D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_COMMON;
-        bool promoted = false; // reached by implicit promotion: more read states may be added the same way
+        bool promoted = false;  // reached by implicit promotion: more read states may be added the same way
     };
-    struct VertexSlot {
+    struct VertexSlot
+    {
         u64 address = 0;
         u64 size = 0;
     };
@@ -144,12 +154,13 @@ private:
     bool pass_discard_[kMaxColorAttachments + 1] = {};
     u32 pass_resource_count_ = 0;
 
-    bool pipeline_bound_ = false;     // a pipeline was set (graphics inside the pass, compute outside)
-    bool pipeline_applied_ = false;   // its root signature and state are set on the D3D12 list (GenerateMips unsets them)
+    bool pipeline_bound_ = false;  // a pipeline was set (graphics inside the pass, compute outside)
+    bool
+        pipeline_applied_ = false;  // its root signature and state are set on the D3D12 list (GenerateMips unsets them)
     Dx12Device::PipelineInfo pipeline_;
     ID3D12PipelineState* applied_state_ = nullptr;
     u8 push_shadow_[kMaxPushConstantBytes] = {};
-    u32 push_written_ = 0;            // bytes of push_shadow_ set since the pipeline was bound
+    u32 push_written_ = 0;  // bytes of push_shadow_ set since the pipeline was bound
 
     Dx12Device::BindGroupInfo groups_[kMaxBindGroups];
     bool group_set_[kMaxBindGroups] = {};
@@ -162,4 +173,4 @@ private:
     IndexType index_type_ = IndexType::UInt32;
 };
 
-} // namespace engine_placeholder::rhi::dx12
+}  // namespace engine_placeholder::rhi::dx12

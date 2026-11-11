@@ -1,9 +1,12 @@
 #include "storage/status.h"
 
-namespace engine_placeholder::storage {
+namespace engine_placeholder::storage
+{
 
-const char* ErrorCodeName(ErrorCode code) {
-    switch (code) {
+const char* ErrorCodeName(ErrorCode code)
+{
+    switch (code)
+    {
     case ErrorCode::Ok: return "ok";
     case ErrorCode::NotFound: return "not found";
     case ErrorCode::Exists: return "exists";
@@ -24,4 +27,4 @@ const char* ErrorCodeName(ErrorCode code) {
     return "other";
 }
 
-} // namespace engine_placeholder::storage
+}  // namespace engine_placeholder::storage

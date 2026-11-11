@@ -20,8 +20,8 @@
 /// Whether [[ENGINE_VERIFY]] and [[ENGINE_UNREACHABLE]] check in this translation unit: 1 or 0.
 ///
 /// Defaults to 1 in a build without `NDEBUG` (the CMake Debug configuration) and 0 with it. The CMake option
-/// `ENGINE_FORCE_DEBUG_CHECKS` defines it as 1 in every configuration. A translation unit may define it before including
-/// this header.
+/// `ENGINE_FORCE_DEBUG_CHECKS` defines it as 1 in every configuration. A translation unit may define it before
+/// including this header.
 #ifndef ENGINE_DEBUG_CHECKS
 #ifdef NDEBUG
 #define ENGINE_DEBUG_CHECKS 0
@@ -42,7 +42,8 @@
 #endif
 #endif
 
-namespace engine_placeholder {
+namespace engine_placeholder
+{
 
 /// Signature of the function that receives log and assert output: file
 /// descriptor, buffer, byte count; returns bytes written or a negative value.
@@ -56,7 +57,8 @@ using WriteSinkFn = long (*)(int fd, const void* buf, usize len);
 void SetWriteSinkForTesting(WriteSinkFn sink);
 
 /// Which macro reported a failure.
-enum class AssertKind : u8 {
+enum class AssertKind : u8
+{
     Assert,         ///< [[ENGINE_ASSERT]] (and [[ENGINE_CHECK_SLOW]], and the legacy [[AssertFail]]).
     Ensure,         ///< [[ENGINE_ENSURE]].
     Verify,         ///< [[ENGINE_VERIFY]].
@@ -68,7 +70,8 @@ enum class AssertKind : u8 {
 ///
 /// - Thread-safety: thread-compatible. A plain value that lives for the duration of the handler call.
 /// - Ownership: every string is borrowed: literals from the macro expansion, valid for the whole program.
-struct AssertInfo {
+struct AssertInfo
+{
     /// Which macro reported it.
     AssertKind kind;
     /// Source file (`__FILE__`).
@@ -84,10 +87,12 @@ struct AssertInfo {
 };
 
 /// What the assert handler wants done after a failure.
-enum class AssertAction : u8 {
-    Abort,    ///< Terminate the process with `abort()`, so a debugger or crash handler sees the abort.
-    Continue, ///< Carry on after the macro. For tests and for [[ENGINE_ENSURE]]; code after a failed [[ENGINE_ASSERT]] may assume the condition held, so only continue where it tolerates the violation.
-    Break     ///< Stop in the debugger at the failing line; if the debugger resumes, execution carries on.
+enum class AssertAction : u8
+{
+    Abort,     ///< Terminate the process with `abort()`, so a debugger or crash handler sees the abort.
+    Continue,  ///< Carry on after the macro. For tests and for [[ENGINE_ENSURE]]; code after a failed [[ENGINE_ASSERT]]
+               ///< may assume the condition held, so only continue where it tolerates the violation.
+    Break      ///< Stop in the debugger at the failing line; if the debugger resumes, execution carries on.
 };
 
 /// The function that decides what happens after a check fails. It must not itself fail an assertion.
@@ -96,13 +101,13 @@ using AssertHandler = AssertAction (*)(const AssertInfo& info);
 /// The handler used until [[SetAssertHandler]] replaces it.
 ///
 /// Prints one line to the write sink (file descriptor 1), `ASSERT FAILED: file:line function: condition: message`
-/// (the leading words depend on the kind; empty parts are left out; truncated at 512 bytes, always ending in a newline),
-/// then returns [[AssertAction::Break]] if a debugger is attached, otherwise [[AssertAction::Abort]] for every kind
-/// except [[AssertKind::Ensure]], which gets [[AssertAction::Continue]].
+/// (the leading words depend on the kind; empty parts are left out; truncated at 512 bytes, always ending in a
+/// newline), then returns [[AssertAction::Break]] if a debugger is attached, otherwise [[AssertAction::Abort]] for
+/// every kind except [[AssertKind::Ensure]], which gets [[AssertAction::Continue]].
 ///
-/// The line is followed by the stack trace (see [[debug::FormatStackTrace]]), starting at the function that failed; names
-/// are left mangled because demangling allocates. Called through a wrapper, the first lines of the trace are the wrapper's
-/// frames. A custom handler can call it to keep the printed report and then choose its own action.
+/// The line is followed by the stack trace (see [[debug::FormatStackTrace]]), starting at the function that failed;
+/// names are left mangled because demangling allocates. Called through a wrapper, the first lines of the trace are the
+/// wrapper's frames. A custom handler can call it to keep the printed report and then choose its own action.
 ///
 /// - Param info: the failure.
 /// - Returns: the action described above.
@@ -126,7 +131,8 @@ AssertHandler SetAssertHandler(AssertHandler handler);
 /// - Param file: source file name, usually `__FILE__`.
 /// - Param line: source line number.
 /// - Param message: explanation text.
-/// - Aborts: always; this function never returns. The process ends with `abort()`, so it dies with SIGABRT (earlier versions
+/// - Aborts: always; this function never returns. The process ends with `abort()`, so it dies with SIGABRT (earlier
+/// versions
 ///   ended with exit code 1).
 /// - Thread-safety: thread-safe.
 [[noreturn]] void AssertFail(const char* file, int line, const char* message);
@@ -135,7 +141,8 @@ AssertHandler SetAssertHandler(AssertHandler handler);
 ///
 /// - Thread-safety: thread-compatible. A plain value passed to an [[EnsureVisitor]].
 /// - Ownership: the strings are literals with program lifetime.
-struct EnsureSiteInfo {
+struct EnsureSiteInfo
+{
     /// Source file of the call site.
     const char* file;
     /// Source line of the call site.
@@ -168,22 +175,25 @@ u32 EnsureFailedSiteCount();
 /// - Thread-safety: not-thread-safe. Call only while no thread is inside an [[ENGINE_ENSURE]].
 void ResetEnsureStateForTesting();
 
-namespace detail {
+namespace detail
+{
 
-// The per-call-site record of ENGINE_ENSURE: a function-local static, constant-initialized, linked into a global list the
-// first time the site fails.
-struct EnsureSite {
+// The per-call-site record of ENGINE_ENSURE: a function-local static, constant-initialized, linked into a global list
+// the first time the site fails.
+struct EnsureSite
+{
     const char* file;
     int line;
     const char* condition;
     const char* message;
     const char* function = nullptr;
-    Atomic<u32> count{0};       // every failure; may wrap, which is harmless
-    Atomic<bool> reported{false}; // set by the first failure; decides who links and reports, whatever `count` does
+    Atomic<u32> count{0};          // every failure; may wrap, which is harmless
+    Atomic<bool> reported{false};  // set by the first failure; decides who links and reports, whatever `count` does
     EnsureSite* next = nullptr;
 };
 
-// Reports a failed check through the handler and acts on its answer. Returns Continue or Break; for Abort it does not return.
+// Reports a failed check through the handler and acts on its answer. Returns Continue or Break; for Abort it does not
+// return.
 ENGINE_NOINLINE ENGINE_COLD AssertAction AssertFailed(AssertKind kind, const char* file, int line, const char* function,
                                                       const char* condition, const char* message);
 
@@ -194,59 +204,67 @@ ENGINE_NOINLINE ENGINE_COLD AssertAction AssertFailed(AssertKind kind, const cha
 // the list and reports it. Returns Break if the debugger should stop at the site, otherwise Continue.
 ENGINE_NOINLINE ENGINE_COLD AssertAction EnsureFailed(EnsureSite& site, const char* function);
 
-} // namespace detail
+}  // namespace detail
 
-} // namespace engine_placeholder
+}  // namespace engine_placeholder
 
 /// Checks `cond` in every build configuration; if it is false, reports the failure and, by default, aborts.
 ///
 /// Use it for a contract the code relies on: a precondition whose violation is a bug in the caller. The failure goes to
-/// the assert handler ([[SetAssertHandler]]); the default handler prints a line and aborts the process (or breaks into an
-/// attached debugger).
+/// the assert handler ([[SetAssertHandler]]); the default handler prints a line and aborts the process (or breaks into
+/// an attached debugger).
 ///
 /// - Param cond: expression that must be true; evaluated exactly once.
 /// - Param msg: `const char*` message describing the violated condition; a string literal in practice.
 /// - Aborts: `cond` evaluates to false (unless a test handler chose to continue).
-#define ENGINE_ASSERT(cond, msg)                                                                                      \
-    do {                                                                                                              \
-        if (!(cond)) [[unlikely]] {                                                                                   \
-            if (::engine_placeholder::detail::AssertFailed(::engine_placeholder::AssertKind::Assert, __FILE__,       \
-                                                           __LINE__, __func__, #cond, msg) ==                        \
-                ::engine_placeholder::AssertAction::Break) {                                                          \
-                ENGINE_DEBUG_BREAK();                                                                                 \
-            }                                                                                                         \
-        }                                                                                                             \
+#define ENGINE_ASSERT(cond, msg)                                                                                       \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        if (!(cond)) [[unlikely]]                                                                                      \
+        {                                                                                                              \
+            if (::engine_placeholder::detail::AssertFailed(::engine_placeholder::AssertKind::Assert, __FILE__,         \
+                                                           __LINE__, __func__, #cond,                                  \
+                                                           msg) == ::engine_placeholder::AssertAction::Break)          \
+            {                                                                                                          \
+                ENGINE_DEBUG_BREAK();                                                                                  \
+            }                                                                                                          \
+        }                                                                                                              \
     } while (false)
 
 /// Evaluates `cond` once and returns it; if it is false, reports the failure once for this call site and returns false.
 ///
-/// Use it where the condition should hold but the caller can recover: `if (!ENGINE_ENSURE(p != nullptr, "no p")) return;`.
-/// The first failure at each call site goes to the assert handler (the default handler prints a line and the program
-/// goes on); later failures there are only counted. See [[ForEachFailedEnsure]]. Not usable in a `constexpr` function.
+/// Use it where the condition should hold but the caller can recover: `if (!ENGINE_ENSURE(p != nullptr, "no p"))
+/// return;`. The first failure at each call site goes to the assert handler (the default handler prints a line and the
+/// program goes on); later failures there are only counted. See [[ForEachFailedEnsure]]. Not usable in a `constexpr`
+/// function.
 ///
 /// - Param cond: expression; evaluated exactly once.
 /// - Param msg: a string literal describing the condition.
 /// - Returns: the value of `cond`.
-#define ENGINE_ENSURE(cond, msg)                                                                                      \
-    (static_cast<bool>(cond) ||                                                                                       \
-     [](const char* engine_ensure_function_) ENGINE_NOINLINE_LAMBDA -> bool {                                                                \
-         static ::engine_placeholder::detail::EnsureSite engine_ensure_site_{__FILE__, __LINE__, #cond, msg};        \
-         if (::engine_placeholder::detail::EnsureFailed(engine_ensure_site_, engine_ensure_function_) ==             \
-             ::engine_placeholder::AssertAction::Break) {                                                             \
-             ENGINE_DEBUG_BREAK();                                                                                    \
-         }                                                                                                            \
-         return false;                                                                                                \
+#define ENGINE_ENSURE(cond, msg)                                                                                       \
+    (static_cast<bool>(cond) || [](const char* engine_ensure_function_) ENGINE_NOINLINE_LAMBDA -> bool                 \
+     {                                                                                                                 \
+         static ::engine_placeholder::detail::EnsureSite engine_ensure_site_{__FILE__, __LINE__, #cond, msg};          \
+         if (::engine_placeholder::detail::EnsureFailed(engine_ensure_site_, engine_ensure_function_) ==               \
+             ::engine_placeholder::AssertAction::Break)                                                                \
+         {                                                                                                             \
+             ENGINE_DEBUG_BREAK();                                                                                     \
+         }                                                                                                             \
+         return false;                                                                                                 \
      }(__func__))
 
-#define ENGINE_VERIFY_IMPL_1_(expr, msg)                                                                              \
-    do {                                                                                                              \
-        if (!(expr)) [[unlikely]] {                                                                                   \
-            if (::engine_placeholder::detail::AssertFailed(::engine_placeholder::AssertKind::Verify, __FILE__,       \
-                                                           __LINE__, __func__, #expr, msg) ==                        \
-                ::engine_placeholder::AssertAction::Break) {                                                          \
-                ENGINE_DEBUG_BREAK();                                                                                 \
-            }                                                                                                         \
-        }                                                                                                             \
+#define ENGINE_VERIFY_IMPL_1_(expr, msg)                                                                               \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        if (!(expr)) [[unlikely]]                                                                                      \
+        {                                                                                                              \
+            if (::engine_placeholder::detail::AssertFailed(::engine_placeholder::AssertKind::Verify, __FILE__,         \
+                                                           __LINE__, __func__, #expr,                                  \
+                                                           msg) == ::engine_placeholder::AssertAction::Break)          \
+            {                                                                                                          \
+                ENGINE_DEBUG_BREAK();                                                                                  \
+            }                                                                                                          \
+        }                                                                                                              \
     } while (false)
 #define ENGINE_VERIFY_IMPL_0_(expr, msg) static_cast<void>(expr)
 // Pastes three tokens after expanding them, so a macro whose value is 0 or 1 can select ENGINE_..._IMPL_0_ or _1_.
@@ -255,27 +273,30 @@ ENGINE_NOINLINE ENGINE_COLD AssertAction EnsureFailed(EnsureSite& site, const ch
 
 /// Evaluates `expr` in every configuration and, when [[ENGINE_DEBUG_CHECKS]] is 1, checks that it is true.
 ///
-/// [[ENGINE_DEBUG_CHECKS]] is a per-translation-unit setting, so this macro, [[ENGINE_CHECK_SLOW]] and [[ENGINE_UNREACHABLE]]
-/// must not be used in header-inline code (the same inline function would differ between translation units); a gate
-/// enforces it. Use [[ENGINE_ASSERT]] or [[ENGINE_ENSURE]] in headers.
+/// [[ENGINE_DEBUG_CHECKS]] is a per-translation-unit setting, so this macro, [[ENGINE_CHECK_SLOW]] and
+/// [[ENGINE_UNREACHABLE]] must not be used in header-inline code (the same inline function would differ between
+/// translation units); a gate enforces it. Use [[ENGINE_ASSERT]] or [[ENGINE_ENSURE]] in headers.
 ///
-/// For a call that must run for its effect but whose result should be true: `ENGINE_VERIFY(Init(), "init failed")`. In a
-/// build without debug checks the expression still runs and the result is ignored.
+/// For a call that must run for its effect but whose result should be true: `ENGINE_VERIFY(Init(), "init failed")`. In
+/// a build without debug checks the expression still runs and the result is ignored.
 ///
 /// - Param expr: expression; evaluated exactly once in every configuration.
 /// - Param msg: a string literal describing the failure.
 /// - Aborts: debug checks are on and `expr` evaluates to false.
 #define ENGINE_VERIFY(expr, msg) ENGINE_PASTE3_(ENGINE_VERIFY_IMPL_, ENGINE_DEBUG_CHECKS, _)(expr, msg)
 
-#define ENGINE_CHECK_SLOW_IMPL_1_(cond, msg)                                                                          \
-    do {                                                                                                              \
-        if (!(cond)) [[unlikely]] {                                                                                   \
-            if (::engine_placeholder::detail::AssertFailed(::engine_placeholder::AssertKind::Assert, __FILE__,       \
-                                                           __LINE__, __func__, #cond, msg) ==                        \
-                ::engine_placeholder::AssertAction::Break) {                                                          \
-                ENGINE_DEBUG_BREAK();                                                                                 \
-            }                                                                                                         \
-        }                                                                                                             \
+#define ENGINE_CHECK_SLOW_IMPL_1_(cond, msg)                                                                           \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        if (!(cond)) [[unlikely]]                                                                                      \
+        {                                                                                                              \
+            if (::engine_placeholder::detail::AssertFailed(::engine_placeholder::AssertKind::Assert, __FILE__,         \
+                                                           __LINE__, __func__, #cond,                                  \
+                                                           msg) == ::engine_placeholder::AssertAction::Break)          \
+            {                                                                                                          \
+                ENGINE_DEBUG_BREAK();                                                                                  \
+            }                                                                                                          \
+        }                                                                                                              \
     } while (false)
 // Off: the condition is still parsed and type-checked, but never evaluated.
 #define ENGINE_CHECK_SLOW_IMPL_0_(cond, msg) static_cast<void>(sizeof(static_cast<bool>(cond)))
@@ -289,34 +310,40 @@ ENGINE_NOINLINE ENGINE_COLD AssertAction EnsureFailed(EnsureSite& site, const ch
 /// - Aborts: slow checks are on and `cond` evaluates to false.
 #define ENGINE_CHECK_SLOW(cond, msg) ENGINE_PASTE3_(ENGINE_CHECK_SLOW_IMPL_, ENGINE_SLOW_CHECKS, _)(cond, msg)
 
-#define ENGINE_UNREACHABLE_IMPL_1_(msg)                                                                               \
-    do {                                                                                                              \
-        if (::engine_placeholder::detail::AssertFailed(::engine_placeholder::AssertKind::Unreachable, __FILE__,      \
-                                                       __LINE__, __func__, "", msg) ==                               \
-            ::engine_placeholder::AssertAction::Break) {                                                              \
-            ENGINE_DEBUG_BREAK();                                                                                     \
-        }                                                                                                             \
-        ::engine_placeholder::detail::UnreachableAbort(); /* a debugger that resumes does not get to continue */      \
+#define ENGINE_UNREACHABLE_IMPL_1_(msg)                                                                                \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        if (::engine_placeholder::detail::AssertFailed(::engine_placeholder::AssertKind::Unreachable, __FILE__,        \
+                                                       __LINE__, __func__, "",                                         \
+                                                       msg) == ::engine_placeholder::AssertAction::Break)              \
+        {                                                                                                              \
+            ENGINE_DEBUG_BREAK();                                                                                      \
+        }                                                                                                              \
+        ::engine_placeholder::detail::UnreachableAbort(); /* a debugger that resumes does not get to continue */       \
     } while (false)
 #define ENGINE_UNREACHABLE_IMPL_0_(msg) ENGINE_UNREACHABLE_HINT()
 
 /// Marks a place that must never be reached.
 ///
-/// With debug checks on ([[ENGINE_DEBUG_CHECKS]] is 1) reaching it reports the failure and aborts (a handler cannot make
-/// it continue, and a debugger that resumes after the break is followed by the abort). With them off it tells the compiler the place is unreachable, which is undefined behavior if it is not.
+/// With debug checks on ([[ENGINE_DEBUG_CHECKS]] is 1) reaching it reports the failure and aborts (a handler cannot
+/// make it continue, and a debugger that resumes after the break is followed by the abort). With them off it tells the
+/// compiler the place is unreachable, which is undefined behavior if it is not.
 ///
 /// - Param msg: a string literal saying why it cannot happen.
 /// - Aborts: debug checks are on and the place is reached.
 #define ENGINE_UNREACHABLE(msg) ENGINE_PASTE3_(ENGINE_UNREACHABLE_IMPL_, ENGINE_DEBUG_CHECKS, _)(msg)
 
-/// Marks code that has not been written yet; reaching it reports the failure and, by default, aborts, in every configuration.
+/// Marks code that has not been written yet; reaching it reports the failure and, by default, aborts, in every
+/// configuration.
 ///
 /// - Aborts: the code is reached (unless a test handler chose to continue).
-#define ENGINE_NOT_IMPLEMENTED()                                                                                      \
-    do {                                                                                                              \
-        if (::engine_placeholder::detail::AssertFailed(::engine_placeholder::AssertKind::NotImplemented, __FILE__,   \
-                                                       __LINE__, __func__, "", "not implemented") ==                 \
-            ::engine_placeholder::AssertAction::Break) {                                                              \
-            ENGINE_DEBUG_BREAK();                                                                                     \
-        }                                                                                                             \
+#define ENGINE_NOT_IMPLEMENTED()                                                                                       \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        if (::engine_placeholder::detail::AssertFailed(::engine_placeholder::AssertKind::NotImplemented, __FILE__,     \
+                                                       __LINE__, __func__, "", "not implemented") ==                   \
+            ::engine_placeholder::AssertAction::Break)                                                                 \
+        {                                                                                                              \
+            ENGINE_DEBUG_BREAK();                                                                                      \
+        }                                                                                                              \
     } while (false)

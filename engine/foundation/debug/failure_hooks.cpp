@@ -8,22 +8,28 @@
 #include "debug/stack_trace.h"
 #include "log/diagnostics_hooks.h"
 
-namespace engine_placeholder::debug {
+namespace engine_placeholder::debug
+{
 
-namespace {
+namespace
+{
 
 // One frame deeper than the old inline call in the assert handler, so it asks CaptureStackTrace to skip one more.
-ENGINE_NOINLINE usize AppendTrace(char* buffer, usize capacity, u32 skip_frames) {
+ENGINE_NOINLINE usize AppendTrace(char* buffer, usize capacity, u32 skip_frames)
+{
     StackTrace trace;
-    if (!CaptureStackTrace(trace, skip_frames + 1)) {
+    if (!CaptureStackTrace(trace, skip_frames + 1))
+    {
         return 0;
     }
     return FormatStackTrace(trace, buffer, capacity);
 }
 
-void WriteContext(void (*write)(void* context, const char* data, usize length), void* context) {
-    if (!CrashContextInitialized()) {
-        InitCrashContext(0, nullptr); // an assert is not a signal handler, so reading /proc is fine here
+void WriteContext(void (*write)(void* context, const char* data, usize length), void* context)
+{
+    if (!CrashContextInitialized())
+    {
+        InitCrashContext(0, nullptr);  // an assert is not a signal handler, so reading /proc is fine here
     }
     CrashReportSink sink;
     sink.write = write;
@@ -31,21 +37,24 @@ void WriteContext(void (*write)(void* context, const char* data, usize length), 
     WriteCrashContext(sink);
 }
 
-bool DebuggerAttached() {
+bool DebuggerAttached()
+{
     return IsDebuggerAttached();
 }
 
-void RegisterThread(const char* name) {
+void RegisterThread(const char* name)
+{
     RegisterThreadForCrashHandling(name);
 }
 
 const FailureReportHooks kHooks = {&AppendTrace, &WriteContext, &DebuggerAttached};
 
-} // namespace
+}  // namespace
 
-void InstallDiagnosticsHooks() {
+void InstallDiagnosticsHooks()
+{
     SetFailureReportHooks(&kHooks);
     SetThreadStartHook(&RegisterThread);
 }
 
-} // namespace engine_placeholder::debug
+}  // namespace engine_placeholder::debug

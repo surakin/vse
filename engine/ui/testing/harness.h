@@ -7,24 +7,28 @@
 #include "ui/surface.h"
 #include "ui/testing/software_raster.h"
 
-//! The offscreen test harness (Phase 15, Day 192): a surface with no window, a font, an atlas and helpers to send input, run frames and read rectangles and pixels.
+//! The offscreen test harness (Phase 15, Day 192): a surface with no window, a font, an atlas and helpers to send
+//! input, run frames and read rectangles and pixels.
 
-namespace engine_placeholder::ui {
+namespace engine_placeholder::ui
+{
 
-/// Everything a widget test needs: an offscreen [[ui::Surface]], a font provider that serves one font for every family key, a glyph atlas, the draw list of the last frame and
-/// the software rasteriser.
+/// Everything a widget test needs: an offscreen [[ui::Surface]], a font provider that serves one font for every family
+/// key, a glyph atlas, the draw list of the last frame and the software rasteriser.
 ///
 /// Every input helper posts one event and runs a frame with `dt` 0, so the effect is visible when it returns.
 ///
 /// - Thread-safety: owner-thread-only.
 /// - Ownership: owns the surface, the font and the atlas.
-class Harness final : public FontProvider {
+class Harness final : public FontProvider
+{
 public:
     /// Makes a harness.
     /// - Param width: surface width in logical units.
     /// - Param height: surface height in logical units.
     /// - Param scale: pixels per logical unit.
-    /// - Param font_file: path of the TrueType font served for every family; if it cannot be opened `Valid()` is false and text is dropped.
+    /// - Param font_file: path of the TrueType font served for every family; if it cannot be opened `Valid()` is false
+    /// and text is dropped.
     Harness(f32 width, f32 height, f32 scale, StringView font_file);
 
     /// Returns whether the font opened.
@@ -86,4 +90,4 @@ private:
     Surface surface_;
 };
 
-} // namespace engine_placeholder::ui
+}  // namespace engine_placeholder::ui

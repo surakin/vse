@@ -5,14 +5,19 @@
 #include "log/assert.h"
 #include "renderer/renderer_log.h"
 
-namespace engine_placeholder::renderer {
+namespace engine_placeholder::renderer
+{
 
-bool DeviceResources::Register(Recreatable* owner, u32 tier) {
-    if (resetting_) {
-        RenderLog(LogVerbosity::Error, "DeviceResources: '%s' cannot register during a reset", owner->RecreatableName());
+bool DeviceResources::Register(Recreatable* owner, u32 tier)
+{
+    if (resetting_)
+    {
+        RenderLog(LogVerbosity::Error, "DeviceResources: '%s' cannot register during a reset",
+                  owner->RecreatableName());
         return false;
     }
-    if (count_ >= kMaxOwners) {
+    if (count_ >= kMaxOwners)
+    {
         RenderLog(LogVerbosity::Error, "DeviceResources: the table of %zu owners is full", kMaxOwners);
         return false;
     }
@@ -24,10 +29,13 @@ bool DeviceResources::Register(Recreatable* owner, u32 tier) {
     return true;
 }
 
-void DeviceResources::Compact() {
+void DeviceResources::Compact()
+{
     usize out = 0;
-    for (usize i = 0; i < count_; ++i) {
-        if (entries_[i].owner != nullptr) {
+    for (usize i = 0; i < count_; ++i)
+    {
+        if (entries_[i].owner != nullptr)
+        {
             entries_[out++] = entries_[i];
         }
     }
@@ -35,17 +43,22 @@ void DeviceResources::Compact() {
     compact_pending_ = false;
 }
 
-void DeviceResources::Unregister(Recreatable* owner) {
-    for (usize i = 0; i < count_; ++i) {
-        if (entries_[i].owner == owner) {
-            if (resetting_) {
-                entries_[i].owner = nullptr; // removed when the reset step ends; the loops skip it
+void DeviceResources::Unregister(Recreatable* owner)
+{
+    for (usize i = 0; i < count_; ++i)
+    {
+        if (entries_[i].owner == owner)
+        {
+            if (resetting_)
+            {
+                entries_[i].owner = nullptr;  // removed when the reset step ends; the loops skip it
                 entries_[i].live = false;
                 compact_pending_ = true;
                 return;
             }
             // Keep registration order for equal tiers: shift down instead of swapping.
-            for (usize j = i + 1; j < count_; ++j) {
+            for (usize j = i + 1; j < count_; ++j)
+            {
                 entries_[j - 1] = entries_[j];
             }
             --count_;
@@ -54,46 +67,57 @@ void DeviceResources::Unregister(Recreatable* owner) {
     }
 }
 
-void DeviceResources::Rebind(Recreatable* from, Recreatable* to) {
-    for (usize i = 0; i < count_; ++i) {
-        if (entries_[i].owner == from && from != nullptr) {
+void DeviceResources::Rebind(Recreatable* from, Recreatable* to)
+{
+    for (usize i = 0; i < count_; ++i)
+    {
+        if (entries_[i].owner == from && from != nullptr)
+        {
             entries_[i].owner = to;
             return;
         }
     }
 }
 
-void DeviceResources::ReleaseAllLive() {
+void DeviceResources::ReleaseAllLive()
+{
     ReleaseLive(0);
     device_ = nullptr;
 }
 
-void DeviceResources::ReleaseFrom(u32 first_tier) {
+void DeviceResources::ReleaseFrom(u32 first_tier)
+{
     resetting_ = true;
     ReleaseLive(first_tier);
     resetting_ = false;
     Compact();
 }
 
-bool DeviceResources::RecreateFrom(u32 first_tier) {
+bool DeviceResources::RecreateFrom(u32 first_tier)
+{
     ENGINE_ASSERT(device_ != nullptr, "DeviceResources::RecreateFrom: there is no current device");
     resetting_ = true;
     failed_name_[0] = '\0';
     bool ok = true;
-    for (;;) {
+    for (;;)
+    {
         Entry* pick = nullptr;
-        for (usize i = 0; i < count_; ++i) {
+        for (usize i = 0; i < count_; ++i)
+        {
             Entry& e = entries_[i];
             if (e.owner != nullptr && !e.live && e.tier >= first_tier &&
-                (pick == nullptr || e.tier < pick->tier || (e.tier == pick->tier && e.sequence < pick->sequence))) {
+                (pick == nullptr || e.tier < pick->tier || (e.tier == pick->tier && e.sequence < pick->sequence)))
+            {
                 pick = &e;
             }
         }
-        if (pick == nullptr) {
+        if (pick == nullptr)
+        {
             break;
         }
         pick->live = true;
-        if (!pick->owner->Recreate(device_)) {
+        if (!pick->owner->Recreate(device_))
+        {
             FormatTo(failed_name_, sizeof(failed_name_), "%s", pick->owner->RecreatableName());
             RenderLog(LogVerbosity::Error, "DeviceResources: '%s' could not be recreated", failed_name_);
             pick->live = false;
@@ -101,7 +125,8 @@ bool DeviceResources::RecreateFrom(u32 first_tier) {
             break;
         }
     }
-    if (!ok) {
+    if (!ok)
+    {
         ReleaseLive(first_tier);
     }
     resetting_ = false;
@@ -109,17 +134,23 @@ bool DeviceResources::RecreateFrom(u32 first_tier) {
     return ok;
 }
 
-void DeviceResources::ReleaseLive(u32 first_tier) {
+void DeviceResources::ReleaseLive(u32 first_tier)
+{
     // Highest tier first; within a tier the later registration first.
-    for (;;) {
+    for (;;)
+    {
         Entry* pick = nullptr;
-        for (usize i = 0; i < count_; ++i) {
+        for (usize i = 0; i < count_; ++i)
+        {
             Entry& e = entries_[i];
-            if (e.owner != nullptr && e.live && e.tier >= first_tier && (pick == nullptr || e.tier > pick->tier || (e.tier == pick->tier && e.sequence > pick->sequence))) {
+            if (e.owner != nullptr && e.live && e.tier >= first_tier &&
+                (pick == nullptr || e.tier > pick->tier || (e.tier == pick->tier && e.sequence > pick->sequence)))
+            {
                 pick = &e;
             }
         }
-        if (pick == nullptr) {
+        if (pick == nullptr)
+        {
             break;
         }
         pick->live = false;
@@ -127,7 +158,8 @@ void DeviceResources::ReleaseLive(u32 first_tier) {
     }
 }
 
-void DeviceResources::OnDeviceReleasing(u32 epoch) {
+void DeviceResources::OnDeviceReleasing(u32 epoch)
+{
     (void)epoch;
     resetting_ = true;
     ReleaseAllLive();
@@ -135,14 +167,16 @@ void DeviceResources::OnDeviceReleasing(u32 epoch) {
     Compact();
 }
 
-bool DeviceResources::OnDeviceCreated(rhi::Device* device, u32 epoch) {
+bool DeviceResources::OnDeviceCreated(rhi::Device* device, u32 epoch)
+{
     (void)epoch;
     device_ = device;
-    if (!RecreateFrom(0)) {
-        device_ = nullptr; // everything is released again; a half-built set is never used
+    if (!RecreateFrom(0))
+    {
+        device_ = nullptr;  // everything is released again; a half-built set is never used
         return false;
     }
     return true;
 }
 
-} // namespace engine_placeholder::renderer
+}  // namespace engine_placeholder::renderer

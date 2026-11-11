@@ -9,20 +9,26 @@
 
 //! The combo box (Phase 15, Day 198): a closed box showing one item of a list, and a drop-down list to choose another.
 
-namespace engine_placeholder::ui {
+namespace engine_placeholder::ui
+{
 
-/// A box that shows the selected item of a [[ui::ListModel]] and opens a drop-down [[ui::ListBox]] (virtualized, so a model of 100,000 items is as cheap as one of ten).
+/// A box that shows the selected item of a [[ui::ListModel]] and opens a drop-down [[ui::ListBox]] (virtualized, so a
+/// model of 100,000 items is as cheap as one of ten).
 ///
-/// While closed, Up and Down select the previous or next item (they run `OnSelectionChanged`), Home and End the first and last, letters select by type-ahead, and the wheel selects when
-/// `SetWheelSelects(true)`. Alt+Down, F4, Space and Enter open the list, and so does a press on the box. While open, the list has the keyboard (arrows, Home, End, PageUp, PageDown,
-/// type-ahead); Enter or a click on an item chooses it and closes the list, Escape or a click elsewhere closes it and keeps the old selection; the focus goes back to the box.
+/// While closed, Up and Down select the previous or next item (they run `OnSelectionChanged`), Home and End the first
+/// and last, letters select by type-ahead, and the wheel selects when `SetWheelSelects(true)`. Alt+Down, F4, Space and
+/// Enter open the list, and so does a press on the box. While open, the list has the keyboard (arrows, Home, End,
+/// PageUp, PageDown, type-ahead); Enter or a click on an item chooses it and closes the list, Escape or a click
+/// elsewhere closes it and keeps the old selection; the focus goes back to the box.
 ///
-/// With `SetEditable(true)` the box holds a [[ui::TextField]]: choosing an item puts its text in the field, and typing text equal to an item selects that item (any other text selects
-/// none), so the text and the selection never disagree. Down in the field opens the list.
+/// With `SetEditable(true)` the box holds a [[ui::TextField]]: choosing an item puts its text in the field, and typing
+/// text equal to an item selects that item (any other text selects none), so the text and the selection never disagree.
+/// Down in the field opens the list.
 ///
 /// - Thread-safety: owner-thread-only.
 /// - Ownership: borrows the model; owns its text field and, while it is open, hands the drop-down list to the surface.
-class ComboBox : public Widget {
+class ComboBox : public Widget
+{
 public:
     /// The most rows the drop-down list shows before it scrolls.
     static constexpr usize kDropRows = 8;
@@ -40,7 +46,8 @@ public:
     /// Uses `model` (null for none) and clears the selection.
     /// - Ownership: borrows `model`, which must outlive its use here.
     void SetModel(ListModel* model);
-    /// Tells the box the model changed: the selection is cleared when it is no longer a valid index, the text is refreshed.
+    /// Tells the box the model changed: the selection is cleared when it is no longer a valid index, the text is
+    /// refreshed.
     void ModelChanged();
     /// Switches the editable variant on or off; marks layout dirty.
     void SetEditable(bool editable);
@@ -109,4 +116,4 @@ private:
     Callback<ComboBox*> on_selection_;
 };
 
-} // namespace engine_placeholder::ui
+}  // namespace engine_placeholder::ui

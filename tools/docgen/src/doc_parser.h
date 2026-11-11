@@ -13,9 +13,11 @@
 // Ownership: everything is allocated from the arena, and text views point
 //   into the scanner's source or the arena; the arena, source, ScanResult
 //   and ExtractResult must outlive the DocResult.
-namespace docgen {
+namespace docgen
+{
 
-enum class LabelKind : engine_placeholder::u8 {
+enum class LabelKind : engine_placeholder::u8
+{
     Param,
     Returns,
     Fails,
@@ -32,66 +34,86 @@ enum class LabelKind : engine_placeholder::u8 {
 // The label as written in a comment ("Thread-safety").
 const char* LabelName(LabelKind kind);
 
-struct Label {
+struct Label
+{
     LabelKind kind = LabelKind::Returns;
-    StringView name;      // Param: the parameter name
-    StringView text;      // continuation lines joined with single spaces
-    StringView code;      // Example: the fenced block that follows, without the fences
-    StringView code_lang; // Example: the fence's info string ("cpp compile")
+    StringView name;       // Param: the parameter name
+    StringView text;       // continuation lines joined with single spaces
+    StringView code;       // Example: the fenced block that follows, without the fences
+    StringView code_lang;  // Example: the fence's info string ("cpp compile")
     bool has_code = false;
-    u32 line = 0;      // absolute source line of the label
-    u32 ref_count = 0; // [[references]] inside the label's text
+    u32 line = 0;       // absolute source line of the label
+    u32 ref_count = 0;  // [[references]] inside the label's text
 };
 
-enum class BlockKind : engine_placeholder::u8 { Paragraph, List, Code };
+enum class BlockKind : engine_placeholder::u8
+{
+    Paragraph,
+    List,
+    Code
+};
 
-struct Block {
+struct Block
+{
     BlockKind kind = BlockKind::Paragraph;
-    StringView text; // Paragraph: lines joined with spaces; Code: the lines joined with '\n'
-    StringView lang; // Code: info string
-    usize first_item = 0; // List: range into ParsedDoc::items
+    StringView text;       // Paragraph: lines joined with spaces; Code: the lines joined with '\n'
+    StringView lang;       // Code: info string
+    usize first_item = 0;  // List: range into ParsedDoc::items
     usize item_count = 0;
     u32 line = 0;
 };
 
-struct Ref {
-    StringView target; // text between [[ and ]]
+struct Ref
+{
+    StringView target;  // text between [[ and ]]
     u32 line = 0;
 };
 
-struct ParsedDoc {
+struct ParsedDoc
+{
     explicit ParsedDoc(ArenaAllocator& arena) : blocks(arena), items(arena), labels(arena), refs(arena) {}
 
-    StringView summary; // first paragraph, lines joined with spaces
+    StringView summary;  // first paragraph, lines joined with spaces
     bool has_summary = false;
     u32 summary_line = 0;
-    bool internal = false; // carries an `Internal:` label
-    Vector<Block, ArenaAllocator> blocks; // detail paragraphs, lists and code blocks, in order
+    bool internal = false;                 // carries an `Internal:` label
+    Vector<Block, ArenaAllocator> blocks;  // detail paragraphs, lists and code blocks, in order
     Vector<StringView, ArenaAllocator> items;
-    Vector<Label, ArenaAllocator> labels; // in source order
-    Vector<Ref, ArenaAllocator> refs;     // every [[reference]] in the comment, in order
+    Vector<Label, ArenaAllocator> labels;  // in source order
+    Vector<Ref, ArenaAllocator> refs;      // every [[reference]] in the comment, in order
 
-    const Label* Find(LabelKind kind) const {
-        for (usize i = 0; i < labels.Size(); ++i) {
-            if (labels[i].kind == kind) return &labels[i];
+    const Label* Find(LabelKind kind) const
+    {
+        for (usize i = 0; i < labels.Size(); ++i)
+        {
+            if (labels[i].kind == kind)
+            {
+                return &labels[i];
+            }
         }
         return nullptr;
     }
 };
 
-struct DocResult {
+struct DocResult
+{
     explicit DocResult(ArenaAllocator& arena) : parsed(arena), diagnostics(arena), undocumented(arena) {}
 
     // One entry per ScanResult::docs, same index; never null after ParseDocs.
     Vector<ParsedDoc*, ArenaAllocator> parsed;
-    Vector<Diagnostic, ArenaAllocator> diagnostics; // sorted by line
+    Vector<Diagnostic, ArenaAllocator> diagnostics;  // sorted by line
     // Public declarations with no doc comment (and no inherited one). Not an
     // error here; `docgen lint` (Day 43) decides.
     Vector<const Decl*, ArenaAllocator> undocumented;
 
-    bool HasErrors() const {
-        for (usize i = 0; i < diagnostics.Size(); ++i) {
-            if (diagnostics[i].severity == Severity::Error) return true;
+    bool HasErrors() const
+    {
+        for (usize i = 0; i < diagnostics.Size(); ++i)
+        {
+            if (diagnostics[i].severity == Severity::Error)
+            {
+                return true;
+            }
         }
         return false;
     }
@@ -116,4 +138,4 @@ const Decl* ResolveInherited(const Decl& fn, const ExtractResult& ex);
 // every parsed header), so a base declared in another header is found.
 const Decl* ResolveInherited(const Decl& fn, const Decl* const* roots, usize root_count);
 
-} // namespace docgen
+}  // namespace docgen

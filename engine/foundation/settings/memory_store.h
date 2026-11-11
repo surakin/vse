@@ -1,25 +1,30 @@
 #pragma once
 
-//! Stores that live in memory: [[settings::MemoryConfigStore]] (full-featured) and [[settings::ReadOnlyConfigStore]] (shipped defaults).
+//! Stores that live in memory: [[settings::MemoryConfigStore]] (full-featured) and [[settings::ReadOnlyConfigStore]]
+//! (shipped defaults).
 
 #include "sync/mutex.h"
 
 #include "containers/shared_ptr.h"
 #include "settings/config_store.h"
 
-namespace engine_placeholder::settings {
+namespace engine_placeholder::settings
+{
 
 class MemoryConfigStore;
 
-/// The durable state of memory stores. Two stores that share one backing see each other's committed changes (and are told about them),
-/// which models two processes or two threads using one configuration; a store made without a backing has its own.
+/// The durable state of memory stores. Two stores that share one backing see each other's committed changes (and are
+/// told about them), which models two processes or two threads using one configuration; a store made without a backing
+/// has its own.
 ///
 /// - Thread-safety: thread-safe.
 /// - Ownership: shared by the stores that use it (see [[settings::MemoryBackingPtr]]).
-class MemoryBacking {
+class MemoryBacking
+{
 public:
     /// One committed entry.
-    struct Entry {
+    struct Entry
+    {
         /// The key.
         Key key;
         /// The value.
@@ -37,7 +42,7 @@ private:
     friend class MemoryConfigStore;
     mutable Mutex mutex_;
     Vector<Entry> entries_;
-    RecursiveMutex notify_mutex_; // held while listeners are called and while one is added or removed
+    RecursiveMutex notify_mutex_;  // held while listeners are called and while one is added or removed
     Vector<MemoryConfigStore*> stores_;
 };
 
@@ -47,11 +52,13 @@ using MemoryBackingPtr = SharedPtr<MemoryBacking>;
 /// Makes a new empty backing.
 MemoryBackingPtr MakeMemoryBacking();
 
-/// A full-featured store in memory: typed values, staged writes with an atomic `Commit`, insertion order, change notification.
+/// A full-featured store in memory: typed values, staged writes with an atomic `Commit`, insertion order, change
+/// notification.
 ///
 /// - Thread-safety: thread-compatible per instance; the backing it uses is thread-safe.
 /// - Ownership: owns its working copy; shares the backing.
-class MemoryConfigStore final : public ConfigStore {
+class MemoryConfigStore final : public ConfigStore
+{
 public:
     /// Makes a store over a private empty backing.
     MemoryConfigStore();
@@ -71,10 +78,12 @@ public:
     Status SetChangeListener(ChangeListener listener, void* user) override;
 
 private:
-    // One staged change; Commit applies the log to the backing, so two stores sharing a backing merge their changes (the later one wins per key).
-    struct Op {
+    // One staged change; Commit applies the log to the backing, so two stores sharing a backing merge their changes
+    // (the later one wins per key).
+    struct Op
+    {
         bool remove = false;
-        MemoryBacking::Entry entry; // the key, and the value unless `remove`
+        MemoryBacking::Entry entry;  // the key, and the value unless `remove`
     };
     usize FindWorking(const Key& key) const;
     void Stage(const Op& op);
@@ -86,7 +95,8 @@ private:
 };
 
 /// One entry of a [[settings::ReadOnlyConfigStore]]: a key and the text of its value.
-struct DefaultEntry {
+struct DefaultEntry
+{
     /// The key text.
     const char* key;
     /// The value text, as it would appear in a file (`1280`, `"fifo"`, `true`).
@@ -97,11 +107,13 @@ struct DefaultEntry {
 ///
 /// - Thread-safety: thread-safe (immutable after construction).
 /// - Ownership: borrows the array, which must outlive the store.
-class ReadOnlyConfigStore final : public ConfigStore {
+class ReadOnlyConfigStore final : public ConfigStore
+{
 public:
     /// Makes a store over `entries[0..count)`.
     ///
-    /// - Param entries: the entries; an entry with a null key or text, or a key that is not a valid [[settings::Key]], is skipped, and the first
+    /// - Param entries: the entries; an entry with a null key or text, or a key that is not a valid [[settings::Key]],
+    /// is skipped, and the first
     ///   entry for a repeated key wins.
     ReadOnlyConfigStore(const DefaultEntry* entries, usize count);
 
@@ -119,4 +131,4 @@ private:
     usize count_;
 };
 
-} // namespace engine_placeholder::settings
+}  // namespace engine_placeholder::settings

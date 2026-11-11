@@ -1,18 +1,23 @@
 #pragma once
 
-// A directory made for one test and removed with everything in it afterwards, through the file layer (the database tests of Phase 19 keep real files).
+// A directory made for one test and removed with everything in it afterwards, through the file layer (the database
+// tests of Phase 19 keep real files).
 
 #include "io/file_system.h"
 #include "io/path.h"
 #include "os/console.h"
 
-namespace engine_placeholder::database_test {
+namespace engine_placeholder::database_test
+{
 
-class TempDir {
+class TempDir
+{
 public:
-    TempDir() {
+    TempDir()
+    {
         io::Path tmp;
-        if (io::TempDirectory(&tmp).Failed() || io::CreateTempDirectory(tmp, "re_db_test", &path_).Failed()) {
+        if (io::TempDirectory(&tmp).Failed() || io::CreateTempDirectory(tmp, "re_db_test", &path_).Failed())
+        {
             os::Abort();
         }
     }
@@ -27,4 +32,4 @@ private:
     io::Path path_;
 };
 
-} // namespace engine_placeholder::database_test
+}  // namespace engine_placeholder::database_test

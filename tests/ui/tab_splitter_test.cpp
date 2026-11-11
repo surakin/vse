@@ -11,9 +11,11 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::ui;
 
-namespace {
+namespace
+{
 
-Rect TsRect(f32 x, f32 y, f32 w, f32 h) {
+Rect TsRect(f32 x, f32 y, f32 w, f32 h)
+{
     Rect r;
     r.x = x;
     r.y = y;
@@ -22,23 +24,32 @@ Rect TsRect(f32 x, f32 y, f32 w, f32 h) {
     return r;
 }
 
-Point TsCenter(const Rect& r) { return Point{r.x + r.w / 2, r.y + r.h / 2}; }
+Point TsCenter(const Rect& r)
+{
+    return Point{r.x + r.w / 2, r.y + r.h / 2};
+}
 
 // ---- tabs ----
 
-struct TabRig {
-    explicit TabRig(usize count = 3, f32 width = 400) : h(500, 300, 1, StringView(UI_TEST_FONT_FILE)) {
+struct TabRig
+{
+    explicit TabRig(usize count = 3, f32 width = 400) : h(500, 300, 1, StringView(UI_TEST_FONT_FILE))
+    {
         UniquePtr<TabView> t = MakeUnique<TabView>(StringView("tabs"));
         tabs = t.Get();
         tabs->OnSelectionChanged().Connect(&TabRig::Changed, this);
         tabs->OnCloseRequested().Connect(&TabRig::CloseAsked, this);
         tabs->SetClosable(closable);
-        for (usize i = 0; i < count; ++i) AddOne(i);
+        for (usize i = 0; i < count; ++i)
+        {
+            AddOne(i);
+        }
         tabs->SetBounds(TsRect(10, 10, width, 200));
         h.GetSurface().Root()->AddChild(UniquePtr<Widget>(t.Release()));
         h.Advance(0);
     }
-    void AddOne(usize i) {
+    void AddOne(usize i)
+    {
         StringBuilder<HeapAllocator> title(HeapAllocator::Default());
         title.Append(StringView("Tab number "));
         title.AppendUInt(i);
@@ -47,7 +58,8 @@ struct TabRig {
         tabs->AddTab(title.View(), UniquePtr<Widget>(page.Release()));
     }
     static void Changed(void* user, TabView*) { ++static_cast<TabRig*>(user)->changes; }
-    static void CloseAsked(void* user, TabView*, usize index) {
+    static void CloseAsked(void* user, TabView*, usize index)
+    {
         TabRig* r = static_cast<TabRig*>(user);
         r->close_asked = static_cast<int>(index);
     }
@@ -59,14 +71,16 @@ struct TabRig {
     int close_asked = -1;
 };
 
-UniquePtr<Widget> MakeLazyPage(void* user) {
+UniquePtr<Widget> MakeLazyPage(void* user)
+{
     ++*static_cast<int*>(user);
     return UniquePtr<Widget>(MakeUnique<TextField>(StringView("lazy")).Release());
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("a click on a header selects its tab and shows its page", "[ui][tabs]") {
+TEST_CASE("a click on a header selects its tab and shows its page", "[ui][tabs]")
+{
     TabRig rig;
     CHECK(rig.tabs->Selected() == 0);
     CHECK_FALSE(rig.pages[0]->Collapsed());
@@ -79,11 +93,12 @@ TEST_CASE("a click on a header selects its tab and shows its page", "[ui][tabs]"
     CHECK_FALSE(rig.pages[1]->Collapsed());
     const Rect content = rig.tabs->ContentRect();
     CHECK(rig.pages[1]->Bounds().y >= content.y - 0.5f);
-    rig.h.Click(p.x - 10, p.y); // the same tab again: no change
+    rig.h.Click(p.x - 10, p.y);  // the same tab again: no change
     CHECK(rig.changes == 1);
 }
 
-TEST_CASE("Select runs no listener and ignores a bad index", "[ui][tabs]") {
+TEST_CASE("Select runs no listener and ignores a bad index", "[ui][tabs]")
+{
     TabRig rig;
     rig.tabs->Select(2);
     CHECK(rig.tabs->Selected() == 2);
@@ -92,13 +107,14 @@ TEST_CASE("Select runs no listener and ignores a bad index", "[ui][tabs]") {
     CHECK(rig.tabs->Selected() == 2);
 }
 
-TEST_CASE("arrow keys on the focused view move the selection", "[ui][tabs]") {
+TEST_CASE("arrow keys on the focused view move the selection", "[ui][tabs]")
+{
     TabRig rig;
     rig.h.GetSurface().SetFocus(rig.tabs);
     rig.h.Key(Key::Right);
     CHECK(rig.tabs->Selected() == 1);
     rig.h.Key(Key::Right);
-    rig.h.Key(Key::Right); // at the end: stays
+    rig.h.Key(Key::Right);  // at the end: stays
     CHECK(rig.tabs->Selected() == 2);
     rig.h.Key(Key::Left);
     CHECK(rig.tabs->Selected() == 1);
@@ -108,28 +124,31 @@ TEST_CASE("arrow keys on the focused view move the selection", "[ui][tabs]") {
     CHECK(rig.tabs->Selected() == 2);
 }
 
-TEST_CASE("Ctrl+Tab cycles the tabs, also from inside a page", "[ui][tabs]") {
+TEST_CASE("Ctrl+Tab cycles the tabs, also from inside a page", "[ui][tabs]")
+{
     TabRig rig;
     rig.h.GetSurface().SetFocus(rig.pages[0]);
     rig.h.Key(Key::Tab, true, os::kModCtrl);
     CHECK(rig.tabs->Selected() == 1);
     rig.h.Key(Key::Tab, true, os::kModCtrl);
     rig.h.Key(Key::Tab, true, os::kModCtrl);
-    CHECK(rig.tabs->Selected() == 0); // wrapped
+    CHECK(rig.tabs->Selected() == 0);  // wrapped
     rig.h.Key(Key::Tab, true, os::kModCtrl | os::kModShift);
     CHECK(rig.tabs->Selected() == 2);
     rig.h.Key(Key::PageUp, true, os::kModCtrl);
     CHECK(rig.tabs->Selected() == 1);
 }
 
-TEST_CASE("arrow keys typed in a page do not switch tabs", "[ui][tabs]") {
+TEST_CASE("arrow keys typed in a page do not switch tabs", "[ui][tabs]")
+{
     TabRig rig;
     rig.h.GetSurface().SetFocus(rig.pages[0]);
     rig.h.Key(Key::Right);
     CHECK(rig.tabs->Selected() == 0);
 }
 
-TEST_CASE("a lazy page is built once, on first selection", "[ui][tabs]") {
+TEST_CASE("a lazy page is built once, on first selection", "[ui][tabs]")
+{
     TabRig rig(1);
     int built = 0;
     rig.tabs->AddLazyTab(StringView("Lazy"), &MakeLazyPage, &built);
@@ -145,7 +164,8 @@ TEST_CASE("a lazy page is built once, on first selection", "[ui][tabs]") {
     CHECK(rig.tabs->Page(1) == page);
 }
 
-TEST_CASE("a hidden page keeps its state", "[ui][tabs]") {
+TEST_CASE("a hidden page keeps its state", "[ui][tabs]")
+{
     TabRig rig;
     rig.pages[0]->SetText(StringView("kept"));
     rig.tabs->Select(2);
@@ -154,21 +174,25 @@ TEST_CASE("a hidden page keeps its state", "[ui][tabs]") {
     CHECK(rig.pages[0]->Text() == StringView("kept"));
 }
 
-TEST_CASE("a close button asks, and CloseTab removes the page and moves the selection", "[ui][tabs]") {
+TEST_CASE("a close button asks, and CloseTab removes the page and moves the selection", "[ui][tabs]")
+{
     TabRig rig(0);
     rig.closable = true;
     rig.tabs->SetClosable(true);
-    for (usize i = 0; i < 3; ++i) rig.AddOne(i);
+    for (usize i = 0; i < 3; ++i)
+    {
+        rig.AddOne(i);
+    }
     rig.h.Advance(0);
     rig.tabs->Select(1);
     const Rect r = rig.tabs->TabRect(1);
     rig.h.Click(r.Right() - 14, r.y + r.h / 2);
     CHECK(rig.close_asked == 1);
-    CHECK(rig.tabs->TabCount() == 3); // the program decides
+    CHECK(rig.tabs->TabCount() == 3);  // the program decides
     rig.tabs->CloseTab(1);
     rig.h.Advance(0);
     CHECK(rig.tabs->TabCount() == 2);
-    CHECK(rig.tabs->Selected() == 1); // the next tab moved up
+    CHECK(rig.tabs->Selected() == 1);  // the next tab moved up
     CHECK_FALSE(rig.tabs->Page(1)->Collapsed());
     rig.tabs->CloseTab(0);
     CHECK(rig.tabs->Selected() == 0);
@@ -177,7 +201,8 @@ TEST_CASE("a close button asks, and CloseTab removes the page and moves the sele
     CHECK(rig.tabs->TabCount() == 0);
 }
 
-TEST_CASE("headers that do not fit scroll, and a selected tab scrolls into view", "[ui][tabs]") {
+TEST_CASE("headers that do not fit scroll, and a selected tab scrolls into view", "[ui][tabs]")
+{
     TabRig rig(10, 300);
     TabView* t = rig.tabs;
     REQUIRE(t->HeaderOverflows());
@@ -197,21 +222,29 @@ TEST_CASE("headers that do not fit scroll, and a selected tab scrolls into view"
     CHECK(t->TabRect(0).x >= b.x - 0.5f);
 }
 
-TEST_CASE("headers that fit show no arrows", "[ui][tabs]") {
+TEST_CASE("headers that fit show no arrows", "[ui][tabs]")
+{
     TabRig rig(2, 400);
     CHECK_FALSE(rig.tabs->HeaderOverflows());
 }
 
 // ---- splitter ----
 
-namespace {
+namespace
+{
 
-struct SplitRig {
-    explicit SplitRig(Orientation o = Orientation::Horizontal, usize panes = 2) : h(500, 300, 1, StringView(UI_TEST_FONT_FILE)) {
+struct SplitRig
+{
+    explicit SplitRig(Orientation o = Orientation::Horizontal, usize panes = 2)
+        : h(500, 300, 1, StringView(UI_TEST_FONT_FILE))
+    {
         UniquePtr<Splitter> s = MakeUnique<Splitter>(o, StringView("split"));
         split = s.Get();
         split->OnChanged().Connect(&SplitRig::Changed, this);
-        for (usize i = 0; i < panes; ++i) split->AddPane(MakeUnique<Widget>(StringView("pane")), 1.0f);
+        for (usize i = 0; i < panes; ++i)
+        {
+            split->AddPane(MakeUnique<Widget>(StringView("pane")), 1.0f);
+        }
         LayoutProps props;
         props.fill_parent = true;
         split->SetProps(props);
@@ -220,7 +253,8 @@ struct SplitRig {
     }
     static void Changed(void* user, Splitter*) { ++static_cast<SplitRig*>(user)->changes; }
     Point Handle(usize i = 0) const { return TsCenter(split->HandleRect(i)); }
-    void Drag(f32 dx, f32 dy, usize handle = 0) {
+    void Drag(f32 dx, f32 dy, usize handle = 0)
+    {
         const Point p = Handle(handle);
         h.PointerDown(p.x, p.y);
         h.PointerMove(p.x + dx / 2, p.y + dy / 2);
@@ -233,16 +267,18 @@ struct SplitRig {
     int changes = 0;
 };
 
-} // namespace
+}  // namespace
 
-TEST_CASE("panes share the room less the handles", "[ui][splitter]") {
+TEST_CASE("panes share the room less the handles", "[ui][splitter]")
+{
     SplitRig rig;
     CHECK(rig.split->PaneSize(0) + rig.split->PaneSize(1) + Splitter::kHandle == 500);
     CHECK(rig.split->PaneSize(0) == rig.split->PaneSize(1));
     CHECK(rig.split->Pane(1)->Bounds().x == rig.split->PaneSize(0) + Splitter::kHandle);
 }
 
-TEST_CASE("dragging a handle moves the boundary", "[ui][splitter]") {
+TEST_CASE("dragging a handle moves the boundary", "[ui][splitter]")
+{
     SplitRig rig;
     const f32 before = rig.split->PaneSize(0);
     rig.Drag(60, 0);
@@ -252,7 +288,8 @@ TEST_CASE("dragging a handle moves the boundary", "[ui][splitter]") {
     CHECK(rig.split->Pane(0)->Bounds().w == rig.split->PaneSize(0));
 }
 
-TEST_CASE("a drag stops at the minimum size of a pane", "[ui][splitter]") {
+TEST_CASE("a drag stops at the minimum size of a pane", "[ui][splitter]")
+{
     SplitRig rig;
     rig.split->SetMinSize(0, 120);
     rig.split->SetMinSize(1, 100);
@@ -264,7 +301,8 @@ TEST_CASE("a drag stops at the minimum size of a pane", "[ui][splitter]") {
     CHECK(rig.split->PaneSize(1) == 100);
 }
 
-TEST_CASE("the panes keep their proportions when the splitter resizes", "[ui][splitter]") {
+TEST_CASE("the panes keep their proportions when the splitter resizes", "[ui][splitter]")
+{
     SplitRig rig;
     rig.Drag(100, 0);
     const f32 ratio = rig.split->PaneSize(0) / rig.split->PaneSize(1);
@@ -274,7 +312,8 @@ TEST_CASE("the panes keep their proportions when the splitter resizes", "[ui][sp
     CHECK(rig.split->PaneSize(0) / rig.split->PaneSize(1) == Catch::Approx(ratio).epsilon(0.001));
 }
 
-TEST_CASE("a double click on a handle restores the starting sizes", "[ui][splitter]") {
+TEST_CASE("a double click on a handle restores the starting sizes", "[ui][splitter]")
+{
     SplitRig rig;
     const f32 start = rig.split->PaneSize(0);
     rig.Drag(80, 0);
@@ -287,7 +326,8 @@ TEST_CASE("a double click on a handle restores the starting sizes", "[ui][splitt
     CHECK(rig.split->PaneSize(0) == start);
 }
 
-TEST_CASE("a collapsible pane collapses past half its minimum and opens again", "[ui][splitter]") {
+TEST_CASE("a collapsible pane collapses past half its minimum and opens again", "[ui][splitter]")
+{
     SplitRig rig;
     rig.split->SetMinSize(0, 100);
     rig.split->SetCollapsible(0, true);
@@ -303,7 +343,8 @@ TEST_CASE("a collapsible pane collapses past half its minimum and opens again", 
     CHECK(rig.split->PaneSize(0) >= 100);
 }
 
-TEST_CASE("panes collapse and open from code", "[ui][splitter]") {
+TEST_CASE("panes collapse and open from code", "[ui][splitter]")
+{
     SplitRig rig(Orientation::Horizontal, 3);
     rig.split->SetPaneCollapsed(1, true);
     rig.h.Advance(0);
@@ -312,10 +353,11 @@ TEST_CASE("panes collapse and open from code", "[ui][splitter]") {
     rig.split->SetPaneCollapsed(1, false);
     rig.h.Advance(0);
     CHECK(rig.split->PaneSize(1) > 0);
-    CHECK(rig.changes == 0); // code changes run no listener
+    CHECK(rig.changes == 0);  // code changes run no listener
 }
 
-TEST_CASE("the fractions are plain numbers that round-trip", "[ui][splitter]") {
+TEST_CASE("the fractions are plain numbers that round-trip", "[ui][splitter]")
+{
     SplitRig rig(Orientation::Horizontal, 3);
     Vector<f32> f;
     rig.split->Fractions(&f);
@@ -326,12 +368,13 @@ TEST_CASE("the fractions are plain numbers that round-trip", "[ui][splitter]") {
     rig.h.Advance(0);
     CHECK(rig.split->PaneSize(1) == Catch::Approx(rig.split->PaneSize(0) * 3).epsilon(0.001));
     const f32 bad[2] = {1.0f, 1.0f};
-    rig.split->SetFractions(Span<const f32>(bad, 2)); // wrong count: ignored
+    rig.split->SetFractions(Span<const f32>(bad, 2));  // wrong count: ignored
     rig.h.Advance(0);
     CHECK(rig.split->PaneSize(1) == Catch::Approx(rig.split->PaneSize(0) * 3).epsilon(0.001));
 }
 
-TEST_CASE("a vertical splitter drags along y and shows the matching cursor", "[ui][splitter]") {
+TEST_CASE("a vertical splitter drags along y and shows the matching cursor", "[ui][splitter]")
+{
     SplitRig rig(Orientation::Vertical);
     const Point p = rig.Handle();
     rig.h.PointerMove(p.x, p.y);
@@ -343,7 +386,8 @@ TEST_CASE("a vertical splitter drags along y and shows the matching cursor", "[u
     CHECK(rig.split->PaneSize(0) == before + 40);
 }
 
-TEST_CASE("a horizontal splitter shows the horizontal resize cursor over its handle", "[ui][splitter]") {
+TEST_CASE("a horizontal splitter shows the horizontal resize cursor over its handle", "[ui][splitter]")
+{
     SplitRig rig;
     const Point p = rig.Handle();
     rig.h.PointerMove(p.x, p.y);

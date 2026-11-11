@@ -1,4 +1,5 @@
-// The component encoding (Phase 19 Day 256): every field kind round trips bit-exact, the bytes are golden, and every bad input is a Status.
+// The component encoding (Phase 19 Day 256): every field kind round trips bit-exact, the bytes are golden, and every
+// bad input is a Status.
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -6,15 +7,27 @@
 #include "lang/limits.h"
 #include "storage/component_registry.h"
 
-namespace engine_placeholder::storage {
-namespace {
+namespace engine_placeholder::storage
+{
+namespace
+{
 
-enum class Mode : u8 { A = 0, B = 1, C = 2 };
-enum class Wide : i32 { Low = -5, High = 5 };
+enum class Mode : u8
+{
+    A = 0,
+    B = 1,
+    C = 2
+};
+enum class Wide : i32
+{
+    Low = -5,
+    High = 5
+};
 
 using Text = String<HeapAllocator>;
 
-struct Everything {
+struct Everything
+{
     u8 u8v = 0;
     u16 u16v = 0;
     u32 u32v = 0;
@@ -40,7 +53,8 @@ struct Everything {
     EntityRef ref;
 };
 
-struct Golden {
+struct Golden
+{
     u16 a = 0;
     i32 b = 0;
     f32 c = 0;
@@ -52,48 +66,69 @@ struct Golden {
 
 constexpr FieldOptions kModeRange = FieldOptions::Enum(0, 2);
 
-Status RegisterAll(ComponentRegistry* r) {
+Status RegisterAll(ComponentRegistry* r)
+{
     ENGINE_TRY(r->Register<Everything>({.id = 1001,
                                         .name = "everything",
-                                        .fields = {Field<&Everything::u8v>("u8"), Field<&Everything::u16v>("u16"), Field<&Everything::u32v>("u32"),
-                                                   Field<&Everything::u64v>("u64"), Field<&Everything::i8v>("i8"), Field<&Everything::i16v>("i16"),
-                                                   Field<&Everything::i32v>("i32"), Field<&Everything::i64v>("i64"), Field<&Everything::f32v>("f32"),
-                                                   Field<&Everything::f64v>("f64"), Field<&Everything::flag>("flag"), Field<&Everything::v2>("v2"),
-                                                   Field<&Everything::v3>("v3"), Field<&Everything::v4>("v4"), Field<&Everything::q>("q"),
-                                                   Field<&Everything::m>("m"), Field<&Everything::box>("box"), Field<&Everything::mode>("mode", kModeRange),
+                                        .fields = {Field<&Everything::u8v>("u8"),
+                                                   Field<&Everything::u16v>("u16"),
+                                                   Field<&Everything::u32v>("u32"),
+                                                   Field<&Everything::u64v>("u64"),
+                                                   Field<&Everything::i8v>("i8"),
+                                                   Field<&Everything::i16v>("i16"),
+                                                   Field<&Everything::i32v>("i32"),
+                                                   Field<&Everything::i64v>("i64"),
+                                                   Field<&Everything::f32v>("f32"),
+                                                   Field<&Everything::f64v>("f64"),
+                                                   Field<&Everything::flag>("flag"),
+                                                   Field<&Everything::v2>("v2"),
+                                                   Field<&Everything::v3>("v3"),
+                                                   Field<&Everything::v4>("v4"),
+                                                   Field<&Everything::q>("q"),
+                                                   Field<&Everything::m>("m"),
+                                                   Field<&Everything::box>("box"),
+                                                   Field<&Everything::mode>("mode", kModeRange),
                                                    Field<&Everything::wide>("wide", FieldOptions::Enum(-5, 5)),
-                                                   Field<&Everything::name>("name", FieldOptions::Text(64)), Field<&Everything::counts>("counts"),
-                                                   Field<&Everything::modes>("modes", kModeRange), Field<&Everything::ref>("ref")}}));
-    return r->Register<Golden>({.id = 1002,
-                                .name = "golden",
-                                .version = 3,
-                                .oldest_version = 3,
-                                .fields = {Field<&Golden::a>("a"), Field<&Golden::b>("b"), Field<&Golden::c>("c"), Field<&Golden::d>("d"),
-                                           Field<&Golden::mode>("mode", kModeRange), Field<&Golden::s>("s"), Field<&Golden::arr>("arr")}});
+                                                   Field<&Everything::name>("name", FieldOptions::Text(64)),
+                                                   Field<&Everything::counts>("counts"),
+                                                   Field<&Everything::modes>("modes", kModeRange),
+                                                   Field<&Everything::ref>("ref")}}));
+    return r->Register<Golden>(
+        {.id = 1002,
+         .name = "golden",
+         .version = 3,
+         .oldest_version = 3,
+         .fields = {Field<&Golden::a>("a"), Field<&Golden::b>("b"), Field<&Golden::c>("c"), Field<&Golden::d>("d"),
+                    Field<&Golden::mode>("mode", kModeRange), Field<&Golden::s>("s"), Field<&Golden::arr>("arr")}});
 }
 
-u32 BitsOf(f32 v) {
+u32 BitsOf(f32 v)
+{
     u32 b = 0;
     MemCopy(&b, &v, sizeof(b));
     return b;
 }
-u64 BitsOf(f64 v) {
+u64 BitsOf(f64 v)
+{
     u64 b = 0;
     MemCopy(&b, &v, sizeof(b));
     return b;
 }
-f32 F32(u32 bits) {
+f32 F32(u32 bits)
+{
     f32 v = 0;
     MemCopy(&v, &bits, sizeof(v));
     return v;
 }
-f64 F64(u64 bits) {
+f64 F64(u64 bits)
+{
     f64 v = 0;
     MemCopy(&v, &bits, sizeof(v));
     return v;
 }
 
-Everything Extreme() {
+Everything Extreme()
+{
     Everything e;
     e.u8v = 0xff;
     e.u16v = 0xffff;
@@ -103,14 +138,17 @@ Everything Extreme() {
     e.i16v = Limits<i16>::Min();
     e.i32v = Limits<i32>::Min();
     e.i64v = Limits<i64>::Min();
-    e.f32v = F32(0x7fc00123u); // a NaN with a payload
-    e.f64v = F64(0x8000000000000000ull); // -0
+    e.f32v = F32(0x7fc00123u);            // a NaN with a payload
+    e.f64v = F64(0x8000000000000000ull);  // -0
     e.flag = true;
-    e.v2 = Vec2(F32(0x00000001u), F32(0x80000000u)); // the smallest denormal, -0
+    e.v2 = Vec2(F32(0x00000001u), F32(0x80000000u));  // the smallest denormal, -0
     e.v3 = Vec3(F32(0x7f800000u), F32(0xff800000u), 1.5f);
     e.v4 = Vec4(1, 2, 3, F32(0x7f80beefu));
     e.q = Quaternion(0.1f, 0.2f, 0.3f, 0.4f);
-    for (usize c = 0; c < 4; ++c) e.m.col[c] = Vec4(static_cast<f32>(c), static_cast<f32>(c + 1), F32(0x007fffffu), -0.0f);
+    for (usize c = 0; c < 4; ++c)
+    {
+        e.m.col[c] = Vec4(static_cast<f32>(c), static_cast<f32>(c + 1), F32(0x007fffffu), -0.0f);
+    }
     e.box.min = Vec3(-1, -2, -3);
     e.box.max = Vec3(4, 5, 6);
     e.mode = Mode::C;
@@ -126,16 +164,21 @@ Everything Extreme() {
     return e;
 }
 
-TEST_CASE("ByteWriter: WriteBytes of a view of its own bytes appends them as they were, also when the buffer grows", "[storage][encoding]") {
+TEST_CASE("ByteWriter: WriteBytes of a view of its own bytes appends them as they were, also when the buffer grows",
+          "[storage][encoding]")
+{
     bytes::ByteWriter w;
-    for (u32 i = 0; i < 4; ++i) {
+    for (u32 i = 0; i < 4; ++i)
+    {
         w.WriteU8(static_cast<u8>(i + 1));
     }
-    for (u32 round = 0; round < 12; ++round) { // doubles the content each time, so the buffer reallocates
+    for (u32 round = 0; round < 12; ++round)
+    {  // doubles the content each time, so the buffer reallocates
         const usize before = w.Size();
         w.WriteBytes(w.Bytes());
         REQUIRE(w.Size() == before * 2);
-        for (usize i = 0; i < before; ++i) {
+        for (usize i = 0; i < before; ++i)
+        {
             REQUIRE(w.Bytes()[before + i] == w.Bytes()[i]);
         }
     }
@@ -143,7 +186,8 @@ TEST_CASE("ByteWriter: WriteBytes of a view of its own bytes appends them as the
     CHECK(w.Bytes()[3] == 4);
 }
 
-TEST_CASE("Encoding: every field kind round trips bit-exact", "[storage][encoding]") {
+TEST_CASE("Encoding: every field kind round trips bit-exact", "[storage][encoding]")
+{
     ComponentRegistry registry;
     REQUIRE(RegisterAll(&registry).Ok());
     const RegisteredComponent* c = registry.FindById(1001);
@@ -190,7 +234,8 @@ TEST_CASE("Encoding: every field kind round trips bit-exact", "[storage][encodin
     CHECK(MemCompare(again.Bytes().Data(), w.Bytes().Data(), w.Size()) == 0);
 }
 
-TEST_CASE("Encoding: the bytes of a fixed component are golden", "[storage][encoding]") {
+TEST_CASE("Encoding: the bytes of a fixed component are golden", "[storage][encoding]")
+{
     ComponentRegistry registry;
     REQUIRE(RegisterAll(&registry).Ok());
     const RegisteredComponent* c = registry.FindById(1002);
@@ -207,29 +252,33 @@ TEST_CASE("Encoding: the bytes of a fixed component are golden", "[storage][enco
     g.arr[1] = 8;
     bytes::ByteWriter w;
     REQUIRE(c->Encode(&g, w, CodecLimits()).Ok());
-    // A change to this string is a change of the stored format: bump the format version and record the reason in the day file.
-    const u8 golden[] = {0x34, 0x12,                         // a
-                         0xfe, 0xff, 0xff, 0xff,             // b
-                         0x00, 0x00, 0x80, 0x3f,             // c = 1.0f
-                         0x01,                               // d
-                         0x01,                               // mode
-                         0x02, 'h', 'i',                     // s
-                         0x02, 0x09, 0x08};                  // arr: count, elements
+    // A change to this string is a change of the stored format: bump the format version and record the reason in the
+    // day file.
+    const u8 golden[] = {0x34, 0x12,              // a
+                         0xfe, 0xff, 0xff, 0xff,  // b
+                         0x00, 0x00, 0x80, 0x3f,  // c = 1.0f
+                         0x01,                    // d
+                         0x01,                    // mode
+                         0x02, 'h',  'i',         // s
+                         0x02, 0x09, 0x08};       // arr: count, elements
     REQUIRE(w.Size() == sizeof(golden));
-    for (usize i = 0; i < sizeof(golden); ++i) {
+    for (usize i = 0; i < sizeof(golden); ++i)
+    {
         INFO("byte " << i);
         CHECK(static_cast<u8>(w.Bytes()[i]) == golden[i]);
     }
 }
 
-TEST_CASE("Encoding: every cut of a valid encoding is Corrupt, never a crash", "[storage][encoding]") {
+TEST_CASE("Encoding: every cut of a valid encoding is Corrupt, never a crash", "[storage][encoding]")
+{
     ComponentRegistry registry;
     REQUIRE(RegisterAll(&registry).Ok());
     const RegisteredComponent* c = registry.FindById(1001);
     const Everything original = Extreme();
     bytes::ByteWriter w;
     REQUIRE(c->Encode(&original, w, CodecLimits()).Ok());
-    for (usize cut = 0; cut < w.Size(); ++cut) {
+    for (usize cut = 0; cut < w.Size(); ++cut)
+    {
         Everything out;
         bytes::ByteReader r(ByteSpan(w.Bytes().Data(), cut));
         const Status s = c->Decode(r, &out, CodecLimits());
@@ -239,83 +288,93 @@ TEST_CASE("Encoding: every cut of a valid encoding is Corrupt, never a crash", "
     }
 }
 
-TEST_CASE("Encoding: values outside their declared form are refused on read", "[storage][encoding]") {
+TEST_CASE("Encoding: values outside their declared form are refused on read", "[storage][encoding]")
+{
     ComponentRegistry registry;
     REQUIRE(RegisterAll(&registry).Ok());
     const RegisteredComponent* c = registry.FindById(1002);
-    auto decode = [&](const Vector<byte>& bytes_in, const CodecLimits& limits) {
+    auto decode = [&](const Vector<byte>& bytes_in, const CodecLimits& limits)
+    {
         Golden g;
         bytes::ByteReader r(ByteSpan(bytes_in.Data(), bytes_in.Size()));
         return c->Decode(r, &g, limits);
     };
-    auto good = [&]() {
+    auto good = [&]()
+    {
         Vector<byte> v;
-        const u8 raw[] = {0x34, 0x12, 0xfe, 0xff, 0xff, 0xff, 0x00, 0x00, 0x80, 0x3f, 0x01, 0x01, 0x02, 'h', 'i', 0x02, 0x09, 0x08};
-        for (const u8 b : raw) v.Push(static_cast<byte>(b));
+        const u8 raw[] = {0x34, 0x12, 0xfe, 0xff, 0xff, 0xff, 0x00, 0x00, 0x80,
+                          0x3f, 0x01, 0x01, 0x02, 'h',  'i',  0x02, 0x09, 0x08};
+        for (const u8 b : raw)
+        {
+            v.Push(static_cast<byte>(b));
+        }
         return v;
     };
     CHECK(decode(good(), CodecLimits()).Ok());
-    { // a bool that is neither 0 nor 1
+    {  // a bool that is neither 0 nor 1
         Vector<byte> v = good();
         v[10] = byte{2};
         CHECK(decode(v, CodecLimits()).Is(ErrorCode::Corrupt));
     }
-    { // an enum above its range
+    {  // an enum above its range
         Vector<byte> v = good();
         v[11] = byte{3};
         CHECK(decode(v, CodecLimits()).Is(ErrorCode::Corrupt));
     }
-    { // text that is not UTF-8
+    {  // text that is not UTF-8
         Vector<byte> v = good();
         v[13] = byte{0xff};
         CHECK(decode(v, CodecLimits()).Is(ErrorCode::Corrupt));
     }
-    { // an array whose count is not the type's
+    {  // an array whose count is not the type's
         Vector<byte> v = good();
         v[15] = byte{3};
         CHECK(decode(v, CodecLimits()).Is(ErrorCode::Corrupt));
     }
-    { // a string length above the limit, and a length of a huge varint
+    {  // a string length above the limit, and a length of a huge varint
         CodecLimits tight;
         tight.max_string_bytes = 1;
         CHECK(decode(good(), tight).Is(ErrorCode::LimitExceeded));
         Vector<byte> v = good();
-        v[12] = byte{0xff}; // the length becomes a long varint that runs into the next bytes
+        v[12] = byte{0xff};  // the length becomes a long varint that runs into the next bytes
         const Status s = decode(v, CodecLimits());
         CHECK(s.Failed());
     }
-    { // an array count above the element limit
+    {  // an array count above the element limit
         CodecLimits tight;
         tight.max_array_elements = 1;
         CHECK(decode(good(), tight).Is(ErrorCode::LimitExceeded));
     }
 }
 
-TEST_CASE("Encoding: a value that cannot be stored is refused on write and leaves the writer as it was", "[storage][encoding]") {
+TEST_CASE("Encoding: a value that cannot be stored is refused on write and leaves the writer as it was",
+          "[storage][encoding]")
+{
     ComponentRegistry registry;
     REQUIRE(RegisterAll(&registry).Ok());
     const RegisteredComponent* c = registry.FindById(1001);
     bytes::ByteWriter w;
     w.WriteU32(0xdeadbeef);
-    { // enum outside the range
+    {  // enum outside the range
         Everything e;
         e.mode = static_cast<Mode>(9);
         CHECK(c->Encode(&e, w, CodecLimits()).Is(ErrorCode::Invalid));
         CHECK(w.Size() == 4);
     }
-    { // a string longer than the field's bound
+    {  // a string longer than the field's bound
         Everything e;
-        e.name = Text(HeapAllocator::Default(), StringView("0123456789012345678901234567890123456789012345678901234567890123456789"));
+        e.name = Text(HeapAllocator::Default(),
+                      StringView("0123456789012345678901234567890123456789012345678901234567890123456789"));
         CHECK(c->Encode(&e, w, CodecLimits()).Is(ErrorCode::LimitExceeded));
         CHECK(w.Size() == 4);
     }
-    { // a string that is not UTF-8
+    {  // a string that is not UTF-8
         Everything e;
         e.name = Text(HeapAllocator::Default(), StringView("\xc3\x28"));
         CHECK(c->Encode(&e, w, CodecLimits()).Is(ErrorCode::Invalid));
         CHECK(w.Size() == 4);
     }
-    { // an array over the element limit
+    {  // an array over the element limit
         CodecLimits tight;
         tight.max_array_elements = 2;
         Everything e;
@@ -324,17 +383,24 @@ TEST_CASE("Encoding: a value that cannot be stored is refused on write and leave
     }
 }
 
-TEST_CASE("Encoding: integers hold their extremes through the field codecs", "[storage][encoding]") {
-    struct Ints {
+TEST_CASE("Encoding: integers hold their extremes through the field codecs", "[storage][encoding]")
+{
+    struct Ints
+    {
         i64 a = 0;
         u64 b = 0;
         i32 c = 0;
     };
     ComponentRegistry registry;
-    REQUIRE(registry.Register<Ints>({.id = 2000, .name = "ints", .fields = {Field<&Ints::a>("a"), Field<&Ints::b>("b"), Field<&Ints::c>("c")}}).Ok());
+    REQUIRE(registry
+                .Register<Ints>({.id = 2000,
+                                 .name = "ints",
+                                 .fields = {Field<&Ints::a>("a"), Field<&Ints::b>("b"), Field<&Ints::c>("c")}})
+                .Ok());
     const RegisteredComponent* c = registry.FindById(2000);
     const i64 as[] = {0, 1, -1, Limits<i64>::Min(), Limits<i64>::Max()};
-    for (const i64 a : as) {
+    for (const i64 a : as)
+    {
         Ints in;
         in.a = a;
         in.b = static_cast<u64>(a);
@@ -351,5 +417,5 @@ TEST_CASE("Encoding: integers hold their extremes through the field codecs", "[s
     }
 }
 
-} // namespace
-} // namespace engine_placeholder::storage
+}  // namespace
+}  // namespace engine_placeholder::storage

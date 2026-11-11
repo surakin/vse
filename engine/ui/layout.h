@@ -5,26 +5,33 @@
 #include "ui/layout_types.h"
 #include "ui/widget.h"
 
-//! The container widgets (Phase 15, Day 193): [[ui::BoxLayout]], [[ui::StackLayout]], [[ui::AnchorLayout]], [[ui::GridLayout]] and [[ui::Spacer]].
+//! The container widgets (Phase 15, Day 193): [[ui::BoxLayout]], [[ui::StackLayout]], [[ui::AnchorLayout]],
+//! [[ui::GridLayout]] and [[ui::Spacer]].
 //!
-//! Layout is two steps per widget. `Measure(constraints)` says what size the widget wants from its content; `Arrange(rect)` places it and its children. Everything is in logical units
-//! and fractional; the canvas snaps rectangles to whole pixels when drawing, so neighbours share an edge at any scale. A child that is collapsed takes no space; one that is only
-//! hidden keeps it. Children read their `LayoutProps` (weight, alignment, minimum and maximum size, grid cell, anchors).
+//! Layout is two steps per widget. `Measure(constraints)` says what size the widget wants from its content;
+//! `Arrange(rect)` places it and its children. Everything is in logical units and fractional; the canvas snaps
+//! rectangles to whole pixels when drawing, so neighbours share an edge at any scale. A child that is collapsed takes
+//! no space; one that is only hidden keeps it. Children read their `LayoutProps` (weight, alignment, minimum and
+//! maximum size, grid cell, anchors).
 
-namespace engine_placeholder::ui {
+namespace engine_placeholder::ui
+{
 
 /// The direction a [[ui::BoxLayout]] lays its children along.
-enum class Orientation : u8 {
-    Horizontal, ///< Left to right.
-    Vertical,   ///< Top to bottom.
+enum class Orientation : u8
+{
+    Horizontal,  ///< Left to right.
+    Vertical,    ///< Top to bottom.
 };
 
-/// A container that gives every shown child a cell along one axis: preferred sizes first, then free space to the children with a weight (up to their maximum), or, when there is
-/// too little room, each child shrinks towards its minimum in proportion to how far above it is. Across the axis a child follows its alignment.
+/// A container that gives every shown child a cell along one axis: preferred sizes first, then free space to the
+/// children with a weight (up to their maximum), or, when there is too little room, each child shrinks towards its
+/// minimum in proportion to how far above it is. Across the axis a child follows its alignment.
 ///
 /// - Thread-safety: owner-thread-only.
 /// - Ownership: owns its children.
-class BoxLayout : public Widget {
+class BoxLayout : public Widget
+{
 public:
     /// Makes a box.
     /// - Param orientation: the main axis.
@@ -36,7 +43,8 @@ public:
     void SetPadding(const Insets& padding);
     /// Returns the orientation.
     Orientation GetOrientation() const { return orientation_; }
-    /// Returns the size wanted: the children's preferred sizes along the axis plus spacing and padding, the largest child across it.
+    /// Returns the size wanted: the children's preferred sizes along the axis plus spacing and padding, the largest
+    /// child across it.
     Size Measure(const Constraints& constraints) override;
     /// Places the children as described in the class comment.
     void Arrange(const Rect& rect) override;
@@ -47,11 +55,13 @@ private:
     Insets padding_;
 };
 
-/// A container that puts every child in the whole content box, one over the other (the last on top), each aligned by its own properties.
+/// A container that puts every child in the whole content box, one over the other (the last on top), each aligned by
+/// its own properties.
 ///
 /// - Thread-safety: owner-thread-only.
 /// - Ownership: owns its children.
-class StackLayout : public Widget {
+class StackLayout : public Widget
+{
 public:
     /// Makes a stack.
     /// - Param name: the widget name.
@@ -67,11 +77,13 @@ private:
     Insets padding_;
 };
 
-/// A container that places each child by edges given as fractions of the content box plus offsets (`LayoutProps::anchor`).
+/// A container that places each child by edges given as fractions of the content box plus offsets
+/// (`LayoutProps::anchor`).
 ///
 /// - Thread-safety: owner-thread-only.
 /// - Ownership: owns its children.
-class AnchorLayout : public Widget {
+class AnchorLayout : public Widget
+{
 public:
     /// Makes an anchor layout.
     /// - Param name: the widget name.
@@ -83,15 +95,18 @@ public:
 /// How a row or column of a [[ui::GridLayout]] gets its size.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct TrackSize {
+struct TrackSize
+{
     /// The kinds of track.
-    enum class Kind : u8 {
-        Fixed,  ///< A given size.
-        Auto,   ///< The largest preferred size of the single-cell children in the track.
-        Weight, ///< Its preferred size plus a share of the free space (after every track's preferred size) in proportion to `value`.
+    enum class Kind : u8
+    {
+        Fixed,   ///< A given size.
+        Auto,    ///< The largest preferred size of the single-cell children in the track.
+        Weight,  ///< Its preferred size plus a share of the free space (after every track's preferred size) in
+                 ///< proportion to `value`.
     };
-    Kind kind = Kind::Auto; ///< How the track is sized.
-    f32 value = 0;          ///< The size (`Fixed`) or the weight (`Weight`).
+    Kind kind = Kind::Auto;  ///< How the track is sized.
+    f32 value = 0;           ///< The size (`Fixed`) or the weight (`Weight`).
 
     /// Returns a fixed track.
     /// - Param size: its size in logical units.
@@ -103,12 +118,14 @@ struct TrackSize {
     static TrackSize Weight(f32 weight) { return TrackSize{Kind::Weight, weight}; }
 };
 
-/// A container with rows and columns. A child names its cell (`column`, `row`) and span in its `LayoutProps`; tracks that were not declared are `Auto`. Children that span several
-/// tracks do not take part in sizing an `Auto` track: they fill the cells they cover.
+/// A container with rows and columns. A child names its cell (`column`, `row`) and span in its `LayoutProps`; tracks
+/// that were not declared are `Auto`. Children that span several tracks do not take part in sizing an `Auto` track:
+/// they fill the cells they cover.
 ///
 /// - Thread-safety: owner-thread-only.
 /// - Ownership: owns its children.
-class GridLayout : public Widget {
+class GridLayout : public Widget
+{
 public:
     /// Makes a grid.
     /// - Param name: the widget name.
@@ -127,7 +144,8 @@ public:
     void Arrange(const Rect& rect) override;
 
 private:
-    struct Solved {
+    struct Solved
+    {
         Vector<f32> columns;
         Vector<f32> rows;
     };
@@ -145,11 +163,12 @@ private:
 ///
 /// - Thread-safety: owner-thread-only.
 /// - Ownership: owns nothing by itself.
-class Spacer : public Widget {
+class Spacer : public Widget
+{
 public:
     /// Makes a spacer.
     /// - Param weight: its share of the free space.
     explicit Spacer(f32 weight = 1.0f);
 };
 
-} // namespace engine_placeholder::ui
+}  // namespace engine_placeholder::ui

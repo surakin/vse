@@ -6,41 +6,49 @@
 
 //! The presentable images of one window.
 
-namespace engine_placeholder::rhi {
+namespace engine_placeholder::rhi
+{
 
 /// The outcome of acquiring or presenting a swapchain image.
-enum class SwapchainStatus : u8 {
-    Ok = 0,    ///< The operation succeeded.
-    Recreated, ///< The swapchain was recreated (resize or out-of-date); the image extent or handles may have changed.
-    Minimized, ///< The window has no drawable area; skip rendering this frame.
-    Lost,      ///< The surface or device is lost; the swapchain cannot be used again.
+enum class SwapchainStatus : u8
+{
+    Ok = 0,     ///< The operation succeeded.
+    Recreated,  ///< The swapchain was recreated (resize or out-of-date); the image extent or handles may have changed.
+    Minimized,  ///< The window has no drawable area; skip rendering this frame.
+    Lost,       ///< The surface or device is lost; the swapchain cannot be used again.
 };
 
 /// How finished images reach the screen.
-enum class PresentMode : u8 {
-    Fifo = 0,  ///< Wait for the display's refresh (vertical sync); always available.
-    Mailbox,   ///< Replace the queued image with the newest one, no tearing, if the system supports it; otherwise `Fifo`.
-    Immediate, ///< Present at once, possibly tearing, if the system supports it; otherwise `Fifo`.
+enum class PresentMode : u8
+{
+    Fifo = 0,   ///< Wait for the display's refresh (vertical sync); always available.
+    Mailbox,    ///< Replace the queued image with the newest one, no tearing, if the system supports it; otherwise
+                ///< `Fifo`.
+    Immediate,  ///< Present at once, possibly tearing, if the system supports it; otherwise `Fifo`.
 };
 
 /// Whether and how the swapchain shows high dynamic range.
-enum class HdrMode : u8 {
-    Off = 0,     ///< Standard dynamic range.
-    ScRgbLinear, ///< Linear extended sRGB in 16-bit float (the "scRGB" mode); 1.0 is SDR white.
-    Hdr10,       ///< 10-bit PQ (ST 2084, BT.2020). Needs a 10-bit format the RHI does not have yet, so it is never granted today.
+enum class HdrMode : u8
+{
+    Off = 0,      ///< Standard dynamic range.
+    ScRgbLinear,  ///< Linear extended sRGB in 16-bit float (the "scRGB" mode); 1.0 is SDR white.
+    Hdr10,  ///< 10-bit PQ (ST 2084, BT.2020). Needs a 10-bit format the RHI does not have yet, so it is never granted
+            ///< today.
 };
 
 /// The color space of the images a swapchain presents.
-enum class ColorSpace : u8 {
-    SrgbNonlinear = 0, ///< sRGB transfer function (what an 8-bit sRGB format means).
-    ScRgbLinear,       ///< Linear extended sRGB.
-    Hdr10,             ///< HDR10 (PQ, BT.2020).
+enum class ColorSpace : u8
+{
+    SrgbNonlinear = 0,  ///< sRGB transfer function (what an 8-bit sRGB format means).
+    ScRgbLinear,        ///< Linear extended sRGB.
+    Hdr10,              ///< HDR10 (PQ, BT.2020).
 };
 
 /// What a swapchain on a given window can do, so a settings screen can grey out what is unavailable.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct SwapchainCaps {
+struct SwapchainCaps
+{
     /// Whether each [[rhi::PresentMode]] (by value) is really offered; `Fifo` is always true.
     bool present_mode_supported[3] = {true, false, false};
     /// The image formats the surface offers in the sRGB-nonlinear color space; the first `format_count` are valid.
@@ -56,7 +64,8 @@ struct SwapchainCaps {
 /// What to create a [[rhi::Swapchain]] for.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct SwapchainDesc {
+struct SwapchainDesc
+{
     /// The preferred presentation mode; falls back to `Fifo` when the system does not offer it.
     PresentMode present_mode = PresentMode::Fifo;
     /// Initial image width in pixels; 0 uses the window's current width.
@@ -79,7 +88,8 @@ struct SwapchainDesc {
 /// - Thread-safety: owner-thread-only. Use one swapchain from the thread that owns its window.
 /// - Ownership: created by a device; destroy it with [[rhi::Device::DestroySwapchain]] before the device is destroyed.
 ///   The textures it exposes are valid only until the next `Acquire` or `Resize`.
-class Swapchain {
+class Swapchain
+{
 public:
     virtual ~Swapchain() = default;
 
@@ -90,13 +100,15 @@ public:
     /// surface is out of date, the swapchain is recreated first and the call still acquires an image.
     ///
     /// - Returns: `Ok`, or `Recreated`, `Minimized` or `Lost` as described for [[rhi::SwapchainStatus]].
-    /// - Fails: a status other than `Ok` means no image was acquired, except `Recreated`, after which an image is acquired.
+    /// - Fails: a status other than `Ok` means no image was acquired, except `Recreated`, after which an image is
+    /// acquired.
     /// - Aborts: the previously acquired image was not presented.
     virtual SwapchainStatus Acquire() = 0;
 
     /// Presents the current image to the window.
     ///
-    /// - Returns: `Ok`, `Recreated` (the surface changed: the image may not have been shown, and the swapchain is rebuilt by
+    /// - Returns: `Ok`, `Recreated` (the surface changed: the image may not have been shown, and the swapchain is
+    /// rebuilt by
     ///   the next `Acquire`), or `Lost`.
     /// - Fails: `Lost` means the image was not presented.
     /// - Aborts: no image has been acquired.
@@ -105,8 +117,8 @@ public:
     /// Changes the present mode, size, format and HDR mode in one call, reusing the old swapchain where the API allows.
     ///
     /// A request the surface cannot grant falls back with a log line; the result is readable from `ActualPresentMode`,
-    /// `ImageFormat` and `GetColorSpace`. A zero width or height is remembered (the swapchain is rebuilt with the rest of the
-    /// request when the window has an area again). The images and textures from before are invalid afterwards.
+    /// `ImageFormat` and `GetColorSpace`. A zero width or height is remembered (the swapchain is rebuilt with the rest
+    /// of the request when the window has an area again). The images and textures from before are invalid afterwards.
     ///
     /// - Param desc: the new description; `width` and `height` of 0 mean the window's current size.
     /// - Returns: `Ok` (rebuilt), `Minimized` (nothing to draw to yet), or `Lost`.
@@ -149,4 +161,4 @@ public:
     virtual TextureHandle CurrentTexture() const = 0;
 };
 
-} // namespace engine_placeholder::rhi
+}  // namespace engine_placeholder::rhi

@@ -10,21 +10,25 @@
 //! width = 1920
 //! ```
 //!
-//! A file is lines. A blank line, or a line whose first non-blank character is `#` or `;`, is a comment. `[a]` or `[a.b]` starts a section;
-//! `name = value` sets the key `<section>.<name>` (before any section the name is the whole, possibly dotted, key). A value is a quoted
-//! text (`"..."` with the escapes `\"`, `\\`, `\n`, `\t`, `\xHH`) or a bare run of characters that ends at the end of the line or at a blank
-//! followed by `#` or `;` (so a bare value cannot start with `#` or `;`: quote it). Lines are at most 4096 bytes and the file is UTF-8 (a byte order mark is accepted and kept).
+//! A file is lines. A blank line, or a line whose first non-blank character is `#` or `;`, is a comment. `[a]` or
+//! `[a.b]` starts a section; `name = value` sets the key `<section>.<name>` (before any section the name is the whole,
+//! possibly dotted, key). A value is a quoted text (`"..."` with the escapes `\"`, `\\`, `\n`, `\t`, `\xHH`) or a bare
+//! run of characters that ends at the end of the line or at a blank followed by `#` or `;` (so a bare value cannot
+//! start with `#` or `;`: quote it). Lines are at most 4096 bytes and the file is UTF-8 (a byte order mark is accepted
+//! and kept).
 //!
-//! A [[settings::ConfigDocument]] keeps every line as written, so changing a value rewrites only the value's own bytes, a new key goes
-//! at the end of its section, and a document that is not changed serializes to the bytes it was parsed from, including line endings,
-//! comments, spacing and lines it could not understand (those are reported as errors and never touched).
+//! A [[settings::ConfigDocument]] keeps every line as written, so changing a value rewrites only the value's own bytes,
+//! a new key goes at the end of its section, and a document that is not changed serializes to the bytes it was parsed
+//! from, including line endings, comments, spacing and lines it could not understand (those are reported as errors and
+//! never touched).
 
 #include "containers/vector.h"
 #include "settings/key.h"
 #include "string/string.h"
 #include "types.h"
 
-namespace engine_placeholder::settings {
+namespace engine_placeholder::settings
+{
 
 /// The most bytes in one line of a settings file.
 inline constexpr usize kMaxConfigLineBytes = 4096;
@@ -36,7 +40,8 @@ inline constexpr usize kMaxProblemMessageBytes = 80;
 /// A problem found while parsing: a 1-based line and column and a message.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct ConfigProblem {
+struct ConfigProblem
+{
     /// The 1-based line.
     u32 line = 0;
     /// The 1-based byte column.
@@ -48,7 +53,8 @@ struct ConfigProblem {
 /// What a parse found.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct ConfigReport {
+struct ConfigReport
+{
     /// The first errors (lines that were not understood and are kept verbatim).
     ConfigProblem errors[kMaxConfigProblems];
     /// How many errors there were in all (it may exceed [[settings::kMaxConfigProblems]]).
@@ -63,7 +69,8 @@ struct ConfigReport {
 ///
 /// - Thread-safety: thread-compatible.
 /// - Ownership: owns its lines.
-class ConfigDocument {
+class ConfigDocument
+{
 public:
     /// Creates an empty document.
     ConfigDocument();
@@ -74,22 +81,24 @@ public:
     /// Destroys the document.
     ~ConfigDocument();
 
-    /// Replaces the contents by parsing `text`. A line that cannot be understood is kept verbatim and reported; the rest is read.
+    /// Replaces the contents by parsing `text`. A line that cannot be understood is kept verbatim and reported; the
+    /// rest is read.
     ///
     /// - Param text: the file's bytes.
     /// - Param report: receives the problems; may be null.
     /// - Fails: reports problems in `report`; never fails as a whole.
     void Parse(StringView text, ConfigReport* report);
 
-    /// Finds the value of `key` (the last entry for it wins). The view is the value as written: a quoted text keeps its quotes.
+    /// Finds the value of `key` (the last entry for it wins). The view is the value as written: a quoted text keeps its
+    /// quotes.
     ///
     /// - Param key: a valid key.
     /// - Param value: receives a view valid until the document is changed.
     /// - Returns: whether the key is present.
     bool Find(StringView key, StringView* value) const;
 
-    /// Sets the value of `key`: the last entry for it is edited in place (its trailing comment stays); otherwise a new line goes at the end of
-    /// the key's section (the section is added if it is missing).
+    /// Sets the value of `key`: the last entry for it is edited in place (its trailing comment stays); otherwise a new
+    /// line goes at the end of the key's section (the section is added if it is missing).
     ///
     /// - Param key: a valid key.
     /// - Param value: the value as it will be written; see [[settings::ConfigDocument::IsValidValue]].
@@ -104,15 +113,16 @@ public:
     /// Returns the 1-based line of the entry that wins for `key`, or 0 if there is none.
     u32 LineOf(StringView key) const;
 
-    /// Appends the keys under `prefix` (equal to it, or starting with `prefix.`; empty means all) in file order, each once.
+    /// Appends the keys under `prefix` (equal to it, or starting with `prefix.`; empty means all) in file order, each
+    /// once.
     void Keys(StringView prefix, Vector<Key>* out) const;
 
-    /// Deletes the lines [[settings::ConfigDocument::Parse]] reported as errors (kept verbatim until now). Used when a damaged file is
-    /// deliberately replaced.
+    /// Deletes the lines [[settings::ConfigDocument::Parse]] reported as errors (kept verbatim until now). Used when a
+    /// damaged file is deliberately replaced.
     void RemoveUnreadable();
 
-    /// Returns whether `value` can be written as a value: no line break, no blanks at either end, at most 4000 bytes, a well-formed quoted
-    /// text if it starts with `"`, and otherwise no blank followed by `#` or `;`.
+    /// Returns whether `value` can be written as a value: no line break, no blanks at either end, at most 4000 bytes, a
+    /// well-formed quoted text if it starts with `"`, and otherwise no blank followed by `#` or `;`.
     static bool IsValidValue(StringView value);
 
     /// Writes the document back as bytes (the byte order mark, if there was one, included).
@@ -127,9 +137,9 @@ private:
     struct Line;
     Vector<Line> lines_;
     bool bom_ = false;
-    u8 eol_ = 1; // 1 = "\n", 2 = "\r\n": what a new line ends with
+    u8 eol_ = 1;  // 1 = "\n", 2 = "\r\n": what a new line ends with
     usize FindLast(const Key& key) const;
     void AppendLine(StringView text);
 };
 
-} // namespace engine_placeholder::settings
+}  // namespace engine_placeholder::settings

@@ -3,11 +3,26 @@
 // report the race and make the process exit non-zero. Never "fix" this.
 #include "sync/thread.h"
 
-int g_shared = 0; // plain int, no synchronization: the race
+int g_shared = 0;  // plain int, no synchronization: the race
 
-int main() {
-    engine_placeholder::Thread a([] { for (int i = 0; i < 100000; ++i) ++g_shared; });
-    engine_placeholder::Thread b([] { for (int i = 0; i < 100000; ++i) ++g_shared; });
+int main()
+{
+    engine_placeholder::Thread a(
+        []
+        {
+            for (int i = 0; i < 100000; ++i)
+            {
+                ++g_shared;
+            }
+        });
+    engine_placeholder::Thread b(
+        []
+        {
+            for (int i = 0; i < 100000; ++i)
+            {
+                ++g_shared;
+            }
+        });
     a.Join();
     b.Join();
     return 0;

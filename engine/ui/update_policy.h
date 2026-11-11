@@ -5,33 +5,41 @@
 #include "ui/draw_list.h"
 #include "ui/surface.h"
 
-//! When a surface runs a frame (Phase 15, Day 202): every frame, only when something changed, or at a fixed rate. A screen in the world that nobody touches should cost nothing.
+//! When a surface runs a frame (Phase 15, Day 202): every frame, only when something changed, or at a fixed rate. A
+//! screen in the world that nobody touches should cost nothing.
 
-namespace engine_placeholder::ui {
+namespace engine_placeholder::ui
+{
 
 /// How often a surface runs a frame.
-enum class UpdatePolicy : u8 {
-    EveryFrame, ///< Every call runs a frame: animations and the viewport stay smooth.
-    OnDemand,   ///< A frame runs the first time and then only when `Surface::NeedsFrame()` says something changed; an idle surface does no work at all.
-    FixedRate,  ///< A frame runs at most `rate` times a second, whatever the caller's frame rate (a low-priority monitor).
+enum class UpdatePolicy : u8
+{
+    EveryFrame,  ///< Every call runs a frame: animations and the viewport stay smooth.
+    OnDemand,    ///< A frame runs the first time and then only when `Surface::NeedsFrame()` says something changed; an
+                 ///< idle surface does no work at all.
+    FixedRate,   ///< A frame runs at most `rate` times a second, whatever the caller's frame rate (a low-priority
+                 ///< monitor).
 };
 
 /// What one call of [[ui::SurfaceUpdater::Frame]] did.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct UpdateResult {
-    bool ran = false;     ///< The surface ran a frame.
-    bool rebuilt = false; ///< The draw list was rebuilt: the picture changed and the surface's texture must be drawn again.
+struct UpdateResult
+{
+    bool ran = false;      ///< The surface ran a frame.
+    bool rebuilt = false;  ///< The draw list was rebuilt: the picture changed and the surface's texture must be drawn
+                           ///< again.
 };
 
 /// Applies an [[ui::UpdatePolicy]] to one surface.
 ///
-/// The time of skipped frames is not lost: the next frame that runs is given the sum, so animations keep their speed. The draw list keeps its last contents between updates, and the
-/// texture it was drawn into keeps its last picture.
+/// The time of skipped frames is not lost: the next frame that runs is given the sum, so animations keep their speed.
+/// The draw list keeps its last contents between updates, and the texture it was drawn into keeps its last picture.
 ///
 /// - Thread-safety: owner-thread-only.
 /// - Ownership: borrows the surface, which must outlive this object.
-class SurfaceUpdater {
+class SurfaceUpdater
+{
 public:
     /// Makes an updater for `surface` (every frame).
     /// - Param surface: the surface; borrowed.
@@ -69,4 +77,4 @@ private:
     u64 skipped_ = 0;
 };
 
-} // namespace engine_placeholder::ui
+}  // namespace engine_placeholder::ui

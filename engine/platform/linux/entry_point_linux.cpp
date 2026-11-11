@@ -3,11 +3,13 @@
 
 #include "os/command_line.h"
 
-namespace engine_placeholder::os::detail {
+namespace engine_placeholder::os::detail
+{
 
-int RunWindowedProgram(int argc, char** argv, WindowedProgramEntry entry) {
+int RunWindowedProgram(int argc, char** argv, WindowedProgramEntry entry)
+{
     StashNativeCommandLine(argc, argv);
     return entry(argc, argv);
 }
 
-} // namespace engine_placeholder::os::detail
+}  // namespace engine_placeholder::os::detail

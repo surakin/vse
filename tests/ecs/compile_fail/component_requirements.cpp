@@ -1,17 +1,22 @@
-// Compiled by tests/ecs/CMakeLists.txt once per CASE: CASE 0 must compile (the control), every other case must be refused.
+// Compiled by tests/ecs/CMakeLists.txt once per CASE: CASE 0 must compile (the control), every other case must be
+// refused.
 #include "ecs/component.h"
 
 using namespace engine_placeholder::ecs;
 
-namespace {
-struct Plain {
+namespace
+{
+struct Plain
+{
     int x;
 };
-struct NoMove {
+struct NoMove
+{
     NoMove() = default;
     NoMove(NoMove&&) = delete;
 };
-class PrivateDestructor {
+class PrivateDestructor
+{
 public:
     PrivateDestructor() = default;
     PrivateDestructor(PrivateDestructor&&) = default;
@@ -19,10 +24,11 @@ public:
 private:
     ~PrivateDestructor() = default;
 };
-struct alignas(128) OverAligned {
+struct alignas(128) OverAligned
+{
     int x;
 };
-} // namespace
+}  // namespace
 
 #if CASE == 1
 using Bad = Plain&;
@@ -42,6 +48,7 @@ using Bad = PrivateDestructor;
 using Bad = Plain;
 #endif
 
-int Probe() {
+int Probe()
+{
     return ComponentOf<Bad>() == kInvalidComponent ? 1 : 0;
 }

@@ -1,5 +1,6 @@
-// Every backend-neutral settings header, included in one translation unit for the cross-target syntax check (Phase 11 Day 139). Nothing here may depend
-// on POSIX or on a Linux-only facility: the Windows and macOS stores implement ConfigStore and everything else is shared.
+// Every backend-neutral settings header, included in one translation unit for the cross-target syntax check (Phase 11
+// Day 139). Nothing here may depend on POSIX or on a Linux-only facility: the Windows and macOS stores implement
+// ConfigStore and everything else is shared.
 #include "settings/config_store.h"
 #include "settings/config_text.h"
 #include "settings/desc.h"

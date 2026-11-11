@@ -1,24 +1,34 @@
 #pragma once
 
-// A connection wrapper for the SQL store tests (Phase 19 Days 262-263): it reports that it cannot add a column and refuses `ALTER`, so a migration takes its rebuild path on SQLite.
+// A connection wrapper for the SQL store tests (Phase 19 Days 262-263): it reports that it cannot add a column and
+// refuses `ALTER`, so a migration takes its rebuild path on SQLite.
 
 #include "database/database.h"
 #include "containers/unique_ptr.h"
 
-namespace engine_placeholder::storage::test {
+namespace engine_placeholder::storage::test
+{
 
-class NoAlterConnection final : public database::Connection {
+class NoAlterConnection final : public database::Connection
+{
 public:
     explicit NoAlterConnection(database::Connection& inner) : inner_(&inner) {}
-    bool Supports(database::Feature f) const override { return f != database::Feature::AddColumn && inner_->Supports(f); }
-    database::Status Prepare(database::SqlText sql, UniquePtr<database::Statement>* out) override {
-        if (sql.View().StartsWith(StringView("ALTER"))) {
+    bool Supports(database::Feature f) const override
+    {
+        return f != database::Feature::AddColumn && inner_->Supports(f);
+    }
+    database::Status Prepare(database::SqlText sql, UniquePtr<database::Statement>* out) override
+    {
+        if (sql.View().StartsWith(StringView("ALTER")))
+        {
             return database::Status::Of(database::ErrorCode::Unsupported);
         }
         return inner_->Prepare(sql, out);
     }
-    database::Status Execute(database::SqlText sql) override {
-        if (sql.View().StartsWith(StringView("ALTER"))) {
+    database::Status Execute(database::SqlText sql) override
+    {
+        if (sql.View().StartsWith(StringView("ALTER")))
+        {
             return database::Status::Of(database::ErrorCode::Unsupported);
         }
         return inner_->Execute(sql);
@@ -39,4 +49,4 @@ private:
     database::Connection* inner_;
 };
 
-} // namespace engine_placeholder::storage::test
+}  // namespace engine_placeholder::storage::test

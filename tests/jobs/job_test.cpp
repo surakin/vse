@@ -12,19 +12,25 @@ using namespace engine_placeholder;
 using engine_placeholder::jobs::FramePool;
 using engine_placeholder::jobs::Job;
 
-namespace {
+namespace
+{
 
 // Job bodies are free functions taking state by value / pointer — the
 // parameter-lifetime rule from job.h.
 
-Job Example() { co_return; }
+Job Example()
+{
+    co_return;
+}
 
-Job SetFlag(bool* flag) {
+Job SetFlag(bool* flag)
+{
     *flag = true;
     co_return;
 }
 
-Job CountResumes(int* counter) {
+Job CountResumes(int* counter)
+{
     ++*counter;
     co_await SuspendAlways{};
     ++*counter;
@@ -34,36 +40,48 @@ Job CountResumes(int* counter) {
 
 // A frame much larger than the biggest pool class: the buffer is live
 // across a suspension point, so it must live in the frame.
-Job BigFrame(int* checksum) {
+Job BigFrame(int* checksum)
+{
     volatile char buf[4096];
-    for (int i = 0; i < 4096; ++i) buf[i] = static_cast<char>(i);
+    for (int i = 0; i < 4096; ++i)
+    {
+        buf[i] = static_cast<char>(i);
+    }
     co_await SuspendAlways{};
     int sum = 0;
-    for (int i = 0; i < 4096; ++i) sum += static_cast<engine_placeholder::byte>(buf[i]);
+    for (int i = 0; i < 4096; ++i)
+    {
+        sum += static_cast<engine_placeholder::byte>(buf[i]);
+    }
     *checksum = sum;
 }
 
-struct HookRecord {
+struct HookRecord
+{
     int calls = 0;
     u64 live_when_called = ~u64{0};
 };
 
-void RecordingHook(void* user) {
+void RecordingHook(void* user)
+{
     auto* rec = static_cast<HookRecord*>(user);
     ++rec->calls;
     rec->live_when_called = FramePool::Global().GetStats().Live();
 }
 
-FramePool::Stats Snap() { return FramePool::Global().GetStats(); }
+FramePool::Stats Snap()
+{
+    return FramePool::Global().GetStats();
+}
 
 // Live frames from other, concurrently-finishing tests must not exist in
 // this process while these run (tests execute sequentially), so Live()
 // deltas are exact.
 
-} // namespace
+}  // namespace
 
-TEST_CASE("Job Example() { co_return; } compiles, runs, and its frame came from the FramePool",
-          "[jobs][job]") {
+TEST_CASE("Job Example() { co_return; } compiles, runs, and its frame came from the FramePool", "[jobs][job]")
+{
     const FramePool::Stats before = Snap();
 
     Job job = Example();
@@ -75,37 +93,40 @@ TEST_CASE("Job Example() { co_return; } compiles, runs, and its frame came from 
     REQUIRE(created.Live() == before.Live() + 1);
 
     CoroutineHandle<> h = job.Release();
-    REQUIRE_FALSE(job.Valid()); // ownership moved out
+    REQUIRE_FALSE(job.Valid());  // ownership moved out
     REQUIRE_FALSE(h.done());
-    h.resume(); // runs to completion; the frame frees itself
+    h.resume();  // runs to completion; the frame frees itself
     FramePool::Stats finished = Snap();
     REQUIRE(finished.TotalPooledFrees() == before.TotalPooledFrees() + 1);
     REQUIRE(finished.Live() == before.Live());
 }
 
-TEST_CASE("A Job does not run until it is resumed", "[jobs][job]") {
+TEST_CASE("A Job does not run until it is resumed", "[jobs][job]")
+{
     bool flag = false;
     Job job = SetFlag(&flag);
-    REQUIRE_FALSE(flag); // initial_suspend = suspend_always
+    REQUIRE_FALSE(flag);  // initial_suspend = suspend_always
     CoroutineHandle<> h = job.Release();
     REQUIRE_FALSE(flag);
     h.resume();
     REQUIRE(flag);
 }
 
-TEST_CASE("A Job destroyed without being released frees its never-started frame", "[jobs][job]") {
+TEST_CASE("A Job destroyed without being released frees its never-started frame", "[jobs][job]")
+{
     const FramePool::Stats before = Snap();
     bool flag = false;
     {
         Job job = SetFlag(&flag);
         REQUIRE(Snap().Live() == before.Live() + 1);
     }
-    REQUIRE_FALSE(flag); // the body never ran
+    REQUIRE_FALSE(flag);  // the body never ran
     REQUIRE(Snap().Live() == before.Live());
     REQUIRE(Snap().TotalPooledFrees() == before.TotalPooledFrees() + 1);
 }
 
-TEST_CASE("Job is move-only and moving transfers or destroys frames correctly", "[jobs][job]") {
+TEST_CASE("Job is move-only and moving transfers or destroys frames correctly", "[jobs][job]")
+{
     const FramePool::Stats before = Snap();
     bool a_flag = false, b_flag = false;
 
@@ -134,7 +155,8 @@ TEST_CASE("Job is move-only and moving transfers or destroys frames correctly", 
     REQUIRE(d.Valid());
 }
 
-TEST_CASE("A multi-suspend job completes and frees its frame only on the final resume", "[jobs][job]") {
+TEST_CASE("A multi-suspend job completes and frees its frame only on the final resume", "[jobs][job]")
+{
     const FramePool::Stats before = Snap();
     int counter = 0;
     Job job = CountResumes(&counter);
@@ -142,16 +164,17 @@ TEST_CASE("A multi-suspend job completes and frees its frame only on the final r
 
     h.resume();
     REQUIRE(counter == 1);
-    REQUIRE(Snap().Live() == before.Live() + 1); // suspended, frame alive
+    REQUIRE(Snap().Live() == before.Live() + 1);  // suspended, frame alive
     h.resume();
     REQUIRE(counter == 2);
     REQUIRE(Snap().Live() == before.Live() + 1);
     h.resume();
     REQUIRE(counter == 3);
-    REQUIRE(Snap().Live() == before.Live()); // finished, frame freed
+    REQUIRE(Snap().Live() == before.Live());  // finished, frame freed
 }
 
-TEST_CASE("The completion hook runs exactly once, after the frame is already freed", "[jobs][job]") {
+TEST_CASE("The completion hook runs exactly once, after the frame is already freed", "[jobs][job]")
+{
     const FramePool::Stats before = Snap();
     HookRecord rec;
 
@@ -167,7 +190,8 @@ TEST_CASE("The completion hook runs exactly once, after the frame is already fre
     REQUIRE(rec.live_when_called == before.Live());
 }
 
-TEST_CASE("The completion hook does not run for a never-started Job", "[jobs][job]") {
+TEST_CASE("The completion hook does not run for a never-started Job", "[jobs][job]")
+{
     HookRecord rec;
     {
         Job job = Example();
@@ -176,8 +200,8 @@ TEST_CASE("The completion hook does not run for a never-started Job", "[jobs][jo
     REQUIRE(rec.calls == 0);
 }
 
-TEST_CASE("A frame bigger than the top size class takes the counted fallback and still balances",
-          "[jobs][job]") {
+TEST_CASE("A frame bigger than the top size class takes the counted fallback and still balances", "[jobs][job]")
+{
     const FramePool::Stats before = Snap();
     int checksum = 0;
     Job job = BigFrame(&checksum);
@@ -187,56 +211,70 @@ TEST_CASE("A frame bigger than the top size class takes the counted fallback and
 
     CoroutineHandle<> h = job.Release();
     h.resume();
-    REQUIRE(checksum == 0); // not finished yet
+    REQUIRE(checksum == 0);  // not finished yet
     h.resume();
     int expected = 0;
-    for (int i = 0; i < 4096; ++i) expected += static_cast<engine_placeholder::byte>(static_cast<char>(i));
+    for (int i = 0; i < 4096; ++i)
+    {
+        expected += static_cast<engine_placeholder::byte>(static_cast<char>(i));
+    }
     REQUIRE(checksum == expected);
     FramePool::Stats finished = Snap();
     REQUIRE(finished.fallback_frees == before.fallback_frees + 1);
     REQUIRE(finished.Live() == before.Live());
 }
 
-TEST_CASE("Jobs created on one thread can finish on another with balanced frame accounting",
-          "[jobs][job]") {
+TEST_CASE("Jobs created on one thread can finish on another with balanced frame accounting", "[jobs][job]")
+{
     const FramePool::Stats before = Snap();
     constexpr int kJobs = 2000;
     Atomic<int> ran{0};
 
     Vector<CoroutineHandle<>> handles;
     static bool flags[kJobs];
-    for (bool& f : flags) f = false;
-    for (int i = 0; i < kJobs; ++i) {
+    for (bool& f : flags)
+    {
+        f = false;
+    }
+    for (int i = 0; i < kJobs; ++i)
+    {
         Job j = SetFlag(&flags[i]);
         handles.Push(j.Release());
     }
     REQUIRE(Snap().Live() == before.Live() + kJobs);
 
-    Thread runner([&] {
-        for (usize i = 0; i < handles.Size(); ++i) {
-            CoroutineHandle<> h = handles[i];
-            h.resume();
-            ran.FetchAdd(1);
-        }
-    });
+    Thread runner(
+        [&]
+        {
+            for (usize i = 0; i < handles.Size(); ++i)
+            {
+                CoroutineHandle<> h = handles[i];
+                h.resume();
+                ran.FetchAdd(1);
+            }
+        });
     runner.Join();
 
     REQUIRE(ran.Load() == kJobs);
-    for (int i = 0; i < kJobs; ++i) {
+    for (int i = 0; i < kJobs; ++i)
+    {
         REQUIRE(flags[i]);
     }
     REQUIRE(Snap().Live() == before.Live());
 }
 
-namespace {
-Job SuspendOnce(Atomic<int>* stage) {
+namespace
+{
+Job SuspendOnce(Atomic<int>* stage)
+{
     stage->Store(1, MemoryOrder::Relaxed);
     co_await SuspendAlways{};
     stage->Store(2, MemoryOrder::Relaxed);
 }
-} // namespace
+}  // namespace
 
-TEST_CASE("A job started on one thread, resumed on another, fires its hook once", "[jobs][job]") {
+TEST_CASE("A job started on one thread, resumed on another, fires its hook once", "[jobs][job]")
+{
     const FramePool::Stats before = Snap();
     Atomic<int> stage{0};
     HookRecord rec;
@@ -256,10 +294,13 @@ TEST_CASE("A job started on one thread, resumed on another, fires its hook once"
     REQUIRE(Snap().Live() == before.Live());
 }
 
-namespace {
+namespace
+{
 
-struct Probe {
-    struct promise_type {
+struct Probe
+{
+    struct promise_type
+    {
         int steps = 0;
         Probe get_return_object() { return Probe{CoroutineHandle<promise_type>::from_promise(*this)}; }
         SuspendAlways initial_suspend() noexcept { return {}; }
@@ -270,14 +311,16 @@ struct Probe {
     CoroutineHandle<promise_type> handle;
 };
 
-Probe TwoSteps() {
+Probe TwoSteps()
+{
     co_await SuspendAlways{};
     co_return;
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("CoroutineHandle resumes, reports done, round-trips its address and destroys", "[jobs][job]") {
+TEST_CASE("CoroutineHandle resumes, reports done, round-trips its address and destroys", "[jobs][job]")
+{
     Probe probe = TwoSteps();
     CHECK(static_cast<bool>(probe.handle));
     CHECK(!probe.handle.done());

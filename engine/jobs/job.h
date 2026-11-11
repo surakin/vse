@@ -27,7 +27,8 @@
 //!
 //! Frame memory comes from [[jobs::FramePool::Global]], never the global
 //! heap, so frame allocation does not return null.
-namespace engine_placeholder::jobs {
+namespace engine_placeholder::jobs
+{
 
 class Counter;
 
@@ -52,7 +53,8 @@ using CompletionFn = void (*)(void* user);
 ///   `Job` destroyed without being released destroys its never-started frame
 ///   (and never runs its completion hook).
 /// - See: [[jobs::Spawn]], [[jobs::Scheduler::Submit]]
-class Job {
+class Job
+{
 public:
     struct promise_type;
 
@@ -63,7 +65,8 @@ public:
     ///
     /// - Thread-safety: not-thread-safe. Only the compiler-generated coroutine machinery touches it.
     /// - Internal: must be visible to the compiler as the coroutine promise type.
-    struct promise_type {
+    struct promise_type
+    {
         CompletionFn on_complete = nullptr;
         void* on_complete_user = nullptr;
 
@@ -73,15 +76,18 @@ public:
         SuspendAlways initial_suspend() noexcept { return {}; }
 
         // Runs when the body finishes: frees the frame, then notifies.
-        struct FinalAwaiter {
+        struct FinalAwaiter
+        {
             bool await_ready() noexcept { return false; }
-            void await_suspend(Handle h) noexcept {
+            void await_suspend(Handle h) noexcept
+            {
                 // Copy out of the promise: the frame (and promise) are
                 // destroyed before the hook runs.
                 CompletionFn fn = h.promise().on_complete;
                 void* user = h.promise().on_complete_user;
                 h.destroy();
-                if (fn != nullptr) {
+                if (fn != nullptr)
+                {
                     fn(user);
                 }
             }
@@ -99,9 +105,10 @@ public:
         static void* operator new(usize size) { return FramePool::Global().Allocate(size); }
         // Over-aligned frames (a local with alignas > 16 live across a
         // suspension) select this overload; the pool only guarantees 16.
-        static void* operator new(usize, AlignVal) {
+        static void* operator new(usize, AlignVal)
+        {
             ENGINE_ASSERT(false, "Job frame requires over-aligned storage (>16 bytes) which FramePool cannot provide");
-            ENGINE_TRAP(); // never hand out misaligned storage, even where the assert is compiled out
+            ENGINE_TRAP();  // never hand out misaligned storage, even where the assert is compiled out
         }
         static void operator delete(void* ptr, usize) noexcept { FramePool::Global().Deallocate(ptr); }
     };
@@ -111,9 +118,11 @@ public:
     /// Destroys the frame if it was never released.
     ///
     /// - Ownership: frees a still-owned, never-started frame; a released job is untouched.
-    ~Job() {
+    ~Job()
+    {
         // Still owned => never released, never started: free its frame.
-        if (handle_) {
+        if (handle_)
+        {
             handle_.destroy();
         }
     }
@@ -125,9 +134,12 @@ public:
     Job(Job&& other) noexcept : handle_(other.handle_) { other.handle_ = nullptr; }
     /// Replaces this job with the frame of `other`, destroying any frame this job still owned.
     /// - Param other: the job to move from; becomes empty.
-    Job& operator=(Job&& other) noexcept {
-        if (this != &other) {
-            if (handle_) {
+    Job& operator=(Job&& other) noexcept
+    {
+        if (this != &other)
+        {
+            if (handle_)
+            {
                 handle_.destroy();
             }
             handle_ = other.handle_;
@@ -154,7 +166,8 @@ public:
     /// - Param user: passed to `fn` unchanged; must stay valid until the hook has run.
     /// - Aborts: the job is empty (moved-from or released), or a completion hook was already set.
     /// - Ownership: `user` is borrowed, not owned; the job never frees it.
-    void SetCompletion(CompletionFn fn, void* user) {
+    void SetCompletion(CompletionFn fn, void* user)
+    {
         ENGINE_ASSERT(handle_, "Job::SetCompletion on an empty Job");
         ENGINE_ASSERT(handle_.promise().on_complete == nullptr, "Job::SetCompletion called twice");
         handle_.promise().on_complete = fn;
@@ -179,7 +192,8 @@ public:
     /// - Returns: the owning handle to the not-yet-started frame.
     /// - Aborts: the job is empty.
     /// - Ownership: the caller takes over the frame; it is freed when the body finishes.
-    CoroutineHandle<> Release() {
+    CoroutineHandle<> Release()
+    {
         ENGINE_ASSERT(handle_, "Job::Release on an empty Job");
         CoroutineHandle<> h = handle_;
         handle_ = nullptr;
@@ -192,4 +206,4 @@ private:
     Handle handle_;
 };
 
-} // namespace engine_placeholder::jobs
+}  // namespace engine_placeholder::jobs

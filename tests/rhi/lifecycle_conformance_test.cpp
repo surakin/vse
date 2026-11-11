@@ -1,5 +1,5 @@
-// Phase 8 Day 114: the lifecycle conformance suite. Every backend must pass it; a new backend (DX12, Metal) runs it by adding one
-// factory to the list at the bottom. See engine/rhi/BACKEND-LIFECYCLE.md.
+// Phase 8 Day 114: the lifecycle conformance suite. Every backend must pass it; a new backend (DX12, Metal) runs it by
+// adding one factory to the list at the bottom. See engine/rhi/BACKEND-LIFECYCLE.md.
 #include "cstr/cstr.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -13,22 +13,26 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
 
-namespace {
+namespace
+{
 
-struct ConformanceQuietLog {
+struct ConformanceQuietLog
+{
     bool saved = LogRhi.Enabled();
     ConformanceQuietLog() { LogRhi.SetEnabled(false); }
     ~ConformanceQuietLog() { LogRhi.SetEnabled(saved); }
 };
 
 // What a backend supplies: a description for its devices and whether a headless device can have a swapchain.
-struct Backend_ {
+struct Backend_
+{
     const char* name;
     DeviceCreateInfo info;
-    bool headless_swapchain; // the null backend can; Vulkan needs a window
+    bool headless_swapchain;  // the null backend can; Vulkan needs a window
 };
 
-BufferDesc Uniform64() {
+BufferDesc Uniform64()
+{
     BufferDesc d;
     d.size = 64;
     d.usage = BufferUsage::Uniform;
@@ -36,7 +40,8 @@ BufferDesc Uniform64() {
     return d;
 }
 
-void RunLifecycleConformance(const Backend_& backend) {
+void RunLifecycleConformance(const Backend_& backend)
+{
     INFO("backend " << backend.name);
     // Epoch, adapter and enumeration.
     AdapterList list;
@@ -45,7 +50,10 @@ void RunLifecycleConformance(const Backend_& backend) {
     AdapterList again;
     REQUIRE(EnumerateAdapters(backend.info, &again));
     REQUIRE(again.count == list.count);
-    for (u32 i = 0; i < list.count; ++i) CHECK(CStrCompare(list.items[i].id, again.items[i].id) == 0);
+    for (u32 i = 0; i < list.count; ++i)
+    {
+        CHECK(CStrCompare(list.items[i].id, again.items[i].id) == 0);
+    }
 
     DevicePtr a = CreateDevice(backend.info);
     REQUIRE(a != nullptr);
@@ -54,7 +62,10 @@ void RunLifecycleConformance(const Backend_& backend) {
     CHECK(a->Epoch() != 0);
     CHECK(a->Epoch() != b->Epoch());
     bool adapter_listed = false;
-    for (u32 i = 0; i < list.count; ++i) adapter_listed = adapter_listed || CStrCompare(a->Adapter().id, list.items[i].id) == 0;
+    for (u32 i = 0; i < list.count; ++i)
+    {
+        adapter_listed = adapter_listed || CStrCompare(a->Adapter().id, list.items[i].id) == 0;
+    }
     CHECK(adapter_listed);
 
     // Handles of one device are not the handles of the next: the top bits of the generation differ.
@@ -93,7 +104,7 @@ void RunLifecycleConformance(const Backend_& backend) {
     b->DestroyBuffer(held);
     b->DestroyBuffer(hb);
     b->Quiesce();
-    CHECK(b->DeviceLost()); // once lost, always lost
+    CHECK(b->DeviceLost());  // once lost, always lost
     b.Reset();
     a.Reset();
 
@@ -101,7 +112,8 @@ void RunLifecycleConformance(const Backend_& backend) {
     DeviceHost host;
     REQUIRE(host.Create(backend.info, SwapchainDesc{}));
     u32 last = host.Epoch();
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < 5; ++i)
+    {
         REQUIRE(host.Recreate(backend.info, SwapchainDesc{}));
         CHECK(host.Epoch() != last);
         last = host.Epoch();
@@ -111,7 +123,8 @@ void RunLifecycleConformance(const Backend_& backend) {
     host.Destroy();
 
     // Swapchain reconfiguration where the backend can make one without a window.
-    if (backend.headless_swapchain) {
+    if (backend.headless_swapchain)
+    {
         DevicePtr d = CreateDevice(backend.info);
         SwapchainDesc desc;
         desc.width = 64;
@@ -124,21 +137,23 @@ void RunLifecycleConformance(const Backend_& backend) {
         CHECK(sc->Reconfigure(desc) == SwapchainStatus::Ok);
         CHECK(sc->Width() == 80);
         const PresentMode actual = sc->ActualPresentMode();
-        CHECK((actual == PresentMode::Immediate || actual == PresentMode::Fifo)); // a fallback is allowed, reported truthfully
-        CHECK(sc->Capabilities().present_mode_supported[0]);                      // Fifo is always available
+        CHECK((actual == PresentMode::Immediate ||
+               actual == PresentMode::Fifo));                 // a fallback is allowed, reported truthfully
+        CHECK(sc->Capabilities().present_mode_supported[0]);  // Fifo is always available
         CHECK(sc->GetColorSpace() == ColorSpace::SrgbNonlinear);
         CHECK(sc->Resize(0, 0) == SwapchainStatus::Minimized);
         CHECK(sc->Resize(40, 30) == SwapchainStatus::Ok);
         d->DestroySwapchain(sc);
-        (void)d->RecreateSurface(nullptr); // backends differ on a null window; the call must not crash
+        (void)d->RecreateSurface(nullptr);  // backends differ on a null window; the call must not crash
         d->Quiesce();
         CHECK(d->Resources().UserObjects() == 0);
     }
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("The null backend conforms to the device lifecycle", "[rhi][lifecycle][conformance]") {
+TEST_CASE("The null backend conforms to the device lifecycle", "[rhi][lifecycle][conformance]")
+{
     ConformanceQuietLog quiet;
     Backend_ null_backend;
     null_backend.name = "null";
@@ -147,7 +162,8 @@ TEST_CASE("The null backend conforms to the device lifecycle", "[rhi][lifecycle]
     RunLifecycleConformance(null_backend);
 }
 
-TEST_CASE("The Vulkan backend conforms to the device lifecycle", "[rhi][lifecycle][conformance][vulkan][gpu]") {
+TEST_CASE("The Vulkan backend conforms to the device lifecycle", "[rhi][lifecycle][conformance][vulkan][gpu]")
+{
     gpu_test::GpuFixture fx;
     fx.Require();
     ConformanceQuietLog quiet;
@@ -157,27 +173,33 @@ TEST_CASE("The Vulkan backend conforms to the device lifecycle", "[rhi][lifecycl
     vulkan_backend.info.validation = ValidationSetting::Off;
     vulkan_backend.headless_swapchain = false;
     DevicePtr probe = CreateDevice(vulkan_backend.info);
-    if (probe == nullptr) {
+    if (probe == nullptr)
+    {
         SKIP("no suitable Vulkan device");
     }
     probe.Reset();
     RunLifecycleConformance(vulkan_backend);
 }
 
-// Phase 13 Day 172: Direct3D 12 on the first hardware adapter, and on WARP (a second implementation, and a GPU-free check).
-TEST_CASE("The DX12 backend conforms to the device lifecycle, on hardware and on WARP", "[rhi][lifecycle][conformance][dx12][gpu]") {
+// Phase 13 Day 172: Direct3D 12 on the first hardware adapter, and on WARP (a second implementation, and a GPU-free
+// check).
+TEST_CASE("The DX12 backend conforms to the device lifecycle, on hardware and on WARP",
+          "[rhi][lifecycle][conformance][dx12][gpu]")
+{
 #if ENGINE_PLATFORM_WINDOWS
     ConformanceQuietLog quiet;
-    for (const char* adapter : {"0", "Basic Render"}) {
-        DYNAMIC_SECTION("adapter " << adapter) {
+    for (const char* adapter : {"0", "Basic Render"})
+    {
+        DYNAMIC_SECTION("adapter " << adapter)
+        {
             Backend_ dx12_backend;
             dx12_backend.name = "dx12";
             dx12_backend.info.backend = Backend::Dx12;
             dx12_backend.info.validation = ValidationSetting::Off;
             dx12_backend.info.adapter = adapter;
-            dx12_backend.headless_swapchain = false; // a DXGI swap chain needs a window
+            dx12_backend.headless_swapchain = false;  // a DXGI swap chain needs a window
             DevicePtr probe = CreateDevice(dx12_backend.info);
-            REQUIRE(probe != nullptr); // every Windows 10 and 11 has Direct3D 12 and WARP
+            REQUIRE(probe != nullptr);  // every Windows 10 and 11 has Direct3D 12 and WARP
             probe.Reset();
             RunLifecycleConformance(dx12_backend);
         }

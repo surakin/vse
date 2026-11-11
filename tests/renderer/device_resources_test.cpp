@@ -16,22 +16,26 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
 
-namespace {
+namespace
+{
 
-struct ResQuietLog {
+struct ResQuietLog
+{
     bool saved_rhi = rhi::LogRhi.Enabled();
     ResQuietLog() { rhi::LogRhi.SetEnabled(false); }
     ~ResQuietLog() { rhi::LogRhi.SetEnabled(saved_rhi); }
 };
 
-rhi::DeviceCreateInfo NullCreate() {
+rhi::DeviceCreateInfo NullCreate()
+{
     rhi::DeviceCreateInfo info;
     info.backend = rhi::Backend::Null;
     return info;
 }
 
 // An owner that records what the registry asks of it.
-struct FakeOwner final : Recreatable {
+struct FakeOwner final : Recreatable
+{
     engine_test::TextList* log = nullptr;
     const char* name = "fake";
     bool fail_recreate = false;
@@ -42,21 +46,26 @@ struct FakeOwner final : Recreatable {
     DeviceResources* register_during_reset = nullptr;
     bool register_refused = false;
 
-    void Release() override {
+    void Release() override
+    {
         ++releases;
         live = false;
         log->Push(engine_test::Concat("release ", name).View());
     }
-    bool Recreate(rhi::Device*) override {
-        if (register_during_reset != nullptr) {
+    bool Recreate(rhi::Device*) override
+    {
+        if (register_during_reset != nullptr)
+        {
             FakeOwner other;
             other.log = log;
             register_refused = !register_during_reset->Register(&other, 0);
-            if (!register_refused) {
+            if (!register_refused)
+            {
                 register_during_reset->Unregister(&other);
             }
         }
-        if (fail_recreate) {
+        if (fail_recreate)
+        {
             log->Push(engine_test::Concat("fail ", name).View());
             return false;
         }
@@ -69,7 +78,8 @@ struct FakeOwner final : Recreatable {
     const char* RecreatableName() const override { return name; }
 };
 
-struct ResetRig {
+struct ResetRig
+{
     engine_test::TextList log;
     DeviceResources registry;
     rhi::DeviceHost host;
@@ -78,9 +88,10 @@ struct ResetRig {
     bool Reset() { return host.Recreate(NullCreate(), rhi::SwapchainDesc{}); }
 };
 
-} // namespace
+}  // namespace
 
-TEST_CASE("Owners register and unregister, also by scope", "[device_resources]") {
+TEST_CASE("Owners register and unregister, also by scope", "[device_resources]")
+{
     ResetRig rig;
     REQUIRE(rig.Create());
     CHECK(rig.registry.Count() == 0);
@@ -91,18 +102,20 @@ TEST_CASE("Owners register and unregister, also by scope", "[device_resources]")
         CHECK(rig.registry.Count() == 1);
         CHECK(a.registration.Registered());
     }
-    CHECK(rig.registry.Count() == 0); // a destroyed owner never gets a callback
+    CHECK(rig.registry.Count() == 0);  // a destroyed owner never gets a callback
     CHECK(rig.Reset());
     CHECK(rig.log.Empty());
 }
 
-TEST_CASE("A reset releases from the highest tier down and recreates from the lowest up", "[device_resources]") {
+TEST_CASE("A reset releases from the highest tier down and recreates from the lowest up", "[device_resources]")
+{
     ResetRig rig;
     FakeOwner t0;
     FakeOwner t1a;
     FakeOwner t1b;
     FakeOwner t4;
-    for (FakeOwner* o : {&t0, &t1a, &t1b, &t4}) {
+    for (FakeOwner* o : {&t0, &t1a, &t1b, &t4})
+    {
         o->log = &rig.log;
     }
     t0.name = "t0";
@@ -117,17 +130,18 @@ TEST_CASE("A reset releases from the highest tier down and recreates from the lo
     REQUIRE(t1b.registration.Attach(&rig.registry, &t1b, tiers::kMeshes));
 
     REQUIRE(rig.Reset());
-    CHECK(rig.log.SameAs({"release t4", "release t1b", "release t1a", "release t0",
-                          "recreate t0", "recreate t1a", "recreate t1b", "recreate t4"}));
+    CHECK(rig.log.SameAs({"release t4", "release t1b", "release t1a", "release t0", "recreate t0", "recreate t1a",
+                          "recreate t1b", "recreate t4"}));
     CHECK(rig.registry.CurrentDevice() == rig.host.GetDevice());
 
     rig.log.Clear();
-    REQUIRE(rig.Reset()); // twice: each owner is released and recreated once per reset
+    REQUIRE(rig.Reset());  // twice: each owner is released and recreated once per reset
     CHECK(rig.log.Size() == 8);
     CHECK(t0.recreates == 2);
 }
 
-TEST_CASE("A failing recreate stops the sequence, releases everything and names the owner", "[device_resources]") {
+TEST_CASE("A failing recreate stops the sequence, releases everything and names the owner", "[device_resources]")
+{
     ResQuietLog quiet;
     ResetRig rig;
     FakeOwner low;
@@ -147,8 +161,8 @@ TEST_CASE("A failing recreate stops the sequence, releases everything and names 
     CHECK_FALSE(rig.Reset());
     CHECK(CStrCompare(rig.registry.FailedOwner(), "bad") == 0);
     CHECK(rig.host.GetDevice() == nullptr);
-    CHECK_FALSE(low.live); // low was built, then released again: a half-built set is never used
-    CHECK(high.recreates == 0); // never reached
+    CHECK_FALSE(low.live);       // low was built, then released again: a half-built set is never used
+    CHECK(high.recreates == 0);  // never reached
     CHECK(rig.log.Back().View() == StringView("release low"));
 
     // Retry after the cause is gone: starts from released and succeeds.
@@ -160,7 +174,8 @@ TEST_CASE("A failing recreate stops the sequence, releases everything and names 
     CHECK(high.live);
 }
 
-TEST_CASE("Registering during a reset is rejected", "[device_resources]") {
+TEST_CASE("Registering during a reset is rejected", "[device_resources]")
+{
     ResQuietLog quiet;
     ResetRig rig;
     FakeOwner owner;
@@ -173,7 +188,8 @@ TEST_CASE("Registering during a reset is rejected", "[device_resources]") {
     CHECK(rig.registry.Count() == 1);
 }
 
-TEST_CASE("A mesh survives a device change with identical content and the same sort id", "[device_resources][mesh]") {
+TEST_CASE("A mesh survives a device change with identical content and the same sort id", "[device_resources][mesh]")
+{
     ResQuietLog quiet;
     ResetRig rig;
     REQUIRE(rig.Create());
@@ -183,7 +199,8 @@ TEST_CASE("A mesh survives a device change with identical content and the same s
     vertices.Resize(static_cast<usize>(data.VertexBytes()));
     MemCopy(vertices.Data(), data.Vertices(), vertices.Size());
 
-    SECTION("borrowed source") {
+    SECTION("borrowed source")
+    {
         GpuMesh mesh;
         REQUIRE(mesh.Create(rig.host.GetDevice(), data, "sphere"));
         REQUIRE(mesh.MakeRecreatable(&rig.registry, GpuMesh::Source{&data, nullptr, nullptr}, "sphere"));
@@ -191,8 +208,8 @@ TEST_CASE("A mesh survives a device change with identical content and the same s
         const rhi::BufferHandle old_vb = mesh.VertexBuffer();
         REQUIRE(rig.Reset());
         REQUIRE(mesh.Valid());
-        CHECK(mesh.VertexBuffer() != old_vb); // the handle changed ...
-        CHECK(mesh.SortId() == sort_id);      // ... the identity did not
+        CHECK(mesh.VertexBuffer() != old_vb);  // the handle changed ...
+        CHECK(mesh.SortId() == sort_id);       // ... the identity did not
         CHECK(mesh.VertexCount() == data.VertexCount());
         renderer_test::ByteVector after;
         after.Resize(vertices.Size());
@@ -201,13 +218,14 @@ TEST_CASE("A mesh survives a device change with identical content and the same s
         CHECK(renderer_test::SameBytes(after, vertices));
         CHECK(rig.host.GetDevice()->Resources().buffers == 2);
     }
-    SECTION("owned source, moved around") {
+    SECTION("owned source, moved around")
+    {
         MeshData copy;
         REQUIRE(MakeSphereMesh(1.0f, 12, 6, &copy) == nullptr);
         GpuMesh original;
         REQUIRE(original.Create(rig.host.GetDevice(), data, "owned"));
         REQUIRE(original.AdoptSource(&rig.registry, static_cast<MeshData&&>(copy), "owned"));
-        GpuMesh moved = static_cast<GpuMesh&&>(original); // the registration follows the move
+        GpuMesh moved = static_cast<GpuMesh&&>(original);  // the registration follows the move
         CHECK(rig.registry.Count() == 1);
         REQUIRE(rig.Reset());
         REQUIRE(moved.Valid());
@@ -218,8 +236,10 @@ TEST_CASE("A mesh survives a device change with identical content and the same s
         REQUIRE(null_device->PeekBuffer(moved.VertexBuffer(), 0, after.Data(), after.Size()));
         CHECK(renderer_test::SameBytes(after, vertices));
     }
-    SECTION("loader source") {
-        struct Loader {
+    SECTION("loader source")
+    {
+        struct Loader
+        {
             static bool Load(void*, MeshData* out) { return MakeSphereMesh(1.0f, 12, 6, out) == nullptr; }
         };
         GpuMesh mesh;
@@ -228,20 +248,23 @@ TEST_CASE("A mesh survives a device change with identical content and the same s
         REQUIRE(rig.Reset());
         CHECK(mesh.Valid());
     }
-    SECTION("a mesh with no source fails the reset and says which") {
+    SECTION("a mesh with no source fails the reset and says which")
+    {
         GpuMesh mesh;
         REQUIRE(mesh.Create(rig.host.GetDevice(), data, "bare"));
-        // Registered through a tiny wrapper that has no source: simulate by making it recreatable then losing the source.
+        // Registered through a tiny wrapper that has no source: simulate by making it recreatable then losing the
+        // source.
         REQUIRE(mesh.MakeRecreatable(&rig.registry, GpuMesh::Source{&data, nullptr, nullptr}, "bare"));
         MeshData small;
         REQUIRE(MakeCubeMesh(1.0f, &small) == nullptr);
-        mesh.MakeRecreatable(&rig.registry, GpuMesh::Source{&small, nullptr, nullptr}, "bare"); // wrong geometry
+        mesh.MakeRecreatable(&rig.registry, GpuMesh::Source{&small, nullptr, nullptr}, "bare");  // wrong geometry
         CHECK_FALSE(rig.Reset());
         CHECK(CStrCompare(rig.registry.FailedOwner(), "bare") == 0);
     }
 }
 
-TEST_CASE("Destroying meshes and textures leaves nothing on the device", "[device_resources][mesh]") {
+TEST_CASE("Destroying meshes and textures leaves nothing on the device", "[device_resources][mesh]")
+{
     ResetRig rig;
     REQUIRE(rig.Create());
     {
@@ -266,7 +289,8 @@ TEST_CASE("Destroying meshes and textures leaves nothing on the device", "[devic
     CHECK(rig.host.GetDevice()->Resources().UserObjects() == 0);
 }
 
-TEST_CASE("Textures and samplers are rebuilt from their pixels or a loader", "[device_resources][texture]") {
+TEST_CASE("Textures and samplers are rebuilt from their pixels or a loader", "[device_resources][texture]")
+{
     ResQuietLog quiet;
     ResetRig rig;
     REQUIRE(rig.Create());
@@ -281,9 +305,11 @@ TEST_CASE("Textures and samplers are rebuilt from their pixels or a loader", "[d
     REQUIRE(from_pixels.Create(rig.host.GetDevice(), static_cast<TextureImage&&>(image), &rig.registry, "pixels"));
     CHECK(from_pixels.Desc().mip_levels == 4);
 
-    struct Loader {
+    struct Loader
+    {
         int calls = 0;
-        static bool Load(void* user, TextureImage* out) {
+        static bool Load(void* user, TextureImage* out)
+        {
             static_cast<Loader*>(user)->calls++;
             out->desc.width = out->desc.height = 4;
             out->desc.format = rhi::Format::RGBA8_UNorm;
@@ -304,18 +330,20 @@ TEST_CASE("Textures and samplers are rebuilt from their pixels or a loader", "[d
     CHECK(from_pixels.Handle() != old_handle);
     CHECK(from_pixels.Desc().mip_levels == 4);
     CHECK(from_loader.Valid());
-    CHECK(loader.calls == 2); // the loader runs at every recreate
+    CHECK(loader.calls == 2);  // the loader runs at every recreate
     CHECK(sampler.Valid());
     CHECK(rig.host.GetDevice()->Resources().textures == 2);
     CHECK(rig.host.GetDevice()->Resources().samplers == 1);
 }
 
-TEST_CASE("A device with smaller limits fails the recreate with a reason instead of crashing", "[device_resources][texture]") {
+TEST_CASE("A device with smaller limits fails the recreate with a reason instead of crashing",
+          "[device_resources][texture]")
+{
     ResQuietLog quiet;
     DeviceResources registry;
     rhi::NullDeviceOptions big;
     rhi::NullDevicePtr first = rhi::CreateNullDevice(big);
-    REQUIRE(registry.OnDeviceCreated(first.Get(), first->Epoch())); // the registry learns the device
+    REQUIRE(registry.OnDeviceCreated(first.Get(), first->Epoch()));  // the registry learns the device
     GpuTexture texture;
     TextureImage image;
     image.desc.width = image.desc.height = 64;
@@ -335,18 +363,20 @@ TEST_CASE("A device with smaller limits fails the recreate with a reason instead
     CHECK(second->Resources().UserObjects() == 0);
 
     rhi::NullDevicePtr third = rhi::CreateNullDevice(big);
-    CHECK(registry.OnDeviceCreated(third.Get(), third->Epoch())); // retry on a device that can hold it
+    CHECK(registry.OnDeviceCreated(third.Get(), third->Epoch()));  // retry on a device that can hold it
     CHECK(texture.Valid());
-    texture.Destroy(); // before the devices go
+    texture.Destroy();  // before the devices go
 }
 
-TEST_CASE("Texture content is identical after a reset on a real device", "[device_resources][texture][vulkan][gpu]") {
+TEST_CASE("Texture content is identical after a reset on a real device", "[device_resources][texture][vulkan][gpu]")
+{
     ResQuietLog quiet;
     DeviceResources registry;
     rhi::DeviceHost host;
     host.AddObserver(&registry, 0);
     rhi::DeviceCreateInfo info;
-    if (!host.Create(info, rhi::SwapchainDesc{})) {
+    if (!host.Create(info, rhi::SwapchainDesc{}))
+    {
         SKIP("no suitable Vulkan device");
     }
     GpuTexture texture;
@@ -355,12 +385,14 @@ TEST_CASE("Texture content is identical after a reset on a real device", "[devic
     image.desc.format = rhi::Format::RGBA8_UNorm;
     image.desc.usage = rhi::TextureUsage::Sampled | rhi::TextureUsage::CopySrc;
     image.pixels.Resize(8 * 8 * 4);
-    for (usize i = 0; i < image.pixels.Size(); ++i) {
+    for (usize i = 0; i < image.pixels.Size(); ++i)
+    {
         image.pixels[i] = static_cast<u8>(i * 7 + 3);
     }
     Vector<u8> expected;
     expected.Resize(image.pixels.Size());
-    for (usize i = 0; i < expected.Size(); ++i) {
+    for (usize i = 0; i < expected.Size(); ++i)
+    {
         expected[i] = image.pixels[i];
     }
     REQUIRE(texture.Create(host.GetDevice(), static_cast<TextureImage&&>(image), &registry, "pattern"));
@@ -368,13 +400,15 @@ TEST_CASE("Texture content is identical after a reset on a real device", "[devic
     REQUIRE(texture.Valid());
     Vector<u8> got;
     got.Resize(expected.Size());
-    REQUIRE(host.GetDevice()->ReadbackTexture(texture.Handle(), 0, 0, got.Data(), got.Size(), rhi::ResourceState::ShaderRead));
+    REQUIRE(host.GetDevice()->ReadbackTexture(texture.Handle(), 0, 0, got.Data(), got.Size(),
+                                              rhi::ResourceState::ShaderRead));
     CHECK(MemCompare(got.Data(), expected.Data(), expected.Size()) == 0);
     texture.Destroy();
     host.Destroy();
 }
 
-TEST_CASE("A mesh that was ready before a reset is ready after it", "[device_resources][mesh]") {
+TEST_CASE("A mesh that was ready before a reset is ready after it", "[device_resources][mesh]")
+{
     ResQuietLog quiet;
     ResetRig rig;
     REQUIRE(rig.Create());
@@ -394,10 +428,11 @@ TEST_CASE("A mesh that was ready before a reset is ready after it", "[device_res
     mesh.MarkReady();
 
     REQUIRE(rig.Reset());
-    CHECK(mesh.Ready()); // the rebuilt buffers were moved to their read states, so Draw's precondition holds
+    CHECK(mesh.Ready());  // the rebuilt buffers were moved to their read states, so Draw's precondition holds
 }
 
-TEST_CASE("A moved sampler or texture rebuilds with a valid description", "[device_resources][texture]") {
+TEST_CASE("A moved sampler or texture rebuilds with a valid description", "[device_resources][texture]")
+{
     ResQuietLog quiet;
     ResetRig rig;
     REQUIRE(rig.Create());
@@ -414,27 +449,35 @@ TEST_CASE("A moved sampler or texture rebuilds with a valid description", "[devi
     image.pixels.Resize(64);
     REQUIRE(texture.Create(rig.host.GetDevice(), static_cast<TextureImage&&>(image), &rig.registry, "moving texture"));
     GpuTexture moved_texture = static_cast<GpuTexture&&>(texture);
-    REQUIRE(rig.Reset()); // under ASan this reads the names the descriptions point at
+    REQUIRE(rig.Reset());  // under ASan this reads the names the descriptions point at
     CHECK(moved.Valid());
     CHECK(moved_texture.Valid());
     CHECK(CStrCompare(moved_texture.Desc().debug_name, "moving texture") == 0);
 }
 
-TEST_CASE("An owner may unregister itself or another from inside Release or Recreate", "[device_resources]") {
+TEST_CASE("An owner may unregister itself or another from inside Release or Recreate", "[device_resources]")
+{
     ResQuietLog quiet;
     ResetRig rig;
-    struct Suicidal final : Recreatable {
+    struct Suicidal final : Recreatable
+    {
         DeviceResources* registry = nullptr;
         Recreatable* victim = nullptr;
         bool live = true;
-        void Release() override {
+        void Release() override
+        {
             live = false;
             registry->Unregister(this);
-            if (victim != nullptr) {
+            if (victim != nullptr)
+            {
                 registry->Unregister(victim);
             }
         }
-        bool Recreate(rhi::Device*) override { live = true; return true; }
+        bool Recreate(rhi::Device*) override
+        {
+            live = true;
+            return true;
+        }
         bool Live() const override { return live; }
         const char* RecreatableName() const override { return "suicidal"; }
     };
@@ -448,22 +491,24 @@ TEST_CASE("An owner may unregister itself or another from inside Release or Recr
     REQUIRE(rig.registry.Register(&other, 1));
     REQUIRE(rig.Reset());
     CHECK(rig.registry.Count() == 0);
-    CHECK(other.releases == 0); // released-after-unregistered owners are not called
+    CHECK(other.releases == 0);  // released-after-unregistered owners are not called
 }
 
-TEST_CASE("An owner registered before the registry saw a device is released at the next reset", "[device_resources]") {
+TEST_CASE("An owner registered before the registry saw a device is released at the next reset", "[device_resources]")
+{
     ResQuietLog quiet;
     DeviceResources registry;
     rhi::NullDevicePtr device = rhi::CreateNullDevice();
     GpuSampler sampler;
-    REQUIRE(sampler.Create(device.Get(), rhi::SamplerDesc{}, &registry, "early")); // the registry has no device yet
+    REQUIRE(sampler.Create(device.Get(), rhi::SamplerDesc{}, &registry, "early"));  // the registry has no device yet
     registry.OnDeviceReleasing(device->Epoch());
-    CHECK_FALSE(sampler.Valid()); // it was live, so it was released rather than skipped
-    CHECK(device->Resources().samplers == 0 );
+    CHECK_FALSE(sampler.Valid());  // it was live, so it was released rather than skipped
+    CHECK(device->Resources().samplers == 0);
     sampler.Destroy();
 }
 
-TEST_CASE("A texture with GPU mips can be made inside an open frame", "[device_resources][texture]") {
+TEST_CASE("A texture with GPU mips can be made inside an open frame", "[device_resources][texture]")
+{
     ResQuietLog quiet;
     rhi::NullDevicePtr device = rhi::CreateNullDevice();
     GpuTexture texture;
@@ -474,9 +519,9 @@ TEST_CASE("A texture with GPU mips can be made inside an open frame", "[device_r
     image.desc.usage = rhi::TextureUsage::Sampled;
     image.pixels.Resize(8 * 8 * 4);
     image.generate_mips = true;
-    device->BeginFrame(); // the caller's frame is open
+    device->BeginFrame();  // the caller's frame is open
     REQUIRE(texture.Create(device.Get(), static_cast<TextureImage&&>(image), nullptr, "streamed"));
-    CHECK(device->InFrame()); // the texture did not close the caller's frame
+    CHECK(device->InFrame());  // the texture did not close the caller's frame
     device->EndFrame();
     CHECK(device->ErrorCount() == 0);
     texture.Destroy();

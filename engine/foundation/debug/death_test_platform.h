@@ -4,7 +4,8 @@
 
 // The per-platform half of the death-test helper (death_test.h). Each platform backend implements these; the neutral
 // code in debug/death_test.cpp calls them. Not part of the public API.
-namespace engine_placeholder::debug::detail {
+namespace engine_placeholder::debug::detail
+{
 
 // True if the platform can start child processes.
 bool PlatformCanSpawn();
@@ -19,4 +20,4 @@ bool PlatformChildRequest(const char** name, const char** argument);
 // Applies the parent's requests that the child must carry out itself (for example turning core dumps off).
 void PlatformPrepareChild();
 
-} // namespace engine_placeholder::debug::detail
+}  // namespace engine_placeholder::debug::detail

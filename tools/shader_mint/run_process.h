@@ -1,12 +1,13 @@
 #pragma once
 
 // Starting slangc and spirv-val from shader_mint --permute (Phase 13 Day 163): one interface, two implementations,
-// run_process_posix.cpp (posix_spawnp) and windows/run_process_windows.cpp (CreateProcessW). The child inherits standard
-// output and standard error, so its messages reach the build log.
+// run_process_posix.cpp (posix_spawnp) and windows/run_process_windows.cpp (CreateProcessW). The child inherits
+// standard output and standard error, so its messages reach the build log.
 
 #include "text.h"
 
-namespace engine_placeholder::shader_mint {
+namespace engine_placeholder::shader_mint
+{
 
 // Appends `arg` to a Windows command line the way CommandLineToArgvW and the C runtime split it back into the same
 // argument: unquoted when it has no space, tab, newline or quote and is not empty; otherwise in quotes, with each quote
@@ -19,4 +20,4 @@ void AppendWindowsArgument(Text* line, StringView arg);
 // Returns true if it exited with status 0; otherwise prints how it failed on stderr.
 bool RunProcess(const Vector<Text>& args);
 
-} // namespace engine_placeholder::shader_mint
+}  // namespace engine_placeholder::shader_mint

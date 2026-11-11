@@ -18,17 +18,18 @@
 #include "mem/heap_allocator.h"
 #include "types.h"
 
-namespace engine_placeholder::ecs {
+namespace engine_placeholder::ecs
+{
 
-template <class... Terms>
-class Query;
+template <class... Terms> class Query;
 class CommandBuffer;
 
-/// One entry of a removal log: the entity that lost a tracked component, the value it had and the removal's sequence number (increasing within a world).
+/// One entry of a removal log: the entity that lost a tracked component, the value it had and the removal's sequence
+/// number (increasing within a world).
 ///
 /// - Thread-safety: thread-compatible plain data.
-template <class T>
-struct RemovedComponent {
+template <class T> struct RemovedComponent
+{
     /// The entity (destroyed, or alive without the component).
     Entity entity;
     /// The component's value at the moment of removal.
@@ -37,9 +38,11 @@ struct RemovedComponent {
     u64 seq = 0;
 };
 
-namespace detail {
+namespace detail
+{
 /// The log of one tracked component type.
-struct RemovalLog {
+struct RemovalLog
+{
     usize size = 0;
     Vector<Entity> entities;
     Vector<u64> seqs;
@@ -51,15 +54,16 @@ u32 NextResourceTypeId();
 /// The next world number (thread-safe, never reused).
 u64 NextWorldId();
 /// The number of the resource type `T`.
-template <class T>
-u32 ResourceTypeId() {
+template <class T> u32 ResourceTypeId()
+{
     static const u32 id = NextResourceTypeId();
     return id;
 }
-} // namespace detail
+}  // namespace detail
 
 /// The outcome of a structural call on one entity.
-enum class Status : u8 {
+enum class Status : u8
+{
     /// The change was made.
     Ok,
     /// The entity is dead, stale or invalid.
@@ -68,14 +72,16 @@ enum class Status : u8 {
     MissingComponent,
     /// The entity already has the component (`Add`; use `Set` to overwrite).
     AlreadyHas,
-    /// A limit stopped it: component or archetype limits, an unregistered type or no memory (counted in `Stats().refused`).
+    /// A limit stopped it: component or archetype limits, an unregistered type or no memory (counted in
+    /// `Stats().refused`).
     Refused,
 };
 
 /// What applying a [[ecs::CommandBuffer]] did.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct PlaybackReport {
+struct PlaybackReport
+{
     /// Commands that changed the world.
     u32 applied = 0;
     /// Commands that did nothing: the entity was dead, lacked or already had the component, or a limit stopped it.
@@ -84,7 +90,8 @@ struct PlaybackReport {
     u32 created = 0;
     /// Adds another report to this one.
     /// - Fails: never.
-    PlaybackReport& operator+=(const PlaybackReport& other) {
+    PlaybackReport& operator+=(const PlaybackReport& other)
+    {
         applied += other.applied;
         ignored += other.ignored;
         created += other.created;
@@ -96,7 +103,8 @@ struct PlaybackReport {
 ///
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: `first` is a string literal.
-struct ValidationReport {
+struct ValidationReport
+{
     /// The number of broken invariants.
     u32 errors = 0;
     /// A description of the first one, or null.
@@ -110,7 +118,8 @@ struct ValidationReport {
 ///
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: owns nothing.
-struct WorldStats {
+struct WorldStats
+{
     /// Entities alive.
     u32 entities = 0;
     /// Archetypes created.
@@ -121,7 +130,8 @@ struct WorldStats {
     u64 graph_hits = 0;
     /// Calls refused by a limit (see [[ecs::Status::Refused]]) or entity creations that failed.
     u64 refused = 0;
-    /// Entities destroyed since the world was made (a system compares it with the value it saw last frame to learn that something was destroyed).
+    /// Entities destroyed since the world was made (a system compares it with the value it saw last frame to learn that
+    /// something was destroyed).
     u64 destroyed = 0;
     /// The chunk pool's counters.
     ChunkPoolStats pool;
@@ -129,13 +139,15 @@ struct WorldStats {
 
 /// Entities with components, grouped into archetypes.
 ///
-/// Structural calls (`Create`, `Destroy`, `Add`, `Remove`, `Set` that adds) move rows, so a pointer from `Get` or a span from a chunk is valid only
-/// until the next structural call. They may not be made while the world is being iterated (`BeginIteration` / `EndIteration`, used by queries); a
-/// command buffer (Day 228) defers them.
+/// Structural calls (`Create`, `Destroy`, `Add`, `Remove`, `Set` that adds) move rows, so a pointer from `Get` or a
+/// span from a chunk is valid only until the next structural call. They may not be made while the world is being
+/// iterated (`BeginIteration` / `EndIteration`, used by queries); a command buffer (Day 228) defers them.
 ///
-/// - Thread-safety: thread-compatible. Const members may run on several threads while no thread makes a structural call.
+/// - Thread-safety: thread-compatible. Const members may run on several threads while no thread makes a structural
+/// call.
 /// - Ownership: owns the entity table, archetypes and chunks; destroying the world destroys every component.
-class World {
+class World
+{
 public:
     /// Creates an empty world with the empty archetype.
     World();
@@ -144,7 +156,8 @@ public:
     /// A number no other world of this program has had (never reused), for objects that cache something about a world.
     /// - Fails: never.
     u64 Id() const { return id_; }
-    /// Destroys the resources in reverse order of creation, then the entities and their archetypes. A resource's destructor must not use the world.
+    /// Destroys the resources in reverse order of creation, then the entities and their archetypes. A resource's
+    /// destructor must not use the world.
     ~World();
 
     /// Creates an entity with no components.
@@ -155,16 +168,14 @@ public:
     /// Creates an entity with the given components.
     /// - Returns: the entity, or the invalid entity when a limit stopped it (nothing is left behind).
     /// - Aborts: the world is being iterated, or a type is listed twice.
-    template <class... Ts>
-    Entity Create(Ts... values);
+    template <class... Ts> Entity Create(Ts... values);
 
     /// Creates `count` entities with default-constructed `Ts`, filled in by `fn`.
     ///
     /// Calls `fn(index, Ts&...)` for each. Looks the archetype up once. Stops early if a limit stops it.
     /// - Returns: how many were created.
     /// - Aborts: the world is being iterated.
-    template <class... Ts, class Fn>
-    u32 CreateMany(u32 count, Fn&& fn);
+    template <class... Ts, class Fn> u32 CreateMany(u32 count, Fn&& fn);
 
     /// Destroys an entity and its components.
     /// - Returns: [[ecs::Status::Ok]], or `DeadEntity`.
@@ -178,102 +189,104 @@ public:
     /// Adds component `T` to a live entity that lacks it, moving it to another archetype.
     /// - Returns: `Ok`, `DeadEntity`, `AlreadyHas` or `Refused`.
     /// - Aborts: the world is being iterated.
-    template <class T>
-    Status Add(Entity entity, T value);
+    template <class T> Status Add(Entity entity, T value);
 
     /// Removes component `T`, moving the entity to another archetype.
     /// - Returns: `Ok`, `DeadEntity` or `MissingComponent`.
     /// - Aborts: the world is being iterated.
-    template <class T>
-    Status Remove(Entity entity);
+    template <class T> Status Remove(Entity entity);
 
     /// Sets component `T`: overwrites it, or adds it when absent.
     /// - Returns: `Ok`, `DeadEntity` or `Refused`.
     /// - Aborts: the world is being iterated and the entity lacks `T` (overwriting is allowed).
-    template <class T>
-    Status Set(Entity entity, T value);
+    template <class T> Status Set(Entity entity, T value);
 
     /// Returns whether a live entity has `T` (false for a dead entity).
     /// - Fails: never.
-    template <class T>
-    bool Has(Entity entity) const;
+    template <class T> bool Has(Entity entity) const;
 
-    /// The entity's `T`, or null when the entity is dead or lacks `T` (also null for a tag: ask `Has`). The non-const form stamps the chunk's `T` column as
-    /// written at the current tick, since the caller may write through the pointer.
+    /// The entity's `T`, or null when the entity is dead or lacks `T` (also null for a tag: ask `Has`). The non-const
+    /// form stamps the chunk's `T` column as written at the current tick, since the caller may write through the
+    /// pointer.
     /// - Fails: returns null as described.
-    /// - Aborts: an active query (`BeginIteration(writes)`) writes `T`; read components the query only reads, or use the query's own arguments.
+    /// - Aborts: an active query (`BeginIteration(writes)`) writes `T`; read components the query only reads, or use
+    /// the query's own arguments.
     /// - Ownership: the pointer views the entity's row; valid until the next structural call.
-    template <class T>
-    T* Get(Entity entity);
+    template <class T> T* Get(Entity entity);
     /// The entity's `T` (const), or null as above.
     /// - Fails: returns null as described.
     /// - Aborts: as for the non-const form.
     /// - Ownership: the pointer views the entity's row; valid until the next structural call.
-    template <class T>
-    const T* Get(Entity entity) const;
+    template <class T> const T* Get(Entity entity) const;
 
     /// The current change-detection tick (starts at 1). Writes, additions and arrivals are stamped with it.
     /// - Fails: never.
     u64 Tick() const { return tick_; }
-    /// Moves to the next tick; changes stamped from now on are newer than any query's `since` taken before. The scheduler calls it between
-    /// frames, and [[ecs::Query::Finish]] calls it so that a write made after a query ran is not lost.
+    /// Moves to the next tick; changes stamped from now on are newer than any query's `since` taken before. The
+    /// scheduler calls it between frames, and [[ecs::Query::Finish]] calls it so that a write made after a query ran is
+    /// not lost.
     /// - Fails: never.
     void Advance() { ++tick_; }
-    /// Ends a frame for the removal logs: entries logged in the frame before this one go, those of the frame just ended stay for one more frame (see
-    /// [[ecs::World::RemovedCount]]). The scheduler calls it at the end of `Schedule::Run`; a program that runs no schedule calls it itself.
+    /// Ends a frame for the removal logs: entries logged in the frame before this one go, those of the frame just ended
+    /// stay for one more frame (see
+    /// [[ecs::World::RemovedCount]]). The scheduler calls it at the end of `Schedule::Run`; a program that runs no
+    /// schedule calls it itself.
     /// - Fails: never.
-    void EndFrame() {
+    void EndFrame()
+    {
         ++removal_epoch_;
         PruneRemovals();
     }
-    /// The number of frames ended so far, plus one (starts at 1): the clock of the removal logs. A reader that handled the logs at epoch `e` can rely on
-    /// them to hold every removal since while this is at most `e + 1`; beyond that entries may have been dropped.
+    /// The number of frames ended so far, plus one (starts at 1): the clock of the removal logs. A reader that handled
+    /// the logs at epoch `e` can rely on them to hold every removal since while this is at most `e + 1`; beyond that
+    /// entries may have been dropped.
     /// - Fails: never.
     u64 RemovalEpoch() const { return removal_epoch_; }
-    /// How many removals of the tracked component `T` the log holds: those of the current and the previous frame (a component declares
-    /// `static constexpr bool kTrackRemoval = true`). A system that runs once per frame sees each removal in the frame it happened or the next; it remembers the
-    /// largest `seq` it handled and skips smaller ones.
+    /// How many removals of the tracked component `T` the log holds: those of the current and the previous frame (a
+    /// component declares `static constexpr bool kTrackRemoval = true`). A system that runs once per frame sees each
+    /// removal in the frame it happened or the next; it remembers the largest `seq` it handled and skips smaller ones.
     /// - Fails: zero for a type that does not track removal.
-    template <class T>
-    usize RemovedCount() const;
+    template <class T> usize RemovedCount() const;
     /// The `index`th logged removal of `T`, oldest first.
     /// - Aborts: `index` is not below `RemovedCount<T>()`.
-    template <class T>
-    RemovedComponent<T> RemovedAt(usize index) const;
+    template <class T> RemovedComponent<T> RemovedAt(usize index) const;
 
     /// Sets the tick (tests of tick arithmetic near the largest value).
     /// - Fails: never.
     void SetTick(u64 tick) { tick_ = tick; }
 
-    /// The entity's `T` for reading, without the check that an active query writes `T` and without stamping: for a system that reads one entity's row while
-    /// writing others' (a child reading its parent). The caller guarantees nothing writes that row meanwhile.
+    /// The entity's `T` for reading, without the check that an active query writes `T` and without stamping: for a
+    /// system that reads one entity's row while writing others' (a child reading its parent). The caller guarantees
+    /// nothing writes that row meanwhile.
     ///
     /// - Returns: the component, or null when the entity is dead or lacks `T` (also null for a tag).
     /// - Fails: returns null as described.
     /// - Ownership: the pointer views the entity's row; valid until the next structural call.
-    template <class T>
-    const T* Peek(Entity entity) const;
-    /// The entity's `T` for writing, without the active-query check and without stamping the chunk (call `Stamp` after the writes, from one thread).
+    template <class T> const T* Peek(Entity entity) const;
+    /// The entity's `T` for writing, without the active-query check and without stamping the chunk (call `Stamp` after
+    /// the writes, from one thread).
     ///
     /// - Returns: the component, or null when the entity is dead or lacks `T`.
     /// - Fails: returns null as described.
     /// - Ownership: the pointer views the entity's row; valid until the next structural call.
-    template <class T>
-    T* Poke(Entity entity);
-    /// Stamps the chunk column of the entity's `T` as written at the current tick (after writes made through `Poke`). Not thread-safe against other stamps.
+    template <class T> T* Poke(Entity entity);
+    /// Stamps the chunk column of the entity's `T` as written at the current tick (after writes made through `Poke`).
+    /// Not thread-safe against other stamps.
     /// - Fails: does nothing for a dead entity or a missing component.
-    template <class T>
-    void Stamp(Entity entity);
-    /// Begins a parallel phase: the schedule's jobs run queries of this world on several threads. Structural calls are refused (it counts as an iteration),
-    /// and queries skip their own iteration bookkeeping, which is not thread-safe. Call it on the thread that submits the jobs, before submitting.
+    template <class T> void Stamp(Entity entity);
+    /// Begins a parallel phase: the schedule's jobs run queries of this world on several threads. Structural calls are
+    /// refused (it counts as an iteration), and queries skip their own iteration bookkeeping, which is not thread-safe.
+    /// Call it on the thread that submits the jobs, before submitting.
     /// - Fails: never.
-    void BeginParallel() {
+    void BeginParallel()
+    {
         BeginIteration();
         parallel_ = true;
     }
     /// Ends the parallel phase begun by `BeginParallel`, after every job has finished.
     /// - Aborts: no parallel phase is active.
-    void EndParallel() {
+    void EndParallel()
+    {
         ENGINE_ASSERT(parallel_, "World::EndParallel without BeginParallel");
         parallel_ = false;
         EndIteration();
@@ -286,19 +299,24 @@ public:
     void BeginIteration() { ++iterating_; }
     /// Marks the end of an iteration.
     /// - Aborts: no iteration is active.
-    void EndIteration() {
+    void EndIteration()
+    {
         ENGINE_ASSERT(iterating_ != 0, "World::EndIteration without BeginIteration");
         --iterating_;
     }
-    /// Marks the start of an iteration that writes the components in `writes`: like the no-argument form, and in addition `World::Get` of
-    /// one of those components aborts until the matching `EndIteration` (the iteration holds them for writing). Queries use this.
+    /// Marks the start of an iteration that writes the components in `writes`: like the no-argument form, and in
+    /// addition `World::Get` of one of those components aborts until the matching `EndIteration` (the iteration holds
+    /// them for writing). Queries use this.
     ///
     /// - Param writes: the component ids the iteration writes.
     /// - Returns: the write set of the enclosing iteration, to pass back to `EndIteration(const ComponentSet&)`.
-    ComponentSet BeginIteration(const ComponentSet& writes) {
+    ComponentSet BeginIteration(const ComponentSet& writes)
+    {
         ++iterating_;
         const ComponentSet previous = iteration_writes_;
-        for (ComponentId id = writes.NextFrom(0); id != kInvalidComponent; id = writes.NextFrom(static_cast<u32>(id) + 1u)) {
+        for (ComponentId id = writes.NextFrom(0); id != kInvalidComponent;
+             id = writes.NextFrom(static_cast<u32>(id) + 1u))
+        {
             iteration_writes_.Add(id);
         }
         return previous;
@@ -307,7 +325,8 @@ public:
     ///
     /// - Param previous: the value `BeginIteration` returned.
     /// - Aborts: no iteration is active.
-    void EndIteration(const ComponentSet& previous) {
+    void EndIteration(const ComponentSet& previous)
+    {
         EndIteration();
         iteration_writes_ = previous;
     }
@@ -315,18 +334,20 @@ public:
     /// - Fails: never.
     bool IsIterating() const { return iterating_ != 0; }
 
-    /// Makes a [[ecs::Query]] over this world with the given terms (`Read<T>`, `Write<T>`, `Optional<T>`, `OptionalWrite<T>`, `With<T>`, `Without<T>`).
+    /// Makes a [[ecs::Query]] over this world with the given terms (`Read<T>`, `Write<T>`, `Optional<T>`,
+    /// `OptionalWrite<T>`, `With<T>`, `Without<T>`).
     ///
     /// Include `ecs/query.h` to call it. The query keeps a pointer to this world, which must outlive it.
-    /// A term list that is empty, longer than 16, names a component twice or reads a tag as data does not compile: see [[ecs::Query]].
-    template <class... Terms>
-    ecs::Query<Terms...> Query();
+    /// A term list that is empty, longer than 16, names a component twice or reads a tag as data does not compile: see
+    /// [[ecs::Query]].
+    template <class... Terms> ecs::Query<Terms...> Query();
 
     /// Applies the recorded commands of `buffer` in recording order, at a sync point.
     ///
-    /// A command on a dead entity, a missing or already present component, or a refused change is skipped and counted, never a crash. The buffer's
-    /// placeholders resolve to the created entities ([[ecs::CommandBuffer::Resolve]]) until the buffer is cleared. Several buffers are applied by
-    /// calling this once per buffer in the order the caller chooses.
+    /// A command on a dead entity, a missing or already present component, or a refused change is skipped and counted,
+    /// never a crash. The buffer's placeholders resolve to the created entities ([[ecs::CommandBuffer::Resolve]]) until
+    /// the buffer is cleared. Several buffers are applied by calling this once per buffer in the order the caller
+    /// chooses.
     ///
     /// - Param buffer: the commands; consumed (its values are moved into the world and destroyed).
     /// - Returns: how many commands changed the world, were skipped and created entities.
@@ -335,58 +356,57 @@ public:
 
     /// Stores the world's one resource of type `T`, replacing the previous one in place (its address does not change).
     ///
-    /// A resource is a singleton per type that is not an entity and never matches a query. A new resource is destroyed after those created later.
+    /// A resource is a singleton per type that is not an entity and never matches a query. A new resource is destroyed
+    /// after those created later.
     ///
     /// - Param value: the value; moved in.
     /// - Returns: the stored resource.
     /// - Fails: never.
-    /// - Ownership: the world owns the resource; the reference is valid until `RemoveResource<T>()` or the world's destruction.
-    template <class T>
-    T& SetResource(T value);
+    /// - Ownership: the world owns the resource; the reference is valid until `RemoveResource<T>()` or the world's
+    /// destruction.
+    template <class T> T& SetResource(T value);
     /// The resource of type `T`.
     /// - Aborts: there is none (ask `HasResource<T>()` or use `TryResource<T>()`).
-    template <class T>
-    T& Resource();
+    template <class T> T& Resource();
     /// The resource of type `T` (const).
     /// - Aborts: there is none.
-    template <class T>
-    const T& Resource() const;
+    template <class T> const T& Resource() const;
     /// The resource of type `T`, or null.
     /// - Fails: returns null when there is none.
     /// - Ownership: the world owns the resource; the pointer is valid until it is removed or the world is destroyed.
-    template <class T>
-    T* TryResource();
+    template <class T> T* TryResource();
     /// The resource of type `T` (const), or null.
     /// - Fails: returns null when there is none.
     /// - Ownership: the world owns the resource; the pointer is valid until it is removed or the world is destroyed.
-    template <class T>
-    const T* TryResource() const;
+    template <class T> const T* TryResource() const;
     /// Returns whether a resource of type `T` is stored.
     /// - Fails: never.
-    template <class T>
-    bool HasResource() const { return TryResource<T>() != nullptr; }
+    template <class T> bool HasResource() const { return TryResource<T>() != nullptr; }
     /// Destroys the resource of type `T`.
     /// - Returns: whether there was one.
     /// - Fails: returns false when there is none.
-    template <class T>
-    bool RemoveResource();
+    template <class T> bool RemoveResource();
 
-    /// Makes sure the archetype for exactly the components in `set` exists, so that [[ecs::World::CreateFromSet]] of it cannot fail for want of an archetype.
+    /// Makes sure the archetype for exactly the components in `set` exists, so that [[ecs::World::CreateFromSet]] of it
+    /// cannot fail for want of an archetype.
     ///
-    /// - Returns: true when the archetype exists after the call; false when a limit stopped it (counted in `Stats().refused`).
+    /// - Returns: true when the archetype exists after the call; false when a limit stopped it (counted in
+    /// `Stats().refused`).
     /// - Fails: returns false as described.
     /// - Aborts: the world is being iterated.
     bool EnsureArchetype(const ComponentSet& set);
-    /// Creates an entity with exactly the components in `set`, each default-constructed (a type-erased `Create`, for loaders that know
-    /// component ids but not types).
+    /// Creates an entity with exactly the components in `set`, each default-constructed (a type-erased `Create`, for
+    /// loaders that know component ids but not types).
     ///
-    /// - Returns: the entity, or the invalid entity when a limit stopped it or a component that is not a tag has no default constructor (nothing is made then).
+    /// - Returns: the entity, or the invalid entity when a limit stopped it or a component that is not a tag has no
+    /// default constructor (nothing is made then).
     /// - Fails: returns the invalid entity as described.
     /// - Aborts: the world is being iterated.
     Entity CreateFromSet(const ComponentSet& set);
     /// Adds the component `id` to a live entity that lacks it, default-constructed (a type-erased `Add`).
     ///
-    /// - Returns: `Ok`, `DeadEntity`, `AlreadyHas`, or `Refused` (a limit, an unregistered id, or a type with no default constructor).
+    /// - Returns: `Ok`, `DeadEntity`, `AlreadyHas`, or `Refused` (a limit, an unregistered id, or a type with no
+    /// default constructor).
     /// - Aborts: the world is being iterated.
     Status AddDefault(Entity entity, ComponentId id);
     /// Removes the component `id` (a type-erased `Remove`).
@@ -397,8 +417,8 @@ public:
     /// Returns whether a live entity has the component `id` (also for a tag; false for a dead entity).
     /// - Fails: never.
     bool HasById(Entity entity, ComponentId id) const;
-    /// The entity's component `id` as raw memory, or null when the entity is dead, lacks it, or it is a tag. The non-const form stamps the component as
-    /// written.
+    /// The entity's component `id` as raw memory, or null when the entity is dead, lacks it, or it is a tag. The
+    /// non-const form stamps the component as written.
     ///
     /// - Fails: returns null as described.
     /// - Ownership: the pointer views the entity's row; valid until the next structural call.
@@ -425,33 +445,32 @@ public:
 
     /// Checks the world's invariants.
     ///
-    /// Every alive entity's location holds that entity, no row holds a dead or duplicated entity, counts add up, and every
-    /// archetype's chunks are full except the last. For tests and debug builds.
+    /// Every alive entity's location holds that entity, no row holds a dead or duplicated entity, counts add up, and
+    /// every archetype's chunks are full except the last. For tests and debug builds.
     ValidationReport Validate() const;
 
 private:
     static constexpr u32 kNone = 0xFFFFFFFFu;
 
-    void NotIterating(const char* call) const {
-        ENGINE_ASSERT(iterating_ == 0, call);
-    }
+    void NotIterating(const char* call) const { ENGINE_ASSERT(iterating_ == 0, call); }
     u32 FindOrCreateArchetype(const ComponentSet& set);
     u32 Transition(u32 from, ComponentId id, bool add);
     Entity CreateIn(u32 archetype, RowRef* row);
     void FixMoved(Entity moved, u32 chunk, u32 row);
     bool Migrate(Entity entity, u32 target, RowRef* new_row);
-    template <class T>
-    void ConstructCell(const Archetype& a, const RowRef& r, T&& value);
+    template <class T> void ConstructCell(const Archetype& a, const RowRef& r, T&& value);
 
     // One slot per resource type number; the object lives in its own heap block so its address is stable.
-    struct ResourceSlot {
+    struct ResourceSlot
+    {
         void* object = nullptr;
         void (*destroy)(void*) = nullptr;
         usize size = 0;
         usize align = 0;
         u64 serial = 0;
     };
-    // Not "FindResource": windows.h defines that name as a macro (FindResourceW), which would rename the call in a file that includes it.
+    // Not "FindResource": windows.h defines that name as a macro (FindResourceW), which would rename the call in a file
+    // that includes it.
     ResourceSlot* FindResourceSlot(u32 type_id);
     const ResourceSlot* FindResourceSlot(u32 type_id) const;
     void DestroyResource(ResourceSlot& slot);
@@ -464,8 +483,7 @@ private:
     u64 id_;
     HashMap<ComponentSet, u32, HeapAllocator> by_set_;
     HashMap<u64, u32, HeapAllocator> edges_;
-    template <class T>
-    T* GetCell(Entity entity, bool mark);
+    template <class T> T* GetCell(Entity entity, bool mark);
     void RecordRemoval(ComponentId id, const TypeInfo& info, Entity entity, const void* value);
     void PruneRemovals();
     const detail::RemovalLog* RemovalLogOf(ComponentId id) const;
@@ -484,67 +502,77 @@ private:
     u64 destroyed_ = 0;
 };
 
-template <class T>
-void World::ConstructCell(const Archetype& a, const RowRef& r, T&& value) {
+template <class T> void World::ConstructCell(const Archetype& a, const RowRef& r, T&& value)
+{
     using U = RemoveReference<T>;
     void* cell = a.CellPtr(r.chunk, ComponentOf<U>(), r.row);
-    if (cell != nullptr) {
+    if (cell != nullptr)
+    {
         ConstructAt<U>(cell, Move(value));
     }
 }
 
-template <class... Ts>
-Entity World::Create(Ts... values) {
+template <class... Ts> Entity World::Create(Ts... values)
+{
     NotIterating("World::Create during iteration");
     ComponentSet set;
     bool registered = ((ComponentOf<Ts>() != kInvalidComponent) && ...);
-    if (!registered) {
+    if (!registered)
+    {
         ++refused_;
         return Entity{};
     }
     (set.Add(ComponentOf<Ts>()), ...);
     ENGINE_ASSERT(set.Count() == sizeof...(Ts), "World::Create: a component type is listed twice");
     const u32 archetype = FindOrCreateArchetype(set);
-    if (archetype == kNone) {
+    if (archetype == kNone)
+    {
         ++refused_;
         return Entity{};
     }
     RowRef row;
     const Entity entity = CreateIn(archetype, &row);
-    if (entity.IsValid()) {
+    if (entity.IsValid())
+    {
         (ConstructCell(*archetypes_[archetype], row, Move(values)), ...);
     }
     return entity;
 }
 
-template <class... Ts, class Fn>
-u32 World::CreateMany(u32 count, Fn&& fn) {
+template <class... Ts, class Fn> u32 World::CreateMany(u32 count, Fn&& fn)
+{
     NotIterating("World::CreateMany during iteration");
     static_assert(((IsDefaultConstructible<Ts>) && ...), "CreateMany default-constructs the components first");
     ComponentSet set;
-    if (!((ComponentOf<Ts>() != kInvalidComponent) && ...)) {
+    if (!((ComponentOf<Ts>() != kInvalidComponent) && ...))
+    {
         ++refused_;
         return 0;
     }
     (set.Add(ComponentOf<Ts>()), ...);
     ENGINE_ASSERT(set.Count() == sizeof...(Ts), "World::CreateMany: a component type is listed twice");
     const u32 archetype = FindOrCreateArchetype(set);
-    if (archetype == kNone) {
+    if (archetype == kNone)
+    {
         ++refused_;
         return 0;
     }
     Archetype& a = *archetypes_[archetype];
     u32 made = 0;
-    for (; made < count; ++made) {
+    for (; made < count; ++made)
+    {
         RowRef row;
         const Entity entity = CreateIn(archetype, &row);
-        if (!entity.IsValid()) {
+        if (!entity.IsValid())
+        {
             break;
         }
         // A tag has no cell; fn is handed one shared scratch object for it.
-        auto cell = [&]<class U>(U*) -> U& {
+        auto cell = [&]<class U>(U*) -> U&
+        {
             void* where = a.CellPtr(row.chunk, ComponentOf<U>(), row.row);
-            if (where != nullptr) {
+            if (where != nullptr)
+            {
                 return *ConstructAt<U>(where);
             }
             static U tag;
@@ -555,28 +583,33 @@ u32 World::CreateMany(u32 count, Fn&& fn) {
     return made;
 }
 
-template <class T>
-Status World::Add(Entity entity, T value) {
+template <class T> Status World::Add(Entity entity, T value)
+{
     NotIterating("World::Add during iteration");
     const EntityLocation* where = table_.Location(entity);
-    if (where == nullptr) {
+    if (where == nullptr)
+    {
         return Status::DeadEntity;
     }
     const ComponentId id = ComponentOf<T>();
-    if (id == kInvalidComponent) {
+    if (id == kInvalidComponent)
+    {
         ++refused_;
         return Status::Refused;
     }
-    if (archetypes_[where->archetype]->Has(id)) {
+    if (archetypes_[where->archetype]->Has(id))
+    {
         return Status::AlreadyHas;
     }
     const u32 target = Transition(where->archetype, id, true);
-    if (target == kNone) {
+    if (target == kNone)
+    {
         ++refused_;
         return Status::Refused;
     }
     RowRef row;
-    if (!Migrate(entity, target, &row)) {
+    if (!Migrate(entity, target, &row))
+    {
         ++refused_;
         return Status::Refused;
     }
@@ -584,14 +617,14 @@ Status World::Add(Entity entity, T value) {
     return Status::Ok;
 }
 
-template <class T>
-usize World::RemovedCount() const {
+template <class T> usize World::RemovedCount() const
+{
     const detail::RemovalLog* log = RemovalLogOf(ComponentOf<T>());
     return log == nullptr ? 0 : log->entities.Size();
 }
 
-template <class T>
-RemovedComponent<T> World::RemovedAt(usize index) const {
+template <class T> RemovedComponent<T> World::RemovedAt(usize index) const
+{
     const detail::RemovalLog* log = RemovalLogOf(ComponentOf<T>());
     ENGINE_ASSERT(log != nullptr && index < log->entities.Size(), "World::RemovedAt: no such logged removal");
     RemovedComponent<T> out;
@@ -601,37 +634,43 @@ RemovedComponent<T> World::RemovedAt(usize index) const {
     return out;
 }
 
-template <class T>
-Status World::Remove(Entity entity) {
+template <class T> Status World::Remove(Entity entity)
+{
     NotIterating("World::Remove during iteration");
     const EntityLocation* where = table_.Location(entity);
-    if (where == nullptr) {
+    if (where == nullptr)
+    {
         return Status::DeadEntity;
     }
     const ComponentId id = ComponentOf<T>();
-    if (id == kInvalidComponent || !archetypes_[where->archetype]->Has(id)) {
+    if (id == kInvalidComponent || !archetypes_[where->archetype]->Has(id))
+    {
         return Status::MissingComponent;
     }
     const u32 target = Transition(where->archetype, id, false);
     RowRef row;
-    if (target == kNone || !Migrate(entity, target, &row)) {
+    if (target == kNone || !Migrate(entity, target, &row))
+    {
         ++refused_;
         return Status::Refused;
     }
     return Status::Ok;
 }
 
-template <class T>
-Status World::Set(Entity entity, T value) {
+template <class T> Status World::Set(Entity entity, T value)
+{
     const EntityLocation* where = table_.Location(entity);
-    if (where == nullptr) {
+    if (where == nullptr)
+    {
         return Status::DeadEntity;
     }
     const ComponentId id = ComponentOf<T>();
-    if (id != kInvalidComponent && archetypes_[where->archetype]->Has(id)) {
+    if (id != kInvalidComponent && archetypes_[where->archetype]->Has(id))
+    {
         Archetype& a = *archetypes_[where->archetype];
         void* cell = a.CellPtr(a.ChunkAt(where->chunk), id, where->row);
-        if (cell != nullptr) {
+        if (cell != nullptr)
+        {
             static_cast<T*>(cell)->~T();
             ConstructAt<T>(cell, Move(value));
             a.MarkWritten(a.ChunkAt(where->chunk), id, tick_);
@@ -641,71 +680,77 @@ Status World::Set(Entity entity, T value) {
     return Add<T>(entity, Move(value));
 }
 
-template <class T>
-bool World::Has(Entity entity) const {
+template <class T> bool World::Has(Entity entity) const
+{
     const EntityLocation* where = table_.Location(entity);
     return where != nullptr && archetypes_[where->archetype]->Has(ComponentOf<T>());
 }
 
-template <class T>
-T* World::Get(Entity entity) {
+template <class T> T* World::Get(Entity entity)
+{
     return GetCell<T>(entity, true);
 }
 
-template <class T>
-const T* World::Get(Entity entity) const {
+template <class T> const T* World::Get(Entity entity) const
+{
     return const_cast<World*>(this)->GetCell<T>(entity, false);
 }
 
-template <class T>
-T* World::GetCell(Entity entity, bool mark) {
+template <class T> T* World::GetCell(Entity entity, bool mark)
+{
     const EntityLocation* where = table_.Location(entity);
-    if (where == nullptr) {
+    if (where == nullptr)
+    {
         return nullptr;
     }
     const ComponentId id = ComponentOf<T>();
     ENGINE_ASSERT(!iteration_writes_.Has(id), "World::Get of a component that an active query writes");
     Archetype& a = *archetypes_[where->archetype];
     Chunk* chunk = a.ChunkAt(where->chunk);
-    if (mark) {
+    if (mark)
+    {
         a.MarkWritten(chunk, id, tick_);
     }
     return static_cast<T*>(a.CellPtr(chunk, id, where->row));
 }
 
-template <class T>
-const T* World::Peek(Entity entity) const {
+template <class T> const T* World::Peek(Entity entity) const
+{
     const EntityLocation* where = table_.Location(entity);
-    if (where == nullptr) {
+    if (where == nullptr)
+    {
         return nullptr;
     }
     const Archetype& a = *archetypes_[where->archetype];
     return static_cast<const T*>(a.CellPtr(a.ChunkAt(where->chunk), ComponentOf<T>(), where->row));
 }
 
-template <class T>
-T* World::Poke(Entity entity) {
+template <class T> T* World::Poke(Entity entity)
+{
     return const_cast<T*>(static_cast<const World*>(this)->Peek<T>(entity));
 }
 
-template <class T>
-void World::Stamp(Entity entity) {
+template <class T> void World::Stamp(Entity entity)
+{
     const EntityLocation* where = table_.Location(entity);
-    if (where != nullptr) {
+    if (where != nullptr)
+    {
         Archetype& a = *archetypes_[where->archetype];
         a.MarkWritten(a.ChunkAt(where->chunk), ComponentOf<T>(), tick_);
     }
 }
 
-template <class T>
-T& World::SetResource(T value) {
+template <class T> T& World::SetResource(T value)
+{
     static_assert(!IsReference<T> && !IsConst<T> && !IsArray<T>, "a resource type must be a plain object type");
     const u32 id = detail::ResourceTypeId<T>();
-    if (id >= resources_.Size()) {
+    if (id >= resources_.Size())
+    {
         resources_.Resize(id + 1);
     }
     ResourceSlot& slot = resources_[id];
-    if (slot.object != nullptr) {
+    if (slot.object != nullptr)
+    {
         T* current = static_cast<T*>(slot.object);
         current->~T();
         ConstructAt<T>(current, Move(value));
@@ -722,40 +767,41 @@ T& World::SetResource(T value) {
     return *static_cast<T*>(memory);
 }
 
-template <class T>
-T* World::TryResource() {
+template <class T> T* World::TryResource()
+{
     ResourceSlot* slot = FindResourceSlot(detail::ResourceTypeId<T>());
     return slot == nullptr ? nullptr : static_cast<T*>(slot->object);
 }
 
-template <class T>
-const T* World::TryResource() const {
+template <class T> const T* World::TryResource() const
+{
     const ResourceSlot* slot = FindResourceSlot(detail::ResourceTypeId<T>());
     return slot == nullptr ? nullptr : static_cast<const T*>(slot->object);
 }
 
-template <class T>
-T& World::Resource() {
+template <class T> T& World::Resource()
+{
     T* found = TryResource<T>();
     ENGINE_ASSERT(found != nullptr, "World::Resource: the world has no resource of this type");
     return *found;
 }
 
-template <class T>
-const T& World::Resource() const {
+template <class T> const T& World::Resource() const
+{
     const T* found = TryResource<T>();
     ENGINE_ASSERT(found != nullptr, "World::Resource: the world has no resource of this type");
     return *found;
 }
 
-template <class T>
-bool World::RemoveResource() {
+template <class T> bool World::RemoveResource()
+{
     ResourceSlot* slot = FindResourceSlot(detail::ResourceTypeId<T>());
-    if (slot == nullptr) {
+    if (slot == nullptr)
+    {
         return false;
     }
     DestroyResource(*slot);
     return true;
 }
 
-} // namespace engine_placeholder::ecs
+}  // namespace engine_placeholder::ecs

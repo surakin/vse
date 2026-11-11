@@ -5,7 +5,8 @@
 
 //! A ring of staging space whose parts are reclaimed when the GPU's timeline passes them.
 
-namespace engine_placeholder::rhi {
+namespace engine_placeholder::rhi
+{
 
 /// Hands out ranges of a circular buffer and takes them back in order as fence values complete.
 ///
@@ -14,7 +15,8 @@ namespace engine_placeholder::rhi {
 /// retired, so fence values passed to `Retire` must not decrease.
 ///
 /// - Thread-safety: thread-compatible. Not synchronized.
-class RingAllocator {
+class RingAllocator
+{
 public:
     /// Creates a ring of `capacity` bytes.
     explicit RingAllocator(u64 capacity);
@@ -49,17 +51,18 @@ public:
     u64 UsedBytes() const { return used_; }
 
 private:
-    struct Group {
+    struct Group
+    {
         u64 fence;
-        u64 end;   // head position when the group was retired
-        u64 bytes; // bytes the group holds
+        u64 end;    // head position when the group was retired
+        u64 bytes;  // bytes the group holds
     };
     Vector<Group> groups_;
     u64 capacity_;
     u64 head_ = 0;
     u64 tail_ = 0;
     u64 used_ = 0;
-    u64 unretired_ = 0; // bytes allocated since the last Retire
+    u64 unretired_ = 0;  // bytes allocated since the last Retire
 };
 
-} // namespace engine_placeholder::rhi
+}  // namespace engine_placeholder::rhi

@@ -4,20 +4,24 @@
 
 #include "settings/layers.h"
 
-namespace engine_placeholder::settings {
+namespace engine_placeholder::settings
+{
 
 /// A copy of the process environment (or a made-up one in a test).
 ///
 /// - Thread-safety: thread-compatible.
 /// - Ownership: owns copies of the names and values.
-class EnvironmentSnapshot {
+class EnvironmentSnapshot
+{
 public:
-    /// An empty snapshot. With `ignore_case`, names that differ only in ASCII case are one variable, as on Windows: a later `Add` replaces an
-    /// earlier one whatever its case, and `Find` matches any case. [[settings::EnvironmentSnapshot::Capture]] sets it from
+    /// An empty snapshot. With `ignore_case`, names that differ only in ASCII case are one variable, as on Windows: a
+    /// later `Add` replaces an earlier one whatever its case, and `Find` matches any case.
+    /// [[settings::EnvironmentSnapshot::Capture]] sets it from
     /// [[os::EnvironmentNamesIgnoreCase]].
     explicit EnvironmentSnapshot(bool ignore_case = false) : ignore_case_(ignore_case) {}
     /// One variable.
-    struct Var {
+    struct Var
+    {
         /// The variable's name.
         String<HeapAllocator> name = String<HeapAllocator>(HeapAllocator::Default());
         /// The variable's value.
@@ -45,18 +49,21 @@ private:
 /// The longest variable name [[settings::EnvironmentVariableFor]] writes, including the terminator.
 inline constexpr usize kMaxEnvNameBytes = 128;
 
-/// Writes the standard variable name of a key: `ENGINE_SETTING_` plus the key in upper case with each `.` replaced by `__`
+/// Writes the standard variable name of a key: `ENGINE_SETTING_` plus the key in upper case with each `.` replaced by
+/// `__`
 /// (`renderer.present_mode` is `ENGINE_SETTING_RENDERER__PRESENT_MODE`).
 ///
 /// - Param key: a valid key.
 /// - Param out: destination of at least [[settings::kMaxEnvNameBytes]] bytes.
 void EnvironmentVariableFor(const Key& key, char* out, usize capacity);
 
-/// A read-only store over a list of `key -> text` entries, each with a note on where it came from. The base of the environment and command-line layers.
+/// A read-only store over a list of `key -> text` entries, each with a note on where it came from. The base of the
+/// environment and command-line layers.
 ///
 /// - Thread-safety: thread-compatible.
 /// - Ownership: owns its entries.
-class TextEntryStore : public ConfigStore {
+class TextEntryStore : public ConfigStore
+{
 public:
     u32 Capabilities() const override { return kCapPreservesOrder; }
     Status Load() override { return Status(); }
@@ -73,7 +80,8 @@ protected:
     void Put(const Key& key, StringView text, StringView origin);
 
 private:
-    struct Entry {
+    struct Entry
+    {
         Key key;
         String<HeapAllocator> text = String<HeapAllocator>(HeapAllocator::Default());
         String<HeapAllocator> origin = String<HeapAllocator>(HeapAllocator::Default());
@@ -82,12 +90,14 @@ private:
 };
 
 /// A read-only layer over an environment snapshot. A setting is supplied by `ENGINE_SETTING_<KEY>` (see
-/// [[settings::EnvironmentVariableFor]]) or by the variable its declaration names in `env` (`ENGINE_RHI_GPU`); the standard name wins when both
-/// are set. Values are text; the layer stack converts them by the setting's type and reports a bad one with the variable's name.
+/// [[settings::EnvironmentVariableFor]]) or by the variable its declaration names in `env` (`ENGINE_RHI_GPU`); the
+/// standard name wins when both are set. Values are text; the layer stack converts them by the setting's type and
+/// reports a bad one with the variable's name.
 ///
 /// - Thread-safety: thread-compatible.
 /// - Ownership: copies what it needs; the registry need not outlive it.
-class EnvironmentSource final : public TextEntryStore {
+class EnvironmentSource final : public TextEntryStore
+{
 public:
     /// Reads the variables that apply to the registered settings.
     EnvironmentSource(const Registry& registry, const EnvironmentSnapshot& environment);
@@ -98,7 +108,8 @@ public:
 /// What the command line asked for.
 ///
 /// - Thread-safety: thread-compatible.
-struct CommandLineResult {
+struct CommandLineResult
+{
     /// Arguments the settings system does not own, in order, for the application (the program name is not included).
     Vector<String<HeapAllocator>> rest;
     /// The problems found: an unknown `--set` key (with a suggestion), a missing value, a flag alias with a bad form.
@@ -115,14 +126,17 @@ struct CommandLineResult {
     String<HeapAllocator> save_path = String<HeapAllocator>(HeapAllocator::Default());
 };
 
-/// A read-only layer over command-line arguments: `--set key=value` (repeatable; a later one for a key wins; the value may contain `=` and may
-/// be quoted), a setting's declared `flag` alias (`--gpu NAME` or `--gpu=NAME`; for a bool `--flag`, `--flag=false` and `--no-flag`, never
-/// a separate value), and `--settings FILE`, `--list-settings`, `--save-settings[=FILE]` and `--help`, which are recorded for the application.
-/// Everything else is left in [[settings::CommandLineResult::rest]]. A bare `--` ends the options: it and everything after it go to `rest` untouched.
+/// A read-only layer over command-line arguments: `--set key=value` (repeatable; a later one for a key wins; the value
+/// may contain `=` and may be quoted), a setting's declared `flag` alias (`--gpu NAME` or `--gpu=NAME`; for a bool
+/// `--flag`, `--flag=false` and `--no-flag`, never a separate value), and `--settings FILE`, `--list-settings`,
+/// `--save-settings[=FILE]` and `--help`, which are recorded for the application. Everything else is left in
+/// [[settings::CommandLineResult::rest]]. A bare `--` ends the options: it and everything after it go to `rest`
+/// untouched.
 ///
 /// - Thread-safety: thread-compatible.
 /// - Ownership: copies what it needs.
-class CommandLineSource final : public TextEntryStore {
+class CommandLineSource final : public TextEntryStore
+{
 public:
     /// Parses the arguments.
     ///
@@ -134,12 +148,14 @@ public:
     /// Returns what the parse found.
     const CommandLineResult& Result() const { return result_; }
 
-    /// Adds a value the program derived from its own command line (an old flag such as `--no-vsync`), unless the arguments already gave the key.
+    /// Adds a value the program derived from its own command line (an old flag such as `--no-vsync`), unless the
+    /// arguments already gave the key.
     ///
     /// - Param key: the setting's key.
     /// - Param text: the value in its text form.
     /// - Param origin: what to show as the source, for example `--no-vsync`.
-    /// - Returns: false if the key was already given, in which case nothing changes (an explicit `--set` wins over an old flag).
+    /// - Returns: false if the key was already given, in which case nothing changes (an explicit `--set` wins over an
+    /// old flag).
     bool AddFromProgram(const Key& key, StringView text, StringView origin);
 
     void Describe(char* out, usize capacity) const override;
@@ -148,4 +164,4 @@ private:
     CommandLineResult result_;
 };
 
-} // namespace engine_placeholder::settings
+}  // namespace engine_placeholder::settings

@@ -14,9 +14,10 @@ using namespace engine_placeholder::renderer;
 
 using namespace gbuffer_rig;
 
-
-TEST_CASE("The G-buffer holds albedo, normal, material and depth of a known scene", "[rhi][gpu][gbuffer]") {
-    FOR_EACH_GPU_BACKEND(backend) {
+TEST_CASE("The G-buffer holds albedo, normal, material and depth of a known scene", "[rhi][gpu][gbuffer]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = MakeDevice(backend);
         {
@@ -73,7 +74,7 @@ TEST_CASE("The G-buffer holds albedo, normal, material and depth of a known scen
             scene.AddObject(od);
             od.mesh = &cube;
             od.material = red.index;
-            od.transform = ModelMatrix(Vec3(200, 1, 0), 1.0f, 0.0f); // far outside the frustum
+            od.transform = ModelMatrix(Vec3(200, 1, 0), 1.0f, 0.0f);  // far outside the frustum
             scene.AddObject(od);
 
             const Layers L = rig.Render(scene, cam);
@@ -81,9 +82,10 @@ TEST_CASE("The G-buffer holds albedo, normal, material and depth of a known scen
             REQUIRE(L.ok);
             CHECK(L.stats.visible == 4);
             CHECK(L.stats.drawn_objects == 4);
-            CHECK(L.stats.draws == 3); // ground, the two cubes as one instanced draw, the sphere
+            CHECK(L.stats.draws == 3);  // ground, the two cubes as one instanced draw, the sphere
 
-            // Ground away from everything: albedo (0, 0.6, 0) -> sRGB bytes, normal +Y, material (0.8, 0, 0), depth at 10 units.
+            // Ground away from everything: albedo (0, 0.6, 0) -> sRGB bytes, normal +Y, material (0.8, 0, 0), depth at
+            // 10 units.
             const Pixel ground = Project(cam, Vec3(0, 0, 4));
             CHECK(Near(L.Albedo(ground.x, ground.y, 0), 0, 2));
             CHECK(Near(L.Albedo(ground.x, ground.y, 1), static_cast<int>(LinearToSrgb(0.6f) * 255.0f + 0.5f), 2));
@@ -94,7 +96,8 @@ TEST_CASE("The G-buffer holds albedo, normal, material and depth of a known scen
             CHECK(Near(L.Material(ground.x, ground.y, 1), 0, 1));
             CHECK(Abs(L.Depth(ground.x, ground.y) - ground.depth) < 1e-4f);
 
-            // The cube's top face (y = 2): nearer than the ground under it, so it wins the depth test whatever the draw order.
+            // The cube's top face (y = 2): nearer than the ground under it, so it wins the depth test whatever the draw
+            // order.
             const Pixel top = Project(cam, Vec3(-3, 2, 0));
             CHECK(Near(L.Albedo(top.x, top.y, 0), static_cast<int>(LinearToSrgb(0.8f) * 255.0f + 0.5f), 2));
             CHECK(Near(L.Albedo(top.x, top.y, 1), static_cast<int>(LinearToSrgb(0.1f) * 255.0f + 0.5f), 2));
@@ -110,7 +113,8 @@ TEST_CASE("The G-buffer holds albedo, normal, material and depth of a known scen
             CHECK(Near(L.Albedo(top2.x, top2.y, 0), static_cast<int>(LinearToSrgb(0.8f) * 255.0f + 0.5f), 2));
             CHECK(Abs(L.Depth(top2.x, top2.y) - top2.depth) < 1e-4f);
 
-            // The sphere: a point 0.6 off its pole has the normal (0.6, 0.8, 0); the emissive scale lands in the material layer.
+            // The sphere: a point 0.6 off its pole has the normal (0.6, 0.8, 0); the emissive scale lands in the
+            // material layer.
             const Pixel sp = Project(cam, Vec3(3.6f, 1.0f + Sqrt(1.0f - 0.36f), 0));
             const Vec3 sn = L.Normal(sp.x, sp.y);
             CHECK(Abs(sn.x - 0.6f) < 0.08f);
@@ -118,10 +122,15 @@ TEST_CASE("The G-buffer holds albedo, normal, material and depth of a known scen
             CHECK(Abs(sn.z) < 0.08f);
             CHECK(Near(L.Material(sp.x, sp.y, 2), 64, 2));
 
-            // Nothing was drawn where no object is: this corner lies on the ground, so use the cleared depth of a point outside
-            // the ground instead (the ground is 16 wide, the view 11.5 wide at that distance, so every pixel is covered).
-            for (u32 i = 0; i < kW * kH; ++i) CHECK(L.depth[i] < 1.0f);
-            // The object outside the frustum left no trace: the pixels of its footprint do not exist, and it was not drawn.
+            // Nothing was drawn where no object is: this corner lies on the ground, so use the cleared depth of a point
+            // outside the ground instead (the ground is 16 wide, the view 11.5 wide at that distance, so every pixel is
+            // covered).
+            for (u32 i = 0; i < kW * kH; ++i)
+            {
+                CHECK(L.depth[i] < 1.0f);
+            }
+            // The object outside the frustum left no trace: the pixels of its footprint do not exist, and it was not
+            // drawn.
             CHECK(L.stats.rejected == 0);
 
             device->WaitIdle();
@@ -131,8 +140,10 @@ TEST_CASE("The G-buffer holds albedo, normal, material and depth of a known scen
     }
 }
 
-TEST_CASE("The G-buffer does not depend on the order objects were added", "[rhi][gpu][gbuffer]") {
-    FOR_EACH_GPU_BACKEND(backend) {
+TEST_CASE("The G-buffer does not depend on the order objects were added", "[rhi][gpu][gbuffer]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = MakeDevice(backend);
         {
@@ -152,22 +163,26 @@ TEST_CASE("The G-buffer does not depend on the order objects were added", "[rhi]
             rig.Prepare(&sphere);
             rig.Prepare(&plane);
             MaterialId mats[3];
-            for (int i = 0; i < 3; ++i) {
+            for (int i = 0; i < 3; ++i)
+            {
                 mats[i] = CreateGBufferMaterial(rig.sys, rig.templates, GBufferOptions{}, "m");
                 rig.sys->SetVec4(mats[i], "base_color", Vec4(0.2f + 0.3f * i, 0.5f, 0.9f - 0.3f * i, 1.0f));
             }
-            struct Item {
+            struct Item
+            {
                 const GpuMesh* mesh;
                 int material;
                 Vec3 position;
             };
-            const Item items[] = {{&plane, 0, Vec3(0, 0, 0)}, {&cube, 1, Vec3(-3, 1, 0)}, {&sphere, 2, Vec3(3, 1, 0)}, {&cube, 1, Vec3(-3, 1, 4)},
-                                  {&sphere, 2, Vec3(3, 1, -4)}, {&cube, 2, Vec3(0, 1, 3)}};
+            const Item items[] = {{&plane, 0, Vec3(0, 0, 0)}, {&cube, 1, Vec3(-3, 1, 0)},   {&sphere, 2, Vec3(3, 1, 0)},
+                                  {&cube, 1, Vec3(-3, 1, 4)}, {&sphere, 2, Vec3(3, 1, -4)}, {&cube, 2, Vec3(0, 1, 3)}};
             const Camera cam = TopDownCamera();
             Layers results[2];
-            for (int pass = 0; pass < 2; ++pass) {
+            for (int pass = 0; pass < 2; ++pass)
+            {
                 RenderScene scene(RenderSceneDesc{});
-                for (int i = 0; i < 6; ++i) {
+                for (int i = 0; i < 6; ++i)
+                {
                     const Item& it = items[pass == 0 ? i : 5 - i];
                     RenderObjectDesc od;
                     od.mesh = it.mesh;
@@ -178,7 +193,8 @@ TEST_CASE("The G-buffer does not depend on the order objects were added", "[rhi]
                 results[pass] = rig.Render(scene, cam);
                 REQUIRE(results[pass].ok);
             }
-            // Four (mesh, material) groups: plane/0, cube/1 (two instances), sphere/2 (two instances), cube/2, however they were added.
+            // Four (mesh, material) groups: plane/0, cube/1 (two instances), sphere/2 (two instances), cube/2, however
+            // they were added.
             CHECK(results[0].stats.draws == 4);
             CHECK(results[1].stats.draws == 4);
             CHECK(Same(results[0].albedo, results[1].albedo));
@@ -192,8 +208,10 @@ TEST_CASE("The G-buffer does not depend on the order objects were added", "[rhi]
     }
 }
 
-TEST_CASE("Vertex colors blend across a mesh, authored in sRGB and landing in the albedo layer", "[rhi][gpu][gbuffer]") {
-    FOR_EACH_GPU_BACKEND(backend) {
+TEST_CASE("Vertex colors blend across a mesh, authored in sRGB and landing in the albedo layer", "[rhi][gpu][gbuffer]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = MakeDevice(backend);
         {
@@ -204,7 +222,8 @@ TEST_CASE("Vertex colors blend across a mesh, authored in sRGB and landing in th
             // Left vertices red, right vertices blue (x < 0 is the left edge).
             Vector<u8> colors;
             colors.Resize(plain.VertexCount() * 4);
-            for (u32 i = 0; i < plain.VertexCount(); ++i) {
+            for (u32 i = 0; i < plain.VertexCount(); ++i)
+            {
                 const bool left = plain.PositionAt(i)[0] < 0.0f;
                 colors[i * 4 + 0] = left ? 255 : 0;
                 colors[i * 4 + 1] = 0;
@@ -237,7 +256,8 @@ TEST_CASE("Vertex colors blend across a mesh, authored in sRGB and landing in th
             INFO(L.error.CStr());
             REQUIRE(L.ok);
             // Plane x in [-8, 8] on the ground at 10 units: the blend is linear across the screen. t = (x + 8) / 16.
-            for (f32 x : {-4.0f, -2.0f, 0.0f, 2.0f, 4.0f}) {
+            for (f32 x : {-4.0f, -2.0f, 0.0f, 2.0f, 4.0f})
+            {
                 const Pixel p = Project(cam, Vec3(x, 0, 0));
                 const f32 t = (x + 8.0f) / 16.0f;
                 INFO("x = " << x);
@@ -257,7 +277,8 @@ TEST_CASE("Vertex colors blend across a mesh, authored in sRGB and landing in th
             CHECK(Near(B.Albedo(c.x, c.y, 0), static_cast<int>(LinearToSrgb(0.25f) * 255.0f + 0.5f), 2));
             CHECK(Near(B.Albedo(c.x, c.y, 2), static_cast<int>(LinearToSrgb(0.75f) * 255.0f + 0.5f), 2));
 
-            // A colored mesh through a material that ignores colors, and the reverse, are named errors; the object is left out.
+            // A colored mesh through a material that ignores colors, and the reverse, are named errors; the object is
+            // left out.
             RenderScene bad(RenderSceneDesc{});
             od.mesh = &mesh;
             od.material = without.index;
@@ -274,8 +295,10 @@ TEST_CASE("Vertex colors blend across a mesh, authored in sRGB and landing in th
     }
 }
 
-TEST_CASE("The normal map and alpha test permutations change the layers they should", "[rhi][gpu][gbuffer]") {
-    FOR_EACH_GPU_BACKEND(backend) {
+TEST_CASE("The normal map and alpha test permutations change the layers they should", "[rhi][gpu][gbuffer]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = MakeDevice(backend);
         {
@@ -345,8 +368,10 @@ TEST_CASE("The normal map and alpha test permutations change the layers they sho
     }
 }
 
-TEST_CASE("The debug view shows the albedo, normal, material and depth layers", "[rhi][gpu][gbuffer]") {
-    FOR_EACH_GPU_BACKEND(backend) {
+TEST_CASE("The debug view shows the albedo, normal, material and depth layers", "[rhi][gpu][gbuffer]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = MakeDevice(backend);
         {
@@ -378,7 +403,7 @@ TEST_CASE("The debug view shows the albedo, normal, material and depth layers", 
             CHECK(Near(out[(c.y * kW + c.x) * 4 + 1], 64, 3));
             CHECK(Near(out[(c.y * kW + c.x) * 4 + 2], 255, 3));
             rig.Render(scene, cam, &view, GBufferLayer::Normal, &out);
-            CHECK(Near(out[(c.y * kW + c.x) * 4 + 0], 128, 3)); // (0, 1, 0) * 0.5 + 0.5
+            CHECK(Near(out[(c.y * kW + c.x) * 4 + 0], 128, 3));  // (0, 1, 0) * 0.5 + 0.5
             CHECK(Near(out[(c.y * kW + c.x) * 4 + 1], 255, 3));
             CHECK(Near(out[(c.y * kW + c.x) * 4 + 2], 128, 3));
             rig.Render(scene, cam, &view, GBufferLayer::Material, &out);

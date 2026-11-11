@@ -5,12 +5,14 @@
 
 //! The one table that turns an RHI resource state into Vulkan stages, accesses and image layouts.
 
-namespace engine_placeholder::rhi::vulkan {
+namespace engine_placeholder::rhi::vulkan
+{
 
 /// The Vulkan synchronization scope and layout of one [[rhi::ResourceState]].
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct StateScope {
+struct StateScope
+{
     /// Pipeline stages that touch the resource in this state (`VK_PIPELINE_STAGE_2_*`).
     VkPipelineStageFlags2 stage = 0;
     /// Memory accesses made in this state (`VK_ACCESS_2_*`).
@@ -22,7 +24,8 @@ struct StateScope {
 /// The source and destination halves of one barrier.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct BarrierScopes {
+struct BarrierScopes
+{
     /// Stages, accesses and layout to wait for.
     StateScope src;
     /// Stages, accesses and layout to make visible to.
@@ -33,7 +36,8 @@ struct BarrierScopes {
 ///
 /// A transition from `Undefined` waits on all earlier work and, for an image, discards the contents (old layout
 /// `UNDEFINED`). `Undefined` is never a valid destination. Buffers support `VertexBuffer`, `IndexBuffer`,
-/// `UniformBuffer`, `ShaderRead`, `ShaderWrite`, `CopySrc` and `CopyDst`; images support every state except the first three.
+/// `UniformBuffer`, `ShaderRead`, `ShaderWrite`, `CopySrc` and `CopyDst`; images support every state except the first
+/// three.
 ///
 /// - Param before: the state the resource is in.
 /// - Param after: the state it moves to.
@@ -57,7 +61,8 @@ bool GetBarrierScopes(ResourceState before, ResourceState after, bool is_image, 
 /// - Param after: the state it moves to.
 /// - Returns: true if the barrier was recorded.
 /// - Fails: returns false, recording nothing, if [[rhi::vulkan::GetBarrierScopes]] rejects the transition for an image.
-bool CmdImageBarrier(const VkDeviceFns& fns, VkCommandBuffer cb, VkImage image, VkImageAspectFlags aspects, u32 base_mip, u32 mip_count,
-                     u32 base_layer, u32 layer_count, ResourceState before, ResourceState after);
+bool CmdImageBarrier(const VkDeviceFns& fns, VkCommandBuffer cb, VkImage image, VkImageAspectFlags aspects,
+                     u32 base_mip, u32 mip_count, u32 base_layer, u32 layer_count, ResourceState before,
+                     ResourceState after);
 
-} // namespace engine_placeholder::rhi::vulkan
+}  // namespace engine_placeholder::rhi::vulkan

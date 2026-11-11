@@ -11,7 +11,8 @@
 
 //! Wayland connection: the compositor connection and the globals the engine binds.
 
-namespace engine_placeholder::os::wayland {
+namespace engine_placeholder::os::wayland
+{
 
 /// Connection to a Wayland compositor plus the bound `wl_compositor`, `xdg_wm_base`, `wl_seat` and `wl_shm` globals.
 ///
@@ -21,14 +22,18 @@ namespace engine_placeholder::os::wayland {
 /// - Thread-safety: not-thread-safe. libwayland objects here are used from one thread.
 /// - Ownership: owns the `wl_display` and every bound global and releases them on
 ///   destruction. The accessors return borrowed pointers valid until then.
-class WaylandConnection {
+class WaylandConnection
+{
 public:
     /// Connects to the compositor named by `$WAYLAND_DISPLAY` (default `wayland-0`) and binds the required globals.
     ///
     /// Binds `wl_compositor`, `xdg_wm_base`, `wl_seat` and `wl_shm` with a registry
-    /// roundtrip, plus `zxdg_decoration_manager_v1`, `wp_cursor_shape_manager_v1`, `zwp_pointer_constraints_v1` and `zwp_relative_pointer_manager_v1`, `wl_data_device_manager` and `zwp_primary_selection_device_manager_v1` when offered.
+    /// roundtrip, plus `zxdg_decoration_manager_v1`, `wp_cursor_shape_manager_v1`, `zwp_pointer_constraints_v1` and
+    /// `zwp_relative_pointer_manager_v1`, `wl_data_device_manager` and `zwp_primary_selection_device_manager_v1` when
+    /// offered.
     /// - Returns: the connection; check [[os::wayland::WaylandConnection::Valid]].
-    /// - Fails: returns an invalid connection (logged via `LogPlatform`) if no compositor is running or a required global is missing.
+    /// - Fails: returns an invalid connection (logged via `LogPlatform`) if no compositor is running or a required
+    /// global is missing.
     static WaylandConnection Connect();
 
     /// Constructs an invalid connection that owns nothing.
@@ -64,16 +69,21 @@ public:
     /// wlroots offer it and draw the titlebar only if the client asks for server-side mode.
     zxdg_decoration_manager_v1* DecorationManager() const { return decoration_manager_; }
 
-    /// Returns the bound `wp_cursor_shape_manager_v1`, or null when the compositor does not offer it (standard cursor shapes are then unavailable).
+    /// Returns the bound `wp_cursor_shape_manager_v1`, or null when the compositor does not offer it (standard cursor
+    /// shapes are then unavailable).
     wp_cursor_shape_manager_v1* CursorShapeManager() const { return cursor_shape_manager_; }
-    /// Returns the bound `zwp_pointer_constraints_v1`, or null when the compositor does not offer it (the pointer lock is then unavailable).
+    /// Returns the bound `zwp_pointer_constraints_v1`, or null when the compositor does not offer it (the pointer lock
+    /// is then unavailable).
     zwp_pointer_constraints_v1* PointerConstraints() const { return pointer_constraints_; }
-    /// Returns the bound `zwp_relative_pointer_manager_v1`, or null when the compositor does not offer it (the pointer lock is then unavailable).
+    /// Returns the bound `zwp_relative_pointer_manager_v1`, or null when the compositor does not offer it (the pointer
+    /// lock is then unavailable).
     zwp_relative_pointer_manager_v1* RelativePointerManager() const { return relative_pointer_manager_; }
 
-    /// Returns the bound `wl_data_device_manager` (version 3), or null when the compositor does not offer it (then there is no clipboard).
+    /// Returns the bound `wl_data_device_manager` (version 3), or null when the compositor does not offer it (then
+    /// there is no clipboard).
     wl_data_device_manager* DataDeviceManager() const { return data_device_manager_; }
-    /// Returns the bound `zwp_primary_selection_device_manager_v1`, or null when the compositor does not offer it (the primary selection is then unavailable).
+    /// Returns the bound `zwp_primary_selection_device_manager_v1`, or null when the compositor does not offer it (the
+    /// primary selection is then unavailable).
     zwp_primary_selection_device_manager_v1* PrimarySelectionManager() const { return primary_selection_manager_; }
 
 private:
@@ -93,4 +103,4 @@ private:
     zwp_primary_selection_device_manager_v1* primary_selection_manager_ = nullptr;
 };
 
-} // namespace engine_placeholder::os::wayland
+}  // namespace engine_placeholder::os::wayland

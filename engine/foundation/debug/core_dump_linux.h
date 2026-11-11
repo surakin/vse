@@ -3,12 +3,13 @@
 #include "types.h"
 
 // Linux details of core dumps that tests reach directly.
-namespace engine_placeholder::debug {
+namespace engine_placeholder::debug
+{
 
 /// Describes where a core goes, given the text of `/proc/sys/kernel/core_pattern`.
 ///
-/// For a piped pattern it names the program (and gives the `coredumpctl` hint for systemd-coredump), otherwise the file name
-/// pattern. Linux only.
+/// For a piped pattern it names the program (and gives the `coredumpctl` hint for systemd-coredump), otherwise the file
+/// name pattern. Linux only.
 ///
 /// - Param pattern: the pattern text without its newline; null or empty gives "unknown". Borrowed for the call.
 /// - Param out: receives a null-terminated sentence, cut to fit.
@@ -26,4 +27,4 @@ void DescribeCorePattern(const char* pattern, char* out, usize capacity);
 /// - Thread-safety: thread-safe.
 bool CorePatternIsPipe(const char* pattern);
 
-} // namespace engine_placeholder::debug
+}  // namespace engine_placeholder::debug

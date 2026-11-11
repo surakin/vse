@@ -6,38 +6,62 @@
 #include "ui/widgets/label.h"
 #include "ui/widgets/look.h"
 
-namespace engine_placeholder::ui {
+namespace engine_placeholder::ui
+{
 
-Size Label::Measure(const Constraints& constraints) { return TextBlock::Measure(constraints); }
+Size Label::Measure(const Constraints& constraints)
+{
+    return TextBlock::Measure(constraints);
+}
 
 // ---- Image ----
 
-void Image::SetImage(ImageId image, Size natural) {
+void Image::SetImage(ImageId image, Size natural)
+{
     image_ = image;
     natural_ = natural;
     MarkDirty(kLayoutDirty);
 }
 
-void Image::SetFit(ImageFit fit) {
-    if (fit_ == fit) return;
+void Image::SetFit(ImageFit fit)
+{
+    if (fit_ == fit)
+    {
+        return;
+    }
     fit_ = fit;
     MarkDirty(kDrawDirty);
 }
 
-void Image::SetTint(u32 abgr) {
-    if (tint_ == abgr) return;
+void Image::SetTint(u32 abgr)
+{
+    if (tint_ == abgr)
+    {
+        return;
+    }
     tint_ = abgr;
     MarkDirty(kDrawDirty);
 }
 
-Size Image::Measure(const Constraints&) { return image_ == 0 ? Size() : natural_; }
+Size Image::Measure(const Constraints&)
+{
+    return image_ == 0 ? Size() : natural_;
+}
 
-void Image::Draw(Canvas& canvas) {
-    if (image_ == 0 || !(natural_.w > 0) || !(natural_.h > 0)) return;
+void Image::Draw(Canvas& canvas)
+{
+    if (image_ == 0 || !(natural_.w > 0) || !(natural_.h > 0))
+    {
+        return;
+    }
     const Rect& b = Bounds();
-    if (!(b.w > 0) || !(b.h > 0)) return;
+    if (!(b.w > 0) || !(b.h > 0))
+    {
+        return;
+    }
     Rect dest = b;
-    if (fit_ != ImageFit::Stretch) {
+    if (fit_ != ImageFit::Stretch)
+    {
         const f32 fit_scale = FMin(b.w / natural_.w, b.h / natural_.h);
         const f32 fill_scale = FMax(b.w / natural_.w, b.h / natural_.h);
         const f32 s = fit_ == ImageFit::Contain ? fit_scale : (fit_ == ImageFit::Cover ? fill_scale : 1.0f);
@@ -51,7 +75,10 @@ void Image::Draw(Canvas& canvas) {
     const f32 top = FMax(dest.y, b.y);
     const f32 right = FMin(dest.Right(), b.Right());
     const f32 bottom = FMin(dest.Bottom(), b.Bottom());
-    if (!(right > left) || !(bottom > top)) return;
+    if (!(right > left) || !(bottom > top))
+    {
+        return;
+    }
     Rect uv;
     uv.x = (left - dest.x) / dest.w;
     uv.y = (top - dest.y) / dest.h;
@@ -67,27 +94,43 @@ void Image::Draw(Canvas& canvas) {
 
 // ---- ProgressBar ----
 
-void ProgressBar::SetValue(f32 value) {
-    if (!(value > 0)) value = 0; // also a NaN
-    if (value > 1) value = 1;
-    if (value == value_) return;
+void ProgressBar::SetValue(f32 value)
+{
+    if (!(value > 0))
+    {
+        value = 0;  // also a NaN
+    }
+    if (value > 1)
+    {
+        value = 1;
+    }
+    if (value == value_)
+    {
+        return;
+    }
     value_ = value;
     MarkDirty(kDrawDirty);
 }
 
-void ProgressBar::SetIndeterminate(bool indeterminate) {
-    if (indeterminate_ == indeterminate) return;
+void ProgressBar::SetIndeterminate(bool indeterminate)
+{
+    if (indeterminate_ == indeterminate)
+    {
+        return;
+    }
     indeterminate_ = indeterminate;
     MarkDirty(kDrawDirty);
 }
 
-Size ProgressBar::Measure(const Constraints&) {
+Size ProgressBar::Measure(const Constraints&)
+{
     Surface* surface = GetSurface();
     const f32 icon = surface != nullptr ? surface->Themes().Metric(MetricId::IconSize, 1.0f) : 0.0f;
     return Size{icon * kLengthInIcons, icon / 2};
 }
 
-void ProgressBar::Draw(Canvas& canvas) {
+void ProgressBar::Draw(Canvas& canvas)
+{
     Surface* surface = GetSurface();
     const f32 scale = surface->Scale();
     const ResolvedStyle track = surface->Themes().Resolve(widget_kind::kPanel, VariantId(0), State(), scale);
@@ -99,23 +142,36 @@ void ProgressBar::Draw(Canvas& canvas) {
     inner.y = b.y + inset;
     inner.w = b.w - inset * 2;
     inner.h = b.h - inset * 2;
-    if (!(inner.w > 0) || !(inner.h > 0)) return;
+    if (!(inner.w > 0) || !(inner.h > 0))
+    {
+        return;
+    }
     const u32 fill = surface->Themes().Color(ColorId::Accent);
     f32 radius = StyleRadius(track, scale) - inset;
-    if (radius < 0) radius = 0;
+    if (radius < 0)
+    {
+        radius = 0;
+    }
     canvas.PushClip(inner);
     Rect bar = inner;
-    if (indeterminate_) {
+    if (indeterminate_)
+    {
         const f32 phase = Fmod(static_cast<f32>(surface->Time()) / kProgressPeriod, 1.0f);
         bar.w = inner.w * kSegment;
         bar.x = inner.x + (inner.w + bar.w) * phase - bar.w;
-    } else {
+    }
+    else
+    {
         bar.w = inner.w * value_;
     }
-    if (bar.w > 0) {
-        if (radius > 0) {
+    if (bar.w > 0)
+    {
+        if (radius > 0)
+        {
             canvas.DrawRoundedRect(bar, CornerRadii(radius), fill);
-        } else {
+        }
+        else
+        {
             canvas.DrawRect(bar, fill);
         }
     }
@@ -124,21 +180,26 @@ void ProgressBar::Draw(Canvas& canvas) {
 
 // ---- Separator ----
 
-Size Separator::Measure(const Constraints&) {
+Size Separator::Measure(const Constraints&)
+{
     Surface* surface = GetSurface();
     const f32 thickness = surface != nullptr ? surface->Themes().Metric(MetricId::BorderWidth, 1.0f) : 0.0f;
     return vertical_ ? Size{thickness, 0} : Size{0, thickness};
 }
 
-void Separator::Draw(Canvas& canvas) {
+void Separator::Draw(Canvas& canvas)
+{
     Surface* surface = GetSurface();
     const f32 scale = surface->Scale();
     const f32 thickness = FMax(surface->Themes().Metric(MetricId::BorderWidth, scale), 1.0f) / scale;
     Rect line = Bounds();
-    if (vertical_) {
+    if (vertical_)
+    {
         line.x += (line.w - thickness) / 2;
         line.w = thickness;
-    } else {
+    }
+    else
+    {
         line.y += (line.h - thickness) / 2;
         line.h = thickness;
     }
@@ -147,15 +208,17 @@ void Separator::Draw(Canvas& canvas) {
 
 // ---- Panel ----
 
-void Panel::SetVariant(StringView variant) {
+void Panel::SetVariant(StringView variant)
+{
     variant_ = RegisterVariant(variant);
     MarkDirty(kDrawDirty);
 }
 
-void Panel::Draw(Canvas& canvas) {
+void Panel::Draw(Canvas& canvas)
+{
     Surface* surface = GetSurface();
     const f32 scale = surface->Scale();
     DrawStyleBox(canvas, Bounds(), surface->Themes().Resolve(widget_kind::kPanel, variant_, State(), scale), scale);
 }
 
-} // namespace engine_placeholder::ui
+}  // namespace engine_placeholder::ui

@@ -1,6 +1,7 @@
-// Phase 13 Day 172: switching the GPU of a running renderer through its `adapter` setting. Every registered owner rebuilds on the new
-// device, the picture matches the blessed golden on each adapter, and the counts and owners stay where they were. (The backend is chosen
-// at start: Day 173 removed the run-time Vulkan/DX12 switch this file also tested.)
+// Phase 13 Day 172: switching the GPU of a running renderer through its `adapter` setting. Every registered owner
+// rebuilds on the new device, the picture matches the blessed golden on each adapter, and the counts and owners stay
+// where they were. (The backend is chosen at start: Day 173 removed the run-time Vulkan/DX12 switch this file also
+// tested.)
 
 #include "cstr/cstr.h"
 
@@ -14,30 +15,39 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
 
-#if ENGINE_PLATFORM_WINDOWS // the helpers serve the DX12 test only: unused, they would be warnings (errors) elsewhere
-namespace {
+#if ENGINE_PLATFORM_WINDOWS  // the helpers serve the DX12 test only: unused, they would be warnings (errors) elsewhere
+namespace
+{
 
-constexpr u32 kSwitchShotW = 320; // the size of renderer_demo.ppm
+constexpr u32 kSwitchShotW = 320;  // the size of renderer_demo.ppm
 constexpr u32 kSwitchShotH = 180;
 
-bool HasBackend(rhi::Backend backend) {
+bool HasBackend(rhi::Backend backend)
+{
     const Vector<rhi::Backend> backends = gpu_test::GpuBackends();
-    for (usize i = 0; i < backends.Size(); ++i) {
-        if (backends[i] == backend) return true;
+    for (usize i = 0; i < backends.Size(); ++i)
+    {
+        if (backends[i] == backend)
+        {
+            return true;
+        }
     }
     return false;
 }
 
 // The demo scene of the reset golden test, 540 objects and 300 lights, on `backend` with validation on.
-bool CreateSwitchRig(reset_rig::Rig* rig, rhi::Backend backend) {
+bool CreateSwitchRig(reset_rig::Rig* rig, rhi::Backend backend)
+{
     rig->target.width = kSwitchShotW;
     rig->target.height = kSwitchShotH;
     return rig->Create(backend, 540, 300, false, nullptr, ENGINE_RENDERER_DEMO_ASSET_DIR, /*validation=*/true);
 }
 
 // The blessed demo picture, read once.
-const gpu_test::Image& Golden() {
-    static const gpu_test::Image golden = [] {
+const gpu_test::Image& Golden()
+{
+    static const gpu_test::Image golden = []
+    {
         gpu_test::Image g;
         gpu_test::ReadPpm(gpu_test::GoldenPath("renderer_demo.ppm").CStr(), &g);
         return g;
@@ -46,7 +56,8 @@ const gpu_test::Image& Golden() {
 }
 
 // Renders a frame, reads it back and checks it against the golden with the reset golden test's tolerance.
-void ShootAndCompare(reset_rig::Rig* rig, gpu_test::Image* image, const char* name) {
+void ShootAndCompare(reset_rig::Rig* rig, gpu_test::Image* image, const char* name)
+{
     REQUIRE(rig->Render() == FrameStatus::Ok);
     REQUIRE(rig->frame.LastGBufferOk());
     REQUIRE(rig->Read(image));
@@ -63,7 +74,8 @@ void ShootAndCompare(reset_rig::Rig* rig, gpu_test::Image* image, const char* na
 }
 
 // The live objects of every kind, without device memory (which depends on the adapter's alignment rules).
-void ExpectSameObjectCounts(const rhi::ResourceCounts& now, const rhi::ResourceCounts& first) {
+void ExpectSameObjectCounts(const rhi::ResourceCounts& now, const rhi::ResourceCounts& first)
+{
     CHECK(now.buffers == first.buffers);
     CHECK(now.textures == first.textures);
     CHECK(now.samplers == first.samplers);
@@ -74,21 +86,28 @@ void ExpectSameObjectCounts(const rhi::ResourceCounts& now, const rhi::ResourceC
     CHECK(now.swapchains == first.swapchains);
 }
 
-} // namespace
+}  // namespace
 #endif
 
-TEST_CASE("The GPU of a running renderer switches between the hardware adapter and WARP and back", "[rhi][gpu][golden][reset][dx12]") {
+TEST_CASE("The GPU of a running renderer switches between the hardware adapter and WARP and back",
+          "[rhi][gpu][golden][reset][dx12]")
+{
 #if ENGINE_PLATFORM_WINDOWS
-    if (!HasBackend(rhi::Backend::Dx12)) SKIP("no Direct3D 12 device");
+    if (!HasBackend(rhi::Backend::Dx12))
+    {
+        SKIP("no Direct3D 12 device");
+    }
     gpu_test::BackendValidation validation(rhi::Backend::Dx12);
     reset_rig::Rig rig;
-    if (!CreateSwitchRig(&rig, rhi::Backend::Dx12)) {
+    if (!CreateSwitchRig(&rig, rhi::Backend::Dx12))
+    {
         rig.TearDown();
         SKIP("no suitable dx12 device");
     }
     const rhi::AdapterInfo hardware = rig.host.GetDevice()->Adapter();
     INFO("first adapter " << hardware.name);
-    if (hardware.kind == rhi::AdapterKind::Software) {
+    if (hardware.kind == rhi::AdapterKind::Software)
+    {
         rig.TearDown();
         SKIP("the first Direct3D 12 adapter is already a software one");
     }
@@ -123,7 +142,7 @@ TEST_CASE("The GPU of a running renderer switches between the hardware adapter a
     CHECK(CStrCompare(rig.host.GetDevice()->Adapter().id, hardware.id) == 0);
     gpu_test::Image again;
     ShootAndCompare(&rig, &again, "gpu_switch_hardware_again");
-    CHECK(again.rgba == first.rgba); // the same adapter and driver: the same bytes
+    CHECK(again.rgba == first.rgba);  // the same adapter and driver: the same bytes
     rig.host.GetDevice()->Quiesce();
     reset_rig::ExpectSameCounts(rig.host.GetDevice()->Resources(), hardware_counts);
     CHECK(rig.registry.Count() == owners);

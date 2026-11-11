@@ -1,7 +1,8 @@
 #pragma once
 
-//! The record store (Phase 19 Day 259): [[storage::Store]] keeps one [[storage::EntityRecord]] per [[storage::EntityKey]], in key order, with all-or-nothing
-//! batches and small named metadata. It knows nothing of components: a record is a key and the bytes the entity container (Day 260) built. Backends:
+//! The record store (Phase 19 Day 259): [[storage::Store]] keeps one [[storage::EntityRecord]] per
+//! [[storage::EntityKey]], in key order, with all-or-nothing batches and small named metadata. It knows nothing of
+//! components: a record is a key and the bytes the entity container (Day 260) built. Backends:
 //! [[storage::MemoryStore]] (the reference) and, from Day 262, the SQL store.
 
 #include "bytes/byte_writer.h"
@@ -14,10 +15,11 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::storage {
+namespace engine_placeholder::storage
+{
 
-/// The content hash of a byte string: 64-bit FNV-1a. Stored with each record so a save can tell an unchanged entity without comparing bytes, and a load can
-/// notice damage. Not cryptographic.
+/// The content hash of a byte string: 64-bit FNV-1a. Stored with each record so a save can tell an unchanged entity
+/// without comparing bytes, and a load can notice damage. Not cryptographic.
 ///
 /// - Param bytes: any bytes, also none.
 /// - Returns: the hash.
@@ -29,7 +31,8 @@ u64 HashBytes(ByteSpan bytes);
 ///
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: owns its bytes; move-only, copy with [[storage::EntityRecord::Clone]].
-struct EntityRecord {
+struct EntityRecord
+{
     EntityKey key;      ///< The entity's key; never null in a store.
     Vector<byte> blob;  ///< The encoded components (the framing is the entity container's, Day 260).
     u64 hash = 0;       ///< [[storage::HashBytes]] of `blob`, as the writer computed it.
@@ -50,10 +53,11 @@ struct EntityRecord {
 /// A half-open range of keys, `[first, end)`, in key order. The default range is every key.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct KeyRange {
-    EntityKey first;          ///< The smallest key in the range.
-    EntityKey end;            ///< The first key past the range; ignored when `unbounded` is true.
-    bool unbounded = true;    ///< When true the range runs to the largest key.
+struct KeyRange
+{
+    EntityKey first;        ///< The smallest key in the range.
+    EntityKey end;          ///< The first key past the range; ignored when `unbounded` is true.
+    bool unbounded = true;  ///< When true the range runs to the largest key.
 
     /// Returns true when `key` is in the range.
     /// - Fails: never.
@@ -63,7 +67,8 @@ struct KeyRange {
 /// Called by [[storage::Store::Scan]] for each record, in key order.
 ///
 /// - Thread-safety: thread-compatible; called on the thread that called `Scan`.
-class RecordVisitor {
+class RecordVisitor
+{
 public:
     virtual ~RecordVisitor() = default;
     /// Receives one record.
@@ -76,25 +81,32 @@ public:
 };
 
 /// Well-known metadata names.
-namespace metadata {
-inline constexpr const char* kFormatVersion = "format_version";     ///< The layout of the store's records; written by the first save.
-inline constexpr const char* kSchemaVersion = "schema_version";     ///< The version of the store's own schema (a backend's).
-inline constexpr const char* kManifest = "manifest";               ///< The components and versions the last save wrote.
-inline constexpr const char* kLastSaveLabel = "last_save_label";    ///< The label of the last save (`SaveOptions::label`).
-} // namespace metadata
+namespace metadata
+{
+inline constexpr const char*
+    kFormatVersion = "format_version";  ///< The layout of the store's records; written by the first save.
+inline constexpr const char*
+    kSchemaVersion = "schema_version";                ///< The version of the store's own schema (a backend's).
+inline constexpr const char* kManifest = "manifest";  ///< The components and versions the last save wrote.
+inline constexpr const char*
+    kLastSaveLabel = "last_save_label";  ///< The label of the last save (`SaveOptions::label`).
+}  // namespace metadata
 
 /// A record store: entity records in key order, batches, and metadata.
 ///
-/// **Batches.** `Begin` opens an all-or-nothing batch: `Put`, `Remove` and `SetMetadata` made after it become visible together at `Commit` and not at all after
-/// `Rollback`. Outside a batch each mutation is its own batch. A mutation that fails inside a batch leaves the batch open; the caller rolls it back.
+/// **Batches.** `Begin` opens an all-or-nothing batch: `Put`, `Remove` and `SetMetadata` made after it become visible
+/// together at `Commit` and not at all after `Rollback`. Outside a batch each mutation is its own batch. A mutation
+/// that fails inside a batch leaves the batch open; the caller rolls it back.
 ///
-/// **Threads.** One writer at a time: mutations, `Begin`, `Commit` and `Rollback` come from one thread (the one that called `Begin` while a batch is open; a
-/// mutation from another thread while a batch is open is `Busy`). Readers (`Get`, `Scan`, `Count`, `GetMetadata`) may run on any thread at any time and see
-/// the last committed state, except that the thread that owns the open batch sees its own uncommitted changes.
+/// **Threads.** One writer at a time: mutations, `Begin`, `Commit` and `Rollback` come from one thread (the one that
+/// called `Begin` while a batch is open; a mutation from another thread while a batch is open is `Busy`). Readers
+/// (`Get`, `Scan`, `Count`, `GetMetadata`) may run on any thread at any time and see the last committed state, except
+/// that the thread that owns the open batch sees its own uncommitted changes.
 ///
 /// - Thread-safety: thread-safe as described above; the implementation locks internally.
 /// - Ownership: a store owns its records; results are copied out.
-class Store {
+class Store
+{
 public:
     virtual ~Store() = default;
 
@@ -109,14 +121,17 @@ public:
     /// - Ownership: `record` is copied; it is read during the call only.
     /// - Fails: `Invalid` (null key); `Busy` (a batch belongs to another thread); `Io`; `LimitExceeded`.
     virtual Status Put(const EntityRecord& record) = 0;
-    /// Stores every record of `records`, in order, as if `Put` had been called for each; a backend overrides it to write them faster (the SQL store sends several rows
-    /// in one statement). A failure leaves the earlier records of the span stored (inside a batch the caller rolls it back).
+    /// Stores every record of `records`, in order, as if `Put` had been called for each; a backend overrides it to
+    /// write them faster (the SQL store sends several rows in one statement). A failure leaves the earlier records of
+    /// the span stored (inside a batch the caller rolls it back).
     ///
     /// - Param records: the records, each as `Put` requires.
     /// - Ownership: borrowed; read during the call only.
     /// - Fails: those of `Put`.
-    virtual Status PutMany(Span<const EntityRecord> records) {
-        for (usize i = 0; i < records.Size(); ++i) {
+    virtual Status PutMany(Span<const EntityRecord> records)
+    {
+        for (usize i = 0; i < records.Size(); ++i)
+        {
             ENGINE_TRY(Put(records[i]));
         }
         return Status::Success();
@@ -157,7 +172,8 @@ public:
 
     /// Reads a metadata value.
     ///
-    /// - Param name: a non-empty name; the well-known names are `metadata::kFormatVersion`, `metadata::kSchemaVersion` and `metadata::kLastSaveLabel`.
+    /// - Param name: a non-empty name; the well-known names are `metadata::kFormatVersion`, `metadata::kSchemaVersion`
+    /// and `metadata::kLastSaveLabel`.
     /// - Param out: receives the text on success.
     /// - Ownership: `name` is read during the call; `out` owns the copy.
     /// - Fails: `NotFound`; `Io`.
@@ -181,4 +197,4 @@ public:
 /// - Fails: the errors of [[storage::Store::Scan]].
 Status ListKeys(const Store& store, const KeyRange& range, usize limit, Vector<EntityKey>* out);
 
-} // namespace engine_placeholder::storage
+}  // namespace engine_placeholder::storage

@@ -17,13 +17,16 @@ using namespace engine_placeholder;
 using namespace engine_placeholder::debug;
 using engine_test::Text;
 
-namespace {
+namespace
+{
 
-void StateSink(void* context, const char* data, usize length) {
+void StateSink(void* context, const char* data, usize length)
+{
     static_cast<Text*>(context)->AppendRawBytes(data, length);
 }
 
-Text StateSection() {
+Text StateSection()
+{
     Text text = engine_test::MakeText();
     CrashReportSink sink;
     sink.write = &StateSink;
@@ -34,14 +37,16 @@ Text StateSection() {
 
 long CaptureWrite(int, const void* data, usize length);
 Text g_captured = engine_test::MakeText();
-long CaptureWrite(int, const void* data, usize length) {
+long CaptureWrite(int, const void* data, usize length)
+{
     g_captured.AppendRawBytes(static_cast<const char*>(data), length);
     return static_cast<long>(length);
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("A text entry appears in the crash report and can be replaced", "[crashstate][debug]") {
+TEST_CASE("A text entry appears in the crash report and can be replaced", "[crashstate][debug]")
+{
     ResetCrashStateForTesting();
     // The table of entries is per process; use names no other test uses.
     REQUIRE(SetCrashStateText("test-gpu", "Test Adapter 9000, driver 1.2.3"));
@@ -53,7 +58,8 @@ TEST_CASE("A text entry appears in the crash report and can be replaced", "[cras
     ResetCrashStateForTesting();
 }
 
-TEST_CASE("A counter entry shows its current value", "[crashstate][debug]") {
+TEST_CASE("A counter entry shows its current value", "[crashstate][debug]")
+{
     ResetCrashStateForTesting();
     Atomic<u64>* counter = CrashStateCounter("test-frame");
     REQUIRE(counter != nullptr);
@@ -63,11 +69,12 @@ TEST_CASE("A counter entry shows its current value", "[crashstate][debug]") {
     CHECK(StateSection().View().Contains("test-frame: 18446744073709551615\n"));
     counter->Store(41231);
     CHECK(StateSection().View().Contains("test-frame: 41231\n"));
-    CHECK(CrashStateCounter("test-frame") == counter); // the same entry on a second call
+    CHECK(CrashStateCounter("test-frame") == counter);  // the same entry on a second call
     ResetCrashStateForTesting();
 }
 
-TEST_CASE("A long text is cut, and a name cannot be both text and counter", "[crashstate][debug]") {
+TEST_CASE("A long text is cut, and a name cannot be both text and counter", "[crashstate][debug]")
+{
     ResetCrashStateForTesting();
     const Text long_text = engine_test::Repeated(500, 'z');
     REQUIRE(SetCrashStateText("test-long", long_text.CStr()));
@@ -82,7 +89,8 @@ TEST_CASE("A long text is cut, and a name cannot be both text and counter", "[cr
     ResetCrashStateForTesting();
 }
 
-TEST_CASE("With error traces on, an Error line is followed by a trace and other lines are not", "[log][debug]") {
+TEST_CASE("With error traces on, an Error line is followed by a trace and other lines are not", "[log][debug]")
+{
     static LogChannel channel("LogTraceTest", LogVerbosity::Info);
     SetWriteSinkForTesting(&CaptureWrite);
     g_captured = engine_test::MakeText();
@@ -101,14 +109,18 @@ TEST_CASE("With error traces on, an Error line is followed by a trace and other 
     CHECK(traced.View().Contains("[LogTraceTest] WARN: a warning\n[LogTraceTest] ERROR: with a trace\n#0 "));
 }
 
-TEST_CASE("Registering a thread before the crash handler is installed sets its name and reports that nothing more was done", "[crash][debug]") {
+TEST_CASE(
+    "Registering a thread before the crash handler is installed sets its name and reports that nothing more was done",
+    "[crash][debug]")
+{
     REQUIRE_FALSE(CrashHandlerInstalled());
     CHECK_FALSE(RegisterThreadForCrashHandling("early-thread"));
     CHECK(CStrCompare(CrashThreadName(), "early-thread") == 0);
     SetCrashThreadName("");
 }
 
-TEST_CASE("The name of a crash state entry is copied, so the caller's string may go away", "[crashstate][debug]") {
+TEST_CASE("The name of a crash state entry is copied, so the caller's string may go away", "[crashstate][debug]")
+{
     ResetCrashStateForTesting();
     {
         char name[16];
@@ -122,7 +134,8 @@ TEST_CASE("The name of a crash state entry is copied, so the caller's string may
     ResetCrashStateForTesting();
 }
 
-TEST_CASE("A log message longer than the line buffer is cut but the line still ends with a newline", "[log][debug]") {
+TEST_CASE("A log message longer than the line buffer is cut but the line still ends with a newline", "[log][debug]")
+{
     static LogChannel channel("LogLongTest", LogVerbosity::Info);
     SetWriteSinkForTesting(&CaptureWrite);
     g_captured = engine_test::MakeText();
@@ -132,6 +145,6 @@ TEST_CASE("A log message longer than the line buffer is cut but the line still e
     SetWriteSinkForTesting(&os::Write);
     const usize first_end = g_captured.View().IndexOf('\n');
     REQUIRE(first_end != g_captured.Length());
-    CHECK(first_end == 511);                                         // 511 bytes of text, then the newline
-    CHECK(g_captured.View().Substring(first_end + 1) == "[LogLongTest] INFO: next\n"); // not glued onto the long line
+    CHECK(first_end == 511);  // 511 bytes of text, then the newline
+    CHECK(g_captured.View().Substring(first_end + 1) == "[LogLongTest] INFO: next\n");  // not glued onto the long line
 }

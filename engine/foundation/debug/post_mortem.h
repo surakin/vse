@@ -10,24 +10,27 @@
 //!   - macOS (Phase 26): the system's core files and crash reports.
 //!   - Android: tombstones, which the system always writes ([[debug::PostMortemResult::Enabled]] with nothing to do).
 //!   - iOS and consoles with their own crash system: [[debug::PostMortemResult::Unsupported]].
-//! The minidump the crash handler writes ([[debug::InstallCrashHandler]]) is separate and always on; a core dump is bigger and
-//! holds the whole process memory, so it is a developer's tool, off by default.
-namespace engine_placeholder::debug {
+//! The minidump the crash handler writes ([[debug::InstallCrashHandler]]) is separate and always on; a core dump is
+//! bigger and holds the whole process memory, so it is a developer's tool, off by default.
+namespace engine_placeholder::debug
+{
 
 /// Largest text in a [[debug::PostMortemReport]].
 inline constexpr usize kPostMortemTextBytes = 256;
 
 /// What [[debug::EnablePostMortemDumps]] achieved.
-enum class PostMortemResult : u8 {
-    Enabled,    ///< The platform will write a post-mortem artifact for a fatal fault.
-    Limited,    ///< It may, but something limits it; `note` in the report says what and how to lift it.
-    Unsupported ///< This platform has no such artifact the program can enable.
+enum class PostMortemResult : u8
+{
+    Enabled,     ///< The platform will write a post-mortem artifact for a fatal fault.
+    Limited,     ///< It may, but something limits it; `note` in the report says what and how to lift it.
+    Unsupported  ///< This platform has no such artifact the program can enable.
 };
 
 /// How to enable post-mortem dumps.
 ///
 /// - Thread-safety: thread-compatible. A plain value.
-struct PostMortemOptions {
+struct PostMortemOptions
+{
     /// Largest artifact to allow, in bytes; 0 means as large as the system permits.
     u64 size_limit_bytes = 0;
 };
@@ -35,7 +38,8 @@ struct PostMortemOptions {
 /// What [[debug::EnablePostMortemDumps]] did and where the artifact will go.
 ///
 /// - Thread-safety: thread-compatible. A plain value.
-struct PostMortemReport {
+struct PostMortemReport
+{
     /// The outcome.
     PostMortemResult result = PostMortemResult::Unsupported;
     /// The size limit before the call, in bytes; the maximum `u64` value means unlimited.
@@ -48,17 +52,21 @@ struct PostMortemReport {
     char note[kPostMortemTextBytes] = {};
 };
 
-/// Allows the platform to write a post-mortem artifact if the process dies from a fatal fault, and reports where it will go.
+/// Allows the platform to write a post-mortem artifact if the process dies from a fatal fault, and reports where it
+/// will go.
 ///
-/// On Linux this raises the soft core size limit to the hard limit (or to `options.size_limit_bytes` if that is lower), makes
-/// the process dumpable (only when the limit was raised), and reads `core_pattern` to say where the core goes. It changes only this process.
+/// On Linux this raises the soft core size limit to the hard limit (or to `options.size_limit_bytes` if that is lower),
+/// makes the process dumpable (only when the limit was raised), and reads `core_pattern` to say where the core goes. It
+/// changes only this process.
 ///
 /// - Param options: how to enable.
 /// - Returns: what was done; never fails hard.
-/// - Fails: reports [[debug::PostMortemResult::Limited]] when the system's hard limit is zero (nothing the process can do) and
+/// - Fails: reports [[debug::PostMortemResult::Limited]] when the system's hard limit is zero (nothing the process can
+/// do) and
 ///   [[debug::PostMortemResult::Unsupported]] where there is no such artifact.
 /// - Thread-safety: thread-safe. Not async-signal-safe.
-/// - Backend: Windows: reads WER's LocalDumps values under HKLM and writes nothing (Limited, with the values to set, when they are absent); macOS: setrlimit(RLIMIT_CORE) and /cores; Android: Enabled with nothing to do.
+/// - Backend: Windows: reads WER's LocalDumps values under HKLM and writes nothing (Limited, with the values to set,
+/// when they are absent); macOS: setrlimit(RLIMIT_CORE) and /cores; Android: Enabled with nothing to do.
 PostMortemReport EnablePostMortemDumps(const PostMortemOptions& options);
 
-} // namespace engine_placeholder::debug
+}  // namespace engine_placeholder::debug

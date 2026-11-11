@@ -7,13 +7,15 @@
 
 //! The DXGI adapters the Direct3D 12 backend can use, described as [[rhi::AdapterInfo]] (Phase 13 Day 164).
 
-namespace engine_placeholder::rhi::dx12 {
+namespace engine_placeholder::rhi::dx12
+{
 
-/// The facts about one DXGI adapter that [[rhi::dx12::MakeAdapterInfo]] turns into an [[rhi::AdapterInfo]]; plain data so the
-/// rule is testable without a GPU.
+/// The facts about one DXGI adapter that [[rhi::dx12::MakeAdapterInfo]] turns into an [[rhi::AdapterInfo]]; plain data
+/// so the rule is testable without a GPU.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct AdapterFacts {
+struct AdapterFacts
+{
     /// The adapter's name from `DXGI_ADAPTER_DESC1::Description`, UTF-8.
     char name[kAdapterNameBytes] = {};
     /// PCI vendor, device, subsystem and revision ids.
@@ -44,12 +46,14 @@ struct AdapterFacts {
 
 /// Turns the facts into the RHI's description.
 ///
-/// The id is `dx12-<vendor>-<device>-<subsystem>-<revision>` in lowercase hex (stable across runs and enumeration order; two identical
-/// cards in one machine would share it, as on Vulkan without a UUID), the LUID the second id form; `Software` for WARP, `Integrated`
-/// for a UMA adapter, else `Discrete`; suitable when the baseline feature level and resource binding tier 2 are available.
+/// The id is `dx12-<vendor>-<device>-<subsystem>-<revision>` in lowercase hex (stable across runs and enumeration
+/// order; two identical cards in one machine would share it, as on Vulkan without a UUID), the LUID the second id form;
+/// `Software` for WARP, `Integrated` for a UMA adapter, else `Discrete`; suitable when the baseline feature level and
+/// resource binding tier 2 are available.
 ///
 /// - Param facts: the adapter.
-/// - Param presentable: whether a window was given (D3D12 presents through the queue, so every suitable adapter can present).
+/// - Param presentable: whether a window was given (D3D12 presents through the queue, so every suitable adapter can
+/// present).
 /// - Returns: the description.
 /// - Fails: never.
 /// - Thread-safety: thread-safe.
@@ -58,7 +62,8 @@ AdapterInfo MakeAdapterInfo(const AdapterFacts& facts, bool presentable);
 /// The adapters of one factory, in the order the device picks from: DXGI's high-performance order, WARP last.
 ///
 /// - Thread-safety: thread-compatible.
-struct AdapterSet {
+struct AdapterSet
+{
     /// The adapters; only the first `count` are valid.
     ComRef<IDXGIAdapter1> adapters[kMaxAdapters];
     /// Their facts.
@@ -69,10 +74,10 @@ struct AdapterSet {
 
 /// Lists the factory's adapters and reads their facts.
 ///
-/// Uses `IDXGIFactory6::EnumAdapterByGpuPreference` (high performance) and appends WARP if DXGI did not list a software adapter.
-/// Reading the binding tier and the memory architecture needs a device: a temporary one is created per adapter at the baseline
-/// feature level (D3D12 hands back the existing device when the process already has one on that adapter, so a live device is not
-/// disturbed) and released before returning.
+/// Uses `IDXGIFactory6::EnumAdapterByGpuPreference` (high performance) and appends WARP if DXGI did not list a software
+/// adapter. Reading the binding tier and the memory architecture needs a device: a temporary one is created per adapter
+/// at the baseline feature level (D3D12 hands back the existing device when the process already has one on that
+/// adapter, so a live device is not disturbed) and released before returning.
 ///
 /// - Param factory: a DXGI factory.
 /// - Param presentable: whether a window was given.
@@ -82,8 +87,8 @@ struct AdapterSet {
 /// - Thread-safety: thread-safe.
 bool ListAdapters(IDXGIFactory6* factory, bool presentable, AdapterSet* out);
 
-/// Picks the adapter a device is created on: the request matched by [[rhi::MatchAdapter]] if there is one, else the first
-/// suitable hardware adapter, else WARP if it is suitable.
+/// Picks the adapter a device is created on: the request matched by [[rhi::MatchAdapter]] if there is one, else the
+/// first suitable hardware adapter, else WARP if it is suitable.
 ///
 /// - Param set: the adapters.
 /// - Param request: `DeviceCreateInfo::adapter`, or null.
@@ -94,4 +99,4 @@ bool ListAdapters(IDXGIFactory6* factory, bool presentable, AdapterSet* out);
 /// - Thread-safety: thread-safe.
 int PickAdapter(const AdapterSet& set, const char* request, char* reason, usize reason_size);
 
-} // namespace engine_placeholder::rhi::dx12
+}  // namespace engine_placeholder::rhi::dx12

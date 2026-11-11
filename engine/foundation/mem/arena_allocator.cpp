@@ -2,11 +2,14 @@
 
 #include "os/os.h"
 
-namespace engine_placeholder {
+namespace engine_placeholder
+{
 
-ArenaAllocator::ArenaAllocator(usize capacity) : capacity_(capacity) {
+ArenaAllocator::ArenaAllocator(usize capacity) : capacity_(capacity)
+{
     void* mem = os::ReserveMemory(capacity);
-    if (mem == nullptr) {
+    if (mem == nullptr)
+    {
         base_ = nullptr;
         capacity_ = 0;
         return;
@@ -14,28 +17,34 @@ ArenaAllocator::ArenaAllocator(usize capacity) : capacity_(capacity) {
     base_ = static_cast<u8*>(mem);
 }
 
-ArenaAllocator::~ArenaAllocator() {
+ArenaAllocator::~ArenaAllocator()
+{
     FreeAll();
 }
 
-void* ArenaAllocator::Alloc(usize size, usize align) {
+void* ArenaAllocator::Alloc(usize size, usize align)
+{
     usize aligned = (offset_ + align - 1) & ~(align - 1);
     // Split into two comparisons (rather than `aligned + size >
     // capacity_`) so a huge `size` can't integer-overflow the sum and
     // wrap past the bounds check.
-    if (aligned > capacity_ || size > capacity_ - aligned) {
+    if (aligned > capacity_ || size > capacity_ - aligned)
+    {
         return nullptr;
     }
     offset_ = aligned + size;
     return base_ + aligned;
 }
 
-void ArenaAllocator::Reset() {
+void ArenaAllocator::Reset()
+{
     offset_ = 0;
 }
 
-void ArenaAllocator::FreeAll() {
-    if (base_ != nullptr) {
+void ArenaAllocator::FreeAll()
+{
+    if (base_ != nullptr)
+    {
         os::ReleaseMemory(base_, capacity_);
         base_ = nullptr;
         capacity_ = 0;
@@ -43,4 +52,4 @@ void ArenaAllocator::FreeAll() {
     }
 }
 
-} // namespace engine_placeholder
+}  // namespace engine_placeholder

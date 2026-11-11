@@ -22,16 +22,20 @@ using scene::RenderHandle;
 using scene::SceneLink;
 using scene::SceneSyncReport;
 
-namespace {
+namespace
+{
 
-ecs::LocalTransform At(f32 x, f32 y, f32 z) {
+ecs::LocalTransform At(f32 x, f32 y, f32 z)
+{
     ecs::LocalTransform t;
     t.position = Vec3(x, y, z);
     return t;
 }
 
-// A world, a null device, a render scene and the frame: transforms, then the camera and the render sync in the render stage.
-struct Rig {
+// A world, a null device, a render scene and the frame: transforms, then the camera and the render sync in the render
+// stage.
+struct Rig
+{
     rhi::NullDevicePtr device = rhi::CreateNullDevice();
     renderer::RenderScene render_scene;
     ecs::World world;
@@ -39,7 +43,8 @@ struct Rig {
     SharedPtr<MeshAsset> cube;
     SharedPtr<MeshAsset> sphere;
 
-    explicit Rig(u32 max_objects = 1024, u32 max_lights = 64) : render_scene(MakeDesc(max_objects, max_lights)) {
+    explicit Rig(u32 max_objects = 1024, u32 max_lights = 64) : render_scene(MakeDesc(max_objects, max_lights))
+    {
         renderer::MeshData data;
         REQUIRE(renderer::MakeCubeMesh(1.0f, &data) == nullptr);
         cube = MakeShared<MeshAsset>();
@@ -58,7 +63,8 @@ struct Rig {
         schedule.Add(MakeRenderSyncSystem("render_sync").InStage(ecs::kRender));
         REQUIRE(schedule.Build().ok);
     }
-    static renderer::RenderSceneDesc MakeDesc(u32 objects, u32 lights) {
+    static renderer::RenderSceneDesc MakeDesc(u32 objects, u32 lights)
+    {
         renderer::RenderSceneDesc d;
         d.max_objects = objects;
         d.max_lights = lights;
@@ -66,32 +72,37 @@ struct Rig {
     }
     void Frame() { schedule.Run(world, 0.016f); }
     const SceneSyncReport& Report() { return world.Resource<SceneSyncReport>(); }
-    ecs::Entity Spawn(f32 x, f32 y, f32 z, const SharedPtr<MeshAsset>& mesh, u32 material = 0) {
+    ecs::Entity Spawn(f32 x, f32 y, f32 z, const SharedPtr<MeshAsset>& mesh, u32 material = 0)
+    {
         MeshRenderer mr;
         mr.mesh = mesh;
         mr.material = material;
         return world.Create(At(x, y, z), ecs::WorldTransform{}, mr);
     }
     // The object an entity is mirrored as (null when it has none).
-    const renderer::RenderObject* ObjectOf(ecs::Entity e) {
+    const renderer::RenderObject* ObjectOf(ecs::Entity e)
+    {
         const RenderHandle* handle = world.Get<RenderHandle>(e);
         return handle == nullptr ? nullptr : render_scene.FindObject(handle->object);
     }
 };
 
-} // namespace
+}  // namespace
 
-TEST_CASE("Scene sync: N entities add N objects with the entities' matrices", "[scene]") {
+TEST_CASE("Scene sync: N entities add N objects with the entities' matrices", "[scene]")
+{
     Rig rig;
     Vector<ecs::Entity> ids;
-    for (u32 i = 0; i < 50; ++i) {
+    for (u32 i = 0; i < 50; ++i)
+    {
         ids.Push(rig.Spawn(static_cast<f32>(i), 2.0f, 3.0f, rig.cube, i));
     }
     rig.Frame();
     rig.Frame();
     CHECK(rig.render_scene.ObjectCount() == 50);
     CHECK(rig.Report().objects_added == 50);
-    for (u32 i = 0; i < 50; ++i) {
+    for (u32 i = 0; i < 50; ++i)
+    {
         const renderer::RenderObject* object = rig.ObjectOf(ids[i]);
         REQUIRE(object != nullptr);
         CHECK(object->transform.col[3].x == static_cast<f32>(i));
@@ -101,7 +112,9 @@ TEST_CASE("Scene sync: N entities add N objects with the entities' matrices", "[
     }
 }
 
-TEST_CASE("Scene sync: moving a parent moves its subtree's objects, calling SetTransform only for the changed", "[scene]") {
+TEST_CASE("Scene sync: moving a parent moves its subtree's objects, calling SetTransform only for the changed",
+          "[scene]")
+{
     Rig rig;
     const ecs::Entity parent = rig.Spawn(10, 0, 0, rig.cube);
     const ecs::Entity kid = rig.Spawn(1, 0, 0, rig.cube);
@@ -120,10 +133,11 @@ TEST_CASE("Scene sync: moving a parent moves its subtree's objects, calling SetT
     CHECK(rig.ObjectOf(kid)->transform.col[3].x == 21.0f);
     CHECK(rig.ObjectOf(grandkid)->transform.col[3].x == 21.0f);
     CHECK(rig.ObjectOf(other)->transform.col[3].x == 50.0f);
-    CHECK(rig.Report().transforms_set - sets == 3); // the subtree, not the other entity
+    CHECK(rig.Report().transforms_set - sets == 3);  // the subtree, not the other entity
 }
 
-TEST_CASE("Scene sync: destroying an entity removes its object and its light", "[scene]") {
+TEST_CASE("Scene sync: destroying an entity removes its object and its light", "[scene]")
+{
     Rig rig;
     const ecs::Entity mesh_entity = rig.Spawn(0, 0, 0, rig.cube);
     LightSource light;
@@ -141,18 +155,21 @@ TEST_CASE("Scene sync: destroying an entity removes its object and its light", "
     CHECK(rig.Report().lights_removed == 1);
     rig.Frame();
     rig.Frame();
-    CHECK(rig.Report().objects_removed == 1); // the removal log is not replayed
+    CHECK(rig.Report().objects_removed == 1);  // the removal log is not replayed
 }
 
-TEST_CASE("Scene sync: an entity destroyed in the frame it was mirrored does not leak its object", "[scene]") {
+TEST_CASE("Scene sync: an entity destroyed in the frame it was mirrored does not leak its object", "[scene]")
+{
     Rig rig;
     const ecs::Entity e = rig.Spawn(0, 0, 0, rig.cube);
-    // Another system of the same stage destroys the entity: its command applies after the sync's own handle command was recorded.
+    // Another system of the same stage destroys the entity: its command applies after the sync's own handle command was
+    // recorded.
     rig.schedule.~Schedule();
     new (&rig.schedule) ecs::Schedule();
     rig.schedule.Add(ecs::MakeTransformSystem("transforms"));
     rig.schedule.Add(MakeRenderSyncSystem("render_sync").InStage(ecs::kRender));
-    rig.schedule.Add(ecs::MakeSystem("killer", [e](ecs::SystemContext& context) { context.Commands().Destroy(e); }).InStage(ecs::kRender));
+    rig.schedule.Add(ecs::MakeSystem("killer", [e](ecs::SystemContext& context) { context.Commands().Destroy(e); })
+                         .InStage(ecs::kRender));
     REQUIRE(rig.schedule.Build().ok);
     rig.Frame();
     rig.Frame();
@@ -160,7 +177,8 @@ TEST_CASE("Scene sync: an entity destroyed in the frame it was mirrored does not
     CHECK(rig.render_scene.ObjectCount() == 0);
 }
 
-TEST_CASE("Scene sync: removing the MeshRenderer removes the object", "[scene]") {
+TEST_CASE("Scene sync: removing the MeshRenderer removes the object", "[scene]")
+{
     Rig rig;
     const ecs::Entity e = rig.Spawn(0, 0, 0, rig.cube);
     rig.Frame();
@@ -180,7 +198,8 @@ TEST_CASE("Scene sync: removing the MeshRenderer removes the object", "[scene]")
     CHECK(rig.render_scene.ObjectCount() == 1);
 }
 
-TEST_CASE("Scene sync: swapping the mesh or material re-adds the object", "[scene]") {
+TEST_CASE("Scene sync: swapping the mesh or material re-adds the object", "[scene]")
+{
     Rig rig;
     const ecs::Entity e = rig.Spawn(4, 0, 0, rig.cube, 1);
     rig.Frame();
@@ -199,10 +218,12 @@ TEST_CASE("Scene sync: swapping the mesh or material re-adds the object", "[scen
     CHECK(rig.Report().readded == 2);
 }
 
-TEST_CASE("Scene sync: the Hidden tag sets and clears the hidden flag", "[scene]") {
+TEST_CASE("Scene sync: the Hidden tag sets and clears the hidden flag", "[scene]")
+{
     Rig rig;
     const ecs::Entity e = rig.Spawn(0, 0, 0, rig.cube);
-    const ecs::Entity born_hidden = rig.world.Create(At(0, 0, 0), ecs::WorldTransform{}, MeshRenderer{rig.cube, 0, 0}, Hidden{});
+    const ecs::Entity born_hidden = rig.world.Create(At(0, 0, 0), ecs::WorldTransform{}, MeshRenderer{rig.cube, 0, 0},
+                                                     Hidden{});
     rig.Frame();
     rig.Frame();
     CHECK((rig.ObjectOf(e)->flags & renderer::ObjectFlags::kHidden) == 0);
@@ -218,10 +239,12 @@ TEST_CASE("Scene sync: the Hidden tag sets and clears the hidden flag", "[scene]
     CHECK((rig.ObjectOf(born_hidden)->flags & renderer::ObjectFlags::kHidden) == 0);
 }
 
-TEST_CASE("Scene sync: a full render scene is a counted refusal, retried when there is room", "[scene]") {
+TEST_CASE("Scene sync: a full render scene is a counted refusal, retried when there is room", "[scene]")
+{
     Rig rig(4, 2);
     Vector<ecs::Entity> ids;
-    for (u32 i = 0; i < 6; ++i) {
+    for (u32 i = 0; i < 6; ++i)
+    {
         ids.Push(rig.Spawn(static_cast<f32>(i), 0, 0, rig.cube));
     }
     rig.Frame();
@@ -231,9 +254,10 @@ TEST_CASE("Scene sync: a full render scene is a counted refusal, retried when th
     rig.world.Destroy(ids[0]);
     rig.Frame();
     rig.Frame();
-    CHECK(rig.render_scene.ObjectCount() == 4); // one of the refused two got the room
+    CHECK(rig.render_scene.ObjectCount() == 4);  // one of the refused two got the room
     LightSource light;
-    for (u32 i = 0; i < 3; ++i) {
+    for (u32 i = 0; i < 3; ++i)
+    {
         rig.world.Create(At(0, 0, 0), ecs::WorldTransform{}, light);
     }
     rig.Frame();
@@ -241,9 +265,11 @@ TEST_CASE("Scene sync: a full render scene is a counted refusal, retried when th
     CHECK(rig.render_scene.LightCount() == 2);
 }
 
-TEST_CASE("Scene sync: a static scene makes no render scene calls", "[scene]") {
+TEST_CASE("Scene sync: a static scene makes no render scene calls", "[scene]")
+{
     Rig rig(131072, 64);
-    for (u32 i = 0; i < 100000; ++i) {
+    for (u32 i = 0; i < 100000; ++i)
+    {
         rig.Spawn(static_cast<f32>(i), 0, 0, rig.cube);
     }
     rig.Frame();
@@ -251,7 +277,8 @@ TEST_CASE("Scene sync: a static scene makes no render scene calls", "[scene]") {
     rig.Frame();
     REQUIRE(rig.render_scene.ObjectCount() == 100000);
     const SceneSyncReport before = rig.Report();
-    for (u32 frame = 0; frame < 100; ++frame) {
+    for (u32 frame = 0; frame < 100; ++frame)
+    {
         rig.Frame();
     }
     const SceneSyncReport& after = rig.Report();
@@ -262,7 +289,8 @@ TEST_CASE("Scene sync: a static scene makes no render scene calls", "[scene]") {
     CHECK(after.readded == before.readded);
 }
 
-TEST_CASE("Scene sync: the mesh asset outlives its entity until the scene entry is gone", "[scene]") {
+TEST_CASE("Scene sync: the mesh asset outlives its entity until the scene entry is gone", "[scene]")
+{
     Rig rig;
     SharedPtr<MeshAsset> temporary = MakeShared<MeshAsset>();
     renderer::MeshData data;
@@ -272,22 +300,23 @@ TEST_CASE("Scene sync: the mesh asset outlives its entity until the scene entry 
     const ecs::Entity e = rig.Spawn(0, 0, 0, temporary);
     rig.Frame();
     rig.Frame();
-    temporary.Reset();            // the test lets go
-    rig.world.Destroy(e);         // the entity's reference goes with it
+    temporary.Reset();     // the test lets go
+    rig.world.Destroy(e);  // the entity's reference goes with it
     CHECK(rig.render_scene.ObjectCount() == 1);
     CHECK(rig.render_scene.ObjectAt(0).mesh == &raw->mesh);
-    CHECK(raw->mesh.Valid()); // still alive: the sync's reference
+    CHECK(raw->mesh.Valid());  // still alive: the sync's reference
     rig.Frame();
-    CHECK(rig.render_scene.ObjectCount() == 0); // after the sync removed the entry, the asset is freed
+    CHECK(rig.render_scene.ObjectCount() == 0);  // after the sync removed the entry, the asset is freed
 }
 
-TEST_CASE("Scene sync: lights follow their entity and an unusable light is counted", "[scene]") {
+TEST_CASE("Scene sync: lights follow their entity and an unusable light is counted", "[scene]")
+{
     Rig rig;
     LightSource point;
     point.radius = 5.0f;
     const ecs::Entity e = rig.world.Create(At(1, 2, 3), ecs::WorldTransform{}, point);
     LightSource bad;
-    bad.radius = 0.0f; // a point light needs a positive radius
+    bad.radius = 0.0f;  // a point light needs a positive radius
     rig.world.Create(At(0, 0, 0), ecs::WorldTransform{}, bad);
     rig.Frame();
     rig.Frame();
@@ -304,13 +333,14 @@ TEST_CASE("Scene sync: lights follow their entity and an unusable light is count
     CHECK(rig.render_scene.FindLight(rig.world.Get<RenderHandle>(e)->light)->intensity == 3.0f);
 }
 
-TEST_CASE("Scene sync: a directional light's direction follows the entity's rotation", "[scene]") {
+TEST_CASE("Scene sync: a directional light's direction follows the entity's rotation", "[scene]")
+{
     Rig rig;
     LightSource sun;
     sun.type = renderer::LightType::Directional;
     sun.direction = Vec3(0, 1, 0);
     ecs::LocalTransform place = At(0, 0, 0);
-    place.rotation = Quaternion::FromAxisAngle(Vec3(0, 0, 1), 1.5707964f); // +Y turns to -X
+    place.rotation = Quaternion::FromAxisAngle(Vec3(0, 0, 1), 1.5707964f);  // +Y turns to -X
     const ecs::Entity e = rig.world.Create(place, ecs::WorldTransform{}, sun);
     rig.Frame();
     rig.Frame();
@@ -319,7 +349,8 @@ TEST_CASE("Scene sync: a directional light's direction follows the entity's rota
     CHECK(light->direction.x < -0.999f);
 }
 
-TEST_CASE("Scene sync: the camera system builds the renderer camera from the active entity", "[scene]") {
+TEST_CASE("Scene sync: the camera system builds the renderer camera from the active entity", "[scene]")
+{
     Rig rig;
     scene::Camera component;
     component.fov_y = 1.0f;
@@ -334,13 +365,14 @@ TEST_CASE("Scene sync: the camera system builds the renderer camera from the act
     CHECK(out.camera.fov_y == 1.0f);
     CHECK(out.camera.aspect == 2.0f);
     const Vec3 forward = out.camera.Forward();
-    CHECK(forward.z < -0.999f); // looks down -Z
+    CHECK(forward.z < -0.999f);  // looks down -Z
     rig.world.Destroy(cam);
     rig.Frame();
     CHECK_FALSE(rig.world.Resource<CameraOutput>().valid);
 }
 
-TEST_CASE("Scene sync: with no scene linked the sync does nothing", "[scene]") {
+TEST_CASE("Scene sync: with no scene linked the sync does nothing", "[scene]")
+{
     Rig rig;
     rig.Spawn(0, 0, 0, rig.cube);
     rig.world.Resource<SceneLink>().scene = nullptr;
@@ -349,8 +381,10 @@ TEST_CASE("Scene sync: with no scene linked the sync does nothing", "[scene]") {
     CHECK(rig.render_scene.ObjectCount() == 0);
 }
 
-TEST_CASE("Scene sync: a world with fresh removal numbers still removes", "[scene]") {
-    // A second world numbers its removals from 1 again: the sync, kept by a new schedule on the new world, must not skip them.
+TEST_CASE("Scene sync: a world with fresh removal numbers still removes", "[scene]")
+{
+    // A second world numbers its removals from 1 again: the sync, kept by a new schedule on the new world, must not
+    // skip them.
     Rig rig;
     const ecs::Entity first = rig.Spawn(0, 0, 0, rig.cube);
     rig.Frame();

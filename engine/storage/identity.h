@@ -1,7 +1,9 @@
 #pragma once
 
-//! Stable identities for entities (Phase 19 Day 258): [[storage::KeyGenerator]] draws keys, [[storage::EntityKeyComponent]] gives an entity one, [[storage::KeyIndex]]
-//! maps keys to entities and back, and [[storage::ResolveReference]], [[storage::CaptureParents]] and [[storage::ApplyParents]] turn stored references back into entities.
+//! Stable identities for entities (Phase 19 Day 258): [[storage::KeyGenerator]] draws keys,
+//! [[storage::EntityKeyComponent]] gives an entity one, [[storage::KeyIndex]] maps keys to entities and back, and
+//! [[storage::ResolveReference]], [[storage::CaptureParents]] and [[storage::ApplyParents]] turn stored references back
+//! into entities.
 
 #include "containers/hash_map.h"
 #include "containers/vector.h"
@@ -12,15 +14,19 @@
 #include "storage/status.h"
 #include "types.h"
 
-namespace engine_placeholder::storage {
+namespace engine_placeholder::storage
+{
 
-/// Draws entity keys: from the operating system's random source, or from a seeded sequence that gives the same keys every run (for tests).
+/// Draws entity keys: from the operating system's random source, or from a seeded sequence that gives the same keys
+/// every run (for tests).
 ///
-/// A key is never null. Two random keys collide with probability 2^-128 per pair; the seeded sequence repeats only after 2^64 draws.
+/// A key is never null. Two random keys collide with probability 2^-128 per pair; the seeded sequence repeats only
+/// after 2^64 draws.
 ///
 /// - Thread-safety: thread-compatible; use one generator per thread.
 /// - Ownership: owns its state; copying it copies the position in the sequence.
-class KeyGenerator {
+class KeyGenerator
+{
 public:
     /// Creates a generator that draws from the operating system.
     /// - Fails: never.
@@ -39,36 +45,42 @@ private:
     u64 state_ = 0;
 };
 
-/// The durable identity of an entity: a component, so it is stored and loaded like any other. A null key means no identity. Registered with id
+/// The durable identity of an entity: a component, so it is stored and loaded like any other. A null key means no
+/// identity. Registered with id
 /// [[storage::kEntityKeyId]].
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct EntityKeyComponent {
+struct EntityKeyComponent
+{
     /// The world logs removals of this component; [[storage::KeyIndex::Sync]] reads the log.
     static constexpr bool kTrackRemoval = true;
     /// The entity's key.
     EntityKey key;
 };
 
-/// The stored form of [[ecs::Parent]]: the parent as a key. It exists in a world only between [[storage::CaptureParents]] (before a save) and
+/// The stored form of [[ecs::Parent]]: the parent as a key. It exists in a world only between
+/// [[storage::CaptureParents]] (before a save) and
 /// [[storage::ApplyParents]] (after a load). Registered with id [[storage::kParentLinkId]].
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct ParentLink {
+struct ParentLink
+{
     /// The parent's key.
     EntityRef parent;
 };
 
 /// What to do with a reference to a key that is in no world.
-enum class MissingPolicy : u8 {
-    Fail,         ///< Report `MissingReference` and change nothing.
-    NullReference ///< Turn the reference into a null reference and count it.
+enum class MissingPolicy : u8
+{
+    Fail,          ///< Report `MissingReference` and change nothing.
+    NullReference  ///< Turn the reference into a null reference and count it.
 };
 
 /// What resolving references found.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct ReferenceReport {
+struct ReferenceReport
+{
     /// The most keys kept in [[storage::ReferenceReport::first_missing]].
     static constexpr usize kMaxReported = 8;
     /// How many references named a key that is not there.
@@ -79,25 +91,30 @@ struct ReferenceReport {
     Vector<EntityKey> first_missing;
 };
 
-/// Maps keys to entities and entities to keys for one world, and keeps both in step with the world's [[storage::EntityKeyComponent]]s.
+/// Maps keys to entities and entities to keys for one world, and keeps both in step with the world's
+/// [[storage::EntityKeyComponent]]s.
 ///
-/// [[storage::KeyIndex::Sync]] reads what changed since the last call (the change stamps) and what was removed (the removal log), so its cost follows the
-/// number of changes, not the number of entities. Call it once per frame, and before a lookup that must see this frame's changes. Two entities with one
-/// key are never both indexed: the first keeps the key, the other stays out and is reported by `Sync` until its key changes or it goes.
+/// [[storage::KeyIndex::Sync]] reads what changed since the last call (the change stamps) and what was removed (the
+/// removal log), so its cost follows the number of changes, not the number of entities. Call it once per frame, and
+/// before a lookup that must see this frame's changes. Two entities with one key are never both indexed: the first
+/// keeps the key, the other stays out and is reported by `Sync` until its key changes or it goes.
 ///
 /// - Thread-safety: thread-compatible; one index per world, used from one thread at a time.
 /// - Ownership: owns its tables; stores entity ids, not pointers into the world.
-class KeyIndex {
+class KeyIndex
+{
 public:
     /// Creates an empty index; the first `Sync` reads every key in the world.
     KeyIndex() : by_key_(HeapAllocator::Default()), by_entity_(HeapAllocator::Default()) {}
 
     /// Brings the index up to date with `world`.
     ///
-    /// Marks the changes read as handled with `ecs::Query::Finish`, which advances the world's tick; call it where no other writer runs (a sync point).
+    /// Marks the changes read as handled with `ecs::Query::Finish`, which advances the world's tick; call it where no
+    /// other writer runs (a sync point).
     ///
     /// - Param world: the world to read; the index is for this world only.
-    /// - Returns: success, or `Duplicate` when entities with one key exist (the index holds one of each pair; see [[storage::KeyIndex::DuplicateCount]]).
+    /// - Returns: success, or `Duplicate` when entities with one key exist (the index holds one of each pair; see
+    /// [[storage::KeyIndex::DuplicateCount]]).
     /// - Fails: `Duplicate`.
     /// - Aborts: the world is being iterated by a query that writes `EntityKeyComponent`.
     /// - Ownership: `world` is borrowed for the call.
@@ -107,8 +124,8 @@ public:
     /// - Param world: the world; synced first so the check sees every key.
     /// - Param entity: a live entity.
     /// - Param key: not null.
-    /// - Returns: success, `Invalid` for a null key or a dead entity, `Duplicate` when another entity has the key (nothing changes), or the error of a `Sync`
-    /// that found other duplicates only if this call did not succeed.
+    /// - Returns: success, `Invalid` for a null key or a dead entity, `Duplicate` when another entity has the key
+    /// (nothing changes), or the error of a `Sync` that found other duplicates only if this call did not succeed.
     /// - Fails: `Invalid`, `Duplicate`.
     /// - Aborts: the world is being iterated.
     /// - Ownership: `world` is borrowed for the call.
@@ -148,12 +165,14 @@ private:
 /// - Returns: success, or `MissingReference` under `Fail`.
 /// - Fails: `MissingReference`.
 /// - Ownership: nothing is retained.
-Status ResolveReference(const KeyIndex& index, EntityKey key, MissingPolicy policy, ReferenceReport* report, ecs::Entity* out);
+Status ResolveReference(const KeyIndex& index, EntityKey key, MissingPolicy policy, ReferenceReport* report,
+                        ecs::Entity* out);
 
 /// What [[storage::CaptureParents]] and [[storage::ApplyParents]] did.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct ParentReport {
+struct ParentReport
+{
     /// Links written by `CaptureParents`.
     usize captured = 0;
     /// Children whose parent has no key (their link is not written).
@@ -166,7 +185,8 @@ struct ParentReport {
     ReferenceReport references;
 };
 
-/// Writes a [[storage::ParentLink]] on every entity that has an [[ecs::Parent]] whose parent has a key, and removes links that no longer match a parent.
+/// Writes a [[storage::ParentLink]] on every entity that has an [[ecs::Parent]] whose parent has a key, and removes
+/// links that no longer match a parent.
 ///
 /// - Param world: the world to prepare for a save.
 /// - Param index: the keys of `world`, synced.
@@ -177,9 +197,11 @@ struct ParentReport {
 /// - Ownership: both are borrowed for the call.
 Status CaptureParents(ecs::World& world, const KeyIndex& index, ParentReport* report);
 
-/// Resolves every [[storage::ParentLink]] in `world` to an [[ecs::Parent]] (with the cycle and depth checks of [[ecs::SetParent]], without its pass over every link) and removes the links.
+/// Resolves every [[storage::ParentLink]] in `world` to an [[ecs::Parent]] (with the cycle and depth checks of
+/// [[ecs::SetParent]], without its pass over every link) and removes the links.
 ///
-/// All targets are resolved before anything changes: under `Fail` one missing parent changes nothing. A parent that is itself a child is applied first.
+/// All targets are resolved before anything changes: under `Fail` one missing parent changes nothing. A parent that is
+/// itself a child is applied first.
 ///
 /// - Param world: the world after a load, every entity created and keyed.
 /// - Param index: the keys of `world`, synced.
@@ -191,4 +213,4 @@ Status CaptureParents(ecs::World& world, const KeyIndex& index, ParentReport* re
 /// - Ownership: both are borrowed for the call.
 Status ApplyParents(ecs::World& world, const KeyIndex& index, MissingPolicy policy, ParentReport* report);
 
-} // namespace engine_placeholder::storage
+}  // namespace engine_placeholder::storage

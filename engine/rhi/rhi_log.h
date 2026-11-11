@@ -8,7 +8,8 @@
 
 //! Logging for the RHI: the `LogRhi` channel and a printf-style helper.
 
-namespace engine_placeholder::rhi {
+namespace engine_placeholder::rhi
+{
 
 /// The log channel used by the RHI and its backends.
 extern LogChannel LogRhi;
@@ -23,8 +24,10 @@ extern LogChannel LogRhi;
 /// - Param fmt: printf format string; the arguments follow it.
 /// - Thread-safety: thread-safe. Formats into a stack buffer and logs through the shared sink.
 void RhiLogV(LogVerbosity level, const char* fmt, ...) ENGINE_PRINTF_FORMAT(2, 3);
-inline void RhiLogV(LogVerbosity level, const char* fmt, ...) {
-    if (!LogRhi.ShouldLog(level)) {
+inline void RhiLogV(LogVerbosity level, const char* fmt, ...)
+{
+    if (!LogRhi.ShouldLog(level))
+    {
         return;
     }
     char buf[512];
@@ -32,7 +35,8 @@ inline void RhiLogV(LogVerbosity level, const char* fmt, ...) {
     ENGINE_VA_START(ap, fmt);
     int n = VFormatTo(buf, sizeof(buf), fmt, ap);
     ENGINE_VA_END(ap);
-    if (n < 0) {
+    if (n < 0)
+    {
         return;
     }
     usize len = static_cast<usize>(n) < sizeof(buf) ? static_cast<usize>(n) : sizeof(buf) - 1;
@@ -44,4 +48,4 @@ inline void RhiLogV(LogVerbosity level, const char* fmt, ...) {
 /// - Param level: verbosity of the message.
 #define RhiLog(level, ...) ::engine_placeholder::rhi::RhiLogV(level, __VA_ARGS__)
 
-} // namespace engine_placeholder::rhi
+}  // namespace engine_placeholder::rhi

@@ -13,16 +13,19 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
 
-namespace {
+namespace
+{
 
 // True when `reason` is non-null and starts with `prefix` (the descriptor name plus the start of the message).
-bool Rejects(const char* reason, const char* prefix) {
+bool Rejects(const char* reason, const char* prefix)
+{
     return reason != nullptr && CStrCompareN(reason, prefix, CStrLength(prefix)) == 0;
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("Default handles are invalid and compare equal", "[rhi][handle]") {
+TEST_CASE("Default handles are invalid and compare equal", "[rhi][handle]")
+{
     BufferHandle a;
     BufferHandle b;
     CHECK_FALSE(a.IsValid());
@@ -31,7 +34,8 @@ TEST_CASE("Default handles are invalid and compare equal", "[rhi][handle]") {
     CHECK(a.generation == 0);
 }
 
-TEST_CASE("Handles compare by index and generation", "[rhi][handle]") {
+TEST_CASE("Handles compare by index and generation", "[rhi][handle]")
+{
     BufferHandle a{3, 1};
     BufferHandle same{3, 1};
     BufferHandle other_index{4, 1};
@@ -39,20 +43,23 @@ TEST_CASE("Handles compare by index and generation", "[rhi][handle]") {
     CHECK(a.IsValid());
     CHECK(a == same);
     CHECK(a != other_index);
-    CHECK(a != other_generation);  // a stale copy of a recycled slot is not equal
+    CHECK(a != other_generation);         // a stale copy of a recycled slot is not equal
     CHECK(BufferHandle{0, 1}.IsValid());  // index 0 is a legal slot; validity is the generation
     CHECK_FALSE(BufferHandle{5, 0}.IsValid());
 }
 
-TEST_CASE("Handle kinds are distinct types", "[rhi][handle]") {
+TEST_CASE("Handle kinds are distinct types", "[rhi][handle]")
+{
     static_assert(!IsSame<BufferHandle, TextureHandle>);
     static_assert(!IsSame<ShaderHandle, PipelineHandle>);
     static_assert(sizeof(BufferHandle) == 8);
     SUCCEED();
 }
 
-TEST_CASE("FormatInfo matches hand-computed layouts for every format", "[rhi][format]") {
-    struct Expect {
+TEST_CASE("FormatInfo matches hand-computed layouts for every format", "[rhi][format]")
+{
+    struct Expect
+    {
         Format f;
         u8 bytes;
         u8 bw;
@@ -91,7 +98,8 @@ TEST_CASE("FormatInfo matches hand-computed layouts for every format", "[rhi][fo
     };
     // Every format except Undefined is covered exactly once.
     CHECK(sizeof(expected) / sizeof(expected[0]) == static_cast<usize>(Format::Count) - 1);
-    for (const Expect& e : expected) {
+    for (const Expect& e : expected)
+    {
         INFO(FormatInfo(e.f).name);
         const FormatProperties& p = FormatInfo(e.f);
         CHECK(p.bytes_per_block == e.bytes);
@@ -106,18 +114,22 @@ TEST_CASE("FormatInfo matches hand-computed layouts for every format", "[rhi][fo
     CHECK(FormatInfo(Format::Undefined).bytes_per_block == 0);
 }
 
-TEST_CASE("Format names are unique and non-empty", "[rhi][format]") {
-    for (usize i = 0; i < static_cast<usize>(Format::Count); ++i) {
+TEST_CASE("Format names are unique and non-empty", "[rhi][format]")
+{
+    for (usize i = 0; i < static_cast<usize>(Format::Count); ++i)
+    {
         const char* a = FormatInfo(static_cast<Format>(i)).name;
         REQUIRE(a != nullptr);
         CHECK(a[0] != '\0');
-        for (usize j = 0; j < i; ++j) {
+        for (usize j = 0; j < i; ++j)
+        {
             CHECK(CStrCompare(a, FormatInfo(static_cast<Format>(j)).name) != 0);
         }
     }
 }
 
-TEST_CASE("Row and slice sizes round partial blocks up", "[rhi][format]") {
+TEST_CASE("Row and slice sizes round partial blocks up", "[rhi][format]")
+{
     CHECK(FormatRowBytes(Format::RGBA8_UNorm, 64) == 256);
     CHECK(FormatSliceBytes(Format::RGBA8_UNorm, 64, 3) == 768);
     // BC1: 4x4 blocks of 8 bytes. 5 texels wide needs 2 blocks; 5 texels high needs 2 block rows.
@@ -129,7 +141,8 @@ TEST_CASE("Row and slice sizes round partial blocks up", "[rhi][format]") {
     CHECK(FormatRowBytes(Format::RGBA32_Float, 0xFFFFFFFFu) == 0xFFFFFFFFull * 16);
 }
 
-TEST_CASE("Flag operators combine, mask and test", "[rhi][flags]") {
+TEST_CASE("Flag operators combine, mask and test", "[rhi][flags]")
+{
     BufferUsage v = BufferUsage::Vertex | BufferUsage::CopyDst;
     CHECK(Has(v, BufferUsage::Vertex));
     CHECK(Has(v, BufferUsage::CopyDst));
@@ -144,7 +157,8 @@ TEST_CASE("Flag operators combine, mask and test", "[rhi][flags]") {
     CHECK((ColorWriteMask::R | ColorWriteMask::G | ColorWriteMask::B | ColorWriteMask::A) == ColorWriteMask::All);
 }
 
-TEST_CASE("VertexFormatSize covers every format", "[rhi][types]") {
+TEST_CASE("VertexFormatSize covers every format", "[rhi][types]")
+{
     CHECK(VertexFormatSize(VertexFormat::Float1) == 4);
     CHECK(VertexFormatSize(VertexFormat::Float2) == 8);
     CHECK(VertexFormatSize(VertexFormat::Float3) == 12);
@@ -152,12 +166,14 @@ TEST_CASE("VertexFormatSize covers every format", "[rhi][types]") {
     CHECK(VertexFormatSize(VertexFormat::UInt3) == 12);
     CHECK(VertexFormatSize(VertexFormat::UNorm8x4) == 4);
     CHECK(VertexFormatSize(VertexFormat::Count) == 0);
-    for (u8 i = 0; i < static_cast<u8>(VertexFormat::Count); ++i) {
+    for (u8 i = 0; i < static_cast<u8>(VertexFormat::Count); ++i)
+    {
         CHECK(VertexFormatSize(static_cast<VertexFormat>(i)) > 0);
     }
 }
 
-TEST_CASE("MaxMipLevels is floor(log2(max extent)) + 1", "[rhi][desc]") {
+TEST_CASE("MaxMipLevels is floor(log2(max extent)) + 1", "[rhi][desc]")
+{
     CHECK(MaxMipLevels(1, 1) == 1);
     CHECK(MaxMipLevels(2, 2) == 2);
     CHECK(MaxMipLevels(256, 256) == 9);
@@ -167,7 +183,8 @@ TEST_CASE("MaxMipLevels is floor(log2(max extent)) + 1", "[rhi][desc]") {
     CHECK(MaxMipLevels(0, 4) == 0);
 }
 
-TEST_CASE("DeviceCaps defaults are the guaranteed minimums", "[rhi][caps]") {
+TEST_CASE("DeviceCaps defaults are the guaranteed minimums", "[rhi][caps]")
+{
     DeviceCaps caps;
     CHECK(caps.max_bind_groups == kMaxBindGroups);
     CHECK(caps.max_push_constant_bytes == kMaxPushConstantBytes);
@@ -175,7 +192,8 @@ TEST_CASE("DeviceCaps defaults are the guaranteed minimums", "[rhi][caps]") {
     CHECK(FormatInfo(caps.depth_format).is_depth);
 }
 
-TEST_CASE("BufferDesc validation", "[rhi][desc]") {
+TEST_CASE("BufferDesc validation", "[rhi][desc]")
+{
     BufferDesc d;
     d.size = 256;
     d.usage = BufferUsage::Vertex;
@@ -205,7 +223,8 @@ TEST_CASE("BufferDesc validation", "[rhi][desc]") {
     CHECK(upload.Validate() == nullptr);
 }
 
-TEST_CASE("TextureDesc validation", "[rhi][desc]") {
+TEST_CASE("TextureDesc validation", "[rhi][desc]")
+{
     TextureDesc d;
     d.width = 64;
     d.height = 64;
@@ -213,15 +232,18 @@ TEST_CASE("TextureDesc validation", "[rhi][desc]") {
     d.usage = TextureUsage::Sampled | TextureUsage::CopyDst;
     CHECK(d.Validate() == nullptr);
 
-    SECTION("zero extent") {
+    SECTION("zero extent")
+    {
         d.width = 0;
         CHECK(Rejects(d.Validate(), "TextureDesc: extent"));
     }
-    SECTION("2D with depth") {
+    SECTION("2D with depth")
+    {
         d.depth = 4;
         CHECK(Rejects(d.Validate(), "TextureDesc: 2D textures must have depth 1"));
     }
-    SECTION("3D array") {
+    SECTION("3D array")
+    {
         d.dimension = TextureDimension::Tex3D;
         d.depth = 4;
         d.array_layers = 2;
@@ -229,15 +251,18 @@ TEST_CASE("TextureDesc validation", "[rhi][desc]") {
         d.array_layers = 1;
         CHECK(d.Validate() == nullptr);
     }
-    SECTION("cube is reserved") {
+    SECTION("cube is reserved")
+    {
         d.dimension = TextureDimension::Cube;
         CHECK(Rejects(d.Validate(), "TextureDesc: cube"));
     }
-    SECTION("undefined format") {
+    SECTION("undefined format")
+    {
         d.format = Format::Undefined;
         CHECK(Rejects(d.Validate(), "TextureDesc: format is undefined"));
     }
-    SECTION("too many mips") {
+    SECTION("too many mips")
+    {
         d.mip_levels = 7;  // 64x64 has 7 levels
         CHECK(d.Validate() == nullptr);
         d.mip_levels = 8;
@@ -245,26 +270,31 @@ TEST_CASE("TextureDesc validation", "[rhi][desc]") {
         d.mip_levels = 0;
         CHECK(Rejects(d.Validate(), "TextureDesc: mip_levels is zero"));
     }
-    SECTION("multisampling") {
+    SECTION("multisampling")
+    {
         d.samples = 4;
         CHECK(Rejects(d.Validate(), "TextureDesc: multisampling"));
     }
-    SECTION("no usage") {
+    SECTION("no usage")
+    {
         d.usage = TextureUsage::None;
         CHECK(Rejects(d.Validate(), "TextureDesc: no usage"));
     }
-    SECTION("depth format used as color") {
+    SECTION("depth format used as color")
+    {
         d.format = Format::D32_Float;
         d.usage = TextureUsage::ColorAttachment;
         CHECK(Rejects(d.Validate(), "TextureDesc: color attachment requires"));
     }
-    SECTION("depth attachment needs a depth format") {
+    SECTION("depth attachment needs a depth format")
+    {
         d.usage = TextureUsage::DepthAttachment;
         CHECK(Rejects(d.Validate(), "TextureDesc: depth attachment requires"));
         d.format = Format::D32_Float;
         CHECK(d.Validate() == nullptr);
     }
-    SECTION("compressed formats cannot be rendered to or stored") {
+    SECTION("compressed formats cannot be rendered to or stored")
+    {
         d.format = Format::BC1_UNorm;
         CHECK(d.Validate() == nullptr);
         d.usage = TextureUsage::ColorAttachment;
@@ -272,7 +302,8 @@ TEST_CASE("TextureDesc validation", "[rhi][desc]") {
         d.usage = TextureUsage::Storage;
         CHECK(Rejects(d.Validate(), "TextureDesc: storage usage requires"));
     }
-    SECTION("compressed 3D") {
+    SECTION("compressed 3D")
+    {
         d.format = Format::BC7_UNorm;
         d.dimension = TextureDimension::Tex3D;
         d.depth = 4;
@@ -280,7 +311,8 @@ TEST_CASE("TextureDesc validation", "[rhi][desc]") {
     }
 }
 
-TEST_CASE("SamplerDesc validation", "[rhi][desc]") {
+TEST_CASE("SamplerDesc validation", "[rhi][desc]")
+{
     SamplerDesc d;
     CHECK(d.Validate() == nullptr);
     d.max_anisotropy = 16.0f;
@@ -310,7 +342,8 @@ TEST_CASE("SamplerDesc validation", "[rhi][desc]") {
     CHECK(Rejects(lod.Validate(), "SamplerDesc: min_lod"));
 }
 
-TEST_CASE("ShaderDesc validation", "[rhi][desc]") {
+TEST_CASE("ShaderDesc validation", "[rhi][desc]")
+{
     const u32 words[8] = {0x07230203, 0x00010000, 0, 1, 0, 0, 0, 0};
     ShaderDesc d;
     d.stage = ShaderStage::Vertex;
@@ -342,13 +375,14 @@ TEST_CASE("ShaderDesc validation", "[rhi][desc]") {
     noentry.entry = nullptr;
     CHECK(Rejects(noentry.Validate(), "ShaderDesc: entry"));
     ShaderDesc longname = d;
-    longname.entry = "0123456789012345678901234567890123456789012345678901234567890123"; // 64 bytes
+    longname.entry = "0123456789012345678901234567890123456789012345678901234567890123";  // 64 bytes
     CHECK(Rejects(longname.Validate(), "ShaderDesc: entry point name is longer"));
-    longname.entry = "012345678901234567890123456789012345678901234567890123456789012"; // 63 bytes
+    longname.entry = "012345678901234567890123456789012345678901234567890123456789012";  // 63 bytes
     CHECK(longname.Validate() == nullptr);
 }
 
-TEST_CASE("ShaderDesc validation checks a DXIL container's tag and size and refuses MSL", "[rhi][desc]") {
+TEST_CASE("ShaderDesc validation checks a DXIL container's tag and size and refuses MSL", "[rhi][desc]")
+{
     // A DXBC container header: tag, 16-byte digest, version 1.0, total size 40, one part; then 8 bytes of part data.
     u8 dxil[40] = {'D', 'X', 'B', 'C'};
     dxil[20] = 1;
@@ -367,7 +401,10 @@ TEST_CASE("ShaderDesc validation checks a DXIL container's tag and size and refu
     wrong_size.size = 36;
     CHECK(Rejects(wrong_size.Validate(), "ShaderDesc: DXIL size differs"));
     u8 bad_tag[40];
-    for (usize i = 0; i < sizeof(bad_tag); ++i) bad_tag[i] = dxil[i];
+    for (usize i = 0; i < sizeof(bad_tag); ++i)
+    {
+        bad_tag[i] = dxil[i];
+    }
     bad_tag[0] = 'Q';
     ShaderDesc not_dxbc = d;
     not_dxbc.bytes = bad_tag;
@@ -387,7 +424,8 @@ TEST_CASE("ShaderDesc validation checks a DXIL container's tag and size and refu
     CHECK(StringView(ShaderFormatName(ShaderFormat::Msl)) == "msl");
 }
 
-TEST_CASE("ShaderBlobSet picks the blob of a format and is empty where a format was not minted", "[rhi][desc]") {
+TEST_CASE("ShaderBlobSet picks the blob of a format and is empty where a format was not minted", "[rhi][desc]")
+{
     static const u32 words[6] = {0x07230203, 0x00010000, 0, 1, 0, 0};
     static const u8 dxil[4] = {'D', 'X', 'B', 'C'};
     ShaderBlobSet set{"sample.frag", SpirvBlob(words, 6), {}};
@@ -400,7 +438,8 @@ TEST_CASE("ShaderBlobSet picks the blob of a format and is empty where a format 
     CHECK(set.For(ShaderFormat::Dxil).bytes == dxil);
 }
 
-TEST_CASE("BindGroupLayoutDesc validation", "[rhi][desc]") {
+TEST_CASE("BindGroupLayoutDesc validation", "[rhi][desc]")
+{
     BindingDesc entries[2];
     entries[0] = {0, BindingType::UniformBuffer, ShaderStage::Vertex, 1};
     entries[1] = {1, BindingType::SampledTexture, ShaderStage::Fragment, 1};
@@ -444,7 +483,8 @@ TEST_CASE("BindGroupLayoutDesc validation", "[rhi][desc]") {
     CHECK(huge_desc.Validate() == nullptr);
 
     BindingDesc many[kMaxBindingsPerLayout + 1];
-    for (u32 i = 0; i < kMaxBindingsPerLayout + 1; ++i) {
+    for (u32 i = 0; i < kMaxBindingsPerLayout + 1; ++i)
+    {
         many[i] = {i, BindingType::UniformBuffer, ShaderStage::Vertex, 1};
     }
     BindGroupLayoutDesc too_many;
@@ -452,9 +492,11 @@ TEST_CASE("BindGroupLayoutDesc validation", "[rhi][desc]") {
     CHECK(Rejects(too_many.Validate(), "BindGroupLayoutDesc: too many"));
 }
 
-namespace {
+namespace
+{
 
-GraphicsPipelineDesc GoodPipeline(VertexBindingDesc* binding, VertexAttributeDesc* attrs) {
+GraphicsPipelineDesc GoodPipeline(VertexBindingDesc* binding, VertexAttributeDesc* attrs)
+{
     binding[0] = {24, false};
     attrs[0] = {0, 0, VertexFormat::Float3, 0};
     attrs[1] = {1, 0, VertexFormat::Float3, 12};
@@ -468,34 +510,40 @@ GraphicsPipelineDesc GoodPipeline(VertexBindingDesc* binding, VertexAttributeDes
     return d;
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("GraphicsPipelineDesc validation", "[rhi][desc]") {
+TEST_CASE("GraphicsPipelineDesc validation", "[rhi][desc]")
+{
     VertexBindingDesc binding[1];
     VertexAttributeDesc attrs[2];
     GraphicsPipelineDesc d = GoodPipeline(binding, attrs);
     CHECK(d.Validate() == nullptr);
 
-    SECTION("missing vertex shader") {
+    SECTION("missing vertex shader")
+    {
         d.vertex_shader = ShaderHandle{};
         CHECK(Rejects(d.Validate(), "GraphicsPipelineDesc: vertex shader"));
     }
-    SECTION("color targets need a fragment shader") {
+    SECTION("color targets need a fragment shader")
+    {
         d.fragment_shader = ShaderHandle{};
         CHECK(Rejects(d.Validate(), "GraphicsPipelineDesc: color targets require"));
         d.color_target_count = 0;
         d.depth_format = Format::D32_Float;
         CHECK(d.Validate() == nullptr);  // depth-only pipeline
     }
-    SECTION("no attachments") {
+    SECTION("no attachments")
+    {
         d.color_target_count = 0;
         CHECK(Rejects(d.Validate(), "GraphicsPipelineDesc: no attachments"));
     }
-    SECTION("too many color targets") {
+    SECTION("too many color targets")
+    {
         d.color_target_count = kMaxColorAttachments + 1;
         CHECK(Rejects(d.Validate(), "GraphicsPipelineDesc: too many color targets"));
     }
-    SECTION("bad target formats") {
+    SECTION("bad target formats")
+    {
         d.color_targets[0].format = Format::D32_Float;
         CHECK(Rejects(d.Validate(), "GraphicsPipelineDesc: color target format"));
         d.color_targets[0].format = Format::BC1_UNorm;
@@ -503,7 +551,8 @@ TEST_CASE("GraphicsPipelineDesc validation", "[rhi][desc]") {
         d.color_targets[0].format = Format::Undefined;
         CHECK(Rejects(d.Validate(), "GraphicsPipelineDesc: color target format"));
     }
-    SECTION("depth state without a depth format") {
+    SECTION("depth state without a depth format")
+    {
         d.depth_test = true;
         CHECK(Rejects(d.Validate(), "GraphicsPipelineDesc: depth state"));
         d.depth_format = Format::D32_Float;
@@ -511,11 +560,13 @@ TEST_CASE("GraphicsPipelineDesc validation", "[rhi][desc]") {
         d.depth_format = Format::RGBA8_UNorm;
         CHECK(Rejects(d.Validate(), "GraphicsPipelineDesc: depth_format"));
     }
-    SECTION("multisampling") {
+    SECTION("multisampling")
+    {
         d.samples = 2;
         CHECK(Rejects(d.Validate(), "GraphicsPipelineDesc: multisampling"));
     }
-    SECTION("vertex layout") {
+    SECTION("vertex layout")
+    {
         binding[0].stride = 0;
         CHECK(Rejects(d.Validate(), "GraphicsPipelineDesc: vertex binding stride"));
         binding[0].stride = 24;
@@ -537,19 +588,22 @@ TEST_CASE("GraphicsPipelineDesc validation", "[rhi][desc]") {
         attrs[1].format = VertexFormat::Float3;
         CHECK(d.Validate() == nullptr);
     }
-    SECTION("a binding no attribute reads is legal") {
+    SECTION("a binding no attribute reads is legal")
+    {
         VertexBindingDesc two[2] = {{24, false}, {16, true}};
         d.vertex_bindings = rhi::Span<VertexBindingDesc>(two);
         CHECK(d.Validate() == nullptr);
     }
-    SECTION("garbage formats are rejected, not asserted on") {
+    SECTION("garbage formats are rejected, not asserted on")
+    {
         d.color_targets[0].format = static_cast<Format>(200);
         CHECK(Rejects(d.Validate(), "GraphicsPipelineDesc: color target format"));
         d.color_targets[0].format = Format::BGRA8_SRGB;
         d.depth_format = static_cast<Format>(200);
         CHECK(Rejects(d.Validate(), "GraphicsPipelineDesc: depth_format"));
     }
-    SECTION("primitive restart needs a strip topology") {
+    SECTION("primitive restart needs a strip topology")
+    {
         d.primitive_restart = true;
         CHECK(Rejects(d.Validate(), "GraphicsPipelineDesc: primitive_restart"));
         d.topology = PrimitiveTopology::LineList;
@@ -559,7 +613,8 @@ TEST_CASE("GraphicsPipelineDesc validation", "[rhi][desc]") {
         d.topology = PrimitiveTopology::LineStrip;
         CHECK(d.Validate() == nullptr);
     }
-    SECTION("garbage enum values are rejected") {
+    SECTION("garbage enum values are rejected")
+    {
         d.depth_compare = static_cast<CompareOp>(99);
         CHECK(Rejects(d.Validate(), "GraphicsPipelineDesc: unknown fixed-function"));
         d.depth_compare = CompareOp::Less;
@@ -577,7 +632,8 @@ TEST_CASE("GraphicsPipelineDesc validation", "[rhi][desc]") {
         d.color_targets[0].write_mask = ColorWriteMask::R | ColorWriteMask::A;
         CHECK(d.Validate() == nullptr);
     }
-    SECTION("layouts and push constants") {
+    SECTION("layouts and push constants")
+    {
         d.bind_group_layouts[0] = BindGroupLayoutHandle{1, 1};
         d.bind_group_layout_count = 1;
         CHECK(d.Validate() == nullptr);
@@ -600,7 +656,8 @@ TEST_CASE("GraphicsPipelineDesc validation", "[rhi][desc]") {
     }
 }
 
-TEST_CASE("ComputePipelineDesc validation", "[rhi][desc]") {
+TEST_CASE("ComputePipelineDesc validation", "[rhi][desc]")
+{
     ComputePipelineDesc d;
     CHECK(Rejects(d.Validate(), "ComputePipelineDesc: compute shader"));
     d.shader = ShaderHandle{1, 1};

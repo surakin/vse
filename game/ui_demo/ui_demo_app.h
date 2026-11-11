@@ -1,7 +1,7 @@
 #pragma once
 
-// The ui_demo application (Phase 15, Day 204): the widget tree of the demo, its menus, themes and orbit camera. It names no window and no GPU, so the tests build the same tree on a
-// ui::Harness; main.cpp puts it in a window.
+// The ui_demo application (Phase 15, Day 204): the widget tree of the demo, its menus, themes and orbit camera. It
+// names no window and no GPU, so the tests build the same tree on a ui::Harness; main.cpp puts it in a window.
 
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
@@ -22,20 +22,29 @@
 #include "ui/widgets/text_field.h"
 #include "ui/widgets/value_widgets.h"
 
-namespace ui_demo {
+namespace ui_demo
+{
 
-/// The length of what `snprintf` wrote into a buffer of `capacity` bytes: it returns the length it would have written, which can pass the buffer.
-inline engine_placeholder::usize FittedLength(int written, engine_placeholder::usize capacity) {
-    if (written <= 0) return 0;
-    return static_cast<engine_placeholder::usize>(written) < capacity ? static_cast<engine_placeholder::usize>(written) : capacity - 1;
+/// The length of what `snprintf` wrote into a buffer of `capacity` bytes: it returns the length it would have written,
+/// which can pass the buffer.
+inline engine_placeholder::usize FittedLength(int written, engine_placeholder::usize capacity)
+{
+    if (written <= 0)
+    {
+        return 0;
+    }
+    return static_cast<engine_placeholder::usize>(written) < capacity ? static_cast<engine_placeholder::usize>(written)
+                                                                      : capacity - 1;
 }
 
 using namespace engine_placeholder;
 
-/// An orbit camera around the origin that the viewport's input turns: dragging with the look button changes the angles, the wheel the distance.
+/// An orbit camera around the origin that the viewport's input turns: dragging with the look button changes the angles,
+/// the wheel the distance.
 ///
 /// - Thread-safety: owner-thread-only.
-class OrbitCamera {
+class OrbitCamera
+{
 public:
     /// The vertical field of view of the demo's camera, in radians.
     static constexpr f32 kFovY = 0.9f;
@@ -54,7 +63,8 @@ public:
     /// Writes the eye position (the orbit distance times `scene_scale` from the point looked at).
     void Eye(f32 scene_scale, f32 out[3]) const;
     /// The point the camera looks at.
-    static void Target(f32 out[3]) {
+    static void Target(f32 out[3])
+    {
         out[0] = 0;
         out[1] = 0.5f;
         out[2] = 0;
@@ -69,20 +79,23 @@ private:
     f32 distance_ = 3.2f;
 };
 
-/// Where the in-world screen stands (the scene puts its quad there and the ray cast aims at it), in world units: its middle, its size, facing +z.
+/// Where the in-world screen stands (the scene puts its quad there and the ray cast aims at it), in world units: its
+/// middle, its size, facing +z.
 constexpr f32 kWorldScreenCenter[3] = {0.0f, 2.1f, -3.6f};
 constexpr f32 kWorldScreenWidth = 4.8f;
 constexpr f32 kWorldScreenHeight = 3.0f;
 
-/// The second surface of the demo: a small screen (a counter button and a label, a theme of its own) that the 3D scene shows on a quad and the viewport's pointer reaches by a ray cast.
+/// The second surface of the demo: a small screen (a counter button and a label, a theme of its own) that the 3D scene
+/// shows on a quad and the viewport's pointer reaches by a ray cast.
 ///
 /// - Thread-safety: owner-thread-only.
 /// - Ownership: owns its surface, its widgets and its input.
-class WorldScreen {
+class WorldScreen
+{
 public:
-    static constexpr f32 kWidth = 320.0f;  ///< The surface's width in logical units.
-    static constexpr f32 kHeight = 200.0f; ///< The surface's height in logical units.
-    static constexpr f32 kScale = 2.0f;    ///< Pixels per logical unit.
+    static constexpr f32 kWidth = 320.0f;   ///< The surface's width in logical units.
+    static constexpr f32 kHeight = 200.0f;  ///< The surface's height in logical units.
+    static constexpr f32 kScale = 2.0f;     ///< Pixels per logical unit.
     WorldScreen();
     ~WorldScreen() = default;
     WorldScreen(const WorldScreen&) = delete;
@@ -106,7 +119,8 @@ private:
 };
 
 /// The rows of the demo's list box: "Item 1" to "Item N", reorderable.
-class ItemModel final : public ui::ListModel {
+class ItemModel final : public ui::ListModel
+{
 public:
     explicit ItemModel(usize count);
     usize ItemCount() const override { return items_.Size(); }
@@ -117,20 +131,24 @@ private:
     Vector<String<HeapAllocator>> items_;
 };
 
-/// What the program does with a change made in the rendering settings dialog (the renderer's `ApplySettings` through the settings system), and what each setting costs.
+/// What the program does with a change made in the rendering settings dialog (the renderer's `ApplySettings` through
+/// the settings system), and what each setting costs.
 ///
 /// - Thread-safety: owner-thread-only.
-class RenderSettingsHost {
+class RenderSettingsHost
+{
 public:
     virtual ~RenderSettingsHost() = default;
-    /// Applies one setting (`present_mode`, `render_scale` or `shader_quality`) from its text; returns whether it was applied.
+    /// Applies one setting (`present_mode`, `render_scale` or `shader_quality`) from its text; returns whether it was
+    /// applied.
     virtual bool Change(StringView key, StringView value) = 0;
     /// Returns the name of the cost class of a setting (`dynamic`, `swapchain`, `pipeline-rebuild`, `device-reset`).
     virtual StringView CostOf(StringView key) = 0;
 };
 
 /// A fixed list of choices for a combo box.
-class ChoiceModel final : public ui::ListModel {
+class ChoiceModel final : public ui::ListModel
+{
 public:
     ChoiceModel(const char* const* names, usize count) : names_(names), count_(count) {}
     usize ItemCount() const override { return count_; }
@@ -142,7 +160,8 @@ private:
 };
 
 /// The names of the choices of the demo's combo box.
-class ShapeModel final : public ui::ListModel {
+class ShapeModel final : public ui::ListModel
+{
 public:
     usize ItemCount() const override { return 3; }
     StringView ItemText(usize index) override;
@@ -150,12 +169,14 @@ public:
 
 /// The demo: builds its tree under the root of a surface.
 ///
-/// The tree: a menu bar (File, Edit, View, Help), a toolbar, a splitter with a left panel of controls and the viewport, and a status bar that stays dark whatever the theme. The viewport
-/// is bound to this object, which keeps the size the viewport asks for and an orbit camera; the renderer's side reads them each frame.
+/// The tree: a menu bar (File, Edit, View, Help), a toolbar, a splitter with a left panel of controls and the viewport,
+/// and a status bar that stays dark whatever the theme. The viewport is bound to this object, which keeps the size the
+/// viewport asks for and an orbit camera; the renderer's side reads them each frame.
 ///
 /// - Thread-safety: owner-thread-only.
 /// - Ownership: borrows the surface; owns its menus and models; the surface owns the widgets.
-class UiDemoApp final : public ui::ViewportBinding {
+class UiDemoApp final : public ui::ViewportBinding
+{
 public:
     static constexpr usize kItemCount = 1000;
     static constexpr const char kStatusReady[] = "Ready";
@@ -182,7 +203,8 @@ public:
     void RequestQuit() { quit_ = true; }
     /// Returns the widget called `name`, from the root or the popup layer, or null.
     ui::Widget* Find(StringView name);
-    /// Chooses an item of the menu titled `title` (as the user would by clicking it): `path` is the item's text, or `Submenu/Item` for one in a submenu (mnemonic `&`s left out); returns whether there was one.
+    /// Chooses an item of the menu titled `title` (as the user would by clicking it): `path` is the item's text, or
+    /// `Submenu/Item` for one in a submenu (mnemonic `&`s left out); returns whether there was one.
     bool ChooseMenuItem(StringView title, StringView path);
     /// Opens the menu titled `title` (without choosing); returns whether there was one.
     bool OpenMenu(StringView title);
@@ -200,15 +222,18 @@ public:
     void SetViewportImage(ui::ImageId image) { image_ = image; }
     u64 ViewportRenders() const { return renders_; }
     u64 ViewportResizes() const { return resizes_; }
-    /// Gives the program's side of the rendering settings dialog (View > Rendering settings...); null removes it (the dialog then reports that it has no renderer).
+    /// Gives the program's side of the rendering settings dialog (View > Rendering settings...); null removes it (the
+    /// dialog then reports that it has no renderer).
     /// - Ownership: borrowed until it is replaced; must outlive its use here.
     void SetRenderSettingsHost(RenderSettingsHost* host) { render_host_ = host; }
-    /// Opens the rendering settings dialog: present mode, render scale and shader quality, each with the cost class of changing it beside the control.
+    /// Opens the rendering settings dialog: present mode, render scale and shader quality, each with the cost class of
+    /// changing it beside the control.
     void ShowRenderingSettings();
 
     /// The in-world screen.
     WorldScreen& World() { return world_; }
-    /// The factor of the scene's size the orbit distance is multiplied by (set from the scene by the program; 1 by default).
+    /// The factor of the scene's size the orbit distance is multiplied by (set from the scene by the program; 1 by
+    /// default).
     void SetSceneScale(f32 scale) { scene_scale_ = scale; }
     f32 SceneScale() const { return scene_scale_; }
     /// The status bar's own theme override.
@@ -251,7 +276,8 @@ private:
     ItemModel items_;
     ShapeModel shapes_;
     RenderSettingsHost* render_host_ = nullptr;
-    usize rendering_selected_[3] = {0, 2, 2}; // the rendering dialog's choices, kept for the next time it opens (present mode, render scale, shader quality)
+    usize rendering_selected_[3] = {0, 2, 2};  // the rendering dialog's choices, kept for the next time it opens
+                                               // (present mode, render scale, shader quality)
     OrbitCamera camera_;
     UniquePtr<ui::Menu> file_menu_;
     UniquePtr<ui::Menu> edit_menu_;
@@ -276,4 +302,4 @@ private:
     u32 about_accelerator_ = 0;
 };
 
-} // namespace ui_demo
+}  // namespace ui_demo

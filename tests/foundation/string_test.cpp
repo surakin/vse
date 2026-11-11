@@ -10,11 +10,12 @@ using engine_placeholder::ArenaAllocator;
 using engine_placeholder::String;
 using engine_placeholder::StringBuilder;
 using engine_placeholder::StringView;
-using engine_placeholder::test::BytesEqual;
 using engine_placeholder::u8;
 using engine_placeholder::os::Write;
+using engine_placeholder::test::BytesEqual;
 
-TEST_CASE("StringView: equality, comparison and substring", "[string][stringview]") {
+TEST_CASE("StringView: equality, comparison and substring", "[string][stringview]")
+{
     StringView a("hello");
     StringView b("hello");
     StringView c("world");
@@ -23,12 +24,13 @@ TEST_CASE("StringView: equality, comparison and substring", "[string][stringview
     REQUIRE(a.Compare(c) < 0);
     REQUIRE(c.Compare(a) > 0);
 
-    StringView sub = a.Substring(1, 3); // "ell"
+    StringView sub = a.Substring(1, 3);  // "ell"
     StringView expected_sub("ell");
     REQUIRE(sub == expected_sub);
 }
 
-TEST_CASE("String: Append builds expected content and stays null-terminated", "[string][string]") {
+TEST_CASE("String: Append builds expected content and stays null-terminated", "[string][string]")
+{
     ArenaAllocator arena(4096);
     String<ArenaAllocator> s(arena);
     REQUIRE(s.Length() == 0);
@@ -41,7 +43,8 @@ TEST_CASE("String: Append builds expected content and stays null-terminated", "[
     REQUIRE(s.CStr()[s.Length()] == '\0');
 }
 
-TEST_CASE("StringBuilder: formats ints/floats/strings byte-for-byte correctly", "[string][string_builder]") {
+TEST_CASE("StringBuilder: formats ints/floats/strings byte-for-byte correctly", "[string][string_builder]")
+{
     ArenaAllocator arena(1024 * 1024);
     StringBuilder<ArenaAllocator> sb(arena);
     sb.Append("answer=");
@@ -56,8 +59,8 @@ TEST_CASE("StringBuilder: formats ints/floats/strings byte-for-byte correctly", 
     const char expected[] = "answer=-42 count=7 pi=3.25 name=engine";
     StringView actual = sb.View();
     bool matches = actual.Length() == sizeof(expected) - 1 &&
-                   BytesEqual(reinterpret_cast<const u8*>(actual.Data()),
-                              reinterpret_cast<const u8*>(expected), actual.Length());
+                   BytesEqual(reinterpret_cast<const u8*>(actual.Data()), reinterpret_cast<const u8*>(expected),
+                              actual.Length());
     REQUIRE(matches);
 
     // Write the formatted result via os::Write, demonstrating the same
@@ -67,10 +70,12 @@ TEST_CASE("StringBuilder: formats ints/floats/strings byte-for-byte correctly", 
     Write(1, newline, 1);
 }
 
-TEST_CASE("StringBuilder::AppendHex formats lowercase hex with optional zero padding", "[string]") {
+TEST_CASE("StringBuilder::AppendHex formats lowercase hex with optional zero padding", "[string]")
+{
     using namespace engine_placeholder;
     // Each call gets its own arena; the result is compared by value.
-    auto hex = [](u64 v, int digits) {
+    auto hex = [](u64 v, int digits)
+    {
         static ArenaAllocator arena(1 << 16);
         StringBuilder<ArenaAllocator> sb(arena);
         sb.AppendHex(v, digits);
@@ -79,7 +84,7 @@ TEST_CASE("StringBuilder::AppendHex formats lowercase hex with optional zero pad
     REQUIRE(hex(0, 1) == StringView("0"));
     REQUIRE(hex(9, 1) == StringView("9"));
     REQUIRE(hex(10, 1) == StringView("a"));
-    REQUIRE(hex(16, 1) == StringView("10"));   // mouse mask 16 is 0x10, not "16"
+    REQUIRE(hex(16, 1) == StringView("10"));  // mouse mask 16 is 0x10, not "16"
     REQUIRE(hex(0x1f, 1) == StringView("1f"));
     REQUIRE(hex(0xdeadbeefULL, 1) == StringView("deadbeef"));
     REQUIRE(hex(0xffffffffffffffffULL, 1) == StringView("ffffffffffffffff"));
@@ -87,7 +92,8 @@ TEST_CASE("StringBuilder::AppendHex formats lowercase hex with optional zero pad
     REQUIRE(hex(0, 3) == StringView("000"));
 }
 
-TEST_CASE("StringView: LastIndexOf, StartsWith, EndsWith and open-ended Substring", "[string][stringview]") {
+TEST_CASE("StringView: LastIndexOf, StartsWith, EndsWith and open-ended Substring", "[string][stringview]")
+{
     StringView a("a/b/c");
     REQUIRE(a.LastIndexOf('/') == 3);
     REQUIRE(a.LastIndexOf('x') == a.Length());

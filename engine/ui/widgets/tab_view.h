@@ -7,21 +7,25 @@
 
 //! The tab view (Phase 15, Day 199): a row of tab headers over a stack of pages, of which one shows.
 
-namespace engine_placeholder::ui {
+namespace engine_placeholder::ui
+{
 
 /// Tab headers over pages.
 ///
-/// Each tab has a title, an optional image and an optional close button, and owns one page (a widget). Only the selected page is shown (the others are collapsed, not destroyed, so their
-/// state is kept); a lazy tab (`AddLazyTab`) builds its page, once, the first time it is selected. A click on a header selects its tab. With the view focused, Left, Right, Home and End
-/// move the selection; Ctrl+Tab and Ctrl+PageDown select the next tab, Ctrl+Shift+Tab and Ctrl+PageUp the previous one (wrapping), also when the focus is inside a page. When the headers do
-/// not fit, two arrows appear at the right end and the wheel over the headers scrolls them; selecting a tab scrolls it into view. A close button asks `OnCloseRequested`; the program decides and
-/// calls `CloseTab`.
+/// Each tab has a title, an optional image and an optional close button, and owns one page (a widget). Only the
+/// selected page is shown (the others are collapsed, not destroyed, so their state is kept); a lazy tab (`AddLazyTab`)
+/// builds its page, once, the first time it is selected. A click on a header selects its tab. With the view focused,
+/// Left, Right, Home and End move the selection; Ctrl+Tab and Ctrl+PageDown select the next tab, Ctrl+Shift+Tab and
+/// Ctrl+PageUp the previous one (wrapping), also when the focus is inside a page. When the headers do not fit, two
+/// arrows appear at the right end and the wheel over the headers scrolls them; selecting a tab scrolls it into view. A
+/// close button asks `OnCloseRequested`; the program decides and calls `CloseTab`.
 ///
 /// `Select` and the other setters run no listener; the user's actions (mouse and keys) run `OnSelectionChanged`.
 ///
 /// - Thread-safety: owner-thread-only.
 /// - Ownership: owns its pages (as children) and its header layouts.
-class TabView : public Widget {
+class TabView : public Widget
+{
 public:
     /// Builds a page when a lazy tab is first selected; return null for no page.
     using PageFactory = UniquePtr<Widget> (*)(void* user);
@@ -76,7 +80,8 @@ public:
     /// - Ownership: borrowed; the view owns it.
     /// - Fails: returns null for an index out of range, an empty tab and a lazy page not built yet.
     Widget* Page(usize index) const;
-    /// Removes tab `index` and destroys its page (the removal is deferred while an event is delivered). The selection moves to the neighbour when the selected tab goes. Runs no listener.
+    /// Removes tab `index` and destroys its page (the removal is deferred while an event is delivered). The selection
+    /// moves to the neighbour when the selected tab goes. Runs no listener.
     /// - Param index: a tab; an index out of range is ignored.
     void CloseTab(usize index);
     /// Returns whether the headers are wider than the view (the arrows show).
@@ -87,7 +92,8 @@ public:
     ///
     /// - Fails: never.
     f32 HeaderScroll() const { return scroll_; }
-    /// Returns the rectangle of header `index` in surface coordinates (it may lie partly or wholly outside the visible span when the headers are scrolled).
+    /// Returns the rectangle of header `index` in surface coordinates (it may lie partly or wholly outside the visible
+    /// span when the headers are scrolled).
     /// - Fails: returns an empty rectangle for an index out of range.
     Rect TabRect(usize index);
     /// Returns the rectangle the selected page gets, in surface coordinates.
@@ -113,7 +119,8 @@ public:
     /// Scrolls the headers while the pointer rests near an end of them.
     /// - Fails: never.
     bool DragAutoScroll(Point position, f32 dt) override;
-    /// Selects the tab under the pointer after a drag has rested over it (as a click would, so `OnSelectionChanged` runs).
+    /// Selects the tab under the pointer after a drag has rested over it (as a click would, so `OnSelectionChanged`
+    /// runs).
     /// - Fails: never.
     bool OnDragHoverDelay(Point position) override;
     /// Returns the listeners called when the user changes the selection (with the view).
@@ -130,7 +137,8 @@ public:
     void OnEvent(Event& event) override;
 
 private:
-    struct Tab {
+    struct Tab
+    {
         TextRun title;
         Widget* page = nullptr;
         PageFactory factory = nullptr;
@@ -140,8 +148,16 @@ private:
         f32 x = 0;
         f32 width = 0;
     };
-    enum class Hit : u8 { None, Tab, Close, ArrowLeft, ArrowRight };
-    struct HitInfo {
+    enum class Hit : u8
+    {
+        None,
+        Tab,
+        Close,
+        ArrowLeft,
+        ArrowRight
+    };
+    struct HitInfo
+    {
         Hit kind = Hit::None;
         usize tab = kNone;
     };
@@ -174,4 +190,4 @@ private:
     Callback<TabView*, usize> on_close_;
 };
 
-} // namespace engine_placeholder::ui
+}  // namespace engine_placeholder::ui

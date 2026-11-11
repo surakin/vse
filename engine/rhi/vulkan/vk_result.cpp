@@ -2,10 +2,13 @@
 
 #include "rhi/rhi_log.h"
 
-namespace engine_placeholder::rhi::vulkan {
+namespace engine_placeholder::rhi::vulkan
+{
 
-const char* VkResultName(VkResult result) {
-    switch (result) {
+const char* VkResultName(VkResult result)
+{
+    switch (result)
+    {
     case VK_SUCCESS: return "VK_SUCCESS";
     case VK_NOT_READY: return "VK_NOT_READY";
     case VK_TIMEOUT: return "VK_TIMEOUT";
@@ -44,28 +47,30 @@ const char* VkResultName(VkResult result) {
     return "VK_RESULT_UNKNOWN";
 }
 
-VkResultClass ClassifyVkResult(VkResult result) {
-    switch (result) {
-    case VK_SUBOPTIMAL_KHR:
-        return VkResultClass::Suboptimal;
+VkResultClass ClassifyVkResult(VkResult result)
+{
+    switch (result)
+    {
+    case VK_SUBOPTIMAL_KHR: return VkResultClass::Suboptimal;
     case VK_ERROR_OUT_OF_DATE_KHR:
-    case VK_ERROR_SURFACE_LOST_KHR:
-        return VkResultClass::Recoverable;
-    case VK_ERROR_DEVICE_LOST:
-        return VkResultClass::DeviceLost;
-    default:
-        return result < 0 ? VkResultClass::Fatal : VkResultClass::Success;
+    case VK_ERROR_SURFACE_LOST_KHR: return VkResultClass::Recoverable;
+    case VK_ERROR_DEVICE_LOST: return VkResultClass::DeviceLost;
+    default: return result < 0 ? VkResultClass::Fatal : VkResultClass::Success;
     }
 }
 
-VkResultClass CheckVkResult(VkResult result, const char* call_text, const char* file, int line) {
+VkResultClass CheckVkResult(VkResult result, const char* call_text, const char* file, int line)
+{
     VkResultClass cls = ClassifyVkResult(result);
-    if (cls == VkResultClass::Success) {
+    if (cls == VkResultClass::Success)
+    {
         return cls;
     }
-    RhiLog((cls == VkResultClass::Recoverable || cls == VkResultClass::Suboptimal) ? LogVerbosity::Debug : LogVerbosity::Error, "Vulkan: %s returned %s (%d) at %s:%d",
-           call_text, VkResultName(result), static_cast<int>(result), file, line);
+    RhiLog((cls == VkResultClass::Recoverable || cls == VkResultClass::Suboptimal) ? LogVerbosity::Debug
+                                                                                   : LogVerbosity::Error,
+           "Vulkan: %s returned %s (%d) at %s:%d", call_text, VkResultName(result), static_cast<int>(result), file,
+           line);
     return cls;
 }
 
-} // namespace engine_placeholder::rhi::vulkan
+}  // namespace engine_placeholder::rhi::vulkan

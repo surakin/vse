@@ -1,6 +1,7 @@
-// The RHI backend registry (Phase 13 Day 162): backends register explicitly, CreateDevice and EnumerateAdapters dispatch through
-// the registry, Auto picks the available backend of highest rank, and a backend the program never registered fails loudly.
-// Each test that empties the registry leaves it to tests/support/register_backends.cpp to fill again before the next test.
+// The RHI backend registry (Phase 13 Day 162): backends register explicitly, CreateDevice and EnumerateAdapters
+// dispatch through the registry, Auto picks the available backend of highest rank, and a backend the program never
+// registered fails loudly. Each test that empties the registry leaves it to tests/support/register_backends.cpp to fill
+// again before the next test.
 #include "cstr/format.h"
 #include "cstr/cstr.h"
 
@@ -17,7 +18,8 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
 
-namespace {
+namespace
+{
 
 // Counts the calls of the fake backends.
 int g_created_a = 0;
@@ -25,38 +27,45 @@ int g_created_b = 0;
 int g_enumerated_b = 0;
 bool g_b_available = true;
 
-DevicePtr CreateFakeA(const DeviceCreateInfo& info) {
+DevicePtr CreateFakeA(const DeviceCreateInfo& info)
+{
     ++g_created_a;
     CHECK(info.backend == Backend::Vulkan);
     return CreateNullDevice(NullDeviceOptions());
 }
 
-DevicePtr CreateFakeB(const DeviceCreateInfo& info) {
+DevicePtr CreateFakeB(const DeviceCreateInfo& info)
+{
     ++g_created_b;
-    CHECK(info.backend == Backend::Dx12); // Auto was resolved before the factory is called
+    CHECK(info.backend == Backend::Dx12);  // Auto was resolved before the factory is called
     NullDeviceOptions options;
     options.caps.shader_format = ShaderFormat::Dxil;
     return CreateNullDevice(options);
 }
 
-bool EnumerateFake(const DeviceCreateInfo&, AdapterList* out) {
+bool EnumerateFake(const DeviceCreateInfo&, AdapterList* out)
+{
     DefaultNullAdapters(out);
     return true;
 }
 
-bool EnumerateFakeB(const DeviceCreateInfo& info, AdapterList* out) {
+bool EnumerateFakeB(const DeviceCreateInfo& info, AdapterList* out)
+{
     ++g_enumerated_b;
     return EnumerateFake(info, out);
 }
 
-bool FakeBAvailable(char* reason, usize reason_size) {
-    if (!g_b_available) {
+bool FakeBAvailable(char* reason, usize reason_size)
+{
+    if (!g_b_available)
+    {
         FormatTo(reason, reason_size, "the fake driver is switched off");
     }
     return g_b_available;
 }
 
-BackendDescriptor FakeA() {
+BackendDescriptor FakeA()
+{
     BackendDescriptor d;
     d.backend = Backend::Vulkan;
     d.name = "fake-a";
@@ -66,7 +75,8 @@ BackendDescriptor FakeA() {
     return d;
 }
 
-BackendDescriptor FakeB() {
+BackendDescriptor FakeB()
+{
     BackendDescriptor d;
     d.backend = Backend::Dx12;
     d.name = "fake-b";
@@ -78,26 +88,30 @@ BackendDescriptor FakeB() {
     return d;
 }
 
-struct Reset {
-    Reset() {
+struct Reset
+{
+    Reset()
+    {
         ClearBackendRegistryForTest();
         g_created_a = g_created_b = g_enumerated_b = 0;
         g_b_available = true;
     }
-    ~Reset() {
+    ~Reset()
+    {
         ClearBackendRegistryForTest();
         RegisterCompiledBackends();
     }
 };
 
-} // namespace
+}  // namespace
 
-TEST_CASE("Backends register in order, once, and clashing descriptors are refused", "[rhi][registry]") {
+TEST_CASE("Backends register in order, once, and clashing descriptors are refused", "[rhi][registry]")
+{
     Reset reset;
     CHECK(RegisteredBackendCount() == 0);
     REQUIRE(RegisterBackend(FakeA()));
     REQUIRE(RegisterBackend(FakeB()));
-    CHECK(RegisterBackend(FakeA())); // the same descriptor again changes nothing
+    CHECK(RegisterBackend(FakeA()));  // the same descriptor again changes nothing
     REQUIRE(RegisteredBackendCount() == 2);
     CHECK(StringView(RegisteredBackend(0).name) == "fake-a");
     CHECK(StringView(RegisteredBackend(1).name) == "fake-b");
@@ -111,7 +125,7 @@ TEST_CASE("Backends register in order, once, and clashing descriptors are refuse
     LogRhi.SetEnabled(false);
     BackendDescriptor same_value = FakeA();
     same_value.name = "other";
-    CHECK_FALSE(RegisterBackend(same_value)); // the Vulkan value is taken
+    CHECK_FALSE(RegisterBackend(same_value));  // the Vulkan value is taken
     BackendDescriptor same_name = FakeB();
     same_name.backend = Backend::Null;
     same_name.name = "fake-a";
@@ -129,14 +143,15 @@ TEST_CASE("Backends register in order, once, and clashing descriptors are refuse
     CHECK(RegisteredBackendCount() == 2);
 }
 
-TEST_CASE("Auto picks the available backend of highest rank and falls back when it is unavailable", "[rhi][registry]") {
+TEST_CASE("Auto picks the available backend of highest rank and falls back when it is unavailable", "[rhi][registry]")
+{
     Reset reset;
     REQUIRE(RegisterBackend(FakeA()));
     REQUIRE(RegisterBackend(FakeB()));
     char reason[160] = {};
     CHECK(PickAutoBackend(reason, sizeof(reason)) == FindBackend(Backend::Dx12));
 
-    DeviceCreateInfo info; // backend defaults to Auto
+    DeviceCreateInfo info;  // backend defaults to Auto
     CHECK(info.backend == Backend::Auto);
     DevicePtr device = CreateDevice(info);
     REQUIRE(device);
@@ -155,7 +170,8 @@ TEST_CASE("Auto picks the available backend of highest rank and falls back when 
     CHECK(g_created_b == 1);
 }
 
-TEST_CASE("A backend that is registered but unavailable is refused with its own reason", "[rhi][registry]") {
+TEST_CASE("A backend that is registered but unavailable is refused with its own reason", "[rhi][registry]")
+{
     Reset reset;
     REQUIRE(RegisterBackend(FakeB()));
     g_b_available = false;
@@ -178,7 +194,8 @@ TEST_CASE("A backend that is registered but unavailable is refused with its own 
     CHECK(g_created_b == 0);
 }
 
-TEST_CASE("A backend this program never registered fails loudly, never as a missing GPU", "[rhi][registry]") {
+TEST_CASE("A backend this program never registered fails loudly, never as a missing GPU", "[rhi][registry]")
+{
     Reset reset;
     char reason[256] = {};
     CHECK(ResolveBackend(Backend::Vulkan, reason, sizeof(reason)) == nullptr);
@@ -201,10 +218,12 @@ TEST_CASE("A backend this program never registered fails loudly, never as a miss
     LogRhi.SetEnabled(was);
 }
 
-TEST_CASE("RegisterCompiledBackends registers null and Vulkan, and Direct3D 12 on Windows; Auto never picks null", "[rhi][registry]") {
+TEST_CASE("RegisterCompiledBackends registers null and Vulkan, and Direct3D 12 on Windows; Auto never picks null",
+          "[rhi][registry]")
+{
     Reset reset;
     CHECK(RegisterCompiledBackends());
-    CHECK(RegisterCompiledBackends()); // again: nothing changes
+    CHECK(RegisterCompiledBackends());  // again: nothing changes
     const BackendDescriptor* null_backend = FindBackend(Backend::Null);
     const BackendDescriptor* vulkan = FindBackend(Backend::Vulkan);
     REQUIRE(null_backend != nullptr);
@@ -215,7 +234,7 @@ TEST_CASE("RegisterCompiledBackends registers null and Vulkan, and Direct3D 12 o
     CHECK(vulkan->auto_rank > 0);
     CHECK(vulkan->shader_format == ShaderFormat::Spirv);
 #if ENGINE_PLATFORM_WINDOWS
-    const BackendDescriptor* dx12 = FindBackend(Backend::Dx12); // Phase 13 Day 164
+    const BackendDescriptor* dx12 = FindBackend(Backend::Dx12);  // Phase 13 Day 164
     REQUIRE(dx12 != nullptr);
     CHECK(dx12->shader_format == ShaderFormat::Dxil);
     CHECK(RegisteredBackendCount() == 3);
@@ -229,7 +248,8 @@ TEST_CASE("RegisterCompiledBackends registers null and Vulkan, and Direct3D 12 o
     CHECK(PickAutoBackend(reason, sizeof(reason)) == nullptr);
 }
 
-TEST_CASE("A device refuses bytecode in a format other than its own, naming both", "[rhi][registry][desc]") {
+TEST_CASE("A device refuses bytecode in a format other than its own, naming both", "[rhi][registry][desc]")
+{
     NullDeviceOptions options;
     options.caps.shader_format = ShaderFormat::Dxil;
     NullDevicePtr device = CreateNullDevice(options);
@@ -244,5 +264,6 @@ TEST_CASE("A device refuses bytecode in a format other than its own, naming both
     d.debug_name = "only_spirv.frag";
     CHECK_FALSE(device->CreateShader(d).IsValid());
     LogRhi.SetEnabled(was);
-    CHECK(device->ErrorCount() == 1); // the direct call is a contract error on the null device; the set lookup fails before it
+    CHECK(device->ErrorCount() ==
+          1);  // the direct call is a contract error on the null device; the set lookup fails before it
 }

@@ -23,9 +23,11 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
 
-namespace {
+namespace
+{
 
-rhi::TextureDesc ColorTex(u32 w, u32 h, rhi::Format format = rhi::Format::RGBA8_UNorm) {
+rhi::TextureDesc ColorTex(u32 w, u32 h, rhi::Format format = rhi::Format::RGBA8_UNorm)
+{
     rhi::TextureDesc d;
     d.width = w;
     d.height = h;
@@ -35,7 +37,8 @@ rhi::TextureDesc ColorTex(u32 w, u32 h, rhi::Format format = rhi::Format::RGBA8_
 }
 
 // Begins and ends a rendering pass on one resource, clearing it: enough for the null device to check the state.
-void ClearPassFn(const PassExecuteContext& context, void* user) {
+void ClearPassFn(const PassExecuteContext& context, void* user)
+{
     const GraphResource* target = static_cast<const GraphResource*>(user);
     rhi::RenderingDesc rd;
     rd.color[0].texture = context.graph->ResolvedTexture(*target);
@@ -45,7 +48,8 @@ void ClearPassFn(const PassExecuteContext& context, void* user) {
 }
 
 // A frame of three passes: an offscreen intermediate sized from the target, then the target.
-struct ThreePass {
+struct ThreePass
+{
     GraphResource mid;
     GraphResource target;
     u32 builds = 0;
@@ -55,31 +59,41 @@ struct ThreePass {
     bool refuse = false;
 };
 
-bool BuildThreePass(const FrameContext& context, void* user) {
+bool BuildThreePass(const FrameContext& context, void* user)
+{
     ThreePass* s = static_cast<ThreePass*>(user);
     ++s->builds;
     s->last_width = context.width;
     s->last_height = context.height;
-    if (s->refuse) return false;
+    if (s->refuse)
+    {
+        return false;
+    }
     s->target = context.target;
-    s->mid = context.graph->CreateTexture("mid", ColorTex(s->bad_transient ? 0 : context.width / 2, s->bad_transient ? 0 : context.height / 2));
+    s->mid = context.graph->CreateTexture(
+        "mid", ColorTex(s->bad_transient ? 0 : context.width / 2, s->bad_transient ? 0 : context.height / 2));
     context.graph->AddPass("mid", &ClearPassFn, &s->mid).Write(s->mid, GraphUsage::ColorAttachment);
-    context.graph->AddPass("final", &ClearPassFn, &s->target).Read(s->mid, GraphUsage::Sampled).Write(s->target, GraphUsage::ColorAttachment);
+    context.graph->AddPass("final", &ClearPassFn, &s->target)
+        .Read(s->mid, GraphUsage::Sampled)
+        .Write(s->target, GraphUsage::ColorAttachment);
     return true;
 }
 
-struct NullRenderer {
+struct NullRenderer
+{
     rhi::NullDevicePtr device;
     rhi::Swapchain* swapchain = nullptr;
     ThreePass scene;
     UniquePtr<Renderer> renderer_owner;
-    Renderer* renderer = nullptr; // view of renderer_owner
+    Renderer* renderer = nullptr;  // view of renderer_owner
 
-    explicit NullRenderer(bool with_swapchain, jobs::Scheduler* scheduler = nullptr, u32 lose_at = 0) {
+    explicit NullRenderer(bool with_swapchain, jobs::Scheduler* scheduler = nullptr, u32 lose_at = 0)
+    {
         rhi::NullDeviceOptions options;
         options.lose_device_at_frame = lose_at;
         device = rhi::CreateNullDevice(options);
-        if (with_swapchain) {
+        if (with_swapchain)
+        {
             rhi::SwapchainDesc sd;
             sd.width = 64;
             sd.height = 48;
@@ -94,18 +108,26 @@ struct NullRenderer {
         renderer_owner = MakeUnique<Renderer>(rd);
         renderer = renderer_owner.Get();
     }
-    ~NullRenderer() {
+    ~NullRenderer()
+    {
         renderer_owner.Reset();
-        if (swapchain != nullptr) device->DestroySwapchain(swapchain);
+        if (swapchain != nullptr)
+        {
+            device->DestroySwapchain(swapchain);
+        }
         device.Reset();
     }
 };
 
-} // namespace
+}  // namespace
 
-TEST_CASE("A swapchain frame renders and presents on the null device", "[renderer][frame]") {
+TEST_CASE("A swapchain frame renders and presents on the null device", "[renderer][frame]")
+{
     NullRenderer r(true);
-    for (int i = 0; i < 5; ++i) REQUIRE(r.renderer->RenderFrame(nullptr, nullptr, nullptr) == FrameStatus::Ok);
+    for (int i = 0; i < 5; ++i)
+    {
+        REQUIRE(r.renderer->RenderFrame(nullptr, nullptr, nullptr) == FrameStatus::Ok);
+    }
     CHECK(r.device->ErrorCount() == 0);
     CHECK(r.renderer->Stats().frames_rendered == 5);
     CHECK(r.scene.last_width == 64);
@@ -115,7 +137,8 @@ TEST_CASE("A swapchain frame renders and presents on the null device", "[rendere
     CHECK(r.renderer->Pool().Stats().texture_reuses == 4);
 }
 
-TEST_CASE("Minimizing skips frames, restoring and resizing resume them with targets that follow", "[renderer][frame]") {
+TEST_CASE("Minimizing skips frames, restoring and resizing resume them with targets that follow", "[renderer][frame]")
+{
     NullRenderer r(true);
     REQUIRE(r.renderer->RenderFrame(nullptr, nullptr, nullptr) == FrameStatus::Ok);
     CHECK(r.swapchain->Resize(0, 0) == rhi::SwapchainStatus::Minimized);
@@ -129,12 +152,16 @@ TEST_CASE("Minimizing skips frames, restoring and resizing resume them with targ
     CHECK(r.device->ErrorCount() == 0);
     // The 32 x 24 intermediate is idle now and the 50 x 40 one is new; the old one is destroyed once it ages out.
     CHECK(r.renderer->Pool().Stats().textures_created == 2);
-    for (int i = 0; i < 6; ++i) REQUIRE(r.renderer->RenderFrame(nullptr, nullptr, nullptr) == FrameStatus::Ok);
+    for (int i = 0; i < 6; ++i)
+    {
+        REQUIRE(r.renderer->RenderFrame(nullptr, nullptr, nullptr) == FrameStatus::Ok);
+    }
     CHECK(r.renderer->Pool().Stats().textures_destroyed == 1);
     CHECK(r.renderer->Pool().Stats().textures_live == 1);
 }
 
-TEST_CASE("An offscreen frame ends in the requested state", "[renderer][frame]") {
+TEST_CASE("An offscreen frame ends in the requested state", "[renderer][frame]")
+{
     NullRenderer r(false);
     rhi::TextureDesc td = ColorTex(64, 48);
     td.usage = rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::CopySrc;
@@ -144,18 +171,24 @@ TEST_CASE("An offscreen frame ends in the requested state", "[renderer][frame]")
     target.width = 64;
     target.height = 48;
     target.final_state = rhi::ResourceState::CopySrc;
-    for (int i = 0; i < 3; ++i) REQUIRE(r.renderer->RenderFrame(nullptr, nullptr, &target) == FrameStatus::Ok);
+    for (int i = 0; i < 3; ++i)
+    {
+        REQUIRE(r.renderer->RenderFrame(nullptr, nullptr, &target) == FrameStatus::Ok);
+    }
     CHECK(r.device->ErrorCount() == 0);
     r.device->DestroyTexture(texture);
 }
 
-TEST_CASE("A frame callback that refuses, or a transient the device cannot make, fails the frame and later frames recover", "[renderer][frame][fault]") {
+TEST_CASE(
+    "A frame callback that refuses, or a transient the device cannot make, fails the frame and later frames recover",
+    "[renderer][frame][fault]")
+{
     NullRenderer r(true);
     r.scene.refuse = true;
     CHECK(r.renderer->RenderFrame(nullptr, nullptr, nullptr) == FrameStatus::Failed);
     CHECK(StringView(r.renderer->LastError()) == "the frame callback abandoned the frame");
     r.scene.refuse = false;
-    r.scene.bad_transient = true; // a zero-size texture: the device refuses to create it
+    r.scene.bad_transient = true;  // a zero-size texture: the device refuses to create it
     CHECK(r.renderer->RenderFrame(nullptr, nullptr, nullptr) == FrameStatus::Failed);
     CHECK(StringView(r.renderer->LastError()) == "transient texture 'mid' could not be allocated");
     r.device->ResetErrors();
@@ -167,19 +200,31 @@ TEST_CASE("A frame callback that refuses, or a transient the device cannot make,
     CHECK(r.renderer->Stats().frames_rendered == 1);
 }
 
-TEST_CASE("Losing the device mid-run ends the frame cleanly and the renderer can be destroyed", "[renderer][frame][fault]") {
-    NullRenderer r(true, nullptr, 4); // the device is lost at the start of the 4th frame
-    for (int i = 0; i < 3; ++i) REQUIRE(r.renderer->RenderFrame(nullptr, nullptr, nullptr) == FrameStatus::Ok);
+TEST_CASE("Losing the device mid-run ends the frame cleanly and the renderer can be destroyed",
+          "[renderer][frame][fault]")
+{
+    NullRenderer r(true, nullptr, 4);  // the device is lost at the start of the 4th frame
+    for (int i = 0; i < 3; ++i)
+    {
+        REQUIRE(r.renderer->RenderFrame(nullptr, nullptr, nullptr) == FrameStatus::Ok);
+    }
     CHECK(r.renderer->RenderFrame(nullptr, nullptr, nullptr) == FrameStatus::DeviceLost);
     CHECK(r.renderer->RenderFrame(nullptr, nullptr, nullptr) == FrameStatus::DeviceLost);
     // Destruction (here, at scope exit) must not crash or leak; the null device checks for leaks at destroy.
 }
 
-TEST_CASE("A thousand frames neither grow the pool nor leak device objects", "[renderer][frame]") {
+TEST_CASE("A thousand frames neither grow the pool nor leak device objects", "[renderer][frame]")
+{
     NullRenderer r(true);
-    for (int i = 0; i < 10; ++i) REQUIRE(r.renderer->RenderFrame(nullptr, nullptr, nullptr) == FrameStatus::Ok);
+    for (int i = 0; i < 10; ++i)
+    {
+        REQUIRE(r.renderer->RenderFrame(nullptr, nullptr, nullptr) == FrameStatus::Ok);
+    }
     const rhi::NullDeviceStats warm = r.device->Statistics();
-    for (int i = 0; i < 1000; ++i) REQUIRE(r.renderer->RenderFrame(nullptr, nullptr, nullptr) == FrameStatus::Ok);
+    for (int i = 0; i < 1000; ++i)
+    {
+        REQUIRE(r.renderer->RenderFrame(nullptr, nullptr, nullptr) == FrameStatus::Ok);
+    }
     const rhi::NullDeviceStats after = r.device->Statistics();
     CHECK(after.textures == warm.textures);
     CHECK(after.buffers == warm.buffers);
@@ -189,42 +234,49 @@ TEST_CASE("A thousand frames neither grow the pool nor leak device objects", "[r
     CHECK(r.device->ErrorCount() == 0);
 }
 
-namespace {
+namespace
+{
 
 // ---- parallel recording ----
 
 constexpr u32 kIndependent = 48;
 
-struct ThreadLog {
+struct ThreadLog
+{
     Atomic<u32> counts{0};
     ThreadId ids[kIndependent];
 };
 
-struct IndependentPass {
+struct IndependentPass
+{
     ThreadLog* log;
     u32 index;
 };
 
-void RecordThread(const PassExecuteContext& context, void* user) {
+void RecordThread(const PassExecuteContext& context, void* user)
+{
     IndependentPass* pass = static_cast<IndependentPass*>(user);
     pass->log->ids[pass->index] = ThisThread::Id();
     pass->log->counts.FetchAdd(1);
     // A little work so the other participants get to steal passes.
     const u64 until = os::MonotonicTimeNanos() + 300 * 1000;
-    while (os::MonotonicTimeNanos() < until) {
+    while (os::MonotonicTimeNanos() < until)
+    {
     }
     (void)context;
 }
 
-// Pass i toggles a buffer between CopyDst and CopySrc, so the passes form a chain whose barrier `before` states are only
-// consistent if the lists are submitted in schedule order.
-struct Chain {
+// Pass i toggles a buffer between CopyDst and CopySrc, so the passes form a chain whose barrier `before` states are
+// only consistent if the lists are submitted in schedule order.
+struct Chain
+{
     GraphResource buffer;
 };
 
-} // namespace
+}  // namespace
 
-TEST_CASE("Independent passes record on several threads, their lists submitted in order", "[renderer][frame][parallel]") {
+TEST_CASE("Independent passes record on several threads, their lists submitted in order", "[renderer][frame][parallel]")
+{
     jobs::Scheduler::Config config;
     config.participants = 4;
     config.pin = false;
@@ -236,7 +288,8 @@ TEST_CASE("Independent passes record on several threads, their lists submitted i
         RenderGraph graph(&arena, RenderGraphDesc{});
         ThreadLog log;
         IndependentPass passes[kIndependent];
-        for (u32 i = 0; i < kIndependent; ++i) {
+        for (u32 i = 0; i < kIndependent; ++i)
+        {
             passes[i] = {&log, i};
             graph.AddPass("independent", &RecordThread, &passes[i], PassFlags::SideEffects);
         }
@@ -246,10 +299,17 @@ TEST_CASE("Independent passes record on several threads, their lists submitted i
         bd.usage = rhi::BufferUsage::CopySrc | rhi::BufferUsage::CopyDst;
         Chain chain;
         chain.buffer = graph.CreateBuffer("chain", bd);
-        for (u32 i = 0; i < 40; ++i) {
+        for (u32 i = 0; i < 40; ++i)
+        {
             PassBuilder b = graph.AddPass("link", nullptr, nullptr, PassFlags::SideEffects);
-            if (i % 2 == 0) b.Write(chain.buffer, GraphUsage::CopyDst);
-            else b.Read(chain.buffer, GraphUsage::CopySrc);
+            if (i % 2 == 0)
+            {
+                b.Write(chain.buffer, GraphUsage::CopyDst);
+            }
+            else
+            {
+                b.Read(chain.buffer, GraphUsage::CopySrc);
+            }
         }
         device->BeginFrame();
         rhi::FenceValue fence = 0;
@@ -259,17 +319,25 @@ TEST_CASE("Independent passes record on several threads, their lists submitted i
         CHECK(log.counts.Load() == kIndependent);
         CHECK(device->ErrorCount() == 0);
         Vector<ThreadId> distinct;
-        for (u32 i = 0; i < kIndependent; ++i) {
+        for (u32 i = 0; i < kIndependent; ++i)
+        {
             bool seen = false;
-            for (usize j = 0; j < distinct.Size(); ++j) seen = seen || distinct[j] == log.ids[i];
-            if (!seen) distinct.Push(log.ids[i]);
+            for (usize j = 0; j < distinct.Size(); ++j)
+            {
+                seen = seen || distinct[j] == log.ids[i];
+            }
+            if (!seen)
+            {
+                distinct.Push(log.ids[i]);
+            }
         }
-        CHECK(distinct.Size() >= 2); // 48 passes of 0.3 ms on 4 participants cannot all land on one thread
+        CHECK(distinct.Size() >= 2);  // 48 passes of 0.3 ms on 4 participants cannot all land on one thread
     }
     device.Reset();
 }
 
-TEST_CASE("ExecuteParallel without a scheduler records the same lists in order", "[renderer][frame][parallel]") {
+TEST_CASE("ExecuteParallel without a scheduler records the same lists in order", "[renderer][frame][parallel]")
+{
     rhi::NullDevicePtr device = rhi::CreateNullDevice();
     {
         TransientPool pool(device.Get(), TransientPoolDesc{});
@@ -279,10 +347,17 @@ TEST_CASE("ExecuteParallel without a scheduler records the same lists in order",
         bd.size = 64;
         bd.usage = rhi::BufferUsage::CopySrc | rhi::BufferUsage::CopyDst;
         const GraphResource buffer = graph.CreateBuffer("chain", bd);
-        for (u32 i = 0; i < 20; ++i) {
+        for (u32 i = 0; i < 20; ++i)
+        {
             PassBuilder b = graph.AddPass("link", nullptr, nullptr, PassFlags::SideEffects);
-            if (i % 2 == 0) b.Write(buffer, GraphUsage::CopyDst);
-            else b.Read(buffer, GraphUsage::CopySrc);
+            if (i % 2 == 0)
+            {
+                b.Write(buffer, GraphUsage::CopyDst);
+            }
+            else
+            {
+                b.Read(buffer, GraphUsage::CopySrc);
+            }
         }
         device->BeginFrame();
         REQUIRE(graph.ExecuteParallel(&pool, device.Get(), nullptr, nullptr));
@@ -292,7 +367,8 @@ TEST_CASE("ExecuteParallel without a scheduler records the same lists in order",
     device.Reset();
 }
 
-TEST_CASE("A lost device during ExecuteParallel fails it and puts the pool back", "[renderer][frame][fault]") {
+TEST_CASE("A lost device during ExecuteParallel fails it and puts the pool back", "[renderer][frame][fault]")
+{
     rhi::NullDeviceOptions options;
     options.lose_device_at_frame = 1;
     rhi::NullDevicePtr device = rhi::CreateNullDevice(options);
@@ -302,26 +378,30 @@ TEST_CASE("A lost device during ExecuteParallel fails it and puts the pool back"
         RenderGraph graph(&arena, RenderGraphDesc{});
         const GraphResource t = graph.CreateTexture("t", ColorTex(8, 8));
         rhi::TextureHandle imported = device->CreateTexture(ColorTex(8, 8));
-        const GraphResource out = graph.ImportTexture("out", imported, rhi::ResourceState::Undefined, rhi::ResourceState::CopySrc, false);
+        const GraphResource out = graph.ImportTexture("out", imported, rhi::ResourceState::Undefined,
+                                                      rhi::ResourceState::CopySrc, false);
         graph.AddPass("a", nullptr, nullptr).Write(t, GraphUsage::ColorAttachment);
         graph.AddPass("b", nullptr, nullptr).Read(t, GraphUsage::Sampled).Write(out, GraphUsage::ColorAttachment);
-        device->BeginFrame(); // the device is lost from here
+        device->BeginFrame();  // the device is lost from here
         CHECK_FALSE(graph.ExecuteParallel(&pool, device.Get(), nullptr, nullptr));
-        CHECK(StringView(graph.ExecuteError()) == "a command list could not be created (the device is lost or out of memory)");
-        CHECK(pool.Stats().textures_idle == pool.Stats().textures_live); // nothing stays out of the pool
+        CHECK(StringView(graph.ExecuteError()) ==
+              "a command list could not be created (the device is lost or out of memory)");
+        CHECK(pool.Stats().textures_idle == pool.Stats().textures_live);  // nothing stays out of the pool
         device->EndFrame();
         device->DestroyTexture(imported);
     }
     device.Reset();
 }
 
-namespace {
+namespace
+{
 
 // ---- real device: serial and parallel recording give the same pixels ----
 
 constexpr u32 kSize = 16;
 
-struct SampleScene {
+struct SampleScene
+{
     rhi::Device* device = nullptr;
     rhi::ShaderHandle vs, fs;
     rhi::BindGroupLayoutHandle layout;
@@ -329,7 +409,8 @@ struct SampleScene {
     rhi::SamplerHandle sampler;
     GraphResource a, b, c, d, out;
 
-    bool Create(rhi::Device* dev) {
+    bool Create(rhi::Device* dev)
+    {
         device = dev;
         rhi::ShaderDesc sd;
         sd.stage = rhi::ShaderStage::Vertex;
@@ -358,14 +439,16 @@ struct SampleScene {
         sampler = device->CreateSampler(smp);
         return vs.IsValid() && fs.IsValid() && layout.IsValid() && pipeline.IsValid() && sampler.IsValid();
     }
-    void Destroy() {
+    void Destroy()
+    {
         device->DestroySampler(sampler);
         device->DestroyPipeline(pipeline);
         device->DestroyBindGroupLayout(layout);
         device->DestroyShader(vs);
         device->DestroyShader(fs);
     }
-    void Clear(const PassExecuteContext& ctx, GraphResource target, f32 r, f32 g, f32 bl, f32 al) const {
+    void Clear(const PassExecuteContext& ctx, GraphResource target, f32 r, f32 g, f32 bl, f32 al) const
+    {
         rhi::RenderingDesc rd;
         rd.color[0].texture = ctx.graph->ResolvedTexture(target);
         rd.color[0].clear_color[0] = r;
@@ -376,7 +459,8 @@ struct SampleScene {
         ctx.list->BeginRendering(rd);
         ctx.list->EndRendering();
     }
-    void Add(const PassExecuteContext& ctx, GraphResource target, GraphResource first, GraphResource second) const {
+    void Add(const PassExecuteContext& ctx, GraphResource target, GraphResource first, GraphResource second) const
+    {
         rhi::BindGroupEntry e[3];
         e[0].binding = 0;
         e[0].texture = ctx.graph->ResolvedTexture(first);
@@ -402,22 +486,32 @@ struct SampleScene {
     }
 };
 
-void ClearA(const PassExecuteContext& c, void* u) { static_cast<const SampleScene*>(u)->Clear(c, static_cast<const SampleScene*>(u)->a, 0.1f, 0.2f, 0.05f, 0.0f); }
-void ClearC(const PassExecuteContext& c, void* u) { static_cast<const SampleScene*>(u)->Clear(c, static_cast<const SampleScene*>(u)->c, 0.3f, 0.1f, 0.2f, 0.0f); }
-void AddAA(const PassExecuteContext& c, void* u) {
-    const SampleScene* s = static_cast<const SampleScene*>(u);
-    s->Add(c, s->b, s->a, s->a); // independent of ClearC: these two may record on different threads
+void ClearA(const PassExecuteContext& c, void* u)
+{
+    static_cast<const SampleScene*>(u)->Clear(c, static_cast<const SampleScene*>(u)->a, 0.1f, 0.2f, 0.05f, 0.0f);
 }
-void AddCC(const PassExecuteContext& c, void* u) {
+void ClearC(const PassExecuteContext& c, void* u)
+{
+    static_cast<const SampleScene*>(u)->Clear(c, static_cast<const SampleScene*>(u)->c, 0.3f, 0.1f, 0.2f, 0.0f);
+}
+void AddAA(const PassExecuteContext& c, void* u)
+{
+    const SampleScene* s = static_cast<const SampleScene*>(u);
+    s->Add(c, s->b, s->a, s->a);  // independent of ClearC: these two may record on different threads
+}
+void AddCC(const PassExecuteContext& c, void* u)
+{
     const SampleScene* s = static_cast<const SampleScene*>(u);
     s->Add(c, s->d, s->c, s->c);
 }
-void AddBD(const PassExecuteContext& c, void* u) {
+void AddBD(const PassExecuteContext& c, void* u)
+{
     const SampleScene* s = static_cast<const SampleScene*>(u);
     s->Add(c, s->out, s->b, s->d);
 }
 
-bool BuildSample(const FrameContext& context, void* user) {
+bool BuildSample(const FrameContext& context, void* user)
+{
     SampleScene* s = static_cast<SampleScene*>(user);
     rhi::TextureDesc rt = ColorTex(kSize, kSize);
     s->a = context.graph->CreateTexture("a", rt);
@@ -436,7 +530,8 @@ bool BuildSample(const FrameContext& context, void* user) {
     return true;
 }
 
-rhi::DevicePtr MakeGpuDevice(rhi::Backend backend, u32 fail_allocations_from = 0) {
+rhi::DevicePtr MakeGpuDevice(rhi::Backend backend, u32 fail_allocations_from = 0)
+{
     rhi::DeviceCreateInfo info;
     info.backend = backend;
     info.validation = rhi::ValidationSetting::On;
@@ -446,26 +541,39 @@ rhi::DevicePtr MakeGpuDevice(rhi::Backend backend, u32 fail_allocations_from = 0
     return rhi::CreateDevice(info);
 }
 
-bool GpuAvailable(rhi::Device* device, rhi::Backend backend) {
-    if (device != nullptr) return true;
+bool GpuAvailable(rhi::Device* device, rhi::Backend backend)
+{
+    if (device != nullptr)
+    {
+        return true;
+    }
     const char* required = os::GetEnvironment("ENGINE_RHI_REQUIRE_GPU");
-    if (required != nullptr && required[0] == '1') FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no " << gpu_test::BackendTag(backend) << " device could be created");
+    if (required != nullptr && required[0] == '1')
+    {
+        FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no " << gpu_test::BackendTag(backend) << " device could be created");
+    }
     return false;
 }
 
-struct GpuRun {
+struct GpuRun
+{
     Vector<u8> pixels;
     FrameStatus status = FrameStatus::Failed;
 };
 
-GpuRun RenderSample(rhi::Device* device, jobs::Scheduler* scheduler) {
+GpuRun RenderSample(rhi::Device* device, jobs::Scheduler* scheduler)
+{
     GpuRun run;
     SampleScene scene;
-    if (!scene.Create(device)) return run;
+    if (!scene.Create(device))
+    {
+        return run;
+    }
     rhi::TextureDesc td = ColorTex(kSize, kSize);
     td.usage = rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::CopySrc;
     const rhi::TextureHandle target = device->CreateTexture(td);
-    if (target.IsValid()) {
+    if (target.IsValid())
+    {
         RendererDesc rd;
         rd.device = device;
         rd.scheduler = scheduler;
@@ -477,10 +585,17 @@ GpuRun RenderSample(rhi::Device* device, jobs::Scheduler* scheduler) {
             ft.texture = target;
             ft.width = ft.height = kSize;
             ft.final_state = rhi::ResourceState::CopySrc;
-            for (int i = 0; i < 3; ++i) run.status = renderer.RenderFrame(nullptr, nullptr, &ft);
+            for (int i = 0; i < 3; ++i)
+            {
+                run.status = renderer.RenderFrame(nullptr, nullptr, &ft);
+            }
             device->WaitIdle();
             run.pixels.Resize(kSize * kSize * 4);
-            if (run.status == FrameStatus::Ok) device->ReadbackTexture(target, 0, 0, run.pixels.Data(), run.pixels.Size(), rhi::ResourceState::CopySrc);
+            if (run.status == FrameStatus::Ok)
+            {
+                device->ReadbackTexture(target, 0, 0, run.pixels.Data(), run.pixels.Size(),
+                                        rhi::ResourceState::CopySrc);
+            }
         }
         device->DestroyTexture(target);
     }
@@ -489,13 +604,18 @@ GpuRun RenderSample(rhi::Device* device, jobs::Scheduler* scheduler) {
     return run;
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("Parallel recording gives the same pixels as serial recording", "[renderer][frame][parallel][gpu]") {
-    FOR_EACH_GPU_BACKEND(backend) {
+TEST_CASE("Parallel recording gives the same pixels as serial recording", "[renderer][frame][parallel][gpu]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = MakeGpuDevice(backend);
-        if (!GpuAvailable(device.Get(), backend)) SKIP("no " << gpu_test::BackendTag(backend) << " device on this machine");
+        if (!GpuAvailable(device.Get(), backend))
+        {
+            SKIP("no " << gpu_test::BackendTag(backend) << " device on this machine");
+        }
         jobs::Scheduler::Config config;
         config.participants = 4;
         config.pin = false;
@@ -517,33 +637,48 @@ TEST_CASE("Parallel recording gives the same pixels as serial recording", "[rend
 
 constexpr u32 kSweep = 24;
 
-TEST_CASE("Device allocation failures at any point end frames cleanly", "[renderer][frame][fault][gpu]") {
-    FOR_EACH_GPU_BACKEND(backend) {
-        // fail_allocations_from = N makes the Nth device-memory allocation and every later one fail. Whatever the scene was
-        // creating at that moment (a texture, the target, a pooled transient), nothing may crash and the teardown must be clean.
+TEST_CASE("Device allocation failures at any point end frames cleanly", "[renderer][frame][fault][gpu]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
+        // fail_allocations_from = N makes the Nth device-memory allocation and every later one fail. Whatever the scene
+        // was creating at that moment (a texture, the target, a pooled transient), nothing may crash and the teardown
+        // must be clean.
         rhi::DevicePtr probe = MakeGpuDevice(backend);
-        if (!GpuAvailable(probe.Get(), backend)) SKIP("no " << gpu_test::BackendTag(backend) << " device on this machine");
+        if (!GpuAvailable(probe.Get(), backend))
+        {
+            SKIP("no " << gpu_test::BackendTag(backend) << " device on this machine");
+        }
         probe.Reset();
         u32 failed_frames = 0;
         u32 ok_frames = 0;
         u32 refused = 0;
-        for (u32 from = 1; from <= kSweep; ++from) {
+        for (u32 from = 1; from <= kSweep; ++from)
+        {
             rhi::DevicePtr device = MakeGpuDevice(backend, from);
-            if (device == nullptr) { // the device's own setup (staging memory) hit the failure: creation is refused cleanly
+            if (device == nullptr)
+            {  // the device's own setup (staging memory) hit the failure: creation is refused cleanly
                 ++refused;
                 continue;
             }
             const GpuRun run = RenderSample(device.Get(), nullptr);
-            if (run.status == FrameStatus::Ok) ++ok_frames;
-            else ++failed_frames;
+            if (run.status == FrameStatus::Ok)
+            {
+                ++ok_frames;
+            }
+            else
+            {
+                ++failed_frames;
+            }
             device.Reset();
         }
-        CHECK(failed_frames > 0); // some allocation index must have hit a texture the frame needed
+        CHECK(failed_frames > 0);  // some allocation index must have hit a texture the frame needed
         CHECK(ok_frames + failed_frames + refused == kSweep);
     }
 }
 
-TEST_CASE("Passes that are only ordering markers record no command list", "[renderer][frame][parallel]") {
+TEST_CASE("Passes that are only ordering markers record no command list", "[renderer][frame][parallel]")
+{
     rhi::NullDevicePtr device = rhi::CreateNullDevice();
     {
         TransientPool pool(device.Get(), TransientPoolDesc{});
@@ -557,22 +692,26 @@ TEST_CASE("Passes that are only ordering markers record no command list", "[rend
         device->BeginFrame();
         REQUIRE(graph.ExecuteParallel(&pool, device.Get(), nullptr, nullptr));
         CHECK(ran == 1);
-        CHECK(device->Statistics().command_lists == 1); // only "real" got a list
+        CHECK(device->Statistics().command_lists == 1);  // only "real" got a list
         device->EndFrame();
     }
     device.Reset();
 }
 
-TEST_CASE("The frame counters add up to the frames begun", "[renderer][frame]") {
+TEST_CASE("The frame counters add up to the frames begun", "[renderer][frame]")
+{
     NullRenderer r(true, nullptr, 7);
-    r.renderer->RenderFrame(nullptr, nullptr, nullptr);                     // ok
+    r.renderer->RenderFrame(nullptr, nullptr, nullptr);  // ok
     r.scene.refuse = true;
-    r.renderer->RenderFrame(nullptr, nullptr, nullptr);                     // failed
+    r.renderer->RenderFrame(nullptr, nullptr, nullptr);  // failed
     r.scene.refuse = false;
     r.swapchain->Resize(0, 0);
-    r.renderer->RenderFrame(nullptr, nullptr, nullptr);                     // skipped
+    r.renderer->RenderFrame(nullptr, nullptr, nullptr);  // skipped
     r.swapchain->Resize(64, 48);
-    for (int i = 0; i < 6; ++i) r.renderer->RenderFrame(nullptr, nullptr, nullptr); // frames 4-6 ok, 7+ lost
+    for (int i = 0; i < 6; ++i)
+    {
+        r.renderer->RenderFrame(nullptr, nullptr, nullptr);  // frames 4-6 ok, 7+ lost
+    }
     const RendererStats s = r.renderer->Stats();
     CHECK(s.frames_rendered + s.frames_skipped + s.frames_failed + s.frames_lost == r.renderer->FrameIndex());
     CHECK(s.frames_lost > 0);

@@ -11,7 +11,8 @@ using engine_placeholder::Vec4;
 using engine_placeholder::test::NearlyEqual;
 using engine_placeholder::test::Vec3NearlyEqual;
 
-TEST_CASE("Mat3 multiply matches a hand-calculated reference product", "[math][matrix]") {
+TEST_CASE("Mat3 multiply matches a hand-calculated reference product", "[math][matrix]")
+{
     // A: columns (1,4,7),(2,5,8),(3,6,10) == rows (1,2,3),(4,5,6),(7,8,10)
     Mat3 a = Mat3::FromBasis(Vec3(1, 4, 7), Vec3(2, 5, 8), Vec3(3, 6, 10));
     // B: columns (1,0,1),(0,1,0),(2,1,1) == rows (1,0,2),(0,1,1),(1,0,1)
@@ -33,7 +34,8 @@ TEST_CASE("Mat3 multiply matches a hand-calculated reference product", "[math][m
     REQUIRE(Vec3NearlyEqual(a * Vec3(1, 2, 3), Vec3(14, 32, 53)));
 }
 
-TEST_CASE("Mat3::Transpose swaps rows and columns as hand-calculated", "[math][matrix]") {
+TEST_CASE("Mat3::Transpose swaps rows and columns as hand-calculated", "[math][matrix]")
+{
     Mat3 a = Mat3::FromBasis(Vec3(1, 4, 7), Vec3(2, 5, 8), Vec3(3, 6, 10));
     Mat3 at = a.Transpose();
     // Transpose's columns are A's rows: (1,2,3), (4,5,6), (7,8,10).
@@ -41,7 +43,8 @@ TEST_CASE("Mat3::Transpose swaps rows and columns as hand-calculated", "[math][m
              Vec3NearlyEqual(at.col[2], Vec3(7, 8, 10))));
 }
 
-TEST_CASE("composing two Mat4 translations adds their offsets", "[math][matrix]") {
+TEST_CASE("composing two Mat4 translations adds their offsets", "[math][matrix]")
+{
     Mat4 translate_a = Mat4::FromBasis(Vec3(1, 0, 0), Vec3(0, 1, 0), Vec3(0, 0, 1), Vec3(1, 2, 3));
     Mat4 translate_b = Mat4::FromBasis(Vec3(1, 0, 0), Vec3(0, 1, 0), Vec3(0, 0, 1), Vec3(10, 20, 30));
 

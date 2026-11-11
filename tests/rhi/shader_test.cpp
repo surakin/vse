@@ -16,113 +16,145 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
 
-namespace {
+namespace
+{
 
 // Silences the RHI log for a scope and restores the previous state, even if an assertion fails.
-struct QuietLog {
+struct QuietLog
+{
     bool saved = LogRhi.Enabled();
     QuietLog() { LogRhi.SetEnabled(false); }
     ~QuietLog() { LogRhi.SetEnabled(saved); }
 };
 
-bool Rejects(const char* message, const char* needle) {
-    if (message == nullptr) {
+bool Rejects(const char* message, const char* needle)
+{
+    if (message == nullptr)
+    {
         return false;
     }
-    for (const char* m = message; *m != '\0'; ++m) {
+    for (const char* m = message; *m != '\0'; ++m)
+    {
         const char* a = m;
         const char* b = needle;
-        while (*a != '\0' && *b != '\0' && *a == *b) {
+        while (*a != '\0' && *b != '\0' && *a == *b)
+        {
             ++a;
             ++b;
         }
-        if (*b == '\0') {
+        if (*b == '\0')
+        {
             return true;
         }
     }
     return false;
 }
 
-const char* Check(const Vector<u32>& w, ShaderStage stage = ShaderStage::Vertex, const char* entry = "main") {
+const char* Check(const Vector<u32>& w, ShaderStage stage = ShaderStage::Vertex, const char* entry = "main")
+{
     return ValidateSpirv(w.Data(), w.Size(), stage, entry);
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("ValidateSpirv accepts the minimal module for each stage", "[rhi][spirv]") {
+TEST_CASE("ValidateSpirv accepts the minimal module for each stage", "[rhi][spirv]")
+{
     CHECK(Check(spirv_test::MinimalModule(ShaderStage::Vertex), ShaderStage::Vertex) == nullptr);
     CHECK(Check(spirv_test::MinimalModule(ShaderStage::Fragment), ShaderStage::Fragment) == nullptr);
     CHECK(Check(spirv_test::MinimalModule(ShaderStage::Compute), ShaderStage::Compute) == nullptr);
 }
 
-TEST_CASE("ValidateSpirv accepts the committed triangle shaders", "[rhi][spirv]") {
-    CHECK(ValidateSpirv(shaders::kTriangleVertSpv, shaders::kTriangleVertSpvWordCount, ShaderStage::Vertex, "main") == nullptr);
-    CHECK(ValidateSpirv(shaders::kTriangleFragSpv, shaders::kTriangleFragSpvWordCount, ShaderStage::Fragment, "main") == nullptr);
+TEST_CASE("ValidateSpirv accepts the committed triangle shaders", "[rhi][spirv]")
+{
+    CHECK(ValidateSpirv(shaders::kTriangleVertSpv, shaders::kTriangleVertSpvWordCount, ShaderStage::Vertex, "main") ==
+          nullptr);
+    CHECK(ValidateSpirv(shaders::kTriangleFragSpv, shaders::kTriangleFragSpvWordCount, ShaderStage::Fragment, "main") ==
+          nullptr);
     // ...and refuses them for the other stage.
-    CHECK(Rejects(ValidateSpirv(shaders::kTriangleVertSpv, shaders::kTriangleVertSpvWordCount, ShaderStage::Fragment, "main"), "different stage"));
-    CHECK(Rejects(ValidateSpirv(shaders::kTriangleFragSpv, shaders::kTriangleFragSpvWordCount, ShaderStage::Compute, "main"), "different stage"));
+    CHECK(Rejects(
+        ValidateSpirv(shaders::kTriangleVertSpv, shaders::kTriangleVertSpvWordCount, ShaderStage::Fragment, "main"),
+        "different stage"));
+    CHECK(Rejects(
+        ValidateSpirv(shaders::kTriangleFragSpv, shaders::kTriangleFragSpvWordCount, ShaderStage::Compute, "main"),
+        "different stage"));
 }
 
-TEST_CASE("ValidateSpirv rejects bad headers", "[rhi][spirv]") {
+TEST_CASE("ValidateSpirv rejects bad headers", "[rhi][spirv]")
+{
     Vector<u32> w = spirv_test::MinimalModule(ShaderStage::Vertex);
-    SECTION("null or tiny") {
+    SECTION("null or tiny")
+    {
         CHECK(Rejects(ValidateSpirv(nullptr, 0, ShaderStage::Vertex, "main"), "smaller"));
         CHECK(Rejects(ValidateSpirv(w.Data(), 4, ShaderStage::Vertex, "main"), "smaller"));
     }
-    SECTION("bad magic") {
+    SECTION("bad magic")
+    {
         w[0] = 0x12345678u;
         CHECK(Rejects(Check(w), "bad magic"));
     }
-    SECTION("byte-swapped module") {
+    SECTION("byte-swapped module")
+    {
         w[0] = 0x03022307u;
         CHECK(Rejects(Check(w), "byte-swapped"));
     }
-    SECTION("version") {
-        w[1] = 0x00010700u; // 1.7
+    SECTION("version")
+    {
+        w[1] = 0x00010700u;  // 1.7
         CHECK(Rejects(Check(w), "version"));
-        w[1] = 0x00020000u; // 2.0
+        w[1] = 0x00020000u;  // 2.0
         CHECK(Rejects(Check(w), "version"));
-        w[1] = 0x00010000u; // 1.0 is fine
+        w[1] = 0x00010000u;  // 1.0 is fine
         CHECK(Check(w) == nullptr);
-        w[1] = 0x00010600u; // 1.6 is fine
+        w[1] = 0x00010600u;  // 1.6 is fine
         CHECK(Check(w) == nullptr);
-        w[1] = 0x00010601u; // reserved bits set
+        w[1] = 0x00010601u;  // reserved bits set
         CHECK(Rejects(Check(w), "version"));
     }
-    SECTION("zero id bound") {
+    SECTION("zero id bound")
+    {
         w[3] = 0;
         CHECK(Rejects(Check(w), "id bound"));
     }
 }
 
-TEST_CASE("ValidateSpirv rejects broken instruction streams", "[rhi][spirv]") {
+TEST_CASE("ValidateSpirv rejects broken instruction streams", "[rhi][spirv]")
+{
     Vector<u32> w = spirv_test::MinimalModule(ShaderStage::Vertex);
-    SECTION("truncated mid-instruction") {
+    SECTION("truncated mid-instruction")
+    {
         w.Pop();
         CHECK(Rejects(Check(w), "truncated"));
     }
-    SECTION("every truncation point is rejected without reading out of bounds") {
-        for (usize cut = 0; cut < w.Size(); ++cut) {
+    SECTION("every truncation point is rejected without reading out of bounds")
+    {
+        for (usize cut = 0; cut < w.Size(); ++cut)
+        {
             CHECK(ValidateSpirv(w.Data(), cut, ShaderStage::Vertex, "main") != nullptr);
         }
     }
-    SECTION("zero-length instruction") {
-        w[5] = 17u; // OpCapability with word count 0
+    SECTION("zero-length instruction")
+    {
+        w[5] = 17u;  // OpCapability with word count 0
         CHECK(Rejects(Check(w), "zero length"));
     }
-    SECTION("garbage after the last instruction") {
+    SECTION("garbage after the last instruction")
+    {
         w.Push(0);
         CHECK(Check(w) != nullptr);
     }
 }
 
-TEST_CASE("ValidateSpirv checks the declared stage, entry name and the supported subset", "[rhi][spirv]") {
-    SECTION("wrong stage") {
+TEST_CASE("ValidateSpirv checks the declared stage, entry name and the supported subset", "[rhi][spirv]")
+{
+    SECTION("wrong stage")
+    {
         CHECK(Rejects(Check(spirv_test::MinimalModule(ShaderStage::Fragment), ShaderStage::Vertex), "different stage"));
         CHECK(Rejects(Check(spirv_test::MinimalModule(ShaderStage::Vertex), ShaderStage::Compute), "different stage"));
-        CHECK(Rejects(Check(spirv_test::MinimalModule(ShaderStage::Vertex), ShaderStage::AllGraphics), "different stage"));
+        CHECK(Rejects(Check(spirv_test::MinimalModule(ShaderStage::Vertex), ShaderStage::AllGraphics),
+                      "different stage"));
     }
-    SECTION("entry point names") {
+    SECTION("entry point names")
+    {
         const Vector<u32> w = spirv_test::MinimalModule(ShaderStage::Vertex, "vs_main");
         CHECK(Check(w, ShaderStage::Vertex, "vs_main") == nullptr);
         CHECK(Rejects(Check(w, ShaderStage::Vertex, "main"), "no entry point"));
@@ -134,41 +166,47 @@ TEST_CASE("ValidateSpirv checks the declared stage, entry name and the supported
         CHECK(Check(four, ShaderStage::Vertex, "abcd") == nullptr);
         CHECK(Rejects(Check(four, ShaderStage::Vertex, "abc"), "no entry point"));
     }
-    SECTION("entry name too long") {
-        const char* name = "0123456789012345678901234567890123456789012345678901234567890123"; // 64 bytes
-        CHECK(Rejects(Check(spirv_test::MinimalModule(ShaderStage::Vertex), ShaderStage::Vertex, name), "longer than 63"));
+    SECTION("entry name too long")
+    {
+        const char* name = "0123456789012345678901234567890123456789012345678901234567890123";  // 64 bytes
+        CHECK(Rejects(Check(spirv_test::MinimalModule(ShaderStage::Vertex), ShaderStage::Vertex, name),
+                      "longer than 63"));
     }
-    SECTION("unterminated entry point name") {
+    SECTION("unterminated entry point name")
+    {
         // "main" fills one word exactly; the terminator is the next word. Drop it and shrink the instruction to match.
         Vector<u32> cut = spirv_test::MinimalModule(ShaderStage::Vertex, "main");
         cut.Pop();
-        cut[10] = (4u << 16) | 15u; // OpEntryPoint: head, model, id, "main"
+        cut[10] = (4u << 16) | 15u;  // OpEntryPoint: head, model, id, "main"
         CHECK(Rejects(Check(cut), "malformed OpEntryPoint"));
         // An interface id after an unterminated name must not be read as its terminator: 256 has a zero low byte.
         cut[10] = (5u << 16) | 15u;
         cut.Push(256u);
         CHECK(Rejects(Check(cut), "malformed OpEntryPoint"));
     }
-    SECTION("capabilities") {
+    SECTION("capabilities")
+    {
         Vector<u32> w = spirv_test::MinimalModule(ShaderStage::Vertex);
-        w[6] = 6; // Kernel instead of Shader
+        w[6] = 6;  // Kernel instead of Shader
         CHECK(Rejects(Check(w), "capability"));
-        w[6] = 2; // Matrix: not Shader
+        w[6] = 2;  // Matrix: not Shader
         CHECK(Rejects(Check(w), "capability"));
     }
-    SECTION("addressing and memory model") {
+    SECTION("addressing and memory model")
+    {
         Vector<u32> w = spirv_test::MinimalModule(ShaderStage::Vertex);
-        w[8] = 5348; // PhysicalStorageBuffer64
+        w[8] = 5348;  // PhysicalStorageBuffer64
         CHECK(Rejects(Check(w), "Logical"));
         w[8] = 0;
-        w[9] = 0; // Simple memory model
+        w[9] = 0;  // Simple memory model
         CHECK(Rejects(Check(w), "memory model"));
-        w[9] = 3; // Vulkan
+        w[9] = 3;  // Vulkan
         CHECK(Check(w) == nullptr);
     }
 }
 
-TEST_CASE("The null device checks shader contents", "[rhi][null][spirv]") {
+TEST_CASE("The null device checks shader contents", "[rhi][null][spirv]")
+{
     QuietLog quiet;
     NullDevicePtr device = CreateNullDevice();
     ShaderDesc desc;
@@ -178,12 +216,15 @@ TEST_CASE("The null device checks shader contents", "[rhi][null][spirv]") {
     CHECK(ok.IsValid());
     CHECK(device->ErrorCount() == 0);
 
-    desc.stage = ShaderStage::Fragment; // the vertex module declared as a fragment shader
+    desc.stage = ShaderStage::Fragment;  // the vertex module declared as a fragment shader
     CHECK_FALSE(device->CreateShader(desc).IsValid());
     CHECK(device->ErrorCount() == 1);
 
     Vector<u32> garbage;
-    for (int i = 0; i < 16; ++i) garbage.Push(0xdeadbeefu);
+    for (int i = 0; i < 16; ++i)
+    {
+        garbage.Push(0xdeadbeefu);
+    }
     desc.stage = ShaderStage::Vertex;
     desc.SetCode(SpirvBlob(garbage.Data(), garbage.Size()));
     CHECK_FALSE(device->CreateShader(desc).IsValid());
@@ -193,13 +234,15 @@ TEST_CASE("The null device checks shader contents", "[rhi][null][spirv]") {
     device.Reset();
 }
 
-TEST_CASE("Vulkan creates shader modules from the committed triangle shaders", "[rhi][vulkan][gpu][spirv]") {
+TEST_CASE("Vulkan creates shader modules from the committed triangle shaders", "[rhi][vulkan][gpu][spirv]")
+{
     gpu_test::GpuFixture fx;
     fx.RequireValidation();
     DeviceCreateInfo info;
     info.validation = ValidationSetting::On;
     vulkan::VulkanDevicePtr device = vulkan::VulkanDevice::Create(info);
-    if (device == nullptr) {
+    if (device == nullptr)
+    {
         SKIP("no suitable Vulkan device");
     }
     ShaderDesc vs;
@@ -228,7 +271,10 @@ TEST_CASE("Vulkan creates shader modules from the committed triangle shaders", "
     ShaderDesc wrong = fs;
     wrong.stage = ShaderStage::Vertex;
     Vector<u32> garbage;
-    for (int i = 0; i < 32; ++i) garbage.Push(1u);
+    for (int i = 0; i < 32; ++i)
+    {
+        garbage.Push(1u);
+    }
     ShaderDesc bad = vs;
     bad.SetCode(SpirvBlob(garbage.Data(), garbage.Size()));
     {
@@ -245,7 +291,7 @@ TEST_CASE("Vulkan creates shader modules from the committed triangle shaders", "
     device->EndFrame();
     device->WaitIdle();
     device->BeginFrame();
-    CHECK_FALSE(device->LookupShader(v, &shader_info)); // stale handle
+    CHECK_FALSE(device->LookupShader(v, &shader_info));  // stale handle
     CHECK(device->Counts().shaders == 0);
     device->EndFrame();
     vulkan::VulkanDevice::ResetLeakCounts();
@@ -253,13 +299,15 @@ TEST_CASE("Vulkan creates shader modules from the committed triangle shaders", "
     CHECK(vulkan::VulkanDevice::GetLeakCounts().user_objects == 0);
 }
 
-TEST_CASE("Vulkan frees a shader the application forgot", "[rhi][vulkan][gpu][spirv]") {
+TEST_CASE("Vulkan frees a shader the application forgot", "[rhi][vulkan][gpu][spirv]")
+{
     gpu_test::GpuFixture fx;
     fx.RequireValidation();
     DeviceCreateInfo info;
     info.validation = ValidationSetting::On;
     vulkan::VulkanDevicePtr device = vulkan::VulkanDevice::Create(info);
-    if (device == nullptr) {
+    if (device == nullptr)
+    {
         SKIP("no suitable Vulkan device");
     }
     ShaderDesc vs;
@@ -269,7 +317,7 @@ TEST_CASE("Vulkan frees a shader the application forgot", "[rhi][vulkan][gpu][sp
     vulkan::VulkanDevice::ResetLeakCounts();
     {
         QuietLog quiet;
-        device.Reset(); // frees the module (the validation layer would report a leak otherwise)
+        device.Reset();  // frees the module (the validation layer would report a leak otherwise)
     }
     CHECK(vulkan::VulkanDevice::GetLeakCounts().user_objects == 1);
     vulkan::VulkanDevice::ResetLeakCounts();

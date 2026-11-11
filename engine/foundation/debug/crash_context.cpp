@@ -5,42 +5,52 @@
 #include "sync/atomic.h"
 #include "sync/mutex.h"
 
-namespace engine_placeholder::debug {
+namespace engine_placeholder::debug
+{
 
-namespace {
+namespace
+{
 
 CrashContext g_crash_context;
 Atomic<bool> g_crash_context_ready{false};
 Mutex g_crash_context_mutex;
 
-void CopyBounded(char* dest, usize capacity, const char* source) {
+void CopyBounded(char* dest, usize capacity, const char* source)
+{
     usize n = 0;
-    for (; source != nullptr && n + 1 < capacity && source[n] != '\0'; ++n) {
+    for (; source != nullptr && n + 1 < capacity && source[n] != '\0'; ++n)
+    {
         dest[n] = source[n];
     }
     dest[n] = '\0';
 }
 
-} // namespace
+}  // namespace
 
-void InitCrashContext(int argc, const char* const* argv) {
+void InitCrashContext(int argc, const char* const* argv)
+{
     LockGuard<Mutex> lock(g_crash_context_mutex);
     const bool first = !g_crash_context_ready.Load(MemoryOrder::Acquire);
-    if (!first && (g_crash_context.command_line[0] != '\0' || argc <= 0)) {
+    if (!first && (g_crash_context.command_line[0] != '\0' || argc <= 0))
+    {
         return;
     }
-    if (first) {
+    if (first)
+    {
         CopyBounded(g_crash_context.engine_version, sizeof(g_crash_context.engine_version), "dev");
         detail::FillPlatformCrashContext(g_crash_context);
     }
     // The command line, arguments joined by single spaces. A later call may supply it if the first had none (the crash
     // handler initializes the context without arguments when the program has not).
     usize used = 0;
-    for (int i = 0; argv != nullptr && i < argc && argv[i] != nullptr; ++i) {
-        if (i > 0 && used + 1 < sizeof(g_crash_context.command_line)) {
+    for (int i = 0; argv != nullptr && i < argc && argv[i] != nullptr; ++i)
+    {
+        if (i > 0 && used + 1 < sizeof(g_crash_context.command_line))
+        {
             g_crash_context.command_line[used++] = ' ';
         }
-        for (usize k = 0; argv[i][k] != '\0' && used + 1 < sizeof(g_crash_context.command_line); ++k) {
+        for (usize k = 0; argv[i][k] != '\0' && used + 1 < sizeof(g_crash_context.command_line); ++k)
+        {
             g_crash_context.command_line[used++] = argv[i][k];
         }
     }
@@ -48,17 +58,20 @@ void InitCrashContext(int argc, const char* const* argv) {
     g_crash_context_ready.Store(true, MemoryOrder::Release);
 }
 
-void SetCoreDumpDescription(const char* text) {
+void SetCoreDumpDescription(const char* text)
+{
     LockGuard<Mutex> lock(g_crash_context_mutex);
     CopyBounded(g_crash_context.core_dumps, sizeof(g_crash_context.core_dumps), text != nullptr ? text : "");
 }
 
-bool CrashContextInitialized() {
+bool CrashContextInitialized()
+{
     return g_crash_context_ready.Load(MemoryOrder::Acquire);
 }
 
-const CrashContext& GetCrashContext() {
+const CrashContext& GetCrashContext()
+{
     return g_crash_context;
 }
 
-} // namespace engine_placeholder::debug
+}  // namespace engine_placeholder::debug

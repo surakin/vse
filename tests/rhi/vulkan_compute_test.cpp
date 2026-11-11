@@ -11,57 +11,65 @@ using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
 using namespace engine_placeholder::rhi::vulkan;
 
-namespace {
+namespace
+{
 
-struct VulkanComputeTestQuietLog {
+struct VulkanComputeTestQuietLog
+{
     bool saved = LogRhi.Enabled();
     VulkanComputeTestQuietLog() { LogRhi.SetEnabled(false); }
     ~VulkanComputeTestQuietLog() { LogRhi.SetEnabled(saved); }
 };
 
-struct ComputeDevice {
+struct ComputeDevice
+{
     gpu_test::GpuFixture fx;
     VulkanDevicePtr device;
 
-    ComputeDevice() {
+    ComputeDevice()
+    {
         fx.RequireValidation();
         DeviceCreateInfo info;
         info.validation = ValidationSetting::On;
         info.sync_validation = true;
         info.pipeline_cache = false;
-        device = VulkanDevice::Create(info); // no window: compute and offscreen only
-        if (device == nullptr) {
+        device = VulkanDevice::Create(info);  // no window: compute and offscreen only
+        if (device == nullptr)
+        {
             SKIP("no suitable Vulkan device");
         }
     }
-    ~ComputeDevice() {
-        if (device != nullptr) {
+    ~ComputeDevice()
+    {
+        if (device != nullptr)
+        {
             device->WaitIdle();
             device.Reset();
         }
     }
 
-    ShaderHandle Shader(const u32* words, usize count) {
+    ShaderHandle Shader(const u32* words, usize count)
+    {
         ShaderDesc d;
         d.stage = ShaderStage::Compute;
         d.SetCode(SpirvBlob(words, count));
         return device->CreateShader(d);
     }
 
-    BindGroupLayoutHandle StorageLayout(u32 buffers) {
-        BindingDesc entries[2] = {{0, BindingType::StorageBuffer, ShaderStage::Compute, 1}, {1, BindingType::StorageBuffer, ShaderStage::Compute, 1}};
+    BindGroupLayoutHandle StorageLayout(u32 buffers)
+    {
+        BindingDesc entries[2] = {{0, BindingType::StorageBuffer, ShaderStage::Compute, 1},
+                                  {1, BindingType::StorageBuffer, ShaderStage::Compute, 1}};
         BindGroupLayoutDesc ld;
         ld.entries = rhi::Span<BindingDesc>(entries, buffers);
         return device->CreateBindGroupLayout(ld);
     }
-
-
-
 };
 
-} // namespace
+}  // namespace
 
-TEST_CASE("Compute pipeline creation refuses bad input", "[rhi][vulkan][gpu][compute]") {
+TEST_CASE("Compute pipeline creation refuses bad input", "[rhi][vulkan][gpu][compute]")
+{
     ComputeDevice t;
     t.fx.ExpectErrors(0);
     VulkanComputeTestQuietLog quiet;
@@ -69,10 +77,10 @@ TEST_CASE("Compute pipeline creation refuses bad input", "[rhi][vulkan][gpu][com
     const BindGroupLayoutHandle one = t.StorageLayout(1);
 
     ComputePipelineDesc cp;
-    CHECK_FALSE(t.device->CreateComputePipeline(cp).IsValid()); // no shader
+    CHECK_FALSE(t.device->CreateComputePipeline(cp).IsValid());  // no shader
 
     ShaderDesc vd;
-    vd.stage = ShaderStage::Vertex; // a compute module declared as a vertex shader is refused by the module check
+    vd.stage = ShaderStage::Vertex;  // a compute module declared as a vertex shader is refused by the module check
     vd.SetCode(SpirvBlob(shaders::kFillCompSpv, shaders::kFillCompSpvWordCount));
     CHECK_FALSE(t.device->CreateShader(vd).IsValid());
 
@@ -89,7 +97,7 @@ TEST_CASE("Compute pipeline creation refuses bad input", "[rhi][vulkan][gpu][com
     cp.shader = cs;
     cp.bind_group_layouts[0] = one;
     cp.bind_group_layout_count = 1;
-    cp.push_constant_bytes = 6; // not a multiple of 4
+    cp.push_constant_bytes = 6;  // not a multiple of 4
     CHECK_FALSE(t.device->CreateComputePipeline(cp).IsValid());
     cp.push_constant_bytes = 4;
 
@@ -98,6 +106,6 @@ TEST_CASE("Compute pipeline creation refuses bad input", "[rhi][vulkan][gpu][com
     t.device->BeginFrame();
     t.device->EndFrame();
     t.device->WaitIdle();
-    CHECK_FALSE(t.device->CreateComputePipeline(cp).IsValid()); // the layout is gone
+    CHECK_FALSE(t.device->CreateComputePipeline(cp).IsValid());  // the layout is gone
     t.device->DestroyShader(cs);
 }

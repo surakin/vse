@@ -9,28 +9,36 @@
 //   global state.
 // Ownership: names and patterns are views into the map text or the arena;
 //   both must outlive the ModuleMap.
-namespace docgen {
+namespace docgen
+{
 
-struct ModuleDef {
+struct ModuleDef
+{
     explicit ModuleDef(ArenaAllocator& arena) : headers(arena), excludes(arena), strict(arena) {}
 
-    StringView name;  // "jobs", "foundation/memory"
-    StringView title; // page title
+    StringView name;   // "jobs", "foundation/memory"
+    StringView title;  // page title
     u32 line = 0;
-    Vector<StringView, ArenaAllocator> headers;  // glob patterns relative to the repo root
-    Vector<StringView, ArenaAllocator> excludes; // glob patterns
-    Vector<StringView, ArenaAllocator> strict;   // lint rule names
+    Vector<StringView, ArenaAllocator> headers;   // glob patterns relative to the repo root
+    Vector<StringView, ArenaAllocator> excludes;  // glob patterns
+    Vector<StringView, ArenaAllocator> strict;    // lint rule names
 };
 
-struct ModuleMap {
+struct ModuleMap
+{
     explicit ModuleMap(ArenaAllocator& arena) : modules(arena), diagnostics(arena) {}
 
-    Vector<ModuleDef*, ArenaAllocator> modules; // in file order
+    Vector<ModuleDef*, ArenaAllocator> modules;  // in file order
     Vector<Diagnostic, ArenaAllocator> diagnostics;
 
-    bool HasErrors() const {
-        for (usize i = 0; i < diagnostics.Size(); ++i) {
-            if (diagnostics[i].severity == Severity::Error) return true;
+    bool HasErrors() const
+    {
+        for (usize i = 0; i < diagnostics.Size(); ++i)
+        {
+            if (diagnostics[i].severity == Severity::Error)
+            {
+                return true;
+            }
         }
         return false;
     }
@@ -61,4 +69,4 @@ void ExpandModule(const ModuleDef& module, const Vector<StringView, ArenaAllocat
 // `root`/`dir` or any directory below it cannot be read.
 bool CollectFiles(StringView root, StringView dir, ArenaAllocator& arena, Vector<StringView, ArenaAllocator>& out);
 
-} // namespace docgen
+}  // namespace docgen

@@ -6,20 +6,25 @@
 #include "ui/layout_types.h"
 #include "ui/widget.h"
 
-//! The scrolling widgets (Phase 15, Day 196): the scroll bar and the scroll view that the list box and the text field share.
+//! The scrolling widgets (Phase 15, Day 196): the scroll bar and the scroll view that the list box and the text field
+//! share.
 
-namespace engine_placeholder::ui {
+namespace engine_placeholder::ui
+{
 
 /// A scroll bar along one axis, with a value in content units.
 ///
-/// The thumb's length is the track's length times the view/content ratio, never below the theme's minimum hit size and never above the track; its place follows the value. A press on the
-/// thumb drags it (the pointer is captured, so the drag may leave the bar), a press on the track outside the thumb pages by one view towards the pointer, a press on an arrow (when
-/// shown) moves by one line. With content not larger than the view the value is 0 and the thumb fills the track. The auto-hide variant draws nothing unless the pointer is over it, it
-/// is being dragged, or it changed within the last `kFadeSeconds`.
+/// The thumb's length is the track's length times the view/content ratio, never below the theme's minimum hit size and
+/// never above the track; its place follows the value. A press on the thumb drags it (the pointer is captured, so the
+/// drag may leave the bar), a press on the track outside the thumb pages by one view towards the pointer, a press on an
+/// arrow (when shown) moves by one line. With content not larger than the view the value is 0 and the thumb fills the
+/// track. The auto-hide variant draws nothing unless the pointer is over it, it is being dragged, or it changed within
+/// the last `kFadeSeconds`.
 ///
 /// - Thread-safety: owner-thread-only.
 /// - Ownership: owns nothing.
-class ScrollBar : public Widget {
+class ScrollBar : public Widget
+{
 public:
     /// The seconds an auto-hide bar stays visible after its value changed.
     static constexpr f32 kFadeSeconds = 1.0f;
@@ -29,7 +34,8 @@ public:
     /// Makes a bar.
     /// - Param vertical: whether the bar runs top to bottom.
     explicit ScrollBar(StringView name = StringView(), bool vertical = true) : Widget(name), vertical_(vertical) {}
-    /// Sets the content and the view length in content units; the value is clamped to the new range; marks the draw dirty.
+    /// Sets the content and the view length in content units; the value is clamped to the new range; marks the draw
+    /// dirty.
     void SetRange(f64 content, f64 view);
     /// Returns the content length.
     ///
@@ -43,7 +49,8 @@ public:
     ///
     /// - Fails: never.
     f64 MaxValue() const { return content_ > view_ ? content_ - view_ : 0.0; }
-    /// Sets the value (the offset of the view's start in content units), clamped to 0..`MaxValue()`, without running the listeners; marks the draw dirty.
+    /// Sets the value (the offset of the view's start in content units), clamped to 0..`MaxValue()`, without running
+    /// the listeners; marks the draw dirty.
     void SetValue(f64 value);
     /// Returns the value.
     ///
@@ -63,7 +70,8 @@ public:
     ///
     /// - Fails: never.
     Rect ThumbRect() const;
-    /// Returns the listeners called when the user moves the bar (with the bar); not when `SetValue` or `SetRange` change it.
+    /// Returns the listeners called when the user moves the bar (with the bar); not when `SetValue` or `SetRange`
+    /// change it.
     Callback<ScrollBar*>& OnChanged() { return on_changed_; }
     /// Returns the thickness across and nothing along.
     Size Measure(const Constraints& constraints) override;
@@ -79,12 +87,13 @@ public:
     bool WantsUpdate() const override;
 
 private:
-    struct Geometry {
-        f32 start = 0;     // track start along the axis, local
-        f32 length = 0;    // track length
-        f32 thumb = 0;     // thumb length
-        f32 thumb_pos = 0; // thumb start along the axis, local
-        f32 arrow = 0;     // arrow button length (0 when none)
+    struct Geometry
+    {
+        f32 start = 0;      // track start along the axis, local
+        f32 length = 0;     // track length
+        f32 thumb = 0;      // thumb length
+        f32 thumb_pos = 0;  // thumb start along the axis, local
+        f32 arrow = 0;      // arrow button length (0 when none)
     };
     Geometry Measure2() const;
     f32 Along(Point local) const { return vertical_ ? local.y : local.x; }
@@ -105,22 +114,25 @@ private:
 };
 
 /// When a [[ui::ScrollView]] shows a bar.
-enum class ScrollPolicy : u8 {
-    Auto,   ///< Only when the content is larger than the view along that axis.
-    Always, ///< Always.
-    Never,  ///< Never; the content is given the view's size on that axis.
+enum class ScrollPolicy : u8
+{
+    Auto,    ///< Only when the content is larger than the view along that axis.
+    Always,  ///< Always.
+    Never,   ///< Never; the content is given the view's size on that axis.
 };
 
 /// One child that may be larger than the view, with scroll bars.
 ///
-/// The content is the first child; the bars follow. The content gets its preferred size along an axis that scrolls (at least the view's size, so it fills a small view) and exactly the
-/// view's size along one that does not. The view clips its content's drawing and hit testing to its own bounds (the bars sit on top). The wheel scrolls by `LineStep` per notch and is
-/// handled only when it moved something, so a wheel at the end of the content bubbles on to an outer view; a focus change inside the content scrolls the focused widget into view. There
-/// is no inertia or elastic overscroll.
+/// The content is the first child; the bars follow. The content gets its preferred size along an axis that scrolls (at
+/// least the view's size, so it fills a small view) and exactly the view's size along one that does not. The view clips
+/// its content's drawing and hit testing to its own bounds (the bars sit on top). The wheel scrolls by `LineStep` per
+/// notch and is handled only when it moved something, so a wheel at the end of the content bubbles on to an outer view;
+/// a focus change inside the content scrolls the focused widget into view. There is no inertia or elastic overscroll.
 ///
 /// - Thread-safety: owner-thread-only.
 /// - Ownership: owns the content and the bars.
-class ScrollView : public Widget {
+class ScrollView : public Widget
+{
 public:
     /// Makes a view with no content.
     explicit ScrollView(StringView name = StringView());
@@ -152,7 +164,8 @@ public:
     ///
     /// - Fails: never.
     Rect Viewport() const { return viewport_; }
-    /// Scrolls the least that makes `rect` (surface coordinates) fully visible; a rectangle larger than the view shows its start. Returns whether the offset changed.
+    /// Scrolls the least that makes `rect` (surface coordinates) fully visible; a rectangle larger than the view shows
+    /// its start. Returns whether the offset changed.
     ///
     /// - Fails: never.
     bool ScrollTo(const Rect& rect);
@@ -200,4 +213,4 @@ private:
     f32 line_step_ = 0;
 };
 
-} // namespace engine_placeholder::ui
+}  // namespace engine_placeholder::ui

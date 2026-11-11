@@ -15,27 +15,32 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi::vulkan;
 
-namespace {
+namespace
+{
 
 using gpu_test::GpuRequired;
 
 // Skips (or, with ENGINE_RHI_REQUIRE_GPU=1, fails) when this machine has no Vulkan loader.
-#define REQUIRE_LOADER(loader)                                                \
-    VulkanLoader loader;                                                      \
-    if (LoadVulkanLoader(&loader) != LoaderStatus::Ok) {                      \
-        if (GpuRequired()) {                                                  \
-            FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no Vulkan loader was found");  \
-        }                                                                     \
-        SKIP("no Vulkan loader on this machine");                             \
+#define REQUIRE_LOADER(loader)                                                                                         \
+    VulkanLoader loader;                                                                                               \
+    if (LoadVulkanLoader(&loader) != LoaderStatus::Ok)                                                                 \
+    {                                                                                                                  \
+        if (GpuRequired())                                                                                             \
+        {                                                                                                              \
+            FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no Vulkan loader was found");                                           \
+        }                                                                                                              \
+        SKIP("no Vulkan loader on this machine");                                                                      \
     }
 
-struct EnvGuard {
+struct EnvGuard
+{
     explicit EnvGuard(const char* value) { test_support::SetEnv(kVulkanLibraryEnvVar, value); }
     ~EnvGuard() { test_support::UnsetEnv(kVulkanLibraryEnvVar); }
 };
 
 // Creates a bare Vulkan 1.3 instance (no extensions) for the GPU tests.
-VkInstance MakeInstance(const VkGlobalFns& global) {
+VkInstance MakeInstance(const VkGlobalFns& global)
+{
     VkApplicationInfo app{};
     app.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     app.apiVersion = VK_API_VERSION_1_3;
@@ -47,9 +52,10 @@ VkInstance MakeInstance(const VkGlobalFns& global) {
     return instance;
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("Vulkan loader reports NoLoader for a missing library without crashing", "[rhi][vulkan]") {
+TEST_CASE("Vulkan loader reports NoLoader for a missing library without crashing", "[rhi][vulkan]")
+{
     EnvGuard guard("/nonexistent/libvulkan.so.1");
     VulkanLoader loader;
     CHECK(LoadVulkanLoader(&loader) == LoaderStatus::NoLoader);
@@ -57,9 +63,10 @@ TEST_CASE("Vulkan loader reports NoLoader for a missing library without crashing
     CHECK(loader.get_instance_proc_addr == nullptr);
 }
 
-TEST_CASE("Vulkan loader reports BadLoader for a library without vkGetInstanceProcAddr", "[rhi][vulkan]") {
+TEST_CASE("Vulkan loader reports BadLoader for a library without vkGetInstanceProcAddr", "[rhi][vulkan]")
+{
 #if ENGINE_PLATFORM_WINDOWS
-    EnvGuard guard("kernel32.dll"); // a system library that is not a Vulkan loader
+    EnvGuard guard("kernel32.dll");  // a system library that is not a Vulkan loader
 #else
     EnvGuard guard("libm.so.6");
 #endif
@@ -68,13 +75,15 @@ TEST_CASE("Vulkan loader reports BadLoader for a library without vkGetInstancePr
     CHECK(loader.get_instance_proc_addr == nullptr);
 }
 
-TEST_CASE("LoaderStatusName names every status", "[rhi][vulkan]") {
+TEST_CASE("LoaderStatusName names every status", "[rhi][vulkan]")
+{
     CHECK(CStrCompare(LoaderStatusName(LoaderStatus::Ok), "Ok") == 0);
     CHECK(CStrCompare(LoaderStatusName(LoaderStatus::NoLoader), "NoLoader") == 0);
     CHECK(CStrCompare(LoaderStatusName(LoaderStatus::BadLoader), "BadLoader") == 0);
 }
 
-TEST_CASE("Vulkan loader resolves the global and instance tables", "[rhi][vulkan][gpu]") {
+TEST_CASE("Vulkan loader resolves the global and instance tables", "[rhi][vulkan][gpu]")
+{
     REQUIRE_LOADER(loader);
     CHECK(loader.get_instance_proc_addr != nullptr);
 
@@ -85,8 +94,10 @@ TEST_CASE("Vulkan loader resolves the global and instance tables", "[rhi][vulkan
     CHECK(global.EnumerateInstanceLayerProperties != nullptr);
 
     u32 version = 0;
-    if (!CheckInstanceVersion(global, &version)) {
-        if (GpuRequired()) {
+    if (!CheckInstanceVersion(global, &version))
+    {
+        if (GpuRequired())
+        {
             FAIL("ENGINE_RHI_REQUIRE_GPU=1 but the Vulkan loader is older than 1.3");
         }
         SKIP("Vulkan loader older than 1.3");
@@ -105,7 +116,8 @@ TEST_CASE("Vulkan loader resolves the global and instance tables", "[rhi][vulkan
     fns.DestroyInstance(instance, nullptr);
 }
 
-TEST_CASE("Vulkan device table loads every mandatory function on a real device", "[rhi][vulkan][gpu]") {
+TEST_CASE("Vulkan device table loads every mandatory function on a real device", "[rhi][vulkan][gpu]")
+{
     gpu_test::GpuFixture fx;
     fx.Require();
     VkInstance instance = fx.Instance().Handle();
@@ -114,8 +126,10 @@ TEST_CASE("Vulkan device table loads every mandatory function on a real device",
     u32 count = 1;
     VkPhysicalDevice physical = nullptr;
     VkResult enumerated = fns.EnumeratePhysicalDevices(instance, &count, &physical);
-    if (physical == nullptr || (enumerated != VK_SUCCESS && enumerated != VK_INCOMPLETE)) {
-        if (GpuRequired()) {
+    if (physical == nullptr || (enumerated != VK_SUCCESS && enumerated != VK_INCOMPLETE))
+    {
+        if (GpuRequired())
+        {
             FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no Vulkan physical device was found");
         }
         SKIP("no Vulkan physical device");
@@ -123,8 +137,10 @@ TEST_CASE("Vulkan device table loads every mandatory function on a real device",
 
     VkPhysicalDeviceProperties props{};
     fns.GetPhysicalDeviceProperties(physical, &props);
-    if (props.apiVersion < VK_API_VERSION_1_3) {
-        if (GpuRequired()) {
+    if (props.apiVersion < VK_API_VERSION_1_3)
+    {
+        if (GpuRequired())
+        {
             FAIL("ENGINE_RHI_REQUIRE_GPU=1 but the first Vulkan device is older than 1.3");
         }
         SKIP("first Vulkan device is older than 1.3");
@@ -136,9 +152,11 @@ TEST_CASE("Vulkan device table loads every mandatory function on a real device",
     families.Resize(family_count);
     fns.GetPhysicalDeviceQueueFamilyProperties(physical, &family_count, families.Data());
     u32 family = family_count;
-    for (u32 i = 0; i < family_count; ++i) {
+    for (u32 i = 0; i < family_count; ++i)
+    {
         if ((families[i].queueFlags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT)) ==
-            (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT)) {
+            (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT))
+        {
             family = i;
             break;
         }
@@ -177,24 +195,30 @@ TEST_CASE("Vulkan device table loads every mandatory function on a real device",
     dev.DestroyDevice(device, nullptr);
 }
 
-namespace {
+namespace
+{
 
 // A fake vkGetInstanceProcAddr: resolves every name to a dummy function except the ones listed as missing,
 // so the mandatory/optional contract can be tested without a driver.
 const char* g_missing[4];
 int g_missing_count = 0;
 void DummyFn() {}
-PFN_vkVoidFunction VKAPI_PTR FakeGetInstanceProcAddr(VkInstance, const char* name) {
-    for (int i = 0; i < g_missing_count; ++i) {
-        if (CStrCompare(name, g_missing[i]) == 0) {
+PFN_vkVoidFunction VKAPI_PTR FakeGetInstanceProcAddr(VkInstance, const char* name)
+{
+    for (int i = 0; i < g_missing_count; ++i)
+    {
+        if (CStrCompare(name, g_missing[i]) == 0)
+        {
             return nullptr;
         }
     }
     return &DummyFn;
 }
-VulkanLoader FakeLoader(InitializerList<const char*> missing) {
+VulkanLoader FakeLoader(InitializerList<const char*> missing)
+{
     g_missing_count = 0;
-    for (const char* name : missing) {
+    for (const char* name : missing)
+    {
         g_missing[g_missing_count++] = name;
     }
     VulkanLoader loader;
@@ -202,25 +226,32 @@ VulkanLoader FakeLoader(InitializerList<const char*> missing) {
     return loader;
 }
 
-VkResult FakeVersion12(u32* out) {
+VkResult FakeVersion12(u32* out)
+{
     *out = VK_API_VERSION_1_2;
     return VK_SUCCESS;
 }
-VkResult FakeVersion13(u32* out) {
+VkResult FakeVersion13(u32* out)
+{
     *out = VK_MAKE_API_VERSION(0, 1, 3, 280);
     return VK_SUCCESS;
 }
-VkResult FakeVersionFails(u32*) { return VK_ERROR_OUT_OF_HOST_MEMORY; }
-} // namespace
+VkResult FakeVersionFails(u32*)
+{
+    return VK_ERROR_OUT_OF_HOST_MEMORY;
+}
+}  // namespace
 
-TEST_CASE("CheckInstanceVersion rejects a Vulkan 1.0 loader", "[rhi][vulkan]") {
-    VkGlobalFns fns; // EnumerateInstanceVersion left null, as on a 1.0 loader
+TEST_CASE("CheckInstanceVersion rejects a Vulkan 1.0 loader", "[rhi][vulkan]")
+{
+    VkGlobalFns fns;  // EnumerateInstanceVersion left null, as on a 1.0 loader
     u32 version = 0;
     CHECK_FALSE(CheckInstanceVersion(fns, &version));
     CHECK(version == VK_API_VERSION_1_0);
 }
 
-TEST_CASE("CheckInstanceVersion requires 1.3", "[rhi][vulkan]") {
+TEST_CASE("CheckInstanceVersion requires 1.3", "[rhi][vulkan]")
+{
     VkGlobalFns fns;
     u32 version = 0;
     fns.EnumerateInstanceVersion = &FakeVersion12;
@@ -232,7 +263,8 @@ TEST_CASE("CheckInstanceVersion requires 1.3", "[rhi][vulkan]") {
     CHECK_FALSE(CheckInstanceVersion(fns, &version));
 }
 
-TEST_CASE("VkResultName covers the results the backend uses", "[rhi][vulkan]") {
+TEST_CASE("VkResultName covers the results the backend uses", "[rhi][vulkan]")
+{
     CHECK(CStrCompare(VkResultName(VK_SUCCESS), "VK_SUCCESS") == 0);
     CHECK(CStrCompare(VkResultName(VK_TIMEOUT), "VK_TIMEOUT") == 0);
     CHECK(CStrCompare(VkResultName(VK_NOT_READY), "VK_NOT_READY") == 0);
@@ -248,7 +280,8 @@ TEST_CASE("VkResultName covers the results the backend uses", "[rhi][vulkan]") {
     CHECK(CStrCompare(VkResultName(static_cast<VkResult>(-424242)), "VK_RESULT_UNKNOWN") == 0);
 }
 
-TEST_CASE("ClassifyVkResult separates success, recoverable, device-lost and fatal", "[rhi][vulkan]") {
+TEST_CASE("ClassifyVkResult separates success, recoverable, device-lost and fatal", "[rhi][vulkan]")
+{
     CHECK(ClassifyVkResult(VK_SUCCESS) == VkResultClass::Success);
     CHECK(ClassifyVkResult(VK_NOT_READY) == VkResultClass::Success);
     CHECK(ClassifyVkResult(VK_TIMEOUT) == VkResultClass::Success);
@@ -261,8 +294,10 @@ TEST_CASE("ClassifyVkResult separates success, recoverable, device-lost and fata
     CHECK(ClassifyVkResult(static_cast<VkResult>(-424242)) == VkResultClass::Fatal);
 }
 
-TEST_CASE("Function tables: optional entries may be null, mandatory ones may not", "[rhi][vulkan]") {
-    SECTION("everything resolves") {
+TEST_CASE("Function tables: optional entries may be null, mandatory ones may not", "[rhi][vulkan]")
+{
+    SECTION("everything resolves")
+    {
         VulkanLoader loader = FakeLoader({});
         VkGlobalFns global;
         VkInstanceFns instance;
@@ -271,7 +306,8 @@ TEST_CASE("Function tables: optional entries may be null, mandatory ones may not
         CHECK(global.CreateInstance != nullptr);
         CHECK(instance.CreateDebugUtilsMessengerEXT != nullptr);
     }
-    SECTION("a missing optional entry loads and is null") {
+    SECTION("a missing optional entry loads and is null")
+    {
         VulkanLoader loader = FakeLoader({"vkCreateDebugUtilsMessengerEXT", "vkEnumerateInstanceVersion"});
         VkGlobalFns global;
         VkInstanceFns instance;
@@ -281,19 +317,20 @@ TEST_CASE("Function tables: optional entries may be null, mandatory ones may not
         CHECK(instance.CreateDebugUtilsMessengerEXT == nullptr);
         CHECK(instance.EnumeratePhysicalDevices != nullptr);
     }
-    SECTION("a missing mandatory entry fails and leaves the table all-null") {
+    SECTION("a missing mandatory entry fails and leaves the table all-null")
+    {
         VulkanLoader loader = FakeLoader({"vkCreateInstance"});
         VkGlobalFns global;
         global.EnumerateInstanceLayerProperties = reinterpret_cast<PFN_vkEnumerateInstanceLayerProperties>(&DummyFn);
         CHECK_FALSE(LoadGlobalFns(loader, &global));
         CHECK(global.CreateInstance == nullptr);
-        CHECK(global.EnumerateInstanceLayerProperties == nullptr); // the resolved ones are cleared too
+        CHECK(global.EnumerateInstanceLayerProperties == nullptr);  // the resolved ones are cleared too
     }
-    SECTION("device tables go through vkGetDeviceProcAddr") {
+    SECTION("device tables go through vkGetDeviceProcAddr")
+    {
         VkInstanceFns instance;
-        instance.GetDeviceProcAddr = [](VkDevice, const char* name) -> PFN_vkVoidFunction {
-            return CStrCompare(name, "vkCmdBeginRendering") == 0 ? nullptr : &DummyFn;
-        };
+        instance.GetDeviceProcAddr = [](VkDevice, const char* name) -> PFN_vkVoidFunction
+        { return CStrCompare(name, "vkCmdBeginRendering") == 0 ? nullptr : &DummyFn; };
         VkDeviceFns device;
         CHECK_FALSE(LoadDeviceFns(instance, nullptr, &device));
         CHECK(device.QueueSubmit2 == nullptr);

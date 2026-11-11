@@ -1,4 +1,5 @@
-// Oracle test of lang/scalar.h: each function is compared with its <cmath> original over sampled inputs. Includes <cmath> on purpose.
+// Oracle test of lang/scalar.h: each function is compared with its <cmath> original over sampled inputs. Includes
+// <cmath> on purpose.
 #include <catch2/catch_test_macros.hpp>
 
 #include <cmath>
@@ -9,19 +10,40 @@
 
 using namespace engine_placeholder;
 
-namespace {
+namespace
+{
 
-template <class T>
-bool Same(T a, T b) {
-    if (std::isnan(a)) return std::isnan(b);
+template <class T> bool Same(T a, T b)
+{
+    if (std::isnan(a))
+    {
+        return std::isnan(b);
+    }
     return a == b && std::signbit(a) == std::signbit(b);
 }
 
-template <class T>
-void Check() {
-    const T values[] = {T(0), T(-0.0), T(0.5), T(-0.5), T(1), T(-1), T(1.5), T(2.5), T(-2.5), T(3.14159), T(100.75), T(-100.75), T(1e-30),
-                        Limits<T>::Max(), Limits<T>::Infinity(), -Limits<T>::Infinity(), Limits<T>::QuietNaN(), Limits<T>::DenormMin()};
-    for (T v : values) {
+template <class T> void Check()
+{
+    const T values[] = {T(0),
+                        T(-0.0),
+                        T(0.5),
+                        T(-0.5),
+                        T(1),
+                        T(-1),
+                        T(1.5),
+                        T(2.5),
+                        T(-2.5),
+                        T(3.14159),
+                        T(100.75),
+                        T(-100.75),
+                        T(1e-30),
+                        Limits<T>::Max(),
+                        Limits<T>::Infinity(),
+                        -Limits<T>::Infinity(),
+                        Limits<T>::QuietNaN(),
+                        Limits<T>::DenormMin()};
+    for (T v : values)
+    {
         CHECK(Same(Sqrt(v), std::sqrt(v)));
         CHECK(Same(Sin(v), std::sin(v)));
         CHECK(Same(Cos(v), std::cos(v)));
@@ -39,8 +61,12 @@ void Check() {
         CHECK(IsInf(v) == std::isinf(v));
         CHECK(SignBit(v) == std::signbit(v));
         CHECK(Same(LdExp(v, 3), std::ldexp(v, 3)));
-        if (std::isfinite(v) && std::fabs(v) < T(1e9)) CHECK(LRound(v) == std::lround(v));
-        for (T w : values) {
+        if (std::isfinite(v) && std::fabs(v) < T(1e9))
+        {
+            CHECK(LRound(v) == std::lround(v));
+        }
+        for (T w : values)
+        {
             CHECK(Same(Pow(v, w), std::pow(v, w)));
             CHECK(Same(Atan2(v, w), std::atan2(v, w)));
             CHECK(Same(Fmod(v, w), std::fmod(v, w)));
@@ -50,12 +76,19 @@ void Check() {
     }
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("Scalar math matches <cmath> for f32", "[cstr][math]") { Check<f32>(); }
-TEST_CASE("Scalar math matches <cmath> for f64", "[cstr][math]") { Check<f64>(); }
+TEST_CASE("Scalar math matches <cmath> for f32", "[cstr][math]")
+{
+    Check<f32>();
+}
+TEST_CASE("Scalar math matches <cmath> for f64", "[cstr][math]")
+{
+    Check<f64>();
+}
 
-TEST_CASE("Integer overloads", "[cstr][math]") {
+TEST_CASE("Integer overloads", "[cstr][math]")
+{
     CHECK(Abs(-5) == 5);
     CHECK(Abs(7) == 7);
     CHECK(Abs(static_cast<i64>(-9000000000ll)) == 9000000000ll);

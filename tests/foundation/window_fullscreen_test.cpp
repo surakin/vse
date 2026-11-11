@@ -16,13 +16,16 @@
 
 using namespace engine_placeholder;
 
-namespace {
+namespace
+{
 
-template <typename Pred>
-bool PumpUntil(os::Window& window, Pred done) {
-    for (int i = 0; i < 300; ++i) {
+template <typename Pred> bool PumpUntil(os::Window& window, Pred done)
+{
+    for (int i = 0; i < 300; ++i)
+    {
         window.PumpEvents();
-        if (done()) {
+        if (done())
+        {
             return true;
         }
         os::SleepNanos(10'000'000);
@@ -30,35 +33,40 @@ bool PumpUntil(os::Window& window, Pred done) {
     return false;
 }
 
-void ToggleFullscreen(os::Window& window) {
+void ToggleFullscreen(os::Window& window)
+{
     REQUIRE(window.Valid());
     REQUIRE(window.SupportsFullscreen());
     CHECK_FALSE(window.IsFullscreen());
     REQUIRE(window.SetFullscreen(true));
-    if (!PumpUntil(window, [&] { return window.IsFullscreen(); })) {
+    if (!PumpUntil(window, [&] { return window.IsFullscreen(); }))
+    {
         SKIP("the window manager or compositor did not honor the fullscreen request in 3 s");
     }
     REQUIRE(window.SetFullscreen(false));
     CHECK(PumpUntil(window, [&] { return !window.IsFullscreen(); }));
 }
 
-} // namespace
+}  // namespace
 
 #if ENGINE_PLATFORM_WINDOWS
 
 // Phase 13 Day 158: borderless over the window's monitor (platform/windows/FULLSCREEN.md), and back to the size it had.
-TEST_CASE("A Win32 window toggles fullscreen", "[window][fullscreen]") {
+TEST_CASE("A Win32 window toggles fullscreen", "[window][fullscreen]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
     os::InputState input;
     os::win32::Win32Window window;
     REQUIRE(window.Open("fullscreen test", 320, 240, &input));
     ToggleFullscreen(window);
-    CHECK(window.Width() == os::win32::Win32Window::ScaleForDpi(320, window.Dpi())); // the placement it had is given back
+    CHECK(window.Width() ==
+          os::win32::Win32Window::ScaleForDpi(320, window.Dpi()));  // the placement it had is given back
     CHECK(window.Height() == os::win32::Win32Window::ScaleForDpi(240, window.Dpi()));
 }
 
-TEST_CASE("The default Window reports fullscreen unsupported", "[window][fullscreen]") {
-    os::win32::Win32Window invalid; // a window that is not open supports nothing
+TEST_CASE("The default Window reports fullscreen unsupported", "[window][fullscreen]")
+{
+    os::win32::Win32Window invalid;  // a window that is not open supports nothing
     CHECK_FALSE(invalid.SupportsFullscreen());
     CHECK_FALSE(invalid.SetFullscreen(true));
     CHECK_FALSE(invalid.IsFullscreen());
@@ -66,27 +74,32 @@ TEST_CASE("The default Window reports fullscreen unsupported", "[window][fullscr
 
 #else
 
-TEST_CASE("An X11 window toggles fullscreen", "[x11][window][fullscreen]") {
+TEST_CASE("An X11 window toggles fullscreen", "[x11][window][fullscreen]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
     os::x11::X11Window window = os::x11::X11Window::Create("fullscreen test", 320, 240);
-    if (!window.Valid()) {
+    if (!window.Valid())
+    {
         SKIP("no X server");
     }
     ToggleFullscreen(window);
 }
 
-TEST_CASE("A Wayland window toggles fullscreen", "[wayland][window][fullscreen]") {
+TEST_CASE("A Wayland window toggles fullscreen", "[wayland][window][fullscreen]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
     os::InputState input;
     os::wayland::WaylandPlatformWindow window;
-    if (!window.Open("fullscreen test", 320, 240, &input)) {
+    if (!window.Open("fullscreen test", 320, 240, &input))
+    {
         SKIP("no Wayland compositor");
     }
     ToggleFullscreen(window);
 }
 
-TEST_CASE("The default Window reports fullscreen unsupported", "[window][fullscreen]") {
-    os::x11::X11Window invalid; // a closed window supports nothing
+TEST_CASE("The default Window reports fullscreen unsupported", "[window][fullscreen]")
+{
+    os::x11::X11Window invalid;  // a closed window supports nothing
     CHECK_FALSE(invalid.SupportsFullscreen());
     CHECK_FALSE(invalid.SetFullscreen(true));
     CHECK_FALSE(invalid.IsFullscreen());

@@ -28,10 +28,12 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
 
-namespace {
+namespace
+{
 
 // The CPU mirror of material_test.frag's MaterialParams (std140).
-struct MaterialParams {
+struct MaterialParams
+{
     f32 base_color[4];
     f32 emissive[3];
     f32 roughness;
@@ -41,7 +43,8 @@ struct MaterialParams {
 };
 static_assert(sizeof(MaterialParams) == 112);
 
-PermutationModule VertexModule() {
+PermutationModule VertexModule()
+{
     PermutationModule m;
     m.words = shaders::kMaterialTestVertSpv;
     m.word_count = shaders::kMaterialTestVertSpvWordCount;
@@ -52,7 +55,8 @@ PermutationModule VertexModule() {
     return m;
 }
 
-MaterialTemplateDesc TestTemplate() {
+MaterialTemplateDesc TestTemplate()
+{
     MaterialTemplateDesc d;
     d.name = "material_test";
     d.vertex = VertexModule();
@@ -63,25 +67,30 @@ MaterialTemplateDesc TestTemplate() {
     return d;
 }
 
-PermutationKey Key(InitializerList<const char*> names) {
+PermutationKey Key(InitializerList<const char*> names)
+{
     PermutationKey key;
     ReflectionError error;
-    REQUIRE(MakePermutationKey(shaders::kMaterialTestFragPermutations, names.begin(), static_cast<u32>(names.size()), &key, &error));
+    REQUIRE(MakePermutationKey(shaders::kMaterialTestFragPermutations, names.begin(), static_cast<u32>(names.size()),
+                               &key, &error));
     return key;
 }
 
-struct Fixture {
+struct Fixture
+{
     rhi::NullDevicePtr device = rhi::CreateNullDevice();
 };
 
-PipelineTarget ColorTarget(rhi::Format f = rhi::Format::RGBA8_UNorm) {
+PipelineTarget ColorTarget(rhi::Format f = rhi::Format::RGBA8_UNorm)
+{
     PipelineTarget t;
     t.color_formats[0] = f;
     t.color_count = 1;
     return t;
 }
 
-rhi::TextureHandle MakeTexture(rhi::Device* device) {
+rhi::TextureHandle MakeTexture(rhi::Device* device)
+{
     rhi::TextureDesc td;
     td.width = 1;
     td.height = 1;
@@ -93,9 +102,10 @@ rhi::TextureHandle MakeTexture(rhi::Device* device) {
     return t;
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("A template and a material are built from reflection", "[renderer][material]") {
+TEST_CASE("A template and a material are built from reflection", "[renderer][material]")
+{
     Fixture f;
     MaterialSystem sys(f.device.Get(), MaterialSystemDesc{});
     REQUIRE(sys.Valid());
@@ -112,7 +122,8 @@ TEST_CASE("A template and a material are built from reflection", "[renderer][mat
     sys.DestroyTemplate(t);
 }
 
-TEST_CASE("Parameter writes land at the shader's std140 offsets", "[renderer][material]") {
+TEST_CASE("Parameter writes land at the shader's std140 offsets", "[renderer][material]")
+{
     Fixture f;
     MaterialSystem sys(f.device.Get(), MaterialSystemDesc{});
     const TemplateId t = sys.CreateTemplate(TestTemplate());
@@ -121,7 +132,7 @@ TEST_CASE("Parameter writes land at the shader's std140 offsets", "[renderer][ma
 
     CHECK(sys.SetVec4(m, "base_color", Vec4(0.1f, 0.2f, 0.3f, 0.4f)));
     CHECK(sys.SetVec3(m, "emissive", Vec3(1, 2, 3)));
-    CHECK(sys.SetFloat(m, "roughness", 0.75f)); // packs into the 4 bytes after the float3
+    CHECK(sys.SetFloat(m, "roughness", 0.75f));  // packs into the 4 bytes after the float3
     CHECK(sys.SetUInt(m, "flags", 7));
     // A matrix that is not its own transpose, so a layout mix-up shows.
     const Mat4 skew = Mat4::FromColumns(Vec4(1, 2, 3, 4), Vec4(5, 6, 7, 8), Vec4(9, 10, 11, 12), Vec4(13, 14, 15, 16));
@@ -144,7 +155,7 @@ TEST_CASE("Parameter writes land at the shader's std140 offsets", "[renderer][ma
     CHECK(got.emissive[2] == 3.0f);
     CHECK(got.roughness == 0.75f);
     CHECK(got.flags == 7);
-    CHECK(MemCompare(&got.uv_transform, &skew, sizeof(Mat4)) == 0); // column-major in memory, as the shader reads it
+    CHECK(MemCompare(&got.uv_transform, &skew, sizeof(Mat4)) == 0);  // column-major in memory, as the shader reads it
 
     // The reflected block agrees with the C++ mirror.
     ShaderReflection fs;
@@ -155,50 +166,57 @@ TEST_CASE("Parameter writes land at the shader's std140 offsets", "[renderer][ma
     INFO(error.message);
 }
 
-TEST_CASE("Values that do not match the reflected block are rejected", "[renderer][material]") {
+TEST_CASE("Values that do not match the reflected block are rejected", "[renderer][material]")
+{
     Fixture f;
     MaterialSystem sys(f.device.Get(), MaterialSystemDesc{});
     const TemplateId t = sys.CreateTemplate(TestTemplate());
     const MaterialId m = sys.CreateMaterial(t, Key({}), "bad");
-    CHECK_FALSE(sys.SetFloat(m, "base_color", 1.0f));                 // a float4 is not a float
-    CHECK_FALSE(sys.SetVec4(m, "uv_transform", Vec4(0, 0, 0, 0)));    // a float4x4 is not a float4
-    CHECK_FALSE(sys.SetVec3(m, "base_color", Vec3(1, 1, 1)));         // nor a float3
-    CHECK_FALSE(sys.SetInt(m, "flags", 1));                           // flags is a uint
+    CHECK_FALSE(sys.SetFloat(m, "base_color", 1.0f));               // a float4 is not a float
+    CHECK_FALSE(sys.SetVec4(m, "uv_transform", Vec4(0, 0, 0, 0)));  // a float4x4 is not a float4
+    CHECK_FALSE(sys.SetVec3(m, "base_color", Vec3(1, 1, 1)));       // nor a float3
+    CHECK_FALSE(sys.SetInt(m, "flags", 1));                         // flags is a uint
     CHECK_FALSE(sys.SetVec4(m, "no_such_member", Vec4(0, 0, 0, 0)));
     CHECK_FALSE(sys.SetMat4(m, "roughness", Mat4::Identity()));
     CHECK_FALSE(sys.SetTexture(m, "no_such_texture", rhi::TextureHandle{}));
-    CHECK_FALSE(sys.SetSampler(m, "albedo_tex", rhi::SamplerHandle{})); // a texture, not a sampler
+    CHECK_FALSE(sys.SetSampler(m, "albedo_tex", rhi::SamplerHandle{}));  // a texture, not a sampler
     CHECK(sys.SetTexture(m, "albedo_tex", rhi::TextureHandle{}));
     CHECK(sys.SetSampler(m, "linear_sampler", rhi::SamplerHandle{}));
 }
 
-TEST_CASE("Templates and materials that break the conventions are rejected", "[renderer][material]") {
+TEST_CASE("Templates and materials that break the conventions are rejected", "[renderer][material]")
+{
     Fixture f;
     MaterialSystem sys(f.device.Get(), MaterialSystemDesc{});
 
-    SECTION("a fragment reflection given as the vertex stage") {
+    SECTION("a fragment reflection given as the vertex stage")
+    {
         MaterialTemplateDesc d = TestTemplate();
         d.vertex.reflection = shaders::kLitFragRefl;
         d.vertex.reflection_size = shaders::kLitFragReflByteCount;
         CHECK_FALSE(sys.CreateTemplate(d).IsValid());
     }
-    SECTION("a corrupt reflection blob") {
+    SECTION("a corrupt reflection blob")
+    {
         MaterialTemplateDesc d = TestTemplate();
         d.vertex.reflection_size = 5;
         CHECK_FALSE(sys.CreateTemplate(d).IsValid());
     }
-    SECTION("a missing fragment") {
+    SECTION("a missing fragment")
+    {
         MaterialTemplateDesc d = TestTemplate();
         d.fragment_permutations = nullptr;
         CHECK_FALSE(sys.CreateTemplate(d).IsValid());
     }
-    SECTION("a permutation key that was not built") {
+    SECTION("a permutation key that was not built")
+    {
         const TemplateId t = sys.CreateTemplate(TestTemplate());
         PermutationKey unbuilt;
         unbuilt.bits = 2;
         CHECK_FALSE(sys.CreateMaterial(t, unbuilt, "x").IsValid());
     }
-    SECTION("a fragment shader that puts a texture in set 0") {
+    SECTION("a fragment shader that puts a texture in set 0")
+    {
         MaterialTemplateDesc d = TestTemplate();
         d.fragment_permutations = nullptr;
         d.fragment.words = shaders::kLitFragSpv;
@@ -208,17 +226,19 @@ TEST_CASE("Templates and materials that break the conventions are rejected", "[r
         d.fragment.dxil = shaders::kLitFragDxil;
         d.fragment.dxil_size = shaders::kLitFragDxilByteCount;
         const TemplateId t = sys.CreateTemplate(d);
-        REQUIRE(t.IsValid()); // the vertex stage is fine; the fragment is checked per material
+        REQUIRE(t.IsValid());  // the vertex stage is fine; the fragment is checked per material
         CHECK_FALSE(sys.CreateMaterial(t, PermutationKey{}, "x").IsValid());
     }
-    SECTION("more texture defaults than texture slots") {
+    SECTION("more texture defaults than texture slots")
+    {
         MaterialTemplateDesc d = TestTemplate();
         TextureDefault many[kMaxMaterialTextures + 1];
         d.texture_defaults = many;
         d.texture_default_count = kMaxMaterialTextures + 1;
         CHECK_FALSE(sys.CreateTemplate(d).IsValid());
     }
-    SECTION("the template list and material list are bounded") {
+    SECTION("the template list and material list are bounded")
+    {
         MaterialSystemDesc small;
         small.max_templates = 1;
         small.max_materials = 1;
@@ -231,7 +251,8 @@ TEST_CASE("Templates and materials that break the conventions are rejected", "[r
     }
 }
 
-TEST_CASE("A fragment shader without material resources still makes a material", "[renderer][material]") {
+TEST_CASE("A fragment shader without material resources still makes a material", "[renderer][material]")
+{
     Fixture f;
     MaterialSystem sys(f.device.Get(), MaterialSystemDesc{});
     MaterialTemplateDesc d = TestTemplate();
@@ -250,11 +271,12 @@ TEST_CASE("A fragment shader without material resources still makes a material",
     sys.FlushMaterials();
     CHECK(sys.MaterialBindGroup(m).IsValid());
     CHECK_FALSE(sys.ParameterRegion(m).buffer.IsValid());
-    CHECK_FALSE(sys.SetFloat(m, "roughness", 1.0f)); // there is no parameter block
+    CHECK_FALSE(sys.SetFloat(m, "roughness", 1.0f));  // there is no parameter block
     CHECK(f.device->ErrorCount() == 0);
 }
 
-TEST_CASE("Unset texture slots show a default chosen by name or by the template", "[renderer][material]") {
+TEST_CASE("Unset texture slots show a default chosen by name or by the template", "[renderer][material]")
+{
     Fixture f;
     MaterialSystem sys(f.device.Get(), MaterialSystemDesc{});
     const TemplateId plain = sys.CreateTemplate(TestTemplate());
@@ -282,7 +304,8 @@ TEST_CASE("Unset texture slots show a default chosen by name or by the template"
     f.device->DestroyTexture(mine);
 }
 
-TEST_CASE("The pipeline cache keys on topology and primitive restart", "[renderer][material][topology]") {
+TEST_CASE("The pipeline cache keys on topology and primitive restart", "[renderer][material][topology]")
+{
     Fixture f;
     MaterialSystem sys(f.device.Get(), MaterialSystemDesc{});
     const TemplateId t = sys.CreateTemplate(TestTemplate());
@@ -291,24 +314,29 @@ TEST_CASE("The pipeline cache keys on topology and primitive restart", "[rendere
     const VertexLayoutData layout = StandardVertexLayout();
     const rhi::PipelineHandle list = sys.GetPipeline(a, ColorTarget(), layout).pipeline;
     REQUIRE(list.IsValid());
-    const PipelineLookup strip = sys.GetPipeline(a, ColorTarget(), layout, rhi::PrimitiveTopology::TriangleStrip, false);
-    const PipelineLookup restart = sys.GetPipeline(a, ColorTarget(), layout, rhi::PrimitiveTopology::TriangleStrip, true);
+    const PipelineLookup strip = sys.GetPipeline(a, ColorTarget(), layout, rhi::PrimitiveTopology::TriangleStrip,
+                                                 false);
+    const PipelineLookup restart = sys.GetPipeline(a, ColorTarget(), layout, rhi::PrimitiveTopology::TriangleStrip,
+                                                   true);
     REQUIRE(strip.pipeline.IsValid());
     REQUIRE(restart.pipeline.IsValid());
     CHECK(strip.pipeline != list);
     CHECK(restart.pipeline != strip.pipeline);
     CHECK(sys.Stats().pipelines == 3);
     // The same request again is a hit.
-    CHECK(sys.GetPipeline(a, ColorTarget(), layout, rhi::PrimitiveTopology::TriangleStrip, true).pipeline == restart.pipeline);
+    CHECK(sys.GetPipeline(a, ColorTarget(), layout, rhi::PrimitiveTopology::TriangleStrip, true).pipeline ==
+          restart.pipeline);
     CHECK(sys.Stats().pipelines == 3);
     // Restart only makes sense for a strip.
     f.device->ResetErrors();
-    CHECK_FALSE(sys.GetPipeline(a, ColorTarget(), layout, rhi::PrimitiveTopology::TriangleList, true).pipeline.IsValid());
+    CHECK_FALSE(
+        sys.GetPipeline(a, ColorTarget(), layout, rhi::PrimitiveTopology::TriangleList, true).pipeline.IsValid());
     CHECK(sys.Warmup(a, ColorTarget(), layout, rhi::PrimitiveTopology::LineList, false));
     CHECK(sys.Stats().pipelines == 4);
 }
 
-TEST_CASE("Materials of one template and key share a pipeline", "[renderer][material]") {
+TEST_CASE("Materials of one template and key share a pipeline", "[renderer][material]")
+{
     Fixture f;
     MaterialSystem sys(f.device.Get(), MaterialSystemDesc{});
     const TemplateId t = sys.CreateTemplate(TestTemplate());
@@ -329,8 +357,8 @@ TEST_CASE("Materials of one template and key share a pipeline", "[renderer][mate
     CHECK(sys.Stats().pipeline_hits == 1);
     CHECK(sys.Stats().pipelines == 1);
 
-    CHECK(sys.GetPipeline(tinted, ColorTarget(), layout).pipeline != pa.pipeline); // another permutation
-    CHECK(sys.GetPipeline(a, ColorTarget(rhi::Format::BGRA8_UNorm), layout).pipeline != pa.pipeline); // another target
+    CHECK(sys.GetPipeline(tinted, ColorTarget(), layout).pipeline != pa.pipeline);  // another permutation
+    CHECK(sys.GetPipeline(a, ColorTarget(rhi::Format::BGRA8_UNorm), layout).pipeline != pa.pipeline);  // another target
     PipelineTarget with_depth = ColorTarget();
     with_depth.depth_format = rhi::Format::D32_Float;
     CHECK(sys.GetPipeline(a, with_depth, layout).pipeline != pa.pipeline);
@@ -343,13 +371,14 @@ TEST_CASE("Materials of one template and key share a pipeline", "[renderer][mate
     CHECK(f.device->ErrorCount() == 0);
 }
 
-TEST_CASE("A pipeline is refused for a mesh layout the vertex shader cannot read", "[renderer][material]") {
+TEST_CASE("A pipeline is refused for a mesh layout the vertex shader cannot read", "[renderer][material]")
+{
     Fixture f;
     MaterialSystem sys(f.device.Get(), MaterialSystemDesc{});
     const TemplateId t = sys.CreateTemplate(TestTemplate());
     const MaterialId m = sys.CreateMaterial(t, Key({}), "m");
     VertexLayoutData missing = StandardVertexLayout();
-    missing.attribute_count = 3; // no uv
+    missing.attribute_count = 3;  // no uv
     CHECK_FALSE(sys.GetPipeline(m, ColorTarget(), missing).pipeline.IsValid());
     VertexLayoutData wrong = StandardVertexLayout();
     wrong.attributes[3].format = rhi::VertexFormat::Float3;
@@ -361,7 +390,8 @@ TEST_CASE("A pipeline is refused for a mesh layout the vertex shader cannot read
     CHECK_FALSE(sys.GetPipeline(m, undefined, StandardVertexLayout()).pipeline.IsValid());
 }
 
-TEST_CASE("Changing a texture rebuilds only that material's bind groups", "[renderer][material]") {
+TEST_CASE("Changing a texture rebuilds only that material's bind groups", "[renderer][material]")
+{
     Fixture f;
     MaterialSystem sys(f.device.Get(), MaterialSystemDesc{});
     const TemplateId t = sys.CreateTemplate(TestTemplate());
@@ -401,14 +431,16 @@ TEST_CASE("Changing a texture rebuilds only that material's bind groups", "[rend
     f.device->DestroyTexture(tex);
 }
 
-TEST_CASE("Parameter blocks are copied once per changed frame region", "[renderer][material]") {
+TEST_CASE("Parameter blocks are copied once per changed frame region", "[renderer][material]")
+{
     Fixture f;
     MaterialSystem sys(f.device.Get(), MaterialSystemDesc{});
     const TemplateId t = sys.CreateTemplate(TestTemplate());
     const MaterialId m = sys.CreateMaterial(t, Key({}), "m");
     u32 flushes = 0;
     // A change must reach all three frame regions, then stop costing anything.
-    for (u64 frame = 0; frame < 3; ++frame) {
+    for (u64 frame = 0; frame < 3; ++frame)
+    {
         sys.BeginFrame(frame);
         sys.FlushMaterials();
         flushes = sys.Stats().parameter_flushes;
@@ -418,22 +450,25 @@ TEST_CASE("Parameter blocks are copied once per changed frame region", "[rendere
     sys.FlushMaterials();
     CHECK(sys.Stats().parameter_flushes == 3);
     CHECK(sys.SetFloat(m, "roughness", 0.5f));
-    CHECK(sys.SetFloat(m, "roughness", 0.5f)); // unchanged: no new work
-    for (u64 frame = 4; frame < 7; ++frame) {
+    CHECK(sys.SetFloat(m, "roughness", 0.5f));  // unchanged: no new work
+    for (u64 frame = 4; frame < 7; ++frame)
+    {
         sys.BeginFrame(frame);
         sys.FlushMaterials();
     }
     CHECK(sys.Stats().parameter_flushes == 6);
 }
 
-TEST_CASE("The draw sort key orders by pipeline, then material, then mesh", "[renderer][material]") {
+TEST_CASE("The draw sort key orders by pipeline, then material, then mesh", "[renderer][material]")
+{
     CHECK(MakeDrawSortKey(0, 5, 9) < MakeDrawSortKey(1, 0, 0));
     CHECK(MakeDrawSortKey(1, 2, 9) < MakeDrawSortKey(1, 3, 0));
     CHECK(MakeDrawSortKey(1, 3, 1) < MakeDrawSortKey(1, 3, 2));
     CHECK(MakeDrawSortKey(65535, 0xffffff, 0xffffff) > MakeDrawSortKey(65534, 0xffffff, 0xffffff));
 }
 
-TEST_CASE("Default textures exist and differ", "[renderer][material]") {
+TEST_CASE("Default textures exist and differ", "[renderer][material]")
+{
     Fixture f;
     MaterialSystem sys(f.device.Get(), MaterialSystemDesc{});
     const rhi::TextureHandle white = sys.GetDefaultTexture(DefaultTexture::White);
@@ -444,7 +479,8 @@ TEST_CASE("Default textures exist and differ", "[renderer][material]") {
     CHECK(black != flat);
 }
 
-TEST_CASE("Everything the system created is released in order", "[renderer][material]") {
+TEST_CASE("Everything the system created is released in order", "[renderer][material]")
+{
     Fixture f;
     {
         MaterialSystem sys(f.device.Get(), MaterialSystemDesc{});
@@ -470,8 +506,11 @@ TEST_CASE("Everything the system created is released in order", "[renderer][mate
     CHECK(f.device->ErrorCount() == 0);
 }
 
-TEST_CASE("Two objects drawn through two materials show their own transform and parameters", "[renderer][material][gpu]") {
-    FOR_EACH_GPU_BACKEND(backend) {
+TEST_CASE("Two objects drawn through two materials show their own transform and parameters",
+          "[renderer][material][gpu]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
         gpu_test::BackendValidation validation(backend);
         rhi::DeviceCreateInfo info;
         info.backend = backend;
@@ -479,9 +518,13 @@ TEST_CASE("Two objects drawn through two materials show their own transform and 
         info.sync_validation = true;
         info.pipeline_cache = false;
         rhi::DevicePtr device = rhi::CreateDevice(info);
-        if (device == nullptr) {
+        if (device == nullptr)
+        {
             const char* required = os::GetEnvironment("ENGINE_RHI_REQUIRE_GPU");
-            if (required != nullptr && required[0] == '1') FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no " << gpu_test::BackendTag(backend) << " device could be created");
+            if (required != nullptr && required[0] == '1')
+            {
+                FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no " << gpu_test::BackendTag(backend) << " device could be created");
+            }
             SKIP("no " << gpu_test::BackendTag(backend) << " device on this machine");
         }
         {
@@ -489,8 +532,8 @@ TEST_CASE("Two objects drawn through two materials show their own transform and 
             REQUIRE(sys.Valid());
             const TemplateId tmpl = sys.CreateTemplate(TestTemplate());
             REQUIRE(tmpl.IsValid());
-            // A: red, half rough. B: the TINT permutation, emissive green, and a user texture in the albedo slot left unset
-            // (so white), a normal slot left unset (so a flat normal: alpha stays base_color.a).
+            // A: red, half rough. B: the TINT permutation, emissive green, and a user texture in the albedo slot left
+            // unset (so white), a normal slot left unset (so a flat normal: alpha stays base_color.a).
             const MaterialId a = sys.CreateMaterial(tmpl, Key({}), "red");
             const MaterialId b = sys.CreateMaterial(tmpl, Key({"TINT"}), "green");
             REQUIRE(a.IsValid());
@@ -506,7 +549,9 @@ TEST_CASE("Two objects drawn through two materials show their own transform and 
             const MaterialId c = sys.CreateMaterial(tmpl, Key({}), "uv");
             REQUIRE(c.IsValid());
             sys.SetUInt(c, "flags", 2);
-            sys.SetMat4(c, "uv_transform", Mat4::FromColumns(Vec4(0.5f, 0, 0, 0), Vec4(0, 0.8f, 0, 0), Vec4(0, 0, 1, 0), Vec4(0.25f, 0, 0, 1)));
+            sys.SetMat4(
+                c, "uv_transform",
+                Mat4::FromColumns(Vec4(0.5f, 0, 0, 0), Vec4(0, 0.8f, 0, 0), Vec4(0, 0, 1, 0), Vec4(0.25f, 0, 0, 1)));
 
             MeshData data;
             REQUIRE(MakePlaneMesh(2.0f, 2.0f, 1, 1, &data) == nullptr);
@@ -550,7 +595,7 @@ TEST_CASE("Two objects drawn through two materials show their own transform and 
             const PipelineLookup pc = sys.GetPipeline(c, ColorTarget(), mesh.Layout());
             REQUIRE(pa.pipeline.IsValid());
             REQUIRE(pb.pipeline.IsValid());
-            CHECK(pc.pipeline == pa.pipeline); // same template and key as A
+            CHECK(pc.pipeline == pa.pipeline);  // same template and key as A
 
             const BufferRegion fr = frame.FrameRegion();
             const BufferRegion orr = frame.ObjectRegion();
@@ -587,7 +632,8 @@ TEST_CASE("Two objects drawn through two materials show their own transform and 
             list->SetScissor(rhi::ScissorRect{0, 0, 64, 32});
             list->SetBindGroup(kFrameSet, frame_group);
             list->SetBindGroup(kObjectSet, object_group);
-            if (sys.ObjectIndexStream().IsValid()) { // Direct3D 12 reads the object index from the stream, not the instance index
+            if (sys.ObjectIndexStream().IsValid())
+            {  // Direct3D 12 reads the object index from the stream, not the instance index
                 list->SetVertexBuffer(MaterialSystem::ObjectIndexSlot(), sys.ObjectIndexStream(), 0);
             }
             // Object i is drawn with first_instance = i; the material is the only per-draw bind.
@@ -622,11 +668,12 @@ TEST_CASE("Two objects drawn through two materials show their own transform and 
             CHECK(near(at(49, 16, 1), 51));
             CHECK(near(at(49, 16, 2), 128));
             CHECK(near(at(49, 16, 3), 255));
-            // Middle object, material C: (t, 0) = (0.5, 0.4, 0); a transposed matrix would give (0.25, 0.4, 0). The pixel is
-            // near the plane's center, so uv is close to (0.5, 0.5).
+            // Middle object, material C: (t, 0) = (0.5, 0.4, 0); a transposed matrix would give (0.25, 0.4, 0). The
+            // pixel is near the plane's center, so uv is close to (0.5, 0.5).
             auto close = [](int got, int want) { return got - want <= 10 && want - got <= 10; };
             INFO("middle pixel " << at(32, 16, 0) << " " << at(32, 16, 1) << " " << at(32, 16, 2));
-            CHECK(close(at(32, 16, 0), 128)); // the pixel is a little off the exact center, so allow the uv to differ by ~0.04
+            CHECK(close(at(32, 16, 0),
+                        128));  // the pixel is a little off the exact center, so allow the uv to differ by ~0.04
             CHECK(close(at(32, 16, 1), 102));
             CHECK(near(at(32, 16, 2), 0));
             // Nothing between the objects or outside.

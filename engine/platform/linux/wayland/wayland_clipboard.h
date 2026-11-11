@@ -12,19 +12,25 @@
 #include "string/string.h"
 #include "types.h"
 
-//! The Wayland clipboard and primary selection: a `wl_data_device` and a `zwp_primary_selection_device_v1` on the seat, with the transfers done through non-blocking pipes.
+//! The Wayland clipboard and primary selection: a `wl_data_device` and a `zwp_primary_selection_device_v1` on the seat,
+//! with the transfers done through non-blocking pipes.
 
-namespace engine_placeholder::os::wayland {
+namespace engine_placeholder::os::wayland
+{
 
 /// The clipboard of a Wayland seat.
 ///
-/// Owning a selection needs the serial of a recent key, button or enter event: the input handler passes each one to [[os::wayland::WaylandClipboard::RecordSerial]], and
-/// [[os::wayland::WaylandClipboard::Set]] fails before the first. Data is sent to a peer and received from it through pipes that [[os::wayland::WaylandClipboard::Tick]]
-/// advances without blocking (a peer that never reads or writes costs only its timeout). Not movable: the listeners capture `this`.
+/// Owning a selection needs the serial of a recent key, button or enter event: the input handler passes each one to
+/// [[os::wayland::WaylandClipboard::RecordSerial]], and
+/// [[os::wayland::WaylandClipboard::Set]] fails before the first. Data is sent to a peer and received from it through
+/// pipes that [[os::wayland::WaylandClipboard::Tick]] advances without blocking (a peer that never reads or writes
+/// costs only its timeout). Not movable: the listeners capture `this`.
 ///
 /// - Thread-safety: owner-thread-only (the thread that dispatches the connection).
-/// - Ownership: owns the data devices, the sources and offers it creates, and the pipes; the managers belong to the connection.
-class WaylandClipboard {
+/// - Ownership: owns the data devices, the sources and offers it creates, and the pipes; the managers belong to the
+/// connection.
+class WaylandClipboard
+{
 public:
     WaylandClipboard() = default;
     /// Calls [[os::wayland::WaylandClipboard::Shutdown]].
@@ -39,9 +45,11 @@ public:
     /// Destroys everything this object created, while the display is still connected. Idempotent.
     void Shutdown();
 
-    /// Remembers the serial of an input event, the proof of user action a compositor wants before it accepts a selection.
+    /// Remembers the serial of an input event, the proof of user action a compositor wants before it accepts a
+    /// selection.
     void RecordSerial(u32 serial) { last_serial_ = serial; }
-    /// Records the serial of a pointer button press: `wl_data_device.start_drag` needs the press that holds the implicit grab, not the latest key or enter serial.
+    /// Records the serial of a pointer button press: `wl_data_device.start_drag` needs the press that holds the
+    /// implicit grab, not the latest key or enter serial.
     void RecordButtonSerial(u32 serial) { button_serial_ = serial; }
 
     /// Returns whether the selection `kind` works (the primary selection needs the compositor to offer the protocol).
@@ -77,7 +85,8 @@ public:
     /// Whether a drag started by this window is running.
     bool Dragging() const { return drag_active_; }
 
-    /// Whether every event of the `wl_data_device`, `wl_data_offer`, `wl_data_source` and the primary selection objects has a listener function (libwayland aborts on a null slot).
+    /// Whether every event of the `wl_data_device`, `wl_data_offer`, `wl_data_source` and the primary selection objects
+    /// has a listener function (libwayland aborts on a null slot).
     static bool ListenersComplete();
 
 private:
@@ -86,30 +95,34 @@ private:
     static constexpr u32 kOfferSlots = 8;
     static constexpr u32 kWriters = 4;
     static constexpr u32 kReaders = 8;
-    struct OfferSlot {
+    struct OfferSlot
+    {
         WaylandClipboard* owner = nullptr;
         ClipboardKind kind = ClipboardKind::Clipboard;
         bool used = false;
         void* proxy = nullptr;
         u32 count = 0;
         char mimes[kMaxMimes][kMimeLength] = {};
-        u32 source_actions = 0; ///< `wl_data_offer.source_actions` (bits of `wl_data_device_manager.dnd_action`).
-        u32 action = 0;         ///< `wl_data_offer.action`: the action the compositor chose.
+        u32 source_actions = 0;  ///< `wl_data_offer.source_actions` (bits of `wl_data_device_manager.dnd_action`).
+        u32 action = 0;          ///< `wl_data_offer.action`: the action the compositor chose.
     };
-    struct Source {
+    struct Source
+    {
         void* proxy = nullptr;
         ClipboardFormat format = ClipboardFormat::Text;
         char custom_name[kMimeLength] = {};
         Vector<byte> bytes;
         WaylandClipboard* owner = nullptr;
         ClipboardKind kind = ClipboardKind::Clipboard;
-        bool drag = false; ///< The source of a drag, not of a selection.
+        bool drag = false;  ///< The source of a drag, not of a selection.
     };
-    struct Writer {
+    struct Writer
+    {
         bool active = false;
         PipeWriter pipe;
     };
-    struct Reader {
+    struct Reader
+    {
         bool active = false;
         u32 id = 0;
         ClipboardFormat format = ClipboardFormat::Text;
@@ -118,7 +131,8 @@ private:
     };
 
     static void HandleDeviceDataOffer(void* data, wl_data_device* device, wl_data_offer* offer);
-    static void HandleDeviceEnter(void* data, wl_data_device* device, u32 serial, wl_surface* surface, wl_fixed_t x, wl_fixed_t y, wl_data_offer* offer);
+    static void HandleDeviceEnter(void* data, wl_data_device* device, u32 serial, wl_surface* surface, wl_fixed_t x,
+                                  wl_fixed_t y, wl_data_offer* offer);
     static void HandleDeviceLeave(void* data, wl_data_device* device);
     static void HandleDeviceMotion(void* data, wl_data_device* device, u32 time, wl_fixed_t x, wl_fixed_t y);
     static void HandleDeviceDrop(void* data, wl_data_device* device);
@@ -132,8 +146,10 @@ private:
     static void HandleSourceDropPerformed(void* data, wl_data_source* source);
     static void HandleSourceFinished(void* data, wl_data_source* source);
     static void HandleSourceAction(void* data, wl_data_source* source, u32 action);
-    static void HandlePrimaryDeviceDataOffer(void* data, zwp_primary_selection_device_v1* device, zwp_primary_selection_offer_v1* offer);
-    static void HandlePrimaryDeviceSelection(void* data, zwp_primary_selection_device_v1* device, zwp_primary_selection_offer_v1* offer);
+    static void HandlePrimaryDeviceDataOffer(void* data, zwp_primary_selection_device_v1* device,
+                                             zwp_primary_selection_offer_v1* offer);
+    static void HandlePrimaryDeviceSelection(void* data, zwp_primary_selection_device_v1* device,
+                                             zwp_primary_selection_offer_v1* offer);
     static void HandlePrimaryOfferOffer(void* data, zwp_primary_selection_offer_v1* offer, const char* mime);
     static void HandlePrimarySourceSend(void* data, zwp_primary_selection_source_v1* source, const char* mime, i32 fd);
     static void HandlePrimarySourceCancelled(void* data, zwp_primary_selection_source_v1* source);
@@ -146,7 +162,8 @@ private:
     static const wl_data_source_listener& SourceListener();
     void ResetDrop();
     void EndDrag(DragAction action);
-    u32 StartRead(ClipboardKind kind, void* offer_proxy, const char* mime, ClipboardFormat format, InputEventType event_type);
+    u32 StartRead(ClipboardKind kind, void* offer_proxy, const char* mime, ClipboardFormat format,
+                  InputEventType event_type);
     u8 DropFormats(const OfferSlot& slot) const;
     OfferSlot* NewOffer(ClipboardKind kind, void* proxy);
     void DestroyOffer(OfferSlot& slot);
@@ -156,7 +173,8 @@ private:
     void Lost(ClipboardKind kind, void* source_proxy);
     void DestroySource(ClipboardKind kind);
     void QueueChanged(ClipboardKind kind);
-    const char* SelectMime(const OfferSlot& slot, ClipboardFormat format, StringView custom_name, bool* latin_or_plain) const;
+    const char* SelectMime(const OfferSlot& slot, ClipboardFormat format, StringView custom_name,
+                           bool* latin_or_plain) const;
 
     static constexpr usize K = static_cast<usize>(ClipboardKind::Count);
     wl_display* display_ = nullptr;
@@ -166,7 +184,7 @@ private:
     zwp_primary_selection_device_manager_v1* primary_manager_ = nullptr;
     InputEventQueue* queue_ = nullptr;
     u32 last_serial_ = 0;
-    u32 button_serial_ = 0; // of the last pointer button press
+    u32 button_serial_ = 0;  // of the last pointer button press
     OfferSlot offers_[kOfferSlots];
     i32 current_[K] = {-1, -1};
     Source sources_[K];
@@ -197,4 +215,4 @@ private:
     wl_buffer* drag_icon_buffer_ = nullptr;
 };
 
-} // namespace engine_placeholder::os::wayland
+}  // namespace engine_placeholder::os::wayland

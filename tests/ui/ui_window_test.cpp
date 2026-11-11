@@ -8,15 +8,21 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::ui;
 
-namespace {
+namespace
+{
 
 // A window that replays queued events and records the cursor calls.
-class FakeWindow final : public os::Window {
+class FakeWindow final : public os::Window
+{
 public:
     bool Valid() const override { return true; }
     void PumpEvents() override {}
-    bool PollEvent(os::InputEvent* out) override {
-        if (next_ >= events.Size()) return false;
+    bool PollEvent(os::InputEvent* out) override
+    {
+        if (next_ >= events.Size())
+        {
+            return false;
+        }
         *out = events[next_++];
         return true;
     }
@@ -29,7 +35,8 @@ public:
     bool IsMinimized() const override { return false; }
     u64 ResizeSerial() const override { return 0; }
     bool SupportsCursorShape() const override { return true; }
-    bool SetCursor(os::CursorShape shape) override {
+    bool SetCursor(os::CursorShape shape) override
+    {
         cursor_calls.Push(shape);
         return accept_cursor;
     }
@@ -44,14 +51,16 @@ private:
     usize next_ = 0;
 };
 
-class WinBox : public Widget {
+class WinBox : public Widget
+{
 public:
     WinBox(StringView name, Rect bounds) : Widget(name) { SetBounds(bounds); }
     Vector<Event> got;
     void OnEvent(Event& e) override { got.Push(e); }
 };
 
-os::InputEvent WinPointer(os::InputEventType type, f64 x, f64 y) {
+os::InputEvent WinPointer(os::InputEventType type, f64 x, f64 y)
+{
     os::InputEvent e;
     e.type = type;
     e.x = x;
@@ -59,9 +68,10 @@ os::InputEvent WinPointer(os::InputEventType type, f64 x, f64 y) {
     return e;
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("window adapter: pointer positions are divided by the scale", "[window]") {
+TEST_CASE("window adapter: pointer positions are divided by the scale", "[window]")
+{
     Surface s(100, 100, 2);
     Rect r;
     r.w = 100;
@@ -87,15 +97,21 @@ TEST_CASE("window adapter: pointer positions are divided by the scale", "[window
     // enter at (20,30), move to (50,25)
     bool saw_move = false;
     bool saw_wheel = false;
-    for (usize i = 0; i < box->got.Size(); ++i) {
+    for (usize i = 0; i < box->got.Size(); ++i)
+    {
         const Event& e = box->got[i];
-        if (e.type == EventType::PointerMove && e.position.x == 50 && e.position.y == 25) saw_move = true;
-        if (e.type == EventType::Wheel) {
+        if (e.type == EventType::PointerMove && e.position.x == 50 && e.position.y == 25)
+        {
+            saw_move = true;
+        }
+        if (e.type == EventType::Wheel)
+        {
             saw_wheel = true;
             CHECK(e.wheel_x == 1);
             CHECK(e.wheel_y == -2);
         }
-        if (e.type == EventType::PointerDown) {
+        if (e.type == EventType::PointerDown)
+        {
             CHECK(e.button == os::kMouseLeft);
             CHECK(e.position.x == 50);
         }
@@ -104,7 +120,8 @@ TEST_CASE("window adapter: pointer positions are divided by the scale", "[window
     CHECK(saw_wheel);
 }
 
-TEST_CASE("window adapter: keys, text, repeat and modifiers arrive in order", "[window]") {
+TEST_CASE("window adapter: keys, text, repeat and modifiers arrive in order", "[window]")
+{
     Surface s(100, 100, 1);
     WinBox* box = static_cast<WinBox*>(s.Root()->AddChild(MakeUnique<WinBox>(StringView("box"), Rect())));
     box->SetFocusable(true);
@@ -130,7 +147,7 @@ TEST_CASE("window adapter: keys, text, repeat and modifiers arrive in order", "[
     WindowAdapter a;
     a.PumpInto(w, s);
     s.Frame(0);
-    REQUIRE(box->got.Size() == 3 + 1); // FocusGained from SetFocus is first
+    REQUIRE(box->got.Size() == 3 + 1);  // FocusGained from SetFocus is first
     CHECK(box->got[1].type == EventType::KeyDown);
     CHECK(box->got[1].repeat);
     CHECK(box->got[1].key == Key::B);
@@ -141,12 +158,14 @@ TEST_CASE("window adapter: keys, text, repeat and modifiers arrive in order", "[
     CHECK(box->got[3].type == EventType::KeyUp);
 }
 
-TEST_CASE("window adapter: resize is forwarded in logical units and costs one layout", "[window]") {
+TEST_CASE("window adapter: resize is forwarded in logical units and costs one layout", "[window]")
+{
     Surface s(100, 100, 2);
     s.Frame(0);
     const u64 before = s.LayoutPasses();
     FakeWindow w;
-    for (u32 i = 1; i <= 5; ++i) {
+    for (u32 i = 1; i <= 5; ++i)
+    {
         os::InputEvent e;
         e.type = os::InputEventType::Resize;
         e.width = 200 + i * 20;
@@ -162,7 +181,8 @@ TEST_CASE("window adapter: resize is forwarded in logical units and costs one la
     CHECK(s.LayoutPasses() == before + 1);
 }
 
-TEST_CASE("window adapter: the surface follows the window's content scale only when asked", "[window]") {
+TEST_CASE("window adapter: the surface follows the window's content scale only when asked", "[window]")
+{
     FakeWindow w;
     w.width = 1280;
     w.height = 720;
@@ -170,7 +190,7 @@ TEST_CASE("window adapter: the surface follows the window's content scale only w
     Surface s(1280, 720, 1);
     WindowAdapter a;
     a.PumpInto(w, s);
-    CHECK(s.Scale() == 1); // off by default: an explicit scale is kept
+    CHECK(s.Scale() == 1);  // off by default: an explicit scale is kept
     CHECK(s.Width() == 1280);
 
     a.SetFollowWindowScale(true);
@@ -185,7 +205,7 @@ TEST_CASE("window adapter: the surface follows the window's content scale only w
     CHECK(s.Height() == 360);
     s.Frame(0);
     REQUIRE(box->got.Size() >= 1);
-    CHECK(box->got[box->got.Size() - 1].position.x == 100); // the pointer of the same pump uses the new scale
+    CHECK(box->got[box->got.Size() - 1].position.x == 100);  // the pointer of the same pump uses the new scale
     CHECK(box->got[box->got.Size() - 1].position.y == 50);
 
     // Moved to a 150% monitor: the window's size and scale change together, the widgets keep their logical size.
@@ -210,7 +230,8 @@ TEST_CASE("window adapter: the surface follows the window's content scale only w
     CHECK(s.Scale() == 1.5f);
 }
 
-TEST_CASE("window adapter: focus and pointer leave reach the surface", "[window]") {
+TEST_CASE("window adapter: focus and pointer leave reach the surface", "[window]")
+{
     Surface s(100, 100, 1);
     Rect r;
     r.w = 100;
@@ -246,7 +267,8 @@ TEST_CASE("window adapter: focus and pointer leave reach the surface", "[window]
     CHECK(s.WindowFocused());
 }
 
-TEST_CASE("window adapter: SetCursor is called only when the shape changes", "[window]") {
+TEST_CASE("window adapter: SetCursor is called only when the shape changes", "[window]")
+{
     Surface s(100, 100, 1);
     Rect r;
     r.w = 100;
@@ -255,7 +277,7 @@ TEST_CASE("window adapter: SetCursor is called only when the shape changes", "[w
     box->SetCursor(os::CursorShape::IBeam);
     FakeWindow w;
     WindowAdapter a;
-    CHECK(!a.UpdateCursor(w, s)); // Arrow is what a window starts with
+    CHECK(!a.UpdateCursor(w, s));  // Arrow is what a window starts with
     CHECK(w.cursor_calls.Size() == 0);
 
     Event move;
@@ -276,7 +298,8 @@ TEST_CASE("window adapter: SetCursor is called only when the shape changes", "[w
     CHECK(a.UpdateCursor(w, s));
     CHECK(w.cursor_calls.Size() == 2);
 
-    SECTION("a window that refuses the shape is asked again") {
+    SECTION("a window that refuses the shape is asked again")
+    {
         w.accept_cursor = false;
         box->SetCursor(os::CursorShape::NotAllowed);
         CHECK(a.UpdateCursor(w, s));
@@ -285,7 +308,8 @@ TEST_CASE("window adapter: SetCursor is called only when the shape changes", "[w
     }
 }
 
-TEST_CASE("window adapter: the wheel turns where the pointer last was", "[window]") {
+TEST_CASE("window adapter: the wheel turns where the pointer last was", "[window]")
+{
     Surface s(200, 100, 2);
     WinBox* left = static_cast<WinBox*>(s.Root()->AddChild(MakeUnique<WinBox>(StringView("left"), Rect())));
     Rect right_bounds;
@@ -298,13 +322,16 @@ TEST_CASE("window adapter: the wheel turns where the pointer last was", "[window
     left_bounds.h = 100;
     left->SetBounds(left_bounds);
     FakeWindow w;
-    w.events.Push(WinPointer(os::InputEventType::PointerMove, 300, 40)); // 150 logical: over the right box
+    w.events.Push(WinPointer(os::InputEventType::PointerMove, 300, 40));  // 150 logical: over the right box
     w.events.Push(WinPointer(os::InputEventType::Wheel, 0, 1));
     WindowAdapter a;
     a.PumpInto(w, s);
     s.Frame(0);
     usize wheels = 0;
-    for (usize i = 0; i < right->got.Size(); ++i) wheels += right->got[i].type == EventType::Wheel;
+    for (usize i = 0; i < right->got.Size(); ++i)
+    {
+        wheels += right->got[i].type == EventType::Wheel;
+    }
     CHECK(wheels == 1);
     CHECK(left->got.Size() == 0);
 }

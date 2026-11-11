@@ -217,6 +217,8 @@ order untouched (it is part of the build: the unity enable/disable pairs). Do no
   test fixtures with planted violations) are never touched.
 - **Install the hook once per machine: `scripts/install-git-hooks.sh`** (Windows: from Git Bash). The pre-commit hook formats the staged C and C++ files and stages them again;
   it refuses a file that also has unstaged edits, and refuses to commit when clang-format (18 or newer, `BUILD.md`) is missing. `--no-verify` is not for routine use.
+- **Comments are wrapped by clang-format at 120 columns, and doc-comment labels are list items** (`/// - Fails: never.`, `docs/DOC-CONVENTIONS.md`): that is the form its comment reflow leaves on a line of its own; a bare
+  `Fails: ...` is a docgen error. A wrapped label or `///<` comment continues on the flush lines below it. Long string literals are not split.
 - **A formatting-only change is its own commit** with no other edits, so review and `git blame` stay useful (list it in `.git-blame-ignore-revs`).
 - **clang-tidy** (`.clang-tidy`, `scripts/tidy.sh`) runs on demand over a non-unity compile database; fix a finding or suppress it on its line with
   `// NOLINT(check): reason` (a reason is required). It is not in the hook.

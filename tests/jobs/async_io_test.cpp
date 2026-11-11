@@ -25,9 +25,11 @@ using namespace engine_placeholder;
 using namespace engine_placeholder::jobs;
 using engine_test::Text;
 
-namespace {
+namespace
+{
 
-UniquePtr<Scheduler> AsyncIoTestMakeScheduler(usize n) {
+UniquePtr<Scheduler> AsyncIoTestMakeScheduler(usize n)
+{
     Scheduler::Config cfg;
     cfg.participants = n;
     return MakeUnique<Scheduler>(cfg);
@@ -35,18 +37,29 @@ UniquePtr<Scheduler> AsyncIoTestMakeScheduler(usize n) {
 
 // A scratch directory removed on destruction (tests/io/temp_dir.h), and the text of a path in it.
 using io_test::TempDir;
-Text FileIn(const TempDir& dir, const char* name) { return engine_test::Concat(dir.Native().View(), "/", StringView(name)); }
+Text FileIn(const TempDir& dir, const char* name)
+{
+    return engine_test::Concat(dir.Native().View(), "/", StringView(name));
+}
 
-u8 PatternByte(usize i) { return static_cast<u8>((i * 131 + (i >> 8) * 7) & 0xFF); }
+u8 PatternByte(usize i)
+{
+    return static_cast<u8>((i * 131 + (i >> 8) * 7) & 0xFF);
+}
 
-void WriteFile(const Text& path, usize size) {
+void WriteFile(const Text& path, usize size)
+{
     Vector<u8> bytes;
     bytes.Resize(size);
-    for (usize i = 0; i < size; ++i) bytes[i] = PatternByte(i);
+    for (usize i = 0; i < size; ++i)
+    {
+        bytes[i] = PatternByte(i);
+    }
     REQUIRE(io::WriteFile(io::Path(path.View()), bytes.Data(), bytes.Size()).Ok());
 }
 
-struct ReadOutcome {
+struct ReadOutcome
+{
     bool ok = false;
     usize size = 0;
     bool content_matches = false;
@@ -56,52 +69,70 @@ struct ReadOutcome {
     Atomic<int> done{0};
 };
 
-Job ReadJob(Scheduler* s, const Text* path, ReadOutcome* out) {
+Job ReadJob(Scheduler* s, const Text* path, ReadOutcome* out)
+{
     FileReadResult r = co_await ReadFileAsync(*s, path->View());
     out->ok = r.ok;
     out->size = r.size;
     out->data_non_null = r.data != nullptr;
     bool match = r.ok;
-    for (usize i = 0; match && i < r.size; ++i) match = r.data[i] == PatternByte(i);
+    for (usize i = 0; match && i < r.size; ++i)
+    {
+        match = r.data[i] == PatternByte(i);
+    }
     out->content_matches = match;
     out->on_participant = WorkerPool::IsParticipantThread();
     out->on_io_thread = ThisThread::Id() == s->Io().ThreadId();
     out->done.FetchAdd(1, MemoryOrder::Release);
 }
 
-#if !ENGINE_PLATFORM_WINDOWS // (only the FIFO case uses it)
-Job ComputeJob(Atomic<int>* counter) {
+#if !ENGINE_PLATFORM_WINDOWS  // (only the FIFO case uses it)
+Job ComputeJob(Atomic<int>* counter)
+{
     counter->FetchAdd(1, MemoryOrder::Release);
     co_return;
 }
 #endif
 
 // Waits until every outcome in `outs` is done.
-void HelpUntilAllDone(Scheduler& s, Vector<ReadOutcome>& outs) {
+void HelpUntilAllDone(Scheduler& s, Vector<ReadOutcome>& outs)
+{
     s.HelpUntil(
-        [](void* u) {
+        [](void* u)
+        {
             Vector<ReadOutcome>& all = *static_cast<Vector<ReadOutcome>*>(u);
-            for (usize i = 0; i < all.Size(); ++i) {
-                if (all[i].done.Load(MemoryOrder::Acquire) == 0) return false;
+            for (usize i = 0; i < all.Size(); ++i)
+            {
+                if (all[i].done.Load(MemoryOrder::Acquire) == 0)
+                {
+                    return false;
+                }
             }
             return true;
         },
         &outs);
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("co_await ReadFileAsync returns the right bytes (small, multi-MB, empty)", "[jobs][io]") {
+TEST_CASE("co_await ReadFileAsync returns the right bytes (small, multi-MB, empty)", "[jobs][io]")
+{
     TempDir dir;
-    struct Case {
+    struct Case
+    {
         const char* name;
         usize size;
     } cases[] = {{"small.bin", 1234}, {"big.bin", 9u << 20}, {"empty.bin", 0}, {"one.bin", 1}};
-    for (auto& c : cases) WriteFile(FileIn(dir, c.name), c.size);
+    for (auto& c : cases)
+    {
+        WriteFile(FileIn(dir, c.name), c.size);
+    }
 
-    for (usize n : {usize{1}, usize{2}, usize{0}}) {
+    for (usize n : {usize{1}, usize{2}, usize{0}})
+    {
         auto s = AsyncIoTestMakeScheduler(n);
-        for (auto& c : cases) {
+        for (auto& c : cases)
+        {
             const Text path = FileIn(dir, c.name);
             ReadOutcome out;
             s->Submit(ReadJob(s.Get(), &path, &out));
@@ -118,7 +149,8 @@ TEST_CASE("co_await ReadFileAsync returns the right bytes (small, multi-MB, empt
     }
 }
 
-TEST_CASE("A missing file, an over-long path and an oversized file fail cleanly", "[jobs][io]") {
+TEST_CASE("A missing file, an over-long path and an oversized file fail cleanly", "[jobs][io]")
+{
     TempDir dir;
     auto s = AsyncIoTestMakeScheduler(2);
 
@@ -146,15 +178,18 @@ TEST_CASE("A missing file, an over-long path and an oversized file fail cleanly"
     REQUIRE(c.content_matches);
 }
 
-namespace {
-Job ReadTinyArena(Scheduler* s, const Text* path, bool* ok, Atomic<int>* done) {
+namespace
+{
+Job ReadTinyArena(Scheduler* s, const Text* path, bool* ok, Atomic<int>* done)
+{
     FileReadResult r = co_await ReadFileAsync(*s, path->View(), 4096);
     *ok = r.ok;
     done->FetchAdd(1, MemoryOrder::Release);
 }
-} // namespace
+}  // namespace
 
-TEST_CASE("A file bigger than max_bytes fails instead of overrunning", "[jobs][io]") {
+TEST_CASE("A file bigger than max_bytes fails instead of overrunning", "[jobs][io]")
+{
     TempDir dir;
     const Text path = FileIn(dir, "f.bin");
     WriteFile(path, 100'000);
@@ -166,25 +201,32 @@ TEST_CASE("A file bigger than max_bytes fails instead of overrunning", "[jobs][i
     REQUIRE_FALSE(ok);
 }
 
-TEST_CASE("64 concurrent reads of different files all complete correctly", "[jobs][io]") {
+TEST_CASE("64 concurrent reads of different files all complete correctly", "[jobs][io]")
+{
     TempDir dir;
     constexpr int kFiles = 64;
     Vector<Text> paths;
     Vector<usize> sizes;
-    for (int i = 0; i < kFiles; ++i) {
+    for (int i = 0; i < kFiles; ++i)
+    {
         char name[32];
         FormatTo(name, sizeof(name), "f%02d.bin", i);
         sizes.Push(1000 + static_cast<usize>(i) * 4099);
         paths.Push(FileIn(dir, name));
         WriteFile(paths[static_cast<usize>(i)], sizes[static_cast<usize>(i)]);
     }
-    for (usize n : {usize{1}, usize{3}}) {
+    for (usize n : {usize{1}, usize{3}})
+    {
         auto s = AsyncIoTestMakeScheduler(n);
-        Vector<ReadOutcome> outs; // sized once while empty: the atomics never move
+        Vector<ReadOutcome> outs;  // sized once while empty: the atomics never move
         outs.Resize(kFiles);
-        for (usize i = 0; i < outs.Size(); ++i) s->Submit(ReadJob(s.Get(), &paths[i], &outs[i]));
+        for (usize i = 0; i < outs.Size(); ++i)
+        {
+            s->Submit(ReadJob(s.Get(), &paths[i], &outs[i]));
+        }
         HelpUntilAllDone(*s, outs);
-        for (usize i = 0; i < outs.Size(); ++i) {
+        for (usize i = 0; i < outs.Size(); ++i)
+        {
             REQUIRE(outs[i].ok);
             REQUIRE(outs[i].size == sizes[i]);
             REQUIRE(outs[i].content_matches);
@@ -194,9 +236,11 @@ TEST_CASE("64 concurrent reads of different files all complete correctly", "[job
     }
 }
 
-TEST_CASE("Compute jobs keep running while a slow read blocks the I/O thread", "[jobs][io]") {
+TEST_CASE("Compute jobs keep running while a slow read blocks the I/O thread", "[jobs][io]")
+{
 #if ENGINE_PLATFORM_WINDOWS
-    SKIP("needs a FIFO whose open blocks until a writer comes (POSIX); Windows has no such file, and opening a busy pipe fails at once");
+    SKIP(
+        "needs a FIFO whose open blocks until a writer comes (POSIX); Windows has no such file, and opening a busy pipe fails at once");
 #else
     TempDir dir;
     // A FIFO with no writer: open() on it blocks the I/O thread until the
@@ -204,17 +248,23 @@ TEST_CASE("Compute jobs keep running while a slow read blocks the I/O thread", "
     const Text fifo = FileIn(dir, "blocked.fifo");
     REQUIRE(mkfifo(fifo.CStr(), 0600) == 0);
 
-    for (usize n : {usize{1}, usize{3}}) {
+    for (usize n : {usize{1}, usize{3}})
+    {
         auto s = AsyncIoTestMakeScheduler(n);
         ReadOutcome blocked;
         // Unblocks the I/O thread at scope exit (before the scheduler is
         // destroyed) even if a REQUIRE below fails, so a failing test
         // fails instead of hanging in ~Scheduler's join.
-        struct FifoRelease {
+        struct FifoRelease
+        {
             const Text* path;
-            ~FifoRelease() {
+            ~FifoRelease()
+            {
                 int fd = open(path->CStr(), O_WRONLY | O_NONBLOCK);
-                if (fd >= 0) close(fd);
+                if (fd >= 0)
+                {
+                    close(fd);
+                }
             }
         } release_on_exit{&fifo};
         s->Submit(ReadJob(s.Get(), &fifo, &blocked));
@@ -222,33 +272,36 @@ TEST_CASE("Compute jobs keep running while a slow read blocks the I/O thread", "
         // Give the read job time to run and park the I/O thread in open()
         // (with N=1 main must run it: it sits below the compute jobs in
         // the deque otherwise).
-        struct Clock {
+        struct Clock
+        {
             u64 until;
         } clock{os::MonotonicTimeNanos() + 100'000'000ull};
-        s->HelpUntil([](void* u) { return os::MonotonicTimeNanos() >= static_cast<Clock*>(u)->until; },
-                     &clock);
+        s->HelpUntil([](void* u) { return os::MonotonicTimeNanos() >= static_cast<Clock*>(u)->until; }, &clock);
 
         // Unrelated compute work completes while the read is in flight.
         Atomic<int> counter{0};
         constexpr int kJobs = 2000;
-        for (int i = 0; i < kJobs; ++i) s->Submit(ComputeJob(&counter));
+        for (int i = 0; i < kJobs; ++i)
+        {
+            s->Submit(ComputeJob(&counter));
+        }
         s->HelpUntil(counter, kJobs);
         REQUIRE(counter.Load() == kJobs);
-        REQUIRE(blocked.done.Load() == 0); // the read is still stuck in the OS
+        REQUIRE(blocked.done.Load() == 0);  // the read is still stuck in the OS
 
         // Release it. O_NONBLOCK|O_WRONLY fails with ENXIO until a reader
         // has the FIFO open, so retrying doubles as "the I/O thread
         // really is inside open()". The read then fails cleanly (a FIFO
         // is not seekable).
         int wfd = -1;
-        for (int attempt = 0; attempt < 5000 && wfd < 0; ++attempt) {
+        for (int attempt = 0; attempt < 5000 && wfd < 0; ++attempt)
+        {
             wfd = open(fifo.CStr(), O_WRONLY | O_NONBLOCK);
-            if (wfd < 0) {
+            if (wfd < 0)
+            {
                 // Let main run the read job if it hasn't yet.
                 Clock slice{os::MonotonicTimeNanos() + 2'000'000ull};
-                s->HelpUntil([](void* u) { return os::MonotonicTimeNanos() >= static_cast<Clock*>(u)->until; },
-                             &slice);
-
+                s->HelpUntil([](void* u) { return os::MonotonicTimeNanos() >= static_cast<Clock*>(u)->until; }, &slice);
             }
         }
         REQUIRE(wfd >= 0);
@@ -261,13 +314,16 @@ TEST_CASE("Compute jobs keep running while a slow read blocks the I/O thread", "
 #endif
 }
 
-TEST_CASE("The I/O thread is not a participant", "[jobs][io]") {
+TEST_CASE("The I/O thread is not a participant", "[jobs][io]")
+{
     auto s = AsyncIoTestMakeScheduler(2);
-    struct Probe : IoRequest {
+    struct Probe : IoRequest
+    {
         Atomic<int> is_participant{-1};
         Atomic<int> done{0};
     } probe;
-    probe.run = [](IoRequest* r) {
+    probe.run = [](IoRequest* r)
+    {
         auto* p = static_cast<Probe*>(r);
         p->is_participant.Store(WorkerPool::IsParticipantThread() ? 1 : 0);
         p->done.Store(1, MemoryOrder::Release);
@@ -277,7 +333,8 @@ TEST_CASE("The I/O thread is not a participant", "[jobs][io]") {
     REQUIRE(probe.is_participant.Load() == 0);
 }
 
-TEST_CASE("Shutdown drains queued reads and frame stats balance", "[jobs][io]") {
+TEST_CASE("Shutdown drains queued reads and frame stats balance", "[jobs][io]")
+{
     TempDir dir;
     const Text path = FileIn(dir, "a.bin");
     WriteFile(path, 5000);
@@ -292,31 +349,36 @@ TEST_CASE("Shutdown drains queued reads and frame stats balance", "[jobs][io]") 
     REQUIRE(FramePool::Global().GetStats().Live() == live_before);
 }
 
-TEST_CASE("IoThread::Shutdown runs everything already queued, then rejects new requests", "[jobs][io]") {
-    struct Req : IoRequest {
+TEST_CASE("IoThread::Shutdown runs everything already queued, then rejects new requests", "[jobs][io]")
+{
+    struct Req : IoRequest
+    {
         Atomic<int>* ran;
     };
     Atomic<int> ran{0};
     Req reqs[50];
     {
         IoThread io;
-        for (auto& r : reqs) {
+        for (auto& r : reqs)
+        {
             r.ran = &ran;
             r.run = [](IoRequest* x) { static_cast<Req*>(x)->ran->FetchAdd(1); };
             REQUIRE(io.Enqueue(&r));
         }
         io.Shutdown();
         REQUIRE(ran.Load() == 50);
-        io.Shutdown(); // idempotent
+        io.Shutdown();  // idempotent
         Req late;
         late.ran = &ran;
         late.run = [](IoRequest*) {};
-        REQUIRE_FALSE(io.Enqueue(&late)); // rejected, not queued, not run
+        REQUIRE_FALSE(io.Enqueue(&late));  // rejected, not queued, not run
     }
 }
 
-TEST_CASE("Concurrent IoThread::Shutdown callers both return only after the join", "[jobs][io]") {
-    for (int round = 0; round < 50; ++round) {
+TEST_CASE("Concurrent IoThread::Shutdown callers both return only after the join", "[jobs][io]")
+{
+    for (int round = 0; round < 50; ++round)
+    {
         IoThread io;
         Thread a([&] { io.Shutdown(); });
         Thread b([&] { io.Shutdown(); });
@@ -325,7 +387,8 @@ TEST_CASE("Concurrent IoThread::Shutdown callers both return only after the join
     }
 }
 
-TEST_CASE("A read issued after the I/O thread shut down fails cleanly instead of aborting", "[jobs][io]") {
+TEST_CASE("A read issued after the I/O thread shut down fails cleanly instead of aborting", "[jobs][io]")
+{
     TempDir dir;
     const Text path = FileIn(dir, "a.bin");
     WriteFile(path, 100);
@@ -338,16 +401,23 @@ TEST_CASE("A read issued after the I/O thread shut down fails cleanly instead of
     REQUIRE(out.on_participant);
 }
 
-TEST_CASE("A read still pending when the I/O thread shuts down completes (drained)", "[jobs][io]") {
+TEST_CASE("A read still pending when the I/O thread shuts down completes (drained)", "[jobs][io]")
+{
     TempDir dir;
     const Text path = FileIn(dir, "a.bin");
     WriteFile(path, 3000);
     auto s = AsyncIoTestMakeScheduler(2);
     Vector<ReadOutcome> outs;
     outs.Resize(20);
-    for (usize i = 0; i < outs.Size(); ++i) s->Submit(ReadJob(s.Get(), &path, &outs[i]));
+    for (usize i = 0; i < outs.Size(); ++i)
+    {
+        s->Submit(ReadJob(s.Get(), &path, &outs[i]));
+    }
     // Keep the workers' continuations alive: join before destruction.
     HelpUntilAllDone(*s, outs);
-    for (usize i = 0; i < outs.Size(); ++i) REQUIRE(outs[i].ok);
+    for (usize i = 0; i < outs.Size(); ++i)
+    {
+        REQUIRE(outs[i].ok);
+    }
     s->Io().Shutdown();
 }

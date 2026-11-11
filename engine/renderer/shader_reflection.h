@@ -10,10 +10,11 @@
 #include "rhi/limits.h"
 #include "types.h"
 
-namespace engine_placeholder::renderer {
+namespace engine_placeholder::renderer
+{
 
 /// The reflection blob format version this build reads and writes.
-inline constexpr u32 kReflectionVersion = 2; // 2: bindings carry their storage stride (Phase 13 Day 166)
+inline constexpr u32 kReflectionVersion = 2;  // 2: bindings carry their storage stride (Phase 13 Day 166)
 /// The capacity of every reflected name, including the terminator; longer names are rejected.
 inline constexpr u32 kMaxReflectionName = 48;
 /// The most bindings one shader module may reflect.
@@ -30,26 +31,29 @@ inline constexpr u32 kNoBlock = 0xffffffffu;
 inline constexpr u32 kReflectionErrorLength = 192;
 
 /// The scalar type of a reflected block member.
-enum class ScalarType : u8 {
-    Float32 = 0, ///< 32-bit float.
-    Int32,       ///< 32-bit signed integer.
-    UInt32,      ///< 32-bit unsigned integer.
-    Count,       ///< Number of scalar types; not a type.
+enum class ScalarType : u8
+{
+    Float32 = 0,  ///< 32-bit float.
+    Int32,        ///< 32-bit signed integer.
+    UInt32,       ///< 32-bit unsigned integer.
+    Count,        ///< Number of scalar types; not a type.
 };
 
 /// The shape of a reflected block member.
-enum class MemberKind : u8 {
-    Scalar = 0, ///< One scalar (`rows` and `columns` are 1).
-    Vector,     ///< A vector of `rows` scalars (`columns` is 1).
-    Matrix,     ///< A matrix of `rows` x `columns` scalars, stored as the block's layout says.
-    Struct,     ///< A nested struct: only its offset and size are reflected (`rows` and `columns` are 0).
-    Count,      ///< Number of kinds; not a kind.
+enum class MemberKind : u8
+{
+    Scalar = 0,  ///< One scalar (`rows` and `columns` are 1).
+    Vector,      ///< A vector of `rows` scalars (`columns` is 1).
+    Matrix,      ///< A matrix of `rows` x `columns` scalars, stored as the block's layout says.
+    Struct,      ///< A nested struct: only its offset and size are reflected (`rows` and `columns` are 0).
+    Count,       ///< Number of kinds; not a kind.
 };
 
 /// One member of a reflected uniform or push-constant block.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct ReflectedMember {
+struct ReflectedMember
+{
     /// The member's name as written in the shader.
     char name[kMaxReflectionName] = {};
     /// Byte offset from the start of the block.
@@ -73,7 +77,8 @@ struct ReflectedMember {
 /// The layout of a uniform buffer or push-constant block as the shader sees it.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct ReflectedBlock {
+struct ReflectedBlock
+{
     /// The block's struct name in the shader (for example `Params`).
     char name[kMaxReflectionName] = {};
     /// Total size in bytes, as the buffer or push range must be at least.
@@ -87,7 +92,8 @@ struct ReflectedBlock {
 /// One resource binding of a shader module.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct ReflectedBinding {
+struct ReflectedBinding
+{
     /// The variable's name in the shader.
     char name[kMaxReflectionName] = {};
     /// The descriptor set (bind group slot).
@@ -102,20 +108,22 @@ struct ReflectedBinding {
     rhi::ShaderStage stages = rhi::ShaderStage::None;
     /// Index into [[renderer::ShaderReflection]]'s `blocks` for a uniform buffer, else [[renderer::kNoBlock]].
     u32 block = kNoBlock;
-    /// For a storage buffer, the size of one element (`StructuredBuffer<T>`: `T` rounded up to its alignment), 1 to 2048; else 0.
-    /// Becomes [[rhi::BindingDesc]]'s `stride`.
+    /// For a storage buffer, the size of one element (`StructuredBuffer<T>`: `T` rounded up to its alignment), 1 to
+    /// 2048; else 0. Becomes [[rhi::BindingDesc]]'s `stride`.
     u32 stride = 0;
 };
 
 /// One vertex shader input.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct ReflectedVertexInput {
+struct ReflectedVertexInput
+{
     /// The input's name in the shader (the struct member or parameter name).
     char name[kMaxReflectionName] = {};
     /// The shader input location.
     u32 location = 0;
-    /// The data type the shader reads (a shader cannot tell whether bytes are normalized, so packed formats are not produced).
+    /// The data type the shader reads (a shader cannot tell whether bytes are normalized, so packed formats are not
+    /// produced).
     rhi::VertexFormat format = rhi::VertexFormat::Float3;
 };
 
@@ -124,7 +132,8 @@ struct ReflectedVertexInput {
 /// Plain data with fixed capacities, so it lives on the stack and needs no allocator.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct ShaderReflection {
+struct ShaderReflection
+{
     /// The one stage the module implements.
     rhi::ShaderStage stage = rhi::ShaderStage::None;
     /// The entry point name.
@@ -152,7 +161,8 @@ struct ShaderReflection {
 /// A failure message from the reflection builders, with room for names so conflicts can be explained.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct ReflectionError {
+struct ReflectionError
+{
     /// A nul-terminated message; empty until a builder fails.
     char message[kReflectionErrorLength] = {};
 };
@@ -220,8 +230,10 @@ bool CheckBlockSize(const ShaderReflection& reflection, const char* block_name, 
 /// [[rhi::BindGroupLayoutDesc]].
 ///
 /// - Thread-safety: thread-compatible plain data.
-/// - Ownership: [[renderer::BindGroupLayoutData::Desc]] returns a descriptor that points into this object, so it must outlive the descriptor.
-struct BindGroupLayoutData {
+/// - Ownership: [[renderer::BindGroupLayoutData::Desc]] returns a descriptor that points into this object, so it must
+/// outlive the descriptor.
+struct BindGroupLayoutData
+{
     /// The entries, sorted by binding index.
     rhi::BindingDesc entries[rhi::kMaxBindingsPerLayout] = {};
     /// Number of valid entries.
@@ -245,14 +257,16 @@ struct BindGroupLayoutData {
 /// - Param set: the descriptor set to build.
 /// - Param out: receives the layout; must not be null.
 /// - Param error: receives a message on failure; may be null.
-/// - Returns: true on success; false on a conflict or if the set holds more than [[rhi::kMaxBindingsPerLayout]] bindings.
+/// - Returns: true on success; false on a conflict or if the set holds more than [[rhi::kMaxBindingsPerLayout]]
+/// bindings.
 /// - Fails: reported through the return value and `error`.
 /// - Ownership: all pointers are borrowed for the call.
 /// - Thread-safety: thread-safe. A pure function of its arguments.
 bool BuildBindGroupLayout(const ShaderReflection* const* shaders, u32 shader_count, u32 set, BindGroupLayoutData* out,
                           ReflectionError* error);
 
-/// Builds the layout of descriptor set `set` from a single shader module (the one-shader form of [[renderer::BuildBindGroupLayout]]).
+/// Builds the layout of descriptor set `set` from a single shader module (the one-shader form of
+/// [[renderer::BuildBindGroupLayout]]).
 ///
 /// - Param shader: the reflection to read.
 /// - Param set: the descriptor set to build.
@@ -268,7 +282,8 @@ bool BuildBindGroupLayoutFor(const ShaderReflection& shader, u32 set, BindGroupL
 ///
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: the attributes are copied by value into the pipeline descriptor that uses them.
-struct VertexLayoutData {
+struct VertexLayoutData
+{
     /// The attributes, in location order, offsets packed with no padding.
     rhi::VertexAttributeDesc attributes[rhi::kMaxVertexAttributes] = {};
     /// Number of valid attributes.
@@ -292,4 +307,4 @@ struct VertexLayoutData {
 /// - Thread-safety: thread-safe. A pure function of its arguments.
 bool BuildVertexLayout(const ShaderReflection& shader, u32 binding, VertexLayoutData* out, ReflectionError* error);
 
-} // namespace engine_placeholder::renderer
+}  // namespace engine_placeholder::renderer

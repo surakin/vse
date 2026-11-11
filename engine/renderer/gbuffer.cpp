@@ -14,73 +14,99 @@
 #include "renderer/renderer_log.h"
 #include "cstr/format.h"
 
-namespace engine_placeholder::renderer {
+namespace engine_placeholder::renderer
+{
 
-namespace {
+namespace
+{
 
-const char* FormatLabel(rhi::Format format) {
-    switch (format) {
-    case rhi::Format::RGBA8_SRGB:
-        return "RGBA8_SRGB";
-    case rhi::Format::RG16_Float:
-        return "RG16_Float";
-    case rhi::Format::RGBA8_UNorm:
-        return "RGBA8_UNorm";
-    case rhi::Format::D32_Float:
-        return "D32_Float";
-    default:
-        return "unknown";
+const char* FormatLabel(rhi::Format format)
+{
+    switch (format)
+    {
+    case rhi::Format::RGBA8_SRGB: return "RGBA8_SRGB";
+    case rhi::Format::RG16_Float: return "RG16_Float";
+    case rhi::Format::RGBA8_UNorm: return "RGBA8_UNorm";
+    case rhi::Format::D32_Float: return "D32_Float";
+    default: return "unknown";
     }
 }
 
-f32 SignNotZero(f32 v) { return v >= 0.0f ? 1.0f : -1.0f; }
+f32 SignNotZero(f32 v)
+{
+    return v >= 0.0f ? 1.0f : -1.0f;
+}
 
 // The location of the per-vertex color attribute in ColorVertexLayout.
 constexpr u32 kColorLocation = 4;
 
-bool HasColor(const VertexLayoutData& layout) {
-    for (u32 i = 0; i < layout.attribute_count; ++i) {
-        if (layout.attributes[i].location == kColorLocation && layout.attributes[i].format == rhi::VertexFormat::UNorm8x4) return true;
+bool HasColor(const VertexLayoutData& layout)
+{
+    for (u32 i = 0; i < layout.attribute_count; ++i)
+    {
+        if (layout.attributes[i].location == kColorLocation &&
+            layout.attributes[i].format == rhi::VertexFormat::UNorm8x4)
+        {
+            return true;
+        }
     }
     return false;
 }
 
-} // namespace
+}  // namespace
 
-bool CheckGBufferFormats(const rhi::Device* device, char* error, usize error_capacity) {
-    struct Need {
+bool CheckGBufferFormats(const rhi::Device* device, char* error, usize error_capacity)
+{
+    struct Need
+    {
         rhi::Format format;
         rhi::TextureUsage usage;
         const char* usage_name;
     };
     const Need needs[] = {
-        {kGBufferAlbedoFormat, rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::Sampled, "color attachment and sampled"},
-        {kGBufferNormalFormat, rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::Sampled, "color attachment and sampled"},
-        {kGBufferMaterialFormat, rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::Sampled, "color attachment and sampled"},
-        {kGBufferDepthFormat, rhi::TextureUsage::DepthAttachment | rhi::TextureUsage::Sampled, "depth attachment and sampled"},
+        {kGBufferAlbedoFormat, rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::Sampled,
+         "color attachment and sampled"},
+        {kGBufferNormalFormat, rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::Sampled,
+         "color attachment and sampled"},
+        {kGBufferMaterialFormat, rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::Sampled,
+         "color attachment and sampled"},
+        {kGBufferDepthFormat, rhi::TextureUsage::DepthAttachment | rhi::TextureUsage::Sampled,
+         "depth attachment and sampled"},
     };
-    // The geometry pass writes three colors at once; D3D12 and Metal allow 8 (4 on some older mobile GPUs), so this only fails on those.
+    // The geometry pass writes three colors at once; D3D12 and Metal allow 8 (4 on some older mobile GPUs), so this
+    // only fails on those.
     const PipelineTarget target = GBufferPipelineTarget();
-    if (device->Caps().max_color_attachments < target.color_count) {
-        if (error != nullptr && error_capacity > 0) {
-            FormatTo(error, error_capacity, "G-buffer: the device allows %u color attachments and the geometry pass writes %u",
-                          device->Caps().max_color_attachments, target.color_count);
+    if (device->Caps().max_color_attachments < target.color_count)
+    {
+        if (error != nullptr && error_capacity > 0)
+        {
+            FormatTo(error, error_capacity,
+                     "G-buffer: the device allows %u color attachments and the geometry pass writes %u",
+                     device->Caps().max_color_attachments, target.color_count);
         }
         return false;
     }
-    for (const Need& need : needs) {
-        if (!device->FormatSupport(need.format, need.usage)) {
-            if (error != nullptr && error_capacity > 0) {
-                FormatTo(error, error_capacity, "G-buffer: the device does not support format %s as %s", FormatLabel(need.format), need.usage_name);
+    for (const Need& need : needs)
+    {
+        if (!device->FormatSupport(need.format, need.usage))
+        {
+            if (error != nullptr && error_capacity > 0)
+            {
+                FormatTo(error, error_capacity, "G-buffer: the device does not support format %s as %s",
+                         FormatLabel(need.format), need.usage_name);
             }
             return false;
         }
     }
-    if (error != nullptr && error_capacity > 0) error[0] = '\0';
+    if (error != nullptr && error_capacity > 0)
+    {
+        error[0] = '\0';
+    }
     return true;
 }
 
-PipelineTarget GBufferPipelineTarget() {
+PipelineTarget GBufferPipelineTarget()
+{
     PipelineTarget t;
     t.color_formats[0] = kGBufferAlbedoFormat;
     t.color_formats[1] = kGBufferNormalFormat;
@@ -90,11 +116,13 @@ PipelineTarget GBufferPipelineTarget() {
     return t;
 }
 
-Vec2 OctEncode(const Vec3& n) {
+Vec2 OctEncode(const Vec3& n)
+{
     const f32 sum = Abs(n.x) + Abs(n.y) + Abs(n.z);
     f32 px = n.x / sum;
     f32 py = n.y / sum;
-    if (n.z < 0.0f) {
+    if (n.z < 0.0f)
+    {
         const f32 nx = (1.0f - Abs(py)) * SignNotZero(px);
         const f32 ny = (1.0f - Abs(px)) * SignNotZero(py);
         px = nx;
@@ -103,11 +131,13 @@ Vec2 OctEncode(const Vec3& n) {
     return Vec2(px, py);
 }
 
-Vec3 OctDecode(const Vec2& f) {
+Vec3 OctDecode(const Vec2& f)
+{
     f32 x = f.x;
     f32 y = f.y;
     const f32 z = 1.0f - Abs(x) - Abs(y);
-    if (z < 0.0f) {
+    if (z < 0.0f)
+    {
         const f32 nx = (1.0f - Abs(y)) * SignNotZero(x);
         const f32 ny = (1.0f - Abs(x)) * SignNotZero(y);
         x = nx;
@@ -117,49 +147,82 @@ Vec3 OctDecode(const Vec2& f) {
     return Vec3(x / len, y / len, z / len);
 }
 
-f32 SrgbToLinear(f32 c) { return c <= 0.04045f ? c / 12.92f : Pow((c + 0.055f) / 1.055f, 2.4f); }
+f32 SrgbToLinear(f32 c)
+{
+    return c <= 0.04045f ? c / 12.92f : Pow((c + 0.055f) / 1.055f, 2.4f);
+}
 
-f32 LinearizeDepth(f32 depth, f32 near_plane, f32 far_plane) { return near_plane * far_plane / (far_plane - depth * (far_plane - near_plane)); }
+f32 LinearizeDepth(f32 depth, f32 near_plane, f32 far_plane)
+{
+    return near_plane * far_plane / (far_plane - depth * (far_plane - near_plane));
+}
 
-void FitCameraDepthRange(const RenderScene& scene, Camera* camera, f32 min_near) {
-    ENGINE_ASSERT(camera != nullptr && min_near > 0.0f, "FitCameraDepthRange: camera is null or min_near is not positive");
+void FitCameraDepthRange(const RenderScene& scene, Camera* camera, f32 min_near)
+{
+    ENGINE_ASSERT(camera != nullptr && min_near > 0.0f,
+                  "FitCameraDepthRange: camera is null or min_near is not positive");
     const Vec3 forward = camera->Forward();
     f32 nearest = 0.0f;
     f32 farthest = 0.0f;
     bool any = false;
-    for (u32 slot = 0; slot < scene.SlotCount(); ++slot) {
-        if (!scene.SlotAlive(slot)) continue;
+    for (u32 slot = 0; slot < scene.SlotCount(); ++slot)
+    {
+        if (!scene.SlotAlive(slot))
+        {
+            continue;
+        }
         const BoundingSphere& s = scene.ObjectAt(slot).bounds.sphere;
         const Vec3 d = s.center - camera->position;
         const f32 along = d.x * forward.x + d.y * forward.y + d.z * forward.z;
         const f32 lo = along - s.radius;
         const f32 hi = along + s.radius;
-        if (!any || lo < nearest) nearest = lo;
-        if (!any || hi > farthest) farthest = hi;
+        if (!any || lo < nearest)
+        {
+            nearest = lo;
+        }
+        if (!any || hi > farthest)
+        {
+            farthest = hi;
+        }
         any = true;
     }
-    if (!any) return;
+    if (!any)
+    {
+        return;
+    }
     camera->near_plane = nearest > min_near ? nearest : min_near;
     camera->far_plane = farthest > camera->near_plane * 2.0f ? farthest : camera->near_plane * 2.0f;
 }
 
-GBufferTemplates CreateGBufferTemplates(MaterialSystem* materials) {
+GBufferTemplates CreateGBufferTemplates(MaterialSystem* materials)
+{
     ENGINE_ASSERT(materials != nullptr, "CreateGBufferTemplates: materials is null");
     GBufferTemplates out;
-    const TextureDefault defaults[2] = {{"albedo_tex", DefaultTexture::White}, {"normal_tex", DefaultTexture::FlatNormal}};
-    for (int colored = 0; colored < 2; ++colored) {
+    const TextureDefault defaults[2] = {{"albedo_tex", DefaultTexture::White},
+                                        {"normal_tex", DefaultTexture::FlatNormal}};
+    for (int colored = 0; colored < 2; ++colored)
+    {
         PermutationKey vkey;
         ReflectionError error;
         const char* names[1] = {"VERTEX_COLOR"};
-        if (!MakePermutationKey(shaders::kGbufferVertPermutations, colored ? names : nullptr, colored ? 1u : 0u, &vkey, &error)) {
+        if (!MakePermutationKey(shaders::kGbufferVertPermutations, colored ? names : nullptr, colored ? 1u : 0u, &vkey,
+                                &error))
+        {
             RenderLog(LogVerbosity::Error, "G-buffer: vertex shader permutation: %s", error.message);
-            if (out.plain.IsValid()) materials->DestroyTemplate(out.plain);
+            if (out.plain.IsValid())
+            {
+                materials->DestroyTemplate(out.plain);
+            }
             return GBufferTemplates{};
         }
         const PermutationModule* vertex = FindPermutation(shaders::kGbufferVertPermutations, vkey, &error);
-        if (vertex == nullptr) {
+        if (vertex == nullptr)
+        {
             RenderLog(LogVerbosity::Error, "G-buffer: vertex shader permutation: %s", error.message);
-            if (out.plain.IsValid()) materials->DestroyTemplate(out.plain);
+            if (out.plain.IsValid())
+            {
+                materials->DestroyTemplate(out.plain);
+            }
             return GBufferTemplates{};
         }
         MaterialTemplateDesc d;
@@ -173,8 +236,12 @@ GBufferTemplates CreateGBufferTemplates(MaterialSystem* materials) {
         d.texture_defaults = defaults;
         d.texture_default_count = 2;
         const TemplateId id = materials->CreateTemplate(d);
-        if (!id.IsValid()) {
-            if (out.plain.IsValid()) materials->DestroyTemplate(out.plain);
+        if (!id.IsValid())
+        {
+            if (out.plain.IsValid())
+            {
+                materials->DestroyTemplate(out.plain);
+            }
             return GBufferTemplates{};
         }
         (colored ? out.colored : out.plain) = id;
@@ -182,26 +249,43 @@ GBufferTemplates CreateGBufferTemplates(MaterialSystem* materials) {
     return out;
 }
 
-MaterialId CreateGBufferMaterial(MaterialSystem* materials, const GBufferTemplates& templates, const GBufferOptions& options, const char* name) {
+MaterialId CreateGBufferMaterial(MaterialSystem* materials, const GBufferTemplates& templates,
+                                 const GBufferOptions& options, const char* name)
+{
     ENGINE_ASSERT(materials != nullptr, "CreateGBufferMaterial: materials is null");
     const TemplateId tmpl = options.vertex_color ? templates.colored : templates.plain;
-    if (!tmpl.IsValid()) {
-        RenderLog(LogVerbosity::Error, "G-buffer: the %s template is invalid", options.vertex_color ? "vertex color" : "plain");
+    if (!tmpl.IsValid())
+    {
+        RenderLog(LogVerbosity::Error, "G-buffer: the %s template is invalid",
+                  options.vertex_color ? "vertex color" : "plain");
         return MaterialId{};
     }
     const char* names[3];
     u32 count = 0;
-    if (options.normal_map) names[count++] = "NORMAL_MAP";
-    if (options.alpha_test) names[count++] = "ALPHA_TEST";
-    if (options.vertex_color) names[count++] = "VERTEX_COLOR";
+    if (options.normal_map)
+    {
+        names[count++] = "NORMAL_MAP";
+    }
+    if (options.alpha_test)
+    {
+        names[count++] = "ALPHA_TEST";
+    }
+    if (options.vertex_color)
+    {
+        names[count++] = "VERTEX_COLOR";
+    }
     PermutationKey key;
     ReflectionError error;
-    if (!MakePermutationKey(shaders::kGbufferFragPermutations, names, count, &key, &error)) {
+    if (!MakePermutationKey(shaders::kGbufferFragPermutations, names, count, &key, &error))
+    {
         RenderLog(LogVerbosity::Error, "G-buffer: fragment shader permutation: %s", error.message);
         return MaterialId{};
     }
     const MaterialId id = materials->CreateMaterial(tmpl, key, name != nullptr ? name : "gbuffer");
-    if (!id.IsValid()) return MaterialId{};
+    if (!id.IsValid())
+    {
+        return MaterialId{};
+    }
     materials->SetVec4(id, "base_color", Vec4(1, 1, 1, 1));
     materials->SetFloat(id, "roughness", 0.5f);
     materials->SetFloat(id, "metallic", 0.0f);
@@ -214,7 +298,8 @@ MaterialId CreateGBufferMaterial(MaterialSystem* materials, const GBufferTemplat
 
 // ---- GBufferPass ----
 
-struct GBufferPass::SortEntry {
+struct GBufferPass::SortEntry
+{
     u64 key = 0;
     u32 slot = 0;
     rhi::PipelineHandle pipeline;
@@ -222,36 +307,48 @@ struct GBufferPass::SortEntry {
     const GpuMesh* mesh = nullptr;
 };
 
-GBufferPass::GBufferPass(rhi::Device* device, MaterialSystem* materials, FrameResources* frame) : materials_(materials), frame_(frame) {
-    ENGINE_ASSERT(device != nullptr && materials != nullptr && frame != nullptr, "GBufferPass: device, materials or frame is null");
+GBufferPass::GBufferPass(rhi::Device* device, MaterialSystem* materials, FrameResources* frame)
+    : materials_(materials), frame_(frame)
+{
+    ENGINE_ASSERT(device != nullptr && materials != nullptr && frame != nullptr,
+                  "GBufferPass: device, materials or frame is null");
     const u32 cap = frame->MaxObjects();
-    if (!draws_.TryResize(cap) || !slots_.TryResize(cap) || !sort_scratch_.TryResize(cap)) {
+    if (!draws_.TryResize(cap) || !slots_.TryResize(cap) || !sort_scratch_.TryResize(cap))
+    {
         RenderLog(LogVerbosity::Error, "GBufferPass: out of memory for %u objects", cap);
         draws_.Reset();
         slots_.Reset();
         sort_scratch_.Reset();
-    } else {
+    }
+    else
+    {
         storage_ok_ = true;
     }
 }
 
 GBufferPass::~GBufferPass() = default;
 
-void GBufferPass::Reject(const char* fmt, ...) {
+void GBufferPass::Reject(const char* fmt, ...)
+{
     ++stats_.rejected;
-    if (error_[0] != '\0') return; // the first message is kept; the rest are counted
+    if (error_[0] != '\0')
+    {
+        return;  // the first message is kept; the rest are counted
+    }
     VarArgs args;
     ENGINE_VA_START(args, fmt);
     VFormatTo(error_, sizeof(error_), fmt, args);
     ENGINE_VA_END(args);
 }
 
-bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum) {
+bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum)
+{
     stats_ = GBufferStats{};
     error_[0] = '\0';
     draw_count_ = 0;
     added_ = false;
-    if (!storage_ok_) {
+    if (!storage_ok_)
+    {
         FormatTo(error_, sizeof(error_), "G-buffer: the pass could not allocate its draw list");
         return false;
     }
@@ -260,13 +357,19 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum) {
     // The per-frame groups are cached by the material system; creating them is rare.
     frame_group_ = materials_->FrameBindGroup(frame_->FrameRegion());
     object_group_ = materials_->ObjectBindGroup(frame_->ObjectRegion());
-    object_index_stream_ = materials_->ObjectIndexStream(); // valid only where shaders read the index from it (Direct3D 12)
-    if (object_index_stream_.IsValid() && cap > kMaxObjectIndices) {
-        // Draw i reads entry i of the stream: a frame with more objects than it holds would read past it (Vulkan has no such limit).
-        FormatTo(error_, sizeof(error_), "G-buffer: %u objects per frame is more than the object index stream holds (%u)", cap, kMaxObjectIndices);
+    object_index_stream_ = materials_
+                               ->ObjectIndexStream();  // valid only where shaders read the index from it (Direct3D 12)
+    if (object_index_stream_.IsValid() && cap > kMaxObjectIndices)
+    {
+        // Draw i reads entry i of the stream: a frame with more objects than it holds would read past it (Vulkan has no
+        // such limit).
+        FormatTo(error_, sizeof(error_),
+                 "G-buffer: %u objects per frame is more than the object index stream holds (%u)", cap,
+                 kMaxObjectIndices);
         return false;
     }
-    if (!frame_group_.IsValid() || !object_group_.IsValid()) {
+    if (!frame_group_.IsValid() || !object_group_.IsValid())
+    {
         FormatTo(error_, sizeof(error_), "G-buffer: the frame or object bind group could not be created");
         return false;
     }
@@ -274,8 +377,10 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum) {
     // Cull into a scratch array sized for the scene; the pass's own arrays hold at most FrameResources::MaxObjects().
     const u32 scene_slots = scene.SlotCount();
     u32* visible_slots = slots_.Data();
-    if (scene_slots > cap) {
-        if (cull_slots_.Size() < scene_slots && !cull_slots_.TryResize(scene_slots)) {
+    if (scene_slots > cap)
+    {
+        if (cull_slots_.Size() < scene_slots && !cull_slots_.TryResize(scene_slots))
+        {
             FormatTo(error_, sizeof(error_), "G-buffer: out of memory for the cull list");
             return false;
         }
@@ -287,40 +392,57 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum) {
     SortEntry* entries = sort_scratch_.Data();
     u32 entry_count = 0;
     const PipelineTarget target = GBufferPipelineTarget();
-    for (u32 i = 0; i < visible; ++i) {
+    for (u32 i = 0; i < visible; ++i)
+    {
         const u32 slot = visible_slots[i];
         const RenderObject& object = scene.ObjectAt(slot);
-        if (entry_count == cap) {
+        if (entry_count == cap)
+        {
             Reject("G-buffer: more visible objects (%u) than the frame resources hold (%u)", visible, cap);
             continue;
         }
         const GpuMesh* mesh = object.mesh;
-        if (mesh == nullptr || !mesh->Valid()) {
+        if (mesh == nullptr || !mesh->Valid())
+        {
             Reject("G-buffer: the object in slot %u has no mesh", slot);
             continue;
         }
-        if (!mesh->Ready()) {
-            Reject("G-buffer: the mesh of the object in slot %u is not prepared: record GpuMesh::RecordPrepare and call MarkReady after the submit", slot);
+        if (!mesh->Ready())
+        {
+            Reject(
+                "G-buffer: the mesh of the object in slot %u is not prepared: record GpuMesh::RecordPrepare and call MarkReady after the submit",
+                slot);
             continue;
         }
         const MaterialId material = materials_->MaterialAtIndex(object.material);
-        if (!material.IsValid()) {
+        if (!material.IsValid())
+        {
             Reject("G-buffer: the object in slot %u uses material %u, which does not exist", slot, object.material);
             continue;
         }
         const bool mesh_color = HasColor(mesh->Layout());
         const bool material_color = materials_->ReadsVertexInput(material, kColorLocation);
-        if (mesh_color != material_color) {
-            if (mesh_color) {
-                Reject("G-buffer: the object in slot %u has a mesh with vertex colors but material %u does not use them (create the material with GBufferOptions::vertex_color)", slot, object.material);
-            } else {
-                Reject("G-buffer: the object in slot %u has a mesh without vertex colors but material %u expects them", slot, object.material);
+        if (mesh_color != material_color)
+        {
+            if (mesh_color)
+            {
+                Reject(
+                    "G-buffer: the object in slot %u has a mesh with vertex colors but material %u does not use them (create the material with GBufferOptions::vertex_color)",
+                    slot, object.material);
+            }
+            else
+            {
+                Reject("G-buffer: the object in slot %u has a mesh without vertex colors but material %u expects them",
+                       slot, object.material);
             }
             continue;
         }
-        const PipelineLookup pipeline = materials_->GetPipeline(material, target, mesh->Layout(), mesh->Topology(), mesh->HasPrimitiveRestart());
-        if (!pipeline.pipeline.IsValid()) {
-            Reject("G-buffer: no pipeline could be built for the object in slot %u with material %u", slot, object.material);
+        const PipelineLookup pipeline = materials_->GetPipeline(material, target, mesh->Layout(), mesh->Topology(),
+                                                                mesh->HasPrimitiveRestart());
+        if (!pipeline.pipeline.IsValid())
+        {
+            Reject("G-buffer: no pipeline could be built for the object in slot %u with material %u", slot,
+                   object.material);
             continue;
         }
         SortEntry& e = entries[entry_count++];
@@ -331,26 +453,39 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum) {
         e.mesh = mesh;
     }
 
-    auto compare = [](const void* a, const void* b) {
+    auto compare = [](const void* a, const void* b)
+    {
         const SortEntry* x = static_cast<const SortEntry*>(a);
         const SortEntry* y = static_cast<const SortEntry*>(b);
-        if (x->key != y->key) return x->key < y->key ? -1 : 1;
-        if (x->slot != y->slot) return x->slot < y->slot ? -1 : 1;
+        if (x->key != y->key)
+        {
+            return x->key < y->key ? -1 : 1;
+        }
+        if (x->slot != y->slot)
+        {
+            return x->slot < y->slot ? -1 : 1;
+        }
         return 0;
     };
     SortRaw(entries, entry_count, sizeof(SortEntry), compare);
-    for (u32 i = 0; i < entry_count; ++i) slots_[i] = entries[i].slot;
+    for (u32 i = 0; i < entry_count; ++i)
+    {
+        slots_[i] = entries[i].slot;
+    }
     frame_->WriteObjects(scene, slots_.Data(), entry_count);
 
     // Runs of the same material and mesh become one instanced draw; the object data is in the same order, so the
     // instances of a run are consecutive entries.
     rhi::PipelineHandle last_pipeline;
     rhi::BindGroupHandle last_group;
-    for (u32 i = 0; i < entry_count; ++i) {
+    for (u32 i = 0; i < entry_count; ++i)
+    {
         const SortEntry& e = entries[i];
-        if (draw_count_ > 0) {
+        if (draw_count_ > 0)
+        {
             Draw& prev = draws_[draw_count_ - 1];
-            if (prev.mesh == e.mesh && prev.material_group == e.material_group && prev.pipeline == e.pipeline) {
+            if (prev.mesh == e.mesh && prev.material_group == e.material_group && prev.pipeline == e.pipeline)
+            {
                 ++prev.instance_count;
                 continue;
             }
@@ -361,8 +496,14 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum) {
         d.mesh = e.mesh;
         d.first_instance = i;
         d.instance_count = 1;
-        if (!(d.pipeline == last_pipeline)) ++stats_.pipeline_binds;
-        if (!(d.material_group == last_group)) ++stats_.material_binds;
+        if (!(d.pipeline == last_pipeline))
+        {
+            ++stats_.pipeline_binds;
+        }
+        if (!(d.material_group == last_group))
+        {
+            ++stats_.material_binds;
+        }
         last_pipeline = d.pipeline;
         last_group = d.material_group;
     }
@@ -371,9 +512,13 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum) {
     return stats_.rejected == 0;
 }
 
-GBufferTargets GBufferPass::AddToGraph(RenderGraph* graph, u32 width, u32 height) {
-    ENGINE_ASSERT(graph != nullptr && width > 0 && height > 0, "GBufferPass::AddToGraph: graph is null or the size is zero");
-    ENGINE_ASSERT(!added_, "GBufferPass::AddToGraph: called twice since the last Prepare; one pass object serves one view per frame");
+GBufferTargets GBufferPass::AddToGraph(RenderGraph* graph, u32 width, u32 height)
+{
+    ENGINE_ASSERT(graph != nullptr && width > 0 && height > 0,
+                  "GBufferPass::AddToGraph: graph is null or the size is zero");
+    ENGINE_ASSERT(
+        !added_,
+        "GBufferPass::AddToGraph: called twice since the last Prepare; one pass object serves one view per frame");
     added_ = true;
     rhi::TextureDesc td;
     td.width = width;
@@ -402,7 +547,8 @@ GBufferTargets GBufferPass::AddToGraph(RenderGraph* graph, u32 width, u32 height
     return targets_;
 }
 
-void GBufferPass::Record(const PassExecuteContext& context, void* user) {
+void GBufferPass::Record(const PassExecuteContext& context, void* user)
+{
     const GBufferPass* self = static_cast<const GBufferPass*>(user);
     rhi::CommandList* list = context.list;
     rhi::RenderingDesc rd;
@@ -410,7 +556,8 @@ void GBufferPass::Record(const PassExecuteContext& context, void* user) {
     rd.color[0].texture = context.graph->ResolvedTexture(self->targets_.albedo);
     rd.color[1].texture = context.graph->ResolvedTexture(self->targets_.normal);
     rd.color[2].texture = context.graph->ResolvedTexture(self->targets_.material);
-    for (u32 i = 0; i < 3; ++i) {
+    for (u32 i = 0; i < 3; ++i)
+    {
         rd.color[i].load = rhi::LoadOp::Clear;
         rd.color[i].store = rhi::StoreOp::Store;
         rd.color[i].clear_color[0] = 0.0f;
@@ -423,26 +570,32 @@ void GBufferPass::Record(const PassExecuteContext& context, void* user) {
     rd.depth.store = rhi::StoreOp::Store;
     rd.depth.clear_depth = 1.0f;
     list->BeginRendering(rd);
-    list->SetViewport(rhi::Viewport{0.0f, 0.0f, static_cast<f32>(self->width_), static_cast<f32>(self->height_), 0.0f, 1.0f});
+    list->SetViewport(
+        rhi::Viewport{0.0f, 0.0f, static_cast<f32>(self->width_), static_cast<f32>(self->height_), 0.0f, 1.0f});
     list->SetScissor(rhi::ScissorRect{0, 0, self->width_, self->height_});
-    if (self->draw_count_ > 0) {
+    if (self->draw_count_ > 0)
+    {
         list->SetBindGroup(kFrameSet, self->frame_group_);
         list->SetBindGroup(kObjectSet, self->object_group_);
-        if (self->object_index_stream_.IsValid()) {
+        if (self->object_index_stream_.IsValid())
+        {
             // Draw i is issued with first_instance = i; Direct3D 12 fetches this instance-rate stream at that index.
             list->SetVertexBuffer(MaterialSystem::ObjectIndexSlot(), self->object_index_stream_, 0);
         }
     }
     rhi::PipelineHandle pipeline;
     rhi::BindGroupHandle group;
-    for (u32 i = 0; i < self->draw_count_; ++i) {
+    for (u32 i = 0; i < self->draw_count_; ++i)
+    {
         const Draw& d = self->draws_[i];
-        if (!(d.pipeline == pipeline)) {
+        if (!(d.pipeline == pipeline))
+        {
             list->SetPipeline(d.pipeline);
             pipeline = d.pipeline;
-            group = rhi::BindGroupHandle{}; // a new pipeline layout: rebind the material group
+            group = rhi::BindGroupHandle{};  // a new pipeline layout: rebind the material group
         }
-        if (!(d.material_group == group)) {
+        if (!(d.material_group == group))
+        {
             list->SetBindGroup(kMaterialSet, d.material_group);
             group = d.material_group;
         }
@@ -453,12 +606,14 @@ void GBufferPass::Record(const PassExecuteContext& context, void* user) {
 
 // ---- GBufferDebugView ----
 
-GBufferDebugView::GBufferDebugView(rhi::Device* device) : device_(device) {
+GBufferDebugView::GBufferDebugView(rhi::Device* device) : device_(device)
+{
     ENGINE_ASSERT(device != nullptr, "GBufferDebugView: device is null");
     Build();
 }
 
-void GBufferDebugView::Build() {
+void GBufferDebugView::Build()
+{
     rhi::Device* device = device_;
     vertex_ = rhi::CreateShaderFromSet(*device, shaders::kFullscreenVertShader, rhi::ShaderStage::Vertex);
     fragment_ = rhi::CreateShaderFromSet(*device, shaders::kGbufferDebugFragShader, rhi::ShaderStage::Fragment);
@@ -470,37 +625,62 @@ void GBufferDebugView::Build() {
     smp.address_v = rhi::AddressMode::ClampToEdge;
     sampler_ = device->CreateSampler(smp);
     rhi::BindingDesc bindings[5];
-    for (u32 i = 0; i < 4; ++i) bindings[i] = {i, rhi::BindingType::SampledTexture, rhi::ShaderStage::Fragment, 1};
+    for (u32 i = 0; i < 4; ++i)
+    {
+        bindings[i] = {i, rhi::BindingType::SampledTexture, rhi::ShaderStage::Fragment, 1};
+    }
     bindings[4] = {4, rhi::BindingType::Sampler, rhi::ShaderStage::Fragment, 1};
     rhi::BindGroupLayoutDesc ld;
     ld.entries = rhi::Span<rhi::BindingDesc>(bindings, 5);
     layout_ = device->CreateBindGroupLayout(ld);
 }
 
-GBufferDebugView::~GBufferDebugView() {
+GBufferDebugView::~GBufferDebugView()
+{
     registration_.Reset();
     Release();
 }
 
-void GBufferDebugView::Release() {
-    if (device_ == nullptr) return;
-    if (pipeline_.IsValid()) device_->DestroyPipeline(pipeline_);
-    if (layout_.IsValid()) device_->DestroyBindGroupLayout(layout_);
-    if (sampler_.IsValid()) device_->DestroySampler(sampler_);
-    if (fragment_.IsValid()) device_->DestroyShader(fragment_);
-    if (vertex_.IsValid()) device_->DestroyShader(vertex_);
+void GBufferDebugView::Release()
+{
+    if (device_ == nullptr)
+    {
+        return;
+    }
+    if (pipeline_.IsValid())
+    {
+        device_->DestroyPipeline(pipeline_);
+    }
+    if (layout_.IsValid())
+    {
+        device_->DestroyBindGroupLayout(layout_);
+    }
+    if (sampler_.IsValid())
+    {
+        device_->DestroySampler(sampler_);
+    }
+    if (fragment_.IsValid())
+    {
+        device_->DestroyShader(fragment_);
+    }
+    if (vertex_.IsValid())
+    {
+        device_->DestroyShader(vertex_);
+    }
     pipeline_ = {};
     layout_ = {};
     sampler_ = {};
     fragment_ = {};
     vertex_ = {};
-    pipeline_format_ = rhi::Format::Undefined; // the pipeline is made again by the next AddToGraph
+    pipeline_format_ = rhi::Format::Undefined;  // the pipeline is made again by the next AddToGraph
 }
 
-bool GBufferDebugView::Recreate(rhi::Device* device) {
+bool GBufferDebugView::Recreate(rhi::Device* device)
+{
     device_ = device;
     Build();
-    if (!Valid()) {
+    if (!Valid())
+    {
         RenderLog(LogVerbosity::Error, "GBufferDebugView: recreating the shaders, sampler or layout failed");
         Release();
         return false;
@@ -508,18 +688,32 @@ bool GBufferDebugView::Recreate(rhi::Device* device) {
     return true;
 }
 
-bool GBufferDebugView::Valid() const { return vertex_.IsValid() && fragment_.IsValid() && sampler_.IsValid() && layout_.IsValid(); }
+bool GBufferDebugView::Valid() const
+{
+    return vertex_.IsValid() && fragment_.IsValid() && sampler_.IsValid() && layout_.IsValid();
+}
 
-void GBufferDebugView::AddToGraph(RenderGraph* graph, const GBufferTargets& targets, GBufferLayer layer, GraphResource output, rhi::Format output_format, f32 near_plane, f32 far_plane) {
-    ENGINE_ASSERT(graph != nullptr && output_format != rhi::Format::Undefined, "GBufferDebugView::AddToGraph: graph is null or the output format is undefined");
+void GBufferDebugView::AddToGraph(RenderGraph* graph, const GBufferTargets& targets, GBufferLayer layer,
+                                  GraphResource output, rhi::Format output_format, f32 near_plane, f32 far_plane)
+{
+    ENGINE_ASSERT(graph != nullptr && output_format != rhi::Format::Undefined,
+                  "GBufferDebugView::AddToGraph: graph is null or the output format is undefined");
     targets_ = targets;
     output_ = output;
     output_format_ = output_format;
-    if (layer == GBufferLayer::WorldPosition) ENGINE_ASSERT(has_inverse_view_projection_, "GBufferDebugView::AddToGraph: the WorldPosition layer needs SetInverseViewProjection first");
+    if (layer == GBufferLayer::WorldPosition)
+    {
+        ENGINE_ASSERT(has_inverse_view_projection_,
+                      "GBufferDebugView::AddToGraph: the WorldPosition layer needs SetInverseViewProjection first");
+    }
     has_inverse_view_projection_ = false;
     // The pipeline is built here, on the frame's thread, not inside the recording callback.
-    if (pipeline_format_ != output_format_) {
-        if (pipeline_.IsValid()) device_->DestroyPipeline(pipeline_);
+    if (pipeline_format_ != output_format_)
+    {
+        if (pipeline_.IsValid())
+        {
+            device_->DestroyPipeline(pipeline_);
+        }
         rhi::GraphicsPipelineDesc gp;
         gp.vertex_shader = vertex_;
         gp.fragment_shader = fragment_;
@@ -545,13 +739,16 @@ void GBufferDebugView::AddToGraph(RenderGraph* graph, const GBufferTargets& targ
         .Write(output, GraphUsage::ColorAttachment);
 }
 
-void GBufferDebugView::Record(const PassExecuteContext& context, void* user) {
+void GBufferDebugView::Record(const PassExecuteContext& context, void* user)
+{
     GBufferDebugView* self = static_cast<GBufferDebugView*>(user);
     rhi::Device* device = self->device_;
     const rhi::TextureHandle out = context.graph->ResolvedTexture(self->output_);
     const rhi::TextureDesc& gd0 = context.graph->TextureDescOf(self->targets_.albedo);
-    if (!self->pipeline_.IsValid()) {
-        RenderLog(LogVerbosity::Error, "GBufferDebugView: the pipeline for the output format could not be created; nothing is drawn");
+    if (!self->pipeline_.IsValid())
+    {
+        RenderLog(LogVerbosity::Error,
+                  "GBufferDebugView: the pipeline for the output format could not be created; nothing is drawn");
         return;
     }
     rhi::BindGroupEntry e[5];
@@ -576,7 +773,8 @@ void GBufferDebugView::Record(const PassExecuteContext& context, void* user) {
     rd.color[0].load = rhi::LoadOp::Clear;
     context.list->BeginRendering(rd);
     context.list->SetPipeline(self->pipeline_);
-    context.list->SetViewport(rhi::Viewport{0.0f, 0.0f, static_cast<f32>(gd0.width), static_cast<f32>(gd0.height), 0.0f, 1.0f});
+    context.list->SetViewport(
+        rhi::Viewport{0.0f, 0.0f, static_cast<f32>(gd0.width), static_cast<f32>(gd0.height), 0.0f, 1.0f});
     context.list->SetScissor(rhi::ScissorRect{0, 0, gd0.width, gd0.height});
     context.list->SetBindGroup(0, group);
     context.list->SetPushConstants(0, &self->params_, sizeof(Params));
@@ -584,4 +782,4 @@ void GBufferDebugView::Record(const PassExecuteContext& context, void* user) {
     context.list->EndRendering();
 }
 
-} // namespace engine_placeholder::renderer
+}  // namespace engine_placeholder::renderer

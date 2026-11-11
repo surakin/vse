@@ -1,6 +1,6 @@
 // Phase 5 Day 79: the G-buffer pass without a GPU. The octahedral normal and sRGB conversions have CPU twins that the
-// real-device tests compare against the shaders; the pass is checked for its sorting, instancing and named errors on the
-// null device.
+// real-device tests compare against the shaders; the pass is checked for its sorting, instancing and named errors on
+// the null device.
 #include "lang/scalar.h"
 #include <catch2/catch_test_macros.hpp>
 
@@ -18,29 +18,34 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
 
-namespace {
+namespace
+{
 
 // A null device, a material system with the G-buffer templates, and frame resources.
-struct Rig {
+struct Rig
+{
     rhi::NullDevicePtr device = rhi::CreateNullDevice();
     UniquePtr<MaterialSystem> sys_owner;
     UniquePtr<FrameResources> frame_owner;
-    MaterialSystem* sys = nullptr; // views of the owners
+    MaterialSystem* sys = nullptr;  // views of the owners
     FrameResources* frame = nullptr;
     GBufferTemplates templates;
-    Rig() {
+    Rig()
+    {
         sys_owner = MakeUnique<MaterialSystem>(device.Get(), MaterialSystemDesc{});
         frame_owner = MakeUnique<FrameResources>(device.Get(), 32);
         sys = sys_owner.Get();
         frame = frame_owner.Get();
         templates = CreateGBufferTemplates(sys);
     }
-    ~Rig() {
+    ~Rig()
+    {
         frame_owner.Reset();
         sys_owner.Reset();
         device.Reset();
     }
-    void MakeReady(GpuMesh* mesh) {
+    void MakeReady(GpuMesh* mesh)
+    {
         device->BeginFrame();
         rhi::CommandList* list = device->CreateCommandList();
         list->Begin();
@@ -51,7 +56,8 @@ struct Rig {
         device->EndFrame();
         mesh->MarkReady();
     }
-    void BeginFrame(u64 f) {
+    void BeginFrame(u64 f)
+    {
         device->BeginFrame();
         sys->BeginFrame(f);
         sys->FlushMaterials();
@@ -59,25 +65,33 @@ struct Rig {
     }
 };
 
-Frustum WideFrustum() {
+Frustum WideFrustum()
+{
     Camera cam = MakeLookAtCamera(Vec3(0, 10, 0), Vec3(0, 0, 0), Vec3(0, 0, -1));
     cam.aspect = 1.0f;
     return Frustum::FromViewProjection(cam.ViewProjection());
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("Octahedral encoding round-trips unit vectors and stays in [-1, 1]", "[renderer][gbuffer]") {
+TEST_CASE("Octahedral encoding round-trips unit vectors and stays in [-1, 1]", "[renderer][gbuffer]")
+{
     CHECK(OctEncode(Vec3(0, 0, 1)).x == 0.0f);
     CHECK(OctEncode(Vec3(0, 0, 1)).y == 0.0f);
     CHECK(OctEncode(Vec3(1, 0, 0)).x == 1.0f);
-    CHECK(OctEncode(Vec3(0, 0, -1)).x == 1.0f); // the lower pole folds to a corner
+    CHECK(OctEncode(Vec3(0, 0, -1)).x == 1.0f);  // the lower pole folds to a corner
     CHECK(OctEncode(Vec3(0, 0, -1)).y == 1.0f);
     u32 count = 0;
-    for (int i = -10; i <= 10; ++i) {
-        for (int j = -10; j <= 10; ++j) {
-            for (int k = -10; k <= 10; ++k) {
-                if (i == 0 && j == 0 && k == 0) continue;
+    for (int i = -10; i <= 10; ++i)
+    {
+        for (int j = -10; j <= 10; ++j)
+        {
+            for (int k = -10; k <= 10; ++k)
+            {
+                if (i == 0 && j == 0 && k == 0)
+                {
+                    continue;
+                }
                 const f32 len = Sqrt(static_cast<f32>(i * i + j * j + k * k));
                 const Vec3 n(i / len, j / len, k / len);
                 const Vec2 e = OctEncode(n);
@@ -93,11 +107,13 @@ TEST_CASE("Octahedral encoding round-trips unit vectors and stays in [-1, 1]", "
     CHECK(count == 9260);
 }
 
-TEST_CASE("The sRGB conversion matches the standard curve and depth linearizes to the plane distances", "[renderer][gbuffer]") {
+TEST_CASE("The sRGB conversion matches the standard curve and depth linearizes to the plane distances",
+          "[renderer][gbuffer]")
+{
     CHECK(SrgbToLinear(0.0f) == 0.0f);
     CHECK(Abs(SrgbToLinear(1.0f) - 1.0f) < 1e-6f);
     CHECK(Abs(SrgbToLinear(0.5f) - 0.21404f) < 1e-4f);
-    CHECK(Abs(SrgbToLinear(0.02f) - 0.02f / 12.92f) < 1e-7f); // the linear segment
+    CHECK(Abs(SrgbToLinear(0.02f) - 0.02f / 12.92f) < 1e-7f);  // the linear segment
     CHECK(Abs(LinearizeDepth(0.0f, 0.5f, 100.0f) - 0.5f) < 1e-6f);
     CHECK(Abs(LinearizeDepth(1.0f, 0.5f, 100.0f) - 100.0f) < 1e-3f);
     // Through the projection: a point at view distance z has depth (f / (f - n)) * (1 - n / z).
@@ -108,7 +124,8 @@ TEST_CASE("The sRGB conversion matches the standard curve and depth linearizes t
     CHECK(Abs(LinearizeDepth(c.z / c.w, cam.near_plane, cam.far_plane) - 7.0f) < 1e-3f);
 }
 
-TEST_CASE("The device check names the first unsupported G-buffer format", "[renderer][gbuffer]") {
+TEST_CASE("The device check names the first unsupported G-buffer format", "[renderer][gbuffer]")
+{
     Rig rig;
     char error[128] = "x";
     CHECK(CheckGBufferFormats(rig.device.Get(), error, sizeof(error)));
@@ -121,7 +138,8 @@ TEST_CASE("The device check names the first unsupported G-buffer format", "[rend
     CHECK(t.depth_format == rhi::Format::D32_Float);
 }
 
-TEST_CASE("The device check refuses a device with too few color attachments, naming the limit", "[renderer][gbuffer]") {
+TEST_CASE("The device check refuses a device with too few color attachments, naming the limit", "[renderer][gbuffer]")
+{
     rhi::NullDeviceOptions options;
     options.caps.max_color_attachments = 2;
     rhi::NullDevicePtr device = rhi::CreateNullDevice(options);
@@ -134,7 +152,8 @@ TEST_CASE("The device check refuses a device with too few color attachments, nam
     CHECK(CheckGBufferFormats(enough.Get(), error, sizeof(error)));
 }
 
-TEST_CASE("The camera depth range encloses the scene", "[renderer][gbuffer]") {
+TEST_CASE("The camera depth range encloses the scene", "[renderer][gbuffer]")
+{
     Rig rig;
     MeshData d;
     REQUIRE(MakeSphereMesh(1.0f, 16, 8, &d) == nullptr);
@@ -145,7 +164,7 @@ TEST_CASE("The camera depth range encloses the scene", "[renderer][gbuffer]") {
     cam.near_plane = 0.123f;
     cam.far_plane = 456.0f;
     FitCameraDepthRange(scene, &cam, 0.1f);
-    CHECK(cam.near_plane == 0.123f); // an empty scene changes nothing
+    CHECK(cam.near_plane == 0.123f);  // an empty scene changes nothing
     RenderObjectDesc od;
     od.mesh = &sphere;
     od.transform = ModelMatrix(Vec3(0, 0, -10), 1.0f, 0.0f);
@@ -162,11 +181,13 @@ TEST_CASE("The camera depth range encloses the scene", "[renderer][gbuffer]") {
     CHECK(cam.far_plane >= cam.near_plane * 2.0f);
 }
 
-TEST_CASE("G-buffer materials pick the shader modules their options name", "[renderer][gbuffer]") {
+TEST_CASE("G-buffer materials pick the shader modules their options name", "[renderer][gbuffer]")
+{
     Rig rig;
     REQUIRE(rig.templates.plain.IsValid());
     REQUIRE(rig.templates.colored.IsValid());
-    for (int bits = 0; bits < 8; ++bits) {
+    for (int bits = 0; bits < 8; ++bits)
+    {
         GBufferOptions o;
         o.normal_map = (bits & 1) != 0;
         o.alpha_test = (bits & 2) != 0;
@@ -184,7 +205,9 @@ TEST_CASE("G-buffer materials pick the shader modules their options name", "[ren
     CHECK_FALSE(CreateGBufferMaterial(rig.sys, none, GBufferOptions{}, "m").IsValid());
 }
 
-TEST_CASE("A colored mesh gets a pipeline from a vertex color material and is refused by one without", "[renderer][gbuffer]") {
+TEST_CASE("A colored mesh gets a pipeline from a vertex color material and is refused by one without",
+          "[renderer][gbuffer]")
+{
     Rig rig;
     MeshData plain, colored;
     REQUIRE(MakePlaneMesh(2.0f, 2.0f, 1, 1, &plain) == nullptr);
@@ -202,7 +225,8 @@ TEST_CASE("A colored mesh gets a pipeline from a vertex color material and is re
     CHECK(rig.sys->GetPipeline(b, target, StandardVertexLayout()).pipeline.IsValid());
 }
 
-TEST_CASE("Prepare sorts, instances and counts what it draws", "[renderer][gbuffer]") {
+TEST_CASE("Prepare sorts, instances and counts what it draws", "[renderer][gbuffer]")
+{
     Rig rig;
     MeshData d;
     REQUIRE(MakeCubeMesh(1.0f, &d) == nullptr);
@@ -216,15 +240,19 @@ TEST_CASE("Prepare sorts, instances and counts what it draws", "[renderer][gbuff
     const MaterialId m0 = CreateGBufferMaterial(rig.sys, rig.templates, GBufferOptions{}, "m0");
     const MaterialId m1 = CreateGBufferMaterial(rig.sys, rig.templates, GBufferOptions{}, "m1");
 
-    struct Item {
+    struct Item
+    {
         const GpuMesh* mesh;
         MaterialId material;
     };
-    const Item items[] = {{&cube, m0}, {&sphere, m1}, {&cube, m1}, {&cube, m0}, {&sphere, m1}, {&cube, m0}, {&sphere, m1}};
+    const Item items[] = {{&cube, m0},   {&sphere, m1}, {&cube, m1},  {&cube, m0},
+                          {&sphere, m1}, {&cube, m0},   {&sphere, m1}};
     GBufferStats stats[2];
-    for (int order = 0; order < 2; ++order) {
+    for (int order = 0; order < 2; ++order)
+    {
         RenderScene scene(RenderSceneDesc{});
-        for (int i = 0; i < 7; ++i) {
+        for (int i = 0; i < 7; ++i)
+        {
             const Item& it = items[order == 0 ? i : 6 - i];
             RenderObjectDesc od;
             od.mesh = it.mesh;
@@ -241,17 +269,19 @@ TEST_CASE("Prepare sorts, instances and counts what it draws", "[renderer][gbuff
         CHECK(StringView(pass.LastError()).Empty());
     }
     // Groups: cube/m0 x3, cube/m1 x1, sphere/m1 x3 -> 3 draws, whatever the order.
-    for (const GBufferStats& s : stats) {
+    for (const GBufferStats& s : stats)
+    {
         CHECK(s.visible == 7);
         CHECK(s.drawn_objects == 7);
         CHECK(s.draws == 3);
         CHECK(s.rejected == 0);
-        CHECK(s.pipeline_binds == 1); // one template and key: one pipeline for all materials
-        CHECK(s.material_binds == 2); // m0, then m1 for both its meshes
+        CHECK(s.pipeline_binds == 1);  // one template and key: one pipeline for all materials
+        CHECK(s.material_binds == 2);  // m0, then m1 for both its meshes
     }
 }
 
-TEST_CASE("Prepare names every object it has to leave out", "[renderer][gbuffer]") {
+TEST_CASE("Prepare names every object it has to leave out", "[renderer][gbuffer]")
+{
     Rig rig;
     MeshData d, colored;
     REQUIRE(MakeCubeMesh(1.0f, &d) == nullptr);
@@ -268,7 +298,8 @@ TEST_CASE("Prepare names every object it has to leave out", "[renderer][gbuffer]
     vc.vertex_color = true;
     const MaterialId color = CreateGBufferMaterial(rig.sys, rig.templates, vc, "color");
 
-    auto run = [&](const GpuMesh* mesh, u32 material, engine_test::Text* message, GBufferStats* stats) {
+    auto run = [&](const GpuMesh* mesh, u32 material, engine_test::Text* message, GBufferStats* stats)
+    {
         RenderScene scene(RenderSceneDesc{});
         RenderObjectDesc od;
         od.mesh = mesh;
@@ -303,10 +334,10 @@ TEST_CASE("Prepare names every object it has to leave out", "[renderer][gbuffer]
 
     CHECK_FALSE(run(&cube, 77, &msg, &stats));
     CHECK(msg.View().Contains("material 77"));
-
 }
 
-TEST_CASE("The frame and object bind groups are created once per region", "[renderer][gbuffer]") {
+TEST_CASE("The frame and object bind groups are created once per region", "[renderer][gbuffer]")
+{
     Rig rig;
     rig.BeginFrame(0);
     const rhi::BindGroupHandle a = rig.sys->FrameBindGroup(rig.frame->FrameRegion());
@@ -330,18 +361,20 @@ TEST_CASE("The frame and object bind groups are created once per region", "[rend
     rig.device->EndFrame();
 }
 
-TEST_CASE("The bind group cache evicts its oldest entry instead of filling up", "[renderer][gbuffer]") {
+TEST_CASE("The bind group cache evicts its oldest entry instead of filling up", "[renderer][gbuffer]")
+{
     Rig rig;
     rig.BeginFrame(0);
     const BufferRegion base = rig.frame->FrameRegion();
     // Recreated frame resources leave regions of dead buffers behind; model that with 20 distinct regions.
     rhi::BindGroupHandle last;
-    for (u64 i = 0; i < 20; ++i) {
+    for (u64 i = 0; i < 20; ++i)
+    {
         BufferRegion r = base;
         r.size = base.size;
         r.offset = base.offset;
         r.buffer = rig.frame->ObjectRegion().buffer;
-        r.offset = i * 256; // distinct (buffer, offset) pairs that stay inside the object buffer
+        r.offset = i * 256;  // distinct (buffer, offset) pairs that stay inside the object buffer
         r.size = sizeof(ObjectData);
         last = rig.sys->ObjectBindGroup(r);
         REQUIRE(last.IsValid());
@@ -350,7 +383,8 @@ TEST_CASE("The bind group cache evicts its oldest entry instead of filling up", 
     rig.device->EndFrame();
 }
 
-TEST_CASE("Mesh sort ids are never zero for a live mesh and a moved-from mesh has none", "[renderer][gbuffer]") {
+TEST_CASE("Mesh sort ids are never zero for a live mesh and a moved-from mesh has none", "[renderer][gbuffer]")
+{
     Rig rig;
     MeshData d;
     REQUIRE(MakeCubeMesh(1.0f, &d) == nullptr);
@@ -367,10 +401,12 @@ TEST_CASE("Mesh sort ids are never zero for a live mesh and a moved-from mesh ha
     CHECK(a.SortId() == 0);
 }
 
-TEST_CASE("Only a UNorm8x4 attribute at location 4 counts as a vertex color", "[renderer][gbuffer]") {
+TEST_CASE("Only a UNorm8x4 attribute at location 4 counts as a vertex color", "[renderer][gbuffer]")
+{
     Rig rig;
     // The standard attributes plus a second uv set (Float4) at location 4: not a color, so a plain material takes it.
-    struct Wide {
+    struct Wide
+    {
         StandardVertex base;
         f32 extra[4];
     };
@@ -385,15 +421,20 @@ TEST_CASE("Only a UNorm8x4 attribute at location 4 counts as a vertex color", "[
     Vector<Wide> vertices;
     vertices.Resize(plane.VertexCount());
     const StandardVertex* in = static_cast<const StandardVertex*>(plane.Vertices());
-    for (u32 i = 0; i < plane.VertexCount(); ++i) {
+    for (u32 i = 0; i < plane.VertexCount(); ++i)
+    {
         vertices[i].base = in[i];
         MemSet(vertices[i].extra, 0, sizeof(vertices[i].extra));
     }
     Vector<u32> indices;
     indices.Resize(plane.IndexCount());
-    for (u32 i = 0; i < plane.IndexCount(); ++i) indices[i] = plane.IndexAt(i);
+    for (u32 i = 0; i < plane.IndexCount(); ++i)
+    {
+        indices[i] = plane.IndexAt(i);
+    }
     MeshData wide;
-    REQUIRE(wide.Set(layout, 0, vertices.Data(), plane.VertexCount(), rhi::IndexType::UInt32, indices.Data(), plane.IndexCount()) == nullptr);
+    REQUIRE(wide.Set(layout, 0, vertices.Data(), plane.VertexCount(), rhi::IndexType::UInt32, indices.Data(),
+                     plane.IndexCount()) == nullptr);
     GpuMesh mesh;
     REQUIRE(mesh.Create(rig.device.Get(), wide, "wide"));
     rig.MakeReady(&mesh);

@@ -26,7 +26,8 @@
 //! Every block carries a 16-byte header (class index and magic) so
 //! deallocation routes pooled and fallback blocks without address-range
 //! checks and the returned pointer stays 16-byte aligned.
-namespace engine_placeholder::jobs {
+namespace engine_placeholder::jobs
+{
 
 /// Thread-safe, size-classed allocator for coroutine frames, with an optional per-thread cache.
 ///
@@ -43,7 +44,8 @@ namespace engine_placeholder::jobs {
 ///   in the destructor. Blocks returned by allocation belong to the caller
 ///   until passed back to [[jobs::FramePool::Deallocate]].
 /// - See: [[jobs::Job]]
-class FramePool {
+class FramePool
+{
 public:
     /// Number of size classes.
     static constexpr usize kClassCount = 5;
@@ -57,7 +59,8 @@ public:
     /// Pool construction parameters.
     ///
     /// - Thread-safety: not-thread-safe. A plain value type.
-    struct Config {
+    struct Config
+    {
         /// Number of blocks reserved for each size class.
         usize slots_per_class[kClassCount] = {16384, 8192, 4096, 2048, 1024};
         /// Enables per-thread caches.
@@ -72,8 +75,10 @@ public:
     ///
     /// Pooled blocks came from a size class; fallback blocks came from libc `malloc`.
     ///
-    /// - Thread-safety: not-thread-safe. A plain value copy; each counter was read atomically but the set is not a consistent cut.
-    struct Stats {
+    /// - Thread-safety: not-thread-safe. A plain value copy; each counter was read atomically but the set is not a
+    /// consistent cut.
+    struct Stats
+    {
         /// Pooled allocations per size class.
         u64 pooled_allocs[kClassCount] = {};
         /// Pooled deallocations per size class.
@@ -103,12 +108,13 @@ public:
     ///
     /// - Thread-safety: owner-thread-only. Each instance belongs to one thread.
     /// - Internal: public only so the implementation's `thread_local` can name the type.
-    struct ThreadCache {
+    struct ThreadCache
+    {
         FramePool* owner = nullptr;
         void* head[kClassCount] = {};
         u32 count[kClassCount] = {};
-        // (Whether this cache was destroyed is kept outside it, in a separate thread_local flag: a store the destructor makes
-        // to the object it is destroying is dead, and optimizers remove it.)
+        // (Whether this cache was destroyed is kept outside it, in a separate thread_local flag: a store the destructor
+        // makes to the object it is destroying is dead, and optimizers remove it.)
         ~ThreadCache();
     };
 
@@ -181,9 +187,10 @@ private:
     static constexpr u32 kFallbackClass = 0xFFFFFFFFu;
     static constexpr u32 kHeaderMagic = 0xF4A3E901u;
     static constexpr u32 kRefillBatch = 16;
-    static constexpr u32 kSpillThreshold = 64; // spill half when exceeded
+    static constexpr u32 kSpillThreshold = 64;  // spill half when exceeded
 
-    struct Header {
+    struct Header
+    {
         u32 class_index;
         u32 magic;
         u64 reserved;
@@ -202,11 +209,12 @@ private:
     Mutex mutex_;
 
     // Per-class central state, guarded by mutex_.
-    struct ClassState {
-        byte* base = nullptr; // slab start (nullptr = reservation failed)
+    struct ClassState
+    {
+        byte* base = nullptr;  // slab start (nullptr = reservation failed)
         usize slots = 0;
-        usize next_unused = 0; // bump index into the slab
-        void* free_list = nullptr; // returned blocks
+        usize next_unused = 0;      // bump index into the slab
+        void* free_list = nullptr;  // returned blocks
     };
     ClassState classes_[kClassCount];
 
@@ -216,4 +224,4 @@ private:
     Atomic<u64> fallback_frees_{0};
 };
 
-} // namespace engine_placeholder::jobs
+}  // namespace engine_placeholder::jobs

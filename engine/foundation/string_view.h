@@ -4,9 +4,11 @@
 
 #include "types.h"
 
-//! [[StringView]], the non-owning text view. It lives in the base layer (it needs nothing but `types.h`) so the OS primitives, the log and the
-//! integer types can take text without depending on the string module; `string/string.h` includes it, so existing code is unaffected.
-namespace engine_placeholder {
+//! [[StringView]], the non-owning text view. It lives in the base layer (it needs nothing but `types.h`) so the OS
+//! primitives, the log and the integer types can take text without depending on the string module; `string/string.h`
+//! includes it, so existing code is unaffected.
+namespace engine_placeholder
+{
 
 /// Non-owning view of a contiguous range of chars: a pointer and a length.
 ///
@@ -16,7 +18,8 @@ namespace engine_placeholder {
 /// - Thread-safety: thread-compatible. Reading is safe from many threads while
 ///   the viewed memory is unchanged.
 /// - Ownership: does not own the characters; the caller keeps them alive.
-class StringView {
+class StringView
+{
 public:
     /// Creates an empty view with a null data pointer.
     constexpr StringView() = default;
@@ -43,12 +46,16 @@ public:
     char operator[](usize index) const { return data_[index]; }
 
     /// Returns true if both views have the same length and bytes.
-    bool operator==(const StringView& other) const {
-        if (length_ != other.length_) {
+    bool operator==(const StringView& other) const
+    {
+        if (length_ != other.length_)
+        {
             return false;
         }
-        for (usize i = 0; i < length_; ++i) {
-            if (data_[i] != other.data_[i]) {
+        for (usize i = 0; i < length_; ++i)
+        {
+            if (data_[i] != other.data_[i])
+            {
                 return false;
             }
         }
@@ -62,15 +69,19 @@ public:
     /// - Param other: view to compare against.
     /// - Returns: a negative value if this view sorts before `other`, zero if
     ///   equal, positive if after.
-    int Compare(const StringView& other) const {
+    int Compare(const StringView& other) const
+    {
         usize min_len = length_ < other.length_ ? length_ : other.length_;
-        for (usize i = 0; i < min_len; ++i) {
-            if (data_[i] != other.data_[i]) {
+        for (usize i = 0; i < min_len; ++i)
+        {
+            if (data_[i] != other.data_[i])
+            {
                 return static_cast<int>(static_cast<byte>(data_[i])) -
                        static_cast<int>(static_cast<byte>(other.data_[i]));
             }
         }
-        if (length_ == other.length_) {
+        if (length_ == other.length_)
+        {
             return 0;
         }
         return length_ < other.length_ ? -1 : 1;
@@ -84,18 +95,19 @@ public:
     /// - Param start: first byte of the sub-range.
     /// - Param count: number of bytes; `start + count` must not exceed
     ///   `Length()` (not checked).
-    StringView Substring(usize start, usize count) const {
-        return StringView(data_ + start, count);
-    }
+    StringView Substring(usize start, usize count) const { return StringView(data_ + start, count); }
 
     /// Finds the first occurrence of the byte `c`.
     ///
     /// - Param c: byte to look for.
     /// - Returns: its index, or `Length()` if it does not occur.
     /// - Fails: reports absence by returning `Length()`.
-    usize IndexOf(char c) const {
-        for (usize i = 0; i < length_; ++i) {
-            if (data_[i] == c) {
+    usize IndexOf(char c) const
+    {
+        for (usize i = 0; i < length_; ++i)
+        {
+            if (data_[i] == c)
+            {
                 return i;
             }
         }
@@ -108,20 +120,26 @@ public:
     /// - Returns: the start index of the first match, or `Length()` if there is
     ///   none or `pattern` is empty.
     /// - Fails: reports absence by returning `Length()`.
-    usize Find(StringView pattern) const {
-        if (pattern.length_ == 0 || pattern.length_ > length_) {
+    usize Find(StringView pattern) const
+    {
+        if (pattern.length_ == 0 || pattern.length_ > length_)
+        {
             return length_;
         }
         usize last_start = length_ - pattern.length_;
-        for (usize start = 0; start <= last_start; ++start) {
+        for (usize start = 0; start <= last_start; ++start)
+        {
             bool match = true;
-            for (usize i = 0; i < pattern.length_; ++i) {
-                if (data_[start + i] != pattern.data_[i]) {
+            for (usize i = 0; i < pattern.length_; ++i)
+            {
+                if (data_[start + i] != pattern.data_[i])
+                {
                     match = false;
                     break;
                 }
             }
-            if (match) {
+            if (match)
+            {
                 return start;
             }
         }
@@ -138,9 +156,12 @@ public:
     /// - Param c: byte to look for.
     /// - Returns: its index, or `Length()` if it does not occur.
     /// - Fails: reports absence by returning `Length()`.
-    usize LastIndexOf(char c) const {
-        for (usize i = length_; i > 0; --i) {
-            if (data_[i - 1] == c) {
+    usize LastIndexOf(char c) const
+    {
+        for (usize i = length_; i > 0; --i)
+        {
+            if (data_[i - 1] == c)
+            {
                 return i - 1;
             }
         }
@@ -148,12 +169,14 @@ public:
     }
 
     /// Returns true if the view begins with `prefix`; an empty prefix always matches.
-    bool StartsWith(StringView prefix) const {
+    bool StartsWith(StringView prefix) const
+    {
         return prefix.length_ <= length_ && Substring(0, prefix.length_) == prefix;
     }
 
     /// Returns true if the view ends with `suffix`; an empty suffix always matches.
-    bool EndsWith(StringView suffix) const {
+    bool EndsWith(StringView suffix) const
+    {
         return suffix.length_ <= length_ && Substring(length_ - suffix.length_) == suffix;
     }
 
@@ -165,4 +188,4 @@ private:
     usize length_ = 0;
 };
 
-} // namespace engine_placeholder
+}  // namespace engine_placeholder

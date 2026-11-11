@@ -12,7 +12,7 @@ Where the builtin type's behavior is undefined this one is defined: `+ - *` and 
 
 The engine's type vocabulary, used instead of the raw standard names so every layer agrees on exact widths.
 
-| Need | Type | |---|---| | a raw byte, or a buffer of them | `byte` (an alias of `u8`; a buffer is `Vector<byte>`, a view is `ByteSpan`) | | 8, 16, 32, 64-bit integers | `i8`..`i64`, `u8`..`u64` (aliases of the `<cstdint>` types) | | 128-bit integers | `i128`, `u128` (classes in `int128.h`: the same behavior on every compiler, with `__int128` inside where it exists) | | an object size or an index | `usize`; the signed difference of two pointers is `isize` | | floating point | `f32`, `f64` | | truth | native `bool` |
+| Need | Type | |---|---| | a raw byte, or a buffer of them | `byte` (alias of `u8`; `Vector<byte>` is a buffer, `ByteSpan` a view) | | 8, 16, 32, 64-bit integers | `i8`..`i64`, `u8`..`u64` (aliases of the `<cstdint>` types) | | 128-bit integers | `i128`, `u128` (classes in `int128.h`, the same on every compiler) | | an object size or an index | `usize`; the signed difference of two pointers is `isize` | | floating point | `f32`, `f64` | | truth | native `bool` |
 
 Code the project owns does not spell `unsigned char`, `uint8_t` and the like; the `std_usage_check` gate (Phase 16 Day 220, which replaced `std_container_check`) will reject them.
 

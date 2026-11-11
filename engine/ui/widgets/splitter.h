@@ -8,21 +8,26 @@
 
 //! The splitter (Phase 15, Day 199): panes side by side or one over the other, with handles the user drags.
 
-namespace engine_placeholder::ui {
+namespace engine_placeholder::ui
+{
 
 /// Two or more panes along one axis, separated by draggable handles.
 ///
-/// Every pane has a relative size (a fraction of the room left after the handles); the sizes follow the splitter when it resizes, in proportion, and a pane never gets less than its
-/// minimum (`SetMinSize`) while the room allows it. A press on a handle captures the pointer and drags the boundary between the two panes beside it (the resize cursor shows over a
-/// handle); a double click on a handle restores the sizes the panes were added with. A pane marked collapsible (`SetCollapsible`) collapses when a drag takes it below half its minimum and
-/// opens again when a drag takes it back over that, and `SetPaneCollapsed` does the same from code. The layout is plain numbers: `Fractions` and `SetFractions` (and the collapsed flags)
-/// are what a layout file would store.
+/// Every pane has a relative size (a fraction of the room left after the handles); the sizes follow the splitter when
+/// it resizes, in proportion, and a pane never gets less than its minimum (`SetMinSize`) while the room allows it. A
+/// press on a handle captures the pointer and drags the boundary between the two panes beside it (the resize cursor
+/// shows over a handle); a double click on a handle restores the sizes the panes were added with. A pane marked
+/// collapsible (`SetCollapsible`) collapses when a drag takes it below half its minimum and opens again when a drag
+/// takes it back over that, and `SetPaneCollapsed` does the same from code. The layout is plain numbers: `Fractions`
+/// and `SetFractions` (and the collapsed flags) are what a layout file would store.
 ///
-/// `Horizontal` places the panes left to right (the handles are vertical bars); `Vertical` top to bottom. The setters run no listener; a drag and a double click run `OnChanged`.
+/// `Horizontal` places the panes left to right (the handles are vertical bars); `Vertical` top to bottom. The setters
+/// run no listener; a drag and a double click run `OnChanged`.
 ///
 /// - Thread-safety: owner-thread-only.
 /// - Ownership: owns its panes.
-class Splitter : public Widget {
+class Splitter : public Widget
+{
 public:
     /// The thickness of a handle, in logical units.
     static constexpr f32 kHandle = 6.0f;
@@ -66,7 +71,8 @@ public:
     ///
     /// - Fails: returns false for an index out of range.
     bool PaneCollapsed(usize index) const { return index < panes_.Size() && panes_[index].collapsed; }
-    /// Copies the relative sizes of the panes (they sum to 1 over the panes that are not collapsed) into `out`, cleared first.
+    /// Copies the relative sizes of the panes (they sum to 1 over the panes that are not collapsed) into `out`, cleared
+    /// first.
     /// - Ownership: `out` must be non-null.
     void Fractions(Vector<f32>* out) const;
     /// Sets the relative sizes (normalized over the panes that are not collapsed). Runs no listener.
@@ -74,12 +80,14 @@ public:
     void SetFractions(Span<const f32> fractions);
     /// Restores the sizes the panes were added with and opens every pane. Runs no listener.
     void Reset();
-    /// Returns the size of pane `index` along the axis, in logical units, as of the last layout (0 when collapsed or out of range).
+    /// Returns the size of pane `index` along the axis, in logical units, as of the last layout (0 when collapsed or
+    /// out of range).
     f32 PaneSize(usize index) const { return index < panes_.Size() ? panes_[index].size : 0.0f; }
     /// Returns the rectangle of handle `index` (between pane `index` and the next) in surface coordinates.
     /// - Fails: returns an empty rectangle for an index out of range.
     Rect HandleRect(usize index) const;
-    /// Returns the listeners called after a drag moves a boundary or a double click resets the sizes (with the splitter).
+    /// Returns the listeners called after a drag moves a boundary or a double click resets the sizes (with the
+    /// splitter).
     Callback<Splitter*>& OnChanged() { return on_changed_; }
     /// Returns the sum of the panes' preferred sizes plus the handles.
     Size Measure(const Constraints& constraints) override;
@@ -91,7 +99,8 @@ public:
     void OnEvent(Event& event) override;
 
 private:
-    struct PaneInfo {
+    struct PaneInfo
+    {
         Widget* widget = nullptr;
         f32 fraction = 0;
         f32 initial = 0;
@@ -119,4 +128,4 @@ private:
     Callback<Splitter*> on_changed_;
 };
 
-} // namespace engine_placeholder::ui
+}  // namespace engine_placeholder::ui

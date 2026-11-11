@@ -5,21 +5,25 @@
 #include "types.h"
 #include "ui/draw_list.h"
 
-//! A small CPU rasteriser for a [[ui::DrawList]] (Phase 15, Day 192), so widget tests compare pixels without a GPU. For tests only; the renderer is the real thing.
+//! A small CPU rasteriser for a [[ui::DrawList]] (Phase 15, Day 192), so widget tests compare pixels without a GPU. For
+//! tests only; the renderer is the real thing.
 //!
-//! It follows the UI shader (`shaders/ui.frag.slang`): solid, rounded-rectangle (anti-aliased, with ring and shadow) and glyph modes, premultiplied blending, the scissor of each
-//! command, a target that is not sRGB (colours are written as given). Image-mode commands are skipped (a software test has no image textures).
+//! It follows the UI shader (`shaders/ui.frag.slang`): solid, rounded-rectangle (anti-aliased, with ring and shadow)
+//! and glyph modes, premultiplied blending, the scissor of each command, a target that is not sRGB (colours are written
+//! as given). Image-mode commands are skipped (a software test has no image textures).
 
-namespace engine_placeholder::ui {
+namespace engine_placeholder::ui
+{
 
 /// A CPU image of RGBA8 pixels, rows top to bottom.
 ///
 /// - Thread-safety: thread-compatible.
 /// - Ownership: owns its pixels.
-struct RasterImage {
-    u32 width = 0;       ///< Width in pixels.
-    u32 height = 0;      ///< Height in pixels.
-    Vector<u8> rgba;     ///< `width * height * 4` bytes, red first.
+struct RasterImage
+{
+    u32 width = 0;    ///< Width in pixels.
+    u32 height = 0;   ///< Height in pixels.
+    Vector<u8> rgba;  ///< `width * height * 4` bytes, red first.
 
     /// Returns the four bytes of pixel (`x`, `y`).
     /// - Aborts: the pixel is outside the image.
@@ -37,6 +41,7 @@ struct RasterImage {
 /// - Param out: receives the image.
 /// - Aborts: `out` is null or `width` or `height` is 0.
 /// - Ownership: borrows `list` and `atlas` for the call; `out` receives the image.
-void RasterizeDrawList(const DrawList& list, const text::GlyphAtlas* atlas, u32 width, u32 height, u32 clear_abgr, RasterImage* out);
+void RasterizeDrawList(const DrawList& list, const text::GlyphAtlas* atlas, u32 width, u32 height, u32 clear_abgr,
+                       RasterImage* out);
 
-} // namespace engine_placeholder::ui
+}  // namespace engine_placeholder::ui

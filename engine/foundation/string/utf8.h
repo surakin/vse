@@ -5,7 +5,8 @@
 #include "string/utf8_codec.h"
 
 //! UTF-8 helpers on StringView: codepoint counting, validation and iteration.
-namespace engine_placeholder {
+namespace engine_placeholder
+{
 
 /// Counts the Unicode codepoints in `sv`.
 ///
@@ -14,10 +15,12 @@ namespace engine_placeholder {
 ///
 /// - Param sv: UTF-8 text.
 /// - Returns: the number of codepoints.
-inline usize CodepointCount(StringView sv) {
+inline usize CodepointCount(StringView sv)
+{
     usize count = 0;
     usize offset = 0;
-    while (offset < sv.Length()) {
+    while (offset < sv.Length())
+    {
         DecodedCodepoint dc = DecodeUtf8At(sv.Data(), sv.Length(), offset, nullptr);
         offset += dc.byte_length;
         ++count;
@@ -30,12 +33,15 @@ inline usize CodepointCount(StringView sv) {
 /// - Param sv: text to check.
 /// - Returns: true if every sequence decodes validly, false at the first
 ///   malformed one.
-inline bool IsValidUtf8(StringView sv) {
+inline bool IsValidUtf8(StringView sv)
+{
     usize offset = 0;
-    while (offset < sv.Length()) {
+    while (offset < sv.Length())
+    {
         bool valid = false;
         DecodedCodepoint dc = DecodeUtf8At(sv.Data(), sv.Length(), offset, &valid);
-        if (!valid) {
+        if (!valid)
+        {
             return false;
         }
         offset += dc.byte_length;
@@ -50,7 +56,8 @@ inline bool IsValidUtf8(StringView sv) {
 ///
 /// - Thread-safety: thread-compatible.
 /// - Ownership: holds a view; the underlying text must outlive the iterator.
-class Utf8CodepointIterator {
+class Utf8CodepointIterator
+{
 public:
     /// Creates an iterator positioned at byte `offset` of `sv`.
     ///
@@ -59,13 +66,15 @@ public:
     Utf8CodepointIterator(StringView sv, usize offset) : sv_(sv), offset_(offset) {}
 
     /// Returns the codepoint at the current position; must not be called at the end.
-    u32 operator*() const {
+    u32 operator*() const
+    {
         DecodedCodepoint dc = DecodeUtf8At(sv_.Data(), sv_.Length(), offset_, nullptr);
         return dc.codepoint;
     }
 
     /// Advances past the current codepoint and returns this iterator.
-    Utf8CodepointIterator& operator++() {
+    Utf8CodepointIterator& operator++()
+    {
         DecodedCodepoint dc = DecodeUtf8At(sv_.Data(), sv_.Length(), offset_, nullptr);
         offset_ += dc.byte_length;
         return *this;
@@ -83,7 +92,8 @@ private:
 ///
 /// - Thread-safety: thread-compatible.
 /// - Ownership: holds a view; the underlying text must outlive the range.
-class Utf8CodepointRange {
+class Utf8CodepointRange
+{
 public:
     /// Creates a range over `sv`.
     ///
@@ -102,8 +112,9 @@ private:
 /// Returns a range over the codepoints of `sv`, for use in a range-for loop.
 ///
 /// - Param sv: UTF-8 text; must outlive the returned range.
-inline Utf8CodepointRange Utf8Codepoints(StringView sv) {
+inline Utf8CodepointRange Utf8Codepoints(StringView sv)
+{
     return Utf8CodepointRange(sv);
 }
 
-} // namespace engine_placeholder
+}  // namespace engine_placeholder

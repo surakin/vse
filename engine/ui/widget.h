@@ -13,9 +13,11 @@
 #include "ui/layout_types.h"
 #include "ui/theme.h"
 
-//! The retained widget tree (Phase 15, Day 192): a [[ui::Widget]] owns its children, belongs to one [[ui::Surface]] and draws through the abstract [[ui::Canvas]].
+//! The retained widget tree (Phase 15, Day 192): a [[ui::Widget]] owns its children, belongs to one [[ui::Surface]] and
+//! draws through the abstract [[ui::Canvas]].
 
-namespace engine_placeholder::ui {
+namespace engine_placeholder::ui
+{
 
 class Surface;
 
@@ -26,22 +28,26 @@ constexpr u32 kDrawDirty = 2;
 
 /// A node of the widget tree.
 ///
-/// Children are owned (`UniquePtr`) and drawn in order, so the last child is on top and is hit-tested first. A widget's id is a hash of its parent's id and its name (its index among
-/// the siblings when the name is empty), so it is the same every time a tree is built the same way. Bounds are in surface coordinates, logical units. The state bits (hover,
-/// pressed, focused) are kept by the surface; `Disabled` follows [[ui::Widget::EffectivelyEnabled]].
+/// Children are owned (`UniquePtr`) and drawn in order, so the last child is on top and is hit-tested first. A widget's
+/// id is a hash of its parent's id and its name (its index among the siblings when the name is empty), so it is the
+/// same every time a tree is built the same way. Bounds are in surface coordinates, logical units. The state bits
+/// (hover, pressed, focused) are kept by the surface; `Disabled` follows [[ui::Widget::EffectivelyEnabled]].
 ///
-/// Removal is safe from inside an event handler: while the surface dispatches, [[ui::Widget::RemoveChild]] and [[ui::Widget::RemoveFromParent]] queue the removal and the widget
-/// dies when the dispatch ends. Destroying a widget clears the surface's references to it (focus, capture, hover).
+/// Removal is safe from inside an event handler: while the surface dispatches, [[ui::Widget::RemoveChild]] and
+/// [[ui::Widget::RemoveFromParent]] queue the removal and the widget dies when the dispatch ends. Destroying a widget
+/// clears the surface's references to it (focus, capture, hover).
 ///
 /// - Thread-safety: owner-thread-only.
 /// - Ownership: owns its children; borrows the parent and the surface.
-class Widget {
+class Widget
+{
 public:
     /// Makes a widget.
     /// - Param name: the name used by `FindByName` and for the id; may be empty.
     explicit Widget(StringView name = StringView());
     /// Destroys the children, after clearing the surface's references to this widget.
-    // Inline on purpose (like every virtual of this class): with no out-of-line virtual the class has no key function, so a test (built with RTTI) that derives from it emits its own typeinfo; the library is built without.
+    // Inline on purpose (like every virtual of this class): with no out-of-line virtual the class has no key function,
+    // so a test (built with RTTI) that derives from it emits its own typeinfo; the library is built without.
     virtual ~Widget() { NotifyDestroyed(); }
     Widget(const Widget&) = delete;
     Widget& operator=(const Widget&) = delete;
@@ -74,7 +80,8 @@ public:
     /// - Aborts: `child` is not a child of this widget.
     /// - Ownership: borrowed; the caller keeps ownership and it must outlive its use here.
     void RemoveChild(Widget* child);
-    /// Moves this widget to the end of its parent's children, so it is drawn last and hit first. Does nothing for a root.
+    /// Moves this widget to the end of its parent's children, so it is drawn last and hit first. Does nothing for a
+    /// root.
     void BringToFront();
     /// Removes and destroys this widget from its parent (deferred during dispatch); does nothing for a root.
     void RemoveFromParent();
@@ -128,17 +135,20 @@ public:
     /// Sets whether the children are clipped; marks the draw dirty.
     void SetClipsChildren(bool clip);
 
-    /// Styles this widget and everything under it from `theme` laid over the surface's theme (a value `theme` leaves unset falls through), for example a status bar that stays dark in a light window. An
-    /// ancestor's override applies under this one's. Marks layout dirty. Null removes the override.
+    /// Styles this widget and everything under it from `theme` laid over the surface's theme (a value `theme` leaves
+    /// unset falls through), for example a status bar that stays dark in a light window. An ancestor's override applies
+    /// under this one's. Marks layout dirty. Null removes the override.
     ///
-    /// - Ownership: borrows `theme`, which must outlive its use here and must not change while the surface draws (set it again after editing).
+    /// - Ownership: borrows `theme`, which must outlive its use here and must not change while the surface draws (set
+    /// it again after editing).
     void SetThemeOverride(const Theme* theme);
     /// Returns the override set by `SetThemeOverride`, or null.
     ///
     /// - Ownership: borrowed; the application owns it.
     /// - Fails: returns null when there is none.
     const Theme* ThemeOverride() const { return theme_override_; }
-    /// Returns the state bits (`kStateHover`, `kStatePressed`, `kStateFocused`, `kStateChecked` of `ui/theme.h`, and `kStateDisabled` when not effectively enabled).
+    /// Returns the state bits (`kStateHover`, `kStatePressed`, `kStateFocused`, `kStateChecked` of `ui/theme.h`, and
+    /// `kStateDisabled` when not effectively enabled).
     u32 State() const;
     /// Sets or clears the `kStateChecked` bit (the surface sets the others); marks the draw dirty.
     void SetChecked(bool checked);
@@ -146,23 +156,30 @@ public:
     ///
     /// - Fails: never.
     bool Checked() const { return (state_ & kStateChecked) != 0; }
-    /// Returns the description: a sentence for tests and a settings screen about what an interactive widget does (empty by default; the name is the short label).
+    /// Returns the description: a sentence for tests and a settings screen about what an interactive widget does (empty
+    /// by default; the name is the short label).
     StringView Description() const { return description_.View(); }
     /// Sets the description.
-    void SetDescription(StringView description) { description_ = String<HeapAllocator>(HeapAllocator::Default(), description); }
-    /// Returns the role tag (0 for none): lets a container find the widgets it manages without run-time type information (a radio group finds its radio buttons).
+    void SetDescription(StringView description)
+    {
+        description_ = String<HeapAllocator>(HeapAllocator::Default(), description);
+    }
+    /// Returns the role tag (0 for none): lets a container find the widgets it manages without run-time type
+    /// information (a radio group finds its radio buttons).
     u32 Role() const { return role_; }
     /// Returns the tooltip text a tooltip popup (Day 198) shows after the pointer rests on the widget; empty for none.
     StringView Tooltip() const { return tooltip_.View(); }
     /// Sets the tooltip text.
     void SetTooltip(StringView tooltip) { tooltip_ = String<HeapAllocator>(HeapAllocator::Default(), tooltip); }
 
-    /// Marks the widget and its ancestors dirty with `flags` (`kLayoutDirty`, `kDrawDirty`; layout implies draw) and tells the surface.
+    /// Marks the widget and its ancestors dirty with `flags` (`kLayoutDirty`, `kDrawDirty`; layout implies draw) and
+    /// tells the surface.
     void MarkDirty(u32 flags);
     /// Returns the dirty flags set on this widget since the last frame cleared them.
     u32 Dirty() const { return dirty_; }
 
-    /// Returns the deepest visible widget under `point` (surface coordinates) in this subtree, honouring clipping and pass-through, or null.
+    /// Returns the deepest visible widget under `point` (surface coordinates) in this subtree, honouring clipping and
+    /// pass-through, or null.
     ///
     /// - Ownership: borrowed; the owner keeps it and it stays valid while the owner lives.
     /// - Fails: returns null when there is none.
@@ -170,20 +187,29 @@ public:
 
     /// Draws this widget (not its children); the default draws nothing.
     virtual void Draw(Canvas&) {}
-    /// Returns the size this widget wants from its content, within `constraints`: a label's text, an image's natural size, a container's children. The default is 0 x 0. Call
-    /// [[ui::Widget::MeasureTotal]], not this, to ask a child: it adds the widget's own size overrides and limits and caches the answer for the layout pass.
+    /// Returns the size this widget wants from its content, within `constraints`: a label's text, an image's natural
+    /// size, a container's children. The default is 0 x 0. Call
+    /// [[ui::Widget::MeasureTotal]], not this, to ask a child: it adds the widget's own size overrides and limits and
+    /// caches the answer for the layout pass.
     virtual Size Measure(const Constraints&) { return Size(); }
-    /// Places the widget in `rect` (surface coordinates) and its children inside it; called by the surface when layout is dirty, parent before children.
-    /// The default sets the bounds and arranges each shown child in its own current bounds, or in the whole content box if it has `fill_parent`.
-    virtual void Arrange(const Rect& rect) {
+    /// Places the widget in `rect` (surface coordinates) and its children inside it; called by the surface when layout
+    /// is dirty, parent before children. The default sets the bounds and arranges each shown child in its own current
+    /// bounds, or in the whole content box if it has `fill_parent`.
+    virtual void Arrange(const Rect& rect)
+    {
         SetBounds(rect);
-        for (usize i = 0; i < children_.Size(); ++i) {
+        for (usize i = 0; i < children_.Size(); ++i)
+        {
             Widget* child = children_[i].Get();
-            if (!child->collapsed_) child->Arrange(child->props_.fill_parent ? rect : child->bounds_);
+            if (!child->collapsed_)
+            {
+                child->Arrange(child->props_.fill_parent ? rect : child->bounds_);
+            }
         }
     }
-    /// Asks for the size of this widget in `constraints`: `Measure` with the `width` and `height` of the layout properties applied, limited to their `min` and `max`, then to
-    /// `constraints`. Cached until the next layout change.
+    /// Asks for the size of this widget in `constraints`: `Measure` with the `width` and `height` of the layout
+    /// properties applied, limited to their `min` and `max`, then to `constraints`. Cached until the next layout
+    /// change.
     Size MeasureTotal(const Constraints& constraints);
     /// Returns the layout properties.
     const LayoutProps& Props() const { return props_; }
@@ -193,7 +219,8 @@ public:
     ///
     /// - Fails: never.
     bool Collapsed() const { return collapsed_; }
-    /// Collapses the widget: it takes no space in a container and is not drawn or hit; `SetVisible(false)` instead hides it but keeps its space. Marks layout dirty.
+    /// Collapses the widget: it takes no space in a container and is not drawn or hit; `SetVisible(false)` instead
+    /// hides it but keeps its space. Marks layout dirty.
     void SetCollapsed(bool collapsed);
     /// Returns whether the widget is drawn and hit: visible and not collapsed.
     ///
@@ -205,13 +232,15 @@ public:
     bool Focusable() const { return focusable_; }
     /// Sets whether the widget can take the keyboard focus.
     void SetFocusable(bool focusable) { focusable_ = focusable; }
-    /// Returns whether `Text` events are delivered to this widget when it has the focus (default false; a text field sets it).
+    /// Returns whether `Text` events are delivered to this widget when it has the focus (default false; a text field
+    /// sets it).
     ///
     /// - Fails: never.
     bool AcceptsText() const { return accepts_text_; }
     /// Sets whether the widget takes text input.
     void SetAcceptsText(bool accepts) { accepts_text_ = accepts; }
-    /// Returns the Tab order key: 0 follows the tree order, a positive value goes first in ascending order, a negative value is skipped by Tab (a click still focuses it).
+    /// Returns the Tab order key: 0 follows the tree order, a positive value goes first in ascending order, a negative
+    /// value is skipped by Tab (a click still focuses it).
     ///
     /// - Fails: never.
     i32 TabIndex() const { return tab_index_; }
@@ -226,27 +255,33 @@ public:
     /// - Fails: never.
     os::CursorShape Cursor() const { return cursor_; }
     /// Names the cursor shape over this widget; a widget without one uses its parent's.
-    void SetCursor(os::CursorShape shape) {
+    void SetCursor(os::CursorShape shape)
+    {
         cursor_ = shape;
         has_cursor_ = true;
     }
     /// Removes the cursor shape set with `SetCursor`.
     void ClearCursor() { has_cursor_ = false; }
-    /// Makes this widget receive every pointer event until `ReleaseCapture` or the buttons are up; for a widget that starts a drag. Does nothing outside a surface.
+    /// Makes this widget receive every pointer event until `ReleaseCapture` or the buttons are up; for a widget that
+    /// starts a drag. Does nothing outside a surface.
     void RequestCapture();
     /// Gives the capture up if this widget holds it.
     void ReleaseCapture();
     /// Takes the keyboard focus. Does nothing outside a surface or when the widget is not focusable, shown and enabled.
     void RequestFocus();
 
-    /// Handles an event delivered to this widget with its position in local space; set `event.handled` to stop it from bubbling. The default ignores it.
+    /// Handles an event delivered to this widget with its position in local space; set `event.handled` to stop it from
+    /// bubbling. The default ignores it.
     virtual void OnEvent(Event&) {}
-    /// Called by the surface on every ancestor of a widget that just got the keyboard focus (the ancestor nearest to it first); a scroll view brings the widget into view. The default does nothing.
+    /// Called by the surface on every ancestor of a widget that just got the keyboard focus (the ancestor nearest to it
+    /// first); a scroll view brings the widget into view. The default does nothing.
     ///
     /// - Ownership: borrows the widget for the call.
     virtual void OnDescendantFocused(Widget*) {}
-    /// Drop target: decides whether a drag at `position` (local) would be accepted here, and what it would do. The surface asks the widget under the pointer, then its ancestors, and the first
-    /// that answers other than `Nothing` is the target. The default refuses. A payload from another program has `pending` entries without data. The answer must be one of `payload.Allowed()`.
+    /// Drop target: decides whether a drag at `position` (local) would be accepted here, and what it would do. The
+    /// surface asks the widget under the pointer, then its ancestors, and the first that answers other than `Nothing`
+    /// is the target. The default refuses. A payload from another program has `pending` entries without data. The
+    /// answer must be one of `payload.Allowed()`.
     /// - Returns: the action the drop would take (usually `payload.Requested()`), or `Nothing`.
     virtual DragAction CanAccept(const DragPayload&, Point) { return DragAction::Nothing; }
     /// Drop target: a drag it accepts came over it; the surface has set `kStateDragOver`. The default does nothing.
@@ -255,24 +290,28 @@ public:
     virtual void OnDragOver(const DragPayload&, Point, DragAction) {}
     /// Drop target: the drag left it, or ended without a drop; the default does nothing.
     virtual void OnDragLeave() {}
-    /// Drop target: the drag was dropped on it at `position` (local) with `action`; the payload is complete. The default does nothing.
+    /// Drop target: the drag was dropped on it at `position` (local) with `action`; the payload is complete. The
+    /// default does nothing.
     virtual void OnDrop(const DragPayload&, Point, DragAction) {}
-    /// Drag source: the drag this widget started ended. `Nothing` means cancelled or refused; `Move` asks the source to remove what it gave. The default does nothing.
+    /// Drag source: the drag this widget started ended. `Nothing` means cancelled or refused; `Move` asks the source to
+    /// remove what it gave. The default does nothing.
     virtual void OnDragEnded(DragAction) {}
-    /// Called each frame while a drag is over this widget or a descendant, with the pointer at `position` (local); a scrolling widget scrolls when the pointer rests near its edge, by an
-    /// amount that grows with the depth into the edge and with `dt`. Returns whether it scrolled. The default does nothing.
+    /// Called each frame while a drag is over this widget or a descendant, with the pointer at `position` (local); a
+    /// scrolling widget scrolls when the pointer rests near its edge, by an amount that grows with the depth into the
+    /// edge and with `dt`. Returns whether it scrolled. The default does nothing.
     /// - Fails: never.
     virtual bool DragAutoScroll(Point, f32) { return false; }
-    /// Called once when a drag has rested over this widget (or a descendant that did not take it) for the hover delay; a tab view selects the tab, a menu opens its submenu. Returns whether it
-    /// handled it. The default does nothing.
+    /// Called once when a drag has rested over this widget (or a descendant that did not take it) for the hover delay;
+    /// a tab view selects the tab, a menu opens its submenu. Returns whether it handled it. The default does nothing.
     /// - Fails: never.
     virtual bool OnDragHoverDelay(Point) { return false; }
     /// Edit commands the surface and the Edit menu route to the focus owner.
-    enum class EditCommand : u8 {
-        Cut,       ///< Copy the selection and remove it.
-        Copy,      ///< Copy the selection.
-        Paste,     ///< Insert the clipboard's text.
-        SelectAll, ///< Select everything.
+    enum class EditCommand : u8
+    {
+        Cut,        ///< Copy the selection and remove it.
+        Copy,       ///< Copy the selection.
+        Paste,      ///< Insert the clipboard's text.
+        SelectAll,  ///< Select everything.
     };
     /// Returns whether the widget can run `command` now (a menu enables its items from it). The default is false.
     /// - Fails: never.
@@ -281,13 +320,16 @@ public:
     virtual void RunEdit(EditCommand) {}
     /// Advances time by `dt` seconds; called each frame for the widgets whose `WantsUpdate` is true.
     virtual void Update(f32) {}
-    /// What `SetContextHandler` takes: called with the user pointer, the widget and the pointer position in surface coordinates.
+    /// What `SetContextHandler` takes: called with the user pointer, the widget and the pointer position in surface
+    /// coordinates.
     using ContextFunction = void (*)(void* user, Widget* widget, Point position);
-    /// Sets the function called when the right button goes down on this widget (or on a descendant that has none of its own), after the press was delivered as usual. Null removes it.
+    /// Sets the function called when the right button goes down on this widget (or on a descendant that has none of its
+    /// own), after the press was delivered as usual. Null removes it.
     /// - Param function: what to call, typically to open a context menu with [[ui::Surface::ShowContextMenu]].
     /// - Param user: passed to it; borrowed.
     /// - Ownership: `user` is borrowed until the handler is replaced or the widget dies.
-    void SetContextHandler(ContextFunction function, void* user) {
+    void SetContextHandler(ContextFunction function, void* user)
+    {
         context_function_ = function;
         context_user_ = user;
     }
@@ -296,7 +338,8 @@ public:
     /// - Fails: never.
     virtual bool WantsUpdate() const { return false; }
 
-    /// Draws this widget and its subtree: the widget, then the children in order inside the clip when `ClipsChildren()`. Does nothing when hidden.
+    /// Draws this widget and its subtree: the widget, then the children in order inside the clip when
+    /// `ClipsChildren()`. Does nothing when hidden.
     void DrawTree(Canvas& canvas);
 
 protected:
@@ -321,7 +364,7 @@ private:
     Vector<UniquePtr<Widget>> children_;
     Rect bounds_;
     u32 dirty_ = 0;
-    u32 state_ = 0; // hover, pressed, focused, checked
+    u32 state_ = 0;  // hover, pressed, focused, checked
     LayoutProps props_;
     u64 measure_generation_ = 0;
     Constraints measure_constraints_;
@@ -340,4 +383,4 @@ private:
     bool clip_children_ = true;
 };
 
-} // namespace engine_placeholder::ui
+}  // namespace engine_placeholder::ui

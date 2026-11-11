@@ -9,19 +9,24 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::ui;
 
-namespace {
+namespace
+{
 
 // A widget with bounds that records what it is asked to do.
-class Probe : public Widget {
+class Probe : public Widget
+{
 public:
     explicit Probe(StringView name, Rect bounds = Rect()) : Widget(name) { SetBounds(bounds); }
     bool remove_self_on_down = false;
     usize children_seen_in_handler = 0;
     u32 downs = 0;
-    void OnEvent(Event& e) override {
-        if (e.type == EventType::PointerDown) {
+    void OnEvent(Event& e) override
+    {
+        if (e.type == EventType::PointerDown)
+        {
             ++downs;
-            if (remove_self_on_down && Parent() != nullptr) {
+            if (remove_self_on_down && Parent() != nullptr)
+            {
                 Widget* parent = Parent();
                 RemoveFromParent();
                 children_seen_in_handler = parent->ChildCount();
@@ -31,14 +36,16 @@ public:
     }
 };
 
-Probe* Add(Widget* parent, StringView name, Rect bounds) {
+Probe* Add(Widget* parent, StringView name, Rect bounds)
+{
     UniquePtr<Probe> p = MakeUnique<Probe>(name, bounds);
     Probe* raw = p.Get();
     parent->AddChild(UniquePtr<Widget>(p.Release()));
     return raw;
 }
 
-void BuildTree(Surface* s, u64* ids) {
+void BuildTree(Surface* s, u64* ids)
+{
     Probe* a = Add(s->Root(), "a", {0, 0, 50, 50});
     Probe* b = Add(a, "b", {0, 0, 10, 10});
     Probe* unnamed1 = Add(a, "", {0, 0, 5, 5});
@@ -49,15 +56,19 @@ void BuildTree(Surface* s, u64* ids) {
     ids[3] = unnamed2->Id();
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("Widget tree: ids are stable across rebuilds and distinct across siblings", "[ui][tree]") {
+TEST_CASE("Widget tree: ids are stable across rebuilds and distinct across siblings", "[ui][tree]")
+{
     Surface s1(100, 100, 1), s2(100, 100, 1);
     u64 ids1[4], ids2[4];
     BuildTree(&s1, ids1);
     BuildTree(&s2, ids2);
-    for (int i = 0; i < 4; ++i) CHECK(ids1[i] == ids2[i]);
-    CHECK(ids1[2] != ids1[3]); // empty names: told apart by index
+    for (int i = 0; i < 4; ++i)
+    {
+        CHECK(ids1[i] == ids2[i]);
+    }
+    CHECK(ids1[2] != ids1[3]);  // empty names: told apart by index
     CHECK(ids1[0] != ids1[1]);
     CHECK(ids1[0] != 0);
     // The same name under another parent is another id.
@@ -70,9 +81,10 @@ TEST_CASE("Widget tree: ids are stable across rebuilds and distinct across sibli
     CHECK(s1.Root()->FindByName("b")->Name() == StringView("b"));
 }
 
-TEST_CASE("Widget tree: dirty flags reach the root and the surface, and a frame clears them", "[ui][tree]") {
+TEST_CASE("Widget tree: dirty flags reach the root and the surface, and a frame clears them", "[ui][tree]")
+{
     Surface s(100, 100, 1);
-    DrawList list; // a frame with a list clears the draw flags too
+    DrawList list;  // a frame with a list clears the draw flags too
     Probe* a = Add(s.Root(), "a", {0, 0, 50, 50});
     Probe* b = Add(a, "b", {0, 0, 10, 10});
     s.Frame(0, &list);
@@ -85,10 +97,10 @@ TEST_CASE("Widget tree: dirty flags reach the root and the surface, and a frame 
     CHECK((s.Root()->Dirty() & kLayoutDirty) == 0);
     CHECK(s.NeedsRedraw());
     s.Frame(0, &list);
-    CHECK(s.LayoutPasses() == passes); // a draw change needs no layout
+    CHECK(s.LayoutPasses() == passes);  // a draw change needs no layout
     b->MarkDirty(kLayoutDirty);
     CHECK((s.Root()->Dirty() & kLayoutDirty) != 0);
-    CHECK((s.Root()->Dirty() & kDrawDirty) != 0); // layout implies draw
+    CHECK((s.Root()->Dirty() & kDrawDirty) != 0);  // layout implies draw
     s.Frame(0, &list);
     CHECK(s.LayoutPasses() == passes + 1);
     CHECK(s.Root()->Dirty() == 0);
@@ -112,11 +124,12 @@ TEST_CASE("Widget tree: dirty flags reach the root and the surface, and a frame 
     CHECK((a->Dirty() & kLayoutDirty) != 0);
 }
 
-TEST_CASE("Widget tree: hit testing follows drawing order, clips, visibility and pass-through", "[ui][tree]") {
+TEST_CASE("Widget tree: hit testing follows drawing order, clips, visibility and pass-through", "[ui][tree]")
+{
     Surface s(200, 200, 1);
     Probe* under = Add(s.Root(), "under", {10, 10, 50, 50});
     Probe* over = Add(s.Root(), "over", {30, 30, 50, 50});
-    CHECK(s.Root()->HitTest({40, 40}) == over);   // the later sibling is on top
+    CHECK(s.Root()->HitTest({40, 40}) == over);  // the later sibling is on top
     CHECK(s.Root()->HitTest({15, 15}) == under);
     CHECK(s.Root()->HitTest({100, 100}) == s.Root());
     CHECK(s.Root()->HitTest({10, 10}) == under);  // the top-left edge is inside
@@ -130,7 +143,7 @@ TEST_CASE("Widget tree: hit testing follows drawing order, clips, visibility and
     CHECK(s.Root()->HitTest({40, 40}) == under);
     Probe* inner = Add(over, "inner", {35, 35, 10, 10});
     CHECK(s.Root()->HitTest({40, 40}) == inner);
-    CHECK(s.Root()->HitTest({70, 70}) == s.Root()); // over itself does not take it
+    CHECK(s.Root()->HitTest({70, 70}) == s.Root());  // over itself does not take it
     over->SetPassThrough(false);
 
     // Clipping: a child outside a clipping parent is not hit, outside a non-clipping parent it is.
@@ -141,7 +154,8 @@ TEST_CASE("Widget tree: hit testing follows drawing order, clips, visibility and
     CHECK(inner != nullptr);
 }
 
-TEST_CASE("Widget tree: removal inside a handler is deferred and the widget dies after the dispatch", "[ui][tree]") {
+TEST_CASE("Widget tree: removal inside a handler is deferred and the widget dies after the dispatch", "[ui][tree]")
+{
     Surface s(100, 100, 1);
     Probe* a = Add(s.Root(), "a", {0, 0, 50, 50});
     Probe* b = Add(s.Root(), "b", {60, 0, 30, 30});
@@ -155,22 +169,26 @@ TEST_CASE("Widget tree: removal inside a handler is deferred and the widget dies
     CHECK(s.Root()->FindByName("a") == nullptr);
     CHECK(s.Root()->ChildCount() == 1);
     CHECK(s.Root()->ChildAt(0) == b);
-    CHECK(s.Capture() == nullptr); // the capture died with the widget
+    CHECK(s.Capture() == nullptr);  // the capture died with the widget
     CHECK(s.Hover() == nullptr);
 }
 
-TEST_CASE("Widget tree: a removal handler sees the tree unchanged until the dispatch ends", "[ui][tree]") {
+TEST_CASE("Widget tree: a removal handler sees the tree unchanged until the dispatch ends", "[ui][tree]")
+{
     Surface s(100, 100, 1);
     Probe* a = Add(s.Root(), "a", {0, 0, 50, 50});
     Add(s.Root(), "b", {60, 0, 30, 30});
     a->remove_self_on_down = true;
     // Observe the child count from inside the handler through a second probe that shares the parent.
-    class Watcher : public Widget {
+    class Watcher : public Widget
+    {
     public:
         Watcher() : Widget("watcher") {}
         usize seen = 99;
-        void OnEvent(Event& e) override {
-            if (e.type == EventType::PointerDown) {
+        void OnEvent(Event& e) override
+        {
+            if (e.type == EventType::PointerDown)
+            {
                 Widget* parent = Parent();
                 parent->RemoveChild(parent->FindByName("a"));
                 seen = parent->ChildCount();
@@ -187,12 +205,13 @@ TEST_CASE("Widget tree: a removal handler sees the tree unchanged until the disp
     down.position = {5, 70};
     down.button = 1;
     s.Dispatch(down);
-    CHECK(watcher->seen == 3); // a, b and the watcher were all still there inside the handler
+    CHECK(watcher->seen == 3);  // a, b and the watcher were all still there inside the handler
     CHECK(s.Root()->ChildCount() == 2);
     CHECK(s.Root()->FindByName("a") == nullptr);
 }
 
-TEST_CASE("Widget tree: removing a subtree clears focus, capture and hover held inside it", "[ui][tree]") {
+TEST_CASE("Widget tree: removing a subtree clears focus, capture and hover held inside it", "[ui][tree]")
+{
     Surface s(100, 100, 1);
     Probe* panel = Add(s.Root(), "panel", {0, 0, 80, 80});
     Probe* leaf = Add(panel, "leaf", {10, 10, 20, 20});
@@ -205,7 +224,7 @@ TEST_CASE("Widget tree: removing a subtree clears focus, capture and hover held 
     s.Dispatch(down);
     CHECK(s.Capture() == leaf);
     CHECK(s.Hover() == leaf);
-    s.Root()->RemoveChild(panel); // not during dispatch: immediate
+    s.Root()->RemoveChild(panel);  // not during dispatch: immediate
     CHECK(s.Focus() == nullptr);
     CHECK(s.Capture() == nullptr);
     CHECK(s.Hover() == nullptr);
@@ -231,7 +250,8 @@ TEST_CASE("Widget tree: removing a subtree clears focus, capture and hover held 
     CHECK(s.Hover() == s.Root());
 }
 
-TEST_CASE("Widget tree: the effective enabled state and the state bits", "[ui][tree]") {
+TEST_CASE("Widget tree: the effective enabled state and the state bits", "[ui][tree]")
+{
     Surface s(100, 100, 1);
     Probe* a = Add(s.Root(), "a", {0, 0, 50, 50});
     Probe* b = Add(a, "b", {0, 0, 10, 10});
@@ -247,8 +267,8 @@ TEST_CASE("Widget tree: the effective enabled state and the state bits", "[ui][t
     CHECK((b->State() & kStateChecked) == 0);
 }
 
-
-TEST_CASE("A subtree theme override styles that subtree only, and removing it restyles", "[ui][theme]") {
+TEST_CASE("A subtree theme override styles that subtree only, and removing it restyles", "[ui][theme]")
+{
     Harness h(200, 100, 1, StringView(UI_TEST_FONT_FILE));
     REQUIRE(h.Valid());
     h.GetSurface().SetTheme(&DefaultLightTheme());
@@ -267,8 +287,8 @@ TEST_CASE("A subtree theme override styles that subtree only, and removing it re
     h.Render(&image);
     const u8* left = image.Pixel(50, 50);
     const u8* right = image.Pixel(150, 50);
-    CHECK(left[0] + left[1] + left[2] > right[0] + right[1] + right[2] + 100); // the light panel is much brighter
-    CHECK(h.GetSurface().Themes().ActiveOverrides() == 0);                    // every push was popped
+    CHECK(left[0] + left[1] + left[2] > right[0] + right[1] + right[2] + 100);  // the light panel is much brighter
+    CHECK(h.GetSurface().Themes().ActiveOverrides() == 0);                      // every push was popped
     dark->SetThemeOverride(nullptr);
     h.Advance(0);
     h.Render(&image);

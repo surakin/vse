@@ -1,5 +1,6 @@
-// The Direct3D 12 backend's resources (Phase 13 Day 165): the format table, buffers on every heap, texture uploads and readbacks through
-// 256-byte row pitches at odd sizes, block-compressed levels, typeless depth with typed views, and the resource accounting. Windows only.
+// The Direct3D 12 backend's resources (Phase 13 Day 165): the format table, buffers on every heap, texture uploads and
+// readbacks through 256-byte row pitches at odd sizes, block-compressed levels, typeless depth with typed views, and
+// the resource accounting. Windows only.
 #include "cstr/format.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -17,19 +18,23 @@ using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
 using namespace engine_placeholder::rhi::dx12;
 
-namespace {
+namespace
+{
 
 // Fails the test on any debug-layer warning or error while it lives.
-struct Silence {
+struct Silence
+{
     Silence() { ResetDebugMessageCounts(); }
-    ~Silence() {
+    ~Silence()
+    {
         const DebugMessageCounts c = GetDebugMessageCounts();
         CHECK(c.errors == 0);
         CHECK(c.warnings == 0);
     }
 };
 
-Dx12DevicePtr MakeResourceDevice(ValidationSetting validation = ValidationSetting::On) {
+Dx12DevicePtr MakeResourceDevice(ValidationSetting validation = ValidationSetting::On)
+{
     DeviceCreateInfo info;
     info.backend = Backend::Dx12;
     info.application_name = "dx12-resource-test";
@@ -38,25 +43,33 @@ Dx12DevicePtr MakeResourceDevice(ValidationSetting validation = ValidationSettin
 }
 
 // Deterministic bytes for a test pattern.
-void Fill(Vector<u8>& bytes, usize size, u32 seed) {
+void Fill(Vector<u8>& bytes, usize size, u32 seed)
+{
     bytes.Resize(size);
     u32 x = seed * 2654435761u + 1;
-    for (usize i = 0; i < size; ++i) {
+    for (usize i = 0; i < size; ++i)
+    {
         x = x * 1664525u + 1013904223u;
         bytes[i] = static_cast<u8>(x >> 24);
     }
 }
 
-bool Same(const Vector<u8>& a, const Vector<u8>& b) { return a.Size() == b.Size() && MemCompare(a.Data(), b.Data(), a.Size()) == 0; }
+bool Same(const Vector<u8>& a, const Vector<u8>& b)
+{
+    return a.Size() == b.Size() && MemCompare(a.Data(), b.Data(), a.Size()) == 0;
+}
 
-u32 Mip(u32 base, u32 mip) {
+u32 Mip(u32 base, u32 mip)
+{
     const u32 e = base >> mip;
     return e == 0 ? 1 : e;
 }
 
 // Uploads a pattern to every mip and layer of a texture and reads each back.
-void RoundTrip(Dx12Device& device, Format format, u32 width, u32 height, u32 mips, u32 layers, u32 depth = 1) {
-    INFO(FormatInfo(format).name << " " << width << "x" << height << " mips " << mips << " layers " << layers << " depth " << depth);
+void RoundTrip(Dx12Device& device, Format format, u32 width, u32 height, u32 mips, u32 layers, u32 depth = 1)
+{
+    INFO(FormatInfo(format).name << " " << width << "x" << height << " mips " << mips << " layers " << layers
+                                 << " depth " << depth);
     TextureDesc td;
     td.dimension = depth > 1 ? TextureDimension::Tex3D : TextureDimension::Tex2D;
     td.width = width;
@@ -66,21 +79,28 @@ void RoundTrip(Dx12Device& device, Format format, u32 width, u32 height, u32 mip
     td.array_layers = layers;
     td.format = format;
     td.usage = TextureUsage::Sampled | TextureUsage::CopyDst | TextureUsage::CopySrc;
-    if (FormatInfo(format).is_depth) td.usage = td.usage | TextureUsage::DepthAttachment;
+    if (FormatInfo(format).is_depth)
+    {
+        td.usage = td.usage | TextureUsage::DepthAttachment;
+    }
     td.debug_name = "round trip";
     const TextureHandle tex = device.CreateTexture(td);
     REQUIRE(tex.IsValid());
-    for (u32 layer = 0; layer < layers; ++layer) {
-        for (u32 mip = 0; mip < mips; ++mip) {
+    for (u32 layer = 0; layer < layers; ++layer)
+    {
+        for (u32 mip = 0; mip < mips; ++mip)
+        {
             const FormatProperties& fp = FormatInfo(format);
             const u32 w = Mip(width, mip), h = Mip(height, mip), d = depth > 1 ? Mip(depth, mip) : 1;
             const usize row = static_cast<usize>(FormatRowBytes(format, w));
             const usize rows = (h + fp.block_height - 1) / fp.block_height;
             Vector<u8> sent;
             Fill(sent, row * rows * d, mip * 31 + layer * 7 + 1);
-            if (format == Format::D32_Float) {
+            if (format == Format::D32_Float)
+            {
                 // Depth must be a float the copy keeps exactly: 0..1.
-                for (usize i = 0; i + 4 <= sent.Size(); i += 4) {
+                for (usize i = 0; i + 4 <= sent.Size(); i += 4)
+                {
                     const f32 v = static_cast<f32>(sent[i]) / 255.0f;
                     MemCopy(&sent[i], &v, 4);
                 }
@@ -96,10 +116,13 @@ void RoundTrip(Dx12Device& device, Format format, u32 width, u32 height, u32 mip
     device.DestroyTexture(tex);
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("Every RHI format has a DXGI format, sRGB pairs map to sRGB, and depth has typeless and typed forms", "[rhi][dx12]") {
-    for (usize i = 1; i < static_cast<usize>(Format::Count); ++i) {
+TEST_CASE("Every RHI format has a DXGI format, sRGB pairs map to sRGB, and depth has typeless and typed forms",
+          "[rhi][dx12]")
+{
+    for (usize i = 1; i < static_cast<usize>(Format::Count); ++i)
+    {
         const Format f = static_cast<Format>(i);
         INFO(FormatInfo(f).name);
         CHECK(ToDxgi(f) != DXGI_FORMAT_UNKNOWN);
@@ -108,7 +131,8 @@ TEST_CASE("Every RHI format has a DXGI format, sRGB pairs map to sRGB, and depth
     CHECK(ToDxgi(Format::BGRA8_SRGB) == DXGI_FORMAT_B8G8R8A8_UNORM_SRGB);
     CHECK(ToDxgi(Format::BC7_SRGB) == DXGI_FORMAT_BC7_UNORM_SRGB);
     CHECK(ToDxgiResource(Format::D32_Float, TextureUsage::DepthAttachment) == DXGI_FORMAT_D32_FLOAT);
-    CHECK(ToDxgiResource(Format::D32_Float, TextureUsage::DepthAttachment | TextureUsage::Sampled) == DXGI_FORMAT_R32_TYPELESS);
+    CHECK(ToDxgiResource(Format::D32_Float, TextureUsage::DepthAttachment | TextureUsage::Sampled) ==
+          DXGI_FORMAT_R32_TYPELESS);
     CHECK(ToDxgiResource(Format::D24_UNorm_S8_UInt, TextureUsage::Sampled) == DXGI_FORMAT_R24G8_TYPELESS);
     CHECK(ToDxgiShaderView(Format::D32_Float) == DXGI_FORMAT_R32_FLOAT);
     CHECK(ToDxgiShaderView(Format::D24_UNorm_S8_UInt) == DXGI_FORMAT_R24_UNORM_X8_TYPELESS);
@@ -120,7 +144,9 @@ TEST_CASE("Every RHI format has a DXGI format, sRGB pairs map to sRGB, and depth
     CHECK(ToD3D12State(ResourceState::ShaderWrite) == D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 }
 
-TEST_CASE("DX12 buffers on every heap round-trip their data, including uploads larger than a staging chunk", "[rhi][dx12][gpu]") {
+TEST_CASE("DX12 buffers on every heap round-trip their data, including uploads larger than a staging chunk",
+          "[rhi][dx12][gpu]")
+{
     Dx12DevicePtr device = MakeResourceDevice();
     REQUIRE(device);
     Silence silence;
@@ -160,10 +186,13 @@ TEST_CASE("DX12 buffers on every heap round-trip their data, including uploads l
         REQUIRE(up.IsValid());
         u8* mapped = static_cast<u8*>(device->MapBuffer(up));
         REQUIRE(mapped != nullptr);
-        for (u32 i = 0; i < 1000; ++i) mapped[i] = static_cast<u8>(i * 7);
+        for (u32 i = 0; i < 1000; ++i)
+        {
+            mapped[i] = static_cast<u8>(i * 7);
+        }
         device->UnmapBuffer(up);
         const u8 more[3] = {9, 8, 7};
-        CHECK(device->UploadBuffer(up, 997, more, 3).fence == 0); // nothing to wait for
+        CHECK(device->UploadBuffer(up, 997, more, 3).fence == 0);  // nothing to wait for
         u8 got[1000] = {};
         REQUIRE(device->ReadbackBuffer(up, 0, got, 1000));
         CHECK(got[10] == 70);
@@ -191,15 +220,19 @@ TEST_CASE("DX12 buffers on every heap round-trip their data, including uploads l
     device->WaitIdle();
 }
 
-TEST_CASE("DX12 textures round-trip every format at odd sizes, with mips, layers and volumes", "[rhi][dx12][gpu]") {
+TEST_CASE("DX12 textures round-trip every format at odd sizes, with mips, layers and volumes", "[rhi][dx12][gpu]")
+{
     Dx12DevicePtr device = MakeResourceDevice();
     REQUIRE(device);
     Silence silence;
-    const Format formats[] = {Format::R8_UNorm,     Format::RG8_UNorm,   Format::RGBA8_UNorm, Format::RGBA8_SRGB,  Format::BGRA8_UNorm,
-                              Format::BGRA8_SRGB,   Format::R16_Float,   Format::RG16_Float,  Format::RGBA16_Float, Format::R32_Float,
-                              Format::RG32_Float,   Format::RGBA32_Float, Format::R32_UInt};
-    for (Format f : formats) {
-        if (!device->FormatSupport(f, TextureUsage::Sampled | TextureUsage::CopyDst | TextureUsage::CopySrc)) {
+    const Format formats[] = {Format::R8_UNorm,     Format::RG8_UNorm,  Format::RGBA8_UNorm, Format::RGBA8_SRGB,
+                              Format::BGRA8_UNorm,  Format::BGRA8_SRGB, Format::R16_Float,   Format::RG16_Float,
+                              Format::RGBA16_Float, Format::R32_Float,  Format::RG32_Float,  Format::RGBA32_Float,
+                              Format::R32_UInt};
+    for (Format f : formats)
+    {
+        if (!device->FormatSupport(f, TextureUsage::Sampled | TextureUsage::CopyDst | TextureUsage::CopySrc))
+        {
             WARN("not sampleable here: " << FormatInfo(f).name);
             continue;
         }
@@ -207,21 +240,24 @@ TEST_CASE("DX12 textures round-trip every format at odd sizes, with mips, layers
         RoundTrip(*device, f, 3, 7, 1, 1);
         RoundTrip(*device, f, 257, 5, 1, 1);
     }
-    // An integer format counts as sampled (a shader loads it), as Vulkan's SAMPLED_IMAGE does; D3D12 reports it as loadable, not filterable.
+    // An integer format counts as sampled (a shader loads it), as Vulkan's SAMPLED_IMAGE does; D3D12 reports it as
+    // loadable, not filterable.
     CHECK(device->FormatSupport(Format::R32_UInt, TextureUsage::Sampled));
-    CHECK_FALSE(device->FormatSupport(Format::RGBA8_SRGB, TextureUsage::Storage)); // no unordered access to sRGB
-    RoundTrip(*device, Format::RGBA8_UNorm, 64, 33, 7, 1);  // every mip down to 1x1
-    RoundTrip(*device, Format::RGBA8_UNorm, 17, 9, 2, 3);   // an array
-    RoundTrip(*device, Format::RGBA8_UNorm, 9, 5, 2, 1, 6); // a volume
-    RoundTrip(*device, Format::D32_Float, 37, 11, 1, 1);    // depth, copied whole
-    if (device->FormatSupport(Format::BC1_UNorm, TextureUsage::Sampled | TextureUsage::CopyDst | TextureUsage::CopySrc)) {
-        RoundTrip(*device, Format::BC1_UNorm, 16, 8, 5, 1); // down to 1x1, which is one 4x4 block
+    CHECK_FALSE(device->FormatSupport(Format::RGBA8_SRGB, TextureUsage::Storage));  // no unordered access to sRGB
+    RoundTrip(*device, Format::RGBA8_UNorm, 64, 33, 7, 1);                          // every mip down to 1x1
+    RoundTrip(*device, Format::RGBA8_UNorm, 17, 9, 2, 3);                           // an array
+    RoundTrip(*device, Format::RGBA8_UNorm, 9, 5, 2, 1, 6);                         // a volume
+    RoundTrip(*device, Format::D32_Float, 37, 11, 1, 1);                            // depth, copied whole
+    if (device->FormatSupport(Format::BC1_UNorm, TextureUsage::Sampled | TextureUsage::CopyDst | TextureUsage::CopySrc))
+    {
+        RoundTrip(*device, Format::BC1_UNorm, 16, 8, 5, 1);  // down to 1x1, which is one 4x4 block
         RoundTrip(*device, Format::BC7_UNorm, 12, 12, 4, 1);
     }
     device->WaitIdle();
 }
 
-TEST_CASE("A sampled DX12 depth texture is typeless with a typed depth view and a shader view", "[rhi][dx12][gpu]") {
+TEST_CASE("A sampled DX12 depth texture is typeless with a typed depth view and a shader view", "[rhi][dx12][gpu]")
+{
     Dx12DevicePtr device = MakeResourceDevice();
     REQUIRE(device);
     Silence silence;
@@ -238,7 +274,7 @@ TEST_CASE("A sampled DX12 depth texture is typeless with a typed depth view and 
     CHECK(info.dsv.ptr != 0);
     CHECK(info.srv.ptr != 0);
     CHECK(info.rtv.ptr == 0);
-    td.usage = TextureUsage::DepthAttachment; // not sampled: typed, no shader view
+    td.usage = TextureUsage::DepthAttachment;  // not sampled: typed, no shader view
     const TextureHandle plain = device->CreateTexture(td);
     REQUIRE(plain.IsValid());
     REQUIRE(device->LookupTexture(plain, &info));
@@ -260,7 +296,9 @@ TEST_CASE("A sampled DX12 depth texture is typeless with a typed depth view and 
     device->WaitIdle();
 }
 
-TEST_CASE("DX12 counts its buffers, textures and memory, and destroyed resources leave after their frame", "[rhi][dx12][gpu]") {
+TEST_CASE("DX12 counts its buffers, textures and memory, and destroyed resources leave after their frame",
+          "[rhi][dx12][gpu]")
+{
     Dx12DevicePtr device = MakeResourceDevice();
     REQUIRE(device);
     Silence silence;
@@ -268,7 +306,7 @@ TEST_CASE("DX12 counts its buffers, textures and memory, and destroyed resources
     const ResourceCounts before = device->Resources();
     CHECK(before.buffers == 0);
     CHECK(before.textures == 0);
-    CHECK(before.internal_objects >= 1); // the staging ring
+    CHECK(before.internal_objects >= 1);  // the staging ring
     BufferDesc bd;
     bd.size = 4096;
     bd.usage = BufferUsage::Vertex | BufferUsage::CopyDst;
@@ -289,25 +327,36 @@ TEST_CASE("DX12 counts its buffers, textures and memory, and destroyed resources
     CHECK(during.device_memory_bytes >= before.device_memory_bytes + 4096 + 128 * 128 * 4);
     device->DestroyBuffer(b);
     device->DestroyTexture(t);
-    CHECK(device->Resources().buffers == 0); // the handle is gone at once...
+    CHECK(device->Resources().buffers == 0);  // the handle is gone at once...
     device->EndFrame();
-    device->Quiesce(); // ...and the memory once the frame has finished
+    device->Quiesce();  // ...and the memory once the frame has finished
     const ResourceCounts after = device->Resources();
     CHECK(after.internal_objects == before.internal_objects);
     CHECK(after.device_memory_bytes == before.device_memory_bytes);
 }
 
-TEST_CASE("Creating 1000 small buffers as committed resources: DX12 against Vulkan on this machine (measured, not asserted)", "[rhi][dx12][gpu][bench]") {
-    auto measure = [](Device& device) {
+TEST_CASE(
+    "Creating 1000 small buffers as committed resources: DX12 against Vulkan on this machine (measured, not asserted)",
+    "[rhi][dx12][gpu][bench]")
+{
+    auto measure = [](Device& device)
+    {
         BufferDesc bd;
         bd.size = 256;
         bd.usage = BufferUsage::Uniform | BufferUsage::CopyDst;
         Vector<BufferHandle> handles;
         const u64 start = os::MonotonicTimeNanos();
-        for (int i = 0; i < 1000; ++i) handles.Push(device.CreateBuffer(bd));
+        for (int i = 0; i < 1000; ++i)
+        {
+            handles.Push(device.CreateBuffer(bd));
+        }
         const u64 ns = os::MonotonicTimeNanos() - start;
-        for (usize i = 0; i < handles.Size(); ++i) {
-            if (handles[i].IsValid()) device.DestroyBuffer(handles[i]);
+        for (usize i = 0; i < handles.Size(); ++i)
+        {
+            if (handles[i].IsValid())
+            {
+                device.DestroyBuffer(handles[i]);
+            }
         }
         device.WaitIdle();
         return static_cast<f64>(ns) / 1.0e6;
@@ -322,10 +371,15 @@ TEST_CASE("Creating 1000 small buffers as committed resources: DX12 against Vulk
     vk.pipeline_cache = false;
     DevicePtr vulkan = CreateDevice(vk);
     char line[160];
-    if (vulkan) {
-        FormatTo(line, sizeof(line), "1000 x 256-byte buffers: DX12 %.2f ms (committed), Vulkan %.2f ms", dx12_ms, measure(*vulkan));
-    } else {
-        FormatTo(line, sizeof(line), "1000 x 256-byte buffers: DX12 %.2f ms (committed); no Vulkan device to compare", dx12_ms);
+    if (vulkan)
+    {
+        FormatTo(line, sizeof(line), "1000 x 256-byte buffers: DX12 %.2f ms (committed), Vulkan %.2f ms", dx12_ms,
+                 measure(*vulkan));
+    }
+    else
+    {
+        FormatTo(line, sizeof(line), "1000 x 256-byte buffers: DX12 %.2f ms (committed); no Vulkan device to compare",
+                 dx12_ms);
     }
     WARN(line);
 }

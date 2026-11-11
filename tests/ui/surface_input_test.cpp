@@ -12,9 +12,11 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::ui;
 
-namespace {
+namespace
+{
 
-SurfaceQuad SiQuad(f32 cx, f32 cy, f32 cz, f32 w, f32 h) {
+SurfaceQuad SiQuad(f32 cx, f32 cy, f32 cz, f32 w, f32 h)
+{
     // A quad in the plane z = cz facing +z: u to the right (+x), v down (-y); (cx, cy) is its top-left corner.
     SurfaceQuad q;
     q.corner[0] = cx;
@@ -29,7 +31,8 @@ SurfaceQuad SiQuad(f32 cx, f32 cy, f32 cz, f32 w, f32 h) {
     return q;
 }
 
-Ray3 SiRay(f32 ox, f32 oy, f32 oz, f32 dx, f32 dy, f32 dz) {
+Ray3 SiRay(f32 ox, f32 oy, f32 oz, f32 dx, f32 dy, f32 dz)
+{
     Ray3 r;
     r.origin[0] = ox;
     r.origin[1] = oy;
@@ -40,13 +43,19 @@ Ray3 SiRay(f32 ox, f32 oy, f32 oz, f32 dx, f32 dy, f32 dz) {
     return r;
 }
 
-struct SiClicks {
+struct SiClicks
+{
     int count = 0;
 };
-void SiCount(void* user, Button*) { ++static_cast<SiClicks*>(user)->count; }
+void SiCount(void* user, Button*)
+{
+    ++static_cast<SiClicks*>(user)->count;
+}
 
-struct SiRig {
-    SiRig(f32 scale = 1.0f) : h(200, 100, scale, StringView(UI_TEST_FONT_FILE)), input(&h.GetSurface()) {
+struct SiRig
+{
+    SiRig(f32 scale = 1.0f) : h(200, 100, scale, StringView(UI_TEST_FONT_FILE)), input(&h.GetSurface())
+    {
         UniquePtr<Button> b = MakeUnique<Button>(StringView("go"), StringView("Go"));
         button = b.Get();
         button->SetBounds(Rect{20, 20, 80, 30});
@@ -60,32 +69,34 @@ struct SiRig {
     SiClicks clicks;
 };
 
-} // namespace
+}  // namespace
 
-TEST_CASE("RayToSurfacePoint gives the point of the quad a ray crosses", "[ui][surface-input]") {
-    const SurfaceQuad quad = SiQuad(-1, 1, 0, 2, 2); // 2 x 2, centred on the origin, facing +z
+TEST_CASE("RayToSurfacePoint gives the point of the quad a ray crosses", "[ui][surface-input]")
+{
+    const SurfaceQuad quad = SiQuad(-1, 1, 0, 2, 2);  // 2 x 2, centred on the origin, facing +z
     SurfaceHit hit = RayToSurfacePoint(SiRay(0, 0, 5, 0, 0, -1), quad);
     REQUIRE(hit.hit);
     CHECK(Abs(hit.u - 0.5f) < 1e-5f);
     CHECK(Abs(hit.v - 0.5f) < 1e-5f);
     CHECK(Abs(hit.t - 5.0f) < 1e-5f);
-    hit = RayToSurfacePoint(SiRay(-0.5f, 0.5f, 3, 0, 0, -2), quad); // the direction need not be a unit vector
+    hit = RayToSurfacePoint(SiRay(-0.5f, 0.5f, 3, 0, 0, -2), quad);  // the direction need not be a unit vector
     REQUIRE(hit.hit);
     CHECK(Abs(hit.u - 0.25f) < 1e-5f);
     CHECK(Abs(hit.v - 0.25f) < 1e-5f);
     CHECK(Abs(hit.t - 1.5f) < 1e-5f);
-    hit = RayToSurfacePoint(SiRay(1, -1, 5, 0, 0, -1), quad); // the bottom-right corner
+    hit = RayToSurfacePoint(SiRay(1, -1, 5, 0, 0, -1), quad);  // the bottom-right corner
     REQUIRE(hit.hit);
     CHECK(Abs(hit.u - 1.0f) < 1e-5f);
     CHECK(Abs(hit.v - 1.0f) < 1e-5f);
 }
 
-TEST_CASE("RayToSurfacePoint at an angle, with a skewed quad, and the misses", "[ui][surface-input]") {
+TEST_CASE("RayToSurfacePoint at an angle, with a skewed quad, and the misses", "[ui][surface-input]")
+{
     const SurfaceQuad quad = SiQuad(-1, 1, 0, 2, 2);
     // A ray from the side that crosses the quad's centre.
     SurfaceHit hit = RayToSurfacePoint(SiRay(4, 0, 4, -1, 0, -1), quad);
     REQUIRE(hit.hit);
-    CHECK(Abs(hit.u - 0.5f) < 1e-4f); // the line reaches z = 0 at x = 0: the centre
+    CHECK(Abs(hit.u - 0.5f) < 1e-4f);  // the line reaches z = 0 at x = 0: the centre
     CHECK(Abs(hit.v - 0.5f) < 1e-4f);
     CHECK(Abs(hit.t - 4.0f) < 1e-4f);
     // Misses: outside the edges, behind the ray, parallel, a zero direction.
@@ -96,7 +107,8 @@ TEST_CASE("RayToSurfacePoint at an angle, with a skewed quad, and the misses", "
     // A parallelogram: the top edge is sheared to the right as it goes down.
     SurfaceQuad skew = quad;
     skew.edge_v[0] = 1.0f;
-    hit = RayToSurfacePoint(SiRay(0.5f, 0, 5, 0, 0, -1), skew); // the point at u = 0.5, v = 0.5: x = -1 + 1 + 0.5 = 0.5, y = 0
+    hit = RayToSurfacePoint(SiRay(0.5f, 0, 5, 0, 0, -1),
+                            skew);  // the point at u = 0.5, v = 0.5: x = -1 + 1 + 0.5 = 0.5, y = 0
     REQUIRE(hit.hit);
     CHECK(Abs(hit.u - 0.5f) < 1e-4f);
     CHECK(Abs(hit.v - 0.5f) < 1e-4f);
@@ -107,20 +119,22 @@ TEST_CASE("RayToSurfacePoint at an angle, with a skewed quad, and the misses", "
     CHECK_FALSE(RayToSurfacePoint(SiRay(0, 0, 5, 0, 0, -1), flat).hit);
 }
 
-TEST_CASE("RayToSurfacePoint reports a ray from behind as a back face, not a hit", "[ui][surface-input]") {
+TEST_CASE("RayToSurfacePoint reports a ray from behind as a back face, not a hit", "[ui][surface-input]")
+{
     const SurfaceQuad quad = SiQuad(-1, 1, 0, 2, 2);
     const SurfaceHit back = RayToSurfacePoint(SiRay(0, 0, -5, 0, 0, 1), quad);
     CHECK_FALSE(back.hit);
     CHECK(back.back_face);
     CHECK(Abs(back.t - 5.0f) < 1e-5f);
-    const SurfaceHit away = RayToSurfacePoint(SiRay(0, 0, -5, 0, 0, -1), quad); // behind and pointing away
+    const SurfaceHit away = RayToSurfacePoint(SiRay(0, 0, -5, 0, 0, -1), quad);  // behind and pointing away
     CHECK_FALSE(away.hit);
     CHECK_FALSE(away.back_face);
     const SurfaceHit outside = RayToSurfacePoint(SiRay(3, 0, -5, 0, 0, 1), quad);
     CHECK_FALSE(outside.back_face);
 }
 
-TEST_CASE("a surface without input ignores everything, an interactive one reacts", "[ui][surface-input]") {
+TEST_CASE("a surface without input ignores everything, an interactive one reacts", "[ui][surface-input]")
+{
     SiRig rig;
     CHECK_FALSE(rig.input.Interactive());
     rig.input.PointerMove(30, 30);
@@ -141,22 +155,24 @@ TEST_CASE("a surface without input ignores everything, an interactive one reacts
     CHECK(rig.clicks.count == 1);
 }
 
-TEST_CASE("pointer positions are in surface pixels or as a fraction of the surface", "[ui][surface-input]") {
-    SiRig rig(2.0f); // 200 x 100 logical, 400 x 200 pixels
+TEST_CASE("pointer positions are in surface pixels or as a fraction of the surface", "[ui][surface-input]")
+{
+    SiRig rig(2.0f);  // 200 x 100 logical, 400 x 200 pixels
     rig.input.SetInteractive(true);
-    rig.input.PointerMove(60, 60); // pixels: logical (30, 30), on the button
+    rig.input.PointerMove(60, 60);  // pixels: logical (30, 30), on the button
     rig.h.Advance(0.016f);
     CHECK(rig.h.GetSurface().Hover() == rig.button);
     rig.input.PointerMove(300, 150);
     rig.h.Advance(0.016f);
     CHECK(rig.h.GetSurface().Hover() != rig.button);
-    rig.input.PointerButtonUv(0.15f, 0.35f, os::kMouseLeft, true); // logical (30, 35)
+    rig.input.PointerButtonUv(0.15f, 0.35f, os::kMouseLeft, true);  // logical (30, 35)
     rig.input.PointerButtonUv(0.15f, 0.35f, os::kMouseLeft, false);
     rig.h.Advance(0.016f);
     CHECK(rig.clicks.count == 1);
 }
 
-TEST_CASE("losing the pointer releases the buttons held and clears the hover", "[ui][surface-input]") {
+TEST_CASE("losing the pointer releases the buttons held and clears the hover", "[ui][surface-input]")
+{
     SiRig rig;
     rig.input.SetInteractive(true);
     rig.input.PointerButton(30, 30, os::kMouseLeft, true);
@@ -177,7 +193,8 @@ TEST_CASE("losing the pointer releases the buttons held and clears the hover", "
     CHECK(rig.h.GetSurface().Capture() == nullptr);
 }
 
-TEST_CASE("keys and text reach the focus owner of a surface", "[ui][surface-input]") {
+TEST_CASE("keys and text reach the focus owner of a surface", "[ui][surface-input]")
+{
     SiRig rig;
     UniquePtr<TextField> f = MakeUnique<TextField>(StringView("field"));
     TextField* field = f.Get();
@@ -197,7 +214,8 @@ TEST_CASE("keys and text reach the focus owner of a surface", "[ui][surface-inpu
     CHECK(field->Text() == StringView("h"));
 }
 
-TEST_CASE("text with a stray continuation byte loses that byte only", "[ui][surface-input]") {
+TEST_CASE("text with a stray continuation byte loses that byte only", "[ui][surface-input]")
+{
     SiRig rig;
     UniquePtr<TextField> f = MakeUnique<TextField>(StringView("field"));
     TextField* field = f.Get();
@@ -208,13 +226,19 @@ TEST_CASE("text with a stray continuation byte loses that byte only", "[ui][surf
     rig.input.Focus(true);
     rig.input.PointerButton(30, 70, os::kMouseLeft, true);
     rig.input.PointerButton(30, 70, os::kMouseLeft, false);
-    // 0x80 alone, then "abc", then a lead byte with a missing continuation, then "d": the four ASCII characters used to be swallowed by a 4-byte guess.
-    rig.input.Text(StringView("\x80" "abc" "\xE2\x82" "d", 7));
+    // 0x80 alone, then "abc", then a lead byte with a missing continuation, then "d": the four ASCII characters used to
+    // be swallowed by a 4-byte guess.
+    rig.input.Text(StringView("\x80"
+                              "abc"
+                              "\xE2\x82"
+                              "d",
+                              7));
     rig.h.Advance(0.016f);
     CHECK(field->Text() == StringView("abcd"));
 }
 
-TEST_CASE("two surfaces keep their own theme, scale and state", "[ui][surface-input]") {
+TEST_CASE("two surfaces keep their own theme, scale and state", "[ui][surface-input]")
+{
     SiRig light(1.0f);
     SiRig dark(2.0f);
     dark.h.GetSurface().SetTheme(&DefaultDarkTheme());
@@ -236,15 +260,17 @@ TEST_CASE("two surfaces keep their own theme, scale and state", "[ui][surface-in
     CHECK(dark.h.GetSurface().Scale() == 2.0f);
 }
 
-TEST_CASE("an on-demand surface runs no frame while idle and one when something happens", "[ui][surface-input][policy]") {
+TEST_CASE("an on-demand surface runs no frame while idle and one when something happens", "[ui][surface-input][policy]")
+{
     SiRig rig;
     SurfaceUpdater updater(&rig.h.GetSurface());
     updater.SetPolicy(UpdatePolicy::OnDemand);
     DrawList list;
     UpdateResult first = updater.Frame(0.016f, &list, &rig.h.Atlas());
-    CHECK(first.ran); // the first frame builds the picture
+    CHECK(first.ran);  // the first frame builds the picture
     CHECK(first.rebuilt);
-    for (int i = 0; i < 100; ++i) {
+    for (int i = 0; i < 100; ++i)
+    {
         const UpdateResult r = updater.Frame(0.016f, &list, &rig.h.Atlas());
         CHECK_FALSE(r.ran);
     }
@@ -257,13 +283,14 @@ TEST_CASE("an on-demand surface runs no frame while idle and one when something 
     rig.input.PointerButton(30, 30, os::kMouseLeft, true);
     const UpdateResult pressed = updater.Frame(0.016f, &list, &rig.h.Atlas());
     CHECK(pressed.ran);
-    CHECK(pressed.rebuilt); // the pressed look changed the picture
+    CHECK(pressed.rebuilt);  // the pressed look changed the picture
     // Idle again.
     updater.Frame(0.016f, &list, &rig.h.Atlas());
     CHECK_FALSE(updater.Frame(0.016f, &list, &rig.h.Atlas()).ran);
 }
 
-TEST_CASE("an on-demand surface keeps running while a caret blinks or a tooltip waits", "[ui][surface-input][policy]") {
+TEST_CASE("an on-demand surface keeps running while a caret blinks or a tooltip waits", "[ui][surface-input][policy]")
+{
     SiRig rig;
     UniquePtr<TextField> f = MakeUnique<TextField>(StringView("field"));
     TextField* field = f.Get();
@@ -276,47 +303,64 @@ TEST_CASE("an on-demand surface keeps running while a caret blinks or a tooltip 
     rig.input.PointerButton(30, 70, os::kMouseLeft, true);
     rig.input.PointerButton(30, 70, os::kMouseLeft, false);
     rig.h.Advance(0.016f);
-    CHECK(rig.h.GetSurface().NeedsFrame()); // the focused field blinks its caret
+    CHECK(rig.h.GetSurface().NeedsFrame());  // the focused field blinks its caret
     rig.button->SetTooltip(StringView("tip"));
     rig.h.Advance(0.016f);
     rig.input.PointerMove(30, 30);
     rig.h.Advance(0.016f);
     CHECK(rig.h.GetSurface().NeedsFrame());
-    // Once the tooltip has shown there is nothing left to wait for (the focused field still blinks, so take the focus away first).
+    // Once the tooltip has shown there is nothing left to wait for (the focused field still blinks, so take the focus
+    // away first).
     rig.h.GetSurface().SetFocus(nullptr);
-    for (int i = 0; i < 40 && !rig.h.GetSurface().TooltipShown(); ++i) rig.h.Advance(0.1f);
+    for (int i = 0; i < 40 && !rig.h.GetSurface().TooltipShown(); ++i)
+    {
+        rig.h.Advance(0.1f);
+    }
     REQUIRE(rig.h.GetSurface().TooltipShown());
     rig.h.Advance(0.1f);
     rig.h.Advance(0.1f);
     CHECK_FALSE(rig.h.GetSurface().NeedsFrame());
 }
 
-TEST_CASE("a fixed-rate surface runs at its rate whatever the caller's frame rate", "[ui][surface-input][policy]") {
+TEST_CASE("a fixed-rate surface runs at its rate whatever the caller's frame rate", "[ui][surface-input][policy]")
+{
     SiRig rig;
     SurfaceUpdater updater(&rig.h.GetSurface());
-    updater.SetPolicy(UpdatePolicy::FixedRate, 10.0f); // every 0.1 s
+    updater.SetPolicy(UpdatePolicy::FixedRate, 10.0f);  // every 0.1 s
     DrawList list;
     u32 runs = 0;
-    for (int i = 0; i < 100; ++i) { // one second at 100 calls a second (a fake clock)
-        if (updater.Frame(0.01f, &list, &rig.h.Atlas()).ran) ++runs;
+    for (int i = 0; i < 100; ++i)
+    {  // one second at 100 calls a second (a fake clock)
+        if (updater.Frame(0.01f, &list, &rig.h.Atlas()).ran)
+        {
+            ++runs;
+        }
     }
     CHECK(runs >= 9);
     CHECK(runs <= 10);
     runs = 0;
-    for (int i = 0; i < 20; ++i) { // slower than the rate: every call runs
-        if (updater.Frame(0.25f, &list, &rig.h.Atlas()).ran) ++runs;
+    for (int i = 0; i < 20; ++i)
+    {  // slower than the rate: every call runs
+        if (updater.Frame(0.25f, &list, &rig.h.Atlas()).ran)
+        {
+            ++runs;
+        }
     }
     CHECK(runs == 20);
 }
 
-TEST_CASE("skipped time is handed to the next frame that runs", "[ui][surface-input][policy]") {
+TEST_CASE("skipped time is handed to the next frame that runs", "[ui][surface-input][policy]")
+{
     SiRig rig;
     SurfaceUpdater updater(&rig.h.GetSurface());
     updater.SetPolicy(UpdatePolicy::OnDemand);
     DrawList list;
     updater.Frame(0.0f, &list, &rig.h.Atlas());
     const f64 before = rig.h.GetSurface().Time();
-    for (int i = 0; i < 10; ++i) updater.Frame(0.5f, &list, &rig.h.Atlas());
+    for (int i = 0; i < 10; ++i)
+    {
+        updater.Frame(0.5f, &list, &rig.h.Atlas());
+    }
     CHECK(rig.h.GetSurface().Time() == before);
     rig.input.SetInteractive(true);
     rig.input.PointerMove(30, 30);

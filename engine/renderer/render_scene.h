@@ -1,6 +1,8 @@
 #pragma once
 
-//! The scene a frame is built from: a fixed-capacity list of objects and lights with stable ids. The renderer draws from this list; programs that use the ECS fill it with `scene::MakeRenderSyncSystem` (module `engine/scene`), which mirrors entities into it and touches it only for what changed. The renderer's own tests build it directly.
+//! The scene a frame is built from: a fixed-capacity list of objects and lights with stable ids. The renderer draws
+//! from this list; programs that use the ECS fill it with `scene::MakeRenderSyncSystem` (module `engine/scene`), which
+//! mirrors entities into it and touches it only for what changed. The renderer's own tests build it directly.
 
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
@@ -11,13 +13,15 @@
 #include "renderer/mesh.h"
 #include "types.h"
 
-namespace engine_placeholder::renderer {
+namespace engine_placeholder::renderer
+{
 
-/// A generation-checked reference to an object in a [[renderer::RenderScene]], like an RHI handle: the all-zero value is
-/// invalid, and an id whose object was removed no longer matches even if its slot is reused.
+/// A generation-checked reference to an object in a [[renderer::RenderScene]], like an RHI handle: the all-zero value
+/// is invalid, and an id whose object was removed no longer matches even if its slot is reused.
 ///
 /// - Thread-safety: thread-safe plain value.
-struct ObjectId {
+struct ObjectId
+{
     /// The slot in the scene.
     u32 index = 0;
     /// The slot's generation when the id was made; 0 means invalid.
@@ -35,7 +39,8 @@ struct ObjectId {
 /// A generation-checked reference to a light in a [[renderer::RenderScene]]; see [[renderer::ObjectId]].
 ///
 /// - Thread-safety: thread-safe plain value.
-struct LightId {
+struct LightId
+{
     /// The slot in the scene.
     u32 index = 0;
     /// The slot's generation when the id was made; 0 means invalid.
@@ -51,16 +56,18 @@ struct LightId {
 };
 
 /// Bits for [[renderer::RenderObject::flags]].
-namespace ObjectFlags {
+namespace ObjectFlags
+{
 /// The object is skipped by culling and never drawn.
 inline constexpr u32 kHidden = 1u << 0;
-} // namespace ObjectFlags
+}  // namespace ObjectFlags
 
 /// What to give [[renderer::RenderScene::AddObject]].
 ///
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: `mesh` is borrowed and must outlive the object.
-struct RenderObjectDesc {
+struct RenderObjectDesc
+{
     /// The geometry; must not be null.
     const GpuMesh* mesh = nullptr;
     /// The material, an id assigned by the material system (0 is "none" until it exists).
@@ -75,7 +82,8 @@ struct RenderObjectDesc {
 ///
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: `mesh` is borrowed.
-struct RenderObject {
+struct RenderObject
+{
     /// The geometry.
     const GpuMesh* mesh = nullptr;
     /// The material id.
@@ -89,17 +97,19 @@ struct RenderObject {
 };
 
 /// The kind of a light.
-enum class LightType : u8 {
-    Directional = 0, ///< Infinitely far away; only `direction` matters.
-    Point,           ///< A point with a radius of influence.
-    Ambient,         ///< A uniform light from every direction; only `color` and `intensity` matter.
+enum class LightType : u8
+{
+    Directional = 0,  ///< Infinitely far away; only `direction` matters.
+    Point,            ///< A point with a radius of influence.
+    Ambient,          ///< A uniform light from every direction; only `color` and `intensity` matter.
 };
 
-/// A light. Directional and ambient lights are lit by the fullscreen part of the deferred lighting pass, point lights by
-/// light volumes (see [[renderer::LightingPass]]).
+/// A light. Directional and ambient lights are lit by the fullscreen part of the deferred lighting pass, point lights
+/// by light volumes (see [[renderer::LightingPass]]).
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct Light {
+struct Light
+{
     /// Directional, point or ambient.
     LightType type = LightType::Directional;
     /// Linear RGB color; `intensity` scales it. For an ambient light this is the whole light.
@@ -110,20 +120,23 @@ struct Light {
     Vec3 direction = Vec3(0, 1, 0);
     /// For a point light, the world position.
     Vec3 position = Vec3(0, 0, 0);
-    /// For a point light, the distance at which its contribution reaches exactly zero (see [[renderer::PointLightAttenuation]]); greater than zero.
+    /// For a point light, the distance at which its contribution reaches exactly zero (see
+    /// [[renderer::PointLightAttenuation]]); greater than zero.
     f32 radius = 1.0f;
 };
 
 /// The most lights a scene or a [[renderer::FrameResources]] can hold: 16384.
 ///
-/// A light is 48 bytes in the light buffer, so that is 768 KiB per frame slot. Asking for more aborts; a frame with more visible lights than the buffer holds reports
-/// the excess in [[renderer::LightSummary::dropped]] and logs an error.
+/// A light is 48 bytes in the light buffer, so that is 768 KiB per frame slot. Asking for more aborts; a frame with
+/// more visible lights than the buffer holds reports the excess in [[renderer::LightSummary::dropped]] and logs an
+/// error.
 inline constexpr u32 kMaxLights = 16384;
 
 /// How many objects and lights a scene can hold.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct RenderSceneDesc {
+struct RenderSceneDesc
+{
     /// Capacity for objects, at least 1.
     u32 max_objects = 1024;
     /// Capacity for lights, from 1 to [[renderer::kMaxLights]].
@@ -138,7 +151,8 @@ struct RenderSceneDesc {
 ///
 /// - Thread-safety: thread-compatible; reading from several threads at once is fine while nobody writes.
 /// - Ownership: owns its storage; the meshes the objects point at are borrowed and must outlive them.
-class RenderScene {
+class RenderScene
+{
 public:
     /// Allocates the storage.
     ///
@@ -205,7 +219,8 @@ public:
     /// - Param light: the light; a point light needs a positive radius.
     /// - Returns: its id, or the invalid id if the scene is full.
     /// - Fails: reported through the return value.
-    /// - Aborts: a point light has a radius that is not positive, or an intensity below zero, or any value of the light is not finite.
+    /// - Aborts: a point light has a radius that is not positive, or an intensity below zero, or any value of the light
+    /// is not finite.
     LightId AddLight(const Light& light);
 
     /// Removes a light; its id becomes stale.
@@ -251,9 +266,11 @@ public:
     u32 Cull(const Frustum& frustum, u32* out_slots, u32 capacity) const;
 
     /// How [[renderer::RenderScene::Cull]] finds the visible objects.
-    enum class CullMode : u8 {
-        Bvh = 0, ///< Through a bounding-volume hierarchy of the objects' boxes (the default): cost follows what is visible.
-        Flat,    ///< A scan of every slot: the reference, kept to compare the two paths.
+    enum class CullMode : u8
+    {
+        Bvh = 0,  ///< Through a bounding-volume hierarchy of the objects' boxes (the default): cost follows what is
+                  ///< visible.
+        Flat,     ///< A scan of every slot: the reference, kept to compare the two paths.
     };
     /// Chooses how `Cull` works. Both give the same slots in the same (increasing) order.
     /// - Fails: never.
@@ -267,13 +284,15 @@ public:
     void OptimizeCulling(u32 budget);
 
 private:
-    struct ObjectSlot {
+    struct ObjectSlot
+    {
         RenderObject object;
         u32 generation = 1;
         u32 next_free = 0;
         bool alive = false;
     };
-    struct LightSlot {
+    struct LightSlot
+    {
         Light light;
         u32 generation = 1;
         u32 next_free = 0;
@@ -298,7 +317,8 @@ private:
     u32 free_light_ = kNoSlot;
     CullMode cull_mode_ = CullMode::Bvh;
     UniquePtr<CullIndex> cull_index_;
-    u32 unindexed_ = 0; // live objects whose box could not go in the hierarchy (not finite): Cull looks at them one by one
+    u32 unindexed_ = 0;  // live objects whose box could not go in the hierarchy (not finite): Cull looks at them one by
+                         // one
 };
 
-} // namespace engine_placeholder::renderer
+}  // namespace engine_placeholder::renderer

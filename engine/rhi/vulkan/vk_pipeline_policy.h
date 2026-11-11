@@ -6,7 +6,8 @@
 //! Pure conversions from RHI pipeline state to Vulkan enums, and the rules for the on-disk pipeline cache, as plain
 //! functions so they can be tested without a GPU.
 
-namespace engine_placeholder::rhi::vulkan {
+namespace engine_placeholder::rhi::vulkan
+{
 
 /// Converts a primitive topology.
 /// - Param topology: the RHI topology.
@@ -61,7 +62,8 @@ VkDescriptorType ToVkDescriptorType(BindingType type);
 /// The identity of the device a pipeline cache blob belongs to.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct PipelineCacheIdentity {
+struct PipelineCacheIdentity
+{
     /// PCI vendor id.
     u32 vendor_id = 0;
     /// PCI device id.
@@ -98,5 +100,4 @@ const char* CheckPipelineCacheHeader(const void* data, usize size, const Pipelin
 /// - Thread-safety: thread-safe. A pure function.
 bool BuildPipelineCachePath(const char* dir, const PipelineCacheIdentity& identity, char* out, usize capacity);
 
-
-} // namespace engine_placeholder::rhi::vulkan
+}  // namespace engine_placeholder::rhi::vulkan

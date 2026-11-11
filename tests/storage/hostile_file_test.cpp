@@ -1,5 +1,6 @@
-// Hostile database files (Phase 19 Day 265): a deterministic corruption fuzz over a saved SQLite file through the open and load path. Every case ends in a
-// Status (the open, the store open or the load fails, or the load succeeds with a world that has valid components); none crashes or hangs.
+// Hostile database files (Phase 19 Day 265): a deterministic corruption fuzz over a saved SQLite file through the open
+// and load path. Every case ends in a Status (the open, the store open or the load fails, or the load succeeds with a
+// world that has valid components); none crashes or hangs.
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -14,33 +15,42 @@
 #include "storage/world_storage.h"
 #include "temp_dir.h"
 
-namespace engine_placeholder::storage {
-namespace {
+namespace engine_placeholder::storage
+{
+namespace
+{
 
-struct HoActor {
+struct HoActor
+{
     i32 hp = 0;
     String<HeapAllocator> name{HeapAllocator::Default()};
     Vec3 pos;
 };
 
-Status RegisterHostile(ComponentRegistry* r) {
+Status RegisterHostile(ComponentRegistry* r)
+{
     ENGINE_TRY(RegisterBuiltinComponents(r));
-    return r->Register<HoActor>({.id = 6000,
-                                 .name = "ho_actor",
-                                 .flags = kComponentStored | kComponentQueryable,
-                                 .fields = {Field<&HoActor::hp>("hp"), Field<&HoActor::name>("name"), Field<&HoActor::pos>("pos")}});
+    return r->Register<HoActor>(
+        {.id = 6000,
+         .name = "ho_actor",
+         .flags = kComponentStored | kComponentQueryable,
+         .fields = {Field<&HoActor::hp>("hp"), Field<&HoActor::name>("name"), Field<&HoActor::pos>("pos")}});
 }
 
-struct HoRng {
+struct HoRng
+{
     u64 s;
-    u32 Next() {
+    u32 Next()
+    {
         s = s * 6364136223846793005ull + 1442695040888963407ull;
         return static_cast<u32>(s >> 33);
     }
 };
 
 // Opens `path`, the store and loads; returns how far it got (0 open failed, 1 store failed, 2 load failed, 3 loaded).
-int TryLoad(const ComponentRegistry& registry, const io::Path& path, database::IntegrityCheck check, const CodecLimits& limits, usize* loaded) {
+int TryLoad(const ComponentRegistry& registry, const io::Path& path, database::IntegrityCheck check,
+            const CodecLimits& limits, usize* loaded)
+{
     database::SqliteDatabase db;
     database::OpenOptions options;
     options.location = path.View();
@@ -48,7 +58,8 @@ int TryLoad(const ComponentRegistry& registry, const io::Path& path, database::I
     options.journal_mode = database::JournalMode::Delete;
     options.integrity_check = check;
     UniquePtr<database::Connection> connection;
-    if (db.Open(options, &connection).Failed()) {
+    if (db.Open(options, &connection).Failed())
+    {
         return 0;
     }
     UniquePtr<SqlStore> store;
@@ -56,7 +67,8 @@ int TryLoad(const ComponentRegistry& registry, const io::Path& path, database::I
     so.registry = &registry;
     so.columns = true;
     so.limits = limits;
-    if (SqlStore::Open(*connection, &store, so).Failed()) {
+    if (SqlStore::Open(*connection, &store, so).Failed())
+    {
         return 1;
     }
     WorldStorage storage(registry, *store);
@@ -66,24 +78,27 @@ int TryLoad(const ComponentRegistry& registry, const io::Path& path, database::I
     LoadOptions load;
     load.unknown = UnknownPolicy::KeepOpaque;
     load.missing = MissingPolicy::NullReference;
-    if (storage.Load(world, index, load, nullptr).Failed()) {
+    if (storage.Load(world, index, load, nullptr).Failed())
+    {
         return 2;
     }
     usize n = 0;
     world.Query<ecs::Read<EntityKeyComponent>>().ForEach([&](ecs::Entity, const EntityKeyComponent&) { ++n; });
     *loaded = n;
     usize mismatches = 0;
-    static_cast<void>(store->VerifyColumns(&mismatches)); // any answer, as long as it is one
+    static_cast<void>(store->VerifyColumns(&mismatches));  // any answer, as long as it is one
     return 3;
 }
 
-bool WriteBytes(const io::Path& path, const Vector<u8>& bytes) {
+bool WriteBytes(const io::Path& path, const Vector<u8>& bytes)
+{
     return io::WriteFile(path, bytes.Data(), bytes.Size()).Ok();
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("Hostile files: a corruption fuzz over a saved database always ends in a Status", "[storage][hostile]") {
+TEST_CASE("Hostile files: a corruption fuzz over a saved database always ends in a Status", "[storage][hostile]")
+{
     ComponentRegistry registry;
     REQUIRE(RegisterHostile(&registry).Ok());
     database_test::TempDir dir;
@@ -104,7 +119,8 @@ TEST_CASE("Hostile files: a corruption fuzz over a saved database always ends in
         KeyIndex index;
         KeyGenerator keys = KeyGenerator::Seeded(8);
         HoRng rng{3};
-        for (u32 i = 0; i < 150; ++i) {
+        for (u32 i = 0; i < 150; ++i)
+        {
             const ecs::Entity e = world.Create(EntityKeyComponent{keys.Next()});
             HoActor a;
             a.hp = static_cast<i32>(rng.Next() % 100);
@@ -124,52 +140,66 @@ TEST_CASE("Hostile files: a corruption fuzz over a saved database always ends in
 
     const io::Path bad = dir / StringView("bad.db");
     usize counts[4] = {0, 0, 0, 0};
-    const database::IntegrityCheck checks[] = {database::IntegrityCheck::Off, database::IntegrityCheck::Quick, database::IntegrityCheck::Full};
+    const database::IntegrityCheck checks[] = {database::IntegrityCheck::Off, database::IntegrityCheck::Quick,
+                                               database::IntegrityCheck::Full};
     HoRng rng{1234};
     u32 cases = 0;
-    const auto run = [&](const Vector<u8>& bytes) {
+    const auto run = [&](const Vector<u8>& bytes)
+    {
         REQUIRE(WriteBytes(bad, bytes));
         const int reached = TryLoad(registry, bad, checks[cases % 3], CodecLimits(), &loaded);
         ++counts[reached];
         ++cases;
     };
     // Byte flips: one to eight bytes of the file, anywhere.
-    for (u32 i = 0; i < 160; ++i) {
+    for (u32 i = 0; i < 160; ++i)
+    {
         Vector<u8> m;
-        for (usize k = 0; k < original.Size(); ++k) {
+        for (usize k = 0; k < original.Size(); ++k)
+        {
             m.Push(original[k]);
         }
-        for (u32 f = 1 + i % 8; f > 0; --f) {
+        for (u32 f = 1 + i % 8; f > 0; --f)
+        {
             m[rng.Next() % m.Size()] ^= static_cast<u8>(1u << (rng.Next() % 8));
         }
         run(m);
     }
     // Truncation at many lengths (including zero and one byte short).
-    for (u32 i = 0; i < 60; ++i) {
+    for (u32 i = 0; i < 60; ++i)
+    {
         const usize cut = i == 0 ? 0 : (i == 1 ? original.Size() - 1 : rng.Next() % original.Size());
         Vector<u8> m;
-        for (usize k = 0; k < cut; ++k) {
+        for (usize k = 0; k < cut; ++k)
+        {
             m.Push(original[k]);
         }
         run(m);
     }
     // Page swaps and zeroed pages (4096-byte pages; the file may use another size, the damage is the same).
-    for (u32 i = 0; i < 40; ++i) {
+    for (u32 i = 0; i < 40; ++i)
+    {
         Vector<u8> m;
-        for (usize k = 0; k < original.Size(); ++k) {
+        for (usize k = 0; k < original.Size(); ++k)
+        {
             m.Push(original[k]);
         }
         const usize pages = original.Size() / 4096;
         const usize a = rng.Next() % pages;
         const usize b = rng.Next() % pages;
-        if (i % 2 == 0) {
-            for (usize k = 0; k < 4096; ++k) {
+        if (i % 2 == 0)
+        {
+            for (usize k = 0; k < 4096; ++k)
+            {
                 const u8 t = m[a * 4096 + k];
                 m[a * 4096 + k] = m[b * 4096 + k];
                 m[b * 4096 + k] = t;
             }
-        } else {
-            for (usize k = 0; k < 4096; ++k) {
+        }
+        else
+        {
+            for (usize k = 0; k < 4096; ++k)
+            {
                 m[a * 4096 + k] = 0;
             }
         }
@@ -180,22 +210,26 @@ TEST_CASE("Hostile files: a corruption fuzz over a saved database always ends in
         Vector<u8> m;
         run(m);
         const char text[] = "this is a save game, honest";
-        for (usize k = 0; k < sizeof(text); ++k) {
+        for (usize k = 0; k < sizeof(text); ++k)
+        {
             m.Push(static_cast<u8>(text[k]));
         }
         run(m);
         Vector<u8> noise;
-        for (u32 k = 0; k < 20000; ++k) {
+        for (u32 k = 0; k < 20000; ++k)
+        {
             noise.Push(static_cast<u8>(rng.Next()));
         }
         run(noise);
     }
     CHECK(cases == 263);
     CHECK(counts[0] + counts[1] + counts[2] + counts[3] == cases);
-    CHECK(counts[0] + counts[1] + counts[2] > 0); // damage is noticed somewhere
+    CHECK(counts[0] + counts[1] + counts[2] > 0);  // damage is noticed somewhere
 }
 
-TEST_CASE("Hostile files: a valid database of another schema is refused or ignored, never loaded as a world", "[storage][hostile]") {
+TEST_CASE("Hostile files: a valid database of another schema is refused or ignored, never loaded as a world",
+          "[storage][hostile]")
+{
     ComponentRegistry registry;
     REQUIRE(RegisterHostile(&registry).Ok());
     database_test::TempDir dir;
@@ -220,7 +254,8 @@ TEST_CASE("Hostile files: a valid database of another schema is refused or ignor
     CHECK(reached < 3);
 }
 
-TEST_CASE("Hostile files: an oversized record is refused by the limit before it is decoded", "[storage][hostile]") {
+TEST_CASE("Hostile files: an oversized record is refused by the limit before it is decoded", "[storage][hostile]")
+{
     ComponentRegistry registry;
     REQUIRE(RegisterHostile(&registry).Ok());
     database_test::TempDir dir;
@@ -244,22 +279,27 @@ TEST_CASE("Hostile files: an oversized record is refused by the limit before it 
         REQUIRE(storage.Save(world, index, SaveOptions(), nullptr).Ok());
         // A record far larger than any limit, put straight into the store.
         Vector<u8> huge;
-        for (u32 i = 0; i < (4u << 20); ++i) {
+        for (u32 i = 0; i < (4u << 20); ++i)
+        {
             huge.Push(static_cast<u8>(i));
         }
-        REQUIRE(store->Put(EntityRecord::Make(KeyGenerator::Seeded(2).Next(), ByteSpan(huge.Data(), huge.Size()))).Ok());
+        REQUIRE(
+            store->Put(EntityRecord::Make(KeyGenerator::Seeded(2).Next(), ByteSpan(huge.Data(), huge.Size()))).Ok());
     }
     CodecLimits limits;
     limits.max_record_bytes = 1 << 20;
     usize loaded = 0;
     const int reached = TryLoad(registry, path, database::IntegrityCheck::Off, limits, &loaded);
-    CHECK((reached == 1 || reached == 2)); // refused when the column tables are refilled at open, or by the load; never loaded
+    CHECK((reached == 1 ||
+           reached == 2));  // refused when the column tables are refilled at open, or by the load; never loaded
 }
 
-TEST_CASE("Hostile files: a stored record naming a structural component is refused, not loaded", "[storage][hostile]") {
+TEST_CASE("Hostile files: a stored record naming a structural component is refused, not loaded", "[storage][hostile]")
+{
     ComponentRegistry registry;
     REQUIRE(RegisterHostile(&registry).Ok());
-    for (const u32 id : {static_cast<u32>(kEntityKeyId), static_cast<u32>(kOpaqueComponentsId)}) {
+    for (const u32 id : {static_cast<u32>(kEntityKeyId), static_cast<u32>(kOpaqueComponentsId)})
+    {
         MemoryStore store;
         bytes::ByteWriter blob;
         blob.WriteU32(1);
@@ -277,4 +317,4 @@ TEST_CASE("Hostile files: a stored record naming a structural component is refus
     }
 }
 
-} // namespace engine_placeholder::storage
+}  // namespace engine_placeholder::storage

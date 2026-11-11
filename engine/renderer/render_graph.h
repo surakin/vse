@@ -1,29 +1,32 @@
 #pragma once
 
-//! The render graph: passes declare what they read and write, and compiling turns that into an ordered, culled schedule.
+//! The render graph: passes declare what they read and write, and compiling turns that into an ordered, culled
+//! schedule.
 //!
 //! Resources are virtual: a transient texture or buffer exists only as a descriptor until a later stage allocates it,
 //! and an import wraps something that outlives the frame (the swapchain image, a persistent target). A pass is a name,
-//! an execute callback (a function pointer and a context pointer, no `std::function`) and a list of accesses, each with a
-//! usage that fixes the resource state it needs. Declaring records data only; every mistake in a graph is reported by
+//! an execute callback (a function pointer and a context pointer, no `std::function`) and a list of accesses, each with
+//! a usage that fixes the resource state it needs. Declaring records data only; every mistake in a graph is reported by
 //! [[renderer::RenderGraph::Compile]] as a named message, never while executing.
 //!
-//! Semantics follow declaration order: a read sees the most recent earlier write, and a write replaces it. From that the
-//! graph derives read-after-write, write-after-write and write-after-read edges, orders the passes topologically with the
-//! smallest declaration index first among those ready (so the order is stable), and drops passes whose results nothing
-//! uses. All storage comes from the arena the graph is given, so building and compiling a frame allocates nothing from
-//! the heap.
+//! Semantics follow declaration order: a read sees the most recent earlier write, and a write replaces it. From that
+//! the graph derives read-after-write, write-after-write and write-after-read edges, orders the passes topologically
+//! with the smallest declaration index first among those ready (so the order is stable), and drops passes whose results
+//! nothing uses. All storage comes from the arena the graph is given, so building and compiling a frame allocates
+//! nothing from the heap.
 
 #include "debug/compiler.h"
 #include "mem/arena_allocator.h"
 #include "rhi/rhi.h"
 #include "types.h"
 
-namespace engine_placeholder::jobs {
+namespace engine_placeholder::jobs
+{
 class Scheduler;
-} // namespace engine_placeholder::jobs
+}  // namespace engine_placeholder::jobs
 
-namespace engine_placeholder::renderer {
+namespace engine_placeholder::renderer
+{
 
 /// Most compile errors the graph keeps; later ones are counted but not stored.
 inline constexpr u32 kMaxGraphErrors = 16;
@@ -35,7 +38,8 @@ inline constexpr u32 kNeverUsed = 0xffffffffu;
 /// A pass in a [[renderer::RenderGraph]].
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct PassId {
+struct PassId
+{
     /// Declaration index; `kInvalid` means no pass.
     u32 index = 0xffffffffu;
 
@@ -49,7 +53,8 @@ struct PassId {
 /// A virtual resource in a [[renderer::RenderGraph]].
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct GraphResource {
+struct GraphResource
+{
     /// Creation index; `kInvalid` means no resource.
     u32 index = 0xffffffffu;
 
@@ -61,44 +66,55 @@ struct GraphResource {
 };
 
 /// What a graph resource is.
-enum class GraphResourceKind : u8 {
-    Texture = 0, ///< A texture.
-    Buffer,      ///< A buffer.
+enum class GraphResourceKind : u8
+{
+    Texture = 0,  ///< A texture.
+    Buffer,       ///< A buffer.
 };
 
 /// How a pass uses a resource; each maps to one [[rhi::ResourceState]] (see [[renderer::StateForUsage]]).
-enum class GraphUsage : u8 {
-    ColorAttachment = 0, ///< Rendered to as a color attachment (texture). Write, or ReadWrite when blending or loading.
-    DepthAttachment,     ///< Depth(-stencil) attachment with writes (texture). Write, or ReadWrite with a depth test.
-    DepthRead,           ///< Depth read-only: the depth test without writes, or sampled (texture). Read.
-    Sampled,             ///< Sampled by shaders (texture). Read.
-    StorageRead,         ///< Read by shaders as a storage image or buffer. Read.
-    StorageWrite,        ///< Written by shaders as a storage image or buffer. Write, or ReadWrite.
-    CopySrc,             ///< Source of a copy. Read.
-    CopyDst,             ///< Destination of a copy. Write.
-    UniformBuffer,       ///< Read as a uniform buffer (buffer). Read.
-    VertexBuffer,        ///< Read as vertex data (buffer). Read.
-    IndexBuffer,         ///< Read as index data (buffer). Read.
-    Count,               ///< Number of usages; not a usage.
+enum class GraphUsage : u8
+{
+    ColorAttachment = 0,  ///< Rendered to as a color attachment (texture). Write, or ReadWrite when blending or
+                          ///< loading.
+    DepthAttachment,      ///< Depth(-stencil) attachment with writes (texture). Write, or ReadWrite with a depth test.
+    DepthRead,            ///< Depth read-only: the depth test without writes, or sampled (texture). Read.
+    Sampled,              ///< Sampled by shaders (texture). Read.
+    StorageRead,          ///< Read by shaders as a storage image or buffer. Read.
+    StorageWrite,         ///< Written by shaders as a storage image or buffer. Write, or ReadWrite.
+    CopySrc,              ///< Source of a copy. Read.
+    CopyDst,              ///< Destination of a copy. Write.
+    UniformBuffer,        ///< Read as a uniform buffer (buffer). Read.
+    VertexBuffer,         ///< Read as vertex data (buffer). Read.
+    IndexBuffer,          ///< Read as index data (buffer). Read.
+    Count,                ///< Number of usages; not a usage.
 };
 
 /// How a pass touches a resource's contents.
-enum class GraphAccess : u8 {
-    Read = 0, ///< The pass reads what an earlier pass wrote.
-    Write,    ///< The pass replaces the contents; the previous contents are not needed.
-    ReadWrite, ///< The pass reads the previous contents and writes new ones.
+enum class GraphAccess : u8
+{
+    Read = 0,   ///< The pass reads what an earlier pass wrote.
+    Write,      ///< The pass replaces the contents; the previous contents are not needed.
+    ReadWrite,  ///< The pass reads the previous contents and writes new ones.
 };
 
 /// Options of a pass.
-enum class PassFlags : u32 {
-    None = 0,         ///< No options.
-    SideEffects = 1u, ///< Keep the pass even if nothing reads its outputs (readbacks, debug draws, presents).
+enum class PassFlags : u32
+{
+    None = 0,          ///< No options.
+    SideEffects = 1u,  ///< Keep the pass even if nothing reads its outputs (readbacks, debug draws, presents).
 };
 
 /// Combines pass flags.
-constexpr PassFlags operator|(PassFlags a, PassFlags b) { return static_cast<PassFlags>(static_cast<u32>(a) | static_cast<u32>(b)); }
+constexpr PassFlags operator|(PassFlags a, PassFlags b)
+{
+    return static_cast<PassFlags>(static_cast<u32>(a) | static_cast<u32>(b));
+}
 /// Tests pass flags: true if `a` and `b` share a bit.
-constexpr bool operator&(PassFlags a, PassFlags b) { return (static_cast<u32>(a) & static_cast<u32>(b)) != 0; }
+constexpr bool operator&(PassFlags a, PassFlags b)
+{
+    return (static_cast<u32>(a) & static_cast<u32>(b)) != 0;
+}
 
 /// Returns the resource state a usage needs.
 ///
@@ -134,7 +150,8 @@ class RenderGraph;
 /// What a pass callback is given while [[renderer::RenderGraph::Execute]] runs.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct PassExecuteContext {
+struct PassExecuteContext
+{
     /// The command list the pass records into. Every barrier the pass needs is already recorded.
     rhi::CommandList* list = nullptr;
     /// The pass's declaration index.
@@ -149,7 +166,8 @@ using PassExecuteFn = void (*)(const PassExecuteContext& context, void* user);
 /// Capacities of a graph. Exceeding one is a compile error, not a crash.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct RenderGraphDesc {
+struct RenderGraphDesc
+{
     /// Most passes.
     u32 max_passes = 256;
     /// Most resources.
@@ -165,13 +183,14 @@ class TransientPool;
 /// One state transition the compiled graph records: `Barrier(resource, before, after)` just before a pass.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct GraphBarrier {
+struct GraphBarrier
+{
     /// The resource.
     GraphResource resource;
     /// Schedule position of the pass the barrier precedes; `ScheduleCount()` for an exit barrier after the last pass.
     u32 position = 0;
-    /// The state the resource is in. A transient resource's first barrier says `Undefined`; `Execute` replaces that with
-    /// the state the pooled resource was left in.
+    /// The state the resource is in. A transient resource's first barrier says `Undefined`; `Execute` replaces that
+    /// with the state the pooled resource was left in.
     rhi::ResourceState before = rhi::ResourceState::Undefined;
     /// The state the pass needs, or the import's final state for an exit barrier.
     rhi::ResourceState after = rhi::ResourceState::Undefined;
@@ -180,14 +199,17 @@ struct GraphBarrier {
 /// Declares the accesses of one pass. Valid until the next pass is added.
 ///
 /// - Thread-safety: thread-compatible.
-class PassBuilder {
+class PassBuilder
+{
 public:
     /// Declares that the pass reads a resource.
     ///
-    /// - Param resource: a resource of this graph. An import counts as already written, so reading it needs no earlier pass.
+    /// - Param resource: a resource of this graph. An import counts as already written, so reading it needs no earlier
+    /// pass.
     /// - Param usage: how it is read; must be a read-only usage.
     /// - Returns: this builder.
-    /// - Fails: a bad resource, a usage that does not suit the resource's kind or the access, or a second declaration of the
+    /// - Fails: a bad resource, a usage that does not suit the resource's kind or the access, or a second declaration
+    /// of the
     ///   same resource in this pass; reported by `Compile`.
     PassBuilder& Read(GraphResource resource, GraphUsage usage);
     /// Declares that the pass writes a resource without needing its old contents.
@@ -219,13 +241,15 @@ private:
 
 /// A frame's pass and resource declarations and their compiled schedule.
 ///
-/// The order of use is: create the resources, `AddPass` and declare accesses, `Compile`, then read the schedule. Names are
-/// borrowed and must outlive the graph (string literals are the normal case). `Compile` takes scratch space from the arena.
+/// The order of use is: create the resources, `AddPass` and declare accesses, `Compile`, then read the schedule. Names
+/// are borrowed and must outlive the graph (string literals are the normal case). `Compile` takes scratch space from
+/// the arena.
 ///
 /// - Thread-safety: thread-compatible.
 /// - Ownership: borrows the arena, which must outlive the graph and not be reset while the graph is in use; all graph
 ///   storage lives in it, so the graph has nothing to free.
-class RenderGraph {
+class RenderGraph
+{
 public:
     /// Reserves the graph's tables in the arena.
     ///
@@ -266,7 +290,8 @@ public:
     /// - Param read_only: true if no pass may write it.
     /// - Returns: the resource, or an invalid one if a limit was hit.
     /// - Fails: the resource table is full.
-    GraphResource ImportTexture(const char* name, rhi::TextureHandle texture, rhi::ResourceState initial, rhi::ResourceState final_state, bool read_only);
+    GraphResource ImportTexture(const char* name, rhi::TextureHandle texture, rhi::ResourceState initial,
+                                rhi::ResourceState final_state, bool read_only);
     /// Wraps an existing buffer; see [[renderer::RenderGraph::ImportTexture]].
     ///
     /// - Param name: a name for messages; borrowed.
@@ -276,7 +301,8 @@ public:
     /// - Param read_only: true if no pass may write it.
     /// - Returns: the resource, or an invalid one if a limit was hit.
     /// - Fails: the resource table is full.
-    GraphResource ImportBuffer(const char* name, rhi::BufferHandle buffer, rhi::ResourceState initial, rhi::ResourceState final_state, bool read_only);
+    GraphResource ImportBuffer(const char* name, rhi::BufferHandle buffer, rhi::ResourceState initial,
+                               rhi::ResourceState final_state, bool read_only);
 
     /// Adds a pass and returns the builder for its accesses.
     ///
@@ -289,8 +315,8 @@ public:
     /// - Ownership: `name` and `user` are borrowed and must outlive the graph.
     PassBuilder AddPass(const char* name, PassExecuteFn execute, void* user, PassFlags flags = PassFlags::None);
 
-    /// Requires `before` to run before `after` when both run, without a shared resource. It does not keep `before` alive:
-    /// a pass that must run only to be ordered should carry [[renderer::PassFlags::SideEffects]].
+    /// Requires `before` to run before `after` when both run, without a shared resource. It does not keep `before`
+    /// alive: a pass that must run only to be ordered should carry [[renderer::PassFlags::SideEffects]].
     ///
     /// - Param before: a pass of this graph.
     /// - Param after: a pass of this graph.
@@ -426,13 +452,14 @@ public:
 
     /// Returns the number of barriers the compiled graph records. Valid after a successful `Compile`.
     ///
-    /// The rules, per resource, walking the scheduled passes in order: a resource starts in its import's initial state, or
-    /// `Undefined` for a transient one. Each use needs the state of its usage (see [[renderer::StateForUsage]]). A barrier
-    /// is recorded when that state differs from the current one, or when the previous use wrote the resource (a
-    /// same-state barrier then orders the two writes, or the write and the read). Consecutive reads in one state share the
-    /// state and need nothing. Barriers for all of a pass's resources precede it, in access order, so a pass's color and
-    /// depth attachments change state together and always outside a rendering pass. After the last pass, an import not in
-    /// its final state gets an exit barrier. A transient resource has no exit barrier; the pool remembers its state.
+    /// The rules, per resource, walking the scheduled passes in order: a resource starts in its import's initial state,
+    /// or `Undefined` for a transient one. Each use needs the state of its usage (see [[renderer::StateForUsage]]). A
+    /// barrier is recorded when that state differs from the current one, or when the previous use wrote the resource (a
+    /// same-state barrier then orders the two writes, or the write and the read). Consecutive reads in one state share
+    /// the state and need nothing. Barriers for all of a pass's resources precede it, in access order, so a pass's
+    /// color and depth attachments change state together and always outside a rendering pass. After the last pass, an
+    /// import not in its final state gets an exit barrier. A transient resource has no exit barrier; the pool remembers
+    /// its state.
     ///
     /// - Fails: never.
     u32 BarrierCount() const { return barrier_count_; }
@@ -441,7 +468,8 @@ public:
     /// - Param index: below `BarrierCount()`.
     /// - Aborts: `index` is out of range.
     GraphBarrier BarrierAt(u32 index) const;
-    /// Returns the state a resource is in after its last scheduled use, before any exit barrier (`Undefined` if unused).
+    /// Returns the state a resource is in after its last scheduled use, before any exit barrier (`Undefined` if
+    /// unused).
     ///
     /// - Param resource: a resource of this graph.
     /// - Aborts: `resource` is invalid, or `Compile` has not succeeded.
@@ -459,45 +487,48 @@ public:
 
     /// Records the compiled graph into a command list: transients from the pool, barriers, then each pass's callback.
     ///
-    /// A transient resource is taken from the pool at its first use and given back after its last, so a later one in the
-    /// same frame can reuse it. Passes record into `list`, which must be open and outside a rendering pass. The graph transitions every resource
-    /// itself, so a pass callback records no barrier for a resource it declared. An import is assumed to be in its
-    /// declared initial state and is left in its final state.
+    /// A transient resource is taken from the pool at its first use and given back after its last, so a later one in
+    /// the same frame can reuse it. Passes record into `list`, which must be open and outside a rendering pass. The
+    /// graph transitions every resource itself, so a pass callback records no barrier for a resource it declared. An
+    /// import is assumed to be in its declared initial state and is left in its final state.
     ///
     /// - Param pool: where transient resources come from; may be null if the graph declares none.
     /// - Param list: the open command list.
     /// - Returns: true if everything was recorded.
-    /// - Fails: `Compile` fails, a transient resource could not be allocated, or `pool` is null while a transient is used;
+    /// - Fails: `Compile` fails, a transient resource could not be allocated, or `pool` is null while a transient is
+    /// used;
     ///   `ExecuteError` then names the cause. The list is incomplete and must not be submitted; every transient taken
     ///   goes back to the pool in the state it was taken in, as if the call had not happened.
-    /// - Aborts: `list` is null. `Device::CreateCommandList` returns null when the device is lost, so check it first; a null list
+    /// - Aborts: `list` is null. `Device::CreateCommandList` returns null when the device is lost, so check it first; a
+    /// null list
     ///   is an environment failure for the caller to handle, not something this function reports.
     /// - Ownership: `pool` and `list` are borrowed for the call; transient resources taken from the pool go back to it
     ///   before `Execute` returns.
     bool Execute(TransientPool* pool, rhi::CommandList* list);
 
-    /// Records the compiled graph like `Execute`, but one command list per pass, in parallel, and submits them in order.
+    /// Records the compiled graph like `Execute`, but one command list per pass, in parallel, and submits them in
+    /// order.
     ///
-    /// Transients are resolved first (serially), then every scheduled pass records into its own list: with a scheduler the
-    /// passes record concurrently on its participants (each list is created on the thread that records it), without one
-    /// they record in order on the calling thread. A pass with no callback and no barriers records no list at all. A
-    /// last list holds the exit barriers of the imports. All lists go to
-    /// one `Submit` in schedule order, so the result is the same as a serial `Execute`: a pass sees the state the plan
-    /// gives it, whichever thread recorded it.
+    /// Transients are resolved first (serially), then every scheduled pass records into its own list: with a scheduler
+    /// the passes record concurrently on its participants (each list is created on the thread that records it), without
+    /// one they record in order on the calling thread. A pass with no callback and no barriers records no list at all.
+    /// A last list holds the exit barriers of the imports. All lists go to one `Submit` in schedule order, so the
+    /// result is the same as a serial `Execute`: a pass sees the state the plan gives it, whichever thread recorded it.
     ///
     /// Pass callbacks run concurrently with each other and must not share mutable state without synchronization; the
     /// graph itself is only read while they run.
     ///
     /// - Param pool: where transient resources come from; may be null if the graph declares none.
     /// - Param device: the device; a frame must be open (`BeginFrame`).
-    /// - Param scheduler: runs the recording, or null to record on the calling thread. Must be called from participant 0
+    /// - Param scheduler: runs the recording, or null to record on the calling thread. Must be called from participant
+    /// 0
     ///   outside any job when set.
     /// - Param fence: receives the fence value of the submission; may be null.
     /// - Returns: true if everything was recorded and submitted.
     /// - Fails: as for `Execute`, and when the device cannot give out a command list or refuses the submission (lost);
-    ///   `ExecuteError` names the cause. Nothing is submitted then and the pool is put back as it was, but pass callbacks
-    ///   may already have run (some or all of them, and on several threads at once), so any state they changed outside
-    ///   the command list stays changed.
+    ///   `ExecuteError` names the cause. Nothing is submitted then and the pool is put back as it was, but pass
+    ///   callbacks may already have run (some or all of them, and on several threads at once), so any state they
+    ///   changed outside the command list stays changed.
     /// - Aborts: `device` is null, or no frame is open.
     /// - Thread-safety: owner-thread-only (a scheduler's participant 0).
     /// - Ownership: `pool`, `device` and `scheduler` are borrowed for the call.
@@ -520,20 +551,23 @@ public:
     ///
     /// The format is line oriented. After a header line (`graph passes=P resources=R scheduled=S culled=C`) come
     /// `schedule: a, b, c` and `culled: x, y` lines, then one block per pass (`pass I "name" [side-effects] at K` or
-    /// `culled`, followed by one indented `read|write|readwrite "resource" usage` line per access), one line per resource
+    /// `culled`, followed by one indented `read|write|readwrite "resource" usage` line per access), one line per
+    /// resource
     /// (`resource I "name" texture|buffer transient|import|import-readonly use=F..L` or `unused`) and one line per edge
     /// (`edge "from" -> "to" raw|waw|war|after ["resource"]`). Before a successful `Compile` only the passes and
     /// resources are listed.
     ///
     /// - Param out: the destination, or null to only measure.
     /// - Param capacity: size of `out` in bytes.
-    /// - Returns: the length the full text needs, excluding the terminator; the output is truncated (and terminated) if it
+    /// - Returns: the length the full text needs, excluding the terminator; the output is truncated (and terminated) if
+    /// it
     ///   exceeds `capacity - 1`.
     /// - Fails: never.
     /// - Ownership: `out` is borrowed for the call.
     usize Dump(char* out, usize capacity) const;
 
-    /// Writes the compiled graph as Graphviz: live passes as boxes in schedule order, culled ones dashed, edges labelled.
+    /// Writes the compiled graph as Graphviz: live passes as boxes in schedule order, culled ones dashed, edges
+    /// labelled.
     ///
     /// - Param out: the destination, or null to only measure.
     /// - Param capacity: size of `out` in bytes.
@@ -594,4 +628,4 @@ private:
     char (*errors_)[kGraphErrorLength] = nullptr;
 };
 
-} // namespace engine_placeholder::renderer
+}  // namespace engine_placeholder::renderer

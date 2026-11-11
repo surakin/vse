@@ -3,15 +3,18 @@
 #include "rhi/device_host.h"
 #include "types.h"
 
-//! The registry of everything in the renderer that owns device objects and can rebuild them after the device is replaced.
+//! The registry of everything in the renderer that owns device objects and can rebuild them after the device is
+//! replaced.
 
-namespace engine_placeholder::renderer {
+namespace engine_placeholder::renderer
+{
 
 /// The tiers owners register at; lower tiers are created first and released last.
 ///
-/// An owner may use a value between these. The order is fixed so that an owner never sees a dependency missing: a mesh needs
-/// nothing but the device, a material needs its textures and samplers, a pass needs its materials.
-namespace tiers {
+/// An owner may use a value between these. The order is fixed so that an owner never sees a dependency missing: a mesh
+/// needs nothing but the device, a material needs its textures and samplers, a pass needs its materials.
+namespace tiers
+{
 /// Samplers and textures.
 inline constexpr u32 kTextures = 0;
 /// Meshes (vertex and index buffers).
@@ -22,16 +25,17 @@ inline constexpr u32 kLayouts = 2;
 inline constexpr u32 kMaterials = 3;
 /// Passes and per-frame buffers.
 inline constexpr u32 kPasses = 4;
-} // namespace tiers
+}  // namespace tiers
 
 /// An object that owns device objects and keeps what it needs to make them again.
 ///
 /// The contract: `Release` destroys every device object and keeps the CPU-side source; `Recreate` makes them again on a
-/// device and re-uploads; neither caches a handle past a frame for anyone else. Both are called on the owning thread, with the
-/// device idle.
+/// device and re-uploads; neither caches a handle past a frame for anyone else. Both are called on the owning thread,
+/// with the device idle.
 ///
 /// - Thread-safety: owner-thread-only.
-class Recreatable {
+class Recreatable
+{
 public:
     virtual ~Recreatable() = default;
 
@@ -42,12 +46,13 @@ public:
     ///
     /// - Param device: the new device.
     /// - Returns: true on success; on failure nothing stays allocated.
-    /// - Fails: returns false, logging the reason, if the source is gone or the device cannot hold the object (limits, memory).
+    /// - Fails: returns false, logging the reason, if the source is gone or the device cannot hold the object (limits,
+    /// memory).
     /// - Ownership: the device is borrowed; it outlives the objects until the next `Release`.
     virtual bool Recreate(rhi::Device* device) = 0;
 
-    /// Returns whether the owner currently holds its device objects. The registry asks when the owner registers, so an owner
-    /// that registers after it made its objects is released at the next reset.
+    /// Returns whether the owner currently holds its device objects. The registry asks when the owner registers, so an
+    /// owner that registers after it made its objects is released at the next reset.
     ///
     /// - Fails: never.
     virtual bool Live() const = 0;
@@ -63,14 +68,16 @@ public:
 /// Rebuilds registered owners in tier order whenever the device host replaces the device.
 ///
 /// Register it with [[rhi::DeviceHost::AddObserver]]; `OnDeviceReleasing` releases owners from the highest tier down,
-/// `OnDeviceCreated` recreates them from the lowest up. A failed `Recreate` stops the sequence, releases everything that was
-/// built (a half-built set is never used), remembers the owner and returns false so the host fails the reset (the caller rolls
-/// back). Calling it again starts from released.
+/// `OnDeviceCreated` recreates them from the lowest up. A failed `Recreate` stops the sequence, releases everything
+/// that was built (a half-built set is never used), remembers the owner and returns false so the host fails the reset
+/// (the caller rolls back). Calling it again starts from released.
 ///
 /// - Thread-safety: owner-thread-only.
-/// - Ownership: borrows the owners; an owner must unregister (see [[renderer::ScopedRegistration]]) before it is destroyed.
+/// - Ownership: borrows the owners; an owner must unregister (see [[renderer::ScopedRegistration]]) before it is
+/// destroyed.
 ///   The registry must outlive every registration.
-class DeviceResources final : public rhi::DeviceObserver {
+class DeviceResources final : public rhi::DeviceObserver
+{
 public:
     /// The most owners.
     static constexpr usize kMaxOwners = 256;
@@ -92,8 +99,8 @@ public:
     bool Register(Recreatable* owner, u32 tier);
 
     /// Removes an owner; unknown owners are ignored. Does not release the owner's objects: the owner does that itself.
-    /// During a reset the entry is only marked dead and removed when the reset step ends, so an owner may unregister itself or
-    /// another from inside `Release` or `Recreate`.
+    /// During a reset the entry is only marked dead and removed when the reset step ends, so an owner may unregister
+    /// itself or another from inside `Release` or `Recreate`.
     /// - Ownership: borrowed for the call; nothing is kept unless the description above says so.
     void Unregister(Recreatable* owner);
 
@@ -106,8 +113,8 @@ public:
     /// Returns the number of registered owners.
     usize Count() const { return count_; }
 
-    /// Releases the live owners at `first_tier` and above, highest first, leaving the lower tiers alone (a pipeline rebuild
-    /// releases tiers 3 and 4 only). `CurrentDevice` is unchanged.
+    /// Releases the live owners at `first_tier` and above, highest first, leaving the lower tiers alone (a pipeline
+    /// rebuild releases tiers 3 and 4 only). `CurrentDevice` is unchanged.
     ///
     /// - Param first_tier: the lowest tier to release.
     void ReleaseFrom(u32 first_tier);
@@ -115,7 +122,8 @@ public:
     /// Recreates the released owners at `first_tier` and above, lowest first, on the current device.
     ///
     /// - Param first_tier: the lowest tier to recreate.
-    /// - Returns: false if an owner failed; the owners at `first_tier` and above are released again and `FailedOwner` names it.
+    /// - Returns: false if an owner failed; the owners at `first_tier` and above are released again and `FailedOwner`
+    /// names it.
     /// - Aborts: there is no current device (the registry is fully released).
     bool RecreateFrom(u32 first_tier);
 
@@ -149,7 +157,8 @@ public:
     const char* ObserverName() const override { return "device-resources"; }
 
 private:
-    struct Entry {
+    struct Entry
+    {
         Recreatable* owner = nullptr;
         u32 tier = 0;
         u32 sequence = 0;
@@ -171,12 +180,13 @@ private:
 
 /// Keeps an owner registered for exactly as long as this object lives.
 ///
-/// Put one in each owner. It moves with the owner (call `Rebind` from the owner's move operations) and unregisters in its
-/// destructor, so a destroyed owner never gets a callback.
+/// Put one in each owner. It moves with the owner (call `Rebind` from the owner's move operations) and unregisters in
+/// its destructor, so a destroyed owner never gets a callback.
 ///
 /// - Thread-safety: owner-thread-only.
 /// - Ownership: borrows the registry and the owner.
-class ScopedRegistration {
+class ScopedRegistration
+{
 public:
     ScopedRegistration() = default;
     /// Releases everything this object owns.
@@ -192,12 +202,15 @@ public:
     /// - Returns: true if registered or `registry` is null.
     /// - Fails: returns false if the registry refused.
     /// - Ownership: borrowed for the call; nothing is kept unless the description above says so.
-    bool Attach(DeviceResources* registry, Recreatable* owner, u32 tier) {
+    bool Attach(DeviceResources* registry, Recreatable* owner, u32 tier)
+    {
         Reset();
-        if (registry == nullptr) {
+        if (registry == nullptr)
+        {
             return true;
         }
-        if (!registry->Register(owner, tier)) {
+        if (!registry->Register(owner, tier))
+        {
             return false;
         }
         registry_ = registry;
@@ -207,9 +220,11 @@ public:
 
     /// Takes over the registration of `other`, whose owner moved to `new_owner`; `other` is left unregistered.
     /// - Ownership: borrowed for the call; nothing is kept unless the description above says so.
-    void Adopt(ScopedRegistration* other, Recreatable* new_owner) {
+    void Adopt(ScopedRegistration* other, Recreatable* new_owner)
+    {
         Reset();
-        if (other->registry_ != nullptr) {
+        if (other->registry_ != nullptr)
+        {
             other->registry_->Rebind(other->owner_, new_owner);
             registry_ = other->registry_;
             owner_ = new_owner;
@@ -219,8 +234,10 @@ public:
     }
 
     /// Unregisters now.
-    void Reset() {
-        if (registry_ != nullptr) {
+    void Reset()
+    {
+        if (registry_ != nullptr)
+        {
             registry_->Unregister(owner_);
             registry_ = nullptr;
             owner_ = nullptr;
@@ -236,4 +253,4 @@ private:
     Recreatable* owner_ = nullptr;
 };
 
-} // namespace engine_placeholder::renderer
+}  // namespace engine_placeholder::renderer

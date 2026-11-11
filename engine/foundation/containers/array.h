@@ -5,7 +5,8 @@
 //! Fixed-size array with inline storage, the engine's `std::array`: the size is a
 //! compile-time constant and the elements live inside the object. [[Vector]] is
 //! every case where the size is only known at runtime or changes.
-namespace engine_placeholder {
+namespace engine_placeholder
+{
 
 /// Array of exactly `N` elements stored inside the object itself.
 ///
@@ -16,8 +17,8 @@ namespace engine_placeholder {
 ///
 /// - Thread-safety: not-thread-safe. Synchronize externally if shared.
 /// - Ownership: owns its elements, which are destroyed with it.
-template <typename T, usize N>
-struct Array {
+template <typename T, usize N> struct Array
+{
     static_assert(N > 0, "Array: a zero-length array has no storage; use Vector or omit it");
 
     /// The elements; public so the type stays an aggregate.
@@ -49,4 +50,4 @@ struct Array {
     const T* end() const { return items + N; }
 };
 
-} // namespace engine_placeholder
+}  // namespace engine_placeholder

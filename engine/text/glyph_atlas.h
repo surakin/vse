@@ -9,16 +9,20 @@
 
 //! The glyph atlas (Phase 14): rasterized glyphs packed into 8-bit coverage pages held in CPU memory.
 //!
-//! The CPU pages are the source of truth; the renderer copies them into GPU textures and can rebuild those textures from them after a device reset.
-//! There is no eviction in this version: a full page adds a page, up to a maximum, after which glyphs are refused and counted.
-namespace engine_placeholder::text {
+//! The CPU pages are the source of truth; the renderer copies them into GPU textures and can rebuild those textures
+//! from them after a device reset. There is no eviction in this version: a full page adds a page, up to a maximum,
+//! after which glyphs are refused and counted.
+namespace engine_placeholder::text
+{
 
 /// Where one glyph lives in the atlas and how to place it.
 ///
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: owns nothing.
-struct GlyphEntry {
-    bool valid = false;       ///< False when the glyph could not be added (see the status of [[text::GlyphAtlas::GetOrAdd]]).
+struct GlyphEntry
+{
+    bool
+        valid = false;  ///< False when the glyph could not be added (see the status of [[text::GlyphAtlas::GetOrAdd]]).
     bool has_pixels = false;  ///< False for a glyph with no outline (a space): nothing to draw, only the advance.
     u32 page = 0;             ///< The atlas page.
     Rect rect;                ///< The glyph's pixels in the page.
@@ -35,24 +39,27 @@ struct GlyphEntry {
 ///
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: owns nothing.
-struct AtlasStats {
-    u64 glyphs = 0;    ///< Glyphs stored (including blank ones).
-    u64 pages = 0;     ///< Pages allocated.
-    u64 hits = 0;      ///< Lookups answered from the atlas.
-    u64 misses = 0;    ///< Lookups that rasterized a glyph.
-    u64 bytes = 0;     ///< Bytes of page memory.
-    u64 too_large = 0; ///< Lookups refused for a font size above [[text::kMaxAtlasPixelSize]].
-    u64 failures = 0;  ///< Lookups that could not add the glyph (atlas full, glyph larger than a page, out of memory).
+struct AtlasStats
+{
+    u64 glyphs = 0;     ///< Glyphs stored (including blank ones).
+    u64 pages = 0;      ///< Pages allocated.
+    u64 hits = 0;       ///< Lookups answered from the atlas.
+    u64 misses = 0;     ///< Lookups that rasterized a glyph.
+    u64 bytes = 0;      ///< Bytes of page memory.
+    u64 too_large = 0;  ///< Lookups refused for a font size above [[text::kMaxAtlasPixelSize]].
+    u64 failures = 0;   ///< Lookups that could not add the glyph (atlas full, glyph larger than a page, out of memory).
 };
 
 /// A set of 8-bit coverage pages keyed by (font id, pixel size, glyph id).
 ///
-/// One atlas serves several fonts and sizes; asking twice for the same key returns the same entry and stores no second copy. Each page tracks the one rectangle that
-/// covers what changed since the last [[text::GlyphAtlas::TakeDirty]], so a frame uploads only that.
+/// One atlas serves several fonts and sizes; asking twice for the same key returns the same entry and stores no second
+/// copy. Each page tracks the one rectangle that covers what changed since the last [[text::GlyphAtlas::TakeDirty]], so
+/// a frame uploads only that.
 ///
 /// - Thread-safety: thread-compatible.
 /// - Ownership: owns its pages; the fonts passed to `GetOrAdd` are only used during the call.
-class GlyphAtlas {
+class GlyphAtlas
+{
 public:
     /// Creates an empty atlas.
     ///
@@ -60,14 +67,17 @@ public:
     /// - Param max_pages: how many pages the atlas may allocate.
     explicit GlyphAtlas(u32 page_size = 1024, u32 max_pages = 8);
 
-    /// Returns the entry for `glyph` of `font` at the font's current pixel size, rasterizing and packing it on first use.
+    /// Returns the entry for `glyph` of `font` at the font's current pixel size, rasterizing and packing it on first
+    /// use.
     ///
     /// - Param font: the font (its pixel size is part of the key).
     /// - Param glyph: the glyph id.
     /// - Param out: receives the entry; `valid` is false on failure.
     /// - Ownership: nothing is retained.
-    /// - Fails: `TooLarge` when the font's size is above [[text::kMaxAtlasPixelSize]] (nothing changes), `AtlasFull` when the glyph does not fit in any page and no page may be added,
-    ///   `OutOfMemory`, plus the errors of [[text::Font::Render]]; the atlas keeps no entry for the glyph and its pages are unchanged; only the counters move.
+    /// - Fails: `TooLarge` when the font's size is above [[text::kMaxAtlasPixelSize]] (nothing changes), `AtlasFull`
+    /// when the glyph does not fit in any page and no page may be added,
+    ///   `OutOfMemory`, plus the errors of [[text::Font::Render]]; the atlas keeps no entry for the glyph and its pages
+    ///   are unchanged; only the counters move.
     Status GetOrAdd(Font& font, GlyphId glyph, GlyphEntry* out);
 
     /// Returns the number of pages.
@@ -83,7 +93,8 @@ public:
     /// - Aborts: `page` is not below [[text::GlyphAtlas::PageCount]].
     /// - Ownership: borrowed from the atlas; invalidated by the next `GetOrAdd`.
     ByteSpan PagePixels(u32 page) const;
-    /// Takes the rectangle of page `page` that changed since the last call (the union of the glyphs added), and marks the page clean.
+    /// Takes the rectangle of page `page` that changed since the last call (the union of the glyphs added), and marks
+    /// the page clean.
     ///
     /// - Param page: the page.
     /// - Param rect: receives the rectangle.
@@ -97,17 +108,20 @@ public:
     AtlasStats Stats() const { return stats_; }
 
 private:
-    struct Key {
+    struct Key
+    {
         u64 font = 0;
         u32 size = 0;
         u32 glyph = 0;
     };
-    struct Slot {
+    struct Slot
+    {
         Key key;
         GlyphEntry entry;
         bool used = false;
     };
-    struct Page {
+    struct Page
+    {
         Page(u32 size, u32 padding) : packer(size, size, padding) {}
         Vector<byte> pixels;
         ShelfPacker packer;
@@ -125,7 +139,7 @@ private:
     u32 page_size_;
     u32 max_pages_;
     Vector<Page> pages_;
-    Vector<Slot> slots_; // open addressing, power-of-two size
+    Vector<Slot> slots_;  // open addressing, power-of-two size
     usize slot_count_ = 0;
     AtlasStats stats_;
 };
@@ -134,14 +148,16 @@ private:
 ///
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: owns nothing.
-struct GlyphQuad {
-    f32 left = 0;   ///< Left edge, a whole pixel.
-    f32 top = 0;    ///< Top edge, a whole pixel.
-    f32 right = 0;  ///< Right edge, a whole pixel.
-    f32 bottom = 0; ///< Bottom edge, a whole pixel.
+struct GlyphQuad
+{
+    f32 left = 0;    ///< Left edge, a whole pixel.
+    f32 top = 0;     ///< Top edge, a whole pixel.
+    f32 right = 0;   ///< Right edge, a whole pixel.
+    f32 bottom = 0;  ///< Bottom edge, a whole pixel.
 };
 
-/// Places one laid-out glyph on whole pixels, so its atlas bitmap is shown texel for texel: the one rule every glyph drawer (the text renderer, the UI canvas) follows.
+/// Places one laid-out glyph on whole pixels, so its atlas bitmap is shown texel for texel: the one rule every glyph
+/// drawer (the text renderer, the UI canvas) follows.
 ///
 /// - Param pen_x: pixel the layout's left edge (x = 0) lands on.
 /// - Param pen_y: pixel the layout's top edge lands on.
@@ -152,7 +168,8 @@ struct GlyphQuad {
 /// - Returns: the quad.
 ///
 /// - Fails: never.
-inline GlyphQuad PlaceGlyph(f32 pen_x, f32 pen_y, f32 glyph_x, f32 glyph_y, const GlyphEntry& entry, f32 scale) {
+inline GlyphQuad PlaceGlyph(f32 pen_x, f32 pen_y, f32 glyph_x, f32 glyph_y, const GlyphEntry& entry, f32 scale)
+{
     GlyphQuad q;
     q.left = Floor(pen_x + glyph_x + static_cast<f32>(entry.left) * scale + 0.5f);
     q.top = Floor(pen_y + glyph_y - static_cast<f32>(entry.top) * scale + 0.5f);
@@ -161,4 +178,4 @@ inline GlyphQuad PlaceGlyph(f32 pen_x, f32 pen_y, f32 glyph_x, f32 glyph_y, cons
     return q;
 }
 
-} // namespace engine_placeholder::text
+}  // namespace engine_placeholder::text

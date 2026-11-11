@@ -6,48 +6,71 @@
 #include "log/log.h"
 #include "ui/surface.h"
 
-namespace engine_placeholder::ui {
+namespace engine_placeholder::ui
+{
 
-namespace {
+namespace
+{
 
-String<HeapAllocator> OwnedText(StringView text) { return String<HeapAllocator>(HeapAllocator::Default(), text); }
+String<HeapAllocator> OwnedText(StringView text)
+{
+    return String<HeapAllocator>(HeapAllocator::Default(), text);
+}
 
-StringView TrimmedText(StringView text) {
+StringView TrimmedText(StringView text)
+{
     usize begin = 0;
     usize end = text.Length();
-    while (begin < end && text[begin] == ' ') ++begin;
-    while (end > begin && text[end - 1] == ' ') --end;
+    while (begin < end && text[begin] == ' ')
+    {
+        ++begin;
+    }
+    while (end > begin && text[end - 1] == ' ')
+    {
+        --end;
+    }
     return text.Substring(begin, end - begin);
 }
 
-bool HasText(StringView text, StringView needle) {
-    if (needle.Length() == 0) return true;
+bool HasText(StringView text, StringView needle)
+{
+    if (needle.Length() == 0)
+    {
+        return true;
+    }
     return text.Find(needle) != text.Length();
 }
 
-} // namespace
+}  // namespace
 
 // ---- LogCapture ----
 
-LogCapture::LogCapture() : filter_(OwnedText(StringView())) {
+LogCapture::LogCapture() : filter_(OwnedText(StringView()))
+{
     lines_.Reserve(kMaxLines);
     // Start at the lines logged from now on: reading nothing moves `next_` to the end of the ring.
     next_ = LogLinesWritten();
 }
 
-void LogCapture::Take(const char* line, usize length, void* context) {
+void LogCapture::Take(const char* line, usize length, void* context)
+{
     LogCapture* self = static_cast<LogCapture*>(context);
-    while (length > 0 && (line[length - 1] == '\n' || line[length - 1] == '\r')) --length;
+    while (length > 0 && (line[length - 1] == '\n' || line[length - 1] == '\r'))
+    {
+        --length;
+    }
     self->Append(StringView(line, length));
 }
 
-usize LogCapture::Poll() {
+usize LogCapture::Poll()
+{
     const u64 before = count_ + dropped_;
     next_ = ReadLogLinesSince(next_, &LogCapture::Take, this);
     return static_cast<usize>(count_ + dropped_ - before);
 }
 
-void LogCapture::Clear() {
+void LogCapture::Clear()
+{
     lines_.Clear();
     first_ = 0;
     count_ = 0;
@@ -57,8 +80,10 @@ void LogCapture::Clear() {
     count_ = 0;
 }
 
-void LogCapture::Append(StringView line) {
-    if (count_ < kMaxLines) {
+void LogCapture::Append(StringView line)
+{
+    if (count_ < kMaxLines)
+    {
         lines_.Push(OwnedText(line));
         ++count_;
         return;
@@ -68,30 +93,56 @@ void LogCapture::Append(StringView line) {
     ++dropped_;
 }
 
-void LogCapture::SetFilter(StringView text) { filter_ = OwnedText(text); }
+void LogCapture::SetFilter(StringView text)
+{
+    filter_ = OwnedText(text);
+}
 
-const String<HeapAllocator>& LogCapture::At(usize index) const { return lines_[(first_ + index) % kMaxLines]; }
+const String<HeapAllocator>& LogCapture::At(usize index) const
+{
+    return lines_[(first_ + index) % kMaxLines];
+}
 
-bool LogCapture::Passes(const String<HeapAllocator>& line) const { return HasText(line.View(), filter_.View()); }
+bool LogCapture::Passes(const String<HeapAllocator>& line) const
+{
+    return HasText(line.View(), filter_.View());
+}
 
-usize LogCapture::VisibleCount() const {
-    if (filter_.Length() == 0) return count_;
+usize LogCapture::VisibleCount() const
+{
+    if (filter_.Length() == 0)
+    {
+        return count_;
+    }
     usize n = 0;
-    for (usize i = 0; i < count_; ++i) {
-        if (Passes(At(i))) ++n;
+    for (usize i = 0; i < count_; ++i)
+    {
+        if (Passes(At(i)))
+        {
+            ++n;
+        }
     }
     return n;
 }
 
-StringView LogCapture::VisibleLine(usize index) const {
-    if (filter_.Length() == 0) {
+StringView LogCapture::VisibleLine(usize index) const
+{
+    if (filter_.Length() == 0)
+    {
         ENGINE_ASSERT(index < count_, "LogCapture::VisibleLine: the index is out of range");
         return At(index).View();
     }
     usize seen = 0;
-    for (usize i = 0; i < count_; ++i) {
-        if (!Passes(At(i))) continue;
-        if (seen == index) return At(i).View();
+    for (usize i = 0; i < count_; ++i)
+    {
+        if (!Passes(At(i)))
+        {
+            continue;
+        }
+        if (seen == index)
+        {
+            return At(i).View();
+        }
         ++seen;
     }
     ENGINE_ASSERT(false, "LogCapture::VisibleLine: the index is out of range");
@@ -102,40 +153,64 @@ StringView LogCapture::VisibleLine(usize index) const {
 
 FrameGraph::FrameGraph(StringView name) : Widget(name) {}
 
-void FrameGraph::Push(f32 ms) {
-    if (!(ms > 0)) ms = 0;
+void FrameGraph::Push(f32 ms)
+{
+    if (!(ms > 0))
+    {
+        ms = 0;
+    }
     samples_[head_] = ms;
     head_ = (head_ + 1) % kSamples;
-    if (count_ < kSamples) ++count_;
+    if (count_ < kSamples)
+    {
+        ++count_;
+    }
     MarkDirty(kDrawDirty);
 }
 
-f32 FrameGraph::Max() const {
+f32 FrameGraph::Max() const
+{
     f32 m = 0;
-    for (usize i = 0; i < count_; ++i) {
-        if (samples_[i] > m) m = samples_[i];
+    for (usize i = 0; i < count_; ++i)
+    {
+        if (samples_[i] > m)
+        {
+            m = samples_[i];
+        }
     }
     return m;
 }
 
-f32 FrameGraph::Average() const {
-    if (count_ == 0) return 0;
+f32 FrameGraph::Average() const
+{
+    if (count_ == 0)
+    {
+        return 0;
+    }
     f32 sum = 0;
-    for (usize i = 0; i < count_; ++i) sum += samples_[i];
+    for (usize i = 0; i < count_; ++i)
+    {
+        sum += samples_[i];
+    }
     return sum / static_cast<f32>(count_);
 }
 
-Size FrameGraph::Measure(const Constraints&) {
+Size FrameGraph::Measure(const Constraints&)
+{
     Size s;
     s.w = static_cast<f32>(kSamples);
     s.h = kHeight;
     return s;
 }
 
-void FrameGraph::Draw(Canvas& canvas) {
+void FrameGraph::Draw(Canvas& canvas)
+{
     Surface* surface = GetSurface();
     const Rect& b = Bounds();
-    if (b.Empty()) return;
+    if (b.Empty())
+    {
+        return;
+    }
     const u32 border = surface->Themes().Color(ColorId::Border);
     const u32 good = surface->Themes().Color(ColorId::Accent);
     const u32 bad = surface->Themes().Color(ColorId::Danger);
@@ -143,10 +218,14 @@ void FrameGraph::Draw(Canvas& canvas) {
     const f32 bar = b.w / static_cast<f32>(kSamples);
     // The oldest sample is at the left, so a graph that is not full starts at the right.
     const usize empty = kSamples - count_;
-    for (usize i = 0; i < count_; ++i) {
+    for (usize i = 0; i < count_; ++i)
+    {
         const usize at = (head_ + kSamples - count_ + i) % kSamples;
         f32 fraction = samples_[at] / kFullScaleMs;
-        if (fraction > 1.0f) fraction = 1.0f;
+        if (fraction > 1.0f)
+        {
+            fraction = 1.0f;
+        }
         Rect r;
         r.w = bar;
         r.h = b.h * fraction;
@@ -160,7 +239,8 @@ void FrameGraph::Draw(Canvas& canvas) {
 
 // ---- DebugOverlay ----
 
-class DebugOverlay::ConsoleModel final : public ListModel {
+class DebugOverlay::ConsoleModel final : public ListModel
+{
 public:
     explicit ConsoleModel(LogCapture* capture) : capture_(capture) {}
     usize ItemCount() const override { return capture_->VisibleCount(); }
@@ -170,7 +250,8 @@ private:
     LogCapture* capture_;
 };
 
-DebugOverlay::DebugOverlay(StringView name) : BoxLayout(Orientation::Vertical, name) {
+DebugOverlay::DebugOverlay(StringView name) : BoxLayout(Orientation::Vertical, name)
+{
     SetSpacing(4.0f);
     Insets pad;
     pad.left = pad.top = pad.right = pad.bottom = 6.0f;
@@ -214,11 +295,16 @@ DebugOverlay::DebugOverlay(StringView name) : BoxLayout(Orientation::Vertical, n
     SetCollapsed(true);
 }
 
-DebugOverlay::~DebugOverlay() {
-    if (surface_ != nullptr && accelerator_ != 0) surface_->UnregisterAccelerator(accelerator_);
+DebugOverlay::~DebugOverlay()
+{
+    if (surface_ != nullptr && accelerator_ != 0)
+    {
+        surface_->UnregisterAccelerator(accelerator_);
+    }
 }
 
-bool DebugOverlay::Attach(Surface* surface, UniquePtr<DebugOverlay> overlay, const KeyChord& toggle) {
+bool DebugOverlay::Attach(Surface* surface, UniquePtr<DebugOverlay> overlay, const KeyChord& toggle)
+{
     DebugOverlay* raw = overlay.Get();
     raw->surface_ = surface;
     surface->Root()->AddChild(UniquePtr<Widget>(overlay.Release()));
@@ -226,106 +312,158 @@ bool DebugOverlay::Attach(Surface* surface, UniquePtr<DebugOverlay> overlay, con
     return raw->accelerator_ != 0;
 }
 
-void DebugOverlay::Toggle(void* user) {
+void DebugOverlay::Toggle(void* user)
+{
     DebugOverlay* self = static_cast<DebugOverlay*>(user);
     self->Show(self->Collapsed());
 }
 
-void DebugOverlay::Show(bool show) {
-    if (show == !Collapsed()) return;
+void DebugOverlay::Show(bool show)
+{
+    if (show == !Collapsed())
+    {
+        return;
+    }
     SetCollapsed(!show);
-    if (show) Refresh();
+    if (show)
+    {
+        Refresh();
+    }
 }
 
-void DebugOverlay::SetStats(const DebugStats& stats) {
+void DebugOverlay::SetStats(const DebugStats& stats)
+{
     graph_->Push(stats.frame_ms);
     const f32 fps = stats.frame_ms > 0 ? 1000.0f / stats.frame_ms : 0.0f;
     char text[160];
-    FormatTo(text, sizeof(text), "%.1f fps  %.2f ms  gpu %.2f ms  draws %u  jobs %u/%u  gpu mem %llu MB", static_cast<double>(fps),
-                  static_cast<double>(stats.frame_ms), static_cast<double>(stats.gpu_ms), stats.draw_calls, stats.jobs_pending, stats.job_workers,
-                  static_cast<unsigned long long>(stats.gpu_bytes >> 20));
+    FormatTo(text, sizeof(text), "%.1f fps  %.2f ms  gpu %.2f ms  draws %u  jobs %u/%u  gpu mem %llu MB",
+             static_cast<double>(fps), static_cast<double>(stats.frame_ms), static_cast<double>(stats.gpu_ms),
+             stats.draw_calls, stats.jobs_pending, stats.job_workers,
+             static_cast<unsigned long long>(stats.gpu_bytes >> 20));
     counters_->SetText(StringView(text, CStrLength(text)));
 }
 
-bool DebugOverlay::AddCommand(StringView name, StringView help, CommandFn function, void* user) {
-    if (name.Length() == 0 || function == nullptr || commands_.Size() >= kMaxCommands) return false;
-    if (name.Find(StringView(" ")) != name.Length()) return false;
-    if (name == StringView("help") || name == StringView("clear")) return false;
-    for (usize i = 0; i < commands_.Size(); ++i) {
-        if (commands_[i].name == name) return false;
+bool DebugOverlay::AddCommand(StringView name, StringView help, CommandFn function, void* user)
+{
+    if (name.Length() == 0 || function == nullptr || commands_.Size() >= kMaxCommands)
+    {
+        return false;
+    }
+    if (name.Find(StringView(" ")) != name.Length())
+    {
+        return false;
+    }
+    if (name == StringView("help") || name == StringView("clear"))
+    {
+        return false;
+    }
+    for (usize i = 0; i < commands_.Size(); ++i)
+    {
+        if (commands_[i].name == name)
+        {
+            return false;
+        }
     }
     commands_.Push(Command(OwnedText(name), OwnedText(help), function, user));
     return true;
 }
 
-bool DebugOverlay::Run(StringView line) {
+bool DebugOverlay::Run(StringView line)
+{
     line = TrimmedText(line);
-    if (line.Length() == 0) return false;
+    if (line.Length() == 0)
+    {
+        return false;
+    }
     char echo[1024];
     const int n = FormatTo(echo, sizeof(echo), "> %.*s", static_cast<int>(line.Length()), line.Data());
-    capture_.Append(StringView(echo, n > 0 ? (static_cast<usize>(n) < sizeof(echo) ? static_cast<usize>(n) : sizeof(echo) - 1) : 0));
+    capture_.Append(StringView(
+        echo, n > 0 ? (static_cast<usize>(n) < sizeof(echo) ? static_cast<usize>(n) : sizeof(echo) - 1) : 0));
     const usize space = line.Find(StringView(" "));
     const StringView name = line.Substring(0, space);
     const StringView argument = space < line.Length() ? TrimmedText(line.Substring(space)) : StringView();
     bool ran = false;
-    if (name == StringView("clear")) {
+    if (name == StringView("clear"))
+    {
         capture_.Clear();
         ran = true;
-    } else if (name == StringView("help")) {
+    }
+    else if (name == StringView("help"))
+    {
         capture_.Append(StringView("help: list the commands"));
         capture_.Append(StringView("clear: empty the console"));
-        for (usize i = 0; i < commands_.Size(); ++i) {
+        for (usize i = 0; i < commands_.Size(); ++i)
+        {
             char buf[256];
             const int len = FormatTo(buf, sizeof(buf), "%s: %s", commands_[i].name.CStr(), commands_[i].help.CStr());
-            capture_.Append(StringView(buf, len > 0 ? (static_cast<usize>(len) < sizeof(buf) ? static_cast<usize>(len) : sizeof(buf) - 1) : 0));
+            capture_.Append(StringView(
+                buf,
+                len > 0 ? (static_cast<usize>(len) < sizeof(buf) ? static_cast<usize>(len) : sizeof(buf) - 1) : 0));
         }
         ran = true;
-    } else {
-        for (usize i = 0; i < commands_.Size(); ++i) {
-            if (commands_[i].name == name) {
+    }
+    else
+    {
+        for (usize i = 0; i < commands_.Size(); ++i)
+        {
+            if (commands_[i].name == name)
+            {
                 commands_[i].function(commands_[i].user, argument, capture_);
                 ran = true;
                 break;
             }
         }
-        if (!ran) capture_.Append(StringView("unknown command (help lists them)"));
+        if (!ran)
+        {
+            capture_.Append(StringView("unknown command (help lists them)"));
+        }
     }
     Refresh();
     return ran;
 }
 
-void DebugOverlay::Submitted(void* user, TextField* field) {
+void DebugOverlay::Submitted(void* user, TextField* field)
+{
     DebugOverlay* self = static_cast<DebugOverlay*>(user);
     self->Run(field->Text());
     field->SetText(StringView());
 }
 
-void DebugOverlay::FilterChanged(void* user, TextField* field) {
+void DebugOverlay::FilterChanged(void* user, TextField* field)
+{
     DebugOverlay* self = static_cast<DebugOverlay*>(user);
     self->capture_.SetFilter(field->Text());
     self->Refresh();
 }
 
-void DebugOverlay::Refresh() {
+void DebugOverlay::Refresh()
+{
     // Follow the newest line only while the user has not scrolled up from where the last refresh left the list.
     const bool follow = console_->Offset() >= bottom_offset_ - 0.5f;
     console_->ModelChanged();
     const usize visible = capture_.VisibleCount();
-    if (follow && visible > 0) {
+    if (follow && visible > 0)
+    {
         console_->ScrollToIndex(visible - 1);
         bottom_offset_ = console_->Offset();
     }
     ++refreshes_;
 }
 
-void DebugOverlay::Update(f32) {
-    if (capture_.Poll() > 0) Refresh();
+void DebugOverlay::Update(f32)
+{
+    if (capture_.Poll() > 0)
+    {
+        Refresh();
+    }
 }
 
-void DebugOverlay::Arrange(const Rect& rect) {
+void DebugOverlay::Arrange(const Rect& rect)
+{
     Rect r = rect;
     Surface* surface = GetSurface();
-    if (surface != nullptr) {
+    if (surface != nullptr)
+    {
         const Rect& root = surface->Root()->Bounds();
         r.w = kWidth;
         r.h = kPanelHeight;
@@ -335,11 +473,12 @@ void DebugOverlay::Arrange(const Rect& rect) {
     BoxLayout::Arrange(r);
 }
 
-void DebugOverlay::Draw(Canvas& canvas) {
+void DebugOverlay::Draw(Canvas& canvas)
+{
     Surface* surface = GetSurface();
     const Rect& b = Bounds();
     canvas.DrawRect(b, surface->Themes().Color(ColorId::WindowBackground));
     canvas.DrawBorder(b, CornerRadii(0), 1.0f, surface->Themes().Color(ColorId::Border));
 }
 
-} // namespace engine_placeholder::ui
+}  // namespace engine_placeholder::ui

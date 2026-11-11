@@ -23,24 +23,48 @@
 #define IO_TEST_SANITIZED 1
 #endif
 
-using namespace engine_placeholder; // the allocation hooks below are global and name the engine types
+using namespace engine_placeholder;  // the allocation hooks below are global and name the engine types
 
-// --- an allocation counter (this test executable only), to prove the local completion path allocates nothing -----------------
-#ifndef IO_TEST_SANITIZED // the sanitizer runtimes define their own operator new
-namespace {
+// --- an allocation counter (this test executable only), to prove the local completion path allocates nothing
+// -----------------
+#ifndef IO_TEST_SANITIZED  // the sanitizer runtimes define their own operator new
+namespace
+{
 Atomic<long> g_allocs{0};
 Atomic<bool> g_counting{false};
-} // namespace
-void* operator new(usize n) {
-    if (g_counting.Load(MemoryOrder::Relaxed)) g_allocs.FetchAdd(1, MemoryOrder::Relaxed);
-    if (void* p = MemAllocate(n == 0 ? 1 : n)) return p;
+}  // namespace
+void* operator new(usize n)
+{
+    if (g_counting.Load(MemoryOrder::Relaxed))
+    {
+        g_allocs.FetchAdd(1, MemoryOrder::Relaxed);
+    }
+    if (void* p = MemAllocate(n == 0 ? 1 : n))
+    {
+        return p;
+    }
     os::Abort();
 }
-void* operator new[](usize n) { return operator new(n); }
-void operator delete(void* p) noexcept { MemFree(p); }
-void operator delete[](void* p) noexcept { MemFree(p); }
-void operator delete(void* p, usize) noexcept { MemFree(p); }
-void operator delete[](void* p, usize) noexcept { MemFree(p); }
+void* operator new[](usize n)
+{
+    return operator new(n);
+}
+void operator delete(void* p) noexcept
+{
+    MemFree(p);
+}
+void operator delete[](void* p) noexcept
+{
+    MemFree(p);
+}
+void operator delete(void* p, usize) noexcept
+{
+    MemFree(p);
+}
+void operator delete[](void* p, usize) noexcept
+{
+    MemFree(p);
+}
 #endif
 
 using namespace engine_placeholder;
@@ -49,9 +73,11 @@ using io::OpenMode;
 using io_test::SlowFile;
 using io_test::TempDir;
 
-namespace {
+namespace
+{
 
-io::FilePtr OpenWith(TempDir& dir, StringView content, OpenMode mode = OpenMode::Read) {
+io::FilePtr OpenWith(TempDir& dir, StringView content, OpenMode mode = OpenMode::Read)
+{
     static int counter = 0;
     const engine_test::Text name = engine_test::Format("async%d", counter++);
     const io::Path path = dir / name.View();
@@ -62,42 +88,50 @@ io::FilePtr OpenWith(TempDir& dir, StringView content, OpenMode mode = OpenMode:
 }
 
 // Installs an executor as the default for one scope, so a failed REQUIRE cannot leave a dangling pointer behind.
-struct ScopedDefaultExecutor {
+struct ScopedDefaultExecutor
+{
     explicit ScopedDefaultExecutor(io::IoExecutor* e) { io::SetDefaultExecutor(e); }
     ~ScopedDefaultExecutor() { io::SetDefaultExecutor(nullptr); }
 };
 
-struct Gate { // waits for N completions and records their order
+struct Gate
+{  // waits for N completions and records their order
     Mutex m;
     ConditionVariable cv;
     int count = 0;
     Vector<int> order;
     Vector<io::Status> statuses;
-    void Add(int id, io::Status s) {
+    void Add(int id, io::Status s)
+    {
         LockGuard<Mutex> lock(m);
         order.Push(id);
         statuses.Push(s);
         ++count;
         cv.NotifyAll();
     }
-    void WaitFor(int n) {
+    void WaitFor(int n)
+    {
         UniqueLock<Mutex> lock(m);
         cv.Wait(lock, [&] { return count >= n; });
     }
 };
-struct Tagged {
+struct Tagged
+{
     Gate* gate;
     int id;
 };
-void TaggedDone(void* user, const io::AsyncResult& r) {
+void TaggedDone(void* user, const io::AsyncResult& r)
+{
     Tagged* t = static_cast<Tagged*>(user);
     t->gate->Add(t->id, r.status);
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("io::File: the network-like double passes the same conformance suite", "[io][async][slowfile]") {
-    for (usize chunk : {usize{4096}, usize{1} << 20}) {
+TEST_CASE("io::File: the network-like double passes the same conformance suite", "[io][async][slowfile]")
+{
+    for (usize chunk : {usize{4096}, usize{1} << 20})
+    {
         INFO("chunk " << chunk);
         SlowFile::Options o;
         o.delay_us = 1;
@@ -107,7 +141,8 @@ TEST_CASE("io::File: the network-like double passes the same conformance suite",
     }
 }
 
-TEST_CASE("io::File: the double expresses a size that is unknown until the first read", "[io][async][slowfile]") {
+TEST_CASE("io::File: the double expresses a size that is unknown until the first read", "[io][async][slowfile]")
+{
     SlowFile f("hello world", SlowFile::Options{50, 4, 0});
     u64 size = 0;
     CHECK((f.Capabilities() & io::kCapSizeKnown) == 0);
@@ -115,13 +150,14 @@ TEST_CASE("io::File: the double expresses a size that is unknown until the first
     char b[16];
     usize n = 0;
     REQUIRE(f.Read(b, 16, 0, &n).Ok());
-    CHECK(n == 4); // a short read, not an error
+    CHECK(n == 4);  // a short read, not an error
     CHECK((f.Capabilities() & io::kCapNativelyAsync) != 0);
     REQUIRE(f.Size(&size).Ok());
     CHECK(size == 11);
 }
 
-TEST_CASE("io::File: asynchronous reads on a local file", "[io][async]") {
+TEST_CASE("io::File: asynchronous reads on a local file", "[io][async]")
+{
     TempDir dir;
     const engine_test::Text content_text = io_test::PatternBytes(50000);
     const StringView content = content_text.View();
@@ -132,13 +168,15 @@ TEST_CASE("io::File: asynchronous reads on a local file", "[io][async]") {
     Tagged tags[kN];
     io::AsyncRequest reqs[kN];
     Vector<char> bufs[kN];
-    for (int i = 0; i < kN; ++i) {
+    for (int i = 0; i < kN; ++i)
+    {
         tags[i] = {&gate, i};
         bufs[i] = engine_test::Chars(1000);
         f->ReadAsync(&reqs[i], bufs[i].Data(), 1000, static_cast<u64>(i) * 1000, &TaggedDone, &tags[i]);
     }
     gate.WaitFor(kN);
-    for (int i = 0; i < kN; ++i) {
+    for (int i = 0; i < kN; ++i)
+    {
         CHECK(gate.order[i] == i);
         CHECK(gate.statuses[i].Ok());
         CHECK(StringView(bufs[i].Data(), bufs[i].Size()) == content.Substring(static_cast<usize>(i) * 1000, 1000));
@@ -158,38 +196,51 @@ TEST_CASE("io::File: asynchronous reads on a local file", "[io][async]") {
     CHECK(StringView(out, 10) == StringView("0123ABC789"));
 }
 
-TEST_CASE("io::File: a thousand concurrent reads of one file", "[io][async]") {
+TEST_CASE("io::File: a thousand concurrent reads of one file", "[io][async]")
+{
     TempDir dir;
     const engine_test::Text content_text = io_test::PatternBytes(100000);
     const StringView content = content_text.View();
-    for (int kind = 0; kind < 2; ++kind) {
-        io::FilePtr f = kind == 0 ? OpenWith(dir, content) : io::FilePtr(MakeUnique<SlowFile>(content, SlowFile::Options{5, 500, 0}));
+    for (int kind = 0; kind < 2; ++kind)
+    {
+        io::FilePtr f = kind == 0 ? OpenWith(dir, content)
+                                  : io::FilePtr(MakeUnique<SlowFile>(content, SlowFile::Options{5, 500, 0}));
         constexpr int kN = 1000;
         Gate gate;
         Vector<Tagged> tags;
         tags.Resize(kN);
         Vector<io::AsyncRequest> reqs;
         reqs.Resize(kN);
-        Vector<char> bufs = engine_test::Chars(static_cast<usize>(kN) * 100); // request i reads into bufs[i * 100 ...]
-        for (int i = 0; i < kN; ++i) {
+        Vector<char> bufs = engine_test::Chars(static_cast<usize>(kN) * 100);  // request i reads into bufs[i * 100 ...]
+        for (int i = 0; i < kN; ++i)
+        {
             tags[i] = {&gate, i};
-            f->ReadAsync(&reqs[i], bufs.Data() + i * 100, 100, static_cast<u64>((i * 97) % 99000), &TaggedDone, &tags[i]);
+            f->ReadAsync(&reqs[i], bufs.Data() + i * 100, 100, static_cast<u64>((i * 97) % 99000), &TaggedDone,
+                         &tags[i]);
         }
         gate.WaitFor(kN);
         Vector<io::Status> by_id;
         by_id.Resize(kN);
-        for (usize k = 0; k < gate.order.Size(); ++k) by_id[static_cast<usize>(gate.order[k])] = gate.statuses[k];
+        for (usize k = 0; k < gate.order.Size(); ++k)
+        {
+            by_id[static_cast<usize>(gate.order[k])] = gate.statuses[k];
+        }
         int bad = 0;
-        for (int i = 0; i < kN; ++i) {
+        for (int i = 0; i < kN; ++i)
+        {
             const usize off = static_cast<usize>((i * 97) % 99000);
-            if (!by_id[i].Ok() || StringView(bufs.Data() + i * 100, 100) != content.Substring(off, 100)) ++bad;
+            if (!by_id[i].Ok() || StringView(bufs.Data() + i * 100, 100) != content.Substring(off, 100))
+            {
+                ++bad;
+            }
         }
         CHECK(bad == 0);
         CHECK(gate.order.Size() == static_cast<usize>(kN));
     }
 }
 
-TEST_CASE("io::File: cancellation", "[io][async]") {
+TEST_CASE("io::File: cancellation", "[io][async]")
+{
     // One slow request keeps the double busy, so the next is still queued when it is cancelled.
     SlowFile f(engine_test::Repeated(100, 'x').View(), SlowFile::Options{30000, 100, 0});
     Gate gate;
@@ -201,35 +252,45 @@ TEST_CASE("io::File: cancellation", "[io][async]") {
     io::AsyncRequest r1;
     f.ReadAsync(&r0, a, 10, 0, &TaggedDone, &t0);
     f.ReadAsync(&r1, b, 10, 0, &TaggedDone, &t1);
-    CHECK(f.Cancel(&r1));  // not started yet
-    CHECK_FALSE(f.Cancel(&r1)); // already cancelled
-    gate.WaitFor(2);       // both complete: the cancelled one exactly once, with Interrupted
+    CHECK(f.Cancel(&r1));        // not started yet
+    CHECK_FALSE(f.Cancel(&r1));  // already cancelled
+    gate.WaitFor(2);             // both complete: the cancelled one exactly once, with Interrupted
     CHECK(gate.statuses[0].Ok());
     CHECK(gate.statuses[1].Is(Error::Interrupted));
-    CHECK_FALSE(f.Cancel(&r0)); // after completion
+    CHECK_FALSE(f.Cancel(&r0));  // after completion
     CHECK(gate.count == 2);
 }
 
-TEST_CASE("io::File: a completion may destroy the file", "[io][async]") {
+TEST_CASE("io::File: a completion may destroy the file", "[io][async]")
+{
     TempDir dir;
-    struct Ctx {
+    struct Ctx
+    {
         io::FilePtr file;
         io::AsyncRequest request;
         Atomic<int> done{0};
         char buf[8];
     } ctx;
     ctx.file = OpenWith(dir, "contents!");
-    ctx.file->ReadAsync(&ctx.request, ctx.buf, 8, 0, [](void* u, const io::AsyncResult& r) {
-        Ctx* c = static_cast<Ctx*>(u);
-        CHECK(r.status.Ok());
-        c->file.Reset(); // destroys the file from inside its own completion
-        c->done.Store(1);
-    }, &ctx);
-    while (ctx.done.Load() == 0) ThisThread::Yield();
+    ctx.file->ReadAsync(
+        &ctx.request, ctx.buf, 8, 0,
+        [](void* u, const io::AsyncResult& r)
+        {
+            Ctx* c = static_cast<Ctx*>(u);
+            CHECK(r.status.Ok());
+            c->file.Reset();  // destroys the file from inside its own completion
+            c->done.Store(1);
+        },
+        &ctx);
+    while (ctx.done.Load() == 0)
+    {
+        ThisThread::Yield();
+    }
     CHECK_FALSE(ctx.file);
 }
 
-TEST_CASE("io::File: destroying a file waits for its requests", "[io][async]") {
+TEST_CASE("io::File: destroying a file waits for its requests", "[io][async]")
+{
     TempDir dir;
     Atomic<int> completed{0};
     constexpr int kN = 50;
@@ -238,11 +299,17 @@ TEST_CASE("io::File: destroying a file waits for its requests", "[io][async]") {
     Vector<char> bufs = engine_test::Chars(static_cast<usize>(kN) * 64);
     {
         io::FilePtr f = OpenWith(dir, io_test::PatternBytes(10000).View());
-        for (int i = 0; i < kN; ++i) {
-            f->ReadAsync(&reqs[i], bufs.Data() + i * 64, 64, 0, [](void* u, const io::AsyncResult&) { static_cast<Atomic<int>*>(u)->FetchAdd(1); }, &completed);
+        for (int i = 0; i < kN; ++i)
+        {
+            f->ReadAsync(
+                &reqs[i], bufs.Data() + i * 64, 64, 0,
+                [](void* u, const io::AsyncResult&) { static_cast<Atomic<int>*>(u)->FetchAdd(1); }, &completed);
         }
-    } // ~LocalFile waits until every request has begun completing
-    while (completed.Load() < kN) ThisThread::Yield();
+    }  // ~LocalFile waits until every request has begun completing
+    while (completed.Load() < kN)
+    {
+        ThisThread::Yield();
+    }
     CHECK(completed.Load() == kN);
     // The double completes queued requests with Interrupted when it is destroyed.
     Atomic<int> interrupted{0};
@@ -251,23 +318,33 @@ TEST_CASE("io::File: destroying a file waits for its requests", "[io][async]") {
     char tmp[10][8];
     {
         SlowFile slow(engine_test::Repeated(100, 'y').View(), SlowFile::Options{20000, 100, 0});
-        for (int i = 0; i < 10; ++i) {
-            slow.ReadAsync(&r2[i], tmp[i], 8, 0, [](void* u, const io::AsyncResult& r) {
-                if (r.status.Is(Error::Interrupted)) static_cast<Atomic<int>*>(u)->FetchAdd(1);
-            }, &interrupted);
+        for (int i = 0; i < 10; ++i)
+        {
+            slow.ReadAsync(
+                &r2[i], tmp[i], 8, 0,
+                [](void* u, const io::AsyncResult& r)
+                {
+                    if (r.status.Is(Error::Interrupted))
+                    {
+                        static_cast<Atomic<int>*>(u)->FetchAdd(1);
+                    }
+                },
+                &interrupted);
         }
     }
-    CHECK(interrupted.Load() >= 8); // the first may already be running
+    CHECK(interrupted.Load() >= 8);  // the first may already be running
 }
 
-TEST_CASE("io::File: an error in the middle of a chain", "[io][async]") {
+TEST_CASE("io::File: an error in the middle of a chain", "[io][async]")
+{
     SlowFile f(io_test::PatternBytes(10000).View(), SlowFile::Options{10, 1000, 3});
     Vector<u8> all;
     const io::Status s = io::ReadAll(f, &all);
     CHECK(s.Is(Error::Io));
 }
 
-TEST_CASE("io::File: an executor that is shut down completes requests with Interrupted", "[io][async]") {
+TEST_CASE("io::File: an executor that is shut down completes requests with Interrupted", "[io][async]")
+{
     TempDir dir;
     const engine_test::Text content_text = io_test::PatternBytes(4096);
     const StringView content = content_text.View();
@@ -282,13 +359,17 @@ TEST_CASE("io::File: an executor that is shut down completes requests with Inter
         Vector<io::AsyncRequest> reqs;
         reqs.Resize(kN);
         char buf[kN][16];
-        for (int i = 0; i < kN; ++i) {
+        for (int i = 0; i < kN; ++i)
+        {
             tags[i] = {&gate, i};
             f->ReadAsync(&reqs[i], buf[i], 16, 0, &TaggedDone, &tags[i]);
         }
-        io_thread->Shutdown(); // drains: everything queued still runs
+        io_thread->Shutdown();  // drains: everything queued still runs
         gate.WaitFor(kN);
-        for (int i = 0; i < kN; ++i) CHECK(gate.statuses[i].Ok());
+        for (int i = 0; i < kN; ++i)
+        {
+            CHECK(gate.statuses[i].Ok());
+        }
         // A stopped executor removes itself as the default, so later requests run on the built-in one.
         Gate later;
         Tagged lt{&later, 0};
@@ -299,7 +380,8 @@ TEST_CASE("io::File: an executor that is shut down completes requests with Inter
         CHECK(later.statuses[0].Ok());
     }
     // An executor that refuses work: the request completes at once, on the caller's thread, with Interrupted.
-    struct Refusing final : io::IoExecutor {
+    struct Refusing final : io::IoExecutor
+    {
         bool Submit(io::IoWork*) override { return false; }
     } refusing;
     ScopedDefaultExecutor scoped(&refusing);
@@ -308,11 +390,12 @@ TEST_CASE("io::File: an executor that is shut down completes requests with Inter
     io::AsyncRequest rr;
     char rb[16];
     f->ReadAsync(&rr, rb, 16, 0, &TaggedDone, &rt);
-    CHECK(refused.count == 1); // already complete when ReadAsync returned
+    CHECK(refused.count == 1);  // already complete when ReadAsync returned
     CHECK(refused.statuses[0].Is(Error::Interrupted));
 }
 
-TEST_CASE("io::File: the local completion path allocates nothing", "[io][async]") {
+TEST_CASE("io::File: the local completion path allocates nothing", "[io][async]")
+{
 #ifdef IO_TEST_SANITIZED
     SKIP("allocation counting needs the plain flavor (the sanitizer runtimes own operator new)");
 #else
@@ -334,7 +417,8 @@ TEST_CASE("io::File: the local completion path allocates nothing", "[io][async]"
     gate.WaitFor(1);
     g_allocs.Store(0);
     g_counting.Store(true);
-    for (int i = 0; i < kN; ++i) {
+    for (int i = 0; i < kN; ++i)
+    {
         tags[i] = {&gate, i};
         f->ReadAsync(&reqs[i], buf, 64, 0, &TaggedDone, &tags[i]);
     }
@@ -344,11 +428,14 @@ TEST_CASE("io::File: the local completion path allocates nothing", "[io][async]"
 #endif
 }
 
-// --- coroutines on a scheduler -----------------------------------------------------------------------------------------------
+// --- coroutines on a scheduler
+// -----------------------------------------------------------------------------------------------
 
-namespace {
+namespace
+{
 
-struct JobOut {
+struct JobOut
+{
     Atomic<int> done{0};
     bool ok = false;
     bool on_participant = false;
@@ -356,7 +443,8 @@ struct JobOut {
     io::Status status;
 };
 
-jobs::Job ReadInJob(jobs::Scheduler* s, io::File* f, JobOut* out) {
+jobs::Job ReadInJob(jobs::Scheduler* s, io::File* f, JobOut* out)
+{
     char buf[16];
     const io::AsyncResult r = co_await jobs::ReadAsync(*s, *f, buf, 16, 4);
     out->ok = r.status.Ok();
@@ -365,7 +453,8 @@ jobs::Job ReadInJob(jobs::Scheduler* s, io::File* f, JobOut* out) {
     out->done.FetchAdd(1, MemoryOrder::Release);
 }
 
-jobs::Job ReadAllInJob(jobs::Scheduler* s, io::File* f, JobOut* out) {
+jobs::Job ReadAllInJob(jobs::Scheduler* s, io::File* f, JobOut* out)
+{
     jobs::FileReadAllResult r = co_await jobs::ReadAllAsync(*s, *f);
     out->status = r.status;
     out->text = engine_test::MakeText(StringView(reinterpret_cast<const char*>(r.bytes.Data()), r.bytes.Size()));
@@ -373,16 +462,18 @@ jobs::Job ReadAllInJob(jobs::Scheduler* s, io::File* f, JobOut* out) {
     out->done.FetchAdd(1, MemoryOrder::Release);
 }
 
-jobs::Job WriteInJob(jobs::Scheduler* s, io::File* f, JobOut* out) {
+jobs::Job WriteInJob(jobs::Scheduler* s, io::File* f, JobOut* out)
+{
     const io::AsyncResult w = co_await jobs::WriteAsync(*s, *f, "XY", 2, 0);
     const io::AsyncResult fl = co_await jobs::FlushAsync(*s, *f);
     out->ok = w.status.Ok() && w.bytes == 2 && fl.status.Ok();
     out->done.FetchAdd(1, MemoryOrder::Release);
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("jobs: co_await file reads inside jobs on a scheduler", "[io][async][jobs]") {
+TEST_CASE("jobs: co_await file reads inside jobs on a scheduler", "[io][async][jobs]")
+{
     TempDir dir;
     jobs::Scheduler::Config cfg;
     cfg.participants = 4;
@@ -432,25 +523,30 @@ TEST_CASE("jobs: co_await file reads inside jobs on a scheduler", "[io][async][j
     }
 }
 
-#if ENGINE_PLATFORM_LINUX // (only the /proc case below uses these)
-namespace {
-struct ProcOut {
+#if ENGINE_PLATFORM_LINUX  // (only the /proc case below uses these)
+namespace
+{
+struct ProcOut
+{
     Atomic<int> done{0};
     bool ok = false;
     usize size = 0;
 };
-jobs::Job ReadProcJob(jobs::Scheduler* s, ProcOut* out) {
+jobs::Job ReadProcJob(jobs::Scheduler* s, ProcOut* out)
+{
     jobs::FileReadResult r = co_await jobs::ReadFileAsync(*s, "/proc/self/status");
     out->ok = r.ok;
     out->size = r.size;
     out->done.FetchAdd(1, MemoryOrder::Release);
 }
-} // namespace
+}  // namespace
 #endif
 
-TEST_CASE("jobs::ReadFileAsync reads files whose reported size is wrong (/proc)", "[io][async][jobs]") {
+TEST_CASE("jobs::ReadFileAsync reads files whose reported size is wrong (/proc)", "[io][async][jobs]")
+{
 #if !ENGINE_PLATFORM_LINUX
-    SKIP("only Linux has a file whose reported size is wrong (/proc); a pipe or FIFO has no size, which ReadFileAsync refuses");
+    SKIP(
+        "only Linux has a file whose reported size is wrong (/proc); a pipe or FIFO has no size, which ReadFileAsync refuses");
 #else
     jobs::Scheduler::Config cfg;
     cfg.participants = 2;

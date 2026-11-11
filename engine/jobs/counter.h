@@ -32,7 +32,8 @@
 //! resumes it, and neither touches the counter afterwards unless it owns the
 //! wake-up. The awaiter therefore cannot finish and destroy the counter while
 //! a decrementer still reads it.
-namespace engine_placeholder::jobs {
+namespace engine_placeholder::jobs
+{
 
 /// Counts outstanding work and lets one coroutine wait for it to reach zero.
 ///
@@ -48,7 +49,8 @@ namespace engine_placeholder::jobs {
 /// - Ownership: the counter does not own the scheduler it is bound to, which
 ///   must outlive it. The counter itself must outlive every decrement and the await.
 /// - See: [[jobs::Spawn]], [[jobs::Job::SetCompletion(Counter&)]]
-class Counter {
+class Counter
+{
 public:
     /// Creates a zeroed counter bound to an explicit scheduler.
     /// - Param scheduler: the scheduler that resumes the waiter; must outlive the counter.
@@ -56,7 +58,8 @@ public:
     /// Creates a zeroed counter bound to the scheduler of the calling participant thread.
     ///
     /// - Aborts: called on a thread that is not a scheduler participant.
-    Counter() : scheduler_(Scheduler::Current()) {
+    Counter() : scheduler_(Scheduler::Current())
+    {
         ENGINE_ASSERT(scheduler_ != nullptr, "Counter() default-constructed on a non-participant thread");
     }
 
@@ -83,10 +86,12 @@ public:
     ///
     /// - Aborts: the count is already zero.
     /// - Thread-safety: thread-safe. Callable from any thread, including non-participants such as the I/O thread.
-    void Decrement() {
+    void Decrement()
+    {
         const u64 old = state_.FetchSub(2, MemoryOrder::AcqRel);
         ENGINE_ASSERT((old >> 1) >= 1, "Counter::Decrement below zero");
-        if ((old >> 1) == 1 && (old & 1) != 0) {
+        if ((old >> 1) == 1 && (old & 1) != 0)
+        {
             // We took the count to zero with a waiter parked: we own the
             // wake-up. The awaiter cannot proceed (or free *this) until
             // we schedule it, so reading slot_ here is safe; nothing of
@@ -111,7 +116,8 @@ public:
     /// Process-wide tallies of which await path was taken, so tests can show both halves of the race ran.
     ///
     /// - Thread-safety: thread-safe. Relaxed atomic counters.
-    struct PathCounters {
+    struct PathCounters
+    {
         /// Awaits that found the count already zero and continued inline.
         Atomic<u64> inline_continues{0};
         /// Awaits that suspended and were woken by a decrementer.
@@ -121,7 +127,8 @@ public:
     /// Gives the process-wide await-path tallies.
     ///
     /// - Returns: a reference to a function-local static that lives for the whole process.
-    static PathCounters& PathStats() {
+    static PathCounters& PathStats()
+    {
         static PathCounters counters;
         return counters;
     }
@@ -138,7 +145,8 @@ public:
     /// Awaiter produced by `co_await` on a counter.
     ///
     /// - Thread-safety: not-thread-safe. It belongs to the one coroutine awaiting the counter.
-    struct Awaitable {
+    struct Awaitable
+    {
         /// The awaited counter.
         Counter* counter;
 
@@ -150,9 +158,11 @@ public:
         /// Parks the awaiting coroutine unless the work finished in the meantime.
         ///
         /// - Param h: the awaiting coroutine's handle.
-        /// - Returns: `false` if the count reached zero first and the coroutine continues inline; `true` if it was parked and the decrementer that reaches zero will schedule it.
+        /// - Returns: `false` if the count reached zero first and the coroutine continues inline; `true` if it was
+        /// parked and the decrementer that reaches zero will schedule it.
         /// - Aborts: another coroutine is already awaiting this counter.
-        bool await_suspend(CoroutineHandle<> h) noexcept {
+        bool await_suspend(CoroutineHandle<> h) noexcept
+        {
             // Check BEFORE touching slot_: a second awaiter must not
             // clobber the first one's handle (ENGINE_ASSERT is always on).
             ENGINE_ASSERT((counter->state_.Load(MemoryOrder::Acquire) & 1) == 0,
@@ -160,18 +170,20 @@ public:
             counter->slot_ = h.address();
             const u64 old = counter->state_.FetchOr(1, MemoryOrder::AcqRel);
             ENGINE_ASSERT((old & 1) == 0, "Counter awaited by more than one coroutine");
-            if ((old >> 1) == 0) {
+            if ((old >> 1) == 0)
+            {
                 // Work finished between await_ready and here; no
                 // decrementer will resume us. Continue inline.
                 PathStats().inline_continues.FetchAdd(1, MemoryOrder::Relaxed);
                 return false;
             }
             PathStats().parked.FetchAdd(1, MemoryOrder::Relaxed);
-            return true; // the decrementer that reaches zero resumes us
+            return true;  // the decrementer that reaches zero resumes us
         }
 
         /// Clears the waiter mark so the counter can be reused for another round.
-        void await_resume() noexcept {
+        void await_resume() noexcept
+        {
             // Single awaiter, count is zero: clear the waiter bit so the
             // Counter can be reused for another round.
             counter->state_.FetchAnd(~u64{1}, MemoryOrder::AcqRel);
@@ -204,7 +216,10 @@ private:
     void* slot_ = nullptr;
 };
 
-inline void Job::SetCompletion(Counter& counter) { SetCompletion(&Counter::DecrementThunk, &counter); }
+inline void Job::SetCompletion(Counter& counter)
+{
+    SetCompletion(&Counter::DecrementThunk, &counter);
+}
 
 /// Counts a job against a counter and submits it; the job's completion decrements the counter.
 ///
@@ -213,10 +228,11 @@ inline void Job::SetCompletion(Counter& counter) { SetCompletion(&Counter::Decre
 /// - Aborts: `job` is empty or already has a completion hook.
 /// - Thread-safety: thread-safe. Callable from any thread; the submit follows the rules of [[jobs::Scheduler::Submit]].
 /// - Ownership: the scheduler takes the job's frame via [[jobs::Job::Release]].
-inline void Spawn(Counter& counter, Job&& job) {
+inline void Spawn(Counter& counter, Job&& job)
+{
     counter.Increment();
     job.SetCompletion(counter);
     counter.GetScheduler().Submit(Move(job));
 }
 
-} // namespace engine_placeholder::jobs
+}  // namespace engine_placeholder::jobs

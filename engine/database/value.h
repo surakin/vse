@@ -7,15 +7,19 @@
 #include "string_view.h"
 #include "types.h"
 
-namespace engine_placeholder::database {
+namespace engine_placeholder::database
+{
 
 /// The five storage classes of a value.
-enum class ValueType : u8 {
-    Null,    ///< No value (SQL `NULL`).
-    Integer, ///< A signed 64-bit integer.
-    Real,    ///< An IEEE 754 binary64 number. A backend may return `-0.0` as `0.0` (SQLite stores it as the integer 0), and cannot store a NaN: binding one is `Misuse`. Code that needs the sign or a NaN stores the 8 bytes as a blob.
-    Text,    ///< UTF-8 text with an explicit length (embedded NUL bytes are kept).
-    Blob,    ///< A sequence of bytes. An empty blob is a blob, not null.
+enum class ValueType : u8
+{
+    Null,     ///< No value (SQL `NULL`).
+    Integer,  ///< A signed 64-bit integer.
+    Real,  ///< An IEEE 754 binary64 number. A backend may return `-0.0` as `0.0` (SQLite stores it as the integer 0),
+           ///< and cannot store a NaN: binding one is `Misuse`. Code that needs the sign or a NaN stores the 8 bytes as
+           ///< a blob.
+    Text,  ///< UTF-8 text with an explicit length (embedded NUL bytes are kept).
+    Blob,  ///< A sequence of bytes. An empty blob is a blob, not null.
 };
 
 /// Returns a stable lower-case name for `type` (`"integer"`); never null.
@@ -26,12 +30,14 @@ const char* ValueTypeName(ValueType type);
 
 /// A value that borrows its text or bytes: what a statement binds and what a column getter returns.
 ///
-/// Two views are equal when their types match and the contents are bitwise equal (a real compares by its bit pattern, so `-0` differs from `0` and
-/// a NaN equals the same NaN). There are no implicit conversions between types: `Integer(1)` and `Real(1.0)` differ.
+/// Two views are equal when their types match and the contents are bitwise equal (a real compares by its bit pattern,
+/// so `-0` differs from `0` and a NaN equals the same NaN). There are no implicit conversions between types:
+/// `Integer(1)` and `Real(1.0)` differ.
 ///
 /// - Thread-safety: immutable value.
 /// - Ownership: borrows the text or bytes; they must outlive the view.
-class ValueView {
+class ValueView
+{
 public:
     /// Creates a null view.
     constexpr ValueView() = default;
@@ -39,28 +45,32 @@ public:
     /// Returns a null view.
     static constexpr ValueView Null() { return ValueView(); }
     /// Returns an integer view.
-    static constexpr ValueView Integer(i64 value) {
+    static constexpr ValueView Integer(i64 value)
+    {
         ValueView v;
         v.type_ = ValueType::Integer;
         v.integer_ = value;
         return v;
     }
     /// Returns a real view.
-    static constexpr ValueView Real(f64 value) {
+    static constexpr ValueView Real(f64 value)
+    {
         ValueView v;
         v.type_ = ValueType::Real;
         v.real_ = value;
         return v;
     }
     /// Returns a text view over `text` (an empty string is empty text, not null).
-    static constexpr ValueView Text(StringView text) {
+    static constexpr ValueView Text(StringView text)
+    {
         ValueView v;
         v.type_ = ValueType::Text;
         v.text_ = text;
         return v;
     }
     /// Returns a blob view over `bytes` (an empty span is an empty blob, not null).
-    static constexpr ValueView Blob(ByteSpan bytes) {
+    static constexpr ValueView Blob(ByteSpan bytes)
+    {
         ValueView v;
         v.type_ = ValueType::Blob;
         v.bytes_ = bytes;
@@ -98,7 +108,8 @@ private:
 ///
 /// - Thread-safety: not-thread-safe; synchronize externally if shared.
 /// - Ownership: owns a copy of the text or bytes.
-class Value {
+class Value
+{
 public:
     /// Creates a null value.
     Value() = default;
@@ -130,4 +141,4 @@ private:
     Vector<byte> bytes_;
 };
 
-} // namespace engine_placeholder::database
+}  // namespace engine_placeholder::database

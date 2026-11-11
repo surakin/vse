@@ -7,35 +7,42 @@
 
 //! Textures and samplers that keep their source, so they can be made again after the device is replaced.
 
-namespace engine_placeholder::renderer {
+namespace engine_placeholder::renderer
+{
 
 /// The CPU side of a texture: its description and its pixels.
 ///
 /// - Thread-safety: thread-compatible.
 /// - Ownership: owns the pixels.
-struct TextureImage {
-    /// The description of the finished texture. `usage` gets `CopyDst` added; `debug_name` is ignored (the owner's name is used).
+struct TextureImage
+{
+    /// The description of the finished texture. `usage` gets `CopyDst` added; `debug_name` is ignored (the owner's name
+    /// is used).
     rhi::TextureDesc desc;
-    /// The pixels of the mip levels, tightly packed, level 0 first. Either all `desc.mip_levels` levels or only level 0.
+    /// The pixels of the mip levels, tightly packed, level 0 first. Either all `desc.mip_levels` levels or only level
+    /// 0.
     Vector<u8> pixels;
-    /// Whether to build the levels that `pixels` does not hold on the GPU (needs `desc.mip_levels` above 1 and a format and
-    /// device that can; otherwise the texture has one level).
+    /// Whether to build the levels that `pixels` does not hold on the GPU (needs `desc.mip_levels` above 1 and a format
+    /// and device that can; otherwise the texture has one level).
     bool generate_mips = false;
 };
 
-/// A function that produces a texture's image again, called at every (re)creation; for textures backed by an asset file.
+/// A function that produces a texture's image again, called at every (re)creation; for textures backed by an asset
+/// file.
 ///
 /// It receives the pointer given with the loader and an image to fill in, and returns false on failure.
 using TextureLoader = bool (*)(void* user, TextureImage* out);
 
 /// A sampled texture that survives a device reset.
 ///
-/// It holds either its pixels (`Create`) or a loader (`CreateFromLoader`), registers with a [[renderer::DeviceResources]] at the
-/// texture tier, and rebuilds itself in `Recreate`. The handle changes after a reset: read `Handle()` each frame, never keep it.
+/// It holds either its pixels (`Create`) or a loader (`CreateFromLoader`), registers with a
+/// [[renderer::DeviceResources]] at the texture tier, and rebuilds itself in `Recreate`. The handle changes after a
+/// reset: read `Handle()` each frame, never keep it.
 ///
 /// - Thread-safety: owner-thread-only. Move-only.
 /// - Ownership: owns the texture and the pixels. The device and the registry must outlive it.
-class GpuTexture final : public Recreatable {
+class GpuTexture final : public Recreatable
+{
 public:
     GpuTexture() = default;
     /// Releases everything this object owns.
@@ -51,10 +58,12 @@ public:
     ///
     /// - Param device: the device.
     /// - Param image: the description and pixels; moved in.
-    /// - Param resources: the registry, or null for a texture that does not need to survive a reset (the pixels are then not kept).
+    /// - Param resources: the registry, or null for a texture that does not need to survive a reset (the pixels are
+    /// then not kept).
     /// - Param debug_name: a label; copied, may be null.
     /// - Returns: true on success.
-    /// - Fails: returns false, logging the reason, if the description is invalid, exceeds the device limits, the format is
+    /// - Fails: returns false, logging the reason, if the description is invalid, exceeds the device limits, the format
+    /// is
     ///   not supported, or the upload fails.
     /// - Aborts: the texture already exists.
     /// - Ownership: borrowed for the call; nothing is kept unless the description above says so.
@@ -71,7 +80,8 @@ public:
     /// - Fails: as for [[renderer::GpuTexture::Create]], and when the loader fails.
     /// - Aborts: the texture already exists.
     /// - Ownership: borrowed for the call; nothing is kept unless the description above says so.
-    bool CreateFromLoader(rhi::Device* device, TextureLoader loader, void* user, DeviceResources* resources, const char* debug_name);
+    bool CreateFromLoader(rhi::Device* device, TextureLoader loader, void* user, DeviceResources* resources,
+                          const char* debug_name);
 
     /// Destroys the texture and forgets the source and the registration.
     void Destroy();
@@ -108,7 +118,8 @@ private:
 ///
 /// - Thread-safety: owner-thread-only. Move-only.
 /// - Ownership: owns the sampler. The device and the registry must outlive it.
-class GpuSampler final : public Recreatable {
+class GpuSampler final : public Recreatable
+{
 public:
     GpuSampler() = default;
     /// Releases everything this object owns.
@@ -157,4 +168,4 @@ private:
     rhi::SamplerHandle handle_;
 };
 
-} // namespace engine_placeholder::renderer
+}  // namespace engine_placeholder::renderer

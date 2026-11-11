@@ -7,27 +7,38 @@
 #include "rhi/vulkan/vk_loader.h"
 #include "rhi/vulkan/vulkan_device.h"
 
-namespace engine_placeholder::rhi {
+namespace engine_placeholder::rhi
+{
 
-namespace {
+namespace
+{
 
-DevicePtr CreateVulkanBackendDevice(const DeviceCreateInfo& info) { return vulkan::VulkanDevice::Create(info); }
+DevicePtr CreateVulkanBackendDevice(const DeviceCreateInfo& info)
+{
+    return vulkan::VulkanDevice::Create(info);
+}
 
-bool EnumerateVulkanAdapters(const DeviceCreateInfo& info, AdapterList* out) { return vulkan::VulkanDevice::EnumerateAdapters(info, out); }
+bool EnumerateVulkanAdapters(const DeviceCreateInfo& info, AdapterList* out)
+{
+    return vulkan::VulkanDevice::EnumerateAdapters(info, out);
+}
 
-bool VulkanAvailable(char* reason, usize reason_size) {
+bool VulkanAvailable(char* reason, usize reason_size)
+{
     vulkan::VulkanLoader loader;
     const vulkan::LoaderStatus status = vulkan::LoadVulkanLoader(&loader);
-    if (status == vulkan::LoaderStatus::Ok) {
+    if (status == vulkan::LoaderStatus::Ok)
+    {
         return true;
     }
     FormatTo(reason, reason_size, "the Vulkan loader could not be used (%s)", vulkan::LoaderStatusName(status));
     return false;
 }
 
-} // namespace
+}  // namespace
 
-bool RegisterVulkanBackend() {
+bool RegisterVulkanBackend()
+{
     BackendDescriptor d;
     d.backend = Backend::Vulkan;
     d.name = "vulkan";
@@ -39,4 +50,4 @@ bool RegisterVulkanBackend() {
     return RegisterBackend(d);
 }
 
-} // namespace engine_placeholder::rhi
+}  // namespace engine_placeholder::rhi

@@ -6,69 +6,85 @@
 
 #include "sync/atomic.h"
 
-namespace engine_placeholder::debug {
+namespace engine_placeholder::debug
+{
 
 // SIGNAL-SAFE-BEGIN
-namespace {
+namespace
+{
 
-struct ProviderEntry {
+struct ProviderEntry
+{
     const char* name;
     CrashStateFn fn;
     void* context;
-    Atomic<bool> ready; // set (release) once the three fields above are written; a report skips an entry not ready
+    Atomic<bool> ready;  // set (release) once the three fields above are written; a report skips an entry not ready
 };
 
 ProviderEntry g_providers[kMaxCrashStateProviders];
 Atomic<usize> g_provider_count{0};
 
-// Builds one line (or a few) in a small buffer on the stack and hands it to the sink in one call, so each piece that has
-// been written is whole.
-class LineWriter {
+// Builds one line (or a few) in a small buffer on the stack and hands it to the sink in one call, so each piece that
+// has been written is whole.
+class LineWriter
+{
 public:
     explicit LineWriter(const CrashReportSink& sink) : sink_(sink) {}
     ~LineWriter() { Flush(); }
     LineWriter(const LineWriter&) = delete;
     LineWriter& operator=(const LineWriter&) = delete;
 
-    LineWriter& Text(const char* text) {
-        for (; text != nullptr && *text != '\0'; ++text) {
+    LineWriter& Text(const char* text)
+    {
+        for (; text != nullptr && *text != '\0'; ++text)
+        {
             Char(*text);
         }
         return *this;
     }
-    LineWriter& Char(char c) {
-        if (length_ == sizeof(buffer_)) {
+    LineWriter& Char(char c)
+    {
+        if (length_ == sizeof(buffer_))
+        {
             Flush();
         }
         buffer_[length_++] = c;
         return *this;
     }
-    LineWriter& Decimal(u64 value) {
+    LineWriter& Decimal(u64 value)
+    {
         char digits[20];
         int n = 0;
-        do {
+        do
+        {
             digits[n++] = static_cast<char>('0' + (value % 10));
             value /= 10;
         } while (value > 0);
-        while (n > 0) {
+        while (n > 0)
+        {
             Char(digits[--n]);
         }
         return *this;
     }
-    LineWriter& Hex(u64 value, int digits) {
-        for (int shift = (digits - 1) * 4; shift >= 0; shift -= 4) {
+    LineWriter& Hex(u64 value, int digits)
+    {
+        for (int shift = (digits - 1) * 4; shift >= 0; shift -= 4)
+        {
             Char("0123456789abcdef"[(value >> shift) & 0xf]);
         }
         return *this;
     }
-    void Flush() {
-        if (length_ > 0 && sink_.write != nullptr) {
+    void Flush()
+    {
+        if (length_ > 0 && sink_.write != nullptr)
+        {
             sink_.write(sink_.context, buffer_, length_);
         }
         length_ = 0;
     }
     // Ends the line and sends it.
-    void EndLine() {
+    void EndLine()
+    {
         Char('\n');
         Flush();
     }
@@ -79,27 +95,34 @@ private:
     usize length_ = 0;
 };
 
-void WriteLogLine(const char* line, usize length, void* context) {
+void WriteLogLine(const char* line, usize length, void* context)
+{
     const CrashReportSink& sink = *static_cast<const CrashReportSink*>(context);
-    if (sink.write != nullptr && length > 0) {
+    if (sink.write != nullptr && length > 0)
+    {
         sink.write(sink.context, line, length);
-        if (line[length - 1] != '\n') {
+        if (line[length - 1] != '\n')
+        {
             sink.write(sink.context, "\n", 1);
         }
     }
 }
 
-} // namespace
+}  // namespace
 
 // SIGNAL-SAFE-END
-bool RegisterCrashStateProvider(const char* name, CrashStateFn fn, void* context) {
-    if (name == nullptr || fn == nullptr) {
+bool RegisterCrashStateProvider(const char* name, CrashStateFn fn, void* context)
+{
+    if (name == nullptr || fn == nullptr)
+    {
         return false;
     }
     // Claim a slot, fill it, then publish it by the count; a report only reads entries below the count.
     usize slot = g_provider_count.Load(MemoryOrder::Relaxed);
-    do {
-        if (slot >= kMaxCrashStateProviders) {
+    do
+    {
+        if (slot >= kMaxCrashStateProviders)
+        {
             return false;
         }
     } while (!g_provider_count.CompareExchangeWeak(slot, slot + 1, MemoryOrder::Relaxed, MemoryOrder::Relaxed));
@@ -112,14 +135,17 @@ bool RegisterCrashStateProvider(const char* name, CrashStateFn fn, void* context
 }
 
 // SIGNAL-SAFE-BEGIN
-void ResetCrashStateProvidersForTesting() {
+void ResetCrashStateProvidersForTesting()
+{
     g_provider_count.Store(0, MemoryOrder::Relaxed);
-    for (ProviderEntry& entry : g_providers) {
+    for (ProviderEntry& entry : g_providers)
+    {
         entry.ready.Store(false, MemoryOrder::Relaxed);
     }
 }
 
-void WriteCrashContext(const CrashReportSink& sink) {
+void WriteCrashContext(const CrashReportSink& sink)
+{
     const CrashContext& c = GetCrashContext();
     {
         LineWriter w(sink);
@@ -127,7 +153,8 @@ void WriteCrashContext(const CrashReportSink& sink) {
         w.Text("build id: ").Text(c.build_id[0] != '\0' ? c.build_id : "(none)").EndLine();
         w.Text("engine: ").Text(c.engine_version).EndLine();
         w.Text("executable: ").Text(c.executable).EndLine();
-        if (c.command_line[0] != '\0') {
+        if (c.command_line[0] != '\0')
+        {
             w.Text("command line: ").Text(c.command_line).EndLine();
         }
         w.Text("started (unix time): ").Decimal(c.start_time_unix).EndLine();
@@ -137,11 +164,18 @@ void WriteCrashContext(const CrashReportSink& sink) {
         w.Text("--- platform ---").EndLine();
         w.Text("os: ").Text(c.os_name).Char(' ').Text(c.os_version).EndLine();
         w.Text("architecture: ").Text(c.architecture).EndLine();
-        if (c.device_model[0] != '\0') {
+        if (c.device_model[0] != '\0')
+        {
             w.Text("device: ").Text(c.device_model).EndLine();
         }
-        w.Text("cpu: ").Text(c.cpu_brand[0] != '\0' ? c.cpu_brand : "(unknown)").Text(", ").Decimal(c.cpu_count).Text(" logical").EndLine();
-        if (c.core_dumps[0] != '\0') {
+        w.Text("cpu: ")
+            .Text(c.cpu_brand[0] != '\0' ? c.cpu_brand : "(unknown)")
+            .Text(", ")
+            .Decimal(c.cpu_count)
+            .Text(" logical")
+            .EndLine();
+        if (c.core_dumps[0] != '\0')
+        {
             w.Text("core dumps: ").Text(c.core_dumps).EndLine();
         }
         w.Text("memory: ").Decimal(c.total_memory_bytes / (1024ull * 1024ull)).Text(" MiB").EndLine();
@@ -150,17 +184,20 @@ void WriteCrashContext(const CrashReportSink& sink) {
         LineWriter w(sink);
         w.Text("--- state ---").EndLine();
     }
-    // A provider that fails a check while running would come back here through the assert handler; the inner report skips them.
+    // A provider that fails a check while running would come back here through the assert handler; the inner report
+    // skips them.
     static thread_local bool in_providers = false;
     const usize providers = in_providers ? 0 : g_provider_count.Load(MemoryOrder::Relaxed);
     in_providers = true;
-    for (usize i = 0; i < providers && i < kMaxCrashStateProviders; ++i) {
-        if (!g_providers[i].ready.Load(MemoryOrder::Acquire)) {
-            continue; // being registered right now
+    for (usize i = 0; i < providers && i < kMaxCrashStateProviders; ++i)
+    {
+        if (!g_providers[i].ready.Load(MemoryOrder::Acquire))
+        {
+            continue;  // being registered right now
         }
         char text[kCrashStateTextBytes];
         text[0] = '\0';
-        text[kCrashStateTextBytes - 1] = '\0'; // a provider that fills the buffer is still cut here
+        text[kCrashStateTextBytes - 1] = '\0';  // a provider that fills the buffer is still cut here
         g_providers[i].fn(g_providers[i].context, text, kCrashStateTextBytes);
         text[kCrashStateTextBytes - 1] = '\0';
         LineWriter w(sink);
@@ -175,26 +212,34 @@ void WriteCrashContext(const CrashReportSink& sink) {
     ReadRecentLogLines(&WriteLogLine, &log_sink, kCrashReportLogLines);
 }
 
-void WriteCrashReport(const CrashReportSink& sink, const CrashReportInfo& info) {
+void WriteCrashReport(const CrashReportSink& sink, const CrashReportInfo& info)
+{
     {
         LineWriter w(sink);
         w.Text("=== CRASH REPORT ===").EndLine();
         w.Text("reason: ").Text(CrashReasonName(info.reason));
-        if (info.has_fault_address) {
+        if (info.has_fault_address)
+        {
             w.Text(" at 0x").Hex(info.fault_address, 16);
         }
-        if (info.message != nullptr && info.message[0] != '\0') {
+        if (info.message != nullptr && info.message[0] != '\0')
+        {
             w.Text(": ").Text(info.message);
         }
         w.EndLine();
         w.Text("thread: ");
-        if (!info.thread_known) {
-            w.Text("unknown"); // never the calling thread's id or name: on Windows that is the crash library's own thread
-        } else {
+        if (!info.thread_known)
+        {
+            w.Text(
+                "unknown");  // never the calling thread's id or name: on Windows that is the crash library's own thread
+        }
+        else
+        {
             w.Decimal(info.thread_id != 0 ? info.thread_id : CurrentThreadId());
         }
         const char* thread_name = info.thread_name != nullptr ? info.thread_name : CrashThreadName();
-        if (info.thread_known && thread_name[0] != '\0') {
+        if (info.thread_known && thread_name[0] != '\0')
+        {
             w.Text(" \"").Text(thread_name).Char('"');
         }
         w.EndLine();
@@ -203,22 +248,26 @@ void WriteCrashReport(const CrashReportSink& sink, const CrashReportInfo& info) 
         LineWriter w(sink);
         w.Text("--- stack trace ---").EndLine();
     }
-    if (info.trace != nullptr && sink.write != nullptr) {
-        // One frame at a time, written as soon as it is resolved, so a fault while resolving frame N leaves frames 0 to N-1 written.
-        for (u32 i = 0; i < info.trace->count; ++i) {
+    if (info.trace != nullptr && sink.write != nullptr)
+    {
+        // One frame at a time, written as soon as it is resolved, so a fault while resolving frame N leaves frames 0 to
+        // N-1 written.
+        for (u32 i = 0; i < info.trace->count; ++i)
+        {
             StackTrace one;
             one.frames[0] = info.trace->frames[i];
             one.count = 1;
             char text[2048];
             const usize length = FormatStackTrace(one, text, sizeof(text));
-            if (length <= 2) {
+            if (length <= 2)
+            {
                 continue;
             }
             // The formatted line starts "#0"; this frame is number i.
             {
                 LineWriter w(sink);
                 w.Text("#").Decimal(i);
-            } // (flushed here, before the rest of the line)
+            }  // (flushed here, before the rest of the line)
             sink.write(sink.context, text + 2, length - 2);
         }
     }
@@ -228,4 +277,4 @@ void WriteCrashReport(const CrashReportSink& sink, const CrashReportInfo& info) 
 }
 
 // SIGNAL-SAFE-END
-} // namespace engine_placeholder::debug
+}  // namespace engine_placeholder::debug

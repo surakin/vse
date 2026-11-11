@@ -13,38 +13,59 @@ using namespace cube_test;
 using gpu_test::CompareOptions;
 using gpu_test::Image;
 
-namespace {
+namespace
+{
 
-struct LitScene : CubeScene {
+struct LitScene : CubeScene
+{
     demo::CubeRenderer cube;
     TextureHandle white;
     SamplerHandle sampler;
-    TextureHandle extra_texture; // a second albedo the test installs, owned (and destroyed) by the scene
+    TextureHandle extra_texture;  // a second albedo the test installs, owned (and destroyed) by the scene
     SamplerHandle extra_sampler;
 
-    explicit LitScene(Backend backend, const Vec3& eye = Vec3(1.8f, 1.5f, 3.0f)) : CubeScene(backend, eye) {
+    explicit LitScene(Backend backend, const Vec3& eye = Vec3(1.8f, 1.5f, 3.0f)) : CubeScene(backend, eye)
+    {
         demo::CubeOptions options;
         options.depth_format = DepthFormat();
         options.lit = true;
         REQUIRE(cube.Create(device.Get(), options));
         // A white albedo makes the lit color equal the lighting term itself.
-        white = demo::CreateSampledTexture(device.Get(), demo::Solid(4, 4, {255, 255, 255, 255}), Format::RGBA8_UNorm, false, "white");
+        white = demo::CreateSampledTexture(device.Get(), demo::Solid(4, 4, {255, 255, 255, 255}), Format::RGBA8_UNorm,
+                                           false, "white");
         REQUIRE(white.IsValid());
         sampler = device->CreateSampler(SamplerDesc{});
         REQUIRE(sampler.IsValid());
         cube.SetTexture(white, sampler);
     }
-    ~LitScene() {
-        if (device == nullptr) return;
+    ~LitScene()
+    {
+        if (device == nullptr)
+        {
+            return;
+        }
         device->WaitIdle();
-        if (extra_sampler.IsValid()) device->DestroySampler(extra_sampler);
-        if (extra_texture.IsValid()) device->DestroyTexture(extra_texture);
-        if (sampler.IsValid()) device->DestroySampler(sampler);
-        if (white.IsValid()) device->DestroyTexture(white);
+        if (extra_sampler.IsValid())
+        {
+            device->DestroySampler(extra_sampler);
+        }
+        if (extra_texture.IsValid())
+        {
+            device->DestroyTexture(extra_texture);
+        }
+        if (sampler.IsValid())
+        {
+            device->DestroySampler(sampler);
+        }
+        if (white.IsValid())
+        {
+            device->DestroyTexture(white);
+        }
     }
 
     // Replaces the albedo; the scene destroys both objects.
-    void UseAlbedo(TextureHandle texture, SamplerHandle new_sampler) {
+    void UseAlbedo(TextureHandle texture, SamplerHandle new_sampler)
+    {
         extra_texture = texture;
         extra_sampler = new_sampler;
         REQUIRE(extra_texture.IsValid());
@@ -52,42 +73,52 @@ struct LitScene : CubeScene {
         cube.SetTexture(extra_texture, extra_sampler);
     }
 
-    Image RenderLit(const demo::Lighting& lighting, const Mat4& model = Mat4::Identity()) { return Render({{&cube, model, &lighting}}); }
+    Image RenderLit(const demo::Lighting& lighting, const Mat4& model = Mat4::Identity())
+    {
+        return Render({{&cube, model, &lighting}});
+    }
 
     void FaceCenter(const Vec3& p, u32* x, u32* y) const { Project(Mat4::Identity(), p, x, y); }
 };
 
-int Level(f32 v) { return static_cast<int>((v < 0.0f ? 0.0f : v > 1.0f ? 1.0f : v) * 255.0f + 0.5f); }
+int Level(f32 v)
+{
+    return static_cast<int>((v < 0.0f ? 0.0f : v > 1.0f ? 1.0f : v) * 255.0f + 0.5f);
+}
 
-} // namespace
+}  // namespace
 
-TEST_CASE("NormalMatrix keeps normals perpendicular under non-uniform scale", "[rhi][lit][math]") {
+TEST_CASE("NormalMatrix keeps normals perpendicular under non-uniform scale", "[rhi][lit][math]")
+{
     using namespace demo;
     // Scale x by 2: a surface with normal (1,1,0) keeps a normal that is perpendicular to its tangent (1,-2,0)/(...).
     const Mat4 model = Mat4::FromBasis(Vec3(2, 0, 0), Vec3(0, 1, 0), Vec3(0, 0, 1), Vec3(5, 6, 7));
     const Mat4 n = NormalMatrix(model);
     const Vec4 normal = n * Vec4(1, 1, 0, 0);
-    const Vec4 tangent = model * Vec4(1, -1, 0, 0); // (1,-1,0) is perpendicular to (1,1,0) before scaling
+    const Vec4 tangent = model * Vec4(1, -1, 0, 0);  // (1,-1,0) is perpendicular to (1,1,0) before scaling
     CHECK(Abs(normal.x * tangent.x + normal.y * tangent.y + normal.z * tangent.z) < 1e-5f);
     // A mirroring model (negative determinant) must not turn normals inside out: the +X normal still points to +X after
     // mirroring Y, and a normal on the mirrored axis keeps its sense.
     const Mat4 mirror = Mat4::FromBasis(Vec3(1, 0, 0), Vec3(0, -1, 0), Vec3(0, 0, 1), Vec3(0, 0, 0));
     const Mat4 mn = NormalMatrix(mirror);
     CHECK(mn.col[0].x > 0.0f);
-    CHECK((mn * Vec4(0, 1, 0, 0)).y < 0.0f); // the surface was mirrored in Y, so its normal is mirrored too
+    CHECK((mn * Vec4(0, 1, 0, 0)).y < 0.0f);  // the surface was mirrored in Y, so its normal is mirrored too
     CHECK((mn * Vec4(1, 0, 0, 0)).x > 0.0f);
     // For a rotation it is the rotation itself (the translation is ignored).
     const Mat4 rotation = ModelMatrix(Vec3(1, 2, 3), 1.0f, 0.7f);
     const Mat4 rn = NormalMatrix(rotation);
-    for (int c = 0; c < 3; ++c) {
+    for (int c = 0; c < 3; ++c)
+    {
         CHECK(Abs(rn.col[c].x - rotation.col[c].x) < 1e-5f);
         CHECK(Abs(rn.col[c].y - rotation.col[c].y) < 1e-5f);
         CHECK(Abs(rn.col[c].z - rotation.col[c].z) < 1e-5f);
     }
 }
 
-TEST_CASE("Visible faces are lit by the Lambert ratio of their normals to the light", "[rhi][gpu][lit]") {
-    FOR_EACH_GPU_BACKEND(backend) {
+TEST_CASE("Visible faces are lit by the Lambert ratio of their normals to the light", "[rhi][gpu][lit]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
         LitScene scene(backend);
         demo::Lighting lighting;
         lighting.to_light = Vec3(0.3f, 0.9f, 0.5f);
@@ -96,13 +127,16 @@ TEST_CASE("Visible faces are lit by the Lambert ratio of their normals to the li
         const Image image = scene.RenderLit(lighting);
 
         const Vec3 l = lighting.to_light.Normalized();
-        struct FaceProbe {
+        struct FaceProbe
+        {
             Vec3 center;
             Vec3 normal;
         };
-        const FaceProbe faces[] = {{Vec3(0, 0, 0.5f), Vec3(0, 0, 1)}, {Vec3(0.5f, 0, 0), Vec3(1, 0, 0)}, {Vec3(0, 0.5f, 0), Vec3(0, 1, 0)}};
+        const FaceProbe faces[] = {
+            {Vec3(0, 0, 0.5f), Vec3(0, 0, 1)}, {Vec3(0.5f, 0, 0), Vec3(1, 0, 0)}, {Vec3(0, 0.5f, 0), Vec3(0, 1, 0)}};
         int levels[3] = {};
-        for (int i = 0; i < 3; ++i) {
+        for (int i = 0; i < 3; ++i)
+        {
             const f32 lambert = faces[i].normal.Dot(l);
             const int want = Level(0.1f + 0.8f * (lambert > 0.0f ? lambert : 0.0f));
             u32 x = 0, y = 0;
@@ -123,11 +157,15 @@ TEST_CASE("Visible faces are lit by the Lambert ratio of their normals to the li
     }
 }
 
-TEST_CASE("A face pointing away from the light gets only the ambient term, and zero intensity leaves ambient everywhere", "[rhi][gpu][lit]") {
-    FOR_EACH_GPU_BACKEND(backend) {
+TEST_CASE(
+    "A face pointing away from the light gets only the ambient term, and zero intensity leaves ambient everywhere",
+    "[rhi][gpu][lit]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
         LitScene scene(backend);
         demo::Lighting away;
-        away.to_light = Vec3(-1, -1, -1); // behind every visible face
+        away.to_light = Vec3(-1, -1, -1);  // behind every visible face
         away.ambient = Vec3(0.2f, 0.1f, 0.3f);
         const Image dark = scene.RenderLit(away);
         demo::Lighting off;
@@ -136,7 +174,8 @@ TEST_CASE("A face pointing away from the light gets only the ambient term, and z
         off.ambient = Vec3(0.2f, 0.1f, 0.3f);
         const Image ambient_only = scene.RenderLit(off);
         const Vec3 centers[] = {Vec3(0, 0, 0.5f), Vec3(0.5f, 0, 0), Vec3(0, 0.5f, 0)};
-        for (const Vec3& c : centers) {
+        for (const Vec3& c : centers)
+        {
             u32 x = 0, y = 0;
             scene.FaceCenter(c, &x, &y);
             CHECK(PixelIs(dark, x, y, Level(0.2f), Level(0.1f), Level(0.3f)));
@@ -145,8 +184,10 @@ TEST_CASE("A face pointing away from the light gets only the ambient term, and z
     }
 }
 
-TEST_CASE("A zero light direction means no direct light and does not poison the image", "[rhi][gpu][lit]") {
-    FOR_EACH_GPU_BACKEND(backend) {
+TEST_CASE("A zero light direction means no direct light and does not poison the image", "[rhi][gpu][lit]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
         LitScene scene(backend);
         demo::Lighting none;
         none.to_light = Vec3(0, 0, 0);
@@ -158,27 +199,31 @@ TEST_CASE("A zero light direction means no direct light and does not poison the 
     }
 }
 
-TEST_CASE("The lit cube renders from a fixed angle and matches its golden image", "[rhi][gpu][lit][golden]") {
-    FOR_EACH_GPU_BACKEND(backend) {
+TEST_CASE("The lit cube renders from a fixed angle and matches its golden image", "[rhi][gpu][lit][golden]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
         LitScene scene(backend);
         // The textured, lit cube: a checkerboard albedo under the same fixed light as the analytic test.
         const demo::Pixels checker = demo::Checkerboard(64, 8, {235, 200, 90, 255}, {40, 60, 120, 255});
         SamplerDesc sd;
         sd.max_anisotropy = 16.0f;
-        scene.UseAlbedo(demo::CreateSampledTexture(scene.device.Get(), checker, Format::RGBA8_SRGB, true, "checker"), scene.device->CreateSampler(sd));
+        scene.UseAlbedo(demo::CreateSampledTexture(scene.device.Get(), checker, Format::RGBA8_SRGB, true, "checker"),
+                        scene.device->CreateSampler(sd));
         demo::Lighting lighting;
         lighting.to_light = Vec3(0.3f, 0.9f, 0.5f);
         lighting.intensity = 0.9f;
         const Image image = scene.RenderLit(lighting, demo::ModelMatrix(Vec3(0, 0, 0), 1.0f, 0.0f));
 
-        // Independent of the golden: the corner is the clear color, and a texel of the +Z face's first cell (the sRGB-decoded
-        // color 235,200,90) shows that color times the Lambert term of the +Z normal.
+        // Independent of the golden: the corner is the clear color, and a texel of the +Z face's first cell (the
+        // sRGB-decoded color 235,200,90) shows that color times the Lambert term of the +Z normal.
         CHECK(PixelIs(image, 2, 2, 51, 51, 51));
         u32 x = 0, y = 0;
         scene.FaceCenter(Vec3(-0.4375f, -0.4375f, 0.5f), &x, &y);
         const Vec3 l = lighting.to_light.Normalized();
         const f32 light = 0.1f + 0.9f * l.z;
-        auto decode = [](int c) {
+        auto decode = [](int c)
+        {
             const f32 v = static_cast<f32>(c) / 255.0f;
             return v <= 0.04045f ? v / 12.92f : Pow((v + 0.055f) / 1.055f, 2.4f);
         };
@@ -191,7 +236,7 @@ TEST_CASE("The lit cube renders from a fixed angle and matches its golden image"
         // differs by 3-10 levels on a handful of pixels), so a small fraction of interior pixels may miss `tolerance`.
         CompareOptions options;
         options.max_interior_miss = 0.005;
-        options.interior_miss_limit = 16; // AMD's worst was 10 levels; a real shading error is larger
+        options.interior_miss_limit = 16;  // AMD's worst was 10 levels; a real shading error is larger
         CheckGolden(image, "lit_cube.ppm", "lit_cube", backend, options);
     }
 }

@@ -3,122 +3,229 @@
 
 #include "lang/new.h"
 
-namespace docgen {
-namespace {
+namespace docgen
+{
+namespace
+{
 
-bool ModuleMapIsSpace(char c) { return c == ' ' || c == '\t' || c == '\r'; }
+bool ModuleMapIsSpace(char c)
+{
+    return c == ' ' || c == '\t' || c == '\r';
+}
 
-StringView ModuleMapTrim(StringView s) {
+StringView ModuleMapTrim(StringView s)
+{
     usize a = 0, b = s.Length();
-    while (a < b && ModuleMapIsSpace(s[a])) ++a;
-    while (b > a && ModuleMapIsSpace(s[b - 1])) --b;
+    while (a < b && ModuleMapIsSpace(s[a]))
+    {
+        ++a;
+    }
+    while (b > a && ModuleMapIsSpace(s[b - 1]))
+    {
+        --b;
+    }
     return StringView(s.Data() + a, b - a);
 }
 
 // Splits "word rest" at the first run of blanks.
-bool NextWord(StringView& line, StringView& word) {
+bool NextWord(StringView& line, StringView& word)
+{
     line = ModuleMapTrim(line);
-    if (line.Empty()) return false;
+    if (line.Empty())
+    {
+        return false;
+    }
     usize i = 0;
-    while (i < line.Length() && !ModuleMapIsSpace(line[i])) ++i;
+    while (i < line.Length() && !ModuleMapIsSpace(line[i]))
+    {
+        ++i;
+    }
     word = StringView(line.Data(), i);
     line = ModuleMapTrim(StringView(line.Data() + i, line.Length() - i));
     return true;
 }
 
-bool ValidPattern(StringView p) {
-    if (p.Empty() || p[0] == '/') return false;
+bool ValidPattern(StringView p)
+{
+    if (p.Empty() || p[0] == '/')
+    {
+        return false;
+    }
     usize i = 0;
-    while (i <= p.Length()) {
+    while (i <= p.Length())
+    {
         usize e = i;
-        while (e < p.Length() && p[e] != '/') ++e;
+        while (e < p.Length() && p[e] != '/')
+        {
+            ++e;
+        }
         StringView seg(p.Data() + i, e - i);
-        if (seg.Empty()) return false;
-        if (seg == StringView("**")) {
+        if (seg.Empty())
+        {
+            return false;
+        }
+        if (seg == StringView("**"))
+        {
             // fine
-        } else {
-            for (usize k = 0; k < seg.Length(); ++k) {
+        }
+        else
+        {
+            for (usize k = 0; k < seg.Length(); ++k)
+            {
                 char c = seg[k];
-                if (c == '?' || c == '[' || c == ']' || c == '{' || c == '}' || c == '\\') return false;
-                if (c == '*' && k + 1 < seg.Length() && seg[k + 1] == '*') return false; // `**` only as a whole segment
+                if (c == '?' || c == '[' || c == ']' || c == '{' || c == '}' || c == '\\')
+                {
+                    return false;
+                }
+                if (c == '*' && k + 1 < seg.Length() && seg[k + 1] == '*')
+                {
+                    return false;  // `**` only as a whole segment
+                }
             }
         }
-        if (e >= p.Length()) break;
+        if (e >= p.Length())
+        {
+            break;
+        }
         i = e + 1;
     }
     return true;
 }
 
-bool MatchSegment(const char* p, usize pn, const char* s, usize sn) {
+bool MatchSegment(const char* p, usize pn, const char* s, usize sn)
+{
     // Iterative '*' matching within one segment.
     usize pi = 0, si = 0, star = ~usize{0}, mark = 0;
-    while (si < sn) {
-        if (pi < pn && p[pi] == '*') {
+    while (si < sn)
+    {
+        if (pi < pn && p[pi] == '*')
+        {
             star = pi++;
             mark = si;
-        } else if (pi < pn && p[pi] == s[si]) {
+        }
+        else if (pi < pn && p[pi] == s[si])
+        {
             ++pi;
             ++si;
-        } else if (star != ~usize{0}) {
+        }
+        else if (star != ~usize{0})
+        {
             pi = star + 1;
             si = ++mark;
-        } else {
+        }
+        else
+        {
             return false;
         }
     }
-    while (pi < pn && p[pi] == '*') ++pi;
+    while (pi < pn && p[pi] == '*')
+    {
+        ++pi;
+    }
     return pi == pn;
 }
 
-bool MatchSegments(StringView pat, usize pi, StringView path, usize si) {
-    for (;;) {
-        if (pi > pat.Length()) return si > path.Length();
+bool MatchSegments(StringView pat, usize pi, StringView path, usize si)
+{
+    for (;;)
+    {
+        if (pi > pat.Length())
+        {
+            return si > path.Length();
+        }
         usize pe = pi;
-        while (pe < pat.Length() && pat[pe] != '/') ++pe;
+        while (pe < pat.Length() && pat[pe] != '/')
+        {
+            ++pe;
+        }
         StringView pseg(pat.Data() + pi, pe - pi);
         const bool last_pat = pe >= pat.Length();
-        if (pseg == StringView("**")) {
-            if (last_pat) return si <= path.Length(); // trailing ** matches the rest (but see below)
+        if (pseg == StringView("**"))
+        {
+            if (last_pat)
+            {
+                return si <= path.Length();  // trailing ** matches the rest (but see below)
+            }
             // Try consuming 0..n whole path segments.
             usize k = si;
-            for (;;) {
-                if (MatchSegments(pat, pe + 1, path, k)) return true;
-                if (k > path.Length()) return false;
+            for (;;)
+            {
+                if (MatchSegments(pat, pe + 1, path, k))
+                {
+                    return true;
+                }
+                if (k > path.Length())
+                {
+                    return false;
+                }
                 usize e = k;
-                while (e < path.Length() && path[e] != '/') ++e;
-                if (e >= path.Length()) return false;
+                while (e < path.Length() && path[e] != '/')
+                {
+                    ++e;
+                }
+                if (e >= path.Length())
+                {
+                    return false;
+                }
                 k = e + 1;
             }
         }
-        if (si > path.Length()) return false;
+        if (si > path.Length())
+        {
+            return false;
+        }
         usize se = si;
-        while (se < path.Length() && path[se] != '/') ++se;
-        if (!MatchSegment(pseg.Data(), pseg.Length(), path.Data() + si, se - si)) return false;
+        while (se < path.Length() && path[se] != '/')
+        {
+            ++se;
+        }
+        if (!MatchSegment(pseg.Data(), pseg.Length(), path.Data() + si, se - si))
+        {
+            return false;
+        }
         const bool last_path = se >= path.Length();
-        if (last_pat || last_path) return last_pat && last_path;
+        if (last_pat || last_path)
+        {
+            return last_pat && last_path;
+        }
         pi = pe + 1;
         si = se + 1;
     }
 }
 
-int CompareViews(StringView a, StringView b) { return a.Compare(b); }
+int CompareViews(StringView a, StringView b)
+{
+    return a.Compare(b);
+}
 
-} // namespace
+}  // namespace
 
-bool GlobMatch(StringView pattern, StringView path) { return MatchSegments(pattern, 0, path, 0); }
+bool GlobMatch(StringView pattern, StringView path)
+{
+    return MatchSegments(pattern, 0, path, 0);
+}
 
-StringView GlobPrefix(StringView pattern) {
+StringView GlobPrefix(StringView pattern)
+{
     usize last_slash = 0;
     bool any = false;
     usize i = 0;
-    while (i < pattern.Length()) {
+    while (i < pattern.Length())
+    {
         usize e = i;
         bool wild = false;
-        while (e < pattern.Length() && pattern[e] != '/') {
-            if (pattern[e] == '*') wild = true;
+        while (e < pattern.Length() && pattern[e] != '/')
+        {
+            if (pattern[e] == '*')
+            {
+                wild = true;
+            }
             ++e;
         }
-        if (wild || e >= pattern.Length()) break;
+        if (wild || e >= pattern.Length())
+        {
+            break;
+        }
         last_slash = e;
         any = true;
         i = e + 1;
@@ -126,37 +233,54 @@ StringView GlobPrefix(StringView pattern) {
     return any ? StringView(pattern.Data(), last_slash) : StringView();
 }
 
-void ParseModuleMap(StringView text, ArenaAllocator& arena, ModuleMap& out) {
+void ParseModuleMap(StringView text, ArenaAllocator& arena, ModuleMap& out)
+{
     ModuleDef* cur = nullptr;
     u32 no = 0;
     usize pos = 0;
-    while (pos <= text.Length()) {
+    while (pos <= text.Length())
+    {
         usize e = pos;
-        while (e < text.Length() && text[e] != '\n') ++e;
+        while (e < text.Length() && text[e] != '\n')
+        {
+            ++e;
+        }
         ++no;
         StringView line(text.Data() + pos, e - pos);
         pos = e + 1;
         // strip a '#' comment (the map has no quoting rules beyond the title)
         bool in_quote = false;
-        for (usize i = 0; i < line.Length(); ++i) {
-            if (line[i] == '"') in_quote = !in_quote;
-            if (line[i] == '#' && !in_quote) {
+        for (usize i = 0; i < line.Length(); ++i)
+        {
+            if (line[i] == '"')
+            {
+                in_quote = !in_quote;
+            }
+            if (line[i] == '#' && !in_quote)
+            {
                 line = StringView(line.Data(), i);
                 break;
             }
         }
         StringView word;
-        if (!NextWord(line, word)) continue;
+        if (!NextWord(line, word))
+        {
+            continue;
+        }
         auto err = [&](const char* m) { out.diagnostics.Push(Diagnostic{Severity::Error, no, StringView(m)}); };
-        if (word == StringView("module")) {
+        if (word == StringView("module"))
+        {
             StringView name;
-            if (!NextWord(line, name) || line.Length() < 2 || line[0] != '"' || line[line.Length() - 1] != '"') {
+            if (!NextWord(line, name) || line.Length() < 2 || line[0] != '"' || line[line.Length() - 1] != '"')
+            {
                 err("malformed module line: expected `module NAME \"Title\"`");
                 cur = nullptr;
                 continue;
             }
-            for (usize i = 0; i < out.modules.Size(); ++i) {
-                if (out.modules[i]->name == name) {
+            for (usize i = 0; i < out.modules.Size(); ++i)
+            {
+                if (out.modules[i]->name == name)
+                {
                     err("duplicate module name");
                     break;
                 }
@@ -170,24 +294,33 @@ void ParseModuleMap(StringView text, ArenaAllocator& arena, ModuleMap& out) {
             out.modules.Push(cur);
             continue;
         }
-        if (word == StringView("header") || word == StringView("exclude") || word == StringView("strict")) {
-            if (cur == nullptr) {
+        if (word == StringView("header") || word == StringView("exclude") || word == StringView("strict"))
+        {
+            if (cur == nullptr)
+            {
                 err("directive outside a module");
                 continue;
             }
             StringView arg;
-            if (!NextWord(line, arg) || !line.Empty()) {
+            if (!NextWord(line, arg) || !line.Empty())
+            {
                 err("expected exactly one argument");
                 continue;
             }
-            if (word == StringView("strict")) {
-                if (arg != StringView("thread-safety") && arg != StringView("ownership") && arg != StringView("failure")) {
+            if (word == StringView("strict"))
+            {
+                if (arg != StringView("thread-safety") && arg != StringView("ownership") &&
+                    arg != StringView("failure"))
+                {
                     err("unknown strict rule (expected thread-safety, ownership or failure)");
                     continue;
                 }
                 cur->strict.Push(arg);
-            } else {
-                if (!ValidPattern(arg)) {
+            }
+            else
+            {
+                if (!ValidPattern(arg))
+                {
                     err("invalid pattern (only `*` within a segment and whole-segment `**` are supported)");
                     continue;
                 }
@@ -200,55 +333,95 @@ void ParseModuleMap(StringView text, ArenaAllocator& arena, ModuleMap& out) {
 }
 
 void ExpandModule(const ModuleDef& module, const Vector<StringView, ArenaAllocator>& files, ArenaAllocator& arena,
-                  Vector<StringView, ArenaAllocator>& out) {
+                  Vector<StringView, ArenaAllocator>& out)
+{
     Vector<StringView, ArenaAllocator> hits(arena);
-    for (usize f = 0; f < files.Size(); ++f) {
+    for (usize f = 0; f < files.Size(); ++f)
+    {
         bool in = false;
-        for (usize h = 0; h < module.headers.Size() && !in; ++h) in = GlobMatch(module.headers[h], files[f]);
-        for (usize x = 0; x < module.excludes.Size() && in; ++x) {
-            if (GlobMatch(module.excludes[x], files[f])) in = false;
+        for (usize h = 0; h < module.headers.Size() && !in; ++h)
+        {
+            in = GlobMatch(module.headers[h], files[f]);
         }
-        if (in) hits.Push(files[f]);
+        for (usize x = 0; x < module.excludes.Size() && in; ++x)
+        {
+            if (GlobMatch(module.excludes[x], files[f]))
+            {
+                in = false;
+            }
+        }
+        if (in)
+        {
+            hits.Push(files[f]);
+        }
     }
     // Sort + dedupe: lexicographic, independent of the input order.
     StableSort(hits, [](StringView x, StringView y) { return CompareViews(x, y) < 0; });
-    for (usize i = 0; i < hits.Size(); ++i) {
-        if (i > 0 && hits[i] == hits[i - 1]) continue;
+    for (usize i = 0; i < hits.Size(); ++i)
+    {
+        if (i > 0 && hits[i] == hits[i - 1])
+        {
+            continue;
+        }
         out.Push(hits[i]);
     }
 }
 
-namespace {
+namespace
+{
 
 constexpr int kMaxDepth = 32;
 
-bool CollectFilesRec(StringView root, StringView dir, int depth, ArenaAllocator& arena, Vector<StringView, ArenaAllocator>& out) {
-    StringView abs_dir = dir.Empty() ? ArenaCat(arena, root, StringView()) : ArenaCat(arena, root, StringView("/"), dir);
+bool CollectFilesRec(StringView root, StringView dir, int depth, ArenaAllocator& arena,
+                     Vector<StringView, ArenaAllocator>& out)
+{
+    StringView abs_dir = dir.Empty() ? ArenaCat(arena, root, StringView())
+                                     : ArenaCat(arena, root, StringView("/"), dir);
     Vector<StringView, ArenaAllocator> names(arena);
-    if (!ListNames(abs_dir, arena, names)) return false;
+    if (!ListNames(abs_dir, arena, names))
+    {
+        return false;
+    }
     bool ok = true;
-    for (usize i = 0; i < names.Size(); ++i) {
+    for (usize i = 0; i < names.Size(); ++i)
+    {
         const StringView name = names[i];
-        if (name[0] == '.') continue;
-        StringView rel = dir.Empty() ? ArenaCat(arena, name, StringView()) : ArenaCat(arena, dir, StringView("/"), name);
+        if (name[0] == '.')
+        {
+            continue;
+        }
+        StringView rel = dir.Empty() ? ArenaCat(arena, name, StringView())
+                                     : ArenaCat(arena, dir, StringView("/"), name);
         StringView abs = ArenaCat(arena, root, StringView("/"), rel);
         const EntryKind own = KindOf(abs, false);
-        if (own == EntryKind::Missing) continue;
-        if (own == EntryKind::Directory) { // symlinked directories are not followed (no cycles)
-            if (depth >= kMaxDepth || !CollectFilesRec(root, rel, depth + 1, arena, out)) ok = false;
-        } else if (own == EntryKind::File) {
+        if (own == EntryKind::Missing)
+        {
+            continue;
+        }
+        if (own == EntryKind::Directory)
+        {  // symlinked directories are not followed (no cycles)
+            if (depth >= kMaxDepth || !CollectFilesRec(root, rel, depth + 1, arena, out))
+            {
+                ok = false;
+            }
+        }
+        else if (own == EntryKind::File)
+        {
             out.Push(rel);
-        } else if (KindOf(abs, true) == EntryKind::File) { // a link to a regular file
+        }
+        else if (KindOf(abs, true) == EntryKind::File)
+        {  // a link to a regular file
             out.Push(rel);
         }
     }
     return ok;
 }
 
-} // namespace
+}  // namespace
 
-bool CollectFiles(StringView root, StringView dir, ArenaAllocator& arena, Vector<StringView, ArenaAllocator>& out) {
+bool CollectFiles(StringView root, StringView dir, ArenaAllocator& arena, Vector<StringView, ArenaAllocator>& out)
+{
     return CollectFilesRec(root, dir, 0, arena, out);
 }
 
-} // namespace docgen
+}  // namespace docgen

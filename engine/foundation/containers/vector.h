@@ -10,7 +10,8 @@
 //! Growable array that owns its storage: on the heap by default, or from a
 //! caller-supplied allocator such as an arena. The fixed-size, inline
 //! counterpart is [[Array]].
-namespace engine_placeholder {
+namespace engine_placeholder
+{
 
 /// Growable contiguous array of `T`; the default allocator is the heap.
 ///
@@ -26,8 +27,8 @@ namespace engine_placeholder {
 /// - Thread-safety: not-thread-safe. Synchronize externally if shared.
 /// - Ownership: the vector destroys its elements. It frees storage only when the
 ///   allocator has `Free`; the allocator must outlive the vector.
-template <typename T, typename Allocator = HeapAllocator>
-class Vector {
+template <typename T, typename Allocator = HeapAllocator> class Vector
+{
 public:
     /// Creates an empty array that allocates from `allocator`.
     ///
@@ -38,10 +39,15 @@ public:
     /// Creates an empty vector on the shared default allocator.
     ///
     /// Only available when the allocator has a static `Default()`, as [[HeapAllocator]] does.
-    Vector() requires requires { Allocator::Default(); } : allocator_(&Allocator::Default()) {}
+    Vector()
+        requires requires { Allocator::Default(); }
+        : allocator_(&Allocator::Default())
+    {
+    }
 
     /// Destroys all elements and, if the allocator has `Free`, releases the storage.
-    ~Vector() {
+    ~Vector()
+    {
         DestroyRange(0, size_);
         ReleaseStorage();
     }
@@ -51,7 +57,8 @@ public:
 
     /// Takes over `other`'s elements and storage, leaving `other` empty with zero capacity.
     Vector(Vector&& other) noexcept
-        : allocator_(other.allocator_), data_(other.data_), size_(other.size_), capacity_(other.capacity_) {
+        : allocator_(other.allocator_), data_(other.data_), size_(other.size_), capacity_(other.capacity_)
+    {
         other.data_ = nullptr;
         other.size_ = 0;
         other.capacity_ = 0;
@@ -61,8 +68,10 @@ public:
     /// storage and allocator, leaving `other` empty with zero capacity.
     ///
     /// This vector's old storage is freed if its allocator has `Free`, else abandoned.
-    Vector& operator=(Vector&& other) noexcept {
-        if (this != &other) {
+    Vector& operator=(Vector&& other) noexcept
+    {
+        if (this != &other)
+        {
             DestroyRange(0, size_);
             ReleaseStorage();
             allocator_ = other.allocator_;
@@ -84,8 +93,10 @@ public:
     ///
     /// - Param new_capacity: required capacity in elements.
     /// - Aborts: the allocator returns nullptr (out of memory).
-    void Reserve(usize new_capacity) {
-        ENGINE_ASSERT(TryReserve(new_capacity), "Vector::Reserve: allocator out of memory (or an element type that cannot move was grown)");
+    void Reserve(usize new_capacity)
+    {
+        ENGINE_ASSERT(TryReserve(new_capacity),
+                      "Vector::Reserve: allocator out of memory (or an element type that cannot move was grown)");
     }
 
     /// Like `Reserve`, but reports allocator exhaustion instead of aborting.
@@ -94,25 +105,33 @@ public:
     /// - Returns: true if the capacity is now sufficient; false if the allocator is
     ///   out of memory, the byte size overflows, or `T` cannot be moved and the vector
     ///   already holds elements (the vector is unchanged in every case).
-    bool TryReserve(usize new_capacity) {
-        if (new_capacity <= capacity_) {
+    bool TryReserve(usize new_capacity)
+    {
+        if (new_capacity <= capacity_)
+        {
             return true;
         }
-        if (new_capacity > static_cast<usize>(-1) / sizeof(T)) {
+        if (new_capacity > static_cast<usize>(-1) / sizeof(T))
+        {
             return false;
         }
-        if constexpr (!IsMoveConstructible<T>) {
-            if (size_ != 0) {
-                return false; // the elements cannot be carried to a new block
+        if constexpr (!IsMoveConstructible<T>)
+        {
+            if (size_ != 0)
+            {
+                return false;  // the elements cannot be carried to a new block
             }
         }
         void* mem = allocator_->Alloc(new_capacity * sizeof(T), alignof(T));
-        if (mem == nullptr) {
+        if (mem == nullptr)
+        {
             return false;
         }
         T* new_data = static_cast<T*>(mem);
-        if constexpr (IsMoveConstructible<T>) {
-            for (usize i = 0; i < size_; ++i) {
+        if constexpr (IsMoveConstructible<T>)
+        {
+            for (usize i = 0; i < size_; ++i)
+            {
                 new (new_data + i) T(Move(data_[i]));
                 data_[i].~T();
             }
@@ -130,8 +149,10 @@ public:
     ///
     /// - Param new_size: the new element count.
     /// - Aborts: growth is needed and the allocator is out of memory.
-    void Resize(usize new_size) {
-        ENGINE_ASSERT(TryResize(new_size), "Vector::Resize: allocator out of memory (or an element type that cannot move was grown)");
+    void Resize(usize new_size)
+    {
+        ENGINE_ASSERT(TryResize(new_size),
+                      "Vector::Resize: allocator out of memory (or an element type that cannot move was grown)");
     }
 
     /// Like `Resize`, but reports failure instead of aborting.
@@ -139,16 +160,20 @@ public:
     /// - Param new_size: the new element count.
     /// - Returns: true on success; false if the allocator is out of memory, or `T` cannot be moved
     ///   and the vector already holds elements (the vector is unchanged).
-    bool TryResize(usize new_size) {
-        if (new_size <= size_) {
+    bool TryResize(usize new_size)
+    {
+        if (new_size <= size_)
+        {
             DestroyRange(new_size, size_);
             size_ = new_size;
             return true;
         }
-        if (!GrowTo(new_size)) {
+        if (!GrowTo(new_size))
+        {
             return false;
         }
-        for (usize i = size_; i < new_size; ++i) {
+        for (usize i = size_; i < new_size; ++i)
+        {
             new (data_ + i) T();
         }
         size_ = new_size;
@@ -160,14 +185,17 @@ public:
     ///
     /// - Param new_size: the new element count.
     /// - Returns: true on success; false if the allocator is out of memory (the vector is unchanged).
-    bool TryResizeUninitialized(usize new_size) {
+    bool TryResizeUninitialized(usize new_size)
+    {
         static_assert(IsTriviallyDefaultConstructible<T> && IsTriviallyDestructible<T>,
                       "Vector::TryResizeUninitialized: only trivial element types may be left uninitialized");
-        if (new_size <= size_) {
+        if (new_size <= size_)
+        {
             size_ = new_size;
             return true;
         }
-        if (!GrowTo(new_size)) {
+        if (!GrowTo(new_size))
+        {
             return false;
         }
         size_ = new_size;
@@ -175,13 +203,15 @@ public:
     }
 
     /// Destroys every element, keeping the storage.
-    void Clear() {
+    void Clear()
+    {
         DestroyRange(0, size_);
         size_ = 0;
     }
 
     /// Destroys every element and releases the storage (if the allocator has `Free`), leaving the vector empty.
-    void Reset() {
+    void Reset()
+    {
         DestroyRange(0, size_);
         ReleaseStorage();
         data_ = nullptr;
@@ -193,13 +223,17 @@ public:
     ///
     /// - Param value: element to copy; it may be an element of this vector.
     /// - Aborts: growth is needed and the allocator is out of memory.
-    void Push(const T& value) {
-        if (size_ == capacity_ && InStorage(&value)) {
+    void Push(const T& value)
+    {
+        if (size_ == capacity_ && InStorage(&value))
+        {
             // `value` may be an element of this vector (`v.Push(v[0])`), which growing frees: copy it first.
             T copy(value);
             GrowIfNeeded();
             new (data_ + size_) T(Move(copy));
-        } else {
+        }
+        else
+        {
             GrowIfNeeded();
             new (data_ + size_) T(value);
         }
@@ -210,12 +244,16 @@ public:
     ///
     /// - Param value: element to move from; it may be an element of this vector.
     /// - Aborts: growth is needed and the allocator is out of memory.
-    void Push(T&& value) {
-        if (size_ == capacity_ && InStorage(&value)) {
-            T moved(Move(value)); // as above: `value` may live in the storage growing frees
+    void Push(T&& value)
+    {
+        if (size_ == capacity_ && InStorage(&value))
+        {
+            T moved(Move(value));  // as above: `value` may live in the storage growing frees
             GrowIfNeeded();
             new (data_ + size_) T(Move(moved));
-        } else {
+        }
+        else
+        {
             GrowIfNeeded();
             new (data_ + size_) T(Move(value));
         }
@@ -225,7 +263,8 @@ public:
     /// Destroys the last element.
     ///
     /// - Aborts: the array is empty.
-    void Pop() {
+    void Pop()
+    {
         ENGINE_ASSERT(size_ > 0, "Vector::Pop: called on an empty vector");
         --size_;
         data_[size_].~T();
@@ -238,17 +277,23 @@ public:
     ///   `Size()` (not checked).
     /// - Param value: element to copy; it may be an element of this vector.
     /// - Aborts: growth is needed and the allocator is out of memory.
-    void Insert(usize index, const T& value) {
-        // `value` may be an element of this vector: growing would free it and the shift below would move it, so copy it first.
+    void Insert(usize index, const T& value)
+    {
+        // `value` may be an element of this vector: growing would free it and the shift below would move it, so copy it
+        // first.
         T copy(value);
         GrowIfNeeded();
-        if (size_ > index) {
+        if (size_ > index)
+        {
             new (data_ + size_) T(Move(data_[size_ - 1]));
-            for (usize i = size_ - 1; i > index; --i) {
+            for (usize i = size_ - 1; i > index; --i)
+            {
                 data_[i] = Move(data_[i - 1]);
             }
             data_[index] = Move(copy);
-        } else {
+        }
+        else
+        {
             new (data_ + size_) T(Move(copy));
         }
         ++size_;
@@ -259,17 +304,22 @@ public:
     /// - Param index: destination position; `Size()` appends.
     /// - Param value: element to move in (the value is moved into a local first, so it may alias an element).
     /// - Aborts: `index` is greater than `Size()`, or growth is needed and the allocator is out of memory.
-    void Insert(usize index, T&& value) {
+    void Insert(usize index, T&& value)
+    {
         ENGINE_ASSERT(index <= size_, "Vector::Insert: index is past the end");
         T moved(Move(value));
         GrowIfNeeded();
-        if (size_ > index) {
+        if (size_ > index)
+        {
             new (data_ + size_) T(Move(data_[size_ - 1]));
-            for (usize i = size_ - 1; i > index; --i) {
+            for (usize i = size_ - 1; i > index; --i)
+            {
                 data_[i] = Move(data_[i - 1]);
             }
             data_[index] = Move(moved);
-        } else {
+        }
+        else
+        {
             new (data_ + size_) T(Move(moved));
         }
         ++size_;
@@ -278,23 +328,31 @@ public:
     /// Removes the element at `index`, shifting later elements down by one.
     ///
     /// - Param index: position to remove; must be less than `Size()` (not checked).
-    void Remove(usize index) {
-        for (usize i = index; i + 1 < size_; ++i) {
+    void Remove(usize index)
+    {
+        for (usize i = index; i + 1 < size_; ++i)
+        {
             data_[i] = Move(data_[i + 1]);
         }
         --size_;
         data_[size_].~T();
     }
 
-    /// Removes `count` elements starting at `first`, shifting later elements down once (one pass, unlike `count` calls of `Remove`).
+    /// Removes `count` elements starting at `first`, shifting later elements down once (one pass, unlike `count` calls
+    /// of `Remove`).
     ///
     /// - Param first: position of the first element to remove.
     /// - Param count: how many to remove; `first + count` must be at most `Size()`.
     /// - Aborts: `first + count` is greater than `Size()`.
-    void RemoveRange(usize first, usize count) {
+    void RemoveRange(usize first, usize count)
+    {
         ENGINE_ASSERT(first <= size_ && count <= size_ - first, "Vector::RemoveRange: the range is past the end");
-        if (count == 0) return;
-        for (usize i = first; i + count < size_; ++i) {
+        if (count == 0)
+        {
+            return;
+        }
+        for (usize i = first; i + count < size_; ++i)
+        {
             data_[i] = Move(data_[i + count]);
         }
         DestroyRange(size_ - count, size_);
@@ -324,40 +382,51 @@ public:
 
 private:
     // True if `p` points into this vector's elements (compared as addresses: the value may come from anywhere).
-    bool InStorage(const T* p) const {
+    bool InStorage(const T* p) const
+    {
         const auto address = reinterpret_cast<uintptr_t>(p);
         const auto begin = reinterpret_cast<uintptr_t>(data_);
         return data_ != nullptr && address >= begin && address < begin + size_ * sizeof(T);
     }
 
-    void GrowIfNeeded() {
-        if (size_ < capacity_) {
+    void GrowIfNeeded()
+    {
+        if (size_ < capacity_)
+        {
             return;
         }
         Reserve(capacity_ == 0 ? 4 : capacity_ * 2);
     }
 
-    bool GrowTo(usize new_size) {
-        if (new_size <= capacity_) {
+    bool GrowTo(usize new_size)
+    {
+        if (new_size <= capacity_)
+        {
             return true;
         }
         usize target = new_size;
-        if (size_ != 0 && capacity_ * 2 > target) {
+        if (size_ != 0 && capacity_ * 2 > target)
+        {
             target = capacity_ * 2;
         }
         return TryReserve(target);
     }
 
-    void ReleaseStorage() {
-        if constexpr (requires(Allocator& a) { a.Free(static_cast<void*>(nullptr), usize{0}, usize{0}); }) {
-            if (data_ != nullptr) {
+    void ReleaseStorage()
+    {
+        if constexpr (requires(Allocator& a) { a.Free(static_cast<void*>(nullptr), usize{0}, usize{0}); })
+        {
+            if (data_ != nullptr)
+            {
                 allocator_->Free(data_, capacity_ * sizeof(T), alignof(T));
             }
         }
     }
 
-    void DestroyRange(usize begin, usize end) {
-        for (usize i = begin; i < end; ++i) {
+    void DestroyRange(usize begin, usize end)
+    {
+        for (usize i = begin; i < end; ++i)
+        {
             data_[i].~T();
         }
     }
@@ -368,4 +437,4 @@ private:
     usize capacity_ = 0;
 };
 
-} // namespace engine_placeholder
+}  // namespace engine_placeholder

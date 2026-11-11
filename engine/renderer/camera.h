@@ -4,7 +4,8 @@
 //!
 //! * World and view space are right-handed with Y up; a camera looks down -Z in view space.
 //! * [[renderer::PerspectiveVulkan]] maps view space to Vulkan clip space: X right, Y *down* (the matrix flips Y) and
-//!   depth 0..1 (near -> 0, far -> 1, no reverse-Z). Viewports take a positive height; the flip lives in the projection.
+//!   depth 0..1 (near -> 0, far -> 1, no reverse-Z). Viewports take a positive height; the flip lives in the
+//!   projection.
 //! * Meshes are counter-clockwise seen from outside. With the projection above that is a front face for
 //!   `FrontFace::CounterClockwise`, and `CullMode::Back` removes faces that point away.
 //! * Matrices are column-major ([[Mat4]]), which is std140's layout for a `mat4`, so one can be copied into a uniform
@@ -14,7 +15,8 @@
 #include "math/vector.h"
 #include "types.h"
 
-namespace engine_placeholder::renderer {
+namespace engine_placeholder::renderer
+{
 
 /// A perspective projection for a right-handed view space and Vulkan clip space (Y down, depth 0..1).
 ///
@@ -58,8 +60,9 @@ Mat4 LookAt(const Vec3& eye, const Vec3& target, const Vec3& up);
 /// - Thread-safety: thread-safe. A pure function of its arguments.
 Mat4 ModelMatrix(const Vec3& position, f32 scale, f32 yaw_radians);
 
-/// The matrix that carries normals with `model`: the inverse transpose of its upper 3x3 up to a positive scale (the cofactor
-/// matrix divided by the sign of the determinant, so a mirroring model does not turn normals inside out), in a Mat4.
+/// The matrix that carries normals with `model`: the inverse transpose of its upper 3x3 up to a positive scale (the
+/// cofactor matrix divided by the sign of the determinant, so a mirroring model does not turn normals inside out), in a
+/// Mat4.
 ///
 /// - Param model: an affine model matrix.
 /// - Returns: the normal matrix; normalize transformed normals in the shader.
@@ -73,7 +76,8 @@ Mat4 NormalMatrix(const Mat4& model);
 /// back). Everything else is derived, so a camera never holds a matrix that can go stale.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct Camera {
+struct Camera
+{
     /// The camera position in world space.
     Vec3 position = Vec3(0, 0, 0);
     /// The orientation: column 0 is right, column 1 is up, column 2 is back (minus the viewing direction).
@@ -130,4 +134,4 @@ struct Camera {
 /// - Thread-safety: thread-safe. A pure function of its arguments.
 Camera MakeLookAtCamera(const Vec3& eye, const Vec3& target, const Vec3& up);
 
-} // namespace engine_placeholder::renderer
+}  // namespace engine_placeholder::renderer

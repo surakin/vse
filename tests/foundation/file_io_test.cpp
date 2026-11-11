@@ -12,8 +12,10 @@ using engine_placeholder::usize;
 namespace io = engine_placeholder::io;
 
 // The running test program, read through its path: ELF on Linux, a PE image (`MZ`) on Windows (Phase 13 Day 158).
-TEST_CASE("io::ReadFile reads the running program and finds its executable magic number", "[file_io][io]") {
-    ArenaAllocator arena(128 * 1024 * 1024); // the running test binary (Catch2 statically linked) is well into the tens of MB
+TEST_CASE("io::ReadFile reads the running program and finds its executable magic number", "[file_io][io]")
+{
+    ArenaAllocator arena(128 * 1024 *
+                         1024);  // the running test binary (Catch2 statically linked) is well into the tens of MB
     usize size = 0;
     u8* buffer = nullptr;
     io::Path self;
@@ -34,16 +36,19 @@ TEST_CASE("io::ReadFile reads the running program and finds its executable magic
 #endif
 }
 
-TEST_CASE("io::ReadFile reports NotFound for a nonexistent file", "[file_io][io]") {
+TEST_CASE("io::ReadFile reports NotFound for a nonexistent file", "[file_io][io]")
+{
     ArenaAllocator arena(1024);
     usize size = 0;
     u8* buffer = nullptr;
-    const io::Status status = io::ReadFile(io::Path("/nonexistent/path/engine_test_should_not_exist"), arena, &buffer, &size);
+    const io::Status status = io::ReadFile(io::Path("/nonexistent/path/engine_test_should_not_exist"), arena, &buffer,
+                                           &size);
     REQUIRE(status.Is(io::Error::NotFound));
     REQUIRE(buffer == nullptr);
 }
 
-TEST_CASE("io::File::Seek repositions the stream for subsequent reads", "[file_io][io]") {
+TEST_CASE("io::File::Seek repositions the stream for subsequent reads", "[file_io][io]")
+{
     io::Path dir;
     REQUIRE(io::TempDirectory(&dir).Ok());
     io::Path scratch;

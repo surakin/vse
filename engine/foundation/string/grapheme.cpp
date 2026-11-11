@@ -12,65 +12,80 @@
 //     current \p{Extended_Pictographic} Extend* run (through `prev`,
 //     possibly `prev` itself being the ZWJ that follows it) are still
 //     "live", used for the emoji ZWJ-sequence rule (GB11).
-namespace engine_placeholder {
+namespace engine_placeholder
+{
 
-namespace {
+namespace
+{
 
 bool BreakBetween(GraphemeBreakProperty prev, GraphemeBreakProperty curr, usize ri_run_len_at_prev,
-                   bool emoji_run_at_prev) {
+                  bool emoji_run_at_prev)
+{
     using GBP = GraphemeBreakProperty;
 
     // GB3: CR x LF
-    if (prev == GBP::CR && curr == GBP::LF) {
+    if (prev == GBP::CR && curr == GBP::LF)
+    {
         return false;
     }
     // GB4: (Control|CR|LF) ÷
-    if (prev == GBP::Control || prev == GBP::CR || prev == GBP::LF) {
+    if (prev == GBP::Control || prev == GBP::CR || prev == GBP::LF)
+    {
         return true;
     }
     // GB5: ÷ (Control|CR|LF)
-    if (curr == GBP::Control || curr == GBP::CR || curr == GBP::LF) {
+    if (curr == GBP::Control || curr == GBP::CR || curr == GBP::LF)
+    {
         return true;
     }
     // GB6: L x (L|V|LV|LVT)
-    if (prev == GBP::L && (curr == GBP::L || curr == GBP::V || curr == GBP::LV || curr == GBP::LVT)) {
+    if (prev == GBP::L && (curr == GBP::L || curr == GBP::V || curr == GBP::LV || curr == GBP::LVT))
+    {
         return false;
     }
     // GB7: (LV|V) x (V|T)
-    if ((prev == GBP::LV || prev == GBP::V) && (curr == GBP::V || curr == GBP::T)) {
+    if ((prev == GBP::LV || prev == GBP::V) && (curr == GBP::V || curr == GBP::T))
+    {
         return false;
     }
     // GB8: (LVT|T) x T
-    if ((prev == GBP::LVT || prev == GBP::T) && curr == GBP::T) {
+    if ((prev == GBP::LVT || prev == GBP::T) && curr == GBP::T)
+    {
         return false;
     }
     // GB9: x (Extend|ZWJ)
-    if (curr == GBP::Extend || curr == GBP::ZWJ) {
+    if (curr == GBP::Extend || curr == GBP::ZWJ)
+    {
         return false;
     }
     // GB9a: x SpacingMark
-    if (curr == GBP::SpacingMark) {
+    if (curr == GBP::SpacingMark)
+    {
         return false;
     }
     // GB9b: Prepend x
-    if (prev == GBP::Prepend) {
+    if (prev == GBP::Prepend)
+    {
         return false;
     }
     // GB11: \p{Extended_Pictographic} Extend* ZWJ x \p{Extended_Pictographic}
-    if (prev == GBP::ZWJ && emoji_run_at_prev && curr == GBP::ExtendedPictographic) {
+    if (prev == GBP::ZWJ && emoji_run_at_prev && curr == GBP::ExtendedPictographic)
+    {
         return false;
     }
     // GB12/GB13: sot (RI RI)* RI x RI — no break on the first RI of a pair.
-    if (prev == GBP::RegionalIndicator && curr == GBP::RegionalIndicator && (ri_run_len_at_prev % 2) == 1) {
+    if (prev == GBP::RegionalIndicator && curr == GBP::RegionalIndicator && (ri_run_len_at_prev % 2) == 1)
+    {
         return false;
     }
     // GB999: Any ÷ Any
     return true;
 }
 
-} // namespace
+}  // namespace
 
-usize GraphemeClusterIterator::FindNextBoundary(usize start) const {
+usize GraphemeClusterIterator::FindNextBoundary(usize start) const
+{
     usize offset = start;
     DecodedCodepoint first = DecodeUtf8At(sv_.Data(), sv_.Length(), offset, nullptr);
     GraphemeBreakProperty prev = LookupGraphemeBreakProperty(first.codepoint);
@@ -78,10 +93,12 @@ usize GraphemeClusterIterator::FindNextBoundary(usize start) const {
     bool emoji_run = (prev == GraphemeBreakProperty::ExtendedPictographic);
     offset += first.byte_length;
 
-    while (offset < sv_.Length()) {
+    while (offset < sv_.Length())
+    {
         DecodedCodepoint dc = DecodeUtf8At(sv_.Data(), sv_.Length(), offset, nullptr);
         GraphemeBreakProperty curr = LookupGraphemeBreakProperty(dc.codepoint);
-        if (BreakBetween(prev, curr, ri_run, emoji_run)) {
+        if (BreakBetween(prev, curr, ri_run, emoji_run))
+        {
             break;
         }
         ri_run = (curr == GraphemeBreakProperty::RegionalIndicator) ? ri_run + 1 : 0;
@@ -93,13 +110,15 @@ usize GraphemeClusterIterator::FindNextBoundary(usize start) const {
     return offset;
 }
 
-usize GraphemeClusterCount(StringView sv) {
+usize GraphemeClusterCount(StringView sv)
+{
     usize count = 0;
-    for (StringView cluster : GraphemeClusters(sv)) {
+    for (StringView cluster : GraphemeClusters(sv))
+    {
         (void)cluster;
         ++count;
     }
     return count;
 }
 
-} // namespace engine_placeholder
+}  // namespace engine_placeholder

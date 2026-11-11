@@ -17,10 +17,10 @@ using gpu_test::CompareOptions;
 using gpu_test::Image;
 using namespace cube_test;
 
-
-TEST_CASE("Perspective and look-at follow the documented conventions", "[rhi][cube][math]") {
+TEST_CASE("Perspective and look-at follow the documented conventions", "[rhi][cube][math]")
+{
     using namespace demo;
-    const Mat4 projection = PerspectiveVulkan(1.5707964f, 2.0f, 1.0f, 5.0f); // 90 degrees: f = 1
+    const Mat4 projection = PerspectiveVulkan(1.5707964f, 2.0f, 1.0f, 5.0f);  // 90 degrees: f = 1
     // A point on the near plane maps to depth 0, on the far plane to depth 1.
     Vec4 near_clip = projection * Vec4(0, 0, -1, 1);
     Vec4 far_clip = projection * Vec4(0, 0, -5, 1);
@@ -30,7 +30,7 @@ TEST_CASE("Perspective and look-at follow the documented conventions", "[rhi][cu
     Vec4 up = projection * Vec4(0, 1, -2, 1);
     Vec4 right = projection * Vec4(2, 0, -2, 1);
     CHECK(up.y / up.w < 0.0f);
-    CHECK(Abs(right.x / right.w - 0.5f) < 1e-5f); // x / (aspect * depth) = 2 / (2 * 2)
+    CHECK(Abs(right.x / right.w - 0.5f) < 1e-5f);  // x / (aspect * depth) = 2 / (2 * 2)
     // The camera looks down -Z of view space: the target lies on the negative Z axis at its distance.
     const Mat4 view = LookAt(Vec3(1, 2, 3), Vec3(1, 2, -1), Vec3(0, 1, 0));
     const Vec4 target = view * Vec4(1, 2, -1, 1);
@@ -40,7 +40,8 @@ TEST_CASE("Perspective and look-at follow the documented conventions", "[rhi][cu
     // The mesh: 24 vertices, 36 indices in range, every face CCW seen from outside (normal . (b-a)x(c-a) > 0).
     const CubeVertex* v = CubeVertices();
     const u16* idx = CubeIndices();
-    for (u32 t = 0; t < kCubeIndexCount / 3; ++t) {
+    for (u32 t = 0; t < kCubeIndexCount / 3; ++t)
+    {
         const CubeVertex& a = v[idx[t * 3]];
         const CubeVertex& b = v[idx[t * 3 + 1]];
         const CubeVertex& c = v[idx[t * 3 + 2]];
@@ -51,8 +52,10 @@ TEST_CASE("Perspective and look-at follow the documented conventions", "[rhi][cu
     }
 }
 
-TEST_CASE("The cube renders from a fixed angle and matches its golden image", "[rhi][gpu][cube][golden]") {
-    FOR_EACH_GPU_BACKEND(backend) {
+TEST_CASE("The cube renders from a fixed angle and matches its golden image", "[rhi][gpu][cube][golden]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
         CubeScene scene(backend, Vec3(1.8f, 1.5f, 3.0f));
         demo::CubeOptions options;
         options.depth_format = scene.DepthFormat();
@@ -64,15 +67,19 @@ TEST_CASE("The cube renders from a fixed angle and matches its golden image", "[
         // Independent of the golden: the corner is background; the center of each visible face shows that face's color
         // (the normal mapped to 0..1); the faces facing away are not drawn.
         CHECK(PixelIs(image, 2, 2, 51, 51, 51));
-        struct FaceProbe {
+        struct FaceProbe
+        {
             Vec3 center;
             int r, g, b;
         };
-        const FaceProbe faces[] = {{Vec3(0, 0, 0.5f), 128, 128, 255}, {Vec3(0.5f, 0, 0), 255, 128, 128}, {Vec3(0, 0.5f, 0), 128, 255, 128}};
-        for (const FaceProbe& f : faces) {
+        const FaceProbe faces[] = {
+            {Vec3(0, 0, 0.5f), 128, 128, 255}, {Vec3(0.5f, 0, 0), 255, 128, 128}, {Vec3(0, 0.5f, 0), 128, 255, 128}};
+        for (const FaceProbe& f : faces)
+        {
             u32 x = 0, y = 0;
             scene.Project(model, f.center, &x, &y);
-            INFO("face at " << f.center.x << "," << f.center.y << "," << f.center.z << " projects to " << x << "," << y);
+            INFO("face at " << f.center.x << "," << f.center.y << "," << f.center.z << " projects to " << x << ","
+                            << y);
             CHECK(PixelIs(image, x, y, f.r, f.g, f.b));
         }
 
@@ -81,8 +88,10 @@ TEST_CASE("The cube renders from a fixed angle and matches its golden image", "[
     }
 }
 
-TEST_CASE("The depth test hides a cube behind another and its absence does not", "[rhi][gpu][cube]") {
-    FOR_EACH_GPU_BACKEND(backend) {
+TEST_CASE("The depth test hides a cube behind another and its absence does not", "[rhi][gpu][cube]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
         CubeScene scene(backend);
         demo::CubeOptions with_depth;
         with_depth.depth_format = scene.DepthFormat();
@@ -99,19 +108,21 @@ TEST_CASE("The depth test hides a cube behind another and its absence does not",
         const Mat4 far_cube = demo::ModelMatrix(Vec3(0, 0, -2), 3.0f, 3.14159265f);
 
         const Image hidden = scene.Render({{&tested, near_cube}, {&tested, far_cube}});
-        CHECK(PixelIs(hidden, 64, 64, 128, 128, 255)); // A is in front, B is occluded behind it
-        CHECK(PixelIs(hidden, 4, 4, 128, 128, 0));     // B shows around A
+        CHECK(PixelIs(hidden, 64, 64, 128, 128, 255));  // A is in front, B is occluded behind it
+        CHECK(PixelIs(hidden, 4, 4, 128, 128, 0));      // B shows around A
 
         const Image overdrawn = scene.Render({{&untested, near_cube}, {&untested, far_cube}});
-        CHECK(PixelIs(overdrawn, 64, 64, 128, 128, 0)); // without depth testing the later draw wins
+        CHECK(PixelIs(overdrawn, 64, 64, 128, 128, 0));  // without depth testing the later draw wins
         CHECK(PixelIs(overdrawn, 4, 4, 128, 128, 0));
 
         scene.device->WaitIdle();
     }
 }
 
-TEST_CASE("Indexed and non-indexed draws of the same cube give identical images", "[rhi][gpu][cube]") {
-    FOR_EACH_GPU_BACKEND(backend) {
+TEST_CASE("Indexed and non-indexed draws of the same cube give identical images", "[rhi][gpu][cube]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
         CubeScene scene(backend, Vec3(1.8f, 1.5f, 3.0f));
         demo::CubeOptions options;
         options.depth_format = scene.DepthFormat();
@@ -130,8 +141,10 @@ TEST_CASE("Indexed and non-indexed draws of the same cube give identical images"
     }
 }
 
-TEST_CASE("Back faces are culled and the winding follows the documented convention", "[rhi][gpu][cube]") {
-    FOR_EACH_GPU_BACKEND(backend) {
+TEST_CASE("Back faces are culled and the winding follows the documented convention", "[rhi][gpu][cube]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
         CubeScene scene(backend);
         demo::CubeOptions options;
         options.depth_format = scene.DepthFormat();

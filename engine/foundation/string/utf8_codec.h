@@ -4,12 +4,14 @@
 
 //! Raw UTF-8 decode and encode on `const char*` buffers, with no dependency on
 //! the string module.
-namespace engine_placeholder {
+namespace engine_placeholder
+{
 
 /// Result of decoding one UTF-8 sequence.
-struct DecodedCodepoint {
-    u32 codepoint;    ///< Decoded Unicode scalar value, or U+FFFD for malformed input.
-    usize byte_length; ///< Number of bytes the sequence occupied (1 for malformed input).
+struct DecodedCodepoint
+{
+    u32 codepoint;      ///< Decoded Unicode scalar value, or U+FFFD for malformed input.
+    usize byte_length;  ///< Number of bytes the sequence occupied (1 for malformed input).
 };
 
 /// Decodes the codepoint starting at byte `offset` in `data[0, length)`.
@@ -36,4 +38,4 @@ DecodedCodepoint DecodeUtf8At(const char* data, usize length, usize offset, bool
 /// - Returns: number of bytes written.
 usize EncodeUtf8(u32 codepoint, char out[4]);
 
-} // namespace engine_placeholder
+}  // namespace engine_placeholder

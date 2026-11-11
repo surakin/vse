@@ -12,7 +12,8 @@
 #include "rhi/desc.h"
 #include "types.h"
 
-namespace engine_placeholder::renderer {
+namespace engine_placeholder::renderer
+{
 
 /// The most options one shader may declare.
 inline constexpr u32 kMaxPermutationOptions = 16;
@@ -22,7 +23,8 @@ inline constexpr u32 kMaxPermutationKeys = 32;
 /// A set of shader options that are switched on: bit `i` is option `i` in declaration order.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct PermutationKey {
+struct PermutationKey
+{
     /// The bit set; bits at or above the shader's option count must be 0.
     u32 bits = 0;
 
@@ -38,9 +40,11 @@ struct PermutationKey {
     /// - Param index: an option index below [[renderer::kMaxPermutationOptions]]; larger values change nothing.
     /// - Returns: the key with the option on, or an unchanged copy for an index at or past the limit.
     /// - Fails: never; an index past the limit is not an error.
-    constexpr PermutationKey With(u32 index) const {
+    constexpr PermutationKey With(u32 index) const
+    {
         PermutationKey key = *this;
-        if (index < kMaxPermutationOptions) {
+        if (index < kMaxPermutationOptions)
+        {
             key.bits |= 1u << index;
         }
         return key;
@@ -54,12 +58,13 @@ struct PermutationKey {
     constexpr bool operator==(const PermutationKey& other) const { return bits == other.bits; }
 };
 
-/// One compiled shader module in every bytecode format it was minted in, and its reflection blob (the reflection is the same
-/// for every format: it comes from the one Slang source).
+/// One compiled shader module in every bytecode format it was minted in, and its reflection blob (the reflection is the
+/// same for every format: it comes from the one Slang source).
 ///
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: the pointers refer to static data in a generated `*.perm.inc` or `*.spv.inc` / `*.dxil.inc`.
-struct PermutationModule {
+struct PermutationModule
+{
     /// The SPIR-V words, or null.
     const u32* words = nullptr;
     /// Number of SPIR-V words.
@@ -78,8 +83,10 @@ struct PermutationModule {
     /// - Param format: the device's format ([[rhi::DeviceCaps::shader_format]]).
     /// - Returns: the blob, empty when the module has none in that format.
     /// - Fails: an empty blob, as described.
-    constexpr rhi::ShaderBlob Blob(rhi::ShaderFormat format) const {
-        switch (format) {
+    constexpr rhi::ShaderBlob Blob(rhi::ShaderFormat format) const
+    {
+        switch (format)
+        {
         case rhi::ShaderFormat::Spirv: return rhi::SpirvBlob(words, word_count);
         case rhi::ShaderFormat::Dxil: return rhi::DxilBlob(dxil, dxil_size);
         case rhi::ShaderFormat::Msl: break;
@@ -90,13 +97,17 @@ struct PermutationModule {
     /// Returns whether the module has bytecode in at least one format.
     ///
     /// - Fails: never.
-    constexpr bool HasCode() const { return (words != nullptr && word_count != 0) || (dxil != nullptr && dxil_size != 0); }
+    constexpr bool HasCode() const
+    {
+        return (words != nullptr && word_count != 0) || (dxil != nullptr && dxil_size != 0);
+    }
 };
 
 /// Which module a key uses. Keys that compile to identical SPIR-V share a module.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct PermutationEntry {
+struct PermutationEntry
+{
     /// The key's option bits.
     u32 key_bits = 0;
     /// Index into [[renderer::ShaderPermutations]]'s `modules`.
@@ -109,7 +120,8 @@ struct PermutationEntry {
 ///
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: all pointers refer to static data in a generated `*.perm.inc`.
-struct ShaderPermutations {
+struct ShaderPermutations
+{
     /// The shader's file name, for error messages (for example `permute_test.frag`).
     const char* shader = "";
     /// The option names in declaration order; option `i` is bit `i` of a key.
@@ -159,7 +171,8 @@ bool MakePermutationKey(const ShaderPermutations& table, const char* const* name
 /// - Param key: the options that are on.
 /// - Param error: receives a message naming the shader and the key (for example `shader 'x.frag' has no permutation
 ///   {INVERT, HALF}`) on failure; may be null.
-/// - Returns: a pointer into `table`, or null if the key was not built (or the table is corrupt, which the message says).
+/// - Returns: a pointer into `table`, or null if the key was not built (or the table is corrupt, which the message
+/// says).
 /// - Fails: reported through the return value and `error`; nothing is substituted.
 /// - Ownership: the pointer refers to static data and stays valid as long as `table`'s storage does.
 /// - Thread-safety: thread-safe. A pure function of its arguments.
@@ -175,4 +188,4 @@ const PermutationModule* FindPermutation(const ShaderPermutations& table, Permut
 /// - Thread-safety: thread-safe. A pure function of its arguments.
 void DescribePermutationKey(const ShaderPermutations& table, PermutationKey key, char* out, usize capacity);
 
-} // namespace engine_placeholder::renderer
+}  // namespace engine_placeholder::renderer

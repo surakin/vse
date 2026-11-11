@@ -6,31 +6,37 @@
 #include "string_view.h"
 #include "types.h"
 
-//! Drag and drop in the toolkit (Phase 15, Day 200): what is dragged. The routing is in [[ui::Surface]]; the widgets that start and accept drags override the `Widget` drag virtuals.
+//! Drag and drop in the toolkit (Phase 15, Day 200): what is dragged. The routing is in [[ui::Surface]]; the widgets
+//! that start and accept drags override the `Widget` drag virtuals.
 
-namespace engine_placeholder::ui {
+namespace engine_placeholder::ui
+{
 
 /// What a drop does with the data; the platform layer's enumeration, so an OS drag needs no translation.
 using DragAction = os::DragAction;
 
 /// The kind of one entry of a [[ui::DragPayload]].
-enum class DragEntryKind : u8 {
-    Text,     ///< UTF-8 text.
-    FileList, ///< Absolute paths separated by `\n`.
-    Custom,   ///< Bytes of an application format named by the entry's name.
-    Pointer,  ///< An application pointer, valid only inside the process (never offered to the OS).
+enum class DragEntryKind : u8
+{
+    Text,      ///< UTF-8 text.
+    FileList,  ///< Absolute paths separated by `\n`.
+    Custom,    ///< Bytes of an application format named by the entry's name.
+    Pointer,   ///< An application pointer, valid only inside the process (never offered to the OS).
 };
 
 /// One typed piece of data in a payload.
 ///
 /// - Thread-safety: thread-compatible.
 /// - Ownership: owns its name and bytes; `pointer` is borrowed.
-struct DragEntry {
-    DragEntryKind kind = DragEntryKind::Text; ///< What the entry holds.
-    Vector<char> name_chars;                  ///< `Custom`: the format name (a MIME type); `Pointer`: the application's tag. Read it with `Name`.
-    Vector<byte> bytes;                       ///< `Text`, `FileList`, `Custom`: the data. Empty while `pending`.
-    void* pointer = nullptr;                  ///< `Pointer`: the application's pointer.
-    bool pending = false;                     ///< The entry is announced by another program but its data has not been read (a drag still moving); a target decides from the kind.
+struct DragEntry
+{
+    DragEntryKind kind = DragEntryKind::Text;  ///< What the entry holds.
+    Vector<char> name_chars;  ///< `Custom`: the format name (a MIME type); `Pointer`: the application's tag. Read it
+                              ///< with `Name`.
+    Vector<byte> bytes;       ///< `Text`, `FileList`, `Custom`: the data. Empty while `pending`.
+    void* pointer = nullptr;  ///< `Pointer`: the application's pointer.
+    bool pending = false;  ///< The entry is announced by another program but its data has not been read (a drag still
+                           ///< moving); a target decides from the kind.
     /// Returns the name.
     ///
     /// - Fails: never.
@@ -43,13 +49,16 @@ struct DragEntry {
 
 /// What a drag carries: typed entries, the actions the source allows, and the action the user asks for.
 ///
-/// A source builds one with the `Add` functions and gives it to [[ui::Surface::BeginDrag]]. A target reads it in `CanAccept` and `OnDrop`; a payload that came from another program is
-/// `pending` until the drop (its entries name the kinds on offer without data), so a target must not read bytes in `CanAccept`. Every entry is capped at [[ui::DragPayload::kMaxEntryBytes]]
-/// and text is made valid UTF-8, so a hostile source cannot hand a target more than a clipboard could.
+/// A source builds one with the `Add` functions and gives it to [[ui::Surface::BeginDrag]]. A target reads it in
+/// `CanAccept` and `OnDrop`; a payload that came from another program is `pending` until the drop (its entries name the
+/// kinds on offer without data), so a target must not read bytes in `CanAccept`. Every entry is capped at
+/// [[ui::DragPayload::kMaxEntryBytes]] and text is made valid UTF-8, so a hostile source cannot hand a target more than
+/// a clipboard could.
 ///
 /// - Thread-safety: thread-compatible.
 /// - Ownership: owns its entries.
-class DragPayload {
+class DragPayload
+{
 public:
     /// The most entries one payload holds.
     static constexpr usize kMaxEntries = 8;
@@ -71,7 +80,8 @@ public:
     /// - Param data: the bytes; copied.
     /// - Param size: their count.
     /// - Returns: whether it was added.
-    /// - Fails: returns false when the payload is full, the name is empty or too long, or the data is above `kMaxEntryBytes`.
+    /// - Fails: returns false when the payload is full, the name is empty or too long, or the data is above
+    /// `kMaxEntryBytes`.
     bool AddCustom(StringView name, const byte* data, usize size);
     /// Adds a pointer that stays inside the process.
     /// - Param tag: names what the pointer is; 1 to 127 bytes.
@@ -92,7 +102,8 @@ public:
     /// Returns entry `index`.
     /// - Aborts: `index` is out of range.
     const DragEntry& Entry(usize index) const;
-    /// Returns the first entry of `kind` (and of `name`, for `Custom` and `Pointer`; an empty name matches any), or null.
+    /// Returns the first entry of `kind` (and of `name`, for `Custom` and `Pointer`; an empty name matches any), or
+    /// null.
     /// - Ownership: borrowed; valid while the payload is unchanged.
     /// - Fails: returns null when there is none.
     const DragEntry* Find(DragEntryKind kind, StringView name = StringView()) const;
@@ -119,8 +130,8 @@ public:
     /// Returns whether `action` is allowed.
     /// - Fails: never.
     bool Allows(DragAction action) const { return (allowed_ & os::DragActionBit(action)) != 0; }
-    /// Returns the action the user asks for: Copy with Ctrl held, Link with Ctrl+Shift, else Move when allowed, else Copy, else Link; `Nothing` when nothing is allowed. A target that accepts
-    /// the drag usually answers with this.
+    /// Returns the action the user asks for: Copy with Ctrl held, Link with Ctrl+Shift, else Move when allowed, else
+    /// Copy, else Link; `Nothing` when nothing is allowed. A target that accepts the drag usually answers with this.
     DragAction Requested() const { return requested_; }
 
 private:
@@ -131,7 +142,8 @@ private:
     DragAction requested_ = DragAction::Nothing;
 };
 
-/// Returns the cursor for an action: not-allowed for `Nothing`, the four-way arrow for `Move`, the hand for `Link`, the arrow for `Copy` (the platform layer has no copy cursor).
+/// Returns the cursor for an action: not-allowed for `Nothing`, the four-way arrow for `Move`, the hand for `Link`, the
+/// arrow for `Copy` (the platform layer has no copy cursor).
 os::CursorShape CursorForDragAction(DragAction action);
 
-} // namespace engine_placeholder::ui
+}  // namespace engine_placeholder::ui

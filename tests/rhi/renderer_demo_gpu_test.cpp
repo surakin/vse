@@ -1,6 +1,6 @@
-// Phase 5 Day 82: the renderer demo's scene rendered offscreen and compared with a golden image, and depth correctness: the
-// picture must not depend on the order objects were added, and intersecting surfaces must resolve where the geometry says.
-// Validation and synchronization validation are on and must stay silent.
+// Phase 5 Day 82: the renderer demo's scene rendered offscreen and compared with a golden image, and depth correctness:
+// the picture must not depend on the order objects were added, and intersecting surfaces must resolve where the
+// geometry says. Validation and synchronization validation are on and must stay silent.
 #include "lang/scalar.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -18,13 +18,15 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
 
-namespace {
+namespace
+{
 
 constexpr u32 kShotW = 320;
 constexpr u32 kShotH = 180;
 
 // What one offscreen render of the demo scene produced (`ok` is false when the frame or any object failed).
-struct DemoShot {
+struct DemoShot
+{
     gpu_test::Image image;
     GBufferStats stats;
     LightSummary lights;
@@ -33,7 +35,8 @@ struct DemoShot {
     engine_test::Text error = engine_test::MakeText();
 };
 
-DemoShot RenderDemo(rhi::Device* device, const renderer_demo::SceneOptions& options, int gbuffer_layer = -1) {
+DemoShot RenderDemo(rhi::Device* device, const renderer_demo::SceneOptions& options, int gbuffer_layer = -1)
+{
     DemoShot shot;
     rhi::TextureDesc td;
     td.width = kShotW;
@@ -73,22 +76,26 @@ DemoShot RenderDemo(rhi::Device* device, const renderer_demo::SceneOptions& opti
         shot.image.width = kShotW;
         shot.image.height = kShotH;
         shot.image.rgba.Resize(static_cast<engine_placeholder::usize>(kShotW) * kShotH * 4);
-        REQUIRE(device->ReadbackTexture(target, 0, 0, shot.image.rgba.Data(), shot.image.rgba.Size(), rhi::ResourceState::CopySrc));
+        REQUIRE(device->ReadbackTexture(target, 0, 0, shot.image.rgba.Data(), shot.image.rgba.Size(),
+                                        rhi::ResourceState::CopySrc));
     }
     device->DestroyTexture(target);
     return shot;
 }
 
-renderer_demo::SceneOptions DefaultOptions() {
+renderer_demo::SceneOptions DefaultOptions()
+{
     renderer_demo::SceneOptions so;
     so.asset_dir = ENGINE_RENDERER_DEMO_ASSET_DIR;
     return so;
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("The demo scene renders offscreen and matches its golden image", "[rhi][gpu][golden][demo]") {
-    FOR_EACH_GPU_BACKEND(backend) {
+TEST_CASE("The demo scene renders offscreen and matches its golden image", "[rhi][gpu][golden][demo]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = gbuffer_rig::MakeDevice(backend);
         {
@@ -98,13 +105,15 @@ TEST_CASE("The demo scene renders offscreen and matches its golden image", "[rhi
             // Independent of the golden: the scene is as large as advertised and everything that should be drawn is.
             CHECK(shot.stats.visible > 100);
             CHECK(shot.stats.rejected == 0);
-            CHECK(shot.stats.draws < shot.stats.drawn_objects); // instanced runs: fewer draws than objects
+            CHECK(shot.stats.draws < shot.stats.drawn_objects);  // instanced runs: fewer draws than objects
             CHECK(shot.lights.point_count > 50);
             CHECK(shot.lights.dropped == 0);
             CHECK(shot.volume_draws == shot.lights.point_count);
-            // The sky stays black (nothing there to light), the ground is lit: the top row is black, the bottom row is not.
+            // The sky stays black (nothing there to light), the ground is lit: the top row is black, the bottom row is
+            // not.
             int top_lit = 0, bottom_lit = 0;
-            for (u32 x = 0; x < kShotW; ++x) {
+            for (u32 x = 0; x < kShotW; ++x)
+            {
                 const u8* t = shot.image.Pixel(x, 2);
                 const u8* b = shot.image.Pixel(x, kShotH - 3);
                 top_lit += (t[0] + t[1] + t[2]) > 0;
@@ -114,7 +123,7 @@ TEST_CASE("The demo scene renders offscreen and matches its golden image", "[rhi
             CHECK(bottom_lit > static_cast<int>(kShotW) * 9 / 10);
 
             gpu_test::CompareOptions co;
-            co.tolerance = 6;          // GGX highlights and 300 summed lights: a few levels of rounding difference
+            co.tolerance = 6;  // GGX highlights and 300 summed lights: a few levels of rounding difference
             co.edge_tolerance = 90;
             co.max_edge_miss = 0.3;
             co.max_interior_miss = 0.002;
@@ -126,25 +135,32 @@ TEST_CASE("The demo scene renders offscreen and matches its golden image", "[rhi
     }
 }
 
-TEST_CASE("The picture does not depend on the order objects were added", "[rhi][gpu][demo][depth]") {
-    FOR_EACH_GPU_BACKEND(backend) {
+TEST_CASE("The picture does not depend on the order objects were added", "[rhi][gpu][demo][depth]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = gbuffer_rig::MakeDevice(backend);
         {
             renderer_demo::SceneOptions so = DefaultOptions();
-            so.objects = 200; // smaller than the milestone scene: this test renders it several times
+            so.objects = 200;  // smaller than the milestone scene: this test renders it several times
             so.lights = 60;
             const DemoShot natural = RenderDemo(device.Get(), so);
             REQUIRE(natural.ok);
-            for (u32 seed : {3u, 77u, 12345u}) {
+            for (u32 seed : {3u, 77u, 12345u})
+            {
                 so.add_order_seed = seed;
                 const DemoShot shuffled = RenderDemo(device.Get(), so);
                 REQUIRE(shuffled.ok);
                 // The same draws (same visible count) and exactly the same picture, pixel for pixel.
                 CHECK(shuffled.stats.visible == natural.stats.visible);
                 engine_placeholder::usize differing = 0;
-                for (engine_placeholder::usize i = 0; i < natural.image.rgba.Size(); i += 4) {
-                    if (MemCompare(&natural.image.rgba[i], &shuffled.image.rgba[i], 3) != 0) ++differing;
+                for (engine_placeholder::usize i = 0; i < natural.image.rgba.Size(); i += 4)
+                {
+                    if (MemCompare(&natural.image.rgba[i], &shuffled.image.rgba[i], 3) != 0)
+                    {
+                        ++differing;
+                    }
                 }
                 INFO("seed " << seed << ": " << differing << " of " << kShotW * kShotH << " pixels differ");
                 CHECK(differing == 0);
@@ -156,17 +172,24 @@ TEST_CASE("The picture does not depend on the order objects were added", "[rhi][
     }
 }
 
-namespace {
+namespace
+{
 
 using namespace gbuffer_rig;
 
 // A mesh of `size` x `size` in the XZ plane, placed with the given basis.
-Mat4 PlaneAt(const Vec3& x_axis, const Vec3& y_axis, const Vec3& z_axis) { return Mat4::FromBasis(x_axis, y_axis, z_axis, Vec3(0, 0, 0)); }
+Mat4 PlaneAt(const Vec3& x_axis, const Vec3& y_axis, const Vec3& z_axis)
+{
+    return Mat4::FromBasis(x_axis, y_axis, z_axis, Vec3(0, 0, 0));
+}
 
-} // namespace
+}  // namespace
 
-TEST_CASE("Two crossing planes resolve visibility along their line of intersection, in either draw order", "[rhi][gpu][demo][depth]") {
-    FOR_EACH_GPU_BACKEND(backend) {
+TEST_CASE("Two crossing planes resolve visibility along their line of intersection, in either draw order",
+          "[rhi][gpu][demo][depth]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = MakeDevice(backend);
         {
@@ -189,7 +212,8 @@ TEST_CASE("Two crossing planes resolve visibility along their line of intersecti
             cam.far_plane = 30.0f;
 
             Layers results[2];
-            for (int order = 0; order < 2; ++order) {
+            for (int order = 0; order < 2; ++order)
+            {
                 RenderScene scene(RenderSceneDesc{});
                 RenderObjectDesc od;
                 od.mesh = &plane;
@@ -203,23 +227,28 @@ TEST_CASE("Two crossing planes resolve visibility along their line of intersecti
             }
 
             int probes = 0;
-            for (const Layers& L : results) {
-                for (f32 z = -3.0f; z <= 3.0f; z += 1.0f) {
-                    struct Probe {
+            for (const Layers& L : results)
+            {
+                for (f32 z = -3.0f; z <= 3.0f; z += 1.0f)
+                {
+                    struct Probe
+                    {
                         Vec3 point;
-                        Vec3 normal; // what the pixel must show
-                        Vec3 surface_point; // where that surface is hit by the pixel's ray
+                        Vec3 normal;         // what the pixel must show
+                        Vec3 surface_point;  // where that surface is hit by the pixel's ray
                     };
-                    // Visible floor beside the line, visible wall above it, the floor hidden behind the wall, the wall's lower half
-                    // hidden under the floor.
+                    // Visible floor beside the line, visible wall above it, the floor hidden behind the wall, the
+                    // wall's lower half hidden under the floor.
                     const Probe list[] = {
                         {Vec3(0.6f, 0.0f, z), Vec3(0, 1, 0), Vec3(0.6f, 0.0f, z)},
                         {Vec3(0.0f, 0.6f, z), Vec3(1, 0, 0), Vec3(0.0f, 0.6f, z)},
                     };
-                    for (const Probe& p : list) {
+                    for (const Probe& p : list)
+                    {
                         const Pixel px = Project(cam, p.point);
                         const Vec3 n = L.Normal(px.x, px.y);
-                        INFO("probe " << p.point.x << " " << p.point.y << " " << p.point.z << " normal " << n.x << " " << n.y << " " << n.z);
+                        INFO("probe " << p.point.x << " " << p.point.y << " " << p.point.z << " normal " << n.x << " "
+                                      << n.y << " " << n.z);
                         CHECK(Abs(n.x - p.normal.x) < 0.02f);
                         CHECK(Abs(n.y - p.normal.y) < 0.02f);
                         CHECK(Abs(n.z - p.normal.z) < 0.02f);
@@ -228,8 +257,8 @@ TEST_CASE("Two crossing planes resolve visibility along their line of intersecti
                         CHECK(Abs(L.Depth(px.x, px.y) - on_surface.depth) < 2e-3f);
                         ++probes;
                     }
-                    // Occlusion: the floor point behind the wall (x < 0) shows the wall; the wall point under the floor (y < 0) shows
-                    // the floor.
+                    // Occlusion: the floor point behind the wall (x < 0) shows the wall; the wall point under the floor
+                    // (y < 0) shows the floor.
                     const Pixel behind = Project(cam, Vec3(-0.6f, 0.0f, z));
                     const Vec3 nb = L.Normal(behind.x, behind.y);
                     INFO("behind the wall, z " << z << " normal " << nb.x << " " << nb.y << " " << nb.z);
@@ -256,30 +285,40 @@ TEST_CASE("Two crossing planes resolve visibility along their line of intersecti
 #include "rhi/null/null_device.h"
 #include "cstr/mem_ops.h"
 
-namespace {
-// Recorded from the generator (a deterministic LCG): a change here means the scene changed, which also changes the golden image.
+namespace
+{
+// Recorded from the generator (a deterministic LCG): a change here means the scene changed, which also changes the
+// golden image.
 constexpr f32 kExpectedShapeX = -33.3885f, kExpectedShapeY = 0.422003f, kExpectedShapeZ = -19.2028f;
-constexpr f32 kExpectedLightX = -27.8331f, kExpectedLightY = 1.72851f, kExpectedLightZ = 9.54387f, kExpectedLightRadius = 4.86283f;
-} // namespace
+constexpr f32 kExpectedLightX = -27.8331f, kExpectedLightY = 1.72851f, kExpectedLightZ = 9.54387f,
+              kExpectedLightRadius = 4.86283f;
+}  // namespace
 
-TEST_CASE("The bump normal map holds unit normals that tilt with the distance from a bump's center", "[rhi][demo]") {
+TEST_CASE("The bump normal map holds unit normals that tilt with the distance from a bump's center", "[rhi][demo]")
+{
     const demo::Pixels p = renderer_demo::MakeBumpNormalPixels();
     REQUIRE(p.width == 256);
-    auto normal = [&p](u32 x, u32 y, f32* n) {
+    auto normal = [&p](u32 x, u32 y, f32* n)
+    {
         const engine_placeholder::byte* px = &p.rgba[(static_cast<engine_placeholder::usize>(y) * p.width + x) * 4];
-        for (int c = 0; c < 3; ++c) n[c] = static_cast<f32>(px[c]) / 255.0f * 2.0f - 1.0f;
+        for (int c = 0; c < 3; ++c)
+        {
+            n[c] = static_cast<f32>(px[c]) / 255.0f * 2.0f - 1.0f;
+        }
     };
     // Every texel decodes to a unit vector facing the viewer (z >= 0), to within the 8-bit rounding.
-    for (u32 y = 0; y < p.height; y += 7) {
-        for (u32 x = 0; x < p.width; x += 5) {
+    for (u32 y = 0; y < p.height; y += 7)
+    {
+        for (u32 x = 0; x < p.width; x += 5)
+        {
             f32 n[3];
             normal(x, y, n);
             CHECK(Abs(Sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]) - 1.0f) < 0.02f);
             CHECK(n[2] >= -0.01f);
         }
     }
-    // The cell is 64 texels. Texel 46 is at u = 0.453 of the bump's half-width; the bump is a sphere of radius 0.9 cell units, so
-    // the normal's x is u / 0.9 = 0.503 and its z is sqrt(1 - x^2) (y is zero on the middle row).
+    // The cell is 64 texels. Texel 46 is at u = 0.453 of the bump's half-width; the bump is a sphere of radius 0.9 cell
+    // units, so the normal's x is u / 0.9 = 0.503 and its z is sqrt(1 - x^2) (y is zero on the middle row).
     f32 n[3];
     normal(46, 32, &n[0]);
     CHECK(Abs(n[0] - 0.5035f) < 0.015f);
@@ -290,7 +329,8 @@ TEST_CASE("The bump normal map holds unit normals that tilt with the distance fr
     CHECK(n[2] > 0.98f);
 }
 
-TEST_CASE("The demo scene is the same on every compiler: fixed positions for given seeds", "[rhi][demo]") {
+TEST_CASE("The demo scene is the same on every compiler: fixed positions for given seeds", "[rhi][demo]")
+{
     rhi::NullDevicePtr device = rhi::CreateNullDevice();
     {
         renderer_demo::DemoFrame frame;
@@ -301,15 +341,17 @@ TEST_CASE("The demo scene is the same on every compiler: fixed positions for giv
         fs.max_lights = 400;
         REQUIRE(frame.Create(fs));
         renderer_demo::SceneOptions so;
-        so.asset_dir = nullptr; // procedural textures
+        so.asset_dir = nullptr;  // procedural textures
         REQUIRE(scene.Create(device.Get(), frame.Materials(), frame.Templates(), so));
         CHECK(scene.ObjectCount() == 540);
-        CHECK(scene.LightCount() == 302); // 300 point lights, a sun and ambient light
+        CHECK(scene.LightCount() == 302);  // 300 point lights, a sun and ambient light
         // The first shape (object 49 after the 49 ground tiles) and the first point light (light 2).
         const RenderObject& shape = scene.Scene().ObjectAt(49);
         const Light& light = scene.Scene().LightAt(2);
-        INFO("shape " << shape.transform.col[3].x << " " << shape.transform.col[3].y << " " << shape.transform.col[3].z);
-        INFO("light " << light.position.x << " " << light.position.y << " " << light.position.z << " radius " << light.radius);
+        INFO("shape " << shape.transform.col[3].x << " " << shape.transform.col[3].y << " "
+                      << shape.transform.col[3].z);
+        INFO("light " << light.position.x << " " << light.position.y << " " << light.position.z << " radius "
+                      << light.radius);
         CHECK(Abs(shape.transform.col[3].x - kExpectedShapeX) < 1e-3f);
         CHECK(Abs(shape.transform.col[3].y - kExpectedShapeY) < 1e-3f);
         CHECK(Abs(shape.transform.col[3].z - kExpectedShapeZ) < 1e-3f);
@@ -329,11 +371,14 @@ TEST_CASE("The demo scene is the same on every compiler: fixed positions for giv
     device.Reset();
 }
 
-namespace {
+namespace
+{
 
-// Runs the demo frame on a real device that loses itself at the start of frame `lose_at` (0: never), up to `frames` frames. Returns
-// how many frames ended Ok and whether any ended DeviceLost; false if the scene could not be created (the loss came first).
-struct LossRun {
+// Runs the demo frame on a real device that loses itself at the start of frame `lose_at` (0: never), up to `frames`
+// frames. Returns how many frames ended Ok and whether any ended DeviceLost; false if the scene could not be created
+// (the loss came first).
+struct LossRun
+{
     bool created = false;
     u32 ok = 0;
     u32 lost = 0;
@@ -342,16 +387,20 @@ struct LossRun {
     TransientPoolStats pool;
 };
 
-LossRun RunWithLoss(u32 lose_at, u32 frames) {
+LossRun RunWithLoss(u32 lose_at, u32 frames)
+{
     LossRun run;
     rhi::DeviceCreateInfo info;
-    info.backend = rhi::Backend::Vulkan; // these two tests count the Vulkan backend's leaks
+    info.backend = rhi::Backend::Vulkan;  // these two tests count the Vulkan backend's leaks
     info.validation = rhi::ValidationSetting::On;
     info.sync_validation = true;
     info.pipeline_cache = false;
     info.faults.lose_device_at_frame = lose_at;
     rhi::DevicePtr device = rhi::CreateDevice(info);
-    if (device == nullptr) return run;
+    if (device == nullptr)
+    {
+        return run;
+    }
     rhi::TextureDesc td;
     td.width = kShotW;
     td.height = kShotH;
@@ -368,7 +417,9 @@ LossRun RunWithLoss(u32 lose_at, u32 frames) {
         renderer_demo::SceneOptions so = DefaultOptions();
         so.objects = 100;
         so.lights = 20;
-        if (target.IsValid() && frame.Create(fs) && scene.Create(device.Get(), frame.Materials(), frame.Templates(), so)) {
+        if (target.IsValid() && frame.Create(fs) &&
+            scene.Create(device.Get(), frame.Materials(), frame.Templates(), so))
+        {
             run.created = true;
             scene.Animate(0.5f);
             Camera camera = scene.OverviewCamera(static_cast<f32>(kShotW) / static_cast<f32>(kShotH));
@@ -381,25 +432,46 @@ LossRun RunWithLoss(u32 lose_at, u32 frames) {
             ft.initial = rhi::ResourceState::Undefined;
             ft.final_state = rhi::ResourceState::CopySrc;
             bool seen_lost = false;
-            for (u32 i = 0; i < frames; ++i) {
+            for (u32 i = 0; i < frames; ++i)
+            {
                 const FrameStatus status = frame.Render(&scene.Scene(), &camera, &ft);
-                if (status == FrameStatus::Ok) ++run.ok;
-                else if (status == FrameStatus::DeviceLost) ++run.lost;
-                else ++run.other;
-                if (status == FrameStatus::DeviceLost) seen_lost = true;
-                else if (seen_lost) run.lost_stays_lost = false;
+                if (status == FrameStatus::Ok)
+                {
+                    ++run.ok;
+                }
+                else if (status == FrameStatus::DeviceLost)
+                {
+                    ++run.lost;
+                }
+                else
+                {
+                    ++run.other;
+                }
+                if (status == FrameStatus::DeviceLost)
+                {
+                    seen_lost = true;
+                }
+                else if (seen_lost)
+                {
+                    run.lost_stays_lost = false;
+                }
             }
             run.pool = frame.PoolStats();
         }
         device->WaitIdle();
     }
-    if (target.IsValid()) device->DestroyTexture(target);
+    if (target.IsValid())
+    {
+        device->DestroyTexture(target);
+    }
     return run;
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("Losing the real device in the deferred pipeline ends frames as DeviceLost and tears down clean", "[rhi][vulkan][gpu][demo][fault]") {
+TEST_CASE("Losing the real device in the deferred pipeline ends frames as DeviceLost and tears down clean",
+          "[rhi][vulkan][gpu][demo][fault]")
+{
     gpu_test::GpuFixture fx;
     fx.RequireValidation();
     rhi::DevicePtr probe = gbuffer_rig::MakeDevice(rhi::Backend::Vulkan);
@@ -408,25 +480,33 @@ TEST_CASE("Losing the real device in the deferred pipeline ends frames as Device
     rhi::vulkan::VulkanDevice::ResetLeakCounts();
     u32 lost_runs = 0;
     u32 refused_runs = 0;
-    for (u32 lose_at = 1; lose_at <= 10; ++lose_at) {
+    for (u32 lose_at = 1; lose_at <= 10; ++lose_at)
+    {
         const LossRun run = RunWithLoss(lose_at, 6);
         INFO("device lost at frame " << lose_at);
-        if (!run.created) {
-            ++refused_runs; // lost while the scene's meshes and textures were uploading: creation failed cleanly
+        if (!run.created)
+        {
+            ++refused_runs;  // lost while the scene's meshes and textures were uploading: creation failed cleanly
             continue;
         }
         CHECK(run.other == 0);
         CHECK(run.lost_stays_lost);
-        if (run.lost > 0) ++lost_runs;
+        if (run.lost > 0)
+        {
+            ++lost_runs;
+        }
     }
-    // How many frames the scene's uploads take decides which runs are refused and which are lost mid-run; some run must have been hit.
+    // How many frames the scene's uploads take decides which runs are refused and which are lost mid-run; some run must
+    // have been hit.
     CHECK(lost_runs + refused_runs > 0);
     const rhi::vulkan::VulkanDevice::LeakCounts leaks = rhi::vulkan::VulkanDevice::GetLeakCounts();
     CHECK(leaks.user_objects == 0);
     CHECK(leaks.internal_objects == 0);
 }
 
-TEST_CASE("A long run of the deferred frame neither grows the transient pool nor leaks", "[rhi][vulkan][gpu][demo][fault]") {
+TEST_CASE("A long run of the deferred frame neither grows the transient pool nor leaks",
+          "[rhi][vulkan][gpu][demo][fault]")
+{
     gpu_test::GpuFixture fx;
     fx.RequireValidation();
     rhi::DevicePtr probe = gbuffer_rig::MakeDevice(rhi::Backend::Vulkan);

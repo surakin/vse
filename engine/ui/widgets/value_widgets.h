@@ -8,18 +8,22 @@
 
 //! The widgets that hold a number (Phase 15, Day 196): the slider and the spin box.
 
-namespace engine_placeholder::ui {
+namespace engine_placeholder::ui
+{
 
 /// A thumb on a track that chooses a value in a range.
 ///
-/// Horizontal (minimum at the left) or vertical (minimum at the bottom). The value snaps to the step exactly ([[ui::ValueRange]]). The pointer drags the thumb (captured, so the drag may
-/// leave the slider); a press on the track jumps there and goes on dragging, or, with `SetTrackPages(true)`, moves one page towards the pointer. Keys: arrows by a step, PageUp/PageDown by a
-/// page, Home and End to the ends; the wheel only when switched on. `OnChanged` runs whenever the user changes the value (while dragging too), `OnCommit` when a drag ends or a key
-/// changed it. `SetValue` changes the value without running either.
+/// Horizontal (minimum at the left) or vertical (minimum at the bottom). The value snaps to the step exactly
+/// ([[ui::ValueRange]]). The pointer drags the thumb (captured, so the drag may leave the slider); a press on the track
+/// jumps there and goes on dragging, or, with `SetTrackPages(true)`, moves one page towards the pointer. Keys: arrows
+/// by a step, PageUp/PageDown by a page, Home and End to the ends; the wheel only when switched on. `OnChanged` runs
+/// whenever the user changes the value (while dragging too), `OnCommit` when a drag ends or a key changed it.
+/// `SetValue` changes the value without running either.
 ///
 /// - Thread-safety: owner-thread-only.
 /// - Ownership: owns nothing.
-class Slider : public Widget {
+class Slider : public Widget
+{
 public:
     /// The page as a fraction of the range when none was set.
     static constexpr f64 kPageFraction = 0.1;
@@ -34,7 +38,10 @@ public:
 
     /// Makes a slider over 0..1.
     /// - Param vertical: whether the track runs bottom to top.
-    explicit Slider(StringView name = StringView(), bool vertical = false) : Widget(name), vertical_(vertical) { SetFocusable(true); }
+    explicit Slider(StringView name = StringView(), bool vertical = false) : Widget(name), vertical_(vertical)
+    {
+        SetFocusable(true);
+    }
     /// Sets the range (and the step and policy in it) and applies it to the current value.
     void SetRange(const ValueRange& range);
     /// Returns the range.
@@ -90,14 +97,17 @@ private:
 
 /// A number with up and down buttons.
 ///
-/// The box is drawn in the `textfield` style; the left part holds an embedded [[ui::TextField]] and the right part the buttons (up above, down below). A press on a button, an arrow key or
-/// a wheel notch changes the value by the step, PageUp and PageDown by ten steps; every change goes through the range, so the value is always in range and on the grid. The field takes
-/// digits, a sign (when the range has negative values) and a decimal point (when `SetDecimals` is above 0) and nothing else; Enter, and losing the focus, commit the text (a text that
-/// is not a number, or that the range rejects, goes back to the value), and Escape reverts it. Home and End move the caret in the field.
+/// The box is drawn in the `textfield` style; the left part holds an embedded [[ui::TextField]] and the right part the
+/// buttons (up above, down below). A press on a button, an arrow key or a wheel notch changes the value by the step,
+/// PageUp and PageDown by ten steps; every change goes through the range, so the value is always in range and on the
+/// grid. The field takes digits, a sign (when the range has negative values) and a decimal point (when `SetDecimals` is
+/// above 0) and nothing else; Enter, and losing the focus, commit the text (a text that is not a number, or that the
+/// range rejects, goes back to the value), and Escape reverts it. Home and End move the caret in the field.
 ///
 /// - Thread-safety: owner-thread-only.
 /// - Ownership: owns its text field.
-class SpinBox : public Widget {
+class SpinBox : public Widget
+{
 public:
     /// The width of the button column as a multiple of the theme's icon size.
     static constexpr f32 kButtonIcons = 1.5f;
@@ -135,7 +145,8 @@ public:
     /// - Fails: never.
     /// - Ownership: borrowed; the box owns it.
     TextField* Field() const { return field_; }
-    /// Reads the field's text as the value: applies it through the range (and runs `OnChanged` when the value changed) when it is a number, else puts the value's text back.
+    /// Reads the field's text as the value: applies it through the range (and runs `OnChanged` when the value changed)
+    /// when it is a number, else puts the value's text back.
     void Commit();
     /// Returns the size of the widest value plus the buttons.
     Size Measure(const Constraints& constraints) override;
@@ -164,4 +175,4 @@ private:
     Callback<SpinBox*> on_changed_;
 };
 
-} // namespace engine_placeholder::ui
+}  // namespace engine_placeholder::ui

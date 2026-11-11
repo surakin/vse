@@ -1,5 +1,6 @@
-// The crash handler end to end on Linux: a child process installs it and crashes; the parent finds the envelope, reads the
-// minidump out of it with the crash_extract parser, and checks the other results. Also the crash dump directory function.
+// The crash handler end to end on Linux: a child process installs it and crashes; the parent finds the envelope, reads
+// the minidump out of it with the crash_extract parser, and checks the other results. Also the crash dump directory
+// function.
 #include <catch2/catch_test_macros.hpp>
 
 #include "debug/crash_context.h"
@@ -26,20 +27,26 @@ using namespace engine_placeholder::debug;
 using debug_test::Cat;
 using debug_test::Text;
 
-namespace {
+namespace
+{
 
 // A fresh temporary directory, removed with everything in it at the end of the scope.
-class CrashTempDir {
+class CrashTempDir
+{
 public:
-    CrashTempDir() {
+    CrashTempDir()
+    {
         const char* tmp = os::GetEnvironment("TMPDIR");
         FormatTo(path_, sizeof(path_), "%s/engine-crash-XXXXXX", tmp != nullptr ? tmp : "/tmp");
-        if (mkdtemp(path_) == nullptr) {
+        if (mkdtemp(path_) == nullptr)
+        {
             path_[0] = '\0';
         }
     }
-    ~CrashTempDir() {
-        if (path_[0] != '\0') {
+    ~CrashTempDir()
+    {
+        if (path_[0] != '\0')
+        {
             debug_test::RemoveTree(path_);
         }
     }
@@ -51,22 +58,26 @@ private:
     char path_[256];
 };
 
-void CollectEnvelopes(const char* directory, engine_test::TextList* found) {
+void CollectEnvelopes(const char* directory, engine_test::TextList* found)
+{
     debug_test::FindFiles(directory, ".envelope", found);
 }
 
-void PutLine(const char* label, int value) {
+void PutLine(const char* label, int value)
+{
     char line[64];
     const int n = FormatTo(line, sizeof(line), "%s=%d\n", label, value);
     os::Write(1, line, static_cast<usize>(n));
 }
 
-} // namespace
+}  // namespace
 
-// ---- children -------------------------------------------------------------------------------------------------------------
-// Each takes the dump directory as its argument.
+// ---- children
+// ------------------------------------------------------------------------------------------------------------- Each
+// takes the dump directory as its argument.
 
-ENGINE_DEATH_TEST_FN(dt_crash_install_then_fault) {
+ENGINE_DEATH_TEST_FN(dt_crash_install_then_fault)
+{
     CrashHandlerOptions options;
     options.dump_directory = argument;
     options.release = "crash-test@1";
@@ -74,10 +85,11 @@ ENGINE_DEATH_TEST_FN(dt_crash_install_then_fault) {
     InjectFault(FaultKind::NullWrite);
 }
 
-ENGINE_DEATH_TEST_FN(dt_crash_default_release_then_fault) {
+ENGINE_DEATH_TEST_FN(dt_crash_default_release_then_fault)
+{
     CrashHandlerOptions options;
     options.dump_directory = argument;
-    InstallCrashHandler(options); // no release given: the build id is used
+    InstallCrashHandler(options);  // no release given: the build id is used
     InitCrashContext(0, nullptr);
     char line[96];
     const int n = FormatTo(line, sizeof(line), "BUILD_ID=%s\n", GetCrashContext().build_id);
@@ -85,7 +97,9 @@ ENGINE_DEATH_TEST_FN(dt_crash_default_release_then_fault) {
     InjectFault(FaultKind::NullWrite);
 }
 
-TEST_CASE("Without a release string the envelope names the binary by its build id", "[crash][crashreport][death][debug][linux]") {
+TEST_CASE("Without a release string the envelope names the binary by its build id",
+          "[crash][crashreport][death][debug][linux]")
+{
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     CrashTempDir dir;
     ChildOptions options;
@@ -101,7 +115,8 @@ TEST_CASE("Without a release string the envelope names the binary by its build i
     CHECK(debug_test::ReadWholeFile(envelopes[0]).View().Contains(id.View()));
 }
 
-ENGINE_DEATH_TEST_FN(dt_crash_install_twice) {
+ENGINE_DEATH_TEST_FN(dt_crash_install_twice)
+{
     CrashHandlerOptions options;
     options.dump_directory = argument;
     PutLine("FIRST", static_cast<int>(InstallCrashHandler(options)));
@@ -111,7 +126,8 @@ ENGINE_DEATH_TEST_FN(dt_crash_install_twice) {
     PutLine("AFTER-UNINSTALL", CrashHandlerInstalled() ? 1 : 0);
 }
 
-ENGINE_DEATH_TEST_FN(dt_crash_uninstall_then_fault) {
+ENGINE_DEATH_TEST_FN(dt_crash_uninstall_then_fault)
+{
     CrashHandlerOptions options;
     options.dump_directory = argument;
     InstallCrashHandler(options);
@@ -120,26 +136,30 @@ ENGINE_DEATH_TEST_FN(dt_crash_uninstall_then_fault) {
     InjectFault(FaultKind::NullWrite);
 }
 
-ENGINE_DEATH_TEST_FN(dt_crash_fault_without_handler) {
+ENGINE_DEATH_TEST_FN(dt_crash_fault_without_handler)
+{
     InjectFault(FaultKind::NullWrite);
 }
 
-ENGINE_DEATH_TEST_FN(dt_crash_bad_directory) {
+ENGINE_DEATH_TEST_FN(dt_crash_bad_directory)
+{
     CrashHandlerOptions options;
-    options.dump_directory = "/proc/self/not-a-place-for-dumps/crashes"; // /proc cannot hold new directories
+    options.dump_directory = "/proc/self/not-a-place-for-dumps/crashes";  // /proc cannot hold new directories
     PutLine("RESULT", static_cast<int>(InstallCrashHandler(options)));
     PutLine("INSTALLED", CrashHandlerInstalled() ? 1 : 0);
     os::Write(1, "PROGRAM-RAN-ON\n", 15);
 }
 
 // Uses the default directory ($XDG_STATE_HOME/<app>/crashes), set by the parent through the environment.
-ENGINE_DEATH_TEST_FN(dt_crash_default_directory_then_fault) {
-    CrashHandlerOptions options; // no dump_directory
+ENGINE_DEATH_TEST_FN(dt_crash_default_directory_then_fault)
+{
+    CrashHandlerOptions options;  // no dump_directory
     PutLine("INSTALLED", static_cast<int>(InstallCrashHandler(options)));
     InjectFault(FaultKind::NullWrite);
 }
 
-ENGINE_DEATH_TEST_FN(dt_crash_print_default_directory) {
+ENGINE_DEATH_TEST_FN(dt_crash_print_default_directory)
+{
     io::Path directory;
     const bool ok = io::CrashDumpDirectory(&directory).Ok();
     PutLine("OK", ok ? 1 : 0);
@@ -148,9 +168,12 @@ ENGINE_DEATH_TEST_FN(dt_crash_print_default_directory) {
     os::Write(1, "\n", 1);
 }
 
-// ---- tests ----------------------------------------------------------------------------------------------------------------
+// ---- tests
+// ----------------------------------------------------------------------------------------------------------------
 
-TEST_CASE("A crash with the handler installed leaves one envelope holding a minidump and still kills the process", "[crash][death][debug][linux]") {
+TEST_CASE("A crash with the handler installed leaves one envelope holding a minidump and still kills the process",
+          "[crash][death][debug][linux]")
+{
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     CrashTempDir dir;
     REQUIRE(dir.Path()[0] != '\0');
@@ -158,10 +181,10 @@ TEST_CASE("A crash with the handler installed leaves one envelope holding a mini
     options.timeout_ms = 30000;
     const ChildResult r = RunInChild("dt_crash_install_then_fault", dir.Path(), options);
     INFO("child stdout: " << Cat(debug_test::StdoutView(r)).CStr());
-    CHECK(r.StdoutContains("INSTALLED=0")); // CrashHandlerResult::Installed
+    CHECK(r.StdoutContains("INSTALLED=0"));  // CrashHandlerResult::Installed
     CHECK(r.terminated);
     CHECK(r.reason == CrashReason::AccessViolation);
-    CHECK(r.native_code == SIGSEGV); // the original fault is still what the process dies from
+    CHECK(r.native_code == SIGSEGV);  // the original fault is still what the process dies from
 
     engine_test::TextList envelopes;
     CollectEnvelopes(dir.Path(), &envelopes);
@@ -175,14 +198,16 @@ TEST_CASE("A crash with the handler installed leaves one envelope holding a mini
     CHECK(content.View().Contains("crash-test@1"));
 }
 
-TEST_CASE("Installing the crash handler twice changes nothing the second time, and it can be uninstalled", "[crash][death][debug][linux]") {
+TEST_CASE("Installing the crash handler twice changes nothing the second time, and it can be uninstalled",
+          "[crash][death][debug][linux]")
+{
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     CrashTempDir dir;
     const ChildResult r = RunInChild("dt_crash_install_twice", dir.Path());
     REQUIRE(r.exited);
     CHECK(r.exit_code == 0);
-    CHECK(r.StdoutContains("FIRST=0"));            // Installed
-    CHECK(r.StdoutContains("SECOND=1"));           // AlreadyInstalled
+    CHECK(r.StdoutContains("FIRST=0"));   // Installed
+    CHECK(r.StdoutContains("SECOND=1"));  // AlreadyInstalled
     CHECK(r.StdoutContains("INSTALLED=1"));
     CHECK(r.StdoutContains("AFTER-UNINSTALL=0"));
     // A normal install says nothing: the library's complaint about having no server address is filtered out.
@@ -190,7 +215,9 @@ TEST_CASE("Installing the crash handler twice changes nothing the second time, a
     CHECK_FALSE(r.StdoutContains("DSN"));
 }
 
-TEST_CASE("After the crash handler is uninstalled a fault behaves as if it never was installed", "[crash][death][debug][linux]") {
+TEST_CASE("After the crash handler is uninstalled a fault behaves as if it never was installed",
+          "[crash][death][debug][linux]")
+{
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     CrashTempDir dir;
     ChildOptions options;
@@ -204,26 +231,32 @@ TEST_CASE("After the crash handler is uninstalled a fault behaves as if it never
     CHECK(envelopes.Empty());
 }
 
-TEST_CASE("A fault before the crash handler is installed leaves no dump and the original signal", "[crash][death][debug][linux]") {
+TEST_CASE("A fault before the crash handler is installed leaves no dump and the original signal",
+          "[crash][death][debug][linux]")
+{
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     const ChildResult r = RunInChild("dt_crash_fault_without_handler");
     CHECK(r.terminated);
     CHECK(r.native_code == SIGSEGV);
 }
 
-TEST_CASE("A dump directory that cannot be created fails the install, logs, and the program runs on", "[crash][death][debug][linux]") {
+TEST_CASE("A dump directory that cannot be created fails the install, logs, and the program runs on",
+          "[crash][death][debug][linux]")
+{
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     const ChildResult r = RunInChild("dt_crash_bad_directory");
     REQUIRE(r.exited);
     CHECK(r.exit_code == 0);
-    CHECK(r.StdoutContains("RESULT=3")); // DirectoryFailed
+    CHECK(r.StdoutContains("RESULT=3"));  // DirectoryFailed
     CHECK(r.StdoutContains("INSTALLED=0"));
     CHECK(r.StdoutContains("PROGRAM-RAN-ON"));
     // The failure is logged as a warning on the crash channel.
     CHECK(r.StdoutContains("crash handler not installed"));
 }
 
-TEST_CASE("Without a directory in the options the dump goes under the user's state directory", "[crash][death][debug][linux]") {
+TEST_CASE("Without a directory in the options the dump goes under the user's state directory",
+          "[crash][death][debug][linux]")
+{
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     CrashTempDir state_home;
     const Text state_env = Cat("XDG_STATE_HOME=", state_home.Path());
@@ -240,7 +273,9 @@ TEST_CASE("Without a directory in the options the dump goes under the user's sta
     CHECK(envelopes.Size() == 1);
 }
 
-TEST_CASE("The crash dump directory is created private to the user and named after the application", "[crash][death][debug][linux]") {
+TEST_CASE("The crash dump directory is created private to the user and named after the application",
+          "[crash][death][debug][linux]")
+{
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     CrashTempDir state_home;
     const Text state_env = Cat("XDG_STATE_HOME=", state_home.Path());
@@ -263,15 +298,17 @@ TEST_CASE("The crash dump directory is created private to the user and named aft
 }
 
 // Changes the environment, so it runs in a child and never in the multithreaded test process.
-ENGINE_DEATH_TEST_FN(dt_crash_directory_without_home) {
+ENGINE_DEATH_TEST_FN(dt_crash_directory_without_home)
+{
     unsetenv("XDG_STATE_HOME");
     unsetenv("HOME");
     io::Path path("untouched");
     PutLine("FOUND", io::CrashDumpDirectory(&path).Ok() ? 1 : 0);
-    PutLine("EMPTY", path == io::Path("untouched") ? 1 : 0); // unchanged on failure
+    PutLine("EMPTY", path == io::Path("untouched") ? 1 : 0);  // unchanged on failure
 }
 
-TEST_CASE("The crash dump directory is not found without a home or state directory", "[crash][death][debug][linux]") {
+TEST_CASE("The crash dump directory is not found without a home or state directory", "[crash][death][debug][linux]")
+{
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     const ChildResult none = RunInChild("dt_crash_directory_without_home");
     REQUIRE(none.exited);
@@ -279,16 +316,19 @@ TEST_CASE("The crash dump directory is not found without a home or state directo
     CHECK(none.StdoutContains("EMPTY=1"));
 }
 
-TEST_CASE("An application name that would leave the intended directory or be cut short is refused", "[crash][death][debug][linux]") {
+TEST_CASE("An application name that would leave the intended directory or be cut short is refused",
+          "[crash][death][debug][linux]")
+{
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
-    // The state directory is one level inside the temporary directory, so a name that climbed out of it would land in the
-    // temporary directory (which is removed at the end) and not somewhere shared like /tmp.
+    // The state directory is one level inside the temporary directory, so a name that climbed out of it would land in
+    // the temporary directory (which is removed at the end) and not somewhere shared like /tmp.
     CrashTempDir outer;
     const Text state_home = Cat(outer.Path(), "/state");
     REQUIRE(::mkdir(state_home.CStr(), 0700) == 0);
     const Text state_env = Cat("XDG_STATE_HOME=", state_home);
     const Text too_long = Cat("ENGINE_APP_NAME=", engine_test::Repeated(300, 'a'));
-    for (const char* bad : {"ENGINE_APP_NAME=..", "ENGINE_APP_NAME=.", "ENGINE_APP_NAME=a/b", "ENGINE_APP_NAME=../x"}) {
+    for (const char* bad : {"ENGINE_APP_NAME=..", "ENGINE_APP_NAME=.", "ENGINE_APP_NAME=a/b", "ENGINE_APP_NAME=../x"})
+    {
         const char* env[] = {state_env.CStr(), bad};
         ChildOptions options;
         options.extra_env = env;
@@ -309,7 +349,9 @@ TEST_CASE("An application name that would leave the intended directory or be cut
     CHECK(::stat(Cat(state_home, "/crashes").CStr(), &info) != 0);
 }
 
-TEST_CASE("A private directory must be a real directory owned by the user, and is tightened to the owner only", "[crash][debug][linux]") {
+TEST_CASE("A private directory must be a real directory owned by the user, and is tightened to the owner only",
+          "[crash][debug][linux]")
+{
     CrashTempDir dir;
     const Text root = engine_test::MakeText(dir.Path());
     // An existing directory open to others is tightened.
@@ -332,22 +374,26 @@ TEST_CASE("A private directory must be a real directory owned by the user, and i
     REQUIRE(debug_test::WriteWholeFile(file.View(), "", 0));
     CHECK(io::CreatePrivateDirectory(io::Path(file.View())).Failed());
     // A directory the user cannot write to is refused (root can write anywhere, so the check is skipped for root).
-    if (::geteuid() != 0) {
+    if (::geteuid() != 0)
+    {
         const Text read_only = Cat(root, "/readonly");
         REQUIRE(::mkdir(read_only.CStr(), 0500) == 0);
         CHECK(io::CreatePrivateDirectory(io::Path(read_only.View())).Failed());
-        ::chmod(read_only.CStr(), 0700); // so the temp directory can be removed
+        ::chmod(read_only.CStr(), 0700);  // so the temp directory can be removed
     }
 }
 
-ENGINE_DEATH_TEST_FN(dt_crash_install_into) {
+ENGINE_DEATH_TEST_FN(dt_crash_install_into)
+{
     CrashHandlerOptions options;
     options.dump_directory = argument;
     PutLine("RESULT", static_cast<int>(InstallCrashHandler(options)));
     PutLine("INSTALLED", CrashHandlerInstalled() ? 1 : 0);
 }
 
-TEST_CASE("The crash handler is not installed into a symbolic link or a directory that is not writable", "[crash][death][debug][linux]") {
+TEST_CASE("The crash handler is not installed into a symbolic link or a directory that is not writable",
+          "[crash][death][debug][linux]")
+{
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     CrashTempDir dir;
     const Text target = Cat(dir.Path(), "/target");
@@ -356,9 +402,10 @@ TEST_CASE("The crash handler is not installed into a symbolic link or a director
     REQUIRE(::symlink(target.CStr(), link.CStr()) == 0);
     const ChildResult through_link = RunInChild("dt_crash_install_into", link.CStr());
     REQUIRE(through_link.exited);
-    CHECK(through_link.StdoutContains("RESULT=3")); // DirectoryFailed
+    CHECK(through_link.StdoutContains("RESULT=3"));  // DirectoryFailed
     CHECK(through_link.StdoutContains("INSTALLED=0"));
-    if (::geteuid() != 0) {
+    if (::geteuid() != 0)
+    {
         const Text read_only = Cat(dir.Path(), "/readonly");
         REQUIRE(::mkdir(read_only.CStr(), 0500) == 0);
         const ChildResult unwritable = RunInChild("dt_crash_install_into", read_only.CStr());
@@ -367,14 +414,16 @@ TEST_CASE("The crash handler is not installed into a symbolic link or a director
     }
 }
 
-TEST_CASE("CreateDirectories creates missing parents, accepts an existing directory and refuses a file", "[crash][debug][linux]") {
+TEST_CASE("CreateDirectories creates missing parents, accepts an existing directory and refuses a file",
+          "[crash][debug][linux]")
+{
     CrashTempDir dir;
     const Text nested = Cat(dir.Path(), "/a/b/c");
     CHECK(io::CreateDirectories(io::Path(nested.View())).Ok());
     struct stat info;
     REQUIRE(::stat(nested.CStr(), &info) == 0);
     CHECK(S_ISDIR(info.st_mode));
-    CHECK(io::CreateDirectories(io::Path(nested.View())).Ok()); // already there
+    CHECK(io::CreateDirectories(io::Path(nested.View())).Ok());  // already there
     const Text file = Cat(dir.Path(), "/a/file");
     REQUIRE(debug_test::WriteWholeFile(file.View(), "", 0));
     CHECK(io::CreateDirectories(io::Path(file.View())).Failed());
@@ -387,17 +436,20 @@ TEST_CASE("CreateDirectories creates missing parents, accepts an existing direct
     CHECK((info.st_mode & 0777) == 0700);
 }
 
-// ---- a crash must survive the next start ----------------------------------------------------------------------------------
+// ---- a crash must survive the next start
+// ----------------------------------------------------------------------------------
 
 // Installs the handler in the given directory and exits normally: what a program does on the launch after a crash.
-ENGINE_DEATH_TEST_FN(dt_crash_install_and_exit) {
+ENGINE_DEATH_TEST_FN(dt_crash_install_and_exit)
+{
     CrashHandlerOptions options;
     options.dump_directory = argument;
     PutLine("INSTALLED", static_cast<int>(InstallCrashHandler(options)));
     UninstallCrashHandler();
 }
 
-TEST_CASE("A crash dump is still there after the program is started again", "[crash][death][debug][linux]") {
+TEST_CASE("A crash dump is still there after the program is started again", "[crash][death][debug][linux]")
+{
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     CrashTempDir dir;
     ChildOptions options;
@@ -411,7 +463,8 @@ TEST_CASE("A crash dump is still there after the program is started again", "[cr
     REQUIRE(original.Length() > 1000);
 
     // The next launch installs the handler again (twice, as a restart loop would), and must not lose the earlier dump.
-    for (int launch = 0; launch < 2; ++launch) {
+    for (int launch = 0; launch < 2; ++launch)
+    {
         const ChildResult restarted = RunInChild("dt_crash_install_and_exit", dir.Path(), options);
         REQUIRE(restarted.exited);
         CHECK(restarted.exit_code == 0);

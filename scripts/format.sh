@@ -5,9 +5,6 @@
 #   scripts/format.sh --check    change nothing; list the files that are not formatted and exit 1 if there are any
 #   scripts/format.sh FILE...    format (or --check) just these files
 #
-# clang-format does the layout; scripts/wrap_comments.py then breaks comment lines longer than the column limit (clang-format's own comment reflow
-# would join doc-comment labels onto the line before). clang-format runs again after it, and until the output is stable (it needs a second pass now and then).
-#
 # The style is in CLAUDE.md ("Code style"); the pre-commit hook (scripts/install-git-hooks.sh) runs this on the staged files.
 set -euo pipefail
 
@@ -42,42 +39,17 @@ fi
 
 jobs="$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)"
 
-run_format() {
-    printf '%s\0' "${files[@]}" | xargs -0 -n 40 -P "$jobs" clang-format -i
-}
-run_wrap() {
-    if command -v python3 >/dev/null 2>&1; then
-        printf '%s\0' "${files[@]}" | xargs -0 -n 200 python3 "$root/scripts/wrap_comments.py" "$@" >/dev/null
-    else
-        echo "format: python3 not found, long comments were not wrapped" >&2
-    fi
-}
-
 if [ "$check" = 1 ]; then
-    # --dry-run -Werror makes clang-format fail for a file that would change; the wrapper's --check lists files with a comment that is too long.
+    # --dry-run -Werror makes clang-format fail for a file that would change; the names come from its messages.
     report="$(mktemp)"
     trap 'rm -f "$report"' EXIT
-    status=0
     if ! printf '%s\0' "${files[@]}" | xargs -0 -n 40 -P "$jobs" clang-format --dry-run -Werror 2>"$report" >/dev/null; then
         grep -E '^[^ ]+:[0-9]+:[0-9]+: error' "$report" | cut -d: -f1 | sort -u | sed 's/^/not formatted: /' >&2 || true
-        status=1
-    fi
-    if command -v python3 >/dev/null 2>&1; then
-        printf '%s\0' "${files[@]}" | xargs -0 -n 200 python3 "$root/scripts/wrap_comments.py" --check || status=1
-    fi
-    if [ "$status" != 0 ]; then
         echo "format: run scripts/format.sh" >&2
         exit 1
     fi
     echo "format: ${#files[@]} files formatted"
 else
-    run_format
-    run_wrap
-    for _ in 1 2 3; do
-        run_format
-        if printf '%s\0' "${files[@]}" | xargs -0 -n 40 -P "$jobs" clang-format --dry-run -Werror >/dev/null 2>&1; then
-            break
-        fi
-    done
+    printf '%s\0' "${files[@]}" | xargs -0 -n 40 -P "$jobs" clang-format -i
     echo "format: ${#files[@]} files"
 fi

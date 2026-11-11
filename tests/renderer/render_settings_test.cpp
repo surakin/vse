@@ -11,9 +11,11 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
 
-namespace {
+namespace
+{
 
-Capabilities AllCapabilities() {
+Capabilities AllCapabilities()
+{
     Capabilities c;
     c.Add("fullscreen");
     c.Add("hdr");
@@ -22,12 +24,18 @@ Capabilities AllCapabilities() {
 
 const char* const kLevelNames[] = {"off", "on"};
 
-} // namespace
+}  // namespace
 
-TEST_CASE("built-in settings have the ids, classes and defaults of the plan", "[render_settings]") {
+TEST_CASE("built-in settings have the ids, classes and defaults of the plan", "[render_settings]")
+{
     const SettingsRegistry& r = SettingsRegistry::Builtin();
     REQUIRE(r.Count() == 14);
-    struct Row { SettingId id; const char* name; CostClass cost; };
+    struct Row
+    {
+        SettingId id;
+        const char* name;
+        CostClass cost;
+    };
     const Row rows[] = {
         {settings::kBackend, "backend", CostClass::DeviceReset},
         {settings::kAdapter, "adapter", CostClass::DeviceReset},
@@ -44,7 +52,8 @@ TEST_CASE("built-in settings have the ids, classes and defaults of the plan", "[
         {settings::kGBufferDebugLayer, "gbuffer_debug_layer", CostClass::Dynamic},
         {settings::kRenderScale, "render_scale", CostClass::Dynamic},
     };
-    for (const Row& row : rows) {
+    for (const Row& row : rows)
+    {
         const SettingDesc* d = r.Find(row.id);
         REQUIRE(d != nullptr);
         CHECK(CStrCompare(d->name, row.name) == 0);
@@ -52,7 +61,7 @@ TEST_CASE("built-in settings have the ids, classes and defaults of the plan", "[
         CHECK(r.FindByName(row.name) == row.id);
     }
     RenderSettings s;
-    CHECK(s.GetEnum(settings::kBackend) == 3); // auto
+    CHECK(s.GetEnum(settings::kBackend) == 3);  // auto
     CHECK(s.GetInt(settings::kFramesInFlight) == 2);
     CHECK(s.GetFloat(settings::kRenderScale) == 1.0f);
     CHECK(CStrCompare(s.GetText(settings::kAdapter), "") == 0);
@@ -62,7 +71,8 @@ TEST_CASE("built-in settings have the ids, classes and defaults of the plan", "[
     CHECK(CStrCompare(CostClassName(CostClass::PipelineRebuild), "pipeline-rebuild") == 0);
 }
 
-TEST_CASE("registration rejects bad declarations", "[render_settings]") {
+TEST_CASE("registration rejects bad declarations", "[render_settings]")
+{
     SettingsRegistry r;
     SettingDesc d;
     d.name = "ok_name";
@@ -71,7 +81,7 @@ TEST_CASE("registration rejects bad declarations", "[render_settings]") {
     d.min_int = 0;
     d.max_int = 10;
     CHECK(r.Register(d).IsValid());
-    CHECK_FALSE(r.Register(d).IsValid()); // duplicate
+    CHECK_FALSE(r.Register(d).IsValid());  // duplicate
     SettingDesc bad = d;
     bad.name = "Upper";
     CHECK_FALSE(r.Register(bad).IsValid());
@@ -104,10 +114,12 @@ TEST_CASE("registration rejects bad declarations", "[render_settings]") {
     CHECK(r.Count() == 1);
 }
 
-TEST_CASE("the registry reports full", "[render_settings]") {
+TEST_CASE("the registry reports full", "[render_settings]")
+{
     SettingsRegistry r;
     char names[kMaxSettings + 1][8];
-    for (u32 i = 0; i < kMaxSettings; ++i) {
+    for (u32 i = 0; i < kMaxSettings; ++i)
+    {
         FormatTo(names[i], sizeof(names[i]), "s%u", i);
         SettingDesc d;
         d.name = names[i];
@@ -119,16 +131,17 @@ TEST_CASE("the registry reports full", "[render_settings]") {
     CHECK(r.Count() == kMaxSettings);
 }
 
-TEST_CASE("typed setters validate type, range and text", "[render_settings]") {
+TEST_CASE("typed setters validate type, range and text", "[render_settings]")
+{
     RenderSettings s;
     CHECK(s.SetInt(settings::kFramesInFlight, 3) == SetStatus::Ok);
     CHECK(s.GetInt(settings::kFramesInFlight) == 3);
-    CHECK(s.SetInt(settings::kFramesInFlight, 9) == SetStatus::Clamped); // clamp policy
+    CHECK(s.SetInt(settings::kFramesInFlight, 9) == SetStatus::Clamped);  // clamp policy
     CHECK(s.GetInt(settings::kFramesInFlight) == 3);
     CHECK(s.SetInt(settings::kFramesInFlight, -4) == SetStatus::Clamped);
     CHECK(s.GetInt(settings::kFramesInFlight) == 1);
     CHECK(s.SetEnum(settings::kPresentMode, 2) == SetStatus::Ok);
-    CHECK(s.SetEnum(settings::kPresentMode, 3) == SetStatus::OutOfRange); // an enum never clamps
+    CHECK(s.SetEnum(settings::kPresentMode, 3) == SetStatus::OutOfRange);  // an enum never clamps
     CHECK(s.GetEnum(settings::kPresentMode) == 2);
     CHECK(s.SetBool(settings::kPresentMode, true) == SetStatus::WrongType);
     CHECK(s.SetBool(SettingId{200}, true) == SetStatus::UnknownId);
@@ -153,7 +166,8 @@ TEST_CASE("typed setters validate type, range and text", "[render_settings]") {
     CHECK(CStrCompare(s.GetText(settings::kWidth), "") == 0);
 }
 
-TEST_CASE("a reject-policy range refuses instead of clamping", "[render_settings]") {
+TEST_CASE("a reject-policy range refuses instead of clamping", "[render_settings]")
+{
     SettingsRegistry r;
     SettingDesc d;
     d.name = "strict";
@@ -169,7 +183,8 @@ TEST_CASE("a reject-policy range refuses instead of clamping", "[render_settings
     CHECK(s.SetInt(id, 2) == SetStatus::Ok);
 }
 
-TEST_CASE("equality ignores generation and compares every type", "[render_settings]") {
+TEST_CASE("equality ignores generation and compares every type", "[render_settings]")
+{
     RenderSettings a;
     RenderSettings b;
     CHECK(a == b);
@@ -191,34 +206,43 @@ TEST_CASE("equality ignores generation and compares every type", "[render_settin
     b = a;
     b.SetInt(settings::kWidth, 1);
     CHECK(a != b);
-    b.SetInt(settings::kWidth, 0); // storing the default value explicitly is still equal
+    b.SetInt(settings::kWidth, 0);  // storing the default value explicitly is still equal
     CHECK(a == b);
 }
 
-TEST_CASE("the diff picks the cost class of the most expensive change", "[render_settings]") {
+TEST_CASE("the diff picks the cost class of the most expensive change", "[render_settings]")
+{
     const Capabilities caps = AllCapabilities();
     const RenderSettings base;
     CHECK(DiffSettings(base, base, caps).cost == CostClass::None);
     CHECK_FALSE(DiffSettings(base, base, caps).Any());
 
-    struct Case { SettingId id; CostClass expected; };
-    auto changed = [&](SettingId id) {
+    struct Case
+    {
+        SettingId id;
+        CostClass expected;
+    };
+    auto changed = [&](SettingId id)
+    {
         RenderSettings s = base;
         const SettingDesc* d = base.Registry().Find(id);
-        switch (d->type) {
-            case SettingType::Bool: s.SetBool(id, !base.GetBool(id)); break;
-            case SettingType::Enum: s.SetEnum(id, (base.GetEnum(id) + 1) % d->enum_count); break;
-            case SettingType::Int: s.SetInt(id, base.GetInt(id) == d->min_int ? d->max_int : d->min_int); break;
-            case SettingType::Float: s.SetFloat(id, base.GetFloat(id) == d->min_float ? d->max_float : d->min_float); break;
-            case SettingType::Text: s.SetText(id, "changed"); break;
+        switch (d->type)
+        {
+        case SettingType::Bool: s.SetBool(id, !base.GetBool(id)); break;
+        case SettingType::Enum: s.SetEnum(id, (base.GetEnum(id) + 1) % d->enum_count); break;
+        case SettingType::Int: s.SetInt(id, base.GetInt(id) == d->min_int ? d->max_int : d->min_int); break;
+        case SettingType::Float: s.SetFloat(id, base.GetFloat(id) == d->min_float ? d->max_float : d->min_float); break;
+        case SettingType::Text: s.SetText(id, "changed"); break;
         }
         return s;
     };
-    for (u32 i = 1; i <= base.Registry().Count(); ++i) {
+    for (u32 i = 1; i <= base.Registry().Count(); ++i)
+    {
         const SettingId id{static_cast<u16>(i)};
         const SettingsChange c = DiffSettings(base, changed(id), caps);
         INFO(base.Registry().Find(id)->name);
-        if (base.Registry().Find(id)->restart_required) {
+        if (base.Registry().Find(id)->restart_required)
+        {
             // Takes effect at the next start: listed apart, costs nothing now (Phase 13 Day 173).
             CHECK(c.changed_count == 0);
             REQUIRE(c.restart_count == 1);
@@ -233,18 +257,19 @@ TEST_CASE("the diff picks the cost class of the most expensive change", "[render
     }
     // Combinations: the maximum wins.
     RenderSettings s = base;
-    s.SetFloat(settings::kRenderScale, 0.5f);                   // Dynamic
-    s.SetEnum(settings::kShaderQuality, 0);                     // PipelineRebuild
+    s.SetFloat(settings::kRenderScale, 0.5f);  // Dynamic
+    s.SetEnum(settings::kShaderQuality, 0);    // PipelineRebuild
     CHECK(DiffSettings(base, s, caps).cost == CostClass::PipelineRebuild);
-    s.SetEnum(settings::kPresentMode, 1);                       // Swapchain
+    s.SetEnum(settings::kPresentMode, 1);  // Swapchain
     CHECK(DiffSettings(base, s, caps).cost == CostClass::PipelineRebuild);
-    s.SetBool(settings::kSyncValidation, true);                 // DeviceReset
+    s.SetBool(settings::kSyncValidation, true);  // DeviceReset
     const SettingsChange all = DiffSettings(base, s, caps);
     CHECK(all.cost == CostClass::DeviceReset);
     CHECK(all.changed_count == 4);
 }
 
-TEST_CASE("a setting registered by someone else takes part in the diff", "[render_settings]") {
+TEST_CASE("a setting registered by someone else takes part in the diff", "[render_settings]")
+{
     SettingsRegistry r;
     RegisterBuiltinSettings(&r);
     SettingDesc d;
@@ -287,7 +312,8 @@ TEST_CASE("a setting registered by someone else takes part in the diff", "[rende
     CHECK(parsed == to);
 }
 
-TEST_CASE("a setting registered after settings were created reads as its default", "[render_settings]") {
+TEST_CASE("a setting registered after settings were created reads as its default", "[render_settings]")
+{
     SettingsRegistry r;
     RegisterBuiltinSettings(&r);
     RenderSettings early(r);
@@ -304,7 +330,8 @@ TEST_CASE("a setting registered after settings were created reads as its default
     CHECK(early.GetInt(settings::kWidth) == 800);
 }
 
-TEST_CASE("unsupported requests are reported, not applied", "[render_settings]") {
+TEST_CASE("unsupported requests are reported, not applied", "[render_settings]")
+{
     Capabilities none;
     const RenderSettings base;
     RenderSettings want = base;
@@ -336,23 +363,29 @@ TEST_CASE("unsupported requests are reported, not applied", "[render_settings]")
     CHECK(ResolveSettings(base, want, AllCapabilities()) == want);
 }
 
-TEST_CASE("capabilities hold names and are bounded", "[render_settings]") {
+TEST_CASE("capabilities hold names and are bounded", "[render_settings]")
+{
     Capabilities c;
     CHECK(c.Has(nullptr));
     CHECK_FALSE(c.Has("hdr"));
     CHECK(c.Add("hdr"));
-    CHECK(c.Add("hdr")); // duplicate is fine
+    CHECK(c.Add("hdr"));  // duplicate is fine
     CHECK(c.Has("hdr"));
     char names[kMaxCapabilities + 1][8];
     bool full = false;
-    for (u32 i = 0; i < kMaxCapabilities + 1; ++i) {
+    for (u32 i = 0; i < kMaxCapabilities + 1; ++i)
+    {
         FormatTo(names[i], sizeof(names[i]), "c%u", i);
-        if (!c.Add(names[i])) full = true;
+        if (!c.Add(names[i]))
+        {
+            full = true;
+        }
     }
     CHECK(full);
 }
 
-TEST_CASE("the text format is stable and round trips", "[render_settings]") {
+TEST_CASE("the text format is stable and round trips", "[render_settings]")
+{
     RenderSettings s;
     s.SetEnum(settings::kBackend, 0);
     s.SetText(settings::kAdapter, "10de:2504:abcd");
@@ -364,7 +397,7 @@ TEST_CASE("the text format is stable and round trips", "[render_settings]") {
     const usize n = SerializeSettings(s, first, sizeof(first));
     REQUIRE(n < sizeof(first));
     CHECK(SerializeSettings(s, second, sizeof(second)) == n);
-    CHECK(CStrCompare(first, second) == 0); // same input, same bytes
+    CHECK(CStrCompare(first, second) == 0);  // same input, same bytes
     CHECK(SerializeSettings(s, nullptr, 0) == n);
     CHECK(CStrFind(first, "version = 1\n") != nullptr);
     CHECK(CStrFind(first, "adapter = 10de:2504:abcd\n") != nullptr);
@@ -377,7 +410,7 @@ TEST_CASE("the text format is stable and round trips", "[render_settings]") {
     CHECK(report.warning_count == 0);
     CHECK(report.version == 1);
     CHECK(parsed == s);
-    CHECK(parsed.GetFloat(settings::kRenderScale) == 0.7f); // %.9g round trips an f32 exactly
+    CHECK(parsed.GetFloat(settings::kRenderScale) == 0.7f);  // %.9g round trips an f32 exactly
 
     // And again byte-for-byte.
     char third[2048];
@@ -390,17 +423,17 @@ TEST_CASE("the text format is stable and round trips", "[render_settings]") {
     CHECK(CStrLength(tiny) == sizeof(tiny) - 1);
 }
 
-TEST_CASE("parsing reports unknown keys, bad values and line numbers", "[render_settings]") {
-    const char* text =
-        "# comment\n"
-        "\n"
-        "version = 1\r\n"
-        "  width   =   640  \n"
-        "colour = red\n"
-        "height = lots\n"
-        "present_mode = sideways\n"
-        "just a line\n"
-        "width = 7\n";
+TEST_CASE("parsing reports unknown keys, bad values and line numbers", "[render_settings]")
+{
+    const char* text = "# comment\n"
+                       "\n"
+                       "version = 1\r\n"
+                       "  width   =   640  \n"
+                       "colour = red\n"
+                       "height = lots\n"
+                       "present_mode = sideways\n"
+                       "just a line\n"
+                       "width = 7\n";
     RenderSettings s;
     s.SetInt(settings::kHeight, 99);
     SettingsParseReport report;
@@ -409,16 +442,17 @@ TEST_CASE("parsing reports unknown keys, bad values and line numbers", "[render_
     CHECK(report.warnings[0].line == 5);
     CHECK(CStrFind(report.warnings[0].message, "colour") != nullptr);
     CHECK(report.error_count == 4);
-    CHECK(report.errors[0].line == 6); // height = lots
-    CHECK(report.errors[1].line == 7); // present_mode
-    CHECK(report.errors[2].line == 8); // not key = value
-    CHECK(report.errors[3].line == 9); // width repeated
+    CHECK(report.errors[0].line == 6);  // height = lots
+    CHECK(report.errors[1].line == 7);  // present_mode
+    CHECK(report.errors[2].line == 8);  // not key = value
+    CHECK(report.errors[3].line == 9);  // width repeated
     // Nothing was applied.
     CHECK(s.GetInt(settings::kWidth) == 0);
     CHECK(s.GetInt(settings::kHeight) == 99);
 }
 
-TEST_CASE("a clean parse applies only the keys present and keeps the generation", "[render_settings]") {
+TEST_CASE("a clean parse applies only the keys present and keeps the generation", "[render_settings]")
+{
     RenderSettings s;
     s.SetInt(settings::kWidth, 100);
     s.SetGeneration(9);
@@ -427,12 +461,13 @@ TEST_CASE("a clean parse applies only the keys present and keeps the generation"
     REQUIRE(ParseSettings(text, CStrLength(text), &s, &report));
     CHECK(s.GetInt(settings::kWidth) == 100);
     CHECK(s.GetInt(settings::kHeight) == 480);
-    CHECK(s.GetFloat(settings::kRenderScale) == 2.0f); // clamped
-    CHECK(report.warning_count == 1);                  // and said so
+    CHECK(s.GetFloat(settings::kRenderScale) == 2.0f);  // clamped
+    CHECK(report.warning_count == 1);                   // and said so
     CHECK(s.Generation() == 9);
 }
 
-TEST_CASE("versions: newer is refused, older is migrated, none is accepted", "[render_settings]") {
+TEST_CASE("versions: newer is refused, older is migrated, none is accepted", "[render_settings]")
+{
     RenderSettings s;
     SettingsParseReport report;
     const char* newer = "version = 2\nwidth = 5\n";
@@ -451,37 +486,41 @@ TEST_CASE("versions: newer is refused, older is migrated, none is accepted", "[r
     CHECK_FALSE(ParseSettings(junk, CStrLength(junk), &s, &report));
 
     // A key written by an older version is renamed by the hook.
-    auto migrate = [](u32 file_version, const char* key) -> const char* {
-        return file_version == 0 && CStrCompare(key, "vsync_mode") == 0 ? "present_mode" : nullptr;
-    };
+    auto migrate = [](u32 file_version, const char* key) -> const char*
+    { return file_version == 0 && CStrCompare(key, "vsync_mode") == 0 ? "present_mode" : nullptr; };
     const char* old = "vsync_mode = immediate\n";
     RenderSettings m;
     CHECK(ParseSettings(old, CStrLength(old), &m, &report, migrate));
     CHECK(m.GetEnum(settings::kPresentMode) == 2);
     RenderSettings unmigrated;
-    CHECK(ParseSettings(old, CStrLength(old), &unmigrated, &report)); // without the hook the key is unknown: a warning
+    CHECK(ParseSettings(old, CStrLength(old), &unmigrated, &report));  // without the hook the key is unknown: a warning
     CHECK(report.warning_count == 1);
     CHECK(unmigrated.GetEnum(settings::kPresentMode) == 0);
 }
 
-TEST_CASE("parsing tolerates empty and null input and over-long lines", "[render_settings]") {
+TEST_CASE("parsing tolerates empty and null input and over-long lines", "[render_settings]")
+{
     RenderSettings s;
     CHECK(ParseSettings(nullptr, 0, &s, nullptr));
     CHECK(ParseSettings("", 0, &s, nullptr));
-    CHECK(ParseSettings("no newline at the end = x", 0, &s, nullptr)); // length 0 reads nothing
+    CHECK(ParseSettings("no newline at the end = x", 0, &s, nullptr));  // length 0 reads nothing
     const engine_test::Text ones = engine_test::Repeated(400, '1');
     const engine_test::Text long_line = engine_test::Concat("width = ", ones.View(), "\n");
     SettingsParseReport report;
     CHECK_FALSE(ParseSettings(long_line.CStr(), long_line.Length(), &s, &report));
     CHECK(report.error_count == 1);
-    const char* last = "width = 33"; // final line without a newline
+    const char* last = "width = 33";  // final line without a newline
     CHECK(ParseSettings(last, CStrLength(last), &s, &report));
     CHECK(s.GetInt(settings::kWidth) == 33);
 }
 
-TEST_CASE("many errors are counted but only the first are recorded", "[render_settings]") {
+TEST_CASE("many errors are counted but only the first are recorded", "[render_settings]")
+{
     engine_test::Text text = engine_test::MakeText();
-    for (int i = 0; i < 20; ++i) text.Append("nonsense\n");
+    for (int i = 0; i < 20; ++i)
+    {
+        text.Append("nonsense\n");
+    }
     RenderSettings s;
     SettingsParseReport report;
     CHECK_FALSE(ParseSettings(text.CStr(), text.Length(), &s, &report));
@@ -489,28 +528,42 @@ TEST_CASE("many errors are counted but only the first are recorded", "[render_se
     CHECK(report.errors[kMaxParseProblems - 1].line == kMaxParseProblems);
 }
 
-TEST_CASE("random pairs: the diff class is the maximum over single changes", "[render_settings]") {
+TEST_CASE("random pairs: the diff class is the maximum over single changes", "[render_settings]")
+{
     const Capabilities caps = AllCapabilities();
     u32 seed = 12345;
-    auto next = [&seed]() {
+    auto next = [&seed]()
+    {
         seed = seed * 1664525u + 1013904223u;
         return seed >> 8;
     };
-    auto randomize = [&](RenderSettings* s) {
-        for (u32 i = 1; i <= s->Registry().Count(); ++i) {
+    auto randomize = [&](RenderSettings* s)
+    {
+        for (u32 i = 1; i <= s->Registry().Count(); ++i)
+        {
             const SettingId id{static_cast<u16>(i)};
             const SettingDesc* d = s->Registry().Find(id);
-            if (next() % 2 == 0) continue; // leave some at the default
-            switch (d->type) {
-                case SettingType::Bool: s->SetBool(id, next() % 2 != 0); break;
-                case SettingType::Enum: s->SetEnum(id, next() % d->enum_count); break;
-                case SettingType::Int: s->SetInt(id, d->min_int + static_cast<i64>(next() % static_cast<u32>(d->max_int - d->min_int + 1))); break;
-                case SettingType::Float: s->SetFloat(id, d->min_float + (d->max_float - d->min_float) * static_cast<f32>(next() % 1000) / 1000.0f); break;
-                case SettingType::Text: s->SetText(id, next() % 2 ? "a" : "bb"); break;
+            if (next() % 2 == 0)
+            {
+                continue;  // leave some at the default
+            }
+            switch (d->type)
+            {
+            case SettingType::Bool: s->SetBool(id, next() % 2 != 0); break;
+            case SettingType::Enum: s->SetEnum(id, next() % d->enum_count); break;
+            case SettingType::Int:
+                s->SetInt(id, d->min_int + static_cast<i64>(next() % static_cast<u32>(d->max_int - d->min_int + 1)));
+                break;
+            case SettingType::Float:
+                s->SetFloat(id,
+                            d->min_float + (d->max_float - d->min_float) * static_cast<f32>(next() % 1000) / 1000.0f);
+                break;
+            case SettingType::Text: s->SetText(id, next() % 2 ? "a" : "bb"); break;
             }
         }
     };
-    for (int iter = 0; iter < 1000; ++iter) {
+    for (int iter = 0; iter < 1000; ++iter)
+    {
         RenderSettings a;
         RenderSettings b;
         randomize(&a);
@@ -520,7 +573,8 @@ TEST_CASE("random pairs: the diff class is the maximum over single changes", "[r
         CHECK(DiffSettings(a, a, caps).changed_count == 0);
         CHECK((ab.changed_count == 0 && ab.restart_count == 0) == (a == b));
         CostClass expected = CostClass::None;
-        for (u32 i = 0; i < ab.changed_count; ++i) {
+        for (u32 i = 0; i < ab.changed_count; ++i)
+        {
             // Each reported change is a real single-setting difference whose class bounds the result.
             RenderSettings one = a;
             char value[kSettingTextBytes];
@@ -528,7 +582,10 @@ TEST_CASE("random pairs: the diff class is the maximum over single changes", "[r
             one.SetFromString(ab.changed[i], value);
             const SettingsChange single = DiffSettings(a, one, caps);
             REQUIRE(single.changed_count == 1);
-            if (single.cost > expected) expected = single.cost;
+            if (single.cost > expected)
+            {
+                expected = single.cost;
+            }
         }
         CHECK(ab.cost == expected);
         // The reverse diff touches the same settings.
@@ -542,9 +599,11 @@ TEST_CASE("random pairs: the diff class is the maximum over single changes", "[r
     }
 }
 
-TEST_CASE("only the backend waits for the next start, and resolving puts it back", "[render_settings]") {
+TEST_CASE("only the backend waits for the next start, and resolving puts it back", "[render_settings]")
+{
     const SettingsRegistry& r = SettingsRegistry::Builtin();
-    for (u32 i = 1; i <= r.Count(); ++i) {
+    for (u32 i = 1; i <= r.Count(); ++i)
+    {
         const SettingId id{static_cast<u16>(i)};
         INFO(r.Find(id)->name);
         CHECK(r.Find(id)->restart_required == (id == settings::kBackend));
@@ -564,11 +623,12 @@ TEST_CASE("only the backend waits for the next start, and resolving puts it back
     CHECK(resolved.GetInt(settings::kFramesInFlight) == 3);
 }
 
-TEST_CASE("putting a gated setting back to its default needs no capability", "[render_settings]") {
+TEST_CASE("putting a gated setting back to its default needs no capability", "[render_settings]")
+{
     Capabilities none;
     RenderSettings on;
-    on.SetBool(settings::kFullscreen, true); // set while the capability existed
-    RenderSettings off;                      // the request: back to the default
+    on.SetBool(settings::kFullscreen, true);  // set while the capability existed
+    RenderSettings off;                       // the request: back to the default
     const SettingsChange c = DiffSettings(on, off, none);
     CHECK(c.changed_count == 1);
     CHECK(c.unsupported_count == 0);
@@ -578,11 +638,12 @@ TEST_CASE("putting a gated setting back to its default needs no capability", "[r
     CHECK(DiffSettings(off, on, none).unsupported_count == 1);
 }
 
-TEST_CASE("text with edge blanks and enum names the format cannot carry are refused", "[render_settings]") {
+TEST_CASE("text with edge blanks and enum names the format cannot carry are refused", "[render_settings]")
+{
     RenderSettings s;
     CHECK(s.SetText(settings::kAdapter, " gpu") == SetStatus::BadText);
     CHECK(s.SetText(settings::kAdapter, "gpu ") == SetStatus::BadText);
-    CHECK(s.SetText(settings::kAdapter, "a b") == SetStatus::Ok); // inner blanks are fine
+    CHECK(s.SetText(settings::kAdapter, "a b") == SetStatus::Ok);  // inner blanks are fine
     char text[2048];
     SerializeSettings(s, text, sizeof(text));
     RenderSettings back;
@@ -596,7 +657,8 @@ TEST_CASE("text with edge blanks and enum names the format cannot carry are refu
     const char* const null_name[] = {nullptr};
     const char* const* lists[] = {with_blank, with_equals, with_hash, empty_name, null_name};
     SettingsRegistry r;
-    for (const char* const* list : lists) {
+    for (const char* const* list : lists)
+    {
         SettingDesc d;
         d.name = "e";
         d.type = SettingType::Enum;
@@ -606,7 +668,8 @@ TEST_CASE("text with edge blanks and enum names the format cannot carry are refu
     }
 }
 
-TEST_CASE("multi_adapter is a capability from two suitable adapters on", "[render_settings][adapter]") {
+TEST_CASE("multi_adapter is a capability from two suitable adapters on", "[render_settings][adapter]")
+{
     Capabilities c;
     CHECK(c.AdapterCount() == 0);
     c.SetAdapterCount(1);
@@ -616,5 +679,5 @@ TEST_CASE("multi_adapter is a capability from two suitable adapters on", "[rende
     CHECK(c.AdapterCount() == 2);
     CHECK(c.Has("multi_adapter"));
     c.SetAdapterCount(1);
-    CHECK_FALSE(c.Has("multi_adapter")); // a smaller count takes it away again
+    CHECK_FALSE(c.Has("multi_adapter"));  // a smaller count takes it away again
 }

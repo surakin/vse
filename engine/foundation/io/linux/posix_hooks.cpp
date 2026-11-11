@@ -5,17 +5,32 @@
 
 #include <unistd.h>
 
-namespace engine_placeholder::io::posix {
+namespace engine_placeholder::io::posix
+{
 
-i64 ModifiedUnixNs(const struct stat& st) { return static_cast<i64>(st.st_mtim.tv_sec) * 1'000'000'000LL + st.st_mtim.tv_nsec; }
+i64 ModifiedUnixNs(const struct stat& st)
+{
+    return static_cast<i64>(st.st_mtim.tv_sec) * 1'000'000'000LL + st.st_mtim.tv_nsec;
+}
 
-int SyncDescriptor(int fd) {
-    for (;;) {
-        if (::fsync(fd) == 0) return 0;
-        if (os::LastError() != EINTR) return -1;
+int SyncDescriptor(int fd)
+{
+    for (;;)
+    {
+        if (::fsync(fd) == 0)
+        {
+            return 0;
+        }
+        if (os::LastError() != EINTR)
+        {
+            return -1;
+        }
     }
 }
 
-int CopyData(int in, int out) { return CopyLoop(in, out); }
+int CopyData(int in, int out)
+{
+    return CopyLoop(in, out);
+}
 
-} // namespace engine_placeholder::io::posix
+}  // namespace engine_placeholder::io::posix

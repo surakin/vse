@@ -12,9 +12,11 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::ui;
 
-namespace {
+namespace
+{
 
-Rect DlRect(f32 x, f32 y, f32 w, f32 h) {
+Rect DlRect(f32 x, f32 y, f32 w, f32 h)
+{
     Rect r;
     r.x = x;
     r.y = y;
@@ -23,14 +25,17 @@ Rect DlRect(f32 x, f32 y, f32 w, f32 h) {
     return r;
 }
 
-class DlPane : public Widget {
+class DlPane : public Widget
+{
 public:
     DlPane() : Widget(StringView("pane")) { SetFocusable(true); }
     Size Measure(const Constraints&) override { return Size{60, 40}; }
 };
 
-struct DlRig {
-    DlRig() : h(400, 300, 1, StringView(UI_TEST_FONT_FILE)) {
+struct DlRig
+{
+    DlRig() : h(400, 300, 1, StringView(UI_TEST_FONT_FILE))
+    {
         UniquePtr<Button> b = MakeUnique<Button>(StringView("behind"), StringView("behind"));
         behind = b.Get();
         behind->SetBounds(DlRect(10, 10, 100, 30));
@@ -44,18 +49,23 @@ struct DlRig {
         h.GetSurface().SetFocus(field);
     }
     static void Clicked(void* user, Button*) { ++static_cast<DlRig*>(user)->clicks; }
-    static void Closed(void* user, Dialog*, int result) {
+    static void Closed(void* user, Dialog*, int result)
+    {
         DlRig* r = static_cast<DlRig*>(user);
         r->closed_with = result;
         ++r->closes;
     }
     static void CloseAgain(void*, Dialog* dialog, int) { dialog->Close(dialog_result::kNo); }
     // A dialog with a text field and OK / Cancel, shown modally.
-    Dialog* Show(StringView title = StringView("Title"), bool field_content = true) {
+    Dialog* Show(StringView title = StringView("Title"), bool field_content = true)
+    {
         UniquePtr<Dialog> d = MakeUnique<Dialog>(StringView("dlg"), title);
-        if (field_content) {
+        if (field_content)
+        {
             d->SetContent(UniquePtr<Widget>(MakeUnique<TextField>(StringView("name")).Release()));
-        } else {
+        }
+        else
+        {
             d->SetContent(UniquePtr<Widget>(MakeUnique<DlPane>().Release()));
         }
         d->AddButton(StringView("OK"), dialog_result::kOk, true);
@@ -66,9 +76,14 @@ struct DlRig {
         h.Advance(0);
         return raw;
     }
-    bool Inside(const Widget* w, const Widget* root) const {
-        for (; w != nullptr; w = w->Parent()) {
-            if (w == root) return true;
+    bool Inside(const Widget* w, const Widget* root) const
+    {
+        for (; w != nullptr; w = w->Parent())
+        {
+            if (w == root)
+            {
+                return true;
+            }
         }
         return false;
     }
@@ -80,11 +95,15 @@ struct DlRig {
     int closed_with = -1;
 };
 
-Point DlCenter(const Rect& r) { return Point{r.x + r.w / 2, r.y + r.h / 2}; }
+Point DlCenter(const Rect& r)
+{
+    return Point{r.x + r.w / 2, r.y + r.h / 2};
+}
 
-} // namespace
+}  // namespace
 
-TEST_CASE("a modal dialog is centered and takes the focus", "[ui][dialog][modal]") {
+TEST_CASE("a modal dialog is centered and takes the focus", "[ui][dialog][modal]")
+{
     DlRig rig;
     Dialog* d = rig.Show();
     Surface& s = rig.h.GetSurface();
@@ -96,7 +115,8 @@ TEST_CASE("a modal dialog is centered and takes the focus", "[ui][dialog][modal]
     CHECK(rig.Inside(s.Focus(), d));
 }
 
-TEST_CASE("a modal dialog blocks the hover and the clicks beneath it", "[ui][dialog][modal]") {
+TEST_CASE("a modal dialog blocks the hover and the clicks beneath it", "[ui][dialog][modal]")
+{
     DlRig rig;
     Dialog* d = rig.Show();
     Surface& s = rig.h.GetSurface();
@@ -107,13 +127,14 @@ TEST_CASE("a modal dialog blocks the hover and the clicks beneath it", "[ui][dia
     CHECK(s.Hover() != rig.behind);
     rig.h.Click(30, 20);
     CHECK(rig.clicks == 0);
-    CHECK(s.ModalCount() == 1); // a click on the shade closes nothing
-    CHECK(rig.Inside(s.Focus(), d)); // and keeps the focus in the dialog
+    CHECK(s.ModalCount() == 1);       // a click on the shade closes nothing
+    CHECK(rig.Inside(s.Focus(), d));  // and keeps the focus in the dialog
     rig.h.Wheel(30, 20, 0, 1);
     CHECK(rig.clicks == 0);
 }
 
-TEST_CASE("the shade is drawn over what lies beneath", "[ui][dialog][modal]") {
+TEST_CASE("the shade is drawn over what lies beneath", "[ui][dialog][modal]")
+{
     DlRig rig;
     RasterImage before;
     rig.h.Render(&before, 0xFFFFFFFFu);
@@ -121,27 +142,31 @@ TEST_CASE("the shade is drawn over what lies beneath", "[ui][dialog][modal]") {
     RasterImage after;
     rig.h.Render(&after, 0xFFFFFFFFu);
     CHECK(before.Pixel(3, 3)[0] == 255);
-    CHECK(after.Pixel(3, 3)[0] < 200); // darker
-    CHECK(after.Pixel(3, 3)[0] > 60);  // but not black: the shade is half transparent
+    CHECK(after.Pixel(3, 3)[0] < 200);  // darker
+    CHECK(after.Pixel(3, 3)[0] > 60);   // but not black: the shade is half transparent
 }
 
-TEST_CASE("Tab cycles inside the dialog only", "[ui][dialog][modal]") {
+TEST_CASE("Tab cycles inside the dialog only", "[ui][dialog][modal]")
+{
     DlRig rig;
     Dialog* d = rig.Show();
     Surface& s = rig.h.GetSurface();
-    for (int i = 0; i < 8; ++i) {
+    for (int i = 0; i < 8; ++i)
+    {
         rig.h.Key(Key::Tab);
         CHECK(rig.Inside(s.Focus(), d));
         CHECK(s.Focus() != rig.behind);
         CHECK(s.Focus() != rig.field);
     }
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < 4; ++i)
+    {
         rig.h.Key(Key::Tab, true, os::kModShift);
         CHECK(rig.Inside(s.Focus(), d));
     }
 }
 
-TEST_CASE("Escape cancels and the focus returns to the previous owner", "[ui][dialog][modal]") {
+TEST_CASE("Escape cancels and the focus returns to the previous owner", "[ui][dialog][modal]")
+{
     DlRig rig;
     Dialog* d = rig.Show();
     (void)d;
@@ -155,11 +180,12 @@ TEST_CASE("Escape cancels and the focus returns to the previous owner", "[ui][di
     CHECK(rig.clicks == 1);
 }
 
-TEST_CASE("Enter presses the default button", "[ui][dialog][modal]") {
+TEST_CASE("Enter presses the default button", "[ui][dialog][modal]")
+{
     DlRig rig;
     Dialog* d = rig.Show(StringView("T"), false);
     Surface& s = rig.h.GetSurface();
-    s.SetFocus(d); // not on a button
+    s.SetFocus(d);  // not on a button
     REQUIRE(d->DefaultButton() != nullptr);
     rig.h.Key(Key::Enter);
     CHECK(rig.closed_with == dialog_result::kOk);
@@ -167,7 +193,8 @@ TEST_CASE("Enter presses the default button", "[ui][dialog][modal]") {
     CHECK(s.ModalCount() == 0);
 }
 
-TEST_CASE("a button closes the dialog with its result", "[ui][dialog][modal]") {
+TEST_CASE("a button closes the dialog with its result", "[ui][dialog][modal]")
+{
     DlRig rig;
     Dialog* d = rig.Show();
     Widget* cancel = d->FindByName(StringView("Cancel"));
@@ -178,7 +205,8 @@ TEST_CASE("a button closes the dialog with its result", "[ui][dialog][modal]") {
     CHECK(rig.h.GetSurface().ModalCount() == 0);
 }
 
-TEST_CASE("the close button cancels", "[ui][dialog][modal]") {
+TEST_CASE("the close button cancels", "[ui][dialog][modal]")
+{
     DlRig rig;
     Dialog* d = rig.Show();
     const Point p = DlCenter(d->CloseButtonRect());
@@ -186,16 +214,19 @@ TEST_CASE("the close button cancels", "[ui][dialog][modal]") {
     CHECK(rig.closed_with == dialog_result::kCancel);
 }
 
-TEST_CASE("a second close does nothing", "[ui][dialog][modal]") {
+TEST_CASE("a second close does nothing", "[ui][dialog][modal]")
+{
     DlRig rig;
     Dialog* d = rig.Show();
-    d->OnClosed().Connect(&DlRig::CloseAgain, &rig); // closing again from inside the listener (the dialog is gone once Close returns)
+    d->OnClosed().Connect(&DlRig::CloseAgain,
+                          &rig);  // closing again from inside the listener (the dialog is gone once Close returns)
     d->Close(dialog_result::kOk);
     CHECK(rig.closes == 1);
     CHECK(rig.closed_with == dialog_result::kOk);
 }
 
-TEST_CASE("dialogs over dialogs form a stack", "[ui][dialog][modal]") {
+TEST_CASE("dialogs over dialogs form a stack", "[ui][dialog][modal]")
+{
     DlRig rig;
     Dialog* a = rig.Show(StringView("A"));
     Dialog* b = rig.Show(StringView("B"));
@@ -203,7 +234,8 @@ TEST_CASE("dialogs over dialogs form a stack", "[ui][dialog][modal]") {
     CHECK(s.ModalCount() == 2);
     CHECK(s.TopModal() == b);
     CHECK(rig.Inside(s.Focus(), b));
-    for (int i = 0; i < 6; ++i) {
+    for (int i = 0; i < 6; ++i)
+    {
         rig.h.Key(Key::Tab);
         CHECK(rig.Inside(s.Focus(), b));
     }
@@ -214,13 +246,14 @@ TEST_CASE("dialogs over dialogs form a stack", "[ui][dialog][modal]") {
     rig.h.Key(Key::Escape);
     CHECK(s.ModalCount() == 1);
     CHECK(s.TopModal() == a);
-    CHECK(rig.Inside(s.Focus(), a)); // back where it was in A
+    CHECK(rig.Inside(s.Focus(), a));  // back where it was in A
     rig.h.Key(Key::Escape);
     CHECK(s.ModalCount() == 0);
     CHECK(s.Focus() == rig.field);
 }
 
-TEST_CASE("closing the lower dialog closes the ones above it", "[ui][dialog][modal]") {
+TEST_CASE("closing the lower dialog closes the ones above it", "[ui][dialog][modal]")
+{
     DlRig rig;
     Dialog* a = rig.Show(StringView("A"));
     rig.Show(StringView("B"));
@@ -230,10 +263,11 @@ TEST_CASE("closing the lower dialog closes the ones above it", "[ui][dialog][mod
     CHECK(rig.h.GetSurface().Focus() == rig.field);
 }
 
-TEST_CASE("closing when the previous focus owner is gone does not crash", "[ui][dialog][modal]") {
+TEST_CASE("closing when the previous focus owner is gone does not crash", "[ui][dialog][modal]")
+{
     DlRig rig;
     Dialog* d = rig.Show();
-    rig.h.GetSurface().Root()->RemoveChild(rig.field); // the app removed the widget that had the focus
+    rig.h.GetSurface().Root()->RemoveChild(rig.field);  // the app removed the widget that had the focus
     rig.h.Advance(0);
     d->Close(dialog_result::kOk);
     rig.h.Advance(0);
@@ -241,7 +275,8 @@ TEST_CASE("closing when the previous focus owner is gone does not crash", "[ui][
     CHECK(rig.h.GetSurface().Focus() == nullptr);
 }
 
-TEST_CASE("a dialog removed by the app takes its shade with it", "[ui][dialog][modal]") {
+TEST_CASE("a dialog removed by the app takes its shade with it", "[ui][dialog][modal]")
+{
     DlRig rig;
     Dialog* d = rig.Show();
     rig.h.GetSurface().ModalLayer()->RemoveChild(d);
@@ -252,7 +287,8 @@ TEST_CASE("a dialog removed by the app takes its shade with it", "[ui][dialog][m
     CHECK(rig.clicks == 1);
 }
 
-TEST_CASE("popups opened inside a dialog work, and Escape closes the popup first", "[ui][dialog][modal]") {
+TEST_CASE("popups opened inside a dialog work, and Escape closes the popup first", "[ui][dialog][modal]")
+{
     DlRig rig;
     Dialog* d = rig.Show();
     Surface& s = rig.h.GetSurface();
@@ -268,7 +304,8 @@ TEST_CASE("popups opened inside a dialog work, and Escape closes the popup first
     CHECK(rig.Inside(s.Focus(), d));
 }
 
-TEST_CASE("opening a modal closes the open popups", "[ui][dialog][modal]") {
+TEST_CASE("opening a modal closes the open popups", "[ui][dialog][modal]")
+{
     DlRig rig;
     Surface& s = rig.h.GetSurface();
     s.OpenPopup(UniquePtr<Widget>(MakeUnique<DlPane>().Release()), DlRect(10, 10, 10, 10), PopupOptions());
@@ -278,7 +315,8 @@ TEST_CASE("opening a modal closes the open popups", "[ui][dialog][modal]") {
     CHECK(s.PopupCount() == 0);
 }
 
-TEST_CASE("accelerators and the menu keys do not run under a modal dialog", "[ui][dialog][modal]") {
+TEST_CASE("accelerators and the menu keys do not run under a modal dialog", "[ui][dialog][modal]")
+{
     DlRig rig;
     Surface& s = rig.h.GetSurface();
     static int fired = 0;
@@ -297,16 +335,18 @@ TEST_CASE("accelerators and the menu keys do not run under a modal dialog", "[ui
     CHECK(fired == 1);
 }
 
-TEST_CASE("keys go to the dialog when the focus is outside it", "[ui][dialog][modal]") {
+TEST_CASE("keys go to the dialog when the focus is outside it", "[ui][dialog][modal]")
+{
     DlRig rig;
     Dialog* d = rig.Show();
     (void)d;
-    rig.h.GetSurface().SetFocus(rig.field); // the program put the focus beneath the dialog
+    rig.h.GetSurface().SetFocus(rig.field);  // the program put the focus beneath the dialog
     rig.h.Key(Key::Escape);
     CHECK(rig.closes == 1);
 }
 
-TEST_CASE("a surface that shrinks keeps its dialogs inside", "[ui][dialog][modal]") {
+TEST_CASE("a surface that shrinks keeps its dialogs inside", "[ui][dialog][modal]")
+{
     DlRig rig;
     Dialog* d = rig.Show();
     rig.h.GetSurface().Resize(250, 150, 1);
@@ -320,7 +360,8 @@ TEST_CASE("a surface that shrinks keeps its dialogs inside", "[ui][dialog][modal
 
 // ---- window frame ----
 
-TEST_CASE("dragging the title bar moves the frame and keeps it inside the surface", "[ui][dialog][frame]") {
+TEST_CASE("dragging the title bar moves the frame and keeps it inside the surface", "[ui][dialog][frame]")
+{
     DlRig rig;
     Dialog* d = rig.Show();
     const Rect start = d->Bounds();
@@ -349,7 +390,8 @@ TEST_CASE("dragging the title bar moves the frame and keeps it inside the surfac
     CHECK(d->Bounds().Bottom() == 300);
 }
 
-TEST_CASE("a frame that is not movable stays put", "[ui][dialog][frame]") {
+TEST_CASE("a frame that is not movable stays put", "[ui][dialog][frame]")
+{
     DlRig rig;
     Dialog* d = rig.Show();
     d->SetMovable(false);
@@ -362,7 +404,8 @@ TEST_CASE("a frame that is not movable stays put", "[ui][dialog][frame]") {
     CHECK(d->Bounds().y == start.y);
 }
 
-TEST_CASE("a resizable frame resizes from its edges down to a minimum", "[ui][dialog][frame]") {
+TEST_CASE("a resizable frame resizes from its edges down to a minimum", "[ui][dialog][frame]")
+{
     DlRig rig;
     Dialog* d = rig.Show();
     d->SetResizable(true);
@@ -387,7 +430,8 @@ TEST_CASE("a resizable frame resizes from its edges down to a minimum", "[ui][di
     CHECK(d->Bounds().Right() == now.Right());
 }
 
-TEST_CASE("the corners show the diagonal cursors", "[ui][dialog][frame]") {
+TEST_CASE("the corners show the diagonal cursors", "[ui][dialog][frame]")
+{
     DlRig rig;
     Dialog* d = rig.Show();
     d->SetResizable(true);
@@ -400,7 +444,8 @@ TEST_CASE("the corners show the diagonal cursors", "[ui][dialog][frame]") {
     CHECK(rig.h.GetSurface().RequestedCursor() == os::CursorShape::ResizeVertical);
 }
 
-TEST_CASE("a frame that is not resizable has no resize edges", "[ui][dialog][frame]") {
+TEST_CASE("a frame that is not resizable has no resize edges", "[ui][dialog][frame]")
+{
     DlRig rig;
     Dialog* d = rig.Show();
     const Rect start = d->Bounds();
@@ -410,7 +455,8 @@ TEST_CASE("a frame that is not resizable has no resize edges", "[ui][dialog][fra
     CHECK(d->Bounds().w == start.w);
 }
 
-TEST_CASE("a frame outside a modal layer closes through its parent", "[ui][dialog][frame]") {
+TEST_CASE("a frame outside a modal layer closes through its parent", "[ui][dialog][frame]")
+{
     DlRig rig;
     UniquePtr<Dialog> d = MakeUnique<Dialog>(StringView("free"), StringView("Free"));
     d->SetContent(UniquePtr<Widget>(MakeUnique<DlPane>().Release()));
@@ -427,22 +473,28 @@ TEST_CASE("a frame outside a modal layer closes through its parent", "[ui][dialo
 
 // ---- message boxes ----
 
-namespace {
-struct MbLog {
+namespace
+{
+struct MbLog
+{
     int calls = 0;
     int result = -1;
-    static void Done(void* user, int result) {
+    static void Done(void* user, int result)
+    {
         MbLog* l = static_cast<MbLog*>(user);
         ++l->calls;
         l->result = result;
     }
 };
-} // namespace
+}  // namespace
 
-TEST_CASE("a message box returns the button that was pressed", "[ui][dialog][messagebox]") {
+TEST_CASE("a message box returns the button that was pressed", "[ui][dialog][messagebox]")
+{
     DlRig rig;
     MbLog log;
-    Dialog* d = ShowMessageBox(&rig.h.GetSurface(), StringView("Quit"), StringView("Do you really want to quit the program and lose all of your unsaved work?"), MessageButtons::YesNoCancel, &MbLog::Done, &log);
+    Dialog* d = ShowMessageBox(&rig.h.GetSurface(), StringView("Quit"),
+                               StringView("Do you really want to quit the program and lose all of your unsaved work?"),
+                               MessageButtons::YesNoCancel, &MbLog::Done, &log);
     rig.h.Advance(0);
     REQUIRE(rig.h.GetSurface().IsModalOpen(d));
     Widget* no = d->FindByName(StringView("No"));
@@ -454,29 +506,38 @@ TEST_CASE("a message box returns the button that was pressed", "[ui][dialog][mes
     CHECK(rig.h.GetSurface().ModalCount() == 0);
 }
 
-TEST_CASE("a message box wraps its text and fits the surface", "[ui][dialog][messagebox]") {
+TEST_CASE("a message box wraps its text and fits the surface", "[ui][dialog][messagebox]")
+{
     DlRig rig;
-    Dialog* d = ShowMessageBox(&rig.h.GetSurface(), StringView("Note"), StringView("A long message that goes on and on and on and on and on and on and on and on and on and on and on."), MessageButtons::Ok, nullptr, nullptr);
+    Dialog* d = ShowMessageBox(
+        &rig.h.GetSurface(), StringView("Note"),
+        StringView(
+            "A long message that goes on and on and on and on and on and on and on and on and on and on and on."),
+        MessageButtons::Ok, nullptr, nullptr);
     rig.h.Advance(0);
     const Rect b = d->Bounds();
     CHECK(b.w <= 400);
     CHECK(b.x >= 0);
     CHECK(b.Right() <= 400);
-    CHECK(b.h > 100); // more than one line
+    CHECK(b.h > 100);  // more than one line
 }
 
-TEST_CASE("Enter confirms a message box, Escape gives the cancel result of its button set", "[ui][dialog][messagebox]") {
+TEST_CASE("Enter confirms a message box, Escape gives the cancel result of its button set", "[ui][dialog][messagebox]")
+{
     DlRig rig;
     MbLog log;
-    ShowMessageBox(&rig.h.GetSurface(), StringView("T"), StringView("Sure?"), MessageButtons::YesNo, &MbLog::Done, &log);
+    ShowMessageBox(&rig.h.GetSurface(), StringView("T"), StringView("Sure?"), MessageButtons::YesNo, &MbLog::Done,
+                   &log);
     rig.h.Advance(0);
     rig.h.Key(Key::Enter);
     CHECK(log.result == dialog_result::kYes);
-    ShowMessageBox(&rig.h.GetSurface(), StringView("T"), StringView("Sure?"), MessageButtons::YesNo, &MbLog::Done, &log);
+    ShowMessageBox(&rig.h.GetSurface(), StringView("T"), StringView("Sure?"), MessageButtons::YesNo, &MbLog::Done,
+                   &log);
     rig.h.Advance(0);
     rig.h.Key(Key::Escape);
     CHECK(log.result == dialog_result::kNo);
-    ShowMessageBox(&rig.h.GetSurface(), StringView("T"), StringView("Hi"), MessageButtons::OkCancel, &MbLog::Done, &log);
+    ShowMessageBox(&rig.h.GetSurface(), StringView("T"), StringView("Hi"), MessageButtons::OkCancel, &MbLog::Done,
+                   &log);
     rig.h.Advance(0);
     rig.h.Key(Key::Escape);
     CHECK(log.result == dialog_result::kCancel);
@@ -487,10 +548,12 @@ TEST_CASE("Enter confirms a message box, Escape gives the cancel result of its b
     CHECK(log.calls == 4);
 }
 
-TEST_CASE("a confirm dialog has a named default button and Cancel", "[ui][dialog][messagebox]") {
+TEST_CASE("a confirm dialog has a named default button and Cancel", "[ui][dialog][messagebox]")
+{
     DlRig rig;
     MbLog log;
-    Dialog* d = ShowConfirm(&rig.h.GetSurface(), StringView("Restart"), StringView("The change needs a restart."), StringView("Restart now"), &MbLog::Done, &log);
+    Dialog* d = ShowConfirm(&rig.h.GetSurface(), StringView("Restart"), StringView("The change needs a restart."),
+                            StringView("Restart now"), &MbLog::Done, &log);
     rig.h.Advance(0);
     REQUIRE(d->DefaultButton() != nullptr);
     CHECK(d->DefaultButton()->GetText() == StringView("Restart now"));

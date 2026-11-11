@@ -5,12 +5,15 @@
 
 #include "cstr/format.h"
 
-namespace engine_placeholder::os {
+namespace engine_placeholder::os
+{
 
-PFN_vkVoidFunction ProbeVulkanCreateInstance() {
+PFN_vkVoidFunction ProbeVulkanCreateInstance()
+{
     char line[96];
     DynamicLibraryHandle vulkan = LoadLibrary(StringView(VulkanLoaderName()));
-    if (vulkan == nullptr) {
+    if (vulkan == nullptr)
+    {
         FormatTo(line, sizeof(line), "GPU driver probe: failed to load %s", VulkanLoaderName());
         Log(LogPlatform, LogVerbosity::Error, StringView(line));
         return nullptr;
@@ -19,7 +22,8 @@ PFN_vkVoidFunction ProbeVulkanCreateInstance() {
     Log(LogPlatform, LogVerbosity::Info, StringView(line));
 
     void* symbol = GetSymbol(vulkan, "vkGetInstanceProcAddr");
-    if (symbol == nullptr) {
+    if (symbol == nullptr)
+    {
         Log(LogPlatform, LogVerbosity::Error, "GPU driver probe: vkGetInstanceProcAddr not found");
         return nullptr;
     }
@@ -29,7 +33,8 @@ PFN_vkVoidFunction ProbeVulkanCreateInstance() {
     // Passing VK_NULL_HANDLE resolves global-level entry points
     // (vkCreateInstance, vkEnumerateInstance*) per the Vulkan spec.
     PFN_vkVoidFunction create_instance = get_instance_proc_addr(nullptr, "vkCreateInstance");
-    if (create_instance == nullptr) {
+    if (create_instance == nullptr)
+    {
         Log(LogPlatform, LogVerbosity::Error, "GPU driver probe: vkCreateInstance not found");
         return nullptr;
     }
@@ -38,4 +43,4 @@ PFN_vkVoidFunction ProbeVulkanCreateInstance() {
     return create_instance;
 }
 
-} // namespace engine_placeholder::os
+}  // namespace engine_placeholder::os

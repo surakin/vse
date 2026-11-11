@@ -6,26 +6,28 @@
 
 //! Grapheme cluster segmentation (UAX #29): iterate or count user-perceived
 //! characters in UTF-8 text.
-namespace engine_placeholder {
+namespace engine_placeholder
+{
 
 /// Grapheme_Cluster_Break property value of a codepoint (UAX #29), with
 /// Extended_Pictographic from the emoji data folded into the same enum.
-enum class GraphemeBreakProperty : u8 {
-    Other,                ///< Any codepoint not listed in the property table.
-    CR,                   ///< Carriage return, U+000D.
-    LF,                   ///< Line feed, U+000A.
-    Control,              ///< Control and format characters that always break.
-    Extend,               ///< Combining marks and other extenders.
-    ZWJ,                  ///< Zero width joiner, U+200D.
-    RegionalIndicator,    ///< Regional indicator symbols, paired into flags.
-    Prepend,              ///< Characters that join to the following one.
-    SpacingMark,          ///< Spacing combining marks.
-    L,                    ///< Hangul leading consonant jamo.
-    V,                    ///< Hangul vowel jamo.
-    T,                    ///< Hangul trailing consonant jamo.
-    LV,                   ///< Precomposed Hangul syllable with no trailing consonant.
-    LVT,                  ///< Precomposed Hangul syllable with a trailing consonant.
-    ExtendedPictographic, ///< Emoji and other pictographic symbols.
+enum class GraphemeBreakProperty : u8
+{
+    Other,                 ///< Any codepoint not listed in the property table.
+    CR,                    ///< Carriage return, U+000D.
+    LF,                    ///< Line feed, U+000A.
+    Control,               ///< Control and format characters that always break.
+    Extend,                ///< Combining marks and other extenders.
+    ZWJ,                   ///< Zero width joiner, U+200D.
+    RegionalIndicator,     ///< Regional indicator symbols, paired into flags.
+    Prepend,               ///< Characters that join to the following one.
+    SpacingMark,           ///< Spacing combining marks.
+    L,                     ///< Hangul leading consonant jamo.
+    V,                     ///< Hangul vowel jamo.
+    T,                     ///< Hangul trailing consonant jamo.
+    LV,                    ///< Precomposed Hangul syllable with no trailing consonant.
+    LVT,                   ///< Precomposed Hangul syllable with a trailing consonant.
+    ExtendedPictographic,  ///< Emoji and other pictographic symbols.
 };
 
 /// Looks up the grapheme-break property of `codepoint` with a binary search over
@@ -43,14 +45,17 @@ GraphemeBreakProperty LookupGraphemeBreakProperty(u32 codepoint);
 /// - Thread-safety: thread-compatible.
 /// - Ownership: holds a view; the underlying text must outlive the iterator and
 ///   the cluster views it yields.
-class GraphemeClusterIterator {
+class GraphemeClusterIterator
+{
 public:
     /// Creates an iterator positioned at byte `offset` of `sv`.
     ///
     /// - Param sv: text to iterate.
     /// - Param offset: byte index of a cluster start, or `sv.Length()` for the end.
-    GraphemeClusterIterator(StringView sv, usize offset) : sv_(sv), offset_(offset) {
-        if (offset_ < sv_.Length()) {
+    GraphemeClusterIterator(StringView sv, usize offset) : sv_(sv), offset_(offset)
+    {
+        if (offset_ < sv_.Length())
+        {
             cluster_end_ = FindNextBoundary(offset_);
         }
     }
@@ -59,9 +64,11 @@ public:
     StringView operator*() const { return sv_.Substring(offset_, cluster_end_ - offset_); }
 
     /// Advances to the next cluster and returns this iterator.
-    GraphemeClusterIterator& operator++() {
+    GraphemeClusterIterator& operator++()
+    {
         offset_ = cluster_end_;
-        if (offset_ < sv_.Length()) {
+        if (offset_ < sv_.Length())
+        {
             cluster_end_ = FindNextBoundary(offset_);
         }
         return *this;
@@ -84,7 +91,8 @@ private:
 ///
 /// - Thread-safety: thread-compatible.
 /// - Ownership: holds a view; the underlying text must outlive the range.
-class GraphemeClusterRange {
+class GraphemeClusterRange
+{
 public:
     /// Creates a range over `sv`.
     ///
@@ -103,7 +111,8 @@ private:
 /// Returns a range over the grapheme clusters of `sv`, for use in a range-for loop.
 ///
 /// - Param sv: UTF-8 text; must outlive the returned range.
-inline GraphemeClusterRange GraphemeClusters(StringView sv) {
+inline GraphemeClusterRange GraphemeClusters(StringView sv)
+{
     return GraphemeClusterRange(sv);
 }
 
@@ -113,4 +122,4 @@ inline GraphemeClusterRange GraphemeClusters(StringView sv) {
 /// - Returns: the number of clusters; 0 for empty text.
 usize GraphemeClusterCount(StringView sv);
 
-} // namespace engine_placeholder
+}  // namespace engine_placeholder

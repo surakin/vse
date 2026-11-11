@@ -17,12 +17,16 @@ using engine_placeholder::u32;
 using engine_placeholder::usize;
 using engine_placeholder::Utf8Codepoints;
 
-namespace {
+namespace
+{
 
-u32 NthCodepoint(StringView sv, usize n) {
+u32 NthCodepoint(StringView sv, usize n)
+{
     usize i = 0;
-    for (u32 cp : Utf8Codepoints(sv)) {
-        if (i == n) {
+    for (u32 cp : Utf8Codepoints(sv))
+    {
+        if (i == n)
+        {
             return cp;
         }
         ++i;
@@ -30,12 +34,13 @@ u32 NthCodepoint(StringView sv, usize n) {
     return 0;
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("NFD decomposes precomposed 'é' into 'e' + combining acute", "[string][normalize]") {
+TEST_CASE("NFD decomposes precomposed 'é' into 'e' + combining acute", "[string][normalize]")
+{
     ArenaAllocator src_arena(4096);
     StringBuilder<ArenaAllocator> sb(src_arena);
-    sb.AppendCodepoint(0x00E9); // precomposed 'é'
+    sb.AppendCodepoint(0x00E9);  // precomposed 'é'
     StringView source = sb.View();
 
     ArenaAllocator out_arena(4096);
@@ -45,11 +50,12 @@ TEST_CASE("NFD decomposes precomposed 'é' into 'e' + combining acute", "[string
     REQUIRE((NthCodepoint(nfd.View(), 0) == 0x0065 && NthCodepoint(nfd.View(), 1) == 0x0301));
 }
 
-TEST_CASE("NFC composes 'e' + combining acute into precomposed 'é'", "[string][normalize]") {
+TEST_CASE("NFC composes 'e' + combining acute into precomposed 'é'", "[string][normalize]")
+{
     ArenaAllocator src_arena(4096);
     StringBuilder<ArenaAllocator> sb(src_arena);
-    sb.AppendCodepoint(0x0065); // 'e'
-    sb.AppendCodepoint(0x0301); // combining acute
+    sb.AppendCodepoint(0x0065);  // 'e'
+    sb.AppendCodepoint(0x0301);  // combining acute
     StringView source = sb.View();
 
     ArenaAllocator out_arena(4096);
@@ -58,13 +64,14 @@ TEST_CASE("NFC composes 'e' + combining acute into precomposed 'é'", "[string][
     REQUIRE((CodepointCount(nfc.View()) == 1 && NthCodepoint(nfc.View(), 0) == 0x00E9));
 }
 
-TEST_CASE("NFD/NFC round-trip and idempotency hold for mixed precomposed/decomposed input", "[string][normalize]") {
+TEST_CASE("NFD/NFC round-trip and idempotency hold for mixed precomposed/decomposed input", "[string][normalize]")
+{
     ArenaAllocator src_arena(4096);
     StringBuilder<ArenaAllocator> sb(src_arena);
     sb.Append("caf");
-    sb.AppendCodepoint(0x00E9); // precomposed 'é'
+    sb.AppendCodepoint(0x00E9);  // precomposed 'é'
     sb.Append(" ");
-    sb.AppendCodepoint(0x0065); // already-decomposed 'e' + combining acute
+    sb.AppendCodepoint(0x0065);  // already-decomposed 'e' + combining acute
     sb.AppendCodepoint(0x0301);
     StringView source = sb.View();
 
@@ -80,10 +87,11 @@ TEST_CASE("NFD/NFC round-trip and idempotency hold for mixed precomposed/decompo
     REQUIRE(nfd_of_nfd1.View() == nfd1.View());
 }
 
-TEST_CASE("NFD(U+AC00) decomposes via the algorithmic Hangul path and NFC recomposes it", "[string][normalize]") {
+TEST_CASE("NFD(U+AC00) decomposes via the algorithmic Hangul path and NFC recomposes it", "[string][normalize]")
+{
     ArenaAllocator src_arena(4096);
     StringBuilder<ArenaAllocator> sb(src_arena);
-    sb.AppendCodepoint(0xAC00); // precomposed Hangul syllable GA
+    sb.AppendCodepoint(0xAC00);  // precomposed Hangul syllable GA
     StringView source = sb.View();
 
     ArenaAllocator out_arena(4096);
@@ -95,7 +103,8 @@ TEST_CASE("NFD(U+AC00) decomposes via the algorithmic Hangul path and NFC recomp
     REQUIRE(nfc.View() == source);
 }
 
-TEST_CASE("composition-excluded U+0958 does not recompose from its decomposition", "[string][normalize]") {
+TEST_CASE("composition-excluded U+0958 does not recompose from its decomposition", "[string][normalize]")
+{
     // U+0958 (DEVANAGARI LETTER QA) canonically decomposes to U+0915 +
     // U+093C but is on the composition-exclusions list, so NFC must not
     // recompose it back.

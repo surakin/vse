@@ -16,22 +16,26 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
 
-namespace {
+namespace
+{
 
-struct HostQuietLog {
+struct HostQuietLog
+{
     bool saved = LogRhi.Enabled();
     HostQuietLog() { LogRhi.SetEnabled(false); }
     ~HostQuietLog() { LogRhi.SetEnabled(saved); }
 };
 
-DeviceCreateInfo NullCreate() {
+DeviceCreateInfo NullCreate()
+{
     DeviceCreateInfo info;
     info.backend = Backend::Null;
     return info;
 }
 
 // Records observer calls into a shared log.
-struct Recorder final : DeviceObserver {
+struct Recorder final : DeviceObserver
+{
     engine_test::TextList* log = nullptr;
     const char* name = "";
     bool fail_create = false;
@@ -39,22 +43,26 @@ struct Recorder final : DeviceObserver {
     int released = 0;
     int created = 0;
     Device* device = nullptr;
-    BufferHandle buffer; // a device object this observer owns, to show the release/recreate cycle
+    BufferHandle buffer;  // a device object this observer owns, to show the release/recreate cycle
 
-    void OnDeviceReleasing(u32 epoch) override {
+    void OnDeviceReleasing(u32 epoch) override
+    {
         (void)epoch;
         ++released;
         log->Push(engine_test::Concat("release ", name).View());
-        if (buffer.IsValid() && device != nullptr) {
+        if (buffer.IsValid() && device != nullptr)
+        {
             device->DestroyBuffer(buffer);
         }
         buffer = BufferHandle{};
         device = nullptr;
     }
-    bool OnDeviceCreated(Device* created_device, u32 epoch) override {
+    bool OnDeviceCreated(Device* created_device, u32 epoch) override
+    {
         last_epoch = epoch;
         device = created_device;
-        if (fail_create) {
+        if (fail_create)
+        {
             log->Push(engine_test::Concat("fail ", name).View());
             return false;
         }
@@ -70,35 +78,44 @@ struct Recorder final : DeviceObserver {
     const char* ObserverName() const override { return name; }
 };
 
-// What the throwing handler throws: a copy of the assertion's message (a thrown object must be copyable, so no owning text).
-struct AssertThrown {
+// What the throwing handler throws: a copy of the assertion's message (a thrown object must be copyable, so no owning
+// text).
+struct AssertThrown
+{
     Array<char, 256> text = {};
     usize length = 0;
     StringView Message() const { return StringView(text.Data(), length); }
 };
 
-AssertAction ThrowingHandler(const AssertInfo& info) {
+AssertAction ThrowingHandler(const AssertInfo& info)
+{
     AssertThrown thrown;
     const StringView message(info.message != nullptr ? info.message : "");
     thrown.length = message.Length() < thrown.text.Size() ? message.Length() : thrown.text.Size();
-    for (usize i = 0; i < thrown.length; ++i) thrown.text[i] = message[i];
+    for (usize i = 0; i < thrown.length; ++i)
+    {
+        thrown.text[i] = message[i];
+    }
     throw thrown;
 }
 
-struct ThrowingAsserts {
+struct ThrowingAsserts
+{
     AssertHandler previous = SetAssertHandler(&ThrowingHandler);
     ~ThrowingAsserts() { SetAssertHandler(previous); }
 };
 
-} // namespace
+}  // namespace
 
-TEST_CASE("Handle pools of different seeds never produce equal handles", "[rhi][host][handles]") {
+TEST_CASE("Handle pools of different seeds never produce equal handles", "[rhi][host][handles]")
+{
     constexpr u32 kSeedA = GenerationSeed(1);
     constexpr u32 kSeedB = GenerationSeed(2);
     static_assert(kSeedA != kSeedB);
     static_assert((kSeedA & 0xFFFFF) == 1, "the low 20 bits start at 1");
 
-    auto check = [](auto tag) {
+    auto check = [](auto tag)
+    {
         using Tag = decltype(tag);
         HandlePool<int, Tag> a;
         HandlePool<int, Tag> b;
@@ -110,7 +127,7 @@ TEST_CASE("Handle pools of different seeds never produce equal handles", "[rhi][
         REQUIRE(hb.IsValid());
         CHECK(ha.index == hb.index);
         CHECK(ha != hb);
-        CHECK(b.Get(ha) == nullptr); // a handle of pool A is not found in pool B
+        CHECK(b.Get(ha) == nullptr);  // a handle of pool A is not found in pool B
         CHECK(a.Get(hb) == nullptr);
         CHECK(a.Get(ha) != nullptr);
     };
@@ -123,13 +140,14 @@ TEST_CASE("Handle pools of different seeds never produce equal handles", "[rhi][
     check(BindGroupTag{});
 }
 
-TEST_CASE("Generation seeding keeps zero invalid and wraps past it", "[rhi][host][handles]") {
+TEST_CASE("Generation seeding keeps zero invalid and wraps past it", "[rhi][host][handles]")
+{
     HandlePool<int, BufferTag> pool;
     pool.SeedGeneration(0xFFFFFFFFu);
     auto h = pool.Allocate(7);
     CHECK(h.generation == 0xFFFFFFFFu);
     REQUIRE(pool.Free(h));
-    auto again = pool.Allocate(8); // the slot's generation wrapped past 0 to 1
+    auto again = pool.Allocate(8);  // the slot's generation wrapped past 0 to 1
     CHECK(again.IsValid());
     CHECK(again.generation == 1);
     CHECK(pool.Get(h) == nullptr);
@@ -139,7 +157,8 @@ TEST_CASE("Generation seeding keeps zero invalid and wraps past it", "[rhi][host
     CHECK(zero.Allocate(1).generation == 1);
 }
 
-TEST_CASE("A handle from one null device is rejected by the next", "[rhi][host][handles]") {
+TEST_CASE("A handle from one null device is rejected by the next", "[rhi][host][handles]")
+{
     HostQuietLog quiet;
     DeviceCreateInfo info = NullCreate();
     DevicePtr a = CreateDevice(info);
@@ -176,14 +195,15 @@ TEST_CASE("A handle from one null device is rejected by the next", "[rhi][host][
     b->DestroySampler(smp_a);
     CHECK(null_b->ErrorCount() == 3);
     CHECK(null_b->StateOf(tex_a) == ResourceState::Undefined);
-    CHECK(b->Resources().buffers == 1); // the stale destroy did not touch B's buffer
+    CHECK(b->Resources().buffers == 1);  // the stale destroy did not touch B's buffer
     b->DestroyBuffer(from_b);
     a->DestroyBuffer(from_a);
     a->DestroyTexture(tex_a);
     a->DestroySampler(smp_a);
 }
 
-TEST_CASE("ResourceCounts follow creation, destruction and Quiesce", "[rhi][host]") {
+TEST_CASE("ResourceCounts follow creation, destruction and Quiesce", "[rhi][host]")
+{
     DevicePtr device = CreateDevice(NullCreate());
     REQUIRE(device != nullptr);
     CHECK(device->Resources().UserObjects() == 0);
@@ -204,9 +224,10 @@ TEST_CASE("ResourceCounts follow creation, destruction and Quiesce", "[rhi][host
     CHECK_FALSE(device->InFrame());
 }
 
-TEST_CASE("DeviceHost creates, recreates 100 times and leaves nothing behind", "[rhi][host]") {
+TEST_CASE("DeviceHost creates, recreates 100 times and leaves nothing behind", "[rhi][host]")
+{
     HostQuietLog quiet;
-    engine_test::TextList log; // observers outlive the host
+    engine_test::TextList log;  // observers outlive the host
     Recorder observer;
     DeviceHost host;
     observer.log = &log;
@@ -216,12 +237,13 @@ TEST_CASE("DeviceHost creates, recreates 100 times and leaves nothing behind", "
     const DeviceCreateInfo info = NullCreate();
     REQUIRE(host.Create(info, SwapchainDesc{}));
     REQUIRE(host.GetDevice() != nullptr);
-    CHECK(host.GetSwapchain() == nullptr); // no window
+    CHECK(host.GetSwapchain() == nullptr);  // no window
     CHECK(observer.created == 1);
     u32 last_epoch = host.Epoch();
     CHECK(last_epoch != 0);
 
-    for (int i = 0; i < 100; ++i) {
+    for (int i = 0; i < 100; ++i)
+    {
         INFO("iteration " << i);
         REQUIRE(host.Recreate(info, SwapchainDesc{}));
         CHECK(host.Epoch() != last_epoch);
@@ -242,7 +264,8 @@ TEST_CASE("DeviceHost creates, recreates 100 times and leaves nothing behind", "
     host.RemoveObserver(&observer);
 }
 
-TEST_CASE("DeviceHost calls observers in tier order, once each", "[rhi][host]") {
+TEST_CASE("DeviceHost calls observers in tier order, once each", "[rhi][host]")
+{
     HostQuietLog quiet;
     engine_test::TextList log;
     Recorder low;
@@ -250,7 +273,8 @@ TEST_CASE("DeviceHost calls observers in tier order, once each", "[rhi][host]") 
     Recorder mid_second;
     Recorder high;
     DeviceHost host;
-    for (Recorder* r : {&low, &mid_first, &mid_second, &high}) {
+    for (Recorder* r : {&low, &mid_first, &mid_second, &high})
+    {
         r->log = &log;
     }
     low.name = "low";
@@ -269,14 +293,15 @@ TEST_CASE("DeviceHost calls observers in tier order, once each", "[rhi][host]") 
 
     log.Clear();
     REQUIRE(host.Recreate(info, SwapchainDesc{}));
-    CHECK(log.SameAs({"release high", "release mid2", "release mid1", "release low",
-                      "create low",   "create mid1",  "create mid2",  "create high"}));
+    CHECK(log.SameAs({"release high", "release mid2", "release mid1", "release low", "create low", "create mid1",
+                      "create mid2", "create high"}));
     host.Destroy();
 }
 
-TEST_CASE("A failing create leaves the host empty and says why", "[rhi][host]") {
+TEST_CASE("A failing create leaves the host empty and says why", "[rhi][host]")
+{
     HostQuietLog quiet;
-    engine_test::TextList log; // observers outlive the host: its destructor notifies them
+    engine_test::TextList log;  // observers outlive the host: its destructor notifies them
     Recorder observer;
     DeviceHost host;
     observer.log = &log;
@@ -310,7 +335,8 @@ TEST_CASE("A failing create leaves the host empty and says why", "[rhi][host]") 
     CHECK(host.GetDevice()->Resources().UserObjects() == 1);
 }
 
-TEST_CASE("DeviceHost refuses Recreate inside a frame or off the owning thread", "[rhi][host]") {
+TEST_CASE("DeviceHost refuses Recreate inside a frame or off the owning thread", "[rhi][host]")
+{
     HostQuietLog quiet;
     ThrowingAsserts asserts;
     DeviceHost host;
@@ -320,43 +346,57 @@ TEST_CASE("DeviceHost refuses Recreate inside a frame or off the owning thread",
 
     host.GetDevice()->BeginFrame();
     bool threw = false;
-    try {
+    try
+    {
         host.Recreate(info, SwapchainDesc{});
-    } catch (const AssertThrown& e) {
+    }
+    catch (const AssertThrown& e)
+    {
         threw = true;
         CHECK(e.Message().Contains(StringView("BeginFrame")));
     }
     CHECK(threw);
-    CHECK(host.Epoch() == epoch); // untouched
+    CHECK(host.Epoch() == epoch);  // untouched
     host.GetDevice()->EndFrame();
 
     bool other_threw = false;
-    Thread other([&] {
-        try {
-            host.Recreate(info, SwapchainDesc{});
-        } catch (const AssertThrown& e) {
-            other_threw = e.Message().Contains(StringView("thread"));
-        }
-    });
+    Thread other(
+        [&]
+        {
+            try
+            {
+                host.Recreate(info, SwapchainDesc{});
+            }
+            catch (const AssertThrown& e)
+            {
+                other_threw = e.Message().Contains(StringView("thread"));
+            }
+        });
     other.Join();
     CHECK(other_threw);
     CHECK(host.Epoch() == epoch);
     CHECK(host.Recreate(info, SwapchainDesc{}));
 }
 
-TEST_CASE("Adding or removing an observer during a reset is rejected", "[rhi][host]") {
+TEST_CASE("Adding or removing an observer during a reset is rejected", "[rhi][host]")
+{
     HostQuietLog quiet;
     ThrowingAsserts asserts;
     DeviceHost host;
-    struct Meddler final : DeviceObserver {
+    struct Meddler final : DeviceObserver
+    {
         DeviceHost* host = nullptr;
         Recorder* other = nullptr;
         bool threw = false;
         void OnDeviceReleasing(u32) override {}
-        bool OnDeviceCreated(Device*, u32) override {
-            try {
+        bool OnDeviceCreated(Device*, u32) override
+        {
+            try
+            {
                 host->AddObserver(other, 0);
-            } catch (const AssertThrown&) {
+            }
+            catch (const AssertThrown&)
+            {
                 threw = true;
             }
             return true;
@@ -374,7 +414,8 @@ TEST_CASE("Adding or removing an observer during a reset is rejected", "[rhi][ho
     host.Destroy();
 }
 
-TEST_CASE("An observer added to a live host is told about the device at once", "[rhi][host]") {
+TEST_CASE("An observer added to a live host is told about the device at once", "[rhi][host]")
+{
     HostQuietLog quiet;
     engine_test::TextList log;
     Recorder late;
@@ -385,12 +426,13 @@ TEST_CASE("An observer added to a live host is told about the device at once", "
     REQUIRE(host.AddObserver(&late, 3));
     CHECK(late.created == 1);
     CHECK(late.buffer.IsValid());
-    host.Destroy(); // releases it
+    host.Destroy();  // releases it
     CHECK(late.released == 1);
     CHECK_FALSE(late.buffer.IsValid());
 }
 
-TEST_CASE("Vulkan devices are destroyed and recreated with nothing left over", "[rhi][host][vulkan][gpu]") {
+TEST_CASE("Vulkan devices are destroyed and recreated with nothing left over", "[rhi][host][vulkan][gpu]")
+{
     gpu_test::GpuFixture fx;
     fx.Require();
     vulkan::VulkanDevice::ResetLeakCounts();
@@ -404,14 +446,17 @@ TEST_CASE("Vulkan devices are destroyed and recreated with nothing left over", "
     observer.log = &log;
     observer.name = "gpu";
     host.AddObserver(&observer, 0);
-    if (!host.Create(info, SwapchainDesc{})) {
-        if (gpu_test::GpuRequired()) {
+    if (!host.Create(info, SwapchainDesc{}))
+    {
+        if (gpu_test::GpuRequired())
+        {
             FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no Vulkan device could be created");
         }
         SKIP("no suitable Vulkan device");
     }
     u32 last = host.Epoch();
-    for (int i = 0; i < 20; ++i) {
+    for (int i = 0; i < 20; ++i)
+    {
         INFO("iteration " << i);
         REQUIRE(host.Recreate(info, SwapchainDesc{}));
         CHECK(host.Epoch() != last);
@@ -426,12 +471,14 @@ TEST_CASE("Vulkan devices are destroyed and recreated with nothing left over", "
     CHECK(leaks.internal_objects == 0);
 }
 
-TEST_CASE("A stale Vulkan buffer handle is not valid on the next device", "[rhi][host][vulkan][gpu]") {
+TEST_CASE("A stale Vulkan buffer handle is not valid on the next device", "[rhi][host][vulkan][gpu]")
+{
     gpu_test::GpuFixture fx;
     fx.Require();
     DeviceCreateInfo info;
     DevicePtr a = CreateDevice(info);
-    if (a == nullptr) {
+    if (a == nullptr)
+    {
         SKIP("no suitable Vulkan device");
     }
     BufferDesc bd;
@@ -452,7 +499,8 @@ TEST_CASE("A stale Vulkan buffer handle is not valid on the next device", "[rhi]
     a->DestroyBuffer(from_a);
 }
 
-TEST_CASE("Removing an observer that holds objects releases them first", "[rhi][host]") {
+TEST_CASE("Removing an observer that holds objects releases them first", "[rhi][host]")
+{
     HostQuietLog quiet;
     engine_test::TextList log;
     Recorder observer;

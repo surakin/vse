@@ -9,12 +9,14 @@
 
 using namespace engine_placeholder;
 
-namespace {
+namespace
+{
 
 char g_capture[1024];
 usize g_capture_len = 0;
 
-long CapturingWriteSink(int, const void* buf, usize len) {
+long CapturingWriteSink(int, const void* buf, usize len)
+{
     usize copy = g_capture_len + len > sizeof(g_capture) ? sizeof(g_capture) - g_capture_len : len;
     MemCopy(g_capture + g_capture_len, buf, copy);
     g_capture_len += copy;
@@ -23,29 +25,34 @@ long CapturingWriteSink(int, const void* buf, usize len) {
 
 // Pins the channel's global state for one test and restores it afterwards, so the test does not depend on defaults or
 // on test order.
-struct ChannelGuard {
+struct ChannelGuard
+{
     LogVerbosity saved_verbosity = LogRender.Verbosity();
     bool saved_enabled = LogRender.Enabled();
-    ChannelGuard() {
+    ChannelGuard()
+    {
         g_capture_len = 0;
         LogRender.SetEnabled(true);
         SetWriteSinkForTesting(&CapturingWriteSink);
     }
-    ~ChannelGuard() {
+    ~ChannelGuard()
+    {
         SetWriteSinkForTesting(&engine_placeholder::os::Write);
         LogRender.SetVerbosity(saved_verbosity);
         LogRender.SetEnabled(saved_enabled);
     }
 };
 
-} // namespace
+}  // namespace
 
-TEST_CASE("The renderer identifies itself", "[renderer][smoke]") {
+TEST_CASE("The renderer identifies itself", "[renderer][smoke]")
+{
     CHECK(renderer::RendererName() != nullptr);
     CHECK(CStrLength(renderer::RendererName()) > 0);
 }
 
-TEST_CASE("RenderLog formats on the render channel and honors the verbosity filter", "[renderer][smoke]") {
+TEST_CASE("RenderLog formats on the render channel and honors the verbosity filter", "[renderer][smoke]")
+{
     ChannelGuard guard;
     LogRender.SetVerbosity(LogVerbosity::Warn);
 
@@ -58,7 +65,8 @@ TEST_CASE("RenderLog formats on the render channel and honors the verbosity filt
     CHECK_FALSE(out.Contains(StringView("filtered out")));
 }
 
-TEST_CASE("RenderLog truncates an over-long message instead of overflowing", "[renderer][smoke]") {
+TEST_CASE("RenderLog truncates an over-long message instead of overflowing", "[renderer][smoke]")
+{
     ChannelGuard guard;
     LogRender.SetVerbosity(LogVerbosity::Warn);
 

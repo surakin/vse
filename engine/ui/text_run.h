@@ -5,20 +5,24 @@
 #include "types.h"
 #include "ui/theme.h"
 
-//! A string laid out in one font, cached (Phase 15, Day 195): what a label, a button and a check box draw their text from.
+//! A string laid out in one font, cached (Phase 15, Day 195): what a label, a button and a check box draw their text
+//! from.
 
-namespace engine_placeholder::ui {
+namespace engine_placeholder::ui
+{
 
 class Surface;
 
 /// One string with its laid-out form, redone only when something it depends on changes.
 ///
-/// The layout depends on the text, the alignment, the font object, the pixel size, the wrap width and the surface scale. `Fit` gives the layout that fits a width: the full one, or
-/// the text cut at a cluster boundary with an ellipsis (U+2026) appended when it is wider; the cut layout is cached too.
+/// The layout depends on the text, the alignment, the font object, the pixel size, the wrap width and the surface
+/// scale. `Fit` gives the layout that fits a width: the full one, or the text cut at a cluster boundary with an
+/// ellipsis (U+2026) appended when it is wider; the cut layout is cached too.
 ///
 /// - Thread-safety: owner-thread-only.
 /// - Ownership: owns the text and the layouts; borrows the font only during `Ensure`.
-class TextRun {
+class TextRun
+{
 public:
     /// Makes a run with no text.
     TextRun() = default;
@@ -27,7 +31,8 @@ public:
     bool SetText(StringView text);
     /// Returns the text.
     StringView Text() const { return StringView(text_.Data(), text_.Size()); }
-    /// Sets the alignment of the lines inside the wrap width; a change invalidates the layouts. Returns whether it changed.
+    /// Sets the alignment of the lines inside the wrap width; a change invalidates the layouts. Returns whether it
+    /// changed.
     /// - Fails: never.
     bool SetAlign(text::Align align);
 
@@ -42,13 +47,16 @@ public:
     /// - Ownership: borrows `face` for the call only.
     /// - Fails: returns false for a null font or a font the layout refuses.
     bool Ensure(text::Font* face, u32 family, f32 size_px, f32 wrap_px, f32 scale);
-    /// Like `Ensure`, with the font taken from a resolved style (size in physical pixels, rounded to whole pixels) and the face from the surface's font provider.
+    /// Like `Ensure`, with the font taken from a resolved style (size in physical pixels, rounded to whole pixels) and
+    /// the face from the surface's font provider.
     /// - Ownership: borrows `surface` for the call only.
-    /// - Returns: whether the layout is usable; false without a surface, a font provider or a face for the style's family.
+    /// - Returns: whether the layout is usable; false without a surface, a font provider or a face for the style's
+    /// family.
     bool EnsureForStyle(Surface* surface, const ResolvedStyle& style, f32 wrap_px);
     /// Returns the full layout from the last successful `Ensure`.
     const text::TextLayout& Full() const { return full_; }
-    /// Returns the layout to draw in `limit_px` pixels: the full one when it fits (or `limit_px` is 0), else the cut one with an ellipsis. Call after `Ensure`.
+    /// Returns the layout to draw in `limit_px` pixels: the full one when it fits (or `limit_px` is 0), else the cut
+    /// one with an ellipsis. Call after `Ensure`.
     const text::TextLayout& Fit(f32 limit_px);
     /// Returns the style (font and pixel size) the layouts were made with.
     const text::TextStyle& Style() const { return style_; }
@@ -60,7 +68,8 @@ public:
     u64 LayoutCount() const { return layout_count_; }
 
 private:
-    Vector<char> text_; // not NUL-terminated; assigning keeps the capacity, so a row that is re-used for other text allocates nothing once warm
+    Vector<char> text_;  // not NUL-terminated; assigning keeps the capacity, so a row that is re-used for other text
+                         // allocates nothing once warm
     text::Align align_ = text::Align::Left;
     text::TextStyle style_;
     text::TextLayout full_;
@@ -76,4 +85,4 @@ private:
     u64 layout_count_ = 0;
 };
 
-} // namespace engine_placeholder::ui
+}  // namespace engine_placeholder::ui

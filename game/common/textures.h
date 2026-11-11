@@ -5,24 +5,27 @@
 //
 // `.rtex` is a throwaway internal container (the asset pipeline brings the real formats): a 24-byte little-endian
 // header - the magic "RTEX", a version (1), width, height, the `rhi::Format` value and the mip count - followed by
-// every mip level's rows tightly packed, level 0 first. Only the 8-bit-per-channel RGBA and BGRA formats are supported (`RGBA8`/`BGRA8`, `UNorm` or `SRGB`).
-
+// every mip level's rows tightly packed, level 0 first. Only the 8-bit-per-channel RGBA and BGRA formats are supported
+// (`RGBA8`/`BGRA8`, `UNorm` or `SRGB`).
 
 #include "containers/span.h"
 #include "containers/vector.h"
 #include "io/file.h"
 #include "rhi/rhi.h"
 
-namespace demo {
+namespace demo
+{
 
 using namespace engine_placeholder;
 
-struct Rgba {
+struct Rgba
+{
     byte r, g, b, a;
 };
 
 // An RGBA8 image, tightly packed, row 0 first.
-struct Pixels {
+struct Pixels
+{
     u32 width = 0;
     u32 height = 0;
     Vector<byte> rgba;
@@ -40,18 +43,20 @@ Pixels UvGradient(u32 width, u32 height);
 // The level count of a full mip chain.
 u32 FullMipCount(u32 width, u32 height);
 
-// Creates a `Sampled` texture of `format` (one of the formats above), uploads `pixels` as level 0 and, when `generate_mips`
-// is set and the format allows it, fills the full mip chain on the GPU. It submits work and waits for it, so call it
-// outside a frame (before the render loop). Returns an invalid handle, logging why, on failure.
-rhi::TextureHandle CreateSampledTexture(rhi::Device* device, const Pixels& pixels, rhi::Format format, bool generate_mips, const char* debug_name);
+// Creates a `Sampled` texture of `format` (one of the formats above), uploads `pixels` as level 0 and, when
+// `generate_mips` is set and the format allows it, fills the full mip chain on the GPU. It submits work and waits for
+// it, so call it outside a frame (before the render loop). Returns an invalid handle, logging why, on failure.
+rhi::TextureHandle CreateSampledTexture(rhi::Device* device, const Pixels& pixels, rhi::Format format,
+                                        bool generate_mips, const char* debug_name);
 
 // A texture loaded from or written to an `.rtex` file.
-struct RtexImage {
+struct RtexImage
+{
     u32 width = 0;
     u32 height = 0;
     rhi::Format format = rhi::Format::Undefined;
     u32 mip_count = 0;
-    Vector<byte> data; // every level, tightly packed
+    Vector<byte> data;  // every level, tightly packed
 };
 
 // Builds a full mip chain for `pixels` on the CPU (a 2x2 box filter; the color of an sRGB format is averaged as
@@ -63,10 +68,12 @@ io::Status WritePpm(const io::Path& path, u32 width, u32 height, const byte* rgb
 
 // Writes the image atomically (a failed write never leaves a half file). Fails with `Invalid` for a malformed image.
 io::Status WriteRtex(const io::Path& path, const RtexImage& image);
-// Reads and validates a file; `image` is unchanged on failure. A damaged, truncated or oversized file is `Invalid`; a missing one `NotFound`.
+// Reads and validates a file; `image` is unchanged on failure. A damaged, truncated or oversized file is `Invalid`; a
+// missing one `NotFound`.
 io::Status ReadRtex(const io::Path& path, RtexImage* image);
 
-// Creates a `Sampled` texture from an `.rtex` image, uploading every stored level. Same rules as `CreateSampledTexture`.
+// Creates a `Sampled` texture from an `.rtex` image, uploading every stored level. Same rules as
+// `CreateSampledTexture`.
 rhi::TextureHandle CreateTextureFromRtex(rhi::Device* device, const RtexImage& image, const char* debug_name);
 
-} // namespace demo
+}  // namespace demo

@@ -5,7 +5,7 @@
 #include "build_defs.h"
 
 #if !ENGINE_PLATFORM_WINDOWS
-#include <unistd.h> // geteuid, chmod for the read-only directory case
+#include <unistd.h>  // geteuid, chmod for the read-only directory case
 #include <sys/stat.h>
 #endif
 
@@ -28,56 +28,79 @@ using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
 using namespace engine_placeholder::rhi::vulkan;
 
-namespace {
+namespace
+{
 
-struct VulkanPipelineTestQuietLog {
+struct VulkanPipelineTestQuietLog
+{
     bool saved = LogRhi.Enabled();
     VulkanPipelineTestQuietLog() { LogRhi.SetEnabled(false); }
     ~VulkanPipelineTestQuietLog() { LogRhi.SetEnabled(saved); }
 };
 
-bool Contains(const char* text, const char* needle) { return text != nullptr && CStrFind(text, needle) != nullptr; }
+bool Contains(const char* text, const char* needle)
+{
+    return text != nullptr && CStrFind(text, needle) != nullptr;
+}
 
-PipelineCacheIdentity Identity() {
+PipelineCacheIdentity Identity()
+{
     PipelineCacheIdentity id;
     id.vendor_id = 0x10de;
     id.device_id = 0x2504;
-    for (u8 i = 0; i < 16; ++i) id.uuid[i] = static_cast<u8>(0xa0 + i);
+    for (u8 i = 0; i < 16; ++i)
+    {
+        id.uuid[i] = static_cast<u8>(0xa0 + i);
+    }
     return id;
 }
 
 // A well-formed version-one header for Identity(), followed by `extra` payload bytes.
-Vector<byte> CopyOf(const Vector<byte>& bytes) {
+Vector<byte> CopyOf(const Vector<byte>& bytes)
+{
     Vector<byte> copy = engine_test::ByteBuffer(bytes.Size());
     MemCopy(copy.Data(), bytes.Data(), bytes.Size());
     return copy;
 }
 
-Vector<byte> CacheBlob(usize extra = 8) {
+Vector<byte> CacheBlob(usize extra = 8)
+{
     const PipelineCacheIdentity id = Identity();
     Vector<byte> b = engine_test::ByteBuffer(32 + extra, 0x5a);
-    auto put = [&](usize at, u32 v) {
-        for (int i = 0; i < 4; ++i) b[at + i] = static_cast<byte>(v >> (8 * i));
+    auto put = [&](usize at, u32 v)
+    {
+        for (int i = 0; i < 4; ++i)
+        {
+            b[at + i] = static_cast<byte>(v >> (8 * i));
+        }
     };
     put(0, 32);
     put(4, 1);
     put(8, id.vendor_id);
     put(12, id.device_id);
-    for (int i = 0; i < 16; ++i) b[16 + i] = id.uuid[i];
+    for (int i = 0; i < 16; ++i)
+    {
+        b[16 + i] = id.uuid[i];
+    }
     return b;
 }
 
-} // namespace
+}  // namespace
 
 // Cuts a cache file to `size` bytes, through the file layer (damage the loader must survive).
-static bool TruncateCacheFile(const char* path, u64 size) {
+static bool TruncateCacheFile(const char* path, u64 size)
+{
     io::FilePtr f;
-    if (!io::File::Open(io::Path(StringView(path)), io::OpenMode::ReadWrite, io::kOpenNone, &f).Ok()) return false;
+    if (!io::File::Open(io::Path(StringView(path)), io::OpenMode::ReadWrite, io::kOpenNone, &f).Ok())
+    {
+        return false;
+    }
     const bool cut = f->Truncate(size).Ok();
     return f->Close().Ok() && cut;
 }
 
-TEST_CASE("Pipeline state converts to the matching Vulkan enums", "[rhi][vulkan][pipeline][policy]") {
+TEST_CASE("Pipeline state converts to the matching Vulkan enums", "[rhi][vulkan][pipeline][policy]")
+{
     CHECK(ToVkTopology(PrimitiveTopology::TriangleList) == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     CHECK(ToVkTopology(PrimitiveTopology::PointList) == VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
     CHECK(ToVkCullMode(CullMode::None) == VK_CULL_MODE_NONE);
@@ -103,15 +126,17 @@ TEST_CASE("Pipeline state converts to the matching Vulkan enums", "[rhi][vulkan]
     CHECK(static_cast<u32>(ColorWriteMask::A) == VK_COLOR_COMPONENT_A_BIT);
 }
 
-TEST_CASE("CheckPipelineCacheHeader accepts only a blob for this device and driver", "[rhi][vulkan][pipeline][policy]") {
+TEST_CASE("CheckPipelineCacheHeader accepts only a blob for this device and driver", "[rhi][vulkan][pipeline][policy]")
+{
     const PipelineCacheIdentity id = Identity();
     Vector<byte> blob = CacheBlob();
     CHECK(CheckPipelineCacheHeader(blob.Data(), blob.Size(), id) == nullptr);
     CHECK(CheckPipelineCacheHeader(nullptr, 0, id) != nullptr);
     CHECK(Contains(CheckPipelineCacheHeader(blob.Data(), 31, id), "smaller"));
-    SECTION("each header field is checked") {
+    SECTION("each header field is checked")
+    {
         Vector<byte> b = CopyOf(blob);
-        b[0] = 16; // header size below 32
+        b[0] = 16;  // header size below 32
         CHECK(Contains(CheckPipelineCacheHeader(b.Data(), b.Size(), id), "header size"));
         b = CopyOf(blob);
         b[4] = 2;
@@ -126,19 +151,21 @@ TEST_CASE("CheckPipelineCacheHeader accepts only a blob for this device and driv
         b[31] ^= 1;
         CHECK(Contains(CheckPipelineCacheHeader(b.Data(), b.Size(), id), "driver"));
     }
-    SECTION("the file is matched against the identity it is asked about") {
+    SECTION("the file is matched against the identity it is asked about")
+    {
         PipelineCacheIdentity other = id;
         other.vendor_id = 0x1002;
         CHECK(CheckPipelineCacheHeader(blob.Data(), blob.Size(), other) != nullptr);
     }
 }
 
-TEST_CASE("The pipeline cache path and directory follow the documented order", "[rhi][vulkan][pipeline][policy]") {
+TEST_CASE("The pipeline cache path and directory follow the documented order", "[rhi][vulkan][pipeline][policy]")
+{
     char path[256];
     REQUIRE(BuildPipelineCachePath("/tmp/c", Identity(), path, sizeof(path)));
     CHECK(CStrCompare(path, "/tmp/c/pipeline_cache_10de_2504_a0a1a2a3a4a5a6a7a8a9aaabacadaeaf.bin") == 0);
     REQUIRE(BuildPipelineCachePath("/tmp/c/", Identity(), path, sizeof(path)));
-    CHECK(CStrFind(path, "/tmp/c/pipeline_cache_") == path); // no doubled slash
+    CHECK(CStrFind(path, "/tmp/c/pipeline_cache_") == path);  // no doubled slash
     char tiny[16];
     CHECK_FALSE(BuildPipelineCachePath("/tmp/c", Identity(), tiny, sizeof(tiny)));
     CHECK(tiny[0] == '\0');
@@ -149,9 +176,10 @@ TEST_CASE("The pipeline cache path and directory follow the documented order", "
     CHECK(ChoosePipelineCacheDir(nullptr, "/env", dir, sizeof(dir)) == PipelineCacheDirChoice::Chosen);
     CHECK(CStrCompare(dir, "/env") == 0);
     CHECK(ChoosePipelineCacheDir("", "", dir, sizeof(dir)) == PipelineCacheDirChoice::NotConfigured);
-    CHECK(dir[0] == '\0'); // neither set: the caller falls back to the user's cache directory
+    CHECK(dir[0] == '\0');  // neither set: the caller falls back to the user's cache directory
     CHECK(ChoosePipelineCacheDir(nullptr, nullptr, dir, sizeof(dir)) == PipelineCacheDirChoice::NotConfigured);
-    CHECK(ChoosePipelineCacheDir("/a/very/long/directory/name/that/does/not/fit", nullptr, tiny, sizeof(tiny)) == PipelineCacheDirChoice::TooLong);
+    CHECK(ChoosePipelineCacheDir("/a/very/long/directory/name/that/does/not/fit", nullptr, tiny, sizeof(tiny)) ==
+          PipelineCacheDirChoice::TooLong);
     CHECK(tiny[0] == '\0');
 
     char app[32];
@@ -165,15 +193,18 @@ TEST_CASE("The pipeline cache path and directory follow the documented order", "
     CHECK(app[0] == '\0');
 }
 
-namespace {
+namespace
+{
 
-struct TriangleDevice {
+struct TriangleDevice
+{
     gpu_test::GpuFixture fx;
     VulkanDevicePtr device;
     ShaderHandle vs;
     ShaderHandle fs;
 
-    explicit TriangleDevice(const char* cache_dir = nullptr, bool cache = true) {
+    explicit TriangleDevice(const char* cache_dir = nullptr, bool cache = true)
+    {
         fx.RequireValidation();
         DeviceCreateInfo info;
         info.validation = ValidationSetting::On;
@@ -181,7 +212,8 @@ struct TriangleDevice {
         info.pipeline_cache = cache;
         info.pipeline_cache_dir = cache_dir;
         device = VulkanDevice::Create(info);
-        if (device == nullptr) {
+        if (device == nullptr)
+        {
             SKIP("no suitable Vulkan device");
         }
         ShaderDesc d;
@@ -192,8 +224,10 @@ struct TriangleDevice {
         d.SetCode(SpirvBlob(shaders::kTriangleFragSpv, shaders::kTriangleFragSpvWordCount));
         fs = device->CreateShader(d);
     }
-    ~TriangleDevice() {
-        if (device != nullptr) {
+    ~TriangleDevice()
+    {
+        if (device != nullptr)
+        {
             device->DestroyShader(vs);
             device->DestroyShader(fs);
             device->WaitIdle();
@@ -201,7 +235,8 @@ struct TriangleDevice {
         }
     }
 
-    GraphicsPipelineDesc Desc(Format target) const {
+    GraphicsPipelineDesc Desc(Format target) const
+    {
         static VertexBindingDesc binding = {20, false};
         static VertexAttributeDesc attributes[2] = {{0, 0, VertexFormat::Float2, 0}, {1, 0, VertexFormat::Float3, 8}};
         GraphicsPipelineDesc g;
@@ -217,12 +252,16 @@ struct TriangleDevice {
     }
 };
 
-} // namespace
+}  // namespace
 
-TEST_CASE("The triangle pipeline compiles for the swapchain format and an offscreen format", "[rhi][vulkan][gpu][pipeline]") {
+TEST_CASE("The triangle pipeline compiles for the swapchain format and an offscreen format",
+          "[rhi][vulkan][gpu][pipeline]")
+{
     TriangleDevice t;
-    for (Format format : {Format::BGRA8_SRGB, Format::RGBA8_UNorm, Format::RGBA16_Float}) {
-        if (!t.device->FormatSupport(format, TextureUsage::ColorAttachment)) {
+    for (Format format : {Format::BGRA8_SRGB, Format::RGBA8_UNorm, Format::RGBA16_Float})
+    {
+        if (!t.device->FormatSupport(format, TextureUsage::ColorAttachment))
+        {
             continue;
         }
         const PipelineHandle p = t.device->CreateGraphicsPipeline(t.Desc(format));
@@ -239,17 +278,20 @@ TEST_CASE("The triangle pipeline compiles for the swapchain format and an offscr
     t.device->EndFrame();
 }
 
-TEST_CASE("Graphics pipeline creation refuses bad input before the driver sees it", "[rhi][vulkan][gpu][pipeline]") {
+TEST_CASE("Graphics pipeline creation refuses bad input before the driver sees it", "[rhi][vulkan][gpu][pipeline]")
+{
     TriangleDevice t;
     t.fx.ExpectErrors(0);
     VulkanPipelineTestQuietLog quiet;
     const Format target = Format::RGBA8_UNorm;
-    SECTION("no vertex shader") {
+    SECTION("no vertex shader")
+    {
         GraphicsPipelineDesc g = t.Desc(target);
         g.vertex_shader = ShaderHandle{};
         CHECK_FALSE(t.device->CreateGraphicsPipeline(g).IsValid());
     }
-    SECTION("a destroyed shader") {
+    SECTION("a destroyed shader")
+    {
         ShaderDesc d;
         d.stage = ShaderStage::Vertex;
         d.SetCode(SpirvBlob(shaders::kTriangleVertSpv, shaders::kTriangleVertSpvWordCount));
@@ -266,7 +308,8 @@ TEST_CASE("Graphics pipeline creation refuses bad input before the driver sees i
         CHECK_FALSE(t.device->CreateGraphicsPipeline(g).IsValid());
         t.device->EndFrame();
     }
-    SECTION("stage mismatch") {
+    SECTION("stage mismatch")
+    {
         GraphicsPipelineDesc g = t.Desc(target);
         g.vertex_shader = t.fs;
         CHECK_FALSE(t.device->CreateGraphicsPipeline(g).IsValid());
@@ -274,28 +317,35 @@ TEST_CASE("Graphics pipeline creation refuses bad input before the driver sees i
         g.fragment_shader = t.vs;
         CHECK_FALSE(t.device->CreateGraphicsPipeline(g).IsValid());
     }
-    SECTION("a layout that does not exist") {
+    SECTION("a layout that does not exist")
+    {
         GraphicsPipelineDesc g = t.Desc(target);
         g.bind_group_layouts[0] = BindGroupLayoutHandle{};
         g.bind_group_layout_count = 1;
         CHECK_FALSE(t.device->CreateGraphicsPipeline(g).IsValid());
     }
-    SECTION("a color format the device cannot render to") {
+    SECTION("a color format the device cannot render to")
+    {
         bool tried = false;
-        for (u32 f = 1; f < static_cast<u32>(Format::Count); ++f) {
+        for (u32 f = 1; f < static_cast<u32>(Format::Count); ++f)
+        {
             const Format format = static_cast<Format>(f);
-            if (!FormatInfo(format).is_depth && !FormatInfo(format).is_compressed && !t.device->FormatSupport(format, TextureUsage::ColorAttachment)) {
+            if (!FormatInfo(format).is_depth && !FormatInfo(format).is_compressed &&
+                !t.device->FormatSupport(format, TextureUsage::ColorAttachment))
+            {
                 GraphicsPipelineDesc g = t.Desc(format);
                 CHECK_FALSE(t.device->CreateGraphicsPipeline(g).IsValid());
                 tried = true;
                 break;
             }
         }
-        if (!tried) {
+        if (!tried)
+        {
             WARN("every color format renders on this device; the unsupported-format path was not exercised");
         }
     }
-    SECTION("limits and descriptor errors") {
+    SECTION("limits and descriptor errors")
+    {
         GraphicsPipelineDesc g = t.Desc(target);
         g.push_constant_bytes = 4096;
         g.push_constant_stages = ShaderStage::Vertex;
@@ -307,18 +357,21 @@ TEST_CASE("Graphics pipeline creation refuses bad input before the driver sees i
     CHECK(t.device->Counts().pipelines == 0);
 }
 
-TEST_CASE("Equal bind group layouts share one descriptor set layout and pipelines share a pipeline layout", "[rhi][vulkan][gpu][pipeline]") {
+TEST_CASE("Equal bind group layouts share one descriptor set layout and pipelines share a pipeline layout",
+          "[rhi][vulkan][gpu][pipeline]")
+{
     TriangleDevice t;
-    BindingDesc entries[2] = {{0, BindingType::UniformBuffer, ShaderStage::Vertex, 1}, {1, BindingType::SampledTexture, ShaderStage::Fragment, 1}};
+    BindingDesc entries[2] = {{0, BindingType::UniformBuffer, ShaderStage::Vertex, 1},
+                              {1, BindingType::SampledTexture, ShaderStage::Fragment, 1}};
     BindGroupLayoutDesc ld;
     ld.entries = rhi::Span<BindingDesc>(entries, 2);
     const BindGroupLayoutHandle a = t.device->CreateBindGroupLayout(ld);
     const BindGroupLayoutHandle b = t.device->CreateBindGroupLayout(ld);
     REQUIRE(a.IsValid());
     REQUIRE(b.IsValid());
-    CHECK_FALSE(a == b); // two handles...
+    CHECK_FALSE(a == b);  // two handles...
     CHECK(t.device->Counts().bind_group_layouts == 2);
-    CHECK(t.device->Counts().descriptor_set_layouts == 1); // ...one Vulkan object
+    CHECK(t.device->Counts().descriptor_set_layouts == 1);  // ...one Vulkan object
 
     // The same bindings listed in another order are the same layout.
     BindingDesc swapped[2] = {entries[1], entries[0]};
@@ -329,7 +382,7 @@ TEST_CASE("Equal bind group layouts share one descriptor set layout and pipeline
     CHECK(t.device->Counts().descriptor_set_layouts == 1);
     t.device->DestroyBindGroupLayout(reordered);
 
-    entries[1].stages = ShaderStage::AllGraphics; // different stages: a different layout
+    entries[1].stages = ShaderStage::AllGraphics;  // different stages: a different layout
     const BindGroupLayoutHandle c = t.device->CreateBindGroupLayout(ld);
     REQUIRE(c.IsValid());
     CHECK(t.device->Counts().descriptor_set_layouts == 2);
@@ -338,7 +391,7 @@ TEST_CASE("Equal bind group layouts share one descriptor set layout and pipeline
     g.bind_group_layouts[0] = a;
     g.bind_group_layout_count = 1;
     const PipelineHandle p1 = t.device->CreateGraphicsPipeline(g);
-    g.bind_group_layouts[0] = b; // equal to `a`
+    g.bind_group_layouts[0] = b;  // equal to `a`
     const PipelineHandle p2 = t.device->CreateGraphicsPipeline(g);
     REQUIRE(p1.IsValid());
     REQUIRE(p2.IsValid());
@@ -372,7 +425,8 @@ TEST_CASE("Equal bind group layouts share one descriptor set layout and pipeline
     t.device->DestroyBindGroupLayout(a);
     t.device->DestroyBindGroupLayout(b);
     t.device->DestroyBindGroupLayout(c);
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 3; ++i)
+    {
         t.device->BeginFrame();
         t.device->EndFrame();
     }
@@ -381,17 +435,21 @@ TEST_CASE("Equal bind group layouts share one descriptor set layout and pipeline
     CHECK(t.device->Counts().bind_group_layouts == 0);
     CHECK(t.device->Counts().descriptor_set_layouts == 0);
     CHECK(t.device->Counts().pipelines == 0);
-    CHECK(t.device->Counts().pipeline_layouts == 0); // freed with the last pipeline that used them
+    CHECK(t.device->Counts().pipeline_layouts == 0);  // freed with the last pipeline that used them
     t.device->EndFrame();
 }
 
-TEST_CASE("Creating and destroying many distinct layouts does not run out of pipeline layouts", "[rhi][vulkan][gpu][pipeline]") {
+TEST_CASE("Creating and destroying many distinct layouts does not run out of pipeline layouts",
+          "[rhi][vulkan][gpu][pipeline]")
+{
     TriangleDevice t;
     // More distinct layouts over time than the cache holds at once: each round's layouts are released.
-    for (u32 round = 0; round < 40; ++round) {
+    for (u32 round = 0; round < 40; ++round)
+    {
         BindGroupLayoutHandle layouts[16];
         PipelineHandle pipelines[16];
-        for (u32 i = 0; i < 16; ++i) {
+        for (u32 i = 0; i < 16; ++i)
+        {
             BindingDesc entry = {i + round, BindingType::UniformBuffer, ShaderStage::Vertex, 1};
             BindGroupLayoutDesc ld;
             ld.entries = rhi::Span<BindingDesc>(&entry, 1);
@@ -403,7 +461,8 @@ TEST_CASE("Creating and destroying many distinct layouts does not run out of pip
             pipelines[i] = t.device->CreateGraphicsPipeline(g);
             REQUIRE(pipelines[i].IsValid());
         }
-        for (u32 i = 0; i < 16; ++i) {
+        for (u32 i = 0; i < 16; ++i)
+        {
             t.device->DestroyPipeline(pipelines[i]);
             t.device->DestroyBindGroupLayout(layouts[i]);
         }
@@ -419,7 +478,8 @@ TEST_CASE("Creating and destroying many distinct layouts does not run out of pip
     t.device->EndFrame();
 }
 
-TEST_CASE("The triangle pipeline draws a triangle into an offscreen target", "[rhi][vulkan][gpu][pipeline]") {
+TEST_CASE("The triangle pipeline draws a triangle into an offscreen target", "[rhi][vulkan][gpu][pipeline]")
+{
     TriangleDevice t;
     t.fx.ExpectErrors(0);
     constexpr u32 kSize = 64;
@@ -433,9 +493,9 @@ TEST_CASE("The triangle pipeline draws a triangle into an offscreen target", "[r
 
     // One red-green-blue triangle covering the middle of the target, in clip space.
     const float vertices[3 * 5] = {
-        0.0f, -0.8f, 1.0f, 0.0f, 0.0f, //
-        0.8f, 0.8f,  1.0f, 0.0f, 0.0f, //
-        -0.8f, 0.8f, 1.0f, 0.0f, 0.0f, //
+        0.0f,  -0.8f, 1.0f, 0.0f, 0.0f,  //
+        0.8f,  0.8f,  1.0f, 0.0f, 0.0f,  //
+        -0.8f, 0.8f,  1.0f, 0.0f, 0.0f,  //
     };
     BufferDesc bd;
     bd.size = sizeof(vertices);
@@ -488,23 +548,28 @@ TEST_CASE("The triangle pipeline draws a triangle into an offscreen target", "[r
     t.device->DestroyTexture(target);
 }
 
-TEST_CASE("A cache directory that cannot be used never stops the device", "[rhi][vulkan][gpu][pipeline][cache]") {
+TEST_CASE("A cache directory that cannot be used never stops the device", "[rhi][vulkan][gpu][pipeline][cache]")
+{
     io_test::TempDir temp_dir;
     VulkanPipelineTestQuietLog quiet;
-    SECTION("the cache directory is a file") {
+    SECTION("the cache directory is a file")
+    {
         REQUIRE(io_test::WriteText(temp_dir / "blocked", "not a directory"));
         const engine_test::Text dir = engine_test::Concat(temp_dir.Native().View(), "/blocked");
         TriangleDevice t(dir.CStr());
         CHECK(t.device->CreateGraphicsPipeline(t.Desc(Format::RGBA8_UNorm)).IsValid());
-        CHECK_FALSE(t.device->SavePipelineCache()); // reported with a warning, not a failure of the device
+        CHECK_FALSE(t.device->SavePipelineCache());  // reported with a warning, not a failure of the device
         CHECK(t.device->PipelineCache().saved_bytes == 0);
     }
-    SECTION("the cache directory cannot be written") {
+    SECTION("the cache directory cannot be written")
+    {
 #if ENGINE_PLATFORM_WINDOWS
-        SUCCEED("not on Windows: a directory's read-only attribute does not stop writes (KNOWN-ISSUES.md, Phase 13 Day 157)");
+        SUCCEED(
+            "not on Windows: a directory's read-only attribute does not stop writes (KNOWN-ISSUES.md, Phase 13 Day 157)");
         return;
 #else
-        if (::geteuid() == 0) {
+        if (::geteuid() == 0)
+        {
             SUCCEED("root writes anywhere");
             return;
         }
@@ -516,27 +581,31 @@ TEST_CASE("A cache directory that cannot be used never stops the device", "[rhi]
         CHECK_FALSE(t.device->SavePipelineCache());
 #endif
     }
-    SECTION("the path is too long to hold a cache file name") {
+    SECTION("the path is too long to hold a cache file name")
+    {
         const engine_test::Text long_name = engine_test::Repeated(600, 'd');
         const engine_test::Text dir = engine_test::Concat(temp_dir.Native().View(), "/", long_name.View());
         TriangleDevice t(dir.CStr());
-        CHECK(t.device->PipelineCachePath()[0] == '\0'); // running without a cache
+        CHECK(t.device->PipelineCachePath()[0] == '\0');  // running without a cache
         CHECK(t.device->CreateGraphicsPipeline(t.Desc(Format::RGBA8_UNorm)).IsValid());
     }
 }
 
-TEST_CASE("The pipeline cache is written at shutdown, reused, and ignored when damaged", "[rhi][vulkan][gpu][pipeline][cache]") {
+TEST_CASE("The pipeline cache is written at shutdown, reused, and ignored when damaged",
+          "[rhi][vulkan][gpu][pipeline][cache]")
+{
     io_test::TempDir temp_dir;
     char dir[512];
     REQUIRE(temp_dir.Native().Length() < sizeof(dir));
-    FormatTo(dir, sizeof(dir), "%s", temp_dir.Native().CStr()); // the TempDir removes everything, whatever a section left behind
+    FormatTo(dir, sizeof(dir), "%s",
+             temp_dir.Native().CStr());  // the TempDir removes everything, whatever a section left behind
     char file[512] = {};
 
     {
         TriangleDevice t(dir);
         const VulkanDevice::PipelineCacheStats s = t.device->PipelineCache();
         CHECK(s.enabled);
-        CHECK(s.loaded_bytes == 0); // nothing there yet
+        CHECK(s.loaded_bytes == 0);  // nothing there yet
         CHECK_FALSE(s.rejected);
         CStrCopyN(file, t.device->PipelineCachePath(), sizeof(file) - 1);
         REQUIRE(file[0] != '\0');
@@ -544,7 +613,7 @@ TEST_CASE("The pipeline cache is written at shutdown, reused, and ignored when d
         const PipelineHandle p = t.device->CreateGraphicsPipeline(t.Desc(Format::RGBA8_UNorm));
         CHECK(p.IsValid());
         t.device->DestroyPipeline(p);
-    } // saved here
+    }  // saved here
     io::FileInfo st;
     REQUIRE(io::Stat(io::Path(StringView(file)), &st).Ok());
     const u64 first_size = st.size;
@@ -553,11 +622,12 @@ TEST_CASE("The pipeline cache is written at shutdown, reused, and ignored when d
     {
         TriangleDevice t(dir);
         const VulkanDevice::PipelineCacheStats s = t.device->PipelineCache();
-        CHECK(s.loaded_bytes == first_size); // reused
+        CHECK(s.loaded_bytes == first_size);  // reused
         CHECK_FALSE(s.rejected);
     }
 
-    SECTION("the cache can be saved while the device runs") {
+    SECTION("the cache can be saved while the device runs")
+    {
         {
             TriangleDevice t(dir);
             const PipelineHandle p = t.device->CreateGraphicsPipeline(t.Desc(Format::RGBA8_UNorm));
@@ -569,7 +639,8 @@ TEST_CASE("The pipeline cache is written at shutdown, reused, and ignored when d
             t.device->DestroyPipeline(p);
         }
     }
-    SECTION("a cache path that is a directory is ignored, not read") {
+    SECTION("a cache path that is a directory is ignored, not read")
+    {
         REQUIRE(io::Remove(io::Path(StringView(file))).Ok());
         REQUIRE(io::CreateDirectory(io::Path(StringView(file))).Ok());
         {
@@ -578,9 +649,11 @@ TEST_CASE("The pipeline cache is written at shutdown, reused, and ignored when d
             CHECK(t.device->CreateGraphicsPipeline(t.Desc(Format::RGBA8_UNorm)).IsValid());
         }
         REQUIRE(io::Remove(io::Path(StringView(file))).Ok());
-        REQUIRE(io::Stat(io::Path(StringView(file)), &st).Is(io::Error::NotFound)); // saving into the directory failed, and nothing was left behind
+        REQUIRE(io::Stat(io::Path(StringView(file)), &st)
+                    .Is(io::Error::NotFound));  // saving into the directory failed, and nothing was left behind
     }
-    SECTION("a truncated file is ignored and replaced") {
+    SECTION("a truncated file is ignored and replaced")
+    {
         REQUIRE(TruncateCacheFile(file, 10));
         {
             VulkanPipelineTestQuietLog quiet;
@@ -588,24 +661,26 @@ TEST_CASE("The pipeline cache is written at shutdown, reused, and ignored when d
             const VulkanDevice::PipelineCacheStats s = t.device->PipelineCache();
             CHECK(s.rejected);
             CHECK(s.loaded_bytes == 0);
-            CHECK(t.device->CreateGraphicsPipeline(t.Desc(Format::RGBA8_UNorm)).IsValid()); // still works
+            CHECK(t.device->CreateGraphicsPipeline(t.Desc(Format::RGBA8_UNorm)).IsValid());  // still works
         }
         TriangleDevice again(dir);
-        CHECK(again.device->PipelineCache().loaded_bytes > 32); // the good file was written back
+        CHECK(again.device->PipelineCache().loaded_bytes > 32);  // the good file was written back
         CHECK_FALSE(again.device->PipelineCache().rejected);
     }
-    SECTION("a file for another device is ignored") {
+    SECTION("a file for another device is ignored")
+    {
         io::FilePtr f;
         REQUIRE(io::File::Open(io::Path(StringView(file)), io::OpenMode::ReadWrite, io::kOpenNone, &f).Ok());
         const byte bogus[4] = {0xde, 0xad, 0xbe, 0xef};
-        REQUIRE(f->Write(bogus, 4, 8).Ok()); // the vendor id
+        REQUIRE(f->Write(bogus, 4, 8).Ok());  // the vendor id
         REQUIRE(f->Close().Ok());
         VulkanPipelineTestQuietLog quiet;
         TriangleDevice t(dir);
         CHECK(t.device->PipelineCache().rejected);
         CHECK(t.device->PipelineCache().loaded_bytes == 0);
     }
-    SECTION("garbage with a plausible header is survived") {
+    SECTION("garbage with a plausible header is survived")
+    {
         io::FilePtr f;
         REQUIRE(io::File::Open(io::Path(StringView(file)), io::OpenMode::ReadWrite, io::kOpenNone, &f).Ok());
         const byte junk[64] = {0xff};
@@ -615,13 +690,15 @@ TEST_CASE("The pipeline cache is written at shutdown, reused, and ignored when d
         TriangleDevice t(dir);
         CHECK(t.device->CreateGraphicsPipeline(t.Desc(Format::RGBA8_UNorm)).IsValid());
     }
-    SECTION("an empty file is ignored") {
+    SECTION("an empty file is ignored")
+    {
         REQUIRE(TruncateCacheFile(file, 0));
         VulkanPipelineTestQuietLog quiet;
         TriangleDevice t(dir);
         CHECK(t.device->PipelineCache().loaded_bytes == 0);
     }
-    SECTION("disabling the cache leaves the file alone") {
+    SECTION("disabling the cache leaves the file alone")
+    {
         TriangleDevice t(dir, /*cache=*/false);
         CHECK_FALSE(t.device->PipelineCache().enabled);
         CHECK(t.device->PipelineCachePath()[0] == '\0');

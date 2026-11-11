@@ -6,10 +6,12 @@
 #include "settings/config_store.h"
 #include "settings/config_text.h"
 
-namespace engine_placeholder::settings {
+namespace engine_placeholder::settings
+{
 
 /// Options of a [[settings::FileConfigStore]].
-struct FileStoreOptions {
+struct FileStoreOptions
+{
     /// Permission bits of a file the store creates (`0600` for a user's file, `0644` for a project's).
     u32 permissions = 0600;
     /// Create the file's missing parent directories on `Commit`.
@@ -18,26 +20,30 @@ struct FileStoreOptions {
     bool keep_backup = true;
     /// The largest file `Load` reads, in bytes; a larger one is `TooLong`.
     u64 max_bytes = u64{8} << 20;
-    /// Never write: `Set`, `Remove` and `Commit` say `ReadOnly` (a layer of shipped defaults or a project file the program must not change).
+    /// Never write: `Set`, `Remove` and `Commit` say `ReadOnly` (a layer of shipped defaults or a project file the
+    /// program must not change).
     bool read_only = false;
 };
 
 /// A [[settings::ConfigStore]] over one text file (see [[settings::ConfigDocument]] for the format).
 ///
-/// The store reads the file whole on `Load` (a missing file is an empty store). `Set` and `Remove` edit the in-memory document, so a change
-/// rewrites only the bytes it touches. `Commit` writes the document with `io::WriteFileAtomic` after copying the previous file to `.bak`.
+/// The store reads the file whole on `Load` (a missing file is an empty store). `Set` and `Remove` edit the in-memory
+/// document, so a change rewrites only the bytes it touches. `Commit` writes the document with `io::WriteFileAtomic`
+/// after copying the previous file to `.bak`.
 ///
-/// **A file that cannot be read is never overwritten by accident.** If `Load` finds lines it cannot understand, the store is *damaged*: the
-/// lines it could read are available, the rest is kept verbatim, and `Commit` refuses with `Damaged` unless `CommitOptions::replace_damaged` is
-/// set (the damaged text is then in the `.bak` file).
+/// **A file that cannot be read is never overwritten by accident.** If `Load` finds lines it cannot understand, the
+/// store is *damaged*: the lines it could read are available, the rest is kept verbatim, and `Commit` refuses with
+/// `Damaged` unless `CommitOptions::replace_damaged` is set (the damaged text is then in the `.bak` file).
 ///
-/// If a `Load` could not read the file at all (permission, size cap, I/O), `Commit` refuses with that error until a `Load` succeeds.
+/// If a `Load` could not read the file at all (permission, size cap, I/O), `Commit` refuses with that error until a
+/// `Load` succeeds.
 ///
 /// Two stores over one file do not merge: the last `Commit` wins as a whole, and a reader never sees a torn file.
 ///
 /// - Thread-safety: thread-compatible.
 /// - Ownership: owns its document; the file belongs to the file system.
-class FileConfigStore final : public ConfigStore {
+class FileConfigStore final : public ConfigStore
+{
 public:
     /// Makes a store over `path`; nothing is read until `Load`.
     ///
@@ -66,11 +72,12 @@ private:
     FileStoreOptions options_;
     ConfigDocument doc_;
     ConfigReport report_;
-    Vector<char> on_disk_; // the bytes the file held at the last Load or Commit (the next .bak)
-    bool exists_ = false;  // the file existed then
-    bool backup_written_ = false; // .bak already holds the file as it was found (set by the first Commit that replaced it)
+    Vector<char> on_disk_;         // the bytes the file held at the last Load or Commit (the next .bak)
+    bool exists_ = false;          // the file existed then
+    bool backup_written_ = false;  // .bak already holds the file as it was found (set by the first Commit that replaced
+                                   // it)
     u32 staged_ = 0;
-    StoreError load_error_ = StoreError::None; // why the last Load could not read the file
+    StoreError load_error_ = StoreError::None;  // why the last Load could not read the file
 };
 
-} // namespace engine_placeholder::settings
+}  // namespace engine_placeholder::settings

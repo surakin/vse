@@ -1,8 +1,10 @@
 #include "storage/component_record.h"
 
-namespace engine_placeholder::storage {
+namespace engine_placeholder::storage
+{
 
-ComponentRecord OpaqueComponent::View() const {
+ComponentRecord OpaqueComponent::View() const
+{
     ComponentRecord r;
     r.id = id;
     r.version = version;
@@ -10,21 +12,26 @@ ComponentRecord OpaqueComponent::View() const {
     return r;
 }
 
-OpaqueComponent OpaqueComponent::From(const ComponentRecord& record) {
+OpaqueComponent OpaqueComponent::From(const ComponentRecord& record)
+{
     OpaqueComponent o;
     o.id = record.id;
     o.version = record.version;
-    for (usize i = 0; i < record.bytes.Size(); ++i) {
+    for (usize i = 0; i < record.bytes.Size(); ++i)
+    {
         o.bytes.Push(record.bytes[i]);
     }
     return o;
 }
 
-Status WriteComponentRecord(const ComponentRecord& record, const CodecLimits& limits, bytes::ByteWriter& out) {
-    if (record.id == 0 || record.version == 0) {
+Status WriteComponentRecord(const ComponentRecord& record, const CodecLimits& limits, bytes::ByteWriter& out)
+{
+    if (record.id == 0 || record.version == 0)
+    {
         return Status::Make(ErrorCode::Invalid, "a record needs a nonzero id and version");
     }
-    if (record.bytes.Size() > limits.max_record_bytes) {
+    if (record.bytes.Size() > limits.max_record_bytes)
+    {
         return Status::Make(ErrorCode::LimitExceeded, "a record is larger than the record limit");
     }
     out.WriteU32(record.id);
@@ -34,18 +41,30 @@ Status WriteComponentRecord(const ComponentRecord& record, const CodecLimits& li
     return Status::Success();
 }
 
-Status ReadComponentRecord(bytes::ByteReader& in, const CodecLimits& limits, ComponentRecord* record) {
-    bytes::ByteReader probe = in; // a failed read leaves `in` where it was
+Status ReadComponentRecord(bytes::ByteReader& in, const CodecLimits& limits, ComponentRecord* record)
+{
+    bytes::ByteReader probe = in;  // a failed read leaves `in` where it was
     ComponentRecord r;
     bytes::ByteError e = probe.ReadU32(&r.id);
-    if (e == bytes::ByteError::Ok) e = probe.ReadU32(&r.version);
+    if (e == bytes::ByteError::Ok)
+    {
+        e = probe.ReadU32(&r.version);
+    }
     u64 length = 0;
-    if (e == bytes::ByteError::Ok) e = probe.ReadLength(limits.max_record_bytes, &length);
-    if (e == bytes::ByteError::Ok) e = probe.ReadBytes(static_cast<usize>(length), &r.bytes);
-    if (e != bytes::ByteError::Ok) {
+    if (e == bytes::ByteError::Ok)
+    {
+        e = probe.ReadLength(limits.max_record_bytes, &length);
+    }
+    if (e == bytes::ByteError::Ok)
+    {
+        e = probe.ReadBytes(static_cast<usize>(length), &r.bytes);
+    }
+    if (e != bytes::ByteError::Ok)
+    {
         return detail::FromByteError(e);
     }
-    if (r.id == 0 || r.version == 0) {
+    if (r.id == 0 || r.version == 0)
+    {
         return Status::Make(ErrorCode::Corrupt, "a record has id 0 or version 0");
     }
     in = probe;
@@ -53,4 +72,4 @@ Status ReadComponentRecord(bytes::ByteReader& in, const CodecLimits& limits, Com
     return Status::Success();
 }
 
-} // namespace engine_placeholder::storage
+}  // namespace engine_placeholder::storage

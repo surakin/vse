@@ -2,22 +2,24 @@
 
 //! The transient pool: textures and buffers a frame's render graph needs, kept between frames and reused.
 //!
-//! A graph declares a transient resource by description only. When the graph runs it takes a real texture or buffer with
-//! an equal description from this pool, or creates one, and gives it back afterwards, so a steady-state frame creates
-//! nothing. A pooled resource also remembers the state it was left in, because the next user starts from there. One that
-//! nobody asks for during a number of frames is destroyed.
+//! A graph declares a transient resource by description only. When the graph runs it takes a real texture or buffer
+//! with an equal description from this pool, or creates one, and gives it back afterwards, so a steady-state frame
+//! creates nothing. A pooled resource also remembers the state it was left in, because the next user starts from there.
+//! One that nobody asks for during a number of frames is destroyed.
 
 #include "containers/vector.h"
 #include "renderer/device_resources.h"
 #include "rhi/rhi.h"
 #include "types.h"
 
-namespace engine_placeholder::renderer {
+namespace engine_placeholder::renderer
+{
 
 /// Capacities and aging of a [[renderer::TransientPool]].
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct TransientPoolDesc {
+struct TransientPoolDesc
+{
     /// Most textures the pool holds, in use or idle.
     u32 max_textures = 128;
     /// Most buffers the pool holds, in use or idle.
@@ -29,7 +31,8 @@ struct TransientPoolDesc {
 /// A texture taken from the pool and the state it is in.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct PooledTexture {
+struct PooledTexture
+{
     /// The texture; invalid if the request failed.
     rhi::TextureHandle handle;
     /// The state the texture is in now; a fresh texture is `Undefined`.
@@ -39,7 +42,8 @@ struct PooledTexture {
 /// A buffer taken from the pool and the state it is in.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct PooledBuffer {
+struct PooledBuffer
+{
     /// The buffer; invalid if the request failed.
     rhi::BufferHandle handle;
     /// The state the buffer is in now; a fresh buffer is `Undefined`.
@@ -49,7 +53,8 @@ struct PooledBuffer {
 /// What the pool has done, for tests and tools.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct TransientPoolStats {
+struct TransientPoolStats
+{
     /// Textures created over the pool's life.
     u32 textures_created = 0;
     /// Textures handed out from the idle list instead of created.
@@ -80,9 +85,11 @@ struct TransientPoolStats {
 /// acquire and release calls (the render graph makes them), `EndFrame`.
 ///
 /// - Thread-safety: thread-compatible.
-/// - Ownership: borrows the device, which must outlive the pool; owns the resources it created and destroys them through
+/// - Ownership: borrows the device, which must outlive the pool; owns the resources it created and destroys them
+/// through
 ///   the device (so the GPU may still be using them) when it is destroyed or they age out.
-class TransientPool final : public Recreatable {
+class TransientPool final : public Recreatable
+{
 public:
     /// Creates an empty pool.
     ///
@@ -195,4 +202,4 @@ private:
     TransientPoolStats stats_;
 };
 
-} // namespace engine_placeholder::renderer
+}  // namespace engine_placeholder::renderer

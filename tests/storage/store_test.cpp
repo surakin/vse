@@ -5,10 +5,13 @@
 #include "storage/storage_options.h"
 #include "storage/world_storage.h"
 
-namespace engine_placeholder::storage {
-namespace {
+namespace engine_placeholder::storage
+{
+namespace
+{
 
-struct MemoryStoreFixture {
+struct MemoryStoreFixture
+{
     static constexpr bool kInjectsFailure = true;
     static constexpr bool kCanCorrupt = true;
     static constexpr bool kReadersSeeCommitted = true;
@@ -23,10 +26,11 @@ private:
 
 STORE_CONFORMANCE_CASES(MemoryStoreFixture)
 
-TEST_CASE("Store: the hash is FNV-1a and the record clones", "[storage][store]") {
+TEST_CASE("Store: the hash is FNV-1a and the record clones", "[storage][store]")
+{
     CHECK(HashBytes(ByteSpan()) == 14695981039346656037ull);
     const byte a[] = {static_cast<byte>('a')};
-    CHECK(HashBytes(ByteSpan(a, 1)) == 0xaf63dc4c8601ec8cull); // the published FNV-1a 64 of "a"
+    CHECK(HashBytes(ByteSpan(a, 1)) == 0xaf63dc4c8601ec8cull);  // the published FNV-1a 64 of "a"
     const EntityRecord r = conformance::Rec(7, 3, 5);
     const EntityRecord c = r.Clone();
     CHECK(c.key == r.key);
@@ -35,7 +39,8 @@ TEST_CASE("Store: the hash is FNV-1a and the record clones", "[storage][store]")
     CHECK(c.blob.Data() != r.blob.Data());
 }
 
-TEST_CASE("Store: a cancel token stays set until reset; options start as a full save of everything", "[storage][store]") {
+TEST_CASE("Store: a cancel token stays set until reset; options start as a full save of everything", "[storage][store]")
+{
     CancelToken token;
     CHECK_FALSE(token.IsCancelled());
     token.Cancel();
@@ -51,14 +56,18 @@ TEST_CASE("Store: a cancel token stays set until reset; options start as a full 
     CHECK(load.missing == MissingPolicy::Fail);
 }
 
-TEST_CASE("Store: WorldStorage lists and deletes through the store; with no registered component save and load are Invalid", "[storage][store]") {
+TEST_CASE(
+    "Store: WorldStorage lists and deletes through the store; with no registered component save and load are Invalid",
+    "[storage][store]")
+{
     ComponentRegistry registry;
     MemoryStore store;
     WorldStorage storage(registry, store);
-    for (u64 k = 1; k <= 5; ++k) {
+    for (u64 k = 1; k <= 5; ++k)
+    {
         REQUIRE(store.Put(conformance::Rec(k, 1)).Ok());
     }
-    const EntityKey gone[] = {EntityKey{0, 2}, EntityKey{0, 4}, EntityKey{0, 99}}; // 99 is not there: not an error
+    const EntityKey gone[] = {EntityKey{0, 2}, EntityKey{0, 4}, EntityKey{0, 99}};  // 99 is not there: not an error
     REQUIRE(storage.Delete(Span<const EntityKey>(gone, 3)).Ok());
     Vector<EntityKey> keys;
     REQUIRE(storage.List(KeyRange(), 10, &keys).Ok());
@@ -69,22 +78,24 @@ TEST_CASE("Store: WorldStorage lists and deletes through the store; with no regi
     ecs::World world;
     KeyIndex index;
     Report report;
-    CHECK(storage.Save(world, index, SaveOptions(), &report).Is(ErrorCode::Invalid)); // an empty registry
+    CHECK(storage.Save(world, index, SaveOptions(), &report).Is(ErrorCode::Invalid));  // an empty registry
     CHECK(storage.Load(world, index, LoadOptions(), &report).Is(ErrorCode::Invalid));
 }
 
-TEST_CASE("Store: a failed Delete leaves the store as it was", "[storage][store]") {
+TEST_CASE("Store: a failed Delete leaves the store as it was", "[storage][store]")
+{
     ComponentRegistry registry;
     MemoryStore store;
     WorldStorage storage(registry, store);
-    for (u64 k = 1; k <= 3; ++k) {
+    for (u64 k = 1; k <= 3; ++k)
+    {
         REQUIRE(store.Put(conformance::Rec(k, 1)).Ok());
     }
     const EntityKey gone[] = {EntityKey{0, 1}, EntityKey{0, 2}};
-    store.FailAfter(3); // Begin, Remove, then the second Remove fails
+    store.FailAfter(3);  // Begin, Remove, then the second Remove fails
     CHECK(storage.Delete(Span<const EntityKey>(gone, 2)).Is(ErrorCode::Io));
     CHECK(conformance::CountOf(store) == 3);
 }
 
-} // namespace
-} // namespace engine_placeholder::storage
+}  // namespace
+}  // namespace engine_placeholder::storage

@@ -9,11 +9,13 @@ using namespace engine_placeholder;
 using namespace engine_placeholder::text;
 using text_test::Opened;
 
-namespace {
+namespace
+{
 
-} // namespace
+}  // namespace
 
-TEST_CASE("The shipped font opens from a path and from bytes", "[text][font]") {
+TEST_CASE("The shipped font opens from a path and from bytes", "[text][font]")
+{
     FontLibrary library;
     REQUIRE(library.Initialize().Ok());
     Font from_path;
@@ -29,11 +31,13 @@ TEST_CASE("The shipped font opens from a path and from bytes", "[text][font]") {
     CHECK(from_bytes.Id() != 0);
 }
 
-TEST_CASE("Metrics grow with the pixel size", "[text][font]") {
+TEST_CASE("Metrics grow with the pixel size", "[text][font]")
+{
     Opened o;
     f32 last_ascent = 0;
     f32 last_height = 0;
-    for (u32 size : {12u, 16u, 24u, 48u}) {
+    for (u32 size : {12u, 16u, 24u, 48u})
+    {
         REQUIRE(o.font.SetPixelSize(size).Ok());
         const FontMetrics m = o.font.Metrics();
         CHECK(m.ascent > last_ascent);
@@ -45,7 +49,8 @@ TEST_CASE("Metrics grow with the pixel size", "[text][font]") {
     }
 }
 
-TEST_CASE("Pixel sizes of 0 and above the sanity limit are refused; large ones are accepted", "[text][font]") {
+TEST_CASE("Pixel sizes of 0 and above the sanity limit are refused; large ones are accepted", "[text][font]")
+{
     Opened o;
     CHECK(o.font.SetPixelSize(0).Is(Error::InvalidArgument));
     CHECK(o.font.SetPixelSize(kMaxPixelSize + 1).Is(Error::InvalidArgument));
@@ -57,23 +62,26 @@ TEST_CASE("Pixel sizes of 0 and above the sanity limit are refused; large ones a
     CHECK(closed.SetPixelSize(16).Is(Error::InvalidArgument));
 }
 
-TEST_CASE("Glyph lookup: real glyphs, .notdef, and invalid code points", "[text][font]") {
+TEST_CASE("Glyph lookup: real glyphs, .notdef, and invalid code points", "[text][font]")
+{
     Opened o;
-    for (char32 c : {U'H', U'e', U'l', U'o', U' '}) {
+    for (char32 c : {U'H', U'e', U'l', U'o', U' '})
+    {
         CHECK(o.font.FindGlyph(c) != 0);
         CHECK(o.font.HasGlyph(c));
     }
     CHECK(o.font.FindGlyph(U'H') != o.font.FindGlyph(U'e'));
-    CHECK(o.font.FindGlyph(0x4E2D) == 0);      // CJK: not in the font
+    CHECK(o.font.FindGlyph(0x4E2D) == 0);  // CJK: not in the font
     CHECK_FALSE(o.font.HasGlyph(0x4E2D));
-    CHECK(o.font.FindGlyph(0xD800) == 0);      // surrogate
-    CHECK(o.font.FindGlyph(0x110000) == 0);    // above the Unicode range
+    CHECK(o.font.FindGlyph(0xD800) == 0);    // surrogate
+    CHECK(o.font.FindGlyph(0x110000) == 0);  // above the Unicode range
     CHECK(o.font.FindGlyph(0xFFFFFFFFu) == 0);
-    CHECK(o.font.FindGlyph(0x0416) != 0);      // Cyrillic Zhe
-    CHECK(o.font.FindGlyph(0x03A9) != 0);      // Greek Omega
+    CHECK(o.font.FindGlyph(0x0416) != 0);  // Cyrillic Zhe
+    CHECK(o.font.FindGlyph(0x03A9) != 0);  // Greek Omega
 }
 
-TEST_CASE("Glyph metrics: advances, boxes, and the space", "[text][font]") {
+TEST_CASE("Glyph metrics: advances, boxes, and the space", "[text][font]")
+{
     Opened o;
     REQUIRE(o.font.SetPixelSize(32).Ok());
     const GlyphMetrics h = o.font.Metrics(o.font.FindGlyph(U'H'));
@@ -87,14 +95,15 @@ TEST_CASE("Glyph metrics: advances, boxes, and the space", "[text][font]") {
     CHECK(space.height == 0);
     const GlyphMetrics w = o.font.Metrics(o.font.FindGlyph(U'W'));
     CHECK(w.advance > h.advance);
-    CHECK(o.font.Metrics(o.font.GlyphCount() + 5).advance == 0); // out of range: zeroes
+    CHECK(o.font.Metrics(o.font.GlyphCount() + 5).advance == 0);  // out of range: zeroes
     // Doubling the size roughly doubles an advance.
     const f32 a32 = h.advance;
     REQUIRE(o.font.SetPixelSize(64).Ok());
     CHECK(o.font.Metrics(o.font.FindGlyph(U'H')).advance > a32 * 1.8f);
 }
 
-TEST_CASE("Kerning pulls AV together and leaves ab alone", "[text][font]") {
+TEST_CASE("Kerning pulls AV together and leaves ab alone", "[text][font]")
+{
     Opened o;
     REQUIRE(o.font.SetPixelSize(48).Ok());
     const f32 av = o.font.Kerning(o.font.FindGlyph(U'A'), o.font.FindGlyph(U'V'));
@@ -103,7 +112,8 @@ TEST_CASE("Kerning pulls AV together and leaves ab alone", "[text][font]") {
     CHECK(ab == 0);
 }
 
-TEST_CASE("Outlines: contour counts and the box against the metrics", "[text][font]") {
+TEST_CASE("Outlines: contour counts and the box against the metrics", "[text][font]")
+{
     Opened o;
     Outline outline;
     REQUIRE(o.font.LoadOutline(o.font.FindGlyph(U'o'), &outline).Ok());
@@ -125,14 +135,16 @@ TEST_CASE("Outlines: contour counts and the box against the metrics", "[text][fo
     CHECK(outline.points.Size() == 0);
 }
 
-TEST_CASE("Bad input is refused with distinct statuses", "[text][font]") {
+TEST_CASE("Bad input is refused with distinct statuses", "[text][font]")
+{
     FontLibrary library;
     REQUIRE(library.Initialize().Ok());
     Vector<byte> good = text_test::FontBytes();
     Font font;
     CHECK(Font::Open(library, ByteSpan(good.Data(), 0), FontOptions{}, &font).Is(Error::Empty));
     const char text[] = "This is a plain text file and not a font at all, just words.";
-    const Status not_font = Font::Open(library, ByteSpan(reinterpret_cast<const byte*>(text), sizeof(text)), FontOptions{}, &font);
+    const Status not_font = Font::Open(library, ByteSpan(reinterpret_cast<const byte*>(text), sizeof(text)),
+                                       FontOptions{}, &font);
     INFO(static_cast<int>(not_font.error) << " " << not_font.message);
     CHECK(not_font.Is(Error::NotAFont));
     Status truncated = Font::Open(library, ByteSpan(good.Data(), good.Size() / 3), FontOptions{}, &font);
@@ -149,7 +161,8 @@ TEST_CASE("Bad input is refused with distinct statuses", "[text][font]") {
     CHECK(Font::Open(cold, ByteSpan(good.Data(), good.Size()), FontOptions{}, &font).Is(Error::InvalidArgument));
 }
 
-TEST_CASE("A font moves and closes; the library sees every block returned", "[text][font]") {
+TEST_CASE("A font moves and closes; the library sees every block returned", "[text][font]")
+{
     FontLibrary library;
     REQUIRE(library.Initialize().Ok());
     {
@@ -165,7 +178,7 @@ TEST_CASE("A font moves and closes; the library sees every block returned", "[te
         CHECK(c.FindGlyph(U'x') != 0);
         c.Close();
         CHECK_FALSE(c.IsOpen());
-        c.Close(); // harmless
+        c.Close();  // harmless
     }
     // Only the library's own module tables are live now; the fonts' blocks are back.
     const LibraryAllocationStats before = library.Stats();
@@ -177,10 +190,12 @@ TEST_CASE("A font moves and closes; the library sees every block returned", "[te
     CHECK(library.Stats().live_bytes_at_end == before.live_bytes_at_end);
 }
 
-TEST_CASE("A failed allocation at any point leaves nothing behind", "[text][font]") {
+TEST_CASE("A failed allocation at any point leaves nothing behind", "[text][font]")
+{
     Vector<byte> good = text_test::FontBytes();
     u32 failures = 0;
-    for (u64 n = 0; n < 400; ++n) {
+    for (u64 n = 0; n < 400; ++n)
+    {
         FontLibrary library;
         REQUIRE(library.Initialize().Ok());
         const u64 live_before = library.Stats().live_bytes_at_end;
@@ -188,12 +203,16 @@ TEST_CASE("A failed allocation at any point leaves nothing behind", "[text][font
         {
             Font font;
             const Status status = Font::Open(library, ByteSpan(good.Data(), good.Size()), FontOptions{}, &font);
-            if (status.Ok()) {
-                // Later allocations fail too: the unhinted outline path must stay safe. (Hinted glyph loading is left out: FreeType 2.15.0's auto-hinter
-                // dereferences a null hash table when an allocation fails during the first glyph load; KNOWN-ISSUES.md.)
+            if (status.Ok())
+            {
+                // Later allocations fail too: the unhinted outline path must stay safe. (Hinted glyph loading is left
+                // out: FreeType 2.15.0's auto-hinter dereferences a null hash table when an allocation fails during the
+                // first glyph load; KNOWN-ISSUES.md.)
                 Outline outline;
                 (void)font.LoadOutline(font.FindGlyph(U'g'), &outline);
-            } else {
+            }
+            else
+            {
                 ++failures;
                 CHECK((status.Is(Error::OutOfMemory) || status.Is(Error::Corrupt)));
                 CHECK_FALSE(font.IsOpen());
@@ -202,35 +221,55 @@ TEST_CASE("A failed allocation at any point leaves nothing behind", "[text][font
         library.FailAllocationsAfter(~u64{0});
         CHECK(library.Stats().live_bytes_at_end == live_before);
     }
-    CHECK(failures > 5); // the injection really bit
+    CHECK(failures > 5);  // the injection really bit
 }
 
-TEST_CASE("Separate libraries and fonts work in parallel from several threads", "[text][font]") {
+TEST_CASE("Separate libraries and fonts work in parallel from several threads", "[text][font]")
+{
     Vector<byte> good = text_test::FontBytes();
     Atomic<u32> ok{0};
     Vector<Thread> threads;
-    for (u32 t = 0; t < 4; ++t) {
-        threads.Push(Thread([&good, &ok, t] {
-            FontLibrary library;
-            if (!library.Initialize().Ok()) return;
-            Font font;
-            if (!Font::Open(library, ByteSpan(good.Data(), good.Size()), FontOptions{}, &font).Ok()) return;
-            for (u32 i = 0; i < 50; ++i) {
-                if (!font.SetPixelSize(10 + t + i).Ok()) return;
-                (void)font.Metrics(font.FindGlyph(U'a' + (i % 26)));
-            }
-            ok.FetchAdd(1);
-        }));
+    for (u32 t = 0; t < 4; ++t)
+    {
+        threads.Push(Thread(
+            [&good, &ok, t]
+            {
+                FontLibrary library;
+                if (!library.Initialize().Ok())
+                {
+                    return;
+                }
+                Font font;
+                if (!Font::Open(library, ByteSpan(good.Data(), good.Size()), FontOptions{}, &font).Ok())
+                {
+                    return;
+                }
+                for (u32 i = 0; i < 50; ++i)
+                {
+                    if (!font.SetPixelSize(10 + t + i).Ok())
+                    {
+                        return;
+                    }
+                    (void)font.Metrics(font.FindGlyph(U'a' + (i % 26)));
+                }
+                ok.FetchAdd(1);
+            }));
     }
-    for (usize i = 0; i < threads.Size(); ++i) threads[i].Join();
+    for (usize i = 0; i < threads.Size(); ++i)
+    {
+        threads[i].Join();
+    }
     CHECK(ok.Load() == 4);
 }
 
-TEST_CASE("A glyph's pixel box contains its whole outline, fractional bearing included", "[text][font]") {
+TEST_CASE("A glyph's pixel box contains its whole outline, fractional bearing included", "[text][font]")
+{
     Opened o;
-    for (u32 size : {13u, 17u, 33u}) {
+    for (u32 size : {13u, 17u, 33u})
+    {
         REQUIRE(o.font.SetPixelSize(size).Ok());
-        for (char32 c = U'!'; c <= U'~'; ++c) {
+        for (char32 c = U'!'; c <= U'~'; ++c)
+        {
             const GlyphId g = o.font.FindGlyph(c);
             Outline outline;
             REQUIRE(o.font.LoadOutline(g, &outline).Ok());
@@ -239,12 +278,14 @@ TEST_CASE("A glyph's pixel box contains its whole outline, fractional bearing in
             const f32 outline_width = static_cast<f32>(outline.x_max - outline.x_min) * scale;
             INFO("size " << size << " glyph " << static_cast<u32>(c));
             CHECK(static_cast<f32>(m.width) >= outline_width - 0.6f);
-            CHECK(static_cast<f32>(m.height) >= static_cast<f32>(outline.y_max - outline.y_min) * scale - 1.0f); // light hinting fits heights to the grid
+            CHECK(static_cast<f32>(m.height) >= static_cast<f32>(outline.y_max - outline.y_min) * scale -
+                                                    1.0f);  // light hinting fits heights to the grid
         }
     }
 }
 
-TEST_CASE("OpenFile and Open of the same bytes give the same font", "[text][font]") {
+TEST_CASE("OpenFile and Open of the same bytes give the same font", "[text][font]")
+{
     FontLibrary library;
     REQUIRE(library.Initialize().Ok());
     Font a;

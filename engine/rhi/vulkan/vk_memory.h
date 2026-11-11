@@ -13,7 +13,8 @@
 //! There is no Vulkan type in this header's logic: the allocator talks to a [[rhi::vulkan::MemoryBackend]], which
 //! the Vulkan device implements and the tests replace with a fake.
 
-namespace engine_placeholder::rhi::vulkan {
+namespace engine_placeholder::rhi::vulkan
+{
 
 /// The most memory types and heaps the allocator tracks (the Vulkan limits).
 inline constexpr u32 kMaxMemoryTypes = 32;
@@ -23,7 +24,8 @@ inline constexpr u32 kMaxMemoryHeaps = 16;
 /// One memory type of the device, as plain data.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct MemoryTypeInfo {
+struct MemoryTypeInfo
+{
     /// Index of the heap this type allocates from.
     u32 heap_index = 0;
     /// Whether the memory is local to the GPU.
@@ -39,7 +41,8 @@ struct MemoryTypeInfo {
 /// One memory heap of the device, as plain data.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct MemoryHeapInfo {
+struct MemoryHeapInfo
+{
     /// Heap size in bytes.
     u64 size = 0;
     /// Whether the heap is GPU-local memory.
@@ -49,7 +52,8 @@ struct MemoryHeapInfo {
 /// The device's memory layout, as plain data.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct MemoryLayout {
+struct MemoryLayout
+{
     /// The memory types; only the first `type_count` are valid.
     MemoryTypeInfo types[kMaxMemoryTypes];
     /// Number of valid entries in `types`.
@@ -75,17 +79,19 @@ struct MemoryLayout {
 int SelectMemoryType(const MemoryLayout& layout, MemoryLocation location, u32 type_bits);
 
 /// The outcome of a memory allocation attempt.
-enum class MemoryResult : u8 {
-    Ok = 0,          ///< Allocated.
-    OutOfDeviceMemory, ///< The device (GPU) memory is exhausted.
-    OutOfHostMemory, ///< The host (CPU) memory is exhausted.
-    Failed,          ///< Any other failure: no suitable memory type, the allocation-count limit, or a driver error.
+enum class MemoryResult : u8
+{
+    Ok = 0,             ///< Allocated.
+    OutOfDeviceMemory,  ///< The device (GPU) memory is exhausted.
+    OutOfHostMemory,    ///< The host (CPU) memory is exhausted.
+    Failed,             ///< Any other failure: no suitable memory type, the allocation-count limit, or a driver error.
 };
 
 /// What a [[rhi::vulkan::MemoryBackend]] allocates for.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct BackendAllocation {
+struct BackendAllocation
+{
     /// Backend-specific handle of the memory object; opaque to the allocator.
     u64 handle = 0;
     /// The mapped pointer of the whole object if it was asked to be mapped, else null.
@@ -94,8 +100,10 @@ struct BackendAllocation {
 
 /// The allocator's source of real memory objects.
 ///
-/// - Thread-safety: thread-compatible; the allocator serializes its calls, so an implementation needs no locking of its own.
-class MemoryBackend {
+/// - Thread-safety: thread-compatible; the allocator serializes its calls, so an implementation needs no locking of its
+/// own.
+class MemoryBackend
+{
 public:
     virtual ~MemoryBackend() = default;
 
@@ -120,7 +128,8 @@ public:
 /// A range of memory handed out by the allocator.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct MemoryAllocation {
+struct MemoryAllocation
+{
     /// Backend handle of the memory object containing the range; 0 for an empty allocation.
     u64 memory = 0;
     /// Byte offset of the range inside that object.
@@ -131,7 +140,8 @@ struct MemoryAllocation {
     void* mapped = nullptr;
     /// The memory type index.
     u32 memory_type = 0;
-    /// Whether host writes are visible to the GPU without a flush (and device writes to the host without an invalidate).
+    /// Whether host writes are visible to the GPU without a flush (and device writes to the host without an
+    /// invalidate).
     bool coherent = false;
     /// Whether this range is a whole dedicated memory object.
     bool dedicated = false;
@@ -147,7 +157,8 @@ struct MemoryAllocation {
 /// What to allocate.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct MemoryRequest {
+struct MemoryRequest
+{
     /// Bytes needed.
     u64 size = 0;
     /// Required alignment in bytes; a power of two.
@@ -170,19 +181,22 @@ struct MemoryRequest {
 /// Tunables of the allocator.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct MemoryAllocatorConfig {
+struct MemoryAllocatorConfig
+{
     /// Size of a block, in bytes.
     u64 block_size = 64ull << 20;
     /// Size of a block in a device-local heap at least `large_heap_bytes` big.
     u64 large_block_size = 256ull << 20;
     /// Heap size from which `large_block_size` is used.
     u64 large_heap_bytes = 8ull << 30;
-    /// Requests larger than this fraction of a block (as a divisor: `block / dedicated_divisor`) get their own memory object.
+    /// Requests larger than this fraction of a block (as a divisor: `block / dedicated_divisor`) get their own memory
+    /// object.
     u32 dedicated_divisor = 2;
     /// The device's `maxMemoryAllocationCount`.
     u32 max_allocation_count = 4096;
     /// Memory objects kept in reserve below the limit for allocations made outside the allocator (swapchain images,
-    /// driver-internal objects); the allocator itself, dedicated objects included, stops at `max_allocation_count - headroom`.
+    /// driver-internal objects); the allocator itself, dedicated objects included, stops at `max_allocation_count -
+    /// headroom`.
     u32 allocation_headroom = 64;
     /// The device's `nonCoherentAtomSize`: ranges in host-visible but non-coherent memory are aligned and sized to a
     /// multiple of it, so flushing or invalidating one never touches a neighbor.
@@ -192,7 +206,8 @@ struct MemoryAllocatorConfig {
 /// Usage numbers for one heap.
 ///
 /// - Thread-safety: thread-compatible plain data (a snapshot).
-struct HeapStats {
+struct HeapStats
+{
     /// Bytes in memory objects allocated from the heap (blocks and dedicated objects).
     u64 allocated_bytes = 0;
     /// Bytes handed out to resources.
@@ -212,7 +227,8 @@ struct HeapStats {
 /// A snapshot of the allocator's state.
 ///
 /// - Thread-safety: thread-compatible plain data (a snapshot).
-struct MemoryStats {
+struct MemoryStats
+{
     /// Per-heap numbers; the first `heap_count` entries are valid.
     HeapStats heaps[kMaxMemoryHeaps];
     /// Number of valid entries in `heaps`.
@@ -226,7 +242,8 @@ struct MemoryStats {
 /// The free ranges of one memory block, with coalescing; the core of the allocator, exposed for testing.
 ///
 /// - Thread-safety: thread-compatible. Not synchronized.
-class FreeList {
+class FreeList
+{
 public:
     /// Creates a list with one free range covering `[0, size)`.
     explicit FreeList(u64 size);
@@ -245,7 +262,8 @@ public:
     /// - Param offset: the offset returned by `Allocate`.
     /// - Param size: the size passed to `Allocate`.
     /// - Returns: true on success.
-    /// - Fails: returns false, changing nothing, if the range overlaps free space already in the list (a double free) or
+    /// - Fails: returns false, changing nothing, if the range overlaps free space already in the list (a double free)
+    /// or
     ///   lies outside the block.
     bool Free(u64 offset, u64 size);
 
@@ -263,7 +281,8 @@ public:
     u64 RangeSize(usize i) const { return ranges_[i].size; }
 
 private:
-    struct Range {
+    struct Range
+    {
         u64 offset;
         u64 size;
     };
@@ -285,7 +304,8 @@ private:
 ///
 /// - Thread-safety: thread-safe. Calls are serialized by an internal mutex, including the backend's.
 /// - Ownership: borrows the backend, which must outlive it; frees every block on destruction.
-class MemoryAllocator {
+class MemoryAllocator
+{
 public:
     /// Creates an allocator over `layout` using `backend`.
     ///
@@ -300,10 +320,12 @@ public:
 
     /// Allocates memory for a resource.
     ///
-    /// - Param request: what is needed. In non-coherent host-visible memory the returned range is rounded up to the atom size.
+    /// - Param request: what is needed. In non-coherent host-visible memory the returned range is rounded up to the
+    /// atom size.
     /// - Param result: receives the outcome; may be null.
     /// - Returns: the allocation, empty on failure.
-    /// - Fails: an empty allocation, with the reason logged on `LogRhi` and given in `result`: no allowed memory type, the
+    /// - Fails: an empty allocation, with the reason logged on `LogRhi` and given in `result`: no allowed memory type,
+    /// the
     ///   allocation-count limit, or the backend failing. Exhaustion logs the per-heap breakdown.
     MemoryAllocation Allocate(const MemoryRequest& request, MemoryResult* result);
 
@@ -320,7 +342,8 @@ public:
     void LogStats() const;
 
 private:
-    struct Block {
+    struct Block
+    {
         u64 memory;
         void* mapped;
         u64 size;
@@ -328,7 +351,8 @@ private:
         UniquePtr<FreeList> free_list;
         bool alive;
     };
-    struct Pool {
+    struct Pool
+    {
         Vector<UniquePtr<Block>> blocks;
     };
 
@@ -344,17 +368,18 @@ private:
     MemoryBackend* backend_;
     mutable Mutex mutex_;
     Pool pools_[kMaxMemoryTypes * 2];
-    struct Dedicated {
+    struct Dedicated
+    {
         u64 memory;
         void* mapped;
         u64 size;
         u32 heap;
     };
-    Vector<Dedicated> dedicated_; // every live dedicated object, so teardown frees them and a double free is caught
+    Vector<Dedicated> dedicated_;  // every live dedicated object, so teardown frees them and a double free is caught
     u64 dedicated_bytes_[kMaxMemoryHeaps] = {};
     u32 dedicated_count_[kMaxMemoryHeaps] = {};
     u32 live_objects_ = 0;
     u64 objects_made_ = 0;
 };
 
-} // namespace engine_placeholder::rhi::vulkan
+}  // namespace engine_placeholder::rhi::vulkan

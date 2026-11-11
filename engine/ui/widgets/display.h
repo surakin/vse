@@ -6,26 +6,31 @@
 #include "ui/theme.h"
 #include "ui/widget.h"
 
-//! The display widgets (Phase 15, Day 195): image, progress bar, separator and panel. Labels are in `ui/widgets/label.h`, buttons in `ui/widgets/buttons.h`.
+//! The display widgets (Phase 15, Day 195): image, progress bar, separator and panel. Labels are in
+//! `ui/widgets/label.h`, buttons in `ui/widgets/buttons.h`.
 
-namespace engine_placeholder::ui {
+namespace engine_placeholder::ui
+{
 
 /// How an [[ui::Image]] fills its bounds.
-enum class ImageFit : u8 {
-    Stretch, ///< The image fills the bounds, distorted if the shapes differ.
-    Contain, ///< The whole image, scaled to fit, centered, keeping its shape.
-    Cover,   ///< The image scaled to cover the bounds, keeping its shape; the overflow is cut.
-    None,    ///< The natural size, centered; cut by the bounds when larger.
+enum class ImageFit : u8
+{
+    Stretch,  ///< The image fills the bounds, distorted if the shapes differ.
+    Contain,  ///< The whole image, scaled to fit, centered, keeping its shape.
+    Cover,    ///< The image scaled to cover the bounds, keeping its shape; the overflow is cut.
+    None,     ///< The natural size, centered; cut by the bounds when larger.
 };
 
 /// A picture by [[ui::ImageId]].
 ///
-/// The id is opaque to the toolkit (the renderer's texture registry resolves it); the natural size is given with the image. `Measure` reports the natural size. Cutting is done by
-/// narrowing the texture coordinates, so nothing is drawn outside the bounds.
+/// The id is opaque to the toolkit (the renderer's texture registry resolves it); the natural size is given with the
+/// image. `Measure` reports the natural size. Cutting is done by narrowing the texture coordinates, so nothing is drawn
+/// outside the bounds.
 ///
 /// - Thread-safety: owner-thread-only.
 /// - Ownership: owns nothing; the image is borrowed from whoever registered it.
-class Image : public Widget {
+class Image : public Widget
+{
 public:
     /// Makes an image widget with no picture.
     explicit Image(StringView name = StringView()) : Widget(name) {}
@@ -51,12 +56,14 @@ private:
 
 /// A bar that fills from the left with a value from 0 to 1, or a segment that slides while the progress is unknown.
 ///
-/// The colors and corner radius come from the `panel` style (the track) and the theme's accent color (the fill). The indeterminate segment moves with the surface clock, one pass per
-/// `kProgressPeriod` seconds, and the widget asks for `Update` only while it is indeterminate so that a still bar costs nothing.
+/// The colors and corner radius come from the `panel` style (the track) and the theme's accent color (the fill). The
+/// indeterminate segment moves with the surface clock, one pass per `kProgressPeriod` seconds, and the widget asks for
+/// `Update` only while it is indeterminate so that a still bar costs nothing.
 ///
 /// - Thread-safety: owner-thread-only.
 /// - Ownership: owns nothing.
-class ProgressBar : public Widget {
+class ProgressBar : public Widget
+{
 public:
     /// The seconds one pass of the indeterminate segment takes.
     static constexpr f32 kProgressPeriod = 1.2f;
@@ -97,7 +104,8 @@ private:
 ///
 /// - Thread-safety: owner-thread-only.
 /// - Ownership: owns nothing.
-class Separator : public Widget {
+class Separator : public Widget
+{
 public:
     /// Makes a separator.
     /// - Param vertical: whether the line is vertical (it divides a row) instead of horizontal.
@@ -115,7 +123,8 @@ private:
 ///
 /// - Thread-safety: owner-thread-only.
 /// - Ownership: owns its children.
-class Panel : public StackLayout {
+class Panel : public StackLayout
+{
 public:
     /// Makes a panel.
     explicit Panel(StringView name = StringView()) : StackLayout(name) {}
@@ -128,4 +137,4 @@ private:
     VariantId variant_ = 0;
 };
 
-} // namespace engine_placeholder::ui
+}  // namespace engine_placeholder::ui

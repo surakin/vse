@@ -13,7 +13,8 @@
 //! only what can be known without a device, against the RHI-wide ceilings in `rhi/limits.h`; the device's
 //! own limits and handle liveness are checked at creation.
 
-namespace engine_placeholder::rhi {
+namespace engine_placeholder::rhi
+{
 
 /// Returns the number of mip levels in a full chain for an image of the given extent: `floor(log2(max)) + 1`.
 ///
@@ -27,7 +28,8 @@ u32 MaxMipLevels(u32 width, u32 height, u32 depth = 1);
 ///
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: `debug_name` is borrowed for the duration of the call; the device copies it.
-struct BufferDesc {
+struct BufferDesc
+{
     /// Size in bytes; must be non-zero.
     u64 size = 0;
     /// What the buffer will be used for; at least one flag.
@@ -52,7 +54,8 @@ struct BufferDesc {
 ///
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: `debug_name` is borrowed for the duration of the call; the device copies it.
-struct TextureDesc {
+struct TextureDesc
+{
     /// 2D, 3D or (reserved) cube.
     TextureDimension dimension = TextureDimension::Tex2D;
     /// Width in texels; must be non-zero.
@@ -86,7 +89,8 @@ struct TextureDesc {
 ///
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: `debug_name` is borrowed for the duration of the call; the device copies it.
-struct SamplerDesc {
+struct SamplerDesc
+{
     /// Filter used when magnifying.
     FilterMode mag_filter = FilterMode::Linear;
     /// Filter used when minifying.
@@ -122,11 +126,13 @@ struct SamplerDesc {
     const char* Validate() const;
 };
 
-/// One shader module's bytecode in one format: a pointer and a size, normally into a minted `*.spv.inc` or `*.dxil.inc`.
+/// One shader module's bytecode in one format: a pointer and a size, normally into a minted `*.spv.inc` or
+/// `*.dxil.inc`.
 ///
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: `bytes` is borrowed; minted blobs are static.
-struct ShaderBlob {
+struct ShaderBlob
+{
     /// The format of `bytes`.
     ShaderFormat format = ShaderFormat::Spirv;
     /// The bytecode, or null for no blob. SPIR-V must be 4-byte aligned.
@@ -147,7 +153,8 @@ struct ShaderBlob {
 /// - Returns: a SPIR-V blob of `word_count * 4` bytes.
 /// - Fails: never.
 /// - Thread-safety: thread-safe.
-constexpr ShaderBlob SpirvBlob(const u32* words, usize word_count) {
+constexpr ShaderBlob SpirvBlob(const u32* words, usize word_count)
+{
     return ShaderBlob{ShaderFormat::Spirv, words, word_count * sizeof(u32)};
 }
 
@@ -158,14 +165,18 @@ constexpr ShaderBlob SpirvBlob(const u32* words, usize word_count) {
 /// - Returns: a DXIL blob.
 /// - Fails: never.
 /// - Thread-safety: thread-safe.
-constexpr ShaderBlob DxilBlob(const u8* bytes, usize size) { return ShaderBlob{ShaderFormat::Dxil, bytes, size}; }
+constexpr ShaderBlob DxilBlob(const u8* bytes, usize size)
+{
+    return ShaderBlob{ShaderFormat::Dxil, bytes, size};
+}
 
 /// One shader in every format it was minted in; code that creates shaders names the set once and picks the device's
 /// format with `For` (`device->Caps().shader_format`).
 ///
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: the blobs and `name` are borrowed; minted sets are static.
-struct ShaderBlobSet {
+struct ShaderBlobSet
+{
     /// The shader's file name (for example `lighting.frag`), for the error when a format is missing.
     const char* name = "";
     /// The SPIR-V module, or empty.
@@ -178,9 +189,11 @@ struct ShaderBlobSet {
     /// - Param format: the format the device takes.
     /// - Returns: the blob, or an empty blob of that format when the set has none (always for `Msl` today).
     /// - Fails: an empty blob, as described.
-    constexpr ShaderBlob For(ShaderFormat format) const {
+    constexpr ShaderBlob For(ShaderFormat format) const
+    {
         // The returned blob always carries `format`, even when a member was initialized with `{}`.
-        switch (format) {
+        switch (format)
+        {
         case ShaderFormat::Spirv: return ShaderBlob{format, spirv.bytes, spirv.size};
         case ShaderFormat::Dxil: return ShaderBlob{format, dxil.bytes, dxil.size};
         case ShaderFormat::Msl: break;
@@ -196,7 +209,8 @@ struct ShaderBlobSet {
 ///
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: `bytes` and `entry` are borrowed for the duration of the call; the device copies what it keeps.
-struct ShaderDesc {
+struct ShaderDesc
+{
     /// The single stage this module's entry point implements.
     ShaderStage stage = ShaderStage::None;
     /// The format of `bytes`.
@@ -214,7 +228,8 @@ struct ShaderDesc {
     ///
     /// - Param blob: the module; borrowed like `bytes`.
     /// - Fails: never.
-    void SetCode(const ShaderBlob& blob) {
+    void SetCode(const ShaderBlob& blob)
+    {
         format = blob.format;
         bytes = blob.bytes;
         size = blob.size;
@@ -226,17 +241,18 @@ struct ShaderDesc {
     /// - Fails: reported through the return value, never by aborting.
     /// - Ownership: the returned string is static and is never freed by the caller.
     ///
-    /// Checks the stage, the entry name (at most 63 bytes) and the module's shape for its format: SPIR-V is 4-byte aligned, a
-    /// whole number of words and at least a header (its contents are checked by [[rhi::ValidateSpirv]] when the shader is
-    /// created); DXIL starts with the `DXBC` container tag, is at least a container header and its size matches the one the
-    /// header records; MSL is refused.
+    /// Checks the stage, the entry name (at most 63 bytes) and the module's shape for its format: SPIR-V is 4-byte
+    /// aligned, a whole number of words and at least a header (its contents are checked by [[rhi::ValidateSpirv]] when
+    /// the shader is created); DXIL starts with the `DXBC` container tag, is at least a container header and its size
+    /// matches the one the header records; MSL is refused.
     const char* Validate() const;
 };
 
 /// One binding in a bind group layout.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct BindingDesc {
+struct BindingDesc
+{
     /// Binding index within the group; unique in the layout.
     u32 binding = 0;
     /// What kind of resource is bound.
@@ -245,9 +261,11 @@ struct BindingDesc {
     ShaderStage stages = ShaderStage::None;
     /// Array size; 1 for a non-array binding.
     u32 count = 1;
-    /// For a `StorageBuffer` or `ReadOnlyStorageBuffer` binding: the size in bytes of one element as the shader declares it
-    /// (`StructuredBuffer<T>`: `sizeof(T)` in the buffer's std430 layout), at most 2048. Direct3D 12 makes a structured view with it, so
-    /// a bound range starts on a multiple of it; Vulkan ignores it. 0 for every other type. Phase 13 Day 166.
+    /// For a `StorageBuffer` or `ReadOnlyStorageBuffer` binding: the size in bytes of one element as the shader
+    /// declares it
+    /// (`StructuredBuffer<T>`: `sizeof(T)` in the buffer's std430 layout), at most 2048. Direct3D 12 makes a structured
+    /// view with it, so a bound range starts on a multiple of it; Vulkan ignores it. 0 for every other type. Phase 13
+    /// Day 166.
     u32 stride = 0;
 };
 
@@ -255,7 +273,8 @@ struct BindingDesc {
 ///
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: `entries` is borrowed for the duration of the call; the device copies it.
-struct BindGroupLayoutDesc {
+struct BindGroupLayoutDesc
+{
     /// The bindings; at most [[rhi::kMaxBindingsPerLayout]].
     Span<BindingDesc> entries;
     /// Optional name shown in debuggers and logs; null for none.
@@ -272,7 +291,8 @@ struct BindGroupLayoutDesc {
 /// One resource bound at a binding of a bind group; set the field that matches the binding's type.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct BindGroupEntry {
+struct BindGroupEntry
+{
     /// The binding index in the layout.
     u32 binding = 0;
     /// The element index for array bindings; 0 otherwise.
@@ -297,7 +317,8 @@ struct BindGroupEntry {
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: `entries` and `debug_name` are borrowed for the duration of the call. The group does not
 ///   keep the bound resources alive; destroying one invalidates the group.
-struct BindGroupDesc {
+struct BindGroupDesc
+{
     /// The layout this group follows; required.
     BindGroupLayoutHandle layout;
     /// Whether the group is transient: valid for the frame it is created in and released by the device afterwards.
@@ -319,7 +340,8 @@ struct BindGroupDesc {
 /// One vertex buffer binding: how fast the buffer advances.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct VertexBindingDesc {
+struct VertexBindingDesc
+{
     /// Distance in bytes between consecutive elements; must be non-zero.
     u32 stride = 0;
     /// Whether the buffer advances per instance rather than per vertex.
@@ -329,7 +351,8 @@ struct VertexBindingDesc {
 /// One vertex attribute: where a shader input comes from.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct VertexAttributeDesc {
+struct VertexAttributeDesc
+{
     /// The shader input location.
     u32 location = 0;
     /// Index into the pipeline's vertex bindings.
@@ -343,7 +366,8 @@ struct VertexAttributeDesc {
 /// Blending for one color attachment.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct BlendState {
+struct BlendState
+{
     /// Whether blending is enabled; when false the other fields are ignored.
     bool enable = false;
     /// Factor for the source color.
@@ -363,7 +387,8 @@ struct BlendState {
 /// One color attachment a pipeline writes.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct ColorTargetDesc {
+struct ColorTargetDesc
+{
     /// Attachment format; a color format.
     Format format = Format::Undefined;
     /// Blending for this attachment.
@@ -379,7 +404,8 @@ struct ColorTargetDesc {
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: spans and `debug_name` are borrowed for the duration of the call; the device copies what it keeps.
 ///   The shader and layout handles are borrowed, not consumed.
-struct GraphicsPipelineDesc {
+struct GraphicsPipelineDesc
+{
     /// The vertex shader; required.
     ShaderHandle vertex_shader;
     /// The fragment shader; required unless the pipeline has no color targets (depth-only).
@@ -392,8 +418,8 @@ struct GraphicsPipelineDesc {
     PrimitiveTopology topology = PrimitiveTopology::TriangleList;
     /// Whether the all-ones index ends the current strip and starts a new one.
     ///
-    /// The all-ones index is 0xFFFF or 0xFFFFFFFF by index type, so one indexed draw can hold several strips. Only for the
-    /// strip topologies (`TriangleStrip`, `LineStrip`); without it that index is an ordinary vertex index.
+    /// The all-ones index is 0xFFFF or 0xFFFFFFFF by index type, so one indexed draw can hold several strips. Only for
+    /// the strip topologies (`TriangleStrip`, `LineStrip`); without it that index is an ordinary vertex index.
     bool primitive_restart = false;
     /// Which faces are culled.
     CullMode cull_mode = CullMode::Back;
@@ -439,7 +465,8 @@ struct GraphicsPipelineDesc {
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: `debug_name` is borrowed for the duration of the call. The shader and layout handles are
 ///   borrowed, not consumed.
-struct ComputePipelineDesc {
+struct ComputePipelineDesc
+{
     /// The compute shader; required.
     ShaderHandle shader;
     /// Layouts of bind groups 0..`bind_group_layout_count`-1.
@@ -459,4 +486,4 @@ struct ComputePipelineDesc {
     const char* Validate() const;
 };
 
-} // namespace engine_placeholder::rhi
+}  // namespace engine_placeholder::rhi

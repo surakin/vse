@@ -10,8 +10,8 @@
 #include "types.h"
 #include "cstr/mem_ops.h"
 
-// Phase 12 Day 142: the assert report and the thread registration reach the debugging module through hooks, and are complete
-// without them.
+// Phase 12 Day 142: the assert report and the thread registration reach the debugging module through hooks, and are
+// complete without them.
 
 using engine_placeholder::AssertAction;
 using engine_placeholder::AssertInfo;
@@ -27,12 +27,14 @@ using engine_placeholder::StringView;
 using engine_placeholder::u32;
 using engine_placeholder::usize;
 
-namespace {
+namespace
+{
 
 char g_captured[8192];
 usize g_captured_length = 0;
 
-long CaptureSink(int, const void* buffer, usize length) {
+long CaptureSink(int, const void* buffer, usize length)
+{
     const usize room = sizeof(g_captured) - g_captured_length;
     const usize take = length < room ? length : room;
     engine_placeholder::MemCopy(g_captured + g_captured_length, buffer, take);
@@ -40,51 +42,62 @@ long CaptureSink(int, const void* buffer, usize length) {
     return static_cast<long>(length);
 }
 
-StringView Captured() {
+StringView Captured()
+{
     return StringView(g_captured, g_captured_length);
 }
 
 int g_trace_calls = 0;
 u32 g_trace_skip = 0;
 
-usize FakeTrace(char* buffer, usize capacity, u32 skip) {
+usize FakeTrace(char* buffer, usize capacity, u32 skip)
+{
     ++g_trace_calls;
     g_trace_skip = skip;
     static const char kText[] = "  #0 fake_frame\n";
     const usize length = sizeof(kText) - 1;
-    if (length > capacity) return 0;
+    if (length > capacity)
+    {
+        return 0;
+    }
     engine_placeholder::MemCopy(buffer, kText, length);
     return length;
 }
 
-void FakeContext(void (*write)(void*, const char*, usize), void* context) {
+void FakeContext(void (*write)(void*, const char*, usize), void* context)
+{
     static const char kText[] = "--- fake context ---\n";
     write(context, kText, sizeof(kText) - 1);
 }
 
 bool g_debugger = false;
-bool FakeDebugger() {
+bool FakeDebugger()
+{
     return g_debugger;
 }
 
 const FailureReportHooks kFakeHooks = {&FakeTrace, &FakeContext, &FakeDebugger};
 
-AssertInfo MakeInfo(AssertKind kind) {
+AssertInfo MakeInfo(AssertKind kind)
+{
     return AssertInfo{kind, "hooks_test.cpp", 7, "TestFunction", "x == 1", "the message"};
 }
 
 // Puts the hooks back as they were when the test began.
-struct HookGuard {
+struct HookGuard
+{
     const FailureReportHooks* previous = GetFailureReportHooks();
-    ~HookGuard() {
+    ~HookGuard()
+    {
         SetFailureReportHooks(previous);
         SetWriteSinkForTesting(&engine_placeholder::os::Write);
     }
 };
 
-} // namespace
+}  // namespace
 
-TEST_CASE("An assert with no report hooks prints its message line and aborts", "[log][assert][hooks]") {
+TEST_CASE("An assert with no report hooks prints its message line and aborts", "[log][assert][hooks]")
+{
     HookGuard guard;
     SetFailureReportHooks(nullptr);
     g_captured_length = 0;
@@ -98,7 +111,8 @@ TEST_CASE("An assert with no report hooks prints its message line and aborts", "
     CHECK_FALSE(Captured().Contains(StringView("fake")));
 }
 
-TEST_CASE("An ensure with no report hooks prints and continues", "[log][assert][hooks]") {
+TEST_CASE("An ensure with no report hooks prints and continues", "[log][assert][hooks]")
+{
     HookGuard guard;
     SetFailureReportHooks(nullptr);
     g_captured_length = 0;
@@ -108,7 +122,9 @@ TEST_CASE("An ensure with no report hooks prints and continues", "[log][assert][
     CHECK(Captured().Contains(StringView("the message")));
 }
 
-TEST_CASE("Installed report hooks add the trace and the context, and the debugger decides Break", "[log][assert][hooks]") {
+TEST_CASE("Installed report hooks add the trace and the context, and the debugger decides Break",
+          "[log][assert][hooks]")
+{
     HookGuard guard;
     g_captured_length = 0;
     g_trace_calls = 0;
@@ -126,7 +142,8 @@ TEST_CASE("Installed report hooks add the trace and the context, and the debugge
     CHECK(DefaultAssertHandler(MakeInfo(AssertKind::Assert)) == AssertAction::Break);
 }
 
-TEST_CASE("An ensure gets the trace but not the crash context", "[log][assert][hooks]") {
+TEST_CASE("An ensure gets the trace but not the crash context", "[log][assert][hooks]")
+{
     HookGuard guard;
     g_captured_length = 0;
     g_debugger = false;
@@ -139,16 +156,19 @@ TEST_CASE("An ensure gets the trace but not the crash context", "[log][assert][h
     CHECK_FALSE(Captured().Contains(StringView("fake context")));
 }
 
-namespace {
+namespace
+{
 int g_started = 0;
 char g_started_name[16];
-void RecordStart(const char* name) {
+void RecordStart(const char* name)
+{
     ++g_started;
     engine_placeholder::CStrCopyN(g_started_name, name != nullptr ? name : "", sizeof(g_started_name) - 1);
 }
-} // namespace
+}  // namespace
 
-TEST_CASE("NotifyThreadStart does nothing without a hook and calls the installed hook", "[log][hooks]") {
+TEST_CASE("NotifyThreadStart does nothing without a hook and calls the installed hook", "[log][hooks]")
+{
     const auto previous = SetThreadStartHook(nullptr);
     g_started = 0;
     NotifyThreadStart("nobody");

@@ -1,5 +1,5 @@
-// Oracle test of the lang module: every wrapper is compared with the standard facility it forwards to. This file includes the standard
-// headers on purpose (the gate lists oracle files by name).
+// Oracle test of the lang module: every wrapper is compared with the standard facility it forwards to. This file
+// includes the standard headers on purpose (the gate lists oracle files by name).
 #include <catch2/catch_test_macros.hpp>
 
 #include <cstdint>
@@ -16,29 +16,55 @@
 
 using namespace engine_placeholder;
 
-namespace {
+namespace
+{
 
-struct MoveOnly {
+struct MoveOnly
+{
     int value = 0;
     MoveOnly() = default;
     explicit MoveOnly(int v) : value(v) {}
     MoveOnly(MoveOnly&& o) noexcept : value(o.value) { o.value = -1; }
-    MoveOnly& operator=(MoveOnly&& o) noexcept { value = o.value; o.value = -1; return *this; }
+    MoveOnly& operator=(MoveOnly&& o) noexcept
+    {
+        value = o.value;
+        o.value = -1;
+        return *this;
+    }
     MoveOnly(const MoveOnly&) = delete;
 };
 
-struct Base {};
-struct Derived : Base {};
-enum class Color : u8 { Red, Green };
+struct Base
+{
+};
+struct Derived : Base
+{
+};
+enum class Color : u8
+{
+    Red,
+    Green
+};
 
-int Which(int&) { return 1; }
-int Which(const int&) { return 2; }
-int Which(int&&) { return 3; }
+int Which(int&)
+{
+    return 1;
+}
+int Which(const int&)
+{
+    return 2;
+}
+int Which(int&&)
+{
+    return 3;
+}
 
-template <class T>
-int ForwardTo(T&& value) { return Which(Forward<T>(value)); }
+template <class T> int ForwardTo(T&& value)
+{
+    return Which(Forward<T>(value));
+}
 
-} // namespace
+}  // namespace
 
 // Traits against the standard originals.
 static_assert(IsSame<int, int> && !IsSame<int, long>);
@@ -53,19 +79,23 @@ static_assert(IsMoveConstructible<MoveOnly> && !IsCopyConstructible<MoveOnly>);
 static_assert(IsBaseOf<Base, Derived> && !IsBaseOf<Derived, Base>);
 static_assert(IsConstructible<MoveOnly, int> && !IsConstructible<MoveOnly, const MoveOnly&>);
 static_assert(IsSame<EnableIf<true, int>, int> && IsSame<Conditional<false, int, long>, long>);
-static_assert(IsSame<RemoveReference<int&>, int> && IsSame<RemoveReference<int&&>, int> && IsSame<RemoveConst<const int>, int>);
-static_assert(IsSame<RemoveCVRef<const volatile int&>, int> && IsSame<RemovePointer<int*>, int> && IsSame<Decay<const int&>, int>);
+static_assert(IsSame<RemoveReference<int&>, int> && IsSame<RemoveReference<int&&>, int> &&
+              IsSame<RemoveConst<const int>, int>);
+static_assert(IsSame<RemoveCVRef<const volatile int&>, int> && IsSame<RemovePointer<int*>, int> &&
+              IsSame<Decay<const int&>, int>);
 static_assert(IsSame<Decay<int[3]>, int*> && IsSame<UnderlyingType<Color>, u8>);
 static_assert(IsSame<MakeUnsigned<i32>, u32> && IsSame<MakeSigned<u64>, i64>);
-static_assert(IsSame<InvokeResult<int (*)(int), int>, int> && IsInvocable<int (*)(int), int> && !IsInvocable<int (*)(int)>);
-static_assert(IsSame<VoidType<int, long>, void> && TrueType::value && !FalseType::value && IntegralConstant<int, 4>::value == 4);
+static_assert(IsSame<InvokeResult<int (*)(int), int>, int> && IsInvocable<int (*)(int), int> &&
+              !IsInvocable<int (*)(int)>);
+static_assert(IsSame<VoidType<int, long>, void> && TrueType::value && !FalseType::value &&
+              IntegralConstant<int, 4>::value == 4);
 static_assert(IsConstantEvaluated() == false || true);
 static_assert(IsSame<decltype(Declval<int>()), int&&>);
 static_assert(noexcept(Move(std::declval<int&>())) && noexcept(Forward<int>(std::declval<int&>())));
 
 // Limits against numeric_limits for every arithmetic type.
-template <class T>
-static void CheckLimits() {
+template <class T> static void CheckLimits()
+{
     using L = Limits<T>;
     using S = std::numeric_limits<T>;
     STATIC_REQUIRE(L::kSpecialized == S::is_specialized);
@@ -79,9 +109,20 @@ static void CheckLimits() {
     STATIC_REQUIRE(L::Epsilon() == S::epsilon());
 }
 
-TEST_CASE("Limits matches numeric_limits for every arithmetic type", "[lang]") {
-    CheckLimits<bool>(); CheckLimits<char>(); CheckLimits<i8>(); CheckLimits<u8>(); CheckLimits<i16>(); CheckLimits<u16>();
-    CheckLimits<i32>(); CheckLimits<u32>(); CheckLimits<i64>(); CheckLimits<u64>(); CheckLimits<f32>(); CheckLimits<f64>();
+TEST_CASE("Limits matches numeric_limits for every arithmetic type", "[lang]")
+{
+    CheckLimits<bool>();
+    CheckLimits<char>();
+    CheckLimits<i8>();
+    CheckLimits<u8>();
+    CheckLimits<i16>();
+    CheckLimits<u16>();
+    CheckLimits<i32>();
+    CheckLimits<u32>();
+    CheckLimits<i64>();
+    CheckLimits<u64>();
+    CheckLimits<f32>();
+    CheckLimits<f64>();
     CHECK(Limits<f32>::Infinity() == std::numeric_limits<f32>::infinity());
     CHECK(Limits<f64>::Infinity() == std::numeric_limits<f64>::infinity());
     CHECK(Limits<f32>::QuietNaN() != Limits<f32>::QuietNaN());
@@ -89,7 +130,8 @@ TEST_CASE("Limits matches numeric_limits for every arithmetic type", "[lang]") {
     CHECK(Limits<f32>::kIsIec559 == std::numeric_limits<f32>::is_iec559);
 }
 
-TEST_CASE("Move, Forward, Exchange, Swap and AsConst", "[lang]") {
+TEST_CASE("Move, Forward, Exchange, Swap and AsConst", "[lang]")
+{
     MoveOnly a(7);
     MoveOnly b = Move(a);
     CHECK(b.value == 7);
@@ -116,8 +158,10 @@ TEST_CASE("Move, Forward, Exchange, Swap and AsConst", "[lang]") {
     STATIC_REQUIRE(IsSame<decltype(AsConst(x)), const int&>);
 }
 
-TEST_CASE("Ordering is std::strong_ordering and compares as one", "[lang]") {
-    struct Key {
+TEST_CASE("Ordering is std::strong_ordering and compares as one", "[lang]")
+{
+    struct Key
+    {
         int v;
         constexpr Ordering operator<=>(const Key& o) const { return v <=> o.v; }
         constexpr bool operator==(const Key& o) const { return v == o.v; }
@@ -130,22 +174,30 @@ TEST_CASE("Ordering is std::strong_ordering and compares as one", "[lang]") {
     STATIC_REQUIRE((Key{1} <=> Key{2}) == Ordering::less);
 }
 
-namespace {
-struct Sum {
+namespace
+{
+struct Sum
+{
     int total = 0;
-    Sum(InitializerList<int> items) {
-        for (int i : items) total += i;
+    Sum(InitializerList<int> items)
+    {
+        for (int i : items)
+        {
+            total += i;
+        }
     }
 };
-} // namespace
+}  // namespace
 
-TEST_CASE("InitializerList accepts a braced list", "[lang]") {
+TEST_CASE("InitializerList accepts a braced list", "[lang]")
+{
     Sum s{1, 2, 3, 4};
     CHECK(s.total == 10);
     STATIC_REQUIRE(IsSame<InitializerList<int>, std::initializer_list<int>>);
 }
 
-TEST_CASE("new helpers: placement, launder and the aligned non-throwing allocation", "[lang]") {
+TEST_CASE("new helpers: placement, launder and the aligned non-throwing allocation", "[lang]")
+{
     alignas(MoveOnly) unsigned char storage[sizeof(MoveOnly)];
     MoveOnly* m = ConstructAt<MoveOnly>(storage, 5);
     CHECK(m->value == 5);
@@ -161,14 +213,24 @@ TEST_CASE("new helpers: placement, launder and the aligned non-throwing allocati
     STATIC_REQUIRE(IsSame<NoThrowTag, std::nothrow_t>);
 }
 
-struct PolymorphicBase {
+struct PolymorphicBase
+{
     virtual ~PolymorphicBase() = default;
 };
-struct PlainType {};
+struct PlainType
+{
+};
 
-TEST_CASE("IsReference, IsArray, IsVolatile, IsDestructible and IsDefaultConstructible", "[lang]") {
-    struct NoDefault { explicit NoDefault(int) {} };
-    struct NoDestroy { ~NoDestroy() = delete; };
+TEST_CASE("IsReference, IsArray, IsVolatile, IsDestructible and IsDefaultConstructible", "[lang]")
+{
+    struct NoDefault
+    {
+        explicit NoDefault(int) {}
+    };
+    struct NoDestroy
+    {
+        ~NoDestroy() = delete;
+    };
     static_assert(IsReference<int&> && IsReference<int&&> && !IsReference<int>);
     static_assert(IsArray<int[3]> && IsArray<int[]> && !IsArray<int*>);
     static_assert(IsVolatile<volatile int> && !IsVolatile<const int>);
@@ -177,7 +239,8 @@ TEST_CASE("IsReference, IsArray, IsVolatile, IsDestructible and IsDefaultConstru
     CHECK(true);
 }
 
-TEST_CASE("HasVirtualDestructor, TypeIdentity and kMaxAlign", "[lang]") {
+TEST_CASE("HasVirtualDestructor, TypeIdentity and kMaxAlign", "[lang]")
+{
     static_assert(HasVirtualDestructor<PolymorphicBase>);
     static_assert(!HasVirtualDestructor<PlainType>);
     static_assert(IsSame<TypeIdentity<int>, int>);

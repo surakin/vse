@@ -26,32 +26,38 @@ using engine_test::MakeText;
 using engine_test::Text;
 using engine_test::TextList;
 
-namespace {
+namespace
+{
 
 LogChannel LogReportTest("LogReportTest", LogVerbosity::Info);
 
-long ReportTestDiscard(int, const void*, usize len) {
+long ReportTestDiscard(int, const void*, usize len)
+{
     return static_cast<long>(len);
 }
 
 // Keeps the log output of a test away from the terminal for the life of the scope.
-class QuietLog {
+class QuietLog
+{
 public:
     QuietLog() { SetWriteSinkForTesting(&ReportTestDiscard); }
     ~QuietLog() { SetWriteSinkForTesting(&os::Write); }
 };
 
-void CollectLine(const char* line, usize length, void* context) {
+void CollectLine(const char* line, usize length, void* context)
+{
     static_cast<TextList*>(context)->Push(StringView(line, length));
 }
 
-TextList RecentLines(usize max_lines = 0) {
+TextList RecentLines(usize max_lines = 0)
+{
     TextList lines;
     ReadRecentLogLines(&CollectLine, &lines, max_lines);
     return lines;
 }
 
-void LogNumbered(const char* prefix, int n) {
+void LogNumbered(const char* prefix, int n)
+{
     char text[64];
     FormatTo(text, sizeof(text), "%s%d", prefix, n);
     Log(LogReportTest, LogVerbosity::Info, StringView(text));
@@ -60,54 +66,66 @@ void LogNumbered(const char* prefix, int n) {
 constexpr usize kNotFound = ~usize(0);
 
 // Finds `needle` at or after `from`; returns its position or kNotFound.
-usize FindAfter(StringView text, StringView needle, usize from = 0) {
-    if (from > text.Length()) return kNotFound;
+usize FindAfter(StringView text, StringView needle, usize from = 0)
+{
+    if (from > text.Length())
+    {
+        return kNotFound;
+    }
     const StringView rest = text.Substring(from);
     const usize at = rest.Find(needle);
     return at == rest.Length() ? kNotFound : from + at;
 }
 
 // True when `text` holds `needle`.
-bool Has(StringView text, StringView needle) {
+bool Has(StringView text, StringView needle)
+{
     return FindAfter(text, needle) != kNotFound;
 }
 
 // A report collected in memory, with the sizes of the pieces it arrived in.
-struct Collected {
+struct Collected
+{
     Text text = MakeText();
     Vector<usize> piece_sizes;
 };
 
-void CollectPiece(void* context, const char* data, usize length) {
+void CollectPiece(void* context, const char* data, usize length)
+{
     Collected* c = static_cast<Collected*>(context);
     c->text.AppendRawBytes(data, length);
     c->piece_sizes.Push(length);
 }
 
-CrashReportSink SinkFor(Collected* c) {
+CrashReportSink SinkFor(Collected* c)
+{
     CrashReportSink sink;
     sink.write = &CollectPiece;
     sink.context = c;
     return sink;
 }
 
-void GpuProvider(void*, char* out, usize capacity) {
+void GpuProvider(void*, char* out, usize capacity)
+{
     FormatTo(out, capacity, "Test GPU 9000, driver 1.2.3");
 }
 
-void FrameProvider(void* context, char* out, usize capacity) {
+void FrameProvider(void* context, char* out, usize capacity)
+{
     FormatTo(out, capacity, "frame %d", *static_cast<int*>(context));
 }
 
 // Misbehaves in the harmless direction: asks for far more than it may write, using a bounded copy as the rules require.
-void VerboseProvider(void*, char* out, usize capacity) {
+void VerboseProvider(void*, char* out, usize capacity)
+{
     const Text big = engine_test::Repeated(1000, 'x');
     FormatTo(out, capacity, "%s", big.CStr());
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("The crash context describes the program and the machine", "[crashreport][debug]") {
+TEST_CASE("The crash context describes the program and the machine", "[crashreport][debug]")
+{
     const char* argv[] = {"debug_tests", "--fake-flag", "value"};
     InitCrashContext(3, argv);
     REQUIRE(CrashContextInitialized());
@@ -119,45 +137,53 @@ TEST_CASE("The crash context describes the program and the machine", "[crashrepo
     CHECK(c.engine_version[0] != '\0');
     CHECK(c.cpu_count > 0);
     CHECK(c.total_memory_bytes > 64ull * 1024 * 1024);
-    CHECK(c.start_time_unix > 1700000000ull); // after November 2023
-    // The build id is lowercase hex when the binary has one: whole bytes on Linux (the GNU build id); on Windows the PDB's GUID (32 digits)
-    // and then its age without leading zeros, the form symbol stores use, so any length from 33 on.
+    CHECK(c.start_time_unix > 1700000000ull);  // after November 2023
+    // The build id is lowercase hex when the binary has one: whole bytes on Linux (the GNU build id); on Windows the
+    // PDB's GUID (32 digits) and then its age without leading zeros, the form symbol stores use, so any length from 33
+    // on.
     const usize id_length = CStrLength(c.build_id);
 #if ENGINE_PLATFORM_WINDOWS
     CHECK((id_length == 0 || id_length >= 33));
 #else
     CHECK(id_length % 2 == 0);
 #endif
-    for (usize i = 0; i < id_length; ++i) {
+    for (usize i = 0; i < id_length; ++i)
+    {
         CHECK(((c.build_id[i] >= '0' && c.build_id[i] <= '9') || (c.build_id[i] >= 'a' && c.build_id[i] <= 'f')));
     }
-    if (CStrFind(c.command_line, "--fake-flag") == nullptr) {
+    if (CStrFind(c.command_line, "--fake-flag") == nullptr)
+    {
         // Another test initialized the context first, without a command line.
         CHECK(c.command_line[0] == '\0');
-    } else {
+    }
+    else
+    {
         CHECK(StringView(c.command_line) == StringView("debug_tests --fake-flag value"));
     }
     // A second call changes nothing.
     const Text before = MakeText(StringView(c.command_line));
     const char* other[] = {"different"};
     InitCrashContext(1, other);
-    if (before.Length() != 0) {
+    if (before.Length() != 0)
+    {
         CHECK(before == StringView(c.command_line));
     }
 }
 
-ENGINE_DEATH_TEST_FN(dt_report_late_command_line) {
-    InitCrashContext(0, nullptr); // as the crash handler or an assert does when the program has not
+ENGINE_DEATH_TEST_FN(dt_report_late_command_line)
+{
+    InitCrashContext(0, nullptr);  // as the crash handler or an assert does when the program has not
     const char* argv[] = {"prog", "--late"};
     InitCrashContext(2, argv);
     const char* other[] = {"other"};
-    InitCrashContext(1, other); // does not replace a command line already there
+    InitCrashContext(1, other);  // does not replace a command line already there
     Collected report;
     WriteCrashContext(SinkFor(&report));
     os::Write(1, report.text.CStr(), report.text.Length());
 }
 
-TEST_CASE("A command line given after an initialization without one is kept, once", "[crashreport][death][debug]") {
+TEST_CASE("A command line given after an initialization without one is kept, once", "[crashreport][death][debug]")
+{
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     const ChildResult r = RunInChild("dt_report_late_command_line");
     REQUIRE(r.exited);
@@ -165,16 +191,19 @@ TEST_CASE("A command line given after an initialization without one is kept, onc
     CHECK_FALSE(r.StdoutContains("other"));
 }
 
-namespace {
-void ReentrantProvider(void*, char* out, usize capacity) {
+namespace
+{
+void ReentrantProvider(void*, char* out, usize capacity)
+{
     // As if a check inside a provider failed and the assert handler wrote the context again.
     Collected inner;
     WriteCrashContext(SinkFor(&inner));
     FormatTo(out, capacity, "inner report had %s", Has(inner.text, "--- state ---") ? "state header" : "nothing");
 }
-} // namespace
+}  // namespace
 
-TEST_CASE("A provider that writes a report itself does not recurse", "[crashreport][debug]") {
+TEST_CASE("A provider that writes a report itself does not recurse", "[crashreport][debug]")
+{
     ResetCrashStateProvidersForTesting();
     RegisterCrashStateProvider("again", &ReentrantProvider, nullptr);
     Collected report;
@@ -183,15 +212,18 @@ TEST_CASE("A provider that writes a report itself does not recurse", "[crashrepo
     CHECK(Has(report.text, "again: inner report had state header\n"));
 }
 
-TEST_CASE("The ring returns the newest 256 lines, oldest first", "[crashreport][log][debug]") {
+TEST_CASE("The ring returns the newest 256 lines, oldest first", "[crashreport][log][debug]")
+{
     QuietLog quiet;
     ResetLogRingForTesting();
-    for (int i = 0; i < 1000; ++i) {
+    for (int i = 0; i < 1000; ++i)
+    {
         LogNumbered("ring-line-", i);
     }
     const TextList lines = RecentLines();
     REQUIRE(lines.Size() == kLogRingSlots);
-    for (usize i = 0; i < lines.Size(); ++i) {
+    for (usize i = 0; i < lines.Size(); ++i)
+    {
         const Text expected = engine_test::Format("ring-line-%zu\n", static_cast<usize>(1000 - kLogRingSlots + i));
         INFO(lines[i].CStr());
         REQUIRE(Has(lines[i], expected));
@@ -203,11 +235,13 @@ TEST_CASE("The ring returns the newest 256 lines, oldest first", "[crashreport][
     CHECK(Has(newest[2], "ring-line-999"));
 }
 
-TEST_CASE("With fewer lines than slots the ring returns exactly those", "[crashreport][log][debug]") {
+TEST_CASE("With fewer lines than slots the ring returns exactly those", "[crashreport][log][debug]")
+{
     QuietLog quiet;
     ResetLogRingForTesting();
     CHECK(RecentLines().Empty());
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 10; ++i)
+    {
         LogNumbered("few-", i);
     }
     const TextList lines = RecentLines();
@@ -216,7 +250,8 @@ TEST_CASE("With fewer lines than slots the ring returns exactly those", "[crashr
     CHECK(Has(lines.Back(), "few-9\n"));
 }
 
-TEST_CASE("A line longer than a slot is cut to the slot size", "[crashreport][log][debug]") {
+TEST_CASE("A line longer than a slot is cut to the slot size", "[crashreport][log][debug]")
+{
     QuietLog quiet;
     ResetLogRingForTesting();
     const Text long_line = engine_test::Repeated(2000, 'q');
@@ -226,14 +261,18 @@ TEST_CASE("A line longer than a slot is cut to the slot size", "[crashreport][lo
     CHECK(lines[0].Length() == kLogRingLineBytes);
 }
 
-TEST_CASE("Lines suppressed by the channel's verbosity are not kept", "[crashreport][log][debug]") {
+TEST_CASE("Lines suppressed by the channel's verbosity are not kept", "[crashreport][log][debug]")
+{
     QuietLog quiet;
     ResetLogRingForTesting();
     Log(LogReportTest, LogVerbosity::Trace, "too detailed");
     CHECK(RecentLines().Empty());
 }
 
-TEST_CASE("Eight threads logging while another reads: every line delivered is whole and each thread's lines stay in order", "[crashreport][log][debug]") {
+TEST_CASE(
+    "Eight threads logging while another reads: every line delivered is whole and each thread's lines stay in order",
+    "[crashreport][log][debug]")
+{
     QuietLog quiet;
     ResetLogRingForTesting();
     Atomic<bool> stop{false};
@@ -242,54 +281,72 @@ TEST_CASE("Eight threads logging while another reads: every line delivered is wh
     Text first_bad = MakeText();
     Atomic<long> delivered{0};
     Atomic<long> passes{0};
-    Thread reader([&] {
-        while (!stop.Load()) {
-            const TextList lines = RecentLines();
-            Array<int, 8> last;
-            for (int& l : last) l = -1;
-            for (usize i = 0; i < lines.Size(); ++i) {
-                const Text& line = lines[i];
-                // "[LogReportTest] INFO: T<thread>-<n>\n"
-                const usize t = FindAfter(line, "INFO: T");
-                int thread_id = -1;
-                int n = -1;
-                if (t == kNotFound || ScanFrom(line.CStr() + t, "INFO: T%d-%d", &thread_id, &n) != 2 || thread_id < 0 || thread_id > 7 ||
-                    line.Length() == 0 || line.CStr()[line.Length() - 1] != '\n') {
-                    bad.FetchAdd(1);
-                    LockGuard<Mutex> lock(bad_mutex);
-                    if (first_bad.Length() == 0) {
-                        first_bad = engine_test::Concat("malformed: [", line, "]");
-                    }
-                    continue;
+    Thread reader(
+        [&]
+        {
+            while (!stop.Load())
+            {
+                const TextList lines = RecentLines();
+                Array<int, 8> last;
+                for (int& l : last)
+                {
+                    l = -1;
                 }
-                if (n <= last[static_cast<usize>(thread_id)]) {
-                    bad.FetchAdd(1); // a thread's own lines went backwards
-                    LockGuard<Mutex> lock(bad_mutex);
-                    if (first_bad.Length() == 0) {
-                        first_bad = engine_test::Format("backwards: thread %d n=%d after %d", thread_id, n, last[static_cast<usize>(thread_id)]);
+                for (usize i = 0; i < lines.Size(); ++i)
+                {
+                    const Text& line = lines[i];
+                    // "[LogReportTest] INFO: T<thread>-<n>\n"
+                    const usize t = FindAfter(line, "INFO: T");
+                    int thread_id = -1;
+                    int n = -1;
+                    if (t == kNotFound || ScanFrom(line.CStr() + t, "INFO: T%d-%d", &thread_id, &n) != 2 ||
+                        thread_id < 0 || thread_id > 7 || line.Length() == 0 || line.CStr()[line.Length() - 1] != '\n')
+                    {
+                        bad.FetchAdd(1);
+                        LockGuard<Mutex> lock(bad_mutex);
+                        if (first_bad.Length() == 0)
+                        {
+                            first_bad = engine_test::Concat("malformed: [", line, "]");
+                        }
+                        continue;
                     }
+                    if (n <= last[static_cast<usize>(thread_id)])
+                    {
+                        bad.FetchAdd(1);  // a thread's own lines went backwards
+                        LockGuard<Mutex> lock(bad_mutex);
+                        if (first_bad.Length() == 0)
+                        {
+                            first_bad = engine_test::Format("backwards: thread %d n=%d after %d", thread_id, n,
+                                                            last[static_cast<usize>(thread_id)]);
+                        }
+                    }
+                    last[static_cast<usize>(thread_id)] = n;
+                    delivered.FetchAdd(1);
                 }
-                last[static_cast<usize>(thread_id)] = n;
-                delivered.FetchAdd(1);
-            }
-            passes.FetchAdd(1);
-            ThisThread::Yield();
-        }
-    });
-    while (passes.Load() == 0) {
-        ThisThread::Yield(); // the writers start once the reader is running, so the two overlap
-    }
-    Array<Thread, 8> writers;
-    for (int t = 0; t < 8; ++t) {
-        writers[static_cast<usize>(t)] = Thread([t] {
-            for (int n = 0; n < 2000; ++n) {
-                char text[32];
-                FormatTo(text, sizeof(text), "T%d-%d", t, n);
-                Log(LogReportTest, LogVerbosity::Info, StringView(text));
+                passes.FetchAdd(1);
+                ThisThread::Yield();
             }
         });
+    while (passes.Load() == 0)
+    {
+        ThisThread::Yield();  // the writers start once the reader is running, so the two overlap
     }
-    for (Thread& w : writers) {
+    Array<Thread, 8> writers;
+    for (int t = 0; t < 8; ++t)
+    {
+        writers[static_cast<usize>(t)] = Thread(
+            [t]
+            {
+                for (int n = 0; n < 2000; ++n)
+                {
+                    char text[32];
+                    FormatTo(text, sizeof(text), "T%d-%d", t, n);
+                    Log(LogReportTest, LogVerbosity::Info, StringView(text));
+                }
+            });
+    }
+    for (Thread& w : writers)
+    {
         w.Join();
     }
     stop = true;
@@ -299,11 +356,12 @@ TEST_CASE("Eight threads logging while another reads: every line delivered is wh
     CHECK(passes.Load() > 0);
     // At rest: the ring holds the last 256 lines, all whole.
     const TextList lines = RecentLines();
-    // A writer descheduled in the middle of its slot and then lapped by 256 newer lines leaves that one slot skipped, so
-    // allow a few missing; what is delivered must still be whole.
+    // A writer descheduled in the middle of its slot and then lapped by 256 newer lines leaves that one slot skipped,
+    // so allow a few missing; what is delivered must still be whole.
     CHECK(lines.Size() >= kLogRingSlots - 8);
     CHECK(lines.Size() <= kLogRingSlots);
-    for (usize i = 0; i < lines.Size(); ++i) {
+    for (usize i = 0; i < lines.Size(); ++i)
+    {
         const usize at = FindAfter(lines[i], "INFO: T");
         REQUIRE(at != kNotFound);
         int t = -1;
@@ -312,7 +370,8 @@ TEST_CASE("Eight threads logging while another reads: every line delivered is wh
     }
 }
 
-TEST_CASE("State providers appear in the report in the order they were registered", "[crashreport][debug]") {
+TEST_CASE("State providers appear in the report in the order they were registered", "[crashreport][debug]")
+{
     ResetCrashStateProvidersForTesting();
     int frame = 41;
     CHECK(RegisterCrashStateProvider("gpu", &GpuProvider, nullptr));
@@ -326,25 +385,28 @@ TEST_CASE("State providers appear in the report in the order they were registere
     REQUIRE(gpu != kNotFound);
     REQUIRE(frame_line != kNotFound);
     CHECK(gpu < frame_line);
-    frame = 42; // a provider reads live state each time
+    frame = 42;  // a provider reads live state each time
     Collected again;
     WriteCrashContext(SinkFor(&again));
     CHECK(Has(again.text, "frame: frame 42\n"));
     ResetCrashStateProvidersForTesting();
 }
 
-TEST_CASE("The provider table holds sixteen and refuses nulls", "[crashreport][debug]") {
+TEST_CASE("The provider table holds sixteen and refuses nulls", "[crashreport][debug]")
+{
     ResetCrashStateProvidersForTesting();
     CHECK_FALSE(RegisterCrashStateProvider(nullptr, &GpuProvider, nullptr));
     CHECK_FALSE(RegisterCrashStateProvider("x", nullptr, nullptr));
-    for (usize i = 0; i < kMaxCrashStateProviders; ++i) {
+    for (usize i = 0; i < kMaxCrashStateProviders; ++i)
+    {
         CHECK(RegisterCrashStateProvider("p", &GpuProvider, nullptr));
     }
     CHECK_FALSE(RegisterCrashStateProvider("one too many", &GpuProvider, nullptr));
     ResetCrashStateProvidersForTesting();
 }
 
-TEST_CASE("A provider's text is cut to its buffer", "[crashreport][debug]") {
+TEST_CASE("A provider's text is cut to its buffer", "[crashreport][debug]")
+{
     ResetCrashStateProvidersForTesting();
     CHECK(RegisterCrashStateProvider("big", &VerboseProvider, nullptr));
     Collected report;
@@ -357,7 +419,8 @@ TEST_CASE("A provider's text is cut to its buffer", "[crashreport][debug]") {
     CHECK(end - at - 5 == kCrashStateTextBytes - 1);
 }
 
-TEST_CASE("A crash report has every section, in order", "[crashreport][debug]") {
+TEST_CASE("A crash report has every section, in order", "[crashreport][debug]")
+{
     InitDebugFacilities();
     InitCrashContext(0, nullptr);
     QuietLog quiet;
@@ -399,7 +462,8 @@ TEST_CASE("A crash report has every section, in order", "[crashreport][debug]") 
         "=== END OF REPORT ===\n",
     };
     usize at = 0;
-    for (const char* marker : markers) {
+    for (const char* marker : markers)
+    {
         INFO(marker);
         const usize found = FindAfter(report.text, StringView(marker), at);
         REQUIRE(found != kNotFound);
@@ -407,12 +471,14 @@ TEST_CASE("A crash report has every section, in order", "[crashreport][debug]") 
     }
     // The report arrives in pieces, none larger than the writer's buffer.
     CHECK(report.piece_sizes.Size() > 10);
-    for (usize i = 0; i < report.piece_sizes.Size(); ++i) {
+    for (usize i = 0; i < report.piece_sizes.Size(); ++i)
+    {
         CHECK(report.piece_sizes[i] <= 512);
     }
 }
 
-TEST_CASE("A report for an assertion names the message instead of an address", "[crashreport][debug]") {
+TEST_CASE("A report for an assertion names the message instead of an address", "[crashreport][debug]")
+{
     CrashReportInfo info;
     info.reason = CrashReason::AssertFailed;
     info.message = "it broke";
@@ -422,29 +488,34 @@ TEST_CASE("A report for an assertion names the message instead of an address", "
     CHECK_FALSE(Has(report.text, " at 0x"));
 }
 
-TEST_CASE("A report with no sink function writes nothing and does not crash", "[crashreport][debug]") {
+TEST_CASE("A report with no sink function writes nothing and does not crash", "[crashreport][debug]")
+{
     CrashReportInfo info;
     WriteCrashReport(CrashReportSink(), info);
     WriteCrashContext(CrashReportSink());
     SUCCEED();
 }
 
-// ---- assert and ensure output -----------------------------------------------------------------------------------------------
+// ---- assert and ensure output
+// -----------------------------------------------------------------------------------------------
 
-ENGINE_DEATH_TEST_FN(dt_report_assert_with_context) {
+ENGINE_DEATH_TEST_FN(dt_report_assert_with_context)
+{
     InitCrashContext(0, nullptr);
     RegisterCrashStateProvider("gpu", &GpuProvider, nullptr);
     Log(LogReportTest, LogVerbosity::Info, "logged-before-the-assert");
     ENGINE_ASSERT(false, "context please");
 }
 
-ENGINE_DEATH_TEST_FN(dt_report_ensure_without_context) {
+ENGINE_DEATH_TEST_FN(dt_report_ensure_without_context)
+{
     InitCrashContext(0, nullptr);
     Log(LogReportTest, LogVerbosity::Info, "logged-before-the-ensure");
     ENGINE_ENSURE(false, "just a note");
 }
 
-TEST_CASE("A failed assert prints the same context sections as a crash report", "[crashreport][assert][death][debug]") {
+TEST_CASE("A failed assert prints the same context sections as a crash report", "[crashreport][assert][death][debug]")
+{
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     const ChildResult r = RunInChild("dt_report_assert_with_context");
     CHECK(r.reason == CrashReason::Abort);
@@ -458,7 +529,9 @@ TEST_CASE("A failed assert prints the same context sections as a crash report", 
     CHECK(r.StdoutContains("logged-before-the-assert"));
 }
 
-TEST_CASE("A failed ensure prints only its message and trace, since the program goes on", "[crashreport][ensure][death][debug]") {
+TEST_CASE("A failed ensure prints only its message and trace, since the program goes on",
+          "[crashreport][ensure][death][debug]")
+{
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     const ChildResult r = RunInChild("dt_report_ensure_without_context");
     REQUIRE(r.exited);
@@ -467,21 +540,26 @@ TEST_CASE("A failed ensure prints only its message and trace, since the program 
     CHECK_FALSE(r.StdoutContains("--- recent log"));
 }
 
-// ---- a provider that faults ---------------------------------------------------------------------------------------------------
+// ---- a provider that faults
+// ---------------------------------------------------------------------------------------------------
 
-namespace {
+namespace
+{
 
-void FaultingProvider(void*, char*, usize) {
+void FaultingProvider(void*, char*, usize)
+{
     InjectFault(FaultKind::NullWrite);
 }
 
-void StdoutPiece(void*, const char* data, usize length) {
+void StdoutPiece(void*, const char* data, usize length)
+{
     os::Write(1, data, length);
 }
 
-} // namespace
+}  // namespace
 
-ENGINE_DEATH_TEST_FN(dt_report_provider_faults) {
+ENGINE_DEATH_TEST_FN(dt_report_provider_faults)
+{
     InitCrashContext(0, nullptr);
     RegisterCrashStateProvider("bad", &FaultingProvider, nullptr);
     CrashReportInfo info;
@@ -491,7 +569,9 @@ ENGINE_DEATH_TEST_FN(dt_report_provider_faults) {
     WriteCrashReport(sink, info);
 }
 
-TEST_CASE("A provider that faults loses the rest of the report but not the part already written", "[crashreport][death][debug]") {
+TEST_CASE("A provider that faults loses the rest of the report but not the part already written",
+          "[crashreport][death][debug]")
+{
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     const ChildResult r = RunInChild("dt_report_provider_faults");
     CHECK(r.terminated);
@@ -502,14 +582,18 @@ TEST_CASE("A provider that faults loses the rest of the report but not the part 
     CHECK_FALSE(r.StdoutContains("=== END OF REPORT ==="));
 }
 
-TEST_CASE("ReadLogLinesSince delivers only the lines logged after the number it returned", "[crashreport][log][debug]") {
+TEST_CASE("ReadLogLinesSince delivers only the lines logged after the number it returned", "[crashreport][log][debug]")
+{
     QuietLog quiet;
     ResetLogRingForTesting();
     TextList first;
     u64 next = ReadLogLinesSince(0, &CollectLine, &first);
     CHECK(first.Empty());
     CHECK(next == 0);
-    for (int i = 0; i < 5; ++i) LogNumbered("since-", i);
+    for (int i = 0; i < 5; ++i)
+    {
+        LogNumbered("since-", i);
+    }
     TextList second;
     next = ReadLogLinesSince(next, &CollectLine, &second);
     REQUIRE(second.Size() == 5);
@@ -518,8 +602,12 @@ TEST_CASE("ReadLogLinesSince delivers only the lines logged after the number it 
     TextList none;
     CHECK(ReadLogLinesSince(next, &CollectLine, &none) == 5);
     CHECK(none.Empty());
-    // More than the ring holds since the last call: the newest slots are delivered, and the returned number still counts every line.
-    for (int i = 0; i < 1000; ++i) LogNumbered("flood-", i);
+    // More than the ring holds since the last call: the newest slots are delivered, and the returned number still
+    // counts every line.
+    for (int i = 0; i < 1000; ++i)
+    {
+        LogNumbered("flood-", i);
+    }
     TextList flood;
     next = ReadLogLinesSince(next, &CollectLine, &flood);
     CHECK(flood.Size() == kLogRingSlots);

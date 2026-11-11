@@ -1492,7 +1492,7 @@ Takes over `other`'s object, leaving `other` empty.
 `constructor UniquePtr::UniquePtr` — defined in `engine/foundation/containers/unique_ptr.h`
 
 ```cpp
-template <typename U, typename E> requires(IsConvertible<U*, T*> && IsConstructible<Deleter, E &&>)
+template <typename U, typename E> requires(IsConvertible<U*, T*> && IsConstructible<Deleter, E&&>)
 UniquePtr(UniquePtr<U, E>&& other) noexcept;
 ```
 

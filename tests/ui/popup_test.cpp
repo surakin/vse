@@ -11,9 +11,11 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::ui;
 
-namespace {
+namespace
+{
 
-Rect PRect(f32 x, f32 y, f32 w, f32 h) {
+Rect PRect(f32 x, f32 y, f32 w, f32 h)
+{
     Rect r;
     r.x = x;
     r.y = y;
@@ -23,12 +25,15 @@ Rect PRect(f32 x, f32 y, f32 w, f32 h) {
 }
 
 // A focusable popup content of a fixed size that records the keys it saw.
-class PopupPane : public Widget {
+class PopupPane : public Widget
+{
 public:
     PopupPane(f32 w, f32 h) : Widget(StringView("pane")), size_(Size{w, h}) { SetFocusable(true); }
     Size Measure(const Constraints&) override { return size_; }
-    void OnEvent(Event& e) override {
-        if (e.type == EventType::KeyDown && e.key == Key::A) {
+    void OnEvent(Event& e) override
+    {
+        if (e.type == EventType::KeyDown && e.key == Key::A)
+        {
             ++a_keys;
             e.handled = true;
         }
@@ -39,8 +44,10 @@ private:
     Size size_;
 };
 
-struct PopupRig {
-    PopupRig() : h(400, 300, 1, StringView(UI_TEST_FONT_FILE)) {
+struct PopupRig
+{
+    PopupRig() : h(400, 300, 1, StringView(UI_TEST_FONT_FILE))
+    {
         UniquePtr<Button> b = MakeUnique<Button>(StringView("behind"), StringView("behind"));
         button = b.Get();
         button->SetBounds(PRect(150, 100, 100, 30));
@@ -53,7 +60,8 @@ struct PopupRig {
         h.Advance(0);
     }
     static void Clicked(void* user, Button*) { ++static_cast<PopupRig*>(user)->clicks; }
-    PopupPane* Open(const Rect& anchor, const PopupOptions& options = PopupOptions(), f32 w = 80, f32 height = 60) {
+    PopupPane* Open(const Rect& anchor, const PopupOptions& options = PopupOptions(), f32 w = 80, f32 height = 60)
+    {
         UniquePtr<PopupPane> p = MakeUnique<PopupPane>(w, height);
         PopupPane* raw = p.Get();
         h.GetSurface().OpenPopup(UniquePtr<Widget>(p.Release()), anchor, options);
@@ -66,9 +74,10 @@ struct PopupRig {
     int clicks = 0;
 };
 
-} // namespace
+}  // namespace
 
-TEST_CASE("PlacePopup prefers its side and flips at each edge", "[ui][popup]") {
+TEST_CASE("PlacePopup prefers its side and flips at each edge", "[ui][popup]")
+{
     const Rect bounds = PRect(0, 0, 400, 300);
     const Size size{100, 80};
     // Below, with room.
@@ -90,27 +99,30 @@ TEST_CASE("PlacePopup prefers its side and flips at each edge", "[ui][popup]") {
     CHECK(r.x == 60);
 }
 
-TEST_CASE("PlacePopup shifts along the edge and starts inside when too large", "[ui][popup]") {
+TEST_CASE("PlacePopup shifts along the edge and starts inside when too large", "[ui][popup]")
+{
     const Rect bounds = PRect(0, 0, 400, 300);
     Rect r = PlacePopup(Size{100, 80}, PRect(350, 10, 40, 20), Placement::Below, bounds);
-    CHECK(r.x == 300); // shifted left to fit
+    CHECK(r.x == 300);  // shifted left to fit
     r = PlacePopup(Size{100, 80}, PRect(10, 290, 40, 20), Placement::Right, bounds);
-    CHECK(r.y == 220); // shifted up to fit
+    CHECK(r.y == 220);  // shifted up to fit
     r = PlacePopup(Size{100, 500}, PRect(10, 10, 40, 20), Placement::Below, bounds);
     CHECK(r.y >= 0);
     CHECK(r.x >= 0);
 }
 
-TEST_CASE("an outside press closes the popup and is consumed", "[ui][popup]") {
+TEST_CASE("an outside press closes the popup and is consumed", "[ui][popup]")
+{
     PopupRig rig;
     rig.Open(PRect(10, 10, 50, 20));
     REQUIRE(rig.h.GetSurface().PopupCount() == 1);
-    rig.h.Click(200, 115); // on the button behind
+    rig.h.Click(200, 115);  // on the button behind
     CHECK(rig.h.GetSurface().PopupCount() == 0);
     CHECK(rig.clicks == 0);
 }
 
-TEST_CASE("an outside press can be passed through", "[ui][popup]") {
+TEST_CASE("an outside press can be passed through", "[ui][popup]")
+{
     PopupRig rig;
     PopupOptions options;
     options.consume_outside_click = false;
@@ -120,14 +132,16 @@ TEST_CASE("an outside press can be passed through", "[ui][popup]") {
     CHECK(rig.clicks == 1);
 }
 
-TEST_CASE("a press inside the popup keeps it open", "[ui][popup]") {
+TEST_CASE("a press inside the popup keeps it open", "[ui][popup]")
+{
     PopupRig rig;
     rig.Open(PRect(10, 10, 50, 20));
     rig.h.Click(30, 50);
     CHECK(rig.h.GetSurface().PopupCount() == 1);
 }
 
-TEST_CASE("closing a popup closes the ones opened after it", "[ui][popup]") {
+TEST_CASE("closing a popup closes the ones opened after it", "[ui][popup]")
+{
     PopupRig rig;
     PopupPane* a = rig.Open(PRect(10, 10, 50, 20));
     PopupPane* b = rig.Open(PRect(100, 10, 50, 20));
@@ -143,7 +157,8 @@ TEST_CASE("closing a popup closes the ones opened after it", "[ui][popup]") {
     CHECK(rig.h.GetSurface().PopupCount() == 0);
 }
 
-TEST_CASE("Escape closes only the top popup", "[ui][popup]") {
+TEST_CASE("Escape closes only the top popup", "[ui][popup]")
+{
     PopupRig rig;
     PopupPane* a = rig.Open(PRect(10, 10, 50, 20));
     rig.Open(PRect(100, 10, 50, 20));
@@ -154,7 +169,8 @@ TEST_CASE("Escape closes only the top popup", "[ui][popup]") {
     CHECK(rig.h.GetSurface().PopupCount() == 0);
 }
 
-TEST_CASE("the popup takes the focus and the previous owner gets it back", "[ui][popup]") {
+TEST_CASE("the popup takes the focus and the previous owner gets it back", "[ui][popup]")
+{
     PopupRig rig;
     rig.h.GetSurface().SetFocus(rig.field);
     PopupPane* p = rig.Open(PRect(10, 10, 50, 20));
@@ -163,7 +179,8 @@ TEST_CASE("the popup takes the focus and the previous owner gets it back", "[ui]
     CHECK(rig.h.GetSurface().Focus() == rig.field);
 }
 
-TEST_CASE("nested popups hand the focus down one level at a time", "[ui][popup]") {
+TEST_CASE("nested popups hand the focus down one level at a time", "[ui][popup]")
+{
     PopupRig rig;
     rig.h.GetSurface().SetFocus(rig.field);
     PopupPane* a = rig.Open(PRect(10, 10, 50, 20));
@@ -175,7 +192,8 @@ TEST_CASE("nested popups hand the focus down one level at a time", "[ui][popup]"
     CHECK(rig.h.GetSurface().Focus() == rig.field);
 }
 
-TEST_CASE("a popup that does not take the focus leaves it alone", "[ui][popup]") {
+TEST_CASE("a popup that does not take the focus leaves it alone", "[ui][popup]")
+{
     PopupRig rig;
     rig.h.GetSurface().SetFocus(rig.field);
     PopupOptions options;
@@ -184,7 +202,8 @@ TEST_CASE("a popup that does not take the focus leaves it alone", "[ui][popup]")
     CHECK(rig.h.GetSurface().Focus() == rig.field);
 }
 
-TEST_CASE("destroying the anchor closes its popup", "[ui][popup]") {
+TEST_CASE("destroying the anchor closes its popup", "[ui][popup]")
+{
     PopupRig rig;
     PopupOptions options;
     options.owner = rig.button;
@@ -195,7 +214,8 @@ TEST_CASE("destroying the anchor closes its popup", "[ui][popup]") {
     CHECK(rig.h.GetSurface().PopupCount() == 0);
 }
 
-TEST_CASE("a press on the owner while its popup is open closes it and is consumed", "[ui][popup]") {
+TEST_CASE("a press on the owner while its popup is open closes it and is consumed", "[ui][popup]")
+{
     PopupRig rig;
     PopupOptions options;
     options.owner = rig.button;
@@ -205,7 +225,8 @@ TEST_CASE("a press on the owner while its popup is open closes it and is consume
     CHECK(rig.clicks == 0);
 }
 
-TEST_CASE("losing the window focus closes every popup", "[ui][popup]") {
+TEST_CASE("losing the window focus closes every popup", "[ui][popup]")
+{
     PopupRig rig;
     rig.Open(PRect(10, 10, 50, 20));
     rig.Open(PRect(100, 10, 50, 20));
@@ -216,7 +237,8 @@ TEST_CASE("losing the window focus closes every popup", "[ui][popup]") {
     CHECK(rig.h.GetSurface().PopupCount() == 0);
 }
 
-TEST_CASE("a context menu is clamped inside the surface", "[ui][popup]") {
+TEST_CASE("a context menu is clamped inside the surface", "[ui][popup]")
+{
     PopupRig rig;
     UniquePtr<PopupPane> p = MakeUnique<PopupPane>(100.0f, 80.0f);
     Widget* w = rig.h.GetSurface().ShowContextMenu(UniquePtr<Widget>(p.Release()), Point{395, 295});
@@ -229,20 +251,24 @@ TEST_CASE("a context menu is clamped inside the surface", "[ui][popup]") {
     CHECK(b.Bottom() <= 300);
 }
 
-namespace {
-struct PopupContextRig {
+namespace
+{
+struct PopupContextRig
+{
     PopupRig rig;
     int calls = 0;
     Point where;
-    static void Handler(void* user, Widget*, Point position) {
+    static void Handler(void* user, Widget*, Point position)
+    {
         PopupContextRig* c = static_cast<PopupContextRig*>(user);
         ++c->calls;
         c->where = position;
     }
 };
-} // namespace
+}  // namespace
 
-TEST_CASE("a right press runs the context handler of the widget under it", "[ui][popup]") {
+TEST_CASE("a right press runs the context handler of the widget under it", "[ui][popup]")
+{
     PopupContextRig c;
     c.rig.button->SetContextHandler(&PopupContextRig::Handler, &c);
     c.rig.h.PointerDown(200, 115, os::kMouseRight);
@@ -255,14 +281,17 @@ TEST_CASE("a right press runs the context handler of the widget under it", "[ui]
     CHECK(c.calls == 1);
 }
 
-namespace {
-struct AccelCounter {
+namespace
+{
+struct AccelCounter
+{
     int fired = 0;
     static void Fire(void* user) { ++static_cast<AccelCounter*>(user)->fired; }
 };
-} // namespace
+}  // namespace
 
-TEST_CASE("an accelerator runs for its chord and can be turned off", "[ui][accelerator]") {
+TEST_CASE("an accelerator runs for its chord and can be turned off", "[ui][accelerator]")
+{
     PopupRig rig;
     AccelCounter counter;
     Surface& s = rig.h.GetSurface();
@@ -271,10 +300,10 @@ TEST_CASE("an accelerator runs for its chord and can be turned off", "[ui][accel
     chord.modifiers = os::kModCtrl;
     const u32 id = s.RegisterAccelerator(chord, &AccelCounter::Fire, &counter);
     REQUIRE(id != 0);
-    CHECK(s.RegisterAccelerator(chord, &AccelCounter::Fire, &counter) == 0); // a chord has one accelerator
+    CHECK(s.RegisterAccelerator(chord, &AccelCounter::Fire, &counter) == 0);  // a chord has one accelerator
     rig.h.Key(Key::S, true, os::kModCtrl);
     CHECK(counter.fired == 1);
-    rig.h.Key(Key::S); // without the modifier
+    rig.h.Key(Key::S);  // without the modifier
     CHECK(counter.fired == 1);
     s.SetAcceleratorEnabled(id, false);
     CHECK_FALSE(s.AcceleratorEnabled(id));
@@ -286,26 +315,28 @@ TEST_CASE("an accelerator runs for its chord and can be turned off", "[ui][accel
     s.UnregisterAccelerator(id);
     rig.h.Key(Key::S, true, os::kModCtrl);
     CHECK(counter.fired == 2);
-    CHECK(s.RegisterAccelerator(chord, &AccelCounter::Fire, &counter) != 0); // free again
+    CHECK(s.RegisterAccelerator(chord, &AccelCounter::Fire, &counter) != 0);  // free again
 }
 
-TEST_CASE("the focus owner sees a key before the accelerators", "[ui][accelerator]") {
+TEST_CASE("the focus owner sees a key before the accelerators", "[ui][accelerator]")
+{
     PopupRig rig;
     AccelCounter counter;
     Surface& s = rig.h.GetSurface();
     KeyChord chord;
     chord.key = Key::A;
     s.RegisterAccelerator(chord, &AccelCounter::Fire, &counter);
-    PopupPane* p = rig.Open(PRect(10, 10, 50, 20)); // takes the focus and handles A
+    PopupPane* p = rig.Open(PRect(10, 10, 50, 20));  // takes the focus and handles A
     rig.h.Key(Key::A);
     CHECK(p->a_keys == 1);
     CHECK(counter.fired == 0);
     rig.h.Key(Key::Escape);
-    rig.h.Key(Key::A); // nothing handles it now
+    rig.h.Key(Key::A);  // nothing handles it now
     CHECK(counter.fired == 1);
 }
 
-TEST_CASE("the chord text names the modifiers in order", "[ui][accelerator]") {
+TEST_CASE("the chord text names the modifiers in order", "[ui][accelerator]")
+{
     KeyChord chord;
     chord.key = Key::S;
     chord.modifiers = os::kModCtrl | os::kModShift;
@@ -317,7 +348,8 @@ TEST_CASE("the chord text names the modifiers in order", "[ui][accelerator]") {
 
 // ---- Tooltips ----
 
-TEST_CASE("a tooltip shows after the hover delay and hides when the pointer leaves", "[ui][tooltip]") {
+TEST_CASE("a tooltip shows after the hover delay and hides when the pointer leaves", "[ui][tooltip]")
+{
     PopupRig rig;
     Surface& s = rig.h.GetSurface();
     rig.button->SetTooltip(StringView("hello"));
@@ -330,14 +362,16 @@ TEST_CASE("a tooltip shows after the hover delay and hides when the pointer leav
     CHECK_FALSE(s.TooltipShown());
 }
 
-TEST_CASE("a widget without a tooltip text shows none", "[ui][tooltip]") {
+TEST_CASE("a widget without a tooltip text shows none", "[ui][tooltip]")
+{
     PopupRig rig;
     rig.h.PointerMove(200, 115);
     rig.h.Advance(static_cast<f32>(Surface::kTooltipDelay) * 2);
     CHECK_FALSE(rig.h.GetSurface().TooltipShown());
 }
 
-TEST_CASE("a press, a wheel turn and a popup hide the tooltip", "[ui][tooltip]") {
+TEST_CASE("a press, a wheel turn and a popup hide the tooltip", "[ui][tooltip]")
+{
     PopupRig rig;
     Surface& s = rig.h.GetSurface();
     rig.button->SetTooltip(StringView("hello"));
@@ -348,7 +382,7 @@ TEST_CASE("a press, a wheel turn and a popup hide the tooltip", "[ui][tooltip]")
     rig.h.PointerDown(200, 115);
     CHECK_FALSE(s.TooltipShown());
     rig.h.PointerUp(200, 115);
-    rig.h.Advance(wait); // the pointer is still: it does not come back until it moves
+    rig.h.Advance(wait);  // the pointer is still: it does not come back until it moves
     CHECK_FALSE(s.TooltipShown());
     rig.h.PointerMove(205, 115);
     rig.h.Advance(wait);
@@ -362,7 +396,8 @@ TEST_CASE("a press, a wheel turn and a popup hide the tooltip", "[ui][tooltip]")
     CHECK_FALSE(s.TooltipShown());
 }
 
-TEST_CASE("the tooltip stays inside the surface", "[ui][tooltip]") {
+TEST_CASE("the tooltip stays inside the surface", "[ui][tooltip]")
+{
     PopupRig rig;
     Surface& s = rig.h.GetSurface();
     UniquePtr<Button> b = MakeUnique<Button>(StringView("corner"), StringView("x"));
@@ -374,9 +409,11 @@ TEST_CASE("the tooltip stays inside the surface", "[ui][tooltip]") {
     rig.h.PointerMove(398, 298);
     rig.h.Advance(static_cast<f32>(Surface::kTooltipDelay) * 1.2f);
     REQUIRE(s.TooltipShown());
-    // The tooltip layer is the last child of the popup layer's sibling; find the bubble by its bounds: it must lie inside.
+    // The tooltip layer is the last child of the popup layer's sibling; find the bubble by its bounds: it must lie
+    // inside.
     bool found = false;
-    for (usize i = 0; i < s.TooltipLayer()->ChildCount(); ++i) {
+    for (usize i = 0; i < s.TooltipLayer()->ChildCount(); ++i)
+    {
         const Rect r = s.TooltipLayer()->ChildAt(i)->Bounds();
         found = true;
         CHECK(r.x >= 0);
@@ -387,12 +424,13 @@ TEST_CASE("the tooltip stays inside the surface", "[ui][tooltip]") {
     CHECK(found);
 }
 
-TEST_CASE("PlacePopup keeps a popup that fits neither side inside the bounds", "[ui][popup]") {
+TEST_CASE("PlacePopup keeps a popup that fits neither side inside the bounds", "[ui][popup]")
+{
     const Rect bounds = PRect(0, 0, 400, 600);
     // 400 high, anchor at y 280..300: 300 below and 280 above are both too little.
     Rect r = PlacePopup(Size{100, 400}, PRect(10, 280, 50, 20), Placement::Below, bounds);
     CHECK(r.y >= 0);
-    CHECK(r.y + r.h <= 600); // the far edge was at 700 before: its last items could not be reached
+    CHECK(r.y + r.h <= 600);  // the far edge was at 700 before: its last items could not be reached
     // The same across.
     r = PlacePopup(Size{300, 100}, PRect(150, 10, 100, 20), Placement::Right, bounds);
     CHECK(r.x >= 0);

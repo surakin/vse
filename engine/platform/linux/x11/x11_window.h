@@ -18,7 +18,8 @@ struct _XDisplay;
 struct _XIC;
 struct _XIM;
 
-namespace engine_placeholder::os::x11 {
+namespace engine_placeholder::os::x11
+{
 
 /// Toplevel window on an X11 display, translating X events into an `InputState`.
 ///
@@ -28,14 +29,16 @@ namespace engine_placeholder::os::x11 {
 /// - Thread-safety: owner-thread-only. Create, pump and destroy it on one thread.
 /// - Ownership: owns the X display connection, window, and input method and context;
 ///   all are released on destruction. A moved-from window is invalid.
-class X11Window final : public Window {
+class X11Window final : public Window
+{
 public:
     /// Opens the display named by `$DISPLAY`, creates and maps a toplevel window, and registers `WM_DELETE_WINDOW`.
     /// - Param title: window title.
     /// - Param width: initial client width in pixels.
     /// - Param height: initial client height in pixels.
     /// - Returns: the window; check [[os::x11::X11Window::Valid]].
-    /// - Fails: returns an invalid window (logged via `LogPlatform`) if the display cannot be opened or a request fails.
+    /// - Fails: returns an invalid window (logged via `LogPlatform`) if the display cannot be opened or a request
+    /// fails.
     static X11Window Create(StringView title, u32 width, u32 height);
 
     /// Constructs an invalid window that owns nothing.
@@ -68,7 +71,8 @@ public:
     ///
     /// - Param input: state to fill, or null to ignore input; not owned and must outlive its use here.
     void SetInputState(InputState* input) { input_ = input; }
-    /// Removes the oldest queued input event; see [[os::Window::PollEvent]]. Events are queued by every `PumpEvents`, whether or not an `InputState` is set.
+    /// Removes the oldest queued input event; see [[os::Window::PollEvent]]. Events are queued by every `PumpEvents`,
+    /// whether or not an `InputState` is set.
     bool PollEvent(InputEvent* out) override { return events_.Pop(out); }
     /// Returns the number of events dropped because the queue was full.
     u64 DroppedEvents() const override { return events_.Dropped(); }
@@ -81,9 +85,11 @@ public:
     /// Returns the backend id, `"x11"`.
     const char* BackendName() const override { return "x11"; }
     /// Returns the `Display*` and window id, with kind `Xlib`; `Invalid` if the window is invalid.
-    NativeWindowInfo GetNativeInfo() const override {
+    NativeWindowInfo GetNativeInfo() const override
+    {
         NativeWindowInfo info;
-        if (display_ != nullptr) {
+        if (display_ != nullptr)
+        {
             info.kind = NativeWindowKind::Xlib;
             info.display = display_;
             info.window_id = window_;
@@ -94,8 +100,8 @@ public:
     bool IsMinimized() const override { return display_ == nullptr || width_ == 0 || height_ == 0 || unmapped_; }
     /// Returns a counter that changes each time the size changes; 0 for an invalid window.
     u64 ResizeSerial() const override { return resize_serial_; }
-    /// Returns true on a valid window: X11 fullscreen goes through the window manager (`_NET_WM_STATE_FULLSCREEN`), which
-    /// may still refuse.
+    /// Returns true on a valid window: X11 fullscreen goes through the window manager (`_NET_WM_STATE_FULLSCREEN`),
+    /// which may still refuse.
     bool SupportsFullscreen() const override { return display_ != nullptr; }
     /// Sends the `_NET_WM_STATE` client message to the root window that adds or removes fullscreen.
     /// - Param fullscreen: the state wanted.
@@ -114,25 +120,39 @@ public:
     bool SetCursorImage(const CursorImage& image) override { return CursorSetImage(display_, window_, cursor_, image); }
     /// Removes the custom cursor image.
     void ClearCursorImage() override { CursorClearImage(display_, window_, cursor_); }
-    /// Returns true on a valid window: the lock is a pointer grab with XInput 2 raw motion (without XInput 2 the grab works and no relative motion arrives).
+    /// Returns true on a valid window: the lock is a pointer grab with XInput 2 raw motion (without XInput 2 the grab
+    /// works and no relative motion arrives).
     bool SupportsPointerLock() const override { return display_ != nullptr; }
-    /// Locks or unlocks the pointer; see [[os::Window::SetPointerLock]]. The grab is taken at once if the window has focus, else when focus arrives.
+    /// Locks or unlocks the pointer; see [[os::Window::SetPointerLock]]. The grab is taken at once if the window has
+    /// focus, else when focus arrives.
     bool SetPointerLock(bool locked) override;
     /// Returns whether this window holds the pointer grab.
     bool PointerLocked() const override { return cursor_.lock.Active(); }
-    /// Returns how many server cursors the window owns, so a test can check that replacing and clearing cursor images frees them.
+    /// Returns how many server cursors the window owns, so a test can check that replacing and clearing cursor images
+    /// frees them.
     u32 CursorObjectCount() const { return cursor_.live; }
 
     /// Returns true on a valid window: both selections work (the clipboard and the primary selection).
-    bool SupportsClipboard(ClipboardKind kind) const override { return display_ != nullptr && static_cast<usize>(kind) < static_cast<usize>(ClipboardKind::Count); }
-    /// Takes the selection; see [[os::Window::SetClipboard]]. The contents are served from `PumpEvents`, in INCR pieces when large.
+    bool SupportsClipboard(ClipboardKind kind) const override
+    {
+        return display_ != nullptr && static_cast<usize>(kind) < static_cast<usize>(ClipboardKind::Count);
+    }
+    /// Takes the selection; see [[os::Window::SetClipboard]]. The contents are served from `PumpEvents`, in INCR pieces
+    /// when large.
     bool SetClipboard(ClipboardKind kind, const ClipboardOffer& offer) override;
     /// Asks the owner of the selection; see [[os::Window::RequestClipboard]].
     u32 RequestClipboard(ClipboardKind kind, ClipboardFormat format, StringView custom_name) override;
     /// Hands over a finished result once.
-    bool TakeClipboardResult(u32 request_id, ClipboardResult* out) override { return clipboard_.requests.Take(request_id, out); }
-    /// Returns whether the selection offers the format (from our own data, or from the targets of the other owner read at the last `ClipboardChanged`).
-    bool ClipboardHasFormat(ClipboardKind kind, ClipboardFormat format, StringView custom_name) const override { return ClipboardHas(display_, clipboard_, kind, format, custom_name); }
+    bool TakeClipboardResult(u32 request_id, ClipboardResult* out) override
+    {
+        return clipboard_.requests.Take(request_id, out);
+    }
+    /// Returns whether the selection offers the format (from our own data, or from the targets of the other owner read
+    /// at the last `ClipboardChanged`).
+    bool ClipboardHasFormat(ClipboardKind kind, ClipboardFormat format, StringView custom_name) const override
+    {
+        return ClipboardHas(display_, clipboard_, kind, format, custom_name);
+    }
 
     /// Returns true on a valid window: XDND version 5.
     bool SupportsDragAndDrop() const override { return display_ != nullptr; }
@@ -144,16 +164,19 @@ public:
     u32 RequestDropData(ClipboardFormat format, StringView custom_name) override;
     /// Sends `XdndFinished`.
     void FinishDrop(DragAction taken) override { DndFinish(display_, window_, dnd_, taken); }
-    /// Starts a drag: grabs the pointer (and keyboard, for Escape), owns `XdndSelection`, and follows the pointer from `PumpEvents`. The drag image is not drawn on X11.
+    /// Starts a drag: grabs the pointer (and keyboard, for Escape), owns `XdndSelection`, and follows the pointer from
+    /// `PumpEvents`. The drag image is not drawn on X11.
     bool BeginDrag(const DragSource& source) override;
     /// Cancels the running drag.
     void CancelDrag() override;
     /// Returns whether a drag started by this window is running.
     bool Dragging() const override { return dnd_.source.active; }
-    /// The pointer moved to (`root_x`, `root_y`) in root coordinates with the modifier `state` while this window drags; `PumpEvents` calls it for each grabbed motion.
-    /// Public so that a test can drive a drag without a pointer. Does nothing when no drag is running.
+    /// The pointer moved to (`root_x`, `root_y`) in root coordinates with the modifier `state` while this window drags;
+    /// `PumpEvents` calls it for each grabbed motion. Public so that a test can drive a drag without a pointer. Does
+    /// nothing when no drag is running.
     void DragPointerMoved(int root_x, int root_y, unsigned long state);
-    /// The button was released while this window drags: drops on the target under the pointer, or ends the drag. `PumpEvents` calls it; public for the same reason.
+    /// The button was released while this window drags: drops on the target under the pointer, or ends the drag.
+    /// `PumpEvents` calls it; public for the same reason.
     void DragButtonReleased();
 
     /// Returns the underlying Xlib `Display*`, or null if invalid.
@@ -195,4 +218,4 @@ private:
     X11DndState dnd_;
 };
 
-} // namespace engine_placeholder::os::x11
+}  // namespace engine_placeholder::os::x11

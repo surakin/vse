@@ -11,9 +11,11 @@
 
 using namespace engine_placeholder;
 
-namespace {
+namespace
+{
 
-void WriteLine(StringView label, StringView value) {
+void WriteLine(StringView label, StringView value)
+{
     ArenaAllocator scratch(256);
     StringBuilder<ArenaAllocator> line(scratch);
     line.Append(label).Append(value).Append('\n');
@@ -21,13 +23,17 @@ void WriteLine(StringView label, StringView value) {
 }
 
 // Parses a non-negative decimal integer; false on empty/non-digit/overflow-ish input.
-bool ParseSeconds(StringView text, u64& out) {
-    if (text.Length() == 0 || text.Length() > 6) {
+bool ParseSeconds(StringView text, u64& out)
+{
+    if (text.Length() == 0 || text.Length() > 6)
+    {
         return false;
     }
     u64 value = 0;
-    for (usize i = 0; i < text.Length(); ++i) {
-        if (text[i] < '0' || text[i] > '9') {
+    for (usize i = 0; i < text.Length(); ++i)
+    {
+        if (text[i] < '0' || text[i] > '9')
+        {
             return false;
         }
         value = value * 10 + static_cast<u64>(text[i] - '0');
@@ -39,7 +45,8 @@ bool ParseSeconds(StringView text, u64& out) {
 // Day 22/23 debug readout: logs InputState whenever something in it
 // changed since the last frame (so a human at the keyboard/mouse can
 // confirm each interaction lands, without a per-frame log flood).
-struct InputSnapshot {
+struct InputSnapshot
+{
     f64 mouse_x = 0.0;
     f64 mouse_y = 0.0;
     bool inside = false;
@@ -50,17 +57,21 @@ struct InputSnapshot {
     u32 keys_down = 0;
 };
 
-u32 CountKeysDown(const os::KeyboardState& kb) {
+u32 CountKeysDown(const os::KeyboardState& kb)
+{
     u32 n = 0;
-    for (usize i = 1; i < os::KeyboardState::kKeyCount; ++i) {
-        if (kb.IsDown(static_cast<os::Key>(i))) {
+    for (usize i = 1; i < os::KeyboardState::kKeyCount; ++i)
+    {
+        if (kb.IsDown(static_cast<os::Key>(i)))
+        {
             ++n;
         }
     }
     return n;
 }
 
-void LogInputIfChanged(const os::InputState& in, InputSnapshot& prev) {
+void LogInputIfChanged(const os::InputState& in, InputSnapshot& prev)
+{
     InputSnapshot cur;
     cur.mouse_x = in.mouse_x;
     cur.mouse_y = in.mouse_y;
@@ -72,10 +83,10 @@ void LogInputIfChanged(const os::InputState& in, InputSnapshot& prev) {
     cur.keys_down = CountKeysDown(in.keyboard);
 
     bool changed = cur.mouse_x != prev.mouse_x || cur.mouse_y != prev.mouse_y || cur.inside != prev.inside ||
-                   cur.buttons != prev.buttons || cur.modifiers != prev.modifiers ||
-                   cur.scroll_dx != prev.scroll_dx || cur.scroll_dy != prev.scroll_dy ||
-                   cur.keys_down != prev.keys_down;
-    if (changed) {
+                   cur.buttons != prev.buttons || cur.modifiers != prev.modifiers || cur.scroll_dx != prev.scroll_dx ||
+                   cur.scroll_dy != prev.scroll_dy || cur.keys_down != prev.keys_down;
+    if (changed)
+    {
         ArenaAllocator scratch(512);
         StringBuilder<ArenaAllocator> line(scratch);
         line.Append("input: mouse=(").AppendFloat(cur.mouse_x, 1).Append(',').AppendFloat(cur.mouse_y, 1);
@@ -91,23 +102,28 @@ void LogInputIfChanged(const os::InputState& in, InputSnapshot& prev) {
     prev = cur;
 }
 
-} // namespace
+}  // namespace
 
-// The program's entry point (platform/entry_point.h): ENGINE_WINDOWED_PROGRAM at the end of the file makes it `main` on Linux and
-// `wWinMain` on Windows, where hello_window is a GUI program (no console window). The arguments are already stashed for FromNative.
-int EngineMain(int, char**) {
+// The program's entry point (platform/entry_point.h): ENGINE_WINDOWED_PROGRAM at the end of the file makes it `main` on
+// Linux and `wWinMain` on Windows, where hello_window is a GUI program (no console window). The arguments are already
+// stashed for FromNative.
+int EngineMain(int, char**)
+{
     ArenaAllocator cmd_line_arena(4096);
     os::CommandLine<ArenaAllocator> cmd_line = os::CommandLine<ArenaAllocator>::FromNative(cmd_line_arena);
 
     WriteLine("program: ", cmd_line.ProgramName());
-    for (usize i = 0; i < cmd_line.ArgCount(); ++i) {
+    for (usize i = 0; i < cmd_line.ArgCount(); ++i)
+    {
         WriteLine("arg: ", cmd_line.Arg(i));
     }
-    for (usize i = 0; i < cmd_line.FlagCount(); ++i) {
+    for (usize i = 0; i < cmd_line.FlagCount(); ++i)
+    {
         ArenaAllocator scratch(256);
         StringBuilder<ArenaAllocator> line(scratch);
         line.Append("flag: --").Append(cmd_line.FlagName(i));
-        if (cmd_line.FlagHasValue(i)) {
+        if (cmd_line.FlagHasValue(i))
+        {
             line.Append('=').Append(cmd_line.FlagValue(i));
         }
         line.Append('\n');
@@ -116,18 +132,39 @@ int EngineMain(int, char**) {
 
     // `--log-level=error|warn|info|debug|trace` sets every channel's
     // verbosity (default Warn hides e.g. resize and decoration lines).
-    for (usize i = 0; i < cmd_line.FlagCount(); ++i) {
-        if (cmd_line.FlagName(i) == StringView("log-level") && cmd_line.FlagHasValue(i)) {
+    for (usize i = 0; i < cmd_line.FlagCount(); ++i)
+    {
+        if (cmd_line.FlagName(i) == StringView("log-level") && cmd_line.FlagHasValue(i))
+        {
             StringView v = cmd_line.FlagValue(i);
             LogVerbosity level = LogVerbosity::Warn;
             bool known = true;
-            if (v == StringView("error")) level = LogVerbosity::Error;
-            else if (v == StringView("warn")) level = LogVerbosity::Warn;
-            else if (v == StringView("info")) level = LogVerbosity::Info;
-            else if (v == StringView("debug")) level = LogVerbosity::Debug;
-            else if (v == StringView("trace")) level = LogVerbosity::Trace;
-            else known = false;
-            if (known) {
+            if (v == StringView("error"))
+            {
+                level = LogVerbosity::Error;
+            }
+            else if (v == StringView("warn"))
+            {
+                level = LogVerbosity::Warn;
+            }
+            else if (v == StringView("info"))
+            {
+                level = LogVerbosity::Info;
+            }
+            else if (v == StringView("debug"))
+            {
+                level = LogVerbosity::Debug;
+            }
+            else if (v == StringView("trace"))
+            {
+                level = LogVerbosity::Trace;
+            }
+            else
+            {
+                known = false;
+            }
+            if (known)
+            {
                 LogCore.SetVerbosity(level);
                 LogRender.SetVerbosity(level);
                 LogPlatform.SetVerbosity(level);
@@ -145,17 +182,24 @@ int EngineMain(int, char**) {
     {
         os::WindowBackend requested = os::WindowBackend::Invalid;
         bool have_flag = false;
-        for (usize i = 0; i < cmd_line.FlagCount(); ++i) {
-            if (cmd_line.FlagName(i) == StringView("backend") && cmd_line.FlagHasValue(i)) {
+        for (usize i = 0; i < cmd_line.FlagCount(); ++i)
+        {
+            if (cmd_line.FlagName(i) == StringView("backend") && cmd_line.FlagHasValue(i))
+            {
                 requested = os::ParseWindowBackend(cmd_line.FlagValue(i));
                 have_flag = true;
             }
         }
-        if (!have_flag) {
+        if (!have_flag)
+        {
             window_host.OpenFromEnvironment("re-engine", 1280, 720, &input_state);
-        } else if (requested == os::WindowBackend::Invalid) {
+        }
+        else if (requested == os::WindowBackend::Invalid)
+        {
             Log(LogPlatform, LogVerbosity::Error, "Window: unrecognized --backend (want auto|wayland|x11|win32)");
-        } else {
+        }
+        else
+        {
             window_host.Open(requested, "re-engine", 1280, 720, &input_state);
         }
     }
@@ -174,10 +218,13 @@ int EngineMain(int, char**) {
     // turns them back on (Day 14's original readout).
     bool print_frame_times = cmd_line.HasFlag("frame-times");
     u64 run_seconds = 6;
-    for (usize i = 0; i < cmd_line.FlagCount(); ++i) {
-        if (cmd_line.FlagName(i) == StringView("run-seconds") && cmd_line.FlagHasValue(i)) {
+    for (usize i = 0; i < cmd_line.FlagCount(); ++i)
+    {
+        if (cmd_line.FlagName(i) == StringView("run-seconds") && cmd_line.FlagHasValue(i))
+        {
             u64 parsed = 0;
-            if (ParseSeconds(cmd_line.FlagValue(i), parsed)) {
+            if (ParseSeconds(cmd_line.FlagValue(i), parsed))
+            {
                 run_seconds = parsed;
             }
         }
@@ -186,29 +233,34 @@ int EngineMain(int, char**) {
 
     u64 run_start = os::MonotonicTimeNanos();
     u64 last = run_start;
-    while (os::MonotonicTimeNanos() - run_start < kRunDurationNanos) {
+    while (os::MonotonicTimeNanos() - run_start < kRunDurationNanos)
+    {
         u64 now = os::MonotonicTimeNanos();
         u64 delta_nanos = now - last;
         last = now;
 
-        if (print_frame_times) {
+        if (print_frame_times)
+        {
             ArenaAllocator scratch(256);
             StringBuilder<ArenaAllocator> line(scratch);
             line.Append("delta_ms: ").AppendFloat(static_cast<f64>(delta_nanos) / 1'000'000.0, 3).Append('\n');
             os::Write(1, line.CStr(), line.View().Length());
         }
 
-        if (os::Window* active = window_host.Get()) {
+        if (os::Window* active = window_host.Get())
+        {
             input_state.BeginFrame();
             active->PumpEvents();
             LogInputIfChanged(input_state, prev_input);
-            if (active->ShouldClose()) {
+            if (active->ShouldClose())
+            {
                 break;
             }
         }
 
         u64 elapsed = os::MonotonicTimeNanos() - now;
-        if (elapsed < kTargetFrameNanos) {
+        if (elapsed < kTargetFrameNanos)
+        {
             os::SleepNanos(kTargetFrameNanos - elapsed);
         }
     }

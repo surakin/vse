@@ -1,4 +1,5 @@
-// The type-erased entity calls a loader uses (Phase 19 Day 260): CreateFromSet, AddDefault, RemoveById, CellOf, HasById, EnsureArchetype.
+// The type-erased entity calls a loader uses (Phase 19 Day 260): CreateFromSet, AddDefault, RemoveById, CellOf,
+// HasById, EnsureArchetype.
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -8,19 +9,30 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::ecs;
 
-namespace {
+namespace
+{
 
-struct RawA { u32 v = 7; };
-struct RawB { f32 x = 1.5f; };
-struct RawTag {};
-struct RawNoDefault {
+struct RawA
+{
+    u32 v = 7;
+};
+struct RawB
+{
+    f32 x = 1.5f;
+};
+struct RawTag
+{
+};
+struct RawNoDefault
+{
     int v;
     explicit RawNoDefault(int x) : v(x) {}
 };
 
-} // namespace
+}  // namespace
 
-TEST_CASE("Raw access: CreateFromSet default-constructs exactly the set", "[ecs][raw]") {
+TEST_CASE("Raw access: CreateFromSet default-constructs exactly the set", "[ecs][raw]")
+{
     World world;
     ComponentSet set;
     set.Add(ComponentOf<RawA>());
@@ -35,12 +47,13 @@ TEST_CASE("Raw access: CreateFromSet default-constructs exactly the set", "[ecs]
     CHECK(world.Get<RawA>(e)->v == 7);
     CHECK(world.Get<RawB>(e)->x == 1.5f);
     CHECK(world.HasById(e, ComponentOf<RawTag>()));
-    CHECK(world.CellOf(e, ComponentOf<RawTag>()) == nullptr); // a tag has no cell
+    CHECK(world.CellOf(e, ComponentOf<RawTag>()) == nullptr);  // a tag has no cell
     CHECK(world.CellOf(e, ComponentOf<RawA>()) == world.Get<RawA>(e));
     CHECK(world.Validate().Ok());
 }
 
-TEST_CASE("Raw access: a type without a default constructor is refused and nothing is made", "[ecs][raw]") {
+TEST_CASE("Raw access: a type without a default constructor is refused and nothing is made", "[ecs][raw]")
+{
     World world;
     ComponentSet set;
     set.Add(ComponentOf<RawA>());
@@ -52,13 +65,14 @@ TEST_CASE("Raw access: a type without a default constructor is refused and nothi
     CHECK_FALSE(world.Has<RawNoDefault>(e));
 }
 
-TEST_CASE("Raw access: AddDefault and RemoveById move an entity like Add and Remove", "[ecs][raw]") {
+TEST_CASE("Raw access: AddDefault and RemoveById move an entity like Add and Remove", "[ecs][raw]")
+{
     World world;
     const Entity e = world.Create(RawA{42});
     CHECK(world.AddDefault(e, ComponentOf<RawB>()) == Status::Ok);
     CHECK(world.AddDefault(e, ComponentOf<RawB>()) == Status::AlreadyHas);
     CHECK(world.Get<RawB>(e)->x == 1.5f);
-    CHECK(world.Get<RawA>(e)->v == 42); // the move kept the old component
+    CHECK(world.Get<RawA>(e)->v == 42);  // the move kept the old component
     CHECK(world.RemoveById(e, ComponentOf<RawA>()) == Status::Ok);
     CHECK(world.RemoveById(e, ComponentOf<RawA>()) == Status::MissingComponent);
     CHECK_FALSE(world.Has<RawA>(e));
@@ -69,7 +83,8 @@ TEST_CASE("Raw access: AddDefault and RemoveById move an entity like Add and Rem
     CHECK(world.Validate().Ok());
 }
 
-TEST_CASE("Raw access: the writable CellOf stamps the component as changed", "[ecs][raw]") {
+TEST_CASE("Raw access: the writable CellOf stamps the component as changed", "[ecs][raw]")
+{
     World world;
     const Entity e = world.Create(RawA{1});
     world.Advance();

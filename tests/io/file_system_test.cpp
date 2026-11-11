@@ -22,30 +22,62 @@ using io_test::TempDir;
 using io_test::EnvGuard;
 #endif
 
-namespace {
+namespace
+{
 
+}  // namespace
 
-} // namespace
-
-#if !ENGINE_PLATFORM_WINDOWS // Windows has its own table (tests/io/io_windows_test.cpp)
-TEST_CASE("io::Error: the errno table and names", "[io][error]") {
-    struct Row { int code; Error error; };
+#if !ENGINE_PLATFORM_WINDOWS  // Windows has its own table (tests/io/io_windows_test.cpp)
+TEST_CASE("io::Error: the errno table and names", "[io][error]")
+{
+    struct Row
+    {
+        int code;
+        Error error;
+    };
     const Row rows[] = {
-        {0, Error::None}, {ENOENT, Error::NotFound}, {EACCES, Error::PermissionDenied}, {EPERM, Error::PermissionDenied},
-        {EEXIST, Error::AlreadyExists}, {ENOTDIR, Error::NotADirectory}, {EISDIR, Error::IsADirectory},
-        {ENOTEMPTY, Error::NotEmpty}, {ENOSPC, Error::NoSpace}, {EDQUOT, Error::NoSpace}, {EFBIG, Error::NoSpace},
-        {ENAMETOOLONG, Error::TooLong}, {EINTR, Error::Interrupted}, {ENOSYS, Error::Unsupported},
-        {EOPNOTSUPP, Error::Unsupported}, {EINVAL, Error::Invalid}, {EBADF, Error::Invalid}, {EXDEV, Error::CrossDevice},
-        {ELOOP, Error::SymlinkLoop}, {ERANGE, Error::TooLong}, {EROFS, Error::ReadOnly}, {EBUSY, Error::Busy}, {ETXTBSY, Error::Busy},
-        {EMFILE, Error::TooManyOpenFiles}, {ENFILE, Error::TooManyOpenFiles}, {ENOMEM, Error::OutOfMemory},
+        {0, Error::None},
+        {ENOENT, Error::NotFound},
+        {EACCES, Error::PermissionDenied},
+        {EPERM, Error::PermissionDenied},
+        {EEXIST, Error::AlreadyExists},
+        {ENOTDIR, Error::NotADirectory},
+        {EISDIR, Error::IsADirectory},
+        {ENOTEMPTY, Error::NotEmpty},
+        {ENOSPC, Error::NoSpace},
+        {EDQUOT, Error::NoSpace},
+        {EFBIG, Error::NoSpace},
+        {ENAMETOOLONG, Error::TooLong},
+        {EINTR, Error::Interrupted},
+        {ENOSYS, Error::Unsupported},
+        {EOPNOTSUPP, Error::Unsupported},
+        {EINVAL, Error::Invalid},
+        {EBADF, Error::Invalid},
+        {EXDEV, Error::CrossDevice},
+        {ELOOP, Error::SymlinkLoop},
+        {ERANGE, Error::TooLong},
+        {EROFS, Error::ReadOnly},
+        {EBUSY, Error::Busy},
+        {ETXTBSY, Error::Busy},
+        {EMFILE, Error::TooManyOpenFiles},
+        {ENFILE, Error::TooManyOpenFiles},
+        {ENOMEM, Error::OutOfMemory},
 #if ENGINE_PLATFORM_MACOS || ENGINE_PLATFORM_IOS
-        // Darwin's own codes (Phase 26 Day 303); ENOTSUP is a number of its own there (on Linux it equals EOPNOTSUPP, listed above).
-        {ENOTSUP, Error::Unsupported}, {EAUTH, Error::PermissionDenied}, {ENEEDAUTH, Error::PermissionDenied}, {EFTYPE, Error::Invalid},
+        // Darwin's own codes (Phase 26 Day 303); ENOTSUP is a number of its own there (on Linux it equals EOPNOTSUPP,
+        // listed above).
+        {ENOTSUP, Error::Unsupported},
+        {EAUTH, Error::PermissionDenied},
+        {ENEEDAUTH, Error::PermissionDenied},
+        {EFTYPE, Error::Invalid},
         {ENOATTR, Error::NotFound},
 #endif
-        {EIO, Error::Io}, {ENXIO, Error::Io}, {EFAULT, Error::Io}, {99999, Error::Io},
+        {EIO, Error::Io},
+        {ENXIO, Error::Io},
+        {EFAULT, Error::Io},
+        {99999, Error::Io},
     };
-    for (const Row& r : rows) {
+    for (const Row& r : rows)
+    {
         INFO("errno " << r.code);
         CHECK(io::ErrorFromOsCode(r.code) == r.error);
     }
@@ -59,7 +91,8 @@ TEST_CASE("io::Error: the errno table and names", "[io][error]") {
 }
 #endif
 
-TEST_CASE("io: Stat, Lstat and the existence questions", "[io][fs]") {
+TEST_CASE("io: Stat, Lstat and the existence questions", "[io][fs]")
+{
     TempDir dir;
     const Path file = dir / "f.txt";
     REQUIRE(io_test::WriteText(file, "hello"));
@@ -82,7 +115,8 @@ TEST_CASE("io: Stat, Lstat and the existence questions", "[io][fs]") {
     CHECK(io::Stat(file / "child", &info).Is(Error::NotADirectory));
 
     // Symbolic links: Stat follows, Lstat describes the link; a dangling link does not exist.
-    if (!io_test::SymlinksAvailable()) {
+    if (!io_test::SymlinksAvailable())
+    {
         WARN("skipped the symbolic link checks: this process cannot create symbolic links (Windows: Developer Mode)");
         return;
     }
@@ -103,20 +137,23 @@ TEST_CASE("io: Stat, Lstat and the existence questions", "[io][fs]") {
     CHECK(io::Stat(loop, &info).Is(Error::SymlinkLoop));
 }
 
-TEST_CASE("io: read-only files report it", "[io][fs]") {
+TEST_CASE("io: read-only files report it", "[io][fs]")
+{
     TempDir dir;
     const Path file = dir / "ro.txt";
     REQUIRE(io_test::WriteText(file, "x"));
     REQUIRE(io_test::SetReadOnlyFile(file));
     io::FileInfo info;
     REQUIRE(io::Stat(file, &info).Ok());
-    if (!io_test::RunningAsRoot()) { // root can write anything
+    if (!io_test::RunningAsRoot())
+    {  // root can write anything
         CHECK(info.read_only);
     }
     CHECK(info.permissions == 0444);
 }
 
-TEST_CASE("io: CreateDirectory, CreateDirectories and Remove", "[io][fs]") {
+TEST_CASE("io: CreateDirectory, CreateDirectories and Remove", "[io][fs]")
+{
     TempDir dir;
     const Path d = dir / "a";
     CHECK(io::CreateDirectory(d).Ok());
@@ -124,7 +161,7 @@ TEST_CASE("io: CreateDirectory, CreateDirectories and Remove", "[io][fs]") {
     CHECK(io::CreateDirectory(dir / "x/y").Is(Error::NotFound));
     CHECK(io::CreateDirectories(dir / "x/y/z").Ok());
     CHECK(io::IsDirectory(dir / "x/y/z"));
-    CHECK(io::CreateDirectories(dir / "x/y/z").Ok()); // existing is success
+    CHECK(io::CreateDirectories(dir / "x/y/z").Ok());  // existing is success
     REQUIRE(io_test::WriteText(dir / "file", "x"));
     CHECK(io::CreateDirectories(dir / "file").Is(Error::NotADirectory));
     CHECK(io::CreateDirectories(dir / "file/sub").Is(Error::NotADirectory));
@@ -141,11 +178,14 @@ TEST_CASE("io: CreateDirectory, CreateDirectories and Remove", "[io][fs]") {
 
     // Over-long names.
     const engine_test::Text long_name = engine_test::Repeated(300, 'n');
-    CHECK(io::CreateDirectory(dir / long_name.View()).Is(Error::TooLong)); // a component over 255 characters, on every platform
+    CHECK(io::CreateDirectory(dir / long_name.View())
+              .Is(Error::TooLong));  // a component over 255 characters, on every platform
 }
 
-TEST_CASE("io: read-only directories refuse changes", "[io][fs]") {
-    if (io_test::RunningAsRoot()) {
+TEST_CASE("io: read-only directories refuse changes", "[io][fs]")
+{
+    if (io_test::RunningAsRoot())
+    {
         SUCCEED("root ignores directory permissions");
         return;
     }
@@ -159,17 +199,18 @@ TEST_CASE("io: read-only directories refuse changes", "[io][fs]") {
     REQUIRE(io_test::AllowAll(d));
 }
 
-TEST_CASE("io: RemoveAll removes trees, never follows links and refuses dangerous arguments", "[io][fs]") {
+TEST_CASE("io: RemoveAll removes trees, never follows links and refuses dangerous arguments", "[io][fs]")
+{
     TempDir dir;
-    TempDir other; // a tree that must survive
+    TempDir other;  // a tree that must survive
     REQUIRE(io_test::WriteText(other / "keep.txt", "keep"));
     REQUIRE(io::CreateDirectories(dir / "t/a/b").Ok());
     REQUIRE(io_test::WriteText(dir / "t/a/b/f", "1"));
     REQUIRE(io_test::WriteText(dir / "t/a/g", "2"));
-    REQUIRE(io_test::MakeDirectoryLink(other.Path(), dir / "t/a/link")); // Windows without Developer Mode: a junction
+    REQUIRE(io_test::MakeDirectoryLink(other.Path(), dir / "t/a/link"));  // Windows without Developer Mode: a junction
     CHECK(io::RemoveAll(dir / "t").Ok());
     CHECK_FALSE(io::Exists(dir / "t"));
-    CHECK(io::Exists(other / "keep.txt")); // the link was removed, not followed
+    CHECK(io::Exists(other / "keep.txt"));  // the link was removed, not followed
     CHECK(io::RemoveAll(dir / "t").Is(Error::NotFound));
 
     // A file and a link are removed too.
@@ -190,24 +231,32 @@ TEST_CASE("io: RemoveAll removes trees, never follows links and refuses dangerou
 
     // A tree deeper than the limit is refused rather than recursing without bound.
     Path deep = dir / "deep";
-    for (int i = 0; i < 140; ++i) deep = deep.Join("d");
+    for (int i = 0; i < 140; ++i)
+    {
+        deep = deep.Join("d");
+    }
     CHECK(io::CreateDirectories(deep).Ok());
     CHECK(io::RemoveAll(dir / "deep").Is(Error::TooLong));
-    // Make it shallow enough for the fixture's own cleanup: the refused RemoveAll deleted nothing, so remove the deepest 20 levels from the
-    // bottom up.
+    // Make it shallow enough for the fixture's own cleanup: the refused RemoveAll deleted nothing, so remove the
+    // deepest 20 levels from the bottom up.
     Path leaf = dir / "deep";
-    for (int i = 0; i < 140; ++i) leaf = leaf.Join("d");
-    for (int level = 0; level < 20; ++level) {
+    for (int i = 0; i < 140; ++i)
+    {
+        leaf = leaf.Join("d");
+    }
+    for (int level = 0; level < 20; ++level)
+    {
         REQUIRE(io::Remove(leaf).Ok());
         leaf = leaf.Parent();
     }
 }
 
-TEST_CASE("io: Rename and Copy", "[io][fs]") {
+TEST_CASE("io: Rename and Copy", "[io][fs]")
+{
     TempDir dir;
     REQUIRE(io_test::WriteText(dir / "a", "AAA"));
     REQUIRE(io_test::WriteText(dir / "b", "BBB"));
-    CHECK(io::Rename(dir / "a", dir / "b").Ok()); // replaces
+    CHECK(io::Rename(dir / "a", dir / "b").Ok());  // replaces
     CHECK(io_test::ReadText(dir / "b") == "AAA");
     CHECK_FALSE(io::Exists(dir / "a"));
     CHECK(io::Rename(dir / "a", dir / "c").Is(Error::NotFound));
@@ -244,15 +293,16 @@ TEST_CASE("io: Rename and Copy", "[io][fs]") {
     CHECK(info.permissions == expected);
 }
 
-TEST_CASE("io: CreatePrivateDirectory", "[io][fs]") {
+TEST_CASE("io: CreatePrivateDirectory", "[io][fs]")
+{
     TempDir dir;
     const Path p = dir / "parent/private";
     REQUIRE(io::CreatePrivateDirectory(p).Ok());
     io::FileInfo info;
     REQUIRE(io::Stat(p, &info).Ok());
 #if ENGINE_PLATFORM_WINDOWS
-    CHECK(io_test::AclIsPrivate(p)); // a protected ACL with one entry, for this user
-    CHECK(io_test::AclIsPrivate(p.Parent())); // missing parents are private too
+    CHECK(io_test::AclIsPrivate(p));           // a protected ACL with one entry, for this user
+    CHECK(io_test::AclIsPrivate(p.Parent()));  // missing parents are private too
 #else
     CHECK(info.permissions == 0700);
 #endif
@@ -277,7 +327,8 @@ TEST_CASE("io: CreatePrivateDirectory", "[io][fs]") {
     CHECK(io::CreatePrivateDirectory(dir / "file").Failed());
 }
 
-TEST_CASE("io: temporary files and directories", "[io][fs]") {
+TEST_CASE("io: temporary files and directories", "[io][fs]")
+{
     TempDir dir;
     Path a;
     Path b;
@@ -289,7 +340,8 @@ TEST_CASE("io: temporary files and directories", "[io][fs]") {
     REQUIRE(io::Stat(a, &info).Ok());
     CHECK(info.type == io::FileType::Regular);
     CHECK(info.size == 0);
-    CHECK(info.permissions == io_test::ReportedPermissions(0600)); // Windows: the directory's (private) ACL is inherited, BACKEND.md
+    CHECK(info.permissions ==
+          io_test::ReportedPermissions(0600));  // Windows: the directory's (private) ACL is inherited, BACKEND.md
     Path d;
     REQUIRE(io::CreateTempDirectory(dir.Path(), "work", &d).Ok());
     CHECK(io::IsDirectory(d));
@@ -299,7 +351,8 @@ TEST_CASE("io: temporary files and directories", "[io][fs]") {
     CHECK(io::CreateTempFile(dir / "missing", "x", &a).Is(Error::NotFound));
 }
 
-TEST_CASE("io: current directory, Absolute, Canonical and ReadLink", "[io][fs]") {
+TEST_CASE("io: current directory, Absolute, Canonical and ReadLink", "[io][fs]")
+{
     TempDir dir;
     Path cwd;
     REQUIRE(io::CurrentDirectory(&cwd).Ok());
@@ -309,17 +362,21 @@ TEST_CASE("io: current directory, Absolute, Canonical and ReadLink", "[io][fs]")
     CHECK(abs == cwd.Join("a/b"));
     REQUIRE(io::Absolute(Path("/x/y"), &abs).Ok());
 #if ENGINE_PLATFORM_WINDOWS
-    CHECK(abs == Path(cwd.RootName()).Join("/x/y")); // a rooted path takes the current drive
+    CHECK(abs == Path(cwd.RootName()).Join("/x/y"));  // a rooted path takes the current drive
 #else
     CHECK(abs == Path("/x/y"));
 #endif
 
     REQUIRE(io::CreateDirectories(dir / "real/sub").Ok());
-    // A relative symbolic link where one can be made; on Windows without Developer Mode a junction, whose target is absolute.
+    // A relative symbolic link where one can be made; on Windows without Developer Mode a junction, whose target is
+    // absolute.
     const bool symlink = io_test::SymlinksAvailable();
-    if (symlink) {
+    if (symlink)
+    {
         REQUIRE(io_test::MakeSymlink("real", dir / "alias", true));
-    } else {
+    }
+    else
+    {
         REQUIRE(io_test::MakeDirectoryLink(dir / "real", dir / "alias"));
     }
     Path canon;
@@ -331,9 +388,12 @@ TEST_CASE("io: current directory, Absolute, Canonical and ReadLink", "[io][fs]")
 
     Path target;
     REQUIRE(io::ReadLink(dir / "alias", &target).Ok());
-    if (symlink) {
+    if (symlink)
+    {
         CHECK(Str(target.View()) == "real");
-    } else {
+    }
+    else
+    {
         CHECK(target == dir / "real");
     }
     CHECK(io::ReadLink(dir / "real", &target).Is(Error::Invalid));
@@ -348,9 +408,12 @@ TEST_CASE("io: current directory, Absolute, Canonical and ReadLink", "[io][fs]")
     REQUIRE(io::SetCurrentDirectory(cwd).Ok());
 }
 
-#if ENGINE_PLATFORM_LINUX // Windows: tests/io/io_windows_test.cpp ("special folders on Windows"); macOS: io_macos_test.cpp (~/Library)
-TEST_CASE("io: special folders", "[io][fs]") {
-    EnvGuard home("HOME"), cfg("XDG_CONFIG_HOME"), cache("XDG_CACHE_HOME"), data("XDG_DATA_HOME"), state("XDG_STATE_HOME"), tmp("TMPDIR");
+#if ENGINE_PLATFORM_LINUX  // Windows: tests/io/io_windows_test.cpp ("special folders on Windows"); macOS:
+                           // io_macos_test.cpp (~/Library)
+TEST_CASE("io: special folders", "[io][fs]")
+{
+    EnvGuard home("HOME"), cfg("XDG_CONFIG_HOME"), cache("XDG_CACHE_HOME"), data("XDG_DATA_HOME"),
+        state("XDG_STATE_HOME"), tmp("TMPDIR");
     ::setenv("HOME", "/home/test", 1);
     ::unsetenv("XDG_CONFIG_HOME");
     ::unsetenv("XDG_CACHE_HOME");
@@ -369,15 +432,18 @@ TEST_CASE("io: special folders", "[io][fs]") {
     ::setenv("XDG_CONFIG_HOME", "/xdg/config", 1);
     REQUIRE(io::UserConfigDirectory("app", &p).Ok());
     CHECK(Str(p.View()) == "/xdg/config/app");
-    ::setenv("XDG_CONFIG_HOME", "relative/config", 1); // relative values are ignored
+    ::setenv("XDG_CONFIG_HOME", "relative/config", 1);  // relative values are ignored
     REQUIRE(io::UserConfigDirectory("app", &p).Ok());
     CHECK(Str(p.View()) == "/home/test/.config/app");
-    ::setenv("HOME", "relative/home", 1); // HOME must be absolute too: falls back to the password database
+    ::setenv("HOME", "relative/home", 1);  // HOME must be absolute too: falls back to the password database
     ::unsetenv("XDG_CONFIG_HOME");
     const io::Status s = io::UserConfigDirectory("app", &p);
-    if (s.Ok()) {
+    if (s.Ok())
+    {
         CHECK(p.IsAbsolute());
-    } else {
+    }
+    else
+    {
         CHECK(s.Is(Error::NotFound));
     }
     ::unsetenv("HOME");

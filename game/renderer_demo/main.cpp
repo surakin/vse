@@ -1,6 +1,6 @@
-// renderer_demo: the Phase 5 showcase. A few hundred lit objects in eight materials, hundreds of point lights and a sun,
-// drawn by the deferred renderer (G-buffer, light volumes, ACES tonemap) into a window (Wayland, X11 or Win32), or offscreen.
-// Tab switches between the orbit and fly cameras. See README.md for the options and controls.
+// renderer_demo: the Phase 5 showcase. A few hundred lit objects in eight materials, hundreds of point lights and a
+// sun, drawn by the deferred renderer (G-buffer, light volumes, ACES tonemap) into a window (Wayland, X11 or Win32), or
+// offscreen. Tab switches between the orbit and fly cameras. See README.md for the options and controls.
 
 #include "lang/scalar.h"
 
@@ -39,14 +39,16 @@ using namespace engine_placeholder::rhi;
 using namespace engine_placeholder::renderer;
 using namespace renderer_demo;
 
-namespace {
+namespace
+{
 
 constexpr int kExitOk = 0;
-constexpr int kExitFailure = 1; // the device, window, swapchain or a frame failed, or memory grew
+constexpr int kExitFailure = 1;  // the device, window, swapchain or a frame failed, or memory grew
 constexpr int kExitUsage = 2;
-constexpr int kExitDeviceLost = 3; // the GPU device was lost; the demo stopped cleanly
+constexpr int kExitDeviceLost = 3;  // the GPU device was lost; the demo stopped cleanly
 
-// Memory must not grow by more than this between frame 100 and the last frame of a run of at least kMemoryCheckFrames frames.
+// Memory must not grow by more than this between frame 100 and the last frame of a run of at least kMemoryCheckFrames
+// frames.
 constexpr long kMemoryCheckStart = 100;
 constexpr long kMemoryCheckFrames = 200;
 constexpr long kMemoryGrowthLimitKiB = 8 * 1024;
@@ -54,10 +56,12 @@ constexpr long kMemoryGrowthLimitKiB = 8 * 1024;
 constexpr u32 kShotWidth = 640;
 constexpr u32 kShotHeight = 360;
 
-struct Options {
-    long frames = 0;                  // 0: until the window closes
-    const char* screenshot = nullptr; // render offscreen to this PPM and exit
-    const char* backend = "auto";     // the display backend: auto, wayland, x11 or win32 (the setting platform.window_backend)
+struct Options
+{
+    long frames = 0;                   // 0: until the window closes
+    const char* screenshot = nullptr;  // render offscreen to this PPM and exit
+    const char*
+        backend = "auto";  // the display backend: auto, wayland, x11 or win32 (the setting platform.window_backend)
     bool no_vsync = false;
     bool validation = false;
     long objects = 540;
@@ -65,74 +69,120 @@ struct Options {
     int gbuffer_layer = -1;
     long inject_device_loss = 0;
     long inject_oom = 0;
-    const char* gpu = nullptr;            // --gpu: an adapter id, an index or part of a name
-    bool list_gpus = false;               // --list-gpus
-    bool prewarm = false;                 // --prewarm: rebuild every pipeline inside a reset instead of on first use
-    const char* script = nullptr;         // --script: the live paths without a keyboard
-    const char* text = nullptr;           // --text: the overlay's greeting (default "Hello, world!"); in --screenshot it also switches the overlay on
+    const char* gpu = nullptr;     // --gpu: an adapter id, an index or part of a name
+    bool list_gpus = false;        // --list-gpus
+    bool prewarm = false;          // --prewarm: rebuild every pipeline inside a reset instead of on first use
+    const char* script = nullptr;  // --script: the live paths without a keyboard
+    const char* text = nullptr;    // --text: the overlay's greeting (default "Hello, world!"); in --screenshot it also
+                                   // switches the overlay on
 };
 
-double NowSeconds() { return static_cast<double>(os::MonotonicTimeNanos()) * 1e-9; }
+double NowSeconds()
+{
+    return static_cast<double>(os::MonotonicTimeNanos()) * 1e-9;
+}
 
-f32 Clamp(f32 v, f32 lo, f32 hi) { return v < lo ? lo : (v > hi ? hi : v); }
+f32 Clamp(f32 v, f32 lo, f32 hi)
+{
+    return v < lo ? lo : (v > hi ? hi : v);
+}
 
 // Orbit around the middle of the scene, or fly with WASD: one object, switched with Tab.
-class CameraController {
+class CameraController
+{
 public:
-    explicit CameraController(const DemoScene& scene) : radius_(scene.Radius()) {
+    explicit CameraController(const DemoScene& scene) : radius_(scene.Radius())
+    {
         distance_ = radius_ * 1.1f;
         fly_position_ = Vec3(0, 3, radius_ * 0.8f);
     }
 
-    void Update(const os::InputState& input, f32 dt) {
+    void Update(const os::InputState& input, f32 dt)
+    {
         const os::KeyboardState& keys = input.keyboard;
-        if (keys.IsDown(os::Key::Tab) && !tab_was_down_) {
+        if (keys.IsDown(os::Key::Tab) && !tab_was_down_)
+        {
             fly_ = !fly_;
         }
         tab_was_down_ = keys.IsDown(os::Key::Tab);
-        const f32 turn = ((keys.IsDown(os::Key::Right) ? 1.0f : 0.0f) - (keys.IsDown(os::Key::Left) ? 1.0f : 0.0f)) * 1.2f * dt;
-        const f32 tilt = ((keys.IsDown(os::Key::Up) ? 1.0f : 0.0f) - (keys.IsDown(os::Key::Down) ? 1.0f : 0.0f)) * 0.8f * dt;
+        const f32 turn = ((keys.IsDown(os::Key::Right) ? 1.0f : 0.0f) - (keys.IsDown(os::Key::Left) ? 1.0f : 0.0f)) *
+                         1.2f * dt;
+        const f32 tilt = ((keys.IsDown(os::Key::Up) ? 1.0f : 0.0f) - (keys.IsDown(os::Key::Down) ? 1.0f : 0.0f)) *
+                         0.8f * dt;
         f32 dyaw = turn, dpitch = tilt;
-        if (input.IsMouseDown(os::kMouseLeft)) {
-            if (dragging_) {
+        if (input.IsMouseDown(os::kMouseLeft))
+        {
+            if (dragging_)
+            {
                 dyaw += static_cast<f32>(input.mouse_x - drag_x_) * -0.005f;
                 dpitch += static_cast<f32>(input.mouse_y - drag_y_) * 0.005f;
             }
             dragging_ = true;
             drag_x_ = input.mouse_x;
             drag_y_ = input.mouse_y;
-        } else {
+        }
+        else
+        {
             dragging_ = false;
         }
-        if (fly_) {
+        if (fly_)
+        {
             yaw_ += dyaw;
             pitch_ = Clamp(pitch_ + dpitch, -1.4f, 1.4f);
             const f32 speed = (keys.IsDown(os::Key::LeftShift) ? 30.0f : 10.0f) * dt;
             const Vec3 forward(Sin(yaw_) * Cos(pitch_), Sin(pitch_), -Cos(yaw_) * Cos(pitch_));
             const Vec3 right(Cos(yaw_), 0, Sin(yaw_));
             Vec3 move(0, 0, 0);
-            if (keys.IsDown(os::Key::W)) move = move + forward;
-            if (keys.IsDown(os::Key::S)) move = move - forward;
-            if (keys.IsDown(os::Key::D)) move = move + right;
-            if (keys.IsDown(os::Key::A)) move = move - right;
-            if (keys.IsDown(os::Key::Space)) move = move + Vec3(0, 1, 0);
-            if (keys.IsDown(os::Key::E)) move = move + Vec3(0, 1, 0);
-            if (keys.IsDown(os::Key::Q)) move = move - Vec3(0, 1, 0);
+            if (keys.IsDown(os::Key::W))
+            {
+                move = move + forward;
+            }
+            if (keys.IsDown(os::Key::S))
+            {
+                move = move - forward;
+            }
+            if (keys.IsDown(os::Key::D))
+            {
+                move = move + right;
+            }
+            if (keys.IsDown(os::Key::A))
+            {
+                move = move - right;
+            }
+            if (keys.IsDown(os::Key::Space))
+            {
+                move = move + Vec3(0, 1, 0);
+            }
+            if (keys.IsDown(os::Key::E))
+            {
+                move = move + Vec3(0, 1, 0);
+            }
+            if (keys.IsDown(os::Key::Q))
+            {
+                move = move - Vec3(0, 1, 0);
+            }
             fly_position_ = fly_position_ + move * speed;
-        } else {
+        }
+        else
+        {
             orbit_yaw_ += dyaw;
             orbit_pitch_ = Clamp(orbit_pitch_ + dpitch, 0.05f, 1.45f);
             distance_ = Clamp(distance_ - static_cast<f32>(input.scroll_dy) * radius_ * 0.05f, 4.0f, radius_ * 3.0f);
         }
     }
 
-    Camera Get(f32 aspect) const {
+    Camera Get(f32 aspect) const
+    {
         Camera cam;
-        if (fly_) {
+        if (fly_)
+        {
             const Vec3 forward(Sin(yaw_) * Cos(pitch_), Sin(pitch_), -Cos(yaw_) * Cos(pitch_));
             cam = MakeLookAtCamera(fly_position_, fly_position_ + forward, Vec3(0, 1, 0));
-        } else {
-            const Vec3 eye(distance_ * Cos(orbit_pitch_) * Sin(orbit_yaw_), distance_ * Sin(orbit_pitch_), distance_ * Cos(orbit_pitch_) * Cos(orbit_yaw_));
+        }
+        else
+        {
+            const Vec3 eye(distance_ * Cos(orbit_pitch_) * Sin(orbit_yaw_), distance_ * Sin(orbit_pitch_),
+                           distance_ * Cos(orbit_pitch_) * Cos(orbit_yaw_));
             cam = MakeLookAtCamera(eye, Vec3(0, 0.5f, 0), Vec3(0, 1, 0));
         }
         cam.aspect = aspect;
@@ -157,22 +207,28 @@ private:
     f64 drag_y_ = 0.0;
 };
 
-bool WritePpm(const char* path, u32 width, u32 height, const Vector<byte>& rgba) {
+bool WritePpm(const char* path, u32 width, u32 height, const Vector<byte>& rgba)
+{
     io::Path file;
-    return io::Path::Parse(StringView(path), io::NativePathStyle(), &file) && demo::WritePpm(file, width, height, rgba.Data()).Ok();
+    return io::Path::Parse(StringView(path), io::NativePathStyle(), &file) &&
+           demo::WritePpm(file, width, height, rgba.Data()).Ok();
 }
 
-demo::DemoSettings* g_demo_settings = nullptr; // the settings of this run: the device description, the F keys and the script
+demo::DemoSettings*
+    g_demo_settings = nullptr;  // the settings of this run: the device description, the F keys and the script
 
-DeviceCreateInfo DeviceInfo(const Options& options) {
+DeviceCreateInfo DeviceInfo(const Options& options)
+{
     DeviceCreateInfo info;
-    g_demo_settings->FillDeviceCreateInfo(&info); // the backend, the validation layer, the GPU, the pipeline cache and the frames in flight come from the settings
+    g_demo_settings->FillDeviceCreateInfo(&info);  // the backend, the validation layer, the GPU, the pipeline cache and
+                                                   // the frames in flight come from the settings
     info.faults.lose_device_at_frame = static_cast<u32>(options.inject_device_loss);
     info.faults.fail_allocations_from = static_cast<u32>(options.inject_oom);
     return info;
 }
 
-SceneOptions SceneOptionsFor(const Options& options) {
+SceneOptions SceneOptionsFor(const Options& options)
+{
     SceneOptions so;
     so.objects = static_cast<u32>(options.objects);
     so.lights = static_cast<u32>(options.lights);
@@ -180,7 +236,8 @@ SceneOptions SceneOptionsFor(const Options& options) {
     return so;
 }
 
-FrameSetup SetupFor(const Options& options, const SceneOptions& so, Device* device, Swapchain* swapchain) {
+FrameSetup SetupFor(const Options& options, const SceneOptions& so, Device* device, Swapchain* swapchain)
+{
     FrameSetup fs;
     fs.device = device;
     fs.swapchain = swapchain;
@@ -191,62 +248,88 @@ FrameSetup SetupFor(const Options& options, const SceneOptions& so, Device* devi
     return fs;
 }
 
-// ---- settings ----------------------------------------------------------------------------------------------------------
+// ---- settings
+// ----------------------------------------------------------------------------------------------------------
 
-// The rendering settings the flags describe (the demo has no settings file or generic setting option yet; see KNOWN-ISSUES.md).
-void BuildSettings(const Options& options, RenderSettings* settings) {
-    if (options.no_vsync) settings->SetEnum(renderer::settings::kPresentMode, 2);
-    if (options.validation) {
+// The rendering settings the flags describe (the demo has no settings file or generic setting option yet; see
+// KNOWN-ISSUES.md).
+void BuildSettings(const Options& options, RenderSettings* settings)
+{
+    if (options.no_vsync)
+    {
+        settings->SetEnum(renderer::settings::kPresentMode, 2);
+    }
+    if (options.validation)
+    {
         settings->SetEnum(renderer::settings::kValidation, 2);
         settings->SetBool(renderer::settings::kSyncValidation, true);
     }
-    if (options.gpu != nullptr) settings->SetText(renderer::settings::kAdapter, options.gpu);
+    if (options.gpu != nullptr)
+    {
+        settings->SetText(renderer::settings::kAdapter, options.gpu);
+    }
 }
 
-int ListGpus() {
-    DeviceCreateInfo info; // headless: the list does not depend on a window
-    g_demo_settings->FillDeviceCreateInfo(&info); // the backend
+int ListGpus()
+{
+    DeviceCreateInfo info;                         // headless: the list does not depend on a window
+    g_demo_settings->FillDeviceCreateInfo(&info);  // the backend
     char why[256] = {};
     const BackendDescriptor* backend = ResolveBackend(info.backend, why, sizeof(why));
-    if (backend == nullptr) {
+    if (backend == nullptr)
+    {
         os::PrintError("renderer_demo: cannot list the GPUs: %s\n", why);
         return kExitFailure;
     }
     AdapterList list;
-    if (!EnumerateAdapters(info, &list)) {
+    if (!EnumerateAdapters(info, &list))
+    {
         os::PrintError("renderer_demo: cannot list the %s GPUs\n", backend->name);
         return kExitFailure;
     }
     os::Print("backend %s\n", backend->name);
     static const char* const kKinds[] = {"other", "software", "virtual", "integrated", "discrete"};
     os::Print("%u GPU(s):\n", list.count);
-    for (u32 i = 0; i < list.count; ++i) {
+    for (u32 i = 0; i < list.count; ++i)
+    {
         const AdapterInfo& a = list.items[i];
         os::Print("  %u  %s  %s  (%s, %llu MiB, driver %s)%s%s\n", i, a.id, a.name, kKinds[static_cast<usize>(a.kind)],
-                    static_cast<unsigned long long>(a.dedicated_memory_bytes >> 20), a.driver, a.suitable ? "" : "  unsuitable: ",
-                    a.suitable ? "" : (a.unsuitable_reason != nullptr ? a.unsuitable_reason : "?"));
+                  static_cast<unsigned long long>(a.dedicated_memory_bytes >> 20), a.driver,
+                  a.suitable ? "" : "  unsuitable: ",
+                  a.suitable ? "" : (a.unsuitable_reason != nullptr ? a.unsuitable_reason : "?"));
     }
     return kExitOk;
 }
 
 // What the keys and the script do to the settings. Each returns the settings to apply.
-void CycleEnum(RenderSettings* s, SettingId id) {
+void CycleEnum(RenderSettings* s, SettingId id)
+{
     const SettingDesc* d = s->Registry().Find(id);
     s->SetEnum(id, (s->GetEnum(id) + 1) % d->enum_count);
 }
 
 // Picks the next suitable adapter after the one in use, as an id for the `adapter` setting.
-bool NextAdapterId(const Device& device, char* out, usize capacity) {
+bool NextAdapterId(const Device& device, char* out, usize capacity)
+{
     const char* current_id = device.Adapter().id;
     AdapterList list;
-    if (!device.ListAdapters(&list) || list.count == 0) return false;
-    u32 at = 0;
-    for (u32 i = 0; i < list.count; ++i) {
-        if (CStrCompare(list.items[i].id, current_id) == 0) at = i;
+    if (!device.ListAdapters(&list) || list.count == 0)
+    {
+        return false;
     }
-    for (u32 step = 1; step <= list.count; ++step) {
+    u32 at = 0;
+    for (u32 i = 0; i < list.count; ++i)
+    {
+        if (CStrCompare(list.items[i].id, current_id) == 0)
+        {
+            at = i;
+        }
+    }
+    for (u32 step = 1; step <= list.count; ++step)
+    {
         const AdapterInfo& a = list.items[(at + step) % list.count];
-        if (a.suitable) {
+        if (a.suitable)
+        {
             FormatTo(out, capacity, "%s", a.id);
             return true;
         }
@@ -254,36 +337,55 @@ bool NextAdapterId(const Device& device, char* out, usize capacity) {
     return false;
 }
 
-void LogApply(const char* what, const ApplyResult& r) {
-    for (u32 i = 0; i < r.change.restart_count; ++i) { // the backend: chosen at start, stored for the next one
+void LogApply(const char* what, const ApplyResult& r)
+{
+    for (u32 i = 0; i < r.change.restart_count; ++i)
+    {  // the backend: chosen at start, stored for the next one
         RhiLogV(LogVerbosity::Info, "renderer_demo: %s: '%s' takes effect at the next start", what,
                 renderer::SettingsRegistry::Builtin().Find(r.change.restart[i])->name);
     }
-    if (r.queued) {
+    if (r.queued)
+    {
         RhiLogV(LogVerbosity::Info, "renderer_demo: %s: queued for the next frame", what);
-    } else if (!r.change.Any() && r.ok && r.performed == CostClass::None) {
-        if (r.change.restart_count != 0) return;
-        RhiLogV(LogVerbosity::Info, "renderer_demo: %s: nothing changed", what);
-    } else if (r.ok) {
-        RhiLogV(LogVerbosity::Info, "renderer_demo: %s: %s done in %.2f ms (release %.2f, device %.2f, swapchain %.2f, rebuild %.2f)", what,
-                CostClassName(r.performed), r.total_ms, r.release_ms, r.device_ms, r.swapchain_ms, r.rebuild_ms);
-        if (r.performed == CostClass::DeviceReset) {
-            RhiLogV(LogVerbosity::Info, "renderer_demo: %s: reset split: owners release %.2f, destroy old device %.2f, create device %.2f, swapchain %.2f, owners rebuild %.2f ms",
-                    what, r.reset.release_ms, r.reset.destroy_ms, r.reset.create_device_ms, r.reset.create_swapchain_ms, r.reset.rebuild_ms);
+    }
+    else if (!r.change.Any() && r.ok && r.performed == CostClass::None)
+    {
+        if (r.change.restart_count != 0)
+        {
+            return;
         }
-    } else {
-        RhiLogV(LogVerbosity::Error, "renderer_demo: %s: %s FAILED (%s)%s%s", what, CostClassName(r.performed), r.reason,
-                r.rolled_back ? ", rolled back" : "", r.device_lost ? ", device lost" : "");
+        RhiLogV(LogVerbosity::Info, "renderer_demo: %s: nothing changed", what);
+    }
+    else if (r.ok)
+    {
+        RhiLogV(LogVerbosity::Info,
+                "renderer_demo: %s: %s done in %.2f ms (release %.2f, device %.2f, swapchain %.2f, rebuild %.2f)", what,
+                CostClassName(r.performed), r.total_ms, r.release_ms, r.device_ms, r.swapchain_ms, r.rebuild_ms);
+        if (r.performed == CostClass::DeviceReset)
+        {
+            RhiLogV(
+                LogVerbosity::Info,
+                "renderer_demo: %s: reset split: owners release %.2f, destroy old device %.2f, create device %.2f, swapchain %.2f, owners rebuild %.2f ms",
+                what, r.reset.release_ms, r.reset.destroy_ms, r.reset.create_device_ms, r.reset.create_swapchain_ms,
+                r.reset.rebuild_ms);
+        }
+    }
+    else
+    {
+        RhiLogV(LogVerbosity::Error, "renderer_demo: %s: %s FAILED (%s)%s%s", what, CostClassName(r.performed),
+                r.reason, r.rolled_back ? ", rolled back" : "", r.device_lost ? ", device lost" : "");
     }
 }
 
 // Renders `frames` frames offscreen (no window) with a fixed camera and time, and saves the last one.
-int RunScreenshot(const Options& options, const RenderSettings& settings) {
+int RunScreenshot(const Options& options, const RenderSettings& settings)
+{
     char adapter_buffer[64];
     DeviceCreateInfo device_info;
     MakeDeviceCreateInfo(settings, DeviceInfo(options), adapter_buffer, &device_info);
     DevicePtr device = CreateDevice(device_info);
-    if (device == nullptr) {
+    if (device == nullptr)
+    {
         RhiLogV(LogVerbosity::Error, "renderer_demo: no %s device", demo::BackendLabel(device_info.backend));
         return kExitFailure;
     }
@@ -299,8 +401,13 @@ int RunScreenshot(const Options& options, const RenderSettings& settings) {
         DemoScene scene;
         const SceneOptions so = SceneOptionsFor(options);
         const FrameSetup fs = SetupFor(options, so, device.Get(), nullptr);
-        if (target.IsValid() && frame.Create(fs) && scene.Create(device.Get(), frame.Materials(), frame.Templates(), so)) {
-            if (options.text != nullptr) frame.SetOverlay(true, StringView(options.text, CStrLength(options.text)), StringView("screenshot"));
+        if (target.IsValid() && frame.Create(fs) &&
+            scene.Create(device.Get(), frame.Materials(), frame.Templates(), so))
+        {
+            if (options.text != nullptr)
+            {
+                frame.SetOverlay(true, StringView(options.text, CStrLength(options.text)), StringView("screenshot"));
+            }
             scene.Animate(0.5f);
             Camera camera = scene.OverviewCamera(static_cast<f32>(kShotWidth) / static_cast<f32>(kShotHeight));
             FitCameraDepthRange(scene.Scene(), &camera, 0.1f);
@@ -312,64 +419,100 @@ int RunScreenshot(const Options& options, const RenderSettings& settings) {
             ft.initial = ResourceState::Undefined;
             ft.final_state = ResourceState::CopySrc;
             FrameStatus status = FrameStatus::Ok;
-            for (long i = 0; i < (options.frames > 0 ? options.frames : 1) && status == FrameStatus::Ok; ++i) {
+            for (long i = 0; i < (options.frames > 0 ? options.frames : 1) && status == FrameStatus::Ok; ++i)
+            {
                 frame.SetTime(0.5f, 0.016f);
                 status = frame.Render(&scene.Scene(), &camera, &ft);
-                ft.initial = ResourceState::CopySrc; // the next frame starts where this one ended
+                ft.initial = ResourceState::CopySrc;  // the next frame starts where this one ended
             }
             Vector<byte> pixels;
             pixels.Resize(static_cast<usize>(kShotWidth) * kShotHeight * 4);
             device->WaitIdle();
-            if (status == FrameStatus::DeviceLost || device->DeviceLost()) {
+            if (status == FrameStatus::DeviceLost || device->DeviceLost())
+            {
                 RhiLogV(LogVerbosity::Error, "renderer_demo: the GPU device was lost; stopping");
                 exit_code = kExitDeviceLost;
-            } else if (status != FrameStatus::Ok) {
+            }
+            else if (status != FrameStatus::Ok)
+            {
                 RhiLogV(LogVerbosity::Error, "renderer_demo: a frame failed: %s", frame.LastError());
-            } else if (!frame.LastGBufferOk()) {
+            }
+            else if (!frame.LastGBufferOk())
+            {
                 RhiLogV(LogVerbosity::Error, "renderer_demo: some objects could not be drawn");
-            } else if (!device->ReadbackTexture(target, 0, 0, pixels.Data(), pixels.Size(), ResourceState::CopySrc)) {
+            }
+            else if (!device->ReadbackTexture(target, 0, 0, pixels.Data(), pixels.Size(), ResourceState::CopySrc))
+            {
                 RhiLogV(LogVerbosity::Error, "renderer_demo: could not read the image back");
-            } else if (!WritePpm(options.screenshot, kShotWidth, kShotHeight, pixels)) {
+            }
+            else if (!WritePpm(options.screenshot, kShotWidth, kShotHeight, pixels))
+            {
                 RhiLogV(LogVerbosity::Error, "renderer_demo: could not write %s", options.screenshot);
-            } else {
-                RhiLogV(LogVerbosity::Info, "renderer_demo: wrote %s (%u objects, %u point lights, %u light volume draws)", options.screenshot,
-                        scene.ObjectCount(), frame.Lights().point_count, frame.PointDraws());
+            }
+            else
+            {
+                RhiLogV(LogVerbosity::Info,
+                        "renderer_demo: wrote %s (%u objects, %u point lights, %u light volume draws)",
+                        options.screenshot, scene.ObjectCount(), frame.Lights().point_count, frame.PointDraws());
                 exit_code = kExitOk;
             }
-        } else {
+        }
+        else
+        {
             RhiLogV(LogVerbosity::Error, "renderer_demo: could not create the target or the scene");
         }
         device->WaitIdle();
     }
-    if (target.IsValid()) device->DestroyTexture(target);
+    if (target.IsValid())
+    {
+        device->DestroyTexture(target);
+    }
     device.Reset();
     return exit_code;
 }
 
-// Splits the script into words and runs them one at a time: `frame:N` runs until N frames were drawn, `set:key=value` applies a
-// setting, `reset` forces a device reset, `gpu:next` moves to the next adapter, `loss` loses the device, `quit` stops.
-struct Script {
+// Splits the script into words and runs them one at a time: `frame:N` runs until N frames were drawn, `set:key=value`
+// applies a setting, `reset` forces a device reset, `gpu:next` moves to the next adapter, `loss` loses the device,
+// `quit` stops.
+struct Script
+{
     char text[4096] = {};
     char* words[512] = {};
     int count = 0;
     int next = 0;
     long wait_until = 0;
-    void Parse(const char* source) {
+    void Parse(const char* source)
+    {
         FormatTo(text, sizeof(text), "%s", source);
-        for (char* p = text; *p != '\0' && count < 512;) {
-            while (*p == ' ') ++p;
-            if (*p == '\0') break;
+        for (char* p = text; *p != '\0' && count < 512;)
+        {
+            while (*p == ' ')
+            {
+                ++p;
+            }
+            if (*p == '\0')
+            {
+                break;
+            }
             words[count++] = p;
-            while (*p != ' ' && *p != '\0') ++p;
-            if (*p == ' ') *p++ = '\0';
+            while (*p != ' ' && *p != '\0')
+            {
+                ++p;
+            }
+            if (*p == ' ')
+            {
+                *p++ = '\0';
+            }
         }
     }
 };
 
-int RunWindow(const Options& options, RenderSettings settings) {
+int RunWindow(const Options& options, RenderSettings settings)
+{
     os::InputState input;
     os::PlatformWindowHost window_host;
-    if (!window_host.Open(os::ParseWindowBackend(StringView(options.backend)), "renderer_demo", 1280, 720, &input)) {
+    if (!window_host.Open(os::ParseWindowBackend(StringView(options.backend)), "renderer_demo", 1280, 720, &input))
+    {
         RhiLogV(LogVerbosity::Error, "renderer_demo: could not open a window");
         return kExitFailure;
     }
@@ -379,11 +522,13 @@ int RunWindow(const Options& options, RenderSettings settings) {
     char adapter_buffer[64];
     DeviceCreateInfo info;
     MakeDeviceCreateInfo(settings, base, adapter_buffer, &info);
-    DeviceResources registry; // destroyed after the host and everything that registered with it
+    DeviceResources registry;  // destroyed after the host and everything that registered with it
     DeviceHost host;
     host.AddObserver(&registry, 0);
-    if (!host.Create(info, MakeSwapchainDesc(settings))) {
-        RhiLogV(LogVerbosity::Error, "renderer_demo: no %s device can present to this window (%s)", demo::BackendLabel(info.backend), host.LastError());
+    if (!host.Create(info, MakeSwapchainDesc(settings)))
+    {
+        RhiLogV(LogVerbosity::Error, "renderer_demo: no %s device can present to this window (%s)",
+                demo::BackendLabel(info.backend), host.LastError());
         return kExitFailure;
     }
     int exit_code = kExitOk;
@@ -400,40 +545,63 @@ int RunWindow(const Options& options, RenderSettings settings) {
         fs.initial_settings = &settings;
         fs.window = window;
         fs.prewarm_pipelines = options.prewarm;
-        if (options.inject_device_loss != 0) fs.recovery.max_attempts = 0; // the injected loss is the terminal kind the tests expect
-        if (!frame.Create(fs) || !scene.Create(host.GetDevice(), frame.Materials(), frame.Templates(), so)) {
+        if (options.inject_device_loss != 0)
+        {
+            fs.recovery.max_attempts = 0;  // the injected loss is the terminal kind the tests expect
+        }
+        if (!frame.Create(fs) || !scene.Create(host.GetDevice(), frame.Materials(), frame.Templates(), so))
+        {
             RhiLogV(LogVerbosity::Error, "renderer_demo: could not create the scene");
             host.GetDevice()->WaitIdle();
             exit_code = kExitFailure;
-        } else {
+        }
+        else
+        {
             Renderer& renderer = *frame.GetRenderer();
-            struct ResetParts {
+            struct ResetParts
+            {
                 DemoFrame* frame;
                 DemoScene* scene;
             } parts{&frame, &scene};
             renderer.SetResetCallbacks(
-                [](void*, const char* stage) { RhiLogV(LogVerbosity::Info, "renderer_demo: changing settings (%s): the window keeps its last picture", stage); },
-                [](void* user, bool ok) {
+                [](void*, const char* stage)
+                {
+                    RhiLogV(LogVerbosity::Info,
+                            "renderer_demo: changing settings (%s): the window keeps its last picture", stage);
+                },
+                [](void* user, bool ok)
+                {
                     auto* p = static_cast<ResetParts*>(user);
                     Renderer* r = p->frame->GetRenderer();
-                    if (r->GetDevice() != nullptr) {
+                    if (r->GetDevice() != nullptr)
+                    {
                         p->frame->Rebind(r->GetDevice(), r->GetSwapchain());
                         p->scene->Rebind(r->GetDevice());
                     }
-                    if (!ok) RhiLogV(LogVerbosity::Warn, "renderer_demo: the change did not work; the previous settings are back");
+                    if (!ok)
+                    {
+                        RhiLogV(LogVerbosity::Warn,
+                                "renderer_demo: the change did not work; the previous settings are back");
+                    }
                 },
                 &parts);
 
             Script script;
-            if (options.script != nullptr) script.Parse(options.script);
-            RhiLogV(LogVerbosity::Info,
-                    "renderer_demo keys: F1 vsync, F2 validation, F3 next GPU, F4 render scale, F5 fullscreen, F6 swapchain format, F7 shader quality, F9 force reset, F10 lose the device, F11 text overlay");
+            if (options.script != nullptr)
+            {
+                script.Parse(options.script);
+            }
+            RhiLogV(
+                LogVerbosity::Info,
+                "renderer_demo keys: F1 vsync, F2 validation, F3 next GPU, F4 render scale, F5 fullscreen, F6 swapchain format, F7 shader quality, F9 force reset, F10 lose the device, F11 text overlay");
             bool previous_keys[11] = {};
             bool overlay_on = true;
             char status_line[384] = {};
-            auto set_overlay = [&] {
+            auto set_overlay = [&]
+            {
                 const char* greeting = options.text != nullptr ? options.text : "Hello, world!";
-                frame.SetOverlay(overlay_on, StringView(greeting, CStrLength(greeting)), StringView(status_line, CStrLength(status_line)));
+                frame.SetOverlay(overlay_on, StringView(greeting, CStrLength(greeting)),
+                                 StringView(status_line, CStrLength(status_line)));
             };
             set_overlay();
             bool measure_next_frame = false;
@@ -447,36 +615,53 @@ int RunWindow(const Options& options, RenderSettings settings) {
             long frames = 0;
             long rss_at_start = 0;
             bool quit = false;
-            auto apply = [&](const char* what, const RenderSettings& wanted) {
+            auto apply = [&](const char* what, const RenderSettings& wanted)
+            {
                 const double t = NowSeconds();
-                // Through the settings system: the change is validated, layered (and so saved by --save-settings style code), announced, and the
-                // renderer applies it with the cheapest sufficient action; a failure rolls the setting back.
+                // Through the settings system: the change is validated, layered (and so saved by --save-settings style
+                // code), announced, and the renderer applies it with the cheapest sufficient action; a failure rolls
+                // the setting back.
                 Vector<engine_placeholder::settings::ChangeRequest> requests;
                 renderer::RenderSettingsToChanges(wanted, g_demo_settings->GetRegistry(), &requests);
                 g_demo_settings->Get().SetCapabilityCheck(&renderer::RendererCapability, &renderer);
-                const engine_placeholder::settings::SetResult set = g_demo_settings->Get().Apply(requests.Data(), requests.Size(), &renderer::ApplySharedChange, &renderer);
-                if (set.error == engine_placeholder::settings::SetError::ApplyFailed) { // the renderer was asked and said no; the setting is rolled back
+                const engine_placeholder::settings::SetResult set = g_demo_settings->Get().Apply(
+                    requests.Data(), requests.Size(), &renderer::ApplySharedChange, &renderer);
+                if (set.error == engine_placeholder::settings::SetError::ApplyFailed)
+                {  // the renderer was asked and said no; the setting is rolled back
                     LogApply(what, renderer.LastApply());
                     return;
                 }
-                if (!set.Ok()) { // refused before the renderer was asked (a missing capability, a value outside the range): say why, change nothing
-                    RhiLogV(LogVerbosity::Warn, "renderer_demo: %s: the settings system refused the change (error %d, value %s)", what, static_cast<int>(set.error), engine_placeholder::settings::ValueErrorName(set.value));
+                if (!set.Ok())
+                {  // refused before the renderer was asked (a missing capability, a value outside the range): say why,
+                   // change nothing
+                    RhiLogV(LogVerbosity::Warn,
+                            "renderer_demo: %s: the settings system refused the change (error %d, value %s)", what,
+                            static_cast<int>(set.error), engine_placeholder::settings::ValueErrorName(set.value));
                     return;
                 }
-                ApplyResult unchanged; // nothing differed: the renderer reports "ok, nothing to do"
-                if (set.Ok() && set.changed == 0) unchanged = renderer.ApplySettings(wanted);
+                ApplyResult unchanged;  // nothing differed: the renderer reports "ok, nothing to do"
+                if (set.Ok() && set.changed == 0)
+                {
+                    unchanged = renderer.ApplySettings(wanted);
+                }
                 const ApplyResult& r = set.Ok() && set.changed == 0 ? unchanged : renderer.LastApply();
                 LogApply(what, r);
-                if (r.ok && r.performed >= CostClass::Swapchain) {
+                if (r.ok && r.performed >= CostClass::Swapchain)
+                {
                     measure_next_frame = true;
                     measure_start = t;
                 }
             };
-            bool stop = false; // set by a frame that failed or lost the device for good; the run ends after it
-            // One frame with the scene and the camera as they are. The loop below calls it, and so does the window while Windows holds the
-            // thread in its own loop (the user dragging the window's frame), so the picture follows the size while the frame is dragged.
-            auto draw = [&]() {
-                if (stop || (options.frames > 0 && frames >= options.frames)) return; // (the window's loop may call again after the run ended)
+            bool stop = false;  // set by a frame that failed or lost the device for good; the run ends after it
+            // One frame with the scene and the camera as they are. The loop below calls it, and so does the window
+            // while Windows holds the thread in its own loop (the user dragging the window's frame), so the picture
+            // follows the size while the frame is dragged.
+            auto draw = [&]()
+            {
+                if (stop || (options.frames > 0 && frames >= options.frames))
+                {
+                    return;  // (the window's loop may call again after the run ended)
+                }
                 const double now_time = NowSeconds();
                 const f32 dt = static_cast<f32>(now_time - previous < 0.1 ? now_time - previous : 0.1);
                 previous = now_time;
@@ -484,14 +669,19 @@ int RunWindow(const Options& options, RenderSettings settings) {
                 const f32 seconds = static_cast<f32>(now_time - start);
                 scene.Animate(seconds);
                 rhi::Swapchain* swapchain = renderer.GetSwapchain();
-                const f32 aspect = swapchain != nullptr && swapchain->Height() > 0 ? static_cast<f32>(swapchain->Width()) / static_cast<f32>(swapchain->Height()) : 1.0f;
+                const f32 aspect = swapchain != nullptr && swapchain->Height() > 0
+                                       ? static_cast<f32>(swapchain->Width()) / static_cast<f32>(swapchain->Height())
+                                       : 1.0f;
                 Camera camera = controller.Get(aspect);
                 FitCameraDepthRange(scene.Scene(), &camera, 0.1f);
                 frame.SetTime(seconds, dt);
-                frame.SetOverlayScale(window->ContentScale()); // the display's scale, which changes when the window moves to another monitor
+                frame.SetOverlayScale(window->ContentScale());  // the display's scale, which changes when the window
+                                                                // moves to another monitor
                 const FrameStatus status = frame.Render(&scene.Scene(), &camera, nullptr);
-                if (status == FrameStatus::DeviceLost) {
-                    if (renderer.IsBroken() || options.inject_device_loss != 0) {
+                if (status == FrameStatus::DeviceLost)
+                {
+                    if (renderer.IsBroken() || options.inject_device_loss != 0)
+                    {
                         RhiLogV(LogVerbosity::Error, "renderer_demo: the GPU device was lost; stopping");
                         exit_code = kExitDeviceLost;
                         stop = true;
@@ -501,33 +691,48 @@ int RunWindow(const Options& options, RenderSettings settings) {
                     ++frames;
                     return;
                 }
-                if (status == FrameStatus::Failed) {
+                if (status == FrameStatus::Failed)
+                {
                     RhiLogV(LogVerbosity::Error, "renderer_demo: a frame failed: %s", frame.LastError());
                     exit_code = kExitFailure;
                     stop = true;
                     return;
                 }
-                if (status == FrameStatus::Skipped) { // minimized or recovering: wait without spinning; it still counts toward --frames
+                if (status == FrameStatus::Skipped)
+                {  // minimized or recovering: wait without spinning; it still counts toward --frames
                     ++frames;
                     os::SleepNanos(10 * 1000 * 1000);
                     return;
                 }
-                if (measure_next_frame) {
-                    RhiLogV(LogVerbosity::Info, "renderer_demo: first good frame %.2f ms after the change was asked for", (NowSeconds() - measure_start) * 1000.0);
+                if (measure_next_frame)
+                {
+                    RhiLogV(LogVerbosity::Info,
+                            "renderer_demo: first good frame %.2f ms after the change was asked for",
+                            (NowSeconds() - measure_start) * 1000.0);
                     measure_next_frame = false;
                 }
                 ++frames;
                 ++window_frames;
-                if (rss_at_start == 0 && frames >= kMemoryCheckStart) rss_at_start = static_cast<long>(os::ResidentMemoryKiB());
+                if (rss_at_start == 0 && frames >= kMemoryCheckStart)
+                {
+                    rss_at_start = static_cast<long>(os::ResidentMemoryKiB());
+                }
                 const double now = NowSeconds();
-                if (now - window_start >= 1.0) {
-                    RhiLogV(LogVerbosity::Info, "renderer_demo: %llu frames, %.3f ms/frame, %u objects drawn in %u draws, %u point lights (%u culled, %u dropped), %u volume draws",
-                            static_cast<unsigned long long>(window_frames), (now - window_start) * 1000.0 / static_cast<double>(window_frames),
-                            frame.GBufferStatistics().drawn_objects, frame.GBufferStatistics().draws, frame.Lights().point_count, frame.Lights().point_culled,
-                            frame.Lights().dropped, frame.PointDraws());
-                    if (renderer.GetDevice() != nullptr) {
-                        FormatTo(status_line, sizeof(status_line), "%.2f ms/frame | %s | %s", (now - window_start) * 1000.0 / static_cast<double>(window_frames),
-                                      renderer.GetDevice()->Adapter().name, renderer.GetDevice()->BackendName());
+                if (now - window_start >= 1.0)
+                {
+                    RhiLogV(
+                        LogVerbosity::Info,
+                        "renderer_demo: %llu frames, %.3f ms/frame, %u objects drawn in %u draws, %u point lights (%u culled, %u dropped), %u volume draws",
+                        static_cast<unsigned long long>(window_frames),
+                        (now - window_start) * 1000.0 / static_cast<double>(window_frames),
+                        frame.GBufferStatistics().drawn_objects, frame.GBufferStatistics().draws,
+                        frame.Lights().point_count, frame.Lights().point_culled, frame.Lights().dropped,
+                        frame.PointDraws());
+                    if (renderer.GetDevice() != nullptr)
+                    {
+                        FormatTo(status_line, sizeof(status_line), "%.2f ms/frame | %s | %s",
+                                 (now - window_start) * 1000.0 / static_cast<double>(window_frames),
+                                 renderer.GetDevice()->Adapter().name, renderer.GetDevice()->BackendName());
                         set_overlay();
                     }
                     window_start = now;
@@ -536,101 +741,187 @@ int RunWindow(const Options& options, RenderSettings settings) {
             };
             using Draw = decltype(draw);
             window->SetModalLoopCallback(
-                [](void* user) {
+                [](void* user)
+                {
                     Draw& frame_once = *static_cast<Draw*>(user);
                     frame_once();
                 },
                 &draw);
-            while (!quit && !stop && !window->ShouldClose() && (options.frames <= 0 || frames < options.frames)) {
+            while (!quit && !stop && !window->ShouldClose() && (options.frames <= 0 || frames < options.frames))
+            {
                 input.BeginFrame();
-                window->PumpEvents(); // may draw frames itself (above), and so end the run
-                if (stop) break;
+                window->PumpEvents();  // may draw frames itself (above), and so end the run
+                if (stop)
+                {
+                    break;
+                }
                 // Script words that are due.
-                while (script.next < script.count && frames >= script.wait_until) {
+                while (script.next < script.count && frames >= script.wait_until)
+                {
                     const char* word = script.words[script.next++];
-                    if (CStrCompareN(word, "frame:", 6) == 0) {
+                    if (CStrCompareN(word, "frame:", 6) == 0)
+                    {
                         script.wait_until = CStrToLong(word + 6);
-                    } else if (CStrCompareN(word, "set:", 4) == 0) {
+                    }
+                    else if (CStrCompareN(word, "set:", 4) == 0)
+                    {
                         RenderSettings wanted = renderer.Settings();
                         const char* eq = CStrFindChar(word + 4, '=');
                         char key[64];
                         bool applied = false;
-                        if (eq != nullptr && static_cast<usize>(eq - (word + 4)) < sizeof(key)) {
+                        if (eq != nullptr && static_cast<usize>(eq - (word + 4)) < sizeof(key))
+                        {
                             MemCopy(key, word + 4, static_cast<usize>(eq - (word + 4)));
                             key[eq - (word + 4)] = '\0';
                             const SettingId id = wanted.Registry().FindByName(key);
-                            if (id.IsValid()) {
+                            if (id.IsValid())
+                            {
                                 const SetStatus status = wanted.SetFromString(id, eq + 1);
-                                if (status == SetStatus::Ok || status == SetStatus::Clamped) {
+                                if (status == SetStatus::Ok || status == SetStatus::Clamped)
+                                {
                                     apply(word, wanted);
                                     applied = true;
                                 }
                             }
                         }
-                        if (!applied) RhiLogV(LogVerbosity::Error, "renderer_demo: script: bad setting '%s' (use set:key=value)", word + 4);
-                    } else if (CStrCompare(word, "reset") == 0) {
+                        if (!applied)
+                        {
+                            RhiLogV(LogVerbosity::Error, "renderer_demo: script: bad setting '%s' (use set:key=value)",
+                                    word + 4);
+                        }
+                    }
+                    else if (CStrCompare(word, "reset") == 0)
+                    {
                         const double t = NowSeconds();
                         const ApplyResult r = renderer.ForceDeviceReset();
                         LogApply("reset", r);
-                        if (r.ok) {
+                        if (r.ok)
+                        {
                             measure_next_frame = true;
                             measure_start = t;
                         }
-                    } else if (CStrCompare(word, "gpu:next") == 0) {
+                    }
+                    else if (CStrCompare(word, "gpu:next") == 0)
+                    {
                         char id[64];
-                        if (renderer.GetDevice() == nullptr) {
-                            RhiLogV(LogVerbosity::Warn, "renderer_demo: script: gpu:next skipped (no device right now)");
-                        } else if (NextAdapterId(*renderer.GetDevice(), id, sizeof(id))) {
+                        if (renderer.GetDevice() == nullptr)
+                        {
+                            RhiLogV(LogVerbosity::Warn,
+                                    "renderer_demo: script: gpu:next skipped (no device right now)");
+                        }
+                        else if (NextAdapterId(*renderer.GetDevice(), id, sizeof(id)))
+                        {
                             RenderSettings wanted = renderer.Settings();
                             wanted.SetText(renderer::settings::kAdapter, id);
                             apply("gpu:next", wanted);
                         }
-                    } else if (CStrCompare(word, "loss") == 0) {
-                        if (renderer.GetDevice() != nullptr) renderer.GetDevice()->InjectDeviceLoss();
-                        else RhiLogV(LogVerbosity::Warn, "renderer_demo: script: loss skipped (no device right now)");
-                    } else if (CStrCompareN(word, "crash:", 6) == 0) {
-                        // A crash in the middle of a run that already reset the device: the report must show the epoch and the reset count.
+                    }
+                    else if (CStrCompare(word, "loss") == 0)
+                    {
+                        if (renderer.GetDevice() != nullptr)
+                        {
+                            renderer.GetDevice()->InjectDeviceLoss();
+                        }
+                        else
+                        {
+                            RhiLogV(LogVerbosity::Warn, "renderer_demo: script: loss skipped (no device right now)");
+                        }
+                    }
+                    else if (CStrCompareN(word, "crash:", 6) == 0)
+                    {
+                        // A crash in the middle of a run that already reset the device: the report must show the epoch
+                        // and the reset count.
                         const char* kind = word + 6;
-                        engine_placeholder::debug::RunCrashTest(CStrCompare(kind, "segv") == 0     ? engine_placeholder::debug::CrashTestKind::Segv
-                                                                : CStrCompare(kind, "assert") == 0 ? engine_placeholder::debug::CrashTestKind::Assert
-                                                                                                   : engine_placeholder::debug::CrashTestKind::Abort);
-                    } else if (CStrCompare(word, "overlay") == 0) { // the F11 key, for scripts: toggles the text overlay
+                        engine_placeholder::debug::RunCrashTest(
+                            CStrCompare(kind, "segv") == 0     ? engine_placeholder::debug::CrashTestKind::Segv
+                            : CStrCompare(kind, "assert") == 0 ? engine_placeholder::debug::CrashTestKind::Assert
+                                                               : engine_placeholder::debug::CrashTestKind::Abort);
+                    }
+                    else if (CStrCompare(word, "overlay") == 0)
+                    {  // the F11 key, for scripts: toggles the text overlay
                         overlay_on = !overlay_on;
                         set_overlay();
                         RhiLogV(LogVerbosity::Info, "renderer_demo: the text overlay is %s", overlay_on ? "on" : "off");
-                    } else if (CStrCompare(word, "quit") == 0) {
+                    }
+                    else if (CStrCompare(word, "quit") == 0)
+                    {
                         quit = true;
-                    } else {
+                    }
+                    else
+                    {
                         RhiLogV(LogVerbosity::Error, "renderer_demo: script: unknown word '%s'", word);
                     }
                 }
                 // The live keys: one action per press.
-                const os::Key function_keys[] = {os::Key::F1, os::Key::F2, os::Key::F3, os::Key::F4, os::Key::F5, os::Key::F6, os::Key::F7, os::Key::F8, os::Key::F9, os::Key::F10, os::Key::F11};
-                if (options.script == nullptr) {
-                    for (int k = 0; k < 11; ++k) {
+                const os::Key function_keys[] = {os::Key::F1, os::Key::F2,  os::Key::F3, os::Key::F4,
+                                                 os::Key::F5, os::Key::F6,  os::Key::F7, os::Key::F8,
+                                                 os::Key::F9, os::Key::F10, os::Key::F11};
+                if (options.script == nullptr)
+                {
+                    for (int k = 0; k < 11; ++k)
+                    {
                         const bool down = input.keyboard.IsDown(function_keys[k]);
-                        if (down && !previous_keys[k]) {
+                        if (down && !previous_keys[k])
+                        {
                             RenderSettings wanted = renderer.Settings();
                             char id[64];
-                            switch (k) {
-                            case 0: wanted.SetEnum(renderer::settings::kPresentMode, wanted.GetEnum(renderer::settings::kPresentMode) == 0 ? 2 : 0); apply("F1 vsync", wanted); break;
-                            case 1: wanted.SetEnum(renderer::settings::kValidation, wanted.GetEnum(renderer::settings::kValidation) == 2 ? 1 : 2); wanted.SetBool(renderer::settings::kSyncValidation, wanted.GetEnum(renderer::settings::kValidation) == 2); apply("F2 validation", wanted); break;
-                            case 2:
-                                if (renderer.GetDevice() != nullptr && NextAdapterId(*renderer.GetDevice(), id, sizeof(id))) { wanted.SetText(renderer::settings::kAdapter, id); apply("F3 next GPU", wanted); }
+                            switch (k)
+                            {
+                            case 0:
+                                wanted.SetEnum(renderer::settings::kPresentMode,
+                                               wanted.GetEnum(renderer::settings::kPresentMode) == 0 ? 2 : 0);
+                                apply("F1 vsync", wanted);
                                 break;
-                            case 3: wanted.SetFloat(renderer::settings::kRenderScale, wanted.GetFloat(renderer::settings::kRenderScale) >= 2.0f ? 0.5f : wanted.GetFloat(renderer::settings::kRenderScale) * 2.0f); apply("F4 render scale", wanted); break;
-                            case 4: wanted.SetBool(renderer::settings::kFullscreen, !wanted.GetBool(renderer::settings::kFullscreen)); apply("F5 fullscreen", wanted); break;
-                            case 5: CycleEnum(&wanted, renderer::settings::kSwapchainFormat); apply("F6 swapchain format", wanted); break;
-                            case 6: CycleEnum(&wanted, renderer::settings::kShaderQuality); apply("F7 shader quality", wanted); break;
-                            case 8: {
+                            case 1:
+                                wanted.SetEnum(renderer::settings::kValidation,
+                                               wanted.GetEnum(renderer::settings::kValidation) == 2 ? 1 : 2);
+                                wanted.SetBool(renderer::settings::kSyncValidation,
+                                               wanted.GetEnum(renderer::settings::kValidation) == 2);
+                                apply("F2 validation", wanted);
+                                break;
+                            case 2:
+                                if (renderer.GetDevice() != nullptr &&
+                                    NextAdapterId(*renderer.GetDevice(), id, sizeof(id)))
+                                {
+                                    wanted.SetText(renderer::settings::kAdapter, id);
+                                    apply("F3 next GPU", wanted);
+                                }
+                                break;
+                            case 3:
+                                wanted.SetFloat(renderer::settings::kRenderScale,
+                                                wanted.GetFloat(renderer::settings::kRenderScale) >= 2.0f
+                                                    ? 0.5f
+                                                    : wanted.GetFloat(renderer::settings::kRenderScale) * 2.0f);
+                                apply("F4 render scale", wanted);
+                                break;
+                            case 4:
+                                wanted.SetBool(renderer::settings::kFullscreen,
+                                               !wanted.GetBool(renderer::settings::kFullscreen));
+                                apply("F5 fullscreen", wanted);
+                                break;
+                            case 5:
+                                CycleEnum(&wanted, renderer::settings::kSwapchainFormat);
+                                apply("F6 swapchain format", wanted);
+                                break;
+                            case 6:
+                                CycleEnum(&wanted, renderer::settings::kShaderQuality);
+                                apply("F7 shader quality", wanted);
+                                break;
+                            case 8:
+                            {
                                 const double t = NowSeconds();
                                 const ApplyResult r = renderer.ForceDeviceReset();
                                 LogApply("F9 force reset", r);
-                                if (r.ok) { measure_next_frame = true; measure_start = t; }
+                                if (r.ok)
+                                {
+                                    measure_next_frame = true;
+                                    measure_start = t;
+                                }
                                 break;
                             }
                             case 9:
-                                if (renderer.GetDevice() != nullptr) {
+                                if (renderer.GetDevice() != nullptr)
+                                {
                                     renderer.GetDevice()->InjectDeviceLoss();
                                     RhiLogV(LogVerbosity::Info, "renderer_demo: F10: the device was told it is lost");
                                 }
@@ -638,7 +929,8 @@ int RunWindow(const Options& options, RenderSettings settings) {
                             case 10:
                                 overlay_on = !overlay_on;
                                 set_overlay();
-                                RhiLogV(LogVerbosity::Info, "renderer_demo: the text overlay is %s", overlay_on ? "on" : "off");
+                                RhiLogV(LogVerbosity::Info, "renderer_demo: the text overlay is %s",
+                                        overlay_on ? "on" : "off");
                                 break;
                             default: break;
                             }
@@ -648,20 +940,32 @@ int RunWindow(const Options& options, RenderSettings settings) {
                 }
                 draw();
             }
-            window->SetModalLoopCallback(nullptr, nullptr); // `draw` ends with this scope
-            if (exit_code == kExitOk && options.frames >= kMemoryCheckFrames && rss_at_start == 0) {
-                RhiLogV(LogVerbosity::Warn, "renderer_demo: the memory check did not run (fewer than %ld frames were drawn)", kMemoryCheckStart);
+            window->SetModalLoopCallback(nullptr, nullptr);  // `draw` ends with this scope
+            if (exit_code == kExitOk && options.frames >= kMemoryCheckFrames && rss_at_start == 0)
+            {
+                RhiLogV(LogVerbosity::Warn,
+                        "renderer_demo: the memory check did not run (fewer than %ld frames were drawn)",
+                        kMemoryCheckStart);
             }
-            if (exit_code == kExitOk && options.frames >= kMemoryCheckFrames && rss_at_start > 0) {
+            if (exit_code == kExitOk && options.frames >= kMemoryCheckFrames && rss_at_start > 0)
+            {
                 const long rss_at_end = static_cast<long>(os::ResidentMemoryKiB());
-                RhiLogV(LogVerbosity::Info, "renderer_demo: resident memory %ld KiB at frame %ld, %ld KiB at frame %ld; %lld open handles; %llu resets", rss_at_start, kMemoryCheckStart, rss_at_end, frames,
-                        static_cast<long long>(os::OpenHandleCount()), static_cast<unsigned long long>(renderer.Stats().resets));
-                if (rss_at_end - rss_at_start > kMemoryGrowthLimitKiB && options.script == nullptr) { // a script resets devices on purpose: report only
-                    RhiLogV(LogVerbosity::Error, "renderer_demo: memory grew by %ld KiB over the run", rss_at_end - rss_at_start);
+                RhiLogV(
+                    LogVerbosity::Info,
+                    "renderer_demo: resident memory %ld KiB at frame %ld, %ld KiB at frame %ld; %lld open handles; %llu resets",
+                    rss_at_start, kMemoryCheckStart, rss_at_end, frames, static_cast<long long>(os::OpenHandleCount()),
+                    static_cast<unsigned long long>(renderer.Stats().resets));
+                if (rss_at_end - rss_at_start > kMemoryGrowthLimitKiB && options.script == nullptr)
+                {  // a script resets devices on purpose: report only
+                    RhiLogV(LogVerbosity::Error, "renderer_demo: memory grew by %ld KiB over the run",
+                            rss_at_end - rss_at_start);
                     exit_code = kExitFailure;
                 }
             }
-            if (host.GetDevice() != nullptr) host.GetDevice()->WaitIdle();
+            if (host.GetDevice() != nullptr)
+            {
+                host.GetDevice()->WaitIdle();
+            }
             scene.Destroy();
             frame.Destroy();
         }
@@ -670,132 +974,224 @@ int RunWindow(const Options& options, RenderSettings settings) {
     return exit_code;
 }
 
-bool ParseCount(const char* text, long* out, long max = 0x7fffffffL) {
+bool ParseCount(const char* text, long* out, long max = 0x7fffffffL)
+{
     char* end = nullptr;
     const long value = CStrToLong(text, &end, 10);
-    if (end == text || *end != '\0' || value < 0 || value > max) return false;
+    if (end == text || *end != '\0' || value < 0 || value > max)
+    {
+        return false;
+    }
     *out = value;
     return true;
 }
 
 // Maps a layer name to a GBufferLayer value, or -1.
-int ParseLayer(const char* name) {
+int ParseLayer(const char* name)
+{
     static const char* const kNames[] = {"albedo", "normal", "material", "depth", "worldpos"};
-    for (int i = 0; i < 5; ++i) {
-        if (CStrCompare(name, kNames[i]) == 0) return i;
+    for (int i = 0; i < 5; ++i)
+    {
+        if (CStrCompare(name, kNames[i]) == 0)
+        {
+            return i;
+        }
     }
     return -1;
 }
 
 const char kUsageFormat[] =
-                 "usage: %s [--backend wayland|x11|win32] [--frames N] [--screenshot out.ppm] [--no-vsync] [--validation]\n"
-                 "       [--objects N] [--lights N] [--gbuffer albedo|normal|material|depth|worldpos]\n"
-                 "       [--inject-device-loss FRAME] [--inject-oom N] [--gpu ID|INDEX|NAME] [--list-gpus] [--prewarm]\n"
-                 "       [--script WORDS] [--text STRING]\n"
-                 "  --backend B       display backend (default: automatic; same as ENGINE_WINDOW_BACKEND)\n"
-                 "  --frames N        stop after N frames (also RENDERER_DEMO_FRAMES=N)\n"
-                 "  --screenshot P    render offscreen, no window, and write the last frame to P (a binary PPM, 640x360)\n"
-                 "  --objects N       total objects including 49 ground tiles, 64 to 20000 (default 540)\n"
-                 "  --lights N        point lights, 0 to 16000 (default 300)\n"
-                 "  --gbuffer L       show a G-buffer layer instead of the lit picture\n"
-                 "  --no-vsync        present without waiting for the display\n"
-                 "  --validation      enable the validation layer with synchronization validation\n"
-                 "  --gpu G           the GPU to use: an id from --list-gpus, an index, or part of the name\n"
-                 "  --list-gpus       print the GPUs and exit\n"
-                 "  --prewarm         after a device reset rebuild every pipeline at once instead of when it is first used\n"
-                 "  --text S          the overlay greeting (default \"Hello, world!\"; F11 toggles the overlay); with --screenshot it draws the overlay in the picture\n"
-                 "  --script W        run steps without a keyboard: frame:N set:key=value reset gpu:next loss crash:segv|abort|assert quit (space separated)\n"
-                 "  --inject-device-loss F  fault injection: lose the GPU device at frame F (exit code 3)\n"
-                 "  --inject-oom N    fault injection: fail device-memory allocation number N and every one after it\n";
+    "usage: %s [--backend wayland|x11|win32] [--frames N] [--screenshot out.ppm] [--no-vsync] [--validation]\n"
+    "       [--objects N] [--lights N] [--gbuffer albedo|normal|material|depth|worldpos]\n"
+    "       [--inject-device-loss FRAME] [--inject-oom N] [--gpu ID|INDEX|NAME] [--list-gpus] [--prewarm]\n"
+    "       [--script WORDS] [--text STRING]\n"
+    "  --backend B       display backend (default: automatic; same as ENGINE_WINDOW_BACKEND)\n"
+    "  --frames N        stop after N frames (also RENDERER_DEMO_FRAMES=N)\n"
+    "  --screenshot P    render offscreen, no window, and write the last frame to P (a binary PPM, 640x360)\n"
+    "  --objects N       total objects including 49 ground tiles, 64 to 20000 (default 540)\n"
+    "  --lights N        point lights, 0 to 16000 (default 300)\n"
+    "  --gbuffer L       show a G-buffer layer instead of the lit picture\n"
+    "  --no-vsync        present without waiting for the display\n"
+    "  --validation      enable the validation layer with synchronization validation\n"
+    "  --gpu G           the GPU to use: an id from --list-gpus, an index, or part of the name\n"
+    "  --list-gpus       print the GPUs and exit\n"
+    "  --prewarm         after a device reset rebuild every pipeline at once instead of when it is first used\n"
+    "  --text S          the overlay greeting (default \"Hello, world!\"; F11 toggles the overlay); with --screenshot it draws the overlay in the picture\n"
+    "  --script W        run steps without a keyboard: frame:N set:key=value reset gpu:next loss crash:segv|abort|assert quit (space separated)\n"
+    "  --inject-device-loss F  fault injection: lose the GPU device at frame F (exit code 3)\n"
+    "  --inject-oom N    fault injection: fail device-memory allocation number N and every one after it\n";
 
-int Usage(const char* program, int code) {
-    if (code == kExitOk) os::Print(kUsageFormat, program);
-    else os::PrintError(kUsageFormat, program);
+int Usage(const char* program, int code)
+{
+    if (code == kExitOk)
+    {
+        os::Print(kUsageFormat, program);
+    }
+    else
+    {
+        os::PrintError(kUsageFormat, program);
+    }
     return code;
 }
 
-} // namespace
+}  // namespace
 
-// The program's entry point (platform/entry_point.h): ENGINE_WINDOWED_PROGRAM at the end of the file makes it `main` on Linux and
-// `wWinMain` (the Windows subsystem, no console window of its own) on Windows.
-int EngineMain(int argc, char** argv) {
-    ::engine_placeholder::rhi::RegisterCompiledBackends(); // before any device: the backends this build has
-    const engine_placeholder::debug::ProgramDebugSetup debug_setup = engine_placeholder::debug::StartProgramDebugging(argc, argv);
-    engine_placeholder::debug::RunCrashTest(debug_setup.crash_test); // --crash-test=segv|abort|assert|ensure, before any window or device
-    LogRhi.SetVerbosity(LogVerbosity::Info); // the frame-time line is Info
+// The program's entry point (platform/entry_point.h): ENGINE_WINDOWED_PROGRAM at the end of the file makes it `main` on
+// Linux and `wWinMain` (the Windows subsystem, no console window of its own) on Windows.
+int EngineMain(int argc, char** argv)
+{
+    ::engine_placeholder::rhi::RegisterCompiledBackends();  // before any device: the backends this build has
+    const engine_placeholder::debug::ProgramDebugSetup debug_setup = engine_placeholder::debug::StartProgramDebugging(
+        argc, argv);
+    engine_placeholder::debug::RunCrashTest(
+        debug_setup.crash_test);              // --crash-test=segv|abort|assert|ensure, before any window or device
+    LogRhi.SetVerbosity(LogVerbosity::Info);  // the frame-time line is Info
     demo::DemoSettings demo_settings;
     char usage_text[4096];
     FormatTo(usage_text, sizeof(usage_text), kUsageFormat, argv[0]);
-    if (!demo_settings.Begin("renderer_demo", usage_text, argc, argv)) return kExitUsage;
+    if (!demo_settings.Begin("renderer_demo", usage_text, argc, argv))
+    {
+        return kExitUsage;
+    }
     g_demo_settings = &demo_settings;
-    argc = demo_settings.RestCount(); // what the settings system did not take: --set, --settings, --gpu, --backend, ... are handled there
+    argc = demo_settings.RestCount();  // what the settings system did not take: --set, --settings, --gpu, --backend,
+                                       // ... are handled there
     argv = demo_settings.RestArgs();
     Options options;
     const char* frames_env = os::GetEnvironment("RENDERER_DEMO_FRAMES");
     options.frames = frames_env != nullptr ? CStrToLong(frames_env) : 0;
-    for (int i = 1; i < argc; ++i) {
-        if (engine_placeholder::debug::IsProgramDebugArgument(argv[i])) {
-            continue; // --crash-handler=... and --crash-test=... are handled by StartProgramDebugging
+    for (int i = 1; i < argc; ++i)
+    {
+        if (engine_placeholder::debug::IsProgramDebugArgument(argv[i]))
+        {
+            continue;  // --crash-handler=... and --crash-test=... are handled by StartProgramDebugging
         }
         const bool has_value = i + 1 < argc;
-        if (CStrCompare(argv[i], "--frames") == 0 && has_value) {
-            if (!ParseCount(argv[++i], &options.frames)) return Usage(argv[0], kExitUsage);
-        } else if (CStrCompare(argv[i], "--screenshot") == 0 && has_value) {
+        if (CStrCompare(argv[i], "--frames") == 0 && has_value)
+        {
+            if (!ParseCount(argv[++i], &options.frames))
+            {
+                return Usage(argv[0], kExitUsage);
+            }
+        }
+        else if (CStrCompare(argv[i], "--screenshot") == 0 && has_value)
+        {
             options.screenshot = argv[++i];
-        } else if (CStrCompare(argv[i], "--backend") == 0 && has_value) {
+        }
+        else if (CStrCompare(argv[i], "--backend") == 0 && has_value)
+        {
             options.backend = argv[++i];
-        } else if (CStrCompare(argv[i], "--no-vsync") == 0) {
+        }
+        else if (CStrCompare(argv[i], "--no-vsync") == 0)
+        {
             options.no_vsync = true;
-        } else if (CStrCompare(argv[i], "--validation") == 0) {
+        }
+        else if (CStrCompare(argv[i], "--validation") == 0)
+        {
             options.validation = true;
-        } else if (CStrCompare(argv[i], "--objects") == 0 && has_value) {
-            if (!ParseCount(argv[++i], &options.objects, 20000) || options.objects < 64) return Usage(argv[0], kExitUsage);
-        } else if (CStrCompare(argv[i], "--lights") == 0 && has_value) {
-            if (!ParseCount(argv[++i], &options.lights, 16000)) return Usage(argv[0], kExitUsage);
-        } else if (CStrCompare(argv[i], "--gbuffer") == 0 && has_value) {
+        }
+        else if (CStrCompare(argv[i], "--objects") == 0 && has_value)
+        {
+            if (!ParseCount(argv[++i], &options.objects, 20000) || options.objects < 64)
+            {
+                return Usage(argv[0], kExitUsage);
+            }
+        }
+        else if (CStrCompare(argv[i], "--lights") == 0 && has_value)
+        {
+            if (!ParseCount(argv[++i], &options.lights, 16000))
+            {
+                return Usage(argv[0], kExitUsage);
+            }
+        }
+        else if (CStrCompare(argv[i], "--gbuffer") == 0 && has_value)
+        {
             options.gbuffer_layer = ParseLayer(argv[++i]);
-            if (options.gbuffer_layer < 0) return Usage(argv[0], kExitUsage);
-        } else if (CStrCompare(argv[i], "--inject-device-loss") == 0 && has_value) {
-            if (!ParseCount(argv[++i], &options.inject_device_loss)) return Usage(argv[0], kExitUsage);
-        } else if (CStrCompare(argv[i], "--inject-oom") == 0 && has_value) {
-            if (!ParseCount(argv[++i], &options.inject_oom)) return Usage(argv[0], kExitUsage);
-        } else if (CStrCompare(argv[i], "--gpu") == 0 && has_value) {
+            if (options.gbuffer_layer < 0)
+            {
+                return Usage(argv[0], kExitUsage);
+            }
+        }
+        else if (CStrCompare(argv[i], "--inject-device-loss") == 0 && has_value)
+        {
+            if (!ParseCount(argv[++i], &options.inject_device_loss))
+            {
+                return Usage(argv[0], kExitUsage);
+            }
+        }
+        else if (CStrCompare(argv[i], "--inject-oom") == 0 && has_value)
+        {
+            if (!ParseCount(argv[++i], &options.inject_oom))
+            {
+                return Usage(argv[0], kExitUsage);
+            }
+        }
+        else if (CStrCompare(argv[i], "--gpu") == 0 && has_value)
+        {
             options.gpu = argv[++i];
-        } else if (CStrCompare(argv[i], "--prewarm") == 0) {
+        }
+        else if (CStrCompare(argv[i], "--prewarm") == 0)
+        {
             options.prewarm = true;
-        } else if (CStrCompare(argv[i], "--list-gpus") == 0) {
+        }
+        else if (CStrCompare(argv[i], "--list-gpus") == 0)
+        {
             options.list_gpus = true;
-        } else if (CStrCompare(argv[i], "--script") == 0 && has_value) {
+        }
+        else if (CStrCompare(argv[i], "--script") == 0 && has_value)
+        {
             options.script = argv[++i];
-        } else if (CStrCompare(argv[i], "--text") == 0 && has_value) {
+        }
+        else if (CStrCompare(argv[i], "--text") == 0 && has_value)
+        {
             options.text = argv[++i];
-        } else if (CStrCompare(argv[i], "--help") == 0 || CStrCompare(argv[i], "-h") == 0) {
+        }
+        else if (CStrCompare(argv[i], "--help") == 0 || CStrCompare(argv[i], "-h") == 0)
+        {
             return Usage(argv[0], kExitOk);
-        } else {
+        }
+        else
+        {
             return Usage(argv[0], kExitUsage);
         }
     }
-    // The flags of this program that are settings: put them into the settings, so --list-settings and --save-settings show them.
-    if (options.no_vsync) demo_settings.SetLegacy("renderer.present_mode", "immediate", "--no-vsync");
-    if (options.validation) {
+    // The flags of this program that are settings: put them into the settings, so --list-settings and --save-settings
+    // show them.
+    if (options.no_vsync)
+    {
+        demo_settings.SetLegacy("renderer.present_mode", "immediate", "--no-vsync");
+    }
+    if (options.validation)
+    {
         demo_settings.SetLegacy("renderer.validation", "on", "--validation");
         demo_settings.SetLegacy("renderer.sync_validation", "true", "--validation");
     }
     {
         const int code = demo_settings.Finish();
-        if (code >= 0) return code;
+        if (code >= 0)
+        {
+            return code;
+        }
     }
     // And what the settings say (a file, --set, the environment) is what the program does.
     static demo::DemoSettings::Effective effective;
     effective = demo_settings.ReadEffective();
-    if (effective.gpu[0] != '\0') options.gpu = effective.gpu;
+    if (effective.gpu[0] != '\0')
+    {
+        options.gpu = effective.gpu;
+    }
     options.no_vsync = effective.immediate;
     options.validation = effective.validation;
-    options.backend = effective.window_backend; // --backend, ENGINE_WINDOW_BACKEND or a file, through the settings
-    if (options.list_gpus) return ListGpus();
-    RenderSettings settings = renderer::RenderSettingsFromSnapshot(demo_settings.GetRegistry(), *demo_settings.Get().Snapshot());
+    options.backend = effective.window_backend;  // --backend, ENGINE_WINDOW_BACKEND or a file, through the settings
+    if (options.list_gpus)
+    {
+        return ListGpus();
+    }
+    RenderSettings settings = renderer::RenderSettingsFromSnapshot(demo_settings.GetRegistry(),
+                                                                   *demo_settings.Get().Snapshot());
     BuildSettings(options, &settings);
-    if (options.screenshot != nullptr) {
+    if (options.screenshot != nullptr)
+    {
         return RunScreenshot(options, settings);
     }
     return RunWindow(options, settings);

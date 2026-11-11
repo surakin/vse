@@ -2,10 +2,13 @@
 
 #include <compare>
 
-//! Three-way comparison results (Phase 16): the engine's spelling of `<compare>`. A class that defines `operator<=>` returns `Ordering`.
-namespace engine_placeholder {
+//! Three-way comparison results (Phase 16): the engine's spelling of `<compare>`. A class that defines `operator<=>`
+//! returns `Ordering`.
+namespace engine_placeholder
+{
 
-/// The result of a three-way comparison of totally ordered values (`std::strong_ordering`): `Ordering::less`, `equal`, `greater`.
+/// The result of a three-way comparison of totally ordered values (`std::strong_ordering`): `Ordering::less`, `equal`,
+/// `greater`.
 using Ordering = std::strong_ordering;
 
-} // namespace engine_placeholder
+}  // namespace engine_placeholder

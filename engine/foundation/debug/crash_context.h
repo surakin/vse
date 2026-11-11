@@ -5,7 +5,8 @@
 //! What a crash report says about the program and the machine, collected once at startup.
 //!
 //! Filled before anything can crash, so the crash path only reads fixed buffers: no allocation, no file access.
-namespace engine_placeholder::debug {
+namespace engine_placeholder::debug
+{
 
 /// Bytes kept of the build id as hex text (a 20-byte id is 40 digits), including the null byte.
 constexpr usize kMaxBuildIdText = 65;
@@ -20,17 +21,19 @@ constexpr usize kMaxContextText = 96;
 ///
 /// Every text field is null-terminated and may be empty when the platform has nothing to say.
 ///
-/// - Thread-safety: immutable. Written once by [[debug::InitCrashContext]]; read from any thread and from signal handlers.
-struct CrashContext {
-    /// The executable's build id as lowercase hex (the GNU build-id note on Linux); empty if the binary has none. It ties a
-    /// dump to the exact binary and its symbol file.
+/// - Thread-safety: immutable. Written once by [[debug::InitCrashContext]]; read from any thread and from signal
+/// handlers.
+struct CrashContext
+{
+    /// The executable's build id as lowercase hex (the GNU build-id note on Linux); empty if the binary has none. It
+    /// ties a dump to the exact binary and its symbol file.
     char build_id[kMaxBuildIdText] = {};
     /// The engine's version text.
     char engine_version[kMaxContextText] = {};
     /// Path of the running executable.
     char executable[kMaxContextPath] = {};
-    /// The command line, arguments joined by single spaces and cut at [[debug::kMaxContextCommandLine]] - 1 bytes; empty on
-    /// a platform or program without one.
+    /// The command line, arguments joined by single spaces and cut at [[debug::kMaxContextCommandLine]] - 1 bytes;
+    /// empty on a platform or program without one.
     char command_line[kMaxContextCommandLine] = {};
     /// Operating system name, for example `Linux`.
     char os_name[kMaxContextText] = {};
@@ -58,15 +61,17 @@ struct CrashContext {
 ///
 /// - Param argc: number of arguments, or 0 if the program has no command line.
 /// - Param argv: the arguments; borrowed for the call; null if the program has none.
-/// The first call fills the context. A later call changes nothing, except that it supplies the command line if the first call
-/// had none (the crash handler and a failed assert initialize without arguments when the program has not).
+/// The first call fills the context. A later call changes nothing, except that it supplies the command line if the
+/// first call had none (the crash handler and a failed assert initialize without arguments when the program has not).
 /// - Thread-safety: thread-safe. Not async-signal-safe: it reads files.
-/// - Backend: the system-information reads. Windows: build id from the PE CodeView record (GUID and age), OS from RtlGetVersion, memory from GlobalMemoryStatusEx; macOS: build id from LC_UUID, OS and CPU from sysctl.
+/// - Backend: the system-information reads. Windows: build id from the PE CodeView record (GUID and age), OS from
+/// RtlGetVersion, memory from GlobalMemoryStatusEx; macOS: build id from LC_UUID, OS and CPU from sysctl.
 void InitCrashContext(int argc, const char* const* argv);
 
 /// Records where a core dump will go (from [[debug::EnablePostMortemDumps]]), to be printed in every crash report.
 /// - Param text: a sentence for a person; copied (and cut to fit); null or empty clears it.
-/// - Thread-safety: thread-safe against other callers and [[debug::InitCrashContext]]; call during startup, because a crash report
+/// - Thread-safety: thread-safe against other callers and [[debug::InitCrashContext]]; call during startup, because a
+/// crash report
 ///   reads it without a lock.
 void SetCoreDumpDescription(const char* text);
 
@@ -81,4 +86,4 @@ bool CrashContextInitialized();
 /// - Thread-safety: thread-safe. Async-signal-safe.
 const CrashContext& GetCrashContext();
 
-} // namespace engine_placeholder::debug
+}  // namespace engine_placeholder::debug

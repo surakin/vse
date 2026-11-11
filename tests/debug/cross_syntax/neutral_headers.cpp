@@ -1,5 +1,5 @@
-// The neutral debugging headers, all in one translation unit, for the cross-target syntax checks (debug_cross_syntax_*): they
-// must compile for Windows and macOS without anything Linux-specific.
+// The neutral debugging headers, all in one translation unit, for the cross-target syntax checks
+// (debug_cross_syntax_*): they must compile for Windows and macOS without anything Linux-specific.
 #include "debug/compiler.h"
 #include "debug/crash_context.h"
 #include "debug/crash_handler.h"

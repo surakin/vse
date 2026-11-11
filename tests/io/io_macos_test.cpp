@@ -1,6 +1,7 @@
-// The file layer on macOS (Phase 26 Day 303): what differs from Linux (the errno table's Darwin rows are in file_system_test.cpp's shared
-// table): normalization and case on this volume (the layer reports what the file system does and never folds),
-// F_FULLFSYNC's cost for a settings-sized file, the executable path and the standard directories under ~/Library.
+// The file layer on macOS (Phase 26 Day 303): what differs from Linux (the errno table's Darwin rows are in
+// file_system_test.cpp's shared table): normalization and case on this volume (the layer reports what the file system
+// does and never folds), F_FULLFSYNC's cost for a settings-sized file, the executable path and the standard directories
+// under ~/Library.
 #include <catch2/catch_test_macros.hpp>
 
 #include <fcntl.h>
@@ -24,22 +25,25 @@
 using namespace engine_placeholder;
 using io::Error;
 using io::Path;
-using io_test::Str;
 using io_test::EnvGuard;
 using io_test::FeedFifo;
+using io_test::Str;
 using io_test::TempDir;
 
-TEST_CASE("io on macOS: a name written in NFC, looked up in NFD, is what the volume says", "[io][fs][macos]") {
+TEST_CASE("io on macOS: a name written in NFC, looked up in NFD, is what the volume says", "[io][fs][macos]")
+{
     TempDir dir;
-    const Path nfc = dir / "caf\xC3\xA9";  // é as one code point (U+00E9)
-    const Path nfd = dir / "cafe\xCC\x81"; // e + combining acute (U+0301)
+    const Path nfc = dir / "caf\xC3\xA9";   // é as one code point (U+00E9)
+    const Path nfd = dir / "cafe\xCC\x81";  // e + combining acute (U+0301)
     REQUIRE(io::WriteFile(nfc, "x", 1).Ok());
-    // The layer must not normalize: its answer for the NFD name is the file system's own. APFS is normalization-insensitive and keeps the
-    // form it was given; HFS+ stores decomposed names. Both are allowed; record which this volume is.
+    // The layer must not normalize: its answer for the NFD name is the file system's own. APFS is
+    // normalization-insensitive and keeps the form it was given; HFS+ stores decomposed names. Both are allowed; record
+    // which this volume is.
     const bool raw_found = ::access(Str(nfd.View()).CStr(), F_OK) == 0;
     io::FileInfo info;
     CHECK(io::Stat(nfd, &info).Ok() == raw_found);
-    os::Print("NFD lookup of an NFC name on this volume: %s\n", raw_found ? "found (normalization-insensitive)" : "not found");
+    os::Print("NFD lookup of an NFC name on this volume: %s\n",
+              raw_found ? "found (normalization-insensitive)" : "not found");
     // The name lists in the form it was written (APFS keeps it), bytes unchanged by the layer.
     io::Directory listing;
     REQUIRE(io::Directory::Open(dir.Path(), &listing).Ok());
@@ -52,19 +56,23 @@ TEST_CASE("io on macOS: a name written in NFC, looked up in NFD, is what the vol
     CHECK((listed_as_nfc || entry.name == StringView("cafe\xCC\x81")));
 }
 
-TEST_CASE("io on macOS: two names differing only in case follow the volume's rule", "[io][fs][macos]") {
+TEST_CASE("io on macOS: two names differing only in case follow the volume's rule", "[io][fs][macos]")
+{
     TempDir dir;
     const long case_sensitive = ::pathconf(Str(dir.Path().View()).CStr(), _PC_CASE_SENSITIVE);
     REQUIRE(case_sensitive >= 0);
     os::Print("the temporary volume is case-%s\n", case_sensitive == 1 ? "sensitive" : "insensitive");
     REQUIRE(io::WriteFile(dir / "Case.txt", "upper", 5).Ok());
     const Path lower = dir / "case.txt";
-    if (case_sensitive == 1) {
+    if (case_sensitive == 1)
+    {
         CHECK_FALSE(io::Exists(lower));
         REQUIRE(io::WriteFile(lower, "lower", 5).Ok());
         CHECK(io_test::ReadText(dir / "Case.txt").View() == StringView("upper"));
-    } else {
-        CHECK(io::Exists(lower)); // the same file under the other spelling
+    }
+    else
+    {
+        CHECK(io::Exists(lower));  // the same file under the other spelling
         CHECK(io_test::ReadText(lower).View() == StringView("upper"));
         // A rename that changes only the case is a real rename: the listing shows the new spelling.
         REQUIRE(io::Rename(dir / "Case.txt", lower).Ok());
@@ -78,23 +86,32 @@ TEST_CASE("io on macOS: two names differing only in case follow the volume's rul
     }
 }
 
-TEST_CASE("io on macOS: Sync and WriteFileAtomic reach the medium (F_FULLFSYNC); the cost for 4 KiB", "[io][file][macos]") {
+TEST_CASE("io on macOS: Sync and WriteFileAtomic reach the medium (F_FULLFSYNC); the cost for 4 KiB",
+          "[io][file][macos]")
+{
     TempDir dir;
     char data[4096];
-    for (usize i = 0; i < sizeof data; ++i) data[i] = static_cast<char>('a' + i % 26);
+    for (usize i = 0; i < sizeof data; ++i)
+    {
+        data[i] = static_cast<char>('a' + i % 26);
+    }
     const Path target = dir / "settings.cfg";
     constexpr int kRuns = 10;
     u64 slowest = 0;
     u64 total = 0;
-    for (int i = 0; i < kRuns; ++i) {
+    for (int i = 0; i < kRuns; ++i)
+    {
         const u64 start = os::MonotonicTimeNanos();
         REQUIRE(io::WriteFileAtomic(target, data, sizeof data).Ok());
         const u64 took = os::MonotonicTimeNanos() - start;
         total += took;
-        if (took > slowest) slowest = took;
+        if (took > slowest)
+        {
+            slowest = took;
+        }
     }
-    os::Print("WriteFileAtomic of 4 KiB with F_FULLFSYNC: mean %.2f ms, slowest %.2f ms over %d runs\n", static_cast<double>(total) / kRuns / 1e6,
-              static_cast<double>(slowest) / 1e6, kRuns);
+    os::Print("WriteFileAtomic of 4 KiB with F_FULLFSYNC: mean %.2f ms, slowest %.2f ms over %d runs\n",
+              static_cast<double>(total) / kRuns / 1e6, static_cast<double>(slowest) / 1e6, kRuns);
     io::FilePtr file;
     REQUIRE(io::File::Open(target, io::OpenMode::ReadWrite, 0, &file).Ok());
     CHECK(file->Sync().Ok());
@@ -102,23 +119,25 @@ TEST_CASE("io on macOS: Sync and WriteFileAtomic reach the medium (F_FULLFSYNC);
     CHECK(io::SyncDirectory(dir.Path()).Ok());
 }
 
-TEST_CASE("io on macOS: the executable path is the real file, and its directory", "[io][fs][macos]") {
+TEST_CASE("io on macOS: the executable path is the real file, and its directory", "[io][fs][macos]")
+{
     Path exe;
     REQUIRE(io::ExecutablePath(&exe).Ok());
     CHECK(exe.IsAbsolute());
     CHECK(exe.FileName().Find(StringView("io_tests")) == 0);
     Path canonical;
     REQUIRE(io::Canonical(exe, &canonical).Ok());
-    CHECK(canonical == exe); // realpath'ed: no link or `..` left
+    CHECK(canonical == exe);  // realpath'ed: no link or `..` left
     Path dir;
     REQUIRE(io::ExecutableDirectory(&dir).Ok());
     CHECK(dir == exe.Parent());
 }
 
-TEST_CASE("io on macOS: the temporary and user directories", "[io][fs][macos]") {
+TEST_CASE("io on macOS: the temporary and user directories", "[io][fs][macos]")
+{
     EnvGuard home("HOME"), tmp("TMPDIR"), cfg("XDG_CONFIG_HOME");
     ::setenv("HOME", "/home/test", 1);
-    ::setenv("XDG_CONFIG_HOME", "/xdg/config", 1); // not a macOS variable: ignored
+    ::setenv("XDG_CONFIG_HOME", "/xdg/config", 1);  // not a macOS variable: ignored
     Path p;
     REQUIRE(io::UserConfigDirectory("app", &p).Ok());
     CHECK(Str(p.View()) == "/home/test/Library/Application Support/app");
@@ -131,9 +150,12 @@ TEST_CASE("io on macOS: the temporary and user directories", "[io][fs][macos]") 
     // HOME must be absolute: a relative one falls back to the password database.
     ::setenv("HOME", "relative/home", 1);
     const io::Status s = io::UserConfigDirectory("app", &p);
-    if (s.Ok()) {
+    if (s.Ok())
+    {
         CHECK(p.IsAbsolute());
-    } else {
+    }
+    else
+    {
         CHECK(s.Is(Error::NotFound));
     }
     // Bad application names.
@@ -162,10 +184,10 @@ TEST_CASE("io on macOS: the temporary and user directories", "[io][fs][macos]") 
     CHECK(unset == p);
 }
 
-
-TEST_CASE("io on macOS: a source whose size is not its content (a FIFO) reads whole", "[io][file][macos]") {
-    // Linux reads /proc/self/status for this (file_test.cpp); macOS has no /proc. A FIFO reports no size, so ReadFile must read to the end,
-    // through both overloads (a Vector, and an arena).
+TEST_CASE("io on macOS: a source whose size is not its content (a FIFO) reads whole", "[io][file][macos]")
+{
+    // Linux reads /proc/self/status for this (file_test.cpp); macOS has no /proc. A FIFO reports no size, so ReadFile
+    // must read to the end, through both overloads (a Vector, and an arena).
     const os::SignalHandler old_pipe = os::SetSignalHandler(SIGPIPE, SIG_IGN);
     TempDir dir;
     const Path fifo = dir / "fifo";
@@ -191,27 +213,30 @@ TEST_CASE("io on macOS: a source whose size is not its content (a FIFO) reads wh
     os::SetSignalHandler(SIGPIPE, old_pipe);
 }
 
-TEST_CASE("io on macOS: Copy copies the data and the mode with fcopyfile, not the times (no clone)", "[io][fs][macos]") {
+TEST_CASE("io on macOS: Copy copies the data and the mode with fcopyfile, not the times (no clone)", "[io][fs][macos]")
+{
     TempDir dir;
     const Path from = dir / "from.bin";
     const Path to = dir / "to.bin";
     REQUIRE(io::WriteFile(from, "copied bytes", 12).Ok());
     REQUIRE(::chmod(Str(from.View()).CStr(), 0640) == 0);
-    struct timeval old_times[2] = {{1'000'000'000, 0}, {1'000'000'000, 0}}; // 2001
+    struct timeval old_times[2] = {{1'000'000'000, 0}, {1'000'000'000, 0}};  // 2001
     REQUIRE(::utimes(Str(from.View()).CStr(), old_times) == 0);
     REQUIRE(io::Copy(from, to, false).Ok());
     CHECK(io_test::ReadText(to).View() == StringView("copied bytes"));
     io::FileInfo info;
     REQUIRE(io::Stat(to, &info).Ok());
     CHECK(info.permissions == 0640);
-    CHECK(info.modified_unix_ns > 1'700'000'000LL * 1'000'000'000LL); // now, not the source's 2001: an APFS clone would have kept it
+    CHECK(info.modified_unix_ns >
+          1'700'000'000LL * 1'000'000'000LL);  // now, not the source's 2001: an APFS clone would have kept it
     CHECK(io::Copy(from, to, false).Is(Error::AlreadyExists));
     REQUIRE(io::WriteFile(from, "new", 3).Ok());
     REQUIRE(io::Copy(from, to, true).Ok());
-    CHECK(io_test::ReadText(to).View() == StringView("new")); // overwritten, truncated
+    CHECK(io_test::ReadText(to).View() == StringView("new"));  // overwritten, truncated
 }
 
-TEST_CASE("io on macOS: without HOME the user directories come from Foundation (the account's home)", "[io][fs][macos]") {
+TEST_CASE("io on macOS: without HOME the user directories come from Foundation (the account's home)", "[io][fs][macos]")
+{
     EnvGuard home("HOME");
     ::unsetenv("HOME");
     struct passwd* pw = ::getpwuid(::geteuid());
@@ -222,11 +247,13 @@ TEST_CASE("io on macOS: without HOME the user directories come from Foundation (
     CHECK(p == account.Join("Library/Application Support/app"));
     REQUIRE(io::UserCacheDirectory("app", &p).Ok());
     CHECK(p == account.Join("Library/Caches/app"));
-    CHECK(io::CrashDumpDirectory(&p).Is(Error::NotFound)); // the crash handler does not guess without HOME
+    CHECK(io::CrashDumpDirectory(&p).Is(Error::NotFound));  // the crash handler does not guess without HOME
 }
 
-TEST_CASE("io on macOS: Copy from a FIFO copies what it delivers, as on Linux", "[io][fs][macos]") {
-    // fcopyfile refuses a source that is not a regular file (ENOTSUP); Copy must still copy it, through the read/write loop (Day 304 review).
+TEST_CASE("io on macOS: Copy from a FIFO copies what it delivers, as on Linux", "[io][fs][macos]")
+{
+    // fcopyfile refuses a source that is not a regular file (ENOTSUP); Copy must still copy it, through the read/write
+    // loop (Day 304 review).
     const os::SignalHandler old_pipe = os::SetSignalHandler(SIGPIPE, SIG_IGN);
     TempDir dir;
     const Path fifo = dir / "fifo";

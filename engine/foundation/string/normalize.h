@@ -9,7 +9,8 @@
 
 //! Canonical Unicode normalization (NFC and NFD) per UAX #15, plus the Unicode
 //! property lookups it is built on.
-namespace engine_placeholder {
+namespace engine_placeholder
+{
 
 /// Looks up the canonical decomposition of a codepoint in the generated tables.
 ///
@@ -54,17 +55,19 @@ void Detail_CanonicalOrder(Vector<u32, ArenaAllocator>& codepoints);
 ///   public API.
 void Detail_ComposeInPlace(Vector<u32, ArenaAllocator>& codepoints);
 
-namespace detail {
+namespace detail
+{
 
 // Generous relative to input size: worst-case canonical decomposition
 // expansion is small (a handful of codepoints per input codepoint), and
 // this is scratch space reclaimed when the function returns, not part of
 // the result.
-inline usize NormalizeScratchBytes(StringView sv) {
+inline usize NormalizeScratchBytes(StringView sv)
+{
     return 4096 + sv.Length() * 32;
 }
 
-} // namespace detail
+}  // namespace detail
 
 /// Converts `sv` to Normalization Form D (canonical decomposition, canonically ordered).
 ///
@@ -78,17 +81,19 @@ inline usize NormalizeScratchBytes(StringView sv) {
 /// - Aborts: the scratch buffer or `allocator` is out of memory.
 /// - Thread-safety: thread-safe provided `allocator` is not shared unsynchronized.
 /// - Ownership: the result is allocated from `allocator`, which owns the memory.
-template <typename Allocator>
-String<Allocator> NormalizeNFD(Allocator& allocator, StringView sv) {
+template <typename Allocator> String<Allocator> NormalizeNFD(Allocator& allocator, StringView sv)
+{
     ArenaAllocator scratch(detail::NormalizeScratchBytes(sv));
     Vector<u32, ArenaAllocator> codepoints(scratch);
-    for (u32 cp : Utf8Codepoints(sv)) {
+    for (u32 cp : Utf8Codepoints(sv))
+    {
         Detail_FullyDecomposeAppend(cp, codepoints);
     }
     Detail_CanonicalOrder(codepoints);
 
     String<Allocator> result(allocator);
-    for (usize i = 0; i < codepoints.Size(); ++i) {
+    for (usize i = 0; i < codepoints.Size(); ++i)
+    {
         char buf[4];
         usize len = EncodeUtf8(codepoints[i], buf);
         result.AppendRawBytes(buf, len);
@@ -108,18 +113,20 @@ String<Allocator> NormalizeNFD(Allocator& allocator, StringView sv) {
 /// - Aborts: the scratch buffer or `allocator` is out of memory.
 /// - Thread-safety: thread-safe provided `allocator` is not shared unsynchronized.
 /// - Ownership: the result is allocated from `allocator`, which owns the memory.
-template <typename Allocator>
-String<Allocator> NormalizeNFC(Allocator& allocator, StringView sv) {
+template <typename Allocator> String<Allocator> NormalizeNFC(Allocator& allocator, StringView sv)
+{
     ArenaAllocator scratch(detail::NormalizeScratchBytes(sv));
     Vector<u32, ArenaAllocator> codepoints(scratch);
-    for (u32 cp : Utf8Codepoints(sv)) {
+    for (u32 cp : Utf8Codepoints(sv))
+    {
         Detail_FullyDecomposeAppend(cp, codepoints);
     }
     Detail_CanonicalOrder(codepoints);
     Detail_ComposeInPlace(codepoints);
 
     String<Allocator> result(allocator);
-    for (usize i = 0; i < codepoints.Size(); ++i) {
+    for (usize i = 0; i < codepoints.Size(); ++i)
+    {
         char buf[4];
         usize len = EncodeUtf8(codepoints[i], buf);
         result.AppendRawBytes(buf, len);
@@ -127,4 +134,4 @@ String<Allocator> NormalizeNFC(Allocator& allocator, StringView sv) {
     return result;
 }
 
-} // namespace engine_placeholder
+}  // namespace engine_placeholder

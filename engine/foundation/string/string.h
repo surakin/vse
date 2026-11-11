@@ -9,7 +9,8 @@
 //! StringBuilder for formatting numbers and text.
 //!
 //! Strings are byte sequences, treated as UTF-8 by the helpers in utf8.h.
-namespace engine_placeholder {
+namespace engine_placeholder
+{
 
 /// Owning, growable, always NUL-terminated string whose bytes come from an allocator.
 ///
@@ -23,25 +24,25 @@ namespace engine_placeholder {
 /// - Ownership: the allocator owns the memory and must outlive the string; the
 ///   string never frees it. Views and C-string pointers are invalidated by any
 ///   append.
-template <typename Allocator>
-class String {
+template <typename Allocator> class String
+{
 public:
     /// Creates an empty string, allocating space for the terminator.
     ///
     /// - Param allocator: allocator for the characters; must outlive the string.
     /// - Aborts: the allocator is out of memory.
-    explicit String(Allocator& allocator) : chars_(allocator) {
-        chars_.Push('\0');
-    }
+    explicit String(Allocator& allocator) : chars_(allocator) { chars_.Push('\0'); }
 
     /// Creates a string holding a copy of `sv`.
     ///
     /// - Param allocator: allocator for the characters; must outlive the string.
     /// - Param sv: text to copy; need not be NUL-terminated.
     /// - Aborts: the allocator is out of memory.
-    String(Allocator& allocator, StringView sv) : chars_(allocator) {
+    String(Allocator& allocator, StringView sv) : chars_(allocator)
+    {
         chars_.Reserve(sv.Length() + 1);
-        for (usize i = 0; i < sv.Length(); ++i) {
+        for (usize i = 0; i < sv.Length(); ++i)
+        {
             chars_.Push(sv[i]);
         }
         chars_.Push('\0');
@@ -58,9 +59,11 @@ public:
     /// - Param sv: text to append; must not view this string's own storage
     ///   because growth may invalidate it.
     /// - Aborts: growth is needed and the allocator is out of memory.
-    void Append(StringView sv) {
-        chars_.Pop(); // drop the trailing '\0'
-        for (usize i = 0; i < sv.Length(); ++i) {
+    void Append(StringView sv)
+    {
+        chars_.Pop();  // drop the trailing '\0'
+        for (usize i = 0; i < sv.Length(); ++i)
+        {
             chars_.Push(sv[i]);
         }
         chars_.Push('\0');
@@ -72,7 +75,8 @@ public:
     ///   non-ASCII byte would make the string malformed UTF-8 (not checked).
     ///   Use [[StringBuilder::AppendCodepoint]] for other codepoints.
     /// - Aborts: growth is needed and the allocator is out of memory.
-    void Append(char c) {
+    void Append(char c)
+    {
         chars_.Pop();
         chars_.Push(c);
         chars_.Push('\0');
@@ -86,9 +90,11 @@ public:
     /// - Param bytes: first byte to append.
     /// - Param count: number of bytes.
     /// - Aborts: growth is needed and the allocator is out of memory.
-    void AppendRawBytes(const char* bytes, usize count) {
+    void AppendRawBytes(const char* bytes, usize count)
+    {
         chars_.Pop();
-        for (usize i = 0; i < count; ++i) {
+        for (usize i = 0; i < count; ++i)
+        {
             chars_.Push(bytes[i]);
         }
         chars_.Push('\0');
@@ -127,8 +133,8 @@ private:
 /// - Thread-safety: not-thread-safe. Synchronize externally if shared.
 /// - Ownership: the allocator owns the memory and must outlive the builder; the
 ///   views and C-string pointers it returns are invalidated by any append.
-template <typename Allocator>
-class StringBuilder {
+template <typename Allocator> class StringBuilder
+{
 public:
     /// Creates an empty builder.
     ///
@@ -141,7 +147,8 @@ public:
     /// - Param sv: text to append.
     /// - Returns: this builder.
     /// - Aborts: growth is needed and the allocator is out of memory.
-    StringBuilder& Append(StringView sv) {
+    StringBuilder& Append(StringView sv)
+    {
         str_.Append(sv);
         return *this;
     }
@@ -151,7 +158,8 @@ public:
     /// - Param c: character to append; must be below 0x80 (not checked).
     /// - Returns: this builder.
     /// - Aborts: growth is needed and the allocator is out of memory.
-    StringBuilder& Append(char c) {
+    StringBuilder& Append(char c)
+    {
         str_.Append(c);
         return *this;
     }
@@ -162,7 +170,8 @@ public:
     ///   0x10FFFF are replaced by U+FFFD.
     /// - Returns: this builder.
     /// - Aborts: growth is needed and the allocator is out of memory.
-    StringBuilder& AppendCodepoint(u32 codepoint) {
+    StringBuilder& AppendCodepoint(u32 codepoint)
+    {
         char buf[4];
         usize len = EncodeUtf8(codepoint, buf);
         str_.AppendRawBytes(buf, len);
@@ -176,14 +185,17 @@ public:
     /// - Param value: number to format.
     /// - Returns: this builder.
     /// - Aborts: growth is needed and the allocator is out of memory.
-    StringBuilder& AppendInt(i64 value) {
-        if (value == 0) {
+    StringBuilder& AppendInt(i64 value)
+    {
+        if (value == 0)
+        {
             return Append('0');
         }
         bool negative = value < 0;
         // Avoid UB negating INT64_MIN directly.
         u64 magnitude = negative ? (static_cast<u64>(-(value + 1)) + 1) : static_cast<u64>(value);
-        if (negative) {
+        if (negative)
+        {
             Append('-');
         }
         AppendDigits(magnitude);
@@ -195,8 +207,10 @@ public:
     /// - Param value: number to format.
     /// - Returns: this builder.
     /// - Aborts: growth is needed and the allocator is out of memory.
-    StringBuilder& AppendUInt(u64 value) {
-        if (value == 0) {
+    StringBuilder& AppendUInt(u64 value)
+    {
+        if (value == 0)
+        {
             return Append('0');
         }
         AppendDigits(value);
@@ -212,21 +226,26 @@ public:
     ///   left, and values above 16 are treated as 16.
     /// - Returns: this builder.
     /// - Aborts: growth is needed and the allocator is out of memory.
-    StringBuilder& AppendHex(u64 value, int min_digits = 1) {
+    StringBuilder& AppendHex(u64 value, int min_digits = 1)
+    {
         char digits[16];
         int n = 0;
-        while (value > 0) {
+        while (value > 0)
+        {
             u64 nibble = value & 0xF;
             digits[n++] = static_cast<char>(nibble < 10 ? '0' + nibble : 'a' + (nibble - 10));
             value >>= 4;
         }
-        while (n < min_digits && n < 16) {
+        while (n < min_digits && n < 16)
+        {
             digits[n++] = '0';
         }
-        if (n == 0) {
+        if (n == 0)
+        {
             digits[n++] = '0';
         }
-        while (n > 0) {
+        while (n > 0)
+        {
             Append(digits[--n]);
         }
         return *this;
@@ -243,13 +262,16 @@ public:
     /// - Param precision: digits after the decimal point; 0 omits the point.
     /// - Returns: this builder.
     /// - Aborts: growth is needed and the allocator is out of memory.
-    StringBuilder& AppendFloat(f64 value, int precision = 6) {
-        if (value < 0) {
+    StringBuilder& AppendFloat(f64 value, int precision = 6)
+    {
+        if (value < 0)
+        {
             Append('-');
             value = -value;
         }
         f64 scale = 1.0;
-        for (int i = 0; i < precision; ++i) {
+        for (int i = 0; i < precision; ++i)
+        {
             scale *= 10.0;
         }
         u64 scaled = static_cast<u64>(value * scale + 0.5);
@@ -258,7 +280,8 @@ public:
         u64 frac_part = divisor > 0 ? scaled % divisor : 0;
 
         AppendUInt(int_part);
-        if (precision > 0) {
+        if (precision > 0)
+        {
             Append('.');
             AppendFracDigits(frac_part, precision);
         }
@@ -271,36 +294,47 @@ public:
     const char* CStr() const { return str_.CStr(); }
 
 private:
-    void AppendDigits(u64 value) {
+    void AppendDigits(u64 value)
+    {
         char digits[20];
         int n = 0;
-        while (value > 0) {
+        while (value > 0)
+        {
             digits[n++] = static_cast<char>('0' + (value % 10));
             value /= 10;
         }
-        while (n > 0) {
+        while (n > 0)
+        {
             Append(digits[--n]);
         }
     }
 
     // Appends exactly `precision` digits, zero-padded on the left.
-    void AppendFracDigits(u64 value, int precision) {
+    void AppendFracDigits(u64 value, int precision)
+    {
         char digits[20];
         int n = 0;
-        if (value == 0) {
-            for (int i = 0; i < precision; ++i) {
-                digits[n++] = '0';
-            }
-        } else {
-            while (value > 0) {
-                digits[n++] = static_cast<char>('0' + (value % 10));
-                value /= 10;
-            }
-            while (n < precision) {
+        if (value == 0)
+        {
+            for (int i = 0; i < precision; ++i)
+            {
                 digits[n++] = '0';
             }
         }
-        while (n > 0) {
+        else
+        {
+            while (value > 0)
+            {
+                digits[n++] = static_cast<char>('0' + (value % 10));
+                value /= 10;
+            }
+            while (n < precision)
+            {
+                digits[n++] = '0';
+            }
+        }
+        while (n > 0)
+        {
             Append(digits[--n]);
         }
     }
@@ -308,4 +342,4 @@ private:
     String<Allocator> str_;
 };
 
-} // namespace engine_placeholder
+}  // namespace engine_placeholder

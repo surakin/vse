@@ -1,9 +1,12 @@
 #include "net/status.h"
 
-namespace engine_placeholder::net {
+namespace engine_placeholder::net
+{
 
-const char* ErrorCodeName(ErrorCode code) {
-    switch (code) {
+const char* ErrorCodeName(ErrorCode code)
+{
+    switch (code)
+    {
     case ErrorCode::Ok: return "ok";
     case ErrorCode::WouldBlock: return "would_block";
     case ErrorCode::Refused: return "refused";
@@ -25,4 +28,4 @@ const char* ErrorCodeName(ErrorCode code) {
     return "other";
 }
 
-} // namespace engine_placeholder::net
+}  // namespace engine_placeholder::net

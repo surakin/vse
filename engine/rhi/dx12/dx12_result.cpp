@@ -1,9 +1,12 @@
 #include "rhi/dx12/dx12_result.h"
 
-namespace engine_placeholder::rhi::dx12 {
+namespace engine_placeholder::rhi::dx12
+{
 
-const char* HresultName(HRESULT result) {
-    switch (result) {
+const char* HresultName(HRESULT result)
+{
+    switch (result)
+    {
     case S_OK: return "S_OK";
     case S_FALSE: return "S_FALSE";
     case E_FAIL: return "E_FAIL";
@@ -30,9 +33,10 @@ const char* HresultName(HRESULT result) {
     }
 }
 
-bool IsDeviceLostResult(HRESULT result) {
-    return result == DXGI_ERROR_DEVICE_REMOVED || result == DXGI_ERROR_DEVICE_RESET || result == DXGI_ERROR_DEVICE_HUNG ||
-           result == DXGI_ERROR_DRIVER_INTERNAL_ERROR;
+bool IsDeviceLostResult(HRESULT result)
+{
+    return result == DXGI_ERROR_DEVICE_REMOVED || result == DXGI_ERROR_DEVICE_RESET ||
+           result == DXGI_ERROR_DEVICE_HUNG || result == DXGI_ERROR_DRIVER_INTERNAL_ERROR;
 }
 
-} // namespace engine_placeholder::rhi::dx12
+}  // namespace engine_placeholder::rhi::dx12

@@ -4,11 +4,14 @@
 #include "mem/arena_allocator.h"
 #include "string/string.h"
 
-namespace engine_placeholder::os::wayland {
+namespace engine_placeholder::os::wayland
+{
 
-namespace {
+namespace
+{
 
-void HandlePing(void* data, xdg_wm_base* shell, u32 serial) {
+void HandlePing(void* data, xdg_wm_base* shell, u32 serial)
+{
     (void)data;
     // Mandatory per the xdg-shell spec: a client that doesn't respond
     // risks the compositor considering it unresponsive/dead.
@@ -19,7 +22,8 @@ constexpr xdg_wm_base_listener kXdgWmBaseListener = {
     .ping = HandlePing,
 };
 
-void LogBoundGlobal(const char* interface_name, u32 version) {
+void LogBoundGlobal(const char* interface_name, u32 version)
+{
     ArenaAllocator scratch(256);
     StringBuilder<ArenaAllocator> line(scratch);
     line.Append("Wayland: bound ").Append(interface_name).Append(" v").AppendUInt(version);
@@ -31,56 +35,80 @@ void LogBoundGlobal(const char* interface_name, u32 version) {
 // populated from this afterward (Connect() is a static member, so it
 // has private access; these free functions never touch WaylandConnection
 // itself).
-struct RegistryState {
+struct RegistryState
+{
     wl_compositor* compositor = nullptr;
     xdg_wm_base* shell = nullptr;
     wl_seat* seat = nullptr;
     wl_shm* shm = nullptr;
-    zxdg_decoration_manager_v1* decoration_manager = nullptr; // optional
-    wp_cursor_shape_manager_v1* cursor_shape_manager = nullptr; // optional
-    zwp_pointer_constraints_v1* pointer_constraints = nullptr; // optional
-    zwp_relative_pointer_manager_v1* relative_pointer_manager = nullptr; // optional
-    wl_data_device_manager* data_device_manager = nullptr; // optional (no clipboard without it)
-    zwp_primary_selection_device_manager_v1* primary_selection_manager = nullptr; // optional
+    zxdg_decoration_manager_v1* decoration_manager = nullptr;                      // optional
+    wp_cursor_shape_manager_v1* cursor_shape_manager = nullptr;                    // optional
+    zwp_pointer_constraints_v1* pointer_constraints = nullptr;                     // optional
+    zwp_relative_pointer_manager_v1* relative_pointer_manager = nullptr;           // optional
+    wl_data_device_manager* data_device_manager = nullptr;                         // optional (no clipboard without it)
+    zwp_primary_selection_device_manager_v1* primary_selection_manager = nullptr;  // optional
 };
 
-void HandleGlobal(void* data, wl_registry* registry, u32 name, const char* interface, u32 version) {
+void HandleGlobal(void* data, wl_registry* registry, u32 name, const char* interface, u32 version)
+{
     auto* state = static_cast<RegistryState*>(data);
     StringView iface(interface);
 
-    if (iface == StringView(wl_compositor_interface.name)) {
-        state->compositor =
-            static_cast<wl_compositor*>(wl_registry_bind(registry, name, &wl_compositor_interface, 4));
+    if (iface == StringView(wl_compositor_interface.name))
+    {
+        state->compositor = static_cast<wl_compositor*>(wl_registry_bind(registry, name, &wl_compositor_interface, 4));
         LogBoundGlobal(interface, version);
-    } else if (iface == StringView(xdg_wm_base_interface.name)) {
+    }
+    else if (iface == StringView(xdg_wm_base_interface.name))
+    {
         state->shell = static_cast<xdg_wm_base*>(wl_registry_bind(registry, name, &xdg_wm_base_interface, 1));
         xdg_wm_base_add_listener(state->shell, &kXdgWmBaseListener, nullptr);
         LogBoundGlobal(interface, version);
-    } else if (iface == StringView(wl_seat_interface.name)) {
-        state->seat = static_cast<wl_seat*>(wl_registry_bind(registry, name, &wl_seat_interface, version < 5 ? version : 5));  // v4: keyboard repeat_info; v5: pointer frames
+    }
+    else if (iface == StringView(wl_seat_interface.name))
+    {
+        state->seat = static_cast<wl_seat*>(
+            wl_registry_bind(registry, name, &wl_seat_interface,
+                             version < 5 ? version : 5));  // v4: keyboard repeat_info; v5: pointer frames
         LogBoundGlobal(interface, version);
-    } else if (iface == StringView(wl_shm_interface.name)) {
+    }
+    else if (iface == StringView(wl_shm_interface.name))
+    {
         state->shm = static_cast<wl_shm*>(wl_registry_bind(registry, name, &wl_shm_interface, 1));
         LogBoundGlobal(interface, version);
-    } else if (iface == StringView(zxdg_decoration_manager_v1_interface.name)) {
+    }
+    else if (iface == StringView(zxdg_decoration_manager_v1_interface.name))
+    {
         state->decoration_manager = static_cast<zxdg_decoration_manager_v1*>(
             wl_registry_bind(registry, name, &zxdg_decoration_manager_v1_interface, 1));
         LogBoundGlobal(interface, version);
-    } else if (iface == StringView(wp_cursor_shape_manager_v1_interface.name)) {
-        state->cursor_shape_manager = static_cast<wp_cursor_shape_manager_v1*>(wl_registry_bind(registry, name, &wp_cursor_shape_manager_v1_interface, 1));
+    }
+    else if (iface == StringView(wp_cursor_shape_manager_v1_interface.name))
+    {
+        state->cursor_shape_manager = static_cast<wp_cursor_shape_manager_v1*>(
+            wl_registry_bind(registry, name, &wp_cursor_shape_manager_v1_interface, 1));
         LogBoundGlobal(interface, version);
-    } else if (iface == StringView(zwp_pointer_constraints_v1_interface.name)) {
-        state->pointer_constraints = static_cast<zwp_pointer_constraints_v1*>(wl_registry_bind(registry, name, &zwp_pointer_constraints_v1_interface, 1));
+    }
+    else if (iface == StringView(zwp_pointer_constraints_v1_interface.name))
+    {
+        state->pointer_constraints = static_cast<zwp_pointer_constraints_v1*>(
+            wl_registry_bind(registry, name, &zwp_pointer_constraints_v1_interface, 1));
         LogBoundGlobal(interface, version);
-    } else if (iface == StringView(zwp_relative_pointer_manager_v1_interface.name)) {
-        state->relative_pointer_manager =
-            static_cast<zwp_relative_pointer_manager_v1*>(wl_registry_bind(registry, name, &zwp_relative_pointer_manager_v1_interface, 1));
+    }
+    else if (iface == StringView(zwp_relative_pointer_manager_v1_interface.name))
+    {
+        state->relative_pointer_manager = static_cast<zwp_relative_pointer_manager_v1*>(
+            wl_registry_bind(registry, name, &zwp_relative_pointer_manager_v1_interface, 1));
         LogBoundGlobal(interface, version);
-    } else if (iface == StringView(wl_data_device_manager_interface.name)) {
+    }
+    else if (iface == StringView(wl_data_device_manager_interface.name))
+    {
         state->data_device_manager = static_cast<wl_data_device_manager*>(
             wl_registry_bind(registry, name, &wl_data_device_manager_interface, version < 3 ? version : 3));
         LogBoundGlobal(interface, version);
-    } else if (iface == StringView(zwp_primary_selection_device_manager_v1_interface.name)) {
+    }
+    else if (iface == StringView(zwp_primary_selection_device_manager_v1_interface.name))
+    {
         state->primary_selection_manager = static_cast<zwp_primary_selection_device_manager_v1*>(
             wl_registry_bind(registry, name, &zwp_primary_selection_device_manager_v1_interface, 1));
         LogBoundGlobal(interface, version);
@@ -89,7 +117,8 @@ void HandleGlobal(void* data, wl_registry* registry, u32 name, const char* inter
     // engine needs yet — silently ignored, not an error.
 }
 
-void HandleGlobalRemove(void* data, wl_registry* registry, u32 name) {
+void HandleGlobalRemove(void* data, wl_registry* registry, u32 name)
+{
     // A compositor global disappearing mid-session (e.g. a seat being
     // unplugged) is Day 20's event-loop concern, not Day 18's connect
     // +bind step.
@@ -103,17 +132,20 @@ constexpr wl_registry_listener kRegistryListener = {
     .global_remove = HandleGlobalRemove,
 };
 
-} // namespace
+}  // namespace
 
-WaylandConnection WaylandConnection::Connect() {
+WaylandConnection WaylandConnection::Connect()
+{
     wl_display* display = wl_display_connect(nullptr);
-    if (display == nullptr) {
+    if (display == nullptr)
+    {
         Log(LogPlatform, LogVerbosity::Error, "Wayland: wl_display_connect failed (no compositor running?)");
         return WaylandConnection();
     }
 
     wl_registry* registry = wl_display_get_registry(display);
-    if (registry == nullptr) {
+    if (registry == nullptr)
+    {
         Log(LogPlatform, LogVerbosity::Error, "Wayland: wl_display_get_registry failed");
         wl_display_disconnect(display);
         return WaylandConnection();
@@ -123,36 +155,47 @@ WaylandConnection WaylandConnection::Connect() {
     wl_registry_add_listener(registry, &kRegistryListener, &state);
     wl_display_roundtrip(display);
 
-    if (state.compositor == nullptr || state.shell == nullptr || state.seat == nullptr || state.shm == nullptr) {
+    if (state.compositor == nullptr || state.shell == nullptr || state.seat == nullptr || state.shm == nullptr)
+    {
         Log(LogPlatform, LogVerbosity::Error, "Wayland: compositor did not advertise all required globals");
-        if (state.compositor != nullptr) {
+        if (state.compositor != nullptr)
+        {
             wl_compositor_destroy(state.compositor);
         }
-        if (state.shell != nullptr) {
+        if (state.shell != nullptr)
+        {
             xdg_wm_base_destroy(state.shell);
         }
-        if (state.seat != nullptr) {
+        if (state.seat != nullptr)
+        {
             wl_seat_destroy(state.seat);
         }
-        if (state.shm != nullptr) {
+        if (state.shm != nullptr)
+        {
             wl_shm_destroy(state.shm);
         }
-        if (state.decoration_manager != nullptr) {
+        if (state.decoration_manager != nullptr)
+        {
             zxdg_decoration_manager_v1_destroy(state.decoration_manager);
         }
-        if (state.cursor_shape_manager != nullptr) {
+        if (state.cursor_shape_manager != nullptr)
+        {
             wp_cursor_shape_manager_v1_destroy(state.cursor_shape_manager);
         }
-        if (state.pointer_constraints != nullptr) {
+        if (state.pointer_constraints != nullptr)
+        {
             zwp_pointer_constraints_v1_destroy(state.pointer_constraints);
         }
-        if (state.relative_pointer_manager != nullptr) {
+        if (state.relative_pointer_manager != nullptr)
+        {
             zwp_relative_pointer_manager_v1_destroy(state.relative_pointer_manager);
         }
-        if (state.data_device_manager != nullptr) {
+        if (state.data_device_manager != nullptr)
+        {
             wl_data_device_manager_destroy(state.data_device_manager);
         }
-        if (state.primary_selection_manager != nullptr) {
+        if (state.primary_selection_manager != nullptr)
+        {
             zwp_primary_selection_device_manager_v1_destroy(state.primary_selection_manager);
         }
         wl_registry_destroy(registry);
@@ -176,23 +219,18 @@ WaylandConnection WaylandConnection::Connect() {
     return conn;
 }
 
-WaylandConnection::~WaylandConnection() {
+WaylandConnection::~WaylandConnection()
+{
     ReleaseAll();
 }
 
 WaylandConnection::WaylandConnection(WaylandConnection&& other) noexcept
-    : display_(other.display_),
-      registry_(other.registry_),
-      compositor_(other.compositor_),
-      xdg_wm_base_(other.xdg_wm_base_),
-      seat_(other.seat_),
-      shm_(other.shm_),
-      decoration_manager_(other.decoration_manager_),
-      cursor_shape_manager_(other.cursor_shape_manager_),
-      pointer_constraints_(other.pointer_constraints_),
-      relative_pointer_manager_(other.relative_pointer_manager_),
-      data_device_manager_(other.data_device_manager_),
-      primary_selection_manager_(other.primary_selection_manager_) {
+    : display_(other.display_), registry_(other.registry_), compositor_(other.compositor_),
+      xdg_wm_base_(other.xdg_wm_base_), seat_(other.seat_), shm_(other.shm_),
+      decoration_manager_(other.decoration_manager_), cursor_shape_manager_(other.cursor_shape_manager_),
+      pointer_constraints_(other.pointer_constraints_), relative_pointer_manager_(other.relative_pointer_manager_),
+      data_device_manager_(other.data_device_manager_), primary_selection_manager_(other.primary_selection_manager_)
+{
     other.display_ = nullptr;
     other.registry_ = nullptr;
     other.compositor_ = nullptr;
@@ -207,8 +245,10 @@ WaylandConnection::WaylandConnection(WaylandConnection&& other) noexcept
     other.primary_selection_manager_ = nullptr;
 }
 
-WaylandConnection& WaylandConnection::operator=(WaylandConnection&& other) noexcept {
-    if (this != &other) {
+WaylandConnection& WaylandConnection::operator=(WaylandConnection&& other) noexcept
+{
+    if (this != &other)
+    {
         ReleaseAll();
         display_ = other.display_;
         registry_ = other.registry_;
@@ -238,55 +278,68 @@ WaylandConnection& WaylandConnection::operator=(WaylandConnection&& other) noexc
     return *this;
 }
 
-void WaylandConnection::ReleaseAll() {
-    if (compositor_ != nullptr) {
+void WaylandConnection::ReleaseAll()
+{
+    if (compositor_ != nullptr)
+    {
         wl_compositor_destroy(compositor_);
         compositor_ = nullptr;
     }
-    if (xdg_wm_base_ != nullptr) {
+    if (xdg_wm_base_ != nullptr)
+    {
         xdg_wm_base_destroy(xdg_wm_base_);
         xdg_wm_base_ = nullptr;
     }
-    if (seat_ != nullptr) {
+    if (seat_ != nullptr)
+    {
         wl_seat_destroy(seat_);
         seat_ = nullptr;
     }
-    if (shm_ != nullptr) {
+    if (shm_ != nullptr)
+    {
         wl_shm_destroy(shm_);
         shm_ = nullptr;
     }
-    if (decoration_manager_ != nullptr) {
+    if (decoration_manager_ != nullptr)
+    {
         zxdg_decoration_manager_v1_destroy(decoration_manager_);
         decoration_manager_ = nullptr;
     }
-    if (cursor_shape_manager_ != nullptr) {
+    if (cursor_shape_manager_ != nullptr)
+    {
         wp_cursor_shape_manager_v1_destroy(cursor_shape_manager_);
         cursor_shape_manager_ = nullptr;
     }
-    if (pointer_constraints_ != nullptr) {
+    if (pointer_constraints_ != nullptr)
+    {
         zwp_pointer_constraints_v1_destroy(pointer_constraints_);
         pointer_constraints_ = nullptr;
     }
-    if (relative_pointer_manager_ != nullptr) {
+    if (relative_pointer_manager_ != nullptr)
+    {
         zwp_relative_pointer_manager_v1_destroy(relative_pointer_manager_);
         relative_pointer_manager_ = nullptr;
     }
-    if (data_device_manager_ != nullptr) {
+    if (data_device_manager_ != nullptr)
+    {
         wl_data_device_manager_destroy(data_device_manager_);
         data_device_manager_ = nullptr;
     }
-    if (primary_selection_manager_ != nullptr) {
+    if (primary_selection_manager_ != nullptr)
+    {
         zwp_primary_selection_device_manager_v1_destroy(primary_selection_manager_);
         primary_selection_manager_ = nullptr;
     }
-    if (registry_ != nullptr) {
+    if (registry_ != nullptr)
+    {
         wl_registry_destroy(registry_);
         registry_ = nullptr;
     }
-    if (display_ != nullptr) {
+    if (display_ != nullptr)
+    {
         wl_display_disconnect(display_);
         display_ = nullptr;
     }
 }
 
-} // namespace engine_placeholder::os::wayland
+}  // namespace engine_placeholder::os::wayland

@@ -2,14 +2,17 @@
 
 //! Setting keys: validated dotted names such as `renderer.present_mode`.
 //!
-//! A key has one to three segments separated by `.`; a segment is a lowercase letter followed by lowercase letters, digits and
-//! `_`, at most 31 bytes; the whole key is at most 95 bytes. In a text file the key `renderer.width` is the name `width` in the
-//! section `[renderer]`, and `a.b.c` is `c` in `[a.b]`; [[settings::Key::Section]] and [[settings::Key::Name]] give that split.
+//! A key has one to three segments separated by `.`; a segment is a lowercase letter followed by lowercase letters,
+//! digits and
+//! `_`, at most 31 bytes; the whole key is at most 95 bytes. In a text file the key `renderer.width` is the name
+//! `width` in the section `[renderer]`, and `a.b.c` is `c` in `[a.b]`; [[settings::Key::Section]] and
+//! [[settings::Key::Name]] give that split.
 
 #include "string/string.h"
 #include "types.h"
 
-namespace engine_placeholder::settings {
+namespace engine_placeholder::settings
+{
 
 /// The most bytes in a key.
 inline constexpr usize kMaxKeyBytes = 95;
@@ -19,17 +22,20 @@ inline constexpr usize kMaxSegmentBytes = 31;
 inline constexpr u32 kMaxKeySegments = 3;
 
 /// Why a key was refused.
-enum class KeyError : u8 {
-    None = 0,         ///< The key is valid.
-    Empty,            ///< No characters.
-    TooLong,          ///< More than 95 bytes.
-    BadCharacter,     ///< A character other than a lowercase letter, digit, `_` or `.`, or a segment that does not start with a letter.
-    EmptySegment,     ///< Two dots in a row, or a dot at either end.
+enum class KeyError : u8
+{
+    None = 0,      ///< The key is valid.
+    Empty,         ///< No characters.
+    TooLong,       ///< More than 95 bytes.
+    BadCharacter,  ///< A character other than a lowercase letter, digit, `_` or `.`, or a segment that does not start
+                   ///< with a letter.
+    EmptySegment,  ///< Two dots in a row, or a dot at either end.
     TooManySegments,  ///< More than three segments.
     SegmentTooLong,   ///< A segment of more than 31 bytes.
 };
 
-/// Returns a short name for a key error (`none`, `empty`, `too_long`, `bad_character`, `empty_segment`, `too_many_segments`, `segment_too_long`).
+/// Returns a short name for a key error (`none`, `empty`, `too_long`, `bad_character`, `empty_segment`,
+/// `too_many_segments`, `segment_too_long`).
 ///
 /// - Returns: a static string.
 /// - Fails: never.
@@ -40,7 +46,8 @@ const char* KeyErrorName(KeyError error);
 ///
 /// - Thread-safety: thread-compatible plain data; a const key may be read from many threads.
 /// - Ownership: a value; owns its bytes.
-class Key {
+class Key
+{
 public:
     /// Creates the empty, invalid key.
     Key() = default;
@@ -78,4 +85,4 @@ private:
     u8 length_ = 0;
 };
 
-} // namespace engine_placeholder::settings
+}  // namespace engine_placeholder::settings

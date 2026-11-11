@@ -11,32 +11,38 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
 
-namespace {
+namespace
+{
 
 // The null device logs each violation at error level; silence the channel so expected errors do not flood the
 // test output, and restore it afterwards.
-struct QuietLog {
+struct QuietLog
+{
     bool saved = LogRhi.Enabled();
     QuietLog() { LogRhi.SetEnabled(false); }
     ~QuietLog() { LogRhi.SetEnabled(saved); }
 };
 
-struct Fixture {
+struct Fixture
+{
     QuietLog quiet;
     NullDevicePtr dev;
-    Fixture(const NullDeviceOptions& options = NullDeviceOptions()) {
+    Fixture(const NullDeviceOptions& options = NullDeviceOptions())
+    {
         dev = CreateNullDevice(options);
         dev->BeginFrame();
     }
 
-    BufferHandle Buffer(u64 size, BufferUsage usage, MemoryLocation loc = MemoryLocation::GpuOnly) {
+    BufferHandle Buffer(u64 size, BufferUsage usage, MemoryLocation loc = MemoryLocation::GpuOnly)
+    {
         BufferDesc d;
         d.size = size;
         d.usage = usage;
         d.location = loc;
         return dev->CreateBuffer(d);
     }
-    TextureHandle Texture(u32 w, u32 h, Format f, TextureUsage usage) {
+    TextureHandle Texture(u32 w, u32 h, Format f, TextureUsage usage)
+    {
         TextureDesc d;
         d.width = w;
         d.height = h;
@@ -44,33 +50,38 @@ struct Fixture {
         d.usage = usage;
         return dev->CreateTexture(d);
     }
-    ShaderHandle Shader(ShaderStage stage) {
+    ShaderHandle Shader(ShaderStage stage)
+    {
         ShaderDesc d;
         d.stage = stage;
         const Vector<u32> words = spirv_test::MinimalModule(stage);
         d.SetCode(SpirvBlob(words.Data(), words.Size()));
         return dev->CreateShader(d);
     }
-    CommandList* List() {
+    CommandList* List()
+    {
         CommandList* l = dev->CreateCommandList();
         REQUIRE(l != nullptr);
         l->Begin();
         return l;
     }
-    void Submit(CommandList* l) {
+    void Submit(CommandList* l)
+    {
         l->End();
         dev->Submit(&l, 1);
     }
     u32 Errors() const { return dev->ErrorCount(); }
     // Asserts that exactly one error has been reported since the last check, then clears it.
-    void ExpectOneError() {
+    void ExpectOneError()
+    {
         CHECK(dev->ErrorCount() == 1);
         dev->ResetErrors();
     }
 };
 
 // A complete set of resources for a draw with one vertex buffer, one uniform buffer, a texture and a sampler.
-struct DrawScene {
+struct DrawScene
+{
     Fixture& f;
     TextureHandle target;
     BufferHandle vertices;
@@ -85,7 +96,8 @@ struct DrawScene {
     VertexBindingDesc binding{12, false};
     VertexAttributeDesc attr{0, 0, VertexFormat::Float3, 0};
 
-    explicit DrawScene(Fixture& fx) : f(fx) {
+    explicit DrawScene(Fixture& fx) : f(fx)
+    {
         target = f.Texture(64, 64, Format::RGBA8_UNorm, TextureUsage::ColorAttachment | TextureUsage::CopySrc);
         vertices = f.Buffer(1024, BufferUsage::Vertex | BufferUsage::CopyDst);
         uniforms = f.Buffer(256, BufferUsage::Uniform, MemoryLocation::CpuToGpu);
@@ -131,27 +143,31 @@ struct DrawScene {
     }
 
     // Moves every resource into the state the draw needs. Records into `l`.
-    void Prepare(CommandList* l) {
+    void Prepare(CommandList* l)
+    {
         l->Barrier(target, ResourceState::Undefined, ResourceState::ColorAttachment);
         l->Barrier(texture, ResourceState::Undefined, ResourceState::ShaderRead);
         l->Barrier(vertices, ResourceState::Undefined, ResourceState::VertexBuffer);
     }
-    RenderingDesc Pass() const {
+    RenderingDesc Pass() const
+    {
         RenderingDesc r;
         r.color[0].texture = target;
         r.color_count = 1;
         return r;
     }
-    void BindAll(CommandList* l) {
+    void BindAll(CommandList* l)
+    {
         l->SetPipeline(pipeline);
         l->SetBindGroup(0, group);
         l->SetVertexBuffer(0, vertices, 0);
     }
 };
 
-} // namespace
+}  // namespace
 
-TEST_CASE("The null device reports its backend and caps", "[rhi][null]") {
+TEST_CASE("The null device reports its backend and caps", "[rhi][null]")
+{
     Fixture f;
     CHECK(StringView(f.dev->BackendName()) == StringView("null"));
     CHECK(f.dev->Caps().max_bind_groups >= 4);
@@ -159,7 +175,8 @@ TEST_CASE("The null device reports its backend and caps", "[rhi][null]") {
     CHECK_FALSE(f.dev->DeviceLost());
 }
 
-TEST_CASE("Upload by mapping then copy to a GPU-only buffer round-trips", "[rhi][null]") {
+TEST_CASE("Upload by mapping then copy to a GPU-only buffer round-trips", "[rhi][null]")
+{
     Fixture f;
     BufferHandle staging = f.Buffer(64, BufferUsage::CopySrc, MemoryLocation::CpuToGpu);
     BufferHandle dst = f.Buffer(64, BufferUsage::CopyDst | BufferUsage::Vertex);
@@ -168,7 +185,8 @@ TEST_CASE("Upload by mapping then copy to a GPU-only buffer round-trips", "[rhi]
 
     u8* p = static_cast<u8*>(f.dev->MapBuffer(staging));
     REQUIRE(p != nullptr);
-    for (u32 i = 0; i < 64; ++i) {
+    for (u32 i = 0; i < 64; ++i)
+    {
         p[i] = static_cast<u8>(i * 3);
     }
     f.dev->UnmapBuffer(staging);
@@ -183,12 +201,14 @@ TEST_CASE("Upload by mapping then copy to a GPU-only buffer round-trips", "[rhi]
     CHECK(f.dev->StateOf(dst) == ResourceState::VertexBuffer);
     u8 out[64];
     REQUIRE(f.dev->PeekBuffer(dst, 0, out, 64));
-    for (u32 i = 0; i < 64; ++i) {
+    for (u32 i = 0; i < 64; ++i)
+    {
         CHECK(out[i] == static_cast<u8>(i * 3));
     }
 }
 
-TEST_CASE("A complete legal draw sequence produces no errors", "[rhi][null]") {
+TEST_CASE("A complete legal draw sequence produces no errors", "[rhi][null]")
+{
     Fixture f;
     DrawScene s(f);
     REQUIRE(s.pipeline.IsValid());
@@ -221,7 +241,8 @@ TEST_CASE("A complete legal draw sequence produces no errors", "[rhi][null]") {
     CHECK(f.Errors() == 0);
 }
 
-TEST_CASE("A legal indexed draw and a legal compute dispatch produce no errors", "[rhi][null]") {
+TEST_CASE("A legal indexed draw and a legal compute dispatch produce no errors", "[rhi][null]")
+{
     Fixture f;
     DrawScene s(f);
     BufferHandle indices = f.Buffer(64, BufferUsage::Index | BufferUsage::CopyDst);
@@ -270,7 +291,8 @@ TEST_CASE("A legal indexed draw and a legal compute dispatch produce no errors",
     CHECK(f.Errors() == 0);
 }
 
-TEST_CASE("Invalid descriptors fail creation with one counted error each", "[rhi][null][misuse]") {
+TEST_CASE("Invalid descriptors fail creation with one counted error each", "[rhi][null][misuse]")
+{
     Fixture f;
     BufferDesc bd;  // size zero
     CHECK_FALSE(f.dev->CreateBuffer(bd).IsValid());
@@ -293,7 +315,8 @@ TEST_CASE("Invalid descriptors fail creation with one counted error each", "[rhi
     f.ExpectOneError();
 }
 
-TEST_CASE("Huge binding array counts cannot overflow the element budget", "[rhi][null][misuse]") {
+TEST_CASE("Huge binding array counts cannot overflow the element budget", "[rhi][null][misuse]")
+{
     Fixture f;
     // Two bindings of 0x80000000 elements would sum to zero in 32 bits.
     BindingDesc big[2] = {
@@ -316,7 +339,8 @@ TEST_CASE("Huge binding array counts cannot overflow the element budget", "[rhi]
     f.ExpectOneError();
 }
 
-TEST_CASE("The caller's limits are honored, including a single-sample anisotropy limit", "[rhi][null]") {
+TEST_CASE("The caller's limits are honored, including a single-sample anisotropy limit", "[rhi][null]")
+{
     NullDeviceOptions opts;
     CHECK(opts.caps.max_sampler_anisotropy == 16.0f);  // the default for a null device
     opts.caps.max_sampler_anisotropy = 1.0f;
@@ -324,7 +348,8 @@ TEST_CASE("The caller's limits are honored, including a single-sample anisotropy
     CHECK(f.dev->Caps().max_sampler_anisotropy == 1.0f);
 }
 
-TEST_CASE("Resources beyond the device limits are refused", "[rhi][null][misuse]") {
+TEST_CASE("Resources beyond the device limits are refused", "[rhi][null][misuse]")
+{
     Fixture f;
     CHECK_FALSE(f.Texture(8192, 8, Format::RGBA8_UNorm, TextureUsage::Sampled).IsValid());
     f.ExpectOneError();
@@ -332,7 +357,8 @@ TEST_CASE("Resources beyond the device limits are refused", "[rhi][null][misuse]
     f.ExpectOneError();
 }
 
-TEST_CASE("Stale handles are rejected on every destroy", "[rhi][null][misuse]") {
+TEST_CASE("Stale handles are rejected on every destroy", "[rhi][null][misuse]")
+{
     Fixture f;
     BufferHandle b = f.Buffer(16, BufferUsage::Vertex);
     f.dev->DestroyBuffer(b);
@@ -353,7 +379,8 @@ TEST_CASE("Stale handles are rejected on every destroy", "[rhi][null][misuse]") 
     f.ExpectOneError();
 }
 
-TEST_CASE("Mapping rules", "[rhi][null][misuse]") {
+TEST_CASE("Mapping rules", "[rhi][null][misuse]")
+{
     Fixture f;
     BufferHandle gpu = f.Buffer(16, BufferUsage::Vertex);
     CHECK(f.dev->MapBuffer(gpu) == nullptr);  // GPU-only is not CPU-visible
@@ -374,7 +401,8 @@ TEST_CASE("Mapping rules", "[rhi][null][misuse]") {
     f.ExpectOneError();
 }
 
-TEST_CASE("Recording outside Begin/End and unbalanced scopes are errors", "[rhi][null][misuse]") {
+TEST_CASE("Recording outside Begin/End and unbalanced scopes are errors", "[rhi][null][misuse]")
+{
     Fixture f;
     BufferHandle b = f.Buffer(16, BufferUsage::CopySrc | BufferUsage::CopyDst);
     CommandList* l = f.dev->CreateCommandList();
@@ -392,7 +420,8 @@ TEST_CASE("Recording outside Begin/End and unbalanced scopes are errors", "[rhi]
     f.ExpectOneError();
 }
 
-TEST_CASE("Rendering pass scoping", "[rhi][null][misuse]") {
+TEST_CASE("Rendering pass scoping", "[rhi][null][misuse]")
+{
     Fixture f;
     DrawScene s(f);
     CommandList* l = f.List();
@@ -412,7 +441,8 @@ TEST_CASE("Rendering pass scoping", "[rhi][null][misuse]") {
     f.ExpectOneError();
 }
 
-TEST_CASE("A barrier from Undefined is always accepted, for buffers and textures alike", "[rhi][null]") {
+TEST_CASE("A barrier from Undefined is always accepted, for buffers and textures alike", "[rhi][null]")
+{
     Fixture f;
     BufferHandle b = f.Buffer(16, BufferUsage::CopySrc | BufferUsage::CopyDst);
     TextureHandle t = f.Texture(4, 4, Format::RGBA8_UNorm, TextureUsage::CopySrc | TextureUsage::CopyDst);
@@ -427,7 +457,8 @@ TEST_CASE("A barrier from Undefined is always accepted, for buffers and textures
     CHECK(f.dev->StateOf(t) == ResourceState::CopySrc);
 }
 
-TEST_CASE("Barrier state mismatches are caught at submit", "[rhi][null][misuse]") {
+TEST_CASE("Barrier state mismatches are caught at submit", "[rhi][null][misuse]")
+{
     Fixture f;
     TextureHandle t = f.Texture(8, 8, Format::RGBA8_UNorm, TextureUsage::Sampled | TextureUsage::CopyDst);
     CommandList* l = f.List();
@@ -448,7 +479,8 @@ TEST_CASE("Barrier state mismatches are caught at submit", "[rhi][null][misuse]"
     f.ExpectOneError();
 }
 
-TEST_CASE("Copy misuse", "[rhi][null][misuse]") {
+TEST_CASE("Copy misuse", "[rhi][null][misuse]")
+{
     Fixture f;
     BufferHandle a = f.Buffer(32, BufferUsage::CopySrc | BufferUsage::CopyDst);
     BufferHandle b = f.Buffer(32, BufferUsage::CopyDst);
@@ -478,14 +510,16 @@ TEST_CASE("Copy misuse", "[rhi][null][misuse]") {
 }
 
 // A device whose copies need only texel alignment (Vulkan, Metal), so these tests exercise the texel rules alone.
-NullDeviceOptions UnitCopyAlignment() {
+NullDeviceOptions UnitCopyAlignment()
+{
     NullDeviceOptions options;
     options.caps.buffer_texture_copy_offset_alignment = 1;
     options.caps.buffer_texture_copy_row_pitch_alignment = 1;
     return options;
 }
 
-TEST_CASE("Texture copies need texel-aligned offsets and pitches", "[rhi][null][misuse]") {
+TEST_CASE("Texture copies need texel-aligned offsets and pitches", "[rhi][null][misuse]")
+{
     Fixture f(UnitCopyAlignment());
     TextureHandle t = f.Texture(16, 16, Format::RGBA8_UNorm, TextureUsage::CopyDst);
     BufferHandle b = f.Buffer(4096, BufferUsage::CopySrc);
@@ -503,7 +537,8 @@ TEST_CASE("Texture copies need texel-aligned offsets and pitches", "[rhi][null][
     CHECK(f.Errors() == 0);
 }
 
-TEST_CASE("Texture copy range checks", "[rhi][null][misuse]") {
+TEST_CASE("Texture copy range checks", "[rhi][null][misuse]")
+{
     Fixture f(UnitCopyAlignment());
     TextureHandle t = f.Texture(16, 16, Format::RGBA8_UNorm, TextureUsage::CopyDst | TextureUsage::CopySrc);
     BufferHandle small = f.Buffer(100, BufferUsage::CopySrc | BufferUsage::CopyDst);
@@ -531,7 +566,8 @@ TEST_CASE("Texture copy range checks", "[rhi][null][misuse]") {
     CHECK(f.Errors() == 0);
 }
 
-TEST_CASE("Draw preconditions", "[rhi][null][misuse]") {
+TEST_CASE("Draw preconditions", "[rhi][null][misuse]")
+{
     Fixture f;
     DrawScene s(f);
     CommandList* l = f.List();
@@ -558,7 +594,8 @@ TEST_CASE("Draw preconditions", "[rhi][null][misuse]") {
     CHECK(f.Errors() == 0);
 }
 
-TEST_CASE("A graphics pipeline does not carry over to the next rendering pass", "[rhi][null][misuse]") {
+TEST_CASE("A graphics pipeline does not carry over to the next rendering pass", "[rhi][null][misuse]")
+{
     Fixture f;
     DrawScene s(f);
     CommandList* l = f.List();
@@ -577,7 +614,8 @@ TEST_CASE("A graphics pipeline does not carry over to the next rendering pass", 
     l->EndRendering();
 }
 
-TEST_CASE("Binding misuse", "[rhi][null][misuse]") {
+TEST_CASE("Binding misuse", "[rhi][null][misuse]")
+{
     Fixture f;
     DrawScene s(f);
     CommandList* l = f.List();
@@ -619,7 +657,8 @@ TEST_CASE("Binding misuse", "[rhi][null][misuse]") {
     l->EndRendering();
 }
 
-TEST_CASE("Pipeline and attachment mismatches", "[rhi][null][misuse]") {
+TEST_CASE("Pipeline and attachment mismatches", "[rhi][null][misuse]")
+{
     Fixture f;
     DrawScene s(f);
     CommandList* l = f.List();
@@ -655,7 +694,8 @@ TEST_CASE("Pipeline and attachment mismatches", "[rhi][null][misuse]") {
     f.ExpectOneError();
 }
 
-TEST_CASE("Resources in the wrong state at submit are caught", "[rhi][null][misuse]") {
+TEST_CASE("Resources in the wrong state at submit are caught", "[rhi][null][misuse]")
+{
     Fixture f;
     DrawScene s(f);
     // The vertex buffer is left in CopyDst instead of VertexBuffer.
@@ -695,7 +735,8 @@ TEST_CASE("Resources in the wrong state at submit are caught", "[rhi][null][misu
     f.ExpectOneError();
 }
 
-TEST_CASE("A destroyed resource used by a recorded draw is caught", "[rhi][null][misuse]") {
+TEST_CASE("A destroyed resource used by a recorded draw is caught", "[rhi][null][misuse]")
+{
     Fixture f;
     DrawScene s(f);
     CommandList* l = f.List();
@@ -708,7 +749,8 @@ TEST_CASE("A destroyed resource used by a recorded draw is caught", "[rhi][null]
     l->EndRendering();
 }
 
-TEST_CASE("Push constant range checks", "[rhi][null][misuse]") {
+TEST_CASE("Push constant range checks", "[rhi][null][misuse]")
+{
     Fixture f;
     DrawScene s(f);
     CommandList* l = f.List();
@@ -717,7 +759,7 @@ TEST_CASE("Push constant range checks", "[rhi][null][misuse]") {
     f.ExpectOneError();
     s.Prepare(l);
     l->BeginRendering(s.Pass());
-    l->SetPipeline(s.pipeline);  // push range is 16 bytes
+    l->SetPipeline(s.pipeline);        // push range is 16 bytes
     l->SetPushConstants(8, data, 16);  // 8 + 16 > 16
     f.ExpectOneError();
     l->SetPushConstants(2, data, 4);  // misaligned
@@ -729,7 +771,8 @@ TEST_CASE("Push constant range checks", "[rhi][null][misuse]") {
     l->EndRendering();
 }
 
-TEST_CASE("Compute misuse", "[rhi][null][misuse]") {
+TEST_CASE("Compute misuse", "[rhi][null][misuse]")
+{
     Fixture f;
     DrawScene s(f);
     ComputePipelineDesc cd;
@@ -750,7 +793,8 @@ TEST_CASE("Compute misuse", "[rhi][null][misuse]") {
     l->EndRendering();
 }
 
-TEST_CASE("Viewport must have positive size", "[rhi][null][misuse]") {
+TEST_CASE("Viewport must have positive size", "[rhi][null][misuse]")
+{
     Fixture f;
     CommandList* l = f.List();
     Viewport vp;
@@ -762,7 +806,8 @@ TEST_CASE("Viewport must have positive size", "[rhi][null][misuse]") {
     CHECK(f.Errors() == 0);
 }
 
-TEST_CASE("Bind groups must match their layout", "[rhi][null][misuse]") {
+TEST_CASE("Bind groups must match their layout", "[rhi][null][misuse]")
+{
     Fixture f;
     DrawScene s(f);
     BindGroupDesc gd;
@@ -809,7 +854,8 @@ TEST_CASE("Bind groups must match their layout", "[rhi][null][misuse]") {
     f.ExpectOneError();
 }
 
-TEST_CASE("Pipelines need live shaders of the right stage", "[rhi][null][misuse]") {
+TEST_CASE("Pipelines need live shaders of the right stage", "[rhi][null][misuse]")
+{
     Fixture f;
     DrawScene s(f);
     GraphicsPipelineDesc pd;
@@ -834,7 +880,8 @@ TEST_CASE("Pipelines need live shaders of the right stage", "[rhi][null][misuse]
     CHECK(f.Errors() == 0);
 }
 
-TEST_CASE("Submit validation", "[rhi][null][misuse]") {
+TEST_CASE("Submit validation", "[rhi][null][misuse]")
+{
     Fixture f;
     CommandList* l = f.List();
     CommandList* ptr = l;
@@ -875,7 +922,8 @@ TEST_CASE("Submit validation", "[rhi][null][misuse]") {
     f.ExpectOneError();
 }
 
-TEST_CASE("Submit needs an open frame and a real array", "[rhi][null][misuse]") {
+TEST_CASE("Submit needs an open frame and a real array", "[rhi][null][misuse]")
+{
     Fixture f;
     CommandList* l = f.List();
     l->End();
@@ -886,7 +934,8 @@ TEST_CASE("Submit needs an open frame and a real array", "[rhi][null][misuse]") 
     f.ExpectOneError();
 }
 
-TEST_CASE("Frames must be begun and ended in pairs", "[rhi][null][misuse]") {
+TEST_CASE("Frames must be begun and ended in pairs", "[rhi][null][misuse]")
+{
     QuietLog quiet;
     NullDevicePtr dev = CreateNullDevice();
     dev->EndFrame();  // no frame
@@ -898,7 +947,8 @@ TEST_CASE("Frames must be begun and ended in pairs", "[rhi][null][misuse]") {
     dev.Reset();
 }
 
-TEST_CASE("Destruction is deferred until the GPU has finished the frame", "[rhi][null][lifetime]") {
+TEST_CASE("Destruction is deferred until the GPU has finished the frame", "[rhi][null][lifetime]")
+{
     NullDeviceOptions opts;
     opts.simulated_latency_frames = 2;
     Fixture f(opts);  // frame 1
@@ -908,7 +958,8 @@ TEST_CASE("Destruction is deferred until the GPU has finished the frame", "[rhi]
     CHECK(f.dev->Statistics().pending_destruction == 1);
 
     // Destroyed in frame 1; with a latency of 2 frames it is released when frame 4 begins.
-    for (int i = 0; i < 2; ++i) {
+    for (int i = 0; i < 2; ++i)
+    {
         f.dev->EndFrame();
         f.dev->BeginFrame();  // frames 2, 3
         CHECK(f.dev->Statistics().pending_destruction == 1);
@@ -919,7 +970,8 @@ TEST_CASE("Destruction is deferred until the GPU has finished the frame", "[rhi]
     CHECK(f.Errors() == 0);
 }
 
-TEST_CASE("With no simulated latency a resource is released at the next frame", "[rhi][null][lifetime]") {
+TEST_CASE("With no simulated latency a resource is released at the next frame", "[rhi][null][lifetime]")
+{
     Fixture f;
     TextureHandle t = f.Texture(4, 4, Format::RGBA8_UNorm, TextureUsage::Sampled);
     f.dev->DestroyTexture(t);
@@ -929,11 +981,13 @@ TEST_CASE("With no simulated latency a resource is released at the next frame", 
     CHECK(f.dev->Statistics().pending_destruction == 0);
 }
 
-TEST_CASE("WaitIdle releases every deferred destruction", "[rhi][null][lifetime]") {
+TEST_CASE("WaitIdle releases every deferred destruction", "[rhi][null][lifetime]")
+{
     NullDeviceOptions opts;
     opts.simulated_latency_frames = 5;
     Fixture f(opts);
-    for (int i = 0; i < 20; ++i) {
+    for (int i = 0; i < 20; ++i)
+    {
         f.dev->DestroyBuffer(f.Buffer(16, BufferUsage::Vertex));
     }
     CHECK(f.dev->Statistics().pending_destruction == 20);
@@ -941,7 +995,8 @@ TEST_CASE("WaitIdle releases every deferred destruction", "[rhi][null][lifetime]
     CHECK(f.dev->Statistics().pending_destruction == 0);
 }
 
-TEST_CASE("A destroyed handle never resolves, even after its slot is reused", "[rhi][null][lifetime]") {
+TEST_CASE("A destroyed handle never resolves, even after its slot is reused", "[rhi][null][lifetime]")
+{
     Fixture f;
     BufferHandle old = f.Buffer(16, BufferUsage::CopySrc, MemoryLocation::CpuToGpu);
     f.dev->DestroyBuffer(old);
@@ -955,7 +1010,8 @@ TEST_CASE("A destroyed handle never resolves, even after its slot is reused", "[
     CHECK(f.dev->MapBuffer(fresh) != nullptr);
 }
 
-TEST_CASE("Statistics count live resources", "[rhi][null][lifetime]") {
+TEST_CASE("Statistics count live resources", "[rhi][null][lifetime]")
+{
     Fixture f;
     DrawScene s(f);
     NullDeviceStats st = f.dev->Statistics();
@@ -973,7 +1029,8 @@ TEST_CASE("Statistics count live resources", "[rhi][null][lifetime]") {
     CHECK(f.dev->Statistics().command_lists == 0);
 }
 
-TEST_CASE("A lost device refuses work", "[rhi][null]") {
+TEST_CASE("A lost device refuses work", "[rhi][null]")
+{
     Fixture f;
     CommandList* l = f.List();
     l->End();
@@ -984,7 +1041,8 @@ TEST_CASE("A lost device refuses work", "[rhi][null]") {
     CHECK(f.Errors() == 0);  // device loss is a state, not a contract violation
 }
 
-TEST_CASE("The last error message is retrievable and truncates safely", "[rhi][null]") {
+TEST_CASE("The last error message is retrievable and truncates safely", "[rhi][null]")
+{
     Fixture f;
     char buf[256];
     CHECK(f.dev->LastError(buf, sizeof(buf)) == 0);
@@ -1001,39 +1059,45 @@ TEST_CASE("The last error message is retrievable and truncates safely", "[rhi][n
     CHECK(f.dev->LastError(buf, sizeof(buf)) == 0);
 }
 
-TEST_CASE("Concurrent creation, destruction and recording is safe", "[rhi][null][threads]") {
+TEST_CASE("Concurrent creation, destruction and recording is safe", "[rhi][null][threads]")
+{
     Fixture f;
     constexpr int kThreads = 4;
     constexpr int kIterations = 200;
     Vector<Thread> threads;
     CommandList* lists[kThreads] = {};
-    for (int t = 0; t < kThreads; ++t) {
-        threads.Push(Thread([&, t]() {
-            for (int i = 0; i < kIterations; ++i) {
+    for (int t = 0; t < kThreads; ++t)
+    {
+        threads.Push(Thread(
+            [&, t]()
+            {
+                for (int i = 0; i < kIterations; ++i)
+                {
+                    BufferDesc d;
+                    d.size = 64;
+                    d.usage = BufferUsage::CopySrc | BufferUsage::CopyDst;
+                    d.location = MemoryLocation::GpuOnly;
+                    BufferHandle a = f.dev->CreateBuffer(d);
+                    BufferHandle b = f.dev->CreateBuffer(d);
+                    f.dev->DestroyBuffer(a);
+                    f.dev->DestroyBuffer(b);
+                }
+                CommandList* l = f.dev->CreateCommandList();
+                l->Begin();
                 BufferDesc d;
                 d.size = 64;
                 d.usage = BufferUsage::CopySrc | BufferUsage::CopyDst;
-                d.location = MemoryLocation::GpuOnly;
-                BufferHandle a = f.dev->CreateBuffer(d);
-                BufferHandle b = f.dev->CreateBuffer(d);
-                f.dev->DestroyBuffer(a);
-                f.dev->DestroyBuffer(b);
-            }
-            CommandList* l = f.dev->CreateCommandList();
-            l->Begin();
-            BufferDesc d;
-            d.size = 64;
-            d.usage = BufferUsage::CopySrc | BufferUsage::CopyDst;
-            BufferHandle src = f.dev->CreateBuffer(d);
-            BufferHandle dst = f.dev->CreateBuffer(d);
-            l->Barrier(src, ResourceState::Undefined, ResourceState::CopySrc);
-            l->Barrier(dst, ResourceState::Undefined, ResourceState::CopyDst);
-            l->CopyBuffer(src, dst, 0, 0, 64);
-            l->End();
-            lists[t] = l;
-        }));
+                BufferHandle src = f.dev->CreateBuffer(d);
+                BufferHandle dst = f.dev->CreateBuffer(d);
+                l->Barrier(src, ResourceState::Undefined, ResourceState::CopySrc);
+                l->Barrier(dst, ResourceState::Undefined, ResourceState::CopyDst);
+                l->CopyBuffer(src, dst, 0, 0, 64);
+                l->End();
+                lists[t] = l;
+            }));
     }
-    for (usize i = 0; i < threads.Size(); ++i) {
+    for (usize i = 0; i < threads.Size(); ++i)
+    {
         threads[i].Join();
     }
     FenceValue v = f.dev->Submit(lists, kThreads);
@@ -1041,7 +1105,8 @@ TEST_CASE("Concurrent creation, destruction and recording is safe", "[rhi][null]
     CHECK(f.Errors() == 0);
 }
 
-TEST_CASE("The null device honors an injected device loss", "[rhi][null][fault]") {
+TEST_CASE("The null device honors an injected device loss", "[rhi][null][fault]")
+{
     DeviceCreateInfo info;
     info.backend = Backend::Null;
     info.faults.lose_device_at_frame = 2;
@@ -1056,22 +1121,24 @@ TEST_CASE("The null device honors an injected device loss", "[rhi][null][fault]"
     device.Reset();
 }
 
-TEST_CASE("The default device enforces Direct3D 12's copy alignment, so portable code pads its rows", "[rhi][null][misuse]") {
-    Fixture f; // default caps: offset 512, row pitch 256
+TEST_CASE("The default device enforces Direct3D 12's copy alignment, so portable code pads its rows",
+          "[rhi][null][misuse]")
+{
+    Fixture f;  // default caps: offset 512, row pitch 256
     TextureHandle t = f.Texture(16, 16, Format::RGBA8_UNorm, TextureUsage::CopyDst | TextureUsage::CopySrc);
     BufferHandle b = f.Buffer(16 * 256 + 1024, BufferUsage::CopySrc | BufferUsage::CopyDst);
     CommandList* l = f.List();
     l->Barrier(t, ResourceState::Undefined, ResourceState::CopyDst);
     l->Barrier(b, ResourceState::Undefined, ResourceState::CopySrc);
-    BufferTextureCopy r; // tightly packed rows of 64 bytes
+    BufferTextureCopy r;  // tightly packed rows of 64 bytes
     l->CopyBufferToTexture(b, t, r);
     f.ExpectOneError();
     r.buffer_row_pitch = 256;
-    r.buffer_offset = 4; // texel-aligned, but not 512-aligned
+    r.buffer_offset = 4;  // texel-aligned, but not 512-aligned
     l->CopyBufferToTexture(b, t, r);
     f.ExpectOneError();
     r.buffer_offset = 512;
-    l->CopyBufferToTexture(b, t, r); // legal
+    l->CopyBufferToTexture(b, t, r);  // legal
     f.Submit(l);
     CHECK(f.Errors() == 0);
 }

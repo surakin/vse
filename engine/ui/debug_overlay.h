@@ -10,20 +10,24 @@
 #include "ui/widgets/list_box.h"
 #include "ui/widgets/text_field.h"
 
-//! The debug overlay (Phase 15, Day 203): a frame-time graph, counters fed by the program, and a log console with a command line.
+//! The debug overlay (Phase 15, Day 203): a frame-time graph, counters fed by the program, and a log console with a
+//! command line.
 
-namespace engine_placeholder::ui {
+namespace engine_placeholder::ui
+{
 
 class Surface;
 
 /// The log lines the console shows: a bounded copy of the log core's ring, read on the UI thread.
 ///
-/// `Poll` reads the lines logged since the last call with `ReadLogLinesSince` (thread-safe, so any thread may log) and keeps the newest `kMaxLines`; the console itself adds its own output
-/// with `Append`. A filter keeps only the lines that contain a text (a level name such as `WARN` works, as the lines carry it).
+/// `Poll` reads the lines logged since the last call with `ReadLogLinesSince` (thread-safe, so any thread may log) and
+/// keeps the newest `kMaxLines`; the console itself adds its own output with `Append`. A filter keeps only the lines
+/// that contain a text (a level name such as `WARN` works, as the lines carry it).
 ///
 /// - Thread-safety: owner-thread-only; the log it reads is thread-safe.
 /// - Ownership: owns the copied lines.
-class LogCapture {
+class LogCapture
+{
 public:
     /// The most lines kept; older ones are dropped.
     static constexpr usize kMaxLines = 512;
@@ -76,20 +80,22 @@ private:
 /// The numbers the program hands to the overlay each frame; the overlay does not reach into the other modules.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct DebugStats {
-    f32 frame_ms = 0;        ///< The last frame's time in milliseconds (the graph and the frame-rate line).
-    f32 gpu_ms = 0;          ///< The GPU time of the frame, or 0 when unknown.
-    u32 draw_calls = 0;      ///< Draw calls recorded.
-    u32 jobs_pending = 0;    ///< Jobs queued in the job system.
-    u32 job_workers = 0;     ///< Worker threads.
-    u64 gpu_bytes = 0;       ///< Device memory in use.
+struct DebugStats
+{
+    f32 frame_ms = 0;      ///< The last frame's time in milliseconds (the graph and the frame-rate line).
+    f32 gpu_ms = 0;        ///< The GPU time of the frame, or 0 when unknown.
+    u32 draw_calls = 0;    ///< Draw calls recorded.
+    u32 jobs_pending = 0;  ///< Jobs queued in the job system.
+    u32 job_workers = 0;   ///< Worker threads.
+    u64 gpu_bytes = 0;     ///< Device memory in use.
 };
 
 /// A bar graph of the last frame times.
 ///
 /// - Thread-safety: owner-thread-only.
 /// - Ownership: owns the samples.
-class FrameGraph : public Widget {
+class FrameGraph : public Widget
+{
 public:
     /// How many samples the graph keeps (one bar each).
     static constexpr usize kSamples = 120;
@@ -125,17 +131,22 @@ private:
     usize count_ = 0;
 };
 
-/// The overlay: the graph, a line of counters, the log console and a command line, in a panel at the top right of the surface.
+/// The overlay: the graph, a line of counters, the log console and a command line, in a panel at the top right of the
+/// surface.
 ///
-/// `Attach` adds it to a surface and registers the key that shows and hides it (hidden it is collapsed: it costs no layout, no draw and no `Update`). While it is shown it polls the log each
-/// frame, so the console follows what any thread logs. A line typed in the command line runs when Enter is pressed: its first word names a command registered with `AddCommand`, the rest is the argument. `help`
-/// lists the commands, `clear` empties the console. The command's text output goes to the console through the `LogCapture` the function receives.
+/// `Attach` adds it to a surface and registers the key that shows and hides it (hidden it is collapsed: it costs no
+/// layout, no draw and no `Update`). While it is shown it polls the log each frame, so the console follows what any
+/// thread logs. A line typed in the command line runs when Enter is pressed: its first word names a command registered
+/// with `AddCommand`, the rest is the argument. `help` lists the commands, `clear` empties the console. The command's
+/// text output goes to the console through the `LogCapture` the function receives.
 ///
 /// - Thread-safety: owner-thread-only.
 /// - Ownership: owns its widgets and the capture; borrows the commands' user pointers.
-class DebugOverlay : public BoxLayout {
+class DebugOverlay : public BoxLayout
+{
 public:
-    /// What a command does: it gets the pointer given to `AddCommand`, the text after the command's name (trimmed), and the capture to write lines of output to.
+    /// What a command does: it gets the pointer given to `AddCommand`, the text after the command's name (trimmed), and
+    /// the capture to write lines of output to.
     using CommandFn = void (*)(void* user, StringView argument, LogCapture& out);
 
     /// The width of the panel in logical units.
@@ -217,9 +228,13 @@ public:
     void Draw(Canvas& canvas) override;
 
 private:
-    struct Command {
+    struct Command
+    {
         Command(String<HeapAllocator>&& n, String<HeapAllocator>&& h, CommandFn f, void* u)
-            : name(static_cast<String<HeapAllocator>&&>(n)), help(static_cast<String<HeapAllocator>&&>(h)), function(f), user(u) {}
+            : name(static_cast<String<HeapAllocator>&&>(n)), help(static_cast<String<HeapAllocator>&&>(h)), function(f),
+              user(u)
+        {
+        }
         String<HeapAllocator> name;
         String<HeapAllocator> help;
         CommandFn function = nullptr;
@@ -246,4 +261,4 @@ private:
     f32 bottom_offset_ = 0;
 };
 
-} // namespace engine_placeholder::ui
+}  // namespace engine_placeholder::ui

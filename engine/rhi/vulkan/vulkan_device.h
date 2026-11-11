@@ -21,7 +21,8 @@
 
 //! The Vulkan implementation of [[rhi::Device]].
 
-namespace engine_placeholder::rhi::vulkan {
+namespace engine_placeholder::rhi::vulkan
+{
 
 class VulkanDevice;
 
@@ -36,7 +37,8 @@ using VulkanDevicePtr = UniquePtr<VulkanDevice, DeviceDeleter>;
 /// - Thread-safety: thread-safe for creation, destruction and mapping, as for [[rhi::Device]]; `Submit`, `BeginFrame`,
 ///   `EndFrame` and `WaitIdle` belong to one submission thread.
 /// - Ownership: the caller owns the device through a [[rhi::vulkan::VulkanDevicePtr]]; it owns the Vulkan instance.
-class VulkanDevice final : public Device {
+class VulkanDevice final : public Device
+{
 public:
     /// Constructs an uninitialized device; use [[rhi::vulkan::VulkanDevice::Create]] or [[rhi::CreateDevice]].
     VulkanDevice() = default;
@@ -58,8 +60,8 @@ public:
 
     /// How many frames of command pools exist; a pool is reset only after the frame that used it has finished.
     static constexpr usize kFramePools = 3;
-    /// How many Vulkan descriptor types the descriptor pools size (uniform buffer, storage buffer, sampled image, sampler, storage
-    /// image); the RHI's read-only storage buffer counts as a storage buffer.
+    /// How many Vulkan descriptor types the descriptor pools size (uniform buffer, storage buffer, sampled image,
+    /// sampler, storage image); the RHI's read-only storage buffer counts as a storage buffer.
     static constexpr u32 kDescriptorKinds = 5;
     /// How many threads can hold a command-pool slot at once; a thread releases its slot when it exits.
     static constexpr usize kThreadSlots = jobs::kMaxParticipants + 64;
@@ -69,7 +71,8 @@ public:
 
     const char* BackendName() const override;
     const AdapterInfo& Adapter() const override { return adapter_; }
-    bool ListAdapters(AdapterList* out) const override {
+    bool ListAdapters(AdapterList* out) const override
+    {
         *out = adapters_;
         return true;
     }
@@ -159,7 +162,8 @@ public:
     /// Counts of the device's live Vulkan objects, for leak checks in tests.
     ///
     /// - Thread-safety: thread-compatible plain data (a snapshot).
-    struct ObjectCounts {
+    struct ObjectCounts
+    {
         /// Live buffers owned by the user (not internal staging).
         usize buffers = 0;
         /// Buffers destroyed but waiting for the GPU to finish with them.
@@ -202,9 +206,10 @@ public:
     /// Objects that were still alive, or were never released, when devices were destroyed.
     ///
     /// - Thread-safety: thread-compatible plain data (a snapshot).
-    struct LeakCounts {
-        /// Buffers, textures, samplers and swapchains the application did not destroy before the device (they are freed,
-        /// with a warning).
+    struct LeakCounts
+    {
+        /// Buffers, textures, samplers and swapchains the application did not destroy before the device (they are
+        /// freed, with a warning).
         u64 user_objects = 0;
         /// Vulkan objects the backend itself failed to release; any is a bug in the backend.
         u64 internal_objects = 0;
@@ -229,7 +234,8 @@ public:
     /// What command recording needs to know about a texture.
     ///
     /// - Thread-safety: thread-compatible plain data (a snapshot).
-    struct TextureInfo {
+    struct TextureInfo
+    {
         /// The image.
         VkImage image = nullptr;
         /// The view over all mips and layers, for sampling.
@@ -255,7 +261,8 @@ public:
     /// - Thread-safety: thread-compatible plain data (a snapshot).
     /// - Ownership: `module` and `entry` are borrowed from the device and stay valid until the shader is destroyed and
     ///   its frame has completed.
-    struct ShaderInfo {
+    struct ShaderInfo
+    {
         /// The `VkShaderModule`.
         VkShaderModule module = nullptr;
         /// The stage the module implements.
@@ -286,7 +293,8 @@ public:
     ///
     /// - Thread-safety: thread-compatible plain data (a snapshot).
     /// - Ownership: the Vulkan handles are borrowed; the pipeline layout lives as long as the device.
-    struct PipelineInfo {
+    struct PipelineInfo
+    {
         /// The pipeline.
         VkPipeline pipeline = nullptr;
         /// Its layout.
@@ -312,9 +320,11 @@ public:
     /// A snapshot of a live bind group, for the command list.
     ///
     /// - Thread-safety: thread-compatible plain data (a snapshot).
-    /// - Ownership: `set` is borrowed from the device; it stays valid until the group is destroyed (persistent) or its frame
+    /// - Ownership: `set` is borrowed from the device; it stays valid until the group is destroyed (persistent) or its
+    /// frame
     ///   has finished (transient).
-    struct BindGroupInfo {
+    struct BindGroupInfo
+    {
         /// The descriptor set.
         VkDescriptorSet set = nullptr;
         /// Identity of the group's bind group layout; equal ids mean equal layouts.
@@ -348,7 +358,8 @@ public:
     /// What the on-disk pipeline cache did for this device.
     ///
     /// - Thread-safety: thread-compatible plain data (a snapshot).
-    struct PipelineCacheStats {
+    struct PipelineCacheStats
+    {
         /// Whether a cache is in use (it is not when disabled or when no directory could be chosen).
         bool enabled = false;
         /// Bytes of an existing file given to the driver at start; 0 if there was none or it was ignored.
@@ -383,7 +394,10 @@ public:
     /// device-lost and error paths. Pass `VK_SUCCESS` to clear a pending fault.
     ///
     /// - Param result: the result the next submission reports, such as `VK_ERROR_DEVICE_LOST`.
-    void InjectSubmitFailure(VkResult result) { inject_submit_result_.Store(static_cast<i32>(result), MemoryOrder::Relaxed); }
+    void InjectSubmitFailure(VkResult result)
+    {
+        inject_submit_result_.Store(static_cast<i32>(result), MemoryOrder::Relaxed);
+    }
 
     /// Returns how many command pools exist, for tests of the per-thread pool policy.
     usize CommandPoolCount() const;
@@ -397,58 +411,67 @@ private:
     static void NotImplemented(const char* what);
 
     // A VkBuffer with its memory; used for user buffers and for internal staging.
-    struct RawBuffer {
+    struct RawBuffer
+    {
         VkBuffer buffer = nullptr;
         MemoryAllocation memory;
         u64 size = 0;
     };
-    struct BufferRes {
+    struct BufferRes
+    {
         RawBuffer raw;
         BufferDesc desc;
         bool mapped = false;
     };
-    struct TextureRes {
+    struct TextureRes
+    {
         VkImage image = nullptr;
         VkImageView view = nullptr;
         VkImageView attachment_view = nullptr;
         MemoryAllocation memory;
-        bool external = false; // a swapchain image: the swapchain owns the VkImage
+        bool external = false;  // a swapchain image: the swapchain owns the VkImage
         TextureDesc desc;
-        ResourceState state = ResourceState::Undefined; // as left by UploadTexture; barriers in lists are the caller's
+        ResourceState state = ResourceState::Undefined;  // as left by UploadTexture; barriers in lists are the caller's
     };
-    struct SamplerRes {
+    struct SamplerRes
+    {
         VkSampler sampler = nullptr;
-        SamplerDesc desc; // normalized: anisotropy clamped, name dropped
+        SamplerDesc desc;  // normalized: anisotropy clamped, name dropped
         u32 refs = 0;
     };
-    struct ShaderRes {
+    struct ShaderRes
+    {
         VkShaderModule module = nullptr;
         ShaderStage stage = ShaderStage::None;
         char entry[kMaxShaderEntryNameLength + 1] = {};
     };
     // One cached VkDescriptorSetLayout, shared by every bind group layout with the same bindings.
-    struct SetLayoutEntry {
+    struct SetLayoutEntry
+    {
         VkDescriptorSetLayout layout = nullptr;
-        u64 id = 0; // never reused, so a pipeline layout key can name it safely
+        u64 id = 0;  // never reused, so a pipeline layout key can name it safely
         BindingDesc bindings[kMaxBindingsPerLayout];
         u32 binding_count = 0;
         u32 refs = 0;
     };
-    struct BindGroupLayoutRes {
+    struct BindGroupLayoutRes
+    {
         u32 set_slot = 0;
         u64 id = 0;
         BindingDesc bindings[kMaxBindingsPerLayout];
         u32 binding_count = 0;
     };
-    struct PipelineLayoutEntry {
+    struct PipelineLayoutEntry
+    {
         VkPipelineLayout layout = nullptr;
         u64 set_ids[kMaxBindGroups] = {};
         u32 set_count = 0;
         u32 push_bytes = 0;
         ShaderStage push_stages = ShaderStage::None;
-        u32 refs = 0; // pipelines using it; it is destroyed when the last one has been collected
+        u32 refs = 0;  // pipelines using it; it is destroyed when the last one has been collected
     };
-    struct PipelineRes {
+    struct PipelineRes
+    {
         VkPipeline pipeline = nullptr;
         VkPipelineLayout layout = nullptr;
         u32 layout_slot = 0;
@@ -461,37 +484,42 @@ private:
         Format color_formats[kMaxColorAttachments] = {};
         Format depth_format = Format::Undefined;
     };
-    struct GroupRef {
+    struct GroupRef
+    {
         BindingType type = BindingType::UniformBuffer;
         BufferHandle buffer;
         TextureHandle texture;
         SamplerHandle sampler;
     };
-    struct BindGroupRes {
+    struct BindGroupRes
+    {
         VkDescriptorSet set = nullptr;
-        VkDescriptorPool pool = nullptr; // the pool a persistent set is freed to
+        VkDescriptorPool pool = nullptr;  // the pool a persistent set is freed to
         u64 layout_id = 0;
         bool transient = false;
         u64 frame = 0;
-        Vector<GroupRef> refs; // owned; released when the group is collected
+        Vector<GroupRef> refs;  // owned; released when the group is collected
         u32 ref_count = 0;
     };
     // A growing list of descriptor pools; the per-frame ones are filled in order and reset together.
     // A pool made for one set of a layout too large for the default sizing; `counts` is what it can hold per type.
-    struct ExactPool {
+    struct ExactPool
+    {
         VkDescriptorPool pool;
         u32 counts[kDescriptorKinds];
     };
-    struct DescriptorPools {
+    struct DescriptorPools
+    {
         Vector<VkDescriptorPool> pools;
-        Vector<ExactPool> exact; // reused when they fit, so large layouts do not make a pool per group
+        Vector<ExactPool> exact;  // reused when they fit, so large layouts do not make a pool per group
         usize current = 0;
     };
     static constexpr usize kMaxSetLayouts = 512;
     static constexpr usize kMaxPipelineLayouts = 512;
-    struct CommandBufferSlot {
+    struct CommandBufferSlot
+    {
         VkCommandBuffer buffer;
-        u64 fence; // the timeline value that frees it; 0 when free
+        u64 fence;  // the timeline value that frees it; 0 when free
     };
 
     void InitializeFormats();
@@ -500,13 +528,15 @@ private:
     void ShutdownPipelines();
     void ReleaseSetLayoutLocked(u32 slot);
     // Finds or makes the pipeline layout and takes a reference on it; null if it cannot be made.
-    VkPipelineLayout PipelineLayoutLocked(const u32* set_slots, const u64* set_ids, u32 count, u32 push_bytes, ShaderStage push_stages,
-                                          u32* slot);
+    VkPipelineLayout PipelineLayoutLocked(const u32* set_slots, const u64* set_ids, u32 count, u32 push_bytes,
+                                          ShaderStage push_stages, u32* slot);
     void ReleasePipelineLayoutLocked(u32 slot);
     // Descriptor pools and bind groups (vulkan_device_bindings.cpp).
-    VkDescriptorPool MakeDescriptorPoolLocked(u32 max_sets, u32 per_type, bool free_individual, const BindingDesc* exact, u32 exact_count);
-    bool AllocateSetLocked(DescriptorPools& pools, bool persistent, VkDescriptorSetLayout layout, const BindingDesc* bindings,
-                           u32 binding_count, VkDescriptorSet* set, VkDescriptorPool* pool);
+    VkDescriptorPool MakeDescriptorPoolLocked(u32 max_sets, u32 per_type, bool free_individual,
+                                              const BindingDesc* exact, u32 exact_count);
+    bool AllocateSetLocked(DescriptorPools& pools, bool persistent, VkDescriptorSetLayout layout,
+                           const BindingDesc* bindings, u32 binding_count, VkDescriptorSet* set,
+                           VkDescriptorPool* pool);
     void ResetFrameDescriptorsLocked(usize frame_slot);
     void ReleaseBindGroupLocked(BindGroupRes* group);
     void ShutdownDescriptors();
@@ -521,14 +551,16 @@ private:
     // Waits for `value` on the timeline, marking the device lost on VK_ERROR_DEVICE_LOST.
     bool WaitTimeline(u64 value, u64 timeout_ns);
     u64 CompletedTimeline() const;
-    // Records `fill` into a one-time command buffer and submits it, signalling a new timeline value. Holds submit_mutex_.
-    template <typename Fill>
-    u64 SubmitInternalLocked(Fill&& fill) {
-        return SubmitRawLocked([](void* context, VkCommandBuffer cb) { (*static_cast<Fill*>(context))(cb); }, &fill, nullptr, 0, nullptr, 0);
+    // Records `fill` into a one-time command buffer and submits it, signalling a new timeline value. Holds
+    // submit_mutex_.
+    template <typename Fill> u64 SubmitInternalLocked(Fill&& fill)
+    {
+        return SubmitRawLocked([](void* context, VkCommandBuffer cb) { (*static_cast<Fill*>(context))(cb); }, &fill,
+                               nullptr, 0, nullptr, 0);
     }
     // `waits` and `extra_signals` are binary semaphores for presentation; the timeline is always signalled too.
-    u64 SubmitRawLocked(void (*fill)(void*, VkCommandBuffer), void* context, const VkSemaphoreSubmitInfo* waits, u32 wait_count,
-                        const VkSemaphoreSubmitInfo* extra_signals, u32 extra_signal_count);
+    u64 SubmitRawLocked(void (*fill)(void*, VkCommandBuffer), void* context, const VkSemaphoreSubmitInfo* waits,
+                        u32 wait_count, const VkSemaphoreSubmitInfo* extra_signals, u32 extra_signal_count);
     bool CreateSurface(const os::NativeWindowInfo& native);
     friend class VulkanSwapchain;
     VkCommandBuffer AcquireUploadCommandBufferLocked();
@@ -542,7 +574,8 @@ private:
     void CollectRetired(bool all);
     void UpdateCompletedFrames();
     // Command pools: one per (frame slot, thread slot), made by the thread that owns the slot.
-    struct ThreadPool {
+    struct ThreadPool
+    {
         VkCommandPool pool = nullptr;
         Vector<UniquePtr<VulkanCommandList>> lists;
         usize used = 0;
@@ -568,20 +601,21 @@ private:
     VkPhysicalDeviceMemoryProperties memory_properties_{};
     DeviceCaps caps_;
     AdapterInfo adapter_;
-    AdapterList adapters_; // every adapter Discover found, kept so a live device never needs a second instance to list them
-    u32 epoch_ = 0; // assigned once the device is known to be usable, so scratch devices do not use up serials
+    AdapterList
+        adapters_;   // every adapter Discover found, kept so a live device never needs a second instance to list them
+    u32 epoch_ = 0;  // assigned once the device is known to be usable, so scratch devices do not use up serials
     Atomic<u32> swapchain_live_{0};
     bool anisotropy_enabled_ = false;
     bool memory_budget_enabled_ = false;
     UniquePtr<VulkanMemoryBackend> memory_backend_;
     UniquePtr<MemoryAllocator> memory_;
     Atomic<bool> device_lost_{false};
-    u32 lose_device_at_submit_ = 0; // fault injection: the Nth submit that submits something loses the device
-    u32 lose_device_at_present_ = 0; // fault injection: the Nth present loses the device
-    Atomic<u32>* strikes_left_ = nullptr;    // fault injection: limit on injected losses across devices, null = none
+    u32 lose_device_at_submit_ = 0;        // fault injection: the Nth submit that submits something loses the device
+    u32 lose_device_at_present_ = 0;       // fault injection: the Nth present loses the device
+    Atomic<u32>* strikes_left_ = nullptr;  // fault injection: limit on injected losses across devices, null = none
     Atomic<u32> submit_count_{0};
     Atomic<u32> present_count_{0};
-    u32 lose_device_at_frame_ = 0; // fault injection: the frame at which to report the device lost, 0 = never
+    u32 lose_device_at_frame_ = 0;  // fault injection: the frame at which to report the device lost, 0 = never
     Atomic<u64> frame_number_{0};
 
     // Resources and deferred destruction (guarded by resource_mutex_).
@@ -633,4 +667,4 @@ private:
     Atomic<ThreadPool*> thread_pools_[kFramePools][kThreadSlots] = {};
 };
 
-} // namespace engine_placeholder::rhi::vulkan
+}  // namespace engine_placeholder::rhi::vulkan

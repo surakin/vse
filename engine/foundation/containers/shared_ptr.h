@@ -9,10 +9,12 @@
 
 //! Reference-counted owning pointer for objects with several owners. [[UniquePtr]] is the default;
 //! use this only where ownership is genuinely shared.
-namespace engine_placeholder {
+namespace engine_placeholder
+{
 
 /// Reference count safe to change from several threads at once; the default policy of [[SharedPtr]].
-struct AtomicRefCount {
+struct AtomicRefCount
+{
     /// Number of owners; starts at one (the creator).
     Atomic<usize> count{1};
     /// Adds an owner.
@@ -24,7 +26,8 @@ struct AtomicRefCount {
 };
 
 /// Reference count for pointers that never leave one thread; no atomic operations.
-struct PlainRefCount {
+struct PlainRefCount
+{
     /// Number of owners; starts at one (the creator).
     usize count = 1;
     /// Adds an owner.
@@ -35,17 +38,19 @@ struct PlainRefCount {
     usize Load() const { return count; }
 };
 
-namespace detail {
+namespace detail
+{
 /// Passkey for the adopting [[SharedPtr]] constructor: only [[MakeShared]] and this header make one.
-struct SharedAdopt {
+struct SharedAdopt
+{
     explicit SharedAdopt() = default;
 };
-} // namespace detail
+}  // namespace detail
 
 /// Control block shared by every [[SharedPtr]] to one object; type-erased so a pointer to a derived
 /// type converts to a pointer to its base.
-template <typename Count>
-struct SharedBlock {
+template <typename Count> struct SharedBlock
+{
     /// The owner count.
     Count refs;
     /// Destroys the object and frees the block (called when the last owner goes).
@@ -63,8 +68,8 @@ struct SharedBlock {
 ///   `Count` is `AtomicRefCount`; not-thread-safe with `PlainRefCount`. One `SharedPtr` object is never safe to
 ///   modify from two threads.
 /// - Ownership: shares ownership of the object; it is destroyed when the last owner is released.
-template <typename T, typename Count = AtomicRefCount>
-class SharedPtr {
+template <typename T, typename Count = AtomicRefCount> class SharedPtr
+{
 public:
     /// Creates an empty pointer.
     constexpr SharedPtr() = default;
@@ -77,12 +82,14 @@ public:
     /// Becomes another owner of the object of a pointer to a derived type.
     template <typename U>
         requires IsConvertible<U*, T*>
-    SharedPtr(const SharedPtr<U, Count>& other) : ptr_(other.ptr_), block_(other.block_) {
+    SharedPtr(const SharedPtr<U, Count>& other) : ptr_(other.ptr_), block_(other.block_)
+    {
         Retain();
     }
 
     /// Takes over `other`'s share, leaving `other` empty.
-    SharedPtr(SharedPtr&& other) noexcept : ptr_(other.ptr_), block_(other.block_) {
+    SharedPtr(SharedPtr&& other) noexcept : ptr_(other.ptr_), block_(other.block_)
+    {
         other.ptr_ = nullptr;
         other.block_ = nullptr;
     }
@@ -90,20 +97,23 @@ public:
     /// Takes over the share of a pointer to a derived type, leaving `other` empty.
     template <typename U>
         requires IsConvertible<U*, T*>
-    SharedPtr(SharedPtr<U, Count>&& other) noexcept : ptr_(other.ptr_), block_(other.block_) {
+    SharedPtr(SharedPtr<U, Count>&& other) noexcept : ptr_(other.ptr_), block_(other.block_)
+    {
         other.ptr_ = nullptr;
         other.block_ = nullptr;
     }
 
     /// Releases the current share, then becomes another owner of `other`'s object.
-    SharedPtr& operator=(const SharedPtr& other) {
+    SharedPtr& operator=(const SharedPtr& other)
+    {
         SharedPtr copy(other);
         Swap(copy);
         return *this;
     }
 
     /// Releases the current share, then takes over `other`'s, leaving `other` empty.
-    SharedPtr& operator=(SharedPtr&& other) noexcept {
+    SharedPtr& operator=(SharedPtr&& other) noexcept
+    {
         SharedPtr moved(Move(other));
         Swap(moved);
         return *this;
@@ -120,11 +130,13 @@ public:
     ~SharedPtr() { Reset(); }
 
     /// Releases this share and leaves the pointer empty.
-    void Reset() {
+    void Reset()
+    {
         SharedBlock<Count>* block = block_;
         ptr_ = nullptr;
         block_ = nullptr;
-        if (block != nullptr && block->refs.Decrement()) {
+        if (block != nullptr && block->refs.Decrement())
+        {
             block->destroy(block);
         }
     }
@@ -146,15 +158,17 @@ public:
     usize UseCount() const { return block_ != nullptr ? block_->refs.Load() : 0; }
 
 private:
-    template <typename U, typename C>
-    friend class SharedPtr;
+    template <typename U, typename C> friend class SharedPtr;
 
-    void Retain() {
-        if (block_ != nullptr) {
+    void Retain()
+    {
+        if (block_ != nullptr)
+        {
             block_->refs.Increment();
         }
     }
-    void Swap(SharedPtr& other) {
+    void Swap(SharedPtr& other)
+    {
         T* p = ptr_;
         ptr_ = other.ptr_;
         other.ptr_ = p;
@@ -168,41 +182,43 @@ private:
 };
 
 /// A [[SharedPtr]] confined to one thread, with a non-atomic count.
-template <typename T>
-using LocalSharedPtr = SharedPtr<T, PlainRefCount>;
+template <typename T> using LocalSharedPtr = SharedPtr<T, PlainRefCount>;
 
-namespace detail {
+namespace detail
+{
 
 // The object and its control block in one allocation.
-template <typename T, typename Count>
-struct SharedStorage : SharedBlock<Count> {
+template <typename T, typename Count> struct SharedStorage : SharedBlock<Count>
+{
     T value;
-    template <typename... Args>
-    explicit SharedStorage(Args&&... args) : value(Forward<Args>(args)...) {
+    template <typename... Args> explicit SharedStorage(Args&&... args) : value(Forward<Args>(args)...)
+    {
         this->destroy = &Destroy;
     }
-    static void Destroy(SharedBlock<Count>* block) {
+    static void Destroy(SharedBlock<Count>* block)
+    {
         SharedStorage* self = static_cast<SharedStorage*>(block);
         self->~SharedStorage();
         HeapAllocator::Default().Free(static_cast<void*>(self), sizeof(SharedStorage), alignof(SharedStorage));
     }
 };
 
-} // namespace detail
+}  // namespace detail
 
 /// Allocates a `T` and its control block together on the heap and returns the first owner.
 ///
 /// - Param args: forwarded to the constructor.
 /// - Returns: the owning pointer, or an empty one if the heap is exhausted.
-template <typename T, typename Count = AtomicRefCount, typename... Args>
-SharedPtr<T, Count> MakeShared(Args&&... args) {
+template <typename T, typename Count = AtomicRefCount, typename... Args> SharedPtr<T, Count> MakeShared(Args&&... args)
+{
     using Storage = detail::SharedStorage<T, Count>;
     void* mem = HeapAllocator::Default().Alloc(sizeof(Storage), alignof(Storage));
-    if (mem == nullptr) {
+    if (mem == nullptr)
+    {
         return SharedPtr<T, Count>();
     }
     Storage* storage = new (mem) Storage(Forward<Args>(args)...);
     return SharedPtr<T, Count>(detail::SharedAdopt(), &storage->value, storage);
 }
 
-} // namespace engine_placeholder
+}  // namespace engine_placeholder

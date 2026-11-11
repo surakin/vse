@@ -1,9 +1,12 @@
 #include "rhi/dx12/dx12_format.h"
 
-namespace engine_placeholder::rhi::dx12 {
+namespace engine_placeholder::rhi::dx12
+{
 
-DXGI_FORMAT ToDxgi(Format format) {
-    switch (format) {
+DXGI_FORMAT ToDxgi(Format format)
+{
+    switch (format)
+    {
     case Format::Undefined: return DXGI_FORMAT_UNKNOWN;
     case Format::R8_UNorm: return DXGI_FORMAT_R8_UNORM;
     case Format::RG8_UNorm: return DXGI_FORMAT_R8G8_UNORM;
@@ -34,11 +37,14 @@ DXGI_FORMAT ToDxgi(Format format) {
     return DXGI_FORMAT_UNKNOWN;
 }
 
-DXGI_FORMAT ToDxgiResource(Format format, TextureUsage usage) {
-    if (!Has(usage, TextureUsage::Sampled)) {
+DXGI_FORMAT ToDxgiResource(Format format, TextureUsage usage)
+{
+    if (!Has(usage, TextureUsage::Sampled))
+    {
         return ToDxgi(format);
     }
-    switch (format) {
+    switch (format)
+    {
     case Format::D32_Float: return DXGI_FORMAT_R32_TYPELESS;
     case Format::D24_UNorm_S8_UInt: return DXGI_FORMAT_R24G8_TYPELESS;
     case Format::D32_Float_S8_UInt: return DXGI_FORMAT_R32G8X24_TYPELESS;
@@ -46,8 +52,10 @@ DXGI_FORMAT ToDxgiResource(Format format, TextureUsage usage) {
     }
 }
 
-DXGI_FORMAT ToDxgiShaderView(Format format) {
-    switch (format) {
+DXGI_FORMAT ToDxgiShaderView(Format format)
+{
+    switch (format)
+    {
     case Format::D32_Float: return DXGI_FORMAT_R32_FLOAT;
     case Format::D24_UNorm_S8_UInt: return DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
     case Format::D32_Float_S8_UInt: return DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
@@ -55,10 +63,15 @@ DXGI_FORMAT ToDxgiShaderView(Format format) {
     }
 }
 
-DXGI_FORMAT ToDxgiDepthView(Format format) { return FormatInfo(format).is_depth ? ToDxgi(format) : DXGI_FORMAT_UNKNOWN; }
+DXGI_FORMAT ToDxgiDepthView(Format format)
+{
+    return FormatInfo(format).is_depth ? ToDxgi(format) : DXGI_FORMAT_UNKNOWN;
+}
 
-DXGI_FORMAT ToDxgiVertex(VertexFormat format) {
-    switch (format) {
+DXGI_FORMAT ToDxgiVertex(VertexFormat format)
+{
+    switch (format)
+    {
     case VertexFormat::Float1: return DXGI_FORMAT_R32_FLOAT;
     case VertexFormat::Float2: return DXGI_FORMAT_R32G32_FLOAT;
     case VertexFormat::Float3: return DXGI_FORMAT_R32G32B32_FLOAT;
@@ -73,24 +86,28 @@ DXGI_FORMAT ToDxgiVertex(VertexFormat format) {
     return DXGI_FORMAT_UNKNOWN;
 }
 
-D3D12_RESOURCE_STATES ToD3D12State(ResourceState state) {
-    switch (state) {
+D3D12_RESOURCE_STATES ToD3D12State(ResourceState state)
+{
+    switch (state)
+    {
     case ResourceState::Undefined: return D3D12_RESOURCE_STATE_COMMON;
     case ResourceState::VertexBuffer:
     case ResourceState::UniformBuffer: return D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
     case ResourceState::IndexBuffer: return D3D12_RESOURCE_STATE_INDEX_BUFFER;
-    case ResourceState::ShaderRead: return D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+    case ResourceState::ShaderRead:
+        return D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
     case ResourceState::ShaderWrite: return D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
     case ResourceState::CopySrc: return D3D12_RESOURCE_STATE_COPY_SOURCE;
     case ResourceState::CopyDst: return D3D12_RESOURCE_STATE_COPY_DEST;
     case ResourceState::ColorAttachment: return D3D12_RESOURCE_STATE_RENDER_TARGET;
     case ResourceState::DepthAttachment: return D3D12_RESOURCE_STATE_DEPTH_WRITE;
     case ResourceState::DepthRead:
-        return D3D12_RESOURCE_STATE_DEPTH_READ | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+        return D3D12_RESOURCE_STATE_DEPTH_READ | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE |
+               D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
     case ResourceState::Present: return D3D12_RESOURCE_STATE_PRESENT;
     case ResourceState::Count: break;
     }
     return D3D12_RESOURCE_STATE_COMMON;
 }
 
-} // namespace engine_placeholder::rhi::dx12
+}  // namespace engine_placeholder::rhi::dx12

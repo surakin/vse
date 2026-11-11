@@ -1,4 +1,5 @@
-// The component registry (Phase 19 Day 256): registration, lookup, the manifest check, the builtin components and the unregistered-component list.
+// The component registry (Phase 19 Day 256): registration, lookup, the manifest check, the builtin components and the
+// unregistered-component list.
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -7,33 +8,49 @@
 #include "storage/builtin_components.h"
 #include "storage/component_registry.h"
 
-namespace engine_placeholder::storage {
-namespace {
+namespace engine_placeholder::storage
+{
+namespace
+{
 
-struct Health {
+struct Health
+{
     i32 current = 0;
     i32 max = 100;
 };
-struct Marker {};
-struct Scratch {
+struct Marker
+{
+};
+struct Scratch
+{
     u32 value = 0;
 };
-struct Forgotten {
+struct Forgotten
+{
     u32 value = 0;
 };
-struct Named {
+struct Named
+{
     u32 a = 0;
 };
-enum class Kind : u8 { X, Y };
-struct WithEnum {
+enum class Kind : u8
+{
+    X,
+    Y
+};
+struct WithEnum
+{
     Kind kind = Kind::X;
 };
 
-Status RegisterHealth(ComponentRegistry* r, u32 id = 1100, const char* name = "health") {
-    return r->Register<Health>({.id = id, .name = name, .fields = {Field<&Health::current>("current"), Field<&Health::max>("max")}});
+Status RegisterHealth(ComponentRegistry* r, u32 id = 1100, const char* name = "health")
+{
+    return r->Register<Health>(
+        {.id = id, .name = name, .fields = {Field<&Health::current>("current"), Field<&Health::max>("max")}});
 }
 
-TEST_CASE("Registry: a component registers once and is found by id, name and type", "[storage][registry]") {
+TEST_CASE("Registry: a component registers once and is found by id, name and type", "[storage][registry]")
+{
     ComponentRegistry r;
     REQUIRE(RegisterHealth(&r).Ok());
     REQUIRE(r.Register<Marker>({.id = 1101, .name = "marker"}).Ok());
@@ -53,25 +70,36 @@ TEST_CASE("Registry: a component registers once and is found by id, name and typ
     CHECK(r.FindByEcsId(ecs::kInvalidComponent) == nullptr);
 }
 
-TEST_CASE("Registry: every registration error is a Status", "[storage][registry]") {
+TEST_CASE("Registry: every registration error is a Status", "[storage][registry]")
+{
     ComponentRegistry r;
     REQUIRE(RegisterHealth(&r).Ok());
-    CHECK(RegisterHealth(&r).Is(ErrorCode::Exists)); // the same id, name and type
-    CHECK(r.Register<Named>({.id = 1100, .name = "other", .fields = {Field<&Named::a>("a")}}).Is(ErrorCode::Exists)); // duplicate id
-    CHECK(r.Register<Named>({.id = 1200, .name = "health", .fields = {Field<&Named::a>("a")}}).Is(ErrorCode::Exists)); // duplicate name
-    CHECK(r.Register<Health>({.id = 1201, .name = "health2", .fields = {Field<&Health::max>("max")}}).Is(ErrorCode::Exists)); // the type again
+    CHECK(RegisterHealth(&r).Is(ErrorCode::Exists));  // the same id, name and type
+    CHECK(r.Register<Named>({.id = 1100, .name = "other", .fields = {Field<&Named::a>("a")}})
+              .Is(ErrorCode::Exists));  // duplicate id
+    CHECK(r.Register<Named>({.id = 1200, .name = "health", .fields = {Field<&Named::a>("a")}})
+              .Is(ErrorCode::Exists));  // duplicate name
+    CHECK(r.Register<Health>({.id = 1201, .name = "health2", .fields = {Field<&Health::max>("max")}})
+              .Is(ErrorCode::Exists));  // the type again
     CHECK(r.Register<Named>({.id = 0, .name = "zero", .fields = {Field<&Named::a>("a")}}).Is(ErrorCode::Invalid));
     CHECK(r.Register<Named>({.id = 1202, .name = "", .fields = {Field<&Named::a>("a")}}).Is(ErrorCode::Invalid));
-    CHECK(r.Register<Named>({.id = 1202, .name = "named", .version = 0, .fields = {Field<&Named::a>("a")}}).Is(ErrorCode::Invalid));
-    CHECK(r.Register<Named>({.id = 1202, .name = "named"}).Is(ErrorCode::Invalid)); // data without fields, not flagged
-    CHECK(r.Register<Named>({.id = 1202, .name = "named", .flags = kComponentSkip, .fields = {Field<&Named::a>("a")}}).Is(ErrorCode::Invalid));
-    CHECK(r.Register<Named>({.id = 1202, .name = "named", .fields = {Field<&Named::a>("a"), Field<&Named::a>("a")}}).Is(ErrorCode::Invalid)); // two fields, one name
-    CHECK(r.Register<WithEnum>({.id = 1203, .name = "with_enum", .fields = {Field<&WithEnum::kind>("kind")}}).Is(ErrorCode::Invalid)); // enum without range
-    CHECK(r.Register<Marker>({.id = 1204, .name = "marker2", .fields = {Field<&Named::a>("a")}}).Is(ErrorCode::Invalid)); // a tag has no fields
+    CHECK(r.Register<Named>({.id = 1202, .name = "named", .version = 0, .fields = {Field<&Named::a>("a")}})
+              .Is(ErrorCode::Invalid));
+    CHECK(r.Register<Named>({.id = 1202, .name = "named"}).Is(ErrorCode::Invalid));  // data without fields, not flagged
+    CHECK(r.Register<Named>({.id = 1202, .name = "named", .flags = kComponentSkip, .fields = {Field<&Named::a>("a")}})
+              .Is(ErrorCode::Invalid));
+    CHECK(r.Register<Named>({.id = 1202, .name = "named", .fields = {Field<&Named::a>("a"), Field<&Named::a>("a")}})
+              .Is(ErrorCode::Invalid));  // two fields, one name
+    CHECK(r.Register<WithEnum>({.id = 1203, .name = "with_enum", .fields = {Field<&WithEnum::kind>("kind")}})
+              .Is(ErrorCode::Invalid));  // enum without range
+    CHECK(r.Register<Marker>({.id = 1204, .name = "marker2", .fields = {Field<&Named::a>("a")}})
+              .Is(ErrorCode::Invalid));  // a tag has no fields
     CHECK(r.Count() == 1);
 }
 
-TEST_CASE("Registry: a derived or skipped component is registered without fields and refuses to encode", "[storage][registry]") {
+TEST_CASE("Registry: a derived or skipped component is registered without fields and refuses to encode",
+          "[storage][registry]")
+{
     ComponentRegistry r;
     REQUIRE(r.Register<Scratch>({.id = 1300, .name = "scratch", .flags = kComponentSkip}).Ok());
     REQUIRE(r.Register<Forgotten>({.id = 1301, .name = "derived", .flags = kComponentDerived}).Ok());
@@ -84,7 +112,8 @@ TEST_CASE("Registry: a derived or skipped component is registered without fields
     CHECK(s->Decode(in, &value, CodecLimits()).Is(ErrorCode::Invalid));
 }
 
-TEST_CASE("Registry: the manifest check keeps ids and names stable", "[storage][registry]") {
+TEST_CASE("Registry: the manifest check keeps ids and names stable", "[storage][registry]")
+{
     ComponentRegistry r;
     REQUIRE(RegisterHealth(&r).Ok());
     Vector<ManifestEntry> made;
@@ -94,7 +123,8 @@ TEST_CASE("Registry: the manifest check keeps ids and names stable", "[storage][
     CHECK(made[0].name == StringView("health"));
     CHECK(r.CheckManifest(Span<const ManifestEntry>(made.Data(), made.Size())).Ok());
 
-    auto check = [&](u32 id, const char* name, u32 version) {
+    auto check = [&](u32 id, const char* name, u32 version)
+    {
         ManifestEntry e;
         e.id = id;
         e.name = StringView(name);
@@ -102,7 +132,7 @@ TEST_CASE("Registry: the manifest check keeps ids and names stable", "[storage][
         return r.CheckManifest(Span<const ManifestEntry>(&e, 1));
     };
     CHECK(check(1100, "health", 1).Ok());
-    CHECK(check(1100, "health", 0).Ok()); // recorded with an older version
+    CHECK(check(1100, "health", 0).Ok());                     // recorded with an older version
     CHECK(check(1100, "hp", 1).Is(ErrorCode::Mismatch));      // the id now has another name
     CHECK(check(1999, "health", 1).Is(ErrorCode::Mismatch));  // the name now has another id
     CHECK(check(1100, "health", 2).Is(ErrorCode::TooNew));    // written by a newer version
@@ -110,7 +140,8 @@ TEST_CASE("Registry: the manifest check keeps ids and names stable", "[storage][
     CHECK(r.CheckManifest(Span<const ManifestEntry>()).Ok());
 }
 
-TEST_CASE("Registry: the builtin components register once and flag the derived ones", "[storage][registry]") {
+TEST_CASE("Registry: the builtin components register once and flag the derived ones", "[storage][registry]")
+{
     ComponentRegistry r;
     REQUIRE(RegisterBuiltinComponents(&r).Ok());
     CHECK(r.Count() == 12);
@@ -126,7 +157,8 @@ TEST_CASE("Registry: the builtin components register once and flag the derived o
     CHECK(RegisterBuiltinComponents(&r).Is(ErrorCode::Exists));
 }
 
-TEST_CASE("Registry: a component the world holds and nobody registered is listed", "[storage][registry]") {
+TEST_CASE("Registry: a component the world holds and nobody registered is listed", "[storage][registry]")
+{
     ComponentRegistry r;
     REQUIRE(RegisterBuiltinComponents(&r).Ok());
     REQUIRE(RegisterHealth(&r).Ok());
@@ -147,7 +179,8 @@ TEST_CASE("Registry: a component the world holds and nobody registered is listed
     REQUIRE(found.Size() == 2);
     bool has_forgotten = false;
     bool has_marker = false;
-    for (usize i = 0; i < found.Size(); ++i) {
+    for (usize i = 0; i < found.Size(); ++i)
+    {
         has_forgotten = has_forgotten || found[i] == ecs::ComponentOf<Forgotten>();
         has_marker = has_marker || found[i] == ecs::ComponentOf<Marker>();
     }
@@ -162,5 +195,5 @@ TEST_CASE("Registry: a component the world holds and nobody registered is listed
     CHECK(after.Size() == 0);
 }
 
-} // namespace
-} // namespace engine_placeholder::storage
+}  // namespace
+}  // namespace engine_placeholder::storage

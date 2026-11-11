@@ -9,7 +9,8 @@
 
 //! Owning pointer to one object, the engine's replacement for a raw `new` / `delete` pair.
 //! [[Array]] and [[Vector]] own runs of elements; [[SharedPtr]] shares one object.
-namespace engine_placeholder {
+namespace engine_placeholder
+{
 
 /// The default deleter of [[UniquePtr]]: runs the destructor and returns the storage to the heap.
 ///
@@ -19,24 +20,30 @@ namespace engine_placeholder {
 ///
 /// - Thread-safety: thread-safe; stateless.
 /// - Ownership: takes the pointer it is given.
-template <typename T>
-struct DefaultDelete {
+template <typename T> struct DefaultDelete
+{
     /// Creates the deleter.
     constexpr DefaultDelete() = default;
     /// Converts from the deleter of a derived type, so `UniquePtr<Derived>` moves into `UniquePtr<Base>`.
     template <typename U>
         requires IsConvertible<U*, T*>
-    constexpr DefaultDelete(const DefaultDelete<U>&) {
-        static_assert(IsSame<T, U> || HasVirtualDestructor<T>, "DefaultDelete<Base>: deleting a derived object needs a virtual destructor on Base");
-        static_assert(alignof(U) <= 16, "DefaultDelete<Base>: a derived type aligned beyond 16 bytes would be released with the wrong alignment");
+    constexpr DefaultDelete(const DefaultDelete<U>&)
+    {
+        static_assert(IsSame<T, U> || HasVirtualDestructor<T>,
+                      "DefaultDelete<Base>: deleting a derived object needs a virtual destructor on Base");
+        static_assert(
+            alignof(U) <= 16,
+            "DefaultDelete<Base>: a derived type aligned beyond 16 bytes would be released with the wrong alignment");
     }
 
     /// Destroys `ptr` and frees its storage.
     ///
     /// - Param ptr: object made by [[MakeUnique]], or null (ignored).
     /// - Ownership: takes the object; it is destroyed and its storage freed.
-    void operator()(T* ptr) const {
-        if (ptr != nullptr) {
+    void operator()(T* ptr) const
+    {
+        if (ptr != nullptr)
+        {
             ptr->~T();
             HeapAllocator::Default().Free(static_cast<void*>(ptr), sizeof(T), alignof(T));
         }
@@ -51,8 +58,8 @@ struct DefaultDelete {
 ///
 /// - Thread-safety: not-thread-safe. Synchronize externally if shared.
 /// - Ownership: owns the object; it is destroyed by `Reset`, by assignment and by the destructor.
-template <typename T, typename Deleter = DefaultDelete<T>>
-class UniquePtr {
+template <typename T, typename Deleter = DefaultDelete<T>> class UniquePtr
+{
 public:
     /// Creates an empty pointer.
     constexpr UniquePtr() = default;
@@ -76,12 +83,16 @@ public:
 
     /// Takes over the object of a pointer to a derived type, leaving `other` empty.
     template <typename U, typename E>
-        requires(IsConvertible<U*, T*> && IsConstructible<Deleter, E &&>)
-    UniquePtr(UniquePtr<U, E>&& other) noexcept : deleter_(Move(other.GetDeleter())), ptr_(other.Release()) {}
+        requires(IsConvertible<U*, T*> && IsConstructible<Deleter, E&&>)
+    UniquePtr(UniquePtr<U, E>&& other) noexcept : deleter_(Move(other.GetDeleter())), ptr_(other.Release())
+    {
+    }
 
     /// Destroys the current object, then takes over `other`'s, leaving `other` empty.
-    UniquePtr& operator=(UniquePtr&& other) noexcept {
-        if (this != &other) {
+    UniquePtr& operator=(UniquePtr&& other) noexcept
+    {
+        if (this != &other)
+        {
             Reset();
             deleter_ = Move(other.deleter_);
             ptr_ = other.Release();
@@ -90,7 +101,8 @@ public:
     }
 
     /// Destroys the owned object and leaves the pointer empty.
-    UniquePtr& operator=(decltype(nullptr)) {
+    UniquePtr& operator=(decltype(nullptr))
+    {
         Reset();
         return *this;
     }
@@ -112,7 +124,8 @@ public:
     explicit operator bool() const { return ptr_ != nullptr; }
 
     /// Gives up ownership and returns the object; the caller must release it with the deleter.
-    T* Release() {
+    T* Release()
+    {
         T* released = ptr_;
         ptr_ = nullptr;
         return released;
@@ -121,10 +134,12 @@ public:
     /// Destroys the owned object (if any) and takes ownership of `ptr`.
     ///
     /// - Param ptr: new object to own, or null to just release the old one.
-    void Reset(T* ptr = nullptr) {
+    void Reset(T* ptr = nullptr)
+    {
         T* old = ptr_;
         ptr_ = ptr;
-        if (old != nullptr) {
+        if (old != nullptr)
+        {
             deleter_(old);
         }
     }
@@ -147,12 +162,14 @@ private:
 /// - Param args: forwarded to the constructor.
 /// - Returns: the owning pointer, or an empty one if the heap is exhausted.
 template <typename T, typename Deleter = DefaultDelete<T>, typename... Args>
-UniquePtr<T, Deleter> MakeUnique(Args&&... args) {
+UniquePtr<T, Deleter> MakeUnique(Args&&... args)
+{
     void* mem = HeapAllocator::Default().Alloc(sizeof(T), alignof(T));
-    if (mem == nullptr) {
+    if (mem == nullptr)
+    {
         return UniquePtr<T, Deleter>();
     }
     return UniquePtr<T, Deleter>(new (mem) T(Forward<Args>(args)...));
 }
 
-} // namespace engine_placeholder
+}  // namespace engine_placeholder

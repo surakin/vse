@@ -2,10 +2,11 @@
 
 //! Layered sources: several stores that read as one, lowest to highest, with a way to ask where a value came from.
 //!
-//! The order, lowest first: the registry's defaults, then the layers by role: [[settings::LayerRole::System]] (shipped defaults),
-//! `User` (the user's file, the one that is written), `Project`, `Custom` (a file named by `--settings`), `Environment`, `CommandLine`,
-//! and above them all `Policy` (what an administrator enforces: Windows group policy).
-//! A value set in a higher layer hides the lower ones; a value missing or unusable in a layer falls through to the next lower one.
+//! The order, lowest first: the registry's defaults, then the layers by role: [[settings::LayerRole::System]] (shipped
+//! defaults), `User` (the user's file, the one that is written), `Project`, `Custom` (a file named by `--settings`),
+//! `Environment`, `CommandLine`, and above them all `Policy` (what an administrator enforces: Windows group policy). A
+//! value set in a higher layer hides the lower ones; a value missing or unusable in a layer falls through to the next
+//! lower one.
 
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
@@ -13,17 +14,21 @@
 #include "settings/registry.h"
 #include "string/string.h"
 
-namespace engine_placeholder::settings {
+namespace engine_placeholder::settings
+{
 
-/// Where a layer sits in the precedence order (lowest first). Layers of one role keep the order they were added in, later ones higher.
-enum class LayerRole : u8 {
-    System = 0,  ///< Defaults shipped with the program or the machine.
-    User,        ///< The user's own file; the layer that is written by default.
-    Project,     ///< A file next to the content.
-    Custom,      ///< A file named on the command line (`--settings FILE`).
-    Environment, ///< Environment variables.
-    CommandLine, ///< `--set` and the flag aliases.
-    Policy,      ///< Values an administrator enforces (Windows: group-policy registry keys); read-only, and above every other layer.
+/// Where a layer sits in the precedence order (lowest first). Layers of one role keep the order they were added in,
+/// later ones higher.
+enum class LayerRole : u8
+{
+    System = 0,   ///< Defaults shipped with the program or the machine.
+    User,         ///< The user's own file; the layer that is written by default.
+    Project,      ///< A file next to the content.
+    Custom,       ///< A file named on the command line (`--settings FILE`).
+    Environment,  ///< Environment variables.
+    CommandLine,  ///< `--set` and the flag aliases.
+    Policy,  ///< Values an administrator enforces (Windows: group-policy registry keys); read-only, and above every
+             ///< other layer.
 };
 
 /// Returns a role's name (`system`, `user`, `project`, `custom`, `environment`, `command-line`, `policy`).
@@ -34,18 +39,20 @@ enum class LayerRole : u8 {
 const char* LayerRoleName(LayerRole role);
 
 /// How a layer fared when it was loaded.
-enum class LayerState : u8 {
-    NotLoaded = 0, ///< `Load` has not run.
-    Loaded,        ///< Read.
-    Missing,       ///< The medium does not exist (a file not written yet); treated as empty.
-    Damaged,       ///< Some of it could not be understood; what could be read is used.
-    Failed,        ///< It could not be read at all; skipped.
+enum class LayerState : u8
+{
+    NotLoaded = 0,  ///< `Load` has not run.
+    Loaded,         ///< Read.
+    Missing,        ///< The medium does not exist (a file not written yet); treated as empty.
+    Damaged,        ///< Some of it could not be understood; what could be read is used.
+    Failed,         ///< It could not be read at all; skipped.
 };
 
 /// A problem found while loading or resolving: the layer, the key if there is one, and a message.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct LayerProblem {
+struct LayerProblem
+{
     /// The layer's name, NUL-terminated and cut to fit.
     char layer[128] = {};
     /// The key, or empty.
@@ -57,7 +64,8 @@ struct LayerProblem {
 /// The answer of [[settings::LayerStack::Resolve]]: a value and where it came from.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct Resolution {
+struct Resolution
+{
     /// The value.
     Value value;
     /// The index of the layer that supplied it, or -1 for the registry's default.
@@ -74,7 +82,8 @@ struct Resolution {
 ///
 /// - Thread-safety: thread-compatible.
 /// - Ownership: owns its stores.
-class LayerStack {
+class LayerStack
+{
 public:
     /// Creates an empty stack.
     LayerStack();
@@ -110,8 +119,9 @@ public:
     /// - Param problems: receives one entry per layer that was damaged or failed; may be null.
     void LoadAll(Vector<LayerProblem>* problems);
 
-    /// Resolves one setting through the layers, highest first. A value that does not convert (a bad number in the environment) is reported in
-    /// `problems` with the layer, the key and where in the layer it came from, and the next lower layer is tried.
+    /// Resolves one setting through the layers, highest first. A value that does not convert (a bad number in the
+    /// environment) is reported in `problems` with the layer, the key and where in the layer it came from, and the next
+    /// lower layer is tried.
     ///
     /// - Param registry: where the declaration is.
     /// - Param id: the setting.
@@ -122,15 +132,16 @@ public:
     /// Resolves the value the layers *below* `layer` give (to decide whether a write is needed).
     void ResolveBelow(const Registry& registry, SettingId id, usize layer, Resolution* out);
 
-    /// Returns the index of the layer that is written (the first `User` layer unless [[settings::LayerStack::SetWriteLayer]] chose another), or `Size()` if there is none.
+    /// Returns the index of the layer that is written (the first `User` layer unless
+    /// [[settings::LayerStack::SetWriteLayer]] chose another), or `Size()` if there is none.
     usize WriteLayer() const;
     /// Chooses the written layer.
     ///
     /// - Aborts: `layer` is not less than `Size()`.
     void SetWriteLayer(usize layer);
 
-    /// Sets a value in the write layer. With `minimal` a value equal to what the lower layers already give is not written, and an earlier
-    /// entry for the key is removed instead, so the file does not fill with defaults.
+    /// Sets a value in the write layer. With `minimal` a value equal to what the lower layers already give is not
+    /// written, and an earlier entry for the key is removed instead, so the file does not fill with defaults.
     ///
     /// - Fails: `NotFound` (no write layer), `ReadOnly`, `TooLong`, and the store's own errors.
     Status Set(const Registry& registry, SettingId id, const Value& value, bool minimal);
@@ -140,13 +151,15 @@ public:
     Status Unset(const Registry& registry, SettingId id);
 
 private:
-    struct Layer {
+    struct Layer
+    {
         String<HeapAllocator> name = String<HeapAllocator>(HeapAllocator::Default());
         LayerRole role = LayerRole::User;
         ConfigStorePtr store;
         LayerState state = LayerState::NotLoaded;
     };
-    bool ResolveFrom(const Registry& registry, SettingId id, usize below, Resolution* out, Vector<LayerProblem>* problems);
+    bool ResolveFrom(const Registry& registry, SettingId id, usize below, Resolution* out,
+                     Vector<LayerProblem>* problems);
     Vector<Layer> layers_;
     usize write_layer_ = static_cast<usize>(-1);
 };
@@ -156,7 +169,8 @@ private:
 /// - Param registry: the keys to search (deprecated keys are not offered).
 /// - Param text: what was typed.
 /// - Param out: receives the suggestion.
-/// - Returns: whether a key is close enough to be worth suggesting (distance at most a third of the length, at least 3).
+/// - Returns: whether a key is close enough to be worth suggesting (distance at most a third of the length, at least
+/// 3).
 bool SuggestKey(const Registry& registry, StringView text, Key* out);
 
-} // namespace engine_placeholder::settings
+}  // namespace engine_placeholder::settings

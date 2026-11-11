@@ -2,10 +2,13 @@
 
 #include "os/last_error.h"
 
-namespace engine_placeholder::net::posix {
+namespace engine_placeholder::net::posix
+{
 
-ErrorCode ErrorFromErrno(int error) {
-    switch (error) {
+ErrorCode ErrorFromErrno(int error)
+{
+    switch (error)
+    {
     case 0: return ErrorCode::Ok;
     case EAGAIN:
 #if EAGAIN != EWOULDBLOCK
@@ -48,4 +51,4 @@ ErrorCode ErrorFromErrno(int error) {
     }
 }
 
-} // namespace engine_placeholder::net::posix
+}  // namespace engine_placeholder::net::posix

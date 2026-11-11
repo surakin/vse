@@ -6,20 +6,23 @@
 //
 // Thread-safety: not-thread-safe per ReferenceBuild.
 // Ownership: arena-allocated; the arena must outlive the ReferenceBuild.
-namespace docgen {
+namespace docgen
+{
 
-struct OutFile {
-    StringView name; // relative to the output directory: "jobs.md", "symbols.txt"
+struct OutFile
+{
+    StringView name;  // relative to the output directory: "jobs.md", "symbols.txt"
     StringView content;
 };
 
-struct ReferenceBuild {
+struct ReferenceBuild
+{
     explicit ReferenceBuild(ArenaAllocator& arena) : map(arena), index(arena), files(arena) {}
 
     ModuleMap map;
     SymbolIndex index;
-    Vector<OutFile, ArenaAllocator> files; // empty when the build failed; sorted by name
-    bool io_failure = false;              // the module map could not be read (as opposed to documentation errors)
+    Vector<OutFile, ArenaAllocator> files;  // empty when the build failed; sorted by name
+    bool io_failure = false;                // the module map could not be read (as opposed to documentation errors)
 };
 
 // Reads the module map at `map_path`, indexes the headers under `root`, and
@@ -31,10 +34,12 @@ bool BuildReference(StringView root, StringView map_path, ArenaAllocator& arena,
 // Writes the files into `out_dir` (created if missing) and removes
 // generated pages that are no longer produced. Problems (I/O) are appended
 // to `problems`; returns true on success.
-bool WriteReference(const ReferenceBuild& build, StringView out_dir, ArenaAllocator& arena, Vector<FileDiag, ArenaAllocator>& problems);
+bool WriteReference(const ReferenceBuild& build, StringView out_dir, ArenaAllocator& arena,
+                    Vector<FileDiag, ArenaAllocator>& problems);
 
 // Compares the in-memory output with `out_dir`. Appends one problem per
 // missing, differing or no-longer-generated file; true when up to date.
-bool CheckReference(const ReferenceBuild& build, StringView out_dir, ArenaAllocator& arena, Vector<FileDiag, ArenaAllocator>& problems);
+bool CheckReference(const ReferenceBuild& build, StringView out_dir, ArenaAllocator& arena,
+                    Vector<FileDiag, ArenaAllocator>& problems);
 
-} // namespace docgen
+}  // namespace docgen

@@ -9,14 +9,18 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
 
-namespace {
+namespace
+{
 
-struct TestTag {};
+struct TestTag
+{
+};
 using TestHandle = Handle<TestTag>;
 
 int g_live_values = 0;
 
-struct Tracked {
+struct Tracked
+{
     int id = 0;
     explicit Tracked(int i = 0) : id(i) { ++g_live_values; }
     Tracked(Tracked&& o) noexcept : id(o.id) { ++g_live_values; }
@@ -27,9 +31,10 @@ struct Tracked {
 
 using Pool = HandlePool<Tracked, TestTag>;
 
-} // namespace
+}  // namespace
 
-TEST_CASE("Allocate returns a valid handle that Get resolves", "[rhi][pool]") {
+TEST_CASE("Allocate returns a valid handle that Get resolves", "[rhi][pool]")
+{
     Pool pool;
     TestHandle h = pool.Allocate(Tracked(7));
     REQUIRE(h.IsValid());
@@ -38,19 +43,21 @@ TEST_CASE("Allocate returns a valid handle that Get resolves", "[rhi][pool]") {
     CHECK(pool.LiveCount() == 1);
 }
 
-TEST_CASE("Invalid and out-of-range handles never resolve", "[rhi][pool]") {
+TEST_CASE("Invalid and out-of-range handles never resolve", "[rhi][pool]")
+{
     Pool pool;
     CHECK(pool.Get(TestHandle{}) == nullptr);
-    CHECK(pool.Get(TestHandle{0, 1}) == nullptr);       // nothing allocated yet
+    CHECK(pool.Get(TestHandle{0, 1}) == nullptr);  // nothing allocated yet
     TestHandle h = pool.Allocate(Tracked(1));
-    CHECK(pool.Get(TestHandle{h.index, 0}) == nullptr);  // generation 0
+    CHECK(pool.Get(TestHandle{h.index, 0}) == nullptr);      // generation 0
     CHECK(pool.Get(TestHandle{h.index + 1, 1}) == nullptr);  // a free slot
     CHECK(pool.Get(TestHandle{0xFFFFFFFFu, 1}) == nullptr);  // far out of range
     CHECK_FALSE(pool.Free(TestHandle{}));
     CHECK_FALSE(pool.Retire(TestHandle{h.index, 99}, 1));
 }
 
-TEST_CASE("A freed handle goes stale and a reused slot gets a new generation", "[rhi][pool]") {
+TEST_CASE("A freed handle goes stale and a reused slot gets a new generation", "[rhi][pool]")
+{
     Pool pool;
     TestHandle first = pool.Allocate(Tracked(1));
     REQUIRE(pool.Free(first));
@@ -61,18 +68,21 @@ TEST_CASE("A freed handle goes stale and a reused slot gets a new generation", "
     CHECK(second.index == first.index);  // the slot is reused
     CHECK(second.generation != first.generation);
     CHECK(second != first);
-    CHECK(pool.Get(first) == nullptr);   // the old copy does not resolve to the new occupant
+    CHECK(pool.Get(first) == nullptr);  // the old copy does not resolve to the new occupant
     REQUIRE(pool.Get(second) != nullptr);
     CHECK(pool.Get(second)->id == 2);
 }
 
-TEST_CASE("Generations are never zero and increase on every reuse", "[rhi][pool]") {
+TEST_CASE("Generations are never zero and increase on every reuse", "[rhi][pool]")
+{
     Pool pool;
     u32 last = 0;
-    for (int i = 0; i < 1000; ++i) {
+    for (int i = 0; i < 1000; ++i)
+    {
         TestHandle h = pool.Allocate(Tracked(i));
         CHECK(h.generation != 0);
-        if (i > 0) {
+        if (i > 0)
+        {
             CHECK(h.generation > last);
         }
         last = h.generation;
@@ -80,7 +90,8 @@ TEST_CASE("Generations are never zero and increase on every reuse", "[rhi][pool]
     }
 }
 
-TEST_CASE("Retire invalidates at once but keeps the value until its frame completes", "[rhi][pool]") {
+TEST_CASE("Retire invalidates at once but keeps the value until its frame completes", "[rhi][pool]")
+{
     g_live_values = 0;
     {
         Pool pool;
@@ -101,7 +112,12 @@ TEST_CASE("Retire invalidates at once but keeps the value until its frame comple
         CHECK(other.index != h.index);
 
         int seen_id = 0;
-        CHECK(pool.CollectRetired(10, [&](Tracked& t) { seen_id = t.id; ++released; }) == 1);
+        CHECK(pool.CollectRetired(10,
+                                  [&](Tracked& t)
+                                  {
+                                      seen_id = t.id;
+                                      ++released;
+                                  }) == 1);
         CHECK(released == 1);
         CHECK(seen_id == 5);  // the callback saw the live value
         CHECK(pool.RetiredCount() == 0);
@@ -116,7 +132,8 @@ TEST_CASE("Retire invalidates at once but keeps the value until its frame comple
     CHECK(g_live_values == 0);
 }
 
-TEST_CASE("CollectRetired releases oldest first and stops at the first unfinished frame", "[rhi][pool]") {
+TEST_CASE("CollectRetired releases oldest first and stops at the first unfinished frame", "[rhi][pool]")
+{
     Pool pool;
     TestHandle a = pool.Allocate(Tracked(1));
     TestHandle b = pool.Allocate(Tracked(2));
@@ -134,43 +151,54 @@ TEST_CASE("CollectRetired releases oldest first and stops at the first unfinishe
     CHECK(order[2] == 3);
 }
 
-TEST_CASE("CollectAllRetired drains everything", "[rhi][pool]") {
+TEST_CASE("CollectAllRetired drains everything", "[rhi][pool]")
+{
     Pool pool;
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 10; ++i)
+    {
         pool.Retire(pool.Allocate(Tracked(i)), 1000 + static_cast<u64>(i));
     }
     CHECK(pool.CollectAllRetired([](Tracked&) {}) == 10);
     CHECK(pool.RetiredCount() == 0);
 }
 
-TEST_CASE("The pool grows past one chunk and keeps pointers stable", "[rhi][pool]") {
+TEST_CASE("The pool grows past one chunk and keeps pointers stable", "[rhi][pool]")
+{
     Pool pool;
     Vector<TestHandle> handles;
     Vector<Tracked*> pointers;
-    for (int i = 0; i < 1000; ++i) {
+    for (int i = 0; i < 1000; ++i)
+    {
         handles.Push(pool.Allocate(Tracked(i)));
         REQUIRE(handles[handles.Size() - 1].IsValid());
         pointers.Push(pool.Get(handles[handles.Size() - 1]));
     }
     CHECK(pool.Capacity() >= 1000);
-    for (int i = 0; i < 1000; ++i) {
+    for (int i = 0; i < 1000; ++i)
+    {
         CHECK(pool.Get(handles[static_cast<usize>(i)]) == pointers[static_cast<usize>(i)]);  // never moved
         CHECK(pointers[static_cast<usize>(i)]->id == i);
     }
     // All handles are distinct.
     Vector<u64> keys;
-    for (usize i = 0; i < handles.Size(); ++i) {
+    for (usize i = 0; i < handles.Size(); ++i)
+    {
         keys.Push((static_cast<u64>(handles[i].index) << 32) | handles[i].generation);
     }
     Sort(engine_placeholder::Span<u64>(keys.Data(), keys.Size()));
     usize repeated = 0;
-    for (usize i = 1; i < keys.Size(); ++i) repeated += keys[i] == keys[i - 1] ? 1 : 0;
+    for (usize i = 1; i < keys.Size(); ++i)
+    {
+        repeated += keys[i] == keys[i - 1] ? 1 : 0;
+    }
     CHECK(repeated == 0);
 }
 
-TEST_CASE("Allocation fails cleanly at the capacity limit", "[rhi][pool]") {
+TEST_CASE("Allocation fails cleanly at the capacity limit", "[rhi][pool]")
+{
     HandlePool<u32, TestTag> pool;
-    for (u32 i = 0; i < (HandlePool<u32, TestTag>::kMaxCapacity); ++i) {
+    for (u32 i = 0; i < (HandlePool<u32, TestTag>::kMaxCapacity); ++i)
+    {
         u32 v = i;
         REQUIRE(pool.Allocate(Move(v)).IsValid());
     }
@@ -179,7 +207,8 @@ TEST_CASE("Allocation fails cleanly at the capacity limit", "[rhi][pool]") {
     CHECK(pool.LiveCount() == HandlePool<u32, TestTag>::kMaxCapacity);
 }
 
-TEST_CASE("Destroying the pool destroys live and retired values", "[rhi][pool]") {
+TEST_CASE("Destroying the pool destroys live and retired values", "[rhi][pool]")
+{
     g_live_values = 0;
     {
         Pool pool;
@@ -190,7 +219,8 @@ TEST_CASE("Destroying the pool destroys live and retired values", "[rhi][pool]")
     CHECK(g_live_values == 0);
 }
 
-TEST_CASE("ForEachLive visits exactly the live values", "[rhi][pool]") {
+TEST_CASE("ForEachLive visits exactly the live values", "[rhi][pool]")
+{
     Pool pool;
     TestHandle a = pool.Allocate(Tracked(1));
     TestHandle b = pool.Allocate(Tracked(2));
@@ -199,21 +229,25 @@ TEST_CASE("ForEachLive visits exactly the live values", "[rhi][pool]") {
     pool.Retire(b, 1);
     int sum = 0;
     int count = 0;
-    pool.ForEachLive([&](TestHandle h, Tracked& t) {
-        CHECK(pool.Get(h) == &t);
-        sum += t.id;
-        ++count;
-    });
+    pool.ForEachLive(
+        [&](TestHandle h, Tracked& t)
+        {
+            CHECK(pool.Get(h) == &t);
+            sum += t.id;
+            ++count;
+        });
     CHECK(count == 1);
     CHECK(sum == 3);
     (void)c;
 }
 
-TEST_CASE("Random allocate/free/retire/collect matches a reference model", "[rhi][pool][stress]") {
+TEST_CASE("Random allocate/free/retire/collect matches a reference model", "[rhi][pool][stress]")
+{
     g_live_values = 0;
     {
         Pool pool;
-        struct Entry {
+        struct Entry
+        {
             TestHandle h;
             int id;
         };
@@ -222,17 +256,21 @@ TEST_CASE("Random allocate/free/retire/collect matches a reference model", "[rhi
         u64 frame = 1;
         u64 completed = 0;
         u64 rng = 0x2545F4914F6CDD1Dull;
-        auto next = [&]() {
+        auto next = [&]()
+        {
             rng ^= rng << 13;
             rng ^= rng >> 7;
             rng ^= rng << 17;
             return rng;
         };
         int next_id = 1;
-        for (int step = 0; step < 20000; ++step) {
-            switch (next() % 6) {
+        for (int step = 0; step < 20000; ++step)
+        {
+            switch (next() % 6)
+            {
             case 0:
-            case 1: {
+            case 1:
+            {
                 int id = next_id++;
                 TestHandle h = pool.Allocate(Tracked(id));
                 REQUIRE(h.IsValid());
@@ -240,7 +278,8 @@ TEST_CASE("Random allocate/free/retire/collect matches a reference model", "[rhi
                 break;
             }
             case 2:
-                if (!live.Empty()) {
+                if (!live.Empty())
+                {
                     usize i = next() % live.Size();
                     REQUIRE(pool.Free(live[i].h));
                     dead.Push(live[i].h);
@@ -249,7 +288,8 @@ TEST_CASE("Random allocate/free/retire/collect matches a reference model", "[rhi
                 }
                 break;
             case 3:
-                if (!live.Empty()) {
+                if (!live.Empty())
+                {
                     usize i = next() % live.Size();
                     REQUIRE(pool.Retire(live[i].h, frame));
                     dead.Push(live[i].h);
@@ -257,23 +297,24 @@ TEST_CASE("Random allocate/free/retire/collect matches a reference model", "[rhi
                     live.Pop();
                 }
                 break;
-            case 4:
-                ++frame;
-                break;
+            case 4: ++frame; break;
             case 5:
-                if (completed < frame) {
+                if (completed < frame)
+                {
                     ++completed;
                     pool.CollectRetired(completed, [](Tracked&) {});
                 }
                 break;
             }
             // Spot-check the model.
-            if (!live.Empty()) {
+            if (!live.Empty())
+            {
                 const Entry& e = live[next() % live.Size()];
                 REQUIRE(pool.Get(e.h) != nullptr);
                 CHECK(pool.Get(e.h)->id == e.id);
             }
-            if (!dead.Empty()) {
+            if (!dead.Empty())
+            {
                 CHECK(pool.Get(dead[next() % dead.Size()]) == nullptr);
             }
         }

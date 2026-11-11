@@ -3,7 +3,8 @@
 //
 //   rhi_bench [--draws N] [--frames N]     draw throughput for N cubes (default: 1000 and 10000)
 //             [--skip-uploads] [--skip-pipelines]
-//             [--rhi null|vulkan|dx12|auto]  the graphics backend (default auto: Direct3D 12 on Windows, Vulkan elsewhere)
+//             [--rhi null|vulkan|dx12|auto]  the graphics backend (default auto: Direct3D 12 on Windows, Vulkan
+//             elsewhere)
 
 #include "os/console.h"
 #include "cstr/number.h"
@@ -24,18 +25,24 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
 
-namespace {
+namespace
+{
 
 constexpr u32 kSize = 512;
 
-double Now() { return static_cast<double>(os::MonotonicTimeNanos()) * 1e-9; }
+double Now()
+{
+    return static_cast<double>(os::MonotonicTimeNanos()) * 1e-9;
+}
 
-struct Target {
+struct Target
+{
     TextureHandle color;
     TextureHandle depth;
 };
 
-bool MakeTarget(Device* device, Target* t) {
+bool MakeTarget(Device* device, Target* t)
+{
     TextureDesc td;
     td.width = kSize;
     td.height = kSize;
@@ -49,7 +56,9 @@ bool MakeTarget(Device* device, Target* t) {
 }
 
 // Records `draws` cubes into one list and returns the CPU time spent recording (seconds); the frame is submitted too.
-double RunFrame(Device* device, demo::CubeRenderer* cube, UniformRing* ring, const Target& t, u32 draws, double* submit_seconds) {
+double RunFrame(Device* device, demo::CubeRenderer* cube, UniformRing* ring, const Target& t, u32 draws,
+                double* submit_seconds)
+{
     device->BeginFrame();
     ring->BeginFrame();
     CommandList* list = device->CreateCommandList();
@@ -64,8 +73,10 @@ double RunFrame(Device* device, demo::CubeRenderer* cube, UniformRing* ring, con
     pass.depth.texture = t.depth;
     pass.depth.store = StoreOp::DontCare;
     list->BeginRendering(pass);
-    const Mat4 vp = demo::PerspectiveVulkan(0.7853982f, 1.0f, 0.1f, 200.0f) * demo::LookAt(Vec3{0.0f, 0.0f, 60.0f}, Vec3{0.0f, 0.0f, 0.0f}, Vec3{0.0f, 1.0f, 0.0f});
-    for (u32 i = 0; i < draws; ++i) {
+    const Mat4 vp = demo::PerspectiveVulkan(0.7853982f, 1.0f, 0.1f, 200.0f) *
+                    demo::LookAt(Vec3{0.0f, 0.0f, 60.0f}, Vec3{0.0f, 0.0f, 0.0f}, Vec3{0.0f, 1.0f, 0.0f});
+    for (u32 i = 0; i < draws; ++i)
+    {
         const f32 x = static_cast<f32>(i % 100) * 0.4f - 20.0f;
         const f32 y = static_cast<f32>((i / 100) % 100) * 0.4f - 20.0f;
         cube->Draw(list, ring, vp * demo::ModelMatrix(Vec3{x, y, 0.0f}, 0.15f, 0.0f), kSize, kSize);
@@ -76,7 +87,8 @@ double RunFrame(Device* device, demo::CubeRenderer* cube, UniformRing* ring, con
     ring->Flush();
     const double submit_start = Now();
     CommandList* lists[] = {list};
-    if (device->Submit(lists, 1) != 0) {
+    if (device->Submit(lists, 1) != 0)
+    {
         cube->Submitted();
     }
     *submit_seconds = Now() - submit_start;
@@ -84,48 +96,55 @@ double RunFrame(Device* device, demo::CubeRenderer* cube, UniformRing* ring, con
     return recorded;
 }
 
-void BenchDraws(Device* device, u32 draws, long frames) {
+void BenchDraws(Device* device, u32 draws, long frames)
+{
     Target t;
     demo::CubeRenderer cube;
     demo::CubeOptions options;
     options.depth_format = device->Caps().depth_format;
     UniformRing ring(device, static_cast<u64>(draws + 16) * 256);
-    if (!MakeTarget(device, &t) || !cube.Create(device, options) || !ring.Valid()) {
+    if (!MakeTarget(device, &t) || !cube.Create(device, options) || !ring.Valid())
+    {
         os::Print("draws %u: setup failed\n", draws);
         device->WaitIdle();
         cube.Destroy();
-        if (t.color.IsValid()) {
+        if (t.color.IsValid())
+        {
             device->DestroyTexture(t.color);
         }
-        if (t.depth.IsValid()) {
+        if (t.depth.IsValid())
+        {
             device->DestroyTexture(t.depth);
         }
         return;
     }
     double submit = 0.0;
-    RunFrame(device, &cube, &ring, t, draws, &submit); // warm up (geometry upload, pools)
+    RunFrame(device, &cube, &ring, t, draws, &submit);  // warm up (geometry upload, pools)
     RunFrame(device, &cube, &ring, t, draws, &submit);
     device->WaitIdle();
     double record_total = 0.0;
     double submit_total = 0.0;
     const double start = Now();
-    for (long f = 0; f < frames; ++f) {
+    for (long f = 0; f < frames; ++f)
+    {
         record_total += RunFrame(device, &cube, &ring, t, draws, &submit);
         submit_total += submit;
     }
     device->WaitIdle();
     const double wall = Now() - start;
-    os::Print("draws        %6u cubes: record %7.3f ms/frame (%6.2f us/draw), submit %6.3f ms, wall %7.3f ms/frame (%.0f draws/s)\n", draws,
-                record_total * 1e3 / static_cast<double>(frames), record_total * 1e6 / static_cast<double>(frames) / draws,
-                submit_total * 1e3 / static_cast<double>(frames), wall * 1e3 / static_cast<double>(frames),
-                static_cast<double>(draws) * static_cast<double>(frames) / wall);
+    os::Print(
+        "draws        %6u cubes: record %7.3f ms/frame (%6.2f us/draw), submit %6.3f ms, wall %7.3f ms/frame (%.0f draws/s)\n",
+        draws, record_total * 1e3 / static_cast<double>(frames),
+        record_total * 1e6 / static_cast<double>(frames) / draws, submit_total * 1e3 / static_cast<double>(frames),
+        wall * 1e3 / static_cast<double>(frames), static_cast<double>(draws) * static_cast<double>(frames) / wall);
     device->WaitIdle();
     cube.Destroy();
     device->DestroyTexture(t.color);
     device->DestroyTexture(t.depth);
 }
 
-void BenchBarriers(Device* device) {
+void BenchBarriers(Device* device)
+{
     BufferDesc bd;
     bd.size = 1024;
     bd.usage = BufferUsage::Storage | BufferUsage::CopySrc | BufferUsage::CopyDst;
@@ -137,34 +156,47 @@ void BenchBarriers(Device* device) {
     td.format = Format::RGBA8_UNorm;
     td.usage = TextureUsage::Sampled | TextureUsage::CopyDst | TextureUsage::CopySrc;
     const TextureHandle texture = device->CreateTexture(td);
-    if (!buffer.IsValid() || !texture.IsValid()) {
+    if (!buffer.IsValid() || !texture.IsValid())
+    {
         os::Print("barriers: setup failed\n");
-        if (buffer.IsValid()) {
+        if (buffer.IsValid())
+        {
             device->DestroyBuffer(buffer);
         }
-        if (texture.IsValid()) {
+        if (texture.IsValid())
+        {
             device->DestroyTexture(texture);
         }
         return;
     }
     constexpr u32 kBarriers = 20000;
-    for (int pass = 0; pass < 2; ++pass) {
+    for (int pass = 0; pass < 2; ++pass)
+    {
         const bool is_texture = pass == 1;
         device->BeginFrame();
         CommandList* list = device->CreateCommandList();
         list->Begin();
-        if (is_texture) {
+        if (is_texture)
+        {
             list->Barrier(texture, ResourceState::Undefined, ResourceState::CopyDst);
-        } else {
+        }
+        else
+        {
             list->Barrier(buffer, ResourceState::Undefined, ResourceState::CopyDst);
         }
         const double start = Now();
-        for (u32 i = 0; i < kBarriers; ++i) {
+        for (u32 i = 0; i < kBarriers; ++i)
+        {
             const bool even = (i & 1) == 0;
-            if (is_texture) {
-                list->Barrier(texture, even ? ResourceState::CopyDst : ResourceState::CopySrc, even ? ResourceState::CopySrc : ResourceState::CopyDst);
-            } else {
-                list->Barrier(buffer, even ? ResourceState::CopyDst : ResourceState::CopySrc, even ? ResourceState::CopySrc : ResourceState::CopyDst);
+            if (is_texture)
+            {
+                list->Barrier(texture, even ? ResourceState::CopyDst : ResourceState::CopySrc,
+                              even ? ResourceState::CopySrc : ResourceState::CopyDst);
+            }
+            else
+            {
+                list->Barrier(buffer, even ? ResourceState::CopyDst : ResourceState::CopySrc,
+                              even ? ResourceState::CopySrc : ResourceState::CopyDst);
             }
         }
         const double elapsed = Now() - start;
@@ -172,20 +204,24 @@ void BenchBarriers(Device* device) {
         CommandList* lists[] = {list};
         device->Submit(lists, 1);
         device->EndFrame();
-        os::Print("barrier      %s: %.3f us per call (%u recorded)\n", is_texture ? "texture" : "buffer ", elapsed * 1e6 / kBarriers, kBarriers);
+        os::Print("barrier      %s: %.3f us per call (%u recorded)\n", is_texture ? "texture" : "buffer ",
+                  elapsed * 1e6 / kBarriers, kBarriers);
         device->WaitIdle();
     }
     device->DestroyBuffer(buffer);
     device->DestroyTexture(texture);
 }
 
-void BenchUploads(Device* device) {
-    struct Case {
+void BenchUploads(Device* device)
+{
+    struct Case
+    {
         u64 bytes;
         int count;
     };
     const Case cases[] = {{1ull << 20, 256}, {64ull << 20, 8}};
-    for (const Case& c : cases) {
+    for (const Case& c : cases)
+    {
         BufferDesc bd;
         bd.size = c.bytes;
         bd.usage = BufferUsage::Vertex | BufferUsage::CopyDst;
@@ -194,47 +230,54 @@ void BenchUploads(Device* device) {
         Vector<byte> data;
         data.Resize(c.bytes);
         MemSet(data.Data(), 0x5a, data.Size());
-        if (!buffer.IsValid()) {
+        if (!buffer.IsValid())
+        {
             os::Print("upload %llu MiB: buffer creation failed\n", static_cast<unsigned long long>(c.bytes >> 20));
             continue;
         }
-        device->UploadBuffer(buffer, 0, data.Data(), c.bytes); // warm up the staging ring
+        device->UploadBuffer(buffer, 0, data.Data(), c.bytes);  // warm up the staging ring
         device->WaitIdle();
         const double start = Now();
         FenceValue last = 0;
         bool ok = true;
-        for (int i = 0; i < c.count && ok; ++i) {
+        for (int i = 0; i < c.count && ok; ++i)
+        {
             const UploadTicket ticket = device->UploadBuffer(buffer, 0, data.Data(), c.bytes);
             ok = ticket.ok;
             last = ticket.fence;
         }
         device->WaitFence(last, ~0ull);
         const double elapsed = Now() - start;
-        if (!ok) {
-            os::Print("upload       %3llu MiB: an upload failed; no figure\n", static_cast<unsigned long long>(c.bytes >> 20));
+        if (!ok)
+        {
+            os::Print("upload       %3llu MiB: an upload failed; no figure\n",
+                      static_cast<unsigned long long>(c.bytes >> 20));
             device->WaitIdle();
             device->DestroyBuffer(buffer);
             continue;
         }
         const double mib = static_cast<double>(c.bytes >> 20) * c.count;
-        os::Print("upload       %3llu MiB x %3d through the staging ring: %8.1f MiB/s (%.2f ms each)\n", static_cast<unsigned long long>(c.bytes >> 20),
-                    c.count, mib / elapsed, elapsed * 1e3 / c.count);
+        os::Print("upload       %3llu MiB x %3d through the staging ring: %8.1f MiB/s (%.2f ms each)\n",
+                  static_cast<unsigned long long>(c.bytes >> 20), c.count, mib / elapsed, elapsed * 1e3 / c.count);
         device->WaitIdle();
         device->DestroyBuffer(buffer);
     }
 }
 
-Backend g_backend = Backend::Auto; // --rhi
+Backend g_backend = Backend::Auto;  // --rhi
 
-// Creates a device, builds a cube pipeline and returns the time CubeRenderer::Create took (shaders + pipeline + buffers).
-double TimePipeline(bool cache, const char* dir) {
+// Creates a device, builds a cube pipeline and returns the time CubeRenderer::Create took (shaders + pipeline +
+// buffers).
+double TimePipeline(bool cache, const char* dir)
+{
     DeviceCreateInfo info;
     info.backend = g_backend;
-    info.validation = ValidationSetting::Off; // a baseline measures the engine, not the layer
+    info.validation = ValidationSetting::Off;  // a baseline measures the engine, not the layer
     info.pipeline_cache = cache;
     info.pipeline_cache_dir = dir;
     DevicePtr device = CreateDevice(info);
-    if (device == nullptr) {
+    if (device == nullptr)
+    {
         return -1.0;
     }
     demo::CubeRenderer cube;
@@ -249,81 +292,112 @@ double TimePipeline(bool cache, const char* dir) {
     return ok ? elapsed : -1.0;
 }
 
-void BenchPipelines() {
+void BenchPipelines()
+{
     io::Path temp;
     io::Path scratch;
     char dir[io::kMaxPathBytes + 1];
     if (io::TempDirectory(&temp).Failed() || io::CreateTempDirectory(temp, "rhi-bench-cache", &scratch).Failed() ||
-        !scratch.ToNative(dir, sizeof(dir))) {
+        !scratch.ToNative(dir, sizeof(dir)))
+    {
         os::Print("pipelines: no temp directory\n");
         return;
     }
     const double off = TimePipeline(false, dir);
     const double cold = TimePipeline(true, dir);
     const double warm = TimePipeline(true, dir);
-    os::Print("pipeline     cube create: no cache %.3f ms, cold cache %.3f ms, warm cache %.3f ms\n", off * 1e3, cold * 1e3, warm * 1e3);
-    if (io::RemoveAll(scratch).Failed()) {
+    os::Print("pipeline     cube create: no cache %.3f ms, cold cache %.3f ms, warm cache %.3f ms\n", off * 1e3,
+              cold * 1e3, warm * 1e3);
+    if (io::RemoveAll(scratch).Failed())
+    {
         os::Print("(could not remove %s)\n", dir);
     }
 }
 
-} // namespace
+}  // namespace
 
-int main(int argc, char** argv) {
-    ::engine_placeholder::rhi::RegisterCompiledBackends(); // before any device: the backends this build has
-    const engine_placeholder::debug::ProgramDebugSetup debug_setup = engine_placeholder::debug::StartProgramDebugging(argc, argv);
-    engine_placeholder::debug::RunCrashTest(debug_setup.crash_test); // --crash-test=segv|abort|assert|ensure, before any window or device
+int main(int argc, char** argv)
+{
+    ::engine_placeholder::rhi::RegisterCompiledBackends();  // before any device: the backends this build has
+    const engine_placeholder::debug::ProgramDebugSetup debug_setup = engine_placeholder::debug::StartProgramDebugging(
+        argc, argv);
+    engine_placeholder::debug::RunCrashTest(
+        debug_setup.crash_test);  // --crash-test=segv|abort|assert|ensure, before any window or device
     long draws = 0;
     long frames = 30;
     bool uploads = true;
     bool pipelines = true;
-    for (int i = 1; i < argc; ++i) {
-        if (engine_placeholder::debug::IsProgramDebugArgument(argv[i])) {
-            continue; // --crash-handler=... and --crash-test=... are handled by StartProgramDebugging
+    for (int i = 1; i < argc; ++i)
+    {
+        if (engine_placeholder::debug::IsProgramDebugArgument(argv[i]))
+        {
+            continue;  // --crash-handler=... and --crash-test=... are handled by StartProgramDebugging
         }
-        if (CStrCompare(argv[i], "--draws") == 0 && i + 1 < argc) {
+        if (CStrCompare(argv[i], "--draws") == 0 && i + 1 < argc)
+        {
             draws = CStrToLong(argv[++i]);
-        } else if (CStrCompare(argv[i], "--frames") == 0 && i + 1 < argc) {
+        }
+        else if (CStrCompare(argv[i], "--frames") == 0 && i + 1 < argc)
+        {
             frames = CStrToLong(argv[++i]);
-        } else if (CStrCompare(argv[i], "--skip-uploads") == 0) {
+        }
+        else if (CStrCompare(argv[i], "--skip-uploads") == 0)
+        {
             uploads = false;
-        } else if (CStrCompare(argv[i], "--skip-pipelines") == 0) {
+        }
+        else if (CStrCompare(argv[i], "--skip-pipelines") == 0)
+        {
             pipelines = false;
-        } else if (CStrCompare(argv[i], "--rhi") == 0 && i + 1 < argc && demo::ParseRhiBackend(argv[i + 1], &g_backend)) {
+        }
+        else if (CStrCompare(argv[i], "--rhi") == 0 && i + 1 < argc && demo::ParseRhiBackend(argv[i + 1], &g_backend))
+        {
             ++i;
-        } else {
-            os::PrintError("usage: %s [--draws N] [--frames N] [--skip-uploads] [--skip-pipelines] [--rhi null|vulkan|dx12|auto]\n", argv[0]);
+        }
+        else
+        {
+            os::PrintError(
+                "usage: %s [--draws N] [--frames N] [--skip-uploads] [--skip-pipelines] [--rhi null|vulkan|dx12|auto]\n",
+                argv[0]);
             return 2;
         }
     }
-    if (frames < 1) {
+    if (frames < 1)
+    {
         frames = 1;
     }
-    if (draws < 0 || draws > 1000000) {
+    if (draws < 0 || draws > 1000000)
+    {
         os::PrintError("rhi_bench: --draws must be between 1 and 1000000\n");
         return 2;
     }
     DeviceCreateInfo info;
     info.backend = g_backend;
-    info.validation = ValidationSetting::Off; // a baseline measures the engine, not the layer
+    info.validation = ValidationSetting::Off;  // a baseline measures the engine, not the layer
     DevicePtr device = CreateDevice(info);
-    if (device == nullptr) {
+    if (device == nullptr)
+    {
         os::PrintError("rhi_bench: no device for --rhi %s (see the log above)\n", demo::RhiBackendName(g_backend));
         return 1;
     }
-    os::Print("backend %s, %ux%u target, %ld frames per draw measurement\n", device->BackendName(), kSize, kSize, frames);
-    if (draws > 0) {
+    os::Print("backend %s, %ux%u target, %ld frames per draw measurement\n", device->BackendName(), kSize, kSize,
+              frames);
+    if (draws > 0)
+    {
         BenchDraws(device.Get(), static_cast<u32>(draws), frames);
-    } else {
+    }
+    else
+    {
         BenchDraws(device.Get(), 1000, frames);
         BenchDraws(device.Get(), 10000, frames);
     }
     BenchBarriers(device.Get());
-    if (uploads) {
+    if (uploads)
+    {
         BenchUploads(device.Get());
     }
     device.Reset();
-    if (pipelines) {
+    if (pipelines)
+    {
         BenchPipelines();
     }
     return 0;

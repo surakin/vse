@@ -1,7 +1,7 @@
 #pragma once
 
-// Helpers shared by rhi_demo and the RHI tests: the cube mesh and a `CubeRenderer` that draws it. The projection and view
-// helpers live in engine/renderer/camera.h. None of this belongs to the RHI itself.
+// Helpers shared by rhi_demo and the RHI tests: the cube mesh and a `CubeRenderer` that draws it. The projection and
+// view helpers live in engine/renderer/camera.h. None of this belongs to the RHI itself.
 //
 // Conventions
 //   * World and view space are right-handed with Y up; the camera looks down -Z in view space.
@@ -20,7 +20,8 @@
 #include "rhi/rhi.h"
 #include "rhi/uniform_ring.h"
 
-namespace demo {
+namespace demo
+{
 
 using namespace engine_placeholder;
 
@@ -31,14 +32,17 @@ using renderer::NormalMatrix;
 using renderer::PerspectiveVulkan;
 
 // One directional light with Lambert diffuse, plus a constant ambient term (the math is in shaders/lit.frag).
-struct Lighting {
-    Vec3 to_light = Vec3(0, 1, 0); // direction from the surface toward the light; need not be normalized; zero means no direct light
+struct Lighting
+{
+    Vec3 to_light = Vec3(
+        0, 1, 0);  // direction from the surface toward the light; need not be normalized; zero means no direct light
     Vec3 color = Vec3(1, 1, 1);
-    f32 intensity = 1.0f;          // scales `color`
+    f32 intensity = 1.0f;  // scales `color`
     Vec3 ambient = Vec3(0.1f, 0.1f, 0.1f);
 };
 
-struct CubeVertex {
+struct CubeVertex
+{
     f32 position[3];
     f32 normal[3];
     f32 uv[2];
@@ -51,18 +55,20 @@ constexpr u32 kCubeIndexCount = 36;
 const CubeVertex* CubeVertices();
 const u16* CubeIndices();
 
-struct CubeOptions {
+struct CubeOptions
+{
     rhi::Format color_format = rhi::Format::RGBA8_UNorm;
-    rhi::Format depth_format = rhi::Format::Undefined; // Undefined: no depth attachment
-    bool depth_test = true;                            // ignored without a depth format
-    bool indexed = true;                               // false draws 36 expanded vertices
+    rhi::Format depth_format = rhi::Format::Undefined;  // Undefined: no depth attachment
+    bool depth_test = true;                             // ignored without a depth format
+    bool indexed = true;                                // false draws 36 expanded vertices
     rhi::CullMode cull = rhi::CullMode::Back;
-    bool textured = false; // multiply the face color by a texture (see `SetTexture`)
-    bool lit = false;      // a textured cube lit by one directional light; draw it with `DrawLit`
+    bool textured = false;  // multiply the face color by a texture (see `SetTexture`)
+    bool lit = false;       // a textured cube lit by one directional light; draw it with `DrawLit`
 };
 
 // Draws the cube. Thread-compatible: use from one thread.
-class CubeRenderer {
+class CubeRenderer
+{
 public:
     // Creates the shaders, pipeline, bind group layout and the vertex (and index) buffer. Returns false, after
     // cleaning up, if anything could not be created.
@@ -82,8 +88,10 @@ public:
     void Prepare(rhi::CommandList* list);
     void Submitted() { geometry_ready_ = true; }
 
-    // For a textured renderer: the texture (in `ShaderRead`) and sampler the next draws use. Both must outlive the draws.
-    void SetTexture(rhi::TextureHandle texture, rhi::SamplerHandle sampler) {
+    // For a textured renderer: the texture (in `ShaderRead`) and sampler the next draws use. Both must outlive the
+    // draws.
+    void SetTexture(rhi::TextureHandle texture, rhi::SamplerHandle sampler)
+    {
         texture_ = texture;
         sampler_ = sampler;
     }
@@ -94,8 +102,8 @@ public:
 
     // Like `Draw` for a renderer created with `lit` (a mismatch is a programming error): `view_projection * model` and
     // the normal matrix of `model` go to the vertex shader, the lighting to the fragment shader. Needs `SetTexture`.
-    bool DrawLit(rhi::CommandList* list, rhi::UniformRing* ring, const Mat4& view_projection, const Mat4& model, const Lighting& lighting, u32 width,
-                 u32 height);
+    bool DrawLit(rhi::CommandList* list, rhi::UniformRing* ring, const Mat4& view_projection, const Mat4& model,
+                 const Lighting& lighting, u32 width, u32 height);
 
 private:
     bool DrawWith(rhi::CommandList* list, const rhi::UniformAllocation& u, u32 width, u32 height);
@@ -115,4 +123,4 @@ private:
     rhi::SamplerHandle sampler_;
 };
 
-} // namespace demo
+}  // namespace demo

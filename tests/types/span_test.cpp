@@ -7,22 +7,32 @@
 
 using namespace engine_placeholder;
 
-namespace {
+namespace
+{
 
-usize Sum(ByteSpan bytes) {
+usize Sum(ByteSpan bytes)
+{
     usize total = 0;
-    for (byte b : bytes) total += b;
+    for (byte b : bytes)
+    {
+        total += b;
+    }
     return total;
 }
 
-usize FillAscending(MutableByteSpan bytes) {
-    for (usize i = 0; i < bytes.Size(); ++i) bytes[i] = static_cast<byte>(i + 1);
+usize FillAscending(MutableByteSpan bytes)
+{
+    for (usize i = 0; i < bytes.Size(); ++i)
+    {
+        bytes[i] = static_cast<byte>(i + 1);
+    }
     return bytes.Size();
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("Span: an empty span and the basic accessors", "[types][span]") {
+TEST_CASE("Span: an empty span and the basic accessors", "[types][span]")
+{
     Span<const int> empty;
     CHECK(empty.Empty());
     CHECK(empty.Size() == 0);
@@ -35,26 +45,30 @@ TEST_CASE("Span: an empty span and the basic accessors", "[types][span]") {
     s[2] = 30;
     CHECK(values[2] == 30);
     int total = 0;
-    for (int v : s) total += v;
+    for (int v : s)
+    {
+        total += v;
+    }
     CHECK(total == 1 + 2 + 30 + 4);
 }
 
-TEST_CASE("Span: conversions from Vector, Array, C arrays and other spans", "[types][span]") {
+TEST_CASE("Span: conversions from Vector, Array, C arrays and other spans", "[types][span]")
+{
     Vector<byte> v;
     v.Resize(8);
-    CHECK(FillAscending(v) == 8);          // Vector -> MutableByteSpan
-    CHECK(Sum(v) == 36);                   // Vector -> ByteSpan
+    CHECK(FillAscending(v) == 8);  // Vector -> MutableByteSpan
+    CHECK(Sum(v) == 36);           // Vector -> ByteSpan
     const Vector<byte>& cv = v;
-    CHECK(Sum(cv) == 36);                  // const Vector -> ByteSpan
+    CHECK(Sum(cv) == 36);  // const Vector -> ByteSpan
     Array<byte, 4> a = {{1, 2, 3, 4}};
-    CHECK(Sum(a) == 10);                   // Array -> ByteSpan
+    CHECK(Sum(a) == 10);  // Array -> ByteSpan
     const Array<byte, 4>& ca = a;
     CHECK(Sum(ca) == 10);
-    CHECK(FillAscending(a) == 4);          // Array -> MutableByteSpan
+    CHECK(FillAscending(a) == 4);  // Array -> MutableByteSpan
     byte c[3] = {5, 6, 7};
-    CHECK(Sum(c) == 18);                   // C array -> ByteSpan
+    CHECK(Sum(c) == 18);  // C array -> ByteSpan
     MutableByteSpan m(c, 3);
-    ByteSpan r = m;                        // mutable -> const
+    ByteSpan r = m;  // mutable -> const
     CHECK(Sum(r) == 18);
     // The conversions that must NOT compile: const to mutable.
     STATIC_REQUIRE_FALSE(IsConvertible<ByteSpan, MutableByteSpan>);
@@ -64,7 +78,8 @@ TEST_CASE("Span: conversions from Vector, Array, C arrays and other spans", "[ty
     STATIC_REQUIRE(IsTriviallyCopyable<ByteSpan>);
 }
 
-TEST_CASE("Span: First, Last and Subspan", "[types][span]") {
+TEST_CASE("Span: First, Last and Subspan", "[types][span]")
+{
     byte data[6] = {10, 11, 12, 13, 14, 15};
     ByteSpan s(data, 6);
     CHECK(s.First(2).Size() == 2);
@@ -73,15 +88,17 @@ TEST_CASE("Span: First, Last and Subspan", "[types][span]") {
     CHECK(s.Subspan(1, 3)[0] == 11);
     CHECK(s.Subspan(1, 3).Size() == 3);
     CHECK(s.Subspan(4).Size() == 2);
-    CHECK(s.Subspan(6).Empty());       // the end is a valid offset
+    CHECK(s.Subspan(6).Empty());  // the end is a valid offset
     CHECK(s.Subspan(6, 0).Empty());
     CHECK(s.First(0).Empty());
     CHECK(s.Last(6).Data() == s.Data());
     CHECK(Sum(s.Subspan(2, 2)) == 12 + 13);
 }
 
-TEST_CASE("Span: bytes of values, text and structs", "[types][span]") {
-    struct Pod {
+TEST_CASE("Span: bytes of values, text and structs", "[types][span]")
+{
+    struct Pod
+    {
         u32 a;
         u32 b;
     } pod{0x04030201u, 0x08070605u};
@@ -101,7 +118,8 @@ TEST_CASE("Span: bytes of values, text and structs", "[types][span]") {
     CHECK(AsBytes(Span<const byte>(v)).Size() == 3);
 }
 
-TEST_CASE("byte is u8 and the standard widths hold", "[types]") {
+TEST_CASE("byte is u8 and the standard widths hold", "[types]")
+{
     STATIC_REQUIRE(IsSame<byte, u8>);
     STATIC_REQUIRE(IsSame<byte, u8> && IsUnsigned<byte> && sizeof(byte) == 1);
     STATIC_REQUIRE(sizeof(isize) == sizeof(usize));
@@ -111,7 +129,8 @@ TEST_CASE("byte is u8 and the standard widths hold", "[types]") {
     CHECK(static_cast<int>(b) == 255);
 }
 
-TEST_CASE("String compares with views and converts to a view", "[types][span]") {
+TEST_CASE("String compares with views and converts to a view", "[types][span]")
+{
     String<HeapAllocator> text(HeapAllocator::Default(), StringView("abc"));
     CHECK(text == "abc");
     CHECK(text != "abd");

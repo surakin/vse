@@ -14,16 +14,21 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::settings;
 
-namespace {
+namespace
+{
 LogChannel g_test_channel("TestSettingsChannel", LogVerbosity::Warn);
 }
 
-TEST_CASE("The engine settings are declared with their old environment variables", "[settings][engine]") {
+TEST_CASE("The engine settings are declared with their old environment variables", "[settings][engine]")
+{
     Registry registry;
     RegisterEngineSettings(&registry);
     const char* const keys[] = {"platform.window_backend", "rhi.pipeline_cache", "rhi.pipeline_cache_dir"};
-    for (const char* k : keys) CHECK(registry.Find(k).IsValid());
-    CHECK(registry.Count() == 3); // only settings something reads
+    for (const char* k : keys)
+    {
+        CHECK(registry.Find(k).IsValid());
+    }
+    CHECK(registry.Count() == 3);  // only settings something reads
     EnvironmentSnapshot env;
     env.Add("ENGINE_WINDOW_BACKEND", "x11");
     env.Add("ENGINE_RHI_CACHE_DIR", "/tmp/cache");
@@ -42,14 +47,17 @@ TEST_CASE("The engine settings are declared with their old environment variables
     CHECK(StringView(r.origin) == "$ENGINE_RHI_CACHE_DIR");
 }
 
-TEST_CASE("Log channels are settings: the file sets them at load and a change reaches the channel", "[settings][engine][log]") {
+TEST_CASE("Log channels are settings: the file sets them at load and a change reaches the channel",
+          "[settings][engine][log]")
+{
     Registry registry;
     RegisterLogSettings(&registry);
     const SettingId verbosity = registry.Find("log.testsettingschannel.verbosity");
     const SettingId enabled = registry.Find("log.testsettingschannel.enabled");
     REQUIRE(verbosity.IsValid());
     REQUIRE(enabled.IsValid());
-    CHECK(registry.Desc(verbosity)->default_value.AsEnum() == static_cast<u32>(LogVerbosity::Warn)); // the channel's own default
+    CHECK(registry.Desc(verbosity)->default_value.AsEnum() ==
+          static_cast<u32>(LogVerbosity::Warn));  // the channel's own default
     io_test::TempDir dir;
     const char* text = "[log.testsettingschannel]\nverbosity = debug\nenabled = false\n";
     const io::Path user = dir / "u.cfg";
@@ -60,17 +68,18 @@ TEST_CASE("Log channels are settings: the file sets them at load and a change re
     o.use_environment = false;
     settings.Load(o);
     AttachLogSettings(&settings);
-    CHECK(g_test_channel.Verbosity() == LogVerbosity::Debug);   // from the file
+    CHECK(g_test_channel.Verbosity() == LogVerbosity::Debug);  // from the file
     CHECK_FALSE(g_test_channel.Enabled());
     REQUIRE(settings.SetText("log.testsettingschannel.verbosity", "error").Ok());
     REQUIRE(settings.SetText("log.testsettingschannel.enabled", "true").Ok());
-    CHECK(g_test_channel.Verbosity() == LogVerbosity::Error);   // through the listener
+    CHECK(g_test_channel.Verbosity() == LogVerbosity::Error);  // through the listener
     CHECK(g_test_channel.Enabled());
     g_test_channel.SetVerbosity(LogVerbosity::Warn);
     g_test_channel.SetEnabled(true);
 }
 
-TEST_CASE("The listing and the help are generated from the registry", "[settings][engine]") {
+TEST_CASE("The listing and the help are generated from the registry", "[settings][engine]")
+{
     Registry registry;
     RegisterEngineSettings(&registry);
     SettingDesc secret = MakeText("net.token", "");
@@ -104,7 +113,9 @@ TEST_CASE("The listing and the help are generated from the registry", "[settings
     CHECK(help.View().Contains("ENGINE_SETTING_<KEY>"));
 }
 
-TEST_CASE("SaveSettingsTo writes only what differs from the defaults and the file reproduces the session", "[settings][engine]") {
+TEST_CASE("SaveSettingsTo writes only what differs from the defaults and the file reproduces the session",
+          "[settings][engine]")
+{
     io_test::TempDir dir;
     Registry registry;
     RegisterEngineSettings(&registry);
@@ -120,7 +131,7 @@ TEST_CASE("SaveSettingsTo writes only what differs from the defaults and the fil
     const StringView text(reinterpret_cast<const char*>(bytes.Data()), bytes.Size());
     CHECK(text.Contains("pipeline_cache = false"));
     CHECK(text.Contains("window_backend = x11"));
-    CHECK_FALSE(text.Contains("pipeline_cache_dir")); // a default is not written
+    CHECK_FALSE(text.Contains("pipeline_cache_dir"));  // a default is not written
     CHECK(text.Contains("version = 1"));
     Registry again;
     RegisterEngineSettings(&again);
@@ -133,7 +144,9 @@ TEST_CASE("SaveSettingsTo writes only what differs from the defaults and the fil
     CHECK(reloaded.Snapshot()->Get(again.Find("platform.window_backend")).AsEnum() == 2);
 }
 
-TEST_CASE("A secret is not shown by --set provenance and not saved to a session file; the file is private", "[settings][engine][regression]") {
+TEST_CASE("A secret is not shown by --set provenance and not saved to a session file; the file is private",
+          "[settings][engine][regression]")
+{
     io_test::TempDir dir;
     Registry registry;
     SettingDesc token = MakeText("net.token", "");
@@ -159,14 +172,16 @@ TEST_CASE("A secret is not shown by --set provenance and not saved to a session 
     Vector<u8> bytes;
     REQUIRE(io::ReadFile(path, &bytes).Ok());
     CHECK_FALSE(StringView(reinterpret_cast<const char*>(bytes.Data()), bytes.Size()).Contains("hunter2"));
-#if !ENGINE_PLATFORM_WINDOWS // Windows has no file modes: a file takes its directory's ACL, private in the user's own folders (io/BACKEND.md, CreateTempFile)
+#if !ENGINE_PLATFORM_WINDOWS  // Windows has no file modes: a file takes its directory's ACL, private in the user's own
+                              // folders (io/BACKEND.md, CreateTempFile)
     io::FileInfo info;
     REQUIRE(io::Stat(path, &info).Ok());
     CHECK((info.permissions & 0777) == 0600);
 #endif
 }
 
-TEST_CASE("SaveSettingsTo does not overwrite a file it cannot read", "[settings][engine][regression]") {
+TEST_CASE("SaveSettingsTo does not overwrite a file it cannot read", "[settings][engine][regression]")
+{
     io_test::TempDir dir;
     Registry registry;
     RegisterEngineSettings(&registry);
@@ -175,7 +190,7 @@ TEST_CASE("SaveSettingsTo does not overwrite a file it cannot read", "[settings]
     settings.LoadFromLayers();
     REQUIRE(settings.SetText("rhi.pipeline_cache", "false").Ok());
     const io::Path path = dir / "big.cfg";
-    const engine_test::Text huge = engine_test::Repeated(9 * 1024 * 1024, '#'); // over the store's 8 MiB read limit
+    const engine_test::Text huge = engine_test::Repeated(9 * 1024 * 1024, '#');  // over the store's 8 MiB read limit
     REQUIRE(io::WriteFile(path, huge.CStr(), huge.Length()).Ok());
     CHECK(SaveSettingsTo(settings, path).Is(StoreError::TooLong));
     io::FileInfo info;
@@ -183,14 +198,18 @@ TEST_CASE("SaveSettingsTo does not overwrite a file it cannot read", "[settings]
     CHECK(info.size == huge.Length());
 }
 
-TEST_CASE("Log settings: registering again reuses the key strings, and a channel set in code keeps its setting unless a layer says otherwise", "[settings][engine][log]") {
+TEST_CASE(
+    "Log settings: registering again reuses the key strings, and a channel set in code keeps its setting unless a layer says otherwise",
+    "[settings][engine][log]")
+{
     Registry first, second;
     RegisterLogSettings(&first);
     const char* key_before = first.KeyOf(first.Find("log.testsettingschannel.verbosity")).View().Data();
     RegisterLogSettings(&second);
     CHECK(second.Find("log.testsettingschannel.verbosity").IsValid());
-    CHECK(first.KeyOf(first.Find("log.testsettingschannel.verbosity")).View().Data() == key_before); // the first registry still reads valid text
-    g_test_channel.SetVerbosity(LogVerbosity::Info); // configured in code after the defaults were captured
+    CHECK(first.KeyOf(first.Find("log.testsettingschannel.verbosity")).View().Data() ==
+          key_before);                                // the first registry still reads valid text
+    g_test_channel.SetVerbosity(LogVerbosity::Info);  // configured in code after the defaults were captured
     io_test::TempDir dir;
     Settings settings(second);
     LoadOptions o;
@@ -199,6 +218,6 @@ TEST_CASE("Log settings: registering again reuses the key strings, and a channel
     o.use_environment = false;
     settings.Load(o);
     AttachLogSettings(&settings);
-    CHECK(g_test_channel.Verbosity() == LogVerbosity::Info); // no layer set it: the code's choice stands
+    CHECK(g_test_channel.Verbosity() == LogVerbosity::Info);  // no layer set it: the code's choice stands
     g_test_channel.SetVerbosity(LogVerbosity::Warn);
 }

@@ -9,24 +9,28 @@
 
 using namespace engine_placeholder;
 
-namespace {
+namespace
+{
 
-io::Path SavedDumpsTempDir() {
+io::Path SavedDumpsTempDir()
+{
     io::Path tmp, dir;
     io::TempDirectory(&tmp);
     REQUIRE(io::CreateTempDirectory(tmp, "re_saved_dumps", &dir).Ok());
     return dir;
 }
 
-void SavedDumpsWrite(const io::Path& dir, const char* name) {
+void SavedDumpsWrite(const io::Path& dir, const char* name)
+{
     const char text[] = "x";
     REQUIRE(io::WriteFile(dir.Join(name), text, 1).Ok());
-    os::SleepNanos(20'000'000); // the next file is clearly newer
+    os::SleepNanos(20'000'000);  // the next file is clearly newer
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("PruneSavedDumps deletes the oldest envelopes beyond the limit and nothing else", "[debug][crash_handler]") {
+TEST_CASE("PruneSavedDumps deletes the oldest envelopes beyond the limit and nothing else", "[debug][crash_handler]")
+{
     const io::Path dir = SavedDumpsTempDir();
     SavedDumpsWrite(dir, "a.envelope");
     SavedDumpsWrite(dir, "b.envelope");
@@ -42,7 +46,7 @@ TEST_CASE("PruneSavedDumps deletes the oldest envelopes beyond the limit and not
     CHECK_FALSE(io::Exists(dir.Join("b.envelope")));
     CHECK(io::Exists(dir.Join("c.envelope")));
     CHECK(io::Exists(dir.Join("d.envelope")));
-    CHECK(io::Exists(dir.Join("notes.txt")));    // not a dump
-    CHECK(debug::PruneSavedDumps(dir.Join("missing"), 1) == 0); // a missing directory is not an error
+    CHECK(io::Exists(dir.Join("notes.txt")));                    // not a dump
+    CHECK(debug::PruneSavedDumps(dir.Join("missing"), 1) == 0);  // a missing directory is not an error
     io::RemoveAll(dir);
 }

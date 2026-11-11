@@ -4,7 +4,8 @@
 
 //! Fixed-size free-list pool allocator backed by a single mmap'd block.
 //! Alloc and Free are O(1) with no bookkeeping storage beyond the slots.
-namespace engine_placeholder {
+namespace engine_placeholder
+{
 
 /// Allocator handing out equally sized slots from one fixed block, with O(1)
 /// allocation and free.
@@ -16,7 +17,8 @@ namespace engine_placeholder {
 /// - Thread-safety: not-thread-safe. Synchronize externally if shared.
 /// - Ownership: owns the backing block, released by the destructor. A slot
 ///   belongs to the caller from `Alloc` until it is passed to `Free`.
-class PoolAllocator {
+class PoolAllocator
+{
 public:
     /// Reserves a block holding `slot_count` slots of `slot_size` bytes.
     ///
@@ -51,4 +53,4 @@ private:
     void* free_list_ = nullptr;
 };
 
-} // namespace engine_placeholder
+}  // namespace engine_placeholder

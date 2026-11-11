@@ -5,7 +5,8 @@
 
 #include "text.h"
 
-namespace engine_placeholder::shader_mint {
+namespace engine_placeholder::shader_mint
+{
 
 // Reads the `// permutation-options: A B C` line from the shader source (it must be in the first 60 lines). Options are
 // upper-case identifiers, unique, at most renderer::kMaxPermutationOptions, and each must also be used somewhere else
@@ -26,7 +27,8 @@ void AppendWordArray(Text* out, StringView name, const Vector<u32>& words);
 void AppendByteArray(Text* out, StringView name, const Vector<u8>& bytes);
 
 // One compiled module of a permuted shader.
-struct BuiltModule {
+struct BuiltModule
+{
     Vector<u32> words;
     Vector<u8> reflection;
 
@@ -39,10 +41,11 @@ struct BuiltModule {
 void DedupeModules(const Vector<BuiltModule>& per_key, Vector<BuiltModule>* modules, Vector<u32>* key_module);
 
 // Writes the `.perm.inc` text. `base` is the symbol base (`kPermuteTestFrag`); module 0 must be the base module and is
-// referenced through the plain `.spv.inc`/`.refl.inc`/`.dxil.inc` symbols instead of being repeated. `key_module[i]` is the
-// module of `keys[i]`. Each module's DXIL (`<base>Perm<m>Dxil`) comes from the `.dxil.inc`, which the text includes.
+// referenced through the plain `.spv.inc`/`.refl.inc`/`.dxil.inc` symbols instead of being repeated. `key_module[i]` is
+// the module of `keys[i]`. Each module's DXIL (`<base>Perm<m>Dxil`) comes from the `.dxil.inc`, which the text
+// includes.
 Text EmitPermutationInc(StringView base, StringView shader_file, StringView source_label, StringView compiler,
                         const Vector<Text>& options, const Vector<u32>& keys, const Vector<u32>& key_module,
                         const Vector<BuiltModule>& modules);
 
-} // namespace engine_placeholder::shader_mint
+}  // namespace engine_placeholder::shader_mint

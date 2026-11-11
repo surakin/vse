@@ -1,5 +1,5 @@
-// The Direct3D 12 backend's device (Phase 13 Day 164): COM ownership, adapters, devices on every adapter with the debug layer silent
-// and nothing left alive, capabilities, and bounded fence waits. Windows only.
+// The Direct3D 12 backend's device (Phase 13 Day 164): COM ownership, adapters, devices on every adapter with the debug
+// layer silent and nothing left alive, capabilities, and bounded fence waits. Windows only.
 #include "cstr/format.h"
 #include "os/console.h"
 #include "sync/atomic.h"
@@ -26,27 +26,36 @@ using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
 using namespace engine_placeholder::rhi::dx12;
 
-namespace {
+namespace
+{
 
 // A COM-shaped object that counts its references.
-struct FakeCom {
+struct FakeCom
+{
     int refs = 1;
     int released_to_zero = 0;
     unsigned long AddRef() { return static_cast<unsigned long>(++refs); }
-    unsigned long Release() {
+    unsigned long Release()
+    {
         const int left = --refs;
-        if (left == 0) ++released_to_zero;
+        if (left == 0)
+        {
+            ++released_to_zero;
+        }
         return static_cast<unsigned long>(left);
     }
 };
 
 // Fails the test on any debug-layer warning or error while it lives (the allow list starts empty, Day 164).
-struct DebugLayerSilence {
-    DebugLayerSilence() {
+struct DebugLayerSilence
+{
+    DebugLayerSilence()
+    {
         ResetDebugMessageCounts();
         Dx12Device::ResetLeakCounts();
     }
-    ~DebugLayerSilence() {
+    ~DebugLayerSilence()
+    {
         const DebugMessageCounts c = GetDebugMessageCounts();
         CHECK(c.errors == 0);
         CHECK(c.warnings == 0);
@@ -55,41 +64,45 @@ struct DebugLayerSilence {
     }
 };
 
-DeviceCreateInfo Dx12Info() {
+DeviceCreateInfo Dx12Info()
+{
     DeviceCreateInfo info;
     info.backend = Backend::Dx12;
     info.application_name = "dx12-test";
     return info;
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("ComRef owns one reference: moves transfer it, Share adds one, Reset and destruction release it", "[rhi][dx12]") {
+TEST_CASE("ComRef owns one reference: moves transfer it, Share adds one, Reset and destruction release it",
+          "[rhi][dx12]")
+{
     FakeCom object;
     {
-        ComRef<FakeCom> a(&object); // takes the creation reference
+        ComRef<FakeCom> a(&object);  // takes the creation reference
         CHECK(object.refs == 1);
         ComRef<FakeCom> b = a.Share();
         CHECK(object.refs == 2);
         ComRef<FakeCom> c(static_cast<ComRef<FakeCom>&&>(a));
         CHECK_FALSE(a);
         CHECK(c.Get() == &object);
-        CHECK(object.refs == 2); // a move adds nothing
+        CHECK(object.refs == 2);  // a move adds nothing
         b.Reset();
         CHECK(object.refs == 1);
         FakeCom* raw = c.Detach();
         CHECK(raw == &object);
-        CHECK(object.refs == 1); // detaching releases nothing
+        CHECK(object.refs == 1);  // detaching releases nothing
         ComRef<FakeCom> d(raw);
-        FakeCom** slot = d.Put(); // Put releases what was held
+        FakeCom** slot = d.Put();  // Put releases what was held
         CHECK(object.refs == 0);
         CHECK(*slot == nullptr);
     }
-    CHECK(object.released_to_zero == 1); // released exactly once, never below zero
+    CHECK(object.released_to_zero == 1);  // released exactly once, never below zero
     CHECK(object.refs == 0);
 }
 
-TEST_CASE("The adapter rules: kind, ids in hex and the suitability reasons", "[rhi][dx12]") {
+TEST_CASE("The adapter rules: kind, ids in hex and the suitability reasons", "[rhi][dx12]")
+{
     AdapterFacts f;
     CStrCopy(f.name, "AMD Radeon(TM) 860M Graphics");
     f.vendor_id = 0x1002;
@@ -121,7 +134,8 @@ TEST_CASE("The adapter rules: kind, ids in hex and the suitability reasons", "[r
     CHECK(StringView(MakeAdapterInfo(f, false).unsuitable_reason).Contains("12_0"));
 }
 
-TEST_CASE("HRESULT names cover the device-loss codes", "[rhi][dx12]") {
+TEST_CASE("HRESULT names cover the device-loss codes", "[rhi][dx12]")
+{
     CHECK(StringView(HresultName(DXGI_ERROR_DEVICE_REMOVED)) == "DXGI_ERROR_DEVICE_REMOVED");
     CHECK(StringView(HresultName(E_OUTOFMEMORY)) == "E_OUTOFMEMORY");
     CHECK(StringView(HresultName(static_cast<HRESULT>(0x12345678))) == "unknown HRESULT");
@@ -130,14 +144,15 @@ TEST_CASE("HRESULT names cover the device-loss codes", "[rhi][dx12]") {
     CHECK_FALSE(IsDeviceLostResult(E_INVALIDARG));
 }
 
-TEST_CASE("The dx12 backend is registered, takes DXIL, and is what Auto picks on Windows", "[rhi][dx12]") {
+TEST_CASE("The dx12 backend is registered, takes DXIL, and is what Auto picks on Windows", "[rhi][dx12]")
+{
     const BackendDescriptor* d = FindBackend(Backend::Dx12);
     REQUIRE(d != nullptr);
     CHECK(StringView(d->name) == "dx12");
     CHECK(d->shader_format == ShaderFormat::Dxil);
     const BackendDescriptor* vulkan = FindBackend(Backend::Vulkan);
     REQUIRE(vulkan != nullptr);
-    CHECK(d->auto_rank > vulkan->auto_rank); // since Phase 13 Day 172
+    CHECK(d->auto_rank > vulkan->auto_rank);  // since Phase 13 Day 172
     char why[160] = {};
     const BackendDescriptor* picked = PickAutoBackend(why, sizeof(why));
     INFO(why);
@@ -153,7 +168,9 @@ TEST_CASE("The dx12 backend is registered, takes DXIL, and is what Auto picks on
     CHECK(BackendAvailable(*d, reason, sizeof(reason)));
 }
 
-TEST_CASE("DX12 lists the hardware adapters and WARP, with ids that are the same on every enumeration", "[rhi][dx12][gpu]") {
+TEST_CASE("DX12 lists the hardware adapters and WARP, with ids that are the same on every enumeration",
+          "[rhi][dx12][gpu]")
+{
     AdapterList first;
     AdapterList second;
     REQUIRE(EnumerateAdapters(Dx12Info(), &first));
@@ -161,7 +178,8 @@ TEST_CASE("DX12 lists the hardware adapters and WARP, with ids that are the same
     REQUIRE(first.count == second.count);
     bool warp = false;
     bool hardware = false;
-    for (u32 i = 0; i < first.count; ++i) {
+    for (u32 i = 0; i < first.count; ++i)
+    {
         INFO(first.items[i].name);
         CHECK(StringView(first.items[i].id) == StringView(second.items[i].id));
         CHECK(StringView(first.items[i].luid) == StringView(second.items[i].luid));
@@ -170,20 +188,30 @@ TEST_CASE("DX12 lists the hardware adapters and WARP, with ids that are the same
         warp = warp || (first.items[i].kind == AdapterKind::Software && first.items[i].suitable);
         hardware = hardware || (first.items[i].kind != AdapterKind::Software && first.items[i].suitable);
     }
-    CHECK(warp); // WARP is part of Windows: always there
-    if (!hardware) {
-        if (gpu_test::GpuRequired()) FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no hardware adapter supports Direct3D 12 at feature level 12_0");
+    CHECK(warp);  // WARP is part of Windows: always there
+    if (!hardware)
+    {
+        if (gpu_test::GpuRequired())
+        {
+            FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no hardware adapter supports Direct3D 12 at feature level 12_0");
+        }
         WARN("no hardware Direct3D 12 adapter on this machine");
     }
 }
 
-TEST_CASE("A DX12 device is created and destroyed on every suitable adapter with the debug layer silent", "[rhi][dx12][gpu]") {
+TEST_CASE("A DX12 device is created and destroyed on every suitable adapter with the debug layer silent",
+          "[rhi][dx12][gpu]")
+{
     AdapterList adapters;
     REQUIRE(EnumerateAdapters(Dx12Info(), &adapters));
     DebugLayerSilence silence;
     u32 made = 0;
-    for (u32 i = 0; i < adapters.count; ++i) {
-        if (!adapters.items[i].suitable) continue;
+    for (u32 i = 0; i < adapters.count; ++i)
+    {
+        if (!adapters.items[i].suitable)
+        {
+            continue;
+        }
         INFO(adapters.items[i].name);
         DeviceCreateInfo info = Dx12Info();
         info.adapter = adapters.items[i].id;
@@ -204,9 +232,10 @@ TEST_CASE("A DX12 device is created and destroyed on every suitable adapter with
         AdapterList listed;
         CHECK(device->ListAdapters(&listed));
         CHECK(listed.count == adapters.count);
-        for (int f = 0; f < 3; ++f) {
+        for (int f = 0; f < 3; ++f)
+        {
             device->BeginFrame();
-            CHECK(device->Submit(nullptr, 0) == 0); // nothing submitted yet: the fence for everything so far
+            CHECK(device->Submit(nullptr, 0) == 0);  // nothing submitted yet: the fence for everything so far
             device->EndFrame();
         }
         CHECK(device->FrameNumber() == 3);
@@ -217,26 +246,28 @@ TEST_CASE("A DX12 device is created and destroyed on every suitable adapter with
     CHECK(made >= 1);
 }
 
-TEST_CASE("A DX12 fence wait on a value that is never signaled returns false within its timeout", "[rhi][dx12][gpu]") {
+TEST_CASE("A DX12 fence wait on a value that is never signaled returns false within its timeout", "[rhi][dx12][gpu]")
+{
     DeviceCreateInfo info = Dx12Info();
     info.validation = ValidationSetting::Off;
     DevicePtr device = CreateDevice(info);
     REQUIRE(device);
-    CHECK(device->WaitFence(0, 0));        // 0 is always reached
+    CHECK(device->WaitFence(0, 0));  // 0 is always reached
     const u64 start = os::MonotonicTimeNanos();
-    CHECK_FALSE(device->WaitFence(1000, 50ull * 1000 * 1000)); // nothing signals 1000
+    CHECK_FALSE(device->WaitFence(1000, 50ull * 1000 * 1000));  // nothing signals 1000
     const u64 waited = os::MonotonicTimeNanos() - start;
     CHECK(waited >= 40ull * 1000 * 1000);
-    CHECK(waited < 2000ull * 1000 * 1000); // bounded: no hang
-    CHECK_FALSE(device->WaitFence(1000, 0)); // a poll
+    CHECK(waited < 2000ull * 1000 * 1000);    // bounded: no hang
+    CHECK_FALSE(device->WaitFence(1000, 0));  // a poll
     CHECK(device->CompletedFence() == 0);
     device->InjectDeviceLoss();
     CHECK(device->DeviceLost());
-    CHECK_FALSE(device->WaitFence(1, ~0ull)); // a lost device answers at once
-    device->WaitIdle(); // and still waits for its real work (none) without hanging
+    CHECK_FALSE(device->WaitFence(1, ~0ull));  // a lost device answers at once
+    device->WaitIdle();                        // and still waits for its real work (none) without hanging
 }
 
-TEST_CASE("A requested DX12 adapter that does not exist fails without falling back", "[rhi][dx12][gpu]") {
+TEST_CASE("A requested DX12 adapter that does not exist fails without falling back", "[rhi][dx12][gpu]")
+{
     DeviceCreateInfo info = Dx12Info();
     info.adapter = "no-such-adapter-anywhere";
     const bool was = LogRhi.Enabled();
@@ -245,19 +276,27 @@ TEST_CASE("A requested DX12 adapter that does not exist fails without falling ba
     LogRhi.SetEnabled(was);
 }
 
-TEST_CASE("With validation on, a D3D12 error reaches the RHI log and is counted", "[rhi][dx12][gpu]") {
+TEST_CASE("With validation on, a D3D12 error reaches the RHI log and is counted", "[rhi][dx12][gpu]")
+{
     DeviceCreateInfo info = Dx12Info();
     info.validation = ValidationSetting::On;
     Dx12DevicePtr device = Dx12Device::Create(info);
     REQUIRE(device);
     REQUIRE(device->ValidationEnabled());
     ResetDebugMessageCounts();
-    struct Seen {
+    struct Seen
+    {
         u32 errors = 0;
     } seen;
-    SetDebugMessageCapture([](void* user, LogVerbosity severity, u32, const char*) {
-        if (severity == LogVerbosity::Error) ++static_cast<Seen*>(user)->errors;
-    }, &seen);
+    SetDebugMessageCapture(
+        [](void* user, LogVerbosity severity, u32, const char*)
+        {
+            if (severity == LogVerbosity::Error)
+            {
+                ++static_cast<Seen*>(user)->errors;
+            }
+        },
+        &seen);
     const bool was = LogRhi.Enabled();
     LogRhi.SetEnabled(false);
     // A zero-sized buffer is invalid: the debug layer reports it and the call fails.
@@ -272,8 +311,9 @@ TEST_CASE("With validation on, a D3D12 error reaches the RHI log and is counted"
     desc.SampleDesc.Count = 1;
     desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
     ComRef<ID3D12Resource> resource;
-    const HRESULT hr = device->D3D()->CreateCommittedResource(&heap, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_COMMON, nullptr,
-                                                             __uuidof(ID3D12Resource), resource.PutVoid());
+    const HRESULT hr = device->D3D()->CreateCommittedResource(&heap, D3D12_HEAP_FLAG_NONE, &desc,
+                                                              D3D12_RESOURCE_STATE_COMMON, nullptr,
+                                                              __uuidof(ID3D12Resource), resource.PutVoid());
     LogRhi.SetEnabled(was);
     SetDebugMessageCapture(nullptr, nullptr);
     CHECK(FAILED(hr));
@@ -282,11 +322,17 @@ TEST_CASE("With validation on, a D3D12 error reaches the RHI log and is counted"
     ResetDebugMessageCounts();
 }
 
-TEST_CASE("ENGINE_RHI_GPU picks the DX12 adapter, and the descriptor's adapter beats it, as on Vulkan", "[rhi][dx12][gpu]") {
-    // Phase 13 Day 170: the DX12 backend ignored the variable, so the golden run meant for WARP ran on the hardware adapter.
+TEST_CASE("ENGINE_RHI_GPU picks the DX12 adapter, and the descriptor's adapter beats it, as on Vulkan",
+          "[rhi][dx12][gpu]")
+{
+    // Phase 13 Day 170: the DX12 backend ignored the variable, so the golden run meant for WARP ran on the hardware
+    // adapter.
     const char* before = os::GetEnvironment("ENGINE_RHI_GPU");
     char saved[256] = {};
-    if (before != nullptr) FormatTo(saved, sizeof(saved), "%s", before);
+    if (before != nullptr)
+    {
+        FormatTo(saved, sizeof(saved), "%s", before);
+    }
     test_support::SetEnv("ENGINE_RHI_GPU", "Basic Render");
     DeviceCreateInfo info;
     info.backend = Backend::Dx12;
@@ -303,29 +349,39 @@ TEST_CASE("ENGINE_RHI_GPU picks the DX12 adapter, and the descriptor's adapter b
         REQUIRE(device);
         CHECK(device->Adapter().kind != AdapterKind::Software);
     }
-    if (before != nullptr) {
+    if (before != nullptr)
+    {
         test_support::SetEnv("ENGINE_RHI_GPU", saved);
-    } else {
+    }
+    else
+    {
         test_support::UnsetEnv("ENGINE_RHI_GPU");
     }
 }
 
 // Phase 13 Day 172: `fail_allocations_from` on Direct3D 12, where each committed resource is one allocation.
-TEST_CASE("An injected DX12 allocation failure gives invalid handles and the device keeps working", "[rhi][dx12][gpu][fault]") {
+TEST_CASE("An injected DX12 allocation failure gives invalid handles and the device keeps working",
+          "[rhi][dx12][gpu][fault]")
+{
     // Find how many resources creation itself makes (the staging ring and friends), then fail from the next one on.
     u32 creation_allocations = 0;
     bool found = false;
-    for (u32 n = 1; n <= 16 && !found; ++n) {
+    for (u32 n = 1; n <= 16 && !found; ++n)
+    {
         DeviceCreateInfo info = Dx12Info();
         info.faults.fail_allocations_from = n;
         DevicePtr probe = CreateDevice(info);
-        if (probe != nullptr) {
+        if (probe != nullptr)
+        {
             found = true;
             creation_allocations = n - 1;
         }
     }
-    if (!found) SKIP("no Direct3D 12 device");
-    CHECK(creation_allocations > 0); // creation does allocate: a device that could not would hide the failure path
+    if (!found)
+    {
+        SKIP("no Direct3D 12 device");
+    }
+    CHECK(creation_allocations > 0);  // creation does allocate: a device that could not would hide the failure path
 
     DeviceCreateInfo info = Dx12Info();
     info.faults.fail_allocations_from = creation_allocations + 1;
@@ -348,28 +404,33 @@ TEST_CASE("An injected DX12 allocation failure gives invalid handles and the dev
     CHECK(after.textures == before.textures);
     CHECK(after.internal_objects == before.internal_objects);
     CHECK(after.device_memory_bytes == before.device_memory_bytes);
-    device->BeginFrame(); // frames still run
+    device->BeginFrame();  // frames still run
     device->EndFrame();
     device->WaitIdle();
     CHECK_FALSE(device->DeviceLost());
 }
 
-// Phase 13 Day 172 review: the explicit loss (a real RemoveDevice) honors the shared strike limit, as every injected loss does.
-TEST_CASE("InjectDeviceLoss on DX12 removes the device only while strikes are left", "[rhi][dx12][gpu][fault]") {
+// Phase 13 Day 172 review: the explicit loss (a real RemoveDevice) honors the shared strike limit, as every injected
+// loss does.
+TEST_CASE("InjectDeviceLoss on DX12 removes the device only while strikes are left", "[rhi][dx12][gpu][fault]")
+{
     Atomic<u32> strikes{1};
     DeviceCreateInfo info = Dx12Info();
     info.faults.strikes_left = &strikes;
     {
         DevicePtr device = CreateDevice(info);
-        if (device == nullptr) SKIP("no Direct3D 12 device");
+        if (device == nullptr)
+        {
+            SKIP("no Direct3D 12 device");
+        }
         device->InjectDeviceLoss();
         CHECK(device->DeviceLost());
         CHECK(strikes.Load() == 0);
-        device->WaitIdle(); // returns on a removed device
+        device->WaitIdle();  // returns on a removed device
     }
-    DevicePtr second = CreateDevice(info); // every device of the adapter is released: a new one, not the removed one
+    DevicePtr second = CreateDevice(info);  // every device of the adapter is released: a new one, not the removed one
     REQUIRE(second != nullptr);
-    second->InjectDeviceLoss(); // no strike left: nothing happens
+    second->InjectDeviceLoss();  // no strike left: nothing happens
     CHECK_FALSE(second->DeviceLost());
     BufferDesc bd;
     bd.size = 256;
@@ -377,5 +438,8 @@ TEST_CASE("InjectDeviceLoss on DX12 removes the device only while strikes are le
     bd.location = MemoryLocation::CpuToGpu;
     const BufferHandle buffer = second->CreateBuffer(bd);
     CHECK(buffer.IsValid());
-    if (buffer.IsValid()) second->DestroyBuffer(buffer);
+    if (buffer.IsValid())
+    {
+        second->DestroyBuffer(buffer);
+    }
 }

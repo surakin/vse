@@ -1,10 +1,13 @@
 // The neutral half of io/error.h; the per-platform ErrorFromOsCode tables are io/<platform>/error.cpp.
 #include "io/error.h"
 
-namespace engine_placeholder::io {
+namespace engine_placeholder::io
+{
 
-const char* ErrorName(Error error) {
-    switch (error) {
+const char* ErrorName(Error error)
+{
+    switch (error)
+    {
     case Error::None: return "none";
     case Error::NotFound: return "not_found";
     case Error::PermissionDenied: return "permission_denied";
@@ -29,4 +32,4 @@ const char* ErrorName(Error error) {
     return "io";
 }
 
-} // namespace engine_placeholder::io
+}  // namespace engine_placeholder::io

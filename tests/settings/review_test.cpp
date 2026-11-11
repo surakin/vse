@@ -18,26 +18,36 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::settings;
 
-namespace {
+namespace
+{
 
-engine_test::Text RvSlurp(const io::Path& path) {
+engine_test::Text RvSlurp(const io::Path& path)
+{
     Vector<u8> bytes;
-    if (io::ReadFile(path, &bytes).Failed()) return engine_test::MakeText("<missing>");
+    if (io::ReadFile(path, &bytes).Failed())
+    {
+        return engine_test::MakeText("<missing>");
+    }
     return engine_test::MakeText(StringView(reinterpret_cast<const char*>(bytes.Data()), bytes.Size()));
 }
 
-void RvWrite(const io::Path& path, StringView text) { REQUIRE(io::WriteFile(path, text.Data(), text.Length()).Ok()); }
+void RvWrite(const io::Path& path, StringView text)
+{
+    REQUIRE(io::WriteFile(path, text.Data(), text.Length()).Ok());
+}
 
-struct RvListenerState {
+struct RvListenerState
+{
     Settings* settings = nullptr;
     u32 second_id = 0;
     int first_calls = 0;
     int second_calls = 0;
 };
 
-} // namespace
+}  // namespace
 
-TEST_CASE("A listener removed by an earlier listener is not called for the same change", "[settings][review]") {
+TEST_CASE("A listener removed by an earlier listener is not called for the same change", "[settings][review]")
+{
     Registry registry;
     const SettingId id = registry.Register(MakeInt("rv.a", 1, 0, 10));
     Settings settings(registry);
@@ -45,18 +55,24 @@ TEST_CASE("A listener removed by an earlier listener is not called for the same 
     settings.LoadFromLayers();
     RvListenerState state;
     state.settings = &settings;
-    settings.AddListener("rv", [](void* user, const ChangeEvent&) {
-        RvListenerState* s = static_cast<RvListenerState*>(user);
-        ++s->first_calls;
-        s->settings->RemoveListener(s->second_id);
-    }, &state);
-    state.second_id = settings.AddListener("rv", [](void* user, const ChangeEvent&) { ++static_cast<RvListenerState*>(user)->second_calls; }, &state);
+    settings.AddListener(
+        "rv",
+        [](void* user, const ChangeEvent&)
+        {
+            RvListenerState* s = static_cast<RvListenerState*>(user);
+            ++s->first_calls;
+            s->settings->RemoveListener(s->second_id);
+        },
+        &state);
+    state.second_id = settings.AddListener(
+        "rv", [](void* user, const ChangeEvent&) { ++static_cast<RvListenerState*>(user)->second_calls; }, &state);
     REQUIRE(settings.Set(id, Value::FromInt(5)).Ok());
     CHECK(state.first_calls == 1);
     CHECK(state.second_calls == 0);
 }
 
-TEST_CASE("Unsetting or minimally writing a renamed setting also removes the deprecated name", "[settings][review]") {
+TEST_CASE("Unsetting or minimally writing a renamed setting also removes the deprecated name", "[settings][review]")
+{
     Registry registry;
     SettingDesc d = MakeInt("rv.new_name", 7, 0, 100);
     const char* const old[] = {"rv.old_name"};
@@ -74,7 +90,8 @@ TEST_CASE("Unsetting or minimally writing a renamed setting also removes the dep
     Resolution r;
     stack.Resolve(registry, id, &r, nullptr);
     REQUIRE(r.value.AsInt() == 5);
-    REQUIRE(stack.Set(*&registry, id, Value::FromInt(7), true).Ok()); // back to the default: minimal writing removes the value
+    REQUIRE(stack.Set(*&registry, id, Value::FromInt(7), true)
+                .Ok());  // back to the default: minimal writing removes the value
     stack.Resolve(registry, id, &r, nullptr);
     CHECK(r.value.AsInt() == 7);
     stack.Store(0).Set("rv.old_name", sv);
@@ -83,7 +100,8 @@ TEST_CASE("Unsetting or minimally writing a renamed setting also removes the dep
     CHECK(r.value.AsInt() == 7);
 }
 
-TEST_CASE("Reserved keys and keys that share an environment variable cannot be registered", "[settings][review]") {
+TEST_CASE("Reserved keys and keys that share an environment variable cannot be registered", "[settings][review]")
+{
     Registry registry;
     RegisterError error = RegisterError::None;
     SettingDesc d = MakeInt("rv.x", 0, 0, 1);
@@ -96,20 +114,28 @@ TEST_CASE("Reserved keys and keys that share an environment variable cannot be r
     CHECK(error == RegisterError::BadKey);
 }
 
-TEST_CASE("Text must be UTF-8 and its stored form must fit", "[settings][review]") {
+TEST_CASE("Text must be UTF-8 and its stored form must fit", "[settings][review]")
+{
     const SettingDesc text = MakeText("rv.text", "");
     Value v;
-    CHECK(ParseValue(text, "\"\\xe9\"", &v) == ValueError::BadEscape);        // a lone Latin-1 byte
+    CHECK(ParseValue(text, "\"\\xe9\"", &v) == ValueError::BadEscape);  // a lone Latin-1 byte
     CHECK(ParseValue(text, "\"caf\xc3\xa9\"", &v) == ValueError::None);
     engine_test::Text backslashes = engine_test::MakeText();
-    for (int i = 0; i < 300; ++i) backslashes.Append('\\');                    // 300 bytes, 602 once escaped and quoted
+    for (int i = 0; i < 300; ++i)
+    {
+        backslashes.Append('\\');  // 300 bytes, 602 once escaped and quoted
+    }
     CHECK(ValidateValue(text, Value::FromText(backslashes.View()), &v) == ValueError::TooLong);
     engine_test::Text plain = engine_test::MakeText();
-    for (int i = 0; i < 300; ++i) plain.Append('a');
+    for (int i = 0; i < 300; ++i)
+    {
+        plain.Append('a');
+    }
     CHECK(ValidateValue(text, Value::FromText(plain.View()), &v) == ValueError::None);
 }
 
-TEST_CASE("A secret given on the command line is not written by Save", "[settings][review]") {
+TEST_CASE("A secret given on the command line is not written by Save", "[settings][review]")
+{
     io_test::TempDir dir;
     Registry registry;
     SettingDesc token = MakeText("rv.token", "");
@@ -134,7 +160,8 @@ TEST_CASE("A secret given on the command line is not written by Save", "[setting
     CHECK_FALSE(text.View().Contains("hunter2"));
 }
 
-TEST_CASE("A --settings file that does not exist is a reported problem", "[settings][review]") {
+TEST_CASE("A --settings file that does not exist is a reported problem", "[settings][review]")
+{
     io_test::TempDir dir;
     Registry registry;
     registry.Register(MakeInt("rv.n", 1, 0, 10));
@@ -149,11 +176,15 @@ TEST_CASE("A --settings file that does not exist is a reported problem", "[setti
     options.argv = argv;
     const LoadReport report = settings.Load(options);
     bool found = false;
-    for (usize i = 0; i < report.problems.Size(); ++i) found = found || StringView(report.problems[i].message).Contains("no such file");
+    for (usize i = 0; i < report.problems.Size(); ++i)
+    {
+        found = found || StringView(report.problems[i].message).Contains("no such file");
+    }
     CHECK(found);
 }
 
-TEST_CASE("A value map matches a text setting stored quoted", "[settings][review]") {
+TEST_CASE("A value map matches a text setting stored quoted", "[settings][review]")
+{
     Registry registry;
     registry.Register(MakeText("rv.mode", ""));
     registry.SetSchemaVersion("rv", 2);
@@ -180,7 +211,8 @@ TEST_CASE("A value map matches a text setting stored quoted", "[settings][review
     CHECK(after.value.AsText() == StringView("\"modern\""));
 }
 
-TEST_CASE("Removing the only entry of a section the class added removes the section again", "[settings][review]") {
+TEST_CASE("Removing the only entry of a section the class added removes the section again", "[settings][review]")
+{
     ConfigDocument doc;
     ConfigReport report;
     doc.Parse("a = 1\n[old]\nb = 2\n", &report);
@@ -194,7 +226,8 @@ TEST_CASE("Removing the only entry of a section the class added removes the sect
     CHECK(StringView(after.Data(), after.Size()) == StringView(before.Data(), before.Size()));
 }
 
-TEST_CASE("The backup keeps the file as it was found, not the previous save", "[settings][review]") {
+TEST_CASE("The backup keeps the file as it was found, not the previous save", "[settings][review]")
+{
     io_test::TempDir dir;
     const io::Path path = dir / "s.cfg";
     RvWrite(path, "n = 1\n");
@@ -211,7 +244,8 @@ TEST_CASE("The backup keeps the file as it was found, not the previous save", "[
     CHECK(RvSlurp(path).View() == "n = 3\n");
 }
 
-TEST_CASE("Saving a session does not downgrade the version stamps of a newer file", "[settings][review]") {
+TEST_CASE("Saving a session does not downgrade the version stamps of a newer file", "[settings][review]")
+{
     io_test::TempDir dir;
     Registry registry;
     registry.Register(MakeInt("rv.n", 1, 0, 10));
@@ -224,7 +258,8 @@ TEST_CASE("Saving a session does not downgrade the version stamps of a newer fil
     CHECK(RvSlurp(path).View() == "version = 99\n");
 }
 
-TEST_CASE("LastSaveStatus can be read while another thread saves", "[settings][review][thread]") {
+TEST_CASE("LastSaveStatus can be read while another thread saves", "[settings][review][thread]")
+{
     io_test::TempDir dir;
     Registry registry;
     const SettingId id = registry.Register(MakeInt("rv.n", 1, 0, 1000));
@@ -237,14 +272,18 @@ TEST_CASE("LastSaveStatus can be read while another thread saves", "[settings][r
     settings.Load(options);
     Atomic<bool> stop{false};
     Atomic<int> reads{0};
-    Thread reader([&] {
-        while (!stop.Load()) {
-            const Status s = settings.LastSaveStatus();
-            (void)s;
-            reads.FetchAdd(1);
-        }
-    });
-    for (int i = 0; i < 50; ++i) {
+    Thread reader(
+        [&]
+        {
+            while (!stop.Load())
+            {
+                const Status s = settings.LastSaveStatus();
+                (void)s;
+                reads.FetchAdd(1);
+            }
+        });
+    for (int i = 0; i < 50; ++i)
+    {
         settings.Set(id, Value::FromInt(2 + i));
         settings.Save();
     }
@@ -253,7 +292,10 @@ TEST_CASE("LastSaveStatus can be read while another thread saves", "[settings][r
     CHECK(reads.Load() > 0);
 }
 
-TEST_CASE("A value set from the command line by the program outranks the user's file, is not saved, and yields to --set", "[settings][review]") {
+TEST_CASE(
+    "A value set from the command line by the program outranks the user's file, is not saved, and yields to --set",
+    "[settings][review]")
+{
     io_test::TempDir dir;
     Registry registry;
     const SettingId a = registry.Register(MakeInt("rv.a", 1, 0, 100));
@@ -274,15 +316,17 @@ TEST_CASE("A value set from the command line by the program outranks the user's 
     const Resolution r = settings.Provenance(a);
     CHECK(StringView(r.layer_name) == "command line");
     CHECK(StringView(r.origin).Contains("--old-flag"));
-    REQUIRE(settings.SetFromCommandLine("rv.b", "6", "--old-flag").Ok());   // the explicit --set wins
+    REQUIRE(settings.SetFromCommandLine("rv.b", "6", "--old-flag").Ok());  // the explicit --set wins
     CHECK(settings.Snapshot()->Get(b).AsInt() == 77);
     REQUIRE(settings.Save().Ok());
     const engine_test::Text saved = RvSlurp(user);
-    CHECK(saved.View().Contains("a = 20"));                                 // the user's file keeps its own value
+    CHECK(saved.View().Contains("a = 20"));  // the user's file keeps its own value
     CHECK_FALSE(saved.View().Contains("= 5"));
 }
 
-TEST_CASE("A change makes a new snapshot that shares the unchanged values and leaves the old snapshot alone", "[settings][review]") {
+TEST_CASE("A change makes a new snapshot that shares the unchanged values and leaves the old snapshot alone",
+          "[settings][review]")
+{
     Registry registry;
     const SettingId a = registry.Register(MakeInt("rv.a", 1, 0, 100));
     const SettingId b = registry.Register(MakeInt("rv.b", 2, 0, 100));
@@ -292,13 +336,15 @@ TEST_CASE("A change makes a new snapshot that shares the unchanged values and le
     const SharedPtr<const SettingsSnapshot> before = settings.Snapshot();
     REQUIRE(settings.Set(a, Value::FromInt(9)).Ok());
     const SharedPtr<const SettingsSnapshot> after = settings.Snapshot();
-    CHECK(before->Get(a).AsInt() == 1);          // the old snapshot is what it was
+    CHECK(before->Get(a).AsInt() == 1);  // the old snapshot is what it was
     CHECK(after->Get(a).AsInt() == 9);
-    CHECK(&before->Get(b) == &after->Get(b));    // the value nobody changed is the same object
+    CHECK(&before->Get(b) == &after->Get(b));  // the value nobody changed is the same object
     CHECK(after->generation > before->generation);
 }
 
-TEST_CASE("A command-line value from the program is recorded under the canonical key and only once it was accepted", "[settings][review]") {
+TEST_CASE("A command-line value from the program is recorded under the canonical key and only once it was accepted",
+          "[settings][review]")
+{
     Registry registry;
     SettingDesc d = MakeInt("rv.new_name", 1, 0, 100);
     const char* const old[] = {"rv.old_name"};
@@ -329,5 +375,8 @@ TEST_CASE("A command-line value from the program is recorded under the canonical
     other.SetCapabilityCheck([](void*, const char*) { return false; }, nullptr);
     CHECK(other.SetFromCommandLine("rv.new_name", "5", "--flag").error == SetError::Unsupported);
     StoredValue sv;
-    CHECK(other.Layers().Store(other.Layers().Find(LayerRole::CommandLine)).Get("rv.new_name", &sv).Is(StoreError::NotFound));
+    CHECK(other.Layers()
+              .Store(other.Layers().Find(LayerRole::CommandLine))
+              .Get("rv.new_name", &sv)
+              .Is(StoreError::NotFound));
 }

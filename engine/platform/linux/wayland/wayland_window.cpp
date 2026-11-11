@@ -9,9 +9,11 @@
 #include "platform/window.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::os::wayland {
+namespace engine_placeholder::os::wayland
+{
 
-namespace {
+namespace
+{
 
 // Window titles/app_ids have no OS-imposed length limit the way file
 // paths do (kMaxPathBytes/PATH_MAX in os.h), so unlike os::Open a
@@ -19,9 +21,11 @@ namespace {
 // a truncated title is cosmetic, not a correctness problem.
 constexpr usize kMaxTitleBytes = 256;
 
-void ToCString(StringView sv, char (&buffer)[kMaxTitleBytes]) {
+void ToCString(StringView sv, char (&buffer)[kMaxTitleBytes])
+{
     usize n = sv.Length() < kMaxTitleBytes - 1 ? sv.Length() : kMaxTitleBytes - 1;
-    for (usize i = 0; i < n; ++i) {
+    for (usize i = 0; i < n; ++i)
+    {
         buffer[i] = sv[i];
     }
     buffer[n] = '\0';
@@ -38,7 +42,8 @@ constexpr u32 kDefaultHeight = 720;
 // from Vulkan's swapchain once Phase 4 exists.
 constexpr u32 kPlaceholderFillColor = 0xFF264F78;
 
-void LogResize(u32 width, u32 height) {
+void LogResize(u32 width, u32 height)
+{
     ArenaAllocator scratch(256);
     StringBuilder<ArenaAllocator> line(scratch);
     line.Append("Wayland: window resized to ").AppendUInt(width).Append('x').AppendUInt(height);
@@ -48,24 +53,29 @@ void LogResize(u32 width, u32 height) {
 // Creates an anonymous, shrinkable-to-`size` shared-memory region
 // (memfd, Linux-specific — this file is already Linux/Wayland-only) and
 // maps it read+write. Returns {nullptr, -1} on any failure.
-struct ShmRegion {
+struct ShmRegion
+{
     void* data = nullptr;
     int fd = -1;
 };
 
-ShmRegion CreateShmRegion(usize size) {
+ShmRegion CreateShmRegion(usize size)
+{
     int fd = ::memfd_create("engine_wayland_buffer", MFD_CLOEXEC);
-    if (fd < 0) {
+    if (fd < 0)
+    {
         Log(LogPlatform, LogVerbosity::Error, "Wayland: memfd_create failed");
         return {};
     }
-    if (::ftruncate(fd, static_cast<long>(size)) != 0) {
+    if (::ftruncate(fd, static_cast<long>(size)) != 0)
+    {
         Log(LogPlatform, LogVerbosity::Error, "Wayland: ftruncate on shm memfd failed");
         ::close(fd);
         return {};
     }
     void* data = ::mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    if (data == MAP_FAILED) {
+    if (data == MAP_FAILED)
+    {
         Log(LogPlatform, LogVerbosity::Error, "Wayland: mmap of shm memfd failed");
         ::close(fd);
         return {};
@@ -76,13 +86,14 @@ ShmRegion CreateShmRegion(usize size) {
 // Builds a width x height XRGB8888 wl_shm buffer filled with the
 // placeholder color. On success returns true and hands back the buffer,
 // its mapping and mapping size.
-bool MakeFilledBuffer(wl_shm* shm, u32 width, u32 height, wl_buffer*& out_buffer, void*& out_data,
-                      usize& out_size) {
-    u32 stride = width * 4; // XRGB8888: 4 bytes/pixel
+bool MakeFilledBuffer(wl_shm* shm, u32 width, u32 height, wl_buffer*& out_buffer, void*& out_data, usize& out_size)
+{
+    u32 stride = width * 4;  // XRGB8888: 4 bytes/pixel
     usize shm_size = static_cast<usize>(stride) * height;
 
     ShmRegion region = CreateShmRegion(shm_size);
-    if (region.data == nullptr) {
+    if (region.data == nullptr)
+    {
         return false;
     }
     // Fill by doubling: write one pixel, then copy the filled prefix over
@@ -91,10 +102,12 @@ bool MakeFilledBuffer(wl_shm* shm, u32 width, u32 height, wl_buffer*& out_buffer
     // on every resize configure).
     auto* pixels = static_cast<u32*>(region.data);
     usize pixel_count = static_cast<usize>(width) * height;
-    if (pixel_count > 0) {
+    if (pixel_count > 0)
+    {
         pixels[0] = kPlaceholderFillColor;
         usize filled = 1;
-        while (filled < pixel_count) {
+        while (filled < pixel_count)
+        {
             usize chunk = filled < pixel_count - filled ? filled : pixel_count - filled;
             MemCopy(pixels + filled, pixels, chunk * sizeof(u32));
             filled += chunk;
@@ -106,15 +119,17 @@ bool MakeFilledBuffer(wl_shm* shm, u32 width, u32 height, wl_buffer*& out_buffer
     // (SCM_RIGHTS, synchronously as part of the wire request) — safe to
     // close our copy now.
     ::close(region.fd);
-    if (pool == nullptr) {
+    if (pool == nullptr)
+    {
         Log(LogPlatform, LogVerbosity::Error, "Wayland: wl_shm_create_pool failed");
         ::munmap(region.data, shm_size);
         return false;
     }
     wl_buffer* buffer = wl_shm_pool_create_buffer(pool, 0, static_cast<i32>(width), static_cast<i32>(height),
-                                                   static_cast<i32>(stride), WL_SHM_FORMAT_XRGB8888);
+                                                  static_cast<i32>(stride), WL_SHM_FORMAT_XRGB8888);
     wl_shm_pool_destroy(pool);
-    if (buffer == nullptr) {
+    if (buffer == nullptr)
+    {
         Log(LogPlatform, LogVerbosity::Error, "Wayland: wl_shm_pool_create_buffer failed");
         ::munmap(region.data, shm_size);
         return false;
@@ -125,23 +140,27 @@ bool MakeFilledBuffer(wl_shm* shm, u32 width, u32 height, wl_buffer*& out_buffer
     return true;
 }
 
-} // namespace
+}  // namespace
 
-WaylandWindow WaylandWindow::Create(WaylandConnection& connection, StringView title, StringView app_id,
-                                    u32 width_hint, u32 height_hint) {
-    if (!connection.Valid()) {
+WaylandWindow WaylandWindow::Create(WaylandConnection& connection, StringView title, StringView app_id, u32 width_hint,
+                                    u32 height_hint)
+{
+    if (!connection.Valid())
+    {
         Log(LogPlatform, LogVerbosity::Error, "Wayland: WaylandWindow::Create called with an invalid connection");
         return WaylandWindow();
     }
 
     wl_surface* surface = wl_compositor_create_surface(connection.Compositor());
-    if (surface == nullptr) {
+    if (surface == nullptr)
+    {
         Log(LogPlatform, LogVerbosity::Error, "Wayland: wl_compositor_create_surface failed");
         return WaylandWindow();
     }
 
     xdg_surface* xdg_surf = xdg_wm_base_get_xdg_surface(connection.XdgWmBase(), surface);
-    if (xdg_surf == nullptr) {
+    if (xdg_surf == nullptr)
+    {
         Log(LogPlatform, LogVerbosity::Error, "Wayland: xdg_wm_base_get_xdg_surface failed");
         wl_surface_destroy(surface);
         return WaylandWindow();
@@ -162,7 +181,8 @@ WaylandWindow WaylandWindow::Create(WaylandConnection& connection, StringView ti
     xdg_surface_add_listener(xdg_surf, &kXdgSurfaceListener, &window);
 
     xdg_toplevel* toplevel = xdg_surface_get_toplevel(xdg_surf);
-    if (toplevel == nullptr) {
+    if (toplevel == nullptr)
+    {
         Log(LogPlatform, LogVerbosity::Error, "Wayland: xdg_surface_get_toplevel failed");
         return WaylandWindow();
     }
@@ -175,9 +195,12 @@ WaylandWindow WaylandWindow::Create(WaylandConnection& connection, StringView ti
     // window undecorated, and the mode actually granted is reported via
     // the decoration's configure event (handled during the roundtrip
     // below).
-    if (connection.DecorationManager() != nullptr) {
-        window.decoration_ = zxdg_decoration_manager_v1_get_toplevel_decoration(connection.DecorationManager(), toplevel);
-        if (window.decoration_ != nullptr) {
+    if (connection.DecorationManager() != nullptr)
+    {
+        window.decoration_ = zxdg_decoration_manager_v1_get_toplevel_decoration(connection.DecorationManager(),
+                                                                                toplevel);
+        if (window.decoration_ != nullptr)
+        {
             zxdg_toplevel_decoration_v1_add_listener(window.decoration_, &kDecorationListener, &window);
             zxdg_toplevel_decoration_v1_set_mode(window.decoration_, ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
         }
@@ -196,13 +219,15 @@ WaylandWindow WaylandWindow::Create(WaylandConnection& connection, StringView ti
     wl_surface_commit(surface);
     wl_display_roundtrip(connection.Display());
 
-    if (window.width_ == 0 || window.height_ == 0) {
+    if (window.width_ == 0 || window.height_ == 0)
+    {
         Log(LogPlatform, LogVerbosity::Error, "Wayland: never received the initial xdg_surface configure");
         return WaylandWindow();
     }
 
     window.shm_ = connection.Shm();
-    if (!window.ReplaceBuffer()) {
+    if (!window.ReplaceBuffer())
+    {
         return WaylandWindow();
     }
     wl_display_roundtrip(connection.Display());
@@ -214,11 +239,13 @@ WaylandWindow WaylandWindow::Create(WaylandConnection& connection, StringView ti
 // suggestion: the window doesn't actually change size until the client
 // attaches a buffer of the new size — which is why resizing did nothing
 // while this only logged the new dimensions.
-bool WaylandWindow::ReplaceBuffer() {
+bool WaylandWindow::ReplaceBuffer()
+{
     wl_buffer* buffer = nullptr;
     void* data = nullptr;
     usize size = 0;
-    if (!MakeFilledBuffer(shm_, width_, height_, buffer, data, size)) {
+    if (!MakeFilledBuffer(shm_, width_, height_, buffer, data, size))
+    {
         return false;
     }
     wl_surface_attach(surface_, buffer, 0, 0);
@@ -227,10 +254,12 @@ bool WaylandWindow::ReplaceBuffer() {
 
     // The old buffer can go as soon as the new one is attached; the
     // compositor keeps its own reference to the old pool until done.
-    if (buffer_ != nullptr) {
+    if (buffer_ != nullptr)
+    {
         wl_buffer_destroy(buffer_);
     }
-    if (shm_data_ != nullptr) {
+    if (shm_data_ != nullptr)
+    {
         ::munmap(shm_data_, shm_size_);
     }
     buffer_ = buffer;
@@ -239,53 +268,45 @@ bool WaylandWindow::ReplaceBuffer() {
     return true;
 }
 
-bool WaylandWindow::CommitPendingResize() {
-    if (!buffer_stale_) {
+bool WaylandWindow::CommitPendingResize()
+{
+    if (!buffer_stale_)
+    {
         return false;
     }
-    if (surface_exported_) {
-        // A graphics layer presents to this surface: its swapchain is recreated on the resize serial and supplies the buffers.
+    if (surface_exported_)
+    {
+        // A graphics layer presents to this surface: its swapchain is recreated on the resize serial and supplies the
+        // buffers.
         buffer_stale_ = false;
         return false;
     }
     // Only clear the flag on success, so a failed allocation is retried
     // on the next pump instead of leaving the window stuck at the old
     // size forever.
-    if (!ReplaceBuffer()) {
+    if (!ReplaceBuffer())
+    {
         return false;
     }
     buffer_stale_ = false;
     return true;
 }
 
-WaylandWindow::~WaylandWindow() {
+WaylandWindow::~WaylandWindow()
+{
     ReleaseAll();
 }
 
 WaylandWindow::WaylandWindow(WaylandWindow&& other) noexcept
-    : surface_(other.surface_),
-      xdg_surface_(other.xdg_surface_),
-      xdg_toplevel_(other.xdg_toplevel_),
-      decoration_(other.decoration_),
-      server_side_decorated_(other.server_side_decorated_),
-      buffer_(other.buffer_),
-      shm_(other.shm_),
-      shm_data_(other.shm_data_),
-      shm_size_(other.shm_size_),
-      width_(other.width_),
-      height_(other.height_),
-      resize_serial_(other.resize_serial_),
-      pending_width_(other.pending_width_),
-      pending_height_(other.pending_height_),
-      pending_constrained_(other.pending_constrained_),
-      fullscreen_(other.fullscreen_),
-      default_width_(other.default_width_),
-      default_height_(other.default_height_),
-      floating_width_(other.floating_width_),
-      floating_height_(other.floating_height_),
-      buffer_stale_(other.buffer_stale_),
-      surface_exported_(other.surface_exported_),
-      should_close_(other.should_close_) {
+    : surface_(other.surface_), xdg_surface_(other.xdg_surface_), xdg_toplevel_(other.xdg_toplevel_),
+      decoration_(other.decoration_), server_side_decorated_(other.server_side_decorated_), buffer_(other.buffer_),
+      shm_(other.shm_), shm_data_(other.shm_data_), shm_size_(other.shm_size_), width_(other.width_),
+      height_(other.height_), resize_serial_(other.resize_serial_), pending_width_(other.pending_width_),
+      pending_height_(other.pending_height_), pending_constrained_(other.pending_constrained_),
+      fullscreen_(other.fullscreen_), default_width_(other.default_width_), default_height_(other.default_height_),
+      floating_width_(other.floating_width_), floating_height_(other.floating_height_),
+      buffer_stale_(other.buffer_stale_), surface_exported_(other.surface_exported_), should_close_(other.should_close_)
+{
     other.surface_ = nullptr;
     other.xdg_surface_ = nullptr;
     other.xdg_toplevel_ = nullptr;
@@ -310,8 +331,10 @@ WaylandWindow::WaylandWindow(WaylandWindow&& other) noexcept
     RebindEventListenerUserData();
 }
 
-WaylandWindow& WaylandWindow::operator=(WaylandWindow&& other) noexcept {
-    if (this != &other) {
+WaylandWindow& WaylandWindow::operator=(WaylandWindow&& other) noexcept
+{
+    if (this != &other)
+    {
         ReleaseAll();
         surface_ = other.surface_;
         xdg_surface_ = other.xdg_surface_;
@@ -362,14 +385,18 @@ WaylandWindow& WaylandWindow::operator=(WaylandWindow&& other) noexcept {
     return *this;
 }
 
-void WaylandWindow::RebindEventListenerUserData() {
-    if (xdg_surface_ != nullptr) {
+void WaylandWindow::RebindEventListenerUserData()
+{
+    if (xdg_surface_ != nullptr)
+    {
         wl_proxy_set_user_data(reinterpret_cast<wl_proxy*>(xdg_surface_), this);
     }
-    if (xdg_toplevel_ != nullptr) {
+    if (xdg_toplevel_ != nullptr)
+    {
         wl_proxy_set_user_data(reinterpret_cast<wl_proxy*>(xdg_toplevel_), this);
     }
-    if (decoration_ != nullptr) {
+    if (decoration_ != nullptr)
+    {
         wl_proxy_set_user_data(reinterpret_cast<wl_proxy*>(decoration_), this);
     }
 }
@@ -378,9 +405,10 @@ const xdg_surface_listener WaylandWindow::kXdgSurfaceListener = {
     .configure = WaylandWindow::HandleXdgSurfaceConfigure,
 };
 
-// Built by assignment: the protocol version adds members (configure_bounds, wm_capabilities) this window does not handle, and a
-// designated initializer that leaves them out is a warning.
-const xdg_toplevel_listener WaylandWindow::kXdgToplevelListener = [] {
+// Built by assignment: the protocol version adds members (configure_bounds, wm_capabilities) this window does not
+// handle, and a designated initializer that leaves them out is a warning.
+const xdg_toplevel_listener WaylandWindow::kXdgToplevelListener = []
+{
     xdg_toplevel_listener listener{};
     listener.configure = WaylandWindow::HandleToplevelConfigure;
     listener.close = WaylandWindow::HandleToplevelClose;
@@ -391,7 +419,8 @@ const zxdg_toplevel_decoration_v1_listener WaylandWindow::kDecorationListener = 
     .configure = WaylandWindow::HandleDecorationConfigure,
 };
 
-void WaylandWindow::HandleDecorationConfigure(void* data, zxdg_toplevel_decoration_v1* decoration, u32 mode) {
+void WaylandWindow::HandleDecorationConfigure(void* data, zxdg_toplevel_decoration_v1* decoration, u32 mode)
+{
     (void)decoration;
     auto* window = static_cast<WaylandWindow*>(data);
     window->server_side_decorated_ = mode == ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE;
@@ -400,7 +429,8 @@ void WaylandWindow::HandleDecorationConfigure(void* data, zxdg_toplevel_decorati
                                        : "Wayland: client-side decorations (window is undecorated)");
 }
 
-void WaylandWindow::HandleXdgSurfaceConfigure(void* data, xdg_surface* surface, u32 serial) {
+void WaylandWindow::HandleXdgSurfaceConfigure(void* data, xdg_surface* surface, u32 serial)
+{
     auto* window = static_cast<WaylandWindow*>(data);
     xdg_surface_ack_configure(surface, serial);
 
@@ -412,11 +442,13 @@ void WaylandWindow::HandleXdgSurfaceConfigure(void* data, xdg_surface* surface, 
     u32 fallback_height = window->floating_height_ != 0 ? window->floating_height_ : window->default_height_;
     u32 new_width = window->pending_width_ != 0 ? window->pending_width_ : fallback_width;
     u32 new_height = window->pending_height_ != 0 ? window->pending_height_ : fallback_height;
-    if (!window->pending_constrained_) {
+    if (!window->pending_constrained_)
+    {
         window->floating_width_ = new_width;
         window->floating_height_ = new_height;
     }
-    if (new_width != window->width_ || new_height != window->height_) {
+    if (new_width != window->width_ || new_height != window->height_)
+    {
         window->width_ = new_width;
         window->height_ = new_height;
         window->resize_serial_ = detail::NextResizeSerial();
@@ -426,14 +458,15 @@ void WaylandWindow::HandleXdgSurfaceConfigure(void* data, xdg_surface* surface, 
         // Deferred (CommitPendingResize) rather than done here: an
         // interactive drag delivers a configure per pointer motion, and
         // only the latest size is worth a new buffer.
-        if (window->buffer_ != nullptr) {
+        if (window->buffer_ != nullptr)
+        {
             window->buffer_stale_ = true;
         }
     }
 }
 
-void WaylandWindow::HandleToplevelConfigure(void* data, xdg_toplevel* toplevel, i32 width, i32 height,
-                                             wl_array* states) {
+void WaylandWindow::HandleToplevelConfigure(void* data, xdg_toplevel* toplevel, i32 width, i32 height, wl_array* states)
+{
     (void)toplevel;
     auto* window = static_cast<WaylandWindow*>(data);
     // Always overwrite, including with 0: a 0 dimension means "client
@@ -446,13 +479,16 @@ void WaylandWindow::HandleToplevelConfigure(void* data, xdg_toplevel* toplevel, 
     bool fullscreen = false;
     auto* begin = static_cast<u32*>(states->data);
     auto* end = begin + states->size / sizeof(u32);
-    for (u32* it = begin; it < end; ++it) {
+    for (u32* it = begin; it < end; ++it)
+    {
         if (*it == XDG_TOPLEVEL_STATE_MAXIMIZED || *it == XDG_TOPLEVEL_STATE_FULLSCREEN ||
             *it == XDG_TOPLEVEL_STATE_TILED_LEFT || *it == XDG_TOPLEVEL_STATE_TILED_RIGHT ||
-            *it == XDG_TOPLEVEL_STATE_TILED_TOP || *it == XDG_TOPLEVEL_STATE_TILED_BOTTOM) {
+            *it == XDG_TOPLEVEL_STATE_TILED_TOP || *it == XDG_TOPLEVEL_STATE_TILED_BOTTOM)
+        {
             constrained = true;
         }
-        if (*it == XDG_TOPLEVEL_STATE_FULLSCREEN) {
+        if (*it == XDG_TOPLEVEL_STATE_FULLSCREEN)
+        {
             fullscreen = true;
         }
     }
@@ -460,47 +496,60 @@ void WaylandWindow::HandleToplevelConfigure(void* data, xdg_toplevel* toplevel, 
     window->fullscreen_ = fullscreen;
 }
 
-bool WaylandWindow::SetFullscreen(bool fullscreen) {
-    if (xdg_toplevel_ == nullptr) {
+bool WaylandWindow::SetFullscreen(bool fullscreen)
+{
+    if (xdg_toplevel_ == nullptr)
+    {
         return false;
     }
-    if (fullscreen) {
+    if (fullscreen)
+    {
         xdg_toplevel_set_fullscreen(xdg_toplevel_, nullptr);
-    } else {
+    }
+    else
+    {
         xdg_toplevel_unset_fullscreen(xdg_toplevel_);
     }
     return true;
 }
 
-void WaylandWindow::HandleToplevelClose(void* data, xdg_toplevel* toplevel) {
+void WaylandWindow::HandleToplevelClose(void* data, xdg_toplevel* toplevel)
+{
     (void)toplevel;
     static_cast<WaylandWindow*>(data)->should_close_ = true;
 }
 
-void WaylandWindow::ReleaseAll() {
-    if (shm_data_ != nullptr) {
+void WaylandWindow::ReleaseAll()
+{
+    if (shm_data_ != nullptr)
+    {
         ::munmap(shm_data_, shm_size_);
         shm_data_ = nullptr;
         shm_size_ = 0;
     }
-    if (buffer_ != nullptr) {
+    if (buffer_ != nullptr)
+    {
         wl_buffer_destroy(buffer_);
         buffer_ = nullptr;
     }
-    if (decoration_ != nullptr) {
+    if (decoration_ != nullptr)
+    {
         zxdg_toplevel_decoration_v1_destroy(decoration_);
         decoration_ = nullptr;
         server_side_decorated_ = false;
     }
-    if (xdg_toplevel_ != nullptr) {
+    if (xdg_toplevel_ != nullptr)
+    {
         xdg_toplevel_destroy(xdg_toplevel_);
         xdg_toplevel_ = nullptr;
     }
-    if (xdg_surface_ != nullptr) {
+    if (xdg_surface_ != nullptr)
+    {
         xdg_surface_destroy(xdg_surface_);
         xdg_surface_ = nullptr;
     }
-    if (surface_ != nullptr) {
+    if (surface_ != nullptr)
+    {
         wl_surface_destroy(surface_);
         surface_ = nullptr;
     }
@@ -514,4 +563,4 @@ void WaylandWindow::ReleaseAll() {
     should_close_ = false;
 }
 
-} // namespace engine_placeholder::os::wayland
+}  // namespace engine_placeholder::os::wayland

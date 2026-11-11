@@ -17,22 +17,26 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
 
-namespace {
+namespace
+{
 
-struct NullFixture {
+struct NullFixture
+{
     rhi::NullDevicePtr device = rhi::CreateNullDevice();
 };
 
-Frustum FrontFrustum() {
+Frustum FrontFrustum()
+{
     Camera cam = MakeLookAtCamera(Vec3(0, 0, 0), Vec3(0, 0, -1), Vec3(0, 1, 0));
     cam.near_plane = 0.5f;
     cam.far_plane = 100.0f;
     return Frustum::FromViewProjection(cam.ViewProjection());
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("GpuMesh uploads vertices and indices and releases them", "[renderer][mesh]") {
+TEST_CASE("GpuMesh uploads vertices and indices and releases them", "[renderer][mesh]")
+{
     NullFixture f;
     MeshData data;
     REQUIRE(MakeSphereMesh(1.0f, 12, 6, &data) == nullptr);
@@ -59,7 +63,8 @@ TEST_CASE("GpuMesh uploads vertices and indices and releases them", "[renderer][
     CHECK(f.device->ErrorCount() == 0);
 }
 
-TEST_CASE("Scene ids are generational and slots are reused", "[renderer][scene]") {
+TEST_CASE("Scene ids are generational and slots are reused", "[renderer][scene]")
+{
     NullFixture f;
     MeshData data;
     REQUIRE(MakeCubeMesh(1.0f, &data) == nullptr);
@@ -77,7 +82,7 @@ TEST_CASE("Scene ids are generational and slots are reused", "[renderer][scene]"
     CHECK(scene.ObjectCount() == 2);
 
     scene.RemoveObject(a);
-    CHECK(scene.FindObject(a) == nullptr); // stale id
+    CHECK(scene.FindObject(a) == nullptr);  // stale id
     CHECK(scene.ObjectCount() == 1);
 
     ObjectId c = scene.AddObject(od);
@@ -93,7 +98,8 @@ TEST_CASE("Scene ids are generational and slots are reused", "[renderer][scene]"
     CHECK_FALSE(scene.AddObject(od).IsValid());
 }
 
-TEST_CASE("Scene lights are added, changed and removed", "[renderer][scene]") {
+TEST_CASE("Scene lights are added, changed and removed", "[renderer][scene]")
+{
     RenderSceneDesc desc;
     desc.max_lights = 2;
     RenderScene scene(desc);
@@ -113,7 +119,8 @@ TEST_CASE("Scene lights are added, changed and removed", "[renderer][scene]") {
     CHECK(scene.AddLight(l).IsValid());
 }
 
-TEST_CASE("Culling keeps visible objects and drops hidden, removed and off-screen ones", "[renderer][scene]") {
+TEST_CASE("Culling keeps visible objects and drops hidden, removed and off-screen ones", "[renderer][scene]")
+{
     NullFixture f;
     MeshData data;
     REQUIRE(MakeCubeMesh(1.0f, &data) == nullptr);
@@ -121,7 +128,8 @@ TEST_CASE("Culling keeps visible objects and drops hidden, removed and off-scree
     REQUIRE(mesh.Create(f.device.Get(), data, "cube"));
 
     RenderScene scene(RenderSceneDesc{});
-    auto add = [&](Vec3 p) {
+    auto add = [&](Vec3 p)
+    {
         RenderObjectDesc d;
         d.mesh = &mesh;
         d.transform = ModelMatrix(p, 1.0f, 0.0f);
@@ -135,13 +143,20 @@ TEST_CASE("Culling keeps visible objects and drops hidden, removed and off-scree
     ObjectId moved = add(Vec3(0, 0, 10));
     scene.SetFlags(hidden, ObjectFlags::kHidden);
     scene.RemoveObject(removed);
-    scene.SetTransform(moved, ModelMatrix(Vec3(0, 0, -20), 1.0f, 0.0f)); // brought into view
+    scene.SetTransform(moved, ModelMatrix(Vec3(0, 0, -20), 1.0f, 0.0f));  // brought into view
 
     Vector<u32> out;
     out.Resize(scene.SlotCount());
     u32 n = scene.Cull(FrontFrustum(), out.Data(), static_cast<u32>(out.Size()));
-    auto has = [&](ObjectId id) {
-        for (u32 i = 0; i < n; ++i) if (out[i] == id.index) return true;
+    auto has = [&](ObjectId id)
+    {
+        for (u32 i = 0; i < n; ++i)
+        {
+            if (out[i] == id.index)
+            {
+                return true;
+            }
+        }
         return false;
     };
     CHECK(n == 2);
@@ -153,7 +168,8 @@ TEST_CASE("Culling keeps visible objects and drops hidden, removed and off-scree
     CHECK_FALSE(has(removed));
 }
 
-TEST_CASE("Frame data layout matches the shader's std140 view", "[renderer][framedata]") {
+TEST_CASE("Frame data layout matches the shader's std140 view", "[renderer][framedata]")
+{
     Camera cam = MakeLookAtCamera(Vec3(1, 2, 3), Vec3(0, 0, 0), Vec3(0, 1, 0));
     FrameData fd = MakeFrameData(cam, 1280, 720, 2.5f, 0.016f, 7);
     CHECK(fd.camera_position.x == 1.0f);
@@ -166,7 +182,8 @@ TEST_CASE("Frame data layout matches the shader's std140 view", "[renderer][fram
     CHECK(ENGINE_OFFSET_OF(FrameData, camera_position) == 256);
 }
 
-TEST_CASE("FrameResources writes per-object data into the current frame's region", "[renderer][framedata]") {
+TEST_CASE("FrameResources writes per-object data into the current frame's region", "[renderer][framedata]")
+{
     NullFixture f;
     MeshData data;
     REQUIRE(MakeCubeMesh(1.0f, &data) == nullptr);
@@ -193,24 +210,28 @@ TEST_CASE("FrameResources writes per-object data into the current frame's region
     CHECK(r0.offset % align == 0);
     ObjectData got[2];
     REQUIRE(f.device->PeekBuffer(r0.buffer, r0.offset, got, sizeof(got)));
-    CHECK(got[0].world.col[3].y == 5.0f); // order follows the slot list
+    CHECK(got[0].world.col[3].y == 5.0f);  // order follows the slot list
     CHECK(got[1].world.col[3].x == 4.0f);
 
     res.BeginFrame(1);
     BufferRegion r1 = res.ObjectRegion();
-    CHECK(r1.offset != r0.offset); // a different region, so the GPU can still read frame 0's
+    CHECK(r1.offset != r0.offset);  // a different region, so the GPU can still read frame 0's
     CHECK(r1.offset % align == 0);
     CHECK(res.FrameRegion().offset % align == 0);
 
     // Exactly the buffer's capacity fits.
     Vector<u32> many;
     many.Resize(16);
-    for (usize i = 0; i < many.Size(); ++i) many[i] = id.index;
+    for (usize i = 0; i < many.Size(); ++i)
+    {
+        many[i] = id.index;
+    }
     CHECK(res.WriteObjects(scene, many.Data(), 16) == 16);
     CHECK(f.device->ErrorCount() == 0);
 }
 
-TEST_CASE("Culling and packing 100k objects (timing only)", "[renderer][scene][perf]") {
+TEST_CASE("Culling and packing 100k objects (timing only)", "[renderer][scene][perf]")
+{
     RenderSceneDesc desc;
     desc.max_objects = 100000;
     RenderScene scene(desc);
@@ -220,10 +241,12 @@ TEST_CASE("Culling and packing 100k objects (timing only)", "[renderer][scene][p
     NullFixture f;
     GpuMesh mesh;
     REQUIRE(mesh.Create(f.device.Get(), data, "cube"));
-    for (u32 i = 0; i < 100000; ++i) {
+    for (u32 i = 0; i < 100000; ++i)
+    {
         RenderObjectDesc d;
         d.mesh = &mesh;
-        d.transform = ModelMatrix(Vec3(static_cast<f32>(i % 100) * 3 - 150, 0, -static_cast<f32>(i / 100) * 3), 1.0f, 0.0f);
+        d.transform = ModelMatrix(Vec3(static_cast<f32>(i % 100) * 3 - 150, 0, -static_cast<f32>(i / 100) * 3), 1.0f,
+                                  0.0f);
         REQUIRE(scene.AddObject(d).IsValid());
     }
     Vector<u32> out;
@@ -237,24 +260,32 @@ TEST_CASE("Culling and packing 100k objects (timing only)", "[renderer][scene][p
     CHECK(n < 100000);
 }
 
-TEST_CASE("Creating and destroying 1000 meshes on a GPU leaks nothing", "[renderer][mesh][gpu]") {
-    FOR_EACH_GPU_BACKEND(backend) {
+TEST_CASE("Creating and destroying 1000 meshes on a GPU leaks nothing", "[renderer][mesh][gpu]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
         rhi::DeviceCreateInfo info;
         info.backend = backend;
         info.validation = rhi::ValidationSetting::On;
         info.pipeline_cache = false;
         rhi::DevicePtr device = rhi::CreateDevice(info);
-        if (device == nullptr) {
+        if (device == nullptr)
+        {
             const char* required = os::GetEnvironment("ENGINE_RHI_REQUIRE_GPU");
-            if (required != nullptr && required[0] == '1') FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no " << gpu_test::BackendTag(backend) << " device could be created");
+            if (required != nullptr && required[0] == '1')
+            {
+                FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no " << gpu_test::BackendTag(backend) << " device could be created");
+            }
             SKIP("no " << gpu_test::BackendTag(backend) << " device on this machine");
         }
         MeshData data;
         REQUIRE(MakeSphereMesh(1.0f, 16, 8, &data) == nullptr);
-        for (int i = 0; i < 1000; ++i) {
+        for (int i = 0; i < 1000; ++i)
+        {
             GpuMesh mesh;
             REQUIRE(mesh.Create(device.Get(), data, "leak-test"));
-            if (i % 100 == 99) {
+            if (i % 100 == 99)
+            {
                 device->BeginFrame();
                 device->EndFrame();
             }

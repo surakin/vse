@@ -20,28 +20,38 @@ using namespace engine_placeholder::rhi;
 using engine_placeholder::rhi::vulkan::ChooseRequestedSurfaceFormat;
 using engine_placeholder::rhi::vulkan::FillSwapchainCaps;
 
-namespace {
+namespace
+{
 
-struct SwapQuietLog {
+struct SwapQuietLog
+{
     bool saved = LogRhi.Enabled();
     SwapQuietLog() { LogRhi.SetEnabled(false); }
     ~SwapQuietLog() { LogRhi.SetEnabled(saved); }
 };
 
-struct SwapAssertThrown {};
-AssertAction SwapThrowingHandler(const AssertInfo&) { throw SwapAssertThrown{}; }
-struct SwapThrowingAsserts {
+struct SwapAssertThrown
+{
+};
+AssertAction SwapThrowingHandler(const AssertInfo&)
+{
+    throw SwapAssertThrown{};
+}
+struct SwapThrowingAsserts
+{
     AssertHandler previous = SetAssertHandler(&SwapThrowingHandler);
     ~SwapThrowingAsserts() { SetAssertHandler(previous); }
 };
 
-DeviceCreateInfo SwapNullInfo() {
+DeviceCreateInfo SwapNullInfo()
+{
     DeviceCreateInfo info;
     info.backend = Backend::Null;
     return info;
 }
 
-SwapchainDesc SwapSized(u32 w, u32 h) {
+SwapchainDesc SwapSized(u32 w, u32 h)
+{
     SwapchainDesc d;
     d.width = w;
     d.height = h;
@@ -53,21 +63,25 @@ const VkSurfaceFormatKHR kRgbaSrgb = {VK_FORMAT_R8G8B8A8_SRGB, VK_COLOR_SPACE_SR
 const VkSurfaceFormatKHR kUnorm = {VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
 const VkSurfaceFormatKHR kScRgb = {VK_FORMAT_R16G16B16A16_SFLOAT, VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT};
 
-struct SwapObserver final : DeviceObserver {
+struct SwapObserver final : DeviceObserver
+{
     int changed = 0;
     Format format = Format::Undefined;
     void OnDeviceReleasing(u32) override {}
     bool OnDeviceCreated(Device*, u32) override { return true; }
-    void OnSwapchainChanged(Swapchain* swapchain) override {
+    void OnSwapchainChanged(Swapchain* swapchain) override
+    {
         ++changed;
         format = swapchain->ImageFormat();
     }
     const char* ObserverName() const override { return "swap"; }
 };
 
-} // namespace
+}  // namespace
 
-TEST_CASE("The requested format is honored when offered and falls back with a note when not", "[rhi][swapchain][policy]") {
+TEST_CASE("The requested format is honored when offered and falls back with a note when not",
+          "[rhi][swapchain][policy]")
+{
     const VkSurfaceFormatKHR offered[] = {kSrgb, kUnorm};
     auto choice = ChooseRequestedSurfaceFormat(offered, 2, Format::Undefined, HdrMode::Off);
     CHECK(choice.format.format == VK_FORMAT_B8G8R8A8_SRGB);
@@ -78,12 +92,13 @@ TEST_CASE("The requested format is honored when offered and falls back with a no
     CHECK(choice.format.format == VK_FORMAT_B8G8R8A8_UNORM);
     CHECK(choice.fallback_note == nullptr);
 
-    choice = ChooseRequestedSurfaceFormat(offered, 2, Format::RGBA8_SRGB, HdrMode::Off); // not offered
+    choice = ChooseRequestedSurfaceFormat(offered, 2, Format::RGBA8_SRGB, HdrMode::Off);  // not offered
     CHECK(choice.format.format == VK_FORMAT_B8G8R8A8_SRGB);
     CHECK(choice.fallback_note != nullptr);
 }
 
-TEST_CASE("HDR is granted only with a matching surface format", "[rhi][swapchain][policy]") {
+TEST_CASE("HDR is granted only with a matching surface format", "[rhi][swapchain][policy]")
+{
     const VkSurfaceFormatKHR sdr_only[] = {kSrgb};
     auto choice = ChooseRequestedSurfaceFormat(sdr_only, 1, Format::Undefined, HdrMode::ScRgbLinear);
     CHECK(choice.space == ColorSpace::SrgbNonlinear);
@@ -102,7 +117,8 @@ TEST_CASE("HDR is granted only with a matching surface format", "[rhi][swapchain
     CHECK(choice.format.format == VK_FORMAT_B8G8R8A8_SRGB);
 }
 
-TEST_CASE("Swapchain capabilities list what the surface offers", "[rhi][swapchain][policy]") {
+TEST_CASE("Swapchain capabilities list what the surface offers", "[rhi][swapchain][policy]")
+{
     const VkSurfaceFormatKHR formats[] = {kSrgb, kRgbaSrgb, kSrgb, kScRgb};
     const VkPresentModeKHR modes[] = {VK_PRESENT_MODE_FIFO_KHR, VK_PRESENT_MODE_MAILBOX_KHR};
     SwapchainCaps caps;
@@ -112,12 +128,13 @@ TEST_CASE("Swapchain capabilities list what the surface offers", "[rhi][swapchai
     CHECK_FALSE(caps.present_mode_supported[2]);
     CHECK(caps.hdr_scrgb);
     CHECK_FALSE(caps.hdr10);
-    REQUIRE(caps.format_count == 2); // the duplicate and the HDR entry are not listed
+    REQUIRE(caps.format_count == 2);  // the duplicate and the HDR entry are not listed
     CHECK(caps.formats[0] == Format::BGRA8_SRGB);
     CHECK(caps.formats[1] == Format::RGBA8_SRGB);
 }
 
-TEST_CASE("A null swapchain reconfigures format, HDR and present mode and reports the result", "[rhi][swapchain]") {
+TEST_CASE("A null swapchain reconfigures format, HDR and present mode and reports the result", "[rhi][swapchain]")
+{
     DevicePtr device = CreateDevice(SwapNullInfo());
     Swapchain* swapchain = device->CreateSwapchain(SwapSized(64, 48));
     REQUIRE(swapchain != nullptr);
@@ -149,13 +166,14 @@ TEST_CASE("A null swapchain reconfigures format, HDR and present mode and report
     device->DestroySwapchain(swapchain);
 }
 
-TEST_CASE("A zero extent defers the swapchain and a later size brings it back", "[rhi][swapchain]") {
+TEST_CASE("A zero extent defers the swapchain and a later size brings it back", "[rhi][swapchain]")
+{
     DevicePtr device = CreateDevice(SwapNullInfo());
     Swapchain* swapchain = device->CreateSwapchain(SwapSized(64, 48));
     REQUIRE(swapchain != nullptr);
     CHECK(swapchain->Resize(0, 0) == SwapchainStatus::Minimized);
     device->BeginFrame();
-    CHECK(swapchain->Acquire() == SwapchainStatus::Minimized); // no zero-sized image exists
+    CHECK(swapchain->Acquire() == SwapchainStatus::Minimized);  // no zero-sized image exists
     device->EndFrame();
     CHECK(device->Resources().textures == 0);
     CHECK(swapchain->Resize(80, 60) == SwapchainStatus::Ok);
@@ -163,7 +181,8 @@ TEST_CASE("A zero extent defers the swapchain and a later size brings it back", 
     device->DestroySwapchain(swapchain);
 }
 
-TEST_CASE("Reconfigure while an image is acquired is rejected", "[rhi][swapchain]") {
+TEST_CASE("Reconfigure while an image is acquired is rejected", "[rhi][swapchain]")
+{
     SwapQuietLog quiet;
     SwapThrowingAsserts asserts;
     DevicePtr device = CreateDevice(SwapNullInfo());
@@ -172,9 +191,12 @@ TEST_CASE("Reconfigure while an image is acquired is rejected", "[rhi][swapchain
     device->BeginFrame();
     REQUIRE(swapchain->Acquire() == SwapchainStatus::Ok);
     bool rejected = false;
-    try {
+    try
+    {
         swapchain->Reconfigure(SwapSized(32, 32));
-    } catch (const SwapAssertThrown&) {
+    }
+    catch (const SwapAssertThrown&)
+    {
         rejected = true;
     }
     CHECK(rejected);
@@ -183,7 +205,9 @@ TEST_CASE("Reconfigure while an image is acquired is rejected", "[rhi][swapchain
     device->DestroySwapchain(swapchain);
 }
 
-TEST_CASE("The host reconfigures without touching the device and tells observers only about a format change", "[rhi][swapchain][host]") {
+TEST_CASE("The host reconfigures without touching the device and tells observers only about a format change",
+          "[rhi][swapchain][host]")
+{
     SwapQuietLog quiet;
     SwapObserver observer;
     DeviceHost host;
@@ -195,7 +219,7 @@ TEST_CASE("The host reconfigures without touching the device and tells observers
     SwapchainDesc desc = SwapSized(100, 80);
     desc.present_mode = PresentMode::Mailbox;
     CHECK(host.ReconfigureSwapchain(desc) == SwapchainStatus::Ok);
-    CHECK(observer.changed == 0); // size and mode only
+    CHECK(observer.changed == 0);  // size and mode only
     CHECK(host.Epoch() == epoch);
     CHECK(host.GetSwapchain()->Width() == 100);
 
@@ -203,27 +227,32 @@ TEST_CASE("The host reconfigures without touching the device and tells observers
     CHECK(host.ReconfigureSwapchain(desc) == SwapchainStatus::Ok);
     CHECK(observer.changed == 1);
     CHECK(observer.format == Format::RGBA16_Float);
-    CHECK(host.Epoch() == epoch); // still the same device
+    CHECK(host.Epoch() == epoch);  // still the same device
     host.Destroy();
 }
 
-TEST_CASE("The host refuses to reconfigure inside a frame", "[rhi][swapchain][host]") {
+TEST_CASE("The host refuses to reconfigure inside a frame", "[rhi][swapchain][host]")
+{
     SwapQuietLog quiet;
     SwapThrowingAsserts asserts;
     DeviceHost host;
     REQUIRE(host.Create(SwapNullInfo(), SwapSized(64, 48)));
     host.GetDevice()->BeginFrame();
     bool rejected = false;
-    try {
+    try
+    {
         host.ReconfigureSwapchain(SwapSized(32, 32));
-    } catch (const SwapAssertThrown&) {
+    }
+    catch (const SwapAssertThrown&)
+    {
         rejected = true;
     }
     CHECK(rejected);
     host.GetDevice()->EndFrame();
 }
 
-TEST_CASE("A lost surface is replaced without a device reset", "[rhi][swapchain][host]") {
+TEST_CASE("A lost surface is replaced without a device reset", "[rhi][swapchain][host]")
+{
     SwapQuietLog quiet;
     SwapObserver observer;
     DeviceHost host;
@@ -238,16 +267,17 @@ TEST_CASE("A lost surface is replaced without a device reset", "[rhi][swapchain]
     null_device->EndFrame();
 
     REQUIRE(host.RecreateSurface(nullptr, SwapSized(64, 48)));
-    CHECK(host.Epoch() == epoch); // same device
+    CHECK(host.Epoch() == epoch);  // same device
     CHECK(host.SurfaceFallbackCount() == 0);
-    CHECK(observer.changed == 0); // the format did not change, so nobody rebuilds anything
+    CHECK(observer.changed == 0);  // the format did not change, so nobody rebuilds anything
     host.GetDevice()->BeginFrame();
     CHECK(host.GetSwapchain()->Acquire() == SwapchainStatus::Ok);
     CHECK(host.GetSwapchain()->Present() == SwapchainStatus::Ok);
     host.GetDevice()->EndFrame();
 }
 
-TEST_CASE("When the adapter cannot present to the new surface the host does a full reset", "[rhi][swapchain][host]") {
+TEST_CASE("When the adapter cannot present to the new surface the host does a full reset", "[rhi][swapchain][host]")
+{
     SwapQuietLog quiet;
     DeviceHost host;
     DeviceCreateInfo info = SwapNullInfo();
@@ -261,24 +291,29 @@ TEST_CASE("When the adapter cannot present to the new surface the host does a fu
     CHECK(host.GetSwapchain() != nullptr);
 }
 
-TEST_CASE("A Vulkan swapchain format request without a window fails cleanly", "[rhi][swapchain][vulkan][gpu]") {
+TEST_CASE("A Vulkan swapchain format request without a window fails cleanly", "[rhi][swapchain][vulkan][gpu]")
+{
     gpu_test::GpuFixture fx;
     fx.Require();
     SwapQuietLog quiet;
     DeviceCreateInfo info;
     DevicePtr device = CreateDevice(info);
-    if (device == nullptr) {
+    if (device == nullptr)
+    {
         SKIP("no suitable Vulkan device");
     }
-    CHECK(device->CreateSwapchain(SwapchainDesc{}) == nullptr); // headless devices have no surface
+    CHECK(device->CreateSwapchain(SwapchainDesc{}) == nullptr);  // headless devices have no surface
 }
 
-namespace {
+namespace
+{
 
-void RunWindowReconfigure(os::WindowBackend backend) {
+void RunWindowReconfigure(os::WindowBackend backend)
+{
     os::InputState input;
     os::PlatformWindowHost window_host;
-    if (!window_host.Open(backend, "rhi reconfigure test", 320, 240, &input)) {
+    if (!window_host.Open(backend, "rhi reconfigure test", 320, 240, &input))
+    {
         SKIP("the window could not be opened");
     }
     os::Window* window = window_host.Get();
@@ -291,14 +326,17 @@ void RunWindowReconfigure(os::WindowBackend backend) {
     info.sync_validation = true;
     info.window = window;
     DeviceHost host;
-    if (!host.Create(info, SwapchainDesc{})) {
-        if (gpu_test::GpuRequired()) {
+    if (!host.Create(info, SwapchainDesc{}))
+    {
+        if (gpu_test::GpuRequired())
+        {
             FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no Vulkan device could present to the window");
         }
         SKIP("no Vulkan device can present to this window");
     }
     fx.ExpectErrors(0);
-    auto frame = [&]() {
+    auto frame = [&]()
+    {
         window->PumpEvents();
         Device* device = host.GetDevice();
         Swapchain* sc = host.GetSwapchain();
@@ -315,7 +353,8 @@ void RunWindowReconfigure(os::WindowBackend backend) {
         const SwapchainStatus presented = sc->Present();
         CHECK((presented == SwapchainStatus::Ok || presented == SwapchainStatus::Recreated));
     };
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < 5; ++i)
+    {
         frame();
     }
     const u32 epoch = host.Epoch();
@@ -326,8 +365,10 @@ void RunWindowReconfigure(os::WindowBackend backend) {
     desc.present_mode = PresentMode::Immediate;
     REQUIRE(host.ReconfigureSwapchain(desc) == SwapchainStatus::Ok);
     CHECK(host.GetSwapchain()->ActualPresentMode() ==
-          (caps.present_mode_supported[static_cast<usize>(PresentMode::Immediate)] ? PresentMode::Immediate : PresentMode::Fifo));
-    for (int i = 0; i < 3; ++i) {
+          (caps.present_mode_supported[static_cast<usize>(PresentMode::Immediate)] ? PresentMode::Immediate
+                                                                                   : PresentMode::Fifo));
+    for (int i = 0; i < 3; ++i)
+    {
         frame();
     }
 
@@ -339,7 +380,8 @@ void RunWindowReconfigure(os::WindowBackend backend) {
     frame();
 
     // A format request the surface offers is honored; the actual format is reported.
-    if (caps.format_count > 0) {
+    if (caps.format_count > 0)
+    {
         desc.hdr = HdrMode::Off;
         desc.format = caps.formats[caps.format_count - 1];
         REQUIRE(host.ReconfigureSwapchain(desc) == SwapchainStatus::Ok);
@@ -351,32 +393,39 @@ void RunWindowReconfigure(os::WindowBackend backend) {
     REQUIRE(host.RecreateSurface(window, desc));
     CHECK(host.Epoch() == epoch);
     CHECK(host.SurfaceFallbackCount() == 0);
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 3; ++i)
+    {
         frame();
     }
     host.Destroy();
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("A Wayland swapchain reconfigures and its surface is replaced", "[rhi][vulkan][gpu][window][wayland][swapchain]") {
+TEST_CASE("A Wayland swapchain reconfigures and its surface is replaced",
+          "[rhi][vulkan][gpu][window][wayland][swapchain]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
-    if (os::GetEnvironment("WAYLAND_DISPLAY") == nullptr) {
+    if (os::GetEnvironment("WAYLAND_DISPLAY") == nullptr)
+    {
         SKIP("no Wayland session");
     }
     RunWindowReconfigure(os::WindowBackend::Wayland);
 }
 
-TEST_CASE("An X11 swapchain reconfigures and its surface is replaced", "[rhi][vulkan][gpu][window][x11][swapchain]") {
+TEST_CASE("An X11 swapchain reconfigures and its surface is replaced", "[rhi][vulkan][gpu][window][x11][swapchain]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
-    if (os::GetEnvironment("DISPLAY") == nullptr) {
+    if (os::GetEnvironment("DISPLAY") == nullptr)
+    {
         SKIP("no X11 display");
     }
     RunWindowReconfigure(os::WindowBackend::X11);
 }
 
 // Phase 13 Day 160: the same checks through the Win32 window and the VK_KHR_win32_surface surface.
-TEST_CASE("A Win32 swapchain reconfigures and its surface is replaced", "[rhi][vulkan][gpu][window][win32][swapchain]") {
+TEST_CASE("A Win32 swapchain reconfigures and its surface is replaced", "[rhi][vulkan][gpu][window][win32][swapchain]")
+{
 #if ENGINE_PLATFORM_WINDOWS
     SKIP_IF_NO_DISPLAY_SESSION();
     RunWindowReconfigure(os::WindowBackend::Win32);

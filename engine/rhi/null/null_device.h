@@ -10,16 +10,19 @@
 //! It lets the layers above the RHI, and the contract itself, be tested with no GPU. Buffer contents are
 //! kept in host memory so uploads, copies and mapping round-trip; textures keep only their state.
 
-namespace engine_placeholder::rhi {
+namespace engine_placeholder::rhi
+{
 
-namespace detail {
+namespace detail
+{
 struct NullDeviceState;
-} // namespace detail
+}  // namespace detail
 
 /// Options for [[rhi::CreateNullDevice]].
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct NullDeviceOptions {
+struct NullDeviceOptions
+{
     /// Creates options with the RHI-guaranteed minimum limits, except that the sampler anisotropy limit is 16.
     NullDeviceOptions() { caps.max_sampler_anisotropy = 16.0f; }
 
@@ -32,8 +35,8 @@ struct NullDeviceOptions {
     u32 simulated_latency_frames = 0;
     /// Largest buffer the device will allocate, in bytes; larger requests fail like an out-of-memory condition.
     u64 max_buffer_bytes = 256ull << 20;
-    /// Reports the device lost at the start of this frame (1 is the first `BeginFrame`), as [[rhi::FaultInjection]] does
-    /// for the Vulkan backend; 0 never does.
+    /// Reports the device lost at the start of this frame (1 is the first `BeginFrame`), as [[rhi::FaultInjection]]
+    /// does for the Vulkan backend; 0 never does.
     u32 lose_device_at_frame = 0;
     /// Reports the device lost at the Nth submit that submits something; 0 never does.
     u32 lose_device_at_submit = 0;
@@ -50,7 +53,8 @@ struct NullDeviceOptions {
     AdapterInfo adapter = DefaultAdapter();
 
     /// Returns the adapter a default-constructed option set reports.
-    static AdapterInfo DefaultAdapter() {
+    static AdapterInfo DefaultAdapter()
+    {
         AdapterList list;
         DefaultNullAdapters(&list);
         return list.items[0];
@@ -60,7 +64,8 @@ struct NullDeviceOptions {
 /// Counts of the null device's resources, for tests and leak checks.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct NullDeviceStats {
+struct NullDeviceStats
+{
     /// Live buffers.
     usize buffers = 0;
     /// Live textures.
@@ -96,7 +101,8 @@ using NullDevicePtr = UniquePtr<NullDevice, DeviceDeleter>;
 /// - Thread-safety: thread-safe for creation, destruction, mapping and inspection; `Submit`, `BeginFrame`,
 ///   `EndFrame` and `WaitIdle` belong to one submission thread, as for [[rhi::Device]].
 /// - Ownership: created by [[rhi::CreateNullDevice]], which returns a [[rhi::NullDevicePtr]].
-class NullDevice final : public Device {
+class NullDevice final : public Device
+{
 public:
     /// Creates the device; use [[rhi::CreateNullDevice]].
     ///
@@ -224,4 +230,4 @@ NullDevicePtr CreateNullDevice(const NullDeviceOptions& options = NullDeviceOpti
 /// - Thread-safety: thread-safe.
 bool RegisterNullBackend();
 
-} // namespace engine_placeholder::rhi
+}  // namespace engine_placeholder::rhi

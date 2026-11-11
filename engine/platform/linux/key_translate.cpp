@@ -5,26 +5,34 @@
 // this translation.
 #include <xkbcommon/xkbcommon-keysyms.h>
 
-namespace engine_placeholder::os {
+namespace engine_placeholder::os
+{
 
-Key KeyFromKeysym(u32 keysym) {
-    if (keysym >= XKB_KEY_a && keysym <= XKB_KEY_z) {
+Key KeyFromKeysym(u32 keysym)
+{
+    if (keysym >= XKB_KEY_a && keysym <= XKB_KEY_z)
+    {
         return static_cast<Key>(static_cast<u32>(Key::A) + (keysym - XKB_KEY_a));
     }
-    if (keysym >= XKB_KEY_A && keysym <= XKB_KEY_Z) {
+    if (keysym >= XKB_KEY_A && keysym <= XKB_KEY_Z)
+    {
         return static_cast<Key>(static_cast<u32>(Key::A) + (keysym - XKB_KEY_A));
     }
-    if (keysym >= XKB_KEY_0 && keysym <= XKB_KEY_9) {
+    if (keysym >= XKB_KEY_0 && keysym <= XKB_KEY_9)
+    {
         return static_cast<Key>(static_cast<u32>(Key::Num0) + (keysym - XKB_KEY_0));
     }
-    if (keysym >= XKB_KEY_KP_0 && keysym <= XKB_KEY_KP_9) {
+    if (keysym >= XKB_KEY_KP_0 && keysym <= XKB_KEY_KP_9)
+    {
         return static_cast<Key>(static_cast<u32>(Key::Num0) + (keysym - XKB_KEY_KP_0));
     }
-    if (keysym >= XKB_KEY_F1 && keysym <= XKB_KEY_F12) {
+    if (keysym >= XKB_KEY_F1 && keysym <= XKB_KEY_F12)
+    {
         return static_cast<Key>(static_cast<u32>(Key::F1) + (keysym - XKB_KEY_F1));
     }
 
-    switch (keysym) {
+    switch (keysym)
+    {
     case XKB_KEY_Escape: return Key::Escape;
     case XKB_KEY_Return:
     case XKB_KEY_KP_Enter: return Key::Enter;
@@ -67,4 +75,4 @@ Key KeyFromKeysym(u32 keysym) {
     }
 }
 
-} // namespace engine_placeholder::os
+}  // namespace engine_placeholder::os

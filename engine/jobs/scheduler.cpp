@@ -9,20 +9,30 @@
 #include "sync/atomic.h"
 #include "sync/mutex.h"
 
-namespace engine_placeholder::jobs {
+namespace engine_placeholder::jobs
+{
 
-namespace {
+namespace
+{
 thread_local int tls_job_depth = 0;
-} // namespace
+}  // namespace
 
-Scheduler::Scheduler(const Config& config) {
+Scheduler::Scheduler(const Config& config)
+{
     usize n = config.participants != 0 ? config.participants : DefaultParticipantCount();
-    if (n > kMaxParticipants) n = kMaxParticipants;
+    if (n > kMaxParticipants)
+    {
+        n = kMaxParticipants;
+    }
     count_ = n;
     lanes_.Resize(count_);
-    for (usize i = 0; i < count_; ++i) {
+    for (usize i = 0; i < count_; ++i)
+    {
         lanes_[i].rng = 0x9E3779B9u * static_cast<u32>(i + 1);
-        if (lanes_[i].rng == 0) lanes_[i].rng = 1;
+        if (lanes_[i].rng == 0)
+        {
+            lanes_[i].rng = 1;
+        }
     }
     WorkerPool::Config pc;
     pc.participants = count_;
@@ -35,32 +45,51 @@ Scheduler::Scheduler(const Config& config) {
     io_ = MakeUnique<IoThread>();
 }
 
-Scheduler::~Scheduler() {
+Scheduler::~Scheduler()
+{
     Shutdown();
-    io_.Reset(); // the I/O thread first, then the workers it feeds
+    io_.Reset();  // the I/O thread first, then the workers it feeds
     pool_.Reset();
 }
 
-Scheduler* Scheduler::Current() {
+Scheduler* Scheduler::Current()
+{
     const Participant* p = WorkerPool::Current();
-    if (p == nullptr || p->owner == nullptr) return nullptr;
+    if (p == nullptr || p->owner == nullptr)
+    {
+        return nullptr;
+    }
     auto* pool = static_cast<WorkerPool*>(p->owner);
     // Only pools created by a Scheduler carry a Scheduler* in `user`.
-    if (pool->WorkerFunction() != &Scheduler::WorkerMain) return nullptr;
+    if (pool->WorkerFunction() != &Scheduler::WorkerMain)
+    {
+        return nullptr;
+    }
     return static_cast<Scheduler*>(pool->User());
 }
 
-bool Scheduler::InsideJob() { return tls_job_depth > 0; }
+bool Scheduler::InsideJob()
+{
+    return tls_job_depth > 0;
+}
 
-int Scheduler::OwnIndex() const {
+int Scheduler::OwnIndex() const
+{
     const Participant* p = WorkerPool::Current();
-    if (p != nullptr && p->owner == pool_.Get()) return static_cast<int>(p->index);
+    if (p != nullptr && p->owner == pool_.Get())
+    {
+        return static_cast<int>(p->index);
+    }
     return -1;
 }
 
-bool Scheduler::IsMainThread() const { return OwnIndex() == 0; }
+bool Scheduler::IsMainThread() const
+{
+    return OwnIndex() == 0;
+}
 
-u32 Scheduler::NextRandom(Lane& lane) {
+u32 Scheduler::NextRandom(Lane& lane)
+{
     u32 x = lane.rng;
     x ^= x << 13;
     x ^= x >> 17;
@@ -69,19 +98,30 @@ u32 Scheduler::NextRandom(Lane& lane) {
     return x;
 }
 
-bool Scheduler::PushInjection(CoroutineHandle<> h) {
+bool Scheduler::PushInjection(CoroutineHandle<> h)
+{
     LockGuard<Mutex> lock(injection_mutex_);
-    if (injection_count_ == kInjectionCapacity) return false;
+    if (injection_count_ == kInjectionCapacity)
+    {
+        return false;
+    }
     injection_[(injection_head_ + injection_count_) % kInjectionCapacity] = h;
     ++injection_count_;
     injection_hint_.Store(injection_count_, MemoryOrder::SeqCst);
     return true;
 }
 
-CoroutineHandle<> Scheduler::PopInjection() {
-    if (injection_hint_.Load(MemoryOrder::SeqCst) == 0) return {};
+CoroutineHandle<> Scheduler::PopInjection()
+{
+    if (injection_hint_.Load(MemoryOrder::SeqCst) == 0)
+    {
+        return {};
+    }
     LockGuard<Mutex> lock(injection_mutex_);
-    if (injection_count_ == 0) return {};
+    if (injection_count_ == 0)
+    {
+        return {};
+    }
     CoroutineHandle<> h = injection_[injection_head_];
     injection_head_ = (injection_head_ + 1) % kInjectionCapacity;
     --injection_count_;
@@ -89,22 +129,32 @@ CoroutineHandle<> Scheduler::PopInjection() {
     return h;
 }
 
-usize Scheduler::InjectionQueueSizeForTesting() {
+usize Scheduler::InjectionQueueSizeForTesting()
+{
     LockGuard<Mutex> lock(injection_mutex_);
     return injection_count_;
 }
 
-CoroutineHandle<> Scheduler::TrySteal(usize index) {
-    if (count_ < 2) return {};
+CoroutineHandle<> Scheduler::TrySteal(usize index)
+{
+    if (count_ < 2)
+    {
+        return {};
+    }
     Lane& me = lanes_[index];
     const usize attempts = 2 * count_;
-    for (usize a = 0; a < attempts; ++a) {
+    for (usize a = 0; a < attempts; ++a)
+    {
         // Uniform over the other count_-1 participants.
         usize victim = NextRandom(me) % (count_ - 1);
-        if (victim >= index) ++victim;
+        if (victim >= index)
+        {
+            ++victim;
+        }
         CoroutineHandle<> h;
         StealStatus st = lanes_[victim].deque.StealTop(h);
-        if (st == StealStatus::Success) {
+        if (st == StealStatus::Success)
+        {
             me.steals.FetchAdd(1, MemoryOrder::Relaxed);
             return h;
         }
@@ -112,44 +162,69 @@ CoroutineHandle<> Scheduler::TrySteal(usize index) {
     return {};
 }
 
-CoroutineHandle<> Scheduler::FindWork(usize index) {
+CoroutineHandle<> Scheduler::FindWork(usize index)
+{
     CoroutineHandle<> h = lanes_[index].deque.PopBottom();
-    if (h) return h;
+    if (h)
+    {
+        return h;
+    }
     h = PopInjection();
-    if (h) return h;
+    if (h)
+    {
+        return h;
+    }
     return TrySteal(index);
 }
 
-void Scheduler::Run(usize index, CoroutineHandle<> h) {
+void Scheduler::Run(usize index, CoroutineHandle<> h)
+{
     ++tls_job_depth;
-    h.resume(); // may destroy the frame; do not touch `h` afterwards
+    h.resume();  // may destroy the frame; do not touch `h` afterwards
     --tls_job_depth;
     lanes_[index].resumes.FetchAdd(1, MemoryOrder::Relaxed);
 }
 
-void Scheduler::NotifyWork() {
+void Scheduler::NotifyWork()
+{
     submit_seq_.FetchAdd(1, MemoryOrder::SeqCst);
-    if (parked_.Load(MemoryOrder::SeqCst) > 0) {
+    if (parked_.Load(MemoryOrder::SeqCst) > 0)
+    {
         // Taking the mutex orders this notify after a worker that has
         // decided to wait is really waiting (see the protocol above).
-        { LockGuard<Mutex> lock(park_mutex_); }
+        {
+            LockGuard<Mutex> lock(park_mutex_);
+        }
         park_cv_.NotifyOne();
     }
 }
 
-void Scheduler::Submit(Job&& job) { Schedule(job.Release()); }
+void Scheduler::Submit(Job&& job)
+{
+    Schedule(job.Release());
+}
 
-CoroutineHandle<> Scheduler::SweepAll(usize index) {
-    for (usize v = 0; v < count_; ++v) {
-        if (v == index) continue;
-        for (;;) {
+CoroutineHandle<> Scheduler::SweepAll(usize index)
+{
+    for (usize v = 0; v < count_; ++v)
+    {
+        if (v == index)
+        {
+            continue;
+        }
+        for (;;)
+        {
             CoroutineHandle<> h;
             StealStatus st = lanes_[v].deque.StealTop(h);
-            if (st == StealStatus::Success) {
+            if (st == StealStatus::Success)
+            {
                 lanes_[index].steals.FetchAdd(1, MemoryOrder::Relaxed);
                 return h;
             }
-            if (st == StealStatus::Empty) break;
+            if (st == StealStatus::Empty)
+            {
+                break;
+            }
         }
     }
     return {};
@@ -158,39 +233,53 @@ CoroutineHandle<> Scheduler::SweepAll(usize index) {
 // Main thread, outside any job, both queues full: run work until the
 // injection queue has kBackpressureSlack free slots (preferring to drain
 // the injection queue itself) so the jobs run here can fan out.
-void Scheduler::MakeRoom() {
-    for (;;) {
+void Scheduler::MakeRoom()
+{
+    for (;;)
+    {
         {
             LockGuard<Mutex> lock(injection_mutex_);
-            if (kInjectionCapacity - injection_count_ >= kBackpressureSlack) return;
+            if (kInjectionCapacity - injection_count_ >= kBackpressureSlack)
+            {
+                return;
+            }
         }
         CoroutineHandle<> w = PopInjection();
-        if (!w) w = FindWork(0);
-        if (w) {
+        if (!w)
+        {
+            w = FindWork(0);
+        }
+        if (w)
+        {
             Run(0, w);
-        } else {
+        }
+        else
+        {
             ThisThread::Yield();
         }
     }
 }
 
-void Scheduler::Schedule(CoroutineHandle<> h) {
+void Scheduler::Schedule(CoroutineHandle<> h)
+{
     ENGINE_ASSERT(h.address() != nullptr, "Scheduler::Schedule: null handle");
     ENGINE_ASSERT(!drained_.Load(MemoryOrder::Acquire), "Scheduler::Schedule after Shutdown completed");
     const int own = OwnIndex();
-    if (own >= 0 && lanes_[own].deque.PushBottom(h)) {
+    if (own >= 0 && lanes_[own].deque.PushBottom(h))
+    {
         NotifyWork();
         return;
     }
-    if (!PushInjection(h)) {
+    if (!PushInjection(h))
+    {
         // Both full. Main outside a job makes room by running work;
         // anyone else has hit a capacity bug.
-        ENGINE_ASSERT(own == 0 && tls_job_depth == 0,
-                      "job queues full: deque and injection queue are at capacity");
+        ENGINE_ASSERT(own == 0 && tls_job_depth == 0, "job queues full: deque and injection queue are at capacity");
         MakeRoom();
         // Prefer our own deque again (running jobs may have freed it),
         // else the injection queue, which now has slack.
-        if (!lanes_[0].deque.PushBottom(h)) {
+        if (!lanes_[0].deque.PushBottom(h))
+        {
             bool ok = PushInjection(h);
             ENGINE_ASSERT(ok, "injection queue refilled while making room");
             (void)ok;
@@ -199,59 +288,82 @@ void Scheduler::Schedule(CoroutineHandle<> h) {
     NotifyWork();
 }
 
-void Scheduler::HelpUntil(bool (*done)(void* user), void* user) {
+void Scheduler::HelpUntil(bool (*done)(void* user), void* user)
+{
     ENGINE_ASSERT(IsMainThread(), "Scheduler::HelpUntil is only for participant 0 (the main thread)");
     ENGINE_ASSERT(tls_job_depth == 0, "Scheduler::HelpUntil called from inside a job (jobs wait with co_await)");
-    while (!done(user)) {
+    while (!done(user))
+    {
         CoroutineHandle<> h = FindWork(0);
-        if (h) {
+        if (h)
+        {
             Run(0, h);
-        } else {
+        }
+        else
+        {
             ThisThread::Yield();
         }
     }
 }
 
-void Scheduler::HelpUntil(Counter& counter) {
+void Scheduler::HelpUntil(Counter& counter)
+{
     HelpUntil([](void* c) { return static_cast<Counter*>(c)->IsZero(); }, &counter);
 }
 
-void Scheduler::HelpUntil(const Atomic<int>& value, int target) {
-    struct Ctx {
+void Scheduler::HelpUntil(const Atomic<int>& value, int target)
+{
+    struct Ctx
+    {
         const Atomic<int>* v;
         int target;
     } ctx{&value, target};
-    HelpUntil([](void* u) { auto* c = static_cast<Ctx*>(u); return c->v->Load(MemoryOrder::Acquire) >= c->target; },
-              &ctx);
+    HelpUntil(
+        [](void* u)
+        {
+            auto* c = static_cast<Ctx*>(u);
+            return c->v->Load(MemoryOrder::Acquire) >= c->target;
+        },
+        &ctx);
 }
 
-void Scheduler::WorkerMain(void* user, Participant& self) { static_cast<Scheduler*>(user)->WorkerLoop(self); }
+void Scheduler::WorkerMain(void* user, Participant& self)
+{
+    static_cast<Scheduler*>(user)->WorkerLoop(self);
+}
 
-void Scheduler::WorkerLoop(Participant& self) {
+void Scheduler::WorkerLoop(Participant& self)
+{
     const usize index = self.index;
-    while (!shutdown_.Load(MemoryOrder::Acquire)) {
+    while (!shutdown_.Load(MemoryOrder::Acquire))
+    {
         const u64 seq = submit_seq_.Load(MemoryOrder::SeqCst);
         CoroutineHandle<> h = FindWork(index);
-        if (h) {
+        if (h)
+        {
             Run(index, h);
             continue;
         }
         // Bounded yield backoff before parking.
         bool found = false;
-        for (int r = 0; r < kYieldRounds && !shutdown_.Load(MemoryOrder::Acquire); ++r) {
+        for (int r = 0; r < kYieldRounds && !shutdown_.Load(MemoryOrder::Acquire); ++r)
+        {
             ThisThread::Yield();
             h = FindWork(index);
-            if (h) {
+            if (h)
+            {
                 found = true;
                 break;
             }
         }
-        if (found) {
+        if (found)
+        {
             Run(index, h);
             continue;
         }
         h = SweepAll(index);
-        if (h) {
+        if (h)
+        {
             Run(index, h);
             continue;
         }
@@ -259,15 +371,18 @@ void Scheduler::WorkerLoop(Participant& self) {
         // rounds above, so any submission after it changes submit_seq_.
         UniqueLock<Mutex> lock(park_mutex_);
         parked_.FetchAdd(1, MemoryOrder::SeqCst);
-        park_cv_.Wait(lock, [&] {
-            return submit_seq_.Load(MemoryOrder::SeqCst) != seq || shutdown_.Load(MemoryOrder::Acquire);
-        });
+        park_cv_.Wait(lock, [&]
+                      { return submit_seq_.Load(MemoryOrder::SeqCst) != seq || shutdown_.Load(MemoryOrder::Acquire); });
         parked_.FetchSub(1, MemoryOrder::SeqCst);
     }
 }
 
-usize Scheduler::Shutdown() {
-    if (shut_down_) return 0;
+usize Scheduler::Shutdown()
+{
+    if (shut_down_)
+    {
+        return 0;
+    }
     shut_down_ = true;
     // Drain the I/O thread first: in-flight reads finish and their
     // continuations are scheduled while the workers still run.
@@ -281,40 +396,69 @@ usize Scheduler::Shutdown() {
 
     // Workers are gone: destroy whatever never ran.
     usize dropped = 0;
-    for (;;) {
+    for (;;)
+    {
         CoroutineHandle<> h = PopInjection();
-        if (!h) break;
+        if (!h)
+        {
+            break;
+        }
         h.destroy();
         ++dropped;
     }
-    for (usize i = 0; i < count_; ++i) {
-        for (;;) {
-            CoroutineHandle<> h; // reset every pass: a Lost steal leaves it null
-            if (i == 0 && IsMainThread()) {
+    for (usize i = 0; i < count_; ++i)
+    {
+        for (;;)
+        {
+            CoroutineHandle<> h;  // reset every pass: a Lost steal leaves it null
+            if (i == 0 && IsMainThread())
+            {
                 h = lanes_[0].deque.PopBottom();
-                if (!h) break;
-            } else {
-                if (lanes_[i].deque.StealTop(h) == StealStatus::Empty) break;
-                if (!h) continue;
+                if (!h)
+                {
+                    break;
+                }
+            }
+            else
+            {
+                if (lanes_[i].deque.StealTop(h) == StealStatus::Empty)
+                {
+                    break;
+                }
+                if (!h)
+                {
+                    continue;
+                }
             }
             h.destroy();
             ++dropped;
         }
     }
     drained_.Store(true, MemoryOrder::Release);
-    if (dropped != 0) {
+    if (dropped != 0)
+    {
         JobsLog(LogVerbosity::Warn, "scheduler shutdown destroyed %zu queued job(s) that never ran",
                 static_cast<size_t>(dropped));
     }
     return dropped;
 }
 
-u64 Scheduler::ResumesBy(usize p) const { return lanes_[p].resumes.Load(MemoryOrder::Relaxed); }
-u64 Scheduler::StealsBy(usize p) const { return lanes_[p].steals.Load(MemoryOrder::Relaxed); }
-u64 Scheduler::TotalResumes() const {
+u64 Scheduler::ResumesBy(usize p) const
+{
+    return lanes_[p].resumes.Load(MemoryOrder::Relaxed);
+}
+u64 Scheduler::StealsBy(usize p) const
+{
+    return lanes_[p].steals.Load(MemoryOrder::Relaxed);
+}
+u64 Scheduler::TotalResumes() const
+{
     u64 t = 0;
-    for (usize i = 0; i < count_; ++i) t += ResumesBy(i);
+    for (usize i = 0; i < count_; ++i)
+    {
+        t += ResumesBy(i);
+    }
     return t;
 }
 
-} // namespace engine_placeholder::jobs
+}  // namespace engine_placeholder::jobs

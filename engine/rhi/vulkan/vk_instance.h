@@ -6,24 +6,28 @@
 
 //! The Vulkan instance, the validation layer policy and the validation message counters.
 
-namespace engine_placeholder::rhi::vulkan {
+namespace engine_placeholder::rhi::vulkan
+{
 
 /// Whether to enable the Khronos validation layer for an instance.
-enum class ValidationMode : u8 {
-    Auto = 0, ///< Follow `ENGINE_RHI_VALIDATION` if set, otherwise on in Debug builds and off in Release.
-    Off,      ///< Never enable validation, whatever the environment says.
-    On,       ///< Enable validation if the layer is installed.
+enum class ValidationMode : u8
+{
+    Auto = 0,  ///< Follow `ENGINE_RHI_VALIDATION` if set, otherwise on in Debug builds and off in Release.
+    Off,       ///< Never enable validation, whatever the environment says.
+    On,        ///< Enable validation if the layer is installed.
 };
 
 /// What to create a [[rhi::vulkan::VulkanInstance]] for.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct VulkanInstanceDesc {
+struct VulkanInstanceDesc
+{
     /// Application name reported to the driver; a static string. Must not be null.
     const char* application_name = "engine";
     /// Application version reported to the driver (`VK_MAKE_VERSION` encoding).
     u32 application_version = 0;
-    /// Enable the surface extensions (`VK_KHR_surface` and the platform's: Wayland and Xlib, or Win32) so windows can be presented to.
+    /// Enable the surface extensions (`VK_KHR_surface` and the platform's: Wayland and Xlib, or Win32) so windows can
+    /// be presented to.
     bool presentable = false;
     /// Whether the validation layer is wanted; see [[rhi::vulkan::ValidationMode]].
     ValidationMode validation = ValidationMode::Auto;
@@ -36,7 +40,8 @@ struct VulkanInstanceDesc {
 /// The outcome of resolving a [[rhi::vulkan::VulkanInstanceDesc]] against the environment.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct ValidationPolicy {
+struct ValidationPolicy
+{
     /// Whether to ask for the validation layer.
     bool enable = false;
     /// Whether synchronization validation is requested.
@@ -45,7 +50,8 @@ struct ValidationPolicy {
     bool best_practices = false;
 };
 
-/// Decides the validation settings from the descriptor and the three environment values, without touching the environment.
+/// Decides the validation settings from the descriptor and the three environment values, without touching the
+/// environment.
 ///
 /// `ENGINE_RHI_VALIDATION` is consulted only for `ValidationMode::Auto`; a value of `"1"` means on and `"0"` off.
 /// The sync and best-practices variables override the descriptor whenever they are set to `"1"` or `"0"`.
@@ -56,13 +62,14 @@ struct ValidationPolicy {
 /// - Param env_best_practices: value of `ENGINE_RHI_VALIDATION_BEST_PRACTICES`, or null if unset.
 /// - Param debug_build: whether this is a Debug build, the default for `Auto` with no environment value.
 /// - Returns: the resolved policy. Sync and best-practices are false when validation is not enabled.
-ValidationPolicy ResolveValidationPolicy(const VulkanInstanceDesc& desc, const char* env_validation, const char* env_sync,
-                                         const char* env_best_practices, bool debug_build);
+ValidationPolicy ResolveValidationPolicy(const VulkanInstanceDesc& desc, const char* env_validation,
+                                         const char* env_sync, const char* env_best_practices, bool debug_build);
 
 /// Running totals of validation messages since process start or the last [[rhi::vulkan::ResetValidationCounts]].
 ///
 /// - Thread-safety: thread-compatible plain data (a snapshot).
-struct ValidationCounts {
+struct ValidationCounts
+{
     /// Messages at `ERROR` severity.
     u64 errors = 0;
     /// Messages at `WARNING` severity.
@@ -82,7 +89,8 @@ void ResetValidationCounts();
 /// (`Error`, `Warn`, `Debug` or `Trace`), the validation message id (possibly empty) and the full message text.
 /// For a few messages the loader reports the error itself and the id is the generic `Loader Message`, with the
 /// `VUID-...` in the text.
-using ValidationCaptureFn = void (*)(void* user, LogVerbosity severity, const char* message_id_name, const char* message);
+using ValidationCaptureFn = void (*)(void* user, LogVerbosity severity, const char* message_id_name,
+                                     const char* message);
 
 /// Installs a hook that sees every validation message, or removes it when `fn` is null.
 ///
@@ -101,7 +109,8 @@ void SetValidationCapture(ValidationCaptureFn fn, void* user);
 /// - Thread-safety: thread-compatible. The tables it exposes are immutable after creation.
 /// - Ownership: owns the `VkInstance` and debug messenger. It keeps a copy of the loader it was created from (the
 ///   library itself is never unloaded), so the loader passed to `Create` need not outlive it.
-class VulkanInstance {
+class VulkanInstance
+{
 public:
     /// Constructs an invalid instance; use [[rhi::vulkan::VulkanInstance::Create]].
     VulkanInstance() = default;
@@ -156,4 +165,4 @@ private:
     bool presentable_ = false;
 };
 
-} // namespace engine_placeholder::rhi::vulkan
+}  // namespace engine_placeholder::rhi::vulkan

@@ -1,5 +1,5 @@
-// The window backend choice: the name parser and both platforms' plans run everywhere; the window host is tested on the platform it is
-// built for (Linux: Wayland and X11, Windows: Win32, Phase 13 Day 158).
+// The window backend choice: the name parser and both platforms' plans run everywhere; the window host is tested on the
+// platform it is built for (Linux: Wayland and X11, Windows: Win32, Phase 13 Day 158).
 #include "os/console.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -23,35 +23,47 @@
 #include "platform/linux/x11/x11_window.h"
 #endif
 
-// The using-directives stay inside this namespace: at file scope they would leak into the files merged after this one in a unity build
-// (an X11 header then finds `Window` ambiguous).
-namespace window_backend_test {
+// The using-directives stay inside this namespace: at file scope they would leak into the files merged after this one
+// in a unity build (an X11 header then finds `Window` ambiguous).
+namespace window_backend_test
+{
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::os;
 
 #if !ENGINE_PLATFORM_WINDOWS
-namespace {
+namespace
+{
 
 // Sets/unsets an env var for a scope, restoring the previous value.
-class ScopedEnv {
+class ScopedEnv
+{
 public:
-    ScopedEnv(const char* name, const char* value) : name_(name) {
+    ScopedEnv(const char* name, const char* value) : name_(name)
+    {
         const char* old = os::GetEnvironment(name);
         had_ = old != nullptr;
-        if (had_) {
+        if (had_)
+        {
             old_ = engine_test::MakeText(old);
         }
-        if (value != nullptr) {
+        if (value != nullptr)
+        {
             setenv(name, value, 1);
-        } else {
+        }
+        else
+        {
             unsetenv(name);
         }
     }
-    ~ScopedEnv() {
-        if (had_) {
+    ~ScopedEnv()
+    {
+        if (had_)
+        {
             setenv(name_, old_.CStr(), 1);
-        } else {
+        }
+        else
+        {
             unsetenv(name_);
         }
     }
@@ -62,15 +74,17 @@ private:
     engine_test::Text old_ = engine_test::MakeText();
 };
 
-bool HaveEnv(const char* name) {
+bool HaveEnv(const char* name)
+{
     const char* v = os::GetEnvironment(name);
     return v != nullptr && v[0] != '\0';
 }
 
-} // namespace
+}  // namespace
 #endif
 
-TEST_CASE("ParseWindowBackend recognizes auto/wayland/x11/win32 and rejects the rest", "[window][os]") {
+TEST_CASE("ParseWindowBackend recognizes auto/wayland/x11/win32 and rejects the rest", "[window][os]")
+{
     REQUIRE(ParseWindowBackend("auto") == WindowBackend::Auto);
     REQUIRE(ParseWindowBackend("wayland") == WindowBackend::Wayland);
     REQUIRE(ParseWindowBackend("x11") == WindowBackend::X11);
@@ -80,7 +94,8 @@ TEST_CASE("ParseWindowBackend recognizes auto/wayland/x11/win32 and rejects the 
     REQUIRE(ParseWindowBackend("Win32") == WindowBackend::Invalid);
 }
 
-TEST_CASE("PlanWindowBackends: auto prefers Wayland, falls back to X11", "[window][os]") {
+TEST_CASE("PlanWindowBackends: auto prefers Wayland, falls back to X11", "[window][os]")
+{
     BackendPlan both = PlanWindowBackends(WindowBackend::Auto, true, true);
     REQUIRE(both.count == 2);
     REQUIRE(both.candidates[0] == WindowBackend::Wayland);
@@ -98,9 +113,12 @@ TEST_CASE("PlanWindowBackends: auto prefers Wayland, falls back to X11", "[windo
     REQUIRE(PlanWindowBackends(WindowBackend::Auto, false, false).count == 0);
 }
 
-TEST_CASE("PlanWindowBackends: a forced backend ignores the environment and never falls back", "[window][os]") {
-    for (bool w : {false, true}) {
-        for (bool x : {false, true}) {
+TEST_CASE("PlanWindowBackends: a forced backend ignores the environment and never falls back", "[window][os]")
+{
+    for (bool w : {false, true})
+    {
+        for (bool x : {false, true})
+        {
             BackendPlan wl = PlanWindowBackends(WindowBackend::Wayland, w, x);
             REQUIRE(wl.count == 1);
             REQUIRE(wl.candidates[0] == WindowBackend::Wayland);
@@ -113,20 +131,27 @@ TEST_CASE("PlanWindowBackends: a forced backend ignores the environment and neve
     REQUIRE(PlanWindowBackends(WindowBackend::Invalid, true, true).refusal == nullptr);
 }
 
-TEST_CASE("PlanWindowBackends: Linux refuses win32 with the reason, whatever the environment", "[window][os]") {
-    for (bool w : {false, true}) {
-        for (bool x : {false, true}) {
+TEST_CASE("PlanWindowBackends: Linux refuses win32 with the reason, whatever the environment", "[window][os]")
+{
+    for (bool w : {false, true})
+    {
+        for (bool x : {false, true})
+        {
             const BackendPlan plan = PlanWindowBackends(WindowBackend::Win32, w, x);
             REQUIRE(plan.count == 0);
             REQUIRE(plan.refusal != nullptr);
             CHECK(StringView(plan.refusal) == StringView("win32 is the Windows backend"));
         }
     }
-    CHECK(PlanWindowBackends(WindowBackend::Auto, false, false).refusal == nullptr); // nothing set is not a refusal by name
+    CHECK(PlanWindowBackends(WindowBackend::Auto, false, false).refusal ==
+          nullptr);  // nothing set is not a refusal by name
 }
 
-TEST_CASE("PlanWin32WindowBackends: auto and win32 give Win32, wayland and x11 are refused with the reason", "[window][os]") {
-    for (WindowBackend requested : {WindowBackend::Auto, WindowBackend::Win32}) {
+TEST_CASE("PlanWin32WindowBackends: auto and win32 give Win32, wayland and x11 are refused with the reason",
+          "[window][os]")
+{
+    for (WindowBackend requested : {WindowBackend::Auto, WindowBackend::Win32})
+    {
         const BackendPlan plan = PlanWin32WindowBackends(requested);
         REQUIRE(plan.count == 1);
         CHECK(plan.candidates[0] == WindowBackend::Win32);
@@ -145,21 +170,25 @@ TEST_CASE("PlanWin32WindowBackends: auto and win32 give Win32, wayland and x11 a
 
 #if ENGINE_PLATFORM_WINDOWS
 
-namespace {
+namespace
+{
 
 // Sets ENGINE_WINDOW_BACKEND for a scope and removes it after (the test processes do not set it themselves).
-struct ScopedBackendVariable {
+struct ScopedBackendVariable
+{
     explicit ScopedBackendVariable(const char* value) { test_support::SetEnv("ENGINE_WINDOW_BACKEND", value); }
     ~ScopedBackendVariable() { test_support::UnsetEnv("ENGINE_WINDOW_BACKEND"); }
     ScopedBackendVariable(const ScopedBackendVariable&) = delete;
     ScopedBackendVariable& operator=(const ScopedBackendVariable&) = delete;
 };
 
-} // namespace
+}  // namespace
 
-TEST_CASE("Windows: PlatformWindowHost opens Win32 for auto and for win32", "[window][os]") {
+TEST_CASE("Windows: PlatformWindowHost opens Win32 for auto and for win32", "[window][os]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
-    for (WindowBackend requested : {WindowBackend::Auto, WindowBackend::Win32}) {
+    for (WindowBackend requested : {WindowBackend::Auto, WindowBackend::Win32})
+    {
         InputState input;
         PlatformWindowHost host;
         REQUIRE(host.Open(requested, "host win32", 640, 480, &input));
@@ -167,17 +196,19 @@ TEST_CASE("Windows: PlatformWindowHost opens Win32 for auto and for win32", "[wi
         REQUIRE(w != nullptr);
         REQUIRE(w->Valid());
         CHECK(StringView(w->BackendName()) == StringView("win32"));
-        const u32 dpi = static_cast<os::win32::Win32Window*>(w)->Dpi(); // the size asked for is logical (Win32Window::Open)
+        const u32 dpi = static_cast<os::win32::Win32Window*>(w)
+                            ->Dpi();  // the size asked for is logical (Win32Window::Open)
         CHECK(w->Width() == os::win32::Win32Window::ScaleForDpi(640, dpi));
         CHECK(w->Height() == os::win32::Win32Window::ScaleForDpi(480, dpi));
         CHECK_FALSE(w->ShouldClose());
         CHECK(w->GetNativeInfo().kind == NativeWindowKind::Win32);
         w->PumpEvents();
-        REQUIRE_FALSE(host.Open(requested, "second", 320, 240, &input)); // a host opens once
+        REQUIRE_FALSE(host.Open(requested, "second", 320, 240, &input));  // a host opens once
     }
 }
 
-TEST_CASE("Windows: PlatformWindowHost refuses Wayland and X11", "[window][os]") {
+TEST_CASE("Windows: PlatformWindowHost refuses Wayland and X11", "[window][os]")
+{
     InputState input;
     PlatformWindowHost wayland;
     CHECK_FALSE(wayland.Open(WindowBackend::Wayland, "no wayland", 320, 240, &input));
@@ -187,7 +218,8 @@ TEST_CASE("Windows: PlatformWindowHost refuses Wayland and X11", "[window][os]")
     CHECK(x11.Get() == nullptr);
 }
 
-TEST_CASE("Windows: PlatformWindowHost::OpenFromEnvironment honors ENGINE_WINDOW_BACKEND", "[window][os]") {
+TEST_CASE("Windows: PlatformWindowHost::OpenFromEnvironment honors ENGINE_WINDOW_BACKEND", "[window][os]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
     InputState input;
     {
@@ -211,11 +243,13 @@ TEST_CASE("Windows: PlatformWindowHost::OpenFromEnvironment honors ENGINE_WINDOW
     CHECK(StringView(unset.Get()->BackendName()) == StringView("win32"));
 }
 
-#else // Linux: the window host over Wayland and X11
+#else  // Linux: the window host over Wayland and X11
 
-TEST_CASE("PlatformWindowHost opens the Wayland backend when forced", "[window][wayland][os]") {
+TEST_CASE("PlatformWindowHost opens the Wayland backend when forced", "[window][wayland][os]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
-    if (!HaveEnv("WAYLAND_DISPLAY")) {
+    if (!HaveEnv("WAYLAND_DISPLAY"))
+    {
         SKIP("no Wayland session");
     }
     InputState input;
@@ -234,9 +268,11 @@ TEST_CASE("PlatformWindowHost opens the Wayland backend when forced", "[window][
     w->PumpEvents();
 }
 
-TEST_CASE("PlatformWindowHost opens the X11 backend when forced", "[window][x11][os]") {
+TEST_CASE("PlatformWindowHost opens the X11 backend when forced", "[window][x11][os]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
-    if (!HaveEnv("DISPLAY")) {
+    if (!HaveEnv("DISPLAY"))
+    {
         SKIP("no X11 display");
     }
     InputState input;
@@ -252,9 +288,11 @@ TEST_CASE("PlatformWindowHost opens the X11 backend when forced", "[window][x11]
     w->PumpEvents();
 }
 
-TEST_CASE("PlatformWindowHost auto falls back to X11 when WAYLAND_DISPLAY is unset", "[window][x11][os]") {
+TEST_CASE("PlatformWindowHost auto falls back to X11 when WAYLAND_DISPLAY is unset", "[window][x11][os]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
-    if (!HaveEnv("DISPLAY")) {
+    if (!HaveEnv("DISPLAY"))
+    {
         SKIP("no X11 display");
     }
     ScopedEnv no_wayland("WAYLAND_DISPLAY", nullptr);
@@ -264,9 +302,11 @@ TEST_CASE("PlatformWindowHost auto falls back to X11 when WAYLAND_DISPLAY is uns
     REQUIRE(StringView(host.Get()->BackendName()) == StringView("x11"));
 }
 
-TEST_CASE("PlatformWindowHost auto falls back to X11 when the Wayland connection fails", "[window][x11][os]") {
+TEST_CASE("PlatformWindowHost auto falls back to X11 when the Wayland connection fails", "[window][x11][os]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
-    if (!HaveEnv("DISPLAY")) {
+    if (!HaveEnv("DISPLAY"))
+    {
         SKIP("no X11 display");
     }
     // WAYLAND_DISPLAY is set but names a socket that doesn't exist.
@@ -277,7 +317,8 @@ TEST_CASE("PlatformWindowHost auto falls back to X11 when the Wayland connection
     REQUIRE(StringView(host.Get()->BackendName()) == StringView("x11"));
 }
 
-TEST_CASE("A forced backend does not fall back when it fails", "[window][os]") {
+TEST_CASE("A forced backend does not fall back when it fails", "[window][os]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
     ScopedEnv bad_wayland("WAYLAND_DISPLAY", "wayland-does-not-exist");
     InputState input;
@@ -286,7 +327,8 @@ TEST_CASE("A forced backend does not fall back when it fails", "[window][os]") {
     REQUIRE(host.Get() == nullptr);
 }
 
-TEST_CASE("PlatformWindowHost::OpenFromEnvironment honors ENGINE_WINDOW_BACKEND", "[window][os]") {
+TEST_CASE("PlatformWindowHost::OpenFromEnvironment honors ENGINE_WINDOW_BACKEND", "[window][os]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
     InputState input;
     {
@@ -294,13 +336,15 @@ TEST_CASE("PlatformWindowHost::OpenFromEnvironment honors ENGINE_WINDOW_BACKEND"
         PlatformWindowHost host;
         REQUIRE_FALSE(host.OpenFromEnvironment("bad override", 320, 240, &input));
     }
-    if (HaveEnv("DISPLAY")) {
+    if (HaveEnv("DISPLAY"))
+    {
         ScopedEnv force("ENGINE_WINDOW_BACKEND", "x11");
         PlatformWindowHost host;
         REQUIRE(host.OpenFromEnvironment("env x11", 320, 240, &input));
         REQUIRE(StringView(host.Get()->BackendName()) == StringView("x11"));
     }
-    if (HaveEnv("WAYLAND_DISPLAY")) {
+    if (HaveEnv("WAYLAND_DISPLAY"))
+    {
         ScopedEnv force("ENGINE_WINDOW_BACKEND", "wayland");
         PlatformWindowHost host;
         REQUIRE(host.OpenFromEnvironment("env wayland", 320, 240, &input));
@@ -308,9 +352,11 @@ TEST_CASE("PlatformWindowHost::OpenFromEnvironment honors ENGINE_WINDOW_BACKEND"
     }
 }
 
-TEST_CASE("PlatformWindowHost rejects opening twice and a null InputState for Wayland", "[window][os]") {
+TEST_CASE("PlatformWindowHost rejects opening twice and a null InputState for Wayland", "[window][os]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
-    if (!HaveEnv("DISPLAY")) {
+    if (!HaveEnv("DISPLAY"))
+    {
         SKIP("no X11 display");
     }
     InputState input;
@@ -319,16 +365,19 @@ TEST_CASE("PlatformWindowHost rejects opening twice and a null InputState for Wa
     REQUIRE_FALSE(host.Open(WindowBackend::X11, "second", 320, 240, &input));
     REQUIRE(host.Get() != nullptr);
 
-    if (HaveEnv("WAYLAND_DISPLAY")) {
+    if (HaveEnv("WAYLAND_DISPLAY"))
+    {
         PlatformWindowHost w;
         REQUIRE_FALSE(w.Open(WindowBackend::Wayland, "no input", 320, 240, nullptr));
     }
 }
 
 TEST_CASE("The Wayland backend ends up with a keyboard and keymap (seat capabilities not lost to window setup)",
-          "[window][wayland][os]") {
+          "[window][wayland][os]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
-    if (!HaveEnv("WAYLAND_DISPLAY")) {
+    if (!HaveEnv("WAYLAND_DISPLAY"))
+    {
         SKIP("no Wayland session");
     }
     InputState input;
@@ -341,9 +390,11 @@ TEST_CASE("The Wayland backend ends up with a keyboard and keymap (seat capabili
     REQUIRE(window.Input().HasPointer());
 }
 
-TEST_CASE("WaylandPlatformWindow reports a dead compositor connection as ShouldClose", "[window][wayland][os]") {
+TEST_CASE("WaylandPlatformWindow reports a dead compositor connection as ShouldClose", "[window][wayland][os]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
-    if (!HaveEnv("WAYLAND_DISPLAY")) {
+    if (!HaveEnv("WAYLAND_DISPLAY"))
+    {
         SKIP("no Wayland session");
     }
     InputState input;
@@ -357,7 +408,8 @@ TEST_CASE("WaylandPlatformWindow reports a dead compositor connection as ShouldC
     // would. Pumping must notice and flip ShouldClose instead of running
     // on a dead window forever.
     REQUIRE(::shutdown(wl_display_get_fd(window.NativeDisplay()), SHUT_RDWR) == 0);
-    for (int i = 0; i < 20 && !window.ShouldClose(); ++i) {
+    for (int i = 0; i < 20 && !window.ShouldClose(); ++i)
+    {
         window.PumpEvents();
         engine_placeholder::os::SleepNanos(5'000'000);
     }
@@ -368,12 +420,14 @@ TEST_CASE("WaylandPlatformWindow reports a dead compositor connection as ShouldC
     REQUIRE(window.GetNativeInfo().kind == NativeWindowKind::Invalid);
     REQUIRE(window.IsMinimized());
     REQUIRE(window.ResizeSerial() == 0);
-    window.PumpEvents(); // further pumps are harmless no-ops
+    window.PumpEvents();  // further pumps are harmless no-ops
 }
 
-TEST_CASE("WaylandPlatformWindow::Close tears everything down and is idempotent", "[window][wayland][os]") {
+TEST_CASE("WaylandPlatformWindow::Close tears everything down and is idempotent", "[window][wayland][os]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
-    if (!HaveEnv("WAYLAND_DISPLAY")) {
+    if (!HaveEnv("WAYLAND_DISPLAY"))
+    {
         SKIP("no Wayland session");
     }
     InputState input;
@@ -391,7 +445,7 @@ TEST_CASE("WaylandPlatformWindow::Close tears everything down and is idempotent"
     REQUIRE_FALSE(window.Input().Valid());
     REQUIRE_FALSE(window.Input().HasKeyboard());
     REQUIRE(window.NativeDisplay() == nullptr);
-    window.Close(); // idempotent
+    window.Close();  // idempotent
     window.PumpEvents();
 
     // A fresh Open on the same object works (new connection, new seat).
@@ -403,9 +457,11 @@ TEST_CASE("WaylandPlatformWindow::Close tears everything down and is idempotent"
     REQUIRE(window.ResizeSerial() != before_close);
 }
 
-TEST_CASE("A Wayland window exposes its native display and surface", "[window][wayland][os]") {
+TEST_CASE("A Wayland window exposes its native display and surface", "[window][wayland][os]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
-    if (!HaveEnv("WAYLAND_DISPLAY")) {
+    if (!HaveEnv("WAYLAND_DISPLAY"))
+    {
         SKIP("no Wayland session");
     }
     InputState input;
@@ -428,7 +484,8 @@ TEST_CASE("A Wayland window exposes its native display and surface", "[window][w
     REQUIRE(again.surface == info.surface);
 }
 
-TEST_CASE("A closed or never-opened Wayland window has no native info and counts as minimized", "[window][wayland][os]") {
+TEST_CASE("A closed or never-opened Wayland window has no native info and counts as minimized", "[window][wayland][os]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
     engine_placeholder::os::wayland::WaylandPlatformWindow closed;
     NativeWindowInfo info = closed.GetNativeInfo();
@@ -438,7 +495,8 @@ TEST_CASE("A closed or never-opened Wayland window has no native info and counts
     REQUIRE(closed.IsMinimized());  // zero area
     REQUIRE(closed.ResizeSerial() == 0);
 
-    if (!HaveEnv("WAYLAND_DISPLAY")) {
+    if (!HaveEnv("WAYLAND_DISPLAY"))
+    {
         SKIP("no Wayland session");
     }
     InputState input;
@@ -449,9 +507,11 @@ TEST_CASE("A closed or never-opened Wayland window has no native info and counts
     REQUIRE(opened.GetNativeInfo().kind == NativeWindowKind::Invalid);
 }
 
-TEST_CASE("An X11 window exposes its native display and window id", "[window][x11][os]") {
+TEST_CASE("An X11 window exposes its native display and window id", "[window][x11][os]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
-    if (!HaveEnv("DISPLAY")) {
+    if (!HaveEnv("DISPLAY"))
+    {
         SKIP("no X11 display");
     }
     InputState input;
@@ -470,4 +530,4 @@ TEST_CASE("An X11 window exposes its native display and window id", "[window][x1
 
 #endif
 
-} // namespace window_backend_test
+}  // namespace window_backend_test

@@ -18,11 +18,13 @@ using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
 using namespace engine_placeholder::renderer;
 
-namespace {
+namespace
+{
 
 constexpr u32 kVulkanRenderGraphTestSize = 16;
 
-struct GraphScene {
+struct GraphScene
+{
     Device* device = nullptr;
     ShaderHandle vs, fs, cs;
     BindGroupLayoutHandle sample_layout, compute_layout;
@@ -32,7 +34,8 @@ struct GraphScene {
     // Per-frame resources, filled in when the graph is declared.
     GraphResource a, b, c, out;
 
-    bool Create(Device* d) {
+    bool Create(Device* d)
+    {
         device = d;
         vs = CreateShaderFromSet(*device, shaders::kFullscreenVertShader, ShaderStage::Vertex);
         fs = CreateShaderFromSet(*device, shaders::kGraphSampleFragShader, ShaderStage::Fragment);
@@ -69,11 +72,12 @@ struct GraphScene {
         smp.mag_filter = smp.min_filter = smp.mip_filter = FilterMode::Nearest;
         smp.address_u = smp.address_v = AddressMode::ClampToEdge;
         sampler = device->CreateSampler(smp);
-        return vs.IsValid() && fs.IsValid() && cs.IsValid() && sample_layout.IsValid() && compute_layout.IsValid() && sample_pipeline.IsValid() &&
-               compute_pipeline.IsValid() && sampler.IsValid();
+        return vs.IsValid() && fs.IsValid() && cs.IsValid() && sample_layout.IsValid() && compute_layout.IsValid() &&
+               sample_pipeline.IsValid() && compute_pipeline.IsValid() && sampler.IsValid();
     }
 
-    void Destroy() {
+    void Destroy()
+    {
         device->DestroySampler(sampler);
         device->DestroyPipeline(sample_pipeline);
         device->DestroyPipeline(compute_pipeline);
@@ -85,7 +89,9 @@ struct GraphScene {
     }
 
     // Draws the fullscreen triangle into `target`, adding the textures `first` and `second`.
-    void DrawSample(const PassExecuteContext& ctx, GraphResource target, GraphResource first, GraphResource second, const f32* clear) const {
+    void DrawSample(const PassExecuteContext& ctx, GraphResource target, GraphResource first, GraphResource second,
+                    const f32* clear) const
+    {
         BindGroupEntry e[3];
         e[0].binding = 0;
         e[0].texture = ctx.graph->ResolvedTexture(first);
@@ -108,7 +114,8 @@ struct GraphScene {
         rd.color_count = 1;
         ctx.list->BeginRendering(rd);
         ctx.list->SetPipeline(sample_pipeline);
-        ctx.list->SetViewport(Viewport{0, 0, static_cast<f32>(kVulkanRenderGraphTestSize), static_cast<f32>(kVulkanRenderGraphTestSize), 0.0f, 1.0f});
+        ctx.list->SetViewport(Viewport{0, 0, static_cast<f32>(kVulkanRenderGraphTestSize),
+                                       static_cast<f32>(kVulkanRenderGraphTestSize), 0.0f, 1.0f});
         ctx.list->SetScissor(ScissorRect{0, 0, kVulkanRenderGraphTestSize, kVulkanRenderGraphTestSize});
         ctx.list->SetBindGroup(0, group);
         ctx.list->Draw(3, 1, 0, 0);
@@ -116,12 +123,13 @@ struct GraphScene {
     }
 };
 
-void ClearPass(const PassExecuteContext& ctx, void* user) {
+void ClearPass(const PassExecuteContext& ctx, void* user)
+{
     const GraphScene* s = static_cast<const GraphScene*>(user);
     RenderingDesc rd;
     rd.color[0].texture = ctx.graph->ResolvedTexture(s->a);
     rd.color[0].load = LoadOp::Clear;
-    rd.color[0].clear_color[0] = 0.1f; // a = (0.1, 0.2, 0.05, 0.0)
+    rd.color[0].clear_color[0] = 0.1f;  // a = (0.1, 0.2, 0.05, 0.0)
     rd.color[0].clear_color[1] = 0.2f;
     rd.color[0].clear_color[2] = 0.05f;
     rd.color[0].clear_color[3] = 0.0f;
@@ -130,13 +138,15 @@ void ClearPass(const PassExecuteContext& ctx, void* user) {
     ctx.list->EndRendering();
 }
 
-void DoublePass(const PassExecuteContext& ctx, void* user) {
+void DoublePass(const PassExecuteContext& ctx, void* user)
+{
     const GraphScene* s = static_cast<const GraphScene*>(user);
     const f32 clear[4] = {0, 0, 0, 0};
-    s->DrawSample(ctx, s->b, s->a, s->a, clear); // b = a + a = (0.2, 0.4, 0.1, 0.0)
+    s->DrawSample(ctx, s->b, s->a, s->a, clear);  // b = a + a = (0.2, 0.4, 0.1, 0.0)
 }
 
-void ComputePass(const PassExecuteContext& ctx, void* user) {
+void ComputePass(const PassExecuteContext& ctx, void* user)
+{
     const GraphScene* s = static_cast<const GraphScene*>(user);
     BindGroupEntry e;
     e.binding = 0;
@@ -148,19 +158,24 @@ void ComputePass(const PassExecuteContext& ctx, void* user) {
     const BindGroupHandle group = s->device->CreateBindGroup(gd);
     ctx.list->SetPipeline(s->compute_pipeline);
     ctx.list->SetBindGroup(0, group);
-    ctx.list->Dispatch(kVulkanRenderGraphTestSize / 8, kVulkanRenderGraphTestSize / 8, 1); // c(x, y) = (x / 255, y / 255, 0, 1)
+    ctx.list->Dispatch(kVulkanRenderGraphTestSize / 8, kVulkanRenderGraphTestSize / 8,
+                       1);  // c(x, y) = (x / 255, y / 255, 0, 1)
 }
 
-void CombinePass(const PassExecuteContext& ctx, void* user) {
+void CombinePass(const PassExecuteContext& ctx, void* user)
+{
     const GraphScene* s = static_cast<const GraphScene*>(user);
     const f32 clear[4] = {0, 0, 0, 0};
-    s->DrawSample(ctx, s->out, s->b, s->c, clear); // out = b + c
+    s->DrawSample(ctx, s->out, s->b, s->c, clear);  // out = b + c
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("A four-pass render graph runs on a real device with no validation or synchronization messages", "[rhi][gpu][graph]") {
-    FOR_EACH_GPU_BACKEND(backend) {
+TEST_CASE("A four-pass render graph runs on a real device with no validation or synchronization messages",
+          "[rhi][gpu][graph]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
         gpu_test::BackendValidation validation(backend);
         DevicePtr device = gpu_test::CreateTestDevice(backend);
         {
@@ -176,9 +191,10 @@ TEST_CASE("A four-pass render graph runs on a real device with no validation or 
             const TextureHandle target = device->CreateTexture(target_desc);
             REQUIRE(target.IsValid());
 
-            // Three frames: the second and third reuse the pooled textures, so their first barriers start from the state the
-            // previous frame left them in.
-            for (u64 frame = 0; frame < 3; ++frame) {
+            // Three frames: the second and third reuse the pooled textures, so their first barriers start from the
+            // state the previous frame left them in.
+            for (u64 frame = 0; frame < 3; ++frame)
+            {
                 ArenaAllocator arena(4u << 20);
                 RenderGraph graph(&arena, RenderGraphDesc{});
                 pool.BeginFrame(frame);
@@ -194,7 +210,9 @@ TEST_CASE("A four-pass render graph runs on a real device with no validation or 
                 scene.out = graph.ImportTexture("out", target, ResourceState::Undefined, ResourceState::CopySrc, false);
 
                 graph.AddPass("clear", &ClearPass, &scene).Write(scene.a, GraphUsage::ColorAttachment);
-                graph.AddPass("double", &DoublePass, &scene).Read(scene.a, GraphUsage::Sampled).Write(scene.b, GraphUsage::ColorAttachment);
+                graph.AddPass("double", &DoublePass, &scene)
+                    .Read(scene.a, GraphUsage::Sampled)
+                    .Write(scene.b, GraphUsage::ColorAttachment);
                 graph.AddPass("gradient", &ComputePass, &scene).Write(scene.c, GraphUsage::StorageWrite);
                 graph.AddPass("combine", &CombinePass, &scene)
                     .Read(scene.b, GraphUsage::Sampled)
@@ -217,11 +235,17 @@ TEST_CASE("A four-pass render graph runs on a real device with no validation or 
                 REQUIRE(device->ReadbackTexture(target, 0, 0, pixels.Data(), pixels.Size(), ResourceState::CopySrc));
                 // out(x, y) = b + c = (0.2 + x / 255, 0.4 + y / 255, 0.1, 1.0), in 8 bits: (51 + x, 102 + y, 26, 255).
                 u32 bad = 0;
-                for (u32 y = 0; y < kVulkanRenderGraphTestSize; ++y) {
-                    for (u32 x = 0; x < kVulkanRenderGraphTestSize; ++x) {
+                for (u32 y = 0; y < kVulkanRenderGraphTestSize; ++y)
+                {
+                    for (u32 x = 0; x < kVulkanRenderGraphTestSize; ++x)
+                    {
                         const u8* px = &pixels[(y * kVulkanRenderGraphTestSize + x) * 4];
                         auto off = [](int got, int want) { return got < want - 2 || got > want + 2; };
-                        if (off(px[0], 51 + static_cast<int>(x)) || off(px[1], 102 + static_cast<int>(y)) || off(px[2], 26) || px[3] != 255) ++bad;
+                        if (off(px[0], 51 + static_cast<int>(x)) || off(px[1], 102 + static_cast<int>(y)) ||
+                            off(px[2], 26) || px[3] != 255)
+                        {
+                            ++bad;
+                        }
                     }
                 }
                 CHECK(bad == 0);
@@ -234,8 +258,12 @@ TEST_CASE("A four-pass render graph runs on a real device with no validation or 
             scene.Destroy();
         }
         device->WaitIdle();
-        // Synchronization validation reports hazards as warnings on Vulkan: none either (the DX12 count covers warnings already).
-        if (backend == Backend::Vulkan) CHECK(rhi::vulkan::GetValidationCounts().warnings == 0);
+        // Synchronization validation reports hazards as warnings on Vulkan: none either (the DX12 count covers warnings
+        // already).
+        if (backend == Backend::Vulkan)
+        {
+            CHECK(rhi::vulkan::GetValidationCounts().warnings == 0);
+        }
         device.Reset();
     }
 }

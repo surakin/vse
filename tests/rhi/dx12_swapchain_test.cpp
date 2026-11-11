@@ -1,6 +1,7 @@
-// The Direct3D 12 swapchain on a Win32 window (Phase 13 Day 169): the DeviceHost flow the Vulkan swapchains run (present mode, HDR and format
-// requests, a replaced surface), the tearing flag and Immediate, the frame-latency wait, the sRGB view of a linear buffer, a window with no
-// area, and a device lost at present. Windows only; skipped when the session cannot show windows.
+// The Direct3D 12 swapchain on a Win32 window (Phase 13 Day 169): the DeviceHost flow the Vulkan swapchains run
+// (present mode, HDR and format requests, a replaced surface), the tearing flag and Immediate, the frame-latency wait,
+// the sRGB view of a linear buffer, a window with no area, and a device lost at present. Windows only; skipped when the
+// session cannot show windows.
 #include "lang/scalar.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -20,18 +21,22 @@ using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
 using namespace engine_placeholder::rhi::dx12;
 
-namespace dx12_swapchain_test {
+namespace dx12_swapchain_test
+{
 
-struct SwapchainSilence {
+struct SwapchainSilence
+{
     SwapchainSilence() { ResetDebugMessageCounts(); }
-    ~SwapchainSilence() {
+    ~SwapchainSilence()
+    {
         const DebugMessageCounts c = GetDebugMessageCounts();
         CHECK(c.errors == 0);
         CHECK(c.warnings == 0);
     }
 };
 
-DeviceCreateInfo Dx12Info(const os::Window* window) {
+DeviceCreateInfo Dx12Info(const os::Window* window)
+{
     DeviceCreateInfo info;
     info.backend = Backend::Dx12;
     info.application_name = "dx12-swapchain-test";
@@ -41,10 +46,12 @@ DeviceCreateInfo Dx12Info(const os::Window* window) {
 }
 
 // One frame: acquire, clear the image to `linear` (through its view), move it to Present, submit, present.
-SwapchainStatus Frame(Device* device, Swapchain* sc, f32 linear = 0.5f) {
+SwapchainStatus Frame(Device* device, Swapchain* sc, f32 linear = 0.5f)
+{
     device->BeginFrame();
     const SwapchainStatus acquired = sc->Acquire();
-    if (acquired != SwapchainStatus::Ok && acquired != SwapchainStatus::Recreated) {
+    if (acquired != SwapchainStatus::Ok && acquired != SwapchainStatus::Recreated)
+    {
         device->EndFrame();
         return acquired;
     }
@@ -65,11 +72,13 @@ SwapchainStatus Frame(Device* device, Swapchain* sc, f32 linear = 0.5f) {
     return sc->Present();
 }
 
-} // namespace dx12_swapchain_test
+}  // namespace dx12_swapchain_test
 
 using namespace dx12_swapchain_test;
 
-TEST_CASE("A DX12 swapchain on a Win32 window reconfigures through the device host, and its window is replaced", "[rhi][dx12][gpu][window][swapchain]") {
+TEST_CASE("A DX12 swapchain on a Win32 window reconfigures through the device host, and its window is replaced",
+          "[rhi][dx12][gpu][window][swapchain]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
     os::InputState input;
     os::PlatformWindowHost window_host;
@@ -79,12 +88,16 @@ TEST_CASE("A DX12 swapchain on a Win32 window reconfigures through the device ho
     DeviceHost host;
     REQUIRE(host.Create(Dx12Info(window), SwapchainDesc{}));
     CHECK(StringView(host.GetDevice()->BackendName()) == StringView("dx12"));
-    auto frame = [&]() {
+    auto frame = [&]()
+    {
         window->PumpEvents();
         const SwapchainStatus s = Frame(host.GetDevice(), host.GetSwapchain());
         CHECK((s == SwapchainStatus::Ok || s == SwapchainStatus::Recreated));
     };
-    for (int i = 0; i < 5; ++i) frame();
+    for (int i = 0; i < 5; ++i)
+    {
+        frame();
+    }
     CHECK(host.GetSwapchain()->Width() == window->Width());
     CHECK(host.GetSwapchain()->ImageFormat() == Format::BGRA8_SRGB);
     const u32 epoch = host.Epoch();
@@ -96,19 +109,23 @@ TEST_CASE("A DX12 swapchain on a Win32 window reconfigures through the device ho
     desc.present_mode = PresentMode::Immediate;
     REQUIRE(host.ReconfigureSwapchain(desc) == SwapchainStatus::Ok);
     CHECK(host.GetSwapchain()->ActualPresentMode() ==
-          (caps.present_mode_supported[static_cast<usize>(PresentMode::Immediate)] ? PresentMode::Immediate : PresentMode::Fifo));
-    for (int i = 0; i < 3; ++i) frame();
+          (caps.present_mode_supported[static_cast<usize>(PresentMode::Immediate)] ? PresentMode::Immediate
+                                                                                   : PresentMode::Fifo));
+    for (int i = 0; i < 3; ++i)
+    {
+        frame();
+    }
     desc.present_mode = PresentMode::Mailbox;
     REQUIRE(host.ReconfigureSwapchain(desc) == SwapchainStatus::Ok);
     CHECK(host.GetSwapchain()->ActualPresentMode() == PresentMode::Fifo);
     frame();
 
-    desc.hdr = HdrMode::Hdr10; // never granted: no 10-bit RHI format
+    desc.hdr = HdrMode::Hdr10;  // never granted: no 10-bit RHI format
     REQUIRE(host.ReconfigureSwapchain(desc) == SwapchainStatus::Ok);
     CHECK(host.GetSwapchain()->GetColorSpace() == ColorSpace::SrgbNonlinear);
     CHECK_FALSE(caps.hdr10);
     frame();
-    desc.hdr = HdrMode::ScRgbLinear; // granted exactly when the capabilities say it can be
+    desc.hdr = HdrMode::ScRgbLinear;  // granted exactly when the capabilities say it can be
     REQUIRE(host.ReconfigureSwapchain(desc) == SwapchainStatus::Ok);
     const bool scrgb = host.GetSwapchain()->Capabilities().hdr_scrgb;
     CHECK((host.GetSwapchain()->GetColorSpace() == ColorSpace::ScRgbLinear) == scrgb);
@@ -120,35 +137,46 @@ TEST_CASE("A DX12 swapchain on a Win32 window reconfigures through the device ho
         ComRef<IDXGIOutput> output;
         ComRef<IDXGIOutput6> output6;
         DXGI_OUTPUT_DESC1 od{};
-        const bool known = SUCCEEDED(d3d->Factory()->EnumAdapters1(0, adapter.Put())) && SUCCEEDED(adapter->EnumOutputs(0, output.Put())) &&
-                           SUCCEEDED(output->QueryInterface(__uuidof(IDXGIOutput6), output6.PutVoid())) && SUCCEEDED(output6->GetDesc1(&od));
+        const bool known = SUCCEEDED(d3d->Factory()->EnumAdapters1(0, adapter.Put())) &&
+                           SUCCEEDED(adapter->EnumOutputs(0, output.Put())) &&
+                           SUCCEEDED(output->QueryInterface(__uuidof(IDXGIOutput6), output6.PutVoid())) &&
+                           SUCCEEDED(output6->GetDesc1(&od));
         WARN("scRGB presentable: " << (scrgb ? "yes" : "no") << "; first output's color space "
-                                    << (known ? (od.ColorSpace == DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020 ? "HDR (G2084)" : "SDR") : "unknown")
-                                    << ", max luminance " << (known ? od.MaxLuminance : 0.0f) << " nits");
+                                   << (known ? (od.ColorSpace == DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020
+                                                    ? "HDR (G2084)"
+                                                    : "SDR")
+                                             : "unknown")
+                                   << ", max luminance " << (known ? od.MaxLuminance : 0.0f) << " nits");
     }
     frame();
 
     desc.hdr = HdrMode::Off;
-    for (u32 i = 0; i < caps.format_count; ++i) {
+    for (u32 i = 0; i < caps.format_count; ++i)
+    {
         desc.format = caps.formats[i];
         INFO(FormatInfo(desc.format).name);
         REQUIRE(host.ReconfigureSwapchain(desc) == SwapchainStatus::Ok);
         CHECK(host.GetSwapchain()->ImageFormat() == desc.format);
         frame();
     }
-    desc.format = Format::R8_UNorm; // not presentable: falls back
+    desc.format = Format::R8_UNorm;  // not presentable: falls back
     REQUIRE(host.ReconfigureSwapchain(desc) == SwapchainStatus::Ok);
     CHECK(host.GetSwapchain()->ImageFormat() == Format::BGRA8_SRGB);
     frame();
 
     REQUIRE(host.RecreateSurface(window, desc));
-    CHECK(host.Epoch() == epoch); // no device reset
-    for (int i = 0; i < 3; ++i) frame();
+    CHECK(host.Epoch() == epoch);  // no device reset
+    for (int i = 0; i < 3; ++i)
+    {
+        frame();
+    }
     host.Destroy();
 }
 
-TEST_CASE("A DX12 swapchain's sRGB image is a view of a linear buffer, with tearing and the latency object as the system allows",
-          "[rhi][dx12][gpu][window][swapchain]") {
+TEST_CASE(
+    "A DX12 swapchain's sRGB image is a view of a linear buffer, with tearing and the latency object as the system allows",
+    "[rhi][dx12][gpu][window][swapchain]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
     os::InputState input;
     os::PlatformWindowHost window_host;
@@ -162,9 +190,12 @@ TEST_CASE("A DX12 swapchain's sRGB image is a view of a linear buffer, with tear
     CHECK(sc->BufferFormat() == DXGI_FORMAT_B8G8R8A8_UNORM);
     CHECK(sc->ImageFormat() == Format::BGRA8_SRGB);
     CHECK(sc->LatencyWaitable() != nullptr);
-    CHECK(sc->Capabilities().present_mode_supported[static_cast<usize>(PresentMode::Immediate)] == sc->TearingAllowed());
+    CHECK(sc->Capabilities().present_mode_supported[static_cast<usize>(PresentMode::Immediate)] ==
+          sc->TearingAllowed());
     BOOL tearing = FALSE;
-    const bool system_tearing = SUCCEEDED(device->Factory()->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &tearing, sizeof(tearing))) && tearing;
+    const bool system_tearing = SUCCEEDED(device->Factory()->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING,
+                                                                                 &tearing, sizeof(tearing))) &&
+                                tearing;
     CHECK(sc->TearingAllowed() == system_tearing);
     WARN("tearing (Immediate) on this PC: " << (system_tearing ? "allowed" : "not allowed"));
     CHECK(device->Resources().swapchains == 1);
@@ -195,7 +226,10 @@ TEST_CASE("A DX12 swapchain's sRGB image is a view of a linear buffer, with tear
     Vector<u8> pixels;
     pixels.Resize(static_cast<usize>(w) * h * 4);
     REQUIRE(device->ReadbackTexture(image, 0, 0, pixels.Data(), pixels.Size(), ResourceState::CopySrc));
-    for (int c = 0; c < 4; ++c) px[c] = pixels[c];
+    for (int c = 0; c < 4; ++c)
+    {
+        px[c] = pixels[c];
+    }
     CHECK(Abs(px[0] - 188) <= 1);
     CHECK(Abs(px[1] - 188) <= 1);
     CHECK(Abs(px[2] - 188) <= 1);
@@ -213,7 +247,9 @@ TEST_CASE("A DX12 swapchain's sRGB image is a view of a linear buffer, with tear
     device->Quiesce();
 }
 
-TEST_CASE("A DX12 swapchain skips a minimized window without waiting and is rebuilt when it comes back", "[rhi][dx12][gpu][window][swapchain]") {
+TEST_CASE("A DX12 swapchain skips a minimized window without waiting and is rebuilt when it comes back",
+          "[rhi][dx12][gpu][window][swapchain]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
     os::InputState input;
     os::PlatformWindowHost window_host;
@@ -230,18 +266,25 @@ TEST_CASE("A DX12 swapchain skips a minimized window without waiting and is rebu
     CHECK(sc->Resize(0, 0) == SwapchainStatus::Minimized);
     const HWND hwnd = static_cast<HWND>(window->GetNativeInfo().surface);
     ShowWindow(hwnd, SW_MINIMIZE);
-    for (int i = 0; i < 50 && !window->IsMinimized(); ++i) window->PumpEvents();
+    for (int i = 0; i < 50 && !window->IsMinimized(); ++i)
+    {
+        window->PumpEvents();
+    }
     REQUIRE(window->IsMinimized());
     const u64 start = os::MonotonicTimeNanos();
-    for (int i = 0; i < 20; ++i) {
+    for (int i = 0; i < 20; ++i)
+    {
         device->BeginFrame();
         CHECK(sc->Acquire() == SwapchainStatus::Minimized);
         device->EndFrame();
     }
     const f64 ms = (static_cast<f64>(os::MonotonicTimeNanos() - start) / 1e6);
-    CHECK(ms < 200.0); // twenty skipped frames, no waits
+    CHECK(ms < 200.0);  // twenty skipped frames, no waits
     ShowWindow(hwnd, SW_RESTORE);
-    for (int i = 0; i < 50 && window->IsMinimized(); ++i) window->PumpEvents();
+    for (int i = 0; i < 50 && window->IsMinimized(); ++i)
+    {
+        window->PumpEvents();
+    }
     REQUIRE_FALSE(window->IsMinimized());
     SwapchainStatus back = Frame(device.Get(), sc);
     CHECK((back == SwapchainStatus::Ok || back == SwapchainStatus::Recreated));
@@ -251,7 +294,8 @@ TEST_CASE("A DX12 swapchain skips a minimized window without waiting and is rebu
     device->Quiesce();
 }
 
-TEST_CASE("A DX12 device lost at present makes the swapchain report Lost", "[rhi][dx12][gpu][window][swapchain]") {
+TEST_CASE("A DX12 device lost at present makes the swapchain report Lost", "[rhi][dx12][gpu][window][swapchain]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
     os::InputState input;
     os::PlatformWindowHost window_host;
@@ -273,9 +317,11 @@ TEST_CASE("A DX12 device lost at present makes the swapchain report Lost", "[rhi
     device->DestroySwapchain(sc);
 }
 
-TEST_CASE("A DX12 swapchain rebuilt inside a frame keeps the frame's destroyed resources until the frame is done", "[rhi][dx12][gpu][window][swapchain]") {
-    // Review finding (Day 169): the rebuild waited with WaitIdle, which also freed everything retired, so a buffer destroyed earlier in
-    // the frame was gone before the list that uses it was submitted.
+TEST_CASE("A DX12 swapchain rebuilt inside a frame keeps the frame's destroyed resources until the frame is done",
+          "[rhi][dx12][gpu][window][swapchain]")
+{
+    // Review finding (Day 169): the rebuild waited with WaitIdle, which also freed everything retired, so a buffer
+    // destroyed earlier in the frame was gone before the list that uses it was submitted.
     SKIP_IF_NO_DISPLAY_SESSION();
     os::InputState input;
     os::PlatformWindowHost window_host;
@@ -298,7 +344,7 @@ TEST_CASE("A DX12 swapchain rebuilt inside a frame keeps the frame's destroyed r
     list->Begin();
     list->CopyBuffer(a, b, 0, 0, 4096);
     list->End();
-    device->DestroyBuffer(a); // allowed: the frame keeps it until its work is done
+    device->DestroyBuffer(a);  // allowed: the frame keeps it until its work is done
     // The window changes size, so the next Acquire rebuilds the swap chain.
     const HWND hwnd = static_cast<HWND>(window->GetNativeInfo().surface);
     SetWindowPos(hwnd, nullptr, 0, 0, 300, 200, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
@@ -306,8 +352,9 @@ TEST_CASE("A DX12 swapchain rebuilt inside a frame keeps the frame's destroyed r
     const SwapchainStatus acquired = sc->Acquire();
     CHECK(acquired == SwapchainStatus::Recreated);
     CommandList* lists[] = {list};
-    CHECK(device->Submit(lists, 1) != 0); // still uses `a`
-    if (acquired == SwapchainStatus::Recreated || acquired == SwapchainStatus::Ok) {
+    CHECK(device->Submit(lists, 1) != 0);  // still uses `a`
+    if (acquired == SwapchainStatus::Recreated || acquired == SwapchainStatus::Ok)
+    {
         CommandList* present = device->CreateCommandList();
         present->Begin();
         present->Barrier(sc->CurrentTexture(), ResourceState::Undefined, ResourceState::Present);
@@ -316,7 +363,9 @@ TEST_CASE("A DX12 swapchain rebuilt inside a frame keeps the frame's destroyed r
         device->Submit(p, 1);
         device->EndFrame();
         sc->Present();
-    } else {
+    }
+    else
+    {
         device->EndFrame();
     }
     device->DestroyBuffer(b);

@@ -17,7 +17,8 @@ using engine_placeholder::test::QuaternionNearlyEqual;
 using engine_placeholder::test::Vec3NearlyEqual;
 
 TEST_CASE("Compose(parent, child) rotates the child's local offset into parent space before adding it",
-          "[math][transform]") {
+          "[math][transform]")
+{
     Transform parent;
     parent.position = Vec3(1, 0, 0);
     parent.rotation = Quaternion::FromAxisAngle(Vec3(0, 0, 1), kPi * 0.5f);
@@ -32,7 +33,8 @@ TEST_CASE("Compose(parent, child) rotates the child's local offset into parent s
     REQUIRE(QuaternionNearlyEqual(composed.rotation, parent.rotation));
 }
 
-TEST_CASE("Transform::ToMatrix() applies scale before translation", "[math][transform]") {
+TEST_CASE("Transform::ToMatrix() applies scale before translation", "[math][transform]")
+{
     Transform t;
     t.position = Vec3(2, 3, 4);
     t.scale = Vec3(2, 3, 4);

@@ -8,17 +8,21 @@
 
 //! The canvas that builds a [[ui::DrawList]] (Phase 15, Day 189).
 
-namespace engine_placeholder::ui {
+namespace engine_placeholder::ui
+{
 
-/// A [[ui::Canvas]] that converts logical units to physical pixels, snaps as the canvas contract says, and appends vertices, indices and commands to a draw list.
+/// A [[ui::Canvas]] that converts logical units to physical pixels, snaps as the canvas contract says, and appends
+/// vertices, indices and commands to a draw list.
 ///
-/// A frame is `list.Clear()`, `Begin(scale, width, height)`, any number of draws, then `list.SortLayers()`. Clips and layers are physical-pixel rectangles on stacks that
-/// keep their capacity. A draw whose rectangle does not meet the current clip, or that is fully transparent, makes no vertex. Consecutive draws with the same clip, layer and
-/// texture share a command; a draw that needs no texture joins any command.
+/// A frame is `list.Clear()`, `Begin(scale, width, height)`, any number of draws, then `list.SortLayers()`. Clips and
+/// layers are physical-pixel rectangles on stacks that keep their capacity. A draw whose rectangle does not meet the
+/// current clip, or that is fully transparent, makes no vertex. Consecutive draws with the same clip, layer and texture
+/// share a command; a draw that needs no texture joins any command.
 ///
 /// - Thread-safety: not-thread-safe; owner-thread only.
 /// - Ownership: borrows the draw list and the glyph atlas, which must outlive it.
-class DrawListCanvas final : public Canvas {
+class DrawListCanvas final : public Canvas
+{
 public:
     /// Makes a canvas that appends to `list` and takes glyphs from `atlas`.
     /// - Param list: the draw list to build; borrowed.
@@ -27,14 +31,16 @@ public:
     /// - Ownership: the list and the atlas are borrowed.
     DrawListCanvas(DrawList* list, text::GlyphAtlas* atlas);
 
-    /// Points the canvas at another list and atlas, keeping its stacks' storage (so a surface that draws every frame allocates nothing in steady state).
+    /// Points the canvas at another list and atlas, keeping its stacks' storage (so a surface that draws every frame
+    /// allocates nothing in steady state).
     /// - Param list: the draw list to build; borrowed.
     /// - Param atlas: the glyph atlas for text; borrowed; null makes every glyph count as dropped.
     /// - Aborts: `list` is null.
     /// - Ownership: the list and the atlas are borrowed.
     void Rebind(DrawList* list, text::GlyphAtlas* atlas);
 
-    /// Starts a frame: sets the scale and the surface size and resets the clip and layer stacks (the draw list is the caller's to `Clear`).
+    /// Starts a frame: sets the scale and the surface size and resets the clip and layer stacks (the draw list is the
+    /// caller's to `Clear`).
     /// - Param scale: physical pixels per logical unit; must be above 0.
     /// - Param width: the surface width in physical pixels.
     /// - Param height: the surface height in physical pixels.
@@ -62,7 +68,8 @@ public:
     PixelRect CurrentClip() const { return clips_[clips_.Size() - 1]; }
 
 private:
-    struct LayerFrame {
+    struct LayerFrame
+    {
         i32 order = 0;
         usize clip_base = 0;
     };
@@ -71,7 +78,8 @@ private:
     PixelRect BoundsOf(f32 x0, f32 y0, f32 x1, f32 y1) const;
     DrawCommand& CommandFor(TextureRef texture);
     void EmitQuad(const Vertex v[4], TextureRef texture);
-    void EmitRectModeQuad(const Rect& px, const CornerRadii& radii_px, f32 border, u32 flags, u32 color, f32 grow, TextureRef texture);
+    void EmitRectModeQuad(const Rect& px, const CornerRadii& radii_px, f32 border, u32 flags, u32 color, f32 grow,
+                          TextureRef texture);
 
     DrawList* list_;
     text::GlyphAtlas* atlas_;
@@ -81,4 +89,4 @@ private:
     Vector<LayerFrame> layers_;
 };
 
-} // namespace engine_placeholder::ui
+}  // namespace engine_placeholder::ui

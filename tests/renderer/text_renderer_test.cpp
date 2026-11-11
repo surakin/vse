@@ -1,9 +1,10 @@
 // Phase 14 Day 180: the GPU copy of the glyph atlas and the text pipeline.
 //
-// Without a GPU (the null device): the atlas textures follow the atlas (new pages, changed pages, nothing when nothing changed) and are
-// made again from it after a release. On a real device: the quad of a glyph shows the atlas bitmap texel for texel (an asymmetric
-// "F", so a flipped or shifted quad fails), premultiplied blending over a colored background, the sRGB round trip, and a device reset
-// that rebuilds the atlas pages, the pipeline and the sampler so the same frame renders the same pixels.
+// Without a GPU (the null device): the atlas textures follow the atlas (new pages, changed pages, nothing when nothing
+// changed) and are made again from it after a release. On a real device: the quad of a glyph shows the atlas bitmap
+// texel for texel (an asymmetric "F", so a flipped or shifted quad fails), premultiplied blending over a colored
+// background, the sRGB round trip, and a device reset that rebuilds the atlas pages, the pipeline and the sampler so
+// the same frame renders the same pixels.
 #include "algorithm.h"
 #include "lang/scalar.h"
 #include "cstr/cstr.h"
@@ -25,9 +26,11 @@
 using namespace engine_placeholder;
 using text_test::Opened;
 
-namespace {
+namespace
+{
 
-text::TextLayout LayText(Opened& o, const char* text, u32 size) {
+text::TextLayout LayText(Opened& o, const char* text, u32 size)
+{
     text::TextStyle style;
     style.font = &o.font;
     style.pixel_size = size;
@@ -36,7 +39,8 @@ text::TextLayout LayText(Opened& o, const char* text, u32 size) {
     return layout;
 }
 
-text::TextStyle StyleOf(Opened& o, u32 size, u32 color) {
+text::TextStyle StyleOf(Opened& o, u32 size, u32 color)
+{
     text::TextStyle style;
     style.font = &o.font;
     style.pixel_size = size;
@@ -45,12 +49,14 @@ text::TextStyle StyleOf(Opened& o, u32 size, u32 color) {
 }
 
 // An offscreen target of any color format, with readback.
-struct Target {
+struct Target
+{
     rhi::Device* device = nullptr;
     rhi::TextureHandle texture;
     u32 width = 0;
     u32 height = 0;
-    bool Make(rhi::Device* d, u32 w, u32 h, rhi::Format format) {
+    bool Make(rhi::Device* d, u32 w, u32 h, rhi::Format format)
+    {
         rhi::TextureDesc td;
         td.width = w;
         td.height = h;
@@ -63,24 +69,32 @@ struct Target {
         height = h;
         return texture.IsValid();
     }
-    void Destroy() {
-        if (device != nullptr && texture.IsValid()) device->DestroyTexture(texture);
+    void Destroy()
+    {
+        if (device != nullptr && texture.IsValid())
+        {
+            device->DestroyTexture(texture);
+        }
         texture = {};
     }
     // Rendering leaves the target in ColorAttachment.
-    gpu_test::Image Read() const {
+    gpu_test::Image Read() const
+    {
         gpu_test::Image image;
         image.width = width;
         image.height = height;
         image.rgba.assign(static_cast<usize>(width) * height * 4, 0);
-        REQUIRE(device->ReadbackTexture(texture, 0, 0, image.rgba.data(), image.rgba.size(), rhi::ResourceState::ColorAttachment));
+        REQUIRE(device->ReadbackTexture(texture, 0, 0, image.rgba.data(), image.rgba.size(),
+                                        rhi::ResourceState::ColorAttachment));
         return image;
     }
 };
 
 // One frame: clear the target, run `add` (which calls TextRenderer::Add), draw, wait, and read the target back.
 template <typename AddFn>
-gpu_test::Image RenderFrame(rhi::Device* device, renderer::TextRenderer* text, const Target& target, const f32 (&clear)[4], AddFn add) {
+gpu_test::Image RenderFrame(rhi::Device* device, renderer::TextRenderer* text, const Target& target,
+                            const f32 (&clear)[4], AddFn add)
+{
     device->BeginFrame();
     text->BeginFrame();
     add();
@@ -90,7 +104,10 @@ gpu_test::Image RenderFrame(rhi::Device* device, renderer::TextRenderer* text, c
     rhi::RenderingDesc pass;
     pass.color_count = 1;
     pass.color[0].texture = target.texture;
-    for (int i = 0; i < 4; ++i) pass.color[0].clear_color[i] = clear[i];
+    for (int i = 0; i < 4; ++i)
+    {
+        pass.color[0].clear_color[i] = clear[i];
+    }
     list->BeginRendering(pass);
     REQUIRE(text->Record(list, target.width, target.height));
     list->EndRendering();
@@ -103,14 +120,20 @@ gpu_test::Image RenderFrame(rhi::Device* device, renderer::TextRenderer* text, c
     return target.Read();
 }
 
-int Diff(int a, int b) { return Abs(a - b); }
+int Diff(int a, int b)
+{
+    return Abs(a - b);
+}
 
-// Where the quad of `glyph` lands for a layout drawn at (x, y): the same arithmetic the renderer uses, spelled out for the test.
-struct Quad {
+// Where the quad of `glyph` lands for a layout drawn at (x, y): the same arithmetic the renderer uses, spelled out for
+// the test.
+struct Quad
+{
     int left = 0, top = 0;
     text::GlyphEntry entry;
 };
-Quad QuadOf(text::GlyphAtlas& atlas, Opened& o, u32 size, const text::PositionedGlyph& g, f32 x, f32 y) {
+Quad QuadOf(text::GlyphAtlas& atlas, Opened& o, u32 size, const text::PositionedGlyph& g, f32 x, f32 y)
+{
     REQUIRE(o.font.SetPixelSize(size).Ok());
     Quad q;
     REQUIRE(atlas.GetOrAdd(o.font, g.glyph, &q.entry).Ok());
@@ -119,19 +142,21 @@ Quad QuadOf(text::GlyphAtlas& atlas, Opened& o, u32 size, const text::Positioned
     return q;
 }
 
-u8 Coverage(const text::GlyphAtlas& atlas, const Quad& q, u32 dx, u32 dy) {
+u8 Coverage(const text::GlyphAtlas& atlas, const Quad& q, u32 dx, u32 dy)
+{
     return atlas.PagePixels(q.entry.page)[(q.entry.rect.y + dy) * atlas.PageSize() + q.entry.rect.x + dx];
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("The atlas textures follow the atlas on the null device", "[renderer][text]") {
+TEST_CASE("The atlas textures follow the atlas on the null device", "[renderer][text]")
+{
     Opened o;
-    text::GlyphAtlas atlas(64, 8); // small pages, so a few glyphs fill one
+    text::GlyphAtlas atlas(64, 8);  // small pages, so a few glyphs fill one
     rhi::NullDevicePtr device = rhi::CreateNullDevice();
     renderer::GlyphAtlasTexture pages;
     REQUIRE(pages.Create(device.Get(), &atlas, nullptr));
-    CHECK(pages.PageCount() == 0); // an empty atlas has no page yet
+    CHECK(pages.PageCount() == 0);  // an empty atlas has no page yet
 
     REQUIRE(o.font.SetPixelSize(20).Ok());
     text::GlyphEntry entry;
@@ -141,14 +166,15 @@ TEST_CASE("The atlas textures follow the atlas on the null device", "[renderer][
     CHECK(pages.Page(0).IsValid());
     CHECK(pages.UploadCount() == 1);
 
-    REQUIRE(pages.Sync()); // nothing changed: nothing is sent
+    REQUIRE(pages.Sync());  // nothing changed: nothing is sent
     CHECK(pages.UploadCount() == 1);
 
     REQUIRE(atlas.GetOrAdd(o.font, o.font.FindGlyph('B'), &entry).Ok());
-    REQUIRE(pages.Sync()); // the page changed: it is sent whole
+    REQUIRE(pages.Sync());  // the page changed: it is sent whole
     CHECK(pages.UploadCount() == 2);
 
-    for (char c = 'C'; c <= 'Z'; ++c) {
+    for (char c = 'C'; c <= 'Z'; ++c)
+    {
         REQUIRE(atlas.GetOrAdd(o.font, o.font.FindGlyph(static_cast<text::char32>(c)), &entry).Ok());
     }
     REQUIRE(atlas.PageCount() > 1);
@@ -168,7 +194,8 @@ TEST_CASE("The atlas textures follow the atlas on the null device", "[renderer][
     CHECK(device->Resources().textures == made.textures - atlas.PageCount());
 }
 
-TEST_CASE("The atlas textures are rebuilt by the registry when the device is replaced", "[renderer][text]") {
+TEST_CASE("The atlas textures are rebuilt by the registry when the device is replaced", "[renderer][text]")
+{
     Opened o;
     text::GlyphAtlas atlas(128, 4);
     renderer::DeviceResources registry;
@@ -188,14 +215,16 @@ TEST_CASE("The atlas textures are rebuilt by the registry when the device is rep
     CHECK(pages.Live());
     CHECK(pages.PageCount() == 1);
     CHECK(pages.Page(0).IsValid());
-    (void)first; // the handle may or may not be equal on a new device; what matters is that the page is live and was sent again
+    (void)first;  // the handle may or may not be equal on a new device; what matters is that the page is live and was
+                  // sent again
     CHECK(pages.UploadCount() == 2);
     pages.Destroy();
     CHECK(registry.Count() == 0);
     host.Destroy();
 }
 
-TEST_CASE("The text renderer queues glyphs, skips spaces and counts what the budget drops", "[renderer][text]") {
+TEST_CASE("The text renderer queues glyphs, skips spaces and counts what the budget drops", "[renderer][text]")
+{
     Opened o;
     text::GlyphAtlas atlas;
     rhi::NullDevicePtr device = rhi::CreateNullDevice();
@@ -206,19 +235,18 @@ TEST_CASE("The text renderer queues glyphs, skips spaces and counts what the bud
     text::TextLayout layout = LayText(o, "ab cd", 16);
     text.BeginFrame();
     CHECK(text.Add(layout, StyleOf(o, 16, 0xFFFFFFFFu), 0, 0));
-    CHECK(text.QueuedGlyphs() == 4); // the space has no pixels
+    CHECK(text.QueuedGlyphs() == 4);  // the space has no pixels
     CHECK(text.DroppedGlyphs() == 0);
     text::TextLayout more = LayText(o, "xyz", 16);
-    CHECK_FALSE(text.Add(more, StyleOf(o, 16, 0xFFFFFFFFu), 0, 20)); // one fits, two do not
+    CHECK_FALSE(text.Add(more, StyleOf(o, 16, 0xFFFFFFFFu), 0, 20));  // one fits, two do not
     CHECK(text.QueuedGlyphs() == 5);
     CHECK(text.DroppedGlyphs() == 2);
     text.BeginFrame();
     CHECK(text.QueuedGlyphs() == 0);
-    CHECK(text.DroppedGlyphs() == 2); // the total is for the object's life
+    CHECK(text.DroppedGlyphs() == 2);  // the total is for the object's life
 
     // Record runs inside a rendering pass on the null device (which checks the calls' order); it must not fail.
     {
-
         Target target;
         REQUIRE(target.Make(device.Get(), 64, 32, rhi::Format::RGBA8_UNorm));
         CHECK(text.Add(layout, StyleOf(o, 16, 0xFFFFFFFFu), 0, 0));
@@ -244,8 +272,10 @@ TEST_CASE("The text renderer queues glyphs, skips spaces and counts what the bud
     CHECK(device->Resources().buffers == 0);
 }
 
-TEST_CASE("A glyph's quad shows the atlas bitmap texel for texel", "[renderer][text][gpu]") {
-    FOR_EACH_GPU_BACKEND(backend) {
+TEST_CASE("A glyph's quad shows the atlas bitmap texel for texel", "[renderer][text][gpu]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = gpu_test::CreateTestDevice(backend);
         Opened o;
@@ -263,7 +293,8 @@ TEST_CASE("A glyph's quad shows the atlas bitmap texel for texel", "[renderer][t
         const f32 x = 11.0f;
         const f32 y = 5.0f;
         const f32 clear[4] = {0, 0, 0, 1};
-        const gpu_test::Image image = RenderFrame(device.Get(), &text, target, clear, [&] { REQUIRE(text.Add(layout, StyleOf(o, size, 0xFFFFFFFFu), x, y)); });
+        const gpu_test::Image image = RenderFrame(device.Get(), &text, target, clear, [&]
+                                                  { REQUIRE(text.Add(layout, StyleOf(o, size, 0xFFFFFFFFu), x, y)); });
 
         const Quad q = QuadOf(atlas, o, size, layout.glyphs[0], x, y);
         REQUIRE(q.entry.has_pixels);
@@ -273,14 +304,20 @@ TEST_CASE("A glyph's quad shows the atlas bitmap texel for texel", "[renderer][t
         REQUIRE(q.top + static_cast<int>(q.entry.rect.h) <= 64);
         int worst = 0;
         u32 inked = 0;
-        for (u32 py = 0; py < 64; ++py) {
-            for (u32 px = 0; px < 80; ++px) {
+        for (u32 py = 0; py < 64; ++py)
+        {
+            for (u32 px = 0; px < 80; ++px)
+            {
                 const u8* p = image.Pixel(px, py);
                 const int dx = static_cast<int>(px) - q.left;
                 const int dy = static_cast<int>(py) - q.top;
-                const bool inside = dx >= 0 && dy >= 0 && dx < static_cast<int>(q.entry.rect.w) && dy < static_cast<int>(q.entry.rect.h);
+                const bool inside = dx >= 0 && dy >= 0 && dx < static_cast<int>(q.entry.rect.w) &&
+                                    dy < static_cast<int>(q.entry.rect.h);
                 const int expected = inside ? Coverage(atlas, q, static_cast<u32>(dx), static_cast<u32>(dy)) : 0;
-                if (expected != 0) ++inked;
+                if (expected != 0)
+                {
+                    ++inked;
+                }
                 worst = Max(Max(worst, Diff(p[0], expected)), Max(Diff(p[1], expected), Diff(p[2], expected)));
                 CHECK(p[3] == 255);
             }
@@ -289,20 +326,29 @@ TEST_CASE("A glyph's quad shows the atlas bitmap texel for texel", "[renderer][t
         CHECK(worst <= 2);
         CHECK(inked > 100);
 
-        // The letter F is asymmetric: its stem is on the left, the top bar is the widest part and the lower right is empty. A quad flipped in
-        // either direction fails one of these (the bitmap comparison above already pins every pixel).
+        // The letter F is asymmetric: its stem is on the left, the top bar is the widest part and the lower right is
+        // empty. A quad flipped in either direction fails one of these (the bitmap comparison above already pins every
+        // pixel).
         const u32 w = q.entry.rect.w, h = q.entry.rect.h;
-        auto ink = [&](u32 row, u32 x0, u32 x1) {
+        auto ink = [&](u32 row, u32 x0, u32 x1)
+        {
             u32 sum = 0;
-            for (u32 dx = x0; dx < x1; ++dx) sum += Coverage(atlas, q, dx, row);
+            for (u32 dx = x0; dx < x1; ++dx)
+            {
+                sum += Coverage(atlas, q, dx, row);
+            }
             return sum;
         };
-        CHECK(ink(h - 3, 0, w / 3) > 0);         // the stem, near the bottom
-        CHECK(ink(h - 3, w / 2, w) == 0);        // nothing to its right
-        CHECK(ink(1, w / 2, w) > 0);             // the top bar reaches right
-        auto on_screen = [&](u32 row, u32 x0, u32 x1) {
+        CHECK(ink(h - 3, 0, w / 3) > 0);   // the stem, near the bottom
+        CHECK(ink(h - 3, w / 2, w) == 0);  // nothing to its right
+        CHECK(ink(1, w / 2, w) > 0);       // the top bar reaches right
+        auto on_screen = [&](u32 row, u32 x0, u32 x1)
+        {
             u32 sum = 0;
-            for (u32 dx = x0; dx < x1; ++dx) sum += image.Pixel(static_cast<u32>(q.left) + dx, static_cast<u32>(q.top) + row)[0];
+            for (u32 dx = x0; dx < x1; ++dx)
+            {
+                sum += image.Pixel(static_cast<u32>(q.left) + dx, static_cast<u32>(q.top) + row)[0];
+            }
             return sum;
         };
         CHECK(on_screen(h - 3, 0, w / 3) > 0);
@@ -314,8 +360,10 @@ TEST_CASE("A glyph's quad shows the atlas bitmap texel for texel", "[renderer][t
     }
 }
 
-TEST_CASE("Text blends with premultiplied alpha over a colored background", "[renderer][text][gpu]") {
-    FOR_EACH_GPU_BACKEND(backend) {
+TEST_CASE("Text blends with premultiplied alpha over a colored background", "[renderer][text][gpu]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = gpu_test::CreateTestDevice(backend);
         Opened o;
@@ -326,13 +374,16 @@ TEST_CASE("Text blends with premultiplied alpha over a colored background", "[re
         REQUIRE(target.Make(device.Get(), 64, 64, rhi::Format::RGBA8_UNorm));
         const u32 size = 48;
         text::TextLayout layout = LayText(o, "H", size);
-        const f32 clear[4] = {0, 0, 1, 1}; // blue
+        const f32 clear[4] = {0, 0, 1, 1};  // blue
         // Red, fully opaque: red in the lowest byte.
-        const gpu_test::Image opaque = RenderFrame(device.Get(), &text, target, clear, [&] { text.Add(layout, StyleOf(o, size, 0xFF0000FFu), 8, 4); });
+        const gpu_test::Image opaque = RenderFrame(device.Get(), &text, target, clear,
+                                                   [&] { text.Add(layout, StyleOf(o, size, 0xFF0000FFu), 8, 4); });
         const Quad q = QuadOf(atlas, o, size, layout.glyphs[0], 8, 4);
         int worst = 0;
-        for (u32 dy = 0; dy < q.entry.rect.h; ++dy) {
-            for (u32 dx = 0; dx < q.entry.rect.w; ++dx) {
+        for (u32 dy = 0; dy < q.entry.rect.h; ++dy)
+        {
+            for (u32 dx = 0; dx < q.entry.rect.w; ++dx)
+            {
                 const u8* p = opaque.Pixel(static_cast<u32>(q.left) + dx, static_cast<u32>(q.top) + dy);
                 const int cov = Coverage(atlas, q, dx, dy);
                 worst = Max(Max(worst, Diff(p[0], cov)), Max(Diff(p[1], 0), Diff(p[2], 255 - cov)));
@@ -341,13 +392,17 @@ TEST_CASE("Text blends with premultiplied alpha over a colored background", "[re
         CHECK(worst <= 2);
 
         // Half transparent red: coverage times 0.5.
-        const gpu_test::Image half = RenderFrame(device.Get(), &text, target, clear, [&] { text.Add(layout, StyleOf(o, size, 0x800000FFu), 8, 4); });
+        const gpu_test::Image half = RenderFrame(device.Get(), &text, target, clear,
+                                                 [&] { text.Add(layout, StyleOf(o, size, 0x800000FFu), 8, 4); });
         worst = 0;
-        for (u32 dy = 0; dy < q.entry.rect.h; ++dy) {
-            for (u32 dx = 0; dx < q.entry.rect.w; ++dx) {
+        for (u32 dy = 0; dy < q.entry.rect.h; ++dy)
+        {
+            for (u32 dx = 0; dx < q.entry.rect.w; ++dx)
+            {
                 const u8* p = half.Pixel(static_cast<u32>(q.left) + dx, static_cast<u32>(q.top) + dy);
                 const f32 a = static_cast<f32>(Coverage(atlas, q, dx, dy)) / 255.0f * (128.0f / 255.0f);
-                worst = Max(Max(worst, Diff(p[0], static_cast<int>(LRound(255.0f * a)))), Diff(p[2], static_cast<int>(LRound(255.0f * (1.0f - a)))));
+                worst = Max(Max(worst, Diff(p[0], static_cast<int>(LRound(255.0f * a)))),
+                            Diff(p[2], static_cast<int>(LRound(255.0f * (1.0f - a)))));
             }
         }
         CHECK(worst <= 3);
@@ -356,8 +411,10 @@ TEST_CASE("Text blends with premultiplied alpha over a colored background", "[re
     }
 }
 
-TEST_CASE("An sRGB target shows the color the application wrote", "[renderer][text][gpu]") {
-    FOR_EACH_GPU_BACKEND(backend) {
+TEST_CASE("An sRGB target shows the color the application wrote", "[renderer][text][gpu]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = gpu_test::CreateTestDevice(backend);
         Opened o;
@@ -371,14 +428,20 @@ TEST_CASE("An sRGB target shows the color the application wrote", "[renderer][te
         const u32 size = 48;
         text::TextLayout layout = LayText(o, "H", size);
         const f32 clear[4] = {0, 0, 0, 1};
-        // A mid gray, written as sRGB bytes. In the middle of a full-coverage pixel the stored byte must be the same gray again (decode in the
-        // shader, encode on write), where a missing decode would store a much brighter value.
-        const gpu_test::Image image = RenderFrame(device.Get(), &text, target, clear, [&] { text.Add(layout, StyleOf(o, size, 0xFF808080u), 8, 4); });
+        // A mid gray, written as sRGB bytes. In the middle of a full-coverage pixel the stored byte must be the same
+        // gray again (decode in the shader, encode on write), where a missing decode would store a much brighter value.
+        const gpu_test::Image image = RenderFrame(device.Get(), &text, target, clear,
+                                                  [&] { text.Add(layout, StyleOf(o, size, 0xFF808080u), 8, 4); });
         const Quad q = QuadOf(atlas, o, size, layout.glyphs[0], 8, 4);
         u32 full = 0;
-        for (u32 dy = 0; dy < q.entry.rect.h; ++dy) {
-            for (u32 dx = 0; dx < q.entry.rect.w; ++dx) {
-                if (Coverage(atlas, q, dx, dy) != 255) continue;
+        for (u32 dy = 0; dy < q.entry.rect.h; ++dy)
+        {
+            for (u32 dx = 0; dx < q.entry.rect.w; ++dx)
+            {
+                if (Coverage(atlas, q, dx, dy) != 255)
+                {
+                    continue;
+                }
                 const u8* p = image.Pixel(static_cast<u32>(q.left) + dx, static_cast<u32>(q.top) + dy);
                 ++full;
                 CHECK(Diff(p[0], 128) <= 2);
@@ -392,12 +455,14 @@ TEST_CASE("An sRGB target shows the color the application wrote", "[renderer][te
     }
 }
 
-TEST_CASE("A device reset rebuilds the atlas pages, the pipeline and the sampler", "[renderer][text][gpu][reset]") {
-    FOR_EACH_GPU_BACKEND(backend) {
+TEST_CASE("A device reset rebuilds the atlas pages, the pipeline and the sampler", "[renderer][text][gpu][reset]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
         gpu_test::BackendValidation validation(backend);
         Opened o;
         text::GlyphAtlas atlas;
-        renderer::DeviceResources registry; // destroyed last
+        renderer::DeviceResources registry;  // destroyed last
         rhi::DeviceHost host;
         rhi::DeviceCreateInfo info;
         info.backend = backend;
@@ -405,12 +470,13 @@ TEST_CASE("A device reset rebuilds the atlas pages, the pipeline and the sampler
         info.sync_validation = backend == rhi::Backend::Vulkan;
         info.pipeline_cache = false;
         host.AddObserver(&registry, 0);
-        if (!host.Create(info, rhi::SwapchainDesc{})) {
+        if (!host.Create(info, rhi::SwapchainDesc{}))
+        {
             SKIP("no " << gpu_test::BackendTag(backend) << " device with validation on this machine");
         }
         renderer::TextRenderer text;
         REQUIRE(text.Create(host.GetDevice(), &atlas, renderer::TextRendererDesc{}, &registry));
-                Target target; // not registered: made again by hand after the reset
+        Target target;  // not registered: made again by hand after the reset
         REQUIRE(target.Make(host.GetDevice(), 96, 48, rhi::Format::RGBA8_UNorm));
 
         const u32 size = 24;
@@ -420,7 +486,8 @@ TEST_CASE("A device reset rebuilds the atlas pages, the pipeline and the sampler
         const gpu_test::Image before = RenderFrame(host.GetDevice(), &text, target, clear, draw);
         const rhi::ResourceCounts counts = host.GetDevice()->Resources();
 
-        // Replace the device: the target belongs to the old one and go with it; the text renderer is rebuilt by the registry.
+        // Replace the device: the target belongs to the old one and go with it; the text renderer is rebuilt by the
+        // registry.
         host.GetDevice()->WaitIdle();
         target.Destroy();
         REQUIRE(host.Recreate(info, rhi::SwapchainDesc{}));
@@ -429,7 +496,7 @@ TEST_CASE("A device reset rebuilds the atlas pages, the pipeline and the sampler
         const gpu_test::Image after = RenderFrame(host.GetDevice(), &text, target, clear, draw);
         const rhi::ResourceCounts now = host.GetDevice()->Resources();
 
-        CHECK(before.rgba == after.rgba); // the same frame, pixel for pixel
+        CHECK(before.rgba == after.rgba);  // the same frame, pixel for pixel
 
         // A lost device recovers through the same path: inject the loss, replace the device, draw again.
         host.GetDevice()->WaitIdle();

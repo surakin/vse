@@ -3,14 +3,17 @@
 #include "settings/desc.h"
 #include "settings/setting.h"
 
-namespace engine_placeholder::spatial {
+namespace engine_placeholder::spatial
+{
 
-SpatialStats DescribeSet(const SpatialSet& set) {
+SpatialStats DescribeSet(const SpatialSet& set)
+{
     SpatialStats s;
     s.set = set.Stats();
     s.static_nodes = set.StaticTree().NodeCount();
     s.static_depth = set.StaticTree().Depth();
-    if (set.Kind() == DynamicKind::Bvh) {
+    if (set.Kind() == DynamicKind::Bvh)
+    {
         const DynamicBvhStats d = set.DynamicTree().Stats();
         s.dynamic_nodes = d.nodes;
         s.dynamic_height = d.height;
@@ -24,13 +27,16 @@ SpatialStats DescribeSet(const SpatialSet& set) {
     return s;
 }
 
-void AppendBoxLines(const Aabb& box, u32 color, Vector<DebugLine>* out) {
+void AppendBoxLines(const Aabb& box, u32 color, Vector<DebugLine>* out)
+{
     const Vec3 lo = box.min;
     const Vec3 hi = box.max;
     const Vec3 c[8] = {Vec3(lo.x, lo.y, lo.z), Vec3(hi.x, lo.y, lo.z), Vec3(hi.x, hi.y, lo.z), Vec3(lo.x, hi.y, lo.z),
                        Vec3(lo.x, lo.y, hi.z), Vec3(hi.x, lo.y, hi.z), Vec3(hi.x, hi.y, hi.z), Vec3(lo.x, hi.y, hi.z)};
-    const u32 edges[12][2] = {{0, 1}, {1, 2}, {2, 3}, {3, 0}, {4, 5}, {5, 6}, {6, 7}, {7, 4}, {0, 4}, {1, 5}, {2, 6}, {3, 7}};
-    for (const auto& e : edges) {
+    const u32 edges[12][2] = {{0, 1}, {1, 2}, {2, 3}, {3, 0}, {4, 5}, {5, 6},
+                              {6, 7}, {7, 4}, {0, 4}, {1, 5}, {2, 6}, {3, 7}};
+    for (const auto& e : edges)
+    {
         DebugLine line;
         line.a = c[e[0]];
         line.b = c[e[1]];
@@ -39,38 +45,57 @@ void AppendBoxLines(const Aabb& box, u32 color, Vector<DebugLine>* out) {
     }
 }
 
-usize DebugLines(const SpatialSet& set, const DebugOptions& options, Vector<DebugLine>* out) {
+usize DebugLines(const SpatialSet& set, const DebugOptions& options, Vector<DebugLine>* out)
+{
     out->Clear();
     auto room = [&]() { return out->Size() + 12 <= options.max_lines; };
-    if (options.has_query && room()) {
+    if (options.has_query && room())
+    {
         AppendBoxLines(options.query, kDebugQueryColor, out);
     }
-    for (usize i = 0; i < options.hits.Size() && room(); ++i) {
+    for (usize i = 0; i < options.hits.Size() && room(); ++i)
+    {
         AppendBoxLines(options.hits[i], kDebugHitColor, out);
     }
     // The query and its hits come first: they are what the caller most wants to see when the structure fills the cap.
-    if (options.nodes) {
+    if (options.nodes)
+    {
         set.Traverse(
-            [&](const Aabb& node) {
-                if (!room()) return NodeVisit::Reject;
+            [&](const Aabb& node)
+            {
+                if (!room())
+                {
+                    return NodeVisit::Reject;
+                }
                 AppendBoxLines(node, kDebugNodeColor, out);
                 return NodeVisit::Descend;
             },
-            [&](SetHandle, const Item& item) {
-                if (options.items && room()) AppendBoxLines(item.box, kDebugItemColor, out);
+            [&](SetHandle, const Item& item)
+            {
+                if (options.items && room())
+                {
+                    AppendBoxLines(item.box, kDebugItemColor, out);
+                }
                 return room();
             });
-    } else if (options.items) {
+    }
+    else if (options.items)
+    {
         set.Traverse([](const Aabb&) { return NodeVisit::Descend; },
-                     [&](SetHandle, const Item& item) {
-                         if (room()) AppendBoxLines(item.box, kDebugItemColor, out);
+                     [&](SetHandle, const Item& item)
+                     {
+                         if (room())
+                         {
+                             AppendBoxLines(item.box, kDebugItemColor, out);
+                         }
                          return room();
                      });
     }
     return out->Size();
 }
 
-void RegisterSpatialSettings(settings::Registry* registry) {
+void RegisterSpatialSettings(settings::Registry* registry)
+{
     settings::SettingDesc parallel = settings::MakeBool("spatial.parallel", true);
     parallel.env = "ENGINE_SPATIAL_PARALLEL";
     parallel.flag = "spatial-parallel";
@@ -82,7 +107,8 @@ void RegisterSpatialSettings(settings::Registry* registry) {
     margin.env = "ENGINE_SPATIAL_FAT_MARGIN";
     margin.flag = "spatial-fat-margin";
     margin.label = "Dynamic tree margin";
-    margin.description = "how far the dynamic trees grow an item's box, as a fraction of its size, before a move re-inserts it (applies to sets made afterwards)";
+    margin.description =
+        "how far the dynamic trees grow an item's box, as a fraction of its size, before a move re-inserts it (applies to sets made afterwards)";
     margin.group = "spatial";
     margin.flags = settings::kAdvanced;
     registry->Register(margin);
@@ -104,13 +130,15 @@ void RegisterSpatialSettings(settings::Registry* registry) {
     registry->Register(debug);
 }
 
-SpatialSetConfig SetConfigFromSettings(const settings::Registry& registry) {
+SpatialSetConfig SetConfigFromSettings(const settings::Registry& registry)
+{
     SpatialSetConfig config;
     const settings::SettingId id = registry.Find(StringView("spatial.fat_margin"));
-    if (id.IsValid()) {
+    if (id.IsValid())
+    {
         config.bvh.fat_margin = static_cast<f32>(settings::Setting<f64>(registry, id).Get());
     }
     return config;
 }
 
-} // namespace engine_placeholder::spatial
+}  // namespace engine_placeholder::spatial

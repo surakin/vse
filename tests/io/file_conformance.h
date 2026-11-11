@@ -5,24 +5,29 @@
 #include "io/file.h"
 #include "test_text.h"
 
-namespace io_test {
+namespace io_test
+{
 
 using namespace engine_placeholder;
 
-/// A `make(StringView content, bool writable)` callable returns an open `io::FilePtr` holding `content`; `writable` asks for
-/// a file that also accepts writes (a backend that cannot write is only run through the read half).
+/// A `make(StringView content, bool writable)` callable returns an open `io::FilePtr` holding `content`; `writable`
+/// asks for a file that also accepts writes (a backend that cannot write is only run through the read half).
 
-inline engine_test::Text PatternBytes(usize n) {
+inline engine_test::Text PatternBytes(usize n)
+{
     engine_test::Text s = engine_test::MakeText();
-    for (usize i = 0; i < n; ++i) s.Append(static_cast<char>((i * 31 + 7) & 0xFF));
+    for (usize i = 0; i < n; ++i)
+    {
+        s.Append(static_cast<char>((i * 31 + 7) & 0xFF));
+    }
     return s;
 }
 
 /// The checks every `io::File` backend must pass for reading. Runs inside a Catch2 test case.
-template <typename Maker>
-inline void RunReadConformance(Maker&& make) {
+template <typename Maker> inline void RunReadConformance(Maker&& make)
+{
     const engine_test::Text content = PatternBytes(100000);
-    const StringView whole = content.View(); // larger than the helpers' chunk
+    const StringView whole = content.View();  // larger than the helpers' chunk
     {
         io::FilePtr f = make(whole, false);
         REQUIRE(f);
@@ -30,7 +35,7 @@ inline void RunReadConformance(Maker&& make) {
         char buf[64];
         usize n = 0;
         REQUIRE(f->Read(buf, 64, 1000, &n).Ok());
-        REQUIRE(n > 0); // a short read is allowed, zero is the end
+        REQUIRE(n > 0);  // a short read is allowed, zero is the end
         CHECK(StringView(buf, n) == whole.Substring(1000, n));
         // Exact reads loop over short reads.
         Vector<char> exact = engine_test::Chars(5000);
@@ -53,7 +58,8 @@ inline void RunReadConformance(Maker&& make) {
         CHECK(StringView(reinterpret_cast<const char*>(all.Data()), all.Size()) == whole);
         CHECK(io::ReadAll(*f, &all, 10).Is(io::Error::TooLong));
         // Stream reads advance a shared position; Seek moves it.
-        if ((f->Capabilities() & io::kCapSeekable) != 0) {
+        if ((f->Capabilities() & io::kCapSeekable) != 0)
+        {
             REQUIRE(f->Seek(10).Ok());
             REQUIRE(io::ReadExact(*f, buf, 4, 10).Ok());
             usize got = 0;
@@ -62,7 +68,8 @@ inline void RunReadConformance(Maker&& make) {
             CHECK(StringView(buf, got) == whole.Substring(10, got));
         }
         u64 size = 0;
-        if ((f->Capabilities() & io::kCapSizeKnown) != 0) {
+        if ((f->Capabilities() & io::kCapSizeKnown) != 0)
+        {
             REQUIRE(f->Size(&size).Ok());
             CHECK(size == whole.Length());
         }
@@ -96,8 +103,8 @@ inline void RunReadConformance(Maker&& make) {
 }
 
 /// The checks every writable `io::File` backend must pass.
-template <typename Maker>
-inline void RunWriteConformance(Maker&& make) {
+template <typename Maker> inline void RunWriteConformance(Maker&& make)
+{
     io::FilePtr f = make(StringView("0123456789"), true);
     REQUIRE(f);
     CHECK((f->Capabilities() & io::kCapWritable) != 0);
@@ -122,7 +129,8 @@ inline void RunWriteConformance(Maker&& make) {
     // Truncate shrinks and extends with zeros.
     REQUIRE(f->Truncate(5).Ok());
     u64 size = 0;
-    if ((f->Capabilities() & io::kCapSizeKnown) != 0) {
+    if ((f->Capabilities() & io::kCapSizeKnown) != 0)
+    {
         REQUIRE(f->Size(&size).Ok());
         CHECK(size == 5);
     }
@@ -150,4 +158,4 @@ inline void RunWriteConformance(Maker&& make) {
     CHECK(f->Flush().Is(io::Error::Invalid));
 }
 
-} // namespace io_test
+}  // namespace io_test

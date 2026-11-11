@@ -6,33 +6,43 @@
 #include "ui/text_run.h"
 #include "ui/widget.h"
 
-//! The single-line text field (Phase 15, Day 197): UTF-8 text edited by grapheme cluster with the keyboard and the mouse, a selection, word movement, undo and redo, and the clipboard.
+//! The single-line text field (Phase 15, Day 197): UTF-8 text edited by grapheme cluster with the keyboard and the
+//! mouse, a selection, word movement, undo and redo, and the clipboard.
 
-namespace engine_placeholder::ui {
+namespace engine_placeholder::ui
+{
 
 class TextField;
 
-/// Decides whether a proposed text may replace the field's text: the function gets the pointer given to `SetValidator`, the field and the whole text the edit would make (valid for
-/// the call only), and returns false to keep the old text.
+/// Decides whether a proposed text may replace the field's text: the function gets the pointer given to `SetValidator`,
+/// the field and the whole text the edit would make (valid for the call only), and returns false to keep the old text.
 using TextValidator = bool (*)(void* user, const TextField* field, StringView proposed);
 
 /// An editable line of text.
 ///
-/// Offsets are byte offsets into the UTF-8 text and are always on grapheme boundaries (`text::NextBoundary` and `text::PreviousBoundary` over the field's layout): a combining mark,
-/// a flag, a ZWJ sequence or a Hangul syllable moves and deletes as one unit. Only `Text` events insert, so a key the field does not know does nothing; there is no input method
-/// and no complex-script shaping (Phase 14 scope). Ctrl+Left and Ctrl+Right move by word ([[ui::WordStart]], [[ui::WordEnd]]). The field scrolls sideways to keep the caret in view.
+/// Offsets are byte offsets into the UTF-8 text and are always on grapheme boundaries (`text::NextBoundary` and
+/// `text::PreviousBoundary` over the field's layout): a combining mark, a flag, a ZWJ sequence or a Hangul syllable
+/// moves and deletes as one unit. Only `Text` events insert, so a key the field does not know does nothing; there is no
+/// input method and no complex-script shaping (Phase 14 scope). Ctrl+Left and Ctrl+Right move by word
+/// ([[ui::WordStart]], [[ui::WordEnd]]). The field scrolls sideways to keep the caret in view.
 ///
-/// The keys are Left, Right, Home, End (Shift extends the selection, Ctrl moves by word), Backspace, Delete (Ctrl: by word), Ctrl+A, Ctrl+C / Ctrl+Insert, Ctrl+X / Shift+Delete, Ctrl+V /
-/// Shift+Insert, Ctrl+Z, Ctrl+Shift+Z and Ctrl+Y, Enter (`OnSubmit`), Escape (`OnCancel`). Tab, Up and Down are left to the surface and the parents. The mouse: a click places the caret,
-/// Shift+click extends, a drag selects (the pointer is captured), a double click selects a word, a triple click all.
+/// The keys are Left, Right, Home, End (Shift extends the selection, Ctrl moves by word), Backspace, Delete (Ctrl: by
+/// word), Ctrl+A, Ctrl+C / Ctrl+Insert, Ctrl+X / Shift+Delete, Ctrl+V / Shift+Insert, Ctrl+Z, Ctrl+Shift+Z and Ctrl+Y,
+/// Enter (`OnSubmit`), Escape (`OnCancel`). Tab, Up and Down are left to the surface and the parents. The mouse: a
+/// click places the caret, Shift+click extends, a drag selects (the pointer is captured), a double click selects a
+/// word, a triple click all.
 ///
-/// Edits go through one path that applies, in order, the read-only flag, the maximum length (in clusters; a longer insertion is cut), and the validator; an edit that changes
-/// nothing is not recorded. Consecutive typing, and consecutive Backspace or Delete presses, are one undo step. A password field draws bullets, refuses copy and cut, moves and edits by
-/// cluster, and treats its whole text as one word (word movement, word deletion and a double click go to the ends), so the spaces do not show.
+/// Edits go through one path that applies, in order, the read-only flag, the maximum length (in clusters; a longer
+/// insertion is cut), and the validator; an edit that changes nothing is not recorded. Consecutive typing, and
+/// consecutive Backspace or Delete presses, are one undo step. A password field draws bullets, refuses copy and cut,
+/// moves and edits by cluster, and treats its whole text as one word (word movement, word deletion and a double click
+/// go to the ends), so the spaces do not show.
 ///
 /// - Thread-safety: owner-thread-only.
-/// - Ownership: owns its text, its undo history and its layouts; borrows the validator's user pointer and the surface's clipboard.
-class TextField : public Widget {
+/// - Ownership: owns its text, its undo history and its layouts; borrows the validator's user pointer and the surface's
+/// clipboard.
+class TextField : public Widget
+{
 public:
     /// The preferred width, as a multiple of the theme's icon size.
     static constexpr f32 kWidthInIcons = 8.0f;
@@ -60,7 +70,8 @@ public:
     /// Cancels a paste still waiting for the clipboard.
     ~TextField() override;
 
-    /// Replaces the text without running a listener or the validator; the caret goes to the end, the selection is dropped and the undo history is cleared.
+    /// Replaces the text without running a listener or the validator; the caret goes to the end, the selection is
+    /// dropped and the undo history is cleared.
     /// - Param text: UTF-8 text; cut to the maximum length.
     /// - Fails: never.
     void SetText(StringView text);
@@ -90,7 +101,8 @@ public:
     /// - Param function: the check.
     /// - Param user: passed to it; borrowed.
     /// - Ownership: `user` is borrowed until the validator is replaced or the field is destroyed.
-    void SetValidator(TextValidator function, void* user) {
+    void SetValidator(TextValidator function, void* user)
+    {
         validator_ = function;
         validator_user_ = user;
     }
@@ -126,7 +138,8 @@ public:
     ///
     /// - Fails: never.
     bool CanRedo() const { return !redo_.Empty(); }
-    /// Returns the caret rectangle in surface coordinates (what is drawn when it is on), after the last layout of the text; empty before the first.
+    /// Returns the caret rectangle in surface coordinates (what is drawn when it is on), after the last layout of the
+    /// text; empty before the first.
     Rect CaretRect();
     /// Returns how far the text is scrolled sideways, in logical units.
     f32 ScrollX() const { return scroll_x_; }
@@ -144,13 +157,15 @@ public:
     Callback<TextField*>& OnFocusLost() { return on_focus_lost_; }
     /// The tag of the pointer entry a drag started by a text field carries (so the field knows a drop is its own).
     static constexpr char kDragTag[] = "ui.textfield.selection";
-    /// Accepts a drag with text (Copy; Move too when it came from this field), unless the field is read-only or a password field, or the pointer is inside the dragged selection.
+    /// Accepts a drag with text (Copy; Move too when it came from this field), unless the field is read-only or a
+    /// password field, or the pointer is inside the dragged selection.
     DragAction CanAccept(const DragPayload& payload, Point position) override;
     /// Shows where the text would land.
     void OnDragOver(const DragPayload& payload, Point position, DragAction action) override;
     /// Hides the drop caret.
     void OnDragLeave() override;
-    /// Inserts the dropped text (its first line) at the drop position and selects it; a move within the field removes the original first.
+    /// Inserts the dropped text (its first line) at the drop position and selects it; a move within the field removes
+    /// the original first.
     void OnDrop(const DragPayload& payload, Point position, DragAction action) override;
     /// A move to another widget removes the dragged text from this field.
     void OnDragEnded(DragAction action) override;
@@ -173,8 +188,15 @@ public:
     bool WantsUpdate() const override;
 
 private:
-    enum class EditKind : u8 { Typing, Backspace, Delete, Other };
-    struct Edit {
+    enum class EditKind : u8
+    {
+        Typing,
+        Backspace,
+        Delete,
+        Other
+    };
+    struct Edit
+    {
         u32 at = 0;
         Vector<char> removed;
         Vector<char> inserted;
@@ -214,7 +236,7 @@ private:
     TextRun run_;
     TextRun mask_;
     TextRun placeholder_run_;
-    Vector<char> mask_text_; // one bullet per cluster of the text
+    Vector<char> mask_text_;  // one bullet per cluster of the text
     Vector<char> placeholder_;
     Vector<Edit> undo_;
     Vector<Edit> redo_;
@@ -224,7 +246,7 @@ private:
     bool read_only_ = false;
     bool password_ = false;
     bool frame_ = true;
-    bool chain_ = false; // the next edit may join the last undo step
+    bool chain_ = false;  // the next edit may join the last undo step
     usize max_length_ = 0;
     TextValidator validator_ = nullptr;
     void* validator_user_ = nullptr;
@@ -234,12 +256,12 @@ private:
     Point last_press_ = Point();
     u32 press_count_ = 0;
     static constexpr u32 kNoCaret = 0xFFFFFFFFu;
-    bool drag_pending_ = false; // a press inside the selection waits to become a drag or a click
+    bool drag_pending_ = false;  // a press inside the selection waits to become a drag or a click
     bool moved_in_place_ = false;
     Point drag_press_;
     u32 drag_lo_ = 0;
     u32 drag_hi_ = 0;
-    Vector<char> drag_text_; // the text the drag took, to check before a move removes it
+    Vector<char> drag_text_;  // the text the drag took, to check before a move removes it
     u32 drop_caret_ = kNoCaret;
     Clipboard::Ticket paste_ticket_ = 0;
     Clipboard* paste_clipboard_ = nullptr;
@@ -249,4 +271,4 @@ private:
     Callback<TextField*> on_focus_lost_;
 };
 
-} // namespace engine_placeholder::ui
+}  // namespace engine_placeholder::ui

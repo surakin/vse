@@ -1,11 +1,13 @@
-// The crash report allocates nothing on Windows (Phase 13 Day 155). Linux proves it by wrapping malloc, calloc and realloc at link time
-// (stack_trace_alloc_linux_test.cpp, GNU ld --wrap), which link.exe and lld-link cannot do. The Windows form is the debug C runtime's
-// allocation hook (_CrtSetAllocHook): it sees every malloc, calloc, realloc and operator new of the C runtime, so it exists only in a Debug
-// build and not under AddressSanitizer (which replaces the C runtime's allocator). It does not see HeapAlloc called directly by Windows
-// itself; os/windows/debug/BACKEND.md lists what the report calls into Windows for, and why none of it is DbgHelp.
+// The crash report allocates nothing on Windows (Phase 13 Day 155). Linux proves it by wrapping malloc, calloc and
+// realloc at link time (stack_trace_alloc_linux_test.cpp, GNU ld --wrap), which link.exe and lld-link cannot do. The
+// Windows form is the debug C runtime's allocation hook (_CrtSetAllocHook): it sees every malloc, calloc, realloc and
+// operator new of the C runtime, so it exists only in a Debug build and not under AddressSanitizer (which replaces the
+// C runtime's allocator). It does not see HeapAlloc called directly by Windows itself; os/windows/debug/BACKEND.md
+// lists what the report calls into Windows for, and why none of it is DbgHelp.
 //
-// The child builds the EXCEPTION_POINTERS a crash would bring and runs the same report the crash library's hook runs, counting the
-// allocations made on its own thread meanwhile. A second child plants an allocation in a state provider, to show the count sees one.
+// The child builds the EXCEPTION_POINTERS a crash would bring and runs the same report the crash library's hook runs,
+// counting the allocations made on its own thread meanwhile. A second child plants an allocation in a state provider,
+// to show the count sees one.
 #include <catch2/catch_test_macros.hpp>
 
 #include "debug/crash_context.h"
@@ -36,46 +38,58 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::debug;
 
-namespace {
+namespace
+{
 
 #if defined(CRASH_ALLOC_HOOK)
 Atomic<u32> g_counted_thread{0};
 Atomic<long> g_allocations{0};
 
-StackTrace g_first_allocation; // where the first counted allocation came from, printed when there is one
+StackTrace g_first_allocation;  // where the first counted allocation came from, printed when there is one
 
-int CountAllocation(int type, void*, size_t, int, long, const byte*, int) { // (the hook type spells the file name as unsigned char)
-    if (type != _HOOK_FREE && GetCurrentThreadId() == g_counted_thread.Load(MemoryOrder::Relaxed)) {
-        if (g_allocations.FetchAdd(1, MemoryOrder::Relaxed) == 0) CaptureStackTrace(g_first_allocation, 0);
+int CountAllocation(int type, void*, size_t, int, long, const byte*, int)
+{  // (the hook type spells the file name as unsigned char)
+    if (type != _HOOK_FREE && GetCurrentThreadId() == g_counted_thread.Load(MemoryOrder::Relaxed))
+    {
+        if (g_allocations.FetchAdd(1, MemoryOrder::Relaxed) == 0)
+        {
+            CaptureStackTrace(g_first_allocation, 0);
+        }
     }
-    return TRUE; // let the allocation go on
+    return TRUE;  // let the allocation go on
 }
 #endif
 
-void PlantedAllocationProvider(void*, char* out, usize capacity) {
-    void* block = MemAllocate(64); // what the report must never do: the check has to see this one
+void PlantedAllocationProvider(void*, char* out, usize capacity)
+{
+    void* block = MemAllocate(64);  // what the report must never do: the check has to see this one
     FormatTo(out, capacity, "planted %s", block != nullptr ? "yes" : "no");
     MemFree(block);
 }
 
-// Installs the crash handler into `directory`, then reports a made-up access violation from this thread the way the library's hook does,
-// and prints how many C runtime allocations the report made.
-void ReportAndCount(const char* directory, bool plant) {
+// Installs the crash handler into `directory`, then reports a made-up access violation from this thread the way the
+// library's hook does, and prints how many C runtime allocations the report made.
+void ReportAndCount(const char* directory, bool plant)
+{
     CrashHandlerOptions options;
     options.dump_directory = directory;
     InitDebugFacilities();
     InitCrashContext(0, nullptr);
-    if (InstallCrashHandler(options) != CrashHandlerResult::Installed) {
+    if (InstallCrashHandler(options) != CrashHandlerResult::Installed)
+    {
         os::Print("INSTALL-FAILED\n");
         return;
     }
-    if (plant) RegisterCrashStateProvider("planted", &PlantedAllocationProvider, nullptr);
+    if (plant)
+    {
+        RegisterCrashStateProvider("planted", &PlantedAllocationProvider, nullptr);
+    }
     CONTEXT context{};
     RtlCaptureContext(&context);
     EXCEPTION_RECORD record{};
     record.ExceptionCode = EXCEPTION_ACCESS_VIOLATION;
     record.NumberParameters = 2;
-    record.ExceptionInformation[0] = 1; // a write
+    record.ExceptionInformation[0] = 1;  // a write
     record.ExceptionInformation[1] = 0x10;
     EXCEPTION_POINTERS pointers{};
     pointers.ExceptionRecord = &record;
@@ -86,10 +100,12 @@ void ReportAndCount(const char* directory, bool plant) {
     debug::detail::ReportCrashFromExceptionPointers(&pointers);
     _CrtSetAllocHook(nullptr);
     g_counted_thread.Store(0);
-    os::Print("ALLOCS=%ld;\n", g_allocations.Load()); // the ";" ends the number (standard output turns a newline into two bytes)
-    if (g_allocations.Load() != 0) {
+    os::Print("ALLOCS=%ld;\n",
+              g_allocations.Load());  // the ";" ends the number (standard output turns a newline into two bytes)
+    if (g_allocations.Load() != 0)
+    {
         static char text[16384];
-        FormatStackTrace(g_first_allocation, text, sizeof(text)); // after the count: resolving allocates
+        FormatStackTrace(g_first_allocation, text, sizeof(text));  // after the count: resolving allocates
         os::Print("first allocation:\n%s", text);
     }
 #else
@@ -100,17 +116,24 @@ void ReportAndCount(const char* directory, bool plant) {
 }
 
 // A fresh directory for the child's dump directory, removed at the end of the scope.
-class AllocTestDir {
+class AllocTestDir
+{
 public:
-    AllocTestDir() {
+    AllocTestDir()
+    {
         io::Path base;
-        if (io::TempDirectory(&base).Ok() && io::CreateTempDirectory(base, "engine-alloc-", &path_).Ok()) {
+        if (io::TempDirectory(&base).Ok() && io::CreateTempDirectory(base, "engine-alloc-", &path_).Ok())
+        {
             text_ = engine_test::MakeText(path_.View());
             ok_ = true;
         }
     }
-    ~AllocTestDir() {
-        if (ok_) (void)io::RemoveAll(path_);
+    ~AllocTestDir()
+    {
+        if (ok_)
+        {
+            (void)io::RemoveAll(path_);
+        }
     }
     AllocTestDir(const AllocTestDir&) = delete;
     AllocTestDir& operator=(const AllocTestDir&) = delete;
@@ -122,24 +145,31 @@ private:
     bool ok_ = false;
 };
 
-} // namespace
+}  // namespace
 
-ENGINE_DEATH_TEST_FN(dt_alloc_win_report) {
+ENGINE_DEATH_TEST_FN(dt_alloc_win_report)
+{
     ReportAndCount(argument, false);
 }
 
-ENGINE_DEATH_TEST_FN(dt_alloc_win_report_planted) {
+ENGINE_DEATH_TEST_FN(dt_alloc_win_report_planted)
+{
     ReportAndCount(argument, true);
 }
 
-// A call through a null function pointer, as the hook receives it: the instruction pointer is 0 and the return address is on top of the
-// stack (a made-up one here, holding this function's own address, so the walk has somewhere to go and then reads zeros and stops).
-ENGINE_DEATH_TEST_FN(dt_report_win_null_call) {
+// A call through a null function pointer, as the hook receives it: the instruction pointer is 0 and the return address
+// is on top of the stack (a made-up one here, holding this function's own address, so the walk has somewhere to go and
+// then reads zeros and stops).
+ENGINE_DEATH_TEST_FN(dt_report_win_null_call)
+{
     CrashHandlerOptions options;
     options.dump_directory = argument;
     InitDebugFacilities();
     InitCrashContext(0, nullptr);
-    if (InstallCrashHandler(options) != CrashHandlerResult::Installed) return;
+    if (InstallCrashHandler(options) != CrashHandlerResult::Installed)
+    {
+        return;
+    }
     static u64 fake_stack[64] = {};
     CONTEXT context{};
     RtlCaptureContext(&context);
@@ -149,7 +179,7 @@ ENGINE_DEATH_TEST_FN(dt_report_win_null_call) {
     EXCEPTION_RECORD record{};
     record.ExceptionCode = EXCEPTION_ACCESS_VIOLATION;
     record.NumberParameters = 2;
-    record.ExceptionInformation[0] = 8; // an execute
+    record.ExceptionInformation[0] = 8;  // an execute
     record.ExceptionInformation[1] = 0;
     EXCEPTION_POINTERS pointers{};
     pointers.ExceptionRecord = &record;
@@ -158,7 +188,9 @@ ENGINE_DEATH_TEST_FN(dt_report_win_null_call) {
     UninstallCrashHandler();
 }
 
-TEST_CASE("Windows: a crash in a call through a null pointer still reports the caller", "[crash][crashreport][death][debug][windows]") {
+TEST_CASE("Windows: a crash in a call through a null pointer still reports the caller",
+          "[crash][crashreport][death][debug][windows]")
+{
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     AllocTestDir dir;
     const ChildResult r = RunInChild("dt_report_win_null_call", dir.Path());
@@ -168,7 +200,9 @@ TEST_CASE("Windows: a crash in a call through a null pointer still reports the c
     CHECK(r.StderrContains("#1  0x"));
 }
 
-TEST_CASE("Windows: the crash report makes no C runtime allocation, and the check sees a planted one", "[crash][crashreport][death][debug][windows]") {
+TEST_CASE("Windows: the crash report makes no C runtime allocation, and the check sees a planted one",
+          "[crash][crashreport][death][debug][windows]")
+{
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
 #if !defined(CRASH_ALLOC_HOOK)
     SKIP("the allocation hook needs the debug C runtime without AddressSanitizer (a Debug build, plain flavor)");
@@ -180,7 +214,8 @@ TEST_CASE("Windows: the crash report makes no C runtime allocation, and the chec
         INFO(Catch::Detail::stringify(StringView(r.stdout_text, r.stdout_length)));
         REQUIRE(r.exited);
         CHECK(r.StderrContains("=== END OF REPORT ==="));
-        CHECK_FALSE(r.StderrContains("ReportAndCount")); // frames are module and offset only: no DbgHelp while a crash is reported
+        CHECK_FALSE(r.StderrContains(
+            "ReportAndCount"));  // frames are module and offset only: no DbgHelp while a crash is reported
         CHECK(r.StdoutContains("ALLOCS=0;"));
     }
     {

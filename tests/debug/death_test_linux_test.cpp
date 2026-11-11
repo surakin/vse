@@ -24,53 +24,64 @@ using namespace engine_placeholder::debug;
 
 // Starts a grandchild that keeps the inherited pipes open for a second, then returns at once: the helper must come back
 // when the child is gone, not when the pipes close.
-ENGINE_DEATH_TEST_FN(dt_linux_orphan_holds_pipes) {
-    if (fork() == 0) {
+ENGINE_DEATH_TEST_FN(dt_linux_orphan_holds_pipes)
+{
+    if (fork() == 0)
+    {
         usleep(1000 * 1000);
         _exit(0);
     }
 }
 
 // Starts a grandchild that sleeps for a long time, prints its pid, and hangs.
-ENGINE_DEATH_TEST_FN(dt_linux_hang_with_grandchild) {
+ENGINE_DEATH_TEST_FN(dt_linux_hang_with_grandchild)
+{
     const pid_t grandchild = fork();
-    if (grandchild == 0) {
-        for (;;) {
+    if (grandchild == 0)
+    {
+        for (;;)
+        {
             usleep(1000 * 1000);
         }
     }
     char line[48];
     const int n = FormatTo(line, sizeof(line), "GRANDCHILD=%d\n", static_cast<int>(grandchild));
     os::Write(1, line, static_cast<usize>(n));
-    for (;;) {
+    for (;;)
+    {
         usleep(10 * 1000);
     }
 }
 
 // Writes its own pid to the file named by the argument, then hangs.
-ENGINE_DEATH_TEST_FN(dt_linux_hang_report_pid) {
+ENGINE_DEATH_TEST_FN(dt_linux_hang_report_pid)
+{
     char line[32];
     const int n = FormatTo(line, sizeof(line), "%d\n", static_cast<int>(getpid()));
     const int fd = os::Open(argument, O_WRONLY | O_CREAT | O_TRUNC, 0600);
     os::Write(fd, line, static_cast<usize>(n));
     os::Close(fd);
-    for (;;) {
+    for (;;)
+    {
         usleep(10 * 1000);
     }
 }
 
 // Runs a hanging child of its own with a long timeout; the test kills this process while that child runs.
-ENGINE_DEATH_TEST_FN(dt_linux_nested_parent) {
+ENGINE_DEATH_TEST_FN(dt_linux_nested_parent)
+{
     ChildOptions options;
     options.timeout_ms = 60000;
     RunInChild("dt_linux_hang_report_pid", argument, options);
 }
 
-ENGINE_DEATH_TEST_FN(dt_linux_null_write) {
+ENGINE_DEATH_TEST_FN(dt_linux_null_write)
+{
     InjectFault(FaultKind::NullWrite);
 }
 
-TEST_CASE("A grandchild that keeps the pipes open does not keep the helper waiting", "[death][debug][linux]") {
+TEST_CASE("A grandchild that keeps the pipes open does not keep the helper waiting", "[death][debug][linux]")
+{
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     ChildResourceGuard guard;
     const u64 start = os::MonotonicTimeNanos();
@@ -78,11 +89,12 @@ TEST_CASE("A grandchild that keeps the pipes open does not keep the helper waiti
     const u64 elapsed_ms = (os::MonotonicTimeNanos() - start) / 1000000ull;
     CHECK(r.exited);
     CHECK(r.exit_code == 0);
-    CHECK(elapsed_ms < 700); // the grandchild holds the pipes for a full second
+    CHECK(elapsed_ms < 700);  // the grandchild holds the pipes for a full second
     CHECK(guard.Clean());
 }
 
-TEST_CASE("A timeout kills the child's whole process group", "[death][debug][linux]") {
+TEST_CASE("A timeout kills the child's whole process group", "[death][debug][linux]")
+{
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     ChildResourceGuard guard;
     ChildOptions options;
@@ -96,9 +108,11 @@ TEST_CASE("A timeout kills the child's whole process group", "[death][debug][lin
     REQUIRE(grandchild > 1);
     // The grandchild was killed with the group; give the kernel a moment to finish tearing it down.
     bool gone = false;
-    for (int i = 0; i < 100 && !gone; ++i) {
+    for (int i = 0; i < 100 && !gone; ++i)
+    {
         gone = (kill(grandchild, 0) != 0 && os::LastError() == ESRCH);
-        if (!gone) {
+        if (!gone)
+        {
             usleep(10 * 1000);
         }
     }
@@ -106,7 +120,8 @@ TEST_CASE("A timeout kills the child's whole process group", "[death][debug][lin
     CHECK(guard.Clean());
 }
 
-TEST_CASE("The signal behind a crash is kept next to the reason", "[death][debug][linux]") {
+TEST_CASE("The signal behind a crash is kept next to the reason", "[death][debug][linux]")
+{
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     const ChildResult r = RunInChild("dt_linux_null_write");
     CHECK(r.terminated);
@@ -114,7 +129,8 @@ TEST_CASE("The signal behind a crash is kept next to the reason", "[death][debug
     CHECK(r.reason == CrashReason::AccessViolation);
 }
 
-TEST_CASE("The helper works from another working directory", "[death][debug][linux]") {
+TEST_CASE("The helper works from another working directory", "[death][debug][linux]")
+{
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     char previous[4096];
     REQUIRE(getcwd(previous, sizeof(previous)) != nullptr);
@@ -126,13 +142,15 @@ TEST_CASE("The helper works from another working directory", "[death][debug][lin
     CHECK(r.native_code == SIGSEGV);
 }
 
-TEST_CASE("A child's own child dies with it when its parent is killed", "[death][debug][linux]") {
+TEST_CASE("A child's own child dies with it when its parent is killed", "[death][debug][linux]")
+{
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     // The grandchild is in its own process group, so killing the child's group does not reach it: only the
     // parent-death signal the helper arms in every child does.
     const char* tmp = os::GetEnvironment("TMPDIR");
     char path[256];
-    FormatTo(path, sizeof(path), "%s/engine-death-test-%d.pid", tmp != nullptr ? tmp : "/tmp", static_cast<int>(getpid()));
+    FormatTo(path, sizeof(path), "%s/engine-death-test-%d.pid", tmp != nullptr ? tmp : "/tmp",
+             static_cast<int>(getpid()));
     unlink(path);
     ChildOptions options;
     options.timeout_ms = 800;
@@ -140,31 +158,39 @@ TEST_CASE("A child's own child dies with it when its parent is killed", "[death]
     REQUIRE(r.timed_out);
 
     pid_t grandchild = 0;
-    for (int i = 0; i < 100 && grandchild <= 1; ++i) {
+    for (int i = 0; i < 100 && grandchild <= 1; ++i)
+    {
         const debug_test::Text recorded = debug_test::ReadWholeFile(path);
-        if (recorded.Length() != 0) {
+        if (recorded.Length() != 0)
+        {
             grandchild = static_cast<pid_t>(CStrToInt(recorded.CStr()));
         }
-        if (grandchild <= 1) {
+        if (grandchild <= 1)
+        {
             usleep(10 * 1000);
         }
     }
     unlink(path);
     REQUIRE(grandchild > 1);
     bool gone = false;
-    for (int i = 0; i < 200 && !gone; ++i) {
+    for (int i = 0; i < 200 && !gone; ++i)
+    {
         gone = (kill(grandchild, 0) != 0 && os::LastError() == ESRCH);
-        if (!gone) {
+        if (!gone)
+        {
             usleep(10 * 1000);
         }
     }
-    if (!gone) {
-        kill(grandchild, SIGKILL); // do not leave the orphan behind when the check fails
+    if (!gone)
+    {
+        kill(grandchild, SIGKILL);  // do not leave the orphan behind when the check fails
     }
     CHECK(gone);
 }
 
-TEST_CASE("A child whose status is reaped elsewhere is reported as unobserved, not as a clean exit", "[death][debug][linux]") {
+TEST_CASE("A child whose status is reaped elsewhere is reported as unobserved, not as a clean exit",
+          "[death][debug][linux]")
+{
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     struct sigaction ignore;
     struct sigaction previous;
@@ -172,7 +198,7 @@ TEST_CASE("A child whose status is reaped elsewhere is reported as unobserved, n
     sigemptyset(&ignore.sa_mask);
     ignore.sa_flags = 0;
     REQUIRE(sigaction(SIGCHLD, &ignore, &previous) == 0);
-    const ChildResult r = RunInChild("dt_linux_null_write"); // with SIGCHLD ignored the kernel reaps the child itself
+    const ChildResult r = RunInChild("dt_linux_null_write");  // with SIGCHLD ignored the kernel reaps the child itself
     sigaction(SIGCHLD, &previous, nullptr);
     CHECK(r.started);
     CHECK_FALSE(r.exited);

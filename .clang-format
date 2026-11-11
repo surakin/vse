@@ -26,8 +26,10 @@ SortIncludes: Never
 IncludeBlocks: Preserve
 IndentPPDirectives: None
 BreakStringLiterals: false
-# false: reflow joins a doc-comment label line (`Fails: never.`) onto the line before it. Long comments are wrapped by scripts/wrap_comments.py, which knows the labels.
-ReflowComments: false
+# Never break after `=` to make room for a trailing comment (`kFlag =\n 1,  ///< ...`): the comment wraps under itself instead.
+PenaltyBreakAssignment: 1000
+# Comments are wrapped at the column limit. Doc-comment labels are list items (`/// - Fails: ...`, docs/DOC-CONVENTIONS.md), which reflow leaves on a line of their own.
+ReflowComments: true
 MaxEmptyLinesToKeep: 1
 KeepEmptyLines:
   AtStartOfBlock: false

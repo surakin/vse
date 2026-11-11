@@ -9,17 +9,19 @@
 
 //! CPU (non-shader-visible) descriptor heaps for the views a resource gets when it is created (Phase 13 Day 165).
 
-namespace engine_placeholder::rhi::dx12 {
+namespace engine_placeholder::rhi::dx12
+{
 
 /// Hands out single descriptors of one heap type from a growing list of non-shader-visible heaps, with a free list.
 ///
-/// A resource's views are made when the resource is created and freed with the resource's deferred destruction, so a freed
-/// descriptor is no longer referenced by any command list in flight. Bind groups copy from these into the shader-visible ring
-/// (Day 166).
+/// A resource's views are made when the resource is created and freed with the resource's deferred destruction, so a
+/// freed descriptor is no longer referenced by any command list in flight. Bind groups copy from these into the
+/// shader-visible ring (Day 166).
 ///
 /// - Thread-safety: not-thread-safe; the device calls it under its resource lock.
 /// - Ownership: owns the heaps.
-class CpuDescriptorHeap {
+class CpuDescriptorHeap
+{
 public:
     /// How many descriptors one heap holds; the allocator adds heaps of this size as it runs out.
     static constexpr u32 kDescriptorsPerHeap = 1024;
@@ -55,18 +57,19 @@ private:
     D3D12_DESCRIPTOR_HEAP_TYPE type_ = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     u32 increment_ = 0;
     Vector<ComRef<ID3D12DescriptorHeap>> heaps_;
-    Vector<usize> free_; // descriptor addresses (D3D12_CPU_DESCRIPTOR_HANDLE::ptr) ready for reuse
-    u32 next_in_last_ = kDescriptorsPerHeap; // descriptors of the newest heap handed out so far
+    Vector<usize> free_;                      // descriptor addresses (D3D12_CPU_DESCRIPTOR_HANDLE::ptr) ready for reuse
+    u32 next_in_last_ = kDescriptorsPerHeap;  // descriptors of the newest heap handed out so far
     u32 used_ = 0;
 };
 
-/// Hands out contiguous ranges of one non-shader-visible heap type: a bind group's views sit next to each other, so `SetBindGroup`
-/// copies them into the frame's ring with one `CopyDescriptorsSimple` (Phase 13 Day 166). Ranges come in power-of-two sizes, each with
-/// its own free list.
+/// Hands out contiguous ranges of one non-shader-visible heap type: a bind group's views sit next to each other, so
+/// `SetBindGroup` copies them into the frame's ring with one `CopyDescriptorsSimple` (Phase 13 Day 166). Ranges come in
+/// power-of-two sizes, each with its own free list.
 ///
 /// - Thread-safety: not-thread-safe; the device calls it under its resource lock.
 /// - Ownership: owns the heaps.
-class CpuDescriptorBlocks {
+class CpuDescriptorBlocks
+{
 public:
     /// How many descriptors one heap holds; the largest range is this size.
     static constexpr u32 kDescriptorsPerHeap = 16384;
@@ -94,7 +97,7 @@ public:
     void Shutdown();
 
 private:
-    static constexpr u32 kClasses = 15; // 1, 2, 4, ... 16384
+    static constexpr u32 kClasses = 15;  // 1, 2, 4, ... 16384
     static u32 ClassOf(u32 count);
     ID3D12Device* device_ = nullptr;
     D3D12_DESCRIPTOR_HEAP_TYPE type_ = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
@@ -104,12 +107,15 @@ private:
     u32 next_in_last_ = kDescriptorsPerHeap;
 };
 
-/// The shader-visible CBV/SRV/UAV heap, split into one region per frame slot: `SetBindGroup` takes a range from the region of its
-/// frame, and `BeginFrame` resets a region once the frame that last used it has finished (Phase 13 Day 166).
+/// The shader-visible CBV/SRV/UAV heap, split into one region per frame slot: `SetBindGroup` takes a range from the
+/// region of its frame, and `BeginFrame` resets a region once the frame that last used it has finished (Phase 13 Day
+/// 166).
 ///
-/// - Thread-safety: thread-safe for `Allocate` (command lists record on several threads); `Reset` belongs to the submission thread.
+/// - Thread-safety: thread-safe for `Allocate` (command lists record on several threads); `Reset` belongs to the
+/// submission thread.
 /// - Ownership: owns the heap.
-class GpuDescriptorRing {
+class GpuDescriptorRing
+{
 public:
     /// Creates the heap.
     ///
@@ -151,12 +157,14 @@ private:
     Atomic<u32> used_[kMaxSlots] = {};
 };
 
-/// Persistent ranges of the shader-visible sampler heap (2048 descriptors at most, D3D12's limit), first fit with coalescing on free:
-/// a bind group's samplers are copied once at creation, and groups with the same samplers share a table (Phase 13 Day 166).
+/// Persistent ranges of the shader-visible sampler heap (2048 descriptors at most, D3D12's limit), first fit with
+/// coalescing on free: a bind group's samplers are copied once at creation, and groups with the same samplers share a
+/// table (Phase 13 Day 166).
 ///
 /// - Thread-safety: not-thread-safe; the device calls it under its resource lock.
 /// - Ownership: owns the heap.
-class GpuDescriptorTables {
+class GpuDescriptorTables
+{
 public:
     /// The size of the shader-visible sampler heap.
     static constexpr u32 kCapacity = D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE;
@@ -179,21 +187,29 @@ public:
     /// - Param count: the count it was asked for.
     void Free(u32 offset, u32 count);
     /// Returns the CPU handle of a descriptor.
-    D3D12_CPU_DESCRIPTOR_HANDLE Cpu(u32 offset) const { return D3D12_CPU_DESCRIPTOR_HANDLE{cpu_start_.ptr + static_cast<usize>(offset) * increment_}; }
+    D3D12_CPU_DESCRIPTOR_HANDLE Cpu(u32 offset) const
+    {
+        return D3D12_CPU_DESCRIPTOR_HANDLE{cpu_start_.ptr + static_cast<usize>(offset) * increment_};
+    }
     /// Returns the GPU handle of a descriptor.
-    D3D12_GPU_DESCRIPTOR_HANDLE Gpu(u32 offset) const { return D3D12_GPU_DESCRIPTOR_HANDLE{gpu_start_.ptr + static_cast<u64>(offset) * increment_}; }
+    D3D12_GPU_DESCRIPTOR_HANDLE Gpu(u32 offset) const
+    {
+        return D3D12_GPU_DESCRIPTOR_HANDLE{gpu_start_.ptr + static_cast<u64>(offset) * increment_};
+    }
     /// Returns how many descriptors are free.
     u32 FreeCount() const;
     /// Returns the heap. Ownership: borrowed.
     ID3D12DescriptorHeap* Heap() const { return heap_.Get(); }
     /// Releases the heap.
-    void Shutdown() {
+    void Shutdown()
+    {
         heap_.Reset();
         ranges_.Clear();
     }
 
 private:
-    struct Range {
+    struct Range
+    {
         u32 offset;
         u32 count;
     };
@@ -201,7 +217,7 @@ private:
     D3D12_CPU_DESCRIPTOR_HANDLE cpu_start_{};
     D3D12_GPU_DESCRIPTOR_HANDLE gpu_start_{};
     u32 increment_ = 0;
-    Vector<Range> ranges_; // free ranges, sorted by offset, never adjacent
+    Vector<Range> ranges_;  // free ranges, sorted by offset, never adjacent
 };
 
-} // namespace engine_placeholder::rhi::dx12
+}  // namespace engine_placeholder::rhi::dx12

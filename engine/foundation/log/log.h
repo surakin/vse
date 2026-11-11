@@ -7,18 +7,20 @@
 //! Channel-based logging with per-channel verbosity (the settings system overrides it, `log.<channel>.verbosity`).
 //!
 //! Needs no allocator; log lines and config parsing use fixed-size stack buffers.
-namespace engine_placeholder {
+namespace engine_placeholder
+{
 
 /// Severity of a log message and the threshold a channel filters by.
 ///
 /// Lower values are more severe; a channel logs a message when its level is
 /// less than or equal to the channel's verbosity.
-enum class LogVerbosity : u8 {
-    Error = 0, ///< Failures the program cannot ignore.
-    Warn = 1,  ///< Suspicious conditions; the default channel threshold.
-    Info = 2,  ///< Normal progress messages.
-    Debug = 3, ///< Developer diagnostics.
-    Trace = 4  ///< Very fine-grained, high-volume tracing.
+enum class LogVerbosity : u8
+{
+    Error = 0,  ///< Failures the program cannot ignore.
+    Warn = 1,   ///< Suspicious conditions; the default channel threshold.
+    Info = 2,   ///< Normal progress messages.
+    Debug = 3,  ///< Developer diagnostics.
+    Trace = 4   ///< Very fine-grained, high-volume tracing.
 };
 
 /// A named source of log messages with its own verbosity threshold and enable flag.
@@ -30,7 +32,8 @@ enum class LogVerbosity : u8 {
 /// - Thread-safety: not-thread-safe. Construct channels during static
 ///   initialization; the verbosity and enable setters are unsynchronized.
 /// - Ownership: does not own `name`; the string must outlive the channel.
-class LogChannel {
+class LogChannel
+{
 public:
     /// Creates a channel, enabled, and adds it to the global registry.
     ///
@@ -66,7 +69,8 @@ public:
     /// - Ownership: the channel is owned by whoever constructed it.
     static LogChannel* Find(StringView name);
 
-    /// Returns the first channel of the global registry (the most recently constructed), or null; `Next` walks the rest.
+    /// Returns the first channel of the global registry (the most recently constructed), or null; `Next` walks the
+    /// rest.
     ///
     /// - Fails: never.
     /// - Thread-safety: not-thread-safe against channel construction.
@@ -89,14 +93,15 @@ constexpr usize kLogRingSlots = 256;
 /// Bytes kept of each line in the ring, newline included; a longer line is cut.
 constexpr usize kLogRingLineBytes = 256;
 
-/// Receives one recent log line from [[ReadRecentLogLines]]: the text (null-terminated, with its trailing newline) and its length.
+/// Receives one recent log line from [[ReadRecentLogLines]]: the text (null-terminated, with its trailing newline) and
+/// its length.
 using RecentLogLineFn = void (*)(const char* line, usize length, void* context);
 
 /// Calls `callback` for the most recent log lines, oldest first, at most [[kLogRingSlots]] of them.
 ///
-/// Every line [[Log]] emits is also kept in a ring in memory, so a crash report can show what the program said last. A slot
-/// that is being overwritten while it is read is skipped, so every line delivered is whole. Reads no file and allocates
-/// nothing.
+/// Every line [[Log]] emits is also kept in a ring in memory, so a crash report can show what the program said last. A
+/// slot that is being overwritten while it is read is skipped, so every line delivered is whole. Reads no file and
+/// allocates nothing.
 ///
 /// - Param callback: called once per line.
 /// - Param context: passed through to `callback`; borrowed for the call.
@@ -104,18 +109,21 @@ using RecentLogLineFn = void (*)(const char* line, usize length, void* context);
 /// - Thread-safety: thread-safe and async-signal-safe: lock-free, concurrent with any number of [[Log]] calls.
 void ReadRecentLogLines(RecentLogLineFn callback, void* context, usize max_lines = 0);
 
-/// Returns how many lines have been logged so far (the number [[ReadLogLinesSince]] returns once it has read them all), so a reader can start from now.
+/// Returns how many lines have been logged so far (the number [[ReadLogLinesSince]] returns once it has read them all),
+/// so a reader can start from now.
 ///
 /// - Thread-safety: thread-safe and async-signal-safe.
 u64 LogLinesWritten();
 
-/// Calls `callback` for the lines logged since `next`, oldest first, and returns the number to pass next time. A first call with 0 delivers what the ring still holds; lines the
-/// ring has already overwritten (more than [[kLogRingSlots]] since the last call) are not delivered, and the caller can see the gap from the returned numbers.
+/// Calls `callback` for the lines logged since `next`, oldest first, and returns the number to pass next time. A first
+/// call with 0 delivers what the ring still holds; lines the ring has already overwritten (more than [[kLogRingSlots]]
+/// since the last call) are not delivered, and the caller can see the gap from the returned numbers.
 ///
 /// - Param next: the value an earlier call returned, or 0.
 /// - Param callback: called once per whole line.
 /// - Param context: passed through to `callback`; borrowed for the call.
-/// - Returns: the number to pass as `next` to the following call: the count of lines logged so far, or less when a line was still being written by another thread (it is delivered by the next call).
+/// - Returns: the number to pass as `next` to the following call: the count of lines logged so far, or less when a line
+/// was still being written by another thread (it is delivered by the next call).
 /// - Thread-safety: thread-safe and async-signal-safe, like [[ReadRecentLogLines]].
 u64 ReadLogLinesSince(u64 next, RecentLogLineFn callback, void* context);
 
@@ -152,4 +160,4 @@ extern LogChannel LogPlatform;
 ///   channel state it reads is unsynchronized.
 void Log(LogChannel& channel, LogVerbosity level, StringView message);
 
-} // namespace engine_placeholder
+}  // namespace engine_placeholder

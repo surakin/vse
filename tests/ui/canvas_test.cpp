@@ -9,10 +9,12 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::ui;
 
-namespace {
+namespace
+{
 
 // A small scene drawn only through the abstract interface (what a widget does).
-void DrawScene(Canvas& c) {
+void DrawScene(Canvas& c)
+{
     c.DrawRect({10, 10, 100, 50}, 0xFF0000FFu);
     c.DrawRoundedRect({20, 20, 80, 30}, CornerRadii(6), 0xFF00FF00u);
     c.DrawBorder({20, 20, 80, 30}, CornerRadii(6), 1, 0xFFFFFFFFu);
@@ -27,35 +29,39 @@ void DrawScene(Canvas& c) {
     c.EndLayer();
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("Canvas: a thickness is whole pixels after scaling, never 1.25", "[ui][canvas]") {
+TEST_CASE("Canvas: a thickness is whole pixels after scaling, never 1.25", "[ui][canvas]")
+{
     RecordingCanvas at1(1.0f), at125(1.25f), at2(2.0f);
     CHECK(at1.SnapLength(1) == 1.0f);
     CHECK(at125.SnapLength(1) == 1.0f);
     CHECK(at2.SnapLength(1) == 2.0f);
-    CHECK(at125.SnapLength(2) == 3.0f); // 2.5 rounds up
-    CHECK(at1.SnapLength(0.1f) == 1.0f); // a visible thickness never vanishes
+    CHECK(at125.SnapLength(2) == 3.0f);   // 2.5 rounds up
+    CHECK(at1.SnapLength(0.1f) == 1.0f);  // a visible thickness never vanishes
     CHECK(at1.SnapLength(0) == 0.0f);
     CHECK(at1.SnapLength(-3) == 0.0f);
-    CHECK(at125.ToPixels(8) == 10.0f); // radii are scaled, not rounded
+    CHECK(at125.ToPixels(8) == 10.0f);  // radii are scaled, not rounded
 }
 
-TEST_CASE("Canvas: rectangles round their edges so neighbours share them", "[ui][canvas]") {
-    for (f32 scale : {1.0f, 1.25f, 1.5f, 2.0f}) {
+TEST_CASE("Canvas: rectangles round their edges so neighbours share them", "[ui][canvas]")
+{
+    for (f32 scale : {1.0f, 1.25f, 1.5f, 2.0f})
+    {
         RecordingCanvas c(scale);
         const Rect a = c.SnapRect({0, 0, 10.4f, 5});
         const Rect b = c.SnapRect({10.4f, 0, 10, 5});
-        CHECK(a.Right() == b.x); // no gap and no overlap
+        CHECK(a.Right() == b.x);  // no gap and no overlap
         CHECK(a.x == Floor(a.x));
         CHECK(a.w == Floor(a.w));
     }
     RecordingCanvas c(1.0f);
-    CHECK(c.SnapRect({0, 0, 0.2f, 0.2f}).w == 1.0f); // thin but present
+    CHECK(c.SnapRect({0, 0, 0.2f, 0.2f}).w == 1.0f);  // thin but present
     CHECK(c.SnapRect({5, 5, 0, 10}).Empty());
 }
 
-TEST_CASE("Canvas: RecordingCanvas records the calls with clip depth and layer", "[ui][canvas][recording]") {
+TEST_CASE("Canvas: RecordingCanvas records the calls with clip depth and layer", "[ui][canvas][recording]")
+{
     RecordingCanvas c;
     DrawScene(c);
     const Vector<CanvasCall>& calls = c.Calls();
@@ -81,7 +87,8 @@ TEST_CASE("Canvas: RecordingCanvas records the calls with clip depth and layer",
     CHECK(c.Calls().Empty());
 }
 
-TEST_CASE("Canvas: a layer starts unclipped in the recording canvas too", "[ui][canvas][recording]") {
+TEST_CASE("Canvas: a layer starts unclipped in the recording canvas too", "[ui][canvas][recording]")
+{
     RecordingCanvas c;
     c.PushClip({0, 0, 5, 5});
     c.BeginLayer(1);
@@ -94,10 +101,11 @@ TEST_CASE("Canvas: a layer starts unclipped in the recording canvas too", "[ui][
     REQUIRE(c.Calls().Size() == 3);
     CHECK(c.Calls()[0].clip_depth == 0);
     CHECK(c.Calls()[1].clip_depth == 1);
-    CHECK(c.Calls()[2].clip_depth == 1); // the outer layer's clip came back
+    CHECK(c.Calls()[2].clip_depth == 1);  // the outer layer's clip came back
 }
 
-TEST_CASE("Canvas: the same scene through both canvases gives matching records", "[ui][canvas][recording]") {
+TEST_CASE("Canvas: the same scene through both canvases gives matching records", "[ui][canvas][recording]")
+{
     RecordingCanvas recording(2.0f);
     DrawScene(recording);
     DrawList list;
@@ -106,11 +114,13 @@ TEST_CASE("Canvas: the same scene through both canvases gives matching records",
     DrawScene(canvas);
     list.SortLayers();
     CHECK(recording.Scale() == canvas.Scale());
-    // Eight calls, one of them (the line, clipped to 0..60 logical) and the triangle inside the clip: every call made primitives, none was culled.
+    // Eight calls, one of them (the line, clipped to 0..60 logical) and the triangle inside the clip: every call made
+    // primitives, none was culled.
     CHECK(list.stats.culled == 0);
     // Seven quads and one triangle: 7 * 4 + 3 vertices, 7 * 6 + 3 indices.
     CHECK(list.vertices.Size() == 31);
     CHECK(list.indices.Size() == 45);
-    CHECK(list.commands[list.commands.Size() - 1].layer == 3); // the layer call came last in the records and in the sorted commands
+    CHECK(list.commands[list.commands.Size() - 1].layer ==
+          3);  // the layer call came last in the records and in the sorted commands
     CHECK(recording.Calls()[7].layer == 3);
 }

@@ -1,5 +1,6 @@
-// Phase 15 Day 202: a UI surface drawn into a texture that another pass samples. The surface paints only when it must, keeps its picture between paints, shows the colours the
-// theme says in sRGB and UNORM, can be transparent, and is painted again after a resize or a device reset.
+// Phase 15 Day 202: a UI surface drawn into a texture that another pass samples. The surface paints only when it must,
+// keeps its picture between paints, shows the colours the theme says in sRGB and UNORM, can be transparent, and is
+// painted again after a resize or a device reset.
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -17,31 +18,38 @@
 
 using namespace engine_placeholder;
 
-namespace {
+namespace
+{
 
 constexpr u32 kSfW = 96;
 constexpr u32 kSfH = 64;
 constexpr u32 kSfRed = 0xFF0000FFu;
 constexpr u32 kSfGreen = 0xFF00FF00u;
 constexpr u32 kSfBlue = 0xFFFF0000u;
-constexpr u32 kSfBrown = 0xFF336699u; // r 0x99, g 0x66, b 0x33
+constexpr u32 kSfBrown = 0xFF336699u;  // r 0x99, g 0x66, b 0x33
 
-struct SfClear {
+struct SfClear
+{
     renderer::GraphResource target;
     f32 color[4] = {0.5f, 0.5f, 0.5f, 1};
 };
 
-void SfClearPass(const renderer::PassExecuteContext& ctx, void* user) {
+void SfClearPass(const renderer::PassExecuteContext& ctx, void* user)
+{
     const SfClear* c = static_cast<const SfClear*>(user);
     rhi::RenderingDesc rd;
     rd.color_count = 1;
     rd.color[0].texture = ctx.graph->ImportedTexture(c->target);
-    for (int i = 0; i < 4; ++i) rd.color[0].clear_color[i] = c->color[i];
+    for (int i = 0; i < 4; ++i)
+    {
+        rd.color[0].clear_color[i] = c->color[i];
+    }
     ctx.list->BeginRendering(rd);
     ctx.list->EndRendering();
 }
 
-ui::Rect SfRect(f32 x, f32 y, f32 w, f32 h) {
+ui::Rect SfRect(f32 x, f32 y, f32 w, f32 h)
+{
     ui::Rect r;
     r.x = x;
     r.y = y;
@@ -51,9 +59,11 @@ ui::Rect SfRect(f32 x, f32 y, f32 w, f32 h) {
 }
 
 // A surface's draw list with one filled rectangle.
-struct SfList {
+struct SfList
+{
     ui::DrawList list;
-    void Fill(u32 w, u32 h, ui::Rect rect, u32 color) {
+    void Fill(u32 w, u32 h, ui::Rect rect, u32 color)
+    {
         list.Clear();
         ui::DrawListCanvas canvas(&list, nullptr);
         canvas.Begin(1.0f, w, h);
@@ -63,7 +73,8 @@ struct SfList {
 };
 
 // What a window frame does with the surface target: paint it or not, then draw it as an image over a grey panel.
-struct SfWorld {
+struct SfWorld
+{
     rhi::Device* device = nullptr;
     renderer::TransientPool* pool = nullptr;
     renderer::UiRenderer* window_ui = nullptr;  // the window's renderer
@@ -71,7 +82,8 @@ struct SfWorld {
     rhi::Format panel_format = rhi::Format::RGBA8_UNorm;
     u64 frame = 0;
 
-    struct Item {
+    struct Item
+    {
         renderer::UiSurfaceTarget* target = nullptr;
         renderer::UiRenderer* surface_ui = nullptr;
         const ui::DrawList* surface_list = nullptr;
@@ -80,26 +92,35 @@ struct SfWorld {
         ui::Rect where;
     };
 
-    void Run(Item* items, usize count, gpu_test::Image* out, f32 grey = 0.5f) {
+    void Run(Item* items, usize count, gpu_test::Image* out, f32 grey = 0.5f)
+    {
         ArenaAllocator arena(4u << 20);
         renderer::RenderGraph graph(&arena, renderer::RenderGraphDesc{});
         pool->BeginFrame(++frame);
         SfClear bg;
-        for (int i = 0; i < 3; ++i) bg.color[i] = grey;
-        bg.target = graph.ImportTexture("panel", panel, rhi::ResourceState::Undefined, rhi::ResourceState::ColorAttachment, false);
+        for (int i = 0; i < 3; ++i)
+        {
+            bg.color[i] = grey;
+        }
+        bg.target = graph.ImportTexture("panel", panel, rhi::ResourceState::Undefined,
+                                        rhi::ResourceState::ColorAttachment, false);
         graph.AddPass("panel", &SfClearPass, &bg).Write(bg.target, renderer::GraphUsage::ColorAttachment);
         renderer::GraphResource sampled[4];
         ui::DrawList window_list;
         ui::DrawListCanvas canvas(&window_list, nullptr);
         canvas.Begin(1.0f, kSfW, kSfH);
-        for (usize i = 0; i < count; ++i) {
+        for (usize i = 0; i < count; ++i)
+        {
             items[i].target->BeginFrame();
-            sampled[i] = items[i].paint ? items[i].target->AddToGraph(&graph, items[i].surface_ui, items[i].surface_list) : items[i].target->Sampled(&graph);
+            sampled[i] = items[i].paint
+                             ? items[i].target->AddToGraph(&graph, items[i].surface_ui, items[i].surface_list)
+                             : items[i].target->Sampled(&graph);
             window_ui->SetImage(items[i].image, items[i].target);
             canvas.DrawImage(items[i].where, items[i].image, {0, 0, 1, 1}, 0xFFFFFFFFu);
         }
         window_list.SortLayers();
-        window_ui->AddToGraph(&graph, &window_list, bg.target, panel_format, kSfW, kSfH, Span<const renderer::GraphResource>(sampled, count));
+        window_ui->AddToGraph(&graph, &window_list, bg.target, panel_format, kSfW, kSfH,
+                              Span<const renderer::GraphResource>(sampled, count));
         device->BeginFrame();
         rhi::CommandList* cl = device->CreateCommandList();
         cl->Begin();
@@ -113,16 +134,19 @@ struct SfWorld {
         out->width = kSfW;
         out->height = kSfH;
         out->rgba.assign(static_cast<usize>(kSfW) * kSfH * 4, 0);
-        REQUIRE(device->ReadbackTexture(panel, 0, 0, out->rgba.data(), out->rgba.size(), rhi::ResourceState::ColorAttachment));
+        REQUIRE(device->ReadbackTexture(panel, 0, 0, out->rgba.data(), out->rgba.size(),
+                                        rhi::ResourceState::ColorAttachment));
     }
 };
 
-bool SfIs(const gpu_test::Image& image, u32 x, u32 y, int r, int g, int b, int tolerance = 2) {
+bool SfIs(const gpu_test::Image& image, u32 x, u32 y, int r, int g, int b, int tolerance = 2)
+{
     const u8* p = image.Pixel(x, y);
     return Abs(p[0] - r) <= tolerance && Abs(p[1] - g) <= tolerance && Abs(p[2] - b) <= tolerance;
 }
 
-rhi::TextureHandle SfPanel(rhi::Device* device, rhi::Format format) {
+rhi::TextureHandle SfPanel(rhi::Device* device, rhi::Format format)
+{
     rhi::TextureDesc td;
     td.width = kSfW;
     td.height = kSfH;
@@ -131,10 +155,14 @@ rhi::TextureHandle SfPanel(rhi::Device* device, rhi::Format format) {
     return device->CreateTexture(td);
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("surface target: a surface painted into its texture shows inside the window frame, and keeps its picture without a repaint", "[renderer][ui][surface][gpu]") {
-    FOR_EACH_GPU_BACKEND(backend) {
+TEST_CASE(
+    "surface target: a surface painted into its texture shows inside the window frame, and keeps its picture without a repaint",
+    "[renderer][ui][surface][gpu]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = gpu_test::CreateTestDevice(backend);
         renderer::UiRendererDesc ud;
@@ -165,14 +193,17 @@ TEST_CASE("surface target: a surface painted into its texture shows inside the w
         gpu_test::Image image;
         world.Run(&item, 1, &image);
         CHECK_FALSE(target.NeedsPaint());
-        CHECK(SfIs(image, 36, 26, 255, 0, 0));    // the red rectangle of the surface
-        CHECK(SfIs(image, 22, 12, 0, 255, 0));    // the surface's own background
-        CHECK(SfIs(image, 10, 10, 128, 128, 128)); // the grey panel around it
+        CHECK(SfIs(image, 36, 26, 255, 0, 0));      // the red rectangle of the surface
+        CHECK(SfIs(image, 22, 12, 0, 255, 0));      // the surface's own background
+        CHECK(SfIs(image, 10, 10, 128, 128, 128));  // the grey panel around it
         CHECK(target.Paints() == 1);
         CHECK(surface_ui.Stats().passes == 1);
         // Idle frames: no paint, no surface pass, and the same picture.
         item.paint = false;
-        for (int i = 0; i < 20; ++i) world.Run(&item, 1, &image);
+        for (int i = 0; i < 20; ++i)
+        {
+            world.Run(&item, 1, &image);
+        }
         CHECK(target.Paints() == 1);
         CHECK(surface_ui.Stats().passes == 1);
         CHECK(window_ui.Stats().passes == 21);
@@ -189,8 +220,11 @@ TEST_CASE("surface target: a surface painted into its texture shows inside the w
     }
 }
 
-TEST_CASE("surface target: an sRGB surface shows the theme's bytes and a transparent one lets the panel through", "[renderer][ui][surface][gpu]") {
-    FOR_EACH_GPU_BACKEND(backend) {
+TEST_CASE("surface target: an sRGB surface shows the theme's bytes and a transparent one lets the panel through",
+          "[renderer][ui][surface][gpu]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = gpu_test::CreateTestDevice(backend);
         renderer::UiRendererDesc srgb;
@@ -211,10 +245,11 @@ TEST_CASE("surface target: an sRGB surface shows the theme's bytes and a transpa
         renderer::UiSurfaceTarget overlay;
         renderer::UiSurfaceTargetDesc ld;
         ld.format = rhi::Format::RGBA8_UNorm;
-        ld.background = 0x00FFFFFFu; // transparent white: the image shader reads the texture as straight alpha, so it must add nothing to what is under it
+        ld.background = 0x00FFFFFFu;  // transparent white: the image shader reads the texture as straight alpha, so it
+                                      // must add nothing to what is under it
         REQUIRE(overlay.Create(device.Get(), ld, 24, 24, nullptr, "overlay"));
         SfList brown_surface;
-        brown_surface.Fill(32, 32, SfRect(0, 0, 0, 0), kSfRed); // an empty rectangle: only the background shows
+        brown_surface.Fill(32, 32, SfRect(0, 0, 0, 0), kSfRed);  // an empty rectangle: only the background shows
         SfList overlay_surface;
         overlay_surface.Fill(24, 24, SfRect(4, 4, 8, 8), kSfRed);
         SfWorld world;
@@ -236,13 +271,15 @@ TEST_CASE("surface target: an sRGB surface shows the theme's bytes and a transpa
         items[1].where = SfRect(48, 4, 24, 24);
         gpu_test::Image image;
         world.Run(items, 2, &image, 0.5f);
-        CHECK(SfIs(image, 20, 20, 0x99, 0x66, 0x33, 3)); // the sRGB surface shows the bytes of the theme colour
-        CHECK(SfIs(image, 56, 12, 255, 0, 0, 3));        // the overlay's red rectangle
-        // The transparent part of the overlay lets the panel (grey 0.5 linear written to an sRGB panel) through unchanged.
+        CHECK(SfIs(image, 20, 20, 0x99, 0x66, 0x33, 3));  // the sRGB surface shows the bytes of the theme colour
+        CHECK(SfIs(image, 56, 12, 255, 0, 0, 3));         // the overlay's red rectangle
+        // The transparent part of the overlay lets the panel (grey 0.5 linear written to an sRGB panel) through
+        // unchanged.
         gpu_test::Image only_panel;
         items[1].where = SfRect(48, 4, 0, 0);
         world.Run(items, 2, &only_panel, 0.5f);
-        CHECK(SfIs(image, 70, 26, only_panel.Pixel(70, 26)[0], only_panel.Pixel(70, 26)[1], only_panel.Pixel(70, 26)[2], 1));
+        CHECK(SfIs(image, 70, 26, only_panel.Pixel(70, 26)[0], only_panel.Pixel(70, 26)[1], only_panel.Pixel(70, 26)[2],
+                   1));
         device->WaitIdle();
         window_ui.ClearImage(5);
         window_ui.ClearImage(6);
@@ -250,17 +287,23 @@ TEST_CASE("surface target: an sRGB surface shows the theme's bytes and a transpa
     }
 }
 
-TEST_CASE("surface target: a resize and a device reset leave it unpainted until the app paints again", "[renderer][ui][surface][gpu][recreatable]") {
-    FOR_EACH_GPU_BACKEND(backend) {
+TEST_CASE("surface target: a resize and a device reset leave it unpainted until the app paints again",
+          "[renderer][ui][surface][gpu][recreatable]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
         gpu_test::BackendValidation validation(backend);
-        renderer::DeviceResources registry; // destroyed last
+        renderer::DeviceResources registry;  // destroyed last
         rhi::DeviceHost host;
         host.AddObserver(&registry, 0);
         rhi::DeviceCreateInfo info;
         info.backend = backend;
         info.validation = rhi::ValidationSetting::Off;
         info.pipeline_cache = false;
-        if (!host.Create(info, rhi::SwapchainDesc{})) SKIP("no device");
+        if (!host.Create(info, rhi::SwapchainDesc{}))
+        {
+            SKIP("no device");
+        }
         renderer::UiRendererDesc ud;
         renderer::UiRenderer window_ui;
         renderer::UiRenderer surface_ui;
@@ -274,15 +317,21 @@ TEST_CASE("surface target: a resize and a device reset leave it unpainted until 
         SfList surface;
         surface.Fill(32, 32, SfRect(8, 8, 16, 16), kSfRed);
         rhi::TextureHandle panel = SfPanel(host.GetDevice(), rhi::Format::RGBA8_UNorm);
-        struct PanelOwner final : renderer::Recreatable {
+        struct PanelOwner final : renderer::Recreatable
+        {
             rhi::Device* device = nullptr;
             rhi::TextureHandle handle;
-            void Release() override {
-                if (device != nullptr && handle.IsValid()) device->DestroyTexture(handle);
+            void Release() override
+            {
+                if (device != nullptr && handle.IsValid())
+                {
+                    device->DestroyTexture(handle);
+                }
                 handle = {};
                 device = nullptr;
             }
-            bool Recreate(rhi::Device* d) override {
+            bool Recreate(rhi::Device* d) override
+            {
                 device = d;
                 handle = SfPanel(d, rhi::Format::RGBA8_UNorm);
                 return handle.IsValid();
@@ -294,7 +343,8 @@ TEST_CASE("surface target: a resize and a device reset leave it unpainted until 
         panel_owner.handle = panel;
         renderer::ScopedRegistration panel_registration;
         panel_registration.Attach(&registry, &panel_owner, renderer::tiers::kTextures);
-        auto frame = [&](bool paint, gpu_test::Image* out) {
+        auto frame = [&](bool paint, gpu_test::Image* out)
+        {
             rhi::Device* device = host.GetDevice();
             renderer::TransientPool pool(device, renderer::TransientPoolDesc{});
             SfWorld world;

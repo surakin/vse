@@ -19,26 +19,30 @@ using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
 using namespace engine_placeholder::rhi::vulkan;
 
-namespace {
+namespace
+{
 
-struct QuietLog {
+struct QuietLog
+{
     bool saved = LogRhi.Enabled();
     QuietLog() { LogRhi.SetEnabled(false); }
     ~QuietLog() { LogRhi.SetEnabled(saved); }
 };
 
-BindGroupLayoutHandle UniformLayout(Device* device) {
+BindGroupLayoutHandle UniformLayout(Device* device)
+{
     BindingDesc entry = {0, BindingType::UniformBuffer, ShaderStage::Vertex, 1};
     BindGroupLayoutDesc ld;
     ld.entries = rhi::Span<BindingDesc>(&entry, 1);
     return device->CreateBindGroupLayout(ld);
 }
 
-} // namespace
+}  // namespace
 
 // ---- the uniform ring (null device: no GPU needed) ----
 
-TEST_CASE("UniformRing offsets respect the alignment and never overlap", "[rhi][null][uniform-ring]") {
+TEST_CASE("UniformRing offsets respect the alignment and never overlap", "[rhi][null][uniform-ring]")
+{
     NullDevicePtr device = CreateNullDevice();
     const u64 alignment = device->Caps().min_uniform_buffer_offset_alignment;
     REQUIRE(alignment > 1);
@@ -48,37 +52,43 @@ TEST_CASE("UniformRing offsets respect the alignment and never overlap", "[rhi][
     device->BeginFrame();
     ring.BeginFrame();
 
-    struct Span64 {
+    struct Span64
+    {
         u64 begin;
         u64 end;
     };
     Vector<Span64> spans;
     u32 state = 12345;
-    for (int i = 0; i < 200; ++i) {
+    for (int i = 0; i < 200; ++i)
+    {
         state = state * 1664525u + 1013904223u;
         const u64 size = 1 + (state >> 16) % 300;
         UniformAllocation a = ring.Allocate(size);
-        if (!a.Valid()) {
+        if (!a.Valid())
+        {
             break;
         }
         CHECK(a.offset % alignment == 0);
         CHECK(a.size == size);
         CHECK(a.buffer == ring.Buffer());
         spans.Push(Span64{a.offset, a.offset + size});
-        MemSet(a.data, static_cast<int>(i), size); // the whole range is writable
+        MemSet(a.data, static_cast<int>(i), size);  // the whole range is writable
     }
     REQUIRE(spans.Size() > 20);
-    for (usize i = 0; i < spans.Size(); ++i) {
-        for (usize j = i + 1; j < spans.Size(); ++j) {
+    for (usize i = 0; i < spans.Size(); ++i)
+    {
+        for (usize j = i + 1; j < spans.Size(); ++j)
+        {
             CHECK((spans[i].end <= spans[j].begin || spans[j].end <= spans[i].begin));
         }
     }
     device->EndFrame();
-    ring_owner.Reset(); // before the device it uses
+    ring_owner.Reset();  // before the device it uses
     device.Reset();
 }
 
-TEST_CASE("UniformRing is full at its capacity, resets each frame and rotates regions", "[rhi][null][uniform-ring]") {
+TEST_CASE("UniformRing is full at its capacity, resets each frame and rotates regions", "[rhi][null][uniform-ring]")
+{
     NullDevicePtr device = CreateNullDevice();
     QuietLog quiet;
     const u64 alignment = device->Caps().min_uniform_buffer_offset_alignment;
@@ -88,28 +98,34 @@ TEST_CASE("UniformRing is full at its capacity, resets each frame and rotates re
     CHECK(ring.BytesPerFrame() == alignment * 4);
 
     u64 first_offset[4] = {};
-    for (int frame = 0; frame < 4; ++frame) {
+    for (int frame = 0; frame < 4; ++frame)
+    {
         device->BeginFrame();
         ring.BeginFrame();
         CHECK(ring.BytesUsed() == 0);
-        for (int i = 0; i < 4; ++i) {
-            UniformAllocation a = ring.Allocate(alignment); // exactly fills the region
+        for (int i = 0; i < 4; ++i)
+        {
+            UniformAllocation a = ring.Allocate(alignment);  // exactly fills the region
             REQUIRE(a.Valid());
-            if (i == 0) first_offset[frame] = a.offset;
+            if (i == 0)
+            {
+                first_offset[frame] = a.offset;
+            }
         }
-        CHECK_FALSE(ring.Allocate(1).Valid()); // full
-        CHECK(ring.Allocate(alignment * 5).data == nullptr); // larger than a region
+        CHECK_FALSE(ring.Allocate(1).Valid());                // full
+        CHECK(ring.Allocate(alignment * 5).data == nullptr);  // larger than a region
         device->EndFrame();
     }
     // Three regions, used in rotation: the fourth frame is back where the first was.
     CHECK(first_offset[0] != first_offset[1]);
     CHECK(first_offset[1] != first_offset[2]);
     CHECK(first_offset[0] == first_offset[3]);
-    ring_owner.Reset(); // before the device it uses
+    ring_owner.Reset();  // before the device it uses
     device.Reset();
 }
 
-TEST_CASE("UniformRing allocations from several threads are disjoint", "[rhi][null][uniform-ring]") {
+TEST_CASE("UniformRing allocations from several threads are disjoint", "[rhi][null][uniform-ring]")
+{
     NullDevicePtr device = CreateNullDevice();
     auto ring_owner = MakeUnique<UniformRing>(device.Get(), 512 * 1024);
     UniformRing& ring = *ring_owner;
@@ -120,29 +136,39 @@ TEST_CASE("UniformRing allocations from several threads are disjoint", "[rhi][nu
     Vector<UniformAllocation> results;
     results.Resize(kThreads * kPerThread);
     Vector<Thread> threads;
-    for (int t = 0; t < kThreads; ++t) {
-        threads.Push(Thread([&, t]() {
-            for (int i = 0; i < kPerThread; ++i) {
-                results[t * kPerThread + i] = ring.Allocate(16 + static_cast<u64>((i * 7 + t) % 100));
-            }
-        }));
+    for (int t = 0; t < kThreads; ++t)
+    {
+        threads.Push(Thread(
+            [&, t]()
+            {
+                for (int i = 0; i < kPerThread; ++i)
+                {
+                    results[t * kPerThread + i] = ring.Allocate(16 + static_cast<u64>((i * 7 + t) % 100));
+                }
+            }));
     }
-    for (usize i = 0; i < threads.Size(); ++i) threads[i].Join();
+    for (usize i = 0; i < threads.Size(); ++i)
+    {
+        threads[i].Join();
+    }
     Vector<byte> seen = engine_test::ByteBuffer(ring.BytesPerFrame() * UniformRing::kSlots, 0);
-    for (usize ri = 0; ri < results.Size(); ++ri) {
+    for (usize ri = 0; ri < results.Size(); ++ri)
+    {
         const UniformAllocation& a = results[ri];
         REQUIRE(a.Valid());
-        for (u64 b = 0; b < a.size; ++b) {
-            REQUIRE(seen[a.offset + b] == 0); // no byte handed out twice
+        for (u64 b = 0; b < a.size; ++b)
+        {
+            REQUIRE(seen[a.offset + b] == 0);  // no byte handed out twice
             seen[a.offset + b] = 1;
         }
     }
     device->EndFrame();
-    ring_owner.Reset(); // before the device it uses
+    ring_owner.Reset();  // before the device it uses
     device.Reset();
 }
 
-TEST_CASE("Transient bind groups end with their frame on the null device", "[rhi][null][bindings]") {
+TEST_CASE("Transient bind groups end with their frame on the null device", "[rhi][null][bindings]")
+{
     NullDevicePtr device = CreateNullDevice();
     QuietLog quiet;
     BindingDesc entry = {0, BindingType::UniformBuffer, ShaderStage::Vertex, 1};
@@ -168,7 +194,7 @@ TEST_CASE("Transient bind groups end with their frame on the null device", "[rhi
     const BindGroupHandle persistent = device->CreateBindGroup(gd);
     REQUIRE(transient.IsValid());
     REQUIRE(persistent.IsValid());
-    device->DestroyBindGroup(transient); // not allowed: one error, the group stays
+    device->DestroyBindGroup(transient);  // not allowed: one error, the group stays
     CHECK(device->ErrorCount() == 1);
     device->ResetErrors();
     device->EndFrame();
@@ -178,7 +204,7 @@ TEST_CASE("Transient bind groups end with their frame on the null device", "[rhi
     list->Begin();
     list->SetBindGroup(0, persistent);
     CHECK(device->ErrorCount() == 0);
-    list->SetBindGroup(0, transient); // released with the frame it was created in
+    list->SetBindGroup(0, transient);  // released with the frame it was created in
     CHECK(device->ErrorCount() == 1);
     device->ResetErrors();
     list->End();
@@ -191,13 +217,16 @@ TEST_CASE("Transient bind groups end with their frame on the null device", "[rhi
 
 // ---- bind groups and push constants on a real device ----
 
-namespace {
+namespace
+{
 
-struct BindDevice {
+struct BindDevice
+{
     gpu_test::GpuFixture fx;
     VulkanDevicePtr device;
 
-    explicit BindDevice(u32 sets_per_pool = 1024) {
+    explicit BindDevice(u32 sets_per_pool = 1024)
+    {
         fx.RequireValidation();
         DeviceCreateInfo info;
         info.validation = ValidationSetting::On;
@@ -205,18 +234,23 @@ struct BindDevice {
         info.descriptor_sets_per_pool = sets_per_pool;
         info.pipeline_cache = false;
         device = VulkanDevice::Create(info);
-        if (device == nullptr) {
+        if (device == nullptr)
+        {
             SKIP("no suitable Vulkan device");
         }
     }
-    ~BindDevice() {
-        if (device != nullptr) {
+    ~BindDevice()
+    {
+        if (device != nullptr)
+        {
             device->WaitIdle();
             device.Reset();
         }
     }
-    void Cycle(int frames) {
-        for (int i = 0; i < frames; ++i) {
+    void Cycle(int frames)
+    {
+        for (int i = 0; i < frames; ++i)
+        {
             device->BeginFrame();
             device->EndFrame();
         }
@@ -224,9 +258,11 @@ struct BindDevice {
     }
 };
 
-} // namespace
+}  // namespace
 
-TEST_CASE("A uniform, texture and sampler bind group and a push constant reach the shader", "[rhi][vulkan][gpu][bindings]") {
+TEST_CASE("A uniform, texture and sampler bind group and a push constant reach the shader",
+          "[rhi][vulkan][gpu][bindings]")
+{
     BindDevice t;
     Device* device = t.device.Get();
     t.fx.ExpectErrors(0);
@@ -241,7 +277,8 @@ TEST_CASE("A uniform, texture and sampler bind group and a push constant reach t
     const TextureHandle texture = device->CreateTexture(td);
     REQUIRE(texture.IsValid());
     Vector<byte> texels = engine_test::ByteBuffer(4 * 4 * 4);
-    for (usize i = 0; i < texels.Size(); i += 4) {
+    for (usize i = 0; i < texels.Size(); i += 4)
+    {
         texels[i] = 200;
         texels[i + 1] = 100;
         texels[i + 2] = 40;
@@ -317,7 +354,8 @@ TEST_CASE("A uniform, texture and sampler bind group and a push constant reach t
     const TextureHandle target = device->CreateTexture(rt);
     REQUIRE(target.IsValid());
 
-    // Two draws into two halves of the target, one with a persistent group and one with a transient one, with different pushes.
+    // Two draws into two halves of the target, one with a persistent group and one with a transient one, with different
+    // pushes.
     device->BeginFrame();
     gd.transient = true;
     const BindGroupHandle transient = device->CreateBindGroup(gd);
@@ -330,7 +368,7 @@ TEST_CASE("A uniform, texture and sampler bind group and a push constant reach t
     pass.color[0].texture = target;
     list->BeginRendering(pass);
     list->SetPipeline(pipeline);
-    list->SetBindGroup(0, persistent); // set before the push constants and the viewport: order must not matter
+    list->SetBindGroup(0, persistent);  // set before the push constants and the viewport: order must not matter
     const float bias_left[4] = {0.0f, 0.0f, 0.0f, 0.0f};
     list->SetPushConstants(0, bias_left, 16);
     list->SetViewport(Viewport{0, 0, 4, 8, 0, 1});
@@ -353,11 +391,11 @@ TEST_CASE("A uniform, texture and sampler bind group and a push constant reach t
     auto near = [](int a, int b) { return a - b <= 2 && b - a <= 2; };
     const byte* left = &pixels[(4 * kSize + 1) * 4];
     const byte* right = &pixels[(4 * kSize + 6) * 4];
-    CHECK(near(left[0], 100));  // 200 * 0.5 from the uniform buffer
-    CHECK(near(left[1], 100));  // 100 * 1.0
-    CHECK(near(left[2], 40));   // 40 + no bias
-    CHECK(near(right[0], 100)); // the transient group binds the same resources
-    CHECK(near(right[2], 40 + 51)); // push constant 0.2 * 255
+    CHECK(near(left[0], 100));       // 200 * 0.5 from the uniform buffer
+    CHECK(near(left[1], 100));       // 100 * 1.0
+    CHECK(near(left[2], 40));        // 40 + no bias
+    CHECK(near(right[0], 100));      // the transient group binds the same resources
+    CHECK(near(right[2], 40 + 51));  // push constant 0.2 * 255
     CHECK(near(right[3], 255));
 
     // The transient group is gone a few frames later; the persistent one stays until destroyed.
@@ -381,7 +419,8 @@ TEST_CASE("A uniform, texture and sampler bind group and a push constant reach t
     device->EndFrame();
 }
 
-TEST_CASE("Heavy transient descriptor use grows pools instead of failing", "[rhi][vulkan][gpu][bindings]") {
+TEST_CASE("Heavy transient descriptor use grows pools instead of failing", "[rhi][vulkan][gpu][bindings]")
+{
     BindDevice t(/*sets_per_pool=*/64);
     t.fx.ExpectErrors(0);
     Device* device = t.device.Get();
@@ -400,15 +439,18 @@ TEST_CASE("Heavy transient descriptor use grows pools instead of failing", "[rhi
     gd.transient = true;
 
     usize pools_after_first = 0;
-    for (int frame = 0; frame < 4; ++frame) {
+    for (int frame = 0; frame < 4; ++frame)
+    {
         device->BeginFrame();
-        for (int i = 0; i < 10000; ++i) {
+        for (int i = 0; i < 10000; ++i)
+        {
             const BindGroupHandle g = device->CreateBindGroup(gd);
             REQUIRE(g.IsValid());
         }
-        if (frame == 0) {
+        if (frame == 0)
+        {
             pools_after_first = t.device->Counts().descriptor_pools;
-            CHECK(pools_after_first > 100); // 10000 / 64 pools, grown on demand
+            CHECK(pools_after_first > 100);  // 10000 / 64 pools, grown on demand
             CHECK(t.device->Counts().bind_groups == 10000);
         }
         device->EndFrame();
@@ -418,13 +460,15 @@ TEST_CASE("Heavy transient descriptor use grows pools instead of failing", "[rhi
     CHECK(t.device->Counts().descriptor_pools <= pools_after_first * 3 + 3);
     t.Cycle(4);
     device->BeginFrame();
-    CHECK(t.device->Counts().bind_groups == 0); // every transient group of the earlier frames was released
+    CHECK(t.device->Counts().bind_groups == 0);  // every transient group of the earlier frames was released
     device->EndFrame();
     device->DestroyBuffer(ubo);
     device->DestroyBindGroupLayout(layout);
 }
 
-TEST_CASE("Persistent bind groups are recycled and a large array gets a pool of its own", "[rhi][vulkan][gpu][bindings]") {
+TEST_CASE("Persistent bind groups are recycled and a large array gets a pool of its own",
+          "[rhi][vulkan][gpu][bindings]")
+{
     BindDevice t(/*sets_per_pool=*/16);
     t.fx.ExpectErrors(0);
     Device* device = t.device.Get();
@@ -443,15 +487,23 @@ TEST_CASE("Persistent bind groups are recycled and a large array gets a pool of 
 
     // Create and destroy far more groups over time than one pool holds: freed sets are reused.
     usize peak_pools = 0;
-    for (int round = 0; round < 20; ++round) {
+    for (int round = 0; round < 20; ++round)
+    {
         Vector<BindGroupHandle> groups;
-        for (int i = 0; i < 40; ++i) {
+        for (int i = 0; i < 40; ++i)
+        {
             groups.Push(device->CreateBindGroup(gd));
             REQUIRE(groups[groups.Size() - 1].IsValid());
         }
         const usize pools = t.device->Counts().descriptor_pools;
-        if (pools > peak_pools) peak_pools = pools;
-        for (usize gi = 0; gi < groups.Size(); ++gi) device->DestroyBindGroup(groups[gi]);
+        if (pools > peak_pools)
+        {
+            peak_pools = pools;
+        }
+        for (usize gi = 0; gi < groups.Size(); ++gi)
+        {
+            device->DestroyBindGroup(groups[gi]);
+        }
         t.Cycle(3);
     }
     CHECK(peak_pools <= 4);
@@ -465,7 +517,8 @@ TEST_CASE("Persistent bind groups are recycled and a large array gets a pool of 
     const SamplerHandle sampler = device->CreateSampler(SamplerDesc{});
     Vector<BindGroupEntry> entries;
     entries.Resize(200);
-    for (u32 i = 0; i < 200; ++i) {
+    for (u32 i = 0; i < 200; ++i)
+    {
         entries[i].binding = 0;
         entries[i].array_element = i;
         entries[i].sampler = sampler;
@@ -480,7 +533,8 @@ TEST_CASE("Persistent bind groups are recycled and a large array gets a pool of 
 
     // Large groups made and destroyed again and again reuse their pool instead of making one each time.
     const usize pools_before = t.device->Counts().descriptor_pools;
-    for (int i = 0; i < 20; ++i) {
+    for (int i = 0; i < 20; ++i)
+    {
         const BindGroupHandle again = device->CreateBindGroup(bg);
         REQUIRE(again.IsValid());
         device->DestroyBindGroup(again);
@@ -490,12 +544,13 @@ TEST_CASE("Persistent bind groups are recycled and a large array gets a pool of 
 
     // The same for a transient large group made every frame.
     bg.transient = true;
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 10; ++i)
+    {
         device->BeginFrame();
         REQUIRE(device->CreateBindGroup(bg).IsValid());
         device->EndFrame();
     }
-    CHECK(t.device->Counts().descriptor_pools <= pools_before + 3); // at most one pool per frame slot
+    CHECK(t.device->Counts().descriptor_pools <= pools_before + 3);  // at most one pool per frame slot
 
     device->DestroySampler(sampler);
     device->DestroyBindGroupLayout(big_layout);
@@ -503,7 +558,8 @@ TEST_CASE("Persistent bind groups are recycled and a large array gets a pool of 
     device->DestroyBindGroupLayout(layout);
 }
 
-TEST_CASE("Bind group misuse is refused before the driver sees it", "[rhi][vulkan][gpu][bindings]") {
+TEST_CASE("Bind group misuse is refused before the driver sees it", "[rhi][vulkan][gpu][bindings]")
+{
     BindDevice t;
     t.fx.ExpectErrors(0);
     Device* device = t.device.Get();
@@ -524,39 +580,47 @@ TEST_CASE("Bind group misuse is refused before the driver sees it", "[rhi][vulka
     BindGroupDesc gd;
     gd.layout = layout;
     gd.entries = rhi::Span<BindGroupEntry>(&ge, 1);
-    SECTION("a buffer without Uniform usage") {
+    SECTION("a buffer without Uniform usage")
+    {
         ge.buffer = vertex_buffer;
         CHECK_FALSE(device->CreateBindGroup(gd).IsValid());
     }
-    SECTION("an offset that is not a multiple of the alignment") {
+    SECTION("an offset that is not a multiple of the alignment")
+    {
         // The alignment is the driver's (4 on AMD, 64 on NVIDIA); 1 is misaligned for any alignment above 1.
-        if (device->Caps().min_uniform_buffer_offset_alignment <= 1) {
+        if (device->Caps().min_uniform_buffer_offset_alignment <= 1)
+        {
             SKIP("the device accepts any uniform offset");
         }
         ge.offset = 1;
         CHECK_FALSE(device->CreateBindGroup(gd).IsValid());
     }
-    SECTION("a range outside the buffer") {
+    SECTION("a range outside the buffer")
+    {
         ge.size = 4096;
         CHECK_FALSE(device->CreateBindGroup(gd).IsValid());
     }
-    SECTION("no entry for a binding") {
+    SECTION("no entry for a binding")
+    {
         gd.entries = rhi::Span<BindGroupEntry>();
         CHECK_FALSE(device->CreateBindGroup(gd).IsValid());
     }
-    SECTION("a destroyed buffer") {
+    SECTION("a destroyed buffer")
+    {
         const BufferHandle gone = device->CreateBuffer(bd);
         device->DestroyBuffer(gone);
         ge.buffer = gone;
         CHECK_FALSE(device->CreateBindGroup(gd).IsValid());
     }
-    SECTION("a destroyed layout") {
+    SECTION("a destroyed layout")
+    {
         const BindGroupLayoutHandle other = UniformLayout(device);
         device->DestroyBindGroupLayout(other);
         gd.layout = other;
         CHECK_FALSE(device->CreateBindGroup(gd).IsValid());
     }
-    SECTION("a group whose resource is destroyed later reports it") {
+    SECTION("a group whose resource is destroyed later reports it")
+    {
         const BufferHandle shortlived = device->CreateBuffer(bd);
         ge.buffer = shortlived;
         const BindGroupHandle g = device->CreateBindGroup(gd);

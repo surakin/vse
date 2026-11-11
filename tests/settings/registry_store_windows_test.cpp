@@ -1,8 +1,9 @@
-// The registry store and the group-policy layers on Windows (Phase 13 Day 157; settings/BACKEND.md, docs/guide/settings.md "Settings on Windows").
+// The registry store and the group-policy layers on Windows (Phase 13 Day 157; settings/BACKEND.md,
+// docs/guide/settings.md "Settings on Windows").
 //
-// Every test works under a key of its own, HKCU\Software\engine-settings-test-<process id>-<n>, removed at the end of the test; the first
-// test of a process also removes the keys of earlier runs whose process is gone (a run that crashed). Nothing touches the developer's real
-// settings (HKCU\Software\<app> of a real program) or any HKLM key.
+// Every test works under a key of its own, HKCU\Software\engine-settings-test-<process id>-<n>, removed at the end of
+// the test; the first test of a process also removes the keys of earlier runs whose process is gone (a run that
+// crashed). Nothing touches the developer's real settings (HKCU\Software\<app> of a real program) or any HKLM key.
 #include <catch2/catch_test_macros.hpp>
 
 #include "cstr/cstr.h"
@@ -27,36 +28,60 @@ using namespace engine_placeholder;
 using namespace engine_placeholder::settings;
 using namespace settings_test;
 
-namespace {
+namespace
+{
 
 constexpr char kTestPrefix[] = "engine-settings-test-";
 
 // Deletes HKCU\Software\engine-settings-test-<pid>-* of processes that no longer run.
-void SweepStaleTestKeys() {
+void SweepStaleTestKeys()
+{
     HKEY software = nullptr;
-    if (RegOpenKeyExW(HKEY_CURRENT_USER, L"Software", 0, KEY_READ | KEY_WOW64_64KEY, &software) != ERROR_SUCCESS) return;
+    if (RegOpenKeyExW(HKEY_CURRENT_USER, L"Software", 0, KEY_READ | KEY_WOW64_64KEY, &software) != ERROR_SUCCESS)
+    {
+        return;
+    }
     Vector<engine_test::Text> stale;
-    for (DWORD index = 0;; ++index) {
+    for (DWORD index = 0;; ++index)
+    {
         wchar_t name[256];
         DWORD units = 256;
-        if (RegEnumKeyExW(software, index, name, &units, nullptr, nullptr, nullptr, nullptr) != ERROR_SUCCESS) break;
+        if (RegEnumKeyExW(software, index, name, &units, nullptr, nullptr, nullptr, nullptr) != ERROR_SUCCESS)
+        {
+            break;
+        }
         char utf8[256];
-        const int n = WideCharToMultiByte(CP_UTF8, 0, name, static_cast<int>(units), utf8, sizeof(utf8) - 1, nullptr, nullptr);
-        if (n <= 0) continue;
+        const int n = WideCharToMultiByte(CP_UTF8, 0, name, static_cast<int>(units), utf8, sizeof(utf8) - 1, nullptr,
+                                          nullptr);
+        if (n <= 0)
+        {
+            continue;
+        }
         utf8[n] = '\0';
-        if (CStrCompareN(utf8, kTestPrefix, sizeof(kTestPrefix) - 1) != 0) continue;
+        if (CStrCompareN(utf8, kTestPrefix, sizeof(kTestPrefix) - 1) != 0)
+        {
+            continue;
+        }
         const unsigned long pid = CStrToULong(utf8 + sizeof(kTestPrefix) - 1, nullptr, 10);
-        if (pid == GetCurrentProcessId()) continue;
+        if (pid == GetCurrentProcessId())
+        {
+            continue;
+        }
         const HANDLE process = OpenProcess(SYNCHRONIZE, FALSE, static_cast<DWORD>(pid));
-        if (process != nullptr) {
+        if (process != nullptr)
+        {
             const bool running = WaitForSingleObject(process, 0) == WAIT_TIMEOUT;
             CloseHandle(process);
-            if (running) continue;
+            if (running)
+            {
+                continue;
+            }
         }
         stale.Push(engine_test::MakeText(StringView(utf8)));
     }
     RegCloseKey(software);
-    for (usize i = 0; i < stale.Size(); ++i) {
+    for (usize i = 0; i < stale.Size(); ++i)
+    {
         wchar_t wide[300];
         WFormatTo(wide, 300, L"Software\\%hs", stale[i].CStr());
         RegDeleteTreeW(HKEY_CURRENT_USER, wide);
@@ -64,15 +89,22 @@ void SweepStaleTestKeys() {
 }
 
 // A key of this test's own under HKCU, deleted (with everything below it) at the end of the scope.
-class TestKey {
+class TestKey
+{
 public:
-    TestKey() {
+    TestKey()
+    {
         static Atomic<int> next{0};
         static Atomic<bool> swept{false};
-        if (!swept.Exchange(true)) SweepStaleTestKeys();
-        FormatTo(path_, sizeof(path_), "Software\\%s%lu-%d", kTestPrefix, static_cast<unsigned long>(GetCurrentProcessId()), next.FetchAdd(1));
+        if (!swept.Exchange(true))
+        {
+            SweepStaleTestKeys();
+        }
+        FormatTo(path_, sizeof(path_), "Software\\%s%lu-%d", kTestPrefix,
+                 static_cast<unsigned long>(GetCurrentProcessId()), next.FetchAdd(1));
     }
-    ~TestKey() {
+    ~TestKey()
+    {
         wchar_t wide[300];
         MultiByteToWideChar(CP_UTF8, 0, path_, -1, wide, 300);
         RegDeleteTreeW(HKEY_CURRENT_USER, wide);
@@ -81,30 +113,40 @@ public:
     TestKey(const TestKey&) = delete;
     TestKey& operator=(const TestKey&) = delete;
     const char* Path() const { return path_; }
-    RegistryStoreOptions Options(bool read_only = false) const {
+    RegistryStoreOptions Options(bool read_only = false) const
+    {
         RegistryStoreOptions o;
         o.path = path_;
         o.read_only = read_only;
         return o;
     }
     // Writes a raw value with the Win32 API (as a person with regedit would), under `section` (null: the key itself).
-    void WriteRaw(const wchar_t* section, const wchar_t* name, DWORD type, const void* data, DWORD bytes) const {
+    void WriteRaw(const wchar_t* section, const wchar_t* name, DWORD type, const void* data, DWORD bytes) const
+    {
         wchar_t wide[400];
-        if (section != nullptr) {
+        if (section != nullptr)
+        {
             WFormatTo(wide, 400, L"%hs\\%ls", path_, section);
-        } else {
+        }
+        else
+        {
             WFormatTo(wide, 400, L"%hs", path_);
         }
         HKEY key = nullptr;
-        REQUIRE(RegCreateKeyExW(HKEY_CURRENT_USER, wide, 0, nullptr, 0, KEY_SET_VALUE | KEY_WOW64_64KEY, nullptr, &key, nullptr) == ERROR_SUCCESS);
+        REQUIRE(RegCreateKeyExW(HKEY_CURRENT_USER, wide, 0, nullptr, 0, KEY_SET_VALUE | KEY_WOW64_64KEY, nullptr, &key,
+                                nullptr) == ERROR_SUCCESS);
         REQUIRE(RegSetValueExW(key, name, 0, type, static_cast<const BYTE*>(data), bytes) == ERROR_SUCCESS);
         RegCloseKey(key);
     }
-    bool SubkeyExists(const wchar_t* section) const {
+    bool SubkeyExists(const wchar_t* section) const
+    {
         wchar_t wide[400];
         WFormatTo(wide, 400, L"%hs\\%ls", path_, section);
         HKEY key = nullptr;
-        if (RegOpenKeyExW(HKEY_CURRENT_USER, wide, 0, KEY_READ | KEY_WOW64_64KEY, &key) != ERROR_SUCCESS) return false;
+        if (RegOpenKeyExW(HKEY_CURRENT_USER, wide, 0, KEY_READ | KEY_WOW64_64KEY, &key) != ERROR_SUCCESS)
+        {
+            return false;
+        }
         RegCloseKey(key);
         return true;
     }
@@ -113,15 +155,17 @@ private:
     char path_[128];
 };
 
-StoredValue AsText(const SettingDesc& desc, const Value& value) {
+StoredValue AsText(const SettingDesc& desc, const Value& value)
+{
     StoredValue out;
     REQUIRE(ToStored(desc, value, false, &out) == StoreError::None);
     return out;
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("Windows: the registry store passes the store conformance suite", "[settings][store][windows]") {
+TEST_CASE("Windows: the registry store passes the store conformance suite", "[settings][store][windows]")
+{
     TestKey key;
     auto make = [&] { return ConfigStorePtr(MakeUnique<RegistryConfigStore>(key.Options())); };
     RunWritableConformance(make);
@@ -129,18 +173,22 @@ TEST_CASE("Windows: the registry store passes the store conformance suite", "[se
     RunCapabilityConformance(make);
 }
 
-TEST_CASE("Windows: a read-only registry store (a policy key) reads and refuses every write", "[settings][store][windows]") {
+TEST_CASE("Windows: a read-only registry store (a policy key) reads and refuses every write",
+          "[settings][store][windows]")
+{
     TestKey key;
     const SettingDesc d = MakeInt("renderer.width", 1280, 0, 16384);
     {
         RegistryConfigStore writer(key.Options());
         REQUIRE(writer.Set("renderer.width", AsText(d, Value::FromInt(1920))).Ok());
     }
-    RunReadOnlyConformance([&] { return ConfigStorePtr(MakeUnique<RegistryConfigStore>(key.Options(true))); }, "renderer.width", d,
-                           Value::FromInt(1920));
+    RunReadOnlyConformance([&] { return ConfigStorePtr(MakeUnique<RegistryConfigStore>(key.Options(true))); },
+                           "renderer.width", d, Value::FromInt(1920));
 }
 
-TEST_CASE("Windows: sections are subkeys, values are REG_SZ text, and anything else is reported, never converted", "[settings][store][windows]") {
+TEST_CASE("Windows: sections are subkeys, values are REG_SZ text, and anything else is reported, never converted",
+          "[settings][store][windows]")
+{
     TestKey key;
     RegistryConfigStore store(key.Options());
     REQUIRE(store.Load().Ok());
@@ -155,7 +203,8 @@ TEST_CASE("Windows: sections are subkeys, values are REG_SZ text, and anything e
     wchar_t text[64] = {};
     DWORD bytes = sizeof(text);
     DWORD type = 0;
-    REQUIRE(RegGetValueW(HKEY_CURRENT_USER, sub, L"width", RRF_RT_ANY | RRF_SUBKEY_WOW6464KEY, &type, text, &bytes) == ERROR_SUCCESS);
+    REQUIRE(RegGetValueW(HKEY_CURRENT_USER, sub, L"width", RRF_RT_ANY | RRF_SUBKEY_WOW6464KEY, &type, text, &bytes) ==
+            ERROR_SUCCESS);
     CHECK(type == REG_SZ);
     CHECK(WStrCompare(text, L"1920") == 0);
     // A value written by hand as a REG_DWORD is a type mismatch for its key, not a number read some other way.
@@ -174,7 +223,7 @@ TEST_CASE("Windows: sections are subkeys, values are REG_SZ text, and anything e
     CHECK(parsed.AsText() == "my gpu");
     Vector<Key> keys;
     REQUIRE(store.Enumerate("renderer", &keys).Ok());
-    CHECK(keys.Size() == 3); // width, height, adapter
+    CHECK(keys.Size() == 3);  // width, height, adapter
     // A typed value is not what a text store takes.
     StoredValue typed;
     typed.typed = true;
@@ -195,25 +244,36 @@ TEST_CASE("Windows: sections are subkeys, values are REG_SZ text, and anything e
     CHECK(StringView(where).StartsWith("registry HKCU\\Software\\engine-settings-test-"));
 }
 
-namespace {
+namespace
+{
 
-struct Counter {
+struct Counter
+{
     Atomic<int> calls{0};
 };
 
-void Count(void* user) { static_cast<Counter*>(user)->calls.FetchAdd(1); }
+void Count(void* user)
+{
+    static_cast<Counter*>(user)->calls.FetchAdd(1);
+}
 
-bool WaitFor(const Counter& c, int at_least, int ms) {
-    for (int waited = 0; waited < ms; waited += 10) {
-        if (c.calls.Load() >= at_least) return true;
+bool WaitFor(const Counter& c, int at_least, int ms)
+{
+    for (int waited = 0; waited < ms; waited += 10)
+    {
+        if (c.calls.Load() >= at_least)
+        {
+            return true;
+        }
         ThisThread::SleepForMilliseconds(10);
     }
     return c.calls.Load() >= at_least;
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("Windows: another writer's change is announced, the store's own is not", "[settings][store][windows]") {
+TEST_CASE("Windows: another writer's change is announced, the store's own is not", "[settings][store][windows]")
+{
     TestKey key;
     const SettingDesc d = MakeInt("renderer.width", 1280, 0, 16384);
     RegistryConfigStore watched(key.Options());
@@ -240,19 +300,24 @@ TEST_CASE("Windows: another writer's change is announced, the store's own is not
     CHECK(counter.calls.Load() == stopped);
 }
 
-namespace {
-struct SelfRemoval {
+namespace
+{
+struct SelfRemoval
+{
     RegistryConfigStore* store = nullptr;
     Atomic<int> result{-1};
 };
-void RemoveSelf(void* user) {
+void RemoveSelf(void* user)
+{
     SelfRemoval* s = static_cast<SelfRemoval*>(user);
     s->result.Store(static_cast<int>(s->store->SetChangeListener(nullptr, nullptr).error));
 }
-} // namespace
+}  // namespace
 
-// A listener that tries to remove itself would make the watch thread wait for itself: the call is refused, and nothing hangs.
-TEST_CASE("Windows: a listener cannot change its own store's listener, and nothing hangs", "[settings][store][windows]") {
+// A listener that tries to remove itself would make the watch thread wait for itself: the call is refused, and nothing
+// hangs.
+TEST_CASE("Windows: a listener cannot change its own store's listener, and nothing hangs", "[settings][store][windows]")
+{
     TestKey key;
     const SettingDesc d = MakeInt("s.n", 0, 0, 10);
     RegistryConfigStore watched(key.Options());
@@ -261,33 +326,49 @@ TEST_CASE("Windows: a listener cannot change its own store's listener, and nothi
     REQUIRE(watched.SetChangeListener(&RemoveSelf, &self).Ok());
     RegistryConfigStore other(key.Options());
     REQUIRE(other.Set("s.n", AsText(d, Value::FromInt(1))).Ok());
-    for (int waited = 0; waited < 5000 && self.result.Load() < 0; waited += 10) ThisThread::SleepForMilliseconds(10);
+    for (int waited = 0; waited < 5000 && self.result.Load() < 0; waited += 10)
+    {
+        ThisThread::SleepForMilliseconds(10);
+    }
     CHECK(self.result.Load() == static_cast<int>(StoreError::Invalid));
-    CHECK(watched.SetChangeListener(nullptr, nullptr).Ok()); // from another thread it works
+    CHECK(watched.SetChangeListener(nullptr, nullptr).Ok());  // from another thread it works
 }
 
-TEST_CASE("Windows: a store destroyed while a change is being announced stops cleanly, a thousand times", "[settings][store][windows]") {
+TEST_CASE("Windows: a store destroyed while a change is being announced stops cleanly, a thousand times",
+          "[settings][store][windows]")
+{
     TestKey key;
     const SettingDesc d = MakeInt("s.n", 0, 0, 1000000);
     RegistryConfigStore writer(key.Options());
     REQUIRE(writer.Set("s.n", AsText(d, Value::FromInt(0))).Ok());
     Atomic<bool> stop{false};
-    Thread churn([&] {
-        RegistryConfigStore w(key.Options());
-        for (int n = 1; !stop.Load(); ++n) (void)w.Set("s.n", AsText(d, Value::FromInt(n % 1000000)));
-    });
+    Thread churn(
+        [&]
+        {
+            RegistryConfigStore w(key.Options());
+            for (int n = 1; !stop.Load(); ++n)
+            {
+                (void)w.Set("s.n", AsText(d, Value::FromInt(n % 1000000)));
+            }
+        });
     Counter counter;
-    for (int i = 0; i < 1000; ++i) {
+    for (int i = 0; i < 1000; ++i)
+    {
         RegistryConfigStore watched(key.Options());
         REQUIRE(watched.SetChangeListener(&Count, &counter).Ok());
-        if (i % 50 == 0) ThisThread::SleepForMilliseconds(2); // now and then, long enough to be mid-announcement
+        if (i % 50 == 0)
+        {
+            ThisThread::SleepForMilliseconds(2);  // now and then, long enough to be mid-announcement
+        }
     }
     stop = true;
     churn.Join();
-    CHECK(counter.calls.Load() >= 0); // the point is that no listener ran on a destroyed store (ASan) and nothing hung
+    CHECK(counter.calls.Load() >= 0);  // the point is that no listener ran on a destroyed store (ASan) and nothing hung
 }
 
-TEST_CASE("Windows: a group-policy value wins over the user's file and the command line, and is never written", "[settings][policy][windows]") {
+TEST_CASE("Windows: a group-policy value wins over the user's file and the command line, and is never written",
+          "[settings][policy][windows]")
+{
     TestKey key;
     io_test::TempDir dir;
     Registry registry;
@@ -313,7 +394,7 @@ TEST_CASE("Windows: a group-policy value wins over the user's file and the comma
     const Resolution r = settings.Provenance(width);
     CHECK(StringView(r.layer_name) == "user policy");
     CHECK(StringView(r.origin).Contains("value width"));
-    CHECK_FALSE(Setting<bool>(registry, vsync).Get()); // not enforced: the user's own value
+    CHECK_FALSE(Setting<bool>(registry, vsync).Get());  // not enforced: the user's own value
     // The program cannot change it (a change of a setting the policy leaves alone is fine).
     CHECK(settings.Set(width, Value::FromInt(1600)).error == SetError::Enforced);
     CHECK(Setting<i64>(registry, width).Get() == 1024);
@@ -326,13 +407,15 @@ TEST_CASE("Windows: a group-policy value wins over the user's file and the comma
     REQUIRE(settings.Save().Ok());
     Vector<u8> saved;
     REQUIRE(io::ReadFile(user, &saved).Ok());
-    CHECK(StringView(reinterpret_cast<const char*>(saved.Data()), saved.Size()).Contains("width = 1920")); // the user's own value, untouched
+    CHECK(StringView(reinterpret_cast<const char*>(saved.Data()), saved.Size())
+              .Contains("width = 1920"));  // the user's own value, untouched
 }
 
-TEST_CASE("Windows: environment names ignore case, so two spellings are one variable", "[settings][env][windows]") {
+TEST_CASE("Windows: environment names ignore case, so two spellings are one variable", "[settings][env][windows]")
+{
     EnvironmentSnapshot env(true);
     env.Add("ENGINE_SETTING_RENDERER__WIDTH", "800");
-    env.Add("engine_setting_renderer__width", "900"); // the same variable on Windows: it replaces the first
+    env.Add("engine_setting_renderer__width", "900");  // the same variable on Windows: it replaces the first
     CHECK(env.Size() == 1);
     REQUIRE(env.Find("Engine_Setting_Renderer__Width") != nullptr);
     CHECK(env.Find("Engine_Setting_Renderer__Width")->View() == "900");
@@ -340,7 +423,8 @@ TEST_CASE("Windows: environment names ignore case, so two spellings are one vari
     posix.Add("A", "1");
     posix.Add("a", "2");
     CHECK(posix.Size() == 2);
-    // The process's own snapshot follows the platform: SetEnvironmentVariable("Path") and "PATH" name one variable here.
+    // The process's own snapshot follows the platform: SetEnvironmentVariable("Path") and "PATH" name one variable
+    // here.
     const EnvironmentSnapshot captured = EnvironmentSnapshot::Capture();
     CHECK(captured.IgnoresCase());
     CHECK(captured.Find("path") != nullptr);

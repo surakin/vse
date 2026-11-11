@@ -13,101 +13,131 @@
 #include "storage/world_storage.h"
 #include "world_compare.h"
 
-namespace engine_placeholder::storage {
-namespace {
+namespace engine_placeholder::storage
+{
+namespace
+{
 
 using ecs::Entity;
 using ecs::World;
 
-struct RtA {
+struct RtA
+{
     i32 a = 0;
     f32 b = 0;
     u8 flag = 0;
 };
-struct RtB {
+struct RtB
+{
     String<HeapAllocator> name{HeapAllocator::Default()};
     Array<u16, 4> codes;
 };
-struct RtC {
+struct RtC
+{
     Vec3 v;
     Quaternion q;
 };
-struct RtD {
+struct RtD
+{
     EntityRef target;
     u64 big = 0;
 };
-struct RtE {
+struct RtE
+{
     bool on = false;
     f64 d = 0;
 };
-struct RtTag {};
+struct RtTag
+{
+};
 
-Status RegisterRoundTripComponents(ComponentRegistry* r) {
+Status RegisterRoundTripComponents(ComponentRegistry* r)
+{
     ENGINE_TRY(RegisterBuiltinComponents(r));
-    ENGINE_TRY(r->Register<RtA>({.id = 2000, .name = "rt_a", .fields = {Field<&RtA::a>("a"), Field<&RtA::b>("b"), Field<&RtA::flag>("flag")}}));
-    ENGINE_TRY(r->Register<RtB>({.id = 2001, .name = "rt_b", .fields = {Field<&RtB::name>("name"), Field<&RtB::codes>("codes")}}));
+    ENGINE_TRY(r->Register<RtA>(
+        {.id = 2000, .name = "rt_a", .fields = {Field<&RtA::a>("a"), Field<&RtA::b>("b"), Field<&RtA::flag>("flag")}}));
+    ENGINE_TRY(r->Register<RtB>(
+        {.id = 2001, .name = "rt_b", .fields = {Field<&RtB::name>("name"), Field<&RtB::codes>("codes")}}));
     ENGINE_TRY(r->Register<RtC>({.id = 2002, .name = "rt_c", .fields = {Field<&RtC::v>("v"), Field<&RtC::q>("q")}}));
-    ENGINE_TRY(r->Register<RtD>({.id = 2003, .name = "rt_d", .fields = {Field<&RtD::target>("target"), Field<&RtD::big>("big")}}));
+    ENGINE_TRY(r->Register<RtD>(
+        {.id = 2003, .name = "rt_d", .fields = {Field<&RtD::target>("target"), Field<&RtD::big>("big")}}));
     ENGINE_TRY(r->Register<RtE>({.id = 2004, .name = "rt_e", .fields = {Field<&RtE::on>("on"), Field<&RtE::d>("d")}}));
     ENGINE_TRY(r->Register<RtTag>({.id = 2005, .name = "rt_tag"}));
     return Status::Success();
 }
 
-struct Rng {
+struct Rng
+{
     u64 s;
-    u32 Next() {
+    u32 Next()
+    {
         s = s * 6364136223846793005ull + 1442695040888963407ull;
         return static_cast<u32>(s >> 33);
     }
 };
 
-// Entities with random subsets of the six test components (64 archetypes), a hierarchy of up to depth 5, references and strings.
-void Populate(World& world, KeyIndex& index, usize count, u64 seed) {
+// Entities with random subsets of the six test components (64 archetypes), a hierarchy of up to depth 5, references and
+// strings.
+void Populate(World& world, KeyIndex& index, usize count, u64 seed)
+{
     Rng rng{seed};
     KeyGenerator gen = KeyGenerator::Seeded(seed);
     Vector<Entity> made;
     Vector<u32> depth;
-    for (usize i = 0; i < count; ++i) {
+    for (usize i = 0; i < count; ++i)
+    {
         const u32 mask = rng.Next() % 64;
         const Entity e = world.Create(EntityKeyComponent{gen.Next()});
         REQUIRE(e.IsValid());
-        if (mask & 1) {
-            REQUIRE(world.Add(e, RtA{static_cast<i32>(rng.Next()) - 1000, static_cast<f32>(rng.Next() % 1000) / 7.0f, static_cast<u8>(rng.Next())}) == ecs::Status::Ok);
+        if (mask & 1)
+        {
+            REQUIRE(world.Add(e, RtA{static_cast<i32>(rng.Next()) - 1000, static_cast<f32>(rng.Next() % 1000) / 7.0f,
+                                     static_cast<u8>(rng.Next())}) == ecs::Status::Ok);
         }
-        if (mask & 2) {
+        if (mask & 2)
+        {
             RtB b;
             const u32 len = rng.Next() % 12;
-            for (u32 k = 0; k < len; ++k) {
+            for (u32 k = 0; k < len; ++k)
+            {
                 b.name.Append(static_cast<char>('a' + rng.Next() % 26));
             }
-            for (usize k = 0; k < 4; ++k) {
+            for (usize k = 0; k < 4; ++k)
+            {
                 b.codes[k] = static_cast<u16>(rng.Next());
             }
             REQUIRE(world.Add(e, Move(b)) == ecs::Status::Ok);
         }
-        if (mask & 4) {
+        if (mask & 4)
+        {
             RtC c;
             c.v = Vec3(static_cast<f32>(rng.Next() % 100) / 3.0f, -1.5f, 2.25f);
             REQUIRE(world.Add(e, c) == ecs::Status::Ok);
         }
-        if (mask & 8) {
+        if (mask & 8)
+        {
             RtD d;
             d.big = (static_cast<u64>(rng.Next()) << 32) | rng.Next();
-            if (!made.Empty()) {
+            if (!made.Empty())
+            {
                 d.target.key = world.Peek<EntityKeyComponent>(made[rng.Next() % made.Size()])->key;
             }
             REQUIRE(world.Add(e, d) == ecs::Status::Ok);
         }
-        if (mask & 16) {
+        if (mask & 16)
+        {
             REQUIRE(world.Add(e, RtE{(rng.Next() & 1) != 0, -0.0}) == ecs::Status::Ok);
         }
-        if (mask & 32) {
+        if (mask & 32)
+        {
             REQUIRE(world.Add(e, RtTag{}) == ecs::Status::Ok);
         }
         u32 my_depth = 0;
-        if (!made.Empty() && rng.Next() % 3 == 0) {
+        if (!made.Empty() && rng.Next() % 3 == 0)
+        {
             const usize p = rng.Next() % made.Size();
-            if (depth[p] < 5) {
+            if (depth[p] < 5)
+            {
                 my_depth = depth[p] + 1;
                 REQUIRE(world.Set(e, ecs::Parent{made[p]}) == ecs::Status::Ok);
                 REQUIRE(world.Set(e, ecs::HierarchyDepth{my_depth}) == ecs::Status::Ok);
@@ -119,20 +149,23 @@ void Populate(World& world, KeyIndex& index, usize count, u64 seed) {
     REQUIRE(index.Sync(world).Ok());
 }
 
-
-struct Rig {
+struct Rig
+{
     ComponentRegistry registry;
     MemoryStore store;
     Rig() { REQUIRE(RegisterRoundTripComponents(&registry).Ok()); }
 };
 
-Vector<EntityKey> OrderOfKeys(World& world) {
+Vector<EntityKey> OrderOfKeys(World& world)
+{
     Vector<EntityKey> keys;
     world.Query<ecs::Read<EntityKeyComponent>>().ForEach([&](const EntityKeyComponent& k) { keys.Push(k.key); });
     return keys;
 }
 
-TEST_CASE("World round trip: 10,000 entities in 64 archetypes load back bit-exact and in the same order", "[storage][world]") {
+TEST_CASE("World round trip: 10,000 entities in 64 archetypes load back bit-exact and in the same order",
+          "[storage][world]")
+{
     Rig rig;
     World source;
     KeyIndex source_index;
@@ -162,7 +195,8 @@ TEST_CASE("World round trip: 10,000 entities in 64 archetypes load back bit-exac
     const Vector<EntityKey> order_b = OrderOfKeys(second);
     REQUIRE(order_a.Size() == order_b.Size());
     bool same_order = true;
-    for (usize i = 0; i < order_a.Size(); ++i) {
+    for (usize i = 0; i < order_a.Size(); ++i)
+    {
         same_order = same_order && order_a[i] == order_b[i];
     }
     CHECK(same_order);
@@ -177,7 +211,8 @@ TEST_CASE("World round trip: 10,000 entities in 64 archetypes load back bit-exac
     REQUIRE(rig.store.Count(&a).Ok());
     REQUIRE(again.Count(&b).Ok());
     CHECK(a == b);
-    for (u64 probe = 0; probe < 50; ++probe) {
+    for (u64 probe = 0; probe < 50; ++probe)
+    {
         const EntityKey key = order_a[probe * 100];
         EntityRecord r1, r2;
         REQUIRE(rig.store.Get(key, &r1).Ok());
@@ -186,7 +221,8 @@ TEST_CASE("World round trip: 10,000 entities in 64 archetypes load back bit-exac
     }
 }
 
-TEST_CASE("World round trip: the store keeps the format, the manifest and the label", "[storage][world]") {
+TEST_CASE("World round trip: the store keeps the format, the manifest and the label", "[storage][world]")
+{
     Rig rig;
     World world;
     KeyIndex index;
@@ -201,7 +237,8 @@ TEST_CASE("World round trip: the store keeps the format, the manifest and the la
     REQUIRE(rig.store.GetMetadata(metadata::kFormatVersion, &value).Ok());
     CHECK(value.View() == StringView("1"));
 
-    SECTION("a registry that renamed a component refuses the store") {
+    SECTION("a registry that renamed a component refuses the store")
+    {
         ComponentRegistry other;
         REQUIRE(RegisterBuiltinComponents(&other).Ok());
         REQUIRE(other.Register<RtA>({.id = 2000, .name = "renamed", .fields = {Field<&RtA::a>("a")}}).Ok());
@@ -211,7 +248,8 @@ TEST_CASE("World round trip: the store keeps the format, the manifest and the la
         CHECK(wrong.Load(target, target_index, LoadOptions(), nullptr).Is(ErrorCode::Mismatch));
         CHECK(OrderOfKeys(target).Size() == 0);
     }
-    SECTION("a store from a newer format is TooNew") {
+    SECTION("a store from a newer format is TooNew")
+    {
         REQUIRE(rig.store.SetMetadata(metadata::kFormatVersion, "2").Ok());
         World target;
         KeyIndex target_index;
@@ -219,17 +257,21 @@ TEST_CASE("World round trip: the store keeps the format, the manifest and the la
     }
 }
 
-Vector<EntityKey> AllKeys(MemoryStore& store) {
+Vector<EntityKey> AllKeys(MemoryStore& store)
+{
     Vector<EntityKey> keys;
     REQUIRE(ListKeys(store, KeyRange(), ~usize(0), &keys).Ok());
     return keys;
 }
 
-RtA* ARow(World& world, KeyIndex& index, EntityKey key) {
+RtA* ARow(World& world, KeyIndex& index, EntityKey key)
+{
     return world.Get<RtA>(index.Find(key));
 }
 
-TEST_CASE("World round trip: Create refuses a key in the world, Replace swaps, Merge keeps entity ids", "[storage][world]") {
+TEST_CASE("World round trip: Create refuses a key in the world, Replace swaps, Merge keeps entity ids",
+          "[storage][world]")
+{
     Rig rig;
     World source;
     KeyIndex source_index;
@@ -237,14 +279,16 @@ TEST_CASE("World round trip: Create refuses a key in the world, Replace swaps, M
     WorldStorage storage(rig.registry, rig.store);
     REQUIRE(storage.Save(source, source_index, SaveOptions(), nullptr).Ok());
     EntityKey with_a;
-    source.Query<ecs::Read<EntityKeyComponent>, ecs::Read<RtA>>().ForEach([&](const EntityKeyComponent& k, const RtA&) { with_a = k.key; });
+    source.Query<ecs::Read<EntityKeyComponent>, ecs::Read<RtA>>().ForEach([&](const EntityKeyComponent& k, const RtA&)
+                                                                          { with_a = k.key; });
     REQUIRE_FALSE(with_a.IsNull());
 
     World target;
     KeyIndex target_index;
     REQUIRE(storage.Load(target, target_index, LoadOptions(), nullptr).Ok());
 
-    SECTION("Create fails and changes nothing") {
+    SECTION("Create fails and changes nothing")
+    {
         ARow(target, target_index, with_a)->a = 123456;
         Report report;
         CHECK(storage.Load(target, target_index, LoadOptions(), &report).Is(ErrorCode::Exists));
@@ -252,7 +296,8 @@ TEST_CASE("World round trip: Create refuses a key in the world, Replace swaps, M
         CHECK(ARow(target, target_index, with_a)->a == 123456);
         CHECK(report.created == 0);
     }
-    SECTION("Replace brings back the stored state and drops entities the store lacks") {
+    SECTION("Replace brings back the stored state and drops entities the store lacks")
+    {
         ARow(target, target_index, with_a)->a = 123456;
         const Entity extra = target.Create(EntityKeyComponent{KeyGenerator::Seeded(999).Next()});
         REQUIRE(extra.IsValid());
@@ -266,7 +311,8 @@ TEST_CASE("World round trip: Create refuses a key in the world, Replace swaps, M
         CHECK_FALSE(target.Exists(extra));
         test::RequireSameWorlds(rig.registry, source, target);
     }
-    SECTION("Merge keeps the world's entity ids and entities that are not in the store") {
+    SECTION("Merge keeps the world's entity ids and entities that are not in the store")
+    {
         const Entity before = target_index.Find(with_a);
         ARow(target, target_index, with_a)->a = 123456;
         const EntityKey extra_key = KeyGenerator::Seeded(999).Next();
@@ -286,18 +332,21 @@ TEST_CASE("World round trip: Create refuses a key in the world, Replace swaps, M
     }
 }
 
-TEST_CASE("World round trip: a store that fails at every write of a save is left unchanged", "[storage][world]") {
+TEST_CASE("World round trip: a store that fails at every write of a save is left unchanged", "[storage][world]")
+{
     Rig rig;
     World world;
     KeyIndex index;
     Populate(world, index, 20, 5);
     WorldStorage storage(rig.registry, rig.store);
     bool succeeded = false;
-    for (u32 fail = 1; fail <= 40 && !succeeded; ++fail) {
+    for (u32 fail = 1; fail <= 40 && !succeeded; ++fail)
+    {
         rig.store.FailAfter(fail);
         const Status s = storage.Save(world, index, SaveOptions(), nullptr);
         rig.store.FailAfter(0);
-        if (s.Ok()) {
+        if (s.Ok())
+        {
             succeeded = true;
             break;
         }
@@ -312,7 +361,8 @@ TEST_CASE("World round trip: a store that fails at every write of a save is left
     CHECK(AllKeys(rig.store).Size() == 20);
 }
 
-TEST_CASE("World round trip: a damaged store leaves the target world unchanged", "[storage][world]") {
+TEST_CASE("World round trip: a damaged store leaves the target world unchanged", "[storage][world]")
+{
     Rig rig;
     World source;
     KeyIndex source_index;
@@ -320,7 +370,7 @@ TEST_CASE("World round trip: a damaged store leaves the target world unchanged",
     WorldStorage storage(rig.registry, rig.store);
     REQUIRE(storage.Save(source, source_index, SaveOptions(), nullptr).Ok());
     const Vector<EntityKey> keys = AllKeys(rig.store);
-    const EntityKey victim = keys[keys.Size() - 3]; // late in key order, so earlier records were fine
+    const EntityKey victim = keys[keys.Size() - 3];  // late in key order, so earlier records were fine
 
     World target;
     KeyIndex target_index;
@@ -330,19 +380,23 @@ TEST_CASE("World round trip: a damaged store leaves the target world unchanged",
     LoadOptions options;
     options.mode = LoadMode::Replace;
 
-    SECTION("a record whose bytes no longer match their hash") {
+    SECTION("a record whose bytes no longer match their hash")
+    {
         REQUIRE(rig.store.CorruptRecord(victim));
         CHECK(storage.Load(target, target_index, options, nullptr).Is(ErrorCode::Corrupt));
     }
-    SECTION("a record cut short, with a hash that matches the cut") {
+    SECTION("a record cut short, with a hash that matches the cut")
+    {
         EntityRecord r;
         REQUIRE(rig.store.Get(victim, &r).Ok());
         REQUIRE(r.blob.Size() > 6);
         REQUIRE(rig.store.Put(EntityRecord::Make(victim, ByteSpan(r.blob.Data(), r.blob.Size() - 3))).Ok());
         CHECK(storage.Load(target, target_index, options, nullptr).Is(ErrorCode::Corrupt));
     }
-    SECTION("a record with garbage and a matching hash") {
-        const byte junk[] = {static_cast<byte>(255), static_cast<byte>(255), static_cast<byte>(255), static_cast<byte>(255), static_cast<byte>(1)};
+    SECTION("a record with garbage and a matching hash")
+    {
+        const byte junk[] = {static_cast<byte>(255), static_cast<byte>(255), static_cast<byte>(255),
+                             static_cast<byte>(255), static_cast<byte>(1)};
         REQUIRE(rig.store.Put(EntityRecord::Make(victim, ByteSpan(junk, 5))).Ok());
         const Status s = storage.Load(target, target_index, options, nullptr);
         CHECK((s.Is(ErrorCode::LimitExceeded) || s.Is(ErrorCode::Corrupt)));
@@ -353,7 +407,8 @@ TEST_CASE("World round trip: a damaged store leaves the target world unchanged",
 }
 
 // A record of one component with the given id and bytes.
-EntityRecord OneComponent(EntityKey key, u32 id, ByteSpan bytes) {
+EntityRecord OneComponent(EntityKey key, u32 id, ByteSpan bytes)
+{
     bytes::ByteWriter w;
     w.WriteU32(1);
     ComponentRecord rec;
@@ -364,21 +419,34 @@ EntityRecord OneComponent(EntityKey key, u32 id, ByteSpan bytes) {
     return EntityRecord::Make(key, w.Bytes());
 }
 
-ByteSpan KeyBytes(bytes::ByteWriter& w, EntityKey key) {
+ByteSpan KeyBytes(bytes::ByteWriter& w, EntityKey key)
+{
     w.WriteU64(key.high);
     w.WriteU64(key.low);
     return w.Bytes();
 }
 
-TEST_CASE("World round trip: unknown components follow the policy, and KeepOpaque survives a save", "[storage][world]") {
+TEST_CASE("World round trip: unknown components follow the policy, and KeepOpaque survives a save", "[storage][world]")
+{
     ComponentRegistry full;
     REQUIRE(RegisterRoundTripComponents(&full).Ok());
-    ComponentRegistry partial; // lacks rt_e and rt_tag
+    ComponentRegistry partial;  // lacks rt_e and rt_tag
     REQUIRE(RegisterBuiltinComponents(&partial).Ok());
-    REQUIRE(partial.Register<RtA>({.id = 2000, .name = "rt_a", .fields = {Field<&RtA::a>("a"), Field<&RtA::b>("b"), Field<&RtA::flag>("flag")}}).Ok());
-    REQUIRE(partial.Register<RtB>({.id = 2001, .name = "rt_b", .fields = {Field<&RtB::name>("name"), Field<&RtB::codes>("codes")}}).Ok());
-    REQUIRE(partial.Register<RtC>({.id = 2002, .name = "rt_c", .fields = {Field<&RtC::v>("v"), Field<&RtC::q>("q")}}).Ok());
-    REQUIRE(partial.Register<RtD>({.id = 2003, .name = "rt_d", .fields = {Field<&RtD::target>("target"), Field<&RtD::big>("big")}}).Ok());
+    REQUIRE(partial
+                .Register<RtA>({.id = 2000,
+                                .name = "rt_a",
+                                .fields = {Field<&RtA::a>("a"), Field<&RtA::b>("b"), Field<&RtA::flag>("flag")}})
+                .Ok());
+    REQUIRE(partial
+                .Register<RtB>(
+                    {.id = 2001, .name = "rt_b", .fields = {Field<&RtB::name>("name"), Field<&RtB::codes>("codes")}})
+                .Ok());
+    REQUIRE(
+        partial.Register<RtC>({.id = 2002, .name = "rt_c", .fields = {Field<&RtC::v>("v"), Field<&RtC::q>("q")}}).Ok());
+    REQUIRE(partial
+                .Register<RtD>(
+                    {.id = 2003, .name = "rt_d", .fields = {Field<&RtD::target>("target"), Field<&RtD::big>("big")}})
+                .Ok());
 
     World source;
     KeyIndex source_index;
@@ -387,19 +455,23 @@ TEST_CASE("World round trip: unknown components follow the policy, and KeepOpaqu
     WorldStorage writer(full, store);
     REQUIRE(writer.Save(source, source_index, SaveOptions(), nullptr).Ok());
     usize with_unknown = 0;
-    source.Query<ecs::Read<EntityKeyComponent>, ecs::Read<RtE>>().ForEach([&](const EntityKeyComponent&, const RtE&) { ++with_unknown; });
-    source.Query<ecs::Read<EntityKeyComponent>, ecs::With<RtTag>>().ForEach([&](const EntityKeyComponent&) { ++with_unknown; });
+    source.Query<ecs::Read<EntityKeyComponent>, ecs::Read<RtE>>().ForEach([&](const EntityKeyComponent&, const RtE&)
+                                                                          { ++with_unknown; });
+    source.Query<ecs::Read<EntityKeyComponent>, ecs::With<RtTag>>().ForEach([&](const EntityKeyComponent&)
+                                                                            { ++with_unknown; });
     REQUIRE(with_unknown > 0);
 
     WorldStorage reader(partial, store);
     World target;
     KeyIndex target_index;
-    SECTION("Fail") {
+    SECTION("Fail")
+    {
         LoadOptions options;
         CHECK(reader.Load(target, target_index, options, nullptr).Is(ErrorCode::NotFound));
         CHECK(OrderOfKeys(target).Size() == 0);
     }
-    SECTION("SkipAndReport") {
+    SECTION("SkipAndReport")
+    {
         LoadOptions options;
         options.unknown = UnknownPolicy::SkipAndReport;
         Report report;
@@ -407,7 +479,8 @@ TEST_CASE("World round trip: unknown components follow the policy, and KeepOpaqu
         CHECK(report.skipped == with_unknown);
         CHECK(OrderOfKeys(target).Size() == 400);
     }
-    SECTION("KeepOpaque writes the unknown records back unchanged") {
+    SECTION("KeepOpaque writes the unknown records back unchanged")
+    {
         LoadOptions options;
         options.unknown = UnknownPolicy::KeepOpaque;
         Report report;
@@ -424,7 +497,8 @@ TEST_CASE("World round trip: unknown components follow the policy, and KeepOpaqu
     }
 }
 
-TEST_CASE("World round trip: references to a missing entity are an error or a counted null", "[storage][world]") {
+TEST_CASE("World round trip: references to a missing entity are an error or a counted null", "[storage][world]")
+{
     Rig rig;
     World source;
     KeyIndex source_index;
@@ -440,16 +514,18 @@ TEST_CASE("World round trip: references to a missing entity are an error or a co
 
     LoadOptions options;
     options.selection.kind = Selection::Kind::Keys;
-    options.selection.keys.Push(child_key); // the parent is not selected, and the target world lacks it
+    options.selection.keys.Push(child_key);  // the parent is not selected, and the target world lacks it
     World target;
     KeyIndex target_index;
 
-    SECTION("Fail changes nothing") {
+    SECTION("Fail changes nothing")
+    {
         Report report;
         CHECK(storage.Load(target, target_index, options, &report).Is(ErrorCode::MissingReference));
         CHECK(OrderOfKeys(target).Size() == 0);
     }
-    SECTION("NullReference loads the child as a root and counts it") {
+    SECTION("NullReference loads the child as a root and counts it")
+    {
         options.missing = MissingPolicy::NullReference;
         Report report;
         REQUIRE(storage.Load(target, target_index, options, &report).Ok());
@@ -460,9 +536,10 @@ TEST_CASE("World round trip: references to a missing entity are an error or a co
         CHECK_FALSE(target.Has<ecs::Parent>(loaded));
         CHECK_FALSE(target.Has<ParentLink>(loaded));
     }
-    SECTION("a key set that includes the parent is whole") {
+    SECTION("a key set that includes the parent is whole")
+    {
         options.selection.keys.Push(parent_key);
-        options.selection.keys.Push(KeyGenerator::Seeded(77).Next()); // nothing has this key: reported, not an error
+        options.selection.keys.Push(KeyGenerator::Seeded(77).Next());  // nothing has this key: reported, not an error
         Report report;
         REQUIRE(storage.Load(target, target_index, options, &report).Ok());
         CHECK(report.missing_keys == 1);
@@ -470,7 +547,8 @@ TEST_CASE("World round trip: references to a missing entity are an error or a co
     }
 }
 
-TEST_CASE("World round trip: stored parent links in a cycle are rejected and counted", "[storage][world]") {
+TEST_CASE("World round trip: stored parent links in a cycle are rejected and counted", "[storage][world]")
+{
     Rig rig;
     KeyGenerator gen = KeyGenerator::Seeded(2);
     const EntityKey a = gen.Next();
@@ -489,7 +567,8 @@ TEST_CASE("World round trip: stored parent links in a cycle are rejected and cou
     CHECK_FALSE(target.Has<ecs::Parent>(index.Find(b)));
 }
 
-TEST_CASE("World round trip: cancelling stops a save and a load without a trace", "[storage][world]") {
+TEST_CASE("World round trip: cancelling stops a save and a load without a trace", "[storage][world]")
+{
     Rig rig;
     World source;
     KeyIndex source_index;
@@ -513,7 +592,9 @@ TEST_CASE("World round trip: cancelling stops a save and a load without a trace"
     CHECK(OrderOfKeys(target).Size() == 0);
 }
 
-TEST_CASE("World round trip: a full save drops records of entities that are gone; a key set save does not", "[storage][world]") {
+TEST_CASE("World round trip: a full save drops records of entities that are gone; a key set save does not",
+          "[storage][world]")
+{
     Rig rig;
     World world;
     KeyIndex index;
@@ -541,11 +622,13 @@ TEST_CASE("World round trip: a full save drops records of entities that are gone
 }
 
 // A world with transforms, a hierarchy and spatial membership, run through the transform and spatial systems.
-struct SystemRig {
+struct SystemRig
+{
     World world;
     ecs::Schedule schedule;
     KeyIndex index;
-    SystemRig() {
+    SystemRig()
+    {
         world.SetResource(ecs::TransformReport{});
         world.SetResource(spatial::SpatialWorld());
         schedule.Add(ecs::MakeTransformSystem("transforms"));
@@ -555,12 +638,14 @@ struct SystemRig {
     void Frame() { schedule.Run(world, 0.016f); }
 };
 
-TEST_CASE("World round trip: derived state is rebuilt by running the systems once after a load", "[storage][world]") {
+TEST_CASE("World round trip: derived state is rebuilt by running the systems once after a load", "[storage][world]")
+{
     Rig rig;
     SystemRig source;
     KeyGenerator gen = KeyGenerator::Seeded(4);
     Vector<Entity> made;
-    for (u32 i = 0; i < 60; ++i) {
+    for (u32 i = 0; i < 60; ++i)
+    {
         ecs::LocalTransform t;
         t.position = Vec3(static_cast<f32>(i), 1.0f, static_cast<f32>(i % 7));
         spatial::SpatialBounds b;
@@ -569,7 +654,8 @@ TEST_CASE("World round trip: derived state is rebuilt by running the systems onc
         m.sets = 1u << spatial::kRenderSet;
         const Entity e = source.world.Create(EntityKeyComponent{gen.Next()}, t, ecs::WorldTransform{}, b, m);
         REQUIRE(e.IsValid());
-        if (i >= 10) {
+        if (i >= 10)
+        {
             REQUIRE(ecs::SetParent(source.world, e, made[i % 10]) == ecs::HierarchyStatus::Ok);
         }
         made.Push(e);
@@ -585,25 +671,29 @@ TEST_CASE("World round trip: derived state is rebuilt by running the systems onc
     target.Frame();
 
     usize compared = 0;
-    source.world.Query<ecs::Read<EntityKeyComponent>, ecs::Read<ecs::WorldTransform>, ecs::Read<spatial::WorldBounds>>().ForEach(
-        [&](const EntityKeyComponent& k, const ecs::WorldTransform& wt, const spatial::WorldBounds& wb) {
-            const Entity other = target.index.Find(k.key);
-            REQUIRE(other.IsValid());
-            const ecs::WorldTransform* twt = target.world.Peek<ecs::WorldTransform>(other);
-            const spatial::WorldBounds* twb = target.world.Peek<spatial::WorldBounds>(other);
-            REQUIRE(twt != nullptr);
-            REQUIRE(twb != nullptr);
-            CHECK(MemCompare(&wt.matrix, &twt->matrix, sizeof(Mat4)) == 0);
-            CHECK(MemCompare(&wb.box, &twb->box, sizeof(Aabb)) == 0);
-            ++compared;
-        });
+    source.world.Query<ecs::Read<EntityKeyComponent>, ecs::Read<ecs::WorldTransform>, ecs::Read<spatial::WorldBounds>>()
+        .ForEach(
+            [&](const EntityKeyComponent& k, const ecs::WorldTransform& wt, const spatial::WorldBounds& wb)
+            {
+                const Entity other = target.index.Find(k.key);
+                REQUIRE(other.IsValid());
+                const ecs::WorldTransform* twt = target.world.Peek<ecs::WorldTransform>(other);
+                const spatial::WorldBounds* twb = target.world.Peek<spatial::WorldBounds>(other);
+                REQUIRE(twt != nullptr);
+                REQUIRE(twb != nullptr);
+                CHECK(MemCompare(&wt.matrix, &twt->matrix, sizeof(Mat4)) == 0);
+                CHECK(MemCompare(&wb.box, &twb->box, sizeof(Aabb)) == 0);
+                ++compared;
+            });
     CHECK(compared == 60);
-    const spatial::SpatialSetStats s1 = source.world.Resource<spatial::SpatialWorld>().Set(spatial::kRenderSet)->Stats();
-    const spatial::SpatialSetStats s2 = target.world.Resource<spatial::SpatialWorld>().Set(spatial::kRenderSet)->Stats();
+    const spatial::SpatialSetStats
+        s1 = source.world.Resource<spatial::SpatialWorld>().Set(spatial::kRenderSet)->Stats();
+    const spatial::SpatialSetStats
+        s2 = target.world.Resource<spatial::SpatialWorld>().Set(spatial::kRenderSet)->Stats();
     CHECK(s1.static_items + s1.dynamic_items == 60);
     CHECK(s2.static_items + s2.dynamic_items == 60);
     CHECK(target.world.Validate().Ok());
 }
 
-} // namespace
-} // namespace engine_placeholder::storage
+}  // namespace
+}  // namespace engine_placeholder::storage

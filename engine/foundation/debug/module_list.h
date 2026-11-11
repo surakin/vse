@@ -3,7 +3,8 @@
 #include "types.h"
 
 //! The executable and shared libraries loaded into the running process, for naming the module an address belongs to.
-namespace engine_placeholder::debug {
+namespace engine_placeholder::debug
+{
 
 /// Bytes kept of a module's path.
 constexpr usize kMaxModulePathBytes = 256;
@@ -11,7 +12,8 @@ constexpr usize kMaxModulePathBytes = 256;
 /// One loaded executable or shared library.
 ///
 /// - Thread-safety: thread-compatible. A plain value.
-struct LoadedModule {
+struct LoadedModule
+{
     /// The difference between the addresses in the file and the addresses in memory; an address minus this is the
     /// offset a debugger or `addr2line` expects.
     u64 load_bias = 0;
@@ -26,7 +28,8 @@ struct LoadedModule {
 /// Reads the list of loaded modules from the operating system and replaces the one in use.
 ///
 /// Called by [[debug::InitDebugFacilities]]; call it again after loading a library at run time if its addresses are
-/// to be named. Each refresh keeps one small table for the life of the program (a reader may still be using the old one).
+/// to be named. Each refresh keeps one small table for the life of the program (a reader may still be using the old
+/// one).
 ///
 /// - Thread-safety: thread-safe. Not async-signal-safe: it allocates and walks the loader's list.
 void RefreshLoadedModules();
@@ -41,4 +44,4 @@ void RefreshLoadedModules();
 /// - Thread-safety: thread-safe and async-signal-safe: it reads an immutable table.
 bool FindLoadedModule(u64 address, LoadedModule* out);
 
-} // namespace engine_placeholder::debug
+}  // namespace engine_placeholder::debug

@@ -1,6 +1,5 @@
-// Phase 8 Day 112: the reset on a real device: the picture before and after a reset is identical and still matches the blessed
-// golden image, and a loop of resets leaves nothing behind.
-
+// Phase 8 Day 112: the reset on a real device: the picture before and after a reset is identical and still matches the
+// blessed golden image, and a loop of resets leaves nothing behind.
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -15,13 +14,15 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
 
-namespace {
+namespace
+{
 
 constexpr u32 kResetShotW = 320;
 constexpr u32 kResetShotH = 180;
 
 // One return per configuration: code after an unconditional return is a warning (C4702) under /WX.
-bool Sanitized() {
+bool Sanitized()
+{
 #if ENGINE_SANITIZED
     return true;
 #else
@@ -29,19 +30,24 @@ bool Sanitized() {
 #endif
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("The demo picture is identical before and after a device reset and still matches the golden", "[rhi][gpu][golden][reset]") {
-    FOR_EACH_GPU_BACKEND(backend) {
+TEST_CASE("The demo picture is identical before and after a device reset and still matches the golden",
+          "[rhi][gpu][golden][reset]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
         gpu_test::BackendValidation validation(backend);
         reset_rig::Rig rig;
         rig.target.width = kResetShotW;
         rig.target.height = kResetShotH;
-        if (!rig.Create(backend, 540, 300, false, nullptr, ENGINE_RENDERER_DEMO_ASSET_DIR, /*validation=*/true)) {
+        if (!rig.Create(backend, 540, 300, false, nullptr, ENGINE_RENDERER_DEMO_ASSET_DIR, /*validation=*/true))
+        {
             rig.TearDown();
             SKIP("no suitable " << gpu_test::BackendTag(backend) << " device");
         }
-        auto shoot = [&](gpu_test::Image* image) {
+        auto shoot = [&](gpu_test::Image* image)
+        {
             REQUIRE(rig.Render() == FrameStatus::Ok);
             REQUIRE(rig.frame.LastGBufferOk());
             REQUIRE(rig.Read(image));
@@ -51,7 +57,8 @@ TEST_CASE("The demo picture is identical before and after a device reset and sti
         shoot(&before);
 
         // A reset with the same adapter and driver: zero tolerance, the two pictures are the same bytes.
-        const ApplyResult result = rig.ResetDevice(false); // sync validation was on: this is a real change, so a device reset
+        const ApplyResult result = rig.ResetDevice(
+            false);  // sync validation was on: this is a real change, so a device reset
         REQUIRE(result.ok);
         CHECK(result.performed == CostClass::DeviceReset);
         shoot(&after);
@@ -76,11 +83,15 @@ TEST_CASE("The demo picture is identical before and after a device reset and sti
     }
 }
 
-TEST_CASE("Resets in a loop on a real device leave the counts, memory and descriptors where they were", "[rhi][gpu][reset]") {
-    FOR_EACH_GPU_BACKEND(backend) {
+TEST_CASE("Resets in a loop on a real device leave the counts, memory and descriptors where they were",
+          "[rhi][gpu][reset]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
         gpu_test::BackendValidation validation(backend);
         reset_rig::Rig rig;
-        if (!rig.Create(backend, 64, 8, false, nullptr, nullptr, /*validation=*/true)) {
+        if (!rig.Create(backend, 64, 8, false, nullptr, nullptr, /*validation=*/true))
+        {
             rig.TearDown();
             SKIP("no suitable " << gpu_test::BackendTag(backend) << " device");
         }
@@ -89,26 +100,34 @@ TEST_CASE("Resets in a loop on a real device leave the counts, memory and descri
         rhi::ResourceCounts first = rig.host.GetDevice()->Resources();
         const usize owners = rig.registry.Count();
         const int iterations = Sanitized() ? 20 : 100;
-        // Warm the loop up before the baseline: driver caches and allocator pools settle in the first iterations. Memory is compared by its
-        // lowest reading over resets 5 to 9 and over the last five: a leak per reset raises the low point. On Windows (AMD Radeon 860M,
-        // Day 161) the process holds about 130 MiB more after some resets and gives it back a few resets later, while the device's own
-        // memory (checked by ExpectSameCounts) does not change, so one reading can land on a step.
+        // Warm the loop up before the baseline: driver caches and allocator pools settle in the first iterations.
+        // Memory is compared by its lowest reading over resets 5 to 9 and over the last five: a leak per reset raises
+        // the low point. On Windows (AMD Radeon 860M, Day 161) the process holds about 130 MiB more after some resets
+        // and gives it back a few resets later, while the device's own memory (checked by ExpectSameCounts) does not
+        // change, so one reading can land on a step.
         i64 early_low = 0;
         i64 late_low = 0;
         i64 baseline_handles = 0;
-        for (int i = 0; i < iterations; ++i) {
+        for (int i = 0; i < iterations; ++i)
+        {
             INFO("reset " << i);
-            REQUIRE(rig.ResetDevice(i % 2 != 0).ok); // alternates; the first call turns sync validation off
+            REQUIRE(rig.ResetDevice(i % 2 != 0).ok);  // alternates; the first call turns sync validation off
             REQUIRE(rig.Render() == FrameStatus::Ok);
             rig.host.GetDevice()->Quiesce();
             const rhi::ResourceCounts now = rig.host.GetDevice()->Resources();
-            if (i == 0) {
-                first = now; // the first frame after a reset caches its frame and object bind groups; every later reset must match this
+            if (i == 0)
+            {
+                first = now;  // the first frame after a reset caches its frame and object bind groups; every later
+                              // reset must match this
             }
             reset_rig::ExpectSameCounts(now, first);
             CHECK(rig.registry.Count() == owners);
-            if (i == 4) baseline_handles = os::OpenHandleCount();
-            if ((i >= 4 && i < 9) || i >= iterations - 5) {
+            if (i == 4)
+            {
+                baseline_handles = os::OpenHandleCount();
+            }
+            if ((i >= 4 && i < 9) || i >= iterations - 5)
+            {
                 const i64 resident = os::ResidentMemoryKiB();
                 i64& low = i < 9 ? early_low : late_low;
                 low = (low == 0 || resident < low) ? resident : low;
@@ -116,17 +135,19 @@ TEST_CASE("Resets in a loop on a real device leave the counts, memory and descri
         }
         const i64 drift_kib = late_low - early_low;
         const i64 handle_drift = os::OpenHandleCount() - baseline_handles;
-        WARN("after " << iterations << " resets: lowest resident " << early_low << " KiB over resets 5-9, " << late_low << " KiB over the last five (drift "
-                      << drift_kib << " KiB), handle drift " << handle_drift << ", last reset "
-                      << rig.R().Stats().last_reset_ms << " ms");
-        // A leak per reset would show about one handle per reset. Direct3D 12's drift over 100 resets ranged from -1 to 3 on the Radeon 860M
-        // (Day 172, five runs, one of them beside other tests), Vulkan's stays at 0.
+        WARN("after " << iterations << " resets: lowest resident " << early_low << " KiB over resets 5-9, " << late_low
+                      << " KiB over the last five (drift " << drift_kib << " KiB), handle drift " << handle_drift
+                      << ", last reset " << rig.R().Stats().last_reset_ms << " ms");
+        // A leak per reset would show about one handle per reset. Direct3D 12's drift over 100 resets ranged from -1 to
+        // 3 on the Radeon 860M (Day 172, five runs, one of them beside other tests), Vulkan's stays at 0.
         CHECK(handle_drift <= (backend == rhi::Backend::Dx12 ? 4 : 2));
-        if (!Sanitized() && early_low != 0 && late_low != 0) {
+        if (!Sanitized() && early_low != 0 && late_low != 0)
+        {
             i64 allowed_kib = 8 * 1024;
-    #if ENGINE_PLATFORM_WINDOWS
-            allowed_kib += 4 * 64 * 1024; // the old devices' memory Windows still counts in the process: up to four 64 MiB blocks (Day 161)
-    #endif
+#if ENGINE_PLATFORM_WINDOWS
+            allowed_kib += 4 * 64 * 1024;  // the old devices' memory Windows still counts in the process: up to four 64
+                                           // MiB blocks (Day 161)
+#endif
             CHECK(drift_kib < allowed_kib);
         }
         CHECK(rig.R().Stats().resets == static_cast<u64>(iterations));

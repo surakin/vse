@@ -5,10 +5,11 @@
 
 //! `HRESULT`s of the D3D12 and DXGI calls the backend makes, as names for logs and as the device-removed test.
 
-namespace engine_placeholder::rhi::dx12 {
+namespace engine_placeholder::rhi::dx12
+{
 
-/// Returns a short name for an `HRESULT` the backend can meet (`S_OK`, `E_OUTOFMEMORY`, `E_INVALIDARG`, `DXGI_ERROR_DEVICE_REMOVED`,
-/// `DXGI_ERROR_DEVICE_RESET`, `DXGI_ERROR_DEVICE_HUNG`, `DXGI_ERROR_UNSUPPORTED`, ...).
+/// Returns a short name for an `HRESULT` the backend can meet (`S_OK`, `E_OUTOFMEMORY`, `E_INVALIDARG`,
+/// `DXGI_ERROR_DEVICE_REMOVED`, `DXGI_ERROR_DEVICE_RESET`, `DXGI_ERROR_DEVICE_HUNG`, `DXGI_ERROR_UNSUPPORTED`, ...).
 ///
 /// - Param result: the code.
 /// - Returns: a static name, or `"unknown HRESULT"` for a code not in the table (log it with `%08lx` too).
@@ -25,4 +26,4 @@ const char* HresultName(HRESULT result);
 /// - Thread-safety: thread-safe.
 bool IsDeviceLostResult(HRESULT result);
 
-} // namespace engine_placeholder::rhi::dx12
+}  // namespace engine_placeholder::rhi::dx12

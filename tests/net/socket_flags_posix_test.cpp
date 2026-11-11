@@ -1,5 +1,5 @@
-// Every socket is non-blocking and close-on-exec from creation, including accepted ones (Phase 20 Day 268). Reads the descriptor flags directly,
-// which only this POSIX test may do.
+// Every socket is non-blocking and close-on-exec from creation, including accepted ones (Phase 20 Day 268). Reads the
+// descriptor flags directly, which only this POSIX test may do.
 
 #include <fcntl.h>
 
@@ -7,20 +7,25 @@
 
 #include "net/socket.h"
 
-namespace engine_placeholder::net {
-namespace {
+namespace engine_placeholder::net
+{
+namespace
+{
 
-bool NonBlockingAndCloseOnExec(const Socket& s) {
+bool NonBlockingAndCloseOnExec(const Socket& s)
+{
     const int fd = static_cast<int>(s.NativeHandle());
     const int status = ::fcntl(fd, F_GETFL);
     const int descriptor = ::fcntl(fd, F_GETFD);
     return status >= 0 && (status & O_NONBLOCK) != 0 && descriptor >= 0 && (descriptor & FD_CLOEXEC) != 0;
 }
 
-TEST_CASE("Sockets are non-blocking and close-on-exec from creation, accepted ones too", "[network][socket]") {
+TEST_CASE("Sockets are non-blocking and close-on-exec from creation, accepted ones too", "[network][socket]")
+{
     Socket listener;
     REQUIRE(Socket::OpenTcp(AddressFamily::V4, &listener).Ok());
-    if (listener.Bind(Endpoint(Address::Loopback(AddressFamily::V4), 0)).Failed()) {
+    if (listener.Bind(Endpoint(Address::Loopback(AddressFamily::V4), 0)).Failed())
+    {
         SKIP("loopback sockets are unavailable here");
     }
     REQUIRE(listener.Listen().Ok());
@@ -38,7 +43,8 @@ TEST_CASE("Sockets are non-blocking and close-on-exec from creation, accepted on
     Socket accepted;
     Endpoint peer;
     Status a = listener.Accept(&accepted, &peer);
-    for (int i = 0; i < 2000 && a.Is(ErrorCode::WouldBlock); ++i) {
+    for (int i = 0; i < 2000 && a.Is(ErrorCode::WouldBlock); ++i)
+    {
         a = listener.Accept(&accepted, &peer);
     }
     REQUIRE(a.Ok());

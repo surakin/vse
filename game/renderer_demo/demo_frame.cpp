@@ -6,15 +6,23 @@
 #include "io/path.h"
 #include "rhi/rhi_log.h"
 
-namespace renderer_demo {
+namespace renderer_demo
+{
 
 using namespace engine_placeholder::renderer;
 
 DemoFrame::DemoFrame() = default;
-DemoFrame::~DemoFrame() { Destroy(); }
+DemoFrame::~DemoFrame()
+{
+    Destroy();
+}
 
-void DemoFrame::Destroy() {
-    if (device_ != nullptr) device_->WaitIdle(); // frames may still be in flight
+void DemoFrame::Destroy()
+{
+    if (device_ != nullptr)
+    {
+        device_->WaitIdle();  // frames may still be in flight
+    }
     // Reverse order of creation: the renderer (and its pooled textures) first, then the passes, then what they borrow.
     renderer_.Reset();
     text_.Destroy();
@@ -32,10 +40,12 @@ void DemoFrame::Destroy() {
     device_ = nullptr;
 }
 
-bool DemoFrame::Create(const FrameSetup& setup) {
+bool DemoFrame::Create(const FrameSetup& setup)
+{
     Destroy();
     char error[256];
-    if (!CheckGBufferFormats(setup.device, error, sizeof(error))) {
+    if (!CheckGBufferFormats(setup.device, error, sizeof(error)))
+    {
         rhi::RhiLogV(LogVerbosity::Error, "renderer_demo: %s", error);
         return false;
     }
@@ -47,7 +57,8 @@ bool DemoFrame::Create(const FrameSetup& setup) {
     md.prewarm_pipelines = setup.prewarm_pipelines;
     materials_ = MakeUnique<MaterialSystem>(setup.device, md);
     frame_ = MakeUnique<FrameResources>(setup.device, setup.max_objects, setup.max_lights);
-    if (!frame_->RegisterWith(setup.resources) || !materials_->Valid() || !frame_->Valid()) {
+    if (!frame_->RegisterWith(setup.resources) || !materials_->Valid() || !frame_->Valid())
+    {
         rhi::RhiLogV(LogVerbosity::Error, "renderer_demo: could not create the material system or the frame buffers");
         Destroy();
         return false;
@@ -57,8 +68,11 @@ bool DemoFrame::Create(const FrameSetup& setup) {
     lighting_ = MakeUnique<LightingPass>(setup.device, materials_.Get(), frame_.Get());
     tonemap_ = MakeUnique<TonemapPass>(setup.device);
     debug_view_ = MakeUnique<GBufferDebugView>(setup.device);
-    const bool registered = lighting_->RegisterWith(setup.resources) && tonemap_->RegisterWith(setup.resources) && debug_view_->RegisterWith(setup.resources);
-    if (!registered || !templates_.plain.IsValid() || !templates_.colored.IsValid() || !lighting_->Valid() || !tonemap_->Valid() || !debug_view_->Valid()) {
+    const bool registered = lighting_->RegisterWith(setup.resources) && tonemap_->RegisterWith(setup.resources) &&
+                            debug_view_->RegisterWith(setup.resources);
+    if (!registered || !templates_.plain.IsValid() || !templates_.colored.IsValid() || !lighting_->Valid() ||
+        !tonemap_->Valid() || !debug_view_->Valid())
+    {
         rhi::RhiLogV(LogVerbosity::Error, "renderer_demo: could not create the render passes");
         Destroy();
         return false;
@@ -76,46 +90,71 @@ bool DemoFrame::Create(const FrameSetup& setup) {
     rd.build = &DemoFrame::Build;
     rd.build_user = this;
     renderer_ = MakeUnique<Renderer>(rd);
-    if (setup.font_path != nullptr) {
-        // The overlay is optional: a missing font or a device without the text shaders leaves the frame without it, with the reason logged.
+    if (setup.font_path != nullptr)
+    {
+        // The overlay is optional: a missing font or a device without the text shaders leaves the frame without it,
+        // with the reason logged.
         text::FontOptions fo;
-        if (font_library_.IsInitialized() || font_library_.Initialize().Ok()) {
-            const text::Status opened = text::Font::OpenFile(font_library_, io::Path(StringView(setup.font_path, CStrLength(setup.font_path))), fo, &font_);
-            if (opened.Ok() && !text_.Create(setup.device, &atlas_, renderer::TextRendererDesc{rhi::Format::RGBA8_SRGB, 4096}, setup.resources)) {
+        if (font_library_.IsInitialized() || font_library_.Initialize().Ok())
+        {
+            const text::Status opened = text::Font::OpenFile(
+                font_library_, io::Path(StringView(setup.font_path, CStrLength(setup.font_path))), fo, &font_);
+            if (opened.Ok() &&
+                !text_.Create(setup.device, &atlas_, renderer::TextRendererDesc{rhi::Format::RGBA8_SRGB, 4096},
+                              setup.resources))
+            {
                 font_.Close();
-            } else if (!opened.Ok()) {
-                rhi::RhiLogV(LogVerbosity::Warn, "renderer_demo: the overlay font '%s' did not open: %s", setup.font_path, opened.message);
+            }
+            else if (!opened.Ok())
+            {
+                rhi::RhiLogV(LogVerbosity::Warn, "renderer_demo: the overlay font '%s' did not open: %s",
+                             setup.font_path, opened.message);
             }
         }
     }
     return true;
 }
 
-bool DemoFrame::SetOverlay(bool on, StringView greeting, StringView status) {
-    if (!font_.IsOpen()) {
+bool DemoFrame::SetOverlay(bool on, StringView greeting, StringView status)
+{
+    if (!font_.IsOpen())
+    {
         return false;
     }
     overlay_on_ = on;
     greeting_.Clear();
-    for (usize i = 0; i < greeting.Length(); ++i) greeting_.Push(greeting[i]);
+    for (usize i = 0; i < greeting.Length(); ++i)
+    {
+        greeting_.Push(greeting[i]);
+    }
     status_.Clear();
-    for (usize i = 0; i < status.Length(); ++i) status_.Push(status[i]);
+    for (usize i = 0; i < status.Length(); ++i)
+    {
+        status_.Push(status[i]);
+    }
     return true;
 }
 
-void DemoFrame::Rebind(rhi::Device* device, rhi::Swapchain* swapchain) {
-    if (!renderer_) return;
+void DemoFrame::Rebind(rhi::Device* device, rhi::Swapchain* swapchain)
+{
+    if (!renderer_)
+    {
+        return;
+    }
     device_ = device;
     renderer_->Rebind(device, swapchain);
 }
 
-FrameStatus DemoFrame::Render(const RenderScene* scene, const Camera* camera, const FrameTarget* offscreen) {
+FrameStatus DemoFrame::Render(const RenderScene* scene, const Camera* camera, const FrameTarget* offscreen)
+{
     return renderer_->RenderFrame(scene, camera, offscreen);
 }
 
-bool DemoFrame::Build(const FrameContext& context, void* user) {
+bool DemoFrame::Build(const FrameContext& context, void* user)
+{
     DemoFrame* self = static_cast<DemoFrame*>(user);
-    if (context.scene == nullptr || context.camera == nullptr) {
+    if (context.scene == nullptr || context.camera == nullptr)
+    {
         return false;
     }
     self->materials_->BeginFrame(context.frame_index);
@@ -126,13 +165,19 @@ bool DemoFrame::Build(const FrameContext& context, void* user) {
     u32 scene_width = context.width;
     u32 scene_height = context.height;
     rhi::Format scene_format = context.format;
-    if (self->compose_.scene_target != nullptr && !self->compose_.scene_target(context, self->compose_.user, &scene_target, &scene_width, &scene_height, &scene_format)) {
+    if (self->compose_.scene_target != nullptr &&
+        !self->compose_.scene_target(context, self->compose_.user, &scene_target, &scene_width, &scene_height,
+                                     &scene_format))
+    {
         return false;
     }
-    const FrameData data = MakeFrameData(*context.camera, scene_width, scene_height, self->time_, self->delta_, context.frame_index);
+    const FrameData data = MakeFrameData(*context.camera, scene_width, scene_height, self->time_, self->delta_,
+                                         context.frame_index);
     self->frame_->WriteFrameData(data);
-    self->gbuffer_ok_ = self->gbuffer_->Prepare(*context.scene, Frustum::FromViewProjection(context.camera->ViewProjection()));
-    if (!self->gbuffer_ok_) {
+    self->gbuffer_ok_ = self->gbuffer_->Prepare(*context.scene,
+                                                Frustum::FromViewProjection(context.camera->ViewProjection()));
+    if (!self->gbuffer_ok_)
+    {
         rhi::RhiLogV(LogVerbosity::Warn, "renderer_demo: some objects were not drawn: %s", self->gbuffer_->LastError());
     }
     self->gbuffer_stats_ = self->gbuffer_->Stats();
@@ -140,15 +185,20 @@ bool DemoFrame::Build(const FrameContext& context, void* user) {
     self->frame_->Flush();
 
     const GBufferTargets targets = self->gbuffer_->AddToGraph(context.graph, scene_width, scene_height);
-    if (self->gbuffer_layer_ >= 0) {
+    if (self->gbuffer_layer_ >= 0)
+    {
         self->debug_view_->SetInverseViewProjection(data.inverse_view_projection);
-        self->debug_view_->AddToGraph(context.graph, targets, static_cast<GBufferLayer>(self->gbuffer_layer_), scene_target, scene_format,
-                                      context.camera->near_plane, context.camera->far_plane);
-    } else {
+        self->debug_view_->AddToGraph(context.graph, targets, static_cast<GBufferLayer>(self->gbuffer_layer_),
+                                      scene_target, scene_format, context.camera->near_plane,
+                                      context.camera->far_plane);
+    }
+    else
+    {
         const GraphResource accum = self->lighting_->AddToGraph(context.graph, targets, scene_width, scene_height);
         self->tonemap_->AddToGraph(context.graph, accum, scene_target, scene_format, self->exposure_);
     }
-    if (self->overlay_on_ && self->font_.IsOpen() && self->text_.Live()) {
+    if (self->overlay_on_ && self->font_.IsOpen() && self->text_.Live())
+    {
         // After the passes that wrote the target (the tonemap or the debug view), over their picture.
         // Sizes and margins in logical pixels, times the display scale (TextStyle sizes are device pixels).
         const f32 scale = self->overlay_scale_;
@@ -161,14 +211,17 @@ bool DemoFrame::Build(const FrameContext& context, void* user) {
         small.pixel_size = px(14);
         small.color = 0xFFC8C8C8u;
         self->text_.BeginFrame();
-        self->text_.Draw(StringView(self->greeting_.Data(), self->greeting_.Size()), big, text::LayoutOptions{}, static_cast<f32>(px(16)), static_cast<f32>(px(12)));
-        self->text_.Draw(StringView(self->status_.Data(), self->status_.Size()), small, text::LayoutOptions{}, static_cast<f32>(px(16)), static_cast<f32>(px(52)));
+        self->text_.Draw(StringView(self->greeting_.Data(), self->greeting_.Size()), big, text::LayoutOptions{},
+                         static_cast<f32>(px(16)), static_cast<f32>(px(12)));
+        self->text_.Draw(StringView(self->status_.Data(), self->status_.Size()), small, text::LayoutOptions{},
+                         static_cast<f32>(px(16)), static_cast<f32>(px(52)));
         self->text_.AddToGraph(context.graph, context.target, context.format, context.width, context.height);
     }
-    if (self->compose_.after_scene != nullptr) {
+    if (self->compose_.after_scene != nullptr)
+    {
         self->compose_.after_scene(context, self->compose_.user);
     }
     return true;
 }
 
-} // namespace renderer_demo
+}  // namespace renderer_demo

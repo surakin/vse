@@ -7,12 +7,14 @@
 
 //! Recording interface for GPU commands, and the structures its commands take.
 
-namespace engine_placeholder::rhi {
+namespace engine_placeholder::rhi
+{
 
 /// A viewport in framebuffer pixels with a depth range.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct Viewport {
+struct Viewport
+{
     /// Left edge in pixels.
     f32 x = 0.0f;
     /// Top edge in pixels.
@@ -30,7 +32,8 @@ struct Viewport {
 /// A scissor rectangle in framebuffer pixels.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct ScissorRect {
+struct ScissorRect
+{
     /// Left edge in pixels.
     i32 x = 0;
     /// Top edge in pixels.
@@ -44,7 +47,8 @@ struct ScissorRect {
 /// One color attachment of a rendering pass.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct ColorAttachmentDesc {
+struct ColorAttachmentDesc
+{
     /// The texture rendered to; must be in `ResourceState::ColorAttachment` and created with `ColorAttachment` usage.
     TextureHandle texture;
     /// What happens to the contents at the start of the pass.
@@ -61,7 +65,8 @@ struct ColorAttachmentDesc {
 /// A combined depth-stencil texture's stencil aspect follows the depth load and store ops, and a clear sets it to 0.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct DepthAttachmentDesc {
+struct DepthAttachmentDesc
+{
     /// The depth texture; must be in `ResourceState::DepthAttachment` and created with `DepthAttachment` usage.
     TextureHandle texture;
     /// What happens to the contents at the start of the pass.
@@ -77,7 +82,8 @@ struct DepthAttachmentDesc {
 /// All attachments must have the same extent, which becomes the default viewport and scissor extent.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct RenderingDesc {
+struct RenderingDesc
+{
     /// Color attachments; the first `color_count` are used.
     ColorAttachmentDesc color[kMaxColorAttachments];
     /// Number of valid entries in `color`.
@@ -89,14 +95,16 @@ struct RenderingDesc {
 /// Describes how a buffer and one mip level of one array layer of a texture are copied to or from each other.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct BufferTextureCopy {
+struct BufferTextureCopy
+{
     /// Byte offset of the first texel row in the buffer; a multiple of the texel size and of
     /// `DeviceCaps::buffer_texture_copy_offset_alignment`.
     u64 buffer_offset = 0;
     /// Bytes between consecutive texel rows (block rows for compressed formats) in the buffer; 0 means tightly packed.
-    /// The resulting pitch must be a multiple of the texel size and of `DeviceCaps::buffer_texture_copy_row_pitch_alignment`,
-    /// so a portable caller pads its rows (Direct3D 12 requires 256-byte aligned rows). 0 is therefore legal only when
-    /// the tight row size already meets the alignment (a 64-texel RGBA8 row does; a 16-texel one does not).
+    /// The resulting pitch must be a multiple of the texel size and of
+    /// `DeviceCaps::buffer_texture_copy_row_pitch_alignment`, so a portable caller pads its rows (Direct3D 12 requires
+    /// 256-byte aligned rows). 0 is therefore legal only when the tight row size already meets the alignment (a
+    /// 64-texel RGBA8 row does; a 16-texel one does not).
     u32 buffer_row_pitch = 0;
     /// The mip level of the texture.
     u32 mip_level = 0;
@@ -118,7 +126,8 @@ struct BufferTextureCopy {
 /// - Thread-safety: thread-compatible. Record one list from one thread; different lists can be recorded on
 ///   different threads at the same time.
 /// - Ownership: a list is owned by the device and stays valid until the next `Device::BeginFrame`.
-class CommandList {
+class CommandList
+{
 public:
     virtual ~CommandList() = default;
 
@@ -137,7 +146,8 @@ public:
     /// - Param src_offset: byte offset in `src`.
     /// - Param dst_offset: byte offset in `dst`.
     /// - Param size: bytes to copy; both ranges must lie inside their buffers.
-    /// - Aborts: outside `Begin`/`End`, inside a rendering pass, a stale handle, a wrong state or usage, or a range outside a buffer.
+    /// - Aborts: outside `Begin`/`End`, inside a rendering pass, a stale handle, a wrong state or usage, or a range
+    /// outside a buffer.
     virtual void CopyBuffer(BufferHandle src, BufferHandle dst, u64 src_offset, u64 dst_offset, u64 size) = 0;
 
     /// Copies the whole of one mip level of one layer from a buffer into a texture.
@@ -185,7 +195,8 @@ public:
     ///
     /// The texture must be in `ShaderRead`, with level 0 (of every layer) holding the picture; it is in `ShaderRead`
     /// afterwards and the previous contents of the other levels are replaced. The null backend checks the state when
-    /// the list is submitted; the Vulkan backend trusts you and relies on its validation layers to catch a mistake. Check
+    /// the list is submitted; the Vulkan backend trusts you and relies on its validation layers to catch a mistake.
+    /// Check
     /// [[rhi::Device::CanGenerateMips]] for the format first.
     ///
     /// - Param texture: a texture created with `Sampled`, `CopySrc` and `CopyDst` usage and more than one mip level.
@@ -246,7 +257,8 @@ public:
     /// - Param slot: the vertex binding index, below `kMaxVertexBindings`.
     /// - Param buffer: a buffer created with `Vertex` usage, in state `VertexBuffer` at draw time.
     /// - Param offset: byte offset of the first element.
-    /// - Aborts: outside `Begin`/`End`, a stale handle, a missing usage flag, a slot out of range, or an offset past the end.
+    /// - Aborts: outside `Begin`/`End`, a stale handle, a missing usage flag, a slot out of range, or an offset past
+    /// the end.
     virtual void SetVertexBuffer(u32 slot, BufferHandle buffer, u64 offset) = 0;
 
     /// Binds the index buffer.
@@ -299,4 +311,4 @@ public:
     virtual void PopDebugLabel() = 0;
 };
 
-} // namespace engine_placeholder::rhi
+}  // namespace engine_placeholder::rhi

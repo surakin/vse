@@ -6,13 +6,16 @@
 //! The choices made when creating a swapchain, as pure functions over plain capability data so they can be tested
 //! without a GPU or a window.
 
-namespace engine_placeholder::rhi::vulkan {
+namespace engine_placeholder::rhi::vulkan
+{
 
 /// A surface format choice and whether it was the preferred kind.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct SurfaceFormatChoice {
-    /// The format and color space to create the swapchain with; `format` is `VK_FORMAT_UNDEFINED` if nothing usable was offered.
+struct SurfaceFormatChoice
+{
+    /// The format and color space to create the swapchain with; `format` is `VK_FORMAT_UNDEFINED` if nothing usable was
+    /// offered.
     VkSurfaceFormatKHR format = {VK_FORMAT_UNDEFINED, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
     /// True if a sRGB 8-bit format with the sRGB-nonlinear color space was found; false if a fallback was taken.
     bool preferred = false;
@@ -32,7 +35,8 @@ SurfaceFormatChoice ChooseSurfaceFormat(const VkSurfaceFormatKHR* formats, usize
 /// A surface format choice made for a request that may ask for a format and for HDR.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct RequestedFormatChoice {
+struct RequestedFormatChoice
+{
     /// The format and color space to create the swapchain with; `VK_FORMAT_UNDEFINED` if nothing usable was offered.
     VkSurfaceFormatKHR format = {VK_FORMAT_UNDEFINED, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
     /// The RHI color space of the choice.
@@ -43,16 +47,17 @@ struct RequestedFormatChoice {
 
 /// Chooses the surface format for a request.
 ///
-/// `hdr` first: `ScRgbLinear` needs `R16G16B16A16_SFLOAT` in `EXTENDED_SRGB_LINEAR`; `Hdr10` is never granted (the RHI has
-/// no 10-bit format yet). Then `requested` (`Undefined` means no preference) must be offered in the sRGB-nonlinear color
-/// space. Whatever cannot be granted falls back to [[rhi::vulkan::ChooseSurfaceFormat]] and sets `fallback_note`.
+/// `hdr` first: `ScRgbLinear` needs `R16G16B16A16_SFLOAT` in `EXTENDED_SRGB_LINEAR`; `Hdr10` is never granted (the RHI
+/// has no 10-bit format yet). Then `requested` (`Undefined` means no preference) must be offered in the sRGB-nonlinear
+/// color space. Whatever cannot be granted falls back to [[rhi::vulkan::ChooseSurfaceFormat]] and sets `fallback_note`.
 ///
 /// - Param formats: the formats the surface supports.
 /// - Param count: number of entries.
 /// - Param requested: the preferred [[rhi::Format]].
 /// - Param hdr: the dynamic range wanted.
 /// - Returns: the choice.
-RequestedFormatChoice ChooseRequestedSurfaceFormat(const VkSurfaceFormatKHR* formats, usize count, Format requested, HdrMode hdr);
+RequestedFormatChoice ChooseRequestedSurfaceFormat(const VkSurfaceFormatKHR* formats, usize count, Format requested,
+                                                   HdrMode hdr);
 
 /// Fills the capability description from what the surface offers.
 ///
@@ -62,8 +67,8 @@ RequestedFormatChoice ChooseRequestedSurfaceFormat(const VkSurfaceFormatKHR* for
 /// - Param mode_count: number of entries.
 /// - Param out: receives the capabilities.
 /// - Ownership: `out` belongs to the caller.
-void FillSwapchainCaps(const VkSurfaceFormatKHR* formats, usize format_count, const VkPresentModeKHR* modes, usize mode_count,
-                       SwapchainCaps* out);
+void FillSwapchainCaps(const VkSurfaceFormatKHR* formats, usize format_count, const VkPresentModeKHR* modes,
+                       usize mode_count, SwapchainCaps* out);
 
 /// Chooses the presentation mode.
 ///
@@ -106,4 +111,4 @@ VkCompositeAlphaFlagBitsKHR ChooseCompositeAlpha(VkCompositeAlphaFlagsKHR suppor
 /// - Returns: the usage flags, or 0 if the surface cannot be rendered to.
 VkImageUsageFlags ChooseImageUsage(VkImageUsageFlags supported);
 
-} // namespace engine_placeholder::rhi::vulkan
+}  // namespace engine_placeholder::rhi::vulkan

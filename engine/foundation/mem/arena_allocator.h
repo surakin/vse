@@ -5,7 +5,8 @@
 //! Linear bump allocator backed by a single mmap'd block. Individual
 //! allocations are never freed; Reset rewinds the bump pointer, FreeAll
 //! unmaps the whole block.
-namespace engine_placeholder {
+namespace engine_placeholder
+{
 
 /// Linear bump allocator over one fixed-capacity block of virtual memory.
 ///
@@ -17,7 +18,8 @@ namespace engine_placeholder {
 /// - Ownership: owns the backing block; it is released by `FreeAll` or the
 ///   destructor. Pointers returned by `Alloc` are invalidated by `Reset`
 ///   and `FreeAll`.
-class ArenaAllocator {
+class ArenaAllocator
+{
 public:
     /// Reserves a block of `capacity` bytes from the OS.
     ///
@@ -58,4 +60,4 @@ private:
     usize offset_ = 0;
 };
 
-} // namespace engine_placeholder
+}  // namespace engine_placeholder

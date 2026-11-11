@@ -1,6 +1,7 @@
 #pragma once
 
-//! Component types: what the world knows about a type stored in an entity's rows, registered without run-time type information.
+//! Component types: what the world knows about a type stored in an entity's rows, registered without run-time type
+//! information.
 
 #include "lang/new.h"
 #include "lang/traits.h"
@@ -8,7 +9,8 @@
 #include "sync/mutex.h"
 #include "types.h"
 
-namespace engine_placeholder::ecs {
+namespace engine_placeholder::ecs
+{
 
 /// A component type's number: an index into the process-wide registry. Stable for the process, not across processes.
 using ComponentId = u16;
@@ -26,14 +28,16 @@ inline constexpr usize kMaxComponentAlign = 64;
 ///
 /// - Thread-safety: thread-compatible plain data; the entries of the registry are immutable after registration.
 /// - Ownership: `name` is borrowed from static storage.
-struct TypeInfo {
+struct TypeInfo
+{
     /// `sizeof(T)`, 0 for a tag.
     usize size = 0;
     /// `alignof(T)`, 1 for a tag.
     usize align = 1;
     /// True for an empty type: it marks an entity and occupies no memory in a chunk.
     bool is_tag = false;
-    /// True when the bytes can be copied to move an object (trivially copyable and destructible): columns of such types move with `MemCopy`.
+    /// True when the bytes can be copied to move an object (trivially copyable and destructible): columns of such types
+    /// move with `MemCopy`.
     bool trivially_relocatable = false;
     /// Move-constructs the object at `destination` from `source` (does not destroy the source).
     void (*move_construct)(void* destination, void* source) = nullptr;
@@ -41,7 +45,8 @@ struct TypeInfo {
     void (*destroy)(void* object) = nullptr;
     /// Default-constructs an object at the address, or null when the type has no default constructor.
     void (*default_construct)(void* where) = nullptr;
-    /// True when the type declares `static constexpr bool kTrackRemoval = true`: the world keeps a short log of every removal of it (see [[ecs::World::RemovedCount]]).
+    /// True when the type declares `static constexpr bool kTrackRemoval = true`: the world keeps a short log of every
+    /// removal of it (see [[ecs::World::RemovedCount]]).
     bool track_removal = false;
     /// The type's `kComponentName` when it declares one, else "component#N".
     const char* name = nullptr;
@@ -49,10 +54,12 @@ struct TypeInfo {
 
 /// The process-wide table of component types, filled when a type is first used.
 ///
-/// - Thread-safety: thread-safe. `Register` serializes; `Info` and `Count` may be called while another thread registers (an entry is
+/// - Thread-safety: thread-safe. `Register` serializes; `Info` and `Count` may be called while another thread registers
+/// (an entry is
 ///   published before the count that covers it).
 /// - Ownership: owns the entries and their names; references from `Info` stay valid for the life of the registry.
-class ComponentRegistry {
+class ComponentRegistry
+{
 public:
     /// An empty registry (tests use their own; programs use `Global()`).
     ComponentRegistry() = default;
@@ -65,7 +72,8 @@ public:
     /// Adds a type and returns its id.
     ///
     /// - Param info: the type; `name` may be null (then "component#N" is made).
-    /// - Returns: the new id, or [[ecs::kInvalidComponent]] when [[ecs::kMaxComponentTypes]] types are registered (counted in `Refused`).
+    /// - Returns: the new id, or [[ecs::kInvalidComponent]] when [[ecs::kMaxComponentTypes]] types are registered
+    /// (counted in `Refused`).
     ComponentId Register(const TypeInfo& info);
 
     /// The entry for `id`.
@@ -86,7 +94,8 @@ private:
     Atomic<u64> refused_{0};
 };
 
-namespace detail {
+namespace detail
+{
 
 template <class T>
 concept HasComponentName = requires { static_cast<const char*>(T::kComponentName); };
@@ -94,21 +103,21 @@ concept HasComponentName = requires { static_cast<const char*>(T::kComponentName
 template <class T>
 concept HasTrackRemoval = requires { static_cast<bool>(T::kTrackRemoval); };
 
-template <class T>
-void MoveConstructComponent(void* destination, void* source) {
+template <class T> void MoveConstructComponent(void* destination, void* source)
+{
     ConstructAt<T>(destination, static_cast<T&&>(*static_cast<T*>(source)));
 }
-template <class T>
-void DestroyComponent(void* object) {
+template <class T> void DestroyComponent(void* object)
+{
     static_cast<T*>(object)->~T();
 }
-template <class T>
-void DefaultConstructComponent(void* where) {
+template <class T> void DefaultConstructComponent(void* where)
+{
     ConstructAt<T>(where);
 }
 
-template <class T>
-ComponentId RegisterComponent() {
+template <class T> ComponentId RegisterComponent()
+{
     static_assert(!IsReference<T>, "a component type must not be a reference");
     static_assert(!IsArray<T>, "a component type must not be an array; wrap it in a struct");
     static_assert(!IsConst<T> && !IsVolatile<T>, "a component type must not be const or volatile");
@@ -122,34 +131,42 @@ ComponentId RegisterComponent() {
     info.trivially_relocatable = IsTriviallyCopyable<T> && IsTriviallyDestructible<T>;
     info.move_construct = &MoveConstructComponent<T>;
     info.destroy = &DestroyComponent<T>;
-    if constexpr (IsDefaultConstructible<T>) {
+    if constexpr (IsDefaultConstructible<T>)
+    {
         info.default_construct = &DefaultConstructComponent<T>;
     }
-    if constexpr (HasTrackRemoval<T>) {
+    if constexpr (HasTrackRemoval<T>)
+    {
         static_assert(!IsEmpty<T>, "a component that tracks removal must carry data (a tag has no value to keep)");
-        static_assert(IsTriviallyCopyable<T>, "a component that tracks removal must be trivially copyable: the log keeps its bytes");
-        static_assert(IsDefaultConstructible<T>, "a component that tracks removal must be default constructible: a log entry is read into a fresh value");
+        static_assert(IsTriviallyCopyable<T>,
+                      "a component that tracks removal must be trivially copyable: the log keeps its bytes");
+        static_assert(
+            IsDefaultConstructible<T>,
+            "a component that tracks removal must be default constructible: a log entry is read into a fresh value");
         info.track_removal = T::kTrackRemoval;
     }
-    if constexpr (HasComponentName<T>) {
+    if constexpr (HasComponentName<T>)
+    {
         info.name = static_cast<const char*>(T::kComponentName);
     }
     return ComponentRegistry::Global().Register(info);
 }
 
-} // namespace detail
+}  // namespace detail
 
 /// The id of component type `T`, registering it on first use.
 ///
-/// `T` must be move constructible and destructible, not a reference, array, const or volatile type, and aligned to at most 64 bytes
-/// (each is a compile-time error). An empty type is a tag. A type may declare `static constexpr const char* kComponentName` to be named in logs.
+/// `T` must be move constructible and destructible, not a reference, array, const or volatile type, and aligned to at
+/// most 64 bytes (each is a compile-time error). An empty type is a tag. A type may declare `static constexpr const
+/// char* kComponentName` to be named in logs.
 ///
-/// - Returns: the id, or [[ecs::kInvalidComponent]] when the registry was full when `T` was first used (the same answer every time).
+/// - Returns: the id, or [[ecs::kInvalidComponent]] when the registry was full when `T` was first used (the same answer
+/// every time).
 /// - Thread-safety: thread-safe.
-template <class T>
-ComponentId ComponentOf() {
+template <class T> ComponentId ComponentOf()
+{
     static const ComponentId id = detail::RegisterComponent<T>();
     return id;
 }
 
-} // namespace engine_placeholder::ecs
+}  // namespace engine_placeholder::ecs

@@ -3,10 +3,11 @@
 #include "containers/vector.h"
 #include "types.h"
 
-//! The Direct3D 12 pipeline cache file's rules (Phase 13 Day 167), as pure functions so they are tested without a GPU: its name, its
-//! header, and the names pipelines are stored under in the `ID3D12PipelineLibrary` it holds.
+//! The Direct3D 12 pipeline cache file's rules (Phase 13 Day 167), as pure functions so they are tested without a GPU:
+//! its name, its header, and the names pipelines are stored under in the `ID3D12PipelineLibrary` it holds.
 
-namespace engine_placeholder::rhi::dx12 {
+namespace engine_placeholder::rhi::dx12
+{
 
 /// FNV-1a over bytes, continuing from `seed` (the offset basis to start).
 ///
@@ -20,7 +21,8 @@ u64 Fnv1a(const void* data, usize size, u64 seed = 0xcbf29ce484222325ull);
 /// The size of the header in front of the library's serialized bytes.
 inline constexpr usize kPipelineLibraryHeaderBytes = 40;
 
-/// Hashes the adapter id and driver version a cache file is for (the header records it, so a renamed file is caught too).
+/// Hashes the adapter id and driver version a cache file is for (the header records it, so a renamed file is caught
+/// too).
 ///
 /// - Param adapter_id: [[rhi::AdapterInfo]]'s `id`.
 /// - Param driver: its `driver` version text.
@@ -28,8 +30,8 @@ inline constexpr usize kPipelineLibraryHeaderBytes = 40;
 /// - Thread-safety: thread-safe. A pure function.
 u64 PipelineLibraryIdentity(const char* adapter_id, const char* driver);
 
-/// Writes the header: the magic `ENGPLIB1`, a format version, the key count, the identity, the payload's size and its FNV-1a hash.
-/// The payload is the keys (8 bytes each, little-endian), then the serialized library.
+/// Writes the header: the magic `ENGPLIB1`, a format version, the key count, the identity, the payload's size and its
+/// FNV-1a hash. The payload is the keys (8 bytes each, little-endian), then the serialized library.
 ///
 /// - Param out: receives [[rhi::dx12::kPipelineLibraryHeaderBytes]] bytes.
 /// - Param identity: from [[rhi::dx12::PipelineLibraryIdentity]].
@@ -43,8 +45,10 @@ void WritePipelineLibraryHeader(byte* out, u64 identity, u32 key_count, const vo
 ///
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: the pointers borrow the file's bytes.
-struct PipelineLibraryParts {
-    /// The keys of the pipelines the library holds (unaligned, little-endian; read with [[rhi::dx12::PipelineLibraryKey]]).
+struct PipelineLibraryParts
+{
+    /// The keys of the pipelines the library holds (unaligned, little-endian; read with
+    /// [[rhi::dx12::PipelineLibraryKey]]).
     const byte* keys = nullptr;
     /// How many.
     u32 key_count = 0;
@@ -54,7 +58,8 @@ struct PipelineLibraryParts {
     usize library_size = 0;
 };
 
-/// Checks a cache file before D3D12 sees any of it: the header, the identity, the payload's size and hash, and the key section.
+/// Checks a cache file before D3D12 sees any of it: the header, the identity, the payload's size and hash, and the key
+/// section.
 ///
 /// - Param data: the whole file.
 /// - Param size: its size.
@@ -107,4 +112,4 @@ bool BuildPipelineLibraryPath(const char* dir, const char* adapter_id, const cha
 /// - Thread-safety: thread-safe. A pure function.
 void PipelineLibraryName(u64 key, wchar_t (&out)[18]);
 
-} // namespace engine_placeholder::rhi::dx12
+}  // namespace engine_placeholder::rhi::dx12

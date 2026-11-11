@@ -15,14 +15,17 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::ui;
 
-namespace {
+namespace
+{
 
 const char* const kSvQuality[] = {"low", "medium", "high"};
 
-struct SvApp {
+struct SvApp
+{
     settings::Registry registry;
     settings::SettingId vsync, width, scale, quality, name, token, hidden, advanced, restart, strict;
-    SvApp() {
+    SvApp()
+    {
         settings::SettingDesc v = settings::MakeBool("ui.vsync", true);
         v.label = "Vertical sync";
         v.group = "Video";
@@ -50,8 +53,10 @@ struct SvApp {
     }
 };
 
-struct SvRig {
-    SvRig() : settings(app.registry), h(520, 700, 1, StringView(UI_TEST_FONT_FILE)) {
+struct SvRig
+{
+    SvRig() : settings(app.registry), h(520, 700, 1, StringView(UI_TEST_FONT_FILE))
+    {
         const io::Path user = dir / "user.cfg";
         settings::LoadOptions o;
         o.app_name = "ui-test";
@@ -61,7 +66,8 @@ struct SvRig {
         settings.Load(o);
         Build();
     }
-    void Build() {
+    void Build()
+    {
         UniquePtr<SettingsView> v = MakeUnique<SettingsView>(&settings, StringView("ui."), StringView("view"));
         view = v.Get();
         LayoutProps fill;
@@ -71,16 +77,19 @@ struct SvRig {
         h.GetSurface().Root()->AddChild(UniquePtr<Widget>(v.Release()));
         h.Advance(0);
     }
-    static bool Apply(void* user, const settings::ChangeEvent&) {
+    static bool Apply(void* user, const settings::ChangeEvent&)
+    {
         SvRig* self = static_cast<SvRig*>(user);
         ++self->applied;
         return self->accept;
     }
-    void ClickControl(settings::SettingId id) {
+    void ClickControl(settings::SettingId id)
+    {
         const Rect r = view->ControlOf(id)->Bounds();
         h.Click(r.x + r.w / 2, r.y + r.h / 2);
     }
-    void Focus(Widget* w) {
+    void Focus(Widget* w)
+    {
         h.GetSurface().SetFocus(w);
         h.Advance(0);
     }
@@ -93,9 +102,11 @@ struct SvRig {
     bool accept = true;
 };
 
-} // namespace
+}  // namespace
 
-TEST_CASE("The settings screen makes a row per setting, skips hidden ones and collapses advanced ones", "[ui][settings]") {
+TEST_CASE("The settings screen makes a row per setting, skips hidden ones and collapses advanced ones",
+          "[ui][settings]")
+{
     SvRig rig;
     REQUIRE(rig.h.Valid());
     SettingsView& v = *rig.view;
@@ -119,7 +130,8 @@ TEST_CASE("The settings screen makes a row per setting, skips hidden ones and co
     CHECK_FALSE(static_cast<TextField*>(v.ControlOf(rig.app.name))->Password());
 }
 
-TEST_CASE("A check box change reaches the settings through Apply once", "[ui][settings]") {
+TEST_CASE("A check box change reaches the settings through Apply once", "[ui][settings]")
+{
     SvRig rig;
     REQUIRE(rig.h.Valid());
     rig.ClickControl(rig.app.vsync);
@@ -127,7 +139,8 @@ TEST_CASE("A check box change reaches the settings through Apply once", "[ui][se
     CHECK_FALSE(settings::Setting<bool>(rig.app.registry, rig.app.vsync).Get());
 }
 
-TEST_CASE("A slider and its spin box show the same value and commit once", "[ui][settings]") {
+TEST_CASE("A slider and its spin box show the same value and commit once", "[ui][settings]")
+{
     SvRig rig;
     REQUIRE(rig.h.Valid());
     Slider* slider = static_cast<Slider*>(rig.view->ControlOf(rig.app.width));
@@ -140,7 +153,8 @@ TEST_CASE("A slider and its spin box show the same value and commit once", "[ui]
     CHECK(static_cast<i64>(slider->Value()) == now);
 }
 
-TEST_CASE("An enum row is a combo box and a text row commits on Enter", "[ui][settings]") {
+TEST_CASE("An enum row is a combo box and a text row commits on Enter", "[ui][settings]")
+{
     SvRig rig;
     REQUIRE(rig.h.Valid());
     ComboBox* combo = static_cast<ComboBox*>(rig.view->ControlOf(rig.app.quality));
@@ -155,7 +169,8 @@ TEST_CASE("An enum row is a combo box and a text row commits on Enter", "[ui][se
     CHECK(rig.settings.Provenance(rig.app.name).value.AsText() == StringView("zed"));
 }
 
-TEST_CASE("A rejected change goes back to the value in force and says why", "[ui][settings]") {
+TEST_CASE("A rejected change goes back to the value in force and says why", "[ui][settings]")
+{
     SvRig rig;
     REQUIRE(rig.h.Valid());
     rig.accept = false;
@@ -169,7 +184,8 @@ TEST_CASE("A rejected change goes back to the value in force and says why", "[ui
     CHECK(rig.view->Message().Length() == 0);
 }
 
-TEST_CASE("A restart-required change is flagged", "[ui][settings]") {
+TEST_CASE("A restart-required change is flagged", "[ui][settings]")
+{
     SvRig rig;
     REQUIRE(rig.h.Valid());
     int heard = 0;
@@ -182,7 +198,8 @@ TEST_CASE("A restart-required change is flagged", "[ui][settings]") {
     CHECK(heard == 1);
 }
 
-TEST_CASE("A value fixed by the command line is shown disabled with its source", "[ui][settings]") {
+TEST_CASE("A value fixed by the command line is shown disabled with its source", "[ui][settings]")
+{
     io_test::TempDir dir;
     SvApp app;
     settings::Settings s(app.registry);
@@ -207,21 +224,29 @@ TEST_CASE("A value fixed by the command line is shown disabled with its source",
     CHECK(view->ControlOf(app.vsync)->Enabled());
 }
 
-TEST_CASE("A change made elsewhere shows up without polling", "[ui][settings]") {
+TEST_CASE("A change made elsewhere shows up without polling", "[ui][settings]")
+{
     SvRig rig;
     REQUIRE(rig.h.Valid());
     const u64 before = rig.view->Refreshes();
-    for (int i = 0; i < 100; ++i) rig.h.Advance(0.016f);
-    CHECK(rig.view->Refreshes() == before); // an idle screen reads nothing
+    for (int i = 0; i < 100; ++i)
+    {
+        rig.h.Advance(0.016f);
+    }
+    CHECK(rig.view->Refreshes() == before);  // an idle screen reads nothing
     CHECK(rig.settings.Set(rig.app.width, settings::Value::FromInt(2000)).error == settings::SetError::None);
     rig.h.Advance(0.016f);
     CHECK(rig.view->Refreshes() == before + 1);
     CHECK(static_cast<i64>(rig.view->SpinOf(rig.app.width)->Value()) == 2000);
-    for (int i = 0; i < 100; ++i) rig.h.Advance(0.016f);
+    for (int i = 0; i < 100; ++i)
+    {
+        rig.h.Advance(0.016f);
+    }
     CHECK(rig.view->Refreshes() == before + 1);
 }
 
-TEST_CASE("A text edit in progress survives a refresh and is committed when the focus leaves", "[ui][settings]") {
+TEST_CASE("A text edit in progress survives a refresh and is committed when the focus leaves", "[ui][settings]")
+{
     SvRig rig;
     REQUIRE(rig.h.Valid());
     TextField* field = static_cast<TextField*>(rig.view->ControlOf(rig.app.name));
@@ -234,11 +259,16 @@ TEST_CASE("A text edit in progress survives a refresh and is committed when the 
     CHECK(rig.settings.Provenance(rig.app.name).value.AsText() == StringView("draft"));
 }
 
-namespace {
-void SvRebuildFromClick(void* user, Button*) { static_cast<SettingsView*>(user)->Rebuild(); }
-} // namespace
+namespace
+{
+void SvRebuildFromClick(void* user, Button*)
+{
+    static_cast<SettingsView*>(user)->Rebuild();
+}
+}  // namespace
 
-TEST_CASE("Rebuild from a handler during a dispatch ends, and the old controls do nothing", "[ui][settings]") {
+TEST_CASE("Rebuild from a handler during a dispatch ends, and the old controls do nothing", "[ui][settings]")
+{
     SvRig rig;
     REQUIRE(rig.h.Valid());
     UniquePtr<Button> button = MakeUnique<Button>(StringView("rebuild"), StringView("Rebuild"));
@@ -253,7 +283,8 @@ TEST_CASE("Rebuild from a handler during a dispatch ends, and the old controls d
     rig.h.GetSurface().Root()->AddChild(UniquePtr<Widget>(button.Release()));
     rig.h.Advance(0);
     const usize rows = rig.view->RowCount();
-    // Without the fix this click never returned: the loop that emptied the view waited for children whose removal was queued.
+    // Without the fix this click never returned: the loop that emptied the view waited for children whose removal was
+    // queued.
     rig.h.Click(where.x + where.w / 2, where.y + where.h / 2);
     CHECK(raw->Name() == StringView("rebuild"));
     CHECK(rig.view->RowCount() == rows);

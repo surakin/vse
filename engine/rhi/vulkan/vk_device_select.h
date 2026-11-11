@@ -5,7 +5,8 @@
 
 //! Choosing a physical device and planning its queues, as pure functions over plain data.
 
-namespace engine_placeholder::rhi::vulkan {
+namespace engine_placeholder::rhi::vulkan
+{
 
 /// The most physical devices considered; further ones are ignored.
 inline constexpr usize kMaxPhysicalDevices = 16;
@@ -13,18 +14,20 @@ inline constexpr usize kMaxPhysicalDevices = 16;
 inline constexpr usize kMaxQueueFamilies = 16;
 
 /// What kind of GPU a physical device is, in the order the ranking prefers.
-enum class GpuKind : u8 {
-    Other = 0, ///< Unknown kind.
-    Cpu,       ///< A software implementation.
-    Virtual,   ///< A virtualized GPU.
-    Integrated,///< A GPU sharing memory with the CPU.
-    Discrete,  ///< A dedicated GPU.
+enum class GpuKind : u8
+{
+    Other = 0,   ///< Unknown kind.
+    Cpu,         ///< A software implementation.
+    Virtual,     ///< A virtualized GPU.
+    Integrated,  ///< A GPU sharing memory with the CPU.
+    Discrete,    ///< A dedicated GPU.
 };
 
 /// One queue family of a physical device.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct QueueFamilyInfo {
+struct QueueFamilyInfo
+{
     /// Number of queues in the family.
     u32 queue_count = 0;
     /// Whether the family supports graphics.
@@ -42,7 +45,8 @@ struct QueueFamilyInfo {
 /// Everything the selection policy needs to know about one physical device.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct PhysicalDeviceInfo {
+struct PhysicalDeviceInfo
+{
     /// The device name as reported by the driver, null-terminated.
     char name[256] = {};
     /// The kind of GPU.
@@ -69,7 +73,8 @@ struct PhysicalDeviceInfo {
     u32 device_id = 0;
     /// The device UUID (`VkPhysicalDeviceIDProperties::deviceUUID`); all zero when the driver gives none.
     u8 uuid[16] = {};
-    /// The device LUID (`VkPhysicalDeviceIDProperties::deviceLUID`, Windows' 8-byte LUID: low part then high part, little-endian).
+    /// The device LUID (`VkPhysicalDeviceIDProperties::deviceLUID`, Windows' 8-byte LUID: low part then high part,
+    /// little-endian).
     u8 luid[8] = {};
     /// Whether the driver reported a LUID (`deviceLUIDValid`; Windows drivers only).
     bool luid_valid = false;
@@ -117,7 +122,8 @@ AdapterInfo MakeAdapterInfo(const PhysicalDeviceInfo& info, bool presentable);
 /// to the earlier device. A non-empty `override_text` that is a decimal number below the device count picks that
 /// device index; any other text (including a number too large to be an index, such as a model number) picks the first
 /// device whose name contains it, ignoring case; the text is first tried as an adapter id (see
-/// [[rhi::MatchAdapter]]). The override must match a suitable device or selection fails. The whole ranking and every rejection reason is logged on `LogRhi`.
+/// [[rhi::MatchAdapter]]). The override must match a suitable device or selection fails. The whole ranking and every
+/// rejection reason is logged on `LogRhi`.
 ///
 /// - Param devices: the candidate devices.
 /// - Param count: number of candidates; at most `kMaxPhysicalDevices` are considered.
@@ -136,7 +142,8 @@ int SelectPhysicalDeviceFor(const PhysicalDeviceInfo* devices, usize count, bool
 /// The queue families chosen for a device.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct QueuePlan {
+struct QueuePlan
+{
     /// The family used for graphics, compute and presentation; `-1` if none is usable.
     int graphics_family = -1;
     /// A dedicated transfer-only family if the device has one, otherwise the same as `graphics_family`.
@@ -154,4 +161,4 @@ struct QueuePlan {
 /// - Returns: the plan; `graphics_family` is -1 if the device has no usable family.
 QueuePlan PlanQueues(const PhysicalDeviceInfo& info, bool presentable);
 
-} // namespace engine_placeholder::rhi::vulkan
+}  // namespace engine_placeholder::rhi::vulkan

@@ -6,9 +6,11 @@
 #include "log/log.h"
 #include "os/os.h"
 
-namespace engine_placeholder::os::wayland {
+namespace engine_placeholder::os::wayland
+{
 
-void WaylandPlatformWindow::Close() {
+void WaylandPlatformWindow::Close()
+{
     // Order matters: the input proxies belong to the connection's
     // display and must be destroyed while it is still connected.
     input_.Shutdown();
@@ -17,24 +19,30 @@ void WaylandPlatformWindow::Close() {
     connection_lost_ = false;
 }
 
-void WaylandPlatformWindow::MarkConnectionLost(const char* why) {
-    if (!connection_lost_) {
+void WaylandPlatformWindow::MarkConnectionLost(const char* why)
+{
+    if (!connection_lost_)
+    {
         connection_lost_ = true;
         Log(LogPlatform, LogVerbosity::Error, why);
     }
 }
 
-bool WaylandPlatformWindow::Open(StringView title, u32 width, u32 height, InputState* input) {
-    if (connection_.Valid()) {
+bool WaylandPlatformWindow::Open(StringView title, u32 width, u32 height, InputState* input)
+{
+    if (connection_.Valid())
+    {
         Log(LogPlatform, LogVerbosity::Error, "Wayland: WaylandPlatformWindow::Open called while already open");
         return false;
     }
-    if (input == nullptr) {
+    if (input == nullptr)
+    {
         Log(LogPlatform, LogVerbosity::Error, "Wayland: WaylandPlatformWindow::Open needs an InputState");
         return false;
     }
     connection_ = WaylandConnection::Connect();
-    if (!connection_.Valid()) {
+    if (!connection_.Valid())
+    {
         return false;
     }
     // Input must hook the seat *before* any further roundtrip: wl_seat's
@@ -45,7 +53,8 @@ bool WaylandPlatformWindow::Open(StringView title, u32 width, u32 height, InputS
     // lines) — caught at the desk, 2026-11-03.
     input_.Init(connection_, input);
     window_ = WaylandWindow::Create(connection_, title, "re_engine", width, height);
-    if (!window_.Valid()) {
+    if (!window_.Valid())
+    {
         Close();
         return false;
     }
@@ -64,21 +73,26 @@ bool WaylandPlatformWindow::Open(StringView title, u32 width, u32 height, InputS
 // wl_display_dispatch() isn't used because the frame loop must keep
 // meeting its budget (and terminate on its own in headless runs) even
 // when the compositor sends nothing.
-void WaylandPlatformWindow::PumpEvents() {
+void WaylandPlatformWindow::PumpEvents()
+{
     wl_display* display = connection_.Display();
-    if (display == nullptr || connection_lost_) {
+    if (display == nullptr || connection_lost_)
+    {
         return;
     }
     // Every libwayland call below can report a dead connection or a
     // protocol error; none of them may be ignored, or a vanished
     // compositor would leave the frame loop running on a dead window.
-    while (wl_display_prepare_read(display) != 0) {
-        if (wl_display_dispatch_pending(display) < 0) {
+    while (wl_display_prepare_read(display) != 0)
+    {
+        if (wl_display_dispatch_pending(display) < 0)
+        {
             MarkConnectionLost("Wayland: dispatch failed (protocol error or lost connection)");
             return;
         }
     }
-    if (wl_display_flush(display) < 0 && os::LastError() != EAGAIN) {
+    if (wl_display_flush(display) < 0 && os::LastError() != EAGAIN)
+    {
         wl_display_cancel_read(display);
         MarkConnectionLost("Wayland: flush failed (compositor connection lost)");
         return;
@@ -88,26 +102,33 @@ void WaylandPlatformWindow::PumpEvents() {
     pfd.fd = wl_display_get_fd(display);
     pfd.events = POLLIN;
     int ready = ::poll(&pfd, 1, 0);
-    if (ready > 0 && (pfd.revents & (POLLIN | POLLHUP | POLLERR)) != 0) {
+    if (ready > 0 && (pfd.revents & (POLLIN | POLLHUP | POLLERR)) != 0)
+    {
         // POLLHUP/POLLERR: read_events reports the EOF/error as -1.
-        if (wl_display_read_events(display) < 0) {
+        if (wl_display_read_events(display) < 0)
+        {
             MarkConnectionLost("Wayland: read failed (compositor connection lost)");
             return;
         }
-    } else {
+    }
+    else
+    {
         wl_display_cancel_read(display);
     }
-    if (wl_display_dispatch_pending(display) < 0) {
+    if (wl_display_dispatch_pending(display) < 0)
+    {
         MarkConnectionLost("Wayland: dispatch failed (protocol error or lost connection)");
         return;
     }
-    if (wl_display_get_error(display) != 0) {
+    if (wl_display_get_error(display) != 0)
+    {
         MarkConnectionLost("Wayland: display reported an error");
         return;
     }
     window_.CommitPendingResize();
     input_.Tick();
-    if (window_.ResizeSerial() != last_resize_serial_) {
+    if (window_.ResizeSerial() != last_resize_serial_)
+    {
         last_resize_serial_ = window_.ResizeSerial();
         InputEvent resize;
         resize.type = InputEventType::Resize;
@@ -118,4 +139,4 @@ void WaylandPlatformWindow::PumpEvents() {
     }
 }
 
-} // namespace engine_placeholder::os::wayland
+}  // namespace engine_placeholder::os::wayland

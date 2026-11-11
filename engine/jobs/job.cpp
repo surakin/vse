@@ -3,8 +3,13 @@
 // rather than when the scheduler first includes the header.
 #include "jobs/job.h"
 
-namespace engine_placeholder::jobs {
-namespace {
-[[maybe_unused]] Job CompileCheck() { co_return; }
-} // namespace
-} // namespace engine_placeholder::jobs
+namespace engine_placeholder::jobs
+{
+namespace
+{
+[[maybe_unused]] Job CompileCheck()
+{
+    co_return;
+}
+}  // namespace
+}  // namespace engine_placeholder::jobs

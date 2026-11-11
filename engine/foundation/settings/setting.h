@@ -1,10 +1,11 @@
 #pragma once
 
-//! Typed handles for reading a setting: `Setting<bool>`, `Setting<i64>`, `Setting<f32>`, `Setting<f64>` and `Setting<E>` for an enum
-//! type `E`, and [[settings::TextSetting]] for text.
+//! Typed handles for reading a setting: `Setting<bool>`, `Setting<i64>`, `Setting<f32>`, `Setting<f64>` and
+//! `Setting<E>` for an enum type `E`, and [[settings::TextSetting]] for text.
 //!
-//! A handle is one pointer. `Get()` is one relaxed atomic load and a decode, so it is safe and cheap in a hot path from any thread;
-//! it sees a published value on the next call after `Registry::Publish` returns. A handle made for the wrong type aborts at creation.
+//! A handle is one pointer. `Get()` is one relaxed atomic load and a decode, so it is safe and cheap in a hot path from
+//! any thread; it sees a published value on the next call after `Registry::Publish` returns. A handle made for the
+//! wrong type aborts at creation.
 
 #include "lang/traits.h"
 
@@ -13,34 +14,53 @@
 #include "sync/atomic.h"
 #include "cstr/mem_ops.h"
 
-namespace engine_placeholder::settings {
+namespace engine_placeholder::settings
+{
 
-namespace detail {
+namespace detail
+{
 
-template <typename T>
-constexpr Type TypeOf() {
-    if constexpr (IsSame<T, bool>) return Type::Bool;
-    else if constexpr (IsSame<T, i64>) return Type::Int;
-    else if constexpr (IsSame<T, f32> || IsSame<T, f64>) return Type::Float;
-    else {
+template <typename T> constexpr Type TypeOf()
+{
+    if constexpr (IsSame<T, bool>)
+    {
+        return Type::Bool;
+    }
+    else if constexpr (IsSame<T, i64>)
+    {
+        return Type::Int;
+    }
+    else if constexpr (IsSame<T, f32> || IsSame<T, f64>)
+    {
+        return Type::Float;
+    }
+    else
+    {
         static_assert(IsEnum<T>, "Setting<T>: T must be bool, i64, f32, f64 or an enum type");
         return Type::Enum;
     }
 }
 
-template <typename T>
-T Decode(u64 bits) {
-    if constexpr (IsSame<T, bool>) {
+template <typename T> T Decode(u64 bits)
+{
+    if constexpr (IsSame<T, bool>)
+    {
         return bits != 0;
-    } else if constexpr (IsSame<T, i64>) {
+    }
+    else if constexpr (IsSame<T, i64>)
+    {
         i64 v;
         MemCopy(&v, &bits, sizeof(v));
         return v;
-    } else if constexpr (IsSame<T, f32> || IsSame<T, f64>) {
+    }
+    else if constexpr (IsSame<T, f32> || IsSame<T, f64>)
+    {
         f64 v;
         MemCopy(&v, &bits, sizeof(v));
         return static_cast<T>(v);
-    } else {
+    }
+    else
+    {
         return static_cast<T>(bits);
     }
 }
@@ -48,14 +68,14 @@ T Decode(u64 bits) {
 /// Encodes a value of a declared type into the cell's 64 bits.
 u64 Encode(const Value& value);
 
-} // namespace detail
+}  // namespace detail
 
 /// A typed, cheap-to-read handle on one registered setting.
 ///
 /// - Thread-safety: thread-safe; any thread may copy it and call `Get`.
 /// - Ownership: borrows the registry, which must outlive the handle.
-template <typename T>
-class Setting {
+template <typename T> class Setting
+{
 public:
     /// Creates an empty handle; `Get` on it aborts.
     Setting() = default;
@@ -65,10 +85,12 @@ public:
     /// - Param registry: the registry that holds it.
     /// - Param id: the setting.
     /// - Aborts: `id` is not registered, or its declared type differs from `T`.
-    Setting(const Registry& registry, SettingId id) : registry_(&registry), id_(id) {
+    Setting(const Registry& registry, SettingId id) : registry_(&registry), id_(id)
+    {
         const SettingDesc* d = registry.Desc(id);
         ENGINE_ASSERT(d != nullptr, "settings::Setting: the id is not registered");
-        ENGINE_ASSERT(d->type == detail::TypeOf<T>(), "settings::Setting: the setting has another type than the handle");
+        ENGINE_ASSERT(d->type == detail::TypeOf<T>(),
+                      "settings::Setting: the setting has another type than the handle");
         cell_ = registry.CellOf(id);
     }
 
@@ -83,7 +105,8 @@ public:
     /// Returns the current value: one relaxed atomic load.
     ///
     /// - Aborts: the handle is empty.
-    T Get() const {
+    T Get() const
+    {
         ENGINE_ASSERT(cell_ != nullptr, "settings::Setting::Get: empty handle");
         return detail::Decode<T>(cell_->bits.Load(MemoryOrder::Relaxed));
     }
@@ -94,7 +117,8 @@ public:
     /// Returns the declaration.
     ///
     /// - Aborts: the handle is empty.
-    const SettingDesc& Desc() const {
+    const SettingDesc& Desc() const
+    {
         ENGINE_ASSERT(registry_ != nullptr, "settings::Setting::Desc: empty handle");
         return *registry_->Desc(id_);
     }
@@ -111,12 +135,14 @@ private:
 ///
 /// - Thread-safety: thread-safe.
 /// - Ownership: borrows the registry.
-class TextSetting {
+class TextSetting
+{
 public:
     /// Makes a handle.
     ///
     /// - Aborts: `id` is not registered or is not a text setting.
-    TextSetting(const Registry& registry, SettingId id) : registry_(&registry), id_(id) {
+    TextSetting(const Registry& registry, SettingId id) : registry_(&registry), id_(id)
+    {
         const SettingDesc* d = registry.Desc(id);
         ENGINE_ASSERT(d != nullptr && d->type == Type::Text, "settings::TextSetting: not a registered text setting");
     }
@@ -130,4 +156,4 @@ private:
     SettingId id_;
 };
 
-} // namespace engine_placeholder::settings
+}  // namespace engine_placeholder::settings

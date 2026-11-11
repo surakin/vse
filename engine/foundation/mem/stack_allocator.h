@@ -6,7 +6,8 @@
 //!
 //! A marker records an earlier offset; popping to it discards everything
 //! allocated since.
-namespace engine_placeholder {
+namespace engine_placeholder
+{
 
 /// Bump allocator whose allocations can be discarded in LIFO order by
 /// rewinding to a saved marker.
@@ -17,7 +18,8 @@ namespace engine_placeholder {
 /// - Thread-safety: not-thread-safe. Synchronize externally if shared.
 /// - Ownership: owns the backing block, released by the destructor. Pointers
 ///   returned by `Push` are invalidated by popping to an earlier marker.
-class StackAllocator {
+class StackAllocator
+{
 public:
     /// Opaque position in the stack: the byte offset at the time it was taken.
     using Marker = usize;
@@ -59,4 +61,4 @@ private:
     usize offset_ = 0;
 };
 
-} // namespace engine_placeholder
+}  // namespace engine_placeholder

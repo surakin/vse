@@ -21,18 +21,24 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
 
-namespace {
+namespace
+{
 
-const ShaderPermutations& Table() { return shaders::kPermuteTestFragPermutations; }
+const ShaderPermutations& Table()
+{
+    return shaders::kPermuteTestFragPermutations;
+}
 
-PermutationKey KeyOf(InitializerList<const char*> names) {
+PermutationKey KeyOf(InitializerList<const char*> names)
+{
     PermutationKey key;
     ReflectionError error;
     REQUIRE(MakePermutationKey(Table(), names.begin(), static_cast<u32>(names.size()), &key, &error));
     return key;
 }
 
-const PermutationModule* Find(InitializerList<const char*> names) {
+const PermutationModule* Find(InitializerList<const char*> names)
+{
     ReflectionError error;
     const PermutationModule* module = FindPermutation(Table(), KeyOf(names), &error);
     INFO(error.message);
@@ -40,9 +46,10 @@ const PermutationModule* Find(InitializerList<const char*> names) {
     return module;
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("The committed permutation table is valid and names its options", "[renderer][permutation]") {
+TEST_CASE("The committed permutation table is valid and names its options", "[renderer][permutation]")
+{
     const ShaderPermutations& t = Table();
     CHECK(ValidateShaderPermutations(t) == nullptr);
     CHECK(CStrCompare(t.shader, "permute_test.frag") == 0);
@@ -55,28 +62,37 @@ TEST_CASE("The committed permutation table is valid and names its options", "[re
     CHECK(t.option_count <= kMaxPermutationOptions);
 }
 
-TEST_CASE("Keys are built from option names and found by lookup", "[renderer][permutation]") {
+TEST_CASE("Keys are built from option names and found by lookup", "[renderer][permutation]")
+{
     const PermutationModule* base = Find({});
-    CHECK(base->words == shaders::kPermuteTestFragSpv); // key with nothing on is the plain module
+    CHECK(base->words == shaders::kPermuteTestFragSpv);  // key with nothing on is the plain module
     CHECK(base->word_count == shaders::kPermuteTestFragSpvWordCount);
 
     CHECK(KeyOf({"INVERT"}).bits == 1);
     CHECK(KeyOf({"HALF", "INVERT"}).bits == 3);
-    CHECK(KeyOf({"INVERT", "HALF"}) == KeyOf({"HALF", "INVERT"})); // order of names does not matter
+    CHECK(KeyOf({"INVERT", "HALF"}) == KeyOf({"HALF", "INVERT"}));  // order of names does not matter
     CHECK(KeyOf({"DEBUG"}).Has(3));
     CHECK_FALSE(KeyOf({"DEBUG"}).Has(0));
 
     // Every built key resolves to a module whose words and reflection are usable.
-    for (const char* key_names : {"", "INVERT", "HALF", "INVERT HALF", "TINT", "DEBUG"}) {
+    for (const char* key_names : {"", "INVERT", "HALF", "INVERT HALF", "TINT", "DEBUG"})
+    {
         Vector<const char*> names;
         const StringView all(key_names);
-        for (usize pos = 0; pos < all.Length();) {
+        for (usize pos = 0; pos < all.Length();)
+        {
             usize end = pos;
-            while (end < all.Length() && all[end] != ' ') ++end;
-            if (end > pos) {
+            while (end < all.Length() && all[end] != ' ')
+            {
+                ++end;
+            }
+            if (end > pos)
+            {
                 const StringView word = all.Substring(pos, end - pos);
-                for (u32 i = 0; i < Table().option_count; ++i) {
-                    if (word == StringView(Table().options[i])) {
+                for (u32 i = 0; i < Table().option_count; ++i)
+                {
+                    if (word == StringView(Table().options[i]))
+                    {
                         names.Push(Table().options[i]);
                     }
                 }
@@ -96,7 +112,8 @@ TEST_CASE("Keys are built from option names and found by lookup", "[renderer][pe
     }
 }
 
-TEST_CASE("Different options build different modules; identical output is shared", "[renderer][permutation]") {
+TEST_CASE("Different options build different modules; identical output is shared", "[renderer][permutation]")
+{
     const PermutationModule* base = Find({});
     const PermutationModule* invert = Find({"INVERT"});
     const PermutationModule* half = Find({"HALF"});
@@ -113,9 +130,10 @@ TEST_CASE("Different options build different modules; identical output is shared
     CHECK(Find({"DEBUG"}) != Find({"TINT"}));
 }
 
-TEST_CASE("A key that was not built is an error naming the shader and the key", "[renderer][permutation]") {
+TEST_CASE("A key that was not built is an error naming the shader and the key", "[renderer][permutation]")
+{
     ReflectionError error;
-    const PermutationKey key = KeyOf({"INVERT", "TINT"}); // valid options, but not in the manifest
+    const PermutationKey key = KeyOf({"INVERT", "TINT"});  // valid options, but not in the manifest
     CHECK(FindPermutation(Table(), key, &error) == nullptr);
     CHECK(CStrFind(error.message, "permute_test.frag") != nullptr);
     CHECK(CStrFind(error.message, "{INVERT, TINT}") != nullptr);
@@ -132,11 +150,12 @@ TEST_CASE("A key that was not built is an error naming the shader and the key", 
     CHECK(CStrFind(error.message, "permute_test.frag") != nullptr);
 }
 
-TEST_CASE("Lookup is bounded by the table, not by the key", "[renderer][permutation]") {
+TEST_CASE("Lookup is bounded by the table, not by the key", "[renderer][permutation]")
+{
     ReflectionError error;
     // Bits beyond the declared options, and the highest bits of the key word, are simply not found.
     CHECK(FindPermutation(Table(), PermutationKey{0x8000u}, &error) == nullptr);
-    CHECK(CStrFind(error.message, "?") != nullptr); // an undeclared option is shown as ?
+    CHECK(CStrFind(error.message, "?") != nullptr);  // an undeclared option is shown as ?
     CHECK(FindPermutation(Table(), PermutationKey{0xffffffffu}, &error) == nullptr);
     CHECK(FindPermutation(Table(), PermutationKey{0x10u}, &error) == nullptr);
 
@@ -151,7 +170,8 @@ TEST_CASE("Lookup is bounded by the table, not by the key", "[renderer][permutat
     // The lookup cannot know a table's real length, so the array here really holds the limit's worth of entries (the
     // committed ones, then empties); a sentinel one past the limit matches the key, so reading past it would find it.
     PermutationEntry padded[kMaxPermutationKeys + 1] = {};
-    for (u32 i = 0; i < Table().entry_count; ++i) {
+    for (u32 i = 0; i < Table().entry_count; ++i)
+    {
         padded[i] = Table().entries[i];
     }
     padded[kMaxPermutationKeys].key_bits = 0x10u;
@@ -168,21 +188,22 @@ TEST_CASE("Lookup is bounded by the table, not by the key", "[renderer][permutat
     char one[1] = {'x'};
     DescribePermutationKey(Table(), PermutationKey{1}, one, 1);
     CHECK(one[0] == '\0');
-    DescribePermutationKey(Table(), PermutationKey{1}, nullptr, 0); // no capacity: writes nothing
+    DescribePermutationKey(Table(), PermutationKey{1}, nullptr, 0);  // no capacity: writes nothing
 }
 
-TEST_CASE("A corrupt table is reported as corrupt, not as a missing key", "[renderer][permutation]") {
+TEST_CASE("A corrupt table is reported as corrupt, not as a missing key", "[renderer][permutation]")
+{
     const u32 words[4] = {0x07230203, 0, 0, 0};
     const u8 blob[4] = {1, 2, 3, 4};
     const PermutationModule modules[1] = {{words, 4, blob, 4}};
     const char* const options[1] = {"A"};
-    const PermutationEntry entries[2] = {{0, 0}, {1, 9}}; // key {A} names module 9 of 1
+    const PermutationEntry entries[2] = {{0, 0}, {1, 9}};  // key {A} names module 9 of 1
     ShaderPermutations t = {"corrupt.frag", options, 1, modules, 1, entries, 2};
     ReflectionError error;
     CHECK(ValidateShaderPermutations(t) != nullptr);
     CHECK(FindPermutation(t, PermutationKey{1}, &error) == nullptr);
     CHECK(CStrFind(error.message, "corrupt") != nullptr);
-    CHECK(CStrFind(error.message, "manifest") == nullptr); // do not send the reader to the manifest
+    CHECK(CStrFind(error.message, "manifest") == nullptr);  // do not send the reader to the manifest
 
     // Null arrays are never dereferenced.
     t.entries = nullptr;
@@ -192,7 +213,8 @@ TEST_CASE("A corrupt table is reported as corrupt, not as a missing key", "[rend
     CHECK(FindPermutation(t, PermutationKey{0}, &error) == nullptr);
 }
 
-TEST_CASE("Malformed tables are rejected by validation", "[renderer][permutation]") {
+TEST_CASE("Malformed tables are rejected by validation", "[renderer][permutation]")
+{
     const u32 words[4] = {0x07230203, 0, 0, 0};
     const u8 blob[4] = {1, 2, 3, 4};
     const PermutationModule modules[2] = {{words, 4, blob, 4}, {words, 4, blob, 4}};
@@ -201,13 +223,15 @@ TEST_CASE("Malformed tables are rejected by validation", "[renderer][permutation
     ShaderPermutations t = {"t", options, 2, modules, 2, good, 3};
     REQUIRE(ValidateShaderPermutations(t) == nullptr);
 
-    SECTION("no base key") {
+    SECTION("no base key")
+    {
         const PermutationEntry entries[2] = {{1, 0}, {3, 1}};
         t.entries = entries;
         t.entry_count = 2;
         CHECK(ValidateShaderPermutations(t) != nullptr);
     }
-    SECTION("keys out of order or repeated") {
+    SECTION("keys out of order or repeated")
+    {
         const PermutationEntry unsorted[3] = {{0, 0}, {3, 1}, {1, 1}};
         t.entries = unsorted;
         CHECK(ValidateShaderPermutations(t) != nullptr);
@@ -215,25 +239,29 @@ TEST_CASE("Malformed tables are rejected by validation", "[renderer][permutation
         t.entries = repeated;
         CHECK(ValidateShaderPermutations(t) != nullptr);
     }
-    SECTION("a key switches on an undeclared option") {
+    SECTION("a key switches on an undeclared option")
+    {
         const PermutationEntry entries[2] = {{0, 0}, {4, 1}};
         t.entries = entries;
         t.entry_count = 2;
         CHECK(ValidateShaderPermutations(t) != nullptr);
     }
-    SECTION("a key names a module that does not exist") {
+    SECTION("a key names a module that does not exist")
+    {
         const PermutationEntry entries[2] = {{0, 0}, {1, 2}};
         t.entries = entries;
         t.entry_count = 2;
         CHECK(ValidateShaderPermutations(t) != nullptr);
     }
-    SECTION("base key must use module 0") {
+    SECTION("base key must use module 0")
+    {
         const PermutationEntry entries[2] = {{0, 1}, {1, 0}};
         t.entries = entries;
         t.entry_count = 2;
         CHECK(ValidateShaderPermutations(t) != nullptr);
     }
-    SECTION("empty or null arrays, too many modules") {
+    SECTION("empty or null arrays, too many modules")
+    {
         ShaderPermutations broken = t;
         broken.entry_count = 0;
         CHECK(ValidateShaderPermutations(broken) != nullptr);
@@ -241,13 +269,14 @@ TEST_CASE("Malformed tables are rejected by validation", "[renderer][permutation
         broken.modules = nullptr;
         CHECK(ValidateShaderPermutations(broken) != nullptr);
         broken = t;
-        broken.module_count = 4; // more modules than keys
+        broken.module_count = 4;  // more modules than keys
         CHECK(ValidateShaderPermutations(broken) != nullptr);
         broken = t;
         broken.option_count = kMaxPermutationOptions + 1;
         CHECK(ValidateShaderPermutations(broken) != nullptr);
     }
-    SECTION("option names that are null, empty or repeated") {
+    SECTION("option names that are null, empty or repeated")
+    {
         const char* const null_name[2] = {"A", nullptr};
         t.options = null_name;
         CHECK(ValidateShaderPermutations(t) != nullptr);
@@ -258,7 +287,8 @@ TEST_CASE("Malformed tables are rejected by validation", "[renderer][permutation
         t.options = repeated;
         CHECK(ValidateShaderPermutations(t) != nullptr);
     }
-    SECTION("a module without words or reflection") {
+    SECTION("a module without words or reflection")
+    {
         const PermutationModule empty[2] = {{words, 4, blob, 4}, {words, 0, blob, 4}};
         t.modules = empty;
         CHECK(ValidateShaderPermutations(t) != nullptr);
@@ -268,14 +298,17 @@ TEST_CASE("Malformed tables are rejected by validation", "[renderer][permutation
     }
 }
 
-namespace {
+namespace
+{
 
 // Draws the fullscreen triangle with the fragment module chosen by `names` into an 8x8 target and returns pixel (6, 2).
-struct Pixel {
+struct Pixel
+{
     int r, g, b, a;
 };
 
-Pixel DrawWithKey(rhi::Device* device, InitializerList<const char*> names) {
+Pixel DrawWithKey(rhi::Device* device, InitializerList<const char*> names)
+{
     const PermutationModule* module = Find(names);
 
     rhi::ShaderDesc vs;
@@ -337,15 +370,18 @@ Pixel DrawWithKey(rhi::Device* device, InitializerList<const char*> names) {
     return out;
 }
 
-bool Near(const Pixel& p, int r, int g, int b) {
+bool Near(const Pixel& p, int r, int g, int b)
+{
     auto close = [](int a, int c) { return a - c <= 2 && c - a <= 2; };
     return close(p.r, r) && close(p.g, g) && close(p.b, b) && p.a == 255;
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("The module a key selects draws the colour its options describe", "[renderer][permutation][gpu]") {
-    FOR_EACH_GPU_BACKEND(backend) {
+TEST_CASE("The module a key selects draws the colour its options describe", "[renderer][permutation][gpu]")
+{
+    FOR_EACH_GPU_BACKEND(backend)
+    {
         gpu_test::BackendValidation validation(backend);
         rhi::DeviceCreateInfo info;
         info.backend = backend;
@@ -353,21 +389,25 @@ TEST_CASE("The module a key selects draws the colour its options describe", "[re
         info.sync_validation = true;
         info.pipeline_cache = false;
         rhi::DevicePtr device = rhi::CreateDevice(info);
-        if (device == nullptr) {
+        if (device == nullptr)
+        {
             const char* required = os::GetEnvironment("ENGINE_RHI_REQUIRE_GPU");
-            if (required != nullptr && required[0] == '1') {
+            if (required != nullptr && required[0] == '1')
+            {
                 FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no " << gpu_test::BackendTag(backend) << " device could be created");
             }
             SKIP("no " << gpu_test::BackendTag(backend) << " device on this machine");
         }
 
-        // The shader's flat colour is (0.8, 0.4, 0.2); each option changes it analytically (see permute_test.frag.slang).
+        // The shader's flat colour is (0.8, 0.4, 0.2); each option changes it analytically (see
+        // permute_test.frag.slang).
         CHECK(Near(DrawWithKey(device.Get(), {}), 204, 102, 51));
         CHECK(Near(DrawWithKey(device.Get(), {"INVERT"}), 51, 153, 204));
         CHECK(Near(DrawWithKey(device.Get(), {"HALF"}), 102, 51, 26));
         CHECK(Near(DrawWithKey(device.Get(), {"INVERT", "HALF"}), 26, 77, 102));
         CHECK(Near(DrawWithKey(device.Get(), {"TINT"}), 204, 102, 26));
-        // DEBUG paints (u, v, 0): pixel (6, 2) of 8x8 is at uv (6.5/8, 2.5/8). The shared DEBUG TINT key draws the same.
+        // DEBUG paints (u, v, 0): pixel (6, 2) of 8x8 is at uv (6.5/8, 2.5/8). The shared DEBUG TINT key draws the
+        // same.
         CHECK(Near(DrawWithKey(device.Get(), {"DEBUG"}), 207, 80, 0));
         CHECK(Near(DrawWithKey(device.Get(), {"DEBUG", "TINT"}), 207, 80, 0));
 

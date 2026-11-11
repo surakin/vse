@@ -2,11 +2,14 @@
 
 #include "log/assert.h"
 
-namespace engine_placeholder::rhi::vulkan {
+namespace engine_placeholder::rhi::vulkan
+{
 
-namespace {
+namespace
+{
 
-struct FormatPair {
+struct FormatPair
+{
     Format format;
     VkFormat vk;
 };
@@ -39,44 +42,53 @@ constexpr FormatPair kFormats[] = {
     {Format::BC7_SRGB, VK_FORMAT_BC7_SRGB_BLOCK},
 };
 
-} // namespace
+}  // namespace
 
 // The table has one row per format after Undefined, in enum order, so a format indexes it directly.
 static_assert(sizeof(kFormats) / sizeof(kFormats[0]) == static_cast<usize>(Format::Count) - 1,
               "vk_format.cpp: the table must have one row for every Format except Undefined");
 
-VkFormat ToVkFormat(Format format) {
+VkFormat ToVkFormat(Format format)
+{
     const usize index = static_cast<usize>(format);
-    if (index == 0 || index >= static_cast<usize>(Format::Count)) {
+    if (index == 0 || index >= static_cast<usize>(Format::Count))
+    {
         return VK_FORMAT_UNDEFINED;
     }
     ENGINE_ASSERT(kFormats[index - 1].format == format, "vk_format.cpp: table rows are out of enum order");
     return kFormats[index - 1].vk;
 }
 
-Format FromVkFormat(VkFormat format) {
-    for (const FormatPair& pair : kFormats) {
-        if (pair.vk == format) {
+Format FromVkFormat(VkFormat format)
+{
+    for (const FormatPair& pair : kFormats)
+    {
+        if (pair.vk == format)
+        {
             return pair.format;
         }
     }
     return Format::Undefined;
 }
 
-VkImageAspectFlags AspectsOf(Format format) {
+VkImageAspectFlags AspectsOf(Format format)
+{
     const FormatProperties& props = FormatInfo(format);
-    if (!props.is_depth) {
+    if (!props.is_depth)
+    {
         return VK_IMAGE_ASPECT_COLOR_BIT;
     }
     return props.has_stencil ? (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT) : VK_IMAGE_ASPECT_DEPTH_BIT;
 }
 
-VkImageAspectFlags CopyAspectOf(Format format) {
+VkImageAspectFlags CopyAspectOf(Format format)
+{
     const FormatProperties& props = FormatInfo(format);
-    if (!props.is_depth) {
+    if (!props.is_depth)
+    {
         return VK_IMAGE_ASPECT_COLOR_BIT;
     }
     return props.has_stencil ? 0 : VK_IMAGE_ASPECT_DEPTH_BIT;
 }
 
-} // namespace engine_placeholder::rhi::vulkan
+}  // namespace engine_placeholder::rhi::vulkan

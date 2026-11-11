@@ -17,15 +17,18 @@
 #include "rhi/rhi.h"
 #include "types.h"
 
-namespace engine_placeholder::jobs {
+namespace engine_placeholder::jobs
+{
 class Scheduler;
 }
 
-namespace renderer_demo {
+namespace renderer_demo
+{
 
 using namespace engine_placeholder;
 
-struct FrameSetup {
+struct FrameSetup
+{
     rhi::Device* device = nullptr;
     // The swapchain to present to, or null to render to a FrameTarget given to each Render call.
     rhi::Swapchain* swapchain = nullptr;
@@ -51,29 +54,34 @@ struct FrameSetup {
     os::Window* window = nullptr;
     // What to do when the device is lost.
     renderer::RecoveryPolicy recovery;
-    // The font file the text overlay draws with, or null for a frame without the overlay (`SetOverlay` then does nothing).
+    // The font file the text overlay draws with, or null for a frame without the overlay (`SetOverlay` then does
+    // nothing).
     const char* font_path = nullptr;
 };
 
-// Lets a program put the 3D scene in a texture of its own and draw more over the frame's target (the UI demo: the scene goes to a viewport's
-// texture, then the UI pass draws the window).
-struct FrameCompose {
-    // Called while the graph is built, before the scene's passes: returns the target, size and format the scene is drawn to (false abandons the frame).
-    bool (*scene_target)(const renderer::FrameContext& context, void* user, renderer::GraphResource* target, u32* width, u32* height, rhi::Format* format) = nullptr;
+// Lets a program put the 3D scene in a texture of its own and draw more over the frame's target (the UI demo: the scene
+// goes to a viewport's texture, then the UI pass draws the window).
+struct FrameCompose
+{
+    // Called while the graph is built, before the scene's passes: returns the target, size and format the scene is
+    // drawn to (false abandons the frame).
+    bool (*scene_target)(const renderer::FrameContext& context, void* user, renderer::GraphResource* target, u32* width,
+                         u32* height, rhi::Format* format) = nullptr;
     // Called after all of the frame's own passes: declares more passes over `context.target`.
     void (*after_scene)(const renderer::FrameContext& context, void* user) = nullptr;
     void* user = nullptr;
 };
 
-class DemoFrame {
+class DemoFrame
+{
 public:
     DemoFrame();
     ~DemoFrame();
     DemoFrame(const DemoFrame&) = delete;
     DemoFrame& operator=(const DemoFrame&) = delete;
 
-    // Creates everything. Returns false, logging why, if a part could not be created (the G-buffer formats are unsupported, a
-    // shader or a pipeline fails).
+    // Creates everything. Returns false, logging why, if a part could not be created (the G-buffer formats are
+    // unsupported, a shader or a pipeline fails).
     bool Create(const FrameSetup& setup);
     // Points the frame at the device and swapchain a reset made; the parts rebuilt themselves through the registry.
     void Rebind(rhi::Device* device, rhi::Swapchain* swapchain);
@@ -88,19 +96,23 @@ public:
     // Sets the compose hooks (see FrameCompose); call before the first Render.
     void SetCompose(const FrameCompose& compose) { compose_ = compose; }
     // Sets the clock the next frame's FrameData carries.
-    void SetTime(f32 seconds, f32 delta_seconds) {
+    void SetTime(f32 seconds, f32 delta_seconds)
+    {
         time_ = seconds;
         delta_ = delta_seconds;
     }
     // Renders one frame of `scene` seen by `camera`. See renderer::Renderer::RenderFrame.
-    renderer::FrameStatus Render(const renderer::RenderScene* scene, const renderer::Camera* camera, const renderer::FrameTarget* offscreen);
+    renderer::FrameStatus Render(const renderer::RenderScene* scene, const renderer::Camera* camera,
+                                 const renderer::FrameTarget* offscreen);
 
-    // The text overlay (Phase 14): `greeting` at 32 px and `status` at 14 px below it, drawn after the tonemap while `on` is true. Needs `FrameSetup::font_path`.
-    // Returns false when the frame has no overlay (no font was given or it could not be opened).
+    // The text overlay (Phase 14): `greeting` at 32 px and `status` at 14 px below it, drawn after the tonemap while
+    // `on` is true. Needs `FrameSetup::font_path`. Returns false when the frame has no overlay (no font was given or it
+    // could not be opened).
     bool SetOverlay(bool on, StringView greeting, StringView status);
     bool OverlayAvailable() const { return font_.IsOpen(); }
     bool OverlayOn() const { return overlay_on_; }
-    // The overlay's display scale: its sizes and margins are multiplied by it (a window's `ContentScale`, 2 on a 200% display; 1 for screenshots).
+    // The overlay's display scale: its sizes and margins are multiplied by it (a window's `ContentScale`, 2 on a 200%
+    // display; 1 for screenshots).
     void SetOverlayScale(f32 scale) { overlay_scale_ = scale > 0.0f ? scale : 1.0f; }
     // What the overlay drew: its renderer's counters.
     renderer::TextStats OverlayStats() const { return text_.Stats(); }
@@ -108,7 +120,10 @@ public:
     const char* LastError() const { return renderer_ ? renderer_->LastError() : "not created"; }
     renderer::RendererStats Stats() const { return renderer_ ? renderer_->Stats() : renderer::RendererStats{}; }
     // The transient pool's counters.
-    renderer::TransientPoolStats PoolStats() const { return renderer_ ? renderer_->Pool().Stats() : renderer::TransientPoolStats{}; }
+    renderer::TransientPoolStats PoolStats() const
+    {
+        return renderer_ ? renderer_->Pool().Stats() : renderer::TransientPoolStats{};
+    }
     // What the last frame drew.
     const renderer::GBufferStats& GBufferStatistics() const { return gbuffer_stats_; }
     const renderer::LightSummary& Lights() const { return light_summary_; }
@@ -146,4 +161,4 @@ private:
     f32 delta_ = 0.0f;
 };
 
-} // namespace renderer_demo
+}  // namespace renderer_demo

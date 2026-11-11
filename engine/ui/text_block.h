@@ -10,18 +10,22 @@
 
 //! A block of text that sizes itself from its content (Phase 15, Day 193): the base of the label widget.
 
-namespace engine_placeholder::ui {
+namespace engine_placeholder::ui
+{
 
 /// Draws one string in one font and reports its size to the layout.
 ///
-/// The text is laid out in physical pixels (font size times the surface scale) and the result converted back to logical units. With wrapping on, the width given to `Measure` is the
-/// wrap width, so the height depends on the width: a container measures the block at the width it will give it. The layout is cached on (text, font, pixel size, wrap width, font
-/// object); an unchanged block does not lay out again. The default color is the theme's `Text`, the default font the theme's `Body`; a block with a style kind (a [[ui::Label]]) takes both from
-/// its style in the theme instead, in the widget's state (so a disabled label uses the disabled color).
+/// The text is laid out in physical pixels (font size times the surface scale) and the result converted back to logical
+/// units. With wrapping on, the width given to `Measure` is the wrap width, so the height depends on the width: a
+/// container measures the block at the width it will give it. The layout is cached on (text, font, pixel size, wrap
+/// width, font object); an unchanged block does not lay out again. The default color is the theme's `Text`, the default
+/// font the theme's `Body`; a block with a style kind (a [[ui::Label]]) takes both from its style in the theme instead,
+/// in the widget's state (so a disabled label uses the disabled color).
 ///
 /// - Thread-safety: owner-thread-only.
 /// - Ownership: owns its text and the cached layout; borrows the font from the surface's font provider.
-class TextBlock : public Widget {
+class TextBlock : public Widget
+{
 public:
     /// Makes a block.
     /// - Param name: the widget name.
@@ -37,9 +41,11 @@ public:
     void SetColor(u32 abgr);
     /// Wraps the text at the width it is measured or arranged at (default off); marks layout dirty.
     void SetWrap(bool wrap);
-    /// Aligns the text horizontally in the bounds (default left); marks the draw dirty. With wrapping the lines are aligned inside the wrap width.
+    /// Aligns the text horizontally in the bounds (default left); marks the draw dirty. With wrapping the lines are
+    /// aligned inside the wrap width.
     void SetAlign(text::Align align);
-    /// Cuts a single line that is wider than the bounds and ends it with an ellipsis (default off); ignored when wrapping. Marks the draw dirty.
+    /// Cuts a single line that is wider than the bounds and ends it with an ellipsis (default off); ignored when
+    /// wrapping. Marks the draw dirty.
     void SetEllipsis(bool ellipsis);
     /// Returns how many times the text was laid out (so a test can see the cache work).
     u64 LayoutCount() const { return run_.LayoutCount(); }
@@ -66,4 +72,4 @@ private:
     VariantId variant_ = 0;
 };
 
-} // namespace engine_placeholder::ui
+}  // namespace engine_placeholder::ui

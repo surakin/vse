@@ -4,19 +4,25 @@
 #include "ui/text_run.h"
 #include "ui/widget.h"
 
-//! The window frame (Phase 15, Day 199): a panel with a title bar, a content area and an optional footer, that the user can move and resize inside its parent.
+//! The window frame (Phase 15, Day 199): a panel with a title bar, a content area and an optional footer, that the user
+//! can move and resize inside its parent.
 
-namespace engine_placeholder::ui {
+namespace engine_placeholder::ui
+{
 
-/// A framed panel: title bar (title text and an optional close button), content, and an optional footer row, in the `window` and `titlebar` styles.
+/// A framed panel: title bar (title text and an optional close button), content, and an optional footer row, in the
+/// `window` and `titlebar` styles.
 ///
-/// Dragging the title bar moves the frame; it stays inside its parent's bounds (the surface or a layer). With `SetResizable(true)` the edges and corners resize it (the resize cursors show
-/// over them), down to a minimum and up to the parent's bounds. The frame is positioned by its bounds, so put it in a parent that leaves the bounds of its children alone (the root, the
-/// popup or modal layer, a plain widget), not in a layout container. The close button, when shown, calls `CloseRequested`, which runs `OnCloseRequested`; the frame does not remove itself.
+/// Dragging the title bar moves the frame; it stays inside its parent's bounds (the surface or a layer). With
+/// `SetResizable(true)` the edges and corners resize it (the resize cursors show over them), down to a minimum and up
+/// to the parent's bounds. The frame is positioned by its bounds, so put it in a parent that leaves the bounds of its
+/// children alone (the root, the popup or modal layer, a plain widget), not in a layout container. The close button,
+/// when shown, calls `CloseRequested`, which runs `OnCloseRequested`; the frame does not remove itself.
 ///
 /// - Thread-safety: owner-thread-only.
 /// - Ownership: owns its content and footer.
-class WindowFrame : public Widget {
+class WindowFrame : public Widget
+{
 public:
     /// The width of the resize band along each edge, in logical units.
     static constexpr f32 kEdge = 6.0f;
@@ -73,7 +79,8 @@ public:
     Rect ContentRect();
     /// Returns the listeners called when the close button is pressed (with the frame).
     Callback<WindowFrame*>& OnCloseRequested() { return on_close_; }
-    /// Called when the close button is pressed; the default runs `OnCloseRequested`. A [[ui::Dialog]] closes itself here.
+    /// Called when the close button is pressed; the default runs `OnCloseRequested`. A [[ui::Dialog]] closes itself
+    /// here.
     virtual void CloseRequested();
     /// Returns the size the title, content and footer need, with the frame's padding.
     Size Measure(const Constraints& constraints) override;
@@ -85,7 +92,13 @@ public:
     void OnEvent(Event& event) override;
 
 private:
-    enum Edge : u32 { kLeft = 1, kRight = 2, kTop = 4, kBottom = 8 };
+    enum Edge : u32
+    {
+        kLeft = 1,
+        kRight = 2,
+        kTop = 4,
+        kBottom = 8
+    };
     f32 TitleHeight();
     u32 EdgesAt(Point local) const;
     Size Floor();
@@ -108,4 +121,4 @@ private:
     Callback<WindowFrame*> on_close_;
 };
 
-} // namespace engine_placeholder::ui
+}  // namespace engine_placeholder::ui

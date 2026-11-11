@@ -6,11 +6,12 @@
 #include "string_view.h"
 #include "types.h"
 
-//! The window host: picks, opens and owns the display backend of the running platform and exposes it as a [[os::Window]]. The header is
-//! the same on every platform; the implementation lives in `platform/<platform>/` (Wayland or X11 on Linux), so a program that includes only
-//! this header builds unchanged on each.
+//! The window host: picks, opens and owns the display backend of the running platform and exposes it as a
+//! [[os::Window]]. The header is the same on every platform; the implementation lives in `platform/<platform>/`
+//! (Wayland or X11 on Linux), so a program that includes only this header builds unchanged on each.
 
-namespace engine_placeholder::os {
+namespace engine_placeholder::os
+{
 
 /// Picks and owns the window backend of the running platform, exposing whichever opened as an [[os::Window]].
 ///
@@ -19,7 +20,8 @@ namespace engine_placeholder::os {
 /// - Thread-safety: not-thread-safe. Use from the thread that opened it.
 /// - Ownership: owns the opened backend window and its connection; the `InputState`
 ///   passed to `Open` is borrowed and must outlive the host.
-class PlatformWindowHost {
+class PlatformWindowHost
+{
 public:
     /// Creates a host with no window; call [[os::PlatformWindowHost::Open]] to open one.
     PlatformWindowHost();
@@ -30,11 +32,14 @@ public:
 
     /// Opens a window on the backend chosen by `requested`, trying fallbacks per [[os::PlanWindowBackends]].
     ///
-    /// For `WindowBackend::Auto` it reads the platform's display environment (on Linux `$WAYLAND_DISPLAY` and `$DISPLAY`) to pick candidates.
+    /// For `WindowBackend::Auto` it reads the platform's display environment (on Linux `$WAYLAND_DISPLAY` and
+    /// `$DISPLAY`) to pick candidates.
     /// - Param requested: backend to use, or `Auto` to try the platform's backends in order.
     /// - Param title: window title.
-    /// - Param width: requested client width in logical pixels, pixels at 100% scaling (a hint; the compositor may override it). Windows
-    ///   multiplies it by the monitor's DPI, so [[os::Window::Width]] may be larger; on Wayland the compositor scales the window instead.
+    /// - Param width: requested client width in logical pixels, pixels at 100% scaling (a hint; the compositor may
+    /// override it). Windows
+    ///   multiplies it by the monitor's DPI, so [[os::Window::Width]] may be larger; on Wayland the compositor scales
+    ///   the window instead.
     /// - Param height: requested client height in logical pixels, as `width`.
     /// - Param input: receives keyboard and pointer state; must outlive the host.
     /// - Returns: `true` if a backend opened.
@@ -58,9 +63,9 @@ public:
     Window* Get() { return active_; }
 
 private:
-    struct Impl; // the concrete backends, defined by the platform's implementation file
+    struct Impl;  // the concrete backends, defined by the platform's implementation file
     UniquePtr<Impl> impl_;
     Window* active_ = nullptr;
 };
 
-} // namespace engine_placeholder::os
+}  // namespace engine_placeholder::os

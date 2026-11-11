@@ -7,16 +7,19 @@
 
 //! Wayland platform window: the Wayland backend packaged as an `os::Window`.
 
-namespace engine_placeholder::os::wayland {
+namespace engine_placeholder::os::wayland
+{
 
 /// Wayland backend as an [[os::Window]]: owns the connection, xdg toplevel window and seat input together.
 ///
 /// Not movable or copyable, because the input listeners capture addresses.
 ///
-/// - Thread-safety: owner-thread-only. Open, pump and close on one thread; listener callbacks run inside `PumpEvents` on that thread.
+/// - Thread-safety: owner-thread-only. Open, pump and close on one thread; listener callbacks run inside `PumpEvents`
+/// on that thread.
 /// - Ownership: owns the connection, window and input; the `InputState` passed to
 ///   `Open` is borrowed and must outlive this object.
-class WaylandPlatformWindow final : public Window {
+class WaylandPlatformWindow final : public Window
+{
 public:
     /// Constructs a closed window; call [[os::wayland::WaylandPlatformWindow::Open]] to connect.
     WaylandPlatformWindow() = default;
@@ -54,7 +57,8 @@ public:
 
     /// Returns true when the compositor offers `wp_cursor_shape_v1` and the seat has a pointer.
     bool SupportsCursorShape() const override { return input_.Cursor().SupportsShape(); }
-    /// Shows a standard cursor shape (set with the serial of the last pointer enter, and again on every enter); see [[os::Window::SetCursor]].
+    /// Shows a standard cursor shape (set with the serial of the last pointer enter, and again on every enter); see
+    /// [[os::Window::SetCursor]].
     bool SetCursor(CursorShape shape) override { return Valid() && input_.Cursor().SetShape(shape); }
     /// Returns true when the seat has a pointer: the image is a `wl_shm` buffer on a cursor surface.
     bool SupportsCursorImage() const override { return input_.Cursor().SupportsImage(); }
@@ -68,7 +72,8 @@ public:
     bool SetPointerLock(bool locked) override { return Valid() && input_.Cursor().SetLock(locked); }
     /// Returns whether the compositor has granted the lock.
     bool PointerLocked() const override { return input_.Cursor().Locked(); }
-    /// Returns whether the compositor offers the data device (and, for the primary selection, the primary selection protocol).
+    /// Returns whether the compositor offers the data device (and, for the primary selection, the primary selection
+    /// protocol).
     bool SupportsClipboard(ClipboardKind kind) const override { return input_.Clipboard().Supports(kind); }
     /// Returns whether the compositor offers the data device (drag and drop uses it).
     bool SupportsDragAndDrop() const override { return input_.Clipboard().SupportsDnd(); }
@@ -77,7 +82,10 @@ public:
     /// Answers the drag over the window (`wl_data_offer.accept` and `set_actions`).
     void SetDropAction(DragAction action) override { input_.Clipboard().SetDropAction(action); }
     /// Reads one format of the dropped data.
-    u32 RequestDropData(ClipboardFormat format, StringView custom_name) override { return input_.Clipboard().RequestDropData(format, custom_name); }
+    u32 RequestDropData(ClipboardFormat format, StringView custom_name) override
+    {
+        return input_.Clipboard().RequestDropData(format, custom_name);
+    }
     /// Ends the drop.
     void FinishDrop(DragAction taken) override { input_.Clipboard().FinishDrop(taken); }
     /// Starts a drag with the serial of the last button or key press; fails before the first.
@@ -87,13 +95,25 @@ public:
     /// Returns whether a drag started by this window is running.
     bool Dragging() const override { return input_.Clipboard().Dragging(); }
     /// Takes the selection; fails before the first key or button event (Wayland demands that serial).
-    bool SetClipboard(ClipboardKind kind, const ClipboardOffer& offer) override { return Valid() && input_.Clipboard().Set(kind, offer); }
+    bool SetClipboard(ClipboardKind kind, const ClipboardOffer& offer) override
+    {
+        return Valid() && input_.Clipboard().Set(kind, offer);
+    }
     /// Starts a read of the selection.
-    u32 RequestClipboard(ClipboardKind kind, ClipboardFormat format, StringView custom_name) override { return Valid() ? input_.Clipboard().Request(kind, format, custom_name) : 0; }
+    u32 RequestClipboard(ClipboardKind kind, ClipboardFormat format, StringView custom_name) override
+    {
+        return Valid() ? input_.Clipboard().Request(kind, format, custom_name) : 0;
+    }
     /// Hands over a finished result once.
-    bool TakeClipboardResult(u32 request_id, ClipboardResult* out) override { return input_.Clipboard().Take(request_id, out); }
+    bool TakeClipboardResult(u32 request_id, ClipboardResult* out) override
+    {
+        return input_.Clipboard().Take(request_id, out);
+    }
     /// Returns whether the selection offers the format.
-    bool ClipboardHasFormat(ClipboardKind kind, ClipboardFormat format, StringView custom_name) const override { return input_.Clipboard().Has(kind, format, custom_name); }
+    bool ClipboardHasFormat(ClipboardKind kind, ClipboardFormat format, StringView custom_name) const override
+    {
+        return input_.Clipboard().Has(kind, format, custom_name);
+    }
 
     /// Returns whether the user closed the window or the compositor connection was lost.
     ///
@@ -104,7 +124,8 @@ public:
     bool ConnectionLost() const { return connection_lost_; }
     /// Returns the underlying `wl_display`, or null if not open.
     ///
-    /// - Ownership: borrowed; owned by this window's connection and valid until [[os::wayland::WaylandPlatformWindow::Close]].
+    /// - Ownership: borrowed; owned by this window's connection and valid until
+    /// [[os::wayland::WaylandPlatformWindow::Close]].
     wl_display* NativeDisplay() const { return connection_.Display(); }
     /// Returns the current window width in pixels.
     u32 Width() const override { return window_.Width(); }
@@ -113,9 +134,11 @@ public:
     /// Returns the backend id, `"wayland"`.
     const char* BackendName() const override { return "wayland"; }
     /// Returns the `wl_display*` and `wl_surface*`, with kind `Wayland`; `Invalid` if the window is not open.
-    NativeWindowInfo GetNativeInfo() const override {
+    NativeWindowInfo GetNativeInfo() const override
+    {
         NativeWindowInfo info;
-        if (Valid()) {
+        if (Valid())
+        {
             info.kind = NativeWindowKind::Wayland;
             info.display = connection_.Display();
             info.surface = window_.Surface();
@@ -123,7 +146,8 @@ public:
         }
         return info;
     }
-    /// Returns whether the window is closed, the connection was lost, or it has zero area; Wayland exposes no minimized state to clients.
+    /// Returns whether the window is closed, the connection was lost, or it has zero area; Wayland exposes no minimized
+    /// state to clients.
     bool IsMinimized() const override { return !Valid() || window_.Width() == 0 || window_.Height() == 0; }
     /// Returns a counter that changes each time a configure changes the window size; 0 when not open.
     u64 ResizeSerial() const override { return Valid() ? window_.ResizeSerial() : 0; }
@@ -132,8 +156,9 @@ public:
     /// Asks the compositor for fullscreen on or off; see [[os::wayland::WaylandWindow::SetFullscreen]].
     /// - Param fullscreen: the state wanted.
     /// - Returns: true if the request was sent.
-    bool SetFullscreen(bool fullscreen) override {
-        return Valid() && window_.SetFullscreen(fullscreen); // sent with the next PumpEvents
+    bool SetFullscreen(bool fullscreen) override
+    {
+        return Valid() && window_.SetFullscreen(fullscreen);  // sent with the next PumpEvents
     }
     /// Returns whether the compositor's latest configure said fullscreen.
     bool IsFullscreen() const override { return Valid() && window_.IsFullscreen(); }
@@ -151,4 +176,4 @@ private:
     void MarkConnectionLost(const char* why);
 };
 
-} // namespace engine_placeholder::os::wayland
+}  // namespace engine_placeholder::os::wayland

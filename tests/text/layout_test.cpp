@@ -8,9 +8,11 @@ using namespace engine_placeholder;
 using namespace engine_placeholder::text;
 using text_test::Opened;
 
-namespace {
+namespace
+{
 
-TextLayout Lay(Opened& o, const char* text, u32 size = 24, f32 max_width = 0, Align align = Align::Left, u32 tab = 4) {
+TextLayout Lay(Opened& o, const char* text, u32 size = 24, f32 max_width = 0, Align align = Align::Left, u32 tab = 4)
+{
     TextStyle style;
     style.font = &o.font;
     style.pixel_size = size;
@@ -24,9 +26,11 @@ TextLayout Lay(Opened& o, const char* text, u32 size = 24, f32 max_width = 0, Al
     return layout;
 }
 
-void RequireTiling(const TextLayout& layout) {
+void RequireTiling(const TextLayout& layout)
+{
     u32 at = 0;
-    for (usize i = 0; i < layout.clusters.Size(); ++i) {
+    for (usize i = 0; i < layout.clusters.Size(); ++i)
+    {
         REQUIRE(layout.clusters[i].byte_begin == at);
         REQUIRE(layout.clusters[i].byte_end > at);
         at = layout.clusters[i].byte_end;
@@ -34,16 +38,21 @@ void RequireTiling(const TextLayout& layout) {
     REQUIRE(at == layout.byte_length);
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("Advances of Hello, world! add up to the font's advances plus kerning", "[text][layout]") {
+TEST_CASE("Advances of Hello, world! add up to the font's advances plus kerning", "[text][layout]")
+{
     Opened o;
     const char* text = "Hello, world!";
     const TextLayout layout = Lay(o, text);
     REQUIRE(layout.glyphs.Size() == 13);
     f32 pen = 0;
-    for (usize i = 0; i < layout.glyphs.Size(); ++i) {
-        if (i > 0) pen += o.font.Kerning(layout.glyphs[i - 1].glyph, layout.glyphs[i].glyph);
+    for (usize i = 0; i < layout.glyphs.Size(); ++i)
+    {
+        if (i > 0)
+        {
+            pen += o.font.Kerning(layout.glyphs[i - 1].glyph, layout.glyphs[i].glyph);
+        }
         CHECK(layout.glyphs[i].x == pen);
         CHECK(layout.glyphs[i].glyph == o.font.FindGlyph(static_cast<char32>(text[i])));
         CHECK(layout.glyphs[i].advance == o.font.Metrics(layout.glyphs[i].glyph).advance);
@@ -58,7 +67,8 @@ TEST_CASE("Advances of Hello, world! add up to the font's advances plus kerning"
     RequireTiling(layout);
 }
 
-TEST_CASE("A kerned pair is closer than the unkerned sum", "[text][layout]") {
+TEST_CASE("A kerned pair is closer than the unkerned sum", "[text][layout]")
+{
     Opened o;
     const TextLayout av = Lay(o, "AV", 48);
     const f32 unkerned = o.font.Metrics(o.font.FindGlyph(U'A')).advance;
@@ -67,66 +77,98 @@ TEST_CASE("A kerned pair is closer than the unkerned sum", "[text][layout]") {
     CHECK(ab.glyphs[1].x == o.font.Metrics(o.font.FindGlyph(U'a')).advance);
 }
 
-TEST_CASE("Wrapping breaks at spaces and never inside a cluster", "[text][layout]") {
+TEST_CASE("Wrapping breaks at spaces and never inside a cluster", "[text][layout]")
+{
     Opened o;
     const char* text = "alpha beta gamma delta epsilon";
     const TextLayout layout = Lay(o, text, 20, 130);
     REQUIRE(layout.lines.Size() > 2);
-    for (usize i = 0; i < layout.lines.Size(); ++i) {
+    for (usize i = 0; i < layout.lines.Size(); ++i)
+    {
         const LineInfo& line = layout.lines[i];
         CHECK(line.width <= 130.0f + 0.01f);
-        if (i > 0) CHECK(text[line.byte_begin] != ' '); // a line starts with a word
+        if (i > 0)
+        {
+            CHECK(text[line.byte_begin] != ' ');  // a line starts with a word
+        }
     }
     RequireTiling(layout);
     // Lines tile the bytes too.
     u32 at = 0;
-    for (usize i = 0; i < layout.lines.Size(); ++i) {
+    for (usize i = 0; i < layout.lines.Size(); ++i)
+    {
         CHECK(layout.lines[i].byte_begin == at);
         at = layout.lines[i].byte_end;
     }
     CHECK(at == layout.byte_length);
     // Combining acute after e: the pair is one cluster, so a line start is never between them.
-    const TextLayout accents = Lay(o, "e\xCC\x81" "e\xCC\x81" "e\xCC\x81" "e\xCC\x81" "e\xCC\x81" "e\xCC\x81", 24, 30);
+    const TextLayout accents = Lay(o,
+                                   "e\xCC\x81"
+                                   "e\xCC\x81"
+                                   "e\xCC\x81"
+                                   "e\xCC\x81"
+                                   "e\xCC\x81"
+                                   "e\xCC\x81",
+                                   24, 30);
     CHECK(accents.lines.Size() > 1);
-    for (usize i = 0; i < accents.lines.Size(); ++i) CHECK(accents.lines[i].byte_begin % 3 == 0);
+    for (usize i = 0; i < accents.lines.Size(); ++i)
+    {
+        CHECK(accents.lines[i].byte_begin % 3 == 0);
+    }
     CHECK(accents.glyphs.Size() == 12);
-    CHECK(accents.glyphs[1].advance == 0); // the combining mark
-    CHECK(accents.glyphs[1].x == accents.glyphs[0].x + accents.glyphs[0].advance); // the mark is drawn at the pen after its base (fonts give it a negative bearing)
+    CHECK(accents.glyphs[1].advance == 0);  // the combining mark
+    CHECK(accents.glyphs[1].x ==
+          accents.glyphs[0].x +
+              accents.glyphs[0]
+                  .advance);  // the mark is drawn at the pen after its base (fonts give it a negative bearing)
 }
 
-TEST_CASE("A word wider than the line wraps between clusters", "[text][layout]") {
+TEST_CASE("A word wider than the line wraps between clusters", "[text][layout]")
+{
     Opened o;
     const TextLayout layout = Lay(o, "WWWWWWWWWW", 24, 50);
     CHECK(layout.lines.Size() > 3);
-    for (usize i = 0; i < layout.lines.Size(); ++i) CHECK(layout.lines[i].cluster_count >= 1);
+    for (usize i = 0; i < layout.lines.Size(); ++i)
+    {
+        CHECK(layout.lines[i].cluster_count >= 1);
+    }
     RequireTiling(layout);
-    const TextLayout narrow = Lay(o, "WW", 24, 1); // narrower than one glyph: still one cluster per line, no endless loop
+    const TextLayout narrow = Lay(o, "WW", 24,
+                                  1);  // narrower than one glyph: still one cluster per line, no endless loop
     CHECK(narrow.lines.Size() == 2);
 }
 
-TEST_CASE("A ZWJ family emoji is one cluster that draws its glyphs", "[text][layout]") {
+TEST_CASE("A ZWJ family emoji is one cluster that draws its glyphs", "[text][layout]")
+{
     Opened o;
-    const char* family = "\xF0\x9F\x91\xA8\xE2\x80\x8D\xF0\x9F\x91\xA9\xE2\x80\x8D\xF0\x9F\x91\xA7\xE2\x80\x8D\xF0\x9F\x91\xA6";
+    const char*
+        family = "\xF0\x9F\x91\xA8\xE2\x80\x8D\xF0\x9F\x91\xA9\xE2\x80\x8D\xF0\x9F\x91\xA7\xE2\x80\x8D\xF0\x9F\x91\xA6";
     const TextLayout layout = Lay(o, family);
     CHECK(layout.clusters.Size() == 1);
     REQUIRE(layout.glyphs.Size() == 7);
-    for (usize i = 0; i < 7; ++i) CHECK(layout.glyphs[i].grapheme_index == 0);
-    CHECK(layout.glyphs[1].advance == 0); // the joiners add nothing
+    for (usize i = 0; i < 7; ++i)
+    {
+        CHECK(layout.glyphs[i].grapheme_index == 0);
+    }
+    CHECK(layout.glyphs[1].advance == 0);  // the joiners add nothing
     CHECK(layout.glyphs[3].advance == 0);
-    CHECK(layout.glyphs[0].glyph == 0);   // the shipped font has no emoji: .notdef
+    CHECK(layout.glyphs[0].glyph == 0);  // the shipped font has no emoji: .notdef
     RequireTiling(layout);
 }
 
-TEST_CASE("Invalid UTF-8 becomes U+FFFD and is counted", "[text][layout]") {
+TEST_CASE("Invalid UTF-8 becomes U+FFFD and is counted", "[text][layout]")
+{
     Opened o;
-    const TextLayout layout = Lay(o, "a\xFF" "b\xC3");
+    const TextLayout layout = Lay(o, "a\xFF"
+                                     "b\xC3");
     CHECK(layout.invalid_sequences == 2);
     CHECK(layout.glyphs.Size() == 4);
     CHECK(layout.glyphs[1].glyph == o.font.FindGlyph(0xFFFD));
     RequireTiling(layout);
 }
 
-TEST_CASE("The empty string is one empty line; line breaks of every kind", "[text][layout]") {
+TEST_CASE("The empty string is one empty line; line breaks of every kind", "[text][layout]")
+{
     Opened o;
     const TextLayout empty = Lay(o, "");
     CHECK(empty.glyphs.Size() == 0);
@@ -141,7 +183,7 @@ TEST_CASE("The empty string is one empty line; line breaks of every kind", "[tex
     CHECK(crlf.glyphs[1].y > crlf.glyphs[0].y);
     CHECK(crlf.glyphs[1].x == 0);
     const TextLayout lf = Lay(o, "a\nb\n");
-    CHECK(lf.lines.Size() == 3); // the empty line after the last break
+    CHECK(lf.lines.Size() == 3);  // the empty line after the last break
     CHECK(lf.lines[2].cluster_count == 0);
     CHECK(lf.height == 3 * o.font.Metrics().line_height);
     const TextLayout blank_middle = Lay(o, "a\n\nb");
@@ -151,7 +193,8 @@ TEST_CASE("The empty string is one empty line; line breaks of every kind", "[tex
     RequireTiling(lf);
 }
 
-TEST_CASE("Tabs advance to the next tab stop", "[text][layout]") {
+TEST_CASE("Tabs advance to the next tab stop", "[text][layout]")
+{
     Opened o;
     const TextLayout lead = Lay(o, "\tb", 24);
     REQUIRE(o.font.SetPixelSize(24).Ok());
@@ -165,47 +208,57 @@ TEST_CASE("Tabs advance to the next tab stop", "[text][layout]") {
     CHECK(wide.glyphs[0].x == 2 * stop);
 }
 
-TEST_CASE("Alignment offsets each line inside the width", "[text][layout]") {
+TEST_CASE("Alignment offsets each line inside the width", "[text][layout]")
+{
     Opened o;
     const TextLayout left = Lay(o, "Hi\nWorld", 24, 300, Align::Left);
     const TextLayout center = Lay(o, "Hi\nWorld", 24, 300, Align::Center);
     const TextLayout right = Lay(o, "Hi\nWorld", 24, 300, Align::Right);
     CHECK(left.lines[0].x == 0);
-    for (usize i = 0; i < 2; ++i) {
+    for (usize i = 0; i < 2; ++i)
+    {
         CHECK(center.lines[i].x == (300 - center.lines[i].width) * 0.5f);
         CHECK(right.lines[i].x == 300 - right.lines[i].width);
         CHECK(right.glyphs[0].x == right.lines[0].x);
     }
-    CHECK(center.lines[0].x > center.lines[1].x); // the shorter line is indented more
+    CHECK(center.lines[0].x > center.lines[1].x);  // the shorter line is indented more
     // Without max_width the widest line is the reference.
     const TextLayout widest = Lay(o, "Hi\nWorld", 24, 0, Align::Right);
     CHECK(widest.lines[1].x == 0);
     CHECK(widest.lines[0].x > 0);
 }
 
-TEST_CASE("Layout is deterministic and glyph offsets follow the text", "[text][layout]") {
+TEST_CASE("Layout is deterministic and glyph offsets follow the text", "[text][layout]")
+{
     Opened o;
     const char* text = "The quick brown fox\njumps over the lazy dog, \xC3\xA9\xCC\x81 \xCE\xA9";
     const TextLayout a = Lay(o, text, 18, 150);
     const TextLayout b = Lay(o, text, 18, 150);
     REQUIRE(a.glyphs.Size() == b.glyphs.Size());
     bool same = true;
-    for (usize i = 0; i < a.glyphs.Size(); ++i) {
-        same = same && a.glyphs[i].glyph == b.glyphs[i].glyph && a.glyphs[i].x == b.glyphs[i].x && a.glyphs[i].y == b.glyphs[i].y;
+    for (usize i = 0; i < a.glyphs.Size(); ++i)
+    {
+        same = same && a.glyphs[i].glyph == b.glyphs[i].glyph && a.glyphs[i].x == b.glyphs[i].x &&
+               a.glyphs[i].y == b.glyphs[i].y;
     }
     CHECK(same);
-    for (usize i = 1; i < a.glyphs.Size(); ++i) CHECK(a.glyphs[i].source_byte_offset > a.glyphs[i - 1].source_byte_offset);
+    for (usize i = 1; i < a.glyphs.Size(); ++i)
+    {
+        CHECK(a.glyphs[i].source_byte_offset > a.glyphs[i - 1].source_byte_offset);
+    }
     RequireTiling(a);
 }
 
-TEST_CASE("Layout refuses a style without a font", "[text][layout]") {
+TEST_CASE("Layout refuses a style without a font", "[text][layout]")
+{
     TextStyle style;
     TextLayout layout;
     CHECK(Layout(StringView("x", 1), style, LayoutOptions{}, &layout).Is(Error::InvalidArgument));
     CHECK(layout.lines.Size() == 0);
 }
 
-TEST_CASE("Layout refuses nonsense options", "[text][layout]") {
+TEST_CASE("Layout refuses nonsense options", "[text][layout]")
+{
     Opened o;
     TextStyle style;
     style.font = &o.font;
@@ -221,12 +274,17 @@ TEST_CASE("Layout refuses nonsense options", "[text][layout]") {
     CHECK(layout.glyphs.Size() == 0);
 }
 
-TEST_CASE("A long text with many lines lays out", "[text][layout]") {
+TEST_CASE("A long text with many lines lays out", "[text][layout]")
+{
     Opened o;
     Vector<char> text;
-    for (u32 i = 0; i < 20000; ++i) {
+    for (u32 i = 0; i < 20000; ++i)
+    {
         text.Push('a' + static_cast<char>(i % 26));
-        if (i % 5 == 4) text.Push('\n');
+        if (i % 5 == 4)
+        {
+            text.Push('\n');
+        }
     }
     TextStyle style;
     style.font = &o.font;

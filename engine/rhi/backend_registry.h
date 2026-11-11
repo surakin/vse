@@ -6,14 +6,16 @@
 #include "string_view.h"
 #include "types.h"
 
-//! The table of RHI backends a program was built with: each backend library registers itself, and [[rhi::CreateDevice]],
+//! The table of RHI backends a program was built with: each backend library registers itself, and
+//! [[rhi::CreateDevice]],
 //! [[rhi::EnumerateAdapters]] and [[rhi::DeviceHost]] reach backends only through it.
 //!
 //! Registration is an explicit call, never a global constructor: a program calls [[rhi::RegisterCompiledBackends]]
 //! (`rhi/backends.h`, library `rhi_backends`) once at startup, before it creates a device; test binaries do it from a
 //! Catch2 listener. A device asked of a backend that was never registered fails with an error that says so.
 
-namespace engine_placeholder::rhi {
+namespace engine_placeholder::rhi
+{
 
 enum class Backend : u8;
 struct DeviceCreateInfo;
@@ -25,7 +27,8 @@ inline constexpr usize kMaxRegisteredBackends = 8;
 ///
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: `name` and the function pointers refer to static data and code in the backend library.
-struct BackendDescriptor {
+struct BackendDescriptor
+{
     /// The backend's value; unique in the registry. Never `Backend::Auto`.
     Backend backend{};
     /// The lowercase name used by the `backend` setting and in logs (for example `vulkan`); unique in the registry.
@@ -40,15 +43,15 @@ struct BackendDescriptor {
     bool (*available)(char* reason, usize reason_size) = nullptr;
     /// The bytecode format the backend's devices take.
     ShaderFormat shader_format = ShaderFormat::Spirv;
-    /// How strongly `Backend::Auto` prefers this backend: the available backend with the highest rank wins. 0 means `Auto`
-    /// never picks it (the null backend).
+    /// How strongly `Backend::Auto` prefers this backend: the available backend with the highest rank wins. 0 means
+    /// `Auto` never picks it (the null backend).
     u32 auto_rank = 0;
 };
 
 /// Adds a backend to the registry.
 ///
-/// Registering the same descriptor again (same backend, same functions) is accepted and changes nothing, so a program may
-/// call [[rhi::RegisterCompiledBackends]] more than once.
+/// Registering the same descriptor again (same backend, same functions) is accepted and changes nothing, so a program
+/// may call [[rhi::RegisterCompiledBackends]] more than once.
 ///
 /// - Param descriptor: copied.
 /// - Returns: true if the backend is registered (now or already).
@@ -115,7 +118,8 @@ const BackendDescriptor* PickAutoBackend(char* reason, usize reason_size);
 /// registered descriptor if it is available.
 ///
 /// - Param backend: the requested backend.
-/// - Param reason: receives why it cannot be used, terminated (not registered in this program, or not available here, with
+/// - Param reason: receives why it cannot be used, terminated (not registered in this program, or not available here,
+/// with
 ///   the backend's own reason); may be null.
 /// - Param reason_size: size of `reason` in bytes.
 /// - Returns: the descriptor, or null.
@@ -124,11 +128,12 @@ const BackendDescriptor* PickAutoBackend(char* reason, usize reason_size);
 /// - Thread-safety: thread-safe.
 const BackendDescriptor* ResolveBackend(Backend backend, char* reason, usize reason_size);
 
-/// Empties the registry, for tests that register fake backends; the next [[rhi::RegisterCompiledBackends]] fills it again.
+/// Empties the registry, for tests that register fake backends; the next [[rhi::RegisterCompiledBackends]] fills it
+/// again.
 ///
 /// Must not be called while a device exists.
 ///
 /// - Thread-safety: thread-safe.
 void ClearBackendRegistryForTest();
 
-} // namespace engine_placeholder::rhi
+}  // namespace engine_placeholder::rhi

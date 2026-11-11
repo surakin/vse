@@ -9,16 +9,23 @@
 
 using namespace engine_placeholder;
 
-namespace {
-Aabb UnitBoxAt(f32 x) { return Aabb{Vec3(x, 0, 0), Vec3(x + 1, 1, 1)}; }
-} // namespace
+namespace
+{
+Aabb UnitBoxAt(f32 x)
+{
+    return Aabb{Vec3(x, 0, 0), Vec3(x + 1, 1, 1)};
+}
+}  // namespace
 
-TEST_CASE("Spatial debug: DescribeSet counts the items and the tree", "[spatial][debug]") {
+TEST_CASE("Spatial debug: DescribeSet counts the items and the tree", "[spatial][debug]")
+{
     spatial::SpatialSet set;
-    for (u32 i = 0; i < 100; ++i) {
+    for (u32 i = 0; i < 100; ++i)
+    {
         set.AddDynamic(UnitBoxAt(static_cast<f32>(i) * 3.0f), i, 0);
     }
-    for (u32 i = 0; i < 20; ++i) {
+    for (u32 i = 0; i < 20; ++i)
+    {
         set.AddStatic(UnitBoxAt(static_cast<f32>(i) * 3.0f + 1000.0f), 1000 + i, 0);
     }
     set.RebuildStatic();
@@ -31,13 +38,15 @@ TEST_CASE("Spatial debug: DescribeSet counts the items and the tree", "[spatial]
     CHECK(stats.memory_bytes > 0);
 }
 
-TEST_CASE("Spatial debug: a box has 12 edges and DebugLines draws every item and stops at the cap", "[spatial][debug]") {
+TEST_CASE("Spatial debug: a box has 12 edges and DebugLines draws every item and stops at the cap", "[spatial][debug]")
+{
     Vector<spatial::DebugLine> lines;
     spatial::AppendBoxLines(UnitBoxAt(0), spatial::kDebugItemColor, &lines);
     CHECK(lines.Size() == 12);
 
     spatial::SpatialSet set;
-    for (u32 i = 0; i < 50; ++i) {
+    for (u32 i = 0; i < 50; ++i)
+    {
         set.AddDynamic(UnitBoxAt(static_cast<f32>(i) * 3.0f), i, 0);
     }
     spatial::DebugOptions items_only;
@@ -45,7 +54,7 @@ TEST_CASE("Spatial debug: a box has 12 edges and DebugLines draws every item and
     CHECK(spatial::DebugLines(set, items_only, &lines) == 50 * 12);
 
     spatial::DebugOptions all;
-    CHECK(spatial::DebugLines(set, all, &lines) > 50 * 12); // the node boxes too
+    CHECK(spatial::DebugLines(set, all, &lines) > 50 * 12);  // the node boxes too
 
     spatial::DebugOptions capped;
     capped.max_lines = 100;
@@ -60,7 +69,7 @@ TEST_CASE("Spatial debug: a box has 12 edges and DebugLines draws every item and
     query.hits = Span<const Aabb>(hits, 2);
     CHECK(spatial::DebugLines(set, query, &lines) == 3 * 12);
 
-    spatial::DebugOptions crowded; // the query and its hits survive a cap the structure would fill
+    spatial::DebugOptions crowded;  // the query and its hits survive a cap the structure would fill
     crowded.max_lines = 36;
     crowded.query = query.query;
     crowded.has_query = true;
@@ -70,7 +79,9 @@ TEST_CASE("Spatial debug: a box has 12 edges and DebugLines draws every item and
     CHECK(lines[0].color == spatial::kDebugQueryColor);
 }
 
-TEST_CASE("Spatial debug: the settings are declared, drive the world's parallel flag and the tree margin", "[spatial][debug][settings]") {
+TEST_CASE("Spatial debug: the settings are declared, drive the world's parallel flag and the tree margin",
+          "[spatial][debug][settings]")
+{
     settings::Registry registry;
     spatial::RegisterSpatialSettings(&registry);
     CHECK(registry.Find(StringView("spatial.parallel")).IsValid());
@@ -88,6 +99,6 @@ TEST_CASE("Spatial debug: the settings are declared, drive the world's parallel 
     registry.Publish(registry.Find(StringView("spatial.parallel")), settings::Value::FromBool(false));
     CHECK_FALSE(world.Parallel());
 
-    settings::Registry empty; // no settings declared: the default configuration
+    settings::Registry empty;  // no settings declared: the default configuration
     CHECK(spatial::SetConfigFromSettings(empty).bvh.fat_margin == 0.25f);
 }

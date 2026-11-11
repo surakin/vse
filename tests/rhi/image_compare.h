@@ -13,17 +13,21 @@
 // neighbouring pixel's by more than `edge_step` (an "edge pixel": the step from background to triangle, far larger
 // than the ramp of a smooth gradient) is compared with the wider `edge_tolerance`, and a bounded fraction of edge
 // pixels may still miss it. Everything else must match within `tolerance`.
-namespace gpu_test {
+namespace gpu_test
+{
 
-// The pixel bytes of an Image: a copyable byte buffer. The lower-case names (assign, resize, data, size, empty) are the spelling the
-// renderer tests still use for the pixels they read back; the capitalized ones are the engine's. The lower-case ones go when those
-// tests are ported.
-class PixelBytes {
+// The pixel bytes of an Image: a copyable byte buffer. The lower-case names (assign, resize, data, size, empty) are the
+// spelling the renderer tests still use for the pixels they read back; the capitalized ones are the engine's. The
+// lower-case ones go when those tests are ported.
+class PixelBytes
+{
 public:
     PixelBytes() = default;
     PixelBytes(const PixelBytes& other) { CopyFrom(other); }
-    PixelBytes& operator=(const PixelBytes& other) {
-        if (this != &other) {
+    PixelBytes& operator=(const PixelBytes& other)
+    {
+        if (this != &other)
+        {
             bytes_.Clear();
             CopyFrom(other);
         }
@@ -33,10 +37,14 @@ public:
     PixelBytes& operator=(PixelBytes&&) noexcept = default;
 
     // Replaces the contents with `count` copies of `fill`.
-    void Assign(engine_placeholder::usize count, engine_placeholder::byte fill) {
+    void Assign(engine_placeholder::usize count, engine_placeholder::byte fill)
+    {
         bytes_.Clear();
         bytes_.Resize(count);
-        for (engine_placeholder::usize i = 0; i < count; ++i) bytes_[i] = fill;
+        for (engine_placeholder::usize i = 0; i < count; ++i)
+        {
+            bytes_[i] = fill;
+        }
     }
     // Sets the size, zero-filling new bytes.
     void Resize(engine_placeholder::usize count) { bytes_.Resize(count); }
@@ -57,38 +65,52 @@ public:
     bool empty() const { return Empty(); }
 
 private:
-    void CopyFrom(const PixelBytes& other) {
+    void CopyFrom(const PixelBytes& other)
+    {
         bytes_.Resize(other.bytes_.Size());
-        for (engine_placeholder::usize i = 0; i < other.bytes_.Size(); ++i) bytes_[i] = other.bytes_[i];
+        for (engine_placeholder::usize i = 0; i < other.bytes_.Size(); ++i)
+        {
+            bytes_[i] = other.bytes_[i];
+        }
     }
     engine_placeholder::Vector<engine_placeholder::byte> bytes_;
 };
 
-struct Image {
+struct Image
+{
     unsigned width = 0;
     unsigned height = 0;
-    PixelBytes rgba; // width * height * 4, row 0 at the top
+    PixelBytes rgba;  // width * height * 4, row 0 at the top
 
-    bool Valid() const { return width > 0 && height > 0 && rgba.Size() == static_cast<engine_placeholder::usize>(width) * height * 4; }
-    const engine_placeholder::byte* Pixel(unsigned x, unsigned y) const { return &rgba[(static_cast<engine_placeholder::usize>(y) * width + x) * 4]; }
+    bool Valid() const
+    {
+        return width > 0 && height > 0 && rgba.Size() == static_cast<engine_placeholder::usize>(width) * height * 4;
+    }
+    const engine_placeholder::byte* Pixel(unsigned x, unsigned y) const
+    {
+        return &rgba[(static_cast<engine_placeholder::usize>(y) * width + x) * 4];
+    }
 };
 
-struct CompareOptions {
-    int tolerance = 2;             // per-channel difference allowed on interior pixels
-    int edge_step = 16;            // golden step between neighbours that makes a pixel an edge pixel
-    int edge_tolerance = 64;       // per-channel difference allowed on edge pixels
-    double max_edge_miss = 0.25;   // fraction of edge pixels allowed to exceed `edge_tolerance`
-    double max_interior_miss = 0;  // fraction of interior pixels allowed to exceed `tolerance`
-    int interior_miss_limit = 255; // no interior pixel may differ by more than this, even within the miss fraction
+struct CompareOptions
+{
+    int tolerance = 2;              // per-channel difference allowed on interior pixels
+    int edge_step = 16;             // golden step between neighbours that makes a pixel an edge pixel
+    int edge_tolerance = 64;        // per-channel difference allowed on edge pixels
+    double max_edge_miss = 0.25;    // fraction of edge pixels allowed to exceed `edge_tolerance`
+    double max_interior_miss = 0;   // fraction of interior pixels allowed to exceed `tolerance`
+    int interior_miss_limit = 255;  // no interior pixel may differ by more than this, even within the miss fraction
 };
 
-struct CompareResult {
+struct CompareResult
+{
     bool same = false;
     unsigned interior_misses = 0;
     unsigned edge_pixels = 0;
     unsigned edge_misses = 0;
     int max_difference = 0;
-    engine_test::Text message = engine_test::MakeText(); // why it failed, with the diff image path when one was written
+    engine_test::Text
+        message = engine_test::MakeText();  // why it failed, with the diff image path when one was written
 };
 
 // Compares `actual` against `golden`. On failure writes a diff image (the amplified absolute difference) to the
@@ -111,4 +133,4 @@ engine_test::Text TempPath(const char* name);
 // The golden directory (the source tree's tests/rhi/golden).
 engine_test::Text GoldenPath(const char* file);
 
-} // namespace gpu_test
+}  // namespace gpu_test

@@ -8,18 +8,22 @@
 
 //! The menu bar (Phase 15, Day 198): a row of titles, each opening a [[ui::Menu]] below it.
 
-namespace engine_placeholder::ui {
+namespace engine_placeholder::ui
+{
 
 /// A row of menu titles.
 ///
-/// A click on a title opens its menu; while one is open, moving the pointer to another title switches to it, and Left and Right in the open menu (when it has no submenu to
-/// enter or leave) do the same. The bar is also driven from the keyboard: install it with `Surface::SetMenuKeyTarget`, then F10 or a lone Alt press takes the focus and
-/// highlights the first title (the mnemonic letters are underlined), Left and Right move, Down, Enter and Space open the menu, a letter opens the title with that mnemonic,
-/// Escape (or F10 / Alt again) leaves the bar. Alt with a letter opens the matching menu from anywhere. Leaving the bar (or closing its menu) gives the focus back to the widget that had it.
+/// A click on a title opens its menu; while one is open, moving the pointer to another title switches to it, and Left
+/// and Right in the open menu (when it has no submenu to enter or leave) do the same. The bar is also driven from the
+/// keyboard: install it with `Surface::SetMenuKeyTarget`, then F10 or a lone Alt press takes the focus and highlights
+/// the first title (the mnemonic letters are underlined), Left and Right move, Down, Enter and Space open the menu, a
+/// letter opens the title with that mnemonic, Escape (or F10 / Alt again) leaves the bar. Alt with a letter opens the
+/// matching menu from anywhere. Leaving the bar (or closing its menu) gives the focus back to the widget that had it.
 ///
 /// - Thread-safety: owner-thread-only.
 /// - Ownership: borrows the menus; owns its title layouts. A menu must outlive the bar.
-class MenuBar : public Widget {
+class MenuBar : public Widget
+{
 public:
     /// No title.
     static constexpr usize kNone = static_cast<usize>(-1);
@@ -62,7 +66,8 @@ public:
     bool WantsUpdate() const override { return open_ != kNone; }
 
 private:
-    struct Title {
+    struct Title
+    {
         TextRun run;
         Menu* menu = nullptr;
         char mnemonic = 0;
@@ -85,4 +90,4 @@ private:
     f32 height_ = 0;
 };
 
-} // namespace engine_placeholder::ui
+}  // namespace engine_placeholder::ui

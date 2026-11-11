@@ -5,7 +5,8 @@
 
 //! A small SPIR-V module reader: the cheap sanity check every backend runs before a module reaches a driver.
 
-namespace engine_placeholder::rhi {
+namespace engine_placeholder::rhi
+{
 
 /// The SPIR-V magic number (the first word of every module in the host's byte order).
 inline constexpr u32 kSpirvMagic = 0x07230203u;
@@ -18,9 +19,11 @@ inline constexpr usize kMaxShaderEntryNameLength = 63;
 /// - Param name: a nul-terminated string; must not be null.
 /// - Returns: true if it is too long.
 /// - Thread-safety: thread-safe. A pure function.
-inline bool ShaderEntryNameTooLong(const char* name) {
+inline bool ShaderEntryNameTooLong(const char* name)
+{
     usize length = 0;
-    while (name[length] != '\0' && length <= kMaxShaderEntryNameLength) {
+    while (name[length] != '\0' && length <= kMaxShaderEntryNameLength)
+    {
         ++length;
     }
     return length > kMaxShaderEntryNameLength;
@@ -31,9 +34,10 @@ inline bool ShaderEntryNameTooLong(const char* name) {
 /// The check reads the header and walks every instruction once. It accepts a module only if:
 /// the magic number is right (a byte-swapped module gets its own message), the version is 1.0 to 1.6, the id bound
 /// is non-zero, every instruction has a non-zero length that stays inside the module and the stream ends exactly
-/// at the last word, the module declares capability `Shader` and no `Kernel`, uses the `Logical` addressing model with the
-/// `GLSL450` or `Vulkan` memory model, and has an `OpEntryPoint` named `entry` whose execution model matches `stage`.
-/// This is a subset check of what the engine's shaders use, not a validator: `spirv-val` is the dev-time validator.
+/// at the last word, the module declares capability `Shader` and no `Kernel`, uses the `Logical` addressing model with
+/// the `GLSL450` or `Vulkan` memory model, and has an `OpEntryPoint` named `entry` whose execution model matches
+/// `stage`. This is a subset check of what the engine's shaders use, not a validator: `spirv-val` is the dev-time
+/// validator.
 ///
 /// - Param words: the module's 32-bit words in host byte order.
 /// - Param word_count: number of words in `words`.
@@ -45,4 +49,4 @@ inline bool ShaderEntryNameTooLong(const char* name) {
 /// - Thread-safety: thread-safe. A pure function of its arguments.
 const char* ValidateSpirv(const u32* words, usize word_count, ShaderStage stage, const char* entry);
 
-} // namespace engine_placeholder::rhi
+}  // namespace engine_placeholder::rhi

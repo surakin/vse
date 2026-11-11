@@ -9,8 +9,8 @@
 using engine_placeholder::os::wayland::WaylandConnection;
 using engine_placeholder::os::wayland::WaylandWindow;
 
-TEST_CASE("WaylandWindow::Create maps a real, visible toplevel window against a real compositor",
-          "[wayland][os]") {
+TEST_CASE("WaylandWindow::Create maps a real, visible toplevel window against a real compositor", "[wayland][os]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
     WaylandConnection conn = WaylandConnection::Connect();
     REQUIRE(conn.Valid());
@@ -24,8 +24,8 @@ TEST_CASE("WaylandWindow::Create maps a real, visible toplevel window against a 
     REQUIRE(window.Height() > 0);
 }
 
-TEST_CASE("WaylandWindow::Create's window does not request close before any close event arrives",
-          "[wayland][os]") {
+TEST_CASE("WaylandWindow::Create's window does not request close before any close event arrives", "[wayland][os]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
     WaylandConnection conn = WaylandConnection::Connect();
     REQUIRE(conn.Valid());
@@ -35,12 +35,14 @@ TEST_CASE("WaylandWindow::Create's window does not request close before any clos
     REQUIRE_FALSE(window.ShouldClose());
 }
 
-TEST_CASE("A default-constructed WaylandWindow reports ShouldClose() false", "[wayland][os]") {
+TEST_CASE("A default-constructed WaylandWindow reports ShouldClose() false", "[wayland][os]")
+{
     WaylandWindow window;
     REQUIRE_FALSE(window.ShouldClose());
 }
 
-TEST_CASE("WaylandWindow::Create fails gracefully on an invalid connection", "[wayland][os]") {
+TEST_CASE("WaylandWindow::Create fails gracefully on an invalid connection", "[wayland][os]")
+{
     WaylandConnection invalid_conn;
     REQUIRE_FALSE(invalid_conn.Valid());
 
@@ -49,13 +51,15 @@ TEST_CASE("WaylandWindow::Create fails gracefully on an invalid connection", "[w
     REQUIRE(window.Surface() == nullptr);
 }
 
-TEST_CASE("WaylandWindow::Create truncates an overlong title instead of failing", "[wayland][os]") {
+TEST_CASE("WaylandWindow::Create truncates an overlong title instead of failing", "[wayland][os]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
     WaylandConnection conn = WaylandConnection::Connect();
     REQUIRE(conn.Valid());
 
     char long_title[600];
-    for (auto& c : long_title) {
+    for (auto& c : long_title)
+    {
         c = 'x';
     }
     long_title[sizeof(long_title) - 1] = '\0';
@@ -65,7 +69,8 @@ TEST_CASE("WaylandWindow::Create truncates an overlong title instead of failing"
     REQUIRE(window.Valid());
 }
 
-TEST_CASE("WaylandWindow move construction/assignment transfers ownership without double-free", "[wayland][os]") {
+TEST_CASE("WaylandWindow move construction/assignment transfers ownership without double-free", "[wayland][os]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
     WaylandConnection conn = WaylandConnection::Connect();
     REQUIRE(conn.Valid());
@@ -86,12 +91,13 @@ TEST_CASE("WaylandWindow move construction/assignment transfers ownership withou
     REQUIRE(c.Surface() == surface);
 }
 
-TEST_CASE("WaylandWindow gets server-side decorations when the compositor offers xdg-decoration",
-          "[wayland][os]") {
+TEST_CASE("WaylandWindow gets server-side decorations when the compositor offers xdg-decoration", "[wayland][os]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
     WaylandConnection conn = WaylandConnection::Connect();
     REQUIRE(conn.Valid());
-    if (conn.DecorationManager() == nullptr) {
+    if (conn.DecorationManager() == nullptr)
+    {
         SKIP("compositor does not offer zxdg_decoration_manager_v1");
     }
     WaylandWindow window = WaylandWindow::Create(conn, "decoration test", "engine_placeholder");
@@ -104,7 +110,8 @@ TEST_CASE("WaylandWindow gets server-side decorations when the compositor offers
 }
 
 TEST_CASE("WaylandWindow re-allocates its buffer and takes the new size when the compositor resizes it",
-          "[wayland][os]") {
+          "[wayland][os]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
     WaylandConnection conn = WaylandConnection::Connect();
     REQUIRE(conn.Valid());
@@ -120,17 +127,20 @@ TEST_CASE("WaylandWindow re-allocates its buffer and takes the new size when the
     // the new size).
     xdg_toplevel_set_maximized(window.XdgToplevel());
     wl_surface_commit(window.Surface());
-    for (int i = 0; i < 10 && window.Width() == original_width; ++i) {
+    for (int i = 0; i < 10 && window.Width() == original_width; ++i)
+    {
         wl_display_roundtrip(conn.Display());
     }
-    REQUIRE(window.CommitPendingResize()); // size changed -> new buffer
-    if (window.Width() == original_width) {
+    REQUIRE(window.CommitPendingResize());  // size changed -> new buffer
+    if (window.Width() == original_width)
+    {
         SKIP("compositor did not resize the window on set_maximized");
     }
     const engine_placeholder::u64 serial_maximized = window.ResizeSerial();
     REQUIRE(serial_maximized != serial_before);  // a swapchain can tell its images are stale
     xdg_toplevel_unset_maximized(window.XdgToplevel());
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < 5; ++i)
+    {
         wl_display_roundtrip(conn.Display());
     }
     window.CommitPendingResize();
@@ -145,7 +155,8 @@ TEST_CASE("WaylandWindow re-allocates its buffer and takes the new size when the
     REQUIRE(wl_display_get_error(conn.Display()) == 0);
 }
 
-TEST_CASE("WaylandWindow::Create uses the size hint when the compositor suggests none", "[wayland][os]") {
+TEST_CASE("WaylandWindow::Create uses the size hint when the compositor suggests none", "[wayland][os]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
     WaylandConnection conn = WaylandConnection::Connect();
     REQUIRE(conn.Valid());
@@ -155,7 +166,8 @@ TEST_CASE("WaylandWindow::Create uses the size hint when the compositor suggests
     REQUIRE(window.Height() == 300);
 }
 
-TEST_CASE("WaylandWindow's resize serial survives a move and is non-zero once sized", "[wayland][os]") {
+TEST_CASE("WaylandWindow's resize serial survives a move and is non-zero once sized", "[wayland][os]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
     WaylandConnection conn = WaylandConnection::Connect();
     REQUIRE(conn.Valid());

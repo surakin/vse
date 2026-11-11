@@ -17,11 +17,13 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::debug;
 
-namespace {
+namespace
+{
 
 // The failure the capture handler saw last, and how many it has seen. The counters are atomic because some tests fail
 // checks from several threads; the strings are literals, so copying the pointers is safe.
-struct FamilyCapture {
+struct FamilyCapture
+{
     Atomic<int> calls{0};
     AssertKind kind = AssertKind::Assert;
     const char* file = nullptr;
@@ -32,7 +34,8 @@ struct FamilyCapture {
 };
 FamilyCapture g_family;
 
-AssertAction FamilyCaptureContinue(const AssertInfo& info) {
+AssertAction FamilyCaptureContinue(const AssertInfo& info)
+{
     g_family.kind = info.kind;
     g_family.file = info.file;
     g_family.line = info.line;
@@ -43,15 +46,18 @@ AssertAction FamilyCaptureContinue(const AssertInfo& info) {
     return AssertAction::Continue;
 }
 
-AssertAction FamilyCountOnly(const AssertInfo&) {
+AssertAction FamilyCountOnly(const AssertInfo&)
+{
     g_family.calls.FetchAdd(1, MemoryOrder::Relaxed);
     return AssertAction::Continue;
 }
 
 // Installs a handler for the life of the scope and restores the previous one.
-class FamilyHandlerScope {
+class FamilyHandlerScope
+{
 public:
-    explicit FamilyHandlerScope(AssertHandler handler) : previous_(SetAssertHandler(handler)) {
+    explicit FamilyHandlerScope(AssertHandler handler) : previous_(SetAssertHandler(handler))
+    {
         g_family.calls = 0;
         g_family.line = 0;
         ResetEnsureStateForTesting();
@@ -62,25 +68,31 @@ private:
     AssertHandler previous_;
 };
 
-ENGINE_NOINLINE bool FamilyEnsureSiteA(bool value) {
+ENGINE_NOINLINE bool FamilyEnsureSiteA(bool value)
+{
     return ENGINE_ENSURE(value, "site A condition");
 }
-ENGINE_NOINLINE bool FamilyEnsureSiteB(bool value) {
+ENGINE_NOINLINE bool FamilyEnsureSiteB(bool value)
+{
     return ENGINE_ENSURE(value, "site B condition");
 }
-ENGINE_NOINLINE bool FamilyEnsureSiteC(bool value) {
+ENGINE_NOINLINE bool FamilyEnsureSiteC(bool value)
+{
     return ENGINE_ENSURE(value, "site C condition");
 }
 
-struct FamilySiteList {
+struct FamilySiteList
+{
     int count = 0;
     u32 counts[8] = {};
     int lines[8] = {};
 };
 
-void FamilyCollectSites(const EnsureSiteInfo& site, void* context) {
+void FamilyCollectSites(const EnsureSiteInfo& site, void* context)
+{
     FamilySiteList* list = static_cast<FamilySiteList*>(context);
-    if (list->count < 8) {
+    if (list->count < 8)
+    {
         list->counts[list->count] = site.failure_count;
         list->lines[list->count] = site.line;
         ++list->count;
@@ -91,7 +103,8 @@ void FamilyCollectSites(const EnsureSiteInfo& site, void* context) {
 char g_family_text[16384];
 usize g_family_text_length = 0;
 int g_family_sink_calls = 0;
-long FamilyCapturingSink(int, const void* buf, usize len) {
+long FamilyCapturingSink(int, const void* buf, usize len)
+{
     ++g_family_sink_calls;
     const usize room = sizeof(g_family_text) - g_family_text_length;
     const usize take = len < room ? len : room;
@@ -102,60 +115,74 @@ long FamilyCapturingSink(int, const void* buf, usize len) {
 
 // Length of the first line of the captured text, newline included (0 if there is none): the default handler prints the
 // message line first and the stack trace after it.
-usize FamilyFirstLineLength() {
-    for (usize i = 0; i < g_family_text_length; ++i) {
-        if (g_family_text[i] == '\n') {
+usize FamilyFirstLineLength()
+{
+    for (usize i = 0; i < g_family_text_length; ++i)
+    {
+        if (g_family_text[i] == '\n')
+        {
             return i + 1;
         }
     }
     return 0;
 }
 
-} // namespace
+}  // namespace
 
 // ---- children for the death tests ---------------------------------------------------------------------------------
 
-ENGINE_DEATH_TEST_FN(dt_family_assert_false) {
+ENGINE_DEATH_TEST_FN(dt_family_assert_false)
+{
     ENGINE_ASSERT(1 + 1 == 3, "arithmetic broke");
 }
 
-ENGINE_DEATH_TEST_FN(dt_family_verify_false) {
+ENGINE_DEATH_TEST_FN(dt_family_verify_false)
+{
     ENGINE_VERIFY(false, "verify failed on purpose");
 }
 
-ENGINE_DEATH_TEST_FN(dt_family_check_slow_false) {
+ENGINE_DEATH_TEST_FN(dt_family_check_slow_false)
+{
     ENGINE_CHECK_SLOW(false, "slow check failed on purpose");
 }
 
-ENGINE_DEATH_TEST_FN(dt_family_unreachable) {
+ENGINE_DEATH_TEST_FN(dt_family_unreachable)
+{
     ENGINE_UNREACHABLE("cannot get here");
 }
 
 // Even a handler that asks to continue cannot make an unreachable place continue.
-ENGINE_DEATH_TEST_FN(dt_family_unreachable_with_continue_handler) {
+ENGINE_DEATH_TEST_FN(dt_family_unreachable_with_continue_handler)
+{
     SetAssertHandler(&FamilyCountOnly);
     ENGINE_UNREACHABLE("cannot get here");
 }
 
-ENGINE_DEATH_TEST_FN(dt_family_not_implemented) {
+ENGINE_DEATH_TEST_FN(dt_family_not_implemented)
+{
     ENGINE_NOT_IMPLEMENTED();
 }
 
-ENGINE_DEATH_TEST_FN(dt_family_ensure_continues) {
-    for (int i = 0; i < 3; ++i) {
-        FamilyEnsureSiteA(false); // three failures, one report
+ENGINE_DEATH_TEST_FN(dt_family_ensure_continues)
+{
+    for (int i = 0; i < 3; ++i)
+    {
+        FamilyEnsureSiteA(false);  // three failures, one report
     }
     os::Write(1, "AFTER-ENSURE\n", 13);
 }
 
-ENGINE_DEATH_TEST_FN(dt_family_legacy_assert_fail) {
-    SetAssertHandler(&FamilyCountOnly); // a handler that continues still cannot keep AssertFail from aborting
+ENGINE_DEATH_TEST_FN(dt_family_legacy_assert_fail)
+{
+    SetAssertHandler(&FamilyCountOnly);  // a handler that continues still cannot keep AssertFail from aborting
     AssertFail("legacy.cpp", 42, "legacy message");
 }
 
 // ---- tests ----------------------------------------------------------------------------------------------------------
 
-TEST_CASE("A failed ENGINE_ASSERT goes to the handler with the full record and the program carries on if it says so", "[assert][debug]") {
+TEST_CASE("A failed ENGINE_ASSERT goes to the handler with the full record and the program carries on if it says so",
+          "[assert][debug]")
+{
     FamilyHandlerScope scope(&FamilyCaptureContinue);
     const int expected_line = __LINE__ + 1;
     ENGINE_ASSERT(1 + 1 == 3, "arithmetic broke");
@@ -169,7 +196,8 @@ TEST_CASE("A failed ENGINE_ASSERT goes to the handler with the full record and t
     CHECK(CStrCompare(g_family.message, "arithmetic broke") == 0);
 }
 
-TEST_CASE("A passing ENGINE_ASSERT does not call the handler and evaluates its condition once", "[assert][debug]") {
+TEST_CASE("A passing ENGINE_ASSERT does not call the handler and evaluates its condition once", "[assert][debug]")
+{
     FamilyHandlerScope scope(&FamilyCaptureContinue);
     int evaluations = 0;
     ENGINE_ASSERT(++evaluations == 1, "should pass");
@@ -177,7 +205,8 @@ TEST_CASE("A passing ENGINE_ASSERT does not call the handler and evaluates its c
     CHECK(g_family.calls == 0);
 }
 
-TEST_CASE("SetAssertHandler returns the previous handler and nullptr restores the default", "[assert][debug]") {
+TEST_CASE("SetAssertHandler returns the previous handler and nullptr restores the default", "[assert][debug]")
+{
     const AssertHandler original = SetAssertHandler(&FamilyCountOnly);
     CHECK(original == &DefaultAssertHandler);
     CHECK(SetAssertHandler(&FamilyCaptureContinue) == &FamilyCountOnly);
@@ -185,14 +214,17 @@ TEST_CASE("SetAssertHandler returns the previous handler and nullptr restores th
     CHECK(SetAssertHandler(original) == &DefaultAssertHandler);
 }
 
-TEST_CASE("A handler installed on one thread is used by a failure on another", "[assert][debug]") {
+TEST_CASE("A handler installed on one thread is used by a failure on another", "[assert][debug]")
+{
     FamilyHandlerScope scope(&FamilyCountOnly);
     Thread other([] { ENGINE_ASSERT(false, "from another thread"); });
     other.Join();
     CHECK(g_family.calls == 1);
 }
 
-TEST_CASE("The default handler truncates a long message at 512 bytes, ends the line, and chooses the action by kind", "[assert][debug]") {
+TEST_CASE("The default handler truncates a long message at 512 bytes, ends the line, and chooses the action by kind",
+          "[assert][debug]")
+{
     char message[2000];
     MemSet(message, 'm', sizeof(message) - 1);
     message[sizeof(message) - 1] = '\0';
@@ -201,11 +233,12 @@ TEST_CASE("The default handler truncates a long message at 512 bytes, ends the l
     SetWriteSinkForTesting(&FamilyCapturingSink);
     const AssertInfo assert_info{AssertKind::Assert, "a/file.cpp", 7, "Func", "x > 0", message};
     const AssertAction assert_action = DefaultAssertHandler(assert_info);
-    const int assert_sink_calls = g_family_sink_calls; // message + trace in one write, then the context sections
+    const int assert_sink_calls = g_family_sink_calls;  // message + trace in one write, then the context sections
     const usize first_length = FamilyFirstLineLength();
     const usize first_total = g_family_text_length;
     const char first_last_byte = first_length > 0 ? g_family_text[first_length - 1] : '\0';
-    const bool first_starts_right = CStrCompareN(g_family_text, "ASSERT FAILED: a/file.cpp:7 Func: x > 0: mmm", 43) == 0;
+    const bool first_starts_right = CStrCompareN(g_family_text, "ASSERT FAILED: a/file.cpp:7 Func: x > 0: mmm", 43) ==
+                                    0;
     g_family_text_length = 0;
     g_family_sink_calls = 0;
     const AssertInfo ensure_info{AssertKind::Ensure, "a/file.cpp", 8, "Func", "y > 0", "short"};
@@ -215,20 +248,23 @@ TEST_CASE("The default handler truncates a long message at 512 bytes, ends the l
 
     CHECK(first_length == 512);
     CHECK(assert_sink_calls >= 2);  // a fatal assert also prints the context sections
-    CHECK(ensure_sink_calls == 1);  // an ensure is the message and its trace in one write, so concurrent reports do not interleave
-    CHECK(first_total > first_length); // the trace follows the line
-    CHECK(first_last_byte == '\n'); // even a truncated line ends in a newline
+    CHECK(ensure_sink_calls ==
+          1);  // an ensure is the message and its trace in one write, so concurrent reports do not interleave
+    CHECK(first_total > first_length);  // the trace follows the line
+    CHECK(first_last_byte == '\n');     // even a truncated line ends in a newline
     CHECK(first_starts_right);
-    CHECK(assert_action == AssertAction::Abort);   // no debugger attached in a test run
-    CHECK(ensure_action == AssertAction::Continue); // ensure never aborts by default
+    CHECK(assert_action == AssertAction::Abort);     // no debugger attached in a test run
+    CHECK(ensure_action == AssertAction::Continue);  // ensure never aborts by default
     // The capture was reset before the second call, so its line starts at the beginning.
     const char* expected = "ENSURE FAILED: a/file.cpp:8 Func: y > 0: short\n";
     CHECK(FamilyFirstLineLength() == CStrLength(expected));
     CHECK(CStrCompareN(g_family_text, expected, CStrLength(expected)) == 0);
 }
 
-TEST_CASE("The default handler prints each kind with its own label and leaves out empty parts", "[assert][debug]") {
-    struct Case {
+TEST_CASE("The default handler prints each kind with its own label and leaves out empty parts", "[assert][debug]")
+{
+    struct Case
+    {
         AssertKind kind;
         const char* condition;
         const char* expected;
@@ -239,7 +275,8 @@ TEST_CASE("The default handler prints each kind with its own label and leaves ou
         {AssertKind::Unreachable, "", "UNREACHABLE REACHED: f.cpp:1 g: m\n"},
         {AssertKind::NotImplemented, "", "NOT IMPLEMENTED: f.cpp:1 g: m\n"},
     };
-    for (const Case& c : cases) {
+    for (const Case& c : cases)
+    {
         g_family_text_length = 0;
         SetWriteSinkForTesting(&FamilyCapturingSink);
         DefaultAssertHandler(AssertInfo{c.kind, "f.cpp", 1, "g", c.condition, "m"});
@@ -250,7 +287,8 @@ TEST_CASE("The default handler prints each kind with its own label and leaves ou
     }
 }
 
-TEST_CASE("ENGINE_ENSURE returns its condition and does not report when it holds", "[ensure][debug]") {
+TEST_CASE("ENGINE_ENSURE returns its condition and does not report when it holds", "[ensure][debug]")
+{
     FamilyHandlerScope scope(&FamilyCountOnly);
     CHECK(FamilyEnsureSiteA(true));
     CHECK(g_family.calls == 0);
@@ -260,9 +298,11 @@ TEST_CASE("ENGINE_ENSURE returns its condition and does not report when it holds
     CHECK(evaluations == 1);
 }
 
-TEST_CASE("ENGINE_ENSURE reports the first failure at a site and only counts the rest", "[ensure][debug]") {
+TEST_CASE("ENGINE_ENSURE reports the first failure at a site and only counts the rest", "[ensure][debug]")
+{
     FamilyHandlerScope scope(&FamilyCaptureContinue);
-    for (int i = 0; i < 1000; ++i) {
+    for (int i = 0; i < 1000; ++i)
+    {
         CHECK_FALSE(FamilyEnsureSiteA(false));
     }
     CHECK(g_family.calls == 1);
@@ -275,12 +315,15 @@ TEST_CASE("ENGINE_ENSURE reports the first failure at a site and only counts the
     CHECK(sites.counts[0] == 1000);
 }
 
-TEST_CASE("Two ENGINE_ENSURE sites are reported once each and counted separately", "[ensure][debug]") {
+TEST_CASE("Two ENGINE_ENSURE sites are reported once each and counted separately", "[ensure][debug]")
+{
     FamilyHandlerScope scope(&FamilyCountOnly);
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < 5; ++i)
+    {
         FamilyEnsureSiteA(false);
     }
-    for (int i = 0; i < 7; ++i) {
+    for (int i = 0; i < 7; ++i)
+    {
         FamilyEnsureSiteB(false);
     }
     CHECK(g_family.calls == 2);
@@ -294,7 +337,8 @@ TEST_CASE("Two ENGINE_ENSURE sites are reported once each and counted separately
     CHECK(sites.counts[1] == 5);
 }
 
-TEST_CASE("After the ensure state is reset a site is reported again", "[ensure][debug]") {
+TEST_CASE("After the ensure state is reset a site is reported again", "[ensure][debug]")
+{
     FamilyHandlerScope scope(&FamilyCountOnly);
     FamilyEnsureSiteA(false);
     CHECK(g_family.calls == 1);
@@ -304,28 +348,38 @@ TEST_CASE("After the ensure state is reset a site is reported again", "[ensure][
     CHECK(g_family.calls == 2);
 }
 
-TEST_CASE("Eight threads failing the same ENGINE_ENSURE for the first time produce exactly one report", "[ensure][debug]") {
-    for (int round = 0; round < 20; ++round) {
+TEST_CASE("Eight threads failing the same ENGINE_ENSURE for the first time produce exactly one report",
+          "[ensure][debug]")
+{
+    for (int round = 0; round < 20; ++round)
+    {
         FamilyHandlerScope scope(&FamilyCountOnly);
         Atomic<int> ready{0};
         Atomic<bool> go{false};
         Thread threads[8];
-        for (Thread& t : threads) {
-            t = Thread([&] {
-                ready.FetchAdd(1);
-                while (!go.Load()) {
-                    ThisThread::Yield();
-                }
-                for (int i = 0; i < 100; ++i) {
-                    FamilyEnsureSiteC(false);
-                }
-            });
+        for (Thread& t : threads)
+        {
+            t = Thread(
+                [&]
+                {
+                    ready.FetchAdd(1);
+                    while (!go.Load())
+                    {
+                        ThisThread::Yield();
+                    }
+                    for (int i = 0; i < 100; ++i)
+                    {
+                        FamilyEnsureSiteC(false);
+                    }
+                });
         }
-        while (ready.Load() < 8) {
+        while (ready.Load() < 8)
+        {
             ThisThread::Yield();
         }
         go = true;
-        for (Thread& t : threads) {
+        for (Thread& t : threads)
+        {
             t.Join();
         }
         REQUIRE(g_family.calls == 1);
@@ -336,7 +390,9 @@ TEST_CASE("Eight threads failing the same ENGINE_ENSURE for the first time produ
     }
 }
 
-TEST_CASE("ENGINE_VERIFY always evaluates its expression and reports a false one as a verify failure", "[verify][debug]") {
+TEST_CASE("ENGINE_VERIFY always evaluates its expression and reports a false one as a verify failure",
+          "[verify][debug]")
+{
     FamilyHandlerScope scope(&FamilyCaptureContinue);
     int evaluations = 0;
     ENGINE_VERIFY(++evaluations == 1, "passes");
@@ -348,7 +404,8 @@ TEST_CASE("ENGINE_VERIFY always evaluates its expression and reports a false one
     CHECK(g_family.kind == AssertKind::Verify);
 }
 
-TEST_CASE("ENGINE_CHECK_SLOW evaluates and checks when slow checks are on", "[check-slow][debug]") {
+TEST_CASE("ENGINE_CHECK_SLOW evaluates and checks when slow checks are on", "[check-slow][debug]")
+{
     FamilyHandlerScope scope(&FamilyCaptureContinue);
     int evaluations = 0;
     ENGINE_CHECK_SLOW(++evaluations == 1, "passes");
@@ -358,7 +415,8 @@ TEST_CASE("ENGINE_CHECK_SLOW evaluates and checks when slow checks are on", "[ch
     CHECK(g_family.kind == AssertKind::Assert);
 }
 
-TEST_CASE("ENGINE_NOT_IMPLEMENTED reports every time in every configuration", "[assert][debug]") {
+TEST_CASE("ENGINE_NOT_IMPLEMENTED reports every time in every configuration", "[assert][debug]")
+{
     FamilyHandlerScope scope(&FamilyCaptureContinue);
     ENGINE_NOT_IMPLEMENTED();
     CHECK(g_family.calls == 1);
@@ -369,7 +427,9 @@ TEST_CASE("ENGINE_NOT_IMPLEMENTED reports every time in every configuration", "[
 
 // ---- death tests: the abort paths -----------------------------------------------------------------------------------
 
-TEST_CASE("A failed ENGINE_ASSERT with the default handler prints one line and dies with an abort", "[assert][death][debug]") {
+TEST_CASE("A failed ENGINE_ASSERT with the default handler prints one line and dies with an abort",
+          "[assert][death][debug]")
+{
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     ChildResourceGuard guard;
     const ChildResult r = RunInChild("dt_family_assert_false");
@@ -388,7 +448,8 @@ TEST_CASE("A failed ENGINE_ASSERT with the default handler prints one line and d
     CHECK(guard.Clean());
 }
 
-TEST_CASE("A failed ENGINE_VERIFY and ENGINE_CHECK_SLOW abort by default", "[assert][death][debug]") {
+TEST_CASE("A failed ENGINE_VERIFY and ENGINE_CHECK_SLOW abort by default", "[assert][death][debug]")
+{
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     const ChildResult verify = RunInChild("dt_family_verify_false");
     CHECK(verify.reason == CrashReason::Abort);
@@ -398,7 +459,8 @@ TEST_CASE("A failed ENGINE_VERIFY and ENGINE_CHECK_SLOW abort by default", "[ass
     CHECK(slow.StdoutContains("slow check failed on purpose"));
 }
 
-TEST_CASE("ENGINE_UNREACHABLE and ENGINE_NOT_IMPLEMENTED abort", "[assert][death][debug]") {
+TEST_CASE("ENGINE_UNREACHABLE and ENGINE_NOT_IMPLEMENTED abort", "[assert][death][debug]")
+{
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     const ChildResult unreachable = RunInChild("dt_family_unreachable");
     CHECK(unreachable.reason == CrashReason::Abort);
@@ -408,13 +470,15 @@ TEST_CASE("ENGINE_UNREACHABLE and ENGINE_NOT_IMPLEMENTED abort", "[assert][death
     CHECK(not_implemented.StdoutContains("NOT IMPLEMENTED: "));
 }
 
-TEST_CASE("A handler cannot make an unreachable place continue, nor AssertFail return", "[assert][death][debug]") {
+TEST_CASE("A handler cannot make an unreachable place continue, nor AssertFail return", "[assert][death][debug]")
+{
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     CHECK(RunInChild("dt_family_unreachable_with_continue_handler").reason == CrashReason::Abort);
     CHECK(RunInChild("dt_family_legacy_assert_fail").reason == CrashReason::Abort);
 }
 
-TEST_CASE("A failed ENGINE_ENSURE prints once and the program goes on", "[ensure][death][debug]") {
+TEST_CASE("A failed ENGINE_ENSURE prints once and the program goes on", "[ensure][death][debug]")
+{
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     const ChildResult r = RunInChild("dt_family_ensure_continues");
     CHECK(r.exited);
@@ -434,27 +498,30 @@ TEST_CASE("A failed ENGINE_ENSURE prints once and the program goes on", "[ensure
     CHECK(StringView(frame, static_cast<usize>(end_of_line - frame)).Contains("FamilyEnsureSiteA"));
 }
 
-TEST_CASE("An ensure site whose failure count wraps is not reported or linked a second time", "[ensure][debug]") {
+TEST_CASE("An ensure site whose failure count wraps is not reported or linked a second time", "[ensure][debug]")
+{
     FamilyHandlerScope scope(&FamilyCountOnly);
     detail::EnsureSite site{"wrap.cpp", 1, "cond", "msg"};
-    CHECK(detail::EnsureFailed(site, "Func") == AssertAction::Continue); // the first failure: reported
+    CHECK(detail::EnsureFailed(site, "Func") == AssertAction::Continue);  // the first failure: reported
     CHECK(g_family.calls == 1);
     CHECK(EnsureFailedSiteCount() == 1);
-    site.count = 0xffffffffu; // the next failure wraps the count to 0, which must not look like a first failure
+    site.count = 0xffffffffu;  // the next failure wraps the count to 0, which must not look like a first failure
     detail::EnsureFailed(site, "Func");
     detail::EnsureFailed(site, "Func");
     CHECK(g_family.calls == 1);
     CHECK(EnsureFailedSiteCount() == 1);
-    FamilySiteList sites; // the list is still finite (a second link would make `site` its own successor)
+    FamilySiteList sites;  // the list is still finite (a second link would make `site` its own successor)
     ForEachFailedEnsure(&FamilyCollectSites, &sites);
     CHECK(sites.count == 1);
-    ResetEnsureStateForTesting(); // unlink the stack-allocated site before it goes out of scope
+    ResetEnsureStateForTesting();  // unlink the stack-allocated site before it goes out of scope
 }
 
-TEST_CASE("The default handler survives null strings in the failure record", "[assert][debug]") {
+TEST_CASE("The default handler survives null strings in the failure record", "[assert][debug]")
+{
     g_family_text_length = 0;
     SetWriteSinkForTesting(&FamilyCapturingSink);
-    const AssertAction action = DefaultAssertHandler(AssertInfo{AssertKind::Assert, nullptr, 3, nullptr, nullptr, nullptr});
+    const AssertAction action = DefaultAssertHandler(
+        AssertInfo{AssertKind::Assert, nullptr, 3, nullptr, nullptr, nullptr});
     SetWriteSinkForTesting(&os::Write);
     CHECK(action == AssertAction::Abort);
     CHECK(g_family_text_length > 0);

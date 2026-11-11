@@ -6,7 +6,8 @@
 
 //! The Vulkan implementation of [[rhi::Swapchain]].
 
-namespace engine_placeholder::rhi::vulkan {
+namespace engine_placeholder::rhi::vulkan
+{
 
 class VulkanDevice;
 
@@ -18,7 +19,8 @@ class VulkanDevice;
 ///
 /// - Thread-safety: owner-thread-only, and not to be used while another thread submits to the same device.
 /// - Ownership: created by [[rhi::Device::CreateSwapchain]], destroyed with [[rhi::Device::DestroySwapchain]].
-class VulkanSwapchain final : public Swapchain {
+class VulkanSwapchain final : public Swapchain
+{
 public:
     /// Constructs an empty swapchain; use [[rhi::vulkan::VulkanSwapchain::Create]].
     explicit VulkanSwapchain(VulkanDevice* device) : device_(device) {}
@@ -42,7 +44,8 @@ public:
     /// - Param device: the device; must have been created with a window.
     /// - Param desc: the presentation mode and initial size.
     /// - Returns: the swapchain, or an empty pointer.
-    /// - Fails: returns an empty pointer, logging the reason, if the surface offers no usable format or cannot be rendered to.
+    /// - Fails: returns an empty pointer, logging the reason, if the surface offers no usable format or cannot be
+    /// rendered to.
     /// - Ownership: the caller owns the result.
     static UniquePtr<VulkanSwapchain> Create(VulkanDevice* device, const SwapchainDesc& desc);
 
@@ -56,7 +59,7 @@ private:
     static constexpr u32 kMaxImages = 16;
 
     VulkanDevice* device_;
-    SwapchainDesc desc_;      // what was asked for; width and height are the last explicit size, 0 for the window's
+    SwapchainDesc desc_;  // what was asked for; width and height are the last explicit size, 0 for the window's
     PresentMode actual_mode_ = PresentMode::Fifo;
     ColorSpace color_space_ = ColorSpace::SrgbNonlinear;
     SwapchainCaps caps_;
@@ -78,4 +81,4 @@ private:
     u64 window_serial_ = 0;
 };
 
-} // namespace engine_placeholder::rhi::vulkan
+}  // namespace engine_placeholder::rhi::vulkan

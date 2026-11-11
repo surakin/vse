@@ -13,11 +13,13 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
 
-namespace {
+namespace
+{
 
 constexpr usize kRenderGraphBarrierTestArenaBytes = 8u << 20;
 
-rhi::TextureDesc Tex(u32 w, u32 h, rhi::Format format, rhi::TextureUsage usage) {
+rhi::TextureDesc Tex(u32 w, u32 h, rhi::Format format, rhi::TextureUsage usage)
+{
     rhi::TextureDesc d;
     d.width = w;
     d.height = h;
@@ -28,32 +30,43 @@ rhi::TextureDesc Tex(u32 w, u32 h, rhi::Format format, rhi::TextureUsage usage) 
 
 constexpr rhi::TextureUsage kColorSampled = rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::Sampled;
 
-struct Plan {
+struct Plan
+{
     ArenaAllocator arena{kRenderGraphBarrierTestArenaBytes};
     RenderGraph graph{&arena, RenderGraphDesc{}};
 
-    GraphResource Transient(const char* name, rhi::TextureUsage usage = kColorSampled | rhi::TextureUsage::Storage | rhi::TextureUsage::CopySrc |
-                                                                       rhi::TextureUsage::CopyDst) {
+    GraphResource Transient(const char* name, rhi::TextureUsage usage = kColorSampled | rhi::TextureUsage::Storage |
+                                                                        rhi::TextureUsage::CopySrc |
+                                                                        rhi::TextureUsage::CopyDst)
+    {
         return graph.CreateTexture(name, Tex(64, 64, rhi::Format::RGBA8_UNorm, usage));
     }
-    GraphResource Import(const char* name, rhi::ResourceState initial, rhi::ResourceState final_state, bool read_only = false) {
+    GraphResource Import(const char* name, rhi::ResourceState initial, rhi::ResourceState final_state,
+                         bool read_only = false)
+    {
         rhi::TextureHandle handle;
         handle.index = 1;
         handle.generation = 1;
         return graph.ImportTexture(name, handle, initial, final_state, read_only);
     }
-    PassBuilder Pass(const char* name, PassFlags flags = PassFlags::None) { return graph.AddPass(name, nullptr, nullptr, flags); }
+    PassBuilder Pass(const char* name, PassFlags flags = PassFlags::None)
+    {
+        return graph.AddPass(name, nullptr, nullptr, flags);
+    }
 
-    engine_test::Text Barriers() {
+    engine_test::Text Barriers()
+    {
         REQUIRE(graph.Compile());
         const usize length = graph.DumpBarriers(nullptr, 0);
         Vector<char> buffer = engine_test::Chars(length + 1);
         graph.DumpBarriers(buffer.Data(), buffer.Size());
         return engine_test::MakeText(engine_test::View(buffer, length));
     }
-    engine_test::Text Errors() const {
+    engine_test::Text Errors() const
+    {
         engine_test::Text all = engine_test::MakeText();
-        for (u32 i = 0; i < graph.ErrorCount(); ++i) {
+        for (u32 i = 0; i < graph.ErrorCount(); ++i)
+        {
             all.Append(StringView(graph.Error(i)));
             all.Append("\n");
         }
@@ -61,24 +74,27 @@ struct Plan {
     }
 };
 
-} // namespace
+}  // namespace
 
-TEST_CASE("A transient written then sampled gets two barriers and the swapchain image ends in Present", "[renderer][graph][barrier]") {
+TEST_CASE("A transient written then sampled gets two barriers and the swapchain image ends in Present",
+          "[renderer][graph][barrier]")
+{
     Plan p;
     const GraphResource t = p.Transient("t");
     const GraphResource bb = p.Import("bb", rhi::ResourceState::Undefined, rhi::ResourceState::Present);
     p.Pass("draw").Write(t, GraphUsage::ColorAttachment);
     p.Pass("post").Read(t, GraphUsage::Sampled).Write(bb, GraphUsage::ColorAttachment);
-    CHECK(p.Barriers() ==
-          "barrier at 0 \"t\" undefined -> color\n"
-          "barrier at 1 \"t\" color -> shader-read\n"
-          "barrier at 1 \"bb\" undefined -> color\n"
-          "barrier at exit \"bb\" color -> present\n");
+    CHECK(p.Barriers() == "barrier at 0 \"t\" undefined -> color\n"
+                          "barrier at 1 \"t\" color -> shader-read\n"
+                          "barrier at 1 \"bb\" undefined -> color\n"
+                          "barrier at exit \"bb\" color -> present\n");
     CHECK(p.graph.StateAfterLastUse(t) == rhi::ResourceState::ShaderRead);
     CHECK(p.graph.StateAfterLastUse(bb) == rhi::ResourceState::ColorAttachment);
 }
 
-TEST_CASE("An import read and then written changes state once and returns to its final state", "[renderer][graph][barrier]") {
+TEST_CASE("An import read and then written changes state once and returns to its final state",
+          "[renderer][graph][barrier]")
+{
     Plan p;
     const GraphResource persist = p.Import("persist", rhi::ResourceState::ShaderRead, rhi::ResourceState::ShaderRead);
     const GraphResource bb = p.Import("bb", rhi::ResourceState::Undefined, rhi::ResourceState::Present);
@@ -86,14 +102,14 @@ TEST_CASE("An import read and then written changes state once and returns to its
     p.Pass("update").Write(persist, GraphUsage::ColorAttachment);
     // The read finds the import already in ShaderRead; the later write is a write-after-read and changes the state, and
     // the exit barrier restores the declared final state.
-    CHECK(p.Barriers() ==
-          "barrier at 0 \"bb\" undefined -> color\n"
-          "barrier at 1 \"persist\" shader-read -> color\n"
-          "barrier at exit \"persist\" color -> shader-read\n"
-          "barrier at exit \"bb\" color -> present\n");
+    CHECK(p.Barriers() == "barrier at 0 \"bb\" undefined -> color\n"
+                          "barrier at 1 \"persist\" shader-read -> color\n"
+                          "barrier at exit \"persist\" color -> shader-read\n"
+                          "barrier at exit \"bb\" color -> present\n");
 }
 
-TEST_CASE("A depth attachment turns into a depth read", "[renderer][graph][barrier]") {
+TEST_CASE("A depth attachment turns into a depth read", "[renderer][graph][barrier]")
+{
     Plan p;
     const GraphResource depth = p.Transient("depth", rhi::TextureUsage::DepthAttachment | rhi::TextureUsage::Sampled);
     const GraphResource color = p.Transient("color");
@@ -101,16 +117,16 @@ TEST_CASE("A depth attachment turns into a depth read", "[renderer][graph][barri
     p.Pass("depth-prepass").Write(depth, GraphUsage::DepthAttachment);
     p.Pass("forward").Read(depth, GraphUsage::DepthRead).Write(color, GraphUsage::ColorAttachment);
     p.Pass("present").Read(color, GraphUsage::Sampled).Write(bb, GraphUsage::ColorAttachment);
-    CHECK(p.Barriers() ==
-          "barrier at 0 \"depth\" undefined -> depth\n"
-          "barrier at 1 \"depth\" depth -> depth-read\n"
-          "barrier at 1 \"color\" undefined -> color\n"
-          "barrier at 2 \"color\" color -> shader-read\n"
-          "barrier at 2 \"bb\" undefined -> color\n"
-          "barrier at exit \"bb\" color -> present\n");
+    CHECK(p.Barriers() == "barrier at 0 \"depth\" undefined -> depth\n"
+                          "barrier at 1 \"depth\" depth -> depth-read\n"
+                          "barrier at 1 \"color\" undefined -> color\n"
+                          "barrier at 2 \"color\" color -> shader-read\n"
+                          "barrier at 2 \"bb\" undefined -> color\n"
+                          "barrier at exit \"bb\" color -> present\n");
 }
 
-TEST_CASE("Consecutive reads in one state share it and need no barrier", "[renderer][graph][barrier]") {
+TEST_CASE("Consecutive reads in one state share it and need no barrier", "[renderer][graph][barrier]")
+{
     Plan p;
     const GraphResource t = p.Transient("t");
     const GraphResource a = p.Transient("a");
@@ -120,110 +136,142 @@ TEST_CASE("Consecutive reads in one state share it and need no barrier", "[rende
     p.Pass("read1").Read(t, GraphUsage::Sampled).Write(a, GraphUsage::ColorAttachment);
     p.Pass("read2").Read(t, GraphUsage::Sampled).Write(b, GraphUsage::ColorAttachment);
     p.Pass("read3").Read(t, GraphUsage::StorageRead).Read(a, GraphUsage::Sampled).Write(c, GraphUsage::ColorAttachment);
-    p.Pass("copy").Read(t, GraphUsage::CopySrc).Read(b, GraphUsage::Sampled).Read(c, GraphUsage::Sampled).Write(p.Import("out", rhi::ResourceState::Undefined, rhi::ResourceState::CopySrc), GraphUsage::CopyDst);
+    p.Pass("copy")
+        .Read(t, GraphUsage::CopySrc)
+        .Read(b, GraphUsage::Sampled)
+        .Read(c, GraphUsage::Sampled)
+        .Write(p.Import("out", rhi::ResourceState::Undefined, rhi::ResourceState::CopySrc), GraphUsage::CopyDst);
     const engine_test::Text text = p.Barriers();
-    // "t" is written once and read in shader-read three times (sampled, sampled, storage-read) with one barrier, then once
-    // more as a copy source.
+    // "t" is written once and read in shader-read three times (sampled, sampled, storage-read) with one barrier, then
+    // once more as a copy source.
     CHECK(text.View().Contains(StringView("\"t\" undefined -> color")));
     CHECK(text.View().Contains(StringView("\"t\" color -> shader-read")));
     CHECK(text.View().Contains(StringView("\"t\" shader-read -> copy-src")));
     u32 t_barriers = 0;
-    for (u32 i = 0; i < p.graph.BarrierCount(); ++i) t_barriers += p.graph.BarrierAt(i).resource.index == t.index ? 1 : 0;
+    for (u32 i = 0; i < p.graph.BarrierCount(); ++i)
+    {
+        t_barriers += p.graph.BarrierAt(i).resource.index == t.index ? 1 : 0;
+    }
     CHECK(t_barriers == 3);
 }
 
-TEST_CASE("A write followed by a write in the same state still gets a barrier", "[renderer][graph][barrier]") {
+TEST_CASE("A write followed by a write in the same state still gets a barrier", "[renderer][graph][barrier]")
+{
     Plan p;
     const GraphResource t = p.Transient("t");
     const GraphResource out = p.Import("out", rhi::ResourceState::Undefined, rhi::ResourceState::CopySrc);
     p.Pass("fill").Write(t, GraphUsage::StorageWrite);
     p.Pass("blur").ReadWrite(t, GraphUsage::StorageWrite);
     p.Pass("copy").Read(t, GraphUsage::CopySrc).Write(out, GraphUsage::CopyDst);
-    CHECK(p.Barriers() ==
-          "barrier at 0 \"t\" undefined -> shader-write\n"
-          "barrier at 1 \"t\" shader-write -> shader-write\n"
-          "barrier at 2 \"t\" shader-write -> copy-src\n"
-          "barrier at 2 \"out\" undefined -> copy-dst\n"
-          "barrier at exit \"out\" copy-dst -> copy-src\n");
+    CHECK(p.Barriers() == "barrier at 0 \"t\" undefined -> shader-write\n"
+                          "barrier at 1 \"t\" shader-write -> shader-write\n"
+                          "barrier at 2 \"t\" shader-write -> copy-src\n"
+                          "barrier at 2 \"out\" undefined -> copy-dst\n"
+                          "barrier at exit \"out\" copy-dst -> copy-src\n");
 }
 
-TEST_CASE("An import no pass uses is still brought to its final state", "[renderer][graph][barrier]") {
+TEST_CASE("An import no pass uses is still brought to its final state", "[renderer][graph][barrier]")
+{
     Plan p;
     p.Import("bb", rhi::ResourceState::Undefined, rhi::ResourceState::Present);
     p.Import("same", rhi::ResourceState::ShaderRead, rhi::ResourceState::ShaderRead);
     CHECK(p.Barriers() == "barrier at exit \"bb\" undefined -> present\n");
 }
 
-TEST_CASE("A pass's attachments are all transitioned before it", "[renderer][graph][barrier]") {
+TEST_CASE("A pass's attachments are all transitioned before it", "[renderer][graph][barrier]")
+{
     Plan p;
     const GraphResource c0 = p.Transient("c0");
     const GraphResource c1 = p.Transient("c1");
     const GraphResource depth = p.Transient("depth", rhi::TextureUsage::DepthAttachment);
     const GraphResource out = p.Import("out", rhi::ResourceState::Undefined, rhi::ResourceState::CopySrc);
-    p.Pass("gbuffer").Write(c0, GraphUsage::ColorAttachment).Write(c1, GraphUsage::ColorAttachment).Write(depth, GraphUsage::DepthAttachment);
+    p.Pass("gbuffer")
+        .Write(c0, GraphUsage::ColorAttachment)
+        .Write(c1, GraphUsage::ColorAttachment)
+        .Write(depth, GraphUsage::DepthAttachment);
     p.Pass("use").Read(c0, GraphUsage::Sampled).Read(c1, GraphUsage::Sampled).Write(out, GraphUsage::CopyDst);
     REQUIRE(p.graph.Compile());
     u32 at_zero = 0;
-    for (u32 i = 0; i < p.graph.BarrierCount(); ++i) {
+    for (u32 i = 0; i < p.graph.BarrierCount(); ++i)
+    {
         const GraphBarrier b = p.graph.BarrierAt(i);
-        if (b.position == 0) {
+        if (b.position == 0)
+        {
             CHECK(b.before == rhi::ResourceState::Undefined);
             ++at_zero;
         }
-        if (i > 0) CHECK(b.position >= p.graph.BarrierAt(i - 1).position); // ordered by position
+        if (i > 0)
+        {
+            CHECK(b.position >= p.graph.BarrierAt(i - 1).position);  // ordered by position
+        }
     }
     CHECK(at_zero == 3);
 }
 
-TEST_CASE("A transient used in a way its description does not allow is a compile error", "[renderer][graph][barrier]") {
+TEST_CASE("A transient used in a way its description does not allow is a compile error", "[renderer][graph][barrier]")
+{
     Plan p;
-    const GraphResource t = p.Transient("t", rhi::TextureUsage::ColorAttachment); // not sampled
+    const GraphResource t = p.Transient("t", rhi::TextureUsage::ColorAttachment);  // not sampled
     const GraphResource bb = p.Import("bb", rhi::ResourceState::Undefined, rhi::ResourceState::Present);
     p.Pass("draw").Write(t, GraphUsage::ColorAttachment);
     p.Pass("post").Read(t, GraphUsage::Sampled).Write(bb, GraphUsage::ColorAttachment);
     CHECK_FALSE(p.graph.Compile());
     REQUIRE(p.graph.ErrorCount() == 1);
-    CHECK(p.Errors() == "pass 'post' uses transient texture 't' as sampled, but its description lacks the matching usage flag\n");
+    CHECK(p.Errors() ==
+          "pass 'post' uses transient texture 't' as sampled, but its description lacks the matching usage flag\n");
 }
 
-namespace {
+namespace
+{
 
 // ---- execution on the null device ----
 
 // A pass that begins and ends a rendering pass on one color attachment (and a depth attachment when given). The null
 // device checks the attachments' states when the pass begins, so a missing barrier is an error.
-struct DrawPass {
+struct DrawPass
+{
     GraphResource color[3];
     u32 color_count = 0;
     GraphResource depth;
     u32 ran = 0;
 };
 
-void RunDraw(const PassExecuteContext& context, void* user) {
+void RunDraw(const PassExecuteContext& context, void* user)
+{
     DrawPass* pass = static_cast<DrawPass*>(user);
     rhi::RenderingDesc rd;
-    for (u32 i = 0; i < pass->color_count; ++i) rd.color[i].texture = context.graph->ResolvedTexture(pass->color[i]);
+    for (u32 i = 0; i < pass->color_count; ++i)
+    {
+        rd.color[i].texture = context.graph->ResolvedTexture(pass->color[i]);
+    }
     rd.color_count = pass->color_count;
-    if (pass->depth.IsValid()) rd.depth.texture = context.graph->ResolvedTexture(pass->depth);
+    if (pass->depth.IsValid())
+    {
+        rd.depth.texture = context.graph->ResolvedTexture(pass->depth);
+    }
     context.list->BeginRendering(rd);
     context.list->EndRendering();
     ++pass->ran;
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("A deferred-shaped graph executes on the null device with zero errors, frame after frame", "[renderer][graph][barrier]") {
+TEST_CASE("A deferred-shaped graph executes on the null device with zero errors, frame after frame",
+          "[renderer][graph][barrier]")
+{
     rhi::NullDevicePtr device = rhi::CreateNullDevice();
     {
         TransientPool pool(device.Get(), TransientPoolDesc{});
         const u32 w = 128;
         const u32 h = 96;
-        rhi::TextureDesc out_desc = Tex(w, h, rhi::Format::RGBA8_UNorm, rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::CopySrc);
+        rhi::TextureDesc out_desc = Tex(w, h, rhi::Format::RGBA8_UNorm,
+                                        rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::CopySrc);
         out_desc.debug_name = "backbuffer";
         const rhi::TextureHandle backbuffer = device->CreateTexture(out_desc);
         REQUIRE(backbuffer.IsValid());
 
-        for (u32 frame = 0; frame < 4; ++frame) {
+        for (u32 frame = 0; frame < 4; ++frame)
+        {
             ArenaAllocator arena(kRenderGraphBarrierTestArenaBytes);
             RenderGraph graph(&arena, RenderGraphDesc{});
             pool.BeginFrame(frame);
@@ -231,9 +279,12 @@ TEST_CASE("A deferred-shaped graph executes on the null device with zero errors,
             const GraphResource albedo = graph.CreateTexture("albedo", Tex(w, h, rhi::Format::RGBA8_UNorm, rt));
             const GraphResource normal = graph.CreateTexture("normal", Tex(w, h, rhi::Format::RGBA16_Float, rt));
             const GraphResource material = graph.CreateTexture("material", Tex(w, h, rhi::Format::RGBA8_UNorm, rt));
-            const GraphResource depth = graph.CreateTexture("depth", Tex(w, h, rhi::Format::D32_Float, rhi::TextureUsage::DepthAttachment | rhi::TextureUsage::Sampled));
+            const GraphResource depth = graph.CreateTexture(
+                "depth",
+                Tex(w, h, rhi::Format::D32_Float, rhi::TextureUsage::DepthAttachment | rhi::TextureUsage::Sampled));
             const GraphResource hdr = graph.CreateTexture("hdr", Tex(w, h, rhi::Format::RGBA16_Float, rt));
-            const GraphResource out = graph.ImportTexture("backbuffer", backbuffer, rhi::ResourceState::Undefined, rhi::ResourceState::CopySrc, false);
+            const GraphResource out = graph.ImportTexture("backbuffer", backbuffer, rhi::ResourceState::Undefined,
+                                                          rhi::ResourceState::CopySrc, false);
 
             DrawPass gbuffer;
             gbuffer.color[0] = albedo;
@@ -259,7 +310,9 @@ TEST_CASE("A deferred-shaped graph executes on the null device with zero errors,
                 .Read(material, GraphUsage::Sampled)
                 .Read(depth, GraphUsage::DepthRead)
                 .Write(hdr, GraphUsage::ColorAttachment);
-            graph.AddPass("tonemap", &RunDraw, &tonemap).Read(hdr, GraphUsage::Sampled).Write(out, GraphUsage::ColorAttachment);
+            graph.AddPass("tonemap", &RunDraw, &tonemap)
+                .Read(hdr, GraphUsage::Sampled)
+                .Write(out, GraphUsage::ColorAttachment);
 
             device->BeginFrame();
             rhi::CommandList* list = device->CreateCommandList();
@@ -288,7 +341,8 @@ TEST_CASE("A deferred-shaped graph executes on the null device with zero errors,
     device.Reset();
 }
 
-TEST_CASE("Non-overlapping transient lifetimes in one frame share a texture", "[renderer][graph][pool]") {
+TEST_CASE("Non-overlapping transient lifetimes in one frame share a texture", "[renderer][graph][pool]")
+{
     rhi::NullDevicePtr device = rhi::CreateNullDevice();
     {
         TransientPool pool(device.Get(), TransientPoolDesc{});
@@ -300,8 +354,10 @@ TEST_CASE("Non-overlapping transient lifetimes in one frame share a texture", "[
         const GraphResource t1 = graph.CreateTexture("t1", d);
         const GraphResource t2 = graph.CreateTexture("t2", d);
         const GraphResource t3 = graph.CreateTexture("t3", d);
-        const rhi::TextureHandle target = device->CreateTexture(Tex(32, 32, rhi::Format::RGBA8_UNorm, rhi::TextureUsage::ColorAttachment));
-        const GraphResource out = graph.ImportTexture("out", target, rhi::ResourceState::Undefined, rhi::ResourceState::ColorAttachment, false);
+        const rhi::TextureHandle target = device->CreateTexture(
+            Tex(32, 32, rhi::Format::RGBA8_UNorm, rhi::TextureUsage::ColorAttachment));
+        const GraphResource out = graph.ImportTexture("out", target, rhi::ResourceState::Undefined,
+                                                      rhi::ResourceState::ColorAttachment, false);
         DrawPass p1, p2, p3, p4;
         p1.color[0] = t1;
         p2.color[0] = t2;
@@ -332,7 +388,8 @@ TEST_CASE("Non-overlapping transient lifetimes in one frame share a texture", "[
     device.Reset();
 }
 
-TEST_CASE("Execute reports a transient it cannot allocate and puts the pool back as it was", "[renderer][graph][pool]") {
+TEST_CASE("Execute reports a transient it cannot allocate and puts the pool back as it was", "[renderer][graph][pool]")
+{
     rhi::NullDevicePtr device = rhi::CreateNullDevice();
     {
         TransientPool pool(device.Get(), TransientPoolDesc{});
@@ -341,9 +398,12 @@ TEST_CASE("Execute reports a transient it cannot allocate and puts the pool back
         pool.BeginFrame(0);
         const rhi::TextureUsage rt = rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::Sampled;
         const GraphResource a = graph.CreateTexture("a", Tex(8, 8, rhi::Format::RGBA8_UNorm, rt));
-        const GraphResource b = graph.CreateTexture("b", Tex(0, 0, rhi::Format::RGBA8_UNorm, rt)); // the device refuses a zero size
-        const rhi::TextureHandle target = device->CreateTexture(Tex(8, 8, rhi::Format::RGBA8_UNorm, rhi::TextureUsage::ColorAttachment));
-        const GraphResource out = graph.ImportTexture("out", target, rhi::ResourceState::Undefined, rhi::ResourceState::ColorAttachment, false);
+        const GraphResource b = graph.CreateTexture(
+            "b", Tex(0, 0, rhi::Format::RGBA8_UNorm, rt));  // the device refuses a zero size
+        const rhi::TextureHandle target = device->CreateTexture(
+            Tex(8, 8, rhi::Format::RGBA8_UNorm, rhi::TextureUsage::ColorAttachment));
+        const GraphResource out = graph.ImportTexture("out", target, rhi::ResourceState::Undefined,
+                                                      rhi::ResourceState::ColorAttachment, false);
         graph.AddPass("p1", nullptr, nullptr).Write(a, GraphUsage::ColorAttachment);
         graph.AddPass("p2", nullptr, nullptr).Read(a, GraphUsage::Sampled).Write(out, GraphUsage::ColorAttachment);
         graph.AddPass("p3", nullptr, nullptr, PassFlags::SideEffects).Write(b, GraphUsage::ColorAttachment);
@@ -352,22 +412,24 @@ TEST_CASE("Execute reports a transient it cannot allocate and puts the pool back
         list->Begin();
         // `a` is used by p1 and p2 and is back in the pool, in ShaderRead, when p3's `b` cannot be created.
         CHECK_FALSE(graph.Execute(&pool, list));
-        CHECK(graph.ErrorCount() == 0); // a runtime failure is not a declaration error
+        CHECK(graph.ErrorCount() == 0);  // a runtime failure is not a declaration error
         CHECK(StringView(graph.ExecuteError()) == StringView("transient texture 'b' could not be allocated"));
         CHECK(pool.Stats().textures_live == 1);
-        CHECK(pool.Stats().textures_idle == 1); // a went back to the pool
-        CHECK(device->ErrorCount() == 1);      // the device refused the zero-size texture
+        CHECK(pool.Stats().textures_idle == 1);  // a went back to the pool
+        CHECK(device->ErrorCount() == 1);        // the device refused the zero-size texture
         device->ResetErrors();
-        list->End(); // abandoned: never submitted
+        list->End();  // abandoned: never submitted
         device->EndFrame();
 
-        // The abandoned list's barriers never ran, so `a` must be back in the state it was taken in (Undefined). A second
-        // frame that uses it would otherwise start a barrier from ShaderRead, which the device never saw (an error).
+        // The abandoned list's barriers never ran, so `a` must be back in the state it was taken in (Undefined). A
+        // second frame that uses it would otherwise start a barrier from ShaderRead, which the device never saw (an
+        // error).
         ArenaAllocator arena2(kRenderGraphBarrierTestArenaBytes);
         RenderGraph graph2(&arena2, RenderGraphDesc{});
         pool.BeginFrame(1);
         const GraphResource a2 = graph2.CreateTexture("a2", Tex(8, 8, rhi::Format::RGBA8_UNorm, rt));
-        const GraphResource out2 = graph2.ImportTexture("out", target, rhi::ResourceState::Undefined, rhi::ResourceState::ColorAttachment, false);
+        const GraphResource out2 = graph2.ImportTexture("out", target, rhi::ResourceState::Undefined,
+                                                        rhi::ResourceState::ColorAttachment, false);
         DrawPass d1, d2;
         d1.color[0] = a2;
         d2.color[0] = out2;
@@ -383,19 +445,21 @@ TEST_CASE("Execute reports a transient it cannot allocate and puts the pool back
         REQUIRE(device->Submit(lists, 1) != 0);
         device->EndFrame();
         CHECK(device->ErrorCount() == 0);
-        CHECK(pool.Stats().texture_reuses == 1); // `a` was handed out again
+        CHECK(pool.Stats().texture_reuses == 1);  // `a` was handed out again
         device->DestroyTexture(target);
     }
     device.Reset();
 }
 
-TEST_CASE("The pool reuses by description and destroys what stays idle too long", "[renderer][pool]") {
+TEST_CASE("The pool reuses by description and destroys what stays idle too long", "[renderer][pool]")
+{
     rhi::NullDevicePtr device = rhi::CreateNullDevice();
     {
         TransientPoolDesc pd;
         pd.max_idle_frames = 2;
         TransientPool pool(device.Get(), pd);
-        const rhi::TextureDesc d = Tex(16, 16, rhi::Format::RGBA8_UNorm, rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::Sampled);
+        const rhi::TextureDesc d = Tex(16, 16, rhi::Format::RGBA8_UNorm,
+                                       rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::Sampled);
         rhi::TextureDesc other = d;
         other.width = 17;
         rhi::BufferDesc bd;
@@ -408,7 +472,7 @@ TEST_CASE("The pool reuses by description and destroys what stays idle too long"
         PooledBuffer b;
         REQUIRE(pool.AcquireTexture(d, &t));
         CHECK(t.state == rhi::ResourceState::Undefined);
-        REQUIRE(pool.AcquireTexture(d, &u)); // the first is in use: a second texture
+        REQUIRE(pool.AcquireTexture(d, &u));  // the first is in use: a second texture
         CHECK(u.handle != t.handle);
         REQUIRE(pool.AcquireBuffer(bd, &b));
         pool.ReleaseTexture(t.handle, rhi::ResourceState::ShaderRead);
@@ -436,9 +500,10 @@ TEST_CASE("The pool reuses by description and destroys what stays idle too long"
         CHECK(pool.Stats().textures_destroyed == 0);
 
         // Frames 2 and 3 use nothing. A resource last used in frame 1 is destroyed once it has been idle for more than
-        // two frames: at the end of frame 4. The one used in frame 0 and never again (the second `d` texture, if frame 1
-        // took the first) goes at the end of frame 3.
-        for (u64 f = 2; f <= 3; ++f) {
+        // two frames: at the end of frame 4. The one used in frame 0 and never again (the second `d` texture, if frame
+        // 1 took the first) goes at the end of frame 3.
+        for (u64 f = 2; f <= 3; ++f)
+        {
             pool.BeginFrame(f);
             pool.EndFrame();
         }
@@ -455,7 +520,8 @@ TEST_CASE("The pool reuses by description and destroys what stays idle too long"
     device.Reset();
 }
 
-TEST_CASE("A destroyed pool leaves no device resources behind", "[renderer][pool]") {
+TEST_CASE("A destroyed pool leaves no device resources behind", "[renderer][pool]")
+{
     rhi::NullDevicePtr device = rhi::CreateNullDevice();
     {
         TransientPool pool(device.Get(), TransientPoolDesc{});
@@ -469,7 +535,8 @@ TEST_CASE("A destroyed pool leaves no device resources behind", "[renderer][pool
     device.Reset();
 }
 
-TEST_CASE("A full pool destroys its longest-idle texture to make room", "[renderer][pool]") {
+TEST_CASE("A full pool destroys its longest-idle texture to make room", "[renderer][pool]")
+{
     rhi::NullDevicePtr device = rhi::CreateNullDevice();
     {
         TransientPoolDesc pd;
@@ -491,7 +558,7 @@ TEST_CASE("A full pool destroys its longest-idle texture to make room", "[render
         CHECK(pool.Stats().textures_live == 2);
         // Everything in use and full: the request fails instead.
         PooledTexture extra;
-        REQUIRE(pool.AcquireTexture(Tex(8, 8, rhi::Format::RGBA8_UNorm, usage), &extra)); // reuses the idle 8x8
+        REQUIRE(pool.AcquireTexture(Tex(8, 8, rhi::Format::RGBA8_UNorm, usage), &extra));  // reuses the idle 8x8
         CHECK_FALSE(pool.AcquireTexture(Tex(32, 32, rhi::Format::RGBA8_UNorm, usage), &t[0]));
         pool.ReleaseTexture(t[2].handle, rhi::ResourceState::ShaderRead);
         pool.ReleaseTexture(extra.handle, rhi::ResourceState::ShaderRead);
@@ -499,7 +566,8 @@ TEST_CASE("A full pool destroys its longest-idle texture to make room", "[render
     device.Reset();
 }
 
-TEST_CASE("A transient buffer goes through the same barriers and the pool across frames", "[renderer][graph][pool]") {
+TEST_CASE("A transient buffer goes through the same barriers and the pool across frames", "[renderer][graph][pool]")
+{
     rhi::NullDevicePtr device = rhi::CreateNullDevice();
     {
         TransientPool pool(device.Get(), TransientPoolDesc{});
@@ -511,12 +579,14 @@ TEST_CASE("A transient buffer goes through the same barriers and the pool across
         out_desc.usage = rhi::BufferUsage::CopyDst;
         const rhi::BufferHandle out_buffer = device->CreateBuffer(out_desc);
         REQUIRE(out_buffer.IsValid());
-        for (u64 frame = 0; frame < 3; ++frame) {
+        for (u64 frame = 0; frame < 3; ++frame)
+        {
             ArenaAllocator arena(kRenderGraphBarrierTestArenaBytes);
             RenderGraph graph(&arena, RenderGraphDesc{});
             pool.BeginFrame(frame);
             const GraphResource scratch = graph.CreateBuffer("scratch", bd);
-            const GraphResource out = graph.ImportBuffer("out", out_buffer, rhi::ResourceState::Undefined, rhi::ResourceState::CopyDst, false);
+            const GraphResource out = graph.ImportBuffer("out", out_buffer, rhi::ResourceState::Undefined,
+                                                         rhi::ResourceState::CopyDst, false);
             graph.AddPass("write", nullptr, nullptr).Write(scratch, GraphUsage::StorageWrite);
             graph.AddPass("copy", nullptr, nullptr).Read(scratch, GraphUsage::CopySrc).Write(out, GraphUsage::CopyDst);
             REQUIRE(graph.Compile());

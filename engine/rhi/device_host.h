@@ -8,14 +8,17 @@
 
 //! The owner of a device and its swapchain, which can destroy and re-create both at run time.
 
-namespace engine_placeholder::rhi {
+namespace engine_placeholder::rhi
+{
 
 /// Something that owns device objects and must release and rebuild them when the device is replaced.
 ///
-/// Register one with [[rhi::DeviceHost::AddObserver]] and a tier; the renderer's resource registry is the usual observer.
+/// Register one with [[rhi::DeviceHost::AddObserver]] and a tier; the renderer's resource registry is the usual
+/// observer.
 ///
 /// - Thread-safety: owner-thread-only: called on the host's owning thread.
-class DeviceObserver {
+class DeviceObserver
+{
 public:
     virtual ~DeviceObserver() = default;
 
@@ -36,8 +39,8 @@ public:
     /// - Returns: false if you could not rebuild; the host then releases every observer again and fails the call.
     virtual bool OnDeviceCreated(Device* device, u32 epoch) = 0;
 
-    /// The swapchain was rebuilt with a different image format or color space (anything built against the old format, such
-    /// as the tonemap pipeline, must be rebuilt). Called in ascending tier order, on the owning thread.
+    /// The swapchain was rebuilt with a different image format or color space (anything built against the old format,
+    /// such as the tonemap pipeline, must be rebuilt). Called in ascending tier order, on the owning thread.
     ///
     /// The default does nothing.
     ///
@@ -56,7 +59,8 @@ public:
 /// Where the time of the last `Recreate` went, in milliseconds.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct ResetTimings {
+struct ResetTimings
+{
     /// Observers releasing their device objects (`OnDeviceReleasing`, all of them).
     double release_ms = 0.0;
     /// Waiting for the GPU, destroying the swapchain and the device (the pipeline cache is saved here).
@@ -65,23 +69,26 @@ struct ResetTimings {
     double create_device_ms = 0.0;
     /// Creating the swapchain.
     double create_swapchain_ms = 0.0;
-    /// Observers rebuilding (`OnDeviceCreated`, all of them: textures re-uploaded, meshes re-uploaded, layouts, shaders, ...).
+    /// Observers rebuilding (`OnDeviceCreated`, all of them: textures re-uploaded, meshes re-uploaded, layouts,
+    /// shaders, ...).
     double rebuild_ms = 0.0;
 };
 
 /// Owns a [[rhi::Device]] and its [[rhi::Swapchain]] and replaces them on request.
 ///
-/// `Recreate` runs: notify observers (`OnDeviceReleasing`, high tier first), `Quiesce`, destroy the swapchain, destroy the
-/// device (which saves the pipeline cache), create the device and the swapchain, notify observers (`OnDeviceCreated`, low
-/// tier first). A failed creation leaves the host empty and `LastError` says why; the caller can `Create` again (the
-/// renderer rolls back to its previous settings that way). Handles of the old device are always invalid on the new one:
-/// each device seeds its handle generations from its serial.
+/// `Recreate` runs: notify observers (`OnDeviceReleasing`, high tier first), `Quiesce`, destroy the swapchain, destroy
+/// the device (which saves the pipeline cache), create the device and the swapchain, notify observers
+/// (`OnDeviceCreated`, low tier first). A failed creation leaves the host empty and `LastError` says why; the caller
+/// can `Create` again (the renderer rolls back to its previous settings that way). Handles of the old device are always
+/// invalid on the new one: each device seeds its handle generations from its serial.
 ///
-/// - Thread-safety: owner-thread-only: every call comes from the thread that called `Create`, outside `BeginFrame`/`EndFrame`.
+/// - Thread-safety: owner-thread-only: every call comes from the thread that called `Create`, outside
+/// `BeginFrame`/`EndFrame`.
 /// - Ownership: owns the device and the swapchain; observers are borrowed and must outlive their registration (the
 ///   destructor still notifies them). Defined in the neutral `rhi` library; devices come from the backends the program
 ///   registered ([[rhi::RegisterCompiledBackends]]).
-class DeviceHost {
+class DeviceHost
+{
 public:
     /// The most observers.
     static constexpr usize kMaxObservers = 32;
@@ -101,7 +108,8 @@ public:
     ///   `Recreate` with the same info (the host does not keep the strings; pass them again to `Recreate`).
     /// - Param swapchain: the swapchain description, used only with a window.
     /// - Returns: true on success.
-    /// - Fails: returns false with `LastError` set and the host empty if the device, the swapchain or an observer fails.
+    /// - Fails: returns false with `LastError` set and the host empty if the device, the swapchain or an observer
+    /// fails.
     /// - Aborts: the host already holds a device.
     bool Create(const DeviceCreateInfo& info, const SwapchainDesc& swapchain);
 
@@ -110,7 +118,8 @@ public:
     /// - Param info: the new device description.
     /// - Param swapchain: the new swapchain description.
     /// - Returns: true on success.
-    /// - Fails: returns false with `LastError` set and the host empty (observers have released); `Create` again to roll back.
+    /// - Fails: returns false with `LastError` set and the host empty (observers have released); `Create` again to roll
+    /// back.
     /// - Aborts: called off the owning thread, or between `BeginFrame` and `EndFrame`.
     bool Recreate(const DeviceCreateInfo& info, const SwapchainDesc& swapchain);
 
@@ -127,8 +136,9 @@ public:
 
     /// Replaces the presentation surface, keeping the device when the adapter can present to the new one.
     ///
-    /// Destroys the swapchain, asks the device for a new surface ([[rhi::Device::RecreateSurface]]) and creates the swapchain
-    /// again; if the device cannot, it does a full `Recreate` with the description of the last `Create` or `Recreate`
+    /// Destroys the swapchain, asks the device for a new surface ([[rhi::Device::RecreateSurface]]) and creates the
+    /// swapchain again; if the device cannot, it does a full `Recreate` with the description of the last `Create` or
+    /// `Recreate`
     /// (`SurfaceFallbackCount` counts those).
     ///
     /// - Param window: the window to present to; must outlive the host's device.
@@ -138,9 +148,9 @@ public:
     /// - Aborts: called off the owning thread or between `BeginFrame` and `EndFrame`.
     bool RecreateSurface(const os::Window* window, const SwapchainDesc& swapchain);
 
-    /// Returns how many device objects were still alive, after every observer released, when devices were destroyed. Any is a leak
-    /// in an owner that did not release; each is also logged as an error. Command lists are not counted: the last frame's lists are
-    /// recycled by the next `BeginFrame` and die with the device.
+    /// Returns how many device objects were still alive, after every observer released, when devices were destroyed.
+    /// Any is a leak in an owner that did not release; each is also logged as an error. Command lists are not counted:
+    /// the last frame's lists are recycled by the next `BeginFrame` and die with the device.
     u32 LeakedObjects() const { return leaked_objects_; }
 
     /// Returns how many times `RecreateSurface` had to fall back to a full reset.
@@ -193,11 +203,12 @@ public:
     void RemoveObserver(DeviceObserver* observer);
 
 private:
-    struct Entry {
+    struct Entry
+    {
         DeviceObserver* observer = nullptr;
         u32 tier = 0;
         u32 sequence = 0;
-        bool created = false; // got OnDeviceCreated and not yet OnDeviceReleasing
+        bool created = false;  // got OnDeviceCreated and not yet OnDeviceReleasing
     };
 
     void NotifySwapchainChanged();
@@ -223,4 +234,4 @@ private:
     char error_[160] = {};
 };
 
-} // namespace engine_placeholder::rhi
+}  // namespace engine_placeholder::rhi

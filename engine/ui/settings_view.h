@@ -17,24 +17,32 @@
 #include "ui/widgets/text_field.h"
 #include "ui/widgets/value_widgets.h"
 
-//! A settings screen generated from the registry (Phase 15, Day 203): one labelled row per setting, the widget chosen by its type, changes written through `Settings::Apply`.
+//! A settings screen generated from the registry (Phase 15, Day 203): one labelled row per setting, the widget chosen
+//! by its type, changes written through `Settings::Apply`.
 
-namespace engine_placeholder::ui {
+namespace engine_placeholder::ui
+{
 
 /// A settings screen: groups of rows, built from the metadata of a [[settings::Registry]].
 ///
-/// Rows are made for every setting whose key starts with the prefix, in key order, grouped by `SettingDesc::group` (a setting with no group is under "General"). `kHidden` settings are
-/// skipped; `kAdvanced` ones are in rows that stay collapsed until the "Show advanced settings" box is ticked. The widget follows the type: a bool is a check box; an int or float with
-/// a range is a slider and a spin box that show the same value; an enum is a combo box over its names; text is a text field (a password field for `kSecret`). Ranges, steps and the
-/// clamp-or-reject policy come from the declaration. A `kRestartRequired` setting has a note "restart required" in its row, and `RestartPending` says one was changed.
+/// Rows are made for every setting whose key starts with the prefix, in key order, grouped by `SettingDesc::group` (a
+/// setting with no group is under "General"). `kHidden` settings are skipped; `kAdvanced` ones are in rows that stay
+/// collapsed until the "Show advanced settings" box is ticked. The widget follows the type: a bool is a check box; an
+/// int or float with a range is a slider and a spin box that show the same value; an enum is a combo box over its
+/// names; text is a text field (a password field for `kSecret`). Ranges, steps and the clamp-or-reject policy come from
+/// the declaration. A `kRestartRequired` setting has a note "restart required" in its row, and `RestartPending` says
+/// one was changed.
 ///
-/// A change goes through `Settings::Apply` (with the apply function given to `SetApply`). If it is refused, the widget goes back to the value in force and `Message` says why. A value
-/// that an environment variable, the command line or a policy layer decides is shown disabled with its source as a tooltip. The widgets show the current values, refreshed when a
-/// settings listener reports a change (from any thread) and never by polling: an idle screen reads nothing from the settings.
+/// A change goes through `Settings::Apply` (with the apply function given to `SetApply`). If it is refused, the widget
+/// goes back to the value in force and `Message` says why. A value that an environment variable, the command line or a
+/// policy layer decides is shown disabled with its source as a tooltip. The widgets show the current values, refreshed
+/// when a settings listener reports a change (from any thread) and never by polling: an idle screen reads nothing from
+/// the settings.
 ///
 /// - Thread-safety: owner-thread-only; the settings listener only sets a flag, so settings may change on any thread.
 /// - Ownership: borrows the settings, which must outlive the view; owns its rows.
-class SettingsView : public BoxLayout {
+class SettingsView : public BoxLayout
+{
 public:
     /// The heading of a setting that names no group.
     static constexpr char kDefaultGroup[] = "General";
@@ -62,7 +70,8 @@ public:
     SettingsView(const SettingsView&) = delete;
     SettingsView& operator=(const SettingsView&) = delete;
 
-    /// Sets the apply function every change is passed to (the renderer's `ApplySettings` glue), or null for none. Returning false from it rejects the change.
+    /// Sets the apply function every change is passed to (the renderer's `ApplySettings` glue), or null for none.
+    /// Returning false from it rejects the change.
     /// - Param user: passed to it; borrowed.
     /// - Ownership: `user` is borrowed until it is replaced.
     void SetApply(settings::ApplyFn apply, void* user);
@@ -87,7 +96,8 @@ public:
     /// - Ownership: borrowed; the view keeps it and it stays valid until `Rebuild`.
     /// - Fails: returns null when there is none.
     Widget* RowOf(settings::SettingId id) const;
-    /// Returns the widget that edits a setting (the slider for a number, the check box, combo box or text field), or null.
+    /// Returns the widget that edits a setting (the slider for a number, the check box, combo box or text field), or
+    /// null.
     ///
     /// - Ownership: borrowed; the view keeps it and it stays valid until `Rebuild`.
     /// - Fails: returns null when there is none.
@@ -121,7 +131,8 @@ public:
     bool WantsUpdate() const override { return changed_.Load(MemoryOrder::Relaxed); }
 
 private:
-    struct Row {
+    struct Row
+    {
         settings::SettingId id;
         settings::Type type = settings::Type::Bool;
         Widget* row = nullptr;
@@ -134,7 +145,8 @@ private:
         bool advanced = false;
     };
     class EnumModel;
-    struct Link {
+    struct Link
+    {
         SettingsView* view = nullptr;
         usize row = 0;
     };
@@ -170,9 +182,10 @@ private:
     Vector<Row> rows_;
     Vector<UniquePtr<Link>> links_;
     Vector<UniquePtr<EnumModel>> models_;
-    Vector<UniquePtr<Link>> retired_links_;        // of controls a Rebuild during a dispatch left alive until the dispatch ended
+    Vector<UniquePtr<Link>>
+        retired_links_;  // of controls a Rebuild during a dispatch left alive until the dispatch ended
     Vector<UniquePtr<EnumModel>> retired_models_;
     Callback<SettingsView*> on_restart_;
 };
 
-} // namespace engine_placeholder::ui
+}  // namespace engine_placeholder::ui

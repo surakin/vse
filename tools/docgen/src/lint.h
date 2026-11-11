@@ -9,28 +9,38 @@
 // Thread-safety: thread-compatible; the functions keep no global state and
 //   only read the index.
 // Ownership: results live in the caller's arena.
-namespace docgen {
+namespace docgen
+{
 
-enum class LintRule : engine_placeholder::u8 { Undocumented, ThreadSafety, Ownership, Failure };
+enum class LintRule : engine_placeholder::u8
+{
+    Undocumented,
+    ThreadSafety,
+    Ownership,
+    Failure
+};
 
-const char* LintRuleName(LintRule r); // "undocumented", "thread-safety", "ownership", "failure"
+const char* LintRuleName(LintRule r);  // "undocumented", "thread-safety", "ownership", "failure"
 
-struct LintFinding {
+struct LintFinding
+{
     LintRule rule;
     const Symbol* symbol;
 };
 
-struct ModuleCoverage {
+struct ModuleCoverage
+{
     StringView name;
     usize total = 0;
     usize documented = 0;
 };
 
-struct LintResult {
+struct LintResult
+{
     explicit LintResult(ArenaAllocator& arena) : findings(arena), modules(arena) {}
 
-    Vector<LintFinding, ArenaAllocator> findings; // symbol order, then rule order
-    Vector<ModuleCoverage, ArenaAllocator> modules; // module map order
+    Vector<LintFinding, ArenaAllocator> findings;    // symbol order, then rule order
+    Vector<ModuleCoverage, ArenaAllocator> modules;  // module map order
     usize total = 0;
     usize documented = 0;
 };
@@ -47,10 +57,12 @@ void RunLint(const SymbolIndex& index, ArenaAllocator& arena, LintResult& out);
 //   # docgen lint baseline v1
 //   module<TAB>NAME<TAB>DOCUMENTED<TAB>TOTAL
 //   known<TAB>RULE<TAB>SYMBOL-ID
-struct Baseline {
+struct Baseline
+{
     explicit Baseline(ArenaAllocator& arena) : modules(arena), known(arena) {}
 
-    struct Known {
+    struct Known
+    {
         StringView rule;
         StringView id;
         bool used = false;
@@ -74,6 +86,7 @@ void RenderCoverage(const LintResult& result, StringBuilder<ArenaAllocator>& out
 // (or the total) whose documented/total ratio dropped; a module missing from
 // or only in the baseline. With no baseline (`baseline` null) every finding is
 // an error.
-void CompareToBaseline(const LintResult& result, Baseline* baseline, ArenaAllocator& arena, Vector<FileDiag, ArenaAllocator>& out);
+void CompareToBaseline(const LintResult& result, Baseline* baseline, ArenaAllocator& arena,
+                       Vector<FileDiag, ArenaAllocator>& out);
 
-} // namespace docgen
+}  // namespace docgen

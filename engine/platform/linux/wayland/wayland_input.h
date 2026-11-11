@@ -13,7 +13,8 @@
 
 //! Wayland seat input: keyboard and pointer events from a `wl_seat` into an `InputState`.
 
-namespace engine_placeholder::os::wayland {
+namespace engine_placeholder::os::wayland
+{
 
 /// Listens to a `wl_seat` and maintains the keyboard and pointer state of an `InputState`.
 ///
@@ -21,10 +22,12 @@ namespace engine_placeholder::os::wayland {
 /// keymap through [[os::XkbKeyboard]], and tracks pointer position, button mask and scroll.
 /// Not movable or copyable, because the listeners capture `this`; call `Init` on an in-place object.
 ///
-/// - Thread-safety: owner-thread-only. Listener callbacks run on the thread that dispatches the connection's events, which must be the one that calls `Init` and `Shutdown`.
+/// - Thread-safety: owner-thread-only. Listener callbacks run on the thread that dispatches the connection's events,
+/// which must be the one that calls `Init` and `Shutdown`.
 /// - Ownership: owns the keyboard and pointer proxies; the seat belongs to the connection and
 ///   the `InputState` is borrowed from the caller.
-class WaylandInput {
+class WaylandInput
+{
 public:
     /// Constructs an uninitialized input handler.
     WaylandInput() = default;
@@ -68,17 +71,19 @@ public:
     /// Read-only view of the clipboard.
     const WaylandClipboard& Clipboard() const { return clipboard_; }
 
-    /// Queues the key repeats that are due (`wl_keyboard` repeat is the client's job); call once per pump, after dispatching.
+    /// Queues the key repeats that are due (`wl_keyboard` repeat is the client's job); call once per pump, after
+    /// dispatching.
     void Tick();
 
     /// Returns whether the handler is attached to a seat.
     bool Valid() const { return seat_ != nullptr; }
     /// Returns whether the seat offered a keyboard.
     bool HasKeyboard() const { return keyboard_ != nullptr; }
-    /// Returns whether every event of the `wl_pointer` and `wl_keyboard` versions the seat is bound at has a listener function.
+    /// Returns whether every event of the `wl_pointer` and `wl_keyboard` versions the seat is bound at has a listener
+    /// function.
     ///
-    /// libwayland aborts the process when a compositor sends an event whose listener slot is null, so a listener table that falls behind the bound seat
-    /// version is a crash; a test checks this.
+    /// libwayland aborts the process when a compositor sends an event whose listener slot is null, so a listener table
+    /// that falls behind the bound seat version is a crash; a test checks this.
     static bool ListenersComplete();
     /// Returns whether the seat offered a pointer.
     bool HasPointer() const { return pointer_ != nullptr; }
@@ -89,23 +94,21 @@ private:
     static void HandleSeatCapabilities(void* data, wl_seat* seat, u32 capabilities);
     static void HandleSeatName(void* data, wl_seat* seat, const char* name);
     static void HandleKeyboardKeymap(void* data, wl_keyboard* keyboard, u32 format, i32 fd, u32 size);
-    static void HandleKeyboardEnter(void* data, wl_keyboard* keyboard, u32 serial, wl_surface* surface,
-                                    wl_array* keys);
+    static void HandleKeyboardEnter(void* data, wl_keyboard* keyboard, u32 serial, wl_surface* surface, wl_array* keys);
     static void HandleKeyboardLeave(void* data, wl_keyboard* keyboard, u32 serial, wl_surface* surface);
-    static void HandleKeyboardKey(void* data, wl_keyboard* keyboard, u32 serial, u32 time, u32 key,
-                                  u32 state);
+    static void HandleKeyboardKey(void* data, wl_keyboard* keyboard, u32 serial, u32 time, u32 key, u32 state);
     static void HandleKeyboardModifiers(void* data, wl_keyboard* keyboard, u32 serial, u32 mods_depressed,
                                         u32 mods_latched, u32 mods_locked, u32 group);
     static void HandleKeyboardRepeatInfo(void* data, wl_keyboard* keyboard, i32 rate, i32 delay);
 
-    static void HandlePointerEnter(void* data, wl_pointer* pointer, u32 serial, wl_surface* surface,
-                                   wl_fixed_t x, wl_fixed_t y);
+    static void HandlePointerEnter(void* data, wl_pointer* pointer, u32 serial, wl_surface* surface, wl_fixed_t x,
+                                   wl_fixed_t y);
     static void HandlePointerLeave(void* data, wl_pointer* pointer, u32 serial, wl_surface* surface);
     static void HandlePointerMotion(void* data, wl_pointer* pointer, u32 time, wl_fixed_t x, wl_fixed_t y);
-    static void HandlePointerButton(void* data, wl_pointer* pointer, u32 serial, u32 time,
-                                    u32 button, u32 state);
+    static void HandlePointerButton(void* data, wl_pointer* pointer, u32 serial, u32 time, u32 button, u32 state);
     static void HandlePointerAxis(void* data, wl_pointer* pointer, u32 time, u32 axis, wl_fixed_t value);
-    // wl_pointer v5 events we do not use. libwayland aborts the process on an event whose listener slot is null, so each needs a function.
+    // wl_pointer v5 events we do not use. libwayland aborts the process on an event whose listener slot is null, so
+    // each needs a function.
     static void HandlePointerFrame(void* data, wl_pointer* pointer);
     static void HandlePointerAxisSource(void* data, wl_pointer* pointer, u32 axis_source);
     static void HandlePointerAxisStop(void* data, wl_pointer* pointer, u32 time, u32 axis);
@@ -139,4 +142,4 @@ private:
     Key held_[kMaxEvdevCode] = {};
 };
 
-} // namespace engine_placeholder::os::wayland
+}  // namespace engine_placeholder::os::wayland

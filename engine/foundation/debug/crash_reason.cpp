@@ -1,9 +1,12 @@
 #include "debug/crash_reason.h"
 
-namespace engine_placeholder::debug {
+namespace engine_placeholder::debug
+{
 
-const char* CrashReasonName(CrashReason reason) {
-    switch (reason) {
+const char* CrashReasonName(CrashReason reason)
+{
+    switch (reason)
+    {
     case CrashReason::None: return "None";
     case CrashReason::AccessViolation: return "AccessViolation";
     case CrashReason::BusError: return "BusError";
@@ -17,4 +20,4 @@ const char* CrashReasonName(CrashReason reason) {
     return "Unknown";
 }
 
-} // namespace engine_placeholder::debug
+}  // namespace engine_placeholder::debug

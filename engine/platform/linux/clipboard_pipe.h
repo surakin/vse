@@ -3,21 +3,33 @@
 #include "containers/vector.h"
 #include "types.h"
 
-//! Non-blocking transfer of clipboard bytes through a pipe, for the Wayland data device: the other program reads or writes the other end at its own pace.
+//! Non-blocking transfer of clipboard bytes through a pipe, for the Wayland data device: the other program reads or
+//! writes the other end at its own pace.
 
-namespace engine_placeholder::os {
+namespace engine_placeholder::os
+{
 
-/// Writes a byte string into a pipe's write end without ever blocking, a piece at a time from [[os::PipeWriter::Pump]], and closes it when done.
+/// Writes a byte string into a pipe's write end without ever blocking, a piece at a time from [[os::PipeWriter::Pump]],
+/// and closes it when done.
 ///
-/// A peer that reads slowly leaves the pipe full; `Pump` then returns and tries again on the next call. The transfer ends with `Done`, `Failed` (the peer closed early) or
-/// `TimedOut` (no byte moved for the timeout), and the descriptor is closed on every ending and on destruction.
+/// A peer that reads slowly leaves the pipe full; `Pump` then returns and tries again on the next call. The transfer
+/// ends with `Done`, `Failed` (the peer closed early) or `TimedOut` (no byte moved for the timeout), and the descriptor
+/// is closed on every ending and on destruction.
 ///
 /// - Thread-safety: not-thread-safe; owner-thread only.
 /// - Ownership: owns the descriptor and a copy of the bytes.
-class PipeWriter {
+class PipeWriter
+{
 public:
     /// The state of the transfer.
-    enum class State : u8 { Idle, Writing, Done, Failed, TimedOut };
+    enum class State : u8
+    {
+        Idle,
+        Writing,
+        Done,
+        Failed,
+        TimedOut
+    };
 
     PipeWriter() = default;
     ~PipeWriter() { Close(); }
@@ -54,14 +66,24 @@ private:
 
 /// Reads a pipe's read end without blocking, a piece at a time from [[os::PipeReader::Pump]], until the peer closes it.
 ///
-/// Ends with `Done` (end of file; the bytes are in `Bytes`), `TooLarge` (more than the cap arrived), `Failed` (a read error) or `TimedOut` (no byte arrived for the timeout).
+/// Ends with `Done` (end of file; the bytes are in `Bytes`), `TooLarge` (more than the cap arrived), `Failed` (a read
+/// error) or `TimedOut` (no byte arrived for the timeout).
 ///
 /// - Thread-safety: not-thread-safe; owner-thread only.
 /// - Ownership: owns the descriptor and the bytes read so far.
-class PipeReader {
+class PipeReader
+{
 public:
     /// The state of the transfer.
-    enum class State : u8 { Idle, Reading, Done, TooLarge, Failed, TimedOut };
+    enum class State : u8
+    {
+        Idle,
+        Reading,
+        Done,
+        TooLarge,
+        Failed,
+        TimedOut
+    };
 
     PipeReader() = default;
     ~PipeReader() { Close(); }
@@ -98,4 +120,4 @@ private:
     State state_ = State::Idle;
 };
 
-} // namespace engine_placeholder::os
+}  // namespace engine_placeholder::os

@@ -1,4 +1,5 @@
-// Versions, upgrade chains, unknown components, custom codecs, record framing and the storage limits (Phase 19 Day 257).
+// Versions, upgrade chains, unknown components, custom codecs, record framing and the storage limits (Phase 19 Day
+// 257).
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -7,11 +8,14 @@
 #include "storage/component_registry.h"
 #include "storage/storage_settings.h"
 
-namespace engine_placeholder::storage {
-namespace {
+namespace engine_placeholder::storage
+{
+namespace
+{
 
 // Version 1: {x, y}. Version 2 adds z. Version 3 widens `flags` from a u8 to a u32 and adds `scale`.
-struct Mover {
+struct Mover
+{
     f32 x = 0;
     f32 y = 0;
     f32 z = 0;
@@ -19,53 +23,79 @@ struct Mover {
     f32 scale = 1.0f;
 };
 
-Status V1ToV2(bytes::ByteReader& in, bytes::ByteWriter& out, const CodecLimits&) {
+Status V1ToV2(bytes::ByteReader& in, bytes::ByteWriter& out, const CodecLimits&)
+{
     f32 x = 0, y = 0;
     bytes::ByteError e = in.ReadF32(&x);
-    if (e == bytes::ByteError::Ok) e = in.ReadF32(&y);
-    if (e != bytes::ByteError::Ok) return detail::FromByteError(e);
+    if (e == bytes::ByteError::Ok)
+    {
+        e = in.ReadF32(&y);
+    }
+    if (e != bytes::ByteError::Ok)
+    {
+        return detail::FromByteError(e);
+    }
     out.WriteF32(x);
     out.WriteF32(y);
-    out.WriteF32(0.0f); // z did not exist
-    out.WriteU8(0);     // v2 has a u8 flags field
+    out.WriteF32(0.0f);  // z did not exist
+    out.WriteU8(0);      // v2 has a u8 flags field
     return Status::Success();
 }
 
-Status V2ToV3(bytes::ByteReader& in, bytes::ByteWriter& out, const CodecLimits&) {
+Status V2ToV3(bytes::ByteReader& in, bytes::ByteWriter& out, const CodecLimits&)
+{
     f32 x = 0, y = 0, z = 0;
     u8 flags = 0;
     bytes::ByteError e = in.ReadF32(&x);
-    if (e == bytes::ByteError::Ok) e = in.ReadF32(&y);
-    if (e == bytes::ByteError::Ok) e = in.ReadF32(&z);
-    if (e == bytes::ByteError::Ok) e = in.ReadU8(&flags);
-    if (e != bytes::ByteError::Ok) return detail::FromByteError(e);
+    if (e == bytes::ByteError::Ok)
+    {
+        e = in.ReadF32(&y);
+    }
+    if (e == bytes::ByteError::Ok)
+    {
+        e = in.ReadF32(&z);
+    }
+    if (e == bytes::ByteError::Ok)
+    {
+        e = in.ReadU8(&flags);
+    }
+    if (e != bytes::ByteError::Ok)
+    {
+        return detail::FromByteError(e);
+    }
     out.WriteF32(x);
     out.WriteF32(y);
     out.WriteF32(z);
     out.WriteU32(flags);
-    out.WriteF32(1.0f); // scale did not exist
+    out.WriteF32(1.0f);  // scale did not exist
     return Status::Success();
 }
 
-Status RegisterMover(ComponentRegistry* r, u32 id = 3000) {
+Status RegisterMover(ComponentRegistry* r, u32 id = 3000)
+{
     return r->Register<Mover>({.id = id,
                                .name = "mover",
                                .version = 3,
-                               .fields = {Field<&Mover::x>("x"), Field<&Mover::y>("y"), Field<&Mover::z>("z"), Field<&Mover::flags>("flags"),
-                                          Field<&Mover::scale>("scale")},
+                               .fields = {Field<&Mover::x>("x"), Field<&Mover::y>("y"), Field<&Mover::z>("z"),
+                                          Field<&Mover::flags>("flags"), Field<&Mover::scale>("scale")},
                                .upgrades = {{1, &V1ToV2}, {2, &V2ToV3}}});
 }
 
-
-Vector<byte> V1Golden() {
+Vector<byte> V1Golden()
+{
     // x = 1.0f, y = 2.0f (little-endian bit patterns).
     const u8 raw[] = {0x00, 0x00, 0x80, 0x3f, 0x00, 0x00, 0x00, 0x40};
     Vector<byte> v;
-    for (const u8 b : raw) v.Push(static_cast<byte>(b));
+    for (const u8 b : raw)
+    {
+        v.Push(static_cast<byte>(b));
+    }
     return v;
 }
 
-TEST_CASE("Upgrade: a version 1 record loads through a three-step chain and equals the current value", "[storage][upgrade]") {
+TEST_CASE("Upgrade: a version 1 record loads through a three-step chain and equals the current value",
+          "[storage][upgrade]")
+{
     ComponentRegistry registry;
     REQUIRE(RegisterMover(&registry).Ok());
     const RegisteredComponent* c = registry.FindById(3000);
@@ -101,7 +131,8 @@ TEST_CASE("Upgrade: a version 1 record loads through a three-step chain and equa
     CHECK(from2.scale == 1.0f);
 }
 
-TEST_CASE("Upgrade: versions outside the chain are refused", "[storage][upgrade]") {
+TEST_CASE("Upgrade: versions outside the chain are refused", "[storage][upgrade]")
+{
     ComponentRegistry registry;
     REQUIRE(RegisterMover(&registry).Ok());
     const RegisteredComponent* c = registry.FindById(3000);
@@ -111,18 +142,25 @@ TEST_CASE("Upgrade: versions outside the chain are refused", "[storage][upgrade]
     CHECK(c->DecodeRecord(0, ByteSpan(v1.Data(), v1.Size()), &m, CodecLimits()).Is(ErrorCode::TooOld));
 
     ComponentRegistry narrow;
-    REQUIRE(narrow.Register<Mover>({.id = 3001,
-                                    .name = "mover2",
-                                    .version = 3,
-                                    .oldest_version = 2,
-                                    .fields = {Field<&Mover::x>("x"), Field<&Mover::y>("y"), Field<&Mover::z>("z"), Field<&Mover::flags>("flags"),
-                                               Field<&Mover::scale>("scale")},
-                                    .upgrades = {{2, &V2ToV3}}}).Ok());
-    CHECK(narrow.FindById(3001)->DecodeRecord(1, ByteSpan(v1.Data(), v1.Size()), &m, CodecLimits()).Is(ErrorCode::TooOld));
+    REQUIRE(narrow
+                .Register<Mover>({.id = 3001,
+                                  .name = "mover2",
+                                  .version = 3,
+                                  .oldest_version = 2,
+                                  .fields = {Field<&Mover::x>("x"), Field<&Mover::y>("y"), Field<&Mover::z>("z"),
+                                             Field<&Mover::flags>("flags"), Field<&Mover::scale>("scale")},
+                                  .upgrades = {{2, &V2ToV3}}})
+                .Ok());
+    CHECK(narrow.FindById(3001)
+              ->DecodeRecord(1, ByteSpan(v1.Data(), v1.Size()), &m, CodecLimits())
+              .Is(ErrorCode::TooOld));
 }
 
-TEST_CASE("Upgrade: a chain with a gap, a duplicate or a bad step fails at registration", "[storage][upgrade]") {
-    auto fields = [](ComponentRegistry* r, u32 id, const char* name, u32 version, u32 oldest, InitializerList<UpgradeStep> steps) {
+TEST_CASE("Upgrade: a chain with a gap, a duplicate or a bad step fails at registration", "[storage][upgrade]")
+{
+    auto fields =
+        [](ComponentRegistry* r, u32 id, const char* name, u32 version, u32 oldest, InitializerList<UpgradeStep> steps)
+    {
         return r->Register<Mover>({.id = id,
                                    .name = name,
                                    .version = version,
@@ -131,46 +169,52 @@ TEST_CASE("Upgrade: a chain with a gap, a duplicate or a bad step fails at regis
                                    .upgrades = steps});
     };
     ComponentRegistry r;
-    CHECK(fields(&r, 1, "gap", 3, 1, {{1, &V1ToV2}}).Is(ErrorCode::Invalid));                        // step 2 missing
-    CHECK(fields(&r, 2, "dup", 3, 1, {{1, &V1ToV2}, {1, &V1ToV2}}).Is(ErrorCode::Invalid));          // step 1 twice, step 2 missing
-    CHECK(fields(&r, 3, "range", 2, 1, {{2, &V1ToV2}}).Is(ErrorCode::Invalid));                      // from_version outside the chain
+    CHECK(fields(&r, 1, "gap", 3, 1, {{1, &V1ToV2}}).Is(ErrorCode::Invalid));  // step 2 missing
+    CHECK(fields(&r, 2, "dup", 3, 1, {{1, &V1ToV2}, {1, &V1ToV2}})
+              .Is(ErrorCode::Invalid));                                          // step 1 twice, step 2 missing
+    CHECK(fields(&r, 3, "range", 2, 1, {{2, &V1ToV2}}).Is(ErrorCode::Invalid));  // from_version outside the chain
     CHECK(fields(&r, 4, "null", 2, 1, {{1, nullptr}}).Is(ErrorCode::Invalid));
-    CHECK(fields(&r, 5, "none", 2, 1, {}).Is(ErrorCode::Invalid));                                   // version 2 with no step
-    CHECK(fields(&r, 6, "oldest", 2, 3, {}).Is(ErrorCode::Invalid));                                 // oldest above the version
+    CHECK(fields(&r, 5, "none", 2, 1, {}).Is(ErrorCode::Invalid));    // version 2 with no step
+    CHECK(fields(&r, 6, "oldest", 2, 3, {}).Is(ErrorCode::Invalid));  // oldest above the version
     CHECK(fields(&r, 7, "zero", 2, 0, {{1, &V1ToV2}}).Is(ErrorCode::Invalid));
     CHECK(fields(&r, 8, "fine", 2, 1, {{1, &V1ToV2}}).Ok());
     CHECK(r.Count() == 1);
 }
 
-TEST_CASE("Upgrade: bad input to a step, trailing bytes and oversize records are errors", "[storage][upgrade]") {
+TEST_CASE("Upgrade: bad input to a step, trailing bytes and oversize records are errors", "[storage][upgrade]")
+{
     ComponentRegistry registry;
     REQUIRE(RegisterMover(&registry).Ok());
     const RegisteredComponent* c = registry.FindById(3000);
     Mover m;
     const Vector<byte> v1 = V1Golden();
-    for (usize cut = 0; cut < v1.Size(); ++cut) {
+    for (usize cut = 0; cut < v1.Size(); ++cut)
+    {
         CHECK(c->DecodeRecord(1, ByteSpan(v1.Data(), cut), &m, CodecLimits()).Is(ErrorCode::Corrupt));
     }
     Vector<byte> longer = V1Golden();
     longer.Push(byte{0});
-    CHECK(c->DecodeRecord(1, ByteSpan(longer.Data(), longer.Size()), &m, CodecLimits()).Is(ErrorCode::Corrupt)); // the first step leaves a byte unread
+    CHECK(c->DecodeRecord(1, ByteSpan(longer.Data(), longer.Size()), &m, CodecLimits())
+              .Is(ErrorCode::Corrupt));  // the first step leaves a byte unread
     bytes::ByteWriter w;
     REQUIRE(c->Encode(&m, w, CodecLimits()).Ok());
     w.WriteU8(1);
-    CHECK(c->DecodeRecord(3, w.Bytes(), &m, CodecLimits()).Is(ErrorCode::Corrupt)); // bytes left after the last field
+    CHECK(c->DecodeRecord(3, w.Bytes(), &m, CodecLimits()).Is(ErrorCode::Corrupt));  // bytes left after the last field
     CodecLimits tight;
     tight.max_record_bytes = 4;
     CHECK(c->DecodeRecord(1, ByteSpan(v1.Data(), v1.Size()), &m, tight).Is(ErrorCode::LimitExceeded));
-    tight.max_record_bytes = 8; // the record fits, the upgraded form (17 bytes) does not
+    tight.max_record_bytes = 8;  // the record fits, the upgraded form (17 bytes) does not
     CHECK(c->DecodeRecord(1, ByteSpan(v1.Data(), v1.Size()), &m, tight).Is(ErrorCode::LimitExceeded));
 }
 
-TEST_CASE("Upgrade: mutated records through the chain are a Status, never a crash", "[storage][upgrade][fuzz]") {
+TEST_CASE("Upgrade: mutated records through the chain are a Status, never a crash", "[storage][upgrade][fuzz]")
+{
     ComponentRegistry registry;
     REQUIRE(RegisterMover(&registry).Ok());
     const RegisteredComponent* c = registry.FindById(3000);
     u64 state = 0x1234567ull;
-    auto next = [&state]() {
+    auto next = [&state]()
+    {
         state ^= state >> 12;
         state ^= state << 25;
         state ^= state >> 27;
@@ -178,25 +222,36 @@ TEST_CASE("Upgrade: mutated records through the chain are a Status, never a cras
     };
     u32 ok = 0;
     u32 bad = 0;
-    for (u32 n = 0; n < 20000; ++n) {
+    for (u32 n = 0; n < 20000; ++n)
+    {
         Vector<byte> bytes = V1Golden();
         const u32 version = 1 + static_cast<u32>(next() % 3);
-        if (version == 2) { // a plausible version 2 record: three floats and a flag byte
+        if (version == 2)
+        {  // a plausible version 2 record: three floats and a flag byte
             bytes.Resize(13);
-        } else if (version == 3) {
+        }
+        else if (version == 3)
+        {
             bytes.Resize(20);
         }
-        for (usize i = 8; i < bytes.Size(); ++i) bytes[i] = static_cast<byte>(next());
-        switch (next() % 3) {
+        for (usize i = 8; i < bytes.Size(); ++i)
+        {
+            bytes[i] = static_cast<byte>(next());
+        }
+        switch (next() % 3)
+        {
         case 0: bytes[static_cast<usize>(next() % bytes.Size())] = static_cast<byte>(next()); break;
         case 1: bytes.Resize(static_cast<usize>(next() % (bytes.Size() + 1))); break;
         default: bytes.Push(static_cast<byte>(next())); break;
         }
         Mover m;
         const Status s = c->DecodeRecord(version, ByteSpan(bytes.Data(), bytes.Size()), &m, CodecLimits());
-        if (s.Ok()) {
+        if (s.Ok())
+        {
             ++ok;
-        } else {
+        }
+        else
+        {
             ++bad;
             CHECK(s.Is(ErrorCode::Corrupt));
         }
@@ -205,11 +260,14 @@ TEST_CASE("Upgrade: mutated records through the chain are a Status, never a cras
     CHECK(bad > 0);
 }
 
-TEST_CASE("Unknown components follow the policy and unknown bytes survive a load and save", "[storage][upgrade]") {
+TEST_CASE("Unknown components follow the policy and unknown bytes survive a load and save", "[storage][upgrade]")
+{
     ComponentRegistry registry;
     REQUIRE(RegisterMover(&registry).Ok());
-    REQUIRE(registry.Register<Mover>({.id = 3002, .name = "dup_type"}).Failed()); // a type registers once; the id stays free
-    struct Derived {
+    REQUIRE(registry.Register<Mover>({.id = 3002, .name = "dup_type"})
+                .Failed());  // a type registers once; the id stays free
+    struct Derived
+    {
         u32 v = 0;
     };
     REQUIRE(registry.Register<Derived>({.id = 3003, .name = "derived", .flags = kComponentDerived}).Ok());
@@ -219,7 +277,7 @@ TEST_CASE("Unknown components follow the policy and unknown bytes survive a load
     CHECK(registry.Resolve(3000, UnknownPolicy::Fail, &comp, &action).Ok());
     CHECK(action == RecordAction::Decode);
     CHECK(comp == registry.FindById(3000));
-    CHECK(registry.Resolve(3003, UnknownPolicy::Fail, &comp, &action).Ok()); // derived: dropped, never an error
+    CHECK(registry.Resolve(3003, UnknownPolicy::Fail, &comp, &action).Ok());  // derived: dropped, never an error
     CHECK(action == RecordAction::Skip);
     CHECK(comp == nullptr);
     CHECK(registry.Resolve(9999, UnknownPolicy::Fail, &comp, &action).Is(ErrorCode::NotFound));
@@ -241,7 +299,10 @@ TEST_CASE("Unknown components follow the policy and unknown bytes survive a load
     a.bytes = known.Bytes();
     const u8 unknown_raw[] = {1, 2, 3, 0xff, 0x00, 0x7f};
     Vector<byte> unknown;
-    for (const u8 b : unknown_raw) unknown.Push(static_cast<byte>(b));
+    for (const u8 b : unknown_raw)
+    {
+        unknown.Push(static_cast<byte>(b));
+    }
     ComponentRecord b;
     b.id = 7777;
     b.version = 5;
@@ -252,13 +313,17 @@ TEST_CASE("Unknown components follow the policy and unknown bytes survive a load
     Vector<OpaqueComponent> kept;
     Mover loaded;
     bytes::ByteReader reader(blob.Bytes());
-    while (!reader.AtEnd()) {
+    while (!reader.AtEnd())
+    {
         ComponentRecord rec;
         REQUIRE(ReadComponentRecord(reader, CodecLimits(), &rec).Ok());
         REQUIRE(registry.Resolve(rec.id, UnknownPolicy::KeepOpaque, &comp, &action).Ok());
-        if (action == RecordAction::Decode) {
+        if (action == RecordAction::Decode)
+        {
             REQUIRE(comp->DecodeRecord(rec.version, rec.bytes, &loaded, CodecLimits()).Ok());
-        } else if (action == RecordAction::KeepOpaque) {
+        }
+        else if (action == RecordAction::KeepOpaque)
+        {
             kept.Push(OpaqueComponent::From(rec));
         }
     }
@@ -279,7 +344,8 @@ TEST_CASE("Unknown components follow the policy and unknown bytes survive a load
     CHECK(MemCompare(saved.Bytes().Data(), blob.Bytes().Data(), blob.Size()) == 0);
 }
 
-TEST_CASE("Record framing: golden bytes, and every cut or bad header is an error", "[storage][upgrade]") {
+TEST_CASE("Record framing: golden bytes, and every cut or bad header is an error", "[storage][upgrade]")
+{
     const u8 payload[] = {0xaa, 0xbb};
     ComponentRecord r;
     r.id = 0x01020304;
@@ -289,10 +355,12 @@ TEST_CASE("Record framing: golden bytes, and every cut or bad header is an error
     REQUIRE(WriteComponentRecord(r, CodecLimits(), w).Ok());
     const u8 golden[] = {0x04, 0x03, 0x02, 0x01, 0x02, 0x00, 0x00, 0x00, 0x02, 0xaa, 0xbb};
     REQUIRE(w.Size() == sizeof(golden));
-    for (usize i = 0; i < sizeof(golden); ++i) {
+    for (usize i = 0; i < sizeof(golden); ++i)
+    {
         CHECK(static_cast<u8>(w.Bytes()[i]) == golden[i]);
     }
-    for (usize cut = 0; cut < w.Size(); ++cut) {
+    for (usize cut = 0; cut < w.Size(); ++cut)
+    {
         bytes::ByteReader in(ByteSpan(w.Bytes().Data(), cut));
         ComponentRecord out;
         CHECK(ReadComponentRecord(in, CodecLimits(), &out).Is(ErrorCode::Corrupt));
@@ -311,26 +379,33 @@ TEST_CASE("Record framing: golden bytes, and every cut or bad header is an error
     CHECK(ReadComponentRecord(z, CodecLimits(), &out).Is(ErrorCode::Corrupt));
 }
 
-struct Handle {
+struct Handle
+{
     u32 index = 0;
     u32 generation = 0;
 };
-Status SaveHandle(const void* component, bytes::ByteWriter& out, const CodecLimits&) {
+Status SaveHandle(const void* component, bytes::ByteWriter& out, const CodecLimits&)
+{
     const Handle* h = static_cast<const Handle*>(component);
     out.WriteVarint((static_cast<u64>(h->generation) << 32) | h->index);
     return Status::Success();
 }
-Status LoadHandle(bytes::ByteReader& in, void* component, const CodecLimits&) {
+Status LoadHandle(bytes::ByteReader& in, void* component, const CodecLimits&)
+{
     u64 packed = 0;
     const bytes::ByteError e = in.ReadVarint(&packed);
-    if (e != bytes::ByteError::Ok) return detail::FromByteError(e);
+    if (e != bytes::ByteError::Ok)
+    {
+        return detail::FromByteError(e);
+    }
     Handle* h = static_cast<Handle*>(component);
     h->index = static_cast<u32>(packed & 0xffffffffu);
     h->generation = static_cast<u32>(packed >> 32);
     return Status::Success();
 }
 
-TEST_CASE("Custom codec: a hand-written pair is used, with the same bounds", "[storage][upgrade]") {
+TEST_CASE("Custom codec: a hand-written pair is used, with the same bounds", "[storage][upgrade]")
+{
     ComponentRegistry registry;
     REQUIRE(registry.Register<Handle>({.id = 3100, .name = "handle", .custom = {&SaveHandle, &LoadHandle}}).Ok());
     const RegisteredComponent* c = registry.FindById(3100);
@@ -343,19 +418,25 @@ TEST_CASE("Custom codec: a hand-written pair is used, with the same bounds", "[s
     REQUIRE(c->DecodeRecord(1, w.Bytes(), &out, CodecLimits()).Ok());
     CHECK(out.index == 123456);
     CHECK(out.generation == 99);
-    for (usize cut = 0; cut < w.Size(); ++cut) {
+    for (usize cut = 0; cut < w.Size(); ++cut)
+    {
         Handle h;
         CHECK(c->DecodeRecord(1, ByteSpan(w.Bytes().Data(), cut), &h, CodecLimits()).Is(ErrorCode::Corrupt));
     }
     // Registration rules for a custom codec.
     ComponentRegistry r;
     CHECK(r.Register<Handle>({.id = 1, .name = "half", .custom = {&SaveHandle, nullptr}}).Is(ErrorCode::Invalid));
-    CHECK(r.Register<Handle>({.id = 2, .name = "both", .fields = {Field<&Handle::index>("i")}, .custom = {&SaveHandle, &LoadHandle}}).Is(ErrorCode::Invalid));
-    CHECK(r.Register<Handle>({.id = 3, .name = "skipped", .flags = kComponentSkip, .custom = {&SaveHandle, &LoadHandle}}).Is(ErrorCode::Invalid));
+    CHECK(r.Register<Handle>(
+               {.id = 2, .name = "both", .fields = {Field<&Handle::index>("i")}, .custom = {&SaveHandle, &LoadHandle}})
+              .Is(ErrorCode::Invalid));
+    CHECK(
+        r.Register<Handle>({.id = 3, .name = "skipped", .flags = kComponentSkip, .custom = {&SaveHandle, &LoadHandle}})
+            .Is(ErrorCode::Invalid));
     CHECK(r.Count() == 0);
 }
 
-TEST_CASE("Limits: the four storage limits are settings and reach the codec", "[storage][upgrade][settings]") {
+TEST_CASE("Limits: the four storage limits are settings and reach the codec", "[storage][upgrade][settings]")
+{
     settings::Registry registry;
     RegisterStorageSettings(&registry);
     RegisterStorageSettings(&registry);
@@ -375,5 +456,5 @@ TEST_CASE("Limits: the four storage limits are settings and reach the codec", "[
     CHECK(l.max_components_per_entity == 5);
 }
 
-} // namespace
-} // namespace engine_placeholder::storage
+}  // namespace
+}  // namespace engine_placeholder::storage

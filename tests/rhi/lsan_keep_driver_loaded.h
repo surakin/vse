@@ -7,10 +7,12 @@
 
 #include "build_defs.h"
 #if ENGINE_SANITIZER_ADDRESS
-#include "os/console.h" // declares setenv (the engine has no wrapper that changes the environment)
+#include "os/console.h"  // declares setenv (the engine has no wrapper that changes the environment)
 
-namespace {
-__attribute__((constructor(101))) void KeepDriverLoadedForLeakChecks() {
+namespace
+{
+__attribute__((constructor(101))) void KeepDriverLoadedForLeakChecks()
+{
     setenv("VK_LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING", "1", 0);
 }
 }  // namespace

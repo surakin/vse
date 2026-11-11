@@ -1,8 +1,8 @@
-// Phase 5 Day 83: failure injection. Each case breaks one stage of a frame (the device is lost before the frame, while the frame
-// callback builds the graph, while the first pass records, while the last pass records; a transient texture cannot be made; a
-// material's texture is missing; an object's pipeline cannot be built) and checks the same three things: the frame ends with a
-// defined status, the cause is in the log or in LastError, and the renderer and the device can still be destroyed with nothing left
-// alive.
+// Phase 5 Day 83: failure injection. Each case breaks one stage of a frame (the device is lost before the frame, while
+// the frame callback builds the graph, while the first pass records, while the last pass records; a transient texture
+// cannot be made; a material's texture is missing; an object's pipeline cannot be built) and checks the same three
+// things: the frame ends with a defined status, the cause is in the log or in LastError, and the renderer and the
+// device can still be destroyed with nothing left alive.
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
 #include <catch2/generators/catch_generators_range.hpp>
@@ -16,11 +16,19 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
 
-namespace {
+namespace
+{
 
-enum class Stage { BetweenFrames, InBuild, InFirstPass, InLastPass };
+enum class Stage
+{
+    BetweenFrames,
+    InBuild,
+    InFirstPass,
+    InLastPass
+};
 
-rhi::TextureDesc RendererFaultTestColorTex(u32 w, u32 h) {
+rhi::TextureDesc RendererFaultTestColorTex(u32 w, u32 h)
+{
     rhi::TextureDesc d;
     d.width = w;
     d.height = h;
@@ -30,7 +38,8 @@ rhi::TextureDesc RendererFaultTestColorTex(u32 w, u32 h) {
 }
 
 // A two-pass frame whose passes and callback can pull the plug on the device.
-struct Faulty {
+struct Faulty
+{
     rhi::NullDevice* device = nullptr;
     GraphResource mid, target;
     bool lose_in_build = false;
@@ -39,42 +48,62 @@ struct Faulty {
     u32 passes_run = 0;
 };
 
-void RunPass(const PassExecuteContext& context, void* user, bool lose) {
+void RunPass(const PassExecuteContext& context, void* user, bool lose)
+{
     Faulty* f = static_cast<Faulty*>(user);
     ++f->passes_run;
-    if (lose) f->device->SimulateDeviceLoss();
+    if (lose)
+    {
+        f->device->SimulateDeviceLoss();
+    }
     rhi::RenderingDesc rd;
     rd.color[0].texture = context.graph->ResolvedTexture(f->passes_run == 1 ? f->mid : f->target);
     rd.color_count = 1;
     context.list->BeginRendering(rd);
     context.list->EndRendering();
 }
-void FirstPass(const PassExecuteContext& context, void* user) { RunPass(context, user, static_cast<Faulty*>(user)->lose_in_first); }
-void LastPass(const PassExecuteContext& context, void* user) { RunPass(context, user, static_cast<Faulty*>(user)->lose_in_last); }
+void FirstPass(const PassExecuteContext& context, void* user)
+{
+    RunPass(context, user, static_cast<Faulty*>(user)->lose_in_first);
+}
+void LastPass(const PassExecuteContext& context, void* user)
+{
+    RunPass(context, user, static_cast<Faulty*>(user)->lose_in_last);
+}
 
-bool BuildFaulty(const FrameContext& context, void* user) {
+bool BuildFaulty(const FrameContext& context, void* user)
+{
     Faulty* f = static_cast<Faulty*>(user);
     f->passes_run = 0;
-    if (f->lose_in_build) f->device->SimulateDeviceLoss();
+    if (f->lose_in_build)
+    {
+        f->device->SimulateDeviceLoss();
+    }
     f->target = context.target;
     f->mid = context.graph->CreateTexture("mid", RendererFaultTestColorTex(context.width / 2, context.height / 2));
     context.graph->AddPass("first", &FirstPass, f).Write(f->mid, GraphUsage::ColorAttachment);
-    context.graph->AddPass("last", &LastPass, f).Read(f->mid, GraphUsage::Sampled).Write(f->target, GraphUsage::ColorAttachment);
+    context.graph->AddPass("last", &LastPass, f)
+        .Read(f->mid, GraphUsage::Sampled)
+        .Write(f->target, GraphUsage::ColorAttachment);
     return true;
 }
 
 // Command lists are not counted: the device recycles them at the next BeginFrame and frees them with itself.
-bool NothingAlive(const rhi::NullDeviceStats& s) {
-    UNSCOPED_INFO("buffers " << s.buffers << " textures " << s.textures << " samplers " << s.samplers << " shaders " << s.shaders << " layouts "
-                    << s.bind_group_layouts << " groups " << s.bind_groups << " pipelines " << s.pipelines << " pending "
-                    << s.pending_destruction << " lists " << s.command_lists);
-    return s.buffers == 0 && s.textures == 0 && s.samplers == 0 && s.shaders == 0 && s.bind_group_layouts == 0 && s.bind_groups == 0 &&
-           s.pipelines == 0 && s.pending_destruction == 0;
+bool NothingAlive(const rhi::NullDeviceStats& s)
+{
+    UNSCOPED_INFO("buffers " << s.buffers << " textures " << s.textures << " samplers " << s.samplers << " shaders "
+                             << s.shaders << " layouts " << s.bind_group_layouts << " groups " << s.bind_groups
+                             << " pipelines " << s.pipelines << " pending " << s.pending_destruction << " lists "
+                             << s.command_lists);
+    return s.buffers == 0 && s.textures == 0 && s.samplers == 0 && s.shaders == 0 && s.bind_group_layouts == 0 &&
+           s.bind_groups == 0 && s.pipelines == 0 && s.pending_destruction == 0;
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("Losing the device at any stage of a frame gives DeviceLost and leaves a destroyable renderer", "[renderer][fault]") {
+TEST_CASE("Losing the device at any stage of a frame gives DeviceLost and leaves a destroyable renderer",
+          "[renderer][fault]")
+{
     const Stage stage = GENERATE(Stage::BetweenFrames, Stage::InBuild, Stage::InFirstPass, Stage::InLastPass);
     rhi::NullDevicePtr device = rhi::CreateNullDevice();
     rhi::NullDevice* null_device = device.Get();
@@ -93,8 +122,12 @@ TEST_CASE("Losing the device at any stage of a frame gives DeviceLost and leaves
             rd.build = &BuildFaulty;
             rd.build_user = &faulty;
             Renderer renderer(rd);
-            for (int i = 0; i < 2; ++i) REQUIRE(renderer.RenderFrame(nullptr, nullptr, nullptr) == FrameStatus::Ok);
-            switch (stage) {
+            for (int i = 0; i < 2; ++i)
+            {
+                REQUIRE(renderer.RenderFrame(nullptr, nullptr, nullptr) == FrameStatus::Ok);
+            }
+            switch (stage)
+            {
             case Stage::BetweenFrames: null_device->SimulateDeviceLoss(); break;
             case Stage::InBuild: faulty.lose_in_build = true; break;
             case Stage::InFirstPass: faulty.lose_in_first = true; break;
@@ -103,7 +136,10 @@ TEST_CASE("Losing the device at any stage of a frame gives DeviceLost and leaves
             CHECK(renderer.RenderFrame(nullptr, nullptr, nullptr) == FrameStatus::DeviceLost);
             CHECK(device->DeviceLost());
             // Later frames keep answering DeviceLost; none of them crashes or hangs.
-            for (int i = 0; i < 3; ++i) CHECK(renderer.RenderFrame(nullptr, nullptr, nullptr) == FrameStatus::DeviceLost);
+            for (int i = 0; i < 3; ++i)
+            {
+                CHECK(renderer.RenderFrame(nullptr, nullptr, nullptr) == FrameStatus::DeviceLost);
+            }
             CHECK(renderer.Stats().frames_lost == 4);
             CHECK(renderer.Stats().frames_rendered == 2);
         }
@@ -113,7 +149,9 @@ TEST_CASE("Losing the device at any stage of a frame gives DeviceLost and leaves
     CHECK(NothingAlive(null_device->Statistics()));
 }
 
-TEST_CASE("A transient texture the device cannot make fails the frame, names it, and the pool stays whole", "[renderer][fault]") {
+TEST_CASE("A transient texture the device cannot make fails the frame, names it, and the pool stays whole",
+          "[renderer][fault]")
+{
     rhi::NullDevicePtr device = rhi::CreateNullDevice();
     {
         Faulty faulty;
@@ -124,7 +162,7 @@ TEST_CASE("A transient texture the device cannot make fails the frame, names it,
         rd.build_user = &faulty;
         Renderer renderer(rd);
         rhi::TextureDesc td = RendererFaultTestColorTex(64, 48);
-        td.format = rhi::Format::Undefined; // the device refuses a texture without a format
+        td.format = rhi::Format::Undefined;  // the device refuses a texture without a format
         const rhi::TextureHandle target = device->CreateTexture(td);
         CHECK_FALSE(target.IsValid());
         device->ResetErrors();
@@ -145,17 +183,21 @@ TEST_CASE("A transient texture the device cannot make fails the frame, names it,
     CHECK(NothingAlive(device->Statistics()));
 }
 
-namespace {
+namespace
+{
 
 // The whole deferred frame on the null device: a small demo scene rendered to an offscreen target.
-struct DeferredRig {
+struct DeferredRig
+{
     rhi::NullDevicePtr device;
     rhi::TextureHandle target;
     renderer_demo::DemoFrame frame;
     renderer_demo::DemoScene scene;
     Camera camera;
 
-    bool Create(u32 lose_at_frame, const char* asset_dir, const rhi::NullDeviceOptions* base = nullptr, u32 max_objects = 128) {
+    bool Create(u32 lose_at_frame, const char* asset_dir, const rhi::NullDeviceOptions* base = nullptr,
+                u32 max_objects = 128)
+    {
         rhi::NullDeviceOptions options = base != nullptr ? *base : rhi::NullDeviceOptions{};
         options.lose_device_at_frame = lose_at_frame;
         device = rhi::CreateNullDevice(options);
@@ -169,18 +211,25 @@ struct DeferredRig {
         fs.device = device.Get();
         fs.max_objects = max_objects;
         fs.max_lights = 32;
-        if (!frame.Create(fs)) return false;
+        if (!frame.Create(fs))
+        {
+            return false;
+        }
         renderer_demo::SceneOptions so;
         so.objects = 64;
         so.lights = 8;
         so.asset_dir = asset_dir;
-        if (!scene.Create(device.Get(), frame.Materials(), frame.Templates(), so)) return false;
+        if (!scene.Create(device.Get(), frame.Materials(), frame.Templates(), so))
+        {
+            return false;
+        }
         scene.Animate(0.0f);
         camera = scene.OverviewCamera(96.0f / 64.0f);
         FitCameraDepthRange(scene.Scene(), &camera, 0.1f);
         return true;
     }
-    FrameStatus Render() {
+    FrameStatus Render()
+    {
         FrameTarget ft;
         ft.texture = target;
         ft.width = 96;
@@ -190,7 +239,8 @@ struct DeferredRig {
         return frame.Render(&scene.Scene(), &camera, &ft);
     }
     // Tears everything down in the order a program would and reports whether the device holds nothing afterwards.
-    bool TearDown() {
+    bool TearDown()
+    {
         device->WaitIdle();
         scene.Destroy();
         frame.Destroy();
@@ -200,23 +250,31 @@ struct DeferredRig {
     }
 };
 
-} // namespace
+}  // namespace
 
-TEST_CASE("Losing the device in the deferred pipeline's frames ends each frame as DeviceLost and frees everything", "[renderer][fault]") {
+TEST_CASE("Losing the device in the deferred pipeline's frames ends each frame as DeviceLost and frees everything",
+          "[renderer][fault]")
+{
     // Frame numbers count from the mesh uploads: the scene creation itself takes the first frames, so the loss lands at
     // different stages of the sweep (before the G-buffer, in it, in lighting, in the tonemap).
     const u32 lose_at = GENERATE(range(3u, 9u));
     DeferredRig rig;
-    if (!rig.Create(lose_at, nullptr)) {
-        // The device was lost while the scene's textures and meshes were being made: creation fails cleanly and frees what it made.
+    if (!rig.Create(lose_at, nullptr))
+    {
+        // The device was lost while the scene's textures and meshes were being made: creation fails cleanly and frees
+        // what it made.
         CHECK(rig.device->DeviceLost());
         CHECK(rig.TearDown());
         return;
     }
     bool lost = false;
-    for (int i = 0; i < 8; ++i) {
+    for (int i = 0; i < 8; ++i)
+    {
         const FrameStatus status = rig.Render();
-        if (status == FrameStatus::DeviceLost) lost = true;
+        if (status == FrameStatus::DeviceLost)
+        {
+            lost = true;
+        }
         // Once lost, always lost; before that, every frame is fine.
         CHECK((status == FrameStatus::DeviceLost) == lost);
     }
@@ -224,17 +282,21 @@ TEST_CASE("Losing the device in the deferred pipeline's frames ends each frame a
     CHECK(rig.TearDown());
 }
 
-TEST_CASE("The deferred frame renders on a device shaped like Direct3D 12: DXIL and the object index stream", "[renderer][fault][dxil]") {
-    // The null device takes the format and the index delivery its caps name, as the DX12 backend will (Phase 13 Day 163): every
-    // shader module is then the DXIL one, every material and light-volume pipeline declares the index attribute, and the passes
-    // bind the stream; a missing binding or a SPIR-V module would be a contract error the device counts.
+TEST_CASE("The deferred frame renders on a device shaped like Direct3D 12: DXIL and the object index stream",
+          "[renderer][fault][dxil]")
+{
+    // The null device takes the format and the index delivery its caps name, as the DX12 backend will (Phase 13 Day
+    // 163): every shader module is then the DXIL one, every material and light-volume pipeline declares the index
+    // attribute, and the passes bind the stream; a missing binding or a SPIR-V module would be a contract error the
+    // device counts.
     rhi::NullDeviceOptions options;
     options.caps.shader_format = rhi::ShaderFormat::Dxil;
     options.caps.object_index_stream = true;
     DeferredRig rig;
     REQUIRE(rig.Create(0, nullptr, &options));
     CHECK(rig.frame.Materials()->ObjectIndexStream().IsValid());
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 3; ++i)
+    {
         CHECK(rig.Render() == FrameStatus::Ok);
     }
     CHECK(rig.frame.LastGBufferOk());
@@ -242,9 +304,11 @@ TEST_CASE("The deferred frame renders on a device shaped like Direct3D 12: DXIL 
     CHECK(rig.TearDown());
 }
 
-TEST_CASE("Only a device that reads the object index stream limits a frame's objects to the stream's size", "[renderer][fault][dxil]") {
-    // More objects per frame than the stream holds: fine on Vulkan, which reads gl_InstanceIndex; refused on a Direct3D 12-shaped
-    // device, where draw i would read past the stream.
+TEST_CASE("Only a device that reads the object index stream limits a frame's objects to the stream's size",
+          "[renderer][fault][dxil]")
+{
+    // More objects per frame than the stream holds: fine on Vulkan, which reads gl_InstanceIndex; refused on a Direct3D
+    // 12-shaped device, where draw i would read past the stream.
     DeferredRig vulkan_shaped;
     REQUIRE(vulkan_shaped.Create(0, nullptr, nullptr, kMaxObjectIndices + 1));
     CHECK(vulkan_shaped.Render() == FrameStatus::Ok);
@@ -258,13 +322,14 @@ TEST_CASE("Only a device that reads the object index stream limits a frame's obj
     REQUIRE(d3d12_shaped.Create(0, nullptr, &options, kMaxObjectIndices + 1));
     const bool was = LogRender.Enabled();
     LogRender.SetEnabled(false);
-    d3d12_shaped.Render(); // the frame completes; the G-buffer pass refuses to draw and says why
+    d3d12_shaped.Render();  // the frame completes; the G-buffer pass refuses to draw and says why
     LogRender.SetEnabled(was);
     CHECK_FALSE(d3d12_shaped.frame.LastGBufferOk());
     CHECK(d3d12_shaped.TearDown());
 }
 
-TEST_CASE("On a Vulkan-shaped device the material system makes no object index stream", "[renderer][fault]") {
+TEST_CASE("On a Vulkan-shaped device the material system makes no object index stream", "[renderer][fault]")
+{
     DeferredRig rig;
     REQUIRE(rig.Create(0, nullptr));
     CHECK_FALSE(rig.frame.Materials()->ObjectIndexStream().IsValid());
@@ -273,7 +338,9 @@ TEST_CASE("On a Vulkan-shaped device the material system makes no object index s
     CHECK(rig.TearDown());
 }
 
-TEST_CASE("A material whose texture file is missing falls back to a procedural one and the frame renders", "[renderer][fault]") {
+TEST_CASE("A material whose texture file is missing falls back to a procedural one and the frame renders",
+          "[renderer][fault]")
+{
     DeferredRig rig;
     REQUIRE(rig.Create(0, "/nonexistent/asset/dir"));
     CHECK(rig.Render() == FrameStatus::Ok);
@@ -282,7 +349,9 @@ TEST_CASE("A material whose texture file is missing falls back to a procedural o
     CHECK(rig.TearDown());
 }
 
-TEST_CASE("An object whose pipeline cannot be built is named and left out; the rest of the frame still draws", "[renderer][fault]") {
+TEST_CASE("An object whose pipeline cannot be built is named and left out; the rest of the frame still draws",
+          "[renderer][fault]")
+{
     rhi::NullDevicePtr device = rhi::CreateNullDevice();
     {
         renderer_demo::DemoFrame frame;
@@ -310,13 +379,14 @@ TEST_CASE("An object whose pipeline cannot be built is named and left out; the r
         device->WaitIdle();
         cube.MarkReady();
         colored_cube.MarkReady();
-        const MaterialId material = CreateGBufferMaterial(frame.Materials(), frame.Templates(), GBufferOptions{}, "plain");
+        const MaterialId material = CreateGBufferMaterial(frame.Materials(), frame.Templates(), GBufferOptions{},
+                                                          "plain");
         RenderScene scene(RenderSceneDesc{});
         RenderObjectDesc od;
         od.material = material.index;
         od.mesh = &cube;
         scene.AddObject(od);
-        od.mesh = &colored_cube; // a vertex-colored mesh under a material that does not read colors: no pipeline fits
+        od.mesh = &colored_cube;  // a vertex-colored mesh under a material that does not read colors: no pipeline fits
         Transform placed;
         placed.position = Vec3(1.5f, 0, 0);
         od.transform = placed.ToMatrix();
@@ -351,9 +421,11 @@ TEST_CASE("An object whose pipeline cannot be built is named and left out; the r
     CHECK(NothingAlive(device->Statistics()));
 }
 
-TEST_CASE("A device that cannot build the G-buffer pipelines leaves every object out and the frame still ends Ok", "[renderer][fault]") {
+TEST_CASE("A device that cannot build the G-buffer pipelines leaves every object out and the frame still ends Ok",
+          "[renderer][fault]")
+{
     rhi::NullDeviceOptions options;
-    options.caps.max_bind_groups = 2; // the material pipelines use sets 0, 1 and 2; the lighting pass needs two groups
+    options.caps.max_bind_groups = 2;  // the material pipelines use sets 0, 1 and 2; the lighting pass needs two groups
     DeferredRig rig;
     REQUIRE(rig.Create(0, nullptr, &options));
     rig.device->ResetErrors();
@@ -362,19 +434,22 @@ TEST_CASE("A device that cannot build the G-buffer pipelines leaves every object
     CHECK(rig.frame.GBufferStatistics().drawn_objects == 0);
     CHECK(rig.frame.GBufferStatistics().rejected == rig.frame.GBufferStatistics().visible);
     CHECK(rig.frame.GBufferStatistics().visible > 0);
-    CHECK(StringView(rig.frame.LastError()).Empty()); // the frame itself did not fail; the objects were named in the pass's error
+    CHECK(StringView(rig.frame.LastError())
+              .Empty());  // the frame itself did not fail; the objects were named in the pass's error
     CHECK(rig.TearDown());
 }
 
-TEST_CASE("A device that cannot build the lighting pipeline refuses the frame setup cleanly", "[renderer][fault]") {
+TEST_CASE("A device that cannot build the lighting pipeline refuses the frame setup cleanly", "[renderer][fault]")
+{
     rhi::NullDeviceOptions options;
-    options.caps.max_bind_groups = 1; // the lighting pass binds the frame block and the G-buffer inputs: two groups
+    options.caps.max_bind_groups = 1;  // the lighting pass binds the frame block and the G-buffer inputs: two groups
     DeferredRig rig;
-    CHECK_FALSE(rig.Create(0, nullptr, &options)); // DemoFrame::Create reports the pass that is not valid
+    CHECK_FALSE(rig.Create(0, nullptr, &options));  // DemoFrame::Create reports the pass that is not valid
     CHECK(rig.TearDown());
 }
 
-TEST_CASE("A device with too few color attachments is refused before any pass is built", "[renderer][fault]") {
+TEST_CASE("A device with too few color attachments is refused before any pass is built", "[renderer][fault]")
+{
     rhi::NullDeviceOptions options;
     options.caps.max_color_attachments = 2;
     DeferredRig rig;

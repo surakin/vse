@@ -17,28 +17,38 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
 
-namespace {
+namespace
+{
 
 // The triangles of a list mesh as sorted, rotation-normalized (smallest index first) triples: equal sets mean the same
 // triangles with the same winding.
-struct Triple {
+struct Triple
+{
     u32 v[3];
-    bool operator<(const Triple& o) const {
-        for (int i = 0; i < 3; ++i) {
-            if (v[i] != o.v[i]) return v[i] < o.v[i];
+    bool operator<(const Triple& o) const
+    {
+        for (int i = 0; i < 3; ++i)
+        {
+            if (v[i] != o.v[i])
+            {
+                return v[i] < o.v[i];
+            }
         }
         return false;
     }
     bool operator==(const Triple& o) const { return v[0] == o.v[0] && v[1] == o.v[1] && v[2] == o.v[2]; }
 };
 
-Vector<Triple> Triangles(const MeshData& list) {
+Vector<Triple> Triangles(const MeshData& list)
+{
     REQUIRE(list.Topology() == rhi::PrimitiveTopology::TriangleList);
     Vector<Triple> out;
-    for (u32 i = 0; i + 2 < list.IndexCount(); i += 3) {
+    for (u32 i = 0; i + 2 < list.IndexCount(); i += 3)
+    {
         u32 a = list.IndexAt(i), b = list.IndexAt(i + 1), c = list.IndexAt(i + 2);
         // rotate so the smallest index is first, keeping the cyclic order (the winding)
-        while (a > b || a > c) {
+        while (a > b || a > c)
+        {
             const u32 t = a;
             a = b;
             b = c;
@@ -50,24 +60,37 @@ Vector<Triple> Triangles(const MeshData& list) {
     return out;
 }
 
-bool SameTriples(const Vector<Triple>& ta, const Vector<Triple>& tb) {
-    if (ta.Size() != tb.Size()) return false;
-    for (usize i = 0; i < ta.Size(); ++i) {
-        if (!(ta[i] == tb[i])) return false;
+bool SameTriples(const Vector<Triple>& ta, const Vector<Triple>& tb)
+{
+    if (ta.Size() != tb.Size())
+    {
+        return false;
+    }
+    for (usize i = 0; i < ta.Size(); ++i)
+    {
+        if (!(ta[i] == tb[i]))
+        {
+            return false;
+        }
     }
     return true;
 }
 
-bool SameTriangles(const MeshData& a, const MeshData& b) {
+bool SameTriangles(const MeshData& a, const MeshData& b)
+{
     const Vector<Triple> ta = Triangles(a);
     const Vector<Triple> tb = Triangles(b);
     return SameTriples(ta, tb);
 }
 
 // A mesh function's message (a string literal in the engine), or empty when it succeeded.
-StringView MeshMsg(const char* error) { return error == nullptr ? StringView() : StringView(error); }
+StringView MeshMsg(const char* error)
+{
+    return error == nullptr ? StringView() : StringView(error);
+}
 
-MeshData PlaneList(u32 x, u32 z) {
+MeshData PlaneList(u32 x, u32 z)
+{
     MeshData m;
     REQUIRE(MakePlaneMesh(2.0f, 2.0f, x, z, &m) == nullptr);
     return m;
@@ -75,13 +98,16 @@ MeshData PlaneList(u32 x, u32 z) {
 
 const VertexLayoutData kLayout = StandardVertexLayout();
 
-} // namespace
+}  // namespace
 
-TEST_CASE("The color vertex layout extends the standard one with a UNorm8x4 color at location 4", "[renderer][mesh][topology]") {
+TEST_CASE("The color vertex layout extends the standard one with a UNorm8x4 color at location 4",
+          "[renderer][mesh][topology]")
+{
     const VertexLayoutData standard = StandardVertexLayout();
     const VertexLayoutData colored = ColorVertexLayout();
     REQUIRE(colored.attribute_count == 5);
-    for (u32 i = 0; i < 4; ++i) {
+    for (u32 i = 0; i < 4; ++i)
+    {
         CHECK(colored.attributes[i].location == standard.attributes[i].location);
         CHECK(colored.attributes[i].format == standard.attributes[i].format);
         CHECK(colored.attributes[i].offset == standard.attributes[i].offset);
@@ -94,11 +120,13 @@ TEST_CASE("The color vertex layout extends the standard one with a UNorm8x4 colo
     CHECK(ENGINE_OFFSET_OF(ColorVertex, color) == 48);
 }
 
-TEST_CASE("A colored mesh keeps the geometry and gives each vertex its color", "[renderer][mesh][topology]") {
+TEST_CASE("A colored mesh keeps the geometry and gives each vertex its color", "[renderer][mesh][topology]")
+{
     MeshData plane = PlaneList(2, 2);
     Vector<u8> colors;
     colors.Resize(plane.VertexCount() * 4);
-    for (u32 i = 0; i < plane.VertexCount(); ++i) {
+    for (u32 i = 0; i < plane.VertexCount(); ++i)
+    {
         colors[i * 4 + 0] = static_cast<u8>(i);
         colors[i * 4 + 1] = static_cast<u8>(255 - i);
         colors[i * 4 + 2] = 7;
@@ -113,27 +141,37 @@ TEST_CASE("A colored mesh keeps the geometry and gives each vertex its color", "
     CHECK(colored.GetBounds().box.max.z == plane.GetBounds().box.max.z);
     const ColorVertex* cv = static_cast<const ColorVertex*>(colored.Vertices());
     const StandardVertex* sv = static_cast<const StandardVertex*>(plane.Vertices());
-    for (u32 i = 0; i < plane.VertexCount(); ++i) {
+    for (u32 i = 0; i < plane.VertexCount(); ++i)
+    {
         CHECK(MemCompare(&cv[i].base, &sv[i], sizeof(StandardVertex)) == 0);
         CHECK(cv[i].color[0] == static_cast<u8>(i));
         CHECK(cv[i].color[1] == static_cast<u8>(255 - i));
         CHECK(cv[i].color[2] == 7);
         CHECK(cv[i].color[3] == 255);
     }
-    for (u32 i = 0; i < plane.IndexCount(); ++i) CHECK(colored.IndexAt(i) == plane.IndexAt(i));
+    for (u32 i = 0; i < plane.IndexCount(); ++i)
+    {
+        CHECK(colored.IndexAt(i) == plane.IndexAt(i));
+    }
 
     const u8 red[4] = {255, 0, 0, 255};
     MeshData uniform;
     REQUIRE(MakeUniformColoredMesh(plane, red, &uniform) == nullptr);
     const ColorVertex* uv = static_cast<const ColorVertex*>(uniform.Vertices());
-    for (u32 i = 0; i < uniform.VertexCount(); ++i) CHECK(uv[i].color[0] == 255);
+    for (u32 i = 0; i < uniform.VertexCount(); ++i)
+    {
+        CHECK(uv[i].color[0] == 255);
+    }
 }
 
-TEST_CASE("Coloring rejects a wrong color count, an empty source and a mesh that is not standard", "[renderer][mesh][topology]") {
+TEST_CASE("Coloring rejects a wrong color count, an empty source and a mesh that is not standard",
+          "[renderer][mesh][topology]")
+{
     MeshData plane = PlaneList(1, 1);
     const u8 colors[4 * 3] = {};
     MeshData out;
-    CHECK(MeshMsg(MakeColoredMesh(plane, colors, 3, &out)) == "colored mesh: the number of colors must equal the number of vertices");
+    CHECK(MeshMsg(MakeColoredMesh(plane, colors, 3, &out)) ==
+          "colored mesh: the number of colors must equal the number of vertices");
     CHECK(MakeColoredMesh(plane, nullptr, plane.VertexCount(), &out) != nullptr);
     MeshData empty;
     CHECK(MeshMsg(MakeColoredMesh(empty, colors, 0, &out)) == "colored mesh: the source mesh is empty");
@@ -142,13 +180,19 @@ TEST_CASE("Coloring rejects a wrong color count, an empty source and a mesh that
     MeshData colored;
     REQUIRE(MakeUniformColoredMesh(plane, red, &colored) == nullptr);
     MeshData again;
-    CHECK(MeshMsg(MakeUniformColoredMesh(colored, red, &again)) == "colored mesh: the source mesh is not in the standard vertex layout");
+    CHECK(MeshMsg(MakeUniformColoredMesh(colored, red, &again)) ==
+          "colored mesh: the source mesh is not in the standard vertex layout");
 }
 
-TEST_CASE("Topology decides what an index count and an index value mean", "[renderer][mesh][topology]") {
+TEST_CASE("Topology decides what an index count and an index value mean", "[renderer][mesh][topology]")
+{
     StandardVertex v[4] = {};
-    for (int i = 0; i < 4; ++i) v[i].position[0] = static_cast<f32>(i);
-    auto set = [&](const u16* idx, u32 n, rhi::PrimitiveTopology t) {
+    for (int i = 0; i < 4; ++i)
+    {
+        v[i].position[0] = static_cast<f32>(i);
+    }
+    auto set = [&](const u16* idx, u32 n, rhi::PrimitiveTopology t)
+    {
         MeshData m;
         const char* e = m.Set(kLayout, 0, v, 4, rhi::IndexType::UInt16, idx, n, t);
         return MeshMsg(e);
@@ -157,11 +201,14 @@ TEST_CASE("Topology decides what an index count and an index value mean", "[rend
     const u16 four[4] = {0, 1, 2, 3};
     const u16 two[2] = {0, 1};
     const u16 restarted[9] = {0, 1, 2, 0xFFFF, 1, 2, 3, 0, 1};
-    CHECK(set(five, 5, rhi::PrimitiveTopology::TriangleList) == "mesh: the index count does not make whole primitives of the topology");
+    CHECK(set(five, 5, rhi::PrimitiveTopology::TriangleList) ==
+          "mesh: the index count does not make whole primitives of the topology");
     CHECK(set(five, 5, rhi::PrimitiveTopology::TriangleStrip).Empty());
-    CHECK(set(two, 2, rhi::PrimitiveTopology::TriangleStrip) == "mesh: the index count does not make whole primitives of the topology");
+    CHECK(set(two, 2, rhi::PrimitiveTopology::TriangleStrip) ==
+          "mesh: the index count does not make whole primitives of the topology");
     CHECK(set(four, 4, rhi::PrimitiveTopology::LineList).Empty());
-    CHECK(set(five, 5, rhi::PrimitiveTopology::LineList) == "mesh: the index count does not make whole primitives of the topology");
+    CHECK(set(five, 5, rhi::PrimitiveTopology::LineList) ==
+          "mesh: the index count does not make whole primitives of the topology");
     CHECK(set(two, 2, rhi::PrimitiveTopology::LineStrip).Empty());
     CHECK(set(two, 1, rhi::PrimitiveTopology::PointList).Empty());
     CHECK(set(four, 4, static_cast<rhi::PrimitiveTopology>(9)) == "mesh: unknown primitive topology");
@@ -169,11 +216,13 @@ TEST_CASE("Topology decides what an index count and an index value mean", "[rend
     CHECK(set(restarted, 9, rhi::PrimitiveTopology::TriangleStrip).Empty());
     CHECK(set(restarted, 9, rhi::PrimitiveTopology::TriangleList) == "mesh: an index points past the last vertex");
     MeshData strip;
-    REQUIRE(strip.Set(kLayout, 0, v, 4, rhi::IndexType::UInt16, restarted, 9, rhi::PrimitiveTopology::TriangleStrip) == nullptr);
+    REQUIRE(strip.Set(kLayout, 0, v, 4, rhi::IndexType::UInt16, restarted, 9, rhi::PrimitiveTopology::TriangleStrip) ==
+            nullptr);
     CHECK(strip.Topology() == rhi::PrimitiveTopology::TriangleStrip);
     CHECK(strip.HasPrimitiveRestart());
     MeshData plain;
-    REQUIRE(plain.Set(kLayout, 0, v, 4, rhi::IndexType::UInt16, four, 4, rhi::PrimitiveTopology::TriangleStrip) == nullptr);
+    REQUIRE(plain.Set(kLayout, 0, v, 4, rhi::IndexType::UInt16, four, 4, rhi::PrimitiveTopology::TriangleStrip) ==
+            nullptr);
     CHECK_FALSE(plain.HasPrimitiveRestart());
     MeshData list = PlaneList(1, 1);
     CHECK(list.Topology() == rhi::PrimitiveTopology::TriangleList);
@@ -184,13 +233,17 @@ TEST_CASE("Topology decides what an index count and an index value mean", "[rend
     many.Resize(65536);
     const u16 idx[3] = {0, 1, 2};
     MeshData big;
-    CHECK(MeshMsg(big.Set(kLayout, 0, many.Data(), 65536, rhi::IndexType::UInt16, idx, 3, rhi::PrimitiveTopology::TriangleStrip)) ==
+    CHECK(MeshMsg(big.Set(kLayout, 0, many.Data(), 65536, rhi::IndexType::UInt16, idx, 3,
+                          rhi::PrimitiveTopology::TriangleStrip)) ==
           "mesh: a strip with 16-bit indices addresses at most 65535 vertices (0xFFFF restarts the strip)");
-    CHECK(big.Set(kLayout, 0, many.Data(), 65536, rhi::IndexType::UInt16, idx, 3, rhi::PrimitiveTopology::TriangleList) == nullptr);
+    CHECK(big.Set(kLayout, 0, many.Data(), 65536, rhi::IndexType::UInt16, idx, 3,
+                  rhi::PrimitiveTopology::TriangleList) == nullptr);
 }
 
-TEST_CASE("The strip grid has the list grid's triangles with fewer indices", "[renderer][mesh][topology]") {
-    for (u32 cells : {1u, 2u, 7u}) {
+TEST_CASE("The strip grid has the list grid's triangles with fewer indices", "[renderer][mesh][topology]")
+{
+    for (u32 cells : {1u, 2u, 7u})
+    {
         MeshData list = PlaneList(cells, cells + 1);
         MeshData strip;
         REQUIRE(MakePlaneStripMesh(2.0f, 2.0f, cells, cells + 1, &strip) == nullptr);
@@ -201,18 +254,27 @@ TEST_CASE("The strip grid has the list grid's triangles with fewer indices", "[r
         MeshData back;
         REQUIRE(StripToList(strip, &back) == nullptr);
         CHECK(SameTriangles(list, back));
-        CHECK(strip.IndexCount() < list.IndexCount() + 3 * (cells + 1)); // never worse than a list plus its row markers
-        if (cells >= 7) CHECK(strip.IndexCount() * 3 < list.IndexCount() * 2 + 100); // about two thirds
+        CHECK(strip.IndexCount() <
+              list.IndexCount() + 3 * (cells + 1));  // never worse than a list plus its row markers
+        if (cells >= 7)
+        {
+            CHECK(strip.IndexCount() * 3 < list.IndexCount() * 2 + 100);  // about two thirds
+        }
     }
 }
 
-TEST_CASE("Strip to list drops degenerate joins and keeps every winding", "[renderer][mesh][topology]") {
+TEST_CASE("Strip to list drops degenerate joins and keeps every winding", "[renderer][mesh][topology]")
+{
     StandardVertex v[8] = {};
-    for (int i = 0; i < 8; ++i) v[i].position[0] = static_cast<f32>(i);
+    for (int i = 0; i < 8; ++i)
+    {
+        v[i].position[0] = static_cast<f32>(i);
+    }
     // two quads joined by degenerate triangles: 0 1 2 3 | 3 4 | 4 5 6 7
     const u16 idx[10] = {0, 1, 2, 3, 3, 4, 4, 5, 6, 7};
     MeshData strip;
-    REQUIRE(strip.Set(kLayout, 0, v, 8, rhi::IndexType::UInt16, idx, 10, rhi::PrimitiveTopology::TriangleStrip) == nullptr);
+    REQUIRE(strip.Set(kLayout, 0, v, 8, rhi::IndexType::UInt16, idx, 10, rhi::PrimitiveTopology::TriangleStrip) ==
+            nullptr);
     MeshData list;
     REQUIRE(StripToList(strip, &list) == nullptr);
     // quad 1: (0,1,2) and (2,1,3); quad 2: (4,5,6) and (6,5,7); the join triangles are gone
@@ -229,45 +291,60 @@ TEST_CASE("Strip to list drops degenerate joins and keeps every winding", "[rend
     CHECK(MeshMsg(StripToList(not_strip, &out)) == "strip to list: the mesh is not a triangle strip");
     const u16 degenerate[3] = {1, 1, 2};
     MeshData none;
-    REQUIRE(none.Set(kLayout, 0, v, 8, rhi::IndexType::UInt16, degenerate, 3, rhi::PrimitiveTopology::TriangleStrip) == nullptr);
+    REQUIRE(none.Set(kLayout, 0, v, 8, rhi::IndexType::UInt16, degenerate, 3, rhi::PrimitiveTopology::TriangleStrip) ==
+            nullptr);
     CHECK(MeshMsg(StripToList(none, &out)) == "strip to list: the strip holds no triangle");
 }
 
-TEST_CASE("List to strip preserves the triangle set and winding, with either join", "[renderer][mesh][topology]") {
+TEST_CASE("List to strip preserves the triangle set and winding, with either join", "[renderer][mesh][topology]")
+{
     MeshData cube, sphere, plane;
     REQUIRE(MakeCubeMesh(1.0f, &cube) == nullptr);
     REQUIRE(MakeSphereMesh(1.0f, 12, 8, &sphere) == nullptr);
     plane = PlaneList(6, 5);
     const MeshData* inputs[] = {&cube, &sphere, &plane};
-    for (const MeshData* in : inputs) {
-        for (StripJoin join : {StripJoin::Restart, StripJoin::Degenerate}) {
+    for (const MeshData* in : inputs)
+    {
+        for (StripJoin join : {StripJoin::Restart, StripJoin::Degenerate})
+        {
             MeshData strip;
             REQUIRE(ListToStrip(*in, join, &strip) == nullptr);
             CHECK(strip.Topology() == rhi::PrimitiveTopology::TriangleStrip);
-            CHECK(strip.HasPrimitiveRestart() == (join == StripJoin::Restart && strip.IndexCount() > 0 && strip.HasPrimitiveRestart()));
-            if (join == StripJoin::Degenerate) CHECK_FALSE(strip.HasPrimitiveRestart());
+            CHECK(strip.HasPrimitiveRestart() ==
+                  (join == StripJoin::Restart && strip.IndexCount() > 0 && strip.HasPrimitiveRestart()));
+            if (join == StripJoin::Degenerate)
+            {
+                CHECK_FALSE(strip.HasPrimitiveRestart());
+            }
             MeshData back;
             REQUIRE(StripToList(strip, &back) == nullptr);
             CHECK(SameTriangles(*in, back));
-            if (in == &sphere || in == &plane) CHECK(strip.IndexCount() < in->IndexCount()); // strips save indices on connected grids
+            if (in == &sphere || in == &plane)
+            {
+                CHECK(strip.IndexCount() < in->IndexCount());  // strips save indices on connected grids
+            }
         }
     }
 }
 
-TEST_CASE("List to strip handles a shuffled mesh and a lone triangle", "[renderer][mesh][topology]") {
+TEST_CASE("List to strip handles a shuffled mesh and a lone triangle", "[renderer][mesh][topology]")
+{
     MeshData plane = PlaneList(5, 5);
     // Reverse the triangle order and rotate each triangle's corners: the same triangle set, in an order that gives the
     // greedy walk no help.
     Vector<u16> shuffled;
-    for (u32 t = plane.IndexCount() / 3; t > 0; --t) {
+    for (u32 t = plane.IndexCount() / 3; t > 0; --t)
+    {
         const u32 i = (t - 1) * 3;
         shuffled.Push(static_cast<u16>(plane.IndexAt(i + 1)));
         shuffled.Push(static_cast<u16>(plane.IndexAt(i + 2)));
         shuffled.Push(static_cast<u16>(plane.IndexAt(i)));
     }
     MeshData mixed;
-    REQUIRE(mixed.Set(plane.Layout(), 0, plane.Vertices(), plane.VertexCount(), rhi::IndexType::UInt16, shuffled.Data(), static_cast<u32>(shuffled.Size())) == nullptr);
-    for (StripJoin join : {StripJoin::Restart, StripJoin::Degenerate}) {
+    REQUIRE(mixed.Set(plane.Layout(), 0, plane.Vertices(), plane.VertexCount(), rhi::IndexType::UInt16, shuffled.Data(),
+                      static_cast<u32>(shuffled.Size())) == nullptr);
+    for (StripJoin join : {StripJoin::Restart, StripJoin::Degenerate})
+    {
         MeshData strip, back;
         REQUIRE(ListToStrip(mixed, join, &strip) == nullptr);
         REQUIRE(StripToList(strip, &back) == nullptr);
@@ -284,7 +361,8 @@ TEST_CASE("List to strip handles a shuffled mesh and a lone triangle", "[rendere
     CHECK(MeshMsg(ListToStrip(strip, StripJoin::Restart, &wrong)) == "list to strip: the mesh is not a triangle list");
 }
 
-TEST_CASE("A GPU strip mesh carries its topology and is culled by its vertices", "[renderer][mesh][topology][scene]") {
+TEST_CASE("A GPU strip mesh carries its topology and is culled by its vertices", "[renderer][mesh][topology][scene]")
+{
     rhi::NullDevicePtr device = rhi::CreateNullDevice();
     {
         MeshData list = PlaneList(2, 2);
@@ -305,29 +383,34 @@ TEST_CASE("A GPU strip mesh carries its topology and is culled by its vertices",
         d.mesh = &moved;
         d.transform = ModelMatrix(Vec3(0, 0, -10), 1.0f, 0.0f);
         scene.AddObject(d);
-        d.transform = ModelMatrix(Vec3(0, 0, 10), 1.0f, 0.0f); // behind the camera
+        d.transform = ModelMatrix(Vec3(0, 0, 10), 1.0f, 0.0f);  // behind the camera
         scene.AddObject(d);
         Camera cam = MakeLookAtCamera(Vec3(0, 0, 0), Vec3(0, 0, -1), Vec3(0, 1, 0));
         cam.near_plane = 0.5f;
         cam.far_plane = 100.0f;
         Vector<u32> out;
         out.Resize(scene.SlotCount());
-        CHECK(scene.Cull(Frustum::FromViewProjection(cam.ViewProjection()), out.Data(), static_cast<u32>(out.Size())) == 1);
+        CHECK(scene.Cull(Frustum::FromViewProjection(cam.ViewProjection()), out.Data(), static_cast<u32>(out.Size())) ==
+              1);
     }
     device->WaitIdle();
     device.Reset();
 }
 
-TEST_CASE("Conversions keep the position offset, and a widened strip uses the 32-bit marker", "[renderer][mesh][topology]") {
+TEST_CASE("Conversions keep the position offset, and a widened strip uses the 32-bit marker",
+          "[renderer][mesh][topology]")
+{
     // Position after a 4-float attribute: offset 16, stride 28.
-    struct V {
+    struct V
+    {
         f32 other[4];
         f32 position[3];
     };
     VertexLayoutData layout;
     layout.stride = sizeof(V);
     V v[4] = {};
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < 4; ++i)
+    {
         v[i].other[0] = 1000.0f;
         v[i].position[0] = static_cast<f32>(i);
     }
@@ -345,7 +428,7 @@ TEST_CASE("Conversions keep the position offset, and a widened strip uses the 32
     // 65536 vertices: the list uses index 0xFFFF, so the strip is widened and must restart with 0xFFFFFFFF.
     Vector<StandardVertex> many;
     many.Resize(65536);
-    const u16 two[6] = {0, 1, 2, 65533, 65534, 65535}; // two disjoint triangles: two strips
+    const u16 two[6] = {0, 1, 2, 65533, 65534, 65535};  // two disjoint triangles: two strips
     MeshData big, wide;
     REQUIRE(big.Set(kLayout, 0, many.Data(), 65536, rhi::IndexType::UInt16, two, 6) == nullptr);
     REQUIRE(ListToStrip(big, StripJoin::Restart, &wide) == nullptr);
@@ -356,7 +439,8 @@ TEST_CASE("Conversions keep the position offset, and a widened strip uses the 32
     CHECK(wide.IndexAt(6) == 65535);
 }
 
-TEST_CASE("A uniform color needs a color", "[renderer][mesh][topology]") {
+TEST_CASE("A uniform color needs a color", "[renderer][mesh][topology]")
+{
     MeshData plane = PlaneList(1, 1);
     MeshData out;
     CHECK(MeshMsg(MakeUniformColoredMesh(plane, nullptr, &out)) == "colored mesh: the color is null");

@@ -5,18 +5,20 @@
 #include "string/string.h"
 #include "types.h"
 
-namespace engine_placeholder::settings {
+namespace engine_placeholder::settings
+{
 
 /// The most bytes (excluding the terminator) in a text value.
 inline constexpr usize kMaxTextBytes = 511;
 
 /// The kind of value a setting holds.
-enum class Type : u8 {
-    Bool = 0, ///< True or false.
-    Int,      ///< A whole number (`i64`) within a range.
-    Float,    ///< A finite `f64` within a range.
-    Enum,     ///< One of a fixed list of names, held as an index.
-    Text,     ///< UTF-8 text of at most 511 bytes.
+enum class Type : u8
+{
+    Bool = 0,  ///< True or false.
+    Int,       ///< A whole number (`i64`) within a range.
+    Float,     ///< A finite `f64` within a range.
+    Enum,      ///< One of a fixed list of names, held as an index.
+    Text,      ///< UTF-8 text of at most 511 bytes.
 };
 
 /// Returns a type's name (`bool`, `int`, `float`, `enum`, `text`).
@@ -30,7 +32,8 @@ const char* TypeName(Type type);
 ///
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: a value; owns its bytes.
-class Value {
+class Value
+{
 public:
     /// Creates `false`.
     Value() = default;
@@ -73,7 +76,8 @@ public:
     /// - Aborts: the type is not `Text`.
     StringView AsText() const;
 
-    /// Returns whether two values have the same type and content (floats compare bitwise, so `-0.0` differs from `0.0`).
+    /// Returns whether two values have the same type and content (floats compare bitwise, so `-0.0` differs from
+    /// `0.0`).
     bool operator==(const Value& other) const;
     /// Returns whether two values differ.
     bool operator!=(const Value& other) const { return !(*this == other); }
@@ -86,4 +90,4 @@ private:
     char text_[kMaxTextBytes + 1] = {};
 };
 
-} // namespace engine_placeholder::settings
+}  // namespace engine_placeholder::settings

@@ -10,13 +10,15 @@
 #include "rhi/rhi.h"
 #include "types.h"
 
-namespace engine_placeholder::renderer {
+namespace engine_placeholder::renderer
+{
 
 /// The per-frame uniform block (set 0, binding 0 in the shaders). Laid out as std140: every member is a `mat4` or a
 /// `vec4`, so the C++ struct needs no padding.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct FrameData {
+struct FrameData
+{
     /// World to view.
     Mat4 view;
     /// View to clip ([[renderer::PerspectiveVulkan]]).
@@ -29,7 +31,8 @@ struct FrameData {
     Vec4 camera_position;
     /// x, y: the viewport size in pixels; z, w: their reciprocals.
     Vec4 viewport;
-    /// x: time in seconds; y: the last frame's duration in seconds; z: the frame number as a float (exact up to 2^24 frames, about 78 hours at 60 fps); w: the far plane distance.
+    /// x: time in seconds; y: the last frame's duration in seconds; z: the frame number as a float (exact up to 2^24
+    /// frames, about 78 hours at 60 fps); w: the far plane distance.
     Vec4 time;
 };
 static_assert(sizeof(FrameData) == 304, "FrameData is 4 mat4 + 3 vec4 (std140)");
@@ -37,7 +40,8 @@ static_assert(sizeof(FrameData) == 304, "FrameData is 4 mat4 + 3 vec4 (std140)")
 /// One entry of the per-object storage buffer (std430): the draw's instance index selects it.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct ObjectData {
+struct ObjectData
+{
     /// Object to world.
     Mat4 world;
     /// Carries normals to world space ([[renderer::NormalMatrix]] of `world`).
@@ -56,12 +60,14 @@ static_assert(sizeof(ObjectData) == 128, "ObjectData is 2 mat4");
 /// - Returns: the block.
 /// - Aborts: the camera's projection parameters are out of range, or the size is 0.
 /// - Thread-safety: thread-safe. A pure function of its arguments.
-FrameData MakeFrameData(const Camera& camera, u32 width, u32 height, f32 time_seconds, f32 delta_seconds, u64 frame_index);
+FrameData MakeFrameData(const Camera& camera, u32 width, u32 height, f32 time_seconds, f32 delta_seconds,
+                        u64 frame_index);
 
 /// A region of a buffer to bind: `offset` and `size` go in a bind group entry.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct BufferRegion {
+struct BufferRegion
+{
     /// The buffer; invalid if the resources could not be created.
     rhi::BufferHandle buffer;
     /// Byte offset of the region.
@@ -73,8 +79,10 @@ struct BufferRegion {
 /// One light as the lighting shaders read it (std430, 48 bytes).
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct LightData {
-    /// xyz: for a directional light the unit vector from the surface toward the light; w: the type (0 directional, 1 point).
+struct LightData
+{
+    /// xyz: for a directional light the unit vector from the surface toward the light; w: the type (0 directional, 1
+    /// point).
     Vec4 direction;
     /// rgb: the light's color times its intensity (linear); w unused.
     Vec4 color;
@@ -86,7 +94,8 @@ static_assert(sizeof(LightData) == 48, "LightData is 3 vec4");
 /// What [[renderer::FrameResources::WriteLights]] found in the scene.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct LightSummary {
+struct LightSummary
+{
     /// The sum of every ambient light's color times its intensity (linear).
     Vec3 ambient = Vec3(0, 0, 0);
     /// Directional lights written to the buffer (they come first).
@@ -109,7 +118,8 @@ struct LightSummary {
 ///
 /// - Thread-safety: thread-compatible. Not copyable.
 /// - Ownership: owns its buffers; the device must outlive it.
-class FrameResources final : public Recreatable {
+class FrameResources final : public Recreatable
+{
 public:
     /// The number of rotating regions; the largest frames in flight a device allows.
     static constexpr u32 kSlots = 3;
@@ -127,8 +137,8 @@ public:
     FrameResources(const FrameResources&) = delete;
     FrameResources& operator=(const FrameResources&) = delete;
 
-    /// Registers the buffers with a registry so they survive a device reset. Nothing else needs saving: every frame writes the
-    /// whole frame, object and light data again from the scene.
+    /// Registers the buffers with a registry so they survive a device reset. Nothing else needs saving: every frame
+    /// writes the whole frame, object and light data again from the scene.
     ///
     /// - Param resources: the registry; null does nothing.
     /// - Returns: true if registered or `resources` is null.
@@ -175,16 +185,16 @@ public:
     /// - Ownership: `slots` is borrowed for the call.
     u32 WriteObjects(const RenderScene& scene, const u32* slots, u32 count);
 
-    /// Writes the scene's lights into this frame's region: directional lights first, then the visible point lights, and sums
-    /// the ambient lights.
+    /// Writes the scene's lights into this frame's region: directional lights first, then the visible point lights, and
+    /// sums the ambient lights.
     ///
-    /// Directional light directions are normalized (a zero direction lights nothing). A point light whose sphere (position,
-    /// radius) is entirely outside the view frustum is left out ([[renderer::LightSummary::point_culled]]); the rest are
-    /// sorted by squared distance from the camera to the light position, nearest first, ties broken by the light's slot, so
-    /// the order is the same on every run. If the lights do not fit in `max_lights`, directional lights are written first
-    /// and the farthest point lights are left out; the number left out is [[renderer::LightSummary::dropped]] and an error
-    /// is logged (once per object). The capacity should be at least the scene's `RenderSceneDesc::max_lights`, which makes
-    /// that impossible.
+    /// Directional light directions are normalized (a zero direction lights nothing). A point light whose sphere
+    /// (position, radius) is entirely outside the view frustum is left out ([[renderer::LightSummary::point_culled]]);
+    /// the rest are sorted by squared distance from the camera to the light position, nearest first, ties broken by the
+    /// light's slot, so the order is the same on every run. If the lights do not fit in `max_lights`, directional
+    /// lights are written first and the farthest point lights are left out; the number left out is
+    /// [[renderer::LightSummary::dropped]] and an error is logged (once per object). The capacity should be at least
+    /// the scene's `RenderSceneDesc::max_lights`, which makes that impossible.
     ///
     /// - Param scene: the scene.
     /// - Param view: the frame block of the view being lit; its `view_projection` and `camera_position` are used.
@@ -229,25 +239,26 @@ private:
     rhi::BufferHandle object_buffer_;
     rhi::BufferHandle light_buffer_;
     byte* light_mapped_ = nullptr;
-    struct PointEntry {
+    struct PointEntry
+    {
         f32 distance_squared;
         u32 slot;
     };
     static int ComparePoints(const void* a, const void* b);
-    Vector<LightData> staged_;       // the written lights, in buffer order (the mapped memory is write-only)
-    Vector<PointEntry> point_scratch_; // visible point lights while sorting; keeps its capacity between frames
+    Vector<LightData> staged_;          // the written lights, in buffer order (the mapped memory is write-only)
+    Vector<PointEntry> point_scratch_;  // visible point lights while sorting; keeps its capacity between frames
     u64 light_stride_ = 0;
     u32 max_lights_ = 0;
     u32 lights_written_ = 0;
     bool warned_lights_ = false;
     byte* frame_mapped_ = nullptr;
     byte* object_mapped_ = nullptr;
-    u64 frame_stride_ = 0;  // bytes between the frame regions: sizeof(FrameData) rounded to the offset alignment
-    u64 object_stride_ = 0; // bytes between the object regions
+    u64 frame_stride_ = 0;   // bytes between the frame regions: sizeof(FrameData) rounded to the offset alignment
+    u64 object_stride_ = 0;  // bytes between the object regions
     u32 max_objects_ = 0;
     u32 slot_ = 0;
     bool begun_ = false;
     u32 objects_written_ = 0;
 };
 
-} // namespace engine_placeholder::renderer
+}  // namespace engine_placeholder::renderer

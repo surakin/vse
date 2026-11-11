@@ -13,21 +13,31 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::ui;
 
-namespace {
+namespace
+{
 
 LogChannel g_overlay_channel("overlay_test");
 
-long OverlayDiscard(int, const void*, usize length) { return static_cast<long>(length); }
+long OverlayDiscard(int, const void*, usize length)
+{
+    return static_cast<long>(length);
+}
 
-struct OverlayQuiet {
+struct OverlayQuiet
+{
     OverlayQuiet() { SetWriteSinkForTesting(&OverlayDiscard); }
     ~OverlayQuiet() { SetWriteSinkForTesting(&os::Write); }
 };
 
-void OverlayLog(const char* text) { Log(g_overlay_channel, LogVerbosity::Warn, StringView(text)); }
+void OverlayLog(const char* text)
+{
+    Log(g_overlay_channel, LogVerbosity::Warn, StringView(text));
+}
 
-struct OverlayRig {
-    OverlayRig() : h(640, 480, 1, StringView(UI_TEST_FONT_FILE)) {
+struct OverlayRig
+{
+    OverlayRig() : h(640, 480, 1, StringView(UI_TEST_FONT_FILE))
+    {
         UniquePtr<DebugOverlay> o = MakeUnique<DebugOverlay>();
         overlay = o.Get();
         KeyChord chord;
@@ -41,32 +51,39 @@ struct OverlayRig {
     bool attached = false;
 };
 
-struct OverlayHits {
+struct OverlayHits
+{
     int calls = 0;
     String<HeapAllocator> argument{HeapAllocator::Default(), StringView()};
 };
 
-void OverlayEcho(void* user, StringView argument, LogCapture& out) {
+void OverlayEcho(void* user, StringView argument, LogCapture& out)
+{
     OverlayHits* hits = static_cast<OverlayHits*>(user);
     ++hits->calls;
     hits->argument = String<HeapAllocator>(HeapAllocator::Default(), argument);
     out.Append(StringView("echoed"));
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("The frame graph keeps the last samples and their statistics", "[ui][debug_overlay]") {
+TEST_CASE("The frame graph keeps the last samples and their statistics", "[ui][debug_overlay]")
+{
     FrameGraph g;
     CHECK(g.Count() == 0);
     CHECK(g.Max() == 0);
-    for (usize i = 0; i < FrameGraph::kSamples + 10; ++i) g.Push(static_cast<f32>(i % 4));
+    for (usize i = 0; i < FrameGraph::kSamples + 10; ++i)
+    {
+        g.Push(static_cast<f32>(i % 4));
+    }
     CHECK(g.Count() == FrameGraph::kSamples);
     CHECK(g.Max() == 3.0f);
     g.Push(-5.0f);
     CHECK(g.Max() == 3.0f);
 }
 
-TEST_CASE("The log capture copies new lines and drops the oldest past its limit", "[ui][debug_overlay]") {
+TEST_CASE("The log capture copies new lines and drops the oldest past its limit", "[ui][debug_overlay]")
+{
     OverlayQuiet quiet;
     LogCapture c;
     CHECK(c.Poll() == 0);
@@ -79,28 +96,41 @@ TEST_CASE("The log capture copies new lines and drops the oldest past its limit"
     REQUIRE(c.VisibleCount() == 1);
     CHECK(c.VisibleLine(0).Find(StringView("second")) != c.VisibleLine(0).Length());
     c.SetFilter(StringView());
-    for (usize i = 0; i < LogCapture::kMaxLines + 20; ++i) c.Append(StringView("filler"));
+    for (usize i = 0; i < LogCapture::kMaxLines + 20; ++i)
+    {
+        c.Append(StringView("filler"));
+    }
     CHECK(c.Count() == LogCapture::kMaxLines);
     CHECK(c.Dropped() > 0);
 }
 
-TEST_CASE("The log capture follows a thread that logs while the UI reads", "[ui][debug_overlay]") {
+TEST_CASE("The log capture follows a thread that logs while the UI reads", "[ui][debug_overlay]")
+{
     OverlayQuiet quiet;
     LogCapture c;
     Atomic<bool> done{false};
-    Thread writer([&done] {
-        for (int i = 0; i < 200; ++i) OverlayLog("from another thread");
-        done.Store(true);
-    });
+    Thread writer(
+        [&done]
+        {
+            for (int i = 0; i < 200; ++i)
+            {
+                OverlayLog("from another thread");
+            }
+            done.Store(true);
+        });
     usize seen = 0;
-    while (!done.Load()) seen += c.Poll();
+    while (!done.Load())
+    {
+        seen += c.Poll();
+    }
     writer.Join();
     seen += c.Poll();
-    CHECK(seen == 200); // fewer than the ring holds, so none may be lost to a poll that meets a line half written
+    CHECK(seen == 200);  // fewer than the ring holds, so none may be lost to a poll that meets a line half written
     CHECK(c.Count() <= LogCapture::kMaxLines);
 }
 
-TEST_CASE("The overlay is hidden until its key is pressed, and costs no updates while hidden", "[ui][debug_overlay]") {
+TEST_CASE("The overlay is hidden until its key is pressed, and costs no updates while hidden", "[ui][debug_overlay]")
+{
     OverlayRig rig;
     REQUIRE(rig.h.Valid());
     REQUIRE(rig.attached);
@@ -108,7 +138,10 @@ TEST_CASE("The overlay is hidden until its key is pressed, and costs no updates 
     CHECK_FALSE(rig.overlay->WantsUpdate());
     const u64 before = rig.overlay->Refreshes();
     OverlayLog("while hidden");
-    for (int i = 0; i < 10; ++i) rig.h.Advance(0.016f);
+    for (int i = 0; i < 10; ++i)
+    {
+        rig.h.Advance(0.016f);
+    }
     CHECK(rig.overlay->Refreshes() == before);
     rig.h.Key(Key::Grave);
     CHECK(rig.overlay->IsShown());
@@ -118,7 +151,8 @@ TEST_CASE("The overlay is hidden until its key is pressed, and costs no updates 
     CHECK_FALSE(rig.overlay->IsShown());
 }
 
-TEST_CASE("The console shows what is logged while the overlay is shown", "[ui][debug_overlay]") {
+TEST_CASE("The console shows what is logged while the overlay is shown", "[ui][debug_overlay]")
+{
     OverlayRig rig;
     REQUIRE(rig.h.Valid());
     rig.overlay->Show(true);
@@ -129,7 +163,8 @@ TEST_CASE("The console shows what is logged while the overlay is shown", "[ui][d
     CHECK(rig.overlay->Console()->Shown());
 }
 
-TEST_CASE("Statistics feed the graph and the counters line", "[ui][debug_overlay]") {
+TEST_CASE("Statistics feed the graph and the counters line", "[ui][debug_overlay]")
+{
     OverlayRig rig;
     REQUIRE(rig.h.Valid());
     DebugStats stats;
@@ -142,7 +177,8 @@ TEST_CASE("Statistics feed the graph and the counters line", "[ui][debug_overlay
     CHECK(text.Find(StringView("62.5")) != text.Length());
 }
 
-TEST_CASE("Commands run from the command line and unknown ones are reported", "[ui][debug_overlay]") {
+TEST_CASE("Commands run from the command line and unknown ones are reported", "[ui][debug_overlay]")
+{
     OverlayRig rig;
     REQUIRE(rig.h.Valid());
     OverlayHits hits;
@@ -166,15 +202,19 @@ TEST_CASE("Commands run from the command line and unknown ones are reported", "[
     CHECK(rig.overlay->Run(StringView("clear")));
     CHECK(rig.overlay->Capture().Count() < count);
     rig.h.Advance(0.016f);
-    CHECK(rig.overlay->Capture().Count() == 0); // the lines logged before are not read again
+    CHECK(rig.overlay->Capture().Count() == 0);  // the lines logged before are not read again
 }
 
-TEST_CASE("The console keeps its place when the user has scrolled up", "[ui][debug_overlay]") {
+TEST_CASE("The console keeps its place when the user has scrolled up", "[ui][debug_overlay]")
+{
     OverlayRig rig;
     REQUIRE(rig.h.Valid());
     rig.overlay->Show(true);
     rig.h.Advance(0.016f);
-    for (int i = 0; i < 100; ++i) OverlayLog("filler");
+    for (int i = 0; i < 100; ++i)
+    {
+        OverlayLog("filler");
+    }
     rig.h.Advance(0.016f);
     const f32 bottom = rig.overlay->Console()->Offset();
     CHECK(bottom > 0);

@@ -1,4 +1,5 @@
-// The SQL record store (Phase 19 Day 262): the conformance suite on SQLite in memory and in a file, schema migration, and crash safety.
+// The SQL record store (Phase 19 Day 262): the conformance suite on SQLite in memory and in a file, schema migration,
+// and crash safety.
 
 #include "database/sqlite/sqlite_database.h"
 #include "database/sqlite/sqlite_os.h"
@@ -15,40 +16,49 @@
 #include "store_conformance.h"
 #include "temp_dir.h"
 
-namespace engine_placeholder::storage {
-namespace {
+namespace engine_placeholder::storage
+{
+namespace
+{
 
 // A store on a private in-memory database.
-struct SqlMemoryFixture {
+struct SqlMemoryFixture
+{
     static constexpr bool kInjectsFailure = true;
     static constexpr bool kCanCorrupt = true;
     static constexpr bool kReadersSeeCommitted = false;
     static const char* Name() { return "sql memory"; }
-    SqlMemoryFixture() {
+    SqlMemoryFixture()
+    {
         REQUIRE(db_.Open(database::OpenOptions(), &connection_).Ok());
         REQUIRE(SqlStore::Open(*connection_, &store_).Ok());
     }
-    ~SqlMemoryFixture() {
+    ~SqlMemoryFixture()
+    {
         store_.Reset();
         connection_.Reset();
     }
     Store& Db() { return *store_; }
     void FailAfter(u32 n) { store_->FailAfter(n); }
-    bool Corrupt(EntityKey key) {
+    bool Corrupt(EntityKey key)
+    {
         // Damages the stored bytes behind the store's back (one more byte, the stored hash stays).
         UniquePtr<database::Statement> st;
-        if (connection_->Prepare("UPDATE entity SET data = ? WHERE key = ?", &st).Failed()) {
+        if (connection_->Prepare("UPDATE entity SET data = ? WHERE key = ?", &st).Failed())
+        {
             return false;
         }
         byte k[16];
-        for (usize i = 0; i < 8; ++i) {
+        for (usize i = 0; i < 8; ++i)
+        {
             k[i] = static_cast<byte>((key.high >> (56 - 8 * i)) & 0xFF);
             k[8 + i] = static_cast<byte>((key.low >> (56 - 8 * i)) & 0xFF);
         }
         const byte junk[3] = {1, 2, 3};
         bool row = false;
-        return st->Bind(1, database::ValueView::Blob(ByteSpan(junk, 3))).Ok() && st->Bind(2, database::ValueView::Blob(ByteSpan(k, 16))).Ok() &&
-               st->Step(&row).Ok() && connection_->ChangedRows() == 1;
+        return st->Bind(1, database::ValueView::Blob(ByteSpan(junk, 3))).Ok() &&
+               st->Bind(2, database::ValueView::Blob(ByteSpan(k, 16))).Ok() && st->Step(&row).Ok() &&
+               connection_->ChangedRows() == 1;
     }
 
 protected:
@@ -60,18 +70,21 @@ protected:
 STORE_CONFORMANCE_CASES(SqlMemoryFixture)
 
 // A store on a file.
-class FileStore {
+class FileStore
+{
 public:
     FileStore() { Open(); }
     ~FileStore() { Close(); }
-    void Open() {
+    void Open()
+    {
         const io::Path path = dir_ / StringView("store.db");
         database::OpenOptions options;
         options.location = path.View();
         REQUIRE(db_.Open(options, &connection_).Ok());
         REQUIRE(SqlStore::Open(*connection_, &store_).Ok());
     }
-    void Close() {
+    void Close()
+    {
         store_.Reset();
         connection_.Reset();
     }
@@ -86,7 +99,8 @@ private:
     UniquePtr<SqlStore> store_;
 };
 
-struct SqlFileStoreFixture {
+struct SqlFileStoreFixture
+{
     static constexpr bool kInjectsFailure = true;
     static constexpr bool kCanCorrupt = false;
     static constexpr bool kReadersSeeCommitted = false;
@@ -101,17 +115,20 @@ private:
 
 STORE_CONFORMANCE_CASES(SqlFileStoreFixture)
 
-Vector<EntityRecord> Records(u64 count) {
+Vector<EntityRecord> Records(u64 count)
+{
     Vector<EntityRecord> out;
-    for (u64 k = 1; k <= count; ++k) {
+    for (u64 k = 1; k <= count; ++k)
+    {
         out.Push(conformance::Rec(k * 3, static_cast<u8>(k), 10 + k % 7));
     }
     return out;
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("SqlStore: a version-1 database is migrated and keeps every record", "[storage][store][sql]") {
+TEST_CASE("SqlStore: a version-1 database is migrated and keeps every record", "[storage][store][sql]")
+{
     database_test::TempDir dir;
     const io::Path path = dir / StringView("old.db");
     const Vector<EntityRecord> records = Records(50);
@@ -123,7 +140,8 @@ TEST_CASE("SqlStore: a version-1 database is migrated and keeps every record", "
         REQUIRE(db.Open(options, &c).Ok());
         REQUIRE(test::BuildSchemaOne(*c, records).Ok());
     }
-    for (int round = 0; round < 2; ++round) { // the second open finds the new schema and migrates nothing
+    for (int round = 0; round < 2; ++round)
+    {  // the second open finds the new schema and migrates nothing
         UniquePtr<database::Connection> c;
         REQUIRE(db.Open(options, &c).Ok());
         UniquePtr<SqlStore> store;
@@ -134,7 +152,8 @@ TEST_CASE("SqlStore: a version-1 database is migrated and keeps every record", "
         usize count = 0;
         REQUIRE(store->Count(&count).Ok());
         CHECK(count == 50 + static_cast<usize>(round));
-        for (usize i = 0; i < records.Size(); ++i) {
+        for (usize i = 0; i < records.Size(); ++i)
+        {
             EntityRecord got;
             REQUIRE(store->Get(records[i].key, &got).Ok());
             CHECK(got.hash == records[i].hash);
@@ -145,13 +164,15 @@ TEST_CASE("SqlStore: a version-1 database is migrated and keeps every record", "
         CHECK(value.View() == StringView("1"));
         REQUIRE(store->GetMetadata(metadata::kSchemaVersion, &value).Ok());
         CHECK(value.View() == StringView("3"));
-        REQUIRE(store->Put(conformance::Rec(1000, 1)).Ok()); // and the new layout takes writes
+        REQUIRE(store->Put(conformance::Rec(1000, 1)).Ok());  // and the new layout takes writes
     }
 }
 
-TEST_CASE("SqlStore: the migration also works on a backend that cannot add a column", "[storage][store][sql]") {
+TEST_CASE("SqlStore: the migration also works on a backend that cannot add a column", "[storage][store][sql]")
+{
     database::SqliteDatabase db;
-    for (const bool can_alter : {true, false}) {
+    for (const bool can_alter : {true, false})
+    {
         UniquePtr<database::Connection> raw;
         REQUIRE(db.Open(database::OpenOptions(), &raw).Ok());
         const Vector<EntityRecord> records = Records(40);
@@ -164,7 +185,8 @@ TEST_CASE("SqlStore: the migration also works on a backend that cannot add a col
         usize count = 0;
         REQUIRE(store->Count(&count).Ok());
         CHECK(count == 40);
-        for (usize i = 0; i < records.Size(); ++i) {
+        for (usize i = 0; i < records.Size(); ++i)
+        {
             EntityRecord got;
             REQUIRE(store->Get(records[i].key, &got).Ok());
             CHECK(got.hash == records[i].hash);
@@ -177,7 +199,8 @@ TEST_CASE("SqlStore: the migration also works on a backend that cannot add a col
     }
 }
 
-TEST_CASE("SqlStore: a database with a newer schema is refused and left untouched", "[storage][store][sql]") {
+TEST_CASE("SqlStore: a database with a newer schema is refused and left untouched", "[storage][store][sql]")
+{
     database_test::TempDir dir;
     const io::Path path = dir / StringView("new.db");
     database::SqliteDatabase db;
@@ -195,13 +218,14 @@ TEST_CASE("SqlStore: a database with a newer schema is refused and left untouche
     CHECK(version == SqlStore::kSchemaVersion + 1);
     CHECK_FALSE(c->InTransaction());
     UniquePtr<database::Statement> st;
-    REQUIRE(c->Prepare("SELECT count(*) FROM entity", &st).Ok()); // the version-1 table is still there
+    REQUIRE(c->Prepare("SELECT count(*) FROM entity", &st).Ok());  // the version-1 table is still there
     bool row = false;
     REQUIRE(st->Step(&row).Ok());
     CHECK(st->Column(0).AsInteger() == 5);
 }
 
-TEST_CASE("SqlStore: a store reopened on its file has what was committed", "[storage][store][sql]") {
+TEST_CASE("SqlStore: a store reopened on its file has what was committed", "[storage][store][sql]")
+{
     FileStore file;
     REQUIRE(file.Store().Put(conformance::Rec(7, 1)).Ok());
     REQUIRE(file.Store().SetMetadata("x", "y").Ok());
@@ -223,16 +247,19 @@ TEST_CASE("SqlStore: a store reopened on its file has what was committed", "[sto
     CHECK(all.keys[2] == EntityKey{5, 1});
 }
 
-TEST_CASE("SqlStore: another thread is Busy while a batch is open", "[storage][store][sql]") {
+TEST_CASE("SqlStore: another thread is Busy while a batch is open", "[storage][store][sql]")
+{
     SqlMemoryFixture f;
     REQUIRE(f.Db().Put(conformance::Rec(1, 1)).Ok());
     REQUIRE(f.Db().Begin().Ok());
     Status read, write;
-    Thread other([&] {
-        usize n = 0;
-        read = f.Db().Count(&n);
-        write = f.Db().Put(conformance::Rec(2, 2));
-    });
+    Thread other(
+        [&]
+        {
+            usize n = 0;
+            read = f.Db().Count(&n);
+            write = f.Db().Put(conformance::Rec(2, 2));
+        });
     other.Join();
     CHECK(read.Is(ErrorCode::Busy));
     CHECK(write.Is(ErrorCode::Busy));
@@ -242,16 +269,20 @@ TEST_CASE("SqlStore: another thread is Busy while a batch is open", "[storage][s
     CHECK(n == 1);
 }
 
-namespace {
+namespace
+{
 
-u64 StateOf(Store& s) {
+u64 StateOf(Store& s)
+{
     return conformance::Fingerprint(s);
 }
 
 // One batch of changes to a store holding Records(30).
-void Batch(Store& s) {
+void Batch(Store& s)
+{
     REQUIRE(s.Begin().Ok());
-    for (u64 k = 100; k < 140; ++k) {
+    for (u64 k = 100; k < 140; ++k)
+    {
         REQUIRE(s.Put(conformance::Rec(k, 5, 300)).Ok());
     }
     REQUIRE(s.Remove(EntityKey{0, 3}).Ok());
@@ -260,7 +291,8 @@ void Batch(Store& s) {
 }
 
 // Runs the batch under a fault plan on a fresh file, then looks at the file again. Returns the operations seen.
-long long CrashRun(unsigned ops, long long fail_at, bool crash, u64 old_state, u64 new_state) {
+long long CrashRun(unsigned ops, long long fail_at, bool crash, u64 old_state, u64 new_state)
+{
     database_test::TempDir dir;
     const io::Path path = dir / StringView("crash.db");
     database::SqliteDatabase db;
@@ -274,7 +306,8 @@ long long CrashRun(unsigned ops, long long fail_at, bool crash, u64 old_state, u
         REQUIRE(SqlStore::Open(*c, &store).Ok());
         const Vector<EntityRecord> base = Records(30);
         REQUIRE(store->Begin().Ok());
-        for (usize i = 0; i < base.Size(); ++i) {
+        for (usize i = 0; i < base.Size(); ++i)
+        {
             REQUIRE(store->Put(base[i]).Ok());
         }
         REQUIRE(store->SetMetadata("m", "old").Ok());
@@ -284,9 +317,11 @@ long long CrashRun(unsigned ops, long long fail_at, bool crash, u64 old_state, u
     {
         UniquePtr<database::Connection> c;
         UniquePtr<SqlStore> store;
-        if (db.Open(options, &c).Ok() && SqlStore::Open(*c, &store).Ok()) {
+        if (db.Open(options, &c).Ok() && SqlStore::Open(*c, &store).Ok())
+        {
             static_cast<void>(store->Begin());
-            for (u64 k = 100; k < 140; ++k) {
+            for (u64 k = 100; k < 140; ++k)
+            {
                 static_cast<void>(store->Put(conformance::Rec(k, 5, 300)));
             }
             static_cast<void>(store->Remove(EntityKey{0, 3}));
@@ -305,18 +340,21 @@ long long CrashRun(unsigned ops, long long fail_at, bool crash, u64 old_state, u
     REQUIRE(store->GetMetadata("m", &m).Ok());
     INFO("ops " << ops << " fail_at " << fail_at << " crash " << crash);
     CHECK((state == old_state || state == new_state));
-    CHECK(((state == old_state) == (m.View() == StringView("old")))); // the metadata moves with the records
+    CHECK(((state == old_state) == (m.View() == StringView("old"))));  // the metadata moves with the records
     return seen;
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("SqlStore: a failure at every write and sync of a batch leaves the old or the new state", "[storage][store][sql][crash]") {
+TEST_CASE("SqlStore: a failure at every write and sync of a batch leaves the old or the new state",
+          "[storage][store][sql][crash]")
+{
     u64 old_state = 0, new_state = 0;
     {
         MemoryStore reference;
         const Vector<EntityRecord> base = Records(30);
-        for (usize i = 0; i < base.Size(); ++i) {
+        for (usize i = 0; i < base.Size(); ++i)
+        {
             REQUIRE(reference.Put(base[i]).Ok());
         }
         old_state = StateOf(reference);
@@ -324,18 +362,23 @@ TEST_CASE("SqlStore: a failure at every write and sync of a batch leaves the old
         new_state = StateOf(reference);
     }
     REQUIRE(old_state != new_state);
-    for (const unsigned op : {database::sqlite_detail::kFaultWrite, database::sqlite_detail::kFaultSync}) {
+    for (const unsigned op : {database::sqlite_detail::kFaultWrite, database::sqlite_detail::kFaultSync})
+    {
         const long long total = CrashRun(op, 1ll << 40, false, old_state, new_state);
         CHECK(total > 0);
-        for (const bool crash : {false, true}) {
-            for (long long n = 0; n < total; ++n) {
+        for (const bool crash : {false, true})
+        {
+            for (long long n = 0; n < total; ++n)
+            {
                 CrashRun(op, n, crash, old_state, new_state);
             }
         }
     }
 }
 
-TEST_CASE("SqlStore: a world saved to a SQL file loads back equal, and incremental saves reach the file", "[storage][store][sql]") {
+TEST_CASE("SqlStore: a world saved to a SQL file loads back equal, and incremental saves reach the file",
+          "[storage][store][sql]")
+{
     ComponentRegistry registry;
     REQUIRE(RegisterBuiltinComponents(&registry).Ok());
     FileStore file;
@@ -343,7 +386,8 @@ TEST_CASE("SqlStore: a world saved to a SQL file loads back equal, and increment
     KeyIndex index;
     KeyGenerator keys = KeyGenerator::Seeded(9);
     Vector<ecs::Entity> made;
-    for (u32 i = 0; i < 300; ++i) {
+    for (u32 i = 0; i < 300; ++i)
+    {
         ecs::LocalTransform t;
         t.position = Vec3(static_cast<f32>(i), 1, 2);
         made.Push(world.Create(EntityKeyComponent{keys.Next()}, t));
@@ -365,7 +409,7 @@ TEST_CASE("SqlStore: a world saved to a SQL file loads back equal, and increment
     CHECK(report.replaced == 1);
     CHECK(report.removed == 1);
     file.Close();
-    file.Open(); // as after a restart
+    file.Open();  // as after a restart
     WorldStorage again(registry, file.Store());
     ecs::World loaded;
     KeyIndex loaded_index;
@@ -374,4 +418,4 @@ TEST_CASE("SqlStore: a world saved to a SQL file loads back equal, and increment
     CHECK(loaded_index.Size() == 299);
 }
 
-} // namespace engine_placeholder::storage
+}  // namespace engine_placeholder::storage

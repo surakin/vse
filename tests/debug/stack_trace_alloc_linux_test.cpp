@@ -18,63 +18,75 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::debug;
 
-namespace {
+namespace
+{
 
 Atomic<unsigned long> g_allocations{0};
 
-} // namespace
+}  // namespace
 
-extern "C" {
-void* __real_malloc(usize size);
-void* __real_calloc(usize count, usize size);
-void* __real_realloc(void* pointer, usize size);
-void* __wrap_malloc(usize size) {
-    g_allocations.FetchAdd(1, MemoryOrder::Relaxed);
-    return __real_malloc(size);
-}
-void* __wrap_calloc(usize count, usize size) {
-    g_allocations.FetchAdd(1, MemoryOrder::Relaxed);
-    return __real_calloc(count, size);
-}
-void* __wrap_realloc(void* pointer, usize size) {
-    g_allocations.FetchAdd(1, MemoryOrder::Relaxed);
-    return __real_realloc(pointer, size);
-}
+extern "C"
+{
+    void* __real_malloc(usize size);
+    void* __real_calloc(usize count, usize size);
+    void* __real_realloc(void* pointer, usize size);
+    void* __wrap_malloc(usize size)
+    {
+        g_allocations.FetchAdd(1, MemoryOrder::Relaxed);
+        return __real_malloc(size);
+    }
+    void* __wrap_calloc(usize count, usize size)
+    {
+        g_allocations.FetchAdd(1, MemoryOrder::Relaxed);
+        return __real_calloc(count, size);
+    }
+    void* __wrap_realloc(void* pointer, usize size)
+    {
+        g_allocations.FetchAdd(1, MemoryOrder::Relaxed);
+        return __real_realloc(pointer, size);
+    }
 }
 
-namespace {
+namespace
+{
 
 char g_handler_text[8192];
 FrameInfo g_handler_entries[kMaxStackFrames * 2];
 
-void TraceInHandler(int) {
+void TraceInHandler(int)
+{
     const unsigned long before = g_allocations.Load(MemoryOrder::Relaxed);
     StackTrace trace;
     CaptureStackTrace(trace, 0);
-    const usize entries = ResolveStackTrace(trace, g_handler_entries, sizeof(g_handler_entries) / sizeof(g_handler_entries[0]));
+    const usize entries = ResolveStackTrace(trace, g_handler_entries,
+                                            sizeof(g_handler_entries) / sizeof(g_handler_entries[0]));
     const usize length = FormatStackTrace(trace, g_handler_text, sizeof(g_handler_text));
     const unsigned long after = g_allocations.Load(MemoryOrder::Relaxed);
     char line[96];
-    const int n = FormatTo(line, sizeof(line), "ALLOCS=%lu FRAMES=%u ENTRIES=%zu TEXT=%zu\n", after - before, trace.count,
-                                static_cast<usize>(entries), static_cast<usize>(length));
+    const int n = FormatTo(line, sizeof(line), "ALLOCS=%lu FRAMES=%u ENTRIES=%zu TEXT=%zu\n", after - before,
+                           trace.count, static_cast<usize>(entries), static_cast<usize>(length));
     os::Write(1, line, static_cast<usize>(n));
     os::Write(1, g_handler_text, length);
 }
 
-ENGINE_NOINLINE void RaiseTheSignal() {
+ENGINE_NOINLINE void RaiseTheSignal()
+{
     ::raise(SIGUSR1);
     ENGINE_COMPILER_BARRIER();
 }
 
-} // namespace
+}  // namespace
 
-ENGINE_DEATH_TEST_FN(dt_alloc_trace_in_signal_handler) {
-    InitDebugFacilities(); // everything that may allocate happens here
+ENGINE_DEATH_TEST_FN(dt_alloc_trace_in_signal_handler)
+{
+    InitDebugFacilities();  // everything that may allocate happens here
     os::SetSignalHandler(SIGUSR1, &TraceInHandler);
     RaiseTheSignal();
 }
 
-TEST_CASE("Capturing, resolving and formatting a trace inside a signal handler allocates nothing", "[stacktrace][debug][linux]") {
+TEST_CASE("Capturing, resolving and formatting a trace inside a signal handler allocates nothing",
+          "[stacktrace][debug][linux]")
+{
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     const ChildResult r = RunInChild("dt_alloc_trace_in_signal_handler");
     REQUIRE(r.exited);
@@ -85,20 +97,24 @@ TEST_CASE("Capturing, resolving and formatting a trace inside a signal handler a
     CHECK(r.StdoutContains("RaiseTheSignal"));
 }
 
-namespace {
+namespace
+{
 
-void CountingWrite(void* context, const char* data, usize length) {
+void CountingWrite(void* context, const char* data, usize length)
+{
     *static_cast<usize*>(context) += length;
     (void)data;
 }
 
-void AllocProvider(void*, char* out, usize capacity) {
+void AllocProvider(void*, char* out, usize capacity)
+{
     FormatTo(out, capacity, "alloc-test-state");
 }
 
-} // namespace
+}  // namespace
 
-ENGINE_DEATH_TEST_FN(dt_alloc_crash_report) {
+ENGINE_DEATH_TEST_FN(dt_alloc_crash_report)
+{
     InitDebugFacilities();
     InitCrashContext(0, nullptr);
     RegisterCrashStateProvider("alloc", &AllocProvider, nullptr);
@@ -117,11 +133,13 @@ ENGINE_DEATH_TEST_FN(dt_alloc_crash_report) {
     WriteCrashReport(sink, info);
     const unsigned long after = g_allocations.Load(MemoryOrder::Relaxed);
     char line[64];
-    const int n = FormatTo(line, sizeof(line), "REPORT_ALLOCS=%lu BYTES=%zu\n", after - before, static_cast<usize>(written));
+    const int n = FormatTo(line, sizeof(line), "REPORT_ALLOCS=%lu BYTES=%zu\n", after - before,
+                           static_cast<usize>(written));
     os::Write(1, line, static_cast<usize>(n));
 }
 
-TEST_CASE("Writing a crash report allocates nothing once the facilities are initialized", "[crashreport][debug][linux]") {
+TEST_CASE("Writing a crash report allocates nothing once the facilities are initialized", "[crashreport][debug][linux]")
+{
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     const ChildResult r = RunInChild("dt_alloc_crash_report");
     REQUIRE(r.exited);

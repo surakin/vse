@@ -67,7 +67,7 @@ load.app_name = "mygame";
 load.argc = argc; load.argv = argv;
 settings::LoadReport report = settings.Load(load);   // every problem is in the report; nothing stops the others
 ...
-settings::SaveOnExit save(settings);                 // writes the user's file at the end of the scope if anything changed
+settings::SaveOnExit save(settings);                 // writes the user's file at the end of the scope if changed
 ```
 
 A setting's value: a small tagged value that is cheap to copy and owns no heap memory.
@@ -3733,7 +3733,7 @@ void FormatSettingsListing(Settings& settings, String<HeapAllocator>* out);
 Writes one line for every setting, sorted by key: the key, the current value, the default, where the value came from, and the description (a `kSecret` setting shows `<secret>`; a setting marked `kHidden` is left out).
 
 ```
-renderer.width                      1920     default 0        user file (line 3)    the window width in pixels (0: the display's)
+renderer.width                      1920     default 0        user file (line 3)    the window width in pixels
 ```
 
 | Field | Value |

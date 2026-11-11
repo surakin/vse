@@ -12,20 +12,27 @@ using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
 using namespace engine_placeholder::rhi::vulkan;
 
-namespace {
+namespace
+{
 
 // The live objects of the fake backend, by id (ids count up from 1): a size per id and a flag saying the id is live.
-class LiveObjects {
+class LiveObjects
+{
 public:
-    void Add(u64 id, u64 size) {
-        if (entries_.Size() <= id) entries_.Resize(id + 1);
+    void Add(u64 id, u64 size)
+    {
+        if (entries_.Size() <= id)
+        {
+            entries_.Resize(id + 1);
+        }
         entries_[id].size = size;
         entries_[id].live = true;
         ++count_;
     }
     bool Has(u64 id) const { return id < entries_.Size() && entries_[id].live; }
     // Removes `id` (which must be live) and returns its size.
-    u64 Remove(u64 id) {
+    u64 Remove(u64 id)
+    {
         entries_[id].live = false;
         --count_;
         return entries_[id].size;
@@ -34,7 +41,8 @@ public:
     bool Empty() const { return count_ == 0; }
 
 private:
-    struct Entry {
+    struct Entry
+    {
         u64 size = 0;
         bool live = false;
     };
@@ -43,15 +51,20 @@ private:
 };
 
 // A fake memory backend: hands out ids, keeps host memory for mapped objects, can be told to fail.
-class FakeBackend final : public MemoryBackend {
+class FakeBackend final : public MemoryBackend
+{
 public:
-    MemoryResult Allocate(u32 type, u64 size, bool map, u64 dedicated_buffer, u64 dedicated_image, BackendAllocation* out) override {
-        if (fail_next != MemoryResult::Ok) {
+    MemoryResult Allocate(u32 type, u64 size, bool map, u64 dedicated_buffer, u64 dedicated_image,
+                          BackendAllocation* out) override
+    {
+        if (fail_next != MemoryResult::Ok)
+        {
             MemoryResult r = fail_next;
             fail_next = MemoryResult::Ok;
             return r;
         }
-        if (budget != 0 && live_bytes + size > budget) {
+        if (budget != 0 && live_bytes + size > budget)
+        {
             return MemoryResult::OutOfDeviceMemory;
         }
         ++calls;
@@ -63,17 +76,25 @@ public:
         live_bytes += size;
         out->handle = id;
         out->mapped = nullptr;
-        if (map) {
-            if (storage.Size() <= id) storage.Resize(id + 1);
+        if (map)
+        {
+            if (storage.Size() <= id)
+            {
+                storage.Resize(id + 1);
+            }
             storage[id].Resize(size);
             out->mapped = storage[id].Data();
         }
         return MemoryResult::Ok;
     }
-    void Free(const BackendAllocation& a) override {
-        REQUIRE(live.Has(a.handle)); // a double free of a whole object would fail here
+    void Free(const BackendAllocation& a) override
+    {
+        REQUIRE(live.Has(a.handle));  // a double free of a whole object would fail here
         live_bytes -= live.Remove(a.handle);
-        if (a.handle < storage.Size()) storage[a.handle] = Vector<char>();
+        if (a.handle < storage.Size())
+        {
+            storage[a.handle] = Vector<char>();
+        }
         ++frees;
     }
     MemoryResult fail_next = MemoryResult::Ok;
@@ -82,11 +103,12 @@ public:
     u32 last_type = 0;
     u64 last_dedicated_buffer = 0, last_dedicated_image = 0;
     LiveObjects live;
-    Vector<Vector<char>> storage; // host memory of the mapped objects, by id
+    Vector<Vector<char>> storage;  // host memory of the mapped objects, by id
 };
 
 // Type 0: device-local; 1: host-visible coherent; 2: host-visible cached; 3: device-local + host-visible (BAR).
-MemoryLayout TestLayout() {
+MemoryLayout TestLayout()
+{
     MemoryLayout l;
     l.type_count = 4;
     l.types[0] = {0, true, false, false, false};
@@ -99,20 +121,22 @@ MemoryLayout TestLayout() {
     return l;
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("SelectMemoryType follows the documented preferences and fallbacks", "[rhi][memory]") {
+TEST_CASE("SelectMemoryType follows the documented preferences and fallbacks", "[rhi][memory]")
+{
     MemoryLayout l = TestLayout();
     CHECK(SelectMemoryType(l, MemoryLocation::GpuOnly, ~0u) == 0);
     CHECK(SelectMemoryType(l, MemoryLocation::CpuToGpu, ~0u) == 1);
     CHECK(SelectMemoryType(l, MemoryLocation::GpuToCpu, ~0u) == 2);
 
     // Type bits restrict the choice.
-    CHECK(SelectMemoryType(l, MemoryLocation::GpuOnly, 0b1000) == 3); // only the BAR type is allowed: device-local fallback
-    CHECK(SelectMemoryType(l, MemoryLocation::CpuToGpu, 0b1000) == 3); // resizable-BAR fallback
-    CHECK(SelectMemoryType(l, MemoryLocation::CpuToGpu, 0b0100) == 2); // non-coherent host-visible as a last resort
-    CHECK(SelectMemoryType(l, MemoryLocation::CpuToGpu, 0b0001) == -1); // nothing host-visible allowed
-    CHECK(SelectMemoryType(l, MemoryLocation::GpuToCpu, 0b0010) == 1); // coherent, uncached
+    CHECK(SelectMemoryType(l, MemoryLocation::GpuOnly, 0b1000) ==
+          3);  // only the BAR type is allowed: device-local fallback
+    CHECK(SelectMemoryType(l, MemoryLocation::CpuToGpu, 0b1000) == 3);   // resizable-BAR fallback
+    CHECK(SelectMemoryType(l, MemoryLocation::CpuToGpu, 0b0100) == 2);   // non-coherent host-visible as a last resort
+    CHECK(SelectMemoryType(l, MemoryLocation::CpuToGpu, 0b0001) == -1);  // nothing host-visible allowed
+    CHECK(SelectMemoryType(l, MemoryLocation::GpuToCpu, 0b0010) == 1);   // coherent, uncached
     CHECK(SelectMemoryType(l, MemoryLocation::GpuToCpu, 0b0001) == -1);
 
     // Unified memory: one type that is everything.
@@ -126,27 +150,29 @@ TEST_CASE("SelectMemoryType follows the documented preferences and fallbacks", "
     CHECK(SelectMemoryType(unified, MemoryLocation::GpuToCpu, ~0u) == 0);
 }
 
-TEST_CASE("FreeList allocates with alignment and coalesces on free", "[rhi][memory]") {
+TEST_CASE("FreeList allocates with alignment and coalesces on free", "[rhi][memory]")
+{
     FreeList list(1024);
     u64 a = 0, b = 0, c = 0;
     REQUIRE(list.Allocate(100, 1, &a));
     CHECK(a == 0);
     REQUIRE(list.Allocate(100, 256, &b));
-    CHECK(b == 256); // aligned up; the gap [100,256) stays free
+    CHECK(b == 256);  // aligned up; the gap [100,256) stays free
     CHECK(list.RangeCount() == 2);
     REQUIRE(list.Allocate(10, 1, &c));
-    CHECK(c == 100); // best fit takes the small gap
+    CHECK(c == 100);  // best fit takes the small gap
     CHECK(list.FreeBytes() == 1024 - 100 - 100 - 10);
 
     CHECK(list.Free(a, 100));
     CHECK(list.Free(c, 10));
     CHECK(list.Free(b, 100));
-    CHECK(list.RangeCount() == 1); // everything merged back
+    CHECK(list.RangeCount() == 1);  // everything merged back
     CHECK(list.FreeBytes() == 1024);
     CHECK(list.LargestFree() == 1024);
 }
 
-TEST_CASE("FreeList reports exhaustion and double frees without changing state", "[rhi][memory]") {
+TEST_CASE("FreeList reports exhaustion and double frees without changing state", "[rhi][memory]")
+{
     FreeList list(256);
     u64 a = 0, b = 0;
     REQUIRE(list.Allocate(256, 1, &a));
@@ -154,91 +180,109 @@ TEST_CASE("FreeList reports exhaustion and double frees without changing state",
     CHECK(list.FreeBytes() == 0);
 
     CHECK(list.Free(a, 256));
-    CHECK_FALSE(list.Free(a, 256));     // double free
-    CHECK_FALSE(list.Free(100, 10));    // overlaps free space
-    CHECK_FALSE(list.Free(250, 100));   // outside the block
-    CHECK_FALSE(list.Free(0, 0));       // empty
+    CHECK_FALSE(list.Free(a, 256));    // double free
+    CHECK_FALSE(list.Free(100, 10));   // overlaps free space
+    CHECK_FALSE(list.Free(250, 100));  // outside the block
+    CHECK_FALSE(list.Free(0, 0));      // empty
     CHECK(list.FreeBytes() == 256);
     CHECK(list.RangeCount() == 1);
 
     REQUIRE(list.Allocate(100, 64, &a));
     REQUIRE(list.Allocate(100, 64, &b));
     CHECK(list.Free(a, 100));
-    CHECK_FALSE(list.Free(a + 50, 20)); // inside a freed range
+    CHECK_FALSE(list.Free(a + 50, 20));  // inside a freed range
     CHECK(list.Free(b, 100));
 }
 
-TEST_CASE("FreeList survives 100k random allocate/free cycles with its invariants intact", "[rhi][memory][stress]") {
+TEST_CASE("FreeList survives 100k random allocate/free cycles with its invariants intact", "[rhi][memory][stress]")
+{
     constexpr u64 kSize = 1 << 20;
     FreeList list(kSize);
-    struct Live {
+    struct Live
+    {
         u64 offset, size;
     };
     Vector<Live> live;
     u64 state = 0x9E3779B97F4A7C15ull;
-    auto next = [&]() {
+    auto next = [&]()
+    {
         state ^= state << 13;
         state ^= state >> 7;
         state ^= state << 17;
         return state;
     };
-    for (int step = 0; step < 100000; ++step) {
-        if (live.Empty() || (next() % 3 != 0 && live.Size() < 2000)) {
+    for (int step = 0; step < 100000; ++step)
+    {
+        if (live.Empty() || (next() % 3 != 0 && live.Size() < 2000))
+        {
             u64 size = 1 + next() % 4096;
             u64 alignment = u64(1) << (next() % 9);
             u64 offset = 0;
-            if (list.Allocate(size, alignment, &offset)) {
+            if (list.Allocate(size, alignment, &offset))
+            {
                 REQUIRE(offset % alignment == 0);
                 REQUIRE(offset + size <= kSize);
                 live.Push(Live{offset, size});
             }
-        } else {
+        }
+        else
+        {
             usize i = static_cast<usize>(next() % live.Size());
             REQUIRE(list.Free(live[i].offset, live[i].size));
             live[i] = live[live.Size() - 1];
             live.Pop();
         }
-        if (step % 5000 == 0) {
+        if (step % 5000 == 0)
+        {
             // Total bytes are conserved, free ranges are ordered, non-adjacent and disjoint from live ranges.
             u64 used = 0;
-            for (usize li = 0; li < live.Size(); ++li) {
+            for (usize li = 0; li < live.Size(); ++li)
+            {
                 used += live[li].size;
             }
             REQUIRE(list.FreeBytes() + used == kSize);
             u64 free_sum = 0;
-            for (usize r = 0; r < list.RangeCount(); ++r) {
+            for (usize r = 0; r < list.RangeCount(); ++r)
+            {
                 free_sum += list.RangeSize(r);
-                if (r > 0) {
-                    REQUIRE(list.RangeOffset(r) > list.RangeOffset(r - 1) + list.RangeSize(r - 1)); // gap = a live range
+                if (r > 0)
+                {
+                    REQUIRE(list.RangeOffset(r) >
+                            list.RangeOffset(r - 1) + list.RangeSize(r - 1));  // gap = a live range
                 }
-                for (usize li = 0; li < live.Size(); ++li) {
+                for (usize li = 0; li < live.Size(); ++li)
+                {
                     const Live& l = live[li];
-                    bool disjoint = l.offset + l.size <= list.RangeOffset(r) || list.RangeOffset(r) + list.RangeSize(r) <= l.offset;
+                    bool disjoint = l.offset + l.size <= list.RangeOffset(r) ||
+                                    list.RangeOffset(r) + list.RangeSize(r) <= l.offset;
                     REQUIRE(disjoint);
                 }
             }
             REQUIRE(free_sum == list.FreeBytes());
         }
     }
-    for (usize li = 0; li < live.Size(); ++li) {
+    for (usize li = 0; li < live.Size(); ++li)
+    {
         REQUIRE(list.Free(live[li].offset, live[li].size));
     }
     CHECK(list.RangeCount() == 1);
     CHECK(list.FreeBytes() == kSize);
 }
 
-TEST_CASE("MemoryAllocator suballocates small requests from shared blocks", "[rhi][memory]") {
+TEST_CASE("MemoryAllocator suballocates small requests from shared blocks", "[rhi][memory]")
+{
     FakeBackend backend;
     MemoryAllocatorConfig config;
     config.block_size = 1 << 20;
-    config.large_heap_bytes = ~0ull; // never use the large block size
+    config.large_heap_bytes = ~0ull;  // never use the large block size
     MemoryAllocator allocator(TestLayout(), config, &backend);
 
     MemoryRequest request;
     request.size = 1000;
     request.alignment = 256;
     Vector<MemoryAllocation> allocations;
-    for (int i = 0; i < 1000; ++i) {
+    for (int i = 0; i < 1000; ++i)
+    {
         MemoryResult r = MemoryResult::Failed;
         MemoryAllocation a = allocator.Allocate(request, &r);
         REQUIRE(r == MemoryResult::Ok);
@@ -256,19 +300,21 @@ TEST_CASE("MemoryAllocator suballocates small requests from shared blocks", "[rh
     CHECK(stats.heaps[0].block_count >= 1);
     CHECK(stats.live_memory_objects == backend.live.Size());
 
-    for (usize i = 0; i < allocations.Size(); ++i) {
+    for (usize i = 0; i < allocations.Size(); ++i)
+    {
         allocator.Free(allocations[i]);
     }
     stats = allocator.Stats();
     CHECK(stats.heaps[0].used_bytes == 0);
-    CHECK(backend.live.Size() == 1); // one empty block is kept as the spare
+    CHECK(backend.live.Size() == 1);  // one empty block is kept as the spare
 }
 
-TEST_CASE("MemoryAllocator maps host-visible blocks once and gives each range its own pointer", "[rhi][memory]") {
+TEST_CASE("MemoryAllocator maps host-visible blocks once and gives each range its own pointer", "[rhi][memory]")
+{
     FakeBackend backend;
     MemoryAllocatorConfig config;
     config.block_size = 1 << 20;
-    config.large_heap_bytes = ~0ull; // never use the large block size
+    config.large_heap_bytes = ~0ull;  // never use the large block size
     MemoryAllocator allocator(TestLayout(), config, &backend);
     MemoryRequest request;
     request.size = 4096;
@@ -280,18 +326,19 @@ TEST_CASE("MemoryAllocator maps host-visible blocks once and gives each range it
     REQUIRE(b.Valid());
     CHECK(a.mapped != nullptr);
     CHECK(a.coherent);
-    CHECK(a.memory == b.memory); // same block
+    CHECK(a.memory == b.memory);  // same block
     CHECK(static_cast<char*>(b.mapped) - static_cast<char*>(a.mapped) == static_cast<long>(b.offset - a.offset));
     CHECK(backend.calls == 1);
     allocator.Free(a);
     allocator.Free(b);
 }
 
-TEST_CASE("MemoryAllocator keeps linear and optimal resources in separate blocks", "[rhi][memory]") {
+TEST_CASE("MemoryAllocator keeps linear and optimal resources in separate blocks", "[rhi][memory]")
+{
     FakeBackend backend;
     MemoryAllocatorConfig config;
     config.block_size = 1 << 20;
-    config.large_heap_bytes = ~0ull; // never use the large block size
+    config.large_heap_bytes = ~0ull;  // never use the large block size
     MemoryAllocator allocator(TestLayout(), config, &backend);
     MemoryRequest request;
     request.size = 256;
@@ -305,15 +352,16 @@ TEST_CASE("MemoryAllocator keeps linear and optimal resources in separate blocks
     allocator.Free(optimal);
 }
 
-TEST_CASE("MemoryAllocator gives large and dedicated requests their own memory object", "[rhi][memory]") {
+TEST_CASE("MemoryAllocator gives large and dedicated requests their own memory object", "[rhi][memory]")
+{
     FakeBackend backend;
     MemoryAllocatorConfig config;
     config.block_size = 1 << 20;
-    config.large_heap_bytes = ~0ull; // never use the large block size
+    config.large_heap_bytes = ~0ull;  // never use the large block size
     MemoryAllocator allocator(TestLayout(), config, &backend);
 
     MemoryRequest big;
-    big.size = (1 << 19) + 1; // over half a block
+    big.size = (1 << 19) + 1;  // over half a block
     MemoryAllocation a = allocator.Allocate(big, nullptr);
     REQUIRE(a.Valid());
     CHECK(a.dedicated);
@@ -337,11 +385,12 @@ TEST_CASE("MemoryAllocator gives large and dedicated requests their own memory o
     CHECK(allocator.Stats().heaps[0].dedicated_count == 0);
 }
 
-TEST_CASE("MemoryAllocator failure policy: empty allocation, the right reason, no abort", "[rhi][memory]") {
+TEST_CASE("MemoryAllocator failure policy: empty allocation, the right reason, no abort", "[rhi][memory]")
+{
     FakeBackend backend;
     MemoryAllocatorConfig config;
     config.block_size = 1 << 20;
-    config.large_heap_bytes = ~0ull; // never use the large block size
+    config.large_heap_bytes = ~0ull;  // never use the large block size
     MemoryAllocator allocator(TestLayout(), config, &backend);
     MemoryRequest request;
     request.size = 1024;
@@ -355,7 +404,7 @@ TEST_CASE("MemoryAllocator failure policy: empty allocation, the right reason, n
     CHECK_FALSE(allocator.Allocate(request, &result).Valid());
     CHECK(result == MemoryResult::OutOfHostMemory);
 
-    request.memory_type_bits = 0; // no allowed type
+    request.memory_type_bits = 0;  // no allowed type
     CHECK_FALSE(allocator.Allocate(request, &result).Valid());
     CHECK(result == MemoryResult::Failed);
 
@@ -369,7 +418,8 @@ TEST_CASE("MemoryAllocator failure policy: empty allocation, the right reason, n
     CHECK(result == MemoryResult::Ok);
 }
 
-TEST_CASE("MemoryAllocator tracks dedicated objects: teardown frees them", "[rhi][memory]") {
+TEST_CASE("MemoryAllocator tracks dedicated objects: teardown frees them", "[rhi][memory]")
+{
     FakeBackend backend;
     MemoryAllocatorConfig config;
     config.block_size = 1 << 20;
@@ -389,7 +439,8 @@ TEST_CASE("MemoryAllocator tracks dedicated objects: teardown frees them", "[rhi
     CHECK(backend.live.Empty());
 }
 
-TEST_CASE("MemoryAllocator rounds ranges in non-coherent memory to the atom size", "[rhi][memory]") {
+TEST_CASE("MemoryAllocator rounds ranges in non-coherent memory to the atom size", "[rhi][memory]")
+{
     FakeBackend backend;
     MemoryAllocatorConfig config;
     config.block_size = 1 << 20;
@@ -400,7 +451,7 @@ TEST_CASE("MemoryAllocator rounds ranges in non-coherent memory to the atom size
     MemoryRequest request;
     request.size = 100;
     request.alignment = 4;
-    request.location = MemoryLocation::GpuToCpu; // type 2: host-visible, cached, not coherent
+    request.location = MemoryLocation::GpuToCpu;  // type 2: host-visible, cached, not coherent
     MemoryAllocation a = allocator.Allocate(request, nullptr);
     MemoryAllocation b = allocator.Allocate(request, nullptr);
     REQUIRE(a.Valid());
@@ -409,9 +460,9 @@ TEST_CASE("MemoryAllocator rounds ranges in non-coherent memory to the atom size
     CHECK(a.size == 256);
     CHECK(a.offset % 256 == 0);
     CHECK(b.offset % 256 == 0);
-    CHECK(b.offset >= a.offset + a.size); // no shared atom
+    CHECK(b.offset >= a.offset + a.size);  // no shared atom
 
-    request.location = MemoryLocation::CpuToGpu; // coherent: untouched
+    request.location = MemoryLocation::CpuToGpu;  // coherent: untouched
     request.size = 100;
     MemoryAllocation c = allocator.Allocate(request, nullptr);
     CHECK(c.size == 100);
@@ -420,7 +471,9 @@ TEST_CASE("MemoryAllocator rounds ranges in non-coherent memory to the atom size
     allocator.Free(c);
 }
 
-TEST_CASE("MemoryAllocator sends a huge alignment to a dedicated object instead of leaking an empty block", "[rhi][memory]") {
+TEST_CASE("MemoryAllocator sends a huge alignment to a dedicated object instead of leaking an empty block",
+          "[rhi][memory]")
+{
     FakeBackend backend;
     MemoryAllocatorConfig config;
     config.block_size = 1 << 20;
@@ -437,18 +490,20 @@ TEST_CASE("MemoryAllocator sends a huge alignment to a dedicated object instead 
     CHECK(backend.live.Empty());
 }
 
-TEST_CASE("MemoryAllocator respects the allocation-count limit and its headroom", "[rhi][memory]") {
+TEST_CASE("MemoryAllocator respects the allocation-count limit and its headroom", "[rhi][memory]")
+{
     FakeBackend backend;
     MemoryAllocatorConfig config;
     config.block_size = 1 << 20;
-    config.large_heap_bytes = ~0ull; // never use the large block size
+    config.large_heap_bytes = ~0ull;  // never use the large block size
     config.max_allocation_count = 10;
-    config.allocation_headroom = 4; // so only 6 objects may exist
+    config.allocation_headroom = 4;  // so only 6 objects may exist
     MemoryAllocator allocator(TestLayout(), config, &backend);
     MemoryRequest request;
-    request.size = 600 << 10; // dedicated, one object each
+    request.size = 600 << 10;  // dedicated, one object each
     Vector<MemoryAllocation> held;
-    for (int i = 0; i < 6; ++i) {
+    for (int i = 0; i < 6; ++i)
+    {
         MemoryAllocation a = allocator.Allocate(request, nullptr);
         REQUIRE(a.Valid());
         held.Push(a);
@@ -459,26 +514,29 @@ TEST_CASE("MemoryAllocator respects the allocation-count limit and its headroom"
     CHECK(backend.live.Size() == 6);
     allocator.Free(held[held.Size() - 1]);
     held.Pop();
-    CHECK(allocator.Allocate(request, nullptr).Valid()); // freeing makes room again
+    CHECK(allocator.Allocate(request, nullptr).Valid());  // freeing makes room again
 }
 
-TEST_CASE("MemoryAllocator releases emptied blocks but keeps one spare", "[rhi][memory]") {
+TEST_CASE("MemoryAllocator releases emptied blocks but keeps one spare", "[rhi][memory]")
+{
     FakeBackend backend;
     MemoryAllocatorConfig config;
     config.block_size = 1 << 20;
-    config.large_heap_bytes = ~0ull; // never use the large block size
+    config.large_heap_bytes = ~0ull;  // never use the large block size
     MemoryAllocator allocator(TestLayout(), config, &backend);
     MemoryRequest request;
-    request.size = 400 << 10; // two fit per 1 MiB block
+    request.size = 400 << 10;  // two fit per 1 MiB block
     Vector<MemoryAllocation> held;
-    for (int i = 0; i < 6; ++i) {
+    for (int i = 0; i < 6; ++i)
+    {
         held.Push(allocator.Allocate(request, nullptr));
     }
     CHECK(backend.live.Size() == 3);
-    for (usize i = 0; i < held.Size(); ++i) {
+    for (usize i = 0; i < held.Size(); ++i)
+    {
         allocator.Free(held[i]);
     }
-    CHECK(backend.live.Size() == 1); // two blocks released, one spare kept
+    CHECK(backend.live.Size() == 1);  // two blocks released, one spare kept
     // The spare is reused without a new backend call.
     u64 calls_before = backend.calls;
     MemoryAllocation again = allocator.Allocate(request, nullptr);
@@ -487,39 +545,46 @@ TEST_CASE("MemoryAllocator releases emptied blocks but keeps one spare", "[rhi][
     allocator.Free(again);
 }
 
-TEST_CASE("MemoryAllocator statistics estimate fragmentation", "[rhi][memory]") {
+TEST_CASE("MemoryAllocator statistics estimate fragmentation", "[rhi][memory]")
+{
     FakeBackend backend;
     MemoryAllocatorConfig config;
     config.block_size = 1 << 20;
-    config.large_heap_bytes = ~0ull; // never use the large block size
+    config.large_heap_bytes = ~0ull;  // never use the large block size
     MemoryAllocator allocator(TestLayout(), config, &backend);
     MemoryRequest request;
     request.size = 64 << 10;
     Vector<MemoryAllocation> held;
-    for (int i = 0; i < 16; ++i) {
+    for (int i = 0; i < 16; ++i)
+    {
         held.Push(allocator.Allocate(request, nullptr));
     }
-    CHECK(allocator.Stats().heaps[0].fragmentation == 0.0f); // block is full
-    for (int i = 0; i < 16; i += 2) {
-        allocator.Free(held[i]); // free every other range: eight 64 KiB holes
+    CHECK(allocator.Stats().heaps[0].fragmentation == 0.0f);  // block is full
+    for (int i = 0; i < 16; i += 2)
+    {
+        allocator.Free(held[i]);  // free every other range: eight 64 KiB holes
     }
     MemoryStats stats = allocator.Stats();
     CHECK(stats.heaps[0].free_bytes == 8 * (64 << 10));
     CHECK(stats.heaps[0].largest_free_bytes == 64 << 10);
     CHECK(stats.heaps[0].fragmentation > 0.8f);
-    for (int i = 1; i < 16; i += 2) {
+    for (int i = 1; i < 16; i += 2)
+    {
         allocator.Free(held[i]);
     }
 }
 
-TEST_CASE("Real driver: allocations of each location kind", "[rhi][memory][gpu]") {
+TEST_CASE("Real driver: allocations of each location kind", "[rhi][memory][gpu]")
+{
     gpu_test::GpuFixture fx;
     fx.Require();
     DeviceCreateInfo info;
     info.validation = ValidationSetting::On;
     VulkanDevicePtr device = VulkanDevice::Create(info);
-    if (device == nullptr) {
-        if (gpu_test::GpuRequired()) {
+    if (device == nullptr)
+    {
+        if (gpu_test::GpuRequired())
+        {
             FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no Vulkan device could be created");
         }
         SKIP("no suitable Vulkan device");
@@ -538,7 +603,7 @@ TEST_CASE("Real driver: allocations of each location kind", "[rhi][memory][gpu]"
     MemoryAllocation up = memory.Allocate(request, nullptr);
     REQUIRE(up.Valid());
     REQUIRE(up.mapped != nullptr);
-    MemSet(up.mapped, 0xAB, 4096); // the mapping is writable
+    MemSet(up.mapped, 0xAB, 4096);  // the mapping is writable
 
     request.location = MemoryLocation::GpuToCpu;
     MemoryAllocation down = memory.Allocate(request, nullptr);
@@ -550,19 +615,22 @@ TEST_CASE("Real driver: allocations of each location kind", "[rhi][memory][gpu]"
     memory.Free(down);
 
     u64 budget = 0, usage = 0;
-    if (device->HeapBudget(0, &budget, &usage)) {
+    if (device->HeapBudget(0, &budget, &usage))
+    {
         CHECK(budget > 0);
     }
     device.Reset();
 }
 
-TEST_CASE("Real driver: a flood of small allocations needs only a few memory objects", "[rhi][memory][gpu]") {
+TEST_CASE("Real driver: a flood of small allocations needs only a few memory objects", "[rhi][memory][gpu]")
+{
     gpu_test::GpuFixture fx;
     fx.Require();
     DeviceCreateInfo info;
     info.validation = ValidationSetting::On;
     VulkanDevicePtr device = VulkanDevice::Create(info);
-    if (device == nullptr) {
+    if (device == nullptr)
+    {
         SKIP("no suitable Vulkan device");
     }
     MemoryAllocator& memory = device->Memory();
@@ -573,18 +641,21 @@ TEST_CASE("Real driver: a flood of small allocations needs only a few memory obj
     request.size = 256 << 10;
     request.alignment = 4096;
     Vector<MemoryAllocation> held;
-    for (int i = 0; i < 2048; ++i) {
+    for (int i = 0; i < 2048; ++i)
+    {
         MemoryAllocation a = memory.Allocate(request, nullptr);
-        if (!a.Valid()) {
-            break; // a GPU with little free memory: judge what was achieved
+        if (!a.Valid())
+        {
+            break;  // a GPU with little free memory: judge what was achieved
         }
         held.Push(a);
     }
-    REQUIRE(held.Size() >= 256); // at least 64 MiB
+    REQUIRE(held.Size() >= 256);  // at least 64 MiB
     const u64 objects = device->MemoryObjectsAllocated() - before;
     CHECK(objects <= 1 + held.Size() / ((64 << 20) / request.size) + 1);
     CHECK(objects < 16);
-    for (usize i = 0; i < held.Size(); ++i) {
+    for (usize i = 0; i < held.Size(); ++i)
+    {
         memory.Free(held[i]);
     }
     device.Reset();

@@ -2,18 +2,18 @@
 
 //! The G-buffer geometry pass: draws every visible object once into the G-buffer with its material, depth-tested.
 //!
-//! The G-buffer holds three color targets and a depth target (renderer spec R11): albedo (`RGBA8_SRGB`: rgb albedo, a baked
-//! occlusion), the world-space normal (`RG16_Float`, octahedral-encoded by [[renderer::OctEncode]]), the material
-//! (`RGBA8_UNorm`: roughness, metallic, emissive scale, flags / 255) and `D32_Float` depth (0 at the near plane, 1 at the
-//! far plane, no reverse-Z). The shaders are `gbuffer.vert` and `gbuffer.frag`; the fragment shader has permutations for a
-//! normal map, an alpha test and per-vertex colors, and [[renderer::CreateGBufferMaterial]] picks the matching vertex and
-//! fragment modules so the two never disagree.
+//! The G-buffer holds three color targets and a depth target (renderer spec R11): albedo (`RGBA8_SRGB`: rgb albedo, a
+//! baked occlusion), the world-space normal (`RG16_Float`, octahedral-encoded by [[renderer::OctEncode]]), the material
+//! (`RGBA8_UNorm`: roughness, metallic, emissive scale, flags / 255) and `D32_Float` depth (0 at the near plane, 1 at
+//! the far plane, no reverse-Z). The shaders are `gbuffer.vert` and `gbuffer.frag`; the fragment shader has
+//! permutations for a normal map, an alpha test and per-vertex colors, and [[renderer::CreateGBufferMaterial]] picks
+//! the matching vertex and fragment modules so the two never disagree.
 //!
 //! A frame uses [[renderer::GBufferPass]] in two steps: `Prepare` (on the frame's thread) culls the scene, sorts the
-//! visible objects by [[renderer::MakeDrawSortKey]], writes their per-object data in that order and builds the draw list;
-//! `AddToGraph` declares the pass whose callback records it. The record step creates no object and issues a handful of RHI
-//! calls per draw: bind the pipeline and material group only when they change, one instanced draw per run of the same mesh
-//! and material.
+//! visible objects by [[renderer::MakeDrawSortKey]], writes their per-object data in that order and builds the draw
+//! list; `AddToGraph` declares the pass whose callback records it. The record step creates no object and issues a
+//! handful of RHI calls per draw: bind the pipeline and material group only when they change, one instanced draw per
+//! run of the same mesh and material.
 #include "containers/vector.h"
 #include "debug/compiler.h"
 #include "math/matrix.h"
@@ -27,7 +27,8 @@
 #include "rhi/rhi.h"
 #include "types.h"
 
-namespace engine_placeholder::renderer {
+namespace engine_placeholder::renderer
+{
 
 /// The albedo target's format (sRGB-encoded on write, decoded on sample).
 inline constexpr rhi::Format kGBufferAlbedoFormat = rhi::Format::RGBA8_SRGB;
@@ -39,20 +40,24 @@ inline constexpr rhi::Format kGBufferMaterialFormat = rhi::Format::RGBA8_UNorm;
 inline constexpr rhi::Format kGBufferDepthFormat = rhi::Format::D32_Float;
 
 /// A G-buffer layer, for the debug view.
-enum class GBufferLayer : u8 {
-    Albedo = 0, ///< The albedo target as it is.
-    Normal,     ///< The decoded normal shown as `n * 0.5 + 0.5`.
-    Material,   ///< The material target's rgb (roughness, metallic, emissive scale).
-    Depth,      ///< Linear view-space depth divided by the far plane, as grey.
-    WorldPosition, ///< The world position rebuilt from depth, shown as `position * 0.05 + 0.5` (background black); needs `SetInverseViewProjection`.
+enum class GBufferLayer : u8
+{
+    Albedo = 0,     ///< The albedo target as it is.
+    Normal,         ///< The decoded normal shown as `n * 0.5 + 0.5`.
+    Material,       ///< The material target's rgb (roughness, metallic, emissive scale).
+    Depth,          ///< Linear view-space depth divided by the far plane, as grey.
+    WorldPosition,  ///< The world position rebuilt from depth, shown as `position * 0.05 + 0.5` (background black);
+                    ///< needs `SetInverseViewProjection`.
 };
 
 /// Checks that the device supports every G-buffer format for the usage the pass needs, and enough simultaneous color
-/// attachments (the geometry pass writes three). Call it once at start-up, before creating templates and passes: the passes
-/// themselves do not repeat it, and on a device that fails it every object would be left out with a log line per pipeline.
+/// attachments (the geometry pass writes three). Call it once at start-up, before creating templates and passes: the
+/// passes themselves do not repeat it, and on a device that fails it every object would be left out with a log line per
+/// pipeline.
 ///
 /// - Param device: the device to ask.
-/// - Param error: receives a message naming the first unsupported format and usage, or the attachment limit; may be null.
+/// - Param error: receives a message naming the first unsupported format and usage, or the attachment limit; may be
+/// null.
 /// - Param error_capacity: size of `error` in bytes.
 /// - Returns: true when all formats are supported.
 /// - Fails: returns false and fills `error`; nothing is logged or aborted.
@@ -64,7 +69,8 @@ bool CheckGBufferFormats(const rhi::Device* device, char* error, usize error_cap
 /// - Fails: never.
 PipelineTarget GBufferPipelineTarget();
 
-/// Encodes a unit vector as two octahedral coordinates in [-1, 1]; the CPU twin of `OctEncode` in `gbuffer_common.slang`.
+/// Encodes a unit vector as two octahedral coordinates in [-1, 1]; the CPU twin of `OctEncode` in
+/// `gbuffer_common.slang`.
 ///
 /// - Param n: a unit vector (a longer or shorter one is projected as it is, so the result still lies in [-1, 1]).
 /// - Returns: the coordinates.
@@ -78,7 +84,8 @@ Vec2 OctEncode(const Vec3& n);
 /// - Fails: never.
 Vec3 OctDecode(const Vec2& f);
 
-/// Converts an sRGB-encoded channel in [0, 1] to linear light; the CPU twin of `SrgbToLinear` in `gbuffer_common.slang`.
+/// Converts an sRGB-encoded channel in [0, 1] to linear light; the CPU twin of `SrgbToLinear` in
+/// `gbuffer_common.slang`.
 ///
 /// - Param c: the encoded value.
 /// - Returns: the linear value.
@@ -97,7 +104,8 @@ f32 LinearizeDepth(f32 depth, f32 near_plane, f32 far_plane);
 /// Sets a camera's near and far planes to enclose every visible-or-not object of the scene.
 ///
 /// The planes come from the world-space bounding spheres projected on the camera's forward axis, with the near plane
-/// never below `min_near` and the far plane at least twice the near one. A scene without objects leaves the camera as it was.
+/// never below `min_near` and the far plane at least twice the near one. A scene without objects leaves the camera as
+/// it was.
 ///
 /// - Param scene: the scene.
 /// - Param camera: the camera to change; its position and rotation must be set.
@@ -109,19 +117,23 @@ void FitCameraDepthRange(const RenderScene& scene, Camera* camera, f32 min_near)
 /// Options of a G-buffer material, which select the shader modules.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct GBufferOptions {
+struct GBufferOptions
+{
     /// Perturb the normal with the `normal_tex` slot (tangent space).
     bool normal_map = false;
-    /// Discard fragments whose alpha (`base_color.a`, times the albedo texture's and the vertex color's) is below `alpha_cutoff`.
+    /// Discard fragments whose alpha (`base_color.a`, times the albedo texture's and the vertex color's) is below
+    /// `alpha_cutoff`.
     bool alpha_test = false;
-    /// Multiply the albedo by the mesh's per-vertex color (sRGB bytes, converted to linear in the shader). The mesh must have one.
+    /// Multiply the albedo by the mesh's per-vertex color (sRGB bytes, converted to linear in the shader). The mesh
+    /// must have one.
     bool vertex_color = false;
 };
 
 /// The two material templates of the G-buffer shaders: for meshes without and with per-vertex colors.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct GBufferTemplates {
+struct GBufferTemplates
+{
     /// The template for standard-layout meshes.
     TemplateId plain;
     /// The template for meshes in the [[renderer::ColorVertexLayout]].
@@ -139,9 +151,9 @@ GBufferTemplates CreateGBufferTemplates(MaterialSystem* materials);
 
 /// Creates a G-buffer material with the options' shader modules and sensible parameters.
 ///
-/// The parameters start as base color white, roughness 0.5, metallic 0, emissive scale 0, alpha cutoff 0.5 and occlusion 1;
-/// change them with the material system's setters (`base_color`, `roughness`, `metallic`, `emissive_scale`, `alpha_cutoff`,
-/// `occlusion`, `flags`), and the textures `albedo_tex` and `normal_tex`.
+/// The parameters start as base color white, roughness 0.5, metallic 0, emissive scale 0, alpha cutoff 0.5 and
+/// occlusion 1; change them with the material system's setters (`base_color`, `roughness`, `metallic`,
+/// `emissive_scale`, `alpha_cutoff`, `occlusion`, `flags`), and the textures `albedo_tex` and `normal_tex`.
 ///
 /// - Param materials: the system.
 /// - Param templates: from [[renderer::CreateGBufferTemplates]].
@@ -151,26 +163,30 @@ GBufferTemplates CreateGBufferTemplates(MaterialSystem* materials);
 /// - Fails: reported through the invalid id.
 /// - Ownership: the material belongs to `materials`.
 /// - Aborts: `materials` is null.
-MaterialId CreateGBufferMaterial(MaterialSystem* materials, const GBufferTemplates& templates, const GBufferOptions& options, const char* name);
+MaterialId CreateGBufferMaterial(MaterialSystem* materials, const GBufferTemplates& templates,
+                                 const GBufferOptions& options, const char* name);
 
 /// The graph resources of the G-buffer targets.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct GBufferTargets {
+struct GBufferTargets
+{
     /// Albedo and baked occlusion.
     GraphResource albedo;
     /// Octahedral world-space normal.
     GraphResource normal;
     /// Roughness, metallic, emissive scale, flags.
     GraphResource material;
-    /// Depth; left in the `DepthAttachment` state; a later pass reads it as `Sampled` (through a sampler) or `DepthRead` (depth test).
+    /// Depth; left in the `DepthAttachment` state; a later pass reads it as `Sampled` (through a sampler) or
+    /// `DepthRead` (depth test).
     GraphResource depth;
 };
 
 /// What a prepared G-buffer pass will draw, and what went wrong.
 ///
 /// - Thread-safety: thread-compatible plain data.
-struct GBufferStats {
+struct GBufferStats
+{
     /// Objects inside the frustum.
     u32 visible = 0;
     /// Objects that will be drawn (visible minus rejected).
@@ -187,10 +203,11 @@ struct GBufferStats {
 
 /// Draws the scene's visible objects into the G-buffer.
 ///
-/// - Thread-safety: thread-compatible. `Prepare` and `AddToGraph` run on the frame's thread; the recorded callback reads the
-/// draw list only, so it may run on a scheduler participant while nothing prepares.
+/// - Thread-safety: thread-compatible. `Prepare` and `AddToGraph` run on the frame's thread; the recorded callback
+/// reads the draw list only, so it may run on a scheduler participant while nothing prepares.
 /// - Ownership: borrows the device, the material system and the frame resources, which must outlive it.
-class GBufferPass {
+class GBufferPass
+{
 public:
     /// Creates the pass.
     ///
@@ -208,15 +225,16 @@ public:
     /// Culls the scene, sorts the visible objects and writes their per-object data.
     ///
     /// Call it after `FrameResources::BeginFrame` and `MaterialSystem::BeginFrame`/`FlushMaterials` and before
-    /// `FrameResources::Flush`. The objects are sorted by [[renderer::MakeDrawSortKey]] (pipeline, material, mesh) with the
-    /// scene slot as tie-break, so the result does not depend on the order objects were added. An object is left out and
-    /// named in `LastError` when its mesh is missing or not prepared, its material does not exist, a pipeline cannot be
-    /// built for the mesh, or the mesh and the material disagree about per-vertex colors.
+    /// `FrameResources::Flush`. The objects are sorted by [[renderer::MakeDrawSortKey]] (pipeline, material, mesh) with
+    /// the scene slot as tie-break, so the result does not depend on the order objects were added. An object is left
+    /// out and named in `LastError` when its mesh is missing or not prepared, its material does not exist, a pipeline
+    /// cannot be built for the mesh, or the mesh and the material disagree about per-vertex colors.
     ///
     /// - Param scene: the scene.
     /// - Param frustum: the camera's frustum.
     /// - Returns: true when every visible object was accepted.
-    /// - Fails: returns false when any object was rejected (the rest is still drawn); the first message is in `LastError`.
+    /// - Fails: returns false when any object was rejected (the rest is still drawn); the first message is in
+    /// `LastError`.
     /// - Ownership: `scene` is borrowed until the pass has been recorded.
     bool Prepare(const RenderScene& scene, const Frustum& frustum);
 
@@ -227,13 +245,14 @@ public:
     /// - Param height: the target height in pixels.
     /// - Returns: the targets; the pass writes all four.
     /// - Aborts: called twice since the last `Prepare` (one pass object serves one view per frame; make one per view).
-    /// - Ownership: `graph` is borrowed for the call; the pass keeps a pointer to this object until the graph is executed.
+    /// - Ownership: `graph` is borrowed for the call; the pass keeps a pointer to this object until the graph is
+    /// executed.
     GBufferTargets AddToGraph(RenderGraph* graph, u32 width, u32 height);
 
     /// Adds usage flags to the G-buffer textures that the next `AddToGraph` declares.
     ///
-    /// For tools and tests, for example `CopySrc` to read a layer back. The default is none beyond what the pass and the
-    /// lighting need.
+    /// For tools and tests, for example `CopySrc` to read a layer back. The default is none beyond what the pass and
+    /// the lighting need.
     ///
     /// - Param usage: flags to add to the four textures.
     /// - Fails: never.
@@ -248,8 +267,9 @@ public:
     GBufferStats Stats() const { return stats_; }
 
 private:
-    struct SortEntry; // one visible object on its way into the draw list; defined in gbuffer.cpp
-    struct Draw {
+    struct SortEntry;  // one visible object on its way into the draw list; defined in gbuffer.cpp
+    struct Draw
+    {
         rhi::PipelineHandle pipeline;
         rhi::BindGroupHandle material_group;
         const GpuMesh* mesh = nullptr;
@@ -264,13 +284,13 @@ private:
     Vector<Draw> draws_;
     u32 draw_count_ = 0;
     Vector<u32> slots_;
-    Vector<u32> cull_slots_; // grown when the scene has more slots than the frame resources hold objects
+    Vector<u32> cull_slots_;  // grown when the scene has more slots than the frame resources hold objects
     bool added_ = false;
-    bool storage_ok_ = false; // the draw, slot and sort arrays were allocated
+    bool storage_ok_ = false;  // the draw, slot and sort arrays were allocated
     Vector<SortEntry> sort_scratch_;
     rhi::BindGroupHandle frame_group_;
     rhi::BindGroupHandle object_group_;
-    rhi::BufferHandle object_index_stream_; // MaterialSystem::ObjectIndexStream of this frame; invalid on Vulkan
+    rhi::BufferHandle object_index_stream_;  // MaterialSystem::ObjectIndexStream of this frame; invalid on Vulkan
     GBufferTargets targets_;
     rhi::TextureUsage extra_usage_ = rhi::TextureUsage::None;
     u32 width_ = 0;
@@ -281,11 +301,13 @@ private:
 
 /// Draws one G-buffer layer into a color target, for debugging and the demo.
 ///
-/// It creates one pipeline per output format and a bind group per frame (a tool, not part of the per-frame cost budget).
+/// It creates one pipeline per output format and a bind group per frame (a tool, not part of the per-frame cost
+/// budget).
 ///
 /// - Thread-safety: thread-compatible.
 /// - Ownership: borrows the device, which must outlive it; owns its shaders, sampler, layout and pipeline.
-class GBufferDebugView final : public Recreatable {
+class GBufferDebugView final : public Recreatable
+{
 public:
     /// Creates the view's shaders and sampler.
     ///
@@ -323,11 +345,14 @@ public:
     /// - Fails: never.
     bool Valid() const;
 
-    /// Sets the matrix the `WorldPosition` layer uses to rebuild positions: [[renderer::FrameData::inverse_view_projection]].
+    /// Sets the matrix the `WorldPosition` layer uses to rebuild positions:
+    /// [[renderer::FrameData::inverse_view_projection]].
     ///
-    /// - Param inverse_view_projection: the inverse of the camera's view-projection (including the projection's Y flip).
+    /// - Param inverse_view_projection: the inverse of the camera's view-projection (including the projection's Y
+    /// flip).
     /// - Fails: never.
-    void SetInverseViewProjection(const Mat4& inverse_view_projection) {
+    void SetInverseViewProjection(const Mat4& inverse_view_projection)
+    {
         params_.inverse_view_projection = inverse_view_projection;
         has_inverse_view_projection_ = true;
     }
@@ -335,22 +360,26 @@ public:
     /// Declares a pass that shows `layer` in `output`.
     ///
     /// - Param graph: the frame's graph.
-    /// - Param targets: the G-buffer targets the pass reads, all as `Sampled` (a depth texture read through a sampler is `Sampled`,
+    /// - Param targets: the G-buffer targets the pass reads, all as `Sampled` (a depth texture read through a sampler
+    /// is `Sampled`,
     ///   `DepthRead` is for the depth test without writes).
     /// - Param layer: what to show.
-    /// - Param output: a color texture resource the pass writes (written as `ColorAttachment`, cleared); its extent must equal the
-    /// G-buffer's.
+    /// - Param output: a color texture resource the pass writes (written as `ColorAttachment`, cleared); its extent
+    /// must equal the G-buffer's.
     /// - Param output_format: the format of `output` (an import carries no description, so the pass cannot read it).
     /// - Param near_plane: the camera's near plane, for `GBufferLayer::Depth`.
     /// - Param far_plane: the camera's far plane, for `GBufferLayer::Depth`.
-    /// - Fails: an invalid resource is reported by `RenderGraph::Compile`; a pipeline the device cannot create is logged and the
+    /// - Fails: an invalid resource is reported by `RenderGraph::Compile`; a pipeline the device cannot create is
+    /// logged and the
     ///   pass then draws nothing.
     /// - Aborts: `layer` is `WorldPosition` and `SetInverseViewProjection` was not called since the last `AddToGraph`.
     /// - Ownership: the pass keeps a pointer to this object until the graph is executed.
-    void AddToGraph(RenderGraph* graph, const GBufferTargets& targets, GBufferLayer layer, GraphResource output, rhi::Format output_format, f32 near_plane, f32 far_plane);
+    void AddToGraph(RenderGraph* graph, const GBufferTargets& targets, GBufferLayer layer, GraphResource output,
+                    rhi::Format output_format, f32 near_plane, f32 far_plane);
 
 private:
-    struct Params {
+    struct Params
+    {
         Mat4 inverse_view_projection = Mat4::Identity();
         u32 layer = 0;
         f32 near_plane = 0.1f;
@@ -376,4 +405,4 @@ private:
     Params params_;
 };
 
-} // namespace engine_placeholder::renderer
+}  // namespace engine_placeholder::renderer

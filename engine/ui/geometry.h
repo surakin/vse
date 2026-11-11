@@ -2,28 +2,32 @@
 
 #include "types.h"
 
-//! The plain geometry types of the UI toolkit: points, rectangles and corner radii in logical units, and the whole-pixel rectangle the draw list clips with.
+//! The plain geometry types of the UI toolkit: points, rectangles and corner radii in logical units, and the
+//! whole-pixel rectangle the draw list clips with.
 
-namespace engine_placeholder::ui {
+namespace engine_placeholder::ui
+{
 
 /// A point.
 ///
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: owns nothing.
-struct Point {
-    f32 x = 0; ///< Horizontal position, growing to the right.
-    f32 y = 0; ///< Vertical position, growing downwards.
+struct Point
+{
+    f32 x = 0;  ///< Horizontal position, growing to the right.
+    f32 y = 0;  ///< Vertical position, growing downwards.
 };
 
 /// An axis-aligned rectangle, origin at its top-left corner. In logical units unless a function says it is in pixels.
 ///
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: owns nothing.
-struct Rect {
-    f32 x = 0; ///< Left edge.
-    f32 y = 0; ///< Top edge.
-    f32 w = 0; ///< Width; a rectangle with `w <= 0` or `h <= 0` is empty.
-    f32 h = 0; ///< Height.
+struct Rect
+{
+    f32 x = 0;  ///< Left edge.
+    f32 y = 0;  ///< Top edge.
+    f32 w = 0;  ///< Width; a rectangle with `w <= 0` or `h <= 0` is empty.
+    f32 h = 0;  ///< Height.
 
     /// Returns whether the rectangle covers no area.
     ///
@@ -47,11 +51,12 @@ struct Rect {
 ///
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: owns nothing.
-struct CornerRadii {
-    f32 top_left = 0;     ///< Radius of the top-left corner.
-    f32 top_right = 0;    ///< Radius of the top-right corner.
-    f32 bottom_right = 0; ///< Radius of the bottom-right corner.
-    f32 bottom_left = 0;  ///< Radius of the bottom-left corner.
+struct CornerRadii
+{
+    f32 top_left = 0;      ///< Radius of the top-left corner.
+    f32 top_right = 0;     ///< Radius of the top-right corner.
+    f32 bottom_right = 0;  ///< Radius of the bottom-right corner.
+    f32 bottom_left = 0;   ///< Radius of the bottom-left corner.
 
     /// Makes all four radii zero.
     CornerRadii() = default;
@@ -74,20 +79,22 @@ struct CornerRadii {
 ///
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: owns nothing.
-struct Size {
-    f32 w = 0; ///< Width.
-    f32 h = 0; ///< Height.
+struct Size
+{
+    f32 w = 0;  ///< Width.
+    f32 h = 0;  ///< Height.
 };
 
 /// Distances from the four edges of a rectangle inwards (padding, margins).
 ///
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: owns nothing.
-struct Insets {
-    f32 left = 0;   ///< Left distance.
-    f32 top = 0;    ///< Top distance.
-    f32 right = 0;  ///< Right distance.
-    f32 bottom = 0; ///< Bottom distance.
+struct Insets
+{
+    f32 left = 0;    ///< Left distance.
+    f32 top = 0;     ///< Top distance.
+    f32 right = 0;   ///< Right distance.
+    f32 bottom = 0;  ///< Bottom distance.
 
     /// Makes zero insets.
     Insets() = default;
@@ -114,11 +121,12 @@ struct Insets {
 ///
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: owns nothing.
-struct PixelRect {
-    i32 x = 0; ///< Left column.
-    i32 y = 0; ///< Top row.
-    i32 w = 0; ///< Width in pixels; the rectangle is empty when `w <= 0` or `h <= 0`.
-    i32 h = 0; ///< Height in pixels.
+struct PixelRect
+{
+    i32 x = 0;  ///< Left column.
+    i32 y = 0;  ///< Top row.
+    i32 w = 0;  ///< Width in pixels; the rectangle is empty when `w <= 0` or `h <= 0`.
+    i32 h = 0;  ///< Height in pixels.
 
     /// Returns whether the rectangle covers no pixel.
     ///
@@ -127,7 +135,8 @@ struct PixelRect {
     /// Returns the part of this rectangle that lies inside `other` (empty when they do not overlap).
     ///
     /// - Fails: never.
-    PixelRect Intersect(const PixelRect& other) const {
+    PixelRect Intersect(const PixelRect& other) const
+    {
         const i32 x0 = x > other.x ? x : other.x;
         const i32 y0 = y > other.y ? y : other.y;
         const i32 x1 = (x + w) < (other.x + other.w) ? (x + w) : (other.x + other.w);
@@ -142,7 +151,10 @@ struct PixelRect {
     /// Returns whether two rectangles have the same position and size.
     ///
     /// - Fails: never.
-    bool operator==(const PixelRect& other) const { return x == other.x && y == other.y && w == other.w && h == other.h; }
+    bool operator==(const PixelRect& other) const
+    {
+        return x == other.x && y == other.y && w == other.w && h == other.h;
+    }
 };
 
-} // namespace engine_placeholder::ui
+}  // namespace engine_placeholder::ui

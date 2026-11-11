@@ -4,47 +4,53 @@
 #include "types.h"
 #include "ui/canvas.h"
 
-//! A canvas that records the calls instead of drawing them, so a widget test can say "this button drew a rounded rect with the hover colour" (Phase 15, Day 189).
+//! A canvas that records the calls instead of drawing them, so a widget test can say "this button drew a rounded rect
+//! with the hover colour" (Phase 15, Day 189).
 
-namespace engine_placeholder::ui {
+namespace engine_placeholder::ui
+{
 
 /// What a recorded call was.
-enum class CanvasCallKind : u8 {
-    Rect,        ///< `DrawRect`.
-    RoundedRect, ///< `DrawRoundedRect`.
-    Border,      ///< `DrawBorder`.
-    Line,        ///< `DrawLine`.
-    Triangle,    ///< `DrawTriangle`.
-    Image,       ///< `DrawImage`.
-    Text,        ///< `DrawText`.
-    Shadow,      ///< `DrawShadow`.
+enum class CanvasCallKind : u8
+{
+    Rect,         ///< `DrawRect`.
+    RoundedRect,  ///< `DrawRoundedRect`.
+    Border,       ///< `DrawBorder`.
+    Line,         ///< `DrawLine`.
+    Triangle,     ///< `DrawTriangle`.
+    Image,        ///< `DrawImage`.
+    Text,         ///< `DrawText`.
+    Shadow,       ///< `DrawShadow`.
 };
 
 /// One recorded drawing call, in the logical units the widget passed.
 ///
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: owns nothing.
-struct CanvasCall {
-    CanvasCallKind kind = CanvasCallKind::Rect; ///< Which operation.
-    Rect rect;                                  ///< The rectangle (`DrawRect`, `DrawRoundedRect`, `DrawBorder`, `DrawImage`, `DrawShadow`); for text the origin in `x`, `y`.
-    CornerRadii radii;                          ///< The corner radii; for a shadow `top_left` holds its radius.
-    Point p0;                                   ///< `DrawLine`, `DrawTriangle`: first point.
-    Point p1;                                   ///< Second point.
-    Point p2;                                   ///< `DrawTriangle`: third point.
-    f32 width = 0;                              ///< `DrawBorder`, `DrawLine`: thickness; `DrawShadow`: blur.
-    u32 color = 0;                              ///< The colour or tint.
-    ImageId image = 0;                          ///< `DrawImage`: the image.
-    Rect uv;                                    ///< `DrawImage`: the texture rectangle.
-    u32 glyph_count = 0;                        ///< `DrawText`: glyphs in the layout.
-    u32 clip_depth = 0;                         ///< Clips on the stack when the call was made (in the current layer).
-    i32 layer = 0;                              ///< The layer order the call was made in.
+struct CanvasCall
+{
+    CanvasCallKind kind = CanvasCallKind::Rect;  ///< Which operation.
+    Rect rect;  ///< The rectangle (`DrawRect`, `DrawRoundedRect`, `DrawBorder`, `DrawImage`, `DrawShadow`); for text
+                ///< the origin in `x`, `y`.
+    CornerRadii radii;    ///< The corner radii; for a shadow `top_left` holds its radius.
+    Point p0;             ///< `DrawLine`, `DrawTriangle`: first point.
+    Point p1;             ///< Second point.
+    Point p2;             ///< `DrawTriangle`: third point.
+    f32 width = 0;        ///< `DrawBorder`, `DrawLine`: thickness; `DrawShadow`: blur.
+    u32 color = 0;        ///< The colour or tint.
+    ImageId image = 0;    ///< `DrawImage`: the image.
+    Rect uv;              ///< `DrawImage`: the texture rectangle.
+    u32 glyph_count = 0;  ///< `DrawText`: glyphs in the layout.
+    u32 clip_depth = 0;   ///< Clips on the stack when the call was made (in the current layer).
+    i32 layer = 0;        ///< The layer order the call was made in.
 };
 
 /// A [[ui::Canvas]] that appends a [[ui::CanvasCall]] per drawing call and draws nothing.
 ///
 /// - Thread-safety: not-thread-safe; owner-thread only.
 /// - Ownership: owns the recorded calls.
-class RecordingCanvas final : public Canvas {
+class RecordingCanvas final : public Canvas
+{
 public:
     /// Makes a recording canvas.
     /// - Param scale: the value `Scale()` returns.
@@ -57,7 +63,8 @@ public:
     /// Forgets the recorded calls and resets the clip and layer state.
     ///
     /// - Fails: never.
-    void Clear() {
+    void Clear()
+    {
         calls_.Clear();
         clip_depths_.Clear();
         layers_.Clear();
@@ -83,9 +90,9 @@ private:
 
     f32 scale_;
     Vector<CanvasCall> calls_;
-    Vector<u32> clip_depths_; // the clip depth to return to at the end of each open layer
+    Vector<u32> clip_depths_;  // the clip depth to return to at the end of each open layer
     Vector<i32> layers_;
     u32 clip_depth_ = 0;
 };
 
-} // namespace engine_placeholder::ui
+}  // namespace engine_placeholder::ui

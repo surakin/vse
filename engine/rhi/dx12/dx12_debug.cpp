@@ -5,9 +5,11 @@
 
 #include "rhi/rhi_log.h"
 
-namespace engine_placeholder::rhi::dx12 {
+namespace engine_placeholder::rhi::dx12
+{
 
-namespace {
+namespace
+{
 
 Atomic<u64> g_errors{0};
 Atomic<u64> g_warnings{0};
@@ -16,9 +18,10 @@ Mutex g_capture_mutex;
 DebugMessageCaptureFn g_capture = nullptr;
 void* g_capture_user = nullptr;
 
-} // namespace
+}  // namespace
 
-DebugMessageCounts GetDebugMessageCounts() {
+DebugMessageCounts GetDebugMessageCounts()
+{
     DebugMessageCounts c;
     c.errors = g_errors.Load(MemoryOrder::Relaxed);
     c.warnings = g_warnings.Load(MemoryOrder::Relaxed);
@@ -26,23 +29,30 @@ DebugMessageCounts GetDebugMessageCounts() {
     return c;
 }
 
-void ResetDebugMessageCounts() {
+void ResetDebugMessageCounts()
+{
     g_errors.Store(0, MemoryOrder::Relaxed);
     g_warnings.Store(0, MemoryOrder::Relaxed);
     g_live_objects.Store(0, MemoryOrder::Relaxed);
 }
 
-void SetDebugMessageCapture(DebugMessageCaptureFn fn, void* user) {
+void SetDebugMessageCapture(DebugMessageCaptureFn fn, void* user)
+{
     LockGuard<Mutex> lock(g_capture_mutex);
     g_capture = fn;
     g_capture_user = user;
 }
 
-void NoteLiveObject() { g_live_objects.FetchAdd(1, MemoryOrder::Relaxed); }
+void NoteLiveObject()
+{
+    g_live_objects.FetchAdd(1, MemoryOrder::Relaxed);
+}
 
-void RecordDebugMessage(D3D12_MESSAGE_SEVERITY severity, D3D12_MESSAGE_ID id, const char* text) {
+void RecordDebugMessage(D3D12_MESSAGE_SEVERITY severity, D3D12_MESSAGE_ID id, const char* text)
+{
     LogVerbosity verbosity = LogVerbosity::Info;
-    switch (severity) {
+    switch (severity)
+    {
     case D3D12_MESSAGE_SEVERITY_CORRUPTION:
     case D3D12_MESSAGE_SEVERITY_ERROR:
         verbosity = LogVerbosity::Error;
@@ -57,9 +67,10 @@ void RecordDebugMessage(D3D12_MESSAGE_SEVERITY severity, D3D12_MESSAGE_ID id, co
     }
     RhiLog(verbosity, "D3D12 debug layer [%d]: %s", static_cast<int>(id), text != nullptr ? text : "");
     LockGuard<Mutex> lock(g_capture_mutex);
-    if (g_capture != nullptr) {
+    if (g_capture != nullptr)
+    {
         g_capture(g_capture_user, verbosity, static_cast<u32>(id), text != nullptr ? text : "");
     }
 }
 
-} // namespace engine_placeholder::rhi::dx12
+}  // namespace engine_placeholder::rhi::dx12

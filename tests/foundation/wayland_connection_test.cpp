@@ -20,26 +20,30 @@ using engine_placeholder::usize;
 using engine_placeholder::os::Write;
 using engine_placeholder::os::wayland::WaylandConnection;
 
-namespace {
+namespace
+{
 
 char g_WaylandConnectionTest_capture_buffer[2048];
 usize g_WaylandConnectionTest_capture_len = 0;
 
-long WaylandConnectionTestCapturingWriteSink(int fd, const void* buf, usize len) {
+long WaylandConnectionTestCapturingWriteSink(int fd, const void* buf, usize len)
+{
     (void)fd;
     usize copy_len = len;
-    if (g_WaylandConnectionTest_capture_len + copy_len > sizeof(g_WaylandConnectionTest_capture_buffer)) {
+    if (g_WaylandConnectionTest_capture_len + copy_len > sizeof(g_WaylandConnectionTest_capture_buffer))
+    {
         copy_len = sizeof(g_WaylandConnectionTest_capture_buffer) - g_WaylandConnectionTest_capture_len;
     }
-    engine_placeholder::MemCopy(g_WaylandConnectionTest_capture_buffer + g_WaylandConnectionTest_capture_len, buf, copy_len);
+    engine_placeholder::MemCopy(g_WaylandConnectionTest_capture_buffer + g_WaylandConnectionTest_capture_len, buf,
+                                copy_len);
     g_WaylandConnectionTest_capture_len += copy_len;
     return static_cast<long>(len);
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("WaylandConnection::Connect binds compositor/xdg_wm_base/seat/shm against a real compositor",
-          "[wayland][os]") {
+TEST_CASE("WaylandConnection::Connect binds compositor/xdg_wm_base/seat/shm against a real compositor", "[wayland][os]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
     WaylandConnection conn = WaylandConnection::Connect();
     REQUIRE(conn.Valid());
@@ -50,8 +54,8 @@ TEST_CASE("WaylandConnection::Connect binds compositor/xdg_wm_base/seat/shm agai
     REQUIRE(conn.Shm() != nullptr);
 }
 
-TEST_CASE("WaylandConnection::Connect fails gracefully (no crash) when no compositor is reachable",
-          "[wayland][os]") {
+TEST_CASE("WaylandConnection::Connect fails gracefully (no crash) when no compositor is reachable", "[wayland][os]")
+{
     const char* previous = engine_placeholder::os::GetEnvironment("WAYLAND_DISPLAY");
     ::setenv("WAYLAND_DISPLAY", "engine-test-nonexistent-socket", 1);
 
@@ -59,14 +63,18 @@ TEST_CASE("WaylandConnection::Connect fails gracefully (no crash) when no compos
     REQUIRE_FALSE(conn.Valid());
     REQUIRE(conn.Display() == nullptr);
 
-    if (previous != nullptr) {
+    if (previous != nullptr)
+    {
         ::setenv("WAYLAND_DISPLAY", previous, 1);
-    } else {
+    }
+    else
+    {
         ::unsetenv("WAYLAND_DISPLAY");
     }
 }
 
-TEST_CASE("WaylandConnection::Connect logs each bound global's interface name and version", "[wayland][os]") {
+TEST_CASE("WaylandConnection::Connect logs each bound global's interface name and version", "[wayland][os]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
     g_WaylandConnectionTest_capture_len = 0;
     LogPlatform.SetVerbosity(LogVerbosity::Info);
@@ -85,8 +93,8 @@ TEST_CASE("WaylandConnection::Connect logs each bound global's interface name an
     REQUIRE(captured.Contains(StringView("wl_shm")));
 }
 
-TEST_CASE("WaylandConnection move construction/assignment transfers ownership without double-free",
-          "[wayland][os]") {
+TEST_CASE("WaylandConnection move construction/assignment transfers ownership without double-free", "[wayland][os]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
     WaylandConnection a = WaylandConnection::Connect();
     REQUIRE(a.Valid());

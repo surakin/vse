@@ -4,18 +4,21 @@
 
 #include "types.h"
 
-namespace engine_placeholder::ecs::detail {
+namespace engine_placeholder::ecs::detail
+{
 
 /// The indices `I...`.
-template <usize... I>
-struct IndexList {};
+template <usize... I> struct IndexList
+{
+};
 
 /// `MakeIndexList<N>::Type` is `IndexList<0, 1, ..., N - 1>`.
-template <usize N, usize... I>
-struct MakeIndexList : MakeIndexList<N - 1, N - 1, I...> {};
-template <usize... I>
-struct MakeIndexList<0, I...> {
+template <usize N, usize... I> struct MakeIndexList : MakeIndexList<N - 1, N - 1, I...>
+{
+};
+template <usize... I> struct MakeIndexList<0, I...>
+{
     using Type = IndexList<I...>;
 };
 
-} // namespace engine_placeholder::ecs::detail
+}  // namespace engine_placeholder::ecs::detail

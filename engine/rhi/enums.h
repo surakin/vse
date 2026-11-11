@@ -8,13 +8,14 @@
 //! Flag enums are `u32` scoped enums whose `|`, `&` and `Has` operators are enabled by specializing
 //! [[rhi::EnableFlagOperators]]; there are no raw integer masks in the interface.
 
-namespace engine_placeholder::rhi {
+namespace engine_placeholder::rhi
+{
 
 /// Opt-in trait: specialize with `value = true` to give a `u32` scoped enum the flag operators.
 ///
 /// - Thread-safety: immutable. A compile-time trait.
-template <typename E>
-struct EnableFlagOperators {
+template <typename E> struct EnableFlagOperators
+{
     /// Whether `E` is a flag enum.
     static constexpr bool value = false;
 };
@@ -25,7 +26,8 @@ struct EnableFlagOperators {
 /// - Param b: second flag set.
 template <typename E>
     requires(EnableFlagOperators<E>::value)
-constexpr E operator|(E a, E b) {
+constexpr E operator|(E a, E b)
+{
     return static_cast<E>(static_cast<u32>(a) | static_cast<u32>(b));
 }
 
@@ -35,7 +37,8 @@ constexpr E operator|(E a, E b) {
 /// - Param b: second flag set.
 template <typename E>
     requires(EnableFlagOperators<E>::value)
-constexpr E operator&(E a, E b) {
+constexpr E operator&(E a, E b)
+{
     return static_cast<E>(static_cast<u32>(a) & static_cast<u32>(b));
 }
 
@@ -46,7 +49,8 @@ constexpr E operator&(E a, E b) {
 /// - Returns: true when every bit of `flags` is set in `value`.
 template <typename E>
     requires(EnableFlagOperators<E>::value)
-constexpr bool Has(E value, E flags) {
+constexpr bool Has(E value, E flags)
+{
     return (static_cast<u32>(value) & static_cast<u32>(flags)) == static_cast<u32>(flags);
 }
 
@@ -56,72 +60,78 @@ constexpr bool Has(E value, E flags) {
 /// - Returns: true when `value` is non-zero.
 template <typename E>
     requires(EnableFlagOperators<E>::value)
-constexpr bool Any(E value) {
+constexpr bool Any(E value)
+{
     return static_cast<u32>(value) != 0;
 }
 
 /// What a buffer may be used for. Combine with `|`; at least one flag is required.
-enum class BufferUsage : u32 {
-    None = 0,         ///< No usage; invalid for a buffer.
-    Vertex = 1u << 0,   ///< Bound as a vertex buffer.
-    Index = 1u << 1,    ///< Bound as an index buffer.
-    Uniform = 1u << 2,  ///< Bound as a uniform (constant) buffer.
-    Storage = 1u << 3,  ///< Bound as a read/write storage buffer.
-    CopySrc = 1u << 4,  ///< Source of a copy.
-    CopyDst = 1u << 5,  ///< Destination of a copy.
-    Indirect = 1u << 6, ///< Source of indirect draw/dispatch arguments. Reserved.
+enum class BufferUsage : u32
+{
+    None = 0,            ///< No usage; invalid for a buffer.
+    Vertex = 1u << 0,    ///< Bound as a vertex buffer.
+    Index = 1u << 1,     ///< Bound as an index buffer.
+    Uniform = 1u << 2,   ///< Bound as a uniform (constant) buffer.
+    Storage = 1u << 3,   ///< Bound as a read/write storage buffer.
+    CopySrc = 1u << 4,   ///< Source of a copy.
+    CopyDst = 1u << 5,   ///< Destination of a copy.
+    Indirect = 1u << 6,  ///< Source of indirect draw/dispatch arguments. Reserved.
 };
 /// Enables the flag operators for [[rhi::BufferUsage]].
 ///
 /// - Thread-safety: immutable. A compile-time trait.
-template <>
-struct EnableFlagOperators<BufferUsage> {
+template <> struct EnableFlagOperators<BufferUsage>
+{
     /// Always true.
     static constexpr bool value = true;
 };
 
 /// What a texture may be used for. Combine with `|`; at least one flag is required.
-enum class TextureUsage : u32 {
-    None = 0,                ///< No usage; invalid for a texture.
-    Sampled = 1u << 0,         ///< Read by shaders through a sampler.
-    Storage = 1u << 1,         ///< Read/written by shaders as a storage image.
-    ColorAttachment = 1u << 2, ///< Rendered to as a color attachment.
-    DepthAttachment = 1u << 3, ///< Rendered to as a depth(-stencil) attachment.
-    CopySrc = 1u << 4,         ///< Source of a copy.
-    CopyDst = 1u << 5,         ///< Destination of a copy.
+enum class TextureUsage : u32
+{
+    None = 0,                   ///< No usage; invalid for a texture.
+    Sampled = 1u << 0,          ///< Read by shaders through a sampler.
+    Storage = 1u << 1,          ///< Read/written by shaders as a storage image.
+    ColorAttachment = 1u << 2,  ///< Rendered to as a color attachment.
+    DepthAttachment = 1u << 3,  ///< Rendered to as a depth(-stencil) attachment.
+    CopySrc = 1u << 4,          ///< Source of a copy.
+    CopyDst = 1u << 5,          ///< Destination of a copy.
 };
 /// Enables the flag operators for [[rhi::TextureUsage]].
 ///
 /// - Thread-safety: immutable. A compile-time trait.
-template <>
-struct EnableFlagOperators<TextureUsage> {
+template <> struct EnableFlagOperators<TextureUsage>
+{
     /// Always true.
     static constexpr bool value = true;
 };
 
 /// The shader stages a binding or push-constant range is visible to. Combine with `|`.
-enum class ShaderStage : u32 {
-    None = 0,            ///< No stage.
-    Vertex = 1u << 0,    ///< Vertex shader.
-    Fragment = 1u << 1,  ///< Fragment (pixel) shader.
-    Compute = 1u << 2,   ///< Compute shader.
-    AllGraphics = (1u << 0) | (1u << 1), ///< Vertex and fragment.
-    All = (1u << 0) | (1u << 1) | (1u << 2), ///< Every stage.
+enum class ShaderStage : u32
+{
+    None = 0,                                 ///< No stage.
+    Vertex = 1u << 0,                         ///< Vertex shader.
+    Fragment = 1u << 1,                       ///< Fragment (pixel) shader.
+    Compute = 1u << 2,                        ///< Compute shader.
+    AllGraphics = (1u << 0) | (1u << 1),      ///< Vertex and fragment.
+    All = (1u << 0) | (1u << 1) | (1u << 2),  ///< Every stage.
 };
 /// Enables the flag operators for [[rhi::ShaderStage]].
 ///
 /// - Thread-safety: immutable. A compile-time trait.
-template <>
-struct EnableFlagOperators<ShaderStage> {
+template <> struct EnableFlagOperators<ShaderStage>
+{
     /// Always true.
     static constexpr bool value = true;
 };
 
-/// The bytecode format of a shader module ([[rhi::ShaderDesc]]); each backend takes one (see [[rhi::DeviceCaps::shader_format]]).
-enum class ShaderFormat : u8 {
-    Spirv = 0, ///< SPIR-V words (Vulkan).
-    Dxil,      ///< A DXIL container (Direct3D 12).
-    Msl,       ///< Metal Shading Language; reserved for the Metal backend (Phase 26), refused by every backend today.
+/// The bytecode format of a shader module ([[rhi::ShaderDesc]]); each backend takes one (see
+/// [[rhi::DeviceCaps::shader_format]]).
+enum class ShaderFormat : u8
+{
+    Spirv = 0,  ///< SPIR-V words (Vulkan).
+    Dxil,       ///< A DXIL container (Direct3D 12).
+    Msl,        ///< Metal Shading Language; reserved for the Metal backend (Phase 26), refused by every backend today.
 };
 
 /// Returns the lowercase name of a shader format (`spirv`, `dxil`, `msl`), for logs.
@@ -134,35 +144,38 @@ enum class ShaderFormat : u8 {
 const char* ShaderFormatName(ShaderFormat format);
 
 /// Which color channels a render target write updates. Combine with `|`.
-enum class ColorWriteMask : u32 {
-    None = 0,       ///< Write nothing.
-    R = 1u << 0,    ///< Red.
-    G = 1u << 1,    ///< Green.
-    B = 1u << 2,    ///< Blue.
-    A = 1u << 3,    ///< Alpha.
-    All = 0xF,      ///< All four channels.
+enum class ColorWriteMask : u32
+{
+    None = 0,     ///< Write nothing.
+    R = 1u << 0,  ///< Red.
+    G = 1u << 1,  ///< Green.
+    B = 1u << 2,  ///< Blue.
+    A = 1u << 3,  ///< Alpha.
+    All = 0xF,    ///< All four channels.
 };
 /// Enables the flag operators for [[rhi::ColorWriteMask]].
 ///
 /// - Thread-safety: immutable. A compile-time trait.
-template <>
-struct EnableFlagOperators<ColorWriteMask> {
+template <> struct EnableFlagOperators<ColorWriteMask>
+{
     /// Always true.
     static constexpr bool value = true;
 };
 
 /// Where a buffer's memory lives and who can access it.
-enum class MemoryLocation : u8 {
-    GpuOnly = 0, ///< Device-local; not CPU-visible. Fill it by upload.
-    CpuToGpu,    ///< CPU-writable and GPU-readable (uploads, per-frame uniforms); mappable.
-    GpuToCpu,    ///< GPU-writable and CPU-readable (readback); mappable, copy destination only.
+enum class MemoryLocation : u8
+{
+    GpuOnly = 0,  ///< Device-local; not CPU-visible. Fill it by upload.
+    CpuToGpu,     ///< CPU-writable and GPU-readable (uploads, per-frame uniforms); mappable.
+    GpuToCpu,     ///< GPU-writable and CPU-readable (readback); mappable, copy destination only.
 };
 
 /// The state a buffer or texture is in between commands.
 ///
 /// The portable common denominator of Vulkan layouts and access masks, Direct3D 12 resource states and
 /// Metal's implicit tracking. Callers state the `before` and `after` states of every transition.
-enum class ResourceState : u8 {
+enum class ResourceState : u8
+{
     Undefined = 0,    ///< Contents unknown; the initial state of a texture. Transitions from here discard contents.
     VertexBuffer,     ///< Read as vertex data.
     IndexBuffer,      ///< Read as index data.
@@ -179,41 +192,46 @@ enum class ResourceState : u8 {
 };
 
 /// How vertices are assembled into primitives.
-enum class PrimitiveTopology : u8 {
-    TriangleList = 0, ///< Every three vertices form a triangle.
-    TriangleStrip,    ///< Each vertex after the first two forms a triangle with the previous two.
-    LineList,         ///< Every two vertices form a line.
-    LineStrip,        ///< Connected line segments.
-    PointList,        ///< Each vertex is a point.
+enum class PrimitiveTopology : u8
+{
+    TriangleList = 0,  ///< Every three vertices form a triangle.
+    TriangleStrip,     ///< Each vertex after the first two forms a triangle with the previous two.
+    LineList,          ///< Every two vertices form a line.
+    LineStrip,         ///< Connected line segments.
+    PointList,         ///< Each vertex is a point.
 };
 
 /// Which triangle faces are discarded.
-enum class CullMode : u8 {
-    None = 0, ///< Draw both faces.
-    Front,    ///< Discard front-facing triangles.
-    Back,     ///< Discard back-facing triangles.
+enum class CullMode : u8
+{
+    None = 0,  ///< Draw both faces.
+    Front,     ///< Discard front-facing triangles.
+    Back,      ///< Discard back-facing triangles.
 };
 
 /// Which winding order is the front face.
-enum class FrontFace : u8 {
-    CounterClockwise = 0, ///< Counter-clockwise in framebuffer space is front-facing.
-    Clockwise,            ///< Clockwise in framebuffer space is front-facing.
+enum class FrontFace : u8
+{
+    CounterClockwise = 0,  ///< Counter-clockwise in framebuffer space is front-facing.
+    Clockwise,             ///< Clockwise in framebuffer space is front-facing.
 };
 
 /// A comparison used by depth tests and comparison samplers.
-enum class CompareOp : u8 {
-    Never = 0,    ///< Never passes.
-    Less,         ///< Passes if the new value is less than the stored one.
-    Equal,        ///< Passes if equal.
-    LessEqual,    ///< Passes if less than or equal.
-    Greater,      ///< Passes if greater.
-    NotEqual,     ///< Passes if not equal.
-    GreaterEqual, ///< Passes if greater than or equal.
-    Always,       ///< Always passes.
+enum class CompareOp : u8
+{
+    Never = 0,     ///< Never passes.
+    Less,          ///< Passes if the new value is less than the stored one.
+    Equal,         ///< Passes if equal.
+    LessEqual,     ///< Passes if less than or equal.
+    Greater,       ///< Passes if greater.
+    NotEqual,      ///< Passes if not equal.
+    GreaterEqual,  ///< Passes if greater than or equal.
+    Always,        ///< Always passes.
 };
 
 /// A blend factor applied to the source or destination color or alpha.
-enum class BlendFactor : u8 {
+enum class BlendFactor : u8
+{
     Zero = 0,          ///< 0.
     One,               ///< 1.
     SrcColor,          ///< Source color.
@@ -227,22 +245,25 @@ enum class BlendFactor : u8 {
 };
 
 /// How blended source and destination terms are combined.
-enum class BlendOp : u8 {
-    Add = 0,         ///< src + dst.
-    Subtract,        ///< src - dst.
-    ReverseSubtract, ///< dst - src.
-    Min,             ///< Component-wise minimum (factors ignored).
-    Max,             ///< Component-wise maximum (factors ignored).
+enum class BlendOp : u8
+{
+    Add = 0,          ///< src + dst.
+    Subtract,         ///< src - dst.
+    ReverseSubtract,  ///< dst - src.
+    Min,              ///< Component-wise minimum (factors ignored).
+    Max,              ///< Component-wise maximum (factors ignored).
 };
 
 /// Texture filtering.
-enum class FilterMode : u8 {
-    Nearest = 0, ///< Nearest texel.
-    Linear,      ///< Linear interpolation.
+enum class FilterMode : u8
+{
+    Nearest = 0,  ///< Nearest texel.
+    Linear,       ///< Linear interpolation.
 };
 
 /// Behavior of texture coordinates outside [0, 1].
-enum class AddressMode : u8 {
+enum class AddressMode : u8
+{
     Repeat = 0,     ///< Tile the texture.
     MirrorRepeat,   ///< Tile, mirroring every other repeat.
     ClampToEdge,    ///< Clamp to the edge texel.
@@ -250,95 +271,98 @@ enum class AddressMode : u8 {
 };
 
 /// Border color used by [[rhi::AddressMode]] `ClampToBorder`.
-enum class BorderColor : u8 {
-    TransparentBlack = 0, ///< (0, 0, 0, 0).
-    OpaqueBlack,          ///< (0, 0, 0, 1).
-    OpaqueWhite,          ///< (1, 1, 1, 1).
+enum class BorderColor : u8
+{
+    TransparentBlack = 0,  ///< (0, 0, 0, 0).
+    OpaqueBlack,           ///< (0, 0, 0, 1).
+    OpaqueWhite,           ///< (1, 1, 1, 1).
 };
 
 /// What happens to an attachment's contents when a rendering pass begins.
-enum class LoadOp : u8 {
-    Load = 0, ///< Keep the existing contents.
-    Clear,    ///< Clear to the attachment's clear value.
-    DontCare, ///< Contents are undefined; the pass will overwrite everything it reads.
+enum class LoadOp : u8
+{
+    Load = 0,  ///< Keep the existing contents.
+    Clear,     ///< Clear to the attachment's clear value.
+    DontCare,  ///< Contents are undefined; the pass will overwrite everything it reads.
 };
 
 /// What happens to an attachment's contents when a rendering pass ends.
-enum class StoreOp : u8 {
-    Store = 0, ///< Keep the results.
-    DontCare,  ///< The results may be discarded (for example a depth buffer used only inside the pass).
+enum class StoreOp : u8
+{
+    Store = 0,  ///< Keep the results.
+    DontCare,   ///< The results may be discarded (for example a depth buffer used only inside the pass).
 };
 
 /// The width of indices in an index buffer.
-enum class IndexType : u8 {
-    UInt16 = 0, ///< 16-bit unsigned indices.
-    UInt32,     ///< 32-bit unsigned indices.
+enum class IndexType : u8
+{
+    UInt16 = 0,  ///< 16-bit unsigned indices.
+    UInt32,      ///< 32-bit unsigned indices.
 };
 
 /// The shape of a texture.
-enum class TextureDimension : u8 {
-    Tex2D = 0, ///< A 2D image, optionally an array.
-    Tex3D,     ///< A volume.
-    Cube,      ///< A cube map; reserved, rejected until a backend supports it.
+enum class TextureDimension : u8
+{
+    Tex2D = 0,  ///< A 2D image, optionally an array.
+    Tex3D,      ///< A volume.
+    Cube,       ///< A cube map; reserved, rejected until a backend supports it.
 };
 
 /// The data type and width of one vertex attribute.
-enum class VertexFormat : u8 {
-    Float1 = 0, ///< One 32-bit float.
-    Float2,     ///< Two 32-bit floats.
-    Float3,     ///< Three 32-bit floats.
-    Float4,     ///< Four 32-bit floats.
-    UInt1,      ///< One 32-bit unsigned integer.
-    UInt2,      ///< Two 32-bit unsigned integers.
-    UInt3,      ///< Three 32-bit unsigned integers.
-    UInt4,      ///< Four 32-bit unsigned integers.
-    UNorm8x4,   ///< Four 8-bit unsigned normalized values (for example packed colors).
-    Count,      ///< Number of vertex formats; not a format.
+enum class VertexFormat : u8
+{
+    Float1 = 0,  ///< One 32-bit float.
+    Float2,      ///< Two 32-bit floats.
+    Float3,      ///< Three 32-bit floats.
+    Float4,      ///< Four 32-bit floats.
+    UInt1,       ///< One 32-bit unsigned integer.
+    UInt2,       ///< Two 32-bit unsigned integers.
+    UInt3,       ///< Three 32-bit unsigned integers.
+    UInt4,       ///< Four 32-bit unsigned integers.
+    UNorm8x4,    ///< Four 8-bit unsigned normalized values (for example packed colors).
+    Count,       ///< Number of vertex formats; not a format.
 };
 
 /// Returns the size in bytes of one attribute of `format`.
 ///
 /// - Param format: a value below `VertexFormat::Count`; any other value returns 0.
-constexpr u32 VertexFormatSize(VertexFormat format) {
-    switch (format) {
+constexpr u32 VertexFormatSize(VertexFormat format)
+{
+    switch (format)
+    {
     case VertexFormat::Float1:
     case VertexFormat::UInt1:
-    case VertexFormat::UNorm8x4:
-        return 4;
+    case VertexFormat::UNorm8x4: return 4;
     case VertexFormat::Float2:
-    case VertexFormat::UInt2:
-        return 8;
+    case VertexFormat::UInt2: return 8;
     case VertexFormat::Float3:
-    case VertexFormat::UInt3:
-        return 12;
+    case VertexFormat::UInt3: return 12;
     case VertexFormat::Float4:
-    case VertexFormat::UInt4:
-        return 16;
-    case VertexFormat::Count:
-        break;
+    case VertexFormat::UInt4: return 16;
+    case VertexFormat::Count: break;
     }
     return 0;
 }
 
 /// The kind of resource a binding refers to.
-enum class BindingType : u8 {
-    UniformBuffer = 0, ///< A uniform buffer range.
-    StorageBuffer,     ///< A storage buffer range.
-    SampledTexture,    ///< A texture read through a sampler.
-    Sampler,           ///< A sampler.
-    StorageTexture,    ///< A texture read/written as a storage image.
+enum class BindingType : u8
+{
+    UniformBuffer = 0,  ///< A uniform buffer range.
+    StorageBuffer,      ///< A storage buffer range.
+    SampledTexture,     ///< A texture read through a sampler.
+    Sampler,            ///< A sampler.
+    StorageTexture,     ///< A texture read/written as a storage image.
     /// A storage buffer range the shaders only read (`StructuredBuffer` in Slang): a storage buffer to Vulkan, a shader
     /// resource view (not an unordered access view) to Direct3D 12, so the buffer is in `ShaderRead` state when bound.
     /// Last before `Count` so the values of the older types, which minted reflection stores, do not change.
     ReadOnlyStorageBuffer,
-    Count,             ///< Number of binding types; not a type.
+    Count,  ///< Number of binding types; not a type.
 };
 
 /// A read-only view of consecutive `T` owned by the caller: the foundation [[Span]] of const elements.
 ///
 /// Used in descriptors so they need no allocation. The memory must stay valid for the duration of the
 /// call the descriptor is passed to; backends copy what they keep.
-template <typename T>
-using Span = engine_placeholder::Span<const T>;
+template <typename T> using Span = engine_placeholder::Span<const T>;
 
-} // namespace engine_placeholder::rhi
+}  // namespace engine_placeholder::rhi

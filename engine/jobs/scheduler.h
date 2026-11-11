@@ -49,7 +49,8 @@
 //! join (`HelpUntil` or await) all outstanding work before destroying the
 //! scheduler, or those frames leak. Submitting concurrently with or after
 //! shutdown is a caller bug (asserted once shutdown has completed).
-namespace engine_placeholder::jobs {
+namespace engine_placeholder::jobs
+{
 
 class Counter;
 class IoThread;
@@ -69,12 +70,14 @@ class IoThread;
 ///   thread. Frames of submitted jobs belong to the scheduler until they run to
 ///   completion or [[jobs::Scheduler::Shutdown]] destroys them unrun.
 /// - See: [[jobs::Counter]], [[jobs::Spawn]], [[jobs::WorkerPool]]
-class Scheduler {
+class Scheduler
+{
 public:
     /// Scheduler construction parameters.
     ///
     /// - Thread-safety: not-thread-safe. A plain value type.
-    struct Config {
+    struct Config
+    {
         /// Number of participants including main; 0 selects the default.
         ///
         /// The default is [[jobs::DefaultParticipantCount]], which honours the
@@ -109,7 +112,8 @@ public:
     /// the queues are full.
     ///
     /// - Param job: the job to run; must be non-empty. It is moved from.
-    /// - Aborts: `job` is empty; the scheduler has completed shutdown; both queues are full and the caller is not participant 0 outside a job.
+    /// - Aborts: `job` is empty; the scheduler has completed shutdown; both queues are full and the caller is not
+    /// participant 0 outside a job.
     /// - Ownership: takes ownership of the job's frame, which destroys itself on completion.
     /// - Thread-safety: thread-safe. Any thread.
     void Submit(Job&& job);
@@ -122,7 +126,8 @@ public:
     /// injection queue.
     ///
     /// - Param h: the suspended coroutine to resume; must not be null and must not be queued already.
-    /// - Aborts: `h` is null; the scheduler has completed shutdown; both queues are full and the caller is not participant 0 outside a job.
+    /// - Aborts: `h` is null; the scheduler has completed shutdown; both queues are full and the caller is not
+    /// participant 0 outside a job.
     /// - Ownership: takes responsibility for resuming `h` exactly once, or destroying it if shutdown drops it unrun.
     /// - Thread-safety: thread-safe. Any thread.
     void Schedule(CoroutineHandle<> h);
@@ -244,7 +249,8 @@ private:
     static constexpr int kYieldRounds = 64;
     static constexpr usize kBackpressureSlack = 512;
 
-    struct Lane {
+    struct Lane
+    {
         WorkStealingDeque deque;
         u32 rng = 1;
         Atomic<u64> resumes{0};
@@ -266,7 +272,7 @@ private:
     void Run(usize index, CoroutineHandle<> h);
     void NotifyWork();
     bool IsMainThread() const;
-    int OwnIndex() const; // participant index on this scheduler, or -1
+    int OwnIndex() const;  // participant index on this scheduler, or -1
 
     usize count_ = 1;
     Vector<Lane> lanes_;
@@ -278,7 +284,7 @@ private:
     CoroutineHandle<> injection_[kInjectionCapacity];
     usize injection_head_ = 0;
     usize injection_count_ = 0;
-    Atomic<usize> injection_hint_{0}; // lock-free "maybe non-empty"
+    Atomic<usize> injection_hint_{0};  // lock-free "maybe non-empty"
 
     // LOST-WAKEUP PROTOCOL. `submit_seq_` is bumped by every submission AFTER
     // the work is made visible. A worker about to park (1) reads
@@ -301,8 +307,8 @@ private:
     Atomic<u64> submit_seq_{0};
     Atomic<u32> parked_{0};
     Atomic<bool> shutdown_{false};
-    bool shut_down_ = false;               // Shutdown() entered (owner thread)
-    Atomic<bool> drained_{false};     // Shutdown() finished sweeping
+    bool shut_down_ = false;       // Shutdown() entered (owner thread)
+    Atomic<bool> drained_{false};  // Shutdown() finished sweeping
 };
 
-} // namespace engine_placeholder::jobs
+}  // namespace engine_placeholder::jobs

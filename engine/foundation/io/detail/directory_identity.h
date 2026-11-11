@@ -4,12 +4,15 @@
 #include "io/path.h"
 #include "types.h"
 
-// Internal to the file layer (Phase 13 Day 152): what the neutral directory walk needs from a backend to detect a loop. Not public API.
-namespace engine_placeholder::io::detail {
+// Internal to the file layer (Phase 13 Day 152): what the neutral directory walk needs from a backend to detect a loop.
+// Not public API.
+namespace engine_placeholder::io::detail
+{
 
-/// Which object a directory is, so a walk can tell when a link leads back to an ancestor: device and inode on POSIX, volume serial and
-/// file index on Windows.
-struct Identity {
+/// Which object a directory is, so a walk can tell when a link leads back to an ancestor: device and inode on POSIX,
+/// volume serial and file index on Windows.
+struct Identity
+{
     u64 device;
     u64 inode;
 };
@@ -17,4 +20,4 @@ struct Identity {
 /// Fills `out` for the directory `path`, following links. Implemented per platform (io/<platform>/directory.cpp).
 Status GetIdentity(const Path& path, Identity* out);
 
-} // namespace engine_placeholder::io::detail
+}  // namespace engine_placeholder::io::detail

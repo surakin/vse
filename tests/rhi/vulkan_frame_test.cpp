@@ -16,23 +16,27 @@ using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
 using namespace engine_placeholder::rhi::vulkan;
 
-namespace {
+namespace
+{
 
-bool VulkanFrameTestHaveEnv(const char* name) {
+bool VulkanFrameTestHaveEnv(const char* name)
+{
     const char* v = os::GetEnvironment(name);
     return v != nullptr && v[0] != '\0';
 }
 
 // Renders a clear into an offscreen texture and reads the pixels back: this checks BeginRendering/EndRendering
 // without depending on a window.
-TEST_CASE("BeginRendering clears an offscreen color attachment", "[rhi][vulkan][gpu][frame]") {
+TEST_CASE("BeginRendering clears an offscreen color attachment", "[rhi][vulkan][gpu][frame]")
+{
     gpu_test::GpuFixture fx;
     fx.RequireValidation();
     DeviceCreateInfo info;
     info.validation = ValidationSetting::On;
     info.sync_validation = true;
     VulkanDevicePtr device = VulkanDevice::Create(info);
-    if (device == nullptr) {
+    if (device == nullptr)
+    {
         SKIP("no suitable Vulkan device");
     }
     TextureDesc td;
@@ -65,7 +69,8 @@ TEST_CASE("BeginRendering clears an offscreen color attachment", "[rhi][vulkan][
     Vector<byte> back = engine_test::ByteBuffer(32 * 16 * 4);
     REQUIRE(device->ReadbackTexture(tex, 0, 0, back.Data(), back.Size(), ResourceState::ColorAttachment));
     bool all_red = true;
-    for (usize i = 0; i < back.Size(); i += 4) {
+    for (usize i = 0; i < back.Size(); i += 4)
+    {
         all_red = all_red && back[i] == 255 && back[i + 1] == 0 && back[i + 2] == 0 && back[i + 3] == 255;
     }
     CHECK(all_red);
@@ -74,18 +79,21 @@ TEST_CASE("BeginRendering clears an offscreen color attachment", "[rhi][vulkan][
     device.Reset();
 }
 
-struct LoopResult {
+struct LoopResult
+{
     u64 max_in_flight = 0;
     u64 frames = 0;
     u64 final_completed = 0;
 };
 
 // Runs `frames` frames of a clear loop with `frames_in_flight` frames allowed and reports the pacing.
-LoopResult RunLoop(os::WindowBackend backend, u32 frames_in_flight, u32 frames) {
+LoopResult RunLoop(os::WindowBackend backend, u32 frames_in_flight, u32 frames)
+{
     LoopResult result;
     os::InputState input;
     os::PlatformWindowHost host;
-    if (!host.Open(backend, "rhi frame test", 320, 240, &input)) {
+    if (!host.Open(backend, "rhi frame test", 320, 240, &input))
+    {
         SKIP("the window could not be opened");
     }
     os::Window* window = host.Get();
@@ -95,8 +103,10 @@ LoopResult RunLoop(os::WindowBackend backend, u32 frames_in_flight, u32 frames) 
     info.window = window;
     info.frames_in_flight = frames_in_flight;
     VulkanDevicePtr device = VulkanDevice::Create(info);
-    if (device == nullptr) {
-        if (gpu_test::GpuRequired()) {
+    if (device == nullptr)
+    {
+        if (gpu_test::GpuRequired())
+        {
             FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no Vulkan device could present to the window");
         }
         SKIP("no Vulkan device can present to this window");
@@ -105,11 +115,13 @@ LoopResult RunLoop(os::WindowBackend backend, u32 frames_in_flight, u32 frames) 
     Swapchain* sc = device->CreateSwapchain(SwapchainDesc{});
     REQUIRE(sc != nullptr);
 
-    for (u32 i = 0; i < frames; ++i) {
+    for (u32 i = 0; i < frames; ++i)
+    {
         window->PumpEvents();
         device->BeginFrame();
         const u64 in_flight = device->FrameNumber() - device->CompletedFrame();
-        if (in_flight > result.max_in_flight) {
+        if (in_flight > result.max_in_flight)
+        {
             result.max_in_flight = in_flight;
         }
         const SwapchainStatus acquired = sc->Acquire();
@@ -141,7 +153,8 @@ LoopResult RunLoop(os::WindowBackend backend, u32 frames_in_flight, u32 frames) 
     return result;
 }
 
-void RunFrameLoopChecks(os::WindowBackend backend) {
+void RunFrameLoopChecks(os::WindowBackend backend)
+{
     gpu_test::GpuFixture fx(/*presentable=*/true);
     fx.Require();
     VulkanDevice::ResetLeakCounts();
@@ -167,26 +180,34 @@ void RunFrameLoopChecks(os::WindowBackend backend) {
     CHECK(leaks.internal_objects == 0);
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("The frame loop on a Wayland window keeps frames in flight bounded and leaks nothing", "[rhi][vulkan][gpu][window][wayland][frame]") {
+TEST_CASE("The frame loop on a Wayland window keeps frames in flight bounded and leaks nothing",
+          "[rhi][vulkan][gpu][window][wayland][frame]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
-    if (!VulkanFrameTestHaveEnv("WAYLAND_DISPLAY")) {
+    if (!VulkanFrameTestHaveEnv("WAYLAND_DISPLAY"))
+    {
         SKIP("no Wayland session");
     }
     RunFrameLoopChecks(os::WindowBackend::Wayland);
 }
 
-TEST_CASE("The frame loop on an X11 window keeps frames in flight bounded and leaks nothing", "[rhi][vulkan][gpu][window][x11][frame]") {
+TEST_CASE("The frame loop on an X11 window keeps frames in flight bounded and leaks nothing",
+          "[rhi][vulkan][gpu][window][x11][frame]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
-    if (!VulkanFrameTestHaveEnv("DISPLAY")) {
+    if (!VulkanFrameTestHaveEnv("DISPLAY"))
+    {
         SKIP("no X11 display");
     }
     RunFrameLoopChecks(os::WindowBackend::X11);
 }
 
 // Phase 13 Day 160: the same checks through the Win32 window and the VK_KHR_win32_surface surface.
-TEST_CASE("The frame loop on a Win32 window keeps frames in flight bounded and leaks nothing", "[rhi][vulkan][gpu][window][win32][frame]") {
+TEST_CASE("The frame loop on a Win32 window keeps frames in flight bounded and leaks nothing",
+          "[rhi][vulkan][gpu][window][win32][frame]")
+{
 #if ENGINE_PLATFORM_WINDOWS
     SKIP_IF_NO_DISPLAY_SESSION();
     RunFrameLoopChecks(os::WindowBackend::Win32);

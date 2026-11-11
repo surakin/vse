@@ -11,11 +11,16 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::ecs;
 
-namespace {
-EntityLocation Where(u32 row = 0) { return EntityLocation{0, 0, row}; }
-} // namespace
+namespace
+{
+EntityLocation Where(u32 row = 0)
+{
+    return EntityLocation{0, 0, row};
+}
+}  // namespace
 
-TEST_CASE("Entity: the default is invalid and packing round-trips", "[ecs][entity]") {
+TEST_CASE("Entity: the default is invalid and packing round-trips", "[ecs][entity]")
+{
     Entity none;
     CHECK_FALSE(none.IsValid());
     CHECK(none.ToU64() == 0);
@@ -28,17 +33,21 @@ TEST_CASE("Entity: the default is invalid and packing round-trips", "[ecs][entit
     CHECK(Entity{9, 1} < Entity{1, 2});
 }
 
-TEST_CASE("EntityTable: fresh ids are valid, alive and distinct", "[ecs][entity]") {
+TEST_CASE("EntityTable: fresh ids are valid, alive and distinct", "[ecs][entity]")
+{
     EntityTable table;
     Vector<Entity> ids;
-    for (u32 i = 0; i < 1000; ++i) {
+    for (u32 i = 0; i < 1000; ++i)
+    {
         const Entity e = table.Allocate(Where(i));
         REQUIRE(e.IsValid());
         REQUIRE(table.IsAlive(e));
         ids.Push(e);
     }
-    for (usize i = 0; i < ids.Size(); ++i) {
-        for (usize j = i + 1; j < ids.Size(); ++j) {
+    for (usize i = 0; i < ids.Size(); ++i)
+    {
+        for (usize j = i + 1; j < ids.Size(); ++j)
+        {
             REQUIRE(ids[i] != ids[j]);
         }
     }
@@ -46,7 +55,8 @@ TEST_CASE("EntityTable: fresh ids are valid, alive and distinct", "[ecs][entity]
     CHECK(table.Location(ids[10])->row == 10);
 }
 
-TEST_CASE("EntityTable: a freed id is dead and the reused slot gives a different id", "[ecs][entity]") {
+TEST_CASE("EntityTable: a freed id is dead and the reused slot gives a different id", "[ecs][entity]")
+{
     EntityTable table;
     const Entity a = table.Allocate(Where(1));
     REQUIRE(table.Free(a));
@@ -62,7 +72,8 @@ TEST_CASE("EntityTable: a freed id is dead and the reused slot gives a different
     CHECK(table.Stats().slots == 1);
 }
 
-TEST_CASE("EntityTable: slots are reused last in, first out", "[ecs][entity]") {
+TEST_CASE("EntityTable: slots are reused last in, first out", "[ecs][entity]")
+{
     EntityTable table;
     const Entity a = table.Allocate(Where());
     const Entity b = table.Allocate(Where());
@@ -74,7 +85,8 @@ TEST_CASE("EntityTable: slots are reused last in, first out", "[ecs][entity]") {
     CHECK(table.Allocate(Where()).index != b.index);
 }
 
-TEST_CASE("EntityTable: invalid and out-of-range ids are not alive", "[ecs][entity]") {
+TEST_CASE("EntityTable: invalid and out-of-range ids are not alive", "[ecs][entity]")
+{
     EntityTable table;
     const Entity a = table.Allocate(Where());
     CHECK_FALSE(table.IsAlive(Entity{}));
@@ -90,7 +102,8 @@ TEST_CASE("EntityTable: invalid and out-of-range ids are not alive", "[ecs][enti
     CHECK_FALSE(table.IsAlive(Entity{a.index, a.generation + 1}));
 }
 
-TEST_CASE("EntityTable: locations are stored and can be changed", "[ecs][entity]") {
+TEST_CASE("EntityTable: locations are stored and can be changed", "[ecs][entity]")
+{
     EntityTable table;
     const Entity e = table.Allocate(EntityLocation{2, 3, 4});
     const EntityTable& view = table;
@@ -102,20 +115,25 @@ TEST_CASE("EntityTable: locations are stored and can be changed", "[ecs][entity]
     CHECK(view.Location(e)->row == 9);
 }
 
-TEST_CASE("EntityTable: a million create and destroy cycles stay exact against a model", "[ecs][entity]") {
+TEST_CASE("EntityTable: a million create and destroy cycles stay exact against a model", "[ecs][entity]")
+{
     EntityTable table;
     ecs_test::Rng rng(12345);
     Vector<Entity> live;
     Vector<Entity> stale;  // a ring of recently destroyed ids, which must stay dead
     stale.Resize(64);
     usize stale_next = 0;
-    for (u32 step = 0; step < 1000000; ++step) {
+    for (u32 step = 0; step < 1000000; ++step)
+    {
         const bool create = live.Size() == 0 || rng.Below(100) < 52;
-        if (create) {
+        if (create)
+        {
             const Entity e = table.Allocate(Where(step));
             REQUIRE(e.IsValid());
             live.Push(e);
-        } else {
+        }
+        else
+        {
             const u32 pick = rng.Below(static_cast<u32>(live.Size()));
             const Entity e = live[pick];
             REQUIRE(table.Free(e));
@@ -124,9 +142,12 @@ TEST_CASE("EntityTable: a million create and destroy cycles stay exact against a
             stale[stale_next] = e;
             stale_next = (stale_next + 1) % stale.Size();
         }
-        if (step % 4096 == 0) {
-            for (usize i = 0; i < stale.Size(); ++i) {
-                if (stale[i].IsValid()) {
+        if (step % 4096 == 0)
+        {
+            for (usize i = 0; i < stale.Size(); ++i)
+            {
+                if (stale[i].IsValid())
+                {
                     REQUIRE_FALSE(table.IsAlive(stale[i]));
                 }
             }
@@ -134,15 +155,18 @@ TEST_CASE("EntityTable: a million create and destroy cycles stay exact against a
     }
     CHECK(table.Stats().alive == live.Size());
     CHECK(table.Stats().alive + table.Stats().free == table.Stats().slots);
-    for (usize i = 0; i < live.Size(); ++i) {
+    for (usize i = 0; i < live.Size(); ++i)
+    {
         REQUIRE(table.IsAlive(live[i]));
     }
 }
 
-TEST_CASE("EntityTable: the generation wraps past zero and the wrap is counted", "[ecs][entity]") {
+TEST_CASE("EntityTable: the generation wraps past zero and the wrap is counted", "[ecs][entity]")
+{
     EntityTable table;
     const Entity a = table.Allocate(Where());
-    table.SetGenerationForTesting(a.index, 0xFFFFFFFEu); // the last generation that is issued; 0xFFFFFFFF marks command-buffer placeholders
+    table.SetGenerationForTesting(
+        a.index, 0xFFFFFFFEu);  // the last generation that is issued; 0xFFFFFFFF marks command-buffer placeholders
     const Entity old{a.index, 0xFFFFFFFEu};
     REQUIRE(table.IsAlive(old));
     REQUIRE(table.Free(old));
@@ -156,7 +180,8 @@ TEST_CASE("EntityTable: the generation wraps past zero and the wrap is counted",
     CHECK_FALSE(table.IsAlive(Entity{a.index, Entity::kPlaceholderGeneration}));
 }
 
-TEST_CASE("EntityTable: a moved-from table is empty and consistent", "[ecs][entity]") {
+TEST_CASE("EntityTable: a moved-from table is empty and consistent", "[ecs][entity]")
+{
     EntityTable a;
     const Entity e = a.Allocate(Where(5));
     const Entity f = a.Allocate(Where(6));
@@ -175,11 +200,13 @@ TEST_CASE("EntityTable: a moved-from table is empty and consistent", "[ecs][enti
     CHECK(c.Stats().alive == 1);
 }
 
-TEST_CASE("EntityTable: a full table refuses and recovers after a free", "[ecs][entity]") {
+TEST_CASE("EntityTable: a full table refuses and recovers after a free", "[ecs][entity]")
+{
     EntityTable table;
     table.SetMaxSlotsForTesting(4);
     Vector<Entity> ids;
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < 4; ++i)
+    {
         ids.Push(table.Allocate(Where()));
         REQUIRE(ids[i].IsValid());
     }
@@ -193,30 +220,44 @@ TEST_CASE("EntityTable: a full table refuses and recovers after a free", "[ecs][
     CHECK(again.index == ids[2].index);
 }
 
-TEST_CASE("Hash<Entity>: sequential ids spread over the buckets", "[ecs][entity]") {
+TEST_CASE("Hash<Entity>: sequential ids spread over the buckets", "[ecs][entity]")
+{
     constexpr u32 kBuckets = 1u << 14;
     constexpr u32 kIds = 100000;
     Vector<u32> counts;
     counts.Resize(kBuckets);
-    for (u32 i = 0; i < kBuckets; ++i) counts[i] = 0;
-    for (u32 i = 0; i < kIds; ++i) {
+    for (u32 i = 0; i < kBuckets; ++i)
+    {
+        counts[i] = 0;
+    }
+    for (u32 i = 0; i < kIds; ++i)
+    {
         ++counts[Hash<Entity>{}(Entity{i, 1}) % kBuckets];
     }
     const u32 mean2 = 2 * kIds / kBuckets;
     u32 overloaded = 0;
-    for (u32 i = 0; i < kBuckets; ++i) {
-        if (counts[i] > mean2) ++overloaded;
+    for (u32 i = 0; i < kBuckets; ++i)
+    {
+        if (counts[i] > mean2)
+        {
+            ++overloaded;
+        }
     }
     CHECK(overloaded * 20 <= kBuckets);  // at most 5 percent of the buckets hold more than twice the mean
     CHECK(Hash<Entity>{}(Entity{5, 1}) != Hash<Entity>{}(Entity{5, 2}));
 }
 
-TEST_CASE("EntityTable: concurrent readers see a stable table", "[ecs][entity][tsan]") {
+TEST_CASE("EntityTable: concurrent readers see a stable table", "[ecs][entity][tsan]")
+{
     EntityTable table;
     Vector<Entity> live;
     Vector<Entity> dead;
-    for (u32 i = 0; i < 2000; ++i) live.Push(table.Allocate(Where(i)));
-    for (u32 i = 0; i < 500; ++i) {
+    for (u32 i = 0; i < 2000; ++i)
+    {
+        live.Push(table.Allocate(Where(i)));
+    }
+    for (u32 i = 0; i < 500; ++i)
+    {
         const Entity e = live[i];
         table.Free(e);
         dead.Push(e);
@@ -224,18 +265,33 @@ TEST_CASE("EntityTable: concurrent readers see a stable table", "[ecs][entity][t
     const EntityTable& view = table;
     Atomic<u32> wrong{0};
     Vector<Thread> threads;
-    for (int t = 0; t < 4; ++t) {
-        threads.Push(Thread([&] {
-            for (int rep = 0; rep < 200; ++rep) {
-                for (usize i = 500; i < live.Size(); ++i) {
-                    if (!view.IsAlive(live[i]) || view.Location(live[i])->row != static_cast<u32>(i)) wrong.FetchAdd(1u);
+    for (int t = 0; t < 4; ++t)
+    {
+        threads.Push(Thread(
+            [&]
+            {
+                for (int rep = 0; rep < 200; ++rep)
+                {
+                    for (usize i = 500; i < live.Size(); ++i)
+                    {
+                        if (!view.IsAlive(live[i]) || view.Location(live[i])->row != static_cast<u32>(i))
+                        {
+                            wrong.FetchAdd(1u);
+                        }
+                    }
+                    for (usize i = 0; i < dead.Size(); ++i)
+                    {
+                        if (view.IsAlive(dead[i]))
+                        {
+                            wrong.FetchAdd(1u);
+                        }
+                    }
                 }
-                for (usize i = 0; i < dead.Size(); ++i) {
-                    if (view.IsAlive(dead[i])) wrong.FetchAdd(1u);
-                }
-            }
-        }));
+            }));
     }
-    for (usize i = 0; i < threads.Size(); ++i) threads[i].Join();
+    for (usize i = 0; i < threads.Size(); ++i)
+    {
+        threads[i].Join();
+    }
     CHECK(wrong.Load() == 0);
 }

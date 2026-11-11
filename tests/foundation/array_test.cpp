@@ -7,9 +7,11 @@ using engine_placeholder::Array;
 using engine_placeholder::u32;
 using engine_placeholder::usize;
 
-namespace {
+namespace
+{
 
-struct Tracked {
+struct Tracked
+{
     static inline usize alive = 0;
     Tracked() { ++alive; }
     Tracked(const Tracked&) = delete;
@@ -17,15 +19,17 @@ struct Tracked {
     ~Tracked() { --alive; }
 };
 
-struct Holder {
+struct Holder
+{
     u32 a;
     u32 b;
     Array<u32, 6> values;
 };
 
-} // namespace
+}  // namespace
 
-TEST_CASE("Array: storage is inline, so an object is its members plus the elements", "[containers][array]") {
+TEST_CASE("Array: storage is inline, so an object is its members plus the elements", "[containers][array]")
+{
     static_assert(sizeof(Array<u32, 6>) == 6 * sizeof(u32));
     static_assert(sizeof(Holder) == 2 * sizeof(u32) + 6 * sizeof(u32));
     static_assert(Array<u32, 6>::Size() == 6);
@@ -38,10 +42,14 @@ TEST_CASE("Array: storage is inline, so an object is its members plus the elemen
     REQUIRE(p + 6 * sizeof(u32) <= lo + sizeof(Holder));
 }
 
-TEST_CASE("Array: aggregate initialization, value-initialization, indexing and iteration", "[containers][array]") {
+TEST_CASE("Array: aggregate initialization, value-initialization, indexing and iteration", "[containers][array]")
+{
     Array<u32, 4> a = {{1, 2, 3, 4}};
     u32 sum = 0;
-    for (u32 v : a) sum += v;
+    for (u32 v : a)
+    {
+        sum += v;
+    }
     REQUIRE(sum == 10);
     a[2] = 30;
     const Array<u32, 4>& c = a;
@@ -49,13 +57,17 @@ TEST_CASE("Array: aggregate initialization, value-initialization, indexing and i
     REQUIRE(c.Data() == a.Data());
 
     Array<u32, 5> zero{};
-    for (usize i = 0; i < zero.Size(); ++i) REQUIRE(zero[i] == 0u);
+    for (usize i = 0; i < zero.Size(); ++i)
+    {
+        REQUIRE(zero[i] == 0u);
+    }
     Array<u32, 5> partial = {{7}};
     REQUIRE(partial[0] == 7u);
     REQUIRE(partial[4] == 0u);
 }
 
-TEST_CASE("Array: elements are constructed and destroyed with the object", "[containers][array]") {
+TEST_CASE("Array: elements are constructed and destroyed with the object", "[containers][array]")
+{
     REQUIRE(Tracked::alive == 0);
     {
         Array<Tracked, 3> a;

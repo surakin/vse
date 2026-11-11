@@ -13,21 +13,29 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::settings;
 
-namespace {
+namespace
+{
 
 const char* const kRegistryModes[] = {"fifo", "mailbox", "immediate"};
-enum class Mode { Fifo, Mailbox, Immediate };
+enum class Mode
+{
+    Fifo,
+    Mailbox,
+    Immediate
+};
 
-RegisterError TryRegister(Registry& r, const SettingDesc& d) {
+RegisterError TryRegister(Registry& r, const SettingDesc& d)
+{
     RegisterError e = RegisterError::None;
     const SettingId id = r.Register(d, &e);
     CHECK(id.IsValid() == (e == RegisterError::None));
     return e;
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("Registry: ids are handed out in registration order and are stable", "[settings][registry]") {
+TEST_CASE("Registry: ids are handed out in registration order and are stable", "[settings][registry]")
+{
     Registry r;
     const SettingId a = r.Register(MakeInt("b.width", 1280, 0, 16384));
     const SettingId b = r.Register(MakeBool("a.fullscreen", false));
@@ -49,10 +57,11 @@ TEST_CASE("Registry: ids are handed out in registration order and are stable", "
     r.Freeze();
     r.Freeze();
     CHECK(r.IsFrozen());
-    CHECK(r.Find("b.width") == a); // ids do not change on freeze
+    CHECK(r.Find("b.width") == a);  // ids do not change on freeze
 }
 
-TEST_CASE("Registry: every registration failure has a reason and changes nothing", "[settings][registry]") {
+TEST_CASE("Registry: every registration failure has a reason and changes nothing", "[settings][registry]")
+{
     Registry r;
     REQUIRE(r.Register(MakeInt("x.n", 5, 0, 10)).IsValid());
     CHECK(TryRegister(r, MakeInt("x.n", 5, 0, 10)) == RegisterError::Duplicate);
@@ -100,11 +109,12 @@ TEST_CASE("Registry: every registration failure has a reason and changes nothing
     bad_old.deprecated_keys = nullptr;
     bad_old.deprecated_count = 1;
     CHECK(TryRegister(r, bad_old) == RegisterError::BadDeprecated);
-    CHECK(r.Count() == 1); // nothing was added by any failure
+    CHECK(r.Count() == 1);  // nothing was added by any failure
     CHECK(StringView(RegisterErrorName(RegisterError::Full)) == "full");
 }
 
-TEST_CASE("Registry: deprecated keys find the setting", "[settings][registry]") {
+TEST_CASE("Registry: deprecated keys find the setting", "[settings][registry]")
+{
     Registry r;
     SettingDesc d = MakeInt("renderer.width", 0, 0, 100);
     const char* const old[] = {"width", "renderer.w"};
@@ -116,18 +126,24 @@ TEST_CASE("Registry: deprecated keys find the setting", "[settings][registry]") 
     CHECK(r.Find("renderer.w") == id);
     CHECK(r.IsDeprecatedKey("width"));
     CHECK_FALSE(r.IsDeprecatedKey("renderer.width"));
-    CHECK(TryRegister(r, MakeBool("width", false)) == RegisterError::Duplicate); // a deprecated key stays reserved
+    CHECK(TryRegister(r, MakeBool("width", false)) == RegisterError::Duplicate);  // a deprecated key stays reserved
 }
 
-TEST_CASE("Registry: five hundred settings", "[settings][registry]") {
+TEST_CASE("Registry: five hundred settings", "[settings][registry]")
+{
     Registry r;
-    for (int i = 0; i < 500; ++i) {
+    for (int i = 0; i < 500; ++i)
+    {
         const engine_test::Text key = engine_test::Format("g%d.k%d", i % 7, i);
         REQUIRE(r.Register(MakeInt(key.CStr(), i, 0, 1000)).IsValid());
     }
     CHECK(r.Count() == 500);
-    for (u32 i = 1; i < 500; ++i) CHECK(r.KeyOf(r.SortedAt(i - 1)) < r.KeyOf(r.SortedAt(i)));
-    for (int i = 0; i < 500; ++i) {
+    for (u32 i = 1; i < 500; ++i)
+    {
+        CHECK(r.KeyOf(r.SortedAt(i - 1)) < r.KeyOf(r.SortedAt(i)));
+    }
+    for (int i = 0; i < 500; ++i)
+    {
         const engine_test::Text key = engine_test::Format("g%d.k%d", i % 7, i);
         const SettingId id = r.Find(key.View());
         REQUIRE(id.IsValid());
@@ -136,7 +152,8 @@ TEST_CASE("Registry: five hundred settings", "[settings][registry]") {
     }
 }
 
-TEST_CASE("Setting handles read the default, see published values and refuse the wrong type", "[settings][registry]") {
+TEST_CASE("Setting handles read the default, see published values and refuse the wrong type", "[settings][registry]")
+{
     Registry r;
     const SettingId b = r.Register(MakeBool("t.b", true));
     const SettingId i = r.Register(MakeInt("t.i", -3, -10, 10));
@@ -170,13 +187,14 @@ TEST_CASE("Setting handles read the default, see published values and refuse the
     CHECK(si.Get() == 9);
     CHECK(sf.Get() == 0.75f);
     CHECK(se.Get() == Mode::Immediate);
-    CHECK(si.Default() == -3); // the default does not move
+    CHECK(si.Default() == -3);  // the default does not move
     CHECK(r.Current(t).AsText() == "a longer text than before");
-    CHECK(st.Get(text, sizeof(text)) == 25); // too small: nothing written, the needed length returned
+    CHECK(st.Get(text, sizeof(text)) == 25);  // too small: nothing written, the needed length returned
     CHECK(Setting<i64>::Find(r, "t.i").Get() == 9);
 }
 
-TEST_CASE("Setting reads are safe while another thread publishes", "[settings][registry][threads]") {
+TEST_CASE("Setting reads are safe while another thread publishes", "[settings][registry][threads]")
+{
     Registry r;
     const SettingId id = r.Register(MakeInt("t.n", 0, 0, 1000000));
     const SettingId fid = r.Register(MakeFloat("t.f", 0.0, 0.0, 1e9));
@@ -187,23 +205,35 @@ TEST_CASE("Setting reads are safe while another thread publishes", "[settings][r
     Atomic<int> torn{0};
     Vector<Thread> readers;
     readers.Resize(3);
-    for (usize t = 0; t < readers.Size(); ++t) {
-        readers[t] = Thread([&] {
-            i64 last = 0;
-            while (!stop.Load()) {
-                const i64 v = n.Get();
-                // The writer publishes n, then f: when n is read, f is at most one step behind it (and may be ahead by the time f is read).
-                if (v < last || f.Get() < static_cast<f64>(v) - 1.0) torn++;
-                last = v;
-            }
-        });
+    for (usize t = 0; t < readers.Size(); ++t)
+    {
+        readers[t] = Thread(
+            [&]
+            {
+                i64 last = 0;
+                while (!stop.Load())
+                {
+                    const i64 v = n.Get();
+                    // The writer publishes n, then f: when n is read, f is at most one step behind it (and may be ahead
+                    // by the time f is read).
+                    if (v < last || f.Get() < static_cast<f64>(v) - 1.0)
+                    {
+                        torn++;
+                    }
+                    last = v;
+                }
+            });
     }
-    for (i64 v = 1; v <= 20000; ++v) {
+    for (i64 v = 1; v <= 20000; ++v)
+    {
         r.Publish(id, Value::FromInt(v));
         r.Publish(fid, Value::FromFloat(static_cast<f64>(v)));
     }
     stop = true;
-    for (usize t = 0; t < readers.Size(); ++t) readers[t].Join();
+    for (usize t = 0; t < readers.Size(); ++t)
+    {
+        readers[t].Join();
+    }
     CHECK(torn.Load() == 0);
     CHECK(n.Get() == 20000);
 }

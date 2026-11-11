@@ -30,13 +30,15 @@
 //! CAS discards the value. Changing the capacity or the full check must keep
 //! that argument true.
 //! Handles are stored as raw addresses and a null handle is never stored.
-namespace engine_placeholder::jobs {
+namespace engine_placeholder::jobs
+{
 
 /// Outcome of one steal attempt on a [[jobs::WorkStealingDeque]].
-enum class StealStatus : u8 {
-    Success, ///< The output handle holds a stolen entry.
-    Empty,   ///< There was nothing to steal.
-    Lost,    ///< Raced with another thief or the owner; worth retrying.
+enum class StealStatus : u8
+{
+    Success,  ///< The output handle holds a stolen entry.
+    Empty,    ///< There was nothing to steal.
+    Lost,     ///< Raced with another thief or the owner; worth retrying.
 };
 
 /// Fixed-capacity work-stealing deque of coroutine handles: one owner at the bottom, any number of thieves at the top.
@@ -51,7 +53,8 @@ enum class StealStatus : u8 {
 /// - Ownership: stores handles without owning them; whoever pops or steals one
 ///   becomes responsible for resuming or destroying it.
 /// - See: [[jobs::Scheduler]]
-class WorkStealingDeque {
+class WorkStealingDeque
+{
 public:
     /// Number of handles the deque holds; a power of two.
     static constexpr usize kDefaultCapacity = 4096;
@@ -73,13 +76,15 @@ public:
     /// - Fails: returns `false` and stores nothing if the deque is full.
     /// - Aborts: `h` is a null handle.
     /// - Thread-safety: owner-thread-only.
-    bool PushBottom(CoroutineHandle<> h) {
+    bool PushBottom(CoroutineHandle<> h)
+    {
         ENGINE_ASSERT(h.address() != nullptr, "WorkStealingDeque: null handle");
         const i64 b = bottom_.Load(MemoryOrder::Relaxed);
         // acquire is enough: a stale (smaller) top only makes the deque look
         // fuller than it is.
         const i64 t = top_.Load(MemoryOrder::Acquire);
-        if (b - t >= static_cast<i64>(kDefaultCapacity)) {
+        if (b - t >= static_cast<i64>(kDefaultCapacity))
+        {
             return false;
         }
         slots_[static_cast<usize>(b) & kMask].Store(h.address(), MemoryOrder::Relaxed);
@@ -93,14 +98,16 @@ public:
     ///
     /// - Returns: the handle, or a null handle if the deque is empty or a thief won the race for the last entry.
     /// - Thread-safety: owner-thread-only.
-    CoroutineHandle<> PopBottom() {
+    CoroutineHandle<> PopBottom()
+    {
         const i64 b = bottom_.Load(MemoryOrder::Relaxed) - 1;
         // seq_cst store then seq_cst load of top_: the Dekker-style pair
         // that makes the owner and a thief agree on who gets the last
         // element (the published algorithm uses a fence here).
         bottom_.Store(b, MemoryOrder::SeqCst);
         i64 t = top_.Load(MemoryOrder::SeqCst);
-        if (t > b) {
+        if (t > b)
+        {
             // Was empty: restore bottom. Must be a release (seq_cst) store:
             // a thief that later reads THIS value must still synchronize
             // with the slot writes of the pushes that preceded it (a plain
@@ -109,12 +116,14 @@ public:
             return {};
         }
         void* addr = slots_[static_cast<usize>(b) & kMask].Load(MemoryOrder::Relaxed);
-        if (t == b) {
+        if (t == b)
+        {
             // Last element: race the thieves for it.
-            if (!top_.CompareExchangeStrong(t, t + 1, MemoryOrder::SeqCst, MemoryOrder::Relaxed)) {
-                addr = nullptr; // a thief won
+            if (!top_.CompareExchangeStrong(t, t + 1, MemoryOrder::SeqCst, MemoryOrder::Relaxed))
+            {
+                addr = nullptr;  // a thief won
             }
-            bottom_.Store(b + 1, MemoryOrder::SeqCst); // release: see above
+            bottom_.Store(b + 1, MemoryOrder::SeqCst);  // release: see above
         }
         return CoroutineHandle<>::from_address(addr);
     }
@@ -122,18 +131,22 @@ public:
     /// Tries to take the oldest handle from the top.
     ///
     /// - Param out: receives the handle on `Success`; left untouched otherwise.
-    /// - Returns: `Success`, `Empty` (nothing to steal) or `Lost` (raced with another thief or the owner; worth retrying).
+    /// - Returns: `Success`, `Empty` (nothing to steal) or `Lost` (raced with another thief or the owner; worth
+    /// retrying).
     /// - Thread-safety: thread-safe. Any thread.
-    StealStatus StealTop(CoroutineHandle<>& out) {
+    StealStatus StealTop(CoroutineHandle<>& out)
+    {
         i64 t = top_.Load(MemoryOrder::SeqCst);
         const i64 b = bottom_.Load(MemoryOrder::SeqCst);
-        if (t >= b) {
+        if (t >= b)
+        {
             return StealStatus::Empty;
         }
         // Read before the CAS: if the CAS succeeds, `top_` was still `t`
         // when we read, so the owner could not have reused this slot.
         void* addr = slots_[static_cast<usize>(t) & kMask].Load(MemoryOrder::Relaxed);
-        if (!top_.CompareExchangeStrong(t, t + 1, MemoryOrder::SeqCst, MemoryOrder::Relaxed)) {
+        if (!top_.CompareExchangeStrong(t, t + 1, MemoryOrder::SeqCst, MemoryOrder::Relaxed))
+        {
             return StealStatus::Lost;
         }
         out = CoroutineHandle<>::from_address(addr);
@@ -146,7 +159,8 @@ public:
     ///
     /// - Returns: an approximate entry count, never negative.
     /// - Thread-safety: thread-safe.
-    i64 ApproxSize() const {
+    i64 ApproxSize() const
+    {
         const i64 b = bottom_.Load(MemoryOrder::Relaxed);
         const i64 t = top_.Load(MemoryOrder::Relaxed);
         return b > t ? b - t : 0;
@@ -161,4 +175,4 @@ private:
     alignas(64) Atomic<void*> slots_[kDefaultCapacity];
 };
 
-} // namespace engine_placeholder::jobs
+}  // namespace engine_placeholder::jobs

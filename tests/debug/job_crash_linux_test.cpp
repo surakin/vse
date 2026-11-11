@@ -16,17 +16,20 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::debug;
 
-namespace {
+namespace
+{
 
-jobs::Job AssertingJob(Atomic<int>* started) {
+jobs::Job AssertingJob(Atomic<int>* started)
+{
     started->Store(1, MemoryOrder::Release);
     ENGINE_ASSERT(false, "assert inside a job");
     co_return;
 }
 
-} // namespace
+}  // namespace
 
-ENGINE_DEATH_TEST_FN(dt_job_assert) {
+ENGINE_DEATH_TEST_FN(dt_job_assert)
+{
     CrashHandlerOptions options;
     options.dump_directory = argument;
     InstallCrashHandler(options);
@@ -36,13 +39,16 @@ ENGINE_DEATH_TEST_FN(dt_job_assert) {
     Atomic<int> started{0};
     scheduler.Submit(AssertingJob(&started));
     // The main thread only waits; the job runs on a worker, which aborts.
-    for (int i = 0; i < 10000 && started.Load() == 0; ++i) {
+    for (int i = 0; i < 10000 && started.Load() == 0; ++i)
+    {
         os::SleepNanos(1000 * 1000);
     }
     os::SleepNanos(5ull * 1000 * 1000 * 1000);
 }
 
-TEST_CASE("An assert inside a job reports the worker's name and a trace that includes the job", "[crash][jobs][death][debug][linux]") {
+TEST_CASE("An assert inside a job reports the worker's name and a trace that includes the job",
+          "[crash][jobs][death][debug][linux]")
+{
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     char directory[] = "/tmp/engine-job-XXXXXX";
     REQUIRE(mkdtemp(directory) != nullptr);
@@ -54,7 +60,7 @@ TEST_CASE("An assert inside a job reports the worker's name and a trace that inc
     INFO(debug_test::Cat(out, err).CStr());
     CHECK(r.reason == CrashReason::Abort);
     CHECK(out.Contains("ASSERT FAILED: "));
-    CHECK(out.Contains("AssertingJob")); // the assert's own trace
+    CHECK(out.Contains("AssertingJob"));  // the assert's own trace
     CHECK(err.Contains("=== CRASH REPORT ==="));
     CHECK(err.Contains("\"worker-"));     // the crash report names the thread
     CHECK(err.Contains("AssertingJob"));  // and its trace includes the job

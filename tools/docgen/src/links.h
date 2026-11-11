@@ -12,17 +12,20 @@
 //
 // Thread-safety: not-thread-safe; one call at a time per arena.
 // Ownership: results are allocated in the caller's arena.
-namespace docgen {
+namespace docgen
+{
 
-struct LinkStats {
-    usize files = 0;    // Markdown files checked
-    usize links = 0;    // links and images checked (internal and external)
-    usize external = 0; // http(s)/mailto links, not fetched
-    usize refs = 0;     // [[Symbol]] references resolved
+struct LinkStats
+{
+    usize files = 0;     // Markdown files checked
+    usize links = 0;     // links and images checked (internal and external)
+    usize external = 0;  // http(s)/mailto links, not fetched
+    usize refs = 0;      // [[Symbol]] references resolved
 };
 
-struct LinkOptions {
-    bool list_external = false; // add a note per external link
+struct LinkOptions
+{
+    bool list_external = false;  // add a note per external link
 };
 
 // Repo-relative paths of the Markdown files docgen checks: `docs/**/*.md`
@@ -35,4 +38,4 @@ bool CollectMarkdownFiles(StringView root, ArenaAllocator& arena, Vector<StringV
 bool CheckLinks(StringView root, const SymbolIndex* index, ArenaAllocator& arena, const LinkOptions& options,
                 Vector<FileDiag, ArenaAllocator>& out, LinkStats& stats);
 
-} // namespace docgen
+}  // namespace docgen

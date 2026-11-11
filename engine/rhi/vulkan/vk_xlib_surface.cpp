@@ -8,13 +8,17 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_xlib.h>
 
-namespace engine_placeholder::rhi::vulkan {
+namespace engine_placeholder::rhi::vulkan
+{
 
-i32 CreateXlibSurface(void* get_instance_proc_addr, void* instance, void* display, u64 window, u64* out_surface) {
+i32 CreateXlibSurface(void* get_instance_proc_addr, void* instance, void* display, u64 window, u64* out_surface)
+{
     PFN_vkGetInstanceProcAddr gipa = reinterpret_cast<PFN_vkGetInstanceProcAddr>(get_instance_proc_addr);
     VkInstance vk_instance = static_cast<VkInstance>(instance);
-    PFN_vkCreateXlibSurfaceKHR create = reinterpret_cast<PFN_vkCreateXlibSurfaceKHR>(gipa(vk_instance, "vkCreateXlibSurfaceKHR"));
-    if (create == nullptr) {
+    PFN_vkCreateXlibSurfaceKHR create = reinterpret_cast<PFN_vkCreateXlibSurfaceKHR>(
+        gipa(vk_instance, "vkCreateXlibSurfaceKHR"));
+    if (create == nullptr)
+    {
         return static_cast<i32>(VK_ERROR_EXTENSION_NOT_PRESENT);
     }
     VkXlibSurfaceCreateInfoKHR info{};
@@ -23,12 +27,13 @@ i32 CreateXlibSurface(void* get_instance_proc_addr, void* instance, void* displa
     info.window = static_cast<Window>(window);
     VkSurfaceKHR surface = VK_NULL_HANDLE;
     const VkResult result = create(vk_instance, &info, nullptr, &surface);
-    if (result == VK_SUCCESS) {
+    if (result == VK_SUCCESS)
+    {
         *out_surface = reinterpret_cast<u64>(surface);
     }
     return static_cast<i32>(result);
 }
 
-} // namespace engine_placeholder::rhi::vulkan
+}  // namespace engine_placeholder::rhi::vulkan
 
 #include "unity/x11_disable.h"

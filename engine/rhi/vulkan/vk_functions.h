@@ -4,7 +4,8 @@
 
 //! Plain tables of Vulkan function pointers, resolved once per global/instance/device scope.
 
-namespace engine_placeholder::rhi::vulkan {
+namespace engine_placeholder::rhi::vulkan
+{
 
 /// Entry points that exist before an instance: `vkCreateInstance` and the instance enumerations.
 ///
@@ -12,7 +13,8 @@ namespace engine_placeholder::rhi::vulkan {
 /// generated from `vk_functions.inc`. Optional members may be null after loading.
 ///
 /// - Thread-safety: thread-compatible plain data; immutable once loaded.
-struct VkGlobalFns {
+struct VkGlobalFns
+{
 #define VK_GLOBAL_FN(name) PFN_vk##name name = nullptr;
 #define VK_GLOBAL_FN_OPT(name) PFN_vk##name name = nullptr;
 #include "rhi/vulkan/vk_functions.inc"
@@ -23,7 +25,8 @@ struct VkGlobalFns {
 /// Same layout rules as [[rhi::vulkan::VkGlobalFns]]. Instance-level functions go through the loader trampoline.
 ///
 /// - Thread-safety: thread-compatible plain data; immutable once loaded.
-struct VkInstanceFns {
+struct VkInstanceFns
+{
 #define VK_INSTANCE_FN(name) PFN_vk##name name = nullptr;
 #define VK_INSTANCE_FN_OPT(name) PFN_vk##name name = nullptr;
 #include "rhi/vulkan/vk_functions.inc"
@@ -34,7 +37,8 @@ struct VkInstanceFns {
 /// Covers everything the backend uses through the end of Phase 4. Same layout rules as [[rhi::vulkan::VkGlobalFns]].
 ///
 /// - Thread-safety: thread-compatible plain data; immutable once loaded.
-struct VkDeviceFns {
+struct VkDeviceFns
+{
 #define VK_DEVICE_FN(name) PFN_vk##name name = nullptr;
 #define VK_DEVICE_FN_OPT(name) PFN_vk##name name = nullptr;
 #include "rhi/vulkan/vk_functions.inc"
@@ -79,7 +83,8 @@ inline constexpr u32 kRequiredVulkanVersion = VK_API_VERSION_1_3;
 /// (Day 50) checks `VkPhysicalDeviceProperties::apiVersion` as well.
 ///
 /// - Param fns: a loaded global table.
-/// - Param out_version: receives the version (`VK_MAKE_API_VERSION` encoding) when the query succeeds, 1.0 for a 1.0 loader;
+/// - Param out_version: receives the version (`VK_MAKE_API_VERSION` encoding) when the query succeeds, 1.0 for a 1.0
+/// loader;
 ///   may be null.
 /// - Returns: true if the version is at least 1.3.
 /// - Fails: returns false and logs "driver too old" if the version is below 1.3, or logs the failed query
@@ -94,4 +99,4 @@ bool CheckInstanceVersion(const VkGlobalFns& fns, u32* out_version);
 /// - Param fns: a loaded global table.
 void LogInstanceCapabilities(const VkGlobalFns& fns);
 
-} // namespace engine_placeholder::rhi::vulkan
+}  // namespace engine_placeholder::rhi::vulkan

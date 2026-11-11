@@ -7,17 +7,20 @@
 #include "sync/atomic.h"
 #include "types.h"
 
-//! Mutual exclusion (Phase 16): the engine's spelling of `<mutex>` and `<condition_variable>`. Every type forwards inline to the
-//! standard one.
-namespace engine_placeholder {
+//! Mutual exclusion (Phase 16): the engine's spelling of `<mutex>` and `<condition_variable>`. Every type forwards
+//! inline to the standard one.
+namespace engine_placeholder
+{
 
 /// A lock that one thread at a time can hold (`std::mutex`). Not recursive: locking it twice from one thread deadlocks.
 ///
 /// - Thread-safety: thread-safe. `Unlock` must come from the thread that locked.
 /// - Ownership: neither copyable nor movable.
-class Mutex {
+class Mutex
+{
 public:
-    /// The standard type that implements this lock; used by [[LockGuard]], [[UniqueLock]] and [[ConditionVariable]] only.
+    /// The standard type that implements this lock; used by [[LockGuard]], [[UniqueLock]] and [[ConditionVariable]]
+    /// only.
     using Native = std::mutex;
 
     constexpr Mutex() noexcept = default;
@@ -40,7 +43,8 @@ private:
 /// A lock the same thread may take again (`std::recursive_mutex`); it must be unlocked as many times as it was locked.
 ///
 /// - Thread-safety: thread-safe, as [[Mutex]].
-class RecursiveMutex {
+class RecursiveMutex
+{
 public:
     /// The standard type that implements this lock.
     using Native = std::recursive_mutex;
@@ -65,8 +69,8 @@ private:
 /// Holds a lock for the length of a scope (`std::lock_guard`): locks in the constructor, unlocks in the destructor.
 ///
 /// - Thread-safety: thread-compatible. The guard belongs to one thread.
-template <class M>
-class LockGuard {
+template <class M> class LockGuard
+{
 public:
     /// Locks `mutex`, which must outlive the guard.
     explicit LockGuard(M& mutex) : guard_(mutex.NativeMutex()) {}
@@ -78,7 +82,8 @@ private:
 };
 
 /// The tag that asks a [[UniqueLock]] not to lock its mutex yet.
-struct DeferLockTag {
+struct DeferLockTag
+{
     explicit DeferLockTag() = default;
 };
 /// The value of [[DeferLockTag]]: `UniqueLock<Mutex> lock(mutex, DeferLock);`.
@@ -87,8 +92,8 @@ inline constexpr DeferLockTag DeferLock{};
 /// A lock holder that can unlock early, relock, and wait on a [[ConditionVariable]] (`std::unique_lock`).
 ///
 /// - Thread-safety: thread-compatible. The holder belongs to one thread.
-template <class M>
-class UniqueLock {
+template <class M> class UniqueLock
+{
 public:
     /// A holder that owns no lock.
     UniqueLock() noexcept = default;
@@ -119,7 +124,8 @@ private:
 /// Waits can wake without a signal: use the predicate forms, or re-check the condition in a loop.
 ///
 /// - Thread-safety: thread-safe. The lock passed to a wait must be held by the calling thread.
-class ConditionVariable {
+class ConditionVariable
+{
 public:
     ConditionVariable() = default;
     ConditionVariable(const ConditionVariable&) = delete;
@@ -128,18 +134,24 @@ public:
     /// Unlocks `lock`, sleeps until notified (or spuriously), and relocks it before returning.
     void Wait(UniqueLock<Mutex>& lock) { native_.wait(lock.NativeLock()); }
     /// Sleeps until `ready()` is true, re-checking after every wake.
-    template <class Predicate>
-    void Wait(UniqueLock<Mutex>& lock, Predicate ready) {
+    template <class Predicate> void Wait(UniqueLock<Mutex>& lock, Predicate ready)
+    {
         native_.wait(lock.NativeLock(), Move(ready));
     }
     /// As `Wait` but gives up after `milliseconds`; returns false when it timed out with `ready()` still false.
-    template <class Predicate>
-    bool WaitForMilliseconds(UniqueLock<Mutex>& lock, u64 milliseconds, Predicate ready) {
-        return native_.wait_for(lock.NativeLock(), std::chrono::milliseconds(detail_sync::ClampDuration(milliseconds, detail_sync::kMaxWaitMilliseconds)), Move(ready));
+    template <class Predicate> bool WaitForMilliseconds(UniqueLock<Mutex>& lock, u64 milliseconds, Predicate ready)
+    {
+        return native_.wait_for(
+            lock.NativeLock(),
+            std::chrono::milliseconds(detail_sync::ClampDuration(milliseconds, detail_sync::kMaxWaitMilliseconds)),
+            Move(ready));
     }
     /// Sleeps for at most `milliseconds` or until notified; returns false when the time ran out.
-    bool WaitForMilliseconds(UniqueLock<Mutex>& lock, u64 milliseconds) {
-        return native_.wait_for(lock.NativeLock(), std::chrono::milliseconds(detail_sync::ClampDuration(milliseconds, detail_sync::kMaxWaitMilliseconds))) == std::cv_status::no_timeout;
+    bool WaitForMilliseconds(UniqueLock<Mutex>& lock, u64 milliseconds)
+    {
+        return native_.wait_for(lock.NativeLock(), std::chrono::milliseconds(detail_sync::ClampDuration(
+                                                       milliseconds, detail_sync::kMaxWaitMilliseconds))) ==
+               std::cv_status::no_timeout;
     }
     /// Wakes one waiting thread, if any.
     void NotifyOne() noexcept { native_.notify_one(); }
@@ -151,7 +163,8 @@ private:
 };
 
 /// Marks a one-time initialization for [[CallOnce]] (`std::once_flag`).
-class OnceFlag {
+class OnceFlag
+{
 public:
     constexpr OnceFlag() noexcept = default;
     OnceFlag(const OnceFlag&) = delete;
@@ -163,10 +176,11 @@ private:
     std::once_flag flag_;
 };
 
-/// Runs `function(args...)` exactly once for `flag` across all threads; later callers wait for the first to finish (`std::call_once`).
-template <class F, class... Args>
-void CallOnce(OnceFlag& flag, F&& function, Args&&... args) {
+/// Runs `function(args...)` exactly once for `flag` across all threads; later callers wait for the first to finish
+/// (`std::call_once`).
+template <class F, class... Args> void CallOnce(OnceFlag& flag, F&& function, Args&&... args)
+{
     std::call_once(flag.NativeFlag(), static_cast<F&&>(function), static_cast<Args&&>(args)...);
 }
 
-} // namespace engine_placeholder
+}  // namespace engine_placeholder

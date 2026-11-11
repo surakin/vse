@@ -18,26 +18,31 @@ using namespace engine_placeholder::rhi;
 using engine_placeholder::rhi::vulkan::GpuKind;
 using engine_placeholder::rhi::vulkan::PhysicalDeviceInfo;
 
-namespace {
+namespace
+{
 
-struct AdapterQuietLog {
+struct AdapterQuietLog
+{
     bool saved = LogRhi.Enabled();
     AdapterQuietLog() { LogRhi.SetEnabled(false); }
     ~AdapterQuietLog() { LogRhi.SetEnabled(saved); }
 };
 
 // Restores the default null adapter list however a test ends.
-struct NullAdaptersGuard {
+struct NullAdaptersGuard
+{
     ~NullAdaptersGuard() { SetNullAdapters(nullptr); }
 };
 
-DeviceCreateInfo NullInfo() {
+DeviceCreateInfo NullInfo()
+{
     DeviceCreateInfo info;
     info.backend = Backend::Null;
     return info;
 }
 
-PhysicalDeviceInfo GoodGpu(const char* name, GpuKind kind, u32 vendor, u32 device, u8 uuid_seed) {
+PhysicalDeviceInfo GoodGpu(const char* name, GpuKind kind, u32 vendor, u32 device, u8 uuid_seed)
+{
     PhysicalDeviceInfo info;
     CStrCopyN(info.name, name, sizeof(info.name) - 1);
     info.kind = kind;
@@ -45,7 +50,8 @@ PhysicalDeviceInfo GoodGpu(const char* name, GpuKind kind, u32 vendor, u32 devic
     info.dynamic_rendering = info.synchronization2 = info.timeline_semaphore = info.swapchain_extension = true;
     info.vendor_id = vendor;
     info.device_id = device;
-    for (u8 i = 0; i < 16; ++i) {
+    for (u8 i = 0; i < 16; ++i)
+    {
         info.uuid[i] = static_cast<u8>(uuid_seed + i);
     }
     info.queue_family_count = 1;
@@ -54,9 +60,10 @@ PhysicalDeviceInfo GoodGpu(const char* name, GpuKind kind, u32 vendor, u32 devic
     return info;
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("The null backend lists two fake adapters", "[rhi][adapter]") {
+TEST_CASE("The null backend lists two fake adapters", "[rhi][adapter]")
+{
     AdapterList list;
     REQUIRE(EnumerateAdapters(NullInfo(), &list));
     REQUIRE(list.count == 2);
@@ -69,9 +76,11 @@ TEST_CASE("The null backend lists two fake adapters", "[rhi][adapter]") {
     CHECK(list.items[1].kind == AdapterKind::Integrated);
 }
 
-TEST_CASE("A live device lists its adapters without a second enumeration", "[rhi][adapter]") {
-    // Device::ListAdapters exists because EnumerateAdapters makes and destroys a second Vulkan instance, which breaks a live device's
-    // swapchain on Wayland with the NVIDIA driver (found 2026-11-07). The list must match what EnumerateAdapters reports.
+TEST_CASE("A live device lists its adapters without a second enumeration", "[rhi][adapter]")
+{
+    // Device::ListAdapters exists because EnumerateAdapters makes and destroys a second Vulkan instance, which breaks a
+    // live device's swapchain on Wayland with the NVIDIA driver (found 2026-11-07). The list must match what
+    // EnumerateAdapters reports.
     DevicePtr device = CreateDevice(NullInfo());
     REQUIRE(device);
     AdapterList live;
@@ -79,24 +88,28 @@ TEST_CASE("A live device lists its adapters without a second enumeration", "[rhi
     REQUIRE(device->ListAdapters(&live));
     REQUIRE(EnumerateAdapters(NullInfo(), &enumerated));
     REQUIRE(live.count == enumerated.count);
-    for (u32 i = 0; i < live.count; ++i) {
+    for (u32 i = 0; i < live.count; ++i)
+    {
         CHECK(CStrCompare(live.items[i].id, enumerated.items[i].id) == 0);
         CHECK(live.items[i].suitable == enumerated.items[i].suitable);
     }
 }
 
-TEST_CASE("Adapter ids are identical across enumerations", "[rhi][adapter]") {
+TEST_CASE("Adapter ids are identical across enumerations", "[rhi][adapter]")
+{
     AdapterList a;
     AdapterList b;
     REQUIRE(EnumerateAdapters(NullInfo(), &a));
     REQUIRE(EnumerateAdapters(NullInfo(), &b));
     REQUIRE(a.count == b.count);
-    for (u32 i = 0; i < a.count; ++i) {
+    for (u32 i = 0; i < a.count; ++i)
+    {
         CHECK(CStrCompare(a.items[i].id, b.items[i].id) == 0);
     }
 }
 
-TEST_CASE("MatchAdapter finds an adapter by id, index or name", "[rhi][adapter]") {
+TEST_CASE("MatchAdapter finds an adapter by id, index or name", "[rhi][adapter]")
+{
     AdapterList list;
     REQUIRE(EnumerateAdapters(NullInfo(), &list));
     CHECK(MatchAdapter(list.items, list.count, "null-integrated") == 1);
@@ -105,22 +118,23 @@ TEST_CASE("MatchAdapter finds an adapter by id, index or name", "[rhi][adapter]"
     CHECK(MatchAdapter(list.items, list.count, "0") == 0);
     CHECK(MatchAdapter(list.items, list.count, "INTEGRATED gpu") == 1);
     CHECK(MatchAdapter(list.items, list.count, "discrete") == 0);
-    CHECK(MatchAdapter(list.items, list.count, "2") == -1); // out of range as an index, no such name
+    CHECK(MatchAdapter(list.items, list.count, "2") == -1);  // out of range as an index, no such name
     CHECK(MatchAdapter(list.items, list.count, "nothing") == -1);
     CHECK(MatchAdapter(list.items, list.count, "") == -1);
     CHECK(MatchAdapter(list.items, list.count, nullptr) == -1);
 }
 
-TEST_CASE("MatchAdapter accepts a LUID, in either case, and only as all 16 digits", "[rhi][adapter]") {
+TEST_CASE("MatchAdapter accepts a LUID, in either case, and only as all 16 digits", "[rhi][adapter]")
+{
     AdapterList list;
     REQUIRE(EnumerateAdapters(NullInfo(), &list));
     CHECK(CStrCompare(list.items[0].luid, "00000000000a0001") == 0);
     CHECK(CStrCompare(list.items[1].luid, "00000000000a0002") == 0);
     CHECK(MatchAdapter(list.items, list.count, "00000000000a0002") == 1);
     CHECK(MatchAdapter(list.items, list.count, "00000000000A0001") == 0);
-    CHECK(MatchAdapter(list.items, list.count, "00000000000a000") == -1);  // 15 digits: not a LUID, not a name
-    CHECK(MatchAdapter(list.items, list.count, "00000000000a00010") == -1); // 17 digits
-    CHECK(MatchAdapter(list.items, list.count, "00000000000a0003") == -1);  // no such adapter
+    CHECK(MatchAdapter(list.items, list.count, "00000000000a000") == -1);    // 15 digits: not a LUID, not a name
+    CHECK(MatchAdapter(list.items, list.count, "00000000000a00010") == -1);  // 17 digits
+    CHECK(MatchAdapter(list.items, list.count, "00000000000a0003") == -1);   // no such adapter
     // An adapter without a LUID is never matched by one.
     NullAdaptersGuard guard;
     AdapterList blank;
@@ -131,9 +145,10 @@ TEST_CASE("MatchAdapter accepts a LUID, in either case, and only as all 16 digit
     AdapterList got;
     REQUIRE(EnumerateAdapters(NullInfo(), &got));
     CHECK(MatchAdapter(got.items, got.count, "00000000000a0001") == -1);
-    // A LUID-shaped request that matches no LUID fails, even when its digits would read as a valid index (a stale LUID).
+    // A LUID-shaped request that matches no LUID fails, even when its digits would read as a valid index (a stale
+    // LUID).
     CHECK(MatchAdapter(got.items, got.count, "0000000000000001") == -1);
-    CHECK(MatchAdapter(got.items, got.count, "1") == 1); // the index rule is unchanged for a short request
+    CHECK(MatchAdapter(got.items, got.count, "1") == 1);  // the index rule is unchanged for a short request
     // CreateDevice takes the LUID form too.
     SetNullAdapters(nullptr);
     DeviceCreateInfo info = NullInfo();
@@ -143,7 +158,8 @@ TEST_CASE("MatchAdapter accepts a LUID, in either case, and only as all 16 digit
     CHECK(CStrCompare(device->Adapter().id, "null-integrated") == 0);
 }
 
-TEST_CASE("The null backend fails when no adapter is suitable", "[rhi][adapter]") {
+TEST_CASE("The null backend fails when no adapter is suitable", "[rhi][adapter]")
+{
     NullAdaptersGuard guard;
     AdapterQuietLog quiet;
     AdapterList list;
@@ -153,51 +169,59 @@ TEST_CASE("The null backend fails when no adapter is suitable", "[rhi][adapter]"
     CHECK(CreateDevice(NullInfo()) == nullptr);
 }
 
-TEST_CASE("An id wins over an index that spells the same digits", "[rhi][adapter]") {
+TEST_CASE("An id wins over an index that spells the same digits", "[rhi][adapter]")
+{
     NullAdaptersGuard guard;
     AdapterList list;
     DefaultNullAdapters(&list);
-    CStrCopy(list.items[0].id, "1"); // an id that looks like the index of the second adapter
+    CStrCopy(list.items[0].id, "1");  // an id that looks like the index of the second adapter
     SetNullAdapters(&list);
     AdapterList got;
     REQUIRE(EnumerateAdapters(NullInfo(), &got));
     CHECK(MatchAdapter(got.items, got.count, "1") == 0);
 }
 
-TEST_CASE("CreateDevice honors DeviceCreateInfo::adapter on the null backend", "[rhi][adapter]") {
+TEST_CASE("CreateDevice honors DeviceCreateInfo::adapter on the null backend", "[rhi][adapter]")
+{
     DeviceCreateInfo info = NullInfo();
-    SECTION("no request picks the first suitable adapter") {
+    SECTION("no request picks the first suitable adapter")
+    {
         DevicePtr device = CreateDevice(info);
         REQUIRE(device != nullptr);
         CHECK(CStrCompare(device->Adapter().id, "null-discrete") == 0);
     }
-    SECTION("by id") {
+    SECTION("by id")
+    {
         info.adapter = "null-integrated";
         DevicePtr device = CreateDevice(info);
         REQUIRE(device != nullptr);
         CHECK(CStrCompare(device->Adapter().id, "null-integrated") == 0);
         CHECK(device->Adapter().kind == AdapterKind::Integrated);
     }
-    SECTION("by name substring") {
+    SECTION("by name substring")
+    {
         info.adapter = "integrated";
         DevicePtr device = CreateDevice(info);
         REQUIRE(device != nullptr);
         CHECK(CStrCompare(device->Adapter().id, "null-integrated") == 0);
     }
-    SECTION("by index") {
+    SECTION("by index")
+    {
         info.adapter = "1";
         DevicePtr device = CreateDevice(info);
         REQUIRE(device != nullptr);
         CHECK(CStrCompare(device->Adapter().id, "null-integrated") == 0);
     }
-    SECTION("an unknown adapter fails and does not fall back") {
+    SECTION("an unknown adapter fails and does not fall back")
+    {
         AdapterQuietLog quiet;
         info.adapter = "no-such-gpu";
         CHECK(CreateDevice(info) == nullptr);
     }
 }
 
-TEST_CASE("The null backend rejects an unsuitable adapter by name", "[rhi][adapter]") {
+TEST_CASE("The null backend rejects an unsuitable adapter by name", "[rhi][adapter]")
+{
     NullAdaptersGuard guard;
     AdapterQuietLog quiet;
     AdapterList list;
@@ -210,13 +234,14 @@ TEST_CASE("The null backend rejects an unsuitable adapter by name", "[rhi][adapt
     info.adapter = "null-discrete";
     CHECK(CreateDevice(info) == nullptr);
 
-    info.adapter = nullptr; // "best" skips the unsuitable one
+    info.adapter = nullptr;  // "best" skips the unsuitable one
     DevicePtr device = CreateDevice(info);
     REQUIRE(device != nullptr);
     CHECK(CStrCompare(device->Adapter().id, "null-integrated") == 0);
 }
 
-TEST_CASE("Vulkan adapter ids come from vendor, device and UUID, not from the order", "[rhi][adapter][vulkan][select]") {
+TEST_CASE("Vulkan adapter ids come from vendor, device and UUID, not from the order", "[rhi][adapter][vulkan][select]")
+{
     PhysicalDeviceInfo a = GoodGpu("GPU A", GpuKind::Discrete, 0x10de, 0x2504, 1);
     PhysicalDeviceInfo b = GoodGpu("GPU B", GpuKind::Integrated, 0x8086, 0x9a49, 40);
     const AdapterInfo ia = vulkan::MakeAdapterInfo(a, false);
@@ -238,12 +263,17 @@ TEST_CASE("Vulkan adapter ids come from vendor, device and UUID, not from the or
     CHECK(vulkan::SelectPhysicalDeviceFor(after, 3, false, ib.id, "test") == 2);
 }
 
-TEST_CASE("A Vulkan adapter with a valid deviceLUID reports it as high part then low part, and matches by it", "[rhi][adapter][vulkan][select]") {
+TEST_CASE("A Vulkan adapter with a valid deviceLUID reports it as high part then low part, and matches by it",
+          "[rhi][adapter][vulkan][select]")
+{
     PhysicalDeviceInfo a = GoodGpu("GPU A", GpuKind::Discrete, 0x1002, 0x150e, 1);
     PhysicalDeviceInfo b = GoodGpu("GPU B", GpuKind::Integrated, 0x8086, 0x9a49, 2);
-    CHECK(vulkan::MakeAdapterInfo(a, false).luid[0] == '\0'); // no valid LUID: empty (every Linux driver)
-    const u8 luid[8] = {0x78, 0x56, 0x34, 0x12, 0x02, 0x00, 0x00, 0x00}; // LowPart 0x12345678, HighPart 2
-    for (usize i = 0; i < 8; ++i) b.luid[i] = luid[i];
+    CHECK(vulkan::MakeAdapterInfo(a, false).luid[0] == '\0');             // no valid LUID: empty (every Linux driver)
+    const u8 luid[8] = {0x78, 0x56, 0x34, 0x12, 0x02, 0x00, 0x00, 0x00};  // LowPart 0x12345678, HighPart 2
+    for (usize i = 0; i < 8; ++i)
+    {
+        b.luid[i] = luid[i];
+    }
     b.luid_valid = true;
     const AdapterInfo ib = vulkan::MakeAdapterInfo(b, false);
     CHECK(CStrCompare(ib.luid, "0000000212345678") == 0);
@@ -251,12 +281,14 @@ TEST_CASE("A Vulkan adapter with a valid deviceLUID reports it as high part then
     CHECK(vulkan::SelectPhysicalDeviceFor(both, 2, false, "0000000212345678", "test") == 1);
 }
 
-TEST_CASE("Unsuitable Vulkan adapters carry a reason, and presentability follows the window", "[rhi][adapter][vulkan][select]") {
+TEST_CASE("Unsuitable Vulkan adapters carry a reason, and presentability follows the window",
+          "[rhi][adapter][vulkan][select]")
+{
     PhysicalDeviceInfo gpu = GoodGpu("GPU", GpuKind::Discrete, 1, 2, 3);
     AdapterInfo info = vulkan::MakeAdapterInfo(gpu, false);
     CHECK(info.suitable);
     CHECK(info.unsuitable_reason == nullptr);
-    CHECK_FALSE(info.can_present); // no window, nothing to present to
+    CHECK_FALSE(info.can_present);  // no window, nothing to present to
 
     info = vulkan::MakeAdapterInfo(gpu, true);
     CHECK(info.suitable);
@@ -282,17 +314,20 @@ TEST_CASE("Unsuitable Vulkan adapters carry a reason, and presentability follows
     CHECK(vulkan::MakeAdapterInfo(cpu, false).kind == AdapterKind::Software);
 }
 
-TEST_CASE("An explicit request does not fall back when it names an unsuitable GPU", "[rhi][adapter][vulkan][select]") {
+TEST_CASE("An explicit request does not fall back when it names an unsuitable GPU", "[rhi][adapter][vulkan][select]")
+{
     AdapterQuietLog quiet;
-    PhysicalDeviceInfo devices[2] = {GoodGpu("fast", GpuKind::Discrete, 1, 1, 1), GoodGpu("slow", GpuKind::Integrated, 2, 2, 2)};
+    PhysicalDeviceInfo devices[2] = {GoodGpu("fast", GpuKind::Discrete, 1, 1, 1),
+                                     GoodGpu("slow", GpuKind::Integrated, 2, 2, 2)};
     devices[0].timeline_semaphore = false;
     char id[kAdapterIdBytes];
     vulkan::MakeAdapterId(devices[0], id, sizeof(id));
     CHECK(vulkan::SelectPhysicalDeviceFor(devices, 2, false, id, "test") == -1);
-    CHECK(vulkan::SelectPhysicalDeviceFor(devices, 2, false, nullptr, "test") == 1); // "best" still works
+    CHECK(vulkan::SelectPhysicalDeviceFor(devices, 2, false, nullptr, "test") == 1);  // "best" still works
 }
 
-TEST_CASE("Real adapters are listed and a device is created on each presentable one", "[rhi][adapter][vulkan][gpu]") {
+TEST_CASE("Real adapters are listed and a device is created on each presentable one", "[rhi][adapter][vulkan][gpu]")
+{
     gpu_test::GpuFixture fx;
     fx.Require();
 
@@ -306,11 +341,13 @@ TEST_CASE("Real adapters are listed and a device is created on each presentable 
     REQUIRE(again.count == list.count);
 
     u32 tried = 0;
-    for (u32 i = 0; i < list.count; ++i) {
+    for (u32 i = 0; i < list.count; ++i)
+    {
         INFO("adapter " << list.items[i].name << " (" << list.items[i].id << ")");
         CHECK(CStrCompare(list.items[i].id, again.items[i].id) == 0);
         CHECK(list.items[i].id[0] != '\0');
-        if (!list.items[i].suitable) {
+        if (!list.items[i].suitable)
+        {
             REQUIRE(list.items[i].unsuitable_reason != nullptr);
             continue;
         }
@@ -321,9 +358,12 @@ TEST_CASE("Real adapters are listed and a device is created on each presentable 
         const engine_test::Text saved_copy = engine_test::MakeText(StringView(saved != nullptr ? saved : ""));
         test_support::SetEnv("ENGINE_RHI_GPU", "no-such-gpu-name");
         DevicePtr device = CreateDevice(create);
-        if (saved != nullptr) {
+        if (saved != nullptr)
+        {
             test_support::SetEnv("ENGINE_RHI_GPU", saved_copy.CStr());
-        } else {
+        }
+        else
+        {
             test_support::UnsetEnv("ENGINE_RHI_GPU");
         }
         REQUIRE(device != nullptr);
@@ -354,12 +394,14 @@ TEST_CASE("Real adapters are listed and a device is created on each presentable 
         ++tried;
     }
     REQUIRE(tried >= 1);
-    if (list.count == 1) {
+    if (list.count == 1)
+    {
         WARN("single-adapter machine: the adapter test ran once");
     }
 }
 
-TEST_CASE("A requested Vulkan adapter that does not exist fails", "[rhi][adapter][vulkan][gpu]") {
+TEST_CASE("A requested Vulkan adapter that does not exist fails", "[rhi][adapter][vulkan][gpu]")
+{
     gpu_test::GpuFixture fx;
     fx.Require();
     AdapterQuietLog quiet;

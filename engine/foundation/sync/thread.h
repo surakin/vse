@@ -8,13 +8,16 @@
 #include "sync/atomic.h"
 #include "types.h"
 
-//! Threads (Phase 16): the engine's spelling of `<thread>`. Names, priorities and affinity are `os`'s, not this header's.
-namespace engine_placeholder {
+//! Threads (Phase 16): the engine's spelling of `<thread>`. Names, priorities and affinity are `os`'s, not this
+//! header's.
+namespace engine_placeholder
+{
 
 /// Identifies a thread for comparison and hashing (`std::thread::id`).
 ///
 /// - Thread-safety: thread-compatible plain data.
-class ThreadId {
+class ThreadId
+{
 public:
     /// The id that names no thread.
     ThreadId() noexcept = default;
@@ -33,17 +36,21 @@ private:
 
 /// An operating-system thread that runs a function (`std::thread`).
 ///
-/// A joinable `Thread` must be joined or detached before it is destroyed; destroying a joinable thread terminates the program.
+/// A joinable `Thread` must be joined or detached before it is destroyed; destroying a joinable thread terminates the
+/// program.
 ///
 /// - Thread-safety: thread-compatible. One thread owns a `Thread` object.
 /// - Ownership: movable, not copyable; the object owns the right to join.
-class Thread {
+class Thread
+{
 public:
     /// A thread object that runs nothing.
     Thread() noexcept = default;
     /// Starts a thread that calls `function(args...)` with copies of `args`.
     template <class F, class... Args, EnableIf<!IsSame<RemoveCVRef<F>, Thread>, int> = 0>
-    explicit Thread(F&& function, Args&&... args) : native_(static_cast<F&&>(function), static_cast<Args&&>(args)...) {}
+    explicit Thread(F&& function, Args&&... args) : native_(static_cast<F&&>(function), static_cast<Args&&>(args)...)
+    {
+    }
     Thread(Thread&&) noexcept = default;
     Thread& operator=(Thread&&) noexcept = default;
     Thread(const Thread&) = delete;
@@ -68,17 +75,32 @@ private:
 };
 
 /// Operations on the calling thread (`std::this_thread`).
-namespace ThisThread {
+namespace ThisThread
+{
 
 /// The calling thread's id.
-inline ThreadId Id() noexcept { return ThreadId(std::this_thread::get_id()); }
+inline ThreadId Id() noexcept
+{
+    return ThreadId(std::this_thread::get_id());
+}
 /// Offers the processor to another thread.
-inline void Yield() noexcept { std::this_thread::yield(); }
+inline void Yield() noexcept
+{
+    std::this_thread::yield();
+}
 /// Blocks the calling thread for at least `milliseconds`.
-inline void SleepForMilliseconds(u64 milliseconds) { std::this_thread::sleep_for(std::chrono::milliseconds(detail_sync::ClampDuration(milliseconds, detail_sync::kMaxWaitMilliseconds))); }
+inline void SleepForMilliseconds(u64 milliseconds)
+{
+    std::this_thread::sleep_for(
+        std::chrono::milliseconds(detail_sync::ClampDuration(milliseconds, detail_sync::kMaxWaitMilliseconds)));
+}
 /// Blocks the calling thread for at least `microseconds`.
-inline void SleepForMicroseconds(u64 microseconds) { std::this_thread::sleep_for(std::chrono::microseconds(detail_sync::ClampDuration(microseconds, detail_sync::kMaxWaitMicroseconds))); }
+inline void SleepForMicroseconds(u64 microseconds)
+{
+    std::this_thread::sleep_for(
+        std::chrono::microseconds(detail_sync::ClampDuration(microseconds, detail_sync::kMaxWaitMicroseconds)));
+}
 
-} // namespace ThisThread
+}  // namespace ThisThread
 
-} // namespace engine_placeholder
+}  // namespace engine_placeholder

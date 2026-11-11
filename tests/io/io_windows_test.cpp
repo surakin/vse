@@ -1,5 +1,6 @@
-// The Windows file backend (Phase 13 Day 151): the Win32 error table, native path forms, the names the backend refuses, sharing with other
-// openers, Stat and Lstat over junctions and links, long paths, and that nothing leaks a handle. Windows only.
+// The Windows file backend (Phase 13 Day 151): the Win32 error table, native path forms, the names the backend refuses,
+// sharing with other openers, Stat and Lstat over junctions and links, long paths, and that nothing leaks a handle.
+// Windows only.
 #include <catch2/catch_test_macros.hpp>
 
 #include "os/console.h"
@@ -17,7 +18,6 @@
 #include <winioctl.h>
 #include "unity/windows_disable.h"
 
-
 using namespace engine_placeholder;
 using io::Error;
 using io::OpenMode;
@@ -25,9 +25,11 @@ using io::Path;
 using io_test::TempDir;
 using io_test::WinPath;
 
-namespace {
+namespace
+{
 
-io::FilePtr MakeWindowsLocal(TempDir& dir, StringView content, bool writable) {
+io::FilePtr MakeWindowsLocal(TempDir& dir, StringView content, bool writable)
+{
     static int counter = 0;
     const engine_test::Text name = engine_test::Format("conf%d", counter++);
     const Path path = dir / name.View();
@@ -37,25 +39,33 @@ io::FilePtr MakeWindowsLocal(TempDir& dir, StringView content, bool writable) {
     return f;
 }
 
-// Creates a symbolic link without elevation, which Windows allows only in Developer Mode. Returns false (and the reason) otherwise.
-bool MakeSymlink(const Path& link, const wchar_t* target, bool directory, DWORD* error) {
+// Creates a symbolic link without elevation, which Windows allows only in Developer Mode. Returns false (and the
+// reason) otherwise.
+bool MakeSymlink(const Path& link, const wchar_t* target, bool directory, DWORD* error)
+{
     const WinPath l(link);
     const DWORD flags = SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE | (directory ? SYMBOLIC_LINK_FLAG_DIRECTORY : 0);
-    if (CreateSymbolicLinkW(l.text, target, flags)) return true;
+    if (CreateSymbolicLinkW(l.text, target, flags))
+    {
+        return true;
+    }
     *error = GetLastError();
     return false;
 }
 
-DWORD HandleCount() {
+DWORD HandleCount()
+{
     DWORD n = 0;
     GetProcessHandleCount(GetCurrentProcess(), &n);
     return n;
 }
 
-} // namespace
+}  // namespace
 
-TEST_CASE("io::Error: the Win32 table", "[io][error][windows]") {
-    struct Row {
+TEST_CASE("io::Error: the Win32 table", "[io][error][windows]")
+{
+    struct Row
+    {
         DWORD code;
         Error error;
     };
@@ -96,16 +106,18 @@ TEST_CASE("io::Error: the Win32 table", "[io][error][windows]") {
         {ERROR_CRC, Error::Io},
         {99999, Error::Io},
     };
-    for (const Row& r : rows) {
+    for (const Row& r : rows)
+    {
         INFO("Win32 code " << r.code);
         CHECK(io::ErrorFromOsCode(static_cast<i32>(r.code)) == r.error);
     }
     const io::Status s = io::Status::FromOs(ERROR_SHARING_VIOLATION);
     CHECK(s.Is(Error::Busy));
-    CHECK(s.os_code == ERROR_SHARING_VIOLATION); // the message keeps the Win32 code
+    CHECK(s.os_code == ERROR_SHARING_VIOLATION);  // the message keeps the Win32 code
 }
 
-TEST_CASE("Path: native Windows forms", "[io][path][windows]") {
+TEST_CASE("Path: native Windows forms", "[io][path][windows]")
+{
     CHECK(io::NativePathStyle() == io::PathStyle::Windows);
     // Both separators on input; one canonical form; ASCII case folded in comparisons, kept in the text.
     CHECK(Path("C:\\a/b\\c") == Path("C:/a/b/c"));
@@ -127,7 +139,8 @@ TEST_CASE("Path: native Windows forms", "[io][path][windows]") {
     const Path verbatim("\\\\?\\C:\\very\\long");
     REQUIRE(verbatim.ToNative(native, sizeof(native)));
     CHECK(StringView(native) == StringView("\\\\?\\C:\\very\\long"));
-    // A device path is a UNC root, so it reads with its root's separator (`\\.\NUL\`, which Win32 opens as the device too).
+    // A device path is a UNC root, so it reads with its root's separator (`\\.\NUL\`, which Win32 opens as the device
+    // too).
     const Path device("\\\\.\\NUL");
     CHECK(device.RootName() == StringView("//./NUL"));
     REQUIRE(device.ToNative(native, sizeof(native)));
@@ -137,13 +150,17 @@ TEST_CASE("Path: native Windows forms", "[io][path][windows]") {
     CHECK(Path("C:/a/CON").FileName() == StringView("CON"));
 }
 
-TEST_CASE("io::File on Windows: reserved names, trailing dots and spaces and streams are refused", "[io][file][windows]") {
+TEST_CASE("io::File on Windows: reserved names, trailing dots and spaces and streams are refused",
+          "[io][file][windows]")
+{
     TempDir dir;
     io::FilePtr f;
-    const char* const refused[] = {"CON",  "con",     "NUL",     "nul.txt",     "nul .txt",   "PRN",    "AUX.log", "COM1",  "COM0",
-                                   "com9.bin", "LPT1", "lpt9.x", "CONIN$", "CONOUT$", "COM\xC2\xB9", "LPT\xC2\xB3", "name.",
-                                   "name ",  "name. .", "file:stream"};
-    for (const char* name : refused) {
+    const char* const refused[] = {"CON",         "con",     "NUL",    "nul.txt", "nul .txt",
+                                   "PRN",         "AUX.log", "COM1",   "COM0",    "com9.bin",
+                                   "LPT1",        "lpt9.x",  "CONIN$", "CONOUT$", "COM\xC2\xB9",
+                                   "LPT\xC2\xB3", "name.",   "name ",  "name. .", "file:stream"};
+    for (const char* name : refused)
+    {
         INFO("name '" << name << "'");
         CHECK(io::File::Open(dir / name, OpenMode::Write, io::kOpenNone, &f).Is(Error::Invalid));
         io::FileInfo info;
@@ -152,7 +169,8 @@ TEST_CASE("io::File on Windows: reserved names, trailing dots and spaces and str
         CHECK(io::File::Open((dir / name) / "child", OpenMode::Write, io::kOpenNone, &f).Is(Error::Invalid));
     }
     const char* const accepted[] = {"CONSOLE", "COM10", "LPT10", "LPT", "nul_x", "a.b.c", ".hidden", "con-figure"};
-    for (const char* name : accepted) {
+    for (const char* name : accepted)
+    {
         INFO("name '" << name << "'");
         REQUIRE(io::File::Open(dir / name, OpenMode::Write, io::kOpenNone, &f).Ok());
         CHECK(f->Close().Ok());
@@ -168,12 +186,14 @@ TEST_CASE("io::File on Windows: reserved names, trailing dots and spaces and str
     CHECK(info.type == io::FileType::Other);
 }
 
-TEST_CASE("io::File on Windows: directories, missing parents and a file used as a directory", "[io][file][windows]") {
+TEST_CASE("io::File on Windows: directories, missing parents and a file used as a directory", "[io][file][windows]")
+{
     TempDir dir;
     io::FilePtr f;
     CHECK(io::File::Open(dir.Path(), OpenMode::Read, io::kOpenNone, &f).Is(Error::IsADirectory));
     CHECK(io::File::Open(dir.Path(), OpenMode::Write, io::kOpenNone, &f).Is(Error::IsADirectory));
-    CHECK(io::File::Open(dir.Path(), OpenMode::ReadWrite, io::kOpenCreateNew, &f).Is(Error::AlreadyExists)); // as O_EXCL on Linux
+    CHECK(io::File::Open(dir.Path(), OpenMode::ReadWrite, io::kOpenCreateNew, &f)
+              .Is(Error::AlreadyExists));  // as O_EXCL on Linux
     CHECK(io::File::Open(dir / "no/such/dir/f", OpenMode::Write, io::kOpenNone, &f).Is(Error::NotFound));
     REQUIRE(io_test::WriteText(dir / "file", "x"));
     CHECK(io::File::Open(dir / "file/child", OpenMode::Read, io::kOpenNone, &f).Is(Error::NotADirectory));
@@ -183,17 +203,20 @@ TEST_CASE("io::File on Windows: directories, missing parents and a file used as 
     CHECK(io::Stat(dir / "missing/child", &info).Is(Error::NotFound));
 }
 
-TEST_CASE("io::File on Windows: open files can be renamed and deleted, and a foreign exclusive open is Busy", "[io][file][share][windows]") {
+TEST_CASE("io::File on Windows: open files can be renamed and deleted, and a foreign exclusive open is Busy",
+          "[io][file][share][windows]")
+{
     TempDir dir;
     REQUIRE(io_test::WriteText(dir / "open.txt", "content"));
     io::FilePtr f;
     REQUIRE(io::File::Open(dir / "open.txt", OpenMode::Read, io::kOpenNone, &f).Ok());
-    // Another opener (here the test itself through Win32) renames the file the engine holds open, then deletes it: FILE_SHARE_DELETE.
+    // Another opener (here the test itself through Win32) renames the file the engine holds open, then deletes it:
+    // FILE_SHARE_DELETE.
     const WinPath from(dir / "open.txt");
     const WinPath to(dir / "renamed.txt");
     CHECK(MoveFileExW(from.text, to.text, MOVEFILE_REPLACE_EXISTING) != FALSE);
     char buf[7];
-    REQUIRE(io::ReadExact(*f, buf, 7, 0).Ok()); // the open file still reads
+    REQUIRE(io::ReadExact(*f, buf, 7, 0).Ok());  // the open file still reads
     CHECK(StringView(buf, 7) == StringView("content"));
     CHECK(DeleteFileW(to.text) != FALSE);
     CHECK(f->Close().Ok());
@@ -202,7 +225,8 @@ TEST_CASE("io::File on Windows: open files can be renamed and deleted, and a for
     // A program that opens without sharing keeps the engine out, and the engine says Busy (ERROR_SHARING_VIOLATION).
     REQUIRE(io_test::WriteText(dir / "locked.txt", "x"));
     const WinPath locked(dir / "locked.txt");
-    const HANDLE exclusive = CreateFileW(locked.text, GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    const HANDLE exclusive = CreateFileW(locked.text, GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
+                                         nullptr);
     REQUIRE(exclusive != INVALID_HANDLE_VALUE);
     const io::Status s = io::File::Open(dir / "locked.txt", OpenMode::Read, io::kOpenNone, &f);
     CHECK(s.Is(Error::Busy));
@@ -211,7 +235,8 @@ TEST_CASE("io::File on Windows: open files can be renamed and deleted, and a for
     CHECK(io::File::Open(dir / "locked.txt", OpenMode::Read, io::kOpenNone, &f).Ok());
 }
 
-TEST_CASE("io: Stat and Lstat on Windows", "[io][fs][windows]") {
+TEST_CASE("io: Stat and Lstat on Windows", "[io][fs][windows]")
+{
     TempDir dir;
     const Path file = dir / "f.txt";
     REQUIRE(io_test::WriteText(file, "hello"));
@@ -224,7 +249,8 @@ TEST_CASE("io: Stat and Lstat on Windows", "[io][fs][windows]") {
     // The modification time is in the engine's epoch (Unix nanoseconds): within a minute of now.
     FILETIME now_ft;
     GetSystemTimeAsFileTime(&now_ft);
-    const i64 now_ns = ((static_cast<i64>(now_ft.dwHighDateTime) << 32 | now_ft.dwLowDateTime) - 116444736000000000LL) * 100;
+    const i64 now_ns = ((static_cast<i64>(now_ft.dwHighDateTime) << 32 | now_ft.dwLowDateTime) - 116444736000000000LL) *
+                       100;
     CHECK(info.modified_unix_ns > now_ns - i64{60} * 1000000000);
     CHECK(info.modified_unix_ns <= now_ns + i64{1000000000});
     CHECK(io::IsFile(file));
@@ -263,9 +289,10 @@ TEST_CASE("io: Stat and Lstat on Windows", "[io][fs][windows]") {
 
     // Symbolic links need Developer Mode (or elevation) to create.
     DWORD error = 0;
-    if (!MakeSymlink(dir / "link", L"f.txt", false, &error)) {
-        WARN("skipped the symbolic link checks: CreateSymbolicLinkW failed with " << error
-                                                                                  << " (1314 = no privilege: turn on Developer Mode to run them)");
+    if (!MakeSymlink(dir / "link", L"f.txt", false, &error))
+    {
+        WARN("skipped the symbolic link checks: CreateSymbolicLinkW failed with "
+             << error << " (1314 = no privilege: turn on Developer Mode to run them)");
         return;
     }
     REQUIRE(io::Lstat(dir / "link", &info).Ok());
@@ -279,20 +306,25 @@ TEST_CASE("io: Stat and Lstat on Windows", "[io][fs][windows]") {
     CHECK(io::Stat(dir / "loop", &info).Is(Error::SymlinkLoop));
 }
 
-TEST_CASE("io::File on Windows: paths longer than MAX_PATH work with LongPathsEnabled off", "[io][file][windows]") {
+TEST_CASE("io::File on Windows: paths longer than MAX_PATH work with LongPathsEnabled off", "[io][file][windows]")
+{
     DWORD enabled = 0;
     DWORD size = sizeof(enabled);
-    RegGetValueW(HKEY_LOCAL_MACHINE, L"SYSTEM\\CurrentControlSet\\Control\\FileSystem", L"LongPathsEnabled", RRF_RT_REG_DWORD, nullptr,
-                 &enabled, &size);
-    INFO("LongPathsEnabled = " << enabled); // recorded; the paths below must work either way
+    RegGetValueW(HKEY_LOCAL_MACHINE, L"SYSTEM\\CurrentControlSet\\Control\\FileSystem", L"LongPathsEnabled",
+                 RRF_RT_REG_DWORD, nullptr, &enabled, &size);
+    INFO("LongPathsEnabled = " << enabled);  // recorded; the paths below must work either way
     TempDir dir;
     // Twelve levels of 30 characters: more than 360 characters below the temporary directory.
     Path deep = dir.Path();
     engine_test::Text relative = engine_test::MakeText();
-    for (int level = 0; level < 12; ++level) {
+    for (int level = 0; level < 12; ++level)
+    {
         const engine_test::Text name = engine_test::Format("level%02d_abcdefghijklmnopqrstu", level);
         deep = deep / name.View();
-        if (level > 0) relative.Append("/");
+        if (level > 0)
+        {
+            relative.Append("/");
+        }
         relative.Append(name.View());
         const WinPath p(deep);
         REQUIRE(CreateDirectoryW(p.text, nullptr));
@@ -341,9 +373,12 @@ TEST_CASE("io::File on Windows: paths longer than MAX_PATH work with LongPathsEn
     CHECK_FALSE(io::Exists(top));
 }
 
-TEST_CASE("io: special folders on Windows", "[io][fs][windows]") {
-    // The expected values come from the environment Windows sets for every session, independent of the known-folder calls under test.
-    auto env = [](const wchar_t* name) {
+TEST_CASE("io: special folders on Windows", "[io][fs][windows]")
+{
+    // The expected values come from the environment Windows sets for every session, independent of the known-folder
+    // calls under test.
+    auto env = [](const wchar_t* name)
+    {
         wchar_t value[MAX_PATH + 1];
         const DWORD n = GetEnvironmentVariableW(name, value, MAX_PATH + 1);
         char utf8[4 * MAX_PATH];
@@ -363,7 +398,8 @@ TEST_CASE("io: special folders on Windows", "[io][fs][windows]") {
     CHECK(p == local / "app/state");
     // Bad application names: the POSIX ones, and what Windows cannot keep.
     const char* const bad[] = {"", ".", "..", "a/b", "a\\b", "a:b", "CON", "nul.txt", "name.", "name "};
-    for (const char* name : bad) {
+    for (const char* name : bad)
+    {
         INFO("app name '" << name << "'");
         CHECK(io::UserConfigDirectory(name, &p).Is(Error::Invalid));
     }
@@ -384,8 +420,8 @@ TEST_CASE("io: special folders on Windows", "[io][fs][windows]") {
     CHECK(exe.Parent() == exe_dir);
     CHECK(io::IsFile(exe));
     CHECK(exe.Extension() == StringView(".exe"));
-    // The crash dump directory: under the local application data, named after ENGINE_APP_NAME (else the executable), private. A name of
-    // the test's own, removed afterwards, so the run leaves nothing in the user's profile.
+    // The crash dump directory: under the local application data, named after ENGINE_APP_NAME (else the executable),
+    // private. A name of the test's own, removed afterwards, so the run leaves nothing in the user's profile.
     const engine_test::Text app = engine_test::Format("re_io_test_crashes.%lu", GetCurrentProcessId());
     test_support::SetEnv("ENGINE_APP_NAME", app.CStr());
     Path crashes;
@@ -399,22 +435,27 @@ TEST_CASE("io: special folders on Windows", "[io][fs][windows]") {
     CHECK_FALSE(io::Exists(local / app.View()));
 }
 
-// Day 161: %APPDATA% and %LOCALAPPDATA% come first when they hold an absolute path, as $XDG_* on Linux, so a test points the user folders (and
-// the crash dumps) into a directory of its own; a relative value is ignored. The variables are put back afterwards.
-TEST_CASE("io: the user folders follow APPDATA and LOCALAPPDATA when they are absolute", "[io][fs][windows]") {
-    auto get = [](const char* name) {
+// Day 161: %APPDATA% and %LOCALAPPDATA% come first when they hold an absolute path, as $XDG_* on Linux, so a test
+// points the user folders (and the crash dumps) into a directory of its own; a relative value is ignored. The variables
+// are put back afterwards.
+TEST_CASE("io: the user folders follow APPDATA and LOCALAPPDATA when they are absolute", "[io][fs][windows]")
+{
+    auto get = [](const char* name)
+    {
         const char* v = os::GetEnvironment(name);
         return engine_test::MakeText(StringView(v != nullptr ? v : ""));
     };
-    struct Restore {
+    struct Restore
+    {
         engine_test::Text roaming, local;
-        ~Restore() {
+        ~Restore()
+        {
             test_support::SetEnv("APPDATA", roaming.CStr());
             test_support::SetEnv("LOCALAPPDATA", local.CStr());
         }
     } restore{get("APPDATA"), get("LOCALAPPDATA")};
     Path known_config;
-    REQUIRE(io::UserConfigDirectory("app", &known_config).Ok()); // the session's own value, which is the known folder
+    REQUIRE(io::UserConfigDirectory("app", &known_config).Ok());  // the session's own value, which is the known folder
     TempDir dir;
     test_support::SetEnv("APPDATA", engine_test::MakeText((dir / "roaming").View()).CStr());
     test_support::SetEnv("LOCALAPPDATA", engine_test::MakeText((dir / "local").View()).CStr());
@@ -440,13 +481,15 @@ TEST_CASE("io: the user folders follow APPDATA and LOCALAPPDATA when they are ab
     CHECK(p == known_config);
 }
 
-TEST_CASE("io: RemoveAll does not follow a junction out of the tree", "[io][fs][windows]") {
+TEST_CASE("io: RemoveAll does not follow a junction out of the tree", "[io][fs][windows]")
+{
     TempDir dir;
     TempDir outside;
     REQUIRE(io_test::WriteText(outside / "keep.txt", "keep"));
     REQUIRE(io::CreateDirectories(dir / "tree/sub").Ok());
     REQUIRE(io_test::MakeJunction(outside.Path(), dir / "tree/sub/junction"));
-    REQUIRE(io_test::WriteText(dir / "tree/sub/junction/through.txt", "x")); // written through the junction, lands outside
+    REQUIRE(
+        io_test::WriteText(dir / "tree/sub/junction/through.txt", "x"));  // written through the junction, lands outside
     REQUIRE(io::Exists(outside / "through.txt"));
     // Read-only files and a file held open inside the tree go too (POSIX semantics).
     REQUIRE(io_test::WriteText(dir / "tree/ro.txt", "r"));
@@ -467,24 +510,25 @@ TEST_CASE("io: RemoveAll does not follow a junction out of the tree", "[io][fs][
     CHECK(items[0].type == io::FileType::Other);
 }
 
-TEST_CASE("io: Rename replaces open, read-only and empty-directory targets", "[io][fs][windows]") {
+TEST_CASE("io: Rename replaces open, read-only and empty-directory targets", "[io][fs][windows]")
+{
     TempDir dir;
     REQUIRE(io_test::WriteText(dir / "a", "new"));
     REQUIRE(io_test::WriteText(dir / "b", "old"));
     io::FilePtr open_b;
     REQUIRE(io::File::Open(dir / "b", OpenMode::Read, io::kOpenNone, &open_b).Ok());
-    REQUIRE(io::Rename(dir / "a", dir / "b").Ok()); // MoveFileExW would refuse: the target is open
+    REQUIRE(io::Rename(dir / "a", dir / "b").Ok());  // MoveFileExW would refuse: the target is open
     char buf[3];
     REQUIRE(io::ReadExact(*open_b, buf, 3, 0).Ok());
-    CHECK(StringView(buf, 3) == StringView("old")); // the open file is the old one
+    CHECK(StringView(buf, 3) == StringView("old"));  // the open file is the old one
     CHECK(io_test::ReadText(dir / "b") == "new");
     REQUIRE(io_test::WriteText(dir / "c", "c"));
     REQUIRE(io_test::SetReadOnlyFile(dir / "b"));
-    REQUIRE(io::Rename(dir / "c", dir / "b").Ok()); // over a read-only file, as rename(2)
+    REQUIRE(io::Rename(dir / "c", dir / "b").Ok());  // over a read-only file, as rename(2)
     CHECK(io_test::ReadText(dir / "b") == "c");
     REQUIRE(io::CreateDirectory(dir / "d1").Ok());
     REQUIRE(io::CreateDirectory(dir / "d2").Ok());
-    REQUIRE(io::Rename(dir / "d1", dir / "d2").Ok()); // a directory over an empty one
+    REQUIRE(io::Rename(dir / "d1", dir / "d2").Ok());  // a directory over an empty one
     CHECK_FALSE(io::Exists(dir / "d1"));
     REQUIRE(io_test::WriteText(dir / "f", "f"));
     CHECK(io::Rename(dir / "d2", dir / "f").Is(Error::NotADirectory));
@@ -494,7 +538,8 @@ TEST_CASE("io: Rename replaces open, read-only and empty-directory targets", "[i
     CHECK(io::SyncDirectory(dir / "missing").Is(Error::NotFound));
 }
 
-TEST_CASE("io::File on Windows: the conformance suites and the error paths leak no handle", "[io][file][windows]") {
+TEST_CASE("io::File on Windows: the conformance suites and the error paths leak no handle", "[io][file][windows]")
+{
     TempDir dir;
     // Warm up anything created once per process (the ACL check's token, the log).
     io::FileInfo info;
@@ -503,7 +548,8 @@ TEST_CASE("io::File on Windows: the conformance suites and the error paths leak 
     io_test::RunReadConformance([&](StringView c, bool w) { return MakeWindowsLocal(dir, c, w); });
     io_test::RunWriteConformance([&](StringView c, bool w) { return MakeWindowsLocal(dir, c, w); });
     io::FilePtr f;
-    for (int i = 0; i < 20; ++i) {
+    for (int i = 0; i < 20; ++i)
+    {
         CHECK(io::File::Open(dir / "missing", OpenMode::Read, io::kOpenNone, &f).Is(Error::NotFound));
         CHECK(io::File::Open(dir.Path(), OpenMode::Read, io::kOpenNone, &f).Is(Error::IsADirectory));
         CHECK(io::File::Open(dir / "CON", OpenMode::Read, io::kOpenNone, &f).Is(Error::Invalid));
@@ -515,13 +561,16 @@ TEST_CASE("io::File on Windows: the conformance suites and the error paths leak 
     CHECK(HandleCount() == before);
 }
 
-TEST_CASE("io::File on Windows: Write and kOpenTruncate replace hidden and system files and keep their attributes", "[io][file][windows]") {
+TEST_CASE("io::File on Windows: Write and kOpenTruncate replace hidden and system files and keep their attributes",
+          "[io][file][windows]")
+{
     TempDir dir;
     const Path path = dir / "hidden.txt";
     REQUIRE(io_test::WriteText(path, "old content"));
     const WinPath p(path);
     REQUIRE(SetFileAttributesW(p.text, FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM));
-    // O_TRUNC on Linux keeps the file and its mode; CREATE_ALWAYS would refuse a hidden file whose attributes the call does not repeat.
+    // O_TRUNC on Linux keeps the file and its mode; CREATE_ALWAYS would refuse a hidden file whose attributes the call
+    // does not repeat.
     REQUIRE(io::WriteFile(path, "new", 3).Ok());
     CHECK(io_test::ReadText(path) == "new");
     io::FilePtr f;
@@ -537,13 +586,15 @@ TEST_CASE("io::File on Windows: Write and kOpenTruncate replace hidden and syste
     CHECK((attributes & FILE_ATTRIBUTE_SYSTEM) != 0);
 }
 
-TEST_CASE("io_test::TempDir removes a tree deeper than MAX_PATH", "[io][windows]") {
+TEST_CASE("io_test::TempDir removes a tree deeper than MAX_PATH", "[io][windows]")
+{
     Path root;
     {
         TempDir dir;
         root = dir.Path();
         Path deep = dir.Path();
-        for (int level = 0; level < 12; ++level) {
+        for (int level = 0; level < 12; ++level)
+        {
             deep = deep / engine_test::Format("level%02d_abcdefghijklmnopqrstu", level).View();
             REQUIRE(CreateDirectoryW(WinPath(deep).text, nullptr));
         }
@@ -552,16 +603,23 @@ TEST_CASE("io_test::TempDir removes a tree deeper than MAX_PATH", "[io][windows]
     CHECK(GetFileAttributesW(WinPath(root).text) == INVALID_FILE_ATTRIBUTES);
 }
 
-TEST_CASE("io: Stat describes a file another program holds without sharing its attributes", "[io][fs][windows]") {
-    // The paging file is opened by the system with no sharing at all: even FILE_READ_ATTRIBUTES is refused (ERROR_SHARING_VIOLATION).
+TEST_CASE("io: Stat describes a file another program holds without sharing its attributes", "[io][fs][windows]")
+{
+    // The paging file is opened by the system with no sharing at all: even FILE_READ_ATTRIBUTES is refused
+    // (ERROR_SHARING_VIOLATION).
     wchar_t windows_dir[MAX_PATH + 1];
     REQUIRE(GetWindowsDirectoryW(windows_dir, MAX_PATH + 1) > 0);
     const Path pagefile(engine_test::Format("%c:/pagefile.sys", static_cast<char>(windows_dir[0])).View());
-    const HANDLE probe = CreateFileW(WinPath(pagefile).text, FILE_READ_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-                                     nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
+    const HANDLE probe = CreateFileW(WinPath(pagefile).text, FILE_READ_ATTRIBUTES,
+                                     FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING,
+                                     FILE_FLAG_BACKUP_SEMANTICS, nullptr);
     const DWORD error = probe == INVALID_HANDLE_VALUE ? GetLastError() : 0;
-    if (probe != INVALID_HANDLE_VALUE) CloseHandle(probe);
-    if (error != ERROR_SHARING_VIOLATION) {
+    if (probe != INVALID_HANDLE_VALUE)
+    {
+        CloseHandle(probe);
+    }
+    if (error != ERROR_SHARING_VIOLATION)
+    {
         WARN("skipped: " << pagefile.View().Data() << " is not held exclusively here (open result " << error << ")");
         return;
     }
@@ -573,11 +631,12 @@ TEST_CASE("io: Stat describes a file another program holds without sharing its a
     CHECK(io::IsFile(pagefile));
 }
 
-TEST_CASE("io: RemoveAll reports a subdirectory it cannot list instead of NotEmpty", "[io][fs][windows]") {
+TEST_CASE("io: RemoveAll reports a subdirectory it cannot list instead of NotEmpty", "[io][fs][windows]")
+{
     TempDir dir;
     REQUIRE(io::CreateDirectories(dir / "tree/locked").Ok());
     REQUIRE(io_test::WriteText(dir / "tree/locked/f.txt", "x"));
     REQUIRE(io_test::DenyListing(dir / "tree/locked"));
-    CHECK(io::RemoveAll(dir / "tree").Is(Error::PermissionDenied)); // as opening a 0000 directory on Linux
+    CHECK(io::RemoveAll(dir / "tree").Is(Error::PermissionDenied));  // as opening a 0000 directory on Linux
     REQUIRE(io_test::AllowAll(dir / "tree/locked"));
 }

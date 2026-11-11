@@ -3,20 +3,36 @@
 
 #include "os/windows/win32.h"
 
-namespace engine_placeholder::os::win32 {
+namespace engine_placeholder::os::win32
+{
 
-namespace {
+namespace
+{
 
-constexpr u32 kRightShiftScanCode = 0x36; // the left Shift is 0x2A
+constexpr u32 kRightShiftScanCode = 0x36;  // the left Shift is 0x2A
 
-Key KeyOffset(Key first, u32 offset) { return static_cast<Key>(static_cast<u32>(first) + offset); }
+Key KeyOffset(Key first, u32 offset)
+{
+    return static_cast<Key>(static_cast<u32>(first) + offset);
+}
 
 // The key a layout's character names, as KeyFromKeysym names the same keysym on Linux.
-Key KeyFromCharacter(u32 c) {
-    if (c >= 'a' && c <= 'z') return KeyOffset(Key::A, c - 'a');
-    if (c >= 'A' && c <= 'Z') return KeyOffset(Key::A, c - 'A');
-    if (c >= '0' && c <= '9') return KeyOffset(Key::Num0, c - '0');
-    switch (c) {
+Key KeyFromCharacter(u32 c)
+{
+    if (c >= 'a' && c <= 'z')
+    {
+        return KeyOffset(Key::A, c - 'a');
+    }
+    if (c >= 'A' && c <= 'Z')
+    {
+        return KeyOffset(Key::A, c - 'A');
+    }
+    if (c >= '0' && c <= '9')
+    {
+        return KeyOffset(Key::Num0, c - '0');
+    }
+    switch (c)
+    {
     case ' ': return Key::Space;
     case '-': return Key::Minus;
     case '=': return Key::Equals;
@@ -33,19 +49,30 @@ Key KeyFromCharacter(u32 c) {
     }
 }
 
-// The navigation keys: the separate ones carry the extended flag; the same virtual keys without it come from the number pad with NumLock
-// off, which XKB reports as KP_Home and the like (not in the enum).
-Key Navigation(Key key, bool extended) { return extended ? key : Key::Unknown; }
+// The navigation keys: the separate ones carry the extended flag; the same virtual keys without it come from the number
+// pad with NumLock off, which XKB reports as KP_Home and the like (not in the enum).
+Key Navigation(Key key, bool extended)
+{
+    return extended ? key : Key::Unknown;
+}
 
-} // namespace
+}  // namespace
 
-Key KeyFromWin32(const Win32KeyMessage& m) {
+Key KeyFromWin32(const Win32KeyMessage& m)
+{
     const u32 vk = m.virtual_key;
-    if (vk >= VK_F1 && vk <= VK_F12) return KeyOffset(Key::F1, vk - VK_F1);
-    if (vk >= VK_NUMPAD0 && vk <= VK_NUMPAD9) return KeyOffset(Key::Num0, vk - VK_NUMPAD0); // NumLock on, as XKB's KP_0..KP_9
-    switch (vk) {
+    if (vk >= VK_F1 && vk <= VK_F12)
+    {
+        return KeyOffset(Key::F1, vk - VK_F1);
+    }
+    if (vk >= VK_NUMPAD0 && vk <= VK_NUMPAD9)
+    {
+        return KeyOffset(Key::Num0, vk - VK_NUMPAD0);  // NumLock on, as XKB's KP_0..KP_9
+    }
+    switch (vk)
+    {
     case VK_ESCAPE: return Key::Escape;
-    case VK_RETURN: return Key::Enter; // the main Enter and the number pad's (extended)
+    case VK_RETURN: return Key::Enter;  // the main Enter and the number pad's (extended)
     case VK_TAB: return Key::Tab;
     case VK_BACK: return Key::Backspace;
     case VK_SPACE: return Key::Space;
@@ -71,7 +98,8 @@ Key KeyFromWin32(const Win32KeyMessage& m) {
     case VK_LWIN: return Key::LeftSuper;
     case VK_RWIN: return Key::RightSuper;
     case VK_CAPITAL: return Key::CapsLock;
-    // Keys the enum has no name for (on Linux: KP_Decimal, KP_Add, Pause, Print, Num_Lock, Scroll_Lock, Menu, KP_Begin).
+    // Keys the enum has no name for (on Linux: KP_Decimal, KP_Add, Pause, Print, Num_Lock, Scroll_Lock, Menu,
+    // KP_Begin).
     case VK_DECIMAL:
     case VK_ADD:
     case VK_SUBTRACT:
@@ -83,13 +111,12 @@ Key KeyFromWin32(const Win32KeyMessage& m) {
     case VK_NUMLOCK:
     case VK_SCROLL:
     case VK_APPS:
-    case VK_CLEAR:
-        return Key::Unknown;
-    default:
-        break;
+    case VK_CLEAR: return Key::Unknown;
+    default: break;
     }
-    // A key that types something (letters, the digit row, punctuation): named by the layout's character, 0 for a dead key.
+    // A key that types something (letters, the digit row, punctuation): named by the layout's character, 0 for a dead
+    // key.
     return KeyFromCharacter(m.character);
 }
 
-} // namespace engine_placeholder::os::win32
+}  // namespace engine_placeholder::os::win32

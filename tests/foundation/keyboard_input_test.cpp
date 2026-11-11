@@ -7,14 +7,16 @@
 #include "platform/linux/wayland/wayland_input.h"
 #include "platform/linux/xkb_keyboard.h"
 
-// The using-directives stay inside this namespace: at file scope they would leak into the files merged after this one in a unity build
-// (an X11 header then finds `Window` ambiguous).
-namespace keyboard_input_test {
+// The using-directives stay inside this namespace: at file scope they would leak into the files merged after this one
+// in a unity build (an X11 header then finds `Window` ambiguous).
+namespace keyboard_input_test
+{
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::os;
 
-namespace {
+namespace
+{
 
 // Linux evdev keycodes for physical key positions (input-event-codes.h).
 constexpr u32 kEvdevQ = 16;
@@ -25,9 +27,10 @@ constexpr u32 kEvdevM = 50;
 constexpr u32 kEvdev1 = 2;
 constexpr u32 kEvdevSpace = 57;
 
-} // namespace
+}  // namespace
 
-TEST_CASE("KeyFromKeysym maps letters case-insensitively, digits, and named keys", "[input][os]") {
+TEST_CASE("KeyFromKeysym maps letters case-insensitively, digits, and named keys", "[input][os]")
+{
     REQUIRE(KeyFromKeysym('a') == Key::A);
     REQUIRE(KeyFromKeysym('A') == Key::A);
     REQUIRE(KeyFromKeysym('z') == Key::Z);
@@ -42,7 +45,8 @@ TEST_CASE("KeyFromKeysym maps letters case-insensitively, digits, and named keys
     REQUIRE(KeyFromKeysym(0) == Key::Unknown);
 }
 
-TEST_CASE("KeyboardState tracks down keys and ignores Unknown/out-of-range", "[input][os]") {
+TEST_CASE("KeyboardState tracks down keys and ignores Unknown/out-of-range", "[input][os]")
+{
     KeyboardState state;
     REQUIRE_FALSE(state.IsDown(Key::A));
     state.SetDown(Key::A, true);
@@ -60,7 +64,8 @@ TEST_CASE("KeyboardState tracks down keys and ignores Unknown/out-of-range", "[i
     REQUIRE_FALSE(state.IsDown(Key::Slash));
 }
 
-TEST_CASE("XkbKeyboard translates the same physical keys per layout (US QWERTY)", "[input][os][xkb]") {
+TEST_CASE("XkbKeyboard translates the same physical keys per layout (US QWERTY)", "[input][os][xkb]")
+{
     XkbKeyboard kb;
     REQUIRE(kb.InitFromNames("us"));
     REQUIRE(kb.KeyForEvdevCode(kEvdevQ) == Key::Q);
@@ -72,7 +77,8 @@ TEST_CASE("XkbKeyboard translates the same physical keys per layout (US QWERTY)"
     REQUIRE(kb.KeyForEvdevCode(kEvdevSpace) == Key::Space);
 }
 
-TEST_CASE("XkbKeyboard translates the same physical keys per layout (French AZERTY)", "[input][os][xkb]") {
+TEST_CASE("XkbKeyboard translates the same physical keys per layout (French AZERTY)", "[input][os][xkb]")
+{
     XkbKeyboard kb;
     REQUIRE(kb.InitFromNames("fr"));
     // AZERTY swaps A<->Q, Z<->W and moves M; digits need Shift.
@@ -81,32 +87,35 @@ TEST_CASE("XkbKeyboard translates the same physical keys per layout (French AZER
     REQUIRE(kb.KeyForEvdevCode(kEvdevA) == Key::Q);
     REQUIRE(kb.KeyForEvdevCode(kEvdevZ) == Key::W);
     REQUIRE(kb.KeyForEvdevCode(kEvdevM) == Key::Comma);
-    REQUIRE(kb.KeyForEvdevCode(kEvdev1) == Key::Unknown); // '&'
+    REQUIRE(kb.KeyForEvdevCode(kEvdev1) == Key::Unknown);  // '&'
     REQUIRE(kb.KeyForEvdevCode(kEvdevSpace) == Key::Space);
 }
 
-TEST_CASE("XkbKeyboard translates the same physical keys per layout (German QWERTZ)", "[input][os][xkb]") {
+TEST_CASE("XkbKeyboard translates the same physical keys per layout (German QWERTZ)", "[input][os][xkb]")
+{
     XkbKeyboard kb;
     REQUIRE(kb.InitFromNames("de"));
     REQUIRE(kb.KeyForEvdevCode(kEvdevQ) == Key::Q);
-    REQUIRE(kb.KeyForEvdevCode(kEvdevZ) == Key::Y); // QWERTZ swaps Y/Z
+    REQUIRE(kb.KeyForEvdevCode(kEvdevZ) == Key::Y);  // QWERTZ swaps Y/Z
     REQUIRE(kb.KeyForEvdevCode(kEvdevM) == Key::M);
     REQUIRE(kb.KeyForEvdevCode(kEvdev1) == Key::Num1);
 }
 
-TEST_CASE("XkbKeyboard UpdateMask drives effective modifiers and shifted symbols", "[input][os][xkb]") {
+TEST_CASE("XkbKeyboard UpdateMask drives effective modifiers and shifted symbols", "[input][os][xkb]")
+{
     XkbKeyboard kb;
     REQUIRE(kb.InitFromNames("fr"));
     REQUIRE(kb.Modifiers() == 0);
     // Shift is modifier bit 0 in the standard XKB real-modifier order.
     kb.UpdateMask(1u, 0, 0, 0);
     REQUIRE((kb.Modifiers() & kModShift) != 0);
-    REQUIRE(kb.KeyForEvdevCode(kEvdev1) == Key::Num1); // AZERTY: Shift+& = 1
+    REQUIRE(kb.KeyForEvdevCode(kEvdev1) == Key::Num1);  // AZERTY: Shift+& = 1
     kb.UpdateMask(0, 0, 0, 0);
     REQUIRE((kb.Modifiers() & kModShift) == 0);
 }
 
-TEST_CASE("XkbKeyboard rejects unusable keymap text and stays invalid", "[input][os][xkb]") {
+TEST_CASE("XkbKeyboard rejects unusable keymap text and stays invalid", "[input][os][xkb]")
+{
     XkbKeyboard kb;
     const char garbage[] = "this is not an xkb keymap";
     REQUIRE_FALSE(kb.InitFromKeymapText(garbage, sizeof(garbage)));
@@ -114,7 +123,8 @@ TEST_CASE("XkbKeyboard rejects unusable keymap text and stays invalid", "[input]
     REQUIRE(kb.KeyForEvdevCode(kEvdevQ) == Key::Unknown);
 }
 
-TEST_CASE("WaylandInput::Init hooks the real seat and loads its keymap", "[wayland][input][os]") {
+TEST_CASE("WaylandInput::Init hooks the real seat and loads its keymap", "[wayland][input][os]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
     wayland::WaylandConnection conn = wayland::WaylandConnection::Connect();
     REQUIRE(conn.Valid());
@@ -123,13 +133,15 @@ TEST_CASE("WaylandInput::Init hooks the real seat and loads its keymap", "[wayla
     wayland::WaylandInput input;
     REQUIRE(input.Init(conn, &state));
     REQUIRE(input.Valid());
-    if (input.HasKeyboard()) {
+    if (input.HasKeyboard())
+    {
         REQUIRE(input.HasKeymap());
     }
     REQUIRE_FALSE(state.keyboard.IsDown(Key::A));
 }
 
-TEST_CASE("WaylandInput::Init fails gracefully on an invalid connection", "[wayland][input][os]") {
+TEST_CASE("WaylandInput::Init fails gracefully on an invalid connection", "[wayland][input][os]")
+{
     wayland::WaylandConnection invalid;
     InputState state;
     wayland::WaylandInput input;
@@ -137,7 +149,8 @@ TEST_CASE("WaylandInput::Init fails gracefully on an invalid connection", "[wayl
     REQUIRE_FALSE(input.Valid());
 }
 
-TEST_CASE("InputState defaults to idle and BeginFrame clears only scroll deltas", "[input][os]") {
+TEST_CASE("InputState defaults to idle and BeginFrame clears only scroll deltas", "[input][os]")
+{
     InputState state;
     REQUIRE(state.mouse_buttons == 0);
     REQUIRE_FALSE(state.pointer_inside);
@@ -162,7 +175,8 @@ TEST_CASE("InputState defaults to idle and BeginFrame clears only scroll deltas"
     REQUIRE(state.keyboard.IsDown(Key::W));
 }
 
-TEST_CASE("WaylandInput::Init creates a pointer iff the seat advertises one", "[wayland][input][os]") {
+TEST_CASE("WaylandInput::Init creates a pointer iff the seat advertises one", "[wayland][input][os]")
+{
     SKIP_IF_NO_DISPLAY_SESSION();
     wayland::WaylandConnection conn = wayland::WaylandConnection::Connect();
     REQUIRE(conn.Valid());
@@ -176,4 +190,4 @@ TEST_CASE("WaylandInput::Init creates a pointer iff the seat advertises one", "[
     REQUIRE(state.scroll_dy == 0.0);
 }
 
-} // namespace keyboard_input_test
+}  // namespace keyboard_input_test

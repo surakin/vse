@@ -4,29 +4,35 @@
 #include "ui/widgets/buttons.h"
 #include "ui/widgets/window_frame.h"
 
-//! The dialog (Phase 15, Day 199): a window frame with a row of buttons, a default button and a result, shown modally by `Surface::ShowModal`.
+//! The dialog (Phase 15, Day 199): a window frame with a row of buttons, a default button and a result, shown modally
+//! by `Surface::ShowModal`.
 
-namespace engine_placeholder::ui {
+namespace engine_placeholder::ui
+{
 
 /// The results the common dialogs return; a program may use any other integers for its own buttons.
-namespace dialog_result {
-constexpr int kNone = 0;   ///< Not closed yet.
-constexpr int kOk = 1;     ///< OK.
-constexpr int kCancel = 2; ///< Cancel, Escape and the close button.
-constexpr int kYes = 3;    ///< Yes.
-constexpr int kNo = 4;     ///< No.
-} // namespace dialog_result
+namespace dialog_result
+{
+constexpr int kNone = 0;    ///< Not closed yet.
+constexpr int kOk = 1;      ///< OK.
+constexpr int kCancel = 2;  ///< Cancel, Escape and the close button.
+constexpr int kYes = 3;     ///< Yes.
+constexpr int kNo = 4;      ///< No.
+}  // namespace dialog_result
 
 /// A [[ui::WindowFrame]] with a button row at the bottom.
 ///
-/// `AddButton` adds a button that closes the dialog with a result. Enter (when the focus owner does not take it) presses the default button; Escape and the close button close the dialog
-/// with the cancel result (`dialog_result::kCancel` unless `SetCancelResult` says otherwise). `Close(result)` runs `OnClosed` and removes the dialog: from the surface's modal stack when
-/// it is modal (the focus goes back to its previous owner), else from its parent. Removal is deferred while an event is delivered, so a button handler may close its own dialog; do not use
+/// `AddButton` adds a button that closes the dialog with a result. Enter (when the focus owner does not take it)
+/// presses the default button; Escape and the close button close the dialog with the cancel result
+/// (`dialog_result::kCancel` unless `SetCancelResult` says otherwise). `Close(result)` runs `OnClosed` and removes the
+/// dialog: from the surface's modal stack when it is modal (the focus goes back to its previous owner), else from its
+/// parent. Removal is deferred while an event is delivered, so a button handler may close its own dialog; do not use
 /// the dialog after `OnClosed` returns, the surface destroys it.
 ///
 /// - Thread-safety: owner-thread-only.
 /// - Ownership: owns its buttons and its content.
-class Dialog : public WindowFrame {
+class Dialog : public WindowFrame
+{
 public:
     /// The gap between the buttons, in logical units.
     static constexpr f32 kButtonGap = 8.0f;
@@ -63,7 +69,8 @@ public:
     void OnEvent(Event& event) override;
 
 private:
-    struct ButtonResult {
+    struct ButtonResult
+    {
         Button* button = nullptr;
         int result = 0;
     };
@@ -78,4 +85,4 @@ private:
     Callback<Dialog*, int> on_closed_;
 };
 
-} // namespace engine_placeholder::ui
+}  // namespace engine_placeholder::ui

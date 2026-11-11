@@ -3,7 +3,8 @@
 #include "types.h"
 
 //! The current thread's id and the name it gave itself, for crash reports.
-namespace engine_placeholder::debug {
+namespace engine_placeholder::debug
+{
 
 /// Bytes kept of a thread name, including the null byte.
 constexpr usize kMaxThreadNameBytes = 32;
@@ -13,7 +14,8 @@ constexpr usize kMaxThreadNameBytes = 32;
 /// - Backend: Windows: GetCurrentThreadId; macOS: pthread_threadid_np.
 u64 CurrentThreadId();
 
-/// Gives the calling thread a name to appear in crash reports (for example `"worker 3"`), cut at [[debug::kMaxThreadNameBytes]] - 1 bytes.
+/// Gives the calling thread a name to appear in crash reports (for example `"worker 3"`), cut at
+/// [[debug::kMaxThreadNameBytes]] - 1 bytes.
 ///
 /// - Param name: a null-terminated string, or null to clear the name; borrowed for the call.
 /// - Thread-safety: thread-safe; it changes only the calling thread's name.
@@ -25,4 +27,4 @@ void SetCrashThreadName(const char* name);
 /// - Thread-safety: thread-safe. Async-signal-safe.
 const char* CrashThreadName();
 
-} // namespace engine_placeholder::debug
+}  // namespace engine_placeholder::debug
