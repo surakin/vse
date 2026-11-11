@@ -1,6 +1,6 @@
 # Paths, files and directories
 
-Status: written (Phase 9).
+Status: written (Phase 9; macOS from Phase 26 Day 287).
 
 **Audience:** every engine, game and tool programmer. All access to files and directories goes through this layer; engine code never calls `fopen`,
 `open`, `stat` or the like (the `file_access_check` gate fails the build if it does).
@@ -169,7 +169,8 @@ entries (the building block of atomic replace).
 
 Each takes the application name, returns a path and creates nothing: `UserConfigDirectory`, `UserCacheDirectory`,
 `UserDataDirectory`, `UserStateDirectory` (on Linux `$XDG_*_HOME` when it is an absolute path, otherwise under `$HOME`; a
-relative value is ignored), `TempDirectory` (`$TMPDIR` when absolute, else `/tmp`), `ExecutablePath` and `ExecutableDirectory`.
+relative value is ignored; macOS: under `~/Library`, see "On macOS"), `TempDirectory` (`$TMPDIR` when absolute, else `/tmp` on Linux),
+`ExecutablePath` and `ExecutableDirectory`.
 Create the directory yourself, usually with `CreateDirectories` or `CreatePrivateDirectory`.
 
 ```cpp compile
@@ -388,6 +389,30 @@ io::RemoveAll(scratch);
 src/main.cpp
 src/util/strings.cpp
 ```
+
+## On macOS
+
+The backend is the POSIX one Linux uses (`io/posix/`, directories included), with a few macOS rules (Phase 26 Day 287; `Copy` with `copyfile`,
+the user directories from `NSSearchPathForDirectoriesInDomains` and native asynchronous reads follow on Day 288):
+
+- **Names are compared by the volume, not by `Path`.** The default APFS volume is case-insensitive: `Case.txt` and `case.txt` are one file, and a
+  rename that changes only the case is a real rename. It is also normalization-insensitive: a name written in NFC (`é` as one code point) opens by
+  its NFD spelling (`e` and a combining accent), and lists in the form it was written. `Path` folds neither: two paths that differ only in case or
+  normalization are different `Path`s that may name one file. Ask the volume with `pathconf(_PC_CASE_SENSITIVE)` when it matters.
+- **Durability is expensive.** `File::Sync` and `SyncDirectory` use `F_FULLFSYNC`, because a plain `fsync` there only reaches the drive's cache. On the
+  development Mac's SSD that is 18 ms for 4 KiB against 0.4 ms for `fsync`, and a 4 KiB `WriteFileAtomic` takes about 39 ms. Batch writes that
+  need it; do not sync per frame.
+- **Folders.** `TempDirectory` is the per-user `$TMPDIR` under `/var/folders` (from `confstr` when the variable is unset), never the shared `/tmp`
+  unless both fail. The user directories are under `~/Library`:
+
+  | Function | macOS |
+  |---|---|
+  | `UserConfigDirectory`, `UserDataDirectory` | `~/Library/Application Support/<app>` |
+  | `UserCacheDirectory` | `~/Library/Caches/<app>` |
+  | `UserStateDirectory` | `~/Library/Application Support/<app>/state` |
+  | `CrashDumpDirectory` | `~/Library/Application Support/<app>/crashes` (created private) |
+
+  The `XDG_*` variables are Linux's and are not read. `ExecutablePath` is the real file (`_NSGetExecutablePath` and `realpath`).
 
 ## Common mistakes
 

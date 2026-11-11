@@ -1,7 +1,7 @@
 # path|reason - files allowed to read configuration (getenv, a --flag) outside the settings system. A stale entry fails the gate.
 # The rule: CLAUDE.md ("Anything a user can configure is a setting") and docs/superpowers/specs/2026-11-07-settings-design.md (section 2, the inventory).
 engine/foundation/debug/program_setup.cpp|Launch-time debugging switches (--crash-handler=, --crash-test=, ENGINE_CRASH_HANDLER) that must act before main builds any Settings.
-engine/foundation/io/linux/file_system.cpp|HOME, XDG_* and ENGINE_APP_NAME locate the configuration directory itself, so they are needed before any settings file can be read.
+engine/foundation/io/posix/file_system.cpp|HOME, XDG_* and TMPDIR (through posix::AbsoluteEnv) locate the configuration directory itself (Linux and macOS), so they are needed before any settings file can be read; ENGINE_APP_NAME names the crash dump directory, which the crash handler needs before any settings exist.
 engine/foundation/io/windows/file_operations.cpp|ENGINE_APP_NAME names the crash dump directory, which the crash handler needs before any settings can be read (as on Linux); APPDATA and LOCALAPPDATA locate the configuration directory itself (as XDG_* on Linux), so they are needed before any settings file can be read.
 engine/foundation/os/linux/debug/death_test.cpp|The death-test child protocol (environment variables and Catch2 arguments passed to the re-executed test program); not user configuration.
 engine/foundation/os/windows/debug/death_test.cpp|The death-test child protocol on Windows: the variables that name the case a child runs, as on Linux.

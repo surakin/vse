@@ -22,11 +22,14 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     os/linux/debug/core_dump.cpp
     os/linux/debug/fault_injection.cpp
   )
+  # The file layer: the POSIX part shared with macOS (io/posix/, Phase 26 Day 287) and Linux's own.
   set(FOUNDATION_IO_PLATFORM_SOURCES
-    io/linux/error.cpp
-    io/linux/file_system.cpp
-    io/linux/local_file.cpp
-    io/linux/directory.cpp
+    io/posix/error.cpp
+    io/posix/file_system.cpp
+    io/posix/local_file.cpp
+    io/posix/directory.cpp
+    io/linux/posix_hooks.cpp
+    io/linux/special_folders.cpp
   )
   set(FOUNDATION_SETTINGS_PLATFORM_SOURCES
     settings/linux/policy_layers.cpp
@@ -74,6 +77,15 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     os/posix/os_posix.cpp
     os/macos/os.cpp
     os/macos/session.mm
+  )
+  # Day 287: the file layer, the POSIX part shared with Linux (io/posix/) and macOS's own (io/macos/).
+  set(FOUNDATION_IO_PLATFORM_SOURCES
+    io/posix/error.cpp
+    io/posix/file_system.cpp
+    io/posix/local_file.cpp
+    io/posix/directory.cpp
+    io/macos/posix_hooks.cpp
+    io/macos/special_folders.cpp
   )
 else()
   message(FATAL_ERROR "No foundation os.h implementation for this platform yet")
@@ -212,12 +224,14 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_link_libraries(foundation${suffix} INTERFACE foundation_settings${suffix} foundation_debug${suffix} foundation_io${suffix} foundation_base${suffix})
   endforeach()
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  # The base layer in the three flavors (Apple clang has ASan, UBSan and TSan); the layers above it join as their macOS backends arrive
-  # (the file layer on Day 287).
+  # The base layer and the file layer (Day 287) in the three flavors (Apple clang has ASan, UBSan and TSan); the layers above them join as
+  # their macOS backends arrive (jobs on Day 289, debugging on Days 290-292).
   foreach(suffix "" "_asan" "_tsan")
     engine_add_foundation_layer(foundation_base "${suffix}" ${FOUNDATION_BASE_SOURCES})
     # The session query (os/macos/session.mm) reads the window server's session dictionary.
     target_link_libraries(foundation_base${suffix} PUBLIC ${CMAKE_DL_LIBS} "-framework CoreGraphics" "-framework Foundation")
+    engine_add_foundation_layer(foundation_io "${suffix}" ${FOUNDATION_IO_SOURCES})
+    target_link_libraries(foundation_io${suffix} PUBLIC foundation_base${suffix})
   endforeach()
 else()
   engine_add_foundation_libs("")

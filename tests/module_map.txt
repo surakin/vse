@@ -11,6 +11,8 @@
 engine/foundation   0,1,2,3,4,5,7,9,10,11
 engine/foundation/debug 3,7
 engine/foundation/io 0,1,2,3,4,5,7,9,10,11
+engine/foundation/io/posix 0,1,2,3,4,5,7,9,10,11,26   # the file layer's backend Linux and macOS share (Phase 26 Day 287)
+engine/foundation/io/macos 9,26
 engine/foundation/settings 3,11
 engine/foundation/os/linux/debug 7
 engine/foundation/os/windows 0,13

@@ -6,8 +6,9 @@ documentation carries a `Backend:` label has a `###` section here, and every sec
 for the Windows and macOS targets (`io_cross_syntax_windows`, `io_cross_syntax_macos`). Design and reasons:
 `docs/superpowers/specs/2026-11-06-file-layer-design.md`.
 
-Linux is implemented in `engine/foundation/io/linux/`. A new platform adds `engine/foundation/io/<platform>/` and selects it in
-`engine/foundation/CMakeLists.txt` next to the Linux sources.
+Linux and macOS share the POSIX backend in `engine/foundation/io/posix/` (Phase 26 Day 287), each adding its own half (`io/linux/`, `io/macos/`:
+the file-time and durable-sync hooks of `io/posix/posix_io.h`, the executable path, the temporary and the user directories). A new platform adds
+`engine/foundation/io/<platform>/` and selects it in `engine/foundation/CMakeLists.txt` next to the Linux sources.
 
 ## Rules every backend follows
 
@@ -158,6 +159,9 @@ Windows, as built (Day 152, measured): `FlushFileBuffers` on a directory handle 
 `FILE_FLAG_BACKUP_SEMANTICS`) and is refused with read access only, so the directory is opened that way; `WriteFileAtomic` gets the same
 durability step as on Linux instead of `Unsupported`.
 
+macOS, as built (Day 287; `F_FULLFSYNC` 18.2 ms against `fsync` 0.39 ms for 4 KiB on the development Mac's SSD, a whole `WriteFileAtomic` of 4 KiB 39 ms): `fsync` is not enough there (it reaches the drive's cache, not the medium), so the directory, like a file's `Sync`, gets
+`fcntl(F_FULLFSYNC)`, with `fsync` where the file system refuses it (`ENOTSUP`, `EINVAL`, `ENOTTY`).
+
 ### `CreateDirectory`
 
 Windows: CreateDirectoryW; macOS: mkdir.
@@ -238,10 +242,16 @@ Windows, as built (Day 152): the print name of a symbolic link (relative as writ
 
 Windows: GetTempPath2W; macOS: NSTemporaryDirectory or $TMPDIR.
 
+macOS, as built (Day 287): `$TMPDIR` when absolute (launchd sets the per-user directory under `/var/folders`), else `confstr(_CS_DARWIN_USER_TEMP_DIR)`
+(the same directory, for a process started without the user's environment), and `/tmp`, which every user shares, only when both fail.
+
 
 ### `ExecutablePath`
 
 Windows: GetModuleFileNameW; macOS: _NSGetExecutablePath resolved with realpath.
+
+macOS, as built (Day 287): `_NSGetExecutablePath` gives the path the program was started by (it may hold a link or `..`); `realpath` makes it the file
+itself, as Linux's `/proc/self/exe` is. `io/macos/special_folders.cpp`.
 
 
 ### `ExecutableDirectory`
@@ -274,6 +284,10 @@ Windows, as built (Day 152): `SHGetKnownFolderPath`; configuration `RoamingAppDa
 hold an absolute path (the session sets them to the same folders), so a test or a launcher can point them elsewhere, as `$XDG_*` on Linux; the crash dump
 directory follows `%LOCALAPPDATA%` too.
 
+macOS, as built (Day 287, interim): `$HOME` (absolute, else the password database) then `Library/Application Support/<app>` for configuration and data,
+`Library/Caches/<app>` for the cache and `Library/Application Support/<app>/state` for state; the `XDG_*` variables are not read. Nothing is created.
+Day 288 asks `NSSearchPathForDirectoriesInDomains` first (a sandboxed process gets its container's folders), with this as the fallback.
+
 ### `CrashDumpDirectory`
 
 Windows: %LOCALAPPDATA%/<app>/crashes; macOS: ~/Library/Application Support/<app>/crashes; Android and iOS: the app-private files directory.
@@ -283,6 +297,9 @@ Do not guess a location without the user's profile. Create it private to the use
 
 Windows, as built (Day 152): `LocalAppData\<app>\crashes`, `<app>` from `ENGINE_APP_NAME` or the executable's name without `.exe`, created with
 `CreatePrivateDirectory`.
+
+macOS, as built (Day 287): `Library/Application Support/<app>/crashes` under `$HOME` (no password-database fallback, as on Linux), `<app>` from
+`ENGINE_APP_NAME` or the executable's name, created with `CreatePrivateDirectory`.
 
 ### `Info`
 
@@ -339,6 +356,10 @@ Windows, as built (Day 151): `io/windows/error.cpp`, tested by `tests/io/io_wind
 `ERROR_DELETE_PENDING`, `ERROR_USER_MAPPED_FILE`. `ERROR_DIRECTORY` is `NotADirectory`, `ERROR_CANT_RESOLVE_FILENAME` (a link loop) `SymlinkLoop`,
 `ERROR_HANDLE_EOF` `EndOfFile`; `ERROR_NOT_READY`, `ERROR_BROKEN_PIPE`, `ERROR_IO_PENDING` and the device errors are `Io`. A message is the
 engine's text and the number (`Status::os_code`); `FormatMessageW` is not called.
+
+macOS, as built (Day 287): Linux's errno table, shared (`io/posix/error.cpp`), with what Darwin adds: `EOPNOTSUPP` is a number of its own (102; `ENOTSUP`
+is 45; on Linux they are one) and is `Unsupported`; `EAUTH` and `ENEEDAUTH` are `PermissionDenied`, `EFTYPE` `Invalid`, `ENOATTR` `NotFound`. Tested
+by `tests/io/io_macos_test.cpp`.
 
 
 ### `NativePathStyle`

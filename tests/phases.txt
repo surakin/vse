@@ -66,7 +66,7 @@ flavors 5   macos: plain           # the gates (Day 286)
 flavors 6   macos: plain           # the phase-map checks (Day 284)
 flavors 7   macos: plain           # the gates (Day 286)
 flavors 8   macos: none
-flavors 9   macos: plain           # the gates (Day 286)
+flavors 9   macos: plain,asan,tsan # the gates (Day 286), tests/io (Day 287)
 flavors 10  macos: plain,asan,tsan # tests/types (Day 284)
 flavors 11  macos: plain           # the gates (Day 286)
 flavors 12  macos: plain           # tests/foundation (Day 285)

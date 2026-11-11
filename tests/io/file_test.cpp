@@ -205,7 +205,7 @@ TEST_CASE("io::File: files over 4 GiB and generated files", "[io][file]") {
         REQUIRE(f->Size(&size).Ok());
         CHECK(size == five_gib);
     }
-#if !ENGINE_PLATFORM_WINDOWS // Windows has no file that reports a wrong size
+#if ENGINE_PLATFORM_LINUX // Windows has no file that reports a wrong size; macOS has no /proc (io_macos_test.cpp reads a FIFO instead)
     // /proc files report size 0 but have content: ReadAll must not trust the size.
     Vector<u8> status;
     REQUIRE(io::ReadFile(Path("/proc/self/status"), &status).Ok());
@@ -261,7 +261,7 @@ TEST_CASE("io: the read helpers", "[io][file]") {
     REQUIRE(io::ReadFile(dir / "empty", arena, &data, &size).Ok());
     CHECK(size == 0);
     CHECK(data != nullptr);
-#if !ENGINE_PLATFORM_WINDOWS
+#if ENGINE_PLATFORM_LINUX
     // A file whose reported size is wrong (a /proc file reports 0) still reads whole through the arena path.
     REQUIRE(io::ReadFile(Path("/proc/self/status"), arena, &data, &size).Ok());
     CHECK(size > 100);

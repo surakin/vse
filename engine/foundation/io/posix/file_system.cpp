@@ -1,5 +1,8 @@
-// The Linux backend of io/file_system.h. This is one of the places allowed to call the POSIX file API directly.
+// The POSIX backend of io/file_system.h, Linux and macOS (Phase 26 Day 287: moved from io/linux/). The executable path, the temporary and the
+// user directories are each system's own (io/linux/special_folders.cpp, io/macos/special_folders.cpp). This is one of the places allowed to
+// call the POSIX file API directly.
 #include "io/file_system.h"
+#include "io/posix/posix_io.h"
 
 #include "os/last_error.h"
 #include "os/console.h"
@@ -39,17 +42,14 @@ Status DoStat(const Path& path, FileInfo* out, bool follow) {
     FileInfo info;
     info.type = TypeOf(st.st_mode);
     info.size = static_cast<u64>(st.st_size);
-    info.modified_unix_ns = static_cast<i64>(st.st_mtim.tv_sec) * 1'000'000'000LL + st.st_mtim.tv_nsec;
+    info.modified_unix_ns = posix::ModifiedUnixNs(st);
     info.permissions = static_cast<u32>(st.st_mode & 07777);
     info.read_only = !S_ISLNK(st.st_mode) && ::faccessat(AT_FDCWD, p, W_OK, AT_EACCESS) != 0;
     *out = info;
     return Status::Success();
 }
 
-Status FromPath(StringView text, Path* out) {
-    if (!Path::Parse(text, PathStyle::Posix, out)) return Status::Of(Error::TooLong);
-    return Status::Success();
-}
+using posix::FromPath;
 
 constexpr int kMaxTreeDepth = 128;
 
@@ -91,47 +91,6 @@ Status RemoveTree(int parent_fd, const char* name, int depth) {
     return Status::Of(Error::NotEmpty);
 }
 
-bool ValidAppName(StringView name) {
-    return !name.Empty() && name != StringView(".") && name != StringView("..") && name.IndexOf('/') == name.Length() &&
-           name.IndexOf('\0') == name.Length() && name.Length() <= 200;
-}
-
-// An absolute environment value, or empty.
-StringView AbsoluteEnv(const char* name) {
-    const char* v = os::GetEnvironment(name);
-    return (v != nullptr && v[0] == '/') ? StringView(v) : StringView();
-}
-
-Status HomeDirectory(Path* out) {
-    StringView home = AbsoluteEnv("HOME");
-    if (!home.Empty()) return FromPath(home, out);
-    struct passwd pw;
-    struct passwd* result = nullptr;
-    char buf[16384];
-    if (::getpwuid_r(::geteuid(), &pw, buf, sizeof(buf), &result) == 0 && result != nullptr && pw.pw_dir != nullptr && pw.pw_dir[0] == '/') {
-        return FromPath(StringView(pw.pw_dir), out);
-    }
-    return Status::Of(Error::NotFound);
-}
-
-Status UserDirectory(const char* xdg_variable, const char* home_relative, StringView app_name, Path* out) {
-    if (!ValidAppName(app_name)) return Status::Of(Error::Invalid);
-    Path base(PathStyle::Posix);
-    StringView xdg = AbsoluteEnv(xdg_variable);
-    if (!xdg.Empty()) {
-        if (Status s = FromPath(xdg, &base); s.Failed()) return s;
-    } else {
-        Path home(PathStyle::Posix);
-        if (Status s = HomeDirectory(&home); s.Failed()) return s;
-        if (!home.TryJoin(Path(home_relative, PathStyle::Posix), &base)) return Status::Of(Error::TooLong);
-    }
-    Path result(PathStyle::Posix);
-    Path app;
-    if (!Path::Parse(app_name, PathStyle::Posix, &app) || !base.TryJoin(app, &result)) return Status::Of(Error::TooLong);
-    *out = static_cast<Path&&>(result);
-    return Status::Success();
-}
-
 Status MakeTemp(const Path& directory, StringView prefix, bool as_directory, Path* out) {
     if (prefix.Empty() || prefix.IndexOf('/') != prefix.Length() || prefix.IndexOf('\0') != prefix.Length()) return Status::Of(Error::Invalid);
     Path tmpl;
@@ -154,6 +113,54 @@ Status MakeTemp(const Path& directory, StringView prefix, bool as_directory, Pat
 }
 
 } // namespace
+
+namespace posix {
+
+bool ValidAppName(StringView name) {
+    return !name.Empty() && name != StringView(".") && name != StringView("..") && name.IndexOf('/') == name.Length() &&
+           name.IndexOf('\0') == name.Length() && name.Length() <= 200;
+}
+
+StringView AbsoluteEnv(const char* name) {
+    const char* v = os::GetEnvironment(name);
+    return (v != nullptr && v[0] == '/') ? StringView(v) : StringView();
+}
+
+Status HomeDirectory(Path* out) {
+    StringView home = AbsoluteEnv("HOME");
+    if (!home.Empty()) return FromPath(home, out);
+    struct passwd pw;
+    struct passwd* result = nullptr;
+    char buf[16384];
+    if (::getpwuid_r(::geteuid(), &pw, buf, sizeof(buf), &result) == 0 && result != nullptr && pw.pw_dir != nullptr && pw.pw_dir[0] == '/') {
+        return FromPath(StringView(pw.pw_dir), out);
+    }
+    return Status::Of(Error::NotFound);
+}
+
+Status FromPath(StringView text, Path* out) {
+    if (!Path::Parse(text, PathStyle::Posix, out)) return Status::Of(Error::TooLong);
+    return Status::Success();
+}
+
+Status CrashAppName(char (&app)[256]) {
+    const char* configured = os::GetEnvironment("ENGINE_APP_NAME");
+    if (configured != nullptr && configured[0] != '\0') {
+        const usize length = CStrLength(configured);
+        if (length > 200) return Status::Of(Error::Invalid);
+        MemCopy(app, configured, length + 1);
+        return Status::Success();
+    }
+    Path exe(PathStyle::Posix);
+    if (Status s = ExecutablePath(&exe); s.Failed()) return s;
+    const StringView name = exe.FileName();
+    if (name.Empty() || name.Length() > 200) return Status::Of(Error::NotFound);
+    MemCopy(app, name.Data(), name.Length());
+    app[name.Length()] = '\0';
+    return Status::Success();
+}
+
+} // namespace posix
 
 Status Stat(const Path& path, FileInfo* out) { return DoStat(path, out, true); }
 Status Lstat(const Path& path, FileInfo* out) { return DoStat(path, out, false); }
@@ -279,7 +286,7 @@ Status SyncDirectory(const Path& path) {
     if (Status s = ToNative(path, p); s.Failed()) return s;
     const int fd = ::open(p, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
     if (fd < 0) return Errno();
-    const Status result = ::fsync(fd) == 0 ? Status::Success() : Errno();
+    const Status result = posix::SyncDescriptor(fd) == 0 ? Status::Success() : Errno();
     ::close(fd);
     return result;
 }
@@ -405,48 +412,10 @@ Status ReadLink(const Path& path, Path* out) {
     return FromPath(StringView(target, static_cast<usize>(n)), out);
 }
 
-Status TempDirectory(Path* out) {
-    StringView dir = AbsoluteEnv("TMPDIR");
-    return FromPath(dir.Empty() ? StringView("/tmp") : dir, out);
-}
-
-Status ExecutablePath(Path* out) { return ReadLink(Path("/proc/self/exe", PathStyle::Posix), out); }
-
 Status ExecutableDirectory(Path* out) {
     Path exe(PathStyle::Posix);
     if (Status s = ExecutablePath(&exe); s.Failed()) return s;
     *out = exe.Parent();
-    return Status::Success();
-}
-
-Status UserConfigDirectory(StringView app_name, Path* out) { return UserDirectory("XDG_CONFIG_HOME", ".config", app_name, out); }
-Status UserCacheDirectory(StringView app_name, Path* out) { return UserDirectory("XDG_CACHE_HOME", ".cache", app_name, out); }
-Status UserDataDirectory(StringView app_name, Path* out) { return UserDirectory("XDG_DATA_HOME", ".local/share", app_name, out); }
-Status UserStateDirectory(StringView app_name, Path* out) { return UserDirectory("XDG_STATE_HOME", ".local/state", app_name, out); }
-
-Status CrashDumpDirectory(Path* out) {
-    // A crash handler must not guess a location: without $XDG_STATE_HOME or $HOME there is no directory (no password-database fallback).
-    if (AbsoluteEnv("XDG_STATE_HOME").Empty() && AbsoluteEnv("HOME").Empty()) return Status::Of(Error::NotFound);
-    char app[256];
-    const char* configured = os::GetEnvironment("ENGINE_APP_NAME");
-    if (configured != nullptr && configured[0] != '\0') {
-        const usize length = CStrLength(configured);
-        if (length > 200) return Status::Of(Error::Invalid);
-        MemCopy(app, configured, length + 1);
-    } else {
-        Path exe(PathStyle::Posix);
-        if (Status s = ExecutablePath(&exe); s.Failed()) return s;
-        const StringView name = exe.FileName();
-        if (name.Empty() || name.Length() > 200) return Status::Of(Error::NotFound);
-        MemCopy(app, name.Data(), name.Length());
-        app[name.Length()] = '\0';
-    }
-    Path state(PathStyle::Posix);
-    if (Status s = UserStateDirectory(StringView(app), &state); s.Failed()) return s; // validates the name too
-    Path dir(PathStyle::Posix);
-    if (!state.TryJoin(Path("crashes", PathStyle::Posix), &dir)) return Status::Of(Error::TooLong);
-    if (Status s = CreatePrivateDirectory(dir); s.Failed()) return s;
-    *out = static_cast<Path&&>(dir);
     return Status::Success();
 }
 

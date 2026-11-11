@@ -186,6 +186,9 @@ platform-dir engine/foundation/os/macos/ engine/foundation/os/
 # The half of the os backend Linux and macOS share (Phase 26 Day 285): only their own directories use it.
 platform-dir engine/foundation/os/posix/ engine/foundation/os/linux/,engine/foundation/os/macos/
 platform-dir engine/foundation/io/linux/ engine/foundation/io/
+# The file layer's POSIX backend, shared by Linux and macOS (Phase 26 Day 287): only their own directories use it.
+platform-dir engine/foundation/io/posix/ engine/foundation/io/linux/,engine/foundation/io/macos/
+platform-dir engine/foundation/io/macos/ engine/foundation/io/
 platform-dir engine/foundation/io/windows/ engine/foundation/io/
 platform-dir engine/jobs/linux/ engine/jobs/
 # The settings stores of each platform (Phase 13 Day 157: the registry store and the policy layers on Windows).

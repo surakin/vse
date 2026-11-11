@@ -1,4 +1,5 @@
-// The Linux table of io::ErrorFromOsCode (errno). io::ErrorName is neutral: io/error.cpp.
+// The POSIX table of io::ErrorFromOsCode (errno), Linux and macOS (Phase 26 Day 287: moved from io/linux/). io::ErrorName is neutral: io/error.cpp.
+#include "build_defs.h"
 #include "os/last_error.h"
 
 #include "io/error.h"
@@ -24,6 +25,13 @@ Error ErrorFromOsCode(i32 os_code) {
     case ENOSYS:
     case ENOTSUP: // equal to EOPNOTSUPP on Linux
         return Error::Unsupported;
+#if ENGINE_PLATFORM_MACOS || ENGINE_PLATFORM_IOS
+    case EOPNOTSUPP: return Error::Unsupported; // a number of its own on Darwin (102; ENOTSUP is 45)
+    case EAUTH:                                 // authentication error (NFS)
+    case ENEEDAUTH: return Error::PermissionDenied;
+    case EFTYPE: return Error::Invalid;         // wrong type of file for the operation
+    case ENOATTR: return Error::NotFound;       // an extended attribute that does not exist
+#endif
     case EINVAL:
     case EBADF: return Error::Invalid;
     case EXDEV: return Error::CrossDevice;

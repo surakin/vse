@@ -236,6 +236,7 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(engine/foundation)
   add_subdirectory(tests/foundation)  # the base-layer tests (foundation_base_tests), Day 285; the file-layer and window ones need later days
   add_subdirectory(tests/foundation_sanitized)
+  add_subdirectory(tests/io)  # the file layer, Day 287 (the asynchronous tests wait for jobs, Day 289)
   add_subdirectory(tests/types)
   add_subdirectory(tests/lang)
   add_subdirectory(tests/sync)
@@ -248,8 +249,8 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   endforeach()
   add_subdirectory(tests/phase_labels)
   add_subdirectory(tests/test_phase_script)
-  message(STATUS "macOS (Phase 26 Day 286): building the base layer of the foundation and its tests, the gates and the test tooling. Not "
-                 "yet ported, so not configured: docgen (Day 293), the file layer (Days 287-288), jobs (Day 289), debugging (Days 290-292), settings (Day 293), text, UI, ECS and "
+  message(STATUS "macOS (Phase 26 Day 287): building the base layer and the file layer of the foundation and their tests, the gates and the test tooling. Not "
+                 "yet ported, so not configured: docgen (Day 293), the file layer's asynchronous I/O (Day 288), jobs (Day 289), debugging (Days 290-292), settings (Day 293), text, UI, ECS and "
                  "spatial (Day 294), the platform layer (Days 295-297), the RHI and renderer (Days 298-309), the demos and tools (Day 310).")
   return()
 endif()

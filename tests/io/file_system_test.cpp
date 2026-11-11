@@ -18,25 +18,12 @@ using io::Error;
 using io::Path;
 using io_test::Str;
 using io_test::TempDir;
+#if !ENGINE_PLATFORM_WINDOWS
+using io_test::EnvGuard;
+#endif
 
 namespace {
 
-#if !ENGINE_PLATFORM_WINDOWS
-struct EnvGuard { // restores an environment variable at scope exit
-    engine_test::Text name;
-    engine_test::Text old;
-    bool had;
-    explicit EnvGuard(const char* n) : name(engine_test::MakeText(StringView(n))), old(engine_test::MakeText()) {
-        const char* v = os::GetEnvironment(n);
-        had = v != nullptr;
-        if (had) old = engine_test::MakeText(StringView(v));
-    }
-    ~EnvGuard() {
-        if (had) ::setenv(name.CStr(), old.CStr(), 1);
-        else ::unsetenv(name.CStr());
-    }
-};
-#endif
 
 } // namespace
 
@@ -51,6 +38,11 @@ TEST_CASE("io::Error: the errno table and names", "[io][error]") {
         {EOPNOTSUPP, Error::Unsupported}, {EINVAL, Error::Invalid}, {EBADF, Error::Invalid}, {EXDEV, Error::CrossDevice},
         {ELOOP, Error::SymlinkLoop}, {ERANGE, Error::TooLong}, {EROFS, Error::ReadOnly}, {EBUSY, Error::Busy}, {ETXTBSY, Error::Busy},
         {EMFILE, Error::TooManyOpenFiles}, {ENFILE, Error::TooManyOpenFiles}, {ENOMEM, Error::OutOfMemory},
+#if ENGINE_PLATFORM_MACOS || ENGINE_PLATFORM_IOS
+        // Darwin's own codes (Phase 26 Day 287); ENOTSUP is a number of its own there (on Linux it equals EOPNOTSUPP, listed above).
+        {ENOTSUP, Error::Unsupported}, {EAUTH, Error::PermissionDenied}, {ENEEDAUTH, Error::PermissionDenied}, {EFTYPE, Error::Invalid},
+        {ENOATTR, Error::NotFound},
+#endif
         {EIO, Error::Io}, {ENXIO, Error::Io}, {EFAULT, Error::Io}, {99999, Error::Io},
     };
     for (const Row& r : rows) {
@@ -356,7 +348,7 @@ TEST_CASE("io: current directory, Absolute, Canonical and ReadLink", "[io][fs]")
     REQUIRE(io::SetCurrentDirectory(cwd).Ok());
 }
 
-#if !ENGINE_PLATFORM_WINDOWS // Windows: tests/io/io_windows_test.cpp ("special folders on Windows")
+#if ENGINE_PLATFORM_LINUX // Windows: tests/io/io_windows_test.cpp ("special folders on Windows"); macOS: io_macos_test.cpp (~/Library)
 TEST_CASE("io: special folders", "[io][fs]") {
     EnvGuard home("HOME"), cfg("XDG_CONFIG_HOME"), cache("XDG_CACHE_HOME"), data("XDG_DATA_HOME"), state("XDG_STATE_HOME"), tmp("TMPDIR");
     ::setenv("HOME", "/home/test", 1);

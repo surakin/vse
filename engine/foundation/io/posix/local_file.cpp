@@ -1,4 +1,6 @@
-// The Linux backend of io::File: a plain file descriptor. One of the places allowed to call the POSIX file API directly.
+// The POSIX backend of io::File, Linux and macOS (Phase 26 Day 287: moved from io/linux/): a plain file descriptor. One of the places allowed to
+// call the POSIX file API directly.
+#include "io/posix/posix_io.h"
 #include "os/last_error.h"
 #include "cstr/format.h"
 
@@ -100,7 +102,7 @@ public:
 
     Status Sync() override {
         if (fd_ < 0) return Status::Of(Error::Invalid);
-        return ::fsync(fd_) == 0 ? Status::Success() : Status::FromOs(os::LastError());
+        return posix::SyncDescriptor(fd_) == 0 ? Status::Success() : Status::FromOs(os::LastError());
     }
 
     Status Truncate(u64 size) override {

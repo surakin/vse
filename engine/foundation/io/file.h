@@ -200,6 +200,9 @@ public:
     virtual Status Flush() = 0;
     /// Pushes the data to the storage device (`fsync`); returns when it is durable.
     ///
+    /// On macOS the local file uses `fcntl(F_FULLFSYNC)`: `fsync` there only hands the data to the drive, whose cache can still lose it. A file
+    /// system that refuses `F_FULLFSYNC` (some network and FAT volumes) gets `fsync`. It costs far more: 18 ms against 0.4 ms for 4 KiB on the
+    /// development Mac's SSD.
     /// Fails: `Unsupported`, `Io`, `NoSpace`.
     virtual Status Sync() = 0;
     /// Sets the size, cutting data off or extending with zeros.

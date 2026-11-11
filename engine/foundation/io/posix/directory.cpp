@@ -1,6 +1,7 @@
-// The Linux backend of io/directory.h (Open, Next, Close, DirectoryEntry::Info, detail::GetIdentity; the rest is io/directory.cpp). One of the places allowed to call the POSIX directory API directly.
+// The POSIX backend of io/directory.h, Linux and macOS (Phase 26 Day 287: moved from io/linux/) (Open, Next, Close, DirectoryEntry::Info, detail::GetIdentity; the rest is io/directory.cpp). One of the places allowed to call the POSIX directory API directly.
 #include "io/directory.h"
 #include "io/detail/directory_identity.h"
+#include "io/posix/posix_io.h"
 
 #include "os/last_error.h"
 #include "cstr/cstr.h"
@@ -47,7 +48,7 @@ Status DirectoryEntry::Info(FileInfo* out) const {
     FileInfo info;
     info.type = TypeFromMode(st.st_mode);
     info.size = static_cast<u64>(st.st_size);
-    info.modified_unix_ns = static_cast<i64>(st.st_mtim.tv_sec) * 1'000'000'000LL + st.st_mtim.tv_nsec;
+    info.modified_unix_ns = posix::ModifiedUnixNs(st);
     info.permissions = static_cast<u32>(st.st_mode & 07777);
     info.read_only = !S_ISLNK(st.st_mode) && ::faccessat(::dirfd(AsDir(owner)), name_z, W_OK, AT_EACCESS) != 0;
     *out = info;

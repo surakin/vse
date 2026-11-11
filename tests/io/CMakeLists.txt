@@ -40,6 +40,26 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   return()
 endif()
 
+# macOS (Phase 26): the file layer from Day 287, without the asynchronous tests, which need the job system (Day 289), and with the
+# macOS-only cases (io_macos_test.cpp). The directory backend is the shared POSIX one, so directory_test runs too.
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  set(_io_macos_sources path_test.cpp file_system_test.cpp file_test.cpp directory_test.cpp share_test.cpp io_macos_test.cpp)
+  foreach(flavor "" "_asan" "_tsan")
+    add_executable(io_tests${flavor} ${_io_macos_sources})
+    target_link_libraries(io_tests${flavor} PRIVATE foundation_io${flavor} Catch2::Catch2WithMain Threads::Threads)
+    target_include_directories(io_tests${flavor} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tests/support)
+  endforeach()
+  engine_discover_tests(io_tests TEST_SUFFIX "" PROPERTIES LABELS "io")
+  engine_discover_tests(io_tests_asan TEST_SUFFIX " [asan]" PROPERTIES LABELS "asan")
+  engine_discover_tests(io_tests_tsan TEST_SUFFIX " [tsan]" PROPERTIES LABELS "tsan")
+  add_test(NAME io_backend_lists COMMAND ${CMAKE_COMMAND} -DROOT=${CMAKE_SOURCE_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/check_io_backend_lists.cmake)
+  add_test(NAME io_backend_lists_planted COMMAND ${CMAKE_COMMAND} -DROOT=${CMAKE_SOURCE_DIR}
+           -DBACKEND_FILE=${CMAKE_CURRENT_SOURCE_DIR}/cross_syntax/planted_backend.md -P ${CMAKE_CURRENT_SOURCE_DIR}/check_io_backend_lists.cmake)
+  set_tests_properties(io_backend_lists_planted PROPERTIES WILL_FAIL TRUE)
+  engine_label_tests(io_backend_lists io_backend_lists_planted)
+  return()
+endif()
+
 function(engine_add_io_tests target foundation_lib jobs_lib suffix label)
   add_executable(${target} ${IO_TEST_SOURCES})
   target_link_libraries(${target} PRIVATE ${jobs_lib} ${foundation_lib} Catch2::Catch2WithMain Threads::Threads)

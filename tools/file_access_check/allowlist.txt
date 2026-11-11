@@ -2,7 +2,8 @@
 # An entry that no longer exempts anything fails the gate (remove it). Lines between SIGNAL-SAFE markers need no entry.
 # The rule and its exceptions: CLAUDE.md ("All file and directory access goes through io::File, io::Path and io::Directory") and
 # docs/superpowers/specs/2026-11-06-file-layer-design.md (section 2, exceptions E1-E5).
-engine/foundation/io/linux/|E5: the Linux backend of the file layer itself (file_system.cpp, local_file.cpp, directory.cpp, error.cpp).
+engine/foundation/io/posix/|E5: the POSIX backend of the file layer itself, shared by Linux and macOS (file_system.cpp, local_file.cpp, directory.cpp, error.cpp).
+engine/foundation/io/macos/|E5: the macOS half of the file layer's backend itself (special_folders.cpp, posix_hooks.cpp).
 engine/foundation/io/windows/|E5: the Windows backend of the file layer itself (win_path.cpp, local_file.cpp, file_system.cpp, error.cpp; Phase 13).
 engine/foundation/os/posix/os_posix.cpp|E1: the descriptor primitives os::Open and os::CreateFileForWriting (Linux and macOS), kept for the assert-path debugger check and for the crash report, which opens its file inside the fault handler.
 engine/foundation/os/linux/os.cpp|E1: os::ResidentMemoryKiB and os::OpenHandleCount read /proc/self/statm and /proc/self/fd with the raw calls; they are process figures, not files.

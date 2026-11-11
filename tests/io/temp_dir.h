@@ -281,6 +281,23 @@ inline bool AclIsPrivate(const io::Path& path) {
 
 #else
 
+/// Restores an environment variable at scope exit (shared by file_system_test.cpp and io_macos_test.cpp: one definition, so a unity build
+/// that merges them has no clash).
+struct EnvGuard { // restores an environment variable at scope exit
+    engine_test::Text name;
+    engine_test::Text old;
+    bool had;
+    explicit EnvGuard(const char* n) : name(engine_test::MakeText(StringView(n))), old(engine_test::MakeText()) {
+        const char* v = os::GetEnvironment(n);
+        had = v != nullptr;
+        if (had) old = engine_test::MakeText(StringView(v));
+    }
+    ~EnvGuard() {
+        if (had) ::setenv(name.CStr(), old.CStr(), 1);
+        else ::unsetenv(name.CStr());
+    }
+};
+
 /// Writes `text` to `path` through the POSIX API (these helpers are independent of the code under test).
 inline bool WriteText(const io::Path& path, const char* text) {
     char p[io::kMaxPathBytes + 1];
