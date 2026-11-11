@@ -364,3 +364,58 @@ starts an incremental `SaveAsync` with its own session; the cost on the frame is
 is the caller's: read `storage.autosave_seconds` (`LocalStorage::AutosaveSeconds`), where 0 means the program does not autosave.
 
 The tutorial [Save a World Without Stalling the Frame](../tutorials/saving-a-world.md) walks through all of this, and `game/storage_demo` runs it on a city with the spatial sets and compares the loaded world with the original.
+
+## Errors
+
+Every failure is a `storage::Status` value; nothing aborts on input. The codes and what a caller does:
+
+| Code | Meaning | Usual response |
+|---|---|---|
+| `NotFound` | a component id or name, or a key, is not there | a registration bug, or a key to skip |
+| `Exists`, `Duplicate` | an id, name or type registered twice; two entities with one key | fix the registration or the data |
+| `Corrupt` | stored bytes are damaged (truncated, out-of-range value, bad UTF-8, a hash that does not match) | the file is not trusted; report it, keep the old one |
+| `TooNew`, `TooOld` | the file was written by a newer format or component version, or one older than the registry can upgrade | update the program, or migrate offline |
+| `LimitExceeded` | a length or count is above a `storage.max_*` limit | raise the limit only if the file is trusted |
+| `Mismatch` | the registry disagrees with the manifest of the file | a renumbered or renamed component |
+| `Invalid` | the caller broke a rule | fix the call |
+| `Busy` | a batch or an asynchronous save is running | try again after it finishes |
+| `Io` | the medium failed | the store holds the previous state; retry or tell the player |
+| `Cancelled` | a `CancelToken` was set | nothing committed was undone, the old state stands |
+| `MissingReference` | a reference names a key that is nowhere | load with `MissingPolicy::NullReference` if that is acceptable |
+| `Unsupported` | the store or component does not offer it | check the layout |
+
+## Untrusted input
+
+**A save game that comes from outside the program (a download, another player, a file the user picked) is untrusted input.** The load path treats it so: the container is
+bounds-checked byte by byte, every length and count is compared with the limits before memory is reserved (`storage.max_record_bytes`, `max_string_bytes`, `max_array_elements`,
+`max_components_per_entity`), every record's hash is checked against its bytes, enums are range-checked, strings must be UTF-8, a parent chain is limited in depth, a load decodes and checks
+everything before it touches the world, and any failure leaves the world as it was. `tests/storage/hostile_file_test.cpp` flips bytes, truncates, swaps and zeroes pages of a saved SQLite
+file, offers other schemas, text and noise, and a record far above the limit: each case ends in a `Status` under ASan. What the library cannot do: tell a *valid* file with silly contents
+(an entity at 1e30) from a good one, or make a file confidential. Set `database.integrity_check` to `quick` or `full` to have the database engine check its own structure when a file is opened
+(`full` reads the whole file). Keep the limits low for files you do not control. Another process must not write the file while it is open (the file layer has no file locks, KNOWN-ISSUES.md).
+
+## Adding a store
+
+A store implements `storage::Store`: `Put`, `Get`, `Remove`, `Scan` (key order), `Count`, `Begin`/`Commit`/`Rollback` (all or nothing), `GetMetadata`/`SetMetadata`, and may override `PutMany` for a faster
+group write. Nothing in `WorldStorage` changes. Run `tests/storage/store_conformance.h` against it (the same cases run on `MemoryStore` and `SqlStore`); set its capability switches honestly
+(`kInjectsFailure`, `kCanCorrupt`, `kReadersSeeCommitted`). The writer is single; a reader on another thread may get `Busy` while a batch is open if the backend cannot show committed state.
+
+## Adding a component
+
+Register it once, at start-up, with a permanent `id`, a `name` and `fields` (`Field<&T::member>("name")`); never reuse or renumber an id. A change to the layout is a new `version` plus an
+`upgrades` entry that turns the old bytes into the new; a record written by a newer version is `TooNew`, by one older than the oldest upgrade `TooOld`. A component that is derived each frame
+(world transform) is flagged `kComponentDerived` and stored as presence only; one that must not be stored is `kComponentSkip`; one a query should find by field is `kComponentQueryable`. The
+manifest of the file records what was registered, so a later program that renumbers by mistake gets `Mismatch` instead of wrong data.
+
+## Threads
+
+`Save` and `Load` use the calling thread. `SaveAsync` must be called from the scheduler's main thread and returns a handle; at most one save per `WorldStorage`. A `Store` is called by the
+writer job and by nobody else while a save runs; `SqlStore` serializes on one connection and gives `Busy` to other threads while a batch is open. A world is read by one thread at a time
+except in the snapshot of `SaveAsync`, where workers read it concurrently and nobody writes it.
+
+## Measured
+
+Release build, one machine (see the spec for the table and the pass conditions): 1,000,000 entities with six components save to SQLite in about 2.9 s and load in about 3.4 s; the column layout
+saves in 2.1x the blob time; an idle incremental save takes under 1.1 ms; an incremental save of 1 percent in neighbouring entities takes 128 ms, but 1 percent spread at random touches almost every
+chunk (1.2 s: the stamps are per chunk); `FindKeys` on an indexed field answers in 1.3 ms; the snapshot of an asynchronous save is 4.6x faster on 8 participants than on 1.
+

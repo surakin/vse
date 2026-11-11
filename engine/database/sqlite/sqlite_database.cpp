@@ -138,22 +138,23 @@ struct SqliteHandle {
 // A debug check (slow checks only): two threads inside one connection's Prepare or Step at once is a data race the caller must not make.
 class UseGuard {
 public:
-    explicit UseGuard(SqliteHandle* handle) : handle_(handle) {
 #if ENGINE_SLOW_CHECKS
+    explicit UseGuard(SqliteHandle* handle) : handle_(handle) {
         const u32 before = handle_->users.FetchAdd(1);
         ENGINE_CHECK_SLOW(before == 0, "database: a connection and its statements are used by two threads at once");
-#endif
     }
-    ~UseGuard() {
-#if ENGINE_SLOW_CHECKS
-        handle_->users.FetchSub(1);
+    ~UseGuard() { handle_->users.FetchSub(1); }
+#else
+    explicit UseGuard(SqliteHandle*) {}
 #endif
-    }
     UseGuard(const UseGuard&) = delete;
     UseGuard& operator=(const UseGuard&) = delete;
 
+#if ENGINE_SLOW_CHECKS
+
 private:
     SqliteHandle* handle_;
+#endif
 };
 
 Status ClosedConnection() { return Failure(ErrorCode::Misuse, "the connection of this statement is closed"); }

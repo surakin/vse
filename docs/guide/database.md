@@ -111,3 +111,21 @@ validates itself); `tests/database/tsan.supp` suppresses exactly those two SQLit
 
 `OpenOptions::integrity_check` runs `PRAGMA quick_check` or `integrity_check` while a file opens; a damaged file fails the open with `Corrupt`. `Full` reads
 the whole file, so it belongs to tools and recovery, not to every start.
+
+## Errors
+
+`database::Status` carries a portable `ErrorCode` and the backend's own code and message (cut to 119 bytes): `Busy` (a lock was not available within `busy_timeout_ms`), `Locked`, `Corrupt` (not a database,
+or the integrity check failed), `NotFound` (a missing file without `Create`), `ReadOnly`, `Full`, `Io`, `TooBig` (a value or location beyond a limit), `Constraint`, `Misuse` (the caller broke a rule: a NaN
+bound as a real, a statement used after its connection closed), `Unsupported` (a feature the backend lacks: ask `Supports` first). The storage layer maps them to its own codes (`detail::MapDatabaseStatus`).
+
+## Untrusted files
+
+A database file that did not come from this program is untrusted. The engine's SQLite is built without extension loading and deserialization, statements are prepared from literals only
+(`SqlText`) and every value is bound, so a hostile file can at worst fail to open or return wrong rows. Use `database.integrity_check` (`quick`, `full`) to have the file checked at open, and never
+let two processes write one file (the engine's VFS keeps its locks in the process).
+
+## Measured
+
+On a file database in Release, the statement cache makes repeated point reads about twice as fast; `tests/database` carries the conformance suite (32 cases) that every backend must pass, the fault-injection
+sweep over writes, syncs and truncations in three journal modes, and the threaded tests. See `docs/superpowers/specs/2026-11-11-storage-design.md` for the storage figures.
+

@@ -469,6 +469,9 @@ Status WorldStorage::Write(detail::SavePlan& plan) {
                     continue;
                 }
                 failure = store_->Remove(stored.keys[i]);
+                if (failure.Failed() && failure.Code() == ErrorCode::NotFound) {
+                    failure = Status::Success(); // somebody else took it
+                }
                 ++r.removed;
             }
         }
@@ -744,6 +747,9 @@ Status LoadOne(LoadState& st, const EntityRecord& rec) {
     for (usize i = 0; i < records.Size(); ++i) {
         Item item;
         item.record = records[i];
+        if (records[i].id == kEntityKeyId || records[i].id == kOpaqueComponentsId) {
+            return Status::Make(ErrorCode::Corrupt, "a stored record names a structural component");
+        }
         RecordAction action = RecordAction::Skip;
         ENGINE_TRY(st.registry.Resolve(records[i].id, st.options.unknown, &item.component, &action));
         const RegisteredComponent* known = st.registry.FindById(records[i].id);

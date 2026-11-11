@@ -164,6 +164,11 @@ private:
     Status Query(StringView component, StringView column, CompareOp op, const database::ValueView& value, Vector<EntityKey>* keys, usize* count) const;
     Status Prepare();
     Status Guard() const;
+    Status BeginAuto(bool* started);
+    Status EndAuto(bool started, Status result);
+    Status PutLocked(const EntityRecord& record);
+    Status PutManyLocked(Span<const EntityRecord> records);
+    Status RemoveLocked(EntityKey key);
     bool ShouldFail();
 
     database::Connection* connection_;

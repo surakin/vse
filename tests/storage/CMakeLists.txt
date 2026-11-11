@@ -13,6 +13,8 @@ set(STORAGE_TEST_SOURCES
   old_schema.cpp  # Day 262
   sql_layout_test.cpp  # Day 263
   async_test.cpp  # Day 264
+  storage_bench.cpp  # Day 265
+  hostile_file_test.cpp  # Day 265
 )
 
 find_package(Threads REQUIRED)

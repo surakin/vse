@@ -1077,6 +1077,28 @@ Status SqlStore::Guard() const {
     return Status::Success();
 }
 
+Status SqlStore::BeginAuto(bool* started) {
+    *started = false;
+    if (in_batch_ || layout_ == nullptr) {
+        return Status::Success(); // a batch is atomic already; blob-only writes are single statements
+    }
+    SQL_TRY(connection_->Begin(database::TransactionKind::Immediate));
+    *started = true;
+    return Status::Success();
+}
+
+Status SqlStore::EndAuto(bool started, Status result) {
+    if (!started) {
+        return result;
+    }
+    if (result.Failed()) {
+        static_cast<void>(connection_->Rollback());
+        return result;
+    }
+    SQL_TRY(connection_->Commit());
+    return result;
+}
+
 Status SqlStore::Put(const EntityRecord& record) {
     if (record.key.IsNull()) {
         return Status::Make(ErrorCode::Invalid, "a record needs a key");
@@ -1089,6 +1111,12 @@ Status SqlStore::Put(const EntityRecord& record) {
     if (ShouldFail()) {
         return Status::Make(ErrorCode::Io, "an injected failure");
     }
+    bool own = false;
+    ENGINE_TRY(BeginAuto(&own));
+    return EndAuto(own, PutLocked(record));
+}
+
+Status SqlStore::PutLocked(const EntityRecord& record) {
     Statement& st = *statements_->put;
     const KeyBytes key(record.key);
     const HashBytesBE hash(record.hash);
@@ -1115,6 +1143,12 @@ Status SqlStore::PutMany(Span<const EntityRecord> records) {
     }
     LockGuard<Mutex> guard(lock_);
     ENGINE_TRY(Guard());
+    bool own = false;
+    ENGINE_TRY(BeginAuto(&own));
+    return EndAuto(own, PutManyLocked(records));
+}
+
+Status SqlStore::PutManyLocked(Span<const EntityRecord> records) {
     constexpr usize kRows = 16; // the rows of the multi-row statement
     usize i = 0;
     while (i < records.Size()) {
@@ -1192,6 +1226,12 @@ Status SqlStore::Remove(EntityKey key) {
     if (ShouldFail()) {
         return Status::Make(ErrorCode::Io, "an injected failure");
     }
+    bool own = false;
+    ENGINE_TRY(BeginAuto(&own));
+    return EndAuto(own, RemoveLocked(key));
+}
+
+Status SqlStore::RemoveLocked(EntityKey key) {
     ENGINE_TRY(RemoveColumns(key)); // before the entity row, whether or not the database enforces the foreign key
     Statement& st = *statements_->remove;
     const KeyBytes bytes(key);
@@ -1287,8 +1327,8 @@ Status SqlStore::Rollback() {
     if (!in_batch_ || owner_ != ThisThread::Id()) {
         return Status::Make(ErrorCode::Invalid, "this thread has no open batch");
     }
-    in_batch_ = false;
     SQL_TRY(connection_->Rollback());
+    in_batch_ = false; // only once the database has let go of the transaction
     return Status::Success();
 }
 

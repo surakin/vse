@@ -78,6 +78,9 @@ AsyncSave::AsyncSave(WorldStorage& storage, jobs::Scheduler& scheduler, SaveSess
 AsyncSave::~AsyncSave() {
     WaitForCounter(*scheduler_, counter_);
     if (!finished_) {
+        if (result_.Ok() && session_ != nullptr && plan_->track_session) {
+            WorldStorage::Adopt(*session_, *plan_); // the records are committed: keep the session in step with them
+        }
         storage_->EndWriter();
     }
 }

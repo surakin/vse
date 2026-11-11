@@ -105,6 +105,34 @@ Release build, Ryzen 9 7950X3D, NVMe, `database.synchronous=NORMAL`, WAL. Worklo
 
 A miss is listed in `KNOWN-ISSUES.md` with the options, as on Phase 18 Day 248.
 
+### Measured (Day 265, 2026-11-11, Linux machine, Release, clang, `storage_tests "[storage-bench]"`)
+
+Six components (key, transform, bounds, membership, an actor with four fields, a flag), a hierarchy of depth up to 5, SQLite file in WAL mode, `synchronous` default.
+
+| Metric | 100,000 | 1,000,000 | Pass condition | |
+|---|---|---|---|---|
+| Full save, SQLite blob | 245 ms | 2,927 ms | 5 s; 100k at most 312 ms | met |
+| Full load, SQLite blob | 274 ms | 3,417 ms | 4 s; 100k at most 361 ms | met |
+| Full save / load, memory store | 210 / 135 ms | 2,284 / 1,529 ms | reference | |
+| Full save, columns and an index | 446 ms | 6,194 ms | at most 2.5x blob | met (1.8x, 2.1x) |
+| Idle incremental save | 0.08 ms | 0.4 ms (1.1 ms with columns) | 20 ms | met |
+| Incremental, 1 percent in neighbouring entities | 13 ms | 128 ms (435 ms with columns) | 0.25 s | met (blob) |
+| Incremental, 1 percent spread at random | 98 ms | 1,230 ms | 0.25 s | **missed** (93 percent of the entities share a chunk with a changed one) |
+| `FindKeys` on an indexed field | 0.09 ms | 1.3 ms | 10 ms | met |
+| Async save, snapshot and encoding, 1 vs 8 participants | 110 vs 24 ms | 1,681 vs 364 ms | at least 2x | met (4.6x) |
+| Async save, everything, 1 vs 8 participants | 186 vs 107 ms | 2,585 vs 1,317 ms | | |
+| Hostile files | 263 corrupted files, other schemas, noise, an oversized record: every case a `Status`, plain and asan | | never crashes or allocates above the limits | met |
+| Crash safety | a failure at every write and sync of a batch leaves the old or new state (Day 254, Day 262) | | | met |
+
+### Deviations from Day 250
+
+- `Store::Save(world, ...)` is `WorldStorage::Save`; the incremental form uses a `SaveSession`; `PutMany` is an addition (Day 263).
+- The settings opener is `LocalStorage::OpenFromSettings`, not a `WorldStorage` function (a `WorldStorage` borrows its store).
+- `SaveAsync` reads the world inside the call (encoding on the workers) and only the store writes are in the background; this is what makes "what is stored is what the frame left" true by construction. The autosaver is a class called once a frame, not an ECS system.
+- `LoadAsync` reads the records on a job; decoding and entity creation stay on the caller's thread.
+- A `Full` save holds the encoded records of the selection in memory until the write (they are freed as written).
+- Not done: the render-scene draw-list comparison in the demo (needs Phase 21 assets); exclusion of a second process on one file (the file layer has no file locks).
+
 ## 5. Contracts the other phases rely on
 
 - `ByteWriter` and `ByteReader` (the bounds-checked canonical encoding) live in `foundation/bytes/`, below both `storage` and Phase 20's `net`, so the two share one reader; this amends the module row of section 2 (`storage` uses it, does not own it).

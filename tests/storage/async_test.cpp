@@ -280,6 +280,27 @@ TEST_CASE("Async save: a handle dropped without Wait finishes the write, even on
     }
 }
 
+TEST_CASE("Async save: a handle dropped without Wait still brings the session up to date", "[storage][async][incremental]") {
+    ComponentRegistry registry;
+    REQUIRE(RegisterAsyComponents(&registry).Ok());
+    jobs::Scheduler scheduler(AsyConfig(2));
+    AsyWorld w;
+    AsyBuild(&w, 5, 60);
+    MemoryStore store;
+    WorldStorage storage(registry, store);
+    SaveSession session;
+    SaveOptions options;
+    options.mode = SaveMode::Incremental;
+    options.session = &session;
+    {
+        UniquePtr<AsyncSave> handle;
+        REQUIRE(storage.SaveAsync(scheduler, w.world, w.index, options, &handle).Ok());
+    } // dropped: the destructor waits and adopts
+    Report report;
+    REQUIRE(storage.Save(w.world, w.index, options, &report).Ok());
+    CHECK(report.encoded == 0); // nothing changed since the dropped save, and the session knows it
+}
+
 TEST_CASE("Async save: a store failure arrives from Finish and leaves the store as it was", "[storage][async]") {
     ComponentRegistry registry;
     REQUIRE(RegisterAsyComponents(&registry).Ok());

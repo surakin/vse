@@ -106,6 +106,11 @@ Status ComponentRegistry::RegisterEntry(const ComponentDesc& desc, ecs::Componen
     if (desc.name == nullptr || desc.name[0] == '\0') {
         return Status::Make(ErrorCode::Invalid, "a component needs a name");
     }
+    for (const char* c = desc.name; *c != '\0'; ++c) {
+        if (static_cast<u8>(*c) < 0x20) { // the manifest is one line per component
+            return Status::Make(ErrorCode::Invalid, "a component name must not hold a control character");
+        }
+    }
     if (desc.version == 0) {
         return Status::Make(ErrorCode::Invalid, "a component version starts at 1");
     }

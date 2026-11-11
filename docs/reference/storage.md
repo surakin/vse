@@ -48,7 +48,7 @@ class AsyncSave { ... }
 
 A save in progress: the writer job is running (or has finished) and the session still has to learn the outcome.
 
-A save is two steps. `WorldStorage::SaveAsync` reads the world (encoding on the workers) and returns; the writer job then owns the store until it is done. `Finish` (or `Wait`) reports how it went and, for a save with a session, brings the session up to date; call it on the thread that owns the world and the session, before the next save with that session. A handle destroyed without `Finish` waits for the writer, then drops the session update: the store is as the save left it, and the session's next incremental save does extra work, never less.
+A save is two steps. `WorldStorage::SaveAsync` reads the world (encoding on the workers) and returns; the writer job then owns the store until it is done. `Finish` (or `Wait`) reports how it went and, for a save with a session, brings the session up to date; call it on the thread that owns the world and the session, before the next save with that session. A handle destroyed without `Finish` waits for the writer, then, if the save succeeded, brings the session up to date on the destroying thread (so that thread must own the world and the session, as for `Finish`).
 
 | Field | Value |
 |---|---|
