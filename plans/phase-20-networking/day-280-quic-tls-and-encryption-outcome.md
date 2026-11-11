@@ -3,7 +3,7 @@
 **Phase:** [Phase 20 — Networking](../phase-20-networking.md)
 **Depends on:** Days 266 (the decision), 273 (the conformance suite), 277, 279.
 
-Implements whichever option the user chose after Day 266's evidence. **This day is conditional: it is rewritten in the commit that records the decision, before it starts**, because the options differ completely; the shared tasks below hold for all of them.
+Implements whichever option the user chose after Day 266's evidence (`docs/superpowers/specs/2026-11-11-networking-design.md`, section 3 (3); the recommendation is branch (d) with QUIC and TLS deferred, branch (e); **the user has not decided yet**). **This day is conditional: it is rewritten in the commit that records the decision, before it starts**, because the options differ completely; the shared tasks below hold for all of them.
 
 ## Tasks
 
