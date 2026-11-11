@@ -1923,11 +1923,9 @@ class GBufferPass { ... }
 
 Draws the scene's visible objects into the G-buffer.
 
-draw list only, so it may run on a scheduler participant while nothing prepares.
-
 | Field | Value |
 |---|---|
-| Thread-safety | thread-compatible. `Prepare` and `AddToGraph` run on the frame's thread; the recorded callback reads the |
+| Thread-safety | thread-compatible. `Prepare` and `AddToGraph` run on the frame's thread; the recorded callback reads the draw list only, so it may run on a scheduler participant while nothing prepares. |
 | Ownership | borrows the device, the material system and the frame resources, which must outlive it. |
 
 ### `GBufferPass(rhi::Device*,MaterialSystem*,FrameResources*)` {#renderer-gbufferpass-gbufferpass-rhi-device-star-materialsystem-star-frameresources-star}
@@ -2233,14 +2231,12 @@ void AddToGraph(RenderGraph* graph, const GBufferTargets& targets, GBufferLayer 
 
 Declares a pass that shows `layer` in `output`.
 
-G-buffer's.
-
 | Field | Value |
 |---|---|
 | Parameter `graph` | the frame's graph. |
 | Parameter `targets` | the G-buffer targets the pass reads, all as `Sampled` (a depth texture read through a sampler is `Sampled`, `DepthRead` is for the depth test without writes). |
 | Parameter `layer` | what to show. |
-| Parameter `output` | a color texture resource the pass writes (written as `ColorAttachment`, cleared); its extent must equal the |
+| Parameter `output` | a color texture resource the pass writes (written as `ColorAttachment`, cleared); its extent must equal the G-buffer's. |
 | Parameter `output_format` | the format of `output` (an import carries no description, so the pass cannot read it). |
 | Parameter `near_plane` | the camera's near plane, for `GBufferLayer::Depth`. |
 | Parameter `far_plane` | the camera's far plane, for `GBufferLayer::Depth`. |

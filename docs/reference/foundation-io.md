@@ -28,11 +28,9 @@ struct DirectoryEntry { ... }
 
 One entry returned by [`io::Directory::Next`](#io-directory-next-directoryentry-star-bool-star).
 
-[`io::Directory`](#io-directory) and while that directory is open (moving the `Directory` does not invalidate them).
-
 | Field | Value |
 |---|---|
-| Thread-safety | thread-compatible. Ownership: `name` and the entry itself are valid until the next call to `Next` on the same |
+| Thread-safety | thread-compatible. Ownership: `name` and the entry itself are valid until the next call to `Next` on the same [`io::Directory`](#io-directory) and while that directory is open (moving the `Directory` does not invalidate them). |
 
 ### `name` {#io-directoryentry-name}
 
@@ -1081,14 +1079,12 @@ static Status Open(const Path& path, OpenMode mode, u32 flags, FilePtr* out);
 
 Opens the local file `path` (the path is never read as a URL; see [`io::File::OpenLocation`](#io-file-openlocation-stringview-openmode-u32-fileptr-star)).
 
-A FIFO opened for reading blocks until a writer appears; a terminal device does not become the controlling terminal. Nothing is locked: the same file can be open any number of times at once, in any modes, and renamed, replaced or removed while open (engine/foundation/io/BACKEND.md, "Sharing").
-
 | Field | Value |
 |---|---|
 | Parameter `path` | the file. |
 | Parameter `mode` | how to open it. |
 | Parameter `flags` | [`io::OpenFlag`](#io-openflag) bits. |
-| Parameter `out` | receives the file; unchanged on failure. |
+| Parameter `out` | receives the file; unchanged on failure. A FIFO opened for reading blocks until a writer appears; a terminal device does not become the controlling terminal. Nothing is locked: the same file can be open any number of times at once, in any modes, and renamed, replaced or removed while open (engine/foundation/io/BACKEND.md, "Sharing"). |
 | Fails | `NotFound`, `PermissionDenied`, `IsADirectory` (also when the path names a directory and the mode is `Read`), `AlreadyExists` (`kOpenCreateNew`), `Invalid` (`OpenMode::Read` with `kOpenCreate`, `kOpenCreateNew` or `kOpenTruncate`; on Windows also a reserved device name, a name ending in a dot or a space, or a colon in a name), `NotADirectory`, `TooManyOpenFiles`, `SymlinkLoop`, `TooLong`, `Busy` (Windows: another program opened the file without sharing). |
 | Backend | Windows: CreateFileW, asynchronous work on the executor as on Linux (BACKEND.md, Open); macOS: open with O_CLOEXEC, asynchronous work on the executor as on Linux (dispatch_io measured slower, Phase 26 Day 304). |
 

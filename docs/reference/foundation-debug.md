@@ -352,12 +352,10 @@ Collects the crash context.
 
 Call it once, early in `main`, before the crash handler is installed. Later calls do nothing.
 
-The first call fills the context. A later call changes nothing, except that it supplies the command line if the first call had none (the crash handler and a failed assert initialize without arguments when the program has not).
-
 | Field | Value |
 |---|---|
 | Parameter `argc` | number of arguments, or 0 if the program has no command line. |
-| Parameter `argv` | the arguments; borrowed for the call; null if the program has none. |
+| Parameter `argv` | the arguments; borrowed for the call; null if the program has none. The first call fills the context. A later call changes nothing, except that it supplies the command line if the first call had none (the crash handler and a failed assert initialize without arguments when the program has not). |
 | Thread-safety | thread-safe. Not async-signal-safe: it reads files. |
 | Backend | the system-information reads. Windows: build id from the PE CodeView record (GUID and age), OS from RtlGetVersion, memory from GlobalMemoryStatusEx; macOS: build id from LC_UUID, OS and CPU from sysctl. |
 

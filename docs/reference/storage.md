@@ -1911,14 +1911,12 @@ Status Assign(ecs::World& world, ecs::Entity entity, EntityKey key);
 
 Gives `entity` the key `key` at once, refusing a key another entity has.
 
-that found other duplicates only if this call did not succeed.
-
 | Field | Value |
 |---|---|
 | Parameter `world` | the world; synced first so the check sees every key. |
 | Parameter `entity` | a live entity. |
 | Parameter `key` | not null. |
-| Returns | success, `Invalid` for a null key or a dead entity, `Duplicate` when another entity has the key (nothing changes), or the error of a `Sync` |
+| Returns | success, `Invalid` for a null key or a dead entity, `Duplicate` when another entity has the key (nothing changes), or the error of a `Sync` that found other duplicates only if this call did not succeed. |
 | Fails | `Invalid`, `Duplicate`. |
 | Aborts | the world is being iterated. |
 | Ownership | `world` is borrowed for the call. |
@@ -4324,14 +4322,12 @@ Status SaveAsync(jobs::Scheduler& scheduler, ecs::World& world, KeyIndex& index,
 
 Saves as [`storage::WorldStorage::Save`](#storage-worldstorage-save-ecs-world-amp-keyindex-amp-const-saveoptions-amp-report-star) does, but only the reading of the world happens before the call returns: the selected (or, incrementally, the changed) entities are encoded on the workers of `scheduler` into memory, then one writer job writes them to the store in a single batch while the caller goes on. What was encoded is the world as the call found it, so the world may change freely once the call has returned, and the stored state is the same whatever the number of workers (the records are written in key order). Hand the result to `AsyncSave::Finish` (or `Wait`) to learn how it went and, for a save with a session, to bring the session up to date.
 
-once from the writer job when the save has committed.
-
 | Field | Value |
 |---|---|
 | Parameter `scheduler` | runs the encoding and the writer job; must outlive the returned handle. |
 | Parameter `world` | the world to read; not touched after the call returns. |
 | Parameter `index` | the keys of `world`. |
-| Parameter `options` | as for `Save`; `cancel`, `progress` and `user` must outlive the handle, and `progress` is called from the calling thread while encoding and |
+| Parameter `options` | as for `Save`; `cancel`, `progress` and `user` must outlive the handle, and `progress` is called from the calling thread while encoding and once from the writer job when the save has committed. |
 | Parameter `out` | receives the handle on success; unchanged on failure. |
 | Fails | `Busy` (a save is running on this object), and the errors of `Save` that can be found before the store is touched (`Invalid`, `Cancelled`, `LimitExceeded`); the store's own errors arrive from `Finish`. |
 | Aborts | not called from participant 0 (the main thread) of `scheduler` outside a job. |

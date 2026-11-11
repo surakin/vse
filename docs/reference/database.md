@@ -343,12 +343,10 @@ virtual Status Step(bool* has_row) = 0;
 
 Runs the statement to its next row or to its end.
 
-`Misuse` for a `Step` after the statement reported done and before `Reset`.
-
 | Field | Value |
 |---|---|
 | Parameter `has_row` | receives true when a row is ready to read, false when the statement is done. |
-| Fails | `Constraint`, `Busy`, `Locked`, `ReadOnly`, `Full`, `Io`, `Corrupt` and the others of [`database::ErrorCode`](#database-errorcode); a failed write statement changed nothing; |
+| Fails | `Constraint`, `Busy`, `Locked`, `ReadOnly`, `Full`, `Io`, `Corrupt` and the others of [`database::ErrorCode`](#database-errorcode); a failed write statement changed nothing; `Misuse` for a `Step` after the statement reported done and before `Reset`. |
 | Ownership | `has_row` is written during the call only; a row's column views stay valid until the next `Step` or `Reset`. |
 
 ### `ColumnCount()` {#database-statement-columncount-const}
@@ -393,11 +391,9 @@ One connection to a database: statements, transactions and the facts about the l
 
 A connection is in one of two states, outside or inside a transaction. A statement outside a transaction commits on its own.
 
-are safe to use from separate threads; writes are serialized by the backend and a writer that waits longer than the busy timeout gets `Busy`.
-
 | Field | Value |
 |---|---|
-| Thread-safety | not-thread-safe; one thread at a time (a connection may move between threads between calls). Separate connections to one database |
+| Thread-safety | not-thread-safe; one thread at a time (a connection may move between threads between calls). Separate connections to one database are safe to use from separate threads; writes are serialized by the backend and a writer that waits longer than the busy timeout gets `Busy`. |
 | Ownership | made by [`database::Database::Open`](#database-database-open-const-openoptions-amp-uniqueptr-lt-connection-gt-star); closing it (destruction) rolls back an open transaction. |
 
 ### `~Connection()` {#database-connection-tilde-connection}
@@ -910,11 +906,9 @@ Status Open(const OpenOptions& options, UniquePtr<Connection>* out) override;
 
 Opens an in-memory database or a file.
 
-an in-memory database cannot be `ReadOnly` or `WriteAhead`; `journal_mode` `Default` is the write-ahead log for a file; `sync_mode` `Default` is `Normal`; `busy_timeout_ms`, `foreign_keys`, `integrity_check` (a file) and `statement_cache` apply.
-
 | Field | Value |
 |---|---|
-| Parameter `options` | `location` empty or `":memory:"` (private, memory), or a path; `mode` `Create` makes a missing file, the others need it to exist; |
+| Parameter `options` | `location` empty or `":memory:"` (private, memory), or a path; `mode` `Create` makes a missing file, the others need it to exist; an in-memory database cannot be `ReadOnly` or `WriteAhead`; `journal_mode` `Default` is the write-ahead log for a file; `sync_mode` `Default` is `Normal`; `busy_timeout_ms`, `foreign_keys`, `integrity_check` (a file) and `statement_cache` apply. |
 | Parameter `out` | receives the connection on success; unchanged on failure. |
 | Fails | `Unsupported` (in memory: read-only or write-ahead log); `NotFound` (a missing file without `Create`); `Corrupt` (the file is not a database, or fails the integrity check); `Io`; `Busy`; `TooBig` (location longer than 1,023 bytes); `Other` if SQLite cannot start. |
 | Ownership | `options.location` is read during the call only; the connection owns its database and does not need this object. |

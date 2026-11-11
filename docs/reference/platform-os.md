@@ -875,8 +875,6 @@ bool EnvironmentEntry(usize index, char* buffer, usize capacity, usize* length);
 
 Copies one environment entry as `NAME=value` into the caller's buffer.
 
-On Windows the entries are the process environment converted from UTF-16 (an unpaired surrogate becomes U+FFFD), without the `=C:=C:\dir` entries Windows keeps for each drive's current directory, which are not variables; [`os::EnvironmentCount`](#os-environmentcount) skips them too.
-
 | Field | Value |
 |---|---|
 | Parameter `index` | position, less than [`os::EnvironmentCount`](#os-environmentcount). |
@@ -884,7 +882,7 @@ On Windows the entries are the process environment converted from UTF-16 (an unp
 | Parameter `capacity` | room in `buffer`, terminator included. |
 | Parameter `length` | receives the entry's full length without the terminator, even when it was cut; 0 when the entry does not exist. Must not be null. |
 | Returns | true if the entry exists. The copy is complete when `*length < capacity`; otherwise call again with a buffer of `*length + 1` bytes. |
-| Fails | returns false and writes an empty string when `index` is out of range; a short buffer is not a failure (see `length`). |
+| Fails | returns false and writes an empty string when `index` is out of range; a short buffer is not a failure (see `length`). On Windows the entries are the process environment converted from UTF-16 (an unpaired surrogate becomes U+FFFD), without the `=C:=C:\dir` entries Windows keeps for each drive's current directory, which are not variables; [`os::EnvironmentCount`](#os-environmentcount) skips them too. |
 | Thread-safety | thread-compatible; another thread changing the environment (`setenv`) while this runs is a race, as it is for `getenv`. |
 | Ownership | nothing is retained. |
 

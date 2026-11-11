@@ -1332,11 +1332,9 @@ virtual void SetPipeline(PipelineHandle pipeline) = 0;
 
 Binds a pipeline for the following draws or dispatches.
 
-A graphics pipeline binding ends with the rendering pass; bind it again in the next pass.
-
 | Field | Value |
 |---|---|
-| Parameter `pipeline` | a graphics pipeline (inside a pass whose attachment formats match it) or a compute pipeline (outside a pass). |
+| Parameter `pipeline` | a graphics pipeline (inside a pass whose attachment formats match it) or a compute pipeline (outside a pass). A graphics pipeline binding ends with the rendering pass; bind it again in the next pass. |
 | Aborts | outside `Begin`/`End`, a stale handle, a graphics pipeline outside a pass or with mismatching attachment formats, or a compute pipeline inside a pass. |
 
 ### `SetBindGroup(u32,BindGroupHandle)` {#rhi-commandlist-setbindgroup-u32-bindgrouphandle}
@@ -3710,14 +3708,12 @@ Copies bytes from the CPU into a buffer, outside the frame's command lists.
 
 The data is staged and copied on the GPU; it has been read from `data` when the call returns. The copy is ordered after all work submitted earlier and before all work submitted later, so a later `Submit` can use the new contents after a barrier from `CopyDst`. The buffer is in state `CopyDst` afterwards. Large uploads are split to fit the staging ring. Uploads from several threads are serialized.
 
-A buffer in `CpuToGpu` memory is the exception: it is written at once through its mapping, with no GPU copy and no ordering against work already submitted, and it keeps its fixed state. Do not overwrite data the GPU may still be reading (use a buffer per frame in flight).
-
 | Field | Value |
 |---|---|
 | Parameter `dst` | a buffer created with `CopyDst` usage. |
 | Parameter `offset` | byte offset in `dst`. |
 | Parameter `data` | the bytes to copy; must not be null. |
-| Parameter `size` | number of bytes; the range must lie inside `dst`. |
+| Parameter `size` | number of bytes; the range must lie inside `dst`. A buffer in `CpuToGpu` memory is the exception: it is written at once through its mapping, with no GPU copy and no ordering against work already submitted, and it keeps its fixed state. Do not overwrite data the GPU may still be reading (use a buffer per frame in flight). |
 | Returns | a ticket; pass its `fence` to `WaitFence` to know when the GPU has finished, and check its `ok`. A failed upload logs the reason and returns `ok` false. |
 | Fails | a lost device, or staging memory running out, logs and copies nothing. |
 | Aborts | `dst` is invalid or stale, lacks `CopyDst` usage, `data` is null, or the range is outside the buffer. |

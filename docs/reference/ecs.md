@@ -2415,11 +2415,9 @@ Made by `world.Query<Terms...>()`, for example `world.Query<Write<Position>, Rea
 
 The query remembers the archetypes that match and how many archetypes the world had when it last looked; each use looks only at the archetypes made since, so keeping a query across frames is cheap. An archetype that has no entities stays in the list and is skipped while iterating.
 
-supported yet: starting an iteration updates the world's (unsynchronized) iteration counter and write set; the parallel scheduler of Day 231 makes that safe.
-
 | Field | Value |
 |---|---|
-| Thread-safety | thread-compatible. A query object has one user at a time. Running two queries of one world on different threads is not |
+| Thread-safety | thread-compatible. A query object has one user at a time. Running two queries of one world on different threads is not supported yet: starting an iteration updates the world's (unsynchronized) iteration counter and write set; the parallel scheduler of Day 231 makes that safe. |
 | Ownership | borrows the world, which must outlive the query; owns its list of archetype indices. |
 
 ### `Query(World&)` {#ecs-query-query-world-amp}

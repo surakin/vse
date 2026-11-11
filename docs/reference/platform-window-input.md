@@ -1259,11 +1259,9 @@ struct KeyboardState { ... }
 
 Per-key down state plus the modifier mask; part of [`os::InputState`](#os-inputstate).
 
-the caller must synchronize if those happen on different threads.
-
 | Field | Value |
 |---|---|
-| Thread-safety | thread-compatible. Written by the backend during event pumping and read by the owner; |
+| Thread-safety | thread-compatible. Written by the backend during event pumping and read by the owner; the caller must synchronize if those happen on different threads. |
 
 ### `kKeyCount` {#os-keyboardstate-kkeycount}
 
@@ -1354,11 +1352,9 @@ Everything the platform layer knows about input right now.
 
 Written by the active window backend while it pumps events, and polled by upper layers.
 
-the caller must synchronize if those happen on different threads.
-
 | Field | Value |
 |---|---|
-| Thread-safety | thread-compatible. Written during [`os::Window::PumpEvents`](#os-window-pumpevents) and read by the owner; |
+| Thread-safety | thread-compatible. Written during [`os::Window::PumpEvents`](#os-window-pumpevents) and read by the owner; the caller must synchronize if those happen on different threads. |
 
 ### `keyboard` {#os-inputstate-keyboard}
 

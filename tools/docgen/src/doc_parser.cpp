@@ -246,8 +246,11 @@ private:
         }
 
         if (!indented) {
+            // A label is a list item (`- Fails: never.`), which survives clang-format's comment reflow; the bare form (`Fails: never.`) is still read.
+            const bool dashed = t.Length() > 2 && t[0] == '-' && t[1] == ' ';
+            const StringView candidate = dashed ? Trim(StringView(t.Data() + 2, t.Length() - 2)) : t;
             LabelMatch m;
-            if (MatchLabel(t, m)) {
+            if (MatchLabel(candidate, m)) {
                 FlushPara();
                 FlushList();
                 EndLabel();
@@ -278,6 +281,17 @@ private:
             FlushPara();
             EndLabel();
             StartItem(t, no);
+            return;
+        }
+        // Lazy continuation (as in CommonMark): a flush line right after an open label or list item continues it. clang-format wraps comments
+        // without indenting the wrapped lines, so a label or item may continue on flush lines; a blank line, a new label or bullet, or a fence ends it.
+        if (cur_label_ == kSwallow) return;
+        if (cur_label_ >= 0 && label_text_open_) {
+            pieces_.Push(t);
+            return;
+        }
+        if (in_list_ && item_open_) {
+            pieces_.Push(t);
             return;
         }
         EndLabel();

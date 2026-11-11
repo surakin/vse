@@ -227,6 +227,56 @@ TEST_CASE("Labels continue on indented lines and end at a blank line", "[docgen]
     REQUIRE(DocParserTestStr(d.blocks[0].text) == "Trailing paragraph.");
 }
 
+TEST_CASE("A label written as a list item is a label, and its flush continuation lines belong to it", "[docgen][docs]") {
+    // The form clang-format's comment reflow leaves alone: `- Label:` on its own line, wrapped text on flush lines below it.
+    Parsed p(Fn("Summary.\n- Returns: the value,\nor zero\non failure.\n- Fails: never.\n- Param a: the input,\nwrapped.\n\nTrailing paragraph."));
+    REQUIRE(p.Diags() == 0);
+    const ParsedDoc& d = p.Doc();
+    REQUIRE(d.labels.Size() == 3);
+    REQUIRE(DocParserTestStr(d.Find(LabelKind::Returns)->text) == "the value, or zero on failure.");
+    REQUIRE(DocParserTestStr(d.Find(LabelKind::Fails)->text) == "never.");
+    REQUIRE(DocParserTestStr(d.Find(LabelKind::Param)->name) == "a");
+    REQUIRE(DocParserTestStr(d.Find(LabelKind::Param)->text) == "the input, wrapped.");
+    REQUIRE(d.blocks.Size() == 1);
+    REQUIRE(DocParserTestStr(d.blocks[0].text) == "Trailing paragraph.");
+    REQUIRE(d.items.Size() == 0);
+}
+
+TEST_CASE("The list-item form and the bare form read the same", "[docgen][docs]") {
+    Parsed bare(Fn("Summary.\nReturns: r,\n  more.\nFails: never.\nThread-safety: thread-safe.\nOwnership: borrowed."));
+    Parsed dashed(Fn("Summary.\n- Returns: r,\nmore.\n- Fails: never.\n- Thread-safety: thread-safe.\n- Ownership: borrowed."));
+    REQUIRE(bare.Diags() == 0);
+    REQUIRE(dashed.Diags() == 0);
+    REQUIRE(bare.Doc().labels.Size() == dashed.Doc().labels.Size());
+    for (usize i = 0; i < bare.Doc().labels.Size(); ++i) {
+        REQUIRE(bare.Doc().labels[i].kind == dashed.Doc().labels[i].kind);
+        REQUIRE(DocParserTestStr(bare.Doc().labels[i].text) == DocParserTestStr(dashed.Doc().labels[i].text));
+    }
+}
+
+TEST_CASE("A list-item label takes the fence of Example, and an unknown one is still an error", "[docgen][docs]") {
+    Parsed p(Fn("Summary.\n- Example: basic use.\n```cpp compile\nf(1, 2);\n```\n- See: [[f]]"));
+    REQUIRE(p.Diags() == 0);
+    const Label* ex = p.Doc().Find(LabelKind::Example);
+    REQUIRE(ex != nullptr);
+    REQUIRE(DocParserTestStr(ex->code) == "f(1, 2);");
+    Parsed unknown(Fn("Summary.\n- Frobnicates: not real,\nand continues.\n- Returns: ok."));
+    REQUIRE(unknown.Diags() == 1);
+    REQUIRE(unknown.Diag(0) == "2: error: unknown label 'Frobnicates'");
+    REQUIRE(unknown.Doc().labels.Size() == 1);
+}
+
+TEST_CASE("An ordinary list item continues on flush lines; a blank line ends it", "[docgen][docs]") {
+    Parsed p(Fn("Summary.\n\n- first item,\nwrapped\n- second\n\nAfter."));
+    REQUIRE(p.Diags() == 0);
+    const ParsedDoc& d = p.Doc();
+    REQUIRE(d.items.Size() == 2);
+    REQUIRE(DocParserTestStr(d.items[0]) == "first item, wrapped");
+    REQUIRE(DocParserTestStr(d.items[1]) == "second");
+    REQUIRE(d.blocks.Size() == 2);
+    REQUIRE(DocParserTestStr(d.blocks[1].text) == "After.");
+}
+
 TEST_CASE("Example takes an immediately following fenced block", "[docgen][docs]") {
     Parsed p(Fn("Summary.\nExample: basic use.\n```cpp compile\nf(1, 2);\n```\nSee: [[f]]"));
     REQUIRE(p.Diags() == 0);

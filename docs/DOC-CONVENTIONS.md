@@ -47,8 +47,20 @@ notes → Platform notes → See also.
 
 ### Contract labels
 
-A line whose text starts with a label and a colon at column 0 of the
-comment text begins a labeled field; indented following lines continue it.
+A labeled field is a list item whose text starts with a label and a colon:
+
+```cpp
+/// Opens a socket.
+///
+/// - Fails: `Invalid` when the family is none; `LimitExceeded` when the process has no
+/// descriptors left.
+/// - Ownership: `*out` is written on success only.
+```
+
+Write each label as `- Label: text` on its own line, after the summary and any prose. The text continues on the lines below it, indented or not, until a blank
+line, the next label or list item, or a code fence: clang-format wraps comments at 120 columns without indenting the wrapped lines, and the list-item form is the one
+it leaves on a line of its own (a bare `Fails: ...` line would be merged into the end of the previous line when that one is wrapped). The bare form (`Fails: ...`
+at column 0) is still read until the tree is migrated, and then it becomes an error.
 
 | Label | Applies to | Content |
 |---|---|---|

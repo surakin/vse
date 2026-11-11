@@ -908,11 +908,9 @@ static Status OpenTcp(AddressFamily family, Socket* out);
 
 Opens a TCP socket of `family` into `*out`.
 
-when the process or the system has no descriptors left; [`net::ErrorCode::Unsupported`](#net-errorcode-unsupported) when the family is not available.
-
 | Field | Value |
 |---|---|
-| Fails | [`net::ErrorCode::Invalid`](#net-errorcode-invalid) when `family` is [`net::AddressFamily::None`](#net-addressfamily-none) or `*out` is already open; [`net::ErrorCode::LimitExceeded`](#net-errorcode-limitexceeded) |
+| Fails | [`net::ErrorCode::Invalid`](#net-errorcode-invalid) when `family` is [`net::AddressFamily::None`](#net-addressfamily-none) or `*out` is already open; [`net::ErrorCode::LimitExceeded`](#net-errorcode-limitexceeded) when the process or the system has no descriptors left; [`net::ErrorCode::Unsupported`](#net-errorcode-unsupported) when the family is not available. |
 | Ownership | `*out` is written on success only; the socket owns its handle. |
 | Backend | opens a non-blocking, close-on-exec stream socket (`SOCK_NONBLOCK \| SOCK_CLOEXEC` on Linux) and keeps its family. |
 
@@ -998,11 +996,9 @@ Status Bind(const Endpoint& local);
 
 Binds to `local`; port 0 asks for a free port (see [`net::Socket::LocalEndpoint`](#net-socket-localendpoint-endpoint-star-const)).
 
-the wrong family), [`net::ErrorCode::Other`](#net-errorcode-other) for a refused privileged port.
-
 | Field | Value |
 |---|---|
-| Fails | [`net::ErrorCode::AddressInUse`](#net-errorcode-addressinuse), [`net::ErrorCode::AddressNotAvailable`](#net-errorcode-addressnotavailable), [`net::ErrorCode::Invalid`](#net-errorcode-invalid) (closed socket, or an endpoint of |
+| Fails | [`net::ErrorCode::AddressInUse`](#net-errorcode-addressinuse), [`net::ErrorCode::AddressNotAvailable`](#net-errorcode-addressnotavailable), [`net::ErrorCode::Invalid`](#net-errorcode-invalid) (closed socket, or an endpoint of the wrong family), [`net::ErrorCode::Other`](#net-errorcode-other) for a refused privileged port. |
 | Backend | `bind`. |
 
 ### `Listen(i32)` {#net-socket-listen-i32}
@@ -1030,11 +1026,9 @@ Status Accept(Socket* connection, Endpoint* peer);
 
 Accepts one pending connection into `*connection`; `*peer` receives its address.
 
-[`net::ErrorCode::Invalid`](#net-errorcode-invalid) for a socket that does not listen or an open `*connection`.
-
 | Field | Value |
 |---|---|
-| Fails | [`net::ErrorCode::WouldBlock`](#net-errorcode-wouldblock) when none is pending; [`net::ErrorCode::LimitExceeded`](#net-errorcode-limitexceeded) when out of descriptors; |
+| Fails | [`net::ErrorCode::WouldBlock`](#net-errorcode-wouldblock) when none is pending; [`net::ErrorCode::LimitExceeded`](#net-errorcode-limitexceeded) when out of descriptors; [`net::ErrorCode::Invalid`](#net-errorcode-invalid) for a socket that does not listen or an open `*connection`. |
 | Ownership | `*connection` and `*peer` are written on success; the new socket owns its handle. |
 | Backend | `accept4` or `accept` plus the non-blocking and close-on-exec flags. A connection aborted before it was accepted is skipped. |
 
@@ -1050,11 +1044,9 @@ Starts connecting to `remote`.
 
 Returns success when the connection is made at once, and [`net::ErrorCode::WouldBlock`](#net-errorcode-wouldblock) when it is under way: wait until the socket is writable and call [`net::Socket::FinishConnect`](#net-socket-finishconnect). A UDP socket "connects" at once: it then sends to and receives from `remote` only.
 
-[`net::ErrorCode::Invalid`](#net-errorcode-invalid).
-
 | Field | Value |
 |---|---|
-| Fails | [`net::ErrorCode::Refused`](#net-errorcode-refused), [`net::ErrorCode::Unreachable`](#net-errorcode-unreachable), [`net::ErrorCode::TimedOut`](#net-errorcode-timedout), [`net::ErrorCode::AlreadyConnected`](#net-errorcode-alreadyconnected), |
+| Fails | [`net::ErrorCode::Refused`](#net-errorcode-refused), [`net::ErrorCode::Unreachable`](#net-errorcode-unreachable), [`net::ErrorCode::TimedOut`](#net-errorcode-timedout), [`net::ErrorCode::AlreadyConnected`](#net-errorcode-alreadyconnected), [`net::ErrorCode::Invalid`](#net-errorcode-invalid). |
 | Backend | `connect` on a non-blocking socket; `EINPROGRESS` and `EINTR` mean "under way". |
 
 ### `FinishConnect()` {#net-socket-finishconnect}
@@ -1067,11 +1059,9 @@ Status FinishConnect();
 
 Completes a connection started by [`net::Socket::Connect`](#net-socket-connect-const-endpoint-amp) that returned WouldBlock.
 
-[`net::ErrorCode::Unreachable`](#net-errorcode-unreachable), ...) when it failed, once; [`net::ErrorCode::Invalid`](#net-errorcode-invalid) when no connect is under way (never started, or the outcome was already reported).
-
 | Field | Value |
 |---|---|
-| Fails | [`net::ErrorCode::WouldBlock`](#net-errorcode-wouldblock) when still under way; the connection's error ([`net::ErrorCode::Refused`](#net-errorcode-refused), [`net::ErrorCode::TimedOut`](#net-errorcode-timedout), |
+| Fails | [`net::ErrorCode::WouldBlock`](#net-errorcode-wouldblock) when still under way; the connection's error ([`net::ErrorCode::Refused`](#net-errorcode-refused), [`net::ErrorCode::TimedOut`](#net-errorcode-timedout), [`net::ErrorCode::Unreachable`](#net-errorcode-unreachable), ...) when it failed, once; [`net::ErrorCode::Invalid`](#net-errorcode-invalid) when no connect is under way (never started, or the outcome was already reported). |
 | Backend | reads the socket's pending error (`SO_ERROR`) and checks the peer. |
 
 ### `Send(ByteSpan,usize*)` {#net-socket-send-bytespan-usize-star}
@@ -1084,11 +1074,9 @@ Status Send(ByteSpan bytes, usize* sent);
 
 Sends bytes of a connected socket; `*sent` receives how many were taken (possibly fewer than `bytes.Size()`, possibly zero with WouldBlock).
 
-[`net::ErrorCode::MessageTooLarge`](#net-errorcode-messagetoolarge) (a datagram above the limit), [`net::ErrorCode::Invalid`](#net-errorcode-invalid).
-
 | Field | Value |
 |---|---|
-| Fails | [`net::ErrorCode::WouldBlock`](#net-errorcode-wouldblock), [`net::ErrorCode::Closed`](#net-errorcode-closed) (the peer has shut down), [`net::ErrorCode::Reset`](#net-errorcode-reset), [`net::ErrorCode::NotConnected`](#net-errorcode-notconnected), |
+| Fails | [`net::ErrorCode::WouldBlock`](#net-errorcode-wouldblock), [`net::ErrorCode::Closed`](#net-errorcode-closed) (the peer has shut down), [`net::ErrorCode::Reset`](#net-errorcode-reset), [`net::ErrorCode::NotConnected`](#net-errorcode-notconnected), [`net::ErrorCode::MessageTooLarge`](#net-errorcode-messagetoolarge) (a datagram above the limit), [`net::ErrorCode::Invalid`](#net-errorcode-invalid). |
 | Ownership | `bytes` is read during the call; nothing is retained. |
 | Backend | `send` with the no-signal flag. |
 
@@ -1104,11 +1092,9 @@ Receives into `buffer`; `*received` receives how many bytes arrived.
 
 On a UDP socket a datagram larger than `buffer` is dropped and reported as [`net::ErrorCode::MessageTooLarge`](#net-errorcode-messagetoolarge), as for [`net::Socket::ReceiveFrom`](#net-socket-receivefrom-mutablebytespan-usize-star-endpoint-star). On a stream, the end of the stream (the peer shut down its writing half) is [`net::ErrorCode::Closed`](#net-errorcode-closed) with `*received` zero. `buffer` must not be empty.
 
-that got an ICMP refusal), [`net::ErrorCode::NotConnected`](#net-errorcode-notconnected), [`net::ErrorCode::Invalid`](#net-errorcode-invalid).
-
 | Field | Value |
 |---|---|
-| Fails | [`net::ErrorCode::WouldBlock`](#net-errorcode-wouldblock), [`net::ErrorCode::MessageTooLarge`](#net-errorcode-messagetoolarge), [`net::ErrorCode::Closed`](#net-errorcode-closed), [`net::ErrorCode::Reset`](#net-errorcode-reset), [`net::ErrorCode::Refused`](#net-errorcode-refused) (a connected UDP socket |
+| Fails | [`net::ErrorCode::WouldBlock`](#net-errorcode-wouldblock), [`net::ErrorCode::MessageTooLarge`](#net-errorcode-messagetoolarge), [`net::ErrorCode::Closed`](#net-errorcode-closed), [`net::ErrorCode::Reset`](#net-errorcode-reset), [`net::ErrorCode::Refused`](#net-errorcode-refused) (a connected UDP socket that got an ICMP refusal), [`net::ErrorCode::NotConnected`](#net-errorcode-notconnected), [`net::ErrorCode::Invalid`](#net-errorcode-invalid). |
 | Ownership | `buffer` is written during the call; nothing is retained. |
 | Backend | `recv`. |
 

@@ -939,8 +939,6 @@ Calls `fn(entity, components...)` for every entity of the set that overlaps `reg
 
 The hits are collected first and then looked up, so `fn` may write the components but must not change the world's structure (create, destroy, add or remove a component).
 
-component); a component type is an empty tag (a compile-time error).
-
 | Field | Value |
 |---|---|
 | Parameter `world` | the world holding the components. |
@@ -950,7 +948,7 @@ component); a component type is an empty tag (a compile-time error).
 | Parameter `filter` | the layer mask and key filter. |
 | Parameter `fn` | called as `fn(ecs::Entity, Ts&...)`. |
 | Returns | how many entities `fn` was called for. |
-| Aborts | an active ECS query writes one of the components, even when this call only reads it (as for `World::Get`: do not call it from a system that writes that |
+| Aborts | an active ECS query writes one of the components, even when this call only reads it (as for `World::Get`: do not call it from a system that writes that component); a component type is an empty tag (a compile-time error). |
 | Thread-safety | thread-compatible. |
 | Ownership | borrows `world`, `spatial` and `fn` for the call. |
 
@@ -3659,11 +3657,9 @@ bool Parallel() const;
 
 Whether the sync computes `WorldBounds` as jobs (when its system has the frame thread to itself). On by default; off runs it on the calling thread.
 
-With [`spatial::SpatialWorld::UseSettings`](#spatial-spatialworld-usesettings-const-settings-registry-amp) it reads `spatial.parallel` each time (so the setting changes it at run time).
-
 | Field | Value |
 |---|---|
-| Fails | never. |
+| Fails | never. With [`spatial::SpatialWorld::UseSettings`](#spatial-spatialworld-usesettings-const-settings-registry-amp) it reads `spatial.parallel` each time (so the setting changes it at run time). |
 
 ### `SetParallel(bool)` {#spatial-spatialworld-setparallel-bool}
 
