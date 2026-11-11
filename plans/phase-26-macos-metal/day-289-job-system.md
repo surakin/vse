@@ -3,12 +3,15 @@
 **Phase:** [Phase 26 — macOS Port + Metal Backend](../phase-26-macos-metal.md)
 **Depends on:** Day 288.
 
-`engine/jobs` has no platform directory: it is built on the `sync` wrappers (threads, atomics, mutexes, condition variables), coroutines and the
-file layer. Today it builds, runs and is measured on macOS, and the platform pieces the wrappers hide (thread names, priorities, CPU count) get their
-macOS answers.
+`engine/jobs` is built on the `sync` wrappers (threads, atomics, mutexes, condition variables), coroutines and the file layer, plus one platform file,
+`jobs/linux/thread_platform.cpp` (CPU list, pinning, thread ids, naming; corrected on Day 283: the first version of this file said jobs had no platform
+code), which `engine/jobs/CMakeLists.txt:18` picks for every system that is not Windows. Today it builds, runs and is measured on macOS.
 
 ## Tasks
 
+- [ ] **`jobs/macos/thread_platform.cpp`** and an explicit macOS branch in `engine/jobs/CMakeLists.txt`: allowed CPUs `0..hw.logicalcpu-1`, `PinCurrentThread`
+      returns false (no affinity masks on macOS; `THREAD_AFFINITY_POLICY` is only a hint, decided by measurement), thread id from `pthread_threadid_np`,
+      naming as below; `tests/jobs/worker_pool_test.cpp` reads pinning back from `/proc/self/task` on Linux: on macOS it checks that pinning reports false.
 - [ ] **`sync` on macOS:** `Thread` names through `pthread_setname_np(name)`, which on macOS names only the calling thread (the wrapper sets the name from
       inside the new thread; a test reads it back with `pthread_getname_np`); name length limit 63 bytes (cut on a UTF-8 boundary, tested); stack size
       through `pthread_attr_setstacksize` (the default secondary-thread stack on macOS is 512 KiB: check the scheduler's workers ask for what they need).

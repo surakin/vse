@@ -25,8 +25,9 @@ Implement `engine/foundation/os/os.h`, `command_line.h`, `session.h` and the GPU
       `SessionStateFromFlags`; `tests/foundation/session_state_test.cpp` runs unchanged; check it over SSH (no window server: `Unknown`).
 - [ ] **Command line:** the neutral `os/command_line.cpp` is used as is (macOS `argv` is UTF-8); a child-process test passes non-ASCII text, quotes and
       backslashes, as on Windows.
-- [ ] **GPU driver probe:** `os::VulkanLoaderName()` gets an `os/macos/vulkan_loader_name.cpp` that answers "none" (decision 8), and the probe reports
-      "not available" in the way its callers already handle; `gpu_driver_loading_test.cpp` skips with that reason.
+- [ ] **GPU driver probe:** not built on macOS (amended on Day 283, done on Day 284); nothing to do here beyond checking no macOS code includes it.
+- [ ] **Process figures:** `ResidentMemoryKiB` (`task_info(MACH_TASK_BASIC_INFO)`) and `OpenHandleCount` (`proc_pidinfo(PROC_PIDLISTFDS)`) in
+      `os/macos/`: the Linux versions read `/proc` and compile on macOS but fail at run time (Day 283).
 - [ ] **Console and log:** the log writes UTF-8 to standard output through `os::Write`; a child writes a non-ASCII line through the log to a pipe and the
       parent reads the same bytes; Terminal.app shows it (checked by hand).
 - [ ] **Base-layer tests on macOS:** `tests/foundation` (`foundation_base_tests`), `tests/types` and `tests/foundation_sanitized` build and run; tests of

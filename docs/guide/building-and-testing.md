@@ -167,6 +167,13 @@ phase. The same goes for a changed build flag, which is why build files force ev
 touching its module's tests. The window tests (`display`) are skipped by default in `--current`/`--affected` unless phase 1
 is selected or `engine/foundation` changed; `--display` includes them.
 
+#### Side phases
+
+A phase the user runs beside the main line on another machine is a **side phase** (proposed on 2026-11-11 and waiting for the user's confirmation;
+today Phase 26, the macOS port, on the Mac). It does not change `CURRENT_PHASE`; its tests carry its own label (`phase26`), and from Phase 26 Day 286 a
+`SIDE_PHASES` file lists it so `scripts/test-phase.sh --affected` adds it on a machine that builds its tests. Until then, run it by number
+(`scripts/test-phase.sh 26`). See CLAUDE.md ("Tests run by phase") and `docs/superpowers/specs/2026-11-11-macos-port-design.md`, section 6.
+
 #### Adding a test
 
 Add a line for the new source file to `tests/phases.txt` (`tests/rhi/vulkan_foo_test.cpp  4`); the build stops, naming the

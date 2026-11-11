@@ -9,7 +9,7 @@ drop, fullscreen, session); the Phase 4 golden images and the Phase 5 scene test
 **Metal** backend with Metal API validation silent; the Metal backend passes the lifecycle conformance suite and recovers from an injected device loss; the demos run
 on Metal; every gate and `ctest -L docs` pass on macOS; and the Linux machine and the Windows PC still pass their full suites in every flavor they have.
 
-**Status: planned (2026-11-10), Days 282-311; nothing started.** Day numbers continue after Phase 25 (Day 281). Phases 19-24 have no day files yet;
+**Status: started (2026-11-10), Days 282-311: Day 282 (the `.metallib` spike; interim route, pending) and Day 283 (spec, inventory, setup) done on the Mac; next Day 284.** Day numbers continue after Phase 25 (Day 281). Phases 19-24 have no day files yet;
 when they get them, Phases 25 and 26 renumber in the same commit (CLAUDE.md, "Phases are whole numbers").
 
 **Hardware (checked 2026-11-10).** The developer's 2019 MacBook Pro 13" (`MacBookPro15,4`): quad-core Intel Core i5 at 1.4 GHz, 8 GB RAM, **Intel Iris Plus
@@ -97,11 +97,11 @@ the Metal backend in the order the DX12 backend was built (Days 164-172), then i
   pass, the standard library only through the wrappers (`std_usage_check`), file access through the file layer, configuration through settings,
   warnings as errors.
 
-## Design decisions made while planning (2026-11-10; Day 283 confirms or amends them in the spec)
+## Design decisions made while planning (2026-11-10; confirmed or amended on Day 283: `docs/superpowers/specs/2026-11-11-macos-port-design.md`, section 2)
 
 1. **Toolchain:** Apple clang (Command Line Tools), CMake 3.21+ and Ninja, a CMake preset `macos-clang` (tree `build-macos`; asan and tsan as the
-   existing sanitized targets), native build on the Mac. **Deployment target macOS 13.0** (the triple the cross-syntax gates already use,
-   `arm64-apple-macos13`; Metal 3 needs macOS 13) on x86-64. **No Xcode** unless the Day 282 spike rejects the driver route. Flags: `-std=c++20
+   existing sanitized targets), native build on the Mac. **Deployment target macOS 13.3** (amended on Day 283: Apple's libc++ has floating-point `std::to_chars` from 13.3; Metal 3 needs 13.0; the
+   cross-syntax gates keep their `arm64-apple-macos13` triple) on x86-64. **No Xcode** unless the Day 282 spike rejects the driver route. Flags: `-std=c++20
    -fno-exceptions -fno-rtti`, `-fobjc-arc` for Objective-C++, the warning set of CLAUDE.md; frameworks linked by name (`-framework Metal` ...) only into
    the libraries that use them.
 2. **The C library is allowed** (`PLAN.md` assumption #2); macOS's libc and libc++ are the system's. POSIX calls are shared with Linux where they behave
@@ -109,8 +109,9 @@ the Metal backend in the order the DX12 backend was built (Days 164-172), then i
 3. **Objective-C++ with ARC, no bridging library.** AppKit and Metal are called from `.mm` files with ordinary Objective-C message syntax; ARC owns
    the Objective-C objects; a C++ class that holds one keeps it in an Objective-C++-only member (or a `__bridge_retained` pointer released in its
    destructor) behind an opaque pointer in the neutral header. Not used: raw `objc_msgSend` calls (the earlier plan; brittle and no safer),
-   `metal-cpp` (a separate download, not part of the OS), Swift. Apple's macro-heavy headers go through `unity/apple_enable.h` / `apple_disable.h`
-   (CLAUDE.md "Unity builds"); `__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORES=0` keeps `check`/`verify`/`require` out of the engine.
+   `metal-cpp` (a separate download, not part of the OS), Swift. **Amended on Day 283:** Apple's headers clash with no engine header in either order (243 headers checked), so no
+   `unity/apple_enable.h` / `apple_disable.h` pair up front; one is added when a real conflict appears (CLAUDE.md "Unity builds");
+   `__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORES=0` stays as a guard for later SDKs.
 4. **Symbols are DWARF in dSYM bundles.** A post-link `dsymutil` step for every executable in debug-info builds; libbacktrace uses `macho.c` and reads
    the dSYM next to the binary; the symbol store holds dSYMs by `LC_UUID`. Crash capture is sentry-native's Breakpad backend with no transport, as
    elsewhere (assumption #20); the report is written from its `on_crash` hook, which receives the user context on macOS.
@@ -126,13 +127,13 @@ the Metal backend in the order the DX12 backend was built (Days 164-172), then i
    (`engine/platform/macos/FULLSCREEN.md`).
 8. **Metal is the only GPU backend on macOS; Vulkan is not built there.** Vulkan on macOS means MoltenVK, a third-party translation layer that does not
    ship with the OS: the zero-third-party-convenience rule excludes it. The null backend builds everywhere and carries the renderer and demos until Metal
-   exists (Day 298). `auto` is Metal on macOS.
+   exists (Day 298). `auto` is Metal on macOS. **Amended on Day 283:** the GPU driver probe (`os/gpu_driver_probe.h`, Vulkan-only, included in
+   `foundation_base`) is not built on macOS, and `rhi_backends` gains an `ENGINE_RHI_HAVE_VULKAN` guard (Day 298).
 9. **Metal baseline:** `MTLGPUFamilyMac2` and Metal 3, the default hazard-tracking mode (so the render graph's barriers become no-ops or encoder
    splits), one `MTLCommandBuffer` per command list with encoders split around render passes, copies and dispatches, `MTLSharedEvent` as the fence,
    `Shared` storage for upload, readback and the uniform ring, `Private` for GPU-only resources, `Managed` with `didModifyRange` for CPU-written
    resources on a non-unified device (`FlushMappedBuffer`). **Bind groups map to direct `set*Buffer`/`set*Texture`/`set*SamplerState` calls at
-   slots read from reflection**, not argument buffers (the Iris Plus 645 is expected to be argument-buffer tier 1; Day 302 measures and the spec may
-   amend). Pipeline cache: `MTLBinaryArchive`, named by adapter identity. Validation: `MTL_DEBUG_LAYER=1` with `MTL_DEBUG_LAYER_ERROR_MODE=assert`
+   slots read from reflection**, not argument buffers (the Iris Plus 645 reports argument-buffer tier 1, Day 282; Day 302 measures and may amend). Pipeline cache: `MTLBinaryArchive`, named by adapter identity. Validation: `MTL_DEBUG_LAYER=1` with `MTL_DEBUG_LAYER_ERROR_MODE=assert`
    and `MTL_SHADER_VALIDATION=1` in the validation test runs, so any message fails the test; the `validation` setting is advisory (set before the
    device exists, as the lifecycle review says).
 10. **Shaders: minted `.metallib` blobs, never compiled at run time** (assumption #18). Slang's `-target metal` output is minted to an AIR-only
@@ -142,8 +143,8 @@ the Metal backend in the order the DX12 backend was built (Days 164-172), then i
     renamed `main_0` by Slang, and the blob records its real entry name; `fill.comp` and `saxpy.comp` get their element count as a constant.
 11. **Golden images are not re-blessed for macOS.** The existing images and tolerances are the oracle on the Iris Plus 645; a difference outside
     tolerance is investigated, and any tolerance change is recorded with the measured numbers (as Phase 13 decision 11).
-12. **The checkout is on a case-insensitive APFS volume.** Day 283 checks the tree for names that differ only in case (none may exist) and for paths
-    the gates or tests assume are case-sensitive.
+12. **The checkout is on a case-insensitive APFS volume.** Checked on Day 283: no paths differ only in case, and no gate or test assumes a
+    case-sensitive file system.
 
 ## Prerequisites the developer installs (Day 283 checks each and records the version in `BUILD.md`)
 

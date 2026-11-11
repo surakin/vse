@@ -27,7 +27,8 @@ Internal design history is for contributors, not engine users: the specs in
 [standard-library wrappers](superpowers/specs/2026-11-09-std-wrappers-design.md),
 [ECS](superpowers/specs/2026-11-10-ecs-design.md),
 [spatial partitioning](superpowers/specs/2026-11-10-spatial-design.md),
-[storage and database](superpowers/specs/2026-11-11-storage-design.md) —
+[storage and database](superpowers/specs/2026-11-11-storage-design.md),
+[macOS port and Metal](superpowers/specs/2026-11-11-macos-port-design.md) —
 and the plans in `plans/`.
 
 ## Map

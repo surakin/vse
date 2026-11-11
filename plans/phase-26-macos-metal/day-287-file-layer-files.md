@@ -11,7 +11,8 @@ Linux moves to `io/posix/`; macOS-only code goes to `io/macos/`.
 - [ ] **Split** `io/linux/{error,local_file,file_system}.cpp` per the inventory: the POSIX-identical parts to `io/posix/`, Linux-only calls (`statx`,
       `O_TMPFILE`, `copy_file_range`, `renameat2`, `/proc/self/exe`) stay in `io/linux/`, their macOS counterparts in `io/macos/`. `modules.txt`,
       `file_access_check`'s allow list (the backend's own files, with the reason) and `io_backend_lists` updated.
-- [ ] **`ErrorFromOsCode`:** errno as on Linux, plus the codes macOS adds (`EAUTH`, `ENOATTR`, `EFTYPE`, `ENEEDAUTH`) and the ones with different values;
+- [ ] **`st_mtim`** (`io/linux/file_system.cpp:42`, `directory.cpp:50`): `st_mtimespec` on macOS, through one helper (Day 283 Spike A).
+- [ ] **`ErrorFromOsCode`:** errno as on Linux; `ENOTSUP` and `EOPNOTSUPP` are different numbers on macOS (`io/linux/error.cpp:25` assumes they are one), plus the codes macOS adds (`EAUTH`, `ENOATTR`, `EFTYPE`, `ENEEDAUTH`) and the ones with different values;
       a table test over every code the backend maps.
 - [ ] **`NativePathStyle`** is POSIX; `Path` needs no change. Document in `io.md` that a case-insensitive volume is the file system's rule (`Path` does not
       fold) and that APFS keeps the normalization form it was given (HFS+ decomposed); a test creates `é` in NFC and opens it in NFD and records the

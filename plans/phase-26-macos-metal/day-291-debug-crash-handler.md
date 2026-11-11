@@ -17,7 +17,8 @@ sentry-native's Breakpad backend on macOS (Mach exception ports, no transport), 
       Everything between `SIGNAL-SAFE-BEGIN`/`END` stays signal-safe (the hook runs on Breakpad's exception thread, so the rules still apply).
 - [ ] **`RegisterThreadForCrashHandling`:** sets the thread's name and returns true (Mach exceptions need no alternate stack); a stack overflow on a worker
       thread produces a report (tested).
-- [ ] **`DeathTestsSupported` and `RunInChild`:** `posix_spawn` shared with Linux in `os/posix/debug/`; the child watches a pipe from the parent and exits
+- [ ] **`DeathTestsSupported` and `RunInChild`:** `posix_spawn` shared with Linux in `os/posix/debug/` (macOS has no `pipe2`: `pipe` then `FD_CLOEXEC`,
+      also in `tests/debug/support/test_support_linux.h`, which becomes `_posix`); the child watches a pipe from the parent and exits
       when it reaches EOF (a parent killed with `SIGKILL` leaves no orphan: tested); `RLIMIT_CORE` 0 in the child; signal decoding as Linux.
 - [ ] **`FaultSupported` and `InjectFault`:** as Linux on x86-64 (`DivideByZero` traps there; the arm64 answer, false, is written and covered by the
       arm64 compile check of Day 310); `IllegalInstruction` with `ud2` on x86-64 and `brk` on arm64; expected reasons checked.

@@ -86,13 +86,28 @@ Day 163, `ENGINE_SLANGC` (`slangc`; else `PATH`, then `C:\Tools\slang-2026.18.2\
 
 There is no Windows ThreadSanitizer or UBSan: those flavors run on the Linux machine only.
 
-## macOS: not yet supported (Phase 26)
+## macOS (x86-64): being ported (Phase 26, a side phase on the Mac)
 
-Planned for Phase 26 (Metal backend, `plans/phase-26-macos-metal.md`). The list is written when that phase is broken into days; expect the Xcode
-Command Line Tools (Clang), CMake, Ninja and `slangc` v2026.18.2. The Command Line Tools do not include the offline Metal compiler (`metal`,
-`metallib`), which ships only with Xcode. **Interim (pending, the user's decision of 2026-11-10):** `.metallib` files are minted through the
-driver's compiler with an undocumented Metal call, so no Xcode is needed for now; the route is decided again when the user has a new Mac
-(Phase 26 Day 282, `KNOWN-ISSUES.md`). Day 283 writes this section in full.
+**Status (2026-11-11, Phase 26 Day 283): nothing builds on macOS yet**; the build is enabled one layer per day from Day 284
+(`plans/phase-26-macos-metal.md`). The versions below are the developer's 2019 MacBook Pro (Intel Core i5-8257U, Intel Iris Plus Graphics 645, macOS
+15.8.1); evidence in `docs/superpowers/specs/2026-11-11-macos-port-design.md`. Xcode is **not** needed: the Command Line Tools have the compiler, and
+the Metal shaders are minted through the driver (below). Command-line tools come from [MacPorts](https://www.macports.org) on this machine;
+Homebrew works the same way.
+
+| What | Version used | Kind | Notes | Install |
+|---|---|---|---|---|
+| macOS on an x86-64 Mac with a Metal 3 GPU | 15.8.1 (24H32) | Required | The deployment target is macOS 13.3 (Day 284; floating-point `std::to_chars` needs 13.3, Metal 3 needs 13.0). Apple silicon is not verified (no hardware; an arm64 compile-only check comes on Day 310). | |
+| Command Line Tools for Xcode | 16.4 (Apple clang 17.0.0, `clang-1700.0.13.5`; macOS SDK 15.5) | Required | The only macOS compiler (Phase 26 rule). Also `lldb` (1700.0.9.502), `dsymutil`, `strip`, `leaks` and Apple's `git` (2.39.5). | `xcode-select --install` |
+| CMake | 3.21 or newer (4.4.4 used) | Required | | `sudo port install cmake` (or `cmake-devel`) |
+| Ninja | 1.13.2 | Required | The generator the `macos-clang` preset uses (Day 284). | `sudo port install ninja` |
+| `bash` | 3.2.57 (`/bin/bash`) | Required | `scripts/test-phase.sh` and the other scripts run on 3.2: none uses a bash-4 feature. | part of macOS |
+| `slangc` | **exactly v2026.18.2** | For checks | Re-mints shaders; same version as Linux and Windows, so minted SPIR-V matches byte for byte (checked on Day 283). Use the macOS x86-64 archive from https://github.com/shader-slang/slang/releases/tag/v2026.18.2 (`slang-2026.18.2-macos-x86_64.tar.gz`) unpacked to `~/tools/slang-2026.18.2`, or name it with `ENGINE_SLANGC`. **Watch out:** kitty (the terminal) ships an unrelated program called `slangc` in `kitty.app/Contents/MacOS`, which can come first on `PATH`; until Day 284 teaches the configure to refuse it, set `ENGINE_SLANGC`. | from the Slang GitHub release |
+| The Metal shader minting | the driver's compiler (`metalfe-32023.622` on macOS 15.8.1) | For checks | **Interim, pending (the user's decision, 2026-11-10):** `.metallib` files are minted through the driver's compiler with the undocumented `-[MTLLibrary serializeToURL:error:]`, so no Xcode; the minted bytes depend on the macOS build, and the route is decided again when the user has a new Mac (Phase 26 Day 282, `KNOWN-ISSUES.md`). | part of macOS |
+| Python 3 | 3.x (3.14.10 used) | Optional | `scripts/list-aborts.py` and `scripts/std-usage-report.py` only. | `sudo port install python314` |
+| Xcode | not installed | Optional | Instruments and the Metal debugger for GPU captures. Not needed to build, test or mint. | App Store |
+
+There is no LeakSanitizer on macOS (Apple clang): ASan aborts the process when `ASAN_OPTIONS` asks for `detect_leaks=1`, so leak checks stay on Linux;
+`leaks --atExit -- <program>` is the macOS tool. ASan (with UBSan) and TSan both work, so macOS runs all three flavors.
 
 ## Android, iOS, consoles: not yet supported
 

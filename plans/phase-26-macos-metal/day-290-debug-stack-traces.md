@@ -24,6 +24,8 @@ crash context. Linux's `os/linux/debug/` is the reference; what is the same POSI
       `sysctl -n` output.
 - [ ] **`crash_extract`** (`tools/crash_extract/resolve.cpp`'s platform branch): resolves a macOS report's frames through the dSYM, with `atos` as a
       cross-check in the test when present.
+- [ ] **`debug_alloc_tests`** link with GNU ld's `--wrap=malloc` (`tests/debug/CMakeLists.txt:201`), which ld64 lacks: interpose with `DYLD_INTERPOSE`,
+      count through a malloc zone, or keep it Linux-only with the reason in `KNOWN-ISSUES.md` (decided here; Day 283 inventory).
 - [ ] **Conformance groups** *stack trace* and *crash context* of `tests/debug/BACKEND-CONFORMANCE.md` pass or skip with a reason.
 - [ ] **Documentation:** `os/macos/debug/BACKEND.md` sections get "as built (Day 290)" notes; `docs/guide/foundation-debugging.md` and
       `porting-debugging.md` macOS sections (dSYM placement, `atos`); `debug_backend_lists` and `debug_cross_syntax_macos` pass; `docgen lint` zero.
