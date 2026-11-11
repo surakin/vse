@@ -15,7 +15,7 @@ set(JOBS_TEST_SOURCES
   worker_pool_test.cpp
   wake_latency_test.cpp
 )
-# macOS (Phase 26 Day 289): the platform half's own cases (names set from inside, no pinning, the CPU list).
+# macOS (Phase 26 Day 305): the platform half's own cases (names set from inside, no pinning, the CPU list).
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   list(APPEND JOBS_TEST_SOURCES macos/thread_platform_macos_test.cpp)
 endif()
@@ -73,7 +73,7 @@ set_tests_properties(tsan_canary_detects_race PROPERTIES
   PASS_REGULAR_EXPRESSION "ThreadSanitizer: data race"
   LABELS "tsan")
 # On macOS the sanitizers' abort_on_error defaults to 1 (Linux: 0), so the report ends in abort() and ctest counts the abort as a failure
-# whatever the output says (Phase 26 Day 289: exit 134 against 66). The canary asks for the Linux behavior there; its pass condition is unchanged.
+# whatever the output says (Phase 26 Day 305: exit 134 against 66). The canary asks for the Linux behavior there; its pass condition is unchanged.
 if(APPLE)
   set_tests_properties(tsan_canary_detects_race PROPERTIES ENVIRONMENT "TSAN_OPTIONS=abort_on_error=0")
 endif()

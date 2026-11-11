@@ -13,7 +13,7 @@
 
 extern "C" char** environ;
 
-// Linux's half of os.h; the calls Linux shares with macOS are in os/posix/os_posix.cpp (Phase 26 Day 285).
+// Linux's half of os.h; the calls Linux shares with macOS are in os/posix/os_posix.cpp (Phase 26 Day 301).
 namespace engine_placeholder::os {
 
 namespace posix {

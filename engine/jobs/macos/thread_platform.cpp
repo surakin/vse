@@ -1,4 +1,4 @@
-// The macOS half of the job system's platform interface (jobs/detail/thread_platform.h; Phase 26 Day 289).
+// The macOS half of the job system's platform interface (jobs/detail/thread_platform.h; Phase 26 Day 305).
 #include "jobs/detail/thread_platform.h"
 
 #include "cstr/mem_ops.h"

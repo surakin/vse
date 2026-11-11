@@ -1,4 +1,4 @@
-// The macOS os backend (Phase 26 Day 285): what os/macos/os.cpp and session.mm do differently from Linux, and what only a macOS run can
+// The macOS os backend (Phase 26 Day 301): what os/macos/os.cpp and session.mm do differently from Linux, and what only a macOS run can
 // show (the clock across threads, the shortest sleeps, the page size, the process figures, library loading without the current directory,
 // arguments and log text through a child's pipe).
 #include <catch2/catch_test_macros.hpp>
@@ -163,7 +163,7 @@ TEST_CASE("macOS: a child reads non-ASCII, quoted and backslashed arguments and 
 
 TEST_CASE("macOS: WriteAllWithTimeout writes to a device poll does not support", "[os][descriptor]") {
     // macOS's poll answers POLLNVAL for /dev/null (Linux: POLLOUT); a crash report to a stderr on /dev/null must still count as written
-    // (Day 285 review).
+    // (Day 301 review).
     const int fd = os::Open("/dev/null", O_WRONLY | O_CLOEXEC);
     REQUIRE(fd >= 0);
     char bytes[2000];

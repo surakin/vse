@@ -31,7 +31,7 @@
 - Findings from the first run of the suite on a real backend: SQLite stores `-0.0` as the integer 0, so the sign of zero is lost (the case now checks zero's value; `ValueType::Real` and the guide say so), and it stores a NaN as NULL (binding a NaN is `Misuse`). `nothing` is an SQLite keyword (a test of mine used it as a column name).
 - Not in the VFS yet, by design: no wall clock (the date functions fail with an error rather than return a wrong date) and no operating-system entropy (the monotonic clock mixed through SplitMix64); Day 254 adds both `os/` wrappers.
 - The suite: 30 of 32 cases run on `SqliteMemoryFixture`, 2 skip (`kSharedLocation = false`). The `UnimplementedFixture` stub stays, to keep the skip path tested.
-- `docs` target: `engine/foundation/cstr/number.h` (Phase 26 Day 284, the Mac line) linked a doc reference to a symbol declared only on macOS, which broke `docgen` on Linux; changed the `[[...]]` to backticks (comment only).
+- `docs` target: `engine/foundation/cstr/number.h` (Phase 26 Day 300, the Mac line) linked a doc reference to a symbol declared only on macOS, which broke `docgen` on Linux; changed the `[[...]]` to backticks (comment only).
 - Runs (Linux, Clang): plain `ran 2288 of 5979 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`; asan `ran 1756 of 5979`; tsan `ran 1438 of 5979` (they ran everything because CMake and a foundation header changed). Failures, none new: the two X11 window tests and the Day 235 tsan scene test. The first plain run failed `std_usage_check` (`unsigned char` in the text column code), fixed. Clang non-unity and GCC: `database_tests` 92 of 92. `ctest -L docs` 7 of 7; database documented 135 of 135.
 
 ## Post-implementation code review

@@ -184,10 +184,10 @@ platform-dir engine/foundation/os/linux/ engine/foundation/os/
 # platform's directory of a lower layer (ARCHITECTURE.md section 4).
 platform-dir engine/foundation/os/windows/ engine/foundation/os/,engine/foundation/io/windows/,engine/jobs/windows/,engine/foundation/settings/windows/,tools/crash_extract/windows/,engine/platform/windows/,engine/rhi/vulkan/windows/,tools/docgen/src/windows/,tools/shader_mint/windows/,engine/rhi/dx12/
 platform-dir engine/foundation/os/macos/ engine/foundation/os/
-# The half of the os backend Linux and macOS share (Phase 26 Day 285): only their own directories use it.
+# The half of the os backend Linux and macOS share (Phase 26 Day 301): only their own directories use it.
 platform-dir engine/foundation/os/posix/ engine/foundation/os/linux/,engine/foundation/os/macos/
 platform-dir engine/foundation/io/linux/ engine/foundation/io/
-# The file layer's POSIX backend, shared by Linux and macOS (Phase 26 Day 287): only their own directories use it.
+# The file layer's POSIX backend, shared by Linux and macOS (Phase 26 Day 303): only their own directories use it.
 platform-dir engine/foundation/io/posix/ engine/foundation/io/linux/,engine/foundation/io/macos/
 platform-dir engine/foundation/io/macos/ engine/foundation/io/
 platform-dir engine/foundation/io/windows/ engine/foundation/io/

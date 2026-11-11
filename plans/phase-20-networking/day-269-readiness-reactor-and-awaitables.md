@@ -1,0 +1,22 @@
+# Phase 20 / Day 269 — Readiness on the Job System: the Reactor, Awaitables & Timers
+
+**Phase:** [Phase 20 — Networking](../phase-20-networking.md)
+**Depends on:** Days 266-268; Phase 2 (`jobs::IoThread`, `Counter`, coroutines).
+
+Readiness handled by the job system's I/O so a coroutine can `co_await` a socket, with no thread per connection (`PLAN.md` assumption #15).
+
+## Tasks
+
+- [ ] **`net::Reactor`**: one non-participant thread owned by the scheduler like `jobs::IoThread` (or an extension of it, as Day 266 decides) running `epoll_wait` (edge-triggered, one-shot re-arm per awaitable); registration of a socket for read or write interest; completion decrements a `jobs::Counter`, so the continuation resumes on a participant, never on the reactor thread. Shutdown drains registered waiters with `Cancelled`.
+- [ ] **Awaitables** `AwaitReadable(socket)`, `AwaitWritable(socket)`, `Accept(listener)`, `Receive(socket, buffer)`, `Send(socket, bytes)` (loops until all bytes are accepted or an error), `ReceiveFrom`, `SendTo`, `Connect(socket, endpoint)`; each returns a `net::Status` plus a count; each takes an optional `CancelToken` and a timeout.
+- [ ] **Timers** through the same thread (`timerfd` or the `epoll_wait` timeout over a timer heap): `Sleep(duration)` awaitable, timeouts on every awaitable, cancel-before-fire; time is `os::MonotonicTimeNanos` through a `Clock` interface so the simulated transport and tests can drive a fake clock.
+- [ ] **Wake-up race rules** written in the spec and tested: registration after the event already happened (level check before sleeping), cancel racing completion (exactly one outcome), socket closed while a waiter is registered (waiter gets `Closed`), scheduler shutdown with waiters.
+- [ ] **Tests** (`tests/net/reactor_test.cpp`, label `network`, plain/asan/tsan): 1,000 loopback connections echoing 100 messages each driven by coroutines on 1-8 participants; timeouts fire within a tolerance and never early; cancel storms; close-while-waiting; shutdown with 500 waiters; a stress loop of register/cancel/complete races; the reactor thread is not a participant (`WorkerPool::IsParticipantThread` false) and no continuation ever runs on it.
+- [ ] **Runs (CLAUDE.md "Tests run by phase"):** `scripts/test-phase.sh --affected` plain; then the asan and tsan flavors (sockets, readiness and connection state are concurrency and lifetime code); quote each run's final `ran X of Y tests (phases ...)` line in this file and never say "all tests pass" for a reduced run. Real-socket tests are labelled `network` and use loopback with ephemeral ports only. `ctest -L docs` when a public header or a guide changed. Build clean (warnings are errors) with Clang and GCC, unity on and off. New code uses the engine's wrappers and types, never `std` (`std_usage_check`).
+- [ ] **Two machines (CLAUDE.md "Windows is a supported platform"):** shared code is portable and checked on the Windows PC no later than Day 281 (Day 278 for the socket backend itself); until then the day is "open until the other machine runs it" in `KNOWN-ISSUES.md`.
+- [ ] **Documentation (CLAUDE.md "Public API is documented before a day is done"):** public headers carry `///` comments with the contract labels (`docs/DOC-CONVENTIONS.md`); `docgen lint` stays at zero; `cmake --build build --target docs` output committed; new modules are added to `docs/reference/modules.txt`; the guide page `docs/guide/net.md` is updated or created and its tagged samples compile and run.
+- [ ] **Module rules (CLAUDE.md "Module dependencies follow ARCHITECTURE.md"):** a new module or edge updates `ARCHITECTURE.md`, `tools/module_deps_check/modules.txt` and the CMake targets (with `_asan`/`_tsan` flavors) in the same commit; no upward edge, no cycle; every new test file has its line in `tests/phases.txt` (phase 20).
+- [ ] **Day review (CLAUDE.md, required):** `/code-review high` over the day's diff after the scoped tests; verify, fix (with a regression test that fails without the fix) or decline each finding with a reason; record the count and outcome under "Post-implementation code review" below and in `STATUS.md`.
+- [ ] `STATUS.md` and `KNOWN-ISSUES.md` updated in the same commit; commit and push.
+
+**Done:** a coroutine awaits readiness, accept, connect, read, write and timers on the job system with every race rule tested under the sanitizers, and no thread per connection exists.

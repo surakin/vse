@@ -17,7 +17,7 @@ if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux" AND NOT CMAKE_CROSSCOMPILING AND NOT 
   endif()
 endif()
 
-# macOS (Phase 26 Day 284): Apple clang from the Command Line Tools is the only compiler (Phase 26 rules), found through xcrun so that a
+# macOS (Phase 26 Day 300): Apple clang from the Command Line Tools is the only compiler (Phase 26 rules), found through xcrun so that a
 # MacPorts or Homebrew clang first on PATH is never picked up by accident; same conditions as the Linux choice above. The deployment target
 # is macOS 13.3: Apple's libc++ has floating-point std::to_chars from 13.3 (cstr/number.h), and Metal 3 needs 13.0
 # (docs/superpowers/specs/2026-11-11-macos-port-design.md, decision 1). Both must be decided before project().
@@ -44,7 +44,7 @@ if(APPLE)
 endif()
 
 # Supported targets: x86-64 Linux, x86-64 Windows (Phase 13), and x86-64 macOS (being ported in Phase 26, a side phase on the Mac; arm64 macOS gets a
-# compile-only configuration on Phase 26 Day 310). Anything else names the phase that ports it.
+# compile-only configuration on Phase 26 Day 326). Anything else names the phase that ports it.
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
   set(ENGINE_PLATFORM linux)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows" AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(AMD64|x86_64)$")
@@ -53,7 +53,7 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "
   set(ENGINE_PLATFORM macos)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   message(FATAL_ERROR "macOS on ${CMAKE_SYSTEM_PROCESSOR} (${CMAKE_OSX_ARCHITECTURES}): only x86-64 is ported so far; the arm64 compile-only "
-                      "configuration is Phase 26 Day 310 (plans/phase-26-macos-metal.md)")
+                      "configuration is Phase 26 Day 326 (plans/phase-26-macos-metal.md)")
 elseif(CMAKE_SYSTEM_NAME MATCHES "^(Android|iOS)$")
   message(FATAL_ERROR "${CMAKE_SYSTEM_NAME} is ported in Phase 27 (plans/phase-27-android-ios.md)")
 else()
@@ -121,7 +121,7 @@ enable_testing()
 set(ENGINE_TEST_TMP_DIR "${CMAKE_BINARY_DIR}/test-tmp")
 file(MAKE_DIRECTORY "${ENGINE_TEST_TMP_DIR}/pipeline-cache" "${ENGINE_TEST_TMP_DIR}/screenshots")
 add_subdirectory(third_party/catch2)
-# macOS (Phase 26) adds these with the layers that use them (text on Day 294; storage when it is ported), not before: nothing configured
+# macOS (Phase 26) adds these with the layers that use them (text on Day 310; storage when it is ported), not before: nothing configured
 # there links them yet, and building them would only cost time on the Mac.
 if(NOT ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(third_party/freetype)  # Phase 14 Day 175: FreeType, vendored (PLAN.md assumption #17)
@@ -224,8 +224,8 @@ if(ENGINE_PLATFORM STREQUAL "windows")
 endif()
 
 # macOS (Phase 26, a side phase on the Mac) builds one layer more each day, in dependency order (ARCHITECTURE.md), as Windows did in Phase 13:
-# Day 284 the base layer and its tests (types, lang, sync, cstr) and the macOS-only checks; Day 285 the os backend and the foundation's base tests; Day 286 the gates and the test tooling. Each later day moves its directories into this list;
-# the "not yet ported" message shrinks with it and is gone on Day 310 (plans/phase-26-macos-metal.md).
+# Day 300 the base layer and its tests (types, lang, sync, cstr) and the macOS-only checks; Day 301 the os backend and the foundation's base tests; Day 302 the gates and the test tooling. Each later day moves its directories into this list;
+# the "not yet ported" message shrinks with it and is gone on Day 326 (plans/phase-26-macos-metal.md).
 if(ENGINE_PLATFORM STREQUAL "macos")
   include(cmake/EngineTestPhases.cmake)
   option(ENGINE_UNITY_BUILD "Compile each target's sources as merged unity translation units" ON)
@@ -234,26 +234,26 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_compile_options(${ENGINE_WARNING_COMPILE_OPTIONS} ${ENGINE_MACOS_COMPILE_OPTIONS})
   add_compile_definitions(${ENGINE_MACOS_DEFINITIONS})
   add_subdirectory(engine/foundation)
-  add_subdirectory(engine/jobs)  # Day 289
+  add_subdirectory(engine/jobs)  # Day 305
   add_subdirectory(tests/jobs)
-  add_subdirectory(tests/foundation)  # the base-layer tests (foundation_base_tests), Day 285; the file-layer and window ones need later days
+  add_subdirectory(tests/foundation)  # the base-layer tests (foundation_base_tests), Day 301; the file-layer and window ones need later days
   add_subdirectory(tests/foundation_sanitized)
-  add_subdirectory(tests/io)  # the file layer, Days 287-289
+  add_subdirectory(tests/io)  # the file layer, Days 303-305
   add_subdirectory(tests/types)
   add_subdirectory(tests/lang)
   add_subdirectory(tests/sync)
   add_subdirectory(tests/cstr)
   add_subdirectory(tests/macos)  # the macOS-only checks (phase 26): build_defs.h on Apple clang, the headers beside AppKit and Metal
-  # The source gates are CMake scripts over the tree, the same on every platform (Day 286, as Windows on Phase 13 Day 150).
+  # The source gates are CMake scripts over the tree, the same on every platform (Day 302, as Windows on Phase 13 Day 150).
   foreach(gate rhi_boundary_check raw_new_check file_access_check std_usage_check settings_fixtures_check config_access_check
                signal_safety_check platform_neutral_check module_deps_check ui_widget_style_check sqlite_boundary_check database_sql_check)
     add_subdirectory(tools/${gate})
   endforeach()
   add_subdirectory(tests/phase_labels)
   add_subdirectory(tests/test_phase_script)
-  message(STATUS "macOS (Phase 26 Day 289): building the base and file layers of the foundation, the job system and their tests, the gates and the test tooling. Not "
-                 "yet ported, so not configured: docgen (Day 293), debugging (Days 290-292), settings (Day 293), text, UI, ECS and "
-                 "spatial (Day 294), the platform layer (Days 295-297), the RHI and renderer (Days 298-309), the demos and tools (Day 310).")
+  message(STATUS "macOS (Phase 26 Day 305): building the base and file layers of the foundation, the job system and their tests, the gates and the test tooling. Not "
+                 "yet ported, so not configured: docgen (Day 309), debugging (Days 306-308), settings (Day 309), text, UI, ECS and "
+                 "spatial (Day 310), the platform layer (Days 311-313), the RHI and renderer (Days 314-325), the demos and tools (Day 326).")
   return()
 endif()
 

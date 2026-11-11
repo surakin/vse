@@ -1090,7 +1090,7 @@ A FIFO opened for reading blocks until a writer appears; a terminal device does 
 | Parameter `flags` | [`io::OpenFlag`](#io-openflag) bits. |
 | Parameter `out` | receives the file; unchanged on failure. |
 | Fails | `NotFound`, `PermissionDenied`, `IsADirectory` (also when the path names a directory and the mode is `Read`), `AlreadyExists` (`kOpenCreateNew`), `Invalid` (`OpenMode::Read` with `kOpenCreate`, `kOpenCreateNew` or `kOpenTruncate`; on Windows also a reserved device name, a name ending in a dot or a space, or a colon in a name), `NotADirectory`, `TooManyOpenFiles`, `SymlinkLoop`, `TooLong`, `Busy` (Windows: another program opened the file without sharing). |
-| Backend | Windows: CreateFileW, asynchronous work on the executor as on Linux (BACKEND.md, Open); macOS: open with O_CLOEXEC, asynchronous work on the executor as on Linux (dispatch_io measured slower, Phase 26 Day 288). |
+| Backend | Windows: CreateFileW, asynchronous work on the executor as on Linux (BACKEND.md, Open); macOS: open with O_CLOEXEC, asynchronous work on the executor as on Linux (dispatch_io measured slower, Phase 26 Day 304). |
 
 ### `OpenLocation(StringView,OpenMode,u32,FilePtr*)` {#io-file-openlocation-stringview-openmode-u32-fileptr-star}
 

@@ -1,0 +1,22 @@
+# Phase 20 / Day 273 — The Transport Interface, the Simulated Transport & the Conformance Suite
+
+**Phase:** [Phase 20 — Networking](../phase-20-networking.md)
+**Depends on:** Days 267, 269, 272.
+
+The interface everything above networking will use, and the in-process transport that proves it fits more than one backend and that every higher layer's tests use.
+
+## Tasks
+
+- [ ] **`net::Transport` / `net::Connection`** as specified in the spec: `Listen(endpoint)`, `Connect(endpoint)`, `Send(connection, channel, bytes, Reliability)`, `Receive`/`Poll` of events (`Opened`, `Message`, `Closed(reason)`), per-connection statistics (RTT, loss estimate, bytes and messages in and out, send queue depth), `Close(connection, reason)`; messages bounded by `MaxMessageBytes()`; channel numbers bounded; ownership of buffers explicit (a received message is a view valid until the next `Poll`, or a moved `Message`).
+- [ ] **`net::Reliability`**: `Unreliable`, `UnreliableSequenced`, `ReliableOrdered`, `ReliableUnordered`; a transport states which it supports (`Supports(reliability)`; TCP maps all reliable kinds to its stream and degrades unreliable ones to reliable with a documented flag).
+- [ ] **`net::SimulatedTransport`:** in-process, deterministic (seeded, driven by a fake `Clock`), configurable per direction: latency and jitter, loss (uniform and burst), reordering, duplication, bandwidth cap with a queue, MTU, and corruption; a `Network` object connects any number of endpoints; time advances only by `Advance(dt)`, so a networking bug replays exactly from its seed.
+- [ ] **Conformance suite** `tests/net/transport_conformance.h`, written once and run against every transport (simulated now; TCP Day 277; UDP Days 274-276; QUIC if Day 280 adds it): connect/accept, close with reasons, ordered reliable delivery under the transport's adverse conditions, unreliable messages may be lost but never corrupted or duplicated into delivery twice (where promised), message size limits, channel isolation, many connections, close during send, events after close, destruction with traffic in flight.
+- [ ] **Tests** (`tests/net/sim_transport_test.cpp`): same seed gives the same packet trace byte for byte; each impairment measured against its configured rate over 1 million packets; the conformance suite passes on the simulated transport.
+- [ ] **Runs (CLAUDE.md "Tests run by phase"):** `scripts/test-phase.sh --affected` plain; then the asan and tsan flavors (sockets, readiness and connection state are concurrency and lifetime code); quote each run's final `ran X of Y tests (phases ...)` line in this file and never say "all tests pass" for a reduced run. Real-socket tests are labelled `network` and use loopback with ephemeral ports only. `ctest -L docs` when a public header or a guide changed. Build clean (warnings are errors) with Clang and GCC, unity on and off. New code uses the engine's wrappers and types, never `std` (`std_usage_check`).
+- [ ] **Two machines (CLAUDE.md "Windows is a supported platform"):** shared code is portable and checked on the Windows PC no later than Day 281 (Day 278 for the socket backend itself); until then the day is "open until the other machine runs it" in `KNOWN-ISSUES.md`.
+- [ ] **Documentation (CLAUDE.md "Public API is documented before a day is done"):** public headers carry `///` comments with the contract labels (`docs/DOC-CONVENTIONS.md`); `docgen lint` stays at zero; `cmake --build build --target docs` output committed; new modules are added to `docs/reference/modules.txt`; the guide page `docs/guide/net.md` is updated or created and its tagged samples compile and run.
+- [ ] **Module rules (CLAUDE.md "Module dependencies follow ARCHITECTURE.md"):** a new module or edge updates `ARCHITECTURE.md`, `tools/module_deps_check/modules.txt` and the CMake targets (with `_asan`/`_tsan` flavors) in the same commit; no upward edge, no cycle; every new test file has its line in `tests/phases.txt` (phase 20).
+- [ ] **Day review (CLAUDE.md, required):** `/code-review high` over the day's diff after the scoped tests; verify, fix (with a regression test that fails without the fix) or decline each finding with a reason; record the count and outcome under "Post-implementation code review" below and in `STATUS.md`.
+- [ ] `STATUS.md` and `KNOWN-ISSUES.md` updated in the same commit; commit and push.
+
+**Done:** one interface with reliability kinds and events exists, the simulated transport reproduces any impairment deterministically, and the conformance suite is ready for the real transports.

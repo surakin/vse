@@ -7,7 +7,7 @@
 #include "string_view.h"
 #include "types.h"
 
-// The hooks the shared POSIX file layer (io/posix/, Phase 26 Day 287) asks of each system: io/linux/posix_hooks.cpp and
+// The hooks the shared POSIX file layer (io/posix/, Phase 26 Day 303) asks of each system: io/linux/posix_hooks.cpp and
 // io/macos/posix_hooks.cpp define them. Internal to the file layer's backends: no other file includes this header
 // (module_deps_check: io/posix/ is per-platform code owned by io/linux/ and io/macos/).
 namespace engine_placeholder::io::posix {

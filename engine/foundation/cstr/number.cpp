@@ -13,7 +13,7 @@
 #include "cstr/cstr.h"
 #include "lang/limits.h"
 
-// detail::ParseDoubleWithoutFromChars (Phase 26 Day 284): std::from_chars for double is a deleted function in Apple's libc++. The grammar
+// detail::ParseDoubleWithoutFromChars (Phase 26 Day 300): std::from_chars for double is a deleted function in Apple's libc++. The grammar
 // is read here, so the end position never depends on strtod's wider one (leading space, '+', hex, the locale's decimal point); only the
 // conversion of a normalized copy is left to strtod_l, in the C locale.
 namespace engine_placeholder::detail {

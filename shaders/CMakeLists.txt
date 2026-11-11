@@ -46,7 +46,7 @@ file(GLOB SHADER_COMMON_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/*_
 
 # slangc: ENGINE_SLANGC (a cache or environment variable), then the locations BUILD.md records (the Windows PC's C:/Tools, the Mac's
 # ~/tools; find_program searches HINTS before PATH), then PATH. A program that answers -v with something other than a Slang version is refused
-# and the committed outputs are used: on the Mac, kitty (the terminal) puts an unrelated `slangc` on PATH (Phase 26 Day 284).
+# and the committed outputs are used: on the Mac, kitty (the terminal) puts an unrelated `slangc` on PATH (Phase 26 Day 300).
 # DXIL (Phase 13 Day 163): the directory with dxcompiler.dll and dxil.dll, from ENGINE_DXC (a dxc executable or its directory), else
 # the Windows SDK the toolchain found (ENGINE_SDK_BIN); never the first dxc on PATH, which may be the Vulkan SDK's older build.
 if(NOT ENGINE_SLANGC AND DEFINED ENV{ENGINE_SLANGC})

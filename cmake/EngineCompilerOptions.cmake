@@ -8,7 +8,7 @@
 #                                      tools that use a library which throws, such as nlohmann/json in tools/shader_mint)
 #   ENGINE_WINDOWS_COMPILE_OPTIONS, ENGINE_WINDOWS_DEFINITIONS  the engine's own options on Windows; the root CMakeLists.txt applies
 #                                      them after the vendored libraries are added, so third-party code keeps its own settings
-#   ENGINE_MACOS_COMPILE_OPTIONS, ENGINE_MACOS_DEFINITIONS  the same on macOS (Phase 26 Day 284): ARC for Objective-C++, and Apple's
+#   ENGINE_MACOS_COMPILE_OPTIONS, ENGINE_MACOS_DEFINITIONS  the same on macOS (Phase 26 Day 300): ARC for Objective-C++, and Apple's
 #                                      AssertMacros.h kept to its underscored names
 #   ENGINE_HAVE_ASAN, ENGINE_HAVE_TSAN whether the sanitizer flavors exist with this compiler
 #   ENGINE_ASAN_COMPILE_OPTIONS, ENGINE_ASAN_LINK_OPTIONS, ENGINE_TSAN_COMPILE_OPTIONS, ENGINE_TSAN_LINK_OPTIONS
@@ -32,7 +32,7 @@ function(engine_asan_runtime target)
 endfunction()
 
 if(NOT ENGINE_MSVC_LIKE)
-  # GCC and Clang (Linux), and Apple clang (macOS, Phase 26: the same flags measured clean on Day 283). The sanitizer flags are unchanged
+  # GCC and Clang (Linux), and Apple clang (macOS, Phase 26: the same flags measured clean on Day 299). The sanitizer flags are unchanged
   # from Phase 7: -fno-sanitize=vptr because the engine libraries are built -fno-rtti while the Catch2 executables are not (see
   # engine/foundation/CMakeLists.txt). Apple clang has no LeakSanitizer: the asan flavor there is ASan and UBSan only, and a test must not
   # ask for detect_leaks=1, which aborts the process on macOS (KNOWN-ISSUES.md).

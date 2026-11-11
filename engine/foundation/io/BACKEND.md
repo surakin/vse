@@ -6,7 +6,7 @@ documentation carries a `Backend:` label has a `###` section here, and every sec
 for the Windows and macOS targets (`io_cross_syntax_windows`, `io_cross_syntax_macos`). Design and reasons:
 `docs/superpowers/specs/2026-11-06-file-layer-design.md`.
 
-Linux and macOS share the POSIX backend in `engine/foundation/io/posix/` (Phase 26 Day 287), each adding its own half (`io/linux/`, `io/macos/`:
+Linux and macOS share the POSIX backend in `engine/foundation/io/posix/` (Phase 26 Day 303), each adding its own half (`io/linux/`, `io/macos/`:
 the file-time and durable-sync hooks of `io/posix/posix_io.h`, the executable path, the temporary and the user directories). A new platform adds
 `engine/foundation/io/<platform>/` and selects it in `engine/foundation/CMakeLists.txt` next to the Linux sources.
 
@@ -30,7 +30,7 @@ the file-time and durable-sync hooks of `io/posix/posix_io.h`, the executable pa
 - **Windows (Phase 13):** UTF-8 to UTF-16 at the boundary; drive letters, UNC and `\\?\` long paths (Path's `PathStyle::Windows` parses all of them
   already); `CreateFileW`, overlapped I/O (`kCapNativelyAsync`), `MoveFileExW` for atomic replace, known folders through `SHGetKnownFolderPath`.
   A registry-backed settings store is Phase 11/12's, not this layer's.
-- **macOS (Phase 26, built on Days 287-288):** the POSIX backend shared with Linux (`io/posix/`); case- and normalization-insensitive default
+- **macOS (Phase 26, built on Days 303-304):** the POSIX backend shared with Linux (`io/posix/`); case- and normalization-insensitive default
   volumes (the layer does not fold); `F_FULLFSYNC` for durability; `fcopyfile`; the default executor for asynchronous work (`dispatch_io` measured
   slower); `~/Library` user directories from `$HOME` or `NSSearchPathForDirectoriesInDomains`.
 - **Android and iOS (Phase 27):** app-private directories as the user directories; the asset bundle is a read-only archive opened as a `File` backend
@@ -141,7 +141,7 @@ Windows: CopyFile2; macOS: fcopyfile(COPYFILE_DATA) on the descriptors (no clone
 Windows, as built (Day 152): `CopyFile2` (`COPY_FILE_FAIL_IF_EXISTS` unless overwriting), which copies the read-only attribute as the mode is copied
 on Linux. The same file under two names (a hard link) is detected by volume serial and 128-bit file id first and refused with `Invalid`.
 
-macOS, as built (Day 288): the shared POSIX `Copy` (descriptors, the same-file refusal by `st_dev`/`st_ino`, truncation only after it, the mode set with
+macOS, as built (Day 304): the shared POSIX `Copy` (descriptors, the same-file refusal by `st_dev`/`st_ino`, truncation only after it, the mode set with
 `fchmod`), with the data moved by `fcopyfile(COPYFILE_DATA)` on those descriptors. Not `COPYFILE_CLONE`: an APFS clone keeps the source's times and
 extended attributes, which `Copy` promises not to copy, and it needs the path-based call, reopening the race the descriptor check closes.
 
@@ -164,7 +164,7 @@ Windows, as built (Day 152, measured): `FlushFileBuffers` on a directory handle 
 `FILE_FLAG_BACKUP_SEMANTICS`) and is refused with read access only, so the directory is opened that way; `WriteFileAtomic` gets the same
 durability step as on Linux instead of `Unsupported`.
 
-macOS, as built (Day 287; `F_FULLFSYNC` 18.2 ms against `fsync` 0.39 ms for 4 KiB on the development Mac's SSD, a whole `WriteFileAtomic` of 4 KiB 39 ms): `fsync` is not enough there (it reaches the drive's cache, not the medium), so the directory, like a file's `Sync`, gets
+macOS, as built (Day 303; `F_FULLFSYNC` 18.2 ms against `fsync` 0.39 ms for 4 KiB on the development Mac's SSD, a whole `WriteFileAtomic` of 4 KiB 39 ms): `fsync` is not enough there (it reaches the drive's cache, not the medium), so the directory, like a file's `Sync`, gets
 `fcntl(F_FULLFSYNC)`, with `fsync` where the file system refuses it (`ENOTSUP`, `EINVAL`, `ENOTTY`).
 
 ### `CreateDirectory`
@@ -247,7 +247,7 @@ Windows, as built (Day 152): the print name of a symbolic link (relative as writ
 
 Windows: GetTempPath2W; macOS: $TMPDIR when absolute, else confstr(_CS_DARWIN_USER_TEMP_DIR).
 
-macOS, as built (Day 287): `$TMPDIR` when absolute (launchd sets the per-user directory under `/var/folders`), else `confstr(_CS_DARWIN_USER_TEMP_DIR)`
+macOS, as built (Day 303): `$TMPDIR` when absolute (launchd sets the per-user directory under `/var/folders`), else `confstr(_CS_DARWIN_USER_TEMP_DIR)`
 (the same directory, for a process started without the user's environment), and `/tmp`, which every user shares, only when both fail.
 
 
@@ -255,7 +255,7 @@ macOS, as built (Day 287): `$TMPDIR` when absolute (launchd sets the per-user di
 
 Windows: GetModuleFileNameW; macOS: _NSGetExecutablePath resolved with realpath.
 
-macOS, as built (Day 287): `_NSGetExecutablePath` gives the path the program was started by (it may hold a link or `..`); `realpath` makes it the file
+macOS, as built (Day 303): `_NSGetExecutablePath` gives the path the program was started by (it may hold a link or `..`); `realpath` makes it the file
 itself, as Linux's `/proc/self/exe` is. `io/macos/special_folders.mm`.
 
 
@@ -289,9 +289,9 @@ Windows, as built (Day 152): `SHGetKnownFolderPath`; configuration `RoamingAppDa
 hold an absolute path (the session sets them to the same folders), so a test or a launcher can point them elsewhere, as `$XDG_*` on Linux; the crash dump
 directory follows `%LOCALAPPDATA%` too.
 
-macOS, as built (Day 287, interim): `$HOME` (absolute, else the password database) then `Library/Application Support/<app>` for configuration and data,
+macOS, as built (Day 303, interim): `$HOME` (absolute, else the password database) then `Library/Application Support/<app>` for configuration and data,
 `Library/Caches/<app>` for the cache and `Library/Application Support/<app>/state` for state; the `XDG_*` variables are not read. Nothing is created.
-Day 288: `$HOME` stays first, as `$XDG_*` and `%APPDATA%` come first on Linux and Windows (a test or a launcher can point it elsewhere; a sandboxed
+Day 304: `$HOME` stays first, as `$XDG_*` and `%APPDATA%` come first on Linux and Windows (a test or a launcher can point it elsewhere; a sandboxed
 process has `$HOME` set to its container). Without an absolute `$HOME`, `NSSearchPathForDirectoriesInDomains` (`NSApplicationSupportDirectory`,
 `NSCachesDirectory`; it does not read `$HOME`, checked), then the password database. The plan had Foundation first; it changed so the three systems
 agree on the environment override (`io/macos/special_folders.mm`).
@@ -306,7 +306,7 @@ Do not guess a location without the user's profile. Create it private to the use
 Windows, as built (Day 152): `LocalAppData\<app>\crashes`, `<app>` from `ENGINE_APP_NAME` or the executable's name without `.exe`, created with
 `CreatePrivateDirectory`.
 
-macOS, as built (Day 287): `Library/Application Support/<app>/crashes` under `$HOME` (no password-database fallback, as on Linux), `<app>` from
+macOS, as built (Day 303): `Library/Application Support/<app>/crashes` under `$HOME` (no password-database fallback, as on Linux), `<app>` from
 `ENGINE_APP_NAME` or the executable's name, created with `CreatePrivateDirectory`.
 
 ### `Info`
@@ -318,7 +318,7 @@ Windows: the attributes the find call already returned, plus GetFileInformationB
 
 Windows: FindFirstFileExW (or NtQueryDirectoryFile) over a handle opened with FILE_FLAG_BACKUP_SEMANTICS; macOS: opendir.
 
-Windows: CreateFileW with FILE_FLAG_OVERLAPPED (so the file is NativelyAsync); macOS: open with O_CLOEXEC, asynchronous work on the executor as on Linux (dispatch_io measured slower, Phase 26 Day 288).
+Windows: CreateFileW with FILE_FLAG_OVERLAPPED (so the file is NativelyAsync); macOS: open with O_CLOEXEC, asynchronous work on the executor as on Linux (dispatch_io measured slower, Phase 26 Day 304).
 
 
 `File::Open` and `Directory::Open` share this section. A file backend implements every pure virtual of `File` (see "The File interface" below) and must pass the conformance suite.
@@ -336,8 +336,8 @@ writes at the offset `0xFFFFFFFF'FFFFFFFF`, which is Win32's atomic append. `Flu
 gigabytes of zeros written by the next write past the old end; a file system without sparse files grows it plainly. A directory opened as a
 file is `IsADirectory` (`AlreadyExists` with `kOpenCreateNew`, as `O_EXCL` says).
 
-`File::Open` on macOS, as built (Days 287-288): the shared POSIX local file (`io/posix/local_file.cpp`), `Sync` through `F_FULLFSYNC`. Asynchronous requests
-run on the executor as on Linux: `dispatch_io` was measured on Day 288 and lost (warm cache, the development Mac: 1,000 random 4 KiB reads 13-16 ms on the
+`File::Open` on macOS, as built (Days 303-304): the shared POSIX local file (`io/posix/local_file.cpp`), `Sync` through `F_FULLFSYNC`. Asynchronous requests
+run on the executor as on Linux: `dispatch_io` was measured on Day 304 and lost (warm cache, the development Mac: 1,000 random 4 KiB reads 13-16 ms on the
 executor against 232-239 ms through a `DISPATCH_IO_RANDOM` channel; one 64 MiB read 50-55 ms against 70-75 ms). It cannot read into the caller's
 buffer (the data arrives as `dispatch_data_t` and is copied) and pays its scheduling per read; `LocalFile` does not claim `kCapNativelyAsync`.
 `Directory::Open`, `Next`, `Info` and `Close` are the shared POSIX ones (`io/posix/directory.cpp`), with `st_mtimespec` through the hook.
@@ -371,7 +371,7 @@ Windows, as built (Day 151): `io/windows/error.cpp`, tested by `tests/io/io_wind
 `ERROR_HANDLE_EOF` `EndOfFile`; `ERROR_NOT_READY`, `ERROR_BROKEN_PIPE`, `ERROR_IO_PENDING` and the device errors are `Io`. A message is the
 engine's text and the number (`Status::os_code`); `FormatMessageW` is not called.
 
-macOS, as built (Day 287): Linux's errno table, shared (`io/posix/error.cpp`), with what Darwin adds: `EOPNOTSUPP` is a number of its own (102; `ENOTSUP`
+macOS, as built (Day 303): Linux's errno table, shared (`io/posix/error.cpp`), with what Darwin adds: `EOPNOTSUPP` is a number of its own (102; `ENOTSUP`
 is 45; on Linux they are one) and is `Unsupported`; `EAUTH` and `ENEEDAUTH` are `PermissionDenied`, `EFTYPE` `Invalid`, `ENOATTR` `NotFound`. Tested
 by `tests/io/io_macos_test.cpp`.
 

@@ -16,7 +16,7 @@ set(JOBS_SOURCES
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   list(APPEND JOBS_SOURCES windows/thread_platform.cpp)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  list(APPEND JOBS_SOURCES macos/thread_platform.cpp)  # Phase 26 Day 289
+  list(APPEND JOBS_SOURCES macos/thread_platform.cpp)  # Phase 26 Day 305
 else()
   list(APPEND JOBS_SOURCES linux/thread_platform.cpp)
 endif()
@@ -26,7 +26,7 @@ set(JOBS_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   # A platform being ported a layer at a time: the job system uses the base and file layers only, so it links foundation_io until the
-  # foundation aggregate exists there (Windows, Phase 13: plain and ASan; macOS, Phase 26 Day 289 until Day 293: plain, ASan and TSan).
+  # foundation aggregate exists there (Windows, Phase 13: plain and ASan; macOS, Phase 26 Day 305 until Day 309: plain, ASan and TSan).
   set(_jobs_flavors "")
   if(ENGINE_HAVE_ASAN)
     list(APPEND _jobs_flavors "_asan")

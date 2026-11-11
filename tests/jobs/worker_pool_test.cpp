@@ -190,7 +190,7 @@ TEST_CASE("Spawned workers are each pinned to one distinct CPU", "[jobs][pool]")
     auto pool = MakeUnique<WorkerPool>(WorkerPool::Config{n});
     REQUIRE(pool->SpawnedWorkerCount() == n - 1);
     if (!jobs::detail::CanPinThreads()) {
-        // A platform without an affinity API (macOS, Phase 26 Day 289): no worker is pinned, and none is reported as pinned.
+        // A platform without an affinity API (macOS, Phase 26 Day 305): no worker is pinned, and none is reported as pinned.
         for (usize i = 1; i < n; ++i) {
             REQUIRE(pool->GetParticipant(i).tid > 0);
             CHECK(pool->GetParticipant(i).cpu == -1);

@@ -1,4 +1,4 @@
-// The POSIX backend of io/file_system.h, Linux and macOS (Phase 26 Day 287: moved from io/linux/). The executable path, the temporary and the
+// The POSIX backend of io/file_system.h, Linux and macOS (Phase 26 Day 303: moved from io/linux/). The executable path, the temporary and the
 // user directories are each system's own (io/linux/special_folders.cpp, io/macos/special_folders.cpp). This is one of the places allowed to
 // call the POSIX file API directly.
 #include "io/file_system.h"

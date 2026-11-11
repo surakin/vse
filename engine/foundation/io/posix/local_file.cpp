@@ -1,4 +1,4 @@
-// The POSIX backend of io::File, Linux and macOS (Phase 26 Day 287: moved from io/linux/): a plain file descriptor. One of the places allowed to
+// The POSIX backend of io::File, Linux and macOS (Phase 26 Day 303: moved from io/linux/): a plain file descriptor. One of the places allowed to
 // call the POSIX file API directly.
 #include "io/posix/posix_io.h"
 #include "os/last_error.h"

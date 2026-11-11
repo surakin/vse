@@ -99,8 +99,8 @@ The numbers are the items of the original table; the plan is `plans/phase-12-mod
   entry point, the same two, Day 158; `rhi/vulkan/windows/`, the Vulkan backend's Win32 surface, `win32.h`, Day 160;
   `tools/docgen/src/windows/`, the sample runner's child processes, `win32.h` and `utf16.h`, Day 161), named as an owner on its
   `platform-dir` line in `tools/module_deps_check/modules.txt`.
-- Code that is the same POSIX calls on Linux and macOS lives once in a `posix/` directory beside them (`os/posix/`, Phase 26 Day 285; `io/posix/`,
-  the file layer's backend, Day 287, with the per-system hooks in `io/posix/posix_io.h`), owned by
+- Code that is the same POSIX calls on Linux and macOS lives once in a `posix/` directory beside them (`os/posix/`, Phase 26 Day 301; `io/posix/`,
+  the file layer's backend, Day 303, with the per-system hooks in `io/posix/posix_io.h`), owned by
   `linux/` and `macos/` of the same module only: neutral code includes it no more than any other per-platform directory.
 
 ## 5. Third-party code

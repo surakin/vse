@@ -1,6 +1,6 @@
 # The Job System
 
-Status: written (Phase 2; Windows pinning from Phase 13; macOS from Phase 26 Day 289).
+Status: written (Phase 2; Windows pinning from Phase 13; macOS from Phase 26 Day 305).
 
 **Audience:** every engine and game programmer. Read [Memory](foundation-memory.md) and [Containers](foundation-containers.md) first. You do not need to know
 C++ coroutines in depth: this page shows the few patterns you write.
@@ -221,7 +221,7 @@ pinned to one CPU each and the main thread is not. The CPU list, thread ids, pin
   group, so `start /affinity` is honoured; a machine with more than 64 logical processors has several groups, and the parser is tested with
   recorded multi-group data. Pinning is `SetThreadGroupAffinity`; workers are named `worker-N` with `SetThreadDescription`, which debuggers,
   profilers and crash dumps show.
-- **macOS** (Phase 26 Day 289): every active logical CPU (`hw.activecpu`; there is no per-process mask). **Workers are not pinned**: macOS has no
+- **macOS** (Phase 26 Day 305): every active logical CPU (`hw.activecpu`; there is no per-process mask). **Workers are not pinned**: macOS has no
   affinity API (`THREAD_AFFINITY_POLICY` is only a grouping hint the scheduler may ignore), so `CanPinThreads()` is false and the pool does not
   try, and a participant's `cpu` is `-1`. Thread ids are `pthread_threadid_np`'s low 31 bits. Workers name themselves `worker-N` with
   `pthread_setname_np`, which on macOS names only the calling thread (so it is called from inside each worker; at most 63 bytes, cut on a UTF-8
@@ -266,7 +266,7 @@ Windows PC (16 logical CPUs, MSVC, Debug build; Phase 13 Day 153): the `Throughp
 sleeps): median 72 us, 99th percentile 0.6 to 1.0 ms over two runs. Idle workers wait on a condition variable, which a notification wakes; timer
 resolution (`timeBeginPeriod`) does not bound that, so it is not changed. The Linux numbers are taken at the Phase 13 close.
 
-Development Mac (a 2019 MacBook Pro: 4-core i5-8257U, 8 logical CPUs, Apple clang, Debug build, workers unpinned; Phase 26 Day 289): 1.00x, 1.99x,
+Development Mac (a 2019 MacBook Pro: 4-core i5-8257U, 8 logical CPUs, Apple clang, Debug build, workers unpinned; Phase 26 Day 305): 1.00x, 1.99x,
 3.79x and 6.07x for 1, 2, 4 and 8 participants (the step from 4 to 8 is hyper-threading); waking an idle worker: median 26 to 27 us, 99th percentile
 61 to 220 us over two runs. No target applies across machines.
 

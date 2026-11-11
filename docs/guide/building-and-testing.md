@@ -445,7 +445,7 @@ itself (vswhere, the registry, the default install folders), so any terminal wor
 ### Building and testing on macOS
 
 macOS (x86-64) is being ported in Phase 26, a side phase on the Mac, one layer per day (`plans/phase-26-macos-metal.md`); today the base
-layer of the foundation and its tests, the gates and the test tooling build (Days 284-286). `BUILD.md` lists what to install: the Command Line Tools (Apple clang), CMake and
+layer of the foundation and its tests, the gates and the test tooling build (Days 300-302). `BUILD.md` lists what to install: the Command Line Tools (Apple clang), CMake and
 Ninja; no Xcode.
 
 - **Preset.** `cmake --preset macos-clang` configures `build-macos` (Ninja, Debug, x86-64, deployment target macOS 13.3); build and test with
@@ -462,8 +462,8 @@ Ninja; no Xcode.
 - **The gates** run here as on Linux and Windows. Rule 7 of `platform_neutral_check` keeps Apple's headers (the frameworks, `<mach/...>`,
   `<dispatch/...>`, `<objc/...>`, `<sys/sysctl.h>`, `<copyfile.h>`, `<libproc.h>`) and `.mm` files in the macOS directories (a `macos/`
   folder, `engine/rhi/metal/`); `std_usage_check` and `module_deps_check` read `.mm` files and count `#import` as `#include`.
-- **Documentation** (`docgen`, the reference, `ctest -L docs`) is not built on the Mac before Phase 26 Day 293 (it needs the whole foundation);
-  the samples wait for Day 310.
+- **Documentation** (`docgen`, the reference, `ctest -L docs`) is not built on the Mac before Phase 26 Day 309 (it needs the whole foundation);
+  the samples wait for Day 326.
 
 ### What "done" means before you commit
 

@@ -39,7 +39,7 @@ TEST_CASE("io::Error: the errno table and names", "[io][error]") {
         {ELOOP, Error::SymlinkLoop}, {ERANGE, Error::TooLong}, {EROFS, Error::ReadOnly}, {EBUSY, Error::Busy}, {ETXTBSY, Error::Busy},
         {EMFILE, Error::TooManyOpenFiles}, {ENFILE, Error::TooManyOpenFiles}, {ENOMEM, Error::OutOfMemory},
 #if ENGINE_PLATFORM_MACOS || ENGINE_PLATFORM_IOS
-        // Darwin's own codes (Phase 26 Day 287); ENOTSUP is a number of its own there (on Linux it equals EOPNOTSUPP, listed above).
+        // Darwin's own codes (Phase 26 Day 303); ENOTSUP is a number of its own there (on Linux it equals EOPNOTSUPP, listed above).
         {ENOTSUP, Error::Unsupported}, {EAUTH, Error::PermissionDenied}, {ENEEDAUTH, Error::PermissionDenied}, {EFTYPE, Error::Invalid},
         {ENOATTR, Error::NotFound},
 #endif

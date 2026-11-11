@@ -1,6 +1,6 @@
 # Platform: OS Layer
 
-Status: written (Phase 1; Windows from Phase 13; macOS from Phase 26 Day 285).
+Status: written (Phase 1; Windows from Phase 13; macOS from Phase 26 Day 301).
 
 **Audience:** engine programmers. Read [Standard types](foundation-types.md) and [Memory](foundation-memory.md) first.
 

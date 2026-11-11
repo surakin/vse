@@ -11,7 +11,7 @@
 #include <time.h>
 #include <unistd.h>
 
-// The functions of os.h that are the same POSIX calls on Linux and macOS (one difference handled: poll on a device, WriteAllWithTimeout) (Phase 26 Day 285, moved from os/linux/os.cpp). The clock,
+// The functions of os.h that are the same POSIX calls on Linux and macOS (one difference handled: poll on a device, WriteAllWithTimeout) (Phase 26 Day 301, moved from os/linux/os.cpp). The clock,
 // random bytes, process figures, library loading and the environment pointer are per platform (os/linux/os.cpp, os/macos/os.cpp).
 namespace engine_placeholder::os {
 

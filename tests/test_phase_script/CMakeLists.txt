@@ -103,11 +103,11 @@ phase_script_case(affected_cmake_file PHASES all ARGS --affected --current-phase
   --diff-from-file ${FIX}/diff_cmake.txt CTEST ${PLAIN})
 phase_script_case(affected_phase_map PHASES all ARGS --affected --current-phase-file ${FIX}/phase5.txt
   --diff-from-file ${FIX}/diff_map.txt CTEST ${PLAIN})
-# Side phases (Phase 26 Day 286): --affected adds a side phase this build has tests of, marked "(side)"; one it has none of is not added; one
+# Side phases (Phase 26 Day 302): --affected adds a side phase this build has tests of, marked "(side)"; one it has none of is not added; one
 # already selected is not marked; --current does not add them. Phase 6 stands in for the side phase: every platform builds its tests.
 phase_script_case(affected_side_phase PHASES "5 6 (side)" SIDE ${FIX}/side_6.txt ARGS --affected --current-phase-file ${FIX}/phase5.txt
   --diff-from-file ${FIX}/diff_notes.txt CTEST -L "^(phase5|phase6)$" ${PLAIN_NO_DISPLAY})
-# A side phase with no tests in the run's flavor is not added (phase 6 has plain tests only; Day 286 review). The flavor is asan, which every
+# A side phase with no tests in the run's flavor is not added (phase 6 has plain tests only; Day 302 review). The flavor is asan, which every
 # platform runs (Windows refuses tsan).
 phase_script_case(affected_side_phase_wrong_flavor PHASES 5 SIDE ${FIX}/side_6.txt ARGS --affected --flavor asan --current-phase-file ${FIX}/phase5.txt
   --diff-from-file ${FIX}/diff_notes.txt CTEST -L "^(phase5)$" -L "^asan$" -LE "^(display|crash)$")

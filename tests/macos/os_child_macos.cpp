@@ -1,4 +1,4 @@
-// The child of tests/macos/os_macos_test.cpp (Phase 26 Day 285): reads its arguments through os::CommandLine::FromNative and writes each
+// The child of tests/macos/os_macos_test.cpp (Phase 26 Day 301): reads its arguments through os::CommandLine::FromNative and writes each
 // back on its own line with os::Write, then one line through the log, so the parent can compare the bytes that crossed the pipe.
 #include "log/log.h"
 #include "mem/arena_allocator.h"

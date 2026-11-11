@@ -1,10 +1,12 @@
 # Phase 20 — Networking (TCP, UDP, and Possibly QUIC)
 
+**Status: planned in full (2026-11-11): Days 266-281 have day files; not started. `CURRENT_PHASE` stays 19 until Day 266.**
+
 **Depends on:** Phase 2 (job system and its async I/O, the scheduler that runs network work), Phase 9 (file layer patterns: errors as values, a test double that proves the interface), Phase 11 (settings), Phase 16 (wrappers), Phase 13 (the Windows platform layer, for the Windows socket backend). Phase 19 (storage) is not required, but a store over the network is its first user.
 **Goal:** one portable socket and transport layer for the whole engine (game traffic, tools, remote debugging, the resource system's network backend, a store over the network), with TCP and UDP from the first day and a QUIC transport if the Phase's spike justifies it.
 **Definition of done:** a `net` module with addresses (IPv4 and IPv6), non-blocking TCP and UDP sockets on Linux and Windows through one interface, readiness handled by the job system's I/O (no thread per connection), and a `Transport` interface above sockets that gives callers connections with reliable ordered and unreliable channels; implemented on TCP and on UDP (with the reliability layer written here); tested on loopback with injected loss, reordering, duplication, delay and partial reads and writes, race-free under the sanitizers, with hostile input fuzzed. The QUIC decision is recorded with its evidence, and a QUIC transport exists if the decision is yes.
 
-## Key deliverables (to be expanded into day-by-day tasks when started)
+## Key deliverables (broken into days below)
 
 - **Socket layer.** `net::Address`/`Endpoint` (a value type with no syscalls, parsing and formatting), `net::Socket` for TCP streams, listeners and UDP datagrams, non-blocking only, with the platform code in `linux/` and `windows/` directories behind a `BACKEND.md` checklist (as the platform, file and settings layers do); `socket`, `bind`, `connect` and the like are called only from those directories (a gate like `file_access_check` enforces it). Name resolution uses the system's resolver (`getaddrinfo`, part of the OS) run on a job so it never blocks a frame. IPv6 and dual-stack where the OS allows. Errors are values (`net::Status`), never exceptions, with portable codes (refused, reset, timed out, unreachable, would block, address in use).
 - **Readiness and I/O on the job system.** `epoll` on Linux and I/O completion ports (or `WSAPoll` first) on Windows, feeding the job scheduler's existing async I/O so a coroutine can `co_await` a read, a write, an accept or a datagram; timers and timeouts through the same facility. No ad hoc thread pools (`PLAN.md` assumption #15).
@@ -18,6 +20,25 @@
 - **Tools and tests.** A loopback echo and throughput benchmark (messages per second, latency percentiles, CPU per connection), a soak test with thousands of simulated connections, a `net_probe` tool for manual checks, and a settings group (`net.*`: ports, timeouts, buffer sizes, simulated conditions for testing).
 - **Integration.** The resource system's network backend (Phase 21) and a network store for Phase 19 become thin users of this layer; replication of ECS state (snapshots, deltas from the change stamps, interest management through `engine/spatial`) is a later phase's work, and the spec records the hooks it will need so they are not retrofitted.
 
+## Days
+
+266. [Design Spec, Spikes (Sockets, Readiness, QUIC/TLS) & Phase Setup](phase-20-networking/day-266-design-spec-spikes-and-setup.md)
+267. [Addresses, Endpoints & Network Errors](phase-20-networking/day-267-addresses-errors-endpoints.md)
+268. [Linux Socket Backend, the Socket Interface & the Access Gate](phase-20-networking/day-268-linux-sockets-and-gate.md)
+269. [Readiness on the Job System: the Reactor, Awaitables & Timers](phase-20-networking/day-269-readiness-reactor-and-awaitables.md)
+270. [Name Resolution on a Job, Listeners & Dual Stack](phase-20-networking/day-270-resolver-listener-dual-stack.md)
+271. [TCP Streams: Framing, Backpressure, Close & Timeouts](phase-20-networking/day-271-tcp-streams-and-framing.md)
+272. [Message Encoding: NetWriter / NetReader, Bit Packing & Quantized Values](phase-20-networking/day-272-net-writer-reader-and-quantization.md)
+273. [The Transport Interface, the Simulated Transport & the Conformance Suite](phase-20-networking/day-273-transport-interface-and-simulated-transport.md)
+274. [UDP Transport I: Packet Format, Handshake & Connection State](phase-20-networking/day-274-udp-transport-handshake-and-packets.md)
+275. [UDP Transport II: Channels, Reliability & Fragmentation](phase-20-networking/day-275-udp-transport-channels-and-fragmentation.md)
+276. [UDP Transport III: RTT, Congestion Control, Keep-alive & Timeouts](phase-20-networking/day-276-udp-transport-rtt-congestion-and-keepalive.md)
+277. [The TCP Transport & the Cross-Transport Conformance Pass](phase-20-networking/day-277-tcp-transport.md)
+278. [Windows Socket Backend (Windows PC)](phase-20-networking/day-278-windows-socket-backend.md)
+279. [Security Basics: Budgets, Rate Limits & Fuzzing](phase-20-networking/day-279-security-limits-and-fuzzing.md)
+280. [The QUIC / TLS / Encryption Outcome (the User's Decision)](phase-20-networking/day-280-quic-tls-and-encryption-outcome.md)
+281. [Settings, `net_probe`, Benchmarks, Docs, Closing Full Run & Phase Review](phase-20-networking/day-281-settings-tools-benchmarks-closing-run-and-review.md)
+
 ## Notes / open questions
 
 - **Sockets are the operating system's own API** (like Win32 and POSIX file calls), so using them is not a third-party dependency; only QUIC and TLS can add one, and each such dependency needs its own entry in `PLAN.md` (assumption #26 states the rule and the open decision).
@@ -25,4 +46,4 @@
 - **No packet sniffing, raw sockets or anything that needs privileges**: ordinary unprivileged sockets only.
 - **Determinism and tests:** the simulated transport is deterministic (seeded) so a networking bug can be replayed; the real-socket tests use only loopback and ephemeral ports and are labelled so a sandbox without network access skips them with the reason.
 - Out of scope for this phase: game-level replication and prediction, matchmaking and relay servers, NAT traversal, voice, HTTP and WebSocket clients (a possible later addition on top of TCP+TLS), and any web or browser platform.
-- The full day-by-day breakdown is written when Phase 19 is complete and before this phase starts (CLAUDE.md, "Planning policy"); the QUIC spike is its first or second day, not a late one, because its answer changes the module's dependencies.
+- The day files are written (2026-11-11). The QUIC/TLS/encryption spike is Day 266 and the user's decision is needed before Day 280; Days 267-279 do not depend on it. Day 278 (Windows backend) and the Windows half of Day 281 run on the Windows PC.

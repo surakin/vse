@@ -22,7 +22,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     os/linux/debug/core_dump.cpp
     os/linux/debug/fault_injection.cpp
   )
-  # The file layer: the POSIX part shared with macOS (io/posix/, Phase 26 Day 287) and Linux's own.
+  # The file layer: the POSIX part shared with macOS (io/posix/, Phase 26 Day 303) and Linux's own.
   set(FOUNDATION_IO_PLATFORM_SOURCES
     io/posix/error.cpp
     io/posix/file_system.cpp
@@ -71,14 +71,14 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     io/windows/directory.cpp
   )
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  # Phase 26 ports one layer per day (ARCHITECTURE.md order). Day 285: the base layer's os backend, the POSIX half shared with Linux
+  # Phase 26 ports one layer per day (ARCHITECTURE.md order). Day 301: the base layer's os backend, the POSIX half shared with Linux
   # (os/posix/) and macOS's own (os/macos/). No GPU driver probe on macOS (decision 8).
   set(FOUNDATION_PLATFORM_SOURCES
     os/posix/os_posix.cpp
     os/macos/os.cpp
     os/macos/session.mm
   )
-  # Day 287: the file layer, the POSIX part shared with Linux (io/posix/) and macOS's own (io/macos/).
+  # Day 303: the file layer, the POSIX part shared with Linux (io/posix/) and macOS's own (io/macos/).
   set(FOUNDATION_IO_PLATFORM_SOURCES
     io/posix/error.cpp
     io/posix/file_system.cpp
@@ -224,8 +224,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_link_libraries(foundation${suffix} INTERFACE foundation_settings${suffix} foundation_debug${suffix} foundation_io${suffix} foundation_base${suffix})
   endforeach()
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  # The base layer and the file layer (Day 287) in the three flavors (Apple clang has ASan, UBSan and TSan); the layers above them join as
-  # their macOS backends arrive (jobs on Day 289, debugging on Days 290-292).
+  # The base layer and the file layer (Day 303) in the three flavors (Apple clang has ASan, UBSan and TSan); the layers above them join as
+  # their macOS backends arrive (jobs on Day 305, debugging on Days 306-308).
   foreach(suffix "" "_asan" "_tsan")
     engine_add_foundation_layer(foundation_base "${suffix}" ${FOUNDATION_BASE_SOURCES})
     # The session query (os/macos/session.mm) reads the window server's session dictionary.

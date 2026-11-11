@@ -27,7 +27,7 @@
 #   __clang__, __GNUC__, _MSC_VER, __x86_64__, __i386__, __aarch64__, _M_X64, _M_IX86, _M_ARM64, __SANITIZE_ADDRESS__, __SANITIZE_THREAD__,
 #   __has_feature, __has_builtin). Code asks ENGINE_PLATFORM_*, ENGINE_COMPILER_*, ENGINE_ARCH_* and ENGINE_SANITIZER_* (engine/foundation/build_defs.h,
 #   the one file that reads the raw macros). Exempt: tests/windows/discovery/ (toolchain probes built outside the engine) and generated code.
-# Rule 7 (Phase 26 Day 286): Apple's headers (AppKit, Foundation, QuartzCore, CoreGraphics, IOKit, Metal and the other frameworks; <mach/...>,
+# Rule 7 (Phase 26 Day 302): Apple's headers (AppKit, Foundation, QuartzCore, CoreGraphics, IOKit, Metal and the other frameworks; <mach/...>,
 #   <dispatch/...>, <objc/...>, <os/...>, <libkern/...>, <malloc/...>, <simd/...>, <copyfile.h>, <sys/sysctl.h>, <sys/event.h>, <libproc.h>,
 #   <crt_externs.h>, <TargetConditionals.h>, <Availability*.h>), by #include or #import, and `.m`/`.mm` files appear only in the macOS
 #   directories: a `macos/` folder (engine/foundation/os/macos/, tests/macos/, ...) and engine/rhi/metal/. Fixtures excepted.
@@ -314,7 +314,7 @@ endforeach()
 # --- Rule 7 ------------------------------------------------------------------------------------------------------------
 # Apple's headers (the frameworks, Mach, libdispatch, the Objective-C runtime, os/, libkern/, malloc/ and the other Darwin-only C headers)
 # and Objective-C or Objective-C++ files appear only in the macOS directories: a `macos/` folder anywhere under engine/, game/, tools/ or
-# tests/, and the Metal backend (engine/rhi/metal/, from Phase 26 Day 300). Phase 26 Day 286. Only the include lines are read (file(STRINGS)
+# tests/, and the Metal backend (engine/rhi/metal/, from Phase 26 Day 316). Phase 26 Day 302. Only the include lines are read (file(STRINGS)
 # with a filter), so the rule costs no second per-line pass over the tree; a commented-out include is skipped as in the other rules.
 set(apple_frameworks "AppKit|Foundation|QuartzCore|CoreGraphics|CoreFoundation|CoreVideo|CoreServices|CoreText|CoreImage|ImageIO|ApplicationServices|Cocoa|Carbon|IOKit|IOSurface|Metal|MetalKit|MetalPerformanceShaders|GameController|AudioToolbox|CoreAudio|AVFoundation|Security|UniformTypeIdentifiers|Accelerate")
 set(apple_include_re "^[ \t]*#[ \t]*(include|import)[ \t]*<((${apple_frameworks})/[^>]*|(mach|mach-o|dispatch|objc|os|libkern|malloc|simd)/[^>]*|copyfile\\.h|sys/sysctl\\.h|sys/event\\.h|libproc\\.h|crt_externs\\.h|TargetConditionals\\.h|Availability[A-Za-z]*\\.h)>")

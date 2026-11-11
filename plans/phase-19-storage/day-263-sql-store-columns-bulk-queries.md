@@ -41,7 +41,7 @@ The Windows half of Days 251-263 (Day 265's Windows task covers what comes after
   does not implement): the defaults are `InitializerList<T>()`.
 - MSVC C4702 (unreachable code) in `detail::EncodeValue`: the enum branch returned, so the final `return Status::Success()` was dead for enums; the
   branch now returns only on failure.
-- `test_phase_script_affected_side_phase_wrong_flavor` (Mac Day 286) passed `--flavor tsan`, which the script refuses on Windows; it uses asan, with
+- `test_phase_script_affected_side_phase_wrong_flavor` (Mac Day 302) passed `--flavor tsan`, which the script refuses on Windows; it uses asan, with
   the same meaning (phase 6 has plain tests only on every platform).
 
 Runs (`--affected --since aa1fe1fc`, which selects everything): plain `ran 2294 of 4455 tests (phases: all; flavors: plain; display: included; crash tests: excluded) in 249 s`, asan `ran 1894 of 4455 tests (phases: all; flavors: asan; display: included; crash tests: excluded) in 157 s`. Plain had three

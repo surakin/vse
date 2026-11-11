@@ -10,7 +10,7 @@
 #   macos_production_options_planted  an engine library's .mm holding a `try`: must fail (the production options reach Objective-C++)
 #   macos_header_planted        the frameworks with Apple's old AssertMacros.h names switched on, then a function named verify: must fail,
 #                               which shows the check catches a clash and why ENGINE_MACOS_DEFINITIONS pins the setting to 0
-# Day 283's Spike B found no clash, so no unity/apple_enable.h pair exists (CLAUDE.md "Unity builds": a pair answers a real conflict).
+# Day 299's Spike B found no clash, so no unity/apple_enable.h pair exists (CLAUDE.md "Unity builds": a pair answers a real conflict).
 
 # --- The header checks: generated from the real list of foundation headers, so a new header is covered without an edit here -------
 file(GLOB_RECURSE _foundation_headers RELATIVE "${CMAKE_SOURCE_DIR}/engine/foundation" CONFIGURE_DEPENDS
@@ -67,7 +67,7 @@ set_tests_properties(macos_production_options_planted PROPERTIES RESOURCE_LOCK b
                      PASS_REGULAR_EXPRESSION "production_options_planted\\.mm:[0-9]+:[0-9]+: error: cannot use 'try' with exceptions disabled")
 engine_label_tests(macos_production_options_planted)
 
-# --- The os backend (Day 285): the clock across threads, sleeps, pages, process figures, library loading, a child's arguments and log -------
+# --- The os backend (Day 301): the clock across threads, sleeps, pages, process figures, library loading, a child's arguments and log -------
 add_executable(macos_os_child os_child_macos.cpp)
 target_link_libraries(macos_os_child PRIVATE foundation_base)
 function(engine_add_macos_os_tests target foundation_lib suffix label)

@@ -1,6 +1,6 @@
 # Paths, files and directories
 
-Status: written (Phase 9; macOS from Phase 26 Day 287).
+Status: written (Phase 9; macOS from Phase 26 Day 303).
 
 **Audience:** every engine, game and tool programmer. All access to files and directories goes through this layer; engine code never calls `fopen`,
 `open`, `stat` or the like (the `file_access_check` gate fails the build if it does).
@@ -392,7 +392,7 @@ src/util/strings.cpp
 
 ## On macOS
 
-The backend is the POSIX one Linux uses (`io/posix/`, directories included), with a few macOS rules (Phase 26 Days 287-288):
+The backend is the POSIX one Linux uses (`io/posix/`, directories included), with a few macOS rules (Phase 26 Days 303-304):
 
 - **Names are compared by the volume, not by `Path`.** The default APFS volume is case-insensitive: `Case.txt` and `case.txt` are one file, and a
   rename that changes only the case is a real rename. It is also normalization-insensitive: a name written in NFC (`é` as one code point) opens by

@@ -1,0 +1,22 @@
+# Phase 20 / Day 274 — UDP Transport I: Packet Format, Handshake & Connection State
+
+**Phase:** [Phase 20 — Networking](../phase-20-networking.md)
+**Depends on:** Days 268-269, 272, 273.
+
+The first third of the UDP transport: how two endpoints establish a connection safely and exchange sequenced, acknowledged packets.
+
+## Tasks
+
+- [ ] **Packet format** (fixed header: protocol id, packet type, connection id, sequence, ack, ack bitfield; versioned; big-endian through `NetWriter`), documented in the guide with a diagram; a packet shorter than its header or longer than the MTU is dropped and counted, never processed.
+- [ ] **Handshake with a challenge against address spoofing:** client hello (padded to full size so the server cannot be used as an amplifier), server challenge carrying a stateless cookie (HMAC-style keyed hash of the endpoint and a rotating secret, built on a documented non-cryptographic-in-this-phase construction unless Day 280 supplies an audited primitive: **never custom cryptography**, so before Day 280 the cookie is documented as an anti-spoofing measure for trusted networks only), client response, server accept; the server keeps **no per-connection state before the response validates**; retransmission of handshake packets with backoff; version and capacity negotiation.
+- [ ] **Connection state machine** (`Connecting`, `Connected`, `Closing`, `Closed`) with timeouts for each state, a connection table with a hard cap (`net.max_connections`) and per-endpoint limits, orderly close (a close packet repeated a few times) and reset on unknown connection ids.
+- [ ] **Sequence numbers and acknowledgements:** 16-bit packet sequence with wraparound-safe comparison, ack plus 32-bit bitfield (Gaffer-style), duplicate-packet detection window, tested across wraparound.
+- [ ] **Tests** (`tests/net/udp_handshake_test.cpp`) over the simulated network and, labelled `network`, loopback: handshake under 0-60 percent loss, reordering and duplication; spoofed-source hello floods leave the server with zero connection state; amplification factor at most 1; replayed and stale handshake packets rejected; wraparound of sequence numbers at 65535 with reordering around the boundary.
+- [ ] **Runs (CLAUDE.md "Tests run by phase"):** `scripts/test-phase.sh --affected` plain; then the asan and tsan flavors (sockets, readiness and connection state are concurrency and lifetime code); quote each run's final `ran X of Y tests (phases ...)` line in this file and never say "all tests pass" for a reduced run. Real-socket tests are labelled `network` and use loopback with ephemeral ports only. `ctest -L docs` when a public header or a guide changed. Build clean (warnings are errors) with Clang and GCC, unity on and off. New code uses the engine's wrappers and types, never `std` (`std_usage_check`).
+- [ ] **Two machines (CLAUDE.md "Windows is a supported platform"):** shared code is portable and checked on the Windows PC no later than Day 281 (Day 278 for the socket backend itself); until then the day is "open until the other machine runs it" in `KNOWN-ISSUES.md`.
+- [ ] **Documentation (CLAUDE.md "Public API is documented before a day is done"):** public headers carry `///` comments with the contract labels (`docs/DOC-CONVENTIONS.md`); `docgen lint` stays at zero; `cmake --build build --target docs` output committed; new modules are added to `docs/reference/modules.txt`; the guide page `docs/guide/net.md` is updated or created and its tagged samples compile and run.
+- [ ] **Module rules (CLAUDE.md "Module dependencies follow ARCHITECTURE.md"):** a new module or edge updates `ARCHITECTURE.md`, `tools/module_deps_check/modules.txt` and the CMake targets (with `_asan`/`_tsan` flavors) in the same commit; no upward edge, no cycle; every new test file has its line in `tests/phases.txt` (phase 20).
+- [ ] **Day review (CLAUDE.md, required):** `/code-review high` over the day's diff after the scoped tests; verify, fix (with a regression test that fails without the fix) or decline each finding with a reason; record the count and outcome under "Post-implementation code review" below and in `STATUS.md`.
+- [ ] `STATUS.md` and `KNOWN-ISSUES.md` updated in the same commit; commit and push.
+
+**Done:** two endpoints connect over UDP with a spoof-resistant handshake and exchange acknowledged packets across sequence wraparound, and a flood costs the server no state.
