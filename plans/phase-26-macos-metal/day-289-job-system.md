@@ -84,3 +84,6 @@ and the thread naming, stack size and affinity behavior on macOS are documented 
 8. **Fixed: the pinning test branched on the platform**: it branches on `jobs::detail::CanPinThreads()`; the pool computes `pin` once.
 9. **Deferred to Day 290 (a task added there): two thread ids on macOS.** `debug::CurrentThreadId`'s macOS backend is Day 290's; the two must print the
    same number for a thread.
+
+After rebasing onto the main line's Phase 19 Day 264: `ran 946 of 946 tests (phases: all; flavors: all; ...)` in unity, with one failure, the timing
+ratio test `Benchmark: the wrappers cost what the standard types cost` (known flaky, passed 3 of 3 alone; `KNOWN-ISSUES.md`).
