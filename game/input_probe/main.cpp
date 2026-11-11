@@ -81,7 +81,7 @@ void Print(const os::InputEvent& e) {
 }
 
 void Say(const char* text) {
-    ArenaAllocator scratch(256);
+    ArenaAllocator scratch(4096); // the banner line is longer than 256 bytes
     StringBuilder<ArenaAllocator> line(scratch);
     line.Append("probe: ").Append(text).Append('\n');
     os::Write(1, line.CStr(), line.View().Length());
@@ -140,7 +140,7 @@ int EngineMain(int, char**) {
         }
     }
     {
-        ArenaAllocator scratch(256);
+        ArenaAllocator scratch(4096); // the banner line is longer than 256 bytes
         StringBuilder<ArenaAllocator> line(scratch);
         line.Append("backend ").Append(window->BackendName()).Append(": shapes=").AppendUInt(window->SupportsCursorShape()).Append(" image=").AppendUInt(window->SupportsCursorImage());
         line.Append(" lock=").AppendUInt(window->SupportsPointerLock()).Append("  keys: L lock, C shape, I image, Y copy, P paste, O paste primary, F formats, D drag, Esc quit\n");
@@ -237,7 +237,7 @@ int EngineMain(int, char**) {
                 Say(paste_id != 0 ? "paste requested" : "paste not possible");
             } else if (e.key == os::Key::F) {
                 for (os::ClipboardKind kind : {os::ClipboardKind::Clipboard, os::ClipboardKind::Primary}) {
-                    ArenaAllocator scratch(256);
+                    ArenaAllocator scratch(4096); // the banner line is longer than 256 bytes
                     StringBuilder<ArenaAllocator> line(scratch);
                     line.Append(kind == os::ClipboardKind::Clipboard ? "clipboard" : "primary").Append(": text=").AppendUInt(window->ClipboardHasFormat(kind, os::ClipboardFormat::Text, StringView()));
                     line.Append(" files=").AppendUInt(window->ClipboardHasFormat(kind, os::ClipboardFormat::FileList, StringView())).Append('\n');

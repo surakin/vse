@@ -184,6 +184,8 @@ test:debug_backend_lists*                       7
 test:debug_cross_syntax_*                       7
 testopt:shaders_check                           5   # only with slangc
 testopt:shaders_portability                     5   # only with slangc
+test:input_probe_runs_wayland                    15
+test:input_probe_runs_x11                        15
 test:renderer_demo_screenshot                   5
 test:renderer_demo_gbuffer_layers               5
 test:renderer_demo_device_loss_screenshot       5
