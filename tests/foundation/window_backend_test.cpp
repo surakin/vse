@@ -282,8 +282,9 @@ TEST_CASE("PlatformWindowHost opens the X11 backend when forced", "[window][x11]
     REQUIRE(w != nullptr);
     REQUIRE(w->Valid());
     REQUIRE(StringView(w->BackendName()) == StringView("x11"));
-    REQUIRE(w->Width() == 640);
-    REQUIRE(w->Height() == 480);
+    // The host takes a logical size: the window is that large times the desktop's Xft.dpi scale.
+    REQUIRE(w->Width() == static_cast<u32>(640.0f * w->ContentScale() + 0.5f));
+    REQUIRE(w->Height() == static_cast<u32>(480.0f * w->ContentScale() + 0.5f));
     REQUIRE_FALSE(w->ShouldClose());
     w->PumpEvents();
 }

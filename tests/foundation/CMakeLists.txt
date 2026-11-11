@@ -52,6 +52,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     wayland_window_test.cpp
     keyboard_input_test.cpp
     x11_window_test.cpp
+    x11_scale_test.cpp
     window_events_test.cpp
     window_cursor_test.cpp
     window_clipboard_test.cpp

@@ -2303,56 +2303,63 @@ os::x11::CursorSetLock(_XDisplay*,unsigned long,X11CursorState&,bool)	function	p
 os::x11::CursorSetFocus(_XDisplay*,unsigned long,X11CursorState&,bool)	function	platform/window-input	os-x11-cursorsetfocus-xdisplay-star-unsigned-long-x11cursorstate-amp-bool	platform-window-input.md	engine/platform/linux/x11/x11_cursor.h:54
 os::x11::CursorHandleGeneric(_XDisplay*,X11CursorState&,void*,InputEventQueue&)	function	platform/window-input	os-x11-cursorhandlegeneric-xdisplay-star-x11cursorstate-amp-void-star-inputeventqueue-amp	platform-window-input.md	engine/platform/linux/x11/x11_cursor.h:58
 os::x11::CursorRelease(_XDisplay*,unsigned long,X11CursorState&)	function	platform/window-input	os-x11-cursorrelease-xdisplay-star-unsigned-long-x11cursorstate-amp	platform-window-input.md	engine/platform/linux/x11/x11_cursor.h:61
-os::x11::X11Window	class	platform/window-input	os-x11-x11window	platform-window-input.md	engine/platform/linux/x11/x11_window.h:32
-os::x11::X11Window::Create(StringView,u32,u32)	function	platform/window-input	os-x11-x11window-create-stringview-u32-u32	platform-window-input.md	engine/platform/linux/x11/x11_window.h:42
-os::x11::X11Window::X11Window()	function	platform/window-input	os-x11-x11window-x11window	platform-window-input.md	engine/platform/linux/x11/x11_window.h:45
-os::x11::X11Window::~X11Window()	function	platform/window-input	os-x11-x11window-tilde-x11window	platform-window-input.md	engine/platform/linux/x11/x11_window.h:48
-os::x11::X11Window::X11Window(const X11Window&)	function	platform/window-input	os-x11-x11window-x11window-const-x11window-amp	platform-window-input.md	engine/platform/linux/x11/x11_window.h:50
-os::x11::X11Window::operator=(const X11Window&)	function	platform/window-input	os-x11-x11window-operator-eq-const-x11window-amp	platform-window-input.md	engine/platform/linux/x11/x11_window.h:51
-os::x11::X11Window::X11Window(X11Window&&) noexcept	function	platform/window-input	os-x11-x11window-x11window-x11window-amp-amp-noexcept	platform-window-input.md	engine/platform/linux/x11/x11_window.h:53
-os::x11::X11Window::operator=(X11Window&&) noexcept	function	platform/window-input	os-x11-x11window-operator-eq-x11window-amp-amp-noexcept	platform-window-input.md	engine/platform/linux/x11/x11_window.h:56
-os::x11::X11Window::Valid() const	function	platform/window-input	os-x11-x11window-valid-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:59
-os::x11::X11Window::PumpEvents(InputState*)	function	platform/window-input	os-x11-x11window-pumpevents-inputstate-star	platform-window-input.md	engine/platform/linux/x11/x11_window.h:66
-os::x11::X11Window::PumpEvents()	function	platform/window-input	os-x11-x11window-pumpevents	platform-window-input.md	engine/platform/linux/x11/x11_window.h:69
-os::x11::X11Window::SetInputState(InputState*)	function	platform/window-input	os-x11-x11window-setinputstate-inputstate-star	platform-window-input.md	engine/platform/linux/x11/x11_window.h:73
-os::x11::X11Window::PollEvent(InputEvent*)	function	platform/window-input	os-x11-x11window-pollevent-inputevent-star	platform-window-input.md	engine/platform/linux/x11/x11_window.h:76
-os::x11::X11Window::DroppedEvents() const	function	platform/window-input	os-x11-x11window-droppedevents-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:78
-os::x11::X11Window::ShouldClose() const	function	platform/window-input	os-x11-x11window-shouldclose-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:80
-os::x11::X11Window::Width() const	function	platform/window-input	os-x11-x11window-width-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:82
-os::x11::X11Window::Height() const	function	platform/window-input	os-x11-x11window-height-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:84
-os::x11::X11Window::BackendName() const	function	platform/window-input	os-x11-x11window-backendname-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:86
-os::x11::X11Window::GetNativeInfo() const	function	platform/window-input	os-x11-x11window-getnativeinfo-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:88
-os::x11::X11Window::IsMinimized() const	function	platform/window-input	os-x11-x11window-isminimized-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:100
-os::x11::X11Window::ResizeSerial() const	function	platform/window-input	os-x11-x11window-resizeserial-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:102
-os::x11::X11Window::SupportsFullscreen() const	function	platform/window-input	os-x11-x11window-supportsfullscreen-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:105
-os::x11::X11Window::SetFullscreen(bool)	function	platform/window-input	os-x11-x11window-setfullscreen-bool	platform-window-input.md	engine/platform/linux/x11/x11_window.h:109
-os::x11::X11Window::IsFullscreen() const	function	platform/window-input	os-x11-x11window-isfullscreen-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:111
-os::x11::X11Window::SupportsCursorShape() const	function	platform/window-input	os-x11-x11window-supportscursorshape-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:114
-os::x11::X11Window::SetCursor(CursorShape)	function	platform/window-input	os-x11-x11window-setcursor-cursorshape	platform-window-input.md	engine/platform/linux/x11/x11_window.h:116
-os::x11::X11Window::SupportsCursorImage() const	function	platform/window-input	os-x11-x11window-supportscursorimage-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:118
-os::x11::X11Window::SetCursorImage(const CursorImage&)	function	platform/window-input	os-x11-x11window-setcursorimage-const-cursorimage-amp	platform-window-input.md	engine/platform/linux/x11/x11_window.h:120
-os::x11::X11Window::ClearCursorImage()	function	platform/window-input	os-x11-x11window-clearcursorimage	platform-window-input.md	engine/platform/linux/x11/x11_window.h:122
-os::x11::X11Window::SupportsPointerLock() const	function	platform/window-input	os-x11-x11window-supportspointerlock-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:125
-os::x11::X11Window::SetPointerLock(bool)	function	platform/window-input	os-x11-x11window-setpointerlock-bool	platform-window-input.md	engine/platform/linux/x11/x11_window.h:128
-os::x11::X11Window::PointerLocked() const	function	platform/window-input	os-x11-x11window-pointerlocked-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:130
-os::x11::X11Window::CursorObjectCount() const	function	platform/window-input	os-x11-x11window-cursorobjectcount-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:133
-os::x11::X11Window::SupportsClipboard(ClipboardKind) const	function	platform/window-input	os-x11-x11window-supportsclipboard-clipboardkind-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:136
-os::x11::X11Window::SetClipboard(ClipboardKind,const ClipboardOffer&)	function	platform/window-input	os-x11-x11window-setclipboard-clipboardkind-const-clipboardoffer-amp	platform-window-input.md	engine/platform/linux/x11/x11_window.h:142
-os::x11::X11Window::RequestClipboard(ClipboardKind,ClipboardFormat,StringView)	function	platform/window-input	os-x11-x11window-requestclipboard-clipboardkind-clipboardformat-stringview	platform-window-input.md	engine/platform/linux/x11/x11_window.h:144
-os::x11::X11Window::TakeClipboardResult(u32,ClipboardResult*)	function	platform/window-input	os-x11-x11window-takeclipboardresult-u32-clipboardresult-star	platform-window-input.md	engine/platform/linux/x11/x11_window.h:146
-os::x11::X11Window::ClipboardHasFormat(ClipboardKind,ClipboardFormat,StringView) const	function	platform/window-input	os-x11-x11window-clipboardhasformat-clipboardkind-clipboardformat-stringview-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:152
-os::x11::X11Window::SupportsDragAndDrop() const	function	platform/window-input	os-x11-x11window-supportsdraganddrop-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:158
-os::x11::X11Window::SetDropAccept(const DropAccept&)	function	platform/window-input	os-x11-x11window-setdropaccept-const-dropaccept-amp	platform-window-input.md	engine/platform/linux/x11/x11_window.h:160
-os::x11::X11Window::SetDropAction(DragAction)	function	platform/window-input	os-x11-x11window-setdropaction-dragaction	platform-window-input.md	engine/platform/linux/x11/x11_window.h:162
-os::x11::X11Window::RequestDropData(ClipboardFormat,StringView)	function	platform/window-input	os-x11-x11window-requestdropdata-clipboardformat-stringview	platform-window-input.md	engine/platform/linux/x11/x11_window.h:164
-os::x11::X11Window::FinishDrop(DragAction)	function	platform/window-input	os-x11-x11window-finishdrop-dragaction	platform-window-input.md	engine/platform/linux/x11/x11_window.h:166
-os::x11::X11Window::BeginDrag(const DragSource&)	function	platform/window-input	os-x11-x11window-begindrag-const-dragsource-amp	platform-window-input.md	engine/platform/linux/x11/x11_window.h:169
-os::x11::X11Window::CancelDrag()	function	platform/window-input	os-x11-x11window-canceldrag	platform-window-input.md	engine/platform/linux/x11/x11_window.h:171
-os::x11::X11Window::Dragging() const	function	platform/window-input	os-x11-x11window-dragging-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:173
-os::x11::X11Window::DragPointerMoved(int,int,unsigned long)	function	platform/window-input	os-x11-x11window-dragpointermoved-int-int-unsigned-long	platform-window-input.md	engine/platform/linux/x11/x11_window.h:177
-os::x11::X11Window::DragButtonReleased()	function	platform/window-input	os-x11-x11window-dragbuttonreleased	platform-window-input.md	engine/platform/linux/x11/x11_window.h:180
-os::x11::X11Window::NativeDisplay() const	function	platform/window-input	os-x11-x11window-nativedisplay-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:185
-os::x11::X11Window::NativeWindow() const	function	platform/window-input	os-x11-x11window-nativewindow-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:189
+os::x11::kMinContentScale	variable	platform/window-input	os-x11-kmincontentscale	platform-window-input.md	engine/platform/linux/x11/x11_scale.h:12
+os::x11::kMaxContentScale	variable	platform/window-input	os-x11-kmaxcontentscale	platform-window-input.md	engine/platform/linux/x11/x11_scale.h:14
+os::x11::ContentScaleFromResources(StringView)	function	platform/window-input	os-x11-contentscalefromresources-stringview	platform-window-input.md	engine/platform/linux/x11/x11_scale.h:27
+os::x11::SizeUnits	enum	platform/window-input	os-x11-sizeunits	platform-window-input.md	engine/platform/linux/x11/x11_window.h:26
+os::x11::SizeUnits::Pixels	enumerator	platform/window-input	os-x11-sizeunits-pixels	platform-window-input.md	engine/platform/linux/x11/x11_window.h:28
+os::x11::SizeUnits::Logical	enumerator	platform/window-input	os-x11-sizeunits-logical	platform-window-input.md	engine/platform/linux/x11/x11_window.h:29
+os::x11::X11Window	class	platform/window-input	os-x11-x11window	platform-window-input.md	engine/platform/linux/x11/x11_window.h:40
+os::x11::X11Window::Create(StringView,u32,u32,SizeUnits)	function	platform/window-input	os-x11-x11window-create-stringview-u32-u32-sizeunits	platform-window-input.md	engine/platform/linux/x11/x11_window.h:52
+os::x11::X11Window::X11Window()	function	platform/window-input	os-x11-x11window-x11window	platform-window-input.md	engine/platform/linux/x11/x11_window.h:55
+os::x11::X11Window::~X11Window()	function	platform/window-input	os-x11-x11window-tilde-x11window	platform-window-input.md	engine/platform/linux/x11/x11_window.h:58
+os::x11::X11Window::X11Window(const X11Window&)	function	platform/window-input	os-x11-x11window-x11window-const-x11window-amp	platform-window-input.md	engine/platform/linux/x11/x11_window.h:60
+os::x11::X11Window::operator=(const X11Window&)	function	platform/window-input	os-x11-x11window-operator-eq-const-x11window-amp	platform-window-input.md	engine/platform/linux/x11/x11_window.h:61
+os::x11::X11Window::X11Window(X11Window&&) noexcept	function	platform/window-input	os-x11-x11window-x11window-x11window-amp-amp-noexcept	platform-window-input.md	engine/platform/linux/x11/x11_window.h:63
+os::x11::X11Window::operator=(X11Window&&) noexcept	function	platform/window-input	os-x11-x11window-operator-eq-x11window-amp-amp-noexcept	platform-window-input.md	engine/platform/linux/x11/x11_window.h:66
+os::x11::X11Window::Valid() const	function	platform/window-input	os-x11-x11window-valid-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:69
+os::x11::X11Window::ContentScale() const	function	platform/window-input	os-x11-x11window-contentscale-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:74
+os::x11::X11Window::PumpEvents(InputState*)	function	platform/window-input	os-x11-x11window-pumpevents-inputstate-star	platform-window-input.md	engine/platform/linux/x11/x11_window.h:81
+os::x11::X11Window::PumpEvents()	function	platform/window-input	os-x11-x11window-pumpevents	platform-window-input.md	engine/platform/linux/x11/x11_window.h:84
+os::x11::X11Window::SetInputState(InputState*)	function	platform/window-input	os-x11-x11window-setinputstate-inputstate-star	platform-window-input.md	engine/platform/linux/x11/x11_window.h:88
+os::x11::X11Window::PollEvent(InputEvent*)	function	platform/window-input	os-x11-x11window-pollevent-inputevent-star	platform-window-input.md	engine/platform/linux/x11/x11_window.h:91
+os::x11::X11Window::DroppedEvents() const	function	platform/window-input	os-x11-x11window-droppedevents-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:93
+os::x11::X11Window::ShouldClose() const	function	platform/window-input	os-x11-x11window-shouldclose-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:95
+os::x11::X11Window::Width() const	function	platform/window-input	os-x11-x11window-width-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:97
+os::x11::X11Window::Height() const	function	platform/window-input	os-x11-x11window-height-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:99
+os::x11::X11Window::BackendName() const	function	platform/window-input	os-x11-x11window-backendname-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:101
+os::x11::X11Window::GetNativeInfo() const	function	platform/window-input	os-x11-x11window-getnativeinfo-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:103
+os::x11::X11Window::IsMinimized() const	function	platform/window-input	os-x11-x11window-isminimized-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:115
+os::x11::X11Window::ResizeSerial() const	function	platform/window-input	os-x11-x11window-resizeserial-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:117
+os::x11::X11Window::SupportsFullscreen() const	function	platform/window-input	os-x11-x11window-supportsfullscreen-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:120
+os::x11::X11Window::SetFullscreen(bool)	function	platform/window-input	os-x11-x11window-setfullscreen-bool	platform-window-input.md	engine/platform/linux/x11/x11_window.h:124
+os::x11::X11Window::IsFullscreen() const	function	platform/window-input	os-x11-x11window-isfullscreen-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:126
+os::x11::X11Window::SupportsCursorShape() const	function	platform/window-input	os-x11-x11window-supportscursorshape-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:129
+os::x11::X11Window::SetCursor(CursorShape)	function	platform/window-input	os-x11-x11window-setcursor-cursorshape	platform-window-input.md	engine/platform/linux/x11/x11_window.h:131
+os::x11::X11Window::SupportsCursorImage() const	function	platform/window-input	os-x11-x11window-supportscursorimage-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:133
+os::x11::X11Window::SetCursorImage(const CursorImage&)	function	platform/window-input	os-x11-x11window-setcursorimage-const-cursorimage-amp	platform-window-input.md	engine/platform/linux/x11/x11_window.h:135
+os::x11::X11Window::ClearCursorImage()	function	platform/window-input	os-x11-x11window-clearcursorimage	platform-window-input.md	engine/platform/linux/x11/x11_window.h:137
+os::x11::X11Window::SupportsPointerLock() const	function	platform/window-input	os-x11-x11window-supportspointerlock-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:140
+os::x11::X11Window::SetPointerLock(bool)	function	platform/window-input	os-x11-x11window-setpointerlock-bool	platform-window-input.md	engine/platform/linux/x11/x11_window.h:143
+os::x11::X11Window::PointerLocked() const	function	platform/window-input	os-x11-x11window-pointerlocked-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:145
+os::x11::X11Window::CursorObjectCount() const	function	platform/window-input	os-x11-x11window-cursorobjectcount-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:148
+os::x11::X11Window::SupportsClipboard(ClipboardKind) const	function	platform/window-input	os-x11-x11window-supportsclipboard-clipboardkind-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:151
+os::x11::X11Window::SetClipboard(ClipboardKind,const ClipboardOffer&)	function	platform/window-input	os-x11-x11window-setclipboard-clipboardkind-const-clipboardoffer-amp	platform-window-input.md	engine/platform/linux/x11/x11_window.h:157
+os::x11::X11Window::RequestClipboard(ClipboardKind,ClipboardFormat,StringView)	function	platform/window-input	os-x11-x11window-requestclipboard-clipboardkind-clipboardformat-stringview	platform-window-input.md	engine/platform/linux/x11/x11_window.h:159
+os::x11::X11Window::TakeClipboardResult(u32,ClipboardResult*)	function	platform/window-input	os-x11-x11window-takeclipboardresult-u32-clipboardresult-star	platform-window-input.md	engine/platform/linux/x11/x11_window.h:161
+os::x11::X11Window::ClipboardHasFormat(ClipboardKind,ClipboardFormat,StringView) const	function	platform/window-input	os-x11-x11window-clipboardhasformat-clipboardkind-clipboardformat-stringview-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:167
+os::x11::X11Window::SupportsDragAndDrop() const	function	platform/window-input	os-x11-x11window-supportsdraganddrop-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:173
+os::x11::X11Window::SetDropAccept(const DropAccept&)	function	platform/window-input	os-x11-x11window-setdropaccept-const-dropaccept-amp	platform-window-input.md	engine/platform/linux/x11/x11_window.h:175
+os::x11::X11Window::SetDropAction(DragAction)	function	platform/window-input	os-x11-x11window-setdropaction-dragaction	platform-window-input.md	engine/platform/linux/x11/x11_window.h:177
+os::x11::X11Window::RequestDropData(ClipboardFormat,StringView)	function	platform/window-input	os-x11-x11window-requestdropdata-clipboardformat-stringview	platform-window-input.md	engine/platform/linux/x11/x11_window.h:179
+os::x11::X11Window::FinishDrop(DragAction)	function	platform/window-input	os-x11-x11window-finishdrop-dragaction	platform-window-input.md	engine/platform/linux/x11/x11_window.h:181
+os::x11::X11Window::BeginDrag(const DragSource&)	function	platform/window-input	os-x11-x11window-begindrag-const-dragsource-amp	platform-window-input.md	engine/platform/linux/x11/x11_window.h:184
+os::x11::X11Window::CancelDrag()	function	platform/window-input	os-x11-x11window-canceldrag	platform-window-input.md	engine/platform/linux/x11/x11_window.h:186
+os::x11::X11Window::Dragging() const	function	platform/window-input	os-x11-x11window-dragging-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:188
+os::x11::X11Window::DragPointerMoved(int,int,unsigned long)	function	platform/window-input	os-x11-x11window-dragpointermoved-int-int-unsigned-long	platform-window-input.md	engine/platform/linux/x11/x11_window.h:192
+os::x11::X11Window::DragButtonReleased()	function	platform/window-input	os-x11-x11window-dragbuttonreleased	platform-window-input.md	engine/platform/linux/x11/x11_window.h:195
+os::x11::X11Window::NativeDisplay() const	function	platform/window-input	os-x11-x11window-nativedisplay-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:200
+os::x11::X11Window::NativeWindow() const	function	platform/window-input	os-x11-x11window-nativewindow-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:204
 os::XkbKeyboard	class	platform/window-input	os-xkbkeyboard	platform-window-input.md	engine/platform/linux/xkb_keyboard.h:24
 os::XkbKeyboard::XkbKeyboard()	function	platform/window-input	os-xkbkeyboard-xkbkeyboard	platform-window-input.md	engine/platform/linux/xkb_keyboard.h:27
 os::XkbKeyboard::~XkbKeyboard()	function	platform/window-input	os-xkbkeyboard-tilde-xkbkeyboard	platform-window-input.md	engine/platform/linux/xkb_keyboard.h:30
@@ -2390,50 +2397,50 @@ os::Window::DroppedEvents() const	function	platform/window-input	os-window-dropp
 os::Window::ShouldClose() const	function	platform/window-input	os-window-shouldclose-const	platform-window-input.md	engine/platform/window.h:82
 os::Window::Width() const	function	platform/window-input	os-window-width-const	platform-window-input.md	engine/platform/window.h:85
 os::Window::Height() const	function	platform/window-input	os-window-height-const	platform-window-input.md	engine/platform/window.h:88
-os::Window::ContentScale() const	function	platform/window-input	os-window-contentscale-const	platform-window-input.md	engine/platform/window.h:96
-os::Window::BackendName() const	function	platform/window-input	os-window-backendname-const	platform-window-input.md	engine/platform/window.h:100
-os::Window::GetNativeInfo() const	function	platform/window-input	os-window-getnativeinfo-const	platform-window-input.md	engine/platform/window.h:106
-os::Window::IsMinimized() const	function	platform/window-input	os-window-isminimized-const	platform-window-input.md	engine/platform/window.h:114
-os::Window::ResizeSerial() const	function	platform/window-input	os-window-resizeserial-const	platform-window-input.md	engine/platform/window.h:122
-os::Window::SupportsCursorShape() const	function	platform/window-input	os-window-supportscursorshape-const	platform-window-input.md	engine/platform/window.h:125
-os::Window::SetCursor(CursorShape)	function	platform/window-input	os-window-setcursor-cursorshape	platform-window-input.md	engine/platform/window.h:134
-os::Window::SupportsCursorImage() const	function	platform/window-input	os-window-supportscursorimage-const	platform-window-input.md	engine/platform/window.h:137
-os::Window::SetCursorImage(const CursorImage&)	function	platform/window-input	os-window-setcursorimage-const-cursorimage-amp	platform-window-input.md	engine/platform/window.h:145
-os::Window::ClearCursorImage()	function	platform/window-input	os-window-clearcursorimage	platform-window-input.md	engine/platform/window.h:149
-os::Window::SupportsPointerLock() const	function	platform/window-input	os-window-supportspointerlock-const	platform-window-input.md	engine/platform/window.h:153
-os::Window::SetPointerLock(bool)	function	platform/window-input	os-window-setpointerlock-bool	platform-window-input.md	engine/platform/window.h:165
-os::Window::PointerLocked() const	function	platform/window-input	os-window-pointerlocked-const	platform-window-input.md	engine/platform/window.h:168
-os::Window::SupportsClipboard(ClipboardKind) const	function	platform/window-input	os-window-supportsclipboard-clipboardkind-const	platform-window-input.md	engine/platform/window.h:172
-os::Window::SetClipboard(ClipboardKind,const ClipboardOffer&)	function	platform/window-input	os-window-setclipboard-clipboardkind-const-clipboardoffer-amp	platform-window-input.md	engine/platform/window.h:185
-os::Window::RequestClipboard(ClipboardKind,ClipboardFormat,StringView)	function	platform/window-input	os-window-requestclipboard-clipboardkind-clipboardformat-stringview	platform-window-input.md	engine/platform/window.h:201
-os::Window::TakeClipboardResult(u32,ClipboardResult*)	function	platform/window-input	os-window-takeclipboardresult-u32-clipboardresult-star	platform-window-input.md	engine/platform/window.h:212
-os::Window::ClipboardHasFormat(ClipboardKind,ClipboardFormat,StringView) const	function	platform/window-input	os-window-clipboardhasformat-clipboardkind-clipboardformat-stringview-const	platform-window-input.md	engine/platform/window.h:219
-os::Window::SupportsDragAndDrop() const	function	platform/window-input	os-window-supportsdraganddrop-const	platform-window-input.md	engine/platform/window.h:226
-os::Window::SetDropAccept(const DropAccept&)	function	platform/window-input	os-window-setdropaccept-const-dropaccept-amp	platform-window-input.md	engine/platform/window.h:231
-os::Window::SetDropAction(DragAction)	function	platform/window-input	os-window-setdropaction-dragaction	platform-window-input.md	engine/platform/window.h:238
-os::Window::RequestDropData(ClipboardFormat,StringView)	function	platform/window-input	os-window-requestdropdata-clipboardformat-stringview	platform-window-input.md	engine/platform/window.h:249
-os::Window::FinishDrop(DragAction)	function	platform/window-input	os-window-finishdrop-dragaction	platform-window-input.md	engine/platform/window.h:257
-os::Window::BeginDrag(const DragSource&)	function	platform/window-input	os-window-begindrag-const-dragsource-amp	platform-window-input.md	engine/platform/window.h:267
-os::Window::CancelDrag()	function	platform/window-input	os-window-canceldrag	platform-window-input.md	engine/platform/window.h:270
-os::Window::Dragging() const	function	platform/window-input	os-window-dragging-const	platform-window-input.md	engine/platform/window.h:273
-os::Window::SupportsFullscreen() const	function	platform/window-input	os-window-supportsfullscreen-const	platform-window-input.md	engine/platform/window.h:280
-os::Window::SetFullscreen(bool)	function	platform/window-input	os-window-setfullscreen-bool	platform-window-input.md	engine/platform/window.h:290
-os::Window::IsFullscreen() const	function	platform/window-input	os-window-isfullscreen-const	platform-window-input.md	engine/platform/window.h:297
-os::Window::ModalLoopCallback	alias	platform/window-input	os-window-modalloopcallback	platform-window-input.md	engine/platform/window.h:301
-os::Window::SetModalLoopCallback(ModalLoopCallback,void*)	function	platform/window-input	os-window-setmodalloopcallback-modalloopcallback-void-star	platform-window-input.md	engine/platform/window.h:310
-os::WindowBackend	enum	platform/window-input	os-windowbackend	platform-window-input.md	engine/platform/window.h:324
-os::WindowBackend::Auto	enumerator	platform/window-input	os-windowbackend-auto	platform-window-input.md	engine/platform/window.h:326
-os::WindowBackend::Wayland	enumerator	platform/window-input	os-windowbackend-wayland	platform-window-input.md	engine/platform/window.h:327
-os::WindowBackend::X11	enumerator	platform/window-input	os-windowbackend-x11	platform-window-input.md	engine/platform/window.h:328
-os::WindowBackend::Win32	enumerator	platform/window-input	os-windowbackend-win32	platform-window-input.md	engine/platform/window.h:329
-os::WindowBackend::Invalid	enumerator	platform/window-input	os-windowbackend-invalid	platform-window-input.md	engine/platform/window.h:330
-os::ParseWindowBackend(StringView)	function	platform/window-input	os-parsewindowbackend-stringview	platform-window-input.md	engine/platform/window.h:339
-os::BackendPlan	struct	platform/window-input	os-backendplan	platform-window-input.md	engine/platform/window.h:344
-os::BackendPlan::candidates	variable	platform/window-input	os-backendplan-candidates	platform-window-input.md	engine/platform/window.h:347
-os::BackendPlan::count	variable	platform/window-input	os-backendplan-count	platform-window-input.md	engine/platform/window.h:349
-os::BackendPlan::refusal	variable	platform/window-input	os-backendplan-refusal	platform-window-input.md	engine/platform/window.h:352
-os::PlanWindowBackends(WindowBackend,bool,bool)	function	platform/window-input	os-planwindowbackends-windowbackend-bool-bool	platform-window-input.md	engine/platform/window.h:364
-os::PlanWin32WindowBackends(WindowBackend)	function	platform/window-input	os-planwin32windowbackends-windowbackend	platform-window-input.md	engine/platform/window.h:371
+os::Window::ContentScale() const	function	platform/window-input	os-window-contentscale-const	platform-window-input.md	engine/platform/window.h:97
+os::Window::BackendName() const	function	platform/window-input	os-window-backendname-const	platform-window-input.md	engine/platform/window.h:101
+os::Window::GetNativeInfo() const	function	platform/window-input	os-window-getnativeinfo-const	platform-window-input.md	engine/platform/window.h:107
+os::Window::IsMinimized() const	function	platform/window-input	os-window-isminimized-const	platform-window-input.md	engine/platform/window.h:115
+os::Window::ResizeSerial() const	function	platform/window-input	os-window-resizeserial-const	platform-window-input.md	engine/platform/window.h:123
+os::Window::SupportsCursorShape() const	function	platform/window-input	os-window-supportscursorshape-const	platform-window-input.md	engine/platform/window.h:126
+os::Window::SetCursor(CursorShape)	function	platform/window-input	os-window-setcursor-cursorshape	platform-window-input.md	engine/platform/window.h:135
+os::Window::SupportsCursorImage() const	function	platform/window-input	os-window-supportscursorimage-const	platform-window-input.md	engine/platform/window.h:138
+os::Window::SetCursorImage(const CursorImage&)	function	platform/window-input	os-window-setcursorimage-const-cursorimage-amp	platform-window-input.md	engine/platform/window.h:146
+os::Window::ClearCursorImage()	function	platform/window-input	os-window-clearcursorimage	platform-window-input.md	engine/platform/window.h:150
+os::Window::SupportsPointerLock() const	function	platform/window-input	os-window-supportspointerlock-const	platform-window-input.md	engine/platform/window.h:154
+os::Window::SetPointerLock(bool)	function	platform/window-input	os-window-setpointerlock-bool	platform-window-input.md	engine/platform/window.h:166
+os::Window::PointerLocked() const	function	platform/window-input	os-window-pointerlocked-const	platform-window-input.md	engine/platform/window.h:169
+os::Window::SupportsClipboard(ClipboardKind) const	function	platform/window-input	os-window-supportsclipboard-clipboardkind-const	platform-window-input.md	engine/platform/window.h:173
+os::Window::SetClipboard(ClipboardKind,const ClipboardOffer&)	function	platform/window-input	os-window-setclipboard-clipboardkind-const-clipboardoffer-amp	platform-window-input.md	engine/platform/window.h:186
+os::Window::RequestClipboard(ClipboardKind,ClipboardFormat,StringView)	function	platform/window-input	os-window-requestclipboard-clipboardkind-clipboardformat-stringview	platform-window-input.md	engine/platform/window.h:202
+os::Window::TakeClipboardResult(u32,ClipboardResult*)	function	platform/window-input	os-window-takeclipboardresult-u32-clipboardresult-star	platform-window-input.md	engine/platform/window.h:213
+os::Window::ClipboardHasFormat(ClipboardKind,ClipboardFormat,StringView) const	function	platform/window-input	os-window-clipboardhasformat-clipboardkind-clipboardformat-stringview-const	platform-window-input.md	engine/platform/window.h:220
+os::Window::SupportsDragAndDrop() const	function	platform/window-input	os-window-supportsdraganddrop-const	platform-window-input.md	engine/platform/window.h:227
+os::Window::SetDropAccept(const DropAccept&)	function	platform/window-input	os-window-setdropaccept-const-dropaccept-amp	platform-window-input.md	engine/platform/window.h:232
+os::Window::SetDropAction(DragAction)	function	platform/window-input	os-window-setdropaction-dragaction	platform-window-input.md	engine/platform/window.h:239
+os::Window::RequestDropData(ClipboardFormat,StringView)	function	platform/window-input	os-window-requestdropdata-clipboardformat-stringview	platform-window-input.md	engine/platform/window.h:250
+os::Window::FinishDrop(DragAction)	function	platform/window-input	os-window-finishdrop-dragaction	platform-window-input.md	engine/platform/window.h:258
+os::Window::BeginDrag(const DragSource&)	function	platform/window-input	os-window-begindrag-const-dragsource-amp	platform-window-input.md	engine/platform/window.h:268
+os::Window::CancelDrag()	function	platform/window-input	os-window-canceldrag	platform-window-input.md	engine/platform/window.h:271
+os::Window::Dragging() const	function	platform/window-input	os-window-dragging-const	platform-window-input.md	engine/platform/window.h:274
+os::Window::SupportsFullscreen() const	function	platform/window-input	os-window-supportsfullscreen-const	platform-window-input.md	engine/platform/window.h:281
+os::Window::SetFullscreen(bool)	function	platform/window-input	os-window-setfullscreen-bool	platform-window-input.md	engine/platform/window.h:291
+os::Window::IsFullscreen() const	function	platform/window-input	os-window-isfullscreen-const	platform-window-input.md	engine/platform/window.h:298
+os::Window::ModalLoopCallback	alias	platform/window-input	os-window-modalloopcallback	platform-window-input.md	engine/platform/window.h:302
+os::Window::SetModalLoopCallback(ModalLoopCallback,void*)	function	platform/window-input	os-window-setmodalloopcallback-modalloopcallback-void-star	platform-window-input.md	engine/platform/window.h:311
+os::WindowBackend	enum	platform/window-input	os-windowbackend	platform-window-input.md	engine/platform/window.h:325
+os::WindowBackend::Auto	enumerator	platform/window-input	os-windowbackend-auto	platform-window-input.md	engine/platform/window.h:327
+os::WindowBackend::Wayland	enumerator	platform/window-input	os-windowbackend-wayland	platform-window-input.md	engine/platform/window.h:328
+os::WindowBackend::X11	enumerator	platform/window-input	os-windowbackend-x11	platform-window-input.md	engine/platform/window.h:329
+os::WindowBackend::Win32	enumerator	platform/window-input	os-windowbackend-win32	platform-window-input.md	engine/platform/window.h:330
+os::WindowBackend::Invalid	enumerator	platform/window-input	os-windowbackend-invalid	platform-window-input.md	engine/platform/window.h:331
+os::ParseWindowBackend(StringView)	function	platform/window-input	os-parsewindowbackend-stringview	platform-window-input.md	engine/platform/window.h:340
+os::BackendPlan	struct	platform/window-input	os-backendplan	platform-window-input.md	engine/platform/window.h:345
+os::BackendPlan::candidates	variable	platform/window-input	os-backendplan-candidates	platform-window-input.md	engine/platform/window.h:348
+os::BackendPlan::count	variable	platform/window-input	os-backendplan-count	platform-window-input.md	engine/platform/window.h:350
+os::BackendPlan::refusal	variable	platform/window-input	os-backendplan-refusal	platform-window-input.md	engine/platform/window.h:353
+os::PlanWindowBackends(WindowBackend,bool,bool)	function	platform/window-input	os-planwindowbackends-windowbackend-bool-bool	platform-window-input.md	engine/platform/window.h:365
+os::PlanWin32WindowBackends(WindowBackend)	function	platform/window-input	os-planwin32windowbackends-windowbackend	platform-window-input.md	engine/platform/window.h:372
 os::PlatformWindowHost	class	platform/window-input	os-platformwindowhost	platform-window-input.md	engine/platform/window_host.h:23
 os::PlatformWindowHost::PlatformWindowHost()	function	platform/window-input	os-platformwindowhost-platformwindowhost	platform-window-input.md	engine/platform/window_host.h:27
 os::PlatformWindowHost::~PlatformWindowHost()	function	platform/window-input	os-platformwindowhost-tilde-platformwindowhost	platform-window-input.md	engine/platform/window_host.h:29

@@ -6,6 +6,7 @@
 #include "unity/x11_enable.h"
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#include <X11/Xatom.h>
 #undef CursorShape  // <X11/X.h> defines it as a number; the engine has os::CursorShape
 
 #include <catch2/catch_test_macros.hpp>
@@ -59,6 +60,46 @@ TEST_CASE("X11Window::Create opens a mapped window on the real X server", "[x11]
                           return XGetWindowAttributes(display, window.NativeWindow(), &attrs) != 0 &&
                                  attrs.map_state == IsViewable;
                       }));
+}
+
+TEST_CASE("An X11 window follows the desktop's Xft.dpi scale, and a logical size is scaled to it", "[x11][os][scale]")
+{
+    SKIP_IF_NO_DISPLAY_SESSION();
+    X11Window window = X11Window::Create("scale test", 640, 480);
+    REQUIRE(window.Valid());
+    // Read the resource database the way a toolkit does, independently of the window's own code path.
+    Display* display = static_cast<Display*>(window.NativeDisplay());
+    Atom type = 0;
+    int format = 0;
+    unsigned long count = 0;
+    unsigned long after = 0;
+    byte* data = nullptr;
+    float expected = 1.0f;
+    if (XGetWindowProperty(display, RootWindow(display, DefaultScreen(display)),
+                           XInternAtom(display, "RESOURCE_MANAGER", False), 0, 16384, False, XA_STRING, &type, &format,
+                           &count, &after, &data) == Success &&
+        data != nullptr)
+    {
+        expected = engine_placeholder::os::x11::ContentScaleFromResources(
+            engine_placeholder::StringView(reinterpret_cast<const char*>(data), count));
+        XFree(data);
+    }
+    CHECK(window.ContentScale() == expected);
+    CHECK(window.ContentScale() >= 1.0f);
+    CHECK(window.ContentScale() <= 4.0f);
+    // The default unit is device pixels: exactly the size asked for, whatever the desktop scale is.
+    CHECK(window.Width() == 640);
+    CHECK(window.Height() == 480);
+
+    X11Window scaled = X11Window::Create("scale test logical", 320, 241,
+                                         engine_placeholder::os::x11::SizeUnits::Logical);
+    REQUIRE(scaled.Valid());
+    CHECK(scaled.ContentScale() == expected);
+    CHECK(scaled.Width() == static_cast<engine_placeholder::u32>(320.0f * expected + 0.5f));
+    CHECK(scaled.Height() == static_cast<engine_placeholder::u32>(241.0f * expected + 0.5f));
+    // A moved window keeps its scale.
+    X11Window moved(static_cast<X11Window&&>(scaled));
+    CHECK(moved.ContentScale() == expected);
 }
 
 TEST_CASE("X11Window::Create fails gracefully for a zero-sized window", "[x11][os]")

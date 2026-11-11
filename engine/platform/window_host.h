@@ -38,8 +38,8 @@ public:
     /// - Param title: window title.
     /// - Param width: requested client width in logical pixels, pixels at 100% scaling (a hint; the compositor may
     /// override it). Windows
-    ///   multiplies it by the monitor's DPI, so [[os::Window::Width]] may be larger; on Wayland the compositor scales
-    ///   the window instead.
+    ///   multiplies it by the monitor's DPI and X11 by the desktop's `Xft.dpi` scale, so [[os::Window::Width]] may be
+    ///   larger; on Wayland the compositor scales the window instead.
     /// - Param height: requested client height in logical pixels, as `width`.
     /// - Param input: receives keyboard and pointer state; must outlive the host.
     /// - Returns: `true` if a backend opened.

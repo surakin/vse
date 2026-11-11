@@ -4,6 +4,7 @@
 #include "platform/linux/x11/x11_clipboard.h"
 #include "platform/linux/x11/x11_cursor.h"
 #include "platform/linux/x11/x11_dnd.h"
+#include "platform/linux/x11/x11_scale.h"
 #include "platform/window.h"
 #include "string/string.h"
 #include "types.h"
@@ -21,6 +22,13 @@ struct _XIM;
 namespace engine_placeholder::os::x11
 {
 
+/// The unit of the size given to [[os::x11::X11Window::Create]].
+enum class SizeUnits : u8
+{
+    Pixels,   ///< Device pixels: the window is exactly this large.
+    Logical,  ///< Pixels at 100% scale: the window is this large times the desktop's `Xft.dpi` scale, as on Win32.
+};
+
 /// Toplevel window on an X11 display, translating X events into an `InputState`.
 ///
 /// Events are polled rather than delivered through callbacks capturing `this`,
@@ -34,12 +42,14 @@ class X11Window final : public Window
 public:
     /// Opens the display named by `$DISPLAY`, creates and maps a toplevel window, and registers `WM_DELETE_WINDOW`.
     /// - Param title: window title.
-    /// - Param width: initial client width in pixels.
-    /// - Param height: initial client height in pixels.
+    /// - Param width: initial client width, in `units`.
+    /// - Param height: initial client height, in `units`.
+    /// - Param units: [[os::x11::SizeUnits::Pixels]] (the default) or [[os::x11::SizeUnits::Logical]], which multiplies
+    /// both sizes by the desktop scale (see [[os::x11::X11Window::ContentScale]]).
     /// - Returns: the window; check [[os::x11::X11Window::Valid]].
     /// - Fails: returns an invalid window (logged via `LogPlatform`) if the display cannot be opened or a request
     /// fails.
-    static X11Window Create(StringView title, u32 width, u32 height);
+    static X11Window Create(StringView title, u32 width, u32 height, SizeUnits units = SizeUnits::Pixels);
 
     /// Constructs an invalid window that owns nothing.
     X11Window() = default;
@@ -57,6 +67,11 @@ public:
 
     /// Returns whether the display connection is open.
     bool Valid() const override { return display_ != nullptr; }
+
+    /// Returns the desktop's scale: `Xft.dpi` over 96 from the root window's `RESOURCE_MANAGER`, 1 to 4 (see
+    /// [[os::x11::ContentScaleFromResources]]). It is read when the window is created and again whenever the property
+    /// changes, which `PumpEvents` sees, so a program that reads it every frame follows the desktop's setting.
+    f32 ContentScale() const override { return content_scale_; }
 
     /// Drains every event already queued without blocking, updating window state and `input`.
     ///
@@ -193,6 +208,7 @@ private:
     void HandleKey(const void* xkey_event, bool pressed, InputState* input);
     void QueueEvent(InputEvent event);
     void ReleaseAllKeys(InputState* input);
+    void ReloadContentScale();
 
     _XDisplay* display_ = nullptr;
     unsigned long window_ = 0;
@@ -211,6 +227,10 @@ private:
     // WaylandInput::held_). X keycodes are 8-bit.
     Key held_[256] = {};
     InputEventQueue events_;
+    // The desktop scale and what is needed to follow it: the root window and the RESOURCE_MANAGER atom.
+    f32 content_scale_ = 1.0f;
+    unsigned long root_ = 0;
+    unsigned long resource_manager_ = 0;
     // Whether the window has keyboard focus as far as FocusIn/FocusOut told (grab-induced focus changes do not count).
     bool focused_ = false;
     X11CursorState cursor_;

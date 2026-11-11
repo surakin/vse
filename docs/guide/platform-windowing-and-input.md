@@ -323,7 +323,10 @@ Code: `engine/platform/linux/x11/`. X11 is the fallback for machines without a W
   is written in both `WM_NAME` and `_NET_WM_NAME` (UTF-8). Without a window manager (a bare X server) there are no decorations and fullscreen is never honored.
 - **Detectable auto-repeat is turned on**, so a held key is one `KeyDown` followed by repeats flagged `repeat`, instead of the X11 default of release and press pairs.
 - **Minimized is visible** here: a window the window manager unmapped or iconified (also on a hidden desktop) makes `IsMinimized()` true.
-- **`ContentScale()` is 1**: X11 has no per-window scale.
+- **`ContentScale()` is the desktop's `Xft.dpi` over 96** (1 to 4), read from the root window's `RESOURCE_MANAGER` when the window is created and again whenever the desktop rewrites it (no event is queued and the window keeps its size: read `ContentScale()` every frame, as the UI adapter does; the last `Xft.dpi` line wins, as in any X resource database). X11 has
+  no per-window or per-monitor scale, and the server's own dpi (`xdpyinfo`) is usually 96 whatever the desktop is set to, so the resource is the signal GTK, Qt and Chromium use too. Under Xwayland
+  with a scaled output the compositor leaves X11 clients unscaled and sets `Xft.dpi` instead. `PlatformWindowHost::Open` takes its size in logical pixels and multiplies it by this scale, as on
+  Windows; `X11Window::Create` takes pixels unless it is given `SizeUnits::Logical`.
 - **Pointer lock is a grab** with XInput 2 raw motion for the deltas. Pointer lock and the clipboard behave as on Wayland, minus the "recent click" rule.
 - **Drag images are not drawn**; the data transfer works.
 - **Under Wayland through Xwayland** an X11 window works, so `--backend=x11` is a way to test this backend on a Wayland desktop.

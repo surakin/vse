@@ -14,7 +14,7 @@ module	foundation/types	97	97
 module	foundation/settings	508	508
 module	foundation/bytes	43	43
 module	platform/os	65	65
-module	platform/window-input	642	642
+module	platform/window-input	649	649
 module	foundation/debug	208	208
 module	text	216	216
 module	ecs	386	386

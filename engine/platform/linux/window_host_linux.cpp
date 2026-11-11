@@ -78,7 +78,7 @@ bool PlatformWindowHost::Open(WindowBackend requested, StringView title, u32 wid
         }
         else if (plan.candidates[i] == WindowBackend::X11)
         {
-            impl_->x11 = x11::X11Window::Create(title, width, height);
+            impl_->x11 = x11::X11Window::Create(title, width, height, x11::SizeUnits::Logical);
             if (impl_->x11.Valid())
             {
                 impl_->x11.SetInputState(input);

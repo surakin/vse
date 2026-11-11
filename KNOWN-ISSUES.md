@@ -44,6 +44,7 @@ Seen failing once or intermittently, passing on rerun. Cause not investigated.
 
 ## Unverified by a human
 
+- **X11 content scale (2026-11-11, Linux machine):** `X11Window` now reports the desktop's `Xft.dpi` over 96 as `ContentScale()` and the window host opens X11 windows at the logical size times it. Checked here on one display (Xwayland, `Xft.dpi: 192`, scale 2.0, a 320x241 logical request opens 640x482) and by unit tests of the parser. **Not checked:** the demos by eye on a scaled X11 desktop (`--backend x11` on `ui_demo` and `renderer_demo`); the live change of the scale (the `PropertyNotify` on the root window's `RESOURCE_MANAGER` reloading it), because the test would have to rewrite the property of the running session; a real X11 session (not Xwayland); a fractional `Xft.dpi` such as 120 or 144.
 Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`, Phases 1-2).
 
 - Phase 26 Day 299 (2026-11-11, the Mac): Spike C (a throwaway `NSApplication` window with a `CAMetalLayer`, our own polled loop) did not check **activation and key focus from a terminal or frame pacing**: the session was locked with the display asleep during the run (`CGSSessionScreenIsLocked` 1, `CGDisplayIsAsleep` 1), the app never became active, and frames ran unpaced (0.92 ms mean). Rerun with the user at the unlocked Mac before Phase 26 Day 311 (`docs/superpowers/specs/2026-11-11-macos-port-design.md`, section 7).

@@ -188,7 +188,50 @@ void AppendText(const char* bytes, int length, bool latin1, u32 modifiers, u64 n
 
 }  // namespace
 
-X11Window X11Window::Create(StringView title, u32 width, u32 height)
+namespace
+{
+
+// The scale from the root window's RESOURCE_MANAGER property (the X resource database), or 1 where it has none.
+f32 ReadContentScale(Display* display, ::Window root, Atom resource_manager)
+{
+    Atom type = 0;
+    int format = 0;
+    unsigned long count = 0;
+    unsigned long after = 0;
+    byte* data = nullptr;
+    // At most 1 MiB of resources (the length is in 32-bit units): a hostile property cannot make this read unbounded.
+    // When the property is longer, the last line is cut somewhere, so only whole lines are used.
+    if (XGetWindowProperty(display, root, resource_manager, 0, 262144, False, XA_STRING, &type, &format, &count, &after,
+                           &data) != Success ||
+        data == nullptr)
+    {
+        return kMinContentScale;
+    }
+    f32 scale = kMinContentScale;
+    if (type == XA_STRING && format == 8)
+    {
+        usize length = count;
+        if (after > 0)
+        {
+            while (length > 0 && data[length - 1] != '\n')
+            {
+                --length;
+            }
+        }
+        scale = ContentScaleFromResources(StringView(reinterpret_cast<const char*>(data), length));
+    }
+    XFree(data);
+    return scale;
+}
+
+}  // namespace
+
+void X11Window::ReloadContentScale()
+{
+    content_scale_ = ReadContentScale(display_, root_, resource_manager_);
+}
+
+X11Window X11Window::Create(StringView title, u32 width, u32 height, SizeUnits units)
 {
     Display* display = XOpenDisplay(nullptr);
     if (display == nullptr)
@@ -205,6 +248,24 @@ X11Window X11Window::Create(StringView title, u32 width, u32 height)
 
     int screen = DefaultScreen(display);
     ::Window root = RootWindow(display, screen);
+    const Atom resource_manager = XInternAtom(display, "RESOURCE_MANAGER", False);
+    const f32 content_scale = ReadContentScale(display, root, resource_manager);
+    if (units == SizeUnits::Logical)
+    {
+        // Like Win32: a logical size is scaled to device pixels, rounded to the nearest, never to zero.
+        // In f64 and clamped to what an X window can be (16-bit sizes), so a huge request cannot overflow the
+        // conversion.
+        const f64 w = static_cast<f64>(width) * static_cast<f64>(content_scale) + 0.5;
+        const f64 h = static_cast<f64>(height) * static_cast<f64>(content_scale) + 0.5;
+        width = static_cast<u32>(w > 65535.0 ? 65535.0 : w);
+        height = static_cast<u32>(h > 65535.0 ? 65535.0 : h);
+    }
+    // The desktop changes its scale by rewriting RESOURCE_MANAGER on the root window. This connection belongs to the
+    // window and selects nothing else on the root, so the mask is set outright; a later feature that listens to the
+    // root (RandR, XInput 2) must add its bits to this one instead of calling XSelectInput again, which would replace
+    // it. The window manager's other root properties (the active window, the desktop) arrive here too and are ignored
+    // in PumpEvents.
+    XSelectInput(display, root, PropertyChangeMask);
 
     XSetWindowAttributes attrs = {};
     attrs.background_pixel = kPlaceholderFillColor;
@@ -265,6 +326,9 @@ X11Window X11Window::Create(StringView title, u32 width, u32 height)
     result.input_context_ = reinterpret_cast<_XIC*>(xic);
     result.width_ = width;
     result.height_ = height;
+    result.content_scale_ = content_scale;
+    result.root_ = root;
+    result.resource_manager_ = resource_manager;
     result.resize_serial_ = detail::NextResizeSerial();
     CursorInit(display, result.cursor_);
     ClipboardInit(display, window, result.clipboard_, &result.events_);
@@ -281,7 +345,8 @@ X11Window::X11Window(X11Window&& other) noexcept
     : display_(other.display_), window_(other.window_), wm_delete_window_(other.wm_delete_window_),
       input_method_(other.input_method_), input_context_(other.input_context_), input_(other.input_),
       width_(other.width_), height_(other.height_), should_close_(other.should_close_), unmapped_(other.unmapped_),
-      resize_serial_(other.resize_serial_), events_(other.events_), focused_(other.focused_), cursor_(other.cursor_),
+      resize_serial_(other.resize_serial_), events_(other.events_), content_scale_(other.content_scale_),
+      root_(other.root_), resource_manager_(other.resource_manager_), focused_(other.focused_), cursor_(other.cursor_),
       clipboard_(static_cast<X11ClipboardState&&>(other.clipboard_)), dnd_(static_cast<X11DndState&&>(other.dnd_))
 {
     MemCopy(held_, other.held_, sizeof(held_));
@@ -297,6 +362,8 @@ X11Window::X11Window(X11Window&& other) noexcept
     other.unmapped_ = false;
     other.resize_serial_ = 0;
     other.events_.Clear();
+    other.root_ = 0;
+    other.resource_manager_ = 0;
     other.focused_ = false;
     other.cursor_ = X11CursorState();
     clipboard_.requests.Init(&events_);  // the queue moved with the window
@@ -321,6 +388,11 @@ X11Window& X11Window::operator=(X11Window&& other) noexcept
         unmapped_ = other.unmapped_;
         resize_serial_ = other.resize_serial_;
         events_ = other.events_;
+        content_scale_ = other.content_scale_;
+        root_ = other.root_;
+        resource_manager_ = other.resource_manager_;
+        other.root_ = 0;
+        other.resource_manager_ = 0;
         focused_ = other.focused_;
         cursor_ = other.cursor_;
         clipboard_ = static_cast<X11ClipboardState&&>(other.clipboard_);
@@ -456,6 +528,12 @@ void X11Window::PumpEvents(InputState* input)
         // Input methods may swallow events (e.g. compose sequences).
         if (XFilterEvent(&event, None) != 0)
         {
+            continue;
+        }
+        if (event.type == PropertyNotify && event.xproperty.window == root_ &&
+            event.xproperty.atom == resource_manager_)
+        {
+            ReloadContentScale();  // the desktop changed its Xft.dpi
             continue;
         }
         if (dnd_.source.active)

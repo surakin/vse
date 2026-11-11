@@ -91,8 +91,9 @@ public:
     /// 100%, the default).
     ///
     /// Win32 gives the window's DPI over 96, and the value changes when the window moves to a monitor of another DPI (a
-    /// `Resize` follows). Wayland and X11 give 1: the Wayland compositor scales the window itself, and X11 has no
-    /// per-window scale.
+    /// `Resize` follows). X11 gives the desktop's `Xft.dpi` over 96 (1 to 4), read again when the desktop changes it
+    /// (no event and no resize: read it every frame, as [[ui::WindowAdapter]] does); X11 has no per-window or
+    /// per-monitor scale. Wayland gives 1: the compositor scales the window itself.
     virtual f32 ContentScale() const { return 1.0f; }
 
     /// Returns the stable lowercase backend id (`"wayland"`, `"x11"`, `"win32"`), for logs and tests.
