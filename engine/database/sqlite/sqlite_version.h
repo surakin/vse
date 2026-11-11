@@ -8,6 +8,7 @@ namespace engine_placeholder::database {
 /// The version of the vendored SQLite library, as its own text (for example `3.54.1`).
 ///
 /// Returns: a NUL-terminated string with static lifetime.
+/// Ownership: the string is static.
 /// Fails: never.
 const char* SqliteVersion();
 

@@ -76,7 +76,7 @@ Conclusions: (1) the entity blob is the default: 3.2x faster to insert and 4x fa
 - `SELECT cols | * | count(*) FROM t [WHERE cond [AND cond ...]] [ORDER BY col [ASC|DESC]] [LIMIT n [OFFSET m]]` with `cond` of the form `col op value` (`=`, `<>`, `<`, `<=`, `>`, `>=`, `IS NULL`, `IS NOT NULL`); no joins, no subqueries, no expressions.
 - `UPDATE t SET col = value [, ...] [WHERE ...]`, `DELETE FROM t [WHERE ...]`.
 - `BEGIN`, `COMMIT`, `ROLLBACK`, `SAVEPOINT s`, `RELEASE s`, `ROLLBACK TO s`.
-- A schema version through `Connection` (`SchemaVersion()` / `SetSchemaVersion()`, backed by `PRAGMA user_version` on SQLite and a field on the memory database): no `PRAGMA` text in `SqlStore`.
+- A schema version through `Connection` (`SchemaVersion()` / `WriteSchemaVersion()`, backed by `PRAGMA user_version` on SQLite and a field on the memory database): no `PRAGMA` text in `SqlStore`.
 - `ALTER TABLE t ADD COLUMN ...` is **not** in the subset: a column layout change on a database without `Supports(AddColumn)` rebuilds the table from the blobs.
 
 Joins are not needed: the entity blob layout loads with one ordered scan, and the optional column tables are read by key range, one table at a time.

@@ -18,7 +18,7 @@ module	foundation/debug	208	208
 module	text	216	216
 module	ecs	378	378
 module	spatial	185	185
-module	database	1	1
+module	database	130	130
 module	scene	44	44
 module	ui	1401	1401
 module	ui_window	25	25

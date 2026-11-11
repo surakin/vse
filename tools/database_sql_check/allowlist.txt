@@ -1,0 +1,2 @@
+# path-prefix|reason. SqlText::Unchecked builds SQL from run-time text.
+engine/database/|backends build savepoint statements from a name the interface has validated as an identifier

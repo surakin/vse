@@ -2,6 +2,8 @@
 # the library under test is built without. One executable per sanitizer flavor.
 set(DATABASE_TEST_SOURCES
   sqlite_smoke_test.cpp  # Day 251
+  conformance_stub_test.cpp  # Day 252
+  interface_test.cpp  # Day 252
 )
 
 find_package(Threads REQUIRED)

@@ -40,3 +40,4 @@ the pages in the order below; each builds on the ones before it. The generated [
 
 18. [ecs](ecs.md): entities, components, archetypes and the world.
 19. [spatial](spatial.md): what is near what: shapes, bounding-volume hierarchies, spatial sets (Phase 18).
+20. [database](database.md): the database interface, SqlText, values and the conformance suite (Phase 19).

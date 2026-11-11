@@ -175,7 +175,7 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(shaders)  # the `shaders` target and shaders_check / shaders_portability, when slangc is found
   # The source gates are CMake scripts over the tree, the same on every platform (Day 150).
   foreach(gate rhi_boundary_check raw_new_check file_access_check std_usage_check settings_fixtures_check config_access_check
-               signal_safety_check platform_neutral_check module_deps_check ui_widget_style_check sqlite_boundary_check)
+               signal_safety_check platform_neutral_check module_deps_check ui_widget_style_check sqlite_boundary_check database_sql_check)
     add_subdirectory(tools/${gate})
   endforeach()
   add_subdirectory(tests/phase_labels)
@@ -240,6 +240,7 @@ add_subdirectory(tools/platform_neutral_check)
 add_subdirectory(tools/module_deps_check)
 add_subdirectory(tools/ui_widget_style_check)  # Phase 15 Day 195
 add_subdirectory(tools/sqlite_boundary_check)  # Phase 19 Day 251
+add_subdirectory(tools/database_sql_check)  # Phase 19 Day 252
 add_subdirectory(tools/crash_extract)
 add_subdirectory(tests/foundation)
 add_subdirectory(tests/jobs)
