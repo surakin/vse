@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# Formats the staged C and C++ files before a commit (CLAUDE.md, "Code style"; .clang-format). Install once per machine: scripts/install-git-hooks.sh.
+#
+# A staged file with no unstaged changes is formatted in place and staged again. A file that also has unstaged changes is refused, because staging
+# the formatted file would stage the unstaged edits too: format it yourself (scripts/format.sh FILE) and stage what you mean to commit.
+# Files in .clang-format-ignore are skipped. `git commit --no-verify` skips the hook.
+set -euo pipefail
+
+root="$(git rev-parse --show-toplevel)"
+cd "$root"
+
+staged=()
+while IFS= read -r -d '' f; do
+    case "$f" in
+        *.h|*.hpp|*.cpp|*.cc|*.c|*.mm|*.m) staged+=("$f") ;;
+    esac
+done < <(git diff --cached --name-only --diff-filter=ACMR -z)
+[ ${#staged[@]} -gt 0 ] || exit 0
+
+if ! command -v clang-format >/dev/null 2>&1; then
+    echo "pre-commit: clang-format is not installed, and the style is a project rule (BUILD.md lists it; version 18 or newer)." >&2
+    echo "pre-commit: install it, or commit with --no-verify and run scripts/format.sh before pushing." >&2
+    exit 1
+fi
+version="$(clang-format --version | sed -n 's/.*version \([0-9]*\)\..*/\1/p' | head -n 1)"
+if [ "${version:-0}" -lt 18 ]; then
+    echo "pre-commit: clang-format $version is too old (18 or newer)." >&2
+    exit 1
+fi
+
+# The files the formatter would leave alone (.clang-format-ignore) are asked of clang-format itself: it reports nothing for them.
+refused=()
+format=()
+for f in "${staged[@]}"; do
+    if git diff --quiet -- "$f"; then
+        format+=("$f")
+    else
+        refused+=("$f")
+    fi
+done
+
+if [ ${#refused[@]} -gt 0 ]; then
+    echo "pre-commit: these files have unstaged changes as well as staged ones; format them yourself and stage what you mean to commit:" >&2
+    for f in "${refused[@]}"; do
+        echo "    scripts/format.sh $f" >&2
+    done
+    exit 1
+fi
+
+if [ ${#format[@]} -gt 0 ]; then
+    scripts/format.sh "${format[@]}" >/dev/null
+    changed=()
+    while IFS= read -r f; do changed+=("$f"); done < <(git diff --name-only -- "${format[@]}")
+    if [ ${#changed[@]} -gt 0 ]; then
+        git add -- "${changed[@]}"
+        echo "pre-commit: formatted and re-staged the files clang-format changed:" >&2
+        printf '    %s\n' "${changed[@]}" >&2
+    fi
+fi
+exit 0

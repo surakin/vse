@@ -469,6 +469,17 @@ Ninja; no Xcode.
 - **Documentation** (`docgen`, the reference, `ctest -L docs`) is not built on the Mac before Phase 26 Day 309 (it needs the whole foundation);
   the samples wait for Day 326.
 
+### Formatting and clang-tidy
+
+The style is `.clang-format` (Allman braces, every control-flow body braced, 120 columns; `CLAUDE.md`, "Code style"). `scripts/format.sh` formats every tracked C and C++ file, or
+the files you name; `scripts/format.sh --check` changes nothing and lists what is not formatted. `scripts/install-git-hooks.sh` (once per machine; from Git Bash on Windows) points git at
+`scripts/git-hooks/`, whose pre-commit hook formats the staged files and stages them again. A file with unstaged edits as well is refused (staging the formatted file would stage
+those edits): run `scripts/format.sh FILE` and stage what you mean. Vendored code, generated code and test fixtures are listed in `.clang-format-ignore`. The installer also tells
+`git blame` to skip the formatting-only commits listed in `.git-blame-ignore-revs`.
+
+clang-tidy is configured in `.clang-tidy` and run by `scripts/tidy.sh` on a separate non-unity build tree (`build-tidy`, which exports `compile_commands.json`). It is not part of the
+commit hook. A finding is fixed, or suppressed on its line with `// NOLINT(check-name): the reason`.
+
 ### What "done" means before you commit
 
 There is no hosted continuous-integration service: the checks are run by you, on your machine(s), by the same scripts a CI job would call. Before a change is

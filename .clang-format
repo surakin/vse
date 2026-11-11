@@ -1,0 +1,32 @@
+# The engine's C++ style (CLAUDE.md, "Code style"). Allman braces, every control-flow body braced, 120 columns, 4 spaces, pointers bind to the type.
+# Formatted by scripts/format.sh and by the pre-commit hook (scripts/install-git-hooks.sh); clang-format 18 or newer (BUILD.md).
+# Files that must not be touched are in .clang-format-ignore.
+BasedOnStyle: LLVM
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 120
+BreakBeforeBraces: Allman
+InsertBraces: true
+InsertNewlineAtEOF: true
+PointerAlignment: Left
+AccessModifierOffset: -4
+NamespaceIndentation: None
+FixNamespaceComments: true
+SpacesBeforeTrailingComments: 2
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortLambdasOnASingleLine: All
+AllowShortEnumsOnASingleLine: false
+# The include order is part of the build: the unity enable/disable pairs and macro-saving headers (CLAUDE.md, "Unity builds") depend on it.
+SortIncludes: Never
+IncludeBlocks: Preserve
+IndentPPDirectives: None
+BreakStringLiterals: false
+ReflowComments: true
+MaxEmptyLinesToKeep: 1
+KeepEmptyLines:
+  AtStartOfBlock: false

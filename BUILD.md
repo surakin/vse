@@ -24,6 +24,8 @@ Arch Linux's, the distribution the development machine uses.
 | CMake | 3.21 or newer (4.4.5 used) | Required | 3.21 for `CMakePresets.json` with toolchain files. | `cmake` |
 | Clang (`clang++`) | C++20 (23.1.4 used) | Required | The compiler CMake picks first on Linux (GCC is the fallback when no `clang++` is installed; it must build clean too). Also runs the cross-target syntax checks (`*_cross_syntax_windows`, `_macos`). | `clang` |
 | Ninja or Make | any | Required | Either generator works. | `ninja` |
+| `clang-format` | 18 or newer (23.1.4 used) | Required to commit | Formats the code (`scripts/format.sh`, `.clang-format`) and runs in the pre-commit hook (`scripts/install-git-hooks.sh`); 18 is the first version with `.clang-format-ignore`. | `clang` |
+| `clang-tidy`, `run-clang-tidy` | 18 or newer (23.1.4 used) | For checks | `scripts/tidy.sh` (`.clang-tidy`). | `clang` |
 | pkg-config | any | Required | Finds the system libraries below. | `pkgconf` |
 | `libwayland-client` (headers) | any current | Required | Wayland backend. | `wayland` |
 | `libxkbcommon` (headers) | any current | Required | Keyboard maps for Wayland. | `libxkbcommon` |

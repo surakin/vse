@@ -207,6 +207,20 @@ or format with the C library (`tools/signal_safety_check` enforces it).
 New modules are added to `docs/reference/modules.txt` in the same day.
 Planning-only commits are exempt, as are days that change no public header.
 
+## Code style: clang-format decides (required)
+
+`.clang-format` is the style: **Allman braces** (every `{` on its own line: functions, classes, enums, namespaces, control flow), **every `if`, `else`, `for`, `while`
+and `do` body braced** (clang-format inserts missing braces), 4-space indent, **120 columns**, pointers bind to the type (`Socket* out`), no namespace indent, include
+order untouched (it is part of the build: the unity enable/disable pairs). Do not format by hand and do not argue with the formatter in a review.
+
+- **Format with `scripts/format.sh`** (everything tracked, or the files given; `--check` only reports). Files in `.clang-format-ignore` (vendored code, generated code,
+  test fixtures with planted violations) are never touched.
+- **Install the hook once per machine: `scripts/install-git-hooks.sh`** (Windows: from Git Bash). The pre-commit hook formats the staged C and C++ files and stages them again;
+  it refuses a file that also has unstaged edits, and refuses to commit when clang-format (18 or newer, `BUILD.md`) is missing. `--no-verify` is not for routine use.
+- **A formatting-only change is its own commit** with no other edits, so review and `git blame` stay useful (list it in `.git-blame-ignore-revs`).
+- **clang-tidy** (`.clang-tidy`, `scripts/tidy.sh`) runs on demand over a non-unity compile database; fix a finding or suppress it on its line with
+  `// NOLINT(check): reason` (a reason is required). It is not in the hook.
+
 ## Always use the wrapped types, never `std` (required, Phase 16)
 
 Code in `engine/`, `game/`, `tools/` and `tests/` includes no standard header, spells no `std::` name, calls no unqualified C library function (`strlen`, `memcpy`, `printf`, `qsort`, ...) and spells no raw `unsigned char` / `(std::)u?int(8|16|32|64)_t`.
