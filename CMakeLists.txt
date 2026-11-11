@@ -91,6 +91,7 @@ set(ENGINE_TEST_TMP_DIR "${CMAKE_BINARY_DIR}/test-tmp")
 file(MAKE_DIRECTORY "${ENGINE_TEST_TMP_DIR}/pipeline-cache" "${ENGINE_TEST_TMP_DIR}/screenshots")
 add_subdirectory(third_party/catch2)
 add_subdirectory(third_party/freetype)  # Phase 14 Day 175: FreeType, vendored (PLAN.md assumption #17)
+add_subdirectory(third_party/sqlite)  # Phase 19 Day 251: SQLite, vendored (PLAN.md assumption #25), used only behind engine/database/sqlite/
 # Catch2's REQUIRE/CHECK throw: exceptions on for Catch2 and, through PUBLIC, every test executable that links it.
 if(ENGINE_EXCEPTIONS_COMPILE_OPTIONS)
   target_compile_options(Catch2 PUBLIC ${ENGINE_EXCEPTIONS_COMPILE_OPTIONS})
@@ -151,6 +152,8 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(tests/ecs)
   add_subdirectory(engine/spatial)  # Phase 18 Day 238
   add_subdirectory(tests/spatial)
+  add_subdirectory(engine/database)  # Phase 19 Day 251
+  add_subdirectory(tests/database)
   add_subdirectory(engine/ui)  # Phase 15 Day 184
   add_subdirectory(engine/ui_window)  # Phase 15 Day 194
   add_subdirectory(tests/ui)
@@ -172,7 +175,7 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(shaders)  # the `shaders` target and shaders_check / shaders_portability, when slangc is found
   # The source gates are CMake scripts over the tree, the same on every platform (Day 150).
   foreach(gate rhi_boundary_check raw_new_check file_access_check std_usage_check settings_fixtures_check config_access_check
-               signal_safety_check platform_neutral_check module_deps_check ui_widget_style_check)
+               signal_safety_check platform_neutral_check module_deps_check ui_widget_style_check sqlite_boundary_check)
     add_subdirectory(tools/${gate})
   endforeach()
   add_subdirectory(tests/phase_labels)
@@ -218,6 +221,7 @@ add_subdirectory(engine/jobs)
 add_subdirectory(engine/text)  # Phase 14 Day 175
 add_subdirectory(engine/ecs)  # Phase 17 Day 223
 add_subdirectory(engine/spatial)  # Phase 18 Day 238
+add_subdirectory(engine/database)  # Phase 19 Day 251
 add_subdirectory(engine/ui)  # Phase 15 Day 184
 add_subdirectory(engine/ui_window)  # Phase 15 Day 194
 add_subdirectory(engine/rhi)
@@ -235,6 +239,7 @@ add_subdirectory(tools/signal_safety_check)
 add_subdirectory(tools/platform_neutral_check)
 add_subdirectory(tools/module_deps_check)
 add_subdirectory(tools/ui_widget_style_check)  # Phase 15 Day 195
+add_subdirectory(tools/sqlite_boundary_check)  # Phase 19 Day 251
 add_subdirectory(tools/crash_extract)
 add_subdirectory(tests/foundation)
 add_subdirectory(tests/jobs)
@@ -246,6 +251,7 @@ add_subdirectory(tests/cstr)  # Phase 16 Day 211
 add_subdirectory(tests/text)  # Phase 14 Day 175
 add_subdirectory(tests/ecs)  # Phase 17 Day 223
 add_subdirectory(tests/spatial)  # Phase 18 Day 238
+add_subdirectory(tests/database)  # Phase 19 Day 251
 add_subdirectory(tests/ui)  # Phase 15 Day 184
 add_subdirectory(tests/settings)
 add_subdirectory(tests/foundation_sanitized)

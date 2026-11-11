@@ -1,0 +1,4 @@
+# path|reason - files (or directories, with a trailing /) outside engine/database/sqlite/ allowed to name SQLite (the header, an sqlite3_ function,
+# a SQLITE_ macro, or a link to the sqlite3 target). An entry that no longer exempts anything fails the gate (remove it).
+# Empty on purpose: the rule is PLAN.md assumption #25 ("only its implementation file includes its header") and
+# docs/superpowers/specs/2026-11-11-storage-design.md (section 2, SQLite).

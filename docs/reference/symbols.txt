@@ -3612,6 +3612,7 @@ spatial::StaticBvh::FirstItem(u32) const	function	spatial	spatial-staticbvh-firs
 spatial::StaticBvh::SahCost() const	function	spatial	spatial-staticbvh-sahcost-const	spatial.md	engine/spatial/static_bvh.h:126
 spatial::StaticBvh::Traverse(NodeTest&&,ItemVisit&&) const	function	spatial	spatial-staticbvh-traverse-nodetest-amp-amp-itemvisit-amp-amp-const	spatial.md	engine/spatial/static_bvh.h:135
 spatial::StaticBvh::TraverseRay(const Ray&,f32,ItemVisit&&) const	function	spatial	spatial-staticbvh-traverseray-const-ray-amp-f32-itemvisit-amp-amp-const	spatial.md	engine/spatial/static_bvh.h:146
+database::SqliteVersion()	function	database	database-sqliteversion	database.md	engine/database/sqlite/sqlite_version.h:12
 scene::MeshAsset	struct	scene	scene-meshasset	scene.md	engine/scene/components.h:22
 scene::MeshAsset::mesh	variable	scene	scene-meshasset-mesh	scene.md	engine/scene/components.h:24
 scene::MeshRenderer	struct	scene	scene-meshrenderer	scene.md	engine/scene/components.h:31

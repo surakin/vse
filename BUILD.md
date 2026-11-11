@@ -11,7 +11,7 @@ Each tool is one of:
   with a printed reason.
 - **Optional:** a convenience for debugging or regenerating vendored files.
 
-Everything third-party that ships inside the engine or a tool (Catch2, libbacktrace, sentry-native with Breakpad, nlohmann/json, FreeType (Phase 14) and later
+Everything third-party that ships inside the engine or a tool (Catch2, libbacktrace, sentry-native with Breakpad, nlohmann/json, FreeType (Phase 14), SQLite 3.54.1 (Phase 19, the amalgamation, `third_party/sqlite/VENDORED.md`) and later
 LuaJIT) is vendored under `third_party/` and built from source. **Do not install it separately.**
 
 ## Linux (x86-64): supported

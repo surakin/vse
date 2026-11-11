@@ -92,6 +92,9 @@ module spatial "Spatial Partitioning"
   strict ownership
   strict failure
 
+module database "Database"
+  header engine/database/sqlite/*.h
+
 module scene "Scene bridge"
   header engine/scene/*.h
   strict thread-safety

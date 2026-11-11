@@ -37,6 +37,8 @@ flavors 17  linux: plain,asan,tsan
 flavors 17  windows: plain,asan
 flavors 18  linux: plain,asan,tsan
 flavors 18  windows: plain,asan
+flavors 19  linux: plain,asan,tsan
+flavors 19  windows: plain,asan
 flavors 15  windows: plain,asan
 # What the Windows build has of each phase (Phase 13 ports one layer per day; each day updates its phases here; `none` = no tests yet).
 # MSVC has no ThreadSanitizer, so no Windows line lists tsan.
@@ -284,6 +286,10 @@ test:ui_demo_*                                      15   # the ui_demo program: 
 # --- Phase 17: ECS (entities, components, archetype chunks, world, queries, systems, the scene bridge) ---
 tests/ecs/                                      17   # Phase 17 Day 223
 tests/spatial/                                  18   # Phase 18 Day 238
+
+# --- Phase 19: storage and the database interface ---
+tests/database/                                 19   # Phase 19 Day 251
+test:sqlite_boundary_check*                     19   # the SQLite boundary gate (Day 251)
 tests/scene/visibility_test.cpp                 18   # Phase 18 Day 247
 tests/scene/scene_sync_test.cpp                     17   # Phase 17 Day 233
 tests/scene/scene_render_test.cpp                   17   # Phase 17 Day 233

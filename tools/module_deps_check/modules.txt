@@ -101,6 +101,8 @@ allow ecs jobs
 module engine/spatial/ spatial 10
 allow spatial ecs
 allow spatial jobs
+# 10 database (Phase 19 Day 251): the database interface, the in-memory implementation and, under sqlite/, the SQLite library (the only files that include sqlite3.h); the foundation only
+module engine/database/ database 10
 # 11 ui (Phase 15 Day 184): the widget toolkit's CPU side (tree, layout, theme, input routing, draw list); text, the platform's input headers and the foundation, no RHI
 module engine/ui/ ui 11
 # 11 RHI: the neutral interface and one module per backend
@@ -159,6 +161,7 @@ module tools/shader_mint/ tools/shader_mint 14
 module tools/unicode_data_gen/ tools/unicode_data_gen 14
 module tools/config_access_check/ tools/gates 14
 module tools/file_access_check/ tools/gates 14
+module tools/sqlite_boundary_check/ tools/gates 14
 module tools/module_deps_check/ tools/gates 14
 module tools/platform_neutral_check/ tools/gates 14
 module tools/raw_new_check/ tools/gates 14
@@ -212,6 +215,7 @@ target jobs jobs
 target text text
 target ecs ecs
 target spatial spatial
+target database_sqlite database
 target platform platform
 target platform_input platform
 target ui ui
