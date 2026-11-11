@@ -3,6 +3,7 @@
 # the platform lists of the platforms that have Vulkan, not in macOS's (Phase 26 decision 8).
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   set(FOUNDATION_PLATFORM_SOURCES
+    os/posix/os_posix.cpp
     os/linux/os.cpp
     os/linux/session.cpp
     os/gpu_driver_probe.cpp
@@ -67,12 +68,12 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     io/windows/directory.cpp
   )
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  # Phase 26 ports one layer per day (ARCHITECTURE.md order). Day 284: the base layer only. TEMPORARY until Day 285, which splits them into
-  # os/posix/ and os/macos/: the Linux os.cpp and session.cpp, which compile on macOS unchanged and serve the layer-0 tests (Day 283 Spike A;
-  # their /proc reads and the logind query fail at run time there, KNOWN-ISSUES.md). No GPU driver probe on macOS (decision 8).
+  # Phase 26 ports one layer per day (ARCHITECTURE.md order). Day 285: the base layer's os backend, the POSIX half shared with Linux
+  # (os/posix/) and macOS's own (os/macos/). No GPU driver probe on macOS (decision 8).
   set(FOUNDATION_PLATFORM_SOURCES
-    os/linux/os.cpp
-    os/linux/session.cpp
+    os/posix/os_posix.cpp
+    os/macos/os.cpp
+    os/macos/session.mm
   )
 else()
   message(FATAL_ERROR "No foundation os.h implementation for this platform yet")
@@ -215,7 +216,8 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   # (the file layer on Day 287).
   foreach(suffix "" "_asan" "_tsan")
     engine_add_foundation_layer(foundation_base "${suffix}" ${FOUNDATION_BASE_SOURCES})
-    target_link_libraries(foundation_base${suffix} PUBLIC ${CMAKE_DL_LIBS})
+    # The session query (os/macos/session.mm) reads the window server's session dictionary.
+    target_link_libraries(foundation_base${suffix} PUBLIC ${CMAKE_DL_LIBS} "-framework CoreGraphics" "-framework Foundation")
   endforeach()
 else()
   engine_add_foundation_libs("")

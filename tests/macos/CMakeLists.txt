@@ -2,6 +2,8 @@
 # tests/phases.txt (the Catch2 file by its path, the build checks by their `test:macos_*` line).
 #
 #   macos_build_defs_tests      build_defs.h on Apple clang (platform, processor, compiler, the sanitizer of each flavor), plain, asan, tsan
+#   macos_os_tests              the os backend (os/macos/os.cpp, session.mm): clock, sleeps, pages, process figures, LoadLibrary, a child
+#                               (macos_os_child) reading non-ASCII arguments and logging UTF-8 to a pipe; plain, asan, tsan
 #   macos_header_apple_first    every neutral foundation header compiles as Objective-C++ (ARC, the warnings of every target) after
 #                               <AppKit/AppKit.h>, <Metal/Metal.h> and <QuartzCore/CAMetalLayer.h>: no Apple macro or type breaks them
 #   macos_header_apple_last     the same with the frameworks after the engine headers, the other order a unity build can merge them in
@@ -64,3 +66,17 @@ add_test(NAME macos_production_options_planted
 set_tests_properties(macos_production_options_planted PROPERTIES RESOURCE_LOCK build_tree
                      PASS_REGULAR_EXPRESSION "production_options_planted\\.mm:[0-9]+:[0-9]+: error: cannot use 'try' with exceptions disabled")
 engine_label_tests(macos_production_options_planted)
+
+# --- The os backend (Day 285): the clock across threads, sleeps, pages, process figures, library loading, a child's arguments and log -------
+add_executable(macos_os_child os_child_macos.cpp)
+target_link_libraries(macos_os_child PRIVATE foundation_base)
+function(engine_add_macos_os_tests target foundation_lib suffix label)
+  add_executable(${target} os_macos_test.cpp)
+  target_link_libraries(${target} PRIVATE ${foundation_lib} Catch2::Catch2WithMain Threads::Threads)
+  target_compile_definitions(${target} PRIVATE ENGINE_TEST_CHILD="$<TARGET_FILE:macos_os_child>")
+  add_dependencies(${target} macos_os_child)
+  engine_discover_tests(${target} TEST_SUFFIX "${suffix}" PROPERTIES LABELS "${label}")
+endfunction()
+engine_add_macos_os_tests(macos_os_tests foundation_base "" "macos")
+engine_add_macos_os_tests(macos_os_tests_asan foundation_base_asan " [asan]" "asan")
+engine_add_macos_os_tests(macos_os_tests_tsan foundation_base_tsan " [tsan]" "tsan")

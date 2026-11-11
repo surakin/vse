@@ -28,9 +28,13 @@ set(FOUNDATION_BASE_TEST_SOURCES
   command_line_test.cpp
   os_timing_test.cpp
   concurrency_primitives_test.cpp
-  gpu_driver_loading_test.cpp
   session_state_test.cpp
 )
+# The GPU driver probe is Vulkan's and not built on macOS (Phase 26 decision 8), so neither is its test; os::LoadLibrary is tested there
+# by tests/macos/os_macos_test.cpp.
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  list(APPEND FOUNDATION_BASE_TEST_SOURCES gpu_driver_loading_test.cpp)
+endif()
 
 find_package(Threads REQUIRED)
 

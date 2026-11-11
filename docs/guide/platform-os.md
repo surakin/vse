@@ -1,6 +1,6 @@
 # Platform: OS Layer
 
-Status: written (Phase 1; Windows from Phase 13).
+Status: written (Phase 1; Windows from Phase 13; macOS from Phase 26 Day 285).
 
 **Audience:** engine programmers. Read [Standard types](foundation-types.md) and [Memory](foundation-memory.md) first.
 
@@ -12,7 +12,7 @@ needs from the system has a better home: **files** are in [Files](io.md), **wind
 ## Design: what is portable and what is per-platform
 
 You write against the portable headers (`os/os.h`, `os/console.h`, `os/command_line.h`, `os/session.h`). Behind each there is one implementation per platform in
-`os/linux/`, `os/windows/` and `os/macos/`, chosen by the build. You never include those directly (a gate fails the build if you do), and you never ask the compiler
+`os/linux/`, `os/windows/` and `os/macos/`, chosen by the build (Linux and macOS share the POSIX half in `os/posix/`). You never include those directly (a gate fails the build if you do), and you never ask the compiler
 "am I on Windows?" yourself: use `#if ENGINE_PLATFORM_WINDOWS` from `build_defs.h`. Text is UTF-8 on every platform; the Windows backend converts to UTF-16 at the
 call.
 
@@ -47,7 +47,7 @@ duration (frame time, timeouts). It has no meaning as a date. `os::SleepNanos(n)
 
 ## Random bytes
 
-`os::FillRandomBytes(buffer, count)` fills a buffer from the operating system's secure random source (`getrandom`, `BCryptGenRandom`). It is for identifiers,
+`os::FillRandomBytes(buffer, count)` fills a buffer from the operating system's secure random source (`getrandom`, `getentropy`, `BCryptGenRandom`). It is for identifiers,
 nonces and seeds that must not be guessable; a game's gameplay random numbers want a seeded generator instead.
 
 ```cpp compile run standalone
@@ -157,7 +157,7 @@ parse a few by hand, as the oldest program.
 ## Dynamic libraries and driver probing
 
 `os::LoadLibrary(path)` opens a shared library and returns a handle (`nullptr` on failure), `os::GetSymbol(handle, "name")` finds a function in it, and
-`os::UnloadLibrary(handle)` closes it. A relative path with a directory in it is refused on Windows, and the current directory is never searched. The engine
+`os::UnloadLibrary(handle)` closes it. A relative path with a directory in it is refused on Windows and macOS, and there the current directory is never searched. The engine
 uses this to load the GPU driver at run time instead of linking it: `os::VulkanLoaderName()` is `libvulkan.so.1` on Linux and `vulkan-1.dll` on Windows, and
 `os::ProbeVulkanCreateInstance()` loads it and reports (to the log, step by step) whether the machine has a usable Vulkan loader. A machine without one then fails
 with a clear message instead of a loader error at start-up.
@@ -175,7 +175,7 @@ if (lib != nullptr) {
 ## Session state
 
 Window tests and the demos need to know whether anyone can see a window. `os::QuerySessionState()` answers `Active`, `Locked`, `Idle`, `Inactive` or `Unknown`
-(Linux asks systemd-logind; Windows reads the session and the input desktop). `os::SessionCanShowWindows(state)` is true for `Active` and `Unknown`. Tests that open real
+(Linux asks systemd-logind; Windows reads the session and the input desktop; macOS reads the window server's session dictionary). `os::SessionCanShowWindows(state)` is true for `Active` and `Unknown`. Tests that open real
 windows skip, with the reason printed, when the session cannot show them; this is why two X11 tests fail while your screen is locked.
 
 ## Descriptors and exiting
@@ -214,6 +214,25 @@ choice (`std::exit`), never for descriptors.
 - **Session state** comes from `WTSQuerySessionInformation` (inactive) and the input desktop's name (locked); Windows has no idle hint.
 - **`include os/windows/win32.h`, never `<windows.h>`**: it removes the macros whose names are engine identifiers (`LoadLibrary`, `near`,
   `far`, ...), so Windows code calls the explicit `...W` functions.
+
+**macOS** (Phase 26; `engine/foundation/os/macos/`, with `os/posix/` shared with Linux). The descriptor, memory, sleep, symbol and
+environment functions are the same POSIX calls as on Linux and live once, in `os/posix/os_posix.cpp`; each system's `os.cpp` adds the
+rest.
+
+- **The clock** is `CLOCK_UPTIME_RAW` (`clock_gettime_nsec_np`), which, like Linux's `CLOCK_MONOTONIC`, stops while the machine sleeps
+  (macOS's own `CLOCK_MONOTONIC` keeps counting). It is in nanoseconds already, so there is no `mach_absolute_time` timebase to
+  multiply and nothing to overflow.
+- **Pages** are 4 KiB on Intel Macs and 16 KiB on Apple silicon: never assume 4 KiB.
+- **Sleeping** is `nanosleep`, resumed after a signal: never early. On the development Mac (Intel, macOS 15) 1 µs took at least 5 µs,
+  100 µs at least 107 µs and 1 ms at least 1.06 ms.
+- **Libraries** are never searched for in the current directory, which macOS's `dlopen` would do for a bare name: a bare name is looked
+  for next to the program, then in `/usr/lib`; a relative path with a directory in it is refused.
+- **The environment** is `*_NSGetEnviron()` (a library cannot name `environ` on macOS); `argv` is UTF-8, and a test starts a child with
+  non-ASCII arguments, quotes and backslashes and compares the bytes of its arguments and of a log line through a pipe.
+- **Process figures** come from `task_info` (resident size) and `proc_pidinfo` (open descriptors).
+- **Session state** is the window server's session dictionary (`os/macos/SESSION.md`); a process started over ssh is in no window-server
+  session and reports `Unknown`.
+- **Objective-C++** (`.mm`, ARC) is used only under `macos/` directories, where an Apple framework has no C interface worth using.
 
 ## What the platform layer adds to a crash report
 

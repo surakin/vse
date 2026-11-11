@@ -1,6 +1,7 @@
 #pragma once
 
 #include "containers/vector.h"
+#include "lang/traits.h"
 #include "types.h"
 
 //! Open-addressing hash map (linear probing, tombstone deletion) whose slot
@@ -77,6 +78,15 @@ template <>
 struct Hash<u64> {
     /// Returns a well-mixed hash of the integer value.
     usize operator()(u64 k) const { return detail::MixHash64(k); }
+};
+
+/// Hash function for `usize` and `isize` keys where they are types of their own: on macOS `usize` is `unsigned long` and `u64` is
+/// `unsigned long long` (Linux and Windows make them the same type, so there the `u64` and `i64` hashes serve). Phase 26 Day 285.
+template <typename K>
+    requires((IsSame<K, usize> && !IsSame<usize, u64>) || (IsSame<K, isize> && !IsSame<isize, i64>))
+struct Hash<K> {
+    /// Returns a well-mixed hash of the integer value.
+    usize operator()(K k) const { return detail::MixHash64(static_cast<u64>(k)); }
 };
 
 /// Hash function for pointer keys; hashes the address, not the pointee.

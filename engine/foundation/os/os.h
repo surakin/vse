@@ -15,6 +15,10 @@
 //! most 2^31 - 1 bytes and reports a short count, which every caller handles. Writes to a console are converted from UTF-8 and shown with
 //! the console's Unicode API; the console's code page is never changed (that would outlive the program in the user's shell). Paths are
 //! UTF-8 and become UTF-16 at the call, with `/` turned into `\` and the `\\?\` prefix added to long absolute paths.
+//!
+//! **macOS** (Phase 26). The descriptor, memory, sleep and library calls are the POSIX ones Linux uses (`os/posix/`); the clock, random
+//! bytes, process figures and library search are macOS's own (`os/macos/os.cpp`). Pages are the system's size: 4 KiB on x86-64 and
+//! 16 KiB on Apple silicon, so no code may assume 4 KiB.
 
 namespace engine_placeholder::os {
 
@@ -96,7 +100,7 @@ void ReleaseMemory(void* addr, usize size);
 /// Returns the current time of a monotonic clock in nanoseconds.
 ///
 /// The clock has no defined epoch, so differences between two calls are meaningful but the value is not
-/// a wall-clock timestamp.
+/// a wall-clock timestamp. On Linux (`CLOCK_MONOTONIC`) and macOS (`CLOCK_UPTIME_RAW`) it stops while the machine sleeps.
 ///
 /// Thread-safety: thread-safe.
 u64 MonotonicTimeNanos();
@@ -109,7 +113,8 @@ u64 MonotonicTimeNanos();
 /// Thread-safety: thread-safe.
 u64 WallClockUnixMillis();
 
-/// Fills `count` bytes at `buffer` from the operating system's cryptographically secure random source.
+/// Fills `count` bytes at `buffer` from the operating system's cryptographically secure random source (`getrandom` on Linux,
+/// `getentropy` on macOS, `BCryptGenRandom` on Windows).
 ///
 /// Thread-safety: thread-safe.
 /// Aborts: the operating system cannot supply random bytes.
@@ -119,11 +124,12 @@ void FillRandomBytes(void* buffer, usize count);
 ///
 /// May sleep longer under scheduler contention; interrupted sleeps are resumed, so it never returns early. On Windows the wait is a
 /// high-resolution timer, which on the development PC wakes in steps of about half a millisecond: 100 us took at least 0.51 ms there.
+/// On the development Mac (Intel, macOS 15) 1 us took at least 5 us, 100 us at least 107 us and 1 ms at least 1.06 ms.
 /// Param nanos: minimum duration to sleep.
 void SleepNanos(u64 nanos);
 
 /// Returns how much of this process's memory is resident in RAM, in KiB: on Linux the resident set (`/proc/self/statm`), on Windows the
-/// working set.
+/// working set, on macOS the task's resident size (`task_info`).
 ///
 /// For leak checks that compare two readings of the same process; the two platforms count shared pages differently, so values are not
 /// comparable between them.
@@ -132,8 +138,8 @@ void SleepNanos(u64 nanos);
 /// Thread-safety: thread-safe.
 i64 ResidentMemoryKiB();
 
-/// Returns how many operating-system handles this process holds open: on Linux its file descriptors (`/proc/self/fd`), on Windows its
-/// kernel handles (files, events, threads, keys, ...).
+/// Returns how many operating-system handles this process holds open: on Linux and macOS its file descriptors (`/proc/self/fd`,
+/// `proc_pidinfo`), on Windows its kernel handles (files, events, threads, keys, ...).
 ///
 /// For leak checks that compare two readings of the same process. On Windows a driver's own threads and events count too.
 /// Returns: the number of open handles, or 0 when it cannot be read.
@@ -148,6 +154,8 @@ using DynamicLibraryHandle = void*;
 ///
 /// On Windows the current directory is never searched: a bare name is looked for in the program's directory, System32 and the
 /// directories added with `AddDllDirectory`; an absolute path is loaded as named; a relative path with a directory in it is refused.
+/// macOS follows the same rule (its `dlopen` would search the current directory for a bare name): a bare name is looked for in the
+/// program's directory, then `/usr/lib`. On Linux the path goes to `dlopen` as given.
 /// Param path: library name or path, at most [[os::kMaxPathBytes]] - 1 bytes.
 /// Returns: the library handle, or `nullptr` on failure.
 /// Fails: returns `nullptr` if the file is not found, has unresolved dependencies, or the path is too long.

@@ -34,7 +34,9 @@ bool SessionCanShowWindows(SessionState state);
 /// it will open a window on (a program started over ssh reports the ssh session).
 ///
 /// Linux asks systemd-logind; Windows reads the session's connect state (`WTSQuerySessionInformation`, not `WTSActive` is `Inactive`) and the
-/// input desktop's name (not `Default` is `Locked`) and never reports `Idle`.
+/// input desktop's name (not `Default` is `Locked`) and never reports `Idle`. macOS reads the window server's session dictionary
+/// (`CGSessionCopyCurrentDictionary`: off the console is `Inactive`, a locked screen `Locked`, a sleeping main display `Idle`); a process
+/// outside a window-server session (started over ssh) has none and reports `Unknown`.
 /// Returns: the state, `Unknown` when the platform cannot say.
 /// Fails: reports `Unknown`; never aborts and waits at most a few seconds (a session manager that does not answer gives `Unknown`).
 /// Thread-safety: thread-safe.

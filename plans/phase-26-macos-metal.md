@@ -9,7 +9,7 @@ drop, fullscreen, session); the Phase 4 golden images and the Phase 5 scene test
 **Metal** backend with Metal API validation silent; the Metal backend passes the lifecycle conformance suite and recovers from an injected device loss; the demos run
 on Metal; every gate and `ctest -L docs` pass on macOS; and the Linux machine and the Windows PC still pass their full suites in every flavor they have.
 
-**Status: started (2026-11-10), Days 282-311: Day 282 (the `.metallib` spike; interim route, pending), Day 283 (spec, inventory, setup) and Day 284 (CMake, Apple clang, the base layer) done on the Mac; next Day 285.** Day numbers continue after Phase 25 (Day 281). Phases 19-24 have no day files yet;
+**Status: started (2026-11-10), Days 282-311: Day 282 (the `.metallib` spike; interim route, pending), Day 283 (spec, inventory, setup), Day 284 (CMake, Apple clang, the base layer) and Day 285 (the `os` backend, `os/posix/`) done on the Mac; next Day 286.** Day numbers continue after Phase 25 (Day 281). Phases 19-24 have no day files yet;
 when they get them, Phases 25 and 26 renumber in the same commit (CLAUDE.md, "Phases are whole numbers").
 
 **Hardware (checked 2026-11-10).** The developer's 2019 MacBook Pro 13" (`MacBookPro15,4`): quad-core Intel Core i5 at 1.4 GHz, 8 GB RAM, **Intel Iris Plus
@@ -194,7 +194,7 @@ Present on 2026-11-10: the Command Line Tools (Apple clang 17.0.0), CMake 4.4.4 
   suite; `settings_cross_syntax_macos` keeps passing.
 - **Standard types (Phase 10) and wrappers (Phase 16)** — Days 284-285: native `__int128` on x86-64 macOS (the portable path is already tested by MSVC);
   the wrapper modules' platform files (`os/`, `sync/`, `cstr/`) on libc++ and Darwin's libc.
-- **GPU driver probe (Phase 13 Day 149)** — Day 285: `os::VulkanLoaderName()` has no macOS answer (decision 8); the probe reports "not available".
+- **GPU driver probe (Phase 13 Day 149)** — not built on macOS, nor its test (decision 8 as amended on Day 283; Days 284-285); `os::LoadLibrary` is tested by `tests/macos/os_macos_test.cpp` there.
 
 ## Notes / open questions
 

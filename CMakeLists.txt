@@ -222,7 +222,7 @@ if(ENGINE_PLATFORM STREQUAL "windows")
 endif()
 
 # macOS (Phase 26, a side phase on the Mac) builds one layer more each day, in dependency order (ARCHITECTURE.md), as Windows did in Phase 13:
-# Day 284 the base layer and its tests (types, lang, sync, cstr) and the macOS-only checks. Each later day moves its directories into this list;
+# Day 284 the base layer and its tests (types, lang, sync, cstr) and the macOS-only checks; Day 285 the os backend and the foundation's base tests. Each later day moves its directories into this list;
 # the "not yet ported" message shrinks with it and is gone on Day 310 (plans/phase-26-macos-metal.md).
 if(ENGINE_PLATFORM STREQUAL "macos")
   include(cmake/EngineTestPhases.cmake)
@@ -232,14 +232,16 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_compile_options(${ENGINE_WARNING_COMPILE_OPTIONS} ${ENGINE_MACOS_COMPILE_OPTIONS})
   add_compile_definitions(${ENGINE_MACOS_DEFINITIONS})
   add_subdirectory(engine/foundation)
+  add_subdirectory(tests/foundation)  # the base-layer tests (foundation_base_tests), Day 285; the file-layer and window ones need later days
+  add_subdirectory(tests/foundation_sanitized)
   add_subdirectory(tests/types)
   add_subdirectory(tests/lang)
   add_subdirectory(tests/sync)
   add_subdirectory(tests/cstr)
   add_subdirectory(tests/macos)  # the macOS-only checks (phase 26): build_defs.h on Apple clang, the headers beside AppKit and Metal
   add_subdirectory(tests/phase_labels)
-  message(STATUS "macOS (Phase 26 Day 284): building the base layer of the foundation and its tests. Not yet ported, so not configured: "
-                 "the os backend (Day 285; the base layer builds the Linux os.cpp and session.cpp until then), the test tooling and gates "
+  message(STATUS "macOS (Phase 26 Day 285): building the base layer of the foundation and its tests. Not yet ported, so not configured: "
+                 "the test tooling and gates "
                  "(Day 286), the file layer (Days 287-288), jobs (Day 289), debugging (Days 290-292), settings (Day 293), text, UI, ECS and "
                  "spatial (Day 294), the platform layer (Days 295-297), the RHI and renderer (Days 298-309), the demos and tools (Day 310).")
   return()

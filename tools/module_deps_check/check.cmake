@@ -225,7 +225,8 @@ set(allow_used "")
 # --- the sources -----------------------------------------------------------------------------------------------------------
 set(sources "")
 foreach(d IN LISTS scan_dirs)
-  file(GLOB_RECURSE found RELATIVE "${ROOT}" "${ROOT}/${d}/*.h" "${ROOT}/${d}/*.hpp" "${ROOT}/${d}/*.cpp" "${ROOT}/${d}/*.c" "${ROOT}/${d}/*.inc")
+  file(GLOB_RECURSE found RELATIVE "${ROOT}" "${ROOT}/${d}/*.h" "${ROOT}/${d}/*.hpp" "${ROOT}/${d}/*.cpp" "${ROOT}/${d}/*.c" "${ROOT}/${d}/*.inc"
+       "${ROOT}/${d}/*.mm")
   list(APPEND sources ${found})
 endforeach()
 list(SORT sources)

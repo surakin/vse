@@ -14,7 +14,7 @@ engine/jobs/coroutine.h|<coroutine>|The coroutine wrapper: the compiler looks co
 
 # --- documented boundaries ---------------------------------------------------------------------------------------------------------
 engine/foundation/types.h|<cstdint>,<cstddef>|Defines the fixed-width aliases (u8..u64, usize, ...) and the byte type from the standard ones; everything else spells the aliases.
-engine/foundation/os/linux/os.cpp|-|The Linux implementation of os::Exit calls the C library's exit.
+engine/foundation/os/posix/os_posix.cpp|-|The POSIX implementation of os::Exit (Linux and macOS) calls the C library's exit.
 engine/foundation/os/windows/os.cpp|-|The Windows implementation of os::Exit calls the C library's exit.
 tools/shader_mint/reflect_json.cpp|<vector>,<cstring>,<cstdio>,<algorithm>|The nlohmann/json boundary (PLAN.md assumption #19): the library is built on std::string and std::vector; the file converts to engine types at its edge.
 tests/shader_mint/reflect_json_test.cpp|<string>,<vector>|Tests the nlohmann/json boundary file above, which takes and returns standard strings and vectors.
