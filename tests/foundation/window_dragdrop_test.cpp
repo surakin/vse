@@ -71,8 +71,9 @@ struct Peer
 {
     Display* display = nullptr;
     unsigned long window = 0;
-    unsigned long a_aware, a_enter, a_position, a_status, a_leave, a_drop, a_finished, a_selection, a_type_list;
-    unsigned long a_copy, a_move, a_utf8, a_uri_list, a_prop;
+    unsigned long a_aware = 0, a_enter = 0, a_position = 0, a_status = 0, a_leave = 0, a_drop = 0, a_finished = 0,
+                  a_selection = 0, a_type_list = 0;
+    unsigned long a_copy = 0, a_move = 0, a_utf8 = 0, a_uri_list = 0, a_prop = 0;
     // What the peer saw (as target).
     int status_count = 0;
     bool last_status_accept = false;

@@ -1,4 +1,5 @@
 #include "settings/desc.h"
+#include "lang/scalar.h"
 #include "string/utf8.h"
 
 #include "cstr/number.h"
@@ -235,7 +236,7 @@ ValueError ParseFloat(const SettingDesc& desc, StringView text, Value* out)
     }
     const ParseDoubleResult parsed = ParseDoubleExact(begin, end);
     f64 value = parsed.value;
-    if (!parsed.ok || parsed.end != end || begin == end || !(value == value) || value - value != 0.0)
+    if (!parsed.ok || parsed.end != end || begin == end || !IsFinite(value))
     {
         return ValueError::BadNumber;
     }

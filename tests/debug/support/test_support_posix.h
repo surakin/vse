@@ -16,7 +16,8 @@
 
 // POSIX leaves the declaration of the environment array to the program (glibc declares it under _GNU_SOURCE; macOS does
 // not).
-extern "C" char** environ;
+extern "C" char**
+    environ;  // NOLINT(readability-redundant-declaration): glibc declares it under _GNU_SOURCE, macOS does not
 
 #include "containers/vector.h"
 #include "cstr/cstr.h"

@@ -166,7 +166,7 @@ Status FromFreeType(FT_Error error)
     }
 }
 
-u32 LoadFlags(Hinting hinting)
+FT_Int32 LoadFlags(Hinting hinting)
 {
     switch (hinting)
     {
@@ -605,7 +605,8 @@ Status Font::Render(GlyphId glyph, GlyphBitmap* out) const
     {
         return MakeStatus(Error::TooLarge, "the pixel size is above the largest rasterized size");
     }
-    const FT_Error error = FT_Load_Glyph(impl_->face, glyph, LoadFlags(impl_->options.hinting) | FT_LOAD_RENDER);
+    const FT_Error error = FT_Load_Glyph(impl_->face, glyph,
+                                         static_cast<FT_Int32>(LoadFlags(impl_->options.hinting) | FT_LOAD_RENDER));
     if (error != 0)
     {
         return FromFreeType(error);

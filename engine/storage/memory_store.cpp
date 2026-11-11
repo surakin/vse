@@ -253,9 +253,10 @@ Status MemoryStore::SetMetadata(StringView name, StringView value)
             return Status::Success();
         }
     }
-    s->meta.Push(Meta{Text(name), Text(value)});
+    Meta entry{Text(name), Text(value)};
+    s->meta.Push(Move(entry));
     return Status::Success();
-}
+}  // NOLINT(clang-analyzer-cplusplus.NewDeleteLeaks): the strings are moved into the vector
 
 bool MemoryStore::CorruptRecord(EntityKey key)
 {

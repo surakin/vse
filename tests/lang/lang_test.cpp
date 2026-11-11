@@ -89,7 +89,7 @@ static_assert(IsSame<InvokeResult<int (*)(int), int>, int> && IsInvocable<int (*
               !IsInvocable<int (*)(int)>);
 static_assert(IsSame<VoidType<int, long>, void> && TrueType::value && !FalseType::value &&
               IntegralConstant<int, 4>::value == 4);
-static_assert(!IsConstantEvaluated() || true);
+static_assert(IsConstantEvaluated());  // true inside a constant expression
 static_assert(IsSame<decltype(Declval<int>()), int&&>);
 static_assert(noexcept(Move(std::declval<int&>())) && noexcept(Forward<int>(std::declval<int&>())));
 

@@ -209,7 +209,8 @@ void WaylandInput::HandleKeyboardEnter(void* data, wl_keyboard* keyboard, u32 se
     self->cursor_.OnFocus(true);
     self->keyboard_events_.FocusGained(NowNs());
     auto* begin = static_cast<u32*>(keys->data);
-    auto* end = begin + keys->size / sizeof(u32);
+    const usize key_count = keys->size / sizeof(u32);
+    auto* end = begin + key_count;
     for (u32* it = begin; it < end; ++it)
     {
         self->ApplyKey(*it, true);

@@ -229,6 +229,7 @@ TEST_CASE("Two crossing planes resolve visibility along their line of intersecti
             int probes = 0;
             for (const Layers& L : results)
             {
+                // NOLINTNEXTLINE(bugprone-float-loop-counter): a sampling grid with exact steps, not a count
                 for (f32 z = -3.0f; z <= 3.0f; z += 1.0f)
                 {
                     struct Probe

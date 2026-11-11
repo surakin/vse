@@ -36,7 +36,7 @@ namespace io = engine_placeholder::io;
 using engine_placeholder::u8;
 using engine_placeholder::Vector;
 
-constexpr engine_placeholder::u64 kMaxInputBytes = 1024u * 1024u * 1024u;
+constexpr engine_placeholder::u64 kMaxInputBytes = engine_placeholder::u64{1024} * 1024 * 1024;
 
 bool ReadWholeFile(const char* path, Vector<u8>* bytes)
 {

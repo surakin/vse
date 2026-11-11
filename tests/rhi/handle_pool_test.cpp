@@ -305,6 +305,7 @@ TEST_CASE("Random allocate/free/retire/collect matches a reference model", "[rhi
                     pool.CollectRetired(completed, [](Tracked&) {});
                 }
                 break;
+            default: break;  // next() % 6 is 0 to 5, all handled above
             }
             // Spot-check the model.
             if (!live.Empty())

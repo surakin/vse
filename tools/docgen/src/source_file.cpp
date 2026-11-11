@@ -97,6 +97,7 @@ bool ListNames(StringView dir, ArenaAllocator& arena, Vector<StringView, ArenaAl
         for (usize i = names.Size(); i > first + 1; --i)
         {
             state = state * 6364136223846793005ull + 1442695040888963407ull;
+            // NOLINTNEXTLINE(clang-analyzer-core.DivideZero): the loop runs only while i > first + 1
             const usize j = first + static_cast<usize>((state >> 33) % (i - first));
             const StringView tmp = names[i - 1];
             names[i - 1] = names[j];

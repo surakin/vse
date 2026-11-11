@@ -589,7 +589,7 @@ int VfsOpen(sqlite3_vfs*, sqlite3_filename name, sqlite3_file* file, int flags, 
         {
             return fail(SQLITE_CANTOPEN);
         }
-        self->path = made;
+        self->path = Move(made);
         self->delete_on_close = true;
         mode = io::OpenMode::ReadWrite;
     }
@@ -600,7 +600,7 @@ int VfsOpen(sqlite3_vfs*, sqlite3_filename name, sqlite3_file* file, int flags, 
         {
             return fail(SQLITE_CANTOPEN);
         }
-        self->path = absolute;
+        self->path = Move(absolute);
         self->delete_on_close = (flags & SQLITE_OPEN_DELETEONCLOSE) != 0;
         if (create)
         {

@@ -732,7 +732,8 @@ void SendEnter(Display* display, unsigned long window, X11ClipboardState& cstate
     const bool many = count > 3;
     const int version = s.target_version < 5 ? s.target_version : 5;
     SendDndMessage(display, s.target_to, dnd.atom_enter, window, (static_cast<long>(version) << 24) | (many ? 1 : 0),
-                   many ? 0 : static_cast<long>(types[0]), many ? 0 : (count > 1 ? static_cast<long>(types[1]) : 0),
+                   many ? 0 : (count > 0 ? static_cast<long>(types[0]) : 0),
+                   many ? 0 : (count > 1 ? static_cast<long>(types[1]) : 0),
                    many ? 0 : (count > 2 ? static_cast<long>(types[2]) : 0));
     XFlush(display);
 }

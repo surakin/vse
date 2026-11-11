@@ -162,8 +162,10 @@ struct BackendCursor
 
 // Runs the following block once per GPU backend (gpu_test::GpuBackends), each in a section named after the backend. The
 // inner loop runs once: it only declares `var`.
+// NOLINTBEGIN(bugprone-macro-parentheses): var is the name of the declared loop variable
 #define FOR_EACH_GPU_BACKEND(var)                                                                                      \
     for (::gpu_test::BackendCursor gpu_backend_cursor_; gpu_backend_cursor_.Next();)                                   \
         for (const ::engine_placeholder::rhi::Backend var = gpu_backend_cursor_.Current(), *gpu_backend_once_ = &var;  \
              gpu_backend_once_ != nullptr; gpu_backend_once_ = nullptr)                                                \
     DYNAMIC_SECTION(::gpu_test::BackendTag(var))
+// NOLINTEND(bugprone-macro-parentheses)

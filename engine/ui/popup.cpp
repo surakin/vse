@@ -99,7 +99,7 @@ String<HeapAllocator> ChordText(const KeyChord& chord)
     else if (k >= f1 && k <= static_cast<u32>(Key::F12))
     {
         sb.Append(StringView("F"));
-        sb.AppendInt(static_cast<i64>(k - f1 + 1));
+        sb.AppendInt(static_cast<i64>(k - f1) + 1);
     }
     else if (k >= n0 && k <= static_cast<u32>(Key::Num9))
     {

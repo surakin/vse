@@ -161,8 +161,11 @@ VulkanDevice::ThreadPool* VulkanDevice::PoolForCurrentThread(usize frame_slot)
     made->pool = vk_pool;
     pool = made.Get();
     owned_pools_[frame_slot][slot] = Move(made);
+    // `pool` points into the object that now lives in owned_pools_; the move kept it alive.
+    // NOLINTBEGIN(clang-analyzer-cplusplus.NewDelete)
     entry.Store(pool, MemoryOrder::Release);
     return pool;
+    // NOLINTEND(clang-analyzer-cplusplus.NewDelete)
 }
 
 void VulkanDevice::ResetFramePools(usize frame_slot)

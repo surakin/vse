@@ -44,7 +44,7 @@ enum class ClipboardStatus : u8
 };
 
 /// The most bytes a clipboard transfer may carry, either way; more is refused (`TooLarge`). 16 MiB.
-inline constexpr usize kMaxClipboardBytes = 16u * 1024u * 1024u;
+inline constexpr usize kMaxClipboardBytes = usize{16} * 1024 * 1024;
 
 /// How long a request waits for any progress, in nanoseconds (2 s).
 inline constexpr u64 kClipboardTimeoutNs = 2'000'000'000ull;

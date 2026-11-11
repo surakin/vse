@@ -1,0 +1,5 @@
+# Tests: the engine's .clang-tidy minus the checks that fire on a test's small, known numbers (a pixel index, a loop of a few hundred steps).
+InheritParentConfig: true
+Checks: >
+  -bugprone-implicit-widening-of-multiplication-result,
+  -bugprone-narrowing-conversions

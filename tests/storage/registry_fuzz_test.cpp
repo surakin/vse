@@ -295,11 +295,13 @@ template <class T> void FuzzKind(const char* name, u32 id)
     CHECK(rejected > 0);
 }
 
+// NOLINTBEGIN(bugprone-macro-parentheses): TYPE is a template argument
 #define FUZZ_KIND(TYPE, NAME, ID)                                                                                      \
     TEST_CASE("Fuzz: " NAME " survives hostile input", "[storage][fuzz]")                                              \
     {                                                                                                                  \
         FuzzKind<FuzzOne<TYPE>>(NAME, ID);                                                                             \
     }
+// NOLINTEND(bugprone-macro-parentheses)
 
 FUZZ_KIND(u8, "u8", 4001)
 FUZZ_KIND(u16, "u16", 4002)

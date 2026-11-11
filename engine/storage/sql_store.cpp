@@ -1,4 +1,5 @@
 #include "storage/sql_store.h"
+#include "lang/scalar.h"
 
 #include "bytes/byte_reader.h"
 #include "bytes/byte_writer.h"
@@ -735,9 +736,9 @@ Status ExtractCells(const SqlTable& table, ByteSpan blob, const CodecLimits& lim
             }
             case FieldKind::F32: cell.number = FloatAt(p); break;
             case FieldKind::F64: cell.number = DoubleAt(p); break;
-            default: cell.number = FloatAt(p + 4 * column.part); break;  // a vector part
+            default: cell.number = FloatAt(p + usize{4} * column.part); break;  // a vector part
             }
-            if (cell.real && !(cell.number == cell.number))
+            if (cell.real && IsNaN(cell.number))
             {
                 cell.null = true;
             }

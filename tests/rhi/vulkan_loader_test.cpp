@@ -21,6 +21,7 @@ namespace
 using gpu_test::GpuRequired;
 
 // Skips (or, with ENGINE_RHI_REQUIRE_GPU=1, fails) when this machine has no Vulkan loader.
+// NOLINTBEGIN(bugprone-macro-parentheses): loader is the name of the declared variable
 #define REQUIRE_LOADER(loader)                                                                                         \
     VulkanLoader loader;                                                                                               \
     if (LoadVulkanLoader(&loader) != LoaderStatus::Ok)                                                                 \
@@ -31,6 +32,7 @@ using gpu_test::GpuRequired;
         }                                                                                                              \
         SKIP("no Vulkan loader on this machine");                                                                      \
     }
+// NOLINTEND(bugprone-macro-parentheses)
 
 struct EnvGuard
 {

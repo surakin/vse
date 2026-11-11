@@ -349,7 +349,7 @@ const char* BindGroupDesc::Validate() const
     {
         return "BindGroupDesc: layout handle is invalid";
     }
-    if (entries.Size() > kMaxBindingsPerLayout * 8)
+    if (entries.Size() > usize{kMaxBindingsPerLayout} * 8)
     {
         return "BindGroupDesc: too many entries";
     }

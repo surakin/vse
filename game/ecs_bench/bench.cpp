@@ -74,7 +74,11 @@ struct Lcg
     }
     f32 Unit() { return static_cast<f32>(Next()) / static_cast<f32>(1u << 24); }
     f32 Range(f32 lo, f32 hi) { return lo + (hi - lo) * Unit(); }
-    u32 Below(u32 n) { return Next() % n; }
+    u32 Below(u32 n)
+    {
+        ENGINE_CHECK_SLOW(n != 0, "Rng::Below: the bound is zero");  // not in the timed loops of a release build
+        return Next() % n;
+    }
 };
 
 // The initial state of entity `i`.

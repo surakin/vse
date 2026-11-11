@@ -403,8 +403,8 @@ TEST_CASE("Address: ordering, equality and hashing agree", "[net][address]")
         {
             CAPTURE(i, j);
             CHECK((list[i] == list[j]) == (i == j));
-            CHECK((list[i] <=> list[j] == Ordering::less) == (i < j));
-            CHECK((list[i] <=> list[j] == Ordering::greater) == (i > j));
+            CHECK(((list[i] <=> list[j]) == Ordering::less) == (i < j));
+            CHECK(((list[i] <=> list[j]) == Ordering::greater) == (i > j));
             if (i == j)
             {
                 CHECK(list[i].HashValue() == list[j].HashValue());

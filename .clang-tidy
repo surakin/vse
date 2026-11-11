@@ -6,7 +6,18 @@
 #   bugprone-signed-bitwise                fires on every `x & 0xff` and `1 << n` with an int literal (780 sites, none a bug)
 #   bugprone-multi-level-implicit-pointer-conversion   Vector<T*> stores pointers through void* storage by design
 #   bugprone-throwing-static-initialization, bugprone-std-exception-baseclass   exceptions are off in this codebase
+#   misc-misplaced-const                   Vulkan, FreeType and dlopen handles are pointer typedefs; `const Handle h` is the intent
+#   performance-inefficient-vector-operation, performance-inefficient-string-concatenation   fire in tools and tests, never in a hot path
 #   readability-redundant-member-init     `= {}` on an aggregate's member is what -Wmissing-designated-field-initializers (an error here) needs
+#   bugprone-invalid-enum-default-initialization   every `VkXxxCreateInfo info{}` has a Vulkan bit-enum member with no zero value
+#   clang-analyzer-core.uninitialized.Assign, ...UndefReturn, unix.cstring.UninitializedRead   reported only inside Vector, UniquePtr and MemCopy, whose raw storage the analyzer cannot model
+#   clang-analyzer-unix.StdCLibraryFunctions   flags every fd that could be -1 (dirfd, dup); the calls then fail with EBADF and the code reports it
+#   bugprone-incorrect-roundings           every `(int)(x + 0.5f)` here has x >= 0; lround would move a pixel at a rounding edge (x + 0.5f rounds in float) and the goldens with it
+#   bugprone-branch-clone                  explicit case tables and `else if` chains of early outs repeat a body on purpose, to name each case
+#   bugprone-reserved-identifier           the toolchain dictates the names: Xlib's _XDisplay, the sanitizers' __lsan_default_options, ld --wrap's __wrap_malloc
+#   bugprone-unchecked-string-to-number-conversion   cstr/number.h is the wrapper of atoi and friends; the rule is to use the wrapper
+#   bugprone-return-const-ref-from-parameter   Min and Max return the reference as std::min does; Checked() validates a description and returns it
+#   performance-no-int-to-ptr              Vulkan non-dispatchable handles and the fake handles of tests are integers cast to pointers
 #   performance-enum-size                  enum base types are chosen for the ABI and for Vulkan, not for size
 #   clang-analyzer-cplusplus.PlacementNew  Vector's growth path: the analyzer cannot see that capacity was checked
 #   misc-const-correctness, misc-no-recursion, misc-explicit-constructor, misc-include-cleaner, misc-non-private-member-variables-in-classes
@@ -18,19 +29,31 @@ Checks: >
   -bugprone-easily-swappable-parameters,
   -bugprone-signed-bitwise,
   -bugprone-multi-level-implicit-pointer-conversion,
+  -bugprone-invalid-enum-default-initialization,
+  -bugprone-branch-clone,
+  -bugprone-incorrect-roundings,
+  -bugprone-reserved-identifier,
+  -bugprone-unchecked-string-to-number-conversion,
+  -bugprone-return-const-ref-from-parameter,
   -bugprone-throwing-static-initialization,
   -bugprone-std-exception-baseclass,
   performance-*,
+  -performance-no-int-to-ptr,
   -performance-enum-size,
+  -performance-inefficient-vector-operation,
+  -performance-inefficient-string-concatenation,
   clang-analyzer-core.*,
+  -clang-analyzer-core.uninitialized.Assign,
+  -clang-analyzer-core.uninitialized.UndefReturn,
   clang-analyzer-cplusplus.NewDelete,
   clang-analyzer-cplusplus.NewDeleteLeaks,
   clang-analyzer-deadcode.DeadStores,
   clang-analyzer-unix.*,
+  -clang-analyzer-unix.cstring.UninitializedRead,
+  -clang-analyzer-unix.StdCLibraryFunctions,
   misc-redundant-expression,
   misc-unused-alias-decls,
   misc-unused-using-decls,
-  misc-misplaced-const,
   misc-definitions-in-headers,
   misc-static-assert,
   modernize-use-nullptr,
@@ -51,4 +74,5 @@ HeaderFilterRegex: '/(engine|game|tools|tests)/'
 ExcludeHeaderFilterRegex: 'generated'
 CheckOptions:
   readability-simplify-boolean-expr.SimplifyDeMorgan: false
+  bugprone-implicit-widening-of-multiplication-result.IgnoreConstantIntExpr: true
   readability-braces-around-statements.ShortStatementLines: 0

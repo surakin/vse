@@ -631,15 +631,8 @@ void TextField::DeleteSelectionOrStep(bool forward, bool by_word)
         Replace(caret_, anchor_, StringView(), EditKind::Other);
         return;
     }
-    u32 to = caret_;
-    if (forward)
-    {
-        to = by_word ? WordRightTarget() : NextCluster(caret_);
-    }
-    else
-    {
-        to = by_word ? WordLeftTarget() : PreviousCluster(caret_);
-    }
+    const u32 to = forward ? (by_word ? WordRightTarget() : NextCluster(caret_))
+                           : (by_word ? WordLeftTarget() : PreviousCluster(caret_));
     if (to == caret_)
     {
         return;

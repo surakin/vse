@@ -34,7 +34,8 @@ demo::Pixels MakeStripePixels()
         for (u32 x = 0; x < kSize; ++x)
         {
             // A smooth triangle wave along the diagonal: 8 stripes per tile, so the tile repeats seamlessly.
-            const f32 t = static_cast<f32>((x + y) % (kSize / 8 * 2)) / static_cast<f32>(kSize / 8 * 2);
+            constexpr u32 kPeriod = kSize / 8 * 2;  // whole pixels per stripe pair
+            const f32 t = static_cast<f32>((x + y) % kPeriod) / static_cast<f32>(kPeriod);
             const f32 wave = t < 0.5f ? t * 2.0f : 2.0f - t * 2.0f;
             const f32 k = wave * wave * (3.0f - 2.0f * wave);
             byte* px = &p.rgba[(static_cast<usize>(y) * kSize + x) * 4];

@@ -15,6 +15,8 @@
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::debug;
+using debug_test::Cat;  // NOLINT(misc-unused-using-decls): used as Cat(command...) in a pack expansion, which the check
+                        // does not see
 using debug_test::Text;
 
 namespace

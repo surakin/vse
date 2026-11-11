@@ -1826,12 +1826,10 @@ private:
     void ParseFunctionTail(ScopeState& sc, usize first, StringView hdr, usize start, usize paren_open, usize op_idx,
                            usize sig_end, u32 flags, usize term_tok)
     {
-        usize name_tok;
         StringView name;
         usize qual_check;  // token just before the (possibly qualified) name
         if (op_idx != kNone)
         {
-            name_tok = op_idx;
             name = Join(op_idx, paren_open);
             flags |= kFlagOperator;
             if (IsIdentTok(op_idx + 1) && !Is(op_idx + 1, "new") && !Is(op_idx + 1, "delete") &&
@@ -1848,7 +1846,7 @@ private:
                 Error(toks_[first].line, "unrecognized declaration");
                 return;
             }
-            name_tok = paren_open - 1;
+            const usize name_tok = paren_open - 1;
             name = toks_[name_tok].text;
             qual_check = name_tok;
             if (name_tok > start && Is(name_tok - 1, "~"))

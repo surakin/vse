@@ -149,11 +149,11 @@ InvokeResult	alias	foundation/lang	invokeresult	foundation-lang.md	engine/founda
 IsInvocable	variable	foundation/lang	isinvocable	foundation-lang.md	engine/foundation/lang/traits.h:102
 IsConstantEvaluated() noexcept	function	foundation/lang	isconstantevaluated-noexcept	foundation-lang.md	engine/foundation/lang/traits.h:105
 Move(T&&) noexcept	function	foundation/lang	move-t-amp-amp-noexcept	foundation-lang.md	engine/foundation/lang/utility.h:14
-Forward(U&&) noexcept	function	foundation/lang	forward-u-amp-amp-noexcept	foundation-lang.md	engine/foundation/lang/utility.h:22
-Exchange(T&,U&&) noexcept	function	foundation/lang	exchange-t-amp-u-amp-amp-noexcept	foundation-lang.md	engine/foundation/lang/utility.h:30
-Swap(T&,T&) noexcept	function	foundation/lang	swap-t-amp-t-amp-noexcept	foundation-lang.md	engine/foundation/lang/utility.h:42
-AsConst(T&) noexcept	function	foundation/lang	asconst-t-amp-noexcept	foundation-lang.md	engine/foundation/lang/utility.h:52
-Declval() noexcept	function	foundation/lang	declval-noexcept	foundation-lang.md	engine/foundation/lang/utility.h:58
+Forward(U&&) noexcept	function	foundation/lang	forward-u-amp-amp-noexcept	foundation-lang.md	engine/foundation/lang/utility.h:24
+Exchange(T&,U&&) noexcept	function	foundation/lang	exchange-t-amp-u-amp-amp-noexcept	foundation-lang.md	engine/foundation/lang/utility.h:32
+Swap(T&,T&) noexcept	function	foundation/lang	swap-t-amp-t-amp-noexcept	foundation-lang.md	engine/foundation/lang/utility.h:44
+AsConst(T&) noexcept	function	foundation/lang	asconst-t-amp-noexcept	foundation-lang.md	engine/foundation/lang/utility.h:54
+Declval() noexcept	function	foundation/lang	declval-noexcept	foundation-lang.md	engine/foundation/lang/utility.h:60
 CStrLength(const char*) noexcept	function	foundation/cstr	cstrlength-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:18
 CStrCompare(const char*,const char*) noexcept	function	foundation/cstr	cstrcompare-const-char-star-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:27
 CStrCompareN(const char*,const char*,usize) noexcept	function	foundation/cstr	cstrcomparen-const-char-star-const-char-star-usize-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:35
@@ -2635,7 +2635,7 @@ debug::RunInChild(const char*,const char*,const ChildOptions&)	function	foundati
 debug::RunDeathTestChildIfRequested()	function	foundation/debug	debug-rundeathtestchildifrequested	foundation-debug.md	engine/foundation/debug/death_test.h:160
 debug::ExitChildProcess(int)	function	foundation/debug	debug-exitchildprocess-int	foundation-debug.md	engine/foundation/debug/death_test.h:165
 debug::SetDeathTestSupportForTesting(bool)	function	foundation/debug	debug-setdeathtestsupportfortesting-bool	foundation-debug.md	engine/foundation/debug/death_test.h:170
-ENGINE_DEATH_TEST_FN	macro	foundation/debug	engine-death-test-fn	foundation-debug.md	engine/foundation/debug/death_test.h:180
+ENGINE_DEATH_TEST_FN	macro	foundation/debug	engine-death-test-fn	foundation-debug.md	engine/foundation/debug/death_test.h:181
 debug::IsDebuggerAttached()	function	foundation/debug	debug-isdebuggerattached	foundation-debug.md	engine/foundation/debug/debugger.h:20
 debug::InstallDiagnosticsHooks()	function	foundation/debug	debug-installdiagnosticshooks	foundation-debug.md	engine/foundation/debug/failure_hooks.h:21
 debug::FaultKind	enum	foundation/debug	debug-faultkind	foundation-debug.md	engine/foundation/debug/fault_injection.h:13

@@ -442,7 +442,8 @@ private:
                 {
                     ++k;
                 }
-                usize s = k, e = k;
+                usize s = k;
+                usize e;
                 if (k < t.Length() && t[k] == '<')
                 {
                     s = ++k;

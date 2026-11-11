@@ -381,7 +381,12 @@ VkPipelineLayout VulkanDevice::PipelineLayoutLocked(const u32* set_slots, const 
 void VulkanDevice::ReleasePipelineLayoutLocked(u32 slot)
 {
     PipelineLayoutEntry& e = pipeline_layouts_[slot];
-    if (e.refs > 0 && --e.refs == 0)
+    if (e.refs == 0)
+    {
+        return;
+    }
+    --e.refs;
+    if (e.refs == 0)
     {
         fns_.DestroyPipelineLayout(device_, e.layout, nullptr);
         e = PipelineLayoutEntry{};

@@ -188,7 +188,7 @@ bool ParseV6Body(StringView text, u8 out[16])
             groups[i] = 0;
         }
     }
-    for (int i = 0; i < 8; ++i)
+    for (usize i = 0; i < 8; ++i)
     {
         out[i * 2] = static_cast<u8>(groups[i] >> 8);
         out[i * 2 + 1] = static_cast<u8>(groups[i] & 0xff);

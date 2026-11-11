@@ -19,8 +19,8 @@ TEST_CASE("ArenaAllocator: 1000 varying-size allocations are non-overlapping and
     // out-of-capacity path in this test.
     ArenaAllocator arena(1024 * 1024);
 
-    void* ptrs[kCount];
-    usize sizes[kCount];
+    void* ptrs[kCount] = {};
+    usize sizes[kCount] = {};
     bool all_allocs_ok = true;
 
     for (usize i = 0; i < kCount; ++i)

@@ -1,6 +1,7 @@
 #include "settings/registry.h"
 
 #include "cstr/cstr.h"
+#include "lang/scalar.h"
 
 #include "log/assert.h"
 #include "settings/setting.h"
@@ -78,7 +79,7 @@ namespace
 
 bool FinitePair(f64 a, f64 b)
 {
-    return a == a && b == b && a - a == 0.0 && b - b == 0.0;
+    return IsFinite(a) && IsFinite(b);
 }
 
 bool GoodEnumName(const char* name)

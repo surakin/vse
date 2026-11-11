@@ -478,7 +478,8 @@ void WaylandWindow::HandleToplevelConfigure(void* data, xdg_toplevel* toplevel, 
     bool constrained = false;
     bool fullscreen = false;
     auto* begin = static_cast<u32*>(states->data);
-    auto* end = begin + states->size / sizeof(u32);
+    const usize state_count = states->size / sizeof(u32);
+    auto* end = begin + state_count;
     for (u32* it = begin; it < end; ++it)
     {
         if (*it == XDG_TOPLEVEL_STATE_MAXIMIZED || *it == XDG_TOPLEVEL_STATE_FULLSCREEN ||

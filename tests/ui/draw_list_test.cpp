@@ -31,6 +31,8 @@ u64 Fnv(u64 h, const void* data, usize size)
     const byte* p = static_cast<const byte*>(data);
     for (usize i = 0; i < size; ++i)
     {
+        // Every byte of a Vertex array was written by the canvas
+        // NOLINTNEXTLINE(clang-analyzer-core.UndefinedBinaryOperatorResult)
         h = (h ^ p[i]) * 1099511628211ull;
     }
     return h;

@@ -176,7 +176,7 @@ Status GlyphAtlas::GetOrAdd(Font& font, GlyphId glyph, GlyphEntry* out)
         Rect rect;
         u32 page = 0;
         bool placed = false;
-        if (u64{bitmap.width} + 2 * kPadding <= page_size_ && u64{bitmap.height} + 2 * kPadding <= page_size_)
+        if (u64{bitmap.width} + 2 * u64{kPadding} <= page_size_ && u64{bitmap.height} + 2 * u64{kPadding} <= page_size_)
         {
             for (page = 0; page < pages_.Size() && !placed; ++page)
             {

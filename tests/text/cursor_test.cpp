@@ -187,6 +187,7 @@ TEST_CASE("Round trip: every boundary hits itself, every point lands within half
                         max_cluster = layout.clusters[line.first_cluster + k].width;
                     }
                 }
+                // NOLINTNEXTLINE(bugprone-float-loop-counter): sample positions along a line; the count is irrelevant
                 for (f32 x = line.x; x <= line.x + line.width; x += 3.7f)
                 {
                     const f32 y = line.top + line.height * 0.5f;

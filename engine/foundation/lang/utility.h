@@ -13,6 +13,8 @@ namespace engine_placeholder
 /// - Thread-safety: thread-safe. Pure; no state.
 template <class T> constexpr decltype(auto) Move(T&& value) noexcept
 {
+    // This is the wrapper of std::move; its parameter is meant to move whatever it is given.
+    // NOLINTNEXTLINE(bugprone-move-forwarding-reference)
     return std::move(value);
 }
 

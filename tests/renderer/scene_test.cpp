@@ -245,8 +245,10 @@ TEST_CASE("Culling and packing 100k objects (timing only)", "[renderer][scene][p
     {
         RenderObjectDesc d;
         d.mesh = &mesh;
-        d.transform = ModelMatrix(Vec3(static_cast<f32>(i % 100) * 3 - 150, 0, -static_cast<f32>(i / 100) * 3), 1.0f,
-                                  0.0f);
+        const f32 column = static_cast<f32>(i % 100);
+        const u32 grid_row = i / 100;  // the integer division is the point: a row of the grid
+        const f32 row = static_cast<f32>(grid_row);
+        d.transform = ModelMatrix(Vec3(column * 3 - 150, 0, -row * 3), 1.0f, 0.0f);
         REQUIRE(scene.AddObject(d).IsValid());
     }
     Vector<u32> out;

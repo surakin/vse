@@ -75,6 +75,8 @@ TEST_CASE("ENGINE_ASSERT on a false condition reports through the handler and lo
 {
     g_capture_len = 0;
     SetWriteSinkForTesting(&CapturingWriteSink);
+    // The handler throws, so the restore below is reached; the analyzer ends the path at the assert
+    // NOLINTNEXTLINE(clang-analyzer-deadcode.DeadStores)
     const AssertHandler previous = SetAssertHandler(&ThrowAfterPrinting);
 
     bool reached_after_assert = false;

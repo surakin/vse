@@ -398,7 +398,7 @@ struct VectorAliasProbe
 {
     int value = 0;
     explicit VectorAliasProbe(int v) : value(v) {}
-    VectorAliasProbe(const VectorAliasProbe& other) : value(other.value) {}
+    VectorAliasProbe(const VectorAliasProbe& other) = default;
     VectorAliasProbe(VectorAliasProbe&& other) noexcept : value(other.value) {}
     VectorAliasProbe& operator=(const VectorAliasProbe& other) = default;
     VectorAliasProbe& operator=(VectorAliasProbe&& other) noexcept

@@ -177,8 +177,10 @@ void SetDeathTestSupportForTesting(bool supported);
 /// parameter `argument` (a `const char*`) from [[debug::RunInChild]]. The name must be unique in the program.
 ///
 /// - Param fn_name: the function's name, also the registered name.
+// NOLINTBEGIN(bugprone-macro-parentheses): fn_name is the name being declared and stringized
 #define ENGINE_DEATH_TEST_FN(fn_name)                                                                                  \
     static void fn_name(const char* argument);                                                                         \
     static ::engine_placeholder::debug::DeathTestEntry fn_name##_death_entry{#fn_name, &fn_name};                      \
     static ::engine_placeholder::debug::DeathTestRegistrar fn_name##_death_registrar{fn_name##_death_entry};           \
     static void fn_name([[maybe_unused]] const char* argument)
+// NOLINTEND(bugprone-macro-parentheses)

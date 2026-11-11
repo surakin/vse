@@ -95,7 +95,10 @@ TEST_CASE("A 2x2 texture with nearest filtering shows its four colors on a face"
         for (u32 i = 0; i < 4; ++i)
         {
             u32 x = 0, y = 0;
-            scene.FacePixel((static_cast<f32>(i % 2) + 0.5f) / 2.0f, (static_cast<f32>(i / 2) + 0.5f) / 2.0f, &x, &y);
+            const f32 column = static_cast<f32>(i % 2);
+            const u32 grid_row = i / 2;  // the integer division is the point: a row of the 2x2 grid
+            const f32 row = static_cast<f32>(grid_row);
+            scene.FacePixel((column + 0.5f) / 2.0f, (row + 0.5f) / 2.0f, &x, &y);
             INFO("quadrant " << i << " at pixel " << x << "," << y);
             CHECK(PixelIs(image, x, y, Tinted(colors[i].r, 0), Tinted(colors[i].g, 1), Tinted(colors[i].b, 2)));
         }

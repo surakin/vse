@@ -92,7 +92,8 @@ bool ReadDumpString(const char* data, engine_placeholder::usize size, u32 rva, c
     engine_placeholder::usize n = 0;
     for (u32 i = 0; i < count; ++i)
     {
-        u32 cp = static_cast<u8>(units[2 * i]) | (u32{static_cast<u8>(units[2 * i + 1])} << 8);
+        u32 cp = static_cast<u8>(units[engine_placeholder::usize{2} * i]) |
+                 (u32{static_cast<u8>(units[engine_placeholder::usize{2} * i + 1])} << 8);
         if (cp >= 0xD800 && cp < 0xDC00 && i + 1 < count)
         {
             const u32 low = static_cast<u8>(units[2 * i + 2]) | (u32{static_cast<u8>(units[2 * i + 3])} << 8);
@@ -294,8 +295,8 @@ bool ReadImageInfo(const char* data, engine_placeholder::usize size, ImageInfo* 
         return false;
     }
     out->size_of_image = Read32(opt + 56);
-    const u32 debug_rva = Read32(opt + directories_at + 6 * 8);  // data directory 6: debug
-    const u32 debug_size = Read32(opt + directories_at + 6 * 8 + 4);
+    const u32 debug_rva = Read32(opt + directories_at + engine_placeholder::usize{6} * 8);  // data directory 6: debug
+    const u32 debug_size = Read32(opt + directories_at + engine_placeholder::usize{6} * 8 + 4);
     // The debug directory's file offset, through the section that holds its address.
     const u64 table = optional + optional_size;
     if (!Fits(size, table, u64{sections} * 40))

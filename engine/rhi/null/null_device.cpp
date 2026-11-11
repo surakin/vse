@@ -643,12 +643,9 @@ public:
                 s_->Error("BeginRendering: depth attachment lacks DepthAttachment usage");
                 return;
             }
-            if (desc.color_count == 0)
-            {
-                w = t->desc.width;
-                h = t->desc.height;
-            }
-            else if (t->desc.width != w || t->desc.height != h)
+            // With color attachments, the depth attachment must have their extent; a depth-only pass has nothing to
+            // match.
+            if (desc.color_count != 0 && (t->desc.width != w || t->desc.height != h))
             {
                 s_->Error("BeginRendering: attachment extents differ");
                 return;
