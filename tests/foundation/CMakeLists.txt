@@ -27,6 +27,7 @@ set(FOUNDATION_BASE_TEST_SOURCES
   diagnostics_hooks_test.cpp
   command_line_test.cpp
   os_timing_test.cpp
+  bytes_test.cpp  # Phase 19 Day 256
   concurrency_primitives_test.cpp
   session_state_test.cpp
 )

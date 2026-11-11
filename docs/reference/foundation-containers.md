@@ -464,6 +464,17 @@ usize operator()(u64 k) const;
 
 Returns a well-mixed hash of the integer value.
 
+## `Hash` {#hash}
+
+`variable Hash` — defined in `engine/foundation/containers/hash_map.h`
+
+```cpp
+template <typename K> requires((IsSame<K, usize> && !IsSame<usize, u64>) || (IsSame<K, isize> && !IsSame<isize, i64>))
+struct Hash<K>;
+```
+
+Hash function for `usize` and `isize` keys where they are types of their own: on macOS `usize` is `unsigned long` and `u64` is `unsigned long long` (Linux and Windows make them the same type, so there the `u64` and `i64` hashes serve). Phase 26 Day 285.
+
 ## `Hash<T*>` {#hash-lt-t-star-gt}
 
 `struct Hash<T*>` — defined in `engine/foundation/containers/hash_map.h`

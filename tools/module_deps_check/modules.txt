@@ -68,6 +68,8 @@ module engine/foundation/algorithm.h algorithm 4
 allow string containers
 allow algorithm containers
 allow algorithm string
+# 5 bytes (Phase 19 Day 256): ByteWriter and ByteReader, the canonical bounds-checked encoding shared by storage and networking; containers, cstr and types only
+module engine/foundation/bytes/ bytes 5
 # 5 OS services
 module engine/foundation/os/command_line.h os_services 5
 module engine/foundation/os/command_line.cpp os_services 5
@@ -104,6 +106,8 @@ allow spatial ecs
 allow spatial jobs
 # 10 database (Phase 19 Day 251): the database interface, the in-memory implementation and, under sqlite/, the SQLite library (the only files that include sqlite3.h); the foundation only
 module engine/database/ database 10
+# 11 storage (Phase 19 Day 256): the component registry and the canonical encoding; later the record store and its backends. The foundation, ecs, spatial (the builtin components), jobs and, from Day 259, database
+module engine/storage/ storage 11
 # 11 ui (Phase 15 Day 184): the widget toolkit's CPU side (tree, layout, theme, input routing, draw list); text, the platform's input headers and the foundation, no RHI
 module engine/ui/ ui 11
 # 11 RHI: the neutral interface and one module per backend
@@ -220,6 +224,7 @@ target text text
 target ecs ecs
 target spatial spatial
 target database database
+target storage storage
 target database_sqlite database
 target platform platform
 target platform_input platform

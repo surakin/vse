@@ -349,35 +349,36 @@ Array::begin()	function	foundation/containers	array-begin	foundation-containers.
 Array::end()	function	foundation/containers	array-end	foundation-containers.md	engine/foundation/containers/array.h:45
 Array::begin() const	function	foundation/containers	array-begin-const	foundation-containers.md	engine/foundation/containers/array.h:47
 Array::end() const	function	foundation/containers	array-end-const	foundation-containers.md	engine/foundation/containers/array.h:49
-Hash<i8>	struct	foundation/containers	hash-lt-i8-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:34
-Hash<i8>::operator()(i8) const	function	foundation/containers	hash-lt-i8-gt-operator-call-i8-const	foundation-containers.md	engine/foundation/containers/hash_map.h:37
-Hash<i16>	struct	foundation/containers	hash-lt-i16-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:40
-Hash<i16>::operator()(i16) const	function	foundation/containers	hash-lt-i16-gt-operator-call-i16-const	foundation-containers.md	engine/foundation/containers/hash_map.h:43
-Hash<i32>	struct	foundation/containers	hash-lt-i32-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:46
-Hash<i32>::operator()(i32) const	function	foundation/containers	hash-lt-i32-gt-operator-call-i32-const	foundation-containers.md	engine/foundation/containers/hash_map.h:49
-Hash<i64>	struct	foundation/containers	hash-lt-i64-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:52
-Hash<i64>::operator()(i64) const	function	foundation/containers	hash-lt-i64-gt-operator-call-i64-const	foundation-containers.md	engine/foundation/containers/hash_map.h:55
-Hash<u8>	struct	foundation/containers	hash-lt-u8-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:58
-Hash<u8>::operator()(u8) const	function	foundation/containers	hash-lt-u8-gt-operator-call-u8-const	foundation-containers.md	engine/foundation/containers/hash_map.h:61
-Hash<u16>	struct	foundation/containers	hash-lt-u16-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:64
-Hash<u16>::operator()(u16) const	function	foundation/containers	hash-lt-u16-gt-operator-call-u16-const	foundation-containers.md	engine/foundation/containers/hash_map.h:67
-Hash<u32>	struct	foundation/containers	hash-lt-u32-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:70
-Hash<u32>::operator()(u32) const	function	foundation/containers	hash-lt-u32-gt-operator-call-u32-const	foundation-containers.md	engine/foundation/containers/hash_map.h:73
-Hash<u64>	struct	foundation/containers	hash-lt-u64-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:76
-Hash<u64>::operator()(u64) const	function	foundation/containers	hash-lt-u64-gt-operator-call-u64-const	foundation-containers.md	engine/foundation/containers/hash_map.h:79
-Hash<T*>	struct	foundation/containers	hash-lt-t-star-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:83
-Hash<T*>::operator()(T*) const	function	foundation/containers	hash-lt-t-star-gt-operator-call-t-star-const	foundation-containers.md	engine/foundation/containers/hash_map.h:86
-HashMap	class	foundation/containers	hashmap	foundation-containers.md	engine/foundation/containers/hash_map.h:107
-HashMap::HashMap(Allocator&,usize)	function	foundation/containers	hashmap-hashmap-allocator-amp-usize	foundation-containers.md	engine/foundation/containers/hash_map.h:117
-HashMap::HashMap(const HashMap&)	function	foundation/containers	hashmap-hashmap-const-hashmap-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:122
-HashMap::operator=(const HashMap&)	function	foundation/containers	hashmap-operator-eq-const-hashmap-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:123
-HashMap::Insert(const K&,const V&)	function	foundation/containers	hashmap-insert-const-k-amp-const-v-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:133
-HashMap::Find(const K&)	function	foundation/containers	hashmap-find-const-k-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:149
-HashMap::Find(const K&) const	function	foundation/containers	hashmap-find-const-k-amp-const	foundation-containers.md	engine/foundation/containers/hash_map.h:163
-HashMap::Remove(const K&)	function	foundation/containers	hashmap-remove-const-k-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:176
-HashMap::Size() const	function	foundation/containers	hashmap-size-const	foundation-containers.md	engine/foundation/containers/hash_map.h:188
-HashMap::SlotCapacity() const	function	foundation/containers	hashmap-slotcapacity-const	foundation-containers.md	engine/foundation/containers/hash_map.h:193
-HashMap::TombstoneCount() const	function	foundation/containers	hashmap-tombstonecount-const	foundation-containers.md	engine/foundation/containers/hash_map.h:199
+Hash<i8>	struct	foundation/containers	hash-lt-i8-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:35
+Hash<i8>::operator()(i8) const	function	foundation/containers	hash-lt-i8-gt-operator-call-i8-const	foundation-containers.md	engine/foundation/containers/hash_map.h:38
+Hash<i16>	struct	foundation/containers	hash-lt-i16-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:41
+Hash<i16>::operator()(i16) const	function	foundation/containers	hash-lt-i16-gt-operator-call-i16-const	foundation-containers.md	engine/foundation/containers/hash_map.h:44
+Hash<i32>	struct	foundation/containers	hash-lt-i32-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:47
+Hash<i32>::operator()(i32) const	function	foundation/containers	hash-lt-i32-gt-operator-call-i32-const	foundation-containers.md	engine/foundation/containers/hash_map.h:50
+Hash<i64>	struct	foundation/containers	hash-lt-i64-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:53
+Hash<i64>::operator()(i64) const	function	foundation/containers	hash-lt-i64-gt-operator-call-i64-const	foundation-containers.md	engine/foundation/containers/hash_map.h:56
+Hash<u8>	struct	foundation/containers	hash-lt-u8-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:59
+Hash<u8>::operator()(u8) const	function	foundation/containers	hash-lt-u8-gt-operator-call-u8-const	foundation-containers.md	engine/foundation/containers/hash_map.h:62
+Hash<u16>	struct	foundation/containers	hash-lt-u16-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:65
+Hash<u16>::operator()(u16) const	function	foundation/containers	hash-lt-u16-gt-operator-call-u16-const	foundation-containers.md	engine/foundation/containers/hash_map.h:68
+Hash<u32>	struct	foundation/containers	hash-lt-u32-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:71
+Hash<u32>::operator()(u32) const	function	foundation/containers	hash-lt-u32-gt-operator-call-u32-const	foundation-containers.md	engine/foundation/containers/hash_map.h:74
+Hash<u64>	struct	foundation/containers	hash-lt-u64-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:77
+Hash<u64>::operator()(u64) const	function	foundation/containers	hash-lt-u64-gt-operator-call-u64-const	foundation-containers.md	engine/foundation/containers/hash_map.h:80
+Hash	variable	foundation/containers	hash	foundation-containers.md	engine/foundation/containers/hash_map.h:85
+Hash<T*>	struct	foundation/containers	hash-lt-t-star-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:93
+Hash<T*>::operator()(T*) const	function	foundation/containers	hash-lt-t-star-gt-operator-call-t-star-const	foundation-containers.md	engine/foundation/containers/hash_map.h:96
+HashMap	class	foundation/containers	hashmap	foundation-containers.md	engine/foundation/containers/hash_map.h:117
+HashMap::HashMap(Allocator&,usize)	function	foundation/containers	hashmap-hashmap-allocator-amp-usize	foundation-containers.md	engine/foundation/containers/hash_map.h:127
+HashMap::HashMap(const HashMap&)	function	foundation/containers	hashmap-hashmap-const-hashmap-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:132
+HashMap::operator=(const HashMap&)	function	foundation/containers	hashmap-operator-eq-const-hashmap-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:133
+HashMap::Insert(const K&,const V&)	function	foundation/containers	hashmap-insert-const-k-amp-const-v-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:143
+HashMap::Find(const K&)	function	foundation/containers	hashmap-find-const-k-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:159
+HashMap::Find(const K&) const	function	foundation/containers	hashmap-find-const-k-amp-const	foundation-containers.md	engine/foundation/containers/hash_map.h:173
+HashMap::Remove(const K&)	function	foundation/containers	hashmap-remove-const-k-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:186
+HashMap::Size() const	function	foundation/containers	hashmap-size-const	foundation-containers.md	engine/foundation/containers/hash_map.h:198
+HashMap::SlotCapacity() const	function	foundation/containers	hashmap-slotcapacity-const	foundation-containers.md	engine/foundation/containers/hash_map.h:203
+HashMap::TombstoneCount() const	function	foundation/containers	hashmap-tombstonecount-const	foundation-containers.md	engine/foundation/containers/hash_map.h:209
 AtomicRefCount	struct	foundation/containers	atomicrefcount	foundation-containers.md	engine/foundation/containers/shared_ptr.h:15
 AtomicRefCount::count	variable	foundation/containers	atomicrefcount-count	foundation-containers.md	engine/foundation/containers/shared_ptr.h:17
 AtomicRefCount::Increment()	function	foundation/containers	atomicrefcount-increment	foundation-containers.md	engine/foundation/containers/shared_ptr.h:19
@@ -1716,6 +1717,50 @@ settings::RegistryConfigStore::Commit(const CommitOptions&)	function	foundation/
 settings::RegistryConfigStore::Origin(StringView,char*,usize) const	function	foundation/settings	settings-registryconfigstore-origin-stringview-char-star-usize-const	foundation-settings.md	engine/foundation/settings/windows/registry_store.h:76
 settings::RegistryConfigStore::IsPresent() const	function	foundation/settings	settings-registryconfigstore-ispresent-const	foundation-settings.md	engine/foundation/settings/windows/registry_store.h:78
 settings::RegistryConfigStore::SetChangeListener(ChangeListener,void*)	function	foundation/settings	settings-registryconfigstore-setchangelistener-changelistener-void-star	foundation-settings.md	engine/foundation/settings/windows/registry_store.h:83
+bytes::ByteError	enum	foundation/bytes	bytes-byteerror	foundation-bytes.md	engine/foundation/bytes/byte_error.h:10
+bytes::ByteError::Ok	enumerator	foundation/bytes	bytes-byteerror-ok	foundation-bytes.md	engine/foundation/bytes/byte_error.h:11
+bytes::ByteError::Truncated	enumerator	foundation/bytes	bytes-byteerror-truncated	foundation-bytes.md	engine/foundation/bytes/byte_error.h:12
+bytes::ByteError::TooLong	enumerator	foundation/bytes	bytes-byteerror-toolong	foundation-bytes.md	engine/foundation/bytes/byte_error.h:13
+bytes::ByteError::Invalid	enumerator	foundation/bytes	bytes-byteerror-invalid	foundation-bytes.md	engine/foundation/bytes/byte_error.h:14
+bytes::ByteErrorName(ByteError)	function	foundation/bytes	bytes-byteerrorname-byteerror	foundation-bytes.md	engine/foundation/bytes/byte_error.h:21
+bytes::ByteReader	class	foundation/bytes	bytes-bytereader	foundation-bytes.md	engine/foundation/bytes/byte_reader.h:18
+bytes::ByteReader::ByteReader(ByteSpan)	function	foundation/bytes	bytes-bytereader-bytereader-bytespan	foundation-bytes.md	engine/foundation/bytes/byte_reader.h:21
+bytes::ByteReader::Remaining() const	function	foundation/bytes	bytes-bytereader-remaining-const	foundation-bytes.md	engine/foundation/bytes/byte_reader.h:24
+bytes::ByteReader::Position() const	function	foundation/bytes	bytes-bytereader-position-const	foundation-bytes.md	engine/foundation/bytes/byte_reader.h:26
+bytes::ByteReader::AtEnd() const	function	foundation/bytes	bytes-bytereader-atend-const	foundation-bytes.md	engine/foundation/bytes/byte_reader.h:29
+bytes::ByteReader::ReadU8(u8*)	function	foundation/bytes	bytes-bytereader-readu8-u8-star	foundation-bytes.md	engine/foundation/bytes/byte_reader.h:33
+bytes::ByteReader::ReadU16(u16*)	function	foundation/bytes	bytes-bytereader-readu16-u16-star	foundation-bytes.md	engine/foundation/bytes/byte_reader.h:43
+bytes::ByteReader::ReadU32(u32*)	function	foundation/bytes	bytes-bytereader-readu32-u32-star	foundation-bytes.md	engine/foundation/bytes/byte_reader.h:53
+bytes::ByteReader::ReadU64(u64*)	function	foundation/bytes	bytes-bytereader-readu64-u64-star	foundation-bytes.md	engine/foundation/bytes/byte_reader.h:63
+bytes::ByteReader::ReadI8(i8*)	function	foundation/bytes	bytes-bytereader-readi8-i8-star	foundation-bytes.md	engine/foundation/bytes/byte_reader.h:66
+bytes::ByteReader::ReadI16(i16*)	function	foundation/bytes	bytes-bytereader-readi16-i16-star	foundation-bytes.md	engine/foundation/bytes/byte_reader.h:76
+bytes::ByteReader::ReadI32(i32*)	function	foundation/bytes	bytes-bytereader-readi32-i32-star	foundation-bytes.md	engine/foundation/bytes/byte_reader.h:86
+bytes::ByteReader::ReadI64(i64*)	function	foundation/bytes	bytes-bytereader-readi64-i64-star	foundation-bytes.md	engine/foundation/bytes/byte_reader.h:96
+bytes::ByteReader::ReadF32(f32*)	function	foundation/bytes	bytes-bytereader-readf32-f32-star	foundation-bytes.md	engine/foundation/bytes/byte_reader.h:106
+bytes::ByteReader::ReadF64(f64*)	function	foundation/bytes	bytes-bytereader-readf64-f64-star	foundation-bytes.md	engine/foundation/bytes/byte_reader.h:116
+bytes::ByteReader::ReadBool(bool*)	function	foundation/bytes	bytes-bytereader-readbool-bool-star	foundation-bytes.md	engine/foundation/bytes/byte_reader.h:126
+bytes::ByteReader::ReadVarint(u64*)	function	foundation/bytes	bytes-bytereader-readvarint-u64-star	foundation-bytes.md	engine/foundation/bytes/byte_reader.h:141
+bytes::ByteReader::ReadLength(u64,u64*)	function	foundation/bytes	bytes-bytereader-readlength-u64-u64-star	foundation-bytes.md	engine/foundation/bytes/byte_reader.h:176
+bytes::ByteReader::ReadBytes(usize,ByteSpan*)	function	foundation/bytes	bytes-bytereader-readbytes-usize-bytespan-star	foundation-bytes.md	engine/foundation/bytes/byte_reader.h:196
+bytes::ByteWriter	class	foundation/bytes	bytes-bytewriter	foundation-bytes.md	engine/foundation/bytes/byte_writer.h:19
+bytes::ByteWriter::ByteWriter()	function	foundation/bytes	bytes-bytewriter-bytewriter	foundation-bytes.md	engine/foundation/bytes/byte_writer.h:22
+bytes::ByteWriter::WriteU8(u8)	function	foundation/bytes	bytes-bytewriter-writeu8-u8	foundation-bytes.md	engine/foundation/bytes/byte_writer.h:26
+bytes::ByteWriter::WriteU16(u16)	function	foundation/bytes	bytes-bytewriter-writeu16-u16	foundation-bytes.md	engine/foundation/bytes/byte_writer.h:28
+bytes::ByteWriter::WriteU32(u32)	function	foundation/bytes	bytes-bytewriter-writeu32-u32	foundation-bytes.md	engine/foundation/bytes/byte_writer.h:30
+bytes::ByteWriter::WriteU64(u64)	function	foundation/bytes	bytes-bytewriter-writeu64-u64	foundation-bytes.md	engine/foundation/bytes/byte_writer.h:32
+bytes::ByteWriter::WriteI8(i8)	function	foundation/bytes	bytes-bytewriter-writei8-i8	foundation-bytes.md	engine/foundation/bytes/byte_writer.h:34
+bytes::ByteWriter::WriteI16(i16)	function	foundation/bytes	bytes-bytewriter-writei16-i16	foundation-bytes.md	engine/foundation/bytes/byte_writer.h:36
+bytes::ByteWriter::WriteI32(i32)	function	foundation/bytes	bytes-bytewriter-writei32-i32	foundation-bytes.md	engine/foundation/bytes/byte_writer.h:38
+bytes::ByteWriter::WriteI64(i64)	function	foundation/bytes	bytes-bytewriter-writei64-i64	foundation-bytes.md	engine/foundation/bytes/byte_writer.h:40
+bytes::ByteWriter::WriteF32(f32)	function	foundation/bytes	bytes-bytewriter-writef32-f32	foundation-bytes.md	engine/foundation/bytes/byte_writer.h:42
+bytes::ByteWriter::WriteF64(f64)	function	foundation/bytes	bytes-bytewriter-writef64-f64	foundation-bytes.md	engine/foundation/bytes/byte_writer.h:48
+bytes::ByteWriter::WriteBool(bool)	function	foundation/bytes	bytes-bytewriter-writebool-bool	foundation-bytes.md	engine/foundation/bytes/byte_writer.h:54
+bytes::ByteWriter::WriteVarint(u64)	function	foundation/bytes	bytes-bytewriter-writevarint-u64	foundation-bytes.md	engine/foundation/bytes/byte_writer.h:56
+bytes::ByteWriter::WriteBytes(ByteSpan)	function	foundation/bytes	bytes-bytewriter-writebytes-bytespan	foundation-bytes.md	engine/foundation/bytes/byte_writer.h:64
+bytes::ByteWriter::Bytes() const	function	foundation/bytes	bytes-bytewriter-bytes-const	foundation-bytes.md	engine/foundation/bytes/byte_writer.h:72
+bytes::ByteWriter::Size() const	function	foundation/bytes	bytes-bytewriter-size-const	foundation-bytes.md	engine/foundation/bytes/byte_writer.h:74
+bytes::ByteWriter::Clear()	function	foundation/bytes	bytes-bytewriter-clear	foundation-bytes.md	engine/foundation/bytes/byte_writer.h:76
+bytes::ByteWriter::Truncate(usize)	function	foundation/bytes	bytes-bytewriter-truncate-usize	foundation-bytes.md	engine/foundation/bytes/byte_writer.h:79
 os::StashNativeCommandLine(int,char**)	function	platform/os	os-stashnativecommandline-int-char-star-star	platform-os.md	engine/foundation/os/command_line.h:21
 os::CommandLine	class	platform/os	os-commandline	platform-os.md	engine/foundation/os/command_line.h:39
 os::CommandLine::CommandLine(Allocator&,int,char**)	function	platform/os	os-commandline-commandline-allocator-amp-int-char-star-star	platform-os.md	engine/foundation/os/command_line.h:50
@@ -1750,29 +1795,29 @@ os::VulkanLoaderName()	function	platform/os	os-vulkanloadername	platform-os.md	e
 os::ProbeVulkanCreateInstance()	function	platform/os	os-probevulkancreateinstance	platform-os.md	engine/foundation/os/gpu_driver_probe.h:25
 os::LastError() noexcept	function	platform/os	os-lasterror-noexcept	platform-os.md	engine/foundation/os/last_error.h:12
 os::SetLastError(int) noexcept	function	platform/os	os-setlasterror-int-noexcept	platform-os.md	engine/foundation/os/last_error.h:17
-os::kMaxPathBytes	variable	platform/os	os-kmaxpathbytes	platform-os.md	engine/foundation/os/os.h:25
-os::Exit(int)	function	platform/os	os-exit-int	platform-os.md	engine/foundation/os/os.h:29
-os::Write(int,const void*,usize)	function	platform/os	os-write-int-const-void-star-usize	platform-os.md	engine/foundation/os/os.h:36
-os::Read(int,void*,usize)	function	platform/os	os-read-int-void-star-usize	platform-os.md	engine/foundation/os/os.h:43
-os::WriteAllWithTimeout(int,const void*,usize,u64)	function	platform/os	os-writeallwithtimeout-int-const-void-star-usize-u64	platform-os.md	engine/foundation/os/os.h:56
-os::Open(StringView,int,int)	function	platform/os	os-open-stringview-int-int	platform-os.md	engine/foundation/os/os.h:67
-os::CreateFileForWriting(StringView,int)	function	platform/os	os-createfileforwriting-stringview-int	platform-os.md	engine/foundation/os/os.h:77
-os::Close(int)	function	platform/os	os-close-int	platform-os.md	engine/foundation/os/os.h:82
-os::ReserveMemory(usize)	function	platform/os	os-reservememory-usize	platform-os.md	engine/foundation/os/os.h:89
-os::ReleaseMemory(void*,usize)	function	platform/os	os-releasememory-void-star-usize	platform-os.md	engine/foundation/os/os.h:94
-os::MonotonicTimeNanos()	function	platform/os	os-monotonictimenanos	platform-os.md	engine/foundation/os/os.h:102
-os::WallClockUnixMillis()	function	platform/os	os-wallclockunixmillis	platform-os.md	engine/foundation/os/os.h:110
-os::FillRandomBytes(void*,usize)	function	platform/os	os-fillrandombytes-void-star-usize	platform-os.md	engine/foundation/os/os.h:116
-os::SleepNanos(u64)	function	platform/os	os-sleepnanos-u64	platform-os.md	engine/foundation/os/os.h:123
-os::ResidentMemoryKiB()	function	platform/os	os-residentmemorykib	platform-os.md	engine/foundation/os/os.h:133
-os::OpenHandleCount()	function	platform/os	os-openhandlecount	platform-os.md	engine/foundation/os/os.h:142
-os::DynamicLibraryHandle	alias	platform/os	os-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:145
-os::LoadLibrary(StringView)	function	platform/os	os-loadlibrary-stringview	platform-os.md	engine/foundation/os/os.h:155
-os::GetSymbol(DynamicLibraryHandle,const char*)	function	platform/os	os-getsymbol-dynamiclibraryhandle-const-char-star	platform-os.md	engine/foundation/os/os.h:163
-os::UnloadLibrary(DynamicLibraryHandle)	function	platform/os	os-unloadlibrary-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:167
-os::EnvironmentCount()	function	platform/os	os-environmentcount	platform-os.md	engine/foundation/os/os.h:170
-os::EnvironmentNamesIgnoreCase()	function	platform/os	os-environmentnamesignorecase	platform-os.md	engine/foundation/os/os.h:176
-os::EnvironmentEntry(usize,char*,usize,usize*)	function	platform/os	os-environmententry-usize-char-star-usize-usize-star	platform-os.md	engine/foundation/os/os.h:190
+os::kMaxPathBytes	variable	platform/os	os-kmaxpathbytes	platform-os.md	engine/foundation/os/os.h:29
+os::Exit(int)	function	platform/os	os-exit-int	platform-os.md	engine/foundation/os/os.h:33
+os::Write(int,const void*,usize)	function	platform/os	os-write-int-const-void-star-usize	platform-os.md	engine/foundation/os/os.h:40
+os::Read(int,void*,usize)	function	platform/os	os-read-int-void-star-usize	platform-os.md	engine/foundation/os/os.h:47
+os::WriteAllWithTimeout(int,const void*,usize,u64)	function	platform/os	os-writeallwithtimeout-int-const-void-star-usize-u64	platform-os.md	engine/foundation/os/os.h:60
+os::Open(StringView,int,int)	function	platform/os	os-open-stringview-int-int	platform-os.md	engine/foundation/os/os.h:71
+os::CreateFileForWriting(StringView,int)	function	platform/os	os-createfileforwriting-stringview-int	platform-os.md	engine/foundation/os/os.h:81
+os::Close(int)	function	platform/os	os-close-int	platform-os.md	engine/foundation/os/os.h:86
+os::ReserveMemory(usize)	function	platform/os	os-reservememory-usize	platform-os.md	engine/foundation/os/os.h:93
+os::ReleaseMemory(void*,usize)	function	platform/os	os-releasememory-void-star-usize	platform-os.md	engine/foundation/os/os.h:98
+os::MonotonicTimeNanos()	function	platform/os	os-monotonictimenanos	platform-os.md	engine/foundation/os/os.h:106
+os::WallClockUnixMillis()	function	platform/os	os-wallclockunixmillis	platform-os.md	engine/foundation/os/os.h:114
+os::FillRandomBytes(void*,usize)	function	platform/os	os-fillrandombytes-void-star-usize	platform-os.md	engine/foundation/os/os.h:121
+os::SleepNanos(u64)	function	platform/os	os-sleepnanos-u64	platform-os.md	engine/foundation/os/os.h:129
+os::ResidentMemoryKiB()	function	platform/os	os-residentmemorykib	platform-os.md	engine/foundation/os/os.h:139
+os::OpenHandleCount()	function	platform/os	os-openhandlecount	platform-os.md	engine/foundation/os/os.h:148
+os::DynamicLibraryHandle	alias	platform/os	os-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:151
+os::LoadLibrary(StringView)	function	platform/os	os-loadlibrary-stringview	platform-os.md	engine/foundation/os/os.h:163
+os::GetSymbol(DynamicLibraryHandle,const char*)	function	platform/os	os-getsymbol-dynamiclibraryhandle-const-char-star	platform-os.md	engine/foundation/os/os.h:171
+os::UnloadLibrary(DynamicLibraryHandle)	function	platform/os	os-unloadlibrary-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:175
+os::EnvironmentCount()	function	platform/os	os-environmentcount	platform-os.md	engine/foundation/os/os.h:178
+os::EnvironmentNamesIgnoreCase()	function	platform/os	os-environmentnamesignorecase	platform-os.md	engine/foundation/os/os.h:184
+os::EnvironmentEntry(usize,char*,usize,usize*)	function	platform/os	os-environmententry-usize-char-star-usize-usize-star	platform-os.md	engine/foundation/os/os.h:198
 os::SessionState	enum	platform/os	os-sessionstate	platform-os.md	engine/foundation/os/session.h:11
 os::SessionState::Active	enumerator	platform/os	os-sessionstate-active	platform-os.md	engine/foundation/os/session.h:12
 os::SessionState::Locked	enumerator	platform/os	os-sessionstate-locked	platform-os.md	engine/foundation/os/session.h:13
@@ -1782,7 +1827,7 @@ os::SessionState::Unknown	enumerator	platform/os	os-sessionstate-unknown	platfor
 os::SessionStateName(SessionState)	function	platform/os	os-sessionstatename-sessionstate	platform-os.md	engine/foundation/os/session.h:20
 os::SessionStateFromFlags(bool,bool,bool,bool)	function	platform/os	os-sessionstatefromflags-bool-bool-bool-bool	platform-os.md	engine/foundation/os/session.h:28
 os::SessionCanShowWindows(SessionState)	function	platform/os	os-sessioncanshowwindows-sessionstate	platform-os.md	engine/foundation/os/session.h:31
-os::QuerySessionState()	function	platform/os	os-querysessionstate	platform-os.md	engine/foundation/os/session.h:41
+os::QuerySessionState()	function	platform/os	os-querysessionstate	platform-os.md	engine/foundation/os/session.h:43
 os::SignalHandler	alias	platform/os	os-signalhandler	platform-os.md	engine/foundation/os/signal.h:10
 os::SetSignalHandler(int,SignalHandler) noexcept	function	platform/os	os-setsignalhandler-int-signalhandler-noexcept	platform-os.md	engine/foundation/os/signal.h:15
 os::ClipboardKind	enum	platform/window-input	os-clipboardkind	platform-window-input.md	engine/platform/clipboard.h:17
@@ -3775,6 +3820,123 @@ database::Value::From(const ValueView&)	function	database	database-value-from-co
 database::Value::View() const	function	database	database-value-view-const	database.md	engine/database/value.h:120
 database::Value::Type() const	function	database	database-value-type-const	database.md	engine/database/value.h:122
 database::Value::operator==(const Value&) const	function	database	database-value-operator-eq-eq-const-value-amp-const	database.md	engine/database/value.h:124
+storage::BuiltinComponentId	enum	storage	storage-builtincomponentid	storage.md	engine/storage/builtin_components.h:11
+storage::kLocalTransformId	enumerator	storage	storage-klocaltransformid	storage.md	engine/storage/builtin_components.h:12
+storage::kWorldTransformId	enumerator	storage	storage-kworldtransformid	storage.md	engine/storage/builtin_components.h:13
+storage::kParentId	enumerator	storage	storage-kparentid	storage.md	engine/storage/builtin_components.h:14
+storage::kHierarchyDepthId	enumerator	storage	storage-khierarchydepthid	storage.md	engine/storage/builtin_components.h:15
+storage::kSpatialBoundsId	enumerator	storage	storage-kspatialboundsid	storage.md	engine/storage/builtin_components.h:16
+storage::kSpatialMembershipId	enumerator	storage	storage-kspatialmembershipid	storage.md	engine/storage/builtin_components.h:17
+storage::kSpatialStaticId	enumerator	storage	storage-kspatialstaticid	storage.md	engine/storage/builtin_components.h:18
+storage::kWorldBoundsId	enumerator	storage	storage-kworldboundsid	storage.md	engine/storage/builtin_components.h:19
+storage::kSpatialProxyId	enumerator	storage	storage-kspatialproxyid	storage.md	engine/storage/builtin_components.h:20
+storage::RegisterBuiltinComponents(ComponentRegistry*)	function	storage	storage-registerbuiltincomponents-componentregistry-star	storage.md	engine/storage/builtin_components.h:28
+storage::ComponentFlags	enum	storage	storage-componentflags	storage.md	engine/storage/component_registry.h:21
+storage::kComponentStored	enumerator	storage	storage-kcomponentstored	storage.md	engine/storage/component_registry.h:22
+storage::kComponentDerived	enumerator	storage	storage-kcomponentderived	storage.md	engine/storage/component_registry.h:23
+storage::kComponentSkip	enumerator	storage	storage-kcomponentskip	storage.md	engine/storage/component_registry.h:24
+storage::ComponentDesc	struct	storage	storage-componentdesc	storage.md	engine/storage/component_registry.h:31
+storage::ComponentDesc::id	variable	storage	storage-componentdesc-id	storage.md	engine/storage/component_registry.h:32
+storage::ComponentDesc::name	variable	storage	storage-componentdesc-name	storage.md	engine/storage/component_registry.h:33
+storage::ComponentDesc::version	variable	storage	storage-componentdesc-version	storage.md	engine/storage/component_registry.h:34
+storage::ComponentDesc::flags	variable	storage	storage-componentdesc-flags	storage.md	engine/storage/component_registry.h:35
+storage::ComponentDesc::fields	variable	storage	storage-componentdesc-fields	storage.md	engine/storage/component_registry.h:36
+storage::RegisteredComponent	class	storage	storage-registeredcomponent	storage.md	engine/storage/component_registry.h:43
+storage::RegisteredComponent::Id() const	function	storage	storage-registeredcomponent-id-const	storage.md	engine/storage/component_registry.h:46
+storage::RegisteredComponent::Name() const	function	storage	storage-registeredcomponent-name-const	storage.md	engine/storage/component_registry.h:51
+storage::RegisteredComponent::Version() const	function	storage	storage-registeredcomponent-version-const	storage.md	engine/storage/component_registry.h:53
+storage::RegisteredComponent::Flags() const	function	storage	storage-registeredcomponent-flags-const	storage.md	engine/storage/component_registry.h:55
+storage::RegisteredComponent::IsStored() const	function	storage	storage-registeredcomponent-isstored-const	storage.md	engine/storage/component_registry.h:58
+storage::RegisteredComponent::EcsId() const	function	storage	storage-registeredcomponent-ecsid-const	storage.md	engine/storage/component_registry.h:60
+storage::RegisteredComponent::IsTag() const	function	storage	storage-registeredcomponent-istag-const	storage.md	engine/storage/component_registry.h:63
+storage::RegisteredComponent::Fields() const	function	storage	storage-registeredcomponent-fields-const	storage.md	engine/storage/component_registry.h:65
+storage::RegisteredComponent::Encode(const void*,bytes::ByteWriter&,const CodecLimits&) const	function	storage	storage-registeredcomponent-encode-const-void-star-bytes-bytewriter-amp-const-codeclimits-amp-const	storage.md	engine/storage/component_registry.h:74
+storage::RegisteredComponent::Decode(bytes::ByteReader&,void*,const CodecLimits&) const	function	storage	storage-registeredcomponent-decode-bytes-bytereader-amp-void-star-const-codeclimits-amp-const	storage.md	engine/storage/component_registry.h:82
+storage::ManifestEntry	struct	storage	storage-manifestentry	storage.md	engine/storage/component_registry.h:99
+storage::ManifestEntry::id	variable	storage	storage-manifestentry-id	storage.md	engine/storage/component_registry.h:100
+storage::ManifestEntry::name	variable	storage	storage-manifestentry-name	storage.md	engine/storage/component_registry.h:101
+storage::ManifestEntry::version	variable	storage	storage-manifestentry-version	storage.md	engine/storage/component_registry.h:102
+storage::ComponentRegistry	class	storage	storage-componentregistry	storage.md	engine/storage/component_registry.h:109
+storage::ComponentRegistry::ComponentRegistry()	function	storage	storage-componentregistry-componentregistry	storage.md	engine/storage/component_registry.h:112
+storage::ComponentRegistry::ComponentRegistry(const ComponentRegistry&)	function	storage	storage-componentregistry-componentregistry-const-componentregistry-amp	storage.md	engine/storage/component_registry.h:113
+storage::ComponentRegistry::operator=(const ComponentRegistry&)	function	storage	storage-componentregistry-operator-eq-const-componentregistry-amp	storage.md	engine/storage/component_registry.h:114
+storage::ComponentRegistry::Register(const ComponentDesc&)	function	storage	storage-componentregistry-register-const-componentdesc-amp	storage.md	engine/storage/component_registry.h:121
+storage::ComponentRegistry::FindById(u32) const	function	storage	storage-componentregistry-findbyid-u32-const	storage.md	engine/storage/component_registry.h:130
+storage::ComponentRegistry::FindByName(StringView) const	function	storage	storage-componentregistry-findbyname-stringview-const	storage.md	engine/storage/component_registry.h:135
+storage::ComponentRegistry::FindByEcsId(ecs::ComponentId) const	function	storage	storage-componentregistry-findbyecsid-ecs-componentid-const	storage.md	engine/storage/component_registry.h:140
+storage::ComponentRegistry::Find() const	function	storage	storage-componentregistry-find-const	storage.md	engine/storage/component_registry.h:145
+storage::ComponentRegistry::Count() const	function	storage	storage-componentregistry-count-const	storage.md	engine/storage/component_registry.h:150
+storage::ComponentRegistry::At(u32) const	function	storage	storage-componentregistry-at-u32-const	storage.md	engine/storage/component_registry.h:152
+storage::ComponentRegistry::Manifest(Vector<ManifestEntry>*) const	function	storage	storage-componentregistry-manifest-vector-lt-manifestentry-gt-star-const	storage.md	engine/storage/component_registry.h:158
+storage::ComponentRegistry::CheckManifest(Span<const ManifestEntry>) const	function	storage	storage-componentregistry-checkmanifest-span-lt-const-manifestentry-gt-const	storage.md	engine/storage/component_registry.h:165
+storage::ComponentRegistry::UnregisteredWithData(const ecs::World&,Vector<ecs::ComponentId>*) const	function	storage	storage-componentregistry-unregisteredwithdata-const-ecs-world-amp-vector-lt-ecs-componentid-gt-star-const	storage.md	engine/storage/component_registry.h:174
+storage::EntityKey	struct	storage	storage-entitykey	storage.md	engine/storage/entity_ref.h:13
+storage::EntityKey::high	variable	storage	storage-entitykey-high	storage.md	engine/storage/entity_ref.h:14
+storage::EntityKey::low	variable	storage	storage-entitykey-low	storage.md	engine/storage/entity_ref.h:15
+storage::EntityKey::IsNull() const	function	storage	storage-entitykey-isnull-const	storage.md	engine/storage/entity_ref.h:19
+storage::EntityRef	struct	storage	storage-entityref	storage.md	engine/storage/entity_ref.h:29
+storage::EntityRef::key	variable	storage	storage-entityref-key	storage.md	engine/storage/entity_ref.h:30
+storage::CodecLimits	struct	storage	storage-codeclimits	storage.md	engine/storage/field.h:27
+storage::CodecLimits::max_string_bytes	variable	storage	storage-codeclimits-max-string-bytes	storage.md	engine/storage/field.h:28
+storage::CodecLimits::max_array_elements	variable	storage	storage-codeclimits-max-array-elements	storage.md	engine/storage/field.h:29
+storage::FieldKind	enum	storage	storage-fieldkind	storage.md	engine/storage/field.h:33
+storage::FieldKind::U8	enumerator	storage	storage-fieldkind-u8	storage.md	engine/storage/field.h:34
+storage::FieldKind::U16	enumerator	storage	storage-fieldkind-u16	storage.md	engine/storage/field.h:35
+storage::FieldKind::U32	enumerator	storage	storage-fieldkind-u32	storage.md	engine/storage/field.h:36
+storage::FieldKind::U64	enumerator	storage	storage-fieldkind-u64	storage.md	engine/storage/field.h:37
+storage::FieldKind::I8	enumerator	storage	storage-fieldkind-i8	storage.md	engine/storage/field.h:38
+storage::FieldKind::I16	enumerator	storage	storage-fieldkind-i16	storage.md	engine/storage/field.h:39
+storage::FieldKind::I32	enumerator	storage	storage-fieldkind-i32	storage.md	engine/storage/field.h:40
+storage::FieldKind::I64	enumerator	storage	storage-fieldkind-i64	storage.md	engine/storage/field.h:41
+storage::FieldKind::F32	enumerator	storage	storage-fieldkind-f32	storage.md	engine/storage/field.h:42
+storage::FieldKind::F64	enumerator	storage	storage-fieldkind-f64	storage.md	engine/storage/field.h:43
+storage::FieldKind::Bool	enumerator	storage	storage-fieldkind-bool	storage.md	engine/storage/field.h:44
+storage::FieldKind::Vec2	enumerator	storage	storage-fieldkind-vec2	storage.md	engine/storage/field.h:45
+storage::FieldKind::Vec3	enumerator	storage	storage-fieldkind-vec3	storage.md	engine/storage/field.h:46
+storage::FieldKind::Vec4	enumerator	storage	storage-fieldkind-vec4	storage.md	engine/storage/field.h:47
+storage::FieldKind::Quat	enumerator	storage	storage-fieldkind-quat	storage.md	engine/storage/field.h:48
+storage::FieldKind::Mat4	enumerator	storage	storage-fieldkind-mat4	storage.md	engine/storage/field.h:49
+storage::FieldKind::Aabb	enumerator	storage	storage-fieldkind-aabb	storage.md	engine/storage/field.h:50
+storage::FieldKind::Enum	enumerator	storage	storage-fieldkind-enum	storage.md	engine/storage/field.h:51
+storage::FieldKind::String	enumerator	storage	storage-fieldkind-string	storage.md	engine/storage/field.h:52
+storage::FieldKind::Array	enumerator	storage	storage-fieldkind-array	storage.md	engine/storage/field.h:53
+storage::FieldKind::EntityRef	enumerator	storage	storage-fieldkind-entityref	storage.md	engine/storage/field.h:54
+storage::FieldOptions	struct	storage	storage-fieldoptions	storage.md	engine/storage/field.h:60
+storage::FieldOptions::has_range	variable	storage	storage-fieldoptions-has-range	storage.md	engine/storage/field.h:61
+storage::FieldOptions::range_min	variable	storage	storage-fieldoptions-range-min	storage.md	engine/storage/field.h:62
+storage::FieldOptions::range_max	variable	storage	storage-fieldoptions-range-max	storage.md	engine/storage/field.h:63
+storage::FieldOptions::max_bytes	variable	storage	storage-fieldoptions-max-bytes	storage.md	engine/storage/field.h:64
+storage::FieldOptions::Enum(i64,i64)	function	storage	storage-fieldoptions-enum-i64-i64	storage.md	engine/storage/field.h:67
+storage::FieldOptions::Text(u64)	function	storage	storage-fieldoptions-text-u64	storage.md	engine/storage/field.h:75
+storage::FieldDesc	struct	storage	storage-fielddesc	storage.md	engine/storage/field.h:204
+storage::FieldDesc::name	variable	storage	storage-fielddesc-name	storage.md	engine/storage/field.h:205
+storage::FieldDesc::kind	variable	storage	storage-fielddesc-kind	storage.md	engine/storage/field.h:206
+storage::FieldDesc::options	variable	storage	storage-fielddesc-options	storage.md	engine/storage/field.h:207
+storage::FieldDesc::memory_size	variable	storage	storage-fielddesc-memory-size	storage.md	engine/storage/field.h:208
+storage::FieldDesc::needs_range	variable	storage	storage-fielddesc-needs-range	storage.md	engine/storage/field.h:209
+storage::FieldDesc::encode	variable	storage	storage-fielddesc-encode	storage.md	engine/storage/field.h:211
+storage::FieldDesc::decode	variable	storage	storage-fielddesc-decode	storage.md	engine/storage/field.h:213
+storage::Field(const char*,FieldOptions)	function	storage	storage-field-const-char-star-fieldoptions	storage.md	engine/storage/field.h:404
+storage::ErrorCode	enum	storage	storage-errorcode	storage.md	engine/storage/status.h:11
+storage::ErrorCode::Ok	enumerator	storage	storage-errorcode-ok	storage.md	engine/storage/status.h:12
+storage::ErrorCode::NotFound	enumerator	storage	storage-errorcode-notfound	storage.md	engine/storage/status.h:13
+storage::ErrorCode::Exists	enumerator	storage	storage-errorcode-exists	storage.md	engine/storage/status.h:14
+storage::ErrorCode::Corrupt	enumerator	storage	storage-errorcode-corrupt	storage.md	engine/storage/status.h:15
+storage::ErrorCode::TooNew	enumerator	storage	storage-errorcode-toonew	storage.md	engine/storage/status.h:16
+storage::ErrorCode::LimitExceeded	enumerator	storage	storage-errorcode-limitexceeded	storage.md	engine/storage/status.h:17
+storage::ErrorCode::Mismatch	enumerator	storage	storage-errorcode-mismatch	storage.md	engine/storage/status.h:18
+storage::ErrorCode::Invalid	enumerator	storage	storage-errorcode-invalid	storage.md	engine/storage/status.h:19
+storage::ErrorCode::Other	enumerator	storage	storage-errorcode-other	storage.md	engine/storage/status.h:20
+storage::ErrorCodeName(ErrorCode)	function	storage	storage-errorcodename-errorcode	storage.md	engine/storage/status.h:27
+storage::Status	class	storage	storage-status	storage.md	engine/storage/status.h:33
+storage::Status::Status()	function	storage	storage-status-status	storage.md	engine/storage/status.h:36
+storage::Status::Success()	function	storage	storage-status-success	storage.md	engine/storage/status.h:39
+storage::Status::Make(ErrorCode,const char*)	function	storage	storage-status-make-errorcode-const-char-star	storage.md	engine/storage/status.h:43
+storage::Status::Ok() const	function	storage	storage-status-ok-const	storage.md	engine/storage/status.h:52
+storage::Status::Failed() const	function	storage	storage-status-failed-const	storage.md	engine/storage/status.h:55
+storage::Status::Is(ErrorCode) const	function	storage	storage-status-is-errorcode-const	storage.md	engine/storage/status.h:58
+storage::Status::Code() const	function	storage	storage-status-code-const	storage.md	engine/storage/status.h:60
+storage::Status::Message() const	function	storage	storage-status-message-const	storage.md	engine/storage/status.h:65
 scene::MeshAsset	struct	scene	scene-meshasset	scene.md	engine/scene/components.h:22
 scene::MeshAsset::mesh	variable	scene	scene-meshasset-mesh	scene.md	engine/scene/components.h:24
 scene::MeshRenderer	struct	scene	scene-meshrenderer	scene.md	engine/scene/components.h:31

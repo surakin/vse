@@ -85,7 +85,7 @@ struct Hash<u64> {
 template <typename K>
     requires((IsSame<K, usize> && !IsSame<usize, u64>) || (IsSame<K, isize> && !IsSame<isize, i64>))
 struct Hash<K> {
-    /// Returns a well-mixed hash of the integer value.
+    // Returns a well-mixed hash of the integer value (a plain comment: docgen does not attach a doc comment inside a constrained specialization).
     usize operator()(K k) const { return detail::MixHash64(static_cast<u64>(k)); }
 };
 

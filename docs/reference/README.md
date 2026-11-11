@@ -10,13 +10,14 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Language support](foundation-lang.md) | 7 | 126 |
 | [Foundation: C library](foundation-cstr.md) | 5 | 60 |
 | [Foundation: Synchronization](foundation-sync.md) | 3 | 113 |
-| [Foundation: Containers](foundation-containers.md) | 7 | 165 |
+| [Foundation: Containers](foundation-containers.md) | 7 | 166 |
 | [Foundation: Strings](foundation-strings.md) | 6 | 98 |
 | [Foundation: Paths and Files](foundation-io.md) | 5 | 265 |
 | [Foundation: Math](foundation-math.md) | 6 | 157 |
 | [Foundation: Logging and Assertions](foundation-log.md) | 3 | 81 |
 | [Foundation: Fundamental Types](foundation-types.md) | 2 | 99 |
 | [Foundation: Settings](foundation-settings.md) | 17 | 525 |
+| [Foundation: Bytes (canonical encoding)](foundation-bytes.md) | 3 | 44 |
 | [Platform: OS Services](platform-os.md) | 7 | 69 |
 | [Platform: Windowing and Input](platform-window-input.md) | 22 | 669 |
 | [Foundation: Debugging](foundation-debug.md) | 15 | 208 |
@@ -24,6 +25,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [ECS](ecs.md) | 12 | 398 |
 | [Spatial Partitioning](spatial.md) | 12 | 333 |
 | [Database](database.md) | 9 | 161 |
+| [Storage](storage.md) | 5 | 117 |
 | [Scene bridge](scene.md) | 2 | 44 |
 | [The UI Toolkit](ui.md) | 46 | 1420 |
 | [The UI Window Adapter](ui_window.md) | 2 | 25 |
