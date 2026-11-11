@@ -43,6 +43,7 @@ return tx.Commit();
   version is `Connection::SchemaVersion`.
 - **Optional features** are asked with `Supports(Feature)`: savepoints, `WITHOUT ROWID`, add-column, named parameters, concurrent readers, write-ahead
   log, foreign keys. Using an unsupported one returns `Unsupported` (or `Syntax` for SQL text), never silently something else.
+- **Reals are numbers, not bit patterns.** A backend may return `-0.0` as `0.0`, and a NaN cannot be bound (`Misuse`); store bits in a blob or an integer when they matter. (Comparison of `ValueView`s is bitwise; the database is not.)
 - **A failed statement does not end the transaction**; the caller decides to roll back.
 - **Misuse is a status, not an abort**: a bind index out of range, `Commit` without `Begin`, a nested `Begin`, a `Step` after the last row without `Reset`.
 
@@ -61,3 +62,14 @@ DATABASE_CONFORMANCE_CASES(MyFixture)
 ```
 
 `tests/database/conformance.h` holds the cases; `tests/database/conformance_stub_test.cpp` shows an unimplemented backend, whose cases skip.
+
+## The SQLite backend
+
+`database::SqliteDatabase` (`database/sqlite/sqlite_database.h`) is the backend. Until the file-layer VFS exists (Day 254) it opens private in-memory
+databases: `OpenOptions::location` empty or `":memory:"`. Each belongs to the connection that opened it, so two connections never share one; the
+conformance cases that need two connections skip on this fixture and run on files later.
+
+- A savepoint outside a transaction starts one, as in SQLite; releasing the outermost savepoint commits it.
+- `SchemaVersion` is `PRAGMA user_version`, inside the backend only.
+- A statement used after its connection was destroyed fails with `Misuse`; the connection's memory lives until the last statement is gone.
+- SQLite reports a syntax error and an unknown table both as one code; the backend tells them apart by the message (`Syntax`, `NotFound`).

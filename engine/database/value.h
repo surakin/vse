@@ -13,7 +13,7 @@ namespace engine_placeholder::database {
 enum class ValueType : u8 {
     Null,    ///< No value (SQL `NULL`).
     Integer, ///< A signed 64-bit integer.
-    Real,    ///< An IEEE 754 binary64 number.
+    Real,    ///< An IEEE 754 binary64 number. A backend may return `-0.0` as `0.0` (SQLite stores it as the integer 0), and cannot store a NaN: binding one is `Misuse`. Code that needs the sign or a NaN stores the 8 bytes as a blob.
     Text,    ///< UTF-8 text with an explicit length (embedded NUL bytes are kept).
     Blob,    ///< A sequence of bytes. An empty blob is a blob, not null.
 };

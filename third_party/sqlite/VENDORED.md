@@ -31,6 +31,7 @@ SQLite). Compile definitions:
 | `SQLITE_DQS=0` | A double-quoted string is an identifier, never a string literal. |
 | `SQLITE_DEFAULT_FOREIGN_KEYS=1` | Foreign keys on by default. |
 | `SQLITE_DEFAULT_MEMSTATUS=0` | No global memory statistics (they take a mutex on every allocation). |
+| `SQLITE_TEMP_STORE=3` | Temporary tables and sort spills stay in memory: the VFS of an in-memory database opens no temporary files. |
 
 The vendored target keeps its own warning flags (the engine's `-Werror` is added after `third_party/`), is excluded from unity builds, and is not
 instrumented by the sanitizers.

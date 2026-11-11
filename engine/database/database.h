@@ -148,7 +148,7 @@ public:
     /// Param sql: one statement; a literal, so no data is formatted into it.
     /// Param out: receives the statement on success; unchanged on failure.
     /// Fails: `Syntax` for text the backend cannot parse; `Unsupported` for a form it lacks; `Misuse` for more than one statement.
-    /// Ownership: the statement must be destroyed before the connection.
+    /// Ownership: a statement used after its connection was destroyed fails with `Misuse`; destroy statements first.
     virtual Status Prepare(SqlText sql, UniquePtr<Statement>* out) = 0;
     /// Runs one statement that has no parameters and returns no rows that matter (schema changes, transaction control, pragmas of a backend).
     ///

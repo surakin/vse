@@ -10,6 +10,8 @@ Console output and process control (Phase 16): the engine's spelling of `printf`
 
 Loader smoke test that locates the Vulkan driver and resolves `vkCreateInstance`; not the RHI.
 
+Built only where the engine has a Vulkan backend (Linux, Windows): macOS has no Vulkan (Phase 26 decision 8: MoltenVK is a third-party layer), so this file and its source are not part of the macOS build, and nothing there may include it.
+
 The C library's error number (Phase 16): the engine's spelling of `errno`, which is a macro and cannot be named from other files. The `E*` constants (`EINTR`, `ENOENT`, ...) arrive through this header.
 
 Thin wrappers around OS calls: file descriptors, memory reservation, clocks, dynamic libraries.

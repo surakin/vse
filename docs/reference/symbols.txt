@@ -191,24 +191,24 @@ MemAllocateZeroed(usize,usize) noexcept	function	foundation/cstr	memallocatezero
 MemReallocate(void*,usize) noexcept	function	foundation/cstr	memreallocate-void-star-usize-noexcept	foundation-cstr.md	engine/foundation/cstr/mem_ops.h:77
 MemFree(void*) noexcept	function	foundation/cstr	memfree-void-star-noexcept	foundation-cstr.md	engine/foundation/cstr/mem_ops.h:84
 SortRaw(void*,usize,usize,int(*)(const void*,const void*))	function	foundation/cstr	sortraw-void-star-usize-usize-int-star-const-void-star-const-void-star	foundation-cstr.md	engine/foundation/cstr/mem_ops.h:92
-CStrToInt(const char*) noexcept	function	foundation/cstr	cstrtoint-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:13
-CStrToLong(const char*) noexcept	function	foundation/cstr	cstrtolong-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:15
-CStrToLong(const char*,char**,int) noexcept	function	foundation/cstr	cstrtolong-const-char-star-char-star-star-int-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:17
-CStrToLongLong(const char*,char**,int) noexcept	function	foundation/cstr	cstrtolonglong-const-char-star-char-star-star-int-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:19
-CStrToULong(const char*,char**,int) noexcept	function	foundation/cstr	cstrtoulong-const-char-star-char-star-star-int-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:21
-CStrToULongLong(const char*,char**,int) noexcept	function	foundation/cstr	cstrtoulonglong-const-char-star-char-star-star-int-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:23
-CStrToDouble(const char*) noexcept	function	foundation/cstr	cstrtodouble-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:25
-CStrToDouble(const char*,char**) noexcept	function	foundation/cstr	cstrtodouble-const-char-star-char-star-star-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:27
-CStrToFloat(const char*,char**) noexcept	function	foundation/cstr	cstrtofloat-const-char-star-char-star-star-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:29
-FormatShortestResult	struct	foundation/cstr	formatshortestresult	foundation-cstr.md	engine/foundation/cstr/number.h:32
-FormatShortestResult::end	variable	foundation/cstr	formatshortestresult-end	foundation-cstr.md	engine/foundation/cstr/number.h:34
-FormatShortestResult::ok	variable	foundation/cstr	formatshortestresult-ok	foundation-cstr.md	engine/foundation/cstr/number.h:36
-FormatShortest(char*,char*,f64) noexcept	function	foundation/cstr	formatshortest-char-star-char-star-f64-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:42
-ParseDoubleResult	struct	foundation/cstr	parsedoubleresult	foundation-cstr.md	engine/foundation/cstr/number.h:48
-ParseDoubleResult::value	variable	foundation/cstr	parsedoubleresult-value	foundation-cstr.md	engine/foundation/cstr/number.h:50
-ParseDoubleResult::end	variable	foundation/cstr	parsedoubleresult-end	foundation-cstr.md	engine/foundation/cstr/number.h:52
-ParseDoubleResult::ok	variable	foundation/cstr	parsedoubleresult-ok	foundation-cstr.md	engine/foundation/cstr/number.h:54
-ParseDoubleExact(const char*,const char*) noexcept	function	foundation/cstr	parsedoubleexact-const-char-star-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:61
+CStrToInt(const char*) noexcept	function	foundation/cstr	cstrtoint-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:14
+CStrToLong(const char*) noexcept	function	foundation/cstr	cstrtolong-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:16
+CStrToLong(const char*,char**,int) noexcept	function	foundation/cstr	cstrtolong-const-char-star-char-star-star-int-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:18
+CStrToLongLong(const char*,char**,int) noexcept	function	foundation/cstr	cstrtolonglong-const-char-star-char-star-star-int-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:20
+CStrToULong(const char*,char**,int) noexcept	function	foundation/cstr	cstrtoulong-const-char-star-char-star-star-int-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:22
+CStrToULongLong(const char*,char**,int) noexcept	function	foundation/cstr	cstrtoulonglong-const-char-star-char-star-star-int-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:24
+CStrToDouble(const char*) noexcept	function	foundation/cstr	cstrtodouble-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:26
+CStrToDouble(const char*,char**) noexcept	function	foundation/cstr	cstrtodouble-const-char-star-char-star-star-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:28
+CStrToFloat(const char*,char**) noexcept	function	foundation/cstr	cstrtofloat-const-char-star-char-star-star-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:30
+FormatShortestResult	struct	foundation/cstr	formatshortestresult	foundation-cstr.md	engine/foundation/cstr/number.h:33
+FormatShortestResult::end	variable	foundation/cstr	formatshortestresult-end	foundation-cstr.md	engine/foundation/cstr/number.h:35
+FormatShortestResult::ok	variable	foundation/cstr	formatshortestresult-ok	foundation-cstr.md	engine/foundation/cstr/number.h:37
+FormatShortest(char*,char*,f64) noexcept	function	foundation/cstr	formatshortest-char-star-char-star-f64-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:43
+ParseDoubleResult	struct	foundation/cstr	parsedoubleresult	foundation-cstr.md	engine/foundation/cstr/number.h:49
+ParseDoubleResult::value	variable	foundation/cstr	parsedoubleresult-value	foundation-cstr.md	engine/foundation/cstr/number.h:51
+ParseDoubleResult::end	variable	foundation/cstr	parsedoubleresult-end	foundation-cstr.md	engine/foundation/cstr/number.h:53
+ParseDoubleResult::ok	variable	foundation/cstr	parsedoubleresult-ok	foundation-cstr.md	engine/foundation/cstr/number.h:55
+ParseDoubleExact(const char*,const char*) noexcept	function	foundation/cstr	parsedoubleexact-const-char-star-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:83
 VarArgs	alias	foundation/cstr	varargs	foundation-cstr.md	engine/foundation/cstr/varargs.h:10
 ENGINE_VA_START	macro	foundation/cstr	engine-va-start	foundation-cstr.md	engine/foundation/cstr/varargs.h:15
 ENGINE_VA_END	macro	foundation/cstr	engine-va-end	foundation-cstr.md	engine/foundation/cstr/varargs.h:17
@@ -1746,8 +1746,8 @@ os::FlushAll()	function	platform/os	os-flushall	platform-os.md	engine/foundation
 os::Abort() noexcept	function	platform/os	os-abort-noexcept	platform-os.md	engine/foundation/os/console.h:78
 os::ExitNow(int) noexcept	function	platform/os	os-exitnow-int-noexcept	platform-os.md	engine/foundation/os/console.h:82
 os::GetEnvironment(const char*) noexcept	function	platform/os	os-getenvironment-const-char-star-noexcept	platform-os.md	engine/foundation/os/console.h:90
-os::VulkanLoaderName()	function	platform/os	os-vulkanloadername	platform-os.md	engine/foundation/os/gpu_driver_probe.h:14
-os::ProbeVulkanCreateInstance()	function	platform/os	os-probevulkancreateinstance	platform-os.md	engine/foundation/os/gpu_driver_probe.h:22
+os::VulkanLoaderName()	function	platform/os	os-vulkanloadername	platform-os.md	engine/foundation/os/gpu_driver_probe.h:17
+os::ProbeVulkanCreateInstance()	function	platform/os	os-probevulkancreateinstance	platform-os.md	engine/foundation/os/gpu_driver_probe.h:25
 os::LastError() noexcept	function	platform/os	os-lasterror-noexcept	platform-os.md	engine/foundation/os/last_error.h:12
 os::SetLastError(int) noexcept	function	platform/os	os-setlasterror-int-noexcept	platform-os.md	engine/foundation/os/last_error.h:17
 os::kMaxPathBytes	variable	platform/os	os-kmaxpathbytes	platform-os.md	engine/foundation/os/os.h:25
@@ -3687,6 +3687,11 @@ database::SqlText	class	database	database-sqltext	database.md	engine/database/sq
 database::SqlText::SqlText(const char*)	function	database	database-sqltext-sqltext-const-char-star	database.md	engine/database/sql_text.h:24
 database::SqlText::Unchecked(StringView)	function	database	database-sqltext-unchecked-stringview	database.md	engine/database/sql_text.h:30
 database::SqlText::View() const	function	database	database-sqltext-view-const	database.md	engine/database/sql_text.h:33
+database::SqliteDatabase	class	database	database-sqlitedatabase	database.md	engine/database/sqlite/sqlite_database.h:17
+database::SqliteDatabase::Name() const	function	database	database-sqlitedatabase-name-const	database.md	engine/database/sqlite/sqlite_database.h:22
+database::SqliteDatabase::Supports(Feature) const	function	database	database-sqlitedatabase-supports-feature-const	database.md	engine/database/sqlite/sqlite_database.h:25
+database::SqliteDatabase::Open(const OpenOptions&,UniquePtr<Connection>*)	function	database	database-sqlitedatabase-open-const-openoptions-amp-uniqueptr-lt-connection-gt-star	database.md	engine/database/sqlite/sqlite_database.h:32
+database::sqlite_detail::InitializeSqlite()	function	database	database-sqlite-detail-initializesqlite	database.md	engine/database/sqlite/sqlite_os.h:13
 database::SqliteVersion()	function	database	database-sqliteversion	database.md	engine/database/sqlite/sqlite_version.h:13
 database::ErrorCode	enum	database	database-errorcode	database.md	engine/database/status.h:12
 database::ErrorCode::Ok	enumerator	database	database-errorcode-ok	database.md	engine/database/status.h:13

@@ -77,7 +77,7 @@ ParseDoubleResult ParseDoubleWithoutFromChars(const char* first, const char* las
 /// Parses a decimal number at the start of `[first, last)`, independent of the process locale, with no leading `+` or space and
 /// hex form (`std::from_chars`). `nan` and `inf` are read as such; a caller that needs a finite number checks the value.
 ///
-/// On macOS and iOS this is [[detail::ParseDoubleWithoutFromChars]] (Apple's libc++ has no `from_chars` for `double`), with the same
+/// On macOS and iOS this is `detail::ParseDoubleWithoutFromChars` (Apple's libc++ has no `from_chars` for `double`), with the same
 /// results.
 /// Thread-safety: thread-safe.
 inline ParseDoubleResult ParseDoubleExact(const char* first, const char* last) noexcept {

@@ -14,7 +14,8 @@ target_compile_definitions(sqlite3 PUBLIC
   SQLITE_OMIT_SHARED_CACHE
   SQLITE_DQS=0
   SQLITE_DEFAULT_FOREIGN_KEYS=1
-  SQLITE_DEFAULT_MEMSTATUS=0)
+  SQLITE_DEFAULT_MEMSTATUS=0
+  SQLITE_TEMP_STORE=3)
 set_target_properties(sqlite3 PROPERTIES UNITY_BUILD OFF POSITION_INDEPENDENT_CODE ON)
 # The amalgamation is third-party C: its warnings are not ours to fix. Warnings off for this target only.
 if(MSVC AND NOT ENGINE_CLANG_CL)

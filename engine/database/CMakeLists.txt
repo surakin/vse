@@ -1,5 +1,5 @@
-# Phase 19: the database module: the interface (Day 252, library `database`), the in-memory implementation (Day 253) and the SQLite library
-# (`database_sqlite`, Day 251, built on the interface): sqlite/ is the one directory that includes sqlite3.h (tools/sqlite_boundary_check). Layer 10, depends on the foundation only.
+# Phase 19: the database module: the interface (Day 252, library `database`), and the SQLite backend
+# (`database_sqlite`, Days 251-255, built on the interface): sqlite/ is the one directory that includes sqlite3.h (tools/sqlite_boundary_check). Layer 10, depends on the foundation only.
 # Headers are included as "database/<name>.h", rooted at engine/. Built plain, ASan and TSan from one source list; the vendored sqlite3
 # library is built once (third_party/sqlite) and linked into every flavor.
 set(DATABASE_SOURCES
@@ -9,6 +9,8 @@ set(DATABASE_SOURCES
 )
 set(DATABASE_SQLITE_SOURCES
   sqlite/sqlite_version.cpp  # Day 251
+  sqlite/sqlite_os.cpp  # Day 253
+  sqlite/sqlite_database.cpp  # Day 253
 )
 set(DATABASE_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
