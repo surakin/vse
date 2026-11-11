@@ -1,12 +1,14 @@
 # Fails, naming the tests, if any test in a build directory lacks a `phaseN` label or has more than one
 # (Phase 6; tests/phases.txt). Run by ctest as test_phase_labels.
-#   cmake -DCTEST=<ctest> -DBUILD_DIR=<dir> -DMAP=<tests/phases.txt> [-DCHECK_FLAVORS=1 -DPLATFORM=linux|windows|macos [-DBUILT_FLAVORS=plain,asan,...]] [-DCHECK_UNUSED=1] -P check.cmake
+#   cmake -DCTEST=<ctest> -DBUILD_DIR=<dir> -DMAP=<tests/phases.txt> [-DCHECK_FLAVORS=1 -DPLATFORM=linux|windows|macos [-DBUILT_FLAVORS=plain,asan,...]] [-DCHECK_UNUSED=1]
+#         [-DCURRENT_PHASE_FILE=<CURRENT_PHASE> [-DSIDE_PHASES_FILE=<SIDE_PHASES>]] -P check.cmake
 # CHECK_FLAVORS also checks that each phase has tests in exactly the sanitizer flavors its `flavors` line lists for PLATFORM: a
 # `flavors <phase> <platform>: <list>` line applies on that platform only, an unqualified line everywhere else, and a phase whose lines
 # all name other platforms must have no tests on this one (Phase 13 Day 148: phase 13's tests exist only on Windows);
 # BUILT_FLAVORS names the flavors this configuration builds (default all three): a flavor the map lists but the configuration cannot build
 # (clang-cl has no ASan flavor yet, Phase 13 Day 150) is not demanded.
 # CHECK_UNUSED also fails on a map line that matches no test or file. Both are for the real build, not the fixtures.
+# CURRENT_PHASE_FILE (with SIDE_PHASES_FILE) fails on a map phase above the current phase that is not a side phase (Phase 26 Day 286).
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/EnginePhaseMap.cmake)
 
 # What ctest selects with the given extra arguments, as "<number>: <name>" entries. The number is the test's index in the
@@ -182,6 +184,55 @@ if(CHECK_UNUSED)
       string(APPEND problems "  unused line in the map: ${pattern}\n")
     endif()
   endforeach()
+endif()
+
+# No phase of the map is above the current one unless it is a side phase (Phase 26 Day 286): a mistyped phase number on a map line, or a
+# phase started without CURRENT_PHASE moving, fails here, on every machine, whether or not this build has the phase's tests.
+if(DEFINED CURRENT_PHASE_FILE)
+  set(current "")
+  if(EXISTS "${CURRENT_PHASE_FILE}")
+    file(STRINGS "${CURRENT_PHASE_FILE}" current_lines REGEX "^[ \t]*[^# \t]")
+    if(current_lines)
+      list(GET current_lines 0 current)
+      string(STRIP "${current}" current)
+    endif()
+  endif()
+  if(NOT current MATCHES "^[0-9]+$")
+    string(APPEND problems "  ${CURRENT_PHASE_FILE}: '${current}' is not a phase number (the file is missing, empty or holds something else)\n")
+  else()
+    set(side "")
+    if(DEFINED SIDE_PHASES_FILE AND EXISTS "${SIDE_PHASES_FILE}")
+      file(STRINGS "${SIDE_PHASES_FILE}" side_lines)
+      foreach(line IN LISTS side_lines)
+        string(REGEX REPLACE "#.*$" "" line "${line}")
+        string(STRIP "${line}" line)
+        if(line STREQUAL "")
+          continue()
+        endif()
+        if(NOT line MATCHES "^[0-9]+$")
+          string(APPEND problems "  ${SIDE_PHASES_FILE}: '${line}' is not a phase number\n")
+          continue()
+        endif()
+        list(APPEND side "${line}")
+      endforeach()
+    endif()
+    set(map_numbers ${_EPM_PHASES})
+    list(REMOVE_DUPLICATES map_numbers)
+    # A side phase is above the current one and has lines in the map; an entry that is neither is stale (the phase was closed, or the
+    # number is mistyped), as a stale allow-list entry is.
+    foreach(n IN LISTS side)
+      if(NOT n GREATER current)
+        string(APPEND problems "  ${SIDE_PHASES_FILE}: side phase ${n} is not above the current phase ${current} (remove the line when a side phase closes)\n")
+      elseif(NOT n IN_LIST map_numbers)
+        string(APPEND problems "  ${SIDE_PHASES_FILE}: side phase ${n} has no lines in the map (a mistyped number?)\n")
+      endif()
+    endforeach()
+    foreach(n IN LISTS map_numbers)
+      if(n GREATER current AND NOT n IN_LIST side)
+        string(APPEND problems "  phase${n} is above the current phase ${current} and is not a side phase (SIDE_PHASES)\n")
+      endif()
+    endforeach()
+  endif()
 endif()
 
 if(problems)

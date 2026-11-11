@@ -170,9 +170,11 @@ is selected or `engine/foundation` changed; `--display` includes them.
 #### Side phases
 
 A phase the user runs beside the main line on another machine is a **side phase** (the user's rule, confirmed 2026-11-11;
-today Phase 26, the macOS port, on the Mac). It does not change `CURRENT_PHASE`; its tests carry its own label (`phase26`), and from Phase 26 Day 286 a
-`SIDE_PHASES` file lists it so `scripts/test-phase.sh --affected` adds it on a machine that builds its tests. Until then, run it by number
-(`scripts/test-phase.sh 26`). See CLAUDE.md ("Tests run by phase") and `docs/superpowers/specs/2026-11-11-macos-port-design.md`, section 6.
+today Phase 26, the macOS port, on the Mac). It does not change `CURRENT_PHASE`; its tests carry its own label (`phase26`), and the `SIDE_PHASES` file lists
+it (one number per line). `scripts/test-phase.sh --affected` adds every side phase the build has tests of, and the summary marks it:
+`ran 29 of 494 tests (phases: 19 26 (side); ...)` on the Mac, while the Linux machine, which builds no phase-26 tests, leaves it out. `--current`
+and a phase number never add it; `scripts/test-phase.sh 26` runs it alone. `test_phase_labels` fails on any phase of `tests/phases.txt` above
+`CURRENT_PHASE` that `SIDE_PHASES` does not list, so a mistyped phase number cannot hide a test. The side phase's last day removes its line. See CLAUDE.md ("Tests run by phase") and `docs/superpowers/specs/2026-11-11-macos-port-design.md`, section 6.
 
 #### Adding a test
 
@@ -443,7 +445,7 @@ itself (vswhere, the registry, the default install folders), so any terminal wor
 ### Building and testing on macOS
 
 macOS (x86-64) is being ported in Phase 26, a side phase on the Mac, one layer per day (`plans/phase-26-macos-metal.md`); today the base
-layer of the foundation and its tests build (Day 284). `BUILD.md` lists what to install: the Command Line Tools (Apple clang), CMake and
+layer of the foundation and its tests, the gates and the test tooling build (Days 284-286). `BUILD.md` lists what to install: the Command Line Tools (Apple clang), CMake and
 Ninja; no Xcode.
 
 - **Preset.** `cmake --preset macos-clang` configures `build-macos` (Ninja, Debug, x86-64, deployment target macOS 13.3); build and test with
@@ -454,7 +456,14 @@ Ninja; no Xcode.
   `detect_leaks=1` (`KNOWN-ISSUES.md`), so leak checks run on Linux.
 - **Objective-C++.** `.mm` files (only in macOS directories) compile with ARC and the warnings of every target. `tests/macos` checks that
   every neutral foundation header compiles beside AppKit, Metal and QuartzCore in either order (`macos_header_apple_first`, `_last`).
-- `scripts/test-phase.sh` runs on macOS from Day 286; until then run `ctest` from `build-macos` and report it as such.
+- **The test script** runs under the system's `/bin/bash` 3.2 (`scripts/test-phase.sh`, defaulting to `build-macos` there), so it keeps to
+  what that bash has: no associative arrays, `mapfile` or `${x,,}`. `--flavor all` is plain, asan and tsan. `--affected` adds phase 26 as a
+  side phase.
+- **The gates** run here as on Linux and Windows. Rule 7 of `platform_neutral_check` keeps Apple's headers (the frameworks, `<mach/...>`,
+  `<dispatch/...>`, `<objc/...>`, `<sys/sysctl.h>`, `<copyfile.h>`, `<libproc.h>`) and `.mm` files in the macOS directories (a `macos/`
+  folder, `engine/rhi/metal/`); `std_usage_check` and `module_deps_check` read `.mm` files and count `#import` as `#include`.
+- **Documentation** (`docgen`, the reference, `ctest -L docs`) is not built on the Mac before Phase 26 Day 293 (it needs the whole foundation);
+  the samples wait for Day 310.
 
 ### What "done" means before you commit
 

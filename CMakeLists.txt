@@ -224,7 +224,7 @@ if(ENGINE_PLATFORM STREQUAL "windows")
 endif()
 
 # macOS (Phase 26, a side phase on the Mac) builds one layer more each day, in dependency order (ARCHITECTURE.md), as Windows did in Phase 13:
-# Day 284 the base layer and its tests (types, lang, sync, cstr) and the macOS-only checks; Day 285 the os backend and the foundation's base tests. Each later day moves its directories into this list;
+# Day 284 the base layer and its tests (types, lang, sync, cstr) and the macOS-only checks; Day 285 the os backend and the foundation's base tests; Day 286 the gates and the test tooling. Each later day moves its directories into this list;
 # the "not yet ported" message shrinks with it and is gone on Day 310 (plans/phase-26-macos-metal.md).
 if(ENGINE_PLATFORM STREQUAL "macos")
   include(cmake/EngineTestPhases.cmake)
@@ -241,10 +241,15 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(tests/sync)
   add_subdirectory(tests/cstr)
   add_subdirectory(tests/macos)  # the macOS-only checks (phase 26): build_defs.h on Apple clang, the headers beside AppKit and Metal
+  # The source gates are CMake scripts over the tree, the same on every platform (Day 286, as Windows on Phase 13 Day 150).
+  foreach(gate rhi_boundary_check raw_new_check file_access_check std_usage_check settings_fixtures_check config_access_check
+               signal_safety_check platform_neutral_check module_deps_check ui_widget_style_check sqlite_boundary_check database_sql_check)
+    add_subdirectory(tools/${gate})
+  endforeach()
   add_subdirectory(tests/phase_labels)
-  message(STATUS "macOS (Phase 26 Day 285): building the base layer of the foundation and its tests. Not yet ported, so not configured: "
-                 "the test tooling and gates "
-                 "(Day 286), the file layer (Days 287-288), jobs (Day 289), debugging (Days 290-292), settings (Day 293), text, UI, ECS and "
+  add_subdirectory(tests/test_phase_script)
+  message(STATUS "macOS (Phase 26 Day 286): building the base layer of the foundation and its tests, the gates and the test tooling. Not "
+                 "yet ported, so not configured: docgen (Day 293), the file layer (Days 287-288), jobs (Day 289), debugging (Days 290-292), settings (Day 293), text, UI, ECS and "
                  "spatial (Day 294), the platform layer (Days 295-297), the RHI and renderer (Days 298-309), the demos and tools (Day 310).")
   return()
 endif()

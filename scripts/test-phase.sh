@@ -6,7 +6,8 @@
 #   N          one phase: 0 1 2 3 4 ... (every test of that phase)
 #   --current  the phase in CURRENT_PHASE (the default)
 #   --affected the current phase plus the phases of every module touched since that phase started (the working tree
-#              and the commits since the last commit that changed CURRENT_PHASE; --since REF picks another base).
+#              and the commits since the last commit that changed CURRENT_PHASE; --since REF picks another base), plus every
+#              side phase in SIDE_PHASES that this build has tests of (the summary marks it "(side)").
 #              Runs everything when a CMakeLists.txt, cmake/, CMakePresets.json, third_party/, a header under
 #              engine/foundation, tests/phases.txt or tests/module_map.txt changed, or when a changed path is in no
 #              line of tests/module_map.txt.
@@ -19,40 +20,45 @@
 #   --display / --no-display       include or leave out the window tests (label `display`); by default left out of
 #                                  --current/--affected unless phase 1 is selected or engine/foundation changed
 #   --jobs N                       parallel tests (default: the number of CPUs)
-#   --build-dir DIR                the CMake build directory (default: build; on Windows build-msvc, the windows-msvc preset's)
+#   --build-dir DIR                the CMake build directory (default: build; on Windows build-msvc, the windows-msvc preset's; on
+#                                  macOS build-macos, the macos-clang preset's)
 #   --no-build                     do not build first
 #   --dry-run                      print what would run and stop
 #   --since REF                    base commit for --affected
 #   --diff-from-file FILE          read the changed paths from FILE (one per line) instead of git; for tests
 #   --current-phase-file FILE      read the current phase from FILE instead of CURRENT_PHASE; for tests
+#   --side-phases-file FILE        read the side phases from FILE instead of SIDE_PHASES; for tests
 #
 # The last line says how much ran: "ran X of Y tests (phases: ...; flavors: ...; display: ...)".
 # Closing a phase means --all --flavor all (the full suite, three flavors). See docs/guide/building-and-testing.md.
 # On Windows run it with Git for Windows' bash (from a plain PowerShell: & "C:\Program Files\Git\bin\bash.exe" scripts/test-phase.sh).
 # MSVC has no ThreadSanitizer, so there --flavor all means plain and asan, and the summary line says so; --flavor tsan is refused.
+# On macOS it runs under the system's /bin/bash (3.2): keep to features that version has (no associative arrays, mapfile, ${x,,}).
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 case "$(uname -s)" in
     MINGW*|MSYS*|CYGWIN*) platform=windows ;;
+    Darwin) platform=macos ;;
     *) platform=linux ;;
 esac
-if [ "$platform" = windows ]; then
-    build="$root/build-msvc"
-else
-    build="$root/build"
-fi
+case "$platform" in
+    windows) build="$root/build-msvc" ;;
+    macos) build="$root/build-macos" ;;
+    *) build="$root/build" ;;
+esac
 mode=current
 phase_arg=""
 flavor=plain
 display=auto
 crashes=auto
-jobs="$(nproc 2>/dev/null || echo 4)"
+jobs="$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)"
 dry=0
 do_build=1
 since=""
 diff_file=""
 phase_file="$root/CURRENT_PHASE"
+side_file="$root/SIDE_PHASES"
 
 usage() { sed -n '2,/^set -euo/p' "${BASH_SOURCE[0]}" | sed '$d' | sed 's/^# \{0,1\}//'; }
 die() { echo "test-phase: $*" >&2; exit 2; }
@@ -73,6 +79,7 @@ while [ $# -gt 0 ]; do
         --since) since="${2:?--since needs a commit}"; shift ;;
         --diff-from-file) diff_file="${2:?--diff-from-file needs a file}"; shift ;;
         --current-phase-file) phase_file="${2:?--current-phase-file needs a file}"; shift ;;
+        --side-phases-file) side_file="${2:?--side-phases-file needs a file}"; shift ;;
         -h|--help) usage; exit 0 ;;
         -*) die "unknown option $1 (try --help)" ;;
         *) [ -z "$phase_arg" ] || die "only one phase can be given"; phase_arg="$1"; mode=phase ;;
@@ -101,6 +108,17 @@ current_phase() {
     # A new phase has no tests yet, so it need not be in tests/phases.txt.
     case "$p" in ''|*[!0-9]*) die "'$p' in $phase_file is not a phase number (a whole number like 4)" ;; esac
     printf '%s' "$p"
+}
+
+# The side phases (one number per line; '#' comments): phases run beside the main line on another machine (CLAUDE.md).
+side_phases() {
+    [ -f "$side_file" ] || return 0
+    local line
+    sed 's/#.*$//' "$side_file" | tr -d ' \t\r' | while IFS= read -r line; do
+        [ -n "$line" ] || continue
+        case "$line" in *[!0-9]*) die "'$line' in $side_file is not a phase number" ;; esac
+        printf '%s\n' "$line"
+    done
 }
 
 changed_files() {
@@ -169,19 +187,13 @@ phases="${phases% }"
 if [ "$full" = 1 ]; then
     phases=all
 fi
-
-# The label expressions for ctest.
-sel=()
-if [ "$phases" != all ]; then
-    re=""
-    for p in $phases; do re="$re|$(label_of "$p")"; done
-    sel+=(-L "^(${re#|})\$")
-fi
+# The flavor and the left-out labels, as ctest options; the phases are added after the side phases are known.
+flavor_sel=()
 exclude="" # labels to leave out
 case "$flavor" in
     plain) exclude="asan|tsan" ;;
-    asan) sel+=(-L '^asan$') ;;
-    tsan) sel+=(-L '^tsan$') ;;
+    asan) flavor_sel+=(-L '^asan$') ;;
+    tsan) flavor_sel+=(-L '^tsan$') ;;
 esac
 show_display=yes
 if [ "$display" = no ]; then
@@ -197,7 +209,7 @@ if [ "$crashes" = auto ] && [ "$mode" != all ]; then
     show_crashes=no
     exclude="${exclude:+$exclude|}crash"
 fi
-[ -z "$exclude" ] || sel+=(-LE "^(${exclude})\$")
+[ -z "$exclude" ] || flavor_sel+=(-LE "^(${exclude})\$")
 
 # A phase and a sanitizer flavor are two -L options, which ctest combines with AND only from CMake 3.29 on; an older ctest uses
 # just the last one and would run every phase of the flavor while this script reports a scoped run. Refuse instead.
@@ -213,6 +225,8 @@ fi
 
 if [ "$platform" = windows ]; then
     [ -d "$build" ] || die "no build directory at $build (configure first: cmake --preset windows-msvc)"
+elif [ "$platform" = macos ]; then
+    [ -d "$build" ] || die "no build directory at $build (configure first: cmake --preset macos-clang)"
 else
     [ -d "$build" ] || die "no build directory at $build (configure first: cmake -S . -B build)"
 fi
@@ -220,12 +234,43 @@ fi
 if [ "$dry" = 0 ] && [ "$do_build" = 1 ]; then
     cmake --build "$build" || { echo "test-phase: the build failed; nothing ran" >&2; exit 1; }
 fi
+
+# --affected adds each side phase this run would select tests of (the Mac builds phase 26's, the Linux machine does not), unless already
+# there. Counted after the build (Catch2 tests are registered when their executable is built) and with the run's own flavor and left-out
+# labels, so a side phase is never named in the summary when none of its tests run.
+side_added=""
+if [ "$mode" = affected ] && [ "$phases" != all ]; then
+    side_list="$(side_phases)" || exit 2
+    for p in $side_list; do
+        case " $phases " in *" $p "*) continue ;; esac
+        n="$(ctest --test-dir "$build" -N -L "^$(label_of "$p")\$" ${flavor_sel[@]+"${flavor_sel[@]}"} | awk '/^Total Tests:/ { print $3 }')"
+        [ "${n:-0}" -gt 0 ] || continue
+        side_added="$side_added $p"
+        phases="$(printf '%s\n' $phases "$p" | sort -u -n | tr '\n' ' ')"
+        phases="${phases% }"
+    done
+fi
+# The phases as the summary shows them: a side phase added by --affected is marked.
+phases_shown=""
+for p in $phases; do
+    case " $side_added " in *" $p "*) phases_shown="$phases_shown $p (side)" ;; *) phases_shown="$phases_shown $p" ;; esac
+done
+phases_shown="${phases_shown# }"
+
+# The label expressions for ctest.
+sel=()
+if [ "$phases" != all ]; then
+    re=""
+    for p in $phases; do re="$re|$(label_of "$p")"; done
+    sel+=(-L "^(${re#|})\$")
+fi
+sel+=(${flavor_sel[@]+"${flavor_sel[@]}"})
 count() { ctest --test-dir "$build" -N "$@" | awk '/^Total Tests:/ { print $3 }'; }
 total="$(count)"
 picked="$(count ${sel[@]+"${sel[@]}"})"
 [ -n "$total" ] && [ -n "$picked" ] || die "could not count tests in $build (is it configured?)"
 
-summary="phases: ${phases}; flavors: ${flavor}${flavor_note}; display: $([ "$show_display" = yes ] && echo included || echo excluded); crash tests: $([ "$show_crashes" = yes ] && echo included || echo excluded)"
+summary="phases: ${phases_shown}; flavors: ${flavor}${flavor_note}; display: $([ "$show_display" = yes ] && echo included || echo excluded); crash tests: $([ "$show_crashes" = yes ] && echo included || echo excluded)"
 if [ -n "$reasons" ] && [ "$mode" = affected ]; then
     echo "test-phase: running everything because of:$reasons"
 fi

@@ -1,12 +1,17 @@
 # One case of scripts/test-phase.sh --dry-run: runs it, checks the phases it reports, and checks that its "X of Y"
 # equals what `ctest -N` selects with the given arguments (Phase 6).
 #   cmake -DSCRIPT=<test-phase.sh> -DBUILD=<dir> -DARGS="--affected;..." -DEXPECT_PHASES="3 4" -DCTEST_ARGS="-L;^phase4$"
-#         [-DEXPECT_FAIL_TEXT=<text>] -P check.cmake   (EXPECT_PHASES=ANY: only check that the run worked)
+#         [-DEXPECT_FAIL_TEXT=<text>] [-DSIDE_FILE=<side phases fixture>] -P check.cmake   (EXPECT_PHASES=ANY: only check that the run worked)
 # ARGS and CTEST_ARGS are ';'-lists. Without CTEST_ARGS the case selects every test.
 if(NOT BASH)
   find_program(BASH bash REQUIRED)  # Windows passes Git's bash.exe as -DBASH (tests/test_phase_script/CMakeLists.txt)
 endif()
-execute_process(COMMAND ${BASH} ${SCRIPT} --dry-run --build-dir ${BUILD} ${ARGS}
+# The side phases come from a fixture (none unless the case names one), so a case means the same on a machine that builds a side phase's
+# tests (the Mac, phase 26) as on one that does not.
+if(NOT SIDE_FILE)
+  set(SIDE_FILE ${CMAKE_CURRENT_LIST_DIR}/fixtures/side_none.txt)
+endif()
+execute_process(COMMAND ${BASH} ${SCRIPT} --dry-run --build-dir ${BUILD} --side-phases-file ${SIDE_FILE} ${ARGS}
   OUTPUT_VARIABLE out ERROR_VARIABLE err RESULT_VARIABLE rc)
 if(EXPECT_FAIL_TEXT)
   if(rc EQUAL 0)

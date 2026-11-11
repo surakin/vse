@@ -41,7 +41,7 @@ Implement `engine/foundation/os/os.h`, `command_line.h`, `session.h` and the GPU
       ctest results, unity on and off. Linux: file `scripts/test-phase.sh --affected` (the `posix/` move touches shared files) plus asan and tsan.
 - [x] **End-of-day review:** `/code-review high`. Extra scrutiny: the descriptor path used by the crash report (lock-free, no allocation), the timebase
       conversion's overflow, `SleepNanos` never returning early, `dlopen`'s search path (no current directory), the environment pointer's lifetime.
-- [ ] Update `STATUS.md`, `KNOWN-ISSUES.md`; commit and push.
+- [x] Update `STATUS.md`, `KNOWN-ISSUES.md`; commit and push (ticked on Day 286; the Day 285 commit `2ddb6d28` did it).
 
 **Done:** `os.h`, `session.h` and the probe are implemented for macOS with the POSIX part shared; the phase 0, 10, 16 and 26 tests pass on macOS in
 three flavors and both unity modes (quoted); `platform-os.md` has a macOS section; the Linux run of the moved files is filed.

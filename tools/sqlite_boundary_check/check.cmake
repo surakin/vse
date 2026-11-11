@@ -48,7 +48,7 @@ endif()
 set(allow_used "")
 
 set(name_re "(^|[^A-Za-z0-9_])(sqlite3[A-Za-z0-9_]*|SQLITE_[A-Z0-9_]+)([^A-Za-z0-9_]|$)")
-set(include_re "^[ \t]*#[ \t]*include[ \t]*[<\"]([^>\"]*/)?sqlite3[A-Za-z0-9_]*\\.h[>\"]")
+set(include_re "^[ \t]*#[ \t]*(include|import)[ \t]*[<\"]([^>\"]*/)?sqlite3[A-Za-z0-9_]*\\.h[>\"]")
 set(link_re "(^|[^A-Za-z0-9_])sqlite3([^A-Za-z0-9_]|$)")
 
 set(files "")

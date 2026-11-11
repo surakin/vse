@@ -1,0 +1,2 @@
+# test fixture: a current phase below most of the map
+3

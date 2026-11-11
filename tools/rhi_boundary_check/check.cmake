@@ -68,12 +68,12 @@ endforeach()
 
 set(ident_re "(^|[^A-Za-z0-9_])(vk[A-Z][A-Za-z0-9_]*|Vk[A-Z][A-Za-z0-9_]*|VK_[A-Z0-9_]+|PFN_vk[A-Za-z0-9_]*)")
 set(ident_win32_re "(^|[^A-Za-z0-9_])(vk[A-Z][A-Za-z0-9_]*|Vk[A-Z][A-Za-z0-9_]*|PFN_vk[A-Za-z0-9_]*)") # VK_ is a Win32 virtual key there
-set(inc_vk_re "^[ \t]*#[ \t]*include[ \t]*[<\"][^>\"]*[Vv]ulkan[^>\"]*[>\"]")
-set(inc_back_re "^[ \t]*#[ \t]*include[ \t]*[<\"][^>\"]*(wayland|[Xx]11|xcb|rhi/(null|dx12|metal)/)[^>\"]*[>\"]")
+set(inc_vk_re "^[ \t]*#[ \t]*(include|import)[ \t]*[<\"][^>\"]*[Vv]ulkan[^>\"]*[>\"]")
+set(inc_back_re "^[ \t]*#[ \t]*(include|import)[ \t]*[<\"][^>\"]*(wayland|[Xx]11|xcb|rhi/(null|dx12|metal)/)[^>\"]*[>\"]")
 # Direct3D 12 and DXGI (Phase 13 Day 150): their names and headers only in engine/rhi/dx12/, as Vulkan's only in engine/rhi/vulkan/; a
 # backend using the other API is a violation too.
 set(dx_ident_re "(^|[^A-Za-z0-9_])(ID3D12[A-Za-z0-9_]*|IDXGI[A-Za-z0-9_]*|D3D12[A-Z][A-Za-z0-9_]*|D3D12_[A-Z0-9_]+|DXGI_[A-Z0-9_]+|D3D_FEATURE_LEVEL_[A-Z0-9_]+|PFN_D3D12[A-Za-z0-9_]*)")
-set(inc_dx_re "^[ \t]*#[ \t]*include[ \t]*[<\"][^>\"]*(d3d12|dxgi|d3dcommon|dxcapi)[^>\"]*[>\"]")
+set(inc_dx_re "^[ \t]*#[ \t]*(include|import)[ \t]*[<\"][^>\"]*(d3d12|dxgi|d3dcommon|dxcapi)[^>\"]*[>\"]")
 
 set(files "")
 foreach(dir engine game tools tests/renderer)

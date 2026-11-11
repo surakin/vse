@@ -21,12 +21,15 @@ endif()
 set(TEST_PHASE_SCRIPT ${CMAKE_SOURCE_DIR}/scripts/test-phase.sh)
 set(FIX ${CMAKE_CURRENT_SOURCE_DIR}/fixtures)
 
-# phase_script_case(<name> PHASES <expected> [DISPLAY yes|no] ARGS <script arguments...> [CTEST <ctest -N arguments...>])
+# phase_script_case(<name> PHASES <expected> [DISPLAY yes|no] [SIDE <side phases file>] ARGS <script arguments...> [CTEST <ctest -N arguments...>])
 function(phase_script_case name)
-  cmake_parse_arguments(C "" "PHASES;DISPLAY" "ARGS;CTEST" ${ARGN})
+  cmake_parse_arguments(C "" "PHASES;DISPLAY;SIDE" "ARGS;CTEST" ${ARGN})
   set(display "")
   if(C_DISPLAY)
     set(display "-DEXPECT_DISPLAY=${C_DISPLAY}")
+  endif()
+  if(C_SIDE)
+    list(APPEND display "-DSIDE_FILE=${C_SIDE}")
   endif()
   add_test(NAME test_phase_script_${name}
     COMMAND ${CMAKE_COMMAND} -DBASH=${BASH_PROGRAM} -DSCRIPT=${TEST_PHASE_SCRIPT} -DBUILD=${CMAKE_BINARY_DIR} "-DARGS=${C_ARGS}"
@@ -55,6 +58,11 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   phase_script_case(explicit_asan PHASES 13 ARGS 13 --flavor asan CTEST -L "^(phase13)$" -L "^asan$" -LE "^crash$")
   phase_script_refuses(explicit_tsan "MSVC has no ThreadSanitizer" 2 --flavor tsan)
   phase_script_case(explicit_all_flavors PHASES 13 ARGS 13 --flavor all CTEST -L "^(phase13)$" -LE "^crash$")
+elseif(ENGINE_PLATFORM STREQUAL "macos")
+  # macOS builds one layer more each day (Phase 26): the phases with sanitizer tests there so far are 0, 10, 16 and 26.
+  phase_script_case(explicit_asan PHASES 16 ARGS 16 --flavor asan CTEST -L "^(phase16)$" -L "^asan$" -LE "^crash$")
+  phase_script_case(explicit_tsan PHASES 10 ARGS 10 --flavor tsan CTEST -L "^(phase10)$" -L "^tsan$" -LE "^crash$")
+  phase_script_case(explicit_all_flavors PHASES 26 ARGS 26 --flavor all CTEST -L "^(phase26)$" -LE "^crash$")
 else()
   phase_script_case(explicit_asan PHASES 4 ARGS 4 --flavor asan CTEST -L "^(phase4)$" -L "^asan$" -LE "^crash$")
   phase_script_case(explicit_tsan PHASES 2 ARGS 2 --flavor tsan CTEST -L "^(phase2)$" -L "^tsan$" -LE "^crash$")
@@ -95,6 +103,24 @@ phase_script_case(affected_cmake_file PHASES all ARGS --affected --current-phase
   --diff-from-file ${FIX}/diff_cmake.txt CTEST ${PLAIN})
 phase_script_case(affected_phase_map PHASES all ARGS --affected --current-phase-file ${FIX}/phase5.txt
   --diff-from-file ${FIX}/diff_map.txt CTEST ${PLAIN})
+# Side phases (Phase 26 Day 286): --affected adds a side phase this build has tests of, marked "(side)"; one it has none of is not added; one
+# already selected is not marked; --current does not add them. Phase 6 stands in for the side phase: every platform builds its tests.
+phase_script_case(affected_side_phase PHASES "5 6 (side)" SIDE ${FIX}/side_6.txt ARGS --affected --current-phase-file ${FIX}/phase5.txt
+  --diff-from-file ${FIX}/diff_notes.txt CTEST -L "^(phase5|phase6)$" ${PLAIN_NO_DISPLAY})
+# A side phase with no tests in the run's flavor is not added (phase 6 has plain tests only; Day 286 review).
+phase_script_case(affected_side_phase_wrong_flavor PHASES 5 SIDE ${FIX}/side_6.txt ARGS --affected --flavor tsan --current-phase-file ${FIX}/phase5.txt
+  --diff-from-file ${FIX}/diff_notes.txt CTEST -L "^(phase5)$" -L "^tsan$" -LE "^(display|crash)$")
+phase_script_case(affected_side_phase_not_built PHASES 5 SIDE ${FIX}/side_99.txt ARGS --affected --current-phase-file ${FIX}/phase5.txt
+  --diff-from-file ${FIX}/diff_notes.txt CTEST -L "^(phase5)$" ${PLAIN_NO_DISPLAY})
+phase_script_case(affected_side_phase_already_selected PHASES "5 6" SIDE ${FIX}/side_6.txt ARGS --affected --current-phase-file ${FIX}/phase5.txt
+  --diff-from-file ${FIX}/diff_runner.txt CTEST -L "^(phase5|phase6)$" ${PLAIN_NO_DISPLAY})
+phase_script_case(current_ignores_side_phases PHASES 5 DISPLAY excluded SIDE ${FIX}/side_6.txt ARGS --current --current-phase-file ${FIX}/phase5.txt
+  CTEST -L "^(phase5)$" ${PLAIN_NO_DISPLAY})
+add_test(NAME test_phase_script_bad_side_phases
+  COMMAND ${CMAKE_COMMAND} -DBASH=${BASH_PROGRAM} -DSCRIPT=${TEST_PHASE_SCRIPT} -DBUILD=${CMAKE_BINARY_DIR} -DSIDE_FILE=${FIX}/bad.txt
+    "-DARGS=--affected;--current-phase-file;${FIX}/phase5.txt;--diff-from-file;${FIX}/diff_notes.txt" "-DEXPECT_FAIL_TEXT=not a phase number"
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/check.cmake)
+list(APPEND PHASE_SCRIPT_TESTS test_phase_script_bad_side_phases)
 # Refusals.
 phase_script_refuses(bad_current_phase "not a phase number" --current --current-phase-file ${FIX}/bad.txt)
 phase_script_refuses(missing_current_phase "is missing" --current --current-phase-file ${FIX}/nonexistent.txt)
@@ -112,6 +138,9 @@ list(APPEND PHASE_SCRIPT_TESTS test_phase_script_module_map_paths)
 if(ENGINE_PLATFORM STREQUAL "windows")
   set(_partition_phases 0 10 13)
   set(_partition_flavors plain,asan)
+elseif(ENGINE_PLATFORM STREQUAL "macos")
+  set(_partition_phases 0 16 26)
+  set(_partition_flavors plain,asan,tsan)
 else()
   set(_partition_phases 2 4 5)
   set(_partition_flavors plain,asan,tsan)

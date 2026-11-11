@@ -87,11 +87,12 @@ set(header_used "") # "<index>:<header>" pairs seen included by a covered file
 
 # --- what is banned ----------------------------------------------------------------------------------------------------------------
 set(std_headers "algorithm|any|array|atomic|bit|bitset|charconv|chrono|codecvt|compare|complex|concepts|condition_variable|coroutine|deque|exception|execution|filesystem|format|forward_list|fstream|functional|future|initializer_list|iomanip|ios|iosfwd|iostream|istream|iterator|latch|limits|list|locale|map|memory|memory_resource|mutex|new|numbers|numeric|optional|ostream|queue|random|ranges|ratio|regex|scoped_allocator|semaphore|set|shared_mutex|source_location|span|sstream|stack|stdexcept|stop_token|streambuf|string|string_view|strstream|syncstream|system_error|thread|tuple|type_traits|typeindex|typeinfo|unordered_map|unordered_set|utility|valarray|variant|vector|version|cassert|cctype|cerrno|cfenv|cfloat|cinttypes|climits|clocale|cmath|csetjmp|csignal|cstdarg|cstddef|cstdint|cstdio|cstdlib|cstring|ctime|cuchar|cwchar|cwctype|assert\\.h|ctype\\.h|errno\\.h|float\\.h|inttypes\\.h|limits\\.h|math\\.h|stdarg\\.h|stddef\\.h|stdint\\.h|stdio\\.h|stdlib\\.h|string\\.h|wchar\\.h")
-set(include_re "^[ \t]*#[ \t]*include[ \t]*<(${std_headers})>")
+# `#import` too: Objective-C++ (.mm) accepts it for any header (Phase 26 Day 286).
+set(include_re "^[ \t]*#[ \t]*(include|import)[ \t]*<(${std_headers})>")
 set(c_names "strlen|strnlen|strcmp|strncmp|strcpy|strncpy|strcat|strncat|strchr|strrchr|strstr|strpbrk|strtok|memcpy|memmove|memset|memcmp|memchr|malloc|calloc|realloc|free|aligned_alloc|printf|fprintf|snprintf|vsnprintf|vfprintf|sprintf|sscanf|puts|fputs|fputc|putchar|fwrite|fread|fopen|fclose|fflush|fgets|getenv|abort|exit|_Exit|atoi|atol|atof|strtol|strtoll|strtoul|strtoull|strtod|strtof|qsort|wcslen|wcscmp|wcsncmp|wcsstr|wcsrchr|wcscat|wmemcpy|wmemmove|swprintf|sqrt|sqrtf|sin|cos|tan|asin|acos|atan|atan2|pow|powf|exp|log|floor|ceil|lround|fabs|fabsf|fmod|ldexp|isnan|isinf|isfinite|signbit|strdup|rand|srand|toupper|tolower|isalpha|isdigit|isalnum|isspace|atexit|system|perror|fseek|ftell|fgetc|getline|setvbuf|assert")
 set(c_re "(^|[^A-Za-z0-9_.>:])(::)?(${c_names})[ \t]*\\(")
 set(int_re "(^|[^A-Za-z0-9_])(unsigned char|signed char|(std::)?u?int(8|16|32|64)_t)([^A-Za-z0-9_]|$)")
-set(prefilter_re "std::|#[ \t]*include[ \t]*<|unsigned char|signed char|int(8|16|32|64)_t|[^A-Za-z0-9_.>:](::)?(${c_names})[ \t]*\\(")
+set(prefilter_re "std::|#[ \t]*(include|import)[ \t]*<|unsigned char|signed char|int(8|16|32|64)_t|[^A-Za-z0-9_.>:](::)?(${c_names})[ \t]*\\(")
 
 set(files "")
 foreach(dir IN LISTS DIRS)
@@ -159,7 +160,7 @@ foreach(f IN LISTS files)
     set(is_include FALSE)
     if(code MATCHES "${include_re}")
       set(is_include TRUE)
-      set(header "<${CMAKE_MATCH_1}>")
+      set(header "<${CMAKE_MATCH_2}>")
       string(REPLACE "\\." "." header "${header}")
       set(kind "standard header ${header}")
     elseif(code MATCHES "std::")

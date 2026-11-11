@@ -29,7 +29,29 @@ if(ENGINE_HAVE_TSAN)
   string(APPEND _built_flavors ",tsan")
 endif()
 phase_labels_test(test_phase_labels ${CMAKE_BINARY_DIR} -DCHECK_FLAVORS=1 -DPLATFORM=${ENGINE_PLATFORM} -DBUILT_FLAVORS=${_built_flavors}
-  ${_check_unused})
+  ${_check_unused} -DCURRENT_PHASE_FILE=${CMAKE_SOURCE_DIR}/CURRENT_PHASE -DSIDE_PHASES_FILE=${CMAKE_SOURCE_DIR}/SIDE_PHASES)
+# Side phases (Phase 26 Day 286): a map phase above the current one fails unless SIDE_PHASES lists it. Planted: the real map with the
+# current phase at 3 (phase 4 and up are above it), and with no side phases (phase 26 is above the current phase).
+phase_labels_test(test_phase_labels_planted_above_current ${CMAKE_CURRENT_BINARY_DIR}/fixtures/good
+  -DCURRENT_PHASE_FILE=${CMAKE_CURRENT_SOURCE_DIR}/fixtures/current_phase_3.txt -DSIDE_PHASES_FILE=${CMAKE_SOURCE_DIR}/SIDE_PHASES)
+phase_labels_test(test_phase_labels_planted_no_side_phase ${CMAKE_CURRENT_BINARY_DIR}/fixtures/good
+  -DCURRENT_PHASE_FILE=${CMAKE_SOURCE_DIR}/CURRENT_PHASE -DSIDE_PHASES_FILE=${CMAKE_CURRENT_SOURCE_DIR}/fixtures/no_side_phases.txt)
+set_tests_properties(test_phase_labels_planted_above_current PROPERTIES
+  PASS_REGULAR_EXPRESSION "phase4 is above the current phase 3 and is not a side phase")
+set_tests_properties(test_phase_labels_planted_no_side_phase PROPERTIES
+  PASS_REGULAR_EXPRESSION "phase26 is above the current phase [0-9]+ and is not a side phase")
+# A stale or mistyped SIDE_PHASES entry (one at or below the current phase, one with no map lines) fails; so does an empty CURRENT_PHASE, with
+# the file named (Day 286 review).
+phase_labels_test(test_phase_labels_planted_stale_side_phase ${CMAKE_CURRENT_BINARY_DIR}/fixtures/good
+  -DCURRENT_PHASE_FILE=${CMAKE_SOURCE_DIR}/CURRENT_PHASE -DSIDE_PHASES_FILE=${CMAKE_CURRENT_SOURCE_DIR}/fixtures/stale_side_phases.txt)
+set_tests_properties(test_phase_labels_planted_stale_side_phase PROPERTIES
+  PASS_REGULAR_EXPRESSION "side phase 3 is not above the current phase [0-9]+.*side phase 62 has no lines in the map")
+phase_labels_test(test_phase_labels_planted_empty_current ${CMAKE_CURRENT_BINARY_DIR}/fixtures/good
+  -DCURRENT_PHASE_FILE=${CMAKE_CURRENT_SOURCE_DIR}/fixtures/no_side_phases.txt -DSIDE_PHASES_FILE=${CMAKE_SOURCE_DIR}/SIDE_PHASES)
+set_tests_properties(test_phase_labels_planted_empty_current PROPERTIES
+  PASS_REGULAR_EXPRESSION "no_side_phases.txt: '' is not a phase number")
+engine_label_tests(test_phase_labels_planted_above_current test_phase_labels_planted_no_side_phase test_phase_labels_planted_stale_side_phase
+  test_phase_labels_planted_empty_current)
 phase_labels_test(test_phase_labels_clean ${CMAKE_CURRENT_BINARY_DIR}/fixtures/good)
 phase_labels_test(test_phase_labels_planted_unlabeled ${CMAKE_CURRENT_BINARY_DIR}/fixtures/unlabeled)
 phase_labels_test(test_phase_labels_planted_doubled ${CMAKE_CURRENT_BINARY_DIR}/fixtures/doubled)

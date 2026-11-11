@@ -49,7 +49,7 @@ set(std_re "std::([A-Za-z_0-9]+)")
 
 set(files "")
 foreach(dir engine game)
-  file(GLOB_RECURSE found RELATIVE "${ROOT}" "${ROOT}/${dir}/*.h" "${ROOT}/${dir}/*.cpp" "${ROOT}/${dir}/*.cc" "${ROOT}/${dir}/*.inl")
+  file(GLOB_RECURSE found RELATIVE "${ROOT}" "${ROOT}/${dir}/*.h" "${ROOT}/${dir}/*.cpp" "${ROOT}/${dir}/*.cc" "${ROOT}/${dir}/*.inl" "${ROOT}/${dir}/*.mm")
   list(APPEND files ${found})
 endforeach()
 

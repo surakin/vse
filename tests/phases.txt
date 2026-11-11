@@ -61,17 +61,18 @@ flavors 0   macos: plain,asan,tsan # tests/foundation (base tests), foundation_s
 flavors 1   macos: plain           # tests/foundation (Day 285)
 flavors 2   macos: none
 flavors 3   macos: none
-flavors 4   macos: none
-flavors 5   macos: none
+flavors 4   macos: plain           # the gates (Day 286)
+flavors 5   macos: plain           # the gates (Day 286)
 flavors 6   macos: plain           # the phase-map checks (Day 284)
-flavors 7   macos: none
+flavors 7   macos: plain           # the gates (Day 286)
 flavors 8   macos: none
-flavors 9   macos: none
+flavors 9   macos: plain           # the gates (Day 286)
 flavors 10  macos: plain,asan,tsan # tests/types (Day 284)
-flavors 11  macos: none
+flavors 11  macos: plain           # the gates (Day 286)
 flavors 12  macos: plain           # tests/foundation (Day 285)
 flavors 15  macos: plain           # tests/foundation (Day 285)
 flavors 16  macos: plain,asan,tsan # tests/lang, sync, cstr (Day 284)
+flavors 19  macos: plain           # the gates (Day 286)
 flavors 26  macos: plain,asan,tsan # tests/macos (Day 284)
 
 # --- Phase 0: foundation (tests/foundation) ---

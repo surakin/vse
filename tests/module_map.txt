@@ -15,6 +15,8 @@ engine/foundation/settings 3,11
 engine/foundation/os/linux/debug 7
 engine/foundation/os/windows 0,13
 engine/foundation/os/windows/debug 7,13
+engine/foundation/os/macos 0,26
+engine/foundation/os/posix 0,1,2,3,4,5,7,9,10,11,26   # the os backend Linux and macOS share (Phase 26 Day 285)
 engine/platform     0,1,4,5,8
 engine/jobs         2,3,4,5
 engine/rhi          3,4,5
@@ -31,7 +33,10 @@ tools/std_usage_check 10
 tools/settings_fixtures_check 11
 tools/config_access_check 11
 tools/module_deps_check 12
+tools/sqlite_boundary_check 19
+tools/database_sql_check 19
 tests/windows       13
+tests/macos         26
 tools/platform_neutral_check 7
 tools/crash_extract 7
 game/hello_window  1
@@ -48,6 +53,7 @@ tests/lang          16
 tests/sync          16
 tests/cstr          16
 tests/settings      11
+tests/database      19
 tests/debug         7
 tests/docgen        3
 tests/rhi           4,5
@@ -66,4 +72,7 @@ STATUS.md           -
 KNOWN-ISSUES.md     -
 UNICODE_VERSION     -
 scripts             6
-CURRENT_PHASE       -
+CURRENT_PHASE       6    # test_phase_labels reads it (Phase 26 Day 286)
+SIDE_PHASES         6    # read by scripts/test-phase.sh and test_phase_labels
+ARCHITECTURE.md     -
+BUILD.md            -

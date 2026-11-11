@@ -17,6 +17,9 @@ configuration so Apple silicon code paths at least build.
 - [ ] **arm64 compile check:** a preset `macos-clang-arm64` (`CMAKE_OSX_ARCHITECTURES=arm64`, deployment target 13.0) builds every target with no warning
       in unity and non-unity modes; nothing runs (no hardware). `FaultSupported(DivideByZero)` is false there, the `brk` illegal instruction compiles, the
       16 KiB page size is not assumed anywhere (a grep of constants). It runs on the closing day and on each later macOS day that changes macOS code.
+- [ ] **`docs_samples` on macOS** (moved from Day 286 by way of Day 293): the guide samples compile and run with Apple clang, linking the macOS
+      libraries (`tools/docgen/CMakeLists.txt` gets a Darwin branch for the frameworks in place of pkg-config's Wayland and X11); `ctest -L docs`
+      passes on macOS.
 - [ ] **Remove the "not yet ported" CMake branch** of Day 284: everything configures on macOS.
 - [ ] **Documentation:** each demo's README names macOS; `KNOWN-ISSUES.md` Apple-silicon line names the compile check and what it does not cover;
       `docgen lint` zero.

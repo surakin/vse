@@ -1,0 +1,3 @@
+# test fixture: a closed side phase and a mistyped one
+3
+62

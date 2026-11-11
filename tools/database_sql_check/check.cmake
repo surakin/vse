@@ -48,7 +48,7 @@ set(allow_used "")
 
 set(files "")
 foreach(dir engine game tools)
-  file(GLOB_RECURSE found RELATIVE "${ROOT}" "${ROOT}/${dir}/*.h" "${ROOT}/${dir}/*.hpp" "${ROOT}/${dir}/*.cpp" "${ROOT}/${dir}/*.inl")
+  file(GLOB_RECURSE found RELATIVE "${ROOT}" "${ROOT}/${dir}/*.h" "${ROOT}/${dir}/*.hpp" "${ROOT}/${dir}/*.cpp" "${ROOT}/${dir}/*.inl" "${ROOT}/${dir}/*.cc" "${ROOT}/${dir}/*.mm")
   list(APPEND files ${found})
 endforeach()
 

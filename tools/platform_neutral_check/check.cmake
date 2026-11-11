@@ -27,6 +27,10 @@
 #   __clang__, __GNUC__, _MSC_VER, __x86_64__, __i386__, __aarch64__, _M_X64, _M_IX86, _M_ARM64, __SANITIZE_ADDRESS__, __SANITIZE_THREAD__,
 #   __has_feature, __has_builtin). Code asks ENGINE_PLATFORM_*, ENGINE_COMPILER_*, ENGINE_ARCH_* and ENGINE_SANITIZER_* (engine/foundation/build_defs.h,
 #   the one file that reads the raw macros). Exempt: tests/windows/discovery/ (toolchain probes built outside the engine) and generated code.
+# Rule 7 (Phase 26 Day 286): Apple's headers (AppKit, Foundation, QuartzCore, CoreGraphics, IOKit, Metal and the other frameworks; <mach/...>,
+#   <dispatch/...>, <objc/...>, <os/...>, <libkern/...>, <malloc/...>, <simd/...>, <copyfile.h>, <sys/sysctl.h>, <sys/event.h>, <libproc.h>,
+#   <crt_externs.h>, <TargetConditionals.h>, <Availability*.h>), by #include or #import, and `.m`/`.mm` files appear only in the macOS
+#   directories: a `macos/` folder (engine/foundation/os/macos/, tests/macos/, ...) and engine/rhi/metal/. Fixtures excepted.
 cmake_minimum_required(VERSION 3.20)
 
 if(NOT ROOT OR NOT BOUNDARY)
@@ -91,9 +95,9 @@ endforeach()
 
 # Platform names (applied to code with strings and comments blanked).
 set(ident_re "(^|[^A-Za-z0-9_])(ucontext_t|siginfo_t|pid_t|HANDLE|SIG[A-Z0-9]+|(fork|waitpid|sigaction)[ \t]*\\()([^A-Za-z0-9_]|$)")
-set(platform_include_re "^[ \t]*#[ \t]*include[ \t]*[<\"](unistd\\.h|windows\\.h|signal\\.h|csignal|sys/[A-Za-z0-9_/]+\\.h|poll\\.h|spawn\\.h|fcntl\\.h|dirent\\.h)[>\"]")
+set(platform_include_re "^[ \t]*#[ \t]*(include|import)[ \t]*[<\"](unistd\\.h|windows\\.h|signal\\.h|csignal|sys/[A-Za-z0-9_/]+\\.h|poll\\.h|spawn\\.h|fcntl\\.h|dirent\\.h)[>\"]")
 set(proc_re "/proc")
-set(lib_include_re "^[ \t]*#[ \t]*include[ \t]*[<\"]([A-Za-z0-9_/]*/)?(backtrace|sentry|ft2build)\\.h[>\"]")
+set(lib_include_re "^[ \t]*#[ \t]*(include|import)[ \t]*[<\"]([A-Za-z0-9_/]*/)?(backtrace|sentry|ft2build)\\.h[>\"]")
 
 # Strips comments from the line in `l`; `in_block` tracks /* ... */ across lines. Sets `code` (strings kept) in the caller.
 # It reads the caller's variable instead of taking an argument: macro arguments are parsed again, which mangles backslashes.
@@ -156,7 +160,7 @@ endforeach()
 # --- Rule 2 ------------------------------------------------------------------------------------------------------------
 set(all_files "")
 foreach(dir engine game tools tests)
-  file(GLOB_RECURSE found RELATIVE "${ROOT}" "${ROOT}/${dir}/*.h" "${ROOT}/${dir}/*.hpp" "${ROOT}/${dir}/*.cpp" "${ROOT}/${dir}/*.cc" "${ROOT}/${dir}/*.inl" "${ROOT}/${dir}/*.mm")
+  file(GLOB_RECURSE found RELATIVE "${ROOT}" "${ROOT}/${dir}/*.h" "${ROOT}/${dir}/*.hpp" "${ROOT}/${dir}/*.cpp" "${ROOT}/${dir}/*.cc" "${ROOT}/${dir}/*.inl" "${ROOT}/${dir}/*.mm" "${ROOT}/${dir}/*.m")
   list(APPEND all_files ${found})
 endforeach()
 foreach(f IN LISTS all_files)
@@ -171,8 +175,8 @@ foreach(f IN LISTS all_files)
     strip_comments()
     set(which "")
     if(code MATCHES "${lib_include_re}")
-      set(which "${CMAKE_MATCH_2}")
-    elseif(code MATCHES "^[ \t]*#[ \t]*include[ \t]*[<\"]freetype/[A-Za-z0-9_/]+\\.h[>\"]")
+      set(which "${CMAKE_MATCH_3}")
+    elseif(code MATCHES "^[ \t]*#[ \t]*(include|import)[ \t]*[<\"]freetype/[A-Za-z0-9_/]+\\.h[>\"]")
       set(which "ft2build") # a <freetype/...> include counts as ft2build.h: FreeType's own headers are the same library: they need no ft2build.h to be reached
     endif()
     if(NOT which STREQUAL "")
@@ -204,7 +208,7 @@ endforeach()
 
 # --- Rule 4 ------------------------------------------------------------------------------------------------------------
 # The header's name without its folders, so <um/windows.h> counts as windows.h (Day 150 review).
-set(win_sdk_re "^[ \t]*#[ \t]*include[ \t]*[<\"]([A-Za-z0-9_]+/)*([A-Za-z0-9_]+)\\.h[>\"]")
+set(win_sdk_re "^[ \t]*#[ \t]*(include|import)[ \t]*[<\"]([A-Za-z0-9_]+/)*([A-Za-z0-9_]+)\\.h[>\"]")
 set(win_sdk_names "^(windows|winternl|wtsapi32|psapi|dbghelp|shlobj|shlobj_core|shellapi|knownfolders|objbase|combaseapi|processthreadsapi|winbase|winuser|winnt|minwindef|fileapi|handleapi|synchapi|libloaderapi|memoryapi|sysinfoapi|debugapi|errhandlingapi|consoleapi|wincon|winreg|winsock2|ws2tcpip|shtypes|propsys|mmdeviceapi|audioclient|xinput|d3d12[a-z0-9_]*|dxgi[a-z0-9_]*|d3dcommon|d3dcompiler|dxcapi)$")
 set(win_dirs_re "^(engine/foundation/(os|io|settings)/windows/|engine/jobs/windows/|engine/platform/windows/|engine/rhi/vulkan/windows/|engine/rhi/dx12/|tests/windows/|tools/crash_extract/windows/|tools/docgen/src/windows/|tools/shader_mint/windows/)")
 foreach(f IN LISTS all_files)
@@ -218,19 +222,19 @@ foreach(f IN LISTS all_files)
   foreach(l IN LISTS lines)
     math(EXPR n "${n}+1")
     strip_comments()
-    if(code MATCHES "^[ \t]*#[ \t]*include[ \t]*\"([^\"]*/)?win32\\.h\"")
+    if(code MATCHES "^[ \t]*#[ \t]*(include|import)[ \t]*\"([^\"]*/)?win32\\.h\"")
       set(seen_wrapper TRUE)
       continue()
     endif()
     # The D3D12 wrapper (Day 164) is the engine's own header and includes win32.h first: it is the include the rule asks for.
-    if(code MATCHES "^[ \t]*#[ \t]*include[ \t]*\"rhi/dx12/d3d12_api\\.h\"")
+    if(code MATCHES "^[ \t]*#[ \t]*(include|import)[ \t]*\"rhi/dx12/d3d12_api\\.h\"")
       set(seen_wrapper TRUE)
       continue()
     endif()
     if(NOT code MATCHES "${win_sdk_re}")
       continue()
     endif()
-    set(h "${CMAKE_MATCH_2}")
+    set(h "${CMAKE_MATCH_3}")
     string(TOLOWER "${h}" h)
     if(NOT h MATCHES "${win_sdk_names}")
       continue()
@@ -260,7 +264,7 @@ endforeach()
 # wWinMain of its own: it writes ENGINE_WINDOWED_PROGRAM (platform/entry_point.h), which makes it a GUI program on Windows (the demos
 # moved to it on Day 161).
 set(entry_def_re "^[ \t]*(extern[ \t]+\"C\"[ \t]+)?int[ \t]+(__stdcall[ \t]+|WINAPI[ \t]+)?(main|wmain|WinMain|wWinMain)[ \t]*\\(")
-set(window_include_re "^[ \t]*#[ \t]*include[ \t]*\"platform/(window_host|window)\\.h\"")
+set(window_include_re "^[ \t]*#[ \t]*(include|import)[ \t]*\"platform/(window_host|window)\\.h\"")
 foreach(f IN LISTS all_files)
   if(f MATCHES "(^|/)fixtures/" OR NOT f MATCHES "^game/")
     continue()
@@ -303,6 +307,37 @@ foreach(f IN LISTS all_files)
       set(raw_name "${CMAKE_MATCH_2}")
       string(STRIP "${l}" shown)
       gate_problem("${f}:${n}: a raw compiler or system macro (${raw_name}); use ENGINE_PLATFORM_*, ENGINE_COMPILER_*, ENGINE_ARCH_* or ENGINE_SANITIZER_* from build_defs.h: ${shown}")
+    endif()
+  endforeach()
+endforeach()
+
+# --- Rule 7 ------------------------------------------------------------------------------------------------------------
+# Apple's headers (the frameworks, Mach, libdispatch, the Objective-C runtime, os/, libkern/, malloc/ and the other Darwin-only C headers)
+# and Objective-C or Objective-C++ files appear only in the macOS directories: a `macos/` folder anywhere under engine/, game/, tools/ or
+# tests/, and the Metal backend (engine/rhi/metal/, from Phase 26 Day 300). Phase 26 Day 286. Only the include lines are read (file(STRINGS)
+# with a filter), so the rule costs no second per-line pass over the tree; a commented-out include is skipped as in the other rules.
+set(apple_frameworks "AppKit|Foundation|QuartzCore|CoreGraphics|CoreFoundation|CoreVideo|CoreServices|CoreText|CoreImage|ImageIO|ApplicationServices|Cocoa|Carbon|IOKit|IOSurface|Metal|MetalKit|MetalPerformanceShaders|GameController|AudioToolbox|CoreAudio|AVFoundation|Security|UniformTypeIdentifiers|Accelerate")
+set(apple_include_re "^[ \t]*#[ \t]*(include|import)[ \t]*<((${apple_frameworks})/[^>]*|(mach|mach-o|dispatch|objc|os|libkern|malloc|simd)/[^>]*|copyfile\\.h|sys/sysctl\\.h|sys/event\\.h|libproc\\.h|crt_externs\\.h|TargetConditionals\\.h|Availability[A-Za-z]*\\.h)>")
+set(mac_dirs_re "(^|/)macos/|^engine/rhi/metal/")
+foreach(f IN LISTS all_files)
+  if(f MATCHES "(^|/)fixtures/" OR f MATCHES "${mac_dirs_re}")
+    continue()
+  endif()
+  if(f MATCHES "\\.mm?$")
+    gate_problem("${f}: an Objective-C or Objective-C++ file outside the macOS directories (a macos/ folder, engine/rhi/metal/)")
+  endif()
+  file(STRINGS "${ROOT}/${f}" include_lines REGEX "^[ \t]*#[ \t]*(include|import)[ \t]*<")
+  if(NOT include_lines)
+    continue()
+  endif()
+  read_lines("${ROOT}/${f}" lines)
+  set(n 0)
+  set(in_block FALSE)
+  foreach(l IN LISTS lines)
+    math(EXPR n "${n}+1")
+    strip_comments()
+    if(code MATCHES "${apple_include_re}")
+      gate_problem("${f}:${n}: an Apple header outside the macOS directories: ${l}")
     endif()
   endforeach()
 endforeach()

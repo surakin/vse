@@ -27,6 +27,10 @@ port.
       applies (no stray `getenv`).
 - [ ] **The `foundation` aggregate:** `foundation_settings -> foundation_debug -> foundation_io -> foundation_base` all exist on macOS; `engine/jobs` now links
       the aggregate (Day 289's temporary branch removed for macOS); `tests/foundation`'s `foundation_tests` (file tests; window tests wait for Day 295).
+- [ ] **`docgen` on macOS** (moved from Day 286, which found it needs the whole foundation): build `tools/docgen` (its `child_process_posix.cpp` as on
+      Linux); `cmake --build build-macos --target docs` regenerates `docs/reference/` byte-identical to Linux's committed one (compare; fix any ordering,
+      path or locale difference); `docs_check`, `docs_links` and `docs_lint` pass on macOS. `docs_samples` waits for Day 310 (the samples link the
+      renderer and UI); its target is configured only when those libraries exist.
 - [ ] **Foundation milestone run:** `scripts/test-phase.sh --flavor all` over the foundation's and the jobs' phases (0, 2, 7, 9, 10, 11, 12, 16 and 26; one
       invocation per phase if the script takes only one, each line quoted), crash tests included; this is the
       "foundation port done" result named in `STATUS.md`.

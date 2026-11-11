@@ -1,0 +1,4 @@
+# Side phases (CLAUDE.md "Tests run by phase"): phases run beside the main line, on another machine, one number per line. They do not
+# change CURRENT_PHASE; scripts/test-phase.sh --affected adds each one a build has tests of, and test_phase_labels accepts their labels
+# above CURRENT_PHASE. A side phase's last day removes its line.
+26
