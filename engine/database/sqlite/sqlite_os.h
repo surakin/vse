@@ -12,6 +12,17 @@ namespace engine_placeholder::database::sqlite_detail {
 /// Returns: 0 (`SQLITE_OK`) or the SQLite result code of the failure.
 int InitializeSqlite();
 
+/// Counts one statement compiled by SQLite (not one served from a connection's statement cache). Called by the backend.
+///
+/// Thread-safety: thread-safe.
+void NotePreparedStatement();
+
+/// The number of statements SQLite has compiled in this process since start: a test reads it before and after a loop to see whether the statement cache
+/// served the repeats.
+///
+/// Thread-safety: thread-safe.
+unsigned long long PreparedStatementCount();
+
 /// The file operations a test can make fail ([[database::sqlite_detail::SetFileFaults]]), combined with `|`.
 enum FileFaultOp : unsigned {
     kFaultWrite = 1,    ///< A write to a file.

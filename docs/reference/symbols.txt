@@ -3637,54 +3637,62 @@ database::SyncMode::Default	enumerator	database	database-syncmode-default	databa
 database::SyncMode::Off	enumerator	database	database-syncmode-off	database.md	engine/database/database.h:53
 database::SyncMode::Normal	enumerator	database	database-syncmode-normal	database.md	engine/database/database.h:54
 database::SyncMode::Full	enumerator	database	database-syncmode-full	database.md	engine/database/database.h:55
-database::OpenOptions	struct	database	database-openoptions	database.md	engine/database/database.h:62
-database::OpenOptions::location	variable	database	database-openoptions-location	database.md	engine/database/database.h:65
-database::OpenOptions::mode	variable	database	database-openoptions-mode	database.md	engine/database/database.h:66
-database::OpenOptions::busy_timeout_ms	variable	database	database-openoptions-busy-timeout-ms	database.md	engine/database/database.h:67
-database::OpenOptions::journal_mode	variable	database	database-openoptions-journal-mode	database.md	engine/database/database.h:68
-database::OpenOptions::sync_mode	variable	database	database-openoptions-sync-mode	database.md	engine/database/database.h:69
-database::OpenOptions::foreign_keys	variable	database	database-openoptions-foreign-keys	database.md	engine/database/database.h:70
-database::TransactionKind	enum	database	database-transactionkind	database.md	engine/database/database.h:74
-database::TransactionKind::Deferred	enumerator	database	database-transactionkind-deferred	database.md	engine/database/database.h:75
-database::TransactionKind::Immediate	enumerator	database	database-transactionkind-immediate	database.md	engine/database/database.h:76
-database::Statement	class	database	database-statement	database.md	engine/database/database.h:86
-database::Statement::~Statement()	function	database	database-statement-tilde-statement	database.md	engine/database/database.h:88
-database::Statement::ParameterCount() const	function	database	database-statement-parametercount-const	database.md	engine/database/database.h:92
-database::Statement::ParameterIndex(StringView,u32*) const	function	database	database-statement-parameterindex-stringview-u32-star-const	database.md	engine/database/database.h:99
-database::Statement::Bind(u32,const ValueView&)	function	database	database-statement-bind-u32-const-valueview-amp	database.md	engine/database/database.h:104
-database::Statement::ClearBindings()	function	database	database-statement-clearbindings	database.md	engine/database/database.h:107
-database::Statement::Reset()	function	database	database-statement-reset	database.md	engine/database/database.h:111
-database::Statement::Step(bool*)	function	database	database-statement-step-bool-star	database.md	engine/database/database.h:119
-database::Statement::ColumnCount() const	function	database	database-statement-columncount-const	database.md	engine/database/database.h:123
-database::Statement::Column(u32) const	function	database	database-statement-column-u32-const	database.md	engine/database/database.h:128
-database::Connection	class	database	database-connection	database.md	engine/database/database.h:138
-database::Connection::~Connection()	function	database	database-connection-tilde-connection	database.md	engine/database/database.h:140
-database::Connection::Supports(Feature) const	function	database	database-connection-supports-feature-const	database.md	engine/database/database.h:144
-database::Connection::Prepare(SqlText,UniquePtr<Statement>*)	function	database	database-connection-prepare-sqltext-uniqueptr-lt-statement-gt-star	database.md	engine/database/database.h:152
-database::Connection::Execute(SqlText)	function	database	database-connection-execute-sqltext	database.md	engine/database/database.h:156
-database::Connection::Begin(TransactionKind)	function	database	database-connection-begin-transactionkind	database.md	engine/database/database.h:161
-database::Connection::Commit()	function	database	database-connection-commit	database.md	engine/database/database.h:164
-database::Connection::Rollback()	function	database	database-connection-rollback	database.md	engine/database/database.h:167
-database::Connection::InTransaction() const	function	database	database-connection-intransaction-const	database.md	engine/database/database.h:170
-database::Connection::Savepoint(StringView)	function	database	database-connection-savepoint-stringview	database.md	engine/database/database.h:176
-database::Connection::ReleaseSavepoint(StringView)	function	database	database-connection-releasesavepoint-stringview	database.md	engine/database/database.h:179
-database::Connection::RollbackToSavepoint(StringView)	function	database	database-connection-rollbacktosavepoint-stringview	database.md	engine/database/database.h:182
-database::Connection::LastInsertRowId() const	function	database	database-connection-lastinsertrowid-const	database.md	engine/database/database.h:186
-database::Connection::ChangedRows() const	function	database	database-connection-changedrows-const	database.md	engine/database/database.h:189
-database::Connection::SchemaVersion(i64*)	function	database	database-connection-schemaversion-i64-star	database.md	engine/database/database.h:194
-database::Connection::WriteSchemaVersion(i64)	function	database	database-connection-writeschemaversion-i64	database.md	engine/database/database.h:197
-database::Database	class	database	database-database	database.md	engine/database/database.h:204
-database::Database::~Database()	function	database	database-database-tilde-database	database.md	engine/database/database.h:206
-database::Database::Name() const	function	database	database-database-name-const	database.md	engine/database/database.h:211
-database::Database::Supports(Feature) const	function	database	database-database-supports-feature-const	database.md	engine/database/database.h:214
-database::Database::Open(const OpenOptions&,UniquePtr<Connection>*)	function	database	database-database-open-const-openoptions-amp-uniqueptr-lt-connection-gt-star	database.md	engine/database/database.h:221
-database::Transaction	class	database	database-transaction	database.md	engine/database/database.h:228
-database::Transaction::Transaction(Connection&,TransactionKind)	function	database	database-transaction-transaction-connection-amp-transactionkind	database.md	engine/database/database.h:231
-database::Transaction::~Transaction()	function	database	database-transaction-tilde-transaction	database.md	engine/database/database.h:233
-database::Transaction::Transaction(const Transaction&)	function	database	database-transaction-transaction-const-transaction-amp	database.md	engine/database/database.h:234
-database::Transaction::operator=(const Transaction&)	function	database	database-transaction-operator-eq-const-transaction-amp	database.md	engine/database/database.h:235
-database::Transaction::BeginStatus() const	function	database	database-transaction-beginstatus-const	database.md	engine/database/database.h:239
-database::Transaction::Commit()	function	database	database-transaction-commit	database.md	engine/database/database.h:243
+database::IntegrityCheck	enum	database	database-integritycheck	database.md	engine/database/database.h:59
+database::IntegrityCheck::Off	enumerator	database	database-integritycheck-off	database.md	engine/database/database.h:60
+database::IntegrityCheck::Quick	enumerator	database	database-integritycheck-quick	database.md	engine/database/database.h:61
+database::IntegrityCheck::Full	enumerator	database	database-integritycheck-full	database.md	engine/database/database.h:62
+database::OpenOptions	struct	database	database-openoptions	database.md	engine/database/database.h:69
+database::OpenOptions::location	variable	database	database-openoptions-location	database.md	engine/database/database.h:72
+database::OpenOptions::mode	variable	database	database-openoptions-mode	database.md	engine/database/database.h:73
+database::OpenOptions::busy_timeout_ms	variable	database	database-openoptions-busy-timeout-ms	database.md	engine/database/database.h:74
+database::OpenOptions::journal_mode	variable	database	database-openoptions-journal-mode	database.md	engine/database/database.h:75
+database::OpenOptions::sync_mode	variable	database	database-openoptions-sync-mode	database.md	engine/database/database.h:76
+database::OpenOptions::foreign_keys	variable	database	database-openoptions-foreign-keys	database.md	engine/database/database.h:77
+database::OpenOptions::integrity_check	variable	database	database-openoptions-integrity-check	database.md	engine/database/database.h:78
+database::OpenOptions::statement_cache	variable	database	database-openoptions-statement-cache	database.md	engine/database/database.h:79
+database::TransactionKind	enum	database	database-transactionkind	database.md	engine/database/database.h:83
+database::TransactionKind::Deferred	enumerator	database	database-transactionkind-deferred	database.md	engine/database/database.h:84
+database::TransactionKind::Immediate	enumerator	database	database-transactionkind-immediate	database.md	engine/database/database.h:85
+database::Statement	class	database	database-statement	database.md	engine/database/database.h:95
+database::Statement::~Statement()	function	database	database-statement-tilde-statement	database.md	engine/database/database.h:97
+database::Statement::ParameterCount() const	function	database	database-statement-parametercount-const	database.md	engine/database/database.h:101
+database::Statement::ParameterIndex(StringView,u32*) const	function	database	database-statement-parameterindex-stringview-u32-star-const	database.md	engine/database/database.h:108
+database::Statement::Bind(u32,const ValueView&)	function	database	database-statement-bind-u32-const-valueview-amp	database.md	engine/database/database.h:113
+database::Statement::ClearBindings()	function	database	database-statement-clearbindings	database.md	engine/database/database.h:116
+database::Statement::Reset()	function	database	database-statement-reset	database.md	engine/database/database.h:120
+database::Statement::Step(bool*)	function	database	database-statement-step-bool-star	database.md	engine/database/database.h:128
+database::Statement::ColumnCount() const	function	database	database-statement-columncount-const	database.md	engine/database/database.h:132
+database::Statement::Column(u32) const	function	database	database-statement-column-u32-const	database.md	engine/database/database.h:137
+database::Connection	class	database	database-connection	database.md	engine/database/database.h:147
+database::Connection::~Connection()	function	database	database-connection-tilde-connection	database.md	engine/database/database.h:149
+database::Connection::Supports(Feature) const	function	database	database-connection-supports-feature-const	database.md	engine/database/database.h:153
+database::Connection::Prepare(SqlText,UniquePtr<Statement>*)	function	database	database-connection-prepare-sqltext-uniqueptr-lt-statement-gt-star	database.md	engine/database/database.h:161
+database::Connection::Execute(SqlText)	function	database	database-connection-execute-sqltext	database.md	engine/database/database.h:165
+database::Connection::Begin(TransactionKind)	function	database	database-connection-begin-transactionkind	database.md	engine/database/database.h:170
+database::Connection::Commit()	function	database	database-connection-commit	database.md	engine/database/database.h:173
+database::Connection::Rollback()	function	database	database-connection-rollback	database.md	engine/database/database.h:176
+database::Connection::InTransaction() const	function	database	database-connection-intransaction-const	database.md	engine/database/database.h:179
+database::Connection::Savepoint(StringView)	function	database	database-connection-savepoint-stringview	database.md	engine/database/database.h:185
+database::Connection::ReleaseSavepoint(StringView)	function	database	database-connection-releasesavepoint-stringview	database.md	engine/database/database.h:188
+database::Connection::RollbackToSavepoint(StringView)	function	database	database-connection-rollbacktosavepoint-stringview	database.md	engine/database/database.h:191
+database::Connection::LastInsertRowId() const	function	database	database-connection-lastinsertrowid-const	database.md	engine/database/database.h:195
+database::Connection::ChangedRows() const	function	database	database-connection-changedrows-const	database.md	engine/database/database.h:198
+database::Connection::SchemaVersion(i64*)	function	database	database-connection-schemaversion-i64-star	database.md	engine/database/database.h:203
+database::Connection::WriteSchemaVersion(i64)	function	database	database-connection-writeschemaversion-i64	database.md	engine/database/database.h:206
+database::Database	class	database	database-database	database.md	engine/database/database.h:213
+database::Database::~Database()	function	database	database-database-tilde-database	database.md	engine/database/database.h:215
+database::Database::Name() const	function	database	database-database-name-const	database.md	engine/database/database.h:220
+database::Database::Supports(Feature) const	function	database	database-database-supports-feature-const	database.md	engine/database/database.h:223
+database::Database::Open(const OpenOptions&,UniquePtr<Connection>*)	function	database	database-database-open-const-openoptions-amp-uniqueptr-lt-connection-gt-star	database.md	engine/database/database.h:230
+database::Transaction	class	database	database-transaction	database.md	engine/database/database.h:237
+database::Transaction::Transaction(Connection&,TransactionKind)	function	database	database-transaction-transaction-connection-amp-transactionkind	database.md	engine/database/database.h:240
+database::Transaction::~Transaction()	function	database	database-transaction-tilde-transaction	database.md	engine/database/database.h:242
+database::Transaction::Transaction(const Transaction&)	function	database	database-transaction-transaction-const-transaction-amp	database.md	engine/database/database.h:243
+database::Transaction::operator=(const Transaction&)	function	database	database-transaction-operator-eq-const-transaction-amp	database.md	engine/database/database.h:244
+database::Transaction::BeginStatus() const	function	database	database-transaction-beginstatus-const	database.md	engine/database/database.h:248
+database::Transaction::Commit()	function	database	database-transaction-commit	database.md	engine/database/database.h:252
+database::RegisterDatabaseSettings(settings::Registry*)	function	database	database-registerdatabasesettings-settings-registry-star	database.md	engine/database/database_settings.h:17
+database::OptionsFromSettings(const settings::Registry&,StringView)	function	database	database-optionsfromsettings-const-settings-registry-amp-stringview	database.md	engine/database/database_settings.h:26
 database::SqlText	class	database	database-sqltext	database.md	engine/database/sql_text.h:19
 database::SqlText::SqlText(const char*)	function	database	database-sqltext-sqltext-const-char-star	database.md	engine/database/sql_text.h:24
 database::SqlText::Unchecked(StringView)	function	database	database-sqltext-unchecked-stringview	database.md	engine/database/sql_text.h:30
@@ -3694,13 +3702,15 @@ database::SqliteDatabase::Name() const	function	database	database-sqlitedatabase
 database::SqliteDatabase::Supports(Feature) const	function	database	database-sqlitedatabase-supports-feature-const	database.md	engine/database/sqlite/sqlite_database.h:29
 database::SqliteDatabase::Open(const OpenOptions&,UniquePtr<Connection>*)	function	database	database-sqlitedatabase-open-const-openoptions-amp-uniqueptr-lt-connection-gt-star	database.md	engine/database/sqlite/sqlite_database.h:38
 database::sqlite_detail::InitializeSqlite()	function	database	database-sqlite-detail-initializesqlite	database.md	engine/database/sqlite/sqlite_os.h:13
-database::sqlite_detail::FileFaultOp	enum	database	database-sqlite-detail-filefaultop	database.md	engine/database/sqlite/sqlite_os.h:16
-database::sqlite_detail::kFaultWrite	enumerator	database	database-sqlite-detail-kfaultwrite	database.md	engine/database/sqlite/sqlite_os.h:17
-database::sqlite_detail::kFaultSync	enumerator	database	database-sqlite-detail-kfaultsync	database.md	engine/database/sqlite/sqlite_os.h:18
-database::sqlite_detail::kFaultTruncate	enumerator	database	database-sqlite-detail-kfaulttruncate	database.md	engine/database/sqlite/sqlite_os.h:19
-database::sqlite_detail::SetFileFaults(unsigned,long long,bool)	function	database	database-sqlite-detail-setfilefaults-unsigned-long-long-bool	database.md	engine/database/sqlite/sqlite_os.h:27
-database::sqlite_detail::ClearFileFaults()	function	database	database-sqlite-detail-clearfilefaults	database.md	engine/database/sqlite/sqlite_os.h:32
-database::sqlite_detail::FileFaultOpsSeen()	function	database	database-sqlite-detail-filefaultopsseen	database.md	engine/database/sqlite/sqlite_os.h:38
+database::sqlite_detail::NotePreparedStatement()	function	database	database-sqlite-detail-notepreparedstatement	database.md	engine/database/sqlite/sqlite_os.h:18
+database::sqlite_detail::PreparedStatementCount()	function	database	database-sqlite-detail-preparedstatementcount	database.md	engine/database/sqlite/sqlite_os.h:24
+database::sqlite_detail::FileFaultOp	enum	database	database-sqlite-detail-filefaultop	database.md	engine/database/sqlite/sqlite_os.h:27
+database::sqlite_detail::kFaultWrite	enumerator	database	database-sqlite-detail-kfaultwrite	database.md	engine/database/sqlite/sqlite_os.h:28
+database::sqlite_detail::kFaultSync	enumerator	database	database-sqlite-detail-kfaultsync	database.md	engine/database/sqlite/sqlite_os.h:29
+database::sqlite_detail::kFaultTruncate	enumerator	database	database-sqlite-detail-kfaulttruncate	database.md	engine/database/sqlite/sqlite_os.h:30
+database::sqlite_detail::SetFileFaults(unsigned,long long,bool)	function	database	database-sqlite-detail-setfilefaults-unsigned-long-long-bool	database.md	engine/database/sqlite/sqlite_os.h:38
+database::sqlite_detail::ClearFileFaults()	function	database	database-sqlite-detail-clearfilefaults	database.md	engine/database/sqlite/sqlite_os.h:43
+database::sqlite_detail::FileFaultOpsSeen()	function	database	database-sqlite-detail-filefaultopsseen	database.md	engine/database/sqlite/sqlite_os.h:49
 database::SqliteVersion()	function	database	database-sqliteversion	database.md	engine/database/sqlite/sqlite_version.h:13
 database::sqlite_detail::EngineVfs()	function	database	database-sqlite-detail-enginevfs	database.md	engine/database/sqlite/sqlite_vfs.h:14
 database::ErrorCode	enum	database	database-errorcode	database.md	engine/database/status.h:12

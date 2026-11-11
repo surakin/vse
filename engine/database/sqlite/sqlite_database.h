@@ -31,10 +31,10 @@ public:
     ///
     /// Param options: `location` empty or `":memory:"` (private, memory), or a path; `mode` `Create` makes a missing file, the others need it to exist;
     /// an in-memory database cannot be `ReadOnly` or `WriteAhead`; `journal_mode` `Default` is the write-ahead log for a file; `sync_mode` `Default` is
-    /// `Normal`; `busy_timeout_ms` and `foreign_keys` apply.
+    /// `Normal`; `busy_timeout_ms`, `foreign_keys`, `integrity_check` (a file) and `statement_cache` apply.
     /// Param out: receives the connection on success; unchanged on failure.
     /// Ownership: `options.location` is read during the call only; the connection owns its database and does not need this object.
-    /// Fails: `Unsupported` (in memory: read-only or write-ahead log); `NotFound` (a missing file without `Create`); `Corrupt` (the file is not a database); `Io`; `Busy`; `TooBig` (location longer than 1,023 bytes); `Other` if SQLite cannot start.
+    /// Fails: `Unsupported` (in memory: read-only or write-ahead log); `NotFound` (a missing file without `Create`); `Corrupt` (the file is not a database, or fails the integrity check); `Io`; `Busy`; `TooBig` (location longer than 1,023 bytes); `Other` if SQLite cannot start.
     Status Open(const OpenOptions& options, UniquePtr<Connection>* out) override;
 };
 

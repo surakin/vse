@@ -6,6 +6,7 @@ set(DATABASE_SOURCES
   status.cpp  # Day 252
   value.cpp  # Day 252
   database.cpp  # Day 252
+  database_settings.cpp  # Day 255
 )
 set(DATABASE_SQLITE_SOURCES
   sqlite/sqlite_version.cpp  # Day 251
@@ -24,7 +25,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_library(database${suffix} STATIC ${DATABASE_SOURCES})
     target_include_directories(database${suffix} PUBLIC ${DATABASE_INCLUDE_ROOT})
     target_compile_options(database${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
-    target_link_libraries(database${suffix} PUBLIC foundation_base${suffix} foundation_io${suffix})
+    target_link_libraries(database${suffix} PUBLIC foundation_base${suffix} foundation_io${suffix} foundation_settings${suffix})
     add_library(database_sqlite${suffix} STATIC ${DATABASE_SQLITE_SOURCES})
     target_include_directories(database_sqlite${suffix} PUBLIC ${DATABASE_INCLUDE_ROOT})
     target_compile_options(database_sqlite${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)

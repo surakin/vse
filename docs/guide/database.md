@@ -1,7 +1,7 @@
 # The database interface: SQL behind one door
 
-Status: in progress (Phase 19). Built: the SQLite library (Day 251), the interface and its conformance suite (Day 252). Next: the SQLite backend on `:memory:`
-(Day 253), its file system and locks (Day 254), settings, cache and concurrency (Day 255).
+Status: Phase 19. Built: the SQLite library (Day 251), the interface and its conformance suite (Day 252), the SQLite backend on `:memory:` (Day 253), on files
+(Day 254) and complete with settings, statement cache and concurrency tests (Day 255). Next: the storage layer on top (Days 256 onward).
 
 **Audience:** engine programmers who keep structured data in tables (the storage layer, a game's save index, tools). Design and the portable SQL subset:
 `docs/superpowers/specs/2026-11-11-storage-design.md`.
@@ -83,3 +83,31 @@ database that belongs to its connection (two connections never share one, so the
 - A statement used after its connection was destroyed fails with `Misuse`; the connection's memory lives until the last statement is gone.
 - SQLite reports a syntax error and an unknown table both as one code; the backend tells them apart by the message (`Syntax`, `NotFound`).
 - A file that is not a database is `Corrupt` at open; a missing file without `OpenMode::Create` is `NotFound`.
+
+### Settings
+
+`database::RegisterDatabaseSettings(&registry)` declares five settings in the group `database` (each with an `ENGINE_DATABASE_*` variable and a
+`--database-*` flag): `database.journal_mode` (`default`, `delete`, `truncate`, `wal`), `database.synchronous` (`default`, `off`, `normal`, `full`),
+`database.busy_timeout_ms` (default 5000), `database.integrity_check` (`off`, `quick`, `full`) and `database.statement_cache` (default 32).
+`database::OptionsFromSettings(registry, location)` turns the current values into `OpenOptions`; a change reaches the next `Open`, not a connection that
+is already open.
+
+### The statement cache
+
+A connection keeps up to `statement_cache` finished statements. When a `Statement` is destroyed it is reset and unbound and parked; the next `Prepare` of the
+same text takes it back instead of compiling again (the benchmark `database_tests "[database-bench]"` shows roughly twice the point-read rate). A parked
+statement holds no lock. SQLite recompiles one itself when the schema changed. `statement_cache = 0` compiles every time.
+
+### Threads
+
+Every connection has its own SQLite connection, and the engine's SQLite is built `THREADSAFE=2`: **a connection and its statements belong to one thread at
+a time**, and different connections may run on different threads. With slow checks on (`ENGINE_SLOW_CHECKS`), two threads inside one connection's `Prepare`
+or `Step` at once abort. With a file in the write-ahead log, one connection writes while others read the last committed state; a second writer waits for the
+busy timeout and then gets `Busy` (`BEGIN IMMEDIATE` reports it at `Begin`, not at the first write). The tests run these cases on threads in the plain,
+AddressSanitizer and ThreadSanitizer flavors. ThreadSanitizer cannot see SQLite's own protocol for the write-ahead-log index header (a lock-free read that
+validates itself); `tests/database/tsan.supp` suppresses exactly those two SQLite functions and nothing of the engine's.
+
+### The integrity check
+
+`OpenOptions::integrity_check` runs `PRAGMA quick_check` or `integrity_check` while a file opens; a damaged file fails the open with `Corrupt`. `Full` reads
+the whole file, so it belongs to tools and recovery, not to every start.

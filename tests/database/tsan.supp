@@ -1,0 +1,9 @@
+# ThreadSanitizer suppressions for the database tests (Phase 19 Day 255).
+#
+# SQLite's write-ahead-log index is shared memory that connections read WITHOUT a lock and validate themselves: the header is written twice and a
+# reader copies both and retries until they match (walIndexWriteHdr / walIndexTryHdr in third_party/sqlite/sqlite3.c; see "WAL index header" in
+# https://sqlite.org/walformat.html). ThreadSanitizer sees the unsynchronized copy and cannot see the protocol. The engine's VFS keeps this index
+# on the heap (engine/database/sqlite/sqlite_vfs.cpp, FileShmMap) instead of a mapped file, so every connection of the process reads the same
+# memory, as on a real mapping. Only these two SQLite functions are listed; a race anywhere else (the engine's own code, the lock tables) is still reported.
+race:walIndexTryHdr
+race:walIndexWriteHdr

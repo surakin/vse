@@ -55,6 +55,13 @@ enum class SyncMode : u8 {
     Full,    ///< Sync at every commit.
 };
 
+/// A check of the stored database made when a file is opened. `Off` skips it.
+enum class IntegrityCheck : u8 {
+    Off,   ///< No check.
+    Quick, ///< A fast check of the structure (no index-against-table comparison); a failure opens as [[database::ErrorCode::Corrupt]].
+    Full,  ///< The complete check, reading the whole file; a failure opens as [[database::ErrorCode::Corrupt]].
+};
+
 /// Everything `Database::Open` needs, as plain fields.
 ///
 /// Thread-safety: thread-compatible plain data.
@@ -68,6 +75,8 @@ struct OpenOptions {
     JournalMode journal_mode = JournalMode::Default; ///< The journal mode.
     SyncMode sync_mode = SyncMode::Default;       ///< The sync mode.
     bool foreign_keys = true;                ///< Enforce `REFERENCES` rules (when [[database::Feature::ForeignKeys]] is supported).
+    IntegrityCheck integrity_check = IntegrityCheck::Off; ///< A check made while opening a file (not an in-memory database).
+    u32 statement_cache = 32;                ///< How many finished statements the connection keeps for reuse by `Prepare` of the same text; 0 keeps none.
 };
 
 /// How a transaction takes its locks.

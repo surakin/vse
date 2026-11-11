@@ -11,6 +11,8 @@
 #include "io/path.h"
 #include "lang/scalar.h"
 #include "log/assert.h"
+#include "containers/vector.h"
+#include "sync/atomic.h"
 
 namespace engine_placeholder::database {
 namespace {
@@ -49,6 +51,14 @@ int NoteJournalMode(void* user, int columns, char** values, char**) {
     return 0;
 }
 
+// sqlite3_exec callback of PRAGMA quick_check / integrity_check: clears the flag when the first row is not "ok".
+int NoteIntegrity(void* user, int columns, char** values, char**) {
+    if (columns > 0 && values[0] != nullptr && CStrCompare(values[0], "ok") != 0) {
+        *static_cast<bool*>(user) = false;
+    }
+    return 0;
+}
+
 Status StatusFromDb(sqlite3* db, int rc) {
     const char* message = db != nullptr ? sqlite3_errmsg(db) : sqlite3_errstr(rc);
     return Status::Make(MapResultCode(rc), rc, StringView(message, CStrLength(message)));
@@ -76,14 +86,74 @@ ErrorCode ClassifyPrepareError(int rc, const char* message) {
 struct SqliteHandle {
     sqlite3* db = nullptr;
     bool open = true;
+    u32 cache_capacity = 0;          // finished statements kept for reuse (0 keeps none)
+    Vector<sqlite3_stmt*> idle;      // reset statements, oldest first; keyed by the text SQLite keeps (`sqlite3_sql`)
+    Atomic<u32> users{0};            // threads inside Prepare or Step: a debug check that a connection is used by one thread at a time
     SqliteHandle() = default;
     SqliteHandle(const SqliteHandle&) = delete;
     SqliteHandle& operator=(const SqliteHandle&) = delete;
     ~SqliteHandle() {
+        ClearIdle();
         if (db != nullptr) {
             sqlite3_close_v2(db);
         }
     }
+
+    void ClearIdle() {
+        for (usize i = 0; i < idle.Size(); ++i) {
+            sqlite3_finalize(idle[i]);
+        }
+        idle.Clear();
+    }
+
+    // Takes back a statement that its owner is done with: reset, unbound and kept for the next Prepare of the same text, or finalized.
+    void Release(sqlite3_stmt* stmt) {
+        if (!open || cache_capacity == 0) {
+            sqlite3_finalize(stmt);
+            return;
+        }
+        sqlite3_reset(stmt);
+        sqlite3_clear_bindings(stmt);
+        if (idle.Size() >= cache_capacity) {
+            sqlite3_finalize(idle[0]);
+            idle.Remove(0);
+        }
+        idle.Push(stmt);
+    }
+
+    // Removes and returns an idle statement whose text is `text`, or null.
+    sqlite3_stmt* TakeIdle(StringView text) {
+        for (usize i = idle.Size(); i > 0; --i) {
+            const char* sql = sqlite3_sql(idle[i - 1]);
+            if (sql != nullptr && CStrLength(sql) == text.Length() && MemCompare(sql, text.Data(), text.Length()) == 0) {
+                sqlite3_stmt* found = idle[i - 1];
+                idle.Remove(i - 1);
+                return found;
+            }
+        }
+        return nullptr;
+    }
+};
+
+// A debug check (slow checks only): two threads inside one connection's Prepare or Step at once is a data race the caller must not make.
+class UseGuard {
+public:
+    explicit UseGuard(SqliteHandle* handle) : handle_(handle) {
+#if ENGINE_SLOW_CHECKS
+        const u32 before = handle_->users.FetchAdd(1);
+        ENGINE_CHECK_SLOW(before == 0, "database: a connection and its statements are used by two threads at once");
+#endif
+    }
+    ~UseGuard() {
+#if ENGINE_SLOW_CHECKS
+        handle_->users.FetchSub(1);
+#endif
+    }
+    UseGuard(const UseGuard&) = delete;
+    UseGuard& operator=(const UseGuard&) = delete;
+
+private:
+    SqliteHandle* handle_;
 };
 
 Status ClosedConnection() { return Failure(ErrorCode::Misuse, "the connection of this statement is closed"); }
@@ -93,7 +163,7 @@ Status ClosedConnection() { return Failure(ErrorCode::Misuse, "the connection of
 class SqliteStatement final : public Statement {
 public:
     SqliteStatement(SharedPtr<SqliteHandle> handle, sqlite3_stmt* stmt) : handle_(Move(handle)), stmt_(stmt) {}
-    ~SqliteStatement() override { sqlite3_finalize(stmt_); }
+    ~SqliteStatement() override { handle_->Release(stmt_); }
 
     u32 ParameterCount() const override { return static_cast<u32>(sqlite3_bind_parameter_count(stmt_)); }
 
@@ -173,6 +243,7 @@ public:
         if (done_) {
             return Failure(ErrorCode::Misuse, "Step: the statement is done; Reset it first");
         }
+        const UseGuard guard(handle_.Get());
         const int rc = sqlite3_step(stmt_);
         if (rc == SQLITE_ROW) {
             *has_row = true;
@@ -242,6 +313,7 @@ public:
             Execute("ROLLBACK");
         }
         handle_->open = false; // statements that outlive the connection fail with Misuse
+        handle_->ClearIdle();
     }
 
     bool Supports(Feature feature) const override {
@@ -261,6 +333,11 @@ public:
         const StringView text = sql.View();
         if (text.Length() == 0) {
             return Failure(ErrorCode::Syntax, "the statement is empty");
+        }
+        const UseGuard guard(handle_.Get());
+        if (sqlite3_stmt* cached = handle_->TakeIdle(text)) {
+            *out = MakeUnique<SqliteStatement>(handle_, cached);
+            return Status::Success();
         }
         sqlite3_stmt* stmt = nullptr;
         const char* tail = nullptr;
@@ -283,6 +360,7 @@ public:
                 return Failure(ErrorCode::Misuse, "Prepare: more than one statement");
             }
         }
+        sqlite_detail::NotePreparedStatement();
         *out = MakeUnique<SqliteStatement>(handle_, stmt);
         return Status::Success();
     }
@@ -453,6 +531,17 @@ Status SqliteDatabase::Open(const OpenOptions& options, UniquePtr<Connection>* o
             return StatusFromDb(handle->db, step);
         }
     }
+    if (!memory && options.integrity_check != IntegrityCheck::Off) {
+        bool sound = true;
+        const int checked = sqlite3_exec(handle->db, options.integrity_check == IntegrityCheck::Full ? "PRAGMA integrity_check" : "PRAGMA quick_check", NoteIntegrity, &sound, nullptr);
+        if (checked != SQLITE_OK) {
+            return StatusFromDb(handle->db, checked);
+        }
+        if (!sound) {
+            return Failure(ErrorCode::Corrupt, "the integrity check found damage");
+        }
+    }
+    handle->cache_capacity = options.statement_cache;
     const int fk = sqlite3_exec(handle->db, options.foreign_keys ? "PRAGMA foreign_keys = ON" : "PRAGMA foreign_keys = OFF", nullptr, nullptr, nullptr);
     if (fk != SQLITE_OK) {
         return StatusFromDb(handle->db, fk);

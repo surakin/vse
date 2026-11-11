@@ -4,6 +4,7 @@
 #include <sqlite3.h>
 
 #include "containers/unique_ptr.h"
+#include "sync/atomic.h"
 #include "sync/mutex.h"
 #include "types.h"
 
@@ -64,6 +65,14 @@ int InitializeOnce() {
 }
 
 } // namespace
+
+namespace {
+Atomic<unsigned long long> g_prepared_statements{0};
+} // namespace
+
+void NotePreparedStatement() { g_prepared_statements.FetchAdd(1, MemoryOrder::Relaxed); }
+
+unsigned long long PreparedStatementCount() { return g_prepared_statements.Load(MemoryOrder::Relaxed); }
 
 int InitializeSqlite() {
     static const int result = InitializeOnce();
