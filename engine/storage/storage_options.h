@@ -63,6 +63,8 @@ struct Selection {
     static Selection All() { return Selection(); }
 };
 
+class SaveSession;
+
 /// Whether a save writes everything or what changed.
 enum class SaveMode : u8 {
     Full,        ///< Every selected entity; records of entities that no longer exist are removed.
@@ -81,6 +83,7 @@ struct SaveOptions {
     Selection selection;                 ///< The entities to save.
     String<HeapAllocator> label{HeapAllocator::Default()}; ///< Recorded as the store's `last_save_label`.
     usize batch_size = 1000;             ///< Entities per store batch (a full save is one batch whatever this is; it sizes the progress and cancel steps).
+    SaveSession* session = nullptr;      ///< Required for `SaveMode::Incremental`; a `Full` save that is given one starts it from that save.
     CancelToken* cancel = nullptr;       ///< Checked between steps; null: never cancelled.
     ProgressFn progress = nullptr;       ///< Called between steps; null: none.
     void* user = nullptr;                ///< Passed to `progress`.
@@ -118,6 +121,10 @@ struct Report {
     usize unknown_kept = 0;   ///< Records of unknown components carried opaquely (`KeepOpaque`).
     usize nulled = 0;         ///< References turned into null references.
     usize missing_keys = 0;   ///< Keys named by `Selection::Keys` that nothing has.
+    usize encoded = 0;        ///< Entities encoded (a save): the cost driver; an idle incremental save encodes none.
+    usize chunks_visited = 0; ///< Chunks an incremental save walked because something in them changed.
+    usize chunks_skipped = 0; ///< Chunks an incremental save skipped as unchanged.
+    usize reconciled = 0;     ///< 1 when an incremental save had to compare the whole world with the store (a new session, or removals that the log no longer held).
     usize unkeyed_parents = 0; ///< Entities whose parent has no key: saved without a parent link.
     usize parents_rejected = 0; ///< Parent links not applied on a load: in a cycle, or deeper than the limit.
     u64 bytes = 0;            ///< Bytes written to or read from the store.

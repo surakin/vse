@@ -7,6 +7,7 @@
 #include "ecs/transform.h"
 #include "storage/builtin_components.h"
 #include "storage/component_record.h"
+#include "storage/save_session.h"
 
 namespace engine_placeholder::storage {
 
@@ -242,6 +243,43 @@ void ReportProgress(ProgressFn fn, usize done, usize total, void* user) {
 
 } // namespace
 
+namespace {
+
+// Collects the key and stored hash of every record, in key order.
+class StoredHashes final : public RecordVisitor {
+public:
+    bool Visit(const EntityRecord& record) override {
+        keys.Push(record.key);
+        hashes.Push(record.hash);
+        return true;
+    }
+    Vector<EntityKey> keys;
+    Vector<u64> hashes;
+};
+
+Status WriteSaveMetadata(Store& store, const ComponentRegistry& registry, const SaveOptions& options) {
+    ENGINE_TRY(store.SetMetadata(metadata::kFormatVersion, "1"));
+    const String<HeapAllocator> manifest = ManifestText(registry);
+    ENGINE_TRY(store.SetMetadata(kManifestName, manifest.View()));
+    if (options.label.Length() != 0) {
+        ENGINE_TRY(store.SetMetadata(metadata::kLastSaveLabel, options.label.View()));
+    }
+    return Status::Success();
+}
+
+// The largest removal number the key component's log holds.
+u64 LargestRemovalSeq(const ecs::World& world, u64 floor) {
+    u64 largest = floor;
+    const usize n = world.RemovedCount<EntityKeyComponent>();
+    for (usize i = 0; i < n; ++i) {
+        const u64 seq = world.RemovedAt<EntityKeyComponent>(i).seq;
+        largest = seq > largest ? seq : largest;
+    }
+    return largest;
+}
+
+} // namespace
+
 Status WorldStorage::Save(ecs::World& world, KeyIndex& index, const SaveOptions& options, Report* report) {
     Report local;
     Report& r = report != nullptr ? *report : local;
@@ -249,25 +287,40 @@ Status WorldStorage::Save(ecs::World& world, KeyIndex& index, const SaveOptions&
     if (registry_->Count() == 0) {
         return Status::Make(ErrorCode::Invalid, "no component is registered, so nothing can be stored");
     }
-    if (options.mode != SaveMode::Full) {
-        return Status::Make(ErrorCode::Invalid, "incremental saves arrive on Day 261");
+    const bool incremental = options.mode == SaveMode::Incremental;
+    if (incremental && options.session == nullptr) {
+        return Status::Make(ErrorCode::Invalid, "an incremental save needs a SaveSession");
+    }
+    if ((incremental || options.session != nullptr) && options.selection.kind != Selection::Kind::AllKeyed) {
+        return Status::Make(ErrorCode::Invalid, "a save session follows the whole world: use the AllKeyed selection");
     }
     if (options.selection.kind == Selection::Kind::Filter && options.selection.filter == nullptr && options.selection.require.Empty()) {
         return Status::Make(ErrorCode::Invalid, "a filter selection needs required components or a filter function");
     }
+    SaveSession* session = options.session;
+    if (session != nullptr && session->baseline_ && session->world_id_ != world.Id()) {
+        session->Reset();
+    }
     ENGINE_TRY(index.Sync(world));
+    if (incremental && session->baseline_ && world.RemovalEpoch() <= session->removal_epoch_ + 1) {
+        return SaveChanged(world, index, options, r);
+    }
+    // A full save, or an incremental one with nothing to go on (a new session, or removals the log no longer holds): compare with the store by hash.
+    const bool reconcile = incremental;
+    r.reconciled = reconcile ? 1 : 0;
 
     Vector<Candidate> chosen;
     ENGINE_TRY(CollectCandidates(world, index, options.selection, &chosen, &r));
 
-    // The keys already stored, to count replacements and to find the records of entities that are gone.
-    Vector<EntityKey> stored;
-    ENGINE_TRY(ListKeys(*store_, KeyRange(), ~usize(0), &stored));
+    // The records already stored, to count replacements, to skip what is unchanged (reconcile) and to find the records of entities that are gone.
+    StoredHashes stored;
+    ENGINE_TRY(store_->Scan(KeyRange(), stored));
 
     ENGINE_TRY(store_->Begin());
     const usize step = options.batch_size == 0 ? 1 : options.batch_size;
     Status failure = Status::Success();
-    usize s = 0; // position in `stored`
+    Vector<u64> hashes; // of each chosen entity, for a session
+    usize s = 0;        // position in `stored`
     for (usize i = 0; i < chosen.Size() && failure.Ok(); ++i) {
         if (i % step == 0) {
             if (options.cancel != nullptr && options.cancel->IsCancelled()) {
@@ -281,10 +334,16 @@ Status WorldStorage::Save(ecs::World& world, KeyIndex& index, const SaveOptions&
         if (failure.Failed()) {
             break;
         }
-        while (s < stored.Size() && stored[s] < chosen[i].key) {
+        ++r.encoded;
+        const u64 hash = HashBytes(blob.Bytes());
+        hashes.Push(hash);
+        while (s < stored.keys.Size() && stored.keys[s] < chosen[i].key) {
             ++s;
         }
-        const bool existed = s < stored.Size() && stored[s] == chosen[i].key;
+        const bool existed = s < stored.keys.Size() && stored.keys[s] == chosen[i].key;
+        if (reconcile && existed && stored.hashes[s] == hash) {
+            continue;
+        }
         failure = store_->Put(EntityRecord::Make(chosen[i].key, blob.Bytes()));
         if (failure.Failed()) {
             break;
@@ -295,26 +354,19 @@ Status WorldStorage::Save(ecs::World& world, KeyIndex& index, const SaveOptions&
     if (failure.Ok() && options.selection.kind == Selection::Kind::AllKeyed) {
         // Records of entities that no longer exist (or lost their key). Both lists are in key order.
         usize c = 0;
-        for (usize i = 0; i < stored.Size() && failure.Ok(); ++i) {
-            while (c < chosen.Size() && chosen[c].key < stored[i]) {
+        for (usize i = 0; i < stored.keys.Size() && failure.Ok(); ++i) {
+            while (c < chosen.Size() && chosen[c].key < stored.keys[i]) {
                 ++c;
             }
-            if (c < chosen.Size() && chosen[c].key == stored[i]) {
+            if (c < chosen.Size() && chosen[c].key == stored.keys[i]) {
                 continue;
             }
-            failure = store_->Remove(stored[i]);
+            failure = store_->Remove(stored.keys[i]);
             ++r.removed;
         }
     }
     if (failure.Ok()) {
-        failure = store_->SetMetadata(metadata::kFormatVersion, "1");
-    }
-    if (failure.Ok()) {
-        const String<HeapAllocator> manifest = ManifestText(*registry_);
-        failure = store_->SetMetadata(kManifestName, manifest.View());
-    }
-    if (failure.Ok() && options.label.Length() != 0) {
-        failure = store_->SetMetadata(metadata::kLastSaveLabel, options.label.View());
+        failure = WriteSaveMetadata(*store_, *registry_, options);
     }
     if (failure.Ok()) {
         failure = store_->Commit();
@@ -323,7 +375,165 @@ Status WorldStorage::Save(ecs::World& world, KeyIndex& index, const SaveOptions&
         static_cast<void>(store_->Rollback()); // the failure being returned is the cause; a batch we opened is open, so this cannot add to it
         return failure;
     }
+    if (session != nullptr) {
+        session->Reset();
+        for (usize i = 0; i < chosen.Size(); ++i) {
+            session->hash_of_->Insert(chosen[i].key, hashes[i]);
+            session->key_of_->Insert(chosen[i].entity, chosen[i].key);
+        }
+        session->baseline_ = true;
+        session->world_id_ = world.Id();
+        session->since_ = world.Tick();
+        session->removal_epoch_ = world.RemovalEpoch();
+        session->last_removal_seq_ = LargestRemovalSeq(world, 0);
+        world.Advance(); // a write after this save is stamped later than the save
+    }
     ReportProgress(options.progress, chosen.Size(), chosen.Size(), options.user);
+    return Status::Success();
+}
+
+Status WorldStorage::SaveChanged(ecs::World& world, KeyIndex& index, const SaveOptions& options, Report& r) {
+    SaveSession& session = *options.session;
+    const ecs::World& view = world;
+    const ecs::ComponentId key_column = ecs::ComponentOf<EntityKeyComponent>();
+
+    // The columns whose change changes a record: every stored component, and the ones that are written as something else (the parent, the unknown ones).
+    Vector<ecs::ComponentId> triggers;
+    for (u32 i = 0; i < registry_->Count(); ++i) {
+        const RegisteredComponent& c = registry_->At(i);
+        if ((c.Flags() & kComponentDerived) == 0) {
+            triggers.Push(c.EcsId());
+        }
+    }
+
+    struct Put {
+        EntityKey key;
+        ecs::Entity entity;
+        u64 hash;
+    };
+    Vector<Put> puts;
+    Vector<EntityKey> removes;
+    Vector<ecs::Entity> forgotten; // entities whose key mapping goes
+    HashMap<EntityKey, u32, HeapAllocator> queued(HeapAllocator::Default());
+    const auto queue_remove = [&](EntityKey key) {
+        if (session.hash_of_->Find(key) != nullptr && queued.Find(key) == nullptr) {
+            queued.Insert(key, 1);
+            removes.Push(key);
+        }
+    };
+
+    // Entities destroyed or stripped of their key since the last save.
+    u64 largest = session.last_removal_seq_;
+    const usize logged = view.RemovedCount<EntityKeyComponent>();
+    for (usize i = 0; i < logged; ++i) {
+        const ecs::RemovedComponent<EntityKeyComponent> entry = view.RemovedAt<EntityKeyComponent>(i);
+        if (entry.seq <= session.last_removal_seq_) {
+            continue;
+        }
+        largest = entry.seq > largest ? entry.seq : largest;
+        forgotten.Push(entry.entity);
+        if (!entry.value.key.IsNull() && !index.Find(entry.value.key).IsValid()) {
+            queue_remove(entry.value.key);
+        }
+    }
+
+    ENGINE_TRY(store_->Begin());
+    const usize step = options.batch_size == 0 ? 1 : options.batch_size;
+    Status failure = Status::Success();
+    const u64 since = session.since_;
+    const u64 now = world.Tick();
+    usize encoded_here = 0;
+    Vector<Put> rekeyed; // entities seen in a changed chunk, with the key they have now
+    for (u32 a = 0; a < view.ArchetypeCount() && failure.Ok(); ++a) {
+        const ecs::Archetype& archetype = view.ArchetypeAt(a);
+        if (!archetype.Has(key_column)) {
+            continue;
+        }
+        for (u32 c = 0; c < archetype.ChunkCount() && failure.Ok(); ++c) {
+            ecs::Chunk* chunk = archetype.ChunkAt(c);
+            bool dirty = false;
+            for (usize t = 0; t < triggers.Size() && !dirty; ++t) {
+                dirty = archetype.Has(triggers[t]) && (archetype.WrittenTick(chunk, triggers[t]) > since || archetype.AddedTick(chunk, triggers[t]) > since);
+            }
+            if (!dirty) {
+                ++r.chunks_skipped;
+                continue;
+            }
+            ++r.chunks_visited;
+            const Span<ecs::Entity> entities = archetype.Entities(chunk);
+            for (usize row = 0; row < entities.Size() && failure.Ok(); ++row) {
+                const ecs::Entity e = entities[row];
+                const EntityKey key = index.KeyOf(e);
+                if (key.IsNull() || index.Find(key) != e) {
+                    continue;
+                }
+                if (encoded_here % step == 0) {
+                    if (options.cancel != nullptr && options.cancel->IsCancelled()) {
+                        failure = Status::Make(ErrorCode::Cancelled, "the save was cancelled");
+                        break;
+                    }
+                    ReportProgress(options.progress, encoded_here, encoded_here, options.user);
+                }
+                ++encoded_here;
+                bytes::ByteWriter blob;
+                failure = EncodeEntity(*registry_, view, index, e, limits_, &r, blob);
+                if (failure.Failed()) {
+                    break;
+                }
+                ++r.encoded;
+                const u64 hash = HashBytes(blob.Bytes());
+                const u64* old = session.hash_of_->Find(key);
+                if (old == nullptr || *old != hash) {
+                    failure = store_->Put(EntityRecord::Make(key, blob.Bytes()));
+                    if (failure.Failed()) {
+                        break;
+                    }
+                    ++(old != nullptr ? r.replaced : r.created);
+                    r.bytes += blob.Size();
+                    puts.Push(Put{key, e, hash});
+                }
+                const EntityKey* previous = session.key_of_->Find(e);
+                if (previous != nullptr && !(*previous == key) && !previous->IsNull() && !index.Find(*previous).IsValid()) {
+                    queue_remove(*previous); // the entity changed its key: the record under the old one goes
+                }
+                rekeyed.Push(Put{key, e, 0});
+            }
+        }
+    }
+    for (usize i = 0; i < removes.Size() && failure.Ok(); ++i) {
+        failure = store_->Remove(removes[i]);
+        if (failure.Failed() && failure.Code() == ErrorCode::NotFound) {
+            failure = Status::Success(); // somebody else took it
+        }
+        ++r.removed;
+    }
+    if (failure.Ok()) {
+        failure = WriteSaveMetadata(*store_, *registry_, options);
+    }
+    if (failure.Ok()) {
+        failure = store_->Commit();
+    }
+    if (failure.Failed()) {
+        static_cast<void>(store_->Rollback());
+        return failure;
+    }
+    for (usize i = 0; i < removes.Size(); ++i) {
+        session.hash_of_->Remove(removes[i]);
+    }
+    for (usize i = 0; i < forgotten.Size(); ++i) {
+        session.key_of_->Remove(forgotten[i]);
+    }
+    for (usize i = 0; i < puts.Size(); ++i) {
+        session.hash_of_->Insert(puts[i].key, puts[i].hash);
+    }
+    for (usize i = 0; i < rekeyed.Size(); ++i) {
+        session.key_of_->Insert(rekeyed[i].entity, rekeyed[i].key);
+    }
+    session.since_ = now;
+    session.removal_epoch_ = world.RemovalEpoch();
+    session.last_removal_seq_ = largest;
+    world.Advance();
+    ReportProgress(options.progress, encoded_here, encoded_here, options.user);
     return Status::Success();
 }
 

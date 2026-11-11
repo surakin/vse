@@ -226,6 +226,10 @@ public:
         ++removal_epoch_;
         PruneRemovals();
     }
+    /// The number of frames ended so far, plus one (starts at 1): the clock of the removal logs. A reader that handled the logs at epoch `e` can rely on
+    /// them to hold every removal since while this is at most `e + 1`; beyond that entries may have been dropped.
+    /// Fails: never.
+    u64 RemovalEpoch() const { return removal_epoch_; }
     /// How many removals of the tracked component `T` the log holds: those of the current and the previous frame (a component declares
     /// `static constexpr bool kTrackRemoval = true`). A system that runs once per frame sees each removal in the frame it happened or the next; it remembers the
     /// largest `seq` it handled and skips smaller ones.

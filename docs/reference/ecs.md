@@ -4608,6 +4608,20 @@ Ends a frame for the removal logs: entries logged in the frame before this one g
 |---|---|
 | Fails | never. |
 
+### `RemovalEpoch()` {#ecs-world-removalepoch-const}
+
+`method ecs::World::RemovalEpoch` — defined in `engine/ecs/world.h`
+
+```cpp
+u64 RemovalEpoch() const;
+```
+
+The number of frames ended so far, plus one (starts at 1): the clock of the removal logs. A reader that handled the logs at epoch `e` can rely on them to hold every removal since while this is at most `e + 1`; beyond that entries may have been dropped.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
 ### `RemovedCount()` {#ecs-world-removedcount-const}
 
 `method ecs::World::RemovedCount` — defined in `engine/ecs/world.h`

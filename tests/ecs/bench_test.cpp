@@ -18,7 +18,9 @@ Options Small() {
     return o;
 }
 
-#if defined(ENGINE_BUILD_CONFIG)
+#if ENGINE_SANITIZER_ADDRESS || ENGINE_SANITIZER_THREAD
+// (unused under a sanitizer: the ratio guard is skipped there)
+#elif defined(ENGINE_BUILD_CONFIG)
 constexpr const char* kBuildConfig = ENGINE_BUILD_CONFIG;  // from CMake: debug, release, relwithdebinfo, minsizerel
 #else
 constexpr const char* kBuildConfig = "debug";

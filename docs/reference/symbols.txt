@@ -734,32 +734,32 @@ io::File::Read(void*,usize,u64,usize*)	function	foundation/io	io-file-read-void-
 io::File::Write(const void*,usize,u64)	function	foundation/io	io-file-write-const-void-star-usize-u64	foundation-io.md	engine/foundation/io/file.h:194
 io::File::Append(const void*,usize)	function	foundation/io	io-file-append-const-void-star-usize	foundation-io.md	engine/foundation/io/file.h:198
 io::File::Flush()	function	foundation/io	io-file-flush	foundation-io.md	engine/foundation/io/file.h:200
-io::File::Sync()	function	foundation/io	io-file-sync	foundation-io.md	engine/foundation/io/file.h:204
-io::File::Truncate(u64)	function	foundation/io	io-file-truncate-u64	foundation-io.md	engine/foundation/io/file.h:208
-io::File::Close()	function	foundation/io	io-file-close	foundation-io.md	engine/foundation/io/file.h:212
-io::File::Seek(u64)	function	foundation/io	io-file-seek-u64	foundation-io.md	engine/foundation/io/file.h:217
-io::File::Tell() const	function	foundation/io	io-file-tell-const	foundation-io.md	engine/foundation/io/file.h:219
-io::File::Read(void*,usize,usize*)	function	foundation/io	io-file-read-void-star-usize-usize-star	foundation-io.md	engine/foundation/io/file.h:221
-io::File::Write(const void*,usize)	function	foundation/io	io-file-write-const-void-star-usize	foundation-io.md	engine/foundation/io/file.h:223
-io::File::Read(MutableByteSpan,usize*)	function	foundation/io	io-file-read-mutablebytespan-usize-star	foundation-io.md	engine/foundation/io/file.h:225
-io::File::Write(ByteSpan)	function	foundation/io	io-file-write-bytespan	foundation-io.md	engine/foundation/io/file.h:227
-io::File::ReadAsync(AsyncRequest*,void*,usize,u64,Completion,void*)	function	foundation/io	io-file-readasync-asyncrequest-star-void-star-usize-u64-completion-void-star	foundation-io.md	engine/foundation/io/file.h:236
-io::File::WriteAsync(AsyncRequest*,const void*,usize,u64,Completion,void*)	function	foundation/io	io-file-writeasync-asyncrequest-star-const-void-star-usize-u64-completion-void-star	foundation-io.md	engine/foundation/io/file.h:240
-io::File::FlushAsync(AsyncRequest*,Completion,void*)	function	foundation/io	io-file-flushasync-asyncrequest-star-completion-void-star	foundation-io.md	engine/foundation/io/file.h:244
-io::File::Cancel(AsyncRequest*)	function	foundation/io	io-file-cancel-asyncrequest-star	foundation-io.md	engine/foundation/io/file.h:248
-io::FileFactory	alias	foundation/io	io-filefactory	foundation-io.md	engine/foundation/io/file.h:279
-io::RegisterFileScheme(StringView,FileFactory)	function	foundation/io	io-registerfilescheme-stringview-filefactory	foundation-io.md	engine/foundation/io/file.h:286
-io::UnregisterFileScheme(StringView)	function	foundation/io	io-unregisterfilescheme-stringview	foundation-io.md	engine/foundation/io/file.h:288
-io::ReadExact(File&,void*,usize,u64)	function	foundation/io	io-readexact-file-amp-void-star-usize-u64	foundation-io.md	engine/foundation/io/file.h:293
-io::ReadAll(File&,Vector<u8>*,u64)	function	foundation/io	io-readall-file-amp-vector-lt-u8-gt-star-u64	foundation-io.md	engine/foundation/io/file.h:298
-io::ReadAll(File&,ArenaAllocator&,u8**,usize*,u64)	function	foundation/io	io-readall-file-amp-arenaallocator-amp-u8-star-star-usize-star-u64	foundation-io.md	engine/foundation/io/file.h:304
-io::ReadFile(const Path&,Vector<u8>*,u64)	function	foundation/io	io-readfile-const-path-amp-vector-lt-u8-gt-star-u64	foundation-io.md	engine/foundation/io/file.h:309
-io::ReadFile(const Path&,ArenaAllocator&,u8**,usize*,u64)	function	foundation/io	io-readfile-const-path-amp-arenaallocator-amp-u8-star-star-usize-star-u64	foundation-io.md	engine/foundation/io/file.h:313
-io::ReadTextFile(const Path&,String<HeapAllocator>*,u64)	function	foundation/io	io-readtextfile-const-path-amp-string-lt-heapallocator-gt-star-u64	foundation-io.md	engine/foundation/io/file.h:317
-io::WriteFile(const Path&,const void*,usize)	function	foundation/io	io-writefile-const-path-amp-const-void-star-usize	foundation-io.md	engine/foundation/io/file.h:321
-io::WriteFile(const Path&,ByteSpan)	function	foundation/io	io-writefile-const-path-amp-bytespan	foundation-io.md	engine/foundation/io/file.h:323
-io::WriteFileAtomic(const Path&,const void*,usize,u32)	function	foundation/io	io-writefileatomic-const-path-amp-const-void-star-usize-u32	foundation-io.md	engine/foundation/io/file.h:334
-io::WriteFileAtomic(const Path&,ByteSpan,u32)	function	foundation/io	io-writefileatomic-const-path-amp-bytespan-u32	foundation-io.md	engine/foundation/io/file.h:336
+io::File::Sync()	function	foundation/io	io-file-sync	foundation-io.md	engine/foundation/io/file.h:207
+io::File::Truncate(u64)	function	foundation/io	io-file-truncate-u64	foundation-io.md	engine/foundation/io/file.h:211
+io::File::Close()	function	foundation/io	io-file-close	foundation-io.md	engine/foundation/io/file.h:215
+io::File::Seek(u64)	function	foundation/io	io-file-seek-u64	foundation-io.md	engine/foundation/io/file.h:220
+io::File::Tell() const	function	foundation/io	io-file-tell-const	foundation-io.md	engine/foundation/io/file.h:222
+io::File::Read(void*,usize,usize*)	function	foundation/io	io-file-read-void-star-usize-usize-star	foundation-io.md	engine/foundation/io/file.h:224
+io::File::Write(const void*,usize)	function	foundation/io	io-file-write-const-void-star-usize	foundation-io.md	engine/foundation/io/file.h:226
+io::File::Read(MutableByteSpan,usize*)	function	foundation/io	io-file-read-mutablebytespan-usize-star	foundation-io.md	engine/foundation/io/file.h:228
+io::File::Write(ByteSpan)	function	foundation/io	io-file-write-bytespan	foundation-io.md	engine/foundation/io/file.h:230
+io::File::ReadAsync(AsyncRequest*,void*,usize,u64,Completion,void*)	function	foundation/io	io-file-readasync-asyncrequest-star-void-star-usize-u64-completion-void-star	foundation-io.md	engine/foundation/io/file.h:239
+io::File::WriteAsync(AsyncRequest*,const void*,usize,u64,Completion,void*)	function	foundation/io	io-file-writeasync-asyncrequest-star-const-void-star-usize-u64-completion-void-star	foundation-io.md	engine/foundation/io/file.h:243
+io::File::FlushAsync(AsyncRequest*,Completion,void*)	function	foundation/io	io-file-flushasync-asyncrequest-star-completion-void-star	foundation-io.md	engine/foundation/io/file.h:247
+io::File::Cancel(AsyncRequest*)	function	foundation/io	io-file-cancel-asyncrequest-star	foundation-io.md	engine/foundation/io/file.h:251
+io::FileFactory	alias	foundation/io	io-filefactory	foundation-io.md	engine/foundation/io/file.h:282
+io::RegisterFileScheme(StringView,FileFactory)	function	foundation/io	io-registerfilescheme-stringview-filefactory	foundation-io.md	engine/foundation/io/file.h:289
+io::UnregisterFileScheme(StringView)	function	foundation/io	io-unregisterfilescheme-stringview	foundation-io.md	engine/foundation/io/file.h:291
+io::ReadExact(File&,void*,usize,u64)	function	foundation/io	io-readexact-file-amp-void-star-usize-u64	foundation-io.md	engine/foundation/io/file.h:296
+io::ReadAll(File&,Vector<u8>*,u64)	function	foundation/io	io-readall-file-amp-vector-lt-u8-gt-star-u64	foundation-io.md	engine/foundation/io/file.h:301
+io::ReadAll(File&,ArenaAllocator&,u8**,usize*,u64)	function	foundation/io	io-readall-file-amp-arenaallocator-amp-u8-star-star-usize-star-u64	foundation-io.md	engine/foundation/io/file.h:307
+io::ReadFile(const Path&,Vector<u8>*,u64)	function	foundation/io	io-readfile-const-path-amp-vector-lt-u8-gt-star-u64	foundation-io.md	engine/foundation/io/file.h:312
+io::ReadFile(const Path&,ArenaAllocator&,u8**,usize*,u64)	function	foundation/io	io-readfile-const-path-amp-arenaallocator-amp-u8-star-star-usize-star-u64	foundation-io.md	engine/foundation/io/file.h:316
+io::ReadTextFile(const Path&,String<HeapAllocator>*,u64)	function	foundation/io	io-readtextfile-const-path-amp-string-lt-heapallocator-gt-star-u64	foundation-io.md	engine/foundation/io/file.h:320
+io::WriteFile(const Path&,const void*,usize)	function	foundation/io	io-writefile-const-path-amp-const-void-star-usize	foundation-io.md	engine/foundation/io/file.h:324
+io::WriteFile(const Path&,ByteSpan)	function	foundation/io	io-writefile-const-path-amp-bytespan	foundation-io.md	engine/foundation/io/file.h:326
+io::WriteFileAtomic(const Path&,const void*,usize,u32)	function	foundation/io	io-writefileatomic-const-path-amp-const-void-star-usize-u32	foundation-io.md	engine/foundation/io/file.h:337
+io::WriteFileAtomic(const Path&,ByteSpan,u32)	function	foundation/io	io-writefileatomic-const-path-amp-bytespan-u32	foundation-io.md	engine/foundation/io/file.h:339
 io::FileType	enum	foundation/io	io-filetype	foundation-io.md	engine/foundation/io/file_system.h:16
 io::FileType::None	enumerator	foundation/io	io-filetype-none	foundation-io.md	engine/foundation/io/file_system.h:17
 io::FileType::Regular	enumerator	foundation/io	io-filetype-regular	foundation-io.md	engine/foundation/io/file_system.h:18
@@ -3298,42 +3298,43 @@ ecs::World::Get(Entity) const	function	ecs	ecs-world-get-entity-const	ecs.md	eng
 ecs::World::Tick() const	function	ecs	ecs-world-tick-const	ecs.md	engine/ecs/world.h:217
 ecs::World::Advance()	function	ecs	ecs-world-advance	ecs.md	engine/ecs/world.h:221
 ecs::World::EndFrame()	function	ecs	ecs-world-endframe	ecs.md	engine/ecs/world.h:225
-ecs::World::RemovedCount() const	function	ecs	ecs-world-removedcount-const	ecs.md	engine/ecs/world.h:233
-ecs::World::RemovedAt(usize) const	function	ecs	ecs-world-removedat-usize-const	ecs.md	engine/ecs/world.h:237
-ecs::World::SetTick(u64)	function	ecs	ecs-world-settick-u64	ecs.md	engine/ecs/world.h:242
-ecs::World::Peek(Entity) const	function	ecs	ecs-world-peek-entity-const	ecs.md	engine/ecs/world.h:250
-ecs::World::Poke(Entity)	function	ecs	ecs-world-poke-entity	ecs.md	engine/ecs/world.h:257
-ecs::World::Stamp(Entity)	function	ecs	ecs-world-stamp-entity	ecs.md	engine/ecs/world.h:261
-ecs::World::BeginParallel()	function	ecs	ecs-world-beginparallel	ecs.md	engine/ecs/world.h:266
-ecs::World::EndParallel()	function	ecs	ecs-world-endparallel	ecs.md	engine/ecs/world.h:272
-ecs::World::IsParallel() const	function	ecs	ecs-world-isparallel-const	ecs.md	engine/ecs/world.h:279
-ecs::World::BeginIteration()	function	ecs	ecs-world-beginiteration	ecs.md	engine/ecs/world.h:282
-ecs::World::EndIteration()	function	ecs	ecs-world-enditeration	ecs.md	engine/ecs/world.h:285
-ecs::World::BeginIteration(const ComponentSet&)	function	ecs	ecs-world-beginiteration-const-componentset-amp	ecs.md	engine/ecs/world.h:294
-ecs::World::EndIteration(const ComponentSet&)	function	ecs	ecs-world-enditeration-const-componentset-amp	ecs.md	engine/ecs/world.h:306
-ecs::World::IsIterating() const	function	ecs	ecs-world-isiterating-const	ecs.md	engine/ecs/world.h:312
-ecs::World::Query()	function	ecs	ecs-world-query	ecs.md	engine/ecs/world.h:318
-ecs::World::Apply(CommandBuffer&)	function	ecs	ecs-world-apply-commandbuffer-amp	ecs.md	engine/ecs/world.h:330
-ecs::World::SetResource(T)	function	ecs	ecs-world-setresource-t	ecs.md	engine/ecs/world.h:340
-ecs::World::Resource()	function	ecs	ecs-world-resource	ecs.md	engine/ecs/world.h:344
-ecs::World::Resource() const	function	ecs	ecs-world-resource-const	ecs.md	engine/ecs/world.h:348
-ecs::World::TryResource()	function	ecs	ecs-world-tryresource	ecs.md	engine/ecs/world.h:353
-ecs::World::TryResource() const	function	ecs	ecs-world-tryresource-const	ecs.md	engine/ecs/world.h:358
-ecs::World::HasResource() const	function	ecs	ecs-world-hasresource-const	ecs.md	engine/ecs/world.h:362
-ecs::World::RemoveResource()	function	ecs	ecs-world-removeresource	ecs.md	engine/ecs/world.h:367
-ecs::World::EnsureArchetype(const ComponentSet&)	function	ecs	ecs-world-ensurearchetype-const-componentset-amp	ecs.md	engine/ecs/world.h:375
-ecs::World::CreateFromSet(const ComponentSet&)	function	ecs	ecs-world-createfromset-const-componentset-amp	ecs.md	engine/ecs/world.h:382
-ecs::World::AddDefault(Entity,ComponentId)	function	ecs	ecs-world-adddefault-entity-componentid	ecs.md	engine/ecs/world.h:387
-ecs::World::RemoveById(Entity,ComponentId)	function	ecs	ecs-world-removebyid-entity-componentid	ecs.md	engine/ecs/world.h:392
-ecs::World::HasById(Entity,ComponentId) const	function	ecs	ecs-world-hasbyid-entity-componentid-const	ecs.md	engine/ecs/world.h:395
-ecs::World::CellOf(Entity,ComponentId)	function	ecs	ecs-world-cellof-entity-componentid	ecs.md	engine/ecs/world.h:401
-ecs::World::CellOf(Entity,ComponentId) const	function	ecs	ecs-world-cellof-entity-componentid-const	ecs.md	engine/ecs/world.h:406
-ecs::World::ArchetypeCount() const	function	ecs	ecs-world-archetypecount-const	ecs.md	engine/ecs/world.h:409
-ecs::World::ArchetypeAt(u32)	function	ecs	ecs-world-archetypeat-u32	ecs.md	engine/ecs/world.h:412
-ecs::World::ArchetypeAt(u32) const	function	ecs	ecs-world-archetypeat-u32-const	ecs.md	engine/ecs/world.h:415
-ecs::World::Entities() const	function	ecs	ecs-world-entities-const	ecs.md	engine/ecs/world.h:417
-ecs::World::Stats() const	function	ecs	ecs-world-stats-const	ecs.md	engine/ecs/world.h:420
-ecs::World::Validate() const	function	ecs	ecs-world-validate-const	ecs.md	engine/ecs/world.h:426
+ecs::World::RemovalEpoch() const	function	ecs	ecs-world-removalepoch-const	ecs.md	engine/ecs/world.h:232
+ecs::World::RemovedCount() const	function	ecs	ecs-world-removedcount-const	ecs.md	engine/ecs/world.h:237
+ecs::World::RemovedAt(usize) const	function	ecs	ecs-world-removedat-usize-const	ecs.md	engine/ecs/world.h:241
+ecs::World::SetTick(u64)	function	ecs	ecs-world-settick-u64	ecs.md	engine/ecs/world.h:246
+ecs::World::Peek(Entity) const	function	ecs	ecs-world-peek-entity-const	ecs.md	engine/ecs/world.h:254
+ecs::World::Poke(Entity)	function	ecs	ecs-world-poke-entity	ecs.md	engine/ecs/world.h:261
+ecs::World::Stamp(Entity)	function	ecs	ecs-world-stamp-entity	ecs.md	engine/ecs/world.h:265
+ecs::World::BeginParallel()	function	ecs	ecs-world-beginparallel	ecs.md	engine/ecs/world.h:270
+ecs::World::EndParallel()	function	ecs	ecs-world-endparallel	ecs.md	engine/ecs/world.h:276
+ecs::World::IsParallel() const	function	ecs	ecs-world-isparallel-const	ecs.md	engine/ecs/world.h:283
+ecs::World::BeginIteration()	function	ecs	ecs-world-beginiteration	ecs.md	engine/ecs/world.h:286
+ecs::World::EndIteration()	function	ecs	ecs-world-enditeration	ecs.md	engine/ecs/world.h:289
+ecs::World::BeginIteration(const ComponentSet&)	function	ecs	ecs-world-beginiteration-const-componentset-amp	ecs.md	engine/ecs/world.h:298
+ecs::World::EndIteration(const ComponentSet&)	function	ecs	ecs-world-enditeration-const-componentset-amp	ecs.md	engine/ecs/world.h:310
+ecs::World::IsIterating() const	function	ecs	ecs-world-isiterating-const	ecs.md	engine/ecs/world.h:316
+ecs::World::Query()	function	ecs	ecs-world-query	ecs.md	engine/ecs/world.h:322
+ecs::World::Apply(CommandBuffer&)	function	ecs	ecs-world-apply-commandbuffer-amp	ecs.md	engine/ecs/world.h:334
+ecs::World::SetResource(T)	function	ecs	ecs-world-setresource-t	ecs.md	engine/ecs/world.h:344
+ecs::World::Resource()	function	ecs	ecs-world-resource	ecs.md	engine/ecs/world.h:348
+ecs::World::Resource() const	function	ecs	ecs-world-resource-const	ecs.md	engine/ecs/world.h:352
+ecs::World::TryResource()	function	ecs	ecs-world-tryresource	ecs.md	engine/ecs/world.h:357
+ecs::World::TryResource() const	function	ecs	ecs-world-tryresource-const	ecs.md	engine/ecs/world.h:362
+ecs::World::HasResource() const	function	ecs	ecs-world-hasresource-const	ecs.md	engine/ecs/world.h:366
+ecs::World::RemoveResource()	function	ecs	ecs-world-removeresource	ecs.md	engine/ecs/world.h:371
+ecs::World::EnsureArchetype(const ComponentSet&)	function	ecs	ecs-world-ensurearchetype-const-componentset-amp	ecs.md	engine/ecs/world.h:379
+ecs::World::CreateFromSet(const ComponentSet&)	function	ecs	ecs-world-createfromset-const-componentset-amp	ecs.md	engine/ecs/world.h:386
+ecs::World::AddDefault(Entity,ComponentId)	function	ecs	ecs-world-adddefault-entity-componentid	ecs.md	engine/ecs/world.h:391
+ecs::World::RemoveById(Entity,ComponentId)	function	ecs	ecs-world-removebyid-entity-componentid	ecs.md	engine/ecs/world.h:396
+ecs::World::HasById(Entity,ComponentId) const	function	ecs	ecs-world-hasbyid-entity-componentid-const	ecs.md	engine/ecs/world.h:399
+ecs::World::CellOf(Entity,ComponentId)	function	ecs	ecs-world-cellof-entity-componentid	ecs.md	engine/ecs/world.h:405
+ecs::World::CellOf(Entity,ComponentId) const	function	ecs	ecs-world-cellof-entity-componentid-const	ecs.md	engine/ecs/world.h:410
+ecs::World::ArchetypeCount() const	function	ecs	ecs-world-archetypecount-const	ecs.md	engine/ecs/world.h:413
+ecs::World::ArchetypeAt(u32)	function	ecs	ecs-world-archetypeat-u32	ecs.md	engine/ecs/world.h:416
+ecs::World::ArchetypeAt(u32) const	function	ecs	ecs-world-archetypeat-u32-const	ecs.md	engine/ecs/world.h:419
+ecs::World::Entities() const	function	ecs	ecs-world-entities-const	ecs.md	engine/ecs/world.h:421
+ecs::World::Stats() const	function	ecs	ecs-world-stats-const	ecs.md	engine/ecs/world.h:424
+ecs::World::Validate() const	function	ecs	ecs-world-validate-const	ecs.md	engine/ecs/world.h:430
 spatial::SpatialBounds	struct	spatial	spatial-spatialbounds	spatial.md	engine/spatial/components.h:16
 spatial::SpatialBounds::local	variable	spatial	spatial-spatialbounds-local	spatial.md	engine/spatial/components.h:18
 spatial::WorldBounds	struct	spatial	spatial-worldbounds	spatial.md	engine/spatial/components.h:25
@@ -4018,6 +4019,13 @@ storage::MemoryStore::GetMetadata(StringView,String<HeapAllocator>*) const	funct
 storage::MemoryStore::SetMetadata(StringView,StringView)	function	storage	storage-memorystore-setmetadata-stringview-stringview	storage.md	engine/storage/memory_store.h:36
 storage::MemoryStore::FailAfter(u32)	function	storage	storage-memorystore-failafter-u32	storage.md	engine/storage/memory_store.h:42
 storage::MemoryStore::CorruptRecord(EntityKey)	function	storage	storage-memorystore-corruptrecord-entitykey	storage.md	engine/storage/memory_store.h:47
+storage::SaveSession	class	storage	storage-savesession	storage.md	engine/storage/save_session.h:24
+storage::SaveSession::SaveSession()	function	storage	storage-savesession-savesession	storage.md	engine/storage/save_session.h:27
+storage::SaveSession::SaveSession(const SaveSession&)	function	storage	storage-savesession-savesession-const-savesession-amp	storage.md	engine/storage/save_session.h:28
+storage::SaveSession::operator=(const SaveSession&)	function	storage	storage-savesession-operator-eq-const-savesession-amp	storage.md	engine/storage/save_session.h:29
+storage::SaveSession::Reset()	function	storage	storage-savesession-reset	storage.md	engine/storage/save_session.h:33
+storage::SaveSession::HasBaseline() const	function	storage	storage-savesession-hasbaseline-const	storage.md	engine/storage/save_session.h:36
+storage::SaveSession::TrackedRecords() const	function	storage	storage-savesession-trackedrecords-const	storage.md	engine/storage/save_session.h:39
 storage::ErrorCode	enum	storage	storage-errorcode	storage.md	engine/storage/status.h:12
 storage::ErrorCode::Ok	enumerator	storage	storage-errorcode-ok	storage.md	engine/storage/status.h:13
 storage::ErrorCode::NotFound	enumerator	storage	storage-errorcode-notfound	storage.md	engine/storage/status.h:14
@@ -4059,41 +4067,46 @@ storage::Selection::require	variable	storage	storage-selection-require	storage.m
 storage::Selection::filter	variable	storage	storage-selection-filter	storage.md	engine/storage/storage_options.h:57
 storage::Selection::user	variable	storage	storage-selection-user	storage.md	engine/storage/storage_options.h:59
 storage::Selection::All()	function	storage	storage-selection-all	storage.md	engine/storage/storage_options.h:63
-storage::SaveMode	enum	storage	storage-savemode	storage.md	engine/storage/storage_options.h:67
-storage::SaveMode::Full	enumerator	storage	storage-savemode-full	storage.md	engine/storage/storage_options.h:68
-storage::SaveMode::Incremental	enumerator	storage	storage-savemode-incremental	storage.md	engine/storage/storage_options.h:69
-storage::ProgressFn	alias	storage	storage-progressfn	storage.md	engine/storage/storage_options.h:73
-storage::SaveOptions	struct	storage	storage-saveoptions	storage.md	engine/storage/storage_options.h:79
-storage::SaveOptions::mode	variable	storage	storage-saveoptions-mode	storage.md	engine/storage/storage_options.h:80
-storage::SaveOptions::selection	variable	storage	storage-saveoptions-selection	storage.md	engine/storage/storage_options.h:81
-storage::SaveOptions::label	variable	storage	storage-saveoptions-label	storage.md	engine/storage/storage_options.h:82
-storage::SaveOptions::batch_size	variable	storage	storage-saveoptions-batch-size	storage.md	engine/storage/storage_options.h:83
-storage::SaveOptions::cancel	variable	storage	storage-saveoptions-cancel	storage.md	engine/storage/storage_options.h:84
-storage::SaveOptions::progress	variable	storage	storage-saveoptions-progress	storage.md	engine/storage/storage_options.h:85
-storage::SaveOptions::user	variable	storage	storage-saveoptions-user	storage.md	engine/storage/storage_options.h:86
-storage::LoadMode	enum	storage	storage-loadmode	storage.md	engine/storage/storage_options.h:90
-storage::LoadMode::Create	enumerator	storage	storage-loadmode-create	storage.md	engine/storage/storage_options.h:91
-storage::LoadMode::Replace	enumerator	storage	storage-loadmode-replace	storage.md	engine/storage/storage_options.h:92
-storage::LoadMode::Merge	enumerator	storage	storage-loadmode-merge	storage.md	engine/storage/storage_options.h:93
-storage::LoadOptions	struct	storage	storage-loadoptions	storage.md	engine/storage/storage_options.h:100
-storage::LoadOptions::mode	variable	storage	storage-loadoptions-mode	storage.md	engine/storage/storage_options.h:101
-storage::LoadOptions::selection	variable	storage	storage-loadoptions-selection	storage.md	engine/storage/storage_options.h:102
-storage::LoadOptions::unknown	variable	storage	storage-loadoptions-unknown	storage.md	engine/storage/storage_options.h:103
-storage::LoadOptions::missing	variable	storage	storage-loadoptions-missing	storage.md	engine/storage/storage_options.h:104
-storage::LoadOptions::cancel	variable	storage	storage-loadoptions-cancel	storage.md	engine/storage/storage_options.h:105
-storage::LoadOptions::progress	variable	storage	storage-loadoptions-progress	storage.md	engine/storage/storage_options.h:106
-storage::LoadOptions::user	variable	storage	storage-loadoptions-user	storage.md	engine/storage/storage_options.h:107
-storage::Report	struct	storage	storage-report	storage.md	engine/storage/storage_options.h:113
-storage::Report::created	variable	storage	storage-report-created	storage.md	engine/storage/storage_options.h:114
-storage::Report::replaced	variable	storage	storage-report-replaced	storage.md	engine/storage/storage_options.h:115
-storage::Report::removed	variable	storage	storage-report-removed	storage.md	engine/storage/storage_options.h:116
-storage::Report::skipped	variable	storage	storage-report-skipped	storage.md	engine/storage/storage_options.h:117
-storage::Report::unknown_kept	variable	storage	storage-report-unknown-kept	storage.md	engine/storage/storage_options.h:118
-storage::Report::nulled	variable	storage	storage-report-nulled	storage.md	engine/storage/storage_options.h:119
-storage::Report::missing_keys	variable	storage	storage-report-missing-keys	storage.md	engine/storage/storage_options.h:120
-storage::Report::unkeyed_parents	variable	storage	storage-report-unkeyed-parents	storage.md	engine/storage/storage_options.h:121
-storage::Report::parents_rejected	variable	storage	storage-report-parents-rejected	storage.md	engine/storage/storage_options.h:122
-storage::Report::bytes	variable	storage	storage-report-bytes	storage.md	engine/storage/storage_options.h:123
+storage::SaveMode	enum	storage	storage-savemode	storage.md	engine/storage/storage_options.h:69
+storage::SaveMode::Full	enumerator	storage	storage-savemode-full	storage.md	engine/storage/storage_options.h:70
+storage::SaveMode::Incremental	enumerator	storage	storage-savemode-incremental	storage.md	engine/storage/storage_options.h:71
+storage::ProgressFn	alias	storage	storage-progressfn	storage.md	engine/storage/storage_options.h:75
+storage::SaveOptions	struct	storage	storage-saveoptions	storage.md	engine/storage/storage_options.h:81
+storage::SaveOptions::mode	variable	storage	storage-saveoptions-mode	storage.md	engine/storage/storage_options.h:82
+storage::SaveOptions::selection	variable	storage	storage-saveoptions-selection	storage.md	engine/storage/storage_options.h:83
+storage::SaveOptions::label	variable	storage	storage-saveoptions-label	storage.md	engine/storage/storage_options.h:84
+storage::SaveOptions::batch_size	variable	storage	storage-saveoptions-batch-size	storage.md	engine/storage/storage_options.h:85
+storage::SaveOptions::session	variable	storage	storage-saveoptions-session	storage.md	engine/storage/storage_options.h:86
+storage::SaveOptions::cancel	variable	storage	storage-saveoptions-cancel	storage.md	engine/storage/storage_options.h:87
+storage::SaveOptions::progress	variable	storage	storage-saveoptions-progress	storage.md	engine/storage/storage_options.h:88
+storage::SaveOptions::user	variable	storage	storage-saveoptions-user	storage.md	engine/storage/storage_options.h:89
+storage::LoadMode	enum	storage	storage-loadmode	storage.md	engine/storage/storage_options.h:93
+storage::LoadMode::Create	enumerator	storage	storage-loadmode-create	storage.md	engine/storage/storage_options.h:94
+storage::LoadMode::Replace	enumerator	storage	storage-loadmode-replace	storage.md	engine/storage/storage_options.h:95
+storage::LoadMode::Merge	enumerator	storage	storage-loadmode-merge	storage.md	engine/storage/storage_options.h:96
+storage::LoadOptions	struct	storage	storage-loadoptions	storage.md	engine/storage/storage_options.h:103
+storage::LoadOptions::mode	variable	storage	storage-loadoptions-mode	storage.md	engine/storage/storage_options.h:104
+storage::LoadOptions::selection	variable	storage	storage-loadoptions-selection	storage.md	engine/storage/storage_options.h:105
+storage::LoadOptions::unknown	variable	storage	storage-loadoptions-unknown	storage.md	engine/storage/storage_options.h:106
+storage::LoadOptions::missing	variable	storage	storage-loadoptions-missing	storage.md	engine/storage/storage_options.h:107
+storage::LoadOptions::cancel	variable	storage	storage-loadoptions-cancel	storage.md	engine/storage/storage_options.h:108
+storage::LoadOptions::progress	variable	storage	storage-loadoptions-progress	storage.md	engine/storage/storage_options.h:109
+storage::LoadOptions::user	variable	storage	storage-loadoptions-user	storage.md	engine/storage/storage_options.h:110
+storage::Report	struct	storage	storage-report	storage.md	engine/storage/storage_options.h:116
+storage::Report::created	variable	storage	storage-report-created	storage.md	engine/storage/storage_options.h:117
+storage::Report::replaced	variable	storage	storage-report-replaced	storage.md	engine/storage/storage_options.h:118
+storage::Report::removed	variable	storage	storage-report-removed	storage.md	engine/storage/storage_options.h:119
+storage::Report::skipped	variable	storage	storage-report-skipped	storage.md	engine/storage/storage_options.h:120
+storage::Report::unknown_kept	variable	storage	storage-report-unknown-kept	storage.md	engine/storage/storage_options.h:121
+storage::Report::nulled	variable	storage	storage-report-nulled	storage.md	engine/storage/storage_options.h:122
+storage::Report::missing_keys	variable	storage	storage-report-missing-keys	storage.md	engine/storage/storage_options.h:123
+storage::Report::encoded	variable	storage	storage-report-encoded	storage.md	engine/storage/storage_options.h:124
+storage::Report::chunks_visited	variable	storage	storage-report-chunks-visited	storage.md	engine/storage/storage_options.h:125
+storage::Report::chunks_skipped	variable	storage	storage-report-chunks-skipped	storage.md	engine/storage/storage_options.h:126
+storage::Report::reconciled	variable	storage	storage-report-reconciled	storage.md	engine/storage/storage_options.h:127
+storage::Report::unkeyed_parents	variable	storage	storage-report-unkeyed-parents	storage.md	engine/storage/storage_options.h:128
+storage::Report::parents_rejected	variable	storage	storage-report-parents-rejected	storage.md	engine/storage/storage_options.h:129
+storage::Report::bytes	variable	storage	storage-report-bytes	storage.md	engine/storage/storage_options.h:130
 storage::RegisterStorageSettings(settings::Registry*)	function	storage	storage-registerstoragesettings-settings-registry-star	storage.md	engine/storage/storage_settings.h:17
 storage::LimitsFromSettings(const settings::Registry&)	function	storage	storage-limitsfromsettings-const-settings-registry-amp	storage.md	engine/storage/storage_settings.h:24
 storage::HashBytes(ByteSpan)	function	storage	storage-hashbytes-bytespan	storage.md	engine/storage/store.h:26
@@ -4129,13 +4142,13 @@ storage::Store::Rollback()	function	storage	storage-store-rollback	storage.md	en
 storage::Store::GetMetadata(StringView,String<HeapAllocator>*) const	function	storage	storage-store-getmetadata-stringview-string-lt-heapallocator-gt-star-const	storage.md	engine/storage/store.h:151
 storage::Store::SetMetadata(StringView,StringView)	function	storage	storage-store-setmetadata-stringview-stringview	storage.md	engine/storage/store.h:158
 storage::ListKeys(const Store&,const KeyRange&,usize,Vector<EntityKey>*)	function	storage	storage-listkeys-const-store-amp-const-keyrange-amp-usize-vector-lt-entitykey-gt-star	storage.md	engine/storage/store.h:169
-storage::WorldStorage	class	storage	storage-worldstorage	storage.md	engine/storage/world_storage.h:18
-storage::WorldStorage::WorldStorage(const ComponentRegistry&,Store&)	function	storage	storage-worldstorage-worldstorage-const-componentregistry-amp-store-amp	storage.md	engine/storage/world_storage.h:25
-storage::WorldStorage::SetLimits(const CodecLimits&)	function	storage	storage-worldstorage-setlimits-const-codeclimits-amp	storage.md	engine/storage/world_storage.h:31
-storage::WorldStorage::Save(ecs::World&,KeyIndex&,const SaveOptions&,Report*)	function	storage	storage-worldstorage-save-ecs-world-amp-keyindex-amp-const-saveoptions-amp-report-star	storage.md	engine/storage/world_storage.h:44
-storage::WorldStorage::Load(ecs::World&,KeyIndex&,const LoadOptions&,Report*)	function	storage	storage-worldstorage-load-ecs-world-amp-keyindex-amp-const-loadoptions-amp-report-star	storage.md	engine/storage/world_storage.h:56
-storage::WorldStorage::Delete(Span<const EntityKey>)	function	storage	storage-worldstorage-delete-span-lt-const-entitykey-gt	storage.md	engine/storage/world_storage.h:62
-storage::WorldStorage::List(const KeyRange&,usize,Vector<EntityKey>*) const	function	storage	storage-worldstorage-list-const-keyrange-amp-usize-vector-lt-entitykey-gt-star-const	storage.md	engine/storage/world_storage.h:70
+storage::WorldStorage	class	storage	storage-worldstorage	storage.md	engine/storage/world_storage.h:19
+storage::WorldStorage::WorldStorage(const ComponentRegistry&,Store&)	function	storage	storage-worldstorage-worldstorage-const-componentregistry-amp-store-amp	storage.md	engine/storage/world_storage.h:26
+storage::WorldStorage::SetLimits(const CodecLimits&)	function	storage	storage-worldstorage-setlimits-const-codeclimits-amp	storage.md	engine/storage/world_storage.h:32
+storage::WorldStorage::Save(ecs::World&,KeyIndex&,const SaveOptions&,Report*)	function	storage	storage-worldstorage-save-ecs-world-amp-keyindex-amp-const-saveoptions-amp-report-star	storage.md	engine/storage/world_storage.h:45
+storage::WorldStorage::Load(ecs::World&,KeyIndex&,const LoadOptions&,Report*)	function	storage	storage-worldstorage-load-ecs-world-amp-keyindex-amp-const-loadoptions-amp-report-star	storage.md	engine/storage/world_storage.h:57
+storage::WorldStorage::Delete(Span<const EntityKey>)	function	storage	storage-worldstorage-delete-span-lt-const-entitykey-gt	storage.md	engine/storage/world_storage.h:63
+storage::WorldStorage::List(const KeyRange&,usize,Vector<EntityKey>*) const	function	storage	storage-worldstorage-list-const-keyrange-amp-usize-vector-lt-entitykey-gt-star-const	storage.md	engine/storage/world_storage.h:71
 scene::MeshAsset	struct	scene	scene-meshasset	scene.md	engine/scene/components.h:22
 scene::MeshAsset::mesh	variable	scene	scene-meshasset-mesh	scene.md	engine/scene/components.h:24
 scene::MeshRenderer	struct	scene	scene-meshrenderer	scene.md	engine/scene/components.h:31

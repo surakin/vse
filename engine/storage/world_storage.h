@@ -6,6 +6,7 @@
 #include "ecs/world.h"
 #include "storage/component_registry.h"
 #include "storage/identity.h"
+#include "storage/save_session.h"
 #include "storage/storage_options.h"
 #include "storage/store.h"
 
@@ -39,7 +40,7 @@ public:
     /// Param options: what and how to save.
     /// Param report: receives counts; may be null.
     /// Returns: success, or `Cancelled`, `Io`, `Busy`, `LimitExceeded`, `Invalid`, `Duplicate`.
-    /// Fails: those codes (`Invalid` also for `SaveMode::Incremental`, which arrives on Day 261, and for an empty registry); on any failure the store holds the state before the save.
+    /// Fails: those codes (`Invalid` also for an empty registry, for `SaveMode::Incremental` without a `SaveSession`, and for a session with a selection other than `AllKeyed`); on any failure the store holds the state before the save.
     /// Ownership: all borrowed for the call.
     Status Save(ecs::World& world, KeyIndex& index, const SaveOptions& options, Report* report);
     /// Loads stored entities into `world`. Every record is decoded and checked first; the world changes only when all of them are good, so a corrupt, truncated,
@@ -70,6 +71,8 @@ public:
     Status List(const KeyRange& range, usize limit, Vector<EntityKey>* out) const;
 
 private:
+    Status SaveChanged(ecs::World& world, KeyIndex& index, const SaveOptions& options, Report& report);
+
     const ComponentRegistry* registry_;
     Store* store_;
     CodecLimits limits_;

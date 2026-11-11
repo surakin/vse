@@ -8,6 +8,7 @@ set(STORAGE_TEST_SOURCES
   identity_test.cpp  # Day 258
   store_test.cpp  # Day 259
   world_roundtrip_test.cpp  # Day 260
+  incremental_test.cpp  # Day 261
 )
 
 find_package(Threads REQUIRED)

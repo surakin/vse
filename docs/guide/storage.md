@@ -242,3 +242,22 @@ that has the key and keeps its entity id. Cancellation is checked in pass one on
 **References.** A parent whose entity is not in the load or the world is `MissingReference` under `MissingPolicy::Fail` and a root plus a count in `Report::nulled`
 under `NullReference`. An `EntityRef` field of your own component keeps the key; look the entity up with `KeyIndex::Find`.
 
+
+## Incremental saves
+
+A `SaveSession` remembers one world's saves to one store: the world tick and removal clock of the last save, the content hash of every record written and the key each entity had. Give it to
+`SaveOptions::session` with `SaveMode::Incremental` and the save does the work in proportion to what changed:
+
+- **Chunks.** A chunk is visited only when a column of a stored component (or the parent, the key, the unknown components) was written or added after the last save; derived columns do not count. A
+  moved or created entity arrives in its chunk with every column stamped, so structural changes are noticed the same way.
+- **Records.** The visited entities are encoded and each record is `Put` only when its content hash differs from what the session knows is stored. An entity written with the value it had costs an encode and no write.
+- **Removals.** Destroyed entities, entities that lost their key and entities that changed it come from the ECS removal log of the key component (`World::RemovedAt`), which keeps the current and the previous frame
+  (`World::EndFrame`). An incremental save at most one frame after the last one reads the log; a later one, a new session, a session of another world or a call to `SaveSession::Reset` has nothing to trust, so it
+  **reconciles**: it encodes every keyed entity, compares each hash with what the store holds, writes the differences and removes the records of entities that are gone (`Report::reconciled` is 1). A restarted
+  process therefore rewrites nothing that is already stored.
+
+The store after any sequence of incremental saves equals the store after one full save of the same world (the tests compare them after 500 random frames). A cancelled or failed save leaves the store as it was and
+the session unchanged, so the next save still sees everything that changed. A `Full` save with a session (the `AllKeyed` selection) starts the session from that save. `Report::encoded`, `chunks_visited` and
+`chunks_skipped` show what a save cost; an idle world encodes nothing and visits no chunk.
+
+Limits: a session follows the whole world (`AllKeyed` only); a record of a child is not rewritten when only its parent gains or loses a key (call `Reset`); if something else changes the store, call `Reset`.
