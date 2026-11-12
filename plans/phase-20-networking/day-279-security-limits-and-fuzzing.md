@@ -34,3 +34,5 @@ Nothing is trusted before the handshake completes; every length is bounded befor
 ## Post-implementation code review
 
 `/code-review high`: 4 findings (plus the automated security review's), 1 fixed, 3 declined. Fixed: UDP bans keyed on a forgeable source address (removed; test `bad cookies from a forged source never lock that address out`). Also fixed on the way: the Mac line's required `input_probe_runs_cocoa` map line made `testopt` so `test_phase_labels` passes on Linux. Declined: TCP bans of a shared (NAT) address (the address is verified, the ban time and count are settings), address rotation resetting other buckets (documented; the global bucket still bounds the total).
+
+Later the same day, the automated security review of the commit: the limiter's table hash is now keyed (`RateLimiterConfig::seed`, random from the system when 0), so an attacker cannot aim addresses at one bucket to evict bans (fixed); the global receive budget ending the crossing connection rather than the largest holder is declined and filed in `KNOWN-ISSUES.md`.

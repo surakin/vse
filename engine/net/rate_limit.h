@@ -57,6 +57,8 @@ struct RateLimiterConfig
     u32 strikes_to_ban = 3;      ///< Strikes that ban an address; 0 never bans.
     u64 strike_window_nanos = 60'000'000'000ull;  ///< Strikes older than this are forgotten.
     u64 ban_nanos = 300'000'000'000ull;           ///< How long a ban lasts.
+    u64 seed = 0;  ///< Keys the table's hash so an attacker cannot aim addresses at one bucket; 0 takes a random key
+                   ///< from the system (tests give one).
 };
 
 /// What the limiter has refused, for tests and diagnostics.
@@ -137,7 +139,10 @@ private:
     void Refill(Entry* e, u64 now) const;
     bool Idle(const Entry& e, u64 now) const;
 
+    usize BucketOf(const Address& address) const;
+
     RateLimiterConfig config_;
+    u64 key_ = 0;
     Vector<Entry> entries_;
     f64 total_tokens_ = 0;
     u64 total_refilled_ = 0;

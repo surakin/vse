@@ -1,5 +1,7 @@
 #include "net/rate_limit.h"
 
+#include "os/os.h"
+
 namespace engine_placeholder::net
 {
 namespace
@@ -19,6 +21,20 @@ RateLimiter::RateLimiter(const RateLimiterConfig& config) : config_(config)
     usize n = config_.max_addresses < kBucketEntries ? kBucketEntries : config_.max_addresses;
     n = (n + kBucketEntries - 1) / kBucketEntries * kBucketEntries;
     entries_.Resize(n);
+    key_ = config_.seed;
+    if (key_ == 0)
+    {
+        os::FillRandomBytes(&key_, sizeof(key_));
+    }
+}
+
+usize RateLimiter::BucketOf(const Address& address) const
+{
+    u64 x = static_cast<u64>(address.HashValue()) ^ key_;  // a splitmix64 finalizer: the key reaches every bit
+    x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ull;
+    x = (x ^ (x >> 27)) * 0x94d049bb133111ebull;
+    x ^= x >> 31;
+    return static_cast<usize>(x % (entries_.Size() / kBucketEntries)) * kBucketEntries;
 }
 
 void RateLimiter::Refill(Entry* e, u64 now) const
@@ -57,7 +73,7 @@ bool RateLimiter::Idle(const Entry& e, u64 now) const
 
 RateLimiter::Entry* RateLimiter::Lookup(const Address& address)
 {
-    const usize base = address.HashValue() % (entries_.Size() / kBucketEntries) * kBucketEntries;
+    const usize base = BucketOf(address);
     for (usize i = 0; i < kBucketEntries; ++i)
     {
         Entry& e = entries_[base + i];
@@ -71,7 +87,7 @@ RateLimiter::Entry* RateLimiter::Lookup(const Address& address)
 
 const RateLimiter::Entry* RateLimiter::Lookup(const Address& address) const
 {
-    const usize base = address.HashValue() % (entries_.Size() / kBucketEntries) * kBucketEntries;
+    const usize base = BucketOf(address);
     for (usize i = 0; i < kBucketEntries; ++i)
     {
         const Entry& e = entries_[base + i];
@@ -85,7 +101,7 @@ const RateLimiter::Entry* RateLimiter::Lookup(const Address& address) const
 
 RateLimiter::Entry* RateLimiter::Claim(const Address& address, u64 now)
 {
-    const usize base = address.HashValue() % (entries_.Size() / kBucketEntries) * kBucketEntries;
+    const usize base = BucketOf(address);
     Entry* victim = nullptr;
     for (usize i = 0; i < kBucketEntries; ++i)
     {
