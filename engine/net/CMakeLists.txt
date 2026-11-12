@@ -13,6 +13,8 @@ set(NET_SOURCES
   sim_datagram.cpp  # Day 274
   udp_protocol.cpp  # Day 274
   udp_transport.cpp  # Day 274
+  sim_stream.cpp  # Day 277
+  tcp_transport.cpp  # Day 277
 )
 # The socket backend (Day 268): the shared POSIX half and the operating system's hooks. The Windows backend arrives on Day 278.
 set(NET_POSIX_SOURCES
@@ -20,6 +22,7 @@ set(NET_POSIX_SOURCES
   posix/socket_posix.cpp  # Day 268
   posix/resolve_posix.cpp  # Day 270
   udp_port.cpp  # Day 274
+  socket_stream.cpp  # Day 277
 )
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   list(APPEND NET_POSIX_SOURCES linux/linux_hooks.cpp)  # Day 268

@@ -4026,6 +4026,14 @@ net::SimNetwork::GetClock() const	function	net	net-simnetwork-getclock-const	net
 net::SimNetwork::Counters() const	function	net	net-simnetwork-counters-const	net.md	engine/net/sim_network.h:150
 net::SimNetwork::EnableTrace()	function	net	net-simnetwork-enabletrace	net.md	engine/net/sim_network.h:153
 net::SimNetwork::Trace() const	function	net	net-simnetwork-trace-const	net.md	engine/net/sim_network.h:157
+net::SimStreamConfig	struct	net	net-simstreamconfig	net.md	engine/net/sim_stream.h:20
+net::SimStreamConfig::latency_nanos	variable	net	net-simstreamconfig-latency-nanos	net.md	engine/net/sim_stream.h:22
+net::SimStreamConfig::send_buffer_bytes	variable	net	net-simstreamconfig-send-buffer-bytes	net.md	engine/net/sim_stream.h:23
+net::SimStreamConfig::max_read_bytes	variable	net	net-simstreamconfig-max-read-bytes	net.md	engine/net/sim_stream.h:24
+net::SimStreamNetwork	class	net	net-simstreamnetwork	net.md	engine/net/sim_stream.h:31
+net::SimStreamNetwork::SimStreamNetwork(const Clock&,const SimStreamConfig&)	function	net	net-simstreamnetwork-simstreamnetwork-const-clock-amp-const-simstreamconfig-amp	net.md	engine/net/sim_stream.h:37
+net::SimStreamNetwork::AllocateEndpoint()	function	net	net-simstreamnetwork-allocateendpoint	net.md	engine/net/sim_stream.h:41
+net::SimStreamNetwork::MakeProvider(const Endpoint&)	function	net	net-simstreamnetwork-makeprovider-const-endpoint-amp	net.md	engine/net/sim_stream.h:47
 net::SimTransportConfig	struct	net	net-simtransportconfig	net.md	engine/net/sim_transport.h:33
 net::SimTransportConfig::channels	variable	net	net-simtransportconfig-channels	net.md	engine/net/sim_transport.h:35
 net::SimTransportConfig::max_message_bytes	variable	net	net-simtransportconfig-max-message-bytes	net.md	engine/net/sim_transport.h:36
@@ -4086,6 +4094,11 @@ net::Socket::SetReceiveBuffer(usize,usize*)	function	net	net-socket-setreceivebu
 net::Socket::SetSendBuffer(usize,usize*)	function	net	net-socket-setsendbuffer-usize-usize-star	net.md	engine/net/socket.h:219
 net::Socket::SetDualStack(bool)	function	net	net-socket-setdualstack-bool	net.md	engine/net/socket.h:224
 net::Socket::SetBroadcast(bool)	function	net	net-socket-setbroadcast-bool	net.md	engine/net/socket.h:228
+net::SocketStreamProvider	class	net	net-socketstreamprovider	net.md	engine/net/socket_stream.h:16
+net::SocketStreamProvider::Listen(const Endpoint&)	function	net	net-socketstreamprovider-listen-const-endpoint-amp	net.md	engine/net/socket_stream.h:23
+net::SocketStreamProvider::LocalEndpoint() const	function	net	net-socketstreamprovider-localendpoint-const	net.md	engine/net/socket_stream.h:27
+net::SocketStreamProvider::Accept(UniquePtr<StreamIo>*,Endpoint*)	function	net	net-socketstreamprovider-accept-uniqueptr-lt-streamio-gt-star-endpoint-star	net.md	engine/net/socket_stream.h:34
+net::SocketStreamProvider::Connect(const Endpoint&,UniquePtr<StreamIo>*)	function	net	net-socketstreamprovider-connect-const-endpoint-amp-uniqueptr-lt-streamio-gt-star	net.md	engine/net/socket_stream.h:41
 net::ErrorCode	enum	net	net-errorcode	net.md	engine/net/status.h:13
 net::ErrorCode::Ok	enumerator	net	net-errorcode-ok	net.md	engine/net/status.h:15
 net::ErrorCode::WouldBlock	enumerator	net	net-errorcode-wouldblock	net.md	engine/net/status.h:16
@@ -4116,6 +4129,17 @@ net::Status::Failed() const	function	net	net-status-failed-const	net.md	engine/n
 net::Status::Is(ErrorCode) const	function	net	net-status-is-errorcode-const	net.md	engine/net/status.h:72
 net::Status::Code() const	function	net	net-status-code-const	net.md	engine/net/status.h:74
 net::Status::OsError() const	function	net	net-status-oserror-const	net.md	engine/net/status.h:76
+net::StreamIo	class	net	net-streamio	net.md	engine/net/stream.h:19
+net::StreamIo::~StreamIo()	function	net	net-streamio-tilde-streamio	net.md	engine/net/stream.h:22
+net::StreamIo::FinishConnect()	function	net	net-streamio-finishconnect	net.md	engine/net/stream.h:28
+net::StreamIo::Receive(MutableByteSpan,usize*)	function	net	net-streamio-receive-mutablebytespan-usize-star	net.md	engine/net/stream.h:37
+net::StreamIo::Send(ByteSpan,usize*)	function	net	net-streamio-send-bytespan-usize-star	net.md	engine/net/stream.h:45
+net::StreamIo::ShutdownWrite()	function	net	net-streamio-shutdownwrite	net.md	engine/net/stream.h:50
+net::StreamProvider	class	net	net-streamprovider	net.md	engine/net/stream.h:56
+net::StreamProvider::~StreamProvider()	function	net	net-streamprovider-tilde-streamprovider	net.md	engine/net/stream.h:59
+net::StreamProvider::Listen(const Endpoint&)	function	net	net-streamprovider-listen-const-endpoint-amp	net.md	engine/net/stream.h:65
+net::StreamProvider::Accept(UniquePtr<StreamIo>*,Endpoint*)	function	net	net-streamprovider-accept-uniqueptr-lt-streamio-gt-star-endpoint-star	net.md	engine/net/stream.h:73
+net::StreamProvider::Connect(const Endpoint&,UniquePtr<StreamIo>*)	function	net	net-streamprovider-connect-const-endpoint-amp-uniqueptr-lt-streamio-gt-star	net.md	engine/net/stream.h:82
 net::CloseReason	enum	net	net-closereason	net.md	engine/net/tcp_stream.h:39
 net::CloseReason::None	enumerator	net	net-closereason-none	net.md	engine/net/tcp_stream.h:41
 net::CloseReason::PeerClosed	enumerator	net	net-closereason-peerclosed	net.md	engine/net/tcp_stream.h:42
@@ -4157,6 +4181,32 @@ net::TcpStream::ReceiveFrame(WaitOptions)	function	net	net-tcpstream-receivefram
 net::TcpStream::Frame() const	function	net	net-tcpstream-frame-const	net.md	engine/net/tcp_stream.h:174
 net::TcpStream::Close()	function	net	net-tcpstream-close	net.md	engine/net/tcp_stream.h:181
 net::TcpStream::Abort()	function	net	net-tcpstream-abort	net.md	engine/net/tcp_stream.h:185
+net::TcpTransportConfig	struct	net	net-tcptransportconfig	net.md	engine/net/tcp_transport.h:45
+net::TcpTransportConfig::channels	variable	net	net-tcptransportconfig-channels	net.md	engine/net/tcp_transport.h:47
+net::TcpTransportConfig::max_message_bytes	variable	net	net-tcptransportconfig-max-message-bytes	net.md	engine/net/tcp_transport.h:48
+net::TcpTransportConfig::max_connections	variable	net	net-tcptransportconfig-max-connections	net.md	engine/net/tcp_transport.h:49
+net::TcpTransportConfig::max_send_queue_bytes	variable	net	net-tcptransportconfig-max-send-queue-bytes	net.md	engine/net/tcp_transport.h:50
+net::TcpTransportConfig::handshake_timeout_nanos	variable	net	net-tcptransportconfig-handshake-timeout-nanos	net.md	engine/net/tcp_transport.h:51
+net::TcpTransportConfig::timeout_nanos	variable	net	net-tcptransportconfig-timeout-nanos	net.md	engine/net/tcp_transport.h:52
+net::TcpTransportConfig::ping_interval_nanos	variable	net	net-tcptransportconfig-ping-interval-nanos	net.md	engine/net/tcp_transport.h:53
+net::TcpTransportConfig::close_linger_nanos	variable	net	net-tcptransportconfig-close-linger-nanos	net.md	engine/net/tcp_transport.h:54
+net::TcpTransportConfig::read_bytes_per_poll	variable	net	net-tcptransportconfig-read-bytes-per-poll	net.md	engine/net/tcp_transport.h:55
+net::TcpTransport	class	net	net-tcptransport	net.md	engine/net/tcp_transport.h:62
+net::TcpTransport::TcpTransport(StreamProvider&,const Clock&,const TcpTransportConfig&)	function	net	net-tcptransport-tcptransport-streamprovider-amp-const-clock-amp-const-tcptransportconfig-amp	net.md	engine/net/tcp_transport.h:69
+net::TcpTransport::~TcpTransport()	function	net	net-tcptransport-tilde-tcptransport	net.md	engine/net/tcp_transport.h:72
+net::TcpTransport::TcpTransport(const TcpTransport&)	function	net	net-tcptransport-tcptransport-const-tcptransport-amp	net.md	engine/net/tcp_transport.h:74
+net::TcpTransport::operator=(const TcpTransport&)	function	net	net-tcptransport-operator-eq-const-tcptransport-amp	net.md	engine/net/tcp_transport.h:75
+net::TcpTransport::Listen(const Endpoint&)	function	net	net-tcptransport-listen-const-endpoint-amp	net.md	engine/net/tcp_transport.h:81
+net::TcpTransport::Connect(const Endpoint&,ConnectionId*)	function	net	net-tcptransport-connect-const-endpoint-amp-connectionid-star	net.md	engine/net/tcp_transport.h:88
+net::TcpTransport::Send(ConnectionId,u8,ByteSpan,Reliability)	function	net	net-tcptransport-send-connectionid-u8-bytespan-reliability	net.md	engine/net/tcp_transport.h:98
+net::TcpTransport::Poll(Event*)	function	net	net-tcptransport-poll-event-star	net.md	engine/net/tcp_transport.h:103
+net::TcpTransport::Close(ConnectionId,u32)	function	net	net-tcptransport-close-connectionid-u32	net.md	engine/net/tcp_transport.h:109
+net::TcpTransport::Statistics(ConnectionId,ConnectionStats*) const	function	net	net-tcptransport-statistics-connectionid-connectionstats-star-const	net.md	engine/net/tcp_transport.h:116
+net::TcpTransport::Supports(Reliability) const	function	net	net-tcptransport-supports-reliability-const	net.md	engine/net/tcp_transport.h:120
+net::TcpTransport::DegradesUnreliable() const	function	net	net-tcptransport-degradesunreliable-const	net.md	engine/net/tcp_transport.h:126
+net::TcpTransport::MaxMessageBytes() const	function	net	net-tcptransport-maxmessagebytes-const	net.md	engine/net/tcp_transport.h:129
+net::TcpTransport::ChannelCount() const	function	net	net-tcptransport-channelcount-const	net.md	engine/net/tcp_transport.h:132
+net::TcpTransport::ConnectionCount() const	function	net	net-tcptransport-connectioncount-const	net.md	engine/net/tcp_transport.h:136
 net::TimeBudget	class	net	net-timebudget	net.md	engine/net/time_budget.h:17
 net::TimeBudget::TimeBudget(const Reactor&,const WaitOptions&)	function	net	net-timebudget-timebudget-const-reactor-amp-const-waitoptions-amp	net.md	engine/net/time_budget.h:23
 net::TimeBudget::Next(bool*) const	function	net	net-timebudget-next-bool-star-const	net.md	engine/net/time_budget.h:38
