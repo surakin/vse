@@ -133,6 +133,20 @@ Pass conditions for the engine's layers (planner's defaults, to be confirmed or 
 | Simulated TCP stream throughput, 16 KiB messages | 1,810 MiB/s of wall time | none |
 | Soak | 10,000 simulated TCP connections, traffic, close and teardown in flight: passes in about 4.5 s, asan-clean | **reduced**: see the deviations |
 
+### Results on Windows (2026-11-12; Release, MSVC, loopback, the Windows PC; two runs)
+
+| Measure | Result |
+|---|---|
+| UDP transport echo, 64 B | p50 20 us, p99 22 us, p999 25 us |
+| UDP transport echo, 1 KiB | p50 22 us, p99 25-26 us, p999 29-31 us |
+| TCP transport echo, 64 B | p50 15-16 us, p99 18-20 us, p999 22-29 us |
+| TCP transport echo, 1 KiB | p50 15 us, p99 18 us, p999 23-24 us |
+| 1,000 simulated TCP connections, one 64 B message each per 100 ms for 10 s | 100,000 messages in 301.5-302.4 ms of CPU, 30 us per connection-second |
+| Simulated TCP stream throughput, 16 KiB messages | 1,609-1,629 MiB/s of wall time |
+
+Within a few microseconds of Linux on the loopback echoes (the Windows poller is `select`, section 3); the simulated measures are about 10-20 %
+slower. The same conditions as on Linux are not measured (below), and the `select` poller has not been measured at 1,000 sockets.
+
 **Not measured, filed in `KNOWN-ISSUES.md`:** the conditions that measure the reactor and coroutine layer under load (250,000 round trips per second at 1,000 connections with four participants; at most 1.0 `epoll_wait` wake-ups per round trip; idle resume p99 under 200 us; saturated hand-off p99 under 5 ms), UDP at 50,000 reliable-ordered and 100,000 unreliable messages per second, the congestion condition (80 % of a 10 Mbit/s, 50 ms link), and the codec. The transports are polled, so a polled loop does not exercise the reactor; the first user of `net::Reactor` with coroutines (a later phase) measures them.
 
 ### Deviations from Day 266

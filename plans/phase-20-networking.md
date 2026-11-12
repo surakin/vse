@@ -1,6 +1,6 @@
 # Phase 20 — Networking (TCP, UDP, and Possibly QUIC)
 
-**Status: complete on Linux (2026-11-12), Days 266-279 and 281 done, Day 280 (QUIC/TLS/encryption) deferred by the user. Open: the Windows PC run of Days 277-281. Next: Phase 21 needs its day files before it starts.**
+**Status: complete on both machines (2026-11-12), Days 266-279 and 281 done, Day 280 (QUIC/TLS/encryption) deferred by the user; Day 278 (the Winsock backend) and the Windows closing run on the Windows PC. Next: Phase 21 needs its day files before it starts.**
 
 **Depends on:** Phase 2 (job system and its async I/O, the scheduler that runs network work), Phase 9 (file layer patterns: errors as values, a test double that proves the interface), Phase 11 (settings), Phase 16 (wrappers), Phase 13 (the Windows platform layer, for the Windows socket backend). Phase 19 (storage) is not required, but a store over the network is its first user.
 **Goal:** one portable socket and transport layer for the whole engine (game traffic, tools, remote debugging, the resource system's network backend, a store over the network), with TCP and UDP from the first day and a QUIC transport if the Phase's spike justifies it.
