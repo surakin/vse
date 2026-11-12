@@ -2,7 +2,7 @@
 // compiler: slangc v2026.18.2, dxcompiler 1.9.2602.17
 #pragma once
 
-#include "lit.frag.spv.inc"
+#include "lit.frag.metallib.inc"  // and its .spv.inc
 #include "rhi/desc.h"
 #include "types.h"
 
@@ -318,6 +318,6 @@ inline constexpr u8 kLitFragDxil[kLitFragDxilByteCount] = {
 inline constexpr u64 kLitFragDxilSpirvFnv = 0xf265325dca3c3ab7ull;
 
 // The shader in every format it was minted in.
-inline constexpr rhi::ShaderBlobSet kLitFragShader = {"lit.frag", rhi::SpirvBlob(kLitFragSpv, kLitFragSpvWordCount), rhi::DxilBlob(kLitFragDxil, kLitFragDxilByteCount)};
+inline constexpr rhi::ShaderBlobSet kLitFragShader = {"lit.frag", rhi::SpirvBlob(kLitFragSpv, kLitFragSpvWordCount), rhi::DxilBlob(kLitFragDxil, kLitFragDxilByteCount), rhi::MetalLibBlob(kLitFragMetallib, kLitFragMetallibByteCount, kLitFragMetallibEntry)};
 
 } // namespace engine_placeholder::shaders

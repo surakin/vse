@@ -1907,7 +1907,7 @@ Checks the descriptor without a device.
 struct ShaderBlob { ... }
 ```
 
-One shader module's bytecode in one format: a pointer and a size, normally into a minted `*.spv.inc` or `*.dxil.inc`.
+One shader module's bytecode in one format: a pointer and a size, normally into a minted `*.spv.inc`, `*.dxil.inc` or `*.metallib.inc`, and for a Metal library the name of the function it exports.
 
 | Field | Value |
 |---|---|
@@ -1943,6 +1943,16 @@ usize size;
 ```
 
 Size of `bytes` in bytes; 0 for no blob.
+
+### `entry` {#rhi-shaderblob-entry}
+
+`variable rhi::ShaderBlob::entry` — defined in `engine/rhi/desc.h`
+
+```cpp
+const char* entry;
+```
+
+The entry point's name in the module, or null for `main` (SPIR-V and DXIL). A Metal library exports the renamed entry Slang wrote (`main_0`), recorded when it was minted; no backend guesses it.
 
 ### `Empty()` {#rhi-shaderblob-empty-const}
 
@@ -1994,6 +2004,25 @@ Returns the blob of a DXIL container given as bytes.
 | Fails | never. |
 | Thread-safety | thread-safe. |
 
+## `MetalLibBlob(const u8*,usize,const char*)` {#rhi-metallibblob-const-u8-star-usize-const-char-star}
+
+`function rhi::MetalLibBlob` — defined in `engine/rhi/desc.h`
+
+```cpp
+constexpr ShaderBlob MetalLibBlob(const u8* bytes, usize size, const char* entry);
+```
+
+Returns the blob of a Metal library given as bytes, with the name of the function it exports.
+
+| Field | Value |
+|---|---|
+| Parameter `bytes` | the library; borrowed. |
+| Parameter `size` | its size in bytes. |
+| Parameter `entry` | the exported entry point (`main_0`); borrowed, static in a minted file. |
+| Returns | a Metal library blob. |
+| Fails | never. |
+| Thread-safety | thread-safe. |
+
 ## `ShaderBlobSet` {#rhi-shaderblobset}
 
 `struct rhi::ShaderBlobSet` — defined in `engine/rhi/desc.h`
@@ -2039,6 +2068,16 @@ ShaderBlob dxil;
 
 The DXIL module, or empty.
 
+### `metallib` {#rhi-shaderblobset-metallib}
+
+`variable rhi::ShaderBlobSet::metallib` — defined in `engine/rhi/desc.h`
+
+```cpp
+ShaderBlob metallib;
+```
+
+The Metal library, or empty (Phase 26 Day 315; minted on a Mac).
+
 ### `For(ShaderFormat)` {#rhi-shaderblobset-for-shaderformat-const}
 
 `method rhi::ShaderBlobSet::For` — defined in `engine/rhi/desc.h`
@@ -2052,7 +2091,7 @@ Returns the blob of one format.
 | Field | Value |
 |---|---|
 | Parameter `format` | the format the device takes. |
-| Returns | the blob, or an empty blob of that format when the set has none (always for `Msl` today). |
+| Returns | the blob, or an empty blob of that format when the set has none. |
 | Fails | an empty blob, as described. |
 
 ## `ShaderDesc` {#rhi-shaderdesc}
@@ -2063,7 +2102,7 @@ Returns the blob of one format.
 struct ShaderDesc { ... }
 ```
 
-Describes a shader module to create from precompiled bytecode: SPIR-V for the Vulkan backend, DXIL for Direct3D 12.
+Describes a shader module to create from precompiled bytecode: SPIR-V for the Vulkan backend, DXIL for Direct3D 12, a Metal library for Metal.
 
 The engine compiles shaders offline and never at runtime (`PLAN.md` assumption #18). A backend refuses a module in another format than its [`rhi::DeviceCaps::shader_format`](#rhi-devicecaps-shader-format) with an error naming both.
 
@@ -2140,7 +2179,7 @@ Optional name shown in debuggers and logs; null for none.
 void SetCode(const ShaderBlob& blob);
 ```
 
-Sets `format`, `bytes` and `size` from a blob.
+Sets `format`, `bytes`, `size` and `entry` from a blob: the entry it names (a Metal library), else `main`.
 
 | Field | Value |
 |---|---|
@@ -2157,7 +2196,7 @@ const char* Validate() const;
 
 Checks the descriptor without a device.
 
-Checks the stage, the entry name (at most 63 bytes) and the module's shape for its format: SPIR-V is 4-byte aligned, a whole number of words and at least a header (its contents are checked by [`rhi::ValidateSpirv`](#rhi-validatespirv-const-u32-star-usize-shaderstage-const-char-star) when the shader is created); DXIL starts with the `DXBC` container tag, is at least a container header and its size matches the one the header records; MSL is refused.
+Checks the stage, the entry name (at most 63 bytes) and the module's shape for its format: SPIR-V is 4-byte aligned, a whole number of words and at least a header (its contents are checked by [`rhi::ValidateSpirv`](#rhi-validatespirv-const-u32-star-usize-shaderstage-const-char-star) when the shader is created); DXIL starts with the `DXBC` container tag, is at least a container header and its size matches the one the header records; a Metal library starts with the `MTLB` tag, is at least its header, is an executable library (type 0, not a dynamic one) and its size matches the one its header records.
 
 | Field | Value |
 |---|---|
@@ -4689,7 +4728,7 @@ The bytecode format of a shader module ([`rhi::ShaderDesc`](#rhi-shaderdesc)); e
 |---|---|---|
 | <a id="rhi-shaderformat-spirv"></a>`Spirv` | `0` | SPIR-V words (Vulkan). |
 | <a id="rhi-shaderformat-dxil"></a>`Dxil` |  | A DXIL container (Direct3D 12). |
-| <a id="rhi-shaderformat-msl"></a>`Msl` |  | Metal Shading Language; reserved for the Metal backend (Phase 26), refused by every backend today. |
+| <a id="rhi-shaderformat-metallib"></a>`MetalLib` |  | A Metal library (`.metallib`, AIR, minted offline: Phase 26 Day 315) with its entry name (Metal). |
 
 ## `ShaderFormatName(ShaderFormat)` {#rhi-shaderformatname-shaderformat}
 
@@ -4699,7 +4738,7 @@ The bytecode format of a shader module ([`rhi::ShaderDesc`](#rhi-shaderdesc)); e
 const char* ShaderFormatName(ShaderFormat format);
 ```
 
-Returns the lowercase name of a shader format (`spirv`, `dxil`, `msl`), for logs.
+Returns the lowercase name of a shader format (`spirv`, `dxil`, `metallib`), for logs.
 
 | Field | Value |
 |---|---|

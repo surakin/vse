@@ -2,7 +2,7 @@
 // compiler: slangc v2026.18.2, dxcompiler 1.9.2602.17
 #pragma once
 
-#include "material_test.vert.spv.inc"
+#include "material_test.vert.metallib.inc"  // and its .spv.inc
 #include "rhi/desc.h"
 #include "types.h"
 
@@ -414,6 +414,6 @@ inline constexpr u8 kMaterialTestVertDxil[kMaterialTestVertDxilByteCount] = {
 inline constexpr u64 kMaterialTestVertDxilSpirvFnv = 0x1c149ecad510bb7full;
 
 // The shader in every format it was minted in.
-inline constexpr rhi::ShaderBlobSet kMaterialTestVertShader = {"material_test.vert", rhi::SpirvBlob(kMaterialTestVertSpv, kMaterialTestVertSpvWordCount), rhi::DxilBlob(kMaterialTestVertDxil, kMaterialTestVertDxilByteCount)};
+inline constexpr rhi::ShaderBlobSet kMaterialTestVertShader = {"material_test.vert", rhi::SpirvBlob(kMaterialTestVertSpv, kMaterialTestVertSpvWordCount), rhi::DxilBlob(kMaterialTestVertDxil, kMaterialTestVertDxilByteCount), rhi::MetalLibBlob(kMaterialTestVertMetallib, kMaterialTestVertMetallibByteCount, kMaterialTestVertMetallibEntry)};
 
 } // namespace engine_placeholder::shaders

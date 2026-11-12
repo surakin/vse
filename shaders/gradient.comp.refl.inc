@@ -6,14 +6,15 @@
 
 namespace engine_placeholder::shaders {
 
-inline constexpr usize kGradientCompReflByteCount = 75;
+inline constexpr usize kGradientCompReflByteCount = 84;
 
 inline constexpr u8 kGradientCompRefl[kGradientCompReflByteCount] = {
-    83, 82, 70, 76, 2, 0, 0, 0, 4, 0, 0, 0, 4, 109, 97, 105,
+    83, 82, 70, 76, 3, 0, 0, 0, 4, 0, 0, 0, 4, 109, 97, 105,
     110, 8, 0, 0, 0, 8, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0,
     0, 3, 105, 109, 103, 0, 0, 0, 0, 0, 0, 0, 0, 4, 1, 0,
     0, 0, 4, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 255, 255, 255, 255,
+    0, 0, 0, 0,
 };
 
 } // namespace engine_placeholder::shaders

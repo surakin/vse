@@ -7,9 +7,11 @@
 //   fragment output location 0: float4 color
 //   no push constants
 
-[[vk::binding(0, 0)]] Texture2D<float4> tex_a : register(t0, space0);
-[[vk::binding(1, 0)]] Texture2D<float4> tex_b : register(t1, space0);
-[[vk::binding(2, 0)]] SamplerState linear_sampler : register(s2, space0);
+#include "target_common.slang"  // ENGINE_REGISTER
+
+[[vk::binding(0, 0)]] Texture2D<float4> tex_a ENGINE_REGISTER(t0, space0);
+[[vk::binding(1, 0)]] Texture2D<float4> tex_b ENGINE_REGISTER(t1, space0);
+[[vk::binding(2, 0)]] SamplerState linear_sampler ENGINE_REGISTER(s2, space0);
 
 struct FragmentInput {
     [[vk::location(0)]] float2 uv : TEXCOORD0;

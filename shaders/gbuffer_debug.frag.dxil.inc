@@ -2,7 +2,7 @@
 // compiler: slangc v2026.18.2, dxcompiler 1.9.2602.17
 #pragma once
 
-#include "gbuffer_debug.frag.spv.inc"
+#include "gbuffer_debug.frag.metallib.inc"  // and its .spv.inc
 #include "rhi/desc.h"
 #include "types.h"
 
@@ -366,6 +366,6 @@ inline constexpr u8 kGbufferDebugFragDxil[kGbufferDebugFragDxilByteCount] = {
 inline constexpr u64 kGbufferDebugFragDxilSpirvFnv = 0x4e422827483d6318ull;
 
 // The shader in every format it was minted in.
-inline constexpr rhi::ShaderBlobSet kGbufferDebugFragShader = {"gbuffer_debug.frag", rhi::SpirvBlob(kGbufferDebugFragSpv, kGbufferDebugFragSpvWordCount), rhi::DxilBlob(kGbufferDebugFragDxil, kGbufferDebugFragDxilByteCount)};
+inline constexpr rhi::ShaderBlobSet kGbufferDebugFragShader = {"gbuffer_debug.frag", rhi::SpirvBlob(kGbufferDebugFragSpv, kGbufferDebugFragSpvWordCount), rhi::DxilBlob(kGbufferDebugFragDxil, kGbufferDebugFragDxilByteCount), rhi::MetalLibBlob(kGbufferDebugFragMetallib, kGbufferDebugFragMetallibByteCount, kGbufferDebugFragMetallibEntry)};
 
 } // namespace engine_placeholder::shaders

@@ -2,7 +2,7 @@
 // compiler: slangc v2026.18.2, dxcompiler 1.9.2602.17
 #pragma once
 
-#include "triangle.frag.spv.inc"
+#include "triangle.frag.metallib.inc"  // and its .spv.inc
 #include "rhi/desc.h"
 #include "types.h"
 
@@ -194,6 +194,6 @@ inline constexpr u8 kTriangleFragDxil[kTriangleFragDxilByteCount] = {
 inline constexpr u64 kTriangleFragDxilSpirvFnv = 0x154a01a5d10fb92bull;
 
 // The shader in every format it was minted in.
-inline constexpr rhi::ShaderBlobSet kTriangleFragShader = {"triangle.frag", rhi::SpirvBlob(kTriangleFragSpv, kTriangleFragSpvWordCount), rhi::DxilBlob(kTriangleFragDxil, kTriangleFragDxilByteCount)};
+inline constexpr rhi::ShaderBlobSet kTriangleFragShader = {"triangle.frag", rhi::SpirvBlob(kTriangleFragSpv, kTriangleFragSpvWordCount), rhi::DxilBlob(kTriangleFragDxil, kTriangleFragDxilByteCount), rhi::MetalLibBlob(kTriangleFragMetallib, kTriangleFragMetallibByteCount, kTriangleFragMetallibEntry)};
 
 } // namespace engine_placeholder::shaders

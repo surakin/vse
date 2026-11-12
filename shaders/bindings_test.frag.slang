@@ -10,6 +10,8 @@
 //   set 0, binding 2: sampler
 //   push constants: float4 bias (16 bytes, fragment stage)
 
+#include "target_common.slang"  // ENGINE_REGISTER
+
 struct Params {
     float4 scale;
 };
@@ -17,10 +19,10 @@ struct Push {
     float4 bias;
 };
 
-[[vk::binding(0, 0)]] ConstantBuffer<Params> params : register(b0, space0);
-[[vk::binding(1, 0)]] Texture2D tex : register(t1, space0);
-[[vk::binding(2, 0)]] SamplerState smp : register(s2, space0);
-[[vk::push_constant]] ConstantBuffer<Push> push : register(b0, space15);
+[[vk::binding(0, 0)]] ConstantBuffer<Params> params ENGINE_REGISTER(b0, space0);
+[[vk::binding(1, 0)]] Texture2D tex ENGINE_REGISTER(t1, space0);
+[[vk::binding(2, 0)]] SamplerState smp ENGINE_REGISTER(s2, space0);
+[[vk::push_constant]] ConstantBuffer<Push> push ENGINE_REGISTER(b0, space15);
 
 [shader("fragment")]
 float4 main([[vk::location(0)]] float2 uv : TEXCOORD0) : SV_Target0 {

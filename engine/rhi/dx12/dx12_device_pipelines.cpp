@@ -402,7 +402,7 @@ ShaderHandle Dx12Device::CreateShader(const ShaderDesc& desc)
         RhiLog(
             LogVerbosity::Error,
             "CreateShader: '%s' is %s, but a Direct3D 12 device runs DXIL (pick the blob with ShaderBlobSet::For(Caps().shader_format))",
-            NameOr(desc.debug_name), desc.format == ShaderFormat::Spirv ? "SPIR-V" : "MSL");
+            NameOr(desc.debug_name), ShaderFormatName(desc.format));
         return {};
     }
     ShaderRes res;

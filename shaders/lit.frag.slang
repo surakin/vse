@@ -17,6 +17,8 @@
 //   set 0, binding 1: sampled texture (2D)
 //   set 0, binding 2: sampler
 
+#include "target_common.slang"  // ENGINE_REGISTER
+
 struct Params {
     float4x4 mvp;
     float4x4 normal_matrix;
@@ -25,9 +27,9 @@ struct Params {
     float4 ambient;
 };
 
-[[vk::binding(0, 0)]] ConstantBuffer<Params> params : register(b0, space0);
-[[vk::binding(1, 0)]] Texture2D tex : register(t1, space0);
-[[vk::binding(2, 0)]] SamplerState smp : register(s2, space0);
+[[vk::binding(0, 0)]] ConstantBuffer<Params> params ENGINE_REGISTER(b0, space0);
+[[vk::binding(1, 0)]] Texture2D tex ENGINE_REGISTER(t1, space0);
+[[vk::binding(2, 0)]] SamplerState smp ENGINE_REGISTER(s2, space0);
 
 struct FragmentInput {
     [[vk::location(0)]] float3 normal : NORMAL;

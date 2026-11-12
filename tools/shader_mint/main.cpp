@@ -27,6 +27,15 @@
 // (reflect_json.h, CheckD3D12Registers) and the container must be signed by the validator. Without the DXIL options
 // nothing DXIL is written and the committed `.dxil.inc` stays.
 //
+// Metal (Phase 26 Day 315): the Metal build's reflection (`--metal-reflection FILE`, the JSON of `slangc -target
+// metal`; permute mode: `--metal-arg ARG`..., slangc run per key) puts each binding's Metal slot into the reflection
+// blob, on every platform, so `.refl.inc` is the same everywhere. On a Mac, the library tools/metal_mint wrote
+// (`--metallib FILE
+// --metallib-info FILE --metallib-out FILE`; permute mode: `--metal-mint PATH --metallib-out FILE`) goes into
+// `<name>.metallib.inc`: `<Base>Metallib`, `<Base>MetallibByteCount`, `<Base>MetallibEntry` (the exported function,
+// `main_0`) and `<Base>MetallibSpirvFnv`. The `.dxil.inc` includes the `.metallib.inc` and its blob set holds all
+// three. Without the Metal library options the committed `.metallib.inc` stays.
+//
 // It fails (non-zero exit, message on stderr) if the reflection cannot be built or disagrees with the SPIR-V. It is a
 // dev-time tool (PLAN.md assumptions #18 and #19): the generated files are committed, so building the engine never
 // needs it, slangc or the JSON library.
@@ -59,10 +68,12 @@ int Usage()
         "usage: shader_mint --name IDENT --source FILE --compiler TEXT --spv FILE --reflection FILE "
         "--spv-out FILE --refl-out FILE\n"
         "                   [--dxil FILE --dxil-reflection FILE --dxil-out FILE --dxil-compiler TEXT]\n"
+        "                   [--metal-reflection FILE] [--metallib FILE --metallib-info FILE --metallib-out FILE]\n"
         "       shader_mint --permute --name IDENT --source LABEL --source-path FILE --manifest FILE --compiler TEXT\n"
         "                   --slangc PATH [--slang-arg ARG]... [--spirv-val PATH] --work-dir DIR\n"
         "                   --spv-out FILE --refl-out FILE --perm-out FILE\n"
-        "                   [--dxil-arg ARG... --dxil-out FILE --dxil-compiler TEXT]\n");
+        "                   [--dxil-arg ARG... --dxil-out FILE --dxil-compiler TEXT]\n"
+        "                   [--metal-arg ARG...] [--metal-mint PATH --metallib-out FILE]\n");
     return 2;
 }
 
@@ -173,12 +184,16 @@ struct Minted
     Vector<u32> words;
     renderer::ShaderReflection reflection;
     Vector<u8> blob;
-    Vector<u8> dxil;  // empty when no DXIL was minted
+    Vector<u8> dxil;                   // empty when no DXIL was minted
+    Vector<u8> metallib;               // empty when no Metal library was minted
+    Text metal_entry = MakeText();     // the function the library exports (main_0)
+    Text metal_compiler = MakeText();  // "metalfe-... on macOS ..." from metal_mint's info file
 };
 
 // Reads slangc's SPIR-V and reflection JSON, cross-checks them and serializes the reflection (parsing it back as a
 // final self-check). Prints the reason and returns false on any problem.
-bool MintModule(const char* spv_path, const char* json_path, const char* source, Minted* out)
+bool MintModule(const char* spv_path, const char* json_path, const char* metal_json_path, const char* source,
+                Minted* out)
 {
     Vector<byte> spv_bytes;
     Vector<byte> json_bytes;
@@ -223,6 +238,20 @@ bool MintModule(const char* spv_path, const char* json_path, const char* source,
     {
         os::PrintError("shader_mint: %s: %s\n", source, error.CStr());
         return false;
+    }
+    if (metal_json_path != nullptr)
+    {
+        Vector<byte> metal_json;
+        if (!ReadAll(metal_json_path, &metal_json))
+        {
+            os::PrintError("shader_mint: cannot read %s\n", metal_json_path);
+            return false;
+        }
+        if (!shader_mint::ApplyMetalSlots(&out->reflection, ToStringView(json_bytes), ToStringView(metal_json), &error))
+        {
+            os::PrintError("shader_mint: %s: %s\n", source, error.CStr());
+            return false;
+        }
     }
     const usize blob_size = renderer::SerializeShaderReflection(out->reflection, nullptr, 0);
     out->blob.Resize(blob_size);
@@ -309,6 +338,171 @@ bool ReadDxil(const char* dxil_path, const char* json_path, const renderer::Shad
     return true;
 }
 
+// The stage named in slangc's arguments (`-stage vertex`), for metal_mint; empty if there is none.
+StringView StageOf(const Vector<Text>& args)
+{
+    for (usize i = 0; i + 1 < args.Size(); ++i)
+    {
+        if (args[i].View() == StringView("-stage"))
+        {
+            return args[i + 1].View();
+        }
+    }
+    return StringView();
+}
+
+// Reads the library tools/metal_mint wrote and its info file (`entry NAME`, `compiler TEXT`, `macos TEXT`). The tool
+// checked the library before writing it; this checks its tag and that the info names an entry. Prints why and returns
+// false on any problem.
+bool ReadMetallib(const char* metallib_path, const char* info_path, const char* source, Minted* out)
+{
+    Vector<byte> bytes;
+    Vector<byte> info;
+    if (!ReadAll(metallib_path, &bytes) || !ReadAll(info_path, &info))
+    {
+        os::PrintError("shader_mint: cannot read %s or %s\n", metallib_path, info_path);
+        return false;
+    }
+    if (bytes.Size() < 32 || bytes[0] != 'M' || bytes[1] != 'T' || bytes[2] != 'L' || bytes[3] != 'B' || bytes[10] != 0)
+    {
+        os::PrintError("shader_mint: %s: %s is not an executable Metal library\n", source, metallib_path);
+        return false;
+    }
+    out->metal_entry = MakeText();
+    out->metal_compiler = MakeText();
+    Text macos = MakeText();
+    const StringView text = ToStringView(info);
+    usize start = 0;
+    while (start < text.Length())
+    {
+        usize end = start;
+        while (end < text.Length() && text[end] != '\n')
+        {
+            ++end;
+        }
+        const StringView line = text.Substring(start, end - start);
+        if (line.StartsWith("entry "))
+        {
+            out->metal_entry = MakeText(line.Substring(6));
+        }
+        else if (line.StartsWith("compiler "))
+        {
+            out->metal_compiler = MakeText(line.Substring(9));
+        }
+        else if (line.StartsWith("macos "))
+        {
+            macos = MakeText(line.Substring(6));
+        }
+        start = end + 1;
+    }
+    if (!IsIdentifier(out->metal_entry.CStr()) || out->metal_compiler.View().Length() == 0)
+    {
+        os::PrintError("shader_mint: %s: %s names no entry point or compiler\n", source, info_path);
+        return false;
+    }
+    Appendf(&out->metal_compiler, " on macOS %s", macos.CStr());
+    out->metallib.Resize(bytes.Size());
+    for (usize i = 0; i < bytes.Size(); ++i)
+    {
+        out->metallib[i] = bytes[i];
+    }
+    return true;
+}
+
+// The `.metallib.inc` text: each module's library (module 0 the base), the function it exports and the hash of the
+// SPIR-V it was minted beside. `compiler` is the slangc version; `metal_compiler` the driver compiler and macOS build.
+Text MetallibText(StringView base, StringView shader_file, const char* source, const char* compiler,
+                  const char* metal_compiler, const Vector<const Vector<u32>*>& module_words,
+                  const Vector<const Minted*>& module_metal)
+{
+    const Text file = MakeText(shader_file);
+    Text text = MakeText();
+    Appendf(
+        &text,
+        "// Generated by tools/shader_mint from %s. Do not edit; run the `shaders` target on a Mac to regenerate (tools/metal_mint).\n",
+        source);
+    Appendf(&text, "// compiler: %s, %s\n", compiler, metal_compiler);
+    Appendf(
+        &text,
+        "#pragma once\n\n#include \"%s.spv.inc\"\n#include \"types.h\"\n\nnamespace engine_placeholder::shaders {\n\n",
+        file.CStr());
+    for (usize m = 0; m < module_metal.Size(); ++m)
+    {
+        Text name = MakeText(base);
+        if (m != 0)
+        {
+            Appendf(&name, "Perm%zu", m);
+        }
+        name.Append("Metallib");
+        shader_mint::AppendByteArray(&text, name.View(), module_metal[m]->metallib);
+        Appendf(&text, "\n// The function the library exports (Slang renames `main` for Metal).\n");
+        Appendf(&text, "inline constexpr const char* %sEntry = \"%s\";\n", name.CStr(),
+                module_metal[m]->metal_entry.CStr());
+        Appendf(
+            &text,
+            "\n// The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.\n");
+        Appendf(&text, "inline constexpr u64 %sSpirvFnv = 0x%016llxull;\n\n", name.CStr(),
+                static_cast<unsigned long long>(SpirvFnv(*module_words[m])));
+    }
+    text.Append("} // namespace engine_placeholder::shaders\n");
+    return text;
+}
+
+// Whether the `.metallib.inc` at `path` lacks the libraries of `module_count` modules (missing, or another count of
+// `...MetallibEntry` constants): then the `.dxil.inc` and `.perm.inc` would name symbols it does not define.
+bool NeedsPlaceholder(const char* path, usize module_count)
+{
+    Vector<byte> bytes;
+    if (!ReadAll(path, &bytes))
+    {
+        return true;
+    }
+    const StringView text = ToStringView(bytes);
+    const StringView marker("MetallibEntry = ");
+    usize found = 0;
+    for (usize i = 0; i + marker.Length() <= text.Length(); ++i)
+    {
+        if (text.Substring(i, marker.Length()) == marker)
+        {
+            ++found;
+        }
+    }
+    return found != module_count;
+}
+
+// A `.metallib.inc` with no library in it (a machine without a Mac added or re-shaped the shader): every module's blob
+// is null and its SPIR-V hash 0, so the engine builds, a Metal device finds no bytecode, and shader_metallib_test names
+// the shader to mint on a Mac.
+Text PlaceholderMetallibText(StringView base, StringView shader_file, const char* source, usize module_count)
+{
+    const Text file = MakeText(shader_file);
+    Text text = MakeText();
+    Appendf(
+        &text,
+        "// Generated by tools/shader_mint from %s without a Metal library. Do not edit; run the `shaders` target on a Mac to mint it.\n",
+        source);
+    text.Append("// compiler: none (not minted)\n");
+    Appendf(
+        &text,
+        "#pragma once\n\n#include \"%s.spv.inc\"\n#include \"types.h\"\n\nnamespace engine_placeholder::shaders {\n\n",
+        file.CStr());
+    for (usize m = 0; m < module_count; ++m)
+    {
+        Text name = MakeText(base);
+        if (m != 0)
+        {
+            Appendf(&name, "Perm%zu", m);
+        }
+        name.Append("Metallib");
+        Appendf(&text, "inline constexpr const u8* %s = nullptr;\n", name.CStr());
+        Appendf(&text, "inline constexpr usize %sByteCount = 0;\n", name.CStr());
+        Appendf(&text, "inline constexpr const char* %sEntry = nullptr;\n", name.CStr());
+        Appendf(&text, "inline constexpr u64 %sSpirvFnv = 0;\n\n", name.CStr());
+    }
+    text.Append("} // namespace engine_placeholder::shaders\n");
+    return text;
+}
+
 // The `.dxil.inc` text: the base module's DXIL, each extra module's DXIL (permuted shaders; `module_dxil[m]` with the
 // SPIR-V `module_words[m]` it was minted beside, module 0 being the base), and the base module's blob set.
 Text DxilText(StringView base, StringView shader_file, const char* source, const char* compiler,
@@ -324,7 +518,7 @@ Text DxilText(StringView base, StringView shader_file, const char* source, const
     Appendf(&text, "// compiler: %s\n", compiler);
     Appendf(
         &text,
-        "#pragma once\n\n#include \"%s.spv.inc\"\n#include \"rhi/desc.h\"\n#include \"types.h\"\n\nnamespace engine_placeholder::shaders {\n\n",
+        "#pragma once\n\n#include \"%s.metallib.inc\"  // and its .spv.inc\n#include \"rhi/desc.h\"\n#include \"types.h\"\n\nnamespace engine_placeholder::shaders {\n\n",
         file.CStr());
     for (usize m = 0; m < module_dxil.Size(); ++m)
     {
@@ -344,8 +538,8 @@ Text DxilText(StringView base, StringView shader_file, const char* source, const
     Appendf(&text, "// The shader in every format it was minted in.\n");
     Appendf(
         &text,
-        "inline constexpr rhi::ShaderBlobSet %sShader = {\"%s\", rhi::SpirvBlob(%sSpv, %sSpvWordCount), rhi::DxilBlob(%sDxil, %sDxilByteCount)};\n",
-        b.CStr(), file.CStr(), b.CStr(), b.CStr(), b.CStr(), b.CStr());
+        "inline constexpr rhi::ShaderBlobSet %sShader = {\"%s\", rhi::SpirvBlob(%sSpv, %sSpvWordCount), rhi::DxilBlob(%sDxil, %sDxilByteCount), rhi::MetalLibBlob(%sMetallib, %sMetallibByteCount, %sMetallibEntry)};\n",
+        b.CStr(), file.CStr(), b.CStr(), b.CStr(), b.CStr(), b.CStr(), b.CStr(), b.CStr(), b.CStr());
     text.Append("\n} // namespace engine_placeholder::shaders\n");
     return text;
 }
@@ -436,8 +630,14 @@ int main(int argc, char** argv)
     const char* dxil_json_path = nullptr;
     const char* dxil_out = nullptr;
     const char* dxil_compiler = nullptr;
+    const char* metal_json_path = nullptr;
+    const char* metallib_path = nullptr;
+    const char* metallib_info_path = nullptr;
+    const char* metallib_out = nullptr;
+    const char* metal_mint = nullptr;
     Vector<Text> slang_args;
     Vector<Text> dxil_args;
+    Vector<Text> metal_args;
     bool permute = false;
     for (int i = 1; i < argc; ++i)
     {
@@ -522,6 +722,30 @@ int main(int argc, char** argv)
         {
             dxil_args.Push(MakeText(StringView(argv[++i])));
         }
+        else if (CStrCompare(argv[i], "--metal-reflection") == 0 && has_value)
+        {
+            metal_json_path = argv[++i];
+        }
+        else if (CStrCompare(argv[i], "--metallib") == 0 && has_value)
+        {
+            metallib_path = argv[++i];
+        }
+        else if (CStrCompare(argv[i], "--metallib-info") == 0 && has_value)
+        {
+            metallib_info_path = argv[++i];
+        }
+        else if (CStrCompare(argv[i], "--metallib-out") == 0 && has_value)
+        {
+            metallib_out = argv[++i];
+        }
+        else if (CStrCompare(argv[i], "--metal-mint") == 0 && has_value)
+        {
+            metal_mint = argv[++i];
+        }
+        else if (CStrCompare(argv[i], "--metal-arg") == 0 && has_value)
+        {
+            metal_args.Push(MakeText(StringView(argv[++i])));
+        }
         else
         {
             return Usage();
@@ -545,6 +769,22 @@ int main(int argc, char** argv)
     {
         return Usage();
     }
+    // Metal: the reflection (plain: a file; permute: slangc's Metal arguments) and, on a Mac, the library: all of its
+    // options or none. The library needs the reflection (its slots are part of the module).
+    const bool want_metal_slots = permute ? !metal_args.Empty() : metal_json_path != nullptr;
+    if (permute ? metal_json_path != nullptr : !metal_args.Empty())
+    {
+        return Usage();
+    }
+    // Without a library (no Mac), `--metallib-out` names the committed file, which is kept when it has the modules and
+    // otherwise replaced by a placeholder, so the `.dxil.inc` and `.perm.inc` that name its symbols still compile.
+    const bool want_metallib = permute ? metal_mint != nullptr : metallib_path != nullptr;
+    if (want_metallib ? (metallib_out == nullptr || !want_metal_slots || (!permute && metallib_info_path == nullptr) ||
+                         (permute && (metallib_path != nullptr || metallib_info_path != nullptr)))
+                      : (metallib_info_path != nullptr || metal_mint != nullptr))
+    {
+        return Usage();
+    }
     const Text base = MakeText(StringView(name));
     const StringView label(source);
     const usize slang_at = label.EndsWith(".slang") ? label.Length() - 6
@@ -557,7 +797,11 @@ int main(int argc, char** argv)
     Vector<Minted> minted_keys;  // permute mode: one per manifest key, in key order
     if (!permute)
     {
-        if (!MintModule(spv_path, json_path, source, &plain))
+        if (!MintModule(spv_path, json_path, metal_json_path, source, &plain))
+        {
+            return 1;
+        }
+        if (want_metallib && !ReadMetallib(metallib_path, metallib_info_path, source, &plain))
         {
             return 1;
         }
@@ -632,8 +876,39 @@ int main(int argc, char** argv)
                     return 1;
                 }
             }
+            // The Metal build of the key: its reflection (the slots) on every platform, its library on a Mac.
+            const Text metal_file = Join(stem.View(), ".metal");
+            const Text metal_json = Join(stem.View(), ".metal.json");
+            if (want_metal_slots)
+            {
+                Vector<Text> metal_command;
+                metal_command.Push(MakeText(StringView(slangc)));
+                metal_command.Push(MakeText(StringView(source_path)));
+                for (usize s2 = 0; s2 < metal_args.Size(); ++s2)
+                {
+                    metal_command.Push(MakeText(metal_args[s2].View()));
+                }
+                for (usize o = 0; o < options.Size(); ++o)
+                {
+                    if ((key >> o) & 1u)
+                    {
+                        metal_command.Push(Join("-D", options[o].View(), "=1"));
+                    }
+                }
+                metal_command.Push(MakeText("-o"));
+                metal_command.Push(MakeText(metal_file.View()));
+                metal_command.Push(MakeText("-reflection-json"));
+                metal_command.Push(MakeText(metal_json.View()));
+                if (!RunProcess(metal_command))
+                {
+                    os::PrintError("shader_mint: %s: slangc failed to build Metal for key %s\n", source,
+                                   shader_mint::DescribeKey(options, key).CStr());
+                    return 1;
+                }
+            }
             Minted m;
-            if (!MintModule(spv_file.CStr(), json_file.CStr(), source, &m))
+            if (!MintModule(spv_file.CStr(), json_file.CStr(), want_metal_slots ? metal_json.CStr() : nullptr, source,
+                            &m))
             {
                 os::PrintError("shader_mint: (while minting key %s)\n", shader_mint::DescribeKey(options, key).CStr());
                 return 1;
@@ -673,12 +948,38 @@ int main(int argc, char** argv)
                     return 1;
                 }
             }
+            if (want_metallib)
+            {
+                const Text metallib_file = Join(stem.View(), ".metallib");
+                const Text info_file = Join(stem.View(), ".metallib.info");
+                const StringView stage = slang_args.Size() != 0 ? StageOf(slang_args) : StringView();
+                Vector<Text> mint_command;
+                mint_command.Push(MakeText(StringView(metal_mint)));
+                mint_command.Push(MakeText("--source"));
+                mint_command.Push(MakeText(metal_file.View()));
+                mint_command.Push(MakeText("--stage"));
+                mint_command.Push(MakeText(stage));
+                mint_command.Push(MakeText("--out"));
+                mint_command.Push(MakeText(metallib_file.View()));
+                mint_command.Push(MakeText("--info"));
+                mint_command.Push(MakeText(info_file.View()));
+                if (stage.Length() == 0 || !RunProcess(mint_command) ||
+                    !ReadMetallib(metallib_file.CStr(), info_file.CStr(), source, &m))
+                {
+                    os::PrintError("shader_mint: %s: metal_mint failed for key %s\n", source,
+                                   shader_mint::DescribeKey(options, key).CStr());
+                    return 1;
+                }
+            }
             minted_keys.Push(static_cast<Minted&&>(m));
         }
         // keys are sorted and the manifest requires key 0, so this is the base module
         Assign(plain.words, Span<const u32>(minted_keys[0].words));
         Assign(plain.blob, Span<const u8>(minted_keys[0].blob));
         Assign(plain.dxil, Span<const u8>(minted_keys[0].dxil));
+        Assign(plain.metallib, Span<const u8>(minted_keys[0].metallib));
+        plain.metal_entry = MakeText(minted_keys[0].metal_entry.View());
+        plain.metal_compiler = MakeText(minted_keys[0].metal_compiler.View());
         plain.reflection = minted_keys[0].reflection;
     }
 
@@ -697,10 +998,27 @@ int main(int argc, char** argv)
         const Text dxil_text = want_dxil ? DxilText(base.View(), shader_file.View(), source, dxil_compiler,
                                                     module_words, module_dxil)
                                          : MakeText();
-        const OutputFile files[] = {{spv_out, &spv_text}, {refl_out, &refl_text}, {dxil_out, &dxil_text}};
-        if (!WriteFiles(files, want_dxil ? 3 : 2))
+        Vector<const Minted*> module_metal;
+        module_metal.Push(&plain);
+        const bool placeholder = !want_metallib && metallib_out != nullptr && NeedsPlaceholder(metallib_out, 1);
+        const Text metallib_text = want_metallib ? MetallibText(base.View(), shader_file.View(), source, compiler,
+                                                                plain.metal_compiler.CStr(), module_words, module_metal)
+                                   : placeholder ? PlaceholderMetallibText(base.View(), shader_file.View(), source, 1)
+                                                 : MakeText();
+        Vector<OutputFile> files;
+        files.Push(OutputFile{spv_out, &spv_text});
+        files.Push(OutputFile{refl_out, &refl_text});
+        if (want_dxil)
         {
-            os::PrintError("shader_mint: failed writing %s, %s or the DXIL\n", spv_out, refl_out);
+            files.Push(OutputFile{dxil_out, &dxil_text});
+        }
+        if (want_metallib || placeholder)
+        {
+            files.Push(OutputFile{metallib_out, &metallib_text});
+        }
+        if (!WriteFiles(files.Data(), files.Size()))
+        {
+            os::PrintError("shader_mint: failed writing %s, %s, the DXIL or the Metal library\n", spv_out, refl_out);
             return 1;
         }
         return 0;
@@ -715,7 +1033,7 @@ int main(int argc, char** argv)
     {
         shader_mint::BuiltModule built;
         built.words = static_cast<Vector<u32>&&>(
-            minted_keys[i].words);  // minted_keys is not used again, except [0], copied into `plain` above
+            minted_keys[i].words);  // only the DXIL and the Metal library of minted_keys are read after this
         built.reflection = static_cast<Vector<u8>&&>(minted_keys[i].blob);
         per_key.Push(static_cast<shader_mint::BuiltModule&&>(built));
     }
@@ -741,11 +1059,46 @@ int main(int argc, char** argv)
         }
         dxil_text = DxilText(base.View(), shader_file.View(), source, dxil_compiler, module_words, module_dxil);
     }
-    const OutputFile files[] = {
-        {spv_out, &spv_text}, {refl_out, &refl_text}, {perm_out, &perm_text}, {dxil_out, &dxil_text}};
-    if (!WriteFiles(files, want_dxil ? 4 : 3))
+    Text metallib_text = MakeText();
+    if (want_metallib)
     {
-        os::PrintError("shader_mint: failed writing %s, %s, %s or the DXIL\n", spv_out, refl_out, perm_out);
+        Vector<const Vector<u32>*> module_words;
+        Vector<const Minted*> module_metal;
+        for (usize m = 0; m < modules.Size(); ++m)
+        {
+            usize first = 0;
+            while (key_module[first] != m)
+            {
+                ++first;  // every module has a key: DedupeModules made it from one
+            }
+            module_words.Push(&modules[m].words);
+            module_metal.Push(&minted_keys[first]);
+        }
+        metallib_text = MetallibText(base.View(), shader_file.View(), source, compiler, plain.metal_compiler.CStr(),
+                                     module_words, module_metal);
+    }
+    const bool placeholder = !want_metallib && metallib_out != nullptr &&
+                             NeedsPlaceholder(metallib_out, modules.Size());
+    if (placeholder)
+    {
+        metallib_text = PlaceholderMetallibText(base.View(), shader_file.View(), source, modules.Size());
+    }
+    Vector<OutputFile> files;
+    files.Push(OutputFile{spv_out, &spv_text});
+    files.Push(OutputFile{refl_out, &refl_text});
+    files.Push(OutputFile{perm_out, &perm_text});
+    if (want_dxil)
+    {
+        files.Push(OutputFile{dxil_out, &dxil_text});
+    }
+    if (want_metallib || placeholder)
+    {
+        files.Push(OutputFile{metallib_out, &metallib_text});
+    }
+    if (!WriteFiles(files.Data(), files.Size()))
+    {
+        os::PrintError("shader_mint: failed writing %s, %s, %s, the DXIL or the Metal library\n", spv_out, refl_out,
+                       perm_out);
         return 1;
     }
     return 0;

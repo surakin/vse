@@ -113,12 +113,33 @@ if(SLANGC)
   file(MAKE_DIRECTORY ${SHADER_WORK_DIR})
 
   set(DXIL_COMPILER "slangc ${SLANGC_VERSION}, dxcompiler ${DXC_VERSION}")
+  # Metal (Phase 26 Day 315): slangc's Metal build on every platform (its reflection holds the Metal slots), and on a Mac
+  # tools/metal_mint, which turns it into the committed <name>.metallib.inc.
+  set(METAL_MINT_TARGET "")
+  if(TARGET metal_mint)
+    set(METAL_MINT_TARGET metal_mint)
+    message(STATUS "Metal: minting .metallib files with tools/metal_mint (the driver's compiler of this macOS build)")
+  endif()
   set(SHADER_INCS "")
   foreach(shader ${ENGINE_SHADERS})
     shader_base_symbol(${shader} symbol)
     shader_stage(${shader} stage)
     slang_compile_args(${stage} slang_args)
+    slang_metal_args(${stage} metal_args)
     set(source ${CMAKE_CURRENT_SOURCE_DIR}/${shader}.slang)
+    set(metal_src ${SHADER_WORK_DIR}/${shader}.metal)
+    set(metal_json ${SHADER_WORK_DIR}/${shader}.metal.json)
+    set(metallib ${SHADER_WORK_DIR}/${shader}.metallib)
+    set(metallib_info ${SHADER_WORK_DIR}/${shader}.metallib.info)
+    set(metallib_inc ${CMAKE_CURRENT_SOURCE_DIR}/${shader}.metallib.inc)
+    set(metal_outputs "")
+    set(metal_mint_cmd ${CMAKE_COMMAND} -E true)
+    set(metal_mint_args --metal-reflection ${metal_json} --metallib-out ${metallib_inc})  # kept, or a placeholder off a Mac
+    if(METAL_MINT_TARGET)
+      set(metal_outputs ${metallib_inc})
+      set(metal_mint_cmd $<TARGET_FILE:metal_mint> --source ${metal_src} --stage ${stage} --out ${metallib} --info ${metallib_info})
+      list(APPEND metal_mint_args --metallib ${metallib} --metallib-info ${metallib_info})
+    endif()
     set(spv ${SHADER_WORK_DIR}/${shader}.spv)
     set(json ${SHADER_WORK_DIR}/${shader}.json)
     set(inc ${CMAKE_CURRENT_SOURCE_DIR}/${shader}.spv.inc)
@@ -142,6 +163,13 @@ if(SLANGC)
       foreach(arg ${slang_args})
         list(APPEND perm_args --slang-arg ${arg})
       endforeach()
+      foreach(arg ${metal_args})
+        list(APPEND perm_args --metal-arg ${arg})
+      endforeach()
+      list(APPEND perm_args --metallib-out ${metallib_inc})  # kept, or a placeholder off a Mac
+      if(METAL_MINT_TARGET)
+        list(APPEND perm_args --metal-mint $<TARGET_FILE:metal_mint>)
+      endif()
       if(SPIRV_VAL)
         list(APPEND perm_args --spirv-val ${SPIRV_VAL})
       endif()
@@ -152,14 +180,14 @@ if(SLANGC)
         list(APPEND perm_args --dxil-out ${dxil_inc} --dxil-compiler "${DXIL_COMPILER}")
       endif()
       add_custom_command(
-        OUTPUT ${inc} ${refl_inc} ${perm_inc} ${dxil_outputs}
+        OUTPUT ${inc} ${refl_inc} ${perm_inc} ${dxil_outputs} ${metal_outputs}
         COMMAND $<TARGET_FILE:shader_mint> --permute --name ${symbol} --source ${shader}.slang --source-path ${source}
                 --manifest ${manifest} --compiler "slangc ${SLANGC_VERSION}" --slangc ${SLANGC} ${perm_args}
                 --work-dir ${SHADER_WORK_DIR} --spv-out ${inc} --refl-out ${refl_inc} --perm-out ${perm_inc}
-        DEPENDS ${source} ${SHADER_COMMON_SOURCES} ${manifest} ${CMAKE_CURRENT_SOURCE_DIR}/names.cmake shader_mint
+        DEPENDS ${source} ${SHADER_COMMON_SOURCES} ${manifest} ${CMAKE_CURRENT_SOURCE_DIR}/names.cmake shader_mint ${METAL_MINT_TARGET}
         COMMENT "Compiling ${shader}.slang (permuted)"
         VERBATIM)
-      list(APPEND SHADER_INCS ${inc} ${refl_inc} ${perm_inc} ${dxil_outputs})
+      list(APPEND SHADER_INCS ${inc} ${refl_inc} ${perm_inc} ${dxil_outputs} ${metal_outputs})
       continue()
     endif()
     if(DXIL_DIR)
@@ -169,23 +197,29 @@ if(SLANGC)
       set(dxil_mint_args --dxil ${dxil} --dxil-reflection ${dxil_json} --dxil-out ${dxil_inc} --dxil-compiler "${DXIL_COMPILER}")
     endif()
     add_custom_command(
-      OUTPUT ${inc} ${refl_inc} ${dxil_outputs}
+      OUTPUT ${inc} ${refl_inc} ${dxil_outputs} ${metal_outputs}
       COMMAND ${SLANGC} ${source} ${slang_args} -o ${spv} -reflection-json ${json}
       COMMAND ${validate_cmd}
       COMMAND ${dxil_compile_cmd}
+      COMMAND ${SLANGC} ${source} ${metal_args} -o ${metal_src} -reflection-json ${metal_json}
+      COMMAND ${metal_mint_cmd}
       COMMAND $<TARGET_FILE:shader_mint> --name ${symbol} --source ${shader}.slang --compiler "slangc ${SLANGC_VERSION}" --spv ${spv}
-              --reflection ${json} --spv-out ${inc} --refl-out ${refl_inc} ${dxil_mint_args}
-      DEPENDS ${source} ${SHADER_COMMON_SOURCES} ${CMAKE_CURRENT_SOURCE_DIR}/names.cmake shader_mint
+              --reflection ${json} --spv-out ${inc} --refl-out ${refl_inc} ${dxil_mint_args} ${metal_mint_args}
+      DEPENDS ${source} ${SHADER_COMMON_SOURCES} ${CMAKE_CURRENT_SOURCE_DIR}/names.cmake shader_mint ${METAL_MINT_TARGET}
       COMMENT "Compiling ${shader}.slang"
       VERBATIM)
-    list(APPEND SHADER_INCS ${inc} ${refl_inc} ${dxil_outputs})
+    list(APPEND SHADER_INCS ${inc} ${refl_inc} ${dxil_outputs} ${metal_outputs})
   endforeach()
   add_custom_target(shaders DEPENDS ${SHADER_INCS})
 
+  set(_metal_mint_define "")
+  if(METAL_MINT_TARGET)
+    set(_metal_mint_define "-DMETAL_MINT=$<TARGET_FILE:metal_mint>")
+  endif()
   add_test(NAME shaders_check
     COMMAND ${CMAKE_COMMAND}
       -DSLANGC=${SLANGC} -DSPIRV_VAL=${SPIRV_VAL} -DSHADER_MINT=$<TARGET_FILE:shader_mint>
-      -DDXIL_DIR=${DXIL_DIR} "-DDXIL_COMPILER=${DXIL_COMPILER}"
+      -DDXIL_DIR=${DXIL_DIR} "-DDXIL_COMPILER=${DXIL_COMPILER}" ${_metal_mint_define}
       -DSHADER_DIR=${CMAKE_CURRENT_SOURCE_DIR} -DWORK_DIR=${SHADER_WORK_DIR}/check
       "-DSHADERS=${ENGINE_SHADERS}" -P ${CMAKE_CURRENT_SOURCE_DIR}/check.cmake)
   set_tests_properties(shaders_check PROPERTIES LABELS "shaders" SKIP_REGULAR_EXPRESSION "SKIP:")
@@ -201,7 +235,7 @@ if(SLANGC)
   endif()
   add_test(NAME shaders_portability
     COMMAND ${CMAKE_COMMAND}
-      -DSLANGC=${SLANGC} -DDXC=${DXC} -DDXC_REQUIRED=${DXC_REQUIRED} -DSHADER_DIR=${CMAKE_CURRENT_SOURCE_DIR} -DWORK_DIR=${SHADER_WORK_DIR}/portability
+      -DSLANGC=${SLANGC} -DDXC=${DXC} -DDXC_REQUIRED=${DXC_REQUIRED} ${_metal_mint_define} -DSHADER_DIR=${CMAKE_CURRENT_SOURCE_DIR} -DWORK_DIR=${SHADER_WORK_DIR}/portability
       "-DSHADERS=${ENGINE_SHADERS}" -P ${CMAKE_CURRENT_SOURCE_DIR}/portability.cmake)
   set_tests_properties(shaders_portability PROPERTIES LABELS "shaders")
   engine_label_tests(shaders_check shaders_portability)

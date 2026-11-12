@@ -10141,6 +10141,36 @@ usize dxil_size;
 
 Size of the DXIL container in bytes.
 
+### `metallib` {#renderer-permutationmodule-metallib}
+
+`variable renderer::PermutationModule::metallib` — defined in `engine/renderer/shader_permutation.h`
+
+```cpp
+const u8* metallib;
+```
+
+The Metal library, or null when the module was not minted for Metal (Phase 26 Day 315).
+
+### `metallib_size` {#renderer-permutationmodule-metallib-size}
+
+`variable renderer::PermutationModule::metallib_size` — defined in `engine/renderer/shader_permutation.h`
+
+```cpp
+usize metallib_size;
+```
+
+Size of the Metal library in bytes.
+
+### `metallib_entry` {#renderer-permutationmodule-metallib-entry}
+
+`variable renderer::PermutationModule::metallib_entry` — defined in `engine/renderer/shader_permutation.h`
+
+```cpp
+const char* metallib_entry;
+```
+
+The function the Metal library exports (`main_0`), or null.
+
 ### `Blob(rhi::ShaderFormat)` {#renderer-permutationmodule-blob-rhi-shaderformat-const}
 
 `method renderer::PermutationModule::Blob` — defined in `engine/renderer/shader_permutation.h`
@@ -10443,6 +10473,16 @@ inline constexpr u32 kNoBlock;
 
 The block index of a binding that has no block (textures, samplers, storage buffers).
 
+## `kNoMetalSlot` {#renderer-knometalslot}
+
+`variable renderer::kNoMetalSlot` — defined in `engine/renderer/shader_reflection.h`
+
+```cpp
+inline constexpr u32 kNoMetalSlot;
+```
+
+[`renderer::ReflectedBinding`](#renderer-reflectedbinding)'s `metal_slot` (and the push-constant block's) when the module was minted without the Metal build's reflection.
+
 ## `kReflectionErrorLength` {#renderer-kreflectionerrorlength}
 
 `variable renderer::kReflectionErrorLength` — defined in `engine/renderer/shader_reflection.h`
@@ -10740,6 +10780,16 @@ u32 stride;
 
 For a storage buffer, the size of one element (`StructuredBuffer<T>`: `T` rounded up to its alignment), 1 to 2048; else 0. Becomes [`rhi::BindingDesc`](rhi.md#rhi-bindingdesc)'s `stride`.
 
+### `metal_slot` {#renderer-reflectedbinding-metal-slot}
+
+`variable renderer::ReflectedBinding::metal_slot` — defined in `engine/renderer/shader_reflection.h`
+
+```cpp
+u32 metal_slot;
+```
+
+The Metal argument index of the binding in the Metal build (Phase 26 Day 315): `[[buffer(n)]]` for a uniform or storage buffer, `[[texture(n)]]` for a sampled or storage texture, `[[sampler(n)]]` for a sampler; the class follows `type`. [`renderer::kNoMetalSlot`](#renderer-knometalslot) when the module has no Metal slots.
+
 ## `ReflectedVertexInput` {#renderer-reflectedvertexinput}
 
 `struct renderer::ReflectedVertexInput` — defined in `engine/renderer/shader_reflection.h`
@@ -10889,6 +10939,26 @@ u32 push_constant_block;
 ```
 
 Index into `blocks` of the push-constant block; meaningful only if `has_push_constants`.
+
+### `has_metal_slots` {#renderer-shaderreflection-has-metal-slots}
+
+`variable renderer::ShaderReflection::has_metal_slots` — defined in `engine/renderer/shader_reflection.h`
+
+```cpp
+bool has_metal_slots;
+```
+
+Whether the Metal slots were minted (`metal_slot` of every binding, `push_constant_metal_slot`): the Metal build's reflection was read beside the SPIR-V one.
+
+### `push_constant_metal_slot` {#renderer-shaderreflection-push-constant-metal-slot}
+
+`variable renderer::ShaderReflection::push_constant_metal_slot` — defined in `engine/renderer/shader_reflection.h`
+
+```cpp
+u32 push_constant_metal_slot;
+```
+
+The Metal buffer index (`[[buffer(n)]]`) the push-constant block is bound at, when `has_metal_slots` and `has_push_constants`; else [`renderer::kNoMetalSlot`](#renderer-knometalslot).
 
 ### `vertex_input_count` {#renderer-shaderreflection-vertex-input-count}
 

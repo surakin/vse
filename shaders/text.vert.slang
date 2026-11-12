@@ -24,7 +24,7 @@ struct Params {
     float pad;
 };
 
-[[vk::push_constant]] ConstantBuffer<Params> params : register(b0, space15);
+[[vk::push_constant]] ConstantBuffer<Params> params ENGINE_REGISTER(b0, space15);
 
 struct VertexInput {
     [[vk::location(0)]] float2 position : TEXCOORD0;

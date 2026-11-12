@@ -12,9 +12,9 @@
 
 #include "target_common.slang"
 
-[[vk::binding(0, 0)]] Texture2DArray<float4> src : register(t0, space0);
-[[vk::binding(1, 0)]] SamplerState linear_clamp : register(s1, space0);
-[[vk::binding(2, 0)]] RWTexture2DArray<float4> dst : register(u2, space0);
+[[vk::binding(0, 0)]] Texture2DArray<float4> src ENGINE_REGISTER(t0, space0);
+[[vk::binding(1, 0)]] SamplerState linear_clamp ENGINE_REGISTER(s1, space0);
+[[vk::binding(2, 0)]] RWTexture2DArray<float4> dst ENGINE_REGISTER(u2, space0);
 
 struct Push {
     uint width;
@@ -22,7 +22,7 @@ struct Push {
     uint srgb;
     uint pad;
 };
-[[vk::push_constant]] ConstantBuffer<Push> push : register(b0, space15);
+[[vk::push_constant]] ConstantBuffer<Push> push ENGINE_REGISTER(b0, space15);
 
 float EncodeSrgb(float linear) {
     return linear <= 0.0031308 ? linear * 12.92 : 1.055 * pow(linear, 1.0 / 2.4) - 0.055;

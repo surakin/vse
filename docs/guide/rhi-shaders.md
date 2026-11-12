@@ -292,12 +292,15 @@ could have used it.
 
 ## Bytecode formats
 
-A [[rhi::ShaderDesc]] carries a format-tagged blob: `format` ([[rhi::ShaderFormat]]: `Spirv`, `Dxil`, and `Msl` reserved for
-the Metal backend), `bytes` and `size`. Each device takes one format, [[rhi::DeviceCaps::shader_format]]: SPIR-V on Vulkan,
-DXIL on Direct3D 12. A module in another format is refused with an error that names both, before any driver sees it.
-`Validate` checks the shape the format promises without a device: SPIR-V is 4-byte aligned, a whole number of words and at
-least a header; DXIL starts with the `DXBC` container tag and its size matches the one its header records; MSL is refused
-until a backend takes it.
+A [[rhi::ShaderDesc]] carries a format-tagged blob: `format` ([[rhi::ShaderFormat]]: `Spirv`, `Dxil` and `MetalLib`), `bytes`,
+`size` and the `entry` name. Each device takes one format, [[rhi::DeviceCaps::shader_format]]: SPIR-V on Vulkan, DXIL on
+Direct3D 12, a Metal library on Metal (Phase 26). A module in another format is refused with an error that names both, before
+any driver sees it. `Validate` checks the shape the format promises without a device: SPIR-V is 4-byte aligned, a whole number
+of words and at least a header; DXIL starts with the `DXBC` container tag and its size matches the one its header records; a
+Metal library starts with `MTLB`, is an executable library (a dynamic one has no entry points a pipeline can use) and its size
+matches the one its header records. A Metal library's blob also names its entry point: Slang renames `main` to `main_0` for
+Metal, and the name the minted library exports is recorded beside it ([[rhi::MetalLibBlob]]), so `SetCode` passes it and no
+backend guesses.
 
 Code that creates shaders names each shader once and picks the device's blob. [[rhi::ShaderBlobSet]] holds a shader in every
 format it was minted in, and [[rhi::CreateShaderFromSet]] creates the module from the blob of the device's format, failing

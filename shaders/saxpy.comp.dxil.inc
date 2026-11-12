@@ -2,7 +2,7 @@
 // compiler: slangc v2026.18.2, dxcompiler 1.9.2602.17
 #pragma once
 
-#include "saxpy.comp.spv.inc"
+#include "saxpy.comp.metallib.inc"  // and its .spv.inc
 #include "rhi/desc.h"
 #include "types.h"
 
@@ -256,6 +256,6 @@ inline constexpr u8 kSaxpyCompDxil[kSaxpyCompDxilByteCount] = {
 inline constexpr u64 kSaxpyCompDxilSpirvFnv = 0x422711eccc7ff673ull;
 
 // The shader in every format it was minted in.
-inline constexpr rhi::ShaderBlobSet kSaxpyCompShader = {"saxpy.comp", rhi::SpirvBlob(kSaxpyCompSpv, kSaxpyCompSpvWordCount), rhi::DxilBlob(kSaxpyCompDxil, kSaxpyCompDxilByteCount)};
+inline constexpr rhi::ShaderBlobSet kSaxpyCompShader = {"saxpy.comp", rhi::SpirvBlob(kSaxpyCompSpv, kSaxpyCompSpvWordCount), rhi::DxilBlob(kSaxpyCompDxil, kSaxpyCompDxilByteCount), rhi::MetalLibBlob(kSaxpyCompMetallib, kSaxpyCompMetallibByteCount, kSaxpyCompMetallibEntry)};
 
 } // namespace engine_placeholder::shaders

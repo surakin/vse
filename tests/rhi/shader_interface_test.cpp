@@ -224,7 +224,7 @@ TEST_CASE("The committed shaders present the expected interface", "[rhi][spirv][
     {
         Check(kFillCompSpv, kFillCompSpvWordCount, ShaderStage::Compute,
               {.bindings = {{0, 0}},
-               .offsets = {0, 0},
+               .offsets = {0, 0, 4},  // the buffer's data, Push.k and Push.count
                .local_size = {64, 1, 1},
                .storage_buffers = 1,
                .push_constant_blocks = 1});
@@ -233,7 +233,7 @@ TEST_CASE("The committed shaders present the expected interface", "[rhi][spirv][
     {
         Check(kSaxpyCompSpv, kSaxpyCompSpvWordCount, ShaderStage::Compute,
               {.bindings = {{0, 0}, {0, 1}},
-               .offsets = {0, 0, 0},
+               .offsets = {0, 0, 0, 4},  // the two buffers' data, Push.a and Push.count
                .local_size = {64, 1, 1},
                .non_writable = 1,
                .storage_buffers = 2,

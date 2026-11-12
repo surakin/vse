@@ -169,6 +169,7 @@ module tools/crash_extract/ tools/crash_extract 14
 module tools/docgen/ tools/docgen 14
 module tools/shader_mint/ tools/shader_mint 14
 module tools/net_probe/ tools/net_probe 14
+module tools/metal_mint/ tools/metal_mint 14
 module tools/unicode_data_gen/ tools/unicode_data_gen 14
 module tools/config_access_check/ tools/gates 14
 module tools/file_access_check/ tools/gates 14
@@ -267,6 +268,7 @@ target crash_extract tools/crash_extract
 target shader_mint_lib tools/shader_mint
 target shader_mint tools/shader_mint
 target net_probe tools/net_probe
+target metal_mint tools/metal_mint
 target docgen_lib tools/docgen
 target docgen tools/docgen
 

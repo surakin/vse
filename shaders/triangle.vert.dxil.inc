@@ -2,7 +2,7 @@
 // compiler: slangc v2026.18.2, dxcompiler 1.9.2602.17
 #pragma once
 
-#include "triangle.vert.spv.inc"
+#include "triangle.vert.metallib.inc"  // and its .spv.inc
 #include "rhi/desc.h"
 #include "types.h"
 
@@ -214,6 +214,6 @@ inline constexpr u8 kTriangleVertDxil[kTriangleVertDxilByteCount] = {
 inline constexpr u64 kTriangleVertDxilSpirvFnv = 0x392536477f91d584ull;
 
 // The shader in every format it was minted in.
-inline constexpr rhi::ShaderBlobSet kTriangleVertShader = {"triangle.vert", rhi::SpirvBlob(kTriangleVertSpv, kTriangleVertSpvWordCount), rhi::DxilBlob(kTriangleVertDxil, kTriangleVertDxilByteCount)};
+inline constexpr rhi::ShaderBlobSet kTriangleVertShader = {"triangle.vert", rhi::SpirvBlob(kTriangleVertSpv, kTriangleVertSpvWordCount), rhi::DxilBlob(kTriangleVertDxil, kTriangleVertDxilByteCount), rhi::MetalLibBlob(kTriangleVertMetallib, kTriangleVertMetallibByteCount, kTriangleVertMetallibEntry)};
 
 } // namespace engine_placeholder::shaders

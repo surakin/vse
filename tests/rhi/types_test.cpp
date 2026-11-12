@@ -416,12 +416,27 @@ TEST_CASE("ShaderDesc validation checks a DXIL container's tag and size and refu
     spirv_as_dxil.size = sizeof(words);
     CHECK(Rejects(spirv_as_dxil.Validate(), "ShaderDesc: DXIL bytecode does not start with the DXBC"));
 
-    ShaderDesc msl = d;
-    msl.format = ShaderFormat::Msl;
-    CHECK(Rejects(msl.Validate(), "ShaderDesc: MSL is not supported"));
+    // A Metal library (Phase 26 Day 315): the MTLB tag, a header, and an executable library (type byte 0).
+    u8 lib[32] = {'M', 'T', 'L', 'B'};
+    lib[16] = sizeof(lib);  // the file size the header records (u64 at 16)
+    ShaderDesc metallib = d;
+    metallib.format = ShaderFormat::MetalLib;
+    metallib.bytes = lib;
+    metallib.size = sizeof(lib);
+    metallib.entry = "main_0";
+    CHECK(metallib.Validate() == nullptr);
+    metallib.size = 16;
+    CHECK(Rejects(metallib.Validate(), "ShaderDesc: module is smaller than a Metal library header"));
+    metallib.size = sizeof(lib) - 4;  // a truncated library
+    CHECK(Rejects(metallib.Validate(), "ShaderDesc: Metal library size differs from the size its header records"));
+    metallib.size = sizeof(lib);
+    lib[10] = 2;  // a dynamic library
+    CHECK(Rejects(metallib.Validate(), "ShaderDesc: Metal library is not an executable library"));
+    lib[0] = 'X';
+    CHECK(Rejects(metallib.Validate(), "ShaderDesc: Metal library does not start with the MTLB tag"));
     CHECK(StringView(ShaderFormatName(ShaderFormat::Spirv)) == "spirv");
     CHECK(StringView(ShaderFormatName(ShaderFormat::Dxil)) == "dxil");
-    CHECK(StringView(ShaderFormatName(ShaderFormat::Msl)) == "msl");
+    CHECK(StringView(ShaderFormatName(ShaderFormat::MetalLib)) == "metallib");
 }
 
 TEST_CASE("ShaderBlobSet picks the blob of a format and is empty where a format was not minted", "[rhi][desc]")
@@ -433,9 +448,18 @@ TEST_CASE("ShaderBlobSet picks the blob of a format and is empty where a format 
     CHECK(set.For(ShaderFormat::Spirv).format == ShaderFormat::Spirv);
     CHECK(set.For(ShaderFormat::Dxil).Empty());
     CHECK(set.For(ShaderFormat::Dxil).format == ShaderFormat::Dxil);
-    CHECK(set.For(ShaderFormat::Msl).Empty());
+    CHECK(set.For(ShaderFormat::MetalLib).Empty());
     set.dxil = DxilBlob(dxil, 4);
     CHECK(set.For(ShaderFormat::Dxil).bytes == dxil);
+    static const u8 lib[4] = {'M', 'T', 'L', 'B'};
+    set.metallib = MetalLibBlob(lib, 4, "main_0");
+    CHECK(set.For(ShaderFormat::MetalLib).bytes == lib);
+    CHECK(StringView(set.For(ShaderFormat::MetalLib).entry) == "main_0");  // the entry travels with the blob
+    ShaderDesc from_set;
+    from_set.SetCode(set.For(ShaderFormat::MetalLib));
+    CHECK(StringView(from_set.entry) == "main_0");
+    from_set.SetCode(set.For(ShaderFormat::Spirv));  // a blob without an entry is `main`, whatever was set before
+    CHECK(StringView(from_set.entry) == "main");
 }
 
 TEST_CASE("BindGroupLayoutDesc validation", "[rhi][desc]")

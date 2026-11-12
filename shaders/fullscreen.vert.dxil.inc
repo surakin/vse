@@ -2,7 +2,7 @@
 // compiler: slangc v2026.18.2, dxcompiler 1.9.2602.17
 #pragma once
 
-#include "fullscreen.vert.spv.inc"
+#include "fullscreen.vert.metallib.inc"  // and its .spv.inc
 #include "rhi/desc.h"
 #include "types.h"
 
@@ -208,6 +208,6 @@ inline constexpr u8 kFullscreenVertDxil[kFullscreenVertDxilByteCount] = {
 inline constexpr u64 kFullscreenVertDxilSpirvFnv = 0x859decd7d4c19063ull;
 
 // The shader in every format it was minted in.
-inline constexpr rhi::ShaderBlobSet kFullscreenVertShader = {"fullscreen.vert", rhi::SpirvBlob(kFullscreenVertSpv, kFullscreenVertSpvWordCount), rhi::DxilBlob(kFullscreenVertDxil, kFullscreenVertDxilByteCount)};
+inline constexpr rhi::ShaderBlobSet kFullscreenVertShader = {"fullscreen.vert", rhi::SpirvBlob(kFullscreenVertSpv, kFullscreenVertSpvWordCount), rhi::DxilBlob(kFullscreenVertDxil, kFullscreenVertDxilByteCount), rhi::MetalLibBlob(kFullscreenVertMetallib, kFullscreenVertMetallibByteCount, kFullscreenVertMetallibEntry)};
 
 } // namespace engine_placeholder::shaders

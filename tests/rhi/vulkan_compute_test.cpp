@@ -99,7 +99,7 @@ TEST_CASE("Compute pipeline creation refuses bad input", "[rhi][vulkan][gpu][com
     cp.bind_group_layout_count = 1;
     cp.push_constant_bytes = 6;  // not a multiple of 4
     CHECK_FALSE(t.device->CreateComputePipeline(cp).IsValid());
-    cp.push_constant_bytes = 4;
+    cp.push_constant_bytes = 8;  // fill.comp's {k, count} (Phase 26 Day 315)
 
     t.device->DestroyBindGroupLayout(one);
     t.device->WaitIdle();

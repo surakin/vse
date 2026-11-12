@@ -30,12 +30,13 @@ inline constexpr u32 kPermuteTestFragPerm1Spv[kPermuteTestFragPerm1SpvWordCount]
     0x00000000, 0x00000004, 0x000200f8, 0x0000000d, 0x0003003e, 0x00000002,
     0x0000000c, 0x000100fd, 0x00010038,
 };
-inline constexpr usize kPermuteTestFragPerm1ReflByteCount = 46;
+inline constexpr usize kPermuteTestFragPerm1ReflByteCount = 51;
 
 inline constexpr u8 kPermuteTestFragPerm1Refl[kPermuteTestFragPerm1ReflByteCount] = {
-    83, 82, 70, 76, 2, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
+    83, 82, 70, 76, 3, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
     110, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 255, 255, 255, 255, 0,
+    0, 0, 0,
 };
 
 inline constexpr usize kPermuteTestFragPerm2SpvWordCount = 93;
@@ -58,12 +59,13 @@ inline constexpr u32 kPermuteTestFragPerm2Spv[kPermuteTestFragPerm2SpvWordCount]
     0x00000000, 0x00000004, 0x000200f8, 0x0000000d, 0x0003003e, 0x00000002,
     0x0000000c, 0x000100fd, 0x00010038,
 };
-inline constexpr usize kPermuteTestFragPerm2ReflByteCount = 46;
+inline constexpr usize kPermuteTestFragPerm2ReflByteCount = 51;
 
 inline constexpr u8 kPermuteTestFragPerm2Refl[kPermuteTestFragPerm2ReflByteCount] = {
-    83, 82, 70, 76, 2, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
+    83, 82, 70, 76, 3, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
     110, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 255, 255, 255, 255, 0,
+    0, 0, 0,
 };
 
 inline constexpr usize kPermuteTestFragPerm3SpvWordCount = 93;
@@ -86,12 +88,13 @@ inline constexpr u32 kPermuteTestFragPerm3Spv[kPermuteTestFragPerm3SpvWordCount]
     0x00000000, 0x00000004, 0x000200f8, 0x0000000d, 0x0003003e, 0x00000002,
     0x0000000c, 0x000100fd, 0x00010038,
 };
-inline constexpr usize kPermuteTestFragPerm3ReflByteCount = 46;
+inline constexpr usize kPermuteTestFragPerm3ReflByteCount = 51;
 
 inline constexpr u8 kPermuteTestFragPerm3Refl[kPermuteTestFragPerm3ReflByteCount] = {
-    83, 82, 70, 76, 2, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
+    83, 82, 70, 76, 3, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
     110, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 255, 255, 255, 255, 0,
+    0, 0, 0,
 };
 
 inline constexpr usize kPermuteTestFragPerm4SpvWordCount = 93;
@@ -114,12 +117,13 @@ inline constexpr u32 kPermuteTestFragPerm4Spv[kPermuteTestFragPerm4SpvWordCount]
     0x00000000, 0x00000004, 0x000200f8, 0x0000000d, 0x0003003e, 0x00000002,
     0x0000000c, 0x000100fd, 0x00010038,
 };
-inline constexpr usize kPermuteTestFragPerm4ReflByteCount = 46;
+inline constexpr usize kPermuteTestFragPerm4ReflByteCount = 51;
 
 inline constexpr u8 kPermuteTestFragPerm4Refl[kPermuteTestFragPerm4ReflByteCount] = {
-    83, 82, 70, 76, 2, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
+    83, 82, 70, 76, 3, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
     110, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 255, 255, 255, 255, 0,
+    0, 0, 0,
 };
 
 inline constexpr usize kPermuteTestFragPerm5SpvWordCount = 112;
@@ -145,23 +149,24 @@ inline constexpr u32 kPermuteTestFragPerm5Spv[kPermuteTestFragPerm5SpvWordCount]
     0x0000000a, 0x00000004, 0x0000000f, 0x0000000b, 0x0000000c, 0x0003003e,
     0x00000002, 0x00000004, 0x000100fd, 0x00010038,
 };
-inline constexpr usize kPermuteTestFragPerm5ReflByteCount = 46;
+inline constexpr usize kPermuteTestFragPerm5ReflByteCount = 51;
 
 inline constexpr u8 kPermuteTestFragPerm5Refl[kPermuteTestFragPerm5ReflByteCount] = {
-    83, 82, 70, 76, 2, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
+    83, 82, 70, 76, 3, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
     110, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 255, 255, 255, 255, 0,
+    0, 0, 0,
 };
 
 inline constexpr const char* kPermuteTestFragOptions[4] = {"INVERT", "HALF", "TINT", "DEBUG", };
 
 inline constexpr renderer::PermutationModule kPermuteTestFragModules[6] = {
-    {kPermuteTestFragSpv, kPermuteTestFragSpvWordCount, kPermuteTestFragRefl, kPermuteTestFragReflByteCount, kPermuteTestFragDxil, kPermuteTestFragDxilByteCount},
-    {kPermuteTestFragPerm1Spv, kPermuteTestFragPerm1SpvWordCount, kPermuteTestFragPerm1Refl, kPermuteTestFragPerm1ReflByteCount, kPermuteTestFragPerm1Dxil, kPermuteTestFragPerm1DxilByteCount},
-    {kPermuteTestFragPerm2Spv, kPermuteTestFragPerm2SpvWordCount, kPermuteTestFragPerm2Refl, kPermuteTestFragPerm2ReflByteCount, kPermuteTestFragPerm2Dxil, kPermuteTestFragPerm2DxilByteCount},
-    {kPermuteTestFragPerm3Spv, kPermuteTestFragPerm3SpvWordCount, kPermuteTestFragPerm3Refl, kPermuteTestFragPerm3ReflByteCount, kPermuteTestFragPerm3Dxil, kPermuteTestFragPerm3DxilByteCount},
-    {kPermuteTestFragPerm4Spv, kPermuteTestFragPerm4SpvWordCount, kPermuteTestFragPerm4Refl, kPermuteTestFragPerm4ReflByteCount, kPermuteTestFragPerm4Dxil, kPermuteTestFragPerm4DxilByteCount},
-    {kPermuteTestFragPerm5Spv, kPermuteTestFragPerm5SpvWordCount, kPermuteTestFragPerm5Refl, kPermuteTestFragPerm5ReflByteCount, kPermuteTestFragPerm5Dxil, kPermuteTestFragPerm5DxilByteCount},
+    {kPermuteTestFragSpv, kPermuteTestFragSpvWordCount, kPermuteTestFragRefl, kPermuteTestFragReflByteCount, kPermuteTestFragDxil, kPermuteTestFragDxilByteCount, kPermuteTestFragMetallib, kPermuteTestFragMetallibByteCount, kPermuteTestFragMetallibEntry},
+    {kPermuteTestFragPerm1Spv, kPermuteTestFragPerm1SpvWordCount, kPermuteTestFragPerm1Refl, kPermuteTestFragPerm1ReflByteCount, kPermuteTestFragPerm1Dxil, kPermuteTestFragPerm1DxilByteCount, kPermuteTestFragPerm1Metallib, kPermuteTestFragPerm1MetallibByteCount, kPermuteTestFragPerm1MetallibEntry},
+    {kPermuteTestFragPerm2Spv, kPermuteTestFragPerm2SpvWordCount, kPermuteTestFragPerm2Refl, kPermuteTestFragPerm2ReflByteCount, kPermuteTestFragPerm2Dxil, kPermuteTestFragPerm2DxilByteCount, kPermuteTestFragPerm2Metallib, kPermuteTestFragPerm2MetallibByteCount, kPermuteTestFragPerm2MetallibEntry},
+    {kPermuteTestFragPerm3Spv, kPermuteTestFragPerm3SpvWordCount, kPermuteTestFragPerm3Refl, kPermuteTestFragPerm3ReflByteCount, kPermuteTestFragPerm3Dxil, kPermuteTestFragPerm3DxilByteCount, kPermuteTestFragPerm3Metallib, kPermuteTestFragPerm3MetallibByteCount, kPermuteTestFragPerm3MetallibEntry},
+    {kPermuteTestFragPerm4Spv, kPermuteTestFragPerm4SpvWordCount, kPermuteTestFragPerm4Refl, kPermuteTestFragPerm4ReflByteCount, kPermuteTestFragPerm4Dxil, kPermuteTestFragPerm4DxilByteCount, kPermuteTestFragPerm4Metallib, kPermuteTestFragPerm4MetallibByteCount, kPermuteTestFragPerm4MetallibEntry},
+    {kPermuteTestFragPerm5Spv, kPermuteTestFragPerm5SpvWordCount, kPermuteTestFragPerm5Refl, kPermuteTestFragPerm5ReflByteCount, kPermuteTestFragPerm5Dxil, kPermuteTestFragPerm5DxilByteCount, kPermuteTestFragPerm5Metallib, kPermuteTestFragPerm5MetallibByteCount, kPermuteTestFragPerm5MetallibEntry},
 };
 
 inline constexpr renderer::PermutationEntry kPermuteTestFragEntries[7] = {

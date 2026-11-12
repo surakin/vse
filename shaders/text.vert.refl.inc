@@ -6,10 +6,10 @@
 
 namespace engine_placeholder::shaders {
 
-inline constexpr usize kTextVertReflByteCount = 184;
+inline constexpr usize kTextVertReflByteCount = 189;
 
 inline constexpr u8 kTextVertRefl[kTextVertReflByteCount] = {
-    83, 82, 70, 76, 2, 0, 0, 0, 1, 0, 0, 0, 4, 109, 97, 105,
+    83, 82, 70, 76, 3, 0, 0, 0, 1, 0, 0, 0, 4, 109, 97, 105,
     110, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 1, 0, 0, 0, 6, 80, 97, 114, 97, 109, 115, 16, 0, 0, 0,
     3, 0, 0, 0, 13, 112, 105, 120, 101, 108, 95, 116, 111, 95, 99, 108,
@@ -18,9 +18,9 @@ inline constexpr u8 kTextVertRefl[kTextVertReflByteCount] = {
     101, 116, 8, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 1, 0, 0,
     0, 0, 0, 0, 0, 0, 3, 112, 97, 100, 12, 0, 0, 0, 4, 0,
     0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,
-    0, 0, 0, 3, 0, 0, 0, 8, 112, 111, 115, 105, 116, 105, 111, 110,
-    0, 0, 0, 0, 1, 2, 117, 118, 1, 0, 0, 0, 1, 5, 99, 111,
-    108, 111, 114, 2, 0, 0, 0, 3,
+    0, 0, 0, 1, 0, 0, 0, 0, 3, 0, 0, 0, 8, 112, 111, 115,
+    105, 116, 105, 111, 110, 0, 0, 0, 0, 1, 2, 117, 118, 1, 0, 0,
+    0, 1, 5, 99, 111, 108, 111, 114, 2, 0, 0, 0, 3,
 };
 
 // Block sizes and member offsets, for static_asserts on the C++ structs copied into these blocks.

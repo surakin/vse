@@ -77,6 +77,12 @@ struct PermutationModule
     const u8* dxil = nullptr;
     /// Size of the DXIL container in bytes.
     usize dxil_size = 0;
+    /// The Metal library, or null when the module was not minted for Metal (Phase 26 Day 315).
+    const u8* metallib = nullptr;
+    /// Size of the Metal library in bytes.
+    usize metallib_size = 0;
+    /// The function the Metal library exports (`main_0`), or null.
+    const char* metallib_entry = nullptr;
 
     /// Returns the module's bytecode in one format.
     ///
@@ -89,7 +95,7 @@ struct PermutationModule
         {
         case rhi::ShaderFormat::Spirv: return rhi::SpirvBlob(words, word_count);
         case rhi::ShaderFormat::Dxil: return rhi::DxilBlob(dxil, dxil_size);
-        case rhi::ShaderFormat::Msl: break;
+        case rhi::ShaderFormat::MetalLib: return rhi::MetalLibBlob(metallib, metallib_size, metallib_entry);
         }
         return rhi::ShaderBlob{format, nullptr, 0};
     }
@@ -99,7 +105,8 @@ struct PermutationModule
     /// - Fails: never.
     constexpr bool HasCode() const
     {
-        return (words != nullptr && word_count != 0) || (dxil != nullptr && dxil_size != 0);
+        return (words != nullptr && word_count != 0) || (dxil != nullptr && dxil_size != 0) ||
+               (metallib != nullptr && metallib_size != 0);
     }
 };
 

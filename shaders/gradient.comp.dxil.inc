@@ -2,7 +2,7 @@
 // compiler: slangc v2026.18.2, dxcompiler 1.9.2602.17
 #pragma once
 
-#include "gradient.comp.spv.inc"
+#include "gradient.comp.metallib.inc"  // and its .spv.inc
 #include "rhi/desc.h"
 #include "types.h"
 
@@ -209,6 +209,6 @@ inline constexpr u8 kGradientCompDxil[kGradientCompDxilByteCount] = {
 inline constexpr u64 kGradientCompDxilSpirvFnv = 0x4d30b2a62741326full;
 
 // The shader in every format it was minted in.
-inline constexpr rhi::ShaderBlobSet kGradientCompShader = {"gradient.comp", rhi::SpirvBlob(kGradientCompSpv, kGradientCompSpvWordCount), rhi::DxilBlob(kGradientCompDxil, kGradientCompDxilByteCount)};
+inline constexpr rhi::ShaderBlobSet kGradientCompShader = {"gradient.comp", rhi::SpirvBlob(kGradientCompSpv, kGradientCompSpvWordCount), rhi::DxilBlob(kGradientCompDxil, kGradientCompDxilByteCount), rhi::MetalLibBlob(kGradientCompMetallib, kGradientCompMetallibByteCount, kGradientCompMetallibEntry)};
 
 } // namespace engine_placeholder::shaders

@@ -14,7 +14,8 @@ namespace engine_placeholder::renderer
 {
 
 /// The reflection blob format version this build reads and writes.
-inline constexpr u32 kReflectionVersion = 2;  // 2: bindings carry their storage stride (Phase 13 Day 166)
+inline constexpr u32 kReflectionVersion = 3;  // 2: bindings carry their storage stride (Phase 13 Day 166); 3: the Metal
+                                              // slots (Phase 26 Day 315)
 /// The capacity of every reflected name, including the terminator; longer names are rejected.
 inline constexpr u32 kMaxReflectionName = 48;
 /// The most bindings one shader module may reflect.
@@ -27,6 +28,9 @@ inline constexpr u32 kMaxBlockMembers = 16;
 inline constexpr u32 kMaxReflectedVertexInputs = 16;
 /// The block index of a binding that has no block (textures, samplers, storage buffers).
 inline constexpr u32 kNoBlock = 0xffffffffu;
+/// [[renderer::ReflectedBinding]]'s `metal_slot` (and the push-constant block's) when the module was minted without
+/// the Metal build's reflection.
+inline constexpr u32 kNoMetalSlot = 0xffffffffu;
 /// The capacity of the message in a [[renderer::ReflectionError]].
 inline constexpr u32 kReflectionErrorLength = 192;
 
@@ -111,6 +115,10 @@ struct ReflectedBinding
     /// For a storage buffer, the size of one element (`StructuredBuffer<T>`: `T` rounded up to its alignment), 1 to
     /// 2048; else 0. Becomes [[rhi::BindingDesc]]'s `stride`.
     u32 stride = 0;
+    /// The Metal argument index of the binding in the Metal build (Phase 26 Day 315): `[[buffer(n)]]` for a uniform or
+    /// storage buffer, `[[texture(n)]]` for a sampled or storage texture, `[[sampler(n)]]` for a sampler; the class
+    /// follows `type`. [[renderer::kNoMetalSlot]] when the module has no Metal slots.
+    u32 metal_slot = kNoMetalSlot;
 };
 
 /// One vertex shader input.
@@ -152,6 +160,12 @@ struct ShaderReflection
     bool has_push_constants = false;
     /// Index into `blocks` of the push-constant block; meaningful only if `has_push_constants`.
     u32 push_constant_block = 0;
+    /// Whether the Metal slots were minted (`metal_slot` of every binding, `push_constant_metal_slot`): the Metal
+    /// build's reflection was read beside the SPIR-V one.
+    bool has_metal_slots = false;
+    /// The Metal buffer index (`[[buffer(n)]]`) the push-constant block is bound at, when `has_metal_slots` and
+    /// `has_push_constants`; else [[renderer::kNoMetalSlot]].
+    u32 push_constant_metal_slot = kNoMetalSlot;
     /// Number of valid entries in `vertex_inputs`.
     u32 vertex_input_count = 0;
     /// The vertex inputs, sorted by increasing location.

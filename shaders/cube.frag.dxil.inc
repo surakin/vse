@@ -2,7 +2,7 @@
 // compiler: slangc v2026.18.2, dxcompiler 1.9.2602.17
 #pragma once
 
-#include "cube.frag.spv.inc"
+#include "cube.frag.metallib.inc"  // and its .spv.inc
 #include "rhi/desc.h"
 #include "types.h"
 
@@ -203,6 +203,6 @@ inline constexpr u8 kCubeFragDxil[kCubeFragDxilByteCount] = {
 inline constexpr u64 kCubeFragDxilSpirvFnv = 0xad4008453053b98cull;
 
 // The shader in every format it was minted in.
-inline constexpr rhi::ShaderBlobSet kCubeFragShader = {"cube.frag", rhi::SpirvBlob(kCubeFragSpv, kCubeFragSpvWordCount), rhi::DxilBlob(kCubeFragDxil, kCubeFragDxilByteCount)};
+inline constexpr rhi::ShaderBlobSet kCubeFragShader = {"cube.frag", rhi::SpirvBlob(kCubeFragSpv, kCubeFragSpvWordCount), rhi::DxilBlob(kCubeFragDxil, kCubeFragDxilByteCount), rhi::MetalLibBlob(kCubeFragMetallib, kCubeFragMetallibByteCount, kCubeFragMetallibEntry)};
 
 } // namespace engine_placeholder::shaders

@@ -430,7 +430,11 @@ interpretations keep it buildable — flag any that don't match intent:
     into the engine/game binary. **Phase 13:** `slangc` mints DXIL from the same sources (with `dxc`'s `dxcompiler.dll` and `dxil.dll` from
     the Windows SDK), committed as `*.dxil.inc` beside `*.spv.inc`; shaders carry one blob per format (`rhi::ShaderBlobSet`) and a device
     takes the one its `DeviceCaps::shader_format` names; the D3D12 build of each shader negates clip-space Y (`ENGINE_CLIP`), and D3D12
-    reads the object index from an instance-rate stream (no base instance).
+    reads the object index from an instance-rate stream (no base instance). **Phase 26 Day 315:** the third format, an AIR-only
+    executable `.metallib` per shader and permutation key, committed as `*.metallib.inc` with the exported entry name (`main_0`), minted
+    on a Mac by `tools/metal_mint` from `slangc -target metal` through the driver's compiler (the interim, pending route of Day 298); the
+    Metal build shares D3D12's clip-space flip and object index stream, `register()` is emitted for D3D12 only (`ENGINE_REGISTER`), and
+    each binding's Metal slot is in the reflection.
     The compiler is a dev-time tool in the same boundary category as
     CMake and the C++ compiler (assumption #8) and Catch2 (#16).
     - **Phase 4 (historical, retired):** shaders were GLSL 4.50 sources

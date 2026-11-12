@@ -2,6 +2,10 @@
 # `shaders_check`; arguments: SLANGC, SPIRV_VAL (optional), SHADER_MINT, SHADER_DIR, WORK_DIR, SHADERS (a ;-list), and for
 # DXIL (Phase 13 Day 163) DXIL_DIR and DXIL_COMPILER (both empty on a machine without dxc: the .dxil.inc files are then not
 # compared, and shader_dxil_test still checks that each was minted beside the committed SPIR-V).
+# Metal (Phase 26 Day 315): the Metal build's reflection is made on every platform (the .refl.inc holds its slots). On a
+# Mac, METAL_MINT (tools/metal_mint) mints each library twice and requires identical bytes (determinism); the committed
+# .metallib.inc is compared only when it was minted by the same driver compiler and macOS build (its `// compiler:` line),
+# since the bytes embed both (Day 298), and otherwise reported as a note.
 # A shader whose recorded compiler version differs from the installed one is reported as a note and not compared; the
 # test prints "SKIP:" (its SKIP_REGULAR_EXPRESSION) only if no shader could be compared at all.
 include(${SHADER_DIR}/names.cmake)
@@ -25,7 +29,9 @@ foreach(shader ${SHADERS})
   endif()
   shader_stage(${shader} stage)
   slang_compile_args(${stage} slang_args)
+  slang_metal_args(${stage} metal_args)
   shader_base_symbol(${shader} symbol)
+  set(committed_metallib ${SHADER_DIR}/${shader}.metallib.inc)
   set(committed_dxil ${SHADER_DIR}/${shader}.dxil.inc)
   set(check_dxil FALSE)
   if(DXIL_DIR)
@@ -49,20 +55,46 @@ foreach(shader ${SHADERS})
     if(SPIRV_VAL)
       list(APPEND perm_args --spirv-val ${SPIRV_VAL})
     endif()
+    foreach(arg ${metal_args})
+      list(APPEND perm_args --metal-arg ${arg})
+    endforeach()
+    if(METAL_MINT)
+      list(APPEND perm_args --metal-mint ${METAL_MINT})
+    endif()
     if(check_dxil)
       foreach(arg ${dxil_args})
         list(APPEND perm_args --dxil-arg ${arg})
       endforeach()
       list(APPEND perm_args --dxil-out ${WORK_DIR}/${shader}.dxil.inc --dxil-compiler "${DXIL_COMPILER}")
     endif()
-    execute_process(COMMAND ${SHADER_MINT} --permute --name ${symbol} --source ${shader}.slang
-                            --source-path ${SHADER_DIR}/${shader}.slang --manifest ${manifest}
-                            --compiler "slangc ${slangc_version}" --slangc ${SLANGC} ${perm_args} --work-dir ${WORK_DIR}
-                            --spv-out ${WORK_DIR}/${shader}.spv.inc --refl-out ${WORK_DIR}/${shader}.refl.inc
-                            --perm-out ${WORK_DIR}/${shader}.perm.inc
-                    RESULT_VARIABLE rc ERROR_VARIABLE err)
-    if(NOT rc EQUAL 0)
-      message(FATAL_ERROR "shader_mint failed on ${shader}: ${err}")
+    # On a Mac every module's library is minted twice (two runs into two directories) and the two .metallib.inc compared:
+    # minting must be deterministic. Off a Mac one run, with the placeholder rule for the library.
+    set(rounds 1)
+    if(METAL_MINT)
+      set(rounds 1 2)
+    endif()
+    foreach(round ${rounds})
+      set(out_dir ${WORK_DIR})
+      if(round EQUAL 2)
+        set(out_dir ${WORK_DIR}/again)
+        file(MAKE_DIRECTORY ${out_dir})
+      endif()
+      execute_process(COMMAND ${SHADER_MINT} --permute --name ${symbol} --source ${shader}.slang
+                              --source-path ${SHADER_DIR}/${shader}.slang --manifest ${manifest}
+                              --compiler "slangc ${slangc_version}" --slangc ${SLANGC} ${perm_args} --work-dir ${out_dir}
+                              --spv-out ${out_dir}/${shader}.spv.inc --refl-out ${out_dir}/${shader}.refl.inc
+                              --perm-out ${out_dir}/${shader}.perm.inc --metallib-out ${out_dir}/${shader}.metallib.inc
+                      RESULT_VARIABLE rc ERROR_VARIABLE err)
+      if(NOT rc EQUAL 0)
+        message(FATAL_ERROR "shader_mint failed on ${shader}: ${err}")
+      endif()
+    endforeach()
+    if(METAL_MINT)
+      execute_process(COMMAND ${CMAKE_COMMAND} -E compare_files ${WORK_DIR}/${shader}.metallib.inc ${WORK_DIR}/again/${shader}.metallib.inc
+                      RESULT_VARIABLE same)
+      if(NOT same EQUAL 0)
+        message(FATAL_ERROR "${shader}: two mints of the Metal libraries differ: minting must be deterministic")
+      endif()
     endif()
     if(NOT EXISTS ${SHADER_DIR}/${shader}.perm.inc)
       message(FATAL_ERROR "${shader}.perm.inc is missing: run `cmake --build build --target shaders`")
@@ -84,6 +116,28 @@ foreach(shader ${SHADERS})
         message(FATAL_ERROR "spirv-val rejected ${shader}: ${err}")
       endif()
     endif()
+    execute_process(COMMAND ${SLANGC} ${SHADER_DIR}/${shader}.slang ${metal_args} -o ${WORK_DIR}/${shader}.metal
+                            -reflection-json ${WORK_DIR}/${shader}.metal.json RESULT_VARIABLE rc ERROR_VARIABLE err)
+    if(NOT rc EQUAL 0)
+      message(FATAL_ERROR "slangc failed to build the Metal source of ${shader}: ${err}")
+    endif()
+    set(metal_mint_args --metal-reflection ${WORK_DIR}/${shader}.metal.json --metallib-out ${WORK_DIR}/${shader}.metallib.inc)
+    if(METAL_MINT)
+      foreach(round 1 2)
+        execute_process(COMMAND ${METAL_MINT} --source ${WORK_DIR}/${shader}.metal --stage ${stage}
+                                --out ${WORK_DIR}/${shader}.${round}.metallib --info ${WORK_DIR}/${shader}.metallib.info
+                        RESULT_VARIABLE rc ERROR_VARIABLE err)
+        if(NOT rc EQUAL 0)
+          message(FATAL_ERROR "metal_mint failed on ${shader}: ${err}")
+        endif()
+      endforeach()
+      execute_process(COMMAND ${CMAKE_COMMAND} -E compare_files ${WORK_DIR}/${shader}.1.metallib ${WORK_DIR}/${shader}.2.metallib
+                      RESULT_VARIABLE same)
+      if(NOT same EQUAL 0)
+        message(FATAL_ERROR "${shader}: two mints of the Metal library differ: minting must be deterministic")
+      endif()
+      list(APPEND metal_mint_args --metallib ${WORK_DIR}/${shader}.1.metallib --metallib-info ${WORK_DIR}/${shader}.metallib.info)
+    endif()
     set(dxil_mint_args "")
     if(check_dxil)
       execute_process(COMMAND ${SLANGC} ${SHADER_DIR}/${shader}.slang ${dxil_args} -o ${WORK_DIR}/${shader}.dxil
@@ -97,6 +151,7 @@ foreach(shader ${SHADERS})
     execute_process(COMMAND ${SHADER_MINT} --name ${symbol} --source ${shader}.slang --compiler "slangc ${slangc_version}"
                             --spv ${WORK_DIR}/${shader}.spv --reflection ${WORK_DIR}/${shader}.json
                             --spv-out ${WORK_DIR}/${shader}.spv.inc --refl-out ${WORK_DIR}/${shader}.refl.inc ${dxil_mint_args}
+                            ${metal_mint_args}
                     RESULT_VARIABLE rc ERROR_VARIABLE err)
     if(NOT rc EQUAL 0)
       message(FATAL_ERROR "shader_mint failed on ${shader}: ${err}")
@@ -112,6 +167,22 @@ foreach(shader ${SHADERS})
   execute_process(COMMAND ${CMAKE_COMMAND} -E compare_files ${committed_refl} ${WORK_DIR}/${shader}.refl.inc RESULT_VARIABLE same)
   if(NOT same EQUAL 0)
     message(FATAL_ERROR "${shader}.refl.inc is out of date: run `cmake --build build --target shaders`")
+  endif()
+  if(METAL_MINT)
+    if(NOT EXISTS ${committed_metallib})
+      message(FATAL_ERROR "${shader}.metallib.inc is missing: run `cmake --build build-macos --target shaders` on a Mac")
+    endif()
+    file(STRINGS ${committed_metallib} recorded_metal REGEX "^// compiler: ")
+    file(STRINGS ${WORK_DIR}/${shader}.metallib.inc minted_metal REGEX "^// compiler: ")
+    if(recorded_metal STREQUAL minted_metal)
+      execute_process(COMMAND ${CMAKE_COMMAND} -E compare_files ${committed_metallib} ${WORK_DIR}/${shader}.metallib.inc
+                      RESULT_VARIABLE same)
+      if(NOT same EQUAL 0)
+        message(FATAL_ERROR "${shader}.metallib.inc is out of date: run `cmake --build build-macos --target shaders` (on a Mac)")
+      endif()
+    else()
+      message("note: ${shader}: Metal library committed with '${recorded_metal}', this Mac mints '${minted_metal}'; its bytes not compared")
+    endif()
   endif()
   if(check_dxil)
     execute_process(COMMAND ${CMAKE_COMMAND} -E compare_files ${committed_dxil} ${WORK_DIR}/${shader}.dxil.inc RESULT_VARIABLE same)

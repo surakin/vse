@@ -2,7 +2,7 @@
 // compiler: slangc v2026.18.2, dxcompiler 1.9.2602.17
 #pragma once
 
-#include "point_light.frag.spv.inc"
+#include "point_light.frag.metallib.inc"  // and its .spv.inc
 #include "rhi/desc.h"
 #include "types.h"
 
@@ -464,6 +464,6 @@ inline constexpr u8 kPointLightFragDxil[kPointLightFragDxilByteCount] = {
 inline constexpr u64 kPointLightFragDxilSpirvFnv = 0x32005f7a894a193cull;
 
 // The shader in every format it was minted in.
-inline constexpr rhi::ShaderBlobSet kPointLightFragShader = {"point_light.frag", rhi::SpirvBlob(kPointLightFragSpv, kPointLightFragSpvWordCount), rhi::DxilBlob(kPointLightFragDxil, kPointLightFragDxilByteCount)};
+inline constexpr rhi::ShaderBlobSet kPointLightFragShader = {"point_light.frag", rhi::SpirvBlob(kPointLightFragSpv, kPointLightFragSpvWordCount), rhi::DxilBlob(kPointLightFragDxil, kPointLightFragDxilByteCount), rhi::MetalLibBlob(kPointLightFragMetallib, kPointLightFragMetallibByteCount, kPointLightFragMetallibEntry)};
 
 } // namespace engine_placeholder::shaders

@@ -2,7 +2,7 @@
 // compiler: slangc v2026.18.2, dxcompiler 1.9.2602.17
 #pragma once
 
-#include "text.vert.spv.inc"
+#include "text.vert.metallib.inc"  // and its .spv.inc
 #include "rhi/desc.h"
 #include "types.h"
 
@@ -297,6 +297,6 @@ inline constexpr u8 kTextVertDxil[kTextVertDxilByteCount] = {
 inline constexpr u64 kTextVertDxilSpirvFnv = 0xdacdfde777e8c34cull;
 
 // The shader in every format it was minted in.
-inline constexpr rhi::ShaderBlobSet kTextVertShader = {"text.vert", rhi::SpirvBlob(kTextVertSpv, kTextVertSpvWordCount), rhi::DxilBlob(kTextVertDxil, kTextVertDxilByteCount)};
+inline constexpr rhi::ShaderBlobSet kTextVertShader = {"text.vert", rhi::SpirvBlob(kTextVertSpv, kTextVertSpvWordCount), rhi::DxilBlob(kTextVertDxil, kTextVertDxilByteCount), rhi::MetalLibBlob(kTextVertMetallib, kTextVertMetallibByteCount, kTextVertMetallibEntry)};
 
 } // namespace engine_placeholder::shaders

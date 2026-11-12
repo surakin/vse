@@ -810,7 +810,7 @@ static bool CheckD3D12RegistersImpl(const renderer::ShaderReflection& reflection
                      std::to_string(b.binding) + ") is " + kind + " register " + std::to_string(index) + " in space " +
                      std::to_string(space) + " in the DXIL build; it must be " + want + " register " +
                      std::to_string(b.binding) + " in space " + std::to_string(b.set) +
-                     " (declare it with register(...); shaders/target_common.slang)";
+                     " (declare it with ENGINE_REGISTER(...); shaders/target_common.slang)";
             return false;
         }
     }
@@ -830,10 +830,131 @@ static bool CheckD3D12RegistersImpl(const renderer::ShaderReflection& reflection
     if (reflection.has_push_constants && !push_seen)
     {
         *error =
-            "the push constant block is not register b0 in space 15 in the DXIL build (declare it with register(b0, space15))";
+            "the push constant block is not register b0 in space 15 in the DXIL build (declare it with ENGINE_REGISTER(b0, space15))";
         return false;
     }
     return true;
+}
+
+// The Metal build's slots (Phase 26 Day 315): each binding of the SPIR-V reflection, matched by name, gets the index
+// slangc gave it in the Metal build, in the argument table its type implies (a buffer is a "constantBuffer", a texture
+// a "shaderResource" or an "unorderedAccess", a sampler a "samplerState"); the push-constant block (named in the SPIR-V
+// build's reflection, kind "pushConstantBuffer") gets its buffer slot. Every Metal parameter must be one the SPIR-V
+// build declares.
+static bool ApplyMetalSlotsImpl(renderer::ShaderReflection* out, const std::string& spirv_json,
+                                const std::string& metal_json, std::string* error)
+{
+    // Filled in a copy, which replaces `out` only when every slot was found and the result validates.
+    renderer::ShaderReflection copy = *out;
+    renderer::ShaderReflection* reflection = &copy;
+    const json spirv = json::parse(spirv_json, nullptr, /*allow_exceptions=*/false);
+    const json metal = json::parse(metal_json, nullptr, /*allow_exceptions=*/false);
+    const json* spirv_parameters = spirv.is_object() ? Field(spirv, "parameters") : nullptr;
+    const json* parameters = metal.is_object() ? Field(metal, "parameters") : nullptr;
+    if (spirv_parameters == nullptr || !spirv_parameters->is_array() || parameters == nullptr ||
+        !parameters->is_array())
+    {
+        *error = "the SPIR-V or Metal reflection file is not valid JSON or has no parameter list";
+        return false;
+    }
+    std::string push_name;
+    for (const json& p : *spirv_parameters)
+    {
+        const json* binding = Field(p, "binding");
+        if (binding != nullptr && JsonText(*binding, "kind") == "pushConstantBuffer")
+        {
+            push_name = JsonText(p, "name");
+        }
+    }
+    for (u32 i = 0; i < reflection->binding_count; ++i)
+    {
+        renderer::ReflectedBinding& b = reflection->bindings[i];
+        const json* found = nullptr;
+        for (const json& p : *parameters)
+        {
+            if (JsonText(p, "name") == b.name)
+            {
+                found = &p;
+            }
+        }
+        const json* binding = found == nullptr ? nullptr : Field(*found, "binding");
+        if (binding == nullptr)
+        {
+            *error = std::string("binding '") + b.name + "' is missing from the Metal build's reflection";
+            return false;
+        }
+        const std::string kind = JsonText(*binding, "kind");
+        const bool texture = b.type == rhi::BindingType::SampledTexture || b.type == rhi::BindingType::StorageTexture;
+        const bool sampler = b.type == rhi::BindingType::Sampler;
+        const bool kind_ok = texture   ? (kind == "shaderResource" || kind == "unorderedAccess")
+                             : sampler ? kind == "samplerState"
+                                       : kind == "constantBuffer";
+        const u32 index = Number(*binding, "index", renderer::kNoMetalSlot);
+        if (!kind_ok || index == renderer::kNoMetalSlot)
+        {
+            *error = std::string("binding '") + b.name + "' is a '" + kind +
+                     "' without a usable index in the Metal build, " + "not the " +
+                     (texture   ? "texture"
+                      : sampler ? "sampler"
+                                : "buffer") +
+                     " its type needs";
+            return false;
+        }
+        b.metal_slot = index;
+    }
+    if (reflection->has_push_constants)
+    {
+        const json* found = nullptr;
+        for (const json& p : *parameters)
+        {
+            if (!push_name.empty() && JsonText(p, "name") == push_name)
+            {
+                found = &p;
+            }
+        }
+        const json* binding = found == nullptr ? nullptr : Field(*found, "binding");
+        if (binding == nullptr || JsonText(*binding, "kind") != "constantBuffer" ||
+            Number(*binding, "index", renderer::kNoMetalSlot) == renderer::kNoMetalSlot)
+        {
+            *error = "the push constant block '" + push_name + "' has no buffer slot in the Metal build's reflection";
+            return false;
+        }
+        reflection->push_constant_metal_slot = Number(*binding, "index", renderer::kNoMetalSlot);
+    }
+    // A Metal parameter not in the reflection must be one the SPIR-V build declares too (a resource the module does
+    // not use, which the reflection leaves out: gbuffer.frag's normal map in the key without NORMAL_MAP); anything
+    // else is a resource only the Metal build has.
+    for (const json& p : *parameters)
+    {
+        const std::string name = JsonText(p, "name");
+        bool declared = false;
+        for (const json& q : *spirv_parameters)
+        {
+            declared = declared || JsonText(q, "name") == name;
+        }
+        if (!declared)
+        {
+            *error = "the Metal build has a parameter '" + name + "' the SPIR-V build does not declare";
+            return false;
+        }
+    }
+    reflection->has_metal_slots = true;
+    if (const char* problem = renderer::ValidateShaderReflection(*reflection))
+    {
+        *error = std::string("the Metal slots: ") + problem;
+        return false;
+    }
+    *out = copy;
+    return true;
+}
+
+bool ApplyMetalSlots(renderer::ShaderReflection* reflection, StringView spirv_json, StringView metal_json, Text* error)
+{
+    std::string message;
+    const bool ok = ApplyMetalSlotsImpl(reflection, std::string(spirv_json.Data(), spirv_json.Length()),
+                                        std::string(metal_json.Data(), metal_json.Length()), &message);
+    *error = MakeText(StringView(message.data(), message.size()));
+    return ok;
 }
 
 bool CheckD3D12Registers(const renderer::ShaderReflection& reflection, StringView dxil_json, Text* error)

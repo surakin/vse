@@ -374,7 +374,7 @@ TEST_CASE(
         cp.push_constant_bytes = push;
         return device->CreateComputePipeline(cp);
     };
-    const PipelineHandle fill = compute(fill_cs, one, 4), saxpy = compute(saxpy_cs, two, 4),
+    const PipelineHandle fill = compute(fill_cs, one, 8), saxpy = compute(saxpy_cs, two, 8),
                          gradient = compute(gradient_cs, tex_layout, 0);
     REQUIRE((fill.IsValid() && saxpy.IsValid() && gradient.IsValid()));
     const BufferHandle x = CmdBuffer(*device, kBytes, BufferUsage::Storage | BufferUsage::CopySrc);
@@ -405,14 +405,14 @@ TEST_CASE(
                         list->Barrier(y, ResourceState::CopyDst, ResourceState::ShaderWrite);
                         list->SetPipeline(fill);
                         list->SetBindGroup(0, fill_group);
-                        const u32 k = 3;
-                        list->SetPushConstants(0, &k, 4);
+                        const u32 fill_push[2] = {3, kCount};  // k and the element count (Phase 26 Day 315)
+                        list->SetPushConstants(0, fill_push, 8);
                         list->Dispatch(kCount / 64, 1, 1);
                         list->Barrier(x, ResourceState::ShaderWrite, ResourceState::ShaderRead);
                         list->SetPipeline(saxpy);
                         list->SetBindGroup(0, saxpy_group);
-                        const u32 a = 2;
-                        list->SetPushConstants(0, &a, 4);
+                        const u32 saxpy_push[2] = {2, kCount};  // a and the element count
+                        list->SetPushConstants(0, saxpy_push, 8);
                         list->Dispatch(kCount / 64, 1, 1);
                         list->Barrier(y, ResourceState::ShaderWrite, ResourceState::CopySrc);
                         list->Barrier(image, ResourceState::Undefined, ResourceState::ShaderWrite);

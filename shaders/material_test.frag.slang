@@ -24,6 +24,8 @@
 
 // permutation-options: TINT
 
+#include "target_common.slang"  // ENGINE_REGISTER
+
 struct MaterialParams {
     float4 base_color;
     float3 emissive;
@@ -32,10 +34,10 @@ struct MaterialParams {
     float4x4 uv_transform;
 };
 
-[[vk::binding(0, 1)]] ConstantBuffer<MaterialParams> material : register(b0, space1);
-[[vk::binding(1, 1)]] Texture2D albedo_tex : register(t1, space1);
-[[vk::binding(2, 1)]] Texture2D normal_tex : register(t2, space1);
-[[vk::binding(3, 1)]] SamplerState linear_sampler : register(s3, space1);
+[[vk::binding(0, 1)]] ConstantBuffer<MaterialParams> material ENGINE_REGISTER(b0, space1);
+[[vk::binding(1, 1)]] Texture2D albedo_tex ENGINE_REGISTER(t1, space1);
+[[vk::binding(2, 1)]] Texture2D normal_tex ENGINE_REGISTER(t2, space1);
+[[vk::binding(3, 1)]] SamplerState linear_sampler ENGINE_REGISTER(s3, space1);
 
 [shader("fragment")]
 float4 main([[vk::location(0)]] float3 world_normal : NORMAL, [[vk::location(1)]] float2 uv : TEXCOORD0,

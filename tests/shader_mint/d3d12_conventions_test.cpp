@@ -59,6 +59,14 @@ const char* kGoodDxilJson = R"({"parameters": [
     {"name": "objects", "binding": {"kind": "shaderResource", "space": 2, "index": 0}},
     {"name": "push", "binding": {"kind": "constantBuffer", "space": 15, "index": 0}}]})";
 
+// What `slangc -target metal -reflection-json` reports for the same shader (Phase 26 Day 315): one argument table per
+// class.
+const char* kGoodMetalJson = R"({"parameters": [
+    {"name": "mat", "binding": {"kind": "constantBuffer", "index": 0}},
+    {"name": "tex", "binding": {"kind": "shaderResource", "index": 0}},
+    {"name": "objects", "binding": {"kind": "constantBuffer", "index": 1}},
+    {"name": "push", "binding": {"kind": "constantBuffer", "index": 2}}]})";
+
 // `text` with the first `from` replaced by `to`.
 Text EditJson(StringView text, StringView from, StringView to)
 {
@@ -194,4 +202,51 @@ TEST_CASE("RunProcess starts a child with every argument intact and reports its 
     Vector<Text> missing;
     missing.Push(MakeText(StringView(SHADER_MINT_TEST_DIR "/no_such_program_here")));
     CHECK_FALSE(RunProcess(missing));
+}
+
+TEST_CASE("The Metal build's slots go into the reflection by name, one resource per slot, or nothing changes",
+          "[shader_mint][metal]")
+{
+    ShaderReflection r;
+    Text error = MakeText();
+    REQUIRE(ReflectionFromJson(StringView(kFragmentJson), &r, &error));
+    CHECK_FALSE(r.has_metal_slots);
+    ShaderReflection good = r;
+    REQUIRE(ApplyMetalSlots(&good, StringView(kFragmentJson), StringView(kGoodMetalJson), &error));
+    CHECK(good.has_metal_slots);
+    CHECK(good.bindings[0].metal_slot == 0);  // mat: [[buffer(0)]]
+    CHECK(good.bindings[1].metal_slot == 0);  // tex: [[texture(0)]], another table
+    CHECK(good.bindings[2].metal_slot == 1);  // objects: [[buffer(1)]]
+    CHECK(good.push_constant_metal_slot == 2);
+    const Text good_json = MakeText(StringView(kGoodMetalJson));
+    auto refused = [&](StringView metal_json, StringView reason)
+    {
+        ShaderReflection copy = r;
+        const bool ok = ApplyMetalSlots(&copy, StringView(kFragmentJson), metal_json, &error);
+        INFO(error.CStr());
+        CHECK_FALSE(ok);
+        CHECK(error.View().Contains(reason));
+        CHECK_FALSE(copy.has_metal_slots);  // a failure leaves the reflection as it was
+        CHECK(copy.bindings[0].metal_slot == renderer::kNoMetalSlot);
+    };
+    // A texture that the Metal build reports as a buffer.
+    refused(
+        EditJson(good_json.View(), R"("kind": "shaderResource", "index": 0)", R"("kind": "constantBuffer", "index": 3)")
+            .View(),
+        StringView("not the texture its type needs"));
+    // Two buffers in one slot (the Phase 26 Day 298 failure).
+    refused(
+        EditJson(good_json.View(), R"("kind": "constantBuffer", "index": 1)", R"("kind": "constantBuffer", "index": 0)")
+            .View(),
+        StringView("share a Metal slot"));
+    // A binding the Metal build does not have.
+    refused(EditJson(good_json.View(), R"({"name": "objects",)", R"({"name": "other",)").View(),
+            StringView("missing from the Metal build"));
+    // A parameter only the Metal build has.
+    refused(EditJson(good_json.View(), R"({"name": "push",)",
+                     R"({"name": "extra", "binding": {"kind": "constantBuffer", "index": 5}},
+    {"name": "push",)")
+                .View(),
+            StringView("the SPIR-V build does not declare"));
+    refused(StringView("not json"), StringView("not valid JSON"));
 }

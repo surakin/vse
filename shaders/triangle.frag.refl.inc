@@ -6,12 +6,13 @@
 
 namespace engine_placeholder::shaders {
 
-inline constexpr usize kTriangleFragReflByteCount = 46;
+inline constexpr usize kTriangleFragReflByteCount = 51;
 
 inline constexpr u8 kTriangleFragRefl[kTriangleFragReflByteCount] = {
-    83, 82, 70, 76, 2, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
+    83, 82, 70, 76, 3, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
     110, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 255, 255, 255, 255, 0,
+    0, 0, 0,
 };
 
 } // namespace engine_placeholder::shaders

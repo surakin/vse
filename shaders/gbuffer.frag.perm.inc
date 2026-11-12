@@ -164,20 +164,21 @@ inline constexpr u32 kGbufferFragPerm1Spv[kGbufferFragPerm1SpvWordCount] = {
     0x00000008, 0x00000075, 0x0003003e, 0x00000009, 0x00000080, 0x000100fd,
     0x00010038,
 };
-inline constexpr usize kGbufferFragPerm1ReflByteCount = 429;
+inline constexpr usize kGbufferFragPerm1ReflByteCount = 450;
 
 inline constexpr u8 kGbufferFragPerm1Refl[kGbufferFragPerm1ReflByteCount] = {
-    83, 82, 70, 76, 2, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
+    83, 82, 70, 76, 3, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
     110, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0,
     0, 8, 109, 97, 116, 101, 114, 105, 97, 108, 1, 0, 0, 0, 0, 0,
     0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 10, 97, 108, 98, 101, 100, 111, 95, 116, 101, 120, 1, 0,
-    0, 0, 1, 0, 0, 0, 2, 1, 0, 0, 0, 2, 0, 0, 0, 255,
-    255, 255, 255, 0, 0, 0, 0, 10, 110, 111, 114, 109, 97, 108, 95, 116,
-    101, 120, 1, 0, 0, 0, 2, 0, 0, 0, 2, 1, 0, 0, 0, 2,
-    0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 14, 108, 105, 110, 101,
-    97, 114, 95, 115, 97, 109, 112, 108, 101, 114, 1, 0, 0, 0, 3, 0,
-    0, 0, 3, 1, 0, 0, 0, 2, 0, 0, 0, 255, 255, 255, 255, 0,
+    0, 0, 0, 0, 0, 0, 0, 10, 97, 108, 98, 101, 100, 111, 95, 116,
+    101, 120, 1, 0, 0, 0, 1, 0, 0, 0, 2, 1, 0, 0, 0, 2,
+    0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 10,
+    110, 111, 114, 109, 97, 108, 95, 116, 101, 120, 1, 0, 0, 0, 2, 0,
+    0, 0, 2, 1, 0, 0, 0, 2, 0, 0, 0, 255, 255, 255, 255, 0,
+    0, 0, 0, 1, 0, 0, 0, 14, 108, 105, 110, 101, 97, 114, 95, 115,
+    97, 109, 112, 108, 101, 114, 1, 0, 0, 0, 3, 0, 0, 0, 3, 1,
+    0, 0, 0, 2, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0,
     0, 0, 0, 1, 0, 0, 0, 14, 77, 97, 116, 101, 114, 105, 97, 108,
     80, 97, 114, 97, 109, 115, 48, 0, 0, 0, 7, 0, 0, 0, 10, 98,
     97, 115, 101, 95, 99, 111, 108, 111, 114, 0, 0, 0, 0, 16, 0, 0,
@@ -193,7 +194,8 @@ inline constexpr u8 kGbufferFragPerm1Refl[kGbufferFragPerm1ReflByteCount] = {
     108, 117, 115, 105, 111, 110, 32, 0, 0, 0, 4, 0, 0, 0, 0, 0,
     1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 5, 102, 108, 97, 103, 115,
     36, 0, 0, 0, 4, 0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 255, 255, 255, 255, 0, 0,
+    0, 0,
 };
 
 inline constexpr usize kGbufferFragPerm2SpvWordCount = 751;
@@ -326,34 +328,35 @@ inline constexpr u32 kGbufferFragPerm2Spv[kGbufferFragPerm2SpvWordCount] = {
     0x00000007, 0x00000060, 0x0003003e, 0x00000008, 0x0000006b, 0x000100fd,
     0x00010038,
 };
-inline constexpr usize kGbufferFragPerm2ReflByteCount = 393;
+inline constexpr usize kGbufferFragPerm2ReflByteCount = 410;
 
 inline constexpr u8 kGbufferFragPerm2Refl[kGbufferFragPerm2ReflByteCount] = {
-    83, 82, 70, 76, 2, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
+    83, 82, 70, 76, 3, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
     110, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0,
     0, 8, 109, 97, 116, 101, 114, 105, 97, 108, 1, 0, 0, 0, 0, 0,
     0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 10, 97, 108, 98, 101, 100, 111, 95, 116, 101, 120, 1, 0,
-    0, 0, 1, 0, 0, 0, 2, 1, 0, 0, 0, 2, 0, 0, 0, 255,
-    255, 255, 255, 0, 0, 0, 0, 14, 108, 105, 110, 101, 97, 114, 95, 115,
-    97, 109, 112, 108, 101, 114, 1, 0, 0, 0, 3, 0, 0, 0, 3, 1,
-    0, 0, 0, 2, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 1,
-    0, 0, 0, 14, 77, 97, 116, 101, 114, 105, 97, 108, 80, 97, 114, 97,
-    109, 115, 48, 0, 0, 0, 7, 0, 0, 0, 10, 98, 97, 115, 101, 95,
-    99, 111, 108, 111, 114, 0, 0, 0, 0, 16, 0, 0, 0, 1, 0, 4,
-    1, 0, 0, 0, 0, 0, 0, 0, 0, 9, 114, 111, 117, 103, 104, 110,
-    101, 115, 115, 16, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 1, 0,
-    0, 0, 0, 0, 0, 0, 0, 8, 109, 101, 116, 97, 108, 108, 105, 99,
-    20, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0,
-    0, 0, 0, 0, 14, 101, 109, 105, 115, 115, 105, 118, 101, 95, 115, 99,
-    97, 108, 101, 24, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 1, 0,
-    0, 0, 0, 0, 0, 0, 0, 12, 97, 108, 112, 104, 97, 95, 99, 117,
-    116, 111, 102, 102, 28, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 1,
-    0, 0, 0, 0, 0, 0, 0, 0, 9, 111, 99, 99, 108, 117, 115, 105,
-    111, 110, 32, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 1, 0, 0,
-    0, 0, 0, 0, 0, 0, 5, 102, 108, 97, 103, 115, 36, 0, 0, 0,
-    4, 0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 10, 97, 108, 98, 101, 100, 111, 95, 116,
+    101, 120, 1, 0, 0, 0, 1, 0, 0, 0, 2, 1, 0, 0, 0, 2,
+    0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 14,
+    108, 105, 110, 101, 97, 114, 95, 115, 97, 109, 112, 108, 101, 114, 1, 0,
+    0, 0, 3, 0, 0, 0, 3, 1, 0, 0, 0, 2, 0, 0, 0, 255,
+    255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 14,
+    77, 97, 116, 101, 114, 105, 97, 108, 80, 97, 114, 97, 109, 115, 48, 0,
+    0, 0, 7, 0, 0, 0, 10, 98, 97, 115, 101, 95, 99, 111, 108, 111,
+    114, 0, 0, 0, 0, 16, 0, 0, 0, 1, 0, 4, 1, 0, 0, 0,
+    0, 0, 0, 0, 0, 9, 114, 111, 117, 103, 104, 110, 101, 115, 115, 16,
+    0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0,
+    0, 0, 0, 8, 109, 101, 116, 97, 108, 108, 105, 99, 20, 0, 0, 0,
+    4, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+    14, 101, 109, 105, 115, 115, 105, 118, 101, 95, 115, 99, 97, 108, 101, 24,
+    0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0,
+    0, 0, 0, 12, 97, 108, 112, 104, 97, 95, 99, 117, 116, 111, 102, 102,
+    28, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0,
+    0, 0, 0, 0, 9, 111, 99, 99, 108, 117, 115, 105, 111, 110, 32, 0,
+    0, 0, 4, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0,
+    0, 0, 5, 102, 108, 97, 103, 115, 36, 0, 0, 0, 4, 0, 0, 0,
+    0, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 1, 255, 255, 255, 255, 0, 0, 0, 0,
 };
 
 inline constexpr usize kGbufferFragPerm3SpvWordCount = 944;
@@ -518,20 +521,21 @@ inline constexpr u32 kGbufferFragPerm3Spv[kGbufferFragPerm3SpvWordCount] = {
     0x0003003e, 0x00000008, 0x0000007e, 0x0003003e, 0x00000009, 0x00000089,
     0x000100fd, 0x00010038,
 };
-inline constexpr usize kGbufferFragPerm3ReflByteCount = 429;
+inline constexpr usize kGbufferFragPerm3ReflByteCount = 450;
 
 inline constexpr u8 kGbufferFragPerm3Refl[kGbufferFragPerm3ReflByteCount] = {
-    83, 82, 70, 76, 2, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
+    83, 82, 70, 76, 3, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
     110, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0,
     0, 8, 109, 97, 116, 101, 114, 105, 97, 108, 1, 0, 0, 0, 0, 0,
     0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 10, 97, 108, 98, 101, 100, 111, 95, 116, 101, 120, 1, 0,
-    0, 0, 1, 0, 0, 0, 2, 1, 0, 0, 0, 2, 0, 0, 0, 255,
-    255, 255, 255, 0, 0, 0, 0, 10, 110, 111, 114, 109, 97, 108, 95, 116,
-    101, 120, 1, 0, 0, 0, 2, 0, 0, 0, 2, 1, 0, 0, 0, 2,
-    0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 14, 108, 105, 110, 101,
-    97, 114, 95, 115, 97, 109, 112, 108, 101, 114, 1, 0, 0, 0, 3, 0,
-    0, 0, 3, 1, 0, 0, 0, 2, 0, 0, 0, 255, 255, 255, 255, 0,
+    0, 0, 0, 0, 0, 0, 0, 10, 97, 108, 98, 101, 100, 111, 95, 116,
+    101, 120, 1, 0, 0, 0, 1, 0, 0, 0, 2, 1, 0, 0, 0, 2,
+    0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 10,
+    110, 111, 114, 109, 97, 108, 95, 116, 101, 120, 1, 0, 0, 0, 2, 0,
+    0, 0, 2, 1, 0, 0, 0, 2, 0, 0, 0, 255, 255, 255, 255, 0,
+    0, 0, 0, 1, 0, 0, 0, 14, 108, 105, 110, 101, 97, 114, 95, 115,
+    97, 109, 112, 108, 101, 114, 1, 0, 0, 0, 3, 0, 0, 0, 3, 1,
+    0, 0, 0, 2, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0,
     0, 0, 0, 1, 0, 0, 0, 14, 77, 97, 116, 101, 114, 105, 97, 108,
     80, 97, 114, 97, 109, 115, 48, 0, 0, 0, 7, 0, 0, 0, 10, 98,
     97, 115, 101, 95, 99, 111, 108, 111, 114, 0, 0, 0, 0, 16, 0, 0,
@@ -547,7 +551,8 @@ inline constexpr u8 kGbufferFragPerm3Refl[kGbufferFragPerm3ReflByteCount] = {
     108, 117, 115, 105, 111, 110, 32, 0, 0, 0, 4, 0, 0, 0, 0, 0,
     1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 5, 102, 108, 97, 103, 115,
     36, 0, 0, 0, 4, 0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 255, 255, 255, 255, 0, 0,
+    0, 0,
 };
 
 inline constexpr usize kGbufferFragPerm4SpvWordCount = 945;
@@ -712,34 +717,35 @@ inline constexpr u32 kGbufferFragPerm4Spv[kGbufferFragPerm4SpvWordCount] = {
     0x00000067, 0x0003003e, 0x00000007, 0x00000082, 0x0003003e, 0x00000008,
     0x0000008d, 0x000100fd, 0x00010038,
 };
-inline constexpr usize kGbufferFragPerm4ReflByteCount = 393;
+inline constexpr usize kGbufferFragPerm4ReflByteCount = 410;
 
 inline constexpr u8 kGbufferFragPerm4Refl[kGbufferFragPerm4ReflByteCount] = {
-    83, 82, 70, 76, 2, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
+    83, 82, 70, 76, 3, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
     110, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0,
     0, 8, 109, 97, 116, 101, 114, 105, 97, 108, 1, 0, 0, 0, 0, 0,
     0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 10, 97, 108, 98, 101, 100, 111, 95, 116, 101, 120, 1, 0,
-    0, 0, 1, 0, 0, 0, 2, 1, 0, 0, 0, 2, 0, 0, 0, 255,
-    255, 255, 255, 0, 0, 0, 0, 14, 108, 105, 110, 101, 97, 114, 95, 115,
-    97, 109, 112, 108, 101, 114, 1, 0, 0, 0, 3, 0, 0, 0, 3, 1,
-    0, 0, 0, 2, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 1,
-    0, 0, 0, 14, 77, 97, 116, 101, 114, 105, 97, 108, 80, 97, 114, 97,
-    109, 115, 48, 0, 0, 0, 7, 0, 0, 0, 10, 98, 97, 115, 101, 95,
-    99, 111, 108, 111, 114, 0, 0, 0, 0, 16, 0, 0, 0, 1, 0, 4,
-    1, 0, 0, 0, 0, 0, 0, 0, 0, 9, 114, 111, 117, 103, 104, 110,
-    101, 115, 115, 16, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 1, 0,
-    0, 0, 0, 0, 0, 0, 0, 8, 109, 101, 116, 97, 108, 108, 105, 99,
-    20, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0,
-    0, 0, 0, 0, 14, 101, 109, 105, 115, 115, 105, 118, 101, 95, 115, 99,
-    97, 108, 101, 24, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 1, 0,
-    0, 0, 0, 0, 0, 0, 0, 12, 97, 108, 112, 104, 97, 95, 99, 117,
-    116, 111, 102, 102, 28, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 1,
-    0, 0, 0, 0, 0, 0, 0, 0, 9, 111, 99, 99, 108, 117, 115, 105,
-    111, 110, 32, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 1, 0, 0,
-    0, 0, 0, 0, 0, 0, 5, 102, 108, 97, 103, 115, 36, 0, 0, 0,
-    4, 0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 10, 97, 108, 98, 101, 100, 111, 95, 116,
+    101, 120, 1, 0, 0, 0, 1, 0, 0, 0, 2, 1, 0, 0, 0, 2,
+    0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 14,
+    108, 105, 110, 101, 97, 114, 95, 115, 97, 109, 112, 108, 101, 114, 1, 0,
+    0, 0, 3, 0, 0, 0, 3, 1, 0, 0, 0, 2, 0, 0, 0, 255,
+    255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 14,
+    77, 97, 116, 101, 114, 105, 97, 108, 80, 97, 114, 97, 109, 115, 48, 0,
+    0, 0, 7, 0, 0, 0, 10, 98, 97, 115, 101, 95, 99, 111, 108, 111,
+    114, 0, 0, 0, 0, 16, 0, 0, 0, 1, 0, 4, 1, 0, 0, 0,
+    0, 0, 0, 0, 0, 9, 114, 111, 117, 103, 104, 110, 101, 115, 115, 16,
+    0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0,
+    0, 0, 0, 8, 109, 101, 116, 97, 108, 108, 105, 99, 20, 0, 0, 0,
+    4, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+    14, 101, 109, 105, 115, 115, 105, 118, 101, 95, 115, 99, 97, 108, 101, 24,
+    0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0,
+    0, 0, 0, 12, 97, 108, 112, 104, 97, 95, 99, 117, 116, 111, 102, 102,
+    28, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0,
+    0, 0, 0, 0, 9, 111, 99, 99, 108, 117, 115, 105, 111, 110, 32, 0,
+    0, 0, 4, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0,
+    0, 0, 5, 102, 108, 97, 103, 115, 36, 0, 0, 0, 4, 0, 0, 0,
+    0, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 1, 255, 255, 255, 255, 0, 0, 0, 0,
 };
 
 inline constexpr usize kGbufferFragPerm5SpvWordCount = 1134;
@@ -935,20 +941,21 @@ inline constexpr u32 kGbufferFragPerm5Spv[kGbufferFragPerm5SpvWordCount] = {
     0x000000a9, 0x0003003e, 0x00000007, 0x00000084, 0x0003003e, 0x00000008,
     0x0000009f, 0x0003003e, 0x00000009, 0x000000aa, 0x000100fd, 0x00010038,
 };
-inline constexpr usize kGbufferFragPerm5ReflByteCount = 429;
+inline constexpr usize kGbufferFragPerm5ReflByteCount = 450;
 
 inline constexpr u8 kGbufferFragPerm5Refl[kGbufferFragPerm5ReflByteCount] = {
-    83, 82, 70, 76, 2, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
+    83, 82, 70, 76, 3, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
     110, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0,
     0, 8, 109, 97, 116, 101, 114, 105, 97, 108, 1, 0, 0, 0, 0, 0,
     0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 10, 97, 108, 98, 101, 100, 111, 95, 116, 101, 120, 1, 0,
-    0, 0, 1, 0, 0, 0, 2, 1, 0, 0, 0, 2, 0, 0, 0, 255,
-    255, 255, 255, 0, 0, 0, 0, 10, 110, 111, 114, 109, 97, 108, 95, 116,
-    101, 120, 1, 0, 0, 0, 2, 0, 0, 0, 2, 1, 0, 0, 0, 2,
-    0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 14, 108, 105, 110, 101,
-    97, 114, 95, 115, 97, 109, 112, 108, 101, 114, 1, 0, 0, 0, 3, 0,
-    0, 0, 3, 1, 0, 0, 0, 2, 0, 0, 0, 255, 255, 255, 255, 0,
+    0, 0, 0, 0, 0, 0, 0, 10, 97, 108, 98, 101, 100, 111, 95, 116,
+    101, 120, 1, 0, 0, 0, 1, 0, 0, 0, 2, 1, 0, 0, 0, 2,
+    0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 10,
+    110, 111, 114, 109, 97, 108, 95, 116, 101, 120, 1, 0, 0, 0, 2, 0,
+    0, 0, 2, 1, 0, 0, 0, 2, 0, 0, 0, 255, 255, 255, 255, 0,
+    0, 0, 0, 1, 0, 0, 0, 14, 108, 105, 110, 101, 97, 114, 95, 115,
+    97, 109, 112, 108, 101, 114, 1, 0, 0, 0, 3, 0, 0, 0, 3, 1,
+    0, 0, 0, 2, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0,
     0, 0, 0, 1, 0, 0, 0, 14, 77, 97, 116, 101, 114, 105, 97, 108,
     80, 97, 114, 97, 109, 115, 48, 0, 0, 0, 7, 0, 0, 0, 10, 98,
     97, 115, 101, 95, 99, 111, 108, 111, 114, 0, 0, 0, 0, 16, 0, 0,
@@ -964,7 +971,8 @@ inline constexpr u8 kGbufferFragPerm5Refl[kGbufferFragPerm5ReflByteCount] = {
     108, 117, 115, 105, 111, 110, 32, 0, 0, 0, 4, 0, 0, 0, 0, 0,
     1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 5, 102, 108, 97, 103, 115,
     36, 0, 0, 0, 4, 0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 255, 255, 255, 255, 0, 0,
+    0, 0,
 };
 
 inline constexpr usize kGbufferFragPerm6SpvWordCount = 1008;
@@ -1139,34 +1147,35 @@ inline constexpr u32 kGbufferFragPerm6Spv[kGbufferFragPerm6SpvWordCount] = {
     0x00000097, 0x0003003e, 0x00000006, 0x00000072, 0x0003003e, 0x00000007,
     0x0000008d, 0x0003003e, 0x00000008, 0x00000098, 0x000100fd, 0x00010038,
 };
-inline constexpr usize kGbufferFragPerm6ReflByteCount = 393;
+inline constexpr usize kGbufferFragPerm6ReflByteCount = 410;
 
 inline constexpr u8 kGbufferFragPerm6Refl[kGbufferFragPerm6ReflByteCount] = {
-    83, 82, 70, 76, 2, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
+    83, 82, 70, 76, 3, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
     110, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0,
     0, 8, 109, 97, 116, 101, 114, 105, 97, 108, 1, 0, 0, 0, 0, 0,
     0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 10, 97, 108, 98, 101, 100, 111, 95, 116, 101, 120, 1, 0,
-    0, 0, 1, 0, 0, 0, 2, 1, 0, 0, 0, 2, 0, 0, 0, 255,
-    255, 255, 255, 0, 0, 0, 0, 14, 108, 105, 110, 101, 97, 114, 95, 115,
-    97, 109, 112, 108, 101, 114, 1, 0, 0, 0, 3, 0, 0, 0, 3, 1,
-    0, 0, 0, 2, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 1,
-    0, 0, 0, 14, 77, 97, 116, 101, 114, 105, 97, 108, 80, 97, 114, 97,
-    109, 115, 48, 0, 0, 0, 7, 0, 0, 0, 10, 98, 97, 115, 101, 95,
-    99, 111, 108, 111, 114, 0, 0, 0, 0, 16, 0, 0, 0, 1, 0, 4,
-    1, 0, 0, 0, 0, 0, 0, 0, 0, 9, 114, 111, 117, 103, 104, 110,
-    101, 115, 115, 16, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 1, 0,
-    0, 0, 0, 0, 0, 0, 0, 8, 109, 101, 116, 97, 108, 108, 105, 99,
-    20, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0,
-    0, 0, 0, 0, 14, 101, 109, 105, 115, 115, 105, 118, 101, 95, 115, 99,
-    97, 108, 101, 24, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 1, 0,
-    0, 0, 0, 0, 0, 0, 0, 12, 97, 108, 112, 104, 97, 95, 99, 117,
-    116, 111, 102, 102, 28, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 1,
-    0, 0, 0, 0, 0, 0, 0, 0, 9, 111, 99, 99, 108, 117, 115, 105,
-    111, 110, 32, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 1, 0, 0,
-    0, 0, 0, 0, 0, 0, 5, 102, 108, 97, 103, 115, 36, 0, 0, 0,
-    4, 0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 10, 97, 108, 98, 101, 100, 111, 95, 116,
+    101, 120, 1, 0, 0, 0, 1, 0, 0, 0, 2, 1, 0, 0, 0, 2,
+    0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 14,
+    108, 105, 110, 101, 97, 114, 95, 115, 97, 109, 112, 108, 101, 114, 1, 0,
+    0, 0, 3, 0, 0, 0, 3, 1, 0, 0, 0, 2, 0, 0, 0, 255,
+    255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 14,
+    77, 97, 116, 101, 114, 105, 97, 108, 80, 97, 114, 97, 109, 115, 48, 0,
+    0, 0, 7, 0, 0, 0, 10, 98, 97, 115, 101, 95, 99, 111, 108, 111,
+    114, 0, 0, 0, 0, 16, 0, 0, 0, 1, 0, 4, 1, 0, 0, 0,
+    0, 0, 0, 0, 0, 9, 114, 111, 117, 103, 104, 110, 101, 115, 115, 16,
+    0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0,
+    0, 0, 0, 8, 109, 101, 116, 97, 108, 108, 105, 99, 20, 0, 0, 0,
+    4, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+    14, 101, 109, 105, 115, 115, 105, 118, 101, 95, 115, 99, 97, 108, 101, 24,
+    0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0,
+    0, 0, 0, 12, 97, 108, 112, 104, 97, 95, 99, 117, 116, 111, 102, 102,
+    28, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0,
+    0, 0, 0, 0, 9, 111, 99, 99, 108, 117, 115, 105, 111, 110, 32, 0,
+    0, 0, 4, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0,
+    0, 0, 5, 102, 108, 97, 103, 115, 36, 0, 0, 0, 4, 0, 0, 0,
+    0, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 1, 255, 255, 255, 255, 0, 0, 0, 0,
 };
 
 inline constexpr usize kGbufferFragPerm7SpvWordCount = 1197;
@@ -1373,20 +1382,21 @@ inline constexpr u32 kGbufferFragPerm7Spv[kGbufferFragPerm7SpvWordCount] = {
     0x0000008f, 0x0003003e, 0x00000008, 0x000000aa, 0x0003003e, 0x00000009,
     0x000000b5, 0x000100fd, 0x00010038,
 };
-inline constexpr usize kGbufferFragPerm7ReflByteCount = 429;
+inline constexpr usize kGbufferFragPerm7ReflByteCount = 450;
 
 inline constexpr u8 kGbufferFragPerm7Refl[kGbufferFragPerm7ReflByteCount] = {
-    83, 82, 70, 76, 2, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
+    83, 82, 70, 76, 3, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
     110, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0,
     0, 8, 109, 97, 116, 101, 114, 105, 97, 108, 1, 0, 0, 0, 0, 0,
     0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 10, 97, 108, 98, 101, 100, 111, 95, 116, 101, 120, 1, 0,
-    0, 0, 1, 0, 0, 0, 2, 1, 0, 0, 0, 2, 0, 0, 0, 255,
-    255, 255, 255, 0, 0, 0, 0, 10, 110, 111, 114, 109, 97, 108, 95, 116,
-    101, 120, 1, 0, 0, 0, 2, 0, 0, 0, 2, 1, 0, 0, 0, 2,
-    0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 14, 108, 105, 110, 101,
-    97, 114, 95, 115, 97, 109, 112, 108, 101, 114, 1, 0, 0, 0, 3, 0,
-    0, 0, 3, 1, 0, 0, 0, 2, 0, 0, 0, 255, 255, 255, 255, 0,
+    0, 0, 0, 0, 0, 0, 0, 10, 97, 108, 98, 101, 100, 111, 95, 116,
+    101, 120, 1, 0, 0, 0, 1, 0, 0, 0, 2, 1, 0, 0, 0, 2,
+    0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 10,
+    110, 111, 114, 109, 97, 108, 95, 116, 101, 120, 1, 0, 0, 0, 2, 0,
+    0, 0, 2, 1, 0, 0, 0, 2, 0, 0, 0, 255, 255, 255, 255, 0,
+    0, 0, 0, 1, 0, 0, 0, 14, 108, 105, 110, 101, 97, 114, 95, 115,
+    97, 109, 112, 108, 101, 114, 1, 0, 0, 0, 3, 0, 0, 0, 3, 1,
+    0, 0, 0, 2, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0,
     0, 0, 0, 1, 0, 0, 0, 14, 77, 97, 116, 101, 114, 105, 97, 108,
     80, 97, 114, 97, 109, 115, 48, 0, 0, 0, 7, 0, 0, 0, 10, 98,
     97, 115, 101, 95, 99, 111, 108, 111, 114, 0, 0, 0, 0, 16, 0, 0,
@@ -1402,20 +1412,21 @@ inline constexpr u8 kGbufferFragPerm7Refl[kGbufferFragPerm7ReflByteCount] = {
     108, 117, 115, 105, 111, 110, 32, 0, 0, 0, 4, 0, 0, 0, 0, 0,
     1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 5, 102, 108, 97, 103, 115,
     36, 0, 0, 0, 4, 0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 255, 255, 255, 255, 0, 0,
+    0, 0,
 };
 
 inline constexpr const char* kGbufferFragOptions[3] = {"NORMAL_MAP", "ALPHA_TEST", "VERTEX_COLOR", };
 
 inline constexpr renderer::PermutationModule kGbufferFragModules[8] = {
-    {kGbufferFragSpv, kGbufferFragSpvWordCount, kGbufferFragRefl, kGbufferFragReflByteCount, kGbufferFragDxil, kGbufferFragDxilByteCount},
-    {kGbufferFragPerm1Spv, kGbufferFragPerm1SpvWordCount, kGbufferFragPerm1Refl, kGbufferFragPerm1ReflByteCount, kGbufferFragPerm1Dxil, kGbufferFragPerm1DxilByteCount},
-    {kGbufferFragPerm2Spv, kGbufferFragPerm2SpvWordCount, kGbufferFragPerm2Refl, kGbufferFragPerm2ReflByteCount, kGbufferFragPerm2Dxil, kGbufferFragPerm2DxilByteCount},
-    {kGbufferFragPerm3Spv, kGbufferFragPerm3SpvWordCount, kGbufferFragPerm3Refl, kGbufferFragPerm3ReflByteCount, kGbufferFragPerm3Dxil, kGbufferFragPerm3DxilByteCount},
-    {kGbufferFragPerm4Spv, kGbufferFragPerm4SpvWordCount, kGbufferFragPerm4Refl, kGbufferFragPerm4ReflByteCount, kGbufferFragPerm4Dxil, kGbufferFragPerm4DxilByteCount},
-    {kGbufferFragPerm5Spv, kGbufferFragPerm5SpvWordCount, kGbufferFragPerm5Refl, kGbufferFragPerm5ReflByteCount, kGbufferFragPerm5Dxil, kGbufferFragPerm5DxilByteCount},
-    {kGbufferFragPerm6Spv, kGbufferFragPerm6SpvWordCount, kGbufferFragPerm6Refl, kGbufferFragPerm6ReflByteCount, kGbufferFragPerm6Dxil, kGbufferFragPerm6DxilByteCount},
-    {kGbufferFragPerm7Spv, kGbufferFragPerm7SpvWordCount, kGbufferFragPerm7Refl, kGbufferFragPerm7ReflByteCount, kGbufferFragPerm7Dxil, kGbufferFragPerm7DxilByteCount},
+    {kGbufferFragSpv, kGbufferFragSpvWordCount, kGbufferFragRefl, kGbufferFragReflByteCount, kGbufferFragDxil, kGbufferFragDxilByteCount, kGbufferFragMetallib, kGbufferFragMetallibByteCount, kGbufferFragMetallibEntry},
+    {kGbufferFragPerm1Spv, kGbufferFragPerm1SpvWordCount, kGbufferFragPerm1Refl, kGbufferFragPerm1ReflByteCount, kGbufferFragPerm1Dxil, kGbufferFragPerm1DxilByteCount, kGbufferFragPerm1Metallib, kGbufferFragPerm1MetallibByteCount, kGbufferFragPerm1MetallibEntry},
+    {kGbufferFragPerm2Spv, kGbufferFragPerm2SpvWordCount, kGbufferFragPerm2Refl, kGbufferFragPerm2ReflByteCount, kGbufferFragPerm2Dxil, kGbufferFragPerm2DxilByteCount, kGbufferFragPerm2Metallib, kGbufferFragPerm2MetallibByteCount, kGbufferFragPerm2MetallibEntry},
+    {kGbufferFragPerm3Spv, kGbufferFragPerm3SpvWordCount, kGbufferFragPerm3Refl, kGbufferFragPerm3ReflByteCount, kGbufferFragPerm3Dxil, kGbufferFragPerm3DxilByteCount, kGbufferFragPerm3Metallib, kGbufferFragPerm3MetallibByteCount, kGbufferFragPerm3MetallibEntry},
+    {kGbufferFragPerm4Spv, kGbufferFragPerm4SpvWordCount, kGbufferFragPerm4Refl, kGbufferFragPerm4ReflByteCount, kGbufferFragPerm4Dxil, kGbufferFragPerm4DxilByteCount, kGbufferFragPerm4Metallib, kGbufferFragPerm4MetallibByteCount, kGbufferFragPerm4MetallibEntry},
+    {kGbufferFragPerm5Spv, kGbufferFragPerm5SpvWordCount, kGbufferFragPerm5Refl, kGbufferFragPerm5ReflByteCount, kGbufferFragPerm5Dxil, kGbufferFragPerm5DxilByteCount, kGbufferFragPerm5Metallib, kGbufferFragPerm5MetallibByteCount, kGbufferFragPerm5MetallibEntry},
+    {kGbufferFragPerm6Spv, kGbufferFragPerm6SpvWordCount, kGbufferFragPerm6Refl, kGbufferFragPerm6ReflByteCount, kGbufferFragPerm6Dxil, kGbufferFragPerm6DxilByteCount, kGbufferFragPerm6Metallib, kGbufferFragPerm6MetallibByteCount, kGbufferFragPerm6MetallibEntry},
+    {kGbufferFragPerm7Spv, kGbufferFragPerm7SpvWordCount, kGbufferFragPerm7Refl, kGbufferFragPerm7ReflByteCount, kGbufferFragPerm7Dxil, kGbufferFragPerm7DxilByteCount, kGbufferFragPerm7Metallib, kGbufferFragPerm7MetallibByteCount, kGbufferFragPerm7MetallibEntry},
 };
 
 inline constexpr renderer::PermutationEntry kGbufferFragEntries[8] = {

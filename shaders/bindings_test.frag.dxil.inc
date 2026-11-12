@@ -2,7 +2,7 @@
 // compiler: slangc v2026.18.2, dxcompiler 1.9.2602.17
 #pragma once
 
-#include "bindings_test.frag.spv.inc"
+#include "bindings_test.frag.metallib.inc"  // and its .spv.inc
 #include "rhi/desc.h"
 #include "types.h"
 
@@ -286,6 +286,6 @@ inline constexpr u8 kBindingsTestFragDxil[kBindingsTestFragDxilByteCount] = {
 inline constexpr u64 kBindingsTestFragDxilSpirvFnv = 0xc0aecfdfa8924c69ull;
 
 // The shader in every format it was minted in.
-inline constexpr rhi::ShaderBlobSet kBindingsTestFragShader = {"bindings_test.frag", rhi::SpirvBlob(kBindingsTestFragSpv, kBindingsTestFragSpvWordCount), rhi::DxilBlob(kBindingsTestFragDxil, kBindingsTestFragDxilByteCount)};
+inline constexpr rhi::ShaderBlobSet kBindingsTestFragShader = {"bindings_test.frag", rhi::SpirvBlob(kBindingsTestFragSpv, kBindingsTestFragSpvWordCount), rhi::DxilBlob(kBindingsTestFragDxil, kBindingsTestFragDxilByteCount), rhi::MetalLibBlob(kBindingsTestFragMetallib, kBindingsTestFragMetallibByteCount, kBindingsTestFragMetallibEntry)};
 
 } // namespace engine_placeholder::shaders

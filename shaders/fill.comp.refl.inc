@@ -6,21 +6,24 @@
 
 namespace engine_placeholder::shaders {
 
-inline constexpr usize kFillCompReflByteCount = 114;
+inline constexpr usize kFillCompReflByteCount = 149;
 
 inline constexpr u8 kFillCompRefl[kFillCompReflByteCount] = {
-    83, 82, 70, 76, 2, 0, 0, 0, 4, 0, 0, 0, 4, 109, 97, 105,
+    83, 82, 70, 76, 3, 0, 0, 0, 4, 0, 0, 0, 4, 109, 97, 105,
     110, 64, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0,
     0, 7, 111, 117, 116, 95, 98, 117, 102, 0, 0, 0, 0, 0, 0, 0,
     0, 1, 1, 0, 0, 0, 4, 0, 0, 0, 255, 255, 255, 255, 4, 0,
-    0, 0, 1, 0, 0, 0, 4, 80, 117, 115, 104, 4, 0, 0, 0, 1,
-    0, 0, 0, 1, 107, 0, 0, 0, 0, 4, 0, 0, 0, 0, 2, 1,
-    1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0,
-    0, 0,
+    0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 4, 80, 117, 115, 104, 8,
+    0, 0, 0, 2, 0, 0, 0, 1, 107, 0, 0, 0, 0, 4, 0, 0,
+    0, 0, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 5, 99, 111,
+    117, 110, 116, 4, 0, 0, 0, 4, 0, 0, 0, 0, 2, 1, 1, 0,
+    0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0,
+    0, 0, 0, 0, 0,
 };
 
 // Block sizes and member offsets, for static_asserts on the C++ structs copied into these blocks.
-inline constexpr u32 kFillCompPushSize = 4;
+inline constexpr u32 kFillCompPushSize = 8;
 inline constexpr u32 kFillCompPushKOffset = 0;
+inline constexpr u32 kFillCompPushCountOffset = 4;
 
 } // namespace engine_placeholder::shaders

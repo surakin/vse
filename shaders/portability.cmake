@@ -5,18 +5,19 @@
 # define (shaders/target_common.slang), as the minted DXIL is.
 # A shader fails the test if slangc exits non-zero, writes an `error`, or produces an empty file. Warnings are expected and
 # listed (Metal renames `main`). `dxc`, if installed, additionally compiles the HLSL to DXIL and reports what it rejects without
-# failing (the instance-index semantic is a known Phase 13 gap); the Metal compiler needs macOS and is not run here. See README.md, "Other targets".
+# failing (the instance-index semantic is a known Phase 13 gap). The Metal source is built with the Metal target define, and on
+# a Mac METAL_MINT (tools/metal_mint, Phase 26 Day 315) compiles every key's Metal source with the driver and loads the result.
+# See README.md, "Other targets".
 include(${SHADER_DIR}/names.cmake)
 # Shaders known not to compile to a target, with the reason; the test fails if one of these starts to compile (remove it from
-# the list) or if any other shader does not.
-#   fill.comp, saxpy.comp (Metal): both call `RWStructuredBuffer.GetDimensions`, and Metal Shading Language cannot ask a buffer
-#   for its length ("unavailable features in entry point"). They are RHI compute test shaders, not renderer shaders; the Metal
-#   backend (Phase 26) passes the element count in a constant and these two get that change then.
-set(KNOWN_UNAVAILABLE metal:fill.comp metal:saxpy.comp)
+# the list) or if any other shader does not. Empty since Phase 26 Day 315 (fill.comp and saxpy.comp take their element count as
+# a push constant instead of asking the buffer, which Metal Shading Language cannot do).
+set(KNOWN_UNAVAILABLE "")
 file(MAKE_DIRECTORY ${WORK_DIR})
 set(compiled 0)
 set(skipped 0)
 set(dxc_checked 0)
+set(metal_minted 0)
 foreach(shader ${SHADERS})
   shader_stage(${shader} stage)
   # The keys to build: a permuted shader's manifest lists them; any other shader has the one empty key.
@@ -60,6 +61,8 @@ foreach(shader ${SHADERS})
       set(target_defines "")
       if(target STREQUAL "hlsl")
         set(target_defines -DENGINE_TARGET_D3D12=1)
+      else()
+        set(target_defines -DENGINE_TARGET_METAL=1)
       endif()
       execute_process(
         COMMAND ${SLANGC} ${SHADER_DIR}/${shader}.slang -target ${target} -entry main -stage ${stage} -matrix-layout-column-major
@@ -99,6 +102,15 @@ foreach(shader ${SHADERS})
         endforeach()
       endif()
       math(EXPR compiled "${compiled} + 1")
+      if(target STREQUAL "metal" AND METAL_MINT)
+        execute_process(COMMAND ${METAL_MINT} --source ${out} --stage ${stage} --out ${WORK_DIR}/${shader}${tag}.metallib
+                                --info ${WORK_DIR}/${shader}${tag}.metallib.info
+                        RESULT_VARIABLE mint_rc ERROR_VARIABLE mint_err)
+        if(NOT mint_rc EQUAL 0)
+          message(FATAL_ERROR "the Metal compiler rejected ${shader}${tag}: ${mint_err}")
+        endif()
+        math(EXPR metal_minted "${metal_minted} + 1")
+      endif()
       if(target STREQUAL "hlsl" AND DXC)
         set(profile vs_6_0)
         if(stage STREQUAL "fragment")
@@ -120,4 +132,5 @@ foreach(shader ${SHADERS})
     endforeach()
   endforeach()
 endforeach()
-message("compiled ${compiled} outputs (HLSL and Metal) for the engine shaders; ${skipped} known unavailable; dxc checked ${dxc_checked}")
+message("compiled ${compiled} outputs (HLSL and Metal) for the engine shaders; ${skipped} known unavailable; dxc checked ${dxc_checked}; "
+        "Metal minted ${metal_minted}")

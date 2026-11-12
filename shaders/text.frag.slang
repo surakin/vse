@@ -11,8 +11,10 @@
 //   set 0, binding 0: sampled texture (2D, R8), fragment stage
 //   set 0, binding 1: sampler, fragment stage
 
-[[vk::binding(0, 0)]] Texture2D page : register(t0, space0);
-[[vk::binding(1, 0)]] SamplerState smp : register(s1, space0);
+#include "target_common.slang"  // ENGINE_REGISTER
+
+[[vk::binding(0, 0)]] Texture2D page ENGINE_REGISTER(t0, space0);
+[[vk::binding(1, 0)]] SamplerState smp ENGINE_REGISTER(s1, space0);
 
 struct FragmentInput {
     [[vk::location(0)]] float2 uv : TEXCOORD0;

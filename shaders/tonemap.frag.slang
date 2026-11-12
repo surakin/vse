@@ -10,7 +10,9 @@
 //   set 0, binding 0: sampled texture hdr (read with Load)
 //   push constants (16 bytes): float exposure; 3 pad
 
-[[vk::binding(0, 0)]] Texture2D<float4> hdr_tex : register(t0, space0);
+#include "target_common.slang"  // ENGINE_REGISTER
+
+[[vk::binding(0, 0)]] Texture2D<float4> hdr_tex ENGINE_REGISTER(t0, space0);
 
 struct Push {
     float exposure;
@@ -18,7 +20,7 @@ struct Push {
     float pad1;
     float pad2;
 };
-[[vk::push_constant]] ConstantBuffer<Push> push : register(b0, space15);
+[[vk::push_constant]] ConstantBuffer<Push> push ENGINE_REGISTER(b0, space15);
 
 struct FragmentInput {
     [[vk::location(0)]] float2 uv : TEXCOORD0;

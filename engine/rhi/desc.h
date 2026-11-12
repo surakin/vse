@@ -126,8 +126,9 @@ struct SamplerDesc
     const char* Validate() const;
 };
 
-/// One shader module's bytecode in one format: a pointer and a size, normally into a minted `*.spv.inc` or
-/// `*.dxil.inc`.
+/// One shader module's bytecode in one format: a pointer and a size, normally into a minted `*.spv.inc`, `*.dxil.inc`
+/// or
+/// `*.metallib.inc`, and for a Metal library the name of the function it exports.
 ///
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: `bytes` is borrowed; minted blobs are static.
@@ -139,6 +140,9 @@ struct ShaderBlob
     const void* bytes = nullptr;
     /// Size of `bytes` in bytes; 0 for no blob.
     usize size = 0;
+    /// The entry point's name in the module, or null for `main` (SPIR-V and DXIL). A Metal library exports the renamed
+    /// entry Slang wrote (`main_0`), recorded when it was minted; no backend guesses it.
+    const char* entry = nullptr;
 
     /// Returns whether the blob holds no bytecode.
     ///
@@ -170,6 +174,19 @@ constexpr ShaderBlob DxilBlob(const u8* bytes, usize size)
     return ShaderBlob{ShaderFormat::Dxil, bytes, size};
 }
 
+/// Returns the blob of a Metal library given as bytes, with the name of the function it exports.
+///
+/// - Param bytes: the library; borrowed.
+/// - Param size: its size in bytes.
+/// - Param entry: the exported entry point (`main_0`); borrowed, static in a minted file.
+/// - Returns: a Metal library blob.
+/// - Fails: never.
+/// - Thread-safety: thread-safe.
+constexpr ShaderBlob MetalLibBlob(const u8* bytes, usize size, const char* entry)
+{
+    return ShaderBlob{ShaderFormat::MetalLib, bytes, size, entry};
+}
+
 /// One shader in every format it was minted in; code that creates shaders names the set once and picks the device's
 /// format with `For` (`device->Caps().shader_format`).
 ///
@@ -183,26 +200,31 @@ struct ShaderBlobSet
     ShaderBlob spirv{ShaderFormat::Spirv, nullptr, 0};
     /// The DXIL module, or empty.
     ShaderBlob dxil{ShaderFormat::Dxil, nullptr, 0};
+    /// The Metal library, or empty (Phase 26 Day 315; minted on a Mac).
+    ShaderBlob metallib{ShaderFormat::MetalLib, nullptr, 0};
 
     /// Returns the blob of one format.
     ///
     /// - Param format: the format the device takes.
-    /// - Returns: the blob, or an empty blob of that format when the set has none (always for `Msl` today).
+    /// - Returns: the blob, or an empty blob of that format when the set has none.
     /// - Fails: an empty blob, as described.
     constexpr ShaderBlob For(ShaderFormat format) const
     {
-        // The returned blob always carries `format`, even when a member was initialized with `{}`.
+        // The stored blob, every field kept, with `format` set: a member initialized with `{}` has the default format.
+        ShaderBlob blob{format, nullptr, 0};
         switch (format)
         {
-        case ShaderFormat::Spirv: return ShaderBlob{format, spirv.bytes, spirv.size};
-        case ShaderFormat::Dxil: return ShaderBlob{format, dxil.bytes, dxil.size};
-        case ShaderFormat::Msl: break;
+        case ShaderFormat::Spirv: blob = spirv; break;
+        case ShaderFormat::Dxil: blob = dxil; break;
+        case ShaderFormat::MetalLib: blob = metallib; break;
         }
-        return ShaderBlob{format, nullptr, 0};
+        blob.format = format;
+        return blob;
     }
 };
 
-/// Describes a shader module to create from precompiled bytecode: SPIR-V for the Vulkan backend, DXIL for Direct3D 12.
+/// Describes a shader module to create from precompiled bytecode: SPIR-V for the Vulkan backend, DXIL for Direct3D 12,
+/// a Metal library for Metal.
 ///
 /// The engine compiles shaders offline and never at runtime (`PLAN.md` assumption #18). A backend refuses a module in
 /// another format than its [[rhi::DeviceCaps::shader_format]] with an error naming both.
@@ -224,7 +246,7 @@ struct ShaderDesc
     /// Optional name shown in debuggers and logs; null for none.
     const char* debug_name = nullptr;
 
-    /// Sets `format`, `bytes` and `size` from a blob.
+    /// Sets `format`, `bytes`, `size` and `entry` from a blob: the entry it names (a Metal library), else `main`.
     ///
     /// - Param blob: the module; borrowed like `bytes`.
     /// - Fails: never.
@@ -233,6 +255,7 @@ struct ShaderDesc
         format = blob.format;
         bytes = blob.bytes;
         size = blob.size;
+        entry = blob.entry != nullptr ? blob.entry : "main";
     }
 
     /// Checks the descriptor without a device.
@@ -244,7 +267,8 @@ struct ShaderDesc
     /// Checks the stage, the entry name (at most 63 bytes) and the module's shape for its format: SPIR-V is 4-byte
     /// aligned, a whole number of words and at least a header (its contents are checked by [[rhi::ValidateSpirv]] when
     /// the shader is created); DXIL starts with the `DXBC` container tag, is at least a container header and its size
-    /// matches the one the header records; MSL is refused.
+    /// matches the one the header records; a Metal library starts with the `MTLB` tag, is at least its header, is an
+    /// executable library (type 0, not a dynamic one) and its size matches the one its header records.
     const char* Validate() const;
 };
 

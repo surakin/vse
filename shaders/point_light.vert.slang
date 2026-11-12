@@ -38,8 +38,8 @@ struct LightData {
 #define LIGHT_VOLUME_SEGMENTS 16
 #define LIGHT_VOLUME_RINGS 8
 
-[[vk::binding(0, 0)]] ConstantBuffer<FrameData> frame : register(b0, space0);
-[[vk::binding(4, 1)]] StructuredBuffer<LightData> lights : register(t4, space1);
+[[vk::binding(0, 0)]] ConstantBuffer<FrameData> frame ENGINE_REGISTER(b0, space0);
+[[vk::binding(4, 1)]] StructuredBuffer<LightData> lights ENGINE_REGISTER(t4, space1);
 
 struct VertexInput {
     uint vertex : ENGINE_VERTEX_ID;

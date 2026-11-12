@@ -1278,6 +1278,22 @@ demos run their scripted resets and recoveries in a Cocoa window on null, and th
 failing the flaky throughput test and two stale sanitizer binaries, both passing once rebuilt. Code review: 9 findings, 8 fixed, 1 in part (the benchmarks keep failing on macOS until Metal, on
 purpose). Waiting: the Linux and Windows runs of the many shared changes (`KNOWN-ISSUES.md`). Next: Day 315 (the Metal shader path).
 
+Phase 26 (side) **Day 315 (2026-11-12, the Mac): the Metal shader path. Tests deferred to the end of Day 325 (the user's choice for Days 315-325:
+build, review, commit and push each day; test at the end).** Every shader and permutation key now has a committed `.metallib.inc`: an AIR-only,
+executable library, its entry name (`main_0`) and the hash of the SPIR-V beside it. `tools/metal_mint` mints them from `slangc -target metal`
+through the driver's compiler (the interim, undocumented `serializeToURL:` route of Day 298, guarded and checked before writing). The 120 outputs
+were byte-identical on a second mint. Shared changes:
+- **The reflection** (format 3) records each binding's Metal slot on every platform; slangc's Metal build needs no Mac.
+- **`ShaderFormat::Msl` is now `MetalLib`**, and a blob carries its entry name.
+- **`register()` is emitted for D3D12 only** (`ENGINE_REGISTER`). The SPIR-V and reflection were re-minted byte-identical.
+- **The Metal build shares D3D12's** clip-space flip and object index stream.
+- **`fill.comp` and `saxpy.comp`** take their element count as a push constant: new SPIR-V, and DXIL stale until the PC re-mints it.
+- **Off a Mac,** a placeholder `.metallib.inc` keeps every build compiling.
+
+Code review: 10 findings, all fixed. The worst were a new test that read DXIL as Metal, and a missing placeholder that would have broken
+Linux and Windows on the next new shader. A formatter call fed every changed file rewrote the day's text files as C++; they were restored and the
+edits replayed. Waiting: the PC's DXIL re-mint, and the Linux and Windows checks (`KNOWN-ISSUES.md`). Next: Day 316 (the Metal device).
+
 Phase 20 **Day 278 (2026-11-12, Windows PC): the Windows socket backend.** Winsock 2 in `engine/net/windows/` (`winsock.h` the one include of the Winsock headers; the error tables; sockets not inherited and non-blocking from creation, dual stack and exclusive ports as the interface's defaults, `SIO_UDP_CONNRESET` off; `GetAddrInfoW` in UTF-16). The poller is `select`, not the planned `WSAPoll`: measured, `WSAPoll` reports a half-closed socket whatever was asked for, which would make the reactor spin; the spec and `BACKEND.md` say so. A refused loopback connect is immediate (SYN retransmission off for loopback; Windows otherwise retries for two seconds). The whole of `tests/net` runs on Windows: four trees clean, `net_tests` and `net_tests_sockets` pass in all of them, plain and asan; the five-thousand-connection listener test hung under load (ephemeral ports exhausted, the accept loop waiting for ever) and now times out and closes server-first. Run: `ran 4806 of 5083 tests (phases: all; flavors: all (plain and asan, no tsan on Windows); display: included; crash tests: excluded) in 376 s`; docs 7 of 7. Review: 4 findings, 2 fixed (a socket closed while the reactor waited broke the reactor for good: `WSAENOTSOCK` from `select`, regression test `poller_test.cpp`; stale comments), 2 declined with measurements (full-backlog refusals, the result mapping cost: `KNOWN-ISSUES.md`). The shared changes wait for the Linux machine (`KNOWN-ISSUES.md`).
 Phase 20 **Day 279 (2026-11-12, Linux machine): security basics.** `net::RateLimiter` (per-address and global token buckets, strikes and bans in a table that never grows), handshake limits on UDP (no bans: a source is not proven), accept limits and per-address caps on TCP, global receive and send budgets, `TcpStream` buffers allocated lazily (the Day 271 memory entry is closed), allocation audit checklist, fuzz tests (a million cases for the parsers, live servers fed mutated bytes) and nine attack tests; guide section "What the network layer does not protect against". Runs: plain `ran 2830 of 7520 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`, asan `ran 2251 of 7520`, tsan `ran 1927 of 7520` (only the known scene test failed); GCC, Clang non-unity, optimized pass; docs 7 of 7. Review: 4 findings, 1 fixed, 3 declined. Open: the Windows PC. **Next: Day 281 (Day 280, QUIC/TLS/encryption, is deferred by the user, 2026-11-12).**
 

@@ -419,13 +419,19 @@ Text EmitPermutationInc(StringView base_view, StringView shader_view, StringView
     }
     out.Append("};\n\n");
     Appendf(&out, "inline constexpr renderer::PermutationModule %sModules[%zu] = {\n", b, modules.Size());
-    Appendf(&out, "    {%sSpv, %sSpvWordCount, %sRefl, %sReflByteCount, %sDxil, %sDxilByteCount},\n", b, b, b, b, b, b);
+    // Each module's Metal library (Phase 26 Day 315) comes from the `.metallib.inc`, which the `.dxil.inc` includes.
+    Appendf(
+        &out,
+        "    {%sSpv, %sSpvWordCount, %sRefl, %sReflByteCount, %sDxil, %sDxilByteCount, %sMetallib, %sMetallibByteCount, "
+        "%sMetallibEntry},\n",
+        b, b, b, b, b, b, b, b, b);
     for (usize m = 1; m < modules.Size(); ++m)
     {
         Appendf(
             &out,
-            "    {%sPerm%zuSpv, %sPerm%zuSpvWordCount, %sPerm%zuRefl, %sPerm%zuReflByteCount, %sPerm%zuDxil, %sPerm%zuDxilByteCount},\n",
-            b, m, b, m, b, m, b, m, b, m, b, m);
+            "    {%sPerm%zuSpv, %sPerm%zuSpvWordCount, %sPerm%zuRefl, %sPerm%zuReflByteCount, %sPerm%zuDxil, %sPerm%zuDxilByteCount, "
+            "%sPerm%zuMetallib, %sPerm%zuMetallibByteCount, %sPerm%zuMetallibEntry},\n",
+            b, m, b, m, b, m, b, m, b, m, b, m, b, m, b, m, b, m);
     }
     out.Append("};\n\n");
     Appendf(&out, "inline constexpr renderer::PermutationEntry %sEntries[%zu] = {\n", b, keys.Size());

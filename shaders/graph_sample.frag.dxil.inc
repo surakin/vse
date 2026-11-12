@@ -2,7 +2,7 @@
 // compiler: slangc v2026.18.2, dxcompiler 1.9.2602.17
 #pragma once
 
-#include "graph_sample.frag.spv.inc"
+#include "graph_sample.frag.metallib.inc"  // and its .spv.inc
 #include "rhi/desc.h"
 #include "types.h"
 
@@ -254,6 +254,6 @@ inline constexpr u8 kGraphSampleFragDxil[kGraphSampleFragDxilByteCount] = {
 inline constexpr u64 kGraphSampleFragDxilSpirvFnv = 0xabc79225fe28c020ull;
 
 // The shader in every format it was minted in.
-inline constexpr rhi::ShaderBlobSet kGraphSampleFragShader = {"graph_sample.frag", rhi::SpirvBlob(kGraphSampleFragSpv, kGraphSampleFragSpvWordCount), rhi::DxilBlob(kGraphSampleFragDxil, kGraphSampleFragDxilByteCount)};
+inline constexpr rhi::ShaderBlobSet kGraphSampleFragShader = {"graph_sample.frag", rhi::SpirvBlob(kGraphSampleFragSpv, kGraphSampleFragSpvWordCount), rhi::DxilBlob(kGraphSampleFragDxil, kGraphSampleFragDxilByteCount), rhi::MetalLibBlob(kGraphSampleFragMetallib, kGraphSampleFragMetallibByteCount, kGraphSampleFragMetallibEntry)};
 
 } // namespace engine_placeholder::shaders

@@ -218,6 +218,7 @@ void WriteReflection(Writer& w, const ShaderReflection& r)
         w.U32(static_cast<u32>(b.stages));
         w.U32(b.block);
         w.U32(b.stride);
+        w.U32(b.metal_slot);
     }
     w.U32(r.block_count);
     for (u32 i = 0; i < r.block_count; ++i)
@@ -242,6 +243,8 @@ void WriteReflection(Writer& w, const ShaderReflection& r)
     }
     w.U8(r.has_push_constants ? 1 : 0);
     w.U32(r.push_constant_block);
+    w.U8(r.has_metal_slots ? 1 : 0);
+    w.U32(r.push_constant_metal_slot);
     w.U32(r.vertex_input_count);
     for (u32 i = 0; i < r.vertex_input_count; ++i)
     {
@@ -255,6 +258,69 @@ void WriteReflection(Writer& w, const ShaderReflection& r)
 }  // namespace
 
 // --- Validation ----------------------------------------------------------------------------------------------------
+
+namespace
+{
+
+// The Metal argument table a binding type uses: 0 buffers, 1 textures, 2 samplers.
+u32 MetalClass(rhi::BindingType type)
+{
+    switch (type)
+    {
+    case rhi::BindingType::SampledTexture:
+    case rhi::BindingType::StorageTexture: return 1;
+    case rhi::BindingType::Sampler: return 2;
+    default: return 0;
+    }
+}
+
+// Every binding (and the push-constant block) has a slot when the Metal slots were minted, none otherwise; two
+// resources of one argument table never share a slot (the Phase 26 Day 298 failure); a slot is below Metal's 31
+// buffers, 128 textures and 16 samplers.
+const char* ValidateMetalSlots(const ShaderReflection& r)
+{
+    if (!r.has_metal_slots)
+    {
+        for (u32 i = 0; i < r.binding_count; ++i)
+        {
+            if (r.bindings[i].metal_slot != kNoMetalSlot)
+            {
+                return "reflection: a binding has a Metal slot, but the module has no Metal slots";
+            }
+        }
+        return r.push_constant_metal_slot == kNoMetalSlot
+                   ? nullptr
+                   : "reflection: the push-constant block has a Metal slot, but the module has no Metal slots";
+    }
+    constexpr u32 kLimits[3] = {31, 128, 16};
+    for (u32 i = 0; i < r.binding_count; ++i)
+    {
+        const ReflectedBinding& b = r.bindings[i];
+        const u32 cls = MetalClass(b.type);
+        if (b.metal_slot == kNoMetalSlot || b.metal_slot >= kLimits[cls])
+        {
+            return "reflection: a binding has no Metal slot, or one past Metal's argument table";
+        }
+        for (u32 j = 0; j < i; ++j)
+        {
+            if (MetalClass(r.bindings[j].type) == cls && r.bindings[j].metal_slot == b.metal_slot)
+            {
+                return "reflection: two bindings share a Metal slot";
+            }
+        }
+        if (r.has_push_constants && cls == 0 && b.metal_slot == r.push_constant_metal_slot)
+        {
+            return "reflection: a buffer binding shares the push-constant block's Metal slot";
+        }
+    }
+    if (r.has_push_constants ? r.push_constant_metal_slot >= kLimits[0] : r.push_constant_metal_slot != kNoMetalSlot)
+    {
+        return "reflection: the push-constant block's Metal slot is missing or out of range, or set without one";
+    }
+    return nullptr;
+}
+
+}  // namespace
 
 const char* ValidateShaderReflection(const ShaderReflection& r)
 {
@@ -381,6 +447,10 @@ const char* ValidateShaderReflection(const ShaderReflection& r)
     {
         return "reflection: the push-constant block index is out of range, or set without a push-constant block";
     }
+    if (const char* metal = ValidateMetalSlots(r))
+    {
+        return metal;
+    }
     for (u32 i = 0; i < r.vertex_input_count; ++i)
     {
         const ReflectedVertexInput& in = r.vertex_inputs[i];
@@ -475,6 +545,7 @@ const char* ParseShaderReflection(const u8* data, usize size, ShaderReflection* 
         b.stages = static_cast<rhi::ShaderStage>(r.U32());
         b.block = r.U32();
         b.stride = r.U32();
+        b.metal_slot = r.U32();
     }
     out->block_count = r.U32();
     if (r.Failed())
@@ -533,6 +604,13 @@ const char* ParseShaderReflection(const u8* data, usize size, ShaderReflection* 
     }
     out->has_push_constants = has_push == 1;
     out->push_constant_block = r.U32();
+    const u32 has_metal = r.U8();
+    if (!r.Failed() && has_metal > 1)
+    {
+        return "reflection blob: the Metal-slots flag is neither 0 nor 1";
+    }
+    out->has_metal_slots = has_metal == 1;
+    out->push_constant_metal_slot = r.U32();
     out->vertex_input_count = r.U32();
     if (r.Failed())
     {

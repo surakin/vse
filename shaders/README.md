@@ -63,7 +63,13 @@ is the D3D12 baseline (`docs/superpowers/specs/2026-11-07-windows-port-design.md
   slot 1 by the G-buffer pass and slot 0 by the light volume); D3D12 fetches it at `StartInstanceLocation + SV_InstanceID`, so the
   renderer still draws object `i` with `first_instance = i`. A device says it needs this with `DeviceCaps::object_index_stream`.
   SPIR-V keeps `SV_VulkanInstanceID` (decided on Day 163: the Vulkan output stays byte for byte as it was, so no Vulkan draw cost
-  was measured; Metal, Phase 26, is expected to use the stream too).
+  was measured). The Metal build defines it too (Phase 26 Day 315): Metal's `[[instance_id]]` excludes the base instance as
+  D3D12's does, and the stream is the same attribute (`[[attribute(15)]]` in the Metal output).
+- **Registers (Phase 26 Day 315).** A resource is declared with `ENGINE_REGISTER(t0, space2)`, which is `: register(t0, space2)` in
+  the DXIL build and nothing in the others. Slang also takes `register()` as the Metal slot, and Metal has no spaces, so `b0` in
+  two spaces would put two parameters at `[[buffer(0)]]`, which the Metal compiler rejects (found on Day 298 in `gbuffer.vert`
+  and `lighting.frag`). Without it Slang gives every Metal resource a slot of its own; the SPIR-V and DXIL outputs were checked
+  unchanged by the macro.
 
 Two rules every shader follows, which `shader_mint` checks:
 
@@ -118,27 +124,47 @@ Matrix/Shader/ImageQuery is used; it also runs `rhi::ValidateSpirv`.
 ## Other targets (checked by `shaders_portability`, for Phases 13 and 26)
 
 `ctest -R shaders_portability` (skipped without `slangc`; `portability.cmake`) compiles every shader and every permutation
-key with `-target hlsl` (with the D3D12 define) and `-target metal`, using the same entry, stage and `-matrix-layout-column-major`
-flags as the SPIR-V build, and fails on any error. If `dxc` is installed it also compiles the HLSL to DXIL: on Windows with the
-SDK's `dxc` a rejection fails the test, elsewhere it is a note.
-Two compute test shaders, `fill.comp` and `saxpy.comp`, do not compile to Metal because they call
-`RWStructuredBuffer.GetDimensions`, which Metal cannot do; they are listed with the reason in `portability.cmake` and the
-test fails if one of them starts to compile. Per target:
+key with `-target hlsl` (with the D3D12 define) and `-target metal` (with the Metal define), using the same entry, stage and
+`-matrix-layout-column-major` flags as the SPIR-V build, and fails on any error. If `dxc` is installed it also compiles the HLSL to
+DXIL: on Windows with the SDK's `dxc` a rejection fails the test, elsewhere it is a note. On a Mac `tools/metal_mint` compiles every
+key's Metal source with the driver as well, and a rejection fails the test. The compute test shaders `fill.comp` and `saxpy.comp`
+take their element count as a push constant (`{k, count}`, `{a, count}`) instead of asking the buffer with
+`RWStructuredBuffer.GetDimensions`, which Metal cannot do (Phase 26 Day 315), so every shader compiles to every target; where the
+target can ask (SPIR-V, DXIL) the count is also bounded by the buffers' lengths. Per target:
 
 - **Clip-space Y.** Vulkan's clip space has Y down, D3D12 and Metal have Y up, and `-fvk-invert-y` only applies to SPIR-V. The
-  D3D12 build flips it with `ENGINE_CLIP` (above); the Metal output is still unflipped (Phase 26). Depth is 0..1 on all three.
+  D3D12 and Metal builds flip it with `ENGINE_CLIP` (above). Depth is 0..1 on all three.
 - **Matrix layout is the same bytes on all three.** With `-matrix-layout-column-major` the HLSL starts with
   `#pragma pack_matrix(column_major)` and keeps `mul(M, v)`; the Metal output declares column-major storage structs
   (`_MatrixStorage_float4x4_ColMajor...`). `row-major` flips both (`#pragma pack_matrix(row_major)`) and would transpose every
   matrix, so never drop the flag.
 - **Metal renames `main`** (`warning E40100: entry point 'main' has been renamed to 'main_0'`), because `main` is
-  reserved in Metal Shading Language. A Metal pipeline cannot look the entry up as `main`: when that backend is built,
-  either give the entry points real names and pass them through (the RHI already takes an entry name) or look up the
-  renamed one. `-fvk-use-entrypoint-name` is the matching flag on the SPIR-V side. The test accepts this warning and prints any
-  other.
-- **Metal flattens descriptor sets to buffer slots.** In `gbuffer.vert` the frame block is `[[buffer(0)]]` and the object
-  buffer `[[buffer(1)]]`, not set numbers. The Metal backend reads slots from the compiled output's reflection.
-- **No base instance in D3D12 shaders.** Handled by the object index stream (above); Metal's `[[instance_id]]` excludes it too.
+  reserved in Metal Shading Language. `tools/metal_mint` reads the name the minted library exports and `shader_mint` records it
+  beside the blob (`<Base>MetallibEntry`, carried by `rhi::MetalLibBlob`), so `ShaderDesc::SetCode` passes it and no backend
+  guesses. The test accepts this warning and prints any other.
+- **Metal flattens descriptor sets to argument slots.** Each resource gets a `[[buffer(n)]]`, `[[texture(n)]]` or `[[sampler(n)]]`
+  index, not a set and binding: in `gbuffer.vert` the frame block is `[[buffer(0)]]` and the object buffer `[[buffer(1)]]`, in
+  `lighting.frag` the four G-buffer textures are `[[texture(0..3)]]` and the frame, lights and push blocks `[[buffer(0..2)]]`.
+  `shader_mint` reads the Metal build's reflection and records each binding's slot (`ReflectedBinding::metal_slot`, and the
+  push-constant block's), and rejects two resources in one slot; the Metal backend binds from those (Phase 26 Day 318).
+- **No base instance in D3D12 or Metal shaders.** Handled by the object index stream (above).
+
+## Metal libraries (Phase 26 Day 315)
+
+Every shader is also minted into `<name>.metallib.inc`: an AIR-only, executable `.metallib` (`<Base>Metallib`), the function it
+exports (`<Base>MetallibEntry`, `main_0`) and the FNV-1a hash of the SPIR-V it was minted beside (`shader_metallib_test` compares
+it). The `.dxil.inc` includes it and its blob set (`<Base>Shader`) holds all three formats; a permuted shader's `.perm.inc` lists
+each module's library. Minting needs a Mac: `slangc -target metal` writes the Metal Shading Language, and `tools/metal_mint`
+compiles it with the driver's own compiler and serializes it through the undocumented `-[MTLLibrary serializeToURL:error:]`, the
+**interim route the user chose on Day 298, pending until they have a new Mac** (`KNOWN-ISSUES.md`); the tool checks the file loads
+as an executable library with one function of the right stage before writing it, and fails with a message naming
+`KNOWN-ISSUES.md` if the call is missing. The bytes embed the driver compiler's version and the macOS build (the `.metallib.inc`'s
+`// compiler:` line records both), so the same source mints the same bytes only on the same macOS build: `shaders_check` compares the
+committed libraries only on a Mac whose build matches, and mints each library twice to check determinism. Off a Mac the committed
+`.metallib.inc` files are used as they are, and the Metal build's reflection (which needs no Mac) still makes the `.refl.inc`, byte
+for byte as on a Mac. A shader added, or a permuted shader whose modules change, on a machine without a Mac gets a placeholder
+`.metallib.inc` (null blobs, `// compiler: none (not minted)`), so everything still builds; `shader_metallib_test` then names it, and
+the next `shaders` run on a Mac mints it.
 
 ## Permuted shaders (Day 72)
 

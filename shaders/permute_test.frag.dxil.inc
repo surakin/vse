@@ -2,7 +2,7 @@
 // compiler: slangc v2026.18.2, dxcompiler 1.9.2602.17
 #pragma once
 
-#include "permute_test.frag.spv.inc"
+#include "permute_test.frag.metallib.inc"  // and its .spv.inc
 #include "rhi/desc.h"
 #include "types.h"
 
@@ -1073,6 +1073,6 @@ inline constexpr u8 kPermuteTestFragPerm5Dxil[kPermuteTestFragPerm5DxilByteCount
 inline constexpr u64 kPermuteTestFragPerm5DxilSpirvFnv = 0xa273f699ed927114ull;
 
 // The shader in every format it was minted in.
-inline constexpr rhi::ShaderBlobSet kPermuteTestFragShader = {"permute_test.frag", rhi::SpirvBlob(kPermuteTestFragSpv, kPermuteTestFragSpvWordCount), rhi::DxilBlob(kPermuteTestFragDxil, kPermuteTestFragDxilByteCount)};
+inline constexpr rhi::ShaderBlobSet kPermuteTestFragShader = {"permute_test.frag", rhi::SpirvBlob(kPermuteTestFragSpv, kPermuteTestFragSpvWordCount), rhi::DxilBlob(kPermuteTestFragDxil, kPermuteTestFragDxilByteCount), rhi::MetalLibBlob(kPermuteTestFragMetallib, kPermuteTestFragMetallibByteCount, kPermuteTestFragMetallibEntry)};
 
 } // namespace engine_placeholder::shaders

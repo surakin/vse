@@ -5,6 +5,7 @@ set(RENDERER_TEST_SOURCES
   shader_reflection_test.cpp
   shader_permutation_test.cpp
   shader_dxil_test.cpp
+  shader_metallib_test.cpp  # Phase 26 Day 315
   geometry_test.cpp
   scene_test.cpp
   mesh_topology_test.cpp

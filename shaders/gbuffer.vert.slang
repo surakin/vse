@@ -36,8 +36,8 @@ struct ObjectData {
     float4x4 normal;
 };
 
-[[vk::binding(0, 0)]] ConstantBuffer<FrameData> frame : register(b0, space0);
-[[vk::binding(0, 2)]] StructuredBuffer<ObjectData> objects : register(t0, space2);
+[[vk::binding(0, 0)]] ConstantBuffer<FrameData> frame ENGINE_REGISTER(b0, space0);
+[[vk::binding(0, 2)]] StructuredBuffer<ObjectData> objects ENGINE_REGISTER(t0, space2);
 
 struct VertexInput {
     [[vk::location(0)]] float3 position : TEXCOORD0;

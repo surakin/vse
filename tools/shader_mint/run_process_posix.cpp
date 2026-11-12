@@ -6,6 +6,10 @@
 
 #include "run_process.h"
 
+// The process environment: glibc declares it in <unistd.h> with _GNU_SOURCE, macOS nowhere (the same declaration as
+// tools/docgen/src/child_process_posix.cpp; it repeats glibc's on Linux).
+extern "C" char** environ;
+
 namespace engine_placeholder::shader_mint
 {
 

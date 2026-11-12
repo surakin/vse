@@ -123,20 +123,21 @@ inline constexpr u32 kMaterialTestFragPerm1Spv[kMaterialTestFragPerm1SpvWordCoun
     0x0000005d, 0x0000005e, 0x00050050, 0x00000013, 0x00000060, 0x0000000e,
     0x0000005f, 0x0003003e, 0x00000006, 0x00000060, 0x000100fd, 0x00010038,
 };
-inline constexpr usize kMaterialTestFragPerm1ReflByteCount = 364;
+inline constexpr usize kMaterialTestFragPerm1ReflByteCount = 385;
 
 inline constexpr u8 kMaterialTestFragPerm1Refl[kMaterialTestFragPerm1ReflByteCount] = {
-    83, 82, 70, 76, 2, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
+    83, 82, 70, 76, 3, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
     110, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0,
     0, 8, 109, 97, 116, 101, 114, 105, 97, 108, 1, 0, 0, 0, 0, 0,
     0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 10, 97, 108, 98, 101, 100, 111, 95, 116, 101, 120, 1, 0,
-    0, 0, 1, 0, 0, 0, 2, 1, 0, 0, 0, 2, 0, 0, 0, 255,
-    255, 255, 255, 0, 0, 0, 0, 10, 110, 111, 114, 109, 97, 108, 95, 116,
-    101, 120, 1, 0, 0, 0, 2, 0, 0, 0, 2, 1, 0, 0, 0, 2,
-    0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 14, 108, 105, 110, 101,
-    97, 114, 95, 115, 97, 109, 112, 108, 101, 114, 1, 0, 0, 0, 3, 0,
-    0, 0, 3, 1, 0, 0, 0, 2, 0, 0, 0, 255, 255, 255, 255, 0,
+    0, 0, 0, 0, 0, 0, 0, 10, 97, 108, 98, 101, 100, 111, 95, 116,
+    101, 120, 1, 0, 0, 0, 1, 0, 0, 0, 2, 1, 0, 0, 0, 2,
+    0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 10,
+    110, 111, 114, 109, 97, 108, 95, 116, 101, 120, 1, 0, 0, 0, 2, 0,
+    0, 0, 2, 1, 0, 0, 0, 2, 0, 0, 0, 255, 255, 255, 255, 0,
+    0, 0, 0, 1, 0, 0, 0, 14, 108, 105, 110, 101, 97, 114, 95, 115,
+    97, 109, 112, 108, 101, 114, 1, 0, 0, 0, 3, 0, 0, 0, 3, 1,
+    0, 0, 0, 2, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0,
     0, 0, 0, 1, 0, 0, 0, 14, 77, 97, 116, 101, 114, 105, 97, 108,
     80, 97, 114, 97, 109, 115, 112, 0, 0, 0, 5, 0, 0, 0, 10, 98,
     97, 115, 101, 95, 99, 111, 108, 111, 114, 0, 0, 0, 0, 16, 0, 0,
@@ -148,14 +149,15 @@ inline constexpr u8 kMaterialTestFragPerm1Refl[kMaterialTestFragPerm1ReflByteCou
     0, 0, 4, 0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0, 0, 0,
     0, 0, 12, 117, 118, 95, 116, 114, 97, 110, 115, 102, 111, 114, 109, 48,
     0, 0, 0, 64, 0, 0, 0, 2, 0, 4, 4, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 1, 255, 255, 255, 255, 0, 0, 0,
+    0,
 };
 
 inline constexpr const char* kMaterialTestFragOptions[1] = {"TINT", };
 
 inline constexpr renderer::PermutationModule kMaterialTestFragModules[2] = {
-    {kMaterialTestFragSpv, kMaterialTestFragSpvWordCount, kMaterialTestFragRefl, kMaterialTestFragReflByteCount, kMaterialTestFragDxil, kMaterialTestFragDxilByteCount},
-    {kMaterialTestFragPerm1Spv, kMaterialTestFragPerm1SpvWordCount, kMaterialTestFragPerm1Refl, kMaterialTestFragPerm1ReflByteCount, kMaterialTestFragPerm1Dxil, kMaterialTestFragPerm1DxilByteCount},
+    {kMaterialTestFragSpv, kMaterialTestFragSpvWordCount, kMaterialTestFragRefl, kMaterialTestFragReflByteCount, kMaterialTestFragDxil, kMaterialTestFragDxilByteCount, kMaterialTestFragMetallib, kMaterialTestFragMetallibByteCount, kMaterialTestFragMetallibEntry},
+    {kMaterialTestFragPerm1Spv, kMaterialTestFragPerm1SpvWordCount, kMaterialTestFragPerm1Refl, kMaterialTestFragPerm1ReflByteCount, kMaterialTestFragPerm1Dxil, kMaterialTestFragPerm1DxilByteCount, kMaterialTestFragPerm1Metallib, kMaterialTestFragPerm1MetallibByteCount, kMaterialTestFragPerm1MetallibEntry},
 };
 
 inline constexpr renderer::PermutationEntry kMaterialTestFragEntries[2] = {

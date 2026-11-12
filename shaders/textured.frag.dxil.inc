@@ -2,7 +2,7 @@
 // compiler: slangc v2026.18.2, dxcompiler 1.9.2602.17
 #pragma once
 
-#include "textured.frag.spv.inc"
+#include "textured.frag.metallib.inc"  // and its .spv.inc
 #include "rhi/desc.h"
 #include "types.h"
 
@@ -259,6 +259,6 @@ inline constexpr u8 kTexturedFragDxil[kTexturedFragDxilByteCount] = {
 inline constexpr u64 kTexturedFragDxilSpirvFnv = 0xa976596febeabaf2ull;
 
 // The shader in every format it was minted in.
-inline constexpr rhi::ShaderBlobSet kTexturedFragShader = {"textured.frag", rhi::SpirvBlob(kTexturedFragSpv, kTexturedFragSpvWordCount), rhi::DxilBlob(kTexturedFragDxil, kTexturedFragDxilByteCount)};
+inline constexpr rhi::ShaderBlobSet kTexturedFragShader = {"textured.frag", rhi::SpirvBlob(kTexturedFragSpv, kTexturedFragSpvWordCount), rhi::DxilBlob(kTexturedFragDxil, kTexturedFragDxilByteCount), rhi::MetalLibBlob(kTexturedFragMetallib, kTexturedFragMetallibByteCount, kTexturedFragMetallibEntry)};
 
 } // namespace engine_placeholder::shaders

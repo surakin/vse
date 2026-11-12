@@ -92,8 +92,8 @@ TEST_CASE("Compute shaders fill a buffer and a second dispatch reads it after a 
                                      {1, BindingType::StorageBuffer, ShaderStage::Compute, 1, 4}};
         const BindGroupLayoutHandle one = t.Layout(one_b, 1);
         const BindGroupLayoutHandle two = t.Layout(two_b, 2);
-        const PipelineHandle fill = t.Pipeline(fill_cs, one, 4, "fill");
-        const PipelineHandle saxpy = t.Pipeline(saxpy_cs, two, 4, "saxpy");
+        const PipelineHandle fill = t.Pipeline(fill_cs, one, 8, "fill");     // {k, count}: Phase 26 Day 315
+        const PipelineHandle saxpy = t.Pipeline(saxpy_cs, two, 8, "saxpy");  // {a, count}
         REQUIRE((fill.IsValid() && saxpy.IsValid()));
         const BufferHandle x = t.Storage(kBytes);
         const BufferHandle y = t.Storage(kBytes);
@@ -117,16 +117,16 @@ TEST_CASE("Compute shaders fill a buffer and a second dispatch reads it after a 
         // x[i] = 3 * i
         list->SetPipeline(fill);
         list->SetBindGroup(0, fill_group);
-        const u32 k = 3;
-        list->SetPushConstants(0, &k, sizeof(k));
+        const u32 fill_push[2] = {3, kCount};  // k, and the element count (the shader does not ask the buffer)
+        list->SetPushConstants(0, fill_push, sizeof(fill_push));
         list->Dispatch(kCount / 64, 1, 1);
         // The saxpy dispatch reads what fill wrote: a compute-to-compute hazard needs the barrier.
         list->Barrier(x, ResourceState::ShaderWrite, ResourceState::ShaderRead);
         // y[i] = 2 * x[i] + y[i] = 7 * i
         list->SetPipeline(saxpy);
         list->SetBindGroup(0, saxpy_group);
-        const u32 a = 2;
-        list->SetPushConstants(0, &a, sizeof(a));
+        const u32 saxpy_push[2] = {2, kCount};  // a, and the element count
+        list->SetPushConstants(0, saxpy_push, sizeof(saxpy_push));
         list->Dispatch(kCount / 64, 1, 1);
         list->Barrier(x, ResourceState::ShaderRead, ResourceState::CopySrc);
         list->Barrier(y, ResourceState::ShaderWrite, ResourceState::CopySrc);

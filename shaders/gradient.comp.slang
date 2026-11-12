@@ -5,7 +5,9 @@
 //   set 0, binding 0: storage image, rgba8, write only
 //   no push constants
 
-[[vk::binding(0, 0)]] [[vk::image_format("rgba8")]] WTexture2D<float4> img : register(u0, space0);
+#include "target_common.slang"  // ENGINE_REGISTER
+
+[[vk::binding(0, 0)]] [[vk::image_format("rgba8")]] WTexture2D<float4> img ENGINE_REGISTER(u0, space0);
 
 [shader("compute")]
 [numthreads(8, 8, 1)]

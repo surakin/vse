@@ -2,7 +2,7 @@
 // compiler: slangc v2026.18.2, dxcompiler 1.9.2602.17
 #pragma once
 
-#include "fill.comp.spv.inc"
+#include "fill.comp.metallib.inc"  // and its .spv.inc
 #include "rhi/desc.h"
 #include "types.h"
 
@@ -229,6 +229,6 @@ inline constexpr u8 kFillCompDxil[kFillCompDxilByteCount] = {
 inline constexpr u64 kFillCompDxilSpirvFnv = 0x3ddee0bf99e962b4ull;
 
 // The shader in every format it was minted in.
-inline constexpr rhi::ShaderBlobSet kFillCompShader = {"fill.comp", rhi::SpirvBlob(kFillCompSpv, kFillCompSpvWordCount), rhi::DxilBlob(kFillCompDxil, kFillCompDxilByteCount)};
+inline constexpr rhi::ShaderBlobSet kFillCompShader = {"fill.comp", rhi::SpirvBlob(kFillCompSpv, kFillCompSpvWordCount), rhi::DxilBlob(kFillCompDxil, kFillCompDxilByteCount), rhi::MetalLibBlob(kFillCompMetallib, kFillCompMetallibByteCount, kFillCompMetallibEntry)};
 
 } // namespace engine_placeholder::shaders

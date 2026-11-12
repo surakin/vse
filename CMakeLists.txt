@@ -293,6 +293,10 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(tests/renderer)
   add_subdirectory(tests/scene)
   add_subdirectory(game)  # Day 310's ecs_bench, Day 311's hello_window and Day 312's input_probe, and from Day 314 the demos
+  add_subdirectory(tools/metal_mint)  # Day 315: the Metal library minter (macOS only), before the shaders that use it
+  add_subdirectory(tools/shader_mint)  # Day 315: the shader minter, with the Metal library (tools/metal_mint)
+  add_subdirectory(tests/shader_mint)
+  add_subdirectory(shaders)  # the `shaders` target and shaders_check / shaders_portability, when slangc is found
   add_subdirectory(tests/foundation)  # the base-layer tests (foundation_base_tests), Day 301; the file-layer and window ones need later days
   add_subdirectory(tests/foundation_sanitized)
   add_subdirectory(tests/io)  # the file layer, Days 303-305

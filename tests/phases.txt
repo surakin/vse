@@ -57,6 +57,8 @@ flavors 9   windows: plain,asan
 flavors 10  windows: plain,asan
 flavors 11  windows: plain,asan
 flavors 12  windows: plain
+flavors 26  linux: plain,asan,tsan  # tests/renderer/shader_metallib_test.cpp: the committed Metal libraries, every platform (Phase 26 Day 315)
+flavors 26  windows: plain,asan     # tests/renderer/shader_metallib_test.cpp: the committed Metal libraries, every platform (Phase 26 Day 315)
 # What the macOS build has of each phase (Phase 26, a side phase on the Mac, ports one layer per day; each day updates its phases here;
 # `none` = no tests yet). Apple clang has ASan, UBSan and TSan, so the macOS lines list all three where a layer is built.
 flavors 0   macos: plain,asan,tsan # tests/foundation (base tests), foundation_sanitized (Day 301)
@@ -282,6 +284,7 @@ test:ui_widget_style_check*                     15
 tests/rhi/backend_registry_test.cpp             13
 tests/rhi/pipeline_cache_file_test.cpp           13
 tests/renderer/shader_dxil_test.cpp             13
+tests/renderer/shader_metallib_test.cpp         26   # the committed Metal libraries (Phase 26 Day 315); every platform
 tests/rhi/dx12_device_test.cpp                  13
 tests/rhi/dx12_resource_test.cpp                13
 tests/rhi/dx12_bindings_test.cpp                13

@@ -31,6 +31,13 @@ function(slang_compile_args stage out)
   set(${out} -target spirv -profile spirv_1_5 -entry main -stage ${stage} -matrix-layout-column-major -O2 PARENT_SCOPE)
 endfunction()
 
+# slang_metal_args(<stage> <out var>) -> the slangc arguments of the Metal build (Phase 26 Day 315): Metal Shading Language with
+# the same entry and matrix layout and the Metal target define (shaders/target_common.slang). Its reflection gives the Metal slots
+# on every platform; on a Mac tools/metal_mint compiles the source into the committed .metallib.
+function(slang_metal_args stage out)
+  set(${out} -target metal -entry main -stage ${stage} -matrix-layout-column-major -O2 -DENGINE_TARGET_METAL=1 PARENT_SCOPE)
+endfunction()
+
 # slang_dxil_args(<stage> <dxc dir> <out var>) -> the slangc arguments of the DXIL build (Phase 13 Day 163): shader model 6.0, the
 # same entry and matrix layout, the D3D12 target define (shaders/target_common.slang), and the directory that holds the dxcompiler.dll
 # and dxil.dll slangc must use (the Windows SDK's, never the first dxc on PATH; dxil.dll signs the container).

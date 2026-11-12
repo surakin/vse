@@ -23,4 +23,10 @@ bool CrossCheckSpirv(const renderer::ShaderReflection& reflection, const u32* wo
 // is the whole `slangc -target dxil -reflection-json` file. Returns false with the reason in `error`.
 bool CheckD3D12Registers(const renderer::ShaderReflection& reflection, StringView dxil_json, Text* error);
 
+// Fills the Metal slots of `reflection` (Phase 26 Day 315) from the Metal build's reflection (`metal_json`, the whole
+// `slangc -target metal -reflection-json` file), matching bindings by name; `spirv_json` (the SPIR-V build's file)
+// names the push-constant block. Sets `has_metal_slots` and validates the result (no two resources in one Metal slot).
+// Returns false, with `reflection`'s slots unset, and the reason in `error`.
+bool ApplyMetalSlots(renderer::ShaderReflection* reflection, StringView spirv_json, StringView metal_json, Text* error);
+
 }  // namespace engine_placeholder::shader_mint

@@ -222,7 +222,7 @@ const char* ShaderFormatName(ShaderFormat format)
     {
     case ShaderFormat::Spirv: return "spirv";
     case ShaderFormat::Dxil: return "dxil";
-    case ShaderFormat::Msl: return "msl";
+    case ShaderFormat::MetalLib: return "metallib";
     }
     return "unknown";
 }
@@ -274,7 +274,36 @@ const char* ShaderDesc::Validate() const
         }
         break;
     }
-    case ShaderFormat::Msl: return "ShaderDesc: MSL is not supported by any backend yet";
+    case ShaderFormat::MetalLib:
+    {
+        // A Metal library: "MTLB", the target platform (u16), the file version (2 x u16), the library type (u8 at 10:
+        // 0 executable, 2 dynamic; Phase 26 Day 298), the file size (u64 at 16), then the rest of the header. Only
+        // executable libraries hold entry points a pipeline can use.
+        constexpr usize kHeader = 32;
+        if (size < kHeader)
+        {
+            return "ShaderDesc: module is smaller than a Metal library header";
+        }
+        const u8* b = static_cast<const u8*>(bytes);
+        if (b[0] != 'M' || b[1] != 'T' || b[2] != 'L' || b[3] != 'B')
+        {
+            return "ShaderDesc: Metal library does not start with the MTLB tag";
+        }
+        if (b[10] != 0)
+        {
+            return "ShaderDesc: Metal library is not an executable library (a dynamic library has no usable entry points)";
+        }
+        u64 recorded = 0;
+        for (u32 i = 0; i < 8; ++i)
+        {
+            recorded |= static_cast<u64>(b[16 + i]) << (8 * i);
+        }
+        if (recorded != size)
+        {
+            return "ShaderDesc: Metal library size differs from the size its header records";
+        }
+        break;
+    }
     default: return "ShaderDesc: unknown bytecode format";
     }
     if (entry == nullptr || entry[0] == '\0')

@@ -178,7 +178,7 @@ TEST_CASE("Reflection says what the shader sources say", "[renderer][reflection]
         CHECK(fill.bindings[0].type == BindingType::StorageBuffer);
         CHECK(fill.bindings[0].stride == 4);  // RWStructuredBuffer<uint> (Phase 13 Day 166)
         CHECK(fill.has_push_constants);
-        CHECK(fill.blocks[fill.push_constant_block].size == 4);
+        CHECK(fill.blocks[fill.push_constant_block].size == 8);  // k and count (Phase 26 Day 315)
 
         ShaderReflection saxpy = LOAD(kSaxpyComp);
         REQUIRE(saxpy.binding_count == 2);
@@ -580,4 +580,73 @@ TEST_CASE("Duplicate block and member names are rejected", "[renderer][reflectio
     r.block_count = 2;
     r.blocks[1] = r.blocks[0];
     CHECK(ValidateShaderReflection(r) != nullptr);
+}
+
+// Phase 26 Day 315: the Metal slots shader_mint records from the Metal build's reflection.
+TEST_CASE("The Metal slots: minted for every binding and the push block, one resource per slot, and they round-trip",
+          "[renderer][reflection][metal]")
+{
+    ShaderReflection r = LOAD(kBindingsTestFrag);  // a uniform block, a texture, a sampler and push constants
+    REQUIRE(r.has_metal_slots);
+    REQUIRE(r.binding_count == 3);
+    for (u32 i = 0; i < r.binding_count; ++i)
+    {
+        CHECK(r.bindings[i].metal_slot != kNoMetalSlot);
+    }
+    CHECK(r.push_constant_metal_slot != kNoMetalSlot);
+    CHECK(ValidateShaderReflection(r) == nullptr);
+    // Serialized and parsed back, the slots are the same.
+    renderer_test::ByteVector blob;
+    blob.Resize(SerializeShaderReflection(r, nullptr, 0));
+    REQUIRE(SerializeShaderReflection(r, blob.Data(), blob.Size()) == blob.Size());
+    ShaderReflection back;
+    REQUIRE(ParseShaderReflection(blob.Data(), blob.Size(), &back) == nullptr);
+    CHECK(back.has_metal_slots);
+    CHECK(back.push_constant_metal_slot == r.push_constant_metal_slot);
+    CHECK(back.bindings[1].metal_slot == r.bindings[1].metal_slot);
+    // Every rule is enforced.
+    ShaderReflection bad = r;
+    bad.bindings[0].metal_slot = kNoMetalSlot;  // a binding without a slot
+    CHECK(ValidateShaderReflection(bad) != nullptr);
+    bad = r;
+    bad.bindings[0].metal_slot = 40;  // past Metal's 31 buffers
+    CHECK(ValidateShaderReflection(bad) != nullptr);
+    bad = r;
+    u32 sampler = 0;
+    for (u32 i = 0; i < bad.binding_count; ++i)
+    {
+        sampler = bad.bindings[i].type == BindingType::Sampler ? i : sampler;
+    }
+    bad.bindings[sampler].metal_slot = 16;  // past Metal's 16 samplers
+    CHECK(ValidateShaderReflection(bad) != nullptr);
+    bad = r;
+    bad.push_constant_metal_slot = bad.bindings[0].metal_slot;  // the uniform block's buffer slot (Day 298's failure)
+    CHECK(ValidateShaderReflection(bad) != nullptr);
+    bad = r;
+    bad.push_constant_metal_slot = kNoMetalSlot;
+    CHECK(ValidateShaderReflection(bad) != nullptr);
+    bad = r;
+    bad.has_metal_slots = false;  // slots without the flag
+    CHECK(ValidateShaderReflection(bad) != nullptr);
+    // Two textures in one slot: a second sampled texture binding at the first one's slot.
+    bad = r;
+    u32 texture = 0;
+    for (u32 i = 0; i < bad.binding_count; ++i)
+    {
+        texture = bad.bindings[i].type == BindingType::SampledTexture ? i : texture;
+    }
+    bad.bindings[bad.binding_count] = bad.bindings[texture];
+    bad.bindings[bad.binding_count].binding = 7;
+    bad.bindings[bad.binding_count].name[0] = 'z';
+    ++bad.binding_count;
+    CHECK(ValidateShaderReflection(bad) != nullptr);
+    // A reflection without Metal slots is valid as long as none is set.
+    ShaderReflection none = r;
+    none.has_metal_slots = false;
+    for (u32 i = 0; i < none.binding_count; ++i)
+    {
+        none.bindings[i].metal_slot = kNoMetalSlot;
+    }
+    none.push_constant_metal_slot = kNoMetalSlot;
+    CHECK(ValidateShaderReflection(none) == nullptr);
 }

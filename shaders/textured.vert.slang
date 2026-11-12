@@ -14,7 +14,7 @@ struct Params {
     float4x4 mvp;
 };
 
-[[vk::binding(0, 0)]] ConstantBuffer<Params> params : register(b0, space0);
+[[vk::binding(0, 0)]] ConstantBuffer<Params> params ENGINE_REGISTER(b0, space0);
 
 struct VertexInput {
     [[vk::location(0)]] float3 position : TEXCOORD0;
