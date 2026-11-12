@@ -2,6 +2,8 @@
 // layouts its reflection gives (Metal validation on and silent), the vertex descriptor, the depth-stencil state cache,
 // compute threadgroups, refusals, and the pipeline cache (an MTLBinaryArchive) round-tripping and surviving damage.
 // Modelled on dx12_pipeline_test.cpp. macOS only.
+#include "metal_test_support.h"  // first: it imports AppKit before any engine name is in scope
+
 #include "cstr/cstr.h"
 #include "cstr/format.h"
 #include "cstr/mem_ops.h"
@@ -62,7 +64,6 @@
 #include "rhi/metal/metal_pipeline_cache.h"
 #include "rhi/rhi.h"
 #include "rhi/rhi_log.h"
-#include "metal_test_support.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;

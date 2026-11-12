@@ -96,7 +96,8 @@ public:
     /// Acquires the next image to render to and makes it the current texture.
     ///
     /// Never blocks for long: a window the compositor has stopped drawing (which Wayland does not report as
-    /// minimized) times out after half a second and counts as `Minimized`. If the window changed size, or the
+    /// minimized) times out after half a second (on Metal, the layer's own one second, which a program cannot
+    /// shorten) and counts as `Minimized`. If the window changed size, or the
     /// surface is out of date, the swapchain is recreated first and the call still acquires an image.
     ///
     /// - Returns: `Ok`, or `Recreated`, `Minimized` or `Lost` as described for [[rhi::SwapchainStatus]].

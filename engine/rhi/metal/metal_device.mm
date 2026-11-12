@@ -12,6 +12,7 @@
 #include "os/os.h"
 #include "rhi/metal/metal_adapters.h"
 #include "rhi/metal/metal_command_list.h"
+#include "rhi/metal/metal_swapchain.h"
 #include "rhi/metal/metal_format.h"
 #include "rhi/rhi_log.h"
 
@@ -22,19 +23,6 @@ namespace engine_placeholder::rhi::metal
 
 namespace
 {
-
-// A not-yet-built operation of Days 317-321: logged once per day of the plan in each program, then quiet (a renderer
-// asks for every resource, on every reset).
-void NotYet(const char* what, u32 day)
-{
-    static Array<Atomic<bool>, 8> said;  // Days 316-323
-    const u32 index = day >= 316 && day < 316 + 8 ? day - 316 : 7;
-    if (!said[index].Exchange(true, MemoryOrder::AcqRel))
-    {
-        RhiLog(LogVerbosity::Error,
-               "Metal: %s is not built yet (Phase 26 Day %u; logged once for that day's operations)", what, day);
-    }
-}
 
 // What a failed command buffer's error code means; the codes are MTLCommandBufferError's.
 const char* CommandBufferErrorName(NSInteger code)
@@ -160,8 +148,10 @@ bool MetalDevice::Initialize(const DeviceCreateInfo& info)
     frames_in_flight_ = info.frames_in_flight < 1 ? 1 : (info.frames_in_flight > 3 ? 3 : info.frames_in_flight);
     lose_device_at_frame_ = info.faults.lose_device_at_frame;
     lose_device_at_submit_ = info.faults.lose_device_at_submit;
+    lose_device_at_present_ = info.faults.lose_device_at_present;
     strikes_left_ = info.faults.strikes_left;
     fail_allocations_from_ = info.faults.fail_allocations_from;
+    window_ = info.window;
     FillCaps();
     epoch_ = AllocateDeviceSerial();  // the handle pools are seeded from it
     if (!InitializeResources())
@@ -222,6 +212,7 @@ MetalDevice::~MetalDevice()
         {
             pipeline_cache_.Save();
         }
+        swapchain_.Reset();  // leaked by the application (counted above); its texture goes before the resources
         ShutdownResources();
         listener_ = nil;
         timeline_ = nil;
@@ -519,6 +510,7 @@ ResourceCounts MetalDevice::Resources() const
         c.samplers = samplers_.LiveCount();
         c.shaders = shaders_.LiveCount();
         c.pipelines = pipelines_.LiveCount();
+        c.swapchains = swapchain_live_.Load(MemoryOrder::Acquire);
         c.bind_group_layouts = bind_group_layouts_.LiveCount();
         bind_groups_.ForEachLive([&](BindGroupHandle, const BindGroupRes& g)
                                  { c.bind_groups += g.transient ? 0 : 1; });  // transient groups end with their frame
@@ -528,19 +520,6 @@ ResourceCounts MetalDevice::Resources() const
     c.internal_objects = raw_resources_.Load(MemoryOrder::Relaxed);
     c.device_memory_bytes = device_memory_bytes_.Load(MemoryOrder::Relaxed);
     return c;
-}
-
-// ---- Day 321 ----
-
-Swapchain* MetalDevice::CreateSwapchain(const SwapchainDesc&)
-{
-    NotYet("CreateSwapchain", 321);
-    return nullptr;
-}
-void MetalDevice::DestroySwapchain(Swapchain*) {}
-bool MetalDevice::RecreateSurface(const os::Window*)
-{
-    return true;  // no swapchain before Day 321: nothing to recreate
 }
 
 }  // namespace engine_placeholder::rhi::metal

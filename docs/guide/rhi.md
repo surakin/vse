@@ -1136,8 +1136,14 @@ registered by [[rhi::RegisterCompiledBackends]] as `metal` ([[rhi::RegisterMetal
   which is what `primitive_restart` asks for (a strip without restart must not use that index). `CopyBuffer` needs offsets and a size that are
   multiples of 4 (Metal's rule on macOS). `GenerateMips` is a blit encoder's `generateMipmapsForTexture:`, no compute shader. Debug labels are
   encoder debug groups, closed at an encoder's end and opened again on the next.
-- **Not built yet.** The swapchain
-  (Day 321): until their day these fail with a log line naming it.
+- **Presentation.** The swapchain is the Cocoa window's own `CAMetalLayer` ([[os::NativeWindowInfo]]'s `surface`): `Acquire` is `nextDrawable`,
+  which waits at most the layer's one-second timeout (a timeout, or a minimized window, is `Minimized`), and `Present` encodes `presentDrawable:`
+  in a command buffer of its own, after the frame's lists, then lets the drawable go: one texture handle follows the current drawable and is empty
+  between frames. `Fifo` is `displaySyncEnabled`, `Immediate` turns it off, and `Mailbox` (which macOS does not have) falls back to `Fifo`. The
+  formats are `bgra8_srgb` (the default) and `bgra8_unorm`; `framebufferOnly` is off so an image can be copied (screenshots). HDR
+  (`ScRgbLinear`: `rgba16_float`, extended linear sRGB, `wantsExtendedDynamicRangeContent`) is granted only on a screen whose potential EDR value
+  is above 1. A window resize changes `drawableSize` at the next `Acquire`, which then says `Recreated`; `RecreateSurface` takes the window's
+  layer as it is when the swapchain is made again.
 
 ### What the RHI reports when something goes wrong
 

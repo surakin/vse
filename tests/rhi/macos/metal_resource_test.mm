@@ -1,6 +1,8 @@
 // The Metal backend's resources (Phase 26 Day 317): storage modes by memory location, the forced-Managed round trip
 // (this Mac is unified: the hook is the Managed path's only coverage), uploads and readbacks of buffers and of every
 // texture format, row pitches, mips and layers, deferred destruction and the counts going back to zero. macOS only.
+#include "metal_test_support.h"  // first: it imports AppKit before any engine name is in scope
+
 #include "cstr/mem_ops.h"
 #include "sync/atomic.h"
 
@@ -12,7 +14,6 @@
 #include "rhi/metal/metal_device.h"
 #include "rhi/rhi.h"
 #include "rhi/rhi_log.h"
-#include "metal_test_support.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
@@ -34,7 +35,7 @@ struct ForcedManaged
     ~ForcedManaged() { ForceManagedStorageForTest(false); }
 };
 
-Vector<u8> Pattern(usize size, u32 seed)
+Vector<u8> TestPattern(usize size, u32 seed)
 {
     Vector<u8> v;
     v.Resize(size);
@@ -68,7 +69,7 @@ BufferHandle MakeBuffer(Device& device, u64 size, BufferUsage usage, MemoryLocat
 void BufferRoundTrips(Device& device)
 {
     const u64 big = (16ull << 20) + 4096 + 12;  // more than one upload chunk
-    const Vector<u8> data = Pattern(static_cast<usize>(big), 1);
+    const Vector<u8> data = TestPattern(static_cast<usize>(big), 1);
     const BufferHandle gpu = MakeBuffer(device, big, BufferUsage::Storage | BufferUsage::CopySrc | BufferUsage::CopyDst,
                                         MemoryLocation::GpuOnly);
     REQUIRE(gpu.IsValid());
@@ -100,7 +101,7 @@ void BufferRoundTrips(Device& device)
     const BufferHandle odd = MakeBuffer(device, 13, BufferUsage::Vertex | BufferUsage::CopySrc | BufferUsage::CopyDst,
                                         MemoryLocation::GpuOnly);
     REQUIRE(odd.IsValid());
-    const Vector<u8> thirteen = Pattern(13, 9);
+    const Vector<u8> thirteen = TestPattern(13, 9);
     CHECK(device.UploadBuffer(odd, 0, thirteen.Data(), 13).ok);
     Vector<u8> odd_back;
     odd_back.Resize(13);
@@ -111,7 +112,7 @@ void BufferRoundTrips(Device& device)
     const BufferHandle upload = MakeBuffer(
         device, 4096, BufferUsage::Uniform | BufferUsage::CopySrc | BufferUsage::CopyDst, MemoryLocation::CpuToGpu);
     REQUIRE(upload.IsValid());
-    const Vector<u8> words = Pattern(4096, 2);
+    const Vector<u8> words = TestPattern(4096, 2);
     u8* mapped = static_cast<u8*>(device.MapBuffer(upload));
     REQUIRE(mapped != nullptr);
     MemCopy(mapped, words.Data(), 2048);
@@ -241,7 +242,7 @@ TEST_CASE("Every Metal texture format round-trips a level through upload and rea
             const u32 w = td.width >> mip;
             const u32 h = td.height >> mip;
             const usize bytes = static_cast<usize>(FormatSliceBytes(format, w, h));
-            Vector<u8> data = Pattern(bytes, static_cast<u32>(f * 7 + mip));
+            Vector<u8> data = TestPattern(bytes, static_cast<u32>(f * 7 + mip));
             if (fp.is_depth)
             {
                 // Depth: floats in [0, 1] (a blit may canonicalize other bit patterns).
@@ -282,7 +283,7 @@ TEST_CASE("A Metal texture upload honours the caller's row pitch, and array laye
     const u32 pitch = 64;  // padded rows
     for (u32 layer = 0; layer < 3; ++layer)
     {
-        Vector<u8> padded = Pattern(pitch * 7, 100 + layer);
+        Vector<u8> padded = TestPattern(pitch * 7, 100 + layer);
         CHECK(device->UploadTexture(tex, 0, layer, padded.Data(), pitch).ok);
         Vector<u8> back;
         back.Resize(row * 7);
@@ -293,7 +294,7 @@ TEST_CASE("A Metal texture upload honours the caller's row pitch, and array laye
         }
     }
     // Layer 0 is still layer 0's after the others were written.
-    Vector<u8> first = Pattern(pitch * 7, 100);
+    Vector<u8> first = TestPattern(pitch * 7, 100);
     Vector<u8> back;
     back.Resize(row * 7);
     REQUIRE(device->ReadbackTexture(tex, 0, 0, back.Data(), back.Size(), ResourceState::ShaderRead));
@@ -308,7 +309,7 @@ TEST_CASE("A Metal texture upload honours the caller's row pitch, and array laye
     vd.usage = TextureUsage::Sampled | TextureUsage::CopyDst | TextureUsage::CopySrc;
     const TextureHandle volume = device->CreateTexture(vd);
     REQUIRE(volume.IsValid());
-    const Vector<u8> slices = Pattern(8 * 2 * 4 * 5, 7);
+    const Vector<u8> slices = TestPattern(8 * 2 * 4 * 5, 7);
     CHECK(device->UploadTexture(volume, 0, 0, slices.Data(), 0).ok);
     Vector<u8> volume_back;
     volume_back.Resize(slices.Size());
@@ -329,7 +330,7 @@ TEST_CASE("A texture larger than one staging chunk uploads in bands", "[rhi][met
     td.usage = TextureUsage::Sampled | TextureUsage::CopyDst | TextureUsage::CopySrc;
     const TextureHandle tex = device->CreateTexture(td);
     REQUIRE(tex.IsValid());
-    const Vector<u8> data = Pattern(2048 * 4 * 2600, 5);
+    const Vector<u8> data = TestPattern(2048 * 4 * 2600, 5);
     CHECK(device->UploadTexture(tex, 0, 0, data.Data(), 0).ok);
     Vector<u8> back;
     back.Resize(data.Size());

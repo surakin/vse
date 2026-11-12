@@ -84,6 +84,8 @@ set(RHI_METAL_SOURCES
   metal/metal_pipeline_cache.mm
   metal/metal_device_commands.mm
   metal/metal_command_list.mm
+  metal/metal_device_swapchain.mm
+  metal/metal_swapchain.mm
   metal/metal_backend.mm
 )
 
@@ -120,7 +122,7 @@ function(engine_add_rhi_libs suffix foundation_lib jobs_lib platform_lib)
     target_include_directories(rhi_metal${suffix} PUBLIC ${RHI_INCLUDE_ROOT})
     target_include_directories(rhi_metal${suffix} PRIVATE ${CMAKE_SOURCE_DIR}/shaders) # the minted .metallib.inc files (mips, Day 320)
     target_compile_options(rhi_metal${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
-    target_link_libraries(rhi_metal${suffix} PUBLIC rhi${suffix} "-framework Metal" "-framework QuartzCore" "-framework Foundation")
+    target_link_libraries(rhi_metal${suffix} PUBLIC rhi${suffix} "-framework Metal" "-framework QuartzCore" "-framework Foundation" "-framework AppKit")
   endif()
 
   add_library(rhi_backends${suffix} STATIC backends/backends.cpp)

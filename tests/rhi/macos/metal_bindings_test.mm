@@ -1,6 +1,8 @@
 // The Metal backend's bindings (Phase 26 Day 318): the slot map built from a minted library's slot table against a
 // pipeline's layouts, its mismatches rejected, the binder skipping unchanged slots and starting over on a new encoder,
 // the sampler cache, bind group validation, transient groups, and groups resolved by handle. macOS only.
+#include "metal_test_support.h"  // first: it imports AppKit before any engine name is in scope
+
 #include "cstr/cstr.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -10,7 +12,6 @@
 #include "rhi/metal/metal_device.h"
 #include "rhi/rhi.h"
 #include "rhi/rhi_log.h"
-#include "metal_test_support.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;

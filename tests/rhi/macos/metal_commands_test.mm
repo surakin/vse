@@ -2,6 +2,8 @@
 // barriers mapped per case, draws with a cleared pass and a strip with primitive restart, compute dispatches at the
 // minted threadgroup size, lists recorded on two threads committed in submission order, mips by blit, debug labels
 // across splits, and a list that failed while recording refused. macOS only.
+#include "metal_test_support.h"  // first: it imports AppKit before any engine name is in scope
+
 #include "cstr/mem_ops.h"
 #include "sync/thread.h"
 
@@ -15,7 +17,6 @@
 #include "rhi/rhi_log.h"
 #include "triangle.frag.dxil.inc"
 #include "triangle.vert.dxil.inc"
-#include "metal_test_support.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;

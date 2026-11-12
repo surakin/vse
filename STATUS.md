@@ -1362,6 +1362,18 @@ Code review: 10 findings, 9 fixed, 1 left for the Day 325 run (UInt16 index offs
 pass dropping a bound compute pipeline. Built in both unity modes; runs deferred to Day 325, after the user says go. Next: Day 321 (the
 swapchain).
 
+Phase 26 (side) **Day 321 (2026-11-12, the Mac): the Metal swapchain. Tests deferred to Day 325.**
+- **The layer:** the Cocoa window's `CAMetalLayer`.
+- **Acquire:** `nextDrawable`, within the layer's one-second timeout; a timeout or a minimized window counts as `Minimized`.
+- **Present:** `presentDrawable:` after the frame's lists, and the drawable is never kept.
+- **Present modes:** `Fifo`, `Immediate`, and `Mailbox` falling back to `Fifo`.
+- **Formats and HDR:** `bgra8_srgb` and `bgra8_unorm`; HDR only on an EDR screen.
+- **Resizes and surfaces:** resizes follow the window, and `RecreateSurface` re-binds to the window's layer.
+
+Four amendments to the plan are recorded in the day file. Code review: 10 findings, all fixed. The worst was the drawable size no longer
+following the window after an explicit `Resize`. Built in both unity modes; runs deferred to Day 325 (with the fullscreen and Retina hand
+checks). Next: Day 322 (golden images).
+
 Phase 20 **Day 278 (2026-11-12, Windows PC): the Windows socket backend.** Winsock 2 in `engine/net/windows/` (`winsock.h` the one include of the Winsock headers; the error tables; sockets not inherited and non-blocking from creation, dual stack and exclusive ports as the interface's defaults, `SIO_UDP_CONNRESET` off; `GetAddrInfoW` in UTF-16). The poller is `select`, not the planned `WSAPoll`: measured, `WSAPoll` reports a half-closed socket whatever was asked for, which would make the reactor spin; the spec and `BACKEND.md` say so. A refused loopback connect is immediate (SYN retransmission off for loopback; Windows otherwise retries for two seconds). The whole of `tests/net` runs on Windows: four trees clean, `net_tests` and `net_tests_sockets` pass in all of them, plain and asan; the five-thousand-connection listener test hung under load (ephemeral ports exhausted, the accept loop waiting for ever) and now times out and closes server-first. Run: `ran 4806 of 5083 tests (phases: all; flavors: all (plain and asan, no tsan on Windows); display: included; crash tests: excluded) in 376 s`; docs 7 of 7. Review: 4 findings, 2 fixed (a socket closed while the reactor waited broke the reactor for good: `WSAENOTSOCK` from `select`, regression test `poller_test.cpp`; stale comments), 2 declined with measurements (full-backlog refusals, the result mapping cost: `KNOWN-ISSUES.md`). The shared changes wait for the Linux machine (`KNOWN-ISSUES.md`).
 Phase 20 **Day 279 (2026-11-12, Linux machine): security basics.** `net::RateLimiter` (per-address and global token buckets, strikes and bans in a table that never grows), handshake limits on UDP (no bans: a source is not proven), accept limits and per-address caps on TCP, global receive and send budgets, `TcpStream` buffers allocated lazily (the Day 271 memory entry is closed), allocation audit checklist, fuzz tests (a million cases for the parsers, live servers fed mutated bytes) and nine attack tests; guide section "What the network layer does not protect against". Runs: plain `ran 2830 of 7520 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`, asan `ran 2251 of 7520`, tsan `ran 1927 of 7520` (only the known scene test failed); GCC, Clang non-unity, optimized pass; docs 7 of 7. Review: 4 findings, 1 fixed, 3 declined. Open: the Windows PC. **Next: Day 281 (Day 280, QUIC/TLS/encryption, is deferred by the user, 2026-11-12).**
 

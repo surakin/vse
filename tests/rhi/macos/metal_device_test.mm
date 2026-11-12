@@ -1,6 +1,8 @@
 // The Metal backend's device (Phase 26 Day 316): the registration, the adapters, a device on every suitable adapter
 // with validation silent, the capabilities, the timeline and frames, bounded waits, loss, and nothing left alive. macOS
 // only; Objective-C++ for the device's own accessors (metal_device.h).
+#include "metal_test_support.h"  // first: it imports AppKit before any engine name is in scope
+
 #include "cstr/cstr.h"
 #include "cstr/format.h"
 #include "sync/atomic.h"
@@ -19,7 +21,6 @@
 #include "rhi/rhi.h"
 #include "rhi/rhi_log.h"
 #include "string_view.h"
-#include "metal_test_support.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;

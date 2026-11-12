@@ -23,12 +23,14 @@
 #include "rhi/rhi.h"
 
 #import <Metal/Metal.h>
+#import <QuartzCore/CAMetalLayer.h>
 
 namespace engine_placeholder::rhi::metal
 {
 
 class MetalDevice;
 class MetalCommandList;
+class MetalSwapchain;
 
 // Metal's argument tables on the Mac2 family: buffers (vertex buffers and push constants share it), textures, samplers.
 inline constexpr u32 kMetalBufferSlots = 31;
@@ -240,10 +242,17 @@ public:
     CommandList* CreateCommandList() override;
     FenceValue Submit(CommandList* const* lists, usize count) override;
 
-    // Day 321 (until then: a failure with a log line).
+    // Day 321 (metal_device_swapchain.mm, metal_swapchain.mm).
     Swapchain* CreateSwapchain(const SwapchainDesc& desc) override;
     void DestroySwapchain(Swapchain* swapchain) override;
     bool RecreateSurface(const os::Window* window) override;
+
+    // The swapchain's side: one texture handle whose Metal texture is the current drawable's (nil between frames).
+    TextureHandle RegisterSwapchainTexture();
+    void SetSwapchainTexture(TextureHandle texture, id<MTLTexture> image, Format format, u32 width, u32 height);
+    void ReleaseSwapchainTexture(TextureHandle texture);
+    // Presents a drawable after everything committed so far; false when the device is lost.
+    bool PresentDrawable(id<CAMetalDrawable> drawable);
 
     // Day 316.
     bool FormatSupport(Format format, TextureUsage usage) const override;
@@ -435,6 +444,8 @@ private:
     // Faults (DeviceCreateInfo::faults).
     u32 lose_device_at_frame_ = 0;
     u32 lose_device_at_submit_ = 0;
+    u32 lose_device_at_present_ = 0;
+    Atomic<u32> present_count_{0};
     Atomic<u32>* strikes_left_ = nullptr;
     Atomic<u32> submit_count_{0};
 
@@ -465,6 +476,11 @@ private:
     HandlePool<BindGroupLayoutRes, BindGroupLayoutTag> bind_group_layouts_;
     HandlePool<BindGroupRes, BindGroupTag> bind_groups_;
     Array<Vector<BindGroupHandle>, kFrameSlots> frame_groups_;
+
+    // The window and its swapchain (Day 321).
+    const os::Window* window_ = nullptr;
+    UniquePtr<MetalSwapchain> swapchain_;
+    Atomic<u32> swapchain_live_{0};
 
     // Command lists (Day 320): a pool per frame slot, recycled when the slot's earlier frame has finished.
     struct ListPool
