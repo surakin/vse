@@ -7,7 +7,9 @@
 // Pure functions over a buffer, like the envelope parser: they read nothing outside it, whatever the bytes are. A
 // module's build id has the form the crash context prints (debug/crash_context.h): for a CodeView "RSDS" record
 // (Windows) the GUID's fields and the age in lowercase hex, for Breakpad's "BpEL" record (Linux) the ELF build id's
-// bytes in hex.
+// bytes in hex. Breakpad's macOS writer records the LC_UUID as an RSDS GUID with age 0, so a macOS module's id is the
+// UUID's 32 hex digits and a final 0; a system library from the dyld shared cache has no file to read it from and its
+// id is all zeros.
 namespace crash_extract
 {
 
@@ -48,6 +50,14 @@ DumpResult ReadDumpModules(const char* data, engine_placeholder::usize size, Dum
 
 // Reads the exception stream; `out->present` is false for a dump without one.
 DumpResult ReadDumpException(const char* data, engine_placeholder::usize size, DumpException* out);
+
+// Completes, in place, the register flags of a dump Breakpad wrote on an x86-64 Mac (Phase 26 Day 308). Breakpad's
+// macOS writer fills each thread's general registers but sets the context flags to CONTEXT_AMD64 alone, and lldb reads
+// no register of such a context (every thread's pc is 0). Each context of the thread list and the exception stream
+// whose flags are exactly CONTEXT_AMD64 gets CONTROL, INTEGER and SEGMENTS; `*completed` counts them. A context or list
+// entry that does not fit (a dump cut short) is skipped, not an error: Malformed is for a damaged header or directory.
+// A dump from another system or processor (an arm64 Mac's is not verified: no hardware) is left alone.
+DumpResult CompleteMacContextFlags(char* data, engine_placeholder::usize size, engine_placeholder::usize* completed);
 
 // What a symbol store files a Windows image and its PDB under.
 struct ImageInfo

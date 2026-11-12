@@ -211,7 +211,11 @@ The crash handler is the same library and the same report (Phase 26 Day 307), wi
   exit code, not a signal, and the system's crash reporter (`ReportCrash`) writes nothing to `~/Library/Logs/DiagnosticReports` for it. Without the
   handler a fault ends the process by signal and `ReportCrash` writes its report. On the development Mac a crashing child ended in about 260 ms with
   the handler (the dump) and 40 ms without.
-- **Core files** are written to `/cores` only when it is writable by the user (`EnablePostMortemDumps` reports `Limited` otherwise, with the fix).
+- **Core files** are written to `/cores` only when it is writable by the user (`EnablePostMortemDumps` reports `Limited` otherwise, with the fix);
+  see "Reading a crash on macOS" below.
+- **The minidump needs one fix before `lldb` reads it.** Breakpad's macOS writer records every thread's registers but flags the context as
+  holding none, so `lldb -c` shows each thread at pc 0. `crash_extract --lldb <envelope> crash.dmp` writes the dump with the flags completed;
+  `scripts/crash-report.sh` does it for you.
 - **Under a debugger** sentry installs no exception ports, so `lldb` sees the fault itself.
 - **ASan:** the handler's object suppresses one ASan report, on Breakpad's copy of the crashed stack into the dump (`__asan_default_suppressions`).
 
@@ -366,8 +370,8 @@ Where the core goes is the system's choice (`/proc/sys/kernel/core_pattern`):
 | a file name pattern such as `core.%e.%p` | a file in the working directory of the crash | `gdb <program> <core>` or `scripts/open-core.sh <program>` |
 | starts with `|` and names another program | wherever that program puts it | see that program |
 
-Changing `core_pattern` needs root (`sudo sysctl kernel.core_pattern=...`); the engine never does it. Two scripts (Linux shell
-scripts; Windows has its own tooling, see "Reading a crash on Windows") take the work out of the common case:
+Changing `core_pattern` needs root (`sudo sysctl kernel.core_pattern=...`); the engine never does it. Two scripts (shell scripts
+for Linux and macOS; Windows has its own tooling, see "Reading a crash on Windows") take the work out of the common case:
 
 ```text
 scripts/find-core.sh  [--pid PID] [--wait SECONDS] [--output FILE] <program>
@@ -386,7 +390,7 @@ passwords**, so do not attach one to a bug report or leave it in a shared direct
 
 ## Turning a dump into a trace
 
-`scripts/crash-report.sh` (a Linux shell script) takes a minidump or the `.envelope` a crash leaves in the dump directory:
+`scripts/crash-report.sh` (a shell script for Linux and macOS) takes a minidump or the `.envelope` a crash leaves in the dump directory:
 
 ```text
 scripts/crash-report.sh <dump directory>/<run>/<id>.envelope  <program>  [<symbol store>]
@@ -433,6 +437,51 @@ function, file and line from the store (`crash_extract --resolve`, through DbgHe
 fetched from a symbol server). Given the program, it refuses a dump made by a different build (exit status 3).
 `scripts\open-dump.ps1 <envelope> <symbol store>` opens the dump in WinDbg (or cdb with `-Batch`), with `_NT_SYMBOL_PATH` cleared so the
 debugger stays offline too; without either debugger it exits with status 66 and says what to install.
+
+### Reading a crash on macOS
+
+**Where the dumps are.** The envelopes are in `~/Library/Application Support/<app>/crashes` (the `<uuid>.run` folder of the last run, then
+`saved/`). With the crash handler installed, the system's crash reporter writes nothing for the crash (the process ends by `_exit`); without it,
+`~/Library/Logs/DiagnosticReports` gets an `.ips` report.
+
+**Keeping symbols.** The build writes a dSYM beside each program (`engine_dsym`). For every build you ship, file it in a symbol store:
+
+```text
+scripts/store-symbols.sh build-macos/game/rhi_demo/rhi_demo symbols
+```
+
+This writes `symbols/<name>/<UUID>/<name>.dSYM`, where the UUID is the program's `LC_UUID` as `dwarfdump --uuid` prints it (the build id the
+crash report and the minidump record). It takes the dSYM beside the program when its UUID matches, or makes one with `dsymutil` (which reads the
+build's object files: store before you clean). A universal program is filed once per architecture, each copy holding only that architecture's
+DWARF (each has its own UUID). `scripts/split-debug.sh <program>` is for a program built without the dSYM: `dsymutil`, then `strip -S`, which
+drops the debug map and keeps the symbol table, so a crash report still names functions, only without files and lines.
+
+**Reading the crash.**
+
+```text
+scripts/crash-report.sh <envelope> [<program>] [<symbol store>]
+```
+
+completes the dump's register flags (`crash_extract --lldb`), loads each module's dSYM from the store with `target symbols add` (matched by
+UUID, so a renamed copy of the program still finds its own), and prints the threads, every stack and the modules with `lldb`. `lldb`'s own
+symbol search (Spotlight, `DebugSymbols`) is turned off, so only the store and a dSYM beside a module's file are used, and nothing is fetched.
+Given the program, a dump from another build is refused (exit status 3; any architecture of a universal program counts). By hand:
+
+```text
+crash_extract --lldb <envelope> crash.dmp
+lldb --no-lldbinit -b -O 'settings set symbols.enable-external-lookup false' -c crash.dmp \
+  -o 'target symbols add symbols/<name>/<UUID>/<name>.dSYM' -o 'thread list' -o 'bt all' -o 'image list'
+atos -o <name>.dSYM -l <module base> <address>      # one address, with the base from crash_extract --modules
+```
+
+The system libraries in the dump have a zero build id (`crash_extract --modules`): they live in the dyld shared cache, with no file for
+Breakpad to read. `lldb` names their frames from this Mac's own copies, which is right only on the same macOS build.
+
+**Core files.** The kernel writes a core to `sysctl kern.corefile` (normally `/cores/core.%P`) only when `kern.coredump` is 1, the core limit
+is above 0 and the user can write to `/cores`, which on a stock Mac belongs to root (`sudo chmod 1777 /cores` opens it; a core is the whole
+address space, often gigabytes). `scripts/find-core.sh` follows that pattern (`ENGINE_CORE_PATTERN` replaces it), checks the core's UUID for
+the program against the program's with `lldb`, and says what is missing when there is no core; `scripts/open-core.sh` prints every thread's
+stack with `lldb`. A core can also be saved from a stopped program in `lldb` with `process save-core <file>`.
 
 ## Keeping symbols for release builds
 

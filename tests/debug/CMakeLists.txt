@@ -143,8 +143,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   return()
 endif()
 
-# macOS (Phase 26 Days 306-307): the shared test files in three flavors, with the macOS-only cases in macos/ (stack traces and the crash context,
-# Day 306; the crash handler on Breakpad's Mach exceptions, death tests and the parent-watch pipe, Day 307).
+# macOS (Phase 26 Days 306-308): the shared test files in three flavors, with the macOS-only cases in macos/ (stack traces and the crash context,
+# Day 306; the crash handler on Breakpad's Mach exceptions, death tests and the parent-watch pipe, Day 307; the dumps and the scripts, Day 308).
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   set(_debug_macos_sources
     death_test_registry_test.cpp
@@ -160,6 +160,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     macos/stack_trace_macos_test.cpp
     macos/crash_end_to_end_macos_test.cpp
     macos/debugger_macos_test.cpp
+    macos/scripts_macos_test.cpp
     saved_dumps_test.cpp
     core_dump_test.cpp
     crash_extract_test.cpp
@@ -174,13 +175,20 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   target_include_directories(debug_test_plugin PRIVATE ${CMAKE_SOURCE_DIR}/engine/foundation)
   set_target_properties(debug_test_plugin PROPERTIES UNITY_BUILD OFF)
   engine_dsym(debug_test_plugin)
+  # A program built for x86-64 and arm64 at once, with a two-architecture dSYM (Day 308): the symbol store files each architecture under its
+  # own UUID, and its core feeds find-core.sh. Plain only, and nothing of the engine linked (one header for ENGINE_NOINLINE).
+  add_executable(debug_universal_program macos/universal_program.cpp)
+  target_include_directories(debug_universal_program PRIVATE ${CMAKE_SOURCE_DIR}/engine/foundation)
+  set_target_properties(debug_universal_program PROPERTIES OSX_ARCHITECTURES "x86_64;arm64")
+  engine_dsym(debug_universal_program)
   foreach(suffix "" "_asan" "_tsan")
     add_executable(debug_tests${suffix} ${_debug_macos_sources})
     engine_enable_death_tests(debug_tests${suffix})
     target_link_libraries(debug_tests${suffix} PRIVATE foundation_debug${suffix} jobs${suffix} Catch2::Catch2WithMain Threads::Threads)
-    add_dependencies(debug_tests${suffix} debug_test_plugin crash_extract)
+    add_dependencies(debug_tests${suffix} debug_test_plugin crash_extract debug_universal_program)
     target_compile_definitions(debug_tests${suffix} PRIVATE DEBUG_TEST_PLUGIN_PATH="$<TARGET_FILE:debug_test_plugin>" ENGINE_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
-      ENGINE_CRASH_EXTRACT_PATH="$<TARGET_FILE:crash_extract>" ENGINE_DEBUG_CHECKS=1 ENGINE_SLOW_CHECKS=1)
+      ENGINE_CRASH_EXTRACT_PATH="$<TARGET_FILE:crash_extract>" UNIVERSAL_PROGRAM_PATH="$<TARGET_FILE:debug_universal_program>"
+      ENGINE_DEBUG_CHECKS=1 ENGINE_SLOW_CHECKS=1)
     target_include_directories(debug_tests${suffix} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tests/support ${CMAKE_SOURCE_DIR}/tools/crash_extract)
     engine_dsym(debug_tests${suffix})
   endforeach()

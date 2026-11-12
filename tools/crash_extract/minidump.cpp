@@ -15,6 +15,15 @@ using engine_placeholder::u8;
 constexpr u32 kMinidumpSignature = 0x504d444d;  // "MDMP"
 constexpr u32 kModuleListStream = 4;
 constexpr u32 kExceptionStream = 6;
+constexpr u32 kThreadListStream = 3;
+constexpr u32 kSystemInfoStream = 7;
+constexpr engine_placeholder::usize kThreadBytes = 48;  // MINIDUMP_THREAD
+constexpr u32 kPlatformMacOs = 0x8101;                  // Breakpad's MD_OS_MAC_OS_X
+constexpr u32 kArchitectureAmd64 = 9;                   // PROCESSOR_ARCHITECTURE_AMD64
+constexpr u32 kContextAmd64 = 0x00100000;               // CONTEXT_AMD64, no register group
+constexpr u32 kContextAmd64Written = kContextAmd64 |
+                                     0x7;  // CONTROL | INTEGER | SEGMENTS: what Breakpad's macOS writer fills
+constexpr engine_placeholder::usize kContextAmd64FlagsOffset = 0x30;
 constexpr engine_placeholder::usize kModuleBytes = 108;  // MINIDUMP_MODULE
 constexpr u32 kRsds = 0x53445352;                        // "RSDS"
 constexpr u32 kBpel = 0x4c457042;                        // "BpEL"
@@ -29,6 +38,11 @@ u32 Read32(const char* p)
     u32 v = 0;
     engine_placeholder::MemCopy(&v, p, sizeof(v));  // little-endian files on little-endian hosts (every target)
     return v;
+}
+
+void Write32(char* p, u32 v)
+{
+    engine_placeholder::MemCopy(p, &v, sizeof(v));
 }
 
 u64 Read64(const char* p)
@@ -219,10 +233,13 @@ DumpResult ReadDumpModules(const char* data, engine_placeholder::usize size, Dum
     {
         return DumpResult::Malformed;
     }
+    // Breakpad's macOS writer pads the count to 8 bytes before the array (MDRawModuleList is not packed there); a list
+    // exactly 4 bytes longer than its modules has that padding, as Breakpad's own reader assumes (Phase 26 Day 308).
+    const u64 header = u64{length} == 8 + u64{modules} * kModuleBytes ? 8 : 4;
     *count = modules;
     for (u32 i = 0; i < modules && i < capacity; ++i)
     {
-        const char* m = data + rva + 4 + u64{i} * kModuleBytes;
+        const char* m = data + rva + header + u64{i} * kModuleBytes;
         DumpModule& module = out[i];
         module = DumpModule();
         module.base = Read64(m);
@@ -263,6 +280,80 @@ DumpResult ReadDumpException(const char* data, engine_placeholder::usize size, D
     out->thread_id = Read32(stream);
     out->code = Read32(stream + 8);
     out->address = Read64(stream + 24);
+    return DumpResult::Ok;
+}
+
+namespace
+{
+
+// Completes one context, given by its location descriptor (size, then RVA, at `location`). A context that is not
+// there or does not fit (a dump cut short) is left alone: the others are still worth reading.
+void CompleteContext(char* data, engine_placeholder::usize size, const char* location,
+                     engine_placeholder::usize* completed)
+{
+    const u32 context_size = Read32(location);
+    const u32 context_rva = Read32(location + 4);
+    if (context_size < kContextAmd64FlagsOffset + 4 || !Fits(size, context_rva, context_size))
+    {
+        return;
+    }
+    char* flags = data + context_rva + kContextAmd64FlagsOffset;
+    if (Read32(flags) == kContextAmd64)
+    {
+        Write32(flags, kContextAmd64Written);
+        ++*completed;
+    }
+}
+
+}  // namespace
+
+DumpResult CompleteMacContextFlags(char* data, engine_placeholder::usize size, engine_placeholder::usize* completed)
+{
+    *completed = 0;
+    u32 rva = 0;
+    u32 length = 0;
+    bool found = false;
+    if (!FindStream(data, size, kSystemInfoStream, &rva, &length, &found))
+    {
+        return DumpResult::Malformed;
+    }
+    if (!found)
+    {
+        return DumpResult::Ok;  // no system named: not knowably a macOS dump
+    }
+    if (length < 24)
+    {
+        return DumpResult::Malformed;
+    }
+    const u32 architecture = static_cast<u8>(data[rva]) | (u32{static_cast<u8>(data[rva + 1])} << 8);
+    if (Read32(data + rva + 20) != kPlatformMacOs || architecture != kArchitectureAmd64)
+    {
+        return DumpResult::Ok;
+    }
+    if (!FindStream(data, size, kThreadListStream, &rva, &length, &found))
+    {
+        return DumpResult::Malformed;
+    }
+    if (found && length >= 4)
+    {
+        // Padded to 8 bytes after the count, like the module list (ReadDumpModules). A count longer than the stream (a
+        // dump cut short) is read as far as the stream goes.
+        const u32 threads = Read32(data + rva);
+        const u64 header = u64{length} == 8 + u64{threads} * kThreadBytes ? 8 : 4;
+        for (u32 i = 0; i < threads && header + (u64{i} + 1) * kThreadBytes <= length; ++i)
+        {
+            CompleteContext(data, size, data + rva + header + u64{i} * kThreadBytes + 40, completed);
+        }
+    }
+    if (!FindStream(data, size, kExceptionStream, &rva, &length, &found))
+    {
+        return DumpResult::Malformed;
+    }
+    // ThreadId, alignment, MINIDUMP_EXCEPTION (152 bytes), then the context's location.
+    if (found && length >= 168)
+    {
+        CompleteContext(data, size, data + rva + 160, completed);
+    }
     return DumpResult::Ok;
 }
 

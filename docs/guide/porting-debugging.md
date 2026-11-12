@@ -1,8 +1,8 @@
 # Porting the debugging facilities to another platform
 
-Status: written (Linux is the reference; Windows was ported in Phase 13; macOS is designed in and waits for Phase 26).
+Status: written (Linux is the reference; Windows was ported in Phase 13; macOS in Phase 26, Days 306-308).
 
-**Audience:** the engineer bringing the debugging facilities to a new platform (today: macOS). Read [Foundation: Debugging](foundation-debugging.md) first;
+**Audience:** the engineer bringing the debugging facilities to a new platform. Read [Foundation: Debugging](foundation-debugging.md) first;
 it explains what each facility does for the person using it. Ordinary engine programmers do not need this page.
 
 The debugging facilities (stack traces, the assert family, the crash report, crash handling, core dumps, the scripts) are written once and run on every
@@ -16,7 +16,7 @@ designed in (an `Unsupported` answer, skipped death tests) and have no work here
 |---|---|---|
 | Linux | reference implementation | `engine/foundation/os/linux/debug/` |
 | Windows | done (Phase 13 Days 154-156) | `engine/foundation/os/windows/debug/BACKEND.md` |
-| macOS | checklist written, not built (Phase 26) | `engine/foundation/os/macos/debug/BACKEND.md` |
+| macOS | done (Phase 26 Days 306-308) | `engine/foundation/os/macos/debug/BACKEND.md` |
 | iOS, consoles | designed in: `Unsupported`, death tests skip | none |
 
 Read, in order: this page; the checklist for your platform (`engine/foundation/os/windows/debug/BACKEND.md` or
@@ -104,7 +104,7 @@ Symbols         DWARF in a dSYM next to the binary (libbacktrace needs it for fi
 The traps: the hardened runtime and notarization restrict what a handler may do; `dsymutil` and `strip` replace `objcopy`; the
 symbol store holds dSYM bundles named by UUID.
 
-**As built (Phase 26 Day 306; the crash handler, death tests and dumps follow on Days 307-308):**
+**As built (Phase 26 Days 306-308; the crash handler itself is described in `os/macos/debug/BACKEND.md`):**
 
 - **dSYMs.** The linker leaves the DWARF in the object files; `engine_dsym(<target>)` (root `CMakeLists.txt`, on by default as `ENGINE_DSYM`)
   runs `dsymutil` after linking and puts `<binary>.dSYM` next to the binary, where libbacktrace looks. Without it a frame names its function
@@ -117,6 +117,18 @@ symbol store holds dSYM bundles named by UUID.
 - **Thread ids** are `pthread_threadid_np`'s low 31 bits, never 0: the same number the job system logs.
 - **Crash context:** build id = the main image's `LC_UUID` (32 hex digits), `kern.osproductversion`, `machdep.cpu.brand_string` (`Apple M1` and so
   on, on Apple silicon), `hw.logicalcpu`, `hw.memsize`, `_NSGetExecutablePath` (no `realpath`: the context may be filled on the assert path).
+- **Breakpad's macOS minidumps differ in two ways** that a reader must allow for (Day 308): the module and thread lists have 4 bytes of padding
+  after their count (the list is exactly 4 bytes longer than its entries; Breakpad's own reader assumes the same), and each x86-64 context's
+  flags name the processor and no register group, though the general registers are written. `crash_extract` reads the padded lists, and
+  `crash_extract --lldb` completes the flags (CONTROL, INTEGER, SEGMENTS) in a copy, without which `lldb` puts every thread at pc 0. An
+  arm64 Mac's dump is not verified (no hardware). A module's id is the `LC_UUID` as an RSDS GUID with age 0; shared-cache libraries have
+  none (zeros).
+- **The scripts** are the Linux ones with a macOS branch, and run on macOS's bash 3.2 (an empty array is unset under `set -u` there:
+  `${a[@]+"${a[@]}"}`). No `readlink -f` (`realpath`, or `cd` and `pwd -P`), `stat -f` instead of `stat -c`, `lldb` instead of `gdb`, the
+  `kern.corefile` pattern instead of `core_pattern` and `coredumpctl`, `dwarfdump --uuid` instead of `readelf -n`, and a store of dSYM bundles
+  under `<name>/<UUID>/` (`ditto --arch` gives each architecture of a universal dSYM its own copy). `lldb`'s external symbol search is turned
+  off in every script, the macOS counterpart of clearing `DEBUGINFOD_URLS`. Asking `lldb` which program a core belongs to is done on the
+  core alone: given a program as well, `lldb` uses that file whatever the core records.
 
 ## Common mistakes
 

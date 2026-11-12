@@ -1,7 +1,7 @@
 # macOS debugging backend (Phase 26)
 
 What Phase 26 implements to bring up the debugging facilities on macOS (Day 306: stack traces, the module list, the crash context; Day 307: the
-crash handler, death tests, fault injection, the debugger check, post-mortem dumps; Day 308: dumps and scripts); Linux is the reference
+crash handler, death tests, fault injection, the debugger check, post-mortem dumps; Day 308: dumps and scripts; every function is built); Linux is the reference
 (`engine/foundation/os/linux/debug/`). Everything else is shared: the facade, the assert family, the report writer, the log ring,
 the crash state, the tests. `posix_spawn`, `setrlimit`, signals and `sigaltstack` are the same calls as on Linux, so most of the
 Linux files compile with small changes. See `docs/guide/porting-debugging.md` and `tests/debug/BACKEND-CONFORMANCE.md`.
@@ -101,5 +101,9 @@ Breakpad's stack copy into the dump (`__asan_default_suppressions`).
 - **Scripts:** the Linux shell scripts mostly work (`lldb` is the system debugger, `dsymutil`/`strip` replace `objcopy`; the
   symbol store holds dSYM bundles named by UUID). `find-core.sh` and `open-core.sh` need `/cores` rules instead of
   `coredumpctl`.
+  **As built (Day 308):** `store-symbols.sh`, `split-debug.sh`, `crash-report.sh`, `find-core.sh` and `open-core.sh` each have a macOS branch
+  (`docs/guide/porting-debugging.md` lists the differences); the store is `<store>/<name>/<UUID>/<name>.dSYM`, one per architecture.
+  `crash_extract` reads Breakpad's padded module list and, with `--lldb`, completes the contexts' register flags so `lldb` reads the dump.
+  Tested by `tests/debug/macos/scripts_macos_test.cpp` (a core saved by `lldb`, since `/cores` is root's).
 - **CMake:** replace the stop in `engine/foundation/CMakeLists.txt`; no `--build-id` (the linker writes `LC_UUID`); build with
   `-g` and `dsymutil` for readable traces. libbacktrace uses `macho.c`.

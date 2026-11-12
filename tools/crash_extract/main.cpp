@@ -1,13 +1,16 @@
 // crash_extract: pulls the minidump out of a crash envelope, and reads what a crash left behind.
 //
-//   crash_extract <envelope> [<output.dmp>]            the minidump inside the envelope, as a .dmp file
-//   crash_extract --modules <dump-or-envelope>         the exception and every module: base, size, build id, file
-//   (Phase 13 Day 156) crash_extract --report <envelope>                  the crash report the handler attached
-//   (crash-report.txt) crash_extract --image <exe-or-dll>                 a Windows image's build id, PDB and the
-//   symbol-store entries it is filed under crash_extract --resolve <store> <dump-or-envelope> [<report>]
-//                                                      the report with its frames named from the PDBs in the store
-//                                                      (Windows: DbgHelp); the report is the envelope's own unless one
-//                                                      is given
+//   crash_extract <envelope> [<output.dmp>]     the minidump inside the envelope, as a .dmp file
+//   crash_extract --modules <dump-or-envelope>  the exception and every module: base, size, build id, file
+//   crash_extract --report <envelope>           the crash report the handler attached (crash-report.txt)
+//   crash_extract --image <exe-or-dll>          a Windows image's build id, PDB and its symbol-store entries
+//   crash_extract --resolve <store> <dump-or-envelope> [<report>]
+//                                               the report with its frames named from the PDBs in the store (Windows:
+//                                               DbgHelp); the report is the envelope's own unless one is given
+//   crash_extract --lldb <dump-or-envelope> <output.dmp>
+//                                               the minidump as lldb reads it: a macOS dump's register flags
+//                                               completed (minidump.h), any other unchanged
+// (--modules to --resolve: Phase 13 Day 156; --lldb: Phase 26 Day 308.)
 //
 // The crash handler (engine/foundation/debug/crash_handler.h) leaves one `.envelope` file per crash in its dump
 // directory; the minidump inside it is what `lldb -c`, `minidump-stackwalk` and WinDbg open. Without an output path the
@@ -201,7 +204,7 @@ int Resolve(const char* store, const char* dump_path, const char* report_path)
     if (named < 0)
     {
         engine_placeholder::os::PrintError(
-            "crash_extract: --resolve needs DbgHelp (Windows); on Linux use scripts/crash-report.sh\n");
+            "crash_extract: --resolve needs DbgHelp (Windows); on Linux and macOS use scripts/crash-report.sh\n");
         return 69;
     }
     if (named == 0)
@@ -211,6 +214,44 @@ int Resolve(const char* store, const char* dump_path, const char* report_path)
             store);
         return 3;
     }
+    return 0;
+}
+
+// The minidump as a file lldb reads: a macOS dump gets its context flags completed (CompleteMacContextFlags); any other
+// is written unchanged. scripts/crash-report.sh uses it on every system (Phase 26 Day 308).
+int WriteForLldb(const char* input_path, const char* output_path)
+{
+    Vector<u8> bytes;
+    const char* dump = nullptr;
+    engine_placeholder::usize size = 0;
+    if (!ReadWholeFile(input_path, &bytes) || !DumpOf(bytes, &dump, &size))
+    {
+        engine_placeholder::os::PrintError("crash_extract: %s is not a minidump or an envelope holding one\n",
+                                           input_path);
+        return 2;
+    }
+    // Refused like Extract's: an envelope named twice would be replaced by the bare dump.
+    if (engine_placeholder::CStrCompare(output_path, input_path) == 0)
+    {
+        engine_placeholder::os::PrintError("crash_extract: the output would overwrite the input\n");
+        return 2;
+    }
+    // The dump lies inside `bytes`, which is this function's own: completed in place, without a second copy.
+    char* writable = reinterpret_cast<char*>(bytes.Data()) + (dump - reinterpret_cast<const char*>(bytes.Data()));
+    engine_placeholder::usize completed = 0;
+    if (crash_extract::CompleteMacContextFlags(writable, size, &completed) != crash_extract::DumpResult::Ok)
+    {
+        engine_placeholder::os::PrintError("crash_extract: %s is a damaged minidump\n", input_path);
+        return 2;
+    }
+    io::Path output;
+    if (!io::Path::Parse(engine_placeholder::StringView(output_path), io::NativePathStyle(), &output) ||
+        !io::WriteFileAtomic(output, writable, size).Ok())
+    {
+        engine_placeholder::os::PrintError("crash_extract: cannot write %s\n", output_path);
+        return 2;
+    }
+    engine_placeholder::os::Print("%s\n", output_path);
     return 0;
 }
 
@@ -286,7 +327,8 @@ int Usage()
                                        "       crash_extract --modules <dump-or-envelope>\n"
                                        "       crash_extract --report <envelope>\n"
                                        "       crash_extract --image <exe-or-dll>\n"
-                                       "       crash_extract --resolve <store> <dump-or-envelope> [<report>]\n");
+                                       "       crash_extract --resolve <store> <dump-or-envelope> [<report>]\n"
+                                       "       crash_extract --lldb <dump-or-envelope> <output.dmp>\n");
     return 64;
 }
 
@@ -314,6 +356,10 @@ int main(int argc, char** argv)
     if (engine_placeholder::CStrCompare(mode, "--resolve") == 0)
     {
         return argc == 4 || argc == 5 ? Resolve(argv[2], argv[3], argc == 5 ? argv[4] : nullptr) : Usage();
+    }
+    if (engine_placeholder::CStrCompare(mode, "--lldb") == 0)
+    {
+        return argc == 4 ? WriteForLldb(argv[2], argv[3]) : Usage();
     }
     if (mode[0] == '-' && mode[1] == '-')
     {
