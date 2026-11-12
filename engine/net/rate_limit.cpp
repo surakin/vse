@@ -30,11 +30,26 @@ RateLimiter::RateLimiter(const RateLimiterConfig& config) : config_(config)
 
 usize RateLimiter::BucketOf(const Address& address) const
 {
-    u64 x = static_cast<u64>(address.HashValue()) ^ key_;  // a splitmix64 finalizer: the key reaches every bit
-    x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ull;
-    x = (x ^ (x >> 27)) * 0x94d049bb133111ebull;
-    x ^= x >> 31;
-    return static_cast<usize>(x % (entries_.Size() / kBucketEntries)) * kBucketEntries;
+    // The key goes into the state before the address bytes are absorbed, with a splitmix64 round after each word, so
+    // two addresses cannot be made to share a bucket without knowing the key.
+    const auto mix = [](u64 x)
+    {
+        x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ull;
+        x = (x ^ (x >> 27)) * 0x94d049bb133111ebull;
+        return x ^ (x >> 31);
+    };
+    const Array<u8, 16>& bytes = address.Bytes();
+    u64 h = mix(key_ ^ (address.IsV6() ? 0x6ull : 0x4ull));
+    for (usize word = 0; word < 2; ++word)
+    {
+        u64 w = 0;
+        for (usize i = 0; i < 8; ++i)
+        {
+            w |= static_cast<u64>(bytes[word * 8 + i]) << (8 * i);
+        }
+        h = mix(h ^ w);
+    }
+    return static_cast<usize>(h % (entries_.Size() / kBucketEntries)) * kBucketEntries;
 }
 
 void RateLimiter::Refill(Entry* e, u64 now) const
