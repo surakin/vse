@@ -112,7 +112,7 @@ u64 TcpGetU64(ByteSpan b, usize at)
 struct TcpTransport::Impl
 {
     Impl(StreamProvider& p, const Clock& c, const TcpTransportConfig& cfg)
-        : provider(&p), clock(&c), config(cfg), by_id(HeapAllocator::Default())
+        : provider(&p), clock(&c), config(cfg), by_id(HeapAllocator::Default()), accept_limiter(cfg.accept_limits)
     {
     }
 
@@ -128,6 +128,8 @@ struct TcpTransport::Impl
     usize queue_head = 0;
     TcpEventRec current;
     Vector<byte> read_buffer;
+    RateLimiter accept_limiter;
+    usize total_out = 0;  // queued output over all connections: exact after a pass, never low until the next
 
     u64 Now() const { return clock->NowNanos(); }
     // Time since `then`; zero if `then` is later than `now` (a connection made after the pass took its time).
@@ -212,6 +214,11 @@ struct TcpTransport::Impl
             return;
         }
         const bool was_open = c->state == TcpState::Open;
+        if (c->incoming && c->state == TcpState::Handshake &&
+            (reason == DisconnectReason::ProtocolError || reason == DisconnectReason::TimedOut))
+        {
+            accept_limiter.Strike(AddressGroup(c->peer.GetAddress()), Now());  // a stranger that never finished
+        }
         c->state = TcpState::Closed;
         TcpEventRec rec;
         rec.kind = EventKind::Closed;
@@ -257,6 +264,7 @@ struct TcpTransport::Impl
             MemCopy(c->out.Data() + at, body.Data(), body.Size());
         }
         c->queued_total += kFrameHeaderBytes + head.Size() + body.Size();
+        total_out += kFrameHeaderBytes + head.Size() + body.Size();
         if (is_message)
         {
             c->ends.Push(c->queued_total);
@@ -590,6 +598,22 @@ struct TcpTransport::Impl
         return true;
     }
 
+    // Whether a stream from `peer` may stay: not banned, within the rate limits and the per-address cap.
+    bool AllowAccept(const Endpoint& peer)
+    {
+        const Address group = AddressGroup(peer.GetAddress());
+        if (!accept_limiter.Allow(group, Now()))
+        {
+            return false;
+        }
+        usize same = 0;
+        for (usize i = 0; i < conns.Size(); ++i)
+        {
+            same += AddressGroup(conns[i]->peer.GetAddress()) == group ? 1 : 0;
+        }
+        return same < config.max_connections_per_address;
+    }
+
     void Service()
     {
         const u64 now = Now();
@@ -607,9 +631,9 @@ struct TcpTransport::Impl
                 {
                     break;
                 }
-                if (conns.Size() >= config.max_connections)
+                if (conns.Size() >= config.max_connections || !AllowAccept(peer))
                 {
-                    continue;  // over the cap: the stream is closed on arrival
+                    continue;  // over a cap or a limit: the stream is closed on arrival
                 }
                 TcpConn* c = Create(Move(io), peer, true);
                 c->state = TcpState::Handshake;
@@ -639,6 +663,16 @@ struct TcpTransport::Impl
                 lingering.Remove(i);
             }
         }
+        usize queued = 0;
+        for (usize i = 0; i < conns.Size(); ++i)
+        {
+            queued += Pending(conns[i].Get());
+        }
+        for (usize i = 0; i < lingering.Size(); ++i)
+        {
+            queued += Pending(lingering[i].Get());
+        }
+        total_out = queued;
     }
 };
 
@@ -711,7 +745,8 @@ Status TcpTransport::Send(ConnectionId connection, u8 channel, ByteSpan bytes, R
     {
         return Status::Of(channel >= c->channels ? ErrorCode::Invalid : ErrorCode::MessageTooLarge);
     }
-    if (m.Pending(c) + bytes.Size() + kFrameHeaderBytes + kDataHeaderBytes > m.config.max_send_queue_bytes)
+    if (m.Pending(c) + bytes.Size() + kFrameHeaderBytes + kDataHeaderBytes > m.config.max_send_queue_bytes ||
+        m.total_out + bytes.Size() + kFrameHeaderBytes + kDataHeaderBytes > m.config.max_total_send_queue_bytes)
     {
         return Status::Of(ErrorCode::LimitExceeded);
     }
@@ -809,6 +844,11 @@ Status TcpTransport::Statistics(ConnectionId connection, ConnectionStats* stats)
     stats->send_queue_messages = messages;
     stats->send_queue_bytes = impl_->Pending(c);
     return Status::Success();
+}
+
+const RateLimiterCounters& TcpTransport::AcceptLimiterCounters() const
+{
+    return impl_->accept_limiter.Counters();
 }
 
 usize TcpTransport::ConnectionCount() const

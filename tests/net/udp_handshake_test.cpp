@@ -304,7 +304,10 @@ TEST_CASE("UDP transport: spoofed hello floods leave the server without state an
     };
     SimNetwork net(21);
     net.SetDefaultLink(Link(0, 0, 0));
-    Side server(net, kServer, TestConfig());
+    UdpTransportConfig server_config = TestConfig();
+    server_config.handshake_limits = RateLimiterConfig{};
+    server_config.handshake_limits.strikes_to_ban = 0;  // this test is about state, not rates (security_test.cpp)
+    Side server(net, kServer, server_config);
     REQUIRE(server.transport.Listen(kServer).Ok());
     Victim victim;
     const Endpoint victim_at = UEp("127.0.0.1:31000");

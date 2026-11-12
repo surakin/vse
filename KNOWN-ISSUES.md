@@ -392,5 +392,6 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
   - statement-cache lookups are linear and miss text with trailing blanks
   - static-destruction order, and temp files orphaned when the process dies
   - fault-injection state is global
-- Phase 20 Day 271 (deferred to Day 279): `net::TcpStream` allocates its send queue (256 KiB), read buffer (64 KiB) and scratch (16 KiB) when it is adopted, whatever the stream does afterwards; 10,000 idle connections would hold about 3.4 GB at the defaults. Lazy growth and `net.connection_budget_bytes` are Day 279. The reason `TcpStream` reports for a kernel connection timeout (`ETIMEDOUT` from keep-alive) has no test: it cannot be provoked on loopback.
 - Phase 20 Day 275 (declined in review): an unreliable fragmented message is reassembled under the key (channel, kind, sequence); if the 16-bit sequence wraps inside `reassembly_timeout_nanos` (more than 13,000 unreliable fragmented messages per second on one channel) with a fragment lost in the first one, a new message with the same totals could complete the stale one with mixed bytes. Reliable kinds are not affected.
+
+- Phase 20 Day 271 (a part kept from the deleted entry): the reason `TcpStream` reports for a kernel connection timeout (`ETIMEDOUT` from keep-alive) has no test: it cannot be provoked on loopback.

@@ -36,12 +36,26 @@
 #include "containers/unique_ptr.h"
 #include "net/clock.h"
 #include "net/datagram.h"
+#include "net/rate_limit.h"
 #include "net/transport.h"
 #include "net/udp_protocol.h"
 #include "types.h"
 
 namespace engine_placeholder::net
 {
+
+/// The default limits on handshake packets: 200 per second per address (burst 200) and 20,000 per second in total
+/// (burst 2,000), no strikes or bans (an unverified source address could be forged).
+/// - Returns: the limits.
+inline RateLimiterConfig DefaultHandshakeLimits()
+{
+    RateLimiterConfig c;
+    c.total_per_second = 20000;
+    c.total_burst = 2000;
+    c.address_per_second = 200;
+    c.address_burst = 200;
+    return c;
+}
 
 /// Limits and times of a [[net::UdpTransport]].
 ///
@@ -71,6 +85,14 @@ struct UdpTransportConfig
     u32 close_repeats = 3;                        ///< Times a Disconnect packet is sent.
     u64 close_interval_nanos = 50'000'000ull;     ///< Delay between them.
     u16 initial_sequence = 0;                     ///< First packet sequence number (tests start near 65535).
+    RateLimiterConfig
+        handshake_limits = DefaultHandshakeLimits();    ///< Rates of ConnectRequest packets, per address (an
+                                                        ///< IPv6 /64 counts as one) and in total; excess is
+                                                        ///< dropped silently. Bad cookies are strikes: an
+                                                        ///< address that earns enough is banned for a while.
+    usize max_total_receive_buffer_bytes = 256u << 20;  ///< Reassembly plus out-of-order bytes over all connections; a
+                                                        ///< connection that would exceed it is ended with
+                                                        ///< [[net::DisconnectReason::ProtocolError]].
     u64 seed = 0;  ///< Salts and cookie keys come from this seed if it is not zero (tests); otherwise from the system.
 };
 
@@ -79,18 +101,20 @@ struct UdpTransportConfig
 /// - Thread-safety: thread-compatible plain data.
 struct UdpCounters
 {
-    u64 datagrams_received = 0;  ///< Datagrams taken from the port.
-    u64 datagrams_sent = 0;      ///< Datagrams given to the port.
-    u64 send_failures = 0;       ///< Datagrams the port refused.
-    u64 dropped_short = 0;       ///< Shorter than their kind's header or not full-size where they must be.
-    u64 dropped_oversize = 0;    ///< Longer than the MTU.
-    u64 dropped_unknown = 0;     ///< Unknown version or kind.
-    u64 dropped_bad_cookie = 0;  ///< A ChallengeResponse whose cookie did not check.
-    u64 dropped_stale = 0;       ///< Replayed handshake packets and payloads too old to judge.
-    u64 dropped_duplicate = 0;   ///< Payload packets whose sequence was already received.
-    u64 challenges_sent = 0;     ///< Challenge packets sent.
-    u64 resets_sent = 0;         ///< Reset packets sent for payloads of unknown connections.
-    u64 denied_sent = 0;         ///< Denied packets sent.
+    u64 datagrams_received = 0;    ///< Datagrams taken from the port.
+    u64 datagrams_sent = 0;        ///< Datagrams given to the port.
+    u64 send_failures = 0;         ///< Datagrams the port refused.
+    u64 dropped_short = 0;         ///< Shorter than their kind's header or not full-size where they must be.
+    u64 dropped_oversize = 0;      ///< Longer than the MTU.
+    u64 dropped_unknown = 0;       ///< Unknown version or kind.
+    u64 dropped_bad_cookie = 0;    ///< A ChallengeResponse whose cookie did not check.
+    u64 dropped_stale = 0;         ///< Replayed handshake packets and payloads too old to judge.
+    u64 dropped_duplicate = 0;     ///< Payload packets whose sequence was already received.
+    u64 challenges_sent = 0;       ///< Challenge packets sent.
+    u64 resets_sent = 0;           ///< Reset packets sent for payloads of unknown connections.
+    u64 denied_sent = 0;           ///< Denied packets sent.
+    u64 dropped_rate_limited = 0;  ///< Handshake packets dropped by the rate limits.
+    u64 budget_closes = 0;         ///< Connections ended because the global receive budget was full.
 };
 
 /// What the transport knows of one connection's packet layer.
@@ -202,6 +226,10 @@ public:
     /// What was dropped and sent.
     /// - Returns: the counters.
     const UdpCounters& Counters() const;
+
+    /// What the handshake rate limiter has allowed and refused.
+    /// - Returns: its counters.
+    const RateLimiterCounters& HandshakeLimiterCounters() const;
 
 private:
     struct Impl;

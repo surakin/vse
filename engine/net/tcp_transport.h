@@ -32,12 +32,26 @@
 #include "containers/vector.h"
 #include "mem/heap_allocator.h"
 #include "net/clock.h"
+#include "net/rate_limit.h"
 #include "net/stream.h"
 #include "net/transport.h"
 #include "types.h"
 
 namespace engine_placeholder::net
 {
+
+/// The default limits on accepted streams: 100 per second per address (burst 100) and 5,000 per second in total
+/// (burst 1,000); three failed handshakes within a minute ban an address for five minutes.
+/// - Returns: the limits.
+inline RateLimiterConfig DefaultAcceptLimits()
+{
+    RateLimiterConfig c;
+    c.total_per_second = 5000;
+    c.total_burst = 1000;
+    c.address_per_second = 100;
+    c.address_burst = 100;
+    return c;
+}
 
 /// Limits and times of a [[net::TcpTransport]].
 ///
@@ -53,6 +67,14 @@ struct TcpTransportConfig
     u64 ping_interval_nanos = 1'000'000'000ull;      ///< Delay between pings (round-trip samples and keep-alive).
     u64 close_linger_nanos = 2'000'000'000ull;       ///< Time a closed connection may take to flush its last bytes.
     usize read_bytes_per_poll = 64 * 1024;           ///< Bytes read per connection per pass (fairness).
+    usize max_connections_per_address = 256;         ///< Connections at once from one address (an IPv6 /64 counts as
+                                                     ///< one); more are closed on arrival.
+    usize max_total_send_queue_bytes = 256u << 20;   ///< Bytes waiting to be written over all connections; `Send`
+                                                     ///< returns [[net::ErrorCode::LimitExceeded]] above it.
+    RateLimiterConfig accept_limits = DefaultAcceptLimits();  ///< Rates of accepted streams, per address and in total;
+                                                              ///< a stream over the limit is closed on arrival. A
+                                                              ///< stream that breaks the protocol before its handshake
+                                                              ///< is done is a strike; enough strikes ban the address.
 };
 
 /// A transport over byte streams.
@@ -134,6 +156,10 @@ public:
     /// The number of connections held, closed ones not yet reported included.
     /// - Returns: the count.
     usize ConnectionCount() const;
+
+    /// What the accept rate limiter has allowed and refused.
+    /// - Returns: its counters.
+    const RateLimiterCounters& AcceptLimiterCounters() const;
 
 private:
     struct Impl;

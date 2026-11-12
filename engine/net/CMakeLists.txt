@@ -14,6 +14,7 @@ set(NET_SOURCES
   udp_protocol.cpp  # Day 274
   udp_transport.cpp  # Day 274
   sim_stream.cpp  # Day 277
+  rate_limit.cpp  # Day 279
   tcp_transport.cpp  # Day 277
 )
 # The socket backend (Day 268): the shared POSIX half and the operating system's hooks; Winsock on Windows (Day 278). The files

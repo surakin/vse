@@ -140,6 +140,11 @@ public:
     /// - Returns: the bytes it holds at most.
     usize SendQueueCapacity() const { return queue_capacity_; }
 
+    /// The memory the send queue holds now: a few KiB for an idle stream, doubling as frames are queued, never above
+    /// the capacity.
+    /// - Returns: the bytes allocated for the queue.
+    usize SendQueueAllocatedBytes() const;
+
     /// Writes queued bytes to the socket until at most `keep_queued` remain, waiting whenever the socket is full.
     /// Awaiting `Flush(0)` is "everything is on its way"; awaiting `Flush(capacity - n)` is "there is room for `n`
     /// more bytes".
@@ -214,7 +219,8 @@ private:
     // The send queue: a ring of fixed capacity.
     mutable Mutex queue_lock_;
     Vector<byte> queue_;
-    usize queue_capacity_ = 0;
+    usize queue_capacity_ = 0;   // the most the queue may hold
+    usize queue_allocated_ = 0;  // the size of the ring now; grows by doubling up to the capacity
     usize queue_head_ = 0;
     usize queue_size_ = 0;
     Vector<byte> scratch_;  // the piece being written, so the lock is not held while writing

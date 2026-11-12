@@ -12,6 +12,7 @@ namespace
 {
 
 constexpr usize kScratchBytes = 16 * 1024;
+constexpr usize kInitialQueueBytes = 4 * 1024;
 constexpr usize kDrainBytes = 4096;
 
 }  // namespace
@@ -73,11 +74,12 @@ Status TcpStream::Adopt(Reactor& reactor, Socket&& socket, const TcpStreamOption
     {
         return Status::Of(ErrorCode::LimitExceeded);
     }
-    Vector<byte> read_buffer;
+    // The buffers are allocated when they are first needed (the read buffer at the first read, the scratch buffer
+    // at the first send) and the queue grows by doubling: an idle connection holds almost nothing.
     Vector<byte> queue;
-    Vector<byte> scratch;
-    if (!read_buffer.TryResizeUninitialized(options.receive_buffer_bytes) ||
-        !queue.TryResizeUninitialized(options.send_queue_bytes) || !scratch.TryResizeUninitialized(kScratchBytes))
+    const usize first_queue = options.send_queue_bytes < kInitialQueueBytes ? options.send_queue_bytes
+                                                                            : kInitialQueueBytes;
+    if (!queue.TryResizeUninitialized(first_queue))
     {
         return Status::Of(ErrorCode::Other);
     }
@@ -103,7 +105,7 @@ Status TcpStream::Adopt(Reactor& reactor, Socket&& socket, const TcpStreamOption
     reactor_ = &reactor;
     options_ = options;
     socket_ = Move(socket);
-    read_buffer_ = Move(read_buffer);
+    read_buffer_.Clear();
     read_begin_ = 0;
     read_end_ = 0;
     read_eof_ = false;
@@ -111,9 +113,10 @@ Status TcpStream::Adopt(Reactor& reactor, Socket&& socket, const TcpStreamOption
     writer_ = FrameWriter(options.max_frame_bytes);
     queue_ = Move(queue);
     queue_capacity_ = options.send_queue_bytes;
+    queue_allocated_ = first_queue;
     queue_head_ = 0;
     queue_size_ = 0;
-    scratch_ = Move(scratch);
+    scratch_.Clear();
     reason_.Store(static_cast<u8>(CloseReason::None), MemoryOrder::Release);
     send_closed_.Store(false, MemoryOrder::Release);
     flushing_.Store(false, MemoryOrder::Release);
@@ -166,24 +169,55 @@ Status TcpStream::Send(ByteSpan payload)
     {
         return Status::Of(ErrorCode::LimitExceeded);
     }
-    usize tail = (queue_head_ + queue_size_) % queue_capacity_;
+    if (scratch_.Empty() && !scratch_.TryResizeUninitialized(kScratchBytes))
+    {
+        return Status::Of(ErrorCode::Other);
+    }
+    if (need > queue_allocated_ - queue_size_)
+    {
+        // Grow the ring (doubling, at most to the capacity) and straighten it.
+        usize grown = queue_allocated_ * 2;
+        while (grown < queue_size_ + need)
+        {
+            grown *= 2;
+        }
+        grown = grown > queue_capacity_ ? queue_capacity_ : grown;
+        Vector<byte> bigger;
+        if (!bigger.TryResizeUninitialized(grown))
+        {
+            return Status::Of(ErrorCode::Other);
+        }
+        const usize first = queue_allocated_ - queue_head_ < queue_size_ ? queue_allocated_ - queue_head_ : queue_size_;
+        MemCopy(bigger.Data(), queue_.Data() + queue_head_, first);
+        MemCopy(bigger.Data() + first, queue_.Data(), queue_size_ - first);
+        queue_ = Move(bigger);
+        queue_allocated_ = grown;
+        queue_head_ = 0;
+    }
+    usize tail = (queue_head_ + queue_size_) % queue_allocated_;
     const auto put = [this, &tail](const byte* data, usize size)
     {
         usize left = size;
         while (left > 0)
         {
-            const usize room = queue_capacity_ - tail;
+            const usize room = queue_allocated_ - tail;
             const usize chunk = left < room ? left : room;
             MemCopy(queue_.Data() + tail, data, chunk);
             data += chunk;
             left -= chunk;
-            tail = (tail + chunk) % queue_capacity_;
+            tail = (tail + chunk) % queue_allocated_;
         }
     };
     put(header, kFrameHeaderBytes);
     put(payload.Data(), payload.Size());
     queue_size_ += need;
     return Status::Success();
+}
+
+usize TcpStream::SendQueueAllocatedBytes() const
+{
+    LockGuard<Mutex> guard(queue_lock_);
+    return queue_allocated_;
 }
 
 usize TcpStream::SendQueueBytes() const
@@ -196,7 +230,7 @@ usize TcpStream::PeekQueue()
 {
     LockGuard<Mutex> guard(queue_lock_);
     usize size = queue_size_ < kScratchBytes ? queue_size_ : kScratchBytes;
-    usize first = queue_capacity_ - queue_head_;
+    usize first = queue_allocated_ - queue_head_;
     first = first < size ? first : size;
     MemCopy(scratch_.Data(), queue_.Data() + queue_head_, first);
     if (size > first)
@@ -209,7 +243,7 @@ usize TcpStream::PeekQueue()
 void TcpStream::DropQueue(usize bytes)
 {
     LockGuard<Mutex> guard(queue_lock_);
-    queue_head_ = (queue_head_ + bytes) % queue_capacity_;
+    queue_head_ = (queue_head_ + bytes) % queue_allocated_;
     queue_size_ -= bytes;
 }
 
@@ -397,6 +431,10 @@ jobs::Task<Status> TcpStream::ReceiveFrame(WaitOptions options)
         if (!NextWait(budget, &next, &idle_governs))
         {
             co_return Status::Of(ErrorCode::TimedOut);
+        }
+        if (read_buffer_.Empty() && !read_buffer_.TryResizeUninitialized(options_.receive_buffer_bytes))
+        {
+            co_return Status::Of(ErrorCode::Other);
         }
         usize want = read_buffer_.Size();
         if (options_.max_read_bytes != 0 && options_.max_read_bytes < want)

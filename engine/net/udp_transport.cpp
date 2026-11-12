@@ -274,7 +274,8 @@ struct UdpTransport::Impl
     Impl(DatagramPort& p, const Clock& c, const UdpTransportConfig& cfg)
         : port(&p), clock(&c), config(ClampedConfig(cfg)), self(p.LocalEndpoint()), by_id(HeapAllocator::Default()),
           by_wire(HeapAllocator::Default()), retired_keys(HeapAllocator::Default()),
-          retired_per_group(HeapAllocator::Default()), retired_per_prefix(HeapAllocator::Default())
+          retired_per_group(HeapAllocator::Default()), retired_per_prefix(HeapAllocator::Default()),
+          handshake_limiter(cfg.handshake_limits)
     {
         state = cfg.seed;
         key0 = Random();
@@ -308,6 +309,8 @@ struct UdpTransport::Impl
     HashMap<Address, u32, HeapAllocator> retired_per_group;
     HashMap<Address, u32, HeapAllocator> retired_per_prefix;
     UdpCounters counters;
+    RateLimiter handshake_limiter;
+    usize total_receive = 0;  // receive bytes over all connections: exact at the start of a Tick, never low after
     Array<byte, 2048> buffer;
 
     u64 Now() const { return clock->NowNanos(); }
@@ -1175,6 +1178,30 @@ struct UdpTransport::Impl
         return nullptr;
     }
 
+    // Whether `more` bytes would pass the budget over all connections.
+    bool OverBudget(usize more)
+    {
+        if (total_receive + more <= config.max_total_receive_buffer_bytes)
+        {
+            return false;
+        }
+        ++counters.budget_closes;
+        return true;
+    }
+
+    // Whether a handshake request from `from` may be answered; counts what it refuses.
+    bool AllowHandshake(const Endpoint& from)
+    {
+        const Address group = GroupOf(from.GetAddress());
+        const u64 now = Now();
+        if (!handshake_limiter.Allow(group, now))
+        {
+            ++counters.dropped_rate_limited;
+            return false;
+        }
+        return true;
+    }
+
     void OnRequest(const Endpoint& from, ByteSpan packet)
     {
         if (packet.Size() < udp::kHandshakeBytes)
@@ -1187,6 +1214,10 @@ struct UdpTransport::Impl
         {
             SendDenied(from, salt, udp::DenyReason::NotListening);
             return;
+        }
+        if (!AllowHandshake(from))
+        {
+            return;  // dropped silently: an answer to a flood is the flood's reward
         }
         Vector<byte> p;
         p.Push(static_cast<byte>(udp::FirstByte(udp::PacketKind::Challenge)));
@@ -1207,6 +1238,8 @@ struct UdpTransport::Impl
         const u64 cookie = ReadU64(packet, 9);
         if (!listening || !CookieValid(from, salt, cookie))
         {
+            // No strike and no ban: until a cookie checks, the source address may be forged, and a ban would let an
+            // attacker lock a real address out. The rate of requests is what the limiter bounds (OnRequest).
             ++counters.dropped_bad_cookie;
             return;
         }
@@ -1582,7 +1615,7 @@ struct UdpTransport::Impl
                         return true;
                     }
                 }
-                if (c->receive_bytes + data.Size() > config.max_receive_buffer_bytes)
+                if (c->receive_bytes + data.Size() > config.max_receive_buffer_bytes || OverBudget(data.Size()))
                 {
                     return false;
                 }
@@ -1591,6 +1624,7 @@ struct UdpTransport::Impl
                 b.data.TryResizeUninitialized(data.Size());
                 MemCopy(b.data.Data(), data.Data(), data.Size());
                 c->receive_bytes += data.Size();
+                total_receive += data.Size();
                 rs.buffered.Push(Move(b));
                 return true;
             }
@@ -1714,7 +1748,7 @@ struct UdpTransport::Impl
                 DropObsoleteReassemblies(c);  // duplicates of delivered messages leave partial ones behind
             }
             if (c->reassemblies.Size() >= config.max_reassemblies ||
-                c->receive_bytes + total > config.max_receive_buffer_bytes)
+                c->receive_bytes + total > config.max_receive_buffer_bytes || OverBudget(total))
             {
                 return !reliable;
             }
@@ -1728,6 +1762,7 @@ struct UdpTransport::Impl
             r.have.Resize(count);
             r.data.Resize(total);
             c->receive_bytes += total;
+            total_receive += total;
             c->reassemblies.Push(Move(r));
         }
         UdpReassembly& r = c->reassemblies[found];
@@ -1834,6 +1869,12 @@ struct UdpTransport::Impl
     void Tick()
     {
         const u64 now = Now();
+        usize held = 0;
+        for (usize i = 0; i < conns.Size(); ++i)
+        {
+            held += conns[i]->receive_bytes;
+        }
+        total_receive = held;
         for (usize i = 0; i < conns.Size(); ++i)
         {
             UdpConn* c = conns[i].Get();
@@ -2113,6 +2154,11 @@ Status UdpTransport::Info(ConnectionId connection, UdpConnectionInfo* info) cons
 usize UdpTransport::ConnectionCount() const
 {
     return impl_->conns.Size();
+}
+
+const RateLimiterCounters& UdpTransport::HandshakeLimiterCounters() const
+{
+    return impl_->handshake_limiter.Counters();
 }
 
 const UdpCounters& UdpTransport::Counters() const

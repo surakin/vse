@@ -396,6 +396,38 @@ TEST_CASE("A frame that does not fit is refused, an empty one is invalid", "[net
     CHECK(client.SendQueueBytes() == 63);
 }
 
+TEST_CASE("An idle stream holds a few KiB; the queue grows with the frames and never passes its capacity",
+          "[network][tcp]")
+{
+    TcpHarness harness;
+    if (!harness.Open())
+    {
+        SKIP("loopback sockets are unavailable here");
+    }
+    TcpStreamOptions options = TcpTestOptions(0);
+    options.send_queue_bytes = 256 * 1024;
+    options.max_frame_bytes = 64 * 1024;
+    TcpStream client;
+    TcpStream server;
+    REQUIRE(harness.Pair(options, options, &client, &server).Ok());
+    CHECK(client.SendQueueAllocatedBytes() <= 4096);
+    Vector<byte> payload;
+    payload.Resize(30000);
+    usize queued = 0;
+    for (u32 i = 0; i < 20; ++i)
+    {
+        if (client.Send(ByteSpan(payload.Data(), payload.Size())).Failed())
+        {
+            break;
+        }
+        queued += payload.Size() + 4;
+        CHECK(client.SendQueueAllocatedBytes() >= client.SendQueueBytes());
+        CHECK(client.SendQueueAllocatedBytes() <= client.SendQueueCapacity());
+    }
+    CHECK(queued > 200000);
+    CHECK(client.SendQueueAllocatedBytes() == 256 * 1024);
+}
+
 namespace
 {
 

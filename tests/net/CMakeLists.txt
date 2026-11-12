@@ -10,6 +10,9 @@ set(NET_TEST_SOURCES
   udp_congestion_test.cpp  # Day 276
   tcp_transport_test.cpp  # Day 277
   transport_comparison_test.cpp  # Day 277
+  rate_limit_test.cpp  # Day 279
+  fuzz_test.cpp  # Day 279
+  security_test.cpp  # Day 279
 )
 # The socket backend's tests (Day 268; Windows from Day 278). Real sockets: the executable is labelled `network`. The error table and the
 # flags a new socket carries are each backend's own test.
