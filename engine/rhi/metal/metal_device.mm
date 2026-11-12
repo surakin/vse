@@ -11,6 +11,7 @@
 #include "os/console.h"
 #include "os/os.h"
 #include "rhi/metal/metal_adapters.h"
+#include "rhi/metal/metal_command_list.h"
 #include "rhi/metal/metal_format.h"
 #include "rhi/rhi_log.h"
 
@@ -131,7 +132,9 @@ bool MetalDevice::Initialize(const DeviceCreateInfo& info)
         }
         device_ = set.devices[static_cast<NSUInteger>(pick)];
         adapter_ = set.list.items[pick];
-        queue_ = [device_ newCommandQueue];
+        // Command lists hold their command buffer from Begin to Submit, and many may be open at once (recording on
+        // jobs): the queue allows more than Metal's default 64 outstanding buffers, past which taking one would block.
+        queue_ = [device_ newCommandQueueWithMaxCommandBufferCount:kMaxCommandBuffers];
         timeline_ = [device_ newSharedEvent];
         dispatch_queue_t notify = dispatch_queue_create("engine.metal.timeline", DISPATCH_QUEUE_SERIAL);
         listener_ = [[MTLSharedEventListener alloc] initWithDispatchQueue:notify];
@@ -409,28 +412,6 @@ FenceValue MetalDevice::CompletedFence() const
     return timeline_.signaledValue;
 }
 
-FenceValue MetalDevice::Submit(CommandList* const* lists, usize count)
-{
-    ENGINE_ASSERT(frame_open_.Load(MemoryOrder::Acquire), "Submit: no frame is open (call BeginFrame first)");
-    ENGINE_ASSERT(count == 0 || lists != nullptr, "Submit: lists is null but count is not zero");
-    LockGuard<Mutex> lock(submit_mutex_);
-    if (DeviceLost())
-    {
-        return 0;
-    }
-    if (count == 0)
-    {
-        return last_signaled_;  // nothing new: the fence for everything submitted so far
-    }
-    if (lose_device_at_submit_ != 0 && submit_count_.FetchAdd(1, MemoryOrder::Relaxed) + 1 == lose_device_at_submit_ &&
-        InjectLoss("submit", lose_device_at_submit_))
-    {
-        return 0;
-    }
-    NotYet("Submit with command lists", 320);
-    return 0;
-}
-
 // ---- frames ----
 
 void MetalDevice::UpdateCompletedFramesLocked()
@@ -549,7 +530,7 @@ ResourceCounts MetalDevice::Resources() const
     return c;
 }
 
-// ---- Days 320-321 ----
+// ---- Day 321 ----
 
 Swapchain* MetalDevice::CreateSwapchain(const SwapchainDesc&)
 {
@@ -557,11 +538,6 @@ Swapchain* MetalDevice::CreateSwapchain(const SwapchainDesc&)
     return nullptr;
 }
 void MetalDevice::DestroySwapchain(Swapchain*) {}
-CommandList* MetalDevice::CreateCommandList()
-{
-    NotYet("CreateCommandList", 320);
-    return nullptr;
-}
 bool MetalDevice::RecreateSurface(const os::Window*)
 {
     return true;  // no swapchain before Day 321: nothing to recreate

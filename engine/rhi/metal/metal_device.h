@@ -28,6 +28,7 @@ namespace engine_placeholder::rhi::metal
 {
 
 class MetalDevice;
+class MetalCommandList;
 
 // Metal's argument tables on the Mac2 family: buffers (vertex buffers and push constants share it), textures, samplers.
 inline constexpr u32 kMetalBufferSlots = 31;
@@ -186,6 +187,8 @@ public:
 
     // How many frames of fences the device remembers; frames further behind than this are waited for.
     static constexpr u64 kTrackedFrames = 64;
+    // How many command buffers may be outstanding on the queue: open lists, committed work and timeline signals.
+    static constexpr NSUInteger kMaxCommandBuffers = 512;
     // How long one slice of a GPU wait lasts before the lost-device check, in milliseconds.
     static constexpr u64 kWaitSliceMs = 100;
 
@@ -233,16 +236,18 @@ public:
     // Waits for the GPU and writes the pipeline cache.
     void Quiesce() override;
 
-    // Days 320-321 (until then: a failure with a log line).
+    // Day 320 (metal_device_commands.mm, metal_command_list.mm).
+    CommandList* CreateCommandList() override;
+    FenceValue Submit(CommandList* const* lists, usize count) override;
+
+    // Day 321 (until then: a failure with a log line).
     Swapchain* CreateSwapchain(const SwapchainDesc& desc) override;
     void DestroySwapchain(Swapchain* swapchain) override;
-    CommandList* CreateCommandList() override;
     bool RecreateSurface(const os::Window* window) override;
 
     // Day 316.
     bool FormatSupport(Format format, TextureUsage usage) const override;
     bool CanGenerateMips(Format format) const override;
-    FenceValue Submit(CommandList* const* lists, usize count) override;
     bool WaitFence(FenceValue value, u64 timeout_ns) override;
     FenceValue CompletedFence() const override;
     void BeginFrame() override;
@@ -296,6 +301,10 @@ public:
     // which keeps the Metal objects alive; false for an invalid group or a resource destroyed since. The lock is held
     // only while resolving: the caller makes its encoder calls afterwards.
     bool ResolveGroup(BindGroupHandle group, Vector<MetalGroupResource>* out) const;
+    // The format of a live texture, Undefined for an invalid or stale handle.
+    Format TextureFormat(TextureHandle texture) const;
+    // The Metal texture and format of a live handle in one lookup; nil (and Undefined) for an invalid or stale one.
+    id<MTLTexture> TextureObject(TextureHandle texture, Format* format) const;
     // A pipeline's Metal state (Day 319), copied into `out` (its slot lists too); false for an invalid or stale handle.
     bool LookupPipeline(PipelineHandle pipeline, MetalPipelineInfo* out) const;
     // The pipeline cache: its archive and its file.
@@ -456,6 +465,16 @@ private:
     HandlePool<BindGroupLayoutRes, BindGroupLayoutTag> bind_group_layouts_;
     HandlePool<BindGroupRes, BindGroupTag> bind_groups_;
     Array<Vector<BindGroupHandle>, kFrameSlots> frame_groups_;
+
+    // Command lists (Day 320): a pool per frame slot, recycled when the slot's earlier frame has finished.
+    struct ListPool
+    {
+        Vector<UniquePtr<MetalCommandList>> lists;
+        usize used = 0;
+        u64 frame = 0;
+    };
+    mutable Mutex list_mutex_;
+    Array<ListPool, kFrameSlots> list_pools_;  // under list_mutex_
 
     // Shaders and pipelines (Day 319), under resource_mutex_.
     HandlePool<ShaderRes, ShaderTag> shaders_;

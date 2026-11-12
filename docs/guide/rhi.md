@@ -1124,7 +1124,19 @@ registered by [[rhi::RegisterCompiledBackends]] as `metal` ([[rhi::RegisterMetal
   adapter or macOS, or one that is damaged, is discarded with a log line and the cache starts empty. Metal reads an archive only from a file,
   so the checked bytes are written beside the cache file for it (`.<process>-<device>.archive`, each device's own), and it serializes into a
   temporary file of the device's own that the backend reads back and writes atomically.
-- **Not built yet.** Command lists (Day 320) and the swapchain
+- **Command lists.** Each list records into its own retained `MTLCommandBuffer` (so a resource it uses stays alive until the GPU is done), so lists
+  record on several jobs at once; `Submit` commits them in the order given, which is the order the queue runs them, and signals the timeline once
+  after the last. A rendering pass is one render encoder; outside a pass, copies and mips share a blit encoder and dispatches a compute encoder,
+  and the open one ends when the kind changes. The pipeline, the bind groups and the push constants are applied at draw and dispatch time, so a
+  new encoder (which starts with nothing bound) gets them back; the viewport and scissor are set inside a pass (Metal keeps them on the render
+  encoder), the scissor clipped to the attachments.
+- **Barriers.** Metal tracks each resource's use and orders the encoders of a command buffer, so a `Barrier` is nothing between encoders; after a
+  dispatch whose writes the next dispatch in the same compute encoder reads (`before` is `ShaderWrite`), it is a `memoryBarrierWithScope:`.
+- **Draws.** `first_instance` is Metal's `baseInstance` and `vertex_offset` its `baseVertex`; strips always restart at the all-ones index on Metal,
+  which is what `primitive_restart` asks for (a strip without restart must not use that index). `CopyBuffer` needs offsets and a size that are
+  multiples of 4 (Metal's rule on macOS). `GenerateMips` is a blit encoder's `generateMipmapsForTexture:`, no compute shader. Debug labels are
+  encoder debug groups, closed at an encoder's end and opened again on the next.
+- **Not built yet.** The swapchain
   (Day 321): until their day these fail with a log line naming it.
 
 ### What the RHI reports when something goes wrong

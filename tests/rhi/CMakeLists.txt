@@ -59,7 +59,7 @@ set(RHI_TEST_SOURCES
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   list(FILTER RHI_TEST_SOURCES EXCLUDE REGEX "/?vulkan_[a-z_]+_test\\.cpp$")
   # The Metal backend's own tests (Phase 26, Days 316-325), Objective-C++ under macos/, linked through rhi_backends (which links rhi_metal).
-  list(APPEND RHI_TEST_SOURCES macos/metal_device_test.mm macos/metal_resource_test.mm macos/metal_bindings_test.mm macos/metal_pipeline_test.mm)
+  list(APPEND RHI_TEST_SOURCES macos/metal_device_test.mm macos/metal_resource_test.mm macos/metal_bindings_test.mm macos/metal_pipeline_test.mm macos/metal_commands_test.mm)
 endif()
 
 # LeakSanitizer's suppressions and its driver-unloading workaround: Linux only (MSVC's AddressSanitizer has no leak checker).
