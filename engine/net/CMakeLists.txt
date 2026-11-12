@@ -7,6 +7,9 @@ set(NET_SOURCES
   endpoint.cpp  # Day 267
   frame.cpp  # Day 271
   codec.cpp  # Day 272
+  transport.cpp  # Day 273
+  sim_network.cpp  # Day 273
+  sim_transport.cpp  # Day 273
 )
 # The socket backend (Day 268): the shared POSIX half and the operating system's hooks. The Windows backend arrives on Day 278.
 set(NET_POSIX_SOURCES

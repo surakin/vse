@@ -1,6 +1,6 @@
 # Networking: addresses, endpoints, errors, sockets, the reactor and TCP streams
 
-Status: Phase 20. Built: addresses, endpoints and the error type (Day 267), the socket interface with its Linux backend and the access gate (Day 268), the reactor, the asynchronous operations and timers (Day 269). name resolution, listeners and the connect helpers (Day 270), framed TCP streams (Day 271), the message codec (Day 272). Next: the transports (Days 273-277).
+Status: Phase 20. Built: addresses, endpoints and the error type (Day 267), the socket interface with its Linux backend and the access gate (Day 268), the reactor, the asynchronous operations and timers (Day 269). name resolution, listeners and the connect helpers (Day 270), framed TCP streams (Day 271), the message codec (Day 272), the transport interface, the simulated network and transport, and the conformance suite (Day 273). Next: the UDP and TCP transports (Days 274-277).
 
 **Audience:** engine programmers who talk to another machine or process. Design, spikes and the benchmark pass conditions:
 `docs/superpowers/specs/2026-11-11-networking-design.md`.
@@ -284,3 +284,25 @@ bool RoundTrip(MutableByteSpan packet) {
            reader.ReadAngle(10, &heading) == CodecError::Ok && flag;
 }
 ```
+
+## Transports: one interface, polled
+
+`net::Transport` (`engine/net/transport.h`) is what everything above networking uses. It is **polled**: `Poll(&event)` returns the next `net::Event` (`Opened`, `Message`, `Closed`) or false, never blocks and
+calls nothing back. A message is delivered whole, never corrupted and never twice; what survives loss depends on the `net::Reliability` chosen per `Send`: `Unreliable`, `UnreliableSequenced` (older than one already
+delivered is dropped), `ReliableOrdered` and `ReliableUnordered`, on one of `ChannelCount()` independent channels. `Connect` returns at once and the outcome is an event; `Send` fails with `LimitExceeded` when the
+queue is full (backpressure as a value: wait and retry), `MessageTooLarge` above `MaxMessageBytes()`, `Closed` after `Close`. A received message's bytes are valid until the next `Poll`. `Close(connection, code)`
+gives the peer the code with `DisconnectReason::PeerClosed`; a connection delivers no event after its `Closed` one and its id is never reused. `Supports` and `DegradesUnreliable` tell what a stream transport cannot do.
+
+### The simulated network and transport
+
+`net::SimNetwork` (`engine/net/sim_network.h`) is a deterministic packet network for tests: per-direction `LinkConfig` (latency, jitter, uniform and burst loss, reordering, duplication, one flipped bit, bandwidth with a
+bounded queue, MTU), one seeded generator, 1 ms ticks driven by `Advance`, and an optional trace (`EnableTrace`) that is identical byte for byte for the same seed and calls. `net::SimulatedTransport`
+(`sim_transport.h`) is a complete transport over it with its own small reliability protocol (checksummed packets so corruption counts as loss, per-message acknowledgements, retransmission with backoff, a window
+of 256, keep-alive and time-out). It is the specification by example of the interface.
+
+### The conformance suite
+
+`tests/net/transport_conformance.h` holds the tests once, as templates over a fixture that makes transports (`MakeServer`, `MakeClient`, `ServerEndpoint`, `DeadEndpoint`, `Destroy`, `Pump`, `Lossy`). The
+simulated transport runs them over a clean link and over a hostile one (10% loss, reordering, duplication, corruption); the UDP and TCP transports of Days 274-277 add a fixture each and must pass the same
+checks: open and accept, close reasons, a refused connect, reliable streams intact and in order, no duplicates, sequencing, size and channel limits, independent channels, many connections, close during send, no events
+after close, and destruction with traffic in flight.

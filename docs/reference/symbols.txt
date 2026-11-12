@@ -3946,6 +3946,73 @@ net::Signal::Signal(const Signal&)	function	net	net-signal-signal-const-signal-a
 net::Signal::operator=(const Signal&)	function	net	net-signal-operator-eq-const-signal-amp	net.md	engine/net/signal.h:32
 net::Signal::Fire()	function	net	net-signal-fire	net.md	engine/net/signal.h:35
 net::Signal::IsFired() const	function	net	net-signal-isfired-const	net.md	engine/net/signal.h:39
+net::LinkConfig	struct	net	net-linkconfig	net.md	engine/net/sim_network.h:29
+net::LinkConfig::latency_nanos	variable	net	net-linkconfig-latency-nanos	net.md	engine/net/sim_network.h:31
+net::LinkConfig::jitter_nanos	variable	net	net-linkconfig-jitter-nanos	net.md	engine/net/sim_network.h:32
+net::LinkConfig::loss	variable	net	net-linkconfig-loss	net.md	engine/net/sim_network.h:33
+net::LinkConfig::burst_start	variable	net	net-linkconfig-burst-start	net.md	engine/net/sim_network.h:34
+net::LinkConfig::burst_length	variable	net	net-linkconfig-burst-length	net.md	engine/net/sim_network.h:35
+net::LinkConfig::reorder	variable	net	net-linkconfig-reorder	net.md	engine/net/sim_network.h:36
+net::LinkConfig::reorder_delay_nanos	variable	net	net-linkconfig-reorder-delay-nanos	net.md	engine/net/sim_network.h:37
+net::LinkConfig::duplicate	variable	net	net-linkconfig-duplicate	net.md	engine/net/sim_network.h:38
+net::LinkConfig::corrupt	variable	net	net-linkconfig-corrupt	net.md	engine/net/sim_network.h:39
+net::LinkConfig::bandwidth_bps	variable	net	net-linkconfig-bandwidth-bps	net.md	engine/net/sim_network.h:40
+net::LinkConfig::queue_bytes	variable	net	net-linkconfig-queue-bytes	net.md	engine/net/sim_network.h:41
+net::LinkConfig::mtu	variable	net	net-linkconfig-mtu	net.md	engine/net/sim_network.h:42
+net::PacketSink	class	net	net-packetsink	net.md	engine/net/sim_network.h:48
+net::PacketSink::~PacketSink()	function	net	net-packetsink-tilde-packetsink	net.md	engine/net/sim_network.h:51
+net::PacketSink::OnPacket(const Endpoint&,ByteSpan)	function	net	net-packetsink-onpacket-const-endpoint-amp-bytespan	net.md	engine/net/sim_network.h:56
+net::PacketSink::OnTick(u64)	function	net	net-packetsink-ontick-u64	net.md	engine/net/sim_network.h:60
+net::PacketSink::OnUnreachable(const Endpoint&)	function	net	net-packetsink-onunreachable-const-endpoint-amp	net.md	engine/net/sim_network.h:63
+net::SimCounters	struct	net	net-simcounters	net.md	engine/net/sim_network.h:69
+net::SimCounters::sent	variable	net	net-simcounters-sent	net.md	engine/net/sim_network.h:71
+net::SimCounters::delivered	variable	net	net-simcounters-delivered	net.md	engine/net/sim_network.h:72
+net::SimCounters::dropped_loss	variable	net	net-simcounters-dropped-loss	net.md	engine/net/sim_network.h:73
+net::SimCounters::dropped_mtu	variable	net	net-simcounters-dropped-mtu	net.md	engine/net/sim_network.h:74
+net::SimCounters::dropped_queue	variable	net	net-simcounters-dropped-queue	net.md	engine/net/sim_network.h:75
+net::SimCounters::duplicated	variable	net	net-simcounters-duplicated	net.md	engine/net/sim_network.h:76
+net::SimCounters::reordered	variable	net	net-simcounters-reordered	net.md	engine/net/sim_network.h:77
+net::SimCounters::corrupted	variable	net	net-simcounters-corrupted	net.md	engine/net/sim_network.h:78
+net::SimCounters::unreachable	variable	net	net-simcounters-unreachable	net.md	engine/net/sim_network.h:79
+net::SimNetwork	class	net	net-simnetwork	net.md	engine/net/sim_network.h:86
+net::SimNetwork::kTickNanos	variable	net	net-simnetwork-kticknanos	net.md	engine/net/sim_network.h:90
+net::SimNetwork::SimNetwork(u64)	function	net	net-simnetwork-simnetwork-u64	net.md	engine/net/sim_network.h:94
+net::SimNetwork::SimNetwork(const SimNetwork&)	function	net	net-simnetwork-simnetwork-const-simnetwork-amp	net.md	engine/net/sim_network.h:96
+net::SimNetwork::operator=(const SimNetwork&)	function	net	net-simnetwork-operator-eq-const-simnetwork-amp	net.md	engine/net/sim_network.h:97
+net::SimNetwork::SetDefaultLink(const LinkConfig&)	function	net	net-simnetwork-setdefaultlink-const-linkconfig-amp	net.md	engine/net/sim_network.h:101
+net::SimNetwork::SetLink(const Endpoint&,const Endpoint&,const LinkConfig&)	function	net	net-simnetwork-setlink-const-endpoint-amp-const-endpoint-amp-const-linkconfig-amp	net.md	engine/net/sim_network.h:107
+net::SimNetwork::Attach(const Endpoint&,PacketSink*)	function	net	net-simnetwork-attach-const-endpoint-amp-packetsink-star	net.md	engine/net/sim_network.h:115
+net::SimNetwork::Detach(const Endpoint&)	function	net	net-simnetwork-detach-const-endpoint-amp	net.md	engine/net/sim_network.h:119
+net::SimNetwork::NewNonce()	function	net	net-simnetwork-newnonce	net.md	engine/net/sim_network.h:124
+net::SimNetwork::AllocateEndpoint()	function	net	net-simnetwork-allocateendpoint	net.md	engine/net/sim_network.h:128
+net::SimNetwork::Transmit(const Endpoint&,const Endpoint&,ByteSpan)	function	net	net-simnetwork-transmit-const-endpoint-amp-const-endpoint-amp-bytespan	net.md	engine/net/sim_network.h:134
+net::SimNetwork::Advance(u64)	function	net	net-simnetwork-advance-u64	net.md	engine/net/sim_network.h:138
+net::SimNetwork::NowNanos() const	function	net	net-simnetwork-nownanos-const	net.md	engine/net/sim_network.h:142
+net::SimNetwork::GetClock() const	function	net	net-simnetwork-getclock-const	net.md	engine/net/sim_network.h:146
+net::SimNetwork::Counters() const	function	net	net-simnetwork-counters-const	net.md	engine/net/sim_network.h:150
+net::SimNetwork::EnableTrace()	function	net	net-simnetwork-enabletrace	net.md	engine/net/sim_network.h:153
+net::SimNetwork::Trace() const	function	net	net-simnetwork-trace-const	net.md	engine/net/sim_network.h:157
+net::SimTransportConfig	struct	net	net-simtransportconfig	net.md	engine/net/sim_transport.h:33
+net::SimTransportConfig::channels	variable	net	net-simtransportconfig-channels	net.md	engine/net/sim_transport.h:35
+net::SimTransportConfig::max_message_bytes	variable	net	net-simtransportconfig-max-message-bytes	net.md	engine/net/sim_transport.h:36
+net::SimTransportConfig::max_connections	variable	net	net-simtransportconfig-max-connections	net.md	engine/net/sim_transport.h:37
+net::SimTransportConfig::max_queued_messages	variable	net	net-simtransportconfig-max-queued-messages	net.md	engine/net/sim_transport.h:38
+net::SimTransportConfig::timeout_nanos	variable	net	net-simtransportconfig-timeout-nanos	net.md	engine/net/sim_transport.h:39
+net::SimTransportConfig::connect_timeout_nanos	variable	net	net-simtransportconfig-connect-timeout-nanos	net.md	engine/net/sim_transport.h:40
+net::SimTransportConfig::keepalive_nanos	variable	net	net-simtransportconfig-keepalive-nanos	net.md	engine/net/sim_transport.h:41
+net::SimulatedTransport	class	net	net-simulatedtransport	net.md	engine/net/sim_transport.h:48
+net::SimulatedTransport::SimulatedTransport(SimNetwork&,const Endpoint&,const SimTransportConfig&)	function	net	net-simulatedtransport-simulatedtransport-simnetwork-amp-const-endpoint-amp-const-simtransportconfig-amp	net.md	engine/net/sim_transport.h:55
+net::SimulatedTransport::~SimulatedTransport()	function	net	net-simulatedtransport-tilde-simulatedtransport	net.md	engine/net/sim_transport.h:58
+net::SimulatedTransport::LocalEndpoint() const	function	net	net-simulatedtransport-localendpoint-const	net.md	engine/net/sim_transport.h:62
+net::SimulatedTransport::Listen(const Endpoint&)	function	net	net-simulatedtransport-listen-const-endpoint-amp	net.md	engine/net/sim_transport.h:68
+net::SimulatedTransport::Connect(const Endpoint&,ConnectionId*)	function	net	net-simulatedtransport-connect-const-endpoint-amp-connectionid-star	net.md	engine/net/sim_transport.h:75
+net::SimulatedTransport::Send(ConnectionId,u8,ByteSpan,Reliability)	function	net	net-simulatedtransport-send-connectionid-u8-bytespan-reliability	net.md	engine/net/sim_transport.h:83
+net::SimulatedTransport::Poll(Event*)	function	net	net-simulatedtransport-poll-event-star	net.md	engine/net/sim_transport.h:88
+net::SimulatedTransport::Close(ConnectionId,u32)	function	net	net-simulatedtransport-close-connectionid-u32	net.md	engine/net/sim_transport.h:94
+net::SimulatedTransport::Statistics(ConnectionId,ConnectionStats*) const	function	net	net-simulatedtransport-statistics-connectionid-connectionstats-star-const	net.md	engine/net/sim_transport.h:101
+net::SimulatedTransport::Supports(Reliability) const	function	net	net-simulatedtransport-supports-reliability-const	net.md	engine/net/sim_transport.h:104
+net::SimulatedTransport::MaxMessageBytes() const	function	net	net-simulatedtransport-maxmessagebytes-const	net.md	engine/net/sim_transport.h:107
+net::SimulatedTransport::ChannelCount() const	function	net	net-simulatedtransport-channelcount-const	net.md	engine/net/sim_transport.h:110
 net::ShutdownMode	enum	net	net-shutdownmode	net.md	engine/net/socket.h:15
 net::ShutdownMode::Read	enumerator	net	net-shutdownmode-read	net.md	engine/net/socket.h:17
 net::ShutdownMode::Write	enumerator	net	net-shutdownmode-write	net.md	engine/net/socket.h:18
@@ -4059,6 +4126,59 @@ net::TcpStream::Abort()	function	net	net-tcpstream-abort	net.md	engine/net/tcp_s
 net::TimeBudget	class	net	net-timebudget	net.md	engine/net/time_budget.h:17
 net::TimeBudget::TimeBudget(const Reactor&,const WaitOptions&)	function	net	net-timebudget-timebudget-const-reactor-amp-const-waitoptions-amp	net.md	engine/net/time_budget.h:23
 net::TimeBudget::Next(bool*) const	function	net	net-timebudget-next-bool-star-const	net.md	engine/net/time_budget.h:38
+net::Reliability	enum	net	net-reliability	net.md	engine/net/transport.h:28
+net::Reliability::Unreliable	enumerator	net	net-reliability-unreliable	net.md	engine/net/transport.h:30
+net::Reliability::UnreliableSequenced	enumerator	net	net-reliability-unreliablesequenced	net.md	engine/net/transport.h:31
+net::Reliability::ReliableOrdered	enumerator	net	net-reliability-reliableordered	net.md	engine/net/transport.h:32
+net::Reliability::ReliableUnordered	enumerator	net	net-reliability-reliableunordered	net.md	engine/net/transport.h:33
+net::ReliabilityName(Reliability)	function	net	net-reliabilityname-reliability	net.md	engine/net/transport.h:40
+net::ConnectionId	alias	net	net-connectionid	net.md	engine/net/transport.h:43
+net::DisconnectReason	enum	net	net-disconnectreason	net.md	engine/net/transport.h:46
+net::DisconnectReason::None	enumerator	net	net-disconnectreason-none	net.md	engine/net/transport.h:48
+net::DisconnectReason::LocalClose	enumerator	net	net-disconnectreason-localclose	net.md	engine/net/transport.h:49
+net::DisconnectReason::PeerClosed	enumerator	net	net-disconnectreason-peerclosed	net.md	engine/net/transport.h:50
+net::DisconnectReason::TimedOut	enumerator	net	net-disconnectreason-timedout	net.md	engine/net/transport.h:51
+net::DisconnectReason::Refused	enumerator	net	net-disconnectreason-refused	net.md	engine/net/transport.h:52
+net::DisconnectReason::Reset	enumerator	net	net-disconnectreason-reset	net.md	engine/net/transport.h:53
+net::DisconnectReason::ProtocolError	enumerator	net	net-disconnectreason-protocolerror	net.md	engine/net/transport.h:54
+net::DisconnectReasonName(DisconnectReason)	function	net	net-disconnectreasonname-disconnectreason	net.md	engine/net/transport.h:61
+net::EventKind	enum	net	net-eventkind	net.md	engine/net/transport.h:64
+net::EventKind::Opened	enumerator	net	net-eventkind-opened	net.md	engine/net/transport.h:66
+net::EventKind::Message	enumerator	net	net-eventkind-message	net.md	engine/net/transport.h:67
+net::EventKind::Closed	enumerator	net	net-eventkind-closed	net.md	engine/net/transport.h:68
+net::Event	struct	net	net-event	net.md	engine/net/transport.h:75
+net::Event::kind	variable	net	net-event-kind	net.md	engine/net/transport.h:77
+net::Event::connection	variable	net	net-event-connection	net.md	engine/net/transport.h:78
+net::Event::incoming	variable	net	net-event-incoming	net.md	engine/net/transport.h:79
+net::Event::peer	variable	net	net-event-peer	net.md	engine/net/transport.h:80
+net::Event::channel	variable	net	net-event-channel	net.md	engine/net/transport.h:81
+net::Event::reliability	variable	net	net-event-reliability	net.md	engine/net/transport.h:82
+net::Event::message	variable	net	net-event-message	net.md	engine/net/transport.h:83
+net::Event::reason	variable	net	net-event-reason	net.md	engine/net/transport.h:84
+net::Event::close_code	variable	net	net-event-close-code	net.md	engine/net/transport.h:85
+net::ConnectionStats	struct	net	net-connectionstats	net.md	engine/net/transport.h:91
+net::ConnectionStats::rtt_seconds	variable	net	net-connectionstats-rtt-seconds	net.md	engine/net/transport.h:93
+net::ConnectionStats::loss	variable	net	net-connectionstats-loss	net.md	engine/net/transport.h:94
+net::ConnectionStats::bytes_sent	variable	net	net-connectionstats-bytes-sent	net.md	engine/net/transport.h:95
+net::ConnectionStats::bytes_received	variable	net	net-connectionstats-bytes-received	net.md	engine/net/transport.h:96
+net::ConnectionStats::messages_sent	variable	net	net-connectionstats-messages-sent	net.md	engine/net/transport.h:97
+net::ConnectionStats::messages_received	variable	net	net-connectionstats-messages-received	net.md	engine/net/transport.h:98
+net::ConnectionStats::packets_sent	variable	net	net-connectionstats-packets-sent	net.md	engine/net/transport.h:99
+net::ConnectionStats::packets_received	variable	net	net-connectionstats-packets-received	net.md	engine/net/transport.h:100
+net::ConnectionStats::send_queue_messages	variable	net	net-connectionstats-send-queue-messages	net.md	engine/net/transport.h:101
+net::ConnectionStats::send_queue_bytes	variable	net	net-connectionstats-send-queue-bytes	net.md	engine/net/transport.h:102
+net::Transport	class	net	net-transport	net.md	engine/net/transport.h:111
+net::Transport::~Transport()	function	net	net-transport-tilde-transport	net.md	engine/net/transport.h:114
+net::Transport::Listen(const Endpoint&)	function	net	net-transport-listen-const-endpoint-amp	net.md	engine/net/transport.h:121
+net::Transport::Connect(const Endpoint&,ConnectionId*)	function	net	net-transport-connect-const-endpoint-amp-connectionid-star	net.md	engine/net/transport.h:130
+net::Transport::Send(ConnectionId,u8,ByteSpan,Reliability)	function	net	net-transport-send-connectionid-u8-bytespan-reliability	net.md	engine/net/transport.h:142
+net::Transport::Poll(Event*)	function	net	net-transport-poll-event-star	net.md	engine/net/transport.h:149
+net::Transport::Close(ConnectionId,u32)	function	net	net-transport-close-connectionid-u32	net.md	engine/net/transport.h:157
+net::Transport::Statistics(ConnectionId,ConnectionStats*) const	function	net	net-transport-statistics-connectionid-connectionstats-star-const	net.md	engine/net/transport.h:166
+net::Transport::Supports(Reliability) const	function	net	net-transport-supports-reliability-const	net.md	engine/net/transport.h:173
+net::Transport::DegradesUnreliable() const	function	net	net-transport-degradesunreliable-const	net.md	engine/net/transport.h:178
+net::Transport::MaxMessageBytes() const	function	net	net-transport-maxmessagebytes-const	net.md	engine/net/transport.h:182
+net::Transport::ChannelCount() const	function	net	net-transport-channelcount-const	net.md	engine/net/transport.h:186
 database::Feature	enum	database	database-feature	database.md	engine/database/database.h:22
 database::Feature::Savepoints	enumerator	database	database-feature-savepoints	database.md	engine/database/database.h:24
 database::Feature::WithoutRowId	enumerator	database	database-feature-withoutrowid	database.md	engine/database/database.h:25
