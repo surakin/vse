@@ -66,8 +66,9 @@ inline const char* BackendTag(engine_placeholder::rhi::Backend backend)
 }
 
 // Fails the test if the backend's validation reported an error while this lives (and, for Direct3D 12, a warning: its
-// debug layer warns about real mistakes too). Construct it before the device, so messages from the device's creation
-// count.
+// debug layer warns about real mistakes too). Metal's validation stops the process at the first error instead
+// (MTL_DEBUG_LAYER_ERROR_MODE=assert, which the macOS ctests set), so it needs no count here. Construct it before the
+// device, so messages from the device's creation count.
 class BackendValidation
 {
 public:

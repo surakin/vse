@@ -30,8 +30,8 @@ function(renderer_demo_expect name code out skip_re)
 endfunction()
 set(RENDERER_NO_GPU "cannot open loader library|no physical devices|no suitable GPU")
 if(APPLE)
-  # macOS until Metal draws (Phase 26 Day 325): a backend asked for by name is not built (no GPU), and auto runs the null
-  # backend, which has no device memory for an allocation fault to hit.
+  # macOS: Vulkan asked for by name is not built there, and until Phase 26 Day 325 auto runs the null backend, which has no device
+  # memory for an allocation fault to hit; Metal is asked for by name (the *_metal tests, which do not skip: every Mac here has it).
   string(APPEND RENDERER_NO_GPU "|backend is not built for macOS")
   set(RENDERER_NEEDS_DEVICE_MEMORY "${RENDERER_NO_GPU}|using the null backend")
 else()
@@ -52,6 +52,17 @@ if(WIN32)
   renderer_demo_expect(renderer_demo_oom_device_dx12 1 "no memory for the resource 'engine staging ring'" ""
     --screenshot RENDERER_DEMO_SHOT --inject-oom 1 --rhi dx12)
   set(_renderer_demo_dx12_tests renderer_demo_screenshot_dx12 renderer_demo_device_loss_trace_dx12 renderer_demo_oom_device_dx12)
+endif()
+set(_renderer_demo_metal_tests)
+if(APPLE)
+  # Metal by name (Phase 26 Day 323; auto picks it from Day 325): the picture with validation on, the loss trace, the staging ring's OOM.
+  renderer_demo_expect(renderer_demo_screenshot_metal 0 "wrote .*renderer_demo_screenshot_metal.ppm \\(540 objects" ""
+    --screenshot RENDERER_DEMO_SHOT --validation --rhi metal)
+  renderer_demo_expect(renderer_demo_device_loss_trace_metal 3 "ENSURE FAILED[^\n]*the Metal device was lost" ""
+    --screenshot RENDERER_DEMO_SHOT --frames 5 --inject-device-loss 3 --rhi metal)
+  renderer_demo_expect(renderer_demo_oom_device_metal 1 "no memory for the resource 'engine staging ring'" ""
+    --screenshot RENDERER_DEMO_SHOT --inject-oom 1 --rhi metal)
+  set(_renderer_demo_metal_tests renderer_demo_screenshot_metal renderer_demo_device_loss_trace_metal renderer_demo_oom_device_metal)
 endif()
 renderer_demo_expect(renderer_demo_gbuffer_layers 0 "wrote" "${RENDERER_NO_GPU}"
   --screenshot RENDERER_DEMO_SHOT --gbuffer normal --objects 100 --lights 10)
@@ -92,7 +103,7 @@ if(WIN32)
   set(_crash_backend win32)
   set(_abort_code 3) # abort() ends a Windows process with exit code 3; the report in the output tells it from exit(3)
 elseif(APPLE)
-  renderer_demo_scripted(renderer_demo_script_cocoa cocoa null)  # Phase 26 Day 314: on null until Metal draws (Day 325)
+  renderer_demo_scripted(renderer_demo_script_cocoa cocoa metal)  # Phase 26 Day 323 (on null from Day 314)
   set(_crash_backend cocoa)
   # The crash handler's Breakpad ends a macOS process with _exit(exception type) once the dump is written
   # (third_party/sentry_native/external/breakpad/src/client/mac/handler/exception_handler.cc): an abort is EXC_SOFTWARE, 5.
@@ -108,7 +119,7 @@ endif()
 function(renderer_demo_overlay_scripted name backend)
   set(rhi vulkan)
   if(APPLE)
-    set(rhi null)  # Phase 26 Day 314: until Metal draws (Day 325)
+    set(rhi metal)  # Phase 26 Day 323 (null from Day 314)
   endif()
   add_test(NAME ${name}
     COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:renderer_demo>;--backend;${backend};--rhi;${rhi};--validation;--frames;60;--script;frame:5 overlay frame:15 overlay frame:20 reset frame:30 quit"
@@ -164,6 +175,6 @@ else()
 endif()
 engine_label_tests(renderer_demo_crash_after_reset renderer_demo_list_gpus renderer_demo_unknown_gpu renderer_demo_screenshot renderer_demo_gbuffer_layers renderer_demo_device_loss_screenshot renderer_demo_device_loss_trace renderer_demo_oom_later
   renderer_demo_oom_device renderer_demo_bad_injection renderer_demo_bad_layer renderer_demo_bad_objects ${_renderer_demo_no_vulkan}
-  renderer_demo_assets_current renderer_demo_screenshot_vulkan ${_renderer_demo_dx12_tests})
+  renderer_demo_assets_current renderer_demo_screenshot_vulkan ${_renderer_demo_dx12_tests} ${_renderer_demo_metal_tests})
 
 demo_settings_tests(renderer_demo)

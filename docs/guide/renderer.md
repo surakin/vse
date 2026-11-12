@@ -989,9 +989,12 @@ past 100000 objects.
 ### Platform notes
 
 The renderer is written and tested on Linux with the Vulkan backend (and the null device, which every non-GPU test uses), and on Windows
-with Vulkan and Direct3D 12 (Phase 13). On macOS (Phase 26) it builds and its suites pass on the null device from Day 314, the demos run
-their scripts there in a Cocoa window, and the `backend` setting's `auto` means null until the Metal backend passes the suites (Day 325,
-[[renderer::BackendForSetting]]; Metal is there by name from Day 316); every shader already compiles to Metal (`ctest -R shaders_portability`). The points that shape code are in the [renderer portability
+with Vulkan and Direct3D 12 (Phase 13), and on macOS with Metal (Phase 26: the backend from Day 316, the renderer's GPU suites through it
+from Day 323, as on the other backends, since they run once per GPU backend). The renderer needs nothing of its own for Metal: the minted
+shader libraries carry their slots, a pass is a render encoder (so a pass that samples what an earlier one wrote is ordered by the encoder
+boundary), and a depth texture is sampled as `depth32_float` itself. Until the suites pass on it (Day 325), the `backend` setting's `auto`
+on macOS is the null backend ([[renderer::BackendForSetting]]) and `--rhi metal` asks for Metal; `renderer_demo`'s scripted and named
+ctests on macOS run on Metal. The points that shape code are in the [renderer portability
 review](../superpowers/specs/2026-11-04-renderer-portability-review.md); a deferred G-buffer is a poor fit for tile-based mobile GPUs
 unless the passes are merged (Phase 27).
 

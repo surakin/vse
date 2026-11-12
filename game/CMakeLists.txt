@@ -39,7 +39,8 @@ if(WIN32)
   file(MAKE_DIRECTORY "${_profile}/roaming" "${_profile}/local")
 elseif(APPLE)
   # macOS keeps the user's settings and the crash database under $HOME/Library/Application Support (Phase 26 Days 304, 314): a private HOME.
-  set(DEMO_PROFILE_ENV "HOME=${_profile}/home")
+  # Metal's API and shader validation too (Phase 26 Day 323): Metal reads them at process start, so a demo's --validation alone is advisory.
+  set(DEMO_PROFILE_ENV "HOME=${_profile}/home;MTL_DEBUG_LAYER=1;MTL_DEBUG_LAYER_ERROR_MODE=assert;MTL_SHADER_VALIDATION=1")
   file(MAKE_DIRECTORY "${_profile}/home")
 else()
   set(DEMO_PROFILE_ENV "XDG_CONFIG_HOME=${_profile}/config;XDG_STATE_HOME=${_profile}/state")

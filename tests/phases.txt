@@ -298,6 +298,9 @@ test:renderer_demo_screenshot_vulkan            13
 testopt:renderer_demo_screenshot_dx12           13
 testopt:renderer_demo_device_loss_trace_dx12    13
 testopt:renderer_demo_oom_device_dx12           13
+testopt:renderer_demo_screenshot_metal          26   # renderer_demo on Metal by name (Day 323)
+testopt:renderer_demo_device_loss_trace_metal   26
+testopt:renderer_demo_oom_device_metal          26
 tests/windows/os_windows_test.cpp               13
 tests/windows/win32_window_windows_test.cpp     13
 tests/windows/win32_input_windows_test.cpp      13
@@ -315,6 +318,7 @@ tests/rhi/macos/metal_bindings_test.mm          26   # Metal bind groups, sample
 tests/rhi/macos/metal_pipeline_test.mm          26   # Metal shaders, pipelines, the binary archive (Day 319)
 tests/rhi/macos/metal_commands_test.mm          26   # Metal command lists, encoders, barriers, mips (Day 320)
 tests/rhi/macos/metal_swapchain_test.mm         26   # the Metal swapchain over the Cocoa window's layer (Day 321)
+tests/rhi/macos/metal_graph_test.mm             26   # the render graph's passes as Metal encoders (Day 323)
 test:metal_validation_planted                   26   # a planted Metal validation error must stop the program (Day 316)
 testopt:macos_*                                 26
 
