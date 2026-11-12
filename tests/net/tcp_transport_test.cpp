@@ -331,4 +331,23 @@ TEST_CASE("TCP transport: a peer that pings and never reads the answers is dropp
     CHECK(rig.server.First(EventKind::Closed)->reason == DisconnectReason::ProtocolError);
 }
 
+TEST_CASE("TCP transport: before the Hello a frame larger than a Hello ends the connection", "[net][tcp]")
+{
+    RawRig rig;
+    UniquePtr<StreamIo> io = rig.OpenRaw();
+    rig.Step(30);
+    const FrameWriter writer(1 << 20);
+    Vector<byte> payload;
+    for (u32 i = 0; i < 1000; ++i)
+    {
+        payload.Push(static_cast<byte>(i));
+    }
+    Vector<byte> bytes;
+    REQUIRE(writer.Encode(ByteSpan(payload.Data(), payload.Size()), &bytes).Ok());
+    SendRaw(*io, bytes);
+    rig.Step(100);
+    CHECK(rig.node.transport.ConnectionCount() == 0);
+    CHECK(rig.server.Count(EventKind::Opened) == 0);
+}
+
 }  // namespace engine_placeholder::net

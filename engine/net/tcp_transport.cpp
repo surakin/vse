@@ -57,6 +57,7 @@ struct TcpConn
     usize ends_head = 0;
     u64 queued_total = 0;        // bytes ever queued
     u64 written_total = 0;       // bytes ever written
+    bool out_failed = false;     // a frame could not be queued (out of memory)
     bool flushing = false;       // closed locally; the last bytes are still being written
     bool shutdown_sent = false;  // the write side is shut; the peer's remaining bytes are read and dropped
     u64 flush_deadline = 0;
@@ -141,7 +142,7 @@ struct TcpTransport::Impl
 
     TcpConn* Create(UniquePtr<StreamIo>&& io, const Endpoint& peer, bool incoming)
     {
-        UniquePtr<TcpConn> conn = MakeUnique<TcpConn>(MaxFrame());
+        UniquePtr<TcpConn> conn = MakeUnique<TcpConn>(kHelloBytes);  // until the Hello, a frame is at most a Hello
         for (;;)
         {
             if (next_id == 0)
@@ -235,6 +236,7 @@ struct TcpTransport::Impl
         {
             return;
         }
+        const usize start = c->out.Size();
         for (usize i = 0; i < kFrameHeaderBytes; ++i)
         {
             c->out.Push(header[i]);
@@ -244,7 +246,12 @@ struct TcpTransport::Impl
             c->out.Push(head[i]);
         }
         const usize at = c->out.Size();
-        c->out.TryResizeUninitialized(at + body.Size());
+        if (!c->out.TryResizeUninitialized(at + body.Size()))
+        {
+            c->out.Resize(start);  // out of memory: no part of this frame is sent and the connection ends
+            c->out_failed = true;
+            return;
+        }
         if (body.Size() != 0)
         {
             MemCopy(c->out.Data() + at, body.Data(), body.Size());
@@ -339,6 +346,7 @@ struct TcpTransport::Impl
     void Open(TcpConn* c)
     {
         c->state = TcpState::Open;
+        c->reader = FrameReader(c->max_message + kFrameSlack);  // the Hello is done: messages may follow
         c->last_ping = Now();
         TcpEventRec rec;
         rec.kind = EventKind::Opened;
@@ -504,7 +512,7 @@ struct TcpTransport::Impl
         {
             return;
         }
-        if (!Write(c))
+        if (c->out_failed || !Write(c))
         {
             End(c, DisconnectReason::Reset, 0);
             return;
@@ -713,6 +721,10 @@ Status TcpTransport::Send(ConnectionId connection, u8 channel, ByteSpan bytes, R
     const byte head[kDataHeaderBytes] = {static_cast<byte>(kTypeData), static_cast<byte>(channel),
                                          static_cast<byte>(sent_as)};
     m.QueueFrame(c, ByteSpan(head, kDataHeaderBytes), bytes, true);
+    if (c->out_failed)
+    {
+        return Status::Of(ErrorCode::LimitExceeded);
+    }
     ++c->stats.messages_sent;
     ++c->stats.packets_sent;
     c->stats.bytes_sent += bytes.Size();
