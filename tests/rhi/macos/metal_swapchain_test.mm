@@ -9,7 +9,11 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "containers/vector.h"
+#include "cstr/mem_ops.h"
 #include "display_session.h"
+#include "triangle.frag.dxil.inc"
+#include "triangle.vert.dxil.inc"
 #include "platform/macos/cocoa_window.h"
 #include "rhi/metal/metal_device.h"
 #include "rhi/metal/metal_swapchain.h"
@@ -230,5 +234,108 @@ TEST_CASE("After an explicit Resize, a Metal swapchain follows the window again 
     CHECK(device->DeviceLost());
     CHECK(swapchain->Reconfigure(SwapchainDesc{}) == SwapchainStatus::Lost);
     CHECK(swapchain->Resize(100, 100) == SwapchainStatus::Lost);
+    device->DestroySwapchain(swapchain);
+}
+
+TEST_CASE("A Metal swapchain image reads back what was rendered to it, byte for byte as an offscreen target",
+          "[rhi][metal][gpu][window]")
+{
+    SKIP_IF_NO_DISPLAY_SESSION();
+    CocoaWindow window;
+    REQUIRE(window.Open("metal swapchain screenshot", 64, 48, nullptr));
+    DeviceCreateInfo info = MetalInfo("metal_swapchain_test");
+    info.window = &window;
+    DevicePtr device = CreateDevice(info);
+    REQUIRE(device);
+    SwapchainDesc desc;
+    desc.format = Format::BGRA8_UNorm;  // no sRGB encoding: the same bytes as the offscreen target
+    Swapchain* swapchain = device->CreateSwapchain(desc);
+    REQUIRE(swapchain != nullptr);
+    // A picture with an orientation: a red triangle in the top-left corner and a green one in the bottom-right, on
+    // blue.
+    const ShaderHandle vs = MetalShader(*device, shaders::kTriangleVertShader, ShaderStage::Vertex);
+    const ShaderHandle fs = MetalShader(*device, shaders::kTriangleFragShader, ShaderStage::Fragment);
+    const f32 vertices[6][5] = {{-1, -1, 1, 0, 0}, {0, -1, 1, 0, 0}, {-1, 0, 1, 0, 0},
+                                {1, 1, 0, 1, 0},   {0, 1, 0, 1, 0},  {1, 0, 0, 1, 0}};
+    BufferDesc bd;
+    bd.size = sizeof(vertices);
+    bd.usage = BufferUsage::Vertex | BufferUsage::CopyDst;
+    const BufferHandle vb = device->CreateBuffer(bd);
+    REQUIRE(device->UploadBuffer(vb, 0, vertices, sizeof(vertices)).ok);
+    VertexBindingDesc binding{20, false};
+    VertexAttributeDesc attributes[2];
+    attributes[0].format = VertexFormat::Float2;
+    attributes[1].location = 1;
+    attributes[1].format = VertexFormat::Float3;
+    attributes[1].offset = 8;
+    GraphicsPipelineDesc gp;
+    gp.vertex_shader = vs;
+    gp.fragment_shader = fs;
+    gp.vertex_bindings = rhi::Span<VertexBindingDesc>(&binding, 1);
+    gp.vertex_attributes = rhi::Span<VertexAttributeDesc>(attributes, 2);
+    gp.cull_mode = CullMode::None;
+    gp.color_targets[0].format = Format::BGRA8_UNorm;
+    gp.color_target_count = 1;
+    const PipelineHandle pipeline = device->CreateGraphicsPipeline(gp);
+    REQUIRE(pipeline.IsValid());
+    TextureDesc td;
+    td.width = swapchain->Width();
+    td.height = swapchain->Height();
+    td.format = Format::BGRA8_UNorm;
+    td.usage = TextureUsage::ColorAttachment | TextureUsage::CopySrc;
+    const TextureHandle offscreen = device->CreateTexture(td);
+    REQUIRE(offscreen.IsValid());
+    auto draw = [&](CommandList* list, TextureHandle target)
+    {
+        RenderingDesc rd;
+        rd.color[0].texture = target;
+        rd.color[0].clear_color[0] = 0.0f;
+        rd.color[0].clear_color[2] = 1.0f;
+        rd.color_count = 1;
+        list->BeginRendering(rd);
+        list->SetPipeline(pipeline);
+        list->SetVertexBuffer(0, vb, 0);
+        list->Draw(6, 1, 0, 0);
+        list->EndRendering();
+    };
+    device->BeginFrame();
+    const SwapchainStatus acquired = swapchain->Acquire();
+    REQUIRE((acquired == SwapchainStatus::Ok || acquired == SwapchainStatus::Recreated));
+    const TextureHandle image = swapchain->CurrentTexture();
+    CommandList* list = device->CreateCommandList();
+    list->Begin();
+    list->Barrier(image, ResourceState::Undefined, ResourceState::ColorAttachment);  // the contract's barriers
+    draw(list, image);
+    list->Barrier(offscreen, ResourceState::Undefined, ResourceState::ColorAttachment);
+    draw(list, offscreen);
+    list->End();
+    REQUIRE(device->Submit(&list, 1) != 0);
+    const usize bytes = static_cast<usize>(swapchain->Width()) * swapchain->Height() * 4;
+    Vector<u8> shown;
+    Vector<u8> expected;
+    shown.Resize(bytes);
+    expected.Resize(bytes);
+    REQUIRE(device->ReadbackTexture(image, 0, 0, shown.Data(), bytes, ResourceState::ColorAttachment));
+    REQUIRE(device->ReadbackTexture(offscreen, 0, 0, expected.Data(), bytes, ResourceState::ColorAttachment));
+    CHECK(MemCompare(shown.Data(), expected.Data(), bytes) == 0);
+    CHECK(shown[2] == 255);          // the top-left pixel is red (BGRA: R at byte 2): rows are top first
+    CHECK(shown[bytes - 3] == 255);  // the bottom-right one green
+    CommandList* present = device->CreateCommandList();
+    present->Begin();
+    present->Barrier(image, ResourceState::ColorAttachment, ResourceState::Present);
+    present->End();
+    REQUIRE(device->Submit(&present, 1) != 0);
+    CHECK(swapchain->Present() == SwapchainStatus::Ok);
+    // After Present there is no drawable (the system took it back): a read is refused, not a crash.
+    const bool was = LogRhi.Enabled();
+    LogRhi.SetEnabled(false);
+    CHECK_FALSE(device->ReadbackTexture(image, 0, 0, shown.Data(), bytes, ResourceState::Present));
+    LogRhi.SetEnabled(was);
+    device->EndFrame();
+    device->DestroyPipeline(pipeline);
+    device->DestroyShader(vs);
+    device->DestroyShader(fs);
+    device->DestroyBuffer(vb);
+    device->DestroyTexture(offscreen);
     device->DestroySwapchain(swapchain);
 }

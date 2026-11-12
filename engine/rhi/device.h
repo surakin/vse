@@ -314,7 +314,8 @@ public:
     /// - Param dst_size: bytes available in `dst`; at least the level's size.
     /// - Param state: the state the texture is in now; not `Undefined`.
     /// - Returns: true on success.
-    /// - Fails: returns false, logging the reason, if the device is lost or memory is exhausted.
+    /// - Fails: returns false, logging the reason, if the device is lost or memory is exhausted, or (on Metal) for a
+    ///   swapchain image that was already presented ([[rhi::Swapchain]]: read it before `Present`).
     /// - Aborts: `src` is invalid or stale, lacks `CopySrc`, `mip` or `layer` is out of range, `dst` is null or too
     /// small,
     ///   `state` is `Undefined` or not a texture state, or (on the null backend) the texture is not in `state`.

@@ -87,7 +87,9 @@ struct SwapchainDesc
 ///
 /// - Thread-safety: owner-thread-only. Use one swapchain from the thread that owns its window.
 /// - Ownership: created by a device; destroy it with [[rhi::Device::DestroySwapchain]] before the device is destroyed.
-///   The textures it exposes are valid only until the next `Acquire` or `Resize`.
+///   The textures it exposes are valid only until the next `Acquire` or `Resize`, and on Metal only until `Present`:
+///   a Metal image is a drawable the system takes back when it is presented, so read an image back (a screenshot)
+///   before presenting it.
 class Swapchain
 {
 public:
@@ -157,7 +159,8 @@ public:
 
     /// Returns the texture for the most recently acquired image.
     ///
-    /// - Returns: the invalid handle before the first successful `Acquire`.
+    /// - Returns: the invalid handle before the first successful `Acquire` (and, on Metal, after `Present`, until the
+    ///   next `Acquire`).
     /// - Ownership: the handle is owned by the swapchain; do not destroy it.
     virtual TextureHandle CurrentTexture() const = 0;
 };

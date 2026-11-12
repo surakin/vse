@@ -26,15 +26,6 @@ using namespace engine_placeholder::rhi::metal::test;
 namespace metal_commands_test
 {
 
-ShaderHandle Shader(Device& device, const ShaderBlobSet& set, ShaderStage stage)
-{
-    ShaderDesc d;
-    d.stage = stage;
-    d.SetCode(set.For(ShaderFormat::MetalLib));
-    d.debug_name = set.name;
-    return device.CreateShader(d);
-}
-
 BufferHandle Buffer(Device& device, u64 size, BufferUsage usage, MemoryLocation location = MemoryLocation::GpuOnly)
 {
     BufferDesc d;
@@ -54,7 +45,7 @@ struct Fill
 
     Fill(Device& device, BufferHandle out)
     {
-        shader = Shader(device, shaders::kFillCompShader, ShaderStage::Compute);
+        shader = MetalShader(device, shaders::kFillCompShader, ShaderStage::Compute);
         BindingDesc b;
         b.binding = 0;
         b.type = BindingType::StorageBuffer;
@@ -96,8 +87,8 @@ struct Triangle
 
     Triangle(Device& device, PrimitiveTopology topology)
     {
-        vs = Shader(device, shaders::kTriangleVertShader, ShaderStage::Vertex);
-        fs = Shader(device, shaders::kTriangleFragShader, ShaderStage::Fragment);
+        vs = MetalShader(device, shaders::kTriangleVertShader, ShaderStage::Vertex);
+        fs = MetalShader(device, shaders::kTriangleFragShader, ShaderStage::Fragment);
         VertexBindingDesc binding{20, false};
         VertexAttributeDesc attributes[2];
         attributes[0].location = 0;

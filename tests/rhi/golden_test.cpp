@@ -295,17 +295,28 @@ TEST_CASE("The per-backend GPU tests run on every GPU backend this machine has",
     }
     CHECK(backends.Size() == available);
     bool dx12 = false;
+    bool metal = false;
     for (usize i = 0; i < backends.Size(); ++i)
     {
         dx12 = dx12 || backends[i] == Backend::Dx12;
+        metal = metal || backends[i] == Backend::Metal;
     }
 #if ENGINE_PLATFORM_WINDOWS
     CHECK(dx12);  // every Windows 10 and 11 has Direct3D 12
 #else
     CHECK_FALSE(dx12);
 #endif
+#if !ENGINE_PLATFORM_MACOS
+    CHECK_FALSE(metal);
+#endif
     if (gpu_test::GpuRequired())
     {
-        CHECK(backends.Size() == (ENGINE_PLATFORM_WINDOWS ? 2u : 1u));  // Vulkan, and Direct3D 12 on Windows
+#if ENGINE_PLATFORM_MACOS
+        // A Mac whose GPU has Metal 3 (the Mac2 family's newer GPUs; not a VM without a GPU): the golden suites run
+        // through it (Phase 26 Day 322).
+        CHECK(metal);
+#endif
+        // Vulkan on Linux; Vulkan and Direct3D 12 on Windows; Metal alone on macOS.
+        CHECK(backends.Size() == (ENGINE_PLATFORM_WINDOWS ? 2u : 1u));
     }
 }

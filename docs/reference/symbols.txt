@@ -7001,30 +7001,30 @@ rhi::Device::DestroySwapchain(Swapchain*)	function	rhi	rhi-device-destroyswapcha
 rhi::Device::FormatSupport(Format,TextureUsage) const	function	rhi	rhi-device-formatsupport-format-textureusage-const	rhi.md	engine/rhi/device.h:270
 rhi::Device::CanGenerateMips(Format) const	function	rhi	rhi-device-cangeneratemips-format-const	rhi.md	engine/rhi/device.h:277
 rhi::Device::UploadTexture(TextureHandle,u32,u32,const void*,u32)	function	rhi	rhi-device-uploadtexture-texturehandle-u32-u32-const-void-star-u32	rhi.md	engine/rhi/device.h:302
-rhi::Device::ReadbackTexture(TextureHandle,u32,u32,void*,u64,ResourceState)	function	rhi	rhi-device-readbacktexture-texturehandle-u32-u32-void-star-u64-resourcestate	rhi.md	engine/rhi/device.h:322
-rhi::Device::MapBuffer(BufferHandle)	function	rhi	rhi-device-mapbuffer-bufferhandle	rhi.md	engine/rhi/device.h:334
-rhi::Device::UnmapBuffer(BufferHandle)	function	rhi	rhi-device-unmapbuffer-bufferhandle	rhi.md	engine/rhi/device.h:339
-rhi::Device::FlushMappedBuffer(BufferHandle,u64,u64)	function	rhi	rhi-device-flushmappedbuffer-bufferhandle-u64-u64	rhi.md	engine/rhi/device.h:349
-rhi::Device::UploadBuffer(BufferHandle,u64,const void*,u64)	function	rhi	rhi-device-uploadbuffer-bufferhandle-u64-const-void-star-u64	rhi.md	engine/rhi/device.h:377
-rhi::Device::ReadbackBuffer(BufferHandle,u64,void*,u64)	function	rhi	rhi-device-readbackbuffer-bufferhandle-u64-void-star-u64	rhi.md	engine/rhi/device.h:392
-rhi::Device::CreateCommandList()	function	rhi	rhi-device-createcommandlist	rhi.md	engine/rhi/device.h:402
-rhi::Device::Submit(CommandList* const*,usize)	function	rhi	rhi-device-submit-commandlist-star-const-star-usize	rhi.md	engine/rhi/device.h:417
-rhi::Device::WaitFence(FenceValue,u64)	function	rhi	rhi-device-waitfence-fencevalue-u64	rhi.md	engine/rhi/device.h:425
-rhi::Device::CompletedFence() const	function	rhi	rhi-device-completedfence-const	rhi.md	engine/rhi/device.h:428
-rhi::Device::BeginFrame()	function	rhi	rhi-device-beginframe	rhi.md	engine/rhi/device.h:433
-rhi::Device::EndFrame()	function	rhi	rhi-device-endframe	rhi.md	engine/rhi/device.h:435
-rhi::Device::FrameNumber() const	function	rhi	rhi-device-framenumber-const	rhi.md	engine/rhi/device.h:437
-rhi::Device::WaitIdle()	function	rhi	rhi-device-waitidle	rhi.md	engine/rhi/device.h:440
-rhi::Device::RecreateSurface(const os::Window*)	function	rhi	rhi-device-recreatesurface-const-os-window-star	rhi.md	engine/rhi/device.h:452
-rhi::Device::Quiesce()	function	rhi	rhi-device-quiesce	rhi.md	engine/rhi/device.h:459
-rhi::Device::Resources() const	function	rhi	rhi-device-resources-const	rhi.md	engine/rhi/device.h:464
-rhi::Device::InFrame() const	function	rhi	rhi-device-inframe-const	rhi.md	engine/rhi/device.h:470
-rhi::Device::InjectDeviceLoss()	function	rhi	rhi-device-injectdeviceloss	rhi.md	engine/rhi/device.h:476
-rhi::Device::DeviceLost() const	function	rhi	rhi-device-devicelost-const	rhi.md	engine/rhi/device.h:481
-rhi::DeviceDeleter	struct	rhi	rhi-devicedeleter	rhi.md	engine/rhi/device.h:490
-rhi::DeviceDeleter::operator()(Device*) const	function	rhi	rhi-devicedeleter-operator-call-device-star-const	rhi.md	engine/rhi/device.h:496
-rhi::DevicePtr	alias	rhi	rhi-deviceptr	rhi.md	engine/rhi/device.h:508
-rhi::CreateShaderFromSet(Device&,const ShaderBlobSet&,ShaderStage,const char*)	function	rhi	rhi-createshaderfromset-device-amp-const-shaderblobset-amp-shaderstage-const-char-star	rhi.md	engine/rhi/device.h:521
+rhi::Device::ReadbackTexture(TextureHandle,u32,u32,void*,u64,ResourceState)	function	rhi	rhi-device-readbacktexture-texturehandle-u32-u32-void-star-u64-resourcestate	rhi.md	engine/rhi/device.h:323
+rhi::Device::MapBuffer(BufferHandle)	function	rhi	rhi-device-mapbuffer-bufferhandle	rhi.md	engine/rhi/device.h:335
+rhi::Device::UnmapBuffer(BufferHandle)	function	rhi	rhi-device-unmapbuffer-bufferhandle	rhi.md	engine/rhi/device.h:340
+rhi::Device::FlushMappedBuffer(BufferHandle,u64,u64)	function	rhi	rhi-device-flushmappedbuffer-bufferhandle-u64-u64	rhi.md	engine/rhi/device.h:350
+rhi::Device::UploadBuffer(BufferHandle,u64,const void*,u64)	function	rhi	rhi-device-uploadbuffer-bufferhandle-u64-const-void-star-u64	rhi.md	engine/rhi/device.h:378
+rhi::Device::ReadbackBuffer(BufferHandle,u64,void*,u64)	function	rhi	rhi-device-readbackbuffer-bufferhandle-u64-void-star-u64	rhi.md	engine/rhi/device.h:393
+rhi::Device::CreateCommandList()	function	rhi	rhi-device-createcommandlist	rhi.md	engine/rhi/device.h:403
+rhi::Device::Submit(CommandList* const*,usize)	function	rhi	rhi-device-submit-commandlist-star-const-star-usize	rhi.md	engine/rhi/device.h:418
+rhi::Device::WaitFence(FenceValue,u64)	function	rhi	rhi-device-waitfence-fencevalue-u64	rhi.md	engine/rhi/device.h:426
+rhi::Device::CompletedFence() const	function	rhi	rhi-device-completedfence-const	rhi.md	engine/rhi/device.h:429
+rhi::Device::BeginFrame()	function	rhi	rhi-device-beginframe	rhi.md	engine/rhi/device.h:434
+rhi::Device::EndFrame()	function	rhi	rhi-device-endframe	rhi.md	engine/rhi/device.h:436
+rhi::Device::FrameNumber() const	function	rhi	rhi-device-framenumber-const	rhi.md	engine/rhi/device.h:438
+rhi::Device::WaitIdle()	function	rhi	rhi-device-waitidle	rhi.md	engine/rhi/device.h:441
+rhi::Device::RecreateSurface(const os::Window*)	function	rhi	rhi-device-recreatesurface-const-os-window-star	rhi.md	engine/rhi/device.h:453
+rhi::Device::Quiesce()	function	rhi	rhi-device-quiesce	rhi.md	engine/rhi/device.h:460
+rhi::Device::Resources() const	function	rhi	rhi-device-resources-const	rhi.md	engine/rhi/device.h:465
+rhi::Device::InFrame() const	function	rhi	rhi-device-inframe-const	rhi.md	engine/rhi/device.h:471
+rhi::Device::InjectDeviceLoss()	function	rhi	rhi-device-injectdeviceloss	rhi.md	engine/rhi/device.h:477
+rhi::Device::DeviceLost() const	function	rhi	rhi-device-devicelost-const	rhi.md	engine/rhi/device.h:482
+rhi::DeviceDeleter	struct	rhi	rhi-devicedeleter	rhi.md	engine/rhi/device.h:491
+rhi::DeviceDeleter::operator()(Device*) const	function	rhi	rhi-devicedeleter-operator-call-device-star-const	rhi.md	engine/rhi/device.h:497
+rhi::DevicePtr	alias	rhi	rhi-deviceptr	rhi.md	engine/rhi/device.h:509
+rhi::CreateShaderFromSet(Device&,const ShaderBlobSet&,ShaderStage,const char*)	function	rhi	rhi-createshaderfromset-device-amp-const-shaderblobset-amp-shaderstage-const-char-star	rhi.md	engine/rhi/device.h:522
 rhi::DeviceObserver	class	rhi	rhi-deviceobserver	rhi.md	engine/rhi/device_host.h:20
 rhi::DeviceObserver::~DeviceObserver()	function	rhi	rhi-deviceobserver-tilde-deviceobserver	rhi.md	engine/rhi/device_host.h:23
 rhi::DeviceObserver::OnDeviceReleasing(u32)	function	rhi	rhi-deviceobserver-ondevicereleasing-u32	rhi.md	engine/rhi/device_host.h:30
@@ -7469,19 +7469,19 @@ rhi::SwapchainDesc::width	variable	rhi	rhi-swapchaindesc-width	rhi.md	engine/rhi
 rhi::SwapchainDesc::height	variable	rhi	rhi-swapchaindesc-height	rhi.md	engine/rhi/swapchain.h:74
 rhi::SwapchainDesc::format	variable	rhi	rhi-swapchaindesc-format	rhi.md	engine/rhi/swapchain.h:77
 rhi::SwapchainDesc::hdr	variable	rhi	rhi-swapchaindesc-hdr	rhi.md	engine/rhi/swapchain.h:79
-rhi::Swapchain	class	rhi	rhi-swapchain	rhi.md	engine/rhi/swapchain.h:91
-rhi::Swapchain::~Swapchain()	function	rhi	rhi-swapchain-tilde-swapchain	rhi.md	engine/rhi/swapchain.h:94
-rhi::Swapchain::Acquire()	function	rhi	rhi-swapchain-acquire	rhi.md	engine/rhi/swapchain.h:107
-rhi::Swapchain::Present()	function	rhi	rhi-swapchain-present	rhi.md	engine/rhi/swapchain.h:116
-rhi::Swapchain::Reconfigure(const SwapchainDesc&)	function	rhi	rhi-swapchain-reconfigure-const-swapchaindesc-amp	rhi.md	engine/rhi/swapchain.h:128
-rhi::Swapchain::ActualPresentMode() const	function	rhi	rhi-swapchain-actualpresentmode-const	rhi.md	engine/rhi/swapchain.h:131
-rhi::Swapchain::GetColorSpace() const	function	rhi	rhi-swapchain-getcolorspace-const	rhi.md	engine/rhi/swapchain.h:134
-rhi::Swapchain::Capabilities() const	function	rhi	rhi-swapchain-capabilities-const	rhi.md	engine/rhi/swapchain.h:139
-rhi::Swapchain::Resize(u32,u32)	function	rhi	rhi-swapchain-resize-u32-u32	rhi.md	engine/rhi/swapchain.h:147
-rhi::Swapchain::ImageFormat() const	function	rhi	rhi-swapchain-imageformat-const	rhi.md	engine/rhi/swapchain.h:150
-rhi::Swapchain::Width() const	function	rhi	rhi-swapchain-width-const	rhi.md	engine/rhi/swapchain.h:153
-rhi::Swapchain::Height() const	function	rhi	rhi-swapchain-height-const	rhi.md	engine/rhi/swapchain.h:156
-rhi::Swapchain::CurrentTexture() const	function	rhi	rhi-swapchain-currenttexture-const	rhi.md	engine/rhi/swapchain.h:162
+rhi::Swapchain	class	rhi	rhi-swapchain	rhi.md	engine/rhi/swapchain.h:93
+rhi::Swapchain::~Swapchain()	function	rhi	rhi-swapchain-tilde-swapchain	rhi.md	engine/rhi/swapchain.h:96
+rhi::Swapchain::Acquire()	function	rhi	rhi-swapchain-acquire	rhi.md	engine/rhi/swapchain.h:109
+rhi::Swapchain::Present()	function	rhi	rhi-swapchain-present	rhi.md	engine/rhi/swapchain.h:118
+rhi::Swapchain::Reconfigure(const SwapchainDesc&)	function	rhi	rhi-swapchain-reconfigure-const-swapchaindesc-amp	rhi.md	engine/rhi/swapchain.h:130
+rhi::Swapchain::ActualPresentMode() const	function	rhi	rhi-swapchain-actualpresentmode-const	rhi.md	engine/rhi/swapchain.h:133
+rhi::Swapchain::GetColorSpace() const	function	rhi	rhi-swapchain-getcolorspace-const	rhi.md	engine/rhi/swapchain.h:136
+rhi::Swapchain::Capabilities() const	function	rhi	rhi-swapchain-capabilities-const	rhi.md	engine/rhi/swapchain.h:141
+rhi::Swapchain::Resize(u32,u32)	function	rhi	rhi-swapchain-resize-u32-u32	rhi.md	engine/rhi/swapchain.h:149
+rhi::Swapchain::ImageFormat() const	function	rhi	rhi-swapchain-imageformat-const	rhi.md	engine/rhi/swapchain.h:152
+rhi::Swapchain::Width() const	function	rhi	rhi-swapchain-width-const	rhi.md	engine/rhi/swapchain.h:155
+rhi::Swapchain::Height() const	function	rhi	rhi-swapchain-height-const	rhi.md	engine/rhi/swapchain.h:158
+rhi::Swapchain::CurrentTexture() const	function	rhi	rhi-swapchain-currenttexture-const	rhi.md	engine/rhi/swapchain.h:165
 rhi::UniformAllocation	struct	rhi	rhi-uniformallocation	rhi.md	engine/rhi/uniform_ring.h:16
 rhi::UniformAllocation::buffer	variable	rhi	rhi-uniformallocation-buffer	rhi.md	engine/rhi/uniform_ring.h:19
 rhi::UniformAllocation::offset	variable	rhi	rhi-uniformallocation-offset	rhi.md	engine/rhi/uniform_ring.h:21

@@ -862,6 +862,12 @@ bool MetalDevice::ReadbackTexture(TextureHandle src, u32 mip, u32 layer, void* d
         texture = t->texture;
         desc = t->desc;
     }
+    if (texture == nil)
+    {
+        // A swapchain image between frames: the drawable is given up at Present, so there is nothing to read.
+        RhiLog(LogVerbosity::Error, "ReadbackTexture: the swapchain image has no drawable (read it before Present)");
+        return false;
+    }
     const FormatProperties& fp = FormatInfo(desc.format);
     const bool is3d = desc.dimension == TextureDimension::Tex3D;
     const u32 width = MipExtent(desc.width, mip);

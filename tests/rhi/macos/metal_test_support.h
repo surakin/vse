@@ -23,6 +23,16 @@ inline DeviceCreateInfo MetalInfo(const char* application = "metal_test")
     return info;
 }
 
+// A shader of `stage` from a minted blob set's Metal library (with its entry and slot table).
+inline ShaderHandle MetalShader(Device& device, const ShaderBlobSet& set, ShaderStage stage)
+{
+    ShaderDesc d;
+    d.stage = stage;
+    d.SetCode(set.For(ShaderFormat::MetalLib));
+    d.debug_name = set.name;
+    return device.CreateShader(d);
+}
+
 // The Metal device behind a device the Metal backend made.
 inline MetalDevice& AsMetal(Device& device)
 {

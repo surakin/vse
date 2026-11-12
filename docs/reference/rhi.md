@@ -3828,7 +3828,7 @@ You say which state the texture is in (the device cannot see barriers recorded i
 | Parameter `dst_size` | bytes available in `dst`; at least the level's size. |
 | Parameter `state` | the state the texture is in now; not `Undefined`. |
 | Returns | true on success. |
-| Fails | returns false, logging the reason, if the device is lost or memory is exhausted. |
+| Fails | returns false, logging the reason, if the device is lost or memory is exhausted, or (on Metal) for a swapchain image that was already presented ([`rhi::Swapchain`](#rhi-swapchain): read it before `Present`). |
 | Aborts | `src` is invalid or stale, lacks `CopySrc`, `mip` or `layer` is out of range, `dst` is null or too small, `state` is `Undefined` or not a texture state, or (on the null backend) the texture is not in `state`. |
 | Ownership | `dst` is borrowed for the call only. |
 
@@ -7883,7 +7883,7 @@ A device is created for one window (`DeviceCreateInfo::window`) and makes the sw
 | Field | Value |
 |---|---|
 | Thread-safety | owner-thread-only. Use one swapchain from the thread that owns its window. |
-| Ownership | created by a device; destroy it with [`rhi::Device::DestroySwapchain`](#rhi-device-destroyswapchain-swapchain-star) before the device is destroyed. The textures it exposes are valid only until the next `Acquire` or `Resize`. |
+| Ownership | created by a device; destroy it with [`rhi::Device::DestroySwapchain`](#rhi-device-destroyswapchain-swapchain-star) before the device is destroyed. The textures it exposes are valid only until the next `Acquire` or `Resize`, and on Metal only until `Present`: a Metal image is a drawable the system takes back when it is presented, so read an image back (a screenshot) before presenting it. |
 
 ### `~Swapchain()` {#rhi-swapchain-tilde-swapchain}
 
@@ -8041,7 +8041,7 @@ Returns the texture for the most recently acquired image.
 
 | Field | Value |
 |---|---|
-| Returns | the invalid handle before the first successful `Acquire`. |
+| Returns | the invalid handle before the first successful `Acquire` (and, on Metal, after `Present`, until the next `Acquire`). |
 | Ownership | the handle is owned by the swapchain; do not destroy it. |
 
 ## `UniformAllocation` {#rhi-uniformallocation}
