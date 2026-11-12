@@ -139,7 +139,8 @@ struct LoadOptions
     const char* policy_name = nullptr;
     /// What the policy layers read instead of their usual place (a test's own), or null.
     ///
-    /// On Windows a registry key in place of `Software\Policies\<name>`, on macOS a defaults suite in place of `<name>`.
+    /// On Windows a registry key in place of `Software\Policies\<name>`, on macOS a defaults suite in place of
+    /// `<name>`.
     const char* policy_path = nullptr;
 };
 
