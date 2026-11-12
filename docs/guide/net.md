@@ -1,6 +1,6 @@
-# Networking: addresses, endpoints, errors and sockets
+# Networking: addresses, endpoints, errors, sockets and the reactor
 
-Status: Phase 20. Built: addresses, endpoints and the error type (Day 267), the socket interface with its Linux backend and the access gate (Day 268). Next: the reactor (Day 269), the transports (Days 273-277).
+Status: Phase 20. Built: addresses, endpoints and the error type (Day 267), the socket interface with its Linux backend and the access gate (Day 268), the reactor, the asynchronous operations and timers (Day 269). Next: name resolution and listeners (Day 270), TCP streams (Day 271), the transports (Days 273-277).
 
 **Audience:** engine programmers who talk to another machine or process. Design, spikes and the benchmark pass conditions:
 `docs/superpowers/specs/2026-11-11-networking-design.md`.
@@ -153,3 +153,46 @@ directory on Day 278.
 
 Tests with real sockets are tagged `[network]`, live in the executable `net_tests_sockets` (ctest label `network`) and use loopback with ports the system
 chooses. A machine that cannot bind loopback skips them with a printed reason, so a sandbox without networking does not fail the suite.
+
+## The reactor: waiting without a thread per connection
+
+A non-blocking socket says `WouldBlock`; something has to wake the coroutine that wants to try again. `net::Reactor` is that something. One dedicated thread waits in
+the platform's poller (epoll on Linux) for the sockets that coroutines wait for and for the nearest timer; when a wait ends it hands the coroutine to the job system's
+scheduler, so it resumes on a participant. The reactor thread runs none of your code, and there is no thread per connection.
+
+```cpp
+jobs::Scheduler scheduler(config);
+net::Reactor reactor(scheduler);          // declared after the scheduler: destroyed (shut down) before it
+
+jobs::Job Echo(net::Reactor* reactor, net::Socket* socket)
+{
+    byte buffer[512];
+    for (;;)
+    {
+        const net::IoResult got = co_await net::Receive(*reactor, *socket, MutableByteSpan(buffer, sizeof buffer));
+        if (got.status.Failed())
+        {
+            break;                       // Closed at the end of the stream, or the failure
+        }
+        const net::IoResult sent = co_await net::Send(*reactor, *socket, ByteSpan(buffer, got.count));
+        if (sent.status.Failed())
+        {
+            break;
+        }
+    }
+    const net::Status closed = reactor->Close(*socket);   // also ends any other wait on this socket
+}
+```
+
+- **Waits** (`WaitReadable`, `WaitWritable`, `Sleep`) are awaitables giving a `Status`: `Ok` (ready; the operation then reports a real error), `TimedOut`, `Cancelled`, `Closed` or `Invalid`.
+  Each ends exactly once. A socket that is already ready ends its wait at once, because the poller checks by level; there is no window between "try" and "wait" in which an event is lost.
+- **Operations** (`Receive`, `Send`, `ReceiveFrom`, `SendTo`, `Accept`, `Connect`) are `jobs::Task`s that try the socket, wait when it would block and try again, until they finish or the options say stop.
+  `Send` returns when every byte has been taken. Their timeout covers the whole operation.
+- **Cancellation** is a `CancelToken` in the options: `Cancel()` from any thread ends every wait that uses it with `Cancelled`, whether it is still registering, waiting, or being completed by an event at that instant.
+- **Closing** a socket that coroutines may be waiting for goes through `Reactor::Close` (or `Forget` before closing by other means); the waits end with `Closed`. Closing the descriptor behind the reactor's back leaves them waiting.
+- **Time** comes from a `Clock`; a test passes a `ManualClock`, advances it and calls `Reactor::Poke`.
+- **Shutdown** (`Reactor::Shutdown`, also the destructor) ends every wait with `Cancelled` and joins the thread. The scheduler must still be running, because it resumes those coroutines, so destroy the reactor first.
+- **One reader and one writer per socket** at a time; a second wait in the same direction ends with `Invalid`.
+
+`jobs::Task<T>` (`engine/jobs/task.h`) is the general building block: a lazy coroutine returning a value, awaited by a job or another task, handing control back with no trip through the scheduler.
+

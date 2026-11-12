@@ -10,6 +10,7 @@ set(JOBS_TEST_SOURCES
   async_io_test.cpp
   parallel_for_test.cpp
   counter_test.cpp
+  task_test.cpp
   scheduler_test.cpp
   deque_test.cpp
   worker_pool_test.cpp

@@ -84,8 +84,8 @@ phase_script_case(current_forced_display PHASES 5 DISPLAY included ARGS --curren
 # --affected: the current phase plus the phases of the touched modules.
 phase_script_case(affected_rhi PHASES "3 4 5" DISPLAY excluded ARGS --affected --current-phase-file ${FIX}/phase5.txt
   --diff-from-file ${FIX}/diff_rhi.txt CTEST -L "^(phase3|phase4|phase5)$" ${PLAIN_NO_DISPLAY})
-phase_script_case(affected_jobs PHASES "2 3 4 5" ARGS --affected --current-phase-file ${FIX}/phase5.txt
-  --diff-from-file ${FIX}/diff_jobs.txt CTEST -L "^(phase2|phase3|phase4|phase5)$" ${PLAIN_NO_DISPLAY})
+phase_script_case(affected_jobs PHASES "2 3 4 5 17 18 19 20" ARGS --affected --current-phase-file ${FIX}/phase5.txt
+  --diff-from-file ${FIX}/diff_jobs.txt CTEST -L "^(phase2|phase3|phase4|phase5|phase17|phase18|phase19|phase20)$" ${PLAIN_NO_DISPLAY})
 phase_script_case(affected_runner PHASES "5 6" ARGS --affected --current-phase-file ${FIX}/phase5.txt
   --diff-from-file ${FIX}/diff_runner.txt CTEST -L "^(phase5|phase6)$" ${PLAIN_NO_DISPLAY})
 phase_script_case(affected_docgen_and_shaders PHASES "3 4 5" ARGS --affected --current-phase-file ${FIX}/phase5.txt

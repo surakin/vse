@@ -130,3 +130,32 @@ For an IPv6 socket: `on` accepts IPv4 peers as mapped addresses (`IPV6_V6ONLY` o
 ### `SetBroadcast`
 
 Allow sending to broadcast addresses; off for every new socket.
+
+## The poller
+
+`net::Poller` (`engine/net/poller.h`) is the one platform class of the readiness code: the reactor (`net/reactor.cpp`), the timers, the cancel logic and the
+asynchronous operations are neutral and sit on it. A new platform implements these four functions in `engine/net/<platform>/` (Linux: `linux/poller_epoll.cpp`).
+
+- **One-shot, by level.** A socket is armed for one notification and reported once; if it is ready when armed it is reported at once, so a registration after the
+  event is not lost. After a report the socket stays known to the poller but is disarmed until armed again (the reactor re-arms the direction that still has a waiter).
+- **`Arm` and `Disarm` run while another thread is in `Wait`**, and `Wake` makes a `Wait` in progress (or the next one) return. Hangup and error are reported as readiness bits;
+  the operation that follows reports the real error.
+- **The timeout of `Wait` never ends early** (round up to the system's resolution).
+
+### `Arm`
+
+Add the socket or modify its registration to one notification of the given interest (read, write or both); epoll: `EPOLL_CTL_MOD` with `EPOLLONESHOT`, falling back to
+`EPOLL_CTL_ADD`. Windows: add or update the socket's slot in the `WSAPoll` set (IOCP would need a different shape, see the spec).
+
+### `Disarm`
+
+Forget the socket; ignore one that is unknown or already closed.
+
+### `Wait`
+
+Block for ready sockets, a wake-up or the timeout, and report the ready sockets (not the wake-up) with their readiness bits.
+
+### `Wake`
+
+Make a wait return: an `eventfd` write on Linux; a connected loopback socket pair on Windows, which has no `eventfd`.
+

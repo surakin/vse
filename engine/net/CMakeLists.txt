@@ -14,8 +14,16 @@ set(NET_POSIX_SOURCES
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   list(APPEND NET_POSIX_SOURCES linux/linux_hooks.cpp)  # Day 268
 endif()
+# The reactor (Day 269): the readiness core is neutral; the poller is the platform's (epoll on Linux; the Windows poller is Day 278).
+set(NET_REACTOR_SOURCES
+  reactor.cpp  # Day 269
+  async.cpp  # Day 269
+)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  list(APPEND NET_REACTOR_SOURCES linux/poller_epoll.cpp)  # Day 269
+endif()
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
-  list(APPEND NET_SOURCES ${NET_POSIX_SOURCES})
+  list(APPEND NET_SOURCES ${NET_POSIX_SOURCES} ${NET_REACTOR_SOURCES})
 endif()
 set(NET_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
@@ -28,7 +36,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_library(net${suffix} STATIC ${NET_SOURCES})
     target_include_directories(net${suffix} PUBLIC ${NET_INCLUDE_ROOT})
     target_compile_options(net${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
-    target_link_libraries(net${suffix} PUBLIC foundation_base${suffix})
+    target_link_libraries(net${suffix} PUBLIC jobs${suffix} foundation_base${suffix})
   endforeach()
   return()
 endif()
@@ -37,5 +45,5 @@ foreach(suffix "" "_asan" "_tsan")
   add_library(net${suffix} STATIC ${NET_SOURCES})
   target_include_directories(net${suffix} PUBLIC ${NET_INCLUDE_ROOT})
   target_compile_options(net${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
-  target_link_libraries(net${suffix} PUBLIC foundation${suffix})
+  target_link_libraries(net${suffix} PUBLIC jobs${suffix} foundation${suffix})
 endforeach()

@@ -22,10 +22,16 @@ engine/foundation/os/macos/debug 7,26
 engine/foundation/os/posix/debug 7,26   # the death-test backend Linux and macOS share (Phase 26 Day 307)
 engine/foundation/os/posix 0,1,2,3,4,5,7,9,10,11,26   # the os backend Linux and macOS share (Phase 26 Day 301)
 engine/platform     0,1,4,5,8
-engine/jobs         2,3,4,5
+engine/jobs         2,3,4,5,17,18,19,20   # ecs, spatial, storage and net schedule on it
 engine/rhi          3,4,5
 engine/renderer     3,4,5
-engine/ecs          3,17
+engine/ecs          3,17,18,19   # spatial, storage and the scene build on it
+engine/spatial      3,5,17,18,19   # the renderer culls through it, the scene syncs it, storage stores its components
+engine/storage      3,19
+engine/scene        3,5,17,18
+engine/text         3,5,14,15
+engine/ui           3,5,15
+engine/ui_window    3,15
 engine/database     3,19
 engine/net          3,20
 shaders             4,5
@@ -46,6 +52,12 @@ tests/macos         26
 tools/platform_neutral_check 7
 tools/crash_extract 7
 game/hello_window  1
+game/input_probe    1
+game/rhi_bench      4
+game/ecs_bench      17
+game/spatial_demo   18
+game/storage_demo   19
+game/ui_demo        3,15
 game/rhi_demo       4,5
 game/renderer_demo  4,5
 game/renderer_bench 4,5
@@ -53,6 +65,14 @@ game/common         4,5
 docs                3
 tests/foundation    0,1
 tests/jobs          2
+tests/ecs           17
+tests/scene         17,18
+tests/spatial       18
+tests/storage       19
+tests/text          14
+tests/ui            15
+tests/foundation_sanitized 0
+tests/support       0,1,2,4,5,7,9,10,11,14,15,16,17,18,19,20   # shared test helpers: any phase's tests may include them
 tests/io            4,5,9   # temp_dir.h is shared with the rhi and renderer tests
 tests/types         10
 tests/lang          16
@@ -74,6 +94,11 @@ plans               -
 claude-memory       -
 .gitignore          -
 CLAUDE.md           -
+.clang-format       -   # formatting never changes what a test does
+.clang-format-ignore -
+.clang-tidy         -
+tests/.clang-tidy   -
+.git-blame-ignore-revs -
 PLAN.md             -
 STATUS.md           -
 KNOWN-ISSUES.md     -
