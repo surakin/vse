@@ -423,15 +423,15 @@ Text EmitPermutationInc(StringView base_view, StringView shader_view, StringView
     Appendf(
         &out,
         "    {%sSpv, %sSpvWordCount, %sRefl, %sReflByteCount, %sDxil, %sDxilByteCount, %sMetallib, %sMetallibByteCount, "
-        "%sMetallibEntry},\n",
-        b, b, b, b, b, b, b, b, b);
+        "%sMetallibEntry, &%sMetallibSlots},\n",
+        b, b, b, b, b, b, b, b, b, b);
     for (usize m = 1; m < modules.Size(); ++m)
     {
         Appendf(
             &out,
             "    {%sPerm%zuSpv, %sPerm%zuSpvWordCount, %sPerm%zuRefl, %sPerm%zuReflByteCount, %sPerm%zuDxil, %sPerm%zuDxilByteCount, "
-            "%sPerm%zuMetallib, %sPerm%zuMetallibByteCount, %sPerm%zuMetallibEntry},\n",
-            b, m, b, m, b, m, b, m, b, m, b, m, b, m, b, m, b, m);
+            "%sPerm%zuMetallib, %sPerm%zuMetallibByteCount, %sPerm%zuMetallibEntry, &%sPerm%zuMetallibSlots},\n",
+            b, m, b, m, b, m, b, m, b, m, b, m, b, m, b, m, b, m, b, m);
     }
     out.Append("};\n\n");
     Appendf(&out, "inline constexpr renderer::PermutationEntry %sEntries[%zu] = {\n", b, keys.Size());

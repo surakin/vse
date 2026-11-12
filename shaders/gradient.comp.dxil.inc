@@ -209,6 +209,6 @@ inline constexpr u8 kGradientCompDxil[kGradientCompDxilByteCount] = {
 inline constexpr u64 kGradientCompDxilSpirvFnv = 0x4d30b2a62741326full;
 
 // The shader in every format it was minted in.
-inline constexpr rhi::ShaderBlobSet kGradientCompShader = {"gradient.comp", rhi::SpirvBlob(kGradientCompSpv, kGradientCompSpvWordCount), rhi::DxilBlob(kGradientCompDxil, kGradientCompDxilByteCount), rhi::MetalLibBlob(kGradientCompMetallib, kGradientCompMetallibByteCount, kGradientCompMetallibEntry)};
+inline constexpr rhi::ShaderBlobSet kGradientCompShader = {"gradient.comp", rhi::SpirvBlob(kGradientCompSpv, kGradientCompSpvWordCount), rhi::DxilBlob(kGradientCompDxil, kGradientCompDxilByteCount), rhi::MetalLibBlob(kGradientCompMetallib, kGradientCompMetallibByteCount, kGradientCompMetallibEntry, &kGradientCompMetallibSlots)};
 
 } // namespace engine_placeholder::shaders

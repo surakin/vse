@@ -1103,7 +1103,14 @@ registered by [[rhi::RegisterCompiledBackends]] as `metal` ([[rhi::RegisterMetal
   packed, since Metal needs no row pitch beyond the texel size ([[rhi::DeviceCaps::buffer_texture_copy_row_pitch_alignment]] 1). A unified Mac
   tests the `Managed` path through a test hook (`rhi::metal::ForceManagedStorageForTest`), which is all of its coverage until a Mac with a discrete
   GPU runs the suites.
-- **Not built yet.** Samplers and bind groups (Day 318), shaders and pipelines (Day 319), command lists (Day 320) and the swapchain
+- **Bindings.** Resources are bound directly (`setVertexBuffer:`, `setFragmentTexture:`, ... at the slots of each stage's minted slot
+  table, [[rhi::ShaderSlotTable]]), not through argument buffers (Phase 26 decision 9; this Iris Plus 645 has argument-buffer tier 1). A
+  pipeline matches each stage's table against its bind group layouts when it is created: a resource the shader binds that the layout of its set
+  lacks, or that is not visible to the stage, or two resources at one slot, fail the creation with the reason. Groups hold their resources by
+  handle and are resolved when they are bound, and a slot that already holds the resource gets no second call (a new encoder starts empty).
+  Push constants are `setVertexBytes:`/`setFragmentBytes:` at the table's push-constant slot. Equal sampler descriptions share one Metal sampler;
+  `ClampToBorder` uses Metal's border colors, which macOS has (iOS before 14 does not: Phase 27).
+- **Not built yet.** Shaders and pipelines (Day 319), command lists (Day 320) and the swapchain
   (Day 321): until their day these fail with a log line naming it.
 
 ### What the RHI reports when something goes wrong

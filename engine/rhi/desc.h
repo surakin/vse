@@ -126,9 +126,46 @@ struct SamplerDesc
     const char* Validate() const;
 };
 
+/// Where one resource of a shader module is bound in a backend whose slots the compiler chose (a Metal library's
+/// `[[buffer(n)]]`, `[[texture(n)]]` or `[[sampler(n)]]`): the resource's set and binding, and its slot in the argument
+/// table its binding type uses (buffers, textures or samplers), with the type and array size the shader declares. An
+/// array binding takes `slot` and the slots after it.
+///
+/// - Thread-safety: thread-compatible plain data.
+struct ShaderSlot
+{
+    /// The bind group (set) of the resource.
+    u8 set = 0;
+    /// The binding within the set.
+    u8 binding = 0;
+    /// The first slot in the argument table of the binding's type.
+    u8 slot = 0;
+    /// The binding's type as the shader declares it (which table the slot is in), checked against the layout's.
+    BindingType type = BindingType::UniformBuffer;
+    /// The array size the shader declares (1 for a non-array binding), checked against the layout's.
+    u32 count = 1;
+};
+
+/// [[rhi::ShaderSlotTable]]'s `push_constant_slot` for a module without push constants.
+inline constexpr u32 kNoShaderSlot = 0xffffffffu;
+
+/// The slots of every resource of one shader module, minted beside a Metal library (Phase 26 Day 318): the Metal
+/// backend binds each bind group's resources at these slots and checks a pipeline's layout against them.
+///
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: `slots` is borrowed; minted tables are static.
+struct ShaderSlotTable
+{
+    /// The resources' slots, `count` of them; null when the module has no resources.
+    const ShaderSlot* slots = nullptr;
+    /// Number of entries in `slots`.
+    u32 count = 0;
+    /// The buffer slot of the push-constant block; [[rhi::kNoShaderSlot]] when the module has none.
+    u32 push_constant_slot = kNoShaderSlot;
+};
+
 /// One shader module's bytecode in one format: a pointer and a size, normally into a minted `*.spv.inc`, `*.dxil.inc`
-/// or
-/// `*.metallib.inc`, and for a Metal library the name of the function it exports.
+/// or `*.metallib.inc`, and for a Metal library the name of the function it exports and the slots of its resources.
 ///
 /// - Thread-safety: thread-compatible plain data.
 /// - Ownership: `bytes` is borrowed; minted blobs are static.
@@ -143,6 +180,9 @@ struct ShaderBlob
     /// The entry point's name in the module, or null for `main` (SPIR-V and DXIL). A Metal library exports the renamed
     /// entry Slang wrote (`main_0`), recorded when it was minted; no backend guesses it.
     const char* entry = nullptr;
+    /// The slots the compiler gave the module's resources (a Metal library); null for SPIR-V and DXIL, whose bindings
+    /// follow the set and binding.
+    const ShaderSlotTable* slots = nullptr;
 
     /// Returns whether the blob holds no bytecode.
     ///
@@ -174,17 +214,19 @@ constexpr ShaderBlob DxilBlob(const u8* bytes, usize size)
     return ShaderBlob{ShaderFormat::Dxil, bytes, size};
 }
 
-/// Returns the blob of a Metal library given as bytes, with the name of the function it exports.
+/// Returns the blob of a Metal library given as bytes, with the name of the function it exports and its slots.
 ///
 /// - Param bytes: the library; borrowed.
 /// - Param size: its size in bytes.
 /// - Param entry: the exported entry point (`main_0`); borrowed, static in a minted file.
+/// - Param slots: the slots of its resources (the minted `...MetallibSlots`); borrowed; null for none recorded.
 /// - Returns: a Metal library blob.
 /// - Fails: never.
 /// - Thread-safety: thread-safe.
-constexpr ShaderBlob MetalLibBlob(const u8* bytes, usize size, const char* entry)
+constexpr ShaderBlob MetalLibBlob(const u8* bytes, usize size, const char* entry,
+                                  const ShaderSlotTable* slots = nullptr)
 {
-    return ShaderBlob{ShaderFormat::MetalLib, bytes, size, entry};
+    return ShaderBlob{ShaderFormat::MetalLib, bytes, size, entry, slots};
 }
 
 /// One shader in every format it was minted in; code that creates shaders names the set once and picks the device's
@@ -245,8 +287,12 @@ struct ShaderDesc
     const char* entry = "main";
     /// Optional name shown in debuggers and logs; null for none.
     const char* debug_name = nullptr;
+    /// The slots of the module's resources, for a backend whose slots the compiler chose (Metal); borrowed; null for
+    /// SPIR-V and DXIL. A Metal library without them cannot be used in a pipeline that binds resources.
+    const ShaderSlotTable* slots = nullptr;
 
-    /// Sets `format`, `bytes`, `size` and `entry` from a blob: the entry it names (a Metal library), else `main`.
+    /// Sets `format`, `bytes`, `size`, `entry` and `slots` from a blob: the entry it names (a Metal library), else
+    /// `main`.
     ///
     /// - Param blob: the module; borrowed like `bytes`.
     /// - Fails: never.
@@ -256,6 +302,7 @@ struct ShaderDesc
         bytes = blob.bytes;
         size = blob.size;
         entry = blob.entry != nullptr ? blob.entry : "main";
+        slots = blob.slots;
     }
 
     /// Checks the descriptor without a device.

@@ -13,6 +13,7 @@
 #include "sync/mutex.h"
 
 #include "containers/array.h"
+#include "containers/vector.h"
 #include "containers/shared_ptr.h"
 #include "containers/unique_ptr.h"
 #include "rhi/device.h"
@@ -26,6 +27,90 @@ namespace engine_placeholder::rhi::metal
 {
 
 class MetalDevice;
+
+// Metal's argument tables on the Mac2 family: buffers (vertex buffers and push constants share it), textures, samplers.
+inline constexpr u32 kMetalBufferSlots = 31;
+inline constexpr u32 kMetalTextureSlots = 128;
+inline constexpr u32 kMetalSamplerSlots = 16;
+
+// One resolved resource of a bind group: its binding, array element and type, and the Metal object (retained) with a
+// buffer's offset.
+struct MetalGroupResource
+{
+    u32 binding = 0;
+    u32 element = 0;
+    BindingType type = BindingType::UniformBuffer;
+    id<MTLBuffer> buffer = nil;
+    u64 offset = 0;
+    id<MTLTexture> texture = nil;
+    id<MTLSamplerState> sampler = nil;
+};
+
+// One resource a shader stage binds, from its Metal library's slot table matched against a pipeline's layouts (Day
+// 318): the set and binding, the binding's type (which argument table) and array size, and the first slot.
+struct MetalSlotRef
+{
+    u8 set = 0;
+    u8 binding = 0;
+    u8 slot = 0;
+    BindingType type = BindingType::UniformBuffer;
+    u32 count = 1;
+};
+
+// Every resource one stage of a pipeline binds, and its push-constant buffer slot (kNoShaderSlot for none).
+struct MetalStageSlots
+{
+    Vector<MetalSlotRef> refs;
+    u32 push_constant_slot = kNoShaderSlot;
+};
+
+// Matches a stage's slot table against a pipeline's bind group layouts: every resource the shader binds must be in the
+// layout of its set, of the type the shader declares (the same argument table), visible to `stage`, with the same array
+// size and inside Metal's tables, no two at one slot, and the push-constant slot inside the buffer table and apart. A
+// module without a table is refused when a layout gives the stage any binding. False with the reason in `error`.
+bool MapStageSlots(MetalDevice& device, ShaderStage stage, const ShaderSlotTable* table,
+                   const BindGroupLayoutHandle* layouts, u32 layout_count, MetalStageSlots* out, char* error,
+                   usize error_size);
+
+// The resources bound on one encoder, per stage, so a bind group that sets a slot to what it already holds issues no
+// call. A new encoder starts empty: call Reset when one begins (Day 318; the command lists use it from Day 320).
+class MetalBinder
+{
+public:
+    // Forgets what is bound (a new encoder).
+    void Reset();
+    // Binds a group's resources at set `set` for the vertex and fragment stages of a render encoder (either may be
+    // null). False when the group is invalid or lacks a resource a stage binds (logged).
+    bool BindRender(MetalDevice& device, id<MTLRenderCommandEncoder> encoder, const MetalStageSlots* vertex,
+                    const MetalStageSlots* fragment, u32 set, BindGroupHandle group);
+    // The same for a compute encoder.
+    bool BindCompute(MetalDevice& device, id<MTLComputeCommandEncoder> encoder, const MetalStageSlots& compute, u32 set,
+                     BindGroupHandle group);
+    // Writes push constants at the stages' push-constant slots (setVertexBytes:, setFragmentBytes:); `size` at most
+    // kMaxPushConstantBytes. A stage without push constants is skipped.
+    void PushRender(id<MTLRenderCommandEncoder> encoder, const MetalStageSlots* vertex, const MetalStageSlots* fragment,
+                    const void* data, u32 size);
+    void PushCompute(id<MTLComputeCommandEncoder> encoder, const MetalStageSlots& compute, const void* data, u32 size);
+    // How many set calls the binder issued since the last Reset (tests: unchanged slots are skipped).
+    u32 IssuedCalls() const { return issued_; }
+
+    // The slots of one stage on the current encoder (pointers are not retained: the device keeps the objects alive
+    // while a frame that used them runs). A push writes a buffer slot too, so it forgets that slot.
+    struct Bound
+    {
+        Array<const void*, kMetalBufferSlots> buffers = {};
+        Array<u64, kMetalBufferSlots> offsets = {};
+        Array<const void*, kMetalTextureSlots> textures = {};
+        Array<const void*, kMetalSamplerSlots> samplers = {};
+    };
+
+private:
+    Bound vertex_;
+    Bound fragment_;
+    Bound compute_;
+    u32 issued_ = 0;
+    Vector<MetalGroupResource> scratch_;  // reused: no allocation per bind once warm
+};
 
 // What the command buffers' completion handlers touch: shared with each handler, so a handler that runs after the
 // device is gone (Metal calls them on its own threads, after the timeline value the device waited for) still has it.
@@ -86,6 +171,14 @@ public:
     void InjectDeviceLoss() override;
     bool DeviceLost() const override { return shared_->lost.Load(MemoryOrder::Acquire); }
 
+    // Day 318 (metal_device_bindings.mm).
+    SamplerHandle CreateSampler(const SamplerDesc& desc) override;
+    void DestroySampler(SamplerHandle sampler) override;
+    BindGroupLayoutHandle CreateBindGroupLayout(const BindGroupLayoutDesc& desc) override;
+    void DestroyBindGroupLayout(BindGroupLayoutHandle layout) override;
+    BindGroupHandle CreateBindGroup(const BindGroupDesc& desc) override;
+    void DestroyBindGroup(BindGroupHandle group) override;
+
     // Day 317 (metal_device_resources.mm).
     BufferHandle CreateBuffer(const BufferDesc& desc) override;
     void DestroyBuffer(BufferHandle buffer) override;
@@ -100,14 +193,8 @@ public:
     bool ReadbackBuffer(BufferHandle src, u64 offset, void* dst, u64 size) override;
 
     // Days 318-321 (until then: a failure with a log line).
-    SamplerHandle CreateSampler(const SamplerDesc& desc) override;
-    void DestroySampler(SamplerHandle sampler) override;
     ShaderHandle CreateShader(const ShaderDesc& desc) override;
     void DestroyShader(ShaderHandle shader) override;
-    BindGroupLayoutHandle CreateBindGroupLayout(const BindGroupLayoutDesc& desc) override;
-    void DestroyBindGroupLayout(BindGroupLayoutHandle layout) override;
-    BindGroupHandle CreateBindGroup(const BindGroupDesc& desc) override;
-    void DestroyBindGroup(BindGroupHandle group) override;
     PipelineHandle CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) override;
     PipelineHandle CreateComputePipeline(const ComputePipelineDesc& desc) override;
     void DestroyPipeline(PipelineHandle pipeline) override;
@@ -165,6 +252,14 @@ public:
     id<MTLBuffer> BufferObject(BufferHandle buffer) const;
     // The Metal texture of a live handle, nil for an invalid or stale one. Ownership: borrowed while the handle lives.
     id<MTLTexture> TextureObject(TextureHandle texture) const;
+    // The Metal sampler of a live handle, nil for an invalid or stale one. Ownership: borrowed while the handle lives.
+    id<MTLSamplerState> SamplerObject(SamplerHandle sampler) const;
+    // The bindings of a live layout (sorted by binding), copied into `out`; false for an invalid or stale handle.
+    bool LayoutBindings(BindGroupLayoutHandle layout, Vector<BindingDesc>* out) const;
+    // Resolves a group's resources by handle (the reset rule: groups hold handles, read at record time) into `out`,
+    // which keeps the Metal objects alive; false for an invalid group or a resource destroyed since. The lock is held
+    // only while resolving: the caller makes its encoder calls afterwards.
+    bool ResolveGroup(BindGroupHandle group, Vector<MetalGroupResource>* out) const;
     // The storage mode a buffer of `location` gets on this device (Private, Shared or Managed).
     MTLStorageMode StorageModeFor(MemoryLocation location) const;
 
@@ -174,6 +269,36 @@ private:
     bool TakeStrike();
     bool InjectLoss(const char* where, u32 number);
     void UpdateCompletedFramesLocked();
+
+    // Day 318 (metal_device_bindings.mm).
+    static constexpr u32 kFrameSlots = 4;  // transient groups end when their frame's slot comes round again
+    struct SamplerRes
+    {
+        id<MTLSamplerState> state = nil;
+        SamplerDesc desc;  // normalized, without the debug name
+        u32 refs = 1;      // equal descriptions share one sampler
+    };
+    struct BindGroupLayoutRes
+    {
+        Vector<BindingDesc> bindings;  // sorted by binding
+    };
+    struct GroupEntry
+    {
+        u32 binding = 0;
+        u32 element = 0;
+        BindingType type = BindingType::UniformBuffer;
+        BufferHandle buffer;
+        u64 offset = 0;
+        TextureHandle texture;
+        SamplerHandle sampler;
+    };
+    struct BindGroupRes
+    {
+        Vector<GroupEntry> entries;
+        bool transient = false;
+    };
+    void RetireFrameGroupsLocked(u32 slot);
+    void ReleaseSamplerLocked(SamplerHandle sampler);
 
     struct BufferRes
     {
@@ -255,6 +380,12 @@ private:
     Atomic<u32> allocation_count_{0};  // device allocations asked for, for fail_allocations_from
     Atomic<u64> device_memory_bytes_{0};
     Atomic<u32> raw_resources_{0};  // Metal buffers and textures alive, the application's and the device's own
+
+    // Bindings (Day 318), under resource_mutex_.
+    HandlePool<SamplerRes, SamplerTag> samplers_;
+    HandlePool<BindGroupLayoutRes, BindGroupLayoutTag> bind_group_layouts_;
+    HandlePool<BindGroupRes, BindGroupTag> bind_groups_;
+    Array<Vector<BindGroupHandle>, kFrameSlots> frame_groups_;
 
     // The staging ring (a Shared buffer), under submit_mutex_.
     id<MTLBuffer> staging_ = nil;

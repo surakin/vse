@@ -3,6 +3,7 @@
 #pragma once
 
 #include "bindings_test.frag.spv.inc"
+#include "rhi/desc.h"
 #include "types.h"
 
 namespace engine_placeholder::shaders {
@@ -339,6 +340,10 @@ inline constexpr u8 kBindingsTestFragMetallib[kBindingsTestFragMetallibByteCount
 
 // The function the library exports (Slang renames `main` for Metal).
 inline constexpr const char* kBindingsTestFragMetallibEntry = "main_0";
+
+// Where the library's resources are bound: set, binding, Metal slot, type, count (rhi::ShaderSlotTable).
+inline constexpr rhi::ShaderSlot kBindingsTestFragMetallibSlotList[3] = {{0, 0, 0, rhi::BindingType(0), 1}, {0, 1, 0, rhi::BindingType(2), 1}, {0, 2, 0, rhi::BindingType(3), 1}, };
+inline constexpr rhi::ShaderSlotTable kBindingsTestFragMetallibSlots = {kBindingsTestFragMetallibSlotList, 3, 0x1u};
 
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kBindingsTestFragMetallibSpirvFnv = 0xc0aecfdfa8924c69ull;

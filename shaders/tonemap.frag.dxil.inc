@@ -291,6 +291,6 @@ inline constexpr u8 kTonemapFragDxil[kTonemapFragDxilByteCount] = {
 inline constexpr u64 kTonemapFragDxilSpirvFnv = 0xd2463a967023f189ull;
 
 // The shader in every format it was minted in.
-inline constexpr rhi::ShaderBlobSet kTonemapFragShader = {"tonemap.frag", rhi::SpirvBlob(kTonemapFragSpv, kTonemapFragSpvWordCount), rhi::DxilBlob(kTonemapFragDxil, kTonemapFragDxilByteCount), rhi::MetalLibBlob(kTonemapFragMetallib, kTonemapFragMetallibByteCount, kTonemapFragMetallibEntry)};
+inline constexpr rhi::ShaderBlobSet kTonemapFragShader = {"tonemap.frag", rhi::SpirvBlob(kTonemapFragSpv, kTonemapFragSpvWordCount), rhi::DxilBlob(kTonemapFragDxil, kTonemapFragDxilByteCount), rhi::MetalLibBlob(kTonemapFragMetallib, kTonemapFragMetallibByteCount, kTonemapFragMetallibEntry, &kTonemapFragMetallibSlots)};
 
 } // namespace engine_placeholder::shaders

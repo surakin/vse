@@ -3,6 +3,7 @@
 #pragma once
 
 #include "textured.frag.spv.inc"
+#include "rhi/desc.h"
 #include "types.h"
 
 namespace engine_placeholder::shaders {
@@ -296,6 +297,10 @@ inline constexpr u8 kTexturedFragMetallib[kTexturedFragMetallibByteCount] = {
 
 // The function the library exports (Slang renames `main` for Metal).
 inline constexpr const char* kTexturedFragMetallibEntry = "main_0";
+
+// Where the library's resources are bound: set, binding, Metal slot, type, count (rhi::ShaderSlotTable).
+inline constexpr rhi::ShaderSlot kTexturedFragMetallibSlotList[2] = {{0, 1, 0, rhi::BindingType(2), 1}, {0, 2, 0, rhi::BindingType(3), 1}, };
+inline constexpr rhi::ShaderSlotTable kTexturedFragMetallibSlots = {kTexturedFragMetallibSlotList, 2, 0xffffffffu};
 
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kTexturedFragMetallibSpirvFnv = 0xa976596febeabaf2ull;

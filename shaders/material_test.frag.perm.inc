@@ -156,8 +156,8 @@ inline constexpr u8 kMaterialTestFragPerm1Refl[kMaterialTestFragPerm1ReflByteCou
 inline constexpr const char* kMaterialTestFragOptions[1] = {"TINT", };
 
 inline constexpr renderer::PermutationModule kMaterialTestFragModules[2] = {
-    {kMaterialTestFragSpv, kMaterialTestFragSpvWordCount, kMaterialTestFragRefl, kMaterialTestFragReflByteCount, kMaterialTestFragDxil, kMaterialTestFragDxilByteCount, kMaterialTestFragMetallib, kMaterialTestFragMetallibByteCount, kMaterialTestFragMetallibEntry},
-    {kMaterialTestFragPerm1Spv, kMaterialTestFragPerm1SpvWordCount, kMaterialTestFragPerm1Refl, kMaterialTestFragPerm1ReflByteCount, kMaterialTestFragPerm1Dxil, kMaterialTestFragPerm1DxilByteCount, kMaterialTestFragPerm1Metallib, kMaterialTestFragPerm1MetallibByteCount, kMaterialTestFragPerm1MetallibEntry},
+    {kMaterialTestFragSpv, kMaterialTestFragSpvWordCount, kMaterialTestFragRefl, kMaterialTestFragReflByteCount, kMaterialTestFragDxil, kMaterialTestFragDxilByteCount, kMaterialTestFragMetallib, kMaterialTestFragMetallibByteCount, kMaterialTestFragMetallibEntry, &kMaterialTestFragMetallibSlots},
+    {kMaterialTestFragPerm1Spv, kMaterialTestFragPerm1SpvWordCount, kMaterialTestFragPerm1Refl, kMaterialTestFragPerm1ReflByteCount, kMaterialTestFragPerm1Dxil, kMaterialTestFragPerm1DxilByteCount, kMaterialTestFragPerm1Metallib, kMaterialTestFragPerm1MetallibByteCount, kMaterialTestFragPerm1MetallibEntry, &kMaterialTestFragPerm1MetallibSlots},
 };
 
 inline constexpr renderer::PermutationEntry kMaterialTestFragEntries[2] = {

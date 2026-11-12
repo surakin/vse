@@ -214,6 +214,6 @@ inline constexpr u8 kTriangleVertDxil[kTriangleVertDxilByteCount] = {
 inline constexpr u64 kTriangleVertDxilSpirvFnv = 0x392536477f91d584ull;
 
 // The shader in every format it was minted in.
-inline constexpr rhi::ShaderBlobSet kTriangleVertShader = {"triangle.vert", rhi::SpirvBlob(kTriangleVertSpv, kTriangleVertSpvWordCount), rhi::DxilBlob(kTriangleVertDxil, kTriangleVertDxilByteCount), rhi::MetalLibBlob(kTriangleVertMetallib, kTriangleVertMetallibByteCount, kTriangleVertMetallibEntry)};
+inline constexpr rhi::ShaderBlobSet kTriangleVertShader = {"triangle.vert", rhi::SpirvBlob(kTriangleVertSpv, kTriangleVertSpvWordCount), rhi::DxilBlob(kTriangleVertDxil, kTriangleVertDxilByteCount), rhi::MetalLibBlob(kTriangleVertMetallib, kTriangleVertMetallibByteCount, kTriangleVertMetallibEntry, &kTriangleVertMetallibSlots)};
 
 } // namespace engine_placeholder::shaders

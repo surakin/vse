@@ -194,6 +194,6 @@ inline constexpr u8 kTriangleFragDxil[kTriangleFragDxilByteCount] = {
 inline constexpr u64 kTriangleFragDxilSpirvFnv = 0x154a01a5d10fb92bull;
 
 // The shader in every format it was minted in.
-inline constexpr rhi::ShaderBlobSet kTriangleFragShader = {"triangle.frag", rhi::SpirvBlob(kTriangleFragSpv, kTriangleFragSpvWordCount), rhi::DxilBlob(kTriangleFragDxil, kTriangleFragDxilByteCount), rhi::MetalLibBlob(kTriangleFragMetallib, kTriangleFragMetallibByteCount, kTriangleFragMetallibEntry)};
+inline constexpr rhi::ShaderBlobSet kTriangleFragShader = {"triangle.frag", rhi::SpirvBlob(kTriangleFragSpv, kTriangleFragSpvWordCount), rhi::DxilBlob(kTriangleFragDxil, kTriangleFragDxilByteCount), rhi::MetalLibBlob(kTriangleFragMetallib, kTriangleFragMetallibByteCount, kTriangleFragMetallibEntry, &kTriangleFragMetallibSlots)};
 
 } // namespace engine_placeholder::shaders

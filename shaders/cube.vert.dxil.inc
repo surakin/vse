@@ -292,6 +292,6 @@ inline constexpr u8 kCubeVertDxil[kCubeVertDxilByteCount] = {
 inline constexpr u64 kCubeVertDxilSpirvFnv = 0x57eb4765ba957762ull;
 
 // The shader in every format it was minted in.
-inline constexpr rhi::ShaderBlobSet kCubeVertShader = {"cube.vert", rhi::SpirvBlob(kCubeVertSpv, kCubeVertSpvWordCount), rhi::DxilBlob(kCubeVertDxil, kCubeVertDxilByteCount), rhi::MetalLibBlob(kCubeVertMetallib, kCubeVertMetallibByteCount, kCubeVertMetallibEntry)};
+inline constexpr rhi::ShaderBlobSet kCubeVertShader = {"cube.vert", rhi::SpirvBlob(kCubeVertSpv, kCubeVertSpvWordCount), rhi::DxilBlob(kCubeVertDxil, kCubeVertDxilByteCount), rhi::MetalLibBlob(kCubeVertMetallib, kCubeVertMetallibByteCount, kCubeVertMetallibEntry, &kCubeVertMetallibSlots)};
 
 } // namespace engine_placeholder::shaders

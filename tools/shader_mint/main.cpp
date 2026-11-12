@@ -32,7 +32,8 @@
 // blob, on every platform, so `.refl.inc` is the same everywhere. On a Mac, the library tools/metal_mint wrote
 // (`--metallib FILE
 // --metallib-info FILE --metallib-out FILE`; permute mode: `--metal-mint PATH --metallib-out FILE`) goes into
-// `<name>.metallib.inc`: `<Base>Metallib`, `<Base>MetallibByteCount`, `<Base>MetallibEntry` (the exported function,
+// `<name>.metallib.inc`: `<Base>Metallib`, `<Base>MetallibByteCount`, `<Base>MetallibSlots` (where its resources are
+// bound, rhi::ShaderSlotTable, Day 318), `<Base>MetallibEntry` (the exported function,
 // `main_0`) and `<Base>MetallibSpirvFnv`. The `.dxil.inc` includes the `.metallib.inc` and its blob set holds all
 // three. Without the Metal library options the committed `.metallib.inc` stays.
 //
@@ -409,6 +410,37 @@ bool ReadMetallib(const char* metallib_path, const char* info_path, const char* 
     return true;
 }
 
+// The slot table of one module's Metal library: every binding's set, binding and Metal slot, and the push-constant
+// block's slot (the reflection's, which ApplyMetalSlots filled from the Metal build).
+void AppendSlotTable(Text* text, StringView name, const renderer::ShaderReflection& reflection)
+{
+    const Text n = MakeText(name);
+    Appendf(
+        text,
+        "\n// Where the library's resources are bound: set, binding, Metal slot, type, count (rhi::ShaderSlotTable).\n");
+    if (reflection.binding_count != 0)
+    {
+        Appendf(text, "inline constexpr rhi::ShaderSlot %sSlotList[%u] = {", n.CStr(), reflection.binding_count);
+        for (u32 i = 0; i < reflection.binding_count; ++i)
+        {
+            const renderer::ReflectedBinding& b = reflection.bindings[i];
+            Appendf(text, "{%u, %u, %u, rhi::BindingType(%u), %u}, ", b.set, b.binding, b.metal_slot,
+                    static_cast<u32>(b.type), b.count);
+        }
+        text->Append("};\n");
+    }
+    const u32 push = reflection.has_push_constants ? reflection.push_constant_metal_slot : rhi::kNoShaderSlot;
+    if (reflection.binding_count != 0)
+    {
+        Appendf(text, "inline constexpr rhi::ShaderSlotTable %sSlots = {%sSlotList, %u, 0x%xu};\n", n.CStr(), n.CStr(),
+                reflection.binding_count, push);
+    }
+    else
+    {
+        Appendf(text, "inline constexpr rhi::ShaderSlotTable %sSlots = {nullptr, 0, 0x%xu};\n", n.CStr(), push);
+    }
+}
+
 // The `.metallib.inc` text: each module's library (module 0 the base), the function it exports and the hash of the
 // SPIR-V it was minted beside. `compiler` is the slangc version; `metal_compiler` the driver compiler and macOS build.
 Text MetallibText(StringView base, StringView shader_file, const char* source, const char* compiler,
@@ -424,7 +456,7 @@ Text MetallibText(StringView base, StringView shader_file, const char* source, c
     Appendf(&text, "// compiler: %s, %s\n", compiler, metal_compiler);
     Appendf(
         &text,
-        "#pragma once\n\n#include \"%s.spv.inc\"\n#include \"types.h\"\n\nnamespace engine_placeholder::shaders {\n\n",
+        "#pragma once\n\n#include \"%s.spv.inc\"\n#include \"rhi/desc.h\"\n#include \"types.h\"\n\nnamespace engine_placeholder::shaders {\n\n",
         file.CStr());
     for (usize m = 0; m < module_metal.Size(); ++m)
     {
@@ -438,6 +470,7 @@ Text MetallibText(StringView base, StringView shader_file, const char* source, c
         Appendf(&text, "\n// The function the library exports (Slang renames `main` for Metal).\n");
         Appendf(&text, "inline constexpr const char* %sEntry = \"%s\";\n", name.CStr(),
                 module_metal[m]->metal_entry.CStr());
+        AppendSlotTable(&text, name.View(), module_metal[m]->reflection);
         Appendf(
             &text,
             "\n// The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.\n");
@@ -458,16 +491,23 @@ bool NeedsPlaceholder(const char* path, usize module_count)
         return true;
     }
     const StringView text = ToStringView(bytes);
-    const StringView marker("MetallibEntry = ");
-    usize found = 0;
-    for (usize i = 0; i + marker.Length() <= text.Length(); ++i)
+    // The entry and the slot table (Day 318) of each module: an older file without the slots is replaced too.
+    const StringView entry_marker("MetallibEntry = ");
+    const StringView slots_marker("MetallibSlots = ");
+    usize entries = 0;
+    usize slots = 0;
+    for (usize i = 0; i < text.Length(); ++i)
     {
-        if (text.Substring(i, marker.Length()) == marker)
+        if (i + entry_marker.Length() <= text.Length() && text.Substring(i, entry_marker.Length()) == entry_marker)
         {
-            ++found;
+            ++entries;
+        }
+        if (i + slots_marker.Length() <= text.Length() && text.Substring(i, slots_marker.Length()) == slots_marker)
+        {
+            ++slots;
         }
     }
-    return found != module_count;
+    return entries != module_count || slots != module_count;
 }
 
 // A `.metallib.inc` with no library in it (a machine without a Mac added or re-shaped the shader): every module's blob
@@ -484,7 +524,7 @@ Text PlaceholderMetallibText(StringView base, StringView shader_file, const char
     text.Append("// compiler: none (not minted)\n");
     Appendf(
         &text,
-        "#pragma once\n\n#include \"%s.spv.inc\"\n#include \"types.h\"\n\nnamespace engine_placeholder::shaders {\n\n",
+        "#pragma once\n\n#include \"%s.spv.inc\"\n#include \"rhi/desc.h\"\n#include \"types.h\"\n\nnamespace engine_placeholder::shaders {\n\n",
         file.CStr());
     for (usize m = 0; m < module_count; ++m)
     {
@@ -497,6 +537,7 @@ Text PlaceholderMetallibText(StringView base, StringView shader_file, const char
         Appendf(&text, "inline constexpr const u8* %s = nullptr;\n", name.CStr());
         Appendf(&text, "inline constexpr usize %sByteCount = 0;\n", name.CStr());
         Appendf(&text, "inline constexpr const char* %sEntry = nullptr;\n", name.CStr());
+        Appendf(&text, "inline constexpr rhi::ShaderSlotTable %sSlots = {};\n", name.CStr());
         Appendf(&text, "inline constexpr u64 %sSpirvFnv = 0;\n\n", name.CStr());
     }
     text.Append("} // namespace engine_placeholder::shaders\n");
@@ -538,8 +579,8 @@ Text DxilText(StringView base, StringView shader_file, const char* source, const
     Appendf(&text, "// The shader in every format it was minted in.\n");
     Appendf(
         &text,
-        "inline constexpr rhi::ShaderBlobSet %sShader = {\"%s\", rhi::SpirvBlob(%sSpv, %sSpvWordCount), rhi::DxilBlob(%sDxil, %sDxilByteCount), rhi::MetalLibBlob(%sMetallib, %sMetallibByteCount, %sMetallibEntry)};\n",
-        b.CStr(), file.CStr(), b.CStr(), b.CStr(), b.CStr(), b.CStr(), b.CStr(), b.CStr(), b.CStr());
+        "inline constexpr rhi::ShaderBlobSet %sShader = {\"%s\", rhi::SpirvBlob(%sSpv, %sSpvWordCount), rhi::DxilBlob(%sDxil, %sDxilByteCount), rhi::MetalLibBlob(%sMetallib, %sMetallibByteCount, %sMetallibEntry, &%sMetallibSlots)};\n",
+        b.CStr(), file.CStr(), b.CStr(), b.CStr(), b.CStr(), b.CStr(), b.CStr(), b.CStr(), b.CStr(), b.CStr());
     text.Append("\n} // namespace engine_placeholder::shaders\n");
     return text;
 }

@@ -464,6 +464,6 @@ inline constexpr u8 kPointLightFragDxil[kPointLightFragDxilByteCount] = {
 inline constexpr u64 kPointLightFragDxilSpirvFnv = 0x32005f7a894a193cull;
 
 // The shader in every format it was minted in.
-inline constexpr rhi::ShaderBlobSet kPointLightFragShader = {"point_light.frag", rhi::SpirvBlob(kPointLightFragSpv, kPointLightFragSpvWordCount), rhi::DxilBlob(kPointLightFragDxil, kPointLightFragDxilByteCount), rhi::MetalLibBlob(kPointLightFragMetallib, kPointLightFragMetallibByteCount, kPointLightFragMetallibEntry)};
+inline constexpr rhi::ShaderBlobSet kPointLightFragShader = {"point_light.frag", rhi::SpirvBlob(kPointLightFragSpv, kPointLightFragSpvWordCount), rhi::DxilBlob(kPointLightFragDxil, kPointLightFragDxilByteCount), rhi::MetalLibBlob(kPointLightFragMetallib, kPointLightFragMetallibByteCount, kPointLightFragMetallibEntry, &kPointLightFragMetallibSlots)};
 
 } // namespace engine_placeholder::shaders

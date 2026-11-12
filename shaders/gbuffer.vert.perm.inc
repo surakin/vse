@@ -178,8 +178,8 @@ inline constexpr u8 kGbufferVertPerm1Refl[kGbufferVertPerm1ReflByteCount] = {
 inline constexpr const char* kGbufferVertOptions[1] = {"VERTEX_COLOR", };
 
 inline constexpr renderer::PermutationModule kGbufferVertModules[2] = {
-    {kGbufferVertSpv, kGbufferVertSpvWordCount, kGbufferVertRefl, kGbufferVertReflByteCount, kGbufferVertDxil, kGbufferVertDxilByteCount, kGbufferVertMetallib, kGbufferVertMetallibByteCount, kGbufferVertMetallibEntry},
-    {kGbufferVertPerm1Spv, kGbufferVertPerm1SpvWordCount, kGbufferVertPerm1Refl, kGbufferVertPerm1ReflByteCount, kGbufferVertPerm1Dxil, kGbufferVertPerm1DxilByteCount, kGbufferVertPerm1Metallib, kGbufferVertPerm1MetallibByteCount, kGbufferVertPerm1MetallibEntry},
+    {kGbufferVertSpv, kGbufferVertSpvWordCount, kGbufferVertRefl, kGbufferVertReflByteCount, kGbufferVertDxil, kGbufferVertDxilByteCount, kGbufferVertMetallib, kGbufferVertMetallibByteCount, kGbufferVertMetallibEntry, &kGbufferVertMetallibSlots},
+    {kGbufferVertPerm1Spv, kGbufferVertPerm1SpvWordCount, kGbufferVertPerm1Refl, kGbufferVertPerm1ReflByteCount, kGbufferVertPerm1Dxil, kGbufferVertPerm1DxilByteCount, kGbufferVertPerm1Metallib, kGbufferVertPerm1MetallibByteCount, kGbufferVertPerm1MetallibEntry, &kGbufferVertPerm1MetallibSlots},
 };
 
 inline constexpr renderer::PermutationEntry kGbufferVertEntries[2] = {

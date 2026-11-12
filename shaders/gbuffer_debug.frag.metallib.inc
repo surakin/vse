@@ -3,6 +3,7 @@
 #pragma once
 
 #include "gbuffer_debug.frag.spv.inc"
+#include "rhi/desc.h"
 #include "types.h"
 
 namespace engine_placeholder::shaders {
@@ -524,6 +525,10 @@ inline constexpr u8 kGbufferDebugFragMetallib[kGbufferDebugFragMetallibByteCount
 
 // The function the library exports (Slang renames `main` for Metal).
 inline constexpr const char* kGbufferDebugFragMetallibEntry = "main_0";
+
+// Where the library's resources are bound: set, binding, Metal slot, type, count (rhi::ShaderSlotTable).
+inline constexpr rhi::ShaderSlot kGbufferDebugFragMetallibSlotList[5] = {{0, 0, 0, rhi::BindingType(2), 1}, {0, 1, 1, rhi::BindingType(2), 1}, {0, 2, 2, rhi::BindingType(2), 1}, {0, 3, 3, rhi::BindingType(2), 1}, {0, 4, 0, rhi::BindingType(3), 1}, };
+inline constexpr rhi::ShaderSlotTable kGbufferDebugFragMetallibSlots = {kGbufferDebugFragMetallibSlotList, 5, 0x0u};
 
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kGbufferDebugFragMetallibSpirvFnv = 0x4e422827483d6318ull;

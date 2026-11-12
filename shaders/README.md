@@ -152,8 +152,9 @@ target can ask (SPIR-V, DXIL) the count is also bounded by the buffers' lengths.
 ## Metal libraries (Phase 26 Day 315)
 
 Every shader is also minted into `<name>.metallib.inc`: an AIR-only, executable `.metallib` (`<Base>Metallib`), the function it
-exports (`<Base>MetallibEntry`, `main_0`) and the FNV-1a hash of the SPIR-V it was minted beside (`shader_metallib_test` compares
-it). The `.dxil.inc` includes it and its blob set (`<Base>Shader`) holds all three formats; a permuted shader's `.perm.inc` lists
+exports (`<Base>MetallibEntry`, `main_0`), where its resources are bound (`<Base>MetallibSlots`, an `rhi::ShaderSlotTable` of set,
+binding and Metal slot, and the push-constant block's buffer slot, from the reflection: Day 318) and the FNV-1a hash of the SPIR-V
+it was minted beside (`shader_metallib_test` compares it). The `.dxil.inc` includes it and its blob set (`<Base>Shader`) holds all three formats; a permuted shader's `.perm.inc` lists
 each module's library. Minting needs a Mac: `slangc -target metal` writes the Metal Shading Language, and `tools/metal_mint`
 compiles it with the driver's own compiler and serializes it through the undocumented `-[MTLLibrary serializeToURL:error:]`, the
 **interim route the user chose on Day 298, pending until they have a new Mac** (`KNOWN-ISSUES.md`); the tool checks the file loads

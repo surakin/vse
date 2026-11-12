@@ -208,6 +208,6 @@ inline constexpr u8 kFullscreenVertDxil[kFullscreenVertDxilByteCount] = {
 inline constexpr u64 kFullscreenVertDxilSpirvFnv = 0x859decd7d4c19063ull;
 
 // The shader in every format it was minted in.
-inline constexpr rhi::ShaderBlobSet kFullscreenVertShader = {"fullscreen.vert", rhi::SpirvBlob(kFullscreenVertSpv, kFullscreenVertSpvWordCount), rhi::DxilBlob(kFullscreenVertDxil, kFullscreenVertDxilByteCount), rhi::MetalLibBlob(kFullscreenVertMetallib, kFullscreenVertMetallibByteCount, kFullscreenVertMetallibEntry)};
+inline constexpr rhi::ShaderBlobSet kFullscreenVertShader = {"fullscreen.vert", rhi::SpirvBlob(kFullscreenVertSpv, kFullscreenVertSpvWordCount), rhi::DxilBlob(kFullscreenVertDxil, kFullscreenVertDxilByteCount), rhi::MetalLibBlob(kFullscreenVertMetallib, kFullscreenVertMetallibByteCount, kFullscreenVertMetallibEntry, &kFullscreenVertMetallibSlots)};
 
 } // namespace engine_placeholder::shaders

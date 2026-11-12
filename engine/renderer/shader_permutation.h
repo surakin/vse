@@ -83,6 +83,8 @@ struct PermutationModule
     usize metallib_size = 0;
     /// The function the Metal library exports (`main_0`), or null.
     const char* metallib_entry = nullptr;
+    /// The slots of the Metal library's resources (Phase 26 Day 318), or null.
+    const rhi::ShaderSlotTable* metallib_slots = nullptr;
 
     /// Returns the module's bytecode in one format.
     ///
@@ -95,7 +97,8 @@ struct PermutationModule
         {
         case rhi::ShaderFormat::Spirv: return rhi::SpirvBlob(words, word_count);
         case rhi::ShaderFormat::Dxil: return rhi::DxilBlob(dxil, dxil_size);
-        case rhi::ShaderFormat::MetalLib: return rhi::MetalLibBlob(metallib, metallib_size, metallib_entry);
+        case rhi::ShaderFormat::MetalLib:
+            return rhi::MetalLibBlob(metallib, metallib_size, metallib_entry, metallib_slots);
         }
         return rhi::ShaderBlob{format, nullptr, 0};
     }

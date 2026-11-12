@@ -311,6 +311,7 @@ testopt:windows_*                               13
 tests/macos/                                    26
 tests/rhi/macos/metal_device_test.mm            26   # the Metal device: adapters, caps, timeline, loss (Day 316)
 tests/rhi/macos/metal_resource_test.mm          26   # Metal buffers, textures, storage modes, uploads (Day 317)
+tests/rhi/macos/metal_bindings_test.mm          26   # Metal bind groups, samplers, slots (Day 318)
 test:metal_validation_planted                   26   # a planted Metal validation error must stop the program (Day 316)
 testopt:macos_*                                 26
 

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "ui.vert.spv.inc"
+#include "rhi/desc.h"
 #include "types.h"
 
 namespace engine_placeholder::shaders {
@@ -385,6 +386,9 @@ inline constexpr u8 kUiVertMetallib[kUiVertMetallibByteCount] = {
 
 // The function the library exports (Slang renames `main` for Metal).
 inline constexpr const char* kUiVertMetallibEntry = "main_0";
+
+// Where the library's resources are bound: set, binding, Metal slot, type, count (rhi::ShaderSlotTable).
+inline constexpr rhi::ShaderSlotTable kUiVertMetallibSlots = {nullptr, 0, 0x0u};
 
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kUiVertMetallibSpirvFnv = 0xf0b1830c79178355ull;

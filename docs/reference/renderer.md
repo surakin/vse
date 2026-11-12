@@ -10171,6 +10171,16 @@ const char* metallib_entry;
 
 The function the Metal library exports (`main_0`), or null.
 
+### `metallib_slots` {#renderer-permutationmodule-metallib-slots}
+
+`variable renderer::PermutationModule::metallib_slots` — defined in `engine/renderer/shader_permutation.h`
+
+```cpp
+const rhi::ShaderSlotTable* metallib_slots;
+```
+
+The slots of the Metal library's resources (Phase 26 Day 318), or null.
+
 ### `Blob(rhi::ShaderFormat)` {#renderer-permutationmodule-blob-rhi-shaderformat-const}
 
 `method renderer::PermutationModule::Blob` — defined in `engine/renderer/shader_permutation.h`

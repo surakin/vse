@@ -479,7 +479,8 @@ void MetalDevice::BeginFrame()
     {
         InjectLoss("frame", static_cast<u32>(frame_number_));
     }
-    CollectRetiredLocked(false);  // what the finished frames destroyed
+    RetireFrameGroupsLocked(static_cast<u32>(frame_number_ % kFrameSlots));  // that slot's last frame has finished
+    CollectRetiredLocked(false);                                             // what the finished frames destroyed
 }
 
 void MetalDevice::EndFrame()
@@ -529,6 +530,10 @@ ResourceCounts MetalDevice::Resources() const
         LockGuard<Mutex> lock(resource_mutex_);
         c.buffers = buffers_.LiveCount();
         c.textures = textures_.LiveCount();
+        c.samplers = samplers_.LiveCount();
+        c.bind_group_layouts = bind_group_layouts_.LiveCount();
+        bind_groups_.ForEachLive([&](BindGroupHandle, const BindGroupRes& g)
+                                 { c.bind_groups += g.transient ? 0 : 1; });  // transient groups end with their frame
     }
     // As on Vulkan and D3D12: every Metal resource alive (the application's and the device's own, such as the staging
     // ring), and their memory.
@@ -537,32 +542,14 @@ ResourceCounts MetalDevice::Resources() const
     return c;
 }
 
-// ---- Days 318-321 ----
+// ---- Days 319-321 ----
 
-SamplerHandle MetalDevice::CreateSampler(const SamplerDesc&)
-{
-    NotYet("CreateSampler", 318);
-    return {};
-}
-void MetalDevice::DestroySampler(SamplerHandle) {}
 ShaderHandle MetalDevice::CreateShader(const ShaderDesc&)
 {
     NotYet("CreateShader", 319);
     return {};
 }
 void MetalDevice::DestroyShader(ShaderHandle) {}
-BindGroupLayoutHandle MetalDevice::CreateBindGroupLayout(const BindGroupLayoutDesc&)
-{
-    NotYet("CreateBindGroupLayout", 318);
-    return {};
-}
-void MetalDevice::DestroyBindGroupLayout(BindGroupLayoutHandle) {}
-BindGroupHandle MetalDevice::CreateBindGroup(const BindGroupDesc&)
-{
-    NotYet("CreateBindGroup", 318);
-    return {};
-}
-void MetalDevice::DestroyBindGroup(BindGroupHandle) {}
 PipelineHandle MetalDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc&)
 {
     NotYet("CreateGraphicsPipeline", 319);

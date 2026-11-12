@@ -300,7 +300,11 @@ of words and at least a header; DXIL starts with the `DXBC` container tag and it
 Metal library starts with `MTLB`, is an executable library (a dynamic one has no entry points a pipeline can use) and its size
 matches the one its header records. A Metal library's blob also names its entry point: Slang renames `main` to `main_0` for
 Metal, and the name the minted library exports is recorded beside it ([[rhi::MetalLibBlob]]), so `SetCode` passes it and no
-backend guesses.
+backend guesses. The library carries one more thing: where its resources are bound. Slang chooses a Metal library's slots
+itself (`[[buffer(n)]]`, `[[texture(n)]]`, `[[sampler(n)]]`, a separate table for each), so each stage of one pipeline may put the
+same set and binding at a different slot. The slots are minted beside the library as an [[rhi::ShaderSlotTable]] (set, binding
+and slot of each resource, an [[rhi::ShaderSlot]] each, and the push-constant block's buffer slot), carried by the blob and by
+`SetCode` into [[rhi::ShaderDesc]]'s `slots`; SPIR-V and DXIL have none, their bindings follow the set and binding.
 
 Code that creates shaders names each shader once and picks the device's blob. [[rhi::ShaderBlobSet]] holds a shader in every
 format it was minted in, and [[rhi::CreateShaderFromSet]] creates the module from the blob of the device's format, failing

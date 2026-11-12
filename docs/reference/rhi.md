@@ -1899,6 +1899,125 @@ Checks the descriptor without a device.
 | Fails | reported through the return value, never by aborting. |
 | Ownership | the returned string is static and is never freed by the caller. |
 
+## `ShaderSlot` {#rhi-shaderslot}
+
+`struct rhi::ShaderSlot` — defined in `engine/rhi/desc.h`
+
+```cpp
+struct ShaderSlot { ... }
+```
+
+Where one resource of a shader module is bound in a backend whose slots the compiler chose (a Metal library's `[[buffer(n)]]`, `[[texture(n)]]` or `[[sampler(n)]]`): the resource's set and binding, and its slot in the argument table its binding type uses (buffers, textures or samplers), with the type and array size the shader declares. An array binding takes `slot` and the slots after it.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data. |
+
+### `set` {#rhi-shaderslot-set}
+
+`variable rhi::ShaderSlot::set` — defined in `engine/rhi/desc.h`
+
+```cpp
+u8 set;
+```
+
+The bind group (set) of the resource.
+
+### `binding` {#rhi-shaderslot-binding}
+
+`variable rhi::ShaderSlot::binding` — defined in `engine/rhi/desc.h`
+
+```cpp
+u8 binding;
+```
+
+The binding within the set.
+
+### `slot` {#rhi-shaderslot-slot}
+
+`variable rhi::ShaderSlot::slot` — defined in `engine/rhi/desc.h`
+
+```cpp
+u8 slot;
+```
+
+The first slot in the argument table of the binding's type.
+
+### `type` {#rhi-shaderslot-type}
+
+`variable rhi::ShaderSlot::type` — defined in `engine/rhi/desc.h`
+
+```cpp
+BindingType type;
+```
+
+The binding's type as the shader declares it (which table the slot is in), checked against the layout's.
+
+### `count` {#rhi-shaderslot-count}
+
+`variable rhi::ShaderSlot::count` — defined in `engine/rhi/desc.h`
+
+```cpp
+u32 count;
+```
+
+The array size the shader declares (1 for a non-array binding), checked against the layout's.
+
+## `kNoShaderSlot` {#rhi-knoshaderslot}
+
+`variable rhi::kNoShaderSlot` — defined in `engine/rhi/desc.h`
+
+```cpp
+inline constexpr u32 kNoShaderSlot;
+```
+
+[`rhi::ShaderSlotTable`](#rhi-shaderslottable)'s `push_constant_slot` for a module without push constants.
+
+## `ShaderSlotTable` {#rhi-shaderslottable}
+
+`struct rhi::ShaderSlotTable` — defined in `engine/rhi/desc.h`
+
+```cpp
+struct ShaderSlotTable { ... }
+```
+
+The slots of every resource of one shader module, minted beside a Metal library (Phase 26 Day 318): the Metal backend binds each bind group's resources at these slots and checks a pipeline's layout against them.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data. |
+| Ownership | `slots` is borrowed; minted tables are static. |
+
+### `slots` {#rhi-shaderslottable-slots}
+
+`variable rhi::ShaderSlotTable::slots` — defined in `engine/rhi/desc.h`
+
+```cpp
+const ShaderSlot* slots;
+```
+
+The resources' slots, `count` of them; null when the module has no resources.
+
+### `count` {#rhi-shaderslottable-count}
+
+`variable rhi::ShaderSlotTable::count` — defined in `engine/rhi/desc.h`
+
+```cpp
+u32 count;
+```
+
+Number of entries in `slots`.
+
+### `push_constant_slot` {#rhi-shaderslottable-push-constant-slot}
+
+`variable rhi::ShaderSlotTable::push_constant_slot` — defined in `engine/rhi/desc.h`
+
+```cpp
+u32 push_constant_slot;
+```
+
+The buffer slot of the push-constant block; [`rhi::kNoShaderSlot`](#rhi-knoshaderslot) when the module has none.
+
 ## `ShaderBlob` {#rhi-shaderblob}
 
 `struct rhi::ShaderBlob` — defined in `engine/rhi/desc.h`
@@ -1907,7 +2026,7 @@ Checks the descriptor without a device.
 struct ShaderBlob { ... }
 ```
 
-One shader module's bytecode in one format: a pointer and a size, normally into a minted `*.spv.inc`, `*.dxil.inc` or `*.metallib.inc`, and for a Metal library the name of the function it exports.
+One shader module's bytecode in one format: a pointer and a size, normally into a minted `*.spv.inc`, `*.dxil.inc` or `*.metallib.inc`, and for a Metal library the name of the function it exports and the slots of its resources.
 
 | Field | Value |
 |---|---|
@@ -1953,6 +2072,16 @@ const char* entry;
 ```
 
 The entry point's name in the module, or null for `main` (SPIR-V and DXIL). A Metal library exports the renamed entry Slang wrote (`main_0`), recorded when it was minted; no backend guesses it.
+
+### `slots` {#rhi-shaderblob-slots}
+
+`variable rhi::ShaderBlob::slots` — defined in `engine/rhi/desc.h`
+
+```cpp
+const ShaderSlotTable* slots;
+```
+
+The slots the compiler gave the module's resources (a Metal library); null for SPIR-V and DXIL, whose bindings follow the set and binding.
 
 ### `Empty()` {#rhi-shaderblob-empty-const}
 
@@ -2004,21 +2133,22 @@ Returns the blob of a DXIL container given as bytes.
 | Fails | never. |
 | Thread-safety | thread-safe. |
 
-## `MetalLibBlob(const u8*,usize,const char*)` {#rhi-metallibblob-const-u8-star-usize-const-char-star}
+## `MetalLibBlob(const u8*,usize,const char*,const ShaderSlotTable*)` {#rhi-metallibblob-const-u8-star-usize-const-char-star-const-shaderslottable-star}
 
 `function rhi::MetalLibBlob` — defined in `engine/rhi/desc.h`
 
 ```cpp
-constexpr ShaderBlob MetalLibBlob(const u8* bytes, usize size, const char* entry);
+constexpr ShaderBlob MetalLibBlob(const u8* bytes, usize size, const char* entry, const ShaderSlotTable* slots = nullptr);
 ```
 
-Returns the blob of a Metal library given as bytes, with the name of the function it exports.
+Returns the blob of a Metal library given as bytes, with the name of the function it exports and its slots.
 
 | Field | Value |
 |---|---|
 | Parameter `bytes` | the library; borrowed. |
 | Parameter `size` | its size in bytes. |
 | Parameter `entry` | the exported entry point (`main_0`); borrowed, static in a minted file. |
+| Parameter `slots` | the slots of its resources (the minted `...MetallibSlots`); borrowed; null for none recorded. |
 | Returns | a Metal library blob. |
 | Fails | never. |
 | Thread-safety | thread-safe. |
@@ -2171,6 +2301,16 @@ const char* debug_name;
 
 Optional name shown in debuggers and logs; null for none.
 
+### `slots` {#rhi-shaderdesc-slots}
+
+`variable rhi::ShaderDesc::slots` — defined in `engine/rhi/desc.h`
+
+```cpp
+const ShaderSlotTable* slots;
+```
+
+The slots of the module's resources, for a backend whose slots the compiler chose (Metal); borrowed; null for SPIR-V and DXIL. A Metal library without them cannot be used in a pipeline that binds resources.
+
 ### `SetCode(const ShaderBlob&)` {#rhi-shaderdesc-setcode-const-shaderblob-amp}
 
 `method rhi::ShaderDesc::SetCode` — defined in `engine/rhi/desc.h`
@@ -2179,7 +2319,7 @@ Optional name shown in debuggers and logs; null for none.
 void SetCode(const ShaderBlob& blob);
 ```
 
-Sets `format`, `bytes`, `size` and `entry` from a blob: the entry it names (a Metal library), else `main`.
+Sets `format`, `bytes`, `size`, `entry` and `slots` from a blob: the entry it names (a Metal library), else `main`.
 
 | Field | Value |
 |---|---|

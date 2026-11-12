@@ -6843,104 +6843,117 @@ rhi::SamplerDesc::min_lod	variable	rhi	rhi-samplerdesc-min-lod	rhi.md	engine/rhi
 rhi::SamplerDesc::max_lod	variable	rhi	rhi-samplerdesc-max-lod	rhi.md	engine/rhi/desc.h:117
 rhi::SamplerDesc::debug_name	variable	rhi	rhi-samplerdesc-debug-name	rhi.md	engine/rhi/desc.h:119
 rhi::SamplerDesc::Validate() const	function	rhi	rhi-samplerdesc-validate-const	rhi.md	engine/rhi/desc.h:126
-rhi::ShaderBlob	struct	rhi	rhi-shaderblob	rhi.md	engine/rhi/desc.h:135
-rhi::ShaderBlob::format	variable	rhi	rhi-shaderblob-format	rhi.md	engine/rhi/desc.h:138
-rhi::ShaderBlob::bytes	variable	rhi	rhi-shaderblob-bytes	rhi.md	engine/rhi/desc.h:140
-rhi::ShaderBlob::size	variable	rhi	rhi-shaderblob-size	rhi.md	engine/rhi/desc.h:142
-rhi::ShaderBlob::entry	variable	rhi	rhi-shaderblob-entry	rhi.md	engine/rhi/desc.h:145
-rhi::ShaderBlob::Empty() const	function	rhi	rhi-shaderblob-empty-const	rhi.md	engine/rhi/desc.h:150
-rhi::SpirvBlob(const u32*,usize)	function	rhi	rhi-spirvblob-const-u32-star-usize	rhi.md	engine/rhi/desc.h:160
-rhi::DxilBlob(const u8*,usize)	function	rhi	rhi-dxilblob-const-u8-star-usize	rhi.md	engine/rhi/desc.h:172
-rhi::MetalLibBlob(const u8*,usize,const char*)	function	rhi	rhi-metallibblob-const-u8-star-usize-const-char-star	rhi.md	engine/rhi/desc.h:185
-rhi::ShaderBlobSet	struct	rhi	rhi-shaderblobset	rhi.md	engine/rhi/desc.h:195
-rhi::ShaderBlobSet::name	variable	rhi	rhi-shaderblobset-name	rhi.md	engine/rhi/desc.h:198
-rhi::ShaderBlobSet::spirv	variable	rhi	rhi-shaderblobset-spirv	rhi.md	engine/rhi/desc.h:200
-rhi::ShaderBlobSet::dxil	variable	rhi	rhi-shaderblobset-dxil	rhi.md	engine/rhi/desc.h:202
-rhi::ShaderBlobSet::metallib	variable	rhi	rhi-shaderblobset-metallib	rhi.md	engine/rhi/desc.h:204
-rhi::ShaderBlobSet::For(ShaderFormat) const	function	rhi	rhi-shaderblobset-for-shaderformat-const	rhi.md	engine/rhi/desc.h:211
-rhi::ShaderDesc	struct	rhi	rhi-shaderdesc	rhi.md	engine/rhi/desc.h:234
-rhi::ShaderDesc::stage	variable	rhi	rhi-shaderdesc-stage	rhi.md	engine/rhi/desc.h:237
-rhi::ShaderDesc::format	variable	rhi	rhi-shaderdesc-format	rhi.md	engine/rhi/desc.h:239
-rhi::ShaderDesc::bytes	variable	rhi	rhi-shaderdesc-bytes	rhi.md	engine/rhi/desc.h:241
-rhi::ShaderDesc::size	variable	rhi	rhi-shaderdesc-size	rhi.md	engine/rhi/desc.h:243
-rhi::ShaderDesc::entry	variable	rhi	rhi-shaderdesc-entry	rhi.md	engine/rhi/desc.h:245
-rhi::ShaderDesc::debug_name	variable	rhi	rhi-shaderdesc-debug-name	rhi.md	engine/rhi/desc.h:247
-rhi::ShaderDesc::SetCode(const ShaderBlob&)	function	rhi	rhi-shaderdesc-setcode-const-shaderblob-amp	rhi.md	engine/rhi/desc.h:253
-rhi::ShaderDesc::Validate() const	function	rhi	rhi-shaderdesc-validate-const	rhi.md	engine/rhi/desc.h:272
-rhi::BindingDesc	struct	rhi	rhi-bindingdesc	rhi.md	engine/rhi/desc.h:278
-rhi::BindingDesc::binding	variable	rhi	rhi-bindingdesc-binding	rhi.md	engine/rhi/desc.h:281
-rhi::BindingDesc::type	variable	rhi	rhi-bindingdesc-type	rhi.md	engine/rhi/desc.h:283
-rhi::BindingDesc::stages	variable	rhi	rhi-bindingdesc-stages	rhi.md	engine/rhi/desc.h:285
-rhi::BindingDesc::count	variable	rhi	rhi-bindingdesc-count	rhi.md	engine/rhi/desc.h:287
-rhi::BindingDesc::stride	variable	rhi	rhi-bindingdesc-stride	rhi.md	engine/rhi/desc.h:293
-rhi::BindGroupLayoutDesc	struct	rhi	rhi-bindgrouplayoutdesc	rhi.md	engine/rhi/desc.h:300
-rhi::BindGroupLayoutDesc::entries	variable	rhi	rhi-bindgrouplayoutdesc-entries	rhi.md	engine/rhi/desc.h:303
-rhi::BindGroupLayoutDesc::debug_name	variable	rhi	rhi-bindgrouplayoutdesc-debug-name	rhi.md	engine/rhi/desc.h:305
-rhi::BindGroupLayoutDesc::Validate() const	function	rhi	rhi-bindgrouplayoutdesc-validate-const	rhi.md	engine/rhi/desc.h:312
-rhi::BindGroupEntry	struct	rhi	rhi-bindgroupentry	rhi.md	engine/rhi/desc.h:318
-rhi::BindGroupEntry::binding	variable	rhi	rhi-bindgroupentry-binding	rhi.md	engine/rhi/desc.h:321
-rhi::BindGroupEntry::array_element	variable	rhi	rhi-bindgroupentry-array-element	rhi.md	engine/rhi/desc.h:323
-rhi::BindGroupEntry::buffer	variable	rhi	rhi-bindgroupentry-buffer	rhi.md	engine/rhi/desc.h:325
-rhi::BindGroupEntry::offset	variable	rhi	rhi-bindgroupentry-offset	rhi.md	engine/rhi/desc.h:327
-rhi::BindGroupEntry::size	variable	rhi	rhi-bindgroupentry-size	rhi.md	engine/rhi/desc.h:329
-rhi::BindGroupEntry::texture	variable	rhi	rhi-bindgroupentry-texture	rhi.md	engine/rhi/desc.h:331
-rhi::BindGroupEntry::sampler	variable	rhi	rhi-bindgroupentry-sampler	rhi.md	engine/rhi/desc.h:333
-rhi::BindGroupDesc	struct	rhi	rhi-bindgroupdesc	rhi.md	engine/rhi/desc.h:344
-rhi::BindGroupDesc::layout	variable	rhi	rhi-bindgroupdesc-layout	rhi.md	engine/rhi/desc.h:347
-rhi::BindGroupDesc::transient	variable	rhi	rhi-bindgroupdesc-transient	rhi.md	engine/rhi/desc.h:350
-rhi::BindGroupDesc::entries	variable	rhi	rhi-bindgroupdesc-entries	rhi.md	engine/rhi/desc.h:352
-rhi::BindGroupDesc::debug_name	variable	rhi	rhi-bindgroupdesc-debug-name	rhi.md	engine/rhi/desc.h:354
-rhi::BindGroupDesc::Validate() const	function	rhi	rhi-bindgroupdesc-validate-const	rhi.md	engine/rhi/desc.h:361
-rhi::VertexBindingDesc	struct	rhi	rhi-vertexbindingdesc	rhi.md	engine/rhi/desc.h:367
-rhi::VertexBindingDesc::stride	variable	rhi	rhi-vertexbindingdesc-stride	rhi.md	engine/rhi/desc.h:370
-rhi::VertexBindingDesc::per_instance	variable	rhi	rhi-vertexbindingdesc-per-instance	rhi.md	engine/rhi/desc.h:372
-rhi::VertexAttributeDesc	struct	rhi	rhi-vertexattributedesc	rhi.md	engine/rhi/desc.h:378
-rhi::VertexAttributeDesc::location	variable	rhi	rhi-vertexattributedesc-location	rhi.md	engine/rhi/desc.h:381
-rhi::VertexAttributeDesc::binding	variable	rhi	rhi-vertexattributedesc-binding	rhi.md	engine/rhi/desc.h:383
-rhi::VertexAttributeDesc::format	variable	rhi	rhi-vertexattributedesc-format	rhi.md	engine/rhi/desc.h:385
-rhi::VertexAttributeDesc::offset	variable	rhi	rhi-vertexattributedesc-offset	rhi.md	engine/rhi/desc.h:387
-rhi::BlendState	struct	rhi	rhi-blendstate	rhi.md	engine/rhi/desc.h:393
-rhi::BlendState::enable	variable	rhi	rhi-blendstate-enable	rhi.md	engine/rhi/desc.h:396
-rhi::BlendState::src_color	variable	rhi	rhi-blendstate-src-color	rhi.md	engine/rhi/desc.h:398
-rhi::BlendState::dst_color	variable	rhi	rhi-blendstate-dst-color	rhi.md	engine/rhi/desc.h:400
-rhi::BlendState::color_op	variable	rhi	rhi-blendstate-color-op	rhi.md	engine/rhi/desc.h:402
-rhi::BlendState::src_alpha	variable	rhi	rhi-blendstate-src-alpha	rhi.md	engine/rhi/desc.h:404
-rhi::BlendState::dst_alpha	variable	rhi	rhi-blendstate-dst-alpha	rhi.md	engine/rhi/desc.h:406
-rhi::BlendState::alpha_op	variable	rhi	rhi-blendstate-alpha-op	rhi.md	engine/rhi/desc.h:408
-rhi::ColorTargetDesc	struct	rhi	rhi-colortargetdesc	rhi.md	engine/rhi/desc.h:414
-rhi::ColorTargetDesc::format	variable	rhi	rhi-colortargetdesc-format	rhi.md	engine/rhi/desc.h:417
-rhi::ColorTargetDesc::blend	variable	rhi	rhi-colortargetdesc-blend	rhi.md	engine/rhi/desc.h:419
-rhi::ColorTargetDesc::write_mask	variable	rhi	rhi-colortargetdesc-write-mask	rhi.md	engine/rhi/desc.h:421
-rhi::GraphicsPipelineDesc	struct	rhi	rhi-graphicspipelinedesc	rhi.md	engine/rhi/desc.h:431
-rhi::GraphicsPipelineDesc::vertex_shader	variable	rhi	rhi-graphicspipelinedesc-vertex-shader	rhi.md	engine/rhi/desc.h:434
-rhi::GraphicsPipelineDesc::fragment_shader	variable	rhi	rhi-graphicspipelinedesc-fragment-shader	rhi.md	engine/rhi/desc.h:436
-rhi::GraphicsPipelineDesc::vertex_bindings	variable	rhi	rhi-graphicspipelinedesc-vertex-bindings	rhi.md	engine/rhi/desc.h:438
-rhi::GraphicsPipelineDesc::vertex_attributes	variable	rhi	rhi-graphicspipelinedesc-vertex-attributes	rhi.md	engine/rhi/desc.h:440
-rhi::GraphicsPipelineDesc::topology	variable	rhi	rhi-graphicspipelinedesc-topology	rhi.md	engine/rhi/desc.h:442
-rhi::GraphicsPipelineDesc::primitive_restart	variable	rhi	rhi-graphicspipelinedesc-primitive-restart	rhi.md	engine/rhi/desc.h:447
-rhi::GraphicsPipelineDesc::cull_mode	variable	rhi	rhi-graphicspipelinedesc-cull-mode	rhi.md	engine/rhi/desc.h:449
-rhi::GraphicsPipelineDesc::front_face	variable	rhi	rhi-graphicspipelinedesc-front-face	rhi.md	engine/rhi/desc.h:451
-rhi::GraphicsPipelineDesc::wireframe	variable	rhi	rhi-graphicspipelinedesc-wireframe	rhi.md	engine/rhi/desc.h:453
-rhi::GraphicsPipelineDesc::depth_test	variable	rhi	rhi-graphicspipelinedesc-depth-test	rhi.md	engine/rhi/desc.h:455
-rhi::GraphicsPipelineDesc::depth_write	variable	rhi	rhi-graphicspipelinedesc-depth-write	rhi.md	engine/rhi/desc.h:457
-rhi::GraphicsPipelineDesc::depth_compare	variable	rhi	rhi-graphicspipelinedesc-depth-compare	rhi.md	engine/rhi/desc.h:459
-rhi::GraphicsPipelineDesc::color_targets	variable	rhi	rhi-graphicspipelinedesc-color-targets	rhi.md	engine/rhi/desc.h:461
-rhi::GraphicsPipelineDesc::color_target_count	variable	rhi	rhi-graphicspipelinedesc-color-target-count	rhi.md	engine/rhi/desc.h:463
-rhi::GraphicsPipelineDesc::depth_format	variable	rhi	rhi-graphicspipelinedesc-depth-format	rhi.md	engine/rhi/desc.h:465
-rhi::GraphicsPipelineDesc::bind_group_layouts	variable	rhi	rhi-graphicspipelinedesc-bind-group-layouts	rhi.md	engine/rhi/desc.h:467
-rhi::GraphicsPipelineDesc::bind_group_layout_count	variable	rhi	rhi-graphicspipelinedesc-bind-group-layout-count	rhi.md	engine/rhi/desc.h:469
-rhi::GraphicsPipelineDesc::push_constant_bytes	variable	rhi	rhi-graphicspipelinedesc-push-constant-bytes	rhi.md	engine/rhi/desc.h:471
-rhi::GraphicsPipelineDesc::push_constant_stages	variable	rhi	rhi-graphicspipelinedesc-push-constant-stages	rhi.md	engine/rhi/desc.h:473
-rhi::GraphicsPipelineDesc::samples	variable	rhi	rhi-graphicspipelinedesc-samples	rhi.md	engine/rhi/desc.h:475
-rhi::GraphicsPipelineDesc::debug_name	variable	rhi	rhi-graphicspipelinedesc-debug-name	rhi.md	engine/rhi/desc.h:477
-rhi::GraphicsPipelineDesc::Validate() const	function	rhi	rhi-graphicspipelinedesc-validate-const	rhi.md	engine/rhi/desc.h:484
-rhi::ComputePipelineDesc	struct	rhi	rhi-computepipelinedesc	rhi.md	engine/rhi/desc.h:492
-rhi::ComputePipelineDesc::shader	variable	rhi	rhi-computepipelinedesc-shader	rhi.md	engine/rhi/desc.h:495
-rhi::ComputePipelineDesc::bind_group_layouts	variable	rhi	rhi-computepipelinedesc-bind-group-layouts	rhi.md	engine/rhi/desc.h:497
-rhi::ComputePipelineDesc::bind_group_layout_count	variable	rhi	rhi-computepipelinedesc-bind-group-layout-count	rhi.md	engine/rhi/desc.h:499
-rhi::ComputePipelineDesc::push_constant_bytes	variable	rhi	rhi-computepipelinedesc-push-constant-bytes	rhi.md	engine/rhi/desc.h:501
-rhi::ComputePipelineDesc::debug_name	variable	rhi	rhi-computepipelinedesc-debug-name	rhi.md	engine/rhi/desc.h:503
-rhi::ComputePipelineDesc::Validate() const	function	rhi	rhi-computepipelinedesc-validate-const	rhi.md	engine/rhi/desc.h:510
+rhi::ShaderSlot	struct	rhi	rhi-shaderslot	rhi.md	engine/rhi/desc.h:135
+rhi::ShaderSlot::set	variable	rhi	rhi-shaderslot-set	rhi.md	engine/rhi/desc.h:138
+rhi::ShaderSlot::binding	variable	rhi	rhi-shaderslot-binding	rhi.md	engine/rhi/desc.h:140
+rhi::ShaderSlot::slot	variable	rhi	rhi-shaderslot-slot	rhi.md	engine/rhi/desc.h:142
+rhi::ShaderSlot::type	variable	rhi	rhi-shaderslot-type	rhi.md	engine/rhi/desc.h:144
+rhi::ShaderSlot::count	variable	rhi	rhi-shaderslot-count	rhi.md	engine/rhi/desc.h:146
+rhi::kNoShaderSlot	variable	rhi	rhi-knoshaderslot	rhi.md	engine/rhi/desc.h:150
+rhi::ShaderSlotTable	struct	rhi	rhi-shaderslottable	rhi.md	engine/rhi/desc.h:157
+rhi::ShaderSlotTable::slots	variable	rhi	rhi-shaderslottable-slots	rhi.md	engine/rhi/desc.h:160
+rhi::ShaderSlotTable::count	variable	rhi	rhi-shaderslottable-count	rhi.md	engine/rhi/desc.h:162
+rhi::ShaderSlotTable::push_constant_slot	variable	rhi	rhi-shaderslottable-push-constant-slot	rhi.md	engine/rhi/desc.h:164
+rhi::ShaderBlob	struct	rhi	rhi-shaderblob	rhi.md	engine/rhi/desc.h:172
+rhi::ShaderBlob::format	variable	rhi	rhi-shaderblob-format	rhi.md	engine/rhi/desc.h:175
+rhi::ShaderBlob::bytes	variable	rhi	rhi-shaderblob-bytes	rhi.md	engine/rhi/desc.h:177
+rhi::ShaderBlob::size	variable	rhi	rhi-shaderblob-size	rhi.md	engine/rhi/desc.h:179
+rhi::ShaderBlob::entry	variable	rhi	rhi-shaderblob-entry	rhi.md	engine/rhi/desc.h:182
+rhi::ShaderBlob::slots	variable	rhi	rhi-shaderblob-slots	rhi.md	engine/rhi/desc.h:185
+rhi::ShaderBlob::Empty() const	function	rhi	rhi-shaderblob-empty-const	rhi.md	engine/rhi/desc.h:190
+rhi::SpirvBlob(const u32*,usize)	function	rhi	rhi-spirvblob-const-u32-star-usize	rhi.md	engine/rhi/desc.h:200
+rhi::DxilBlob(const u8*,usize)	function	rhi	rhi-dxilblob-const-u8-star-usize	rhi.md	engine/rhi/desc.h:212
+rhi::MetalLibBlob(const u8*,usize,const char*,const ShaderSlotTable*)	function	rhi	rhi-metallibblob-const-u8-star-usize-const-char-star-const-shaderslottable-star	rhi.md	engine/rhi/desc.h:226
+rhi::ShaderBlobSet	struct	rhi	rhi-shaderblobset	rhi.md	engine/rhi/desc.h:237
+rhi::ShaderBlobSet::name	variable	rhi	rhi-shaderblobset-name	rhi.md	engine/rhi/desc.h:240
+rhi::ShaderBlobSet::spirv	variable	rhi	rhi-shaderblobset-spirv	rhi.md	engine/rhi/desc.h:242
+rhi::ShaderBlobSet::dxil	variable	rhi	rhi-shaderblobset-dxil	rhi.md	engine/rhi/desc.h:244
+rhi::ShaderBlobSet::metallib	variable	rhi	rhi-shaderblobset-metallib	rhi.md	engine/rhi/desc.h:246
+rhi::ShaderBlobSet::For(ShaderFormat) const	function	rhi	rhi-shaderblobset-for-shaderformat-const	rhi.md	engine/rhi/desc.h:253
+rhi::ShaderDesc	struct	rhi	rhi-shaderdesc	rhi.md	engine/rhi/desc.h:276
+rhi::ShaderDesc::stage	variable	rhi	rhi-shaderdesc-stage	rhi.md	engine/rhi/desc.h:279
+rhi::ShaderDesc::format	variable	rhi	rhi-shaderdesc-format	rhi.md	engine/rhi/desc.h:281
+rhi::ShaderDesc::bytes	variable	rhi	rhi-shaderdesc-bytes	rhi.md	engine/rhi/desc.h:283
+rhi::ShaderDesc::size	variable	rhi	rhi-shaderdesc-size	rhi.md	engine/rhi/desc.h:285
+rhi::ShaderDesc::entry	variable	rhi	rhi-shaderdesc-entry	rhi.md	engine/rhi/desc.h:287
+rhi::ShaderDesc::debug_name	variable	rhi	rhi-shaderdesc-debug-name	rhi.md	engine/rhi/desc.h:289
+rhi::ShaderDesc::slots	variable	rhi	rhi-shaderdesc-slots	rhi.md	engine/rhi/desc.h:292
+rhi::ShaderDesc::SetCode(const ShaderBlob&)	function	rhi	rhi-shaderdesc-setcode-const-shaderblob-amp	rhi.md	engine/rhi/desc.h:299
+rhi::ShaderDesc::Validate() const	function	rhi	rhi-shaderdesc-validate-const	rhi.md	engine/rhi/desc.h:319
+rhi::BindingDesc	struct	rhi	rhi-bindingdesc	rhi.md	engine/rhi/desc.h:325
+rhi::BindingDesc::binding	variable	rhi	rhi-bindingdesc-binding	rhi.md	engine/rhi/desc.h:328
+rhi::BindingDesc::type	variable	rhi	rhi-bindingdesc-type	rhi.md	engine/rhi/desc.h:330
+rhi::BindingDesc::stages	variable	rhi	rhi-bindingdesc-stages	rhi.md	engine/rhi/desc.h:332
+rhi::BindingDesc::count	variable	rhi	rhi-bindingdesc-count	rhi.md	engine/rhi/desc.h:334
+rhi::BindingDesc::stride	variable	rhi	rhi-bindingdesc-stride	rhi.md	engine/rhi/desc.h:340
+rhi::BindGroupLayoutDesc	struct	rhi	rhi-bindgrouplayoutdesc	rhi.md	engine/rhi/desc.h:347
+rhi::BindGroupLayoutDesc::entries	variable	rhi	rhi-bindgrouplayoutdesc-entries	rhi.md	engine/rhi/desc.h:350
+rhi::BindGroupLayoutDesc::debug_name	variable	rhi	rhi-bindgrouplayoutdesc-debug-name	rhi.md	engine/rhi/desc.h:352
+rhi::BindGroupLayoutDesc::Validate() const	function	rhi	rhi-bindgrouplayoutdesc-validate-const	rhi.md	engine/rhi/desc.h:359
+rhi::BindGroupEntry	struct	rhi	rhi-bindgroupentry	rhi.md	engine/rhi/desc.h:365
+rhi::BindGroupEntry::binding	variable	rhi	rhi-bindgroupentry-binding	rhi.md	engine/rhi/desc.h:368
+rhi::BindGroupEntry::array_element	variable	rhi	rhi-bindgroupentry-array-element	rhi.md	engine/rhi/desc.h:370
+rhi::BindGroupEntry::buffer	variable	rhi	rhi-bindgroupentry-buffer	rhi.md	engine/rhi/desc.h:372
+rhi::BindGroupEntry::offset	variable	rhi	rhi-bindgroupentry-offset	rhi.md	engine/rhi/desc.h:374
+rhi::BindGroupEntry::size	variable	rhi	rhi-bindgroupentry-size	rhi.md	engine/rhi/desc.h:376
+rhi::BindGroupEntry::texture	variable	rhi	rhi-bindgroupentry-texture	rhi.md	engine/rhi/desc.h:378
+rhi::BindGroupEntry::sampler	variable	rhi	rhi-bindgroupentry-sampler	rhi.md	engine/rhi/desc.h:380
+rhi::BindGroupDesc	struct	rhi	rhi-bindgroupdesc	rhi.md	engine/rhi/desc.h:391
+rhi::BindGroupDesc::layout	variable	rhi	rhi-bindgroupdesc-layout	rhi.md	engine/rhi/desc.h:394
+rhi::BindGroupDesc::transient	variable	rhi	rhi-bindgroupdesc-transient	rhi.md	engine/rhi/desc.h:397
+rhi::BindGroupDesc::entries	variable	rhi	rhi-bindgroupdesc-entries	rhi.md	engine/rhi/desc.h:399
+rhi::BindGroupDesc::debug_name	variable	rhi	rhi-bindgroupdesc-debug-name	rhi.md	engine/rhi/desc.h:401
+rhi::BindGroupDesc::Validate() const	function	rhi	rhi-bindgroupdesc-validate-const	rhi.md	engine/rhi/desc.h:408
+rhi::VertexBindingDesc	struct	rhi	rhi-vertexbindingdesc	rhi.md	engine/rhi/desc.h:414
+rhi::VertexBindingDesc::stride	variable	rhi	rhi-vertexbindingdesc-stride	rhi.md	engine/rhi/desc.h:417
+rhi::VertexBindingDesc::per_instance	variable	rhi	rhi-vertexbindingdesc-per-instance	rhi.md	engine/rhi/desc.h:419
+rhi::VertexAttributeDesc	struct	rhi	rhi-vertexattributedesc	rhi.md	engine/rhi/desc.h:425
+rhi::VertexAttributeDesc::location	variable	rhi	rhi-vertexattributedesc-location	rhi.md	engine/rhi/desc.h:428
+rhi::VertexAttributeDesc::binding	variable	rhi	rhi-vertexattributedesc-binding	rhi.md	engine/rhi/desc.h:430
+rhi::VertexAttributeDesc::format	variable	rhi	rhi-vertexattributedesc-format	rhi.md	engine/rhi/desc.h:432
+rhi::VertexAttributeDesc::offset	variable	rhi	rhi-vertexattributedesc-offset	rhi.md	engine/rhi/desc.h:434
+rhi::BlendState	struct	rhi	rhi-blendstate	rhi.md	engine/rhi/desc.h:440
+rhi::BlendState::enable	variable	rhi	rhi-blendstate-enable	rhi.md	engine/rhi/desc.h:443
+rhi::BlendState::src_color	variable	rhi	rhi-blendstate-src-color	rhi.md	engine/rhi/desc.h:445
+rhi::BlendState::dst_color	variable	rhi	rhi-blendstate-dst-color	rhi.md	engine/rhi/desc.h:447
+rhi::BlendState::color_op	variable	rhi	rhi-blendstate-color-op	rhi.md	engine/rhi/desc.h:449
+rhi::BlendState::src_alpha	variable	rhi	rhi-blendstate-src-alpha	rhi.md	engine/rhi/desc.h:451
+rhi::BlendState::dst_alpha	variable	rhi	rhi-blendstate-dst-alpha	rhi.md	engine/rhi/desc.h:453
+rhi::BlendState::alpha_op	variable	rhi	rhi-blendstate-alpha-op	rhi.md	engine/rhi/desc.h:455
+rhi::ColorTargetDesc	struct	rhi	rhi-colortargetdesc	rhi.md	engine/rhi/desc.h:461
+rhi::ColorTargetDesc::format	variable	rhi	rhi-colortargetdesc-format	rhi.md	engine/rhi/desc.h:464
+rhi::ColorTargetDesc::blend	variable	rhi	rhi-colortargetdesc-blend	rhi.md	engine/rhi/desc.h:466
+rhi::ColorTargetDesc::write_mask	variable	rhi	rhi-colortargetdesc-write-mask	rhi.md	engine/rhi/desc.h:468
+rhi::GraphicsPipelineDesc	struct	rhi	rhi-graphicspipelinedesc	rhi.md	engine/rhi/desc.h:478
+rhi::GraphicsPipelineDesc::vertex_shader	variable	rhi	rhi-graphicspipelinedesc-vertex-shader	rhi.md	engine/rhi/desc.h:481
+rhi::GraphicsPipelineDesc::fragment_shader	variable	rhi	rhi-graphicspipelinedesc-fragment-shader	rhi.md	engine/rhi/desc.h:483
+rhi::GraphicsPipelineDesc::vertex_bindings	variable	rhi	rhi-graphicspipelinedesc-vertex-bindings	rhi.md	engine/rhi/desc.h:485
+rhi::GraphicsPipelineDesc::vertex_attributes	variable	rhi	rhi-graphicspipelinedesc-vertex-attributes	rhi.md	engine/rhi/desc.h:487
+rhi::GraphicsPipelineDesc::topology	variable	rhi	rhi-graphicspipelinedesc-topology	rhi.md	engine/rhi/desc.h:489
+rhi::GraphicsPipelineDesc::primitive_restart	variable	rhi	rhi-graphicspipelinedesc-primitive-restart	rhi.md	engine/rhi/desc.h:494
+rhi::GraphicsPipelineDesc::cull_mode	variable	rhi	rhi-graphicspipelinedesc-cull-mode	rhi.md	engine/rhi/desc.h:496
+rhi::GraphicsPipelineDesc::front_face	variable	rhi	rhi-graphicspipelinedesc-front-face	rhi.md	engine/rhi/desc.h:498
+rhi::GraphicsPipelineDesc::wireframe	variable	rhi	rhi-graphicspipelinedesc-wireframe	rhi.md	engine/rhi/desc.h:500
+rhi::GraphicsPipelineDesc::depth_test	variable	rhi	rhi-graphicspipelinedesc-depth-test	rhi.md	engine/rhi/desc.h:502
+rhi::GraphicsPipelineDesc::depth_write	variable	rhi	rhi-graphicspipelinedesc-depth-write	rhi.md	engine/rhi/desc.h:504
+rhi::GraphicsPipelineDesc::depth_compare	variable	rhi	rhi-graphicspipelinedesc-depth-compare	rhi.md	engine/rhi/desc.h:506
+rhi::GraphicsPipelineDesc::color_targets	variable	rhi	rhi-graphicspipelinedesc-color-targets	rhi.md	engine/rhi/desc.h:508
+rhi::GraphicsPipelineDesc::color_target_count	variable	rhi	rhi-graphicspipelinedesc-color-target-count	rhi.md	engine/rhi/desc.h:510
+rhi::GraphicsPipelineDesc::depth_format	variable	rhi	rhi-graphicspipelinedesc-depth-format	rhi.md	engine/rhi/desc.h:512
+rhi::GraphicsPipelineDesc::bind_group_layouts	variable	rhi	rhi-graphicspipelinedesc-bind-group-layouts	rhi.md	engine/rhi/desc.h:514
+rhi::GraphicsPipelineDesc::bind_group_layout_count	variable	rhi	rhi-graphicspipelinedesc-bind-group-layout-count	rhi.md	engine/rhi/desc.h:516
+rhi::GraphicsPipelineDesc::push_constant_bytes	variable	rhi	rhi-graphicspipelinedesc-push-constant-bytes	rhi.md	engine/rhi/desc.h:518
+rhi::GraphicsPipelineDesc::push_constant_stages	variable	rhi	rhi-graphicspipelinedesc-push-constant-stages	rhi.md	engine/rhi/desc.h:520
+rhi::GraphicsPipelineDesc::samples	variable	rhi	rhi-graphicspipelinedesc-samples	rhi.md	engine/rhi/desc.h:522
+rhi::GraphicsPipelineDesc::debug_name	variable	rhi	rhi-graphicspipelinedesc-debug-name	rhi.md	engine/rhi/desc.h:524
+rhi::GraphicsPipelineDesc::Validate() const	function	rhi	rhi-graphicspipelinedesc-validate-const	rhi.md	engine/rhi/desc.h:531
+rhi::ComputePipelineDesc	struct	rhi	rhi-computepipelinedesc	rhi.md	engine/rhi/desc.h:539
+rhi::ComputePipelineDesc::shader	variable	rhi	rhi-computepipelinedesc-shader	rhi.md	engine/rhi/desc.h:542
+rhi::ComputePipelineDesc::bind_group_layouts	variable	rhi	rhi-computepipelinedesc-bind-group-layouts	rhi.md	engine/rhi/desc.h:544
+rhi::ComputePipelineDesc::bind_group_layout_count	variable	rhi	rhi-computepipelinedesc-bind-group-layout-count	rhi.md	engine/rhi/desc.h:546
+rhi::ComputePipelineDesc::push_constant_bytes	variable	rhi	rhi-computepipelinedesc-push-constant-bytes	rhi.md	engine/rhi/desc.h:548
+rhi::ComputePipelineDesc::debug_name	variable	rhi	rhi-computepipelinedesc-debug-name	rhi.md	engine/rhi/desc.h:550
+rhi::ComputePipelineDesc::Validate() const	function	rhi	rhi-computepipelinedesc-validate-const	rhi.md	engine/rhi/desc.h:557
 rhi::FenceValue	alias	rhi	rhi-fencevalue	rhi.md	engine/rhi/device.h:20
 rhi::UploadTicket	struct	rhi	rhi-uploadticket	rhi.md	engine/rhi/device.h:25
 rhi::UploadTicket::fence	variable	rhi	rhi-uploadticket-fence	rhi.md	engine/rhi/device.h:29
@@ -8311,23 +8324,24 @@ renderer::PermutationModule::dxil_size	variable	renderer	renderer-permutationmod
 renderer::PermutationModule::metallib	variable	renderer	renderer-permutationmodule-metallib	renderer.md	engine/renderer/shader_permutation.h:81
 renderer::PermutationModule::metallib_size	variable	renderer	renderer-permutationmodule-metallib-size	renderer.md	engine/renderer/shader_permutation.h:83
 renderer::PermutationModule::metallib_entry	variable	renderer	renderer-permutationmodule-metallib-entry	renderer.md	engine/renderer/shader_permutation.h:85
-renderer::PermutationModule::Blob(rhi::ShaderFormat) const	function	renderer	renderer-permutationmodule-blob-rhi-shaderformat-const	renderer.md	engine/renderer/shader_permutation.h:92
-renderer::PermutationModule::HasCode() const	function	renderer	renderer-permutationmodule-hascode-const	renderer.md	engine/renderer/shader_permutation.h:106
-renderer::PermutationEntry	struct	renderer	renderer-permutationentry	renderer.md	engine/renderer/shader_permutation.h:116
-renderer::PermutationEntry::key_bits	variable	renderer	renderer-permutationentry-key-bits	renderer.md	engine/renderer/shader_permutation.h:119
-renderer::PermutationEntry::module	variable	renderer	renderer-permutationentry-module	renderer.md	engine/renderer/shader_permutation.h:121
-renderer::ShaderPermutations	struct	renderer	renderer-shaderpermutations	renderer.md	engine/renderer/shader_permutation.h:130
-renderer::ShaderPermutations::shader	variable	renderer	renderer-shaderpermutations-shader	renderer.md	engine/renderer/shader_permutation.h:133
-renderer::ShaderPermutations::options	variable	renderer	renderer-shaderpermutations-options	renderer.md	engine/renderer/shader_permutation.h:135
-renderer::ShaderPermutations::option_count	variable	renderer	renderer-shaderpermutations-option-count	renderer.md	engine/renderer/shader_permutation.h:137
-renderer::ShaderPermutations::modules	variable	renderer	renderer-shaderpermutations-modules	renderer.md	engine/renderer/shader_permutation.h:139
-renderer::ShaderPermutations::module_count	variable	renderer	renderer-shaderpermutations-module-count	renderer.md	engine/renderer/shader_permutation.h:141
-renderer::ShaderPermutations::entries	variable	renderer	renderer-shaderpermutations-entries	renderer.md	engine/renderer/shader_permutation.h:143
-renderer::ShaderPermutations::entry_count	variable	renderer	renderer-shaderpermutations-entry-count	renderer.md	engine/renderer/shader_permutation.h:145
-renderer::ValidateShaderPermutations(const ShaderPermutations&)	function	renderer	renderer-validateshaderpermutations-const-shaderpermutations-amp	renderer.md	engine/renderer/shader_permutation.h:159
-renderer::MakePermutationKey(const ShaderPermutations&,const char* const*,u32,PermutationKey*,ReflectionError*)	function	renderer	renderer-makepermutationkey-const-shaderpermutations-amp-const-char-star-const-star-u32-permutationkey-star-reflectionerror-star	renderer.md	engine/renderer/shader_permutation.h:172
-renderer::FindPermutation(const ShaderPermutations&,PermutationKey,ReflectionError*)	function	renderer	renderer-findpermutation-const-shaderpermutations-amp-permutationkey-reflectionerror-star	renderer.md	engine/renderer/shader_permutation.h:186
-renderer::DescribePermutationKey(const ShaderPermutations&,PermutationKey,char*,usize)	function	renderer	renderer-describepermutationkey-const-shaderpermutations-amp-permutationkey-char-star-usize	renderer.md	engine/renderer/shader_permutation.h:196
+renderer::PermutationModule::metallib_slots	variable	renderer	renderer-permutationmodule-metallib-slots	renderer.md	engine/renderer/shader_permutation.h:87
+renderer::PermutationModule::Blob(rhi::ShaderFormat) const	function	renderer	renderer-permutationmodule-blob-rhi-shaderformat-const	renderer.md	engine/renderer/shader_permutation.h:94
+renderer::PermutationModule::HasCode() const	function	renderer	renderer-permutationmodule-hascode-const	renderer.md	engine/renderer/shader_permutation.h:109
+renderer::PermutationEntry	struct	renderer	renderer-permutationentry	renderer.md	engine/renderer/shader_permutation.h:119
+renderer::PermutationEntry::key_bits	variable	renderer	renderer-permutationentry-key-bits	renderer.md	engine/renderer/shader_permutation.h:122
+renderer::PermutationEntry::module	variable	renderer	renderer-permutationentry-module	renderer.md	engine/renderer/shader_permutation.h:124
+renderer::ShaderPermutations	struct	renderer	renderer-shaderpermutations	renderer.md	engine/renderer/shader_permutation.h:133
+renderer::ShaderPermutations::shader	variable	renderer	renderer-shaderpermutations-shader	renderer.md	engine/renderer/shader_permutation.h:136
+renderer::ShaderPermutations::options	variable	renderer	renderer-shaderpermutations-options	renderer.md	engine/renderer/shader_permutation.h:138
+renderer::ShaderPermutations::option_count	variable	renderer	renderer-shaderpermutations-option-count	renderer.md	engine/renderer/shader_permutation.h:140
+renderer::ShaderPermutations::modules	variable	renderer	renderer-shaderpermutations-modules	renderer.md	engine/renderer/shader_permutation.h:142
+renderer::ShaderPermutations::module_count	variable	renderer	renderer-shaderpermutations-module-count	renderer.md	engine/renderer/shader_permutation.h:144
+renderer::ShaderPermutations::entries	variable	renderer	renderer-shaderpermutations-entries	renderer.md	engine/renderer/shader_permutation.h:146
+renderer::ShaderPermutations::entry_count	variable	renderer	renderer-shaderpermutations-entry-count	renderer.md	engine/renderer/shader_permutation.h:148
+renderer::ValidateShaderPermutations(const ShaderPermutations&)	function	renderer	renderer-validateshaderpermutations-const-shaderpermutations-amp	renderer.md	engine/renderer/shader_permutation.h:162
+renderer::MakePermutationKey(const ShaderPermutations&,const char* const*,u32,PermutationKey*,ReflectionError*)	function	renderer	renderer-makepermutationkey-const-shaderpermutations-amp-const-char-star-const-star-u32-permutationkey-star-reflectionerror-star	renderer.md	engine/renderer/shader_permutation.h:175
+renderer::FindPermutation(const ShaderPermutations&,PermutationKey,ReflectionError*)	function	renderer	renderer-findpermutation-const-shaderpermutations-amp-permutationkey-reflectionerror-star	renderer.md	engine/renderer/shader_permutation.h:189
+renderer::DescribePermutationKey(const ShaderPermutations&,PermutationKey,char*,usize)	function	renderer	renderer-describepermutationkey-const-shaderpermutations-amp-permutationkey-char-star-usize	renderer.md	engine/renderer/shader_permutation.h:199
 renderer::kReflectionVersion	variable	renderer	renderer-kreflectionversion	renderer.md	engine/renderer/shader_reflection.h:17
 renderer::kMaxReflectionName	variable	renderer	renderer-kmaxreflectionname	renderer.md	engine/renderer/shader_reflection.h:20
 renderer::kMaxReflectedBindings	variable	renderer	renderer-kmaxreflectedbindings	renderer.md	engine/renderer/shader_reflection.h:22

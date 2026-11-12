@@ -3,6 +3,7 @@
 #pragma once
 
 #include "gbuffer.vert.spv.inc"
+#include "rhi/desc.h"
 #include "types.h"
 
 namespace engine_placeholder::shaders {
@@ -657,6 +658,10 @@ inline constexpr u8 kGbufferVertMetallib[kGbufferVertMetallibByteCount] = {
 
 // The function the library exports (Slang renames `main` for Metal).
 inline constexpr const char* kGbufferVertMetallibEntry = "main_0";
+
+// Where the library's resources are bound: set, binding, Metal slot, type, count (rhi::ShaderSlotTable).
+inline constexpr rhi::ShaderSlot kGbufferVertMetallibSlotList[2] = {{0, 0, 0, rhi::BindingType(0), 1}, {2, 0, 1, rhi::BindingType(5), 1}, };
+inline constexpr rhi::ShaderSlotTable kGbufferVertMetallibSlots = {kGbufferVertMetallibSlotList, 2, 0xffffffffu};
 
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kGbufferVertMetallibSpirvFnv = 0x25aafbe7481296dbull;
@@ -1322,6 +1327,10 @@ inline constexpr u8 kGbufferVertPerm1Metallib[kGbufferVertPerm1MetallibByteCount
 
 // The function the library exports (Slang renames `main` for Metal).
 inline constexpr const char* kGbufferVertPerm1MetallibEntry = "main_0";
+
+// Where the library's resources are bound: set, binding, Metal slot, type, count (rhi::ShaderSlotTable).
+inline constexpr rhi::ShaderSlot kGbufferVertPerm1MetallibSlotList[2] = {{0, 0, 0, rhi::BindingType(0), 1}, {2, 0, 1, rhi::BindingType(5), 1}, };
+inline constexpr rhi::ShaderSlotTable kGbufferVertPerm1MetallibSlots = {kGbufferVertPerm1MetallibSlotList, 2, 0xffffffffu};
 
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kGbufferVertPerm1MetallibSpirvFnv = 0x7b0072ad647b67ecull;

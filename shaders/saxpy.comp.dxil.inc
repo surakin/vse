@@ -256,6 +256,6 @@ inline constexpr u8 kSaxpyCompDxil[kSaxpyCompDxilByteCount] = {
 inline constexpr u64 kSaxpyCompDxilSpirvFnv = 0x422711eccc7ff673ull;
 
 // The shader in every format it was minted in.
-inline constexpr rhi::ShaderBlobSet kSaxpyCompShader = {"saxpy.comp", rhi::SpirvBlob(kSaxpyCompSpv, kSaxpyCompSpvWordCount), rhi::DxilBlob(kSaxpyCompDxil, kSaxpyCompDxilByteCount), rhi::MetalLibBlob(kSaxpyCompMetallib, kSaxpyCompMetallibByteCount, kSaxpyCompMetallibEntry)};
+inline constexpr rhi::ShaderBlobSet kSaxpyCompShader = {"saxpy.comp", rhi::SpirvBlob(kSaxpyCompSpv, kSaxpyCompSpvWordCount), rhi::DxilBlob(kSaxpyCompDxil, kSaxpyCompDxilByteCount), rhi::MetalLibBlob(kSaxpyCompMetallib, kSaxpyCompMetallibByteCount, kSaxpyCompMetallibEntry, &kSaxpyCompMetallibSlots)};
 
 } // namespace engine_placeholder::shaders

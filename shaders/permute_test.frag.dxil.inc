@@ -1073,6 +1073,6 @@ inline constexpr u8 kPermuteTestFragPerm5Dxil[kPermuteTestFragPerm5DxilByteCount
 inline constexpr u64 kPermuteTestFragPerm5DxilSpirvFnv = 0xa273f699ed927114ull;
 
 // The shader in every format it was minted in.
-inline constexpr rhi::ShaderBlobSet kPermuteTestFragShader = {"permute_test.frag", rhi::SpirvBlob(kPermuteTestFragSpv, kPermuteTestFragSpvWordCount), rhi::DxilBlob(kPermuteTestFragDxil, kPermuteTestFragDxilByteCount), rhi::MetalLibBlob(kPermuteTestFragMetallib, kPermuteTestFragMetallibByteCount, kPermuteTestFragMetallibEntry)};
+inline constexpr rhi::ShaderBlobSet kPermuteTestFragShader = {"permute_test.frag", rhi::SpirvBlob(kPermuteTestFragSpv, kPermuteTestFragSpvWordCount), rhi::DxilBlob(kPermuteTestFragDxil, kPermuteTestFragDxilByteCount), rhi::MetalLibBlob(kPermuteTestFragMetallib, kPermuteTestFragMetallibByteCount, kPermuteTestFragMetallibEntry, &kPermuteTestFragMetallibSlots)};
 
 } // namespace engine_placeholder::shaders

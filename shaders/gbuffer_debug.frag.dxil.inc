@@ -366,6 +366,6 @@ inline constexpr u8 kGbufferDebugFragDxil[kGbufferDebugFragDxilByteCount] = {
 inline constexpr u64 kGbufferDebugFragDxilSpirvFnv = 0x4e422827483d6318ull;
 
 // The shader in every format it was minted in.
-inline constexpr rhi::ShaderBlobSet kGbufferDebugFragShader = {"gbuffer_debug.frag", rhi::SpirvBlob(kGbufferDebugFragSpv, kGbufferDebugFragSpvWordCount), rhi::DxilBlob(kGbufferDebugFragDxil, kGbufferDebugFragDxilByteCount), rhi::MetalLibBlob(kGbufferDebugFragMetallib, kGbufferDebugFragMetallibByteCount, kGbufferDebugFragMetallibEntry)};
+inline constexpr rhi::ShaderBlobSet kGbufferDebugFragShader = {"gbuffer_debug.frag", rhi::SpirvBlob(kGbufferDebugFragSpv, kGbufferDebugFragSpvWordCount), rhi::DxilBlob(kGbufferDebugFragDxil, kGbufferDebugFragDxilByteCount), rhi::MetalLibBlob(kGbufferDebugFragMetallib, kGbufferDebugFragMetallibByteCount, kGbufferDebugFragMetallibEntry, &kGbufferDebugFragMetallibSlots)};
 
 } // namespace engine_placeholder::shaders

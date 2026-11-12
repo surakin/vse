@@ -309,6 +309,6 @@ inline constexpr u8 kLitVertDxil[kLitVertDxilByteCount] = {
 inline constexpr u64 kLitVertDxilSpirvFnv = 0x1d47bb3e28b4b930ull;
 
 // The shader in every format it was minted in.
-inline constexpr rhi::ShaderBlobSet kLitVertShader = {"lit.vert", rhi::SpirvBlob(kLitVertSpv, kLitVertSpvWordCount), rhi::DxilBlob(kLitVertDxil, kLitVertDxilByteCount), rhi::MetalLibBlob(kLitVertMetallib, kLitVertMetallibByteCount, kLitVertMetallibEntry)};
+inline constexpr rhi::ShaderBlobSet kLitVertShader = {"lit.vert", rhi::SpirvBlob(kLitVertSpv, kLitVertSpvWordCount), rhi::DxilBlob(kLitVertDxil, kLitVertDxilByteCount), rhi::MetalLibBlob(kLitVertMetallib, kLitVertMetallibByteCount, kLitVertMetallibEntry, &kLitVertMetallibSlots)};
 
 } // namespace engine_placeholder::shaders

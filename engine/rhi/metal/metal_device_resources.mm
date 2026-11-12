@@ -103,6 +103,9 @@ bool MetalDevice::InitializeResources()
     const u32 seed = GenerationSeed(epoch_);
     buffers_.SeedGeneration(seed);
     textures_.SeedGeneration(seed);
+    samplers_.SeedGeneration(seed);
+    bind_group_layouts_.SeedGeneration(seed);
+    bind_groups_.SeedGeneration(seed);
 #if ENGINE_PLATFORM_MACOS
     managed_ = !device_.hasUnifiedMemory || g_force_managed.Load(MemoryOrder::Acquire);
 #else
@@ -140,6 +143,7 @@ void MetalDevice::ShutdownResources()
             }
             t.texture = nil;
         });
+    samplers_.ForEachLive([](SamplerHandle, SamplerRes& s) { s.state = nil; });
     staging_ring_.Reset();
     if (staging_ != nil)
     {
@@ -152,6 +156,9 @@ void MetalDevice::ShutdownResources()
 void MetalDevice::CollectRetiredLocked(bool all)
 {
     const u64 completed = all ? ~0ull : completed_frames_;
+    bind_groups_.CollectRetired(completed, [](BindGroupRes&) {});
+    bind_group_layouts_.CollectRetired(completed, [](BindGroupLayoutRes&) {});
+    samplers_.CollectRetired(completed, [](SamplerRes& s) { s.state = nil; });
     buffers_.CollectRetired(completed,
                             [&](BufferRes& b)
                             {

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "fullscreen.vert.spv.inc"
+#include "rhi/desc.h"
 #include "types.h"
 
 namespace engine_placeholder::shaders {
@@ -264,6 +265,9 @@ inline constexpr u8 kFullscreenVertMetallib[kFullscreenVertMetallibByteCount] = 
 
 // The function the library exports (Slang renames `main` for Metal).
 inline constexpr const char* kFullscreenVertMetallibEntry = "main_0";
+
+// Where the library's resources are bound: set, binding, Metal slot, type, count (rhi::ShaderSlotTable).
+inline constexpr rhi::ShaderSlotTable kFullscreenVertMetallibSlots = {nullptr, 0, 0xffffffffu};
 
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kFullscreenVertMetallibSpirvFnv = 0x859decd7d4c19063ull;

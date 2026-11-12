@@ -254,6 +254,6 @@ inline constexpr u8 kGraphSampleFragDxil[kGraphSampleFragDxilByteCount] = {
 inline constexpr u64 kGraphSampleFragDxilSpirvFnv = 0xabc79225fe28c020ull;
 
 // The shader in every format it was minted in.
-inline constexpr rhi::ShaderBlobSet kGraphSampleFragShader = {"graph_sample.frag", rhi::SpirvBlob(kGraphSampleFragSpv, kGraphSampleFragSpvWordCount), rhi::DxilBlob(kGraphSampleFragDxil, kGraphSampleFragDxilByteCount), rhi::MetalLibBlob(kGraphSampleFragMetallib, kGraphSampleFragMetallibByteCount, kGraphSampleFragMetallibEntry)};
+inline constexpr rhi::ShaderBlobSet kGraphSampleFragShader = {"graph_sample.frag", rhi::SpirvBlob(kGraphSampleFragSpv, kGraphSampleFragSpvWordCount), rhi::DxilBlob(kGraphSampleFragDxil, kGraphSampleFragDxilByteCount), rhi::MetalLibBlob(kGraphSampleFragMetallib, kGraphSampleFragMetallibByteCount, kGraphSampleFragMetallibEntry, &kGraphSampleFragMetallibSlots)};
 
 } // namespace engine_placeholder::shaders

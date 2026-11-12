@@ -229,6 +229,6 @@ inline constexpr u8 kFillCompDxil[kFillCompDxilByteCount] = {
 inline constexpr u64 kFillCompDxilSpirvFnv = 0x3ddee0bf99e962b4ull;
 
 // The shader in every format it was minted in.
-inline constexpr rhi::ShaderBlobSet kFillCompShader = {"fill.comp", rhi::SpirvBlob(kFillCompSpv, kFillCompSpvWordCount), rhi::DxilBlob(kFillCompDxil, kFillCompDxilByteCount), rhi::MetalLibBlob(kFillCompMetallib, kFillCompMetallibByteCount, kFillCompMetallibEntry)};
+inline constexpr rhi::ShaderBlobSet kFillCompShader = {"fill.comp", rhi::SpirvBlob(kFillCompSpv, kFillCompSpvWordCount), rhi::DxilBlob(kFillCompDxil, kFillCompDxilByteCount), rhi::MetalLibBlob(kFillCompMetallib, kFillCompMetallibByteCount, kFillCompMetallibEntry, &kFillCompMetallibSlots)};
 
 } // namespace engine_placeholder::shaders

@@ -258,6 +258,6 @@ inline constexpr u8 kTextFragDxil[kTextFragDxilByteCount] = {
 inline constexpr u64 kTextFragDxilSpirvFnv = 0x7b9b23325359fa27ull;
 
 // The shader in every format it was minted in.
-inline constexpr rhi::ShaderBlobSet kTextFragShader = {"text.frag", rhi::SpirvBlob(kTextFragSpv, kTextFragSpvWordCount), rhi::DxilBlob(kTextFragDxil, kTextFragDxilByteCount), rhi::MetalLibBlob(kTextFragMetallib, kTextFragMetallibByteCount, kTextFragMetallibEntry)};
+inline constexpr rhi::ShaderBlobSet kTextFragShader = {"text.frag", rhi::SpirvBlob(kTextFragSpv, kTextFragSpvWordCount), rhi::DxilBlob(kTextFragDxil, kTextFragDxilByteCount), rhi::MetalLibBlob(kTextFragMetallib, kTextFragMetallibByteCount, kTextFragMetallibEntry, &kTextFragMetallibSlots)};
 
 } // namespace engine_placeholder::shaders

@@ -294,6 +294,6 @@ inline constexpr u8 kMipgenCompDxil[kMipgenCompDxilByteCount] = {
 inline constexpr u64 kMipgenCompDxilSpirvFnv = 0xa0bdbe6da86d37ecull;
 
 // The shader in every format it was minted in.
-inline constexpr rhi::ShaderBlobSet kMipgenCompShader = {"mipgen.comp", rhi::SpirvBlob(kMipgenCompSpv, kMipgenCompSpvWordCount), rhi::DxilBlob(kMipgenCompDxil, kMipgenCompDxilByteCount), rhi::MetalLibBlob(kMipgenCompMetallib, kMipgenCompMetallibByteCount, kMipgenCompMetallibEntry)};
+inline constexpr rhi::ShaderBlobSet kMipgenCompShader = {"mipgen.comp", rhi::SpirvBlob(kMipgenCompSpv, kMipgenCompSpvWordCount), rhi::DxilBlob(kMipgenCompDxil, kMipgenCompDxilByteCount), rhi::MetalLibBlob(kMipgenCompMetallib, kMipgenCompMetallibByteCount, kMipgenCompMetallibEntry, &kMipgenCompMetallibSlots)};
 
 } // namespace engine_placeholder::shaders
