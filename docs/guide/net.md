@@ -310,8 +310,7 @@ after close, and destruction with traffic in flight.
 ## The UDP transport: packets and the handshake
 
 `net::UdpTransport` (`engine/net/udp_transport.h`) runs over a `net::DatagramPort` (`SocketDatagramPort` on a real non-blocking UDP socket, `SimDatagramPort` on the simulated network) and a `net::Clock`, so the same code is tested
-deterministically and over loopback. Day 274 builds the packet layer, the handshake and the connection state machine; messages go unreliably, one per packet (`Supports` says so), until channels and reliability arrive on
-Days 275-276. The wire format, every integer little-endian, is written out in `engine/net/udp_protocol.h`.
+deterministically and over loopback. Day 274 builds the packet layer, the handshake and the connection state machine; Day 275 adds the data plane (next section); congestion control and the refined round-trip estimate arrive on Day 276. The wire format, every integer little-endian, is written out in `engine/net/udp_protocol.h`.
 
 - **Handshake.** `ConnectRequest` (padded to 1200 bytes) -> `Challenge` (17 bytes: the client's salt and a cookie) -> `ChallengeResponse` (padded again, with the cookie) -> `Accepted` (the connection id). The server **keeps nothing**
   until the response validates: the cookie is `SipHash-2-4` under a secret key of the endpoint (address, scope, port), the client's random salt and the time period (`cookie_period_nanos`, a cookie lives two periods). A request
@@ -323,3 +322,21 @@ Days 275-276. The wire format, every integer little-endian, is written out in `e
   message and nothing else to send is acknowledged by an empty packet after `ack_delay_nanos`, and an idle connection sends one per `keepalive_nanos`. `Close` repeats a `Disconnect` packet `close_repeats` times; silence for `timeout_nanos` is `TimedOut`.
 - **Trust.** The cookie stops spoofed-source floods and amplification. It does not authenticate a peer, and nothing is encrypted: until the encryption outcome of Day 280, use the transport on trusted networks only. SipHash is a published keyed hash
   (the published test vectors are in `tests/net/udp_handshake_test.cpp`), not a replacement for the audited primitive Day 280 decides on.
+
+## The UDP transport: channels, reliability and fragmentation
+
+All four `net::Reliability` kinds work on `net::UdpTransport` (`Supports` is true for each). `Send` only queues; the next `Poll` packs and sends, so several small messages share a packet.
+
+- **Frames and packing.** A message becomes one frame (channel, kind, per-channel-and-kind sequence number, length), or fragments of 1024 bytes when it does not fit a packet (`kUdpSingleMax`). A packet takes resent frames first, then the channels in ascending order
+  (a lower channel number is a higher priority), up to the 1200-byte MTU. At most 32 packets leave per `Poll` (an acknowledgement covers 33), so a burst cannot outrun its own acknowledgements.
+- **Reliability.** A packet's acknowledgement acknowledges its reliable frames. A frame is sent again when its packet is three or more packets behind an acknowledged one, was not acknowledged and is older than the smoothed round trip plus twice its variance (so a
+  network that reorders deeply does not get every overtaken packet sent twice), or when its time-out passes (round trip plus four variances, 30 ms to 2 s, doubling per try). At most `window_frames` (256) reliable frames are in flight; `max_queued_frames` bounds the
+  rest and `Send` returns `LimitExceeded` when the queue is full. The receiver acknowledges at once after every 8 packets that carried frames, otherwise after `ack_delay_nanos`.
+- **Ordering.** `ReliableOrdered` keeps a reorder buffer per channel; `ReliableUnordered` delivers on arrival and remembers the sequence numbers above the lowest missing one; `UnreliableSequenced` drops anything not newer than the newest delivered; `Unreliable` is delivered as received.
+  A reliable message more than 1024 sequence numbers ahead of the next expected, or that would exceed the receive byte budget, ends the connection with `DisconnectReason::ProtocolError` (the peer broke a bound it must keep).
+- **Fragments are checked exactly before memory is committed.** The first fragment declares the count and the total size; the count, the index, the total (at most `max_message_bytes`), and the exact length of every fragment (1024 except the last, which must make the total) are validated, so fragments cannot
+  overlap and a later fragment that disagrees with the first is rejected. The bytes committed for a message are its declared total, counted against `max_receive_buffer_bytes` and `max_reassemblies` (which must be at least the peer's `window_frames`: a legitimate reliable sender can
+  have that many messages partial at once). An unreliable message missing a fragment is dropped after `reassembly_timeout_nanos`; for a reliable one a violation ends the connection. Copies of fragments of a message that is already complete are dropped (they cannot start a reassembly nobody would finish).
+- **Unconfirmed connections.** A server that accepted a connection and has not yet heard from the client repeats `Accepted` on its own with a growing delay (the client's repeated responses, also lost, are not the only chance), and a client that has not been answered in one cookie period asks for a new cookie.
+- **Tested** (`tests/net/udp_channels_test.cpp`): the 13 conformance checks at 0, 5, 30 and 60 percent loss with reordering and duplication; a 1 MiB message intact under each; 400 mixed-size messages once and in order on four channels; a large message on a high channel not delaying small ones on a low channel;
+  hand-built hostile fragments (a declared gigabyte, thousands of one-fragment messages, mismatched totals and wrong lengths, a reliable sequence far ahead); and duplicated fragments leaving nothing behind.

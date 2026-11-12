@@ -110,7 +110,9 @@ Reset              [kind][u16 connection_id]
 
 The two requests that a stranger can send are padded to the full size, and every answer to a stranger is far smaller than the request, so the server cannot be used to amplify traffic towards a forged source address.
 
-[`net::UdpTransport`](#net-udptransport): the game-traffic transport over UDP datagrams (Phase 20 Days 274-276). Day 274 builds the first third: the packet format, a handshake that costs a server no state before the client proves it owns its address, the connection state machine and the sequence/acknowledgement machinery of every packet. Messages are carried unreliably, one per packet; channels with reliability, fragmentation, round-trip time and congestion control follow on Days 275 and 276 behind the same [`net::Transport`](#net-transport) interface.
+[`net::UdpTransport`](#net-udptransport): the game-traffic transport over UDP datagrams (Phase 20 Days 274-276). Day 274 builds the first third: the packet format, a handshake that costs a server no state before the client proves it owns its address, the connection state machine and the sequence/acknowledgement machinery of every packet. Day 275 adds the four reliability kinds on independent channels, several small messages per packet and fragmentation of large ones; congestion control and the refined round-trip estimate follow on Day 276, behind the same [`net::Transport`](#net-transport) interface.
+
+**Data.** A message becomes one frame, or fragments of 1024 bytes for a message that does not fit a packet. Frames of all channels are packed into packets (resent frames first, then channels in ascending order, so a lower channel number is a higher priority). A packet's acknowledgement acknowledges its reliable frames; a frame is sent again when its packet is three or more packets behind an acknowledged one and was not acknowledged, or when its time-out (from the round-trip estimate, doubling per try) passes. Reliable-ordered delivery keeps a bounded reorder buffer per channel; a peer whose gap exceeds it, or that exceeds the reassembly and reorder byte budget, is disconnected with [`net::DisconnectReason::ProtocolError`](#net-disconnectreason-protocolerror). Fragments are declared up front (index, count, total size) and checked exactly: sizes, overlap and total are validated before any memory is committed.
 
 **Handshake** (the wire format is in `net/udp_protocol.h`). The client sends a ConnectRequest padded to a full datagram. The server answers with a small Challenge holding a cookie, a keyed hash of the client's endpoint, the client's random salt and the current time period, and **keeps nothing**. The client repeats the cookie in a ChallengeResponse (padded again); only then does the server create the connection and answer Accepted with the connection id. Requests that are not full-size are dropped, so no answer is larger than the request that caused it. A forged source address cannot complete the exchange and so cannot make the server hold a connection or flood a third party. A cookie is valid for the period it was made in and the next one. Handshake packets are repeated with a doubling delay until answered or the connect time-out.
 
@@ -6959,6 +6961,66 @@ u8 channels;
 
 Channels per connection.
 
+### `max_message_bytes` {#net-udptransportconfig-max-message-bytes}
+
+`variable net::UdpTransportConfig::max_message_bytes` — defined in `engine/net/udp_transport.h`
+
+```cpp
+usize max_message_bytes;
+```
+
+Largest message; above one packet it is fragmented (at most 65535 fragments of 1024 bytes; more is lowered to that).
+
+### `max_queued_frames` {#net-udptransportconfig-max-queued-frames}
+
+`variable net::UdpTransportConfig::max_queued_frames` — defined in `engine/net/udp_transport.h`
+
+```cpp
+usize max_queued_frames;
+```
+
+Frames (messages or fragments) waiting or unacknowledged per connection.
+
+### `window_frames` {#net-udptransportconfig-window-frames}
+
+`variable net::UdpTransportConfig::window_frames` — defined in `engine/net/udp_transport.h`
+
+```cpp
+usize window_frames;
+```
+
+Reliable frames in flight per connection.
+
+### `max_receive_buffer_bytes` {#net-udptransportconfig-max-receive-buffer-bytes}
+
+`variable net::UdpTransportConfig::max_receive_buffer_bytes` — defined in `engine/net/udp_transport.h`
+
+```cpp
+usize max_receive_buffer_bytes;
+```
+
+Reassembly plus out-of-order bytes per connection; more ends it.
+
+### `max_reassemblies` {#net-udptransportconfig-max-reassemblies}
+
+`variable net::UdpTransportConfig::max_reassemblies` — defined in `engine/net/udp_transport.h`
+
+```cpp
+usize max_reassemblies;
+```
+
+Messages being reassembled per connection (at least the peer's window: a reliable sender may have that many partial at once).
+
+### `reassembly_timeout_nanos` {#net-udptransportconfig-reassembly-timeout-nanos}
+
+`variable net::UdpTransportConfig::reassembly_timeout_nanos` — defined in `engine/net/udp_transport.h`
+
+```cpp
+u64 reassembly_timeout_nanos;
+```
+
+Unreliable messages missing a fragment this long are dropped.
+
 ### `max_connections` {#net-udptransportconfig-max-connections}
 
 `variable net::UdpTransportConfig::max_connections` — defined in `engine/net/udp_transport.h`
@@ -7277,6 +7339,36 @@ u64 packets_acked;
 
 Packets of ours the peer acknowledged.
 
+### `frames_resent` {#net-udpconnectioninfo-frames-resent}
+
+`variable net::UdpConnectionInfo::frames_resent` — defined in `engine/net/udp_transport.h`
+
+```cpp
+u64 frames_resent;
+```
+
+Reliable frames sent again after a loss or a time-out.
+
+### `buffered_bytes` {#net-udpconnectioninfo-buffered-bytes}
+
+`variable net::UdpConnectionInfo::buffered_bytes` — defined in `engine/net/udp_transport.h`
+
+```cpp
+usize buffered_bytes;
+```
+
+Bytes held for reassembly and for out-of-order delivery.
+
+### `reassemblies` {#net-udpconnectioninfo-reassemblies}
+
+`variable net::UdpConnectionInfo::reassemblies` — defined in `engine/net/udp_transport.h`
+
+```cpp
+usize reassemblies;
+```
+
+Messages being reassembled.
+
 ### `duplicates` {#net-udpconnectioninfo-duplicates}
 
 `variable net::UdpConnectionInfo::duplicates` — defined in `engine/net/udp_transport.h`
@@ -7400,16 +7492,16 @@ Starts a handshake with `to`.
 Status Send(ConnectionId connection, u8 channel, ByteSpan bytes, Reliability reliability) override;
 ```
 
-Sends a message, unreliably, in one packet.
+Queues a message; it is packed into a packet at the next [`net::UdpTransport::Poll`](#net-udptransport-poll-event-star).
 
 | Field | Value |
 |---|---|
 | Parameter `connection` | the connection. |
 | Parameter `channel` | the channel. |
 | Parameter `bytes` | the message. |
-| Parameter `reliability` | only [`net::Reliability::Unreliable`](#net-reliability-unreliable) is carried before Day 275. |
+| Parameter `reliability` | how to carry it. |
 | Returns | success. |
-| Fails | [`net::ErrorCode::Invalid`](#net-errorcode-invalid), [`net::ErrorCode::MessageTooLarge`](#net-errorcode-messagetoolarge), [`net::ErrorCode::Closed`](#net-errorcode-closed), [`net::ErrorCode::Unsupported`](#net-errorcode-unsupported) for another reliability, [`net::ErrorCode::NotConnected`](#net-errorcode-notconnected) while the handshake is under way. |
+| Fails | [`net::ErrorCode::Invalid`](#net-errorcode-invalid), [`net::ErrorCode::MessageTooLarge`](#net-errorcode-messagetoolarge), [`net::ErrorCode::Closed`](#net-errorcode-closed), [`net::ErrorCode::LimitExceeded`](#net-errorcode-limitexceeded) (the queue is full: retry later), [`net::ErrorCode::NotConnected`](#net-errorcode-notconnected) while the handshake is under way. |
 
 ### `Poll(Event*)` {#net-udptransport-poll-event-star}
 
@@ -7470,12 +7562,12 @@ Reads a connection's counters.
 bool Supports(Reliability reliability) const override;
 ```
 
-Only unreliable messages are carried as asked (so far).
+All four kinds are carried as asked.
 
 | Field | Value |
 |---|---|
 | Parameter `reliability` | the kind. |
-| Returns | true for Unreliable. |
+| Returns | true. |
 
 ### `MaxMessageBytes()` {#net-udptransport-maxmessagebytes-const}
 
@@ -7489,7 +7581,7 @@ The largest message.
 
 | Field | Value |
 |---|---|
-| Returns | the bytes that fit one packet after the frame header. |
+| Returns | [`net::UdpTransportConfig::max_message_bytes`](#net-udptransportconfig-max-message-bytes). |
 
 ### `ChannelCount()` {#net-udptransport-channelcount-const}
 

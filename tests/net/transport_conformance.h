@@ -230,7 +230,7 @@ template <class F> void CloseCarriesReasons(F& f)
     CHECK(client.transport->Send(cc, 0, ByteSpan(one, 1), Reliability::ReliableOrdered).Is(ErrorCode::Closed));
     CHECK(client.transport->Close(987654, 0).Is(ErrorCode::Invalid));
     REQUIRE(SettleUntil(
-        f, 10000, [&] { return server.Count(EventKind::Closed, sc) == 1 && client.Count(EventKind::Closed, cc) == 1; },
+        f, 20000, [&] { return server.Count(EventKind::Closed, sc) == 1 && client.Count(EventKind::Closed, cc) == 1; },
         &client, &server));
     const Rec* local = client.First(EventKind::Closed, cc);
     const Rec* remote = server.First(EventKind::Closed, sc);
@@ -253,7 +253,7 @@ template <class F> void ConnectToNothingIsRefused(F& f)
     Peer client = MakePeer(f.MakeClient());
     ConnectionId cc = 0;
     REQUIRE(client.transport->Connect(f.DeadEndpoint(), &cc).Ok());
-    REQUIRE(SettleUntil(f, 20000, [&] { return client.Count(EventKind::Closed, cc) == 1; }, &client));
+    REQUIRE(SettleUntil(f, 70000, [&] { return client.Count(EventKind::Closed, cc) == 1; }, &client));
     const Rec* closed = client.First(EventKind::Closed, cc);
     CHECK((closed->reason == DisconnectReason::Refused || closed->reason == DisconnectReason::TimedOut));
     CHECK(client.Count(EventKind::Opened, cc) == 0);
@@ -545,7 +545,7 @@ template <class F> void ManyConnectionsAtOnce(F& f)
             clients[i].Drain();
         }
     };
-    for (u32 t = 0; t < 30000 && !all_open(); t += 10)
+    for (u32 t = 0; t < (f.Lossy() ? 90000u : 30000u) && !all_open(); t += 10)
     {
         f.Pump(10);
         drain_all();

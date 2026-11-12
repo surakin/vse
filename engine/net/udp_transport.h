@@ -2,9 +2,19 @@
 
 //! [[net::UdpTransport]]: the game-traffic transport over UDP datagrams (Phase 20 Days 274-276). Day 274 builds the
 //! first third: the packet format, a handshake that costs a server no state before the client proves it owns its
-//! address, the connection state machine and the sequence/acknowledgement machinery of every packet. Messages are
-//! carried unreliably, one per packet; channels with reliability, fragmentation, round-trip time and congestion
-//! control follow on Days 275 and 276 behind the same [[net::Transport]] interface.
+//! address, the connection state machine and the sequence/acknowledgement machinery of every packet. Day 275 adds the
+//! four reliability kinds on independent channels, several small messages per packet and fragmentation of large ones;
+//! congestion control and the refined round-trip estimate follow on Day 276, behind the same [[net::Transport]]
+//! interface.
+//!
+//! **Data.** A message becomes one frame, or fragments of 1024 bytes for a message that does not fit a packet. Frames
+//! of all channels are packed into packets (resent frames first, then channels in ascending order, so a lower channel
+//! number is a higher priority). A packet's acknowledgement acknowledges its reliable frames; a frame is sent again
+//! when its packet is three or more packets behind an acknowledged one and was not acknowledged, or when its time-out
+//! (from the round-trip estimate, doubling per try) passes. Reliable-ordered delivery keeps a bounded reorder buffer
+//! per channel; a peer whose gap exceeds it, or that exceeds the reassembly and reorder byte budget, is disconnected
+//! with [[net::DisconnectReason::ProtocolError]]. Fragments are declared up front (index, count, total size) and
+//! checked exactly: sizes, overlap and total are validated before any memory is committed.
 //!
 //! **Handshake** (the wire format is in `net/udp_protocol.h`). The client sends a ConnectRequest padded to a full
 //! datagram. The server answers with a small Challenge holding a cookie, a keyed hash of the client's endpoint, the
@@ -38,13 +48,21 @@ namespace engine_placeholder::net
 /// - Thread-safety: thread-compatible plain data.
 struct UdpTransportConfig
 {
-    u8 channels = 8;                               ///< Channels per connection.
-    usize max_connections = 1024;                  ///< Connections at once, both kinds.
-    usize max_connections_per_address = 8;         ///< Accepted connections from one address.
-    u64 connect_timeout_nanos = 5'000'000'000ull;  ///< Time to complete a handshake.
-    u64 timeout_nanos = 10'000'000'000ull;         ///< Silence after which a connection times out.
-    u64 keepalive_nanos = 1'000'000'000ull;        ///< Silence after which an empty packet is sent.
-    u64 ack_delay_nanos = 20'000'000ull;           ///< How long an acknowledgement waits for a packet to ride on.
+    u8 channels = 8;                     ///< Channels per connection.
+    usize max_message_bytes = 1u << 20;  ///< Largest message; above one packet it is fragmented (at most 65535
+                                         ///< fragments of 1024 bytes; more is lowered to that).
+    usize max_queued_frames = 8192;      ///< Frames (messages or fragments) waiting or unacknowledged per connection.
+    usize window_frames = 256;           ///< Reliable frames in flight per connection.
+    usize max_receive_buffer_bytes = 16u << 20;  ///< Reassembly plus out-of-order bytes per connection; more ends it.
+    usize max_reassemblies = 256;                ///< Messages being reassembled per connection (at least the peer's
+                                                 ///< window: a reliable sender may have that many partial at once).
+    u64 reassembly_timeout_nanos = 5'000'000'000ull;  ///< Unreliable messages missing a fragment this long are dropped.
+    usize max_connections = 1024;                     ///< Connections at once, both kinds.
+    usize max_connections_per_address = 8;            ///< Accepted connections from one address.
+    u64 connect_timeout_nanos = 5'000'000'000ull;     ///< Time to complete a handshake.
+    u64 timeout_nanos = 10'000'000'000ull;            ///< Silence after which a connection times out.
+    u64 keepalive_nanos = 1'000'000'000ull;           ///< Silence after which an empty packet is sent.
+    u64 ack_delay_nanos = 20'000'000ull;              ///< How long an acknowledgement waits for a packet to ride on.
     u64 handshake_retry_nanos = 200'000'000ull;   ///< First delay before a handshake packet is repeated (doubles, up to
                                                   ///< 1 s).
     u64 cookie_period_nanos = 10'000'000'000ull;  ///< Length of a cookie's time period; a cookie lives two.
@@ -83,6 +101,9 @@ struct UdpConnectionInfo
     u16 latest_received = 0;    ///< The newest sequence received.
     bool any_received = false;  ///< Something was received.
     u64 packets_acked = 0;      ///< Packets of ours the peer acknowledged.
+    u64 frames_resent = 0;      ///< Reliable frames sent again after a loss or a time-out.
+    usize buffered_bytes = 0;   ///< Bytes held for reassembly and for out-of-order delivery.
+    usize reassemblies = 0;     ///< Messages being reassembled.
     u64 duplicates = 0;         ///< Payload packets dropped as duplicates.
     u64 too_old = 0;            ///< Payload packets dropped for being more than 32 behind.
 };
@@ -119,15 +140,15 @@ public:
     /// - Fails: [[net::ErrorCode::LimitExceeded]].
     /// - Ownership: `*connection` is written on success.
     Status Connect(const Endpoint& to, ConnectionId* connection) override;
-    /// Sends a message, unreliably, in one packet.
+    /// Queues a message; it is packed into a packet at the next [[net::UdpTransport::Poll]].
     /// - Param connection: the connection.
     /// - Param channel: the channel.
     /// - Param bytes: the message.
-    /// - Param reliability: only [[net::Reliability::Unreliable]] is carried before Day 275.
+    /// - Param reliability: how to carry it.
     /// - Returns: success.
     /// - Fails: [[net::ErrorCode::Invalid]], [[net::ErrorCode::MessageTooLarge]], [[net::ErrorCode::Closed]],
-    /// [[net::ErrorCode::Unsupported]] for another reliability, [[net::ErrorCode::NotConnected]] while the handshake
-    /// is under way.
+    /// [[net::ErrorCode::LimitExceeded]] (the queue is full: retry later), [[net::ErrorCode::NotConnected]] while the
+    /// handshake is under way.
     Status Send(ConnectionId connection, u8 channel, ByteSpan bytes, Reliability reliability) override;
     /// Receives datagrams, runs the timers and returns the next event.
     /// - Param event: receives the event.
@@ -147,13 +168,16 @@ public:
     /// - Fails: [[net::ErrorCode::Invalid]].
     /// - Ownership: `*stats` is written on success.
     Status Statistics(ConnectionId connection, ConnectionStats* stats) const override;
-    /// Only unreliable messages are carried as asked (so far).
+    /// All four kinds are carried as asked.
     /// - Param reliability: the kind.
-    /// - Returns: true for Unreliable.
-    bool Supports(Reliability reliability) const override { return reliability == Reliability::Unreliable; }
+    /// - Returns: true.
+    bool Supports(Reliability reliability) const override
+    {
+        return static_cast<u8>(reliability) <= static_cast<u8>(Reliability::ReliableUnordered);
+    }
     /// The largest message.
-    /// - Returns: the bytes that fit one packet after the frame header.
-    usize MaxMessageBytes() const override;
+    /// - Returns: [[net::UdpTransportConfig::max_message_bytes]].
+    usize MaxMessageBytes() const override { return config_.max_message_bytes; }
     /// The number of channels.
     /// - Returns: [[net::UdpTransportConfig::channels]].
     u8 ChannelCount() const override { return config_.channels; }

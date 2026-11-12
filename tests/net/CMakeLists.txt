@@ -6,6 +6,7 @@ set(NET_TEST_SOURCES
   net_codec_test.cpp  # Day 272
   sim_transport_test.cpp  # Day 273
   udp_handshake_test.cpp  # Day 274
+  udp_channels_test.cpp  # Day 275
 )
 # The socket backend's tests (Day 268); the Windows backend arrives on Day 278. Real sockets: the executable is labelled `network`.
 set(NET_SOCKET_TEST_SOURCES "")

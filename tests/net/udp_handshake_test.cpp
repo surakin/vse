@@ -253,8 +253,8 @@ TEST_CASE("UDP transport: connect, exchange messages, acknowledgements flow", "[
     CHECK(info.connected);
     CHECK(info.packets_acked >= 10);
     CHECK(info.duplicates == 0);
-    // Unsupported kinds say so; sending before the handshake is refused.
-    CHECK(client.transport.Send(cc, 0, ByteSpan(msg, 3), Reliability::ReliableOrdered).Is(ErrorCode::Unsupported));
+    // Reliable messages are queued; sending before the handshake is refused.
+    CHECK(client.transport.Send(cc, 0, ByteSpan(msg, 3), Reliability::ReliableOrdered).Ok());
     ConnectionId c2 = 0;
     REQUIRE(client.transport.Connect(kServer, &c2).Ok());
     CHECK(client.transport.Send(c2, 0, ByteSpan(msg, 3), Reliability::Unreliable).Is(ErrorCode::NotConnected));

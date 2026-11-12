@@ -4263,58 +4263,67 @@ net::udp::PayloadHeader::ack_bits	variable	net	net-udp-payloadheader-ack-bits	ne
 net::udp::PayloadHeader::has_ack	variable	net	net-udp-payloadheader-has-ack	net.md	engine/net/udp_protocol.h:185
 net::udp::WritePayloadHeader(const PayloadHeader&,Vector<byte>*)	function	net	net-udp-writepayloadheader-const-payloadheader-amp-vector-lt-byte-gt-star	net.md	engine/net/udp_protocol.h:192
 net::udp::ReadPayloadHeader(ByteSpan,PayloadHeader*,ByteSpan*)	function	net	net-udp-readpayloadheader-bytespan-payloadheader-star-bytespan-star	net.md	engine/net/udp_protocol.h:200
-net::UdpTransportConfig	struct	net	net-udptransportconfig	net.md	engine/net/udp_transport.h:39
-net::UdpTransportConfig::channels	variable	net	net-udptransportconfig-channels	net.md	engine/net/udp_transport.h:41
-net::UdpTransportConfig::max_connections	variable	net	net-udptransportconfig-max-connections	net.md	engine/net/udp_transport.h:42
-net::UdpTransportConfig::max_connections_per_address	variable	net	net-udptransportconfig-max-connections-per-address	net.md	engine/net/udp_transport.h:43
-net::UdpTransportConfig::connect_timeout_nanos	variable	net	net-udptransportconfig-connect-timeout-nanos	net.md	engine/net/udp_transport.h:44
-net::UdpTransportConfig::timeout_nanos	variable	net	net-udptransportconfig-timeout-nanos	net.md	engine/net/udp_transport.h:45
-net::UdpTransportConfig::keepalive_nanos	variable	net	net-udptransportconfig-keepalive-nanos	net.md	engine/net/udp_transport.h:46
-net::UdpTransportConfig::ack_delay_nanos	variable	net	net-udptransportconfig-ack-delay-nanos	net.md	engine/net/udp_transport.h:47
-net::UdpTransportConfig::handshake_retry_nanos	variable	net	net-udptransportconfig-handshake-retry-nanos	net.md	engine/net/udp_transport.h:48
-net::UdpTransportConfig::cookie_period_nanos	variable	net	net-udptransportconfig-cookie-period-nanos	net.md	engine/net/udp_transport.h:50
-net::UdpTransportConfig::close_repeats	variable	net	net-udptransportconfig-close-repeats	net.md	engine/net/udp_transport.h:51
-net::UdpTransportConfig::close_interval_nanos	variable	net	net-udptransportconfig-close-interval-nanos	net.md	engine/net/udp_transport.h:52
-net::UdpTransportConfig::initial_sequence	variable	net	net-udptransportconfig-initial-sequence	net.md	engine/net/udp_transport.h:53
-net::UdpTransportConfig::seed	variable	net	net-udptransportconfig-seed	net.md	engine/net/udp_transport.h:54
-net::UdpCounters	struct	net	net-udpcounters	net.md	engine/net/udp_transport.h:60
-net::UdpCounters::datagrams_received	variable	net	net-udpcounters-datagrams-received	net.md	engine/net/udp_transport.h:62
-net::UdpCounters::datagrams_sent	variable	net	net-udpcounters-datagrams-sent	net.md	engine/net/udp_transport.h:63
-net::UdpCounters::send_failures	variable	net	net-udpcounters-send-failures	net.md	engine/net/udp_transport.h:64
-net::UdpCounters::dropped_short	variable	net	net-udpcounters-dropped-short	net.md	engine/net/udp_transport.h:65
-net::UdpCounters::dropped_oversize	variable	net	net-udpcounters-dropped-oversize	net.md	engine/net/udp_transport.h:66
-net::UdpCounters::dropped_unknown	variable	net	net-udpcounters-dropped-unknown	net.md	engine/net/udp_transport.h:67
-net::UdpCounters::dropped_bad_cookie	variable	net	net-udpcounters-dropped-bad-cookie	net.md	engine/net/udp_transport.h:68
-net::UdpCounters::dropped_stale	variable	net	net-udpcounters-dropped-stale	net.md	engine/net/udp_transport.h:69
-net::UdpCounters::dropped_duplicate	variable	net	net-udpcounters-dropped-duplicate	net.md	engine/net/udp_transport.h:70
-net::UdpCounters::challenges_sent	variable	net	net-udpcounters-challenges-sent	net.md	engine/net/udp_transport.h:71
-net::UdpCounters::resets_sent	variable	net	net-udpcounters-resets-sent	net.md	engine/net/udp_transport.h:72
-net::UdpCounters::denied_sent	variable	net	net-udpcounters-denied-sent	net.md	engine/net/udp_transport.h:73
-net::UdpConnectionInfo	struct	net	net-udpconnectioninfo	net.md	engine/net/udp_transport.h:79
-net::UdpConnectionInfo::connected	variable	net	net-udpconnectioninfo-connected	net.md	engine/net/udp_transport.h:81
-net::UdpConnectionInfo::next_sequence	variable	net	net-udpconnectioninfo-next-sequence	net.md	engine/net/udp_transport.h:82
-net::UdpConnectionInfo::latest_received	variable	net	net-udpconnectioninfo-latest-received	net.md	engine/net/udp_transport.h:83
-net::UdpConnectionInfo::any_received	variable	net	net-udpconnectioninfo-any-received	net.md	engine/net/udp_transport.h:84
-net::UdpConnectionInfo::packets_acked	variable	net	net-udpconnectioninfo-packets-acked	net.md	engine/net/udp_transport.h:85
-net::UdpConnectionInfo::duplicates	variable	net	net-udpconnectioninfo-duplicates	net.md	engine/net/udp_transport.h:86
-net::UdpConnectionInfo::too_old	variable	net	net-udpconnectioninfo-too-old	net.md	engine/net/udp_transport.h:87
-net::UdpTransport	class	net	net-udptransport	net.md	engine/net/udp_transport.h:94
-net::UdpTransport::UdpTransport(DatagramPort&,const Clock&,const UdpTransportConfig&)	function	net	net-udptransport-udptransport-datagramport-amp-const-clock-amp-const-udptransportconfig-amp	net.md	engine/net/udp_transport.h:102
-net::UdpTransport::~UdpTransport()	function	net	net-udptransport-tilde-udptransport	net.md	engine/net/udp_transport.h:105
-net::UdpTransport::UdpTransport(const UdpTransport&)	function	net	net-udptransport-udptransport-const-udptransport-amp	net.md	engine/net/udp_transport.h:107
-net::UdpTransport::operator=(const UdpTransport&)	function	net	net-udptransport-operator-eq-const-udptransport-amp	net.md	engine/net/udp_transport.h:108
-net::UdpTransport::Listen(const Endpoint&)	function	net	net-udptransport-listen-const-endpoint-amp	net.md	engine/net/udp_transport.h:114
-net::UdpTransport::Connect(const Endpoint&,ConnectionId*)	function	net	net-udptransport-connect-const-endpoint-amp-connectionid-star	net.md	engine/net/udp_transport.h:121
-net::UdpTransport::Send(ConnectionId,u8,ByteSpan,Reliability)	function	net	net-udptransport-send-connectionid-u8-bytespan-reliability	net.md	engine/net/udp_transport.h:131
-net::UdpTransport::Poll(Event*)	function	net	net-udptransport-poll-event-star	net.md	engine/net/udp_transport.h:136
-net::UdpTransport::Close(ConnectionId,u32)	function	net	net-udptransport-close-connectionid-u32	net.md	engine/net/udp_transport.h:142
-net::UdpTransport::Statistics(ConnectionId,ConnectionStats*) const	function	net	net-udptransport-statistics-connectionid-connectionstats-star-const	net.md	engine/net/udp_transport.h:149
-net::UdpTransport::Supports(Reliability) const	function	net	net-udptransport-supports-reliability-const	net.md	engine/net/udp_transport.h:153
-net::UdpTransport::MaxMessageBytes() const	function	net	net-udptransport-maxmessagebytes-const	net.md	engine/net/udp_transport.h:156
-net::UdpTransport::ChannelCount() const	function	net	net-udptransport-channelcount-const	net.md	engine/net/udp_transport.h:159
-net::UdpTransport::Info(ConnectionId,UdpConnectionInfo*) const	function	net	net-udptransport-info-connectionid-udpconnectioninfo-star-const	net.md	engine/net/udp_transport.h:167
-net::UdpTransport::ConnectionCount() const	function	net	net-udptransport-connectioncount-const	net.md	engine/net/udp_transport.h:171
-net::UdpTransport::Counters() const	function	net	net-udptransport-counters-const	net.md	engine/net/udp_transport.h:175
+net::UdpTransportConfig	struct	net	net-udptransportconfig	net.md	engine/net/udp_transport.h:49
+net::UdpTransportConfig::channels	variable	net	net-udptransportconfig-channels	net.md	engine/net/udp_transport.h:51
+net::UdpTransportConfig::max_message_bytes	variable	net	net-udptransportconfig-max-message-bytes	net.md	engine/net/udp_transport.h:52
+net::UdpTransportConfig::max_queued_frames	variable	net	net-udptransportconfig-max-queued-frames	net.md	engine/net/udp_transport.h:54
+net::UdpTransportConfig::window_frames	variable	net	net-udptransportconfig-window-frames	net.md	engine/net/udp_transport.h:55
+net::UdpTransportConfig::max_receive_buffer_bytes	variable	net	net-udptransportconfig-max-receive-buffer-bytes	net.md	engine/net/udp_transport.h:56
+net::UdpTransportConfig::max_reassemblies	variable	net	net-udptransportconfig-max-reassemblies	net.md	engine/net/udp_transport.h:57
+net::UdpTransportConfig::reassembly_timeout_nanos	variable	net	net-udptransportconfig-reassembly-timeout-nanos	net.md	engine/net/udp_transport.h:59
+net::UdpTransportConfig::max_connections	variable	net	net-udptransportconfig-max-connections	net.md	engine/net/udp_transport.h:60
+net::UdpTransportConfig::max_connections_per_address	variable	net	net-udptransportconfig-max-connections-per-address	net.md	engine/net/udp_transport.h:61
+net::UdpTransportConfig::connect_timeout_nanos	variable	net	net-udptransportconfig-connect-timeout-nanos	net.md	engine/net/udp_transport.h:62
+net::UdpTransportConfig::timeout_nanos	variable	net	net-udptransportconfig-timeout-nanos	net.md	engine/net/udp_transport.h:63
+net::UdpTransportConfig::keepalive_nanos	variable	net	net-udptransportconfig-keepalive-nanos	net.md	engine/net/udp_transport.h:64
+net::UdpTransportConfig::ack_delay_nanos	variable	net	net-udptransportconfig-ack-delay-nanos	net.md	engine/net/udp_transport.h:65
+net::UdpTransportConfig::handshake_retry_nanos	variable	net	net-udptransportconfig-handshake-retry-nanos	net.md	engine/net/udp_transport.h:66
+net::UdpTransportConfig::cookie_period_nanos	variable	net	net-udptransportconfig-cookie-period-nanos	net.md	engine/net/udp_transport.h:68
+net::UdpTransportConfig::close_repeats	variable	net	net-udptransportconfig-close-repeats	net.md	engine/net/udp_transport.h:69
+net::UdpTransportConfig::close_interval_nanos	variable	net	net-udptransportconfig-close-interval-nanos	net.md	engine/net/udp_transport.h:70
+net::UdpTransportConfig::initial_sequence	variable	net	net-udptransportconfig-initial-sequence	net.md	engine/net/udp_transport.h:71
+net::UdpTransportConfig::seed	variable	net	net-udptransportconfig-seed	net.md	engine/net/udp_transport.h:72
+net::UdpCounters	struct	net	net-udpcounters	net.md	engine/net/udp_transport.h:78
+net::UdpCounters::datagrams_received	variable	net	net-udpcounters-datagrams-received	net.md	engine/net/udp_transport.h:80
+net::UdpCounters::datagrams_sent	variable	net	net-udpcounters-datagrams-sent	net.md	engine/net/udp_transport.h:81
+net::UdpCounters::send_failures	variable	net	net-udpcounters-send-failures	net.md	engine/net/udp_transport.h:82
+net::UdpCounters::dropped_short	variable	net	net-udpcounters-dropped-short	net.md	engine/net/udp_transport.h:83
+net::UdpCounters::dropped_oversize	variable	net	net-udpcounters-dropped-oversize	net.md	engine/net/udp_transport.h:84
+net::UdpCounters::dropped_unknown	variable	net	net-udpcounters-dropped-unknown	net.md	engine/net/udp_transport.h:85
+net::UdpCounters::dropped_bad_cookie	variable	net	net-udpcounters-dropped-bad-cookie	net.md	engine/net/udp_transport.h:86
+net::UdpCounters::dropped_stale	variable	net	net-udpcounters-dropped-stale	net.md	engine/net/udp_transport.h:87
+net::UdpCounters::dropped_duplicate	variable	net	net-udpcounters-dropped-duplicate	net.md	engine/net/udp_transport.h:88
+net::UdpCounters::challenges_sent	variable	net	net-udpcounters-challenges-sent	net.md	engine/net/udp_transport.h:89
+net::UdpCounters::resets_sent	variable	net	net-udpcounters-resets-sent	net.md	engine/net/udp_transport.h:90
+net::UdpCounters::denied_sent	variable	net	net-udpcounters-denied-sent	net.md	engine/net/udp_transport.h:91
+net::UdpConnectionInfo	struct	net	net-udpconnectioninfo	net.md	engine/net/udp_transport.h:97
+net::UdpConnectionInfo::connected	variable	net	net-udpconnectioninfo-connected	net.md	engine/net/udp_transport.h:99
+net::UdpConnectionInfo::next_sequence	variable	net	net-udpconnectioninfo-next-sequence	net.md	engine/net/udp_transport.h:100
+net::UdpConnectionInfo::latest_received	variable	net	net-udpconnectioninfo-latest-received	net.md	engine/net/udp_transport.h:101
+net::UdpConnectionInfo::any_received	variable	net	net-udpconnectioninfo-any-received	net.md	engine/net/udp_transport.h:102
+net::UdpConnectionInfo::packets_acked	variable	net	net-udpconnectioninfo-packets-acked	net.md	engine/net/udp_transport.h:103
+net::UdpConnectionInfo::frames_resent	variable	net	net-udpconnectioninfo-frames-resent	net.md	engine/net/udp_transport.h:104
+net::UdpConnectionInfo::buffered_bytes	variable	net	net-udpconnectioninfo-buffered-bytes	net.md	engine/net/udp_transport.h:105
+net::UdpConnectionInfo::reassemblies	variable	net	net-udpconnectioninfo-reassemblies	net.md	engine/net/udp_transport.h:106
+net::UdpConnectionInfo::duplicates	variable	net	net-udpconnectioninfo-duplicates	net.md	engine/net/udp_transport.h:107
+net::UdpConnectionInfo::too_old	variable	net	net-udpconnectioninfo-too-old	net.md	engine/net/udp_transport.h:108
+net::UdpTransport	class	net	net-udptransport	net.md	engine/net/udp_transport.h:115
+net::UdpTransport::UdpTransport(DatagramPort&,const Clock&,const UdpTransportConfig&)	function	net	net-udptransport-udptransport-datagramport-amp-const-clock-amp-const-udptransportconfig-amp	net.md	engine/net/udp_transport.h:123
+net::UdpTransport::~UdpTransport()	function	net	net-udptransport-tilde-udptransport	net.md	engine/net/udp_transport.h:126
+net::UdpTransport::UdpTransport(const UdpTransport&)	function	net	net-udptransport-udptransport-const-udptransport-amp	net.md	engine/net/udp_transport.h:128
+net::UdpTransport::operator=(const UdpTransport&)	function	net	net-udptransport-operator-eq-const-udptransport-amp	net.md	engine/net/udp_transport.h:129
+net::UdpTransport::Listen(const Endpoint&)	function	net	net-udptransport-listen-const-endpoint-amp	net.md	engine/net/udp_transport.h:135
+net::UdpTransport::Connect(const Endpoint&,ConnectionId*)	function	net	net-udptransport-connect-const-endpoint-amp-connectionid-star	net.md	engine/net/udp_transport.h:142
+net::UdpTransport::Send(ConnectionId,u8,ByteSpan,Reliability)	function	net	net-udptransport-send-connectionid-u8-bytespan-reliability	net.md	engine/net/udp_transport.h:152
+net::UdpTransport::Poll(Event*)	function	net	net-udptransport-poll-event-star	net.md	engine/net/udp_transport.h:157
+net::UdpTransport::Close(ConnectionId,u32)	function	net	net-udptransport-close-connectionid-u32	net.md	engine/net/udp_transport.h:163
+net::UdpTransport::Statistics(ConnectionId,ConnectionStats*) const	function	net	net-udptransport-statistics-connectionid-connectionstats-star-const	net.md	engine/net/udp_transport.h:170
+net::UdpTransport::Supports(Reliability) const	function	net	net-udptransport-supports-reliability-const	net.md	engine/net/udp_transport.h:174
+net::UdpTransport::MaxMessageBytes() const	function	net	net-udptransport-maxmessagebytes-const	net.md	engine/net/udp_transport.h:180
+net::UdpTransport::ChannelCount() const	function	net	net-udptransport-channelcount-const	net.md	engine/net/udp_transport.h:183
+net::UdpTransport::Info(ConnectionId,UdpConnectionInfo*) const	function	net	net-udptransport-info-connectionid-udpconnectioninfo-star-const	net.md	engine/net/udp_transport.h:191
+net::UdpTransport::ConnectionCount() const	function	net	net-udptransport-connectioncount-const	net.md	engine/net/udp_transport.h:195
+net::UdpTransport::Counters() const	function	net	net-udptransport-counters-const	net.md	engine/net/udp_transport.h:199
 database::Feature	enum	database	database-feature	database.md	engine/database/database.h:22
 database::Feature::Savepoints	enumerator	database	database-feature-savepoints	database.md	engine/database/database.h:24
 database::Feature::WithoutRowId	enumerator	database	database-feature-withoutrowid	database.md	engine/database/database.h:25

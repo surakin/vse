@@ -12,8 +12,36 @@ namespace engine_placeholder::net
 namespace
 {
 
-constexpr u8 kUdpFrameMessage = 1;
-constexpr usize kUdpFrameHeaderBytes = 1 + 1 + 2;
+constexpr usize kUdpMaxMessageBytes = 65535u * 1024u;  // fragment counts are 16 bits
+
+// The configuration with the values the wire format cannot carry brought down to what it can.
+UdpTransportConfig ClampedConfig(UdpTransportConfig c)
+{
+    if (c.max_message_bytes > kUdpMaxMessageBytes)
+    {
+        c.max_message_bytes = kUdpMaxMessageBytes;
+    }
+    if (c.max_connections > 65535)
+    {
+        c.max_connections = 65535;  // wire ids are 16 bits
+    }
+    return c;
+}
+
+constexpr u8 kUdpFrameData = 1;
+constexpr usize kUdpDataHeaderBytes = 1 + 1 + 1 + 2 + 2;  // type, channel, kind and flags, message sequence, length
+constexpr usize kUdpFragmentExtraBytes = 2 + 2 + 4;       // fragment index, fragment count, total size
+constexpr usize kUdpFragmentBytes = 1024;                 // payload of every fragment but the last
+constexpr usize kUdpSingleMax = udp::kMaxPayloadBytes - kUdpDataHeaderBytes;  // largest message sent as one frame
+constexpr u8 kUdpFragmentFlag = 0x80;
+constexpr usize kUdpRingSize = 1024;       // packets remembered for acknowledgement
+constexpr u16 kUdpLookahead = 1024;        // how far ahead of the next expected a reliable message may be
+constexpr u32 kUdpLossThreshold = 3;       // packets behind an acknowledged one that count as lost
+constexpr u32 kUdpAckEvery = 8;            // packets with frames received before an acknowledgement is sent at once
+constexpr usize kUdpPacketsPerFlush = 32;  // one acknowledgement covers 33 packets: a burst may not be longer
+constexpr u64 kUdpMinRto = 30'000'000ull;
+constexpr u64 kUdpMaxRto = 2'000'000'000ull;
+constexpr u64 kUdpInitialRto = 200'000'000ull;
 constexpr usize kReceiveBatch = 256;        // datagrams taken from the port per Poll
 constexpr usize kUdpRetiredMemory = 16384;  // closed handshakes remembered while their cookie lives
 constexpr usize
@@ -34,6 +62,73 @@ enum class Phase : u8
     Response,  // client: waiting for Accepted
 };
 
+struct UdpOutFrame
+{
+    bool live = false;
+    u32 gen = 0;
+    u8 channel = 0;
+    u8 rel = 0;
+    u16 seq = 0;
+    u16 frag_index = 0;
+    u16 frag_count = 0;  // 0: a whole message
+    u32 total = 0;       // fragments: the message's size
+    Vector<byte> data;
+    u16 packet_seq = 0;  // the packet that carried it last
+    u64 sent_time = 0;
+    u32 tries = 0;
+    bool sent = false;
+    bool resend_queued = false;
+};
+
+struct UdpSentPacket
+{
+    u16 seq = 0;
+    bool used = false;
+    bool acked = false;
+    bool resolved = false;  // declared lost
+    u64 time = 0;
+    Vector<u64> frames;  // handles of the reliable frames it carried
+};
+
+struct UdpChannelOut
+{
+    Vector<u64> queue;  // handles, oldest first from `head`
+    usize head = 0;
+    u16 next_seq[4] = {};
+};
+
+struct UdpBuffered
+{
+    u16 seq = 0;
+    Vector<byte> data;
+};
+
+struct UdpRecvSpace
+{
+    bool any = false;
+    u16 next = 0;  // sequenced: the newest delivered; reliable: the next expected (ordered) or the lowest missing
+    Vector<u16> above;
+    Vector<UdpBuffered> buffered;
+};
+
+struct UdpChannelIn
+{
+    UdpRecvSpace space[4];
+};
+
+struct UdpReassembly
+{
+    u8 channel = 0;
+    u8 rel = 0;
+    u16 seq = 0;
+    u32 total = 0;
+    u16 count = 0;
+    u16 got = 0;
+    Vector<u8> have;
+    Vector<byte> data;
+    u64 started = 0;
+};
+
 struct UdpConn
 {
     ConnectionId id = 0;
@@ -50,10 +145,28 @@ struct UdpConn
     u64 last_sent = 0;
     u64 last_try = 0;
     u64 retry_nanos = 0;
+    u64 phase_started = 0;  // when the client entered its current handshake phase
     bool ack_pending = false;
+    u32 unacked_packets = 0;  // packets with frames received since our last packet: an acknowledgement covers 33 only
     u16 send_seq = 0;
     udp::ReceiveWindow recv;
-    udp::SendLog log;
+    Vector<UdpOutFrame> frames;  // slots; a handle is (generation << 32) | slot
+    Vector<u32> free_slots;
+    Vector<UdpChannelOut> out;
+    Vector<UdpChannelIn> in;
+    Vector<u64> resend;  // handles to send again, oldest first from `resend_head`
+    usize resend_head = 0;
+    Vector<UdpSentPacket> ring;
+    u16 tail_seq = 0;  // the oldest packet not yet resolved
+    usize queued_frames = 0;
+    usize queued_bytes = 0;
+    usize inflight_frames = 0;
+    usize receive_bytes = 0;  // reassembly plus out-of-order buffers
+    Vector<UdpReassembly> reassemblies;
+    bool has_rtt = false;
+    f64 srtt = 0;
+    f64 rttvar = 0;
+    u64 frames_first_sent = 0;
     UdpConnectionInfo info;
     ConnectionStats stats;
 };
@@ -137,15 +250,11 @@ void PadTo(Vector<byte>* out, usize size)
 struct UdpTransport::Impl
 {
     Impl(DatagramPort& p, const Clock& c, const UdpTransportConfig& cfg)
-        : port(&p), clock(&c), config(cfg), self(p.LocalEndpoint()), by_id(HeapAllocator::Default()),
+        : port(&p), clock(&c), config(ClampedConfig(cfg)), self(p.LocalEndpoint()), by_id(HeapAllocator::Default()),
           by_wire(HeapAllocator::Default()), retired_keys(HeapAllocator::Default()),
           retired_per_group(HeapAllocator::Default()), retired_per_prefix(HeapAllocator::Default())
     {
         state = cfg.seed;
-        if (config.max_connections > 65535)
-        {
-            config.max_connections = 65535;  // wire ids are 16 bits
-        }
         key0 = Random();
         key1 = Random();
     }
@@ -215,6 +324,10 @@ struct UdpTransport::Impl
         conn->last_heard = conn->created;
         conn->last_sent = conn->created;
         conn->send_seq = config.initial_sequence;
+        conn->tail_seq = config.initial_sequence;
+        conn->out.Resize(config.channels);
+        conn->in.Resize(config.channels);
+        conn->ring.Resize(kUdpRingSize);
         UdpConn* raw = conn.Get();
         by_id.Insert(raw->id, raw);
         conns.Push(Move(conn));
@@ -414,8 +527,159 @@ struct UdpTransport::Impl
         Emit(to, p);
     }
 
-    // A payload packet with one frame, or none (an acknowledgement or a keep-alive).
-    void SendPayload(UdpConn* c, bool with_frame, u8 channel, ByteSpan message)
+    // ---- frames: queueing, packing, acknowledgement ----
+
+    static UdpOutFrame* Resolve(UdpConn* c, u64 handle)
+    {
+        const u32 slot = static_cast<u32>(handle & 0xffffffffu);
+        const u32 gen = static_cast<u32>(handle >> 32);
+        if (slot >= c->frames.Size() || !c->frames[slot].live || c->frames[slot].gen != gen)
+        {
+            return nullptr;
+        }
+        return &c->frames[slot];
+    }
+
+    static bool IsReliableKind(u8 rel) { return rel >= static_cast<u8>(Reliability::ReliableOrdered); }
+
+    u64 NewFrame(UdpConn* c, u8 channel, u8 rel, u16 seq, u16 frag_index, u16 frag_count, u32 total, ByteSpan data)
+    {
+        u32 slot = 0;
+        if (!c->free_slots.Empty())
+        {
+            slot = c->free_slots[c->free_slots.Size() - 1];
+            c->free_slots.Pop();
+        }
+        else
+        {
+            slot = static_cast<u32>(c->frames.Size());
+            c->frames.Push(UdpOutFrame());
+        }
+        UdpOutFrame& f = c->frames[slot];
+        const u32 gen = f.gen + 1;
+        f = UdpOutFrame();
+        f.gen = gen;
+        f.live = true;
+        f.channel = channel;
+        f.rel = rel;
+        f.seq = seq;
+        f.frag_index = frag_index;
+        f.frag_count = frag_count;
+        f.total = total;
+        f.data.TryResizeUninitialized(data.Size());
+        MemCopy(f.data.Data(), data.Data(), data.Size());
+        ++c->queued_frames;
+        c->queued_bytes += data.Size();
+        return (static_cast<u64>(gen) << 32) | slot;
+    }
+
+    void FreeFrame(UdpConn* c, u64 handle)
+    {
+        UdpOutFrame* f = Resolve(c, handle);
+        if (f == nullptr)
+        {
+            return;
+        }
+        if (f->sent && IsReliableKind(f->rel))
+        {
+            --c->inflight_frames;
+        }
+        --c->queued_frames;
+        c->queued_bytes -= f->data.Size();
+        f->live = false;
+        f->data = Vector<byte>();
+        c->free_slots.Push(static_cast<u32>(handle & 0xffffffffu));
+    }
+
+    // Splits a message into frames and queues them on its channel.
+    Status QueueMessage(UdpConn* c, u8 channel, u8 rel, ByteSpan bytes)
+    {
+        const usize count = bytes.Size() <= kUdpSingleMax ? 1
+                                                          : (bytes.Size() + kUdpFragmentBytes - 1) / kUdpFragmentBytes;
+        if (c->queued_frames + count > config.max_queued_frames)
+        {
+            return Status::Of(ErrorCode::LimitExceeded);
+        }
+        UdpChannelOut& out = c->out[channel];
+        const u16 seq = out.next_seq[rel]++;
+        if (count == 1)
+        {
+            out.queue.Push(NewFrame(c, channel, rel, seq, 0, 0, 0, bytes));
+            return Status::Success();
+        }
+        for (usize i = 0; i < count; ++i)
+        {
+            const usize at = i * kUdpFragmentBytes;
+            const usize len = bytes.Size() - at < kUdpFragmentBytes ? bytes.Size() - at : kUdpFragmentBytes;
+            out.queue.Push(NewFrame(c, channel, rel, seq, static_cast<u16>(i), static_cast<u16>(count),
+                                    static_cast<u32>(bytes.Size()), ByteSpan(bytes.Data() + at, len)));
+        }
+        return Status::Success();
+    }
+
+    static usize EncodedSize(const UdpOutFrame& f)
+    {
+        return kUdpDataHeaderBytes + (f.frag_count > 1 ? kUdpFragmentExtraBytes : 0) + f.data.Size();
+    }
+
+    static void AppendFrame(const UdpOutFrame& f, Vector<byte>* p)
+    {
+        p->Push(static_cast<byte>(kUdpFrameData));
+        p->Push(static_cast<byte>(f.channel));
+        p->Push(static_cast<byte>(f.rel | (f.frag_count > 1 ? kUdpFragmentFlag : 0)));
+        PutU16(p, f.seq);
+        PutU16(p, static_cast<u16>(f.data.Size()));
+        if (f.frag_count > 1)
+        {
+            PutU16(p, f.frag_index);
+            PutU16(p, f.frag_count);
+            PutU32(p, f.total);
+        }
+        for (usize i = 0; i < f.data.Size(); ++i)
+        {
+            p->Push(f.data[i]);
+        }
+    }
+
+    u64 Rto(const UdpConn* c) const
+    {
+        if (!c->has_rtt)
+        {
+            return kUdpInitialRto;
+        }
+        const u64 nanos = static_cast<u64>((c->srtt + 4.0 * c->rttvar) * 1e9);
+        return nanos < kUdpMinRto ? kUdpMinRto : (nanos > kUdpMaxRto ? kUdpMaxRto : nanos);
+    }
+
+    void RttSample(UdpConn* c, f64 seconds)
+    {
+        if (!c->has_rtt)
+        {
+            c->has_rtt = true;
+            c->srtt = seconds;
+            c->rttvar = seconds / 2;
+        }
+        else
+        {
+            const f64 diff = c->srtt > seconds ? c->srtt - seconds : seconds - c->srtt;
+            c->rttvar = 0.75 * c->rttvar + 0.25 * diff;
+            c->srtt = 0.875 * c->srtt + 0.125 * seconds;
+        }
+        c->stats.rtt_seconds = c->srtt;
+    }
+
+    void QueueResend(UdpConn* c, u64 handle, u16 from_packet)
+    {
+        UdpOutFrame* f = Resolve(c, handle);
+        if (f != nullptr && f->packet_seq == from_packet && !f->resend_queued)
+        {
+            f->resend_queued = true;
+            c->resend.Push(handle);
+        }
+    }
+
+    // Builds one packet from what is waiting and sends it; an empty one only if `force`. False if nothing was sent.
+    bool SendPacket(UdpConn* c, bool force)
     {
         Vector<byte> p;
         udp::PayloadHeader h;
@@ -425,23 +689,228 @@ struct UdpTransport::Impl
         h.ack = c->recv.Latest();
         h.ack_bits = c->recv.Bits();
         udp::WritePayloadHeader(h, &p);
-        if (with_frame)
+        Vector<u64> carried;
+        usize new_reliable = 0;
+        bool full = false;
+        while (!full && c->resend_head < c->resend.Size())
         {
-            p.Push(static_cast<byte>(kUdpFrameMessage));
-            p.Push(static_cast<byte>(channel));
-            PutU16(&p, static_cast<u16>(message.Size()));
-            for (usize i = 0; i < message.Size(); ++i)
+            const u64 handle = c->resend[c->resend_head];
+            UdpOutFrame* f = Resolve(c, handle);
+            if (f == nullptr || !f->resend_queued)
             {
-                p.Push(message[i]);
+                ++c->resend_head;
+                continue;
+            }
+            if (p.Size() + EncodedSize(*f) > udp::kMtu)
+            {
+                full = true;
+                break;
+            }
+            f->resend_queued = false;
+            AppendFrame(*f, &p);
+            carried.Push(handle);
+            ++c->resend_head;
+        }
+        if (c->resend_head > 64 && c->resend_head * 2 > c->resend.Size())
+        {
+            c->resend.RemoveRange(0, c->resend_head);
+            c->resend_head = 0;
+        }
+        for (usize ch = 0; ch < c->out.Size() && !full; ++ch)
+        {
+            UdpChannelOut& out = c->out[ch];
+            while (out.head < out.queue.Size())
+            {
+                const u64 handle = out.queue[out.head];
+                UdpOutFrame* f = Resolve(c, handle);
+                if (f == nullptr)
+                {
+                    ++out.head;
+                    continue;
+                }
+                if (IsReliableKind(f->rel) && c->inflight_frames + new_reliable >= config.window_frames)
+                {
+                    break;  // the window is full: this channel waits for acknowledgements
+                }
+                if (p.Size() + EncodedSize(*f) > udp::kMtu)
+                {
+                    full = true;
+                    break;
+                }
+                AppendFrame(*f, &p);
+                carried.Push(handle);
+                new_reliable += IsReliableKind(f->rel) ? 1 : 0;
+                ++out.head;
+            }
+            if (out.head > 64 && out.head * 2 > out.queue.Size())
+            {
+                out.queue.RemoveRange(0, out.head);
+                out.head = 0;
             }
         }
-        c->log.OnSent(c->send_seq);
+        if (carried.Empty() && !force)
+        {
+            return false;
+        }
+        const u64 now = Now();
+        const u16 seq = c->send_seq;
+        UdpSentPacket& entry = c->ring[seq % kUdpRingSize];
+        if (entry.used && !entry.acked && !entry.resolved)
+        {
+            for (usize i = 0; i < entry.frames.Size(); ++i)
+            {
+                QueueResend(c, entry.frames[i], entry.seq);  // its record is about to be overwritten: treat it as lost
+            }
+        }
+        entry.seq = seq;
+        entry.used = true;
+        entry.acked = false;
+        entry.resolved = false;
+        entry.time = now;
+        entry.frames.Clear();
+        for (usize i = 0; i < carried.Size(); ++i)
+        {
+            UdpOutFrame* f = Resolve(c, carried[i]);
+            if (f == nullptr)
+            {
+                continue;
+            }
+            if (IsReliableKind(f->rel))
+            {
+                f->packet_seq = seq;
+                f->sent_time = now;
+                ++f->tries;
+                if (!f->sent)
+                {
+                    f->sent = true;
+                    ++c->inflight_frames;
+                }
+                else
+                {
+                    ++c->info.frames_resent;
+                }
+                entry.frames.Push(carried[i]);
+            }
+            else
+            {
+                FreeFrame(c, carried[i]);  // unreliable: sent once and forgotten
+            }
+        }
         ++c->send_seq;
         c->info.next_sequence = c->send_seq;
-        c->last_sent = Now();
+        c->last_sent = now;
         c->ack_pending = false;
+        c->unacked_packets = 0;
         ++c->stats.packets_sent;
+        c->stats.loss = c->stats.packets_sent == 0
+                            ? 0
+                            : static_cast<f64>(c->info.frames_resent) / static_cast<f64>(c->stats.packets_sent);
         Emit(c->peer, p);
+        return true;
+    }
+
+    void Flush(UdpConn* c)
+    {
+        for (usize n = 0; n < kUdpPacketsPerFlush; ++n)
+        {
+            if (!SendPacket(c, false))
+            {
+                break;
+            }
+        }
+    }
+
+    // How old an unacknowledged packet must be before three newer acknowledged ones make it lost: a network that
+    // reorders deeply would otherwise get every overtaken packet sent again.
+    u64 LossDelay(const UdpConn* c) const { return static_cast<u64>((c->srtt + 2.0 * c->rttvar) * 1e9); }
+
+    void OnAckFields(UdpConn* c, u16 ack, u32 bits)
+    {
+        const u64 now = Now();
+        if (!udp::SeqNewer(c->send_seq, ack))
+        {
+            return;  // acknowledges a packet we have not sent
+        }
+        for (u32 i = 0; i <= 32; ++i)
+        {
+            if (i > 0 && ((bits >> (i - 1)) & 1u) == 0)
+            {
+                continue;
+            }
+            const u16 seq = static_cast<u16>(ack - i);
+            UdpSentPacket& e = c->ring[seq % kUdpRingSize];
+            if (!e.used || e.seq != seq || e.acked)
+            {
+                continue;
+            }
+            e.acked = true;
+            ++c->info.packets_acked;
+            if (i == 0)
+            {
+                RttSample(c,
+                          static_cast<f64>(now - e.time) / 1e9);  // only the newest: older ones were acknowledged late
+            }
+            for (usize k = 0; k < e.frames.Size(); ++k)
+            {
+                FreeFrame(c, e.frames[k]);
+            }
+            e.frames.Clear();
+        }
+        // Packets three or more behind an acknowledged one that were not themselves acknowledged are lost.
+        if (udp::SeqDistance(c->send_seq, c->tail_seq) > kUdpRingSize)
+        {
+            c->tail_seq = static_cast<u16>(c->send_seq - kUdpRingSize);
+        }
+        while (udp::SeqNewer(ack, c->tail_seq) && udp::SeqDistance(ack, c->tail_seq) >= kUdpLossThreshold)
+        {
+            UdpSentPacket& e = c->ring[c->tail_seq % kUdpRingSize];
+            if (e.used && e.seq == c->tail_seq && !e.acked && !e.resolved)
+            {
+                if (c->has_rtt && now - e.time < LossDelay(c))
+                {
+                    break;  // newer packets overtook it, but it has not had the time a late one would need
+                }
+                e.resolved = true;
+                for (usize k = 0; k < e.frames.Size(); ++k)
+                {
+                    QueueResend(c, e.frames[k], e.seq);
+                }
+            }
+            ++c->tail_seq;
+        }
+    }
+
+    // Sends again the frames whose time-out has passed.
+    void CheckTimeouts(UdpConn* c, u64 now)
+    {
+        const u64 base = Rto(c);
+        if (udp::SeqDistance(c->send_seq, c->tail_seq) > kUdpRingSize)
+        {
+            c->tail_seq = static_cast<u16>(c->send_seq - kUdpRingSize);
+        }
+        for (u16 seq = c->tail_seq; seq != c->send_seq; ++seq)
+        {
+            UdpSentPacket& e = c->ring[seq % kUdpRingSize];
+            if (!e.used || e.seq != seq || e.acked || e.resolved)
+            {
+                continue;
+            }
+            for (usize k = 0; k < e.frames.Size(); ++k)
+            {
+                UdpOutFrame* f = Resolve(c, e.frames[k]);
+                if (f == nullptr || f->packet_seq != seq || f->resend_queued)
+                {
+                    continue;
+                }
+                u64 rto = base << (f->tries > 6 ? 5 : f->tries - 1);
+                rto = rto > kUdpMaxRto ? kUdpMaxRto : rto;
+                if (now - f->sent_time >= rto)
+                {
+                    f->resend_queued = true;
+                    c->resend.Push(e.frames[k]);
+                }
+            }
+        }
     }
 
     // ---- events ----
@@ -617,6 +1086,8 @@ struct UdpTransport::Impl
         }
         c->wire_id = next_wire++;
         by_wire.Insert(c->wire_id, c);
+        c->last_try = Now();
+        c->retry_nanos = config.handshake_retry_nanos;
         SendAccepted(c);
         Open(c);
     }
@@ -635,6 +1106,10 @@ struct UdpTransport::Impl
             if (!c->incoming && c->state == UdpState::Connecting && c->peer == from && c->client_salt == salt)
             {
                 c->cookie = ReadU64(packet, 9);
+                if (c->phase != Phase::Response)
+                {
+                    c->phase_started = Now();
+                }
                 c->phase = Phase::Response;
                 c->retry_nanos = config.handshake_retry_nanos;
                 c->last_try = Now();
@@ -738,38 +1213,351 @@ struct UdpTransport::Impl
         ++c->stats.packets_received;
         if (h.has_ack)
         {
-            c->info.packets_acked += c->log.OnAck(h.ack, h.ack_bits, nullptr);
+            OnAckFields(c, h.ack, h.ack_bits);
         }
-        usize at = 0;
         bool had_frame = false;
+        if (!ProcessFrames(c, body, &had_frame))
+        {
+            Abort(c, DisconnectReason::ProtocolError);  // the peer broke a bound it must keep
+            return;
+        }
+        c->ack_pending = c->ack_pending ||
+                         had_frame;  // an empty packet is never answered, or two peers would ping-pong
+        if (had_frame && ++c->unacked_packets >= kUdpAckEvery)
+        {
+            // A burst can hold more packets than one acknowledgement covers (the latest and the 32 before it): answer
+            // every few packets, or the sender would take the uncovered ones for lost.
+            SendPacket(c, true);
+        }
+    }
+
+    // Ends a connection for a reason of ours and tells the peer (code 0), as Close does.
+    void Abort(UdpConn* c, DisconnectReason reason)
+    {
+        if (c->state == UdpState::Connected)
+        {
+            UdpLingering l;
+            l.peer = c->peer;
+            l.wire_id = c->wire_id;
+            l.code = 0;
+            l.sends_left = config.close_repeats;
+            l.next_send = Now();
+            lingering.Push(l);
+        }
+        End(c, reason, 0);
+    }
+
+    void Deliver(UdpConn* c, u8 channel, u8 rel, ByteSpan data)
+    {
+        UdpEventRec rec;
+        rec.kind = EventKind::Message;
+        rec.connection = c->id;
+        rec.channel = channel;
+        rec.reliability = static_cast<Reliability>(rel);
+        rec.data.TryResizeUninitialized(data.Size());
+        MemCopy(rec.data.Data(), data.Data(), data.Size());
+        ++c->stats.messages_received;
+        c->stats.bytes_received += data.Size();
+        Queue(Move(rec));
+    }
+
+    // Reads the frames of one payload; false if the peer broke a bound it must keep.
+    bool ProcessFrames(UdpConn* c, ByteSpan body, bool* had_frame)
+    {
+        usize at = 0;
         while (at < body.Size())
         {
-            if (body.Size() - at < kUdpFrameHeaderBytes || static_cast<u8>(body[at]) != kUdpFrameMessage)
+            if (body.Size() - at < kUdpDataHeaderBytes || static_cast<u8>(body[at]) != kUdpFrameData)
             {
                 break;  // a frame we do not know: the rest of the packet cannot be read
             }
             const u8 channel = static_cast<u8>(body[at + 1]);
-            const usize length = ReadU16(body, at + 2);
-            at += kUdpFrameHeaderBytes;
-            if (length == 0 || length > body.Size() - at || channel >= config.channels)
+            const u8 kind = static_cast<u8>(body[at + 2]);
+            const u16 seq = ReadU16(body, at + 3);
+            const usize length = ReadU16(body, at + 5);
+            at += kUdpDataHeaderBytes;
+            const bool fragment = (kind & kUdpFragmentFlag) != 0;
+            const u8 rel = kind & 3;
+            u16 index = 0;
+            u16 count = 0;
+            u32 total = 0;
+            if ((kind & 0x7c) != 0 || channel >= config.channels || length == 0)
             {
                 break;
             }
-            UdpEventRec rec;
-            rec.kind = EventKind::Message;
-            rec.connection = c->id;
-            rec.channel = channel;
-            rec.reliability = Reliability::Unreliable;
-            rec.data.TryResizeUninitialized(length);
-            MemCopy(rec.data.Data(), body.Data() + at, length);
-            ++c->stats.messages_received;
-            c->stats.bytes_received += length;
-            Queue(Move(rec));
+            if (fragment)
+            {
+                if (body.Size() - at < kUdpFragmentExtraBytes)
+                {
+                    break;
+                }
+                index = ReadU16(body, at);
+                count = ReadU16(body, at + 2);
+                for (u32 i = 0; i < 4; ++i)
+                {
+                    total |= static_cast<u32>(static_cast<u8>(body[at + 4 + i])) << (8 * i);
+                }
+                at += kUdpFragmentExtraBytes;
+            }
+            if (length > body.Size() - at)
+            {
+                break;
+            }
+            const ByteSpan payload(body.Data() + at, length);
             at += length;
-            had_frame = true;
+            *had_frame = true;
+            const bool ok = fragment ? OnFragment(c, channel, rel, seq, index, count, total, payload)
+                                     : OnMessage(c, channel, rel, seq, payload);
+            if (!ok)
+            {
+                return false;
+            }
         }
-        c->ack_pending = c->ack_pending ||
-                         had_frame;  // an empty packet is never answered, or two peers would ping-pong
+        return true;
+    }
+
+    // A whole message (or a reassembled one) arrived; false on a protocol violation.
+    bool OnMessage(UdpConn* c, u8 channel, u8 rel, u16 seq, ByteSpan data)
+    {
+        if (data.Size() > config.max_message_bytes)
+        {
+            return !IsReliableKind(rel);
+        }
+        UdpRecvSpace& rs = c->in[channel].space[rel];
+        switch (static_cast<Reliability>(rel))
+        {
+        case Reliability::Unreliable: Deliver(c, channel, rel, data); return true;
+        case Reliability::UnreliableSequenced:
+            if (!rs.any || udp::SeqNewer(seq, rs.next))
+            {
+                rs.any = true;
+                rs.next = seq;
+                Deliver(c, channel, rel, data);
+            }
+            return true;
+        case Reliability::ReliableUnordered:
+        {
+            const u16 d = udp::SeqDistance(seq, rs.next);
+            if (d >= 0x8000)
+            {
+                return true;  // delivered before
+            }
+            if (d > kUdpLookahead)
+            {
+                return false;
+            }
+            for (usize i = 0; i < rs.above.Size(); ++i)
+            {
+                if (rs.above[i] == seq)
+                {
+                    return true;
+                }
+            }
+            rs.above.Push(seq);
+            Deliver(c, channel, rel, data);
+            for (bool again = true; again;)
+            {
+                again = false;
+                for (usize i = 0; i < rs.above.Size(); ++i)
+                {
+                    if (rs.above[i] == rs.next)
+                    {
+                        rs.above.Remove(i);
+                        ++rs.next;
+                        again = true;
+                        break;
+                    }
+                }
+            }
+            return true;
+        }
+        case Reliability::ReliableOrdered:
+        {
+            const u16 d = udp::SeqDistance(seq, rs.next);
+            if (d >= 0x8000)
+            {
+                return true;  // delivered before
+            }
+            if (d > kUdpLookahead)
+            {
+                return false;  // a gap beyond the reorder buffer
+            }
+            if (d != 0)
+            {
+                for (usize i = 0; i < rs.buffered.Size(); ++i)
+                {
+                    if (rs.buffered[i].seq == seq)
+                    {
+                        return true;
+                    }
+                }
+                if (c->receive_bytes + data.Size() > config.max_receive_buffer_bytes)
+                {
+                    return false;
+                }
+                UdpBuffered b;
+                b.seq = seq;
+                b.data.TryResizeUninitialized(data.Size());
+                MemCopy(b.data.Data(), data.Data(), data.Size());
+                c->receive_bytes += data.Size();
+                rs.buffered.Push(Move(b));
+                return true;
+            }
+            Deliver(c, channel, rel, data);
+            ++rs.next;
+            for (bool again = true; again;)
+            {
+                again = false;
+                for (usize i = 0; i < rs.buffered.Size(); ++i)
+                {
+                    if (rs.buffered[i].seq == rs.next)
+                    {
+                        Deliver(c, channel, rel, ByteSpan(rs.buffered[i].data.Data(), rs.buffered[i].data.Size()));
+                        c->receive_bytes -= rs.buffered[i].data.Size();
+                        rs.buffered.Remove(i);
+                        ++rs.next;
+                        again = true;
+                        break;
+                    }
+                }
+            }
+            return true;
+        }
+        }
+        return true;
+    }
+
+    // True if a reliable message of this sequence number is already complete (delivered, or held for its turn).
+    static bool AlreadyHave(const UdpRecvSpace& rs, u8 rel, u16 seq)
+    {
+        if (udp::SeqDistance(seq, rs.next) >= 0x8000)
+        {
+            return true;
+        }
+        if (rel == static_cast<u8>(Reliability::ReliableUnordered))
+        {
+            for (usize i = 0; i < rs.above.Size(); ++i)
+            {
+                if (rs.above[i] == seq)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        for (usize i = 0; i < rs.buffered.Size(); ++i)
+        {
+            if (rs.buffered[i].seq == seq)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Removes reliable reassemblies of messages that were completed meanwhile (a duplicate fragment can start one
+    // after its message was delivered, and no further fragment will come to finish it).
+    void DropObsoleteReassemblies(UdpConn* c)
+    {
+        for (usize i = c->reassemblies.Size(); i > 0; --i)
+        {
+            const UdpReassembly& r = c->reassemblies[i - 1];
+            if (IsReliableKind(r.rel) && AlreadyHave(c->in[r.channel].space[r.rel], r.rel, r.seq))
+            {
+                c->receive_bytes -= r.total;
+                c->reassemblies.Remove(i - 1);
+            }
+        }
+    }
+
+    // A fragment arrived. Everything it declares is checked against what the message must look like before any memory
+    // is committed: the size, the count, and the exact length of this fragment (so fragments cannot overlap).
+    bool OnFragment(UdpConn* c, u8 channel, u8 rel, u16 seq, u16 index, u16 count, u32 total, ByteSpan payload)
+    {
+        const bool reliable = IsReliableKind(rel);
+        const usize max_count = (config.max_message_bytes + kUdpFragmentBytes - 1) / kUdpFragmentBytes;
+        if (count < 2 || count > max_count || index >= count || total > config.max_message_bytes ||
+            total <= static_cast<usize>(count - 1) * kUdpFragmentBytes ||
+            total > static_cast<usize>(count) * kUdpFragmentBytes)
+        {
+            return !reliable;
+        }
+        const usize expected = index + 1 < count ? kUdpFragmentBytes
+                                                 : total - static_cast<usize>(count - 1) * kUdpFragmentBytes;
+        if (payload.Size() != expected)
+        {
+            return !reliable;
+        }
+        UdpRecvSpace& rs = c->in[channel].space[rel];
+        if (reliable)
+        {
+            const u16 d = udp::SeqDistance(seq, rs.next);
+            if (d >= 0x8000)
+            {
+                return true;  // a fragment of a message already delivered
+            }
+            if (d > kUdpLookahead)
+            {
+                return false;
+            }
+            if (AlreadyHave(rs, rel, seq))
+            {
+                return true;  // a fragment of a message that is complete and waiting its turn
+            }
+        }
+        usize found = c->reassemblies.Size();
+        for (usize i = 0; i < c->reassemblies.Size(); ++i)
+        {
+            const UdpReassembly& r = c->reassemblies[i];
+            if (r.channel == channel && r.rel == rel && r.seq == seq)
+            {
+                found = i;
+                break;
+            }
+        }
+        if (found == c->reassemblies.Size())
+        {
+            if (c->reassemblies.Size() >= config.max_reassemblies ||
+                c->receive_bytes + total > config.max_receive_buffer_bytes)
+            {
+                DropObsoleteReassemblies(c);  // duplicates of delivered messages leave partial ones behind
+            }
+            if (c->reassemblies.Size() >= config.max_reassemblies ||
+                c->receive_bytes + total > config.max_receive_buffer_bytes)
+            {
+                return !reliable;
+            }
+            UdpReassembly r;
+            r.channel = channel;
+            r.rel = rel;
+            r.seq = seq;
+            r.total = total;
+            r.count = count;
+            r.started = Now();
+            r.have.Resize(count);
+            r.data.Resize(total);
+            c->receive_bytes += total;
+            c->reassemblies.Push(Move(r));
+        }
+        UdpReassembly& r = c->reassemblies[found];
+        if (r.total != total || r.count != count)
+        {
+            return !reliable;  // inconsistent with the first fragment
+        }
+        if (r.have[index] != 0)
+        {
+            return true;
+        }
+        r.have[index] = 1;
+        MemCopy(r.data.Data() + static_cast<usize>(index) * kUdpFragmentBytes, payload.Data(), payload.Size());
+        if (++r.got < r.count)
+        {
+            return true;
+        }
+        Vector<byte> whole = Move(r.data);
+        c->receive_bytes -= total;
+        c->reassemblies.Remove(found);
+        return OnMessage(c, channel, rel, seq, ByteSpan(whole.Data(), whole.Size()));
     }
 
     void OnDisconnect(const Endpoint& from, ByteSpan packet)
@@ -850,6 +1638,10 @@ struct UdpTransport::Impl
                 {
                     c->last_try = now;
                     c->retry_nanos = c->retry_nanos * 2 > kMaxHandshakeRetry ? kMaxHandshakeRetry : c->retry_nanos * 2;
+                    if (c->phase == Phase::Response && now - c->phase_started >= config.cookie_period_nanos)
+                    {
+                        c->phase = Phase::Request;  // the cookie may have expired: ask for a new one
+                    }
                     if (c->phase == Phase::Request)
                     {
                         SendRequest(c);
@@ -866,10 +1658,37 @@ struct UdpTransport::Impl
                 {
                     End(c, DisconnectReason::TimedOut, 0);
                 }
-                else if ((c->ack_pending && now - c->last_sent >= config.ack_delay_nanos) ||
-                         now - c->last_sent >= config.keepalive_nanos)
+                else
                 {
-                    SendPayload(c, false, 0, ByteSpan());
+                    if (c->incoming && !c->info.any_received && now - c->last_try >= c->retry_nanos)
+                    {
+                        // The client has not spoken since the handshake: our Accepted may have been lost, and its
+                        // repeated answers may be lost as well, so say it again on our own, with a growing delay.
+                        c->last_try = now;
+                        c->retry_nanos = c->retry_nanos * 2 > kMaxHandshakeRetry ? kMaxHandshakeRetry
+                                                                                 : c->retry_nanos * 2;
+                        SendAccepted(c);
+                    }
+                    CheckTimeouts(c, now);
+                    Flush(c);
+                    if ((c->ack_pending && now - c->last_sent >= config.ack_delay_nanos) ||
+                        now - c->last_sent >= config.keepalive_nanos)
+                    {
+                        SendPacket(c, true);
+                    }
+                    for (usize k = 0; k < c->reassemblies.Size();)
+                    {
+                        const UdpReassembly& r = c->reassemblies[k];
+                        if (!IsReliableKind(r.rel) && now - r.started >= config.reassembly_timeout_nanos)
+                        {
+                            c->receive_bytes -= r.total;  // an unreliable message missing a fragment is never completed
+                            c->reassemblies.Remove(k);
+                        }
+                        else
+                        {
+                            ++k;
+                        }
+                    }
                 }
             }
         }
@@ -925,16 +1744,11 @@ struct UdpTransport::Impl
 };
 
 UdpTransport::UdpTransport(DatagramPort& port, const Clock& clock, const UdpTransportConfig& config)
-    : config_(config), impl_(MakeUnique<Impl>(port, clock, config))
+    : config_(ClampedConfig(config)), impl_(MakeUnique<Impl>(port, clock, config_))
 {
 }
 
 UdpTransport::~UdpTransport() = default;
-
-usize UdpTransport::MaxMessageBytes() const
-{
-    return udp::kMaxPayloadBytes - 4;
-}
 
 Status UdpTransport::Listen(const Endpoint& at)
 {
@@ -979,18 +1793,17 @@ Status UdpTransport::Send(ConnectionId connection, u8 channel, ByteSpan bytes, R
     {
         return Status::Of(ErrorCode::MessageTooLarge);
     }
-    if (reliability != Reliability::Unreliable)
-    {
-        return Status::Of(ErrorCode::Unsupported);
-    }
     if (c->state != UdpState::Connected)
     {
         return Status::Of(ErrorCode::NotConnected);
     }
-    ++c->stats.messages_sent;
-    c->stats.bytes_sent += bytes.Size();
-    m.SendPayload(c, true, channel, bytes);
-    return Status::Success();
+    const Status queued = m.QueueMessage(c, channel, static_cast<u8>(reliability), bytes);
+    if (queued.Ok())
+    {
+        ++c->stats.messages_sent;
+        c->stats.bytes_sent += bytes.Size();
+    }
+    return queued;
 }
 
 bool UdpTransport::Poll(Event* event)
@@ -1062,6 +1875,8 @@ Status UdpTransport::Statistics(ConnectionId connection, ConnectionStats* stats)
         return Status::Of(ErrorCode::Invalid);
     }
     *stats = c->stats;
+    stats->send_queue_messages = c->queued_frames;  // frames: a fragmented message counts once per fragment
+    stats->send_queue_bytes = c->queued_bytes;
     return Status::Success();
 }
 
@@ -1073,6 +1888,8 @@ Status UdpTransport::Info(ConnectionId connection, UdpConnectionInfo* info) cons
         return Status::Of(ErrorCode::Invalid);
     }
     *info = c->info;
+    info->buffered_bytes = c->receive_bytes;
+    info->reassemblies = c->reassemblies.Size();
     return Status::Success();
 }
 
