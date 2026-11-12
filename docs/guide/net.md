@@ -1,6 +1,6 @@
-# Networking: addresses, endpoints, errors, sockets and the reactor
+# Networking: addresses, endpoints, errors, sockets, the reactor and TCP streams
 
-Status: Phase 20. Built: addresses, endpoints and the error type (Day 267), the socket interface with its Linux backend and the access gate (Day 268), the reactor, the asynchronous operations and timers (Day 269). name resolution, listeners and the connect helpers (Day 270). Next: TCP streams (Day 271), the transports (Days 273-277).
+Status: Phase 20. Built: addresses, endpoints and the error type (Day 267), the socket interface with its Linux backend and the access gate (Day 268), the reactor, the asynchronous operations and timers (Day 269). name resolution, listeners and the connect helpers (Day 270), framed TCP streams (Day 271). Next: the transports (Days 273-277).
 
 **Audience:** engine programmers who talk to another machine or process. Design, spikes and the benchmark pass conditions:
 `docs/superpowers/specs/2026-11-11-networking-design.md`.
@@ -209,3 +209,40 @@ jobs::Job Echo(net::Reactor* reactor, net::Socket* socket)
 - **`net::ConnectAny`** tries a list of endpoints one after the other, each for the attempt timeout (a sequential "happy eyeballs": the resolver's order puts the preferred family first), and **`net::ConnectTo`** is
   `Resolve` then `ConnectAny`.
 
+## TCP streams and frames
+
+`net::TcpStream` is a connected socket that sends and receives **frames** (a 4-byte big-endian length, then the payload) with memory that cannot grow past what was configured, and that
+says why it ended. `net::FrameWriter` and `net::FrameReader` are the framing on its own, for any byte stream.
+
+- **Sending is a bounded queue.** `Send(frame)` copies the frame into a ring of `send_queue_bytes` and answers `LimitExceeded` when it does not fit: the caller sees the backpressure and nothing
+  grows. `Flush(keep_queued)` writes the queue to the socket, waiting whenever the socket is full; awaiting `Flush(0)` means everything is on its way, and `Flush(capacity - n)` means there is
+  room for `n` more bytes (the "writable again" wait). `SendFrame` is the form that waits for room, queues and flushes. One coroutine flushes at a time; `Send` can be called from any thread.
+- **Receiving reads into a buffer of fixed size** (`receive_buffer_bytes`) and decodes with a `FrameReader`, so a frame may arrive in pieces of any size (the tests cut the stream at every byte). The
+  length is checked before the payload is read: zero (`Invalid`) or above `max_frame_bytes` (`LimitExceeded`) ends the stream with `CloseReason::ProtocolError` having spent no memory on it, and
+  the payload buffer grows only with bytes that arrived, so a header that promises a megabyte costs nothing until the megabyte comes.
+- **Every end has a reason** (`Reason()`): `PeerClosed` (an orderly end at a frame boundary), `Reset`, `TimedOut`, `LocalClose`, `ProtocolError` (bad framing, or the stream ended inside a frame). The first
+  reason stays. A failed stream is shut so the other direction's waiting operation returns, and it is reset (not closed politely) when it is closed.
+- **Timeouts.** `idle_timeout_nanos` is the longest the stream waits for bytes (or for the peer to take bytes): it restarts with every byte, so a slow frame is fine and a silent peer ends the stream with
+  `TimedOut` (this is how a half-open connection is found). The timeout of one call (`WaitOptions`) only ends that call and leaves the stream open. `connect_timeout_nanos` bounds `TcpStream::Connect`.
+  TCP keep-alive probes are `keep_alive` and the three timing values.
+- **Closing.** `Close()` flushes the queue, shuts the sending side, reads until the peer ends its side (discarding what it still sends) and closes; if `linger_nanos` runs out it gives up, resets and reports
+  `TimedOut`. `Abort()` closes at once and the peer sees a reset. Call either when no receive or flush is outstanding (cancel them with their `CancelToken` first).
+
+```cpp compile standalone
+#include "jobs/task.h"
+#include "net/tcp_stream.h"
+
+using namespace engine_placeholder;
+using namespace engine_placeholder::net;
+
+// Sends one frame and waits for the echo of it; returns the echo's size, or 0 on any failure.
+jobs::Task<usize> EchoOnce(TcpStream& stream, ByteSpan frame) {
+    if ((co_await stream.SendFrame(frame)).Failed()) {  // waits for room in the queue, then for the socket to take it
+        co_return 0;
+    }
+    if ((co_await stream.ReceiveFrame()).Failed()) {  // on failure stream.Reason() says why the stream ended
+        co_return 0;
+    }
+    co_return stream.Frame().Size();  // valid until the next ReceiveFrame
+}
+```

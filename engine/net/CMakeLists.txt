@@ -22,6 +22,8 @@ set(NET_REACTOR_SOURCES
   resolver.cpp  # Day 270
   resolve.cpp  # Day 270
   listener.cpp  # Day 270
+  frame.cpp  # Day 271
+  tcp_stream.cpp  # Day 271
 )
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   list(APPEND NET_REACTOR_SOURCES linux/poller_epoll.cpp)  # Day 269

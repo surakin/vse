@@ -2,12 +2,13 @@
 # the library under test is built without. One executable per sanitizer flavor. Real-socket tests (from Day 268) are tagged [network].
 set(NET_TEST_SOURCES
   address_test.cpp  # Day 267
+  frame_test.cpp  # Day 271
 )
 # The socket backend's tests (Day 268); the Windows backend arrives on Day 278. Real sockets: the executable is labelled `network`.
 set(NET_SOCKET_TEST_SOURCES "")
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
   list(APPEND NET_TEST_SOURCES errno_map_posix_test.cpp)  # Day 268
-  list(APPEND NET_SOCKET_TEST_SOURCES socket_test.cpp socket_flags_posix_test.cpp reactor_test.cpp resolve_test.cpp listener_test.cpp)  # Days 268-270
+  list(APPEND NET_SOCKET_TEST_SOURCES socket_test.cpp socket_flags_posix_test.cpp reactor_test.cpp resolve_test.cpp listener_test.cpp tcp_test.cpp)  # Days 268-271
 endif()
 
 find_package(Threads REQUIRED)

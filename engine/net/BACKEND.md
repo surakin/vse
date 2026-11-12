@@ -115,6 +115,15 @@ Turn off Nagle's delay on a stream socket; `Invalid` on a datagram socket.
 
 Turn keep-alive probes on or off.
 
+### `SetKeepAliveTiming`
+
+Set the idle time, probe interval and probe count of keep-alive on a stream socket (Linux `TCP_KEEPIDLE`/`TCP_KEEPINTVL`/`TCP_KEEPCNT`; macOS `TCP_KEEPALIVE` for the
+idle time; Windows `SIO_KEEPALIVE_VALS`, which takes milliseconds and has no count: report `Unsupported` for the count).
+
+### `SetLinger`
+
+`SO_LINGER`: on with 0 seconds makes the close abortive (a reset is sent, unsent data dropped); off restores the default.
+
 ### `SetReceiveBuffer`
 
 Request a receive buffer and report what the system granted.

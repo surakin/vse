@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 
 #include "cstr/mem_ops.h"
+#include "lang/status_try.h"
 #include "net/posix/posix_net.h"
 #include "net/socket.h"
 #include "os/last_error.h"
@@ -531,6 +532,47 @@ Status Socket::SetKeepAlive(bool on)
         return Status::Of(ErrorCode::Invalid);
     }
     return SetIntOption(handle_, SOL_SOCKET, SO_KEEPALIVE, on ? 1 : 0);
+}
+
+Status Socket::SetKeepAliveTiming(u32 idle_seconds, u32 interval_seconds, u32 probes)
+{
+    if (!IsOpen() || datagram_)
+    {
+        return Status::Of(ErrorCode::Invalid);
+    }
+    if (idle_seconds != 0)
+    {
+#if defined(TCP_KEEPIDLE)
+        ENGINE_TRY(SetIntOption(handle_, IPPROTO_TCP, TCP_KEEPIDLE, static_cast<int>(idle_seconds)));
+#else
+        ENGINE_TRY(SetIntOption(handle_, IPPROTO_TCP, TCP_KEEPALIVE, static_cast<int>(idle_seconds)));
+#endif
+    }
+    if (interval_seconds != 0)
+    {
+        ENGINE_TRY(SetIntOption(handle_, IPPROTO_TCP, TCP_KEEPINTVL, static_cast<int>(interval_seconds)));
+    }
+    if (probes != 0)
+    {
+        ENGINE_TRY(SetIntOption(handle_, IPPROTO_TCP, TCP_KEEPCNT, static_cast<int>(probes)));
+    }
+    return Status::Success();
+}
+
+Status Socket::SetLinger(bool on, u32 seconds)
+{
+    if (!IsOpen() || datagram_)
+    {
+        return Status::Of(ErrorCode::Invalid);
+    }
+    linger value{};
+    value.l_onoff = on ? 1 : 0;
+    value.l_linger = static_cast<int>(seconds);
+    if (::setsockopt(Fd(handle_), SOL_SOCKET, SO_LINGER, &value, sizeof(value)) != 0)
+    {
+        return StatusFromErrno(os::LastError());
+    }
+    return Status::Success();
 }
 
 Status Socket::SetReceiveBuffer(usize bytes, usize* granted)

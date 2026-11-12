@@ -194,6 +194,18 @@ public:
     /// - Backend: `setsockopt`.
     /// - Fails: [[net::ErrorCode::Invalid]].
     Status SetKeepAlive(bool on);
+    /// Sets how long keep-alive probes wait and repeat on a stream socket whose keep-alive is on (`TCP_KEEPIDLE`,
+    /// `TCP_KEEPINTVL`, `TCP_KEEPCNT`): after `idle_seconds` without data the first probe is sent, then one every
+    /// `interval_seconds`, and the connection is reset after `probes` unanswered ones. Zero leaves a value unchanged.
+    /// - Backend: `setsockopt`.
+    /// - Fails: [[net::ErrorCode::Invalid]] (a UDP socket), [[net::ErrorCode::Unsupported]].
+    Status SetKeepAliveTiming(u32 idle_seconds, u32 interval_seconds, u32 probes);
+    /// Chooses what closing does with unsent data (`SO_LINGER`). With `on` and `seconds` of 0 the close is abortive:
+    /// unsent data is dropped and the peer sees a reset (`RST`) instead of an orderly end. Otherwise the close is the
+    /// system's default (orderly, in the background).
+    /// - Backend: `setsockopt`.
+    /// - Fails: [[net::ErrorCode::Invalid]].
+    Status SetLinger(bool on, u32 seconds);
     /// Asks for a receive buffer of `bytes`; `*granted` (optional) receives what the system reports afterwards, which
     /// may differ (Linux doubles the request and caps it at its configured maximum).
     /// - Backend: `setsockopt`, then `getsockopt`.

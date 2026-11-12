@@ -3768,6 +3768,22 @@ net::EndpointSet::operator[](usize) const	function	net	net-endpointset-operator-
 net::EndpointSet::Clear()	function	net	net-endpointset-clear	net.md	engine/net/endpoint.h:119
 Hash<net::Endpoint>	struct	net	hash-lt-net-endpoint-gt	net.md	engine/net/endpoint.h:134
 Hash<net::Endpoint>::operator()(const net::Endpoint&) const	function	net	hash-lt-net-endpoint-gt-operator-call-const-net-endpoint-amp-const	net.md	engine/net/endpoint.h:137
+net::kFrameHeaderBytes	variable	net	net-kframeheaderbytes	net.md	engine/net/frame.h:19
+net::FrameWriter	class	net	net-framewriter	net.md	engine/net/frame.h:24
+net::FrameWriter::FrameWriter(usize)	function	net	net-framewriter-framewriter-usize	net.md	engine/net/frame.h:29
+net::FrameWriter::MaxFrameBytes() const	function	net	net-framewriter-maxframebytes-const	net.md	engine/net/frame.h:33
+net::FrameWriter::Encode(ByteSpan,Vector<byte>*) const	function	net	net-framewriter-encode-bytespan-vector-lt-byte-gt-star-const	net.md	engine/net/frame.h:42
+net::FrameWriter::Header(usize,byte(&)[kFrameHeaderBytes]) const	function	net	net-framewriter-header-usize-byte-amp-kframeheaderbytes-const	net.md	engine/net/frame.h:49
+net::FrameReader	class	net	net-framereader	net.md	engine/net/frame.h:63
+net::FrameReader::FrameReader(usize)	function	net	net-framereader-framereader-usize	net.md	engine/net/frame.h:68
+net::FrameReader::Consume(ByteSpan,usize*)	function	net	net-framereader-consume-bytespan-usize-star	net.md	engine/net/frame.h:79
+net::FrameReader::HasFrame() const	function	net	net-framereader-hasframe-const	net.md	engine/net/frame.h:84
+net::FrameReader::Frame() const	function	net	net-framereader-frame-const	net.md	engine/net/frame.h:89
+net::FrameReader::Pop()	function	net	net-framereader-pop	net.md	engine/net/frame.h:92
+net::FrameReader::InFrame() const	function	net	net-framereader-inframe-const	net.md	engine/net/frame.h:97
+net::FrameReader::BufferedBytes() const	function	net	net-framereader-bufferedbytes-const	net.md	engine/net/frame.h:101
+net::FrameReader::Reset()	function	net	net-framereader-reset	net.md	engine/net/frame.h:104
+net::FrameReader::MaxFrameBytes() const	function	net	net-framereader-maxframebytes-const	net.md	engine/net/frame.h:108
 net::ListenerOptions	struct	net	net-listeneroptions	net.md	engine/net/listener.h:21
 net::ListenerOptions::backlog	variable	net	net-listeneroptions-backlog	net.md	engine/net/listener.h:23
 net::ListenerOptions::reuse_address	variable	net	net-listeneroptions-reuse-address	net.md	engine/net/listener.h:24
@@ -3893,10 +3909,12 @@ net::Socket::PeerEndpoint(Endpoint*) const	function	net	net-socket-peerendpoint-
 net::Socket::SetReuseAddress(bool)	function	net	net-socket-setreuseaddress-bool	net.md	engine/net/socket.h:188
 net::Socket::SetNoDelay(bool)	function	net	net-socket-setnodelay-bool	net.md	engine/net/socket.h:192
 net::Socket::SetKeepAlive(bool)	function	net	net-socket-setkeepalive-bool	net.md	engine/net/socket.h:196
-net::Socket::SetReceiveBuffer(usize,usize*)	function	net	net-socket-setreceivebuffer-usize-usize-star	net.md	engine/net/socket.h:202
-net::Socket::SetSendBuffer(usize,usize*)	function	net	net-socket-setsendbuffer-usize-usize-star	net.md	engine/net/socket.h:207
-net::Socket::SetDualStack(bool)	function	net	net-socket-setdualstack-bool	net.md	engine/net/socket.h:212
-net::Socket::SetBroadcast(bool)	function	net	net-socket-setbroadcast-bool	net.md	engine/net/socket.h:216
+net::Socket::SetKeepAliveTiming(u32,u32,u32)	function	net	net-socket-setkeepalivetiming-u32-u32-u32	net.md	engine/net/socket.h:202
+net::Socket::SetLinger(bool,u32)	function	net	net-socket-setlinger-bool-u32	net.md	engine/net/socket.h:208
+net::Socket::SetReceiveBuffer(usize,usize*)	function	net	net-socket-setreceivebuffer-usize-usize-star	net.md	engine/net/socket.h:214
+net::Socket::SetSendBuffer(usize,usize*)	function	net	net-socket-setsendbuffer-usize-usize-star	net.md	engine/net/socket.h:219
+net::Socket::SetDualStack(bool)	function	net	net-socket-setdualstack-bool	net.md	engine/net/socket.h:224
+net::Socket::SetBroadcast(bool)	function	net	net-socket-setbroadcast-bool	net.md	engine/net/socket.h:228
 net::ErrorCode	enum	net	net-errorcode	net.md	engine/net/status.h:13
 net::ErrorCode::Ok	enumerator	net	net-errorcode-ok	net.md	engine/net/status.h:15
 net::ErrorCode::WouldBlock	enumerator	net	net-errorcode-wouldblock	net.md	engine/net/status.h:16
@@ -3927,6 +3945,47 @@ net::Status::Failed() const	function	net	net-status-failed-const	net.md	engine/n
 net::Status::Is(ErrorCode) const	function	net	net-status-is-errorcode-const	net.md	engine/net/status.h:72
 net::Status::Code() const	function	net	net-status-code-const	net.md	engine/net/status.h:74
 net::Status::OsError() const	function	net	net-status-oserror-const	net.md	engine/net/status.h:76
+net::CloseReason	enum	net	net-closereason	net.md	engine/net/tcp_stream.h:38
+net::CloseReason::None	enumerator	net	net-closereason-none	net.md	engine/net/tcp_stream.h:40
+net::CloseReason::PeerClosed	enumerator	net	net-closereason-peerclosed	net.md	engine/net/tcp_stream.h:41
+net::CloseReason::Reset	enumerator	net	net-closereason-reset	net.md	engine/net/tcp_stream.h:42
+net::CloseReason::TimedOut	enumerator	net	net-closereason-timedout	net.md	engine/net/tcp_stream.h:43
+net::CloseReason::LocalClose	enumerator	net	net-closereason-localclose	net.md	engine/net/tcp_stream.h:44
+net::CloseReason::ProtocolError	enumerator	net	net-closereason-protocolerror	net.md	engine/net/tcp_stream.h:45
+net::CloseReasonName(CloseReason)	function	net	net-closereasonname-closereason	net.md	engine/net/tcp_stream.h:52
+net::TcpStreamOptions	struct	net	net-tcpstreamoptions	net.md	engine/net/tcp_stream.h:57
+net::TcpStreamOptions::max_frame_bytes	variable	net	net-tcpstreamoptions-max-frame-bytes	net.md	engine/net/tcp_stream.h:59
+net::TcpStreamOptions::receive_buffer_bytes	variable	net	net-tcpstreamoptions-receive-buffer-bytes	net.md	engine/net/tcp_stream.h:60
+net::TcpStreamOptions::send_queue_bytes	variable	net	net-tcpstreamoptions-send-queue-bytes	net.md	engine/net/tcp_stream.h:61
+net::TcpStreamOptions::max_read_bytes	variable	net	net-tcpstreamoptions-max-read-bytes	net.md	engine/net/tcp_stream.h:62
+net::TcpStreamOptions::idle_timeout_nanos	variable	net	net-tcpstreamoptions-idle-timeout-nanos	net.md	engine/net/tcp_stream.h:63
+net::TcpStreamOptions::connect_timeout_nanos	variable	net	net-tcpstreamoptions-connect-timeout-nanos	net.md	engine/net/tcp_stream.h:64
+net::TcpStreamOptions::linger_nanos	variable	net	net-tcpstreamoptions-linger-nanos	net.md	engine/net/tcp_stream.h:65
+net::TcpStreamOptions::socket_receive_buffer_bytes	variable	net	net-tcpstreamoptions-socket-receive-buffer-bytes	net.md	engine/net/tcp_stream.h:66
+net::TcpStreamOptions::socket_send_buffer_bytes	variable	net	net-tcpstreamoptions-socket-send-buffer-bytes	net.md	engine/net/tcp_stream.h:67
+net::TcpStreamOptions::no_delay	variable	net	net-tcpstreamoptions-no-delay	net.md	engine/net/tcp_stream.h:68
+net::TcpStreamOptions::keep_alive	variable	net	net-tcpstreamoptions-keep-alive	net.md	engine/net/tcp_stream.h:69
+net::TcpStreamOptions::keep_alive_idle_seconds	variable	net	net-tcpstreamoptions-keep-alive-idle-seconds	net.md	engine/net/tcp_stream.h:70
+net::TcpStreamOptions::keep_alive_interval_seconds	variable	net	net-tcpstreamoptions-keep-alive-interval-seconds	net.md	engine/net/tcp_stream.h:71
+net::TcpStreamOptions::keep_alive_probes	variable	net	net-tcpstreamoptions-keep-alive-probes	net.md	engine/net/tcp_stream.h:72
+net::TcpStream	class	net	net-tcpstream	net.md	engine/net/tcp_stream.h:81
+net::TcpStream::TcpStream()	function	net	net-tcpstream-tcpstream	net.md	engine/net/tcp_stream.h:85
+net::TcpStream::~TcpStream()	function	net	net-tcpstream-tilde-tcpstream	net.md	engine/net/tcp_stream.h:88
+net::TcpStream::TcpStream(const TcpStream&)	function	net	net-tcpstream-tcpstream-const-tcpstream-amp	net.md	engine/net/tcp_stream.h:90
+net::TcpStream::operator=(const TcpStream&)	function	net	net-tcpstream-operator-eq-const-tcpstream-amp	net.md	engine/net/tcp_stream.h:91
+net::TcpStream::Connect(Reactor&,const Endpoint&,const TcpStreamOptions&,TcpStream*,CancelToken*)	function	net	net-tcpstream-connect-reactor-amp-const-endpoint-amp-const-tcpstreamoptions-amp-tcpstream-star-canceltoken-star	net.md	engine/net/tcp_stream.h:103
+net::TcpStream::Adopt(Reactor&,Socket&&,const TcpStreamOptions&)	function	net	net-tcpstream-adopt-reactor-amp-socket-amp-amp-const-tcpstreamoptions-amp	net.md	engine/net/tcp_stream.h:113
+net::TcpStream::IsOpen() const	function	net	net-tcpstream-isopen-const	net.md	engine/net/tcp_stream.h:117
+net::TcpStream::Reason() const	function	net	net-tcpstream-reason-const	net.md	engine/net/tcp_stream.h:121
+net::TcpStream::Send(ByteSpan)	function	net	net-tcpstream-send-bytespan	net.md	engine/net/tcp_stream.h:130
+net::TcpStream::SendQueueBytes() const	function	net	net-tcpstream-sendqueuebytes-const	net.md	engine/net/tcp_stream.h:134
+net::TcpStream::SendQueueCapacity() const	function	net	net-tcpstream-sendqueuecapacity-const	net.md	engine/net/tcp_stream.h:138
+net::TcpStream::Flush(usize,WaitOptions)	function	net	net-tcpstream-flush-usize-waitoptions	net.md	engine/net/tcp_stream.h:149
+net::TcpStream::SendFrame(ByteSpan,WaitOptions)	function	net	net-tcpstream-sendframe-bytespan-waitoptions	net.md	engine/net/tcp_stream.h:157
+net::TcpStream::ReceiveFrame(WaitOptions)	function	net	net-tcpstream-receiveframe-waitoptions	net.md	engine/net/tcp_stream.h:167
+net::TcpStream::Frame() const	function	net	net-tcpstream-frame-const	net.md	engine/net/tcp_stream.h:171
+net::TcpStream::Close()	function	net	net-tcpstream-close	net.md	engine/net/tcp_stream.h:178
+net::TcpStream::Abort()	function	net	net-tcpstream-abort	net.md	engine/net/tcp_stream.h:182
 net::TimeBudget	class	net	net-timebudget	net.md	engine/net/time_budget.h:17
 net::TimeBudget::TimeBudget(const Reactor&,const WaitOptions&)	function	net	net-timebudget-timebudget-const-reactor-amp-const-waitoptions-amp	net.md	engine/net/time_budget.h:23
 net::TimeBudget::Next(bool*) const	function	net	net-timebudget-next-bool-star-const	net.md	engine/net/time_budget.h:38
