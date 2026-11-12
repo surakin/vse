@@ -1,5 +1,7 @@
 # Phase 20 / Day 280 — The QUIC / TLS / Encryption Outcome (the User's Decision)
 
+> **Deferred (the user, 2026-11-12): skip QUIC, TLS and encryption for now; they will be handled later.** Phase 20 closes with the transports for trusted networks only (the guide says so, "What the network layer does not protect against"). No task below is done; where this work lands (a later phase, which would renumber the plan) is decided when the user takes it up.
+
 **Phase:** [Phase 20 — Networking](../phase-20-networking.md)
 **Depends on:** Days 266 (the decision), 273 (the conformance suite), 277, 279.
 

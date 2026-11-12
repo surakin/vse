@@ -1,6 +1,6 @@
 # Phase 20 — Networking (TCP, UDP, and Possibly QUIC)
 
-**Status: Day 266 done (2026-11-11): design spec `docs/superpowers/specs/2026-11-11-networking-design.md`, three spikes, `CURRENT_PHASE` is 20. Next: Day 267. The QUIC/TLS/encryption decision is the user's and is pending (needed before Day 280).**
+**Status: Day 266 done (2026-11-11): design spec `docs/superpowers/specs/2026-11-11-networking-design.md`, three spikes, `CURRENT_PHASE` is 20. Next: Day 267. The QUIC/TLS/encryption decision is the user's: on 2026-11-12 they deferred all of it (Day 280 is skipped, not done); Phase 20 closes without it.**
 
 **Depends on:** Phase 2 (job system and its async I/O, the scheduler that runs network work), Phase 9 (file layer patterns: errors as values, a test double that proves the interface), Phase 11 (settings), Phase 16 (wrappers), Phase 13 (the Windows platform layer, for the Windows socket backend). Phase 19 (storage) is not required, but a store over the network is its first user.
 **Goal:** one portable socket and transport layer for the whole engine (game traffic, tools, remote debugging, the resource system's network backend, a store over the network), with TCP and UDP from the first day and a QUIC transport if the Phase's spike justifies it.
@@ -46,4 +46,4 @@
 - **No packet sniffing, raw sockets or anything that needs privileges**: ordinary unprivileged sockets only.
 - **Determinism and tests:** the simulated transport is deterministic (seeded) so a networking bug can be replayed; the real-socket tests use only loopback and ephemeral ports and are labelled so a sandbox without network access skips them with the reason.
 - Out of scope for this phase: game-level replication and prediction, matchmaking and relay servers, NAT traversal, voice, HTTP and WebSocket clients (a possible later addition on top of TCP+TLS), and any web or browser platform.
-- The day files are written (2026-11-11). The QUIC/TLS/encryption spike is Day 266 and the user's decision is needed before Day 280; Days 267-279 do not depend on it. Day 278 (Windows backend) and the Windows half of Day 281 run on the Windows PC.
+- The day files are written (2026-11-11). The QUIC/TLS/encryption spike is Day 266 and the user deferred the decision on 2026-11-12 (Day 280 is skipped); Days 267-279 do not depend on it. Day 278 (Windows backend) and the Windows half of Day 281 run on the Windows PC.
