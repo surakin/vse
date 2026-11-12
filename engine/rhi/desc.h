@@ -162,6 +162,9 @@ struct ShaderSlotTable
     u32 count = 0;
     /// The buffer slot of the push-constant block; [[rhi::kNoShaderSlot]] when the module has none.
     u32 push_constant_slot = kNoShaderSlot;
+    /// A compute module's threadgroup size (`[numthreads]`), which a Metal dispatch passes, so a compute pipeline needs
+    /// the table; zero for other stages.
+    u32 threadgroup_size[3] = {0, 0, 0};
 };
 
 /// One shader module's bytecode in one format: a pointer and a size, normally into a minted `*.spv.inc`, `*.dxil.inc`
@@ -288,7 +291,8 @@ struct ShaderDesc
     /// Optional name shown in debuggers and logs; null for none.
     const char* debug_name = nullptr;
     /// The slots of the module's resources, for a backend whose slots the compiler chose (Metal); borrowed; null for
-    /// SPIR-V and DXIL. A Metal library without them cannot be used in a pipeline that binds resources.
+    /// SPIR-V and DXIL. A Metal library without them cannot be used in a pipeline that binds resources, nor in a
+    /// compute pipeline (the table holds the threadgroup size a Metal dispatch passes).
     const ShaderSlotTable* slots = nullptr;
 
     /// Sets `format`, `bytes`, `size`, `entry` and `slots` from a blob: the entry it names (a Metal library), else

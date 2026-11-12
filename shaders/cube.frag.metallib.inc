@@ -256,7 +256,7 @@ inline constexpr u8 kCubeFragMetallib[kCubeFragMetallibByteCount] = {
 inline constexpr const char* kCubeFragMetallibEntry = "main_0";
 
 // Where the library's resources are bound: set, binding, Metal slot, type, count (rhi::ShaderSlotTable).
-inline constexpr rhi::ShaderSlotTable kCubeFragMetallibSlots = {nullptr, 0, 0xffffffffu};
+inline constexpr rhi::ShaderSlotTable kCubeFragMetallibSlots = {nullptr, 0, 0xffffffffu, {0, 0, 0}};
 
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kCubeFragMetallibSpirvFnv = 0xad4008453053b98cull;

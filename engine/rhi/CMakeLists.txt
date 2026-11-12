@@ -80,6 +80,8 @@ set(RHI_METAL_SOURCES
   metal/metal_device.mm
   metal/metal_device_resources.mm
   metal/metal_device_bindings.mm
+  metal/metal_device_pipelines.mm
+  metal/metal_pipeline_cache.mm
   metal/metal_backend.mm
 )
 

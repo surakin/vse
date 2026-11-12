@@ -2018,6 +2018,16 @@ u32 push_constant_slot;
 
 The buffer slot of the push-constant block; [`rhi::kNoShaderSlot`](#rhi-knoshaderslot) when the module has none.
 
+### `threadgroup_size` {#rhi-shaderslottable-threadgroup-size}
+
+`variable rhi::ShaderSlotTable::threadgroup_size` — defined in `engine/rhi/desc.h`
+
+```cpp
+u32 threadgroup_size[3];
+```
+
+A compute module's threadgroup size (`[numthreads]`), which a Metal dispatch passes, so a compute pipeline needs the table; zero for other stages.
+
 ## `ShaderBlob` {#rhi-shaderblob}
 
 `struct rhi::ShaderBlob` — defined in `engine/rhi/desc.h`
@@ -2309,7 +2319,7 @@ Optional name shown in debuggers and logs; null for none.
 const ShaderSlotTable* slots;
 ```
 
-The slots of the module's resources, for a backend whose slots the compiler chose (Metal); borrowed; null for SPIR-V and DXIL. A Metal library without them cannot be used in a pipeline that binds resources.
+The slots of the module's resources, for a backend whose slots the compiler chose (Metal); borrowed; null for SPIR-V and DXIL. A Metal library without them cannot be used in a pipeline that binds resources, nor in a compute pipeline (the table holds the threadgroup size a Metal dispatch passes).
 
 ### `SetCode(const ShaderBlob&)` {#rhi-shaderdesc-setcode-const-shaderblob-amp}
 
@@ -7405,9 +7415,9 @@ How many frames the CPU may get ahead of the GPU, 1 to 3 (values outside are cla
 bool pipeline_cache;
 ```
 
-Whether the Vulkan backend keeps a pipeline cache on disk, so pipelines compile faster on later runs.
+Whether the device keeps a pipeline cache on disk, so pipelines compile faster on later runs (Vulkan, Direct3D 12 and Metal, which keeps an `MTLBinaryArchive`).
 
-The file name carries the vendor, device and driver identity; a file that does not match or is damaged is ignored with a log line. The null backend ignores it.
+The file name carries the adapter's identity, and the file records the driver it was made with; a file that does not match or is damaged is ignored with a log line. The null backend ignores it.
 
 ### `descriptor_sets_per_pool` {#rhi-devicecreateinfo-descriptor-sets-per-pool}
 

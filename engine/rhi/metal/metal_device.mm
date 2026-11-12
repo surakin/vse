@@ -165,6 +165,7 @@ bool MetalDevice::Initialize(const DeviceCreateInfo& info)
     {
         return false;
     }
+    pipeline_cache_.Open(device_, info, adapter_, epoch_);  // running without a cache is not a failure
     RhiLog(LogVerbosity::Info, "Metal: device on '%s' (%s), validation %s%s, %s memory", adapter_.name, adapter_.id,
            validation_ ? "on" : "off", EnvironmentOn("MTL_SHADER_VALIDATION") ? " with shader validation" : "",
            managed_ ? "managed" : "shared");
@@ -213,6 +214,10 @@ MetalDevice::~MetalDevice()
                        "Metal: %zu application object(s) were still alive when the device was destroyed",
                        counts.UserObjects());
             }
+        }
+        if (queue_ != nil)
+        {
+            pipeline_cache_.Save();
         }
         ShutdownResources();
         listener_ = nil;
@@ -531,6 +536,8 @@ ResourceCounts MetalDevice::Resources() const
         c.buffers = buffers_.LiveCount();
         c.textures = textures_.LiveCount();
         c.samplers = samplers_.LiveCount();
+        c.shaders = shaders_.LiveCount();
+        c.pipelines = pipelines_.LiveCount();
         c.bind_group_layouts = bind_group_layouts_.LiveCount();
         bind_groups_.ForEachLive([&](BindGroupHandle, const BindGroupRes& g)
                                  { c.bind_groups += g.transient ? 0 : 1; });  // transient groups end with their frame
@@ -542,25 +549,8 @@ ResourceCounts MetalDevice::Resources() const
     return c;
 }
 
-// ---- Days 319-321 ----
+// ---- Days 320-321 ----
 
-ShaderHandle MetalDevice::CreateShader(const ShaderDesc&)
-{
-    NotYet("CreateShader", 319);
-    return {};
-}
-void MetalDevice::DestroyShader(ShaderHandle) {}
-PipelineHandle MetalDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc&)
-{
-    NotYet("CreateGraphicsPipeline", 319);
-    return {};
-}
-PipelineHandle MetalDevice::CreateComputePipeline(const ComputePipelineDesc&)
-{
-    NotYet("CreateComputePipeline", 319);
-    return {};
-}
-void MetalDevice::DestroyPipeline(PipelineHandle) {}
 Swapchain* MetalDevice::CreateSwapchain(const SwapchainDesc&)
 {
     NotYet("CreateSwapchain", 321);

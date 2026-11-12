@@ -31,7 +31,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [The UI Toolkit](ui.md) | 46 | 1420 |
 | [The UI Window Adapter](ui_window.md) | 2 | 25 |
 | [The Job System](jobs.md) | 13 | 203 |
-| [The Render Hardware Interface](rhi.md) | 21 | 810 |
+| [The Render Hardware Interface](rhi.md) | 21 | 811 |
 | [The renderer](renderer.md) | 25 | 1111 |
 | [The Vulkan backend (loader, function tables, result helpers)](rhi-vulkan.md) | 17 | 440 |
 | [The Direct3D 12 backend (Windows)](rhi-dx12.md) | 12 | 319 |

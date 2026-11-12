@@ -1110,7 +1110,21 @@ registered by [[rhi::RegisterCompiledBackends]] as `metal` ([[rhi::RegisterMetal
   handle and are resolved when they are bound, and a slot that already holds the resource gets no second call (a new encoder starts empty).
   Push constants are `setVertexBytes:`/`setFragmentBytes:` at the table's push-constant slot. Equal sampler descriptions share one Metal sampler;
   `ClampToBorder` uses Metal's border colors, which macOS has (iOS before 14 does not: Phase 27).
-- **Not built yet.** Shaders and pipelines (Day 319), command lists (Day 320) and the swapchain
+- **Pipelines.** A shader is an `MTLLibrary` made from the minted bytes and the function its blob names, with a copy of its slot table. A
+  render pipeline puts vertex buffer binding `b` at buffer slot `30 - b` (the top of the table, clear of the shader's own buffers, which Slang
+  numbers from 0; the creation fails if they would meet). Cull mode, winding, fill mode and the depth-stencil state are set on the encoder when
+  the pipeline is bound, and equal depth-stencil descriptions share one state. A compute pipeline keeps the threadgroup size the shader
+  declares (minted in its slot table, since a Metal dispatch passes it) and is refused when it exceeds the pipeline's
+  `maxTotalThreadsPerThreadgroup`.
+- **The pipeline cache** is an `MTLBinaryArchive`: a pipeline is looked up in it first (`MTLPipelineOptionFailOnBinaryArchiveMiss`), and a miss
+  is compiled once, into the archive, and created from it. Every use of the archive holds one lock (Metal does not document a lookup beside an add
+  as safe), so pipeline creation is serialized while a cache is open; `pipeline_cache = false` lifts that for a program that compiles from
+  many jobs and keeps no cache. `Quiesce` and the device's destruction write it to `metal-<adapter id>.bin` in the cache directory
+  ([[rhi::ResolvePipelineCacheDir]]), behind a header with the adapter's id and the macOS build and a hash of the archive. A file for another
+  adapter or macOS, or one that is damaged, is discarded with a log line and the cache starts empty. Metal reads an archive only from a file,
+  so the checked bytes are written beside the cache file for it (`.<process>-<device>.archive`, each device's own), and it serializes into a
+  temporary file of the device's own that the backend reads back and writes atomically.
+- **Not built yet.** Command lists (Day 320) and the swapchain
   (Day 321): until their day these fail with a log line naming it.
 
 ### What the RHI reports when something goes wrong

@@ -310,7 +310,7 @@ inline constexpr const char* kSaxpyCompMetallibEntry = "main_0";
 
 // Where the library's resources are bound: set, binding, Metal slot, type, count (rhi::ShaderSlotTable).
 inline constexpr rhi::ShaderSlot kSaxpyCompMetallibSlotList[2] = {{0, 0, 0, rhi::BindingType(5), 1}, {0, 1, 1, rhi::BindingType(1), 1}, };
-inline constexpr rhi::ShaderSlotTable kSaxpyCompMetallibSlots = {kSaxpyCompMetallibSlotList, 2, 0x2u};
+inline constexpr rhi::ShaderSlotTable kSaxpyCompMetallibSlots = {kSaxpyCompMetallibSlotList, 2, 0x2u, {64, 1, 1}};
 
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kSaxpyCompMetallibSpirvFnv = 0xaf49c4602ffa84c6ull;

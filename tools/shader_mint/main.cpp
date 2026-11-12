@@ -432,12 +432,14 @@ void AppendSlotTable(Text* text, StringView name, const renderer::ShaderReflecti
     const u32 push = reflection.has_push_constants ? reflection.push_constant_metal_slot : rhi::kNoShaderSlot;
     if (reflection.binding_count != 0)
     {
-        Appendf(text, "inline constexpr rhi::ShaderSlotTable %sSlots = {%sSlotList, %u, 0x%xu};\n", n.CStr(), n.CStr(),
-                reflection.binding_count, push);
+        Appendf(text, "inline constexpr rhi::ShaderSlotTable %sSlots = {%sSlotList, %u, 0x%xu, {%u, %u, %u}};\n",
+                n.CStr(), n.CStr(), reflection.binding_count, push, reflection.local_size[0], reflection.local_size[1],
+                reflection.local_size[2]);
     }
     else
     {
-        Appendf(text, "inline constexpr rhi::ShaderSlotTable %sSlots = {nullptr, 0, 0x%xu};\n", n.CStr(), push);
+        Appendf(text, "inline constexpr rhi::ShaderSlotTable %sSlots = {nullptr, 0, 0x%xu, {%u, %u, %u}};\n", n.CStr(),
+                push, reflection.local_size[0], reflection.local_size[1], reflection.local_size[2]);
     }
 }
 

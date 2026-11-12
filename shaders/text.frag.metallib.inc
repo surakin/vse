@@ -303,7 +303,7 @@ inline constexpr const char* kTextFragMetallibEntry = "main_0";
 
 // Where the library's resources are bound: set, binding, Metal slot, type, count (rhi::ShaderSlotTable).
 inline constexpr rhi::ShaderSlot kTextFragMetallibSlotList[2] = {{0, 0, 0, rhi::BindingType(2), 1}, {0, 1, 0, rhi::BindingType(3), 1}, };
-inline constexpr rhi::ShaderSlotTable kTextFragMetallibSlots = {kTextFragMetallibSlotList, 2, 0xffffffffu};
+inline constexpr rhi::ShaderSlotTable kTextFragMetallibSlots = {kTextFragMetallibSlotList, 2, 0xffffffffu, {0, 0, 0}};
 
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kTextFragMetallibSpirvFnv = 0x7b9b23325359fa27ull;

@@ -104,6 +104,8 @@ bool MetalDevice::InitializeResources()
     buffers_.SeedGeneration(seed);
     textures_.SeedGeneration(seed);
     samplers_.SeedGeneration(seed);
+    shaders_.SeedGeneration(seed);
+    pipelines_.SeedGeneration(seed);
     bind_group_layouts_.SeedGeneration(seed);
     bind_groups_.SeedGeneration(seed);
 #if ENGINE_PLATFORM_MACOS
@@ -144,6 +146,14 @@ void MetalDevice::ShutdownResources()
             t.texture = nil;
         });
     samplers_.ForEachLive([](SamplerHandle, SamplerRes& s) { s.state = nil; });
+    pipelines_.ForEachLive([](PipelineHandle, PipelineRes& p) { p.info = MetalPipelineInfo{}; });
+    shaders_.ForEachLive(
+        [](ShaderHandle, ShaderRes& s)
+        {
+            s.function = nil;
+            s.library = nil;
+        });
+    depth_states_.Clear();
     staging_ring_.Reset();
     if (staging_ != nil)
     {
@@ -156,6 +166,13 @@ void MetalDevice::ShutdownResources()
 void MetalDevice::CollectRetiredLocked(bool all)
 {
     const u64 completed = all ? ~0ull : completed_frames_;
+    pipelines_.CollectRetired(completed, [](PipelineRes& p) { p.info = MetalPipelineInfo{}; });
+    shaders_.CollectRetired(completed,
+                            [](ShaderRes& s)
+                            {
+                                s.function = nil;
+                                s.library = nil;
+                            });
     bind_groups_.CollectRetired(completed, [](BindGroupRes&) {});
     bind_group_layouts_.CollectRetired(completed, [](BindGroupLayoutRes&) {});
     samplers_.CollectRetired(completed, [](SamplerRes& s) { s.state = nil; });

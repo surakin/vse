@@ -244,7 +244,7 @@ inline constexpr u8 kPermuteTestFragMetallib[kPermuteTestFragMetallibByteCount] 
 inline constexpr const char* kPermuteTestFragMetallibEntry = "main_0";
 
 // Where the library's resources are bound: set, binding, Metal slot, type, count (rhi::ShaderSlotTable).
-inline constexpr rhi::ShaderSlotTable kPermuteTestFragMetallibSlots = {nullptr, 0, 0xffffffffu};
+inline constexpr rhi::ShaderSlotTable kPermuteTestFragMetallibSlots = {nullptr, 0, 0xffffffffu, {0, 0, 0}};
 
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kPermuteTestFragMetallibSpirvFnv = 0x1cffa8afb2435908ull;
@@ -485,7 +485,7 @@ inline constexpr u8 kPermuteTestFragPerm1Metallib[kPermuteTestFragPerm1MetallibB
 inline constexpr const char* kPermuteTestFragPerm1MetallibEntry = "main_0";
 
 // Where the library's resources are bound: set, binding, Metal slot, type, count (rhi::ShaderSlotTable).
-inline constexpr rhi::ShaderSlotTable kPermuteTestFragPerm1MetallibSlots = {nullptr, 0, 0xffffffffu};
+inline constexpr rhi::ShaderSlotTable kPermuteTestFragPerm1MetallibSlots = {nullptr, 0, 0xffffffffu, {0, 0, 0}};
 
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kPermuteTestFragPerm1MetallibSpirvFnv = 0xde185d1bffd02edfull;
@@ -726,7 +726,7 @@ inline constexpr u8 kPermuteTestFragPerm2Metallib[kPermuteTestFragPerm2MetallibB
 inline constexpr const char* kPermuteTestFragPerm2MetallibEntry = "main_0";
 
 // Where the library's resources are bound: set, binding, Metal slot, type, count (rhi::ShaderSlotTable).
-inline constexpr rhi::ShaderSlotTable kPermuteTestFragPerm2MetallibSlots = {nullptr, 0, 0xffffffffu};
+inline constexpr rhi::ShaderSlotTable kPermuteTestFragPerm2MetallibSlots = {nullptr, 0, 0xffffffffu, {0, 0, 0}};
 
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kPermuteTestFragPerm2MetallibSpirvFnv = 0x9c36db99e3eb67deull;
@@ -967,7 +967,7 @@ inline constexpr u8 kPermuteTestFragPerm3Metallib[kPermuteTestFragPerm3MetallibB
 inline constexpr const char* kPermuteTestFragPerm3MetallibEntry = "main_0";
 
 // Where the library's resources are bound: set, binding, Metal slot, type, count (rhi::ShaderSlotTable).
-inline constexpr rhi::ShaderSlotTable kPermuteTestFragPerm3MetallibSlots = {nullptr, 0, 0xffffffffu};
+inline constexpr rhi::ShaderSlotTable kPermuteTestFragPerm3MetallibSlots = {nullptr, 0, 0xffffffffu, {0, 0, 0}};
 
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kPermuteTestFragPerm3MetallibSpirvFnv = 0xeb3698a91a7460aaull;
@@ -1208,7 +1208,7 @@ inline constexpr u8 kPermuteTestFragPerm4Metallib[kPermuteTestFragPerm4MetallibB
 inline constexpr const char* kPermuteTestFragPerm4MetallibEntry = "main_0";
 
 // Where the library's resources are bound: set, binding, Metal slot, type, count (rhi::ShaderSlotTable).
-inline constexpr rhi::ShaderSlotTable kPermuteTestFragPerm4MetallibSlots = {nullptr, 0, 0xffffffffu};
+inline constexpr rhi::ShaderSlotTable kPermuteTestFragPerm4MetallibSlots = {nullptr, 0, 0xffffffffu, {0, 0, 0}};
 
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kPermuteTestFragPerm4MetallibSpirvFnv = 0x0b7c8be1d81c75e9ull;
@@ -1451,7 +1451,7 @@ inline constexpr u8 kPermuteTestFragPerm5Metallib[kPermuteTestFragPerm5MetallibB
 inline constexpr const char* kPermuteTestFragPerm5MetallibEntry = "main_0";
 
 // Where the library's resources are bound: set, binding, Metal slot, type, count (rhi::ShaderSlotTable).
-inline constexpr rhi::ShaderSlotTable kPermuteTestFragPerm5MetallibSlots = {nullptr, 0, 0xffffffffu};
+inline constexpr rhi::ShaderSlotTable kPermuteTestFragPerm5MetallibSlots = {nullptr, 0, 0xffffffffu, {0, 0, 0}};
 
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kPermuteTestFragPerm5MetallibSpirvFnv = 0xa273f699ed927114ull;

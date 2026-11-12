@@ -298,7 +298,7 @@ inline constexpr const char* kGraphSampleFragMetallibEntry = "main_0";
 
 // Where the library's resources are bound: set, binding, Metal slot, type, count (rhi::ShaderSlotTable).
 inline constexpr rhi::ShaderSlot kGraphSampleFragMetallibSlotList[3] = {{0, 0, 0, rhi::BindingType(2), 1}, {0, 1, 1, rhi::BindingType(2), 1}, {0, 2, 0, rhi::BindingType(3), 1}, };
-inline constexpr rhi::ShaderSlotTable kGraphSampleFragMetallibSlots = {kGraphSampleFragMetallibSlotList, 3, 0xffffffffu};
+inline constexpr rhi::ShaderSlotTable kGraphSampleFragMetallibSlots = {kGraphSampleFragMetallibSlotList, 3, 0xffffffffu, {0, 0, 0}};
 
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kGraphSampleFragMetallibSpirvFnv = 0xabc79225fe28c020ull;

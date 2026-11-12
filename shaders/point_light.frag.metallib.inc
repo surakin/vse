@@ -791,7 +791,7 @@ inline constexpr const char* kPointLightFragMetallibEntry = "main_0";
 
 // Where the library's resources are bound: set, binding, Metal slot, type, count (rhi::ShaderSlotTable).
 inline constexpr rhi::ShaderSlot kPointLightFragMetallibSlotList[6] = {{0, 0, 0, rhi::BindingType(0), 1}, {1, 0, 0, rhi::BindingType(2), 1}, {1, 1, 1, rhi::BindingType(2), 1}, {1, 2, 2, rhi::BindingType(2), 1}, {1, 3, 3, rhi::BindingType(2), 1}, {1, 4, 1, rhi::BindingType(5), 1}, };
-inline constexpr rhi::ShaderSlotTable kPointLightFragMetallibSlots = {kPointLightFragMetallibSlotList, 6, 0xffffffffu};
+inline constexpr rhi::ShaderSlotTable kPointLightFragMetallibSlots = {kPointLightFragMetallibSlotList, 6, 0xffffffffu, {0, 0, 0}};
 
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kPointLightFragMetallibSpirvFnv = 0x32005f7a894a193cull;

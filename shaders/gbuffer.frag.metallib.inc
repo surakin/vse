@@ -460,7 +460,7 @@ inline constexpr const char* kGbufferFragMetallibEntry = "main_0";
 
 // Where the library's resources are bound: set, binding, Metal slot, type, count (rhi::ShaderSlotTable).
 inline constexpr rhi::ShaderSlot kGbufferFragMetallibSlotList[3] = {{1, 0, 0, rhi::BindingType(0), 1}, {1, 1, 0, rhi::BindingType(2), 1}, {1, 3, 0, rhi::BindingType(3), 1}, };
-inline constexpr rhi::ShaderSlotTable kGbufferFragMetallibSlots = {kGbufferFragMetallibSlotList, 3, 0xffffffffu};
+inline constexpr rhi::ShaderSlotTable kGbufferFragMetallibSlots = {kGbufferFragMetallibSlotList, 3, 0xffffffffu, {0, 0, 0}};
 
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kGbufferFragMetallibSpirvFnv = 0xcff4f8d5a2fa71ddull;
@@ -968,7 +968,7 @@ inline constexpr const char* kGbufferFragPerm1MetallibEntry = "main_0";
 
 // Where the library's resources are bound: set, binding, Metal slot, type, count (rhi::ShaderSlotTable).
 inline constexpr rhi::ShaderSlot kGbufferFragPerm1MetallibSlotList[4] = {{1, 0, 0, rhi::BindingType(0), 1}, {1, 1, 0, rhi::BindingType(2), 1}, {1, 2, 1, rhi::BindingType(2), 1}, {1, 3, 0, rhi::BindingType(3), 1}, };
-inline constexpr rhi::ShaderSlotTable kGbufferFragPerm1MetallibSlots = {kGbufferFragPerm1MetallibSlotList, 4, 0xffffffffu};
+inline constexpr rhi::ShaderSlotTable kGbufferFragPerm1MetallibSlots = {kGbufferFragPerm1MetallibSlotList, 4, 0xffffffffu, {0, 0, 0}};
 
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kGbufferFragPerm1MetallibSpirvFnv = 0xdb74551ef8fb54aaull;
@@ -1437,7 +1437,7 @@ inline constexpr const char* kGbufferFragPerm2MetallibEntry = "main_0";
 
 // Where the library's resources are bound: set, binding, Metal slot, type, count (rhi::ShaderSlotTable).
 inline constexpr rhi::ShaderSlot kGbufferFragPerm2MetallibSlotList[3] = {{1, 0, 0, rhi::BindingType(0), 1}, {1, 1, 0, rhi::BindingType(2), 1}, {1, 3, 0, rhi::BindingType(3), 1}, };
-inline constexpr rhi::ShaderSlotTable kGbufferFragPerm2MetallibSlots = {kGbufferFragPerm2MetallibSlotList, 3, 0xffffffffu};
+inline constexpr rhi::ShaderSlotTable kGbufferFragPerm2MetallibSlots = {kGbufferFragPerm2MetallibSlotList, 3, 0xffffffffu, {0, 0, 0}};
 
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kGbufferFragPerm2MetallibSpirvFnv = 0x2a5ffa0b22b8512full;
@@ -1958,7 +1958,7 @@ inline constexpr const char* kGbufferFragPerm3MetallibEntry = "main_0";
 
 // Where the library's resources are bound: set, binding, Metal slot, type, count (rhi::ShaderSlotTable).
 inline constexpr rhi::ShaderSlot kGbufferFragPerm3MetallibSlotList[4] = {{1, 0, 0, rhi::BindingType(0), 1}, {1, 1, 0, rhi::BindingType(2), 1}, {1, 2, 1, rhi::BindingType(2), 1}, {1, 3, 0, rhi::BindingType(3), 1}, };
-inline constexpr rhi::ShaderSlotTable kGbufferFragPerm3MetallibSlots = {kGbufferFragPerm3MetallibSlotList, 4, 0xffffffffu};
+inline constexpr rhi::ShaderSlotTable kGbufferFragPerm3MetallibSlots = {kGbufferFragPerm3MetallibSlotList, 4, 0xffffffffu, {0, 0, 0}};
 
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kGbufferFragPerm3MetallibSpirvFnv = 0x67d53bd9cd641098ull;
@@ -2449,7 +2449,7 @@ inline constexpr const char* kGbufferFragPerm4MetallibEntry = "main_0";
 
 // Where the library's resources are bound: set, binding, Metal slot, type, count (rhi::ShaderSlotTable).
 inline constexpr rhi::ShaderSlot kGbufferFragPerm4MetallibSlotList[3] = {{1, 0, 0, rhi::BindingType(0), 1}, {1, 1, 0, rhi::BindingType(2), 1}, {1, 3, 0, rhi::BindingType(3), 1}, };
-inline constexpr rhi::ShaderSlotTable kGbufferFragPerm4MetallibSlots = {kGbufferFragPerm4MetallibSlotList, 3, 0xffffffffu};
+inline constexpr rhi::ShaderSlotTable kGbufferFragPerm4MetallibSlots = {kGbufferFragPerm4MetallibSlotList, 3, 0xffffffffu, {0, 0, 0}};
 
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kGbufferFragPerm4MetallibSpirvFnv = 0x8449d4c913dd0b83ull;
@@ -2990,7 +2990,7 @@ inline constexpr const char* kGbufferFragPerm5MetallibEntry = "main_0";
 
 // Where the library's resources are bound: set, binding, Metal slot, type, count (rhi::ShaderSlotTable).
 inline constexpr rhi::ShaderSlot kGbufferFragPerm5MetallibSlotList[4] = {{1, 0, 0, rhi::BindingType(0), 1}, {1, 1, 0, rhi::BindingType(2), 1}, {1, 2, 1, rhi::BindingType(2), 1}, {1, 3, 0, rhi::BindingType(3), 1}, };
-inline constexpr rhi::ShaderSlotTable kGbufferFragPerm5MetallibSlots = {kGbufferFragPerm5MetallibSlotList, 4, 0xffffffffu};
+inline constexpr rhi::ShaderSlotTable kGbufferFragPerm5MetallibSlots = {kGbufferFragPerm5MetallibSlotList, 4, 0xffffffffu, {0, 0, 0}};
 
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kGbufferFragPerm5MetallibSpirvFnv = 0x8d8adc2bd62a3927ull;
@@ -3494,7 +3494,7 @@ inline constexpr const char* kGbufferFragPerm6MetallibEntry = "main_0";
 
 // Where the library's resources are bound: set, binding, Metal slot, type, count (rhi::ShaderSlotTable).
 inline constexpr rhi::ShaderSlot kGbufferFragPerm6MetallibSlotList[3] = {{1, 0, 0, rhi::BindingType(0), 1}, {1, 1, 0, rhi::BindingType(2), 1}, {1, 3, 0, rhi::BindingType(3), 1}, };
-inline constexpr rhi::ShaderSlotTable kGbufferFragPerm6MetallibSlots = {kGbufferFragPerm6MetallibSlotList, 3, 0xffffffffu};
+inline constexpr rhi::ShaderSlotTable kGbufferFragPerm6MetallibSlots = {kGbufferFragPerm6MetallibSlotList, 3, 0xffffffffu, {0, 0, 0}};
 
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kGbufferFragPerm6MetallibSpirvFnv = 0x06076d35957b006dull;
@@ -4050,7 +4050,7 @@ inline constexpr const char* kGbufferFragPerm7MetallibEntry = "main_0";
 
 // Where the library's resources are bound: set, binding, Metal slot, type, count (rhi::ShaderSlotTable).
 inline constexpr rhi::ShaderSlot kGbufferFragPerm7MetallibSlotList[4] = {{1, 0, 0, rhi::BindingType(0), 1}, {1, 1, 0, rhi::BindingType(2), 1}, {1, 2, 1, rhi::BindingType(2), 1}, {1, 3, 0, rhi::BindingType(3), 1}, };
-inline constexpr rhi::ShaderSlotTable kGbufferFragPerm7MetallibSlots = {kGbufferFragPerm7MetallibSlotList, 4, 0xffffffffu};
+inline constexpr rhi::ShaderSlotTable kGbufferFragPerm7MetallibSlots = {kGbufferFragPerm7MetallibSlotList, 4, 0xffffffffu, {0, 0, 0}};
 
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kGbufferFragPerm7MetallibSpirvFnv = 0x7f436372863a61b2ull;

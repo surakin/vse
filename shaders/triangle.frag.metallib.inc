@@ -244,7 +244,7 @@ inline constexpr u8 kTriangleFragMetallib[kTriangleFragMetallibByteCount] = {
 inline constexpr const char* kTriangleFragMetallibEntry = "main_0";
 
 // Where the library's resources are bound: set, binding, Metal slot, type, count (rhi::ShaderSlotTable).
-inline constexpr rhi::ShaderSlotTable kTriangleFragMetallibSlots = {nullptr, 0, 0xffffffffu};
+inline constexpr rhi::ShaderSlotTable kTriangleFragMetallibSlots = {nullptr, 0, 0xffffffffu, {0, 0, 0}};
 
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kTriangleFragMetallibSpirvFnv = 0x154a01a5d10fb92bull;

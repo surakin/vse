@@ -362,7 +362,7 @@ inline constexpr const char* kTonemapFragMetallibEntry = "main_0";
 
 // Where the library's resources are bound: set, binding, Metal slot, type, count (rhi::ShaderSlotTable).
 inline constexpr rhi::ShaderSlot kTonemapFragMetallibSlotList[1] = {{0, 0, 0, rhi::BindingType(2), 1}, };
-inline constexpr rhi::ShaderSlotTable kTonemapFragMetallibSlots = {kTonemapFragMetallibSlotList, 1, 0x0u};
+inline constexpr rhi::ShaderSlotTable kTonemapFragMetallibSlots = {kTonemapFragMetallibSlotList, 1, 0x0u, {0, 0, 0}};
 
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kTonemapFragMetallibSpirvFnv = 0xd2463a967023f189ull;

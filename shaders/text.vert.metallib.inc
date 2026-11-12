@@ -361,7 +361,7 @@ inline constexpr u8 kTextVertMetallib[kTextVertMetallibByteCount] = {
 inline constexpr const char* kTextVertMetallibEntry = "main_0";
 
 // Where the library's resources are bound: set, binding, Metal slot, type, count (rhi::ShaderSlotTable).
-inline constexpr rhi::ShaderSlotTable kTextVertMetallibSlots = {nullptr, 0, 0x0u};
+inline constexpr rhi::ShaderSlotTable kTextVertMetallibSlots = {nullptr, 0, 0x0u, {0, 0, 0}};
 
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kTextVertMetallibSpirvFnv = 0xdacdfde777e8c34cull;

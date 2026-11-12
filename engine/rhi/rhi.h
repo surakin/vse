@@ -99,10 +99,11 @@ struct DeviceCreateInfo
     /// the frame this many back to finish. 1 trades throughput for latency; 3 the other way. The null backend ignores
     /// it.
     u32 frames_in_flight = 2;
-    /// Whether the Vulkan backend keeps a pipeline cache on disk, so pipelines compile faster on later runs.
+    /// Whether the device keeps a pipeline cache on disk, so pipelines compile faster on later runs (Vulkan, Direct3D
+    /// 12 and Metal, which keeps an `MTLBinaryArchive`).
     ///
-    /// The file name carries the vendor, device and driver identity; a file that does not match or is damaged is
-    /// ignored with a log line. The null backend ignores it.
+    /// The file name carries the adapter's identity, and the file records the driver it was made with; a file that
+    /// does not match or is damaged is ignored with a log line. The null backend ignores it.
     bool pipeline_cache = true;
     /// How many bind groups one descriptor pool holds, 16 to 65536 (clamped). The Vulkan backend adds a pool whenever
     /// one runs out, so this sets the granularity of growth, not a limit. The null backend ignores it.

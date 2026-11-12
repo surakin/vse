@@ -473,7 +473,7 @@ inline constexpr const char* kMaterialTestFragMetallibEntry = "main_0";
 
 // Where the library's resources are bound: set, binding, Metal slot, type, count (rhi::ShaderSlotTable).
 inline constexpr rhi::ShaderSlot kMaterialTestFragMetallibSlotList[4] = {{1, 0, 0, rhi::BindingType(0), 1}, {1, 1, 0, rhi::BindingType(2), 1}, {1, 2, 1, rhi::BindingType(2), 1}, {1, 3, 0, rhi::BindingType(3), 1}, };
-inline constexpr rhi::ShaderSlotTable kMaterialTestFragMetallibSlots = {kMaterialTestFragMetallibSlotList, 4, 0xffffffffu};
+inline constexpr rhi::ShaderSlotTable kMaterialTestFragMetallibSlots = {kMaterialTestFragMetallibSlotList, 4, 0xffffffffu, {0, 0, 0}};
 
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kMaterialTestFragMetallibSpirvFnv = 0xe2817bb9a40c9975ull;
@@ -945,7 +945,7 @@ inline constexpr const char* kMaterialTestFragPerm1MetallibEntry = "main_0";
 
 // Where the library's resources are bound: set, binding, Metal slot, type, count (rhi::ShaderSlotTable).
 inline constexpr rhi::ShaderSlot kMaterialTestFragPerm1MetallibSlotList[4] = {{1, 0, 0, rhi::BindingType(0), 1}, {1, 1, 0, rhi::BindingType(2), 1}, {1, 2, 1, rhi::BindingType(2), 1}, {1, 3, 0, rhi::BindingType(3), 1}, };
-inline constexpr rhi::ShaderSlotTable kMaterialTestFragPerm1MetallibSlots = {kMaterialTestFragPerm1MetallibSlotList, 4, 0xffffffffu};
+inline constexpr rhi::ShaderSlotTable kMaterialTestFragPerm1MetallibSlots = {kMaterialTestFragPerm1MetallibSlotList, 4, 0xffffffffu, {0, 0, 0}};
 
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kMaterialTestFragPerm1MetallibSpirvFnv = 0xde43c797c9800c6aull;

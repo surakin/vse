@@ -18,6 +18,7 @@
 #include "containers/unique_ptr.h"
 #include "rhi/device.h"
 #include "rhi/handle_pool.h"
+#include "rhi/metal/metal_pipeline_cache.h"
 #include "rhi/staging_ring.h"
 #include "rhi/rhi.h"
 
@@ -32,6 +33,13 @@ class MetalDevice;
 inline constexpr u32 kMetalBufferSlots = 31;
 inline constexpr u32 kMetalTextureSlots = 128;
 inline constexpr u32 kMetalSamplerSlots = 16;
+
+// The buffer slot of vertex buffer binding `binding`: the top of the buffer table, counting down (30, 29, ...), so the
+// shader's own buffers, which Slang numbers from 0, never meet them (pipeline creation checks it).
+constexpr u32 MetalVertexBufferSlot(u32 binding)
+{
+    return kMetalBufferSlots - 1 - binding;
+}
 
 // One resolved resource of a bind group: its binding, array element and type, and the Metal object (retained) with a
 // buffer's offset.
@@ -111,6 +119,30 @@ private:
     u32 issued_ = 0;
     Vector<MetalGroupResource> scratch_;  // reused: no allocation per bind once warm
 };
+
+// What a command list needs of a pipeline (Day 320), resolved by handle when it is bound: the Metal states, the
+// fixed-function state Metal sets on the encoder, each stage's slots and a compute pipeline's threadgroup size. The
+// objects are retained.
+struct MetalPipelineInfo
+{
+    bool compute = false;
+    id<MTLRenderPipelineState> render = nil;
+    id<MTLComputePipelineState> compute_state = nil;
+    id<MTLDepthStencilState> depth = nil;
+    MTLPrimitiveType primitive = MTLPrimitiveTypeTriangle;
+    MTLCullMode cull = MTLCullModeBack;
+    MTLWinding winding = MTLWindingCounterClockwise;
+    MTLTriangleFillMode fill = MTLTriangleFillModeFill;
+    u32 vertex_binding_count = 0;
+    MetalStageSlots vertex;
+    MetalStageSlots fragment;
+    MetalStageSlots kernel;
+    MTLSize threadgroup = MTLSizeMake(0, 0, 0);
+};
+
+// The vertex descriptor of a pipeline description: each attribute at its location, read from its binding's buffer at
+// MetalVertexBufferSlot, and each binding's stride and step rate (Day 319). Exposed for tests.
+MTLVertexDescriptor* MakeMetalVertexDescriptor(const GraphicsPipelineDesc& desc);
 
 // What the command buffers' completion handlers touch: shared with each handler, so a handler that runs after the
 // device is gone (Metal calls them on its own threads, after the timeline value the device waited for) still has it.
@@ -192,12 +224,16 @@ public:
     UploadTicket UploadBuffer(BufferHandle dst, u64 offset, const void* data, u64 size) override;
     bool ReadbackBuffer(BufferHandle src, u64 offset, void* dst, u64 size) override;
 
-    // Days 318-321 (until then: a failure with a log line).
+    // Day 319 (metal_device_pipelines.mm).
     ShaderHandle CreateShader(const ShaderDesc& desc) override;
     void DestroyShader(ShaderHandle shader) override;
     PipelineHandle CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) override;
     PipelineHandle CreateComputePipeline(const ComputePipelineDesc& desc) override;
     void DestroyPipeline(PipelineHandle pipeline) override;
+    // Waits for the GPU and writes the pipeline cache.
+    void Quiesce() override;
+
+    // Days 320-321 (until then: a failure with a log line).
     Swapchain* CreateSwapchain(const SwapchainDesc& desc) override;
     void DestroySwapchain(Swapchain* swapchain) override;
     CommandList* CreateCommandList() override;
@@ -260,6 +296,15 @@ public:
     // which keeps the Metal objects alive; false for an invalid group or a resource destroyed since. The lock is held
     // only while resolving: the caller makes its encoder calls afterwards.
     bool ResolveGroup(BindGroupHandle group, Vector<MetalGroupResource>* out) const;
+    // A pipeline's Metal state (Day 319), copied into `out` (its slot lists too); false for an invalid or stale handle.
+    bool LookupPipeline(PipelineHandle pipeline, MetalPipelineInfo* out) const;
+    // The pipeline cache: its archive and its file.
+    MetalPipelineCache& PipelineCache() { return pipeline_cache_; }
+    // Pipelines found in the cache's archive and pipelines compiled, since the device was created.
+    u32 PipelineCacheHits() const { return cache_hits_.Load(MemoryOrder::Relaxed); }
+    u32 PipelineCacheMisses() const { return cache_misses_.Load(MemoryOrder::Relaxed); }
+    // The depth-stencil state for a description, shared by equal ones (Day 319). Ownership: the device keeps it.
+    id<MTLDepthStencilState> DepthStencilState(bool test, bool write, CompareOp compare);
     // The storage mode a buffer of `location` gets on this device (Private, Shared or Managed).
     MTLStorageMode StorageModeFor(MemoryLocation location) const;
 
@@ -298,6 +343,31 @@ private:
         bool transient = false;
     };
     void RetireFrameGroupsLocked(u32 slot);
+
+    // Day 319 (metal_device_pipelines.mm).
+    struct ShaderRes
+    {
+        id<MTLLibrary> library = nil;
+        id<MTLFunction> function = nil;
+        ShaderStage stage = ShaderStage::None;
+        bool has_slots = false;
+        Vector<ShaderSlot> slots;  // copied from the descriptor's table (borrowed only for the call)
+        u32 push_constant_slot = kNoShaderSlot;
+        u32 threadgroup[3] = {0, 0, 0};
+    };
+    struct PipelineRes
+    {
+        MetalPipelineInfo info;
+    };
+    struct DepthStateEntry
+    {
+        u32 key = 0;
+        id<MTLDepthStencilState> state = nil;
+    };
+    // A shader's function and slot table, copied out (the table's `slots` point into `*slots`); false for an invalid
+    // handle or one of another stage.
+    bool ShaderParts(ShaderHandle shader, ShaderStage stage, id<MTLFunction>* function, Vector<ShaderSlot>* slots,
+                     ShaderSlotTable* table, bool* has_table) const;
     void ReleaseSamplerLocked(SamplerHandle sampler);
 
     struct BufferRes
@@ -386,6 +456,14 @@ private:
     HandlePool<BindGroupLayoutRes, BindGroupLayoutTag> bind_group_layouts_;
     HandlePool<BindGroupRes, BindGroupTag> bind_groups_;
     Array<Vector<BindGroupHandle>, kFrameSlots> frame_groups_;
+
+    // Shaders and pipelines (Day 319), under resource_mutex_.
+    HandlePool<ShaderRes, ShaderTag> shaders_;
+    HandlePool<PipelineRes, PipelineTag> pipelines_;
+    Vector<DepthStateEntry> depth_states_;
+    MetalPipelineCache pipeline_cache_;
+    Atomic<u32> cache_hits_{0};
+    Atomic<u32> cache_misses_{0};
 
     // The staging ring (a Shared buffer), under submit_mutex_.
     id<MTLBuffer> staging_ = nil;

@@ -287,7 +287,7 @@ inline constexpr const char* kGradientCompMetallibEntry = "main_0";
 
 // Where the library's resources are bound: set, binding, Metal slot, type, count (rhi::ShaderSlotTable).
 inline constexpr rhi::ShaderSlot kGradientCompMetallibSlotList[1] = {{0, 0, 0, rhi::BindingType(4), 1}, };
-inline constexpr rhi::ShaderSlotTable kGradientCompMetallibSlots = {kGradientCompMetallibSlotList, 1, 0xffffffffu};
+inline constexpr rhi::ShaderSlotTable kGradientCompMetallibSlots = {kGradientCompMetallibSlotList, 1, 0xffffffffu, {8, 8, 1}};
 
 // The FNV-1a hash of the SPIR-V this library was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kGradientCompMetallibSpirvFnv = 0x4d30b2a62741326full;
