@@ -14,8 +14,10 @@ namespace
 
 constexpr u8 kUdpFrameMessage = 1;
 constexpr usize kUdpFrameHeaderBytes = 1 + 1 + 2;
-constexpr usize kReceiveBatch = 256;         // datagrams taken from the port per Poll
-constexpr usize kUdpRetiredMemory = 16384;   // closed handshakes remembered while their cookie lives
+constexpr usize kReceiveBatch = 256;        // datagrams taken from the port per Poll
+constexpr usize kUdpRetiredMemory = 16384;  // closed handshakes remembered while their cookie lives
+constexpr usize
+    kUdpRetiredPerPrefix = 1024;  // per /24 (IPv4) or /48 (IPv6): sixteen networks are needed to fill the table
 constexpr usize kUdpRetiredPerAddress = 64;  // of them, per source address: a churning address is denied alone
 constexpr u64 kMaxHandshakeRetry = 1'000'000'000ull;
 
@@ -80,9 +82,9 @@ struct UdpLingering
 
 struct UdpRetired
 {
-    u64 key = 0;    // keyed hash of (endpoint, salt): unpredictable to an attacker, so it cannot be made to collide
-    Address group;  // the source address, or its /64 for IPv6: the unit of the quota
-    u64 epoch = 0;  // the cookie period in which the connection was accepted; its cookie dies after the next one
+    u64 key = 0;     // keyed hash of (endpoint, salt): unpredictable to an attacker, so it cannot be made to collide
+    Address group;   // the source address, or its /64 for IPv6: the unit of the quota
+    Address prefix;  // its /24 (IPv4) or /48 (IPv6): the unit of the wider quota
 };
 
 u64 ReadU64(ByteSpan b, usize at)
@@ -137,7 +139,7 @@ struct UdpTransport::Impl
     Impl(DatagramPort& p, const Clock& c, const UdpTransportConfig& cfg)
         : port(&p), clock(&c), config(cfg), self(p.LocalEndpoint()), by_id(HeapAllocator::Default()),
           by_wire(HeapAllocator::Default()), retired_keys(HeapAllocator::Default()),
-          retired_per_group(HeapAllocator::Default())
+          retired_per_group(HeapAllocator::Default()), retired_per_prefix(HeapAllocator::Default())
     {
         state = cfg.seed;
         if (config.max_connections > 65535)
@@ -165,10 +167,15 @@ struct UdpTransport::Impl
     usize queue_head = 0;
     UdpEventRec current;
     Vector<UdpLingering> lingering;
-    Vector<UdpRetired> retired;  // oldest first, from `retired_head`; epochs never decrease along it
-    usize retired_head = 0;
+    // Remembered handshakes, in two buckets by the period in which their cookie expires (a cookie expires after the
+    // period following the one it was made in, and an entry is only kept while that is not over, so the current and the
+    // next period are the only two that can be live).
+    Vector<UdpRetired> retired[2];
+    u64 retired_expiry[2] = {0, 0};
+    usize retired_count = 0;
     HashMap<u64, u8, HeapAllocator> retired_keys;
     HashMap<Address, u32, HeapAllocator> retired_per_group;
+    HashMap<Address, u32, HeapAllocator> retired_per_prefix;
     UdpCounters counters;
     Array<byte, 2048> buffer;
 
@@ -214,36 +221,40 @@ struct UdpTransport::Impl
         return raw;
     }
 
-    // The quota groups IPv6 addresses by their /64, the size of one subscriber's allocation.
-    static Address GroupOf(const Address& a)
+    // The quota groups IPv6 addresses by their /64, the size of one subscriber's allocation; a wider quota groups IPv4
+    // by /24 and IPv6 by /48, so no single network can fill the table.
+    static Address GroupOf(const Address& a, usize keep_bytes_v6)
     {
         if (!a.IsV6())
         {
             return a;
         }
         Array<u8, 16> bytes = a.Bytes();
-        for (usize i = 8; i < 16; ++i)
+        for (usize i = keep_bytes_v6; i < 16; ++i)
         {
             bytes[i] = 0;
         }
         return Address::V6(bytes, 0);
     }
+    static Address GroupOf(const Address& a) { return GroupOf(a, 8); }
+    static Address PrefixOf(const Address& a)
+    {
+        if (a.IsV6())
+        {
+            return GroupOf(a, 6);
+        }
+        const Array<u8, 16>& b = a.Bytes();
+        return Address::V4(static_cast<u8>(b[0]), static_cast<u8>(b[1]), static_cast<u8>(b[2]), 0);
+    }
 
     u64 HandshakeKey(const Endpoint& from, u64 salt) const { return Cookie(from, salt, ~u64{0}); }
 
-    // Remembers that this handshake produced a connection that has ended, until its cookie has expired.
-    void Retire(const UdpConn* c)
+    static void CountUp(HashMap<Address, u32, HeapAllocator>& map, const Address& key)
     {
-        UdpRetired r;
-        r.key = HandshakeKey(c->peer, c->client_salt);
-        r.group = GroupOf(c->peer.GetAddress());
-        r.epoch = c->epoch;
-        retired.Push(r);
-        retired_keys.Insert(r.key, 1);
-        u32* count = retired_per_group.Find(r.group);
+        u32* count = map.Find(key);
         if (count == nullptr)
         {
-            retired_per_group.Insert(r.group, 1);
+            map.Insert(key, 1);
         }
         else
         {
@@ -251,25 +262,63 @@ struct UdpTransport::Impl
         }
     }
 
-    // Forgets, oldest first, the handshakes whose cookies can no longer be presented.
+    static void CountDown(HashMap<Address, u32, HeapAllocator>& map, const Address& key)
+    {
+        u32* count = map.Find(key);
+        if (count != nullptr && --*count == 0)
+        {
+            map.Remove(key);
+        }
+    }
+
+    void ClearBucket(usize bucket)
+    {
+        for (usize i = 0; i < retired[bucket].Size(); ++i)
+        {
+            const UdpRetired& r = retired[bucket][i];
+            retired_keys.Remove(r.key);
+            CountDown(retired_per_group, r.group);
+            CountDown(retired_per_prefix, r.prefix);
+        }
+        retired_count -= retired[bucket].Size();
+        retired[bucket].Clear();
+    }
+
+    // Remembers that this handshake produced a connection that has ended, until its cookie has expired. A cookie that
+    // has expired already needs no memory.
+    void Retire(const UdpConn* c)
+    {
+        const u64 expiry = c->epoch + 1;
+        if (Epoch() > expiry)
+        {
+            return;
+        }
+        const usize bucket = expiry & 1;
+        if (retired_expiry[bucket] != expiry)
+        {
+            ClearBucket(bucket);  // what is left in it expired two periods ago
+            retired_expiry[bucket] = expiry;
+        }
+        UdpRetired r;
+        r.key = HandshakeKey(c->peer, c->client_salt);
+        r.group = GroupOf(c->peer.GetAddress());
+        r.prefix = PrefixOf(c->peer.GetAddress());
+        retired[bucket].Push(r);
+        ++retired_count;
+        retired_keys.Insert(r.key, 1);
+        CountUp(retired_per_group, r.group);
+        CountUp(retired_per_prefix, r.prefix);
+    }
+
+    // Forgets the handshakes whose cookies can no longer be presented.
     void PurgeRetired()
     {
-        const u64 epoch = Epoch();
-        while (retired_head < retired.Size() && epoch > retired[retired_head].epoch + 1)
+        for (usize bucket = 0; bucket < 2; ++bucket)
         {
-            const UdpRetired& r = retired[retired_head];
-            retired_keys.Remove(r.key);
-            u32* count = retired_per_group.Find(r.group);
-            if (count != nullptr && --*count == 0)
+            if (!retired[bucket].Empty() && Epoch() > retired_expiry[bucket])
             {
-                retired_per_group.Remove(r.group);
+                ClearBucket(bucket);
             }
-            ++retired_head;
-        }
-        if (retired_head > 1024 && retired_head * 2 > retired.Size())
-        {
-            retired.RemoveRange(0, retired_head);
-            retired_head = 0;
         }
     }
 
@@ -529,12 +578,13 @@ struct UdpTransport::Impl
         // IPv6 /64) that churns through handshakes is denied alone; a full table denies new handshakes until the
         // oldest cookies expire.
         const u32* here = retired_per_group.Find(GroupOf(from.GetAddress()));
-        if (here != nullptr && *here >= kUdpRetiredPerAddress)
+        const u32* wider = retired_per_prefix.Find(PrefixOf(from.GetAddress()));
+        if ((here != nullptr && *here >= kUdpRetiredPerAddress) || (wider != nullptr && *wider >= kUdpRetiredPerPrefix))
         {
             SendDenied(from, salt, udp::DenyReason::AddressLimit);
             return;
         }
-        if (retired.Size() - retired_head >= kUdpRetiredMemory)
+        if (retired_count >= kUdpRetiredMemory)
         {
             SendDenied(from, salt, udp::DenyReason::ServerFull);
             return;
