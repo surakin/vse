@@ -15,7 +15,7 @@ namespace
 constexpr u8 kUdpFrameMessage = 1;
 constexpr usize kUdpFrameHeaderBytes = 1 + 1 + 2;
 constexpr usize kReceiveBatch = 256;         // datagrams taken from the port per Poll
-constexpr usize kUdpRetiredMemory = 4096;    // closed handshakes remembered while their cookie lives
+constexpr usize kUdpRetiredMemory = 16384;   // closed handshakes remembered while their cookie lives
 constexpr usize kUdpRetiredPerAddress = 64;  // of them, per source address: a churning address is denied alone
 constexpr u64 kMaxHandshakeRetry = 1'000'000'000ull;
 
@@ -80,8 +80,8 @@ struct UdpLingering
 
 struct UdpRetired
 {
-    Endpoint peer;
-    u64 salt = 0;
+    u64 key = 0;    // keyed hash of (endpoint, salt): unpredictable to an attacker, so it cannot be made to collide
+    Address group;  // the source address, or its /64 for IPv6: the unit of the quota
     u64 epoch = 0;  // the cookie period in which the connection was accepted; its cookie dies after the next one
 };
 
@@ -136,7 +136,8 @@ struct UdpTransport::Impl
 {
     Impl(DatagramPort& p, const Clock& c, const UdpTransportConfig& cfg)
         : port(&p), clock(&c), config(cfg), self(p.LocalEndpoint()), by_id(HeapAllocator::Default()),
-          by_wire(HeapAllocator::Default())
+          by_wire(HeapAllocator::Default()), retired_keys(HeapAllocator::Default()),
+          retired_per_group(HeapAllocator::Default())
     {
         state = cfg.seed;
         if (config.max_connections > 65535)
@@ -164,7 +165,10 @@ struct UdpTransport::Impl
     usize queue_head = 0;
     UdpEventRec current;
     Vector<UdpLingering> lingering;
-    Vector<UdpRetired> retired;
+    Vector<UdpRetired> retired;  // oldest first, from `retired_head`; epochs never decrease along it
+    usize retired_head = 0;
+    HashMap<u64, u8, HeapAllocator> retired_keys;
+    HashMap<Address, u32, HeapAllocator> retired_per_group;
     UdpCounters counters;
     Array<byte, 2048> buffer;
 
@@ -210,17 +214,72 @@ struct UdpTransport::Impl
         return raw;
     }
 
+    // The quota groups IPv6 addresses by their /64, the size of one subscriber's allocation.
+    static Address GroupOf(const Address& a)
+    {
+        if (!a.IsV6())
+        {
+            return a;
+        }
+        Array<u8, 16> bytes = a.Bytes();
+        for (usize i = 8; i < 16; ++i)
+        {
+            bytes[i] = 0;
+        }
+        return Address::V6(bytes, 0);
+    }
+
+    u64 HandshakeKey(const Endpoint& from, u64 salt) const { return Cookie(from, salt, ~u64{0}); }
+
+    // Remembers that this handshake produced a connection that has ended, until its cookie has expired.
+    void Retire(const UdpConn* c)
+    {
+        UdpRetired r;
+        r.key = HandshakeKey(c->peer, c->client_salt);
+        r.group = GroupOf(c->peer.GetAddress());
+        r.epoch = c->epoch;
+        retired.Push(r);
+        retired_keys.Insert(r.key, 1);
+        u32* count = retired_per_group.Find(r.group);
+        if (count == nullptr)
+        {
+            retired_per_group.Insert(r.group, 1);
+        }
+        else
+        {
+            ++*count;
+        }
+    }
+
+    // Forgets, oldest first, the handshakes whose cookies can no longer be presented.
+    void PurgeRetired()
+    {
+        const u64 epoch = Epoch();
+        while (retired_head < retired.Size() && epoch > retired[retired_head].epoch + 1)
+        {
+            const UdpRetired& r = retired[retired_head];
+            retired_keys.Remove(r.key);
+            u32* count = retired_per_group.Find(r.group);
+            if (count != nullptr && --*count == 0)
+            {
+                retired_per_group.Remove(r.group);
+            }
+            ++retired_head;
+        }
+        if (retired_head > 1024 && retired_head * 2 > retired.Size())
+        {
+            retired.RemoveRange(0, retired_head);
+            retired_head = 0;
+        }
+    }
+
     void Remove(UdpConn* c)
     {
         by_id.Remove(c->id);
         if (c->incoming)
         {
             by_wire.Remove(c->wire_id);
-            UdpRetired r;
-            r.peer = c->peer;
-            r.salt = c->client_salt;
-            r.epoch = c->epoch;
-            retired.Push(r);
+            Retire(c);
         }
         for (usize i = 0; i < conns.Size(); ++i)
         {
@@ -428,30 +487,6 @@ struct UdpTransport::Impl
         Emit(from, p);
     }
 
-    // Drops the oldest remembered handshake of the address that has the most of them.
-    void EvictFromBusiestAddress()
-    {
-        usize best = 0;
-        usize best_count = 0;
-        for (usize i = 0; i < retired.Size(); ++i)
-        {
-            usize count = 0;
-            for (usize j = 0; j < retired.Size(); ++j)
-            {
-                count += retired[j].peer.GetAddress() == retired[i].peer.GetAddress() ? 1 : 0;
-            }
-            if (count > best_count)
-            {
-                best_count = count;
-                best = i;
-            }
-        }
-        if (best_count > 0)
-        {
-            retired.Remove(best);  // the first entry found for that address is its oldest
-        }
-    }
-
     void OnResponse(const Endpoint& from, ByteSpan packet)
     {
         if (packet.Size() < udp::kHandshakeBytes)
@@ -484,40 +519,25 @@ struct UdpTransport::Impl
             }
             from_address += c->state != UdpState::Closed && c->peer.GetAddress() == from.GetAddress() ? 1 : 0;
         }
-        for (usize i = 0; i < retired.Size(); ++i)
+        PurgeRetired();
+        if (retired_keys.Find(HandshakeKey(from, salt)) != nullptr)
         {
-            if (retired[i].peer == from && retired[i].salt == salt)
-            {
-                ++counters.dropped_stale;  // a replay of a handshake whose connection already ended
-                return;
-            }
-        }
-        // Forget handshakes whose cookie has expired anyway; never evict one that could still be replayed.
-        for (usize i = 0; i < retired.Size();)
-        {
-            if (Epoch() > retired[i].epoch + 1)
-            {
-                retired.Remove(i);
-            }
-            else
-            {
-                ++i;
-            }
-        }
-        usize retired_here = 0;
-        for (usize i = 0; i < retired.Size(); ++i)
-        {
-            retired_here += retired[i].peer.GetAddress() == from.GetAddress() ? 1 : 0;
-        }
-        if (retired_here >= kUdpRetiredPerAddress)
-        {
-            SendDenied(from, salt,
-                       udp::DenyReason::AddressLimit);  // this address churns through handshakes; others are unaffected
+            ++counters.dropped_stale;  // a replay of a handshake whose connection already ended
             return;
         }
-        if (retired.Size() >= kUdpRetiredMemory)
+        // Fail closed: an entry whose cookie can still be presented is never forgotten to make room. One address (or
+        // IPv6 /64) that churns through handshakes is denied alone; a full table denies new handshakes until the
+        // oldest cookies expire.
+        const u32* here = retired_per_group.Find(GroupOf(from.GetAddress()));
+        if (here != nullptr && *here >= kUdpRetiredPerAddress)
         {
-            EvictFromBusiestAddress();  // never a lockout for everyone: the address with the most entries pays
+            SendDenied(from, salt, udp::DenyReason::AddressLimit);
+            return;
+        }
+        if (retired.Size() - retired_head >= kUdpRetiredMemory)
+        {
+            SendDenied(from, salt, udp::DenyReason::ServerFull);
+            return;
         }
         if (conns.Size() >= config.max_connections)
         {
