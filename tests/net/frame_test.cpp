@@ -138,9 +138,9 @@ TEST_CASE("Ten thousand frames survive every way of cutting the stream", "[net][
             FrameReader reader(1000);
             u64 state = seed * 7919;
             bool ok = true;
-            CHECK(FrameTestFeed(reader, stream, kFrames,
-                                [&state](usize) { return static_cast<usize>(1 + FrameTestNext(&state) % 700); }, &ok) ==
-                  kFrames);
+            CHECK(FrameTestFeed(
+                      reader, stream, kFrames,
+                      [&state](usize) { return static_cast<usize>(1 + FrameTestNext(&state) % 700); }, &ok) == kFrames);
             CHECK(ok);
         }
     }

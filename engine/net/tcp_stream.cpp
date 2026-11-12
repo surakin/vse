@@ -20,18 +20,12 @@ const char* CloseReasonName(CloseReason reason)
 {
     switch (reason)
     {
-        case CloseReason::None:
-            return "None";
-        case CloseReason::PeerClosed:
-            return "PeerClosed";
-        case CloseReason::Reset:
-            return "Reset";
-        case CloseReason::TimedOut:
-            return "TimedOut";
-        case CloseReason::LocalClose:
-            return "LocalClose";
-        case CloseReason::ProtocolError:
-            return "ProtocolError";
+    case CloseReason::None: return "None";
+    case CloseReason::PeerClosed: return "PeerClosed";
+    case CloseReason::Reset: return "Reset";
+    case CloseReason::TimedOut: return "TimedOut";
+    case CloseReason::LocalClose: return "LocalClose";
+    case CloseReason::ProtocolError: return "ProtocolError";
     }
     return "Unknown";
 }
@@ -74,7 +68,8 @@ Status TcpStream::Adopt(Reactor& reactor, Socket&& socket, const TcpStreamOption
     {
         return Status::Of(ErrorCode::Invalid);
     }
-    if (options.max_frame_bytes == 0 || options.receive_buffer_bytes == 0 || options.send_queue_bytes < kFrameHeaderBytes + 1)
+    if (options.max_frame_bytes == 0 || options.receive_buffer_bytes == 0 ||
+        options.send_queue_bytes < kFrameHeaderBytes + 1)
     {
         return Status::Of(ErrorCode::LimitExceeded);
     }
@@ -227,7 +222,8 @@ bool TcpStream::NextWait(const TimeBudget& budget, WaitOptions* out, bool* idle_
         return false;
     }
     *idle_governs = false;
-    if (options_.idle_timeout_nanos >= 0 && (out->timeout_nanos < 0 || options_.idle_timeout_nanos <= out->timeout_nanos))
+    if (options_.idle_timeout_nanos >= 0 &&
+        (out->timeout_nanos < 0 || options_.idle_timeout_nanos <= out->timeout_nanos))
     {
         out->timeout_nanos = options_.idle_timeout_nanos;
         *idle_governs = true;
@@ -248,8 +244,8 @@ jobs::Task<Status> TcpStream::Flush(usize keep_queued, WaitOptions options)
     }
     const TimeBudget budget(*reactor_, options);
     Status result;
-    usize piece = 0;     // bytes in the scratch buffer
-    usize written = 0;   // of those, the bytes the socket has taken
+    usize piece = 0;    // bytes in the scratch buffer
+    usize written = 0;  // of those, the bytes the socket has taken
     for (;;)
     {
         if (written == piece)
@@ -377,8 +373,8 @@ jobs::Task<Status> TcpStream::ReceiveFrame(WaitOptions options)
         if (read_begin_ < read_end_)
         {
             usize used = 0;
-            const Status decoded =
-                reader_.Consume(ByteSpan(read_buffer_.Data() + read_begin_, read_end_ - read_begin_), &used);
+            const Status decoded = reader_.Consume(ByteSpan(read_buffer_.Data() + read_begin_, read_end_ - read_begin_),
+                                                   &used);
             read_begin_ += used;
             if (decoded.Failed())
             {
@@ -407,7 +403,8 @@ jobs::Task<Status> TcpStream::ReceiveFrame(WaitOptions options)
         {
             want = options_.max_read_bytes;
         }
-        const IoResult received = co_await net::Receive(*reactor_, socket_, MutableByteSpan(read_buffer_.Data(), want), next);
+        const IoResult received = co_await net::Receive(*reactor_, socket_, MutableByteSpan(read_buffer_.Data(), want),
+                                                        next);
         if (received.status.Ok())
         {
             read_end_ = received.count;

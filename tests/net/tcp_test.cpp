@@ -55,9 +55,9 @@ void TcpTestWait(Scheduler& scheduler, Atomic<int>& done, int target)
         Atomic<int>* done;
         int target;
     } probe{&done, target};
-    scheduler.HelpUntil([](void* u)
-                        { return static_cast<Probe*>(u)->done->Load(MemoryOrder::Acquire) >= static_cast<Probe*>(u)->target; },
-                        &probe);
+    scheduler.HelpUntil(
+        [](void* u)
+        { return static_cast<Probe*>(u)->done->Load(MemoryOrder::Acquire) >= static_cast<Probe*>(u)->target; }, &probe);
 }
 
 // A reactor, a listening loopback socket, and a way to make a connected pair of streams.
@@ -66,10 +66,7 @@ class TcpHarness
 public:
     explicit TcpHarness(usize participants = 4) : scheduler_(MakeConfig(participants)), reactor_(scheduler_) {}
 
-    bool Open()
-    {
-        return listener_.Open(Endpoint(Address::Loopback(AddressFamily::V4), 0)).Ok();
-    }
+    bool Open() { return listener_.Open(Endpoint(Address::Loopback(AddressFamily::V4), 0)).Ok(); }
 
     // Connects `client` to the listener and accepts `server`.
     Status Pair(const TcpStreamOptions& client_options, const TcpStreamOptions& server_options, TcpStream* client,
@@ -465,7 +462,7 @@ struct Hostile
     explicit Hostile(TcpHarness& h) : harness(&h) {}
 
     ReceiveOutcome& Run(const Vector<byte>& to_send, RawEnd end, WaitOptions options = {},
-                       TcpStreamOptions server_options = TcpTestOptions(0))
+                        TcpStreamOptions server_options = TcpTestOptions(0))
     {
         ReceiveOutcome& out = outcome;
         REQUIRE(harness->RawPair(server_options, &raw, &server).Ok());
@@ -664,7 +661,7 @@ TEST_CASE("The idle time restarts with every byte that arrives", "[network][tcp]
     harness.GetScheduler().Submit(Dribble::Run(&harness.GetReactor(), &raw, &dribbled));
     TcpTestWait(harness.GetScheduler(), dribbled, 1);
     TcpTestWait(harness.GetScheduler(), out.done, 1);
-    CHECK(out.frames == 1);  // the frame arrived whole although it took longer than the idle time
+    CHECK(out.frames == 1);                      // the frame arrived whole although it took longer than the idle time
     CHECK(out.reason == CloseReason::TimedOut);  // then the silence ended it
 }
 
@@ -862,7 +859,8 @@ TEST_CASE("Connecting to a port nobody listens on is refused, to a listener work
     CHECK_FALSE(stream.IsOpen());
 }
 
-TEST_CASE("Keep-alive timing and linger are accepted on a stream socket and refused on a datagram socket", "[network][tcp]")
+TEST_CASE("Keep-alive timing and linger are accepted on a stream socket and refused on a datagram socket",
+          "[network][tcp]")
 {
     Socket tcp;
     Socket udp;
