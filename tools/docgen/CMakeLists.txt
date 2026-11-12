@@ -40,6 +40,27 @@ add_executable(docgen src/main.cpp)
 target_compile_options(docgen PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
 target_link_libraries(docgen PRIVATE docgen_lib)
 
+# macOS (Phase 26 Day 309): the reference and the three checks that need only docgen. The samples link the renderer, UI, text and the rest,
+# which macOS builds from Day 310 on; docs_samples and the samples step of `docs` join on Day 326.
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  set(DOCGEN_LINT_ARGS --root ${CMAKE_SOURCE_DIR} --baseline ${CMAKE_SOURCE_DIR}/docs/reference/lint-baseline.txt)
+  add_test(NAME docs_check COMMAND docgen check --root ${CMAKE_SOURCE_DIR})
+  add_test(NAME docs_links COMMAND docgen links --root ${CMAKE_SOURCE_DIR})
+  add_test(NAME docs_lint COMMAND docgen lint ${DOCGEN_LINT_ARGS} --quiet)
+  set_tests_properties(docs_check docs_links docs_lint PROPERTIES LABELS "docs" TIMEOUT 300)
+  engine_label_tests(docs_check docs_links docs_lint)
+  add_custom_target(docs
+    COMMAND $<TARGET_FILE:docgen> reference --root ${CMAKE_SOURCE_DIR}
+    COMMAND $<TARGET_FILE:docgen> check --root ${CMAKE_SOURCE_DIR}
+    COMMAND $<TARGET_FILE:docgen> links --root ${CMAKE_SOURCE_DIR}
+    COMMAND $<TARGET_FILE:docgen> lint ${DOCGEN_LINT_ARGS}
+    DEPENDS docgen
+    COMMENT "Regenerating docs/reference and running the documentation checks (macOS: no samples before Phase 26 Day 326)"
+    VERBATIM
+    USES_TERMINAL)
+  return()
+endif()
+
 # Phase 3 Day 43: the documentation checks. `cmake --build build --target docs` regenerates docs/reference and then runs every check; ctest
 # runs the four checks (no regeneration) as docs_check, docs_links, docs_samples and docs_lint. Samples are compiled with the engine's own
 # production flags, include roots and libraries.

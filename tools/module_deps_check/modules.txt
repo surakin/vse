@@ -201,6 +201,7 @@ platform-dir engine/jobs/linux/ engine/jobs/
 # The settings stores of each platform (Phase 13 Day 157: the registry store and the policy layers on Windows).
 platform-dir engine/foundation/settings/linux/ engine/foundation/settings/
 platform-dir engine/foundation/settings/windows/ engine/foundation/settings/
+platform-dir engine/foundation/settings/macos/ engine/foundation/settings/
 platform-dir engine/jobs/windows/ engine/jobs/
 platform-dir engine/platform/linux/ engine/platform/
 platform-dir engine/platform/windows/ engine/platform/

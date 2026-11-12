@@ -10,6 +10,10 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+// macOS's <unistd.h> does not declare it (a program may still name it; Phase 26 Day 309); on Linux this repeats the
+// header's declaration.
+extern "C" char** environ;
+
 namespace docgen
 {
 

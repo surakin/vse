@@ -1,6 +1,6 @@
 # Settings
 
-Status: written (Phase 11).
+Status: written (Phase 11; Windows in Phase 13, macOS in Phase 26 Day 309).
 
 **Audience:** every engine and game programmer who adds an option a user can change (a resolution, a volume, a log level), or who reads one.
 
@@ -220,7 +220,7 @@ this is not a setting
 
 A program reads its settings from several places, and a `settings::LayerStack` puts them in order. From lowest to highest: the **defaults** declared in the registry, then the layers by role:
 `System` (defaults shipped with the program or machine), `User` (the user's file), `Project` (a file next to the content), `Custom` (a file named with `--settings`), `Environment`, `CommandLine`,
-and on top `Policy` (values an administrator enforces: Windows group policy; a program cannot change them, `SetError::Enforced`).
+and on top `Policy` (values an administrator enforces: Windows group policy, macOS managed preferences; a program cannot change them, `SetError::Enforced`).
 A value in a higher layer hides the lower ones. A layer that has no value for a key, cannot be read, or holds a value that does not convert (a bad number in the environment) is skipped for that key, and
 the next lower layer answers; each skip is a `LayerProblem` naming the layer, the key and, for a bad value, where it came from.
 
@@ -283,6 +283,37 @@ over the user's policy). `Settings::Load` adds both as read-only `Policy` layers
 value's source.
 
 **Environment names ignore case** on Windows, as the system's own lookups do: `ENGINE_SETTING_RENDERER__WIDTH` and `engine_setting_renderer__width` are one variable.
+
+## Settings on macOS
+
+**Where values live.** The user's settings are the same file as on Linux and Windows, `<user config directory>/<app>/settings.cfg`
+(`~/Library/Application Support/<app>/settings.cfg`), so one format, its comments and `--settings` files work everywhere. A program that would rather keep them in
+the user defaults system adds a `settings::UserDefaultsConfigStore` (`settings/macos/user_defaults_store.h`) as its user layer, over a defaults domain (a
+*suite*) named after the application, such as its bundle identifier. Writing one value there takes about 0.2 ms; a settings file's save takes about 40 ms on the
+development Mac, because the file layer makes it durable (`F_FULLFSYNC`).
+
+**The defaults layout.** A dotted key is the defaults key as it is, and every value is a string holding the text a settings file holds (`1920`, `true`,
+`mailbox`, `"a name"`), for the reason the registry store gives: an enum reaches a store as an index, so only text keeps every type. Inspect and edit them with
+the system's tool:
+
+```text
+defaults read com.example.mygame
+defaults write com.example.mygame renderer.width 1920
+defaults write com.example.mygame renderer.vsync -bool false
+defaults delete com.example.mygame renderer.width
+```
+
+A value written with a type (`-int`, `-bool`, `-float`) reads as its text; a date, data, array or dictionary is reported for its key as a type mismatch and the
+next layer down answers. Each write is visible to every process when it returns (the preferences daemon holds it); `Commit` asks the daemon to write the
+domain's file now. macOS tells a process only about its own writes, so the store watches the domain itself, every quarter of a second on a thread of its own, and
+tells a listener about other writers' changes (another process, `defaults write`), never about its own.
+
+**Managed preferences.** An administrator enforces a value with a configuration profile, which macOS installs as managed preferences for the application's
+domain. `Settings::Load` adds them as the read-only `Policy` layer, above everything else (`LoadOptions::use_policy`, on by default; `policy_name` names another
+domain): the values for which `CFPreferencesAppValueIsForced` is true. A program cannot change a setting a profile enforces (`SetError::Enforced`). Without a
+profile the layer is empty.
+
+**Environment names are case-sensitive** on macOS, as on Linux.
 
 ## Environment and command line
 

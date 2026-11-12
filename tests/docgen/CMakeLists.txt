@@ -12,6 +12,13 @@ set(DOCGEN_TEST_SOURCES
   lint_test.cpp
 )
 
+# macOS (Phase 26 Day 309): the Command Line Tools' compiler, run by its path as the sample runner does, finds no SDK of its own, and CMake
+# keeps the one it passes to itself (CMAKE_OSX_SYSROOT stays empty), so the tests ask xcrun for it. Empty elsewhere.
+set(DOCGEN_TEST_SYSROOT "")
+if(APPLE)
+  execute_process(COMMAND xcrun --show-sdk-path OUTPUT_VARIABLE DOCGEN_TEST_SYSROOT OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+endif()
+
 find_package(Threads REQUIRED)
 include(Catch)
 
@@ -21,7 +28,7 @@ target_include_directories(docgen_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(docgen_tests PRIVATE
   DOCGEN_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/fixtures"
   DOCGEN_ENGINE_DIR="${CMAKE_SOURCE_DIR}/engine"
-  DOCGEN_CXX="${CMAKE_CXX_COMPILER}")
+  DOCGEN_CXX="${CMAKE_CXX_COMPILER}" DOCGEN_SYSROOT="${DOCGEN_TEST_SYSROOT}")
 engine_discover_tests(docgen_tests PROPERTIES LABELS "docgen")
 
 add_executable(docgen_tests_asan ${DOCGEN_TEST_SOURCES})
@@ -30,5 +37,5 @@ target_include_directories(docgen_tests_asan PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
 target_compile_definitions(docgen_tests_asan PRIVATE
   DOCGEN_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/fixtures"
   DOCGEN_ENGINE_DIR="${CMAKE_SOURCE_DIR}/engine"
-  DOCGEN_CXX="${CMAKE_CXX_COMPILER}")
+  DOCGEN_CXX="${CMAKE_CXX_COMPILER}" DOCGEN_SYSROOT="${DOCGEN_TEST_SYSROOT}")
 engine_discover_tests(docgen_tests_asan TEST_SUFFIX " [asan]" PROPERTIES LABELS "docgen;asan")

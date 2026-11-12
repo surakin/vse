@@ -130,12 +130,16 @@ struct LoadOptions
     int argc = 0;
     /// `MinimalWrites` for later `Set` calls: a value equal to what the lower layers give is not written to the file.
     bool minimal_writes = true;
-    /// Add the platform's policy layers ([[settings::LayerRole::Policy]]): on Windows the group-policy keys
-    /// `Software\Policies\<name>` under HKCU and then HKLM (the machine's win); elsewhere none yet.
+    /// Add the platform's policy layers ([[settings::LayerRole::Policy]]).
+    ///
+    /// On Windows the group-policy keys `Software\Policies\<name>` under HKCU and then HKLM (the machine's win); on
+    /// macOS the managed preferences of the suite `<name>`; elsewhere none yet.
     bool use_policy = true;
     /// The name the policy layers read under, or null for `app_name`.
     const char* policy_name = nullptr;
-    /// The registry key the policy layers read instead of `Software\Policies\<name>` (a test's own key), or null.
+    /// What the policy layers read instead of their usual place (a test's own), or null.
+    ///
+    /// On Windows a registry key in place of `Software\Policies\<name>`, on macOS a defaults suite in place of `<name>`.
     const char* policy_path = nullptr;
 };
 

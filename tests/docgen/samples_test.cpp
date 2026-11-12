@@ -66,6 +66,13 @@ struct Result
         opt.root = SamplesTestSv(t.root);
         opt.compiler = StringView(DOCGEN_CXX);
         opt.flags.Push(StringView("-std=c++20"));
+        // macOS (Phase 26 Day 309): the Command Line Tools' compiler, called by its path, finds no SDK of its own; the
+        // samples get the SDK xcrun names (empty elsewhere; tests/docgen/CMakeLists.txt).
+        if (StringView(DOCGEN_SYSROOT).Length() != 0)
+        {
+            opt.flags.Push(StringView("-isysroot"));
+            opt.flags.Push(StringView(DOCGEN_SYSROOT));
+        }
         opt.prelude = ArenaCat(arena, SamplesTestSv(t.root), StringView("/prelude.h"));
         opt.scratch_base = ArenaCat(arena, SamplesTestSv(t.root), StringView("/scratch"));
         opt.jobs = jobs;

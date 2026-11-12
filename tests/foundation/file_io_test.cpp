@@ -11,7 +11,8 @@ using engine_placeholder::u8;
 using engine_placeholder::usize;
 namespace io = engine_placeholder::io;
 
-// The running test program, read through its path: ELF on Linux, a PE image (`MZ`) on Windows (Phase 13 Day 158).
+// The running test program, read through its path: ELF on Linux, a PE image (`MZ`) on Windows (Phase 13 Day 158),
+// Mach-O on macOS (Phase 26 Day 309: a 64-bit image, little-endian 0xFEEDFACF, or a universal one, 0xCAFEBABE).
 TEST_CASE("io::ReadFile reads the running program and finds its executable magic number", "[file_io][io]")
 {
     ArenaAllocator arena(128 * 1024 *
@@ -28,6 +29,10 @@ TEST_CASE("io::ReadFile reads the running program and finds its executable magic
 #if ENGINE_PLATFORM_WINDOWS
     REQUIRE(buffer[0] == 'M');
     REQUIRE(buffer[1] == 'Z');
+#elif ENGINE_PLATFORM_MACOS
+    const bool thin = buffer[0] == 0xCF && buffer[1] == 0xFA && buffer[2] == 0xED && buffer[3] == 0xFE;
+    const bool universal = buffer[0] == 0xCA && buffer[1] == 0xFE && buffer[2] == 0xBA && buffer[3] == 0xBE;
+    REQUIRE((thin || universal));
 #else
     REQUIRE(buffer[0] == 0x7F);
     REQUIRE(buffer[1] == 'E');

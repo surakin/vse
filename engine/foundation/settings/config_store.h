@@ -4,8 +4,8 @@
 //!
 //! The settings system reads and writes through this interface and never assumes a file. A store is a flat collection
 //! of `key -> value` entries. Implementations: a text file (Day 133), memory, read-only shipped defaults (all in the
-//! foundation); the Windows registry, `NSUserDefaults`, Android `SharedPreferences` and console save data follow in the
-//! platform phases.
+//! foundation); the Windows registry and macOS's user defaults (built), Android `SharedPreferences` and console save
+//! data follow in the platform phases.
 //!
 //! **Staged and immediate writes.** `Set` and `Remove` change the store's *working* state; every later `Get` and
 //! `Enumerate` on the same store sees them. A store with [[settings::kCapPerKeyWrites]] (a registry) makes each change
@@ -145,13 +145,15 @@ public:
     /// Returns the store's [[settings::StoreCapability]] bits.
     ///
     /// - Backend: Windows: the registry store reports kCapWritable | kCapPerKeyWrites | kCapNotifies (values are REG_SZ
-    /// text, not typed); macOS: NSUserDefaults reports kCapWritable | kCapTypedValues | kCapNotifies.
+    /// text, not typed); macOS: the user defaults store reports kCapWritable | kCapPerKeyWrites | kCapNotifies (values
+    /// are string text, not typed; a forced-only store is not writable).
     virtual u32 Capabilities() const = 0;
 
     /// Writes a short description for logs into `out` (a path, `memory`, `registry HKCU\Software\app`), NUL-terminated
     /// and cut to fit.
     ///
-    /// - Backend: Windows: `registry HKCU\Software\<app>`; macOS: the defaults domain or the plist path.
+    /// - Backend: Windows: `registry HKCU\Software\<app>`; macOS: `user defaults <suite>` (or `managed preferences
+    /// <suite>`).
     virtual void Describe(char* out, usize capacity) const = 0;
 
     /// Reads the durable state, discarding any staged changes. Call it once before using the store, and again to pick
@@ -162,8 +164,8 @@ public:
     /// - Fails: `Damaged` (the content is unreadable as a whole; reads still see what could be parsed), `Io`,
     /// `PermissionDenied`.
     ///
-    /// - Backend: Windows: RegOpenKeyEx (a missing key loads as empty) and a read of all values; macOS: synchronize the
-    /// defaults domain.
+    /// - Backend: Windows: RegOpenKeyEx (a missing key loads as empty) and a read of all values; macOS:
+    /// CFPreferencesSynchronize of the suite (a missing domain loads as empty).
     virtual Status Load() = 0;
 
     /// Reads one entry (staged changes included).
@@ -172,7 +174,8 @@ public:
     /// - Param out: receives the value.
     /// - Fails: `NotFound`, `Invalid` (not a valid key).
     ///
-    /// - Backend: Windows: RegQueryValueEx of a REG_SZ (another type is TypeMismatch); macOS: objectForKey.
+    /// - Backend: Windows: RegQueryValueEx of a REG_SZ (another type is TypeMismatch); macOS: CFPreferencesCopyValue
+    /// of the suite alone (a string, or a number or boolean as its text; another type is TypeMismatch).
     virtual Status Get(StringView key, StoredValue* out) = 0;
 
     /// Sets one entry.
@@ -183,14 +186,14 @@ public:
     /// - Returns: success; staged until `Commit` unless the store has [[settings::kCapPerKeyWrites]].
     /// - Fails: `ReadOnly`, `Invalid`, `TooLong`, `Io` (a per-key store).
     ///
-    /// - Backend: Windows: RegSetValueEx at once (a per-key store); macOS: setObject:forKey:.
+    /// - Backend: Windows: RegSetValueEx at once (a per-key store); macOS: CFPreferencesSetValue of a string, at once.
     virtual Status Set(StringView key, const StoredValue& value) = 0;
 
     /// Removes one entry.
     ///
     /// - Fails: `NotFound` (nothing changes), `ReadOnly`, `Invalid`, `Io` (a per-key store).
     ///
-    /// - Backend: Windows: RegDeleteValue; macOS: removeObjectForKey.
+    /// - Backend: Windows: RegDeleteValue; macOS: CFPreferencesSetValue with no value.
     virtual Status Remove(StringView key) = 0;
 
     /// Appends the keys under `prefix` to `out`: the keys equal to `prefix` or starting with `prefix.`; an empty prefix
@@ -200,7 +203,7 @@ public:
     /// - Fails: `Invalid` (a non-empty prefix that is not a valid key), `Io`.
     ///
     /// - Backend: Windows: RegEnumValue and RegEnumKeyEx under the subkey the prefix names; macOS:
-    /// dictionaryRepresentation filtered by the prefix.
+    /// CFPreferencesCopyKeyList of the suite (forced-only: the managed files' enforced keys), filtered by the prefix.
     virtual Status Enumerate(StringView prefix, Vector<Key>* out) = 0;
 
     /// Makes the staged changes durable.
@@ -212,7 +215,8 @@ public:
     ///   durable state as it was and the changes staged (retry is allowed); a store without it reports in
     ///   `Status::done` how many changes landed.
     ///
-    /// - Backend: Windows: nothing to do for a per-key store, or RegFlushKey; macOS: synchronize.
+    /// - Backend: Windows: nothing to do for a per-key store, or RegFlushKey; macOS: CFPreferencesSynchronize (the
+    /// daemon writes the domain's file now).
     virtual Status Commit(const CommitOptions& options) = 0;
 
     /// Writes where the entry for `key` came from inside this store, for provenance messages (`line 12`,
@@ -243,7 +247,8 @@ public:
     /// - Param user: passed back to `listener`.
     /// - Fails: `Unsupported` (no [[settings::kCapNotifies]]).
     ///
-    /// - Backend: Windows: RegNotifyChangeKeyValue on a thread; macOS: NSUserDefaultsDidChangeNotification.
+    /// - Backend: Windows: RegNotifyChangeKeyValue on a thread; macOS: a thread that compares the domain every 250 ms
+    /// (NSUserDefaultsDidChangeNotification misses other processes' writes).
     virtual Status SetChangeListener(ChangeListener listener, void* user)
     {
         (void)listener;

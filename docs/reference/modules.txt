@@ -37,6 +37,7 @@ module foundation/types "Foundation: Fundamental Types"
 module foundation/settings "Foundation: Settings"
   header engine/foundation/settings/*.h
   header engine/foundation/settings/windows/registry_store.h
+  header engine/foundation/settings/macos/user_defaults_store.h
 
 module foundation/bytes "Foundation: Bytes (canonical encoding)"
   header engine/foundation/bytes/*.h

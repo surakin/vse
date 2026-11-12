@@ -25,8 +25,8 @@ endif()
 set(JOBS_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  # A platform being ported a layer at a time: the job system uses the base and file layers only, so it links foundation_io until the
-  # foundation aggregate exists there (Windows, Phase 13: plain and ASan; macOS, Phase 26 Day 305 until Day 309: plain, ASan and TSan).
+  # The platforms whose flavors differ from Linux's (Windows: plain and ASan; macOS: plain, ASan and TSan). Each links the foundation aggregate
+  # (Windows since Phase 13 Day 157; macOS since Phase 26 Day 309, before which it linked foundation_io).
   set(_jobs_flavors "")
   if(ENGINE_HAVE_ASAN)
     list(APPEND _jobs_flavors "_asan")
@@ -38,7 +38,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     add_library(jobs${suffix} STATIC ${JOBS_SOURCES})
     target_include_directories(jobs${suffix} PUBLIC ${JOBS_INCLUDE_ROOT})
     target_compile_options(jobs${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
-    target_link_libraries(jobs${suffix} PUBLIC foundation_io${suffix})
+    target_link_libraries(jobs${suffix} PUBLIC foundation${suffix})
   endforeach()
   return()
 endif()

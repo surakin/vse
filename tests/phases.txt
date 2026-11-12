@@ -62,7 +62,7 @@ flavors 12  windows: plain
 flavors 0   macos: plain,asan,tsan # tests/foundation (base tests), foundation_sanitized (Day 301)
 flavors 1   macos: plain           # tests/foundation (Day 301)
 flavors 2   macos: plain,asan,tsan # tests/jobs (Day 305)
-flavors 3   macos: none
+flavors 3   macos: plain,asan     # tests/docgen, docs_check, docs_links, docs_lint (Day 309)
 flavors 4   macos: plain           # the gates (Day 302)
 flavors 5   macos: plain           # the gates (Day 302)
 flavors 6   macos: plain           # the phase-map checks (Day 300)
@@ -70,7 +70,7 @@ flavors 7   macos: plain,asan,tsan # the gates (Day 302), tests/debug (Day 306)
 flavors 8   macos: none
 flavors 9   macos: plain,asan,tsan # the gates (Day 302), tests/io (Day 303)
 flavors 10  macos: plain,asan,tsan # tests/types (Day 300)
-flavors 11  macos: plain           # the gates (Day 302)
+flavors 11  macos: plain,asan,tsan # the gates (Day 302), tests/settings (Day 309)
 flavors 12  macos: plain           # tests/foundation (Day 301)
 flavors 15  macos: plain           # tests/foundation (Day 301)
 flavors 16  macos: plain,asan,tsan # tests/lang, sync, cstr (Day 300)

@@ -65,7 +65,12 @@ target_link_libraries(foundation_base_tests PRIVATE foundation_base Catch2::Catc
 target_include_directories(foundation_base_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tests/support)
 
 # The file-layer and window tests need foundation_io and the platform library, which Windows builds from Days 151 and 158.
-if(TARGET platform)
+# macOS (Phase 26 Day 309) builds the file tests on the foundation aggregate; the window tests join with the platform layer (Day 311).
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND NOT TARGET platform)
+  add_executable(foundation_tests file_io_test.cpp)
+  target_link_libraries(foundation_tests PRIVATE foundation Catch2::Catch2WithMain Threads::Threads)
+  target_include_directories(foundation_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tests/support)
+elseif(TARGET platform)
   add_executable(foundation_tests ${FOUNDATION_PLATFORM_TEST_SOURCES})
   target_link_libraries(foundation_tests PRIVATE platform foundation Catch2::Catch2WithMain Threads::Threads)
   target_include_directories(foundation_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tests/support)

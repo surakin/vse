@@ -54,8 +54,18 @@ store, the memory stores, the environment and command-line layers and everything
   policy holds cannot be changed by the program (`SetError::Enforced`). The default user store on Windows stays the file
   (`<user config directory>/<app>/settings.cfg`, as on Linux: one format, comments, `--settings` files); a program that wants the registry adds a
   `RegistryConfigStore` layer itself.
-- **macOS (Phase 26):** `NSUserDefaults` (a suite named after the application) or a plist file through the file store; `NSUserDefaultsDidChangeNotification`
-  for changes; the application bundle's defaults as the read-only `System` layer.
+- **macOS (Phase 26), built on Day 309:** `UserDefaultsConfigStore` (`settings/macos/user_defaults_store.h`), one defaults domain (a suite) for the
+  current user on any host, through CoreFoundation's `CFPreferences` (the layer under `NSUserDefaults`; no Objective-C). A dotted key is the defaults key as
+  it is. **Every value is a string holding the canonical text**, as on Windows and for the same reason; a value written by hand with a type (a number, a
+  boolean) reads as its text, anything else is `TypeMismatch`. Each write is visible to every process at once (the preferences daemon), so
+  `kCapPerKeyWrites`; `Commit` is `CFPreferencesSynchronize`. Reads ask the domain alone (`CFPreferencesCopyValue`), never the global domain
+  `CFPreferencesCopyAppValue` would fall back to. **Notifications:** `NSUserDefaultsDidChangeNotification` reports this process's writes only (an outside
+  `defaults write` posts nothing; measured on Day 309), so `kCapNotifies` is a watch thread that compares the domain with what the store last saw every
+  250 ms, as the registry store compares, its own writes recorded under the same lock. The policy layer is a forced-only, read-only store over the suite
+  (managed preferences, `CFPreferencesAppValueIsForced`; its keys from `/Library/Managed Preferences/[<user>/]<suite>.plist`). The default user store stays
+  the file, as on Windows (measured: 0.17 ms per defaults write against about 40 ms for a durable file save). **Not built:** a `System` layer from
+  the application bundle's registered defaults. A program registers those itself at run time (`registerDefaults:` is not stored anywhere), so they are
+  the program's own shipped defaults, which `LoadOptions::shipped` already is.
 - **Android (Phase 27):** `SharedPreferences`; `apply()` is asynchronous and `commit()` synchronous, so `Commit` calls `commit()` and reports its result;
   `OnSharedPreferenceChangeListener` for notifications.
 - **iOS (Phase 27):** `NSUserDefaults` as on macOS.
@@ -121,7 +131,8 @@ Optional. Whether the backing medium exists (a file not written yet, a registry 
 
 What `Settings::Load` adds as the `Policy` layers (`settings/policy_layers.h`). Windows (Day 157): two read-only `RegistryConfigStore`s,
 `HKCU\Software\Policies\<name>` and then `HKLM\Software\Policies\<name>` (the machine's win, as group policy orders them); `LoadOptions::policy_path`
-replaces both with one key of the caller's (a test's own HKCU key). Linux: none yet. A policy key that does not exist is an empty layer.
+replaces both with one key of the caller's (a test's own HKCU key). macOS (Phase 26 Day 309): one forced-only `UserDefaultsConfigStore` over the
+suite (`policy_path`, else `policy_name`, else `app_name`). Linux: none yet. A policy key that does not exist is an empty layer.
 
 ### `Capture`
 

@@ -275,6 +275,9 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(tools/crash_extract)  # Day 306: the dump reader (the resolver's macOS branch is Day 308)
   include(cmake/EngineDeathTests.cmake)
   add_subdirectory(tests/debug)  # Day 306: stack traces and the crash context; the rest of the backend on Days 307-308
+  add_subdirectory(tests/settings)  # Day 309: the settings layer and the user defaults store
+  add_subdirectory(tools/docgen)  # Day 309: the reference and the documentation checks (the samples wait for Day 326)
+  add_subdirectory(tests/docgen)
   add_subdirectory(tests/types)
   add_subdirectory(tests/lang)
   add_subdirectory(tests/sync)
@@ -288,9 +291,9 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(tools/net_access_check)  # Phase 20 Day 268 (its own line: editing the gate list above would widen scripts/test-phase.sh --affected)
   add_subdirectory(tests/phase_labels)
   add_subdirectory(tests/test_phase_script)
-  message(STATUS "macOS (Phase 26 Day 306): building the base, file and debugging layers of the foundation, the job system and their tests, the gates and the test tooling. Not "
-                 "yet ported, so not configured: docgen (Day 309), the crash handler, death tests and post-mortem dumps (Days 307-308), settings (Day 309), text, UI, ECS and "
-                 "spatial (Day 310), the platform layer (Days 311-313), the RHI and renderer (Days 314-325), the demos and tools (Day 326).")
+  message(STATUS "macOS (Phase 26 Day 309): building the whole foundation (base, file, debugging and settings layers), the job system, docgen (without its samples), "
+                 "crash_extract and their tests, the gates and the test tooling. Not yet ported, so not configured: text, UI, ECS and spatial (Day 310), the platform layer "
+                 "(Days 311-313), the RHI and renderer (Days 314-325), the demos, the other tools and docs_samples (Day 326).")
   return()
 endif()
 

@@ -102,6 +102,11 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     os/macos/debug/posix_debug_hooks.cpp
     os/macos/debug/core_dump_macos.cpp
   )
+  # Day 309: the user defaults store and the managed-preferences policy layer (settings/BACKEND.md).
+  set(FOUNDATION_SETTINGS_PLATFORM_SOURCES
+    settings/macos/user_defaults_store.cpp
+    settings/macos/policy_layers.cpp
+  )
 else()
   message(FATAL_ERROR "No foundation os.h implementation for this platform yet")
 endif()
@@ -252,8 +257,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_link_libraries(foundation${suffix} INTERFACE foundation_settings${suffix} foundation_debug${suffix} foundation_io${suffix} foundation_base${suffix})
   endforeach()
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  # The base layer, the file layer (Day 303) and the debugging layer (Day 306) in the three flavors (Apple clang has ASan, UBSan and TSan); the layers
-  # above them join as their macOS backends arrive (jobs on Day 305, the rest of debugging on Days 307-308).
+  # Every layer of the foundation in the three flavors (Apple clang has ASan, UBSan and TSan): the base layer (Days 300-301), the file layer (Day 303),
+  # the debugging layer (Days 306-308) and the settings layer with the aggregate (Day 309).
   foreach(suffix "" "_asan" "_tsan")
     engine_add_foundation_layer(foundation_base "${suffix}" ${FOUNDATION_BASE_SOURCES})
     # The session query (os/macos/session.mm) reads the window server's session dictionary.
@@ -263,6 +268,11 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     target_link_libraries(foundation_io${suffix} PUBLIC foundation_base${suffix} "-framework Foundation")
     engine_add_foundation_layer(foundation_debug "${suffix}" ${FOUNDATION_DEBUG_SOURCES})
     target_link_libraries(foundation_debug${suffix} PUBLIC foundation_io${suffix} PRIVATE backtrace sentry)
+    # The user defaults store (settings/macos/) uses CoreFoundation's preferences.
+    engine_add_foundation_layer(foundation_settings "${suffix}" ${FOUNDATION_SETTINGS_SOURCES} ${FOUNDATION_SETTINGS_PLATFORM_SOURCES})
+    target_link_libraries(foundation_settings${suffix} PUBLIC foundation_debug${suffix} "-framework CoreFoundation")
+    add_library(foundation${suffix} INTERFACE)
+    target_link_libraries(foundation${suffix} INTERFACE foundation_settings${suffix} foundation_debug${suffix} foundation_io${suffix} foundation_base${suffix})
   endforeach()
 else()
   engine_add_foundation_libs("")
