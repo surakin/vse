@@ -1055,7 +1055,10 @@ struct UdpTransport::Impl
                     break;  // newer packets overtook it, but it has not had the time a late one would need
                 }
                 e.resolved = true;
-                OnPacketLost(c, &e);
+                if (e.counted)  // a lost empty packet (an acknowledgement) says nothing about the path's capacity
+                {
+                    OnPacketLost(c, &e);
+                }
                 for (usize k = 0; k < e.frames.Size(); ++k)
                 {
                     QueueResend(c, e.frames[k], e.seq);
@@ -1259,7 +1262,10 @@ struct UdpTransport::Impl
                 }
                 return;
             }
-            from_address += c->state != UdpState::Closed && c->peer.GetAddress() == from.GetAddress() ? 1 : 0;
+            from_address += c->state != UdpState::Closed &&
+                                    AddressGroup(c->peer.GetAddress()) == AddressGroup(from.GetAddress())
+                                ? 1
+                                : 0;
         }
         PurgeRetired();
         if (retired_keys.Find(HandshakeKey(from, salt)) != nullptr)
@@ -1464,7 +1470,7 @@ struct UdpTransport::Impl
             l.peer = c->peer;
             l.wire_id = c->wire_id;
             l.code = 0;
-            l.sends_left = config.close_repeats;
+            l.sends_left = config.close_repeats != 0 ? config.close_repeats : 1;
             l.next_send = Now();
             lingering.Push(l);
         }
@@ -2114,7 +2120,7 @@ Status UdpTransport::Close(ConnectionId connection, u32 code)
         l.has_salt = c->state != UdpState::Connected;
         l.salt = c->client_salt;
         l.code = code;
-        l.sends_left = config_.close_repeats;
+        l.sends_left = config_.close_repeats != 0 ? config_.close_repeats : 1;
         l.next_send = m.Now();
         m.lingering.Push(l);
     }

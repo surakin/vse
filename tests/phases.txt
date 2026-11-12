@@ -201,6 +201,9 @@ test:renderer_demo_device_loss_screenshot       5
 test:spatial_demo_runs                        18
 test:storage_demo_runs                        19
 test:storage_demo_columns_runs                19
+test:net_demo_runs                             20   # Phase 20 Day 281
+test:net_demo_simulated_runs                   20
+test:net_probe_*                               20   # Phase 20 Day 281
 test:renderer_demo_device_loss_trace            5
 test:renderer_demo_oom_later                    5
 test:renderer_demo_oom_device                   5

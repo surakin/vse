@@ -3899,6 +3899,11 @@ net::Listener::Accept(Reactor&,Socket*,Endpoint*,WaitOptions)	function	net	net-l
 net::Listener::Reserve()	function	net	net-listener-reserve	net.md	engine/net/listener.h:93
 net::Listener::Handled()	function	net	net-listener-handled	net.md	engine/net/listener.h:97
 net::Listener::Unhandled() const	function	net	net-listener-unhandled-const	net.md	engine/net/listener.h:108
+net::RegisterNetSettings(settings::Registry*)	function	net	net-registernetsettings-settings-registry-star	net.md	engine/net/net_settings.h:32
+net::UdpConfigFromSettings(const settings::Registry&)	function	net	net-udpconfigfromsettings-const-settings-registry-amp	net.md	engine/net/net_settings.h:40
+net::TcpConfigFromSettings(const settings::Registry&)	function	net	net-tcpconfigfromsettings-const-settings-registry-amp	net.md	engine/net/net_settings.h:48
+net::StreamOptionsFromSettings(const settings::Registry&)	function	net	net-streamoptionsfromsettings-const-settings-registry-amp	net.md	engine/net/net_settings.h:56
+net::LinkFromSettings(const settings::Registry&)	function	net	net-linkfromsettings-const-settings-registry-amp	net.md	engine/net/net_settings.h:64
 net::kPollRead	variable	net	net-kpollread	net.md	engine/net/poller.h:15
 net::kPollWrite	variable	net	net-kpollwrite	net.md	engine/net/poller.h:17
 net::kPollError	variable	net	net-kpollerror	net.md	engine/net/poller.h:19

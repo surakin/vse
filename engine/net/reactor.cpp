@@ -591,8 +591,8 @@ Status Reactor::Close(Socket& socket)
     Status closed;
     {
         // Under the lock, so that a wait registering at this moment either comes before (and ends with Closed) or after
-        // the close (and finds a descriptor the system refuses): it can never be armed on a descriptor that is closed
-        // behind its back.
+        // the close; a descriptor number the system has since reused is the caller's race to avoid): it is never armed
+        // on a descriptor that is closed behind its back by this call.
         LockGuard<Mutex> guard(lock_);
         ForgetLocked(socket.NativeHandle(), &ready);
         closed = socket.Close();
@@ -604,7 +604,8 @@ Status Reactor::Close(Socket& socket)
 void Reactor::Shutdown()
 {
     LockGuard<Mutex> shutdown_guard(shutdown_lock_);
-    if (!running_.Load(MemoryOrder::Acquire))
+    // A loop that ended on a poller failure cleared `running_` but its thread still has to be joined.
+    if (!running_.Load(MemoryOrder::Acquire) && !thread_.Joinable())
     {
         return;
     }

@@ -121,6 +121,33 @@ Pass conditions for the engine's layers (planner's defaults, to be confirmed or 
 | Soak | 10,000 simulated connections for 10 simulated minutes at 30 messages per second each, with 5 % loss, 2 % reordering and 1 % duplication: every reliable message delivered in order exactly once, memory within `net.connection_budget_bytes` x connections |
 | Congestion | on a simulated 10 Mbit/s, 50 ms link the sender reaches at least 80 % of the link rate and its queue delay does not grow without bound |
 
+### Results (Day 281; Release, Clang, loopback, one Linux machine)
+
+| Measure | Result | Against the pass condition |
+|---|---|---|
+| UDP transport echo, 64 B, loopback, one connection, serial | p50 18 us, p99 22 us, p999 25 us | no condition on latency; one round trip at a time, so about 55,000 round trips per second |
+| UDP transport echo, 1 KiB | p50 22 us, p99 26 us, p999 36 us | as above |
+| TCP transport echo, 64 B, loopback | p50 16 us, p99 22 us, p999 242 us | as above |
+| TCP transport echo, 1 KiB | p50 16 us, p99 21 us, p999 254 us | as above |
+| 1,000 simulated TCP connections, one 64 B message each per 100 ms for 10 s | 100,000 messages in 251.6 ms of CPU, 25 us per connection-second (both ends of the connection, simulated carrier) | no condition on this; the idle-connection condition below is not measured |
+| Simulated TCP stream throughput, 16 KiB messages | 1,810 MiB/s of wall time | none |
+| Soak | 10,000 simulated TCP connections, traffic, close and teardown in flight: passes in about 4.5 s, asan-clean | **reduced**: see the deviations |
+
+**Not measured, filed in `KNOWN-ISSUES.md`:** the conditions that measure the reactor and coroutine layer under load (250,000 round trips per second at 1,000 connections with four participants; at most 1.0 `epoll_wait` wake-ups per round trip; idle resume p99 under 200 us; saturated hand-off p99 under 5 ms), UDP at 50,000 reliable-ordered and 100,000 unreliable messages per second, the congestion condition (80 % of a 10 Mbit/s, 50 ms link), and the codec. The transports are polled, so a polled loop does not exercise the reactor; the first user of `net::Reactor` with coroutines (a later phase) measures them.
+
+### Deviations from Day 266
+
+- `net::TransportConfig::FromSettings` became free functions (`UdpConfigFromSettings`, `TcpConfigFromSettings`, `StreamOptionsFromSettings`, `LinkFromSettings`), because the two transports have different configurations and no common base.
+- The soak test is 10,000 simulated TCP connections with stream cuts, not 10 simulated minutes of UDP traffic with 5 % loss, 2 % reordering and 1 % duplication; the lossy UDP behaviour is covered by the Day 275 and 276 tests, and the large-connection-count one by this test. Memory is checked by asan (no leak), not by a number.
+- `tools/net_probe resolve` parses literal addresses and endpoints only; resolving a host name needs the reactor.
+- `game/net_demo` has no storage `AsyncLoad` over TCP: there is no network `Store` yet (Phase 19 has the interface only).
+- Day 280 (QUIC, TLS and encryption) was deferred by the user on 2026-11-12; the transports are for trusted networks (guide, "What the network layer does not protect against").
+- The mixed-connections TSan test planned on Day 277 was not written.
+
+### Replication hooks (recorded, not built)
+
+Every outgoing UDP datagram carries a sequence number the application can read back for snapshot stamping (`ConnectionStats`); a per-connection bandwidth budget is a setting (`net.max_bandwidth_bytes_per_second`) and `ConnectionStats` reports what a connection sends; the interest-callback slot is not built (nothing in `net` would call it). A replication phase adds it and decides the rest.
+
 ## 6. Hooks recorded for later phases
 
 The resource system (Phase 21) and a network store (Phase 19's `Store` interface) use `Transport` as it is. Replication (not scheduled) reads the packet sequence number, the per-connection bandwidth budget and the interest callback slot of section 2; the spec of that phase decides the rest.

@@ -21,7 +21,7 @@
 //! - [[net::Reactor::Shutdown]] completes every wait with Cancelled.
 //!
 //! The reactor must be shut down (or destroyed) before the scheduler it was given, because it schedules the
-//! continuations. On Linux the poller is epoll; the Windows poller arrives on Day 278.
+//! continuations. On Linux the poller is epoll; on Windows it is a `select` poller.
 
 #include "containers/hash_map.h"
 #include "containers/vector.h"

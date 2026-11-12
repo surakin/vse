@@ -88,8 +88,8 @@ struct UdpTransportConfig
     RateLimiterConfig
         handshake_limits = DefaultHandshakeLimits();    ///< Rates of ConnectRequest packets, per address (an
                                                         ///< IPv6 /64 counts as one) and in total; excess is
-                                                        ///< dropped silently. Bad cookies are strikes: an
-                                                        ///< address that earns enough is banned for a while.
+                                                        ///< dropped silently. There are no strikes or bans
+                                                        ///< (a source address may be forged until a cookie checks).
     usize max_total_receive_buffer_bytes = 256u << 20;  ///< Reassembly plus out-of-order bytes over all connections; a
                                                         ///< connection that would exceed it is ended with
                                                         ///< [[net::DisconnectReason::ProtocolError]].

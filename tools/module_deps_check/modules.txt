@@ -162,11 +162,13 @@ module game/rhi_bench/ game/rhi_bench 14
 module game/ecs_bench/ game/ecs_bench 14
 module game/spatial_demo/ game/spatial_demo 14
 module game/storage_demo/ game/storage_demo 14
+module game/net_demo/ game/net_demo 14
 module game/rhi_demo/ game/rhi_demo 14
 module game/ui_demo/ game/ui_demo 14
 module tools/crash_extract/ tools/crash_extract 14
 module tools/docgen/ tools/docgen 14
 module tools/shader_mint/ tools/shader_mint 14
+module tools/net_probe/ tools/net_probe 14
 module tools/unicode_data_gen/ tools/unicode_data_gen 14
 module tools/config_access_check/ tools/gates 14
 module tools/file_access_check/ tools/gates 14
@@ -254,6 +256,7 @@ target rhi_bench game/rhi_bench
 target ecs_bench game/ecs_bench
 target spatial_demo game/spatial_demo
 target storage_demo game/storage_demo
+target net_demo game/net_demo
 target renderer_demo_lib game/renderer_demo
 target renderer_demo game/renderer_demo
 target renderer_demo_mint game/renderer_demo
@@ -263,6 +266,7 @@ target ui_demo game/ui_demo
 target crash_extract tools/crash_extract
 target shader_mint_lib tools/shader_mint
 target shader_mint tools/shader_mint
+target net_probe tools/net_probe
 target docgen_lib tools/docgen
 target docgen tools/docgen
 

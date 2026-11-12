@@ -13,10 +13,12 @@ set(NET_TEST_SOURCES
   rate_limit_test.cpp  # Day 279
   fuzz_test.cpp  # Day 279
   security_test.cpp  # Day 279
+  net_settings_test.cpp  # Day 281
+  soak_test.cpp  # Day 281
 )
 # The socket backend's tests (Day 268; Windows from Day 278). Real sockets: the executable is labelled `network`. The error table and the
 # flags a new socket carries are each backend's own test.
-set(NET_SOCKET_TEST_SOURCES socket_test.cpp reactor_test.cpp resolve_test.cpp listener_test.cpp tcp_test.cpp udp_loopback_test.cpp tcp_loopback_test.cpp poller_test.cpp)  # Days 268-278
+set(NET_SOCKET_TEST_SOURCES socket_test.cpp reactor_test.cpp resolve_test.cpp listener_test.cpp tcp_test.cpp udp_loopback_test.cpp tcp_loopback_test.cpp poller_test.cpp net_bench.cpp)  # Days 268-278
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   list(APPEND NET_TEST_SOURCES wsa_error_map_windows_test.cpp)  # Day 278
   list(APPEND NET_SOCKET_TEST_SOURCES windows/socket_flags_windows_test.cpp)  # Day 278
