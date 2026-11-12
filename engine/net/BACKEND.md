@@ -6,7 +6,9 @@ carries a `Backend:` label has a `###` section here, and every section names suc
 `docs/superpowers/specs/2026-11-11-networking-design.md`.
 
 Linux and macOS share the POSIX backend in `engine/net/posix/` (`socket_posix.cpp`, `posix_error.cpp`), each adding its own hooks (`net/linux/linux_hooks.cpp`;
-`net/macos/` when Phase 26 reaches the network). A new platform adds `engine/net/<platform>/` and selects it in `engine/net/CMakeLists.txt`. Only these
+`net/macos/` when Phase 26 reaches the network). Windows has its own in `engine/net/windows/` (Phase 20 Day 278: `socket_windows.cpp`, `wsa_error.cpp`,
+`poller_select.cpp`, `resolve_windows.cpp`; the Winsock headers only through `windows/winsock.h`). A new platform adds `engine/net/<platform>/` and selects it in
+`engine/net/CMakeLists.txt`. Only these
 directories may call the operating system's socket API; the gate `net_access_check` fails on a socket call anywhere else.
 
 ## Rules every backend follows
@@ -29,10 +31,22 @@ directories may call the operating system's socket API; the gate `net_access_che
 
 ## Platform notes
 
-- **Windows (Phase 20 Day 278):** Winsock 2 (`WSAStartup` once, before the first socket, `WSACleanup` at shutdown), `WSASocketW` with `WSA_FLAG_NO_HANDLE_INHERIT`
-  and `ioctlsocket(FIONBIO)`; `WSAGetLastError` mapped through a table (`WSAEWOULDBLOCK`, `WSAECONNRESET`, ...); `closesocket`; `SOCKET` is an unsigned
-  handle, held in `NativeHandle()` as an `i64`; no `accept4`, so set the flags after `accept`; `MSG_TRUNC` does not exist, use `WSAEMSGSIZE` from `recvfrom`
-  (the datagram is cut and the error is reported).
+- **Windows (Phase 20 Day 278, `engine/net/windows/`):** Winsock 2.2, started once per process by the first socket, poller or resolution
+  (`windows::EnsureWinsock`, a `CallOnce`); no `WSACleanup`: the process's exit releases it, and a cleanup while the resolver or reactor thread may be inside
+  Winsock would pull the library from under them. `WSASocketW` with `WSA_FLAG_NO_HANDLE_INHERIT` (not inherited from creation), then `ioctlsocket(FIONBIO)`;
+  an accepted socket takes the listener's "not inherited" (seen on Day 278, so there is no window in which a child could get it) and gets both flags set
+  again anyway (`SetHandleInformation`, `FIONBIO`). `WSAGetLastError` is mapped through one table (`wsa_error.cpp`, tested from a list of
+  numbers); `closesocket`; `SOCKET` is an unsigned handle, held in `NativeHandle()` as an `i64` (`INVALID_SOCKET` is -1 there). No signal for a vanished
+  peer, so no flag. `MSG_TRUNC` does not exist: a cut datagram fails with `WSAEMSGSIZE` (MessageTooLarge, the rest dropped). A UDP socket has
+  `SIO_UDP_CONNRESET` off, or an ICMP "port unreachable" for an earlier datagram would fail the next receive with `WSAECONNRESET`. Windows' defaults are
+  changed to the interface's at creation: an IPv6 socket is dual stack (`IPV6_V6ONLY` off; Windows' default is on), and every socket has an exclusive port
+  (`SO_EXCLUSIVEADDRUSE`; `SO_REUSEADDR` is never set, see `SetReuseAddress`); a bind refused with `WSAEACCES` (a port held exclusively) is AddressInUse.
+  A connect to a **loopback** address turns off SYN retransmission (`SIO_TCP_INITIAL_RTO`), because Windows answers a reset to its SYN by sending the SYN
+  again and a refused loopback connect would take two seconds; other destinations keep that behavior. A full accept queue refuses at once on Windows
+  either way (it answers a reset where Linux drops the SYN and the client tries again): of 300 loopback connects to a listener with a backlog of 1 that
+  accepted 20 every 100 ms, 299 were refused with the setting and 291 without it (measured on Day 278). A non-blocking `send` takes the whole buffer when
+  the send buffer has any room (the kernel keeps the caller's bytes), so a large write is rarely partial. Scope names go through `if_nametoindex`
+  (`iphlpapi`). Libraries: `ws2_32` and `iphlpapi`, both part of Windows.
 - **macOS (Phase 26):** the POSIX backend; no `accept4`, no `SOCK_NONBLOCK`: create with `socket`, then `fcntl` the two flags immediately; `SO_NOSIGPIPE`
   instead of `MSG_NOSIGNAL`; `MSG_TRUNC` is not available on `recvfrom` for datagrams, use `recvmsg` and its `MSG_TRUNC` result flag.
 - **Android and iOS (Phase 27):** the same POSIX backend; the application lifecycle closes or suspends sockets when it moves to the background, which the
@@ -104,8 +118,8 @@ The connected peer, `NotConnected` when there is none.
 
 ### `SetReuseAddress`
 
-Allow binding a port that has connections waiting to expire. (Not the Windows `SO_REUSEADDR`, which allows hijacking: use `SO_EXCLUSIVEADDRUSE` for off and leave
-"on" as the default there.)
+Allow binding a port that has connections waiting to expire. (Not the Windows `SO_REUSEADDR`, which allows hijacking: Windows sockets are opened with
+`SO_EXCLUSIVEADDRUSE`, which is "off"; "on" clears it, which is Windows' own default, where a port whose old connections wait to expire can be bound again.)
 
 ### `SetNoDelay`
 
@@ -118,7 +132,8 @@ Turn keep-alive probes on or off.
 ### `SetKeepAliveTiming`
 
 Set the idle time, probe interval and probe count of keep-alive on a stream socket (Linux `TCP_KEEPIDLE`/`TCP_KEEPINTVL`/`TCP_KEEPCNT`; macOS `TCP_KEEPALIVE` for the
-idle time; Windows `SIO_KEEPALIVE_VALS`, which takes milliseconds and has no count: report `Unsupported` for the count).
+idle time; Windows 10 1709 and later have the three Linux options, in seconds, and the backend uses them rather than the older `SIO_KEEPALIVE_VALS`, which takes
+milliseconds and has no count).
 
 ### `SetLinger`
 
@@ -154,19 +169,31 @@ asynchronous operations are neutral and sit on it. A new platform implements the
 ### `Arm`
 
 Add the socket or modify its registration to one notification of the given interest (read, write or both); epoll: `EPOLL_CTL_MOD` with `EPOLLONESHOT`, falling back to
-`EPOLL_CTL_ADD`. Windows: add or update the socket's slot in the `WSAPoll` set (IOCP would need a different shape, see the spec).
+`EPOLL_CTL_ADD`. Windows: check the handle (`getsockopt(SO_TYPE)`, as `epoll_ctl` refuses a closed descriptor), add or update the socket in the poller's own armed set
+under its lock, and wake a wait in progress so that its next copy has it.
+
+Windows uses `select`, not `WSAPoll` (the Day 266 plan; changed on Day 278 after a measurement): `WSAPoll` reports `POLLHUP` for the peer's half-close whatever was
+asked for, so a socket waited on only for writing with a full send buffer would make every poll return at once; `select` reports it for writing only when it can be
+written or was reset, and the end of the stream and a reset make it readable, which is epoll's behavior. The set is built for each wait from the armed set (an
+`fd_set` of the needed size: Winsock reads `fd_count` entries, so a set larger than `FD_SETSIZE` is laid out the same way); a socket armed for writing is also in
+the exception set, where a failed connect appears. IOCP would need a different shape, see the spec.
 
 ### `Disarm`
 
-Forget the socket; ignore one that is unknown or already closed.
+Forget the socket; ignore one that is unknown or already closed. Windows: remove it from the armed set; a wait in progress may still see it, and its report is dropped
+(each registration carries a generation, so a new socket that reuses a closed handle's value is not reported for the old one).
 
 ### `Wait`
 
-Block for ready sockets, a wake-up or the timeout, and report the ready sockets (not the wake-up) with their readiness bits.
+Block for ready sockets, a wake-up or the timeout, and report the ready sockets (not the wake-up) with their readiness bits. Windows: `select` over a copy of the armed
+set taken under the lock, the timeout rounded up to a microsecond. A handle in the copy that is closed before or during `select` (the reactor disarms and closes
+from another thread while it waits) makes `select` fail with `WSAENOTSOCK`; that is not a broken poller: a closed handle still armed in the same registration is
+reported once as an error, a disarmed one is dropped, and the next wait takes a new copy (`tests/net/poller_test.cpp`, found by the Day 278 review).
 
 ### `Wake`
 
-Make a wait return: an `eventfd` write on Linux; a connected loopback socket pair on Windows, which has no `eventfd`.
+Make a wait return: an `eventfd` write on Linux; on Windows, which has no `eventfd`, one byte from a UDP socket connected to a second one bound to loopback, which
+the wait watches for reading and drains.
 
 ## Name resolution
 
@@ -179,5 +206,7 @@ Make a wait return: an `eventfd` write on Linux; a connected loopback socket pai
 
 ### `SystemResolve`
 
-Resolve a name and a port to endpoints with the operating system's resolver, asking for stream sockets so that each address appears once.
+Resolve a name and a port to endpoints with the operating system's resolver, asking for stream sockets so that each address appears once. Windows: `GetAddrInfoW`
+with the name in UTF-16 (the ANSI `getaddrinfo` would pass an internationalized name through the process's code page); its result codes (`WSAHOST_NOT_FOUND`,
+`WSATRY_AGAIN`, ...) map to the same meanings as POSIX's `EAI_` codes (`windows::ErrorFromResolveError`).
 

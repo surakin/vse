@@ -1,8 +1,10 @@
 #pragma once
 
 //! [[net::Poller]]: the platform's readiness primitive, one per [[net::Reactor]]. The only file of the readiness code
-//! that differs between operating systems (epoll on Linux, `WSAPoll` on Windows, kqueue on macOS).
+//! that differs between operating systems (epoll on Linux, `select` on Windows, kqueue on macOS).
 
+#include "build_defs.h"
+#include "containers/unique_ptr.h"
 #include "net/status.h"
 #include "types.h"
 
@@ -35,7 +37,8 @@ struct PollEvent
 ///
 /// - Thread-safety: thread-safe except that [[net::Poller::Wait]] is called by one thread at a time. `Arm`, `Disarm`
 /// and `Wake` may be called from any thread while another waits.
-/// - Ownership: owns the operating-system object (the epoll descriptor and its wake-up descriptor).
+/// - Ownership: owns the operating-system objects (the epoll descriptor and its wake-up descriptor; on Windows the two
+/// wake-up sockets and the set of armed sockets).
 class Poller
 {
 public:
@@ -54,7 +57,8 @@ public:
     /// Arms `handle` for one notification of `interest` (`kPollRead`, `kPollWrite` or both), adding it if it is new.
     ///
     /// - Backend: level-triggered one-shot registration (`EPOLLONESHOT`, `EPOLL_CTL_MOD`, falling back to
-    /// `EPOLL_CTL_ADD`).
+    /// `EPOLL_CTL_ADD`; on Windows the poller's own armed set, checked with `getsockopt(SO_TYPE)`, waking a wait in
+    /// progress).
     /// - Param handle: the socket's native handle.
     /// - Param interest: the `kPoll` bits to wait for.
     /// - Fails: [[net::ErrorCode::Invalid]] for a handle the system refuses; [[net::ErrorCode::LimitExceeded]] when out
@@ -63,7 +67,8 @@ public:
 
     /// Forgets `handle`: no notification for it is reported afterwards, and the poller keeps nothing of it.
     ///
-    /// - Backend: `EPOLL_CTL_DEL`, ignoring a handle that is not registered or already closed.
+    /// - Backend: `EPOLL_CTL_DEL` (Windows: removal from the armed set), ignoring a handle that is not registered or
+    /// already closed.
     /// - Param handle: the socket's native handle.
     /// - Fails: never.
     void Disarm(i64 handle);
@@ -74,7 +79,8 @@ public:
     /// Waits for armed sockets to become ready, for a [[net::Poller::Wake]], or for the timeout.
     ///
     /// - Backend: `epoll_wait` (the timeout is rounded up to a millisecond, so it never returns early), draining the
-    /// wake-up descriptor without reporting it.
+    /// wake-up descriptor without reporting it; on Windows `select` over a copy of the armed set (not `WSAPoll`, which
+    /// reports a half-closed socket whatever was asked for).
     /// - Param events: receives the ready sockets.
     /// - Param capacity: how many events fit; at most [[net::Poller::kMaxBatch]] are reported.
     /// - Param timeout_nanos: the longest wait, or negative to wait for ever.
@@ -86,13 +92,20 @@ public:
 
     /// Makes a [[net::Poller::Wait]] in progress, or the next one, return at once.
     ///
-    /// - Backend: writes the wake-up descriptor (`eventfd`; a socket pair where there is none).
+    /// - Backend: writes the wake-up descriptor (`eventfd`; on Windows a byte to a loopback UDP socket the wait
+    /// watches).
     /// - Fails: never.
     void Wake();
 
 private:
-    i64 poller_ = -1;  // the epoll descriptor (a platform handle)
-    i64 wake_ = -1;    // the wake-up descriptor
+    i64 poller_ = -1;  // the epoll descriptor (Windows: the wake-up socket the wait reads)
+    i64 wake_ = -1;    // the wake-up descriptor (Windows: the socket that writes to it)
+#if ENGINE_PLATFORM_WINDOWS
+    // select has no kernel object to hold the armed sockets: the poller keeps them, under a lock
+    // (net/windows/poller_select.cpp).
+    struct ArmedSet;
+    UniquePtr<ArmedSet> armed_;
+#endif
 };
 
 }  // namespace engine_placeholder::net

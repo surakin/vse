@@ -11,11 +11,15 @@ set(NET_TEST_SOURCES
   tcp_transport_test.cpp  # Day 277
   transport_comparison_test.cpp  # Day 277
 )
-# The socket backend's tests (Day 268); the Windows backend arrives on Day 278. Real sockets: the executable is labelled `network`.
-set(NET_SOCKET_TEST_SOURCES "")
-if(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
+# The socket backend's tests (Day 268; Windows from Day 278). Real sockets: the executable is labelled `network`. The error table and the
+# flags a new socket carries are each backend's own test.
+set(NET_SOCKET_TEST_SOURCES socket_test.cpp reactor_test.cpp resolve_test.cpp listener_test.cpp tcp_test.cpp udp_loopback_test.cpp tcp_loopback_test.cpp poller_test.cpp)  # Days 268-278
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  list(APPEND NET_TEST_SOURCES wsa_error_map_windows_test.cpp)  # Day 278
+  list(APPEND NET_SOCKET_TEST_SOURCES windows/socket_flags_windows_test.cpp)  # Day 278
+else()
   list(APPEND NET_TEST_SOURCES errno_map_posix_test.cpp)  # Day 268
-  list(APPEND NET_SOCKET_TEST_SOURCES socket_test.cpp socket_flags_posix_test.cpp reactor_test.cpp resolve_test.cpp listener_test.cpp tcp_test.cpp udp_loopback_test.cpp tcp_loopback_test.cpp)  # Days 268-277
+  list(APPEND NET_SOCKET_TEST_SOURCES socket_flags_posix_test.cpp)  # Day 268
 endif()
 
 find_package(Threads REQUIRED)

@@ -99,10 +99,10 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   foreach(lib renderer_passes renderer ui net storage database_sqlite database sqlite3 spatial ecs text freetype rhi_backends rhi_dx12 rhi_vulkan rhi jobs platform foundation_settings foundation_debug foundation_io foundation_base sentry breakpad_client)
     list(APPEND DOCGEN_LINK_ARGS --link $<TARGET_LINKER_FILE:${lib}>)
   endforeach()
-  # The system libraries those link beyond CMake's standard ones (engine/foundation, engine/platform and sentry's CMakeLists.txt), then
+  # The system libraries those link beyond CMake's standard ones (engine/foundation, engine/platform, engine/net and sentry's CMakeLists.txt), then
   # the standard ones every program of the build gets (CMAKE_CXX_STANDARD_LIBRARIES: kernel32, user32, gdi32, ...).
   separate_arguments(_standard_libraries WINDOWS_COMMAND "${CMAKE_CXX_STANDARD_LIBRARIES}")
-  foreach(lib shlwapi.lib version.lib dbghelp.lib psapi.lib synchronization.lib bcrypt.lib wtsapi32.lib d3d12.lib dxgi.lib dxguid.lib ${_standard_libraries})
+  foreach(lib shlwapi.lib version.lib dbghelp.lib psapi.lib synchronization.lib bcrypt.lib wtsapi32.lib d3d12.lib dxgi.lib dxguid.lib ws2_32.lib iphlpapi.lib ${_standard_libraries})
     list(APPEND DOCGEN_LINK_ARGS --link ${lib})
   endforeach()
   if(ENGINE_CLANG_CL)

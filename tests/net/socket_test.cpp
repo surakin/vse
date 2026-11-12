@@ -4,6 +4,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "build_defs.h"
 #include "containers/vector.h"
 #include "net/socket.h"
 #include "os/os.h"
@@ -401,10 +402,16 @@ TEST_CASE("TCP: a write larger than the socket buffers is taken in parts, and ev
             FAIL("receive failed: " << ErrorCodeName(r.Code()));
         }
     }
+    INFO("partial writes: " << partial_writes << ", a write would have blocked: " << would_block);
     CHECK(intact);
     CHECK(sent == total);
     CHECK(received == total);
+    // Windows takes a whole non-blocking write when the send buffer has any room (it keeps the caller's bytes in the
+    // kernel), so the 8 MiB go in one call there and no part is observable; the checks above (every byte arrives, in
+    // order) are the ones that apply.
+#if !ENGINE_PLATFORM_WINDOWS
     CHECK((partial_writes > 0 || would_block));
+#endif
 }
 
 TEST_CASE("TCP: shutting down the writing half is read as Closed after the data", "[network][socket]")

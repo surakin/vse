@@ -23,7 +23,8 @@ inline constexpr usize kMaxHostNameBytes = 253;
 /// Resolves `host` and `port` with the operating system's resolver into at most [[net::EndpointSet::kCapacity]]
 /// endpoints: the addresses the system returns, in its order, without duplicates, the rest dropped.
 ///
-/// - Backend: `getaddrinfo` with a stream socket hint and a numeric service (`engine/net/posix/resolve_posix.cpp`); the
+/// - Backend: `getaddrinfo` with a stream socket hint and a numeric service (`engine/net/posix/resolve_posix.cpp`;
+/// `GetAddrInfoW` with the name in UTF-16 in `engine/net/windows/resolve_windows.cpp`); the
 /// error codes `EAI_*` become [[net::ErrorCode::NotFound]] (the name does not exist), [[net::ErrorCode::TimedOut]] (the
 /// name server did not answer),
 /// [[net::ErrorCode::Unreachable]], [[net::ErrorCode::LimitExceeded]] or [[net::ErrorCode::Other]].

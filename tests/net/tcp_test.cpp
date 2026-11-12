@@ -1,7 +1,10 @@
 // TcpStream (Phase 20 Day 271): framed echo with every read size, bounded send queue and backpressure, oversized and
 // zero-length frames, reset and end of stream mid-frame, idle timeout, graceful close and the linger limit.
 
+#include "build_defs.h"
+#if !ENGINE_PLATFORM_WINDOWS
 #include <sys/resource.h>
+#endif
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -915,17 +918,19 @@ TEST_CASE("A stream that was never opened answers Closed", "[network][tcp]")
 
 TEST_CASE("A thousand streams carry a frame each", "[network][tcp]")
 {
+    constexpr usize kPairs = 500;
+#if !ENGINE_PLATFORM_WINDOWS  // Windows has no per-process descriptor limit
     struct rlimit limit{};
     if (::getrlimit(RLIMIT_NOFILE, &limit) == 0 && limit.rlim_cur < 4096 && limit.rlim_cur < limit.rlim_max)
     {
         limit.rlim_cur = limit.rlim_max < 4096 ? limit.rlim_max : 4096;
         ::setrlimit(RLIMIT_NOFILE, &limit);
     }
-    constexpr usize kPairs = 500;
     if (::getrlimit(RLIMIT_NOFILE, &limit) != 0 || limit.rlim_cur < 2 * kPairs + 64)
     {
         SKIP("the descriptor limit is too low for a thousand streams");
     }
+#endif
     TcpHarness harness;
     if (!harness.Open())
     {

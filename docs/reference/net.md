@@ -34,7 +34,7 @@ A frame is a 4-byte big-endian length followed by that many payload bytes. A fra
 
 [`net::Listener`](#net-listener): a listening socket with the accept loop's policy: back off when the process is out of descriptors, and a cap on connections that were accepted but are not yet handled.
 
-[`net::Poller`](#net-poller): the platform's readiness primitive, one per [`net::Reactor`](#net-reactor). The only file of the readiness code that differs between operating systems (epoll on Linux, `WSAPoll` on Windows, kqueue on macOS).
+[`net::Poller`](#net-poller): the platform's readiness primitive, one per [`net::Reactor`](#net-reactor). The only file of the readiness code that differs between operating systems (epoll on Linux, `select` on Windows, kqueue on macOS).
 
 [`net::Reactor`](#net-reactor): readiness and timers for sockets, on the job system.
 
@@ -2979,7 +2979,7 @@ A socket is armed for one notification: it is reported once, when it is ready (a
 | Field | Value |
 |---|---|
 | Thread-safety | thread-safe except that [`net::Poller::Wait`](#net-poller-wait-pollevent-star-usize-i64-usize-star) is called by one thread at a time. `Arm`, `Disarm` and `Wake` may be called from any thread while another waits. |
-| Ownership | owns the operating-system object (the epoll descriptor and its wake-up descriptor). |
+| Ownership | owns the operating-system objects (the epoll descriptor and its wake-up descriptor; on Windows the two wake-up sockets and the set of armed sockets). |
 
 ### `Poller()` {#net-poller-poller}
 
@@ -3050,7 +3050,7 @@ Arms `handle` for one notification of `interest` (`kPollRead`, `kPollWrite` or b
 | Parameter `handle` | the socket's native handle. |
 | Parameter `interest` | the `kPoll` bits to wait for. |
 | Fails | [`net::ErrorCode::Invalid`](#net-errorcode-invalid) for a handle the system refuses; [`net::ErrorCode::LimitExceeded`](#net-errorcode-limitexceeded) when out of resources. |
-| Backend | level-triggered one-shot registration (`EPOLLONESHOT`, `EPOLL_CTL_MOD`, falling back to `EPOLL_CTL_ADD`). |
+| Backend | level-triggered one-shot registration (`EPOLLONESHOT`, `EPOLL_CTL_MOD`, falling back to `EPOLL_CTL_ADD`; on Windows the poller's own armed set, checked with `getsockopt(SO_TYPE)`, waking a wait in progress). |
 
 ### `Disarm(i64)` {#net-poller-disarm-i64}
 
@@ -3066,7 +3066,7 @@ Forgets `handle`: no notification for it is reported afterwards, and the poller 
 |---|---|
 | Parameter `handle` | the socket's native handle. |
 | Fails | never. |
-| Backend | `EPOLL_CTL_DEL`, ignoring a handle that is not registered or already closed. |
+| Backend | `EPOLL_CTL_DEL` (Windows: removal from the armed set), ignoring a handle that is not registered or already closed. |
 
 ### `kMaxBatch` {#net-poller-kmaxbatch}
 
@@ -3096,7 +3096,7 @@ Waits for armed sockets to become ready, for a [`net::Poller::Wake`](#net-poller
 | Parameter `count` | receives the number of events written; 0 on a timeout, a wake-up or an interruption. |
 | Fails | the system refuses the wait for a reason other than an interruption (the poller is broken); `*count` is 0. |
 | Ownership | `events` is written during the call; nothing is retained. |
-| Backend | `epoll_wait` (the timeout is rounded up to a millisecond, so it never returns early), draining the wake-up descriptor without reporting it. |
+| Backend | `epoll_wait` (the timeout is rounded up to a millisecond, so it never returns early), draining the wake-up descriptor without reporting it; on Windows `select` over a copy of the armed set (not `WSAPoll`, which reports a half-closed socket whatever was asked for). |
 
 ### `Wake()` {#net-poller-wake}
 
@@ -3111,7 +3111,7 @@ Makes a [`net::Poller::Wait`](#net-poller-wait-pollevent-star-usize-i64-usize-st
 | Field | Value |
 |---|---|
 | Fails | never. |
-| Backend | writes the wake-up descriptor (`eventfd`; a socket pair where there is none). |
+| Backend | writes the wake-up descriptor (`eventfd`; on Windows a byte to a loopback UDP socket the wait watches). |
 
 ## `WaitKind` {#net-waitkind}
 
@@ -3626,7 +3626,7 @@ Resolves `host` and `port` with the operating system's resolver into at most [`n
 | Fails | [`net::ErrorCode::NotFound`](#net-errorcode-notfound) and the others above; [`net::ErrorCode::Invalid`](#net-errorcode-invalid) for an empty or too long name, or one that contains a zero byte. |
 | Thread-safety | thread-safe. It blocks for as long as the name server takes. |
 | Ownership | `host` is only read during the call; `*out` is written. |
-| Backend | `getaddrinfo` with a stream socket hint and a numeric service (`engine/net/posix/resolve_posix.cpp`); the error codes `EAI_*` become [`net::ErrorCode::NotFound`](#net-errorcode-notfound) (the name does not exist), [`net::ErrorCode::TimedOut`](#net-errorcode-timedout) (the name server did not answer), [`net::ErrorCode::Unreachable`](#net-errorcode-unreachable), [`net::ErrorCode::LimitExceeded`](#net-errorcode-limitexceeded) or [`net::ErrorCode::Other`](#net-errorcode-other). |
+| Backend | `getaddrinfo` with a stream socket hint and a numeric service (`engine/net/posix/resolve_posix.cpp`; `GetAddrInfoW` with the name in UTF-16 in `engine/net/windows/resolve_windows.cpp`); the error codes `EAI_*` become [`net::ErrorCode::NotFound`](#net-errorcode-notfound) (the name does not exist), [`net::ErrorCode::TimedOut`](#net-errorcode-timedout) (the name server did not answer), [`net::ErrorCode::Unreachable`](#net-errorcode-unreachable), [`net::ErrorCode::LimitExceeded`](#net-errorcode-limitexceeded) or [`net::ErrorCode::Other`](#net-errorcode-other). |
 
 ## `ResolveFn` {#net-resolvefn}
 
@@ -4974,7 +4974,7 @@ Opens a TCP socket of `family` into `*out`.
 |---|---|
 | Fails | [`net::ErrorCode::Invalid`](#net-errorcode-invalid) when `family` is [`net::AddressFamily::None`](#net-addressfamily-none) or `*out` is already open; [`net::ErrorCode::LimitExceeded`](#net-errorcode-limitexceeded) when the process or the system has no descriptors left; [`net::ErrorCode::Unsupported`](#net-errorcode-unsupported) when the family is not available. |
 | Ownership | `*out` is written on success only; the socket owns its handle. |
-| Backend | opens a non-blocking, close-on-exec stream socket (`SOCK_NONBLOCK \| SOCK_CLOEXEC` on Linux) and keeps its family. |
+| Backend | opens a non-blocking, close-on-exec stream socket (`SOCK_NONBLOCK \| SOCK_CLOEXEC` on Linux; `WSASocketW` with `WSA_FLAG_NO_HANDLE_INHERIT`, then `FIONBIO`, on Windows, which also makes an IPv6 socket dual stack and the port exclusive, the interface's defaults) and keeps its family. |
 
 ### `OpenUdp(AddressFamily,Socket*)` {#net-socket-openudp-addressfamily-socket-star}
 
@@ -5092,7 +5092,7 @@ Accepts one pending connection into `*connection`; `*peer` receives its address.
 |---|---|
 | Fails | [`net::ErrorCode::WouldBlock`](#net-errorcode-wouldblock) when none is pending; [`net::ErrorCode::LimitExceeded`](#net-errorcode-limitexceeded) when out of descriptors; [`net::ErrorCode::Invalid`](#net-errorcode-invalid) for a socket that does not listen or an open `*connection`. |
 | Ownership | `*connection` and `*peer` are written on success; the new socket owns its handle. |
-| Backend | `accept4` or `accept` plus the non-blocking and close-on-exec flags. A connection aborted before it was accepted is skipped. |
+| Backend | `accept4`, or `accept` plus the non-blocking and close-on-exec (Windows: not inherited) flags. A connection aborted or reset before it was accepted is skipped. |
 
 ### `Connect(const Endpoint&)` {#net-socket-connect-const-endpoint-amp}
 
@@ -5109,7 +5109,7 @@ Returns success when the connection is made at once, and [`net::ErrorCode::Would
 | Field | Value |
 |---|---|
 | Fails | [`net::ErrorCode::Refused`](#net-errorcode-refused), [`net::ErrorCode::Unreachable`](#net-errorcode-unreachable), [`net::ErrorCode::TimedOut`](#net-errorcode-timedout), [`net::ErrorCode::AlreadyConnected`](#net-errorcode-alreadyconnected), [`net::ErrorCode::Invalid`](#net-errorcode-invalid). |
-| Backend | `connect` on a non-blocking socket; `EINPROGRESS` and `EINTR` mean "under way". |
+| Backend | `connect` on a non-blocking socket; `EINPROGRESS` and `EINTR` (Windows: `WSAEWOULDBLOCK`) mean "under way". Windows turns off SYN retransmission for a loopback destination first, so a refusal there is as quick as on Linux. |
 
 ### `FinishConnect()` {#net-socket-finishconnect}
 
@@ -5140,7 +5140,7 @@ Sends bytes of a connected socket; `*sent` receives how many were taken (possibl
 |---|---|
 | Fails | [`net::ErrorCode::WouldBlock`](#net-errorcode-wouldblock), [`net::ErrorCode::Closed`](#net-errorcode-closed) (the peer has shut down), [`net::ErrorCode::Reset`](#net-errorcode-reset), [`net::ErrorCode::NotConnected`](#net-errorcode-notconnected), [`net::ErrorCode::MessageTooLarge`](#net-errorcode-messagetoolarge) (a datagram above the limit), [`net::ErrorCode::Invalid`](#net-errorcode-invalid). |
 | Ownership | `bytes` is read during the call; nothing is retained. |
-| Backend | `send` with the no-signal flag. |
+| Backend | `send` with the no-signal flag (none on Windows, which raises no signal; it takes a whole write when its send buffer has any room). |
 
 ### `Receive(MutableByteSpan,usize*)` {#net-socket-receive-mutablebytespan-usize-star}
 
@@ -5192,7 +5192,7 @@ A datagram larger than `buffer` is dropped and reported as [`net::ErrorCode::Mes
 |---|---|
 | Fails | [`net::ErrorCode::WouldBlock`](#net-errorcode-wouldblock), [`net::ErrorCode::MessageTooLarge`](#net-errorcode-messagetoolarge), [`net::ErrorCode::Invalid`](#net-errorcode-invalid). |
 | Ownership | `buffer` is written during the call; nothing is retained. |
-| Backend | `recvfrom` with the truncation-detecting flag. |
+| Backend | `recvfrom` with the truncation-detecting flag (Windows: `WSAEMSGSIZE` reports the cut). |
 
 ### `Shutdown(ShutdownMode)` {#net-socket-shutdown-shutdownmode}
 
@@ -5269,7 +5269,7 @@ Allows binding a port that has connections in the waiting state (`SO_REUSEADDR`)
 | Field | Value |
 |---|---|
 | Fails | [`net::ErrorCode::Invalid`](#net-errorcode-invalid). |
-| Backend | `setsockopt`. |
+| Backend | `setsockopt`; on Windows `SO_EXCLUSIVEADDRUSE` off for on, since its `SO_REUSEADDR` would let another socket take the port over. |
 
 ### `SetNoDelay(bool)` {#net-socket-setnodelay-bool}
 

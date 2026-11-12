@@ -1,10 +1,14 @@
 // The listener (Phase 20 Day 270): thousands of accepts, running out of descriptors and recovering, the
 // unhandled-connection cap, and dual stack.
 
+#include "build_defs.h"
+#if !ENGINE_PLATFORM_WINDOWS
 #include <sys/resource.h>
+#endif
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "containers/array.h"
 #include "containers/unique_ptr.h"
 #include "jobs/scheduler.h"
 #include "net/async.h"
@@ -36,14 +40,20 @@ struct ListenerCounts
     Atomic<int> done{0};
 };
 
+// How long one accept or one wait for the server's close may take before the loops give up: a client that failed (out
+// of ephemeral ports, say) must end the test with a failure, not leave the other loop waiting for ever.
+constexpr i64 kListenerTestStepTimeoutNanos = 20'000'000'000;
+
 // Accepts `count` connections one after the other, closing each (which is "handling" it).
 Job ListenerTestAcceptLoop(Reactor* reactor, Listener* listener, int count, ListenerCounts* counts)
 {
+    WaitOptions options;
+    options.timeout_nanos = kListenerTestStepTimeoutNanos;
     for (int i = 0; i < count; ++i)
     {
         Socket connection;
         Endpoint peer;
-        const IoResult r = co_await listener->Accept(*reactor, &connection, &peer);
+        const IoResult r = co_await listener->Accept(*reactor, &connection, &peer, options);
         if (r.status.Failed() || !peer.GetAddress().IsLoopback())
         {
             counts->failures.FetchAdd(1);
@@ -56,9 +66,14 @@ Job ListenerTestAcceptLoop(Reactor* reactor, Listener* listener, int count, List
     counts->done.FetchAdd(1, MemoryOrder::Release);
 }
 
-// Connects `count` times, closing each connection once it is made.
+// Connects `count` times, closing each connection once the server has closed it. The server closes first, so the
+// connection's TIME_WAIT stays on the listener's side and does not hold the client's ephemeral port (both closing at
+// once leaves both sides in TIME_WAIT; on Windows, with 16,384 ephemeral ports kept for two minutes, five thousand
+// connections a run beside the other socket tests ran out of ports: Phase 20 Day 278).
 Job ListenerTestConnectLoop(Reactor* reactor, Endpoint at, int count, ListenerCounts* counts)
 {
+    WaitOptions options;
+    options.timeout_nanos = kListenerTestStepTimeoutNanos;
     for (int i = 0; i < count; ++i)
     {
         Socket client;
@@ -74,6 +89,13 @@ Job ListenerTestConnectLoop(Reactor* reactor, Endpoint at, int count, ListenerCo
             break;
         }
         counts->connected.FetchAdd(1, MemoryOrder::Relaxed);
+        Array<byte, 16> buffer{};
+        const IoResult end = co_await Receive(*reactor, client, MutableByteSpan(buffer.Data(), buffer.Size()), options);
+        if (!end.status.Is(ErrorCode::Closed))
+        {
+            counts->failures.FetchAdd(1);  // the server sends nothing and closes: the end of the stream, nothing else
+            break;
+        }
         [[maybe_unused]] const Status closed = reactor->Close(client);
     }
     counts->done.FetchAdd(1, MemoryOrder::Release);
@@ -134,6 +156,7 @@ struct ExhaustionOutcome
     Atomic<int> done{0};
 };
 
+#if !ENGINE_PLATFORM_WINDOWS  // the descriptor-limit tests below, which Windows skips
 Job ListenerTestAcceptOne(Reactor* reactor, Listener* listener, Socket* connection, ExhaustionOutcome* out)
 {
     Endpoint peer;
@@ -142,6 +165,7 @@ Job ListenerTestAcceptOne(Reactor* reactor, Listener* listener, Socket* connecti
     out->elapsed_nanos = reactor->GetClock().NowNanos() - start;
     out->done.FetchAdd(1, MemoryOrder::Release);
 }
+#endif
 
 }  // namespace
 
@@ -161,6 +185,9 @@ TEST_CASE("Running out of descriptors is survived: the accept backs off and reco
         listener.LocalEndpoint());  // completes in the kernel: the connection waits in the listener's queue
     REQUIRE((c.Ok() || c.Is(ErrorCode::WouldBlock)));
 
+#if ENGINE_PLATFORM_WINDOWS
+    SKIP("Windows has no per-process descriptor limit to lower");
+#else
     rlimit original{};
     if (::getrlimit(RLIMIT_NOFILE, &original) != 0)
     {
@@ -201,6 +228,7 @@ TEST_CASE("Running out of descriptors is survived: the accept backs off and reco
     CHECK(connection.IsOpen());
     CHECK(out.elapsed_nanos >= 100'000'000);
     CHECK(listener.Unhandled() == 1);
+#endif
 }
 
 TEST_CASE("An accept that is out of descriptors still honours its timeout", "[network][listener]")
@@ -216,6 +244,9 @@ TEST_CASE("An accept that is out of descriptors still honours its timeout", "[ne
     REQUIRE(Socket::OpenTcp(AddressFamily::V4, &client).Ok());
     const Status c = client.Connect(listener.LocalEndpoint());
     REQUIRE((c.Ok() || c.Is(ErrorCode::WouldBlock)));
+#if ENGINE_PLATFORM_WINDOWS
+    SKIP("Windows has no per-process descriptor limit to lower");
+#else
     rlimit original{};
     if (::getrlimit(RLIMIT_NOFILE, &original) != 0)
     {
@@ -264,6 +295,7 @@ TEST_CASE("An accept that is out of descriptors still honours its timeout", "[ne
     CHECK(out.elapsed_nanos >= 40'000'000);
     CHECK(out.elapsed_nanos < 150'000'000);  // not a whole 200 ms back-off late
     CHECK(listener.Unhandled() == 0);
+#endif
 }
 
 namespace

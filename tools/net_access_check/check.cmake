@@ -1,7 +1,7 @@
 # Network access gate (Phase 20 Day 268). Run as:
 #   cmake -DROOT=<tree> [-DALLOWLIST=<file>] -P check.cmake
 # No C or C++ file under engine/, game/, tools/ or tests/ may call the operating system's socket API directly (socket, bind, connect, listen, accept, send,
-# recv, sendto, recvfrom, getsockopt, setsockopt, getaddrinfo, epoll_*, kqueue, WSA*, closesocket, ...) or include its headers (<sys/socket.h>,
+# recv, sendto, recvfrom, getsockopt, setsockopt, getaddrinfo, epoll_*, kqueue, select, WSA*, closesocket, GetAddrInfoW, ...) or include its headers (<sys/socket.h>,
 # <netinet/...>, <arpa/inet.h>, <netdb.h>, <sys/epoll.h>, <winsock2.h>, <ws2tcpip.h>): sockets go through net::Socket (engine/net), and only the backend
 # directories engine/net/linux/, engine/net/posix/, engine/net/windows/ and engine/net/macos/ speak the operating system's API.
 # Exempt: those directories, member calls (`x.send(...)`, `p->bind(...)`), comments and string literals, lines between `// SIGNAL-SAFE-BEGIN` and
@@ -67,7 +67,7 @@ endif()
 set(allow_used "")
 
 # The calls. Preceded by a character that is not part of an identifier, `.` or `>` (a member call), and followed by `(`.
-set(names "socket|socketpair|bind|connect|listen|accept|accept4|send|recv|sendto|recvfrom|sendmsg|recvmsg|sendmmsg|recvmmsg|getsockopt|setsockopt|getsockname|getpeername|shutdown|getaddrinfo|freeaddrinfo|getnameinfo|gethostbyname|gethostbyaddr|epoll_create|epoll_create1|epoll_ctl|epoll_wait|epoll_pwait|kqueue|kevent|closesocket|ioctlsocket|if_nametoindex|if_indextoname|getifaddrs|freeifaddrs|inet_aton|sendfile|sockatmark|inet_pton|inet_ntop|inet_addr|inet_ntoa|htons|ntohs|htonl|ntohl|WSAStartup|WSACleanup|WSASocketW|WSASocketA|WSAGetLastError|WSAPoll|WSASend|WSARecv|WSASendTo|WSARecvFrom|WSAIoctl|WSAConnect|WSAAccept|WSAEventSelect|WSAWaitForMultipleEvents|WSACreateEvent|GetAddrInfoW|GetAddrInfoExW|ConvertInterfaceNameToLuidA|ConvertInterfaceNameToLuidW")
+set(names "socket|socketpair|bind|connect|listen|accept|accept4|send|recv|sendto|recvfrom|sendmsg|recvmsg|sendmmsg|recvmmsg|getsockopt|setsockopt|getsockname|getpeername|shutdown|getaddrinfo|freeaddrinfo|getnameinfo|gethostbyname|gethostbyaddr|epoll_create|epoll_create1|epoll_ctl|epoll_wait|epoll_pwait|kqueue|kevent|closesocket|ioctlsocket|if_nametoindex|if_indextoname|getifaddrs|freeifaddrs|inet_aton|sendfile|sockatmark|inet_pton|inet_ntop|inet_addr|inet_ntoa|htons|ntohs|htonl|ntohl|select|WSAStartup|WSACleanup|WSASocketW|WSASocketA|WSAGetLastError|WSAPoll|WSASend|WSARecv|WSASendTo|WSARecvFrom|WSAIoctl|WSAConnect|WSAAccept|WSAEventSelect|WSAWaitForMultipleEvents|WSACreateEvent|GetAddrInfoW|GetAddrInfoExW|FreeAddrInfoW|FreeAddrInfoExW|WSAAddressToStringW|WSAStringToAddressW|ConvertInterfaceNameToLuidA|ConvertInterfaceNameToLuidW")
 set(call_re "(^|[^A-Za-z0-9_.>])(::|std::)?(${names})[ \t]*\\(")
 # The headers of the socket API.
 set(header_re "^[ \t]*#[ \t]*include[ \t]*[<\"](sys/socket\\.h|sys/epoll\\.h|sys/event\\.h|sys/un\\.h|netinet/[A-Za-z0-9_]+\\.h|arpa/inet\\.h|netdb\\.h|net/if\\.h|ifaddrs\\.h|winsock2\\.h|ws2tcpip\\.h|mswsock\\.h|iphlpapi\\.h|afunix\\.h)[>\"]")

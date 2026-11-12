@@ -3899,24 +3899,24 @@ net::Listener::Accept(Reactor&,Socket*,Endpoint*,WaitOptions)	function	net	net-l
 net::Listener::Reserve()	function	net	net-listener-reserve	net.md	engine/net/listener.h:93
 net::Listener::Handled()	function	net	net-listener-handled	net.md	engine/net/listener.h:97
 net::Listener::Unhandled() const	function	net	net-listener-unhandled-const	net.md	engine/net/listener.h:108
-net::kPollRead	variable	net	net-kpollread	net.md	engine/net/poller.h:13
-net::kPollWrite	variable	net	net-kpollwrite	net.md	engine/net/poller.h:15
-net::kPollError	variable	net	net-kpollerror	net.md	engine/net/poller.h:17
-net::kPollHangup	variable	net	net-kpollhangup	net.md	engine/net/poller.h:19
-net::PollEvent	struct	net	net-pollevent	net.md	engine/net/poller.h:24
-net::PollEvent::handle	variable	net	net-pollevent-handle	net.md	engine/net/poller.h:26
-net::PollEvent::ready	variable	net	net-pollevent-ready	net.md	engine/net/poller.h:27
-net::Poller	class	net	net-poller	net.md	engine/net/poller.h:39
-net::Poller::Poller()	function	net	net-poller-poller	net.md	engine/net/poller.h:43
-net::Poller::~Poller()	function	net	net-poller-tilde-poller	net.md	engine/net/poller.h:45
-net::Poller::Poller(const Poller&)	function	net	net-poller-poller-const-poller-amp	net.md	engine/net/poller.h:47
-net::Poller::operator=(const Poller&)	function	net	net-poller-operator-eq-const-poller-amp	net.md	engine/net/poller.h:48
-net::Poller::IsValid() const	function	net	net-poller-isvalid-const	net.md	engine/net/poller.h:52
-net::Poller::Arm(i64,u32)	function	net	net-poller-arm-i64-u32	net.md	engine/net/poller.h:62
-net::Poller::Disarm(i64)	function	net	net-poller-disarm-i64	net.md	engine/net/poller.h:69
-net::Poller::kMaxBatch	variable	net	net-poller-kmaxbatch	net.md	engine/net/poller.h:72
-net::Poller::Wait(PollEvent*,usize,i64,usize*)	function	net	net-poller-wait-pollevent-star-usize-i64-usize-star	net.md	engine/net/poller.h:85
-net::Poller::Wake()	function	net	net-poller-wake	net.md	engine/net/poller.h:91
+net::kPollRead	variable	net	net-kpollread	net.md	engine/net/poller.h:15
+net::kPollWrite	variable	net	net-kpollwrite	net.md	engine/net/poller.h:17
+net::kPollError	variable	net	net-kpollerror	net.md	engine/net/poller.h:19
+net::kPollHangup	variable	net	net-kpollhangup	net.md	engine/net/poller.h:21
+net::PollEvent	struct	net	net-pollevent	net.md	engine/net/poller.h:26
+net::PollEvent::handle	variable	net	net-pollevent-handle	net.md	engine/net/poller.h:28
+net::PollEvent::ready	variable	net	net-pollevent-ready	net.md	engine/net/poller.h:29
+net::Poller	class	net	net-poller	net.md	engine/net/poller.h:42
+net::Poller::Poller()	function	net	net-poller-poller	net.md	engine/net/poller.h:46
+net::Poller::~Poller()	function	net	net-poller-tilde-poller	net.md	engine/net/poller.h:48
+net::Poller::Poller(const Poller&)	function	net	net-poller-poller-const-poller-amp	net.md	engine/net/poller.h:50
+net::Poller::operator=(const Poller&)	function	net	net-poller-operator-eq-const-poller-amp	net.md	engine/net/poller.h:51
+net::Poller::IsValid() const	function	net	net-poller-isvalid-const	net.md	engine/net/poller.h:55
+net::Poller::Arm(i64,u32)	function	net	net-poller-arm-i64-u32	net.md	engine/net/poller.h:66
+net::Poller::Disarm(i64)	function	net	net-poller-disarm-i64	net.md	engine/net/poller.h:74
+net::Poller::kMaxBatch	variable	net	net-poller-kmaxbatch	net.md	engine/net/poller.h:77
+net::Poller::Wait(PollEvent*,usize,i64,usize*)	function	net	net-poller-wait-pollevent-star-usize-i64-usize-star	net.md	engine/net/poller.h:91
+net::Poller::Wake()	function	net	net-poller-wake	net.md	engine/net/poller.h:98
 net::WaitKind	enum	net	net-waitkind	net.md	engine/net/reactor.h:46
 net::WaitKind::Readable	enumerator	net	net-waitkind-readable	net.md	engine/net/reactor.h:48
 net::WaitKind::Writable	enumerator	net	net-waitkind-writable	net.md	engine/net/reactor.h:49
@@ -3957,16 +3957,16 @@ net::ConnectOptions::token	variable	net	net-connectoptions-token	net.md	engine/n
 net::ConnectAny(Reactor&,const EndpointSet&,Socket*,ConnectOptions)	function	net	net-connectany-reactor-amp-const-endpointset-amp-socket-star-connectoptions	net.md	engine/net/resolve.h:75
 net::ConnectTo(Reactor&,Resolver&,StringView,u16,Socket*,ConnectOptions)	function	net	net-connectto-reactor-amp-resolver-amp-stringview-u16-socket-star-connectoptions	net.md	engine/net/resolve.h:87
 net::kMaxHostNameBytes	variable	net	net-kmaxhostnamebytes	net.md	engine/net/resolver.h:21
-net::SystemResolve(StringView,u16,AddressFamily,EndpointSet*)	function	net	net-systemresolve-stringview-u16-addressfamily-endpointset-star	net.md	engine/net/resolver.h:40
-net::ResolveFn	alias	net	net-resolvefn	net.md	engine/net/resolver.h:43
-net::Resolver	class	net	net-resolver	net.md	engine/net/resolver.h:73
-net::Resolver::kDefaultQueue	variable	net	net-resolver-kdefaultqueue	net.md	engine/net/resolver.h:77
-net::Resolver::Resolver(ResolveFn,usize)	function	net	net-resolver-resolver-resolvefn-usize	net.md	engine/net/resolver.h:83
-net::Resolver::~Resolver()	function	net	net-resolver-tilde-resolver	net.md	engine/net/resolver.h:86
-net::Resolver::Resolver(const Resolver&)	function	net	net-resolver-resolver-const-resolver-amp	net.md	engine/net/resolver.h:88
-net::Resolver::operator=(const Resolver&)	function	net	net-resolver-operator-eq-const-resolver-amp	net.md	engine/net/resolver.h:89
-net::Resolver::Submit(const SharedPtr<ResolveRequest>&)	function	net	net-resolver-submit-const-sharedptr-lt-resolverequest-gt-amp	net.md	engine/net/resolver.h:96
-net::Resolver::Shutdown()	function	net	net-resolver-shutdown	net.md	engine/net/resolver.h:100
+net::SystemResolve(StringView,u16,AddressFamily,EndpointSet*)	function	net	net-systemresolve-stringview-u16-addressfamily-endpointset-star	net.md	engine/net/resolver.h:41
+net::ResolveFn	alias	net	net-resolvefn	net.md	engine/net/resolver.h:44
+net::Resolver	class	net	net-resolver	net.md	engine/net/resolver.h:74
+net::Resolver::kDefaultQueue	variable	net	net-resolver-kdefaultqueue	net.md	engine/net/resolver.h:78
+net::Resolver::Resolver(ResolveFn,usize)	function	net	net-resolver-resolver-resolvefn-usize	net.md	engine/net/resolver.h:84
+net::Resolver::~Resolver()	function	net	net-resolver-tilde-resolver	net.md	engine/net/resolver.h:87
+net::Resolver::Resolver(const Resolver&)	function	net	net-resolver-resolver-const-resolver-amp	net.md	engine/net/resolver.h:89
+net::Resolver::operator=(const Resolver&)	function	net	net-resolver-operator-eq-const-resolver-amp	net.md	engine/net/resolver.h:90
+net::Resolver::Submit(const SharedPtr<ResolveRequest>&)	function	net	net-resolver-submit-const-sharedptr-lt-resolverequest-gt-amp	net.md	engine/net/resolver.h:97
+net::Resolver::Shutdown()	function	net	net-resolver-shutdown	net.md	engine/net/resolver.h:101
 net::Signal	class	net	net-signal	net.md	engine/net/signal.h:25
 net::Signal::Signal()	function	net	net-signal-signal	net.md	engine/net/signal.h:29
 net::Signal::Signal(const Signal&)	function	net	net-signal-signal-const-signal-amp	net.md	engine/net/signal.h:31
@@ -4068,34 +4068,34 @@ net::Socket::Socket(const Socket&)	function	net	net-socket-socket-const-socket-a
 net::Socket::operator=(const Socket&)	function	net	net-socket-operator-eq-const-socket-amp	net.md	engine/net/socket.h:47
 net::Socket::Socket(Socket&&) noexcept	function	net	net-socket-socket-socket-amp-amp-noexcept	net.md	engine/net/socket.h:49
 net::Socket::operator=(Socket&&) noexcept	function	net	net-socket-operator-eq-socket-amp-amp-noexcept	net.md	engine/net/socket.h:51
-net::Socket::OpenTcp(AddressFamily,Socket*)	function	net	net-socket-opentcp-addressfamily-socket-star	net.md	engine/net/socket.h:61
-net::Socket::OpenUdp(AddressFamily,Socket*)	function	net	net-socket-openudp-addressfamily-socket-star	net.md	engine/net/socket.h:67
-net::Socket::IsOpen() const	function	net	net-socket-isopen-const	net.md	engine/net/socket.h:71
-net::Socket::Family() const	function	net	net-socket-family-const	net.md	engine/net/socket.h:74
-net::Socket::IsDatagram() const	function	net	net-socket-isdatagram-const	net.md	engine/net/socket.h:77
-net::Socket::NativeHandle() const	function	net	net-socket-nativehandle-const	net.md	engine/net/socket.h:81
-net::Socket::Bind(const Endpoint&)	function	net	net-socket-bind-const-endpoint-amp	net.md	engine/net/socket.h:88
-net::Socket::Listen(i32)	function	net	net-socket-listen-i32	net.md	engine/net/socket.h:93
-net::Socket::Accept(Socket*,Endpoint*)	function	net	net-socket-accept-socket-star-endpoint-star	net.md	engine/net/socket.h:102
-net::Socket::Connect(const Endpoint&)	function	net	net-socket-connect-const-endpoint-amp	net.md	engine/net/socket.h:113
-net::Socket::FinishConnect()	function	net	net-socket-finishconnect	net.md	engine/net/socket.h:121
-net::Socket::Send(ByteSpan,usize*)	function	net	net-socket-send-bytespan-usize-star	net.md	engine/net/socket.h:131
-net::Socket::Receive(MutableByteSpan,usize*)	function	net	net-socket-receive-mutablebytespan-usize-star	net.md	engine/net/socket.h:143
-net::Socket::SendTo(ByteSpan,const Endpoint&,usize*)	function	net	net-socket-sendto-bytespan-const-endpoint-amp-usize-star	net.md	engine/net/socket.h:150
-net::Socket::ReceiveFrom(MutableByteSpan,usize*,Endpoint*)	function	net	net-socket-receivefrom-mutablebytespan-usize-star-endpoint-star	net.md	engine/net/socket.h:158
-net::Socket::Shutdown(ShutdownMode)	function	net	net-socket-shutdown-shutdownmode	net.md	engine/net/socket.h:164
-net::Socket::Close()	function	net	net-socket-close	net.md	engine/net/socket.h:170
-net::Socket::LocalEndpoint(Endpoint*) const	function	net	net-socket-localendpoint-endpoint-star-const	net.md	engine/net/socket.h:177
-net::Socket::PeerEndpoint(Endpoint*) const	function	net	net-socket-peerendpoint-endpoint-star-const	net.md	engine/net/socket.h:183
-net::Socket::SetReuseAddress(bool)	function	net	net-socket-setreuseaddress-bool	net.md	engine/net/socket.h:188
-net::Socket::SetNoDelay(bool)	function	net	net-socket-setnodelay-bool	net.md	engine/net/socket.h:192
-net::Socket::SetKeepAlive(bool)	function	net	net-socket-setkeepalive-bool	net.md	engine/net/socket.h:196
-net::Socket::SetKeepAliveTiming(u32,u32,u32)	function	net	net-socket-setkeepalivetiming-u32-u32-u32	net.md	engine/net/socket.h:202
-net::Socket::SetLinger(bool,u32)	function	net	net-socket-setlinger-bool-u32	net.md	engine/net/socket.h:208
-net::Socket::SetReceiveBuffer(usize,usize*)	function	net	net-socket-setreceivebuffer-usize-usize-star	net.md	engine/net/socket.h:214
-net::Socket::SetSendBuffer(usize,usize*)	function	net	net-socket-setsendbuffer-usize-usize-star	net.md	engine/net/socket.h:219
-net::Socket::SetDualStack(bool)	function	net	net-socket-setdualstack-bool	net.md	engine/net/socket.h:224
-net::Socket::SetBroadcast(bool)	function	net	net-socket-setbroadcast-bool	net.md	engine/net/socket.h:228
+net::Socket::OpenTcp(AddressFamily,Socket*)	function	net	net-socket-opentcp-addressfamily-socket-star	net.md	engine/net/socket.h:62
+net::Socket::OpenUdp(AddressFamily,Socket*)	function	net	net-socket-openudp-addressfamily-socket-star	net.md	engine/net/socket.h:68
+net::Socket::IsOpen() const	function	net	net-socket-isopen-const	net.md	engine/net/socket.h:72
+net::Socket::Family() const	function	net	net-socket-family-const	net.md	engine/net/socket.h:75
+net::Socket::IsDatagram() const	function	net	net-socket-isdatagram-const	net.md	engine/net/socket.h:78
+net::Socket::NativeHandle() const	function	net	net-socket-nativehandle-const	net.md	engine/net/socket.h:82
+net::Socket::Bind(const Endpoint&)	function	net	net-socket-bind-const-endpoint-amp	net.md	engine/net/socket.h:89
+net::Socket::Listen(i32)	function	net	net-socket-listen-i32	net.md	engine/net/socket.h:94
+net::Socket::Accept(Socket*,Endpoint*)	function	net	net-socket-accept-socket-star-endpoint-star	net.md	engine/net/socket.h:103
+net::Socket::Connect(const Endpoint&)	function	net	net-socket-connect-const-endpoint-amp	net.md	engine/net/socket.h:116
+net::Socket::FinishConnect()	function	net	net-socket-finishconnect	net.md	engine/net/socket.h:124
+net::Socket::Send(ByteSpan,usize*)	function	net	net-socket-send-bytespan-usize-star	net.md	engine/net/socket.h:135
+net::Socket::Receive(MutableByteSpan,usize*)	function	net	net-socket-receive-mutablebytespan-usize-star	net.md	engine/net/socket.h:147
+net::Socket::SendTo(ByteSpan,const Endpoint&,usize*)	function	net	net-socket-sendto-bytespan-const-endpoint-amp-usize-star	net.md	engine/net/socket.h:154
+net::Socket::ReceiveFrom(MutableByteSpan,usize*,Endpoint*)	function	net	net-socket-receivefrom-mutablebytespan-usize-star-endpoint-star	net.md	engine/net/socket.h:162
+net::Socket::Shutdown(ShutdownMode)	function	net	net-socket-shutdown-shutdownmode	net.md	engine/net/socket.h:168
+net::Socket::Close()	function	net	net-socket-close	net.md	engine/net/socket.h:174
+net::Socket::LocalEndpoint(Endpoint*) const	function	net	net-socket-localendpoint-endpoint-star-const	net.md	engine/net/socket.h:181
+net::Socket::PeerEndpoint(Endpoint*) const	function	net	net-socket-peerendpoint-endpoint-star-const	net.md	engine/net/socket.h:187
+net::Socket::SetReuseAddress(bool)	function	net	net-socket-setreuseaddress-bool	net.md	engine/net/socket.h:193
+net::Socket::SetNoDelay(bool)	function	net	net-socket-setnodelay-bool	net.md	engine/net/socket.h:197
+net::Socket::SetKeepAlive(bool)	function	net	net-socket-setkeepalive-bool	net.md	engine/net/socket.h:201
+net::Socket::SetKeepAliveTiming(u32,u32,u32)	function	net	net-socket-setkeepalivetiming-u32-u32-u32	net.md	engine/net/socket.h:207
+net::Socket::SetLinger(bool,u32)	function	net	net-socket-setlinger-bool-u32	net.md	engine/net/socket.h:213
+net::Socket::SetReceiveBuffer(usize,usize*)	function	net	net-socket-setreceivebuffer-usize-usize-star	net.md	engine/net/socket.h:219
+net::Socket::SetSendBuffer(usize,usize*)	function	net	net-socket-setsendbuffer-usize-usize-star	net.md	engine/net/socket.h:224
+net::Socket::SetDualStack(bool)	function	net	net-socket-setdualstack-bool	net.md	engine/net/socket.h:229
+net::Socket::SetBroadcast(bool)	function	net	net-socket-setbroadcast-bool	net.md	engine/net/socket.h:233
 net::SocketStreamProvider	class	net	net-socketstreamprovider	net.md	engine/net/socket_stream.h:16
 net::SocketStreamProvider::Listen(const Endpoint&)	function	net	net-socketstreamprovider-listen-const-endpoint-amp	net.md	engine/net/socket_stream.h:23
 net::SocketStreamProvider::LocalEndpoint() const	function	net	net-socketstreamprovider-localendpoint-const	net.md	engine/net/socket_stream.h:27

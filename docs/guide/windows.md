@@ -138,6 +138,7 @@ out of the window is modal (`BeginDrag` returns when it ends), so keep a modal-l
 | Data, cache and state | `%LOCALAPPDATA%\<app>` (`cache`, `state`) |
 | The pipeline cache | `%LOCALAPPDATA%\<app>\cache`: Vulkan's `pipeline_cache_<vendor>_<device>_<uuid>.bin`, DX12's `pipelines_<adapter id>_<driver>.bin` |
 | Crash dumps | `%LOCALAPPDATA%\<app>\crashes` |
+| The socket backend | `engine/net/windows/` (Winsock 2, Phase 20 Day 278; `docs/guide/net.md`, "On Windows") |
 
 Paths are UTF-16 at the system boundary and UTF-8 everywhere in the engine; the file layer adds the `\\?\` prefix past 248 characters, so long
 paths work without the system's long-path setting (`docs/guide/io.md`).
@@ -150,6 +151,9 @@ paths work without the system's long-path setting (`docs/guide/io.md`).
 - **Running GPU tests by hand without `ENGINE_RHI_CACHE_DIR`**: the pipeline cache lands in your profile.
 - **Expecting a report from a fast fail** (`__fastfail`, `/GS` checks): exit code `0xC0000409`, no report, no dump.
 - **Expecting ThreadSanitizer.** MSVC has none; tsan runs on Linux.
+- **Including `<winsock2.h>` directly.** Only `engine/net/windows/` calls Winsock, through `net/windows/winsock.h` (after `win32.h`); everything else uses
+  `net::Socket`. The gates `net_access_check` and `platform_neutral_check` refuse it elsewhere.
+- **Expecting a refused connect to be quick everywhere.** It is on loopback; to another host Windows retries for about two seconds first.
 
 ## See also
 

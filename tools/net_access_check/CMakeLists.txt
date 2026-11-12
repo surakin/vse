@@ -16,7 +16,7 @@ net_access_test(net_access_check_planted ${NET_ACCESS_FIXTURES}/bad ${NET_ACCESS
 set_tests_properties(net_access_check_planted PROPERTIES WILL_FAIL TRUE)
 net_access_test(net_access_check_planted_count ${NET_ACCESS_FIXTURES}/bad ${NET_ACCESS_FIXTURES}/good/allowlist.txt)
 set_tests_properties(net_access_check_planted_count PROPERTIES
-  PASS_REGULAR_EXPRESSION "engine/leak.cpp:1:.*engine/leak.cpp:2:.*engine/leak.cpp:4:.*engine/leak.cpp:6:.*engine/leak.cpp:7:.*engine/leak.cpp:8:.*engine/leak.cpp:9:.*engine/win_leak.cpp:1:.*engine/win_leak.cpp:2:.*engine/win_leak.cpp:3:.*tools/tool.cpp:1:.*tools/tool.cpp:2:.*tools/tool.cpp:3:.*stale entry engine/app/allowed.cpp.*14 problem")
+  PASS_REGULAR_EXPRESSION "engine/leak.cpp:1:.*engine/leak.cpp:2:.*engine/leak.cpp:4:.*engine/leak.cpp:6:.*engine/leak.cpp:7:.*engine/leak.cpp:8:.*engine/leak.cpp:9:.*engine/win_leak.cpp:1:.*engine/win_leak.cpp:2:.*engine/win_leak.cpp:3:.*engine/win_leak.cpp:4:.*tools/tool.cpp:1:.*tools/tool.cpp:2:.*tools/tool.cpp:3:.*stale entry engine/app/allowed.cpp.*15 problem")
 
 # A clean tree passes: the backend directory is exempt; comments, strings, member calls and SIGNAL-SAFE regions are not violations; an allow-listed file is covered.
 net_access_test(net_access_check_clean ${NET_ACCESS_FIXTURES}/good ${NET_ACCESS_FIXTURES}/good/allowlist.txt)

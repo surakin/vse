@@ -52,8 +52,9 @@ public:
 
     /// Opens a TCP socket of `family` into `*out`.
     ///
-    /// - Backend: opens a non-blocking, close-on-exec stream socket (`SOCK_NONBLOCK | SOCK_CLOEXEC` on Linux) and keeps
-    /// its family.
+    /// - Backend: opens a non-blocking, close-on-exec stream socket (`SOCK_NONBLOCK | SOCK_CLOEXEC` on Linux;
+    /// `WSASocketW` with `WSA_FLAG_NO_HANDLE_INHERIT`, then `FIONBIO`, on Windows, which also makes an IPv6 socket dual
+    /// stack and the port exclusive, the interface's defaults) and keeps its family.
     /// - Fails: [[net::ErrorCode::Invalid]] when `family` is [[net::AddressFamily::None]] or `*out` is already open;
     /// [[net::ErrorCode::LimitExceeded]] when the process or the system has no descriptors left;
     /// [[net::ErrorCode::Unsupported]] when the family is not available.
@@ -93,8 +94,8 @@ public:
     Status Listen(i32 backlog = 128);
     /// Accepts one pending connection into `*connection`; `*peer` receives its address.
     ///
-    /// - Backend: `accept4` or `accept` plus the non-blocking and close-on-exec flags. A connection aborted before it
-    /// was accepted is skipped.
+    /// - Backend: `accept4`, or `accept` plus the non-blocking and close-on-exec (Windows: not inherited) flags. A
+    /// connection aborted or reset before it was accepted is skipped.
     /// - Fails: [[net::ErrorCode::WouldBlock]] when none is pending; [[net::ErrorCode::LimitExceeded]] when out of
     /// descriptors;
     /// [[net::ErrorCode::Invalid]] for a socket that does not listen or an open `*connection`.
@@ -106,7 +107,9 @@ public:
     /// wait until the socket is writable and call [[net::Socket::FinishConnect]]. A UDP socket "connects" at once: it
     /// then sends to and receives from `remote` only.
     ///
-    /// - Backend: `connect` on a non-blocking socket; `EINPROGRESS` and `EINTR` mean "under way".
+    /// - Backend: `connect` on a non-blocking socket; `EINPROGRESS` and `EINTR` (Windows: `WSAEWOULDBLOCK`) mean "under
+    /// way". Windows turns off SYN retransmission for a loopback destination first, so a refusal there is as quick as
+    /// on Linux.
     /// - Fails: [[net::ErrorCode::Refused]], [[net::ErrorCode::Unreachable]], [[net::ErrorCode::TimedOut]],
     /// [[net::ErrorCode::AlreadyConnected]],
     /// [[net::ErrorCode::Invalid]].
@@ -123,7 +126,8 @@ public:
     /// Sends bytes of a connected socket; `*sent` receives how many were taken (possibly fewer than `bytes.Size()`,
     /// possibly zero with WouldBlock).
     ///
-    /// - Backend: `send` with the no-signal flag.
+    /// - Backend: `send` with the no-signal flag (none on Windows, which raises no signal; it takes a whole write when
+    /// its send buffer has any room).
     /// - Fails: [[net::ErrorCode::WouldBlock]], [[net::ErrorCode::Closed]] (the peer has shut down),
     /// [[net::ErrorCode::Reset]], [[net::ErrorCode::NotConnected]],
     /// [[net::ErrorCode::MessageTooLarge]] (a datagram above the limit), [[net::ErrorCode::Invalid]].
@@ -152,7 +156,7 @@ public:
     ///
     /// A datagram larger than `buffer` is dropped and reported as [[net::ErrorCode::MessageTooLarge]].
     ///
-    /// - Backend: `recvfrom` with the truncation-detecting flag.
+    /// - Backend: `recvfrom` with the truncation-detecting flag (Windows: `WSAEMSGSIZE` reports the cut).
     /// - Fails: [[net::ErrorCode::WouldBlock]], [[net::ErrorCode::MessageTooLarge]], [[net::ErrorCode::Invalid]].
     /// - Ownership: `buffer` is written during the call; nothing is retained.
     Status ReceiveFrom(MutableByteSpan buffer, usize* received, Endpoint* from);
@@ -183,7 +187,8 @@ public:
     Status PeerEndpoint(Endpoint* out) const;
 
     /// Allows binding a port that has connections in the waiting state (`SO_REUSEADDR`).
-    /// - Backend: `setsockopt`.
+    /// - Backend: `setsockopt`; on Windows `SO_EXCLUSIVEADDRUSE` off for on, since its `SO_REUSEADDR` would let another
+    /// socket take the port over.
     /// - Fails: [[net::ErrorCode::Invalid]].
     Status SetReuseAddress(bool on);
     /// Turns off (on = true) the delay of small TCP segments (`TCP_NODELAY`). Invalid for a UDP socket.

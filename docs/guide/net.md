@@ -146,8 +146,25 @@ system granted: Linux doubles the request and caps it at `net.core.rmem_max`), `
 ### Porting
 
 `engine/net/BACKEND.md` is the checklist for a new platform: every `Socket` operation with its rules, the error table, and the quirks of Windows, macOS,
-mobile and consoles. The test `net_backend_lists` keeps it in step with the header. Linux and macOS share `engine/net/posix/`; Windows gets its own
-directory on Day 278.
+mobile and consoles. The test `net_backend_lists` keeps it in step with the header. Linux and macOS share `engine/net/posix/`; Windows has its own,
+`engine/net/windows/` (Day 278).
+
+### On Windows
+
+The same interface and the same tests run on Windows, through Winsock 2 (`ws2_32` and `iphlpapi`, both part of the system: nothing to install). What differs is
+inside the backend, and the interface's rules hold on both:
+
+- Winsock starts with the first socket, poller or name lookup, once per process; nothing calls `WSAStartup` by hand.
+- Sockets are created not inheritable and non-blocking. An IPv6 socket is dual stack and every port is exclusive, as on Linux (Windows' own defaults are the
+  opposite: IPv6 only, and a port another socket may take over with `SO_REUSEADDR`). `SetReuseAddress(true)` clears the exclusive flag; it never sets
+  `SO_REUSEADDR`.
+- The reactor's poller is `select` over the armed sockets, woken by a byte between two loopback UDP sockets. Not `WSAPoll`: it reports a half-closed
+  connection whatever was asked for, so a coroutine waiting to write to a peer that has stopped sending would make the reactor spin.
+- A connect to a loopback address is refused at once. Elsewhere Windows sends the SYN again after a refusal, so a refused connect to another host takes about
+  two seconds; give a connect a timeout of more than that.
+- A non-blocking send takes the whole buffer when the socket's buffer has any room, so large writes are rarely partial; the code handles both.
+- A UDP socket is not reset by an ICMP "port unreachable" (`SIO_UDP_CONNRESET` is off): a datagram to a closed port is simply lost, as on Linux.
+- Host names go to `GetAddrInfoW` in UTF-16. The descriptor-limit tests of `listener_test.cpp` skip, since Windows has no per-process limit to lower.
 
 ### Tests that use real sockets
 
@@ -157,7 +174,7 @@ chooses. A machine that cannot bind loopback skips them with a printed reason, s
 ## The reactor: waiting without a thread per connection
 
 A non-blocking socket says `WouldBlock`; something has to wake the coroutine that wants to try again. `net::Reactor` is that something. One dedicated thread waits in
-the platform's poller (epoll on Linux) for the sockets that coroutines wait for and for the nearest timer; when a wait ends it hands the coroutine to the job system's
+the platform's poller (epoll on Linux, `select` on Windows) for the sockets that coroutines wait for and for the nearest timer; when a wait ends it hands the coroutine to the job system's
 scheduler, so it resumes on a participant. The reactor thread runs none of your code, and there is no thread per connection.
 
 ```cpp
