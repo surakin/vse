@@ -12,7 +12,7 @@ Document, measure, run everything on both machines, review the whole phase, clos
 - [x] **Benchmark** `game/renderer_bench` section `ui`: draw-list build for 1,000 / 5,000 widgets, layout time for the same trees, UI renderer record cost, list box with 100,000 items per frame, steady-state allocation count; recorded in the guide and this file (no thresholds in tests).
 - [x] **Project documents:** `PLAN.md` (the roadmap row, a progress-log entry, the assumption list if the platform libraries or the pointer-lock choices need one), `CLAUDE.md` if a rule changed (the `ui` module line, the platform event stream, theme rule "no literal colors in widgets" if it became a gate), `BUILD.md` (any new library), `ARCHITECTURE.md` (the measured graph), `STATUS.md`.
 - [x] **Known-issues sweep:** every Phase 15 deferral filed (no docking, no IME, no clipboard-manager persistence, no drag images on X11 without a compositor, no accessibility, no file dialogs, no scroll inertia, tree view deferred to Phase 31 if the editor needs it, DX12 and Win32 items as they stand after Day 205); entries this phase fixed removed.
-- [ ] **Closing full runs (CLAUDE.md, required for a phase's last day):** Linux `scripts/test-phase.sh --all --flavor all`, `ctest -L docs`, `ui_demo` and the other demos 1000 frames with validation on Wayland and X11; Windows `scripts/test-phase.sh --all --flavor all` (plain and asan), `ctest -L docs`, the demos 1000 frames on DX12 and Vulkan; record both final `ran X of Y tests (phases ...)` lines here; nothing left out. **Linux half done (see Notes and Runs); the Windows half is open: it needs the Windows PC after this day's shared-code changes.**
+- [x] **Closing full runs (CLAUDE.md, required for a phase's last day):** Linux `scripts/test-phase.sh --all --flavor all`, `ctest -L docs`, `ui_demo` and the other demos 1000 frames with validation on Wayland and X11; Windows `scripts/test-phase.sh --all --flavor all` (plain and asan), `ctest -L docs`, the demos 1000 frames on DX12 and Vulkan; record both final `ran X of Y tests (phases ...)` lines here; nothing left out. **Linux half done (see Notes and Runs); the Windows half done on 2026-11-12 (below).**
 - [x] **End-of-phase review (CLAUDE.md, uncapped):** `/code-review high --max-findings all` over the whole phase's diff (the commit before Day 184 to the working tree); verify, fix or decline each finding with a reason; record the count and outcome under "Post-implementation code review".
 - [x] `plans/phase-15-ui-system.md` (status complete), `PLAN.md`, `STATUS.md` updated; `CURRENT_PHASE` stays 15 until Phase 17 has its day files and starts; commit and push.
 
@@ -43,6 +43,9 @@ List box over 100,000 items: 3.7 us per frame scrolling inside laid-out rows (0 
 `ctest -L docs` 7 of 7; `rhi_demo`, `renderer_demo` and `ui_demo` `--frames 1000 --validation` on DX12 and Vulkan, all exit 0 with no validation
 message and no memory growth. Twelve display tests (five clipboard and drag-and-drop tests and the Alt key test, plain and asan) failed in the run and in
 three reruns while the console session was locked; they wait for a rerun on an unlocked desktop (`KNOWN-ISSUES.md`), so the task stays open.
+**Done later on 2026-11-12:** with the desktop unlocked, all twelve passed (`ctest -R "Windows clipboard|Windows drag and drop|the left Alt is Alt"`
+in `build-msvc`: 26 of 26, plain and asan, the other clipboard and drag-and-drop tests included), and so did the whole scoped run of the Windows catch-up
+after the Mac's Phase 26 Day 311 (`ran 4807 of 5084 tests (phases: all; flavors: all (plain and asan, no tsan on Windows); display: included; crash tests: excluded) in 379 s`, no failure). The Windows half of the closing run is complete.
 
 ## Runs
 
