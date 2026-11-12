@@ -467,7 +467,7 @@ Ninja; no Xcode.
   `<dispatch/...>`, `<objc/...>`, `<sys/sysctl.h>`, `<copyfile.h>`, `<libproc.h>`) and `.mm` files in the macOS directories (a `macos/`
   folder, `engine/rhi/metal/`); `std_usage_check` and `module_deps_check` read `.mm` files and count `#import` as `#include`.
 - **Documentation** (`docgen`, the reference, `ctest -L docs`) is not built on the Mac before Phase 26 Day 309 (it needs the whole foundation);
-  the samples wait for Day 326.
+  the samples wait for Day 327.
 
 ### Formatting and clang-tidy
 

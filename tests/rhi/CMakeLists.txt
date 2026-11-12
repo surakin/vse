@@ -135,6 +135,6 @@ function(engine_rhi_cross_syntax_test name triple)
 endfunction()
 engine_rhi_cross_syntax_test(rhi_cross_syntax_windows x86_64-pc-windows-msvc)
 # Kept now that macOS builds for real (Phase 26 Day 302): the Intel development Mac builds x86-64 only, so this is what compiles these
-# headers for arm64 (Apple silicon) until Phase 26 Day 326's arm64 build.
+# headers for arm64 (Apple silicon) until Phase 26 Day 327's arm64 build.
 engine_rhi_cross_syntax_test(rhi_cross_syntax_macos arm64-apple-macos13)
 engine_label_tests(rhi_lifecycle_lists rhi_cross_syntax_windows rhi_cross_syntax_macos)

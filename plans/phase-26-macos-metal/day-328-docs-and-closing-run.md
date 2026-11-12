@@ -1,7 +1,7 @@
-# Phase 26 / Day 327 — Guides, Closing Full Runs on Three Machines & Wrap-up
+# Phase 26 / Day 328 — Guides, Closing Full Runs on Three Machines & Wrap-up
 
 **Phase:** [Phase 26 — macOS Port + Metal Backend](../phase-26-macos-metal.md)
-**Depends on:** Day 326.
+**Depends on:** Day 327.
 
 The macOS guide, the documentation pass, the full suites on the Mac, the Linux machine and the Windows PC, the uncapped end-of-phase review, and the
 answer to `PLAN.md` assumption #11.

@@ -23,7 +23,7 @@ docs build pass here.
       headers (not standard); a planted `<vector>` in a `.mm` still fails.
 - [x] **Cross-syntax gates:** the `*_cross_syntax_macos` checks (types, io, settings, debug, rhi) keep their meaning now that a real macOS build exists:
       keep them (they cover arm64 syntax, which this Mac does not build natively) and say so in their comments.
-- [x] **Moved (amended on Day 302): to Day 309 (docgen, the reference, `docs_check`/`links`/`lint`) and Day 326 (`docs_samples`).** docgen
+- [x] **Moved (amended on Day 302): to Day 309 (docgen, the reference, `docs_check`/`links`/`lint`) and Day 327 (`docs_samples`).** docgen
       needs `io/` and `debug/failure_hooks.h`, which the Mac builds from Days 303-304 and 306-308, and its samples link the renderer, UI and text, which
       arrive with Days 310-325; until then the reference and `docgen lint` run on the Linux machine (`KNOWN-ISSUES.md`). Original task: build the tool, `cmake --build build-macos --target docs` produces the same `docs/reference/` bytes as Linux (compare, fix any
       ordering or path difference), and `ctest -L docs` passes, including the guide samples (`tools/docgen/src/samples.cpp`'s platform branch).
@@ -61,9 +61,9 @@ and every gate passes on macOS with the new macOS rules and their planted fixtur
   any header, so a `.mm` could reach `<vector>` or an upper layer unseen; both now match `#include` and `#import`. Planted: `<vector>` by
   `#include` and `<string>` by `#import` in a `.mm` (`std_usage_check_planted_lines`), and an upward `#import` in a `.mm`
   (`module_deps_check_upward_objc`).
-- **Cross-syntax checks** kept, with a comment in each of the five `CMakeLists.txt`: they are what compiles those headers for arm64 until Day 326.
+- **Cross-syntax checks** kept, with a comment in each of the five `CMakeLists.txt`: they are what compiles those headers for arm64 until Day 327.
 - **docgen moved (plan amended):** it needs the file layer and `debug/failure_hooks.h` (Days 303-308 on the Mac) and its samples link the renderer and
-  UI; the reference and `docs_check`/`links`/`lint` go to Day 309, `docs_samples` to Day 326.
+  UI; the reference and `docs_check`/`links`/`lint` go to Day 309, `docs_samples` to Day 327.
 - **`tests/module_map.txt`** maps what was missing: `tests/macos` (26), `os/macos` and `os/posix`, `SIDE_PHASES` and `CURRENT_PHASE` (6: the label
   check reads them), `ARCHITECTURE.md`, `BUILD.md`, and the main line's `tests/database`, `sqlite_boundary_check` and `database_sql_check` (19),
   which sent every `--affected` run to the full suite.

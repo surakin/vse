@@ -9,7 +9,7 @@ drop, fullscreen, session); the Phase 4 golden images and the Phase 5 scene test
 **Metal** backend with Metal API validation silent; the Metal backend passes the lifecycle conformance suite and recovers from an injected device loss; the demos run
 on Metal; every gate and `ctest -L docs` pass on macOS; and the Linux machine and the Windows PC still pass their full suites in every flavor they have.
 
-**Status: started (2026-11-10), Days 298-327: Day 298 (the `.metallib` spike; interim route, pending), Day 299 (spec, inventory, setup), Day 300 (CMake, Apple clang, the base layer) Day 301 (the `os` backend, `os/posix/`) Day 302 (test tooling, side phases, gates) Day 303 (file layer I: `io/posix/`, local files, errors) Day 304 (file layer II: `Copy`, standard directories, async measured) Day 305 (the job
+**Status: started (2026-11-10), Days 298-328: Day 298 (the `.metallib` spike; interim route, pending), Day 299 (spec, inventory, setup), Day 300 (CMake, Apple clang, the base layer) Day 301 (the `os` backend, `os/posix/`) Day 302 (test tooling, side phases, gates) Day 303 (file layer I: `io/posix/`, local files, errors) Day 304 (file layer II: `Copy`, standard directories, async measured) Day 305 (the job
 system) Day 306 (debugging I: stack traces, modules, crash context) Day 307 (debugging II: crash handler, death tests) Day 308 (debugging III:
 dumps, symbol store, scripts) and Day 309 (settings, the aggregate, docgen: the foundation port is done) done on the Mac; next Day 310.** Day numbers continue after Phase 25 (Day 297). Phases 19-24 have no day files yet;
 when they get them, Phases 25 and 26 renumber in the same commit (CLAUDE.md, "Phases are whole numbers").
@@ -21,7 +21,7 @@ earlier version of this file:** the GPU is integrated, not discrete, so `hasUnif
 exercised only by forcing it (Day 317); there is one adapter, so the run-time GPU switch has no second Metal device to switch to (the null backend covers
 the switch logic, as on Linux). The `slangc` on `PATH` (`/Applications/kitty.app/Contents/MacOS/slangc`) is kitty's own program, not the Slang compiler.
 It does **not** exercise Apple silicon (unified memory with tile-based rendering, memoryless attachments, arm64 code); that stays unverified and is recorded
-in `KNOWN-ISSUES.md` (Day 326 adds an arm64 compile-only configuration).
+in `KNOWN-ISSUES.md` (Day 327 adds an arm64 compile-only configuration).
 
 ## Runs on the side (the user's request, 2026-11-10)
 
@@ -32,8 +32,8 @@ order. The user asked to start with the foundation (Days 300-309) and then plan 
   `scripts/test-phase.sh` a side phase (a `SIDE_PHASES` file listing `26`, added to `--affected` runs), and Day 299 adds the rule to CLAUDE.md
   ("Tests run by phase"); the user confirmed it on 2026-11-11.
 - **It ports what exists on `master` when each day runs.** Each day starts by pulling `master`. A module a main-line phase adds before this phase
-  closes gets its macOS port inside the day of its layer if that day has not run yet, or on Day 326 if it has. After this phase closes, every phase gets
-  a macOS day the way it gets a Windows PC day today; Day 327 writes that answer into `PLAN.md` assumption #11 (proposed; the user confirms).
+  closes gets its macOS port inside the day of its layer if that day has not run yet, or on Day 327 if it has. After this phase closes, every phase gets
+  a macOS day the way it gets a Windows PC day today; Day 328 writes that answer into `PLAN.md` assumption #11 (proposed; the user confirms).
 - **Shared code is checked on the other machines by the next session there**, not at this phase's close, because the main line keeps working on those
   machines in the meantime and must not sit on a broken `master` for weeks. A Phase 26 day that changes shared files (anything outside the macOS-only
   directories listed under "Where macOS code goes") files the Linux and Windows runs it needs in `KNOWN-ISSUES.md`, and the next day on that machine runs
@@ -70,8 +70,9 @@ order. The user asked to start with the foundation (Days 300-309) and then plan 
 307. [Metal Renderer: the Phase 5 Suite](phase-26-macos-metal/day-323-metal-renderer.md)
 308. [Text, UI and the Scene Bridge on Metal](phase-26-macos-metal/day-324-metal-text-ui-scene.md)
 309. [Metal Lifecycle, Device Loss and Resets](phase-26-macos-metal/day-325-metal-lifecycle.md)
-310. [Demos, Benchmarks, Catch-up and the arm64 Compile Check](phase-26-macos-metal/day-326-demos-benches-arm64.md)
-311. [Guides, Closing Full Runs on Three Machines & Wrap-up](phase-26-macos-metal/day-327-docs-and-closing-run.md)
+310. [Networking on macOS: the Socket Hooks, the kqueue Poller, Name Resolution](phase-26-macos-metal/day-326-macos-networking.md) (added 2026-11-12)
+310. [Demos, Benchmarks, Catch-up and the arm64 Compile Check](phase-26-macos-metal/day-327-demos-benches-arm64.md)
+311. [Guides, Closing Full Runs on Three Machines & Wrap-up](phase-26-macos-metal/day-328-docs-and-closing-run.md)
 
 Order reasoning: the spike comes first because its answer (driver-minted `.metallib` or Xcode) changes `BUILD.md`, the prerequisites and Day 315, and it
 needs no build of the engine. Then the stack bottom-up, one layer per day as Phase 13 did (`ARCHITECTURE.md`): the build, `os`, the test tooling (so every
@@ -84,7 +85,7 @@ the Metal backend in the order the DX12 backend was built (Days 164-172), then i
 ## Rules for every day of this phase
 
 - **Three machines.** The Mac does the day; the Linux machine and the Windows PC check the shared files it changed at their next session (above). Each day
-  names, in its result and in `KNOWN-ISSUES.md`, the shared files, the flavors to run and the docs to regenerate. Day 327 confirms none is left open.
+  names, in its result and in `KNOWN-ISSUES.md`, the shared files, the flavors to run and the docs to regenerate. Day 328 confirms none is left open.
 - **Flavors.** macOS has all three: `plain`, `asan` (with UBSan, as on Linux) and `tsan`; Apple clang supports both sanitizers on x86-64. Apple clang has no
   LeakSanitizer on macOS, so leak checks stay on Linux (`KNOWN-ISSUES.md`, Day 301 records what was measured). Concurrency, lifetime and memory days run asan
   and tsan of the same selection on the Mac.
@@ -202,7 +203,7 @@ Present on 2026-11-10: the Command Line Tools (Apple clang 17.0.0), CMake 4.4.4 
 
 - **Pending, the user's decision (2026-11-10):** the `.metallib` minting route is the undocumented `-[MTLLibrary serializeToURL:error:]` until the user has a new Mac; then it is decided again, and the new Mac also runs the spike's open task (loading on Apple silicon and another macOS version).
 - **Confirmed by the user (2026-11-11):** the side-phase rule (CLAUDE.md, written on Day 299; the tooling is Day 302). **Still proposed:** the answer
-  to `PLAN.md` assumption #11 (a macOS day in every later phase, Day 327); not building Vulkan on macOS (decision 8).
+  to `PLAN.md` assumption #11 (a macOS day in every later phase, Day 328); not building Vulkan on macOS (decision 8).
 - The iOS platform layer (UIKit, touch) and the LuaJIT interpreter-only build for iOS are Phase 27, which reuses this phase's Metal backend.
 - **HDR:** EDR (`wantsExtendedDynamicRangeContent`, `RGBA16Float`, extended linear sRGB) maps `HdrMode::ScRgbLinear`; the MacBook's built-in display is not
   an EDR display, so HDR stays checked by the policy tests only (Day 321 records it).

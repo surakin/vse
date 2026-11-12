@@ -48,7 +48,7 @@ port.
       now knows Mach-O, thin or universal.)
 - [x] **`docgen` on macOS** (moved from Day 302, which found it needs the whole foundation): build `tools/docgen` (its `child_process_posix.cpp` as on
       Linux); `cmake --build build-macos --target docs` regenerates `docs/reference/` byte-identical to Linux's committed one (compare; fix any ordering,
-      path or locale difference); `docs_check`, `docs_links` and `docs_lint` pass on macOS. `docs_samples` waits for Day 326 (the samples link the
+      path or locale difference); `docs_check`, `docs_links` and `docs_lint` pass on macOS. `docs_samples` waits for Day 327 (the samples link the
       renderer and UI); its target is configured only when those libraries exist.
       (`tools/docgen/CMakeLists.txt` has a macOS branch with the three checks and a `docs` target without samples; `tests/docgen` runs plain
       and asan. One fix: macOS's `<unistd.h>` does not declare `environ` (`child_process_posix.cpp`). **The reference is byte-identical:**
@@ -77,7 +77,7 @@ byte-identical to Linux's. `UserDefaultsConfigStore` passes the store conformanc
   sample-runner tests compile their samples with the Command Line Tools' compiler by path, which finds no SDK without `-isysroot` (the
   tests get it from `xcrun --show-sdk-path`; CMake leaves `CMAKE_OSX_SYSROOT` empty); `file_io_test.cpp` expected ELF on every system but
   Windows; macOS's `<unistd.h>` does not declare `environ`.
-- **Not built, by decision:** the `System` layer from bundle defaults (above). `docs_samples` waits for Day 326, as planned.
+- **Not built, by decision:** the `System` layer from bundle defaults (above). `docs_samples` waits for Day 327, as planned.
 - **Observed:** the linker now prints `ignoring duplicate libraries` for test programs that name a foundation layer and also link `jobs`
   (which brings the whole foundation now); a notice of ld64's, not a compile warning, recorded in `KNOWN-ISSUES.md` (the flag that hides it
   would silence a warning, which the rules do not allow).

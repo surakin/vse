@@ -44,7 +44,7 @@ if(APPLE)
 endif()
 
 # Supported targets: x86-64 Linux, x86-64 Windows (Phase 13), and x86-64 macOS (being ported in Phase 26, a side phase on the Mac; arm64 macOS gets a
-# compile-only configuration on Phase 26 Day 326). Anything else names the phase that ports it.
+# compile-only configuration on Phase 26 Day 327). Anything else names the phase that ports it.
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
   set(ENGINE_PLATFORM linux)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows" AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(AMD64|x86_64)$")
@@ -53,7 +53,7 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "
   set(ENGINE_PLATFORM macos)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   message(FATAL_ERROR "macOS on ${CMAKE_SYSTEM_PROCESSOR} (${CMAKE_OSX_ARCHITECTURES}): only x86-64 is ported so far; the arm64 compile-only "
-                      "configuration is Phase 26 Day 326 (plans/phase-26-macos-metal.md)")
+                      "configuration is Phase 26 Day 327 (plans/phase-26-macos-metal.md)")
 elseif(CMAKE_SYSTEM_NAME MATCHES "^(Android|iOS)$")
   message(FATAL_ERROR "${CMAKE_SYSTEM_NAME} is ported in Phase 27 (plans/phase-27-android-ios.md)")
 else()
@@ -253,7 +253,7 @@ endif()
 
 # macOS (Phase 26, a side phase on the Mac) builds one layer more each day, in dependency order (ARCHITECTURE.md), as Windows did in Phase 13:
 # Day 300 the base layer and its tests (types, lang, sync, cstr) and the macOS-only checks; Day 301 the os backend and the foundation's base tests; Day 302 the gates and the test tooling. Each later day moves its directories into this list;
-# the "not yet ported" message shrinks with it and is gone on Day 326 (plans/phase-26-macos-metal.md).
+# the "not yet ported" message shrinks with it and is gone on Day 327 (plans/phase-26-macos-metal.md).
 if(ENGINE_PLATFORM STREQUAL "macos")
   include(cmake/EngineTestPhases.cmake)
   # Third-party code first, before the engine's warning options, so it keeps its own flags (as on Linux). libbacktrace: Mach-O, Day 306.
@@ -276,7 +276,7 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   include(cmake/EngineDeathTests.cmake)
   add_subdirectory(tests/debug)  # Day 306: stack traces and the crash context; the rest of the backend on Days 307-308
   add_subdirectory(tests/settings)  # Day 309: the settings layer and the user defaults store
-  add_subdirectory(tools/docgen)  # Day 309: the reference and the documentation checks (the samples wait for Day 326)
+  add_subdirectory(tools/docgen)  # Day 309: the reference and the documentation checks (the samples wait for Day 327)
   add_subdirectory(tests/docgen)
   add_subdirectory(tests/types)
   add_subdirectory(tests/lang)
@@ -293,7 +293,7 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(tests/test_phase_script)
   message(STATUS "macOS (Phase 26 Day 309): building the whole foundation (base, file, debugging and settings layers), the job system, docgen (without its samples), "
                  "crash_extract and their tests, the gates and the test tooling. Not yet ported, so not configured: text, UI, ECS and spatial (Day 310), the platform layer "
-                 "(Days 311-313), the RHI and renderer (Days 314-325), the demos, the other tools and docs_samples (Day 326).")
+                 "(Days 311-313), the RHI and renderer (Days 314-325), the demos, the other tools and docs_samples (Day 327).")
   return()
 endif()
 

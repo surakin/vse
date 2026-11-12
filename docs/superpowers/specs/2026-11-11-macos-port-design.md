@@ -106,7 +106,7 @@ is decided on Day 302.
   ELF magic check (`tests/foundation/file_io_test.cpp:26`) — Days 303-304; pinning read back from `/proc/self/task` (`tests/jobs/worker_pool_test.cpp`) —
   Day 305; XDG special folders (`tests/io/file_system_test.cpp:359`) — Day 304.
 - The demos' CMake `else()` branches mean "Linux" (`game/CMakeLists.txt:40` XDG profile; the `if(WIN32)` blocks of `rhi_demo`, `renderer_demo`,
-  `ui_demo` schedule Wayland and X11 runs) — Day 326.
+  `ui_demo` schedule Wayland and X11 runs) — Day 327.
 - `scripts/test-phase.sh:36-38` maps every non-Windows host to `linux`, `:50` uses `nproc`; no bash-4 feature anywhere in `scripts/` — Day 302.
 - `tests/phases.txt` refuses a `flavors` line for a phase that has no tests in the map (`tests/phase_labels/check.cmake:110`): the
   `flavors 26 macos: plain,asan,tsan` line is added with the first phase-26 test (Day 300 or 285), not on Day 299.
@@ -196,7 +196,7 @@ About 70 conditions in `tests/`; the eleven whose non-Windows branch assumes Lin
 
 | file:line | does | macOS needs | day |
 |---|---|---|---|
-| `CMakeLists.txt:23-32` | target table, Darwin stop | `ENGINE_PLATFORM macos` for x86-64 (arm64 compile-only, Day 326) | 284 |
+| `CMakeLists.txt:23-32` | target table, Darwin stop | `ENGINE_PLATFORM macos` for x86-64 (arm64 compile-only, Day 327) | 284 |
 | `CMakeLists.txt:43-55` | `ENGINE_SPLIT_DEBUG_INFO` with `split-debug.sh` | `-g` and a post-link `dsymutil` | 290, 292 |
 | `CMakeLists.txt:101-183` | the Windows block (sentry, Vulkan SDK copy, subdirectories, `return()`) | a macOS list growing one layer per day | 284 |
 | `cmake/EngineCompilerOptions.cmake:31-46` | GCC and Clang flags | the same for Apple clang; `OBJCXX` with `-fobjc-arc`; deployment target 13.3 | 284 |
@@ -235,8 +235,8 @@ Wayland, X11 and window-layer tests (Days 311-313). `tests/rhi`: the Vulkan test
 
 ### 8.9 `KNOWN-ISSUES.md` lines naming Phase 26 or macOS
 
-Twenty-one lines, each addressed by a day: the Metal shader items (Day 315), the pending `.metallib` route (Days 298, 315, 327), Apple silicon (Days 326,
-311), assumption #11 (Day 327), the AArch64 fault-injection branch (Day 326), Breakpad's macOS headers (Day 307), the cross-syntax coverage gaps (Days
+Twenty-one lines, each addressed by a day: the Metal shader items (Day 315), the pending `.metallib` route (Days 298, 315, 328), Apple silicon (Days 327,
+311), assumption #11 (Day 328), the AArch64 fault-injection branch (Day 327), Breakpad's macOS headers (Day 307), the cross-syntax coverage gaps (Days
 290-291), fullscreen and HDR (Days 311, 321), the macOS file layer (Days 303-304), the input stream, cursor, clipboard and drag and drop (Days 312-313),
 and the lldb-dependent debug tests (Day 308).
 

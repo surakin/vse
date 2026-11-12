@@ -1,7 +1,7 @@
-# Phase 26 / Day 326 — Demos, Benchmarks, Catch-up and the arm64 Compile Check
+# Phase 26 / Day 327 — Demos, Benchmarks, Catch-up and the arm64 Compile Check
 
 **Phase:** [Phase 26 — macOS Port + Metal Backend](../phase-26-macos-metal.md)
-**Depends on:** Day 325.
+**Depends on:** Day 326.
 
 Every demo and benchmark on Metal, the macOS port of whatever the main line added after this phase's layer days ran, and a compile-only arm64
 configuration so Apple silicon code paths at least build.

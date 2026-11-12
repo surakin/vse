@@ -41,7 +41,7 @@ target_compile_options(docgen PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
 target_link_libraries(docgen PRIVATE docgen_lib)
 
 # macOS (Phase 26 Day 309): the reference and the three checks that need only docgen. The samples link the renderer, UI, text and the rest,
-# which macOS builds from Day 310 on; docs_samples and the samples step of `docs` join on Day 326.
+# which macOS builds from Day 310 on; docs_samples and the samples step of `docs` join on Day 327.
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   set(DOCGEN_LINT_ARGS --root ${CMAKE_SOURCE_DIR} --baseline ${CMAKE_SOURCE_DIR}/docs/reference/lint-baseline.txt)
   add_test(NAME docs_check COMMAND docgen check --root ${CMAKE_SOURCE_DIR})
@@ -55,7 +55,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     COMMAND $<TARGET_FILE:docgen> links --root ${CMAKE_SOURCE_DIR}
     COMMAND $<TARGET_FILE:docgen> lint ${DOCGEN_LINT_ARGS}
     DEPENDS docgen
-    COMMENT "Regenerating docs/reference and running the documentation checks (macOS: no samples before Phase 26 Day 326)"
+    COMMENT "Regenerating docs/reference and running the documentation checks (macOS: no samples before Phase 26 Day 327)"
     VERBATIM
     USES_TERMINAL)
   return()

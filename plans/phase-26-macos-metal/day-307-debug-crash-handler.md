@@ -21,7 +21,7 @@ sentry-native's Breakpad backend on macOS (Mach exception ports, no transport), 
       also in `tests/debug/support/test_support_linux.h`, which becomes `_posix`); the child watches a pipe from the parent and exits
       when it reaches EOF (a parent killed with `SIGKILL` leaves no orphan: tested); `RLIMIT_CORE` 0 in the child; signal decoding as Linux.
 - [x] **`FaultSupported` and `InjectFault`:** as Linux on x86-64 (`DivideByZero` traps there; the arm64 answer, false, is written and covered by the
-      arm64 compile check of Day 326); `IllegalInstruction` with `ud2` on x86-64 and `brk` on arm64; expected reasons checked.
+      arm64 compile check of Day 327); `IllegalInstruction` with `ud2` on x86-64 and `brk` on arm64; expected reasons checked.
 - [x] **`IsDebuggerAttached`:** `sysctl(CTL_KERN, KERN_PROC, KERN_PROC_PID)` and `P_TRACED`; tested under `lldb` by the existing debugger test (skips
       without `lldb`).
 - [x] **Crash reports and the system:** the macOS crash reporter (`ReportCrash`) also writes `~/Library/Logs/DiagnosticReports`; the death tests must

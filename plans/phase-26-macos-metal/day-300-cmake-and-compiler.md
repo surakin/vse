@@ -10,7 +10,7 @@ higher layers stay unconfigured on macOS until their day (each listed in the spe
 
 - [x] **Remove the stop** in the root `CMakeLists.txt` (`CMAKE_SYSTEM_NAME STREQUAL "Darwin"`) and in `engine/foundation/CMakeLists.txt`; replace it
       with a macOS branch that configures only the layers already ported and prints which are not yet (the list shrinks day by day and is gone on
-      Day 326).
+      Day 327).
 - [x] **Preset `macos-clang`** in `CMakePresets.json` (Ninja, tree `build-macos`, `CMAKE_OSX_DEPLOYMENT_TARGET=13.0`, `CMAKE_OSX_ARCHITECTURES=x86_64`,
       build and test presets; **deployment target 13.3**, amended on Day 299: floating `std::to_chars` needs it); the configure finds Apple clang through `xcrun` (never MacPorts' clang first on `PATH`) and fails with a clear message
       without the Command Line Tools.
@@ -44,7 +44,7 @@ higher layers stay unconfigured on macOS until their day (each listed in the spe
       (`test_phase_labels` refuses a `flavors` line for a phase without tests, `tests/phase_labels/check.cmake:110`).
 - [x] **CMake gates:** `module_deps_check` and `std_usage_check` pass when run by hand on macOS.
 - [x] **Both unity modes:** `cmake --preset macos-clang` and `-DENGINE_UNITY_BUILD=OFF` build clean; record full-build times (8 GB, 4 cores).
-- [x] **Documentation:** `docs/guide/building-and-testing.md` gets a short "Building on macOS" section (the full guide is Day 327); `STATUS.md` names the
+- [x] **Documentation:** `docs/guide/building-and-testing.md` gets a short "Building on macOS" section (the full guide is Day 328); `STATUS.md` names the
       preset.
 - [x] **End-of-day review:** `/code-review high`. Extra scrutiny: the CMake branches (nothing Linux-only now skipped on Linux), the probe and
       `slangc` changes leaving Linux and Windows unchanged.
@@ -58,7 +58,7 @@ machines.
 
 - **Configure:** the root `CMakeLists.txt` takes Apple clang through `xcrun` before `project()` (only on a Darwin host with no compiler, toolchain or
   `CXX`/`CC` given; it stops with an install hint without the Command Line Tools), sets the deployment target to 13.3 (not for a cross build),
-  enables `OBJCXX`, maps x86-64 Darwin to `ENGINE_PLATFORM macos` (arm64 stops, naming Day 326), and has a macOS block that adds the base layer,
+  enables `OBJCXX`, maps x86-64 Darwin to `ENGINE_PLATFORM macos` (arm64 stops, naming Day 327), and has a macOS block that adds the base layer,
   `tests/types`, `lang`, `sync`, `cstr`, the new `tests/macos` and `tests/phase_labels`, printing what is not ported yet. FreeType and SQLite are
   not added on macOS until their layers (review finding 7). `engine/foundation/CMakeLists.txt` builds `foundation_base` in plain, asan and tsan
   on macOS, **temporarily with the Linux `os.cpp` and `session.cpp`** (Day 301 replaces them; `KNOWN-ISSUES.md`). Preset `macos-clang`

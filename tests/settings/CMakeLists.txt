@@ -51,7 +51,7 @@ function(engine_settings_cross_syntax_test name triple)
 endfunction()
 engine_settings_cross_syntax_test(settings_cross_syntax_windows x86_64-pc-windows-msvc)
 # Kept now that macOS builds for real (Phase 26 Day 302): the Intel development Mac builds x86-64 only, so this is what compiles these
-# headers for arm64 (Apple silicon) until Phase 26 Day 326's arm64 build.
+# headers for arm64 (Apple silicon) until Phase 26 Day 327's arm64 build.
 engine_settings_cross_syntax_test(settings_cross_syntax_macos arm64-apple-macos13)
 add_test(NAME settings_backend_lists_planted COMMAND ${CMAKE_COMMAND} -DROOT=${CMAKE_SOURCE_DIR}
          -DBACKEND_FILE=${CMAKE_CURRENT_SOURCE_DIR}/cross_syntax/planted_backend.md -P ${CMAKE_CURRENT_SOURCE_DIR}/check_settings_backend_lists.cmake)
