@@ -39,6 +39,11 @@ List box over 100,000 items: 3.7 us per frame scrolling inside laid-out rows (0 
 
 **Windows half.** The user did Day 205 on the Windows PC; this day built and tested those commits on Linux (four builds clean, scoped runs plain `ran 1927 of 4928`, asan `ran 1411 of 4928`, no failures). **The closing full run on Windows (`--all --flavor all` plain and asan, `ctest -L docs`, the demos on DX12 and Vulkan) was not run after this day's changes**; the Windows lines are Day 205's (plain `ran 1746 of 3398`, asan `ran 1385 of 3398`). It is listed in `KNOWN-ISSUES.md`.
 
+**Windows half, run on 2026-11-12 (Windows PC):** four trees clean (after three unrelated fixes, `KNOWN-ISSUES.md`); `ran 4551 of 4551 tests (phases: all; flavors: all (plain and asan, no tsan on Windows); display: included; crash tests: included) in 413 s`;
+`ctest -L docs` 7 of 7; `rhi_demo`, `renderer_demo` and `ui_demo` `--frames 1000 --validation` on DX12 and Vulkan, all exit 0 with no validation
+message and no memory growth. Twelve display tests (five clipboard and drag-and-drop tests and the Alt key test, plain and asan) failed in the run and in
+three reruns while the console session was locked; they wait for a rerun on an unlocked desktop (`KNOWN-ISSUES.md`), so the task stays open.
+
 ## Runs
 
 - Linux closing run, before the review fixes: `ran 4928 of 4928 tests (phases: all; flavors: all; display: included; crash tests: included) in 138 s`, 100% passed. `ctest -L docs` 7 of 7. Demos `ui_demo`, `renderer_demo`, `rhi_demo`, 1000 frames, `--validation --no-vsync`, Wayland and X11: exit 0, no warnings or errors.

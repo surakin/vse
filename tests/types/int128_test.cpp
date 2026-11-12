@@ -359,15 +359,15 @@ TEST_CASE("The 128-bit types have a fixed size, alignment and layout", "[types][
 
 TEST_CASE("u128 and i128: the three-way comparison agrees with the six operators", "[types][int128]")
 {
-    // The comparisons with 0 are in double parentheses so Catch2 does not decompose them: MSVC rejects passing the
-    // literal 0 through Catch2's operator templates to the ordering types' literal-zero comparison (C7595, found on
-    // Phase 13 Day 149).
+    // The results are compared with the named orderings, not with a literal 0: MSVC rejects passing the literal 0
+    // through Catch2's operator templates to the ordering types' literal-zero comparison (C7595, found on Phase 13 Day
+    // 149), and clang-tidy's modernize-use-nullptr turns that 0 into a nullptr, which only libstdc++ accepts.
     const u128 small = u128::FromParts(0, 1), big = u128::FromParts(1, 0);
-    CHECK(((small <=> big) < nullptr));
-    CHECK(((big <=> small) > nullptr));
-    CHECK(((small <=> small) == nullptr));
+    CHECK(((small <=> big) == Ordering::less));
+    CHECK(((big <=> small) == Ordering::greater));
+    CHECK(((small <=> small) == Ordering::equal));
     const i128 neg(i64{-5}), pos(i64{3});
-    CHECK(((neg <=> pos) < nullptr));
-    CHECK(((pos <=> neg) > nullptr));
-    CHECK(((neg <=> neg) == nullptr));
+    CHECK(((neg <=> pos) == Ordering::less));
+    CHECK(((pos <=> neg) == Ordering::greater));
+    CHECK(((neg <=> neg) == Ordering::equal));
 }

@@ -17,7 +17,7 @@ set(_includes "")
 foreach(_h IN LISTS _foundation_headers)
   # Per-platform headers, generated code, the unity macro pairs and the platform halves of neutral interfaces are not API a
   # Windows file would include next to <windows.h>.
-  if(_h MATCHES "(^|/)(linux|macos|windows|generated|unity)/" OR _h MATCHES "_platform\\.h$" OR _h MATCHES "_linux\\.h$")
+  if(_h MATCHES "(^|/)(linux|macos|windows|posix|generated|unity)/" OR _h MATCHES "_platform\\.h$" OR _h MATCHES "_linux\\.h$")
     continue()
   endif()
   string(APPEND _includes "#include \"${_h}\"\n")

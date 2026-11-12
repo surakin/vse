@@ -3773,19 +3773,19 @@ net::ListenerOptions::backlog	variable	net	net-listeneroptions-backlog	net.md	en
 net::ListenerOptions::reuse_address	variable	net	net-listeneroptions-reuse-address	net.md	engine/net/listener.h:24
 net::ListenerOptions::dual_stack	variable	net	net-listeneroptions-dual-stack	net.md	engine/net/listener.h:25
 net::ListenerOptions::max_unhandled	variable	net	net-listeneroptions-max-unhandled	net.md	engine/net/listener.h:26
-net::Listener	class	net	net-listener	net.md	engine/net/listener.h:34
-net::Listener::Listener()	function	net	net-listener-listener	net.md	engine/net/listener.h:38
-net::Listener::Listener(const Listener&)	function	net	net-listener-listener-const-listener-amp	net.md	engine/net/listener.h:40
-net::Listener::operator=(const Listener&)	function	net	net-listener-operator-eq-const-listener-amp	net.md	engine/net/listener.h:41
-net::Listener::Open(const Endpoint&,const ListenerOptions&)	function	net	net-listener-open-const-endpoint-amp-const-listeneroptions-amp	net.md	engine/net/listener.h:52
-net::Listener::IsOpen() const	function	net	net-listener-isopen-const	net.md	engine/net/listener.h:56
-net::Listener::GetSocket()	function	net	net-listener-getsocket	net.md	engine/net/listener.h:60
-net::Listener::LocalEndpoint() const	function	net	net-listener-localendpoint-const	net.md	engine/net/listener.h:64
-net::Listener::DualStack() const	function	net	net-listener-dualstack-const	net.md	engine/net/listener.h:68
-net::Listener::Accept(Reactor&,Socket*,Endpoint*,WaitOptions)	function	net	net-listener-accept-reactor-amp-socket-star-endpoint-star-waitoptions	net.md	engine/net/listener.h:81
-net::Listener::Reserve()	function	net	net-listener-reserve	net.md	engine/net/listener.h:86
-net::Listener::Handled()	function	net	net-listener-handled	net.md	engine/net/listener.h:89
-net::Listener::Unhandled() const	function	net	net-listener-unhandled-const	net.md	engine/net/listener.h:99
+net::Listener	class	net	net-listener	net.md	engine/net/listener.h:37
+net::Listener::Listener()	function	net	net-listener-listener	net.md	engine/net/listener.h:41
+net::Listener::Listener(const Listener&)	function	net	net-listener-listener-const-listener-amp	net.md	engine/net/listener.h:43
+net::Listener::operator=(const Listener&)	function	net	net-listener-operator-eq-const-listener-amp	net.md	engine/net/listener.h:44
+net::Listener::Open(const Endpoint&,const ListenerOptions&)	function	net	net-listener-open-const-endpoint-amp-const-listeneroptions-amp	net.md	engine/net/listener.h:56
+net::Listener::IsOpen() const	function	net	net-listener-isopen-const	net.md	engine/net/listener.h:60
+net::Listener::GetSocket()	function	net	net-listener-getsocket	net.md	engine/net/listener.h:64
+net::Listener::LocalEndpoint() const	function	net	net-listener-localendpoint-const	net.md	engine/net/listener.h:68
+net::Listener::DualStack() const	function	net	net-listener-dualstack-const	net.md	engine/net/listener.h:72
+net::Listener::Accept(Reactor&,Socket*,Endpoint*,WaitOptions)	function	net	net-listener-accept-reactor-amp-socket-star-endpoint-star-waitoptions	net.md	engine/net/listener.h:87
+net::Listener::Reserve()	function	net	net-listener-reserve	net.md	engine/net/listener.h:93
+net::Listener::Handled()	function	net	net-listener-handled	net.md	engine/net/listener.h:97
+net::Listener::Unhandled() const	function	net	net-listener-unhandled-const	net.md	engine/net/listener.h:108
 net::kPollRead	variable	net	net-kpollread	net.md	engine/net/poller.h:13
 net::kPollWrite	variable	net	net-kpollwrite	net.md	engine/net/poller.h:15
 net::kPollError	variable	net	net-kpollerror	net.md	engine/net/poller.h:17
@@ -3833,27 +3833,27 @@ net::Reactor::Forget(const Socket&)	function	net	net-reactor-forget-const-socket
 net::Reactor::Close(Socket&)	function	net	net-reactor-close-socket-amp	net.md	engine/net/reactor.h:192
 net::Reactor::Poke()	function	net	net-reactor-poke	net.md	engine/net/reactor.h:195
 net::Reactor::Shutdown()	function	net	net-reactor-shutdown	net.md	engine/net/reactor.h:199
-net::ResolveResult	struct	net	net-resolveresult	net.md	engine/net/resolve.h:21
-net::ResolveResult::status	variable	net	net-resolveresult-status	net.md	engine/net/resolve.h:23
-net::ResolveResult::endpoints	variable	net	net-resolveresult-endpoints	net.md	engine/net/resolve.h:24
-net::Resolve(Reactor&,Resolver&,StringView,u16,AddressFamily,WaitOptions)	function	net	net-resolve-reactor-amp-resolver-amp-stringview-u16-addressfamily-waitoptions	net.md	engine/net/resolve.h:44
-net::ConnectOptions	struct	net	net-connectoptions	net.md	engine/net/resolve.h:50
-net::ConnectOptions::attempt_timeout_nanos	variable	net	net-connectoptions-attempt-timeout-nanos	net.md	engine/net/resolve.h:52
-net::ConnectOptions::resolve_timeout_nanos	variable	net	net-connectoptions-resolve-timeout-nanos	net.md	engine/net/resolve.h:53
-net::ConnectOptions::token	variable	net	net-connectoptions-token	net.md	engine/net/resolve.h:54
-net::ConnectAny(Reactor&,const EndpointSet&,Socket*,ConnectOptions)	function	net	net-connectany-reactor-amp-const-endpointset-amp-socket-star-connectoptions	net.md	engine/net/resolve.h:67
-net::ConnectTo(Reactor&,Resolver&,StringView,u16,Socket*,ConnectOptions)	function	net	net-connectto-reactor-amp-resolver-amp-stringview-u16-socket-star-connectoptions	net.md	engine/net/resolve.h:78
+net::ResolveResult	struct	net	net-resolveresult	net.md	engine/net/resolve.h:22
+net::ResolveResult::status	variable	net	net-resolveresult-status	net.md	engine/net/resolve.h:24
+net::ResolveResult::endpoints	variable	net	net-resolveresult-endpoints	net.md	engine/net/resolve.h:25
+net::Resolve(Reactor&,Resolver&,StringView,u16,AddressFamily,WaitOptions)	function	net	net-resolve-reactor-amp-resolver-amp-stringview-u16-addressfamily-waitoptions	net.md	engine/net/resolve.h:49
+net::ConnectOptions	struct	net	net-connectoptions	net.md	engine/net/resolve.h:55
+net::ConnectOptions::attempt_timeout_nanos	variable	net	net-connectoptions-attempt-timeout-nanos	net.md	engine/net/resolve.h:57
+net::ConnectOptions::resolve_timeout_nanos	variable	net	net-connectoptions-resolve-timeout-nanos	net.md	engine/net/resolve.h:58
+net::ConnectOptions::token	variable	net	net-connectoptions-token	net.md	engine/net/resolve.h:60
+net::ConnectAny(Reactor&,const EndpointSet&,Socket*,ConnectOptions)	function	net	net-connectany-reactor-amp-const-endpointset-amp-socket-star-connectoptions	net.md	engine/net/resolve.h:75
+net::ConnectTo(Reactor&,Resolver&,StringView,u16,Socket*,ConnectOptions)	function	net	net-connectto-reactor-amp-resolver-amp-stringview-u16-socket-star-connectoptions	net.md	engine/net/resolve.h:87
 net::kMaxHostNameBytes	variable	net	net-kmaxhostnamebytes	net.md	engine/net/resolver.h:21
-net::SystemResolve(StringView,u16,AddressFamily,EndpointSet*)	function	net	net-systemresolve-stringview-u16-addressfamily-endpointset-star	net.md	engine/net/resolver.h:37
-net::ResolveFn	alias	net	net-resolvefn	net.md	engine/net/resolver.h:40
-net::Resolver	class	net	net-resolver	net.md	engine/net/resolver.h:66
-net::Resolver::kDefaultQueue	variable	net	net-resolver-kdefaultqueue	net.md	engine/net/resolver.h:70
-net::Resolver::Resolver(ResolveFn,usize)	function	net	net-resolver-resolver-resolvefn-usize	net.md	engine/net/resolver.h:75
-net::Resolver::~Resolver()	function	net	net-resolver-tilde-resolver	net.md	engine/net/resolver.h:78
-net::Resolver::Resolver(const Resolver&)	function	net	net-resolver-resolver-const-resolver-amp	net.md	engine/net/resolver.h:80
-net::Resolver::operator=(const Resolver&)	function	net	net-resolver-operator-eq-const-resolver-amp	net.md	engine/net/resolver.h:81
-net::Resolver::Submit(const SharedPtr<ResolveRequest>&)	function	net	net-resolver-submit-const-sharedptr-lt-resolverequest-gt-amp	net.md	engine/net/resolver.h:88
-net::Resolver::Shutdown()	function	net	net-resolver-shutdown	net.md	engine/net/resolver.h:92
+net::SystemResolve(StringView,u16,AddressFamily,EndpointSet*)	function	net	net-systemresolve-stringview-u16-addressfamily-endpointset-star	net.md	engine/net/resolver.h:40
+net::ResolveFn	alias	net	net-resolvefn	net.md	engine/net/resolver.h:43
+net::Resolver	class	net	net-resolver	net.md	engine/net/resolver.h:73
+net::Resolver::kDefaultQueue	variable	net	net-resolver-kdefaultqueue	net.md	engine/net/resolver.h:77
+net::Resolver::Resolver(ResolveFn,usize)	function	net	net-resolver-resolver-resolvefn-usize	net.md	engine/net/resolver.h:83
+net::Resolver::~Resolver()	function	net	net-resolver-tilde-resolver	net.md	engine/net/resolver.h:86
+net::Resolver::Resolver(const Resolver&)	function	net	net-resolver-resolver-const-resolver-amp	net.md	engine/net/resolver.h:88
+net::Resolver::operator=(const Resolver&)	function	net	net-resolver-operator-eq-const-resolver-amp	net.md	engine/net/resolver.h:89
+net::Resolver::Submit(const SharedPtr<ResolveRequest>&)	function	net	net-resolver-submit-const-sharedptr-lt-resolverequest-gt-amp	net.md	engine/net/resolver.h:96
+net::Resolver::Shutdown()	function	net	net-resolver-shutdown	net.md	engine/net/resolver.h:100
 net::Signal	class	net	net-signal	net.md	engine/net/signal.h:25
 net::Signal::Signal()	function	net	net-signal-signal	net.md	engine/net/signal.h:29
 net::Signal::Signal(const Signal&)	function	net	net-signal-signal-const-signal-amp	net.md	engine/net/signal.h:31
@@ -3927,9 +3927,9 @@ net::Status::Failed() const	function	net	net-status-failed-const	net.md	engine/n
 net::Status::Is(ErrorCode) const	function	net	net-status-is-errorcode-const	net.md	engine/net/status.h:72
 net::Status::Code() const	function	net	net-status-code-const	net.md	engine/net/status.h:74
 net::Status::OsError() const	function	net	net-status-oserror-const	net.md	engine/net/status.h:76
-net::TimeBudget	class	net	net-timebudget	net.md	engine/net/time_budget.h:16
-net::TimeBudget::TimeBudget(const Reactor&,const WaitOptions&)	function	net	net-timebudget-timebudget-const-reactor-amp-const-waitoptions-amp	net.md	engine/net/time_budget.h:22
-net::TimeBudget::Next(bool*) const	function	net	net-timebudget-next-bool-star-const	net.md	engine/net/time_budget.h:37
+net::TimeBudget	class	net	net-timebudget	net.md	engine/net/time_budget.h:17
+net::TimeBudget::TimeBudget(const Reactor&,const WaitOptions&)	function	net	net-timebudget-timebudget-const-reactor-amp-const-waitoptions-amp	net.md	engine/net/time_budget.h:23
+net::TimeBudget::Next(bool*) const	function	net	net-timebudget-next-bool-star-const	net.md	engine/net/time_budget.h:38
 database::Feature	enum	database	database-feature	database.md	engine/database/database.h:22
 database::Feature::Savepoints	enumerator	database	database-feature-savepoints	database.md	engine/database/database.h:24
 database::Feature::WithoutRowId	enumerator	database	database-feature-withoutrowid	database.md	engine/database/database.h:25
@@ -4164,50 +4164,50 @@ storage::ComponentDesc::name	variable	storage	storage-componentdesc-name	storage
 storage::ComponentDesc::version	variable	storage	storage-componentdesc-version	storage.md	engine/storage/component_registry.h:72
 storage::ComponentDesc::oldest_version	variable	storage	storage-componentdesc-oldest-version	storage.md	engine/storage/component_registry.h:74
 storage::ComponentDesc::flags	variable	storage	storage-componentdesc-flags	storage.md	engine/storage/component_registry.h:76
-storage::ComponentDesc::fields	variable	storage	storage-componentdesc-fields	storage.md	engine/storage/component_registry.h:77
-storage::ComponentDesc::upgrades	variable	storage	storage-componentdesc-upgrades	storage.md	engine/storage/component_registry.h:79
-storage::ComponentDesc::custom	variable	storage	storage-componentdesc-custom	storage.md	engine/storage/component_registry.h:81
-storage::RegisteredComponent	class	storage	storage-registeredcomponent	storage.md	engine/storage/component_registry.h:88
-storage::RegisteredComponent::Id() const	function	storage	storage-registeredcomponent-id-const	storage.md	engine/storage/component_registry.h:92
-storage::RegisteredComponent::Name() const	function	storage	storage-registeredcomponent-name-const	storage.md	engine/storage/component_registry.h:97
-storage::RegisteredComponent::Version() const	function	storage	storage-registeredcomponent-version-const	storage.md	engine/storage/component_registry.h:99
-storage::RegisteredComponent::OldestVersion() const	function	storage	storage-registeredcomponent-oldestversion-const	storage.md	engine/storage/component_registry.h:101
-storage::RegisteredComponent::Flags() const	function	storage	storage-registeredcomponent-flags-const	storage.md	engine/storage/component_registry.h:103
-storage::RegisteredComponent::IsStored() const	function	storage	storage-registeredcomponent-isstored-const	storage.md	engine/storage/component_registry.h:106
-storage::RegisteredComponent::IsQueryable() const	function	storage	storage-registeredcomponent-isqueryable-const	storage.md	engine/storage/component_registry.h:109
-storage::RegisteredComponent::EcsId() const	function	storage	storage-registeredcomponent-ecsid-const	storage.md	engine/storage/component_registry.h:111
-storage::RegisteredComponent::IsTag() const	function	storage	storage-registeredcomponent-istag-const	storage.md	engine/storage/component_registry.h:114
-storage::RegisteredComponent::Fields() const	function	storage	storage-registeredcomponent-fields-const	storage.md	engine/storage/component_registry.h:116
-storage::RegisteredComponent::Encode(const void*,bytes::ByteWriter&,const CodecLimits&) const	function	storage	storage-registeredcomponent-encode-const-void-star-bytes-bytewriter-amp-const-codeclimits-amp-const	storage.md	engine/storage/component_registry.h:126
-storage::RegisteredComponent::Decode(bytes::ByteReader&,void*,const CodecLimits&) const	function	storage	storage-registeredcomponent-decode-bytes-bytereader-amp-void-star-const-codeclimits-amp-const	storage.md	engine/storage/component_registry.h:136
-storage::RegisteredComponent::DecodeRecord(u32,ByteSpan,void*,const CodecLimits&) const	function	storage	storage-registeredcomponent-decoderecord-u32-bytespan-void-star-const-codeclimits-amp-const	storage.md	engine/storage/component_registry.h:150
-storage::UnknownPolicy	enum	storage	storage-unknownpolicy	storage.md	engine/storage/component_registry.h:167
-storage::UnknownPolicy::Fail	enumerator	storage	storage-unknownpolicy-fail	storage.md	engine/storage/component_registry.h:169
-storage::UnknownPolicy::SkipAndReport	enumerator	storage	storage-unknownpolicy-skipandreport	storage.md	engine/storage/component_registry.h:170
-storage::UnknownPolicy::KeepOpaque	enumerator	storage	storage-unknownpolicy-keepopaque	storage.md	engine/storage/component_registry.h:171
-storage::RecordAction	enum	storage	storage-recordaction	storage.md	engine/storage/component_registry.h:176
-storage::RecordAction::Decode	enumerator	storage	storage-recordaction-decode	storage.md	engine/storage/component_registry.h:178
-storage::RecordAction::Skip	enumerator	storage	storage-recordaction-skip	storage.md	engine/storage/component_registry.h:179
-storage::RecordAction::KeepOpaque	enumerator	storage	storage-recordaction-keepopaque	storage.md	engine/storage/component_registry.h:180
-storage::ManifestEntry	struct	storage	storage-manifestentry	storage.md	engine/storage/component_registry.h:188
-storage::ManifestEntry::id	variable	storage	storage-manifestentry-id	storage.md	engine/storage/component_registry.h:190
-storage::ManifestEntry::name	variable	storage	storage-manifestentry-name	storage.md	engine/storage/component_registry.h:191
-storage::ManifestEntry::version	variable	storage	storage-manifestentry-version	storage.md	engine/storage/component_registry.h:192
-storage::ComponentRegistry	class	storage	storage-componentregistry	storage.md	engine/storage/component_registry.h:200
-storage::ComponentRegistry::ComponentRegistry()	function	storage	storage-componentregistry-componentregistry	storage.md	engine/storage/component_registry.h:204
-storage::ComponentRegistry::ComponentRegistry(const ComponentRegistry&)	function	storage	storage-componentregistry-componentregistry-const-componentregistry-amp	storage.md	engine/storage/component_registry.h:205
-storage::ComponentRegistry::operator=(const ComponentRegistry&)	function	storage	storage-componentregistry-operator-eq-const-componentregistry-amp	storage.md	engine/storage/component_registry.h:206
-storage::ComponentRegistry::Register(const ComponentDesc&)	function	storage	storage-componentregistry-register-const-componentdesc-amp	storage.md	engine/storage/component_registry.h:215
-storage::ComponentRegistry::FindById(u32) const	function	storage	storage-componentregistry-findbyid-u32-const	storage.md	engine/storage/component_registry.h:224
-storage::ComponentRegistry::FindByName(StringView) const	function	storage	storage-componentregistry-findbyname-stringview-const	storage.md	engine/storage/component_registry.h:229
-storage::ComponentRegistry::FindByEcsId(ecs::ComponentId) const	function	storage	storage-componentregistry-findbyecsid-ecs-componentid-const	storage.md	engine/storage/component_registry.h:234
-storage::ComponentRegistry::Find() const	function	storage	storage-componentregistry-find-const	storage.md	engine/storage/component_registry.h:239
-storage::ComponentRegistry::Count() const	function	storage	storage-componentregistry-count-const	storage.md	engine/storage/component_registry.h:241
-storage::ComponentRegistry::At(u32) const	function	storage	storage-componentregistry-at-u32-const	storage.md	engine/storage/component_registry.h:243
-storage::ComponentRegistry::Resolve(u32,UnknownPolicy,const RegisteredComponent**,RecordAction*) const	function	storage	storage-componentregistry-resolve-u32-unknownpolicy-const-registeredcomponent-star-star-recordaction-star-const	storage.md	engine/storage/component_registry.h:254
-storage::ComponentRegistry::Manifest(Vector<ManifestEntry>*) const	function	storage	storage-componentregistry-manifest-vector-lt-manifestentry-gt-star-const	storage.md	engine/storage/component_registry.h:261
-storage::ComponentRegistry::CheckManifest(Span<const ManifestEntry>) const	function	storage	storage-componentregistry-checkmanifest-span-lt-const-manifestentry-gt-const	storage.md	engine/storage/component_registry.h:269
-storage::ComponentRegistry::UnregisteredWithData(const ecs::World&,Vector<ecs::ComponentId>*) const	function	storage	storage-componentregistry-unregisteredwithdata-const-ecs-world-amp-vector-lt-ecs-componentid-gt-star-const	storage.md	engine/storage/component_registry.h:279
+storage::ComponentDesc::fields	variable	storage	storage-componentdesc-fields	storage.md	engine/storage/component_registry.h:79
+storage::ComponentDesc::upgrades	variable	storage	storage-componentdesc-upgrades	storage.md	engine/storage/component_registry.h:82
+storage::ComponentDesc::custom	variable	storage	storage-componentdesc-custom	storage.md	engine/storage/component_registry.h:85
+storage::RegisteredComponent	class	storage	storage-registeredcomponent	storage.md	engine/storage/component_registry.h:92
+storage::RegisteredComponent::Id() const	function	storage	storage-registeredcomponent-id-const	storage.md	engine/storage/component_registry.h:96
+storage::RegisteredComponent::Name() const	function	storage	storage-registeredcomponent-name-const	storage.md	engine/storage/component_registry.h:101
+storage::RegisteredComponent::Version() const	function	storage	storage-registeredcomponent-version-const	storage.md	engine/storage/component_registry.h:103
+storage::RegisteredComponent::OldestVersion() const	function	storage	storage-registeredcomponent-oldestversion-const	storage.md	engine/storage/component_registry.h:105
+storage::RegisteredComponent::Flags() const	function	storage	storage-registeredcomponent-flags-const	storage.md	engine/storage/component_registry.h:107
+storage::RegisteredComponent::IsStored() const	function	storage	storage-registeredcomponent-isstored-const	storage.md	engine/storage/component_registry.h:110
+storage::RegisteredComponent::IsQueryable() const	function	storage	storage-registeredcomponent-isqueryable-const	storage.md	engine/storage/component_registry.h:113
+storage::RegisteredComponent::EcsId() const	function	storage	storage-registeredcomponent-ecsid-const	storage.md	engine/storage/component_registry.h:115
+storage::RegisteredComponent::IsTag() const	function	storage	storage-registeredcomponent-istag-const	storage.md	engine/storage/component_registry.h:118
+storage::RegisteredComponent::Fields() const	function	storage	storage-registeredcomponent-fields-const	storage.md	engine/storage/component_registry.h:120
+storage::RegisteredComponent::Encode(const void*,bytes::ByteWriter&,const CodecLimits&) const	function	storage	storage-registeredcomponent-encode-const-void-star-bytes-bytewriter-amp-const-codeclimits-amp-const	storage.md	engine/storage/component_registry.h:130
+storage::RegisteredComponent::Decode(bytes::ByteReader&,void*,const CodecLimits&) const	function	storage	storage-registeredcomponent-decode-bytes-bytereader-amp-void-star-const-codeclimits-amp-const	storage.md	engine/storage/component_registry.h:140
+storage::RegisteredComponent::DecodeRecord(u32,ByteSpan,void*,const CodecLimits&) const	function	storage	storage-registeredcomponent-decoderecord-u32-bytespan-void-star-const-codeclimits-amp-const	storage.md	engine/storage/component_registry.h:154
+storage::UnknownPolicy	enum	storage	storage-unknownpolicy	storage.md	engine/storage/component_registry.h:171
+storage::UnknownPolicy::Fail	enumerator	storage	storage-unknownpolicy-fail	storage.md	engine/storage/component_registry.h:173
+storage::UnknownPolicy::SkipAndReport	enumerator	storage	storage-unknownpolicy-skipandreport	storage.md	engine/storage/component_registry.h:174
+storage::UnknownPolicy::KeepOpaque	enumerator	storage	storage-unknownpolicy-keepopaque	storage.md	engine/storage/component_registry.h:175
+storage::RecordAction	enum	storage	storage-recordaction	storage.md	engine/storage/component_registry.h:180
+storage::RecordAction::Decode	enumerator	storage	storage-recordaction-decode	storage.md	engine/storage/component_registry.h:182
+storage::RecordAction::Skip	enumerator	storage	storage-recordaction-skip	storage.md	engine/storage/component_registry.h:183
+storage::RecordAction::KeepOpaque	enumerator	storage	storage-recordaction-keepopaque	storage.md	engine/storage/component_registry.h:184
+storage::ManifestEntry	struct	storage	storage-manifestentry	storage.md	engine/storage/component_registry.h:192
+storage::ManifestEntry::id	variable	storage	storage-manifestentry-id	storage.md	engine/storage/component_registry.h:194
+storage::ManifestEntry::name	variable	storage	storage-manifestentry-name	storage.md	engine/storage/component_registry.h:195
+storage::ManifestEntry::version	variable	storage	storage-manifestentry-version	storage.md	engine/storage/component_registry.h:196
+storage::ComponentRegistry	class	storage	storage-componentregistry	storage.md	engine/storage/component_registry.h:204
+storage::ComponentRegistry::ComponentRegistry()	function	storage	storage-componentregistry-componentregistry	storage.md	engine/storage/component_registry.h:208
+storage::ComponentRegistry::ComponentRegistry(const ComponentRegistry&)	function	storage	storage-componentregistry-componentregistry-const-componentregistry-amp	storage.md	engine/storage/component_registry.h:209
+storage::ComponentRegistry::operator=(const ComponentRegistry&)	function	storage	storage-componentregistry-operator-eq-const-componentregistry-amp	storage.md	engine/storage/component_registry.h:210
+storage::ComponentRegistry::Register(const ComponentDesc&)	function	storage	storage-componentregistry-register-const-componentdesc-amp	storage.md	engine/storage/component_registry.h:219
+storage::ComponentRegistry::FindById(u32) const	function	storage	storage-componentregistry-findbyid-u32-const	storage.md	engine/storage/component_registry.h:228
+storage::ComponentRegistry::FindByName(StringView) const	function	storage	storage-componentregistry-findbyname-stringview-const	storage.md	engine/storage/component_registry.h:233
+storage::ComponentRegistry::FindByEcsId(ecs::ComponentId) const	function	storage	storage-componentregistry-findbyecsid-ecs-componentid-const	storage.md	engine/storage/component_registry.h:238
+storage::ComponentRegistry::Find() const	function	storage	storage-componentregistry-find-const	storage.md	engine/storage/component_registry.h:243
+storage::ComponentRegistry::Count() const	function	storage	storage-componentregistry-count-const	storage.md	engine/storage/component_registry.h:245
+storage::ComponentRegistry::At(u32) const	function	storage	storage-componentregistry-at-u32-const	storage.md	engine/storage/component_registry.h:247
+storage::ComponentRegistry::Resolve(u32,UnknownPolicy,const RegisteredComponent**,RecordAction*) const	function	storage	storage-componentregistry-resolve-u32-unknownpolicy-const-registeredcomponent-star-star-recordaction-star-const	storage.md	engine/storage/component_registry.h:258
+storage::ComponentRegistry::Manifest(Vector<ManifestEntry>*) const	function	storage	storage-componentregistry-manifest-vector-lt-manifestentry-gt-star-const	storage.md	engine/storage/component_registry.h:265
+storage::ComponentRegistry::CheckManifest(Span<const ManifestEntry>) const	function	storage	storage-componentregistry-checkmanifest-span-lt-const-manifestentry-gt-const	storage.md	engine/storage/component_registry.h:273
+storage::ComponentRegistry::UnregisteredWithData(const ecs::World&,Vector<ecs::ComponentId>*) const	function	storage	storage-componentregistry-unregisteredwithdata-const-ecs-world-amp-vector-lt-ecs-componentid-gt-star-const	storage.md	engine/storage/component_registry.h:283
 storage::EntityKey	struct	storage	storage-entitykey	storage.md	engine/storage/entity_ref.h:19
 storage::EntityKey::high	variable	storage	storage-entitykey-high	storage.md	engine/storage/entity_ref.h:21
 storage::EntityKey::low	variable	storage	storage-entitykey-low	storage.md	engine/storage/entity_ref.h:22
