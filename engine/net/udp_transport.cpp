@@ -14,9 +14,9 @@ namespace
 
 constexpr u8 kUdpFrameMessage = 1;
 constexpr usize kUdpFrameHeaderBytes = 1 + 1 + 2;
-constexpr usize kReceiveBatch = 256;  // datagrams taken from the port per Poll
-constexpr usize
-    kUdpRetiredMemory = 4096;  // closed handshakes remembered while their cookie lives; more: new ones are denied
+constexpr usize kReceiveBatch = 256;         // datagrams taken from the port per Poll
+constexpr usize kUdpRetiredMemory = 4096;    // closed handshakes remembered while their cookie lives
+constexpr usize kUdpRetiredPerAddress = 64;  // of them, per source address: a churning address is denied alone
 constexpr u64 kMaxHandshakeRetry = 1'000'000'000ull;
 
 enum class UdpState : u8
@@ -428,6 +428,30 @@ struct UdpTransport::Impl
         Emit(from, p);
     }
 
+    // Drops the oldest remembered handshake of the address that has the most of them.
+    void EvictFromBusiestAddress()
+    {
+        usize best = 0;
+        usize best_count = 0;
+        for (usize i = 0; i < retired.Size(); ++i)
+        {
+            usize count = 0;
+            for (usize j = 0; j < retired.Size(); ++j)
+            {
+                count += retired[j].peer.GetAddress() == retired[i].peer.GetAddress() ? 1 : 0;
+            }
+            if (count > best_count)
+            {
+                best_count = count;
+                best = i;
+            }
+        }
+        if (best_count > 0)
+        {
+            retired.Remove(best);  // the first entry found for that address is its oldest
+        }
+    }
+
     void OnResponse(const Endpoint& from, ByteSpan packet)
     {
         if (packet.Size() < udp::kHandshakeBytes)
@@ -480,7 +504,22 @@ struct UdpTransport::Impl
                 ++i;
             }
         }
-        if (conns.Size() >= config.max_connections || retired.Size() >= kUdpRetiredMemory)
+        usize retired_here = 0;
+        for (usize i = 0; i < retired.Size(); ++i)
+        {
+            retired_here += retired[i].peer.GetAddress() == from.GetAddress() ? 1 : 0;
+        }
+        if (retired_here >= kUdpRetiredPerAddress)
+        {
+            SendDenied(from, salt,
+                       udp::DenyReason::AddressLimit);  // this address churns through handshakes; others are unaffected
+            return;
+        }
+        if (retired.Size() >= kUdpRetiredMemory)
+        {
+            EvictFromBusiestAddress();  // never a lockout for everyone: the address with the most entries pays
+        }
+        if (conns.Size() >= config.max_connections)
         {
             SendDenied(from, salt, udp::DenyReason::ServerFull);
             return;

@@ -416,7 +416,7 @@ TEST_CASE("UDP transport: a replayed or stale handshake is rejected", "[net][udp
     // Many other handshakes come and go: the recorded one is still remembered while its cookie lives.
     for (u32 i = 0; i < 70; ++i)
     {
-        Side other(net, Endpoint(Address::Loopback(AddressFamily::V4), static_cast<u16>(21000 + i)), cfg);
+        Side other(net, Endpoint(Address::V4(127, 0, static_cast<u8>(1 + i), 1), 21000), cfg);
         ConnectionId oc = 0;
         REQUIRE(other.transport.Connect(kServer, &oc).Ok());
         Run(net, 150, &server, &other);
@@ -674,6 +674,45 @@ TEST_CASE("UDP transport: payloads for a connection being closed are not answere
         Run(net, 10, &server, &client);
     }
     CHECK(server.transport.Counters().resets_sent == 0);
+}
+
+TEST_CASE("UDP transport: an address that churns handshakes is denied alone", "[net][udp]")
+{
+    SimNetwork net(93);
+    net.SetDefaultLink(Link(0, 0, 0));
+    UdpTransportConfig cfg = TestConfig();
+    cfg.cookie_period_nanos = 600'000'000'000ull;
+    Side server(net, kServer, cfg);
+    REQUIRE(server.transport.Listen(kServer).Ok());
+    // One address connects and disconnects over and over until the server stops taking it.
+    u32 accepted = 0;
+    u32 denied = 0;
+    for (u32 i = 0; i < 80; ++i)
+    {
+        Side churn(net, Endpoint(Address::V4(10, 0, 0, 1), static_cast<u16>(22000 + i)), cfg);
+        ConnectionId id = 0;
+        REQUIRE(churn.transport.Connect(kServer, &id).Ok());
+        Run(net, 150, &server, &churn);
+        if (churn.Count(EventKind::Opened) == 1)
+        {
+            ++accepted;
+            REQUIRE(churn.transport.Close(id, 0).Ok());
+            Run(net, 60, &server, &churn);
+        }
+        else if (churn.Count(EventKind::Closed) == 1 &&
+                 churn.First(EventKind::Closed)->reason == DisconnectReason::Refused)
+        {
+            ++denied;
+        }
+    }
+    CHECK(accepted == 64);
+    CHECK(denied == 16);
+    // Another address is not affected.
+    Side other(net, Endpoint(Address::V4(10, 0, 0, 2), 22000), cfg);
+    ConnectionId id = 0;
+    REQUIRE(other.transport.Connect(kServer, &id).Ok());
+    Run(net, 150, &server, &other);
+    CHECK(other.Count(EventKind::Opened) == 1);
 }
 
 }  // namespace engine_placeholder::net
