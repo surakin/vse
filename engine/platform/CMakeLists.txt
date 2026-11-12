@@ -64,9 +64,10 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   )
   set(PLATFORM_DISPLAY_LIBS user32 shell32 gdi32 ole32) # gdi32: the custom cursor's DIB; ole32: drag and drop (Day 205)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  # Phase 26 Day 311: the Cocoa window, the window host and the entry point (input, the cursor, the clipboard and drag and drop
-  # on Days 312-313). AppKit for the window, QuartzCore for its CAMetalLayer.
+  # Phase 26 Day 311: the Cocoa window, the window host and the entry point; Day 312 the keys and the input event stream (the cursor,
+  # the clipboard and drag and drop on Day 313). AppKit for the window, QuartzCore for its CAMetalLayer.
   list(APPEND PLATFORM_SOURCES
+    macos/cocoa_keys.cpp
     macos/cocoa_window.mm
     macos/window_host_macos.cpp
     macos/entry_point_macos.cpp

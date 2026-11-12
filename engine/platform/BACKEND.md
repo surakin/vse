@@ -76,9 +76,24 @@ modal-loop callback keeps the program drawing; it refuses to start unless a mous
 
 **Built (Phase 26 Day 311): the window** (`macos/cocoa_window.mm`): `NSWindow` with a `CAMetalLayer`-backed view, `PumpEvents` draining
 `nextEventMatchingMask:untilDate:distantPast`, the size in pixels at the backing scale, `windowShouldClose:` and Quit as close requests,
-native fullscreen, `Resize`/`FocusGained`/`FocusLost` in the stream; the window host (`macos/window_host_macos.cpp`) and the entry point
-(`macos/entry_point_macos.cpp`). **Not built yet** (Days 312-313; drag and drop is `NSDraggingDestination` and `NSDraggingSource` on the view; the clipboard is `NSPasteboard` (`NSPasteboardTypeString`, file URLs; `changeCount` polled for `ClipboardChanged`); cursors `NSCursor`, the lock `CGAssociateMouseAndMouseCursorPosition`): `NSEvent` key events with `interpretKeyEvents:` for text, dead keys and input methods, `scrollingDeltaX/Y`, `keyDown` repeat from
-`isARepeat`, `windowDidBecomeKey`/`windowDidResignKey`, `windowDidResize`. The `PollEvent` default (no events) keeps the layer compiling meanwhile.
+native fullscreen; the window host (`macos/window_host_macos.cpp`) and the entry point (`macos/entry_point_macos.cpp`). **The event stream
+(Day 312):** the content view is the first responder. `keyDown:`/`keyUp:` give `KeyDown` (repeat from `isARepeat`, or a press of a key already
+down) and `KeyUp`, named by `KeyFromCocoa` (`macos/cocoa_keys.*`: the key code for keys named by position, `charactersIgnoringModifiers` for
+the others); a release ends the `Key` its key was pressed as (in `InputState` only once no other key of that name is held), and a key-up for a key the window never saw go down is dropped. `flagsChanged:`
+gives the modifier keys (the side from the device bits; Caps Lock as a press and a release at once, since macOS reports only its toggle), with
+the modifiers held before them. Option is Alt, Command is Super. AppKit does not pass a key-up with Command held to the window, so `PumpEvents`
+gives such an event to its window directly. **Text:** a minimal `NSTextInputClient`; `keyDown:` calls `interpretKeyEvents:` unless Control or
+Command is held, `insertText:` gives a `Text` per scalar (control characters and AppKit's function-key scalars U+F700-U+F8FF dropped), dead keys
+and input methods are the system's (marked text is tracked, not shown), `doCommandBySelector:` gives nothing; Option's characters do arrive (on
+macOS it is the layout's third level). **Pointer:** `mouseMoved:` (from the tracking area, key or not; a move outside with no button held is dropped) and the three `*Dragged:` as `PointerMove`,
+the three button pairs (`buttonNumber` 2 to 4: middle, back, forward), positions in pixels from the top left; an `NSTrackingArea`
+(`ActiveAlways`, `InVisibleRect`, `MouseMoved`, `EnabledDuringMouseDrag`) for `PointerEnter`/`PointerLeave`, and the first move inside is an enter when none came; `acceptsFirstMouse:`
+is true. **Wheel:** `scrollingDeltaX/Y`, signs turned (macOS: positive up and left), precise deltas over 10 points per notch, line deltas as
+notches; `InputState` 10 units per notch. **Focus:** `windowDidBecomeKey` (the modifiers read again) and `windowDidResignKey` (a `KeyUp` per held
+key, then `FocusLost`; buttons stay held); `Close` releases the keys too. **Resize:** `windowDidResize` and `windowDidChangeBackingProperties`;
+the stream starts with the settled size. **Not built yet** (Day 313): drag and drop is `NSDraggingDestination` and `NSDraggingSource` on the
+view; the clipboard is `NSPasteboard` (`NSPasteboardTypeString`, file URLs; `changeCount` polled for `ClipboardChanged`); cursors `NSCursor`,
+the lock `CGAssociateMouseAndMouseCursorPosition`.
 
 ### `android`
 

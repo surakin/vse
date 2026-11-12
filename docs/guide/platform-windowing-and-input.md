@@ -291,8 +291,9 @@ nothing changes and `IsFullscreen` stays false, so a settings layer treats the `
 - **Windows:** borderless over the window's monitor (`engine/platform/windows/FULLSCREEN.md`): the style loses
   `WS_OVERLAPPEDWINDOW` and the window covers the monitor's rectangle; leaving gives back the saved style and placement. Windows
   never refuses, and the change is synchronous: `IsFullscreen` is true when `SetFullscreen` returns. No exclusive mode.
-- **macOS** is not implemented yet; the checklist is in `engine/platform/macos/FULLSCREEN.md`. A backend that does not
-  implement it keeps the default (`SupportsFullscreen` is false) and the setting is unavailable.
+- **macOS:** native fullscreen (`toggleFullScreen:`, a Space of its own; `engine/platform/macos/FULLSCREEN.md`, Phase 26 Day 311): the
+  change animates, so `IsFullscreen` follows when it ends, and a request made during the animation is applied after it. A backend that
+  does not implement fullscreen keeps the default (`SupportsFullscreen` is false) and the setting is unavailable.
 
 ### Wayland specifics
 
@@ -380,7 +381,44 @@ never reaches a destroyed object; for the same reason the object cannot move.
 - **Without a window server** (an ssh login with nobody at the console) no window opens, and the log says why; a locked screen still
   opens windows, but nobody sees them, so the window tests skip while it is locked.
 - **Native handles:** kind `Cocoa`, `display` the content `NSView*`, `surface` its `CAMetalLayer*`, `window_id` the window number.
-- **Input** (keys, text, the mouse) comes on Phase 26 Day 312; today the stream has `Resize`, `FocusGained` and `FocusLost`.
+- **Input** is the next section; the cursor, the clipboard and drag and drop come on Phase 26 Day 313.
+
+### macOS input
+
+The content view is the window's first responder and fills the [[os::InputState]] and the event stream (Phase 26 Day 312), with the meaning
+the Linux and Windows backends give them.
+
+- **Keys are layout-aware.** A key that types a character is named by what the layout gives it with Shift and Caps Lock
+  (`charactersIgnoringModifiers`): on AZERTY the key in the Q position is `A`, Shift+1 on a US layout is `!` and so `Unknown`, a dead key is
+  `Unknown`, as on Linux. Every other key is named by its key code (the position): left and right modifiers apart, the number pad's digits as
+  `Num0`..`Num9` and its Enter as `Enter`, Help as `Insert`, the forward Delete as `Delete`, the Delete above Return as `Backspace`; fn, F13 and
+  up, the pad's operators and the volume keys are `Unknown`. The translation is `os::cocoa::KeyFromCocoa` (`platform/macos/cocoa_keys.h`); a
+  table test checks every `Key` against the SDK's `kVK_` codes. A release clears the `Key` its key was pressed as, as on X11 and Windows; two keys of one name (the digit row's `1` and
+  the pad's, Return and the pad's Enter) each have their own press and release in the stream, and `InputState` keeps the `Key` down while either is held.
+- **The modifiers:** Shift, Control as `kModCtrl`, **Option as Alt** (`LeftAlt`/`RightAlt`, `kModAlt`), **Command as Super**
+  (`LeftSuper`/`RightSuper`, `kModSuper`), Caps Lock; a Mac has no Num Lock. Modifier keys come from `flagsChanged:`, left and right told
+  apart by the device bits; a `KeyDown` or `KeyUp` of a modifier carries the modifiers held before it, as on Linux and Windows. **Caps Lock**
+  is reported by macOS once per press, as the lock's new state: each press is a `KeyDown` and a `KeyUp` at once.
+- **Option does not rename a key** (Option+E is `Key::E`) **and does type.** On macOS Option is the layout's third level, the way people type
+  `€`, `@` or `ñ` on many layouts, so unlike Alt on Linux and Windows its characters arrive as `Text`. **Control and Command type nothing.**
+- **Text** comes from AppKit's text system (`interpretKeyEvents:`, a minimal `NSTextInputClient`): one `Text` per scalar right after the
+  `KeyDown`, again with each repeat (`isARepeat`). A dead key gives none until the next key completes it (Option-E then E, or the accent key of
+  a Spanish layout, gives `é`); a dead key followed by a key it does not combine with gives both. Enter, Tab, Backspace, Escape, Delete and the
+  arrows give none. An input method's composition (marked text) is not shown; its committed text arrives as `Text`, as on X11.
+- **Command shortcuts:** the menu's own (Cmd-Q) are taken by the menu and never reach the program; every other Command press arrives as a key.
+  AppKit keeps a key-up with Command held for itself, so `PumpEvents` hands it to the window directly; a key whose press the menu took has no
+  `KeyUp` either.
+- **The pointer:** positions in pixels from the top left (AppKit's points from the bottom left, flipped and scaled). Moves arrive whether or not the
+  window is key (a tracking area), and while a button is held also outside the window, as a press keeps the mouse on X11 and
+  Windows. `PointerEnter` and `PointerLeave` come from a tracking area, whether or not the window is key; a pointer already inside when the
+  window opens enters with its first move. Buttons: left, right, the middle (button 2) and buttons 3 and 4 as back and forward. The click that
+  activates the window reaches the program (`acceptsFirstMouse:`). A Control-click is a left click with `kModCtrl`, not a right click.
+- **The wheel:** a mouse wheel's lines are notches; a trackpad's or Magic Mouse's precise scroll is points, ten to the notch (AppKit's own
+  line scroll), so a two-finger swipe gives fractions. Positive is right and down. The user's natural-scrolling setting is applied by macOS
+  before the program sees the event, as for every macOS program. `InputState::scroll_dx/dy` keep the Linux units, 10 per notch (points).
+- **Focus** is the key window: `windowDidBecomeKey` and `windowDidResignKey`. On loss (Cmd-Tab, a click on another program or another of
+  this program's windows) every held key gets a `KeyUp`, then `FocusLost`; the buttons stay held, because macOS gives the release to the
+  window the press went to. On gain the modifiers are read again, so a Command still held after Cmd-Tab back is known.
 
 ### Windows input
 
@@ -425,8 +463,8 @@ program). Started from Explorer it has no console: the writes fail and the log f
 
 ### Known limitations
 
-- The event stream is implemented on Linux (Wayland and X11); the Windows backend gets it on Phase 15 Day 205, macOS in Phase 26 (`engine/platform/BACKEND.md`).
-- The cursor shapes, images and the lock are implemented on Linux; Windows gets them on Phase 15 Day 205, macOS in Phase 26 (`engine/platform/BACKEND.md`).
+- The event stream is implemented on Linux (Wayland and X11), Windows (Phase 15 Day 205) and macOS (Phase 26 Day 312) (`engine/platform/BACKEND.md`).
+- The cursor shapes, images and the lock are implemented on Linux and Windows (Phase 15 Day 205); macOS gets them on Phase 26 Day 313 (`engine/platform/BACKEND.md`).
 - No input-method (IME) composition: a Chinese, Japanese or Korean input method is not supported; dead keys and compose sequences are.
 - The Wayland half is checked against a real compositor only, which cannot be made to send key, pointer and focus events; the key logic is tested through
   `KeyboardEvents` with a fake clock and real keymaps, and the pointer, focus and wheel handlers by the end-to-end runs of the UI demo (Day 204).

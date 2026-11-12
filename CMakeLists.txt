@@ -283,6 +283,7 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(tests/ui)  # the CPU-side tests; the window, clipboard and viewport ones need the window layer (Day 311)
   add_subdirectory(game/ecs_bench)  # Day 310: the ECS benchmark, CPU only (the other programs of game/ come with their layers)
   add_subdirectory(game/hello_window)  # Day 311: the first windowed program
+  add_subdirectory(game/input_probe)  # Day 312: the input event stream, checked by hand
   add_subdirectory(tests/foundation)  # the base-layer tests (foundation_base_tests), Day 301; the file-layer and window ones need later days
   add_subdirectory(tests/foundation_sanitized)
   add_subdirectory(tests/io)  # the file layer, Days 303-305

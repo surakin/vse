@@ -92,3 +92,15 @@ endfunction()
 engine_add_macos_window_tests(macos_window_tests platform "" "macos")
 engine_add_macos_window_tests(macos_window_tests_asan platform_asan " [asan]" "asan")
 engine_add_macos_window_tests(macos_window_tests_tsan platform_tsan " [tsan]" "tsan")
+
+# --- The input event stream (Day 312): the key table against the SDK's kVK_ constants, then keys, text, the pointer, the wheel and the
+# focus from synthesized NSEvents in real windows, so `display`. Carbon for the key codes and the current layout's dead key. -----------
+function(engine_add_macos_input_tests target platform_lib suffix label)
+  add_executable(${target} cocoa_input_macos_test.mm)
+  target_link_libraries(${target} PRIVATE ${platform_lib} Catch2::Catch2WithMain Threads::Threads "-framework AppKit" "-framework Carbon")
+  target_include_directories(${target} PRIVATE ${CMAKE_SOURCE_DIR}/tests/support)
+  engine_discover_tests(${target} TEST_SUFFIX "${suffix}" PROPERTIES LABELS "${label};display" RESOURCE_LOCK display)
+endfunction()
+engine_add_macos_input_tests(macos_input_tests platform "" "macos")
+engine_add_macos_input_tests(macos_input_tests_asan platform_asan " [asan]" "asan")
+engine_add_macos_input_tests(macos_input_tests_tsan platform_tsan " [tsan]" "tsan")

@@ -6,11 +6,13 @@
 //!
 //! Keys are layout-aware: they name the symbol the user's layout produces, not the physical position. Each backend
 //! gives the state the same meaning: on Linux from XKB keysyms (`platform/linux/key_translate.h`), on Windows from the
-//! layout's character for a key that types one and the scan code for the others (`platform/windows/win32_keys.h`). The
-//! differences on Windows: AltGr is the right Alt alone and no modifier, as XKB's level-3 shift is; a focus loss also
-//! releases the mouse buttons (Windows hands the mouse to the other window, where the X11 and Wayland servers still
-//! deliver the release); and the wheel is scaled to the Linux backends' 10 units per notch. There is no text input yet
-//! on any backend.
+//! layout's character for a key that types one and the scan code for the others (`platform/windows/win32_keys.h`), on
+//! macOS from the layout's character and the key code the same way (`platform/macos/cocoa_keys.h`). On Windows, AltGr
+//! is the right Alt alone and no modifier, as XKB's level-3 shift is; a focus loss also releases the
+//! mouse buttons (Windows hands the mouse to the other window, where the X11 and Wayland servers still deliver the
+//! release); and the wheel is scaled to the Linux backends' 10 units per notch. On macOS Option is Alt and Command is
+//! Super, Option does not rename a key, and a trackpad's scroll is 10 points to the notch. Text arrives through the
+//! event stream (`platform/input_event.h`).
 
 namespace engine_placeholder::os
 {

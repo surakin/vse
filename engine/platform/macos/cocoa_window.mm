@@ -6,6 +6,8 @@
 
 #include "log/log.h"
 #include "os/os.h"
+#include "platform/macos/cocoa_keys.h"
+#include "string/utf8_codec.h"
 
 #import <AppKit/AppKit.h>
 #import <CoreGraphics/CoreGraphics.h>
@@ -44,11 +46,35 @@ bool g_in_modal_callback = false;  // the live-resize callback is running: PumpE
 }
 @end
 
-// The content view: backed by a CAMetalLayer the RHI renders into (makeBackingLayer), so AppKit never draws it.
-@interface EngineMetalView : NSView
+// The content view: backed by a CAMetalLayer the RHI renders into (makeBackingLayer), so AppKit never draws it. It is
+// the window's first responder and turns the NSEvents it gets into the C++ window's input (cocoa_keys.h): keys, text
+// through a minimal NSTextInputClient (interpretKeyEvents: gives dead keys and input methods their say; marked text is
+// not shown), the pointer in pixels from the top left, the wheel in notches. Close clears `owner` first.
+@interface EngineMetalView : NSView <NSTextInputClient>
+@property(nonatomic, assign) CocoaWindow* owner;
 @end
 
+namespace
+{
+
+engine_placeholder::u32 FirstScalar(NSString* text)
+{
+    if (text.length == 0)
+    {
+        return 0;
+    }
+    const char* utf8 = text.UTF8String;
+    const engine_placeholder::usize length = [text lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
+    return utf8 != nullptr ? engine_placeholder::DecodeUtf8At(utf8, length, 0).codepoint : 0;
+}
+
+}  // namespace
+
 @implementation EngineMetalView
+{
+    BOOL has_marked_text_;
+    NSTrackingArea* tracking_;
+}
 - (CALayer*)makeBackingLayer
 {
     return [CAMetalLayer layer];
@@ -60,6 +86,230 @@ bool g_in_modal_callback = false;  // the live-resize callback is running: PumpE
 - (BOOL)acceptsFirstResponder
 {
     return YES;
+}
+- (BOOL)acceptsFirstMouse:(NSEvent*)event
+{
+    (void)event;
+    return YES;  // the click that activates the window reaches the program, as on the other platforms
+}
+- (void)updateTrackingAreas
+{
+    if (tracking_ == nil)
+    {
+        // The visible rectangle, kept current by AppKit: entered, exited and moved over whether or not the window is
+        // key (Linux and Windows report motion to an unfocused window), and during a drag too.
+        tracking_ = [[NSTrackingArea alloc]
+            initWithRect:NSZeroRect
+                 options:NSTrackingMouseEnteredAndExited | NSTrackingMouseMoved | NSTrackingActiveAlways |
+                         NSTrackingInVisibleRect | NSTrackingEnabledDuringMouseDrag
+                   owner:self
+                userInfo:nil];
+        [self addTrackingArea:tracking_];
+    }
+    [super updateTrackingAreas];
+}
+
+// The event's position in window pixels from the top left, and whether it is inside the view.
+- (NSPoint)pixelPointOf:(NSEvent*)event inside:(BOOL*)inside
+{
+    const NSPoint p = [self convertPoint:event.locationInWindow fromView:nil];
+    const NSRect bounds = self.bounds;
+    if (inside != nullptr)
+    {
+        *inside = NSPointInRect(p, bounds);
+    }
+    const CGFloat scale = self.window != nil ? self.window.backingScaleFactor : 1.0;
+    return NSMakePoint(p.x * scale, (bounds.size.height - p.y) * scale);
+}
+
+- (void)keyDown:(NSEvent*)event
+{
+    if (self.owner == nullptr)
+    {
+        return;
+    }
+    if (self.owner->OnKeyDown(event.keyCode, FirstScalar(event.charactersIgnoringModifiers), event.modifierFlags,
+                              event.isARepeat))
+    {
+        [self interpretKeyEvents:@[ event ]];  // insertText: (the Text after this KeyDown) or doCommandBySelector:
+    }
+}
+- (void)keyUp:(NSEvent*)event
+{
+    if (self.owner != nullptr)
+    {
+        self.owner->OnKeyUp(event.keyCode, event.modifierFlags);
+    }
+}
+- (void)flagsChanged:(NSEvent*)event
+{
+    if (self.owner != nullptr)
+    {
+        self.owner->OnFlagsChanged(event.keyCode, event.modifierFlags);
+    }
+}
+
+// NSTextInputClient, minimally: committed text becomes Text events; marked text (a dead key waiting, an input method
+// composing) is remembered so the input system knows, but not shown.
+- (void)insertText:(id)string replacementRange:(NSRange)range
+{
+    (void)range;
+    has_marked_text_ = NO;
+    NSString* text = [string isKindOfClass:[NSAttributedString class]] ? [(NSAttributedString*)string string] : string;
+    if (self.owner != nullptr && text.length != 0)
+    {
+        self.owner->OnText(text.UTF8String, [text lengthOfBytesUsingEncoding:NSUTF8StringEncoding]);
+    }
+}
+- (void)doCommandBySelector:(SEL)selector
+{
+    (void)selector;  // Enter, Tab, Backspace, the arrows: the KeyDown said it; no beep, no text
+}
+- (void)setMarkedText:(id)string selectedRange:(NSRange)selected replacementRange:(NSRange)range
+{
+    (void)selected;
+    (void)range;
+    NSString* text = [string isKindOfClass:[NSAttributedString class]] ? [(NSAttributedString*)string string] : string;
+    has_marked_text_ = text.length != 0;
+}
+- (void)unmarkText
+{
+    has_marked_text_ = NO;
+}
+- (BOOL)hasMarkedText
+{
+    return has_marked_text_;
+}
+- (NSRange)markedRange
+{
+    return has_marked_text_ ? NSMakeRange(0, 1) : NSMakeRange(NSNotFound, 0);
+}
+- (NSRange)selectedRange
+{
+    return NSMakeRange(0, 0);
+}
+- (NSArray<NSAttributedStringKey>*)validAttributesForMarkedText
+{
+    return @[];
+}
+- (NSAttributedString*)attributedSubstringForProposedRange:(NSRange)range actualRange:(NSRangePointer)actual
+{
+    (void)range;
+    (void)actual;
+    return nil;
+}
+- (NSUInteger)characterIndexForPoint:(NSPoint)point
+{
+    (void)point;
+    return NSNotFound;
+}
+- (NSRect)firstRectForCharacterRange:(NSRange)range actualRange:(NSRangePointer)actual
+{
+    (void)range;
+    (void)actual;
+    // An input method's candidate window opens at the window's top left corner.
+    const NSRect bounds = self.bounds;
+    const NSRect corner = NSMakeRect(0, bounds.size.height, 0, 0);
+    return self.window != nil ? [self.window convertRectToScreen:[self convertRect:corner toView:nil]] : NSZeroRect;
+}
+
+- (void)reportMove:(NSEvent*)event dragging:(BOOL)dragging
+{
+    if (self.owner != nullptr)
+    {
+        BOOL inside = NO;
+        const NSPoint p = [self pixelPointOf:event inside:&inside];
+        if (!inside && !dragging)
+        {
+            return;  // a move outside with no button held is another window's (or nobody's), as on X11 and Windows
+        }
+        self.owner->OnPointerMove(p.x, p.y, inside, event.modifierFlags);
+    }
+}
+- (void)reportButton:(NSEvent*)event bit:(engine_placeholder::u32)bit down:(bool)down
+{
+    if (self.owner != nullptr && bit != 0)
+    {
+        const NSPoint p = [self pixelPointOf:event inside:nullptr];
+        self.owner->OnPointerButton(bit, down, p.x, p.y, event.modifierFlags);
+    }
+}
+- (engine_placeholder::u32)otherButtonBit:(NSEvent*)event
+{
+    switch (event.buttonNumber)
+    {
+    case 2: return engine_placeholder::os::kMouseMiddle;
+    case 3: return engine_placeholder::os::kMouseBack;
+    case 4: return engine_placeholder::os::kMouseForward;
+    default: return 0;  // a sixth button and up: not in the engine's mask
+    }
+}
+- (void)mouseMoved:(NSEvent*)event
+{
+    [self reportMove:event dragging:NO];
+}
+- (void)mouseDragged:(NSEvent*)event
+{
+    [self reportMove:event dragging:YES];
+}
+- (void)rightMouseDragged:(NSEvent*)event
+{
+    [self reportMove:event dragging:YES];
+}
+- (void)otherMouseDragged:(NSEvent*)event
+{
+    [self reportMove:event dragging:YES];
+}
+- (void)mouseDown:(NSEvent*)event
+{
+    [self reportButton:event bit:engine_placeholder::os::kMouseLeft down:true];
+}
+- (void)mouseUp:(NSEvent*)event
+{
+    [self reportButton:event bit:engine_placeholder::os::kMouseLeft down:false];
+}
+- (void)rightMouseDown:(NSEvent*)event
+{
+    [self reportButton:event bit:engine_placeholder::os::kMouseRight down:true];
+}
+- (void)rightMouseUp:(NSEvent*)event
+{
+    [self reportButton:event bit:engine_placeholder::os::kMouseRight down:false];
+}
+- (void)otherMouseDown:(NSEvent*)event
+{
+    [self reportButton:event bit:[self otherButtonBit:event] down:true];
+}
+- (void)otherMouseUp:(NSEvent*)event
+{
+    [self reportButton:event bit:[self otherButtonBit:event] down:false];
+}
+- (void)mouseEntered:(NSEvent*)event
+{
+    if (self.owner != nullptr)
+    {
+        const NSPoint p = [self pixelPointOf:event inside:nullptr];
+        self.owner->OnPointerEnter(p.x, p.y, event.modifierFlags);
+    }
+}
+- (void)mouseExited:(NSEvent*)event
+{
+    if (self.owner != nullptr)
+    {
+        self.owner->OnPointerLeave(event.modifierFlags);
+    }
+}
+- (void)scrollWheel:(NSEvent*)event
+{
+    if (self.owner != nullptr)
+    {
+        const engine_placeholder::os::cocoa::CocoaWheel wheel = engine_placeholder::os::cocoa::CocoaWheelNotches(
+            event.scrollingDeltaX, event.scrollingDeltaY, event.hasPreciseScrollingDeltas);
+        if (wheel.dx != 0.0 || wheel.dy != 0.0)
+        {
+            self.owner->OnWheel(wheel.dx, wheel.dy, event.modifierFlags);
+        }
+    }
 }
 @end
 
@@ -217,6 +467,10 @@ bool EnsureApplication()
     CFRelease(session);
     @autoreleasepool
     {
+        // Holding a key repeats it, as on the other platforms: press-and-hold (the accent menu a held letter opens in a
+        // text field) is turned off for this program. Only the registration domain, the fallback below every other
+        // one: the user's own settings are not touched, and a user who sets it for this program still wins.
+        [[NSUserDefaults standardUserDefaults] registerDefaults:@{@"ApplePressAndHoldEnabled" : @NO}];
         NSApplication* app = [NSApplication sharedApplication];
         [app setActivationPolicy:NSApplicationActivationPolicyRegular];
         g_app_delegate = [[EngineApplicationDelegate alloc] init];
@@ -279,6 +533,8 @@ bool CocoaWindow::Open(StringView title, u32 width, u32 height, InputState* inpu
     fullscreen_wanted_ = false;
     fullscreen_transition_ = false;
     events_.Clear();
+    held_ = {};
+    modifiers_ = 0;
     input_ = input != nullptr ? input : &own_input_;
     @autoreleasepool
     {
@@ -298,7 +554,9 @@ bool CocoaWindow::Open(StringView title, u32 width, u32 height, InputState* inpu
         native_->window.title = text != nil ? text : @"";
         native_->view = [[EngineMetalView alloc] initWithFrame:content];
         native_->view.wantsLayer = YES;
+        native_->view.owner = this;
         native_->window.contentView = native_->view;
+        [native_->window makeFirstResponder:native_->view];
         native_->delegate = [[EngineWindowDelegate alloc] init];
         native_->delegate.owner = this;
         native_->window.delegate = native_->delegate;
@@ -319,6 +577,7 @@ void CocoaWindow::Close()
     @autoreleasepool
     {
         native_->delegate.owner = nullptr;  // first: nothing AppKit sends from here on reaches this object
+        native_->view.owner = nullptr;
         native_->window.delegate = nil;
         [native_->window orderOut:nil];
         [native_->window close];
@@ -329,7 +588,11 @@ void CocoaWindow::Close()
     fullscreen_ = false;  // a fullscreen window's Space goes with it
     fullscreen_wanted_ = false;
     fullscreen_transition_ = false;
-    // The delegate is detached, so windowDidResignKey never comes: the stream still says the focus went.
+    // The delegate is detached, so windowDidResignKey never comes: the stream still says the keys and the focus went.
+    if (!focused_)
+    {
+        ReleaseKeys();  // keys given to an unfocused window (OnFocusChanged releases a focused one's)
+    }
     OnFocusChanged(false);
 }
 
@@ -357,6 +620,17 @@ void CocoaWindow::PumpEvents()
             if (event == nil)
             {
                 break;
+            }
+            // NSApplication does not pass a key-up with Command held on to the window (it keeps it for key
+            // equivalents), which would leave the key down: give it to the window directly.
+            if (event.type == NSEventTypeKeyUp && (event.modifierFlags & NSEventModifierFlagCommand) != 0)
+            {
+                NSWindow* target = event.window != nil ? event.window : NSApp.keyWindow;
+                if (target != nil)
+                {
+                    [target sendEvent:event];
+                }
+                continue;
             }
             [NSApp sendEvent:event];
         }
@@ -474,8 +748,241 @@ void CocoaWindow::OnFocusChanged(bool focused)
         return;
     }
     focused_ = focused;
+    if (focused)
+    {
+        // Modifiers that changed while another program had the keyboard (Cmd-Tab back with Command still held).
+        SetModifiers(ModifiersFromCocoa([NSEvent modifierFlags]));
+    }
+    else
+    {
+        ReleaseKeys();  // their key-ups go to whichever program has the keyboard now
+    }
     InputEvent event;
     event.type = focused ? InputEventType::FocusGained : InputEventType::FocusLost;
+    event.modifiers = modifiers_;
+    QueueEvent(event);
+}
+
+void CocoaWindow::ReleaseKeys()
+{
+    for (u32 code = 0; code < kCocoaKeyCodeCount; ++code)
+    {
+        const Key key = held_[code];
+        if (key != Key::Unknown)
+        {
+            held_[code] = Key::Unknown;
+            QueueKey(InputEventType::KeyUp, key, false, modifiers_);
+        }
+    }
+    input_->keyboard.ReleaseAll();
+    SetModifiers(0);
+}
+
+void CocoaWindow::SetModifiers(u32 modifiers)
+{
+    modifiers_ = modifiers;
+    input_->keyboard.modifiers = modifiers;
+}
+
+void CocoaWindow::QueueKey(InputEventType type, Key key, bool repeat, u32 modifiers)
+{
+    InputEvent event;
+    event.type = type;
+    event.key = key;
+    event.repeat = repeat;
+    event.modifiers = modifiers;
+    QueueEvent(event);
+}
+
+bool CocoaWindow::OnKeyDown(u32 key_code, u32 character, u64 flags, bool is_repeat)
+{
+    const u32 modifiers = ModifiersFromCocoa(flags);
+    const bool may_type = (modifiers & (kModCtrl | kModSuper)) == 0;
+    if (key_code >= kCocoaKeyCodeCount || IsCocoaModifierKey(key_code))
+    {
+        return may_type;  // modifier keys come through flagsChanged:
+    }
+    SetModifiers(modifiers);
+    const Key held = held_[key_code];
+    // A press of a key already down is a repeat; it keeps the Key it was pressed as (the layout may have changed).
+    const bool repeat = is_repeat || held != Key::Unknown;
+    const Key key = held != Key::Unknown ? held : KeyFromCocoa(key_code, character);
+    if (key != Key::Unknown)
+    {
+        // A key without an engine name still types its text, but is neither down nor up: nothing could release it.
+        held_[key_code] = key;
+        input_->keyboard.SetDown(key, true);
+        QueueKey(InputEventType::KeyDown, key, repeat, modifiers);
+    }
+    return may_type;
+}
+
+void CocoaWindow::OnKeyUp(u32 key_code, u64 flags)
+{
+    SetModifiers(ModifiersFromCocoa(flags));
+    if (key_code >= kCocoaKeyCodeCount)
+    {
+        return;
+    }
+    const Key key = held_[key_code];
+    if (key == Key::Unknown)
+    {
+        return;  // a key whose press this window did not see (Cmd-Q's Q, taken by the menu), or one without a name
+    }
+    held_[key_code] = Key::Unknown;
+    input_->keyboard.SetDown(key, StillHeld(key));
+    QueueKey(InputEventType::KeyUp, key, false, modifiers_);
+}
+
+bool CocoaWindow::StillHeld(Key key) const
+{
+    // Two keys can have one name (the digit row's 1 and the number pad's, Return and the pad's Enter): the Key stays
+    // down in InputState while either is held. The stream reports each key's own press and release.
+    for (u32 code = 0; code < kCocoaKeyCodeCount; ++code)
+    {
+        if (held_[code] == key)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+void CocoaWindow::OnFlagsChanged(u32 key_code, u64 flags)
+{
+    const u32 before = modifiers_;
+    const u32 after = ModifiersFromCocoa(flags);
+    if (key_code < kCocoaKeyCodeCount && IsCocoaModifierKey(key_code))
+    {
+        const Key key = KeyFromCocoa(key_code, 0);
+        if (key == Key::CapsLock)
+        {
+            // macOS reports Caps Lock once per press, as the lock's new state, never the key's release: a tap.
+            QueueKey(InputEventType::KeyDown, key, false, before);
+            QueueKey(InputEventType::KeyUp, key, false, after);
+        }
+        else if (key != Key::Unknown)
+        {
+            const bool down = CocoaModifierKeyDown(key_code, flags);
+            if (down && held_[key_code] == Key::Unknown)
+            {
+                held_[key_code] = key;
+                input_->keyboard.SetDown(key, true);
+                QueueKey(InputEventType::KeyDown, key, false, before);  // the modifiers held before the key, as on
+                                                                        // Linux and Windows
+            }
+            else if (!down && held_[key_code] != Key::Unknown)
+            {
+                held_[key_code] = Key::Unknown;
+                input_->keyboard.SetDown(key, false);
+                QueueKey(InputEventType::KeyUp, key, false, before);
+            }
+        }
+    }
+    SetModifiers(after);
+}
+
+void CocoaWindow::OnText(const char* utf8, usize length)
+{
+    // One event per scalar (an input method commits whole words; a dead key with a letter it does not combine with
+    // gives both), without the control characters.
+    usize offset = 0;
+    while (offset < length)
+    {
+        const DecodedCodepoint decoded = DecodeUtf8At(utf8, length, offset);
+        offset += decoded.byte_length;
+        if (!IsTypedScalar(decoded.codepoint))
+        {
+            continue;
+        }
+        InputEvent event;
+        event.type = InputEventType::Text;
+        event.text_length = static_cast<u8>(EncodeUtf8(decoded.codepoint, event.text));
+        event.modifiers = modifiers_;
+        QueueEvent(event);
+    }
+}
+
+void CocoaWindow::OnPointerEnter(f64 x, f64 y, u64 flags)
+{
+    if (input_->pointer_inside)
+    {
+        return;  // a move inside reported it already
+    }
+    input_->pointer_inside = true;
+    input_->mouse_x = x;
+    input_->mouse_y = y;
+    InputEvent event;
+    event.type = InputEventType::PointerEnter;
+    event.x = x;
+    event.y = y;
+    event.modifiers = ModifiersFromCocoa(flags);
+    QueueEvent(event);
+}
+
+void CocoaWindow::OnPointerLeave(u64 flags)
+{
+    if (!input_->pointer_inside)
+    {
+        return;
+    }
+    input_->pointer_inside = false;
+    InputEvent event;
+    event.type = InputEventType::PointerLeave;
+    event.modifiers = ModifiersFromCocoa(flags);
+    QueueEvent(event);
+}
+
+void CocoaWindow::OnPointerMove(f64 x, f64 y, bool inside, u64 flags)
+{
+    // The tracking area's mouseEntered: does not come for a pointer that was already inside when the window opened:
+    // the first move inside is the enter then (as on Windows).
+    if (inside && !input_->pointer_inside)
+    {
+        OnPointerEnter(x, y, flags);
+    }
+    input_->mouse_x = x;
+    input_->mouse_y = y;
+    InputEvent event;
+    event.type = InputEventType::PointerMove;
+    event.x = x;
+    event.y = y;
+    event.modifiers = ModifiersFromCocoa(flags);
+    QueueEvent(event);
+}
+
+void CocoaWindow::OnPointerButton(u32 button, bool down, f64 x, f64 y, u64 flags)
+{
+    if (down)
+    {
+        input_->mouse_buttons |= button;
+    }
+    else
+    {
+        input_->mouse_buttons &= ~button;
+    }
+    input_->mouse_x = x;
+    input_->mouse_y = y;
+    InputEvent event;
+    event.type = InputEventType::PointerButton;
+    event.button = button;
+    event.down = down;
+    event.x = x;
+    event.y = y;
+    event.modifiers = ModifiersFromCocoa(flags);
+    QueueEvent(event);
+}
+
+void CocoaWindow::OnWheel(f64 dx_notches, f64 dy_notches, u64 flags)
+{
+    // InputState keeps the Linux backends' units, 10 per notch (for a precise scroll: points).
+    input_->scroll_dx += dx_notches * kCocoaPointsPerNotch;
+    input_->scroll_dy += dy_notches * kCocoaPointsPerNotch;
+    InputEvent event;
+    event.type = InputEventType::Wheel;
+    event.x = dx_notches;
+    event.y = dy_notches;
+    event.modifiers = ModifiersFromCocoa(flags);
     QueueEvent(event);
 }
 

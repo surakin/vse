@@ -9,7 +9,9 @@
 //! entry point of a windowed program or by the first window a test opens. Cmd-Q, the Dock's Quit and the menu's Quit do
 //! not end the process: they make every window's [[os::Window::ShouldClose]] true, as the close button does, so the
 //! program decides.
+#include "containers/array.h"
 #include "containers/unique_ptr.h"
+#include "platform/macos/cocoa_keys.h"
 #include "platform/input.h"
 #include "platform/input_event.h"
 #include "platform/window.h"
@@ -70,7 +72,7 @@ public:
     /// - Param title: the title, UTF-8.
     /// - Param width: the content width in points.
     /// - Param height: the content height in points.
-    /// - Param input: the input state the window fills (Day 312), or null for a private one.
+    /// - Param input: the input state the window fills, or null for a private one.
     /// - Returns: true if the window is open.
     /// - Fails: false, logged, off the main thread, without a window server, for a zero size, or when already open.
     bool Open(StringView title, u32 width, u32 height, InputState* input);
@@ -112,16 +114,32 @@ public:
     /// Called while AppKit runs its own loop (a live resize), so the program can keep drawing.
     void SetModalLoopCallback(ModalLoopCallback callback, void* user) override;
 
-    // What the window's delegate (cocoa_window.mm) reports; not for programs.
+    // What the window's delegate and its view (cocoa_window.mm) report; not for programs. The input handlers take the
+    // NSEvent's fields as numbers (cocoa_keys.h): `flags` is `modifierFlags`, positions are window pixels from the top
+    // left.
     struct Native;
     void OnCloseRequested() { close_requested_ = true; }
     void OnGeometryChanged(bool in_live_resize);
     void OnFocusChanged(bool focused);
     void OnFullscreenTransition(bool started);
     void OnFullscreenChanged(bool fullscreen);
+    /// Returns true when the press may type text (neither Control nor Command held), so the view interprets it.
+    bool OnKeyDown(u32 key_code, u32 character, u64 flags, bool is_repeat);
+    void OnKeyUp(u32 key_code, u64 flags);
+    void OnFlagsChanged(u32 key_code, u64 flags);
+    void OnText(const char* utf8, usize length);
+    void OnPointerMove(f64 x, f64 y, bool inside, u64 flags);
+    void OnPointerButton(u32 button, bool down, f64 x, f64 y, u64 flags);
+    void OnPointerEnter(f64 x, f64 y, u64 flags);
+    void OnPointerLeave(u64 flags);
+    void OnWheel(f64 dx_notches, f64 dy_notches, u64 flags);
 
 private:
     void QueueEvent(InputEvent event);
+    void QueueKey(InputEventType type, Key key, bool repeat, u32 modifiers);
+    void SetModifiers(u32 modifiers);
+    void ReleaseKeys();
+    bool StillHeld(Key key) const;
 
     UniquePtr<Native> native_;
     InputState* input_ = nullptr;
@@ -136,6 +154,8 @@ private:
     bool fullscreen_wanted_ = false;      // the last SetFullscreen
     bool fullscreen_transition_ = false;  // AppKit is animating: a request waits for the end
     bool focused_ = false;
+    Array<Key, kCocoaKeyCodeCount> held_ = {};  // by key code: the Key it was pressed as, Unknown when up
+    u32 modifiers_ = 0;                         // the ModifierBit mask after the last key or modifier event
     ModalLoopCallback modal_callback_ = nullptr;
     void* modal_user_ = nullptr;
 };
