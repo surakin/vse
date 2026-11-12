@@ -19,12 +19,6 @@ namespace
 constexpr u64 kTextureChunkBytes = 4ull << 20;
 constexpr u64 kVulkanDeviceTexturesStagingWaitNs = 10ull * 1000 * 1000 * 1000;
 
-u32 MipExtent(u32 base, u32 mip)
-{
-    const u32 v = base >> mip;
-    return v > 0 ? v : 1;
-}
-
 VkImageUsageFlags ToVkImageUsage(TextureUsage usage)
 {
     VkImageUsageFlags flags = 0;

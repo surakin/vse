@@ -33,12 +33,6 @@ u64 AlignUp(u64 value, u64 alignment)
     return (value + alignment - 1) / alignment * alignment;
 }
 
-u32 MipExtent(u32 base, u32 mip)
-{
-    const u32 e = base >> mip;
-    return e == 0 ? 1 : e;
-}
-
 D3D12_HEAP_TYPE HeapOf(MemoryLocation location)
 {
     switch (location)

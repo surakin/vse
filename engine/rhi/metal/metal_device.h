@@ -16,6 +16,8 @@
 #include "containers/shared_ptr.h"
 #include "containers/unique_ptr.h"
 #include "rhi/device.h"
+#include "rhi/handle_pool.h"
+#include "rhi/staging_ring.h"
 #include "rhi/rhi.h"
 
 #import <Metal/Metal.h>
@@ -33,6 +35,11 @@ struct MetalDeviceShared
 {
     Atomic<bool> lost{false};
 };
+
+// Makes every Metal device created afterwards in this process use the Managed storage mode for CPU-visible buffers, as
+// on a GPU without unified memory, so a unified Mac covers that path (a test hook: Phase 26 Day 317). Thread-safety:
+// thread-safe; devices read it when they are created.
+void ForceManagedStorageForTest(bool on);
 
 /// Owning pointer to a Metal device; destroying it waits for the GPU first (see rhi::DeviceDeleter).
 using MetalDevicePtr = UniquePtr<MetalDevice, DeviceDeleter>;
@@ -53,6 +60,10 @@ public:
 
     // Creates a device as rhi::CreateDevice does for this backend; null with the reason logged.
     static MetalDevicePtr Create(const DeviceCreateInfo& info);
+    // Application objects (buffers, textures, ...) devices still had when they were destroyed, since the last reset;
+    // each is also a warning in the log. For tests. Thread-safety: thread-safe.
+    static u64 LeakedUserObjects();
+    static void ResetLeakedUserObjects();
     // Lists the adapters (every MTLDevice of the system), as rhi::EnumerateAdapters does for this backend.
     static bool EnumerateAdapters(const DeviceCreateInfo& info, AdapterList* out);
 
@@ -75,11 +86,20 @@ public:
     void InjectDeviceLoss() override;
     bool DeviceLost() const override { return shared_->lost.Load(MemoryOrder::Acquire); }
 
-    // Days 317-321 (until then: a failure with a log line).
+    // Day 317 (metal_device_resources.mm).
     BufferHandle CreateBuffer(const BufferDesc& desc) override;
     void DestroyBuffer(BufferHandle buffer) override;
     TextureHandle CreateTexture(const TextureDesc& desc) override;
     void DestroyTexture(TextureHandle texture) override;
+    UploadTicket UploadTexture(TextureHandle dst, u32 mip, u32 layer, const void* data, u32 row_pitch) override;
+    bool ReadbackTexture(TextureHandle src, u32 mip, u32 layer, void* dst, u64 dst_size, ResourceState state) override;
+    void* MapBuffer(BufferHandle buffer) override;
+    void UnmapBuffer(BufferHandle buffer) override;
+    void FlushMappedBuffer(BufferHandle buffer, u64 offset, u64 size) override;
+    UploadTicket UploadBuffer(BufferHandle dst, u64 offset, const void* data, u64 size) override;
+    bool ReadbackBuffer(BufferHandle src, u64 offset, void* dst, u64 size) override;
+
+    // Days 318-321 (until then: a failure with a log line).
     SamplerHandle CreateSampler(const SamplerDesc& desc) override;
     void DestroySampler(SamplerHandle sampler) override;
     ShaderHandle CreateShader(const ShaderDesc& desc) override;
@@ -93,12 +113,6 @@ public:
     void DestroyPipeline(PipelineHandle pipeline) override;
     Swapchain* CreateSwapchain(const SwapchainDesc& desc) override;
     void DestroySwapchain(Swapchain* swapchain) override;
-    UploadTicket UploadTexture(TextureHandle dst, u32 mip, u32 layer, const void* data, u32 row_pitch) override;
-    bool ReadbackTexture(TextureHandle src, u32 mip, u32 layer, void* dst, u64 dst_size, ResourceState state) override;
-    void* MapBuffer(BufferHandle buffer) override;
-    void UnmapBuffer(BufferHandle buffer) override;
-    UploadTicket UploadBuffer(BufferHandle dst, u64 offset, const void* data, u64 size) override;
-    bool ReadbackBuffer(BufferHandle src, u64 offset, void* dst, u64 size) override;
     CommandList* CreateCommandList() override;
     bool RecreateSurface(const os::Window* window) override;
 
@@ -144,12 +158,63 @@ public:
     // The submission lock (the queue's order and the timeline's values).
     Mutex& SubmitMutex() { return submit_mutex_; }
 
+    // Whether CPU-visible buffers use the Managed storage mode (a GPU without unified memory, or
+    // ForceManagedStorageForTest).
+    bool ManagedStorage() const { return managed_; }
+    // The Metal buffer of a live handle, nil for an invalid or stale one. Ownership: borrowed while the handle lives.
+    id<MTLBuffer> BufferObject(BufferHandle buffer) const;
+    // The Metal texture of a live handle, nil for an invalid or stale one. Ownership: borrowed while the handle lives.
+    id<MTLTexture> TextureObject(TextureHandle texture) const;
+    // The storage mode a buffer of `location` gets on this device (Private, Shared or Managed).
+    MTLStorageMode StorageModeFor(MemoryLocation location) const;
+
 private:
     bool Initialize(const DeviceCreateInfo& info);
     void FillCaps();
     bool TakeStrike();
     bool InjectLoss(const char* where, u32 number);
     void UpdateCompletedFramesLocked();
+
+    struct BufferRes
+    {
+        id<MTLBuffer> buffer = nil;
+        BufferDesc desc;           // without the debug name
+        u8* mapped = nullptr;      // the contents of a Shared or Managed buffer
+        bool user_mapped = false;  // between MapBuffer and UnmapBuffer
+        bool managed = false;      // Managed: CPU writes need didModifyRange, GPU writes a synchronizeResource
+        u64 bytes = 0;             // the allocation's size, as counted
+    };
+    struct TextureRes
+    {
+        id<MTLTexture> texture = nil;
+        TextureDesc desc;                                       // without the debug name
+        ResourceState upload_state = ResourceState::Undefined;  // as UploadTexture leaves it (the RHI's rule)
+        bool external = false;                                  // a swapchain image (Day 321): the swapchain owns it
+        u64 bytes = 0;
+    };
+    // metal_device_resources.mm.
+    bool InitializeResources();
+    void ShutdownResources();
+    void CollectRetiredLocked(bool all);
+    // Makes a buffer, counting it (and failing as an injected allocation failure asks); nil with the reason logged.
+    id<MTLBuffer> NewBuffer(u64 size, MTLResourceOptions options, const char* name, u64* bytes);
+    bool CountAllocation(const char* name);
+    void ReleaseBytes(u64 bytes);
+    // A command buffer for the device's own copies, nil when the device is lost; committed by CommitInternalLocked,
+    // which signals the timeline after it and returns the value (0 when lost). Under the submission lock.
+    id<MTLCommandBuffer> BeginInternalLocked(NSString* label);
+    u64 CommitInternalLocked(id<MTLCommandBuffer> buffer);
+    // Space in the staging ring, waiting for the GPU to free some when it is full. Under the submission lock.
+    bool StageLocked(u64 size, u64 alignment, u64* offset);
+    // Runs `encode` on a blit encoder with a temporary Shared buffer of `bytes`, waits, and copies the buffer to `dst`.
+    bool BlitToCpu(u64 bytes, NSString* label, void (^encode)(id<MTLBlitCommandEncoder>, id<MTLBuffer>), u8* dst);
+    // Buffer-to-buffer copies through the staging ring or a temporary buffer, for any range (aligned to 4 bytes
+    // inside).
+    bool ReadGpuBuffer(id<MTLBuffer> source, u64 offset, u64 size, u8* dst);
+    UploadTicket WriteGpuBuffer(id<MTLBuffer> target, u64 offset, const u8* data, u64 size);
+    // didModifyRange: on a Managed buffer (macOS).
+    static void NoteModified(id<MTLBuffer> buffer, u64 offset, u64 size);
+    static void NoteLeakedUserObjects(u64 count);
 
     id<MTLDevice> device_ = nil;
     id<MTLCommandQueue> queue_ = nil;
@@ -176,11 +241,26 @@ private:
     u64 last_signaled_ = 0;  // under submit_mutex_
     Atomic<u64> last_signaled_published_{0};
 
-    mutable Mutex frame_mutex_;
-    u64 frame_number_ = 0;      // under frame_mutex_
+    mutable Mutex resource_mutex_;
+    u64 frame_number_ = 0;      // under resource_mutex_
     u64 ended_frames_ = 0;      // the last frame EndFrame closed
     u64 completed_frames_ = 0;  // the last frame whose fence the GPU reached
     Array<u64, kTrackedFrames> frame_fences_ = {};
+
+    // Resources (Day 317), under resource_mutex_.
+    HandlePool<BufferRes, BufferTag> buffers_;
+    HandlePool<TextureRes, TextureTag> textures_;
+    bool managed_ = false;
+    u32 fail_allocations_from_ = 0;
+    Atomic<u32> allocation_count_{0};  // device allocations asked for, for fail_allocations_from
+    Atomic<u64> device_memory_bytes_{0};
+    Atomic<u32> raw_resources_{0};  // Metal buffers and textures alive, the application's and the device's own
+
+    // The staging ring (a Shared buffer), under submit_mutex_.
+    id<MTLBuffer> staging_ = nil;
+    u8* staging_mapped_ = nullptr;
+    u64 staging_bytes_ = 0;
+    UniquePtr<RingAllocator> staging_ring_;
 };
 
 }  // namespace engine_placeholder::rhi::metal

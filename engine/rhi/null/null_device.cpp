@@ -211,12 +211,6 @@ bool TextureStateAllowed(ResourceState s, TextureUsage u)
     }
 }
 
-u32 MipExtent(u32 base, u32 mip)
-{
-    u32 e = base >> mip;
-    return e == 0 ? 1 : e;
-}
-
 }  // namespace null_impl
 using namespace null_impl;
 

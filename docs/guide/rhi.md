@@ -1094,7 +1094,16 @@ registered by [[rhi::RegisterCompiledBackends]] as `metal` ([[rhi::RegisterMetal
   the same way, since Metal has no call that removes a device.
 - **Capabilities.** 8 color attachments, 16384 for 2D textures, 256-byte constant-buffer offsets, no row-pitch alignment beyond the texel size for copies; the pixel
   formats are asked with the device's family (`D24S8` only where the GPU has it, BC formats where it decodes them), and the G-buffer formats all pass.
-- **Not built yet.** Buffers and textures (Day 317), samplers and bind groups (Day 318), shaders and pipelines (Day 319), command lists (Day 320) and the swapchain
+- **Memory.** GPU-only buffers and every texture are `Private`; readback memory (`GpuToCpu`) is `Shared`, so a persistent mapping sees the GPU's
+  finished writes. CPU-written memory (`CpuToGpu`) is `Shared` on a GPU with unified memory (every Apple silicon Mac and Intel's integrated GPUs) and
+  `Managed` otherwise: there the CPU's writes reach the GPU through `didModifyRange:`, which `FlushMappedBuffer`, `UnmapBuffer` and a `CpuToGpu`
+  `UploadBuffer` send (so call `FlushMappedBuffer` for a buffer you keep mapped). The staging ring (64 MiB, `Shared`) feeds uploads. Metal copies
+  between buffers in 4-byte units on macOS; the backend widens an unaligned range to the window around it (reading the window's edges back first for
+  a write), so any offset and size work, at the cost of a wait for an unaligned write. Copies between buffers and textures use the caller's rows
+  packed, since Metal needs no row pitch beyond the texel size ([[rhi::DeviceCaps::buffer_texture_copy_row_pitch_alignment]] 1). A unified Mac
+  tests the `Managed` path through a test hook (`rhi::metal::ForceManagedStorageForTest`), which is all of its coverage until a Mac with a discrete
+  GPU runs the suites.
+- **Not built yet.** Samplers and bind groups (Day 318), shaders and pipelines (Day 319), command lists (Day 320) and the swapchain
   (Day 321): until their day these fail with a log line naming it.
 
 ### What the RHI reports when something goes wrong

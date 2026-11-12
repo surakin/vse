@@ -7236,8 +7236,9 @@ rhi::FormatProperties::has_stencil	variable	rhi	rhi-formatproperties-has-stencil
 rhi::FormatProperties::is_srgb	variable	rhi	rhi-formatproperties-is-srgb	rhi.md	engine/rhi/format.h:71
 rhi::FormatProperties::is_compressed	variable	rhi	rhi-formatproperties-is-compressed	rhi.md	engine/rhi/format.h:73
 rhi::FormatInfo(Format)	function	rhi	rhi-formatinfo-format	rhi.md	engine/rhi/format.h:113
-rhi::FormatRowBytes(Format,u32)	function	rhi	rhi-formatrowbytes-format-u32	rhi.md	engine/rhi/format.h:125
-rhi::FormatSliceBytes(Format,u32,u32)	function	rhi	rhi-formatslicebytes-format-u32-u32	rhi.md	engine/rhi/format.h:138
+rhi::MipExtent(u32,u32)	function	rhi	rhi-mipextent-u32-u32	rhi.md	engine/rhi/format.h:125
+rhi::FormatRowBytes(Format,u32)	function	rhi	rhi-formatrowbytes-format-u32	rhi.md	engine/rhi/format.h:136
+rhi::FormatSliceBytes(Format,u32,u32)	function	rhi	rhi-formatslicebytes-format-u32-u32	rhi.md	engine/rhi/format.h:149
 rhi::Handle	struct	rhi	rhi-handle	rhi.md	engine/rhi/handle.h:23
 rhi::Handle::index	variable	rhi	rhi-handle-index	rhi.md	engine/rhi/handle.h:26
 rhi::Handle::generation	variable	rhi	rhi-handle-generation	rhi.md	engine/rhi/handle.h:28
@@ -9355,4 +9356,4 @@ rhi::dx12::Dx12Swapchain::CurrentTexture() const	function	rhi-dx12	rhi-dx12-dx12
 rhi::dx12::Dx12Swapchain::TearingAllowed() const	function	rhi-dx12	rhi-dx12-dx12swapchain-tearingallowed-const	rhi-dx12.md	engine/rhi/dx12/dx12_swapchain.h:65
 rhi::dx12::Dx12Swapchain::BufferFormat() const	function	rhi-dx12	rhi-dx12-dx12swapchain-bufferformat-const	rhi-dx12.md	engine/rhi/dx12/dx12_swapchain.h:67
 rhi::dx12::Dx12Swapchain::LatencyWaitable() const	function	rhi-dx12	rhi-dx12-dx12swapchain-latencywaitable-const	rhi-dx12.md	engine/rhi/dx12/dx12_swapchain.h:69
-rhi::RegisterMetalBackend()	function	rhi-metal	rhi-registermetalbackend	rhi-metal.md	engine/rhi/metal/metal_backend.h:18
+rhi::RegisterMetalBackend()	function	rhi-metal	rhi-registermetalbackend	rhi-metal.md	engine/rhi/metal/metal_backend.h:19

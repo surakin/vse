@@ -158,10 +158,16 @@ bool MetalDevice::Initialize(const DeviceCreateInfo& info)
     lose_device_at_frame_ = info.faults.lose_device_at_frame;
     lose_device_at_submit_ = info.faults.lose_device_at_submit;
     strikes_left_ = info.faults.strikes_left;
+    fail_allocations_from_ = info.faults.fail_allocations_from;
     FillCaps();
-    epoch_ = AllocateDeviceSerial();  // the handle pools (Days 317-319) are seeded from it
-    RhiLog(LogVerbosity::Info, "Metal: device on '%s' (%s), validation %s%s", adapter_.name, adapter_.id,
-           validation_ ? "on" : "off", EnvironmentOn("MTL_SHADER_VALIDATION") ? " with shader validation" : "");
+    epoch_ = AllocateDeviceSerial();  // the handle pools are seeded from it
+    if (!InitializeResources())
+    {
+        return false;
+    }
+    RhiLog(LogVerbosity::Info, "Metal: device on '%s' (%s), validation %s%s, %s memory", adapter_.name, adapter_.id,
+           validation_ ? "on" : "off", EnvironmentOn("MTL_SHADER_VALIDATION") ? " with shader validation" : "",
+           managed_ ? "managed" : "shared");
     return true;
 }
 
@@ -196,6 +202,19 @@ MetalDevice::~MetalDevice()
     // DeviceDeleter waited for the GPU; a device that never finished initializing has nothing in flight.
     @autoreleasepool
     {
+        if (queue_ != nil)
+        {
+            WaitIdle();  // collects every retired resource
+            const ResourceCounts counts = Resources();
+            if (counts.UserObjects() != 0)
+            {
+                NoteLeakedUserObjects(counts.UserObjects());
+                RhiLog(LogVerbosity::Warn,
+                       "Metal: %zu application object(s) were still alive when the device was destroyed",
+                       counts.UserObjects());
+            }
+        }
+        ShutdownResources();
         listener_ = nil;
         timeline_ = nil;
         queue_ = nil;
@@ -420,7 +439,7 @@ void MetalDevice::UpdateCompletedFramesLocked()
 
 u64 MetalDevice::CompletedFrame() const
 {
-    LockGuard<Mutex> lock(frame_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     const_cast<MetalDevice*>(this)->UpdateCompletedFramesLocked();
     return completed_frames_;
 }
@@ -433,7 +452,7 @@ void MetalDevice::BeginFrame()
     {
         u64 wait_for = 0;
         {
-            LockGuard<Mutex> lock(frame_mutex_);
+            LockGuard<Mutex> lock(resource_mutex_);
             UpdateCompletedFramesLocked();
             if (ended_frames_ - completed_frames_ >= kTrackedFrames - 2)
             {
@@ -451,7 +470,7 @@ void MetalDevice::BeginFrame()
             break;  // nothing to wait for, or the device is lost (the wait returned)
         }
     }
-    LockGuard<Mutex> lock(frame_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     ENGINE_ASSERT(!frame_open_.Load(MemoryOrder::Relaxed), "BeginFrame: the previous frame was not ended");
     UpdateCompletedFramesLocked();
     ++frame_number_;
@@ -460,13 +479,14 @@ void MetalDevice::BeginFrame()
     {
         InjectLoss("frame", static_cast<u32>(frame_number_));
     }
+    CollectRetiredLocked(false);  // what the finished frames destroyed
 }
 
 void MetalDevice::EndFrame()
 {
     u64 frame = 0;
     {
-        LockGuard<Mutex> lock(frame_mutex_);
+        LockGuard<Mutex> lock(resource_mutex_);
         ENGINE_ASSERT(frame_open_.Load(MemoryOrder::Relaxed), "EndFrame: no frame is open");
         frame_open_.Store(false, MemoryOrder::Release);  // later destroys belong to the next frame
         frame = frame_number_;
@@ -478,14 +498,14 @@ void MetalDevice::EndFrame()
         LockGuard<Mutex> lock(submit_mutex_);
         last = last_signaled_;
     }
-    LockGuard<Mutex> lock(frame_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     ended_frames_ = frame;
     frame_fences_[frame % kTrackedFrames] = last;
 }
 
 u64 MetalDevice::FrameNumber() const
 {
-    LockGuard<Mutex> lock(frame_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     return frame_number_;
 }
 
@@ -497,30 +517,28 @@ void MetalDevice::WaitIdle()
         last = last_signaled_;
     }
     WaitForValue(last, ~0ull);
-    LockGuard<Mutex> lock(frame_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     UpdateCompletedFramesLocked();
+    CollectRetiredLocked(true);
 }
 
 ResourceCounts MetalDevice::Resources() const
 {
-    // The resource pools come with Days 317-319; nothing exists yet.
-    return ResourceCounts{};
+    ResourceCounts c;
+    {
+        LockGuard<Mutex> lock(resource_mutex_);
+        c.buffers = buffers_.LiveCount();
+        c.textures = textures_.LiveCount();
+    }
+    // As on Vulkan and D3D12: every Metal resource alive (the application's and the device's own, such as the staging
+    // ring), and their memory.
+    c.internal_objects = raw_resources_.Load(MemoryOrder::Relaxed);
+    c.device_memory_bytes = device_memory_bytes_.Load(MemoryOrder::Relaxed);
+    return c;
 }
 
-// ---- Days 317-321 ----
+// ---- Days 318-321 ----
 
-BufferHandle MetalDevice::CreateBuffer(const BufferDesc&)
-{
-    NotYet("CreateBuffer", 317);
-    return {};
-}
-void MetalDevice::DestroyBuffer(BufferHandle) {}
-TextureHandle MetalDevice::CreateTexture(const TextureDesc&)
-{
-    NotYet("CreateTexture", 317);
-    return {};
-}
-void MetalDevice::DestroyTexture(TextureHandle) {}
 SamplerHandle MetalDevice::CreateSampler(const SamplerDesc&)
 {
     NotYet("CreateSampler", 318);
@@ -562,32 +580,6 @@ Swapchain* MetalDevice::CreateSwapchain(const SwapchainDesc&)
     return nullptr;
 }
 void MetalDevice::DestroySwapchain(Swapchain*) {}
-UploadTicket MetalDevice::UploadTexture(TextureHandle, u32, u32, const void*, u32)
-{
-    NotYet("UploadTexture", 317);
-    return {};
-}
-bool MetalDevice::ReadbackTexture(TextureHandle, u32, u32, void*, u64, ResourceState)
-{
-    NotYet("ReadbackTexture", 317);
-    return false;
-}
-void* MetalDevice::MapBuffer(BufferHandle)
-{
-    NotYet("MapBuffer", 317);
-    return nullptr;
-}
-void MetalDevice::UnmapBuffer(BufferHandle) {}
-UploadTicket MetalDevice::UploadBuffer(BufferHandle, u64, const void*, u64)
-{
-    NotYet("UploadBuffer", 317);
-    return {};
-}
-bool MetalDevice::ReadbackBuffer(BufferHandle, u64, void*, u64)
-{
-    NotYet("ReadbackBuffer", 317);
-    return false;
-}
 CommandList* MetalDevice::CreateCommandList()
 {
     NotYet("CreateCommandList", 320);

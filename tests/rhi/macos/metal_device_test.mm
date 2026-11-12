@@ -19,30 +19,13 @@
 #include "rhi/rhi.h"
 #include "rhi/rhi_log.h"
 #include "string_view.h"
+#include "metal_test_support.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
 using namespace engine_placeholder::rhi::metal;
 
-namespace
-{
-
-DeviceCreateInfo MetalInfo()
-{
-    RegisterCompiledBackends();
-    DeviceCreateInfo info;
-    info.backend = Backend::Metal;
-    info.application_name = "metal_device_test";
-    return info;
-}
-
-// The Metal device behind a DevicePtr the backend made.
-MetalDevice& AsMetal(Device& device)
-{
-    return static_cast<MetalDevice&>(device);
-}
-
-}  // namespace
+using namespace engine_placeholder::rhi::metal::test;
 
 TEST_CASE("The metal backend is registered, takes Metal libraries, and is asked for by name only until Day 325",
           "[rhi][metal]")
@@ -64,10 +47,10 @@ TEST_CASE("Metal lists every device with a hex registry id, the same on every en
           "[rhi][metal][gpu]")
 {
     AdapterList first;
-    REQUIRE(EnumerateAdapters(MetalInfo(), &first));
+    REQUIRE(EnumerateAdapters(MetalInfo("metal_device_test"), &first));
     REQUIRE(first.count >= 1);
     AdapterList second;
-    REQUIRE(EnumerateAdapters(MetalInfo(), &second));
+    REQUIRE(EnumerateAdapters(MetalInfo("metal_device_test"), &second));
     REQUIRE(second.count == first.count);
     u32 suitable = 0;
     for (u32 i = 0; i < first.count; ++i)
@@ -107,7 +90,7 @@ TEST_CASE("A Metal device is created and destroyed on every suitable adapter, wi
           "[rhi][metal][gpu]")
 {
     AdapterList adapters;
-    REQUIRE(EnumerateAdapters(MetalInfo(), &adapters));
+    REQUIRE(EnumerateAdapters(MetalInfo("metal_device_test"), &adapters));
     u32 made = 0;
     for (u32 i = 0; i < adapters.count; ++i)
     {
@@ -116,7 +99,7 @@ TEST_CASE("A Metal device is created and destroyed on every suitable adapter, wi
             continue;
         }
         INFO(adapters.items[i].name);
-        DeviceCreateInfo info = MetalInfo();
+        DeviceCreateInfo info = MetalInfo("metal_device_test");
         info.adapter = adapters.items[i].id;
         info.validation = ValidationSetting::On;
         DevicePtr device = CreateDevice(info);
@@ -173,7 +156,7 @@ TEST_CASE("A Metal device is created and destroyed on every suitable adapter, wi
 TEST_CASE("The Metal timeline counts the signals, frames wait for their fences, and waits are bounded",
           "[rhi][metal][gpu]")
 {
-    DeviceCreateInfo info = MetalInfo();
+    DeviceCreateInfo info = MetalInfo("metal_device_test");
     info.frames_in_flight = 2;
     DevicePtr device = CreateDevice(info);
     REQUIRE(device);
@@ -210,7 +193,7 @@ TEST_CASE("A lost Metal device answers waits at once and ignores submissions; st
           "[rhi][metal][gpu][fault]")
 {
     Atomic<u32> strikes{1};
-    DeviceCreateInfo info = MetalInfo();
+    DeviceCreateInfo info = MetalInfo("metal_device_test");
     info.faults.strikes_left = &strikes;
     {
         DevicePtr device = CreateDevice(info);
@@ -241,7 +224,7 @@ TEST_CASE("A lost Metal device answers waits at once and ignores submissions; st
 
 TEST_CASE("A frame lost at a set number marks the device lost at that BeginFrame", "[rhi][metal][gpu][fault]")
 {
-    DeviceCreateInfo info = MetalInfo();
+    DeviceCreateInfo info = MetalInfo("metal_device_test");
     info.faults.lose_device_at_frame = 3;
     DevicePtr device = CreateDevice(info);
     REQUIRE(device);
@@ -259,7 +242,7 @@ TEST_CASE("A frame lost at a set number marks the device lost at that BeginFrame
 
 TEST_CASE("A requested Metal adapter that does not exist fails without falling back", "[rhi][metal][gpu]")
 {
-    DeviceCreateInfo info = MetalInfo();
+    DeviceCreateInfo info = MetalInfo("metal_device_test");
     info.adapter = "no-such-adapter-anywhere";
     const bool was = LogRhi.Enabled();
     LogRhi.SetEnabled(false);
@@ -286,7 +269,7 @@ TEST_CASE("Metal pixel formats: depth is never a color target, sRGB never storag
 
 TEST_CASE("Metal generates mips only for filterable color formats", "[rhi][metal][gpu]")
 {
-    DevicePtr device = CreateDevice(MetalInfo());
+    DevicePtr device = CreateDevice(MetalInfo("metal_device_test"));
     REQUIRE(device);
     CHECK(device->CanGenerateMips(Format::RGBA8_UNorm));
     CHECK(device->CanGenerateMips(Format::RGBA16_Float));
@@ -304,7 +287,7 @@ TEST_CASE("A Metal device destroyed right after its signals outlives none of the
     // shared state, never the device (the ASan flavor catches a handler touching a freed device).
     for (int round = 0; round < 20; ++round)
     {
-        DevicePtr device = CreateDevice(MetalInfo());
+        DevicePtr device = CreateDevice(MetalInfo("metal_device_test"));
         REQUIRE(device);
         MetalDevice& metal = AsMetal(*device);
         device->BeginFrame();

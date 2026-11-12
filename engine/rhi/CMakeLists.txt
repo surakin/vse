@@ -78,6 +78,7 @@ set(RHI_METAL_SOURCES
   metal/metal_adapters.mm
   metal/metal_format.mm
   metal/metal_device.mm
+  metal/metal_device_resources.mm
   metal/metal_backend.mm
 )
 

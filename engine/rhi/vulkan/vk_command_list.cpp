@@ -138,17 +138,6 @@ void VulkanCommandList::Barrier(BufferHandle buffer, ResourceState before, Resou
     device_->Fns().CmdPipelineBarrier2(buffer_, &dep);
 }
 
-namespace
-{
-
-u32 MipExtent(u32 base, u32 mip)
-{
-    const u32 v = base >> mip;
-    return v > 0 ? v : 1;
-}
-
-}  // namespace
-
 // Records the copy between a buffer and one level of a texture, in either direction.
 void VulkanCommandList::CopyLevel(BufferHandle buffer, TextureHandle texture, const BufferTextureCopy& region,
                                   bool to_texture)

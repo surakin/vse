@@ -117,6 +117,17 @@ inline const FormatProperties& FormatInfo(Format format)
     return detail::kFormatTable[static_cast<usize>(format)];
 }
 
+/// Returns the extent of mip level `mip` of a dimension `base` texels long: halved per level, never below 1.
+///
+/// - Param base: the level-0 width, height or depth.
+/// - Param mip: the mip level.
+/// - Fails: never.
+inline u32 MipExtent(u32 base, u32 mip)
+{
+    const u32 e = mip < 32 ? base >> mip : 0;
+    return e == 0 ? 1 : e;
+}
+
 /// Returns the number of bytes in one row of `width` texels of `format`, rounding a partial block up.
 ///
 /// - Param format: the texel format; must not be `Undefined`.

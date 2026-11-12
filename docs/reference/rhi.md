@@ -5290,6 +5290,22 @@ Returns the layout facts for `format`.
 | Returns | a reference to a static table entry, valid for the life of the program. |
 | Aborts | `format` is `Format::Count` or larger. |
 
+## `MipExtent(u32,u32)` {#rhi-mipextent-u32-u32}
+
+`function rhi::MipExtent` — defined in `engine/rhi/format.h`
+
+```cpp
+inline u32 MipExtent(u32 base, u32 mip);
+```
+
+Returns the extent of mip level `mip` of a dimension `base` texels long: halved per level, never below 1.
+
+| Field | Value |
+|---|---|
+| Parameter `base` | the level-0 width, height or depth. |
+| Parameter `mip` | the mip level. |
+| Fails | never. |
+
 ## `FormatRowBytes(Format,u32)` {#rhi-formatrowbytes-format-u32}
 
 `function rhi::FormatRowBytes` — defined in `engine/rhi/format.h`
