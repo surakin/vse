@@ -640,6 +640,10 @@ Run it yourself with `ecs_bench [--entities N] [--frames N] [--threads N] [--csv
 - **On Windows** (AMD Ryzen AI 7 350, 8 cores, MSVC Release; Phase 17 Day 236): iteration at 100k 0.40 ms against 9.1 ms (22.7x), sparse access 119x, 4 workers at
   96 percent efficiency, 110 bytes per entity (baseline 232). Churn (1.45x) and hierarchy propagation (3.8x) beat the baseline there, because its heap allocations
   cost more with that system's allocator (155 ns a create against 35 ns on Linux). The full table is in `plans/phase-17-ecs/day-236-docs-closing-run-and-review.md`.
+- **On macOS** (Intel Core i5-8257U, 4 cores, 8 threads, a 2019 MacBook Pro; Apple clang 17, Release; Phase 26 Day 310, one run while Spotlight was indexing): iteration
+  at 100k 0.85 ms against 16.9 ms (19.8x), at 1M 9.1 ms against 338 ms (37x), sparse access 518x; 4 workers at 82 percent efficiency, 8 at 61 percent (8 threads
+  on 4 cores); 110 bytes per entity (baseline 232). Churn beats the baseline (1.5x), as on Windows; hierarchy propagation does not (0.89x). Every pass condition holds.
+  The rest of the figures are in `plans/phase-26-macos-metal/day-310-cpu-modules.md`.
 
 ## Common mistakes
 

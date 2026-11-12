@@ -606,6 +606,10 @@ Four settings are declared by `spatial::RegisterSpatialSettings(&registry)`: `sp
 
 The benchmark is `tests/spatial/spatial_bench.cpp`: run `spatial_tests "[spatial-bench]"` from a Release build; it prints the culling gain, the static queries, the moving-agent cost with a tree and with a grid, the sync with 1 to 8 workers and the margin sweep. Results against the pass conditions are in the design spec, section 4.1. `game/spatial_demo` (`--stats`, `--debug-draw`, `--frames`, `--entities`, `--serial`) runs 50,000 entities through the sync with a culling query, the contacts of the physics set, a ray pick and a neighbor query each frame.
 
+On macOS (Intel Core i5-8257U, 4 cores, 8 threads; Release; Phase 26 Day 310) moving 100,000 agents costs 171 ms a frame in a tree and 34 ms in a grid (Linux:
+87 ms and 10 ms), culling 1,000,000 static items is 53 times faster than a flat scan, and the sync with all of them moving takes 322 ms on one worker and 174 ms on
+two to eight (the moves bound it); the rest of the figures are in `plans/phase-26-macos-metal/day-310-cpu-modules.md`.
+
 ## See also
 
 [Math](foundation-math.md) (vectors, matrices, transforms), [Renderer](renderer.md) (culling with these shapes), [ECS](ecs.md); reference:

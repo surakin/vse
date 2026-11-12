@@ -11,7 +11,7 @@ on Metal; every gate and `ctest -L docs` pass on macOS; and the Linux machine an
 
 **Status: started (2026-11-10), Days 298-328: Day 298 (the `.metallib` spike; interim route, pending), Day 299 (spec, inventory, setup), Day 300 (CMake, Apple clang, the base layer) Day 301 (the `os` backend, `os/posix/`) Day 302 (test tooling, side phases, gates) Day 303 (file layer I: `io/posix/`, local files, errors) Day 304 (file layer II: `Copy`, standard directories, async measured) Day 305 (the job
 system) Day 306 (debugging I: stack traces, modules, crash context) Day 307 (debugging II: crash handler, death tests) Day 308 (debugging III:
-dumps, symbol store, scripts) and Day 309 (settings, the aggregate, docgen: the foundation port is done) done on the Mac; next Day 310.** Day numbers continue after Phase 25 (Day 297). Phases 19-24 have no day files yet;
+dumps, symbol store, scripts) Day 309 (settings, the aggregate, docgen: the foundation port is done) and Day 310 (text, UI, ECS, spatial, database, storage) done on the Mac; next Day 311.** Day numbers continue after Phase 25 (Day 297). Phases 19-24 have no day files yet;
 when they get them, Phases 25 and 26 renumber in the same commit (CLAUDE.md, "Phases are whole numbers").
 
 **Hardware (checked 2026-11-10).** The developer's 2019 MacBook Pro 13" (`MacBookPro15,4`): quad-core Intel Core i5 at 1.4 GHz, 8 GB RAM, **Intel Iris Plus

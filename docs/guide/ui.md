@@ -338,6 +338,11 @@ a program may notice: a drag out of the window to another program is modal (the 
 when it starts, through `os::DragSource::started`), and the clipboard's
 contents stay after the window closes.
 
+### On macOS
+
+The toolkit's CPU side runs on macOS unchanged (Phase 26 Day 310: `tests/ui` in three flavors, without the tests that need a window). The window adapter, the
+system cursors, the clipboard and the drag bridge come with the Cocoa window layer (Days 311-313).
+
 ## The viewport
 
 **The widget** (`ui/viewport.h`). `ui::Viewport` is a rectangle that shows a rendered world; it knows nothing of the GPU. The application implements `ViewportBinding`: `OnResize(width, height)`, `Render(frame)`, `Image()` (the `ImageId` the UI draws over the rectangle, 0 for none yet) and `OnInput(input)`. Every frame, after layout, the viewport works out its size in **physical pixels** (bounds times the surface scale), calls `OnResize` only when that size differs from the last one it reported (so a window dragged through ten sizes between two frames costs one call, with the final size), then `Render`, then draws the image. A zero-size viewport (a collapsed pane) calls nothing and the binding keeps its target; a hidden or collapsed one is not drawn at all, so it renders nothing and changes nothing. `AspectOf(width, height)` is the helper for the camera. Children of a viewport (a HUD label, a gizmo handle) draw after the image inside its clip and get the pointer before the viewport does.

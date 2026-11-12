@@ -10,8 +10,9 @@ set(DATABASE_TEST_SOURCES
   sqlite_backend_test.cpp  # Day 255
 )
 
-# ThreadSanitizer's suppressions for SQLite's lock-free WAL index header (tests/database/tsan.supp): Linux only (MSVC has no ThreadSanitizer).
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+# ThreadSanitizer's suppressions for SQLite's lock-free WAL index header (tests/database/tsan.supp): Linux and macOS (Phase 26 Day 310);
+# MSVC has no ThreadSanitizer.
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   list(APPEND DATABASE_TEST_SOURCES tsan_options.cpp)
   set_source_files_properties(tsan_options.cpp PROPERTIES COMPILE_DEFINITIONS "ENGINE_DATABASE_TSAN_SUPP=\"${CMAKE_CURRENT_SOURCE_DIR}/tsan.supp\"")
 endif()

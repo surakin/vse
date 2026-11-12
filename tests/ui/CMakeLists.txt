@@ -30,12 +30,24 @@ set(UI_TEST_SOURCES
   ${CMAKE_SOURCE_DIR}/game/ui_demo/ui_script.cpp
 )
 
+# macOS (Phase 26 Day 310): the tests that open a window or use the OS clipboard, and the demo application's, need ui_window (and the window
+# layer under it, Day 311); until the macOS build has that target they stay off, and everything else, the CPU side, runs.
+set(_ui_needs_window FALSE)
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND NOT TARGET ui_window)
+  set(_ui_needs_window TRUE)
+  list(REMOVE_ITEM UI_TEST_SOURCES ui_window_test.cpp clipboard_test.cpp viewport_test.cpp ui_demo_app_test.cpp
+       ${CMAKE_SOURCE_DIR}/game/ui_demo/ui_demo_app.cpp ${CMAKE_SOURCE_DIR}/game/ui_demo/ui_script.cpp)
+endif()
+
 find_package(Threads REQUIRED)
 include(Catch)
 
 function(engine_add_ui_tests target ui_lib suffix label)
   add_executable(${target} ${UI_TEST_SOURCES})
   string(REGEX REPLACE "^ui" "ui_window" window_lib ${ui_lib})
+  if(_ui_needs_window)
+    set(window_lib "")
+  endif()
   target_link_libraries(${target} PRIVATE ${ui_lib} ${window_lib} Catch2::Catch2WithMain Threads::Threads)
   target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tests/io ${CMAKE_SOURCE_DIR}/tests/support ${CMAKE_SOURCE_DIR}/game/ui_demo)
   target_compile_definitions(${target} PRIVATE UI_TEST_FONT_FILE="${CMAKE_SOURCE_DIR}/assets/fonts/LiberationSans-Regular.ttf")

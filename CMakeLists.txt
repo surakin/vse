@@ -152,12 +152,9 @@ enable_testing()
 set(ENGINE_TEST_TMP_DIR "${CMAKE_BINARY_DIR}/test-tmp")
 file(MAKE_DIRECTORY "${ENGINE_TEST_TMP_DIR}/pipeline-cache" "${ENGINE_TEST_TMP_DIR}/screenshots")
 add_subdirectory(third_party/catch2)
-# macOS (Phase 26) adds these with the layers that use them (text on Day 310; storage when it is ported), not before: nothing configured
-# there links them yet, and building them would only cost time on the Mac.
-if(NOT ENGINE_PLATFORM STREQUAL "macos")
-  add_subdirectory(third_party/freetype)  # Phase 14 Day 175: FreeType, vendored (PLAN.md assumption #17)
-  add_subdirectory(third_party/sqlite)  # Phase 19 Day 251: SQLite, vendored (PLAN.md assumption #25), used only behind engine/database/sqlite/
-endif()
+# Every platform, macOS since Phase 26 Day 310 (text and the database arrived there that day).
+add_subdirectory(third_party/freetype)  # Phase 14 Day 175: FreeType, vendored (PLAN.md assumption #17)
+add_subdirectory(third_party/sqlite)  # Phase 19 Day 251: SQLite, vendored (PLAN.md assumption #25), used only behind engine/database/sqlite/
 # Catch2's REQUIRE/CHECK throw: exceptions on for Catch2 and, through PUBLIC, every test executable that links it.
 if(ENGINE_EXCEPTIONS_COMPILE_OPTIONS)
   target_compile_options(Catch2 PUBLIC ${ENGINE_EXCEPTIONS_COMPILE_OPTIONS})
@@ -269,6 +266,22 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(engine/foundation)
   add_subdirectory(engine/jobs)  # Day 305
   add_subdirectory(tests/jobs)
+  # Day 310: the modules above the foundation with no platform code (layers 10-11), and their tests. engine/platform gives only its
+  # header-only platform_input target before the window layer (Days 311-313); engine/net's macOS backend is Day 326.
+  add_subdirectory(engine/platform)
+  add_subdirectory(engine/text)
+  add_subdirectory(tests/text)
+  add_subdirectory(engine/ecs)
+  add_subdirectory(tests/ecs)
+  add_subdirectory(engine/spatial)
+  add_subdirectory(tests/spatial)
+  add_subdirectory(engine/database)
+  add_subdirectory(tests/database)
+  add_subdirectory(engine/storage)
+  add_subdirectory(tests/storage)
+  add_subdirectory(engine/ui)
+  add_subdirectory(tests/ui)  # the CPU-side tests; the window, clipboard and viewport ones need the window layer (Day 311)
+  add_subdirectory(game/ecs_bench)  # Day 310: the ECS benchmark, CPU only (the other programs of game/ come with their layers)
   add_subdirectory(tests/foundation)  # the base-layer tests (foundation_base_tests), Day 301; the file-layer and window ones need later days
   add_subdirectory(tests/foundation_sanitized)
   add_subdirectory(tests/io)  # the file layer, Days 303-305
@@ -291,9 +304,9 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(tools/net_access_check)  # Phase 20 Day 268 (its own line: editing the gate list above would widen scripts/test-phase.sh --affected)
   add_subdirectory(tests/phase_labels)
   add_subdirectory(tests/test_phase_script)
-  message(STATUS "macOS (Phase 26 Day 309): building the whole foundation (base, file, debugging and settings layers), the job system, docgen (without its samples), "
-                 "crash_extract and their tests, the gates and the test tooling. Not yet ported, so not configured: text, UI, ECS and spatial (Day 310), the platform layer "
-                 "(Days 311-313), the RHI and renderer (Days 314-325), the demos, the other tools and docs_samples (Day 327).")
+  message(STATUS "macOS (Phase 26 Day 310): building the whole foundation (base, file, debugging and settings layers), the job system, text, UI (CPU side), ECS, "
+                 "spatial, the database and storage, docgen (without its samples), crash_extract and their tests, the gates and the test tooling. Not yet ported, so "
+                 "not configured: the platform layer (Days 311-313), networking (Day 326), the RHI and renderer (Days 314-325), the demos, the other tools and docs_samples (Day 327).")
   return()
 endif()
 

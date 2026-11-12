@@ -1,6 +1,10 @@
 # The platform layer (layer 9, ARCHITECTURE.md): windows, input and the display backends. It is its own library so that only the
 # programs and libraries that need a window link Wayland, X11 and xkbcommon; the foundation does not.
 # Headers are included as "platform/<name>.h", rooted at engine/ (the foundation's own headers come from engine/foundation).
+# The pure-data input headers (input.h, later input_event.h) without the display libraries, for the modules that only need the types (ui).
+add_library(platform_input INTERFACE)
+target_include_directories(platform_input INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/..)
+
 set(PLATFORM_SOURCES
   window.cpp
   clipboard.cpp
@@ -60,14 +64,13 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   )
   set(PLATFORM_DISPLAY_LIBS user32 shell32 gdi32 ole32) # gdi32: the custom cursor's DIB; ole32: drag and drop (Day 205)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  message(FATAL_ERROR "macOS is implemented in Phase 26 (the window backend: platform/macos/FULLSCREEN.md)")
+  # Phase 26 Day 310: only the header-only input types above, for engine/ui; the window backend (Cocoa) arrives on Days 311-313
+  # (platform/macos/FULLSCREEN.md).
+  return()
 else()
   message(FATAL_ERROR "No window backend for this platform yet")
 endif()
 
-# The pure-data input headers (input.h, later input_event.h) without the display libraries, for the modules that only need the types (ui).
-add_library(platform_input INTERFACE)
-target_include_directories(platform_input INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 # One library per sanitizer flavor, each on the matching foundation_debug (crash state, the lowest layer it uses; the flags come with it, as for jobs and the RHI).
 function(engine_add_platform_lib suffix foundation_lib)
