@@ -6,6 +6,7 @@
 #include "test_text.h"
 
 #include "renderer/render_settings.h"
+#include "rhi/rhi.h"
 #include "cstr/cstr.h"
 
 using namespace engine_placeholder;
@@ -61,7 +62,7 @@ TEST_CASE("built-in settings have the ids, classes and defaults of the plan", "[
         CHECK(r.FindByName(row.name) == row.id);
     }
     RenderSettings s;
-    CHECK(s.GetEnum(settings::kBackend) == 3);  // auto
+    CHECK(s.GetEnum(settings::kBackend) == static_cast<u32>(rhi::Backend::Auto));  // auto
     CHECK(s.GetInt(settings::kFramesInFlight) == 2);
     CHECK(s.GetFloat(settings::kRenderScale) == 1.0f);
     CHECK(CStrCompare(s.GetText(settings::kAdapter), "") == 0);

@@ -12,13 +12,17 @@
 #include "rhi/device_host.h"
 #include "rhi/null/null_device.h"
 #include "rhi/rhi_log.h"
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
 #include "rhi/vulkan/vk_swapchain_policy.h"
+#endif
 #include "build_defs.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
 using engine_placeholder::rhi::vulkan::ChooseRequestedSurfaceFormat;
 using engine_placeholder::rhi::vulkan::FillSwapchainCaps;
+#endif
 
 namespace
 {
@@ -58,10 +62,12 @@ SwapchainDesc SwapSized(u32 w, u32 h)
     return d;
 }
 
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
 const VkSurfaceFormatKHR kSrgb = {VK_FORMAT_B8G8R8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
 const VkSurfaceFormatKHR kRgbaSrgb = {VK_FORMAT_R8G8B8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
 const VkSurfaceFormatKHR kUnorm = {VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
 const VkSurfaceFormatKHR kScRgb = {VK_FORMAT_R16G16B16A16_SFLOAT, VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT};
+#endif
 
 struct SwapObserver final : DeviceObserver
 {
@@ -79,6 +85,7 @@ struct SwapObserver final : DeviceObserver
 
 }  // namespace
 
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
 TEST_CASE("The requested format is honored when offered and falls back with a note when not",
           "[rhi][swapchain][policy]")
 {
@@ -96,7 +103,9 @@ TEST_CASE("The requested format is honored when offered and falls back with a no
     CHECK(choice.format.format == VK_FORMAT_B8G8R8A8_SRGB);
     CHECK(choice.fallback_note != nullptr);
 }
+#endif
 
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
 TEST_CASE("HDR is granted only with a matching surface format", "[rhi][swapchain][policy]")
 {
     const VkSurfaceFormatKHR sdr_only[] = {kSrgb};
@@ -116,7 +125,9 @@ TEST_CASE("HDR is granted only with a matching surface format", "[rhi][swapchain
     CHECK(choice.fallback_note != nullptr);
     CHECK(choice.format.format == VK_FORMAT_B8G8R8A8_SRGB);
 }
+#endif
 
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
 TEST_CASE("Swapchain capabilities list what the surface offers", "[rhi][swapchain][policy]")
 {
     const VkSurfaceFormatKHR formats[] = {kSrgb, kRgbaSrgb, kSrgb, kScRgb};
@@ -132,6 +143,7 @@ TEST_CASE("Swapchain capabilities list what the surface offers", "[rhi][swapchai
     CHECK(caps.formats[0] == Format::BGRA8_SRGB);
     CHECK(caps.formats[1] == Format::RGBA8_SRGB);
 }
+#endif
 
 TEST_CASE("A null swapchain reconfigures format, HDR and present mode and reports the result", "[rhi][swapchain]")
 {
@@ -291,6 +303,7 @@ TEST_CASE("When the adapter cannot present to the new surface the host does a fu
     CHECK(host.GetSwapchain() != nullptr);
 }
 
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
 TEST_CASE("A Vulkan swapchain format request without a window fails cleanly", "[rhi][swapchain][vulkan][gpu]")
 {
     gpu_test::GpuFixture fx;
@@ -401,7 +414,9 @@ void RunWindowReconfigure(os::WindowBackend backend)
 }
 
 }  // namespace
+#endif
 
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
 TEST_CASE("A Wayland swapchain reconfigures and its surface is replaced",
           "[rhi][vulkan][gpu][window][wayland][swapchain]")
 {
@@ -412,7 +427,9 @@ TEST_CASE("A Wayland swapchain reconfigures and its surface is replaced",
     }
     RunWindowReconfigure(os::WindowBackend::Wayland);
 }
+#endif
 
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
 TEST_CASE("An X11 swapchain reconfigures and its surface is replaced", "[rhi][vulkan][gpu][window][x11][swapchain]")
 {
     SKIP_IF_NO_DISPLAY_SESSION();
@@ -422,8 +439,10 @@ TEST_CASE("An X11 swapchain reconfigures and its surface is replaced", "[rhi][vu
     }
     RunWindowReconfigure(os::WindowBackend::X11);
 }
+#endif
 
 // Phase 13 Day 160: the same checks through the Win32 window and the VK_KHR_win32_surface surface.
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
 TEST_CASE("A Win32 swapchain reconfigures and its surface is replaced", "[rhi][vulkan][gpu][window][win32][swapchain]")
 {
 #if ENGINE_PLATFORM_WINDOWS
@@ -433,3 +452,4 @@ TEST_CASE("A Win32 swapchain reconfigures and its surface is replaced", "[rhi][v
     SKIP("Win32 is the Windows backend");
 #endif
 }
+#endif

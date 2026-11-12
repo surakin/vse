@@ -92,9 +92,10 @@ bool SameValue(const RenderSettings& a, const RenderSettings& b, SettingId id, c
 }
 
 // In rhi::Backend's order, so a value converts by a cast (renderer.cpp).
-const char* const kBackendNames[] = {"null", "vulkan", "dx12", "auto"};
+const char* const kBackendNames[] = {"null", "vulkan", "dx12", "metal", "auto"};
 static_assert(static_cast<u32>(rhi::Backend::Null) == 0 && static_cast<u32>(rhi::Backend::Vulkan) == 1 &&
-                  static_cast<u32>(rhi::Backend::Dx12) == 2 && static_cast<u32>(rhi::Backend::Auto) == 3,
+                  static_cast<u32>(rhi::Backend::Dx12) == 2 && static_cast<u32>(rhi::Backend::Metal) == 3 &&
+                  static_cast<u32>(rhi::Backend::Auto) == 4,
               "kBackendNames follows rhi::Backend");
 const char* const kValidationNames[] = {"auto", "off", "on"};
 const char* const kPresentNames[] = {"fifo", "mailbox", "immediate"};
@@ -284,7 +285,7 @@ void RegisterBuiltinSettings(SettingsRegistry* registry)
     {
         // The graphics API is chosen when the program starts; a change waits for the next start (no run-time backend
         // switch).
-        SettingDesc d = MakeEnum("backend", CostClass::DeviceReset, kBackendNames, 3);
+        SettingDesc d = MakeEnum("backend", CostClass::DeviceReset, kBackendNames, 4);
         d.restart_required = true;
         add(d, settings::kBackend);
     }

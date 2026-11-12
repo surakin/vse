@@ -280,10 +280,18 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(engine/storage)
   add_subdirectory(tests/storage)
   add_subdirectory(engine/ui)
-  add_subdirectory(tests/ui)  # the CPU-side tests; the window, clipboard and viewport ones need the window layer (Day 311)
-  add_subdirectory(game/ecs_bench)  # Day 310: the ECS benchmark, CPU only (the other programs of game/ come with their layers)
-  add_subdirectory(game/hello_window)  # Day 311: the first windowed program
-  add_subdirectory(game/input_probe)  # Day 312: the input event stream, checked by hand
+  add_subdirectory(engine/ui_window)  # Day 314, before tests/ui, which builds its window-bound tests when the target exists
+  add_subdirectory(tests/ui)
+  # Day 314: the RHI on the null backend (no Vulkan on macOS: Phase 26 decision 8; Metal from Day 316), the renderer, the scene bridge,
+  # the UI window adapter and every program of game/.
+  message(STATUS "macOS: the RHI builds its null backend only; rhi_vulkan and rhi_dx12 are not built here (no Vulkan on macOS, decision 8)")
+  add_subdirectory(engine/rhi)
+  add_subdirectory(engine/renderer)
+  add_subdirectory(engine/scene)
+  add_subdirectory(tests/rhi)
+  add_subdirectory(tests/renderer)
+  add_subdirectory(tests/scene)
+  add_subdirectory(game)  # Day 310's ecs_bench, Day 311's hello_window and Day 312's input_probe, and from Day 314 the demos
   add_subdirectory(tests/foundation)  # the base-layer tests (foundation_base_tests), Day 301; the file-layer and window ones need later days
   add_subdirectory(tests/foundation_sanitized)
   add_subdirectory(tests/io)  # the file layer, Days 303-305

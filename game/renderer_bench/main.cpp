@@ -1,7 +1,7 @@
 // renderer_bench: records the Phase 5 performance baseline. Prints one line per measurement; nothing here is asserted
 // in CI. See docs/guide/renderer.md ("Performance notes") for what the numbers mean.
 //
-//   renderer_bench [--section graph|frame|lights|pool|text|ui|all] [--rhi null|vulkan|dx12|auto] [--frames N]
+//   renderer_bench [--section graph|frame|lights|pool|text|ui|all] [--rhi null|vulkan|dx12|metal|auto] [--frames N]
 //   [--threads N]
 //             [--objects 1000|10000|50000] [--single]
 //
@@ -727,7 +727,7 @@ bool Section(const Options& o, const char* name)
 int Usage(const char* program)
 {
     os::PrintError(
-        "usage: %s [--section graph|frame|lights|pool|text|ui|all] [--rhi null|vulkan|dx12|auto] [--frames 1-500] [--threads 0-64] [--objects 1000|10000|50000] [--single]\n",
+        "usage: %s [--section graph|frame|lights|pool|text|ui|all] [--rhi null|vulkan|dx12|metal|auto] [--frames 1-500] [--threads 0-64] [--objects 1000|10000|50000] [--single]\n",
         program);
     return 2;
 }

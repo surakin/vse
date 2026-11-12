@@ -12,6 +12,7 @@
 #include "rhi/null/null_device.h"
 #include "rhi/rhi.h"
 #include "rhi/rhi_log.h"
+#include "renderer/renderer.h"
 #include "string_view.h"
 #include "build_defs.h"
 
@@ -199,8 +200,16 @@ TEST_CASE("A backend this program never registered fails loudly, never as a miss
     Reset reset;
     char reason[256] = {};
     CHECK(ResolveBackend(Backend::Vulkan, reason, sizeof(reason)) == nullptr);
+#if ENGINE_PLATFORM_MACOS
+    CHECK(CStrFind(reason, "the vulkan backend is not built for macOS") != nullptr);  // not a registration slip
+#else
     CHECK(CStrFind(reason, "the vulkan backend is not registered in this program") != nullptr);
     CHECK(CStrFind(reason, "rhi::RegisterCompiledBackends") != nullptr);
+#endif
+#if !ENGINE_PLATFORM_WINDOWS
+    CHECK(ResolveBackend(Backend::Dx12, reason, sizeof(reason)) == nullptr);
+    CHECK(CStrFind(reason, "the dx12 backend is not built for") != nullptr);  // a platform fact, not a slip
+#endif
     CHECK(ResolveBackend(Backend::Null, reason, sizeof(reason)) == nullptr);
     CHECK(CStrFind(reason, "the null backend is not registered") != nullptr);
     CHECK(PickAutoBackend(reason, sizeof(reason)) == nullptr);
@@ -225,12 +234,13 @@ TEST_CASE("RegisterCompiledBackends registers null and Vulkan, and Direct3D 12 o
     CHECK(RegisterCompiledBackends());
     CHECK(RegisterCompiledBackends());  // again: nothing changes
     const BackendDescriptor* null_backend = FindBackend(Backend::Null);
-    const BackendDescriptor* vulkan = FindBackend(Backend::Vulkan);
     REQUIRE(null_backend != nullptr);
-    REQUIRE(vulkan != nullptr);
     CHECK(StringView(null_backend->name) == "null");
-    CHECK(StringView(vulkan->name) == "vulkan");
     CHECK(null_backend->auto_rank == 0);
+#if ENGINE_RHI_HAVE_VULKAN
+    const BackendDescriptor* vulkan = FindBackend(Backend::Vulkan);
+    REQUIRE(vulkan != nullptr);
+    CHECK(StringView(vulkan->name) == "vulkan");
     CHECK(vulkan->auto_rank > 0);
     CHECK(vulkan->shader_format == ShaderFormat::Spirv);
 #if ENGINE_PLATFORM_WINDOWS
@@ -241,11 +251,63 @@ TEST_CASE("RegisterCompiledBackends registers null and Vulkan, and Direct3D 12 o
 #else
     CHECK(RegisteredBackendCount() == 2);
 #endif
-    // With only the null backend registered, Auto has nothing to pick.
+#else
+    // macOS (Phase 26 Day 314): no Vulkan; the null backend alone until Metal (Day 316).
+    CHECK(FindBackend(Backend::Vulkan) == nullptr);
+    CHECK(RegisteredBackendCount() == 1);
+#endif
+    // With only the null backend registered, Auto has nothing to pick, on every platform (macOS too: only the backend
+    // setting turns that into the null backend, renderer::BackendForSetting).
     ClearBackendRegistryForTest();
     REQUIRE(RegisterNullBackend());
     char reason[160] = {};
     CHECK(PickAutoBackend(reason, sizeof(reason)) == nullptr);
+}
+
+TEST_CASE(
+    "The backend setting's auto is the null backend on macOS only with no GPU backend built; one that is built and fails is "
+    "never replaced; metal is refused as not built",
+    "[rhi][registry]")
+{
+    // The macOS fallback (Phase 26 Day 314, removed with Metal on Day 316) applies only when no backend auto may pick
+    // is registered at all: a registered backend that cannot run (Metal from Day 316, here a fake) is a loud failure
+    // with its own reason, and the setting's backend stays auto.
+    Reset reset;
+    REQUIRE(RegisterNullBackend());
+    const char* note = "untouched";
+#if ENGINE_PLATFORM_MACOS
+    CHECK(renderer::BackendForSetting(static_cast<u32>(Backend::Auto), &note) == Backend::Null);
+    REQUIRE(note != nullptr);
+    CHECK(CStrFind(note, "no GPU backend is built for macOS yet") != nullptr);
+#else
+    CHECK(renderer::BackendForSetting(static_cast<u32>(Backend::Auto), &note) == Backend::Auto);
+    CHECK(note == nullptr);
+#endif
+    CHECK(renderer::BackendForSetting(static_cast<u32>(Backend::Vulkan), &note) ==
+          Backend::Vulkan);  // a named backend is never replaced
+    CHECK(note == nullptr);
+    ClearBackendRegistryForTest();
+    REQUIRE(RegisterNullBackend());
+    REQUIRE(RegisterBackend(FakeB()));
+    g_b_available = false;
+    CHECK(renderer::BackendForSetting(static_cast<u32>(Backend::Auto), &note) ==
+          Backend::Auto);  // a GPU backend is built: no fallback
+    CHECK(note == nullptr);
+    char reason[256] = {};
+    CHECK(PickAutoBackend(reason, sizeof(reason)) == nullptr);
+    CHECK(CStrFind(reason, "fake-b is not available: the fake driver is switched off") != nullptr);
+    const bool was = LogRhi.Enabled();
+    LogRhi.SetEnabled(false);
+    DeviceCreateInfo info;
+    info.backend = Backend::Auto;
+    CHECK_FALSE(CreateDevice(info));  // no device at all: never a null one in disguise
+    LogRhi.SetEnabled(was);
+    CHECK(ResolveBackend(Backend::Metal, reason, sizeof(reason)) == nullptr);
+#if ENGINE_PLATFORM_MACOS
+    CHECK(CStrFind(reason, "the metal backend is not built yet") != nullptr);
+#else
+    CHECK(CStrFind(reason, "the metal backend is not built for") != nullptr);  // and never will be here
+#endif
 }
 
 TEST_CASE("A device refuses bytecode in a format other than its own, naming both", "[rhi][registry][desc]")

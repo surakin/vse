@@ -81,10 +81,16 @@ function(engine_add_rhi_libs suffix foundation_lib jobs_lib platform_lib)
   target_compile_options(rhi${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
   target_link_libraries(rhi${suffix} PUBLIC ${foundation_lib} ${jobs_lib} ${platform_lib})
 
-  add_library(rhi_vulkan${suffix} STATIC ${RHI_VULKAN_SOURCES})
-  target_include_directories(rhi_vulkan${suffix} PUBLIC ${RHI_INCLUDE_ROOT})
-  target_compile_options(rhi_vulkan${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
-  target_link_libraries(rhi_vulkan${suffix} PUBLIC rhi${suffix})
+  # No Vulkan on macOS (Phase 26 decision 8: MoltenVK is third-party): the neutral RHI and the null backend there, Metal from Day 316.
+  if(NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    add_library(rhi_vulkan${suffix} STATIC ${RHI_VULKAN_SOURCES})
+    target_include_directories(rhi_vulkan${suffix} PUBLIC ${RHI_INCLUDE_ROOT})
+    target_compile_options(rhi_vulkan${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
+    target_link_libraries(rhi_vulkan${suffix} PUBLIC rhi${suffix})
+    # Everything that links the Vulkan backend (rhi_backends, and through it the tests) builds its Vulkan code: the shared tests keep
+    # their Vulkan cases behind this define, which macOS does not have.
+    target_compile_definitions(rhi_vulkan${suffix} PUBLIC ENGINE_RHI_HAVE_VULKAN=1)
+  endif()
 
   if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_library(rhi_dx12${suffix} STATIC ${RHI_DX12_SOURCES})
@@ -97,7 +103,10 @@ function(engine_add_rhi_libs suffix foundation_lib jobs_lib platform_lib)
   add_library(rhi_backends${suffix} STATIC backends/backends.cpp)
   target_include_directories(rhi_backends${suffix} PUBLIC ${RHI_INCLUDE_ROOT})
   target_compile_options(rhi_backends${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
-  target_link_libraries(rhi_backends${suffix} PUBLIC rhi_vulkan${suffix} rhi${suffix})
+  if(TARGET rhi_vulkan${suffix})
+    target_link_libraries(rhi_backends${suffix} PUBLIC rhi_vulkan${suffix})  # with ENGINE_RHI_HAVE_VULKAN: backends.cpp lists it
+  endif()
+  target_link_libraries(rhi_backends${suffix} PUBLIC rhi${suffix})
   if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_link_libraries(rhi_backends${suffix} PUBLIC rhi_dx12${suffix})
     target_compile_definitions(rhi_backends${suffix} PRIVATE ENGINE_RHI_HAVE_DX12=1) # the table in backends.cpp lists it

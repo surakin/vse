@@ -24,14 +24,14 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Text](text.md) | 6 | 221 |
 | [ECS](ecs.md) | 12 | 406 |
 | [Spatial Partitioning](spatial.md) | 12 | 333 |
-| [Networking](net.md) | 30 | 724 |
+| [Networking](net.md) | 30 | 725 |
 | [Database](database.md) | 9 | 161 |
 | [Storage](storage.md) | 17 | 410 |
 | [Scene bridge](scene.md) | 2 | 44 |
 | [The UI Toolkit](ui.md) | 46 | 1420 |
 | [The UI Window Adapter](ui_window.md) | 2 | 25 |
 | [The Job System](jobs.md) | 13 | 203 |
-| [The Render Hardware Interface](rhi.md) | 21 | 792 |
-| [The renderer](renderer.md) | 25 | 1102 |
+| [The Render Hardware Interface](rhi.md) | 21 | 793 |
+| [The renderer](renderer.md) | 25 | 1103 |
 | [The Vulkan backend (loader, function tables, result helpers)](rhi-vulkan.md) | 17 | 440 |
 | [The Direct3D 12 backend (Windows)](rhi-dx12.md) | 12 | 319 |

@@ -1,3 +1,4 @@
+#include "build_defs.h"
 #include "cstr/format.h"
 #include "cstr/cstr.h"
 #include "sync/mutex.h"
@@ -41,9 +42,30 @@ const char* RequestedName(Backend backend)
     case Backend::Null: return "null";
     case Backend::Vulkan: return "vulkan";
     case Backend::Dx12: return "dx12";
+    case Backend::Metal: return "metal";
     case Backend::Auto: return "auto";
     }
     return "unknown";
+}
+
+// Whether this platform's build has the backend at all (engine/rhi/CMakeLists.txt): a backend it does not build is
+// refused for that reason, not as a registration slip.
+bool BuiltForThisPlatform(Backend backend)
+{
+    switch (backend)
+    {
+    case Backend::Null: return true;
+    case Backend::Vulkan: return ENGINE_PLATFORM_LINUX || ENGINE_PLATFORM_WINDOWS;  // not macOS: Phase 26 decision 8
+    case Backend::Dx12: return ENGINE_PLATFORM_WINDOWS;
+    case Backend::Metal: return false;  // macOS, from Phase 26 Day 316
+    case Backend::Auto: return true;
+    }
+    return false;
+}
+
+const char* PlatformName()
+{
+    return ENGINE_PLATFORM_WINDOWS ? "Windows" : ENGINE_PLATFORM_MACOS ? "macOS" : "Linux";
 }
 
 bool Same(const BackendDescriptor& a, const BackendDescriptor& b)
@@ -203,6 +225,19 @@ const BackendDescriptor* ResolveBackend(Backend backend, char* reason, usize rea
         return PickAutoBackend(reason, reason_size);
     }
     const BackendDescriptor* d = FindBackend(backend);
+    if (d == nullptr && !BuiltForThisPlatform(backend))
+    {
+        if (backend == Backend::Metal && ENGINE_PLATFORM_MACOS)
+        {
+            SetReason(reason, reason_size, "the %s backend is not built yet (Phase 26 Day 316)%s", "metal", "");
+        }
+        else
+        {
+            SetReason(reason, reason_size, "the %s backend is not built for %s", RequestedName(backend),
+                      PlatformName());
+        }
+        return nullptr;
+    }
     if (d == nullptr)
     {
         SetReason(

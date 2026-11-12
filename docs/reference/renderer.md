@@ -9411,6 +9411,24 @@ rhi::FenceValue last_fence;
 
 The fence value of the latest submission.
 
+## `BackendForSetting(u32,const char**)` {#renderer-backendforsetting-u32-const-char-star-star}
+
+`function renderer::BackendForSetting` — defined in `engine/renderer/renderer.h`
+
+```cpp
+rhi::Backend BackendForSetting(u32 setting_value, const char** note);
+```
+
+The backend the `backend` setting's value asks for: the value itself, except that on macOS, until the Metal backend exists (Phase 26 Day 316, which removes this), `auto` in a program with no GPU backend registered at all is the null backend, with `*note` saying so (and the renderer's log saying it once per program). A GPU backend that is registered but cannot run is never replaced: the device creation then fails and says why. [`rhi::PickAutoBackend`](rhi.md#rhi-pickautobackend-char-star-usize) itself never picks null; only the setting does this.
+
+| Field | Value |
+|---|---|
+| Parameter `setting_value` | the `backend` setting's enum value (it follows [`rhi::Backend`](rhi.md#rhi-backend)). |
+| Parameter `note` | receives the reason when the fallback was taken, else null. |
+| Returns | the backend to create. |
+| Fails | never. |
+| Thread-safety | thread-safe (reads the backend registry). |
+
 ## `MakeDeviceCreateInfo(const RenderSettings&,const rhi::DeviceCreateInfo&,char*,rhi::DeviceCreateInfo*)` {#renderer-makedevicecreateinfo-const-rendersettings-amp-const-rhi-devicecreateinfo-amp-char-star-rhi-devicecreateinfo-star}
 
 `function renderer::MakeDeviceCreateInfo` — defined in `engine/renderer/renderer.h`
@@ -9419,7 +9437,7 @@ The fence value of the latest submission.
 void MakeDeviceCreateInfo(const RenderSettings& settings, const rhi::DeviceCreateInfo& base, char* adapter_buffer, rhi::DeviceCreateInfo* out);
 ```
 
-Builds the description a device is created with from settings: backend, adapter, validation, sync validation and frames in flight come from `settings`, everything else from `base`.
+Builds the description a device is created with from settings: backend, adapter, validation, sync validation and frames in flight come from `settings`, everything else from `base`. The backend is the setting's through [`renderer::BackendForSetting`](#renderer-backendforsetting-u32-const-char-star-star): on macOS, until Metal, `auto` there becomes `Null` (logged once).
 
 | Field | Value |
 |---|---|

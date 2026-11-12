@@ -333,7 +333,7 @@ TEST_CASE("The settings system is brought back in line when a queued change fail
     // stored value is the one for the next start and the sync leaves it alone (Phase 13 Day 173).
     const st::SettingId backend = rig.registry.Find("renderer.backend");
     CHECK_FALSE(rs::SyncSharedFromRenderer(rig.renderer.Get(), &settings));
-    CHECK(settings.Snapshot()->Get(backend).AsEnum() == 3);
+    CHECK(settings.Snapshot()->Get(backend).AsEnum() == static_cast<u32>(rhi::Backend::Auto));
     REQUIRE(settings.Set(backend, st::Value::FromEnum(2)).Ok());  // dx12, for the next start
     CHECK_FALSE(rs::SyncSharedFromRenderer(rig.renderer.Get(), &settings));
     CHECK(settings.Snapshot()->Get(backend).AsEnum() == 2);

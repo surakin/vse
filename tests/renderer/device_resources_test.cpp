@@ -377,7 +377,7 @@ TEST_CASE("Texture content is identical after a reset on a real device", "[devic
     rhi::DeviceCreateInfo info;
     if (!host.Create(info, rhi::SwapchainDesc{}))
     {
-        SKIP("no suitable Vulkan device");
+        SKIP("no GPU backend can make a device here (Vulkan or Direct3D 12; none on macOS before Metal)");
     }
     GpuTexture texture;
     TextureImage image;

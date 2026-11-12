@@ -114,7 +114,7 @@ void RegisterSharedSettings(sset::Registry* registry)
             const char* flag;
         } kInfo[] = {
             {"backend",
-             "the graphics backend: auto (the preferred one this program has and this machine runs), null (no GPU), vulkan or dx12",
+             "the graphics backend: auto (the preferred one this program has and this machine runs), null (no GPU), vulkan, dx12 or metal",
              nullptr, "rhi"},
             {"adapter", "the GPU: an id from --list-gpus, an index, or part of the name (empty: the best one)",
              "ENGINE_RHI_GPU", "gpu"},

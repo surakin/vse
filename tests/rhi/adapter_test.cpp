@@ -10,13 +10,17 @@
 #include "rhi/adapter.h"
 #include "rhi/rhi.h"
 #include "rhi/rhi_log.h"
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
 #include "rhi/vulkan/vk_device_select.h"
+#endif
 #include "cstr/cstr.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
 using engine_placeholder::rhi::vulkan::GpuKind;
 using engine_placeholder::rhi::vulkan::PhysicalDeviceInfo;
+#endif
 
 namespace
 {
@@ -41,6 +45,7 @@ DeviceCreateInfo NullInfo()
     return info;
 }
 
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
 PhysicalDeviceInfo GoodGpu(const char* name, GpuKind kind, u32 vendor, u32 device, u8 uuid_seed)
 {
     PhysicalDeviceInfo info;
@@ -59,6 +64,7 @@ PhysicalDeviceInfo GoodGpu(const char* name, GpuKind kind, u32 vendor, u32 devic
     info.families[0].graphics = info.families[0].compute = info.families[0].transfer = info.families[0].present = true;
     return info;
 }
+#endif
 
 }  // namespace
 
@@ -240,6 +246,7 @@ TEST_CASE("The null backend rejects an unsuitable adapter by name", "[rhi][adapt
     CHECK(CStrCompare(device->Adapter().id, "null-integrated") == 0);
 }
 
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
 TEST_CASE("Vulkan adapter ids come from vendor, device and UUID, not from the order", "[rhi][adapter][vulkan][select]")
 {
     PhysicalDeviceInfo a = GoodGpu("GPU A", GpuKind::Discrete, 0x10de, 0x2504, 1);
@@ -262,7 +269,9 @@ TEST_CASE("Vulkan adapter ids come from vendor, device and UUID, not from the or
     CHECK(vulkan::SelectPhysicalDeviceFor(before, 2, false, ib.id, "test") == 1);
     CHECK(vulkan::SelectPhysicalDeviceFor(after, 3, false, ib.id, "test") == 2);
 }
+#endif
 
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
 TEST_CASE("A Vulkan adapter with a valid deviceLUID reports it as high part then low part, and matches by it",
           "[rhi][adapter][vulkan][select]")
 {
@@ -280,7 +289,9 @@ TEST_CASE("A Vulkan adapter with a valid deviceLUID reports it as high part then
     PhysicalDeviceInfo both[2] = {a, b};
     CHECK(vulkan::SelectPhysicalDeviceFor(both, 2, false, "0000000212345678", "test") == 1);
 }
+#endif
 
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
 TEST_CASE("Unsuitable Vulkan adapters carry a reason, and presentability follows the window",
           "[rhi][adapter][vulkan][select]")
 {
@@ -313,7 +324,9 @@ TEST_CASE("Unsuitable Vulkan adapters carry a reason, and presentability follows
     PhysicalDeviceInfo cpu = GoodGpu("llvmpipe", GpuKind::Cpu, 0x10005, 0, 0);
     CHECK(vulkan::MakeAdapterInfo(cpu, false).kind == AdapterKind::Software);
 }
+#endif
 
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
 TEST_CASE("An explicit request does not fall back when it names an unsuitable GPU", "[rhi][adapter][vulkan][select]")
 {
     AdapterQuietLog quiet;
@@ -325,7 +338,9 @@ TEST_CASE("An explicit request does not fall back when it names an unsuitable GP
     CHECK(vulkan::SelectPhysicalDeviceFor(devices, 2, false, id, "test") == -1);
     CHECK(vulkan::SelectPhysicalDeviceFor(devices, 2, false, nullptr, "test") == 1);  // "best" still works
 }
+#endif
 
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
 TEST_CASE("Real adapters are listed and a device is created on each presentable one", "[rhi][adapter][vulkan][gpu]")
 {
     gpu_test::GpuFixture fx;
@@ -399,7 +414,9 @@ TEST_CASE("Real adapters are listed and a device is created on each presentable 
         WARN("single-adapter machine: the adapter test ran once");
     }
 }
+#endif
 
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
 TEST_CASE("A requested Vulkan adapter that does not exist fails", "[rhi][adapter][vulkan][gpu]")
 {
     gpu_test::GpuFixture fx;
@@ -409,3 +426,4 @@ TEST_CASE("A requested Vulkan adapter that does not exist fails", "[rhi][adapter
     info.adapter = "vk-0000-0000-00000000000000000000000000000000";
     CHECK(CreateDevice(info) == nullptr);
 }
+#endif

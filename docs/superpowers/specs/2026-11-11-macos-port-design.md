@@ -234,7 +234,13 @@ About 70 conditions in `tests/`; the eleven whose non-Windows branch assumes Lin
 `crash_handler_linux_test.cpp`, `crash_report_linux_test.cpp`, `crash_end_to_end_linux_test.cpp`, `core_dump_linux_test.cpp` (with
 `debug/core_dump_linux.h`), `crash_report_script_linux_test.cpp`, `program_crash_test_linux_test.cpp`, `job_crash_linux_test.cpp`,
 `stack_trace_alloc_linux_test.cpp`: shared as `_posix` where the code is POSIX, `_macos` where it is not (Days 306-308). `tests/foundation`: the
-Wayland, X11 and window-layer tests (Days 311-313). `tests/rhi`: the Vulkan tests (not built on macOS; Metal equivalents, Days 316-321).
+Wayland, X11 and window-layer tests (Days 311-313). `tests/rhi`: the Vulkan tests (not built on macOS; Metal equivalents, Days 316-321). **As configured on Day 314:** the files left out on macOS
+are `vulkan_bindings_test.cpp`, `vulkan_buffer_test.cpp`, `vulkan_commands_test.cpp`, `vulkan_compute_test.cpp`, `vulkan_device_test.cpp`, `vulkan_fault_test.cpp`, `vulkan_frame_test.cpp`, `vulkan_instance_test.cpp`, `vulkan_loader_test.cpp`, `vulkan_memory_test.cpp`, `vulkan_pipeline_test.cpp`, `vulkan_strip_test.cpp`, `vulkan_swapchain_test.cpp`, `vulkan_texture_test.cpp`; and the Vulkan cases of the shared files, between `#if ENGINE_RHI_HAVE_VULKAN` (defined by
+`rhi_backends` where it links the Vulkan backend): in `adapter_test.cpp` (adapter ids, LUIDs, selection), `device_host_test.cpp` (the leak counts
+across a recreation), `shader_test.cpp` (shader modules), `renderer_demo_gpu_test.cpp` (the loss and long-run leak checks),
+`swapchain_reconfigure_test.cpp` (the surface-format policy and the presentation cases), `render_graph_gpu_test.cpp` (the synchronization
+validation count), and `gpu_fixture.h`/`backend_fixture.h` (the validation counters; without Vulkan the fixture's `Require` skips with "no GPU
+backend"). The demos' `*_no_vulkan` ctests are not registered on macOS.
 
 ### 8.9 `KNOWN-ISSUES.md` lines naming Phase 26 or macOS
 

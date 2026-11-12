@@ -3927,21 +3927,22 @@ net::RateLimiterConfig::max_addresses	variable	net	net-ratelimiterconfig-max-add
 net::RateLimiterConfig::strikes_to_ban	variable	net	net-ratelimiterconfig-strikes-to-ban	net.md	engine/net/rate_limit.h:57
 net::RateLimiterConfig::strike_window_nanos	variable	net	net-ratelimiterconfig-strike-window-nanos	net.md	engine/net/rate_limit.h:58
 net::RateLimiterConfig::ban_nanos	variable	net	net-ratelimiterconfig-ban-nanos	net.md	engine/net/rate_limit.h:59
-net::RateLimiterCounters	struct	net	net-ratelimitercounters	net.md	engine/net/rate_limit.h:65
-net::RateLimiterCounters::allowed	variable	net	net-ratelimitercounters-allowed	net.md	engine/net/rate_limit.h:67
-net::RateLimiterCounters::refused_total	variable	net	net-ratelimitercounters-refused-total	net.md	engine/net/rate_limit.h:68
-net::RateLimiterCounters::refused_address	variable	net	net-ratelimitercounters-refused-address	net.md	engine/net/rate_limit.h:69
-net::RateLimiterCounters::refused_banned	variable	net	net-ratelimitercounters-refused-banned	net.md	engine/net/rate_limit.h:70
-net::RateLimiterCounters::bans	variable	net	net-ratelimitercounters-bans	net.md	engine/net/rate_limit.h:71
-net::RateLimiter	class	net	net-ratelimiter	net.md	engine/net/rate_limit.h:77
-net::RateLimiter::RateLimiter(const RateLimiterConfig&)	function	net	net-ratelimiter-ratelimiter-const-ratelimiterconfig-amp	net.md	engine/net/rate_limit.h:82
-net::RateLimiter::Allow(const Address&,u64)	function	net	net-ratelimiter-allow-const-address-amp-u64	net.md	engine/net/rate_limit.h:90
-net::RateLimiter::Strike(const Address&,u64)	function	net	net-ratelimiter-strike-const-address-amp-u64	net.md	engine/net/rate_limit.h:95
-net::RateLimiter::IsBanned(const Address&,u64) const	function	net	net-ratelimiter-isbanned-const-address-amp-u64-const	net.md	engine/net/rate_limit.h:101
-net::RateLimiter::ActiveAddresses(u64) const	function	net	net-ratelimiter-activeaddresses-u64-const	net.md	engine/net/rate_limit.h:106
-net::RateLimiter::BannedAddresses(u64) const	function	net	net-ratelimiter-bannedaddresses-u64-const	net.md	engine/net/rate_limit.h:111
-net::RateLimiter::Capacity() const	function	net	net-ratelimiter-capacity-const	net.md	engine/net/rate_limit.h:115
-net::RateLimiter::Counters() const	function	net	net-ratelimiter-counters-const	net.md	engine/net/rate_limit.h:119
+net::RateLimiterConfig::seed	variable	net	net-ratelimiterconfig-seed	net.md	engine/net/rate_limit.h:60
+net::RateLimiterCounters	struct	net	net-ratelimitercounters	net.md	engine/net/rate_limit.h:67
+net::RateLimiterCounters::allowed	variable	net	net-ratelimitercounters-allowed	net.md	engine/net/rate_limit.h:69
+net::RateLimiterCounters::refused_total	variable	net	net-ratelimitercounters-refused-total	net.md	engine/net/rate_limit.h:70
+net::RateLimiterCounters::refused_address	variable	net	net-ratelimitercounters-refused-address	net.md	engine/net/rate_limit.h:71
+net::RateLimiterCounters::refused_banned	variable	net	net-ratelimitercounters-refused-banned	net.md	engine/net/rate_limit.h:72
+net::RateLimiterCounters::bans	variable	net	net-ratelimitercounters-bans	net.md	engine/net/rate_limit.h:73
+net::RateLimiter	class	net	net-ratelimiter	net.md	engine/net/rate_limit.h:79
+net::RateLimiter::RateLimiter(const RateLimiterConfig&)	function	net	net-ratelimiter-ratelimiter-const-ratelimiterconfig-amp	net.md	engine/net/rate_limit.h:84
+net::RateLimiter::Allow(const Address&,u64)	function	net	net-ratelimiter-allow-const-address-amp-u64	net.md	engine/net/rate_limit.h:92
+net::RateLimiter::Strike(const Address&,u64)	function	net	net-ratelimiter-strike-const-address-amp-u64	net.md	engine/net/rate_limit.h:97
+net::RateLimiter::IsBanned(const Address&,u64) const	function	net	net-ratelimiter-isbanned-const-address-amp-u64-const	net.md	engine/net/rate_limit.h:103
+net::RateLimiter::ActiveAddresses(u64) const	function	net	net-ratelimiter-activeaddresses-u64-const	net.md	engine/net/rate_limit.h:108
+net::RateLimiter::BannedAddresses(u64) const	function	net	net-ratelimiter-bannedaddresses-u64-const	net.md	engine/net/rate_limit.h:113
+net::RateLimiter::Capacity() const	function	net	net-ratelimiter-capacity-const	net.md	engine/net/rate_limit.h:117
+net::RateLimiter::Counters() const	function	net	net-ratelimiter-counters-const	net.md	engine/net/rate_limit.h:121
 net::WaitKind	enum	net	net-waitkind	net.md	engine/net/reactor.h:46
 net::WaitKind::Readable	enumerator	net	net-waitkind-readable	net.md	engine/net/reactor.h:48
 net::WaitKind::Writable	enumerator	net	net-waitkind-writable	net.md	engine/net/reactor.h:49
@@ -7374,32 +7375,33 @@ rhi::Backend	enum	rhi	rhi-backend	rhi.md	engine/rhi/rhi.h:19
 rhi::Backend::Null	enumerator	rhi	rhi-backend-null	rhi.md	engine/rhi/rhi.h:21
 rhi::Backend::Vulkan	enumerator	rhi	rhi-backend-vulkan	rhi.md	engine/rhi/rhi.h:22
 rhi::Backend::Dx12	enumerator	rhi	rhi-backend-dx12	rhi.md	engine/rhi/rhi.h:23
-rhi::Backend::Auto	enumerator	rhi	rhi-backend-auto	rhi.md	engine/rhi/rhi.h:24
-rhi::ValidationSetting	enum	rhi	rhi-validationsetting	rhi.md	engine/rhi/rhi.h:28
-rhi::ValidationSetting::Auto	enumerator	rhi	rhi-validationsetting-auto	rhi.md	engine/rhi/rhi.h:30
-rhi::ValidationSetting::Off	enumerator	rhi	rhi-validationsetting-off	rhi.md	engine/rhi/rhi.h:31
-rhi::ValidationSetting::On	enumerator	rhi	rhi-validationsetting-on	rhi.md	engine/rhi/rhi.h:32
-rhi::FaultInjection	struct	rhi	rhi-faultinjection	rhi.md	engine/rhi/rhi.h:43
-rhi::FaultInjection::lose_device_at_frame	variable	rhi	rhi-faultinjection-lose-device-at-frame	rhi.md	engine/rhi/rhi.h:47
-rhi::FaultInjection::lose_device_at_submit	variable	rhi	rhi-faultinjection-lose-device-at-submit	rhi.md	engine/rhi/rhi.h:50
-rhi::FaultInjection::lose_device_at_present	variable	rhi	rhi-faultinjection-lose-device-at-present	rhi.md	engine/rhi/rhi.h:53
-rhi::FaultInjection::strikes_left	variable	rhi	rhi-faultinjection-strikes-left	rhi.md	engine/rhi/rhi.h:58
-rhi::FaultInjection::fail_allocations_from	variable	rhi	rhi-faultinjection-fail-allocations-from	rhi.md	engine/rhi/rhi.h:61
-rhi::FaultInjection::fail_surface_recreate	variable	rhi	rhi-faultinjection-fail-surface-recreate	rhi.md	engine/rhi/rhi.h:64
-rhi::FaultInjection::fail_swapchain_create	variable	rhi	rhi-faultinjection-fail-swapchain-create	rhi.md	engine/rhi/rhi.h:67
-rhi::DeviceCreateInfo	struct	rhi	rhi-devicecreateinfo	rhi.md	engine/rhi/rhi.h:75
-rhi::DeviceCreateInfo::backend	variable	rhi	rhi-devicecreateinfo-backend	rhi.md	engine/rhi/rhi.h:78
-rhi::DeviceCreateInfo::application_name	variable	rhi	rhi-devicecreateinfo-application-name	rhi.md	engine/rhi/rhi.h:80
-rhi::DeviceCreateInfo::validation	variable	rhi	rhi-devicecreateinfo-validation	rhi.md	engine/rhi/rhi.h:82
-rhi::DeviceCreateInfo::sync_validation	variable	rhi	rhi-devicecreateinfo-sync-validation	rhi.md	engine/rhi/rhi.h:84
-rhi::DeviceCreateInfo::adapter	variable	rhi	rhi-devicecreateinfo-adapter	rhi.md	engine/rhi/rhi.h:91
-rhi::DeviceCreateInfo::window	variable	rhi	rhi-devicecreateinfo-window	rhi.md	engine/rhi/rhi.h:96
-rhi::DeviceCreateInfo::frames_in_flight	variable	rhi	rhi-devicecreateinfo-frames-in-flight	rhi.md	engine/rhi/rhi.h:100
-rhi::DeviceCreateInfo::pipeline_cache	variable	rhi	rhi-devicecreateinfo-pipeline-cache	rhi.md	engine/rhi/rhi.h:105
-rhi::DeviceCreateInfo::descriptor_sets_per_pool	variable	rhi	rhi-devicecreateinfo-descriptor-sets-per-pool	rhi.md	engine/rhi/rhi.h:108
-rhi::DeviceCreateInfo::pipeline_cache_dir	variable	rhi	rhi-devicecreateinfo-pipeline-cache-dir	rhi.md	engine/rhi/rhi.h:113
-rhi::DeviceCreateInfo::faults	variable	rhi	rhi-devicecreateinfo-faults	rhi.md	engine/rhi/rhi.h:115
-rhi::CreateDevice(const DeviceCreateInfo&)	function	rhi	rhi-createdevice-const-devicecreateinfo-amp	rhi.md	engine/rhi/rhi.h:139
+rhi::Backend::Metal	enumerator	rhi	rhi-backend-metal	rhi.md	engine/rhi/rhi.h:24
+rhi::Backend::Auto	enumerator	rhi	rhi-backend-auto	rhi.md	engine/rhi/rhi.h:25
+rhi::ValidationSetting	enum	rhi	rhi-validationsetting	rhi.md	engine/rhi/rhi.h:29
+rhi::ValidationSetting::Auto	enumerator	rhi	rhi-validationsetting-auto	rhi.md	engine/rhi/rhi.h:31
+rhi::ValidationSetting::Off	enumerator	rhi	rhi-validationsetting-off	rhi.md	engine/rhi/rhi.h:32
+rhi::ValidationSetting::On	enumerator	rhi	rhi-validationsetting-on	rhi.md	engine/rhi/rhi.h:33
+rhi::FaultInjection	struct	rhi	rhi-faultinjection	rhi.md	engine/rhi/rhi.h:44
+rhi::FaultInjection::lose_device_at_frame	variable	rhi	rhi-faultinjection-lose-device-at-frame	rhi.md	engine/rhi/rhi.h:48
+rhi::FaultInjection::lose_device_at_submit	variable	rhi	rhi-faultinjection-lose-device-at-submit	rhi.md	engine/rhi/rhi.h:51
+rhi::FaultInjection::lose_device_at_present	variable	rhi	rhi-faultinjection-lose-device-at-present	rhi.md	engine/rhi/rhi.h:54
+rhi::FaultInjection::strikes_left	variable	rhi	rhi-faultinjection-strikes-left	rhi.md	engine/rhi/rhi.h:59
+rhi::FaultInjection::fail_allocations_from	variable	rhi	rhi-faultinjection-fail-allocations-from	rhi.md	engine/rhi/rhi.h:62
+rhi::FaultInjection::fail_surface_recreate	variable	rhi	rhi-faultinjection-fail-surface-recreate	rhi.md	engine/rhi/rhi.h:65
+rhi::FaultInjection::fail_swapchain_create	variable	rhi	rhi-faultinjection-fail-swapchain-create	rhi.md	engine/rhi/rhi.h:68
+rhi::DeviceCreateInfo	struct	rhi	rhi-devicecreateinfo	rhi.md	engine/rhi/rhi.h:76
+rhi::DeviceCreateInfo::backend	variable	rhi	rhi-devicecreateinfo-backend	rhi.md	engine/rhi/rhi.h:79
+rhi::DeviceCreateInfo::application_name	variable	rhi	rhi-devicecreateinfo-application-name	rhi.md	engine/rhi/rhi.h:81
+rhi::DeviceCreateInfo::validation	variable	rhi	rhi-devicecreateinfo-validation	rhi.md	engine/rhi/rhi.h:83
+rhi::DeviceCreateInfo::sync_validation	variable	rhi	rhi-devicecreateinfo-sync-validation	rhi.md	engine/rhi/rhi.h:85
+rhi::DeviceCreateInfo::adapter	variable	rhi	rhi-devicecreateinfo-adapter	rhi.md	engine/rhi/rhi.h:92
+rhi::DeviceCreateInfo::window	variable	rhi	rhi-devicecreateinfo-window	rhi.md	engine/rhi/rhi.h:97
+rhi::DeviceCreateInfo::frames_in_flight	variable	rhi	rhi-devicecreateinfo-frames-in-flight	rhi.md	engine/rhi/rhi.h:101
+rhi::DeviceCreateInfo::pipeline_cache	variable	rhi	rhi-devicecreateinfo-pipeline-cache	rhi.md	engine/rhi/rhi.h:106
+rhi::DeviceCreateInfo::descriptor_sets_per_pool	variable	rhi	rhi-devicecreateinfo-descriptor-sets-per-pool	rhi.md	engine/rhi/rhi.h:109
+rhi::DeviceCreateInfo::pipeline_cache_dir	variable	rhi	rhi-devicecreateinfo-pipeline-cache-dir	rhi.md	engine/rhi/rhi.h:114
+rhi::DeviceCreateInfo::faults	variable	rhi	rhi-devicecreateinfo-faults	rhi.md	engine/rhi/rhi.h:116
+rhi::CreateDevice(const DeviceCreateInfo&)	function	rhi	rhi-createdevice-const-devicecreateinfo-amp	rhi.md	engine/rhi/rhi.h:140
 rhi::LogRhi	variable	rhi	rhi-logrhi	rhi.md	engine/rhi/rhi_log.h:15
 rhi::RhiLogV(LogVerbosity,const char*,...)	function	rhi	rhi-rhilogv-logverbosity-const-char-star	rhi.md	engine/rhi/rhi_log.h:26
 RhiLog	macro	rhi	rhilog	rhi.md	engine/rhi/rhi_log.h:49
@@ -8241,44 +8243,45 @@ renderer::RendererStats::recoveries	variable	renderer	renderer-rendererstats-rec
 renderer::RendererStats::recovery_failures	variable	renderer	renderer-rendererstats-recovery-failures	renderer.md	engine/renderer/renderer.h:183
 renderer::RendererStats::last_reset_ms	variable	renderer	renderer-rendererstats-last-reset-ms	renderer.md	engine/renderer/renderer.h:185
 renderer::RendererStats::last_fence	variable	renderer	renderer-rendererstats-last-fence	renderer.md	engine/renderer/renderer.h:187
-renderer::MakeDeviceCreateInfo(const RenderSettings&,const rhi::DeviceCreateInfo&,char*,rhi::DeviceCreateInfo*)	function	renderer	renderer-makedevicecreateinfo-const-rendersettings-amp-const-rhi-devicecreateinfo-amp-char-star-rhi-devicecreateinfo-star	renderer.md	engine/renderer/renderer.h:198
-renderer::MakeSwapchainDesc(const RenderSettings&)	function	renderer	renderer-makeswapchaindesc-const-rendersettings-amp	renderer.md	engine/renderer/renderer.h:205
-renderer::ApplyResult	struct	renderer	renderer-applyresult	renderer.md	engine/renderer/renderer.h:210
-renderer::ApplyResult::ok	variable	renderer	renderer-applyresult-ok	renderer.md	engine/renderer/renderer.h:213
-renderer::ApplyResult::queued	variable	renderer	renderer-applyresult-queued	renderer.md	engine/renderer/renderer.h:216
-renderer::ApplyResult::rolled_back	variable	renderer	renderer-applyresult-rolled-back	renderer.md	engine/renderer/renderer.h:218
-renderer::ApplyResult::device_lost	variable	renderer	renderer-applyresult-device-lost	renderer.md	engine/renderer/renderer.h:220
-renderer::ApplyResult::performed	variable	renderer	renderer-applyresult-performed	renderer.md	engine/renderer/renderer.h:222
-renderer::ApplyResult::change	variable	renderer	renderer-applyresult-change	renderer.md	engine/renderer/renderer.h:224
-renderer::ApplyResult::reason	variable	renderer	renderer-applyresult-reason	renderer.md	engine/renderer/renderer.h:226
-renderer::ApplyResult::total_ms	variable	renderer	renderer-applyresult-total-ms	renderer.md	engine/renderer/renderer.h:228
-renderer::ApplyResult::release_ms	variable	renderer	renderer-applyresult-release-ms	renderer.md	engine/renderer/renderer.h:230
-renderer::ApplyResult::device_ms	variable	renderer	renderer-applyresult-device-ms	renderer.md	engine/renderer/renderer.h:232
-renderer::ApplyResult::swapchain_ms	variable	renderer	renderer-applyresult-swapchain-ms	renderer.md	engine/renderer/renderer.h:234
-renderer::ApplyResult::rebuild_ms	variable	renderer	renderer-applyresult-rebuild-ms	renderer.md	engine/renderer/renderer.h:236
-renderer::ApplyResult::reset	variable	renderer	renderer-applyresult-reset	renderer.md	engine/renderer/renderer.h:239
-renderer::ResetBeginFn	alias	renderer	renderer-resetbeginfn	renderer.md	engine/renderer/renderer.h:243
-renderer::ResetEndFn	alias	renderer	renderer-resetendfn	renderer.md	engine/renderer/renderer.h:246
-renderer::Renderer	class	renderer	renderer-renderer	renderer.md	engine/renderer/renderer.h:256
-renderer::Renderer::Renderer(const RendererDesc&)	function	renderer	renderer-renderer-renderer-const-rendererdesc-amp	renderer.md	engine/renderer/renderer.h:264
-renderer::Renderer::Renderer(const Renderer&)	function	renderer	renderer-renderer-renderer-const-renderer-amp	renderer.md	engine/renderer/renderer.h:265
-renderer::Renderer::operator=(const Renderer&)	function	renderer	renderer-renderer-operator-eq-const-renderer-amp	renderer.md	engine/renderer/renderer.h:266
-renderer::Renderer::Rebind(rhi::Device*,rhi::Swapchain*)	function	renderer	renderer-renderer-rebind-rhi-device-star-rhi-swapchain-star	renderer.md	engine/renderer/renderer.h:277
-renderer::Renderer::ApplySettings(const RenderSettings&)	function	renderer	renderer-renderer-applysettings-const-rendersettings-amp	renderer.md	engine/renderer/renderer.h:295
-renderer::Renderer::ForceDeviceReset()	function	renderer	renderer-renderer-forcedevicereset	renderer.md	engine/renderer/renderer.h:303
-renderer::Renderer::Settings() const	function	renderer	renderer-renderer-settings-const	renderer.md	engine/renderer/renderer.h:307
-renderer::Renderer::LastApply() const	function	renderer	renderer-renderer-lastapply-const	renderer.md	engine/renderer/renderer.h:311
-renderer::Renderer::GetCapabilities() const	function	renderer	renderer-renderer-getcapabilities-const	renderer.md	engine/renderer/renderer.h:315
-renderer::Renderer::SetResetCallbacks(ResetBeginFn,ResetEndFn,void*)	function	renderer	renderer-renderer-setresetcallbacks-resetbeginfn-resetendfn-void-star	renderer.md	engine/renderer/renderer.h:324
-renderer::Renderer::GetDevice() const	function	renderer	renderer-renderer-getdevice-const	renderer.md	engine/renderer/renderer.h:336
-renderer::Renderer::GetSwapchain() const	function	renderer	renderer-renderer-getswapchain-const	renderer.md	engine/renderer/renderer.h:341
-renderer::Renderer::IsRecovering() const	function	renderer	renderer-renderer-isrecovering-const	renderer.md	engine/renderer/renderer.h:346
-renderer::Renderer::IsBroken() const	function	renderer	renderer-renderer-isbroken-const	renderer.md	engine/renderer/renderer.h:350
-renderer::Renderer::RenderFrame(const RenderScene*,const Camera*,const FrameTarget*)	function	renderer	renderer-renderer-renderframe-const-renderscene-star-const-camera-star-const-frametarget-star	renderer.md	engine/renderer/renderer.h:366
-renderer::Renderer::LastError() const	function	renderer	renderer-renderer-lasterror-const	renderer.md	engine/renderer/renderer.h:371
-renderer::Renderer::Stats() const	function	renderer	renderer-renderer-stats-const	renderer.md	engine/renderer/renderer.h:375
-renderer::Renderer::Pool() const	function	renderer	renderer-renderer-pool-const	renderer.md	engine/renderer/renderer.h:379
-renderer::Renderer::FrameIndex() const	function	renderer	renderer-renderer-frameindex-const	renderer.md	engine/renderer/renderer.h:383
+renderer::BackendForSetting(u32,const char**)	function	renderer	renderer-backendforsetting-u32-const-char-star-star	renderer.md	engine/renderer/renderer.h:201
+renderer::MakeDeviceCreateInfo(const RenderSettings&,const rhi::DeviceCreateInfo&,char*,rhi::DeviceCreateInfo*)	function	renderer	renderer-makedevicecreateinfo-const-rendersettings-amp-const-rhi-devicecreateinfo-amp-char-star-rhi-devicecreateinfo-star	renderer.md	engine/renderer/renderer.h:212
+renderer::MakeSwapchainDesc(const RenderSettings&)	function	renderer	renderer-makeswapchaindesc-const-rendersettings-amp	renderer.md	engine/renderer/renderer.h:219
+renderer::ApplyResult	struct	renderer	renderer-applyresult	renderer.md	engine/renderer/renderer.h:224
+renderer::ApplyResult::ok	variable	renderer	renderer-applyresult-ok	renderer.md	engine/renderer/renderer.h:227
+renderer::ApplyResult::queued	variable	renderer	renderer-applyresult-queued	renderer.md	engine/renderer/renderer.h:230
+renderer::ApplyResult::rolled_back	variable	renderer	renderer-applyresult-rolled-back	renderer.md	engine/renderer/renderer.h:232
+renderer::ApplyResult::device_lost	variable	renderer	renderer-applyresult-device-lost	renderer.md	engine/renderer/renderer.h:234
+renderer::ApplyResult::performed	variable	renderer	renderer-applyresult-performed	renderer.md	engine/renderer/renderer.h:236
+renderer::ApplyResult::change	variable	renderer	renderer-applyresult-change	renderer.md	engine/renderer/renderer.h:238
+renderer::ApplyResult::reason	variable	renderer	renderer-applyresult-reason	renderer.md	engine/renderer/renderer.h:240
+renderer::ApplyResult::total_ms	variable	renderer	renderer-applyresult-total-ms	renderer.md	engine/renderer/renderer.h:242
+renderer::ApplyResult::release_ms	variable	renderer	renderer-applyresult-release-ms	renderer.md	engine/renderer/renderer.h:244
+renderer::ApplyResult::device_ms	variable	renderer	renderer-applyresult-device-ms	renderer.md	engine/renderer/renderer.h:246
+renderer::ApplyResult::swapchain_ms	variable	renderer	renderer-applyresult-swapchain-ms	renderer.md	engine/renderer/renderer.h:248
+renderer::ApplyResult::rebuild_ms	variable	renderer	renderer-applyresult-rebuild-ms	renderer.md	engine/renderer/renderer.h:250
+renderer::ApplyResult::reset	variable	renderer	renderer-applyresult-reset	renderer.md	engine/renderer/renderer.h:253
+renderer::ResetBeginFn	alias	renderer	renderer-resetbeginfn	renderer.md	engine/renderer/renderer.h:257
+renderer::ResetEndFn	alias	renderer	renderer-resetendfn	renderer.md	engine/renderer/renderer.h:260
+renderer::Renderer	class	renderer	renderer-renderer	renderer.md	engine/renderer/renderer.h:270
+renderer::Renderer::Renderer(const RendererDesc&)	function	renderer	renderer-renderer-renderer-const-rendererdesc-amp	renderer.md	engine/renderer/renderer.h:278
+renderer::Renderer::Renderer(const Renderer&)	function	renderer	renderer-renderer-renderer-const-renderer-amp	renderer.md	engine/renderer/renderer.h:279
+renderer::Renderer::operator=(const Renderer&)	function	renderer	renderer-renderer-operator-eq-const-renderer-amp	renderer.md	engine/renderer/renderer.h:280
+renderer::Renderer::Rebind(rhi::Device*,rhi::Swapchain*)	function	renderer	renderer-renderer-rebind-rhi-device-star-rhi-swapchain-star	renderer.md	engine/renderer/renderer.h:291
+renderer::Renderer::ApplySettings(const RenderSettings&)	function	renderer	renderer-renderer-applysettings-const-rendersettings-amp	renderer.md	engine/renderer/renderer.h:309
+renderer::Renderer::ForceDeviceReset()	function	renderer	renderer-renderer-forcedevicereset	renderer.md	engine/renderer/renderer.h:317
+renderer::Renderer::Settings() const	function	renderer	renderer-renderer-settings-const	renderer.md	engine/renderer/renderer.h:321
+renderer::Renderer::LastApply() const	function	renderer	renderer-renderer-lastapply-const	renderer.md	engine/renderer/renderer.h:325
+renderer::Renderer::GetCapabilities() const	function	renderer	renderer-renderer-getcapabilities-const	renderer.md	engine/renderer/renderer.h:329
+renderer::Renderer::SetResetCallbacks(ResetBeginFn,ResetEndFn,void*)	function	renderer	renderer-renderer-setresetcallbacks-resetbeginfn-resetendfn-void-star	renderer.md	engine/renderer/renderer.h:338
+renderer::Renderer::GetDevice() const	function	renderer	renderer-renderer-getdevice-const	renderer.md	engine/renderer/renderer.h:350
+renderer::Renderer::GetSwapchain() const	function	renderer	renderer-renderer-getswapchain-const	renderer.md	engine/renderer/renderer.h:355
+renderer::Renderer::IsRecovering() const	function	renderer	renderer-renderer-isrecovering-const	renderer.md	engine/renderer/renderer.h:360
+renderer::Renderer::IsBroken() const	function	renderer	renderer-renderer-isbroken-const	renderer.md	engine/renderer/renderer.h:364
+renderer::Renderer::RenderFrame(const RenderScene*,const Camera*,const FrameTarget*)	function	renderer	renderer-renderer-renderframe-const-renderscene-star-const-camera-star-const-frametarget-star	renderer.md	engine/renderer/renderer.h:380
+renderer::Renderer::LastError() const	function	renderer	renderer-renderer-lasterror-const	renderer.md	engine/renderer/renderer.h:385
+renderer::Renderer::Stats() const	function	renderer	renderer-renderer-stats-const	renderer.md	engine/renderer/renderer.h:389
+renderer::Renderer::Pool() const	function	renderer	renderer-renderer-pool-const	renderer.md	engine/renderer/renderer.h:393
+renderer::Renderer::FrameIndex() const	function	renderer	renderer-renderer-frameindex-const	renderer.md	engine/renderer/renderer.h:397
 renderer::RendererName()	function	renderer	renderer-renderername	renderer.md	engine/renderer/renderer_info.h:13
 renderer::RenderLogV(LogVerbosity,const char*,...)	function	renderer	renderer-renderlogv-logverbosity-const-char-star	renderer.md	engine/renderer/renderer_log.h:23
 RenderLog	macro	renderer	renderlog	renderer.md	engine/renderer/renderer_log.h:46

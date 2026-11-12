@@ -7,7 +7,9 @@
 #include "gpu_fixture.h"
 #include "rhi/backend_registry.h"
 #include "rhi/rhi.h"
+#if ENGINE_RHI_HAVE_VULKAN  // rhi_backends defines it where it links the Vulkan backend (not macOS)
 #include "rhi/vulkan/vk_instance.h"
+#endif
 #if ENGINE_PLATFORM_WINDOWS
 #include "rhi/dx12/dx12_debug.h"
 #endif
@@ -45,21 +47,22 @@ inline engine_placeholder::Vector<engine_placeholder::rhi::Backend> GpuBackends(
     return out;
 }
 
-// The index of `backend` in the renderer's `backend` setting (null, vulkan, dx12, auto: renderer/render_settings.cpp).
+// The index of `backend` in the renderer's `backend` setting (null, vulkan, dx12, metal, auto:
+// renderer/render_settings.cpp).
 inline engine_placeholder::u32 BackendSettingIndex(engine_placeholder::rhi::Backend backend)
 {
-    using engine_placeholder::rhi::Backend;
-    return backend == Backend::Null ? 0 : backend == Backend::Vulkan ? 1 : backend == Backend::Dx12 ? 2 : 3;
+    return static_cast<engine_placeholder::u32>(backend);  // kBackendNames follows rhi::Backend (static_assert there)
 }
 
 // The backend's name as a section name and in messages.
 inline const char* BackendTag(engine_placeholder::rhi::Backend backend)
 {
     using engine_placeholder::rhi::Backend;
-    return backend == Backend::Vulkan ? "vulkan"
-           : backend == Backend::Dx12 ? "dx12"
-           : backend == Backend::Null ? "null"
-                                      : "other";
+    return backend == Backend::Vulkan  ? "vulkan"
+           : backend == Backend::Dx12  ? "dx12"
+           : backend == Backend::Metal ? "metal"
+           : backend == Backend::Null  ? "null"
+                                       : "other";
 }
 
 // Fails the test if the backend's validation reported an error while this lives (and, for Direct3D 12, a warning: its
@@ -70,7 +73,9 @@ class BackendValidation
 public:
     explicit BackendValidation(engine_placeholder::rhi::Backend backend) : backend_(backend)
     {
+#if ENGINE_RHI_HAVE_VULKAN
         engine_placeholder::rhi::vulkan::ResetValidationCounts();
+#endif
 #if ENGINE_PLATFORM_WINDOWS
         engine_placeholder::rhi::dx12::ResetDebugMessageCounts();
 #endif
@@ -82,10 +87,12 @@ public:
             return;  // a failed REQUIRE or a SKIP is unwinding: the test reported its own cause
         }
         INFO("backend " << BackendTag(backend_));
+#if ENGINE_RHI_HAVE_VULKAN
         if (backend_ == engine_placeholder::rhi::Backend::Vulkan)
         {
             CHECK(engine_placeholder::rhi::vulkan::GetValidationCounts().errors == expected_errors_);
         }
+#endif
 #if ENGINE_PLATFORM_WINDOWS
         if (backend_ == engine_placeholder::rhi::Backend::Dx12)
         {

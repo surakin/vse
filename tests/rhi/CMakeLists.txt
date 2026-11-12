@@ -54,6 +54,12 @@ set(RHI_TEST_SOURCES
   shader_interface_test.cpp
 )
 
+# The Vulkan backend's own tests: not on macOS, which has no Vulkan (Phase 26 decision 8; the list is in the macOS port spec). The
+# neutral and null-device suites, and the GPU-tagged tests (which skip without a GPU backend until Metal), run there.
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  list(FILTER RHI_TEST_SOURCES EXCLUDE REGEX "/?vulkan_[a-z_]+_test\\.cpp$")
+endif()
+
 # LeakSanitizer's suppressions and its driver-unloading workaround: Linux only (MSVC's AddressSanitizer has no leak checker).
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   list(APPEND RHI_TEST_SOURCES lsan_options.cpp)
@@ -99,6 +105,9 @@ function(engine_add_rhi_tests target rhi_lib rhi_vulkan_lib rhi_backends_lib suf
   string(REGEX REPLACE "^rhi" "ui" ui_lib "${rhi_lib}")
   string(REGEX REPLACE "^rhi" "scene" scene_lib "${rhi_lib}")
   string(REGEX REPLACE "^rhi" "ecs" ecs_lib "${rhi_lib}")
+  if(NOT TARGET ${rhi_vulkan_lib})
+    set(rhi_vulkan_lib "")  # macOS: no Vulkan library (rhi_backends then leaves ENGINE_RHI_HAVE_VULKAN undefined)
+  endif()
   target_link_libraries(${target} PRIVATE ${scene_lib} ${ecs_lib} ${ui_lib} ${passes_lib} ${renderer_lib} ${rhi_lib} ${rhi_vulkan_lib} ${rhi_backends_lib} Catch2::Catch2WithMain Threads::Threads)
   target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/shaders ${CMAKE_SOURCE_DIR}/game/common ${CMAKE_SOURCE_DIR}/game/renderer_demo ${CMAKE_SOURCE_DIR}/game/ui_demo ${CMAKE_SOURCE_DIR}/tests/renderer ${CMAKE_SOURCE_DIR}/tests/io ${CMAKE_SOURCE_DIR}/tests/support)
   target_compile_definitions(${target} PRIVATE ENGINE_RHI_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/golden"

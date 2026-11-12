@@ -13,7 +13,9 @@
 #include "cube_fixture.h"
 #include "image_compare.h"
 #include "test_text.h"
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
 #include "rhi/vulkan/vulkan_device.h"
+#endif
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
@@ -372,6 +374,7 @@ TEST_CASE("The demo scene is the same on every compiler: fixed positions for giv
     device.Reset();
 }
 
+#if ENGINE_RHI_HAVE_VULKAN  // the loss runs of the Vulkan cases below
 namespace
 {
 
@@ -469,7 +472,9 @@ LossRun RunWithLoss(u32 lose_at, u32 frames)
 }
 
 }  // namespace
+#endif
 
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
 TEST_CASE("Losing the real device in the deferred pipeline ends frames as DeviceLost and tears down clean",
           "[rhi][vulkan][gpu][demo][fault]")
 {
@@ -504,7 +509,9 @@ TEST_CASE("Losing the real device in the deferred pipeline ends frames as Device
     CHECK(leaks.user_objects == 0);
     CHECK(leaks.internal_objects == 0);
 }
+#endif
 
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
 TEST_CASE("A long run of the deferred frame neither grows the transient pool nor leaks",
           "[rhi][vulkan][gpu][demo][fault]")
 {
@@ -528,3 +535,4 @@ TEST_CASE("A long run of the deferred frame neither grows the transient pool nor
     CHECK(leaks.user_objects == 0);
     CHECK(leaks.internal_objects == 0);
 }
+#endif

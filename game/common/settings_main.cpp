@@ -1,5 +1,7 @@
 #include "settings_main.h"
 
+#include "renderer/renderer.h"
+
 #include "os/console.h"
 
 #include "io/path.h"
@@ -83,8 +85,9 @@ void DemoSettings::FillDeviceCreateInfo(::engine_placeholder::rhi::DeviceCreateI
 {
     const SharedPtr<const sset::SettingsSnapshot> shared = settings_->Snapshot();
     auto get = [&](const char* key) -> const sset::Value& { return shared->Get(registry_.Find(StringView(key))); };
-    info->backend = static_cast<::engine_placeholder::rhi::Backend>(
-        get("renderer.backend").AsEnum());  // the names follow rhi::Backend
+    const char* fallback = nullptr;  // macOS's auto until Metal, logged by BackendForSetting (renderer.h)
+    info->backend = ::engine_placeholder::renderer::BackendForSetting(
+        static_cast<u32>(get("renderer.backend").AsEnum()), &fallback);
     info->validation = static_cast<::engine_placeholder::rhi::ValidationSetting>(get("renderer.validation").AsEnum());
     info->sync_validation = get("renderer.sync_validation").AsBool();
     info->frames_in_flight = static_cast<u32>(get("renderer.frames_in_flight").AsInt());

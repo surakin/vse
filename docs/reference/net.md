@@ -3230,6 +3230,16 @@ u64 ban_nanos;
 
 How long a ban lasts.
 
+### `seed` {#net-ratelimiterconfig-seed}
+
+`variable net::RateLimiterConfig::seed` — defined in `engine/net/rate_limit.h`
+
+```cpp
+u64 seed;
+```
+
+Keys the table's hash so an attacker cannot aim addresses at one bucket; 0 takes a random key from the system (tests give one).
+
 ## `RateLimiterCounters` {#net-ratelimitercounters}
 
 `struct net::RateLimiterCounters` — defined in `engine/net/rate_limit.h`

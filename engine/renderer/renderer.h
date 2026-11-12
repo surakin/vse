@@ -187,8 +187,22 @@ struct RendererStats
     rhi::FenceValue last_fence = 0;
 };
 
+/// The backend the `backend` setting's value asks for: the value itself, except that on macOS, until the Metal backend
+/// exists (Phase 26 Day 316, which removes this), `auto` in a program with no GPU backend registered at all is the null
+/// backend, with `*note` saying so (and the renderer's log saying it once per program). A GPU backend that is
+/// registered but cannot run is never replaced: the device creation then fails and says why. [[rhi::PickAutoBackend]]
+/// itself never picks null; only the setting does this.
+///
+/// - Param setting_value: the `backend` setting's enum value (it follows [[rhi::Backend]]).
+/// - Param note: receives the reason when the fallback was taken, else null.
+/// - Returns: the backend to create.
+/// - Fails: never.
+/// - Thread-safety: thread-safe (reads the backend registry).
+rhi::Backend BackendForSetting(u32 setting_value, const char** note);
+
 /// Builds the description a device is created with from settings: backend, adapter, validation, sync validation and
-/// frames in flight come from `settings`, everything else from `base`.
+/// frames in flight come from `settings`, everything else from `base`. The backend is the setting's through
+/// [[renderer::BackendForSetting]]: on macOS, until Metal, `auto` there becomes `Null` (logged once).
 ///
 /// - Param settings: the settings.
 /// - Param base: the rest of the description (window, application name, faults).

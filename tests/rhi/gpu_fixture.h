@@ -6,9 +6,12 @@
 
 #include "catch_engine_types.h"
 #include "containers/vector.h"
+#include "log/log.h"
 #include "test_text.h"
 
+#if ENGINE_RHI_HAVE_VULKAN
 #include "rhi/vulkan/vk_instance.h"
+#endif
 
 // The shared fixture for every `[gpu]` test (docs/superpowers/specs/2026-11-04-rhi-design.md, sections 10 and 12).
 //
@@ -32,6 +35,7 @@ struct CapturedMessage
     engine_test::Text text;
 };
 
+#if ENGINE_RHI_HAVE_VULKAN
 class GpuFixture
 {
 public:
@@ -116,5 +120,31 @@ private:
     engine_placeholder::Vector<CapturedMessage> messages_;
     unsigned long long expected_errors_ = 0;
 };
+#else
+// A build without Vulkan (macOS: Phase 26 decision 8) has no GPU backend until Metal (Phase 26 Day 316; its GPU tests
+// on Day 322): every [gpu] test skips, and fails under ENGINE_RHI_REQUIRE_GPU=1.
+class GpuFixture
+{
+public:
+    explicit GpuFixture([[maybe_unused]] bool presentable = false) {}
+    GpuFixture(const GpuFixture&) = delete;
+    GpuFixture& operator=(const GpuFixture&) = delete;
+
+    void Require() const
+    {
+        if (GpuRequired())
+        {
+            FAIL("ENGINE_RHI_REQUIRE_GPU=1 but this build has no GPU backend");
+        }
+        SKIP("no GPU backend in this build (macOS: Metal from Phase 26 Day 316)");
+    }
+    void RequireValidation() const { Require(); }
+    void ExpectErrors([[maybe_unused]] unsigned long long n) {}
+    const engine_placeholder::Vector<CapturedMessage>& Messages() const { return messages_; }
+
+private:
+    engine_placeholder::Vector<CapturedMessage> messages_;
+};
+#endif
 
 }  // namespace gpu_test

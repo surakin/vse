@@ -274,7 +274,10 @@ demo with exit code 3 and a message, a failed allocation with exit code 1.
 
 ### Platform notes
 
-Vulkan (Linux and Windows) and Direct3D 12 (Windows) are the built backends, plus the `null` test backend; see "The DX12 backend" below. The Vulkan backend needs Vulkan 1.3 with dynamic rendering, synchronization2 and timeline
+The backends each platform builds, besides the `null` test backend everywhere: Vulkan on Linux, Vulkan and Direct3D 12 on Windows (see "The DX12 backend" below), and on
+macOS none yet: macOS has no Vulkan (MoltenVK would be a third-party layer, Phase 26 decision 8), so `rhi_vulkan` is not built there, and `metal` is a backend name that is refused as
+"not built yet" until the Metal backend arrives (Phase 26 Day 316). The neutral RHI, the renderer, the scene bridge and the demos run on macOS on the null backend meanwhile;
+GPU tests skip there with "no GPU backend". The Vulkan backend needs Vulkan 1.3 with dynamic rendering, synchronization2 and timeline
 semaphores, and presents through `VK_KHR_wayland_surface` or `VK_KHR_xlib_surface` on Linux and `VK_KHR_win32_surface`
 on Windows, depending on the window ([[os::Window]]); "Vulkan on Windows" below has the Windows details. With the NVIDIA proprietary driver, ThreadSanitizer cannot run GPU tests (the driver's threads crash
 inside its interceptors), and the X11 presentation path leaks inside a library the driver unloads; see "Building and
@@ -325,8 +328,10 @@ Vulkan everywhere, and Direct3D 12 on Windows. Test binaries do it from a Catch2
 `Backend::Auto`, the default of [[rhi::DeviceCreateInfo::backend]], picks the available registered backend with the highest
 rank ([[rhi::PickAutoBackend]]): Direct3D 12 (rank 20) on Windows, Vulkan (10) elsewhere; the null backend has rank 0, so `Auto` never picks it. A named backend that is registered but
 cannot run here (no Vulkan loader, for example) fails with the backend's own reason ([[rhi::ResolveBackend]]). The renderer's
-`backend` setting (`auto`, `null`, `vulkan`, `dx12`) goes through the same rule when the program starts; it is not changed at run time
-(a change waits for the next start, see the render settings guide).
+`backend` setting (`auto`, `null`, `vulkan`, `dx12`, `metal`) goes through the same rule when the program starts; it is not changed at run time
+(a change waits for the next start, see the render settings guide). One exception, on macOS only and only until Metal exists: the setting's `auto` in a program
+with no GPU backend registered at all is the null backend, with a logged note ([[renderer::BackendForSetting]]); `rhi::PickAutoBackend` itself still never picks
+null, and a GPU backend that is registered but fails is never replaced by null.
 
 ```cpp compile standalone run
 #include <cstdio>

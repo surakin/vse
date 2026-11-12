@@ -10,7 +10,8 @@
 namespace demo
 {
 
-// The backend `name` chooses: null, vulkan, dx12 or auto. Returns false, leaving `out` alone, for any other name.
+// The backend `name` chooses: null, vulkan, dx12, metal or auto. Returns false, leaving `out` alone, for any other
+// name.
 inline bool ParseRhiBackend(const char* name, ::engine_placeholder::rhi::Backend* out)
 {
     using ::engine_placeholder::rhi::Backend;
@@ -18,8 +19,11 @@ inline bool ParseRhiBackend(const char* name, ::engine_placeholder::rhi::Backend
     {
         const char* name;
         Backend backend;
-    } kNames[] = {
-        {"null", Backend::Null}, {"vulkan", Backend::Vulkan}, {"dx12", Backend::Dx12}, {"auto", Backend::Auto}};
+    } kNames[] = {{"null", Backend::Null},
+                  {"vulkan", Backend::Vulkan},
+                  {"dx12", Backend::Dx12},
+                  {"metal", Backend::Metal},
+                  {"auto", Backend::Auto}};
     for (const auto& n : kNames)
     {
         if (engine_placeholder::CStrCompare(name, n.name) == 0)
@@ -40,6 +44,7 @@ inline const char* RhiBackendName(::engine_placeholder::rhi::Backend backend)
     case Backend::Null: return "null";
     case Backend::Vulkan: return "vulkan";
     case Backend::Dx12: return "dx12";
+    case Backend::Metal: return "metal";
     case Backend::Auto: return "auto";
     }
     return "?";

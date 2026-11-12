@@ -12,7 +12,9 @@
 #include "renderer/render_graph.h"
 #include "renderer/transient_pool.h"
 #include "rhi/rhi.h"
+#if ENGINE_RHI_HAVE_VULKAN  // not on macOS (Phase 26 decision 8)
 #include "rhi/vulkan/vk_instance.h"
+#endif
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
@@ -260,10 +262,12 @@ TEST_CASE("A four-pass render graph runs on a real device with no validation or 
         device->WaitIdle();
         // Synchronization validation reports hazards as warnings on Vulkan: none either (the DX12 count covers warnings
         // already).
+#if ENGINE_RHI_HAVE_VULKAN
         if (backend == Backend::Vulkan)
         {
             CHECK(rhi::vulkan::GetValidationCounts().warnings == 0);
         }
+#endif
         device.Reset();
     }
 }

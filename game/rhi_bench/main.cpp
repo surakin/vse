@@ -3,8 +3,9 @@
 //
 //   rhi_bench [--draws N] [--frames N]     draw throughput for N cubes (default: 1000 and 10000)
 //             [--skip-uploads] [--skip-pipelines]
-//             [--rhi null|vulkan|dx12|auto]  the graphics backend (default auto: Direct3D 12 on Windows, Vulkan
-//             elsewhere)
+//             [--rhi null|vulkan|dx12|metal|auto]  the graphics backend (default auto: Direct3D 12 on Windows, Vulkan
+//             on Linux; on macOS none until Metal, Phase 26 Day 316: a benchmark does not measure the null device
+//             unasked)
 
 #include "os/console.h"
 #include "cstr/number.h"
@@ -356,7 +357,7 @@ int main(int argc, char** argv)
         else
         {
             os::PrintError(
-                "usage: %s [--draws N] [--frames N] [--skip-uploads] [--skip-pipelines] [--rhi null|vulkan|dx12|auto]\n",
+                "usage: %s [--draws N] [--frames N] [--skip-uploads] [--skip-pipelines] [--rhi null|vulkan|dx12|metal|auto]\n",
                 argv[0]);
             return 2;
         }

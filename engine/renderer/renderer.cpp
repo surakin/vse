@@ -8,6 +8,7 @@
 #include "log/assert.h"
 #include "os/os.h"
 #include "renderer/renderer_log.h"
+#include "build_defs.h"
 #include "rhi/backend_registry.h"
 #include "cstr/cstr.h"
 
@@ -96,12 +97,38 @@ void SetReason(ApplyResult* r, const char* text)
 
 }  // namespace
 
+rhi::Backend BackendForSetting(u32 setting_value, const char** note)
+{
+    *note = nullptr;
+    const rhi::Backend requested = static_cast<rhi::Backend>(setting_value);  // kBackendNames follows rhi::Backend
+#if ENGINE_PLATFORM_MACOS
+    if (requested == rhi::Backend::Auto && rhi::FindBackend(rhi::Backend::Null) != nullptr)
+    {
+        for (usize i = 0; i < rhi::RegisteredBackendCount(); ++i)
+        {
+            if (rhi::RegisteredBackend(i).auto_rank != 0)
+            {
+                return requested;  // a GPU backend is built: auto is its, failures included
+            }
+        }
+        *note = "auto: no GPU backend is built for macOS yet (Metal: Phase 26 Day 316); using the null backend";
+        static Atomic<bool> said{false};  // once per program, whichever renderer or thread asks first
+        if (!said.Exchange(true))
+        {
+            RenderLog(LogVerbosity::Warn, "Renderer: %s", *note);
+        }
+        return rhi::Backend::Null;
+    }
+#endif
+    return requested;
+}
+
 void MakeDeviceCreateInfo(const RenderSettings& settings, const rhi::DeviceCreateInfo& base, char* adapter_buffer,
                           rhi::DeviceCreateInfo* out)
 {
     *out = base;
-    out->backend = static_cast<rhi::Backend>(
-        settings.GetEnum(settings::kBackend));  // kBackendNames follows rhi::Backend
+    const char* note = nullptr;  // logged by BackendForSetting
+    out->backend = BackendForSetting(settings.GetEnum(settings::kBackend), &note);
     const char* adapter = settings.GetText(settings::kAdapter);
     if (adapter != nullptr && adapter[0] != '\0')
     {
@@ -263,7 +290,8 @@ ApplyResult Renderer::ApplyNow(const RenderSettings& requested, bool force_devic
         // A backend this program did not register, or one that cannot run here, is refused before anything is torn
         // down.
         char why[sizeof(result.reason)];
-        if (rhi::ResolveBackend(static_cast<rhi::Backend>(resolved.GetEnum(settings::kBackend)), why, sizeof(why)) ==
+        const char* note = nullptr;  // the setting's backend, as the device will be made (BackendForSetting)
+        if (rhi::ResolveBackend(BackendForSetting(resolved.GetEnum(settings::kBackend), &note), why, sizeof(why)) ==
             nullptr)
         {
             SetReason(&result, why);

@@ -8,7 +8,9 @@
 #include "rhi/rhi.h"
 #include "rhi/rhi_log.h"
 #include "rhi/spirv.h"
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
 #include "rhi/vulkan/vulkan_device.h"
+#endif
 #include "spirv_builder.h"
 #include "triangle.frag.spv.inc"
 #include "triangle.vert.spv.inc"
@@ -234,6 +236,7 @@ TEST_CASE("The null device checks shader contents", "[rhi][null][spirv]")
     device.Reset();
 }
 
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
 TEST_CASE("Vulkan creates shader modules from the committed triangle shaders", "[rhi][vulkan][gpu][spirv]")
 {
     gpu_test::GpuFixture fx;
@@ -298,7 +301,9 @@ TEST_CASE("Vulkan creates shader modules from the committed triangle shaders", "
     device.Reset();
     CHECK(vulkan::VulkanDevice::GetLeakCounts().user_objects == 0);
 }
+#endif
 
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
 TEST_CASE("Vulkan frees a shader the application forgot", "[rhi][vulkan][gpu][spirv]")
 {
     gpu_test::GpuFixture fx;
@@ -322,3 +327,4 @@ TEST_CASE("Vulkan frees a shader the application forgot", "[rhi][vulkan][gpu][sp
     CHECK(vulkan::VulkanDevice::GetLeakCounts().user_objects == 1);
     vulkan::VulkanDevice::ResetLeakCounts();
 }
+#endif

@@ -29,6 +29,14 @@ function(renderer_demo_expect name code out skip_re)
     ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/${name};${DEMO_PROFILE_ENV}")
 endfunction()
 set(RENDERER_NO_GPU "cannot open loader library|no physical devices|no suitable GPU")
+if(APPLE)
+  # macOS until Metal (Phase 26 Day 316): a backend asked for by name is not built (no GPU), and auto runs the null
+  # backend, which has no device memory for an allocation fault to hit.
+  string(APPEND RENDERER_NO_GPU "|backend is not built for macOS")
+  set(RENDERER_NEEDS_DEVICE_MEMORY "${RENDERER_NO_GPU}|using the null backend")
+else()
+  set(RENDERER_NEEDS_DEVICE_MEMORY "${RENDERER_NO_GPU}")
+endif()
 # A normal offscreen run writes the picture and says how much it drew.
 renderer_demo_expect(renderer_demo_screenshot 0 "wrote .*renderer_demo_screenshot.ppm \\(540 objects, [0-9]+ point lights" "${RENDERER_NO_GPU}"
   --screenshot RENDERER_DEMO_SHOT --validation)
@@ -53,7 +61,7 @@ renderer_demo_expect(renderer_demo_device_loss_trace 3 "ENSURE FAILED[^\n]*the V
   --screenshot RENDERER_DEMO_SHOT --frames 5 --inject-device-loss 3 --rhi vulkan)
 # Device creation allocates a driver-dependent number of times, so the third allocation fails either creation itself or
 # the first resource after it; the demo must report either cleanly (exit 1), never crash.
-renderer_demo_expect(renderer_demo_oom_later 1 "no [a-z0-9]+ device|could not create the target or the scene" "${RENDERER_NO_GPU}"
+renderer_demo_expect(renderer_demo_oom_later 1 "no [a-z0-9]+ device|could not create the target or the scene" "${RENDERER_NEEDS_DEVICE_MEMORY}"
   --screenshot RENDERER_DEMO_SHOT --inject-oom 3)
 renderer_demo_expect(renderer_demo_oom_device 1 "cannot set up the staging ring" "${RENDERER_NO_GPU}"
   --screenshot RENDERER_DEMO_SHOT --inject-oom 1 --rhi vulkan)
@@ -83,6 +91,12 @@ if(WIN32)
   renderer_demo_scripted(renderer_demo_script_win32_dx12 win32 dx12)
   set(_crash_backend win32)
   set(_abort_code 3) # abort() ends a Windows process with exit code 3; the report in the output tells it from exit(3)
+elseif(APPLE)
+  renderer_demo_scripted(renderer_demo_script_cocoa cocoa null)  # Phase 26 Day 314: on null until Metal (Day 316)
+  set(_crash_backend cocoa)
+  # The crash handler's Breakpad ends a macOS process with _exit(exception type) once the dump is written
+  # (third_party/sentry_native/external/breakpad/src/client/mac/handler/exception_handler.cc): an abort is EXC_SOFTWARE, 5.
+  set(_abort_code 5)
 else()
   renderer_demo_scripted(renderer_demo_script_wayland wayland vulkan)
   renderer_demo_scripted(renderer_demo_script_x11 x11 vulkan)
@@ -92,8 +106,12 @@ endif()
 
 # The text overlay (Phase 14 Day 182): the F11 toggle as a script word, in a real window with validation on; and a screenshot with the overlay in it.
 function(renderer_demo_overlay_scripted name backend)
+  set(rhi vulkan)
+  if(APPLE)
+    set(rhi null)  # Phase 26 Day 314: until Metal (Day 316)
+  endif()
   add_test(NAME ${name}
-    COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:renderer_demo>;--backend;${backend};--rhi;vulkan;--validation;--frames;60;--script;frame:5 overlay frame:15 overlay frame:20 reset frame:30 quit"
+    COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:renderer_demo>;--backend;${backend};--rhi;${rhi};--validation;--frames;60;--script;frame:5 overlay frame:15 overlay frame:20 reset frame:30 quit"
       -DEXPECT_CODE=0 "-DEXPECT_OUT=text overlay is off.*text overlay is on.*device-reset done in"
       "-DSKIP_IF_OUT=${RENDERER_NO_GPU}" "-DSKIP_NO_DISPLAY_OUT=could not open a window"
       "-DFORBID_OUT=a Vulkan validation error was reported" -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
@@ -103,6 +121,9 @@ endfunction()
 if(WIN32)
   renderer_demo_overlay_scripted(renderer_demo_overlay_win32 win32)
   engine_label_tests(renderer_demo_overlay_win32)
+elseif(APPLE)
+  renderer_demo_overlay_scripted(renderer_demo_overlay_cocoa cocoa)
+  engine_label_tests(renderer_demo_overlay_cocoa)
 else()
   renderer_demo_overlay_scripted(renderer_demo_overlay_wayland wayland)
   renderer_demo_overlay_scripted(renderer_demo_overlay_x11 x11)
@@ -120,11 +141,14 @@ add_test(NAME renderer_demo_crash_after_reset
 set_tests_properties(renderer_demo_crash_after_reset PROPERTIES LABELS "gpu;demo;display;crash" RESOURCE_LOCK display SKIP_RETURN_CODE 77
   ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/renderer_demo_crash_after_reset;${DEMO_PROFILE_ENV}")
 
-add_test(NAME renderer_demo_no_vulkan
-  COMMAND ${CMAKE_COMMAND} -E env ENGINE_VULKAN_LIBRARY=/nonexistent
-    ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:renderer_demo>;--screenshot;${ENGINE_TEST_TMP_DIR}/screenshots/renderer_demo_no_vulkan.ppm;--rhi;vulkan" -DEXPECT_CODE=1 "-DEXPECT_OUT=no vulkan device"
-    -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
-set_tests_properties(renderer_demo_no_vulkan PROPERTIES LABELS demo ENVIRONMENT "${DEMO_PROFILE_ENV}")
+if(NOT APPLE)  # macOS has no Vulkan
+  add_test(NAME renderer_demo_no_vulkan
+    COMMAND ${CMAKE_COMMAND} -E env ENGINE_VULKAN_LIBRARY=/nonexistent
+      ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:renderer_demo>;--screenshot;${ENGINE_TEST_TMP_DIR}/screenshots/renderer_demo_no_vulkan.ppm;--rhi;vulkan" -DEXPECT_CODE=1 "-DEXPECT_OUT=no vulkan device"
+      -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
+  set_tests_properties(renderer_demo_no_vulkan PROPERTIES LABELS demo ENVIRONMENT "${DEMO_PROFILE_ENV}")
+  set(_renderer_demo_no_vulkan renderer_demo_no_vulkan)
+endif()
 
 # The committed textures are what the generator writes, byte for byte, and writing is deterministic.
 add_test(NAME renderer_demo_assets_current
@@ -133,11 +157,13 @@ add_test(NAME renderer_demo_assets_current
 set_tests_properties(renderer_demo_assets_current PROPERTIES LABELS demo)
 if(WIN32)
   engine_label_tests(renderer_demo_script_win32 renderer_demo_script_win32_dx12)
+elseif(APPLE)
+  engine_label_tests(renderer_demo_script_cocoa)
 else()
   engine_label_tests(renderer_demo_script_wayland renderer_demo_script_x11)
 endif()
 engine_label_tests(renderer_demo_crash_after_reset renderer_demo_list_gpus renderer_demo_unknown_gpu renderer_demo_screenshot renderer_demo_gbuffer_layers renderer_demo_device_loss_screenshot renderer_demo_device_loss_trace renderer_demo_oom_later
-  renderer_demo_oom_device renderer_demo_bad_injection renderer_demo_bad_layer renderer_demo_bad_objects renderer_demo_no_vulkan
+  renderer_demo_oom_device renderer_demo_bad_injection renderer_demo_bad_layer renderer_demo_bad_objects ${_renderer_demo_no_vulkan}
   renderer_demo_assets_current renderer_demo_screenshot_vulkan ${_renderer_demo_dx12_tests})
 
 demo_settings_tests(renderer_demo)
