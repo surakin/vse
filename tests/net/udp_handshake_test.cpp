@@ -385,8 +385,10 @@ TEST_CASE("UDP transport: a replayed or stale handshake is rejected", "[net][udp
 {
     SimNetwork net(41);
     net.SetDefaultLink(Link(0, 0, 0));
-    Side server(net, kServer, TestConfig());
-    Side client(net, UEp("127.0.0.1:20001"), TestConfig());
+    UdpTransportConfig cfg = TestConfig();
+    cfg.cookie_period_nanos = 60'000'000'000ull;
+    Side server(net, kServer, cfg);
+    Side client(net, UEp("127.0.0.1:20001"), cfg);
     REQUIRE(server.transport.Listen(kServer).Ok());
     ConnectionId cc = 0;
     REQUIRE(client.transport.Connect(kServer, &cc).Ok());
@@ -411,10 +413,21 @@ TEST_CASE("UDP transport: a replayed or stale handshake is rejected", "[net][udp
     REQUIRE(server.transport.Close(sc, 0).Ok());
     Run(net, 100, &server, &client);
     REQUIRE(server.transport.ConnectionCount() == 0);
+    // Many other handshakes come and go: the recorded one is still remembered while its cookie lives.
+    for (u32 i = 0; i < 70; ++i)
+    {
+        Side other(net, Endpoint(Address::Loopback(AddressFamily::V4), static_cast<u16>(21000 + i)), cfg);
+        ConnectionId oc = 0;
+        REQUIRE(other.transport.Connect(kServer, &oc).Ok());
+        Run(net, 150, &server, &other);
+        REQUIRE(other.transport.Close(oc, 0).Ok());
+        Run(net, 60, &server, &other);
+    }
+    const usize opened_before = server.Count(EventKind::Opened);
     net.Transmit(UEp("127.0.0.1:20001"), kServer, ByteSpan(response->Data(), response->Size()));
     Run(net, 50, &server, &client);
     CHECK(server.transport.ConnectionCount() == 0);
-    CHECK(server.Count(EventKind::Opened) == 1);
+    CHECK(server.Count(EventKind::Opened) == opened_before);  // the others came and went; the replay added none
     CHECK(server.transport.Counters().dropped_stale >= 1);
 }
 

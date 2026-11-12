@@ -14,8 +14,9 @@ namespace
 
 constexpr u8 kUdpFrameMessage = 1;
 constexpr usize kUdpFrameHeaderBytes = 1 + 1 + 2;
-constexpr usize kReceiveBatch = 256;     // datagrams taken from the port per Poll
-constexpr usize kUdpRetiredMemory = 64;  // closed incoming handshakes remembered, to refuse a replayed response
+constexpr usize kReceiveBatch = 256;  // datagrams taken from the port per Poll
+constexpr usize
+    kUdpRetiredMemory = 4096;  // closed handshakes remembered while their cookie lives; more: new ones are denied
 constexpr u64 kMaxHandshakeRetry = 1'000'000'000ull;
 
 enum class UdpState : u8
@@ -41,6 +42,7 @@ struct UdpConn
     Phase phase = Phase::Request;
     u64 client_salt = 0;
     u64 cookie = 0;
+    u64 epoch = 0;
     u64 created = 0;
     u64 last_heard = 0;
     u64 last_sent = 0;
@@ -80,6 +82,7 @@ struct UdpRetired
 {
     Endpoint peer;
     u64 salt = 0;
+    u64 epoch = 0;  // the cookie period in which the connection was accepted; its cookie dies after the next one
 };
 
 u64 ReadU64(ByteSpan b, usize at)
@@ -213,13 +216,10 @@ struct UdpTransport::Impl
         if (c->incoming)
         {
             by_wire.Remove(c->wire_id);
-            if (retired.Size() >= kUdpRetiredMemory)
-            {
-                retired.Remove(0);
-            }
             UdpRetired r;
             r.peer = c->peer;
             r.salt = c->client_salt;
+            r.epoch = c->epoch;
             retired.Push(r);
         }
         for (usize i = 0; i < conns.Size(); ++i)
@@ -468,7 +468,19 @@ struct UdpTransport::Impl
                 return;
             }
         }
-        if (conns.Size() >= config.max_connections)
+        // Forget handshakes whose cookie has expired anyway; never evict one that could still be replayed.
+        for (usize i = 0; i < retired.Size();)
+        {
+            if (Epoch() > retired[i].epoch + 1)
+            {
+                retired.Remove(i);
+            }
+            else
+            {
+                ++i;
+            }
+        }
+        if (conns.Size() >= config.max_connections || retired.Size() >= kUdpRetiredMemory)
         {
             SendDenied(from, salt, udp::DenyReason::ServerFull);
             return;
@@ -481,6 +493,7 @@ struct UdpTransport::Impl
         UdpConn* c = Create(from, true);
         c->client_salt = salt;
         c->cookie = cookie;
+        c->epoch = Epoch();
         for (u32 tries = 0; tries < 65536; ++tries)
         {
             if (next_wire == 0)
