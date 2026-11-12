@@ -1,6 +1,6 @@
 # Networking: addresses, endpoints, errors, sockets, the reactor and TCP streams
 
-Status: Phase 20. Built: addresses, endpoints and the error type (Day 267), the socket interface with its Linux backend and the access gate (Day 268), the reactor, the asynchronous operations and timers (Day 269). name resolution, listeners and the connect helpers (Day 270), framed TCP streams (Day 271). Next: the transports (Days 273-277).
+Status: Phase 20. Built: addresses, endpoints and the error type (Day 267), the socket interface with its Linux backend and the access gate (Day 268), the reactor, the asynchronous operations and timers (Day 269). name resolution, listeners and the connect helpers (Day 270), framed TCP streams (Day 271), the message codec (Day 272). Next: the transports (Days 273-277).
 
 **Audience:** engine programmers who talk to another machine or process. Design, spikes and the benchmark pass conditions:
 `docs/superpowers/specs/2026-11-11-networking-design.md`.
@@ -244,5 +244,43 @@ jobs::Task<usize> EchoOnce(TcpStream& stream, ByteSpan frame) {
         co_return 0;
     }
     co_return stream.Frame().Size();  // valid until the next ReceiveFrame
+}
+```
+
+## Messages: the bit-packed codec
+
+`net::NetWriter` writes into a buffer you own (a packet, say) and `net::NetReader` reads it back; both are in `engine/net/codec.h`. Bits are packed from the low bit of the first byte, so a
+32-bit integer written at a byte boundary is the little-endian bytes of `bytes::ByteWriter`, and a ranged integer takes only the bits its range needs.
+
+- **Values.** `WriteBits`, `WriteBool`, `WriteRange(value, min, max)` (the fewest bits; none for a single value), fixed-width integers and raw floats, canonical varints (the Phase 19 encoding, at any bit
+  offset) and zigzag signed varints, strings and byte arrays with a **mandatory maximum length** (checked before anything is allocated: a length that promises more than the message holds is `Truncated`), and
+  `AlignToByte` (the padding is zero, and the reader insists on it, so a message has one valid encoding).
+- **Quantized values.** `Quantize`/`WriteQuantized` map a float in `[min, max]` onto `2^bits` levels; the error is at most half a step, `(max - min) / (2 * (2^bits - 1))`, plus one `f32` rounding. A value outside the
+  range (infinities too) clamps, `-0` is `0`, NaN is rejected. Vectors quantize per component; a rotation is "smallest three" (2 bits for the index of the largest component, then the other three in
+  `[-1/sqrt 2, 1/sqrt 2]`, error under `4 * sqrt 2 / (2 * (2^bits - 1))` in the four-vector norm); an angle wraps modulo a full turn (error at most `pi / 2^bits`). The arithmetic is done in `f64` with each intermediate
+  product stored before it is used again, so no compiler can fuse a multiply and an add differently: the same inputs give the same bits on Linux, Windows and the Mac (the golden bytes in `tests/net/net_codec_test.cpp` pin it).
+- **Deltas.** `WriteDeltaInt(value, baseline)` and `WriteDeltaQuantized` write the difference as a signed varint; the reader passes the same baseline. There is no replication logic here, only the encoding.
+- **Errors are values** (`CodecError`: `Full`, `Truncated`, `OutOfRange`, `TooLong`, `Invalid`). A failed write or read changes nothing, and the reader stays usable at the same position.
+
+```cpp compile standalone
+#include "net/codec.h"
+
+using namespace engine_placeholder;
+using namespace engine_placeholder::net;
+
+// Writes a position and a heading into `packet`, reads them back; returns true if they survived within the error bound.
+bool RoundTrip(MutableByteSpan packet) {
+    NetWriter writer(packet);
+    if (writer.WriteBool(true) != CodecError::Ok ||
+        writer.WriteVec3(Vec3(12.5f, 0.0f, -80.25f), -512.0f, 512.0f, 16) != CodecError::Ok ||  // about 0.016 per step
+        writer.WriteAngle(1.5708f, 10) != CodecError::Ok) {
+        return false;
+    }
+    NetReader reader(writer.Bytes());
+    bool flag = false;
+    Vec3 position;
+    f32 heading = 0.0f;
+    return reader.ReadBool(&flag) == CodecError::Ok && reader.ReadVec3(-512.0f, 512.0f, 16, &position) == CodecError::Ok &&
+           reader.ReadAngle(10, &heading) == CodecError::Ok && flag;
 }
 ```

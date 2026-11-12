@@ -24,7 +24,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Text](text.md) | 6 | 221 |
 | [ECS](ecs.md) | 12 | 406 |
 | [Spatial Partitioning](spatial.md) | 12 | 333 |
-| [Networking](net.md) | 16 | 314 |
+| [Networking](net.md) | 17 | 384 |
 | [Database](database.md) | 9 | 161 |
 | [Storage](storage.md) | 17 | 410 |
 | [Scene bridge](scene.md) | 2 | 44 |

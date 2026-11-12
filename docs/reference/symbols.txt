@@ -3741,6 +3741,76 @@ net::ManualClock	class	net	net-manualclock	net.md	engine/net/clock.h:44
 net::ManualClock::ManualClock(u64)	function	net	net-manualclock-manualclock-u64	net.md	engine/net/clock.h:49
 net::ManualClock::NowNanos() const	function	net	net-manualclock-nownanos-const	net.md	engine/net/clock.h:53
 net::ManualClock::Advance(u64)	function	net	net-manualclock-advance-u64	net.md	engine/net/clock.h:57
+net::CodecError	enum	net	net-codecerror	net.md	engine/net/codec.h:32
+net::CodecError::Ok	enumerator	net	net-codecerror-ok	net.md	engine/net/codec.h:34
+net::CodecError::Full	enumerator	net	net-codecerror-full	net.md	engine/net/codec.h:35
+net::CodecError::Truncated	enumerator	net	net-codecerror-truncated	net.md	engine/net/codec.h:36
+net::CodecError::OutOfRange	enumerator	net	net-codecerror-outofrange	net.md	engine/net/codec.h:37
+net::CodecError::TooLong	enumerator	net	net-codecerror-toolong	net.md	engine/net/codec.h:39
+net::CodecError::Invalid	enumerator	net	net-codecerror-invalid	net.md	engine/net/codec.h:40
+net::CodecErrorName(CodecError)	function	net	net-codecerrorname-codecerror	net.md	engine/net/codec.h:48
+net::QuantizedLevels(u32)	function	net	net-quantizedlevels-u32	net.md	engine/net/codec.h:53
+net::Quantize(f32,f32,f32,u32,u64*)	function	net	net-quantize-f32-f32-f32-u32-u64-star	net.md	engine/net/codec.h:70
+net::Dequantize(u64,f32,f32,u32,f32*)	function	net	net-dequantize-u64-f32-f32-u32-f32-star	net.md	engine/net/codec.h:85
+net::NetWriter	class	net	net-netwriter	net.md	engine/net/codec.h:91
+net::NetWriter::NetWriter(MutableByteSpan)	function	net	net-netwriter-netwriter-mutablebytespan	net.md	engine/net/codec.h:96
+net::NetWriter::BitsWritten() const	function	net	net-netwriter-bitswritten-const	net.md	engine/net/codec.h:100
+net::NetWriter::BytesWritten() const	function	net	net-netwriter-byteswritten-const	net.md	engine/net/codec.h:104
+net::NetWriter::Bytes() const	function	net	net-netwriter-bytes-const	net.md	engine/net/codec.h:108
+net::NetWriter::BitsLeft() const	function	net	net-netwriter-bitsleft-const	net.md	engine/net/codec.h:112
+net::NetWriter::WriteBits(u64,u32)	function	net	net-netwriter-writebits-u64-u32	net.md	engine/net/codec.h:120
+net::NetWriter::WriteBool(bool)	function	net	net-netwriter-writebool-bool	net.md	engine/net/codec.h:126
+net::NetWriter::WriteRange(i64,i64,i64)	function	net	net-netwriter-writerange-i64-i64-i64	net.md	engine/net/codec.h:135
+net::NetWriter::WriteU8(u8)	function	net	net-netwriter-writeu8-u8	net.md	engine/net/codec.h:141
+net::NetWriter::WriteU16(u16)	function	net	net-netwriter-writeu16-u16	net.md	engine/net/codec.h:146
+net::NetWriter::WriteU32(u32)	function	net	net-netwriter-writeu32-u32	net.md	engine/net/codec.h:151
+net::NetWriter::WriteU64(u64)	function	net	net-netwriter-writeu64-u64	net.md	engine/net/codec.h:156
+net::NetWriter::WriteI32(i32)	function	net	net-netwriter-writei32-i32	net.md	engine/net/codec.h:161
+net::NetWriter::WriteI64(i64)	function	net	net-netwriter-writei64-i64	net.md	engine/net/codec.h:166
+net::NetWriter::WriteF32(f32)	function	net	net-netwriter-writef32-f32	net.md	engine/net/codec.h:171
+net::NetWriter::WriteF64(f64)	function	net	net-netwriter-writef64-f64	net.md	engine/net/codec.h:176
+net::NetWriter::WriteVarint(u64)	function	net	net-netwriter-writevarint-u64	net.md	engine/net/codec.h:183
+net::NetWriter::WriteSignedVarint(i64)	function	net	net-netwriter-writesignedvarint-i64	net.md	engine/net/codec.h:189
+net::NetWriter::WriteBytes(ByteSpan,usize)	function	net	net-netwriter-writebytes-bytespan-usize	net.md	engine/net/codec.h:196
+net::NetWriter::WriteString(StringView,usize)	function	net	net-netwriter-writestring-stringview-usize	net.md	engine/net/codec.h:203
+net::NetWriter::AlignToByte()	function	net	net-netwriter-aligntobyte	net.md	engine/net/codec.h:208
+net::NetWriter::WriteQuantized(f32,f32,f32,u32)	function	net	net-netwriter-writequantized-f32-f32-f32-u32	net.md	engine/net/codec.h:217
+net::NetWriter::WriteVec2(const Vec2&,f32,f32,u32)	function	net	net-netwriter-writevec2-const-vec2-amp-f32-f32-u32	net.md	engine/net/codec.h:226
+net::NetWriter::WriteVec3(const Vec3&,f32,f32,u32)	function	net	net-netwriter-writevec3-const-vec3-amp-f32-f32-u32	net.md	engine/net/codec.h:234
+net::NetWriter::WriteVec4(const Vec4&,f32,f32,u32)	function	net	net-netwriter-writevec4-const-vec4-amp-f32-f32-u32	net.md	engine/net/codec.h:242
+net::NetWriter::WriteQuaternion(const Quaternion&,u32)	function	net	net-netwriter-writequaternion-const-quaternion-amp-u32	net.md	engine/net/codec.h:253
+net::NetWriter::WriteAngle(f32,u32)	function	net	net-netwriter-writeangle-f32-u32	net.md	engine/net/codec.h:261
+net::NetWriter::WriteDeltaInt(i64,i64)	function	net	net-netwriter-writedeltaint-i64-i64	net.md	engine/net/codec.h:268
+net::NetWriter::WriteDeltaQuantized(f32,f32,f32,f32,u32)	function	net	net-netwriter-writedeltaquantized-f32-f32-f32-f32-u32	net.md	engine/net/codec.h:278
+net::NetReader	class	net	net-netreader	net.md	engine/net/codec.h:293
+net::NetReader::NetReader(ByteSpan)	function	net	net-netreader-netreader-bytespan	net.md	engine/net/codec.h:298
+net::NetReader::BitPosition() const	function	net	net-netreader-bitposition-const	net.md	engine/net/codec.h:302
+net::NetReader::BitsLeft() const	function	net	net-netreader-bitsleft-const	net.md	engine/net/codec.h:306
+net::NetReader::AtEnd() const	function	net	net-netreader-atend-const	net.md	engine/net/codec.h:310
+net::NetReader::ReadBits(u32,u64*)	function	net	net-netreader-readbits-u32-u64-star	net.md	engine/net/codec.h:318
+net::NetReader::ReadBool(bool*)	function	net	net-netreader-readbool-bool-star	net.md	engine/net/codec.h:325
+net::NetReader::ReadRange(i64,i64,i64*)	function	net	net-netreader-readrange-i64-i64-i64-star	net.md	engine/net/codec.h:335
+net::NetReader::ReadU8(u8*)	function	net	net-netreader-readu8-u8-star	net.md	engine/net/codec.h:342
+net::NetReader::ReadU16(u16*)	function	net	net-netreader-readu16-u16-star	net.md	engine/net/codec.h:348
+net::NetReader::ReadU32(u32*)	function	net	net-netreader-readu32-u32-star	net.md	engine/net/codec.h:354
+net::NetReader::ReadU64(u64*)	function	net	net-netreader-readu64-u64-star	net.md	engine/net/codec.h:360
+net::NetReader::ReadI32(i32*)	function	net	net-netreader-readi32-i32-star	net.md	engine/net/codec.h:366
+net::NetReader::ReadI64(i64*)	function	net	net-netreader-readi64-i64-star	net.md	engine/net/codec.h:372
+net::NetReader::ReadF32(f32*)	function	net	net-netreader-readf32-f32-star	net.md	engine/net/codec.h:378
+net::NetReader::ReadF64(f64*)	function	net	net-netreader-readf64-f64-star	net.md	engine/net/codec.h:384
+net::NetReader::ReadVarint(u64*)	function	net	net-netreader-readvarint-u64-star	net.md	engine/net/codec.h:392
+net::NetReader::ReadSignedVarint(i64*)	function	net	net-netreader-readsignedvarint-i64-star	net.md	engine/net/codec.h:399
+net::NetReader::ReadBytes(usize,Vector<byte>*)	function	net	net-netreader-readbytes-usize-vector-lt-byte-gt-star	net.md	engine/net/codec.h:408
+net::NetReader::ReadString(usize,String<HeapAllocator>*)	function	net	net-netreader-readstring-usize-string-lt-heapallocator-gt-star	net.md	engine/net/codec.h:416
+net::NetReader::AlignToByte()	function	net	net-netreader-aligntobyte	net.md	engine/net/codec.h:421
+net::NetReader::ReadQuantized(f32,f32,u32,f32*)	function	net	net-netreader-readquantized-f32-f32-u32-f32-star	net.md	engine/net/codec.h:431
+net::NetReader::ReadVec2(f32,f32,u32,Vec2*)	function	net	net-netreader-readvec2-f32-f32-u32-vec2-star	net.md	engine/net/codec.h:441
+net::NetReader::ReadVec3(f32,f32,u32,Vec3*)	function	net	net-netreader-readvec3-f32-f32-u32-vec3-star	net.md	engine/net/codec.h:450
+net::NetReader::ReadVec4(f32,f32,u32,Vec4*)	function	net	net-netreader-readvec4-f32-f32-u32-vec4-star	net.md	engine/net/codec.h:459
+net::NetReader::ReadQuaternion(u32,Quaternion*)	function	net	net-netreader-readquaternion-u32-quaternion-star	net.md	engine/net/codec.h:468
+net::NetReader::ReadAngle(u32,f32*)	function	net	net-netreader-readangle-u32-f32-star	net.md	engine/net/codec.h:476
+net::NetReader::ReadDeltaInt(i64,i64*)	function	net	net-netreader-readdeltaint-i64-i64-star	net.md	engine/net/codec.h:484
+net::NetReader::ReadDeltaQuantized(f32,f32,f32,u32,f32*)	function	net	net-netreader-readdeltaquantized-f32-f32-f32-u32-f32-star	net.md	engine/net/codec.h:496
 net::EndpointText	struct	net	net-endpointtext	net.md	engine/net/endpoint.h:16
 net::EndpointText::kCapacity	variable	net	net-endpointtext-kcapacity	net.md	engine/net/endpoint.h:19
 net::EndpointText::chars	variable	net	net-endpointtext-chars	net.md	engine/net/endpoint.h:21

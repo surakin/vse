@@ -3,6 +3,7 @@
 set(NET_TEST_SOURCES
   address_test.cpp  # Day 267
   frame_test.cpp  # Day 271
+  net_codec_test.cpp  # Day 272
 )
 # The socket backend's tests (Day 268); the Windows backend arrives on Day 278. Real sockets: the executable is labelled `network`.
 set(NET_SOCKET_TEST_SOURCES "")

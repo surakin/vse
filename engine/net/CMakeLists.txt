@@ -5,6 +5,8 @@ set(NET_SOURCES
   status.cpp  # Day 267
   address.cpp  # Day 267
   endpoint.cpp  # Day 267
+  frame.cpp  # Day 271
+  codec.cpp  # Day 272
 )
 # The socket backend (Day 268): the shared POSIX half and the operating system's hooks. The Windows backend arrives on Day 278.
 set(NET_POSIX_SOURCES
@@ -22,7 +24,6 @@ set(NET_REACTOR_SOURCES
   resolver.cpp  # Day 270
   resolve.cpp  # Day 270
   listener.cpp  # Day 270
-  frame.cpp  # Day 271
   tcp_stream.cpp  # Day 271
 )
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
