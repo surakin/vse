@@ -16,7 +16,7 @@ Drag and drop between programs: the values shared by every platform backend. The
 
 The entry point of a windowed program (Phase 13 Day 158), written once in source so no build file chooses it per platform.
 
-A windowed program (a game, a demo) defines `int EngineMain(int argc, char** argv)` and, in one source file at global scope, writes `ENGINE_WINDOWED_PROGRAM(EngineMain)` instead of `main`. The macro expands to the platform's own entry point: `main` on Linux, `wWinMain` on Windows, where it makes the program a Windows (GUI) program: no console window opens when it is started from Explorer. Either way `EngineMain` gets UTF-8 arguments, already stashed for [`os::CommandLine::FromNative`](platform-os.md#os-commandline-fromnative-allocator-amp), and its result is the exit code.
+A windowed program (a game, a demo) defines `int EngineMain(int argc, char** argv)` and, in one source file at global scope, writes `ENGINE_WINDOWED_PROGRAM(EngineMain)` instead of `main`. The macro expands to the platform's own entry point: `main` on Linux; `main` on macOS too, which sets up the application object (a regular app with a Dock icon and a Quit menu, `platform/macos/cocoa_window.h`) before `EngineMain` runs, so a program run from a terminal is an ordinary app without a bundle; `wWinMain` on Windows, where it makes the program a Windows (GUI) program: no console window opens when it is started from Explorer. Either way `EngineMain` gets UTF-8 arguments, already stashed for [`os::CommandLine::FromNative`](platform-os.md#os-commandline-fromnative-allocator-amp), and its result is the exit code.
 
 The Windows subsystem comes with the entry point, from source: the macro's expansion carries a linker directive for `/SUBSYSTEM:WINDOWS`, which wins over the `/SUBSYSTEM:CONSOLE` the build gives every program, so tests and command-line tools, which keep a plain `main`, stay console programs, and no build file chooses a subsystem per target. A Windows GUI program writes its output to the handles it inherited (a pipe, a redirected file, ctest's capture) as they are. With none, started from a terminal, it attaches to that terminal's console, so its output appears there (after the shell's next prompt: a shell does not wait for a GUI program); started from Explorer, there is no console and the writes fail (the log file still has everything).
 
@@ -4632,7 +4632,7 @@ Which native windowing system a window belongs to, so a graphics layer knows how
 | <a id="os-nativewindowkind-wayland"></a>`Wayland` |  | A Wayland surface: `display` is a `wl_display*`, `surface` is a `wl_surface*`. |
 | <a id="os-nativewindowkind-xlib"></a>`Xlib` |  | An X11 window: `display` is a `Display*`, `window_id` is the `Window` (XID). |
 | <a id="os-nativewindowkind-win32"></a>`Win32` |  | A Win32 window: `display` is the `HINSTANCE` of the module that registered the window class, `surface` the `HWND`. |
-| <a id="os-nativewindowkind-cocoa"></a>`Cocoa` |  | Reserved for the macOS port: `surface` is the `NSView*` (or `CAMetalLayer*`). |
+| <a id="os-nativewindowkind-cocoa"></a>`Cocoa` |  | A macOS window (Phase 26 Day 311): `display` is the content `NSView*`, `surface` its `CAMetalLayer*`, `window_id` the window number. |
 | <a id="os-nativewindowkind-android"></a>`Android` |  | Reserved for the Android port: `surface` is the `ANativeWindow*`. |
 
 ## `NativeWindowInfo` {#os-nativewindowinfo}
@@ -4816,7 +4816,7 @@ Win32 gives the window's DPI over 96, and the value changes when the window move
 virtual const char* BackendName() const = 0;
 ```
 
-Returns the stable lowercase backend id (`"wayland"`, `"x11"`, `"win32"`), for logs and tests.
+Returns the stable lowercase backend id (`"wayland"`, `"x11"`, `"win32"`, `"cocoa"`), for logs and tests.
 
 | Field | Value |
 |---|---|
@@ -5205,9 +5205,9 @@ A function a window calls while the platform holds the thread in a loop of its o
 virtual void SetModalLoopCallback(ModalLoopCallback callback, void* user);
 ```
 
-Sets the function to call during the platform's own loops, so a program can keep drawing: on Windows, while the user moves or resizes the window by its frame (or has its system menu open), about every 10 ms; on Linux there is no such loop and it is never called.
+Sets the function to call during the platform's own loops, so a program can keep drawing.
 
-The default ignores it. A program renders a frame from the callback and reads the window's size there as usual.
+On Windows, while the user moves or resizes the window by its frame (or has its system menu open), about every 10 ms; on macOS at each step of a live resize; on Linux there is no such loop and it is never called. The default ignores it. A program renders a frame from the callback and reads the window's size there as usual; a `PumpEvents` from inside it returns at once.
 
 | Field | Value |
 |---|---|
@@ -5226,10 +5226,11 @@ Selects which display backend to use for a window.
 
 | Enumerator | Value | Description |
 |---|---|---|
-| <a id="os-windowbackend-auto"></a>`Auto` | `0` | The platform's choice: on Linux from the environment, Wayland first; on Windows, Win32. |
+| <a id="os-windowbackend-auto"></a>`Auto` | `0` | The platform's choice: on Linux from the environment, Wayland first; on Windows, Win32; on macOS, Cocoa. |
 | <a id="os-windowbackend-wayland"></a>`Wayland` |  | Force the Wayland backend (Linux). |
 | <a id="os-windowbackend-x11"></a>`X11` |  | Force the X11 backend (Linux). |
 | <a id="os-windowbackend-win32"></a>`Win32` |  | Force the Win32 backend (Windows). |
+| <a id="os-windowbackend-cocoa"></a>`Cocoa` |  | Force the Cocoa backend (macOS; Phase 26 Day 311). |
 | <a id="os-windowbackend-invalid"></a>`Invalid` |  | Unrecognized name, or an empty candidate slot. |
 
 ## `ParseWindowBackend(StringView)` {#os-parsewindowbackend-stringview}
@@ -5240,7 +5241,7 @@ Selects which display backend to use for a window.
 WindowBackend ParseWindowBackend(StringView name);
 ```
 
-Parses `"auto"`, `"wayland"`, `"x11"` or `"win32"` into a [`os::WindowBackend`](#os-windowbackend), on every platform (the plan says what the platform has).
+Parses `"auto"`, `"wayland"`, `"x11"`, `"win32"` or `"cocoa"` into a [`os::WindowBackend`](#os-windowbackend), on every platform (the plan says what the platform has).
 
 Anything else, including an empty string, yields `WindowBackend::Invalid`, so callers can tell an unrecognized name from `"auto"`.
 
@@ -5325,6 +5326,22 @@ Builds the list of backends to try on Windows: `Auto` and `Win32` yield Win32, `
 |---|---|
 | Parameter `requested` | the backend asked for. |
 | Returns | the plan; `count` is 0 when no backend is eligible. |
+
+## `PlanCocoaWindowBackends(WindowBackend)` {#os-plancocoawindowbackends-windowbackend}
+
+`function os::PlanCocoaWindowBackends` — defined in `engine/platform/window.h`
+
+```cpp
+BackendPlan PlanCocoaWindowBackends(WindowBackend requested);
+```
+
+Builds the list of backends to try on macOS: `Auto` and `Cocoa` yield Cocoa; `Wayland`, `X11` and `Win32` an empty plan with its `refusal` (Phase 26 Day 311).
+
+| Field | Value |
+|---|---|
+| Parameter `requested` | the backend asked for. |
+| Returns | the plan; `count` is 0 when no backend is eligible. |
+| Fails | never; an ineligible request is an empty plan. |
 
 ## `PlatformWindowHost` {#os-platformwindowhost}
 

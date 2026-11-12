@@ -124,9 +124,9 @@ DemoSettings::Effective DemoSettings::ReadEffective()
     }
     e.immediate = snapshot.Get(id("renderer.present_mode")).AsEnum() == 2;
     e.validation = snapshot.Get(id("renderer.validation")).AsEnum() == 2;
-    static const char* const kBackends[] = {"auto", "wayland", "x11", "win32"};
+    static const char* const kBackends[] = {"auto", "wayland", "x11", "win32", "cocoa"};
     engine_placeholder::FormatTo(e.window_backend, sizeof(e.window_backend), "%s",
-                                 kBackends[snapshot.Get(id("platform.window_backend")).AsEnum() % 4]);
+                                 kBackends[snapshot.Get(id("platform.window_backend")).AsEnum() % 5]);
     return e;
 }
 

@@ -23,7 +23,8 @@ enum class NativeWindowKind : u8
     Xlib,         ///< An X11 window: `display` is a `Display*`, `window_id` is the `Window` (XID).
     Win32,  ///< A Win32 window: `display` is the `HINSTANCE` of the module that registered the window class, `surface`
             ///< the `HWND`.
-    Cocoa,  ///< Reserved for the macOS port: `surface` is the `NSView*` (or `CAMetalLayer*`).
+    Cocoa,  ///< A macOS window (Phase 26 Day 311): `display` is the content `NSView*`, `surface` its `CAMetalLayer*`,
+            ///< `window_id` the window number.
     Android,  ///< Reserved for the Android port: `surface` is the `ANativeWindow*`.
 };
 
@@ -96,7 +97,7 @@ public:
     /// per-monitor scale. Wayland gives 1: the compositor scales the window itself.
     virtual f32 ContentScale() const { return 1.0f; }
 
-    /// Returns the stable lowercase backend id (`"wayland"`, `"x11"`, `"win32"`), for logs and tests.
+    /// Returns the stable lowercase backend id (`"wayland"`, `"x11"`, `"win32"`, `"cocoa"`), for logs and tests.
     /// - Ownership: the string is static and is never freed by the caller.
     virtual const char* BackendName() const = 0;
 
@@ -301,11 +302,12 @@ public:
     /// cannot return.
     using ModalLoopCallback = void (*)(void* user);
 
-    /// Sets the function to call during the platform's own loops, so a program can keep drawing: on Windows, while the
-    /// user moves or resizes the window by its frame (or has its system menu open), about every 10 ms; on Linux there
-    /// is no such loop and it is never called.
+    /// Sets the function to call during the platform's own loops, so a program can keep drawing.
     ///
-    /// The default ignores it. A program renders a frame from the callback and reads the window's size there as usual.
+    /// On Windows, while the user moves or resizes the window by its frame (or has its system menu open), about every
+    /// 10 ms; on macOS at each step of a live resize; on Linux there is no such loop and it is never called. The
+    /// default ignores it. A program renders a frame from the callback and reads the window's size there as usual; a
+    /// `PumpEvents` from inside it returns at once.
     /// - Param callback: the function, or null to stop; it must not close or destroy the window.
     /// - Param user: passed to `callback`.
     virtual void SetModalLoopCallback(ModalLoopCallback callback, void* user)
@@ -324,15 +326,17 @@ u64 NextResizeSerial();
 /// Selects which display backend to use for a window.
 enum class WindowBackend : u8
 {
-    Auto = 0,  ///< The platform's choice: on Linux from the environment, Wayland first; on Windows, Win32.
+    Auto = 0,  ///< The platform's choice: on Linux from the environment, Wayland first; on Windows, Win32; on macOS,
+               ///< Cocoa.
     Wayland,   ///< Force the Wayland backend (Linux).
     X11,       ///< Force the X11 backend (Linux).
     Win32,     ///< Force the Win32 backend (Windows).
+    Cocoa,     ///< Force the Cocoa backend (macOS; Phase 26 Day 311).
     Invalid,   ///< Unrecognized name, or an empty candidate slot.
 };
 
-/// Parses `"auto"`, `"wayland"`, `"x11"` or `"win32"` into a [[os::WindowBackend]], on every platform (the plan says
-/// what the platform has).
+/// Parses `"auto"`, `"wayland"`, `"x11"`, `"win32"` or `"cocoa"` into a [[os::WindowBackend]], on every platform (the
+/// plan says what the platform has).
 ///
 /// Anything else, including an empty string, yields `WindowBackend::Invalid`, so callers can tell an
 /// unrecognized name from `"auto"`.
@@ -370,5 +374,13 @@ BackendPlan PlanWindowBackends(WindowBackend requested, bool wayland_env_set, bo
 /// - Param requested: the backend asked for.
 /// - Returns: the plan; `count` is 0 when no backend is eligible.
 BackendPlan PlanWin32WindowBackends(WindowBackend requested);
+
+/// Builds the list of backends to try on macOS: `Auto` and `Cocoa` yield Cocoa; `Wayland`, `X11` and `Win32` an empty
+/// plan with its `refusal` (Phase 26 Day 311).
+///
+/// - Param requested: the backend asked for.
+/// - Returns: the plan; `count` is 0 when no backend is eligible.
+/// - Fails: never; an ineligible request is an empty plan.
+BackendPlan PlanCocoaWindowBackends(WindowBackend requested);
 
 }  // namespace engine_placeholder::os

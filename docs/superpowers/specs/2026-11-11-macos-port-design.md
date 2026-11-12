@@ -50,7 +50,9 @@ and linked `claude-memory/` (the empty backup was removed).
    `windowDidResize` and the drawable followed (1800x1064 pixels for a 900x532-point view); `performClose:` (the close button's path) reached
    `windowShouldClose:`, which returned NO so the program decides. **Not confirmed:** activation and key focus from a terminal, and frame pacing, because
    the session was **locked with the display asleep** during the run (`CGSSessionScreenIsLocked` 1, `CGDisplayIsAsleep` 1, idle 1,102 s): the app never
-   became active and `nextDrawable` did not pace to the display (3,117 frames in about 3 s, 0.92 ms mean). Rerun with the user present (section 7).
+   became active and `nextDrawable` did not pace to the display (3,117 frames in about 3 s, 0.92 ms mean). Rerun with the user present (section 7). **Rerun on Phase 26 Day 311 with the session unlocked: confirmed.** The same program became the active app with
+   a key window 104 ms after start, from a terminal, and its frames paced to the display (176 frames in about 3 s, 16.88 ms mean, worst 75 ms
+   at the programmatic resize); scale 2.0, the drawable 1800x1064 after the resize, `windowShouldClose:` reached by `performClose:`.
 6. **Input — not exercised yet** (Day 312).
 7. **Session state — confirmed:** `CGSessionCopyCurrentDictionary` reported the locked screen and the console, `CGDisplayIsAsleep` the sleeping
    display, `CGEventSourceSecondsSinceLastEventType` the idle time (Spike C's diagnosis): `os/macos/SESSION.md` works as written.
@@ -133,6 +135,7 @@ Day 299; the tooling is Day 302.
 ## 7. Open after Day 299
 
 - Spike C's activation, key focus and frame pacing, with the session unlocked (the user present): rerun the throwaway program before Day 311 starts.
+  **Done on Day 311** (decision 5).
 - Day 298's "load elsewhere" task (Apple silicon, another macOS version): waits for the user's new Mac (pending in `KNOWN-ISSUES.md`).
 
 ## 8. Inventory of Linux-only code

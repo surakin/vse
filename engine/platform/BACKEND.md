@@ -74,7 +74,10 @@ modal-loop callback keeps the program drawing; it refuses to start unless a mous
 
 ### `macos`
 
-Not implemented yet (Phase 26; drag and drop is `NSDraggingDestination` and `NSDraggingSource` on the view; the clipboard is `NSPasteboard` (`NSPasteboardTypeString`, file URLs; `changeCount` polled for `ClipboardChanged`); cursors `NSCursor`, the lock `CGAssociateMouseAndMouseCursorPosition`): `NSEvent` key events with `interpretKeyEvents:` for text, dead keys and input methods, `scrollingDeltaX/Y`, `keyDown` repeat from
+**Built (Phase 26 Day 311): the window** (`macos/cocoa_window.mm`): `NSWindow` with a `CAMetalLayer`-backed view, `PumpEvents` draining
+`nextEventMatchingMask:untilDate:distantPast`, the size in pixels at the backing scale, `windowShouldClose:` and Quit as close requests,
+native fullscreen, `Resize`/`FocusGained`/`FocusLost` in the stream; the window host (`macos/window_host_macos.cpp`) and the entry point
+(`macos/entry_point_macos.cpp`). **Not built yet** (Days 312-313; drag and drop is `NSDraggingDestination` and `NSDraggingSource` on the view; the clipboard is `NSPasteboard` (`NSPasteboardTypeString`, file URLs; `changeCount` polled for `ClipboardChanged`); cursors `NSCursor`, the lock `CGAssociateMouseAndMouseCursorPosition`): `NSEvent` key events with `interpretKeyEvents:` for text, dead keys and input methods, `scrollingDeltaX/Y`, `keyDown` repeat from
 `isARepeat`, `windowDidBecomeKey`/`windowDidResignKey`, `windowDidResize`. The `PollEvent` default (no events) keeps the layer compiling meanwhile.
 
 ### `android`

@@ -266,8 +266,8 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(engine/foundation)
   add_subdirectory(engine/jobs)  # Day 305
   add_subdirectory(tests/jobs)
-  # Day 310: the modules above the foundation with no platform code (layers 10-11), and their tests. engine/platform gives only its
-  # header-only platform_input target before the window layer (Days 311-313); engine/net's macOS backend is Day 326.
+  # Day 310: the modules above the foundation with no platform code (layers 10-11), and their tests; engine/net's macOS backend is
+  # Day 326. Day 311: engine/platform builds the Cocoa window (input and the rest on Days 312-313).
   add_subdirectory(engine/platform)
   add_subdirectory(engine/text)
   add_subdirectory(tests/text)
@@ -282,6 +282,7 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(engine/ui)
   add_subdirectory(tests/ui)  # the CPU-side tests; the window, clipboard and viewport ones need the window layer (Day 311)
   add_subdirectory(game/ecs_bench)  # Day 310: the ECS benchmark, CPU only (the other programs of game/ come with their layers)
+  add_subdirectory(game/hello_window)  # Day 311: the first windowed program
   add_subdirectory(tests/foundation)  # the base-layer tests (foundation_base_tests), Day 301; the file-layer and window ones need later days
   add_subdirectory(tests/foundation_sanitized)
   add_subdirectory(tests/io)  # the file layer, Days 303-305

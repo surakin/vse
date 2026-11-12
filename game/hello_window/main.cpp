@@ -196,7 +196,7 @@ int EngineMain(int, char**)
         }
         else if (requested == os::WindowBackend::Invalid)
         {
-            Log(LogPlatform, LogVerbosity::Error, "Window: unrecognized --backend (want auto|wayland|x11|win32)");
+            Log(LogPlatform, LogVerbosity::Error, "Window: unrecognized --backend (want auto|wayland|x11|win32|cocoa)");
         }
         else
         {

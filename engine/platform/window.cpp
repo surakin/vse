@@ -32,6 +32,10 @@ WindowBackend ParseWindowBackend(StringView name)
     {
         return WindowBackend::Win32;
     }
+    if (name == StringView("cocoa"))
+    {
+        return WindowBackend::Cocoa;
+    }
     return WindowBackend::Invalid;
 }
 
@@ -53,6 +57,7 @@ BackendPlan PlanWindowBackends(WindowBackend requested, bool wayland_env_set, bo
         }
         break;
     case WindowBackend::Win32: plan.refusal = "win32 is the Windows backend"; break;
+    case WindowBackend::Cocoa: plan.refusal = "cocoa is the macOS backend"; break;
     case WindowBackend::Invalid: break;
     }
     return plan;
@@ -67,6 +72,22 @@ BackendPlan PlanWin32WindowBackends(WindowBackend requested)
     case WindowBackend::Win32: plan.candidates[plan.count++] = WindowBackend::Win32; break;
     case WindowBackend::Wayland: plan.refusal = "wayland is a Linux backend"; break;
     case WindowBackend::X11: plan.refusal = "x11 is a Linux backend"; break;
+    case WindowBackend::Cocoa: plan.refusal = "cocoa is the macOS backend"; break;
+    case WindowBackend::Invalid: break;
+    }
+    return plan;
+}
+
+BackendPlan PlanCocoaWindowBackends(WindowBackend requested)
+{
+    BackendPlan plan;
+    switch (requested)
+    {
+    case WindowBackend::Auto:
+    case WindowBackend::Cocoa: plan.candidates[plan.count++] = WindowBackend::Cocoa; break;
+    case WindowBackend::Wayland: plan.refusal = "wayland is a Linux backend"; break;
+    case WindowBackend::X11: plan.refusal = "x11 is a Linux backend"; break;
+    case WindowBackend::Win32: plan.refusal = "win32 is the Windows backend"; break;
     case WindowBackend::Invalid: break;
     }
     return plan;

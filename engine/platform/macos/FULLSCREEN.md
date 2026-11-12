@@ -1,4 +1,4 @@
-# Fullscreen on macOS (checklist for Phase 26)
+# Fullscreen on macOS (checklist for Phase 26; built on Day 311, `macos/cocoa_window.mm`, tested by `window_fullscreen_test.cpp`, except `drawableSize`, which the Metal swapchain sets on Day 321)
 
 `os::Window::SupportsFullscreen`, `SetFullscreen` and `IsFullscreen` are the interface (`engine/platform/window.h`).
 

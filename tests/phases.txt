@@ -67,7 +67,7 @@ flavors 4   macos: plain           # the gates (Day 302)
 flavors 5   macos: plain           # the gates (Day 302)
 flavors 6   macos: plain           # the phase-map checks (Day 300)
 flavors 7   macos: plain,asan,tsan # the gates (Day 302), tests/debug (Day 306)
-flavors 8   macos: none
+flavors 8   macos: plain           # the fullscreen toggle (Day 311)
 flavors 9   macos: plain,asan,tsan # the gates (Day 302), tests/io (Day 303)
 flavors 10  macos: plain,asan,tsan # tests/types (Day 300)
 flavors 11  macos: plain,asan,tsan # the gates (Day 302), tests/settings (Day 309)

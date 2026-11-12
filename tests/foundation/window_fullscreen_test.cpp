@@ -9,6 +9,8 @@
 
 #if ENGINE_PLATFORM_WINDOWS
 #include "platform/windows/win32_window.h"
+#elif ENGINE_PLATFORM_MACOS
+#include "platform/macos/cocoa_window.h"
 #else
 #include "platform/linux/wayland/wayland_platform_window.h"
 #include "platform/linux/x11/x11_window.h"
@@ -67,6 +69,32 @@ TEST_CASE("A Win32 window toggles fullscreen", "[window][fullscreen]")
 TEST_CASE("The default Window reports fullscreen unsupported", "[window][fullscreen]")
 {
     os::win32::Win32Window invalid;  // a window that is not open supports nothing
+    CHECK_FALSE(invalid.SupportsFullscreen());
+    CHECK_FALSE(invalid.SetFullscreen(true));
+    CHECK_FALSE(invalid.IsFullscreen());
+}
+
+#elif ENGINE_PLATFORM_MACOS
+
+// Phase 26 Day 311: native fullscreen (platform/macos/FULLSCREEN.md), which animates into a Space of its own, and back
+// to the size the window had.
+TEST_CASE("A Cocoa window toggles fullscreen", "[window][fullscreen]")
+{
+    SKIP_IF_NO_DISPLAY_SESSION();
+    os::InputState input;
+    os::cocoa::CocoaWindow window;
+    REQUIRE(window.Open("fullscreen test", 320, 240, &input));
+    const u32 width = window.Width();
+    const u32 height = window.Height();
+    const u64 serial = window.ResizeSerial();
+    ToggleFullscreen(window);
+    CHECK(window.ResizeSerial() != serial);  // the screen's size arrived through resize, and the old one came back
+    CHECK(PumpUntil(window, [&] { return window.Width() == width && window.Height() == height; }));
+}
+
+TEST_CASE("The default Window reports fullscreen unsupported", "[window][fullscreen]")
+{
+    os::cocoa::CocoaWindow invalid;  // a window that is not open supports nothing
     CHECK_FALSE(invalid.SupportsFullscreen());
     CHECK_FALSE(invalid.SetFullscreen(true));
     CHECK_FALSE(invalid.IsFullscreen());

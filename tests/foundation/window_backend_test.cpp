@@ -1,5 +1,5 @@
-// The window backend choice: the name parser and both platforms' plans run everywhere; the window host is tested on the
-// platform it is built for (Linux: Wayland and X11, Windows: Win32, Phase 13 Day 158).
+// The window backend choice: the name parser and every platform's plan run everywhere; the window host is tested on the
+// platform it is built for (Linux: Wayland and X11, Windows: Win32, Phase 13 Day 158, macOS: Cocoa, Phase 26 Day 311).
 #include "os/console.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -13,6 +13,8 @@
 
 #if ENGINE_PLATFORM_WINDOWS
 #include "platform/windows/win32_window.h"
+#include "test_env.h"
+#elif ENGINE_PLATFORM_MACOS
 #include "test_env.h"
 #else
 #include <sys/socket.h>
@@ -31,7 +33,7 @@ namespace window_backend_test
 using namespace engine_placeholder;
 using namespace engine_placeholder::os;
 
-#if !ENGINE_PLATFORM_WINDOWS
+#if ENGINE_PLATFORM_LINUX
 namespace
 {
 
@@ -89,6 +91,8 @@ TEST_CASE("ParseWindowBackend recognizes auto/wayland/x11/win32 and rejects the 
     REQUIRE(ParseWindowBackend("wayland") == WindowBackend::Wayland);
     REQUIRE(ParseWindowBackend("x11") == WindowBackend::X11);
     REQUIRE(ParseWindowBackend("win32") == WindowBackend::Win32);
+    REQUIRE(ParseWindowBackend("cocoa") == WindowBackend::Cocoa);
+    REQUIRE(ParseWindowBackend("Cocoa") == WindowBackend::Invalid);
     REQUIRE(ParseWindowBackend("") == WindowBackend::Invalid);
     REQUIRE(ParseWindowBackend("X11") == WindowBackend::Invalid);
     REQUIRE(ParseWindowBackend("Win32") == WindowBackend::Invalid);
@@ -147,6 +151,41 @@ TEST_CASE("PlanWindowBackends: Linux refuses win32 with the reason, whatever the
           nullptr);  // nothing set is not a refusal by name
 }
 
+TEST_CASE("Every plan refuses another platform's backend with the reason, and macOS's plan gives Cocoa", "[window][os]")
+{
+    // Phase 26 Day 311: cocoa is refused by the Linux and Windows plans, and the macOS plan refuses theirs.
+    const BackendPlan on_linux = PlanWindowBackends(WindowBackend::Cocoa, true, true);
+    CHECK(on_linux.count == 0);
+    REQUIRE(on_linux.refusal != nullptr);
+    CHECK(StringView(on_linux.refusal) == StringView("cocoa is the macOS backend"));
+    const BackendPlan on_windows = PlanWin32WindowBackends(WindowBackend::Cocoa);
+    CHECK(on_windows.count == 0);
+    REQUIRE(on_windows.refusal != nullptr);
+    CHECK(StringView(on_windows.refusal) == StringView("cocoa is the macOS backend"));
+    for (WindowBackend requested : {WindowBackend::Auto, WindowBackend::Cocoa})
+    {
+        const BackendPlan plan = PlanCocoaWindowBackends(requested);
+        REQUIRE(plan.count == 1);
+        CHECK(plan.candidates[0] == WindowBackend::Cocoa);
+        CHECK(plan.refusal == nullptr);
+    }
+    const struct
+    {
+        WindowBackend backend;
+        const char* reason;
+    } refused[] = {{WindowBackend::Wayland, "wayland is a Linux backend"},
+                   {WindowBackend::X11, "x11 is a Linux backend"},
+                   {WindowBackend::Win32, "win32 is the Windows backend"}};
+    for (const auto& r : refused)
+    {
+        const BackendPlan plan = PlanCocoaWindowBackends(r.backend);
+        CHECK(plan.count == 0);
+        REQUIRE(plan.refusal != nullptr);
+        CHECK(StringView(plan.refusal) == StringView(r.reason));
+    }
+    CHECK(PlanCocoaWindowBackends(WindowBackend::Invalid).count == 0);
+}
+
 TEST_CASE("PlanWin32WindowBackends: auto and win32 give Win32, wayland and x11 are refused with the reason",
           "[window][os]")
 {
@@ -168,8 +207,7 @@ TEST_CASE("PlanWin32WindowBackends: auto and win32 give Win32, wayland and x11 a
     CHECK(PlanWin32WindowBackends(WindowBackend::Invalid).count == 0);
 }
 
-#if ENGINE_PLATFORM_WINDOWS
-
+#if !ENGINE_PLATFORM_LINUX
 namespace
 {
 
@@ -183,6 +221,9 @@ struct ScopedBackendVariable
 };
 
 }  // namespace
+#endif
+
+#if ENGINE_PLATFORM_WINDOWS
 
 TEST_CASE("Windows: PlatformWindowHost opens Win32 for auto and for win32", "[window][os]")
 {
@@ -241,6 +282,67 @@ TEST_CASE("Windows: PlatformWindowHost::OpenFromEnvironment honors ENGINE_WINDOW
     PlatformWindowHost unset;
     REQUIRE(unset.OpenFromEnvironment("env unset", 320, 240, &input));
     CHECK(StringView(unset.Get()->BackendName()) == StringView("win32"));
+}
+
+#elif ENGINE_PLATFORM_MACOS
+
+// Phase 26 Day 311: the window host on macOS.
+TEST_CASE("macOS: PlatformWindowHost opens Cocoa for auto and for cocoa", "[window][os]")
+{
+    SKIP_IF_NO_DISPLAY_SESSION();
+    for (WindowBackend requested : {WindowBackend::Auto, WindowBackend::Cocoa})
+    {
+        InputState input;
+        PlatformWindowHost host;
+        REQUIRE(host.Open(requested, "host cocoa", 640, 480, &input));
+        os::Window* w = host.Get();
+        REQUIRE(w != nullptr);
+        REQUIRE(w->Valid());
+        CHECK(StringView(w->BackendName()) == StringView("cocoa"));
+        // The size asked for is in points; the window reports pixels (points times the backing scale).
+        CHECK(w->Width() == static_cast<u32>(640 * w->ContentScale()));
+        CHECK(w->Height() == static_cast<u32>(480 * w->ContentScale()));
+        CHECK_FALSE(w->ShouldClose());
+        CHECK(w->GetNativeInfo().kind == NativeWindowKind::Cocoa);
+        w->PumpEvents();
+        REQUIRE_FALSE(host.Open(requested, "second", 320, 240, &input));  // a host opens once
+    }
+}
+
+TEST_CASE("macOS: PlatformWindowHost refuses Wayland, X11 and Win32", "[window][os]")
+{
+    InputState input;
+    for (WindowBackend requested : {WindowBackend::Wayland, WindowBackend::X11, WindowBackend::Win32})
+    {
+        PlatformWindowHost host;
+        CHECK_FALSE(host.Open(requested, "not cocoa", 320, 240, &input));
+        CHECK(host.Get() == nullptr);
+    }
+}
+
+TEST_CASE("macOS: PlatformWindowHost::OpenFromEnvironment honors ENGINE_WINDOW_BACKEND", "[window][os]")
+{
+    SKIP_IF_NO_DISPLAY_SESSION();
+    InputState input;
+    {
+        ScopedBackendVariable bad("carrier-pigeon");
+        PlatformWindowHost host;
+        CHECK_FALSE(host.OpenFromEnvironment("bad override", 320, 240, &input));
+    }
+    {
+        ScopedBackendVariable linux_only("wayland");
+        PlatformWindowHost host;
+        CHECK_FALSE(host.OpenFromEnvironment("wayland on macos", 320, 240, &input));
+    }
+    {
+        ScopedBackendVariable cocoa("cocoa");
+        PlatformWindowHost host;
+        REQUIRE(host.OpenFromEnvironment("env cocoa", 320, 240, &input));
+        CHECK(StringView(host.Get()->BackendName()) == StringView("cocoa"));
+    }
+    PlatformWindowHost unset;
+    REQUIRE(unset.OpenFromEnvironment("env unset", 320, 240, &input));
+    CHECK(StringView(unset.Get()->BackendName()) == StringView("cocoa"));
 }
 
 #else  // Linux: the window host over Wayland and X11

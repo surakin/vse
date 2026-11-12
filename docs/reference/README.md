@@ -19,7 +19,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Settings](foundation-settings.md) | 18 | 545 |
 | [Foundation: Bytes (canonical encoding)](foundation-bytes.md) | 3 | 44 |
 | [Platform: OS Services](platform-os.md) | 7 | 69 |
-| [Platform: Windowing and Input](platform-window-input.md) | 23 | 676 |
+| [Platform: Windowing and Input](platform-window-input.md) | 23 | 678 |
 | [Foundation: Debugging](foundation-debug.md) | 15 | 208 |
 | [Text](text.md) | 6 | 221 |
 | [ECS](ecs.md) | 12 | 406 |

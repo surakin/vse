@@ -85,8 +85,8 @@ override it uses `OpenFromEnvironment`, which reads `$ENGINE_WINDOW_BACKEND` (`a
 | automatic | lowest | Wayland, else X11 |
 
 **A forced backend never falls back.** `--backend=wayland` on a machine with no Wayland compositor fails and says so; it does not quietly open an X11 window,
-because someone who forced a backend is testing it. Only `Auto` tries the next candidate. On Windows the one backend is Win32. `window->BackendName()`
-returns `"wayland"`, `"x11"` or `"win32"` for logs and test names.
+because someone who forced a backend is testing it. Only `Auto` tries the next candidate. On Windows the one backend is Win32, on macOS Cocoa (`auto` or `cocoa`; the other names are
+refused with the reason). `window->BackendName()` returns `"wayland"`, `"x11"`, `"win32"` or `"cocoa"` for logs and test names.
 
 ### Event pumping and the frame loop
 
@@ -357,6 +357,31 @@ never reaches a destroyed object; for the same reason the object cannot move.
   once. On Linux there is no such loop and the callback is never called.
 - **Native handles:** kind `Win32`, `display` the `HINSTANCE` of the module that registered the class, `surface` the `HWND`.
 
+### macOS specifics
+
+`os::cocoa::CocoaWindow` (`platform/macos/cocoa_window.h`, Phase 26 Day 311) is an `NSWindow` whose content view is backed by a
+`CAMetalLayer`, driven by the program's own loop: `PumpEvents` drains AppKit's event queue without waiting, for every window of the program.
+
+- **The main thread only.** AppKit allows windows on the main thread alone; `Open` on another thread fails with a log line (AppKit would
+  abort the process). Keep the window, and the loop that pumps it, on the thread that runs `main`.
+- **The application** (`NSApplication`, a regular app with a Dock icon and a menu with Quit) is set up once, by the windowed program's
+  entry point or by the first window a test opens. No app bundle and no `Info.plist` are needed: a program run from a terminal becomes the
+  active app with a key window (about 0.1 s after the window appears, measured), gets Retina pixels, and its frames pace to the display.
+- **The size asked for is in points; `Width` and `Height` are pixels** (points times the backing scale, 2 on a Retina display), as on
+  Windows. `ContentScale` is the backing scale; a move to a display of another scale changes the pixel size and `ResizeSerial`, and the
+  layer's `contentsScale` follows.
+- **Close and Quit are requests.** The close button sets `ShouldClose`; the window stays until its owner closes it. Quit (Cmd-Q, the
+  menu, the Dock) does not end the process: it makes every window's `ShouldClose` true (`os::cocoa::QuitRequested`), and a program that
+  decides not to quit takes it back with `os::cocoa::ClearQuitRequest`. A logout, restart or shutdown asks the same way, but the system
+  is told to wait (`NSTerminateLater`) instead of refused: it goes on when the program ends, and is cancelled by `ClearQuitRequest`.
+- **Live resize** runs AppKit's own loop, as Windows' modal loop does: `SetModalLoopCallback`'s function is called from each resize step.
+- **Fullscreen** is native fullscreen (`toggleFullScreen:`, a Space of its own): `SetFullscreen` starts the animation and `IsFullscreen`
+  follows when it ends; the new size arrives as a resize (`platform/macos/FULLSCREEN.md`).
+- **Without a window server** (an ssh login with nobody at the console) no window opens, and the log says why; a locked screen still
+  opens windows, but nobody sees them, so the window tests skip while it is locked.
+- **Native handles:** kind `Cocoa`, `display` the content `NSView*`, `surface` its `CAMetalLayer*`, `window_id` the window number.
+- **Input** (keys, text, the mouse) comes on Phase 26 Day 312; today the stream has `Resize`, `FocusGained` and `FocusLost`.
+
 ### Windows input
 
 `Win32Window` fills the [[os::InputState]] it was opened with from the window's messages, with the meaning the Linux backends give it.
@@ -390,7 +415,8 @@ A program that opens a window defines `int EngineMain(int argc, char** argv)` an
 at global scope, instead of `main` (`platform/entry_point.h`). On Linux that is `main`; on Windows it is `wWinMain` with a linker
 directive for the GUI subsystem, so starting the program from Explorer opens no console window. `EngineMain` gets UTF-8 arguments
 split by the Windows rules for quotes and backslashes, already stashed for `os::CommandLine::FromNative`. Tests and command-line tools
-keep a plain `main` and stay console programs; no build file chooses a subsystem. The `platform_neutral_check` gate fails on a windowed
+keep a plain `main` and stay console programs; no build file chooses a subsystem. On macOS it is `main`, which sets up the application
+object (a regular app with a Quit menu) before `EngineMain` runs. The `platform_neutral_check` gate fails on a windowed
 program under `game/` that defines its own `main` (the demos are listed until they reach Windows on Day 161).
 
 A GUI program's output goes to the handles it inherited (a pipe, a redirected file, ctest's capture). Started from a terminal with

@@ -4,6 +4,7 @@
 #   macos_build_defs_tests      build_defs.h on Apple clang (platform, processor, compiler, the sanitizer of each flavor), plain, asan, tsan
 #   macos_os_tests              the os backend (os/macos/os.cpp, session.mm): clock, sleeps, pages, process figures, LoadLibrary, a child
 #                               (macos_os_child) reading non-ASCII arguments and logging UTF-8 to a pipe; plain, asan, tsan
+#   macos_window_tests          the Cocoa window (Day 311): sizes, resize, close and Quit, minimize, the main thread; plain, asan, tsan
 #   macos_header_apple_first    every neutral foundation header compiles as Objective-C++ (ARC, the warnings of every target) after
 #                               <AppKit/AppKit.h>, <Metal/Metal.h> and <QuartzCore/CAMetalLayer.h>: no Apple macro or type breaks them
 #   macos_header_apple_last     the same with the frameworks after the engine headers, the other order a unity build can merge them in
@@ -80,3 +81,14 @@ endfunction()
 engine_add_macos_os_tests(macos_os_tests foundation_base "" "macos")
 engine_add_macos_os_tests(macos_os_tests_asan foundation_base_asan " [asan]" "asan")
 engine_add_macos_os_tests(macos_os_tests_tsan foundation_base_tsan " [tsan]" "tsan")
+
+# --- The Cocoa window (Day 311): sizes, the CAMetalLayer, resize, close, Quit, minimize, the main thread; real windows, so `display` ---------
+function(engine_add_macos_window_tests target platform_lib suffix label)
+  add_executable(${target} cocoa_window_macos_test.mm)
+  target_link_libraries(${target} PRIVATE ${platform_lib} Catch2::Catch2WithMain Threads::Threads "-framework AppKit" "-framework QuartzCore")
+  target_include_directories(${target} PRIVATE ${CMAKE_SOURCE_DIR}/tests/support)
+  engine_discover_tests(${target} TEST_SUFFIX "${suffix}" PROPERTIES LABELS "${label};display" RESOURCE_LOCK display)
+endfunction()
+engine_add_macos_window_tests(macos_window_tests platform "" "macos")
+engine_add_macos_window_tests(macos_window_tests_asan platform_asan " [asan]" "asan")
+engine_add_macos_window_tests(macos_window_tests_tsan platform_tsan " [tsan]" "tsan")

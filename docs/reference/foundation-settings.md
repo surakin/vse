@@ -1299,7 +1299,7 @@ void RegisterEngineSettings(Registry* registry);
 
 Declares the engine-level settings in `registry`:
 
-| key | type | environment variable | |---|---|---| | `platform.window_backend` | enum `auto`, `wayland`, `x11`, `win32` | `ENGINE_WINDOW_BACKEND` (flag `--backend`) | | `rhi.pipeline_cache` | bool | | | `rhi.pipeline_cache_dir` | text | `ENGINE_RHI_CACHE_DIR` |
+| key | type | environment variable | |---|---|---| | `platform.window_backend` | enum `auto`, `wayland`, `x11`, `win32`, `cocoa` | `ENGINE_WINDOW_BACKEND` (flag `--backend`) | | `rhi.pipeline_cache` | bool | | | `rhi.pipeline_cache_dir` | text | `ENGINE_RHI_CACHE_DIR` |
 
 Only settings something reads are declared. `platform.window_backend` is read by the programs (which pass it to the window host as before), and `rhi.pipeline_cache` and `rhi.pipeline_cache_dir` fill the device creation. The variables `ENGINE_JOB_THREADS`, `ENGINE_CRASH_HANDLER` and `ENGINE_RHI_VALIDATION_BEST_PRACTICES` are read directly by the job topology, the crash handler setup and the Vulkan instance because they run before any [`settings::Settings`](#settings-settings) can exist; they are not settings (the configuration check lists them as exceptions).
 

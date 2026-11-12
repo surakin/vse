@@ -7,9 +7,11 @@
 //!
 //! A windowed program (a game, a demo) defines `int EngineMain(int argc, char** argv)` and, in one source file at
 //! global scope, writes `ENGINE_WINDOWED_PROGRAM(EngineMain)` instead of `main`. The macro expands to the platform's
-//! own entry point: `main` on Linux, `wWinMain` on Windows, where it makes the program a Windows (GUI) program: no
-//! console window opens when it is started from Explorer. Either way `EngineMain` gets UTF-8 arguments, already stashed
-//! for [[os::CommandLine::FromNative]], and its result is the exit code.
+//! own entry point: `main` on Linux; `main` on macOS too, which sets up the application object (a regular app with a
+//! Dock icon and a Quit menu, `platform/macos/cocoa_window.h`) before `EngineMain` runs, so a program run from a
+//! terminal is an ordinary app without a bundle; `wWinMain` on Windows, where it makes the program a Windows (GUI)
+//! program: no console window opens when it is started from Explorer. Either way `EngineMain` gets UTF-8 arguments,
+//! already stashed for [[os::CommandLine::FromNative]], and its result is the exit code.
 //!
 //! The Windows subsystem comes with the entry point, from source: the macro's expansion carries a linker directive for
 //! `/SUBSYSTEM:WINDOWS`, which wins over the `/SUBSYSTEM:CONSOLE` the build gives every program, so tests and
@@ -32,8 +34,9 @@ namespace detail
 /// ([[os::StashNativeCommandLine]]) and returns `entry`'s result. Called by [[ENGINE_WINDOWED_PROGRAM]]'s expansion
 /// only.
 ///
-/// - Param argc: `main`'s count on Linux; ignored on Windows, which reads the command line itself (`GetCommandLineW`).
-/// - Param argv: `main`'s arguments on Linux; ignored on Windows, which converts its wide arguments to UTF-8.
+/// - Param argc: `main`'s count on Linux and macOS; ignored on Windows, which reads the command line itself
+/// (`GetCommandLineW`).
+/// - Param argv: `main`'s arguments on Linux and macOS; ignored on Windows, which converts its wide arguments to UTF-8.
 /// - Param entry: the program's own entry point.
 /// - Returns: `entry`'s result.
 /// - Fails: on Windows, returns 1 without calling `entry` if the command line cannot be read or the arguments cannot be

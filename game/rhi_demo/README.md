@@ -79,7 +79,7 @@ Settings:
   --settings FILE         read settings from FILE (above the project file, below the environment)
   --save-settings[=FILE]  write the settings that differ from their defaults to FILE (default: the user's settings file) and exit
   --list-settings         print every setting: its value, default, where it came from and what it is for, and exit
-  --backend NAME          platform.window_backend: the display backend: wayland or x11 on Linux, win32 on Windows (auto picks Wayland, then X11, on Linux)
+  --backend NAME          platform.window_backend: the display backend: wayland or x11 on Linux, win32 on Windows, cocoa on macOS (auto picks Wayland, then X11, on Linux)
   --gpu TEXT              renderer.adapter: the GPU: an id from --list-gpus, an index, or part of the name (empty: the best one)
   --rhi NAME              renderer.backend: the graphics backend: auto (the preferred one this program has and this machine runs), null (no GPU), vulkan or dx12
 Environment: ENGINE_SETTING_<KEY> sets any setting (the key in capitals, dots written as __, e.g. ENGINE_SETTING_RENDERER__PRESENT_MODE); also:
