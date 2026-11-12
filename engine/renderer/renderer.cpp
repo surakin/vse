@@ -111,7 +111,8 @@ rhi::Backend BackendForSetting(u32 setting_value, const char** note)
                 return requested;  // a GPU backend is built: auto is its, failures included
             }
         }
-        *note = "auto: no GPU backend is built for macOS yet (Metal: Phase 26 Day 316); using the null backend";
+        *note =
+            "auto: no macOS backend is picked by auto yet (Metal is asked for by name until Phase 26 Day 325); using the null backend";
         static Atomic<bool> said{false};  // once per program, whichever renderer or thread asks first
         if (!said.Exchange(true))
         {

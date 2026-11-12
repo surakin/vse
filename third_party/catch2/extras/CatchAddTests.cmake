@@ -377,21 +377,25 @@ function(catch_discover_tests_impl)
       set(output_dir_arg "--out ${output_dir}/${output_prefix}${escaped_name_clean}${output_suffix}")
     endif()
 
-    # [engine patch] LABELS takes every following element up to the next property name (upper case, like
-    # SKIP_RETURN_CODE), so several labels work; the phase label is added to them.
+    # [engine patch] LABELS and ENVIRONMENT take every following element up to the next property name (upper case, like
+    # SKIP_RETURN_CODE), so several labels and several variables work; the phase label is added to the labels.
     set(test_properties "")
     set(test_labels "")
-    set(in_labels FALSE)
+    set(test_environment "")
+    set(in_list "")
     foreach(property IN LISTS properties)
-      if(property STREQUAL "LABELS")
-        set(in_labels TRUE)
-      elseif(in_labels AND NOT property MATCHES "^[A-Z][A-Z_0-9]*$")
+      if(property STREQUAL "LABELS" OR property STREQUAL "ENVIRONMENT")
+        set(in_list "${property}")
+      elseif(in_list STREQUAL "LABELS" AND NOT property MATCHES "^[A-Z][A-Z_0-9]*$")
         list(APPEND test_labels "${property}")
+      elseif(in_list STREQUAL "ENVIRONMENT" AND NOT property MATCHES "^[A-Z][A-Z_0-9]*$")
+        list(APPEND test_environment "${property}")
       else()
-        set(in_labels FALSE)
+        set(in_list "")
         list(APPEND test_properties "${property}")
       endif()
     endforeach()
+
     if(_PHASE_MAP)
       string(JSON test_file GET "${single_test}" "source-location" "filename")
       file(RELATIVE_PATH test_file "${_PHASE_ROOT}" "${test_file}")
@@ -422,6 +426,10 @@ function(catch_discover_tests_impl)
       LABELS "${test_labels}"
     )
     string(APPEND script "${_Command}")
+    if(test_environment)  # [engine patch] one quoted argument, so the variables stay one list
+      prepare_command(set_tests_properties "${prefix}${plain_name}${suffix}" PROPERTIES ENVIRONMENT "${test_environment}")
+      string(APPEND script "${_Command}")
+    endif()
 
     if(add_tags)
       string(JSON num_tags LENGTH "${test_tags}")

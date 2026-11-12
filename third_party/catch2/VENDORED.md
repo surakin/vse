@@ -28,7 +28,7 @@ source file under the kept paths was modified.
 
 `extras/Catch.cmake` and `extras/CatchAddTests.cmake` carry a small engine patch (marked `[engine patch]`; Phase 5
 Day 86): `catch_discover_tests` takes `PHASE_MAP`/`PHASE_ROOT`, labels each test `phaseN` from its source file via
-`cmake/EnginePhaseMap.cmake`, and `LABELS` accepts several labels (every element up to the next upper-case property
+`cmake/EnginePhaseMap.cmake`, and `LABELS` and `ENVIRONMENT` (Phase 26 Day 316) accept several values (every element up to the next upper-case property
 name). Re-apply it when updating the pin.
 
 To update the pin: repeat this pruning against a newer release tarball

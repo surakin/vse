@@ -1294,6 +1294,25 @@ Code review: 10 findings, all fixed. The worst were a new test that read DXIL as
 Linux and Windows on the next new shader. A formatter call fed every changed file rewrote the day's text files as C++; they were restored and the
 edits replayed. Waiting: the PC's DXIL re-mint, and the Linux and Windows checks (`KNOWN-ISSUES.md`). Next: Day 316 (the Metal device).
 
+Phase 26 (side) **Day 316 (2026-11-12, the Mac): the Metal device. Tests deferred to Day 325.** `rhi_metal` (`engine/rhi/metal/`, Objective-C++
+with ARC) is built and registered on macOS. It has:
+- **Adapters:** every `MTLDevice`, with the registry ID as the id.
+- **The device:** one queue, and an `MTLSharedEvent` timeline as the fence.
+- **Waits** in 100 ms slices that end on a lost device.
+- **Frames in flight,** as on D3D12.
+- **The capabilities and formats** of the device's family.
+- **Command-buffer errors and loss,** reported as on the other backends.
+
+**Plan change:** Metal is registered at auto rank 0, as D3D12 was before it passed the suites, so it is used only when asked for by name
+(`--rhi metal`). The Day 314 fallback ("auto is null on macOS") stays until Day 325, when Metal can draw. Validation is advisory on Metal
+(an environment setting read at process start). The macOS RHI ctests now run with Metal's API and shader validation, and the macOS `[gpu]` tests
+run under TSan too. The planted program `metal_validation_planted` shows that a validation error stops a run.
+
+Code review: 10 findings, all fixed. The worst were the Catch2 discovery patch flattening a second environment variable, which had stripped every
+macOS RHI test of its phase label, and a use after free in the completion handlers (they now hold shared state, not the device). Built in both
+unity modes; runs deferred to Day 325. Waiting: the Linux and Windows runs of the Catch2 discovery patch (`KNOWN-ISSUES.md`). Next: Day 317
+(Metal buffers and textures).
+
 Phase 20 **Day 278 (2026-11-12, Windows PC): the Windows socket backend.** Winsock 2 in `engine/net/windows/` (`winsock.h` the one include of the Winsock headers; the error tables; sockets not inherited and non-blocking from creation, dual stack and exclusive ports as the interface's defaults, `SIO_UDP_CONNRESET` off; `GetAddrInfoW` in UTF-16). The poller is `select`, not the planned `WSAPoll`: measured, `WSAPoll` reports a half-closed socket whatever was asked for, which would make the reactor spin; the spec and `BACKEND.md` say so. A refused loopback connect is immediate (SYN retransmission off for loopback; Windows otherwise retries for two seconds). The whole of `tests/net` runs on Windows: four trees clean, `net_tests` and `net_tests_sockets` pass in all of them, plain and asan; the five-thousand-connection listener test hung under load (ephemeral ports exhausted, the accept loop waiting for ever) and now times out and closes server-first. Run: `ran 4806 of 5083 tests (phases: all; flavors: all (plain and asan, no tsan on Windows); display: included; crash tests: excluded) in 376 s`; docs 7 of 7. Review: 4 findings, 2 fixed (a socket closed while the reactor waited broke the reactor for good: `WSAENOTSOCK` from `select`, regression test `poller_test.cpp`; stale comments), 2 declined with measurements (full-backlog refusals, the result mapping cost: `KNOWN-ISSUES.md`). The shared changes wait for the Linux machine (`KNOWN-ISSUES.md`).
 Phase 20 **Day 279 (2026-11-12, Linux machine): security basics.** `net::RateLimiter` (per-address and global token buckets, strikes and bans in a table that never grows), handshake limits on UDP (no bans: a source is not proven), accept limits and per-address caps on TCP, global receive and send budgets, `TcpStream` buffers allocated lazily (the Day 271 memory entry is closed), allocation audit checklist, fuzz tests (a million cases for the parsers, live servers fed mutated bytes) and nine attack tests; guide section "What the network layer does not protect against". Runs: plain `ran 2830 of 7520 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`, asan `ran 2251 of 7520`, tsan `ran 1927 of 7520` (only the known scene test failed); GCC, Clang non-unity, optimized pass; docs 7 of 7. Review: 4 findings, 1 fixed, 3 declined. Open: the Windows PC. **Next: Day 281 (Day 280, QUIC/TLS/encryption, is deferred by the user, 2026-11-12).**
 

@@ -30,7 +30,7 @@ function(renderer_demo_expect name code out skip_re)
 endfunction()
 set(RENDERER_NO_GPU "cannot open loader library|no physical devices|no suitable GPU")
 if(APPLE)
-  # macOS until Metal (Phase 26 Day 316): a backend asked for by name is not built (no GPU), and auto runs the null
+  # macOS until Metal draws (Phase 26 Day 325): a backend asked for by name is not built (no GPU), and auto runs the null
   # backend, which has no device memory for an allocation fault to hit.
   string(APPEND RENDERER_NO_GPU "|backend is not built for macOS")
   set(RENDERER_NEEDS_DEVICE_MEMORY "${RENDERER_NO_GPU}|using the null backend")
@@ -92,7 +92,7 @@ if(WIN32)
   set(_crash_backend win32)
   set(_abort_code 3) # abort() ends a Windows process with exit code 3; the report in the output tells it from exit(3)
 elseif(APPLE)
-  renderer_demo_scripted(renderer_demo_script_cocoa cocoa null)  # Phase 26 Day 314: on null until Metal (Day 316)
+  renderer_demo_scripted(renderer_demo_script_cocoa cocoa null)  # Phase 26 Day 314: on null until Metal draws (Day 325)
   set(_crash_backend cocoa)
   # The crash handler's Breakpad ends a macOS process with _exit(exception type) once the dump is written
   # (third_party/sentry_native/external/breakpad/src/client/mac/handler/exception_handler.cc): an abort is EXC_SOFTWARE, 5.
@@ -108,7 +108,7 @@ endif()
 function(renderer_demo_overlay_scripted name backend)
   set(rhi vulkan)
   if(APPLE)
-    set(rhi null)  # Phase 26 Day 314: until Metal (Day 316)
+    set(rhi null)  # Phase 26 Day 314: until Metal draws (Day 325)
   endif()
   add_test(NAME ${name}
     COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:renderer_demo>;--backend;${backend};--rhi;${rhi};--validation;--frames;60;--script;frame:5 overlay frame:15 overlay frame:20 reset frame:30 quit"

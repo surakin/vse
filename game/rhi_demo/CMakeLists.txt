@@ -20,7 +20,7 @@ function(rhi_demo_expect name code out skip_re)
 endfunction()
 set(RHI_NO_GPU "cannot open loader library|no physical devices|no suitable GPU")
 if(APPLE)
-  # macOS until Metal (Phase 26 Day 316): a backend asked for by name is not built (no GPU), and auto runs the null
+  # macOS until Metal draws (Phase 26 Day 325): a backend asked for by name is not built (no GPU), and auto runs the null
   # backend, which has no device memory for an allocation fault to hit.
   string(APPEND RHI_NO_GPU "|backend is not built for macOS")
   set(RHI_NEEDS_DEVICE_MEMORY "${RHI_NO_GPU}|using the null backend")

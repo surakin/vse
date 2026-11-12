@@ -7,6 +7,9 @@
 #if ENGINE_RHI_HAVE_DX12
 #include "rhi/dx12/dx12_backend.h"
 #endif
+#if ENGINE_RHI_HAVE_METAL
+#include "rhi/metal/metal_backend.h"
+#endif
 
 namespace engine_placeholder::rhi
 {
@@ -20,6 +23,9 @@ bool RegisterCompiledBackends()
 #endif
 #if ENGINE_RHI_HAVE_DX12  // the build defines it where the rhi_dx12 library exists (Windows)
     ok = RegisterDx12Backend() && ok;
+#endif
+#if ENGINE_RHI_HAVE_METAL  // the build defines it where the rhi_metal library exists (macOS, Phase 26 Day 316)
+    ok = RegisterMetalBackend() && ok;
 #endif
     return ok;
 }

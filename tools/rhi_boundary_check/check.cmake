@@ -74,6 +74,12 @@ set(inc_back_re "^[ \t]*#[ \t]*(include|import)[ \t]*[<\"][^>\"]*(wayland|[Xx]11
 # backend using the other API is a violation too.
 set(dx_ident_re "(^|[^A-Za-z0-9_])(ID3D12[A-Za-z0-9_]*|IDXGI[A-Za-z0-9_]*|D3D12[A-Z][A-Za-z0-9_]*|D3D12_[A-Z0-9_]+|DXGI_[A-Z0-9_]+|D3D_FEATURE_LEVEL_[A-Z0-9_]+|PFN_D3D12[A-Za-z0-9_]*)")
 set(inc_dx_re "^[ \t]*#[ \t]*(include|import)[ \t]*[<\"][^>\"]*(d3d12|dxgi|d3dcommon|dxcapi)[^>\"]*[>\"]")
+# Metal (Phase 26 Day 316): the framework's headers (Metal, MetalKit, MetalPerformanceShaders, MetalFX; `#include`, `#import` or `@import`) and
+# its API names (MTLDevice, MTLGPUFamilyMac2, MTLCreateSystemDefaultDevice: MTL, a capital and at least one more name character, which the
+# library file tag "MTLB" does not have) only in engine/rhi/metal/ and the minting tool tools/metal_mint/. The window's CAMetalLayer comes
+# from QuartzCore, not Metal, and is the platform layer's.
+set(mtl_ident_re "(^|[^A-Za-z0-9_])MTL[A-Z][A-Za-z0-9_]+")
+set(inc_mtl_re "^[ \t]*(#[ \t]*(include|import)[ \t]*[<\"]Metal(Kit|PerformanceShaders|PerformanceShadersGraph|FX)?/[^>\"]*[>\"]|@import[ \t]+Metal(Kit|PerformanceShaders|PerformanceShadersGraph|FX)?[ \t]*[;.])")
 
 set(files "")
 foreach(dir engine game tools tests/renderer)
@@ -99,6 +105,10 @@ foreach(f IN LISTS files)
   endif()
   if(f MATCHES "^engine/rhi/dx12/")
     set(dx_ok TRUE)
+  endif()
+  set(mtl_ok FALSE)
+  if(f MATCHES "^engine/rhi/metal/" OR f MATCHES "^tools/metal_mint/")
+    set(mtl_ok TRUE)
   endif()
   read_lines("${ROOT}/${f}" lines)
   set(hits "")
@@ -144,6 +154,8 @@ foreach(f IN LISTS files)
       list(APPEND hits "${f}:${n}: ${raw}")
     elseif(NOT dx_ok AND (code MATCHES "${inc_dx_re}" OR code MATCHES "${dx_ident_re}"))
       list(APPEND hits "${f}:${n}: ${raw}")
+    elseif(NOT mtl_ok AND (code MATCHES "${inc_mtl_re}" OR code MATCHES "${mtl_ident_re}"))
+      list(APPEND hits "${f}:${n}: ${raw}")
     endif()
   endforeach()
   # Reverse rule: agnostic RHI headers.
@@ -174,7 +186,7 @@ endforeach()
 foreach(a IN LISTS allowed)
   list(FIND used_allow "${a}" idx)
   if(idx EQUAL -1)
-    gate_problem("stale allow-list entry (no Vulkan or D3D12 use left): ${a}")
+    gate_problem("stale allow-list entry (no Vulkan, D3D12 or Metal use left): ${a}")
   endif()
 endforeach()
 

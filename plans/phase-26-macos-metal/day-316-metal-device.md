@@ -8,31 +8,83 @@ and the device capabilities. Modelled on DX12 Day 164.
 
 ## Tasks
 
-- [ ] **Library and boundary:** `engine/rhi/metal/` (`.mm` files, ARC), library `rhi_metal` linking `-framework Metal -framework QuartzCore`, registered
+- [x] **Library and boundary:** `engine/rhi/metal/` (`.mm` files, ARC), library `rhi_metal` linking `-framework Metal -framework QuartzCore`, registered
       by `rhi_backends` on macOS; `rhi_boundary_check` allows Metal headers only there (planted fixture); `module_deps_check` row for `rhi/metal`
       (`ARCHITECTURE.md` updated in the same commit: `rhi/metal -> rhi, jobs, platform, foundation`).
-- [ ] **Adapters** (`metal_adapters.mm`): `MTLCopyAllDevices()`; `AdapterInfo` per the phase file's input list (id `registryID` as lowercase hex, name,
+- [x] **Adapters** (`metal_adapters.mm`): `MTLCopyAllDevices()`; `AdapterInfo` per the phase file's input list (id `registryID` as lowercase hex, name,
       kind, `dedicated_memory_bytes`, driver as the OS version, `can_present`, `suitable` on `MTLGPUFamilyMac2` plus Metal 3); enumeration creates no
       queue; `MatchAdapter` by id and name; `tests/rhi/adapter_test.cpp` runs with a Metal factory; record what this Iris Plus 645 reports
       (`hasUnifiedMemory`, `isLowPower`, `isRemovable`, `recommendedMaxWorkingSetSize`, argument-buffer tier, `readWriteTextureSupport`).
-- [ ] **Device** (`metal_device.mm/.h`): `CreateDevice` for the chosen adapter, one `MTLCommandQueue`, the device serial and generation seed
+- [x] **Device** (`metal_device.mm/.h`): `CreateDevice` for the chosen adapter, one `MTLCommandQueue`, the device serial and generation seed
       (`AllocateDeviceSerial`/`GenerationSeed`), handle pools as the other backends; `Adapter()`, `Epoch()`, `Resources()` counts.
-- [ ] **Events:** `MTLSharedEvent` as the device timeline (frames in flight, `WaitIdle` with a bounded wait through `waitUntilSignaledValue:timeoutMS:`
+- [x] **Events:** `MTLSharedEvent` as the device timeline (frames in flight, `WaitIdle` with a bounded wait through `waitUntilSignaledValue:timeoutMS:`
       or a notification listener), command-buffer completion handlers counting finished work; never block forever after a failure.
-- [ ] **Validation:** the `validation` setting is advisory on Metal (API validation is an environment setting read when the process starts the Metal
+- [x] **Validation:** the `validation` setting is advisory on Metal (API validation is an environment setting read when the process starts the Metal
       framework); the GPU test ctests set `MTL_DEBUG_LAYER=1`, `MTL_DEBUG_LAYER_ERROR_MODE=assert`, `MTL_SHADER_VALIDATION=1`; a planted invalid call in a
       test proves a validation error fails the test (and is removed from the passing set: run as an expected-failure check).
-- [ ] **Capabilities:** `DeviceCaps` filled from the device (limits, `max_color_attachments` 8, copy alignments, `object_index_stream` true, formats asked
+- [x] **Capabilities:** `DeviceCaps` filled from the device (limits, `max_color_attachments` 8, copy alignments, `object_index_stream` true, formats asked
       with the family tables); `CheckGBufferFormats` passes.
-- [ ] **Errors:** command-buffer errors (`MTLCommandBufferStatusError`, `error.code`) logged through `rhi_log.h` with the buffer's label; a helper maps
+- [x] **Errors:** command-buffer errors (`MTLCommandBufferStatusError`, `error.code`) logged through `rhi_log.h` with the buffer's label; a helper maps
       `NSError` to the RHI's error text without leaking Objective-C into neutral code.
-- [ ] **Tests:** `smoke_test`, `backend_registry_test`, `adapter_test`, a new `tests/rhi/metal_device_test.mm` (phase 26: creation, queue, events, caps,
+- [x] **Tests:** `smoke_test`, `backend_registry_test`, `adapter_test`, a new `tests/rhi/metal_device_test.mm` (phase 26: creation, queue, events, caps,
       destruction order leaving nothing alive: ARC plus the `Resources()` counts).
-- [ ] **Documentation:** `docs/guide/rhi.md` "Metal" section (adapters, validation environment, what is advisory); `docgen lint` zero.
-- [ ] **Runs:** `scripts/test-phase.sh --affected --flavor all` (quote; GPU tests under ASan and TSan too, as on Linux).
-- [ ] **End-of-day review:** `/code-review high`. Extra scrutiny: ARC ownership of the device and queue against the C++ handle pools, completion
+- [x] **Documentation:** `docs/guide/rhi.md` "Metal" section (adapters, validation environment, what is advisory); `docgen lint` zero.
+- [ ] **Runs:** `scripts/test-phase.sh --affected --flavor all` (quote; GPU tests under ASan and TSan too, as on Linux). **Deferred to Day 325 (the user's choice)**, with the record of the adapter's properties (the device test prints them).
+- [x] **End-of-day review:** `/code-review high`. Extra scrutiny: ARC ownership of the device and queue against the C++ handle pools, completion
       handlers running on Metal's threads (TSan), bounded waits.
-- [ ] Update `STATUS.md`, `KNOWN-ISSUES.md`; commit and push.
+- [x] Update `STATUS.md`, `KNOWN-ISSUES.md`; commit and push.
 
 **Done:** `--rhi=metal` creates a device on the Iris Plus 645 with validation on and silent, the adapter, smoke and Metal device tests pass in three
 flavors, the adapter's reported properties are recorded, and `ARCHITECTURE.md` has the `rhi/metal` row.
+
+## Implementation notes
+
+- **`rhi_metal`** (`engine/rhi/metal/`, Objective-C++ with ARC; `-framework Metal -framework QuartzCore -framework Foundation`), linked and
+  registered by `rhi_backends` on macOS (`ENGINE_RHI_HAVE_METAL`). `metal_adapters.mm` (`MTLCopyAllDevices`, id = registry ID in 16 hex digits,
+  driver = the macOS version, integrated when unified or low power, suitable with Mac2 and Metal 3; `PickMetalAdapter` through `MatchAdapter`,
+  else a discrete GPU first), `metal_format.mm` (pixel formats and usages by the device's family; D24S8 and BC asked of the device; a nil device
+  aborts), `metal_device.mm` (one queue, the `MTLSharedEvent` timeline, a shared-event listener for waits in 100 ms slices with a lost check,
+  frames in flight as D3D12, fault injection, the completion handler on every command buffer), `metal_backend.mm`.
+- **Plan change: Auto does not pick Metal yet.** It is registered at rank 0, as D3D12 was until Phase 13 Day 172, so `--rhi metal` asks for it and
+  the setting's `auto` stays the null backend on macOS (`renderer::BackendForSetting`) until the backend can draw: the fallback is removed on Day
+  325, not today (the operations of Days 317-321 fail with a log line once per day until then). `BuiltForThisPlatform(Metal)` is true on macOS;
+  a Metal request in a program that did not register it says "not registered", not "not built yet".
+- **Validation:** advisory. `MTL_DEBUG_LAYER` is reported, and `renderer.validation` `on` without it warns. The macOS RHI ctests set
+  `MTL_DEBUG_LAYER=1`, `MTL_DEBUG_LAYER_ERROR_MODE=assert`, `MTL_SHADER_VALIDATION=1` and `ENGINE_RHI_EXPECT_METAL_VALIDATION=1` (the device test
+  then requires the layer). The planted check is the program `metal_validation_planted` (an encoder left open at commit; ctest
+  `metal_validation_planted` passes only on "failed assertion"). The macOS `[gpu]` tests also run under TSan (Linux leaves them out for the NVIDIA
+  driver).
+- **Catch2 discovery patch:** `ENVIRONMENT` now takes several variables, as `LABELS` does (`third_party/catch2/extras/CatchAddTests.cmake`,
+  `VENDORED.md`). Found by the review: a second variable had broken every macOS RHI test's properties.
+- **Gates and maps:** `rhi_boundary_check` keeps Metal headers (Metal, MetalKit, MetalPerformanceShaders, MetalFX; `#include`, `#import`,
+  `@import`) and `MTL` names in `engine/rhi/metal/` and `tools/metal_mint/` (planted fixture, 17 problems); `module_deps_check` target and
+  platform-dir rows; `ARCHITECTURE.md` (`rhi/metal -> rhi, jobs, platform, foundation`); `config_access_check` allow entry for
+  `metal_device.mm`; `tests/phases.txt` (`tests/rhi/macos/metal_device_test.mm`, `test:metal_validation_planted`, phase 26).
+- **Tests added** (run on Day 325): `tests/rhi/macos/metal_device_test.mm` (registration, adapters, a device on every suitable adapter with caps
+  and formats, `CheckGBufferFormats`, the timeline and frames, bounded waits, loss and strikes, a lost frame, a missing adapter, the mip rule,
+  destruction right after signals), `metal_validation_planted`, and the macOS cases of `backend_registry_test.cpp`.
+- **Docs:** `docs/guide/rhi.md` "The Metal backend" and the platform notes; `docs/guide/renderer.md`; the reference module `rhi-metal`
+  (`metal_backend.h`), regenerated, `docgen lint` at zero (baseline row added).
+- **Built:** both unity modes on macOS, every flavor, no warning. **Runs: deferred to Day 325.** A stray `build/` tree configured by mistake
+  was deleted.
+
+## Post-implementation code review
+
+`/code-review high` on the day's diff: 10 findings, all fixed.
+
+1. **A second environment variable broke every macOS RHI test's properties** (the Catch2 discovery flattened the list: the tests lost their
+   phase labels, `SKIP_RETURN_CODE` and the validation variables). Fixed in the discovery patch; checked with `ctest --show-only=json-v1` in the
+   three flavors (37 phase-26 Metal tests listed).
+2. **The device test's validation check passed with the variable missing.** Fixed: `ENGINE_RHI_EXPECT_METAL_VALIDATION=1` under ctest makes it
+   required.
+3. **Use after free: a completion handler captured the raw device**, and can run after the device is destroyed (Metal signals the timeline
+   value before it calls the handlers). Fixed: the loss flag lives in a `MetalDeviceShared` each handler holds a reference to; test: twenty
+   devices destroyed right after sixteen signals (ASan, Day 325).
+4. **`CanGenerateMips` accepted integer formats.** Fixed: `MtlFormatCanGenerateMips` (filterable color formats; 32-bit floats only with
+   `supports32BitFloatFiltering`); tested.
+5. **`finished_buffers_` was written and never read.** Removed (the shared state replaced it).
+6. **The gate missed `MTLGPUFamilyMac2`-style names, MetalKit and `@import Metal`.** Fixed; three planted lines.
+7. **`NotYet` said "once" but logged every call.** Fixed: once per day's operations in a program.
+8. **The renderer's note still said no GPU backend is built for macOS.** Fixed (note, test, comments).
+9. **A nil device gave optimistic BC and pessimistic D24S8 answers.** Fixed: the format queries abort on nil.
+10. **`STATUS.md` and the day file were not updated.** Done in this commit.

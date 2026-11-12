@@ -17,7 +17,7 @@ rhi_boundary_test(rhi_boundary_check_planted ${RHI_BOUNDARY_FIXTURES}/bad ${RHI_
 set_tests_properties(rhi_boundary_check_planted PROPERTIES WILL_FAIL TRUE)
 rhi_boundary_test(rhi_boundary_check_planted_count ${RHI_BOUNDARY_FIXTURES}/bad ${RHI_BOUNDARY_FIXTURES}/bad/allow.txt)
 set_tests_properties(rhi_boundary_check_planted_count PROPERTIES
-  PASS_REGULAR_EXPRESSION "engine/foundation/x.cpp:1.*engine/platform/windows/vulkan_in_win32.cpp:3.*engine/renderer/leak.cpp:1.*engine/rhi/device.h:2.*engine/rhi/vulkan/dx_in_vulkan.cpp:1.*game/after_comment.cpp:1.*game/dx_leak.cpp:1.*game/dx_leak.cpp:2.*game/import_leak.mm:1.*game/leak.cpp:1.*game/leak.cpp:2.*tests/renderer/t.cpp:1.*12 problem"
+  PASS_REGULAR_EXPRESSION "engine/foundation/x.cpp:1.*engine/platform/windows/vulkan_in_win32.cpp:3.*engine/renderer/leak.cpp:1.*engine/rhi/device.h:2.*engine/rhi/vulkan/dx_in_vulkan.cpp:1.*game/after_comment.cpp:1.*game/dx_leak.cpp:1.*game/dx_leak.cpp:2.*game/import_leak.mm:1.*game/leak.cpp:1.*game/leak.cpp:2.*game/metal_leak.mm:1.*game/metal_leak.mm:3.*game/metal_leak.mm:5.*game/metal_leak.mm:6.*game/metal_leak.mm:7.*tests/renderer/t.cpp:1.*17 problem"
   WILL_FAIL FALSE)
 
 # A clean tree (comments and PerspectiveVulkan-style names, Vulkan inside engine/rhi/vulkan, Win32 virtual keys in engine/platform/windows) passes.

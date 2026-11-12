@@ -7046,7 +7046,7 @@ A backend exists in a program only once its library registered it ([`rhi::Regist
 | <a id="rhi-backend-null"></a>`Null` | `0` | The validating no-GPU device ([`rhi::NullDevice`](#rhi-nulldevice)). |
 | <a id="rhi-backend-vulkan"></a>`Vulkan` |  | The Vulkan 1.3 backend, loaded at run time from the system's Vulkan loader. |
 | <a id="rhi-backend-dx12"></a>`Dx12` |  | The Direct3D 12 backend (Windows). |
-| <a id="rhi-backend-metal"></a>`Metal` |  | The Metal backend (macOS, Phase 26: built from Day 316; until then refused as not built). |
+| <a id="rhi-backend-metal"></a>`Metal` |  | The Metal backend (macOS, Phase 26 from Day 316; by name only until Day 325). |
 | <a id="rhi-backend-auto"></a>`Auto` |  | The platform's preferred backend among those registered and available ([`rhi::PickAutoBackend`](#rhi-pickautobackend-char-star-usize)). |
 
 ## `ValidationSetting` {#rhi-validationsetting}

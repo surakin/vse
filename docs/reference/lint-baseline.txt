@@ -30,3 +30,4 @@ module	rhi	780	780
 module	renderer	1049	1049
 module	rhi-vulkan	432	432
 module	rhi-dx12	310	310
+module	rhi-metal	1	1

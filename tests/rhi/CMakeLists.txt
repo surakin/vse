@@ -58,6 +58,8 @@ set(RHI_TEST_SOURCES
 # neutral and null-device suites, and the GPU-tagged tests (which skip without a GPU backend until Metal), run there.
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   list(FILTER RHI_TEST_SOURCES EXCLUDE REGEX "/?vulkan_[a-z_]+_test\\.cpp$")
+  # The Metal backend's own tests (Phase 26, Days 316-325), Objective-C++ under macos/, linked through rhi_backends (which links rhi_metal).
+  list(APPEND RHI_TEST_SOURCES macos/metal_device_test.mm)
 endif()
 
 # LeakSanitizer's suppressions and its driver-unloading workaround: Linux only (MSVC's AddressSanitizer has no leak checker).
@@ -115,14 +117,19 @@ function(engine_add_rhi_tests target rhi_lib rhi_vulkan_lib rhi_backends_lib suf
     ENGINE_RENDERER_DEMO_ASSET_DIR="${CMAKE_SOURCE_DIR}/game/renderer_demo/assets"
     ENGINE_TEXT_FONT_FILE="${CMAKE_SOURCE_DIR}/assets/fonts/LiberationSans-Regular.ttf"
     ENGINE_RHI_LSAN_SUPP="${CMAKE_CURRENT_SOURCE_DIR}/lsan.supp")
-  # Tests that do not pass a cache directory must not write to the user's ~/.cache.
+  # Tests that do not pass a cache directory must not write to the user's ~/.cache. On macOS every test runs with Metal's API and
+  # shader validation on, a validation error stopping the test (Phase 26 Day 316): Metal reads these when the process starts it.
+  set(env "ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/rhi_tests-${label}")
+  if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    # ENGINE_RHI_EXPECT_METAL_VALIDATION makes the Metal device test require the others, so losing them fails it.
+    list(APPEND env MTL_DEBUG_LAYER=1 MTL_DEBUG_LAYER_ERROR_MODE=assert MTL_SHADER_VALIDATION=1 ENGINE_RHI_EXPECT_METAL_VALIDATION=1)
+  endif()
   # Tests that open a window share the desktop's input focus, so they hold the `display` resource and run one at a time
   # (see tests/foundation/CMakeLists.txt); the rest run in parallel. `spec` is ANDed onto each half.
   engine_discover_tests(${target} TEST_SUFFIX "${suffix}" TEST_SPEC "~[window]~[x11]~[wayland]${spec}"
-    PROPERTIES LABELS "${label}" ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/rhi_tests-${label}")
+    PROPERTIES LABELS "${label}" ENVIRONMENT "${env}")
   engine_discover_tests(${target} TEST_SUFFIX "${suffix}" TEST_SPEC "[window]${spec},[x11]${spec},[wayland]${spec}"
-    PROPERTIES LABELS "${label};display" RESOURCE_LOCK display
-    ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/rhi_tests-${label}")
+    PROPERTIES LABELS "${label};display" RESOURCE_LOCK display ENVIRONMENT "${env}")
 endfunction()
 
 engine_add_rhi_tests(rhi_tests rhi rhi_vulkan rhi_backends "" "rhi" "")
@@ -133,7 +140,24 @@ if(ENGINE_HAVE_ASAN)
   engine_add_rhi_tests(rhi_tests_asan rhi_asan rhi_vulkan_asan rhi_backends_asan " [asan]" "asan" "~[x11]")
 endif()
 if(ENGINE_HAVE_TSAN)
-  engine_add_rhi_tests(rhi_tests_tsan rhi_tsan rhi_vulkan_tsan rhi_backends_tsan " [tsan]" "tsan" "~[gpu]")
+  if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    # The [gpu] tests leave TSan out on Linux for the NVIDIA driver's threads; Metal's run under it (Phase 26 Day 316).
+    engine_add_rhi_tests(rhi_tests_tsan rhi_tsan rhi_vulkan_tsan rhi_backends_tsan " [tsan]" "tsan" "")
+  else()
+    engine_add_rhi_tests(rhi_tests_tsan rhi_tsan rhi_vulkan_tsan rhi_backends_tsan " [tsan]" "tsan" "~[gpu]")
+  endif()
+endif()
+
+# A planted Metal validation error (Phase 26 Day 316): a validation error must stop a program run with the GPU tests' environment.
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  add_executable(metal_validation_planted macos/metal_validation_planted.mm)
+  target_link_libraries(metal_validation_planted PRIVATE rhi_backends)
+  add_test(NAME metal_validation_planted COMMAND metal_validation_planted)
+  set_tests_properties(metal_validation_planted PROPERTIES
+    ENVIRONMENT "MTL_DEBUG_LAYER=1;MTL_DEBUG_LAYER_ERROR_MODE=assert"
+    PASS_REGULAR_EXPRESSION "failed assertion"
+    FAIL_REGULAR_EXPRESSION "the planted call was not caught|validation is off")
+  engine_label_tests(metal_validation_planted)
 endif()
 
 # Phase 8 Day 114: the lifecycle checklist for the DX12 and Metal backends stays in step with the interfaces, and the neutral RHI

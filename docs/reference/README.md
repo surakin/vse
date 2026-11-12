@@ -35,3 +35,4 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [The renderer](renderer.md) | 25 | 1110 |
 | [The Vulkan backend (loader, function tables, result helpers)](rhi-vulkan.md) | 17 | 440 |
 | [The Direct3D 12 backend (Windows)](rhi-dx12.md) | 12 | 319 |
+| [The Metal backend (macOS)](rhi-metal.md) | 1 | 1 |

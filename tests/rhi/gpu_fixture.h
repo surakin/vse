@@ -121,8 +121,8 @@ private:
     unsigned long long expected_errors_ = 0;
 };
 #else
-// A build without Vulkan (macOS: Phase 26 decision 8) has no GPU backend until Metal (Phase 26 Day 316; its GPU tests
-// on Day 322): every [gpu] test skips, and fails under ENGINE_RHI_REQUIRE_GPU=1.
+// A build without Vulkan (macOS: Phase 26 decision 8) has no GPU backend the shared fixture uses until Metal draws
+// (Phase 26 Day 325; its GPU tests on Day 322): every [gpu] test skips, and fails under ENGINE_RHI_REQUIRE_GPU=1.
 class GpuFixture
 {
 public:
@@ -136,7 +136,7 @@ public:
         {
             FAIL("ENGINE_RHI_REQUIRE_GPU=1 but this build has no GPU backend");
         }
-        SKIP("no GPU backend in this build (macOS: Metal from Phase 26 Day 316)");
+        SKIP("no GPU backend in this build (macOS: Metal joins the shared GPU tests on Phase 26 Day 322)");
     }
     void RequireValidation() const { Require(); }
     void ExpectErrors([[maybe_unused]] unsigned long long n) {}

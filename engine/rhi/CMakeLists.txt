@@ -72,6 +72,15 @@ set(RHI_DX12_SOURCES
   dx12/dx12_backend.cpp
 )
 
+# The Metal backend (Phase 26, Days 316-325), macOS only: Objective-C++ with ARC, the one place Metal is named (rhi_boundary_check). It links the
+# system's Metal and QuartzCore frameworks (the CAMetalLayer of the swapchain, Day 321).
+set(RHI_METAL_SOURCES
+  metal/metal_adapters.mm
+  metal/metal_format.mm
+  metal/metal_device.mm
+  metal/metal_backend.mm
+)
+
 # Headers are included as "rhi/<name>.h", rooted at engine/.
 set(RHI_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
@@ -100,6 +109,14 @@ function(engine_add_rhi_libs suffix foundation_lib jobs_lib platform_lib)
     target_link_libraries(rhi_dx12${suffix} PUBLIC rhi${suffix} d3d12 dxgi dxguid)
   endif()
 
+  if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    add_library(rhi_metal${suffix} STATIC ${RHI_METAL_SOURCES})
+    target_include_directories(rhi_metal${suffix} PUBLIC ${RHI_INCLUDE_ROOT})
+    target_include_directories(rhi_metal${suffix} PRIVATE ${CMAKE_SOURCE_DIR}/shaders) # the minted .metallib.inc files (mips, Day 320)
+    target_compile_options(rhi_metal${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
+    target_link_libraries(rhi_metal${suffix} PUBLIC rhi${suffix} "-framework Metal" "-framework QuartzCore" "-framework Foundation")
+  endif()
+
   add_library(rhi_backends${suffix} STATIC backends/backends.cpp)
   target_include_directories(rhi_backends${suffix} PUBLIC ${RHI_INCLUDE_ROOT})
   target_compile_options(rhi_backends${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
@@ -110,6 +127,10 @@ function(engine_add_rhi_libs suffix foundation_lib jobs_lib platform_lib)
   if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_link_libraries(rhi_backends${suffix} PUBLIC rhi_dx12${suffix})
     target_compile_definitions(rhi_backends${suffix} PRIVATE ENGINE_RHI_HAVE_DX12=1) # the table in backends.cpp lists it
+  endif()
+  if(TARGET rhi_metal${suffix})
+    target_link_libraries(rhi_backends${suffix} PUBLIC rhi_metal${suffix})
+    target_compile_definitions(rhi_backends${suffix} PRIVATE ENGINE_RHI_HAVE_METAL=1) # the table in backends.cpp lists it
   endif()
 endfunction()
 

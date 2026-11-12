@@ -164,3 +164,6 @@ module rhi-vulkan "The Vulkan backend (loader, function tables, result helpers)"
 
 module rhi-dx12 "The Direct3D 12 backend (Windows)"
   header engine/rhi/dx12/*.h
+
+module rhi-metal "The Metal backend (macOS)"
+  header engine/rhi/metal/metal_backend.h

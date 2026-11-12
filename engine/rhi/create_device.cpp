@@ -57,7 +57,7 @@ bool BuiltForThisPlatform(Backend backend)
     case Backend::Null: return true;
     case Backend::Vulkan: return ENGINE_PLATFORM_LINUX || ENGINE_PLATFORM_WINDOWS;  // not macOS: Phase 26 decision 8
     case Backend::Dx12: return ENGINE_PLATFORM_WINDOWS;
-    case Backend::Metal: return false;  // macOS, from Phase 26 Day 316
+    case Backend::Metal: return ENGINE_PLATFORM_MACOS;  // Phase 26 Day 316
     case Backend::Auto: return true;
     }
     return false;
@@ -227,15 +227,7 @@ const BackendDescriptor* ResolveBackend(Backend backend, char* reason, usize rea
     const BackendDescriptor* d = FindBackend(backend);
     if (d == nullptr && !BuiltForThisPlatform(backend))
     {
-        if (backend == Backend::Metal && ENGINE_PLATFORM_MACOS)
-        {
-            SetReason(reason, reason_size, "the %s backend is not built yet (Phase 26 Day 316)%s", "metal", "");
-        }
-        else
-        {
-            SetReason(reason, reason_size, "the %s backend is not built for %s", RequestedName(backend),
-                      PlatformName());
-        }
+        SetReason(reason, reason_size, "the %s backend is not built for %s", RequestedName(backend), PlatformName());
         return nullptr;
     }
     if (d == nullptr)

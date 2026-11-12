@@ -214,6 +214,8 @@ platform-dir engine/platform/macos/ engine/platform/
 platform-dir engine/rhi/vulkan/ engine/rhi/
 # The Direct3D 12 backend (Phase 13 Day 164): Windows only; uses os/windows/win32.h and utf16.h.
 platform-dir engine/rhi/dx12/ engine/rhi/
+# The Metal backend (Phase 26 Day 316): macOS only, Objective-C++.
+platform-dir engine/rhi/metal/ engine/rhi/
 # The crash_extract tool's DbgHelp resolver (Phase 13 Day 156): uses os/windows/win32.h and <dbghelp.h>.
 platform-dir tools/crash_extract/windows/ tools/crash_extract/
 # docgen's child processes on Windows (Phase 13 Day 161): a job object per child; uses os/windows/win32.h.
@@ -248,6 +250,7 @@ target ui_window ui_window
 target rhi rhi
 target rhi_vulkan rhi/vulkan
 target rhi_dx12 rhi/dx12
+target rhi_metal rhi/metal
 target rhi_backends rhi/backends
 target renderer renderer
 target renderer_passes renderer
