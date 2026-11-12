@@ -105,6 +105,7 @@ Accepted           [kind][u64 client_salt][u16 connection_id]
 Denied             [kind][u64 client_salt][u8 reason]
 Payload            [kind][u16 connection_id][u16 sequence][u16 ack][u32 ack_bits][frames...]
 Disconnect         [kind][u16 connection_id][u32 code]
+                   (a client that gives up during the handshake sends connection_id 0 and appends [u64 client_salt])
 Reset              [kind][u16 connection_id]
 ```
 
@@ -6152,6 +6153,46 @@ f64 rtt_seconds;
 
 Smoothed round-trip time; 0 until measured.
 
+### `jitter_seconds` {#net-connectionstats-jitter-seconds}
+
+`variable net::ConnectionStats::jitter_seconds` — defined in `engine/net/transport.h`
+
+```cpp
+f64 jitter_seconds;
+```
+
+Variation of the round-trip time (its mean deviation); 0 until measured.
+
+### `send_rate_bytes_per_second` {#net-connectionstats-send-rate-bytes-per-second}
+
+`variable net::ConnectionStats::send_rate_bytes_per_second` — defined in `engine/net/transport.h`
+
+```cpp
+f64 send_rate_bytes_per_second;
+```
+
+Bytes put on the wire per second over the last full second.
+
+### `window_bytes` {#net-connectionstats-window-bytes}
+
+`variable net::ConnectionStats::window_bytes` — defined in `engine/net/transport.h`
+
+```cpp
+f64 window_bytes;
+```
+
+Congestion window; 0 where the transport has none.
+
+### `bytes_in_flight` {#net-connectionstats-bytes-in-flight}
+
+`variable net::ConnectionStats::bytes_in_flight` — defined in `engine/net/transport.h`
+
+```cpp
+usize bytes_in_flight;
+```
+
+Bytes sent and not yet acknowledged or declared lost; 0 where not tracked.
+
 ### `loss` {#net-connectionstats-loss}
 
 `variable net::ConnectionStats::loss` — defined in `engine/net/transport.h`
@@ -7061,6 +7102,16 @@ u64 timeout_nanos;
 
 Silence after which a connection times out.
 
+### `max_bandwidth_bytes_per_second` {#net-udptransportconfig-max-bandwidth-bytes-per-second}
+
+`variable net::UdpTransportConfig::max_bandwidth_bytes_per_second` — defined in `engine/net/udp_transport.h`
+
+```cpp
+u64 max_bandwidth_bytes_per_second;
+```
+
+Cap on the send rate of one connection; 0 for none (the congestion window still applies).
+
 ### `keepalive_nanos` {#net-udptransportconfig-keepalive-nanos}
 
 `variable net::UdpTransportConfig::keepalive_nanos` — defined in `engine/net/udp_transport.h`
@@ -7368,6 +7419,36 @@ usize reassemblies;
 ```
 
 Messages being reassembled.
+
+### `window_cuts` {#net-udpconnectioninfo-window-cuts}
+
+`variable net::UdpConnectionInfo::window_cuts` — defined in `engine/net/udp_transport.h`
+
+```cpp
+u64 window_cuts;
+```
+
+Times the congestion window was halved after losses.
+
+### `timeouts_fired` {#net-udpconnectioninfo-timeouts-fired}
+
+`variable net::UdpConnectionInfo::timeouts_fired` — defined in `engine/net/udp_transport.h`
+
+```cpp
+u64 timeouts_fired;
+```
+
+Times a time-out reset the window to its smallest size.
+
+### `dropped_unreliable` {#net-udpconnectioninfo-dropped-unreliable}
+
+`variable net::UdpConnectionInfo::dropped_unreliable` — defined in `engine/net/udp_transport.h`
+
+```cpp
+u64 dropped_unreliable;
+```
+
+Queued unreliable frames discarded to make room (oldest first).
 
 ### `duplicates` {#net-udpconnectioninfo-duplicates}
 

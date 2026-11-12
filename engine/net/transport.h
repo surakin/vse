@@ -90,16 +90,20 @@ struct Event
 /// - Thread-safety: thread-compatible plain data.
 struct ConnectionStats
 {
-    f64 rtt_seconds = 0;            ///< Smoothed round-trip time; 0 until measured.
-    f64 loss = 0;                   ///< Estimated fraction of sent packets that needed to be sent again, 0 to 1.
-    u64 bytes_sent = 0;             ///< Payload bytes handed to the connection by Send.
-    u64 bytes_received = 0;         ///< Payload bytes delivered as messages.
-    u64 messages_sent = 0;          ///< Messages accepted by Send.
-    u64 messages_received = 0;      ///< Messages delivered.
-    u64 packets_sent = 0;           ///< Packets (or segments) put on the wire, retransmissions included.
-    u64 packets_received = 0;       ///< Packets that arrived and were valid.
-    usize send_queue_messages = 0;  ///< Reliable messages not yet acknowledged, or waiting to be sent.
-    usize send_queue_bytes = 0;     ///< Their payload bytes.
+    f64 rtt_seconds = 0;                 ///< Smoothed round-trip time; 0 until measured.
+    f64 jitter_seconds = 0;              ///< Variation of the round-trip time (its mean deviation); 0 until measured.
+    f64 send_rate_bytes_per_second = 0;  ///< Bytes put on the wire per second over the last full second.
+    f64 window_bytes = 0;                ///< Congestion window; 0 where the transport has none.
+    usize bytes_in_flight = 0;           ///< Bytes sent and not yet acknowledged or declared lost; 0 where not tracked.
+    f64 loss = 0;                        ///< Estimated fraction of sent packets that needed to be sent again, 0 to 1.
+    u64 bytes_sent = 0;                  ///< Payload bytes handed to the connection by Send.
+    u64 bytes_received = 0;              ///< Payload bytes delivered as messages.
+    u64 messages_sent = 0;               ///< Messages accepted by Send.
+    u64 messages_received = 0;           ///< Messages delivered.
+    u64 packets_sent = 0;                ///< Packets (or segments) put on the wire, retransmissions included.
+    u64 packets_received = 0;            ///< Packets that arrived and were valid.
+    usize send_queue_messages = 0;       ///< Reliable messages not yet acknowledged, or waiting to be sent.
+    usize send_queue_bytes = 0;          ///< Their payload bytes.
 };
 
 /// A source and sink of messages between this process and its peers.

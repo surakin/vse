@@ -291,7 +291,7 @@ template <class F> void ReliableOrderedArrivesOnceInOrder(F& f)
     SendStream(f, client, cc, 0, Reliability::ReliableOrdered, 0, kCount, max);
     SendStream(f, server, sc, 2, Reliability::ReliableOrdered, 0, kCount, max);
     REQUIRE(SettleUntil(
-        f, 600000,
+        f, f.Lossy() ? 3600000u : 600000u,
         [&] { return server.Count(EventKind::Message) >= kCount && client.Count(EventKind::Message) >= kCount; },
         &client, &server));
     Settle(f, 200, &client, &server);  // anything extra (a duplicate) would show up now
@@ -330,7 +330,9 @@ template <class F> void ReliableUnorderedArrivesOnce(F& f)
     REQUIRE(Connect(f, &client, &server, &cc, &sc));
     constexpr u32 kCount = 400;
     SendStream(f, client, cc, 1, Reliability::ReliableUnordered, 0, kCount, client.transport->MaxMessageBytes());
-    REQUIRE(SettleUntil(f, 600000, [&] { return server.Count(EventKind::Message) >= kCount; }, &client, &server));
+    REQUIRE(SettleUntil(
+        f, f.Lossy() ? 3600000u : 600000u, [&] { return server.Count(EventKind::Message) >= kCount; }, &client,
+        &server));
     Settle(f, 200, &client, &server);
     CHECK(server.Count(EventKind::Message) == kCount);
     Vector<u8> seen;
@@ -371,7 +373,15 @@ template <class F> void UnreliableIsNeverCorruptedOrDuplicated(F& f)
         SendStream(f, client, cc, 3, Reliability::Unreliable, batch, 10, client.transport->MaxMessageBytes());
         Settle(f, 10, &client, &server);
     }
-    Settle(f, 2000, &client, &server);
+    // A carrier with congestion control takes a while to carry it all; a lossy one may drop some.
+    if (f.Lossy())
+    {
+        Settle(f, 2000, &client, &server);
+    }
+    else
+    {
+        SettleUntil(f, 20000, [&] { return server.Count(EventKind::Message) >= kCount; }, &client, &server);
+    }
     Vector<u8> seen;
     seen.Resize(kCount);
     bool good = true;
@@ -483,7 +493,8 @@ template <class F> void ChannelsAreIndependent(F& f)
                    client.transport->MaxMessageBytes());
     }
     REQUIRE(SettleUntil(
-        f, 600000, [&] { return server.Count(EventKind::Message) >= channels * kPerChannel; }, &client, &server));
+        f, f.Lossy() ? 3600000u : 600000u, [&] { return server.Count(EventKind::Message) >= channels * kPerChannel; },
+        &client, &server));
     Settle(f, 100, &client, &server);
     CHECK(server.Count(EventKind::Message) == channels * kPerChannel);
     bool good = true;

@@ -278,7 +278,7 @@ TEST_CASE("UDP transport: a 1 MiB message arrives intact under every impairment"
         Vector<byte> msg;
         Pattern(k + 1, 1u << 20, &msg);
         REQUIRE(p.client.transport.Send(p.cc, 3, ByteSpan(msg.Data(), msg.Size()), Reliability::ReliableOrdered).Ok());
-        REQUIRE(p.Until(900000, [&] { return p.Messages(p.server_events) == 1; }));
+        REQUIRE(p.Until(losses[k] > 0.5 ? 7200000 : 900000, [&] { return p.Messages(p.server_events) == 1; }));
         for (usize i = 0; i < p.server_events.Size(); ++i)
         {
             if (p.server_events[i].kind == EventKind::Message)
@@ -349,7 +349,7 @@ TEST_CASE("UDP transport: many mixed-size messages arrive once and in order on e
                 p.Until(20, [] { return false; });
             }
         }
-        REQUIRE(p.Until(900000, [&] { return p.Messages(p.server_events) == kCount; }));
+        REQUIRE(p.Until(3600000, [&] { return p.Messages(p.server_events) == kCount; }));
         u32 next[4] = {0, 1, 2, 3};
         for (usize i = 0; i < p.server_events.Size(); ++i)
         {

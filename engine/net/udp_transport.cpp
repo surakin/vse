@@ -34,10 +34,16 @@ constexpr usize kUdpFragmentExtraBytes = 2 + 2 + 4;       // fragment index, fra
 constexpr usize kUdpFragmentBytes = 1024;                 // payload of every fragment but the last
 constexpr usize kUdpSingleMax = udp::kMaxPayloadBytes - kUdpDataHeaderBytes;  // largest message sent as one frame
 constexpr u8 kUdpFragmentFlag = 0x80;
-constexpr usize kUdpRingSize = 1024;       // packets remembered for acknowledgement
-constexpr u16 kUdpLookahead = 1024;        // how far ahead of the next expected a reliable message may be
-constexpr u32 kUdpLossThreshold = 3;       // packets behind an acknowledged one that count as lost
-constexpr u32 kUdpAckEvery = 8;            // packets with frames received before an acknowledgement is sent at once
+constexpr usize kUdpRingSize = 1024;  // packets remembered for acknowledgement
+constexpr u16 kUdpLookahead = 1024;   // how far ahead of the next expected a reliable message may be
+constexpr u32 kUdpLossThreshold = 3;  // packets behind an acknowledged one that count as lost
+constexpr u32 kUdpAckEvery = 8;       // packets with frames received before an acknowledgement is sent at once
+constexpr f64 kUdpMss = static_cast<f64>(udp::kMtu);  // congestion window unit: one full packet
+constexpr f64 kUdpInitialWindow = 10 * kUdpMss;
+constexpr f64 kUdpMinWindow = 2 * kUdpMss;
+constexpr f64 kUdpMaxWindow = 64.0 * 1024 * 1024;
+constexpr f64 kUdpPaceGain = 1.25;  // pacing rate relative to window / round trip
+constexpr f64 kUdpPaceBurst = 4 * kUdpMss;
 constexpr usize kUdpPacketsPerFlush = 32;  // one acknowledgement covers 33 packets: a burst may not be longer
 constexpr u64 kUdpMinRto = 30'000'000ull;
 constexpr u64 kUdpMaxRto = 2'000'000'000ull;
@@ -86,6 +92,8 @@ struct UdpSentPacket
     bool used = false;
     bool acked = false;
     bool resolved = false;  // declared lost
+    bool counted = false;   // its bytes are in the congestion window's flight count
+    u16 bytes = 0;
     u64 time = 0;
     Vector<u64> frames;  // handles of the reliable frames it carried
 };
@@ -167,6 +175,18 @@ struct UdpConn
     f64 srtt = 0;
     f64 rttvar = 0;
     u64 frames_first_sent = 0;
+    f64 cwnd = kUdpInitialWindow;  // congestion window, bytes
+    f64 ssthresh = kUdpMaxWindow;
+    usize in_flight = 0;  // bytes of packets sent and neither acknowledged nor declared lost
+    bool in_recovery = false;
+    u16 recovery_seq = 0;  // packets up to this one were sent before the last window cut
+    u64 last_timeout_cut = 0;
+    f64 pace_tokens = kUdpPaceBurst;
+    u64 pace_time = 0;
+    f64 app_tokens = 0;
+    u64 app_time = 0;
+    u64 rate_window_start = 0;  // throughput is measured over the last full second
+    u64 rate_window_bytes = 0;
     UdpConnectionInfo info;
     ConnectionStats stats;
 };
@@ -191,6 +211,8 @@ struct UdpLingering
     u32 code = 0;
     u32 sends_left = 0;
     u64 next_send = 0;
+    bool has_salt = false;  // a client that gave up during the handshake names its attempt by the salt
+    u64 salt = 0;
 };
 
 struct UdpRetired
@@ -314,6 +336,12 @@ struct UdpTransport::Impl
         return found == nullptr ? nullptr : *found;
     }
 
+    f64 AppBurst() const
+    {
+        const f64 rate = static_cast<f64>(config.max_bandwidth_bytes_per_second);
+        return rate / 50 > 2 * kUdpMss ? rate / 50 : 2 * kUdpMss;
+    }
+
     UdpConn* Create(const Endpoint& peer, bool incoming)
     {
         UniquePtr<UdpConn> conn = MakeUnique<UdpConn>();
@@ -328,6 +356,10 @@ struct UdpTransport::Impl
         conn->out.Resize(config.channels);
         conn->in.Resize(config.channels);
         conn->ring.Resize(kUdpRingSize);
+        conn->pace_time = conn->created;
+        conn->app_time = conn->created;
+        conn->app_tokens = AppBurst();
+        conn->rate_window_start = conn->created;
         UdpConn* raw = conn.Get();
         by_id.Insert(raw->id, raw);
         conns.Push(Move(conn));
@@ -591,11 +623,39 @@ struct UdpTransport::Impl
         c->free_slots.Push(static_cast<u32>(handle & 0xffffffffu));
     }
 
+    // Makes room for a new unreliable message by discarding the oldest queued unreliable frames: a reliable message is
+    // delayed by a full queue, an unreliable one is not worth waiting for.
+    void DropOldestUnreliable(UdpConn* c, usize frames)
+    {
+        for (usize ch = 0; ch < c->out.Size() && frames != 0; ++ch)
+        {
+            UdpChannelOut& out = c->out[ch];
+            while (out.head < out.queue.Size() && Resolve(c, out.queue[out.head]) == nullptr)
+            {
+                ++out.head;  // frames already gone (sent, acknowledged or dropped before)
+            }
+            for (usize i = out.head; i < out.queue.Size() && frames != 0; ++i)
+            {
+                UdpOutFrame* f = Resolve(c, out.queue[i]);
+                if (f != nullptr && !IsReliableKind(f->rel))
+                {
+                    FreeFrame(c, out.queue[i]);
+                    ++c->info.dropped_unreliable;
+                    --frames;
+                }
+            }
+        }
+    }
+
     // Splits a message into frames and queues them on its channel.
     Status QueueMessage(UdpConn* c, u8 channel, u8 rel, ByteSpan bytes)
     {
         const usize count = bytes.Size() <= kUdpSingleMax ? 1
                                                           : (bytes.Size() + kUdpFragmentBytes - 1) / kUdpFragmentBytes;
+        if (c->queued_frames + count > config.max_queued_frames && !IsReliableKind(rel))
+        {
+            DropOldestUnreliable(c, c->queued_frames + count - config.max_queued_frames);
+        }
         if (c->queued_frames + count > config.max_queued_frames)
         {
             return Status::Of(ErrorCode::LimitExceeded);
@@ -647,12 +707,17 @@ struct UdpTransport::Impl
         {
             return kUdpInitialRto;
         }
-        const u64 nanos = static_cast<u64>((c->srtt + 4.0 * c->rttvar) * 1e9);
+        const u64 nanos = static_cast<u64>((1.5 * c->srtt + 4.0 * c->rttvar) * 1e9);
         return nanos < kUdpMinRto ? kUdpMinRto : (nanos > kUdpMaxRto ? kUdpMaxRto : nanos);
     }
 
     void RttSample(UdpConn* c, f64 seconds)
     {
+        if (c->has_rtt && seconds > 4 * c->srtt + 0.05)
+        {
+            seconds = 4 * c->srtt +
+                      0.05;  // an acknowledgement that was itself lost for a while is not the path's round trip
+        }
         if (!c->has_rtt)
         {
             c->has_rtt = true;
@@ -666,6 +731,7 @@ struct UdpTransport::Impl
             c->srtt = 0.875 * c->srtt + 0.125 * seconds;
         }
         c->stats.rtt_seconds = c->srtt;
+        c->stats.jitter_seconds = c->rttvar;
     }
 
     void QueueResend(UdpConn* c, u64 handle, u16 from_packet)
@@ -676,6 +742,96 @@ struct UdpTransport::Impl
             f->resend_queued = true;
             c->resend.Push(handle);
         }
+    }
+
+    // ---- congestion control: NewReno-style window, pacing, application cap ----
+
+    void RefillBuckets(UdpConn* c, u64 now)
+    {
+        if (c->has_rtt && c->srtt > 0)
+        {
+            const f64 rate = kUdpPaceGain * c->cwnd / c->srtt;
+            c->pace_tokens += rate * static_cast<f64>(now - c->pace_time) / 1e9;
+            c->pace_tokens = c->pace_tokens > kUdpPaceBurst ? kUdpPaceBurst : c->pace_tokens;
+        }
+        c->pace_time = now;
+        if (config.max_bandwidth_bytes_per_second != 0)
+        {
+            c->app_tokens += static_cast<f64>(config.max_bandwidth_bytes_per_second) *
+                             static_cast<f64>(now - c->app_time) / 1e9;
+            c->app_tokens = c->app_tokens > AppBurst() ? AppBurst() : c->app_tokens;
+        }
+        c->app_time = now;
+    }
+
+    // May a packet with data leave now? At least one packet may always be in flight.
+    bool MaySend(UdpConn* c, u64 now)
+    {
+        RefillBuckets(c, now);
+        if (c->in_flight != 0 && static_cast<f64>(c->in_flight) >= c->cwnd)
+        {
+            return false;
+        }
+        if (c->has_rtt && c->pace_tokens <= 0)
+        {
+            return false;
+        }
+        return config.max_bandwidth_bytes_per_second == 0 || c->app_tokens > 0;
+    }
+
+    // A packet leaves the flight count: acknowledged, declared lost, or its record is reused.
+    void Uncount(UdpConn* c, UdpSentPacket* e)
+    {
+        if (e->counted)
+        {
+            e->counted = false;
+            c->in_flight = c->in_flight > e->bytes ? c->in_flight - e->bytes : 0;
+        }
+    }
+
+    void OnPacketAcked(UdpConn* c, UdpSentPacket* e)
+    {
+        const bool window_limited = static_cast<f64>(c->in_flight) * 2 >= c->cwnd;
+        const bool counted = e->counted;
+        Uncount(c, e);
+        if (!counted || !window_limited)
+        {
+            return;  // a window that is not full does not grow
+        }
+        const f64 bytes = e->bytes;
+        c->cwnd += c->cwnd < c->ssthresh ? bytes : kUdpMss * bytes / c->cwnd;
+        c->cwnd = c->cwnd > kUdpMaxWindow ? kUdpMaxWindow : c->cwnd;
+    }
+
+    // A packet was declared lost: halve the window once per round trip (losses of packets sent before the last cut
+    // belong to the same event).
+    void OnPacketLost(UdpConn* c, UdpSentPacket* e)
+    {
+        Uncount(c, e);
+        if (c->in_recovery && !udp::SeqNewer(e->seq, c->recovery_seq))
+        {
+            return;
+        }
+        c->in_recovery = true;
+        c->recovery_seq = static_cast<u16>(c->send_seq - 1);
+        c->ssthresh = c->cwnd / 2 > kUdpMinWindow ? c->cwnd / 2 : kUdpMinWindow;
+        c->cwnd = c->ssthresh;
+        ++c->info.window_cuts;
+    }
+
+    // A time-out fired: the path may have collapsed, so start again from the smallest window (once per time-out).
+    void OnTimeoutCut(UdpConn* c, u64 now)
+    {
+        if (c->last_timeout_cut != 0 && now - c->last_timeout_cut < Rto(c))
+        {
+            return;
+        }
+        c->last_timeout_cut = now;
+        c->ssthresh = c->cwnd / 2 > kUdpMinWindow ? c->cwnd / 2 : kUdpMinWindow;
+        c->cwnd = kUdpMinWindow;
+        c->in_recovery = true;
+        c->recovery_seq = static_cast<u16>(c->send_seq - 1);
+        ++c->info.timeouts_fired;
     }
 
     // Builds one packet from what is waiting and sends it; an empty one only if `force`. False if nothing was sent.
@@ -691,7 +847,8 @@ struct UdpTransport::Impl
         udp::WritePayloadHeader(h, &p);
         Vector<u64> carried;
         usize new_reliable = 0;
-        bool full = false;
+        const u64 now = Now();
+        bool full = !MaySend(c, now);  // the window, the pacing or the cap holds the data back
         while (!full && c->resend_head < c->resend.Size())
         {
             const u64 handle = c->resend[c->resend_head];
@@ -752,7 +909,6 @@ struct UdpTransport::Impl
         {
             return false;
         }
-        const u64 now = Now();
         const u16 seq = c->send_seq;
         UdpSentPacket& entry = c->ring[seq % kUdpRingSize];
         if (entry.used && !entry.acked && !entry.resolved)
@@ -762,11 +918,27 @@ struct UdpTransport::Impl
                 QueueResend(c, entry.frames[i], entry.seq);  // its record is about to be overwritten: treat it as lost
             }
         }
+        if (entry.used)
+        {
+            Uncount(c, &entry);
+        }
         entry.seq = seq;
         entry.used = true;
         entry.acked = false;
         entry.resolved = false;
         entry.time = now;
+        entry.bytes = static_cast<u16>(p.Size());
+        entry.counted = !carried.Empty();
+        if (entry.counted)
+        {
+            c->in_flight += p.Size();
+            c->pace_tokens -= static_cast<f64>(p.Size());
+            c->pace_tokens = c->pace_tokens < -kUdpPaceBurst ? -kUdpPaceBurst : c->pace_tokens;  // owe at most a burst
+            if (config.max_bandwidth_bytes_per_second != 0)
+            {
+                c->app_tokens -= static_cast<f64>(p.Size());
+            }
+        }
         entry.frames.Clear();
         for (usize i = 0; i < carried.Size(); ++i)
         {
@@ -802,6 +974,14 @@ struct UdpTransport::Impl
         c->ack_pending = false;
         c->unacked_packets = 0;
         ++c->stats.packets_sent;
+        c->rate_window_bytes += p.Size();
+        if (now - c->rate_window_start >= 1'000'000'000ull)
+        {
+            c->stats.send_rate_bytes_per_second = static_cast<f64>(c->rate_window_bytes) * 1e9 /
+                                                  static_cast<f64>(now - c->rate_window_start);
+            c->rate_window_bytes = 0;
+            c->rate_window_start = now;
+        }
         c->stats.loss = c->stats.packets_sent == 0
                             ? 0
                             : static_cast<f64>(c->info.frames_resent) / static_cast<f64>(c->stats.packets_sent);
@@ -822,7 +1002,7 @@ struct UdpTransport::Impl
 
     // How old an unacknowledged packet must be before three newer acknowledged ones make it lost: a network that
     // reorders deeply would otherwise get every overtaken packet sent again.
-    u64 LossDelay(const UdpConn* c) const { return static_cast<u64>((c->srtt + 2.0 * c->rttvar) * 1e9); }
+    u64 LossDelay(const UdpConn* c) const { return static_cast<u64>((1.25 * c->srtt + 4.0 * c->rttvar) * 1e9); }
 
     void OnAckFields(UdpConn* c, u16 ack, u32 bits)
     {
@@ -845,6 +1025,7 @@ struct UdpTransport::Impl
             }
             e.acked = true;
             ++c->info.packets_acked;
+            OnPacketAcked(c, &e);
             if (i == 0)
             {
                 RttSample(c,
@@ -871,6 +1052,7 @@ struct UdpTransport::Impl
                     break;  // newer packets overtook it, but it has not had the time a late one would need
                 }
                 e.resolved = true;
+                OnPacketLost(c, &e);
                 for (usize k = 0; k < e.frames.Size(); ++k)
                 {
                     QueueResend(c, e.frames[k], e.seq);
@@ -895,6 +1077,13 @@ struct UdpTransport::Impl
             {
                 continue;
             }
+            if (e.counted && now - e.time >= base)
+            {
+                // No acknowledgement in a time-out: a packet of unreliable frames has no frame to time out, and its
+                // bytes must not hold the window closed for good.
+                Uncount(c, &e);
+                OnTimeoutCut(c, now);
+            }
             for (usize k = 0; k < e.frames.Size(); ++k)
             {
                 UdpOutFrame* f = Resolve(c, e.frames[k]);
@@ -906,6 +1095,8 @@ struct UdpTransport::Impl
                 rto = rto > kUdpMaxRto ? kUdpMaxRto : rto;
                 if (now - f->sent_time >= rto)
                 {
+                    Uncount(c, &e);
+                    OnTimeoutCut(c, now);
                     f->resend_queued = true;
                     c->resend.Push(e.frames[k]);
                 }
@@ -1567,7 +1758,25 @@ struct UdpTransport::Impl
             ++counters.dropped_short;
             return;
         }
-        UdpConn* c = FindPayloadTarget(from, ReadU16(packet, 1));
+        UdpConn* c = nullptr;
+        if (ReadU16(packet, 1) == 0 && packet.Size() >= 15)
+        {
+            // A client that gave up during the handshake: connection id 0 never exists, the salt names the attempt.
+            const u64 salt = ReadU64(packet, 7);
+            for (usize i = 0; i < conns.Size(); ++i)
+            {
+                UdpConn* k = conns[i].Get();
+                if (k->incoming && k->state == UdpState::Connected && k->peer == from && k->client_salt == salt)
+                {
+                    c = k;
+                    break;
+                }
+            }
+        }
+        else
+        {
+            c = FindPayloadTarget(from, ReadU16(packet, 1));
+        }
         if (c != nullptr && c->state == UdpState::Connected)
         {
             u32 code = 0;
@@ -1701,6 +1910,10 @@ struct UdpTransport::Impl
                 p.Push(static_cast<byte>(udp::FirstByte(udp::PacketKind::Disconnect)));
                 PutU16(&p, l.wire_id);
                 PutU32(&p, l.code);
+                if (l.has_salt)
+                {
+                    PutU64(&p, l.salt);
+                }
                 Emit(l.peer, p);
                 l.next_send = now + config.close_interval_nanos;
                 --l.sends_left;
@@ -1852,11 +2065,13 @@ Status UdpTransport::Close(ConnectionId connection, u32 code)
     {
         return Status::Of(ErrorCode::Closed);
     }
-    if (c->state == UdpState::Connected)
+    if (c->state == UdpState::Connected || (c->state == UdpState::Connecting && !c->incoming))
     {
         UdpLingering l;
         l.peer = c->peer;
-        l.wire_id = c->wire_id;
+        l.wire_id = c->state == UdpState::Connected ? c->wire_id : 0;
+        l.has_salt = c->state != UdpState::Connected;
+        l.salt = c->client_salt;
         l.code = code;
         l.sends_left = config_.close_repeats;
         l.next_send = m.Now();
@@ -1877,6 +2092,8 @@ Status UdpTransport::Statistics(ConnectionId connection, ConnectionStats* stats)
     *stats = c->stats;
     stats->send_queue_messages = c->queued_frames;  // frames: a fragmented message counts once per fragment
     stats->send_queue_bytes = c->queued_bytes;
+    stats->window_bytes = c->cwnd;
+    stats->bytes_in_flight = c->in_flight;
     return Status::Success();
 }
 

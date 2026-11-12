@@ -16,6 +16,7 @@
 //! Denied             [kind][u64 client_salt][u8 reason]
 //! Payload            [kind][u16 connection_id][u16 sequence][u16 ack][u32 ack_bits][frames...]
 //! Disconnect         [kind][u16 connection_id][u32 code]
+//!                    (a client that gives up during the handshake sends connection_id 0 and appends [u64 client_salt])
 //! Reset              [kind][u16 connection_id]
 //! ```
 //!

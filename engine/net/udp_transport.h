@@ -61,10 +61,12 @@ struct UdpTransportConfig
     usize max_connections_per_address = 8;            ///< Accepted connections from one address.
     u64 connect_timeout_nanos = 5'000'000'000ull;     ///< Time to complete a handshake.
     u64 timeout_nanos = 10'000'000'000ull;            ///< Silence after which a connection times out.
-    u64 keepalive_nanos = 1'000'000'000ull;           ///< Silence after which an empty packet is sent.
-    u64 ack_delay_nanos = 20'000'000ull;              ///< How long an acknowledgement waits for a packet to ride on.
-    u64 handshake_retry_nanos = 200'000'000ull;   ///< First delay before a handshake packet is repeated (doubles, up to
-                                                  ///< 1 s).
+    u64 max_bandwidth_bytes_per_second = 0;      ///< Cap on the send rate of one connection; 0 for none (the congestion
+                                                 ///< window still applies).
+    u64 keepalive_nanos = 1'000'000'000ull;      ///< Silence after which an empty packet is sent.
+    u64 ack_delay_nanos = 20'000'000ull;         ///< How long an acknowledgement waits for a packet to ride on.
+    u64 handshake_retry_nanos = 200'000'000ull;  ///< First delay before a handshake packet is repeated (doubles, up to
+                                                 ///< 1 s).
     u64 cookie_period_nanos = 10'000'000'000ull;  ///< Length of a cookie's time period; a cookie lives two.
     u32 close_repeats = 3;                        ///< Times a Disconnect packet is sent.
     u64 close_interval_nanos = 50'000'000ull;     ///< Delay between them.
@@ -96,16 +98,19 @@ struct UdpCounters
 /// - Thread-safety: thread-compatible plain data.
 struct UdpConnectionInfo
 {
-    bool connected = false;     ///< The handshake finished and the connection is open.
-    u16 next_sequence = 0;      ///< The sequence number the next packet will carry.
-    u16 latest_received = 0;    ///< The newest sequence received.
-    bool any_received = false;  ///< Something was received.
-    u64 packets_acked = 0;      ///< Packets of ours the peer acknowledged.
-    u64 frames_resent = 0;      ///< Reliable frames sent again after a loss or a time-out.
-    usize buffered_bytes = 0;   ///< Bytes held for reassembly and for out-of-order delivery.
-    usize reassemblies = 0;     ///< Messages being reassembled.
-    u64 duplicates = 0;         ///< Payload packets dropped as duplicates.
-    u64 too_old = 0;            ///< Payload packets dropped for being more than 32 behind.
+    bool connected = false;      ///< The handshake finished and the connection is open.
+    u16 next_sequence = 0;       ///< The sequence number the next packet will carry.
+    u16 latest_received = 0;     ///< The newest sequence received.
+    bool any_received = false;   ///< Something was received.
+    u64 packets_acked = 0;       ///< Packets of ours the peer acknowledged.
+    u64 frames_resent = 0;       ///< Reliable frames sent again after a loss or a time-out.
+    usize buffered_bytes = 0;    ///< Bytes held for reassembly and for out-of-order delivery.
+    usize reassemblies = 0;      ///< Messages being reassembled.
+    u64 window_cuts = 0;         ///< Times the congestion window was halved after losses.
+    u64 timeouts_fired = 0;      ///< Times a time-out reset the window to its smallest size.
+    u64 dropped_unreliable = 0;  ///< Queued unreliable frames discarded to make room (oldest first).
+    u64 duplicates = 0;          ///< Payload packets dropped as duplicates.
+    u64 too_old = 0;             ///< Payload packets dropped for being more than 32 behind.
 };
 
 /// A transport over UDP datagrams.
