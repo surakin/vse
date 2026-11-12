@@ -24,9 +24,14 @@ function(ui_demo_expect name code out skip_re)
 endfunction()
 set(UI_DEMO_NO_GPU "cannot open loader library|no physical devices|no suitable GPU")
 if(APPLE)
-  string(APPEND UI_DEMO_NO_GPU "|backend is not built for macOS")  # macOS until Metal draws (Phase 26 Day 325)
+  string(APPEND UI_DEMO_NO_GPU "|backend is not built for macOS")  # Vulkan by name on macOS (Metal: the *_metal test)
 endif()
 ui_demo_expect(ui_demo_screenshot 0 "wrote .*ui_demo_screenshot.ppm \\(960x600\\)" "${UI_DEMO_NO_GPU}" --screenshot UI_DEMO_SHOT --validation --rhi vulkan)
+if(APPLE)
+  # The same picture on Metal by name (Phase 26 Day 324), with Metal's validation on (DEMO_PROFILE_ENV).
+  # Named outside `ui_demo_*` (phase 15 in tests/phases.txt) so it carries phase 26 with the other Metal ctests.
+  ui_demo_expect(metal_ui_demo_screenshot 0 "wrote .*metal_ui_demo_screenshot.ppm \\(960x600\\)" "" --screenshot UI_DEMO_SHOT --validation --rhi metal)
+endif()
 # Every kind of script word, offscreen, with the validation layer on and silent: input, menus, themes, drops, the clipboard, a resize and two pictures.
 ui_demo_expect(ui_demo_screenshot_script 0 "wrote .*ui_demo_screenshot_script_a.ppm .*wrote .*ui_demo_screenshot_script.ppm \\(640x480\\)" "${UI_DEMO_NO_GPU}"
   --screenshot UI_DEMO_SHOT --validation --scale 2 --frames 40 --script "frame:2 click:btn_new frame:4 type:abc key:Tab key:ctrl+a frame:6 theme:dark frame:8 openmenu:View frame:10 key:Escape drop:text:dropped frame:12 paste:pasted frame:13 rendering frame:14 key:Escape drag:list_items:0,60 wheel:viewport:3 frame:18 shot:${ENGINE_TEST_TMP_DIR}/screenshots/ui_demo_screenshot_script_a.ppm resize:320x240 frame:24 menu:Help/About frame:30")
@@ -49,7 +54,7 @@ function(ui_demo_scripted name backend rhi)
     COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:ui_demo>;--backend;${backend};--rhi;${rhi};--validation;--frames;150;--script;frame:5 click:btn_new frame:8 menu:View/Theme/Dark frame:12 drop:text:hello frame:15 set:render_scale=0.5 frame:20 set:present_mode=immediate frame:30 reset frame:40 set:shader_quality=low rendering frame:55 theme:light frame:60 loss frame:120 quit"
       -DEXPECT_CODE=0 "-DEXPECT_OUT=swapchain done in.*device-reset done in.*pipeline-rebuild done in.*recovered after 1 attempt"
       "-DSKIP_IF_OUT=${UI_DEMO_NO_GPU}" "-DSKIP_NO_DISPLAY_OUT=could not open a window"
-      "-DFORBID_OUT=a Vulkan validation error was reported|(ERROR|WARN): D3D12 debug layer" -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
+      "-DFORBID_OUT=a Vulkan validation error was reported|(ERROR|WARN): D3D12 debug layer|failed assertion" -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
   set_tests_properties(${name} PROPERTIES LABELS "gpu;demo;display" RESOURCE_LOCK display SKIP_RETURN_CODE 77
     ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/${name};${DEMO_PROFILE_ENV}")
   engine_label_tests(${name})
@@ -58,7 +63,7 @@ if(WIN32)
   ui_demo_scripted(ui_demo_script_win32 win32 vulkan)
   ui_demo_scripted(ui_demo_script_win32_dx12 win32 dx12) # Phase 15 Day 205: the same run on Direct3D 12
 elseif(APPLE)
-  ui_demo_scripted(ui_demo_script_cocoa cocoa null)  # Phase 26 Day 314: on null until Metal draws (Day 325)
+  ui_demo_scripted(ui_demo_script_cocoa cocoa metal)  # Phase 26 Day 324 (on null from Day 314)
 else()
   ui_demo_scripted(ui_demo_script_wayland wayland vulkan)
   ui_demo_scripted(ui_demo_script_x11 x11 vulkan)

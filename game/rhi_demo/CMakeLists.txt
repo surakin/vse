@@ -20,8 +20,8 @@ function(rhi_demo_expect name code out skip_re)
 endfunction()
 set(RHI_NO_GPU "cannot open loader library|no physical devices|no suitable GPU")
 if(APPLE)
-  # macOS until Metal draws (Phase 26 Day 325): a backend asked for by name is not built (no GPU), and auto runs the null
-  # backend, which has no device memory for an allocation fault to hit.
+  # macOS: Vulkan asked for by name is not built there, and until Phase 26 Day 325 auto runs the null backend, which has no device
+  # memory for an allocation fault to hit; Metal is asked for by name (the *_metal tests).
   string(APPEND RHI_NO_GPU "|backend is not built for macOS")
   set(RHI_NEEDS_DEVICE_MEMORY "${RHI_NO_GPU}|using the null backend")
 else()
@@ -49,7 +49,16 @@ if(WIN32)
   rhi_demo_expect(rhi_demo_list_gpus_dx12 0 "backend dx12.*Microsoft Basic Render Driver" "" --list-gpus --rhi dx12)
   set(_rhi_demo_dx12_tests rhi_demo_device_loss_trace_dx12 rhi_demo_oom_device_dx12 rhi_demo_list_gpus_dx12)
 endif()
-# A mistyped fault is a usage error (exit 2), not "inject nothing".
+set(_rhi_demo_metal_tests)
+if(APPLE)
+  # The same faults on Metal by name (Phase 26 Day 324; auto picks it from Day 325), and the listing.
+  rhi_demo_expect(rhi_demo_device_loss_trace_metal 3 "ENSURE FAILED[^\n]*the Metal device was lost" ""
+    --screenshot ${RHI_DEMO_SHOT} --frames 5 --inject-device-loss 3 --rhi metal)
+  rhi_demo_expect(rhi_demo_oom_device_metal 1 "no memory for the resource 'engine staging ring'" ""
+    --screenshot ${RHI_DEMO_SHOT} --inject-oom 1 --rhi metal)
+  rhi_demo_expect(rhi_demo_list_gpus_metal 0 "backend metal[^\n]*\n[1-9][0-9]* GPU\\(s\\):" "" --list-gpus --rhi metal)
+  set(_rhi_demo_metal_tests rhi_demo_device_loss_trace_metal rhi_demo_oom_device_metal rhi_demo_list_gpus_metal)
+endif()
 # A mistyped fault is a usage error (exit 2), not "inject nothing".
 # The GPUs are listed without a window; a GPU that does not exist fails cleanly and does not fall back to another.
 rhi_demo_expect(rhi_demo_list_gpus 0 "[0-9]+ GPU\\(s\\):" "${RHI_NO_GPU}" --list-gpus)
@@ -70,6 +79,6 @@ if(NOT APPLE)
   set(_rhi_demo_no_vulkan rhi_demo_no_vulkan)
 endif()
 engine_label_tests(rhi_demo_list_gpus rhi_demo_unknown_gpu rhi_demo_device_loss_screenshot rhi_demo_device_loss_trace rhi_demo_oom_later rhi_demo_oom_device rhi_demo_bad_injection
-  rhi_demo_negative_injection ${_rhi_demo_no_vulkan} rhi_demo_bad_rhi ${_rhi_demo_dx12_tests})
+  rhi_demo_negative_injection ${_rhi_demo_no_vulkan} rhi_demo_bad_rhi ${_rhi_demo_dx12_tests} ${_rhi_demo_metal_tests})
 
 demo_settings_tests(rhi_demo)

@@ -125,7 +125,7 @@ function(renderer_demo_overlay_scripted name backend)
     COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:renderer_demo>;--backend;${backend};--rhi;${rhi};--validation;--frames;60;--script;frame:5 overlay frame:15 overlay frame:20 reset frame:30 quit"
       -DEXPECT_CODE=0 "-DEXPECT_OUT=text overlay is off.*text overlay is on.*device-reset done in"
       "-DSKIP_IF_OUT=${RENDERER_NO_GPU}" "-DSKIP_NO_DISPLAY_OUT=could not open a window"
-      "-DFORBID_OUT=a Vulkan validation error was reported" -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
+      "-DFORBID_OUT=a Vulkan validation error was reported|failed assertion" -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
   set_tests_properties(${name} PROPERTIES LABELS "gpu;demo;display" RESOURCE_LOCK display SKIP_RETURN_CODE 77
     ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/${name};${DEMO_PROFILE_ENV}")
 endfunction()

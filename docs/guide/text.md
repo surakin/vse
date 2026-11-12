@@ -138,7 +138,9 @@ Word movement (Ctrl+arrow) is not in `text/cursor.h`; the UI toolkit adds it (`u
 
 `renderer::TextRenderer` (`renderer/text_renderer.h`) puts a laid-out text on a color target. It owns a `renderer::GlyphAtlasTexture` (one R8 texture per atlas page), its own pipeline
 (shaders `text.vert` and `text.frag`), a sampler and a vertex buffer with one region per frame in flight, and registers with the `DeviceResources` registry, so a device reset or loss
-rebuilds all of it from the CPU atlas (the pages are the source of truth; no glyph is lost and no handle is kept past a frame).
+rebuilds all of it from the CPU atlas (the pages are the source of truth; no glyph is lost and no handle is kept past a frame). It is meant to draw on every backend,
+Metal included (Phase 26 Day 324: the text GPU tests run once per backend, so through Metal on macOS, and are first run there on Day 325; on a Retina
+window text is rasterized at the backing scale the window reports).
 
 ```cpp
 renderer::TextRenderer text;
