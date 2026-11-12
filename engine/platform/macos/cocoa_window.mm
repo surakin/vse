@@ -3,6 +3,7 @@
 // CocoaWindow::Native; the delegate reaches the C++ window through a plain pointer that Close clears before anything is
 // released, so no AppKit callback reaches a destroyed window.
 #include "platform/macos/cocoa_window.h"
+#include "platform/macos/cocoa_window_native.h"
 
 #include "log/log.h"
 #include "os/os.h"
@@ -46,13 +47,11 @@ bool g_in_modal_callback = false;  // the live-resize callback is running: PumpE
 }
 @end
 
-// The content view: backed by a CAMetalLayer the RHI renders into (makeBackingLayer), so AppKit never draws it. It is
-// the window's first responder and turns the NSEvents it gets into the C++ window's input (cocoa_keys.h): keys, text
-// through a minimal NSTextInputClient (interpretKeyEvents: gives dead keys and input methods their say; marked text is
-// not shown), the pointer in pixels from the top left, the wheel in notches. Close clears `owner` first.
-@interface EngineMetalView : NSView <NSTextInputClient>
-@property(nonatomic, assign) CocoaWindow* owner;
-@end
+// The content view (declared in cocoa_window_native.h): backed by a CAMetalLayer the RHI renders into
+// (makeBackingLayer), so AppKit never draws it. It is the window's first responder and turns the NSEvents it gets into
+// the C++ window's input (cocoa_keys.h): keys, text through a minimal NSTextInputClient (interpretKeyEvents: gives dead
+// keys and input methods their say; marked text is not shown), the pointer in pixels from the top left, the wheel in
+// notches. The cursor and drag and drop are its categories in cocoa_cursor.mm and cocoa_dragdrop.mm.
 
 namespace
 {
@@ -100,8 +99,8 @@ engine_placeholder::u32 FirstScalar(NSString* text)
         // key (Linux and Windows report motion to an unfocused window), and during a drag too.
         tracking_ = [[NSTrackingArea alloc]
             initWithRect:NSZeroRect
-                 options:NSTrackingMouseEnteredAndExited | NSTrackingMouseMoved | NSTrackingActiveAlways |
-                         NSTrackingInVisibleRect | NSTrackingEnabledDuringMouseDrag
+                 options:NSTrackingMouseEnteredAndExited | NSTrackingMouseMoved | NSTrackingCursorUpdate |
+                         NSTrackingActiveAlways | NSTrackingInVisibleRect | NSTrackingEnabledDuringMouseDrag
                    owner:self
                 userInfo:nil];
         [self addTrackingArea:tracking_];
@@ -158,7 +157,9 @@ engine_placeholder::u32 FirstScalar(NSString* text)
     NSString* text = [string isKindOfClass:[NSAttributedString class]] ? [(NSAttributedString*)string string] : string;
     if (self.owner != nullptr && text.length != 0)
     {
-        self.owner->OnText(text.UTF8String, [text lengthOfBytesUsingEncoding:NSUTF8StringEncoding]);
+        engine_placeholder::Vector<engine_placeholder::byte> utf8;
+        engine_placeholder::os::cocoa::Utf8Of(text, &utf8, nullptr);  // UTF8String gives nothing for a lone surrogate
+        self.owner->OnText(reinterpret_cast<const char*>(utf8.Data()), utf8.Size());
     }
 }
 - (void)doCommandBySelector:(SEL)selector
@@ -215,6 +216,17 @@ engine_placeholder::u32 FirstScalar(NSString* text)
 
 - (void)reportMove:(NSEvent*)event dragging:(BOOL)dragging
 {
+    if (dragging)
+    {
+        self.lastMouseEvent = event;  // a drag the program starts now starts from here
+    }
+    if (self.owner != nullptr && self.owner->PointerLocked())
+    {
+        // The cursor is detached and parked: the motion is the event's delta (points, accelerated as the system
+        // moves the cursor; AppKit gives no unaccelerated deltas), positive right and down.
+        self.owner->OnRelativeMotion(event.deltaX, event.deltaY, event.modifierFlags);
+        return;
+    }
     if (self.owner != nullptr)
     {
         BOOL inside = NO;
@@ -228,6 +240,14 @@ engine_placeholder::u32 FirstScalar(NSString* text)
 }
 - (void)reportButton:(NSEvent*)event bit:(engine_placeholder::u32)bit down:(bool)down
 {
+    if (down)
+    {
+        self.lastMouseEvent = event;
+    }
+    else if ([NSEvent pressedMouseButtons] == 0)
+    {
+        self.lastMouseEvent = nil;  // no button held: no drag can start
+    }
     if (self.owner != nullptr && bit != 0)
     {
         const NSPoint p = [self pixelPointOf:event inside:nullptr];
@@ -335,6 +355,14 @@ engine_placeholder::u32 FirstScalar(NSString* text)
         self.owner->OnGeometryChanged([static_cast<NSWindow*>(notification.object) inLiveResize]);
     }
 }
+- (void)windowDidMove:(NSNotification*)notification
+{
+    (void)notification;
+    if (self.owner != nullptr)
+    {
+        self.owner->OnGeometryChanged(false);  // a locked cursor follows the view's centre
+    }
+}
 - (void)windowDidChangeBackingProperties:(NSNotification*)notification
 {
     (void)notification;
@@ -413,13 +441,6 @@ engine_placeholder::u32 FirstScalar(NSString* text)
 
 namespace engine_placeholder::os::cocoa
 {
-
-struct CocoaWindow::Native
-{
-    NSWindow* window = nil;
-    EngineMetalView* view = nil;
-    EngineWindowDelegate* delegate = nil;
-};
 
 namespace
 {
@@ -535,6 +556,10 @@ bool CocoaWindow::Open(StringView title, u32 width, u32 height, InputState* inpu
     events_.Clear();
     held_ = {};
     modifiers_ = 0;
+    cursor_shape_ = CursorShape::Arrow;
+    image_hash_ = 0;
+    lock_ = PointerLockState();
+    clipboard_requests_.Init(&events_);
     input_ = input != nullptr ? input : &own_input_;
     @autoreleasepool
     {
@@ -557,6 +582,8 @@ bool CocoaWindow::Open(StringView title, u32 width, u32 height, InputState* inpu
         native_->view.owner = this;
         native_->window.contentView = native_->view;
         [native_->window makeFirstResponder:native_->view];
+        native_->pasteboard = [NSPasteboard generalPasteboard];
+        pasteboard_count_ = native_->pasteboard.changeCount;
         native_->delegate = [[EngineWindowDelegate alloc] init];
         native_->delegate.owner = this;
         native_->window.delegate = native_->delegate;
@@ -577,7 +604,17 @@ void CocoaWindow::Close()
     @autoreleasepool
     {
         native_->delegate.owner = nullptr;  // first: nothing AppKit sends from here on reaches this object
+        ReleaseCursor();  // before the view lets go: the hide is balanced and the mouse attached again
+        if (native_->dnd.dragging)
+        {
+            // A drag this window started outlives it in AppKit; the window says it ended (BACKEND.md), and the view is
+            // kept alive for the session's remaining callbacks, which find no owner.
+            KeepViewForDrag(native_->view);
+            OnDragEnded(DragAction::Nothing);
+        }
+        clipboard_requests_.FailAll(ClipboardStatus::Failed, MonotonicTimeNanos());
         native_->view.owner = nullptr;
+        [native_->view unregisterDraggedTypes];
         native_->window.delegate = nil;
         [native_->window orderOut:nil];
         [native_->window close];
@@ -635,6 +672,17 @@ void CocoaWindow::PumpEvents()
             [NSApp sendEvent:event];
         }
         [NSApp updateWindows];
+        const u64 now = MonotonicTimeNanos();
+        if (native_ != nullptr)
+        {
+            if (now >= next_pasteboard_poll_ns_)
+            {
+                next_pasteboard_poll_ns_ = now + 250'000'000ull;  // changeCount is a call to the pasteboard server
+                PollPasteboard();
+            }
+            DndTick(now);
+        }
+        clipboard_requests_.Expire(now);
         if (native_ != nullptr && !fullscreen_transition_ && fullscreen_wanted_ != fullscreen_)
         {
             fullscreen_transition_ = true;  // the request that arrived during the last animation
@@ -705,6 +753,10 @@ void CocoaWindow::OnGeometryChanged(bool in_live_resize)
     const f32 scale = static_cast<f32>(native_->window.backingScaleFactor);
     const u32 width = static_cast<u32>(pixels.size.width);
     const u32 height = static_cast<u32>(pixels.size.height);
+    if (locked_)
+    {
+        WarpToCentre();  // moved, resized or made fullscreen while locked: the parked cursor stays inside the view
+    }
     // The layer's own scale follows the window's, so a drawable sized in pixels is shown sharp.
     native_->view.layer.contentsScale = native_->window.backingScaleFactor;
     if (width != width_ || height != height_ || scale != scale_)
@@ -756,6 +808,10 @@ void CocoaWindow::OnFocusChanged(bool focused)
     else
     {
         ReleaseKeys();  // their key-ups go to whichever program has the keyboard now
+    }
+    if (native_ != nullptr)
+    {
+        ApplyLock(lock_.SetFocused(focused));  // held only while focused; asked for again on focus while wanted
     }
     InputEvent event;
     event.type = focused ? InputEventType::FocusGained : InputEventType::FocusLost;
@@ -918,6 +974,7 @@ void CocoaWindow::OnPointerEnter(f64 x, f64 y, u64 flags)
     event.y = y;
     event.modifiers = ModifiersFromCocoa(flags);
     QueueEvent(event);
+    ApplyCursor();  // the shape or image, or the hide, over the window
 }
 
 void CocoaWindow::OnPointerLeave(u64 flags)
@@ -931,6 +988,18 @@ void CocoaWindow::OnPointerLeave(u64 flags)
     event.type = InputEventType::PointerLeave;
     event.modifiers = ModifiersFromCocoa(flags);
     QueueEvent(event);
+    if (!lock_.Active())
+    {
+        ApplyCursor();  // a hidden cursor shows again outside the window
+        // The window's shape does not follow the pointer out; but a cursor another view or window has set since (its
+        // enter can come before this leave) is left alone.
+        NSCursor* mine = native_->image_cursor != nil ? native_->image_cursor
+                                                      : (__bridge NSCursor*)SystemCursorFor(cursor_shape_);
+        if ([NSCursor currentCursor] == mine)
+        {
+            [[NSCursor arrowCursor] set];
+        }
+    }
 }
 
 void CocoaWindow::OnPointerMove(f64 x, f64 y, bool inside, u64 flags)

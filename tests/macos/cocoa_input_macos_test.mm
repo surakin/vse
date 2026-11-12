@@ -859,3 +859,20 @@ TEST_CASE("macOS events: a move outside the window with no button held is not re
     CHECK(events[3].x < 0.0);
     CHECK_FALSE(state.pointer_inside);
 }
+
+// Day 313: an NSString may hold an unpaired surrogate, for which UTF8String gives nothing: the scalar becomes U+FFFD.
+TEST_CASE("macOS events: inserted text with an unpaired surrogate gives U+FFFD for it and keeps the rest",
+          "[macos][window][events]")
+{
+    SKIP_IF_NO_DISPLAY_SESSION();
+    CocoaWindow window;
+    OpenQuiet(window, nullptr);
+    NSView<NSTextInputClient>* view = (NSView<NSTextInputClient>*)ViewOf(window);
+    const unichar units[] = {'a', 0xD800, 'b'};
+    [view insertText:[NSString stringWithCharacters:units length:3] replacementRange:NSMakeRange(NSNotFound, 0)];
+    const Vector<InputEvent> events = Drain(window);
+    REQUIRE(events.Size() == 3);
+    CHECK(TextIs(events[0], "a"));
+    CHECK(TextIs(events[1], "\xEF\xBF\xBD"));
+    CHECK(TextIs(events[2], "b"));
+}

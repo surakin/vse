@@ -4981,7 +4981,7 @@ virtual bool SetClipboard([[maybe_unused]] ClipboardKind kind, [[maybe_unused]] 
 
 Takes ownership of a selection and offers `offer` to other programs; what was offered before is replaced.
 
-The window copies the bytes and serves other programs' requests for them from later `PumpEvents` calls, in pieces if they are large, so keep pumping. The contents vanish with the window (no clipboard manager keeps them). Text is made valid UTF-8 first. On Wayland the compositor accepts the offer only after a recent key press or click in the window.
+The window copies the bytes and serves other programs' requests for them from later `PumpEvents` calls, in pieces if they are large, so keep pumping. On X11 and Wayland the contents vanish with the window (no clipboard manager keeps them); on Windows and macOS the system keeps them. Text is made valid UTF-8 first. On Wayland the compositor accepts the offer only after a recent key press or click in the window.
 
 | Field | Value |
 |---|---|

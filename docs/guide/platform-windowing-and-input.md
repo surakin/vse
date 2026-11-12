@@ -190,7 +190,7 @@ The system clipboard and, on Linux, the primary (middle-click) selection:
 
 ### Drag and drop between programs
 
-Dropping onto your window and dragging out of it (Wayland, X11):
+Dropping onto your window and dragging out of it (Wayland, X11, Windows, macOS):
 
     os::DropAccept accept;
     accept.formats = os::kDropText | os::kDropFiles;                    // nothing accepted means the window refuses every drag
@@ -381,7 +381,7 @@ never reaches a destroyed object; for the same reason the object cannot move.
 - **Without a window server** (an ssh login with nobody at the console) no window opens, and the log says why; a locked screen still
   opens windows, but nobody sees them, so the window tests skip while it is locked.
 - **Native handles:** kind `Cocoa`, `display` the content `NSView*`, `surface` its `CAMetalLayer*`, `window_id` the window number.
-- **Input** is the next section; the cursor, the clipboard and drag and drop come on Phase 26 Day 313.
+- **Input** is the next section; the cursor, the clipboard and drag and drop the one after it.
 
 ### macOS input
 
@@ -419,6 +419,44 @@ the Linux and Windows backends give them.
 - **Focus** is the key window: `windowDidBecomeKey` and `windowDidResignKey`. On loss (Cmd-Tab, a click on another program or another of
   this program's windows) every held key gets a `KeyUp`, then `FocusLost`; the buttons stay held, because macOS gives the release to the
   window the press went to. On gain the modifiers are read again, so a Command still held after Cmd-Tab back is known.
+
+### macOS cursor, clipboard and drag and drop
+
+Phase 26 Day 313 (`platform/macos/cocoa_cursor.mm`, `cocoa_clipboard.mm`, `cocoa_dragdrop.mm`).
+
+- **Shapes** are `NSCursor`s (`os::cocoa::SystemCursorFor`). macOS has no diagonal resize cursor before macOS 15: `ResizeDiagonalNWSE` and
+  `ResizeDiagonalNESW` are its frame-resize cursors from macOS 15 and the arrow on 13 and 14. It has no four-way arrow at all: `ResizeAll` is
+  the open hand, the Mac's "move" cursor. The shape is set from the view's tracking area (`cursorUpdate:`) and the arrow comes back when the
+  pointer leaves.
+- **`Hidden`** is `[NSCursor hide]`, which AppKit counts: the window keeps exactly one hide in effect while the pointer is over it (or while
+  locked) and undoes it on leave, close and destruction, so a program can never leave the cursor hidden (`os::cocoa::CursorHideDepth`,
+  tested on every path). An image outranks `Hidden`.
+- **Images** become an `NSCursor` of `width / scale` points with the hotspot scaled the same way; an equal image is not made again.
+- **The lock** warps the cursor to the view's centre and detaches it from the mouse (`CGAssociateMouseAndMouseCursorPosition`); neither needs
+  the Accessibility permission. `RelativeMotion` is the events' `deltaX/deltaY`: points, positive right and down, **accelerated** (AppKit gives
+  no unaccelerated deltas). The first motion after the warp is dropped when the warp really moved the cursor, because its delta includes
+  the jump (seen by hand: about 200 points). The cursor is warped back to the centre whenever the window moves or changes size while locked.
+  No `PointerMove` arrives while locked.
+- **Clipboard:** the general `NSPasteboard`. Text is `NSPasteboardTypeString`; a file list is file URLs, read and written through the shared
+  `text/uri-list` rules (`ParseUriList`), so the same paths are refused as on Linux and a web link is counted in `rejected_entries`; the URLs
+  keep the program's bytes (not `fileURLWithPath:`, which rewrites `é` into an `e` and a combining accent). A custom format is the pasteboard
+  type named by `custom_name` (a reverse-DNS name such as `com.example.engine-entity` reads naturally to other Mac programs). The calls are
+  synchronous, so a request is answered at once and announced by its `ClipboardData` event (as on Windows), never `Timeout`. Another program's
+  change is noticed by polling `changeCount` in `PumpEvents`, at most every 250 ms (it is a call to the pasteboard server), so
+  `ClipboardChanged` comes up to a quarter second late; the window's own writes do not count. A write AppKit refuses after the pasteboard
+  was cleared (NSPasteboard has no transaction) leaves it empty, and that change is reported. No primary
+  selection. **The system keeps the data after the window closes**, as on Windows. A pasteboard stores text with an unpaired surrogate as
+  nothing (seen on macOS 15); typed text with one gets U+FFFD.
+- **Drops:** the view is the destination, registered for the accepted formats' types. The dragging pasteboard is valid only during the drop,
+  so every accepted format is read then and `RequestDropData` answers from that copy. macOS narrows the source's operations for the keys
+  held (Option: copy only; Command: move only), so the default answer is Copy where the source allows it, else Move; Finder's generic
+  operation counts as a move.
+- **Dragging out:** `BeginDrag` needs the mouse-down (or drag) event of a button still held, and starts AppKit's session from it; text and a
+  custom format go in one item, each file in its own. The drag image is `DragSource::image` (scaled to points), else the system's documents
+  icon. AppKit takes the release of the button the drag used, so the drag's end releases the buttons no longer held, before `DragEnded`.
+  **`CancelDrag` cannot stop AppKit's session**: from AppKit's next query the source allows nothing, so a target that has not accepted yet
+  refuses; one that already had may still take the data, and `DragEnded` reports what it did. A window closed during its own drag reports
+  `DragEnded` with `Nothing` at once.
 
 ### Windows input
 
@@ -464,7 +502,7 @@ program). Started from Explorer it has no console: the writes fail and the log f
 ### Known limitations
 
 - The event stream is implemented on Linux (Wayland and X11), Windows (Phase 15 Day 205) and macOS (Phase 26 Day 312) (`engine/platform/BACKEND.md`).
-- The cursor shapes, images and the lock are implemented on Linux and Windows (Phase 15 Day 205); macOS gets them on Phase 26 Day 313 (`engine/platform/BACKEND.md`).
+- The cursor shapes, images, the lock, the clipboard and drag and drop are implemented on Linux, Windows (Phase 15 Day 205) and macOS (Phase 26 Day 313) (`engine/platform/BACKEND.md`).
 - No input-method (IME) composition: a Chinese, Japanese or Korean input method is not supported; dead keys and compose sequences are.
 - The Wayland half is checked against a real compositor only, which cannot be made to send key, pointer and focus events; the key logic is tested through
   `KeyboardEvents` with a fake clock and real keymaps, and the pointer, focus and wheel handlers by the end-to-end runs of the UI demo (Day 204).

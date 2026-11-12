@@ -91,9 +91,21 @@ the three button pairs (`buttonNumber` 2 to 4: middle, back, forward), positions
 is true. **Wheel:** `scrollingDeltaX/Y`, signs turned (macOS: positive up and left), precise deltas over 10 points per notch, line deltas as
 notches; `InputState` 10 units per notch. **Focus:** `windowDidBecomeKey` (the modifiers read again) and `windowDidResignKey` (a `KeyUp` per held
 key, then `FocusLost`; buttons stay held); `Close` releases the keys too. **Resize:** `windowDidResize` and `windowDidChangeBackingProperties`;
-the stream starts with the settled size. **Not built yet** (Day 313): drag and drop is `NSDraggingDestination` and `NSDraggingSource` on the
-view; the clipboard is `NSPasteboard` (`NSPasteboardTypeString`, file URLs; `changeCount` polled for `ClipboardChanged`); cursors `NSCursor`,
-the lock `CGAssociateMouseAndMouseCursorPosition`.
+the stream starts with the settled size. **Cursor and lock (Day 313,
+`macos/cocoa_cursor.mm`):** the shapes are `NSCursor`s (the diagonal resize cursors from macOS 15's frame-resize cursors, else the arrow;
+`ResizeAll` the open hand), set from `cursorUpdate:` (the tracking area has `NSTrackingCursorUpdate`) and on every change with the pointer inside;
+`Hidden` and the lock are `[NSCursor hide]`, kept to exactly one hide per window and undone on leave, close and destruction; an image is an
+`NSCursor` from an `NSBitmapImageRep` (premultiplied RGBA, the default format) of `width / scale` points. The lock warps to the view's centre and
+calls `CGAssociateMouseAndMouseCursorPosition(false)` (no Accessibility permission needed); `RelativeMotion` from `deltaX/deltaY` (accelerated),
+the first one after a warp that moved the cursor dropped, and the cursor warped back to the centre when the window moves or resizes. **Clipboard (`macos/cocoa_clipboard.mm`):** the general `NSPasteboard`; text `NSPasteboardTypeString`, files
+as file URLs through `BuildUriList`/`ParseUriList` both ways, custom formats as the named type; synchronous, announced by the event;
+`changeCount` polled in `PumpEvents` (every 250 ms at most) for `ClipboardChanged`; a file list cut at `kMaxDropFileEntries` URLs before the rules; no `Primary`; the system keeps the data after the window closes. An `NSString`'s
+unpaired surrogates become U+FFFD. **Drag and drop (`macos/cocoa_dragdrop.mm`):** the view is the `NSDraggingDestination`
+(`registerForDraggedTypes:` from `SetDropAccept`, at most `kMaxDragTypes` types looked at, every accepted format read in
+`performDragOperation:`) and the `NSDraggingSource` (`beginDraggingSessionWithItems:event:source:` from the held button's event); the source's
+operation mask is the allowed actions (Generic is a move); the end releases the buttons AppKit's drag loop took the release of; `CancelDrag` makes
+the mask none, since the session cannot be stopped, and `DragEnded` gives what the target did; `Close` during a drag reports `DragEnded`
+(`Nothing`) and keeps the view alive for the session's last callbacks.
 
 ### `android`
 
