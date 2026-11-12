@@ -5,12 +5,13 @@ set(NET_TEST_SOURCES
   frame_test.cpp  # Day 271
   net_codec_test.cpp  # Day 272
   sim_transport_test.cpp  # Day 273
+  udp_handshake_test.cpp  # Day 274
 )
 # The socket backend's tests (Day 268); the Windows backend arrives on Day 278. Real sockets: the executable is labelled `network`.
 set(NET_SOCKET_TEST_SOURCES "")
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
   list(APPEND NET_TEST_SOURCES errno_map_posix_test.cpp)  # Day 268
-  list(APPEND NET_SOCKET_TEST_SOURCES socket_test.cpp socket_flags_posix_test.cpp reactor_test.cpp resolve_test.cpp listener_test.cpp tcp_test.cpp)  # Days 268-271
+  list(APPEND NET_SOCKET_TEST_SOURCES socket_test.cpp socket_flags_posix_test.cpp reactor_test.cpp resolve_test.cpp listener_test.cpp tcp_test.cpp udp_loopback_test.cpp)  # Days 268-274
 endif()
 
 find_package(Threads REQUIRED)

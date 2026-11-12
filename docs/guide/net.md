@@ -1,6 +1,6 @@
 # Networking: addresses, endpoints, errors, sockets, the reactor and TCP streams
 
-Status: Phase 20. Built: addresses, endpoints and the error type (Day 267), the socket interface with its Linux backend and the access gate (Day 268), the reactor, the asynchronous operations and timers (Day 269). name resolution, listeners and the connect helpers (Day 270), framed TCP streams (Day 271), the message codec (Day 272), the transport interface, the simulated network and transport, and the conformance suite (Day 273). Next: the UDP and TCP transports (Days 274-277).
+Status: Phase 20. Built: addresses, endpoints and the error type (Day 267), the socket interface with its Linux backend and the access gate (Day 268), the reactor, the asynchronous operations and timers (Day 269). name resolution, listeners and the connect helpers (Day 270), framed TCP streams (Day 271), the message codec (Day 272), the transport interface, the simulated network and transport, and the conformance suite (Day 273), the UDP transport's packet layer and handshake (Day 274). Next: the UDP transport's channels and reliability (Days 275-276) and the TCP transport (Day 277).
 
 **Audience:** engine programmers who talk to another machine or process. Design, spikes and the benchmark pass conditions:
 `docs/superpowers/specs/2026-11-11-networking-design.md`.
@@ -306,3 +306,20 @@ of 256, keep-alive and time-out). It is the specification by example of the inte
 simulated transport runs them over a clean link and over a hostile one (10% loss, reordering, duplication, corruption); the UDP and TCP transports of Days 274-277 add a fixture each and must pass the same
 checks: open and accept, close reasons, a refused connect, reliable streams intact and in order, no duplicates, sequencing, size and channel limits, independent channels, many connections, close during send, no events
 after close, and destruction with traffic in flight.
+
+## The UDP transport: packets and the handshake
+
+`net::UdpTransport` (`engine/net/udp_transport.h`) runs over a `net::DatagramPort` (`SocketDatagramPort` on a real non-blocking UDP socket, `SimDatagramPort` on the simulated network) and a `net::Clock`, so the same code is tested
+deterministically and over loopback. Day 274 builds the packet layer, the handshake and the connection state machine; messages go unreliably, one per packet (`Supports` says so), until channels and reliability arrive on
+Days 275-276. The wire format, every integer little-endian, is written out in `engine/net/udp_protocol.h`.
+
+- **Handshake.** `ConnectRequest` (padded to 1200 bytes) -> `Challenge` (17 bytes: the client's salt and a cookie) -> `ChallengeResponse` (padded again, with the cookie) -> `Accepted` (the connection id). The server **keeps nothing**
+  until the response validates: the cookie is `SipHash-2-4` under a secret key of the endpoint (address, scope, port), the client's random salt and the time period (`cookie_period_nanos`, a cookie lives two periods). A request
+  or response shorter than 1200 bytes is dropped without an answer, and no answer to a stranger is larger than 17 bytes, so the server cannot amplify a flood towards a forged address (tested: a flood of 20,000 spoofed
+  packets leaves zero connections and the victim receives under a twentieth of the bytes). Handshake packets repeat with a doubling delay (200 ms to 1 s) until the connect time-out. A replayed response for a live connection is answered again
+  without a second connection; for a connection that ended it is dropped (the last 64 are remembered). The connection table is capped (`max_connections`, `max_connections_per_address`); over the cap the client gets `Denied` and a `Refused` close.
+- **Packets.** A payload packet carries the connection id, a 16-bit sequence, the newest sequence received and 32 bits for the 32 before it (`udp::ReceiveWindow`, `udp::SendLog`). Comparison is wraparound-safe; a sequence seen before, or more
+  than 32 behind the newest, is dropped and counted. A packet from an unknown connection id is answered by a 3-byte `Reset`, which closes the client's connection with `DisconnectReason::Reset`. Acknowledgements ride on payloads; a packet that carried a
+  message and nothing else to send is acknowledged by an empty packet after `ack_delay_nanos`, and an idle connection sends one per `keepalive_nanos`. `Close` repeats a `Disconnect` packet `close_repeats` times; silence for `timeout_nanos` is `TimedOut`.
+- **Trust.** The cookie stops spoofed-source floods and amplification. It does not authenticate a peer, and nothing is encrypted: until the encryption outcome of Day 280, use the transport on trusted networks only. SipHash is a published keyed hash
+  (the published test vectors are in `tests/net/udp_handshake_test.cpp`), not a replacement for the audited primitive Day 280 decides on.

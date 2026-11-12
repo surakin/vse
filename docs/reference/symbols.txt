@@ -1642,55 +1642,55 @@ settings::LoadOptions::argc	variable	foundation/settings	settings-loadoptions-ar
 settings::LoadOptions::minimal_writes	variable	foundation/settings	settings-loadoptions-minimal-writes	foundation-settings.md	engine/foundation/settings/settings.h:132
 settings::LoadOptions::use_policy	variable	foundation/settings	settings-loadoptions-use-policy	foundation-settings.md	engine/foundation/settings/settings.h:137
 settings::LoadOptions::policy_name	variable	foundation/settings	settings-loadoptions-policy-name	foundation-settings.md	engine/foundation/settings/settings.h:139
-settings::LoadOptions::policy_path	variable	foundation/settings	settings-loadoptions-policy-path	foundation-settings.md	engine/foundation/settings/settings.h:143
-settings::LoadReport	struct	foundation/settings	settings-loadreport	foundation-settings.md	engine/foundation/settings/settings.h:147
-settings::LoadReport::LayerInfo	struct	foundation/settings	settings-loadreport-layerinfo	foundation-settings.md	engine/foundation/settings/settings.h:150
-settings::LoadReport::LayerInfo::name	variable	foundation/settings	settings-loadreport-layerinfo-name	foundation-settings.md	engine/foundation/settings/settings.h:153
-settings::LoadReport::LayerInfo::state	variable	foundation/settings	settings-loadreport-layerinfo-state	foundation-settings.md	engine/foundation/settings/settings.h:155
-settings::LoadReport::layers	variable	foundation/settings	settings-loadreport-layers	foundation-settings.md	engine/foundation/settings/settings.h:158
-settings::LoadReport::problems	variable	foundation/settings	settings-loadreport-problems	foundation-settings.md	engine/foundation/settings/settings.h:160
-settings::LoadReport::notes	variable	foundation/settings	settings-loadreport-notes	foundation-settings.md	engine/foundation/settings/settings.h:163
-settings::LoadReport::Clean() const	function	foundation/settings	settings-loadreport-clean-const	foundation-settings.md	engine/foundation/settings/settings.h:165
-settings::SaveOptions	struct	foundation/settings	settings-saveoptions	foundation-settings.md	engine/foundation/settings/settings.h:169
-settings::SaveOptions::include_command_line	variable	foundation/settings	settings-saveoptions-include-command-line	foundation-settings.md	engine/foundation/settings/settings.h:173
-settings::SaveOptions::replace_damaged	variable	foundation/settings	settings-saveoptions-replace-damaged	foundation-settings.md	engine/foundation/settings/settings.h:175
-settings::SaveOptions::replace_newer	variable	foundation/settings	settings-saveoptions-replace-newer	foundation-settings.md	engine/foundation/settings/settings.h:178
-settings::SettingsSnapshot	struct	foundation/settings	settings-settingssnapshot	foundation-settings.md	engine/foundation/settings/settings.h:184
-settings::SettingsSnapshot::values	variable	foundation/settings	settings-settingssnapshot-values	foundation-settings.md	engine/foundation/settings/settings.h:188
-settings::SettingsSnapshot::generation	variable	foundation/settings	settings-settingssnapshot-generation	foundation-settings.md	engine/foundation/settings/settings.h:190
-settings::SettingsSnapshot::Get(SettingId) const	function	foundation/settings	settings-settingssnapshot-get-settingid-const	foundation-settings.md	engine/foundation/settings/settings.h:194
-settings::Settings	class	foundation/settings	settings-settings	foundation-settings.md	engine/foundation/settings/settings.h:207
-settings::Settings::Settings(Registry&)	function	foundation/settings	settings-settings-settings-registry-amp	foundation-settings.md	engine/foundation/settings/settings.h:211
-settings::Settings::~Settings()	function	foundation/settings	settings-settings-tilde-settings	foundation-settings.md	engine/foundation/settings/settings.h:213
-settings::Settings::Settings(const Settings&)	function	foundation/settings	settings-settings-settings-const-settings-amp	foundation-settings.md	engine/foundation/settings/settings.h:214
-settings::Settings::operator=(const Settings&)	function	foundation/settings	settings-settings-operator-eq-const-settings-amp	foundation-settings.md	engine/foundation/settings/settings.h:215
-settings::Settings::GetRegistry()	function	foundation/settings	settings-settings-getregistry	foundation-settings.md	engine/foundation/settings/settings.h:218
-settings::Settings::Load(const LoadOptions&)	function	foundation/settings	settings-settings-load-const-loadoptions-amp	foundation-settings.md	engine/foundation/settings/settings.h:226
-settings::Settings::LoadFromLayers()	function	foundation/settings	settings-settings-loadfromlayers	foundation-settings.md	engine/foundation/settings/settings.h:230
-settings::Settings::Migrations()	function	foundation/settings	settings-settings-migrations	foundation-settings.md	engine/foundation/settings/settings.h:233
-settings::Settings::UserFileIsNewer() const	function	foundation/settings	settings-settings-userfileisnewer-const	foundation-settings.md	engine/foundation/settings/settings.h:236
-settings::Settings::Layers()	function	foundation/settings	settings-settings-layers	foundation-settings.md	engine/foundation/settings/settings.h:239
-settings::Settings::CommandLine() const	function	foundation/settings	settings-settings-commandline-const	foundation-settings.md	engine/foundation/settings/settings.h:241
-settings::Settings::Set(SettingId,const Value&)	function	foundation/settings	settings-settings-set-settingid-const-value-amp	foundation-settings.md	engine/foundation/settings/settings.h:248
-settings::Settings::SetText(StringView,StringView)	function	foundation/settings	settings-settings-settext-stringview-stringview	foundation-settings.md	engine/foundation/settings/settings.h:250
-settings::Settings::SetFromCommandLine(StringView,StringView,StringView)	function	foundation/settings	settings-settings-setfromcommandline-stringview-stringview-stringview	foundation-settings.md	engine/foundation/settings/settings.h:260
-settings::Settings::Apply(const ChangeRequest*,usize,ApplyFn,void*)	function	foundation/settings	settings-settings-apply-const-changerequest-star-usize-applyfn-void-star	foundation-settings.md	engine/foundation/settings/settings.h:270
-settings::Settings::AddListener(StringView,SettingsListener,void*)	function	foundation/settings	settings-settings-addlistener-stringview-settingslistener-void-star	foundation-settings.md	engine/foundation/settings/settings.h:276
-settings::Settings::RemoveListener(u32)	function	foundation/settings	settings-settings-removelistener-u32	foundation-settings.md	engine/foundation/settings/settings.h:278
-settings::Settings::SetCapabilityCheck(CapabilityFn,void*)	function	foundation/settings	settings-settings-setcapabilitycheck-capabilityfn-void-star	foundation-settings.md	engine/foundation/settings/settings.h:280
-settings::Settings::Snapshot() const	function	foundation/settings	settings-settings-snapshot-const	foundation-settings.md	engine/foundation/settings/settings.h:283
-settings::Settings::Provenance(SettingId)	function	foundation/settings	settings-settings-provenance-settingid	foundation-settings.md	engine/foundation/settings/settings.h:285
-settings::Settings::Save(const SaveOptions&)	function	foundation/settings	settings-settings-save-const-saveoptions-amp	foundation-settings.md	engine/foundation/settings/settings.h:292
-settings::Settings::LastSaveStatus() const	function	foundation/settings	settings-settings-lastsavestatus-const	foundation-settings.md	engine/foundation/settings/settings.h:296
-settings::Settings::SaveIfChanged()	function	foundation/settings	settings-settings-saveifchanged	foundation-settings.md	engine/foundation/settings/settings.h:302
-settings::Settings::HasUnsavedChanges() const	function	foundation/settings	settings-settings-hasunsavedchanges-const	foundation-settings.md	engine/foundation/settings/settings.h:304
-settings::Settings::SetAutosaveQuietSeconds(double)	function	foundation/settings	settings-settings-setautosavequietseconds-double	foundation-settings.md	engine/foundation/settings/settings.h:306
-settings::Settings::PollAutosave()	function	foundation/settings	settings-settings-pollautosave	foundation-settings.md	engine/foundation/settings/settings.h:311
-settings::SaveOnExit	class	foundation/settings	settings-saveonexit	foundation-settings.md	engine/foundation/settings/settings.h:350
-settings::SaveOnExit::SaveOnExit(Settings&)	function	foundation/settings	settings-saveonexit-saveonexit-settings-amp	foundation-settings.md	engine/foundation/settings/settings.h:354
-settings::SaveOnExit::~SaveOnExit()	function	foundation/settings	settings-saveonexit-tilde-saveonexit	foundation-settings.md	engine/foundation/settings/settings.h:356
-settings::SaveOnExit::SaveOnExit(const SaveOnExit&)	function	foundation/settings	settings-saveonexit-saveonexit-const-saveonexit-amp	foundation-settings.md	engine/foundation/settings/settings.h:357
-settings::SaveOnExit::operator=(const SaveOnExit&)	function	foundation/settings	settings-saveonexit-operator-eq-const-saveonexit-amp	foundation-settings.md	engine/foundation/settings/settings.h:358
+settings::LoadOptions::policy_path	variable	foundation/settings	settings-loadoptions-policy-path	foundation-settings.md	engine/foundation/settings/settings.h:144
+settings::LoadReport	struct	foundation/settings	settings-loadreport	foundation-settings.md	engine/foundation/settings/settings.h:148
+settings::LoadReport::LayerInfo	struct	foundation/settings	settings-loadreport-layerinfo	foundation-settings.md	engine/foundation/settings/settings.h:151
+settings::LoadReport::LayerInfo::name	variable	foundation/settings	settings-loadreport-layerinfo-name	foundation-settings.md	engine/foundation/settings/settings.h:154
+settings::LoadReport::LayerInfo::state	variable	foundation/settings	settings-loadreport-layerinfo-state	foundation-settings.md	engine/foundation/settings/settings.h:156
+settings::LoadReport::layers	variable	foundation/settings	settings-loadreport-layers	foundation-settings.md	engine/foundation/settings/settings.h:159
+settings::LoadReport::problems	variable	foundation/settings	settings-loadreport-problems	foundation-settings.md	engine/foundation/settings/settings.h:161
+settings::LoadReport::notes	variable	foundation/settings	settings-loadreport-notes	foundation-settings.md	engine/foundation/settings/settings.h:164
+settings::LoadReport::Clean() const	function	foundation/settings	settings-loadreport-clean-const	foundation-settings.md	engine/foundation/settings/settings.h:166
+settings::SaveOptions	struct	foundation/settings	settings-saveoptions	foundation-settings.md	engine/foundation/settings/settings.h:170
+settings::SaveOptions::include_command_line	variable	foundation/settings	settings-saveoptions-include-command-line	foundation-settings.md	engine/foundation/settings/settings.h:174
+settings::SaveOptions::replace_damaged	variable	foundation/settings	settings-saveoptions-replace-damaged	foundation-settings.md	engine/foundation/settings/settings.h:176
+settings::SaveOptions::replace_newer	variable	foundation/settings	settings-saveoptions-replace-newer	foundation-settings.md	engine/foundation/settings/settings.h:179
+settings::SettingsSnapshot	struct	foundation/settings	settings-settingssnapshot	foundation-settings.md	engine/foundation/settings/settings.h:185
+settings::SettingsSnapshot::values	variable	foundation/settings	settings-settingssnapshot-values	foundation-settings.md	engine/foundation/settings/settings.h:189
+settings::SettingsSnapshot::generation	variable	foundation/settings	settings-settingssnapshot-generation	foundation-settings.md	engine/foundation/settings/settings.h:191
+settings::SettingsSnapshot::Get(SettingId) const	function	foundation/settings	settings-settingssnapshot-get-settingid-const	foundation-settings.md	engine/foundation/settings/settings.h:195
+settings::Settings	class	foundation/settings	settings-settings	foundation-settings.md	engine/foundation/settings/settings.h:208
+settings::Settings::Settings(Registry&)	function	foundation/settings	settings-settings-settings-registry-amp	foundation-settings.md	engine/foundation/settings/settings.h:212
+settings::Settings::~Settings()	function	foundation/settings	settings-settings-tilde-settings	foundation-settings.md	engine/foundation/settings/settings.h:214
+settings::Settings::Settings(const Settings&)	function	foundation/settings	settings-settings-settings-const-settings-amp	foundation-settings.md	engine/foundation/settings/settings.h:215
+settings::Settings::operator=(const Settings&)	function	foundation/settings	settings-settings-operator-eq-const-settings-amp	foundation-settings.md	engine/foundation/settings/settings.h:216
+settings::Settings::GetRegistry()	function	foundation/settings	settings-settings-getregistry	foundation-settings.md	engine/foundation/settings/settings.h:219
+settings::Settings::Load(const LoadOptions&)	function	foundation/settings	settings-settings-load-const-loadoptions-amp	foundation-settings.md	engine/foundation/settings/settings.h:227
+settings::Settings::LoadFromLayers()	function	foundation/settings	settings-settings-loadfromlayers	foundation-settings.md	engine/foundation/settings/settings.h:231
+settings::Settings::Migrations()	function	foundation/settings	settings-settings-migrations	foundation-settings.md	engine/foundation/settings/settings.h:234
+settings::Settings::UserFileIsNewer() const	function	foundation/settings	settings-settings-userfileisnewer-const	foundation-settings.md	engine/foundation/settings/settings.h:237
+settings::Settings::Layers()	function	foundation/settings	settings-settings-layers	foundation-settings.md	engine/foundation/settings/settings.h:240
+settings::Settings::CommandLine() const	function	foundation/settings	settings-settings-commandline-const	foundation-settings.md	engine/foundation/settings/settings.h:242
+settings::Settings::Set(SettingId,const Value&)	function	foundation/settings	settings-settings-set-settingid-const-value-amp	foundation-settings.md	engine/foundation/settings/settings.h:249
+settings::Settings::SetText(StringView,StringView)	function	foundation/settings	settings-settings-settext-stringview-stringview	foundation-settings.md	engine/foundation/settings/settings.h:251
+settings::Settings::SetFromCommandLine(StringView,StringView,StringView)	function	foundation/settings	settings-settings-setfromcommandline-stringview-stringview-stringview	foundation-settings.md	engine/foundation/settings/settings.h:261
+settings::Settings::Apply(const ChangeRequest*,usize,ApplyFn,void*)	function	foundation/settings	settings-settings-apply-const-changerequest-star-usize-applyfn-void-star	foundation-settings.md	engine/foundation/settings/settings.h:271
+settings::Settings::AddListener(StringView,SettingsListener,void*)	function	foundation/settings	settings-settings-addlistener-stringview-settingslistener-void-star	foundation-settings.md	engine/foundation/settings/settings.h:277
+settings::Settings::RemoveListener(u32)	function	foundation/settings	settings-settings-removelistener-u32	foundation-settings.md	engine/foundation/settings/settings.h:279
+settings::Settings::SetCapabilityCheck(CapabilityFn,void*)	function	foundation/settings	settings-settings-setcapabilitycheck-capabilityfn-void-star	foundation-settings.md	engine/foundation/settings/settings.h:281
+settings::Settings::Snapshot() const	function	foundation/settings	settings-settings-snapshot-const	foundation-settings.md	engine/foundation/settings/settings.h:284
+settings::Settings::Provenance(SettingId)	function	foundation/settings	settings-settings-provenance-settingid	foundation-settings.md	engine/foundation/settings/settings.h:286
+settings::Settings::Save(const SaveOptions&)	function	foundation/settings	settings-settings-save-const-saveoptions-amp	foundation-settings.md	engine/foundation/settings/settings.h:293
+settings::Settings::LastSaveStatus() const	function	foundation/settings	settings-settings-lastsavestatus-const	foundation-settings.md	engine/foundation/settings/settings.h:297
+settings::Settings::SaveIfChanged()	function	foundation/settings	settings-settings-saveifchanged	foundation-settings.md	engine/foundation/settings/settings.h:303
+settings::Settings::HasUnsavedChanges() const	function	foundation/settings	settings-settings-hasunsavedchanges-const	foundation-settings.md	engine/foundation/settings/settings.h:305
+settings::Settings::SetAutosaveQuietSeconds(double)	function	foundation/settings	settings-settings-setautosavequietseconds-double	foundation-settings.md	engine/foundation/settings/settings.h:307
+settings::Settings::PollAutosave()	function	foundation/settings	settings-settings-pollautosave	foundation-settings.md	engine/foundation/settings/settings.h:312
+settings::SaveOnExit	class	foundation/settings	settings-saveonexit	foundation-settings.md	engine/foundation/settings/settings.h:351
+settings::SaveOnExit::SaveOnExit(Settings&)	function	foundation/settings	settings-saveonexit-saveonexit-settings-amp	foundation-settings.md	engine/foundation/settings/settings.h:355
+settings::SaveOnExit::~SaveOnExit()	function	foundation/settings	settings-saveonexit-tilde-saveonexit	foundation-settings.md	engine/foundation/settings/settings.h:357
+settings::SaveOnExit::SaveOnExit(const SaveOnExit&)	function	foundation/settings	settings-saveonexit-saveonexit-const-saveonexit-amp	foundation-settings.md	engine/foundation/settings/settings.h:358
+settings::SaveOnExit::operator=(const SaveOnExit&)	function	foundation/settings	settings-saveonexit-operator-eq-const-saveonexit-amp	foundation-settings.md	engine/foundation/settings/settings.h:359
 settings::kMaxTextBytes	variable	foundation/settings	settings-kmaxtextbytes	foundation-settings.md	engine/foundation/settings/value.h:12
 settings::Type	enum	foundation/settings	settings-type	foundation-settings.md	engine/foundation/settings/value.h:15
 settings::Type::Bool	enumerator	foundation/settings	settings-type-bool	foundation-settings.md	engine/foundation/settings/value.h:17
@@ -3831,6 +3831,11 @@ net::NetReader::ReadQuaternion(u32,Quaternion*)	function	net	net-netreader-readq
 net::NetReader::ReadAngle(u32,f32*)	function	net	net-netreader-readangle-u32-f32-star	net.md	engine/net/codec.h:476
 net::NetReader::ReadDeltaInt(i64,i64*)	function	net	net-netreader-readdeltaint-i64-i64-star	net.md	engine/net/codec.h:484
 net::NetReader::ReadDeltaQuantized(f32,f32,f32,u32,f32*)	function	net	net-netreader-readdeltaquantized-f32-f32-f32-u32-f32-star	net.md	engine/net/codec.h:496
+net::DatagramPort	class	net	net-datagramport	net.md	engine/net/datagram.h:17
+net::DatagramPort::~DatagramPort()	function	net	net-datagramport-tilde-datagramport	net.md	engine/net/datagram.h:20
+net::DatagramPort::SendTo(ByteSpan,const Endpoint&)	function	net	net-datagramport-sendto-bytespan-const-endpoint-amp	net.md	engine/net/datagram.h:28
+net::DatagramPort::ReceiveFrom(MutableByteSpan,usize*,Endpoint*)	function	net	net-datagramport-receivefrom-mutablebytespan-usize-star-endpoint-star	net.md	engine/net/datagram.h:37
+net::DatagramPort::LocalEndpoint() const	function	net	net-datagramport-localendpoint-const	net.md	engine/net/datagram.h:41
 net::EndpointText	struct	net	net-endpointtext	net.md	engine/net/endpoint.h:16
 net::EndpointText::kCapacity	variable	net	net-endpointtext-kcapacity	net.md	engine/net/endpoint.h:19
 net::EndpointText::chars	variable	net	net-endpointtext-chars	net.md	engine/net/endpoint.h:21
@@ -3966,6 +3971,15 @@ net::Signal::Signal(const Signal&)	function	net	net-signal-signal-const-signal-a
 net::Signal::operator=(const Signal&)	function	net	net-signal-operator-eq-const-signal-amp	net.md	engine/net/signal.h:32
 net::Signal::Fire()	function	net	net-signal-fire	net.md	engine/net/signal.h:35
 net::Signal::IsFired() const	function	net	net-signal-isfired-const	net.md	engine/net/signal.h:39
+net::SimDatagramPort	class	net	net-simdatagramport	net.md	engine/net/sim_datagram.h:18
+net::SimDatagramPort::SimDatagramPort(SimNetwork&,const Endpoint&)	function	net	net-simdatagramport-simdatagramport-simnetwork-amp-const-endpoint-amp	net.md	engine/net/sim_datagram.h:24
+net::SimDatagramPort::~SimDatagramPort()	function	net	net-simdatagramport-tilde-simdatagramport	net.md	engine/net/sim_datagram.h:27
+net::SimDatagramPort::SimDatagramPort(const SimDatagramPort&)	function	net	net-simdatagramport-simdatagramport-const-simdatagramport-amp	net.md	engine/net/sim_datagram.h:29
+net::SimDatagramPort::operator=(const SimDatagramPort&)	function	net	net-simdatagramport-operator-eq-const-simdatagramport-amp	net.md	engine/net/sim_datagram.h:30
+net::SimDatagramPort::IsAttached() const	function	net	net-simdatagramport-isattached-const	net.md	engine/net/sim_datagram.h:34
+net::SimDatagramPort::SendTo(ByteSpan,const Endpoint&)	function	net	net-simdatagramport-sendto-bytespan-const-endpoint-amp	net.md	engine/net/sim_datagram.h:40
+net::SimDatagramPort::ReceiveFrom(MutableByteSpan,usize*,Endpoint*)	function	net	net-simdatagramport-receivefrom-mutablebytespan-usize-star-endpoint-star	net.md	engine/net/sim_datagram.h:48
+net::SimDatagramPort::LocalEndpoint() const	function	net	net-simdatagramport-localendpoint-const	net.md	engine/net/sim_datagram.h:51
 net::LinkConfig	struct	net	net-linkconfig	net.md	engine/net/sim_network.h:29
 net::LinkConfig::latency_nanos	variable	net	net-linkconfig-latency-nanos	net.md	engine/net/sim_network.h:31
 net::LinkConfig::jitter_nanos	variable	net	net-linkconfig-jitter-nanos	net.md	engine/net/sim_network.h:32
@@ -4199,6 +4213,108 @@ net::Transport::Supports(Reliability) const	function	net	net-transport-supports-
 net::Transport::DegradesUnreliable() const	function	net	net-transport-degradesunreliable-const	net.md	engine/net/transport.h:178
 net::Transport::MaxMessageBytes() const	function	net	net-transport-maxmessagebytes-const	net.md	engine/net/transport.h:182
 net::Transport::ChannelCount() const	function	net	net-transport-channelcount-const	net.md	engine/net/transport.h:186
+net::SocketDatagramPort	class	net	net-socketdatagramport	net.md	engine/net/udp_port.h:16
+net::SocketDatagramPort::Open(const Endpoint&,SocketDatagramPort*,usize)	function	net	net-socketdatagramport-open-const-endpoint-amp-socketdatagramport-star-usize	net.md	engine/net/udp_port.h:27
+net::SocketDatagramPort::SocketDatagramPort()	function	net	net-socketdatagramport-socketdatagramport	net.md	engine/net/udp_port.h:30
+net::SocketDatagramPort::SendTo(ByteSpan,const Endpoint&)	function	net	net-socketdatagramport-sendto-bytespan-const-endpoint-amp	net.md	engine/net/udp_port.h:37
+net::SocketDatagramPort::ReceiveFrom(MutableByteSpan,usize*,Endpoint*)	function	net	net-socketdatagramport-receivefrom-mutablebytespan-usize-star-endpoint-star	net.md	engine/net/udp_port.h:45
+net::SocketDatagramPort::LocalEndpoint() const	function	net	net-socketdatagramport-localendpoint-const	net.md	engine/net/udp_port.h:48
+net::udp::kVersion	variable	net	net-udp-kversion	net.md	engine/net/udp_protocol.h:33
+net::udp::kMtu	variable	net	net-udp-kmtu	net.md	engine/net/udp_protocol.h:36
+net::udp::kHandshakeBytes	variable	net	net-udp-khandshakebytes	net.md	engine/net/udp_protocol.h:39
+net::udp::kPayloadHeaderBytes	variable	net	net-udp-kpayloadheaderbytes	net.md	engine/net/udp_protocol.h:42
+net::udp::kMaxPayloadBytes	variable	net	net-udp-kmaxpayloadbytes	net.md	engine/net/udp_protocol.h:45
+net::udp::PacketKind	enum	net	net-udp-packetkind	net.md	engine/net/udp_protocol.h:48
+net::udp::PacketKind::ConnectRequest	enumerator	net	net-udp-packetkind-connectrequest	net.md	engine/net/udp_protocol.h:50
+net::udp::PacketKind::Challenge	enumerator	net	net-udp-packetkind-challenge	net.md	engine/net/udp_protocol.h:51
+net::udp::PacketKind::ChallengeResponse	enumerator	net	net-udp-packetkind-challengeresponse	net.md	engine/net/udp_protocol.h:52
+net::udp::PacketKind::Accepted	enumerator	net	net-udp-packetkind-accepted	net.md	engine/net/udp_protocol.h:53
+net::udp::PacketKind::Denied	enumerator	net	net-udp-packetkind-denied	net.md	engine/net/udp_protocol.h:54
+net::udp::PacketKind::Payload	enumerator	net	net-udp-packetkind-payload	net.md	engine/net/udp_protocol.h:55
+net::udp::PacketKind::Disconnect	enumerator	net	net-udp-packetkind-disconnect	net.md	engine/net/udp_protocol.h:56
+net::udp::PacketKind::Reset	enumerator	net	net-udp-packetkind-reset	net.md	engine/net/udp_protocol.h:57
+net::udp::DenyReason	enum	net	net-udp-denyreason	net.md	engine/net/udp_protocol.h:61
+net::udp::DenyReason::ServerFull	enumerator	net	net-udp-denyreason-serverfull	net.md	engine/net/udp_protocol.h:63
+net::udp::DenyReason::AddressLimit	enumerator	net	net-udp-denyreason-addresslimit	net.md	engine/net/udp_protocol.h:64
+net::udp::DenyReason::NotListening	enumerator	net	net-udp-denyreason-notlistening	net.md	engine/net/udp_protocol.h:65
+net::udp::FirstByte(PacketKind,bool)	function	net	net-udp-firstbyte-packetkind-bool	net.md	engine/net/udp_protocol.h:73
+net::udp::ParseFirstByte(u8,PacketKind*,bool*)	function	net	net-udp-parsefirstbyte-u8-packetkind-star-bool-star	net.md	engine/net/udp_protocol.h:81
+net::udp::SipHash24(u64,u64,ByteSpan)	function	net	net-udp-siphash24-u64-u64-bytespan	net.md	engine/net/udp_protocol.h:91
+net::udp::SeqNewer(u16,u16)	function	net	net-udp-seqnewer-u16-u16	net.md	engine/net/udp_protocol.h:98
+net::udp::SeqDistance(u16,u16)	function	net	net-udp-seqdistance-u16-u16	net.md	engine/net/udp_protocol.h:105
+net::udp::SeqVerdict	enum	net	net-udp-seqverdict	net.md	engine/net/udp_protocol.h:108
+net::udp::SeqVerdict::Fresh	enumerator	net	net-udp-seqverdict-fresh	net.md	engine/net/udp_protocol.h:110
+net::udp::SeqVerdict::Duplicate	enumerator	net	net-udp-seqverdict-duplicate	net.md	engine/net/udp_protocol.h:111
+net::udp::SeqVerdict::TooOld	enumerator	net	net-udp-seqverdict-tooold	net.md	engine/net/udp_protocol.h:112
+net::udp::ReceiveWindow	class	net	net-udp-receivewindow	net.md	engine/net/udp_protocol.h:119
+net::udp::ReceiveWindow::OnReceive(u16)	function	net	net-udp-receivewindow-onreceive-u16	net.md	engine/net/udp_protocol.h:125
+net::udp::ReceiveWindow::Latest() const	function	net	net-udp-receivewindow-latest-const	net.md	engine/net/udp_protocol.h:129
+net::udp::ReceiveWindow::Bits() const	function	net	net-udp-receivewindow-bits-const	net.md	engine/net/udp_protocol.h:133
+net::udp::ReceiveWindow::Any() const	function	net	net-udp-receivewindow-any-const	net.md	engine/net/udp_protocol.h:137
+net::udp::SendLog	class	net	net-udp-sendlog	net.md	engine/net/udp_protocol.h:148
+net::udp::SendLog::kCapacity	variable	net	net-udp-sendlog-kcapacity	net.md	engine/net/udp_protocol.h:152
+net::udp::SendLog::OnSent(u16)	function	net	net-udp-sendlog-onsent-u16	net.md	engine/net/udp_protocol.h:156
+net::udp::SendLog::OnAck(u16,u32,Vector<u16>*)	function	net	net-udp-sendlog-onack-u16-u32-vector-lt-u16-gt-star	net.md	engine/net/udp_protocol.h:164
+net::udp::PayloadHeader	struct	net	net-udp-payloadheader	net.md	engine/net/udp_protocol.h:179
+net::udp::PayloadHeader::connection	variable	net	net-udp-payloadheader-connection	net.md	engine/net/udp_protocol.h:181
+net::udp::PayloadHeader::sequence	variable	net	net-udp-payloadheader-sequence	net.md	engine/net/udp_protocol.h:182
+net::udp::PayloadHeader::ack	variable	net	net-udp-payloadheader-ack	net.md	engine/net/udp_protocol.h:183
+net::udp::PayloadHeader::ack_bits	variable	net	net-udp-payloadheader-ack-bits	net.md	engine/net/udp_protocol.h:184
+net::udp::PayloadHeader::has_ack	variable	net	net-udp-payloadheader-has-ack	net.md	engine/net/udp_protocol.h:185
+net::udp::WritePayloadHeader(const PayloadHeader&,Vector<byte>*)	function	net	net-udp-writepayloadheader-const-payloadheader-amp-vector-lt-byte-gt-star	net.md	engine/net/udp_protocol.h:192
+net::udp::ReadPayloadHeader(ByteSpan,PayloadHeader*,ByteSpan*)	function	net	net-udp-readpayloadheader-bytespan-payloadheader-star-bytespan-star	net.md	engine/net/udp_protocol.h:200
+net::UdpTransportConfig	struct	net	net-udptransportconfig	net.md	engine/net/udp_transport.h:39
+net::UdpTransportConfig::channels	variable	net	net-udptransportconfig-channels	net.md	engine/net/udp_transport.h:41
+net::UdpTransportConfig::max_connections	variable	net	net-udptransportconfig-max-connections	net.md	engine/net/udp_transport.h:42
+net::UdpTransportConfig::max_connections_per_address	variable	net	net-udptransportconfig-max-connections-per-address	net.md	engine/net/udp_transport.h:43
+net::UdpTransportConfig::connect_timeout_nanos	variable	net	net-udptransportconfig-connect-timeout-nanos	net.md	engine/net/udp_transport.h:44
+net::UdpTransportConfig::timeout_nanos	variable	net	net-udptransportconfig-timeout-nanos	net.md	engine/net/udp_transport.h:45
+net::UdpTransportConfig::keepalive_nanos	variable	net	net-udptransportconfig-keepalive-nanos	net.md	engine/net/udp_transport.h:46
+net::UdpTransportConfig::ack_delay_nanos	variable	net	net-udptransportconfig-ack-delay-nanos	net.md	engine/net/udp_transport.h:47
+net::UdpTransportConfig::handshake_retry_nanos	variable	net	net-udptransportconfig-handshake-retry-nanos	net.md	engine/net/udp_transport.h:48
+net::UdpTransportConfig::cookie_period_nanos	variable	net	net-udptransportconfig-cookie-period-nanos	net.md	engine/net/udp_transport.h:50
+net::UdpTransportConfig::close_repeats	variable	net	net-udptransportconfig-close-repeats	net.md	engine/net/udp_transport.h:51
+net::UdpTransportConfig::close_interval_nanos	variable	net	net-udptransportconfig-close-interval-nanos	net.md	engine/net/udp_transport.h:52
+net::UdpTransportConfig::initial_sequence	variable	net	net-udptransportconfig-initial-sequence	net.md	engine/net/udp_transport.h:53
+net::UdpTransportConfig::seed	variable	net	net-udptransportconfig-seed	net.md	engine/net/udp_transport.h:54
+net::UdpCounters	struct	net	net-udpcounters	net.md	engine/net/udp_transport.h:60
+net::UdpCounters::datagrams_received	variable	net	net-udpcounters-datagrams-received	net.md	engine/net/udp_transport.h:62
+net::UdpCounters::datagrams_sent	variable	net	net-udpcounters-datagrams-sent	net.md	engine/net/udp_transport.h:63
+net::UdpCounters::send_failures	variable	net	net-udpcounters-send-failures	net.md	engine/net/udp_transport.h:64
+net::UdpCounters::dropped_short	variable	net	net-udpcounters-dropped-short	net.md	engine/net/udp_transport.h:65
+net::UdpCounters::dropped_oversize	variable	net	net-udpcounters-dropped-oversize	net.md	engine/net/udp_transport.h:66
+net::UdpCounters::dropped_unknown	variable	net	net-udpcounters-dropped-unknown	net.md	engine/net/udp_transport.h:67
+net::UdpCounters::dropped_bad_cookie	variable	net	net-udpcounters-dropped-bad-cookie	net.md	engine/net/udp_transport.h:68
+net::UdpCounters::dropped_stale	variable	net	net-udpcounters-dropped-stale	net.md	engine/net/udp_transport.h:69
+net::UdpCounters::dropped_duplicate	variable	net	net-udpcounters-dropped-duplicate	net.md	engine/net/udp_transport.h:70
+net::UdpCounters::challenges_sent	variable	net	net-udpcounters-challenges-sent	net.md	engine/net/udp_transport.h:71
+net::UdpCounters::resets_sent	variable	net	net-udpcounters-resets-sent	net.md	engine/net/udp_transport.h:72
+net::UdpCounters::denied_sent	variable	net	net-udpcounters-denied-sent	net.md	engine/net/udp_transport.h:73
+net::UdpConnectionInfo	struct	net	net-udpconnectioninfo	net.md	engine/net/udp_transport.h:79
+net::UdpConnectionInfo::connected	variable	net	net-udpconnectioninfo-connected	net.md	engine/net/udp_transport.h:81
+net::UdpConnectionInfo::next_sequence	variable	net	net-udpconnectioninfo-next-sequence	net.md	engine/net/udp_transport.h:82
+net::UdpConnectionInfo::latest_received	variable	net	net-udpconnectioninfo-latest-received	net.md	engine/net/udp_transport.h:83
+net::UdpConnectionInfo::any_received	variable	net	net-udpconnectioninfo-any-received	net.md	engine/net/udp_transport.h:84
+net::UdpConnectionInfo::packets_acked	variable	net	net-udpconnectioninfo-packets-acked	net.md	engine/net/udp_transport.h:85
+net::UdpConnectionInfo::duplicates	variable	net	net-udpconnectioninfo-duplicates	net.md	engine/net/udp_transport.h:86
+net::UdpConnectionInfo::too_old	variable	net	net-udpconnectioninfo-too-old	net.md	engine/net/udp_transport.h:87
+net::UdpTransport	class	net	net-udptransport	net.md	engine/net/udp_transport.h:94
+net::UdpTransport::UdpTransport(DatagramPort&,const Clock&,const UdpTransportConfig&)	function	net	net-udptransport-udptransport-datagramport-amp-const-clock-amp-const-udptransportconfig-amp	net.md	engine/net/udp_transport.h:102
+net::UdpTransport::~UdpTransport()	function	net	net-udptransport-tilde-udptransport	net.md	engine/net/udp_transport.h:105
+net::UdpTransport::UdpTransport(const UdpTransport&)	function	net	net-udptransport-udptransport-const-udptransport-amp	net.md	engine/net/udp_transport.h:107
+net::UdpTransport::operator=(const UdpTransport&)	function	net	net-udptransport-operator-eq-const-udptransport-amp	net.md	engine/net/udp_transport.h:108
+net::UdpTransport::Listen(const Endpoint&)	function	net	net-udptransport-listen-const-endpoint-amp	net.md	engine/net/udp_transport.h:114
+net::UdpTransport::Connect(const Endpoint&,ConnectionId*)	function	net	net-udptransport-connect-const-endpoint-amp-connectionid-star	net.md	engine/net/udp_transport.h:121
+net::UdpTransport::Send(ConnectionId,u8,ByteSpan,Reliability)	function	net	net-udptransport-send-connectionid-u8-bytespan-reliability	net.md	engine/net/udp_transport.h:131
+net::UdpTransport::Poll(Event*)	function	net	net-udptransport-poll-event-star	net.md	engine/net/udp_transport.h:136
+net::UdpTransport::Close(ConnectionId,u32)	function	net	net-udptransport-close-connectionid-u32	net.md	engine/net/udp_transport.h:142
+net::UdpTransport::Statistics(ConnectionId,ConnectionStats*) const	function	net	net-udptransport-statistics-connectionid-connectionstats-star-const	net.md	engine/net/udp_transport.h:149
+net::UdpTransport::Supports(Reliability) const	function	net	net-udptransport-supports-reliability-const	net.md	engine/net/udp_transport.h:153
+net::UdpTransport::MaxMessageBytes() const	function	net	net-udptransport-maxmessagebytes-const	net.md	engine/net/udp_transport.h:156
+net::UdpTransport::ChannelCount() const	function	net	net-udptransport-channelcount-const	net.md	engine/net/udp_transport.h:159
+net::UdpTransport::Info(ConnectionId,UdpConnectionInfo*) const	function	net	net-udptransport-info-connectionid-udpconnectioninfo-star-const	net.md	engine/net/udp_transport.h:167
+net::UdpTransport::ConnectionCount() const	function	net	net-udptransport-connectioncount-const	net.md	engine/net/udp_transport.h:171
+net::UdpTransport::Counters() const	function	net	net-udptransport-counters-const	net.md	engine/net/udp_transport.h:175
 database::Feature	enum	database	database-feature	database.md	engine/database/database.h:22
 database::Feature::Savepoints	enumerator	database	database-feature-savepoints	database.md	engine/database/database.h:24
 database::Feature::WithoutRowId	enumerator	database	database-feature-withoutrowid	database.md	engine/database/database.h:25
