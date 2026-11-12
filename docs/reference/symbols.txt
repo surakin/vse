@@ -3717,15 +3717,15 @@ net::Address::operator!=(const Address&) const	function	net	net-address-operator
 net::Address::operator<=>(const Address&) const	function	net	net-address-operator-lt-eq-gt-const-address-amp-const	net.md	engine/net/address.h:165
 Hash<net::Address>	struct	net	hash-lt-net-address-gt	net.md	engine/net/address.h:183
 Hash<net::Address>::operator()(const net::Address&) const	function	net	hash-lt-net-address-gt-operator-call-const-net-address-amp-const	net.md	engine/net/address.h:186
-net::IoResult	struct	net	net-ioresult	net.md	engine/net/async.h:29
-net::IoResult::status	variable	net	net-ioresult-status	net.md	engine/net/async.h:31
-net::IoResult::count	variable	net	net-ioresult-count	net.md	engine/net/async.h:32
-net::Receive(Reactor&,Socket&,MutableByteSpan,WaitOptions)	function	net	net-receive-reactor-amp-socket-amp-mutablebytespan-waitoptions	net.md	engine/net/async.h:41
-net::Send(Reactor&,Socket&,ByteSpan,WaitOptions)	function	net	net-send-reactor-amp-socket-amp-bytespan-waitoptions	net.md	engine/net/async.h:49
-net::ReceiveFrom(Reactor&,Socket&,MutableByteSpan,Endpoint*,WaitOptions)	function	net	net-receivefrom-reactor-amp-socket-amp-mutablebytespan-endpoint-star-waitoptions	net.md	engine/net/async.h:59
-net::SendTo(Reactor&,Socket&,ByteSpan,const Endpoint&,WaitOptions)	function	net	net-sendto-reactor-amp-socket-amp-bytespan-const-endpoint-amp-waitoptions	net.md	engine/net/async.h:69
-net::Accept(Reactor&,Socket&,Socket*,Endpoint*,WaitOptions)	function	net	net-accept-reactor-amp-socket-amp-socket-star-endpoint-star-waitoptions	net.md	engine/net/async.h:79
-net::Connect(Reactor&,Socket&,const Endpoint&,WaitOptions)	function	net	net-connect-reactor-amp-socket-amp-const-endpoint-amp-waitoptions	net.md	engine/net/async.h:87
+net::IoResult	struct	net	net-ioresult	net.md	engine/net/async.h:30
+net::IoResult::status	variable	net	net-ioresult-status	net.md	engine/net/async.h:32
+net::IoResult::count	variable	net	net-ioresult-count	net.md	engine/net/async.h:33
+net::Receive(Reactor&,Socket&,MutableByteSpan,WaitOptions)	function	net	net-receive-reactor-amp-socket-amp-mutablebytespan-waitoptions	net.md	engine/net/async.h:43
+net::Send(Reactor&,Socket&,ByteSpan,WaitOptions)	function	net	net-send-reactor-amp-socket-amp-bytespan-waitoptions	net.md	engine/net/async.h:51
+net::ReceiveFrom(Reactor&,Socket&,MutableByteSpan,Endpoint*,WaitOptions)	function	net	net-receivefrom-reactor-amp-socket-amp-mutablebytespan-endpoint-star-waitoptions	net.md	engine/net/async.h:62
+net::SendTo(Reactor&,Socket&,ByteSpan,const Endpoint&,WaitOptions)	function	net	net-sendto-reactor-amp-socket-amp-bytespan-const-endpoint-amp-waitoptions	net.md	engine/net/async.h:72
+net::Accept(Reactor&,Socket&,Socket*,Endpoint*,WaitOptions)	function	net	net-accept-reactor-amp-socket-amp-socket-star-endpoint-star-waitoptions	net.md	engine/net/async.h:83
+net::Connect(Reactor&,Socket&,const Endpoint&,WaitOptions)	function	net	net-connect-reactor-amp-socket-amp-const-endpoint-amp-waitoptions	net.md	engine/net/async.h:92
 net::CancelToken	class	net	net-canceltoken	net.md	engine/net/cancel.h:24
 net::CancelToken::CancelToken()	function	net	net-canceltoken-canceltoken	net.md	engine/net/cancel.h:28
 net::CancelToken::CancelToken(const CancelToken&)	function	net	net-canceltoken-canceltoken-const-canceltoken-amp	net.md	engine/net/cancel.h:30
@@ -3768,6 +3768,24 @@ net::EndpointSet::operator[](usize) const	function	net	net-endpointset-operator-
 net::EndpointSet::Clear()	function	net	net-endpointset-clear	net.md	engine/net/endpoint.h:119
 Hash<net::Endpoint>	struct	net	hash-lt-net-endpoint-gt	net.md	engine/net/endpoint.h:134
 Hash<net::Endpoint>::operator()(const net::Endpoint&) const	function	net	hash-lt-net-endpoint-gt-operator-call-const-net-endpoint-amp-const	net.md	engine/net/endpoint.h:137
+net::ListenerOptions	struct	net	net-listeneroptions	net.md	engine/net/listener.h:21
+net::ListenerOptions::backlog	variable	net	net-listeneroptions-backlog	net.md	engine/net/listener.h:23
+net::ListenerOptions::reuse_address	variable	net	net-listeneroptions-reuse-address	net.md	engine/net/listener.h:24
+net::ListenerOptions::dual_stack	variable	net	net-listeneroptions-dual-stack	net.md	engine/net/listener.h:25
+net::ListenerOptions::max_unhandled	variable	net	net-listeneroptions-max-unhandled	net.md	engine/net/listener.h:26
+net::Listener	class	net	net-listener	net.md	engine/net/listener.h:34
+net::Listener::Listener()	function	net	net-listener-listener	net.md	engine/net/listener.h:38
+net::Listener::Listener(const Listener&)	function	net	net-listener-listener-const-listener-amp	net.md	engine/net/listener.h:40
+net::Listener::operator=(const Listener&)	function	net	net-listener-operator-eq-const-listener-amp	net.md	engine/net/listener.h:41
+net::Listener::Open(const Endpoint&,const ListenerOptions&)	function	net	net-listener-open-const-endpoint-amp-const-listeneroptions-amp	net.md	engine/net/listener.h:52
+net::Listener::IsOpen() const	function	net	net-listener-isopen-const	net.md	engine/net/listener.h:56
+net::Listener::GetSocket()	function	net	net-listener-getsocket	net.md	engine/net/listener.h:60
+net::Listener::LocalEndpoint() const	function	net	net-listener-localendpoint-const	net.md	engine/net/listener.h:64
+net::Listener::DualStack() const	function	net	net-listener-dualstack-const	net.md	engine/net/listener.h:68
+net::Listener::Accept(Reactor&,Socket*,Endpoint*,WaitOptions)	function	net	net-listener-accept-reactor-amp-socket-star-endpoint-star-waitoptions	net.md	engine/net/listener.h:81
+net::Listener::Reserve()	function	net	net-listener-reserve	net.md	engine/net/listener.h:86
+net::Listener::Handled()	function	net	net-listener-handled	net.md	engine/net/listener.h:89
+net::Listener::Unhandled() const	function	net	net-listener-unhandled-const	net.md	engine/net/listener.h:99
 net::kPollRead	variable	net	net-kpollread	net.md	engine/net/poller.h:13
 net::kPollWrite	variable	net	net-kpollwrite	net.md	engine/net/poller.h:15
 net::kPollError	variable	net	net-kpollerror	net.md	engine/net/poller.h:17
@@ -3781,38 +3799,67 @@ net::Poller::~Poller()	function	net	net-poller-tilde-poller	net.md	engine/net/po
 net::Poller::Poller(const Poller&)	function	net	net-poller-poller-const-poller-amp	net.md	engine/net/poller.h:47
 net::Poller::operator=(const Poller&)	function	net	net-poller-operator-eq-const-poller-amp	net.md	engine/net/poller.h:48
 net::Poller::IsValid() const	function	net	net-poller-isvalid-const	net.md	engine/net/poller.h:52
-net::Poller::Arm(i64,u32)	function	net	net-poller-arm-i64-u32	net.md	engine/net/poller.h:60
-net::Poller::Disarm(i64)	function	net	net-poller-disarm-i64	net.md	engine/net/poller.h:67
-net::Poller::kMaxBatch	variable	net	net-poller-kmaxbatch	net.md	engine/net/poller.h:70
-net::Poller::Wait(PollEvent*,usize,i64,usize*)	function	net	net-poller-wait-pollevent-star-usize-i64-usize-star	net.md	engine/net/poller.h:82
-net::Poller::Wake()	function	net	net-poller-wake	net.md	engine/net/poller.h:88
-net::WaitKind	enum	net	net-waitkind	net.md	engine/net/reactor.h:43
-net::WaitKind::Readable	enumerator	net	net-waitkind-readable	net.md	engine/net/reactor.h:45
-net::WaitKind::Writable	enumerator	net	net-waitkind-writable	net.md	engine/net/reactor.h:46
-net::WaitKind::Sleep	enumerator	net	net-waitkind-sleep	net.md	engine/net/reactor.h:47
-net::WaitOptions	struct	net	net-waitoptions	net.md	engine/net/reactor.h:53
-net::WaitOptions::token	variable	net	net-waitoptions-token	net.md	engine/net/reactor.h:55
-net::WaitOptions::timeout_nanos	variable	net	net-waitoptions-timeout-nanos	net.md	engine/net/reactor.h:56
-net::WaitAwaitable	class	net	net-waitawaitable	net.md	engine/net/reactor.h:90
-net::WaitAwaitable::await_ready() const noexcept	function	net	net-waitawaitable-await-ready-const-noexcept	net.md	engine/net/reactor.h:95
-net::WaitAwaitable::await_suspend(CoroutineHandle<>) noexcept	function	net	net-waitawaitable-await-suspend-coroutinehandle-lt-gt-noexcept	net.md	engine/net/reactor.h:100
-net::WaitAwaitable::await_resume() const noexcept	function	net	net-waitawaitable-await-resume-const-noexcept	net.md	engine/net/reactor.h:104
-net::Reactor	class	net	net-reactor	net.md	engine/net/reactor.h:120
-net::Reactor::Reactor(jobs::Scheduler&,const Clock*)	function	net	net-reactor-reactor-jobs-scheduler-amp-const-clock-star	net.md	engine/net/reactor.h:126
-net::Reactor::~Reactor()	function	net	net-reactor-tilde-reactor	net.md	engine/net/reactor.h:129
-net::Reactor::Reactor(const Reactor&)	function	net	net-reactor-reactor-const-reactor-amp	net.md	engine/net/reactor.h:131
-net::Reactor::operator=(const Reactor&)	function	net	net-reactor-operator-eq-const-reactor-amp	net.md	engine/net/reactor.h:132
-net::Reactor::IsRunning() const	function	net	net-reactor-isrunning-const	net.md	engine/net/reactor.h:137
-net::Reactor::GetScheduler() const	function	net	net-reactor-getscheduler-const	net.md	engine/net/reactor.h:141
-net::Reactor::GetClock() const	function	net	net-reactor-getclock-const	net.md	engine/net/reactor.h:145
-net::Reactor::GetThreadId() const	function	net	net-reactor-getthreadid-const	net.md	engine/net/reactor.h:149
-net::Reactor::WaitReadable(const Socket&,WaitOptions)	function	net	net-reactor-waitreadable-const-socket-amp-waitoptions	net.md	engine/net/reactor.h:155
-net::Reactor::WaitWritable(const Socket&,WaitOptions)	function	net	net-reactor-waitwritable-const-socket-amp-waitoptions	net.md	engine/net/reactor.h:161
-net::Reactor::Sleep(u64,WaitOptions)	function	net	net-reactor-sleep-u64-waitoptions	net.md	engine/net/reactor.h:167
-net::Reactor::Forget(const Socket&)	function	net	net-reactor-forget-const-socket-amp	net.md	engine/net/reactor.h:172
-net::Reactor::Close(Socket&)	function	net	net-reactor-close-socket-amp	net.md	engine/net/reactor.h:177
-net::Reactor::Poke()	function	net	net-reactor-poke	net.md	engine/net/reactor.h:180
-net::Reactor::Shutdown()	function	net	net-reactor-shutdown	net.md	engine/net/reactor.h:184
+net::Poller::Arm(i64,u32)	function	net	net-poller-arm-i64-u32	net.md	engine/net/poller.h:62
+net::Poller::Disarm(i64)	function	net	net-poller-disarm-i64	net.md	engine/net/poller.h:69
+net::Poller::kMaxBatch	variable	net	net-poller-kmaxbatch	net.md	engine/net/poller.h:72
+net::Poller::Wait(PollEvent*,usize,i64,usize*)	function	net	net-poller-wait-pollevent-star-usize-i64-usize-star	net.md	engine/net/poller.h:85
+net::Poller::Wake()	function	net	net-poller-wake	net.md	engine/net/poller.h:91
+net::WaitKind	enum	net	net-waitkind	net.md	engine/net/reactor.h:46
+net::WaitKind::Readable	enumerator	net	net-waitkind-readable	net.md	engine/net/reactor.h:48
+net::WaitKind::Writable	enumerator	net	net-waitkind-writable	net.md	engine/net/reactor.h:49
+net::WaitKind::Sleep	enumerator	net	net-waitkind-sleep	net.md	engine/net/reactor.h:50
+net::WaitKind::Signal	enumerator	net	net-waitkind-signal	net.md	engine/net/reactor.h:51
+net::WaitOptions	struct	net	net-waitoptions	net.md	engine/net/reactor.h:57
+net::WaitOptions::token	variable	net	net-waitoptions-token	net.md	engine/net/reactor.h:59
+net::WaitOptions::timeout_nanos	variable	net	net-waitoptions-timeout-nanos	net.md	engine/net/reactor.h:60
+net::WaitAwaitable	class	net	net-waitawaitable	net.md	engine/net/reactor.h:97
+net::WaitAwaitable::await_ready() const noexcept	function	net	net-waitawaitable-await-ready-const-noexcept	net.md	engine/net/reactor.h:102
+net::WaitAwaitable::await_suspend(CoroutineHandle<>) noexcept	function	net	net-waitawaitable-await-suspend-coroutinehandle-lt-gt-noexcept	net.md	engine/net/reactor.h:107
+net::WaitAwaitable::await_resume() const noexcept	function	net	net-waitawaitable-await-resume-const-noexcept	net.md	engine/net/reactor.h:111
+net::Reactor	class	net	net-reactor	net.md	engine/net/reactor.h:128
+net::Reactor::Reactor(jobs::Scheduler&,const Clock*)	function	net	net-reactor-reactor-jobs-scheduler-amp-const-clock-star	net.md	engine/net/reactor.h:135
+net::Reactor::~Reactor()	function	net	net-reactor-tilde-reactor	net.md	engine/net/reactor.h:138
+net::Reactor::Reactor(const Reactor&)	function	net	net-reactor-reactor-const-reactor-amp	net.md	engine/net/reactor.h:140
+net::Reactor::operator=(const Reactor&)	function	net	net-reactor-operator-eq-const-reactor-amp	net.md	engine/net/reactor.h:141
+net::Reactor::IsRunning() const	function	net	net-reactor-isrunning-const	net.md	engine/net/reactor.h:146
+net::Reactor::GetScheduler() const	function	net	net-reactor-getscheduler-const	net.md	engine/net/reactor.h:150
+net::Reactor::GetClock() const	function	net	net-reactor-getclock-const	net.md	engine/net/reactor.h:154
+net::Reactor::GetThreadId() const	function	net	net-reactor-getthreadid-const	net.md	engine/net/reactor.h:158
+net::Reactor::WaitReadable(const Socket&,WaitOptions)	function	net	net-reactor-waitreadable-const-socket-amp-waitoptions	net.md	engine/net/reactor.h:164
+net::Reactor::WaitWritable(const Socket&,WaitOptions)	function	net	net-reactor-waitwritable-const-socket-amp-waitoptions	net.md	engine/net/reactor.h:170
+net::Reactor::Sleep(u64,WaitOptions)	function	net	net-reactor-sleep-u64-waitoptions	net.md	engine/net/reactor.h:176
+net::Reactor::WaitSignal(Signal&,WaitOptions)	function	net	net-reactor-waitsignal-signal-amp-waitoptions	net.md	engine/net/reactor.h:182
+net::Reactor::Forget(const Socket&)	function	net	net-reactor-forget-const-socket-amp	net.md	engine/net/reactor.h:187
+net::Reactor::Close(Socket&)	function	net	net-reactor-close-socket-amp	net.md	engine/net/reactor.h:192
+net::Reactor::Poke()	function	net	net-reactor-poke	net.md	engine/net/reactor.h:195
+net::Reactor::Shutdown()	function	net	net-reactor-shutdown	net.md	engine/net/reactor.h:199
+net::ResolveResult	struct	net	net-resolveresult	net.md	engine/net/resolve.h:21
+net::ResolveResult::status	variable	net	net-resolveresult-status	net.md	engine/net/resolve.h:23
+net::ResolveResult::endpoints	variable	net	net-resolveresult-endpoints	net.md	engine/net/resolve.h:24
+net::Resolve(Reactor&,Resolver&,StringView,u16,AddressFamily,WaitOptions)	function	net	net-resolve-reactor-amp-resolver-amp-stringview-u16-addressfamily-waitoptions	net.md	engine/net/resolve.h:44
+net::ConnectOptions	struct	net	net-connectoptions	net.md	engine/net/resolve.h:50
+net::ConnectOptions::attempt_timeout_nanos	variable	net	net-connectoptions-attempt-timeout-nanos	net.md	engine/net/resolve.h:52
+net::ConnectOptions::resolve_timeout_nanos	variable	net	net-connectoptions-resolve-timeout-nanos	net.md	engine/net/resolve.h:53
+net::ConnectOptions::token	variable	net	net-connectoptions-token	net.md	engine/net/resolve.h:54
+net::ConnectAny(Reactor&,const EndpointSet&,Socket*,ConnectOptions)	function	net	net-connectany-reactor-amp-const-endpointset-amp-socket-star-connectoptions	net.md	engine/net/resolve.h:67
+net::ConnectTo(Reactor&,Resolver&,StringView,u16,Socket*,ConnectOptions)	function	net	net-connectto-reactor-amp-resolver-amp-stringview-u16-socket-star-connectoptions	net.md	engine/net/resolve.h:78
+net::kMaxHostNameBytes	variable	net	net-kmaxhostnamebytes	net.md	engine/net/resolver.h:21
+net::SystemResolve(StringView,u16,AddressFamily,EndpointSet*)	function	net	net-systemresolve-stringview-u16-addressfamily-endpointset-star	net.md	engine/net/resolver.h:37
+net::ResolveFn	alias	net	net-resolvefn	net.md	engine/net/resolver.h:40
+net::Resolver	class	net	net-resolver	net.md	engine/net/resolver.h:66
+net::Resolver::kDefaultQueue	variable	net	net-resolver-kdefaultqueue	net.md	engine/net/resolver.h:70
+net::Resolver::Resolver(ResolveFn,usize)	function	net	net-resolver-resolver-resolvefn-usize	net.md	engine/net/resolver.h:75
+net::Resolver::~Resolver()	function	net	net-resolver-tilde-resolver	net.md	engine/net/resolver.h:78
+net::Resolver::Resolver(const Resolver&)	function	net	net-resolver-resolver-const-resolver-amp	net.md	engine/net/resolver.h:80
+net::Resolver::operator=(const Resolver&)	function	net	net-resolver-operator-eq-const-resolver-amp	net.md	engine/net/resolver.h:81
+net::Resolver::Submit(const SharedPtr<ResolveRequest>&)	function	net	net-resolver-submit-const-sharedptr-lt-resolverequest-gt-amp	net.md	engine/net/resolver.h:88
+net::Resolver::Shutdown()	function	net	net-resolver-shutdown	net.md	engine/net/resolver.h:92
+net::Signal	class	net	net-signal	net.md	engine/net/signal.h:25
+net::Signal::Signal()	function	net	net-signal-signal	net.md	engine/net/signal.h:29
+net::Signal::Signal(const Signal&)	function	net	net-signal-signal-const-signal-amp	net.md	engine/net/signal.h:31
+net::Signal::operator=(const Signal&)	function	net	net-signal-operator-eq-const-signal-amp	net.md	engine/net/signal.h:32
+net::Signal::Fire()	function	net	net-signal-fire	net.md	engine/net/signal.h:35
+net::Signal::IsFired() const	function	net	net-signal-isfired-const	net.md	engine/net/signal.h:39
 net::ShutdownMode	enum	net	net-shutdownmode	net.md	engine/net/socket.h:15
 net::ShutdownMode::Read	enumerator	net	net-shutdownmode-read	net.md	engine/net/socket.h:17
 net::ShutdownMode::Write	enumerator	net	net-shutdownmode-write	net.md	engine/net/socket.h:18
@@ -3867,18 +3914,22 @@ net::ErrorCode::Cancelled	enumerator	net	net-errorcode-cancelled	net.md	engine/n
 net::ErrorCode::Invalid	enumerator	net	net-errorcode-invalid	net.md	engine/net/status.h:29
 net::ErrorCode::LimitExceeded	enumerator	net	net-errorcode-limitexceeded	net.md	engine/net/status.h:31
 net::ErrorCode::Unsupported	enumerator	net	net-errorcode-unsupported	net.md	engine/net/status.h:33
-net::ErrorCode::Other	enumerator	net	net-errorcode-other	net.md	engine/net/status.h:34
-net::ErrorCodeName(ErrorCode)	function	net	net-errorcodename-errorcode	net.md	engine/net/status.h:41
-net::Status	class	net	net-status	net.md	engine/net/status.h:49
-net::Status::Status()	function	net	net-status-status	net.md	engine/net/status.h:53
-net::Status::Success()	function	net	net-status-success	net.md	engine/net/status.h:56
-net::Status::Of(ErrorCode)	function	net	net-status-of-errorcode	net.md	engine/net/status.h:58
-net::Status::Make(ErrorCode,i32)	function	net	net-status-make-errorcode-i32	net.md	engine/net/status.h:61
-net::Status::Ok() const	function	net	net-status-ok-const	net.md	engine/net/status.h:65
-net::Status::Failed() const	function	net	net-status-failed-const	net.md	engine/net/status.h:68
-net::Status::Is(ErrorCode) const	function	net	net-status-is-errorcode-const	net.md	engine/net/status.h:71
-net::Status::Code() const	function	net	net-status-code-const	net.md	engine/net/status.h:73
-net::Status::OsError() const	function	net	net-status-oserror-const	net.md	engine/net/status.h:75
+net::ErrorCode::NotFound	enumerator	net	net-errorcode-notfound	net.md	engine/net/status.h:34
+net::ErrorCode::Other	enumerator	net	net-errorcode-other	net.md	engine/net/status.h:35
+net::ErrorCodeName(ErrorCode)	function	net	net-errorcodename-errorcode	net.md	engine/net/status.h:42
+net::Status	class	net	net-status	net.md	engine/net/status.h:50
+net::Status::Status()	function	net	net-status-status	net.md	engine/net/status.h:54
+net::Status::Success()	function	net	net-status-success	net.md	engine/net/status.h:57
+net::Status::Of(ErrorCode)	function	net	net-status-of-errorcode	net.md	engine/net/status.h:59
+net::Status::Make(ErrorCode,i32)	function	net	net-status-make-errorcode-i32	net.md	engine/net/status.h:62
+net::Status::Ok() const	function	net	net-status-ok-const	net.md	engine/net/status.h:66
+net::Status::Failed() const	function	net	net-status-failed-const	net.md	engine/net/status.h:69
+net::Status::Is(ErrorCode) const	function	net	net-status-is-errorcode-const	net.md	engine/net/status.h:72
+net::Status::Code() const	function	net	net-status-code-const	net.md	engine/net/status.h:74
+net::Status::OsError() const	function	net	net-status-oserror-const	net.md	engine/net/status.h:76
+net::TimeBudget	class	net	net-timebudget	net.md	engine/net/time_budget.h:16
+net::TimeBudget::TimeBudget(const Reactor&,const WaitOptions&)	function	net	net-timebudget-timebudget-const-reactor-amp-const-waitoptions-amp	net.md	engine/net/time_budget.h:22
+net::TimeBudget::Next(bool*) const	function	net	net-timebudget-next-bool-star-const	net.md	engine/net/time_budget.h:37
 database::Feature	enum	database	database-feature	database.md	engine/database/database.h:22
 database::Feature::Savepoints	enumerator	database	database-feature-savepoints	database.md	engine/database/database.h:24
 database::Feature::WithoutRowId	enumerator	database	database-feature-withoutrowid	database.md	engine/database/database.h:25
@@ -6102,15 +6153,15 @@ jobs::Scheduler::ParkedWorkersForTesting() const	function	jobs	jobs-scheduler-pa
 jobs::Scheduler::InjectionQueueSizeForTesting()	function	jobs	jobs-scheduler-injectionqueuesizefortesting	jobs.md	engine/jobs/scheduler.h:240
 jobs::Scheduler::InjectionCapacity()	function	jobs	jobs-scheduler-injectioncapacity	jobs.md	engine/jobs/scheduler.h:245
 jobs::Task	class	jobs	jobs-task	jobs.md	engine/jobs/task.h:81
-jobs::Task::Task()	function	jobs	jobs-task-task	jobs.md	engine/jobs/task.h:102
-jobs::Task::~Task()	function	jobs	jobs-task-tilde-task	jobs.md	engine/jobs/task.h:107
-jobs::Task::Task(const Task&)	function	jobs	jobs-task-task-const-task-amp	jobs.md	engine/jobs/task.h:115
-jobs::Task::operator=(const Task&)	function	jobs	jobs-task-operator-eq-const-task-amp	jobs.md	engine/jobs/task.h:116
-jobs::Task::Task(Task&&) noexcept	function	jobs	jobs-task-task-task-amp-amp-noexcept	jobs.md	engine/jobs/task.h:118
-jobs::Task::operator=(Task&&) noexcept	function	jobs	jobs-task-operator-eq-task-amp-amp-noexcept	jobs.md	engine/jobs/task.h:120
-jobs::Task::await_ready() const noexcept	function	jobs	jobs-task-await-ready-const-noexcept	jobs.md	engine/jobs/task.h:137
-jobs::Task::await_suspend(CoroutineHandle<>) noexcept	function	jobs	jobs-task-await-suspend-coroutinehandle-lt-gt-noexcept	jobs.md	engine/jobs/task.h:144
-jobs::Task::await_resume() noexcept	function	jobs	jobs-task-await-resume-noexcept	jobs.md	engine/jobs/task.h:154
+jobs::Task::Task()	function	jobs	jobs-task-task	jobs.md	engine/jobs/task.h:105
+jobs::Task::~Task()	function	jobs	jobs-task-tilde-task	jobs.md	engine/jobs/task.h:110
+jobs::Task::Task(const Task&)	function	jobs	jobs-task-task-const-task-amp	jobs.md	engine/jobs/task.h:118
+jobs::Task::operator=(const Task&)	function	jobs	jobs-task-operator-eq-const-task-amp	jobs.md	engine/jobs/task.h:119
+jobs::Task::Task(Task&&) noexcept	function	jobs	jobs-task-task-task-amp-amp-noexcept	jobs.md	engine/jobs/task.h:121
+jobs::Task::operator=(Task&&) noexcept	function	jobs	jobs-task-operator-eq-task-amp-amp-noexcept	jobs.md	engine/jobs/task.h:123
+jobs::Task::await_ready() const noexcept	function	jobs	jobs-task-await-ready-const-noexcept	jobs.md	engine/jobs/task.h:140
+jobs::Task::await_suspend(CoroutineHandle<>) noexcept	function	jobs	jobs-task-await-suspend-coroutinehandle-lt-gt-noexcept	jobs.md	engine/jobs/task.h:147
+jobs::Task::await_resume() noexcept	function	jobs	jobs-task-await-resume-noexcept	jobs.md	engine/jobs/task.h:157
 jobs::kMaxParticipants	variable	jobs	jobs-kmaxparticipants	jobs.md	engine/jobs/topology.h:13
 jobs::GetAllowedCpus(u32*,usize)	function	jobs	jobs-getallowedcpus-u32-star-usize	jobs.md	engine/jobs/topology.h:27
 jobs::ParseParticipantOverride(const char*,usize,bool*)	function	jobs	jobs-parseparticipantoverride-const-char-star-usize-bool-star	jobs.md	engine/jobs/topology.h:41

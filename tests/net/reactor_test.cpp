@@ -472,6 +472,102 @@ TEST_CASE("A token cancelled after its reactor is gone is harmless, and a token 
     CHECK(outlives.IsCancelled());
 }
 
+namespace
+{
+
+Job ReactorTestWaitSignal(Reactor* reactor, Signal* signal, WaitOptions options, WaitOutcome* out)
+{
+    out->status = co_await reactor->WaitSignal(*signal, options);
+    out->on_participant = jobs::WorkerPool::IsParticipantThread();
+    out->done.FetchAdd(1, MemoryOrder::Release);
+}
+
+}  // namespace
+
+TEST_CASE(
+    "A signal fired from another thread ends the wait; before the wait it ends at once; a timeout and a cancel still apply",
+    "[network][reactor][signal]")
+{
+    auto scheduler = ReactorTestScheduler(2);
+    Reactor reactor(*scheduler);
+    REQUIRE_REACTOR(reactor);
+    Signal later;
+    WaitOutcome waiting;
+    scheduler->Submit(ReactorTestWaitSignal(&reactor, &later, {}, &waiting));
+    ThisThread::SleepForMilliseconds(30);
+    CHECK(NotDoneYet(waiting));
+    Thread firer([&later] { later.Fire(); });
+    WaitDone(*scheduler, waiting);
+    firer.Join();
+    CHECK(waiting.status.Ok());
+    CHECK(waiting.on_participant);
+    later.Fire();  // idempotent, and harmless after the wait ended
+
+    Signal early;
+    early.Fire();
+    WaitOutcome immediate;
+    scheduler->Submit(ReactorTestWaitSignal(&reactor, &early, {}, &immediate));
+    WaitDone(*scheduler, immediate);
+    CHECK(immediate.status.Ok());
+
+    Signal never;
+    WaitOptions limit;
+    limit.timeout_nanos = 20'000'000;
+    WaitOutcome timed;
+    scheduler->Submit(ReactorTestWaitSignal(&reactor, &never, limit, &timed));
+    WaitDone(*scheduler, timed);
+    CHECK(timed.status.Is(ErrorCode::TimedOut));
+    never.Fire();  // after the timeout: no wait, no pointer to the reactor, nothing happens
+
+    CancelToken token;
+    WaitOptions cancellable;
+    cancellable.token = &token;
+    Signal other;
+    WaitOutcome cancelled;
+    scheduler->Submit(ReactorTestWaitSignal(&reactor, &other, cancellable, &cancelled));
+    ThisThread::SleepForMilliseconds(20);
+    token.Cancel();
+    WaitDone(*scheduler, cancelled);
+    CHECK(cancelled.status.Is(ErrorCode::Cancelled));
+
+    // One waiter per signal.
+    Signal shared;
+    WaitOutcome first;
+    WaitOutcome second;
+    scheduler->Submit(ReactorTestWaitSignal(&reactor, &shared, {}, &first));
+    ThisThread::SleepForMilliseconds(20);
+    scheduler->Submit(ReactorTestWaitSignal(&reactor, &shared, {}, &second));
+    WaitDone(*scheduler, second);
+    CHECK(second.status.Is(ErrorCode::Invalid));
+    shared.Fire();
+    WaitDone(*scheduler, first);
+    CHECK(first.status.Ok());
+}
+
+TEST_CASE("Firing a signal races with the wait starting without losing the wake-up",
+          "[network][reactor][signal][stress]")
+{
+    auto scheduler = ReactorTestScheduler(4);
+    Reactor reactor(*scheduler);
+    REQUIRE_REACTOR(reactor);
+    constexpr int kRounds = 2000;
+    for (int round = 0; round < kRounds; ++round)
+    {
+        Signal signal;
+        WaitOutcome out;
+        Thread firer(
+            [&signal, round]
+            {
+                ThisThread::SleepForMicroseconds(static_cast<u64>(round % 40));
+                signal.Fire();
+            });
+        scheduler->Submit(ReactorTestWaitSignal(&reactor, &signal, {}, &out));
+        WaitDone(*scheduler, out);
+        firer.Join();
+        REQUIRE(out.status.Ok());
+    }
+}
+
 TEST_CASE("An enormous sleep does not end at once", "[network][reactor]")
 {
     auto scheduler = ReactorTestScheduler(2);

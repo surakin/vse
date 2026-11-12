@@ -19,6 +19,17 @@ u64 SaturatingAdd(u64 a, u64 b)
 
 }  // namespace
 
+void Signal::Fire()
+{
+    fired_.Store(true, MemoryOrder::SeqCst);
+    // A wait that registers after this load sees the flag (it stores the reactor before it checks the flag).
+    Reactor* reactor = reactor_.Load(MemoryOrder::SeqCst);
+    if (reactor != nullptr)
+    {
+        reactor->FireSignal(this);
+    }
+}
+
 void CancelToken::Cancel()
 {
     cancelled_.Store(true, MemoryOrder::SeqCst);
@@ -83,6 +94,13 @@ WaitAwaitable Reactor::WaitWritable(const Socket& socket, WaitOptions options)
 {
     WaitAwaitable awaitable(this, WaitKind::Writable, socket.NativeHandle(), options.timeout_nanos, options.token);
     awaitable.invalid_ = !socket.IsOpen();
+    return awaitable;
+}
+
+WaitAwaitable Reactor::WaitSignal(Signal& signal, WaitOptions options)
+{
+    WaitAwaitable awaitable(this, WaitKind::Signal, -1, options.timeout_nanos, options.token);
+    awaitable.wait_.signal = &signal;
     return awaitable;
 }
 
@@ -263,7 +281,20 @@ bool Reactor::Begin(Wait* wait)
         wait->result = Status::Of(ErrorCode::Cancelled);
         return false;
     }
-    if (wait->kind != WaitKind::Sleep)
+    if (wait->kind == WaitKind::Signal)
+    {
+        if (wait->signal->IsFired())
+        {
+            wait->result = Status::Success();  // fired before the wait began
+            return false;
+        }
+        if (wait->signal->wait_ != nullptr)
+        {
+            wait->result = Status::Of(ErrorCode::Invalid);  // one waiter per signal
+            return false;
+        }
+    }
+    if (wait->kind == WaitKind::Readable || wait->kind == WaitKind::Writable)
     {
         FdRecord* record = fds_.Find(wait->socket);
         if (record == nullptr)
@@ -300,6 +331,19 @@ bool Reactor::Begin(Wait* wait)
             poller_.Wake();  // the reactor thread sleeps until an older deadline: make it look again
         }
     }
+    if (wait->kind == WaitKind::Signal)
+    {
+        // Register with the signal, then look at its flag again (Fire sets the flag first and then looks for the
+        // reactor).
+        wait->signal->wait_ = wait;
+        wait->signal->reactor_.Store(this, MemoryOrder::SeqCst);
+        if (wait->signal->IsFired())
+        {
+            Ready discarded;
+            CompleteLocked(wait, Status::Success(), &discarded);
+            return false;
+        }
+    }
     if (wait->token != nullptr)
     {
         // Register with the token first, then look at its flag again: CancelToken::Cancel sets the flag first and then
@@ -327,7 +371,12 @@ void Reactor::CompleteLocked(Wait* wait, Status result, Ready* ready)
     UnlinkAll(wait);
     UnlinkToken(wait);
     HeapRemove(wait);
-    if (wait->kind != WaitKind::Sleep)
+    if (wait->kind == WaitKind::Signal)
+    {
+        wait->signal->wait_ = nullptr;
+        wait->signal->reactor_.Store(nullptr, MemoryOrder::SeqCst);
+    }
+    if (wait->kind == WaitKind::Readable || wait->kind == WaitKind::Writable)
     {
         FdRecord* record = fds_.Find(wait->socket);
         if (record != nullptr)
@@ -489,6 +538,19 @@ void Reactor::CancelWaitsOf(CancelToken* token)
         while (token->waits_ != nullptr)  // CompleteLocked takes each wait off the token's list
         {
             CompleteLocked(token->waits_, Status::Of(ErrorCode::Cancelled), &ready);
+        }
+    }
+    Release(&ready);
+}
+
+void Reactor::FireSignal(Signal* signal)
+{
+    Ready ready;
+    {
+        LockGuard<Mutex> guard(lock_);
+        if (signal->wait_ != nullptr)
+        {
+            CompleteLocked(signal->wait_, Status::Success(), &ready);
         }
     }
     Release(&ready);

@@ -31,6 +31,7 @@ enum class ErrorCode : u8
     LimitExceeded,  ///< A configured or fixed limit was reached: connections, descriptors, queue capacity, a set's
                     ///< capacity.
     Unsupported,    ///< The operating system or the backend lacks the feature.
+    NotFound,       ///< A name does not exist: a host name that does not resolve.
     Other,          ///< Anything else.
 };
 

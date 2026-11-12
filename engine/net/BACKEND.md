@@ -159,3 +159,16 @@ Block for ready sockets, a wake-up or the timeout, and report the ready sockets 
 
 Make a wait return: an `eventfd` write on Linux; a connected loopback socket pair on Windows, which has no `eventfd`.
 
+## Name resolution
+
+`net::SystemResolve` (`engine/net/resolver.h`) is the one place a host name becomes endpoints; the thread that calls it, the queue, the timeouts and the cancel logic are neutral
+(`resolver.cpp`, `resolve.cpp`). A new platform implements the one function in `engine/net/<platform>/` (POSIX: `posix/resolve_posix.cpp`, `getaddrinfo`).
+
+- **Bounded and deduplicated:** at most `EndpointSet::kCapacity` endpoints, in the system's order, an address once; a system that returns nothing is `NotFound`.
+- **Errors by meaning:** a name that does not exist is `NotFound`, a name server that did not answer is `TimedOut`, and the rest map to `Unreachable`, `LimitExceeded`, `Unsupported` or `Other`.
+- **It blocks and cannot be cancelled** (Windows: `GetAddrInfoExW` could be, and may be used to; the interface does not rely on it): the resolver thread absorbs that, and a resolution whose coroutine gave up is finished and dropped.
+
+### `SystemResolve`
+
+Resolve a name and a port to endpoints with the operating system's resolver, asking for stream sockets so that each address appears once.
+

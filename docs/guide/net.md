@@ -1,6 +1,6 @@
 # Networking: addresses, endpoints, errors, sockets and the reactor
 
-Status: Phase 20. Built: addresses, endpoints and the error type (Day 267), the socket interface with its Linux backend and the access gate (Day 268), the reactor, the asynchronous operations and timers (Day 269). Next: name resolution and listeners (Day 270), TCP streams (Day 271), the transports (Days 273-277).
+Status: Phase 20. Built: addresses, endpoints and the error type (Day 267), the socket interface with its Linux backend and the access gate (Day 268), the reactor, the asynchronous operations and timers (Day 269). name resolution, listeners and the connect helpers (Day 270). Next: TCP streams (Day 271), the transports (Days 273-277).
 
 **Audience:** engine programmers who talk to another machine or process. Design, spikes and the benchmark pass conditions:
 `docs/superpowers/specs/2026-11-11-networking-design.md`.
@@ -195,4 +195,17 @@ jobs::Job Echo(net::Reactor* reactor, net::Socket* socket)
 - **One reader and one writer per socket** at a time; a second wait in the same direction ends with `Invalid`.
 
 `jobs::Task<T>` (`engine/jobs/task.h`) is the general building block: a lazy coroutine returning a value, awaited by a job or another task, handing control back with no trip through the scheduler.
+
+## Names, listeners and connecting
+
+- **`net::Resolve`** turns a host name and a port into at most 16 endpoints. A numeric host (`127.0.0.1`, `::1`, `[::1]`) is parsed in place; a name is queued for the `net::Resolver`, one thread that
+  calls the operating system's resolver, which blocks for as long as the name server takes and cannot be cancelled. The coroutine waits on a `net::Signal` that the thread fires, so the timeout and the cancel token
+  work as for every wait; a resolution that was given up is finished on the thread and its answer dropped. The resolver's queue is bounded (`LimitExceeded` when full), and `Resolver::Shutdown` ends the queued
+  requests with `Cancelled` and waits for the one in progress, so shut it down before the reactor.
+- **`net::Signal`** is the general form: a one-shot event any thread can `Fire`, awaited with `Reactor::WaitSignal`. A signal fired before the wait begins ends the wait at once.
+- **`net::Listener`** opens, binds and listens, and its `Accept` task applies the policy of an accept loop: when the process is out of descriptors it sleeps (5 ms, doubling to 200 ms) and tries again instead of
+  spinning; when `max_unhandled` connections are accepted and not yet reported handled (`Listener::Handled`), it stops accepting and leaves the rest in the kernel's queue. Write the loop yourself, three lines.
+- **Dual stack:** a listener on `[::]` also accepts IPv4 clients (mapped addresses) where the system allows it. `Listener::DualStack()` says whether it does; `ListenerOptions::dual_stack = false` asks for IPv6 only.
+- **`net::ConnectAny`** tries a list of endpoints one after the other, each for the attempt timeout (a sequential "happy eyeballs": the resolver's order puts the preferred family first), and **`net::ConnectTo`** is
+  `Resolve` then `ConnectAny`.
 

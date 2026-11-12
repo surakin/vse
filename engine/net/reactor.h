@@ -31,6 +31,7 @@
 #include "net/cancel.h"
 #include "net/clock.h"
 #include "net/poller.h"
+#include "net/signal.h"
 #include "net/socket.h"
 #include "net/status.h"
 #include "sync/atomic.h"
@@ -47,6 +48,7 @@ enum class WaitKind : u8
     Readable,  ///< The socket can be read, accepted from, or has hung up.
     Writable,  ///< The socket can be written, or a connect finished.
     Sleep,     ///< Only time passes: ends with Ok when the duration is over.
+    Signal,    ///< A [[net::Signal]] fired by another thread.
 };
 
 /// Optional cancel token and timeout of a wait or an operation.
@@ -75,9 +77,10 @@ struct Wait
     bool has_deadline = false;
     u64 deadline = 0;  ///< On the reactor's clock.
     CancelToken* token = nullptr;
-    Status result;         ///< The outcome, written before the coroutine is scheduled.
-    bool done = false;     ///< Completed (guarded by the reactor's lock).
-    Wait* prev = nullptr;  ///< The list of all active waits.
+    Signal* signal = nullptr;  ///< For WaitKind::Signal.
+    Status result;             ///< The outcome, written before the coroutine is scheduled.
+    bool done = false;         ///< Completed (guarded by the reactor's lock).
+    Wait* prev = nullptr;      ///< The list of all active waits.
     Wait* next = nullptr;
     Wait* token_prev = nullptr;  ///< The list of the waits of one cancel token.
     Wait* token_next = nullptr;
@@ -110,6 +113,7 @@ public:
 private:
     friend class Reactor;
     WaitAwaitable(Reactor* reactor, WaitKind kind, i64 socket, i64 timeout_nanos, CancelToken* token);
+    friend class Signal;
 
     Wait wait_;
     i64 timeout_nanos_ = -1;
@@ -171,6 +175,12 @@ public:
     /// - Returns: an awaitable that ends with Ok after `nanos`, or Cancelled.
     WaitAwaitable Sleep(u64 nanos, WaitOptions options = {});
 
+    /// Waits until another thread fires `signal`.
+    /// - Param signal: the signal; it must outlive the wait, and only one coroutine may wait for it.
+    /// - Param options: token and timeout.
+    /// - Returns: an awaitable giving Ok when the signal fires (also if it fired already), or TimedOut or Cancelled.
+    WaitAwaitable WaitSignal(Signal& signal, WaitOptions options = {});
+
     /// Ends every wait on `socket` with [[net::ErrorCode::Closed]] and forgets the socket. Call it before the
     /// descriptor is closed by other means; [[net::Reactor::Close]] does both.
     /// - Param socket: the socket (open or not).
@@ -191,6 +201,7 @@ public:
 private:
     friend class WaitAwaitable;
     friend class CancelToken;
+    friend class Signal;
 
     struct FdRecord
     {
@@ -201,6 +212,7 @@ private:
 
     bool Begin(Wait* wait);
     void CancelWaitsOf(CancelToken* token);
+    void FireSignal(Signal* signal);
     void ForgetLocked(i64 handle, Ready* ready);
     void RearmOrFail(i64 handle, Ready* ready);
     void LinkToken(Wait* wait);

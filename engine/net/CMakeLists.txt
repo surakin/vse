@@ -10,6 +10,7 @@ set(NET_SOURCES
 set(NET_POSIX_SOURCES
   posix/posix_error.cpp  # Day 268
   posix/socket_posix.cpp  # Day 268
+  posix/resolve_posix.cpp  # Day 270
 )
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   list(APPEND NET_POSIX_SOURCES linux/linux_hooks.cpp)  # Day 268
@@ -18,6 +19,9 @@ endif()
 set(NET_REACTOR_SOURCES
   reactor.cpp  # Day 269
   async.cpp  # Day 269
+  resolver.cpp  # Day 270
+  resolve.cpp  # Day 270
+  listener.cpp  # Day 270
 )
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   list(APPEND NET_REACTOR_SOURCES linux/poller_epoll.cpp)  # Day 269

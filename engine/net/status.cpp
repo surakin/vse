@@ -23,6 +23,7 @@ const char* ErrorCodeName(ErrorCode code)
     case ErrorCode::Invalid: return "invalid";
     case ErrorCode::LimitExceeded: return "limit_exceeded";
     case ErrorCode::Unsupported: return "unsupported";
+    case ErrorCode::NotFound: return "not_found";
     case ErrorCode::Other: return "other";
     }
     return "other";

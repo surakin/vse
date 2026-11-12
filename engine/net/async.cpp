@@ -1,4 +1,5 @@
 #include "net/async.h"
+#include "net/time_budget.h"
 
 namespace engine_placeholder::net
 {
@@ -6,56 +7,13 @@ namespace engine_placeholder::net
 namespace
 {
 
-// The time left for the whole operation: tracks one deadline across the waits of a loop.
-class Budget
-{
-public:
-    Budget(const Reactor& reactor, const WaitOptions& options) : clock_(&reactor.GetClock()), token_(options.token)
-    {
-        if (options.timeout_nanos >= 0)
-        {
-            limited_ = true;
-            deadline_ = clock_->NowNanos() + static_cast<u64>(options.timeout_nanos);
-        }
-    }
-
-    // The options for the next wait: the same token and what is left of the timeout. `expired` is set when nothing is
-    // left.
-    WaitOptions Next(bool* expired) const
-    {
-        WaitOptions next;
-        next.token = token_;
-        *expired = false;
-        if (limited_)
-        {
-            const u64 now = clock_->NowNanos();
-            if (now >= deadline_)
-            {
-                *expired = true;
-                next.timeout_nanos = 0;
-            }
-            else
-            {
-                next.timeout_nanos = static_cast<i64>(deadline_ - now);
-            }
-        }
-        return next;
-    }
-
-private:
-    const Clock* clock_;
-    CancelToken* token_;
-    bool limited_ = false;
-    u64 deadline_ = 0;
-};
-
 // The loop all the operations share: try; if the socket would block, wait (for the time that is left of the whole
 // operation, and unless cancelled) in the direction the operation needs; try again. `op` is called for each try and
 // returns the status of the try and the bytes moved so far; it reports WouldBlock to ask for a wait.
 template <class Op>
 jobs::Task<IoResult> RetryWhileBlocked(Reactor& reactor, Socket& socket, bool wait_for_read, WaitOptions options, Op op)
 {
-    const Budget budget(reactor, options);
+    const TimeBudget budget(reactor, options);
     for (;;)
     {
         const IoResult attempt = op();

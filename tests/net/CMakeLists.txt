@@ -7,7 +7,7 @@ set(NET_TEST_SOURCES
 set(NET_SOCKET_TEST_SOURCES "")
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
   list(APPEND NET_TEST_SOURCES errno_map_posix_test.cpp)  # Day 268
-  list(APPEND NET_SOCKET_TEST_SOURCES socket_test.cpp socket_flags_posix_test.cpp reactor_test.cpp)  # Days 268-269
+  list(APPEND NET_SOCKET_TEST_SOURCES socket_test.cpp socket_flags_posix_test.cpp reactor_test.cpp resolve_test.cpp listener_test.cpp)  # Days 268-270
 endif()
 
 find_package(Threads REQUIRED)
