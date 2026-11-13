@@ -640,6 +640,19 @@ TEST_CASE("The Metal slots: minted for every binding and the push block, one res
     bad.bindings[bad.binding_count].name[0] = 'z';
     ++bad.binding_count;
     CHECK(ValidateShaderReflection(bad) != nullptr);
+    // An array's slots are a range: a second texture inside it shares a slot even though the first slots differ (the
+    // end-of-phase review, Day 328), and one just after it does not.
+    bad = r;
+    bad.bindings[texture].count = 4;  // slots s..s+3
+    bad.bindings[bad.binding_count] = bad.bindings[texture];
+    bad.bindings[bad.binding_count].count = 1;
+    bad.bindings[bad.binding_count].binding = 7;
+    bad.bindings[bad.binding_count].name[0] = 'z';
+    bad.bindings[bad.binding_count].metal_slot = bad.bindings[texture].metal_slot + 2;
+    ++bad.binding_count;
+    CHECK(ValidateShaderReflection(bad) != nullptr);
+    bad.bindings[bad.binding_count - 1].metal_slot = bad.bindings[texture].metal_slot + 4 + 16;  // past every texture
+    CHECK(ValidateShaderReflection(bad) == nullptr);
     // A reflection without Metal slots is valid as long as none is set.
     ShaderReflection none = r;
     none.has_metal_slots = false;

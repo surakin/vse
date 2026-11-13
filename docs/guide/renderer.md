@@ -1,7 +1,7 @@
 # The Renderer
 
 **Audience:** engine and game programmers who draw things. Read [The RHI](rhi.md) first for the device, buffers and command lists this page builds on.
-**Covers:** the renderer core (Phase 5), resetting the device at run time (Phase 8) and the Direct3D 12 notes (Phase 13).
+**Covers:** the renderer core (Phase 5), resetting the device at run time (Phase 8) the Direct3D 12 notes (Phase 13) and the Metal notes (Phase 26).
 
 The renderer turns a description of a world (objects with a mesh, a material and a position, plus lights, seen by a camera) into a picture. You do not call
 Vulkan or Direct3D: you fill a scene, give the renderer a callback that says which passes to run, and it does the rest each frame.
@@ -95,7 +95,7 @@ inserts the barriers), records every pass, submits once and presents. The shippe
 G-buffer (albedo, normal, material parameters, depth), a lighting pass shades it from the lights (a full-screen pass for ambient and
 directional light, one scissored sphere per point light), and a tonemap pass maps the HDR result to the target. Materials come from
 Slang shaders described by reflection, so a material is a template plus parameters and textures, and its pipelines are built on
-demand and cached. Nothing here names Vulkan; a D3D12 or Metal backend plugs in under the RHI.
+demand and cached. Nothing here names Vulkan; the Direct3D 12 and Metal backends plug in under the RHI.
 
 Shader reflection (what a compiled shader says about its own inputs) is described in [Shaders](rhi-shaders.md#reflection-shaders-describe-themselves), and shader variants in [Shaders](rhi-shaders.md#permutations-one-source-several-modules).
 
@@ -979,7 +979,7 @@ past 100000 objects.
   frame's thread, and the recorded callbacks may run on scheduler participants, reading only what `Prepare` left.
 - **Contract violations abort; environment failures report.** See "Failure behavior".
 - **Shaders follow the set convention** (set 0 frame, set 1 material, set 2 objects) and read the object index from
-  `SV_VulkanInstanceID`; see `shaders/README.md`.
+  `SV_VulkanInstanceID` (Direct3D 12 and Metal from the object index stream); see `shaders/README.md`.
 
 ### Common mistakes
 

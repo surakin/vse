@@ -187,6 +187,39 @@ TEST_CASE(
         CHECK(AsMetal(*managed).ManagedStorage());
         CHECK(AsMetal(*managed).StorageModeFor(MemoryLocation::CpuToGpu) == MTLStorageModeManaged);
         CHECK(AsMetal(*managed).StorageModeFor(MemoryLocation::GpuToCpu) == MTLStorageModeShared);
+        // CPU-written memory the GPU may write stays Shared (Day 328's review), so a GPU copy into it reads back.
+        CHECK(AsMetal(*managed).StorageModeFor(MemoryLocation::CpuToGpu, BufferUsage::CopyDst) == MTLStorageModeShared);
+        CHECK(AsMetal(*managed).StorageModeFor(MemoryLocation::CpuToGpu, BufferUsage::Storage) == MTLStorageModeShared);
+        BufferDesc src_desc;
+        src_desc.size = 64;
+        src_desc.usage = BufferUsage::CopySrc | BufferUsage::CopyDst;
+        const BufferHandle src = managed->CreateBuffer(src_desc);
+        BufferDesc dst_desc;
+        dst_desc.size = 64;
+        dst_desc.usage = BufferUsage::CopyDst | BufferUsage::CopySrc | BufferUsage::Uniform;
+        dst_desc.location = MemoryLocation::CpuToGpu;
+        const BufferHandle dst = managed->CreateBuffer(dst_desc);
+        REQUIRE((src.IsValid() && dst.IsValid()));
+        Array<u8, 64> pattern = {};
+        for (usize i = 0; i < pattern.Size(); ++i)
+        {
+            pattern[i] = static_cast<u8>(i * 3 + 1);
+        }
+        REQUIRE(managed->UploadBuffer(src, 0, pattern.Data(), pattern.Size()).ok);
+        managed->BeginFrame();
+        CommandList* list = managed->CreateCommandList();
+        REQUIRE(list != nullptr);
+        list->Begin();
+        list->CopyBuffer(src, dst, 0, 0, 64);
+        list->End();
+        REQUIRE(managed->Submit(&list, 1) != 0);
+        managed->EndFrame();
+        managed->WaitIdle();
+        Array<u8, 64> got = {};
+        REQUIRE(managed->ReadbackBuffer(dst, 0, got.Data(), got.Size()));
+        CHECK(MemCompare(got.Data(), pattern.Data(), pattern.Size()) == 0);  // the GPU's write, not the CPU's copy
+        managed->DestroyBuffer(src);
+        managed->DestroyBuffer(dst);
     }
     DevicePtr after = MakeMetal("metal_resource_test after");
     REQUIRE(after);

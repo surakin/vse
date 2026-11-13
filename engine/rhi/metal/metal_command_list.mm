@@ -61,12 +61,9 @@ void MetalCommandList::Begin()
     phase_ = Phase::Recording;
     failed_ = false;
     counts_ = Counts{};
-    pipeline_ = {};
-    pipeline_dirty_ = false;
-    groups_ = {};
-    groups_dirty_ = 0;
-    push_size_ = 0;
-    push_dirty_ = false;
+    graphics_ = BindPoint{};
+    compute_bind_ = BindPoint{};
+    compute_bound_ = false;
     index_buffer_ = nil;
     label_count_ = 0;
     label_overflow_ = 0;
@@ -127,9 +124,12 @@ void MetalCommandList::EndEncoder()
     kind_ = EncoderKind::None;
     // A new encoder starts with nothing bound: everything is applied again at the next draw or dispatch.
     binder_.Reset();
-    pipeline_dirty_ = pipeline_.IsValid();
-    groups_dirty_ = ~0u;
-    push_dirty_ = push_size_ != 0;
+    for (BindPoint* point : {&graphics_, &compute_bind_})
+    {
+        point->pipeline_dirty = point->pipeline.IsValid();
+        point->groups_dirty = ~0u;
+        point->push_dirty = point->push_size != 0;
+    }
 }
 
 void MetalCommandList::ReplayLabels()
@@ -366,10 +366,7 @@ void MetalCommandList::BeginRendering(const RenderingDesc& desc)
     ENGINE_ASSERT(desc.color_count != 0 || desc.depth.texture.IsValid(), "BeginRendering: no attachments");
     // The pass is open from here even when the list has failed, so EndRendering and End pair with it as on a good list.
     in_pass_ = true;
-    if (pipeline_.IsValid() && !info_.compute)
-    {
-        pipeline_ = {};  // a graphics pipeline binding ends with the pass (the RHI's rule); a compute one stays
-    }
+    graphics_.pipeline = {};  // a graphics pipeline binding ends with the pass (the RHI's rule); the compute one stays
     if (!Recording())
     {
         return;
@@ -446,11 +443,8 @@ void MetalCommandList::EndRendering()
     ENGINE_ASSERT(in_pass_, "EndRendering: no rendering pass is open");
     in_pass_ = false;
     EndEncoder();
-    if (pipeline_.IsValid() && !info_.compute)
-    {
-        pipeline_ = {};  // the pass's graphics pipeline ends with it; a compute one bound before the pass stays
-        pipeline_dirty_ = false;
-    }
+    graphics_.pipeline = {};  // the pass's graphics pipeline ends with it; the compute one bound before the pass stays
+    graphics_.pipeline_dirty = false;
 }
 
 void MetalCommandList::SetPipeline(PipelineHandle pipeline)
@@ -459,20 +453,24 @@ void MetalCommandList::SetPipeline(PipelineHandle pipeline)
     {
         return;
     }
-    if (pipeline == pipeline_ && !pipeline_dirty_)
-    {
-        return;
-    }
-    if (!device_->LookupPipeline(pipeline, &info_))
+    MetalPipelineInfo info;
+    if (!device_->LookupPipeline(pipeline, &info))
     {
         Fail("SetPipeline", "the pipeline is invalid or destroyed");
         return;
     }
-    ENGINE_ASSERT(info_.compute != in_pass_, "SetPipeline: a graphics pipeline outside a pass or a compute one inside");
-    pipeline_ = pipeline;
-    pipeline_dirty_ = true;
-    groups_dirty_ = ~0u;  // another pipeline may put the same groups at other slots
-    push_dirty_ = push_size_ != 0;
+    ENGINE_ASSERT(info.compute != in_pass_, "SetPipeline: a graphics pipeline outside a pass or a compute one inside");
+    compute_bound_ = info.compute;
+    BindPoint& point = Current();
+    if (pipeline == point.pipeline && !point.pipeline_dirty)
+    {
+        return;
+    }
+    point.pipeline = pipeline;
+    point.info = static_cast<MetalPipelineInfo&&>(info);
+    point.pipeline_dirty = true;
+    point.groups_dirty = ~0u;  // another pipeline may put the same groups at other slots
+    point.push_dirty = point.push_size != 0;
 }
 
 void MetalCommandList::SetBindGroup(u32 slot, BindGroupHandle group)
@@ -482,8 +480,9 @@ void MetalCommandList::SetBindGroup(u32 slot, BindGroupHandle group)
         return;
     }
     ENGINE_ASSERT(slot < kMaxBindGroups, "SetBindGroup: slot out of range");
-    groups_[slot] = group;
-    groups_dirty_ |= 1u << slot;
+    BindPoint& point = Current();
+    point.groups[slot] = group;
+    point.groups_dirty |= 1u << slot;
 }
 
 void MetalCommandList::SetPushConstants(u32 offset, const void* data, u32 size)
@@ -492,12 +491,13 @@ void MetalCommandList::SetPushConstants(u32 offset, const void* data, u32 size)
     {
         return;
     }
-    ENGINE_ASSERT(pipeline_.IsValid(), "SetPushConstants: no pipeline bound");
+    BindPoint& point = Current();
+    ENGINE_ASSERT(point.pipeline.IsValid(), "SetPushConstants: no pipeline bound");
     ENGINE_ASSERT(offset % 4 == 0 && size % 4 == 0 && offset + size <= kMaxPushConstantBytes && data != nullptr,
                   "SetPushConstants: a range that is not 4-byte aligned or exceeds the push-constant range");
-    MemCopy(push_.Data() + offset, data, size);
-    push_size_ = offset + size > push_size_ ? offset + size : push_size_;
-    push_dirty_ = true;
+    MemCopy(point.push.Data() + offset, data, size);
+    point.push_size = offset + size > point.push_size ? offset + size : point.push_size;
+    point.push_dirty = true;
 }
 
 void MetalCommandList::SetViewport(const Viewport& viewport)
@@ -580,37 +580,38 @@ void MetalCommandList::SetIndexBuffer(BufferHandle buffer, u64 offset, IndexType
 bool MetalCommandList::ApplyRender()
 {
     ENGINE_ASSERT(in_pass_, "Draw: outside a rendering pass");
-    ENGINE_ASSERT(pipeline_.IsValid() && !info_.compute, "Draw: no graphics pipeline bound");
-    if (render_ == nil || !pipeline_.IsValid())
+    BindPoint& point = graphics_;
+    ENGINE_ASSERT(point.pipeline.IsValid(), "Draw: no graphics pipeline bound");
+    if (render_ == nil || !point.pipeline.IsValid())
     {
         return false;
     }
-    if (pipeline_dirty_)
+    if (point.pipeline_dirty)
     {
-        [render_ setRenderPipelineState:info_.render];
-        [render_ setDepthStencilState:info_.depth];
-        [render_ setCullMode:info_.cull];
-        [render_ setFrontFacingWinding:info_.winding];
-        [render_ setTriangleFillMode:info_.fill];
-        pipeline_dirty_ = false;
+        [render_ setRenderPipelineState:point.info.render];
+        [render_ setDepthStencilState:point.info.depth];
+        [render_ setCullMode:point.info.cull];
+        [render_ setFrontFacingWinding:point.info.winding];
+        [render_ setTriangleFillMode:point.info.fill];
+        point.pipeline_dirty = false;
     }
-    const MetalStageSlots* fragment = &info_.fragment;  // empty for a depth-only pipeline
+    const MetalStageSlots* fragment = &point.info.fragment;  // empty for a depth-only pipeline
     for (u32 set = 0; set < kMaxBindGroups; ++set)
     {
-        if ((groups_dirty_ & (1u << set)) != 0 && groups_[set].IsValid())
+        if ((point.groups_dirty & (1u << set)) != 0 && point.groups[set].IsValid())
         {
-            if (!binder_.BindRender(*device_, render_, &info_.vertex, fragment, set, groups_[set]))
+            if (!binder_.BindRender(*device_, render_, &point.info.vertex, fragment, set, point.groups[set]))
             {
                 Fail("Draw", "a bind group could not be bound");
                 return false;
             }
         }
     }
-    groups_dirty_ = 0;
-    if (push_dirty_)
+    point.groups_dirty = 0;
+    if (point.push_dirty)
     {
-        binder_.PushRender(render_, &info_.vertex, fragment, push_.Data(), push_size_);
-        push_dirty_ = false;
+        binder_.PushRender(render_, &point.info.vertex, fragment, point.push.Data(), point.push_size);
+        point.push_dirty = false;
     }
     counts_.binder_calls = binder_.IssuedCalls();
     return true;
@@ -625,7 +626,7 @@ void MetalCommandList::Draw(u32 vertex_count, u32 instance_count, u32 first_vert
         {
             return;
         }
-        [render_ drawPrimitives:info_.primitive
+        [render_ drawPrimitives:graphics_.info.primitive
                     vertexStart:first_vertex
                     vertexCount:vertex_count
                   instanceCount:instance_count
@@ -650,7 +651,7 @@ void MetalCommandList::DrawIndexed(u32 index_count, u32 instance_count, u32 firs
         }
         const u64 size = index_type_ == IndexType::UInt16 ? 2 : 4;
         // Strips restart at the all-ones index on Metal always (the RHI's primitive_restart asks for the same).
-        [render_ drawIndexedPrimitives:info_.primitive
+        [render_ drawIndexedPrimitives:graphics_.info.primitive
                             indexCount:index_count
                              indexType:index_type_ == IndexType::UInt16 ? MTLIndexTypeUInt16 : MTLIndexTypeUInt32
                            indexBuffer:index_buffer_
@@ -664,33 +665,34 @@ void MetalCommandList::DrawIndexed(u32 index_count, u32 instance_count, u32 firs
 bool MetalCommandList::ApplyCompute()
 {
     ENGINE_ASSERT(!in_pass_, "Dispatch: inside a rendering pass");
-    ENGINE_ASSERT(pipeline_.IsValid() && info_.compute, "Dispatch: no compute pipeline bound");
-    if (!pipeline_.IsValid() || !info_.compute)
+    BindPoint& point = compute_bind_;
+    ENGINE_ASSERT(point.pipeline.IsValid(), "Dispatch: no compute pipeline bound");
+    if (!point.pipeline.IsValid())
     {
         return false;
     }
     id<MTLComputeCommandEncoder> encoder = Compute();
-    if (pipeline_dirty_)
+    if (point.pipeline_dirty)
     {
-        [encoder setComputePipelineState:info_.compute_state];
-        pipeline_dirty_ = false;
+        [encoder setComputePipelineState:point.info.compute_state];
+        point.pipeline_dirty = false;
     }
     for (u32 set = 0; set < kMaxBindGroups; ++set)
     {
-        if ((groups_dirty_ & (1u << set)) != 0 && groups_[set].IsValid())
+        if ((point.groups_dirty & (1u << set)) != 0 && point.groups[set].IsValid())
         {
-            if (!binder_.BindCompute(*device_, encoder, info_.kernel, set, groups_[set]))
+            if (!binder_.BindCompute(*device_, encoder, point.info.kernel, set, point.groups[set]))
             {
                 Fail("Dispatch", "a bind group could not be bound");
                 return false;
             }
         }
     }
-    groups_dirty_ = 0;
-    if (push_dirty_)
+    point.groups_dirty = 0;
+    if (point.push_dirty)
     {
-        binder_.PushCompute(encoder, info_.kernel, push_.Data(), push_size_);
-        push_dirty_ = false;
+        binder_.PushCompute(encoder, point.info.kernel, point.push.Data(), point.push_size);
+        point.push_dirty = false;
     }
     counts_.binder_calls = binder_.IssuedCalls();
     return true;
@@ -705,7 +707,7 @@ void MetalCommandList::Dispatch(u32 x, u32 y, u32 z)
         {
             return;
         }
-        [compute_ dispatchThreadgroups:MTLSizeMake(x, y, z) threadsPerThreadgroup:info_.threadgroup];
+        [compute_ dispatchThreadgroups:MTLSizeMake(x, y, z) threadsPerThreadgroup:compute_bind_.info.threadgroup];
     }
 }
 

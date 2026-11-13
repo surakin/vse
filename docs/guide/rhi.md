@@ -1,6 +1,6 @@
 # The Render Hardware Interface (RHI)
 
-Status: written (Phase 4; Direct3D 12 backend added in Phase 13).
+Status: written (Phase 4; Direct3D 12 backend added in Phase 13; Metal backend added in Phase 26).
 
 **Audience:** engine and renderer programmers. Read [Standard types](foundation-types.md) and [Containers](foundation-containers.md) first. If you only want to
 draw things with materials, start with the [renderer guide](renderer.md): the renderer sits on top of the RHI and hides most of this page. You come here
@@ -32,13 +32,13 @@ This page is long because it is also the reference for the backends. You do not 
 2. **Then, to draw something:** Backends and the registry, Creating a device, Uploading data, Recording and submitting, Presenting to a window, The frame loop,
    Pipelines, Binding resources. The [hello-rhi tutorial](../tutorials/hello-rhi.md) walks through exactly these.
 3. **When you need it:** Textures and samplers, Depth and indexed draws, Textures in draws, Compute, Choosing a GPU, Presentation, Lifecycle and reset.
-4. **Contributors and curious readers only:** GPU memory, Vulkan backend notes, Validation layers (worth reading if you debug), Vulkan on Windows, The DX12 backend,
+4. **Contributors and curious readers only:** GPU memory, Vulkan backend notes, Validation layers (worth reading if you debug), Vulkan on Windows, The DX12 backend, The Metal backend,
    Performance notes.
 
 ## Source of truth
 
 - `engine/rhi/*.h`
-- `engine/rhi/vulkan/` (backend internals)
+- `engine/rhi/vulkan/`, `engine/rhi/dx12/` and `engine/rhi/metal/` (backend internals)
 - `docs/superpowers/specs/2026-11-04-rhi-design.md` (design decisions D1-D8)
 - `plans/phase-04-vulkan-rhi.md`
 
@@ -78,7 +78,7 @@ Full reference: [The Render Hardware Interface](../reference/rhi.md).
 
 The RHI is the only way the engine talks to the GPU. Code above it - the renderer, the demo, tools - holds
 `Device`, `CommandList` and `Swapchain` objects and opaque, generation-checked handles; it never includes Vulkan
-(Vulkan and Direct3D 12 are the backends built today; Metal will sit behind the same interface). Where to read next:
+(Vulkan, Direct3D 12 and Metal are the backends built today). Where to read next:
 
 | To do this | Read |
 |---|---|
@@ -98,7 +98,7 @@ projection, the cube mesh, the textures, the `UniformRing` - is renderer-side co
 
 | Word | Meaning |
 |---|---|
-| **backend** | the code that implements the RHI on one API: `Vulkan`, `Dx12` (Windows), `Null` (checks everything, draws nothing) |
+| **backend** | the code that implements the RHI on one API: `Vulkan` (Linux, Windows), `Dx12` (Windows), `Metal` (macOS), `Null` (checks everything, draws nothing) |
 | **handle** | an opaque eight-byte id for a GPU object; the all-zero value is invalid (next section) |
 | **descriptor struct** | a plain struct (`BufferDesc`, `TextureDesc`, ...) that says what to create; not to be confused with a shader "descriptor" below |
 | **command list** | a recording of GPU work (copies, draws, dispatches); nothing runs until you `Submit` it |
@@ -240,7 +240,7 @@ can recover. After a lost device, submissions are ignored, `Device::DeviceLost` 
 and the device still works; a lost device is also recoverable: `DeviceHost::Recreate` replaces it (see "Lifecycle and reset", and the
 renderer guide's "Device loss and recovery" for the automatic retry policy).
 
-**Failure injection.** [[rhi::FaultInjection]] in [[rhi::DeviceCreateInfo]] makes the Vulkan backend fail on purpose, so
+**Failure injection.** [[rhi::FaultInjection]] in [[rhi::DeviceCreateInfo]] makes a GPU backend (Vulkan, Direct3D 12, Metal) fail on purpose, so
 the paths above are exercised without a broken machine: `lose_device_at_frame` reports the device lost at a chosen
 frame, and `fail_allocations_from` makes the Nth device-memory allocation and every later one fail as if the GPU were
 out of memory. `rhi_demo` exposes them as `--inject-device-loss FRAME` and `--inject-oom N`; a lost device ends the
@@ -369,7 +369,7 @@ a GPU backend is registered: yes
 ### Creating a device
 
 [[rhi::CreateDevice]] takes a [[rhi::DeviceCreateInfo]] and returns a device for the requested [[rhi::Backend]]
-(`Null`, `Vulkan`, `Dx12`, or `Auto` for the preferred one), or null with the reason logged. The device is headless; a
+(`Null`, `Vulkan`, `Dx12`, `Metal`, or `Auto` for the preferred one), or null with the reason logged. The device is headless; a
 presentation window is added with the swapchain.
 
 For Vulkan, the GPU is chosen by [[rhi::vulkan::SelectPhysicalDevice]]. A GPU qualifies if it supports Vulkan 1.3,
@@ -968,7 +968,7 @@ Every validation message is logged on `LogRhi` with its severity (`ERROR` become
 installs a hook that sees each message. Log lines are truncated at 512 bytes; the capture hook gets the full text.
 
 Tests do not read the counters by hand. Every `[gpu]` test constructs `gpu_test::GpuFixture`
-(`tests/rhi/gpu_fixture.h`) and calls `Require()`: it skips the test when there is no Vulkan (or fails it under
+(`tests/rhi/gpu_fixture.h`) and calls `Require()`: it skips the test when there is no Vulkan (always on macOS, where Metal runs the per-backend tests; or fails it under
 `ENGINE_RHI_REQUIRE_GPU=1`), owns a validation-enabled instance with synchronization validation on, and fails the
 test at teardown if any validation error was reported. A test that provokes an error on purpose declares it with
 `ExpectErrors(n)`.

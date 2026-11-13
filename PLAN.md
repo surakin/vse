@@ -263,6 +263,17 @@ interpretations keep it buildable — flag any that don't match intent:
     macOS builds working — a closing day in each phase that ports its
     platform-dependent parts, or a periodic catch-up phase. Decide when
     Phase 26 completes; record the answer here.
+    **Proposed on Phase 26 Day 328 (2026-11-13), waiting for the user's
+    confirmation:** every later phase gets a macOS day, as it has a
+    Windows PC day (its platform-dependent parts ported and its suites run
+    on the Mac in three flavors, with the arm64 compile check), and the
+    closing full run of every phase includes the Mac beside the Linux
+    machine and the PC. Phase 26 showed the cost of the alternative: Days
+    310, 324, 326 and 327 caught up with modules the main line had built
+    meanwhile (the CPU modules, text and UI, networking), each finding
+    platform behavior the main line's tests had assumed (an `accept` that
+    drops the connection, loopback that frees room late, a `float3` that
+    is 16 bytes).
 12. **The resource system (Phase 21) has pluggable storage backends and
     versioned per-type binary formats.** Resources are loaded through a
     backend abstraction — pak-file (packed archive), filesystem (loose
@@ -434,7 +445,9 @@ interpretations keep it buildable — flag any that don't match intent:
     executable `.metallib` per shader and permutation key, committed as `*.metallib.inc` with the exported entry name (`main_0`), minted
     on a Mac by `tools/metal_mint` from `slangc -target metal` through the driver's compiler (the interim, pending route of Day 298); the
     Metal build shares D3D12's clip-space flip and object index stream, `register()` is emitted for D3D12 only (`ENGINE_REGISTER`), and
-    each binding's Metal slot is in the reflection.
+    each binding's Metal slot is in the reflection. **Day 318:** each `.metallib.inc` carries its slot table (`rhi::ShaderSlotTable`), so
+    the Metal backend binds by the minter's slots, not by reflection at run time. **Day 325:** `shader_mint` refuses a block whose
+    field offsets differ between the SPIR-V and Metal builds (a `float3` is 16 bytes in Metal; `shaders/README.md`).
     The compiler is a dev-time tool in the same boundary category as
     CMake and the C++ compiler (assumption #8) and Catch2 (#16).
     - **Phase 4 (historical, retired):** shaders were GLSL 4.50 sources
@@ -708,7 +721,7 @@ PLAN.md
 | 23 | Audio | Linux, Windows (macOS once Phase 26 lands; mobile in Phase 27) | [plans/phase-23-audio.md](plans/phase-23-audio.md) | Custom mixer plays hand-decoded WAV, positional 3D audio, on Linux and Windows through one device interface (macOS joins in Phase 26) |
 | 24 | Scripting (Lua/LuaJIT) | Linux | [plans/phase-24-scripting.md](plans/phase-24-scripting.md) | LuaJIT runs a gameplay script that spawns/moves an entity via engine API bindings |
 | 25 | **3D text, large 2D text & colored glyphs** | Linux | [plans/phase-25-3d-text-and-color-glyphs.md](plans/phase-25-3d-text-and-color-glyphs.md) | Text above Phase 14's maximum raster size draws sharp as filled 2D outline meshes, and text laid out by Phase 14 becomes an extruded, optionally beveled 3D mesh from the vector glyph outlines (own flattening, triangulation with holes, extrusion; no third-party tessellator) that draws through the Phase 5 renderer; colored glyphs (`COLR` v0 layers, `CBDT`/`sbix` bitmaps) on the 2D and 3D paths. Split out of Phase 14 on 2026-11-08 |
-| 26 | macOS port + Metal backend (planned 2026-11-10, Days 298-328; runs on the side of the main line, the user's request) | macOS | [plans/phase-26-macos-metal.md](plans/phase-26-macos-metal.md) | Everything that runs on Linux and Windows runs on macOS (x86-64): foundation, jobs, debugging, settings, the CPU modules, a Cocoa window and input, and a Metal RHI backend that passes the golden images, scene, text and UI suites and the lifecycle conformance suite; no Vulkan on macOS |
+| 26 | macOS port + Metal backend (planned 2026-11-10, Days 298-328; runs on the side of the main line, the user's request; complete on the Mac 2026-11-13; the closing test runs on the Mac, Linux and the PC left to the user) | macOS | [plans/phase-26-macos-metal.md](plans/phase-26-macos-metal.md) | Everything that runs on Linux and Windows runs on macOS (x86-64): foundation, jobs, debugging, settings, the CPU modules, a Cocoa window and input, and a Metal RHI backend that passes the golden images, scene, text and UI suites and the lifecycle conformance suite; no Vulkan on macOS |
 | 27 | Android + iOS ports | Android, iOS | [plans/phase-27-android-ios.md](plans/phase-27-android-ios.md) | Android reuses the Vulkan backend, iOS the Metal backend from Phase 26; touch input and app-lifecycle platform layers |
 | 28 | Console ports | Xbox, PS5 | [plans/phase-28-consoles.md](plans/phase-28-consoles.md) | Gated on dev kit/NDA access; same RHI, new platform layer |
 | 29 | **Unreal asset & level import** | Linux | [plans/phase-29-unreal-asset-import.md](plans/phase-29-unreal-asset-import.md) | A real UE5 project's meshes/textures/materials/one level import and render in-engine |
@@ -960,3 +973,10 @@ that changed from the plan and why.)_
 - **2026-11-12 — Phase 15 (UI system) complete on the Windows PC too.** The Windows closing run after Day 206 passed on 2026-11-12 (four trees clean, `ran 4551 of 4551 tests` with every flavor Windows has, docs, the demos on DX12 and Vulkan) except twelve clipboard, drag-and-drop and Alt-key tests that cannot pass while the console session is locked; they passed later the same day on an unlocked desktop (26 of 26 with the rest of their group, plain and asan). `plans/phase-15-ui-system/day-206-docs-and-closing-run.md`.
 - **2026-11-12 — Phase 20 (networking) complete on Linux, Days 266-279 and 281; Day 280 (QUIC/TLS/encryption) deferred by the user.** Addresses, sockets, reactor, resolver, TCP streams, codec, the Transport interface with a simulated transport, UDP and TCP transports, rate limits, fuzzing, settings, `net_probe`, `net_demo`, soak and benchmarks. Closing run `ran 7532 of 7532 tests`. Open: the Windows PC run of Days 277-281, unmeasured reactor pass conditions, and where the deferred encryption work lands (it would renumber the plan). Next: Phase 21 day files.
 - **2026-11-12 — Phase 20 (networking) complete on the Windows PC too.** Day 278 built the Winsock backend (`select` poller, measured instead of the planned `WSAPoll`); the closing run after Days 277-281: four trees clean, `ran 5141 of 5141 tests (phases: all; flavors: all (plain and asan, no tsan on Windows); display: included; crash tests: included) in 379 s` (only the known flaky Win32 mouse test), docs 7 of 7, `net_demo` over UDP and TCP, the windowed demos on DX12 and Vulkan, the network benchmarks within a few microseconds of Linux (spec section 5). `plans/phase-20-networking/day-281-settings-tools-benchmarks-closing-run-and-review.md`.
+- **2026-11-13 — Phase 26 (macOS port + Metal backend) complete on the Mac, Days 298-328; its closing test runs left to the user** (their decision:
+  "Skip the tests. Finish this phase. I'll run them later."). The foundation, jobs, debugging, settings, the CPU modules, the Cocoa window and input,
+  networking (kqueue), the RHI with a Metal backend (minted `.metallib` libraries with slot tables, direct binding, a binary-archive pipeline cache,
+  device loss and resets) and every demo run on macOS; `docs/guide/macos.md`; an arm64 compile-only preset. The Mac's full run before the end-of-phase
+  review's fixes: `ran 7414 of 7414 tests` with only known failures (the window tests skipped on a locked screen). Uncapped review: 17 findings, 9
+  fixed, 8 declined. Open: the closing runs on the Mac (unlocked), the Linux machine and the PC (which re-minted the DXIL and ran Days 315-326); the user's word on assumption
+  #11 (proposed) and the side-phase rule. `plans/phase-26-macos-metal/day-328-docs-and-closing-run.md`.

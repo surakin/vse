@@ -92,7 +92,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     list(APPEND DOCGEN_LINK_ARGS --link "/LIBPATH:${dir}")
   endforeach()
   set(DOCGEN_EXTRA_INCLUDES -I ${ENGINE_VULKAN_HEADERS_DIR})
-  set(DOCGEN_SAMPLE_LIBRARIES platform breakpad_client rhi_dx12)
+  set(DOCGEN_SAMPLE_LIBRARIES platform breakpad_client rhi_dx12 rhi_vulkan)  # linked by path, so named here too
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   # macOS (Phase 26 Day 327): Apple clang with the engine's options and macOS definitions, the Metal backend in place of Vulkan, and the
   # frameworks the libraries link (engine/platform, engine/rhi/metal, engine/foundation): the same list a demo's link line has.
@@ -142,7 +142,7 @@ else()
     list(APPEND DOCGEN_LINK_ARGS --link ${flag})
   endforeach()
   set(DOCGEN_EXTRA_INCLUDES "")
-  set(DOCGEN_SAMPLE_LIBRARIES backtrace breakpad_client unwind)
+  set(DOCGEN_SAMPLE_LIBRARIES backtrace breakpad_client unwind rhi_vulkan)  # linked by path, so named here too
 endif()
 # The guide's text samples open the shipped font; samples run in a scratch directory, so they get its absolute path as a macro.
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")

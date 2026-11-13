@@ -1,12 +1,12 @@
 # Shaders: from Slang to a shader module
 
-Status: written (Phase 4 Day 58; Phase 5 Days 69-84; DXIL added in Phase 13).
+Status: written (Phase 4 Day 58; Phase 5 Days 69-84; DXIL added in Phase 13; Metal libraries added in Phase 26).
 
 **Audience:** engine and renderer programmers who write or load shaders. Read [The RHI](rhi.md) first (at least its "Words you will meet" table).
 
 A **shader** is a small program that runs on the GPU: a vertex shader places each corner of a triangle, a fragment shader colors each pixel, a compute shader does
 general work. The engine never compiles shaders while the game runs. You write them in the **Slang** language, a build step turns them into bytecode (**SPIR-V** for
-Vulkan, **DXIL** for Direct3D 12), and the bytecode is committed to the repository as `.inc` files that the program embeds. At run time you hand that bytecode to the RHI
+Vulkan, **DXIL** for Direct3D 12, a **Metal library** for Metal), and the bytecode is committed to the repository as `.inc` files that the program embeds. At run time you hand that bytecode to the RHI
 and get a shader handle. You touch this page when you add or change a `.slang` file, or load a shader in C++.
 
 ## At a glance
@@ -25,7 +25,7 @@ and get a shader handle. You touch this page when you add or change a `.slang` f
 | Word | Meaning |
 |---|---|
 | **Slang** | the shader language the engine uses (HLSL-like syntax); the only one: no GLSL, no hand-written bytecode |
-| **SPIR-V / DXIL** | the compiled forms of a shader for Vulkan / Direct3D 12; a device accepts only its own (`DeviceCaps::shader_format`) |
+| **SPIR-V / DXIL / metallib** | the compiled forms of a shader for Vulkan / Direct3D 12 / Metal; a device accepts only its own (`DeviceCaps::shader_format`) |
 | **minting** | the offline step (`shader_mint`) that turns `slangc` output into the committed `.inc` files; the engine says "mint", not "cook" |
 | **reflection** | facts about a shader (its bindings, block sizes, vertex inputs) recorded at mint time so C++ can read them instead of repeating them |
 | **bind group / set** | the group of buffers, textures and samplers a shader reads together; the second number in `[[vk::binding(binding, set)]]` is the group index |
@@ -40,6 +40,7 @@ and get a shader handle. You touch this page when you add or change a `.slang` f
 - `engine/renderer/shader_reflection.h` (the reflection data, its blob format and the layout builders)
 - `engine/renderer/shader_permutation.h` and `tools/shader_mint/permutations.*` (permutation tables and how they are minted)
 - `engine/rhi/spirv.h` (the sanity check every `CreateShader` runs)
+- `tools/metal_mint/` (the Metal libraries, minted on a Mac) and the `*.metallib.inc` files
 - `PLAN.md` assumption #18 (the shader toolchain decision)
 
 ## API reference
@@ -95,7 +96,7 @@ Pitfalls that cost time and how the sources avoid them (each is explained in `sh
 `-matrix-layout-column-major` so a `Mat4` copied into a uniform block is not transposed.
 
 The RHI takes precompiled bytecode in [[rhi::ShaderDesc]]. Slang also produces HLSL and Metal from the same
-sources, which is how the DX12 backend gets its shaders today and the Metal backend will, and `ctest -R shaders_portability` proves it
+sources, which is how the DX12 and Metal backends get their shaders, and `ctest -R shaders_portability` proves it
 today: every shader and every permutation key compiles to both. Four things to handle then, all recorded in
 `shaders/README.md`: the clip-space Y flip (the RHI follows Vulkan's convention, and the flip lives in the projection),
 Metal's renaming of an entry point called `main`, Metal's flattening of descriptor sets to buffer slots, and the missing
@@ -365,6 +366,16 @@ SPIR-V device: created
 DXIL device: refused (no dxil blob)
 ```
 
+## Metal libraries
+
+Every shader and every permutation key is also minted into `shaders/<name>.metallib.inc` for Metal (Phase 26 Day 315): Slang's Metal output,
+compiled by the driver's own compiler on a Mac (`tools/metal_mint`, an interim route: `shaders/README.md`, "Metal libraries"). The file holds the
+library, the function it exports (`main_0`: Metal reserves `main`), the shader's slot table (`<Base>MetallibSlots`, Day 318) and the hash of the
+SPIR-V it was minted beside; the `.dxil.inc` includes it, so the blob set has all three formats. Minting needs a Mac; elsewhere the committed
+files are used, and a shader added off a Mac gets a placeholder until one mints it. `shader_metallib_test` checks every library on every
+machine. A block the CPU writes must lay out the same in Metal as in std140: a `float3` takes 16 bytes in Metal, and `shader_mint` refuses a
+difference.
+
 ## What the engine accepts
 
 The check is a subset check of what the engine's shaders use, not a validator (`spirv-val` is the validator, run by
@@ -390,8 +401,8 @@ shader follows:
   `float4x4` is four `float4` columns. Prefer `float4` members and explicit padding so the C++ struct and the block
   agree.
 - **Storage buffers** are `RWStructuredBuffer<T>` (written) or `StructuredBuffer<T>` (read only) and come out as
-  std430; `GetDimensions` gives the element count, but Metal cannot answer it (`fill.comp` and `saxpy.comp` do not compile to
-  Metal for that reason), so a shader meant for every backend takes the count as a constant.
+  std430; `GetDimensions` gives the element count, but Metal cannot answer it, so a shader meant for every backend takes the count
+  as a constant (`fill.comp` and `saxpy.comp` take it as a push constant and compile to every target).
   Reflection records each one's element size (`ReflectedBinding::stride`, `T` rounded up to its alignment), which becomes the
   layout's `BindingDesc::stride`; `ByteAddressBuffer` is refused by the minter (Phase 13 Day 166).
 - **Descriptor sets** are bind groups: the second argument of `[[vk::binding(binding, set)]]` is the group index, the
@@ -428,7 +439,7 @@ cofactor matrix of the model's upper 3x3, so normals stay perpendicular to surfa
 
 - Editing a `.spv.inc` by hand: it is overwritten the next time the `shaders` target runs.
 - Changing a `.slang` file and forgetting to regenerate: `shaders_check` fails when `slangc` is installed. Without `slangc` the edit is silently ignored.
-- Committing the `.slang` file without both generated `.inc` files (and the `.dxil.inc` / `.perm.inc` where they exist).
+- Committing the `.slang` file without both generated `.inc` files (and the `.dxil.inc`, `.metallib.inc` and `.perm.inc` where they exist).
 - Declaring the wrong stage in [[rhi::ShaderDesc]]: the module is refused with "implements a different stage".
 - Handing a device a module in the wrong format (SPIR-V to a Direct3D 12 device): it is refused with an error naming both formats; create from a `ShaderBlobSet` instead.
 - A `vec3` in a uniform block with a tightly packed C++ struct: std140 pads it to 16 bytes.

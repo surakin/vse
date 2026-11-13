@@ -140,10 +140,29 @@ Windows x64 builds and runs everything, with the Vulkan and Direct3D 12 backends
 - **Windows code lives in Windows directories:** Win32, the Windows SDK, D3D12 and DXGI headers only under `*/windows/` (and `engine/rhi/dx12/`),
   and `windows.h` only through `engine/foundation/os/windows/win32.h` (the `platform_neutral_check`, `module_deps_check` and `rhi_boundary_check`
   gates enforce it).
-- **Two machines:** a day is built and tested on the machine it is done on; changes to shared code (CMake, the phase map, the gates, the scripts,
-  shared tests) are checked on the other machine no later than the phase's close, and `KNOWN-ISSUES.md` lists what is waiting for that run.
+- **Three machines** (the Linux machine, the Windows PC and, from Phase 26, the Mac): a day is built and tested on the machine it is done on; changes to
+  shared code (CMake, the phase map, the gates, the scripts, shared tests) are checked on the other machines no later than the phase's close, and
+  `KNOWN-ISSUES.md` lists what is waiting for those runs.
 - **The graphics backend is chosen at start** (`renderer.backend`, `--rhi`; `auto` is Direct3D 12 on Windows): there is no run-time backend
   switch (the user's decision, 2026-11-08).
+
+## macOS is a supported platform (Phase 26, required)
+
+macOS builds and runs everything, with the Cocoa window and the Metal backend (`docs/guide/macos.md`, `BUILD.md`); there is no Vulkan on macOS (MoltenVK is
+third-party, Phase 26 decision 8).
+
+- **Build and test** with Apple clang from the Command Line Tools (no Xcode): `cmake --preset macos-clang` / `cmake --build --preset macos-clang` (tree
+  `build-macos`, x86-64), tests through `scripts/test-phase.sh` (the system's bash 3.2). Flavors are plain, asan and tsan (no LeakSanitizer). A change must
+  build clean in both unity modes there as well, and a day that changes macOS code also builds `macos-clang-arm64` (`build-macos-arm64`, compile-only:
+  nothing runs) in both unity modes. Format with MacPorts' `clang-format` 23.x, never the Command Line Tools' Apple one.
+- **macOS code lives in macOS directories:** Apple's headers and `.mm` files only under `*/macos/` (and `engine/rhi/metal/`); Metal only in
+  `engine/rhi/metal/` and `tools/metal_mint/` (the `platform_neutral_check`, `rhi_boundary_check` and `net_access_check` gates enforce it). Objective-C++
+  uses ARC, and every backend entry point that calls AppKit or Metal wraps its body in `@autoreleasepool` (callers may have none; `metal_autorelease_pools`).
+- **Metal runs validated in the tests** (`MTL_DEBUG_LAYER=1 MTL_DEBUG_LAYER_ERROR_MODE=assert MTL_SHADER_VALIDATION=1` in the ctests): a validation error
+  stops the test. Window tests need the Mac's console unlocked.
+- **Shaders:** the `.metallib` files are minted on the Mac (`tools/metal_mint`, an interim route pending the user's next Mac); a block written by the CPU
+  must lay out the same in Metal as in std140 (`shader_mint` refuses a difference).
+- **The graphics backend is chosen at start** (`auto` is Metal on macOS), as everywhere.
 
 ## End-of-day code review (required)
 
@@ -286,9 +305,9 @@ table in `PLAN.md`.
   and proven on Linux before porting to Windows/macOS/Android/iOS/consoles.
   Windows is Phase 13, right after the renderer core and the layering
   phases, and ports what exists by then (platform layer, RHI, renderer,
-  shaders). **The macOS + Metal port is postponed (2026-11-08) to Phase 26**,
-  just before Android/iOS (Phase 27, which reuses its Metal backend); consoles
-  are Phase 28. Until then macOS stays designed in, not built. How the later
+  shaders). **The macOS + Metal port is Phase 26** (postponed there on 2026-11-08,
+  built on the Mac beside the main line, 2026-11-10 to 2026-11-13), just before Android/iOS (Phase 27, which reuses its Metal
+  backend); consoles are Phase 28. How the later
   Linux-first phases (7-13) keep the Windows/macOS builds working is an
   open decision, see `PLAN.md` assumption #11. On Linux, Wayland is the primary display backend, X11 is
   a fallback backend for systems that haven't moved to Wayland — both

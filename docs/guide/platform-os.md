@@ -113,7 +113,7 @@ variables that must be read before the settings system can (the window backend, 
 ## Command line
 
 A windowed program defines `int EngineMain(int argc, char** argv)` and writes `ENGINE_WINDOWED_PROGRAM(EngineMain)` once at global scope instead of `main`
-(`platform/entry_point.h`); the macro becomes `main` on Linux and `wWinMain` on Windows (so no console window opens), and the arguments are UTF-8 on both. A
+(`platform/entry_point.h`); the macro becomes `main` on Linux and `wWinMain` on Windows (so no console window opens), and the arguments are UTF-8 on all three. A
 command-line tool just keeps `main`. Then `os::CommandLine<Allocator>::FromNative(allocator)` parses the arguments: `--name` is a flag, `--name=value` a flag with a value, and
 anything else is a positional argument.
 
@@ -158,7 +158,7 @@ parse a few by hand, as the oldest program.
 
 `os::LoadLibrary(path)` opens a shared library and returns a handle (`nullptr` on failure), `os::GetSymbol(handle, "name")` finds a function in it, and
 `os::UnloadLibrary(handle)` closes it. A relative path with a directory in it is refused on Windows and macOS, and there the current directory is never searched. The engine
-uses this to load the GPU driver at run time instead of linking it: `os::VulkanLoaderName()` is `libvulkan.so.1` on Linux and `vulkan-1.dll` on Windows, and
+uses this to load the GPU driver at run time instead of linking it: `os::VulkanLoaderName()` is `libvulkan.so.1` on Linux and `vulkan-1.dll` on Windows (macOS has no Vulkan: its GPU backend, Metal, is a system framework), and
 `os::ProbeVulkanCreateInstance()` loads it and reports (to the log, step by step) whether the machine has a usable Vulkan loader. A machine without one then fails
 with a clear message instead of a loader error at start-up.
 
@@ -236,9 +236,9 @@ rest.
 
 ## What the platform layer adds to a crash report
 
-When a window opens, its backend (`wayland` or `x11`) is registered as the `window` line of every crash report. A fault in a window
-callback names the thread it ran on, like any other. The crash dump directory comes from `io::CrashDumpDirectory` (under
-`$XDG_STATE_HOME` or `~/.local/state`); `os::CreateFileForWriting` is what the crash report uses to write its file, because it opens it inside the fault
+When a window opens, its backend (`wayland`, `x11`, `win32` or `cocoa`) is registered as the `window` line of every crash report. A fault in a window
+callback names the thread it ran on, like any other. The crash dump directory comes from `io::CrashDumpDirectory` (on Linux under
+`$XDG_STATE_HOME` or `~/.local/state`; on Windows `%LOCALAPPDATA%\<app>\crashes`; on macOS `~/Library/Application Support/<app>/crashes`); `os::CreateFileForWriting` is what the crash report uses to write its file, because it opens it inside the fault
 handler where the file layer may not run.
 
 ## Descriptors, not files

@@ -1,6 +1,6 @@
 # Building and Testing
 
-Status: written (Phases 0-17).
+Status: written (Phases 0-17; Windows from Phase 13; macOS from Phase 26).
 
 **Audience:** everyone who changes the engine. [Getting started](getting-started.md) has the first build; this page is what you need to *check your work*:
 the flavors, how to choose and run tests, what each sanitizer catches, and how to write a test.
@@ -13,7 +13,7 @@ One configure produces three *flavors* of every library and test program, so the
 |---|---|---|---|
 | plain | `ecs_tests`, `foundation_base`, ... | the normal optimizer and warnings | wrong behavior; this is what ships |
 | ASan + UBSan | `*_asan` | AddressSanitizer and UndefinedBehaviorSanitizer | out-of-bounds, use-after-free, leaks, overflow, misaligned and null access |
-| TSan | `*_tsan` | ThreadSanitizer (Linux only) | data races |
+| TSan | `*_tsan` | ThreadSanitizer (Linux and macOS; not Windows) | data races |
 
 Useful targets: `cmake --build build` builds everything; `cmake --build build --target ecs_tests` builds one test program; `--target docs` regenerates the reference
 pages. Production code is compiled with `-fno-exceptions -fno-rtti` and **warnings as errors**; tests are not (Catch2 uses exceptions), but still build warning-free.
@@ -32,7 +32,7 @@ is proved (the include rules are checked by the `module_deps_check` gate).
 | `foundation_debug` | 7 | asserts with traces, crash handling, `StartProgramDebugging`, death tests | Links `foundation_io`; the only library that links libbacktrace and sentry-native (PRIVATE). Without it an assert prints one line and aborts (the hooks of `log/diagnostics_hooks.h` are not installed); a program or test that wants traces calls `debug::InitDebugFacilities`. |
 | `foundation_settings` | 8 | `settings::Registry`, `Setting<T>`, `Settings` | Links `foundation_debug`. |
 | `foundation` | 0-8 | everything above | An `INTERFACE` aggregate of the four; what the programs, `jobs` and `rhi` link. |
-| `platform` | 9 | `platform/window.h`, `input.h`, `window_host.h` | Links `foundation_debug` (crash state); the only library that links Wayland, xkbcommon and X11. |
+| `platform` | 9 | `platform/window.h`, `input.h`, `window_host.h` | Links `foundation_debug` (crash state); the only library that links the display libraries (Wayland, xkbcommon and X11 on Linux; user32 on Windows; AppKit and QuartzCore on macOS). |
 
 Each library has an `_asan` and a `_tsan` variant (`foundation_io_asan`, `platform_tsan`, ...) and a test links the variant of its own flavor. Tests: `tests/types`,
 `tests/foundation_sanitized` and the core files of `tests/foundation` (the executable `foundation_base_tests`) link `foundation_base`; `tests/io` links
@@ -206,7 +206,8 @@ through `libsystemd.so.0`, loaded at run time; `os/windows/SESSION.md` and `os/m
 
 ### GPU tests and validation layers
 
-Tests tagged `[gpu]` (CTest label `gpu`) need a Vulkan driver. Without one they skip; set
+Tests tagged `[gpu]` (CTest label `gpu`) need a GPU backend: a Vulkan driver on Linux and Windows, Metal on macOS (where the
+Vulkan-only tests skip). Without one they skip; set
 `ENGINE_RHI_REQUIRE_GPU=1` (do this on a development machine) to make a skip a failure so a broken driver cannot
 hide. They run under `gpu_test::GpuFixture`, which enables the Khronos validation layer with synchronization
 validation and fails the test on any validation error. `ENGINE_RHI_VALIDATION_FATAL=1` aborts on the first error
@@ -293,7 +294,7 @@ more than a few seconds belongs in a stress label, not in the default run.
 
 The golden-image tests and the checks around them (`golden_test.cpp`, `compute_test.cpp`, `cube_test.cpp`, `textured_cube_test.cpp`,
 `lit_cube_test.cpp` in `tests/rhi/`) run once per GPU backend the machine has: Vulkan on Linux, Vulkan and Direct3D 12 on Windows
-(Phase 13 Day 170). They use only the RHI interface, through `tests/rhi/backend_fixture.h`:
+(Phase 13 Day 170), Metal on macOS (Phase 26 Day 322). They use only the RHI interface, through `tests/rhi/backend_fixture.h`:
 
 ```
 FOR_EACH_GPU_BACKEND(backend) {
@@ -303,12 +304,12 @@ FOR_EACH_GPU_BACKEND(backend) {
 }
 ```
 
-Each backend is a Catch2 section named after it (`vulkan`, `dx12`), so a failure names the backend, and one backend runs alone with
+Each backend is a Catch2 section named after it (`vulkan`, `dx12`, `metal`), so a failure names the backend, and one backend runs alone with
 `-c`: `rhi_tests "[golden]" -c dx12`. `gpu_test::GpuBackends` lists the registered backends but null that are available; the test "The
-per-backend GPU tests run on every GPU backend this machine has" checks the list against the registry (and that Windows has Direct3D 12),
+per-backend GPU tests run on every GPU backend this machine has" checks the list against the registry (that Windows has Direct3D 12, and that only macOS has Metal),
 so a test cannot quietly run one backend. Shaders come from the minted blob sets (`CreateShaderFromSet`), so each backend gets its own
-format. `BackendValidation` counts Vulkan's validation errors, and Direct3D 12's debug-layer errors and warnings. Tests of one backend's
-internals (the loader, the instance, memory policy, SPIR-V checks) stay in the `vulkan_*` and `dx12_*` files.
+format. `BackendValidation` counts Vulkan's validation errors, and Direct3D 12's debug-layer errors and warnings; Metal's validation stops the process at the first error. Tests of one backend's
+internals (the loader, the instance, memory policy, SPIR-V checks) stay in the `vulkan_*`, `dx12_*` and `tests/rhi/macos/metal_*` files.
 
 - **Another adapter:** `ENGINE_RHI_GPU` picks it on either backend (an id from `--list-gpus`, an index, or part of the name):
   `ENGINE_RHI_GPU="Basic Render" rhi_tests "[golden]" -c dx12` runs the goldens on WARP, Direct3D 12's software rasterizer.
@@ -350,7 +351,7 @@ person is needed. `tests/rhi/render_target.h` is the offscreen target (RGBA8 col
 
 ### Testing a UI
 
-A widget test needs no window and no GPU: `ui::Harness` (`engine/ui/testing/harness.h`) is an offscreen surface with a font, an atlas, input helpers and a software rasteriser; the sample in `docs/guide/ui.md` ("The widget tree, the surface and the test harness") is the pattern, and `tests/ui/` has one file per widget family. A test of the toolkit on a real device is a golden picture (`tests/rhi/ui_golden_gpu_test.cpp`, `ui_demo_gpu_test.cpp`; the pictures are `tests/rhi/golden/ui_*.ppm`, Vulkan on Linux, both backends on Windows) and, for anything that owns device objects, the reset check of "Testing a reset". `ui_demo` runs scripted (`--script`, `--screenshot`) under the ctests `ui_demo_*`, including `ui_demo_script_wayland|x11` on a live display. The CPU cost of the toolkit is `renderer_bench --section ui`, which asserts nothing.
+A widget test needs no window and no GPU: `ui::Harness` (`engine/ui/testing/harness.h`) is an offscreen surface with a font, an atlas, input helpers and a software rasteriser; the sample in `docs/guide/ui.md` ("The widget tree, the surface and the test harness") is the pattern, and `tests/ui/` has one file per widget family. A test of the toolkit on a real device is a golden picture (`tests/rhi/ui_golden_gpu_test.cpp`, `ui_demo_gpu_test.cpp`; the pictures are `tests/rhi/golden/ui_*.ppm`, Vulkan on Linux, both backends on Windows, Metal on macOS) and, for anything that owns device objects, the reset check of "Testing a reset". `ui_demo` runs scripted (`--script`, `--screenshot`) under the ctests `ui_demo_*`, including `ui_demo_script_wayland|x11` on a live display. The CPU cost of the toolkit is `renderer_bench --section ui`, which asserts nothing.
 
 ### Stress tests and replaying a failing seed (`ENGINE_STRESS_SEED`)
 
@@ -431,14 +432,15 @@ itself (vswhere, the registry, the default install folders), so any terminal wor
   `MSYS2_ARG_CONV_EXCL='*'` or calls the tool through CMake.
 - **The phase map per platform.** File patterns in `tests/phases.txt` need no platform: every source file is in both checkouts, and only
   the built tests differ. What differs is which phases have tests in which flavors, so every phase has a `flavors <phase> windows: ...`
-  line (`none` for a phase with no Windows tests), and a change that adds or removes a phase's Windows tests updates its line. `test_phase_labels`
+  and a `flavors <phase> macos: ...` line (`none` where the platform has no tests of it), and a change that adds or removes a phase's tests on
+  a platform updates its line. `test_phase_labels`
   checks the line for the platform it runs on, and only the flavors the configuration builds (`clang-cl` is not asked for ASan tests).
   The unused-line check runs on Linux only: a `test:` line for a test Windows does not build (a Wayland or X11 test) matches nothing
   there without being stale.
 - **The `display` group.** `SKIP_IF_NO_DISPLAY_SESSION()` asks `os::QuerySessionState()`, which on Windows asks the Terminal Services
   API whether this session is the active one and checks that the input desktop is `Default` (a locked workstation or a screen saver
   switches it; `engine/foundation/os/windows/session.cpp`), so a locked screen skips the window tests, as on Linux.
-- **The source gates** (`*_check`) are CMake scripts and run unchanged on both machines; they also know the Windows rules: `windows.h`
+- **The source gates** (`*_check`) are CMake scripts and run unchanged on all three machines; they also know the Windows rules: `windows.h`
   only through `engine/foundation/os/windows/win32.h` and the Windows SDK headers only in the Windows directories
   (`platform_neutral_check`), no platform system header in neutral code (`module_deps_check`), D3D12 and DXGI only in
   `engine/rhi/dx12/` (`rhi_boundary_check`), and the Win32 and C runtime file, environment and command-line calls
@@ -451,8 +453,8 @@ itself (vswhere, the registry, the default install folders), so any terminal wor
 
 ### Building and testing on macOS
 
-macOS (x86-64) is being ported in Phase 26, a side phase on the Mac, one layer per day (`plans/phase-26-macos-metal.md`); today the base
-layer of the foundation and its tests, the gates and the test tooling build (Days 300-302). `BUILD.md` lists what to install: the Command Line Tools (Apple clang), CMake and
+Since Phase 26 every layer builds and is tested on macOS (x86-64, Apple clang), with the Cocoa window and the Metal backend in place of
+Vulkan; [macOS](macos.md) is the platform's page. `BUILD.md` lists what to install: the Command Line Tools (Apple clang), CMake and
 Ninja; no Xcode.
 
 - **Preset.** `cmake --preset macos-clang` configures `build-macos` (Ninja, Debug, x86-64, deployment target macOS 13.3); build and test with
@@ -472,8 +474,8 @@ Ninja; no Xcode.
 - **The gates** run here as on Linux and Windows. Rule 7 of `platform_neutral_check` keeps Apple's headers (the frameworks, `<mach/...>`,
   `<dispatch/...>`, `<objc/...>`, `<sys/sysctl.h>`, `<copyfile.h>`, `<libproc.h>`) and `.mm` files in the macOS directories (a `macos/`
   folder, `engine/rhi/metal/`); `std_usage_check` and `module_deps_check` read `.mm` files and count `#import` as `#include`.
-- **Documentation** (`docgen`, the reference, `ctest -L docs`) is not built on the Mac before Phase 26 Day 309 (it needs the whole foundation);
-  the samples wait for Day 327.
+- **Documentation** (`docgen`, the reference, `ctest -L docs` with its samples) builds and runs on the Mac as on Linux (the samples from
+  Phase 26 Day 327).
 
 ### Formatting and clang-tidy
 
@@ -501,12 +503,12 @@ committed:
 
 Some tests need a live desktop and fail while your session is locked; `KNOWN-ISSUES.md` lists them, so a failure there is not automatically your change.
 
-## Debugging scripts (Linux)
+## Debugging scripts (Linux and macOS)
 
 `scripts/find-core.sh` and `scripts/open-core.sh` locate the newest core dump of a program, check its build id and open it in
-`gdb`; they are Linux shell scripts and are described in the "Core dumps on Linux" section of `docs/guide/foundation-debugging.md`.
+the debugger (`gdb` on Linux, `lldb` on macOS); they are shell scripts and are described in the "Core dumps on Linux" section of `docs/guide/foundation-debugging.md`.
 Their test (`The newest core of a crashed program is found by script...`) runs in the plain flavor only and skips, with the
-reason printed, when `gdb` is missing or the system keeps no core.
+reason printed, when the debugger is missing or the system keeps no core.
 
 `scripts/crash-report.sh`, `scripts/store-symbols.sh` and `scripts/split-debug.sh` turn crash dumps into traces and keep the symbols
 of release builds ("Turning a dump into a trace" and "Keeping symbols for release builds" in the same guide). Their tests

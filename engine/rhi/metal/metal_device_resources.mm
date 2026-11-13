@@ -236,7 +236,7 @@ void MetalDevice::ReleaseBytes(u64 bytes)
     raw_resources_.FetchSub(1, MemoryOrder::Relaxed);
 }
 
-MTLStorageMode MetalDevice::StorageModeFor(MemoryLocation location) const
+MTLStorageMode MetalDevice::StorageModeFor(MemoryLocation location, BufferUsage usage) const
 {
     // Readback memory is Shared on every Mac: the GPU's writes are then visible to the CPU once the work is done,
     // without a synchronizeResource: per read, and a persistent mapping stays valid. Only CPU-written memory is Managed
@@ -246,7 +246,10 @@ MTLStorageMode MetalDevice::StorageModeFor(MemoryLocation location) const
         return MTLStorageModePrivate;
     }
 #if ENGINE_PLATFORM_MACOS
-    if (location == MemoryLocation::CpuToGpu && managed_)
+    // A buffer the GPU may write stays Shared (the end-of-phase review, Day 328): a Managed one's GPU writes reach the
+    // CPU's copy only through a synchronizeResource: blit, and its readback and mapping read that copy.
+    const bool gpu_writes = (usage & (BufferUsage::CopyDst | BufferUsage::Storage)) != BufferUsage::None;
+    if (location == MemoryLocation::CpuToGpu && managed_ && !gpu_writes)
     {
         return MTLStorageModeManaged;
     }
@@ -444,7 +447,7 @@ BufferHandle MetalDevice::CreateBuffer(const BufferDesc& desc)
     BufferRes res;
     res.desc = desc;
     res.desc.debug_name = nullptr;
-    const MTLStorageMode mode = StorageModeFor(desc.location);
+    const MTLStorageMode mode = StorageModeFor(desc.location, desc.usage);
     MTLResourceOptions options = static_cast<MTLResourceOptions>(mode) << MTLResourceStorageModeShift;
     if (desc.location == MemoryLocation::CpuToGpu)
     {

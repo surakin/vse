@@ -545,15 +545,17 @@ bool CocoaWindow::BeginDrag(const DragSource& source)
         native_->dnd.dragging = true;
         native_->dnd.cancelled = false;
         native_->dnd.outgoing_allowed = static_cast<u8>(source.allowed_actions & kAllDragActions);
-        if (source.started != nullptr)
-        {
-            source.started(source.started_user);
-        }
         NSDraggingSession* session = [view beginDraggingSessionWithItems:items event:event source:view];
         if (session == nil)
         {
             native_->dnd.dragging = false;
-            return false;
+            return false;  // nothing started, so nothing is told (the end-of-phase review: no DragEnded would follow)
+        }
+        // The session runs from the event loop after this returns, so the program hears of it before AppKit's
+        // callbacks.
+        if (source.started != nullptr)
+        {
+            source.started(source.started_user);
         }
     }
     return true;

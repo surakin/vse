@@ -1,11 +1,11 @@
 # Platform: Windowing and Input
 
-Status: written (Phases 1, 13 and 15).
+Status: written (Phases 1, 13, 15 and 26).
 
 **Audience:** every programmer who opens a window. Read [Platform: operating system](platform-os.md) first for the console, the clock and the command line.
 
 A window is where a program meets the user: it shows what you draw and delivers what the user does. This page teaches how to open one, run the frame loop,
-read the keyboard and mouse, and hand the window to the graphics layer. The engine has its own window code for each system (Wayland, X11, Win32); your
+read the keyboard and mouse, and hand the window to the graphics layer. The engine has its own window code for each system (Wayland, X11, Win32, Cocoa); your
 program talks to one interface, [[os::Window]], and never names a backend.
 
 ## At a glance
@@ -24,8 +24,8 @@ program talks to one interface, [[os::Window]], and never names a backend.
 
 Windows and input are the **platform layer** (layer 9): `engine/platform/`, the CMake library `platform` (`platform_asan`, `platform_tsan`), headers included as
 `platform/window.h`, `platform/input.h` and `platform/window_host.h`. The types keep the `os::` namespace. `platform` is the only library that links the display libraries
-(Wayland, xkbcommon, X11 on Linux; user32 and shell32 on Windows); a program or test that opens a window links `platform` (the RHI libraries do, so anything on the RHI gets it). A program includes only the neutral
-`platform/window_host.h`: `os::PlatformWindowHost` picks and owns the backend, which is defined in `platform/linux/` or `platform/windows/` and never included by a program (the `module_deps_check` gate fails on it).
+(Wayland, xkbcommon, X11 on Linux; user32 and shell32 on Windows; AppKit and QuartzCore on macOS); a program or test that opens a window links `platform` (the RHI libraries do, so anything on the RHI gets it). A program includes only the neutral
+`platform/window_host.h`: `os::PlatformWindowHost` picks and owns the backend, which is defined in `platform/linux/`, `platform/windows/` or `platform/macos/` and never included by a program (the `module_deps_check` gate fails on it).
 
 ## Source of truth
 
@@ -37,6 +37,7 @@ Windows and input are the **platform layer** (layer 9): `engine/platform/`, the 
 - `linux/x11/*`
 - `linux/xkb_keyboard.h`
 - `windows/win32_window.h`, `windows/win32_keys.h` and `windows/FULLSCREEN.md`
+- `macos/window_host_macos.cpp`, `macos/entry_point_macos.cpp`, `macos/cocoa_window.h`, `macos/cocoa_keys.h` and `macos/FULLSCREEN.md`
 - `linux/key_translate.h` (the keysym translation both Linux backends share)
 
 ## API reference
@@ -44,7 +45,7 @@ Windows and input are the **platform layer** (layer 9): `engine/platform/`, the 
 Full reference: [Platform: Windowing and Input](../reference/platform-window-input.md).
 
 - [[os::Window]] — the window interface
-- [[os::WindowBackend]] — backend selection (Wayland and X11 on Linux, Win32 on Windows)
+- [[os::WindowBackend]] — backend selection (Wayland and X11 on Linux, Win32 on Windows, Cocoa on macOS)
 - [[os::InputState]] — per-window input state
 - [[os::Key]] — keyboard keys
 - [[os::NativeWindowInfo]] and [[os::NativeWindowKind]] — the native handles a graphics layer needs
@@ -233,8 +234,8 @@ A resize or a minimize on one window changes only that window's serial; with two
 A graphics layer needs three things from a window that the polled interface does not otherwise give it, and
 `os::Window` answers them without exposing any platform type:
 
-- `GetNativeInfo()` returns a plain [[os::NativeWindowInfo]]: a `kind` (Wayland, Xlib, and reserved
-  Win32, Cocoa and Android values) and the handles that kind uses. For Wayland that is the `wl_display*`
+- `GetNativeInfo()` returns a plain [[os::NativeWindowInfo]]: a `kind` (Wayland, Xlib, Win32, Cocoa, and a reserved
+  Android value) and the handles that kind uses. For Wayland that is the `wl_display*`
   and `wl_surface*`; for X11 the `Display*` and the integer window id. A window that is not open reports
   `NativeWindowKind::Invalid`. The pointers are borrowed from the window: create the presentation surface
   after the window, and destroy it before the window.
@@ -482,8 +483,7 @@ Phase 26 Day 313 (`platform/macos/cocoa_cursor.mm`, `cocoa_clipboard.mm`, `cocoa
 - **Focus loss** (`WM_KILLFOCUS`: Alt+Tab, a click elsewhere, another window of the program) releases every key, button and modifier.
   Windows sends it only when the keyboard focus really leaves, not for the window's own menus, the line the X11 backend draws with its grab
   modes. Unlike Linux it also releases the buttons: the other window gets the mouse and the release.
-- **Not yet, on any backend:** text input (the characters typed, dead keys and input methods; the UI phase adds it), relative mouse motion
-  and cursor capture or hiding: `os::Window` has no call for them.
+- **Not yet, on any backend:** IME composition (the text being composed is not shown; the composed text arrives as typed text).
 
 ### Windowed programs: the entry point
 
@@ -493,7 +493,7 @@ directive for the GUI subsystem, so starting the program from Explorer opens no 
 split by the Windows rules for quotes and backslashes, already stashed for `os::CommandLine::FromNative`. Tests and command-line tools
 keep a plain `main` and stay console programs; no build file chooses a subsystem. On macOS it is `main`, which sets up the application
 object (a regular app with a Quit menu) before `EngineMain` runs. The `platform_neutral_check` gate fails on a windowed
-program under `game/` that defines its own `main` (the demos are listed until they reach Windows on Day 161).
+program under `game/` that defines its own `main`.
 
 A GUI program's output goes to the handles it inherited (a pipe, a redirected file, ctest's capture). Started from a terminal with
 none, it attaches to that terminal's console and prints there, after the shell's next prompt (a shell does not wait for a GUI

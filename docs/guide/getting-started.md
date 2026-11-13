@@ -1,14 +1,14 @@
 # Getting Started
 
-Status: written (Linux and Windows).
+Status: written (Linux, Windows and macOS).
 
 **Audience:** a new developer. This page takes you from a fresh checkout to a running window and a passing test, then tells you how the repository is
 organized and what the rules of the house are. Everything after it in the [guide](README.md) assumes you have read it.
 
 ## What this engine is
 
-A game engine written from scratch in C++20: it opens its own windows (Wayland or X11 on Linux, Win32 on Windows), talks to the GPU through its own
-graphics layer (Vulkan and Direct3D 12), runs its work on its own job system, draws its own text and user interface, and stores game objects in its own
+A game engine written from scratch in C++20: it opens its own windows (Wayland or X11 on Linux, Win32 on Windows, Cocoa on macOS), talks to the GPU through its
+own graphics layer (Vulkan, Direct3D 12 and Metal), runs its work on its own job system, draws its own text and user interface, and stores game objects in its own
 entity-component system. It has almost no third-party code: the operating system's libraries, and a short list of vendored libraries for jobs that are
 solved problems (FreeType for fonts, Catch2 for tests, and a few more, all under `third_party/` and built from source).
 
@@ -21,7 +21,7 @@ Two choices shape everything you will read:
 
 ## Prerequisites
 
-You need a C++20 compiler (Clang is the reference; GCC and, on Windows, MSVC and `clang-cl` also work), CMake 3.21 or newer, Ninja or Make and the
+You need a C++20 compiler (Clang is the reference; GCC and, on Windows, MSVC and `clang-cl` also work; on macOS, Apple clang from the Command Line Tools), CMake 3.21 or newer, Ninja or Make and the
 platform's window libraries. `BUILD.md` in the repository root lists every tool and library per platform with the versions in use; on Linux you also need
 a Wayland compositor or an X server to open windows, and a Vulkan 1.3 driver to run the graphics demos.
 
@@ -48,6 +48,14 @@ cmake --build --preset windows-msvc
 ctest --preset windows-msvc
 ```
 
+**On macOS** (Phase 26), with the Command Line Tools (no Xcode), CMake and Ninja; the graphics backend is Metal. [macOS](macos.md) has the rest.
+
+```
+cmake --preset macos-clang             # the build tree is build-macos
+cmake --build --preset macos-clang
+ctest --preset macos-clang
+```
+
 ## Running your first program
 
 `hello_window` is the smallest program: it opens a window, prints the keyboard and mouse state when it changes, and closes itself after six seconds.
@@ -59,7 +67,7 @@ build/game/hello_window/hello_window --run-seconds=30 --log-level=info
 
 | Flag | Meaning |
 |---|---|
-| `--backend=auto\|wayland\|x11\|win32` | which window system to use (the default asks the environment: Wayland first, then X11) |
+| `--backend=auto\|wayland\|x11\|win32\|cocoa` | which window system to use (the default: Wayland, then X11 on Linux; Win32 on Windows; Cocoa on macOS) |
 | `--run-seconds=N` | how long to run (default 6) |
 | `--frame-times` | print the time of every frame |
 | `--log-level=error\|warn\|info\|debug\|trace` | how chatty the engine's logging is |
@@ -111,9 +119,9 @@ reported as failing when your session is locked; `KNOWN-ISSUES.md` lists them. [
 | Path | What is there |
 |---|---|
 | `engine/foundation/` | the base: types, memory, containers, strings, math, logging, files, settings, debugging |
-| `engine/platform/` | windows and input (Wayland, X11, Win32) |
+| `engine/platform/` | windows and input (Wayland, X11, Win32, Cocoa) |
 | `engine/jobs/` | the job system |
-| `engine/rhi/` | the graphics abstraction and its backends (`vulkan/`, `dx12/`, `null/`) |
+| `engine/rhi/` | the graphics abstraction and its backends (`vulkan/`, `dx12/`, `metal/`, `null/`) |
 | `engine/renderer/` | render graph, materials, passes |
 | `engine/text/`, `engine/ui/`, `engine/ui_window/` | fonts and text layout, the widget toolkit, the glue between a window and the UI |
 | `engine/ecs/` | the entity-component system |

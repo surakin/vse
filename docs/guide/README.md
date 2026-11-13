@@ -23,7 +23,7 @@ the pages in the order below; each builds on the ones before it. The generated [
 
 10. [building-and-testing](building-and-testing.md): scoped test runs, sanitizers, the gates, writing a test.
 11. [foundation-debugging](foundation-debugging.md): stack traces, crash dumps, death tests. [porting-debugging](porting-debugging.md): for a new platform.
-12. [windows](windows.md): building and running on Windows.
+12. [windows](windows.md): building and running on Windows. [macos](macos.md): building and running on macOS.
 
 ## Running a program
 

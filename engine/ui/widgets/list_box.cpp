@@ -662,7 +662,8 @@ void ListBox::OnEvent(Event& event)
         press_pending_ = false;
         if (pressed_ != kNone)
         {
-            const bool plain = (event.modifiers & (os::kModCtrl | os::kModShift)) == 0;
+            // The toggle modifier is the shortcut one (Cmd on macOS; the end-of-phase review), as in Click.
+            const bool plain = (event.modifiers & (os::kModShortcut | os::kModShift)) == 0;
             if ((reorderable_ || drag_out_) && plain && IsSelected(pressed_))
             {
                 press_pending_ = true;  // a press on the selection keeps it: it may be the start of a drag

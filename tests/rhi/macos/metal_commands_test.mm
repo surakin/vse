@@ -430,6 +430,53 @@ TEST_CASE("A compute pipeline bound before a Metal pass is still bound after it"
     device->DestroyTexture(target);
 }
 
+TEST_CASE("A pass that binds a graphics pipeline and groups leaves the compute pipeline and its groups bound",
+          "[rhi][metal][gpu]")
+{
+    // The end-of-phase review (Day 328): compute and graphics shared one bound state, so a pass's pipeline and groups
+    // replaced the compute ones; Vulkan and Direct3D 12 keep a bind point each.
+    DevicePtr device = CreateDevice(MetalInfo("metal_commands_test"));
+    REQUIRE(device);
+    const BufferHandle out = Buffer(*device, 256 * 4, BufferUsage::Storage | BufferUsage::CopySrc);
+    const BufferHandle other = Buffer(*device, 256 * 4, BufferUsage::Storage | BufferUsage::CopySrc);
+    Fill fill(*device, out);
+    Fill decoy(*device, other);  // its group goes to the graphics bind point inside the pass
+    Triangle triangle(*device, PrimitiveTopology::TriangleList);
+    REQUIRE((fill.pipeline.IsValid() && decoy.pipeline.IsValid() && triangle.pipeline.IsValid()));
+    const TextureHandle target = Target(*device);
+    device->BeginFrame();
+    CommandList* list = device->CreateCommandList();
+    list->Begin();
+    list->SetPipeline(fill.pipeline);
+    list->SetBindGroup(0, fill.group);
+    RenderingDesc rd;
+    rd.color[0].texture = target;
+    rd.color_count = 1;
+    list->BeginRendering(rd);
+    list->SetPipeline(triangle.pipeline);
+    list->SetBindGroup(0, decoy.group);  // the graphics bind point's slot 0, not the compute one's
+    list->EndRendering();
+    const u32 nine[2] = {9, 256};
+    list->SetPipeline(fill.pipeline);  // the compute kind again: its group was never replaced, so none is bound here
+    list->SetPushConstants(0, nine, 8);
+    list->Dispatch(4, 1, 1);
+    list->End();
+    REQUIRE(device->Submit(&list, 1) != 0);
+    device->EndFrame();
+    Array<u32, 256> got = {};
+    REQUIRE(device->ReadbackBuffer(out, 0, got.Data(), 256 * 4));
+    CHECK(got[10] == 90);  // written through fill.group, not decoy's
+    Array<u32, 256> untouched = {};
+    REQUIRE(device->ReadbackBuffer(other, 0, untouched.Data(), 256 * 4));
+    CHECK(untouched[10] == 0);
+    triangle.Destroy(*device);
+    fill.Destroy(*device);
+    decoy.Destroy(*device);
+    device->DestroyBuffer(out);
+    device->DestroyBuffer(other);
+    device->DestroyTexture(target);
+}
+
 TEST_CASE("A failed Metal list still pairs its passes and labels, and seventeen nested labels balance",
           "[rhi][metal][gpu]")
 {

@@ -9,9 +9,12 @@ drop, fullscreen, session); the Phase 4 golden images and the Phase 5 scene test
 **Metal** backend with Metal API validation silent; the Metal backend passes the lifecycle conformance suite and recovers from an injected device loss; the demos run
 on Metal; every gate and `ctest -L docs` pass on macOS; and the Linux machine and the Windows PC still pass their full suites in every flavor they have.
 
-**Status: started (2026-11-10), Days 298-328: Day 298 (the `.metallib` spike; interim route, pending), Day 299 (spec, inventory, setup), Day 300 (CMake, Apple clang, the base layer) Day 301 (the `os` backend, `os/posix/`) Day 302 (test tooling, side phases, gates) Day 303 (file layer I: `io/posix/`, local files, errors) Day 304 (file layer II: `Copy`, standard directories, async measured) Day 305 (the job
-system) Day 306 (debugging I: stack traces, modules, crash context) Day 307 (debugging II: crash handler, death tests) Day 308 (debugging III:
-dumps, symbol store, scripts) Day 309 (settings, the aggregate, docgen: the foundation port is done) Day 310 (text, UI, ECS, spatial, database, storage) and Day 311 (the Cocoa window) done on the Mac; next Day 312.** Day numbers continue after Phase 25 (Day 297). Phases 19-24 have no day files yet;
+**Status: complete on the Mac (2026-11-13), Days 298-328, by the user's decision; the closing test runs are left for the user to run later**
+(their words, 2026-11-13: "Skip the tests. Finish this phase. I'll run them later."). Done: every day's work, its review and its records, and the
+uncapped end-of-phase review (Day 328). The Mac's full run before the review's last fixes passed but for known failures, with the window tests
+skipped (the screen had locked); not yet run: the Mac's closing run after those fixes with the screen unlocked, and the Linux machine's and the
+Windows PC's closing runs (`KNOWN-ISSUES.md`). Pending the user's word: the answer to assumption #11 (`PLAN.md`, proposed) and whether the side-phase
+rule stays in `CLAUDE.md`. Day numbers continue after Phase 25 (Day 297). Phases 19-24 have no day files yet;
 when they get them, Phases 25 and 26 renumber in the same commit (CLAUDE.md, "Phases are whole numbers").
 
 **Hardware (checked 2026-11-10).** The developer's 2019 MacBook Pro 13" (`MacBookPro15,4`): quad-core Intel Core i5 at 1.4 GHz, 8 GB RAM, **Intel Iris Plus

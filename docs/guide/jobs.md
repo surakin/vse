@@ -11,7 +11,7 @@ rendering command recording, asset loading, file I/O) through **one job system**
 ## Mental model
 
 - A **job** is a small function that runs once, on any core. It is a C++20 coroutine that returns `jobs::Job`.
-- The **scheduler** (`jobs::Scheduler`) owns a set of worker threads, one per CPU core, each pinned to its core. Together with your main thread they are the
+- The **scheduler** (`jobs::Scheduler`) owns a set of worker threads, one per CPU core, each pinned to its core where the system allows it (macOS has no affinity API, so its workers are unpinned). Together with your main thread they are the
   *participants*.
 - You **submit** jobs; idle workers **steal** them from each other, so the load balances itself.
 - To know when work is finished you use a **counter** (`jobs::Counter`): it counts the jobs still running, and you wait until it reaches zero.

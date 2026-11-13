@@ -297,18 +297,25 @@ const char* ValidateMetalSlots(const ShaderReflection& r)
     {
         const ReflectedBinding& b = r.bindings[i];
         const u32 cls = MetalClass(b.type);
-        if (b.metal_slot == kNoMetalSlot || b.metal_slot >= kLimits[cls])
+        // An array takes `count` consecutive slots (the end-of-phase review: ranges, not only the first slot, must not
+        // meet, or the pipeline is refused at run time instead of at mint time).
+        const u32 count = b.count == 0 ? 1 : b.count;
+        if (b.metal_slot == kNoMetalSlot || b.metal_slot >= kLimits[cls] || count > kLimits[cls] - b.metal_slot)
         {
             return "reflection: a binding has no Metal slot, or one past Metal's argument table";
         }
         for (u32 j = 0; j < i; ++j)
         {
-            if (MetalClass(r.bindings[j].type) == cls && r.bindings[j].metal_slot == b.metal_slot)
+            const ReflectedBinding& o = r.bindings[j];
+            const u32 other_count = o.count == 0 ? 1 : o.count;
+            if (MetalClass(o.type) == cls && o.metal_slot < b.metal_slot + count &&
+                b.metal_slot < o.metal_slot + other_count)
             {
                 return "reflection: two bindings share a Metal slot";
             }
         }
-        if (r.has_push_constants && cls == 0 && b.metal_slot == r.push_constant_metal_slot)
+        if (r.has_push_constants && cls == 0 && r.push_constant_metal_slot >= b.metal_slot &&
+            r.push_constant_metal_slot < b.metal_slot + count)
         {
             return "reflection: a buffer binding shares the push-constant block's Metal slot";
         }

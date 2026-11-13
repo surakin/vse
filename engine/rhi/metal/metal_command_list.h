@@ -111,16 +111,26 @@ private:
     u32 pass_width_ = 0;
     u32 pass_height_ = 0;
 
-    // The bound state, applied at draw or dispatch time.
-    PipelineHandle pipeline_;
-    MetalPipelineInfo info_;  // pipeline_'s, looked up when it is set
-    bool pipeline_dirty_ = false;
-    Array<BindGroupHandle, kMaxBindGroups> groups_ = {};
-    u32 groups_dirty_ = 0;  // a bit per set
-    Array<u8, kMaxPushConstantBytes> push_ = {};
-    u32 push_size_ = 0;
-    bool push_dirty_ = false;
-    __unsafe_unretained id<MTLBuffer> index_buffer_ = nil;  // the device keeps it alive through the frame
+    // The bound state, applied at draw or dispatch time: one per kind of pipeline, as Vulkan's and Direct3D 12's bind
+    // points, so a compute pipeline and its groups bound before a pass are still there after it (Phase 26 Day 328).
+    // SetBindGroup and SetPushConstants go to the kind of the pipeline bound last, as on Vulkan.
+    struct BindPoint
+    {
+        PipelineHandle pipeline;
+        MetalPipelineInfo info;  // pipeline's, looked up when it is set
+        bool pipeline_dirty = false;
+        Array<BindGroupHandle, kMaxBindGroups> groups = {};
+        u32 groups_dirty = 0;  // a bit per set
+        Array<u8, kMaxPushConstantBytes> push = {};
+        u32 push_size = 0;
+        bool push_dirty = false;
+    };
+    BindPoint graphics_;
+    BindPoint compute_bind_;
+    bool compute_bound_ = false;  // the kind of the pipeline bound last
+    BindPoint& Current() { return compute_bound_ ? compute_bind_ : graphics_; }
+    id<MTLBuffer>
+        index_buffer_ = nil;  // held: a WaitIdle in the frame could collect a destroyed buffer before the draw
     u64 index_offset_ = 0;
     IndexType index_type_ = IndexType::UInt16;
     MetalBinder binder_;

@@ -18,7 +18,7 @@ id** (a hash stored in the binary) is how a dump is matched to that build. Nothi
 |---|---|---|
 | A program crashed and left a report on the screen | the first frame of the stack trace and the `reason:` line | "What a crash report contains" |
 | The report has no file and line numbers | build with RelWithDebInfo, or use a symbol store | "Release builds", "Keeping symbols for release builds" |
-| I have an `.envelope` file and need every thread | `scripts/crash-report.sh` (Linux), `scripts/crash-report.ps1` (Windows) | "Turning a dump into a trace" |
+| I have an `.envelope` file and need every thread | `scripts/crash-report.sh` (Linux and macOS), `scripts/crash-report.ps1` (Windows) | "Turning a dump into a trace" |
 | I need heap or object state | a core dump | "Core dumps on Linux" |
 | An assertion fired | the message, then the trace under it | "Assert, ensure or verify" |
 | No report and no dump at all | the handler was off (Release default), a stack overflow on an unregistered thread, or a Windows fast fail | "Installing the crash handler", "Stack overflow and other threads" |
@@ -47,7 +47,7 @@ You have a crash report on the screen, a `.envelope` in the dump directory, or a
    RelWithDebInfo build, or resolve with the symbol store: "Turning a dump into a trace".
 3. **Need more than the report?** `scripts/crash-report.sh <envelope> <program>` prints every thread and the modules from the
    minidump (and refuses the wrong build). For heap or object state ask for a core: "Core dumps on Linux".
-4. **Is it the right build?** Compare `build id:` in the report with `readelf -n <program>`; the scripts do it for you.
+4. **Is it the right build?** Compare `build id:` in the report with `readelf -n <program>` (Linux) or `dwarfdump --uuid <program>` (macOS); the scripts do it for you.
 5. **Reproduce it.** `--crash-test=...` in any demo shows the path works; a test that expects a crash is in "Testing code that
    crashes". Make the failing case a test before you fix it.
 6. **Report, don't upload.** Nothing the engine does ever sends a dump anywhere. A dump and a core hold process memory: keep
@@ -186,7 +186,8 @@ there is no helper program to ship next to the game.
 ### Where dumps go, and what is never sent
 
 Dumps go to a directory on the local disk, never the working directory (a game started from a read-only or sandboxed
-directory could not write there): `$XDG_STATE_HOME/<app>/crashes`, or `~/.local/state/<app>/crashes`, where `<app>` is the
+directory could not write there): on Linux `$XDG_STATE_HOME/<app>/crashes`, or `~/.local/state/<app>/crashes` (on Windows
+`%LOCALAPPDATA%\<app>\crashes`, on macOS `~/Library/Application Support/<app>/crashes`), where `<app>` is the
 environment variable `ENGINE_APP_NAME` or the executable's name (a name that is `.`, `..`, has a slash, or is very long is
 refused). The directory must be a real directory (not a symbolic link) owned by the user, is created private to them
 (mode 0700), is tightened to 0700 if it exists open to others, and must be writable; otherwise the handler is not
@@ -597,7 +598,7 @@ test that wants [[debug::CrashReason::StackOverflow]] checks for [[debug::CrashR
 ## Compiler-specific constructs (`compiler.h`)
 
 Code that needs a compiler builtin, an attribute or inline assembly uses a macro from `debug/compiler.h` instead, so the same source
-builds with GCC and Clang on Linux and with MSVC and clang-cl on Windows. Do not write `__attribute__`, `__builtin_...` or
+builds with GCC and Clang on Linux, with MSVC and clang-cl on Windows, and with Apple clang on macOS. Do not write `__attribute__`, `__builtin_...` or
 `__declspec` elsewhere.
 
 | Macro | For | GCC/Clang | MSVC | clang-cl |
@@ -617,6 +618,6 @@ between a lambda's parameters and its `->` and inlines the lambda anyway, and bo
 
 ## See also
 
-[Logging and Assertions](foundation-logging-and-assert.md), [Porting the debugging facilities](porting-debugging.md), [Windows](windows.md),
+[Logging and Assertions](foundation-logging-and-assert.md), [Porting the debugging facilities](porting-debugging.md), [Windows](windows.md), [macOS](macos.md),
 [Building and testing](building-and-testing.md) (sanitizers, death tests in a test target).
 

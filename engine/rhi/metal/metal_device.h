@@ -326,7 +326,9 @@ public:
     // The depth-stencil state for a description, shared by equal ones (Day 319). Ownership: the device keeps it.
     id<MTLDepthStencilState> DepthStencilState(bool test, bool write, CompareOp compare);
     // The storage mode a buffer of `location` gets on this device (Private, Shared or Managed).
-    MTLStorageMode StorageModeFor(MemoryLocation location) const;
+    // `usage` decides for CPU-written memory: one the GPU may write (copy destination, storage) is Shared even where
+    // others are Managed, since Metal sends a Managed resource's GPU writes to the CPU only through a blit.
+    MTLStorageMode StorageModeFor(MemoryLocation location, BufferUsage usage = BufferUsage::None) const;
 
 private:
     bool Initialize(const DeviceCreateInfo& info);

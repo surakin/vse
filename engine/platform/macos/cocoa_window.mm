@@ -561,6 +561,9 @@ bool CocoaWindow::Open(StringView title, u32 width, u32 height, InputState* inpu
     lock_ = PointerLockState();
     clipboard_requests_.Init(&events_);
     input_ = input != nullptr ? input : &own_input_;
+    // A new window starts with the pointer outside: one reopened on the state its last window closed with (the pointer
+    // over it) would otherwise never report the enter (the end-of-phase review).
+    input_->pointer_inside = false;
     @autoreleasepool
     {
         native_ = MakeUnique<Native>();
