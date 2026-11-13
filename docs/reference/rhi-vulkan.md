@@ -4273,6 +4273,21 @@ const VkPhysicalDeviceProperties& Properties() const;
 
 Returns the physical device's properties and limits.
 
+### `SupportsVertexFormat(VertexFormat)` {#rhi-vulkan-vulkandevice-supportsvertexformat-vertexformat-const}
+
+`method rhi::vulkan::VulkanDevice::SupportsVertexFormat` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+bool SupportsVertexFormat(VertexFormat format) const;
+```
+
+Returns whether the GPU can read `format` from a vertex buffer (`VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT`).
+
+| Field | Value |
+|---|---|
+| Parameter `format` | a value below `VertexFormat::Count`; any other value returns false. |
+| Thread-safety | thread-safe. |
+
 ### `Memory()` {#rhi-vulkan-vulkandevice-memory}
 
 `method rhi::vulkan::VulkanDevice::Memory` — defined in `engine/rhi/vulkan/vulkan_device.h`

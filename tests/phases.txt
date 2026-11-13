@@ -191,6 +191,7 @@ tests/rhi/lighting_gpu_test.cpp                 5
 tests/rhi/render_graph_gpu_test.cpp             5
 tests/rhi/renderer_demo_gpu_test.cpp            5
 tests/rhi/vulkan_strip_test.cpp                 5   # an RHI field, added by the renderer's mesh work
+tests/rhi/vulkan_vertex_format_test.cpp         22  # the packed vertex formats (Phase 22 Day 317)
 test:raw_new_check*                             5
 test:signal_safety_check*                       7
 test:debug_backend_lists*                       7

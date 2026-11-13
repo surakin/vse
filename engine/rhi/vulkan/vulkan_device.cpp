@@ -8,6 +8,7 @@
 #include "rhi/rhi_log.h"
 #include "rhi/spirv.h"
 #include "rhi/vulkan/vk_format.h"
+#include "rhi/vulkan/vk_pipeline_policy.h"
 #include "rhi/vulkan/vk_result.h"
 #include "rhi/vulkan/vk_swapchain.h"
 #include "sync/atomic.h"
@@ -703,6 +704,18 @@ bool VulkanDevice::LookupShader(ShaderHandle shader, ShaderInfo* out) const
 bool VulkanDevice::DeviceLost() const
 {
     return device_lost_.Load(MemoryOrder::Relaxed);
+}
+
+bool VulkanDevice::SupportsVertexFormat(VertexFormat format) const
+{
+    const VkFormat vk_format = ToVkVertexFormat(format);
+    if (vk_format == VK_FORMAT_UNDEFINED)
+    {
+        return false;
+    }
+    VkFormatProperties props{};
+    instance_.Fns().GetPhysicalDeviceFormatProperties(physical_, vk_format, &props);
+    return (props.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) != 0;
 }
 
 }  // namespace engine_placeholder::rhi::vulkan

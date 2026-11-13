@@ -489,6 +489,10 @@ const char* GraphicsPipelineDesc::Validate() const
         {
             return "GraphicsPipelineDesc: vertex attribute extends past its binding stride";
         }
+        if (a.offset % VertexFormatAlignment(a.format) != 0)
+        {
+            return "GraphicsPipelineDesc: vertex attribute offset is not aligned to its format's component size";
+        }
         for (usize j = 0; j < i; ++j)
         {
             if (vertex_attributes[j].location == a.location)

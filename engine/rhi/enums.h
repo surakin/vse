@@ -320,6 +320,15 @@ enum class VertexFormat : u8
     UInt3,       ///< Three 32-bit unsigned integers.
     UInt4,       ///< Four 32-bit unsigned integers.
     UNorm8x4,    ///< Four 8-bit unsigned normalized values (for example packed colors).
+    Float16x2,   ///< Two 16-bit floats (half precision), read by the shader as a float2.
+    Float16x4,   ///< Four 16-bit floats, read as a float4.
+    UNorm16x2,   ///< Two 16-bit unsigned normalized values in [0, 1], read as a float2.
+    UNorm16x4,   ///< Four 16-bit unsigned normalized values in [0, 1], read as a float4.
+    SNorm16x2,   ///< Two 16-bit signed normalized values in [-1, 1], read as a float2.
+    SNorm16x4,   ///< Four 16-bit signed normalized values in [-1, 1], read as a float4.
+    SNorm8x4,    ///< Four 8-bit signed normalized values in [-1, 1] (packed normals and tangents), read as a float4.
+    UInt8x4,     ///< Four 8-bit unsigned integers (joint indices), read as a uint4.
+    UInt16x4,    ///< Four 16-bit unsigned integers, read as a uint4.
     Count,       ///< Number of vertex formats; not a format.
 };
 
@@ -332,9 +341,18 @@ constexpr u32 VertexFormatSize(VertexFormat format)
     {
     case VertexFormat::Float1:
     case VertexFormat::UInt1:
-    case VertexFormat::UNorm8x4: return 4;
+    case VertexFormat::UNorm8x4:
+    case VertexFormat::SNorm8x4:
+    case VertexFormat::UInt8x4:
+    case VertexFormat::Float16x2:
+    case VertexFormat::UNorm16x2:
+    case VertexFormat::SNorm16x2: return 4;
     case VertexFormat::Float2:
-    case VertexFormat::UInt2: return 8;
+    case VertexFormat::UInt2:
+    case VertexFormat::Float16x4:
+    case VertexFormat::UNorm16x4:
+    case VertexFormat::SNorm16x4:
+    case VertexFormat::UInt16x4: return 8;
     case VertexFormat::Float3:
     case VertexFormat::UInt3: return 12;
     case VertexFormat::Float4:
@@ -342,6 +360,90 @@ constexpr u32 VertexFormatSize(VertexFormat format)
     case VertexFormat::Count: break;
     }
     return 0;
+}
+
+/// Returns the number of components the shader sees for one attribute of `format` (1 to 4).
+///
+/// - Param format: a value below `VertexFormat::Count`; any other value returns 0.
+constexpr u32 VertexFormatComponents(VertexFormat format)
+{
+    switch (format)
+    {
+    case VertexFormat::Float1:
+    case VertexFormat::UInt1: return 1;
+    case VertexFormat::Float2:
+    case VertexFormat::UInt2:
+    case VertexFormat::Float16x2:
+    case VertexFormat::UNorm16x2:
+    case VertexFormat::SNorm16x2: return 2;
+    case VertexFormat::Float3:
+    case VertexFormat::UInt3: return 3;
+    case VertexFormat::Float4:
+    case VertexFormat::UInt4:
+    case VertexFormat::UNorm8x4:
+    case VertexFormat::SNorm8x4:
+    case VertexFormat::UInt8x4:
+    case VertexFormat::Float16x4:
+    case VertexFormat::UNorm16x4:
+    case VertexFormat::SNorm16x4:
+    case VertexFormat::UInt16x4: return 4;
+    case VertexFormat::Count: break;
+    }
+    return 0;
+}
+
+/// Returns whether the shader reads `format` as an unsigned integer vector (otherwise as a float vector).
+///
+/// - Param format: a value below `VertexFormat::Count`.
+/// - Fails: never.
+constexpr bool VertexFormatIsInteger(VertexFormat format)
+{
+    return format == VertexFormat::UInt1 || format == VertexFormat::UInt2 || format == VertexFormat::UInt3 ||
+           format == VertexFormat::UInt4 || format == VertexFormat::UInt8x4 || format == VertexFormat::UInt16x4;
+}
+
+/// Returns the byte alignment an attribute of `format` needs inside its vertex (the size of one component: 1, 2 or 4).
+///
+/// - Param format: a value below `VertexFormat::Count`; any other value returns 0.
+constexpr u32 VertexFormatAlignment(VertexFormat format)
+{
+    switch (format)
+    {
+    case VertexFormat::UNorm8x4:
+    case VertexFormat::SNorm8x4:
+    case VertexFormat::UInt8x4: return 1;
+    case VertexFormat::Float16x2:
+    case VertexFormat::Float16x4:
+    case VertexFormat::UNorm16x2:
+    case VertexFormat::UNorm16x4:
+    case VertexFormat::SNorm16x2:
+    case VertexFormat::SNorm16x4:
+    case VertexFormat::UInt16x4: return 2;
+    case VertexFormat::Float1:
+    case VertexFormat::Float2:
+    case VertexFormat::Float3:
+    case VertexFormat::Float4:
+    case VertexFormat::UInt1:
+    case VertexFormat::UInt2:
+    case VertexFormat::UInt3:
+    case VertexFormat::UInt4: return 4;
+    case VertexFormat::Count: break;
+    }
+    return 0;
+}
+
+/// Returns whether a vertex attribute stored as `stored` can feed a shader input that reads `input` (a float or uint
+/// vector of the same width): a normalized, half or float attribute feeds a float input, an integer attribute feeds a
+/// uint input, and the component counts must match.
+///
+/// - Param stored: the attribute format in the mesh layout.
+/// - Param input: the format the shader reads, as reflection reports it (`Float1`-`Float4` or `UInt1`-`UInt4`).
+/// - Fails: never.
+constexpr bool VertexFormatFeedsInput(VertexFormat stored, VertexFormat input)
+{
+    return stored < VertexFormat::Count && input < VertexFormat::Count &&
+           VertexFormatIsInteger(stored) == VertexFormatIsInteger(input) &&
+           VertexFormatComponents(stored) == VertexFormatComponents(input);
 }
 
 /// The kind of resource a binding refers to.

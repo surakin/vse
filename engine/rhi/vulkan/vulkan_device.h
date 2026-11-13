@@ -143,6 +143,12 @@ public:
     /// Returns the physical device's properties and limits.
     const VkPhysicalDeviceProperties& Properties() const { return properties_; }
 
+    /// Returns whether the GPU can read `format` from a vertex buffer (`VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT`).
+    ///
+    /// - Param format: a value below `VertexFormat::Count`; any other value returns false.
+    /// - Thread-safety: thread-safe.
+    bool SupportsVertexFormat(VertexFormat format) const;
+
     /// Returns the GPU memory suballocator.
     /// - Ownership: borrowed; valid for the life of the device.
     MemoryAllocator& Memory() { return *memory_; }

@@ -172,6 +172,64 @@ TEST_CASE("VertexFormatSize covers every format", "[rhi][types]")
     }
 }
 
+TEST_CASE("The packed vertex formats have the sizes, widths and alignments of their type", "[rhi][types]")
+{
+    struct Row
+    {
+        VertexFormat format;
+        u32 size;
+        u32 components;
+        bool integer;
+        u32 alignment;
+    };
+    const Row rows[] = {
+        {VertexFormat::Float16x2, 4, 2, false, 2}, {VertexFormat::Float16x4, 8, 4, false, 2},
+        {VertexFormat::UNorm16x2, 4, 2, false, 2}, {VertexFormat::UNorm16x4, 8, 4, false, 2},
+        {VertexFormat::SNorm16x2, 4, 2, false, 2}, {VertexFormat::SNorm16x4, 8, 4, false, 2},
+        {VertexFormat::SNorm8x4, 4, 4, false, 1},  {VertexFormat::UNorm8x4, 4, 4, false, 1},
+        {VertexFormat::UInt8x4, 4, 4, true, 1},    {VertexFormat::UInt16x4, 8, 4, true, 2},
+        {VertexFormat::Float3, 12, 3, false, 4},   {VertexFormat::UInt2, 8, 2, true, 4},
+    };
+    for (const Row& r : rows)
+    {
+        INFO("format " << static_cast<u32>(r.format));
+        CHECK(VertexFormatSize(r.format) == r.size);
+        CHECK(VertexFormatComponents(r.format) == r.components);
+        CHECK(VertexFormatIsInteger(r.format) == r.integer);
+        CHECK(VertexFormatAlignment(r.format) == r.alignment);
+    }
+    CHECK(VertexFormatComponents(VertexFormat::Count) == 0);
+    CHECK(VertexFormatAlignment(VertexFormat::Count) == 0);
+    // Every format has non-zero size, width and alignment, and a size that is a multiple of its alignment.
+    for (u8 i = 0; i < static_cast<u8>(VertexFormat::Count); ++i)
+    {
+        const VertexFormat f = static_cast<VertexFormat>(i);
+        CHECK(VertexFormatComponents(f) > 0);
+        CHECK(VertexFormatSize(f) % VertexFormatAlignment(f) == 0);
+    }
+}
+
+TEST_CASE("A vertex attribute feeds a shader input of the same kind and width", "[rhi][types]")
+{
+    // Float-class storage feeds float inputs of the same width; integer storage feeds uint inputs.
+    CHECK(VertexFormatFeedsInput(VertexFormat::UNorm8x4, VertexFormat::Float4));
+    CHECK(VertexFormatFeedsInput(VertexFormat::SNorm8x4, VertexFormat::Float4));
+    CHECK(VertexFormatFeedsInput(VertexFormat::Float16x2, VertexFormat::Float2));
+    CHECK(VertexFormatFeedsInput(VertexFormat::UNorm16x4, VertexFormat::Float4));
+    CHECK(VertexFormatFeedsInput(VertexFormat::SNorm16x2, VertexFormat::Float2));
+    CHECK(VertexFormatFeedsInput(VertexFormat::UInt8x4, VertexFormat::UInt4));
+    CHECK(VertexFormatFeedsInput(VertexFormat::UInt16x4, VertexFormat::UInt4));
+    CHECK(VertexFormatFeedsInput(VertexFormat::Float3, VertexFormat::Float3));
+    // A different width, or a float attribute for a uint input and the reverse, does not.
+    CHECK_FALSE(VertexFormatFeedsInput(VertexFormat::UNorm8x4, VertexFormat::Float3));
+    CHECK_FALSE(VertexFormatFeedsInput(VertexFormat::Float16x2, VertexFormat::Float4));
+    CHECK_FALSE(VertexFormatFeedsInput(VertexFormat::UInt8x4, VertexFormat::Float4));
+    CHECK_FALSE(VertexFormatFeedsInput(VertexFormat::UNorm8x4, VertexFormat::UInt4));
+    CHECK_FALSE(VertexFormatFeedsInput(VertexFormat::UInt16x4, VertexFormat::UInt3));
+    CHECK_FALSE(VertexFormatFeedsInput(VertexFormat::Count, VertexFormat::Float4));
+    CHECK_FALSE(VertexFormatFeedsInput(VertexFormat::Float4, VertexFormat::Count));
+}
+
 TEST_CASE("MaxMipLevels is floor(log2(max extent)) + 1", "[rhi][desc]")
 {
     CHECK(MaxMipLevels(1, 1) == 1);
@@ -601,6 +659,13 @@ TEST_CASE("GraphicsPipelineDesc validation", "[rhi][desc]")
 
         attrs[1].offset = 16;  // 16 + 12 > 24
         CHECK(Rejects(d.Validate(), "GraphicsPipelineDesc: vertex attribute extends"));
+        attrs[1].offset = 12;
+
+        attrs[1].format = VertexFormat::UNorm16x4;  // 8 bytes at offset 12: fits the stride, and 12 is 2-aligned
+        CHECK(d.Validate() == nullptr);
+        attrs[1].offset = 13;  // not a multiple of the 16-bit component size
+        CHECK(Rejects(d.Validate(), "GraphicsPipelineDesc: vertex attribute offset is not aligned"));
+        attrs[1].format = VertexFormat::Float3;
         attrs[1].offset = 12;
 
         attrs[1].location = 0;  // duplicate of attrs[0]

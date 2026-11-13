@@ -36,6 +36,15 @@ MTLVertexFormat VertexFormatOf(VertexFormat f)
     case VertexFormat::UInt3: return MTLVertexFormatUInt3;
     case VertexFormat::UInt4: return MTLVertexFormatUInt4;
     case VertexFormat::UNorm8x4: return MTLVertexFormatUChar4Normalized;
+    case VertexFormat::Float16x2: return MTLVertexFormatHalf2;
+    case VertexFormat::Float16x4: return MTLVertexFormatHalf4;
+    case VertexFormat::UNorm16x2: return MTLVertexFormatUShort2Normalized;
+    case VertexFormat::UNorm16x4: return MTLVertexFormatUShort4Normalized;
+    case VertexFormat::SNorm16x2: return MTLVertexFormatShort2Normalized;
+    case VertexFormat::SNorm16x4: return MTLVertexFormatShort4Normalized;
+    case VertexFormat::SNorm8x4: return MTLVertexFormatChar4Normalized;
+    case VertexFormat::UInt8x4: return MTLVertexFormatUChar4;
+    case VertexFormat::UInt16x4: return MTLVertexFormatUShort4;
     case VertexFormat::Count: break;
     }
     return MTLVertexFormatInvalid;

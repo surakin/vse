@@ -5228,6 +5228,15 @@ The data type and width of one vertex attribute.
 | <a id="rhi-vertexformat-uint3"></a>`UInt3` |  | Three 32-bit unsigned integers. |
 | <a id="rhi-vertexformat-uint4"></a>`UInt4` |  | Four 32-bit unsigned integers. |
 | <a id="rhi-vertexformat-unorm8x4"></a>`UNorm8x4` |  | Four 8-bit unsigned normalized values (for example packed colors). |
+| <a id="rhi-vertexformat-float16x2"></a>`Float16x2` |  | Two 16-bit floats (half precision), read by the shader as a float2. |
+| <a id="rhi-vertexformat-float16x4"></a>`Float16x4` |  | Four 16-bit floats, read as a float4. |
+| <a id="rhi-vertexformat-unorm16x2"></a>`UNorm16x2` |  | Two 16-bit unsigned normalized values in [0, 1], read as a float2. |
+| <a id="rhi-vertexformat-unorm16x4"></a>`UNorm16x4` |  | Four 16-bit unsigned normalized values in [0, 1], read as a float4. |
+| <a id="rhi-vertexformat-snorm16x2"></a>`SNorm16x2` |  | Two 16-bit signed normalized values in [-1, 1], read as a float2. |
+| <a id="rhi-vertexformat-snorm16x4"></a>`SNorm16x4` |  | Four 16-bit signed normalized values in [-1, 1], read as a float4. |
+| <a id="rhi-vertexformat-snorm8x4"></a>`SNorm8x4` |  | Four 8-bit signed normalized values in [-1, 1] (packed normals and tangents), read as a float4. |
+| <a id="rhi-vertexformat-uint8x4"></a>`UInt8x4` |  | Four 8-bit unsigned integers (joint indices), read as a uint4. |
+| <a id="rhi-vertexformat-uint16x4"></a>`UInt16x4` |  | Four 16-bit unsigned integers, read as a uint4. |
 | <a id="rhi-vertexformat-count"></a>`Count` |  | Number of vertex formats; not a format. |
 
 ## `VertexFormatSize(VertexFormat)` {#rhi-vertexformatsize-vertexformat}
@@ -5243,6 +5252,65 @@ Returns the size in bytes of one attribute of `format`.
 | Field | Value |
 |---|---|
 | Parameter `format` | a value below `VertexFormat::Count`; any other value returns 0. |
+
+## `VertexFormatComponents(VertexFormat)` {#rhi-vertexformatcomponents-vertexformat}
+
+`function rhi::VertexFormatComponents` — defined in `engine/rhi/enums.h`
+
+```cpp
+constexpr u32 VertexFormatComponents(VertexFormat format);
+```
+
+Returns the number of components the shader sees for one attribute of `format` (1 to 4).
+
+| Field | Value |
+|---|---|
+| Parameter `format` | a value below `VertexFormat::Count`; any other value returns 0. |
+
+## `VertexFormatIsInteger(VertexFormat)` {#rhi-vertexformatisinteger-vertexformat}
+
+`function rhi::VertexFormatIsInteger` — defined in `engine/rhi/enums.h`
+
+```cpp
+constexpr bool VertexFormatIsInteger(VertexFormat format);
+```
+
+Returns whether the shader reads `format` as an unsigned integer vector (otherwise as a float vector).
+
+| Field | Value |
+|---|---|
+| Parameter `format` | a value below `VertexFormat::Count`. |
+| Fails | never. |
+
+## `VertexFormatAlignment(VertexFormat)` {#rhi-vertexformatalignment-vertexformat}
+
+`function rhi::VertexFormatAlignment` — defined in `engine/rhi/enums.h`
+
+```cpp
+constexpr u32 VertexFormatAlignment(VertexFormat format);
+```
+
+Returns the byte alignment an attribute of `format` needs inside its vertex (the size of one component: 1, 2 or 4).
+
+| Field | Value |
+|---|---|
+| Parameter `format` | a value below `VertexFormat::Count`; any other value returns 0. |
+
+## `VertexFormatFeedsInput(VertexFormat,VertexFormat)` {#rhi-vertexformatfeedsinput-vertexformat-vertexformat}
+
+`function rhi::VertexFormatFeedsInput` — defined in `engine/rhi/enums.h`
+
+```cpp
+constexpr bool VertexFormatFeedsInput(VertexFormat stored, VertexFormat input);
+```
+
+Returns whether a vertex attribute stored as `stored` can feed a shader input that reads `input` (a float or uint vector of the same width): a normalized, half or float attribute feeds a float input, an integer attribute feeds a uint input, and the component counts must match.
+
+| Field | Value |
+|---|---|
+| Parameter `stored` | the attribute format in the mesh layout. |
+| Parameter `input` | the format the shader reads, as reflection reports it (`Float1`-`Float4` or `UInt1`-`UInt4`). |
+| Fails | never. |
 
 ## `BindingType` {#rhi-bindingtype}
 

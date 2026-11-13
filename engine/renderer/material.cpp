@@ -1757,9 +1757,9 @@ PipelineLookup MaterialSystem::GetPipeline(MaterialId id, const PipelineTarget& 
             {
                 found = true;
                 const rhi::VertexFormat have = vertex_layout.attributes[a].format;
-                // A normalized 8-bit attribute reaches the shader as a float4, so a float4 input reads it.
-                const bool compatible = have == in.format ||
-                                        (have == rhi::VertexFormat::UNorm8x4 && in.format == rhi::VertexFormat::Float4);
+                // A normalized, half or float attribute reaches the shader as a float vector and an integer attribute
+                // as a uint vector of the same width (rhi::VertexFormatFeedsInput).
+                const bool compatible = rhi::VertexFormatFeedsInput(have, in.format);
                 if (!compatible)
                 {
                     RenderLog(

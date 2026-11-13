@@ -37,6 +37,7 @@ set(RHI_TEST_SOURCES
   lit_cube_test.cpp
   render_graph_gpu_test.cpp
   vulkan_strip_test.cpp
+  vulkan_vertex_format_test.cpp  # Phase 22 Day 317
   gbuffer_gpu_test.cpp
   lighting_gpu_test.cpp
   renderer_demo_gpu_test.cpp

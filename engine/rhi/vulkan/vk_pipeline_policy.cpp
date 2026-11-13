@@ -92,6 +92,15 @@ VkFormat ToVkVertexFormat(VertexFormat format)
     case VertexFormat::UInt3: return VK_FORMAT_R32G32B32_UINT;
     case VertexFormat::UInt4: return VK_FORMAT_R32G32B32A32_UINT;
     case VertexFormat::UNorm8x4: return VK_FORMAT_R8G8B8A8_UNORM;
+    case VertexFormat::Float16x2: return VK_FORMAT_R16G16_SFLOAT;
+    case VertexFormat::Float16x4: return VK_FORMAT_R16G16B16A16_SFLOAT;
+    case VertexFormat::UNorm16x2: return VK_FORMAT_R16G16_UNORM;
+    case VertexFormat::UNorm16x4: return VK_FORMAT_R16G16B16A16_UNORM;
+    case VertexFormat::SNorm16x2: return VK_FORMAT_R16G16_SNORM;
+    case VertexFormat::SNorm16x4: return VK_FORMAT_R16G16B16A16_SNORM;
+    case VertexFormat::SNorm8x4: return VK_FORMAT_R8G8B8A8_SNORM;
+    case VertexFormat::UInt8x4: return VK_FORMAT_R8G8B8A8_UINT;
+    case VertexFormat::UInt16x4: return VK_FORMAT_R16G16B16A16_UINT;
     case VertexFormat::Count: break;
     }
     return VK_FORMAT_UNDEFINED;
