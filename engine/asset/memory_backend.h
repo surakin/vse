@@ -21,7 +21,7 @@ namespace engine_placeholder::asset
 /// no reader of them open): the host may free or reuse `data` from then on.
 using ReleaseBytes = void (*)(void* user, const void* data, usize size);
 
-/// What the manager reports about the resources that depend on another one (Day 323 supplies it); the backend refuses
+/// What the manager reports about the resources that depend on another one (Day 328 supplies it); the backend refuses
 /// to remove or replace a resource that has dependents unless the host forces it.
 ///
 /// - Thread-safety: thread-compatible; the functions are called from the thread that changes the backend, one at a

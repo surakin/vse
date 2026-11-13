@@ -1,4 +1,4 @@
-// asset_mint: Phase 22 Day 316, the first cut (Day 327 completes the tool).
+// asset_mint: Phase 22 Day 316, the first cut (Day 332 completes the tool).
 //
 //   asset_mint pack DIRECTORY OUTPUT.pak [--target=N] [--no-names]
 //

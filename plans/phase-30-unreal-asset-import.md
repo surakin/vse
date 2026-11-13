@@ -69,8 +69,12 @@ kind:
    vertex/index buffers (positions, normals, tangents, UVs, LOD levels)
    via UE's own reflection/data access and write into the Phase 22 mesh
    format.
-3. **Skeletal mesh & skeleton export.** Bones, bind pose, skin weights,
-   read the same way.
+3. **Skeletal mesh, skeleton and animation export.** Bones, bind pose, skin
+   weights and `UAnimSequence` tracks, read the same way and written into
+   the Phase 22 skeleton, mesh (skin stream) and animation clip formats
+   (Days 318-320); a skeleton above 256 joints or a vertex with more than four
+   influences is reported by the importer (the formats' v1 limits), never
+   silently truncated.
 4. **Texture export.** Read `UTexture2D` GPU-native compressed payloads
    (BCn/ASTC — hardware formats, not a library, per assumption #4)
    straight into the Phase 22 texture format.

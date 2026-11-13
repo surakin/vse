@@ -1973,7 +1973,7 @@ Called exactly once when a borrowed resource's bytes are no longer used (replace
 struct ResourceInUseQuery { ... }
 ```
 
-What the manager reports about the resources that depend on another one (Day 323 supplies it); the backend refuses to remove or replace a resource that has dependents unless the host forces it.
+What the manager reports about the resources that depend on another one (Day 328 supplies it); the backend refuses to remove or replace a resource that has dependents unless the host forces it.
 
 | Field | Value |
 |---|---|
@@ -3812,7 +3812,7 @@ Writes the four characters and a terminating zero to `out` (a non-printable byte
 inline constexpr ResourceType kMesh;
 ```
 
-A mesh (Day 317).
+A mesh (Day 319).
 
 ## `kTexture` {#asset-types-ktexture}
 
@@ -3822,7 +3822,7 @@ A mesh (Day 317).
 inline constexpr ResourceType kTexture;
 ```
 
-A texture (Day 318).
+A texture (Day 323).
 
 ## `kMaterial` {#asset-types-kmaterial}
 
@@ -3832,7 +3832,7 @@ A texture (Day 318).
 inline constexpr ResourceType kMaterial;
 ```
 
-A material (Day 321).
+A material (Day 326).
 
 ## `kLevel` {#asset-types-klevel}
 
@@ -3842,7 +3842,7 @@ A material (Day 321).
 inline constexpr ResourceType kLevel;
 ```
 
-A level (Day 322).
+A level (Day 327).
 
 ## `kNames` {#asset-types-knames}
 

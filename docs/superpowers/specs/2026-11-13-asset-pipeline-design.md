@@ -13,7 +13,7 @@ Settled on Phase 22 Day 313 (2026-11-13). Plan: `plans/phase-22-asset-pipeline.m
 | Topic | Decision |
 |---|---|
 | Module | `engine/asset`, layer 13 (beside `scene`): depends on `foundation`, `jobs`, `ecs`, `storage`, `net`, `rhi`, `renderer`; nothing below includes it. |
-| Tools | `tools/asset_mint` (mint, pack, verify, list, remint, unmint), `tools/resource_server` (network backend's peer). Minters and upgrade code are kept out of game binaries by the gate `asset_boundary_check` (Day 328). |
+| Tools | `tools/asset_mint` (mint, pack, verify, list, remint, unmint), `tools/resource_server` (network backend's peer). Minters and upgrade code are kept out of game binaries by the gate `asset_boundary_check` (Day 333). |
 | Id | **Amended 2026-11-13 (the user, after the plan was written: broken dependencies must never happen).** `ResourceId` is a stable 64-bit id assigned once by `asset_mint adopt` and written into the source file itself (every source format is ours, so each has an id field; no sidecar, one file per asset; `mint` stays a pure function of the sources) and into the header of every minted blob; the normalized virtual path (`/`, no `.` or `..`) is an alias in a minted `NAMES` blob, so rename and move never change an id. A duplicate id is a mint error. `ResourceId::None()` is the explicit null reference. |
 | Dependencies | Every blob has a standard, sorted dependency section `(id, type, type version, role)`; the loader follows only declared dependencies. The mint refuses an unresolved or wrongly typed reference, a cycle, a duplicate id, and the deletion of a referenced asset; `pack` refuses an incomplete closure (a patch pak names its base pak by content hash); the runtime loads a resource's whole closure atomically and publishes no handle on failure, naming the chain. No optional references; no silent fallback (fallbacks only behind `assets.allow_fallbacks`, counted, zero asserted in tests and demos). |
 | Content hash | SHA-256, truncated to 128 bits, portable code (Spike 2: 375 MB/s on one core). Used for the cache key, the verify command and the pak; it is not on the load path of a local file. |
@@ -27,7 +27,8 @@ Settled on Phase 22 Day 313 (2026-11-13). Plan: `plans/phase-22-asset-pipeline.m
 | Determinism | Minting is a pure function of the inputs and the tool version: no time stamps, no absolute paths, no hash-table order, no thread-count dependence. Tested by minting twice and with 1 and 8 workers. |
 | Manager | Handle = `ResourceId` + generation. `Load<T>` synchronous; `LoadAsync<T>` on jobs (decode and validate on workers, GPU upload on the owner thread). Reference counts, a dependency graph, fallbacks, a streaming budget. `Recreatable` owners keep their loader, so a device reset reloads from the backend. |
 | Network backend | Read-only over `net::TcpTransport`; requests stat, list, read range; responses bounded by settings; an on-disk cache keyed by content hash; retry with back-off; offline mode serves the cache. No authentication and no encryption (trusted networks only, the user's deferral of 2026-11-12). |
-| Levels | The binary form is the storage module's component records (`ComponentRegistry`) plus a resource-reference table. Spike 5's question (column memory images with a layout fingerprint) is answered on Day 327's planning step, not here. The text form is line-oriented. |
+| Levels | The binary form is the storage module's component records (`ComponentRegistry`) plus a resource-reference table. Spike 5's question (column memory images with a layout fingerprint) is answered on Day 332's planning step, not here. The text form is line-oriented. |
+| Skeletal assets (added 2026-11-13) | `SKEL` and `ANIM` blobs and a mesh skin stream (4 influences, weights summing to 255, joints at most 256) in `engine/asset`; the runtime in the new module `engine/animation` (layer 12, below `asset`, no `asset` include); GPU skinning from a per-frame 48-byte-per-joint palette in the vertex shader (permutation `SKINNED`); packed vertex formats added to the RHI first (Day 317). Limits and deferrals: PLAN.md 2026-11-13 entry. |
 | Settings | `assets.*` through `settings::Registry`: mounts, cache directory and size, streaming budget, worker count, network timeouts. |
 
 ## Spike results
@@ -53,7 +54,7 @@ Portable SHA-256: **375 MB/s**. A 256 MiB blob hashes in about 0.7 s, so the has
 | `mmap` + populate | 0.1 ms to map | pages fault on touch |
 | validation scan of an index range / finite positions | 6.3 / 6.1 ms | about 43 GB/s |
 
-Conclusions: (1) a **pre-faulted buffer pool** is worth 4x on the read; a fresh buffer pays for page faults, not for the copy; (2) any copy costs 6x to 10x the read, so **no copy between the read and the GPU upload**; (3) validation is cheap (6 ms per 256 MiB), so it stays; (4) the renderer's `MeshData::Set` (validates and copies) and `TextureImage` (owned `Vector<u8>`) are copies the load path cannot afford. **Renderer changes this phase needs**: a trusted, zero-copy entry into `GpuMesh` and `GpuTexture` from a span of the blob (Days 317 and 318), and `BC4_UNorm` in `rhi::Format` with the backend mappings (Day 319).
+Conclusions: (1) a **pre-faulted buffer pool** is worth 4x on the read; a fresh buffer pays for page faults, not for the copy; (2) any copy costs 6x to 10x the read, so **no copy between the read and the GPU upload**; (3) validation is cheap (6 ms per 256 MiB), so it stays; (4) the renderer's `MeshData::Set` (validates and copies) and `TextureImage` (owned `Vector<u8>`) are copies the load path cannot afford. **Renderer changes this phase needs**: a trusted, zero-copy entry into `GpuMesh` and `GpuTexture` from a span of the blob (Days 319 and 323), and `BC4_UNorm` in `rhi::Format` with the backend mappings (Day 324).
 
 ### Spike 4: texture upload and the reset (by reading the code)
 
@@ -72,7 +73,7 @@ A range-fit encoder (principal axis, projection, endpoint refinement by least sq
 
 The two-subset bound gave 57.1 dB on the photo-like image against 54.4 dB for mode 6 RGB (+2.7 dB) and 17.1 dB against 13.9 dB on noise; its smooth-image figures are unreliable (the throwaway bound code had a defect), and it ignores partition signalling, so treat it as an upper bound only. **Decision: BC1, BC4, BC5 and BC7 mode 6. The partitioned BC7 modes (0-3, 7) are not built in this phase**; they add a partition search that costs about 10x the encode time for about 3 dB at best, and mode 6 is already 8 to 10 dB above BC1. Revisit if a real asset shows a visible gap. A 1024x1024 mip chain mints in well under 2 s per core with mode 6; the mint parallelizes by block rows, and the output must not depend on the worker count (each block is encoded independently, so it does not).
 
-## Pass conditions for Day 329 (planner's defaults, the user confirms)
+## Pass conditions for Day 334 (planner's defaults, the user confirms)
 
 - Warm local load of a 256 MiB blob within 1.5x of the raw `pread` time into a pre-faulted buffer (the Spike 5 row: about 26 ms).
 - `load_conversions == 0` and zero allocations on the load path after the pool is warm.

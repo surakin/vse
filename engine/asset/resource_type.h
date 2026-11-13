@@ -60,13 +60,13 @@ private:
 /// The types of this phase.
 namespace types
 {
-/// A mesh (Day 317).
+/// A mesh (Day 319).
 inline constexpr ResourceType kMesh = ResourceType::FromChars('M', 'E', 'S', 'H');
-/// A texture (Day 318).
+/// A texture (Day 323).
 inline constexpr ResourceType kTexture = ResourceType::FromChars('T', 'E', 'X', 'R');
-/// A material (Day 321).
+/// A material (Day 326).
 inline constexpr ResourceType kMaterial = ResourceType::FromChars('M', 'A', 'T', 'L');
-/// A level (Day 322).
+/// A level (Day 327).
 inline constexpr ResourceType kLevel = ResourceType::FromChars('L', 'E', 'V', 'L');
 /// The id <-> path table (a blob that is not itself a resource: its header id may be null).
 inline constexpr ResourceType kNames = ResourceType::FromChars('N', 'A', 'M', 'E');

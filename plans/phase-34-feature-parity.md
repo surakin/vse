@@ -14,8 +14,9 @@ detail only once reached, against real priorities at that time.
   (Nanite/Lumen-class features), advanced shadowing.
 - World streaming / world partition for large open worlds.
 - Replication, prediction and matchmaking on top of Phase 20's transport layer (the sockets, TCP/UDP and the transport interface are Phase 20's).
-- Animation systems (blend trees, IK, state machines) beyond Phase 30's
-  basic skeletal mesh import.
+- Animation systems (blend trees, IK, state machines, retargeting, morph
+  targets, compute pre-skinning) beyond Phase 22's skeleton and clip formats,
+  sampler, blending and GPU skinning.
 - Landscape/terrain and foliage systems (deferred out of Phase 30).
 - Niagara-equivalent particle/VFX system.
 - Further Unreal import coverage: latent Blueprint nodes, Sequencer/
