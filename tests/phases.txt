@@ -326,6 +326,7 @@ tests/rhi/macos/metal_commands_test.mm          21   # Metal command lists, enco
 tests/rhi/macos/metal_swapchain_test.mm         21   # the Metal swapchain over the Cocoa window's layer (Day 305)
 tests/rhi/macos/metal_graph_test.mm             21   # the render graph's passes as Metal encoders (Day 307)
 tests/rhi/macos/metal_lifecycle_test.mm         21   # Metal resets, stale handles, tolerant destruction (Day 309)
+tests/rhi/macos/metal_vertex_format_test.mm     22   # the packed vertex formats on Metal (Phase 22 Day 317, the Mac's catch-up)
 testopt:metal_validation_planted                   21   # a planted Metal validation error must stop the program (Day 300)
 testopt:metal_autorelease_pools                     21   # no Metal object autoreleased without a pool in the reset loop (Day 309)
 testopt:macos_*                                 21
