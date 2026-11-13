@@ -122,7 +122,7 @@ enum ModifierBit : u32
 };
 
 /// The modifier of the command shortcuts (copy, cut, paste, select all, undo, quit): Command ([[os::kModSuper]]) on
-/// macOS, Control elsewhere (Phase 26 Day 325). Word moves and Ctrl+Tab keep Control on every platform.
+/// macOS, Control elsewhere (Phase 21 Day 309). Word moves and Ctrl+Tab keep Control on every platform.
 inline constexpr u32 kModShortcut = ENGINE_PLATFORM_MACOS ? kModSuper : kModCtrl;
 
 /// Per-key down state plus the modifier mask; part of [[os::InputState]].

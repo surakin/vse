@@ -147,7 +147,7 @@ system granted: Linux doubles the request and caps it at `net.core.rmem_max`), `
 
 `engine/net/BACKEND.md` is the checklist for a new platform: every `Socket` operation with its rules, the error table, and the quirks of Windows, macOS,
 mobile and consoles. The test `net_backend_lists` keeps it in step with the header. Linux and macOS share `engine/net/posix/`; Windows has its own,
-`engine/net/windows/` (Day 278). macOS adds `engine/net/macos/` (Phase 26 Day 326): its hooks and a kqueue poller.
+`engine/net/windows/` (Day 278). macOS adds `engine/net/macos/` (Phase 21 Day 310): its hooks and a kqueue poller.
 
 ### On Windows
 
@@ -168,7 +168,7 @@ inside the backend, and the interface's rules hold on both:
 
 ### On macOS
 
-The same interface and the same tests run on macOS (Phase 26 Day 326), through the POSIX backend with macOS's hooks and a kqueue poller. What differs:
+The same interface and the same tests run on macOS (Phase 21 Day 310), through the POSIX backend with macOS's hooks and a kqueue poller. What differs:
 
 - Sockets are made non-blocking, close-on-exec and free of `SIGPIPE` (`SO_NOSIGPIPE`) right after they are created or accepted: macOS has no flags for
   it at creation. A program that forks while another thread opens sockets can pass one to its child in that moment; spawn with

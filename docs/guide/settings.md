@@ -1,6 +1,6 @@
 # Settings
 
-Status: written (Phase 11; Windows in Phase 13, macOS in Phase 26 Day 309).
+Status: written (Phase 11; Windows in Phase 13, macOS in Phase 21 Day 293).
 
 **Audience:** every engine and game programmer who adds an option a user can change (a resolution, a volume, a log level), or who reads one.
 
@@ -144,7 +144,7 @@ std::printf("%d %lld\n", early_has ? 1 : 0, static_cast<long long>(value.AsInt()
 
 ## Writing a store backend
 
-A new backend (the Windows registry in Phase 13, `NSUserDefaults` in Phase 26) derives from `ConfigStore`, implements the eight pure functions, sets only the capability bits that are true, and passes the
+A new backend (the Windows registry in Phase 13, `NSUserDefaults` in Phase 21) derives from `ConfigStore`, implements the eight pure functions, sets only the capability bits that are true, and passes the
 conformance suite in `tests/settings/config_store_conformance.h`: `RunWritableConformance`, `RunDurabilityConformance` and `RunCapabilityConformance` for a writable store, `RunReadOnlyConformance` for one that
 is not. Each takes a factory that returns a new instance over the same durable backing every time it is called (a second instance models a restart), so the suite can check that committed content survives
 and uncommitted content does not (unless the store is per-key). A store is not ready until the suite passes and its `Capabilities()` match what the suite found.

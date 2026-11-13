@@ -21,7 +21,7 @@ enum class Backend : u8
     Null = 0,  ///< The validating no-GPU device ([[rhi::NullDevice]]).
     Vulkan,    ///< The Vulkan 1.3 backend, loaded at run time from the system's Vulkan loader.
     Dx12,      ///< The Direct3D 12 backend (Windows).
-    Metal,     ///< The Metal backend (macOS, Phase 26: what `Auto` picks there from Day 325).
+    Metal,     ///< The Metal backend (macOS, Phase 21: what `Auto` picks there from Day 309).
     Auto,      ///< The platform's preferred backend among those registered and available ([[rhi::PickAutoBackend]]).
 };
 

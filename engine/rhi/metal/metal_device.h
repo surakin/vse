@@ -1,12 +1,12 @@
 #pragma once
 
-// The Metal implementation of rhi::Device (Phase 26, Days 316-325). Objective-C++: included only by the backend's .mm
+// The Metal implementation of rhi::Device (Phase 21, Days 300-309). Objective-C++: included only by the backend's .mm
 // files and its tests (rhi_boundary_check keeps Metal names in engine/rhi/metal/); the rest of the engine reaches it
 // through the backend registry (rhi_backends) and the neutral rhi::Device.
 //
-// Day 316: the device, its queue, the timeline (an MTLSharedEvent: the device's fence), frames in flight, the
+// Day 300: the device, its queue, the timeline (an MTLSharedEvent: the device's fence), frames in flight, the
 // capabilities, the adapters, validation (advisory: Metal's is an environment setting of the process) and
-// command-buffer errors. The resource, binding, pipeline, command-list and swapchain operations come on Days 317-321
+// command-buffer errors. The resource, binding, pipeline, command-list and swapchain operations come on Days 301-305
 // and until then fail with a log line saying so.
 
 #include "sync/atomic.h"
@@ -84,7 +84,7 @@ bool MapStageSlots(MetalDevice& device, ShaderStage stage, const ShaderSlotTable
                    usize error_size);
 
 // The resources bound on one encoder, per stage, so a bind group that sets a slot to what it already holds issues no
-// call. A new encoder starts empty: call Reset when one begins (Day 318; the command lists use it from Day 320).
+// call. A new encoder starts empty: call Reset when one begins (Day 302; the command lists use it from Day 304).
 class MetalBinder
 {
 public:
@@ -123,7 +123,7 @@ private:
     Vector<MetalGroupResource> scratch_;  // reused: no allocation per bind once warm
 };
 
-// What a command list needs of a pipeline (Day 320), resolved by handle when it is bound: the Metal states, the
+// What a command list needs of a pipeline (Day 304), resolved by handle when it is bound: the Metal states, the
 // fixed-function state Metal sets on the encoder, each stage's slots and a compute pipeline's threadgroup size. The
 // objects are retained.
 struct MetalPipelineInfo
@@ -144,7 +144,7 @@ struct MetalPipelineInfo
 };
 
 // The vertex descriptor of a pipeline description: each attribute at its location, read from its binding's buffer at
-// MetalVertexBufferSlot, and each binding's stride and step rate (Day 319). Exposed for tests.
+// MetalVertexBufferSlot, and each binding's stride and step rate (Day 303). Exposed for tests.
 MTLVertexDescriptor* MakeMetalVertexDescriptor(const GraphicsPipelineDesc& desc);
 
 // What the command buffers' completion handlers touch: shared with each handler, so a handler that runs after the
@@ -157,7 +157,7 @@ struct MetalDeviceShared
 };
 
 // Makes every Metal device created afterwards in this process use the Managed storage mode for CPU-visible buffers, as
-// on a GPU without unified memory, so a unified Mac covers that path (a test hook: Phase 26 Day 317). Thread-safety:
+// on a GPU without unified memory, so a unified Mac covers that path (a test hook: Phase 21 Day 301). Thread-safety:
 // thread-safe; devices read it when they are created.
 void ForceManagedStorageForTest(bool on);
 
@@ -210,7 +210,7 @@ public:
     void InjectDeviceLoss() override;
     bool DeviceLost() const override { return shared_->lost.Load(MemoryOrder::Acquire); }
 
-    // Day 318 (metal_device_bindings.mm).
+    // Day 302 (metal_device_bindings.mm).
     SamplerHandle CreateSampler(const SamplerDesc& desc) override;
     void DestroySampler(SamplerHandle sampler) override;
     BindGroupLayoutHandle CreateBindGroupLayout(const BindGroupLayoutDesc& desc) override;
@@ -218,7 +218,7 @@ public:
     BindGroupHandle CreateBindGroup(const BindGroupDesc& desc) override;
     void DestroyBindGroup(BindGroupHandle group) override;
 
-    // Day 317 (metal_device_resources.mm).
+    // Day 301 (metal_device_resources.mm).
     BufferHandle CreateBuffer(const BufferDesc& desc) override;
     void DestroyBuffer(BufferHandle buffer) override;
     TextureHandle CreateTexture(const TextureDesc& desc) override;
@@ -231,7 +231,7 @@ public:
     UploadTicket UploadBuffer(BufferHandle dst, u64 offset, const void* data, u64 size) override;
     bool ReadbackBuffer(BufferHandle src, u64 offset, void* dst, u64 size) override;
 
-    // Day 319 (metal_device_pipelines.mm).
+    // Day 303 (metal_device_pipelines.mm).
     ShaderHandle CreateShader(const ShaderDesc& desc) override;
     void DestroyShader(ShaderHandle shader) override;
     PipelineHandle CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) override;
@@ -240,11 +240,11 @@ public:
     // Waits for the GPU and writes the pipeline cache.
     void Quiesce() override;
 
-    // Day 320 (metal_device_commands.mm, metal_command_list.mm).
+    // Day 304 (metal_device_commands.mm, metal_command_list.mm).
     CommandList* CreateCommandList() override;
     FenceValue Submit(CommandList* const* lists, usize count) override;
 
-    // Day 321 (metal_device_swapchain.mm, metal_swapchain.mm).
+    // Day 305 (metal_device_swapchain.mm, metal_swapchain.mm).
     Swapchain* CreateSwapchain(const SwapchainDesc& desc) override;
     void DestroySwapchain(Swapchain* swapchain) override;
     bool RecreateSurface(const os::Window* window) override;
@@ -256,7 +256,7 @@ public:
     // Presents a drawable after everything committed so far; false when the device is lost.
     bool PresentDrawable(id<CAMetalDrawable> drawable);
 
-    // Day 316.
+    // Day 300.
     bool FormatSupport(Format format, TextureUsage usage) const override;
     bool CanGenerateMips(Format format) const override;
     bool WaitFence(FenceValue value, u64 timeout_ns) override;
@@ -316,14 +316,14 @@ public:
     Format TextureFormat(TextureHandle texture) const;
     // The Metal texture and format of a live handle in one lookup; nil (and Undefined) for an invalid or stale one.
     id<MTLTexture> TextureObject(TextureHandle texture, Format* format) const;
-    // A pipeline's Metal state (Day 319), copied into `out` (its slot lists too); false for an invalid or stale handle.
+    // A pipeline's Metal state (Day 303), copied into `out` (its slot lists too); false for an invalid or stale handle.
     bool LookupPipeline(PipelineHandle pipeline, MetalPipelineInfo* out) const;
     // The pipeline cache: its archive and its file.
     MetalPipelineCache& PipelineCache() { return pipeline_cache_; }
     // Pipelines found in the cache's archive and pipelines compiled, since the device was created.
     u32 PipelineCacheHits() const { return cache_hits_.Load(MemoryOrder::Relaxed); }
     u32 PipelineCacheMisses() const { return cache_misses_.Load(MemoryOrder::Relaxed); }
-    // The depth-stencil state for a description, shared by equal ones (Day 319). Ownership: the device keeps it.
+    // The depth-stencil state for a description, shared by equal ones (Day 303). Ownership: the device keeps it.
     id<MTLDepthStencilState> DepthStencilState(bool test, bool write, CompareOp compare);
     // The storage mode a buffer of `location` gets on this device (Private, Shared or Managed).
     // `usage` decides for CPU-written memory: one the GPU may write (copy destination, storage) is Shared even where
@@ -337,7 +337,7 @@ private:
     bool InjectLoss(const char* where, u32 number);
     void UpdateCompletedFramesLocked();
 
-    // Day 318 (metal_device_bindings.mm).
+    // Day 302 (metal_device_bindings.mm).
     static constexpr u32 kFrameSlots = 4;  // transient groups end when their frame's slot comes round again
     struct SamplerRes
     {
@@ -366,7 +366,7 @@ private:
     };
     void RetireFrameGroupsLocked(u32 slot);
 
-    // Day 319 (metal_device_pipelines.mm).
+    // Day 303 (metal_device_pipelines.mm).
     struct ShaderRes
     {
         id<MTLLibrary> library = nil;
@@ -406,7 +406,7 @@ private:
         id<MTLTexture> texture = nil;
         TextureDesc desc;                                       // without the debug name
         ResourceState upload_state = ResourceState::Undefined;  // as UploadTexture leaves it (the RHI's rule)
-        bool external = false;                                  // a swapchain image (Day 321): the swapchain owns it
+        bool external = false;                                  // a swapchain image (Day 305): the swapchain owns it
         u64 bytes = 0;
     };
     // metal_device_resources.mm.
@@ -467,7 +467,7 @@ private:
     u64 completed_frames_ = 0;  // the last frame whose fence the GPU reached
     Array<u64, kTrackedFrames> frame_fences_ = {};
 
-    // Resources (Day 317), under resource_mutex_.
+    // Resources (Day 301), under resource_mutex_.
     HandlePool<BufferRes, BufferTag> buffers_;
     HandlePool<TextureRes, TextureTag> textures_;
     bool managed_ = false;
@@ -476,18 +476,18 @@ private:
     Atomic<u64> device_memory_bytes_{0};
     Atomic<u32> raw_resources_{0};  // Metal buffers and textures alive, the application's and the device's own
 
-    // Bindings (Day 318), under resource_mutex_.
+    // Bindings (Day 302), under resource_mutex_.
     HandlePool<SamplerRes, SamplerTag> samplers_;
     HandlePool<BindGroupLayoutRes, BindGroupLayoutTag> bind_group_layouts_;
     HandlePool<BindGroupRes, BindGroupTag> bind_groups_;
     Array<Vector<BindGroupHandle>, kFrameSlots> frame_groups_;
 
-    // The window and its swapchain (Day 321).
+    // The window and its swapchain (Day 305).
     const os::Window* window_ = nullptr;
     UniquePtr<MetalSwapchain> swapchain_;
     Atomic<u32> swapchain_live_{0};
 
-    // Command lists (Day 320): a pool per frame slot, recycled when the slot's earlier frame has finished.
+    // Command lists (Day 304): a pool per frame slot, recycled when the slot's earlier frame has finished.
     struct ListPool
     {
         Vector<UniquePtr<MetalCommandList>> lists;
@@ -497,7 +497,7 @@ private:
     mutable Mutex list_mutex_;
     Array<ListPool, kFrameSlots> list_pools_;  // under list_mutex_
 
-    // Shaders and pipelines (Day 319), under resource_mutex_.
+    // Shaders and pipelines (Day 303), under resource_mutex_.
     HandlePool<ShaderRes, ShaderTag> shaders_;
     HandlePool<PipelineRes, PipelineTag> pipelines_;
     Vector<DepthStateEntry> depth_states_;

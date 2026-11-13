@@ -99,8 +99,8 @@ void SetReason(ApplyResult* r, const char* text)
 
 rhi::Backend BackendForSetting(u32 setting_value, const char** note)
 {
-    // The value itself on every platform: macOS's `auto` is Metal since Phase 26 Day 325 (it was the null backend from
-    // Day 314, while Metal was asked for by name). The note stays for a platform that needs a fallback again.
+    // The value itself on every platform: macOS's `auto` is Metal since Phase 21 Day 309 (it was the null backend from
+    // Day 298, while Metal was asked for by name). The note stays for a platform that needs a fallback again.
     *note = nullptr;
     return static_cast<rhi::Backend>(setting_value);  // kBackendNames follows rhi::Backend
 }

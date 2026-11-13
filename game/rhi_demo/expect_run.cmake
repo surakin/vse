@@ -7,7 +7,7 @@
 execute_process(COMMAND ${CMD} RESULT_VARIABLE code OUTPUT_VARIABLE out ERROR_VARIABLE err)
 set(all "${out}${err}")
 # A test that names a backend this platform cannot have (`--rhi vulkan` on macOS, `--rhi dx12` off Windows:
-# rhi::CreateDevice's reason) is skipped even when a GPU is required: there is no device to require (Phase 26 Day 325).
+# rhi::CreateDevice's reason) is skipped even when a GPU is required: there is no device to require (Phase 21 Day 309).
 # Only when the command asked for it by name: `auto` or a default resolving to such a backend is a failure.
 string(REPLACE ";" " " cmd_text "${CMD}")
 if(cmd_text MATCHES "--rhi (vulkan|dx12)( |$)")

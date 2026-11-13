@@ -30,7 +30,7 @@ It is a windowed program (the Windows subsystem, `ENGINE_WINDOWED_PROGRAM`): sta
 terminal its output goes to that terminal. Its settings file is `%APPDATA%\renderer_demo\settings.cfg`, its crash dumps go to
 `%LOCALAPPDATA%\renderer_demo\crashes`.
 
-On macOS (Phase 26), with the `macos-clang` preset (`BUILD.md`): the device is Metal (`auto` picks it; there is no Vulkan on macOS).
+On macOS (Phase 21), with the `macos-clang` preset (`BUILD.md`): the device is Metal (`auto` picks it; there is no Vulkan on macOS).
 
 ```
 cmake --build --preset macos-clang --target renderer_demo

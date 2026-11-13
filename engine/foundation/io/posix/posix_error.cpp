@@ -1,4 +1,4 @@
-// The POSIX table of io::ErrorFromOsCode (errno), Linux and macOS (Phase 26 Day 303: moved from io/linux/).
+// The POSIX table of io::ErrorFromOsCode (errno), Linux and macOS (Phase 21 Day 287: moved from io/linux/).
 // io::ErrorName is neutral: io/error.cpp.
 #include "build_defs.h"
 #include "os/last_error.h"

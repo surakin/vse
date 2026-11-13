@@ -11,7 +11,7 @@
 #include <sys/random.h>
 #include <unistd.h>
 
-// Linux's half of os.h; the calls Linux shares with macOS are in os/posix/os_posix.cpp (Phase 26 Day 301).
+// Linux's half of os.h; the calls Linux shares with macOS are in os/posix/os_posix.cpp (Phase 21 Day 285).
 namespace engine_placeholder::os
 {
 

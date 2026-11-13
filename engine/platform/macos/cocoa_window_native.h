@@ -1,6 +1,6 @@
 #pragma once
 
-// The Objective-C side of CocoaWindow (Phase 26 Days 311-313), shared by the files that implement it:
+// The Objective-C side of CocoaWindow (Phase 21 Days 295-297), shared by the files that implement it:
 // cocoa_window.mm (the window, the view, input), cocoa_cursor.mm (cursor and pointer lock), cocoa_clipboard.mm and
 // cocoa_dragdrop.mm. Objective-C++ only; never included by C++ code (cocoa_window.h is the C++ interface).
 #include "containers/array.h"

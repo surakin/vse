@@ -313,7 +313,7 @@ TEST_CASE("The per-backend GPU tests run on every GPU backend this machine has",
     {
 #if ENGINE_PLATFORM_MACOS
         // A Mac whose GPU has Metal 3 (the Mac2 family's newer GPUs; not a VM without a GPU): the golden suites run
-        // through it (Phase 26 Day 322).
+        // through it (Phase 21 Day 306).
         CHECK(metal);
 #endif
         // Vulkan on Linux; Vulkan and Direct3D 12 on Windows; Metal alone on macOS.

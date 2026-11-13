@@ -275,7 +275,7 @@ u32 MetalClass(rhi::BindingType type)
 }
 
 // Every binding (and the push-constant block) has a slot when the Metal slots were minted, none otherwise; two
-// resources of one argument table never share a slot (the Phase 26 Day 298 failure); a slot is below Metal's 31
+// resources of one argument table never share a slot (the Phase 21 Day 282 failure); a slot is below Metal's 31
 // buffers, 128 textures and 16 samplers.
 const char* ValidateMetalSlots(const ShaderReflection& r)
 {

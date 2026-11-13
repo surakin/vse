@@ -6,7 +6,7 @@ target_link_libraries(input_probe PRIVATE platform)
 
 # The banner line once overflowed a 256-byte scratch arena and aborted the program at start (found by hand on 2026-11-11): a one-second run on each display
 # backend, in a real window, must reach the end. Holds the `display` resource and skips without a session for that backend. macOS has one
-# backend, Cocoa (Phase 26 Day 312).
+# backend, Cocoa (Phase 21 Day 296).
 if(APPLE)
   set(INPUT_PROBE_BACKENDS cocoa)
 else()

@@ -234,7 +234,7 @@ DumpResult ReadDumpModules(const char* data, engine_placeholder::usize size, Dum
         return DumpResult::Malformed;
     }
     // Breakpad's macOS writer pads the count to 8 bytes before the array (MDRawModuleList is not packed there); a list
-    // exactly 4 bytes longer than its modules has that padding, as Breakpad's own reader assumes (Phase 26 Day 308).
+    // exactly 4 bytes longer than its modules has that padding, as Breakpad's own reader assumes (Phase 21 Day 292).
     const u64 header = u64{length} == 8 + u64{modules} * kModuleBytes ? 8 : 4;
     *count = modules;
     for (u32 i = 0; i < modules && i < capacity; ++i)

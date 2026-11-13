@@ -1,4 +1,4 @@
-// The POSIX death-test backend, shared by Linux and macOS (Phase 26 Day 307: moved from os/linux/debug/death_test.cpp);
+// The POSIX death-test backend, shared by Linux and macOS (Phase 21 Day 291: moved from os/linux/debug/death_test.cpp);
 // each system supplies the hooks of os/posix/debug/posix_debug.h (the pipe, the program's path, the environment, dying
 // with the parent).
 #include "debug/death_test.h"

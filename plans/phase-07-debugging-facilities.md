@@ -5,7 +5,7 @@ assertions, process and file wrappers, threads).
 **Goal:** when the engine or a game crashes, fails an assertion, or hits a state that should not happen, the developer
 gets a readable stack trace with function, file and line, a dump file to open in a debugger, and macros that distinguish
 "abort here" from "report and carry on". Built on existing libraries (below) instead of hand-written crash machinery.
-Linux is implemented; Windows (Phase 13) and macOS (Phase 26) are left ready; every interface is shaped so no later
+Linux is implemented; Windows (Phase 13) and macOS (Phase 21) are left ready; every interface is shaped so no later
 platform forces a redesign.
 **Definition of done:** a crash (signal, `ENGINE_ASSERT`, unhandled error) prints a symbolized stack trace and the
 engine's context (build id, platform, last log lines) and leaves a minidump holding every thread; an `ENGINE_ENSURE`
@@ -64,7 +64,7 @@ own minidump writer and reader, Mach-O and PE readers, an own crash signal handl
 
 ## Platform design (PLAN.md assumption #11)
 
-**Scope (decided 2026-11-06):** this phase implements **Linux only**. It leaves **Windows (Phase 13) and macOS (Phase 26)
+**Scope (decided 2026-11-06):** this phase implements **Linux only**. It leaves **Windows (Phase 13) and macOS (Phase 21)
 ready**: the libraries already support them, so "ready" means a facade and tests free of Linux assumptions, per-backend
 checklists (`BACKEND.md`) for the few platform-specific functions, a backend conformance list the same test sources
 satisfy, cross-target syntax checks, and a porting guide (Day 101). Android, iOS and the consoles (Phases 27 and 28) are
@@ -78,7 +78,7 @@ Rules applied in every day file:
   (`tools/platform_neutral_check`) enforces this from Day 92.
 - **Death tests re-execute the test binary** (no `fork`, which Windows lacks and which is unsafe in a multithreaded
   process); platforms that cannot spawn (iOS, consoles) report `Unsupported` and the tests skip.
-- **Tests speak the neutral API** (`InjectFault(FaultKind)`, `ChildResult::reason`), so Phases 13 and 26 build the same
+- **Tests speak the neutral API** (`InjectFault(FaultKind)`, `ChildResult::reason`), so Phases 13 and 21 build the same
   sources and make the same groups pass.
 - **No assumption of a command line, a filesystem layout or a process model.** Dumps go to an `os::`-provided directory.
 - **Compiler differences stay in one header** (`debug/compiler.h`: debug break, unreachable hint, noinline).

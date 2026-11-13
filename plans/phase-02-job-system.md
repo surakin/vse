@@ -99,7 +99,7 @@ here first if implementation proves one wrong.
 
 - The `FramePool` size classes (Day 27) are a starting guess; Day 35
   logs the real frame-size histogram and adjusts them. Revisit again
-  once ECS (Phase 17) and asset streaming (Phase 21) are real consumers.
+  once ECS (Phase 17) and asset streaming (Phase 22) are real consumers.
 - `parallel_for`'s chunk-size heuristic (Day 33) is a fixed constant for
   now; adaptive chunking based on measured per-job cost is deferred until
   a real workload (Phase 17's ECS system scheduling) shows it's needed.
@@ -108,6 +108,6 @@ here first if implementation proves one wrong.
 - Physical-core/SMT-aware placement is deliberately not done (logical
   CPUs only). Revisit if profiling on a hyperthreaded machine shows
   siblings contending.
-- Windows/macOS/console ports (Phases 13, 26, 27 and 28) will need their own
+- Windows/macOS/console ports (Phases 13, 21, 27 and 28) will need their own
   affinity/topology queries behind the same participant interface; the
   Linux-specific calls are confined to Day 29.

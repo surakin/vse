@@ -30,8 +30,8 @@ set(UI_TEST_SOURCES
   ${CMAKE_SOURCE_DIR}/game/ui_demo/ui_script.cpp
 )
 
-# macOS (Phase 26 Day 310): the tests that open a window or use the OS clipboard, and the demo application's, need ui_window (and the window
-# layer under it, Day 311); until the macOS build has that target they stay off, and everything else, the CPU side, runs.
+# macOS (Phase 21 Day 294): the tests that open a window or use the OS clipboard, and the demo application's, need ui_window (and the window
+# layer under it, Day 295); until the macOS build has that target they stay off, and everything else, the CPU side, runs.
 set(_ui_needs_window FALSE)
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND NOT TARGET ui_window)
   set(_ui_needs_window TRUE)

@@ -17,7 +17,7 @@
 //! console's code page is never changed (that would outlive the program in the user's shell). Paths are UTF-8 and
 //! become UTF-16 at the call, with `/` turned into `\` and the `\\?\` prefix added to long absolute paths.
 //!
-//! **macOS** (Phase 26). The descriptor, memory, sleep and library calls are the POSIX ones Linux uses (`os/posix/`);
+//! **macOS** (Phase 21). The descriptor, memory, sleep and library calls are the POSIX ones Linux uses (`os/posix/`);
 //! the clock, random bytes, process figures and library search are macOS's own (`os/macos/os.cpp`). Pages are the
 //! system's size: 4 KiB on x86-64 and 16 KiB on Apple silicon, so no code may assume 4 KiB.
 

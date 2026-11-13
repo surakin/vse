@@ -51,7 +51,7 @@ DumpResult ReadDumpModules(const char* data, engine_placeholder::usize size, Dum
 // Reads the exception stream; `out->present` is false for a dump without one.
 DumpResult ReadDumpException(const char* data, engine_placeholder::usize size, DumpException* out);
 
-// Completes, in place, the register flags of a dump Breakpad wrote on an x86-64 Mac (Phase 26 Day 308). Breakpad's
+// Completes, in place, the register flags of a dump Breakpad wrote on an x86-64 Mac (Phase 21 Day 292). Breakpad's
 // macOS writer fills each thread's general registers but sets the context flags to CONTEXT_AMD64 alone, and lldb reads
 // no register of such a context (every thread's pc is 0). Each context of the thread list and the exception stream
 // whose flags are exactly CONTEXT_AMD64 gets CONTROL, INTEGER and SEGMENTS; `*completed` counts them. A context or list

@@ -1,4 +1,4 @@
-// The Cocoa window (Phase 26 Day 311; engine/platform/macos/cocoa_window.h): Retina size and scale, the CAMetalLayer
+// The Cocoa window (Phase 21 Day 295; engine/platform/macos/cocoa_window.h): Retina size and scale, the CAMetalLayer
 // the RHI gets, resize through AppKit, the close button and Quit as requests the program answers, minimizing, a window
 // refused off the main thread, and a window destroyed while AppKit still has events for it. Every case opens a real
 // window, so the file is in the `display` group and skips while the session is locked.
@@ -210,7 +210,7 @@ TEST_CASE("macOS: a window destroyed with AppKit events still pending, and a clo
     CHECK_FALSE(closed.Open("zero", 0, 100, nullptr));
 }
 
-// Review findings, Day 311.
+// Review findings, Day 295.
 
 TEST_CASE("macOS: a logout, restart or shutdown is a session end; a plain Quit is not", "[macos][window]")
 {

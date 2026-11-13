@@ -35,7 +35,7 @@ block it allocates comes from the engine's heap. The demo (`renderer_demo --text
 - A **glyph** is one code point's shape: `FindGlyph(codepoint)` looks it up in the font's character map. There is **no shaping**: a code point is a glyph, a
   missing one is glyph 0 (`.notdef`, the box), never an error.
 - Sizes are **pixels** (`SetPixelSize`): the caller multiplies by its display scale, there is no hidden HiDPI factor. 0 and sizes above 2048 are refused.
-  Sizes above `kMaxAtlasPixelSize` (128) work for metrics, layout and outlines; only rasterization refuses them (Phase 25 draws such text as meshes).
+  Sizes above `kMaxAtlasPixelSize` (128) work for metrics, layout and outlines; only rasterization refuses them (Phase 26 draws such text as meshes).
 - **Errors are values.** `Font::Open` reports `Empty`, `NotAFont`, `Corrupt` (including a font cut short), `Unsupported` or `OutOfMemory` in a `text::Status`
   with a message.
 
@@ -139,7 +139,7 @@ Word movement (Ctrl+arrow) is not in `text/cursor.h`; the UI toolkit adds it (`u
 `renderer::TextRenderer` (`renderer/text_renderer.h`) puts a laid-out text on a color target. It owns a `renderer::GlyphAtlasTexture` (one R8 texture per atlas page), its own pipeline
 (shaders `text.vert` and `text.frag`), a sampler and a vertex buffer with one region per frame in flight, and registers with the `DeviceResources` registry, so a device reset or loss
 rebuilds all of it from the CPU atlas (the pages are the source of truth; no glyph is lost and no handle is kept past a frame). It is meant to draw on every backend,
-Metal included (Phase 26 Day 324: the text GPU tests run once per backend, so through Metal on macOS, and are first run there on Day 325; on a Retina
+Metal included (Phase 21 Day 308: the text GPU tests run once per backend, so through Metal on macOS, and are first run there on Day 309; on a Retina
 window text is rasterized at the backing scale the window reports).
 
 ```cpp
@@ -167,7 +167,7 @@ and, outside the graph, `Record(list, width, height)` inside their own rendering
 - `Add` looks each glyph up in the atlas (rasterizing it on first use), so the first frame that uses a glyph pays for it; `Record` sends the atlas pages that changed since the last frame. A
   changed page is sent **whole** (the RHI uploads a full mip level at a time), one megabyte for a 1024-pixel page.
 - Text above `kMaxAtlasPixelSize` (128 px) is laid out at the requested size but rasterized at 128 px and drawn with scaled quads (blurry, correctly placed); `Stats().scaled_large_glyphs`
-  counts such glyphs and the first use of each size is logged. Phase 25 draws large text as outline meshes.
+  counts such glyphs and the first use of each size is logged. Phase 26 draws large text as outline meshes.
 - One frame draws at most `max_glyphs` glyphs (8192 by default); the rest are dropped, counted in `DroppedGlyphs()` and logged once per frame, and a full atlas drops glyphs the same way.
 
 ## Common mistakes
@@ -189,7 +189,7 @@ size). `None`, `Normal` and `Bytecode` are the others. The choice is made per fo
 
 - Kerning comes from the font's `kern` table only (`FT_Get_Kerning`); pair adjustment that lives only in GPOS is not read.
 - Metrics are horizontal; vertical layout is out of scope.
-- `LoadOutline` returns the unscaled contours with on/off-curve flags (quadratic for TrueType, cubic for CFF): the seam Phase 25's outline meshes use.
+- `LoadOutline` returns the unscaled contours with on/off-curve flags (quadratic for TrueType, cubic for CFF): the seam Phase 26's outline meshes use.
 - FreeType's auto-hinter does not survive a failed allocation during the first glyph load (a FreeType 2.15.0 defect, `KNOWN-ISSUES.md`); opening a font and
   loading outlines do survive it, and the library's allocation counters stay exact.
 

@@ -1,4 +1,4 @@
-// The cursor, the pointer lock, the clipboard and drag and drop on macOS (Phase 26 Day 313;
+// The cursor, the pointer lock, the clipboard and drag and drop on macOS (Phase 21 Day 297;
 // engine/platform/macos/cocoa_cursor.mm, cocoa_clipboard.mm, cocoa_dragdrop.mm, engine/platform/BACKEND.md "macos").
 // The clipboard cases use a private, uniquely named pasteboard (the user's clipboard is never touched); the drop cases
 // feed the view a synthesized NSDraggingInfo over a private pasteboard, as AppKit calls a destination. Sending a drag
@@ -795,7 +795,7 @@ TEST_CASE("macOS drag: BeginDrag refuses without a button held, without offers a
     CHECK(Drain(window).Size() == 0);
 }
 
-// Hand check, Day 313: after a drag out of the window, the button the drag started with stayed down: AppKit's drag loop
+// Hand check, Day 297: after a drag out of the window, the button the drag started with stayed down: AppKit's drag loop
 // takes its release.
 TEST_CASE("macOS drag: the end of a drag releases the buttons no longer held, before DragEnded",
           "[macos][window][dragdrop]")
@@ -820,7 +820,7 @@ TEST_CASE("macOS drag: the end of a drag releases the buttons no longer held, be
     CHECK(events[1].drag_action == static_cast<u8>(DragAction::Copy));
 }
 
-// Review findings, Day 313.
+// Review findings, Day 297.
 
 TEST_CASE("macOS lock: the cursor follows the view's centre when the window changes size, and a focus regained "
           "without a jump keeps the first move",

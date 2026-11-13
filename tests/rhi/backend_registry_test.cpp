@@ -252,7 +252,7 @@ TEST_CASE("RegisterCompiledBackends registers null and Vulkan, and Direct3D 12 o
     CHECK(RegisteredBackendCount() == 2);
 #endif
 #else
-    // macOS (Phase 26): no Vulkan; the null and Metal backends, Metal what Auto picks (from Day 325).
+    // macOS (Phase 21): no Vulkan; the null and Metal backends, Metal what Auto picks (from Day 309).
     CHECK(FindBackend(Backend::Vulkan) == nullptr);
     const BackendDescriptor* metal = FindBackend(Backend::Metal);
     REQUIRE(metal != nullptr);
@@ -273,7 +273,7 @@ TEST_CASE(
     "refused where it is not built",
     "[rhi][registry]")
 {
-    // The setting's value is the backend on every platform (macOS's null fallback of Phase 26 Day 314 ended on Day
+    // The setting's value is the backend on every platform (macOS's null fallback of Phase 21 Day 298 ended on Day
     // 325), and a registered backend that cannot run is a loud failure with its own reason, never replaced.
     Reset reset;
     REQUIRE(RegisterNullBackend());

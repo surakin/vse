@@ -97,7 +97,7 @@ TEST_CASE("A socket closed without being disarmed is reported, not a broken wait
 
 TEST_CASE("A wait with no room for events is Invalid, not an instant return", "[network][poller]")
 {
-    // kevent with no room returns at once, which would make a waiting loop spin; epoll_wait refuses it (Day 326).
+    // kevent with no room returns at once, which would make a waiting loop spin; epoll_wait refuses it (Day 310).
     Poller poller;
     REQUIRE(poller.IsValid());
     Array<PollEvent, 1> events;

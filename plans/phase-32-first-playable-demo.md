@@ -1,6 +1,6 @@
 # Phase 32 — First Playable Demo
 
-**Depends on:** Phases 0-25 at minimum (core engine, physics, audio,
+**Depends on:** Phases 0-26 at minimum (core engine, physics, audio,
 scripting), plus Phase 13 (Windows port) since the definition of done below
 requires running on Windows too; Phase 31 (editor) helps but isn't
 strictly required if content is still hand-authored via the asset
@@ -24,7 +24,7 @@ Windows.
 
 ## Notes / open questions
 
-- Full day-by-day breakdown deferred until Phase 24 (and ideally 18) are
+- Full day-by-day breakdown deferred until Phase 25 (and ideally 18) are
   complete.
 - This phase is expected to feed back into earlier phases' plans (bug
   fixes, API changes) — that's the point of it existing.

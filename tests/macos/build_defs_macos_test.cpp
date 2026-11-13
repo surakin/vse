@@ -1,4 +1,4 @@
-// build_defs.h on Apple clang (Phase 26 Day 300): the macOS build selects macOS, x86-64 and Clang, and the sanitizer
+// build_defs.h on Apple clang (Phase 21 Day 284): the macOS build selects macOS, x86-64 and Clang, and the sanitizer
 // macros say which flavor this executable is. Built in the plain, asan and tsan flavors; ENGINE_TEST_EXPECT_ASAN and
 // ENGINE_TEST_EXPECT_TSAN come from tests/macos/CMakeLists.txt. The neutral checks (exactly one of each family) are
 // tests/foundation/build_defs_test.cpp.
@@ -17,7 +17,7 @@ TEST_CASE("build_defs.h selects macOS on the macOS build", "[build_defs][macos]"
 
 TEST_CASE("build_defs.h selects x86-64 and Clang with Apple clang", "[build_defs][macos]")
 {
-    CHECK(ENGINE_ARCH_X64 == 1);  // the macOS build is x86-64 only until the arm64 compile check (Phase 26 Day 327)
+    CHECK(ENGINE_ARCH_X64 == 1);  // the macOS build is x86-64 only until the arm64 compile check (Phase 21 Day 311)
     CHECK(ENGINE_ARCH_ARM64 == 0);
     CHECK(ENGINE_COMPILER_CLANG == 1);
     CHECK(ENGINE_COMPILER_GCC == 0);

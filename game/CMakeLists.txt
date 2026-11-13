@@ -38,8 +38,8 @@ if(WIN32)
   set(DEMO_PROFILE_ENV "APPDATA=${_profile}/roaming;LOCALAPPDATA=${_profile}/local")
   file(MAKE_DIRECTORY "${_profile}/roaming" "${_profile}/local")
 elseif(APPLE)
-  # macOS keeps the user's settings and the crash database under $HOME/Library/Application Support (Phase 26 Days 304, 314): a private HOME.
-  # Metal's API and shader validation too (Phase 26 Day 323): Metal reads them at process start, so a demo's --validation alone is advisory.
+  # macOS keeps the user's settings and the crash database under $HOME/Library/Application Support (Phase 21 Days 288, 298): a private HOME.
+  # Metal's API and shader validation too (Phase 21 Day 307): Metal reads them at process start, so a demo's --validation alone is advisory.
   set(DEMO_PROFILE_ENV "HOME=${_profile}/home;MTL_DEBUG_LAYER=1;MTL_DEBUG_LAYER_ERROR_MODE=assert;MTL_SHADER_VALIDATION=1")
   file(MAKE_DIRECTORY "${_profile}/home")
 else()
@@ -56,7 +56,7 @@ add_subdirectory(renderer_bench)
 add_subdirectory(ecs_bench)
 add_subdirectory(spatial_demo)
 add_subdirectory(storage_demo)
-add_subdirectory(net_demo)  # Phase 20 Day 281 (macOS from Phase 26 Day 326)
+add_subdirectory(net_demo)  # Phase 20 Day 281 (macOS from Phase 21 Day 310)
 add_subdirectory(ui_demo)
 
 # The README's "Settings options" block must be the settings part of --help (so the documentation cannot drift from the registry).

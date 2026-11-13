@@ -1,7 +1,7 @@
 #pragma once
 
 // Helpers shared by the POSIX tests of tests/debug, Linux and macOS (Phase 16 Day 217; shared as test_support_posix.h
-// since Phase 26 Day 307): text concatenation, a shell command run with its output captured (what `popen` did),
+// since Phase 21 Day 291): text concatenation, a shell command run with its output captured (what `popen` did),
 // removing a directory tree (what `remove` inside `nftw` did), finding files under a directory and reading a whole
 // file. They exist so the tests need no `std::string`, no `<cstdio>` and no `<cstdlib>`; the POSIX calls they make
 // (`posix_spawn`, `waitpid`, `nftw`, `opendir`) are not part of the C++ standard library.
@@ -121,7 +121,7 @@ inline ShellRun RunShell(StringView command)
     ShellRun run;
     const Text owned = engine_test::MakeText(command);  // NUL-terminated
     int fds[2];
-    // pipe, then close-on-exec on both ends (macOS has no pipe2; Phase 26 Day 307 made this header shared as
+    // pipe, then close-on-exec on both ends (macOS has no pipe2; Phase 21 Day 291 made this header shared as
     // test_support_posix.h).
     if (::pipe(fds) != 0)
     {

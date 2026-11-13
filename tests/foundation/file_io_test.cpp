@@ -12,7 +12,7 @@ using engine_placeholder::usize;
 namespace io = engine_placeholder::io;
 
 // The running test program, read through its path: ELF on Linux, a PE image (`MZ`) on Windows (Phase 13 Day 158),
-// Mach-O on macOS (Phase 26 Day 309: a 64-bit image, little-endian 0xFEEDFACF, or a universal one, 0xCAFEBABE).
+// Mach-O on macOS (Phase 21 Day 293: a 64-bit image, little-endian 0xFEEDFACF, or a universal one, 0xCAFEBABE).
 TEST_CASE("io::ReadFile reads the running program and finds its executable magic number", "[file_io][io]")
 {
     ArenaAllocator arena(128 * 1024 *

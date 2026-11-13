@@ -1,6 +1,6 @@
 # Platform: OS Layer
 
-Status: written (Phase 1; Windows from Phase 13; macOS from Phase 26 Day 301).
+Status: written (Phase 1; Windows from Phase 13; macOS from Phase 21 Day 285).
 
 **Audience:** engine programmers. Read [Standard types](foundation-types.md) and [Memory](foundation-memory.md) first.
 
@@ -215,7 +215,7 @@ choice (`std::exit`), never for descriptors.
 - **`include os/windows/win32.h`, never `<windows.h>`**: it removes the macros whose names are engine identifiers (`LoadLibrary`, `near`,
   `far`, ...), so Windows code calls the explicit `...W` functions.
 
-**macOS** (Phase 26; `engine/foundation/os/macos/`, with `os/posix/` shared with Linux). The descriptor, memory, sleep, symbol and
+**macOS** (Phase 21; `engine/foundation/os/macos/`, with `os/posix/` shared with Linux). The descriptor, memory, sleep, symbol and
 environment functions are the same POSIX calls as on Linux and live once, in `os/posix/os_posix.cpp`; each system's `os.cpp` adds the
 rest.
 

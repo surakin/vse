@@ -10,7 +10,7 @@
 //   crash_extract --lldb <dump-or-envelope> <output.dmp>
 //                                               the minidump as lldb reads it: a macOS dump's register flags
 //                                               completed (minidump.h), any other unchanged
-// (--modules to --resolve: Phase 13 Day 156; --lldb: Phase 26 Day 308.)
+// (--modules to --resolve: Phase 13 Day 156; --lldb: Phase 21 Day 292.)
 //
 // The crash handler (engine/foundation/debug/crash_handler.h) leaves one `.envelope` file per crash in its dump
 // directory; the minidump inside it is what `lldb -c`, `minidump-stackwalk` and WinDbg open. Without an output path the
@@ -218,7 +218,7 @@ int Resolve(const char* store, const char* dump_path, const char* report_path)
 }
 
 // The minidump as a file lldb reads: a macOS dump gets its context flags completed (CompleteMacContextFlags); any other
-// is written unchanged. scripts/crash-report.sh uses it on every system (Phase 26 Day 308).
+// is written unchanged. scripts/crash-report.sh uses it on every system (Phase 21 Day 292).
 int WriteForLldb(const char* input_path, const char* output_path)
 {
     Vector<u8> bytes;

@@ -12,7 +12,7 @@ endfunction()
 rhi_boundary_test(rhi_boundary_check ${CMAKE_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/allowlist.txt)
 
 # Planted violations: all three kinds must be reported (include, identifier, backend include in an agnostic header); an Objective-C++
-# #import counts as an include (Phase 26 Day 302).
+# #import counts as an include (Phase 21 Day 286).
 rhi_boundary_test(rhi_boundary_check_planted ${RHI_BOUNDARY_FIXTURES}/bad ${RHI_BOUNDARY_FIXTURES}/bad/allow.txt)
 set_tests_properties(rhi_boundary_check_planted PROPERTIES WILL_FAIL TRUE)
 rhi_boundary_test(rhi_boundary_check_planted_count ${RHI_BOUNDARY_FIXTURES}/bad ${RHI_BOUNDARY_FIXTURES}/bad/allow.txt)

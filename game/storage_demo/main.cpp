@@ -2,7 +2,7 @@
 // to a SQLite file, loaded into a fresh world, and checked against the original: every stored component equal, the
 // derived state (world transforms, spatial sets) rebuilt by the systems and answering the same queries as the original
 // and as a brute-force scan. Then the world runs with the autosaver and the last autosave is loaded again. Headless:
-// nothing is drawn (the render scene bridge needs the meshes of Phase 21's assets, KNOWN-ISSUES.md).
+// nothing is drawn (the render scene bridge needs the meshes of Phase 22's assets, KNOWN-ISSUES.md).
 //
 //   storage_demo [--entities N]  entity count (default 20000; a fifth are static blocks)
 //                [--frames N]    frames to run with autosave (default 60)

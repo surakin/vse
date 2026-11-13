@@ -188,7 +188,7 @@ struct RendererStats
 };
 
 /// The backend the `backend` setting's value asks for: the value itself on every platform (macOS's `auto` is Metal
-/// since Phase 26 Day 325; from Day 314 it was the null backend there, with a note, while Metal was asked for by name).
+/// since Phase 21 Day 309; from Day 298 it was the null backend there, with a note, while Metal was asked for by name).
 /// A GPU backend that is registered but cannot run is never replaced: the device creation then fails and says why.
 ///
 /// - Param setting_value: the `backend` setting's enum value (it follows [[rhi::Backend]]).

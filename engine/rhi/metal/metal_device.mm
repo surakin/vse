@@ -1,4 +1,4 @@
-// The Metal device (Phase 26 Day 316; metal_device.h): creation, the timeline and frames, the capabilities,
+// The Metal device (Phase 21 Day 300; metal_device.h): creation, the timeline and frames, the capabilities,
 // command-buffer errors, device loss. Objective-C++ with ARC: the device, queue, event and listener are strong members
 // released by the destructor after the GPU is idle.
 #include "rhi/metal/metal_device.h"
@@ -64,7 +64,7 @@ bool EnvironmentOn(const char* name)
     return value != nullptr && value[0] != '\0' && value[0] != '0';
 }
 
-// The waits for a timeline value (Phase 26 Day 325). The listener's block captures nothing, so it is a global block:
+// The waits for a timeline value (Phase 21 Day 309). The listener's block captures nothing, so it is a global block:
 // a block with captures is copied on the waiting thread and read on Metal's notification thread, a hand-off made in
 // IOSurface that ThreadSanitizer cannot see (it reported the capture as a race). The block finds its semaphores here,
 // under a lock: an event and the value each waits for, and the semaphore, retained while the wait is registered.
@@ -255,7 +255,7 @@ bool MetalDevice::Initialize(const DeviceCreateInfo& info)
     // setting can only report it. `On` without the variable is a warning, not a failure.
     validation_ = EnvironmentOn("MTL_DEBUG_LAYER");
     // The validation settings change on a device reset elsewhere; on Metal a reset cannot change them, so a request
-    // that differs from the process says it takes effect at the next start (Phase 26 Day 325).
+    // that differs from the process says it takes effect at the next start (Phase 21 Day 309).
     if (info.validation == ValidationSetting::On && !validation_)
     {
         RhiLog(
@@ -289,7 +289,7 @@ bool MetalDevice::Initialize(const DeviceCreateInfo& info)
     }
     // Metal's shader validation and a binary archive do not mix on macOS 15.8: adding a pipeline to an archive
     // read from a file stops the process inside Metal (an unbalanced dispatch_group_leave in the compiler's variant
-    // cache, seen on Day 325). The archive is left off while shader validation is on.
+    // cache, seen on Day 309). The archive is left off while shader validation is on.
     if (info.pipeline_cache && EnvironmentOn("MTL_SHADER_VALIDATION"))
     {
         RhiLog(LogVerbosity::Info, "Metal: the pipeline archive is off while MTL_SHADER_VALIDATION is set");
@@ -328,7 +328,7 @@ void MetalDevice::FillCaps()
     caps_.object_index_stream = true;  // [[instance_id]] excludes the base instance: the renderer's index stream
     for (usize f = 1; f < static_cast<usize>(Format::Count); ++f)
     {
-        // Metal generates mips with a blit (Day 320) for a color format that can be rendered and filtered.
+        // Metal generates mips with a blit (Day 304) for a color format that can be rendered and filtered.
         mip_support_[f] = MtlFormatCanGenerateMips(static_cast<Format>(f), device_);
     }
 }

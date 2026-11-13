@@ -30,7 +30,7 @@ function(renderer_demo_expect name code out skip_re)
 endfunction()
 set(RENDERER_NO_GPU "cannot open loader library|no physical devices|no suitable GPU")
 if(APPLE)
-  # macOS: Vulkan asked for by name is not built there (auto is Metal from Phase 26 Day 325; the *_metal tests ask for it by name).
+  # macOS: Vulkan asked for by name is not built there (auto is Metal from Phase 21 Day 309; the *_metal tests ask for it by name).
   # A Mac without a Metal 3 GPU (a VM, an older Mac): auto finds no backend and says why, which skips as no GPU does elsewhere.
   string(APPEND RENDERER_NO_GPU "|backend is not built for macOS|this Mac has no Metal device|no Metal device of the Mac2 family")
 endif()
@@ -53,7 +53,7 @@ if(WIN32)
 endif()
 set(_renderer_demo_metal_tests)
 if(APPLE)
-  # Metal by name (Phase 26 Day 323; auto picks it too from Day 325): the picture with validation on, the loss trace, the staging ring's OOM.
+  # Metal by name (Phase 21 Day 307; auto picks it too from Day 309): the picture with validation on, the loss trace, the staging ring's OOM.
   renderer_demo_expect(renderer_demo_screenshot_metal 0 "wrote .*renderer_demo_screenshot_metal.ppm \\(540 objects" ""
     --screenshot RENDERER_DEMO_SHOT --validation --rhi metal)
   renderer_demo_expect(renderer_demo_device_loss_trace_metal 3 "ENSURE FAILED[^\n]*the Metal device was lost" ""
@@ -101,7 +101,7 @@ if(WIN32)
   set(_crash_backend win32)
   set(_abort_code 3) # abort() ends a Windows process with exit code 3; the report in the output tells it from exit(3)
 elseif(APPLE)
-  renderer_demo_scripted(renderer_demo_script_cocoa cocoa metal)  # Phase 26 Day 323 (on null from Day 314)
+  renderer_demo_scripted(renderer_demo_script_cocoa cocoa metal)  # Phase 21 Day 307 (on null from Day 298)
   set(_crash_backend cocoa)
   # The crash handler's Breakpad ends a macOS process with _exit(exception type) once the dump is written
   # (third_party/sentry_native/external/breakpad/src/client/mac/handler/exception_handler.cc): an abort is EXC_SOFTWARE, 5.
@@ -117,7 +117,7 @@ endif()
 function(renderer_demo_overlay_scripted name backend)
   set(rhi vulkan)
   if(APPLE)
-    set(rhi metal)  # Phase 26 Day 323 (null from Day 314)
+    set(rhi metal)  # Phase 21 Day 307 (null from Day 298)
   endif()
   add_test(NAME ${name}
     COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:renderer_demo>;--backend;${backend};--rhi;${rhi};--validation;--frames;60;--script;frame:5 overlay frame:15 overlay frame:20 reset frame:30 quit"

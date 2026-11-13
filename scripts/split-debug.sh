@@ -6,7 +6,7 @@
 # Linux: <binary>.debug (binutils objcopy and strip), and a link from the program to the debug file. The program keeps
 # its GNU build id, so a debugger or scripts/crash-report.sh can find the debug file again from a symbol store
 # (scripts/store-symbols.sh). The CMake option ENGINE_SPLIT_DEBUG_INFO runs this after linking.
-# macOS (Phase 26 Day 308): <binary>.dSYM (dsymutil, which reads the build's object files), then `strip -S`, which
+# macOS (Phase 21 Day 292): <binary>.dSYM (dsymutil, which reads the build's object files), then `strip -S`, which
 # removes the debug map and keeps the symbol table, so a crash report still names functions; the LC_UUID ties the
 # program to its dSYM. The build makes the dSYM itself (engine_dsym); this is for a program built without it.
 set -eu

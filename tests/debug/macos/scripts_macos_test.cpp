@@ -1,4 +1,4 @@
-// The crash and core scripts on macOS (Phase 26 Day 308): scripts/crash-report.sh on a dump from a crashing child (the
+// The crash and core scripts on macOS (Phase 21 Day 292): scripts/crash-report.sh on a dump from a crashing child (the
 // trace names the faulting function and every thread, cross-checked with atos), a stripped program resolving through a
 // dSYM symbol store (scripts/store-symbols.sh, split-debug.sh) and not without one, a wrong program refused; and
 // find-core.sh and open-core.sh on a core lldb saves (the kernel's /cores is root's on a stock Mac). Every script runs
@@ -312,7 +312,7 @@ TEST_CASE("macOS: store-symbols.sh keeps the bundle already stored when a new co
     REQUIRE(Run("ditto '" UNIVERSAL_PROGRAM_PATH ".dSYM' '", work, "/p.dSYM'").exit_code == 0);
     REQUIRE(Run(Script("store-symbols.sh"), " '", work, "/p.dSYM' '", work, "/sym'").exit_code == 0);
     // A bundle ditto cannot read in full (its Info.plist unreadable): the copy fails after the checks pass. The old
-    // bundle used to be deleted first (review finding, Day 308).
+    // bundle used to be deleted first (review finding, Day 292).
     REQUIRE(Run("chmod 000 '", work, "/p.dSYM/Contents/Info.plist'").exit_code == 0);
     const ScriptRun failed = Run(Script("store-symbols.sh"), " '", work, "/p.dSYM' '", work, "/sym'");
     Run("chmod 644 '", work, "/p.dSYM/Contents/Info.plist'");
@@ -384,7 +384,7 @@ TEST_CASE("macOS: without crash_extract, crash-report.sh warns and still reads a
     const Text dump = Cat(dir.Path(), "/crash.dmp");
     REQUIRE(Run("'" ENGINE_CRASH_EXTRACT_PATH "' '", envelope, "' '", dump, "'").exit_code == 0);
     // Without the tool the registers stay unread (pc 0), but the threads and modules are listed (review finding,
-    // Day 308: it used to stop with exit status 2).
+    // Day 292: it used to stop with exit status 2).
     const ScriptRun run = Run("ENGINE_CRASH_EXTRACT=/nonexistent ", Script("crash-report.sh"), " '", dump, "'");
     INFO(run.output.CStr());
     CHECK(run.exit_code == 0);
@@ -451,7 +451,7 @@ TEST_CASE("macOS: find-core.sh finds a program's newest core and checks its UUID
 
     // A pattern naming the process (%N) with a program whose name is longer than the kernel keeps (32 bytes), and a
     // copy under that name, which is not the name the core records: the core is found by the cut name, and the
-    // program's UUID is the core's first image outside the system's own (review findings, Day 308).
+    // program's UUID is the core's first image outside the system's own (review findings, Day 292).
     const Text long_name = engine_test::MakeText("engine_physics_benchmark_tool_x64_long");
     REQUIRE(Run("cp '", work, "/prog' '", work, "/", long_name, "'").exit_code == 0);
     REQUIRE(Run("mv '", work, "/core.", pid, "' '", work, "/", long_name.View().Substring(0, 32), ".", pid, "'")

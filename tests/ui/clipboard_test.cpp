@@ -135,7 +135,7 @@ TEST_CASE("a field destroyed while its paste is pending is not called when the d
 
 TEST_CASE("The command shortcuts take Command on macOS and Control elsewhere", "[ui][clipboard]")
 {
-    // Phase 26 Day 325: on macOS Ctrl+C copied and Cmd+C did nothing (found by hand in ui_demo).
+    // Phase 21 Day 309: on macOS Ctrl+C copied and Cmd+C did nothing (found by hand in ui_demo).
     OsRig rig;
     rig.a->SetText(StringView("hello world"));
     rig.a->SetSelection(0, 5);

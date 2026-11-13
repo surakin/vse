@@ -160,7 +160,7 @@ TEST_CASE("a mnemonic letter chooses its item, a disabled one does nothing", "[u
     rig.h.Key(Key::O);  // Open is disabled
     CHECK(rig.runs == 0);
     CHECK(rig.h.GetSurface().PopupCount() == 1);
-    rig.h.Key(Key::A, true, os::kModSuper);  // Cmd+A on macOS is a shortcut, not the mnemonic (Day 325)
+    rig.h.Key(Key::A, true, os::kModSuper);  // Cmd+A on macOS is a shortcut, not the mnemonic (Day 309)
     CHECK(rig.runs == 0);
     rig.h.Key(Key::A, true, os::kModCtrl);
     CHECK(rig.runs == 0);

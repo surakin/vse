@@ -17,7 +17,7 @@ cmake --build build --target ui_demo
 ./build/game/ui_demo/ui_demo --screenshot out.ppm --script "frame:2 theme:dark frame:4 openmenu:View"
 ```
 
-On macOS (Phase 26), with the `macos-clang` preset (`BUILD.md`): the device is Metal (`auto` picks it; there is no Vulkan on macOS).
+On macOS (Phase 21), with the `macos-clang` preset (`BUILD.md`): the device is Metal (`auto` picks it; there is no Vulkan on macOS).
 
 ```
 cmake --build --preset macos-clang --target ui_demo

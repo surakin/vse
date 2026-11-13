@@ -1,4 +1,4 @@
-// The render graph on Metal (Phase 26 Day 323): a pass that writes a target and the pass that samples it land in
+// The render graph on Metal (Phase 21 Day 307): a pass that writes a target and the pass that samples it land in
 // separate render encoders (the encoder boundary is what orders them on Metal, decision 9), the graph's barriers become
 // nothing between encoders, and the sampled result is right. macOS only; the shared graph and scene suites run
 // through Metal from backend_fixture.h.
@@ -155,7 +155,7 @@ TEST_CASE("On Metal a render graph's writing pass and the pass that samples it a
     CHECK(counts.render_encoders == 2);  // one per pass: the encoder boundary orders the write before the read
     CHECK(counts.memory_barriers == 0);  // the graph's barriers are between encoders: nothing on Metal
     // a: Undefined -> ColorAttachment and ColorAttachment -> Sampled; out: Undefined -> ColorAttachment and
-    // ColorAttachment -> CopySrc (its final state). None is inside a compute encoder (measured on Day 325).
+    // ColorAttachment -> CopySrc (its final state). None is inside a compute encoder (measured on Day 309).
     CHECK(counts.skipped_barriers == 4);
     REQUIRE(device->Submit(&list, 1) != 0);
     device->EndFrame();

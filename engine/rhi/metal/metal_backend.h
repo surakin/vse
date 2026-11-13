@@ -9,7 +9,7 @@ namespace engine_placeholder::rhi
 ///
 /// Called by [[rhi::RegisterCompiledBackends]]; calling it again changes nothing. The backend is available when the
 /// system lists a Metal device of the Mac2 family that supports Metal 3. `Auto` picks it on macOS, where it is the only
-/// GPU backend (rank 30, from Phase 26 Day 325; from Day 316 it was asked for by name only, as Direct3D 12 was before
+/// GPU backend (rank 30, from Phase 21 Day 309; from Day 300 it was asked for by name only, as Direct3D 12 was before
 /// Phase 13 Day 172).
 ///
 /// - Returns: true if the backend is registered.

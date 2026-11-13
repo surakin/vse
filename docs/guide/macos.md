@@ -1,11 +1,11 @@
 # macOS
 
-Status: written (Phase 26, Day 328).
+Status: written (Phase 21, Day 312).
 
 **Audience:** anyone who builds, runs or debugs the engine on a Mac. Read [Getting started](getting-started.md) and
 [Building and testing](building-and-testing.md) first: everything in the other guides applies, and this page is only what is different on macOS.
 
-macOS runs the same code as Linux with a Cocoa window and a Metal graphics backend; there is no Vulkan on macOS (Phase 26 decision 8: MoltenVK is
+macOS runs the same code as Linux with a Cocoa window and a Metal graphics backend; there is no Vulkan on macOS (Phase 21 decision 8: MoltenVK is
 a third-party layer). It is built and tested on an Intel Mac (a 2019 MacBook Pro with Intel Iris Plus Graphics 645); Apple silicon is compiled, not
 run (below).
 
@@ -27,7 +27,7 @@ run (below).
 - `BUILD.md` ("macOS"): the prerequisites, each with the version in use and how to install it.
 - `CMakePresets.json` (`macos-clang`, `macos-clang-arm64`), the macOS branch of the root `CMakeLists.txt`, `cmake/EngineCompilerOptions.cmake`.
 - `docs/superpowers/specs/2026-11-11-macos-port-design.md`: the decisions of the port and the measurements behind them.
-- `plans/phase-26-macos-metal.md` and its day files (the Metal backend's design and every measurement: Days 315-325).
+- `plans/phase-21-macos-metal.md` and its day files (the Metal backend's design and every measurement: Days 299-309).
 
 ## Prerequisites
 
@@ -58,7 +58,7 @@ mint shaders. Versions and install lines are in `BUILD.md`. Xcode itself is opti
   write `__strong*` when the callee only stores into it.
 - **Autorelease pools.** A caller of the engine may have no pool (a job thread, a C++ test). Every backend entry point that calls into AppKit or
   Metal wraps its body in `@autoreleasepool`, or what Metal autoreleases is never released (it held devices alive: about 37 MiB over 100 resets,
-  Day 325). The ctest `metal_autorelease_pools` checks it.
+  Day 309). The ctest `metal_autorelease_pools` checks it.
 - **Apple's macros.** `AssertMacros.h` defines short names (`check`, `verify`, `require`) unless `__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORES`
   is 0, which the build defines (`ENGINE_MACOS_DEFINITIONS`). AppKit's QuickDraw headers declare global `Handle` and `Pattern`: import AppKit before
   any engine name is in scope in a unity-merged file (`tests/rhi/macos/metal_test_support.h`).
@@ -66,7 +66,7 @@ mint shaders. Versions and install lines are in `BUILD.md`. Xcode itself is opti
 ## Running tests
 
 `scripts/test-phase.sh` runs under the system's `/bin/bash` 3.2 and defaults to `build-macos`; `--flavor all` is plain, asan and tsan, and
-`--affected` adds phase 26 while it is a side phase. **Window tests need the console unlocked**: a locked Mac (or a VNC session that ended, which
+`--affected` adds phase 21 while it is a side phase. **Window tests need the console unlocked**: a locked Mac (or a VNC session that ended, which
 relocks it) gives no window activation and no vsync, so check the summary for skipped `display` tests. The Metal tests run with Metal's
 validation in assert mode (`MTL_DEBUG_LAYER=1 MTL_DEBUG_LAYER_ERROR_MODE=assert MTL_SHADER_VALIDATION=1`, set by the ctests), so a validation error
 stops the test. The pipeline archive is off while shader validation is on (Metal stops inside it), so the archive tests (tag `[archive]`) run in a
@@ -113,7 +113,7 @@ types), drag and drop is AppKit's dragging session, and the pointer lock disasso
 | The user's settings | `~/Library/Application Support/<app>/settings.cfg` (the same file and format as on Linux); a program may use user defaults instead (`settings::UserDefaultsConfigStore`) |
 | Crash dumps | `~/Library/Application Support/<app>/crashes` |
 | The pipeline cache | `~/Library/Caches/engine/metal-<adapter id>.bin` (a binary archive behind a header that names the adapter and the macOS build) |
-| The socket backend | `engine/net/macos/` (the POSIX backend's hooks and a kqueue poller, Phase 26 Day 326; `docs/guide/net.md`, "On macOS") |
+| The socket backend | `engine/net/macos/` (the POSIX backend's hooks and a kqueue poller, Phase 21 Day 310; `docs/guide/net.md`, "On macOS") |
 
 ## Common mistakes
 

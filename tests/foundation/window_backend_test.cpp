@@ -1,5 +1,5 @@
 // The window backend choice: the name parser and every platform's plan run everywhere; the window host is tested on the
-// platform it is built for (Linux: Wayland and X11, Windows: Win32, Phase 13 Day 158, macOS: Cocoa, Phase 26 Day 311).
+// platform it is built for (Linux: Wayland and X11, Windows: Win32, Phase 13 Day 158, macOS: Cocoa, Phase 21 Day 295).
 #include "os/console.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -153,7 +153,7 @@ TEST_CASE("PlanWindowBackends: Linux refuses win32 with the reason, whatever the
 
 TEST_CASE("Every plan refuses another platform's backend with the reason, and macOS's plan gives Cocoa", "[window][os]")
 {
-    // Phase 26 Day 311: cocoa is refused by the Linux and Windows plans, and the macOS plan refuses theirs.
+    // Phase 21 Day 295: cocoa is refused by the Linux and Windows plans, and the macOS plan refuses theirs.
     const BackendPlan on_linux = PlanWindowBackends(WindowBackend::Cocoa, true, true);
     CHECK(on_linux.count == 0);
     REQUIRE(on_linux.refusal != nullptr);
@@ -286,7 +286,7 @@ TEST_CASE("Windows: PlatformWindowHost::OpenFromEnvironment honors ENGINE_WINDOW
 
 #elif ENGINE_PLATFORM_MACOS
 
-// Phase 26 Day 311: the window host on macOS.
+// Phase 21 Day 295: the window host on macOS.
 TEST_CASE("macOS: PlatformWindowHost opens Cocoa for auto and for cocoa", "[window][os]")
 {
     SKIP_IF_NO_DISPLAY_SESSION();

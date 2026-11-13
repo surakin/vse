@@ -1981,7 +1981,7 @@ inline constexpr u32 kNoShaderSlot;
 struct ShaderSlotTable { ... }
 ```
 
-The slots of every resource of one shader module, minted beside a Metal library (Phase 26 Day 318): the Metal backend binds each bind group's resources at these slots and checks a pipeline's layout against them.
+The slots of every resource of one shader module, minted beside a Metal library (Phase 21 Day 302): the Metal backend binds each bind group's resources at these slots and checks a pipeline's layout against them.
 
 | Field | Value |
 |---|---|
@@ -2216,7 +2216,7 @@ The DXIL module, or empty.
 ShaderBlob metallib;
 ```
 
-The Metal library, or empty (Phase 26 Day 315; minted on a Mac).
+The Metal library, or empty (Phase 21 Day 299; minted on a Mac).
 
 ### `For(ShaderFormat)` {#rhi-shaderblobset-for-shaderformat-const}
 
@@ -4878,7 +4878,7 @@ The bytecode format of a shader module ([`rhi::ShaderDesc`](#rhi-shaderdesc)); e
 |---|---|---|
 | <a id="rhi-shaderformat-spirv"></a>`Spirv` | `0` | SPIR-V words (Vulkan). |
 | <a id="rhi-shaderformat-dxil"></a>`Dxil` |  | A DXIL container (Direct3D 12). |
-| <a id="rhi-shaderformat-metallib"></a>`MetalLib` |  | A Metal library (`.metallib`, AIR, minted offline: Phase 26 Day 315) with its entry name (Metal). |
+| <a id="rhi-shaderformat-metallib"></a>`MetalLib` |  | A Metal library (`.metallib`, AIR, minted offline: Phase 21 Day 299) with its entry name (Metal). |
 
 ## `ShaderFormatName(ShaderFormat)` {#rhi-shaderformatname-shaderformat}
 
@@ -7212,7 +7212,7 @@ A backend exists in a program only once its library registered it ([`rhi::Regist
 | <a id="rhi-backend-null"></a>`Null` | `0` | The validating no-GPU device ([`rhi::NullDevice`](#rhi-nulldevice)). |
 | <a id="rhi-backend-vulkan"></a>`Vulkan` |  | The Vulkan 1.3 backend, loaded at run time from the system's Vulkan loader. |
 | <a id="rhi-backend-dx12"></a>`Dx12` |  | The Direct3D 12 backend (Windows). |
-| <a id="rhi-backend-metal"></a>`Metal` |  | The Metal backend (macOS, Phase 26: what `Auto` picks there from Day 325). |
+| <a id="rhi-backend-metal"></a>`Metal` |  | The Metal backend (macOS, Phase 21: what `Auto` picks there from Day 309). |
 | <a id="rhi-backend-auto"></a>`Auto` |  | The platform's preferred backend among those registered and available ([`rhi::PickAutoBackend`](#rhi-pickautobackend-char-star-usize)). |
 
 ## `ValidationSetting` {#rhi-validationsetting}

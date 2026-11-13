@@ -33,7 +33,7 @@ Describe how each component type is stored, and write the byte encoding. Outside
 - `ecs::Parent` is registered `kComponentSkip` until Day 258 stores it as an `EntityRef`. There is no `SpatialLayer` component (the plan's list was loose): the layer is a member of `SpatialMembership`.
 - C++ has no reflection: a member left out of a field list is not detected. The check available is the golden-bytes test and `UnregisteredWithData` for whole types.
 - `Register<T>` calls `ecs::ComponentOf<T>()`, which uses one of the 128 slots of the ECS registry, as any component does.
-- Fixed on the way: `containers/hash_map.h` (Mac Day 301) had a doc comment inside a constrained `Hash<K>` specialization that made `docgen` fail on Linux; it is a plain comment now. The docgen lint baseline was refreshed (other modules had grown).
+- Fixed on the way: `containers/hash_map.h` (Mac Day 285) had a doc comment inside a constrained `Hash<K>` specialization that made `docgen` fail on Linux; it is a plain comment now. The docgen lint baseline was refreshed (other modules had grown).
 - Runs (Linux, Clang): plain `ran 2363 of 6180 tests (phases: all; flavors: plain; display: included; crash tests: excluded)` (the two known X11Window failures; `docs_check` failed once mid-day on a stale docs state and passes now: `ctest -L docs` 7 of 7); asan `ran 1819 of 6180 tests`; tsan `ran 1501 of 6180 tests` (the Day 235 scene test only). After the last edits `storage_tests` (plain, asan, tsan) and `foundation_base_tests [bytes]` were rerun and pass; Clang non-unity and GCC build clean and pass.
 
 ## Post-implementation code review

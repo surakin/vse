@@ -1,6 +1,6 @@
 # Debugging facilities — library selection and design (Phase 7, Day 91)
 
-Status: decided 2026-11-06 from the spikes below. Scope: Linux implemented, Windows (Phase 13) and macOS (Phase 26) made
+Status: decided 2026-11-06 from the spikes below. Scope: Linux implemented, Windows (Phase 13) and macOS (Phase 21) made
 ready, mobile and consoles designed in. `PLAN.md` assumption #20 is the policy exception this spec supports.
 
 ## 1. Decision
@@ -182,7 +182,7 @@ examples, benchmarks, `external/crashpad`, `external/libunwindstack-ndk`, `ndk/`
   handler uses winhttp, not libcurl. libbacktrace reads DWARF only, so MSVC/PDB builds need either clang with DWARF or a
   DbgHelp resolver behind `ResolveStackTrace`; `IsDebuggerPresent`, `CreateProcess` for death tests, NTSTATUS decode for
   `CrashReason`, WER `LocalDumps` as the core-dump equivalent.
-- **macOS (Phase 26):** supported (macOS 15+, Apple Clang or LLVM Clang 15+); Breakpad backend available; libbacktrace
+- **macOS (Phase 21):** supported (macOS 15+, Apple Clang or LLVM Clang 15+); Breakpad backend available; libbacktrace
   needs the dSYM next to the binary; code signing and entitlements for the handler apply to the Crashpad backend only;
   `sysctl` `P_TRACED` for debugger detection; `posix_spawn` death tests shared with Linux.
 - **Android / iOS (Phase 27):** Android API 21+, NDK 23+, default backend `inproc` (no minidump); iOS is not in the
@@ -206,7 +206,7 @@ a sink type instead of a descriptor, `Unsupported` results) is unchanged from th
 
 Checked in `third_party/sentry_native/` (0.17.6) and `third_party/libbacktrace/` (commit `0b9b49c`).
 
-| | Linux (built and tested) | Windows (Phase 13) | macOS (Phase 26) | Android / iOS (Phase 27) | Consoles (Phase 28) |
+| | Linux (built and tested) | Windows (Phase 13) | macOS (Phase 21) | Android / iOS (Phase 27) | Consoles (Phase 28) |
 |---|---|---|---|---|---|
 | sentry-native Breakpad backend | supported | supported (README matrix) | supported (README matrix) | "(✓)": builds, untested upstream | separate repos, NDA |
 | Transport `none` | supported | supported | supported | supported | n/a |
@@ -231,7 +231,7 @@ What each platform needs that Linux does not:
 - **Consoles:** the crash libraries are under NDA; the neutral facade forwards to them; decided in Phase 28.
 
 Known gaps and the decision each needs: **(1)** PDB symbols on Windows (Phase 13: clang with DWARF, or a DbgHelp resolver behind
-`ResolveStackTrace`); **(2)** file and line on macOS need the dSYM (Phase 26: ship or locate it); **(3)** the Windows and macOS
+`ResolveStackTrace`); **(2)** file and line on macOS need the dSYM (Phase 21: ship or locate it); **(3)** the Windows and macOS
 crash report is written from `on_crash`, so the Linux recorder (`os/linux/debug/crash_signal.cpp`) has no counterpart and
 `detail::InstallCrashEventHook` is not implemented there; **(4)** Android and iOS minidumps (Phase 27); **(5)** consoles
 (Phase 28). The lists per function are `engine/foundation/os/windows/debug/BACKEND.md` and

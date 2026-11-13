@@ -1,4 +1,4 @@
-// The macOS window backend (Phase 26 Day 311; platform/macos/cocoa_window.h, engine/platform/BACKEND.md "macos",
+// The macOS window backend (Phase 21 Day 295; platform/macos/cocoa_window.h, engine/platform/BACKEND.md "macos",
 // platform/macos/FULLSCREEN.md). Objective-C++ with ARC: the window, its view and its delegate are held strongly by
 // CocoaWindow::Native; the delegate reaches the C++ window through a plain pointer that Close clears before anything is
 // released, so no AppKit callback reaches a destroyed window.
@@ -793,7 +793,7 @@ void CocoaWindow::OnFullscreenChanged(bool fullscreen)
     fullscreen_ = fullscreen;
     fullscreen_transition_ = false;
     // A request made during the animation is applied by the next PumpEvents: AppKit ignores a toggle sent from inside
-    // windowDidEnterFullScreen / windowDidExitFullScreen (seen on Day 311).
+    // windowDidEnterFullScreen / windowDidExitFullScreen (seen on Day 295).
 }
 
 void CocoaWindow::OnFocusChanged(bool focused)

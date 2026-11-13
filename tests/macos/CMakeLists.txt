@@ -1,17 +1,17 @@
-# macOS-only tests (Phase 26, a side phase on the Mac). Configured only on macOS (root CMakeLists.txt); labeled phase 26 through
+# macOS-only tests (Phase 21, a side phase on the Mac). Configured only on macOS (root CMakeLists.txt); labeled phase 21 through
 # tests/phases.txt (the Catch2 file by its path, the build checks by their `test:macos_*` line).
 #
 #   macos_build_defs_tests      build_defs.h on Apple clang (platform, processor, compiler, the sanitizer of each flavor), plain, asan, tsan
 #   macos_os_tests              the os backend (os/macos/os.cpp, session.mm): clock, sleeps, pages, process figures, LoadLibrary, a child
 #                               (macos_os_child) reading non-ASCII arguments and logging UTF-8 to a pipe; plain, asan, tsan
-#   macos_window_tests          the Cocoa window (Day 311): sizes, resize, close and Quit, minimize, the main thread; plain, asan, tsan
+#   macos_window_tests          the Cocoa window (Day 295): sizes, resize, close and Quit, minimize, the main thread; plain, asan, tsan
 #   macos_header_apple_first    every neutral foundation header compiles as Objective-C++ (ARC, the warnings of every target) after
 #                               <AppKit/AppKit.h>, <Metal/Metal.h> and <QuartzCore/CAMetalLayer.h>: no Apple macro or type breaks them
 #   macos_header_apple_last     the same with the frameworks after the engine headers, the other order a unity build can merge them in
 #   macos_production_options_planted  an engine library's .mm holding a `try`: must fail (the production options reach Objective-C++)
 #   macos_header_planted        the frameworks with Apple's old AssertMacros.h names switched on, then a function named verify: must fail,
 #                               which shows the check catches a clash and why ENGINE_MACOS_DEFINITIONS pins the setting to 0
-# Day 299's Spike B found no clash, so no unity/apple_enable.h pair exists (CLAUDE.md "Unity builds": a pair answers a real conflict).
+# Day 283's Spike B found no clash, so no unity/apple_enable.h pair exists (CLAUDE.md "Unity builds": a pair answers a real conflict).
 
 # --- The header checks: generated from the real list of foundation headers, so a new header is covered without an edit here -------
 file(GLOB_RECURSE _foundation_headers RELATIVE "${CMAKE_SOURCE_DIR}/engine/foundation" CONFIGURE_DEPENDS
@@ -19,7 +19,7 @@ file(GLOB_RECURSE _foundation_headers RELATIVE "${CMAKE_SOURCE_DIR}/engine/found
 set(_includes "")
 foreach(_h IN LISTS _foundation_headers)
   # Per-platform headers, generated code, the unity macro pairs and the platform halves of neutral interfaces are not what a macOS file
-  # includes next to the frameworks; the GPU driver probe is not part of the macOS build (Phase 26 decision 8).
+  # includes next to the frameworks; the GPU driver probe is not part of the macOS build (Phase 21 decision 8).
   if(_h MATCHES "(^|/)(linux|macos|windows|posix|generated|unity)/" OR _h MATCHES "_platform\\.h$" OR _h MATCHES "_linux\\.h$"
      OR _h STREQUAL "os/gpu_driver_probe.h")
     continue()
@@ -68,7 +68,7 @@ set_tests_properties(macos_production_options_planted PROPERTIES RESOURCE_LOCK b
                      PASS_REGULAR_EXPRESSION "production_options_planted\\.mm:[0-9]+:[0-9]+: error: cannot use 'try' with exceptions disabled")
 engine_label_tests(macos_production_options_planted)
 
-# --- The os backend (Day 301): the clock across threads, sleeps, pages, process figures, library loading, a child's arguments and log -------
+# --- The os backend (Day 285): the clock across threads, sleeps, pages, process figures, library loading, a child's arguments and log -------
 add_executable(macos_os_child os_child_macos.cpp)
 target_link_libraries(macos_os_child PRIVATE foundation_base)
 function(engine_add_macos_os_tests target foundation_lib suffix label)
@@ -82,7 +82,7 @@ engine_add_macos_os_tests(macos_os_tests foundation_base "" "macos")
 engine_add_macos_os_tests(macos_os_tests_asan foundation_base_asan " [asan]" "asan")
 engine_add_macos_os_tests(macos_os_tests_tsan foundation_base_tsan " [tsan]" "tsan")
 
-# --- The Cocoa window (Day 311): sizes, the CAMetalLayer, resize, close, Quit, minimize, the main thread; real windows, so `display` ---------
+# --- The Cocoa window (Day 295): sizes, the CAMetalLayer, resize, close, Quit, minimize, the main thread; real windows, so `display` ---------
 function(engine_add_macos_window_tests target platform_lib suffix label)
   add_executable(${target} cocoa_window_macos_test.mm)
   target_link_libraries(${target} PRIVATE ${platform_lib} Catch2::Catch2WithMain Threads::Threads "-framework AppKit" "-framework QuartzCore")
@@ -93,7 +93,7 @@ engine_add_macos_window_tests(macos_window_tests platform "" "macos")
 engine_add_macos_window_tests(macos_window_tests_asan platform_asan " [asan]" "asan")
 engine_add_macos_window_tests(macos_window_tests_tsan platform_tsan " [tsan]" "tsan")
 
-# --- The input event stream (Day 312): the key table against the SDK's kVK_ constants, then keys, text, the pointer, the wheel and the
+# --- The input event stream (Day 296): the key table against the SDK's kVK_ constants, then keys, text, the pointer, the wheel and the
 # focus from synthesized NSEvents in real windows, so `display`. Carbon for the key codes and the current layout's dead key. -----------
 function(engine_add_macos_input_tests target platform_lib suffix label)
   add_executable(${target} cocoa_input_macos_test.mm)
@@ -105,7 +105,7 @@ engine_add_macos_input_tests(macos_input_tests platform "" "macos")
 engine_add_macos_input_tests(macos_input_tests_asan platform_asan " [asan]" "asan")
 engine_add_macos_input_tests(macos_input_tests_tsan platform_tsan " [tsan]" "tsan")
 
-# --- The cursor, the pointer lock, the clipboard and drag and drop (Day 313): real windows, private pasteboards, a synthesized drag; `display` ---
+# --- The cursor, the pointer lock, the clipboard and drag and drop (Day 297): real windows, private pasteboards, a synthesized drag; `display` ---
 function(engine_add_macos_transfer_tests target platform_lib suffix label)
   add_executable(${target} cocoa_transfer_macos_test.mm)
   target_link_libraries(${target} PRIVATE ${platform_lib} Catch2::Catch2WithMain Threads::Threads "-framework AppKit")

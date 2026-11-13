@@ -1,4 +1,4 @@
-// The Linux half of io/file_system.h (Phase 26 Day 303: split from the shared io/posix/file_system.cpp): the executable
+// The Linux half of io/file_system.h (Phase 21 Day 287: split from the shared io/posix/file_system.cpp): the executable
 // path (/proc/self/exe), the temporary directory and the XDG user directories. It calls no file API directly (the link
 // is read through io::ReadLink).
 #include "io/file_system.h"

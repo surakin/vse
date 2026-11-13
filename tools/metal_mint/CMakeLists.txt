@@ -1,7 +1,7 @@
-# metal_mint (Phase 26 Day 315): the Metal Shading Language that slangc writes, compiled by the driver's own compiler and
+# metal_mint (Phase 21 Day 299): the Metal Shading Language that slangc writes, compiled by the driver's own compiler and
 # serialized into the AIR-only .metallib that shaders/<name>.metallib.inc embeds. macOS only (it needs a Metal device),
 # dev-time only, never linked into the engine (PLAN.md assumption #18). The route is the interim, undocumented one the user
-# chose on Day 298 (pending until a new Mac; KNOWN-ISSUES.md), isolated in macos/metal_mint.mm.
+# chose on Day 282 (pending until a new Mac; KNOWN-ISSUES.md), isolated in macos/metal_mint.mm.
 if(NOT APPLE)
   return()
 endif()

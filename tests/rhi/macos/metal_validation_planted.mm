@@ -1,4 +1,4 @@
-// A planted Metal validation error (Phase 26 Day 316): commits a command buffer whose blit encoder was never ended,
+// A planted Metal validation error (Phase 21 Day 300): commits a command buffer whose blit encoder was never ended,
 // which Metal's API validation (MTL_DEBUG_LAYER=1 with MTL_DEBUG_LAYER_ERROR_MODE=assert) stops with a failed
 // assertion. The ctest metal_validation_planted expects that assertion: it shows a validation error fails a GPU test
 // run with the same environment. Without validation the program reports so and exits 3, which the ctest does not accept

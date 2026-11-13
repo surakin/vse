@@ -92,7 +92,7 @@ TEST_CASE("Compute shaders fill a buffer and a second dispatch reads it after a 
                                      {1, BindingType::StorageBuffer, ShaderStage::Compute, 1, 4}};
         const BindGroupLayoutHandle one = t.Layout(one_b, 1);
         const BindGroupLayoutHandle two = t.Layout(two_b, 2);
-        const PipelineHandle fill = t.Pipeline(fill_cs, one, 8, "fill");     // {k, count}: Phase 26 Day 315
+        const PipelineHandle fill = t.Pipeline(fill_cs, one, 8, "fill");     // {k, count}: Phase 21 Day 299
         const PipelineHandle saxpy = t.Pipeline(saxpy_cs, two, 8, "saxpy");  // {a, count}
         REQUIRE((fill.IsValid() && saxpy.IsValid()));
         const BufferHandle x = t.Storage(kBytes);

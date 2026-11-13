@@ -1,4 +1,4 @@
-// Fault injection on POSIX, Linux and macOS (Phase 26 Day 307: moved from os/linux/debug/fault_injection.cpp): the same
+// Fault injection on POSIX, Linux and macOS (Phase 21 Day 291: moved from os/linux/debug/fault_injection.cpp): the same
 // signals, with the bus error from each system's hook (posix::TriggerBusError).
 #include "debug/fault_injection.h"
 #include "os/posix/debug/posix_debug.h"

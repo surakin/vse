@@ -473,7 +473,7 @@ template <typename K> requires((IsSame<K, usize> && !IsSame<usize, u64>) || (IsS
 struct Hash<K>;
 ```
 
-Hash function for `usize` and `isize` keys where they are types of their own: on macOS `usize` is `unsigned long` and `u64` is `unsigned long long` (Linux and Windows make them the same type, so there the `u64` and `i64` hashes serve). Phase 26 Day 301.
+Hash function for `usize` and `isize` keys where they are types of their own: on macOS `usize` is `unsigned long` and `u64` is `unsigned long long` (Linux and Windows make them the same type, so there the `u64` and `i64` hashes serve). Phase 21 Day 285.
 
 ## `Hash<T*>` {#hash-lt-t-star-gt}
 

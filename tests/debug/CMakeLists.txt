@@ -3,7 +3,7 @@
 # built exception/RTTI-free. Built plain and under ASan/UBSan and TSan, each linked against the matching foundation.
 #
 # Files named *_linux_* hold the Linux-only details (signals, fork, /proc); everything else speaks the neutral API of
-# engine/foundation/debug/ so the Windows and macOS ports (Phases 13 and 26) build the same sources.
+# engine/foundation/debug/ so the Windows and macOS ports (Phases 13 and 21) build the same sources.
 set(DEBUG_TEST_SOURCES
   death_test_registry_test.cpp
   death_test_run_test.cpp
@@ -143,8 +143,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   return()
 endif()
 
-# macOS (Phase 26 Days 306-308): the shared test files in three flavors, with the macOS-only cases in macos/ (stack traces and the crash context,
-# Day 306; the crash handler on Breakpad's Mach exceptions, death tests and the parent-watch pipe, Day 307; the dumps and the scripts, Day 308).
+# macOS (Phase 21 Days 290-292): the shared test files in three flavors, with the macOS-only cases in macos/ (stack traces and the crash context,
+# Day 290; the crash handler on Breakpad's Mach exceptions, death tests and the parent-watch pipe, Day 291; the dumps and the scripts, Day 292).
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   set(_debug_macos_sources
     death_test_registry_test.cpp
@@ -175,7 +175,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   target_include_directories(debug_test_plugin PRIVATE ${CMAKE_SOURCE_DIR}/engine/foundation)
   set_target_properties(debug_test_plugin PROPERTIES UNITY_BUILD OFF)
   engine_dsym(debug_test_plugin)
-  # A program built for x86-64 and arm64 at once, with a two-architecture dSYM (Day 308): the symbol store files each architecture under its
+  # A program built for x86-64 and arm64 at once, with a two-architecture dSYM (Day 292): the symbol store files each architecture under its
   # own UUID, and its core feeds find-core.sh. Plain only, and nothing of the engine linked (one header for ENGINE_NOINLINE).
   add_executable(debug_universal_program macos/universal_program.cpp)
   target_include_directories(debug_universal_program PRIVATE ${CMAKE_SOURCE_DIR}/engine/foundation)
@@ -378,7 +378,7 @@ function(engine_cross_syntax_test name triple)
   set_tests_properties(${name} PROPERTIES LABELS "debug" SKIP_REGULAR_EXPRESSION "clang\\+\\+ not found")
 endfunction()
 engine_cross_syntax_test(debug_cross_syntax_windows x86_64-pc-windows-msvc)
-# Kept now that macOS builds for real (Phase 26 Day 302): the Intel development Mac builds x86-64 only, so this is what compiles these
-# headers for arm64 (Apple silicon) until Phase 26 Day 327's arm64 build.
+# Kept now that macOS builds for real (Phase 21 Day 286): the Intel development Mac builds x86-64 only, so this is what compiles these
+# headers for arm64 (Apple silicon) until Phase 21 Day 311's arm64 build.
 engine_cross_syntax_test(debug_cross_syntax_macos arm64-apple-macos13)
 engine_label_tests(debug_cross_syntax_windows debug_cross_syntax_macos)

@@ -1,4 +1,4 @@
-// ParseDoubleExact's contract on every platform, and (Phase 26 Day 300) the parser macOS uses in place of
+// ParseDoubleExact's contract on every platform, and (Phase 21 Day 284) the parser macOS uses in place of
 // std::from_chars, which Apple's libc++ lacks for double: detail::ParseDoubleWithoutFromChars. On Linux both exist, so
 // they are compared on every input here; on macOS ParseDoubleExact is the replacement, so the contract cases and the
 // shortest round trip test it directly.
@@ -172,7 +172,7 @@ TEST_CASE("ParseDoubleExact keeps digits beyond the 780th and reads text without
     CHECK(r.value == 1.0);
 
     // A point ten million digits away and an exponent of eight digits that cancel exactly: 1.0. Neither may be cut
-    // short while the other is kept (Phase 26 Day 300 review: the exponent stopped growing past 1,000,000, so this read
+    // short while the other is kept (Phase 21 Day 284 review: the exponent stopped growing past 1,000,000, so this read
     // as 0.1).
     static char far[10000016];
     usize n = 0;

@@ -106,7 +106,7 @@ texture is shown on a quad in a 3D scene (an in-world screen).
   - Widget **variants** (e.g. primary/danger button, heading label) are
     named style entries in the theme, not subclasses.
   - Themes load from an engine data file (the format belongs to the
-    Phase 21 asset pipeline; until then a theme is built in code), and
+    Phase 22 asset pipeline; until then a theme is built in code), and
     scale with the surface's DPI/scale factor.
   - Custom widgets read the same theme, so game UIs and the editor
     share one styling mechanism.

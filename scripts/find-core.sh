@@ -9,7 +9,7 @@
 # different build exits with status 3. On success the core's path is printed on standard output and the debugger command
 # on standard error. Exit status: 0 found, 2 not found, 3 build id mismatch, 64 bad usage.
 #
-# macOS (Phase 26 Day 308): the pattern is `sysctl kern.corefile` (normally /cores/core.%P), and cores are written only
+# macOS (Phase 21 Day 292): the pattern is `sysctl kern.corefile` (normally /cores/core.%P), and cores are written only
 # when kern.coredump is 1, the core limit is above 0 and /cores is writable by the user (it belongs to root: `sudo chmod
 # 1777 /cores` allows it). The build id is the LC_UUID, read from the core with lldb; the command printed is lldb's.
 # ENGINE_CORE_PATTERN, on either system, replaces the system's pattern (for cores moved elsewhere).

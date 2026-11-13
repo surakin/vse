@@ -1,4 +1,4 @@
-// The macOS half of the job system's platform interface (Phase 26 Day 305): thread names are set from inside the thread
+// The macOS half of the job system's platform interface (Phase 21 Day 289): thread names are set from inside the thread
 // and read back, cut to 63 bytes on a UTF-8 boundary; the CPU list is every active logical CPU; pinning does not exist.
 #include <catch2/catch_test_macros.hpp>
 

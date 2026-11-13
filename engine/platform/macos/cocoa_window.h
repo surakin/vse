@@ -1,6 +1,6 @@
 #pragma once
 
-//! The macOS window backend (Phase 26 Day 311): an `NSWindow` whose content view is backed by a `CAMetalLayer`, run by
+//! The macOS window backend (Phase 21 Day 295): an `NSWindow` whose content view is backed by a `CAMetalLayer`, run by
 //! the program's own loop (`PumpEvents` drains AppKit's event queue). C++ only: the AppKit objects live in
 //! `cocoa_window.mm`.
 //!

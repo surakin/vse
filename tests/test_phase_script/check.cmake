@@ -7,7 +7,7 @@ if(NOT BASH)
   find_program(BASH bash REQUIRED)  # Windows passes Git's bash.exe as -DBASH (tests/test_phase_script/CMakeLists.txt)
 endif()
 # The side phases come from a fixture (none unless the case names one), so a case means the same on a machine that builds a side phase's
-# tests (the Mac, phase 26) as on one that does not.
+# tests (the Mac, phase 21) as on one that does not.
 if(NOT SIDE_FILE)
   set(SIDE_FILE ${CMAKE_CURRENT_LIST_DIR}/fixtures/side_none.txt)
 endif()

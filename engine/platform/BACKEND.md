@@ -74,10 +74,10 @@ modal-loop callback keeps the program drawing; it refuses to start unless a mous
 
 ### `macos`
 
-**Built (Phase 26 Day 311): the window** (`macos/cocoa_window.mm`): `NSWindow` with a `CAMetalLayer`-backed view, `PumpEvents` draining
+**Built (Phase 21 Day 295): the window** (`macos/cocoa_window.mm`): `NSWindow` with a `CAMetalLayer`-backed view, `PumpEvents` draining
 `nextEventMatchingMask:untilDate:distantPast`, the size in pixels at the backing scale, `windowShouldClose:` and Quit as close requests,
 native fullscreen; the window host (`macos/window_host_macos.cpp`) and the entry point (`macos/entry_point_macos.cpp`). **The event stream
-(Day 312):** the content view is the first responder. `keyDown:`/`keyUp:` give `KeyDown` (repeat from `isARepeat`, or a press of a key already
+(Day 296):** the content view is the first responder. `keyDown:`/`keyUp:` give `KeyDown` (repeat from `isARepeat`, or a press of a key already
 down) and `KeyUp`, named by `KeyFromCocoa` (`macos/cocoa_keys.*`: the key code for keys named by position, `charactersIgnoringModifiers` for
 the others); a release ends the `Key` its key was pressed as (in `InputState` only once no other key of that name is held), and a key-up for a key the window never saw go down is dropped. `flagsChanged:`
 gives the modifier keys (the side from the device bits; Caps Lock as a press and a release at once, since macOS reports only its toggle), with
@@ -91,7 +91,7 @@ the three button pairs (`buttonNumber` 2 to 4: middle, back, forward), positions
 is true. **Wheel:** `scrollingDeltaX/Y`, signs turned (macOS: positive up and left), precise deltas over 10 points per notch, line deltas as
 notches; `InputState` 10 units per notch. **Focus:** `windowDidBecomeKey` (the modifiers read again) and `windowDidResignKey` (a `KeyUp` per held
 key, then `FocusLost`; buttons stay held); `Close` releases the keys too. **Resize:** `windowDidResize` and `windowDidChangeBackingProperties`;
-the stream starts with the settled size. **Cursor and lock (Day 313,
+the stream starts with the settled size. **Cursor and lock (Day 297,
 `macos/cocoa_cursor.mm`):** the shapes are `NSCursor`s (the diagonal resize cursors from macOS 15's frame-resize cursors, else the arrow;
 `ResizeAll` the open hand), set from `cursorUpdate:` (the tracking area has `NSTrackingCursorUpdate`) and on every change with the pointer inside;
 `Hidden` and the lock are `[NSCursor hide]`, kept to exactly one hide per window and undone on leave, close and destruction; an image is an

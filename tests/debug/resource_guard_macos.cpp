@@ -1,4 +1,4 @@
-// macOS implementation of ChildResourceGuard (Phase 26 Day 306): counts the process's descriptors with
+// macOS implementation of ChildResourceGuard (Phase 21 Day 290): counts the process's descriptors with
 // os::OpenHandleCount (proc_pidinfo; macOS has no /proc) and asks waitpid whether any child is left.
 #include "resource_guard.h"
 

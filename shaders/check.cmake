@@ -2,10 +2,10 @@
 # `shaders_check`; arguments: SLANGC, SPIRV_VAL (optional), SHADER_MINT, SHADER_DIR, WORK_DIR, SHADERS (a ;-list), and for
 # DXIL (Phase 13 Day 163) DXIL_DIR and DXIL_COMPILER (both empty on a machine without dxc: the .dxil.inc files are then not
 # compared, and shader_dxil_test still checks that each was minted beside the committed SPIR-V).
-# Metal (Phase 26 Day 315): the Metal build's reflection is made on every platform (the .refl.inc holds its slots). On a
+# Metal (Phase 21 Day 299): the Metal build's reflection is made on every platform (the .refl.inc holds its slots). On a
 # Mac, METAL_MINT (tools/metal_mint) mints each library twice and requires identical bytes (determinism); the committed
 # .metallib.inc is compared only when it was minted by the same driver compiler and macOS build (its `// compiler:` line),
-# since the bytes embed both (Day 298), and otherwise reported as a note.
+# since the bytes embed both (Day 282), and otherwise reported as a note.
 # A shader whose recorded compiler version differs from the installed one is reported as a note and not compared; the
 # test prints "SKIP:" (its SKIP_REGULAR_EXPRESSION) only if no shader could be compared at all.
 include(${SHADER_DIR}/names.cmake)

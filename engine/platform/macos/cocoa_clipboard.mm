@@ -1,4 +1,4 @@
-// The clipboard of CocoaWindow (Phase 26 Day 313; platform/macos/cocoa_window.h, BACKEND.md "macos"): NSPasteboard.
+// The clipboard of CocoaWindow (Phase 21 Day 297; platform/macos/cocoa_window.h, BACKEND.md "macos"): NSPasteboard.
 //
 // Text is NSPasteboardTypeString, a file list is file URLs (written with writeObjects:, read with
 // readObjectsForClasses:) checked by the shared `text/uri-list` rules (ParseUriList: absolute,

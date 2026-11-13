@@ -4,7 +4,7 @@
 
 #include "types.h"
 
-// The hooks the shared POSIX death-test backend (os/posix/debug/death_test_posix.cpp, Phase 26 Day 307) asks of each
+// The hooks the shared POSIX death-test backend (os/posix/debug/death_test_posix.cpp, Phase 21 Day 291) asks of each
 // system: os/linux/debug/posix_debug_hooks.cpp and os/macos/debug/posix_debug_hooks.cpp define them. Internal to the
 // debugging backends (module_deps_check: os/posix/debug/ is per-platform code owned by os/linux/debug/ and
 // os/macos/debug/).

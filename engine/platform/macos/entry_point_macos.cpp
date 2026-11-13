@@ -1,4 +1,4 @@
-// The entry point of a windowed program on macOS (Phase 26 Day 311; platform/entry_point.h): `main`'s own arguments,
+// The entry point of a windowed program on macOS (Phase 21 Day 295; platform/entry_point.h): `main`'s own arguments,
 // already UTF-8, and the application object set up before the program runs (cocoa::EnsureApplication: a regular,
 // dock-visible app with a Quit menu). Without a window server (an ssh login) the program still runs; only opening a
 // window fails.

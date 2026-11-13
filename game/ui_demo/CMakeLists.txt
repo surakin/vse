@@ -29,8 +29,8 @@ if(APPLE)
 endif()
 ui_demo_expect(ui_demo_screenshot 0 "wrote .*ui_demo_screenshot.ppm \\(960x600\\)" "${UI_DEMO_NO_GPU}" --screenshot UI_DEMO_SHOT --validation --rhi vulkan)
 if(APPLE)
-  # The same picture on Metal by name (Phase 26 Day 324), with Metal's validation on (DEMO_PROFILE_ENV).
-  # Named outside `ui_demo_*` (phase 15 in tests/phases.txt) so it carries phase 26 with the other Metal ctests.
+  # The same picture on Metal by name (Phase 21 Day 308), with Metal's validation on (DEMO_PROFILE_ENV).
+  # Named outside `ui_demo_*` (phase 15 in tests/phases.txt) so it carries phase 21 with the other Metal ctests.
   ui_demo_expect(metal_ui_demo_screenshot 0 "wrote .*metal_ui_demo_screenshot.ppm \\(960x600\\)" "" --screenshot UI_DEMO_SHOT --validation --rhi metal)
 endif()
 # Every kind of script word, offscreen, with the validation layer on and silent: input, menus, themes, drops, the clipboard, a resize and two pictures.
@@ -64,7 +64,7 @@ if(WIN32)
   ui_demo_scripted(ui_demo_script_win32 win32 vulkan)
   ui_demo_scripted(ui_demo_script_win32_dx12 win32 dx12) # Phase 15 Day 205: the same run on Direct3D 12
 elseif(APPLE)
-  ui_demo_scripted(ui_demo_script_cocoa cocoa metal)  # Phase 26 Day 324 (on null from Day 314)
+  ui_demo_scripted(ui_demo_script_cocoa cocoa metal)  # Phase 21 Day 308 (on null from Day 298)
 else()
   ui_demo_scripted(ui_demo_script_wayland wayland vulkan)
   ui_demo_scripted(ui_demo_script_x11 x11 vulkan)

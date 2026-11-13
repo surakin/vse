@@ -1,7 +1,7 @@
 # engine_add_sentry([C11]): sentry-native for the crash handler (third_party/sentry_native, PLAN.md assumption #20), configured the same way on
 # every platform: crash capture and minidumps only, the Breakpad backend, no transport (nothing can be uploaded), a static library, no tests,
 # examples, benchmarks or install. Called by each platform's branch of the root CMakeLists.txt before the engine's own options, so the library
-# keeps its own flags (Phase 26 Day 307: one definition in place of three copies).
+# keeps its own flags (Phase 21 Day 291: one definition in place of three copies).
 #   C11: build the library's C as C11 (it sets C99 when no standard is given; glibc's memchr/strchr macros use _Generic, so every call warned,
 #        -Wc11-extensions on Clang). Scoped to this call: no other C target changes.
 function(engine_add_sentry)

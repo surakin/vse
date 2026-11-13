@@ -77,13 +77,13 @@ struct PermutationModule
     const u8* dxil = nullptr;
     /// Size of the DXIL container in bytes.
     usize dxil_size = 0;
-    /// The Metal library, or null when the module was not minted for Metal (Phase 26 Day 315).
+    /// The Metal library, or null when the module was not minted for Metal (Phase 21 Day 299).
     const u8* metallib = nullptr;
     /// Size of the Metal library in bytes.
     usize metallib_size = 0;
     /// The function the Metal library exports (`main_0`), or null.
     const char* metallib_entry = nullptr;
-    /// The slots of the Metal library's resources (Phase 26 Day 318), or null.
+    /// The slots of the Metal library's resources (Phase 21 Day 302), or null.
     const rhi::ShaderSlotTable* metallib_slots = nullptr;
 
     /// Returns the module's bytecode in one format.

@@ -26,7 +26,7 @@ The one place that calls `socket`, `bind`, `connect`, `send` and the like on Lin
 - Built: `net/socket.h` (22 operations, each with a `Backend:` label), `net/posix/socket_posix.cpp` and `posix_error.cpp` (shared with macOS), `net/linux/linux_hooks.cpp` (`accept4`, `SOCK_NONBLOCK | SOCK_CLOEXEC`, `MSG_NOSIGNAL`, `MSG_TRUNC`), `engine/net/BACKEND.md` with the test `net_backend_lists` (and a planted self-test), the gate `tools/net_access_check` (7 ctest cases; allow list: three non-socket or libwayland uses in existing code), `tests/net/socket_test.cpp` and `socket_flags_posix_test.cpp` in the executable `net_tests_sockets` (ctest label `network`; SKIP with the reason when loopback cannot be bound), `errno_map_posix_test.cpp`. Guide `docs/guide/net.md` has a Sockets section with a compiled sample.
 - Amendments: the scope-name-to-index conversion (`if_nametoindex`) lives in the backend; `FinishConnect` was added (a non-blocking connect needs it); `ShutdownMode`, `NativeHandle()` (for the reactor of Day 269) and `SetDualStack` were added to the interface. Edits to the root `CMakeLists.txt` are separate added lines, so `scripts/test-phase.sh --affected` stays scoped.
 - Runs (scoped, plain `--affected` after the change to the script): plain `ran 521 of 6686 tests (phases: 3 4 6 12 20; flavors: plain; display: excluded; crash tests: excluded)`, asan `ran 420 of 6686`, tsan `ran 181 of 6686`; no failures. GCC non-unity build of `net`, `net_tests`, `net_tests_sockets` clean, tests pass; docs 7 of 7 (`net` 129 of 129 documented).
-- Open: the Windows PC build (backend: Day 278); the macOS hooks (Phase 26).
+- Open: the Windows PC build (backend: Day 278); the macOS hooks (Phase 21).
 
 ## Post-implementation code review
 

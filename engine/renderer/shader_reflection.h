@@ -15,7 +15,7 @@ namespace engine_placeholder::renderer
 
 /// The reflection blob format version this build reads and writes.
 inline constexpr u32 kReflectionVersion = 3;  // 2: bindings carry their storage stride (Phase 13 Day 166); 3: the Metal
-                                              // slots (Phase 26 Day 315)
+                                              // slots (Phase 21 Day 299)
 /// The capacity of every reflected name, including the terminator; longer names are rejected.
 inline constexpr u32 kMaxReflectionName = 48;
 /// The most bindings one shader module may reflect.
@@ -115,7 +115,7 @@ struct ReflectedBinding
     /// For a storage buffer, the size of one element (`StructuredBuffer<T>`: `T` rounded up to its alignment), 1 to
     /// 2048; else 0. Becomes [[rhi::BindingDesc]]'s `stride`.
     u32 stride = 0;
-    /// The Metal argument index of the binding in the Metal build (Phase 26 Day 315): `[[buffer(n)]]` for a uniform or
+    /// The Metal argument index of the binding in the Metal build (Phase 21 Day 299): `[[buffer(n)]]` for a uniform or
     /// storage buffer, `[[texture(n)]]` for a sampled or storage texture, `[[sampler(n)]]` for a sampler; the class
     /// follows `type`. [[renderer::kNoMetalSlot]] when the module has no Metal slots.
     u32 metal_slot = kNoMetalSlot;

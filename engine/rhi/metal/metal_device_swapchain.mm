@@ -1,4 +1,4 @@
-// MetalDevice: the swapchain and presentation (Phase 26 Day 321).
+// MetalDevice: the swapchain and presentation (Phase 21 Day 305).
 
 #include "lang/utility.h"
 #include "sync/mutex.h"

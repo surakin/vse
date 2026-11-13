@@ -274,7 +274,7 @@ if [ "$dry" = 0 ] && [ "$do_build" = 1 ]; then
     cmake --build "$build" || { echo "test-phase: the build failed; nothing ran" >&2; exit 1; }
 fi
 
-# --affected adds each side phase this run would select tests of (the Mac builds phase 26's, the Linux machine does not), unless already
+# --affected adds each side phase this run would select tests of (the Mac builds phase 21's, the Linux machine does not), unless already
 # there. Counted after the build (Catch2 tests are registered when their executable is built) and with the run's own flavor and left-out
 # labels, so a side phase is never named in the summary when none of its tests run.
 side_added=""

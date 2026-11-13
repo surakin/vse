@@ -10,14 +10,14 @@
 #include "rhi/adapter.h"
 #include "rhi/rhi.h"
 #include "rhi/rhi_log.h"
-#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 21 decision 8)
 #include "rhi/vulkan/vk_device_select.h"
 #endif
 #include "cstr/cstr.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
-#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 21 decision 8)
 using engine_placeholder::rhi::vulkan::GpuKind;
 using engine_placeholder::rhi::vulkan::PhysicalDeviceInfo;
 #endif
@@ -45,7 +45,7 @@ DeviceCreateInfo NullInfo()
     return info;
 }
 
-#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 21 decision 8)
 PhysicalDeviceInfo GoodGpu(const char* name, GpuKind kind, u32 vendor, u32 device, u8 uuid_seed)
 {
     PhysicalDeviceInfo info;
@@ -246,7 +246,7 @@ TEST_CASE("The null backend rejects an unsuitable adapter by name", "[rhi][adapt
     CHECK(CStrCompare(device->Adapter().id, "null-integrated") == 0);
 }
 
-#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 21 decision 8)
 TEST_CASE("Vulkan adapter ids come from vendor, device and UUID, not from the order", "[rhi][adapter][vulkan][select]")
 {
     PhysicalDeviceInfo a = GoodGpu("GPU A", GpuKind::Discrete, 0x10de, 0x2504, 1);
@@ -271,7 +271,7 @@ TEST_CASE("Vulkan adapter ids come from vendor, device and UUID, not from the or
 }
 #endif
 
-#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 21 decision 8)
 TEST_CASE("A Vulkan adapter with a valid deviceLUID reports it as high part then low part, and matches by it",
           "[rhi][adapter][vulkan][select]")
 {
@@ -291,7 +291,7 @@ TEST_CASE("A Vulkan adapter with a valid deviceLUID reports it as high part then
 }
 #endif
 
-#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 21 decision 8)
 TEST_CASE("Unsuitable Vulkan adapters carry a reason, and presentability follows the window",
           "[rhi][adapter][vulkan][select]")
 {
@@ -326,7 +326,7 @@ TEST_CASE("Unsuitable Vulkan adapters carry a reason, and presentability follows
 }
 #endif
 
-#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 21 decision 8)
 TEST_CASE("An explicit request does not fall back when it names an unsuitable GPU", "[rhi][adapter][vulkan][select]")
 {
     AdapterQuietLog quiet;
@@ -340,7 +340,7 @@ TEST_CASE("An explicit request does not fall back when it names an unsuitable GP
 }
 #endif
 
-#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 21 decision 8)
 TEST_CASE("Real adapters are listed and a device is created on each presentable one", "[rhi][adapter][vulkan][gpu]")
 {
     gpu_test::GpuFixture fx;
@@ -416,7 +416,7 @@ TEST_CASE("Real adapters are listed and a device is created on each presentable 
 }
 #endif
 
-#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 21 decision 8)
 TEST_CASE("A requested Vulkan adapter that does not exist fails", "[rhi][adapter][vulkan][gpu]")
 {
     gpu_test::GpuFixture fx;

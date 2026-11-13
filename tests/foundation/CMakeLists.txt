@@ -31,7 +31,7 @@ set(FOUNDATION_BASE_TEST_SOURCES
   concurrency_primitives_test.cpp
   session_state_test.cpp
 )
-# The GPU driver probe is Vulkan's and not built on macOS (Phase 26 decision 8), so neither is its test; os::LoadLibrary is tested there
+# The GPU driver probe is Vulkan's and not built on macOS (Phase 21 decision 8), so neither is its test; os::LoadLibrary is tested there
 # by tests/macos/os_macos_test.cpp.
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   list(APPEND FOUNDATION_BASE_TEST_SOURCES gpu_driver_loading_test.cpp)
@@ -65,7 +65,7 @@ target_link_libraries(foundation_base_tests PRIVATE foundation_base Catch2::Catc
 target_include_directories(foundation_base_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tests/support)
 
 # The file-layer and window tests need foundation_io and the platform library, which Windows builds from Days 151 and 158.
-# macOS (Phase 26 Day 309) builds the file tests on the foundation aggregate; the window tests join with the platform layer (Day 311).
+# macOS (Phase 21 Day 293) builds the file tests on the foundation aggregate; the window tests join with the platform layer (Day 295).
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND NOT TARGET platform)
   add_executable(foundation_tests file_io_test.cpp)
   target_link_libraries(foundation_tests PRIVATE foundation Catch2::Catch2WithMain Threads::Threads)

@@ -59,7 +59,7 @@ const char* kGoodDxilJson = R"({"parameters": [
     {"name": "objects", "binding": {"kind": "shaderResource", "space": 2, "index": 0}},
     {"name": "push", "binding": {"kind": "constantBuffer", "space": 15, "index": 0}}]})";
 
-// What `slangc -target metal -reflection-json` reports for the same shader (Phase 26 Day 315): one argument table per
+// What `slangc -target metal -reflection-json` reports for the same shader (Phase 21 Day 299): one argument table per
 // class.
 const char* kGoodMetalJson = R"({"parameters": [
     {"name": "mat", "binding": {"kind": "constantBuffer", "index": 0}},
@@ -236,7 +236,7 @@ TEST_CASE("The Metal build's slots go into the reflection by name, one resource 
         EditJson(good_json.View(), R"("kind": "shaderResource", "index": 0)", R"("kind": "constantBuffer", "index": 3)")
             .View(),
         StringView("not the texture its type needs"));
-    // Two buffers in one slot (the Phase 26 Day 298 failure).
+    // Two buffers in one slot (the Phase 21 Day 282 failure).
     refused(
         EditJson(good_json.View(), R"("kind": "constantBuffer", "index": 1)", R"("kind": "constantBuffer", "index": 0)")
             .View(),
@@ -251,7 +251,7 @@ TEST_CASE("The Metal build's slots go into the reflection by name, one resource 
                 .View(),
             StringView("the SPIR-V build does not declare"));
     refused(StringView("not json"), StringView("not valid JSON"));
-    // A block field the Metal build puts elsewhere (Day 325: a scalar after a float3 moves in Metal's layout), and the
+    // A block field the Metal build puts elsewhere (Day 309: a scalar after a float3 moves in Metal's layout), and the
     // same field where the SPIR-V build has it.
     auto with_tint_at = [&](const char* offset)
     {

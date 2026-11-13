@@ -1,4 +1,4 @@
-// The cursor and the pointer lock of CocoaWindow (Phase 26 Day 313; platform/macos/cocoa_window.h, BACKEND.md "macos").
+// The cursor and the pointer lock of CocoaWindow (Phase 21 Day 297; platform/macos/cocoa_window.h, BACKEND.md "macos").
 //
 // Shapes are NSCursors, set from cursorUpdate: (the tracking area's) and whenever the state changes with the pointer
 // inside. `Hidden` and the lock use [NSCursor hide], which AppKit counts: every hide is matched by exactly one unhide,

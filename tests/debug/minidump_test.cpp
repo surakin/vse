@@ -140,7 +140,7 @@ const char* AsChars(const Vector<u8>& v)
     return reinterpret_cast<const char*>(v.Data());
 }
 
-// A dump as Breakpad writes it on an x86-64 Mac (Phase 26 Day 308): system info naming macOS (or `platform`) and
+// A dump as Breakpad writes it on an x86-64 Mac (Phase 21 Day 292): system info naming macOS (or `platform`) and
 // `architecture`, a thread list padded to 8 bytes after its count with one thread, an exception stream, and two
 // x86-64 contexts whose flags are `flags`; a module list, padded the same way, of one module at 0x100000000.
 struct MacDump
@@ -331,7 +331,7 @@ TEST_CASE("A module list padded after its count, as Breakpad writes it on macOS,
     REQUIRE(crash_extract::ReadDumpModules(AsChars(m.bytes), m.bytes.Size(), modules, 2, &count) ==
             crash_extract::DumpResult::Ok);
     REQUIRE(count == 1);
-    CHECK(modules[0].base == 0x100000000ull);  // read 4 bytes early, it was 0x0000000000000000 with size 1 (Day 308)
+    CHECK(modules[0].base == 0x100000000ull);  // read 4 bytes early, it was 0x0000000000000000 with size 1 (Day 292)
     CHECK(modules[0].size == 0x4000u);
 }
 
@@ -381,7 +381,7 @@ TEST_CASE("A macOS dump whose thread context lies past its end still has the exc
           "[crash-extract][debug]")
 {
     // A dump cut short, or written by a handler that stopped early: the thread's context points outside the file. The
-    // contexts that are there are still completed, so lldb reads what it can (review finding, Day 308).
+    // contexts that are there are still completed, so lldb reads what it can (review finding, Day 292).
     MacDump m = MakeMacDump();
     const usize threads_rva = Get32(m.bytes, 32 + 12 + 8);  // the second directory entry: the thread list
     Set32(m.bytes, threads_rva + 8 + 44, static_cast<u32>(m.bytes.Size() + 4096));

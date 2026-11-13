@@ -1,4 +1,4 @@
-// The macOS half of post-mortem dumps (debug/post_mortem.h; Phase 26 Day 307, brought forward from Day 308): raise the
+// The macOS half of post-mortem dumps (debug/post_mortem.h; Phase 21 Day 291, brought forward from Day 292): raise the
 // core size limit as on Linux, and say where the core goes. macOS writes cores to kern.corefile (normally
 // /cores/core.<pid>) only when kern.coredump is 1 and the directory is writable by the crashing user, which /cores is
 // not by default (root, 755): then the result is Limited, with how to lift it. The system's crash reporter writes its

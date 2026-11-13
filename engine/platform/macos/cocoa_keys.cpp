@@ -1,4 +1,4 @@
-// macOS key events to Key (Phase 26 Day 312; platform/macos/cocoa_keys.h says what the names mean). The codes are
+// macOS key events to Key (Phase 21 Day 296; platform/macos/cocoa_keys.h says what the names mean). The codes are
 // HIToolbox's kVK_ values and the flags AppKit's NSEventModifierFlag and IOKit's NX_DEVICE masks, written as numbers so
 // this file needs no Apple header; tests/macos/cocoa_input_macos_test.mm checks every one against the SDK's constants.
 #include "platform/macos/cocoa_keys.h"

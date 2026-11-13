@@ -131,7 +131,7 @@ enum class ShaderFormat : u8
 {
     Spirv = 0,  ///< SPIR-V words (Vulkan).
     Dxil,       ///< A DXIL container (Direct3D 12).
-    MetalLib,   ///< A Metal library (`.metallib`, AIR, minted offline: Phase 26 Day 315) with its entry name (Metal).
+    MetalLib,   ///< A Metal library (`.metallib`, AIR, minted offline: Phase 21 Day 299) with its entry name (Metal).
 };
 
 /// Returns the lowercase name of a shader format (`spirv`, `dxil`, `metallib`), for logs.

@@ -8,7 +8,7 @@ A data-oriented entity/component/system core that gameplay, the scene and later 
 
 Goals: thousands to millions of entities per frame; cache-friendly iteration; structural changes that are safe during iteration; systems that run in parallel through the job system with a deterministic result; honest measurement against a naive object-oriented baseline.
 
-Non-goals (this phase): serialization and prefabs from files (Phase 21), events and observers (added when the first consumer needs them), entity relationships other than `Parent`, replication, sparse-set storage (decided by a benchmark on Day 235), editor reflection.
+Non-goals (this phase): serialization and prefabs from files (Phase 22), events and observers (added when the first consumer needs them), entity relationships other than `Parent`, replication, sparse-set storage (decided by a benchmark on Day 235), editor reflection.
 
 Anti-goals: an ECS that wins only on a toy benchmark; a scheduler whose parallel result differs from the sequential one; hidden threads (all parallelism is the job system's, `PLAN.md` assumption #15).
 
@@ -95,4 +95,4 @@ Decisions follow the table in section 2. The numbers are single-machine and rela
 - Per-chunk change precision may over-mark: measured on Day 229 and in the render sync.
 - Archetype explosion (many component combinations): bounded by 128 types; the archetype count is a stat and the graph cache keeps transitions O(1).
 - Pointer invalidation bugs in user code: the iteration guard and `Validate()`.
-- 3D text (Phase 25) needs `Text3D` entities: Day 290 of that phase is already amended to build on `engine/scene`.
+- 3D text (Phase 26) needs `Text3D` entities: Day 321 of that phase is already amended to build on `engine/scene`.

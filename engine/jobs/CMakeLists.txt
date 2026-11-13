@@ -16,7 +16,7 @@ set(JOBS_SOURCES
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   list(APPEND JOBS_SOURCES windows/thread_platform.cpp)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  list(APPEND JOBS_SOURCES macos/thread_platform.cpp)  # Phase 26 Day 305
+  list(APPEND JOBS_SOURCES macos/thread_platform.cpp)  # Phase 21 Day 289
 else()
   list(APPEND JOBS_SOURCES linux/thread_platform.cpp)
 endif()
@@ -26,7 +26,7 @@ set(JOBS_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   # The platforms whose flavors differ from Linux's (Windows: plain and ASan; macOS: plain, ASan and TSan). Each links the foundation aggregate
-  # (Windows since Phase 13 Day 157; macOS since Phase 26 Day 309, before which it linked foundation_io).
+  # (Windows since Phase 13 Day 157; macOS since Phase 21 Day 293, before which it linked foundation_io).
   set(_jobs_flavors "")
   if(ENGINE_HAVE_ASAN)
     list(APPEND _jobs_flavors "_asan")

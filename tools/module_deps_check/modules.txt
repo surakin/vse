@@ -191,12 +191,12 @@ platform-dir engine/foundation/os/linux/ engine/foundation/os/
 # platform's directory of a lower layer (ARCHITECTURE.md section 4).
 platform-dir engine/foundation/os/windows/ engine/foundation/os/,engine/foundation/io/windows/,engine/jobs/windows/,engine/foundation/settings/windows/,tools/crash_extract/windows/,engine/platform/windows/,engine/rhi/vulkan/windows/,tools/docgen/src/windows/,tools/shader_mint/windows/,engine/rhi/dx12/,engine/net/windows/,tests/net/windows/
 platform-dir engine/foundation/os/macos/ engine/foundation/os/
-# The half of the os backend Linux and macOS share (Phase 26 Day 301): only their own directories use it.
+# The half of the os backend Linux and macOS share (Phase 21 Day 285): only their own directories use it.
 platform-dir engine/foundation/os/posix/ engine/foundation/os/linux/,engine/foundation/os/macos/
-# The death-test backend Linux and macOS share (Phase 26 Day 307): only their debug directories use it.
+# The death-test backend Linux and macOS share (Phase 21 Day 291): only their debug directories use it.
 platform-dir engine/foundation/os/posix/debug/ engine/foundation/os/linux/debug/,engine/foundation/os/macos/debug/
 platform-dir engine/foundation/io/linux/ engine/foundation/io/
-# The file layer's POSIX backend, shared by Linux and macOS (Phase 26 Day 303): only their own directories use it.
+# The file layer's POSIX backend, shared by Linux and macOS (Phase 21 Day 287): only their own directories use it.
 platform-dir engine/foundation/io/posix/ engine/foundation/io/linux/,engine/foundation/io/macos/
 platform-dir engine/foundation/io/macos/ engine/foundation/io/
 platform-dir engine/foundation/io/windows/ engine/foundation/io/
@@ -214,7 +214,7 @@ platform-dir engine/platform/macos/ engine/platform/
 platform-dir engine/rhi/vulkan/ engine/rhi/
 # The Direct3D 12 backend (Phase 13 Day 164): Windows only; uses os/windows/win32.h and utf16.h.
 platform-dir engine/rhi/dx12/ engine/rhi/
-# The Metal backend (Phase 26 Day 316): macOS only, Objective-C++.
+# The Metal backend (Phase 21 Day 300): macOS only, Objective-C++.
 platform-dir engine/rhi/metal/ engine/rhi/
 # The crash_extract tool's DbgHelp resolver (Phase 13 Day 156): uses os/windows/win32.h and <dbghelp.h>.
 platform-dir tools/crash_extract/windows/ tools/crash_extract/

@@ -11,7 +11,7 @@
 #   STORE/<name>/<build-id>/<name>.debug         one directory per build, easy to read and to archive
 #   STORE/.build-id/<xx>/<rest>.debug            the layout gdb and lldb search by build id (a link to the file above)
 #
-# macOS (Phase 26 Day 308): BINARY is the program, or its .dSYM bundle. A program's dSYM is the bundle beside it
+# macOS (Phase 21 Day 292): BINARY is the program, or its .dSYM bundle. A program's dSYM is the bundle beside it
 # (<program>.dSYM, as the build's engine_dsym makes it) when its UUID matches, else dsymutil makes one (it reads the
 # object files of the build, so run it before they are cleaned). The layout, one bundle per UUID (the LC_UUID, as
 # `dwarfdump --uuid` prints it):

@@ -1,4 +1,4 @@
-// The Metal backend's lifecycle (Phase 26 Day 325): 100 device resets through rhi::DeviceHost with an observer that
+// The Metal backend's lifecycle (Phase 21 Day 309): 100 device resets through rhi::DeviceHost with an observer that
 // owns a buffer, the counts and memory unchanged after each and the reset time measured; a stale handle invalid on the
 // next device; a loss that ignores every later submission and a destruction after it that does not wait; the device
 // observer installed and removed with the device. The conformance suite's Metal case is in

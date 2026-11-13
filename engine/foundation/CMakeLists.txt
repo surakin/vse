@@ -1,6 +1,6 @@
-# Per-platform implementation of os/os.h: os/linux/, os/windows/ (Phase 13) and, being ported in Phase 26, os/macos/ (PLAN.md
+# Per-platform implementation of os/os.h: os/linux/, os/windows/ (Phase 13) and, being ported in Phase 21, os/macos/ (PLAN.md
 # assumption #11). The GPU driver probe (os/gpu_driver_probe.h) is Vulkan-only and pulls the Vulkan headers into this layer, so it is in
-# the platform lists of the platforms that have Vulkan, not in macOS's (Phase 26 decision 8).
+# the platform lists of the platforms that have Vulkan, not in macOS's (Phase 21 decision 8).
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   set(FOUNDATION_PLATFORM_SOURCES
     os/posix/os_posix.cpp
@@ -11,7 +11,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   )
 
   # Phase 7: the per-platform half of the debugging facilities (debug/*.h are the neutral interfaces). Windows and macOS
-  # add os/<platform>/debug/ in Phases 13 and 26 (see the BACKEND.md checklists there).
+  # add os/<platform>/debug/ in Phases 13 and 21 (see the BACKEND.md checklists there).
   set(FOUNDATION_DEBUG_PLATFORM_SOURCES
     debug/stack_trace_backtrace.cpp
     os/posix/debug/death_test_posix.cpp
@@ -23,7 +23,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     os/linux/debug/core_dump.cpp
     os/posix/debug/fault_injection_posix.cpp
   )
-  # The file layer: the POSIX part shared with macOS (io/posix/, Phase 26 Day 303) and Linux's own.
+  # The file layer: the POSIX part shared with macOS (io/posix/, Phase 21 Day 287) and Linux's own.
   set(FOUNDATION_IO_PLATFORM_SOURCES
     io/posix/posix_error.cpp
     io/posix/file_system.cpp
@@ -72,14 +72,14 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     io/windows/directory.cpp
   )
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  # Phase 26 ports one layer per day (ARCHITECTURE.md order). Day 301: the base layer's os backend, the POSIX half shared with Linux
+  # Phase 21 ports one layer per day (ARCHITECTURE.md order). Day 285: the base layer's os backend, the POSIX half shared with Linux
   # (os/posix/) and macOS's own (os/macos/). No GPU driver probe on macOS (decision 8).
   set(FOUNDATION_PLATFORM_SOURCES
     os/posix/os_posix.cpp
     os/macos/os.cpp
     os/macos/session.mm
   )
-  # Day 303: the file layer, the POSIX part shared with Linux (io/posix/) and macOS's own (io/macos/).
+  # Day 287: the file layer, the POSIX part shared with Linux (io/posix/) and macOS's own (io/macos/).
   set(FOUNDATION_IO_PLATFORM_SOURCES
     io/posix/posix_error.cpp
     io/posix/file_system.cpp
@@ -88,9 +88,9 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     io/macos/posix_hooks.cpp
     io/macos/special_folders.mm
   )
-  # The debugging backend (os/macos/debug/BACKEND.md): stack traces through libbacktrace on Mach-O, the module list, the crash context (Day 306);
-  # the crash hook on Breakpad's on_crash, death tests (shared with Linux in os/posix/debug/), fault injection, the debugger check (Day 307).
-  # Post-mortem dumps (core_dump_macos.cpp) too, brought forward from Day 308.
+  # The debugging backend (os/macos/debug/BACKEND.md): stack traces through libbacktrace on Mach-O, the module list, the crash context (Day 290);
+  # the crash hook on Breakpad's on_crash, death tests (shared with Linux in os/posix/debug/), fault injection, the debugger check (Day 291).
+  # Post-mortem dumps (core_dump_macos.cpp) too, brought forward from Day 292.
   set(FOUNDATION_DEBUG_PLATFORM_SOURCES
     debug/stack_trace_backtrace.cpp
     os/macos/debug/module_list.cpp
@@ -102,7 +102,7 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     os/macos/debug/posix_debug_hooks.cpp
     os/macos/debug/core_dump_macos.cpp
   )
-  # Day 309: the user defaults store and the managed-preferences policy layer (settings/BACKEND.md).
+  # Day 293: the user defaults store and the managed-preferences policy layer (settings/BACKEND.md).
   set(FOUNDATION_SETTINGS_PLATFORM_SOURCES
     settings/macos/user_defaults_store.cpp
     settings/macos/policy_layers.cpp
@@ -183,7 +183,7 @@ set(FOUNDATION_SETTINGS_SOURCES
 # ENGINE_PRODUCTION_COMPILE_OPTIONS (-fno-exceptions etc) is applied PRIVATE, not PUBLIC: PUBLIC compile options are a usage
 # requirement that would leak into every consumer that links these targets, including the Catch2-based test executables, which
 # need exceptions. Production executables (game/hello_window) that want the same hardening declare it themselves.
-# ENGINE_PRODUCTION_COMPILE_OPTIONS is for C++ and Objective-C++ (the macOS .mm files, Phase 26), so it is scoped to CXX and OBJCXX
+# ENGINE_PRODUCTION_COMPILE_OPTIONS is for C++ and Objective-C++ (the macOS .mm files, Phase 21), so it is scoped to CXX and OBJCXX
 # translation units by a generator expression (the C sources of vendored code keep their own flags); tests/macos checks that a .mm gets it.
 #
 # Sanitized variants are separate targets built from the same sources, not a build-wide flag, so the plain and sanitized binaries
@@ -192,7 +192,7 @@ set(FOUNDATION_SETTINGS_SOURCES
 # consistently, and TSan only gives trustworthy answers when every library that touches shared memory is instrumented too.
 function(engine_add_foundation_layer name suffix)
   # On macOS a static archive keeps only the base name of each object, and dsymutil skips a second object of the same name in the debug map,
-  # so its frames lose file and line (Phase 26 Day 306: io/error.cpp and io/posix/error.cpp were one). Two sources of one library may not share
+  # so its frames lose file and line (Phase 21 Day 290: io/error.cpp and io/posix/error.cpp were one). Two sources of one library may not share
   # a file name there; the platform file takes a prefix or suffix (posix_error.cpp, crash_context_macos.cpp).
   if(APPLE)
     set(_seen "")
@@ -257,8 +257,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_link_libraries(foundation${suffix} INTERFACE foundation_settings${suffix} foundation_debug${suffix} foundation_io${suffix} foundation_base${suffix})
   endforeach()
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  # Every layer of the foundation in the three flavors (Apple clang has ASan, UBSan and TSan): the base layer (Days 300-301), the file layer (Day 303),
-  # the debugging layer (Days 306-308) and the settings layer with the aggregate (Day 309).
+  # Every layer of the foundation in the three flavors (Apple clang has ASan, UBSan and TSan): the base layer (Days 284-285), the file layer (Day 287),
+  # the debugging layer (Days 290-292) and the settings layer with the aggregate (Day 293).
   foreach(suffix "" "_asan" "_tsan")
     engine_add_foundation_layer(foundation_base "${suffix}" ${FOUNDATION_BASE_SOURCES})
     # The session query (os/macos/session.mm) reads the window server's session dictionary.

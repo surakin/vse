@@ -1,6 +1,6 @@
 #pragma once
 
-// The adapters of the Metal backend (Phase 26 Day 316): every MTLDevice of the system, as rhi::AdapterInfo.
+// The adapters of the Metal backend (Phase 21 Day 300): every MTLDevice of the system, as rhi::AdapterInfo.
 // Objective-C++.
 
 #include "rhi/adapter.h"

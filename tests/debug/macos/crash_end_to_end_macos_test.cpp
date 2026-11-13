@@ -1,4 +1,4 @@
-// Crash handling end to end on macOS (Phase 26 Day 307): a child installs the crash handler (sentry's Breakpad backend:
+// Crash handling end to end on macOS (Phase 21 Day 291): a child installs the crash handler (sentry's Breakpad backend:
 // Mach exception ports) and faults; the parent checks the report on standard error and in the report file, the envelope
 // with its minidump, and the thread the report names. The report is written from Breakpad's on_crash hook
 // (os/macos/debug/crash_hook.cpp). Also: a death-test child does not outlive a parent killed with SIGKILL (the watch
@@ -265,7 +265,7 @@ TEST_CASE("macOS: a state provider that faults inside the report ends the proces
           "[crash][crashreport][death][debug][macos]")
 {
     // The report runs on Breakpad's exception thread; a second fault there would go to the port only that thread serves
-    // (Day 307 review). The dump is written before the report, so it is there; the report stops where the provider
+    // (Day 291 review). The dump is written before the report, so it is there; the report stops where the provider
     // faulted.
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     TempDir dir;

@@ -1,4 +1,4 @@
-// The Metal backend's command lists (Phase 26 Day 320): encoders split by kind, state applied again after a split,
+// The Metal backend's command lists (Phase 21 Day 304): encoders split by kind, state applied again after a split,
 // barriers mapped per case, draws with a cleared pass and a strip with primitive restart, compute dispatches at the
 // minted threadgroup size, lists recorded on two threads committed in submission order, mips by blit, debug labels
 // across splits, and a list that failed while recording refused. macOS only.
@@ -190,7 +190,7 @@ TEST_CASE("A Metal pass clears and draws, and a strip restarts at the all-ones i
     device->DestroyBuffer(ib);
 }
 
-// Day 320's open question, answered on Day 325: a 16-bit index draw that starts at an odd index gives Metal an index
+// Day 304's open question, answered on Day 309: a 16-bit index draw that starts at an odd index gives Metal an index
 // buffer offset that is not a multiple of 4. Run with API validation (every ctest on macOS), this shows whether Metal
 // accepts it, and that the right indices are read.
 TEST_CASE("A Metal 16-bit index draw may start at an odd index", "[rhi][metal][gpu]")
@@ -433,7 +433,7 @@ TEST_CASE("A compute pipeline bound before a Metal pass is still bound after it"
 TEST_CASE("A pass that binds a graphics pipeline and groups leaves the compute pipeline and its groups bound",
           "[rhi][metal][gpu]")
 {
-    // The end-of-phase review (Day 328): compute and graphics shared one bound state, so a pass's pipeline and groups
+    // The end-of-phase review (Day 312): compute and graphics shared one bound state, so a pass's pipeline and groups
     // replaced the compute ones; Vulkan and Direct3D 12 keep a bind point each.
     DevicePtr device = CreateDevice(MetalInfo("metal_commands_test"));
     REQUIRE(device);

@@ -1,4 +1,4 @@
-// The Metal backend's resources (Phase 26 Day 317): storage modes by memory location, the forced-Managed round trip
+// The Metal backend's resources (Phase 21 Day 301): storage modes by memory location, the forced-Managed round trip
 // (this Mac is unified: the hook is the Managed path's only coverage), uploads and readbacks of buffers and of every
 // texture format, row pitches, mips and layers, deferred destruction and the counts going back to zero. macOS only.
 #include "metal_test_support.h"  // first: it imports AppKit before any engine name is in scope
@@ -187,7 +187,7 @@ TEST_CASE(
         CHECK(AsMetal(*managed).ManagedStorage());
         CHECK(AsMetal(*managed).StorageModeFor(MemoryLocation::CpuToGpu) == MTLStorageModeManaged);
         CHECK(AsMetal(*managed).StorageModeFor(MemoryLocation::GpuToCpu) == MTLStorageModeShared);
-        // CPU-written memory the GPU may write stays Shared (Day 328's review), so a GPU copy into it reads back.
+        // CPU-written memory the GPU may write stays Shared (Day 312's review), so a GPU copy into it reads back.
         CHECK(AsMetal(*managed).StorageModeFor(MemoryLocation::CpuToGpu, BufferUsage::CopyDst) == MTLStorageModeShared);
         CHECK(AsMetal(*managed).StorageModeFor(MemoryLocation::CpuToGpu, BufferUsage::Storage) == MTLStorageModeShared);
         BufferDesc src_desc;

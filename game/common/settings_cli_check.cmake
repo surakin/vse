@@ -74,7 +74,7 @@ if(MODE STREQUAL "golden")
 elseif(MODE STREQUAL "regex")
   if(DEFINED USER_FILE) # a user settings file written before the run: USER_FILE is its text, APP the program's settings name
     # Where the program looks for it: $XDG_CONFIG_HOME on Linux, %APPDATA% on Windows (both ${WORK}/xdg here), and on macOS
-    # $HOME/Library/Application Support, with HOME=${WORK} (Phase 26 Day 314).
+    # $HOME/Library/Application Support, with HOME=${WORK} (Phase 21 Day 298).
     set(user_dir "${WORK}/xdg/${APP}")
     if(CMAKE_HOST_APPLE)
       set(user_dir "${WORK}/Library/Application Support/${APP}")

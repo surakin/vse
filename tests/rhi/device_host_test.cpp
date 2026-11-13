@@ -10,7 +10,7 @@
 #include "rhi/handle_pool.h"
 #include "rhi/null/null_device.h"
 #include "rhi/rhi_log.h"
-#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 21 decision 8)
 #include "rhi/vulkan/vulkan_device.h"
 #endif
 #include "cstr/cstr.h"
@@ -433,7 +433,7 @@ TEST_CASE("An observer added to a live host is told about the device at once", "
     CHECK_FALSE(late.buffer.IsValid());
 }
 
-#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 21 decision 8)
 TEST_CASE("Vulkan devices are destroyed and recreated with nothing left over", "[rhi][host][vulkan][gpu]")
 {
     gpu_test::GpuFixture fx;
@@ -475,7 +475,7 @@ TEST_CASE("Vulkan devices are destroyed and recreated with nothing left over", "
 }
 #endif
 
-#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 26 decision 8)
+#if ENGINE_RHI_HAVE_VULKAN  // the Vulkan backend's cases: not on macOS (Phase 21 decision 8)
 TEST_CASE("A stale Vulkan buffer handle is not valid on the next device", "[rhi][host][vulkan][gpu]")
 {
     gpu_test::GpuFixture fx;

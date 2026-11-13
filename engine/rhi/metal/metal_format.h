@@ -1,6 +1,6 @@
 #pragma once
 
-// RHI formats as Metal pixel formats, and what each supports on a device (Phase 26 Days 316-317). Objective-C++.
+// RHI formats as Metal pixel formats, and what each supports on a device (Phase 21 Days 300-301). Objective-C++.
 
 #include "rhi/enums.h"
 #include "rhi/format.h"

@@ -52,7 +52,7 @@ TEST_CASE("errno values map to portable codes", "[net][errno]")
         {EAFNOSUPPORT, ErrorCode::Unsupported},
         {EPROTONOSUPPORT, ErrorCode::Unsupported},
         {EOPNOTSUPP, ErrorCode::Unsupported},
-        {ENOTSUP, ErrorCode::Unsupported},  // a number of its own on macOS (Phase 26 Day 326)
+        {ENOTSUP, ErrorCode::Unsupported},  // a number of its own on macOS (Phase 21 Day 310)
         {EPROTOTYPE, ErrorCode::Unsupported},
         {ENOPROTOOPT, ErrorCode::Unsupported},
         {EMFILE, ErrorCode::LimitExceeded},
@@ -75,7 +75,7 @@ TEST_CASE("errno values map to portable codes", "[net][errno]")
 
 TEST_CASE("A failed send's errno is mapped with the system's quirks", "[net][errors]")
 {
-    // macOS fails a send on a connection being torn down with EPROTOTYPE (Phase 26 Day 326): Closed there; elsewhere
+    // macOS fails a send on a connection being torn down with EPROTOTYPE (Phase 21 Day 310): Closed there; elsewhere
     // the table's Unsupported. Every other number is the table's.
 #if ENGINE_PLATFORM_MACOS
     CHECK(posix::SendErrorCode(EPROTOTYPE) == ErrorCode::Closed);

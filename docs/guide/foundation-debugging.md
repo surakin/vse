@@ -1,7 +1,7 @@
 # Foundation: Debugging
 
-Status: written (Phase 7 on Linux; Phase 13 added Windows; macOS from Phase 26: stack traces and the crash context on Day 306, the crash handler and
-death tests on Day 307, dumps on Day 308; see [porting](porting-debugging.md)).
+Status: written (Phase 7 on Linux; Phase 13 added Windows; macOS from Phase 21: stack traces and the crash context on Day 290, the crash handler and
+death tests on Day 291, dumps on Day 292; see [porting](porting-debugging.md)).
 
 **Audience:** every engine programmer who has to find out why a program crashed, or who writes a test for code that is supposed to crash. Read
 [Logging and Assertions](foundation-logging-and-assert.md) first: assertions are where most crashes start.
@@ -203,7 +203,7 @@ to, is its own tool that reads the file.
 
 ### On macOS
 
-The crash handler is the same library and the same report (Phase 26 Day 307), with these differences:
+The crash handler is the same library and the same report (Phase 21 Day 291), with these differences:
 
 - **Mach exceptions, not signals.** Breakpad catches a fault as a Mach exception on its own thread while the crashed thread is suspended; an abort
   comes through its `SIGABRT` handler. The report is built from the crashed thread's registers, so it names that thread, its reason and its stack,
@@ -577,7 +577,7 @@ child and closes every descriptor it opened.
 | Platform | How the child is started | Notes |
 |---|---|---|
 | Linux | `posix_spawn` of `/proc/self/exe` | implemented (Phase 7) |
-| macOS | `posix_spawn` | Phase 26; the POSIX code is shared with Linux |
+| macOS | `posix_spawn` | Phase 21; the POSIX code is shared with Linux |
 | Windows | `CreateProcess` | Phase 13; exit statuses such as `0xC0000005` map to a [[debug::CrashReason]] |
 | iOS, consoles | not possible | [[debug::DeathTestsSupported]] is false and death tests skip with a printed reason |
 

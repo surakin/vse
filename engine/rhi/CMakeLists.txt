@@ -72,8 +72,8 @@ set(RHI_DX12_SOURCES
   dx12/dx12_backend.cpp
 )
 
-# The Metal backend (Phase 26, Days 316-325), macOS only: Objective-C++ with ARC, the one place Metal is named (rhi_boundary_check). It links the
-# system's Metal and QuartzCore frameworks (the CAMetalLayer of the swapchain, Day 321).
+# The Metal backend (Phase 21, Days 300-309), macOS only: Objective-C++ with ARC, the one place Metal is named (rhi_boundary_check). It links the
+# system's Metal and QuartzCore frameworks (the CAMetalLayer of the swapchain, Day 305).
 set(RHI_METAL_SOURCES
   metal/metal_adapters.mm
   metal/metal_format.mm
@@ -98,7 +98,7 @@ function(engine_add_rhi_libs suffix foundation_lib jobs_lib platform_lib)
   target_compile_options(rhi${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
   target_link_libraries(rhi${suffix} PUBLIC ${foundation_lib} ${jobs_lib} ${platform_lib})
 
-  # No Vulkan on macOS (Phase 26 decision 8: MoltenVK is third-party): the neutral RHI and the null backend there, Metal from Day 316.
+  # No Vulkan on macOS (Phase 21 decision 8: MoltenVK is third-party): the neutral RHI and the null backend there, Metal from Day 300.
   if(NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     add_library(rhi_vulkan${suffix} STATIC ${RHI_VULKAN_SOURCES})
     target_include_directories(rhi_vulkan${suffix} PUBLIC ${RHI_INCLUDE_ROOT})
@@ -120,7 +120,7 @@ function(engine_add_rhi_libs suffix foundation_lib jobs_lib platform_lib)
   if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     add_library(rhi_metal${suffix} STATIC ${RHI_METAL_SOURCES})
     target_include_directories(rhi_metal${suffix} PUBLIC ${RHI_INCLUDE_ROOT})
-    target_include_directories(rhi_metal${suffix} PRIVATE ${CMAKE_SOURCE_DIR}/shaders) # the minted .metallib.inc files (mips, Day 320)
+    target_include_directories(rhi_metal${suffix} PRIVATE ${CMAKE_SOURCE_DIR}/shaders) # the minted .metallib.inc files (mips, Day 304)
     target_compile_options(rhi_metal${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
     target_link_libraries(rhi_metal${suffix} PUBLIC rhi${suffix} "-framework Metal" "-framework QuartzCore" "-framework Foundation" "-framework AppKit")
   endif()

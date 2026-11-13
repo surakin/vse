@@ -1,4 +1,4 @@
-// The macOS half of the POSIX socket backend (Phase 26 Day 326): the flags and calls that differ from Linux.
+// The macOS half of the POSIX socket backend (Phase 21 Day 310): the flags and calls that differ from Linux.
 //
 // macOS has no SOCK_NONBLOCK, SOCK_CLOEXEC or accept4, so a socket is created (or accepted) and its two flags are set
 // right after, before the call returns. Between the two there is a window in which another thread that forks and

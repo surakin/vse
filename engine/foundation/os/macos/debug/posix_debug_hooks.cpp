@@ -1,4 +1,4 @@
-// macOS's answers to the shared POSIX death-test backend's hooks (os/posix/debug/posix_debug.h; Phase 26 Day 307).
+// macOS's answers to the shared POSIX death-test backend's hooks (os/posix/debug/posix_debug.h; Phase 21 Day 291).
 #include "os/posix/debug/posix_debug.h"
 
 #include "os/last_error.h"
@@ -39,7 +39,7 @@ bool MakeCloexecPipe(int fds[2])
 const char* SelfExecutablePath(char* buffer, usize capacity)
 {
     // The kernel's absolute path of the running image (proc_pidpath), not _NSGetExecutablePath's argv-based one, which
-    // can be relative (a test that changes directory would then spawn nothing) or a link (Day 307 review).
+    // can be relative (a test that changes directory would then spawn nothing) or a link (Day 291 review).
     return ::proc_pidpath(::getpid(), buffer, static_cast<u32>(capacity)) > 0 ? buffer : nullptr;
 }
 
@@ -56,7 +56,7 @@ bool ChildNeedsParentWatch()
 short PrepareSpawnFlags(posix_spawn_file_actions_t* actions)
 {
     // Only the descriptors the file actions name survive the spawn (and standard input, inherited explicitly), so a
-    // pipe another thread made between pipe() and fcntl(FD_CLOEXEC) cannot leak into this child (Day 307 review).
+    // pipe another thread made between pipe() and fcntl(FD_CLOEXEC) cannot leak into this child (Day 291 review).
     if (::posix_spawn_file_actions_addinherit_np(actions, 0) != 0)
     {
         return -1;

@@ -1,6 +1,6 @@
 #pragma once
 
-// The Metal swapchain (Phase 26 Day 321): the Cocoa window's CAMetalLayer, nextDrawable as Acquire and presentDrawable:
+// The Metal swapchain (Phase 21 Day 305): the Cocoa window's CAMetalLayer, nextDrawable as Acquire and presentDrawable:
 // as Present. Objective-C++.
 
 #include "rhi/swapchain.h"

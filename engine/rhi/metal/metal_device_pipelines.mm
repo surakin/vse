@@ -1,7 +1,7 @@
-// MetalDevice: shaders, render and compute pipelines, depth-stencil states and the pipeline cache (Phase 26 Day 319).
+// MetalDevice: shaders, render and compute pipelines, depth-stencil states and the pipeline cache (Phase 21 Day 303).
 //
 // A shader is an MTLLibrary made from the minted bytes and the function its blob names, with a copy of the library's
-// slot table (Day 318). A render pipeline maps each stage's table against its layouts (MapStageSlots); vertex buffers
+// slot table (Day 302). A render pipeline maps each stage's table against its layouts (MapStageSlots); vertex buffers
 // sit at the top of the buffer table (MetalVertexBufferSlot), clear of the shader's own buffers. What Metal sets on the
 // encoder rather than in the pipeline state (cull mode, winding, fill mode, the primitive type, the depth-stencil
 // state) is kept with the pipeline for the command list. Pipelines are looked up in the binary archive first; a miss is

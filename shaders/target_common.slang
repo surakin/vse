@@ -1,7 +1,7 @@
 // What differs between the bytecode targets of one shader source (Phase 13 Day 163; shaders/README.md, "Targets").
 //
 // The SPIR-V build defines nothing and keeps Vulkan's conventions. The DXIL build passes -DENGINE_TARGET_D3D12=1 and the
-// Metal build -DENGINE_TARGET_METAL=1 (Phase 26 Day 315), and these macros adapt the things they do differently (Metal
+// Metal build -DENGINE_TARGET_METAL=1 (Phase 21 Day 299), and these macros adapt the things they do differently (Metal
 // as Direct3D 12 for the first three):
 //
 //   ENGINE_CLIP(p)               the clip-space position a vertex shader writes. Vulkan's clip space has Y down and the engine's
@@ -17,7 +17,7 @@
 //
 //   ENGINE_REGISTER(r, s)        a resource's D3D12 register, `: register(r, s)` in the DXIL build and nothing in the others:
 //                                Slang also takes register() as the Metal slot, and Metal has no spaces, so b0 in two spaces
-//                                would be two parameters at [[buffer(0)]] (Phase 26 Day 298). Without it Slang gives each
+//                                would be two parameters at [[buffer(0)]] (Phase 21 Day 282). Without it Slang gives each
 //                                Metal resource its own slot, which shader_mint records in the reflection.
 //
 // Rules every engine shader follows so one source serves every target (shader_mint checks the first two when it mints DXIL):

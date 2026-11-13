@@ -140,7 +140,7 @@ CompareResult Compare(const Image& golden, const Image& actual, const CompareOpt
             r.max_difference, wrote ? "; diff image: " : "", wrote ? path.CStr() : "");
         r.message = engine_test::MakeText(engine_placeholder::StringView(text));
     }
-    // ENGINE_RHI_GOLDEN_REPORT=1 prints every comparison's numbers, passed or not (Phase 26 Day 325: the numbers of a
+    // ENGINE_RHI_GOLDEN_REPORT=1 prints every comparison's numbers, passed or not (Phase 21 Day 309: the numbers of a
     // backend's goldens are recorded in its day files).
     const char* report = engine_placeholder::os::GetEnvironment("ENGINE_RHI_GOLDEN_REPORT");
     if (report != nullptr && report[0] == '1')

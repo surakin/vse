@@ -1,4 +1,4 @@
-// The macOS module list (debug/module_list.h; Phase 26 Day 306): the images dyld has loaded, with their slide and their
+// The macOS module list (debug/module_list.h; Phase 21 Day 290): the images dyld has loaded, with their slide and their
 // __TEXT segment.
 #include "debug/module_list.h"
 
@@ -33,7 +33,7 @@ Mutex g_module_refresh_mutex;
 
 // The image's __TEXT segment in memory (vmaddr + slide): the code a stack frame can point into. Not the span of all
 // segments: in the dyld shared cache an image's segments are not adjacent and every image shares one __LINKEDIT, so
-// that span covers its neighbours and the first image listed would claim their frames (seen on Day 306:
+// that span covers its neighbours and the first image listed would claim their frames (seen on Day 290:
 // libsystem_pthread's frames named libobjc).
 bool TextExtent(const mach_header_64* header, u64 slide, u64* low, u64* high)
 {

@@ -6,7 +6,7 @@ carries a `Backend:` label has a `###` section here, and every section names suc
 `docs/superpowers/specs/2026-11-11-networking-design.md`.
 
 Linux and macOS share the POSIX backend in `engine/net/posix/` (`socket_posix.cpp`, `posix_error.cpp`, `resolve_posix.cpp`), each adding its own hooks and
-poller (`net/linux/`: `linux_hooks.cpp`, `poller_epoll.cpp`; `net/macos/`: `macos_hooks.cpp`, `poller_kqueue.cpp`, Phase 26 Day 326). Windows has its own in `engine/net/windows/` (Phase 20 Day 278: `socket_windows.cpp`, `wsa_error.cpp`,
+poller (`net/linux/`: `linux_hooks.cpp`, `poller_epoll.cpp`; `net/macos/`: `macos_hooks.cpp`, `poller_kqueue.cpp`, Phase 21 Day 310). Windows has its own in `engine/net/windows/` (Phase 20 Day 278: `socket_windows.cpp`, `wsa_error.cpp`,
 `poller_select.cpp`, `resolve_windows.cpp`; the Winsock headers only through `windows/winsock.h`). A new platform adds `engine/net/<platform>/` and selects it in
 `engine/net/CMakeLists.txt`. Only these
 directories may call the operating system's socket API; the gate `net_access_check` fails on a socket call anywhere else.
@@ -47,7 +47,7 @@ directories may call the operating system's socket API; the gate `net_access_che
   accepted 20 every 100 ms, 299 were refused with the setting and 291 without it (measured on Day 278). A non-blocking `send` takes the whole buffer when
   the send buffer has any room (the kernel keeps the caller's bytes), so a large write is rarely partial. Scope names go through `if_nametoindex`
   (`iphlpapi`). Libraries: `ws2_32` and `iphlpapi`, both part of Windows.
-- **macOS, as built (Phase 26 Day 326, `engine/net/macos/`):** the POSIX backend with macOS hooks. No `accept4` and no `SOCK_NONBLOCK`/`SOCK_CLOEXEC`: a
+- **macOS, as built (Phase 21 Day 310, `engine/net/macos/`):** the POSIX backend with macOS hooks. No `accept4` and no `SOCK_NONBLOCK`/`SOCK_CLOEXEC`: a
   socket is created (or accepted) and gets `FD_CLOEXEC`, `O_NONBLOCK` and `SO_NOSIGPIPE` before the call returns, closed if one is refused. **The one window:**
   between `socket` (or `accept`) and `FD_CLOEXEC`, another thread that forks and execs passes the descriptor to its child; macOS cannot close it for a plain
   socket. The engine starts children only for death tests; an application that forks while sockets open should spawn with `POSIX_SPAWN_CLOEXEC_DEFAULT`.

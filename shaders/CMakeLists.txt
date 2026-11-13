@@ -46,7 +46,7 @@ file(GLOB SHADER_COMMON_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/*_
 
 # slangc: ENGINE_SLANGC (a cache or environment variable), then the locations BUILD.md records (the Windows PC's C:/Tools, the Mac's
 # ~/tools; find_program searches HINTS before PATH), then PATH. A program that answers -v with something other than a Slang version is refused
-# and the committed outputs are used: on the Mac, kitty (the terminal) puts an unrelated `slangc` on PATH (Phase 26 Day 300).
+# and the committed outputs are used: on the Mac, kitty (the terminal) puts an unrelated `slangc` on PATH (Phase 21 Day 284).
 # DXIL (Phase 13 Day 163): the directory with dxcompiler.dll and dxil.dll, from ENGINE_DXC (a dxc executable or its directory), else
 # the Windows SDK the toolchain found (ENGINE_SDK_BIN); never the first dxc on PATH, which may be the Vulkan SDK's older build.
 if(NOT ENGINE_SLANGC AND DEFINED ENV{ENGINE_SLANGC})
@@ -59,7 +59,7 @@ else()
   find_program(SLANGC slangc HINTS "C:/Tools/slang-2026.18.2/bin" "$ENV{HOME}/tools/slang-2026.18.2/bin")
 endif()
 if(ENGINE_COMPILE_ONLY)
-  # A compile-only build (Phase 26 Day 327) cannot run the minters it builds: the committed outputs are used as they are.
+  # A compile-only build (Phase 21 Day 311) cannot run the minters it builds: the committed outputs are used as they are.
   message(STATUS "Compile-only build: shaders are not minted; the committed outputs are used")
   set(SLANGC "")
 endif()
@@ -118,7 +118,7 @@ if(SLANGC)
   file(MAKE_DIRECTORY ${SHADER_WORK_DIR})
 
   set(DXIL_COMPILER "slangc ${SLANGC_VERSION}, dxcompiler ${DXC_VERSION}")
-  # Metal (Phase 26 Day 315): slangc's Metal build on every platform (its reflection holds the Metal slots), and on a Mac
+  # Metal (Phase 21 Day 299): slangc's Metal build on every platform (its reflection holds the Metal slots), and on a Mac
   # tools/metal_mint, which turns it into the committed <name>.metallib.inc.
   set(METAL_MINT_TARGET "")
   if(TARGET metal_mint)

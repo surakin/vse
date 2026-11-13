@@ -1,4 +1,4 @@
-// The macOS debugger check (Phase 26 Day 307): sysctl(KERN_PROC_PID) and P_TRACED. A normal run is not traced; a child
+// The macOS debugger check (Phase 21 Day 291): sysctl(KERN_PROC_PID) and P_TRACED. A normal run is not traced; a child
 // that asks to be traced (PT_TRACE_ME sets the same P_TRACED flag lldb's attach does) sees a debugger attached. Checked
 // once under lldb itself by hand (the day file).
 #include <catch2/catch_test_macros.hpp>

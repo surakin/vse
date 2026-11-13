@@ -1,4 +1,4 @@
-// The Metal pipeline cache (Phase 26 Day 319; metal_pipeline_cache.h).
+// The Metal pipeline cache (Phase 21 Day 303; metal_pipeline_cache.h).
 //
 // Metal reads and writes a binary archive only through a file URL, so the archive's bytes live in a second file beside
 // the cache file: written through the file layer from the checked cache file when the device opens, and serialized by
@@ -306,7 +306,7 @@ bool MetalPipelineCache::Save()
     const char* temp = temp_path_;
     bool ok = false;
     // Metal serializes into a file beside the cache file, so the directory must be there first (the user's cache
-    // directory is not, before the first save: "Invalid URL", seen on Day 325).
+    // directory is not, before the first save: "Invalid URL", seen on Day 309).
     const io::Path dir = PathOf(temp).Parent();
     if (!dir.IsEmpty() && io::CreateDirectories(dir).Failed())
     {

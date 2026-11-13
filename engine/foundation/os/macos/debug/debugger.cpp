@@ -1,4 +1,4 @@
-// The macOS debugger check (debug/debugger.h; Phase 26 Day 307): the kernel's process flags through
+// The macOS debugger check (debug/debugger.h; Phase 21 Day 291): the kernel's process flags through
 // sysctl(KERN_PROC_PID), P_TRACED while a debugger (lldb) is attached. Cached for a second, as on Linux. Allocates
 // nothing (the assert path asks).
 #include "debug/debugger.h"

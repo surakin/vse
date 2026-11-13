@@ -419,7 +419,7 @@ Text EmitPermutationInc(StringView base_view, StringView shader_view, StringView
     }
     out.Append("};\n\n");
     Appendf(&out, "inline constexpr renderer::PermutationModule %sModules[%zu] = {\n", b, modules.Size());
-    // Each module's Metal library (Phase 26 Day 315) comes from the `.metallib.inc`, which the `.dxil.inc` includes.
+    // Each module's Metal library (Phase 21 Day 299) comes from the `.metallib.inc`, which the `.dxil.inc` includes.
     Appendf(
         &out,
         "    {%sSpv, %sSpvWordCount, %sRefl, %sReflByteCount, %sDxil, %sDxilByteCount, %sMetallib, %sMetallibByteCount, "

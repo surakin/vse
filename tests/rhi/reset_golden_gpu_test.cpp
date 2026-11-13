@@ -93,7 +93,7 @@ TEST_CASE("Resets in a loop on a real device leave the counts, memory and descri
 {
 #if ENGINE_PLATFORM_MACOS
     // For the ctest metal_autorelease_pools (tests/rhi/macos/run_autorelease_pools.cmake): the reports it fails on are
-    // this thread's, the engine's calls; Metal's own threads release what it held and report too (Day 325).
+    // this thread's, the engine's calls; Metal's own threads release what it held and report too (Day 309).
     const char* print_thread = os::GetEnvironment("ENGINE_RHI_PRINT_TEST_THREAD");
     if (print_thread != nullptr && print_thread[0] == '1')
     {
@@ -155,7 +155,7 @@ TEST_CASE("Resets in a loop on a real device leave the counts, memory and descri
         // A leak per reset would show about one handle per reset. Direct3D 12's drift over 100 resets ranged from -1 to
         // 3 on the Radeon 860M (Day 172, five runs, one of them beside other tests), Vulkan's stays at 0.
         CHECK(handle_drift <= (backend == rhi::Backend::Dx12 ? 4 : 2));
-        // Metal's validation layer in assert mode grows the process by 8 to 13 MiB over the 100 resets (Phase 26 Day
+        // Metal's validation layer in assert mode grows the process by 8 to 13 MiB over the 100 resets (Phase 21 Day
         // 325, four runs), in its own completion handlers on Metal's thread; without it the drift is 1.4 to 3.4 MiB.
         // The ctest metal_autorelease_pools runs this test without validation, so the check still holds for the engine.
         const char* metal_layer = os::GetEnvironment("MTL_DEBUG_LAYER");

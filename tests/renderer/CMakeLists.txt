@@ -5,7 +5,7 @@ set(RENDERER_TEST_SOURCES
   shader_reflection_test.cpp
   shader_permutation_test.cpp
   shader_dxil_test.cpp
-  shader_metallib_test.cpp  # Phase 26 Day 315
+  shader_metallib_test.cpp  # Phase 21 Day 299
   geometry_test.cpp
   scene_test.cpp
   mesh_topology_test.cpp
@@ -65,7 +65,7 @@ function(engine_add_renderer_tests target suffix label spec)
   target_link_libraries(${target} PRIVATE scene${flavor} ecs${flavor} renderer_passes${flavor} renderer${flavor} rhi_backends${flavor} Catch2::Catch2WithMain Threads::Threads)
   target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/shaders ${CMAKE_SOURCE_DIR}/game/common ${CMAKE_SOURCE_DIR}/game/renderer_demo ${CMAKE_SOURCE_DIR}/tests/io ${CMAKE_SOURCE_DIR}/tests/support ${CMAKE_SOURCE_DIR}/tests/rhi ${CMAKE_SOURCE_DIR}/tests/text)
   target_compile_definitions(${target} PRIVATE TEXT_TEST_FONT_FILE="${CMAKE_SOURCE_DIR}/assets/fonts/LiberationSans-Regular.ttf" ENGINE_RHI_LSAN_SUPP="${CMAKE_SOURCE_DIR}/tests/rhi/lsan.supp" SETTINGS_FIXTURE_DIR="${CMAKE_SOURCE_DIR}/tests/settings/fixtures")
-  # On macOS the GPU suites run through Metal (Phase 26 Day 323) with its API and shader validation on, an error stopping the test.
+  # On macOS the GPU suites run through Metal (Phase 21 Day 307) with its API and shader validation on, an error stopping the test.
   set(env "ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/renderer_tests-${label}")
   if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     list(APPEND env MTL_DEBUG_LAYER=1 MTL_DEBUG_LAYER_ERROR_MODE=assert MTL_SHADER_VALIDATION=1)
@@ -79,7 +79,7 @@ if(ENGINE_HAVE_ASAN)
 endif()
 if(ENGINE_HAVE_TSAN)
   if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    engine_add_renderer_tests(renderer_tests_tsan " [tsan]" "tsan" "")  # Metal's GPU tests run under TSan (Phase 26 Day 323)
+    engine_add_renderer_tests(renderer_tests_tsan " [tsan]" "tsan" "")  # Metal's GPU tests run under TSan (Phase 21 Day 307)
   else()
     engine_add_renderer_tests(renderer_tests_tsan " [tsan]" "tsan" "~[gpu]")
   endif()

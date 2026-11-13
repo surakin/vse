@@ -12,7 +12,7 @@ add_test(NAME std_usage_check COMMAND ${CMAKE_COMMAND} -DROOT=${CMAKE_SOURCE_DIR
 set_tests_properties(std_usage_check PROPERTIES LABELS types)
 
 # Planted violations (an include, std::, an unqualified C call, a raw integer spelling, a header outside its module's list, a violation in
-# tools/, and in an Objective-C++ file a standard header by #include and by #import, Phase 26 Day 302) are reported by line; comments, literals and member calls are not.
+# tools/, and in an Objective-C++ file a standard header by #include and by #import, Phase 21 Day 286) are reported by line; comments, literals and member calls are not.
 std_usage_test(std_usage_check_planted ${STD_USAGE_FIXTURES}/bad ${STD_USAGE_FIXTURES}/good/allowlist.txt)
 set_tests_properties(std_usage_check_planted PROPERTIES WILL_FAIL TRUE)
 std_usage_test(std_usage_check_planted_lines ${STD_USAGE_FIXTURES}/bad ${STD_USAGE_FIXTURES}/good/allowlist.txt)

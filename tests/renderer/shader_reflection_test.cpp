@@ -178,7 +178,7 @@ TEST_CASE("Reflection says what the shader sources say", "[renderer][reflection]
         CHECK(fill.bindings[0].type == BindingType::StorageBuffer);
         CHECK(fill.bindings[0].stride == 4);  // RWStructuredBuffer<uint> (Phase 13 Day 166)
         CHECK(fill.has_push_constants);
-        CHECK(fill.blocks[fill.push_constant_block].size == 8);  // k and count (Phase 26 Day 315)
+        CHECK(fill.blocks[fill.push_constant_block].size == 8);  // k and count (Phase 21 Day 299)
 
         ShaderReflection saxpy = LOAD(kSaxpyComp);
         REQUIRE(saxpy.binding_count == 2);
@@ -582,7 +582,7 @@ TEST_CASE("Duplicate block and member names are rejected", "[renderer][reflectio
     CHECK(ValidateShaderReflection(r) != nullptr);
 }
 
-// Phase 26 Day 315: the Metal slots shader_mint records from the Metal build's reflection.
+// Phase 21 Day 299: the Metal slots shader_mint records from the Metal build's reflection.
 TEST_CASE("The Metal slots: minted for every binding and the push block, one resource per slot, and they round-trip",
           "[renderer][reflection][metal]")
 {
@@ -620,7 +620,7 @@ TEST_CASE("The Metal slots: minted for every binding and the push block, one res
     bad.bindings[sampler].metal_slot = 16;  // past Metal's 16 samplers
     CHECK(ValidateShaderReflection(bad) != nullptr);
     bad = r;
-    bad.push_constant_metal_slot = bad.bindings[0].metal_slot;  // the uniform block's buffer slot (Day 298's failure)
+    bad.push_constant_metal_slot = bad.bindings[0].metal_slot;  // the uniform block's buffer slot (Day 282's failure)
     CHECK(ValidateShaderReflection(bad) != nullptr);
     bad = r;
     bad.push_constant_metal_slot = kNoMetalSlot;
@@ -641,7 +641,7 @@ TEST_CASE("The Metal slots: minted for every binding and the push block, one res
     ++bad.binding_count;
     CHECK(ValidateShaderReflection(bad) != nullptr);
     // An array's slots are a range: a second texture inside it shares a slot even though the first slots differ (the
-    // end-of-phase review, Day 328), and one just after it does not.
+    // end-of-phase review, Day 312), and one just after it does not.
     bad = r;
     bad.bindings[texture].count = 4;  // slots s..s+3
     bad.bindings[bad.binding_count] = bad.bindings[texture];

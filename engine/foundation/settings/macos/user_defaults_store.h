@@ -1,6 +1,6 @@
 #pragma once
 
-//! The user defaults system (`NSUserDefaults`, `CFPreferences`) as a [[settings::ConfigStore]] (Phase 26 Day 309;
+//! The user defaults system (`NSUserDefaults`, `CFPreferences`) as a [[settings::ConfigStore]] (Phase 21 Day 293;
 //! `engine/foundation/settings/BACKEND.md`).
 //!
 //! A store is one defaults domain (a *suite*: `defaults read <suite>` shows it), for the current user on any host. A
@@ -13,7 +13,7 @@
 //! domain's file now. There is no order and no comment.
 //!
 //! Change notifications: macOS posts `NSUserDefaultsDidChangeNotification` for this process's own writes only (checked
-//! on Day 309: an outside `defaults write` posts nothing), so the store compares the domain with what it last saw, on
+//! on Day 293: an outside `defaults write` posts nothing), so the store compares the domain with what it last saw, on
 //! a thread of its own every quarter of a second, and tells the listener about another writer's change, never about
 //! its own.
 //!

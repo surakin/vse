@@ -525,7 +525,7 @@ TEST_CASE("Options: the families and kinds they apply to, and the buffer the sys
 
 TEST_CASE("A connection reset before it is accepted is skipped or accepted, never Invalid", "[network][socket]")
 {
-    // Day 326's review: on macOS the options set on an accepted socket fail with EINVAL when the peer already reset
+    // Day 310's review: on macOS the options set on an accepted socket fail with EINVAL when the peer already reset
     // it, which read as a misuse; it is an aborted connection.
     REQUIRE_LOOPBACK(AddressFamily::V4);
     Socket listener;

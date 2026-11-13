@@ -1,6 +1,6 @@
 # Building and Testing
 
-Status: written (Phases 0-17; Windows from Phase 13; macOS from Phase 26).
+Status: written (Phases 0-17; Windows from Phase 13; macOS from Phase 21).
 
 **Audience:** everyone who changes the engine. [Getting started](getting-started.md) has the first build; this page is what you need to *check your work*:
 the flavors, how to choose and run tests, what each sanitizer catches, and how to write a test.
@@ -174,7 +174,7 @@ is selected or `engine/foundation` changed; `--display` includes them.
 #### Side phases
 
 A phase the user runs beside the main line on another machine is a **side phase** (the user's rule, confirmed 2026-11-11;
-today Phase 26, the macOS port, on the Mac). It does not change `CURRENT_PHASE`; its tests carry its own label (`phase26`), and the `SIDE_PHASES` file lists
+today Phase 21, the macOS port, on the Mac). It does not change `CURRENT_PHASE`; its tests carry its own label (`phase21`), and the `SIDE_PHASES` file lists
 it (one number per line). `scripts/test-phase.sh --affected` adds every side phase the build has tests of, and the summary marks it:
 `ran 29 of 494 tests (phases: 19 26 (side); ...)` on the Mac, while the Linux machine, which builds no phase-26 tests, leaves it out. `--current`
 and a phase number never add it; `scripts/test-phase.sh 26` runs it alone. `test_phase_labels` fails on any phase of `tests/phases.txt` above
@@ -294,7 +294,7 @@ more than a few seconds belongs in a stress label, not in the default run.
 
 The golden-image tests and the checks around them (`golden_test.cpp`, `compute_test.cpp`, `cube_test.cpp`, `textured_cube_test.cpp`,
 `lit_cube_test.cpp` in `tests/rhi/`) run once per GPU backend the machine has: Vulkan on Linux, Vulkan and Direct3D 12 on Windows
-(Phase 13 Day 170), Metal on macOS (Phase 26 Day 322). They use only the RHI interface, through `tests/rhi/backend_fixture.h`:
+(Phase 13 Day 170), Metal on macOS (Phase 21 Day 306). They use only the RHI interface, through `tests/rhi/backend_fixture.h`:
 
 ```
 FOR_EACH_GPU_BACKEND(backend) {
@@ -345,7 +345,7 @@ person is needed. `tests/rhi/render_target.h` is the offscreen target (RGBA8 col
   commit it. Never regenerate to make a failing run pass without understanding the difference.
 - **The numbers of a passing run.** `ENGINE_RHI_GOLDEN_REPORT=1` prints one line per comparison, passed or not: the
   worst channel difference and the interior and edge pixels over their tolerances (how a backend's differences are
-  recorded, Phase 26 Day 325).
+  recorded, Phase 21 Day 309).
 - **Validation.** GPU tests fail on any validation error. With `ENGINE_RHI_VALIDATION_FATAL=1` the whole suite is clean
   except the validation-capture tests in `vulkan_instance_test.cpp`, which provoke errors on purpose and so abort.
 
@@ -453,14 +453,14 @@ itself (vswhere, the registry, the default install folders), so any terminal wor
 
 ### Building and testing on macOS
 
-Since Phase 26 every layer builds and is tested on macOS (x86-64, Apple clang), with the Cocoa window and the Metal backend in place of
+Since Phase 21 every layer builds and is tested on macOS (x86-64, Apple clang), with the Cocoa window and the Metal backend in place of
 Vulkan; [macOS](macos.md) is the platform's page. `BUILD.md` lists what to install: the Command Line Tools (Apple clang), CMake and
 Ninja; no Xcode.
 
 - **Preset.** `cmake --preset macos-clang` configures `build-macos` (Ninja, Debug, x86-64, deployment target macOS 13.3); build and test with
   `cmake --build --preset macos-clang` and `ctest --preset macos-clang`. The configure takes Apple clang through `xcrun`, so a MacPorts or
   Homebrew clang first on `PATH` is not picked up, and stops with a message without the Command Line Tools. Everything the Linux build has is
-  built, with the Metal backend in place of Vulkan (Day 327).
+  built, with the Metal backend in place of Vulkan (Day 311).
 - **Apple silicon, compile-only.** `cmake --preset macos-clang-arm64` configures `build-macos-arm64` for arm64 with `ENGINE_COMPILE_ONLY` (Day
   327): every target builds and nothing built runs, so there is no test discovery and no shader minting (the committed outputs are used). It
   is how the Intel Mac checks arm64 code paths; run it, unity and `-DENGINE_UNITY_BUILD=OFF`, on every macOS day that changes macOS code.
@@ -469,13 +469,13 @@ Ninja; no Xcode.
 - **Objective-C++.** `.mm` files (only in macOS directories) compile with ARC and the warnings of every target. `tests/macos` checks that
   every neutral foundation header compiles beside AppKit, Metal and QuartzCore in either order (`macos_header_apple_first`, `_last`).
 - **The test script** runs under the system's `/bin/bash` 3.2 (`scripts/test-phase.sh`, defaulting to `build-macos` there), so it keeps to
-  what that bash has: no associative arrays, `mapfile` or `${x,,}`. `--flavor all` is plain, asan and tsan. `--affected` adds phase 26 as a
+  what that bash has: no associative arrays, `mapfile` or `${x,,}`. `--flavor all` is plain, asan and tsan. `--affected` adds phase 21 as a
   side phase.
 - **The gates** run here as on Linux and Windows. Rule 7 of `platform_neutral_check` keeps Apple's headers (the frameworks, `<mach/...>`,
   `<dispatch/...>`, `<objc/...>`, `<sys/sysctl.h>`, `<copyfile.h>`, `<libproc.h>`) and `.mm` files in the macOS directories (a `macos/`
   folder, `engine/rhi/metal/`); `std_usage_check` and `module_deps_check` read `.mm` files and count `#import` as `#include`.
 - **Documentation** (`docgen`, the reference, `ctest -L docs` with its samples) builds and runs on the Mac as on Linux (the samples from
-  Phase 26 Day 327).
+  Phase 21 Day 311).
 
 ### Formatting and clang-tidy
 

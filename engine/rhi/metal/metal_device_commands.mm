@@ -1,4 +1,4 @@
-// MetalDevice: command lists and submission (Phase 26 Day 320).
+// MetalDevice: command lists and submission (Phase 21 Day 304).
 //
 // Lists come from a pool per frame slot and are recycled when the slot comes round (BeginFrame waited for that frame).
 // Each list records into its own retained MTLCommandBuffer, so lists can be recorded on several jobs at once; Submit

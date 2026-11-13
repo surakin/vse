@@ -1,4 +1,4 @@
-# Runs the reset loop with OBJC_DEBUG_MISSING_POOLS=YES (the ctest metal_autorelease_pools, Phase 26 Day 325) and
+# Runs the reset loop with OBJC_DEBUG_MISSING_POOLS=YES (the ctest metal_autorelease_pools, Phase 21 Day 309) and
 # fails when an object of Metal or a GPU driver is autoreleased with no pool on the test's own thread: that is an engine
 # call made by a caller without a pool. Metal's own threads (the command buffers' completion) release what Metal held
 # after the engine let go and report too; those are not the engine's and are not counted. Called with

@@ -76,7 +76,7 @@ TEST_CASE("The default Window reports fullscreen unsupported", "[window][fullscr
 
 #elif ENGINE_PLATFORM_MACOS
 
-// Phase 26 Day 311: native fullscreen (platform/macos/FULLSCREEN.md), which animates into a Space of its own, and back
+// Phase 21 Day 295: native fullscreen (platform/macos/FULLSCREEN.md), which animates into a Space of its own, and back
 // to the size the window had.
 TEST_CASE("A Cocoa window toggles fullscreen", "[window][fullscreen]")
 {

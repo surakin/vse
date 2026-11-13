@@ -74,7 +74,7 @@ set(inc_back_re "^[ \t]*#[ \t]*(include|import)[ \t]*[<\"][^>\"]*(wayland|[Xx]11
 # backend using the other API is a violation too.
 set(dx_ident_re "(^|[^A-Za-z0-9_])(ID3D12[A-Za-z0-9_]*|IDXGI[A-Za-z0-9_]*|D3D12[A-Z][A-Za-z0-9_]*|D3D12_[A-Z0-9_]+|DXGI_[A-Z0-9_]+|D3D_FEATURE_LEVEL_[A-Z0-9_]+|PFN_D3D12[A-Za-z0-9_]*)")
 set(inc_dx_re "^[ \t]*#[ \t]*(include|import)[ \t]*[<\"][^>\"]*(d3d12|dxgi|d3dcommon|dxcapi)[^>\"]*[>\"]")
-# Metal (Phase 26 Day 316): the framework's headers (Metal, MetalKit, MetalPerformanceShaders, MetalFX; `#include`, `#import` or `@import`) and
+# Metal (Phase 21 Day 300): the framework's headers (Metal, MetalKit, MetalPerformanceShaders, MetalFX; `#include`, `#import` or `@import`) and
 # its API names (MTLDevice, MTLGPUFamilyMac2, MTLCreateSystemDefaultDevice: MTL, a capital and at least one more name character, which the
 # library file tag "MTLB" does not have) only in engine/rhi/metal/ and the minting tool tools/metal_mint/. The window's CAMetalLayer comes
 # from QuartzCore, not Metal, and is the platform layer's. A line's ';' reads as <SEMI> here (read_lines), so `@import Metal;`

@@ -1,4 +1,4 @@
-// net::Poller on macOS (Phase 26 Day 326): kqueue, with one-shot read and write filters and an EVFILT_USER event to
+// net::Poller on macOS (Phase 21 Day 310): kqueue, with one-shot read and write filters and an EVFILT_USER event to
 // wake the wait.
 //
 // kqueue keeps reading and writing as two filters of a socket, where epoll has one registration: `Arm` adds the

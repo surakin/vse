@@ -17,13 +17,13 @@ Settle the design with experiments before any text code, vendor FreeType the way
         computes; no hidden scale);
       - **size policy (developer decision 2026-11-08):** the atlas rasterizes glyphs up to a **maximum pixel size** (`kMaxAtlasPixelSize`; the value is fixed by the Day 175 measurements of atlas area and
         rasterization time per glyph, starting from 128 px). Metrics, layout and outlines work at any size up to a separate sanity limit (2048 px). **Above the maximum, text is meant to draw as filled 2D
-        meshes built from the glyph outlines** (the same flatten-and-triangulate code Phase 25's 3D text uses for its faces), so that path is built in Phase 25; until then the text renderer draws such
+        meshes built from the glyph outlines** (the same flatten-and-triangulate code Phase 26's 3D text uses for its faces), so that path is built in Phase 26; until then the text renderer draws such
         glyphs from the maximum-size raster scaled up (blurry, counted in `Stats`, logged once), never skipped and never an atlas flood. Sizes between the minimum and maximum are used as requested (no
         quantization in v1); the pen positions the layout produces do not depend on which path draws a glyph, so switching paths later moves nothing;
       - the atlas: R8 coverage pages, a shelf packer, page size, what happens when a page is full (a new page, one draw per page, as Phase 5 Day 84 says), eviction **not** in v1;
       - **reset and loss (CLAUDE.md RHI rule):** the atlas keeps its CPU pages, registers with `renderer::DeviceResources` at its tier, implements `Release`/`Recreate`, and
         never caches a handle past a frame;
-      - the seams Phase 25 needs: outline access on the font, glyph ids and pen positions independent of drawing, an atlas that can add an RGBA page;
+      - the seams Phase 26 needs: outline access on the font, glyph ids and pen positions independent of drawing, an atlas that can add an RGBA page;
       - hinting: the candidates (none, light, normal, the font's bytecode) and how the choice is made (rendered samples at 12, 16, 24, 48 px compared by eye and by a coverage
         test), recorded with the pictures' file names;
       - the settings the phase adds, if any (CLAUDE.md "Anything configurable is a setting"): which are settings and which are launch-only options of the demos.

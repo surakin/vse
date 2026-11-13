@@ -1,16 +1,16 @@
 # Compiles every engine shader (and every permutation key of the permuted ones) to HLSL and Metal Shading Language with slangc,
-# the proof that the sources are not Vulkan in disguise (Phases 13 and 26 take the D3D12 and Metal backends from these same sources).
+# the proof that the sources are not Vulkan in disguise (Phases 13 and 21 take the D3D12 and Metal backends from these same sources).
 # Run through ctest as `shaders_portability`; arguments: SLANGC, SHADER_DIR, WORK_DIR, SHADERS (a ;-list), DXC (optional),
 # DXC_REQUIRED (ON on Windows with the SDK's dxc: a rejected HLSL then fails the test). The HLSL is built with the D3D12 target
 # define (shaders/target_common.slang), as the minted DXIL is.
 # A shader fails the test if slangc exits non-zero, writes an `error`, or produces an empty file. Warnings are expected and
 # listed (Metal renames `main`). `dxc`, if installed, additionally compiles the HLSL to DXIL and reports what it rejects without
 # failing (the instance-index semantic is a known Phase 13 gap). The Metal source is built with the Metal target define, and on
-# a Mac METAL_MINT (tools/metal_mint, Phase 26 Day 315) compiles every key's Metal source with the driver and loads the result.
+# a Mac METAL_MINT (tools/metal_mint, Phase 21 Day 299) compiles every key's Metal source with the driver and loads the result.
 # See README.md, "Other targets".
 include(${SHADER_DIR}/names.cmake)
 # Shaders known not to compile to a target, with the reason; the test fails if one of these starts to compile (remove it from
-# the list) or if any other shader does not. Empty since Phase 26 Day 315 (fill.comp and saxpy.comp take their element count as
+# the list) or if any other shader does not. Empty since Phase 21 Day 299 (fill.comp and saxpy.comp take their element count as
 # a push constant instead of asking the buffer, which Metal Shading Language cannot do).
 set(KNOWN_UNAVAILABLE "")
 file(MAKE_DIRECTORY ${WORK_DIR})

@@ -55,9 +55,9 @@ bool BuiltForThisPlatform(Backend backend)
     switch (backend)
     {
     case Backend::Null: return true;
-    case Backend::Vulkan: return ENGINE_PLATFORM_LINUX || ENGINE_PLATFORM_WINDOWS;  // not macOS: Phase 26 decision 8
+    case Backend::Vulkan: return ENGINE_PLATFORM_LINUX || ENGINE_PLATFORM_WINDOWS;  // not macOS: Phase 21 decision 8
     case Backend::Dx12: return ENGINE_PLATFORM_WINDOWS;
-    case Backend::Metal: return ENGINE_PLATFORM_MACOS;  // Phase 26 Day 316
+    case Backend::Metal: return ENGINE_PLATFORM_MACOS;  // Phase 21 Day 300
     case Backend::Auto: return true;
     }
     return false;

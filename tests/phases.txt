@@ -2,10 +2,10 @@
 #
 # `<pattern>  <phase>`: a source path relative to the repo root (`*` inside one segment; a trailing `/` is a whole
 # directory), or `test:<glob>` for a test that is not a Catch2 test case. Phases: 0 foundation, 1 Linux platform,
-# 2 jobs, 3 docs tooling, 4 RHI, 5 renderer, 6 test scoping, 7 debugging facilities, 8 RHI reset, 9 file handling, 10 standard types and containers, 11 settings system, 12 module layering, 13 Windows port, 14 font and text, 15 UI system, 16 standard-library wrappers, 17 ECS, 18 spatial partitioning, 19 storage, 20 networking, 26 macOS port (a side phase, run on the Mac beside the main line: `SIDE_PHASES`, Phase 26 Day 299). The rule is the phase that owns the behavior, not the directory.
+# 2 jobs, 3 docs tooling, 4 RHI, 5 renderer, 6 test scoping, 7 debugging facilities, 8 RHI reset, 9 file handling, 10 standard types and containers, 11 settings system, 12 module layering, 13 Windows port, 14 font and text, 15 UI system, 16 standard-library wrappers, 17 ECS, 18 spatial partitioning, 19 storage, 20 networking, 21 macOS port (a side phase, run on the Mac beside the main line: `SIDE_PHASES`, Phase 21 Day 283). The rule is the phase that owns the behavior, not the directory.
 #
 # Adding a Catch2 test file: add a line here, or the build stops naming the file. Adding another kind of test: add a
-# `test:` line and call engine_label_tests() after add_test. Labels are `phase0` ... `phase20`, and `phase26` for the side phase.
+# `test:` line and call engine_label_tests() after add_test. Labels are `phase0` ... `phase20`, and `phase21` for the side phase.
 # `flavors <phase> plain,asan,tsan` lines (below) list the sanitizer flavors each phase has tests in; a new phase needs one.
 
 # Which flavors have tests of each phase (plain = neither asan nor tsan). test_phase_labels fails if a phase gains or
@@ -57,32 +57,32 @@ flavors 9   windows: plain,asan
 flavors 10  windows: plain,asan
 flavors 11  windows: plain,asan
 flavors 12  windows: plain
-flavors 26  linux: plain,asan,tsan  # tests/renderer/shader_metallib_test.cpp: the committed Metal libraries, every platform (Phase 26 Day 315)
-flavors 26  windows: plain,asan     # tests/renderer/shader_metallib_test.cpp: the committed Metal libraries, every platform (Phase 26 Day 315)
-# What the macOS build has of each phase (Phase 26, a side phase on the Mac, ports one layer per day; each day updates its phases here;
+flavors 21  linux: plain,asan,tsan  # tests/renderer/shader_metallib_test.cpp: the committed Metal libraries, every platform (Phase 21 Day 299)
+flavors 21  windows: plain,asan     # tests/renderer/shader_metallib_test.cpp: the committed Metal libraries, every platform (Phase 21 Day 299)
+# What the macOS build has of each phase (Phase 21, a side phase on the Mac, ports one layer per day; each day updates its phases here;
 # `none` = no tests yet). Apple clang has ASan, UBSan and TSan, so the macOS lines list all three where a layer is built.
-flavors 0   macos: plain,asan,tsan # tests/foundation (base tests), foundation_sanitized (Day 301)
-flavors 1   macos: plain           # tests/foundation (Day 301)
-flavors 2   macos: plain,asan,tsan # tests/jobs (Day 305)
-flavors 3   macos: plain,asan     # tests/docgen, docs_check, docs_links, docs_lint (Day 309)
-flavors 4   macos: plain,asan,tsan # the gates (Day 302), tests/rhi on the null backend (Day 314)
-flavors 5   macos: plain,asan,tsan # the gates (Day 302), tests/renderer (Day 314)
-flavors 6   macos: plain           # the phase-map checks (Day 300)
-flavors 7   macos: plain,asan,tsan # the gates (Day 302), tests/debug (Day 306)
-flavors 8   macos: plain,asan,tsan # the fullscreen toggle (Day 311), the reset suites on null (Day 314)
-flavors 9   macos: plain,asan,tsan # the gates (Day 302), tests/io (Day 303)
-flavors 10  macos: plain,asan,tsan # tests/types (Day 300)
-flavors 11  macos: plain,asan,tsan # the gates (Day 302), tests/settings (Day 309)
-flavors 12  macos: plain           # tests/foundation (Day 301)
-flavors 13  macos: plain,asan,tsan # the backend registry and the renderer's Phase 13 cases (Day 314)
-flavors 14  macos: plain,asan,tsan # tests/text (Day 310)
-flavors 15  macos: plain,asan,tsan # tests/foundation and ui_widget_style_check (plain, Days 301-302), tests/ui (three flavors, Day 310)
-flavors 16  macos: plain,asan,tsan # tests/lang, sync, cstr (Day 300)
-flavors 17  macos: plain,asan,tsan # tests/ecs (Day 310)
-flavors 18  macos: plain,asan,tsan # tests/spatial (Day 310)
-flavors 19  macos: plain,asan,tsan # the gates (Day 302), tests/database and tests/storage (Day 310)
-flavors 20  macos: plain,asan,tsan # the gate net_access_check (Day 308), tests/net (Day 326)
-flavors 26  macos: plain,asan,tsan # tests/macos (Day 300)
+flavors 0   macos: plain,asan,tsan # tests/foundation (base tests), foundation_sanitized (Day 285)
+flavors 1   macos: plain           # tests/foundation (Day 285)
+flavors 2   macos: plain,asan,tsan # tests/jobs (Day 289)
+flavors 3   macos: plain,asan     # tests/docgen, docs_check, docs_links, docs_lint (Day 293)
+flavors 4   macos: plain,asan,tsan # the gates (Day 286), tests/rhi on the null backend (Day 298)
+flavors 5   macos: plain,asan,tsan # the gates (Day 286), tests/renderer (Day 298)
+flavors 6   macos: plain           # the phase-map checks (Day 284)
+flavors 7   macos: plain,asan,tsan # the gates (Day 286), tests/debug (Day 290)
+flavors 8   macos: plain,asan,tsan # the fullscreen toggle (Day 295), the reset suites on null (Day 298)
+flavors 9   macos: plain,asan,tsan # the gates (Day 286), tests/io (Day 287)
+flavors 10  macos: plain,asan,tsan # tests/types (Day 284)
+flavors 11  macos: plain,asan,tsan # the gates (Day 286), tests/settings (Day 293)
+flavors 12  macos: plain           # tests/foundation (Day 285)
+flavors 13  macos: plain,asan,tsan # the backend registry and the renderer's Phase 13 cases (Day 298)
+flavors 14  macos: plain,asan,tsan # tests/text (Day 294)
+flavors 15  macos: plain,asan,tsan # tests/foundation and ui_widget_style_check (plain, Days 285-286), tests/ui (three flavors, Day 294)
+flavors 16  macos: plain,asan,tsan # tests/lang, sync, cstr (Day 284)
+flavors 17  macos: plain,asan,tsan # tests/ecs (Day 294)
+flavors 18  macos: plain,asan,tsan # tests/spatial (Day 294)
+flavors 19  macos: plain,asan,tsan # the gates (Day 286), tests/database and tests/storage (Day 294)
+flavors 20  macos: plain,asan,tsan # the gate net_access_check (Day 292), tests/net (Day 310)
+flavors 21  macos: plain,asan,tsan # tests/macos (Day 284)
 
 # --- Phase 0: foundation (tests/foundation) ---
 tests/foundation/arena_allocator_test.cpp       0
@@ -196,7 +196,7 @@ testopt:shaders_check                           5   # only with slangc
 testopt:shaders_portability                     5   # only with slangc
 test:input_probe_runs_wayland                    15
 test:input_probe_runs_x11                        15
-testopt:input_probe_runs_cocoa                  26   # only on macOS (the Mac line registered it as required: unused on Linux)
+testopt:input_probe_runs_cocoa                  21   # only on macOS (the Mac line registered it as required: unused on Linux)
 test:renderer_demo_screenshot                   5
 test:renderer_demo_gbuffer_layers               5
 test:renderer_demo_device_loss_screenshot       5
@@ -284,7 +284,7 @@ test:ui_widget_style_check*                     15
 tests/rhi/backend_registry_test.cpp             13
 tests/rhi/pipeline_cache_file_test.cpp           13
 tests/renderer/shader_dxil_test.cpp             13
-tests/renderer/shader_metallib_test.cpp         26   # the committed Metal libraries (Phase 26 Day 315); every platform
+tests/renderer/shader_metallib_test.cpp         21   # the committed Metal libraries (Phase 21 Day 299); every platform
 tests/rhi/dx12_device_test.cpp                  13
 tests/rhi/dx12_resource_test.cpp                13
 tests/rhi/dx12_bindings_test.cpp                13
@@ -294,15 +294,15 @@ tests/rhi/dx12_swapchain_test.cpp               13
 tests/rhi/adapter_switch_gpu_test.cpp           13
 test:rhi_demo_bad_rhi                           13
 testopt:rhi_demo_*_dx12                         13
-testopt:rhi_demo_*_metal                        26   # rhi_demo on Metal by name (Day 324)
-testopt:metal_ui_demo_screenshot                26   # ui_demo on Metal by name (Day 324)
+testopt:rhi_demo_*_metal                        21   # rhi_demo on Metal by name (Day 308)
+testopt:metal_ui_demo_screenshot                21   # ui_demo on Metal by name (Day 308)
 test:renderer_demo_screenshot_vulkan            13
 testopt:renderer_demo_screenshot_dx12           13
 testopt:renderer_demo_device_loss_trace_dx12    13
 testopt:renderer_demo_oom_device_dx12           13
-testopt:renderer_demo_screenshot_metal          26   # renderer_demo on Metal by name (Day 323)
-testopt:renderer_demo_device_loss_trace_metal   26
-testopt:renderer_demo_oom_device_metal          26
+testopt:renderer_demo_screenshot_metal          21   # renderer_demo on Metal by name (Day 307)
+testopt:renderer_demo_device_loss_trace_metal   21
+testopt:renderer_demo_oom_device_metal          21
 tests/windows/os_windows_test.cpp               13
 tests/windows/win32_window_windows_test.cpp     13
 tests/windows/win32_input_windows_test.cpp      13
@@ -312,19 +312,19 @@ tests/windows/win32_clipboard_windows_test.cpp  15   # the Win32 clipboard (Day 
 tests/windows/win32_dragdrop_windows_test.cpp   15   # OLE drag and drop (Day 205)
 testopt:windows_*                               13
 
-# --- Phase 26: macOS port (a side phase on the Mac; tests/macos is configured only on macOS) ---
-tests/macos/                                    26
-tests/rhi/macos/metal_device_test.mm            26   # the Metal device: adapters, caps, timeline, loss (Day 316)
-tests/rhi/macos/metal_resource_test.mm          26   # Metal buffers, textures, storage modes, uploads (Day 317)
-tests/rhi/macos/metal_bindings_test.mm          26   # Metal bind groups, samplers, slots (Day 318)
-tests/rhi/macos/metal_pipeline_test.mm          26   # Metal shaders, pipelines, the binary archive (Day 319)
-tests/rhi/macos/metal_commands_test.mm          26   # Metal command lists, encoders, barriers, mips (Day 320)
-tests/rhi/macos/metal_swapchain_test.mm         26   # the Metal swapchain over the Cocoa window's layer (Day 321)
-tests/rhi/macos/metal_graph_test.mm             26   # the render graph's passes as Metal encoders (Day 323)
-tests/rhi/macos/metal_lifecycle_test.mm         26   # Metal resets, stale handles, tolerant destruction (Day 325)
-test:metal_validation_planted                   26   # a planted Metal validation error must stop the program (Day 316)
-test:metal_autorelease_pools                     26   # no Metal object autoreleased without a pool in the reset loop (Day 325)
-testopt:macos_*                                 26
+# --- Phase 21: macOS port (a side phase on the Mac; tests/macos is configured only on macOS) ---
+tests/macos/                                    21
+tests/rhi/macos/metal_device_test.mm            21   # the Metal device: adapters, caps, timeline, loss (Day 300)
+tests/rhi/macos/metal_resource_test.mm          21   # Metal buffers, textures, storage modes, uploads (Day 301)
+tests/rhi/macos/metal_bindings_test.mm          21   # Metal bind groups, samplers, slots (Day 302)
+tests/rhi/macos/metal_pipeline_test.mm          21   # Metal shaders, pipelines, the binary archive (Day 303)
+tests/rhi/macos/metal_commands_test.mm          21   # Metal command lists, encoders, barriers, mips (Day 304)
+tests/rhi/macos/metal_swapchain_test.mm         21   # the Metal swapchain over the Cocoa window's layer (Day 305)
+tests/rhi/macos/metal_graph_test.mm             21   # the render graph's passes as Metal encoders (Day 307)
+tests/rhi/macos/metal_lifecycle_test.mm         21   # Metal resets, stale handles, tolerant destruction (Day 309)
+testopt:metal_validation_planted                   21   # a planted Metal validation error must stop the program (Day 300)
+testopt:metal_autorelease_pools                     21   # no Metal object autoreleased without a pool in the reset loop (Day 309)
+testopt:macos_*                                 21
 
 # --- Phase 14: font and text (FreeType, glyph atlas, layout, cursor, the overlay text pass) ---
 tests/text/                                     14

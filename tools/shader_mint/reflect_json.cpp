@@ -837,7 +837,7 @@ static bool CheckD3D12RegistersImpl(const renderer::ShaderReflection& reflection
 }
 
 // The uniform offsets of every field under a parameter's type, by path (`block.field.inner`): a constant buffer's
-// element, a structured buffer's result, nested structs and arrays of structs (Phase 26 Day 325).
+// element, a structured buffer's result, nested structs and arrays of structs (Phase 21 Day 309).
 static void CollectUniformOffsets(const json& type, const std::string& prefix,
                                   std::vector<std::pair<std::string, u32>>* out)
 {
@@ -880,11 +880,11 @@ static void CollectUniformOffsets(const json& type, const std::string& prefix,
     }
 }
 
-// The Metal build's slots (Phase 26 Day 315): each binding of the SPIR-V reflection, matched by name, gets the index
+// The Metal build's slots (Phase 21 Day 299): each binding of the SPIR-V reflection, matched by name, gets the index
 // slangc gave it in the Metal build, in the argument table its type implies (a buffer is a "constantBuffer", a texture
 // a "shaderResource" or an "unorderedAccess", a sampler a "samplerState"); the push-constant block (named in the SPIR-V
 // build's reflection, kind "pushConstantBuffer") gets its buffer slot. Every Metal parameter must be one the SPIR-V
-// build declares, and every block field must sit at the same offset in both builds (Day 325).
+// build declares, and every block field must sit at the same offset in both builds (Day 309).
 static bool ApplyMetalSlotsImpl(renderer::ShaderReflection* out, const std::string& spirv_json,
                                 const std::string& metal_json, std::string* error)
 {

@@ -1,6 +1,6 @@
 # Porting the debugging facilities to another platform
 
-Status: written (Linux is the reference; Windows was ported in Phase 13; macOS in Phase 26, Days 306-308).
+Status: written (Linux is the reference; Windows was ported in Phase 13; macOS in Phase 21, Days 290-292).
 
 **Audience:** the engineer bringing the debugging facilities to a new platform. Read [Foundation: Debugging](foundation-debugging.md) first;
 it explains what each facility does for the person using it. Ordinary engine programmers do not need this page.
@@ -16,7 +16,7 @@ designed in (an `Unsupported` answer, skipped death tests) and have no work here
 |---|---|---|
 | Linux | reference implementation | `engine/foundation/os/linux/debug/` |
 | Windows | done (Phase 13 Days 154-156) | `engine/foundation/os/windows/debug/BACKEND.md` |
-| macOS | done (Phase 26 Days 306-308) | `engine/foundation/os/macos/debug/BACKEND.md` |
+| macOS | done (Phase 21 Days 290-292) | `engine/foundation/os/macos/debug/BACKEND.md` |
 | iOS, consoles | designed in: `Unsupported`, death tests skip | none |
 
 Read, in order: this page; the checklist for your platform (`engine/foundation/os/windows/debug/BACKEND.md` or
@@ -104,7 +104,7 @@ Symbols         DWARF in a dSYM next to the binary (libbacktrace needs it for fi
 The traps: the hardened runtime and notarization restrict what a handler may do; `dsymutil` and `strip` replace `objcopy`; the
 symbol store holds dSYM bundles named by UUID.
 
-**As built (Phase 26 Days 306-308; the crash handler itself is described in `os/macos/debug/BACKEND.md`):**
+**As built (Phase 21 Days 290-292; the crash handler itself is described in `os/macos/debug/BACKEND.md`):**
 
 - **dSYMs.** The linker leaves the DWARF in the object files; `engine_dsym(<target>)` (root `CMakeLists.txt`, on by default as `ENGINE_DSYM`)
   runs `dsymutil` after linking and puts `<binary>.dSYM` next to the binary, where libbacktrace looks. Without it a frame names its function
@@ -117,7 +117,7 @@ symbol store holds dSYM bundles named by UUID.
 - **Thread ids** are `pthread_threadid_np`'s low 31 bits, never 0: the same number the job system logs.
 - **Crash context:** build id = the main image's `LC_UUID` (32 hex digits), `kern.osproductversion`, `machdep.cpu.brand_string` (`Apple M1` and so
   on, on Apple silicon), `hw.logicalcpu`, `hw.memsize`, `_NSGetExecutablePath` (no `realpath`: the context may be filled on the assert path).
-- **Breakpad's macOS minidumps differ in two ways** that a reader must allow for (Day 308): the module and thread lists have 4 bytes of padding
+- **Breakpad's macOS minidumps differ in two ways** that a reader must allow for (Day 292): the module and thread lists have 4 bytes of padding
   after their count (the list is exactly 4 bytes longer than its entries; Breakpad's own reader assumes the same), and each x86-64 context's
   flags name the processor and no register group, though the general registers are written. `crash_extract` reads the padded lists, and
   `crash_extract --lldb` completes the flags (CONTROL, INTEGER, SEGMENTS) in a copy, without which `lldb` puts every thread at pc 0. An

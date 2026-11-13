@@ -1,4 +1,4 @@
-// Every minted Metal library (Phase 26 Day 315): it passes ShaderDesc validation (MTLB, an executable library, the size
+// Every minted Metal library (Phase 21 Day 299): it passes ShaderDesc validation (MTLB, an executable library, the size
 // its header records), it names the function it exports (main_0, Slang's rename of main), and it was minted beside the
 // SPIR-V that is committed now. A shader changed and re-minted on a machine without a Mac keeps its old library; the
 // FNV-1a hash shader_mint recorded beside it then differs from the hash of the committed SPIR-V, and this test names

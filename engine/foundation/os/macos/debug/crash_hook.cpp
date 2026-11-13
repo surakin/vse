@@ -1,4 +1,4 @@
-// The macOS half of crash reporting (debug/crash_event_platform.h; Phase 26 Day 307). Breakpad takes hardware faults as
+// The macOS half of crash reporting (debug/crash_event_platform.h; Phase 21 Day 291). Breakpad takes hardware faults as
 // Mach exceptions on its own handler thread (the crashed thread and the others suspended) and aborts through a SIGABRT
 // handler on the crashing thread; either way sentry calls `on_crash` with the crashed thread's register context and
 // nothing else (no exception type, no thread). So the report is built from that context: which path it came from (the
@@ -188,7 +188,7 @@ void WalkFrames(const Registers& r, StackTrace& trace)
 
 // True when `sp` is on this thread's stack or its signal stack: the context is this thread's own, so the report runs on
 // the crashing thread (Breakpad's SIGABRT handler), not on Breakpad's exception thread. The signal stack counts so that
-// an abort from a handler running there (SA_ONSTACK) is still recognized (Day 307 review).
+// an abort from a handler running there (SA_ONSTACK) is still recognized (Day 291 review).
 bool OnCurrentThreadStack(u64 sp)
 {
     pthread_t self = ::pthread_self();
@@ -410,7 +410,7 @@ bool RegisterThreadForCrashHandling(const char* name)
 }  // namespace engine_placeholder::debug
 
 #if ENGINE_SANITIZER_ADDRESS
-// ASan on macOS (Phase 26 Day 307): Breakpad copies the crashed thread's stack into the minidump with libc's write(),
+// ASan on macOS (Phase 21 Day 291): Breakpad copies the crashed thread's stack into the minidump with libc's write(),
 // and ASan's write interceptor reports the redzones between that stack's frames as a stack-buffer-underflow, which ends
 // the process before the report (Linux's Breakpad writes with raw system calls, which no interceptor sees). The dump's
 // copy of the stack is what it is for: the reports from that one call are suppressed, through ASan's

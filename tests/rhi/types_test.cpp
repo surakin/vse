@@ -416,7 +416,7 @@ TEST_CASE("ShaderDesc validation checks a DXIL container's tag and size and refu
     spirv_as_dxil.size = sizeof(words);
     CHECK(Rejects(spirv_as_dxil.Validate(), "ShaderDesc: DXIL bytecode does not start with the DXBC"));
 
-    // A Metal library (Phase 26 Day 315): the MTLB tag, a header, and an executable library (type byte 0).
+    // A Metal library (Phase 21 Day 299): the MTLB tag, a header, and an executable library (type byte 0).
     u8 lib[40] = {'M', 'T', 'L', 'B'};  // 40 bytes: truncated by 4 it still has a whole header
     lib[16] = sizeof(lib);              // the file size the header records (u64 at 16)
     ShaderDesc metallib = d;

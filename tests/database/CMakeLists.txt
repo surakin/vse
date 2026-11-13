@@ -10,7 +10,7 @@ set(DATABASE_TEST_SOURCES
   sqlite_backend_test.cpp  # Day 255
 )
 
-# ThreadSanitizer's suppressions for SQLite's lock-free WAL index header (tests/database/tsan.supp): Linux and macOS (Phase 26 Day 310);
+# ThreadSanitizer's suppressions for SQLite's lock-free WAL index header (tests/database/tsan.supp): Linux and macOS (Phase 21 Day 294);
 # MSVC has no ThreadSanitizer.
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   list(APPEND DATABASE_TEST_SOURCES tsan_options.cpp)

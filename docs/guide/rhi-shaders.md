@@ -1,6 +1,6 @@
 # Shaders: from Slang to a shader module
 
-Status: written (Phase 4 Day 58; Phase 5 Days 69-84; DXIL added in Phase 13; Metal libraries added in Phase 26).
+Status: written (Phase 4 Day 58; Phase 5 Days 69-84; DXIL added in Phase 13; Metal libraries added in Phase 21).
 
 **Audience:** engine and renderer programmers who write or load shaders. Read [The RHI](rhi.md) first (at least its "Words you will meet" table).
 
@@ -295,7 +295,7 @@ could have used it.
 
 A [[rhi::ShaderDesc]] carries a format-tagged blob: `format` ([[rhi::ShaderFormat]]: `Spirv`, `Dxil` and `MetalLib`), `bytes`,
 `size` and the `entry` name. Each device takes one format, [[rhi::DeviceCaps::shader_format]]: SPIR-V on Vulkan, DXIL on
-Direct3D 12, a Metal library on Metal (Phase 26). A module in another format is refused with an error that names both, before
+Direct3D 12, a Metal library on Metal (Phase 21). A module in another format is refused with an error that names both, before
 any driver sees it. `Validate` checks the shape the format promises without a device: SPIR-V is 4-byte aligned, a whole number
 of words and at least a header; DXIL starts with the `DXBC` container tag and its size matches the one its header records; a
 Metal library starts with `MTLB`, is an executable library (a dynamic one has no entry points a pipeline can use) and its size
@@ -368,9 +368,9 @@ DXIL device: refused (no dxil blob)
 
 ## Metal libraries
 
-Every shader and every permutation key is also minted into `shaders/<name>.metallib.inc` for Metal (Phase 26 Day 315): Slang's Metal output,
+Every shader and every permutation key is also minted into `shaders/<name>.metallib.inc` for Metal (Phase 21 Day 299): Slang's Metal output,
 compiled by the driver's own compiler on a Mac (`tools/metal_mint`, an interim route: `shaders/README.md`, "Metal libraries"). The file holds the
-library, the function it exports (`main_0`: Metal reserves `main`), the shader's slot table (`<Base>MetallibSlots`, Day 318) and the hash of the
+library, the function it exports (`main_0`: Metal reserves `main`), the shader's slot table (`<Base>MetallibSlots`, Day 302) and the hash of the
 SPIR-V it was minted beside; the `.dxil.inc` includes it, so the blob set has all three formats. Minting needs a Mac; elsewhere the committed
 files are used, and a shader added off a Mac gets a placeholder until one mints it. `shader_metallib_test` checks every library on every
 machine. A block the CPU writes must lay out the same in Metal as in std140: a `float3` takes 16 bytes in Metal, and `shader_mint` refuses a

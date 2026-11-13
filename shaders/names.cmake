@@ -31,7 +31,7 @@ function(slang_compile_args stage out)
   set(${out} -target spirv -profile spirv_1_5 -entry main -stage ${stage} -matrix-layout-column-major -O2 PARENT_SCOPE)
 endfunction()
 
-# slang_metal_args(<stage> <out var>) -> the slangc arguments of the Metal build (Phase 26 Day 315): Metal Shading Language with
+# slang_metal_args(<stage> <out var>) -> the slangc arguments of the Metal build (Phase 21 Day 299): Metal Shading Language with
 # the same entry and matrix layout and the Metal target define (shaders/target_common.slang). Its reflection gives the Metal slots
 # on every platform; on a Mac tools/metal_mint compiles the source into the committed .metallib.
 function(slang_metal_args stage out)

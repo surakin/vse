@@ -1,6 +1,6 @@
 #pragma once
 
-// Helpers the Metal backend's tests share (Phase 26 Day 317). Objective-C++.
+// Helpers the Metal backend's tests share (Phase 21 Day 301). Objective-C++.
 
 // AppKit before anything else: its QuickDraw headers declare global names (`Handle`, `Pattern`) that clash with the
 // engine's once a test file's `using namespace` is in scope, which a unity build merges ahead of later files.
@@ -40,7 +40,7 @@ inline MetalDevice& AsMetal(Device& device)
     return static_cast<MetalDevice&>(device);
 }
 
-// Whether Metal's shader validation is on for this process, which leaves the pipeline archive off (Day 325). The
+// Whether Metal's shader validation is on for this process, which leaves the pipeline archive off (Day 309). The
 // archive tests carry the tag [archive] and run in a ctest of their own without it (tests/rhi/CMakeLists.txt).
 inline bool ShaderValidationOn()
 {

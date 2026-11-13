@@ -1,4 +1,4 @@
-// The adapters of the Metal backend (Phase 26 Day 316; metal_adapters.h).
+// The adapters of the Metal backend (Phase 21 Day 300; metal_adapters.h).
 #include "rhi/metal/metal_adapters.h"
 
 #include "cstr/cstr.h"

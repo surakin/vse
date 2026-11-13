@@ -12,7 +12,7 @@ set(DOCGEN_TEST_SOURCES
   lint_test.cpp
 )
 
-# macOS (Phase 26 Day 309): the Command Line Tools' compiler, run by its path as the sample runner does, finds no SDK of its own, and CMake
+# macOS (Phase 21 Day 293): the Command Line Tools' compiler, run by its path as the sample runner does, finds no SDK of its own, and CMake
 # keeps the one it passes to itself (CMAKE_OSX_SYSROOT stays empty), so the tests ask xcrun for it. Empty elsewhere.
 set(DOCGEN_TEST_SYSROOT "")
 if(APPLE)

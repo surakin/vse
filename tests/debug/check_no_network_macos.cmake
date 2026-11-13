@@ -1,4 +1,4 @@
-# Fails if a built Mach-O binary links a network or TLS library or imports their functions (Phase 26 Day 307, the macOS form of
+# Fails if a built Mach-O binary links a network or TLS library or imports their functions (Phase 21 Day 291, the macOS form of
 # check_no_network.cmake; PLAN.md assumption #20: the crash handler must not be able to upload anything).
 #   cmake -DBINARY=<file> -P check_no_network_macos.cmake
 #   cmake -DTOOL_TEXT_FILE=<file with otool -L and nm -u output> -P check_no_network_macos.cmake   (to test the check itself)

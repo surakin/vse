@@ -1,4 +1,4 @@
-// RHI formats on Metal (Phase 26 Day 316; metal_format.h).
+// RHI formats on Metal (Phase 21 Day 300; metal_format.h).
 #include "rhi/metal/metal_format.h"
 
 #include "log/assert.h"

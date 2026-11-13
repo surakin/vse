@@ -10,7 +10,7 @@ Console output and process control (Phase 16): the engine's spelling of `printf`
 
 Loader smoke test that locates the Vulkan driver and resolves `vkCreateInstance`; not the RHI.
 
-Built only where the engine has a Vulkan backend (Linux, Windows): macOS has no Vulkan (Phase 26 decision 8: MoltenVK is a third-party layer), so this file and its source are not part of the macOS build, and nothing there may include it.
+Built only where the engine has a Vulkan backend (Linux, Windows): macOS has no Vulkan (Phase 21 decision 8: MoltenVK is a third-party layer), so this file and its source are not part of the macOS build, and nothing there may include it.
 
 The C library's error number (Phase 16): the engine's spelling of `errno`, which is a macro and cannot be named from other files. The `E*` constants (`EINTR`, `ENOENT`, ...) arrive through this header.
 
@@ -20,7 +20,7 @@ Exit/Write/Read/Open/Close keep POSIX-shaped signatures; the implementation live
 
 **Windows** (Phase 13). Descriptors are the engine's own: 0, 1 and 2 are the standard handles, and [`os::Open`](#os-open-stringview-int-int) hands out 3 and up from a fixed table of 256 handles, claimed without a lock so the crash path can use it (the C runtime's descriptors are not used: a thread stopped inside one holds a lock a crash report would wait on). `long` is 32 bits there, so one [`os::Write`](#os-write-int-const-void-star-usize) or [`os::Read`](#os-read-int-void-star-usize) moves at most 2^31 - 1 bytes and reports a short count, which every caller handles. Writes to a console are converted from UTF-8 and shown with the console's Unicode API; the console's code page is never changed (that would outlive the program in the user's shell). Paths are UTF-8 and become UTF-16 at the call, with `/` turned into `\` and the `\\?\` prefix added to long absolute paths.
 
-**macOS** (Phase 26). The descriptor, memory, sleep and library calls are the POSIX ones Linux uses (`os/posix/`); the clock, random bytes, process figures and library search are macOS's own (`os/macos/os.cpp`). Pages are the system's size: 4 KiB on x86-64 and 16 KiB on Apple silicon, so no code may assume 4 KiB.
+**macOS** (Phase 21). The descriptor, memory, sleep and library calls are the POSIX ones Linux uses (`os/posix/`); the clock, random bytes, process figures and library search are macOS's own (`os/macos/os.cpp`). Pages are the system's size: 4 KiB on x86-64 and 16 KiB on Apple silicon, so no code may assume 4 KiB.
 
 Signal handlers (Phase 16): the engine's spelling of `std::signal`. The `SIG*` constants and the POSIX `sigaction` family arrive through this header.
 

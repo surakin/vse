@@ -18,13 +18,13 @@ bool RegisterCompiledBackends()
 {
     // The table of backends this build has. Order matters only between backends of equal auto rank.
     bool ok = RegisterNullBackend();
-#if ENGINE_RHI_HAVE_VULKAN  // the build defines it where the rhi_vulkan library exists (not macOS: Phase 26 decision 8)
+#if ENGINE_RHI_HAVE_VULKAN  // the build defines it where the rhi_vulkan library exists (not macOS: Phase 21 decision 8)
     ok = RegisterVulkanBackend() && ok;
 #endif
 #if ENGINE_RHI_HAVE_DX12  // the build defines it where the rhi_dx12 library exists (Windows)
     ok = RegisterDx12Backend() && ok;
 #endif
-#if ENGINE_RHI_HAVE_METAL  // the build defines it where the rhi_metal library exists (macOS, Phase 26 Day 316)
+#if ENGINE_RHI_HAVE_METAL  // the build defines it where the rhi_metal library exists (macOS, Phase 21 Day 300)
     ok = RegisterMetalBackend() && ok;
 #endif
     return ok;

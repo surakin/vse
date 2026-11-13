@@ -44,7 +44,7 @@ bool CrashReportInProgress();
 void RemoveCrashEventHook();
 
 #if ENGINE_PLATFORM_MACOS
-// macOS (Phase 26 Day 307): the crash library calls its `on_crash` hook with the crashed thread's register context (a
+// macOS (Phase 21 Day 291): the crash library calls its `on_crash` hook with the crashed thread's register context (a
 // ucontext_t, ucontext64_t on arm64), on Breakpad's exception thread for a hardware fault or on the crashing thread for
 // an abort; crash_handler_sentry.cpp passes it here, which builds the CrashEvent from it
 // (os/macos/debug/crash_hook.cpp) and calls the hook InstallCrashEventHook installed. Signal-safe.

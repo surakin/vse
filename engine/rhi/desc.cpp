@@ -277,7 +277,7 @@ const char* ShaderDesc::Validate() const
     case ShaderFormat::MetalLib:
     {
         // A Metal library: "MTLB", the target platform (u16), the file version (2 x u16), the library type (u8 at 10:
-        // 0 executable, 2 dynamic; Phase 26 Day 298), the file size (u64 at 16), then the rest of the header. Only
+        // 0 executable, 2 dynamic; Phase 21 Day 282), the file size (u64 at 16), then the rest of the header. Only
         // executable libraries hold entry points a pipeline can use.
         constexpr usize kHeader = 32;
         if (size < kHeader)

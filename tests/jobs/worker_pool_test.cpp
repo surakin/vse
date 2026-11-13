@@ -243,7 +243,7 @@ TEST_CASE("Spawned workers are each pinned to one distinct CPU", "[jobs][pool]")
     REQUIRE(pool->SpawnedWorkerCount() == n - 1);
     if (!jobs::detail::CanPinThreads())
     {
-        // A platform without an affinity API (macOS, Phase 26 Day 305): no worker is pinned, and none is reported as
+        // A platform without an affinity API (macOS, Phase 21 Day 289): no worker is pinned, and none is reported as
         // pinned.
         for (usize i = 1; i < n; ++i)
         {

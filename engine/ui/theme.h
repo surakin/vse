@@ -209,7 +209,7 @@ struct Theme
     const Style* FindStyle(WidgetKind kind, VariantId variant) const;
 };
 
-/// Builds a [[ui::Theme]] in code (a data file loader arrives with Phase 21).
+/// Builds a [[ui::Theme]] in code (a data file loader arrives with Phase 22).
 ///
 /// - Thread-safety: thread-compatible.
 /// - Ownership: owns the theme until `Build`.

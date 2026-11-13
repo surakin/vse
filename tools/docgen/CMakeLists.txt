@@ -94,7 +94,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   set(DOCGEN_EXTRA_INCLUDES -I ${ENGINE_VULKAN_HEADERS_DIR})
   set(DOCGEN_SAMPLE_LIBRARIES platform breakpad_client rhi_dx12 rhi_vulkan)  # linked by path, so named here too
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  # macOS (Phase 26 Day 327): Apple clang with the engine's options and macOS definitions, the Metal backend in place of Vulkan, and the
+  # macOS (Phase 21 Day 311): Apple clang with the engine's options and macOS definitions, the Metal backend in place of Vulkan, and the
   # frameworks the libraries link (engine/platform, engine/rhi/metal, engine/foundation): the same list a demo's link line has.
   set(DOCGEN_FLAGS_ARGS --flag -std=c++20)
   foreach(opt ${ENGINE_PRODUCTION_COMPILE_OPTIONS})

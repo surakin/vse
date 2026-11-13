@@ -70,7 +70,7 @@ the 1x1 white texture that textureless commands bind; it keeps nothing but CPU-s
   `Stats().dropped_commands`.
 - **Budget:** `UiRendererDesc::max_vertices` / `max_indices` size the per-frame-slot buffers; commands past them are dropped and counted, with a warning in the log.
 - **Shaders** are `shaders/ui.vert.slang` and `ui.frag.slang`, minted to SPIR-V, DXIL and a Metal library, so the UI draws on every backend
-  (Metal from Phase 26 Day 324).
+  (Metal from Phase 21 Day 308).
 
 ```cpp
 renderer::UiRenderer ui_renderer;
@@ -341,9 +341,9 @@ contents stay after the window closes.
 
 ### On macOS
 
-The toolkit's CPU side runs on macOS unchanged (Phase 26 Day 310: `tests/ui` in three flavors, without the tests that need a window). The window adapter, the
-system cursors, the clipboard and the drag bridge come with the Cocoa window layer (Days 311-313). The UI renderer, the viewport widget and the surfaces
-draw through Metal from Day 324: their GPU tests run once per backend, so through Metal on macOS (first run there on Day 325), and `ui_demo`'s macOS
+The toolkit's CPU side runs on macOS unchanged (Phase 21 Day 294: `tests/ui` in three flavors, without the tests that need a window). The window adapter, the
+system cursors, the clipboard and the drag bridge come with the Cocoa window layer (Days 295-297). The UI renderer, the viewport widget and the surfaces
+draw through Metal from Day 308: their GPU tests run once per backend, so through Metal on macOS (first run there on Day 309), and `ui_demo`'s macOS
 ctests use `--rhi metal`. The
 clip rectangles are pixels of the target, which on a Retina window is the backing size (the window reports pixels, `ContentScale` gives the scale).
 

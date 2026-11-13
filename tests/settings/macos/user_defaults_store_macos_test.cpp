@@ -1,4 +1,4 @@
-// The user defaults store and the managed-preferences policy layer on macOS (Phase 26 Day 309; settings/BACKEND.md,
+// The user defaults store and the managed-preferences policy layer on macOS (Phase 21 Day 293; settings/BACKEND.md,
 // docs/guide/settings.md "Settings on macOS").
 //
 // Every test works in a defaults suite of its own, engine-settings-test-<process id>-<n>, whose values are removed at
@@ -373,11 +373,11 @@ TEST_CASE("macOS: managed preferences are an empty policy layer when no profile 
     char where[256];
     managed.Describe(where, sizeof(where));
     CHECK(StringView(where).StartsWith("managed preferences engine-settings-test-"));
-    // Where an enforced value lives is not `defaults` (review finding, Day 309).
+    // Where an enforced value lives is not `defaults` (review finding, Day 293).
     managed.Origin("renderer.width", where, sizeof(where));
     CHECK(StringView(where).StartsWith("managed preferences engine-settings-test-"));
 
-    // A suite that is not one file name reads no managed file at all (review finding, Day 309: it could name a file
+    // A suite that is not one file name reads no managed file at all (review finding, Day 293: it could name a file
     // outside /Library/Managed Preferences; its keys were still filtered by CFPreferencesAppValueIsForced, so this case
     // passed before the fix too, and pins the behavior).
     for (const char* bad : {"../../../tmp/x", "..", "a/b", ""})

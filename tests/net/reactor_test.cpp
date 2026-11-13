@@ -596,7 +596,7 @@ TEST_CASE("The peer's half-close does not wake a coroutine that waits to write",
     }
     // Fill the client's send path until the socket says it is full, and stays full: macOS's loopback moves the bytes
     // to the peer after the send returns, so room appears a moment later (a real readiness, reported by kqueue), and
-    // the path is full only when a pause adds no room (Phase 26 Day 326).
+    // the path is full only when a pause adds no room (Phase 21 Day 310).
     Vector<byte> chunk;
     chunk.Resize(usize{1} << 16);
     auto fill = [&]

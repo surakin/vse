@@ -1,4 +1,4 @@
-// The Metal backend's shaders and pipelines (Phase 26 Day 319): every committed shader forms a pipeline with the
+// The Metal backend's shaders and pipelines (Phase 21 Day 303): every committed shader forms a pipeline with the
 // layouts its reflection gives (Metal validation on and silent), the vertex descriptor, the depth-stencil state cache,
 // compute threadgroups, refusals, and the pipeline cache (an MTLBinaryArchive) round-tripping and surviving damage.
 // Modelled on dx12_pipeline_test.cpp. macOS only.
@@ -645,7 +645,7 @@ TEST_CASE("The Metal pipeline cache creates its directory when it is not there y
     {
         SKIP("the pipeline archive is off while MTL_SHADER_VALIDATION is set (its ctest runs without it)");
     }
-    // The user's cache directory does not exist before the first save (Day 325: Metal serialized into a missing
+    // The user's cache directory does not exist before the first save (Day 309: Metal serialized into a missing
     // directory, "Invalid URL", and nothing was written).
     io_test::TempDir dir;
     char nested[600] = {};
@@ -673,7 +673,7 @@ TEST_CASE("When Metal will not serialize the archive, a fresh one of the run's p
     {
         SKIP("the pipeline archive is off while MTL_SHADER_VALIDATION is set (its ctest runs without it)");
     }
-    // Day 325: an archive read from its file, with the window's pipelines added, was refused by Metal ("missing
+    // Day 309: an archive read from its file, with the window's pipelines added, was refused by Metal ("missing
     // 'vertex' stage in pipeline no. 8"), and nothing was written from then on.
     io_test::TempDir dir;
     const engine_test::Text native = dir.Native();

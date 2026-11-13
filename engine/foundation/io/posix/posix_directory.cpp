@@ -1,4 +1,4 @@
-// The POSIX backend of io/directory.h, Linux and macOS (Phase 26 Day 303: moved from io/linux/) (Open, Next, Close,
+// The POSIX backend of io/directory.h, Linux and macOS (Phase 21 Day 287: moved from io/linux/) (Open, Next, Close,
 // DirectoryEntry::Info, detail::GetIdentity; the rest is io/directory.cpp). One of the places allowed to call the POSIX
 // directory API directly.
 #include "io/directory.h"

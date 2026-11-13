@@ -1,4 +1,4 @@
-// The window host on macOS (Phase 26 Day 311): the one backend is Cocoa (PlanCocoaWindowBackends); Wayland, X11 and
+// The window host on macOS (Phase 21 Day 295): the one backend is Cocoa (PlanCocoaWindowBackends); Wayland, X11 and
 // Win32 are refused.
 #include "platform/window_host.h"
 

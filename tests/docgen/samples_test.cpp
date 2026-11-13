@@ -66,7 +66,7 @@ struct Result
         opt.root = SamplesTestSv(t.root);
         opt.compiler = StringView(DOCGEN_CXX);
         opt.flags.Push(StringView("-std=c++20"));
-        // macOS (Phase 26 Day 309): the Command Line Tools' compiler, called by its path, finds no SDK of its own; the
+        // macOS (Phase 21 Day 293): the Command Line Tools' compiler, called by its path, finds no SDK of its own; the
         // samples get the SDK xcrun names (empty elsewhere; tests/docgen/CMakeLists.txt).
         if (StringView(DOCGEN_SYSROOT).Length() != 0)
         {

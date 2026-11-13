@@ -48,7 +48,7 @@ cmake --build --preset windows-msvc
 ctest --preset windows-msvc
 ```
 
-**On macOS** (Phase 26), with the Command Line Tools (no Xcode), CMake and Ninja; the graphics backend is Metal. [macOS](macos.md) has the rest.
+**On macOS** (Phase 21), with the Command Line Tools (no Xcode), CMake and Ninja; the graphics backend is Metal. [macOS](macos.md) has the rest.
 
 ```
 cmake --preset macos-clang             # the build tree is build-macos

@@ -149,7 +149,7 @@ struct ShaderSlot
 /// [[rhi::ShaderSlotTable]]'s `push_constant_slot` for a module without push constants.
 inline constexpr u32 kNoShaderSlot = 0xffffffffu;
 
-/// The slots of every resource of one shader module, minted beside a Metal library (Phase 26 Day 318): the Metal
+/// The slots of every resource of one shader module, minted beside a Metal library (Phase 21 Day 302): the Metal
 /// backend binds each bind group's resources at these slots and checks a pipeline's layout against them.
 ///
 /// - Thread-safety: thread-compatible plain data.
@@ -245,7 +245,7 @@ struct ShaderBlobSet
     ShaderBlob spirv{ShaderFormat::Spirv, nullptr, 0};
     /// The DXIL module, or empty.
     ShaderBlob dxil{ShaderFormat::Dxil, nullptr, 0};
-    /// The Metal library, or empty (Phase 26 Day 315; minted on a Mac).
+    /// The Metal library, or empty (Phase 21 Day 299; minted on a Mac).
     ShaderBlob metallib{ShaderFormat::MetalLib, nullptr, 0};
 
     /// Returns the blob of one format.

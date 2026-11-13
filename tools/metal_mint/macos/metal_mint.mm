@@ -1,5 +1,5 @@
-// metal_mint (Phase 26 Day 315): compiles the Metal Shading Language that `slangc -target metal` wrote into an
-// AIR-only, executable `.metallib`, with the driver's own compiler: the interim route the user chose on Day 298
+// metal_mint (Phase 21 Day 299): compiles the Metal Shading Language that `slangc -target metal` wrote into an
+// AIR-only, executable `.metallib`, with the driver's own compiler: the interim route the user chose on Day 282
 // (pending until they have a new Mac), the undocumented -[MTLLibrary serializeToURL:error:] of an ordinary library. It
 // is the one place that route is used, so a later route (Xcode's `metal`) replaces this file.
 //
@@ -13,7 +13,7 @@
 //   macos Version 15.8.1 (Build 24G...)
 //
 // The minted bytes depend on the driver compiler's version and the macOS build (they embed the compiler version and a
-// target triple such as air64-apple-macosx15.8.0; Day 298), so the same source mints the same bytes on the same macOS
+// target triple such as air64-apple-macosx15.8.0; Day 282), so the same source mints the same bytes on the same macOS
 // build only. A missing or failing selector is an error that names KNOWN-ISSUES.md, never a crash. Dev-time only: never
 // linked into the engine (PLAN.md assumption #18).
 #include "cstr/cstr.h"
@@ -153,13 +153,13 @@ int main(int argc, char** argv)
         {
             return Fail(source, [@"the driver's compiler refused the source: " stringByAppendingString:Reason(error)]);
         }
-        // The undocumented call (Day 298). Guarded: a macOS without it, or a failure, is a clear error.
+        // The undocumented call (Day 282). Guarded: a macOS without it, or a failure, is a clear error.
         const SEL serialize = NSSelectorFromString(@"serializeToURL:error:");
         if (![library respondsToSelector:serialize])
         {
             return Fail(source,
-                        @"this macOS's MTLLibrary has no serializeToURL:error: (the interim minting route of Phase 26 "
-                        @"Day 298 is gone): see KNOWN-ISSUES.md; mint on another Mac or move to Xcode's metal");
+                        @"this macOS's MTLLibrary has no serializeToURL:error: (the interim minting route of Phase 21 "
+                        @"Day 282 is gone): see KNOWN-ISSUES.md; mint on another Mac or move to Xcode's metal");
         }
         NSString* temp_path = [NSString stringWithFormat:@"%s.serializing", out];
         NSURL* temp_url = [NSURL fileURLWithPath:temp_path];

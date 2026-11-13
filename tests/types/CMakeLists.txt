@@ -46,7 +46,7 @@ function(engine_types_cross_syntax_test name triple)
   add_test(NAME ${name} COMMAND ${CMAKE_COMMAND} -DTRIPLE=${triple} -DROOT=${CMAKE_SOURCE_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/cross_syntax/check_types_cross_syntax.cmake)
 endfunction()
 engine_types_cross_syntax_test(types_cross_syntax_windows x86_64-pc-windows-msvc)
-# Kept now that macOS builds for real (Phase 26 Day 302): the Intel development Mac builds x86-64 only, so this is what compiles these
-# headers for arm64 (Apple silicon) until Phase 26 Day 327's arm64 build.
+# Kept now that macOS builds for real (Phase 21 Day 286): the Intel development Mac builds x86-64 only, so this is what compiles these
+# headers for arm64 (Apple silicon) until Phase 21 Day 311's arm64 build.
 engine_types_cross_syntax_test(types_cross_syntax_macos arm64-apple-macos13)
 engine_label_tests(types_cross_syntax_windows types_cross_syntax_macos)

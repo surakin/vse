@@ -12,7 +12,7 @@
 #include "renderer/render_graph.h"
 #include "renderer/transient_pool.h"
 #include "rhi/rhi.h"
-#if ENGINE_RHI_HAVE_VULKAN  // not on macOS (Phase 26 decision 8)
+#if ENGINE_RHI_HAVE_VULKAN  // not on macOS (Phase 21 decision 8)
 #include "rhi/vulkan/vk_instance.h"
 #endif
 

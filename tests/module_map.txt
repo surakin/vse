@@ -11,7 +11,7 @@
 engine/foundation   0,1,2,3,4,5,7,9,10,11
 engine/foundation/debug 3,7
 engine/foundation/io 0,1,2,3,4,5,7,9,10,11
-engine/foundation/io/posix 0,1,2,3,4,5,7,9,10,11,26   # the file layer's backend Linux and macOS share (Phase 26 Day 303)
+engine/foundation/io/posix 0,1,2,3,4,5,7,9,10,11,26   # the file layer's backend Linux and macOS share (Phase 21 Day 287)
 engine/foundation/io/macos 9,26
 engine/foundation/settings 3,11
 engine/foundation/os/linux/debug 7
@@ -19,8 +19,8 @@ engine/foundation/os/windows 0,13
 engine/foundation/os/windows/debug 7,13
 engine/foundation/os/macos 0,26
 engine/foundation/os/macos/debug 7,26
-engine/foundation/os/posix/debug 7,26   # the death-test backend Linux and macOS share (Phase 26 Day 307)
-engine/foundation/os/posix 0,1,2,3,4,5,7,9,10,11,26   # the os backend Linux and macOS share (Phase 26 Day 301)
+engine/foundation/os/posix/debug 7,26   # the death-test backend Linux and macOS share (Phase 21 Day 291)
+engine/foundation/os/posix 0,1,2,3,4,5,7,9,10,11,26   # the os backend Linux and macOS share (Phase 21 Day 285)
 engine/platform     0,1,4,5,8
 engine/jobs         2,3,4,5,17,18,19,20   # ecs, spatial, storage and net schedule on it
 engine/rhi          3,4,5
@@ -107,7 +107,7 @@ scripts             6
 CMakeLists.txt     6    # only an additive change gets here (scripts/test-phase.sh forces a full run for any other)
 tests/phases.txt   6    # likewise
 tests/module_map.txt 6  # likewise
-CURRENT_PHASE       6    # test_phase_labels reads it (Phase 26 Day 302)
+CURRENT_PHASE       6    # test_phase_labels reads it (Phase 21 Day 286)
 SIDE_PHASES         6    # read by scripts/test-phase.sh and test_phase_labels
 ARCHITECTURE.md     -
 BUILD.md            -

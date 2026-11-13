@@ -1,4 +1,4 @@
-// The Metal backend's device (Phase 26 Day 316): the registration, the adapters, a device on every suitable adapter
+// The Metal backend's device (Phase 21 Day 300): the registration, the adapters, a device on every suitable adapter
 // with validation silent, the capabilities, the timeline and frames, bounded waits, loss, and nothing left alive. macOS
 // only; Objective-C++ for the device's own accessors (metal_device.h).
 #include "metal_test_support.h"  // first: it imports AppKit before any engine name is in scope
@@ -40,7 +40,7 @@ TEST_CASE("The metal backend is registered, takes Metal libraries, and is what A
     const BackendDescriptor* picked = PickAutoBackend(why, sizeof(why));
     INFO(why);
     REQUIRE(picked != nullptr);
-    CHECK(picked->backend == Backend::Metal);  // from Phase 26 Day 325
+    CHECK(picked->backend == Backend::Metal);  // from Phase 21 Day 309
     char reason[160] = {};
     INFO(reason);
     CHECK(BackendAvailable(*d, reason, sizeof(reason)));
@@ -72,7 +72,7 @@ TEST_CASE("Metal lists every device with a hex registry id, the same on every en
         suitable += a.suitable ? 1 : 0;
     }
     CHECK(suitable >= 1);
-    // The properties of each device, for the day file's record (Day 316: what this Mac reports).
+    // The properties of each device, for the day file's record (Day 300: what this Mac reports).
     @autoreleasepool
     {
         NSArray<id<MTLDevice>>* devices = MTLCopyAllDevices();

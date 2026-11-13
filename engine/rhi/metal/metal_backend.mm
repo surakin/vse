@@ -1,4 +1,4 @@
-// The Metal backend's registration (Phase 26 Day 316; metal_backend.h).
+// The Metal backend's registration (Phase 21 Day 300; metal_backend.h).
 #include "rhi/metal/metal_backend.h"
 
 #include "cstr/format.h"
@@ -59,7 +59,7 @@ bool RegisterMetalBackend()
     d.enumerate_adapters = &EnumerateMetalAdapters;
     d.available = &MetalAvailable;
     d.shader_format = ShaderFormat::MetalLib;
-    d.auto_rank = 30;  // the GPU backend of macOS: Auto means Metal there (Phase 26 Day 325; by name only from Day 316)
+    d.auto_rank = 30;  // the GPU backend of macOS: Auto means Metal there (Phase 21 Day 309; by name only from Day 300)
     return RegisterBackend(d);
 }
 

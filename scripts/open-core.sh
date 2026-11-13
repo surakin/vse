@@ -3,7 +3,7 @@
 #
 #   scripts/open-core.sh [--pid PID] [--wait SECONDS] EXECUTABLE [CORE]
 #
-# Linux: gdb. macOS (Phase 26 Day 308): lldb, the system's debugger. Without CORE it asks scripts/find-core.sh for the
+# Linux: gdb. macOS (Phase 21 Day 292): lldb, the system's debugger. Without CORE it asks scripts/find-core.sh for the
 # newest one, which also checks the build id. The debugger is told not to look for symbols on the network: gdb gets no
 # debuginfod unless ENGINE_ALLOW_DEBUGINFOD is set, lldb's external symbol search (Spotlight, DebugSymbols) is turned off.
 set -u

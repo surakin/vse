@@ -1,4 +1,4 @@
-// MetalDevice: buffers, textures, the staging ring, and uploads and readbacks (Phase 26 Day 317).
+// MetalDevice: buffers, textures, the staging ring, and uploads and readbacks (Phase 21 Day 301).
 //
 // Storage modes follow the memory location: GpuOnly resources and every texture are Private; readback memory (GpuToCpu)
 // and the staging ring are Shared; CPU-written memory (CpuToGpu) is Shared on a GPU with unified memory and Managed
@@ -246,7 +246,7 @@ MTLStorageMode MetalDevice::StorageModeFor(MemoryLocation location, BufferUsage 
         return MTLStorageModePrivate;
     }
 #if ENGINE_PLATFORM_MACOS
-    // A buffer the GPU may write stays Shared (the end-of-phase review, Day 328): a Managed one's GPU writes reach the
+    // A buffer the GPU may write stays Shared (the end-of-phase review, Day 312): a Managed one's GPU writes reach the
     // CPU's copy only through a synchronizeResource: blit, and its readback and mapping read that copy.
     const bool gpu_writes = (usage & (BufferUsage::CopyDst | BufferUsage::Storage)) != BufferUsage::None;
     if (location == MemoryLocation::CpuToGpu && managed_ && !gpu_writes)

@@ -40,11 +40,11 @@ Layered sources: several stores that read as one, lowest to highest, with a way 
 
 The order, lowest first: the registry's defaults, then the layers by role: [`settings::LayerRole::System`](#settings-layerrole-system) (shipped defaults), `User` (the user's file, the one that is written), `Project`, `Custom` (a file named by `--settings`), `Environment`, `CommandLine`, and above them all `Policy` (what an administrator enforces: Windows group policy). A value set in a higher layer hides the lower ones; a value missing or unusable in a layer falls through to the next lower one.
 
-The user defaults system (`NSUserDefaults`, `CFPreferences`) as a [`settings::ConfigStore`](#settings-configstore) (Phase 26 Day 309; `engine/foundation/settings/BACKEND.md`).
+The user defaults system (`NSUserDefaults`, `CFPreferences`) as a [`settings::ConfigStore`](#settings-configstore) (Phase 21 Day 293; `engine/foundation/settings/BACKEND.md`).
 
 A store is one defaults domain (a *suite*: `defaults read <suite>` shows it), for the current user on any host. A dotted key is the defaults key as it is (`renderer.width`). Every value is written as a string holding the value's canonical text, the text a settings file holds (`true`, `-42`, `0.1`, `fifo`, `"a name"`), for the reason the Windows registry store gives: a typed enum reaches a store as an index without its names, so only text round-trips every type. A value written by hand with a type (`defaults write <suite> renderer.width -int 1280`, a boolean, a real) reads as its text; a date, data, array or dictionary is `TypeMismatch`. Each write is durable when it returns (the preferences daemon holds it for every process), so there is no staging; `Commit` asks the daemon to write the domain's file now. There is no order and no comment.
 
-Change notifications: macOS posts `NSUserDefaultsDidChangeNotification` for this process's own writes only (checked on Day 309: an outside `defaults write` posts nothing), so the store compares the domain with what it last saw, on a thread of its own every quarter of a second, and tells the listener about another writer's change, never about its own.
+Change notifications: macOS posts `NSUserDefaultsDidChangeNotification` for this process's own writes only (checked on Day 293: an outside `defaults write` posts nothing), so the store compares the domain with what it last saw, on a thread of its own every quarter of a second, and tells the listener about another writer's change, never about its own.
 
 A *forced-only* store is the read-only view of the values a configuration profile enforces for the suite (managed preferences, `CFPreferencesAppValueIsForced`): the settings' `Policy` layer on macOS.
 

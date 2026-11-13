@@ -121,9 +121,9 @@ private:
     unsigned long long expected_errors_ = 0;
 };
 #else
-// A build without Vulkan (macOS: Phase 26 decision 8): this fixture's tests are the Vulkan-only ones, so they skip (and
+// A build without Vulkan (macOS: Phase 21 decision 8): this fixture's tests are the Vulkan-only ones, so they skip (and
 // fail under ENGINE_RHI_REQUIRE_GPU=1). The tests that run once per backend use backend_fixture.h, which walks Metal
-// on macOS (Phase 26 Day 322), and Metal's own tests are tests/rhi/macos/metal_*.
+// on macOS (Phase 21 Day 306), and Metal's own tests are tests/rhi/macos/metal_*.
 class GpuFixture
 {
 public:

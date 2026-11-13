@@ -45,7 +45,7 @@ message and no memory growth. Twelve display tests (five clipboard and drag-and-
 three reruns while the console session was locked; they wait for a rerun on an unlocked desktop (`KNOWN-ISSUES.md`), so the task stays open.
 **Done later on 2026-11-12:** with the desktop unlocked, all twelve passed (`ctest -R "Windows clipboard|Windows drag and drop|the left Alt is Alt"`
 in `build-msvc`: 26 of 26, plain and asan, the other clipboard and drag-and-drop tests included), and so did the whole scoped run of the Windows catch-up
-after the Mac's Phase 26 Day 311 (`ran 4807 of 5084 tests (phases: all; flavors: all (plain and asan, no tsan on Windows); display: included; crash tests: excluded) in 379 s`, no failure). The Windows half of the closing run is complete.
+after the Mac's Phase 21 Day 295 (`ran 4807 of 5084 tests (phases: all; flavors: all (plain and asan, no tsan on Windows); display: included; crash tests: excluded) in 379 s`, no failure). The Windows half of the closing run is complete.
 
 ## Runs
 

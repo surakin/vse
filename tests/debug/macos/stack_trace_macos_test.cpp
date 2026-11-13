@@ -1,4 +1,4 @@
-// The macOS debugging backend's first third (Phase 26 Day 306): stack traces through libbacktrace on Mach-O with dSYMs,
+// The macOS debugging backend's first third (Phase 21 Day 290): stack traces through libbacktrace on Mach-O with dSYMs,
 // the module list from dyld, the thread id, and the crash context against what `sysctl -n` prints.
 #include <catch2/catch_test_macros.hpp>
 
@@ -180,7 +180,7 @@ TEST_CASE("macOS: a frame in a system library is named by its module", "[stacktr
         {
             system_frame = true;
         }
-        // No image claims another's frame: libobjc is not on this path (Day 306 found shared-cache images' ranges
+        // No image claims another's frame: libobjc is not on this path (Day 290 found shared-cache images' ranges
         // overlapping).
         CHECK(CStrFind(entries[i].module, "libobjc") == nullptr);
     }

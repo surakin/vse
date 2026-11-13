@@ -82,9 +82,9 @@ phase in progress. Day to day, run only what the work can have affected:
 - **A phase's last day runs the whole suite in every flavor**: `scripts/test-phase.sh --all --flavor all`, plus
   `ctest -L docs` and the demos the phase ships, and records the line in the day file. A phase is not complete without
   it. `CURRENT_PHASE` changes only in the commit that starts the next phase.
-- **Side phases (confirmed by the user, 2026-11-11; Phase 26 Day 299):** a phase the user runs beside the main line, on
-  another machine (Phase 26, the macOS port), is listed in `SIDE_PHASES` and does not change `CURRENT_PHASE`. Its tests carry its own label;
-  `scripts/test-phase.sh --affected` adds every side phase on a machine that builds its tests (Phase 26 Day 302), and its days quote their own
+- **Side phases (confirmed by the user, 2026-11-11; Phase 21 Day 283):** a phase the user runs beside the main line, on
+  another machine (Phase 21, the macOS port), is listed in `SIDE_PHASES` and does not change `CURRENT_PHASE`. Its tests carry its own label;
+  `scripts/test-phase.sh --affected` adds every side phase on a machine that builds its tests (Phase 21 Day 286), and its days quote their own
   `ran X of Y` line. Its last day closes it with the full run like any phase, and removes it from `SIDE_PHASES`.
 - A new test file needs a line in `tests/phases.txt` (the build stops without one); any other `add_test` needs a
   `test:` line there and `engine_label_tests(<name>)`. `ctest -L docs` is not scoped: run it on every day that changes
@@ -140,16 +140,16 @@ Windows x64 builds and runs everything, with the Vulkan and Direct3D 12 backends
 - **Windows code lives in Windows directories:** Win32, the Windows SDK, D3D12 and DXGI headers only under `*/windows/` (and `engine/rhi/dx12/`),
   and `windows.h` only through `engine/foundation/os/windows/win32.h` (the `platform_neutral_check`, `module_deps_check` and `rhi_boundary_check`
   gates enforce it).
-- **Three machines** (the Linux machine, the Windows PC and, from Phase 26, the Mac): a day is built and tested on the machine it is done on; changes to
+- **Three machines** (the Linux machine, the Windows PC and, from Phase 21, the Mac): a day is built and tested on the machine it is done on; changes to
   shared code (CMake, the phase map, the gates, the scripts, shared tests) are checked on the other machines no later than the phase's close, and
   `KNOWN-ISSUES.md` lists what is waiting for those runs.
 - **The graphics backend is chosen at start** (`renderer.backend`, `--rhi`; `auto` is Direct3D 12 on Windows): there is no run-time backend
   switch (the user's decision, 2026-11-08).
 
-## macOS is a supported platform (Phase 26, required)
+## macOS is a supported platform (Phase 21, required)
 
 macOS builds and runs everything, with the Cocoa window and the Metal backend (`docs/guide/macos.md`, `BUILD.md`); there is no Vulkan on macOS (MoltenVK is
-third-party, Phase 26 decision 8).
+third-party, Phase 21 decision 8).
 
 - **Build and test** with Apple clang from the Command Line Tools (no Xcode): `cmake --preset macos-clang` / `cmake --build --preset macos-clang` (tree
   `build-macos`, x86-64), tests through `scripts/test-phase.sh` (the system's bash 3.2). Flavors are plain, asan and tsan (no LeakSanitizer). A change must
@@ -298,14 +298,14 @@ table in `PLAN.md`.
   `PLAN.md` assumption #15.
 - **RHI abstraction is mandatory.** Renderer/gameplay code must never call
   Vulkan, DX12, or Metal directly — only through the common RHI interface
-  defined in Phase 4. Vulkan (Phase 4) and Direct3D 12 (Phase 13) are the backends; Metal (Phase 26)
+  defined in Phase 4. Vulkan (Phase 4) and Direct3D 12 (Phase 13) are the backends; Metal (Phase 21)
   follows behind the same interface.
 - **Data-oriented ECS**, not an OOP scene graph.
 - **Linux first, Wayland primary / X11 fallback.** Every system is built
   and proven on Linux before porting to Windows/macOS/Android/iOS/consoles.
   Windows is Phase 13, right after the renderer core and the layering
   phases, and ports what exists by then (platform layer, RHI, renderer,
-  shaders). **The macOS + Metal port is Phase 26** (postponed there on 2026-11-08,
+  shaders). **The macOS + Metal port is Phase 21** (postponed there on 2026-11-08,
   built on the Mac beside the main line, 2026-11-10 to 2026-11-13), just before Android/iOS (Phase 27, which reuses its Metal
   backend); consoles are Phase 28. How the later
   Linux-first phases (7-13) keep the Windows/macOS builds working is an
@@ -351,7 +351,7 @@ table in `PLAN.md`.
 - **Every target platform is designed in from day one — desktop, mobile,
   and console alike — even though only Linux is implemented before
   Phase 13 (Windows).** Platform-layer and engine-facing interfaces must stay
-  shaped so no later backend (Phases 13, 26, 27 and 28) ever forces a redesign of
+  shaped so no later backend (Phases 13, 21, 27 and 28) ever forces a redesign of
   already-built engine layers — see `PLAN.md` assumption #11. Build order
   still follows the roadmap (Linux → Windows/macOS → Android/iOS →
   consoles); that's not license to design as if mobile/console don't
@@ -368,10 +368,10 @@ table in `PLAN.md`.
   rasterization only — text shaping for complex scripts (HarfBuzz's
   domain) is explicitly out of scope until a real need shows up; cursor/
   line-break positions instead reuse the foundation string module's
-  existing grapheme clustering. **libpng and zlib are vendored with it from Phase 25 Day 293** (the user's decision, 2026-11-10), used only by FreeType
+  existing grapheme clustering. **libpng and zlib are vendored with it from Phase 26 Day 324** (the user's decision, 2026-11-10), used only by FreeType
   to decode the PNG strikes of `CBDT`/`sbix` colored-glyph fonts; no engine file includes their headers.
 - **Gameplay scripting embeds real languages, not a custom bytecode VM —
-  starting with Lua via LuaJIT** (Phase 24). Deliberate, individually
+  starting with Lua via LuaJIT** (Phase 25). Deliberate, individually
   justified exception to the third-party-dependency line, ships inside
   the runtime engine/game binary — see `PLAN.md` assumption #13. Designed
   with a pluggable language-backend seam so more languages can be added
@@ -381,8 +381,8 @@ table in `PLAN.md`.
   have (Phases 29 and 30): loading a real, unmodified UE 5.3+ project's
   meshes/textures/materials/levels, and eventually Blueprint gameplay
   logic, directly into this engine. Deliberately sequenced *after*
-  multiplatform support (Phases 13, 26, 27 and 28) rather than right after the asset
-  pipeline (Phase 21) — see `PLAN.md` assumption #14. Targets uncooked editor-format
+  multiplatform support (Phases 13, 21, 27 and 28) rather than right after the asset
+  pipeline (Phase 22) — see `PLAN.md` assumption #14. Targets uncooked editor-format
   projects, not shipped/cooked games. The offline import tool links a DLL
   built from Unreal Engine's own source to parse `.uasset`/`.umap`
   content via UE's real `UObject`/package-loading system, rather than a
@@ -403,7 +403,7 @@ table in `PLAN.md`.
   compiled by `slangc` (dev-time, optional) to SPIR-V and embedded as
   committed `*.spv.inc` files; a checkout without `slangc` builds from
   the committed outputs. Don't add GLSL or hand-written SPIR-V. DX12 and
-  Metal output comes from the same Slang sources in Phases 13 and 26 (note
+  Metal output comes from the same Slang sources in Phases 13 and 21 (note
   the clip-space Y flip and Metal's `main` rename in `shaders/README.md`).
 - **Debugging facilities are built on existing libraries** (Phase 7): libbacktrace (stack traces and symbols) and
   sentry-native 0.17.6 with its Breakpad backend and **no upload** (`none` transport, crash capture and minidumps only) - a
@@ -423,7 +423,7 @@ table in `PLAN.md`.
   requires them); the engine's runtime libraries still do not.
 - **Terminology: we mint assets, we do not cook them.** Offline
   asset/shader processing tools are "mints"/"minters" (`tools/shader_mint`,
-  the Phase 21 asset minter) and their outputs are "minted". "Cook" appears
+  the Phase 22 asset minter) and their outputs are "minted". "Cook" appears
   only when describing Unreal's pipeline. Minting must be deterministic:
   same inputs and tool version give byte-identical outputs, tested for
   every minter (see `PLAN.md`, guiding principles).

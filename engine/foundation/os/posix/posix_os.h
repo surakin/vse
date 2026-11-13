@@ -2,7 +2,7 @@
 
 #include "os/os.h"
 
-// The half of os.h that Linux and macOS share (Phase 26 Day 301): os/posix/os_posix.cpp holds the calls that are the
+// The half of os.h that Linux and macOS share (Phase 21 Day 285): os/posix/os_posix.cpp holds the calls that are the
 // same POSIX calls on both, and each platform's os.cpp (os/linux/, os/macos/) supplies the rest and the two hooks
 // below. Internal to those files: no other file includes this header (module_deps_check: os/posix/ is per-platform code
 // owned by os/linux/ and os/macos/).

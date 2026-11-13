@@ -1,8 +1,8 @@
 // MetalDevice: samplers, bind group layouts and bind groups, and binding them at the slots a Metal library's minted
-// slot table gives (Phase 26 Day 318; decision 9: direct set*Buffer/set*Texture/set*SamplerState calls, no argument
+// slot table gives (Phase 21 Day 302; decision 9: direct set*Buffer/set*Texture/set*SamplerState calls, no argument
 // buffers).
 //
-// Slang chooses each Metal library's slots itself (one table per stage, Day 315), so a group's resources are not bound
+// Slang chooses each Metal library's slots itself (one table per stage, Day 299), so a group's resources are not bound
 // at a fixed slot: a pipeline maps each stage's table against its layouts (MapStageSlots, at creation), and the binder
 // sets each resource at the slot that stage's table gives. Groups hold their resources by RHI handle and are resolved
 // when they are bound (the reset rule), never cached as Metal objects past a frame.

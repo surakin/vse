@@ -8,7 +8,7 @@
 # BUILT_FLAVORS names the flavors this configuration builds (default all three): a flavor the map lists but the configuration cannot build
 # (clang-cl has no ASan flavor yet, Phase 13 Day 150) is not demanded.
 # CHECK_UNUSED also fails on a map line that matches no test or file. Both are for the real build, not the fixtures.
-# CURRENT_PHASE_FILE (with SIDE_PHASES_FILE) fails on a map phase above the current phase that is not a side phase (Phase 26 Day 302).
+# CURRENT_PHASE_FILE (with SIDE_PHASES_FILE) fails on a map phase above the current phase that is not a side phase (Phase 21 Day 286).
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/EnginePhaseMap.cmake)
 
 # What ctest selects with the given extra arguments, as "<number>: <name>" entries. The number is the test's index in the
@@ -186,7 +186,7 @@ if(CHECK_UNUSED)
   endforeach()
 endif()
 
-# No phase of the map is above the current one unless it is a side phase (Phase 26 Day 302): a mistyped phase number on a map line, or a
+# No phase of the map is above the current one unless it is a side phase (Phase 21 Day 286): a mistyped phase number on a map line, or a
 # phase started without CURRENT_PHASE moving, fails here, on every machine, whether or not this build has the phase's tests.
 if(DEFINED CURRENT_PHASE_FILE)
   set(current "")

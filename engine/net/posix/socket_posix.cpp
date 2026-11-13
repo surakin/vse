@@ -114,8 +114,8 @@ template <typename Call> auto RetryOnInterrupt(Call call)
 }
 
 // Receives one datagram with recvmsg, which reports a datagram cut to fit the buffer through its MSG_TRUNC result flag
-// on Linux and macOS alike (recvfrom's MSG_TRUNC input flag, which returns the real size, is Linux's only: Phase 26
-// Day 326). `from` may be null. Returns the bytes received, or -1 with errno set.
+// on Linux and macOS alike (recvfrom's MSG_TRUNC input flag, which returns the real size, is Linux's only: Phase 21
+// Day 310). `from` may be null. Returns the bytes received, or -1 with errno set.
 long ReceiveDatagram(i64 handle, MutableByteSpan buffer, sockaddr_storage* from, bool* cut)
 {
     *cut = false;
@@ -321,7 +321,7 @@ Status Socket::FinishConnect()
         {
             return Status::Of(ErrorCode::WouldBlock);  // no error recorded and no peer yet: still under way
         }
-        // The connect failed between the two calls (seen on macOS under load, Phase 26 Day 326, where getpeername then
+        // The connect failed between the two calls (seen on macOS under load, Phase 21 Day 310, where getpeername then
         // fails with EINVAL): the pending error, read again, is the outcome; with none, a connection gone at once.
         int late = 0;
         size = sizeof(late);

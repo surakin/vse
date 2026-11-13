@@ -1,4 +1,4 @@
-// The Metal swapchain (Phase 26 Day 321; metal_swapchain.h).
+// The Metal swapchain (Phase 21 Day 305; metal_swapchain.h).
 //
 // The layer is the window's own CAMetalLayer (os::NativeWindowInfo::surface). The images are its drawables:
 // `nextDrawable` waits at most the layer's timeout (allowsNextDrawableTimeout, one second) and a timeout counts as

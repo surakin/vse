@@ -277,7 +277,7 @@ foreach(f IN LISTS sources)
       endforeach()
     endforeach()
   endif()
-  # `#import` too: Objective-C++ (.mm) accepts it (Phase 26 Day 302).
+  # `#import` too: Objective-C++ (.mm) accepts it (Phase 21 Day 286).
   file(STRINGS "${ROOT}/${f}" incs REGEX "^[ \t]*#[ \t]*(include|import)[ \t]*\"[^\"]+\"")
   get_filename_component(fdir "${f}" DIRECTORY)
   foreach(inc_line IN LISTS incs)

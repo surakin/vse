@@ -181,7 +181,7 @@ TEST_CASE("The Vulkan backend conforms to the device lifecycle", "[rhi][lifecycl
     RunLifecycleConformance(vulkan_backend);
 }
 
-// Phase 26 Day 325: Metal on the Mac's adapter (validation is the process's: the macOS ctests set MTL_DEBUG_LAYER).
+// Phase 21 Day 309: Metal on the Mac's adapter (validation is the process's: the macOS ctests set MTL_DEBUG_LAYER).
 TEST_CASE("The Metal backend conforms to the device lifecycle", "[rhi][lifecycle][conformance][metal][gpu]")
 {
 #if ENGINE_PLATFORM_MACOS

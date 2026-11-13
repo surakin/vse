@@ -1,4 +1,4 @@
-// The macOS input event stream (Phase 26 Day 312; engine/platform/macos/cocoa_keys.h, cocoa_window.mm,
+// The macOS input event stream (Phase 21 Day 296; engine/platform/macos/cocoa_keys.h, cocoa_window.mm,
 // engine/platform/BACKEND.md "macos"). The key table and the flag, text and wheel rules first, checked against the
 // SDK's own constants without a window; then keys, text (with the current layout's dead key), the pointer, the wheel
 // and the focus through a real window, from synthesized NSEvents given to it the way AppKit gives them, with the
@@ -804,7 +804,7 @@ TEST_CASE("macOS events: a window reopened after Close holds no key and no modif
     CHECK(CountOf(Drain(window), InputEventType::KeyUp) == 0);
 }
 
-// Hand check, Day 312: a held letter gave KeyDown repeats without Text: press-and-hold took the repeats for its accent
+// Hand check, Day 296: a held letter gave KeyDown repeats without Text: press-and-hold took the repeats for its accent
 // menu. The application turns it off in the registration domain only.
 TEST_CASE(
     "macOS: press-and-hold is off for the program, in the registration domain only, so a held key repeats its text",
@@ -816,7 +816,7 @@ TEST_CASE(
     CHECK([registered[@"ApplePressAndHoldEnabled"] isEqual:@NO]);
 }
 
-// Review findings, Day 312.
+// Review findings, Day 296.
 
 TEST_CASE(
     "macOS events: two keys of one name each go down and up, and InputState keeps the Key down while either is held",
@@ -860,7 +860,7 @@ TEST_CASE("macOS events: a move outside the window with no button held is not re
     CHECK_FALSE(state.pointer_inside);
 }
 
-// Day 313: an NSString may hold an unpaired surrogate, for which UTF8String gives nothing: the scalar becomes U+FFFD.
+// Day 297: an NSString may hold an unpaired surrogate, for which UTF8String gives nothing: the scalar becomes U+FFFD.
 TEST_CASE("macOS events: inserted text with an unpaired surrogate gives U+FFFD for it and keeps the rest",
           "[macos][window][events]")
 {

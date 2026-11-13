@@ -1,4 +1,4 @@
-// The user defaults system as a settings store (Phase 26 Day 309; settings/macos/user_defaults_store.h,
+// The user defaults system as a settings store (Phase 21 Day 293; settings/macos/user_defaults_store.h,
 // settings/BACKEND.md). CoreFoundation's preferences API (CFPreferences), the C layer under NSUserDefaults: the same
 // domains, the same daemon (cfprefsd), no Objective-C needed. Every read and write names the domain for the current
 // user on any host, so the global domain (NSGlobalDomain) and per-host values are never mixed in.

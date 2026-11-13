@@ -59,10 +59,10 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   phase_script_refuses(explicit_tsan "MSVC has no ThreadSanitizer" 2 --flavor tsan)
   phase_script_case(explicit_all_flavors PHASES 13 ARGS 13 --flavor all CTEST -L "^(phase13)$" -LE "^crash$")
 elseif(ENGINE_PLATFORM STREQUAL "macos")
-  # macOS builds one layer more each day (Phase 26): the phases with sanitizer tests there so far are 0, 10, 16 and 26.
+  # macOS builds one layer more each day (Phase 21): the phases with sanitizer tests there so far are 0, 10, 16 and 21.
   phase_script_case(explicit_asan PHASES 16 ARGS 16 --flavor asan CTEST -L "^(phase16)$" -L "^asan$" -LE "^crash$")
   phase_script_case(explicit_tsan PHASES 10 ARGS 10 --flavor tsan CTEST -L "^(phase10)$" -L "^tsan$" -LE "^crash$")
-  phase_script_case(explicit_all_flavors PHASES 26 ARGS 26 --flavor all CTEST -L "^(phase26)$" -LE "^crash$")
+  phase_script_case(explicit_all_flavors PHASES 21 ARGS 21 --flavor all CTEST -L "^(phase21)$" -LE "^crash$")
 else()
   phase_script_case(explicit_asan PHASES 4 ARGS 4 --flavor asan CTEST -L "^(phase4)$" -L "^asan$" -LE "^crash$")
   phase_script_case(explicit_tsan PHASES 2 ARGS 2 --flavor tsan CTEST -L "^(phase2)$" -L "^tsan$" -LE "^crash$")
@@ -115,11 +115,11 @@ phase_script_case(affected_root_cmake_not_additive PHASES all ARGS --affected --
   --diff-from-file ${FIX}/diff_root_cmake.txt CTEST ${PLAIN})
 phase_script_case(affected_docgen_cmake PHASES "3 4 5" ARGS --affected --current-phase-file ${FIX}/phase5.txt
   --diff-from-file ${FIX}/diff_docgen_cmake.txt CTEST -L "^(phase3|phase4|phase5)$" ${PLAIN_NO_DISPLAY})
-# Side phases (Phase 26 Day 302): --affected adds a side phase this build has tests of, marked "(side)"; one it has none of is not added; one
+# Side phases (Phase 21 Day 286): --affected adds a side phase this build has tests of, marked "(side)"; one it has none of is not added; one
 # already selected is not marked; --current does not add them. Phase 6 stands in for the side phase: every platform builds its tests.
 phase_script_case(affected_side_phase PHASES "5 6 (side)" SIDE ${FIX}/side_6.txt ARGS --affected --current-phase-file ${FIX}/phase5.txt
   --diff-from-file ${FIX}/diff_notes.txt CTEST -L "^(phase5|phase6)$" ${PLAIN_NO_DISPLAY})
-# A side phase with no tests in the run's flavor is not added (phase 6 has plain tests only; Day 302 review). The flavor is asan, which every
+# A side phase with no tests in the run's flavor is not added (phase 6 has plain tests only; Day 286 review). The flavor is asan, which every
 # platform runs (Windows refuses tsan).
 phase_script_case(affected_side_phase_wrong_flavor PHASES 5 SIDE ${FIX}/side_6.txt ARGS --affected --flavor asan --current-phase-file ${FIX}/phase5.txt
   --diff-from-file ${FIX}/diff_notes.txt CTEST -L "^(phase5)$" -L "^asan$" -LE "^(display|crash)$")
@@ -152,7 +152,7 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   set(_partition_phases 0 10 13)
   set(_partition_flavors plain,asan)
 elseif(ENGINE_PLATFORM STREQUAL "macos")
-  set(_partition_phases 0 16 26)
+  set(_partition_phases 0 16 21)
   set(_partition_flavors plain,asan,tsan)
 else()
   set(_partition_phases 2 4 5)

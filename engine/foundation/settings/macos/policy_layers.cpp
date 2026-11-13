@@ -1,4 +1,4 @@
-// Managed preferences as the settings' top layer on macOS (Phase 26 Day 309; docs/guide/settings.md, "Settings on
+// Managed preferences as the settings' top layer on macOS (Phase 21 Day 293; docs/guide/settings.md, "Settings on
 // macOS"). An administrator enforces a value with a configuration profile, which macOS installs as managed preferences
 // for the application's defaults domain (/Library/Managed Preferences/[<user>/]<suite>.plist);
 // CFPreferencesAppValueIsForced says which values are enforced. One read-only, forced-only store; a domain with nothing

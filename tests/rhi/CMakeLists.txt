@@ -54,11 +54,11 @@ set(RHI_TEST_SOURCES
   shader_interface_test.cpp
 )
 
-# The Vulkan backend's own tests: not on macOS, which has no Vulkan (Phase 26 decision 8; the list is in the macOS port spec). The
+# The Vulkan backend's own tests: not on macOS, which has no Vulkan (Phase 21 decision 8; the list is in the macOS port spec). The
 # neutral and null-device suites, and the GPU-tagged tests (which skip without a GPU backend until Metal), run there.
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   list(FILTER RHI_TEST_SOURCES EXCLUDE REGEX "/?vulkan_[a-z_]+_test\\.cpp$")
-  # The Metal backend's own tests (Phase 26, Days 316-325), Objective-C++ under macos/, linked through rhi_backends (which links rhi_metal).
+  # The Metal backend's own tests (Phase 21, Days 300-309), Objective-C++ under macos/, linked through rhi_backends (which links rhi_metal).
   list(APPEND RHI_TEST_SOURCES macos/metal_device_test.mm macos/metal_resource_test.mm macos/metal_bindings_test.mm macos/metal_pipeline_test.mm macos/metal_commands_test.mm macos/metal_swapchain_test.mm macos/metal_graph_test.mm macos/metal_lifecycle_test.mm)
 endif()
 
@@ -118,7 +118,7 @@ function(engine_add_rhi_tests target rhi_lib rhi_vulkan_lib rhi_backends_lib suf
     ENGINE_TEXT_FONT_FILE="${CMAKE_SOURCE_DIR}/assets/fonts/LiberationSans-Regular.ttf"
     ENGINE_RHI_LSAN_SUPP="${CMAKE_CURRENT_SOURCE_DIR}/lsan.supp")
   # Tests that do not pass a cache directory must not write to the user's ~/.cache. On macOS every test runs with Metal's API and
-  # shader validation on, a validation error stopping the test (Phase 26 Day 316): Metal reads these when the process starts it.
+  # shader validation on, a validation error stopping the test (Phase 21 Day 300): Metal reads these when the process starts it.
   set(env "ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/rhi_tests-${label}")
   if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     # ENGINE_RHI_EXPECT_METAL_VALIDATION makes the Metal device test require the others, so losing them fails it.
@@ -130,7 +130,7 @@ function(engine_add_rhi_tests target rhi_lib rhi_vulkan_lib rhi_backends_lib suf
     PROPERTIES LABELS "${label}" ENVIRONMENT "${env}")
   engine_discover_tests(${target} TEST_SUFFIX "${suffix}" TEST_SPEC "[window]${spec},[x11]${spec},[wayland]${spec}"
     PROPERTIES LABELS "${label};display" RESOURCE_LOCK display ENVIRONMENT "${env}")
-  # The Metal pipeline archive's tests (tag [archive], Phase 26 Day 325): Metal stops inside a binary archive while its
+  # The Metal pipeline archive's tests (tag [archive], Phase 21 Day 309): Metal stops inside a binary archive while its
   # shader validation is on, and the device then leaves the archive off, so these run with the API validation alone.
   if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set(archive_env "${env}")
@@ -149,14 +149,14 @@ if(ENGINE_HAVE_ASAN)
 endif()
 if(ENGINE_HAVE_TSAN)
   if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    # The [gpu] tests leave TSan out on Linux for the NVIDIA driver's threads; Metal's run under it (Phase 26 Day 316).
+    # The [gpu] tests leave TSan out on Linux for the NVIDIA driver's threads; Metal's run under it (Phase 21 Day 300).
     engine_add_rhi_tests(rhi_tests_tsan rhi_tsan rhi_vulkan_tsan rhi_backends_tsan " [tsan]" "tsan" "")
   else()
     engine_add_rhi_tests(rhi_tests_tsan rhi_tsan rhi_vulkan_tsan rhi_backends_tsan " [tsan]" "tsan" "~[gpu]")
   endif()
 endif()
 
-# A planted Metal validation error (Phase 26 Day 316): a validation error must stop a program run with the GPU tests' environment.
+# A planted Metal validation error (Phase 21 Day 300): a validation error must stop a program run with the GPU tests' environment.
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   add_executable(metal_validation_planted macos/metal_validation_planted.mm)
   target_link_libraries(metal_validation_planted PRIVATE rhi_backends)
@@ -168,7 +168,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     PASS_REGULAR_EXPRESSION "stopped by Metal's validation"
     FAIL_REGULAR_EXPRESSION "the planted call was not caught|validation is off")
   engine_label_tests(metal_validation_planted)
-  # Every Metal object the backend's calls autorelease is drained by a pool of its own (Phase 26 Day 325): a caller
+  # Every Metal object the backend's calls autorelease is drained by a pool of its own (Phase 21 Day 309): a caller
   # with no pool (a job thread, a C++ test) would otherwise keep it, and a released object autoreleases its device, so
   # a hundred resets held about 37 MiB. Only the test's own thread counts (tests/rhi/macos/run_autorelease_pools.cmake).
   # Without Metal's validation layer this run also keeps the loop's memory check, which that layer's own growth defeats.
@@ -187,7 +187,7 @@ function(engine_rhi_cross_syntax_test name triple)
   add_test(NAME ${name} COMMAND ${CMAKE_COMMAND} -DTRIPLE=${triple} -DROOT=${CMAKE_SOURCE_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/cross_syntax/check_rhi_cross_syntax.cmake)
 endfunction()
 engine_rhi_cross_syntax_test(rhi_cross_syntax_windows x86_64-pc-windows-msvc)
-# Kept now that macOS builds for real (Phase 26 Day 302): the Intel development Mac builds x86-64 only, so this is what compiles these
-# headers for arm64 (Apple silicon) until Phase 26 Day 327's arm64 build.
+# Kept now that macOS builds for real (Phase 21 Day 286): the Intel development Mac builds x86-64 only, so this is what compiles these
+# headers for arm64 (Apple silicon) until Phase 21 Day 311's arm64 build.
 engine_rhi_cross_syntax_test(rhi_cross_syntax_macos arm64-apple-macos13)
 engine_label_tests(rhi_lifecycle_lists rhi_cross_syntax_windows rhi_cross_syntax_macos)

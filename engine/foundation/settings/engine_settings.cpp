@@ -10,7 +10,7 @@ namespace engine_placeholder::settings
 namespace
 {
 
-const char* const kWindowBackends[] = {"auto", "wayland", "x11", "win32", "cocoa"};  // cocoa: Phase 26 Day 311
+const char* const kWindowBackends[] = {"auto", "wayland", "x11", "win32", "cocoa"};  // cocoa: Phase 21 Day 295
 const char* const kVerbosities[] = {"error", "warn", "info", "debug", "trace"};
 
 struct LogKeys

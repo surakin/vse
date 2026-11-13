@@ -1,6 +1,6 @@
 #pragma once
 
-// The Metal command list (Phase 26 Day 320): one MTLCommandBuffer per recording, with render, blit and compute encoders
+// The Metal command list (Phase 21 Day 304): one MTLCommandBuffer per recording, with render, blit and compute encoders
 // opened as the commands need them. Objective-C++.
 //
 // A rendering pass is one render encoder. Outside a pass, copies and mips share a blit encoder and dispatches a compute
@@ -112,7 +112,7 @@ private:
     u32 pass_height_ = 0;
 
     // The bound state, applied at draw or dispatch time: one per kind of pipeline, as Vulkan's and Direct3D 12's bind
-    // points, so a compute pipeline and its groups bound before a pass are still there after it (Phase 26 Day 328).
+    // points, so a compute pipeline and its groups bound before a pass are still there after it (Phase 21 Day 312).
     // SetBindGroup and SetPushConstants go to the kind of the pipeline bound last, as on Vulkan.
     struct BindPoint
     {

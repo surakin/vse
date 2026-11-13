@@ -27,13 +27,13 @@
 // (reflect_json.h, CheckD3D12Registers) and the container must be signed by the validator. Without the DXIL options
 // nothing DXIL is written and the committed `.dxil.inc` stays.
 //
-// Metal (Phase 26 Day 315): the Metal build's reflection (`--metal-reflection FILE`, the JSON of `slangc -target
+// Metal (Phase 21 Day 299): the Metal build's reflection (`--metal-reflection FILE`, the JSON of `slangc -target
 // metal`; permute mode: `--metal-arg ARG`..., slangc run per key) puts each binding's Metal slot into the reflection
 // blob, on every platform, so `.refl.inc` is the same everywhere. On a Mac, the library tools/metal_mint wrote
 // (`--metallib FILE
 // --metallib-info FILE --metallib-out FILE`; permute mode: `--metal-mint PATH --metallib-out FILE`) goes into
 // `<name>.metallib.inc`: `<Base>Metallib`, `<Base>MetallibByteCount`, `<Base>MetallibSlots` (where its resources are
-// bound, rhi::ShaderSlotTable, Day 318), `<Base>MetallibEntry` (the exported function,
+// bound, rhi::ShaderSlotTable, Day 302), `<Base>MetallibEntry` (the exported function,
 // `main_0`) and `<Base>MetallibSpirvFnv`. The `.dxil.inc` includes the `.metallib.inc` and its blob set holds all
 // three. Without the Metal library options the committed `.metallib.inc` stays.
 //
@@ -493,7 +493,7 @@ bool NeedsPlaceholder(const char* path, usize module_count)
         return true;
     }
     const StringView text = ToStringView(bytes);
-    // The entry and the slot table (Day 318) of each module: an older file without the slots is replaced too.
+    // The entry and the slot table (Day 302) of each module: an older file without the slots is replaced too.
     const StringView entry_marker("MetallibEntry = ");
     const StringView slots_marker("MetallibSlots = ");
     usize entries = 0;

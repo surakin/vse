@@ -1,4 +1,4 @@
-// The Metal command list (Phase 26 Day 320; metal_command_list.h).
+// The Metal command list (Phase 21 Day 304; metal_command_list.h).
 
 #include "rhi/metal/metal_command_list.h"
 

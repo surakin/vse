@@ -1259,7 +1259,7 @@ This is the effective state, so a latched or locked modifier counts, not just a 
 inline constexpr u32 kModShortcut;
 ```
 
-The modifier of the command shortcuts (copy, cut, paste, select all, undo, quit): Command ([`os::kModSuper`](#os-kmodsuper)) on macOS, Control elsewhere (Phase 26 Day 325). Word moves and Ctrl+Tab keep Control on every platform.
+The modifier of the command shortcuts (copy, cut, paste, select all, undo, quit): Command ([`os::kModSuper`](#os-kmodsuper)) on macOS, Control elsewhere (Phase 21 Day 309). Word moves and Ctrl+Tab keep Control on every platform.
 
 ## `KeyboardState` {#os-keyboardstate}
 
@@ -4642,7 +4642,7 @@ Which native windowing system a window belongs to, so a graphics layer knows how
 | <a id="os-nativewindowkind-wayland"></a>`Wayland` |  | A Wayland surface: `display` is a `wl_display*`, `surface` is a `wl_surface*`. |
 | <a id="os-nativewindowkind-xlib"></a>`Xlib` |  | An X11 window: `display` is a `Display*`, `window_id` is the `Window` (XID). |
 | <a id="os-nativewindowkind-win32"></a>`Win32` |  | A Win32 window: `display` is the `HINSTANCE` of the module that registered the window class, `surface` the `HWND`. |
-| <a id="os-nativewindowkind-cocoa"></a>`Cocoa` |  | A macOS window (Phase 26 Day 311): `display` is the content `NSView*`, `surface` its `CAMetalLayer*`, `window_id` the window number. |
+| <a id="os-nativewindowkind-cocoa"></a>`Cocoa` |  | A macOS window (Phase 21 Day 295): `display` is the content `NSView*`, `surface` its `CAMetalLayer*`, `window_id` the window number. |
 | <a id="os-nativewindowkind-android"></a>`Android` |  | Reserved for the Android port: `surface` is the `ANativeWindow*`. |
 
 ## `NativeWindowInfo` {#os-nativewindowinfo}
@@ -5240,7 +5240,7 @@ Selects which display backend to use for a window.
 | <a id="os-windowbackend-wayland"></a>`Wayland` |  | Force the Wayland backend (Linux). |
 | <a id="os-windowbackend-x11"></a>`X11` |  | Force the X11 backend (Linux). |
 | <a id="os-windowbackend-win32"></a>`Win32` |  | Force the Win32 backend (Windows). |
-| <a id="os-windowbackend-cocoa"></a>`Cocoa` |  | Force the Cocoa backend (macOS; Phase 26 Day 311). |
+| <a id="os-windowbackend-cocoa"></a>`Cocoa` |  | Force the Cocoa backend (macOS; Phase 21 Day 295). |
 | <a id="os-windowbackend-invalid"></a>`Invalid` |  | Unrecognized name, or an empty candidate slot. |
 
 ## `ParseWindowBackend(StringView)` {#os-parsewindowbackend-stringview}
@@ -5345,7 +5345,7 @@ Builds the list of backends to try on Windows: `Auto` and `Win32` yield Win32, `
 BackendPlan PlanCocoaWindowBackends(WindowBackend requested);
 ```
 
-Builds the list of backends to try on macOS: `Auto` and `Cocoa` yield Cocoa; `Wayland`, `X11` and `Win32` an empty plan with its `refusal` (Phase 26 Day 311).
+Builds the list of backends to try on macOS: `Auto` and `Cocoa` yield Cocoa; `Wayland`, `X11` and `Win32` an empty plan with its `refusal` (Phase 21 Day 295).
 
 | Field | Value |
 |---|---|

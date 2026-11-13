@@ -3,7 +3,7 @@
 #
 #   scripts/crash-report.sh DUMP-OR-ENVELOPE [EXECUTABLE-OR-SYMBOL-STORE]
 #
-# Linux and macOS (Phase 26 Day 308; the same dumps open on any host with the tools). DUMP-OR-ENVELOPE is a minidump (.dmp)
+# Linux and macOS (Phase 21 Day 292; the same dumps open on any host with the tools). DUMP-OR-ENVELOPE is a minidump (.dmp)
 # or the .envelope file a crash leaves in the dump directory (the minidump is pulled out of it with crash_extract). The
 # second argument is the program that crashed, or a symbol store made by scripts/store-symbols.sh (or both, repeated: pass
 # the executable first).

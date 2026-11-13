@@ -9419,7 +9419,7 @@ The fence value of the latest submission.
 rhi::Backend BackendForSetting(u32 setting_value, const char** note);
 ```
 
-The backend the `backend` setting's value asks for: the value itself on every platform (macOS's `auto` is Metal since Phase 26 Day 325; from Day 314 it was the null backend there, with a note, while Metal was asked for by name). A GPU backend that is registered but cannot run is never replaced: the device creation then fails and says why.
+The backend the `backend` setting's value asks for: the value itself on every platform (macOS's `auto` is Metal since Phase 21 Day 309; from Day 298 it was the null backend there, with a note, while Metal was asked for by name). A GPU backend that is registered but cannot run is never replaced: the device creation then fails and says why.
 
 | Field | Value |
 |---|---|
@@ -10149,7 +10149,7 @@ Size of the DXIL container in bytes.
 const u8* metallib;
 ```
 
-The Metal library, or null when the module was not minted for Metal (Phase 26 Day 315).
+The Metal library, or null when the module was not minted for Metal (Phase 21 Day 299).
 
 ### `metallib_size` {#renderer-permutationmodule-metallib-size}
 
@@ -10179,7 +10179,7 @@ The function the Metal library exports (`main_0`), or null.
 const rhi::ShaderSlotTable* metallib_slots;
 ```
 
-The slots of the Metal library's resources (Phase 26 Day 318), or null.
+The slots of the Metal library's resources (Phase 21 Day 302), or null.
 
 ### `Blob(rhi::ShaderFormat)` {#renderer-permutationmodule-blob-rhi-shaderformat-const}
 
@@ -10798,7 +10798,7 @@ For a storage buffer, the size of one element (`StructuredBuffer<T>`: `T` rounde
 u32 metal_slot;
 ```
 
-The Metal argument index of the binding in the Metal build (Phase 26 Day 315): `[[buffer(n)]]` for a uniform or storage buffer, `[[texture(n)]]` for a sampled or storage texture, `[[sampler(n)]]` for a sampler; the class follows `type`. [`renderer::kNoMetalSlot`](#renderer-knometalslot) when the module has no Metal slots.
+The Metal argument index of the binding in the Metal build (Phase 21 Day 299): `[[buffer(n)]]` for a uniform or storage buffer, `[[texture(n)]]` for a sampled or storage texture, `[[sampler(n)]]` for a sampler; the class follows `type`. [`renderer::kNoMetalSlot`](#renderer-knometalslot) when the module has no Metal slots.
 
 ## `ReflectedVertexInput` {#renderer-reflectedvertexinput}
 

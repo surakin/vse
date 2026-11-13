@@ -1,4 +1,4 @@
-// The macOS half of the crash context (debug/crash_context_platform.h; Phase 26 Day 306) and the thread id. Called
+// The macOS half of the crash context (debug/crash_context_platform.h; Phase 21 Day 290) and the thread id. Called
 // lazily from the assert path, where the heap may be inconsistent: nothing here allocates (sysctl into fixed buffers,
 // the main image's load commands in memory).
 #include "debug/crash_context_platform.h"

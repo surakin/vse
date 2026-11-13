@@ -7,7 +7,7 @@ Written 2026-11-11 (Phase 19 Day 250). Plan: `plans/phase-19-storage.md`; `PLAN.
 Save games, persistent worlds, editor scenes, server state and tools all need "write these entities down and read them back, exactly". One module family with a stable on-disk identity for components and entities, a record store interface that any backend can implement, and a SQL database interface under the first store means that the save format is decided once, tested once, and survives type changes.
 
 Goals: a round trip that is bit-exact for every stored component; versioned (an older stored version loads through registered upgrades); incremental (a save writes what changed); atomic (a crash leaves the old or the new state, never a mix); a database interface with two implementations (SQLite and an in-memory one) that pass one conformance suite; a stored file is untrusted input.
-Non-goals: a binary save-game file store, a network store, a cloud store (the interface is shaped for them; none is built); storing ECS resources, spatial sets, render handles or any derived structure; streaming of world cells (Phase 33); the asset format (Phase 21 reuses the registry and the identity rules, not the database); SQL features beyond the portable subset of section 4.
+Non-goals: a binary save-game file store, a network store, a cloud store (the interface is shaped for them; none is built); storing ECS resources, spatial sets, render handles or any derived structure; streaming of world cells (Phase 33); the asset format (Phase 22 reuses the registry and the identity rules, not the database); SQL features beyond the portable subset of section 4.
 Anti-goals: SQL text built from data; a SQLite type, code or header reaching any file outside `engine/database/sqlite/`; a load that leaves a half-built world; a decoder that trusts a length it read.
 
 ## 2. Decisions
@@ -131,12 +131,12 @@ Six components (key, transform, bounds, membership, an actor with four fields, a
 - `SaveAsync` reads the world inside the call (encoding on the workers) and only the store writes are in the background; this is what makes "what is stored is what the frame left" true by construction. The autosaver is a class called once a frame, not an ECS system.
 - `LoadAsync` reads the records on a job; decoding and entity creation stay on the caller's thread.
 - A `Full` save holds the encoded records of the selection in memory until the write (they are freed as written).
-- Not done: the render-scene draw-list comparison in the demo (needs Phase 21 assets); exclusion of a second process on one file (the file layer has no file locks).
+- Not done: the render-scene draw-list comparison in the demo (needs Phase 22 assets); exclusion of a second process on one file (the file layer has no file locks).
 
 ## 5. Contracts the other phases rely on
 
 - `ByteWriter` and `ByteReader` (the bounds-checked canonical encoding) live in `foundation/bytes/`, below both `storage` and Phase 20's `net`, so the two share one reader; this amends the module row of section 2 (`storage` uses it, does not own it).
-- Phase 21 (assets): `ComponentRegistry`, `ByteWriter`/`ByteReader`, the version and upgrade rules and `EntityKey` are the level and prefab format's building blocks; the asset format is minted, immutable and deterministic, not stored in a database.
+- Phase 22 (assets): `ComponentRegistry`, `ByteWriter`/`ByteReader`, the version and upgrade rules and `EntityKey` are the level and prefab format's building blocks; the asset format is minted, immutable and deterministic, not stored in a database.
 - Phase 20 (networking): a network store implements `storage::Store`'s record operations; nothing in `WorldStorage` changes.
 - Phase 31 (editor): scenes are saved through `WorldStorage`; `FindKeys` serves the editor's queries.
 - Phase 33 (world streaming): cells are selections by key set; `Merge` loads them into a running world.

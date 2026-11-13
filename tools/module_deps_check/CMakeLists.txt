@@ -20,7 +20,7 @@ endfunction()
 set(MODULE_DEPS_TESTS module_deps_check)
 module_deps_fixture(module_deps_check_clean clean clean/allowlist.txt "2 module edges from includes, 0 problem")
 module_deps_fixture(module_deps_check_upward upward upward/allowlist.txt "upward include: low \\(1\\) -> mid \\(2\\): engine/low/a.h:3")
-# The same through an Objective-C++ #import (Phase 26 Day 302: .mm files are scanned, #import counts as #include).
+# The same through an Objective-C++ #import (Phase 21 Day 286: .mm files are scanned, #import counts as #include).
 module_deps_fixture(module_deps_check_upward_objc upward_objc upward_objc/allowlist.txt "upward include: low \\(1\\) -> mid \\(2\\): engine/low/a.mm:2")
 module_deps_fixture(module_deps_check_cycle cycle cycle/allowlist.txt "cycle: these modules reach themselves through includes or links: mid, mid2")
 module_deps_fixture(module_deps_check_platform platform platform/allowlist.txt "platform include: prog -> low: game/prog/main.cpp:2 includes the per-platform file low/linux/os.h")

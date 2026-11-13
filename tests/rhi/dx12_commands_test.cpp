@@ -406,7 +406,7 @@ TEST_CASE(
                         list->Barrier(y, ResourceState::CopyDst, ResourceState::ShaderWrite);
                         list->SetPipeline(fill);
                         list->SetBindGroup(0, fill_group);
-                        const u32 fill_push[2] = {3, kCount};  // k and the element count (Phase 26 Day 315)
+                        const u32 fill_push[2] = {3, kCount};  // k and the element count (Phase 21 Day 299)
                         list->SetPushConstants(0, fill_push, 8);
                         list->Dispatch(kCount / 64, 1, 1);
                         list->Barrier(x, ResourceState::ShaderWrite, ResourceState::ShaderRead);
@@ -745,7 +745,7 @@ TEST_CASE("Many DX12 bind groups per frame over more frames than the ring has sl
     cp.shader = cs;
     cp.bind_group_layouts[0] = layout;
     cp.bind_group_layout_count = 1;
-    cp.push_constant_bytes = 8;  // fill.comp's {k, count} (Phase 26 Day 315)
+    cp.push_constant_bytes = 8;  // fill.comp's {k, count} (Phase 21 Day 299)
     const PipelineHandle fill = device->CreateComputePipeline(cp);
     const BufferHandle buf = CmdBuffer(*device, u64{kGroups} * kSlice, BufferUsage::Storage | BufferUsage::CopySrc);
     REQUIRE((fill.IsValid() && buf.IsValid()));

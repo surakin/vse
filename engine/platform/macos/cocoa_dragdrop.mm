@@ -1,4 +1,4 @@
-// Drag and drop of CocoaWindow (Phase 26 Day 313; platform/macos/cocoa_window.h, BACKEND.md "macos").
+// Drag and drop of CocoaWindow (Phase 21 Day 297; platform/macos/cocoa_window.h, BACKEND.md "macos").
 //
 // Receiving: the view is an NSDraggingDestination registered for the accepted formats' pasteboard types; entered,
 // updated, exited and performDragOperation: become DragEnter, DragOver, DragLeave and Drop. The dragging pasteboard is

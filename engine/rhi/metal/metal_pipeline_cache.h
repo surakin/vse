@@ -1,6 +1,6 @@
 #pragma once
 
-// The Metal pipeline cache (Phase 26 Day 319): an MTLBinaryArchive the device's pipelines are added to, kept in a file
+// The Metal pipeline cache (Phase 21 Day 303): an MTLBinaryArchive the device's pipelines are added to, kept in a file
 // named by the adapter (pipeline_cache_file.h) behind a header that records the adapter and macOS build it is for and
 // a hash of the archive. A stale or damaged file is discarded with a log line. Objective-C++.
 
@@ -54,7 +54,7 @@ public:
     id<MTLComputePipelineState> NewCompute(MTLComputePipelineDescriptor* descriptor, bool* hit, NSError** error);
     // Writes the file when pipelines were added since it was read or written. True when nothing was to do or it wrote.
     // Metal sometimes refuses to serialize an archive read from a file with pipelines added to it (macOS 15.8, "missing
-    // 'vertex' stage in pipeline no. N", seen on Day 325): the file is then written from a fresh archive of the
+    // 'vertex' stage in pipeline no. N", seen on Day 309): the file is then written from a fresh archive of the
     // pipelines this device made, which replaces the loaded one. If that fails too the device stops saving.
     bool Save();
 
@@ -93,7 +93,7 @@ private:
     // A fresh archive with every pipeline in render_used_ and compute_used_; nil when Metal refuses one.
     id<MTLBinaryArchive> RebuildLocked();  // neither archive serialized: no more saves for this device (logged once)
     // Copies of the descriptors of every pipeline made through the archive since Open, hits and misses: a fresh
-    // archive is built from them when the loaded one, with pipelines added, will not serialize (Day 325).
+    // archive is built from them when the loaded one, with pipelines added, will not serialize (Day 309).
     // One entry per distinct description (equal ones are kept once), held for the device's life: a device reset ends
     // it.
     NSMutableOrderedSet<MTLRenderPipelineDescriptor*>* render_used_ = nil;

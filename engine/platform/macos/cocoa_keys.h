@@ -1,6 +1,6 @@
 #pragma once
 
-//! macOS key events to [[os::Key]] (Phase 26 Day 312), with the meaning the other backends give keys: layout-aware.
+//! macOS key events to [[os::Key]] (Phase 21 Day 296), with the meaning the other backends give keys: layout-aware.
 //!
 //! A key that types a character is named by the character the active layout gives it with Shift and Caps Lock only
 //! (`charactersIgnoringModifiers`), as XKB names it by its keysym and Windows by its layout's character: on a French

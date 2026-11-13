@@ -1,4 +1,4 @@
-// The Metal swapchain (Phase 26 Day 321): the present-mode mapping, a swapchain over a Cocoa window's CAMetalLayer that
+// The Metal swapchain (Phase 21 Day 305): the present-mode mapping, a swapchain over a Cocoa window's CAMetalLayer that
 // acquires, clears and presents frames, never keeps a drawable past its frame, reconfigures (present mode, format, HDR
 // as the screen allows, size), counts as a live swapchain, is made again after RecreateSurface, and reports Minimized
 // for a minimized window. The window tests need the console session unlocked (display group). macOS only.

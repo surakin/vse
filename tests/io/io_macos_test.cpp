@@ -1,4 +1,4 @@
-// The file layer on macOS (Phase 26 Day 303): what differs from Linux (the errno table's Darwin rows are in
+// The file layer on macOS (Phase 21 Day 287): what differs from Linux (the errno table's Darwin rows are in
 // file_system_test.cpp's shared table): normalization and case on this volume (the layer reports what the file system
 // does and never folds), F_FULLFSYNC's cost for a settings-sized file, the executable path and the standard directories
 // under ~/Library.
@@ -253,7 +253,7 @@ TEST_CASE("io on macOS: without HOME the user directories come from Foundation (
 TEST_CASE("io on macOS: Copy from a FIFO copies what it delivers, as on Linux", "[io][fs][macos]")
 {
     // fcopyfile refuses a source that is not a regular file (ENOTSUP); Copy must still copy it, through the read/write
-    // loop (Day 304 review).
+    // loop (Day 288 review).
     const os::SignalHandler old_pipe = os::SetSignalHandler(SIGPIPE, SIG_IGN);
     TempDir dir;
     const Path fifo = dir / "fifo";

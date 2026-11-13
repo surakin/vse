@@ -1,7 +1,7 @@
 # The Renderer
 
 **Audience:** engine and game programmers who draw things. Read [The RHI](rhi.md) first for the device, buffers and command lists this page builds on.
-**Covers:** the renderer core (Phase 5), resetting the device at run time (Phase 8) the Direct3D 12 notes (Phase 13) and the Metal notes (Phase 26).
+**Covers:** the renderer core (Phase 5), resetting the device at run time (Phase 8) the Direct3D 12 notes (Phase 13) and the Metal notes (Phase 21).
 
 The renderer turns a description of a world (objects with a mesh, a material and a position, plus lights, seen by a camera) into a picture. You do not call
 Vulkan or Direct3D: you fill a scene, give the renderer a callback that says which passes to run, and it does the rest each frame.
@@ -888,7 +888,7 @@ A **lost surface** on a healthy device (the swapchain returns `Lost` but `Device
 success), counts in `RendererStats::recoveries` and `recovery_failures`, and shows `recovering (attempt N)` in the crash report. A
 settings change asked for during the lost frame is applied at the first frame boundary after the recovery, not lost.
 
-On Metal (Phase 26 Day 325) the loss comes from a command buffer's error or from the system removing the GPU (the device observer), and the
+On Metal (Phase 21 Day 309) the loss comes from a command buffer's error or from the system removing the GPU (the device observer), and the
 recovery is the same reset: a new `MTLDevice` from `MTLCopyAllDevices`, every owner rebuilt from its CPU-side source.
 
 **What the application should show.** While frames return `Skipped` the window keeps its last picture; show a short "graphics device
@@ -950,7 +950,7 @@ a promise, and are never asserted in CI. Do not tune on a Debug build: it is fiv
 | Point lights: 100 / 1000 / 4000 / 16000 | +0.01 / +0.15 / +0.9 / +3.1 ms; about 0.1-0.2 us of CPU per light |
 | Transient pool, 100 frames | 5 textures created, 520 reuses (99% hit rate), none destroyed |
 
-On macOS (Phase 26 Day 327; Metal on the Iris Plus 645, Intel i5-8257U, Release): the graph 0.07-0.09 us per pass; a frame of 1000 objects
+On macOS (Phase 21 Day 311; Metal on the Iris Plus 645, Intel i5-8257U, Release): the graph 0.07-0.09 us per pass; a frame of 1000 objects
 1.4-1.5 ms, 10000 about 7.1 ms, 50000 about 25 ms (0.5 us per object; the laptop's CPU, and Metal's encoding of the same 16 draws); 16000 point
 lights 13.9 ms; the transient pool the same 99% hit rate.
 
@@ -996,10 +996,10 @@ past 100000 objects.
 ### Platform notes
 
 The renderer is written and tested on Linux with the Vulkan backend (and the null device, which every non-GPU test uses), and on Windows
-with Vulkan and Direct3D 12 (Phase 13), and on macOS with Metal (Phase 26: the backend from Day 316, the renderer's GPU suites through it
-from Day 323, as on the other backends, since they run once per GPU backend). The renderer needs nothing of its own for Metal: the minted
+with Vulkan and Direct3D 12 (Phase 13), and on macOS with Metal (Phase 21: the backend from Day 300, the renderer's GPU suites through it
+from Day 307, as on the other backends, since they run once per GPU backend). The renderer needs nothing of its own for Metal: the minted
 shader libraries carry their slots, a pass is a render encoder (so a pass that samples what an earlier one wrote is ordered by the encoder
-boundary), and a depth texture is sampled as `depth32_float` itself. The `backend` setting's `auto` on macOS is Metal from Day 325 (from Day 314 it was
+boundary), and a depth texture is sampled as `depth32_float` itself. The `backend` setting's `auto` on macOS is Metal from Day 309 (from Day 298 it was
 the null backend there, [[renderer::BackendForSetting]]); `renderer_demo`'s scripted and named ctests on macOS run on Metal. The points that shape code are in the [renderer portability
 review](../superpowers/specs/2026-11-04-renderer-portability-review.md); a deferred G-buffer is a poor fit for tile-based mobile GPUs
 unless the passes are merged (Phase 27).
@@ -1026,7 +1026,7 @@ Culling through a bounding-volume hierarchy (`RenderScene::SetCullMode`): see [S
 - [ECS: Rendering](ecs.md#rendering): entities mirrored into a `RenderScene` by `scene::MakeRenderSyncSystem` (`engine/scene`); the renderer demo's scene is built that way since Phase 17 Day 234 (`DemoScene` keeps its interface), and the renderer's own tests still fill a `RenderScene` directly.
 - Culling 100k objects costs 0.57 ms on one thread in a Release build (5.7 ns an object), 0.08 ms with eight workers as a chunk-parallel frustum test over an ECS bounds component (`scene_tests "[cost]"`); `GBufferPass::Prepare` keeps its single-thread path, and `RenderScene::Cull` can instead walk a bounding-volume hierarchy (see above); a precomputed visible-list overload was not built.
 - [The RHI](rhi.md) and the [renderer design](../superpowers/specs/2026-11-04-renderer-design.md).
-- [Renderer portability review](../superpowers/specs/2026-11-04-renderer-portability-review.md): what Phases 13, 26 and 27 add.
+- [Renderer portability review](../superpowers/specs/2026-11-04-renderer-portability-review.md): what Phases 13, 21 and 27 add.
 - [Shaders: from Slang to a shader module](rhi-shaders.md) and [Tutorial: From a Scene to a Lit Frame](../tutorials/hello-renderer.md).
 
 ## What the renderer adds to a crash report

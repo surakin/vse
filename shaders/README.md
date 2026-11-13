@@ -63,11 +63,11 @@ is the D3D12 baseline (`docs/superpowers/specs/2026-11-07-windows-port-design.md
   slot 1 by the G-buffer pass and slot 0 by the light volume); D3D12 fetches it at `StartInstanceLocation + SV_InstanceID`, so the
   renderer still draws object `i` with `first_instance = i`. A device says it needs this with `DeviceCaps::object_index_stream`.
   SPIR-V keeps `SV_VulkanInstanceID` (decided on Day 163: the Vulkan output stays byte for byte as it was, so no Vulkan draw cost
-  was measured). The Metal build defines it too (Phase 26 Day 315): Metal's `[[instance_id]]` excludes the base instance as
+  was measured). The Metal build defines it too (Phase 21 Day 299): Metal's `[[instance_id]]` excludes the base instance as
   D3D12's does, and the stream is the same attribute (`[[attribute(15)]]` in the Metal output).
-- **Registers (Phase 26 Day 315).** A resource is declared with `ENGINE_REGISTER(t0, space2)`, which is `: register(t0, space2)` in
+- **Registers (Phase 21 Day 299).** A resource is declared with `ENGINE_REGISTER(t0, space2)`, which is `: register(t0, space2)` in
   the DXIL build and nothing in the others. Slang also takes `register()` as the Metal slot, and Metal has no spaces, so `b0` in
-  two spaces would put two parameters at `[[buffer(0)]]`, which the Metal compiler rejects (found on Day 298 in `gbuffer.vert`
+  two spaces would put two parameters at `[[buffer(0)]]`, which the Metal compiler rejects (found on Day 282 in `gbuffer.vert`
   and `lighting.frag`). Without it Slang gives every Metal resource a slot of its own; the SPIR-V and DXIL outputs were checked
   unchanged by the macro.
 
@@ -121,7 +121,7 @@ compute local size, descriptor (set, binding) pairs, interface locations, std140
 is 176 bytes, matching the C++ struct), `NonReadable`, push-constant blocks and that no capability beyond
 Matrix/Shader/ImageQuery is used; it also runs `rhi::ValidateSpirv`.
 
-## Other targets (checked by `shaders_portability`, for Phases 13 and 26)
+## Other targets (checked by `shaders_portability`, for Phases 13 and 21)
 
 `ctest -R shaders_portability` (skipped without `slangc`; `portability.cmake`) compiles every shader and every permutation
 key with `-target hlsl` (with the D3D12 define) and `-target metal` (with the Metal define), using the same entry, stage and
@@ -129,7 +129,7 @@ key with `-target hlsl` (with the D3D12 define) and `-target metal` (with the Me
 DXIL: on Windows with the SDK's `dxc` a rejection fails the test, elsewhere it is a note. On a Mac `tools/metal_mint` compiles every
 key's Metal source with the driver as well, and a rejection fails the test. The compute test shaders `fill.comp` and `saxpy.comp`
 take their element count as a push constant (`{k, count}`, `{a, count}`) instead of asking the buffer with
-`RWStructuredBuffer.GetDimensions`, which Metal cannot do (Phase 26 Day 315), so every shader compiles to every target; where the
+`RWStructuredBuffer.GetDimensions`, which Metal cannot do (Phase 21 Day 299), so every shader compiles to every target; where the
 target can ask (SPIR-V, DXIL) the count is also bounded by the buffers' lengths. Per target:
 
 - **Clip-space Y.** Vulkan's clip space has Y down, D3D12 and Metal have Y up, and `-fvk-invert-y` only applies to SPIR-V. The
@@ -141,7 +141,7 @@ target can ask (SPIR-V, DXIL) the count is also bounded by the buffers' lengths.
 - **A `float3` in a block takes 16 bytes in Metal.** std140 (SPIR-V, and what the CPU writes) puts a scalar in the 4 bytes after
   a `float3`; Metal's layout does not, so the scalar moves and every later field with it. Put a `float3` before a 16-byte aligned
   member (a `float4`, a matrix, the block's end), never before a scalar: `material_test.frag` had `roughness` at 28 against
-  Metal's 32 (Phase 26 Day 325). `shader_mint` compares every block field's offset in the two builds and refuses a mismatch.
+  Metal's 32 (Phase 21 Day 309). `shader_mint` compares every block field's offset in the two builds and refuses a mismatch.
 - **Metal renames `main`** (`warning E40100: entry point 'main' has been renamed to 'main_0'`), because `main` is
   reserved in Metal Shading Language. `tools/metal_mint` reads the name the minted library exports and `shader_mint` records it
   beside the blob (`<Base>MetallibEntry`, carried by `rhi::MetalLibBlob`), so `ShaderDesc::SetCode` passes it and no backend
@@ -150,18 +150,18 @@ target can ask (SPIR-V, DXIL) the count is also bounded by the buffers' lengths.
   index, not a set and binding: in `gbuffer.vert` the frame block is `[[buffer(0)]]` and the object buffer `[[buffer(1)]]`, in
   `lighting.frag` the four G-buffer textures are `[[texture(0..3)]]` and the frame, lights and push blocks `[[buffer(0..2)]]`.
   `shader_mint` reads the Metal build's reflection and records each binding's slot (`ReflectedBinding::metal_slot`, and the
-  push-constant block's), and rejects two resources in one slot; the Metal backend binds from those (Phase 26 Day 318).
+  push-constant block's), and rejects two resources in one slot; the Metal backend binds from those (Phase 21 Day 302).
 - **No base instance in D3D12 or Metal shaders.** Handled by the object index stream (above).
 
-## Metal libraries (Phase 26 Day 315)
+## Metal libraries (Phase 21 Day 299)
 
 Every shader is also minted into `<name>.metallib.inc`: an AIR-only, executable `.metallib` (`<Base>Metallib`), the function it
 exports (`<Base>MetallibEntry`, `main_0`), where its resources are bound (`<Base>MetallibSlots`, an `rhi::ShaderSlotTable` of set,
-binding and Metal slot, and the push-constant block's buffer slot, from the reflection: Day 318) and the FNV-1a hash of the SPIR-V
+binding and Metal slot, and the push-constant block's buffer slot, from the reflection: Day 302) and the FNV-1a hash of the SPIR-V
 it was minted beside (`shader_metallib_test` compares it). The `.dxil.inc` includes it and its blob set (`<Base>Shader`) holds all three formats; a permuted shader's `.perm.inc` lists
 each module's library. Minting needs a Mac: `slangc -target metal` writes the Metal Shading Language, and `tools/metal_mint`
 compiles it with the driver's own compiler and serializes it through the undocumented `-[MTLLibrary serializeToURL:error:]`, the
-**interim route the user chose on Day 298, pending until they have a new Mac** (`KNOWN-ISSUES.md`); the tool checks the file loads
+**interim route the user chose on Day 282, pending until they have a new Mac** (`KNOWN-ISSUES.md`); the tool checks the file loads
 as an executable library with one function of the right stage before writing it, and fails with a message naming
 `KNOWN-ISSUES.md` if the call is missing. The bytes embed the driver compiler's version and the macOS build (the `.metallib.inc`'s
 `// compiler:` line records both), so the same source mints the same bytes only on the same macOS build: `shaders_check` compares the

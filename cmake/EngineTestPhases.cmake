@@ -15,7 +15,7 @@ set(ENGINE_PHASE_MAP ${CMAKE_SOURCE_DIR}/tests/phases.txt)
 # are labels, so an upper-case label would be read as a property name.
 function(engine_discover_tests target)
   if(ENGINE_COMPILE_ONLY)
-    return()  # discovery runs the test program after it links, which a compile-only build cannot (Phase 26 Day 327)
+    return()  # discovery runs the test program after it links, which a compile-only build cannot (Phase 21 Day 311)
   endif()
   catch_discover_tests(${target} ${ARGN} PHASE_MAP "${ENGINE_PHASE_MAP}" PHASE_ROOT "${CMAKE_SOURCE_DIR}")
 endfunction()
