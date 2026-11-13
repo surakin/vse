@@ -666,12 +666,16 @@ Status MeshView::Open(ByteSpan data, const TypeRegistry& types)
             return MeshCorrupt("a mesh attribute is out of range, misaligned or repeats a location");
         }
         locations |= 1u << location;
-        const u32 end = static_cast<u32>(offset) + rhi::VertexFormatSize(static_cast<rhi::VertexFormat>(format));
-        stride[binding] = end > stride[binding] ? end : stride[binding];
+        const u64 end = offset + rhi::VertexFormatSize(static_cast<rhi::VertexFormat>(format));
+        if (end > 256)
+        {
+            return MeshCorrupt("a mesh attribute ends past 256 bytes of its vertex");
+        }
+        stride[binding] = end > stride[binding] ? static_cast<u32>(end) : stride[binding];
     }
     stride[0] = (stride[0] + 3) & ~3u;
     stride[1] = (stride[1] + 3) & ~3u;
-    if (stride[0] == 0 || (stride[1] != 0) != skinned)
+    if (stride[0] == 0 || (stride[1] != 0) != skinned || (skinned && stride[1] != kMeshSkinStride))
     {
         return MeshCorrupt("the attributes do not match the streams the mesh declares");
     }

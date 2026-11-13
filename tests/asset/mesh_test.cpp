@@ -474,6 +474,17 @@ TEST_CASE("mesh: a skinned mesh records its skeleton and refuses another", "[ass
     CHECK(view.CheckSkeleton(skeleton).Ok());
     CHECK(view.CheckSkin().Ok());
     {
+        // Attributes that shrink the skin stride below the 8 bytes CheckSkin reads, and an offset that would overflow.
+        Vector<byte> attributes = MshSection(types, blob, kMeshSectionAttributes);
+        Vector<byte> bad = MshCopy(attributes);
+        bad[5 * 16 + 8] = 0;  // the weights at offset 0: stride 4
+        CHECK(MshOpen(types, MshWith(types, blob, kMeshSectionAttributes, bad)).Failed());
+        bad = MshCopy(attributes);
+        bad[5 * 16 + 11] = 0xff;  // offset near 2^32
+        bad[5 * 16 + 10] = 0xff;
+        CHECK(MshOpen(types, MshWith(types, blob, kMeshSectionAttributes, bad)).Failed());
+    }
+    {
         // A hostile skin stream: weights that do not sum to 255, and a joint past the count.
         Vector<byte> stream = MshSection(types, blob, kMeshSectionSkin);
         stream[4] = 1;
