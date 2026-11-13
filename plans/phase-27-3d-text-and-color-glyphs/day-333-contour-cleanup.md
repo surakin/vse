@@ -1,6 +1,6 @@
-# Phase 26 / Day 333 — Contour Orientation, Nesting & Overlap Removal
+# Phase 27 / Day 333 — Contour Orientation, Nesting & Overlap Removal
 
-**Phase:** [Phase 26 — 3D Text, Large 2D Text & Colored Glyphs](../phase-26-3d-text-and-color-glyphs.md)
+**Phase:** [Phase 27 — 3D Text, Large 2D Text & Colored Glyphs](../phase-27-3d-text-and-color-glyphs.md)
 **Depends on:** Day 332.
 
 Make the flattened contours safe for triangulation and extrusion: known orientation, outer/hole classification, and no overlaps or self-intersections.

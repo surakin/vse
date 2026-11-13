@@ -1,4 +1,4 @@
-# Phase 25 — Scripting (Lua/LuaJIT)
+# Phase 26 — Scripting (Lua/LuaJIT)
 
 **Depends on:** Phase 17 (ECS).
 **Goal:** embedded gameplay scripting via a real, well-known language
@@ -7,7 +7,7 @@ instead of a custom bytecode VM — starting with Lua via LuaJIT (root
 seam so more languages can be added later as additive backends, not a
 redesign — same pattern already used for the RHI (Phase 4), resource
 backends (Phase 22), and window backends (Phase 1). Also the
-compilation/execution target for Phase 30's Blueprint importer, so this
+compilation/execution target for Phase 31's Blueprint importer, so this
 phase's engine API bindings and event model should keep Blueprint's
 semantics (event graphs, latent nodes, function calls, casts) in mind
 even though this phase itself doesn't parse any Unreal data.
@@ -27,24 +27,24 @@ moves an ECS entity via this phase's engine API bindings.
   get/set, basic math/logging calls.
 - **Event/callback model** (e.g. "on tick," "on collision") — needed both
   for native gameplay scripting and, later, as the landing target for
-  Blueprint's event graphs (Phase 30).
+  Blueprint's event graphs (Phase 31).
 - **JIT-vs-interpreter platform seam.** LuaJIT's JIT (runtime code
   generation) is disallowed on iOS App Store builds and typically on
   console certification; LuaJIT ships an interpreter-only fallback mode
-  for those. Not implemented until Phases 27/27 (iOS, consoles),
+  for those. Not implemented until Phases 28/28 (iOS, consoles),
   but the embedding should make that a platform-config choice from the
   start, not an API change (ties to root `PLAN.md` assumption #11).
 
 ## Notes / open questions
 
 - Full day-by-day breakdown deferred until Phase 17 is complete.
-- Phase 30 (Blueprint import) will likely surface gaps in binding/event
+- Phase 31 (Blueprint import) will likely surface gaps in binding/event
   coverage (loops, latent/async waits, casts, interfaces) — expect to
-  revisit this phase's scope once Phase 30 starts, rather than trying to
+  revisit this phase's scope once Phase 31 starts, rather than trying to
   anticipate all of Blueprint's semantics up front.
 - Which additional "well-known languages" get added later (and when) is
   undecided — revisit against real demand, not speculatively.
 - Exact JIT-vs-interpreter fallback handling for iOS/console builds is a
-  day-level decision for Phases 27/27, not now.
+  day-level decision for Phases 28/28, not now.
 
 - **Settings from scripts (from Phase 11 Day 139):** scripts read and set settings by dotted key through `settings::Settings` (typed `Get`/`Set` validated against the registry, so a script cannot store an out-of-range or wrongly typed value), subscribe with prefix listeners, and never open the configuration file or read the environment themselves; secret settings are not readable from scripts.

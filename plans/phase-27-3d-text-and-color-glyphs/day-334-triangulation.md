@@ -1,6 +1,6 @@
-# Phase 26 / Day 334 — Triangulating Polygons with Holes
+# Phase 27 / Day 334 — Triangulating Polygons with Holes
 
-**Phase:** [Phase 26 — 3D Text, Large 2D Text & Colored Glyphs](../phase-26-3d-text-and-color-glyphs.md)
+**Phase:** [Phase 27 — 3D Text, Large 2D Text & Colored Glyphs](../phase-27-3d-text-and-color-glyphs.md)
 **Depends on:** Day 333.
 
 Own ear-clipping triangulator with hole bridging; the shared core of the large 2D text and the 3D faces. No third-party tessellator.

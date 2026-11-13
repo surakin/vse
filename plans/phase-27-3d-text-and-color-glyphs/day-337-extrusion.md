@@ -1,6 +1,6 @@
-# Phase 26 / Day 337 — Extruding Glyph Geometry
+# Phase 27 / Day 337 — Extruding Glyph Geometry
 
-**Phase:** [Phase 26 — 3D Text, Large 2D Text & Colored Glyphs](../phase-26-3d-text-and-color-glyphs.md)
+**Phase:** [Phase 27 — 3D Text, Large 2D Text & Colored Glyphs](../phase-27-3d-text-and-color-glyphs.md)
 **Depends on:** Day 334.
 
 Turn the triangulated glyph into a solid: front face, back face and side walls, with normals, tangents and UVs. CPU only.

@@ -1,6 +1,6 @@
-# Phase 31 — Editor Tooling
+# Phase 32 — Editor Tooling
 
-**Depends on:** Phase 15 (UI system), Phase 17 (ECS), Phase 22 (Asset pipeline), Phase 25
+**Depends on:** Phase 15 (UI system), Phase 17 (ECS), Phase 22 (Asset pipeline), Phase 26
 (Scripting: Lua/LuaJIT) — the editor is built using the engine's own
 renderer/ECS and Phase 15's UI system, not a separate GUI toolkit.
 **Goal:** an in-engine editor for building content without hand-writing
@@ -22,7 +22,7 @@ exist and can build/modify a level that the runtime can load.
 
 ## Notes / open questions
 
-- Full day-by-day breakdown deferred until Phase 25 is complete.
+- Full day-by-day breakdown deferred until Phase 26 is complete.
 - **UI and text (resolved).** Phase 14 owns glyph rasterization/layout and
   Phase 15 owns the widget toolkit and viewport widget; this phase
   consumes both. Whether the editor needs any *additional* general

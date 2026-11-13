@@ -35,7 +35,7 @@ From the bottom up. "Platform code" means a per-OS backend directory (`linux/`, 
 Later phases add modules above the renderer in the order `PLAN.md`'s diagram gives (text, UI, ECS, physics, audio, assets, scripting, Unreal import,
 editor); each gets its row here when its phase is broken into days.
 
-## 2. The measured graph (after Phase 12, 2027-11-7)
+## 2. The measured graph (after Phase 12, 2028-11-7)
 
 Measured by `module_deps_check` on the whole tree: **172 module edges from includes, plus the CMake link lines, 0 problems.** There is no cycle and no
 upward edge. The last two allow-listed edges (rhi/vulkan → rhi/null and renderer → rhi/vulkan) were removed by the RHI backend registry on Phase 13 Day 162;

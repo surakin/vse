@@ -7,7 +7,7 @@ Written 2026-11-10 (Phase 18 Day 237). Plan: `plans/phase-18-spatial-partitionin
 Physics' broad phase, the renderer's culling, audio emitter lookup, gameplay proximity and ray queries, and tools all need "what is near this box, ray, frustum". One module with exact, tested, deterministic structures, and an ECS tier that keeps them in step with entities at the cost of what moved, is built once and measured once, instead of four private grids.
 
 Goals: static and dynamic BVHs behind one query vocabulary; named spatial sets so the renderer's tree does not hold physics triggers; a deterministic begin/end pair feed for physics; renderer culling through the render set with output identical to the flat scan.
-Non-goals: a narrow phase or collision shapes beyond the box and sphere used as bounds (Phase 23), navigation meshes, a 2D variant, GPU-side culling, world-cell streaming (Phase 33), serialization of trees (rebuilt on load).
+Non-goals: a narrow phase or collision shapes beyond the box and sphere used as bounds (Phase 24), navigation meshes, a 2D variant, GPU-side culling, world-cell streaming (Phase 34), serialization of trees (rebuilt on load).
 Anti-goal: a structure that is fast in a benchmark but cannot be kept exact against a brute force under random operations.
 
 ## 2. Decisions
@@ -23,7 +23,7 @@ Anti-goal: a structure that is fast in a benchmark but cannot be kept exact agai
 | Loose octree | **Rejected.** | Cheapest build (3.5 ms) and update (0.04 us), but the all-pairs query is 4x to 6x slower than the static BVH (213 and 122 ms against 50 and 21 ms) and rays 6x to 10x slower. |
 | Sets | A world has up to 8 named spatial sets (`render`, `physics`, `audio`, `gameplay`, ...); a bitmask on the entity says which sets it joins; each set has its own static and dynamic structure and its own layer mask. | The render tree must not hold invisible triggers and the reverse. |
 | Queries | Overlap with box, sphere or frustum; ray cast (closest, any, all); box sweep; nearest-k; all overlapping pairs; every query takes a layer mask and an optional filter; results come out in a documented deterministic order. | Day 241. |
-| Physics contract | A `PairTracker` keeps overlap pairs between frames and reports begin and end, deterministically; fat margins are internal; the narrow phase is Phase 23's. | Day 243. |
+| Physics contract | A `PairTracker` keeps overlap pairs between frames and reports begin and end, deterministically; fat margins are internal; the narrow phase is Phase 24's. | Day 243. |
 | Renderer contract | **As built (Day 247):** `RenderScene::Cull` walks its own `SpatialSet` behind the unchanged interface and returns the flat scan's slots in the same order; `RenderScene::SetCullMode(Bvh|Flat)` keeps the flat scan as the reference. A parallel `CullFrustum`, a precomputed visible-list overload and the `renderer.culling` setting were not built (filed in KNOWN-ISSUES.md). | Day 247. |
 | Bounds | `SpatialBounds` (local-space box from the mesh), `WorldBounds` (computed from `WorldTransform` only when it changed), a `Static` tag that keeps an entity in the static tree, a `SpatialLayer` component. | Day 244. |
 | Determinism | The same inputs build the same tree (a parallel build equals the sequential one byte for byte); queries are read-only and thread-safe between updates; updates run as a system after transform propagation. | Replays, tests. |
@@ -146,9 +146,9 @@ The miss: the dynamic tree re-inserts 0.8 to 0.9 us per move at this speed (agen
 
 ## 5. Contracts the other phases rely on
 
-- **Phase 23 (physics):** consumes `PairTracker` begin/end events and the set's layer masks; fat margins never leak into pair events; the narrow phase and the shapes are its own. `plans/phase-23-physics.md` already states this and needs no change.
+- **Phase 24 (physics):** consumes `PairTracker` begin/end events and the set's layer masks; fat margins never leak into pair events; the narrow phase and the shapes are its own. `plans/phase-24-physics.md` already states this and needs no change.
 - **Phase 17 Day 233 (`RenderSync`/`RenderScene`):** the bridge is unchanged; `RenderScene::Cull` uses a spatial index of its own (Day 247). The visible-list overload and visibility system originally planned were not built. `RenderSync` does not assume it alone decides what is drawn (its note already says so).
-- **Phase 26 (3D text):** needs nothing from here; its text entities become spatial members when they carry bounds.
+- **Phase 27 (3D text):** needs nothing from here; its text entities become spatial members when they carry bounds.
 
 ## 6. Open points the days settle
 

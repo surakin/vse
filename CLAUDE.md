@@ -301,13 +301,14 @@ table in `PLAN.md`.
   defined in Phase 4. Vulkan (Phase 4) and Direct3D 12 (Phase 13) are the backends; Metal (Phase 21)
   follows behind the same interface.
 - **Data-oriented ECS**, not an OOP scene graph.
+- **The engine must stay buildable as a loadable library** (Phase 23, planned; `PLAN.md` assumption #27): the same sources build as static libraries (the default) or as one shared library with hidden symbols and a versioned flat C ABI at the boundary. Until Phase 23 exists, do not add global or static state that could not live once inside one library (a second copy per module would be a bug), do not let an owning pointer or an allocation cross a module boundary to be freed by another module, and do not make a module depend on its own static initialization order.
 - **Linux first, Wayland primary / X11 fallback.** Every system is built
   and proven on Linux before porting to Windows/macOS/Android/iOS/consoles.
   Windows is Phase 13, right after the renderer core and the layering
   phases, and ports what exists by then (platform layer, RHI, renderer,
   shaders). **The macOS + Metal port is Phase 21** (postponed there on 2026-11-08,
-  built on the Mac beside the main line, 2026-11-10 to 2026-11-13), just before Android/iOS (Phase 27, which reuses its Metal
-  backend); consoles are Phase 28. How the later
+  built on the Mac beside the main line, 2026-11-10 to 2026-11-13), just before Android/iOS (Phase 28, which reuses its Metal
+  backend); consoles are Phase 29. How the later
   Linux-first phases (7-13) keep the Windows/macOS builds working is an
   open decision, see `PLAN.md` assumption #11. On Linux, Wayland is the primary display backend, X11 is
   a fallback backend for systems that haven't moved to Wayland — both
@@ -351,7 +352,7 @@ table in `PLAN.md`.
 - **Every target platform is designed in from day one — desktop, mobile,
   and console alike — even though only Linux is implemented before
   Phase 13 (Windows).** Platform-layer and engine-facing interfaces must stay
-  shaped so no later backend (Phases 13, 21, 27 and 28) ever forces a redesign of
+  shaped so no later backend (Phases 13, 21, 28 and 29) ever forces a redesign of
   already-built engine layers — see `PLAN.md` assumption #11. Build order
   still follows the roadmap (Linux → Windows/macOS → Android/iOS →
   consoles); that's not license to design as if mobile/console don't
@@ -368,20 +369,20 @@ table in `PLAN.md`.
   rasterization only — text shaping for complex scripts (HarfBuzz's
   domain) is explicitly out of scope until a real need shows up; cursor/
   line-break positions instead reuse the foundation string module's
-  existing grapheme clustering. **libpng and zlib are vendored with it from Phase 26 Day 342** (the user's decision, 2026-11-10), used only by FreeType
+  existing grapheme clustering. **libpng and zlib are vendored with it from Phase 27 Day 342** (the user's decision, 2026-11-10), used only by FreeType
   to decode the PNG strikes of `CBDT`/`sbix` colored-glyph fonts; no engine file includes their headers.
 - **Gameplay scripting embeds real languages, not a custom bytecode VM —
-  starting with Lua via LuaJIT** (Phase 25). Deliberate, individually
+  starting with Lua via LuaJIT** (Phase 26). Deliberate, individually
   justified exception to the third-party-dependency line, ships inside
   the runtime engine/game binary — see `PLAN.md` assumption #13. Designed
   with a pluggable language-backend seam so more languages can be added
-  later without a redesign. Phase 30's Blueprint importer targets this
+  later without a redesign. Phase 31's Blueprint importer targets this
   (transpiling to Lua) instead of a custom VM.
 - **Unreal Engine project import is a headline objective**, not a nice-to-
-  have (Phases 29 and 30): loading a real, unmodified UE 5.3+ project's
+  have (Phases 30 and 31): loading a real, unmodified UE 5.3+ project's
   meshes/textures/materials/levels, and eventually Blueprint gameplay
   logic, directly into this engine. Deliberately sequenced *after*
-  multiplatform support (Phases 13, 21, 27 and 28) rather than right after the asset
+  multiplatform support (Phases 13, 21, 28 and 29) rather than right after the asset
   pipeline (Phase 22) — see `PLAN.md` assumption #14. Targets uncooked editor-format
   projects, not shipped/cooked games. The offline import tool links a DLL
   built from Unreal Engine's own source to parse `.uasset`/`.umap`
@@ -389,7 +390,7 @@ table in `PLAN.md`.
   from-scratch reverse-engineered parser — scoped to the import tool
   only, never linked or shipped in the engine/game runtime (see
   `PLAN.md` assumption #6). **Open risk, unresolved:** Epic's UE EULA
-  terms need review before Phase 29 work starts — flagged in `PLAN.md`,
+  terms need review before Phase 30 work starts — flagged in `PLAN.md`,
   not yet resolved.
 - **The GUI is the engine's own widget toolkit, not a third-party one**
   (Phase 15): a retained-mode widget set (menus, buttons, comboboxes,
@@ -427,7 +428,7 @@ table in `PLAN.md`.
   only when describing Unreal's pipeline. Minting must be deterministic:
   same inputs and tool version give byte-identical outputs, tested for
   every minter (see `PLAN.md`, guiding principles).
-- **Engine core before editor.** The editor (Phase 31) is built last,
+- **Engine core before editor.** The editor (Phase 32) is built last,
   using the engine's own renderer/ECS and Phase 15 UI system — not a
   separate GUI toolkit.
 

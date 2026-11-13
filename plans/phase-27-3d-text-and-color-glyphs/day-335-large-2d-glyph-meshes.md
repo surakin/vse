@@ -1,6 +1,6 @@
-# Phase 26 / Day 335 — Large 2D Glyph Meshes: Cache & Edge Ramp
+# Phase 27 / Day 335 — Large 2D Glyph Meshes: Cache & Edge Ramp
 
-**Phase:** [Phase 26 — 3D Text, Large 2D Text & Colored Glyphs](../phase-26-3d-text-and-color-glyphs.md)
+**Phase:** [Phase 27 — 3D Text, Large 2D Text & Colored Glyphs](../phase-27-3d-text-and-color-glyphs.md)
 **Depends on:** Day 334; the glyph atlas keys (Phase 14 Day 177).
 
 The cached per-glyph geometry the 2D mesh path draws, with the antialiasing fringe, still CPU-only and tested with a software rasterizer.

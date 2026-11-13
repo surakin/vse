@@ -1,6 +1,6 @@
-# Phase 26 / Day 338 — Beveled Extrusion
+# Phase 27 / Day 338 — Beveled Extrusion
 
-**Phase:** [Phase 26 — 3D Text, Large 2D Text & Colored Glyphs](../phase-26-3d-text-and-color-glyphs.md)
+**Phase:** [Phase 27 — 3D Text, Large 2D Text & Colored Glyphs](../phase-27-3d-text-and-color-glyphs.md)
 **Depends on:** Day 337.
 
 Optional bevel on the front and back edges: chamfer or rounded profile, correct at concave corners and thin strokes.

@@ -1,4 +1,4 @@
-# Phase 33+ — Feature-Parity Push
+# Phase 34+ — Feature-Parity Push
 
 **Depends on:** a working engine core and at least one real demo (Phase
 27) to ground priorities against real usage rather than a feature
@@ -14,9 +14,9 @@ detail only once reached, against real priorities at that time.
   (Nanite/Lumen-class features), advanced shadowing.
 - World streaming / world partition for large open worlds.
 - Replication, prediction and matchmaking on top of Phase 20's transport layer (the sockets, TCP/UDP and the transport interface are Phase 20's).
-- Animation systems (blend trees, IK, state machines) beyond Phase 29's
+- Animation systems (blend trees, IK, state machines) beyond Phase 30's
   basic skeletal mesh import.
-- Landscape/terrain and foliage systems (deferred out of Phase 29).
+- Landscape/terrain and foliage systems (deferred out of Phase 30).
 - Niagara-equivalent particle/VFX system.
 - Further Unreal import coverage: latent Blueprint nodes, Sequencer/
   cinematics, cooked-game import if ever justified.
@@ -24,5 +24,5 @@ detail only once reached, against real priorities at that time.
 ## Notes / open questions
 
 - Deliberately left unscoped. Break this into real phase-NN files (23,
-  24, ...) once Phase 32 is complete and it's clear what the engine
+  24, ...) once Phase 33 is complete and it's clear what the engine
   actually needs next.

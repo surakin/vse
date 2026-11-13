@@ -109,8 +109,8 @@ the mask none, since the session cannot be stopped, and `DragEnded` gives what t
 
 ### `android`
 
-Not implemented yet (Phase 27): `AInputEvent` key and motion events, text from the soft keyboard (an IME is unavoidable there), touch as the pointer.
+Not implemented yet (Phase 28): `AInputEvent` key and motion events, text from the soft keyboard (an IME is unavoidable there), touch as the pointer.
 
 ### `ios`
 
-Not implemented yet (Phase 27): `UIKeyCommand`/`pressesBegan` for hardware keys, `UITextInput` for the soft keyboard, touches as the pointer.
+Not implemented yet (Phase 28): `UIKeyCommand`/`pressesBegan` for hardware keys, `UITextInput` for the soft keyboard, touches as the pointer.

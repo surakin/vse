@@ -1,6 +1,6 @@
-# Phase 26 / Day 341 — COLR Layers on the 2D and 3D Paths
+# Phase 27 / Day 341 — COLR Layers on the 2D and 3D Paths
 
-**Phase:** [Phase 26 — 3D Text, Large 2D Text & Colored Glyphs](../phase-26-3d-text-and-color-glyphs.md)
+**Phase:** [Phase 27 — 3D Text, Large 2D Text & Colored Glyphs](../phase-27-3d-text-and-color-glyphs.md)
 **Depends on:** Day 340; Days 336 and 339.
 
 Draw layered color glyphs everywhere text draws.

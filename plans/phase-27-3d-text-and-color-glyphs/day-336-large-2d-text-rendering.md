@@ -1,6 +1,6 @@
-# Phase 26 / Day 336 — Large 2D Text on the GPU
+# Phase 27 / Day 336 — Large 2D Text on the GPU
 
-**Phase:** [Phase 26 — 3D Text, Large 2D Text & Colored Glyphs](../phase-26-3d-text-and-color-glyphs.md)
+**Phase:** [Phase 27 — 3D Text, Large 2D Text & Colored Glyphs](../phase-27-3d-text-and-color-glyphs.md)
 **Depends on:** Day 335; `renderer::TextRenderer` (Phase 14 Days 180-181).
 
 Draw the Day 335 meshes in the overlay pass and remove Phase 14's scaled-raster stand-in.

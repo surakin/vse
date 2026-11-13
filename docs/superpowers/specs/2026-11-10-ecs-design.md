@@ -95,4 +95,4 @@ Decisions follow the table in section 2. The numbers are single-machine and rela
 - Per-chunk change precision may over-mark: measured on Day 229 and in the render sync.
 - Archetype explosion (many component combinations): bounded by 128 types; the archetype count is a stat and the graph cache keeps transitions O(1).
 - Pointer invalidation bugs in user code: the iteration guard and `Validate()`.
-- 3D text (Phase 26) needs `Text3D` entities: Day 339 of that phase is already amended to build on `engine/scene`.
+- 3D text (Phase 27) needs `Text3D` entities: Day 339 of that phase is already amended to build on `engine/scene`.
