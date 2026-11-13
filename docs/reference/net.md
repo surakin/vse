@@ -3188,7 +3188,7 @@ Waits for armed sockets to become ready, for a [`net::Poller::Wake`](#net-poller
 | Parameter `capacity` | how many events fit; at most [`net::Poller::kMaxBatch`](#net-poller-kmaxbatch) are reported. |
 | Parameter `timeout_nanos` | the longest wait, or negative to wait for ever. |
 | Parameter `count` | receives the number of events written; 0 on a timeout, a wake-up or an interruption. |
-| Fails | the system refuses the wait for a reason other than an interruption (the poller is broken); `*count` is 0. |
+| Fails | [`net::ErrorCode::Invalid`](#net-errorcode-invalid) when `capacity` is 0; the system refuses the wait for a reason other than an interruption (the poller is broken); `*count` is 0 either way. |
 | Ownership | `events` is written during the call; nothing is retained. |
 | Backend | `epoll_wait` (the timeout is rounded up to a millisecond, so it never returns early), draining the wake-up descriptor without reporting it; on Windows `select` over a copy of the armed set (not `WSAPoll`, which reports a half-closed socket whatever was asked for); on macOS `kevent`, a socket's two filters merged into one event. |
 

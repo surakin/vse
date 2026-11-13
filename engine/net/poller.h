@@ -87,8 +87,8 @@ public:
     /// - Param timeout_nanos: the longest wait, or negative to wait for ever.
     /// - Param count: receives the number of events written; 0 on a timeout, a wake-up or an interruption.
     /// - Ownership: `events` is written during the call; nothing is retained.
-    /// - Fails: the system refuses the wait for a reason other than an interruption (the poller is broken); `*count` is
-    /// 0.
+    /// - Fails: [[net::ErrorCode::Invalid]] when `capacity` is 0; the system refuses the wait for a reason other than
+    /// an interruption (the poller is broken); `*count` is 0 either way.
     Status Wait(PollEvent* events, usize capacity, i64 timeout_nanos, usize* count);
 
     /// Makes a [[net::Poller::Wait]] in progress, or the next one, return at once.

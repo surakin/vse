@@ -224,8 +224,10 @@ void Poller::Disarm(i64 handle)
 Status Poller::Wait(PollEvent* events, usize capacity, i64 timeout_nanos, usize* count)
 {
     *count = 0;
-    if (!armed_)
+    if (!armed_ || capacity == 0)
     {
+        // No room: select would report sockets nobody can be told of, so a waiting loop would spin; epoll_wait refuses
+        // it (EINVAL) and so does the kqueue poller.
         return Status::Of(ErrorCode::Invalid);
     }
     ArmedSet& a = *armed_;

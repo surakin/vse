@@ -15,6 +15,7 @@
 #include "saxpy.comp.dxil.inc"
 #include "triangle.frag.dxil.inc"
 #include "triangle.vert.dxil.inc"
+#include "containers/array.h"
 #include "containers/vector.h"
 #include "rhi/dx12/dx12_debug.h"
 #include "rhi/dx12/dx12_device.h"
@@ -744,7 +745,7 @@ TEST_CASE("Many DX12 bind groups per frame over more frames than the ring has sl
     cp.shader = cs;
     cp.bind_group_layouts[0] = layout;
     cp.bind_group_layout_count = 1;
-    cp.push_constant_bytes = 4;
+    cp.push_constant_bytes = 8;  // fill.comp's {k, count} (Phase 26 Day 315)
     const PipelineHandle fill = device->CreateComputePipeline(cp);
     const BufferHandle buf = CmdBuffer(*device, u64{kGroups} * kSlice, BufferUsage::Storage | BufferUsage::CopySrc);
     REQUIRE((fill.IsValid() && buf.IsValid()));
@@ -764,8 +765,10 @@ TEST_CASE("Many DX12 bind groups per frame over more frames than the ring has sl
             const BindGroupHandle group = CmdGroup(*device, layout, &e, 1, true);
             REQUIRE(group.IsValid());
             list->SetBindGroup(0, group);
-            const u32 k = g + f * 1000;
-            list->SetPushConstants(0, &k, 4);
+            // The count bounds the write to the group's slice; with only `k` pushed the shader read an unset count (the
+            // Windows PC, 2026-11-13: 6 bad elements in about one run in three).
+            const Array<u32, 2> push = {g + f * 1000, kSlice / 4};
+            list->SetPushConstants(0, push.Data(), 8);
             list->Dispatch(1, 1, 1);
         }
         list->Barrier(buf, ResourceState::ShaderWrite, ResourceState::CopySrc);
