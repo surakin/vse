@@ -7,6 +7,7 @@ The block-compression core: decoders first (the reference for every test), then 
 
 ## Tasks
 
+- [ ] **`rhi::Format::BC4_UNorm`** (Day 313 Spike 4: the enum has BC1, BC5 and BC7 but not BC4): add it with the Vulkan, DX12 and Metal mappings, the format-property table and a test per backend that compiles on its platform (the Mac and the PC check theirs at the phase close, `KNOWN-ISSUES.md`).
 - [ ] **Decoders** for BC1, BC2/BC3 (alpha), BC4, BC5 and (Day 320) BC7 written from the published formats: `DecodeBlock`, `DecodeImage`; tested against the format specification's worked examples.
 - [ ] **BC1 encoder:** endpoint selection by a deterministic principal-axis (range-fit) search with refinement, a 4-color mode and an optional 3-color-plus-transparent mode, endpoint rounding and ordering fixed so the output is byte-identical everywhere; a quality setting that bounds the refinement iterations.
 - [ ] **BC4 and BC5 encoders** (one and two channels, 8 interpolation steps, both endpoint orders tried, deterministic tie-breaking).

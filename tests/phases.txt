@@ -2,10 +2,10 @@
 #
 # `<pattern>  <phase>`: a source path relative to the repo root (`*` inside one segment; a trailing `/` is a whole
 # directory), or `test:<glob>` for a test that is not a Catch2 test case. Phases: 0 foundation, 1 Linux platform,
-# 2 jobs, 3 docs tooling, 4 RHI, 5 renderer, 6 test scoping, 7 debugging facilities, 8 RHI reset, 9 file handling, 10 standard types and containers, 11 settings system, 12 module layering, 13 Windows port, 14 font and text, 15 UI system, 16 standard-library wrappers, 17 ECS, 18 spatial partitioning, 19 storage, 20 networking, 21 macOS port (a side phase, run on the Mac beside the main line: `SIDE_PHASES`, Phase 21 Day 283). The rule is the phase that owns the behavior, not the directory.
+# 2 jobs, 3 docs tooling, 4 RHI, 5 renderer, 6 test scoping, 7 debugging facilities, 8 RHI reset, 9 file handling, 10 standard types and containers, 11 settings system, 12 module layering, 13 Windows port, 14 font and text, 15 UI system, 16 standard-library wrappers, 17 ECS, 18 spatial partitioning, 19 storage, 20 networking, 22 asset pipeline and resource system, 21 macOS port (a side phase, run on the Mac beside the main line: `SIDE_PHASES`, Phase 21 Day 283). The rule is the phase that owns the behavior, not the directory.
 #
 # Adding a Catch2 test file: add a line here, or the build stops naming the file. Adding another kind of test: add a
-# `test:` line and call engine_label_tests() after add_test. Labels are `phase0` ... `phase20`, and `phase21` for the side phase.
+# `test:` line and call engine_label_tests() after add_test. Labels are `phase0` ... `phase20`, `phase21` (the macOS port) and `phase22`.
 # `flavors <phase> plain,asan,tsan` lines (below) list the sanitizer flavors each phase has tests in; a new phase needs one.
 
 # Which flavors have tests of each phase (plain = neither asan nor tsan). test_phase_labels fails if a phase gains or
@@ -41,6 +41,8 @@ flavors 19  linux: plain,asan,tsan
 flavors 19  windows: plain,asan
 flavors 20  linux: plain,asan,tsan
 flavors 20  windows: plain,asan
+flavors 22  linux: plain,asan,tsan
+flavors 22  windows: plain,asan
 flavors 15  windows: plain,asan
 # What the Windows build has of each phase (Phase 13 ports one layer per day; each day updates its phases here; `none` = no tests yet).
 # MSVC has no ThreadSanitizer, so no Windows line lists tsan.
@@ -83,6 +85,7 @@ flavors 18  macos: plain,asan,tsan # tests/spatial (Day 294)
 flavors 19  macos: plain,asan,tsan # the gates (Day 286), tests/database and tests/storage (Day 294)
 flavors 20  macos: plain,asan,tsan # the gate net_access_check (Day 292), tests/net (Day 310)
 flavors 21  macos: plain,asan,tsan # tests/macos (Day 284)
+flavors 22  macos: plain,asan,tsan # tests/asset (Day 313)
 
 # --- Phase 0: foundation (tests/foundation) ---
 tests/foundation/arena_allocator_test.cpp       0
@@ -360,3 +363,6 @@ tests/scene/CMakeLists.txt                      17
 tests/net/                                      20   # Phase 20 Day 267
 test:net_backend_lists*                         20   # the socket backend checklist (Day 268)
 test:net_access_check*                          20   # the socket access gate (Day 268)
+
+# --- Phase 22: asset pipeline and resource system ---
+tests/asset/                                    22   # Phase 22 Day 313

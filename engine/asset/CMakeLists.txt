@@ -1,0 +1,28 @@
+# Phase 22: the asset pipeline and resource system (library `asset`). Day 313: the skeleton (one translation unit naming the module); the
+# following days add resource identity, the blob container, the backends and the resource manager. Layer 13, above the renderer and below
+# only programs. Headers are included as "asset/<name>.h", rooted at engine/. Built plain, ASan and TSan from one source list.
+set(ASSET_SOURCES
+  asset_module.cpp  # Day 313
+)
+set(ASSET_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  set(_asset_flavors "")
+  if(ENGINE_HAVE_ASAN)
+    list(APPEND _asset_flavors "_asan")
+  endif()
+  foreach(suffix "" ${_asset_flavors})
+    add_library(asset${suffix} STATIC ${ASSET_SOURCES})
+    target_include_directories(asset${suffix} PUBLIC ${ASSET_INCLUDE_ROOT})
+    target_compile_options(asset${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
+    target_link_libraries(asset${suffix} PUBLIC foundation${suffix})
+  endforeach()
+  return()
+endif()
+
+foreach(suffix "" "_asan" "_tsan")
+  add_library(asset${suffix} STATIC ${ASSET_SOURCES})
+  target_include_directories(asset${suffix} PUBLIC ${ASSET_INCLUDE_ROOT})
+  target_compile_options(asset${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
+  target_link_libraries(asset${suffix} PUBLIC foundation${suffix})
+endforeach()

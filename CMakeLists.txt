@@ -245,6 +245,8 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(engine/rhi)  # Day 160: the RHI and the Vulkan backend (DX12 from Day 162)
   add_subdirectory(engine/renderer)  # Day 161: the renderer and its suite (tests/rhi links it from Day 160)
   add_subdirectory(engine/scene)  # Phase 17 Day 233
+  add_subdirectory(engine/asset)  # Phase 22 Day 313
+  add_subdirectory(tests/asset)
   add_subdirectory(tests/rhi)  # Day 160: the Phase 4 RHI suite through Vulkan
   add_subdirectory(tests/renderer)  # Day 161
   add_subdirectory(tests/scene)  # Phase 17 Day 233
@@ -307,6 +309,8 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(engine/rhi)
   add_subdirectory(engine/renderer)
   add_subdirectory(engine/scene)
+  add_subdirectory(engine/asset)
+  add_subdirectory(tests/asset)
   add_subdirectory(tests/rhi)
   add_subdirectory(tests/renderer)
   add_subdirectory(tests/scene)
@@ -376,6 +380,7 @@ add_subdirectory(engine/ui_window)  # Phase 15 Day 194
 add_subdirectory(engine/rhi)
 add_subdirectory(engine/renderer)
 add_subdirectory(engine/scene)  # Phase 17 Day 233
+add_subdirectory(engine/asset)  # Phase 22 Day 313
 add_subdirectory(tools/docgen)
 add_subdirectory(tools/shader_mint)
 add_subdirectory(tools/rhi_boundary_check)
@@ -406,6 +411,7 @@ add_subdirectory(tests/spatial)  # Phase 18 Day 238
 add_subdirectory(tests/database)  # Phase 19 Day 251
 add_subdirectory(tests/storage)  # Phase 19 Day 256
 add_subdirectory(tests/net)  # Phase 20 Day 267
+add_subdirectory(tests/asset)  # Phase 22 Day 313
 add_subdirectory(tests/ui)  # Phase 15 Day 184
 add_subdirectory(tests/settings)
 add_subdirectory(tests/foundation_sanitized)

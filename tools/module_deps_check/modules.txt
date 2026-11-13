@@ -152,6 +152,8 @@ forbid renderer rhi/metal
 forbid renderer rhi/backends
 # 13 scene (Phase 17 Day 233): the bridge from ECS entities to the renderer's RenderScene; ecs and renderer below it, nothing in ecs or renderer includes it
 module engine/scene/ scene 13
+# 13 asset (Phase 22 Day 313): resource identity, blob containers, backends (filesystem, pak, network) and the resource manager; foundation, jobs, ecs, storage, net, rhi and renderer below it, nothing includes it but programs
+module engine/asset/ asset 13
 # 14 programs: demos, benchmarks, tools
 module game/hello_window/ game/hello_window 14
 module game/input_probe/ game/input_probe 14
@@ -242,6 +244,7 @@ target spatial spatial
 target database database
 target storage storage
 target net net
+target asset asset
 target database_sqlite database
 target platform platform
 target platform_input platform

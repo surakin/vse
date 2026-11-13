@@ -4428,6 +4428,8 @@ net::UdpTransport::Info(ConnectionId,UdpConnectionInfo*) const	function	net	net-
 net::UdpTransport::ConnectionCount() const	function	net	net-udptransport-connectioncount-const	net.md	engine/net/udp_transport.h:224
 net::UdpTransport::Counters() const	function	net	net-udptransport-counters-const	net.md	engine/net/udp_transport.h:228
 net::UdpTransport::HandshakeLimiterCounters() const	function	net	net-udptransport-handshakelimitercounters-const	net.md	engine/net/udp_transport.h:232
+asset::kContainerVersion	variable	asset	asset-kcontainerversion	asset.md	engine/asset/asset_module.h:16
+asset::CurrentContainerVersion()	function	asset	asset-currentcontainerversion	asset.md	engine/asset/asset_module.h:20
 database::Feature	enum	database	database-feature	database.md	engine/database/database.h:22
 database::Feature::Savepoints	enumerator	database	database-feature-savepoints	database.md	engine/database/database.h:24
 database::Feature::WithoutRowId	enumerator	database	database-feature-withoutrowid	database.md	engine/database/database.h:25

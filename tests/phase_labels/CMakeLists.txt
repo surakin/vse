@@ -35,7 +35,7 @@ phase_labels_test(test_phase_labels ${CMAKE_BINARY_DIR} -DCHECK_FLAVORS=1 -DPLAT
 phase_labels_test(test_phase_labels_planted_above_current ${CMAKE_CURRENT_BINARY_DIR}/fixtures/good
   -DCURRENT_PHASE_FILE=${CMAKE_CURRENT_SOURCE_DIR}/fixtures/current_phase_3.txt -DSIDE_PHASES_FILE=${CMAKE_SOURCE_DIR}/SIDE_PHASES)
 phase_labels_test(test_phase_labels_planted_no_side_phase ${CMAKE_CURRENT_BINARY_DIR}/fixtures/good
-  -DCURRENT_PHASE_FILE=${CMAKE_SOURCE_DIR}/CURRENT_PHASE -DSIDE_PHASES_FILE=${CMAKE_CURRENT_SOURCE_DIR}/fixtures/no_side_phases.txt)
+  -DCURRENT_PHASE_FILE=${CMAKE_CURRENT_SOURCE_DIR}/fixtures/current_phase_3.txt -DSIDE_PHASES_FILE=${CMAKE_CURRENT_SOURCE_DIR}/fixtures/no_side_phases.txt)
 set_tests_properties(test_phase_labels_planted_above_current PROPERTIES
   PASS_REGULAR_EXPRESSION "phase4 is above the current phase 3 and is not a side phase")
 set_tests_properties(test_phase_labels_planted_no_side_phase PROPERTIES

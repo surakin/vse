@@ -30,6 +30,7 @@ From the bottom up. "Platform code" means a per-OS backend directory (`linux/`, 
 | 12. Renderer | `engine/renderer` (+ `renderer_passes`) | Render graph, materials, passes, and from Phase 14 the glyph atlas texture and the text renderer. RHI (neutral only), jobs, text (the CPU atlas and layout types), spatial (from Phase 18 Day 247: `RenderScene` keeps its objects' boxes in a `spatial::SpatialSet` for culling; only `spatial_set.h` and `query.h` are included, never the ECS tier), foundation including settings. |
 | 12. UI window adapter | `engine/ui_window` (Phase 15 Day 194) | `WindowAdapter`: drains a window's input events into a surface (pointer positions divided by the scale, resize, focus) and sets the window's cursor from the surface. The only module naming both `ui` and `os::Window`. Depends on ui, platform and the foundation. |
 | 13. Scene bridge | `engine/scene` (Phase 17 Day 233) | `MeshRenderer`, `LightSource`, `Camera`, `RenderHandle` and the `RenderSync` system that mirrors ECS entities into `renderer::RenderScene`, touching it only for what changed. Depends on `ecs`, `renderer` (and below); nothing in `ecs` or `renderer` includes it. |
+| 13. Assets | `engine/asset` (Phase 22 Day 313) | Resource identity, the blob container, the filesystem, pak and network backends, the resource manager; from Day 313 only the skeleton. `foundation`, `jobs`, `ecs`, `storage`, `net`, `rhi` and `renderer` below it; only programs include it. |
 | 14. Programs | `game/*`, `tools/*`, `tests/*` | Demos, benches, tools and tests. Anything below. Neutral headers only: no `os/<platform>/` include (section 3, item 6). `tools/metal_mint` (Phase 21 Day 299, macOS only) links `foundation` and Apple's Metal framework; its one source is under `macos/` (`platform_neutral_check` rule 7). |
 
 Later phases add modules above the renderer in the order `PLAN.md`'s diagram gives (text, UI, ECS, physics, audio, assets, scripting, Unreal import,
@@ -51,6 +52,7 @@ spatial           ->  foundation (incl. math); from later days ecs, jobs      (P
 database          ->  foundation                                              (Phase 19 Day 251)
 storage           ->  foundation (incl. bytes), ecs, spatial, jobs, database  (Phase 19 Day 256; database from Day 262)
 net               ->  foundation (incl. bytes); jobs from Day 269             (Phase 20 Day 267)
+asset             ->  foundation, jobs, ecs, storage, net, rhi, renderer      (Phase 22 Day 313)
 bytes             ->  containers, cstr, types (header-only)                   (Phase 19 Day 256)
 ui                ->  text, platform_input (header-only), foundation
 ui_window         ->  ui, platform, foundation                               (Phase 15 Day 194)

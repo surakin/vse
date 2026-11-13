@@ -1,6 +1,6 @@
 # Phase 22 — Asset Pipeline & Resource System
 
-**Status: planned (2026-11-13): day files written, Days 313-330. Nothing started; `CURRENT_PHASE` stays 20 until Day 313 (its first task). Needs from the user: confirm the benchmark pass conditions on Day 329 (planner's defaults).**
+**Status: in progress (2026-11-13): Day 313 done (spec, spikes, skeleton); `CURRENT_PHASE` is 22. Days 314-330 next. Needs from the user: confirm the benchmark pass conditions on Day 329 (planner's defaults).**
 
 **Depends on:** Phase 17 (ECS), Phase 5 (renderer core: `MeshData`, `GpuTexture`, `MaterialSystem`), Phase 8 (`Recreatable`, the device reset), Phase 19 (storage: the component registry and entity keys the level format reuses), Phase 20 (networking: the network backend is a user of `net::TcpTransport`), Phase 9 (file layer), Phase 11 (settings), Phase 2 (jobs). Placed before physics (23) and audio (24) so both load minted assets. Phase 21 (macOS) is complete on the Mac: the resource system must build and run there too.
 **Goal:** a resource system with pluggable storage backends, versioned per-type binary formats, offline tooling that produces them deterministically, and a runtime manager that loads them synchronously and asynchronously: the foundation Phase 30 (Unreal import) targets when converting external content into engine-native form. See root `PLAN.md` assumption #12 for the settled design decisions this phase implements.

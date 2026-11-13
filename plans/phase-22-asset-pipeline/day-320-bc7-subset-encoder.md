@@ -8,7 +8,7 @@ The high-quality format for color and alpha, limited to the modes Day 313's spik
 ## Tasks
 
 - [ ] **BC7 decoder** for every mode (the decoder must accept any valid block, whatever the encoder writes).
-- [ ] **BC7 encoder subset:** modes 6 (one subset, RGBA with p-bits) and the two-subset mode the spike picked for opaque color (with a fixed table of partitions, a bounded partition search), endpoint refinement by a bounded least-squares or coordinate descent, p-bit and index-bit selection; choice between modes by error, ties broken by mode number.
+- [ ] **BC7 encoder, mode 6 only (Day 313 Spike 3):** one subset, RGBA, 7-bit endpoints with p-bits, 4-bit indices; principal-axis fit, the four p-bit combinations, a bounded least-squares refinement. Spike numbers: 52 to 55 dB on smooth content against 43 to 45 dB for BC1, 3.7 to 7.4 MP/s unoptimized on one core. The partitioned modes are **not** built (about +3 dB for about 10x the encode time); revisit only if a real asset shows a visible gap.
 - [ ] **Quality and speed settings** (`fast`, `normal`, `high`: partitions tried and refinement steps) with the time per megapixel measured and recorded.
 - [ ] **Texture minter formats** `bc7` (color), `bc7-alpha`; a minter option choosing the format by content (opaque or not) is *not* added (explicit is deterministic and reviewable).
 - [ ] **Tests:** PSNR against BC1 on the same images (BC7 must be better on the gradient, noise and a photograph-like test image), validity of every block by the decoder, mode histogram stable across worker counts, output golden-hashed for the standard images at each quality.

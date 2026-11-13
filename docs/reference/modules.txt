@@ -105,6 +105,12 @@ module net "Networking"
   strict ownership
   strict failure
 
+module asset "Assets and resources"
+  header engine/asset/*.h
+  strict thread-safety
+  strict ownership
+  strict failure
+
 module database "Database"
   header engine/database/*.h
   header engine/database/sqlite/*.h
