@@ -147,6 +147,20 @@ Pass conditions for the engine's layers (planner's defaults, to be confirmed or 
 Within a few microseconds of Linux on the loopback echoes (the Windows poller is `select`, section 3); the simulated measures are about 10-20 %
 slower. The same conditions as on Linux are not measured (below), and the `select` poller has not been measured at 1,000 sockets.
 
+### Results on macOS (2026-11-13, Phase 26 Day 327; Release, Apple clang, loopback, the 2019 MacBook Pro, Intel i5-8257U, 4 cores; one run)
+
+| Measure | Result |
+|---|---|
+| UDP transport echo, 64 B | p50 47 us, p99 111 us, p999 168 us |
+| UDP transport echo, 1 KiB | p50 54 us, p99 127 us, p999 194 us |
+| TCP transport echo, 64 B | p50 28 us, p99 69 us, p999 117 us |
+| TCP transport echo, 1 KiB | p50 29 us, p99 73 us, p999 135 us |
+| 1,000 simulated TCP connections, one 64 B message each per 100 ms for 10 s | 100,000 messages in 472.4 ms of CPU, 47 us per connection-second |
+| Simulated TCP stream throughput, 16 KiB messages | 965 MiB/s of wall time |
+
+About twice the Linux and Windows loopback latencies (the kqueue poller, section 3, on a laptop CPU), and the simulated measures about 1.6 times
+slower, in line with the slower machine.
+
 **Not measured, filed in `KNOWN-ISSUES.md`:** the conditions that measure the reactor and coroutine layer under load (250,000 round trips per second at 1,000 connections with four participants; at most 1.0 `epoll_wait` wake-ups per round trip; idle resume p99 under 200 us; saturated hand-off p99 under 5 ms), UDP at 50,000 reliable-ordered and 100,000 unreliable messages per second, the congestion condition (80 % of a 10 Mbit/s, 50 ms link), and the codec. The transports are polled, so a polled loop does not exercise the reactor; the first user of `net::Reactor` with coroutines (a later phase) measures them.
 
 ### Deviations from Day 266

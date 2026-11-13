@@ -58,6 +58,11 @@ if(ENGINE_SLANGC)
 else()
   find_program(SLANGC slangc HINTS "C:/Tools/slang-2026.18.2/bin" "$ENV{HOME}/tools/slang-2026.18.2/bin")
 endif()
+if(ENGINE_COMPILE_ONLY)
+  # A compile-only build (Phase 26 Day 327) cannot run the minters it builds: the committed outputs are used as they are.
+  message(STATUS "Compile-only build: shaders are not minted; the committed outputs are used")
+  set(SLANGC "")
+endif()
 if(SLANGC)
   # The program may be an unrelated one (above): it gets no input and 10 seconds, so one that waits cannot stop the configure.
   if(CMAKE_HOST_WIN32)

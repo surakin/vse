@@ -40,27 +40,6 @@ add_executable(docgen src/main.cpp)
 target_compile_options(docgen PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
 target_link_libraries(docgen PRIVATE docgen_lib)
 
-# macOS (Phase 26 Day 309): the reference and the three checks that need only docgen. The samples link the renderer, UI, text and the rest,
-# which macOS builds from Day 310 on; docs_samples and the samples step of `docs` join on Day 327.
-if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  set(DOCGEN_LINT_ARGS --root ${CMAKE_SOURCE_DIR} --baseline ${CMAKE_SOURCE_DIR}/docs/reference/lint-baseline.txt)
-  add_test(NAME docs_check COMMAND docgen check --root ${CMAKE_SOURCE_DIR})
-  add_test(NAME docs_links COMMAND docgen links --root ${CMAKE_SOURCE_DIR})
-  add_test(NAME docs_lint COMMAND docgen lint ${DOCGEN_LINT_ARGS} --quiet)
-  set_tests_properties(docs_check docs_links docs_lint PROPERTIES LABELS "docs" TIMEOUT 300)
-  engine_label_tests(docs_check docs_links docs_lint)
-  add_custom_target(docs
-    COMMAND $<TARGET_FILE:docgen> reference --root ${CMAKE_SOURCE_DIR}
-    COMMAND $<TARGET_FILE:docgen> check --root ${CMAKE_SOURCE_DIR}
-    COMMAND $<TARGET_FILE:docgen> links --root ${CMAKE_SOURCE_DIR}
-    COMMAND $<TARGET_FILE:docgen> lint ${DOCGEN_LINT_ARGS}
-    DEPENDS docgen
-    COMMENT "Regenerating docs/reference and running the documentation checks (macOS: no samples before Phase 26 Day 327)"
-    VERBATIM
-    USES_TERMINAL)
-  return()
-endif()
-
 # Phase 3 Day 43: the documentation checks. `cmake --build build --target docs` regenerates docs/reference and then runs every check; ctest
 # runs the four checks (no regeneration) as docs_check, docs_links, docs_samples and docs_lint. Samples are compiled with the engine's own
 # production flags, include roots and libraries.
@@ -114,6 +93,41 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   endforeach()
   set(DOCGEN_EXTRA_INCLUDES -I ${ENGINE_VULKAN_HEADERS_DIR})
   set(DOCGEN_SAMPLE_LIBRARIES platform breakpad_client rhi_dx12)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  # macOS (Phase 26 Day 327): Apple clang with the engine's options and macOS definitions, the Metal backend in place of Vulkan, and the
+  # frameworks the libraries link (engine/platform, engine/rhi/metal, engine/foundation): the same list a demo's link line has.
+  set(DOCGEN_FLAGS_ARGS --flag -std=c++20)
+  foreach(opt ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
+    list(APPEND DOCGEN_FLAGS_ARGS --flag ${opt})
+  endforeach()
+  foreach(def IN LISTS ENGINE_MACOS_DEFINITIONS)
+    list(APPEND DOCGEN_FLAGS_ARGS --flag -D${def})
+  endforeach()
+  # What CMake gives its own compiles and links: the SDK (the C++ headers live in it) and the deployment target.
+  set(_docgen_sdk "${CMAKE_OSX_SYSROOT}")
+  if(NOT _docgen_sdk)
+    execute_process(COMMAND xcrun --show-sdk-path OUTPUT_VARIABLE _docgen_sdk OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+  endif()
+  if(_docgen_sdk)
+    list(APPEND DOCGEN_FLAGS_ARGS --flag -isysroot --flag ${_docgen_sdk})
+  endif()
+  if(CMAKE_OSX_DEPLOYMENT_TARGET)
+    list(APPEND DOCGEN_FLAGS_ARGS --flag -mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET})
+  endif()
+  foreach(arch IN LISTS CMAKE_OSX_ARCHITECTURES)  # the libraries' architecture, not the compiler's default
+    list(APPEND DOCGEN_FLAGS_ARGS --flag -arch --flag ${arch})
+  endforeach()
+  set(DOCGEN_LINK_ARGS "")
+  foreach(lib renderer_passes renderer ui net storage database_sqlite database sqlite3 spatial ecs text freetype rhi_backends rhi_metal rhi jobs platform
+              foundation_settings foundation_debug foundation_io foundation_base backtrace sentry breakpad_client)
+    list(APPEND DOCGEN_LINK_ARGS --link $<TARGET_FILE:${lib}>)
+  endforeach()
+  foreach(framework AppKit CoreFoundation CoreGraphics Foundation Metal QuartzCore)
+    list(APPEND DOCGEN_LINK_ARGS --link -framework --link ${framework})
+  endforeach()
+  list(APPEND DOCGEN_LINK_ARGS --link -pthread)
+  set(DOCGEN_EXTRA_INCLUDES "")
+  set(DOCGEN_SAMPLE_LIBRARIES backtrace breakpad_client platform)
 else()
   set(DOCGEN_FLAGS_ARGS --flag -std=c++20)
   foreach(opt ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
@@ -165,7 +179,7 @@ add_custom_target(docs
   COMMAND $<TARGET_FILE:docgen> links --root ${CMAKE_SOURCE_DIR}
   COMMAND $<TARGET_FILE:docgen> samples ${DOCGEN_SAMPLES_ARGS}
   COMMAND $<TARGET_FILE:docgen> lint ${DOCGEN_LINT_ARGS}
-  DEPENDS docgen renderer_passes renderer net storage database_sqlite database sqlite3 spatial ecs text freetype rhi_backends rhi_vulkan rhi jobs foundation sentry ${DOCGEN_SAMPLE_LIBRARIES}
+  DEPENDS docgen renderer_passes renderer net storage database_sqlite database sqlite3 spatial ecs text freetype rhi_backends rhi jobs foundation sentry ${DOCGEN_SAMPLE_LIBRARIES}
   COMMENT "Regenerating docs/reference and running the documentation checks"
   VERBATIM
   USES_TERMINAL)

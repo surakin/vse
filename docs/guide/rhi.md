@@ -304,6 +304,10 @@ comparing later work, not a promise, and are never asserted in CI.
 | Upload through the staging ring, 1 MiB x 256 and 64 MiB x 8 | 14-18 GiB/s (a memcpy plus one GPU copy; bound by host memory bandwidth) |
 | Cube pipeline creation (shaders, pipeline, buffers) | 5.6-5.8 ms with the cache off, 4.9-5.0 ms on a cold cache, 3.6 ms on a warm one |
 
+On macOS (Phase 26 Day 327; Metal on the Intel Iris Plus 645 of a 2019 MacBook Pro, macOS 15.8.1, Release, validation off): 0.64-0.89 us per
+draw (1000 and 10000 cubes, a transient bind group each), barriers 0.02-0.05 us (recorded, nothing to encode between Metal encoders), uploads
+3.8 GiB/s (1 MiB) and 6.6 GiB/s (64 MiB), the cube pipeline 1.8-1.9 ms with or without the pipeline archive.
+
 Use it with the design rules in mind. `Submit` of a whole frame costs microseconds, so the cost of a frame is recording.
 Recording is thread-compatible per list, so scale by recording lists on several jobs. A profile of the 10000-draw case
 (`perf record`) put the NVIDIA driver at about 12%, the device's resource mutex (`pthread_mutex_lock`, from
@@ -321,13 +325,13 @@ availability probe, its shader format and how strongly `Auto` prefers it) and re
 library and reach backends only through this registry, so the renderer links `rhi` alone and never a backend.
 
 Registration is one explicit call, never a global constructor: a program calls [[rhi::RegisterCompiledBackends]]
-(`rhi/backends/backends.h`, library `rhi_backends`) at startup, before it creates a device. It registers the null backend and
-Vulkan everywhere, and Direct3D 12 on Windows. Test binaries do it from a Catch2 listener
+(`rhi/backends/backends.h`, library `rhi_backends`) at startup, before it creates a device. It registers the null backend everywhere,
+Vulkan on Linux and Windows, Direct3D 12 on Windows and Metal on macOS (which has no Vulkan: Phase 26 decision 8). Test binaries do it from a Catch2 listener
 (`tests/support/register_backends.cpp`). Forgetting the call is not a silent "no GPU": the device creation fails with
 `the vulkan backend is not registered in this program (link rhi_backends and call rhi::RegisterCompiledBackends ...)`.
 
 `Backend::Auto`, the default of [[rhi::DeviceCreateInfo::backend]], picks the available registered backend with the highest
-rank ([[rhi::PickAutoBackend]]): Direct3D 12 (rank 20) on Windows, Vulkan (10) elsewhere; the null backend has rank 0, so `Auto` never picks it. A named backend that is registered but
+rank ([[rhi::PickAutoBackend]]): Direct3D 12 (rank 20) on Windows, Metal (30) on macOS, Vulkan (10) on Linux; the null backend has rank 0, so `Auto` never picks it. A named backend that is registered but
 cannot run here (no Vulkan loader, for example) fails with the backend's own reason ([[rhi::ResolveBackend]]). The renderer's
 `backend` setting (`auto`, `null`, `vulkan`, `dx12`, `metal`) goes through the same rule when the program starts; it is not changed at run time
 (a change waits for the next start, see the render settings guide). From Phase 26 Day 314 to Day 324 there was one exception, on macOS: the setting's `auto` in a
@@ -345,17 +349,21 @@ using namespace engine_placeholder;
 
 int main() {
     rhi::RegisterCompiledBackends();
-    // Every platform has these two; Windows also registers dx12, which takes dxil.
-    for (rhi::Backend which : {rhi::Backend::Null, rhi::Backend::Vulkan}) {
-        const rhi::BackendDescriptor* backend = rhi::FindBackend(which);
-        std::printf("%s takes %s\n", backend->name, rhi::ShaderFormatName(backend->shader_format));
+    // Every platform has the null backend, and at least one GPU backend: Vulkan (spirv) on Linux and Windows,
+    // Direct3D 12 (dxil) on Windows, Metal (metallib) on macOS.
+    const rhi::BackendDescriptor* null_backend = rhi::FindBackend(rhi::Backend::Null);
+    std::printf("%s takes %s\n", null_backend->name, rhi::ShaderFormatName(null_backend->shader_format));
+    bool gpu = false;
+    for (rhi::Backend which : {rhi::Backend::Vulkan, rhi::Backend::Dx12, rhi::Backend::Metal}) {
+        gpu = gpu || rhi::FindBackend(which) != nullptr;
     }
+    std::printf("a GPU backend is registered: %s\n", gpu ? "yes" : "no");
     return 0;
 }
 ```
 ```output
 null takes spirv
-vulkan takes spirv
+a GPU backend is registered: yes
 ```
 
 ### Creating a device

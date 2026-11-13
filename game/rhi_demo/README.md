@@ -1,8 +1,8 @@
 # rhi_demo
 
 The RHI's reference client: a textured, depth-tested cube lit by one directional light that orbits it, drawn through
-the RHI into a window (Wayland or X11 on Linux, Win32 on Windows) or offscreen. The backend is the `renderer.backend` setting (`--rhi`):
-`auto` is Direct3D 12 on Windows and Vulkan elsewhere, `vulkan` and `dx12` name one. Nothing here includes a backend header.
+the RHI into a window (Wayland or X11 on Linux, Win32 on Windows, Cocoa on macOS) or offscreen. The backend is the `renderer.backend` setting
+(`--rhi`): `auto` is Direct3D 12 on Windows, Metal on macOS and Vulkan on Linux; `vulkan`, `dx12` and `metal` name one. Nothing here includes a backend header.
 
 ## Build and run
 
@@ -26,11 +26,22 @@ It is a windowed program (the Windows subsystem, `ENGINE_WINDOWED_PROGRAM`): sta
 terminal its output goes to that terminal. Its settings file is `%APPDATA%\rhi_demo\settings.cfg`, its crash dumps go to
 `%LOCALAPPDATA%\rhi_demo\crashes`.
 
+On macOS (Phase 26), with the `macos-clang` preset (`BUILD.md`): the device is Metal (`auto` picks it; there is no Vulkan on macOS).
+
+```
+cmake --build --preset macos-clang --target rhi_demo
+./build-macos/game/rhi_demo/rhi_demo --frames 1000
+```
+
+Run Metal's validation with `MTL_DEBUG_LAYER=1 MTL_DEBUG_LAYER_ERROR_MODE=assert` (and `MTL_SHADER_VALIDATION=1`) in the environment: `--validation`
+cannot turn it on after Metal starts. Its settings file is `~/Library/Application Support/rhi_demo/settings.cfg`, its crash dumps go to
+`~/Library/Application Support/rhi_demo/crashes`, and its pipeline cache to `~/Library/Caches/engine/`.
+
 ## Options
 
 | Option | Meaning |
 |---|---|
-| `--backend wayland\|x11\|win32` | display backend; default automatic (Wayland first on Linux, Win32 on Windows). Same as `ENGINE_WINDOW_BACKEND` |
+| `--backend wayland\|x11\|win32\|cocoa` | display backend; default automatic (Wayland first on Linux, Win32 on Windows, Cocoa on macOS). Same as `ENGINE_WINDOW_BACKEND` |
 | `--frames N` | stop after N frames (also `RHI_DEMO_FRAMES=N`); a run of 200 or more frames also checks that memory did not grow by more than 8 MiB between frame 100 and the end |
 | `--screenshot FILE` | render offscreen with a fixed camera and light, with no window, and write the last frame to FILE as a binary PPM (N frames with `--frames`) |
 | `--no-vsync` | present with `Immediate` instead of `Fifo` |

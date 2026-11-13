@@ -950,6 +950,10 @@ a promise, and are never asserted in CI. Do not tune on a Debug build: it is fiv
 | Point lights: 100 / 1000 / 4000 / 16000 | +0.01 / +0.15 / +0.9 / +3.1 ms; about 0.1-0.2 us of CPU per light |
 | Transient pool, 100 frames | 5 textures created, 520 reuses (99% hit rate), none destroyed |
 
+On macOS (Phase 26 Day 327; Metal on the Iris Plus 645, Intel i5-8257U, Release): the graph 0.07-0.09 us per pass; a frame of 1000 objects
+1.4-1.5 ms, 10000 about 7.1 ms, 50000 about 25 ms (0.5 us per object; the laptop's CPU, and Metal's encoding of the same 16 draws); 16000 point
+lights 13.9 ms; the transient pool the same 99% hit rate.
+
 The renderer instances objects that share a mesh and material, so 10000 objects cost 16 draws and the per-draw figure in
 the [RHI performance notes](rhi.md#performance-notes) (about 0.5 us per draw, unique data for each draw) does not apply
 to it; per object it is 0.08 us, which is culling, sorting, and writing the object's matrices. A scene in which no two objects

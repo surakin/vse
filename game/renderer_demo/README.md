@@ -2,9 +2,9 @@
 
 The Phase 5 showcase: a tiled ground, a few hundred spheres and cubes in eight materials, hundreds of point lights, a sun and
 a little ambient light, drawn by the deferred renderer (G-buffer, light volumes, ACES tonemap) into a window (Wayland or X11
-on Linux, Win32 on Windows) or offscreen. `rhi_demo` stays as the RHI's own reference client; this one goes through `renderer::Renderer` and the render
-graph and never names a backend: the device is Vulkan or Direct3D 12 by the `renderer.backend` setting (`--rhi`; `auto` is
-Direct3D 12 on Windows), and the `backend` setting switches it while the demo runs.
+on Linux, Win32 on Windows, Cocoa on macOS) or offscreen. `rhi_demo` stays as the RHI's own reference client; this one goes through `renderer::Renderer` and the render
+graph and never names a backend: the device is Vulkan, Direct3D 12 or Metal by the `renderer.backend` setting (`--rhi`; `auto` is
+Direct3D 12 on Windows and Metal on macOS), chosen when the demo starts: a change to `backend` waits for the next start.
 
 ## Build and run
 
@@ -30,11 +30,22 @@ It is a windowed program (the Windows subsystem, `ENGINE_WINDOWED_PROGRAM`): sta
 terminal its output goes to that terminal. Its settings file is `%APPDATA%\renderer_demo\settings.cfg`, its crash dumps go to
 `%LOCALAPPDATA%\renderer_demo\crashes`.
 
+On macOS (Phase 26), with the `macos-clang` preset (`BUILD.md`): the device is Metal (`auto` picks it; there is no Vulkan on macOS).
+
+```
+cmake --build --preset macos-clang --target renderer_demo
+./build-macos/game/renderer_demo/renderer_demo --frames 1000
+```
+
+Run Metal's validation with `MTL_DEBUG_LAYER=1 MTL_DEBUG_LAYER_ERROR_MODE=assert` (and `MTL_SHADER_VALIDATION=1`) in the environment: `--validation`
+cannot turn it on after Metal starts. Its settings file is `~/Library/Application Support/renderer_demo/settings.cfg`, its crash dumps go to
+`~/Library/Application Support/renderer_demo/crashes`, and its pipeline cache to `~/Library/Caches/engine/`.
+
 ## Options
 
 | Option | Meaning |
 |---|---|
-| `--backend wayland\|x11\|win32` | display backend; default automatic (Wayland first on Linux, Win32 on Windows). Same as `ENGINE_WINDOW_BACKEND` |
+| `--backend wayland\|x11\|win32\|cocoa` | display backend; default automatic (Wayland first on Linux, Win32 on Windows, Cocoa on macOS). Same as `ENGINE_WINDOW_BACKEND` |
 | `--frames N` | stop after N frames (also `RENDERER_DEMO_FRAMES=N`); a run of 200 or more frames also checks that resident memory did not grow by more than 8 MiB between frame 100 and the end |
 | `--screenshot FILE` | render offscreen with a fixed camera and time, with no window, and write the last frame to FILE as a binary PPM |
 | `--objects N` | total objects, the 49 ground tiles included, 64 to 20000 (default 540) |

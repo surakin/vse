@@ -17,11 +17,22 @@ cmake --build build --target ui_demo
 ./build/game/ui_demo/ui_demo --screenshot out.ppm --script "frame:2 theme:dark frame:4 openmenu:View"
 ```
 
+On macOS (Phase 26), with the `macos-clang` preset (`BUILD.md`): the device is Metal (`auto` picks it; there is no Vulkan on macOS).
+
+```
+cmake --build --preset macos-clang --target ui_demo
+./build-macos/game/ui_demo/ui_demo --frames 1000
+```
+
+Run Metal's validation with `MTL_DEBUG_LAYER=1 MTL_DEBUG_LAYER_ERROR_MODE=assert` (and `MTL_SHADER_VALIDATION=1`) in the environment: `--validation`
+cannot turn it on after Metal starts. Its settings file is `~/Library/Application Support/ui_demo/settings.cfg`, its crash dumps go to
+`~/Library/Application Support/ui_demo/crashes`, and its pipeline cache to `~/Library/Caches/engine/`.
+
 ## Things to try
 
-- **Menus:** File, Edit, View, Help; keys: Alt+F opens File, F1 opens About, Ctrl+Q quits; View > Theme switches the whole tree between light and dark at run time (the status bar
+- **Menus:** File, Edit, View, Help; keys: Alt+F opens File, F1 opens About, Ctrl+Q quits (Cmd+Q on macOS); View > Theme switches the whole tree between light and dark at run time (the status bar
   stays dark: a subtree theme override).
-- **Left panel:** Tab walks the controls in order; drag a row of the list to reorder it; right-click the panel for a context menu; drop text or a file on the text field; Ctrl+V pastes.
+- **Left panel:** Tab walks the controls in order; drag a row of the list to reorder it; right-click the panel for a context menu; drop text or a file on the text field; Ctrl+V pastes (Cmd+V on macOS).
 - **Viewport:** right-drag orbits, the wheel zooms; left-click the in-world screen's Count button.
 - **Settings:** View > Rendering settings... changes the present mode, the render scale and the shader quality while the window is open, with the cost class of each beside its control
   (`docs/guide/render-settings.md`); the `set:`, `reset` and `loss` script words do the same without a person.

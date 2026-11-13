@@ -457,8 +457,11 @@ Ninja; no Xcode.
 
 - **Preset.** `cmake --preset macos-clang` configures `build-macos` (Ninja, Debug, x86-64, deployment target macOS 13.3); build and test with
   `cmake --build --preset macos-clang` and `ctest --preset macos-clang`. The configure takes Apple clang through `xcrun`, so a MacPorts or
-  Homebrew clang first on `PATH` is not picked up, and stops with a message without the Command Line Tools. It prints which layers are not
-  ported yet.
+  Homebrew clang first on `PATH` is not picked up, and stops with a message without the Command Line Tools. Everything the Linux build has is
+  built, with the Metal backend in place of Vulkan (Day 327).
+- **Apple silicon, compile-only.** `cmake --preset macos-clang-arm64` configures `build-macos-arm64` for arm64 with `ENGINE_COMPILE_ONLY` (Day
+  327): every target builds and nothing built runs, so there is no test discovery and no shader minting (the committed outputs are used). It
+  is how the Intel Mac checks arm64 code paths; run it, unity and `-DENGINE_UNITY_BUILD=OFF`, on every macOS day that changes macOS code.
 - **Flavors.** plain, asan (ASan and UBSan) and tsan, as on Linux. Apple clang has no LeakSanitizer: ASan aborts when asked for
   `detect_leaks=1` (`KNOWN-ISSUES.md`), so leak checks run on Linux.
 - **Objective-C++.** `.mm` files (only in macOS directories) compile with ARC and the warnings of every target. `tests/macos` checks that

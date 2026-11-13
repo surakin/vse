@@ -43,17 +43,29 @@ if(APPLE)
   enable_language(OBJCXX)
 endif()
 
-# Supported targets: x86-64 Linux, x86-64 Windows (Phase 13), and x86-64 macOS (being ported in Phase 26, a side phase on the Mac; arm64 macOS gets a
-# compile-only configuration on Phase 26 Day 327). Anything else names the phase that ports it.
+# Supported targets: x86-64 Linux, x86-64 Windows (Phase 13), and x86-64 macOS (Phase 26, a side phase on the Mac). arm64 macOS has a compile-only
+# configuration (Phase 26 Day 327, preset macos-clang-arm64): everything builds and nothing runs, since the Mac that builds it is Intel. Anything
+# else names the phase that ports it.
+option(ENGINE_COMPILE_ONLY "Build every target and run nothing built (no test discovery, no shader minting): a cross-compiled check" OFF)
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
   set(ENGINE_PLATFORM linux)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows" AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(AMD64|x86_64)$")
   set(ENGINE_PLATFORM windows)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64" AND NOT CMAKE_OSX_ARCHITECTURES MATCHES "arm64")
   set(ENGINE_PLATFORM macos)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND (CMAKE_OSX_ARCHITECTURES STREQUAL "arm64" OR
+       (NOT CMAKE_OSX_ARCHITECTURES AND CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")))
+  # arm64: built and run natively on Apple silicon (not seen yet: no such Mac), compile-only from an Intel Mac (or a CMake under Rosetta).
+  set(ENGINE_PLATFORM macos)
+  if(NOT CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "arm64" AND NOT ENGINE_COMPILE_ONLY)
+    message(FATAL_ERROR "arm64 macOS on an Intel Mac builds compile-only: configure with -DENGINE_COMPILE_ONLY=ON (preset macos-clang-arm64)")
+  endif()
+  if(ENGINE_COMPILE_ONLY)
+    message(STATUS "macOS arm64 (Phase 26 Day 327): compile-only, nothing built is run here")
+  endif()
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  message(FATAL_ERROR "macOS on ${CMAKE_SYSTEM_PROCESSOR} (${CMAKE_OSX_ARCHITECTURES}): only x86-64 is ported so far; the arm64 compile-only "
-                      "configuration is Phase 26 Day 327 (plans/phase-26-macos-metal.md)")
+  message(FATAL_ERROR "macOS on ${CMAKE_SYSTEM_PROCESSOR} (${CMAKE_OSX_ARCHITECTURES}): x86-64 and arm64 (compile-only) are the supported "
+                      "architectures (plans/phase-26-macos-metal.md)")
 elseif(CMAKE_SYSTEM_NAME MATCHES "^(Android|iOS)$")
   message(FATAL_ERROR "${CMAKE_SYSTEM_NAME} is ported in Phase 27 (plans/phase-27-android-ios.md)")
 else()
@@ -146,7 +158,13 @@ if(ENGINE_FORCE_SLOW_CHECKS)
   add_compile_definitions(ENGINE_SLOW_CHECKS=1)
 endif()
 
-enable_testing()
+if(ENGINE_COMPILE_ONLY)
+  # Nothing built here may run (Phase 26 Day 327): the tests are declared, so every target and test script is configured as usual, but no
+  # CTestTestfile is written, so ctest finds nothing to run.
+  message(STATUS "Compile-only build: tests are declared but not enabled (ctest runs nothing here)")
+else()
+  enable_testing()
+endif()
 # Where tests keep the files they make while they run (a private settings profile, pipeline caches, the command-line checks' folders, scratch
 # projects): one folder of the build tree, safe to delete at any time.
 set(ENGINE_TEST_TMP_DIR "${CMAKE_BINARY_DIR}/test-tmp")
@@ -249,9 +267,8 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   return()
 endif()
 
-# macOS (Phase 26, a side phase on the Mac) builds one layer more each day, in dependency order (ARCHITECTURE.md), as Windows did in Phase 13:
-# Day 300 the base layer and its tests (types, lang, sync, cstr) and the macOS-only checks; Day 301 the os backend and the foundation's base tests; Day 302 the gates and the test tooling. Each later day moves its directories into this list;
-# the "not yet ported" message shrinks with it and is gone on Day 327 (plans/phase-26-macos-metal.md).
+# macOS (Phase 26, a side phase on the Mac): everything the Linux build has, ported one layer a day in dependency order (ARCHITECTURE.md), as
+# Windows was in Phase 13; complete on Day 327 (plans/phase-26-macos-metal.md). Not built here: Vulkan (decision 8) and Direct3D 12.
 if(ENGINE_PLATFORM STREQUAL "macos")
   include(cmake/EngineTestPhases.cmake)
   # Third-party code first, before the engine's warning options, so it keeps its own flags (as on Linux). libbacktrace: Mach-O, Day 306.
@@ -285,9 +302,8 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(engine/ui)
   add_subdirectory(engine/ui_window)  # Day 314, before tests/ui, which builds its window-bound tests when the target exists
   add_subdirectory(tests/ui)
-  # Day 314: the RHI on the null backend (no Vulkan on macOS: Phase 26 decision 8; Metal from Day 316), the renderer, the scene bridge,
+  # The RHI with its null and Metal backends (no Vulkan on macOS: Phase 26 decision 8; Metal from Day 316), the renderer, the scene bridge,
   # the UI window adapter and every program of game/.
-  message(STATUS "macOS: the RHI builds its null backend only; rhi_vulkan and rhi_dx12 are not built here (no Vulkan on macOS, decision 8)")
   add_subdirectory(engine/rhi)
   add_subdirectory(engine/renderer)
   add_subdirectory(engine/scene)
@@ -299,14 +315,14 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(tools/shader_mint)  # Day 315: the shader minter, with the Metal library (tools/metal_mint)
   add_subdirectory(tests/shader_mint)
   add_subdirectory(shaders)  # the `shaders` target and shaders_check / shaders_portability, when slangc is found
-  add_subdirectory(tests/foundation)  # the base-layer tests (foundation_base_tests), Day 301; the file-layer and window ones need later days
+  add_subdirectory(tests/foundation)  # the foundation's tests (the base layer from Day 301, the file layer and the window from Days 303-313)
   add_subdirectory(tests/foundation_sanitized)
   add_subdirectory(tests/io)  # the file layer, Days 303-305
   add_subdirectory(tools/crash_extract)  # Day 306: the dump reader (the resolver's macOS branch is Day 308)
   include(cmake/EngineDeathTests.cmake)
   add_subdirectory(tests/debug)  # Day 306: stack traces and the crash context; the rest of the backend on Days 307-308
   add_subdirectory(tests/settings)  # Day 309: the settings layer and the user defaults store
-  add_subdirectory(tools/docgen)  # Day 309: the reference and the documentation checks (the samples wait for Day 327)
+  add_subdirectory(tools/docgen)  # Day 309: the reference and the documentation checks; the samples from Day 327
   add_subdirectory(tests/docgen)
   add_subdirectory(tests/types)
   add_subdirectory(tests/lang)
@@ -322,9 +338,7 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(tools/net_probe)  # Phase 26 Day 326
   add_subdirectory(tests/phase_labels)
   add_subdirectory(tests/test_phase_script)
-  message(STATUS "macOS (Phase 26 Day 310): building the whole foundation (base, file, debugging and settings layers), the job system, text, UI (CPU side), ECS, "
-                 "spatial, the database and storage, docgen (without its samples), crash_extract and their tests, the gates and the test tooling. Not yet ported, so "
-                 "not configured: the platform layer (Days 311-313), networking (Day 326), the RHI and renderer (Days 314-325), the demos, the other tools and docs_samples (Day 327).")
+  message(STATUS "macOS (Phase 26): building everything the Linux build has, with the Metal backend in place of Vulkan (Day 327)")
   return()
 endif()
 

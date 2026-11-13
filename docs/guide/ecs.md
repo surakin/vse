@@ -643,7 +643,8 @@ Run it yourself with `ecs_bench [--entities N] [--frames N] [--threads N] [--csv
 - **On macOS** (Intel Core i5-8257U, 4 cores, 8 threads, a 2019 MacBook Pro; Apple clang 17, Release; Phase 26 Day 310, one run while Spotlight was indexing): iteration
   at 100k 0.85 ms against 16.9 ms (19.8x), at 1M 9.1 ms against 338 ms (37x), sparse access 518x; 4 workers at 82 percent efficiency, 8 at 61 percent (8 threads
   on 4 cores); 110 bytes per entity (baseline 232). Churn beats the baseline (1.5x), as on Windows; hierarchy propagation does not (0.89x). Every pass condition holds.
-  The rest of the figures are in `plans/phase-26-macos-metal/day-310-cpu-modules.md`.
+  The rest of the figures are in `plans/phase-26-macos-metal/day-310-cpu-modules.md`. Again on Day 327 (idle machine): iteration at 100k 0.88 ms against
+  19.0 ms (21.5x), 4 workers at 80 percent, sparse access 529x; the pass conditions hold.
 
 ## Common mistakes
 

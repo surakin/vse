@@ -34,13 +34,22 @@
       "binaryDir": "${sourceDir}/build-macos",
       "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug", "CMAKE_OSX_DEPLOYMENT_TARGET": "13.3", "CMAKE_OSX_ARCHITECTURES": "x86_64" },
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Darwin" }
+    },
+    {
+      "name": "macos-clang-arm64",
+      "displayName": "macOS arm64, compile-only (build-macos-arm64/): every target for Apple silicon, built on the Intel Mac and never run",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-macos-arm64",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug", "CMAKE_OSX_DEPLOYMENT_TARGET": "13.3", "CMAKE_OSX_ARCHITECTURES": "arm64", "ENGINE_COMPILE_ONLY": "ON" },
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Darwin" }
     }
   ],
   "buildPresets": [
     { "name": "linux", "configurePreset": "linux" },
     { "name": "windows-msvc", "configurePreset": "windows-msvc" },
     { "name": "windows-clang-cl", "configurePreset": "windows-clang-cl" },
-    { "name": "macos-clang", "configurePreset": "macos-clang" }
+    { "name": "macos-clang", "configurePreset": "macos-clang" },
+    { "name": "macos-clang-arm64", "configurePreset": "macos-clang-arm64" }
   ],
   "testPresets": [
     { "name": "linux", "configurePreset": "linux", "output": { "outputOnFailure": true } },
