@@ -144,14 +144,19 @@ and says so loudly when it left tests out. Quote that line when reporting a redu
 
 `--affected` reads the paths changed since the last commit that changed `CURRENT_PHASE` (the commits of the phase and the
 working tree, plus new files) and adds the phases listed for each directory in `tests/module_map.txt`: `engine/rhi` selects
-the RHI and renderer tests and the docs checks, `engine/foundation` almost everything. It runs everything when a
-`CMakeLists.txt`, `cmake/`, `third_party/`, a header under `engine/foundation`, `tests/phases.txt` or
-`tests/module_map.txt` changed, or when a changed path is in no line of the module map, so a new directory is never skipped
-silently. A `CMakeLists.txt`, `tests/phases.txt` or `tests/module_map.txt` whose change only **adds** lines (a new library, a new
-test file, a new map line; in the root `CMakeLists.txt` only `add_subdirectory` calls and comments) does not widen the run, so a day
-that adds a module or a test costs its own phases, not the suite. Editing or removing an existing line there still runs everything.
-`tools/docgen/CMakeLists.txt` never widens it (the map sends it to phase 3). Because the diff reaches back to the start of the
-phase, one non-additive edit widens every later day of the phase too: keep such edits to the day that needs them.
+the RHI and renderer tests and the docs checks, `engine/foundation` almost everything. It runs everything when the root or a module's
+`CMakeLists.txt`, `cmake/`, `third_party/`, a header under `engine/foundation`, `tests/phases.txt` or `tests/module_map.txt` changed,
+and it says so, with the reasons, before the build starts. A `CMakeLists.txt`, `tests/phases.txt` or `tests/module_map.txt` whose change
+only **adds** lines (a new library, a new test file, a new map line; in the root `CMakeLists.txt` only `add_subdirectory` calls and
+comments) does not widen the run, so a day that adds a module or a test costs its own phases, not the suite. Editing or removing an
+existing line there still runs everything. The `CMakeLists.txt` of a directory under `tests/`, `tools/` or `game/` never widens it (the
+map line of the directory names the phases; `tools/docgen`'s goes to phase 3). Because the diff reaches back to the start of the
+phase, one non-additive edit to a module's CMake widens every later day of the phase too: keep such edits to the day that needs them.
+
+**A changed path that is in no line of the module map is an error**, not a reason to run everything: the script stops before it
+builds, names the paths and asks for the map line (`path  phases`, the phases whose tests exercise the directory). The ctest
+`test_phase_script_module_map_paths` checks the other direction as well: a source directory directly under `engine/`, `game/`,
+`tools/` or `tests/` that holds a file and has no line in the map fails it, so a new module is mapped the day it is created.
 
 #### What it saves
 

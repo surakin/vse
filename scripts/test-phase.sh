@@ -9,11 +9,14 @@
 #              and the commits since the last commit that changed CURRENT_PHASE; --since REF picks another base), plus every
 #              side phase in SIDE_PHASES that this build has tests of (the summary marks it "(side)").
 #              Runs everything when a CMakeLists.txt, cmake/, CMakePresets.json, third_party/, a header under
-#              engine/foundation, tests/phases.txt or tests/module_map.txt changed, or when a changed path is in no
-#              line of tests/module_map.txt. Exception: a CMakeLists.txt, tests/phases.txt or tests/module_map.txt whose
+#              engine/foundation, tests/phases.txt or tests/module_map.txt changed (the reasons are printed before anything is
+#              built). A changed path that is in no line of tests/module_map.txt is an ERROR, not a reason to run everything: the
+#              script stops before building and names the path; add its line to tests/module_map.txt (the ctest
+#              test_phase_script_module_map_paths also fails when a source directory has no line). Exception: a CMakeLists.txt, tests/phases.txt or tests/module_map.txt whose
 #              change only ADDS lines (a new library, a new test, a new map line) does not widen the run; for the root
 #              CMakeLists.txt the added lines must be add_subdirectory calls or comments. (A new file is only added lines.)
-#              tools/docgen/CMakeLists.txt is never a reason (it is the docs tool's; the map sends it to phase 3).
+#              The CMakeLists.txt of a directory under tests/, tools/ or game/ is never a reason (the map line of the directory names
+#              the phases that exercise it; tools/docgen's goes to phase 3).
 #   --all      every test; with --flavor all and nothing left out, also records how long it took in
 #              <build>/.last-full-run
 #
@@ -186,6 +189,10 @@ only_additions() {
 forces_all() {
     case "$1" in
         tools/docgen/CMakeLists.txt) return 1 ;;
+        # A test, tool or game directory's own CMakeLists.txt only defines that directory's targets and tests; the map line of the
+        # directory names the phases that exercise it. (A module's, cmake/ and the root's still reach everything.) Without this a
+        # single edited line in one test's CMake keeps every later --affected of the phase at the whole suite.
+        tests/*/CMakeLists.txt|tools/*/CMakeLists.txt|game/*/CMakeLists.txt) return 1 ;;
         CMakeLists.txt|*/CMakeLists.txt|tests/phases.txt|tests/module_map.txt) only_additions "$1" && return 1; return 0 ;;
         cmake/*|CMakePresets.json|third_party/*) return 0 ;;
         engine/foundation/*.h) return 0 ;;
@@ -196,6 +203,7 @@ forces_all() {
 started=$SECONDS
 full=0
 reasons=""
+unmapped=""
 phases=""
 platform_touched=0
 case "$mode" in
@@ -213,7 +221,7 @@ case "$mode" in
             if forces_all "$f"; then full=1; reasons="$reasons $f"; continue; fi
             mp="$(module_phases "$f")"
             case "$mp" in
-                '?') full=1; reasons="$reasons $f(not in tests/module_map.txt)" ;;
+                '?') unmapped="$unmapped $f" ;;
                 '-') ;;
                 *) phases="$phases ${mp//,/ }" ;;
             esac
@@ -221,6 +229,10 @@ case "$mode" in
         done <<< "$files"
         ;;
 esac
+if [ -n "$unmapped" ]; then
+    die "these changed paths are in no line of tests/module_map.txt, so --affected cannot tell which phases they touch (nothing was built or run; it does not guess by running everything):$unmapped
+add a line for each (the path, then the phases whose tests exercise it, as the other lines do), or use --all if you mean the full suite"
+fi
 phases="$(printf '%s\n' $phases | sort -u -n | tr '\n' ' ')"
 phases="${phases% }"
 if [ "$full" = 1 ]; then
@@ -269,6 +281,9 @@ elif [ "$platform" = macos ]; then
 else
     [ -d "$build" ] || die "no build directory at $build (configure first: cmake -S . -B build)"
 fi
+if [ -n "$reasons" ] && [ "$mode" = affected ]; then
+    echo "test-phase: running everything because of:$reasons (the build starts now; --dry-run prints this without building)"
+fi
 # Tests are registered when their executable is built, so build before counting (a dry run counts the tree as built).
 if [ "$dry" = 0 ] && [ "$do_build" = 1 ]; then
     cmake --build "$build" || { echo "test-phase: the build failed; nothing ran" >&2; exit 1; }
@@ -310,9 +325,6 @@ picked="$(count ${sel[@]+"${sel[@]}"})"
 [ -n "$total" ] && [ -n "$picked" ] || die "could not count tests in $build (is it configured?)"
 
 summary="phases: ${phases_shown}; flavors: ${flavor}${flavor_note}; display: $([ "$show_display" = yes ] && echo included || echo excluded); crash tests: $([ "$show_crashes" = yes ] && echo included || echo excluded)"
-if [ -n "$reasons" ] && [ "$mode" = affected ]; then
-    echo "test-phase: running everything because of:$reasons"
-fi
 if [ "$picked" -eq 0 ]; then
     echo "test-phase: the selection ($summary) contains no tests; nothing ran (a phase has none until its first test file is in tests/phases.txt; --affected adds the touched modules' phases)" >&2
     exit 1

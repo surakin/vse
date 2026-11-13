@@ -97,10 +97,14 @@ phase_script_case(affected_foundation_source PHASES "0 1 2 3 4 5 7 9 10 11" DISP
 # Escalations to the whole suite.
 phase_script_case(affected_foundation_header PHASES all DISPLAY included ARGS --affected --current-phase-file ${FIX}/phase5.txt
   --diff-from-file ${FIX}/diff_foundation_header.txt CTEST ${PLAIN})
-phase_script_case(affected_unknown_directory PHASES all ARGS --affected --current-phase-file ${FIX}/phase5.txt
-  --diff-from-file ${FIX}/diff_unknown.txt CTEST ${PLAIN})
+# A changed path that is in no line of tests/module_map.txt is an error that stops before the build (it used to widen the run to the
+# whole suite, which hid the missing line until a long run had started).
+phase_script_refuses(affected_unknown_directory "mystery/new_thing.cpp" --affected --current-phase-file ${FIX}/phase5.txt
+  --diff-from-file ${FIX}/diff_unknown.txt)
+phase_script_refuses(affected_unknown_directory_runs_nothing "nothing was built or run" --affected --current-phase-file ${FIX}/phase5.txt
+  --diff-from-file ${FIX}/diff_unknown.txt)
 phase_script_case(affected_cmake_file PHASES all ARGS --affected --current-phase-file ${FIX}/phase5.txt
-  --diff-from-file ${FIX}/diff_cmake.txt CTEST ${PLAIN})
+  --diff-from-file ${FIX}/diff_module_cmake.txt CTEST ${PLAIN})
 phase_script_case(affected_phase_map PHASES all ARGS --affected --current-phase-file ${FIX}/phase5.txt
   --diff-from-file ${FIX}/diff_map.txt CTEST ${PLAIN})
 # A build or map file whose change only adds lines does not widen the run (a new module or test must not cost a full run); the same file
@@ -115,6 +119,9 @@ phase_script_case(affected_root_cmake_not_additive PHASES all ARGS --affected --
   --diff-from-file ${FIX}/diff_root_cmake.txt CTEST ${PLAIN})
 phase_script_case(affected_docgen_cmake PHASES "3 4 5" ARGS --affected --current-phase-file ${FIX}/phase5.txt
   --diff-from-file ${FIX}/diff_docgen_cmake.txt CTEST -L "^(phase3|phase4|phase5)$" ${PLAIN_NO_DISPLAY})
+# A test directory's own CMakeLists.txt, even with lines edited or removed, selects the directory's phases and not the suite.
+phase_script_case(affected_tests_directory_cmake PHASES "5 20" ARGS --affected --current-phase-file ${FIX}/phase5.txt
+  --diff-from-file ${FIX}/diff_tests_dir_cmake.txt CTEST -L "^(phase5|phase20)$" ${PLAIN_NO_DISPLAY})
 # Side phases (Phase 21 Day 286): --affected adds a side phase this build has tests of, marked "(side)"; one it has none of is not added; one
 # already selected is not marked; --current does not add them. Phase 6 stands in for the side phase: every platform builds its tests.
 phase_script_case(affected_side_phase PHASES "5 6 (side)" SIDE ${FIX}/side_6.txt ARGS --affected --current-phase-file ${FIX}/phase5.txt

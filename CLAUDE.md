@@ -74,8 +74,11 @@ phase in progress. Day to day, run only what the work can have affected:
 
 - `scripts/test-phase.sh --affected` (plain flavor) runs the current phase plus the phases of every module the work
   touched; it runs everything by itself when `cmake/`, `third_party/` or an `engine/foundation` header changed, or when a
-  `CMakeLists.txt`, the phase map or the module map had a line edited or removed (a change that only adds lines, such as a new module
-  or test, selects just its own phases). Before the end-of-day review, also run the sanitizer flavors of the same selection
+  module's or the root `CMakeLists.txt`, the phase map or the module map had a line edited or removed (a change that only adds lines,
+  such as a new module or test, selects just its own phases; the `CMakeLists.txt` of a directory under `tests/`, `tools/` or `game/` never
+  widens it). It says why before the build starts, and **a changed path that is in no line of `tests/module_map.txt` is an error that
+  stops before building** (add the line in the day the directory appears: the ctest `test_phase_script_module_map_paths` fails on a
+  source directory without one). Before the end-of-day review, also run the sanitizer flavors of the same selection
   (`--affected --flavor asan`, then `--flavor tsan`) when the day touched concurrency, lifetime or memory code.
 - **A reduced run is reported as what it was**: the day file and `STATUS.md` quote the script's final line
   (`ran X of Y tests (phases ...)`) and never say "all tests pass" for a run that left tests out.
