@@ -7,7 +7,7 @@ Loading without stalling the frame: decode on workers, upload on the owner threa
 
 ## Tasks
 
-- [ ] **`LoadAsync<T>(id, priority, token) -> LoadTicket`:** reads and decodes on jobs (the backend's `ReadAtAsync` where it has one), then queues the GPU part for the owner thread's `Update(budget)`; `Wait`, `IsDone`, `Finish`, as `SaveAsync` does; cancellation by token before and during the read (the result is dropped and nothing leaks).
+- [ ] **`LoadAsync<T>(id, priority, token) -> LoadTicket`:** reads (straight into the aligned destination buffer, ranged and, where the backend can, asynchronously) on jobs (the backend's `ReadAtAsync` where it has one), then queues the GPU part for the owner thread's `Update(budget)`; `Wait`, `IsDone`, `Finish`, as `SaveAsync` does; cancellation by token before and during the read (the result is dropped and nothing leaks).
 - [ ] **Priorities and a bounded queue:** three priorities (`Immediate`, `Normal`, `Background`); at most `assets.max_inflight` loads at once; a request over the limit queues, and over `assets.max_queued` returns `LimitExceeded` (back-pressure as a value).
 - [ ] **Streaming budget:** `Update(max_microseconds, max_bytes)` does GPU uploads until the budget is spent, so a frame's cost is bounded; the leftovers wait for the next frame; a `Stats` counter reports the backlog.
 - [ ] **Level loading as a streamed unit:** `LoadLevelAsync` loads the blob, then its dependency list in priority order, reporting progress (`loaded/total`); the level becomes active when every `Immediate` dependency is ready.

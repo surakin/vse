@@ -7,9 +7,10 @@ The shipping container: many resources in one file, found by id.
 
 ## Tasks
 
-- [ ] **Format** (as the spec settled it): header (magic, version, alignment), entry data aligned, the index (sorted by `ResourceId`: id, offset, size, content hash, type), a footer (index offset, entry count, index hash); no compression in version 1 (a flag reserved).
+- [ ] **Format** (as the spec settled it): header (magic, version, alignment), entry data aligned to 64 bytes (and to the page size above 1 MiB) so a ranged read lands in an aligned destination buffer with no copy afterwards, the index (sorted by `ResourceId`: id, offset, size, content hash, type), a footer (index offset, entry count, index hash); no compression in version 1 (a flag reserved).
 - [ ] **`PakWriter`:** adds (id, bytes), refuses duplicate ids and id collisions between different paths (it keeps the path list in a debug sidecar, not in the pak), writes through `io::File`, finishes with the index and footer; deterministic (entries in id order, padding zero-filled, no time stamps).
 - [ ] **`PakReader`:** opens, validates the footer, checks the index against the file size before using it (counts and offsets bounded; entries in range, sorted, no duplicates), binary-searches by id, exposes ranged reads; never trusts an offset.
+- [ ] **Versions announced and enforced:** the pak header carries its own format version and the current version of each resource type it holds (a small table); the reader refuses an older pak (`UnsupportedVersion`), and the writer refuses a blob that is not the current version of its type or whose hash does not verify (the packer is an enforcement point).
 - [ ] **`PakBackend`** implementing `ResourceBackend` (read-only, `Watch` reports nothing) and joining the conformance suite.
 - [ ] **`asset_mint pack`** first cut (the tool arrives fully on Day 327): `tools/asset_mint` skeleton with a `pack` command that packs a directory of blobs; tests drive the library, not the tool.
 - [ ] **Tests:** a pak of 100,000 entries (open under the spike's bound), every footer or index corruption and every truncation refused, two packs of the same inputs identical byte for byte, lookups of absent ids, a 4 GiB offset test through a sparse test double (offsets are 64-bit).

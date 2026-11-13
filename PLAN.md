@@ -282,10 +282,16 @@ interpretations keep it buildable — flag any that don't match intent:
     one served a given resource, same pattern as the RHI and the
     Wayland/X11 window backends. Every resource type (mesh, texture,
     material, level, ...) owns its own binary format with an explicit
-    version header; the runtime loader supports old versions rather than
-    breaking previously-minted content when a format changes — this is
-    the resolution to the versioning/migration question Phase 22 already
-    flagged as open. Binary is the default and required format
+    version header. **Amended 2026-11-13 (the user): loading performance is
+    paramount, load-time conversions are discouraged, and upgrades are
+    enforced offline** — the runtime loads the current version of every
+    format only and refuses an older one (naming `asset_mint remint`); the
+    upgrade chains live in the tool, not in the game; blobs are laid out
+    for direct GPU upload (aligned, GPU-native formats, mips pre-generated,
+    references resolved) so a load is one read and one upload, and a
+    counter of load-time conversions must stay zero. This replaces the
+    earlier wording that the runtime loader supports old versions, and
+    resolves the versioning/migration question Phase 22 flagged as open. Binary is the default and required format
     engine-wide; a parallel text format is optional per type, added only
     where it earns its keep (chiefly where hand-editing or VCS-friendly
     merging matters, e.g. levels/scenes) — the offline mint converts
@@ -982,3 +988,4 @@ that changed from the plan and why.)_
   #11 (proposed) and the side-phase rule. `plans/phase-21-macos-metal/day-312-docs-and-closing-run.md`.
 - **2026-11-13 — Phases renumbered (the user's request): the macOS port is Phase 21 (was 26, Days 282-312, was 298-328), and every phase after it moves up one: asset pipeline 22 (was 21), physics 23, audio 24, scripting 25, 3D text 26 (was 25; its days are 331-346, was 282-297 until the same day, then 313-328 for a few hours).** Plan files and directories, `PLAN.md`, `CLAUDE.md`, `STATUS.md`, `KNOWN-ISSUES.md`, `tests/phases.txt`, `SIDE_PHASES` (21), the `phaseNN` labels, the memory notes, the docs and the code comments were rewritten in the same commit. **Progress-log and `STATUS.md` entries dated before 2026-11-13 that say "Phase 21" to "Phase 26" or give Day 282-328 keep the numbers they were written with unless they are under "Known issues"; read them against this entry** (old 21-25 are now 22-26, old 26 is now 21; old Days 298-328 are now 282-312, old Days 282-297 are now 331-346). Windows PC and the Mac: `git pull --rebase` before the next commit; rebuild (the test labels changed).
 - **2026-11-13 — Phase 22 (asset pipeline & resource system) broken into day files (Days 313-330, the user's request).** Design spec and four spikes first (pak layout, content hash, BC encoding, texture upload and the reset), then ids and the versioned blob container, the backend interface with the filesystem backend and mounts, the pak, the mesh, texture (with BC1/BC4/BC5 and a BC7 subset, own deterministic encoders), material and level formats with their minters (levels have the one text form), the resource manager, asynchronous loading with a streaming budget, the resource server and the read-only network backend with a content-hash cache, the `asset_mint` tool, settings, the no-tools-in-the-game gate and `asset_demo`, benchmarks and docs, and the closing runs on three machines. The user's answers: custom source formats only, an own BC encoder, a read-only TCP network backend. **Phase 26 (3D text) day numbers moved from 313-328 to 331-346.** Nothing started; `CURRENT_PHASE` stays 20 until Day 313.
+- **2026-11-13 — Phase 22 principles added (the user): loading performance is paramount; load-time conversions are discouraged; asset upgrades are enforced offline whenever possible.** The runtime loads the current format version only (older ones are refused naming `asset_mint remint`; the upgrade chains live in `tools/asset_mint`), the packer and `verify --require-current` enforce it, and blobs are laid out for zero-copy upload with every mip and conversion done at mint time. Days 313-329 were amended (Day 313 gets a fifth spike on the zero-copy load path; Day 329 gets load-performance pass conditions); the day count and numbers are unchanged. Assumption #12 amended.
