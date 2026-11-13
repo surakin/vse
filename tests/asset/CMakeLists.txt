@@ -16,7 +16,9 @@ set(ASSET_TEST_SOURCES
   memory_file.h  # Day 316
   pak_test.cpp  # Day 316
   skeleton_test.cpp  # Day 318
+  mesh_test.cpp  # Day 319
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/skeleton_source.cpp  # Day 318: the minter under test
+  ${CMAKE_SOURCE_DIR}/tools/asset_mint/mesh_source.cpp  # Day 319: the mesh minter under test
 )
 
 find_package(Threads REQUIRED)

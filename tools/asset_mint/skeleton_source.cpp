@@ -1,5 +1,6 @@
 #include "skeleton_source.h"
 
+#include "source_text.h"
 #include "cstr/cstr.h"
 #include "cstr/format.h"
 #include "cstr/mem_ops.h"
@@ -12,58 +13,6 @@ namespace
 {
 
 constexpr f64 kSourceUnitTolerance = 1e-2;
-
-struct SrcLineTokens
-{
-    StringView tokens[24];
-    usize count = 0;
-    bool overflow = false;
-};
-
-bool SrcIsSpace(char c)
-{
-    return c == ' ' || c == '\t' || c == '\r';
-}
-
-SrcLineTokens SrcTokenize(StringView line)
-{
-    SrcLineTokens out;
-    usize i = 0;
-    while (i < line.Length())
-    {
-        while (i < line.Length() && SrcIsSpace(line[i]))
-        {
-            ++i;
-        }
-        if (i >= line.Length() || line[i] == '#')
-        {
-            break;
-        }
-        const usize start = i;
-        while (i < line.Length() && !SrcIsSpace(line[i]) && line[i] != '#')
-        {
-            ++i;
-        }
-        if (out.count == 24)
-        {
-            out.overflow = true;
-            break;
-        }
-        out.tokens[out.count++] = line.Substring(start, i - start);
-    }
-    return out;
-}
-
-bool SrcNumber(StringView token, f32* out)
-{
-    const ParseDoubleResult r = ParseDoubleExact(token.Data(), token.Data() + token.Length());
-    if (!r.ok || r.end != token.Data() + token.Length() || !IsFinite(r.value) || Abs(r.value) > 3.0e38)
-    {
-        return false;
-    }
-    *out = static_cast<f32>(r.value);
-    return true;
-}
 
 void SrcSetError(SkeletonSourceError* error, u32 line, const char* message)
 {
@@ -107,7 +56,7 @@ Status ParseSkeletonSource(StringView text, SkeletonSource* out, SkeletonSourceE
             ++end;
         }
         ++line_number;
-        const SrcLineTokens t = SrcTokenize(text.Substring(pos, end - pos));
+        const srctext::LineTokens t = srctext::Tokenize(text.Substring(pos, end - pos));
         pos = end + 1;
         if (t.count == 0 && !t.overflow)
         {
@@ -178,7 +127,7 @@ Status ParseSkeletonSource(StringView text, SkeletonSource* out, SkeletonSourceE
             f32 v[10];
             for (u32 k = 0; k < 10; ++k)
             {
-                if (!SrcNumber(t.tokens[3 + k], &v[k]))
+                if (!srctext::ParseFloat(t.tokens[3 + k], &v[k]))
                 {
                     return SrcFail(error, line_number, "a number is malformed or not finite");
                 }
@@ -228,7 +177,7 @@ Status ParseSkeletonSource(StringView text, SkeletonSource* out, SkeletonSourceE
             }
             for (u32 k = 0; k < 12; ++k)
             {
-                if (!SrcNumber(t.tokens[2 + k], &out->joints[index].inverse_bind[k]))
+                if (!srctext::ParseFloat(t.tokens[2 + k], &out->joints[index].inverse_bind[k]))
                 {
                     return SrcFail(error, line_number, "a number is malformed or not finite");
                 }

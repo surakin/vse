@@ -460,6 +460,7 @@ Status SkeletonView::Open(ByteSpan data, const TypeRegistry& types)
 
     joint_count_ = static_cast<u32>(n);
     hash_ = hash;
+    id_ = blob.Id();
     has_names_ = names;
     center_ = center;
     radius_ = radius;

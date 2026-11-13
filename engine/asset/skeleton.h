@@ -128,6 +128,10 @@ public:
     /// The number of joints.
     /// - Fails: never.
     u32 JointCount() const { return joint_count_; }
+    /// The resource id recorded in the blob header.
+    ///
+    /// - Fails: never.
+    ResourceId Id() const { return id_; }
     /// The skeleton hash recorded in the blob.
     /// - Fails: never.
     const ContentHash& Hash() const { return hash_; }
@@ -172,6 +176,7 @@ public:
 
 private:
     u32 joint_count_ = 0;
+    ResourceId id_;
     ContentHash hash_;
     bool has_names_ = false;
     Array<f32, 3> center_ = {};

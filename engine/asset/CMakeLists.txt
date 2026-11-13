@@ -19,6 +19,7 @@ set(ASSET_SOURCES
   pak.cpp  # Day 316
   pak_backend.cpp  # Day 316
   skeleton.cpp  # Day 318
+  mesh.cpp  # Day 319
 )
 set(ASSET_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

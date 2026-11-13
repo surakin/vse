@@ -210,3 +210,59 @@ int main() {
 ```output
 2 joints, tip is 1, parent 0, inverse bind y -2.0
 ```
+
+## Meshes
+
+A mesh (`asset::types::kMesh`, `MESH`) is laid out for the GPU: the vertex section is the exact bytes of vertex buffer binding 0 and the index section the exact bytes of the index buffer (16-bit up to 65,536 vertices, otherwise 32-bit, always a triangle list), each 64-byte aligned, so a loader hands a span of the blob to the upload and nothing is converted. Sections: the header (counts, bounds, the texture-coordinate decode, the measured packing error, the skeleton hash of a skinned mesh), the attribute list, the vertex stream, the indices, the LODs (a range of indices and a screen size, non-increasing) and the material slots (a name and a range of indices). `asset::MeshView::Open` checks the sizes, counts and ranges once and keeps spans into the buffer; it does not scan the indices (`CheckIndices` does, for tools).
+
+The default layout (`quality packed`, 24 bytes) is position `Float3`, normal and tangent `SNorm8x4` (the bitangent sign is the tangent's w) and texture coordinates `UNorm16x2` decoded as `offset + scale * value` with a per-mesh offset and scale from the header; the minter records the largest error it measured on the texture coordinates and on the normals and tangents. `quality full` (48 bytes) keeps `Float3`, `Float3`, `Float4`, `Float2`.
+
+A skinned mesh adds binding 1: joint indices `UInt8x4` (location 5) and weights `UNorm8x4` (location 6). The minter keeps the four largest influences of a vertex (ties by joint index), renormalizes in double precision and rounds with the largest-remainder rule so the four weights sum to exactly 255 (a shader needs no renormalization), strongest first. The skeleton is a dependency with the role `kMeshRoleSkinSkeleton`, and the blob records its hash and joint count: `MeshView::CheckSkeleton` refuses a skeleton with another id, hash or joint count (`DependencyTypeMismatch`). The bind-pose box of each joint's influence set is stored too. Morph targets are not supported (section 40 is reserved and refused).
+
+The source form `.mesh.src` (`asset_mint mint-mesh SOURCE OUTPUT [--skeleton=SKELETON.blob] [--target=N]`):
+
+```
+id 00000000000000bb
+skeleton 00000000000000aa
+v 0 0 0   0 0 1   1 0 0 1   0 0
+v 1 0 0   0 0 1   1 0 0 1   1 0
+v 0 1 0   0 0 1   1 0 0 1   0 1
+i 0 1 2
+slot body 0 3
+skin 0 0 0.5 1 0.5
+skin 1 1 1
+skin 2 0 1
+```
+
+`v` is position, normal, tangent xyz and the bitangent sign (+1 or -1), uv. All `v` records come before `i` and `skin`. Errors name the line; a vertex of a skinned mesh with no weight above 0 is reported at its `v` line.
+
+```cpp compile run standalone
+#include "asset/mesh.h"
+#include "os/console.h"
+
+using namespace engine_placeholder;
+
+int main() {
+    asset::TypeRegistry types;
+    asset::MeshVertex vertices[3];
+    vertices[1].position = {{1.0f, 0.0f, 0.0f}};
+    vertices[1].uv = {{1.0f, 0.0f}};
+    vertices[2].position = {{0.0f, 1.0f, 0.0f}};
+    vertices[2].uv = {{0.0f, 1.0f}};
+    const u32 indices[3] = {0, 1, 2};
+    asset::MeshBuildInput input;
+    input.vertices = Span<const asset::MeshVertex>(vertices, 3);
+    input.indices = Span<const u32>(indices, 3);
+
+    Vector<byte> blob;
+    if (asset::BuildMeshBlob(types, asset::ResourceId::FromValue(9), input, &blob).Failed()) return 1;
+    asset::MeshView view;
+    if (view.Open(ByteSpan(blob.Data(), blob.Size()), types).Failed()) return 1;
+    os::Print("%u vertices of %u bytes, %u indices of %u bytes, %u attributes\n", view.VertexCount(), view.VertexStride(),
+              view.IndexCount(), view.IndexBytesPerIndex(), view.AttributeCount());
+    return 0;
+}
+```
+```output
+3 vertices of 24 bytes, 3 indices of 2 bytes, 4 attributes
+```
