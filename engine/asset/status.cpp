@@ -23,6 +23,8 @@ const char* ErrorCodeName(ErrorCode code)
     case ErrorCode::LimitExceeded: return "limit exceeded";
     case ErrorCode::WrongTarget: return "wrong target";
     case ErrorCode::Invalid: return "invalid";
+    case ErrorCode::InUse: return "in use";
+    case ErrorCode::NotReady: return "not ready";
     case ErrorCode::Other: return "other";
     }
     return "other";

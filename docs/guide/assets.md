@@ -1,6 +1,6 @@
 # Assets and resources: identity, blobs, backends and the resource manager
 
-Status: Phase 22. Built: the module skeleton and the container version constant (Day 313); resource ids, paths, types, the content hash, the blob container and the id <-> path table (Day 314). Next: the backend interface, the filesystem and memory backends and mounts (Day 315).
+Status: Phase 22. Built: the module skeleton and the container version constant (Day 313); resource ids, paths, types, the content hash, the blob container and the id <-> path table (Day 314). The backend interface, the filesystem and host-memory backends, the load buffer pool and mounts (Day 315). Next: the pak format (Day 316).
 
 **Audience:** engine and game programmers who load meshes, textures, materials and levels. Design, spikes and the benchmark pass conditions:
 `docs/superpowers/specs/2026-11-13-asset-pipeline-design.md`.
@@ -51,3 +51,57 @@ int main() {
 ## The blob container
 
 Every minted resource is a blob: a fixed 64-byte header (magic, container version, type, type version, the blob's own id, the target tag, the size and a 128-bit content hash), a section table, then sections that each start on a 64-byte boundary (a 4096-byte page boundary from 1 MiB), so the loader hands a span of the file buffer straight to the GPU upload. Section 1 is the standard dependency section: `(id, type, type version, role)` records sorted by id, with no optional dependencies. `asset::BlobWriter` builds it (deterministically: the same input gives the same bytes); `asset::BlobReader::Open` validates the header and every offset and size before anything is used, and reads the **current version of the type only**: any other version is refused with `UnsupportedVersion` and a message naming `asset_mint remint`. The content hash (SHA-256 truncated to 128 bits) is checked only by `BlobReader::Verify`, never on the load path.
+
+## Backends, mounts and host content
+
+A source of resources implements `asset::ResourceBackend`: `Stat` and `Open` by id (an `asset::ResourceReader` reads any range, synchronously or with `ReadAtAsync`), `ReadTable` / `ReadTableAsync` for the backend's own id <-> path table, `List` as a bounded view over it, and `Watch` for the changes since the last call. The table is complete or an error, never silently partial. `ReadTableAsync` returns an `asset::TableTicket` at once: `Finish` waits for the whole table, `TakePage` consumes what has arrived (every page holds complete entries), `Cancel` leaves no table, and a failure surfaces from `Finish` with the backend's status. A backend that does not read natively gets a default that runs `ReadTable` on the I/O executor.
+
+- `asset::FilesystemBackend` serves a directory of loose blobs. It builds its index once: from `resources.table` (a minted `NAMES` blob) when the directory has one, otherwise by walking the directory and reading each file's 64-byte header (the path is the file's location, the id the blob's own; never an id from a file name). A stored table is a cache that is never trusted over the files: `Stat` and `Open` check the file's own id, and a mismatch is `Corrupt`. Two files that claim one id fail the index with `DuplicateId`. `Watch` rescans and reports added, replaced and removed ids.
+- `asset::HostMemoryBackend` holds resources whose bytes the host application provides at run time: copied into the backend, or borrowed with a release function that runs exactly once after the resource is replaced or removed and its last reader closed. `Add`, `Replace` and `Remove` work from any thread; an open reader keeps the bytes it opened, so a replace never tears a load. `Add` checks the blob (its own id, its content hash, and a hash the host supplies) and the byte budget (`assets.memory_backend_bytes`; past it `Add` returns `LimitExceeded`: the host owns the content, so there is back-pressure and never eviction). A resource that a loaded one depends on cannot be removed or replaced unless the host forces it (`InUse` names the dependents).
+- `asset::FaultyBackend` wraps any backend with injected failures, chunked reads and latency, for tests.
+
+`asset::MountTable` orders backends by priority (the later of two equal priorities wins), so a loose-file mount overrides a pak and host content overrides both. A load by id goes to the highest-priority backend that has the id; a failure of that backend other than `NotFound` is returned, never replaced by a lower copy. Path questions are answered from the mounts' tables: `RefreshTablesAsync` starts every mount's table read without blocking and merges each table as it arrives, `Resolve` answers `NotReady` (never `NotFound`) for a path whose mount has not delivered its table, and loads by id never use a table. `Snapshot` returns the merged table and the entries one mount shadowed in another.
+
+`asset::LoadBufferPool` hands out the buffers a resource is read into: 64-byte aligned (page aligned from 1 MiB), pages touched when the buffer is created (a read into a pre-faulted buffer was four times faster in the Day 313 spike), returned on release, and bounded by `assets.buffer_pool_bytes`.
+
+```cpp compile run standalone
+#include "asset/blob.h"
+#include "asset/memory_backend.h"
+#include "asset/mount_table.h"
+#include "os/console.h"
+
+using namespace engine_placeholder;
+
+int main() {
+    asset::TypeRegistry types;
+    const asset::ResourceId id = asset::ResourceId::FromValue(0x42);
+
+    asset::BlobWriter writer(types, asset::types::kLevel, id);
+    const char payload[] = "hello";
+    if (writer.AddSection(16, ByteSpan(reinterpret_cast<const byte*>(payload), sizeof(payload))).Failed()) return 1;
+    Vector<byte> blob;
+    if (writer.Finish(&blob).Failed()) return 1;
+
+    // The host provides the bytes; the backend copies them and reports the path.
+    asset::HostMemoryBackend host(types, 1 << 20);
+    const StringView path = "/levels/start.level";
+    asset::MemoryAddOptions options;
+    options.paths = Span<const StringView>(&path, 1);
+    if (host.Add(id, ByteSpan(blob.Data(), blob.Size()), options).Failed()) return 1;
+
+    asset::MountTable mounts;
+    asset::MountId mount = 0;
+    if (mounts.Mount("/", &host, 100, &mount).Failed()) return 1;
+    if (mounts.RefreshTables().Failed()) return 1;
+
+    asset::ResourceId found;
+    if (mounts.Resolve("/levels/start.level", &found).Failed()) return 1;
+    UniquePtr<asset::ResourceReader> reader;
+    if (mounts.Open(found, &reader).Failed()) return 1;
+    os::Print("%u bytes, id matches: %d\n", static_cast<unsigned>(reader->Size()), found == id ? 1 : 0);
+    return 0;
+}
+```
+```output
+256 bytes, id matches: 1
+```

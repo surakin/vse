@@ -2,9 +2,15 @@
 
 // Helpers shared by the asset tests (Phase 22 Day 314).
 
+#include <catch2/catch_test_macros.hpp>
+
+#include "asset/blob.h"
 #include "containers/span.h"
 #include "containers/vector.h"
 #include "cstr/cstr.h"
+#include "io/file_system.h"
+#include "io/path.h"
+#include "os/console.h"
 #include "string_view.h"
 #include "types.h"
 
@@ -43,5 +49,72 @@ inline bool Contains(const char* message, const char* needle)
     const StringView n(needle, CStrLength(needle));
     return haystack.Find(n) != haystack.Length();
 }
+
+/// A StringView of a C string.
+inline StringView Vp(const char* text)
+{
+    return StringView(text, CStrLength(text));
+}
+
+/// A resource id from a number.
+inline ResourceId Rid(u64 value)
+{
+    return ResourceId::FromValue(value);
+}
+
+/// The bytes of a vector as a span.
+inline ByteSpan AsBytes(const Vector<byte>& bytes)
+{
+    return ByteSpan(bytes.Data(), bytes.Size());
+}
+
+/// The type the backend tests mint their blobs with.
+inline constexpr ResourceType kBackendTestType = ResourceType::FromChars('B', 'K', 'N', 'D');
+
+/// A registry that knows the built-in types and `kBackendTestType`.
+inline TypeRegistry MakeBackendRegistry()
+{
+    TypeRegistry registry;
+    REQUIRE(registry.Register(kBackendTestType, 1, "backend test").Ok());
+    return registry;
+}
+
+/// A blob of `id` whose one section holds `payload_bytes` pseudo-random bytes (seeded by `seed`).
+inline Vector<byte> MakeTestBlob(const TypeRegistry& registry, ResourceId id, usize payload_bytes, u32 seed)
+{
+    Rng rng(seed);
+    Vector<byte> payload;
+    for (usize i = 0; i < payload_bytes; ++i)
+    {
+        payload.Push(static_cast<byte>(rng.Below(256)));
+    }
+    BlobWriter writer(registry, kBackendTestType, id);
+    REQUIRE(writer.AddSection(16, payload).Ok());
+    Vector<byte> blob;
+    REQUIRE(writer.Finish(&blob).Ok());
+    return blob;
+}
+
+/// A directory made for one test and removed with everything in it afterwards.
+class TempDir
+{
+public:
+    TempDir()
+    {
+        io::Path tmp;
+        if (io::TempDirectory(&tmp).Failed() || io::CreateTempDirectory(tmp, "re_asset_test", &path_).Failed())
+        {
+            os::Abort();
+        }
+    }
+    ~TempDir() { io::RemoveAll(path_); }
+    TempDir(const TempDir&) = delete;
+    TempDir& operator=(const TempDir&) = delete;
+
+    const io::Path& Path() const { return path_; }
+
+private:
+    io::Path path_;
+};
 
 }  // namespace engine_placeholder::asset::test

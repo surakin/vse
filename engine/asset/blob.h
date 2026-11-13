@@ -208,4 +208,30 @@ private:
     usize dependency_offset_ = 0;
 };
 
+/// The fixed fields of a blob's 64-byte header, read without opening the blob.
+///
+/// - Thread-safety: immutable value.
+struct BlobHeaderInfo
+{
+    ResourceType type;         ///< The resource type tag.
+    u32 type_version = 0;      ///< The type version the blob was minted at.
+    ResourceId id;             ///< The blob's own id (null only for a `NAMES` blob).
+    u32 target = 0;            ///< The target tag.
+    u64 total_size = 0;        ///< The size the header records for the whole blob.
+    ContentHash content_hash;  ///< The recorded content hash.
+};
+
+/// Reads the header fields of a blob from its first `kBlobHeaderBytes` bytes, so a backend can learn a file's id and
+/// type without reading the file.
+///
+/// Checks the magic and the container version only; the type, the type version and the rest are checked by
+/// [[asset::BlobReader::Open]].
+/// - Param header: at least `kBlobHeaderBytes` bytes from the start of the blob.
+/// - Fails: `Corrupt` when the bytes are shorter than a header or do not start with the blob magic;
+/// `UnsupportedVersion`
+///   when the container version is not the current one.
+/// - Ownership: borrows `header` for the call only.
+/// - Thread-safety: thread-safe.
+Status PeekBlobHeader(ByteSpan header, BlobHeaderInfo* out);
+
 }  // namespace engine_placeholder::asset

@@ -4430,6 +4430,67 @@ net::UdpTransport::Counters() const	function	net	net-udptransport-counters-const
 net::UdpTransport::HandshakeLimiterCounters() const	function	net	net-udptransport-handshakelimitercounters-const	net.md	engine/net/udp_transport.h:232
 asset::kContainerVersion	variable	asset	asset-kcontainerversion	asset.md	engine/asset/asset_module.h:16
 asset::CurrentContainerVersion()	function	asset	asset-currentcontainerversion	asset.md	engine/asset/asset_module.h:20
+asset::RegisterAssetSettings(settings::Registry*)	function	asset	asset-registerassetsettings-settings-registry-star	asset.md	engine/asset/asset_settings.h:17
+asset::BufferPoolBytesFromSettings(const settings::Registry&)	function	asset	asset-bufferpoolbytesfromsettings-const-settings-registry-amp	asset.md	engine/asset/asset_settings.h:23
+asset::MemoryBackendBytesFromSettings(const settings::Registry&)	function	asset	asset-memorybackendbytesfromsettings-const-settings-registry-amp	asset.md	engine/asset/asset_settings.h:29
+asset::BackendCapability	enum	asset	asset-backendcapability	asset.md	engine/asset/backend.h:23
+asset::kBackendRanged	enumerator	asset	asset-kbackendranged	asset.md	engine/asset/backend.h:25
+asset::kBackendAsync	enumerator	asset	asset-kbackendasync	asset.md	engine/asset/backend.h:26
+asset::kBackendWatch	enumerator	asset	asset-kbackendwatch	asset.md	engine/asset/backend.h:27
+asset::kBackendWritable	enumerator	asset	asset-kbackendwritable	asset.md	engine/asset/backend.h:28
+asset::kBackendStoredTable	enumerator	asset	asset-kbackendstoredtable	asset.md	engine/asset/backend.h:29
+asset::kBackendAsyncTable	enumerator	asset	asset-kbackendasynctable	asset.md	engine/asset/backend.h:30
+asset::ResourceInfo	struct	asset	asset-resourceinfo	asset.md	engine/asset/backend.h:36
+asset::ResourceInfo::size	variable	asset	asset-resourceinfo-size	asset.md	engine/asset/backend.h:38
+asset::ResourceInfo::hash	variable	asset	asset-resourceinfo-hash	asset.md	engine/asset/backend.h:39
+asset::ResourceInfo::has_hash	variable	asset	asset-resourceinfo-has-hash	asset.md	engine/asset/backend.h:40
+asset::ResourceInfo::modified_ns	variable	asset	asset-resourceinfo-modified-ns	asset.md	engine/asset/backend.h:41
+asset::ResourceInfo::type	variable	asset	asset-resourceinfo-type	asset.md	engine/asset/backend.h:43
+asset::ChangeKind	enum	asset	asset-changekind	asset.md	engine/asset/backend.h:47
+asset::ChangeKind::Added	enumerator	asset	asset-changekind-added	asset.md	engine/asset/backend.h:49
+asset::ChangeKind::Replaced	enumerator	asset	asset-changekind-replaced	asset.md	engine/asset/backend.h:50
+asset::ChangeKind::Removed	enumerator	asset	asset-changekind-removed	asset.md	engine/asset/backend.h:51
+asset::ChangeRecord	struct	asset	asset-changerecord	asset.md	engine/asset/backend.h:57
+asset::ChangeRecord::id	variable	asset	asset-changerecord-id	asset.md	engine/asset/backend.h:59
+asset::ChangeRecord::kind	variable	asset	asset-changerecord-kind	asset.md	engine/asset/backend.h:60
+asset::ReadDone	alias	asset	asset-readdone	asset.md	engine/asset/backend.h:64
+asset::ResourceReader	class	asset	asset-resourcereader	asset.md	engine/asset/backend.h:72
+asset::ResourceReader::ResourceReader()	function	asset	asset-resourcereader-resourcereader	asset.md	engine/asset/backend.h:75
+asset::ResourceReader::ResourceReader(const ResourceReader&)	function	asset	asset-resourcereader-resourcereader-const-resourcereader-amp	asset.md	engine/asset/backend.h:76
+asset::ResourceReader::operator=(const ResourceReader&)	function	asset	asset-resourcereader-operator-eq-const-resourcereader-amp	asset.md	engine/asset/backend.h:77
+asset::ResourceReader::~ResourceReader()	function	asset	asset-resourcereader-tilde-resourcereader	asset.md	engine/asset/backend.h:78
+asset::ResourceReader::Size() const	function	asset	asset-resourcereader-size-const	asset.md	engine/asset/backend.h:81
+asset::ResourceReader::ReadAt(u64,void*,usize)	function	asset	asset-resourcereader-readat-u64-void-star-usize	asset.md	engine/asset/backend.h:87
+asset::ResourceReader::ReadAtAsync(u64,void*,usize,ReadDone,void*)	function	asset	asset-resourcereader-readatasync-u64-void-star-usize-readdone-void-star	asset.md	engine/asset/backend.h:94
+asset::ListFromTable(ResourceBackend&,StringView,usize,Vector<ResourceId>*)	function	asset	asset-listfromtable-resourcebackend-amp-stringview-usize-vector-lt-resourceid-gt-star	asset.md	engine/asset/backend.h:107
+asset::TableTicket	class	asset	asset-tableticket	asset.md	engine/asset/backend.h:117
+asset::TableTicket::TableTicket()	function	asset	asset-tableticket-tableticket	asset.md	engine/asset/backend.h:121
+asset::TableTicket::TableTicket(const TableTicket&)	function	asset	asset-tableticket-tableticket-const-tableticket-amp	asset.md	engine/asset/backend.h:122
+asset::TableTicket::operator=(const TableTicket&)	function	asset	asset-tableticket-operator-eq-const-tableticket-amp	asset.md	engine/asset/backend.h:123
+asset::TableTicket::~TableTicket()	function	asset	asset-tableticket-tilde-tableticket	asset.md	engine/asset/backend.h:125
+asset::TableTicket::RunBlocking(ResourceBackend&)	function	asset	asset-tableticket-runblocking-resourcebackend-amp	asset.md	engine/asset/backend.h:129
+asset::TableTicket::IsDone() const	function	asset	asset-tableticket-isdone-const	asset.md	engine/asset/backend.h:134
+asset::TableTicket::Wait()	function	asset	asset-tableticket-wait	asset.md	engine/asset/backend.h:137
+asset::TableTicket::Cancel()	function	asset	asset-tableticket-cancel	asset.md	engine/asset/backend.h:140
+asset::TableTicket::Finish(ResourceTable*)	function	asset	asset-tableticket-finish-resourcetable-star	asset.md	engine/asset/backend.h:146
+asset::TableTicket::TakePage(ResourceTable*,bool*)	function	asset	asset-tableticket-takepage-resourcetable-star-bool-star	asset.md	engine/asset/backend.h:153
+asset::TableTicket::IsCancelled() const	function	asset	asset-tableticket-iscancelled-const	asset.md	engine/asset/backend.h:158
+asset::TableTicket::SetOnComplete(void(*)(void*),void*)	function	asset	asset-tableticket-setoncomplete-void-star-void-star-void-star	asset.md	engine/asset/backend.h:166
+asset::TableTicket::Publish(const ResourceTable&)	function	asset	asset-tableticket-publish-const-resourcetable-amp	asset.md	engine/asset/backend.h:173
+asset::TableTicket::Complete(Status)	function	asset	asset-tableticket-complete-status	asset.md	engine/asset/backend.h:176
+asset::ResourceBackend	class	asset	asset-resourcebackend	asset.md	engine/asset/backend.h:208
+asset::ResourceBackend::ResourceBackend()	function	asset	asset-resourcebackend-resourcebackend	asset.md	engine/asset/backend.h:211
+asset::ResourceBackend::ResourceBackend(const ResourceBackend&)	function	asset	asset-resourcebackend-resourcebackend-const-resourcebackend-amp	asset.md	engine/asset/backend.h:212
+asset::ResourceBackend::operator=(const ResourceBackend&)	function	asset	asset-resourcebackend-operator-eq-const-resourcebackend-amp	asset.md	engine/asset/backend.h:213
+asset::ResourceBackend::~ResourceBackend()	function	asset	asset-resourcebackend-tilde-resourcebackend	asset.md	engine/asset/backend.h:214
+asset::ResourceBackend::Name() const	function	asset	asset-resourcebackend-name-const	asset.md	engine/asset/backend.h:220
+asset::ResourceBackend::Capabilities() const	function	asset	asset-resourcebackend-capabilities-const	asset.md	engine/asset/backend.h:223
+asset::ResourceBackend::Stat(ResourceId,ResourceInfo*)	function	asset	asset-resourcebackend-stat-resourceid-resourceinfo-star	asset.md	engine/asset/backend.h:229
+asset::ResourceBackend::Open(ResourceId,UniquePtr<ResourceReader>*)	function	asset	asset-resourcebackend-open-resourceid-uniqueptr-lt-resourcereader-gt-star	asset.md	engine/asset/backend.h:236
+asset::ResourceBackend::ReadTable(ResourceTable*)	function	asset	asset-resourcebackend-readtable-resourcetable-star	asset.md	engine/asset/backend.h:242
+asset::ResourceBackend::ReadTableAsync()	function	asset	asset-resourcebackend-readtableasync	asset.md	engine/asset/backend.h:246
+asset::ResourceBackend::List(StringView,usize,Vector<ResourceId>*)	function	asset	asset-resourcebackend-list-stringview-usize-vector-lt-resourceid-gt-star	asset.md	engine/asset/backend.h:252
+asset::ResourceBackend::Watch(Vector<ChangeRecord>*)	function	asset	asset-resourcebackend-watch-vector-lt-changerecord-gt-star	asset.md	engine/asset/backend.h:261
 asset::kBlobHeaderBytes	variable	asset	asset-kblobheaderbytes	asset.md	engine/asset/blob.h:40
 asset::kSectionEntryBytes	variable	asset	asset-ksectionentrybytes	asset.md	engine/asset/blob.h:42
 asset::kSectionAlignment	variable	asset	asset-ksectionalignment	asset.md	engine/asset/blob.h:44
@@ -4466,6 +4527,14 @@ asset::BlobReader::FindSection(u32,ByteSpan*) const	function	asset	asset-blobrea
 asset::BlobReader::DependencyCount() const	function	asset	asset-blobreader-dependencycount-const	asset.md	engine/asset/blob.h:180
 asset::BlobReader::DependencyAt(usize) const	function	asset	asset-blobreader-dependencyat-usize-const	asset.md	engine/asset/blob.h:184
 asset::BlobReader::Verify() const	function	asset	asset-blobreader-verify-const	asset.md	engine/asset/blob.h:189
+asset::BlobHeaderInfo	struct	asset	asset-blobheaderinfo	asset.md	engine/asset/blob.h:214
+asset::BlobHeaderInfo::type	variable	asset	asset-blobheaderinfo-type	asset.md	engine/asset/blob.h:216
+asset::BlobHeaderInfo::type_version	variable	asset	asset-blobheaderinfo-type-version	asset.md	engine/asset/blob.h:217
+asset::BlobHeaderInfo::id	variable	asset	asset-blobheaderinfo-id	asset.md	engine/asset/blob.h:218
+asset::BlobHeaderInfo::target	variable	asset	asset-blobheaderinfo-target	asset.md	engine/asset/blob.h:219
+asset::BlobHeaderInfo::total_size	variable	asset	asset-blobheaderinfo-total-size	asset.md	engine/asset/blob.h:220
+asset::BlobHeaderInfo::content_hash	variable	asset	asset-blobheaderinfo-content-hash	asset.md	engine/asset/blob.h:221
+asset::PeekBlobHeader(ByteSpan,BlobHeaderInfo*)	function	asset	asset-peekblobheader-bytespan-blobheaderinfo-star	asset.md	engine/asset/blob.h:235
 asset::ContentHash	struct	asset	asset-contenthash	asset.md	engine/asset/content_hash.h:17
 asset::ContentHash::bytes	variable	asset	asset-contenthash-bytes	asset.md	engine/asset/content_hash.h:19
 asset::ContentHash::IsZero() const	function	asset	asset-contenthash-iszero-const	asset.md	engine/asset/content_hash.h:23
@@ -4476,6 +4545,102 @@ asset::ContentHasher::Update(ByteSpan)	function	asset	asset-contenthasher-update
 asset::ContentHasher::Finish()	function	asset	asset-contenthasher-finish	asset.md	engine/asset/content_hash.h:55
 asset::ContentHasher::Reset()	function	asset	asset-contenthasher-reset	asset.md	engine/asset/content_hash.h:59
 asset::HashBytes(ByteSpan)	function	asset	asset-hashbytes-bytespan	asset.md	engine/asset/content_hash.h:74
+asset::FaultOp	enum	asset	asset-faultop	asset.md	engine/asset/faulty_backend.h:14
+asset::FaultOp::Stat	enumerator	asset	asset-faultop-stat	asset.md	engine/asset/faulty_backend.h:16
+asset::FaultOp::Open	enumerator	asset	asset-faultop-open	asset.md	engine/asset/faulty_backend.h:17
+asset::FaultOp::Read	enumerator	asset	asset-faultop-read	asset.md	engine/asset/faulty_backend.h:18
+asset::FaultOp::ReadTable	enumerator	asset	asset-faultop-readtable	asset.md	engine/asset/faulty_backend.h:19
+asset::FaultOp::Watch	enumerator	asset	asset-faultop-watch	asset.md	engine/asset/faulty_backend.h:20
+asset::FaultyBackend	class	asset	asset-faultybackend	asset.md	engine/asset/faulty_backend.h:27
+asset::FaultyBackend::FaultyBackend(ResourceBackend&)	function	asset	asset-faultybackend-faultybackend-resourcebackend-amp	asset.md	engine/asset/faulty_backend.h:31
+asset::FaultyBackend::FailNext(FaultOp,Status,u32,u32)	function	asset	asset-faultybackend-failnext-faultop-status-u32-u32	asset.md	engine/asset/faulty_backend.h:34
+asset::FaultyBackend::SetLatencyMs(FaultOp,u64)	function	asset	asset-faultybackend-setlatencyms-faultop-u64	asset.md	engine/asset/faulty_backend.h:37
+asset::FaultyBackend::SetReadChunk(usize)	function	asset	asset-faultybackend-setreadchunk-usize	asset.md	engine/asset/faulty_backend.h:41
+asset::FaultyBackend::CallCount(FaultOp) const	function	asset	asset-faultybackend-callcount-faultop-const	asset.md	engine/asset/faulty_backend.h:44
+asset::FaultyBackend::Name() const	function	asset	asset-faultybackend-name-const	asset.md	engine/asset/faulty_backend.h:46
+asset::FaultyBackend::Capabilities() const	function	asset	asset-faultybackend-capabilities-const	asset.md	engine/asset/faulty_backend.h:47
+asset::FaultyBackend::Stat(ResourceId,ResourceInfo*)	function	asset	asset-faultybackend-stat-resourceid-resourceinfo-star	asset.md	engine/asset/faulty_backend.h:48
+asset::FaultyBackend::Open(ResourceId,UniquePtr<ResourceReader>*)	function	asset	asset-faultybackend-open-resourceid-uniqueptr-lt-resourcereader-gt-star	asset.md	engine/asset/faulty_backend.h:49
+asset::FaultyBackend::ReadTable(ResourceTable*)	function	asset	asset-faultybackend-readtable-resourcetable-star	asset.md	engine/asset/faulty_backend.h:50
+asset::FaultyBackend::Watch(Vector<ChangeRecord>*)	function	asset	asset-faultybackend-watch-vector-lt-changerecord-gt-star	asset.md	engine/asset/faulty_backend.h:51
+asset::FaultyBackend::Apply(FaultOp)	function	asset	asset-faultybackend-apply-faultop	asset.md	engine/asset/faulty_backend.h:55
+asset::FaultyBackend::ReadChunk() const	function	asset	asset-faultybackend-readchunk-const	asset.md	engine/asset/faulty_backend.h:57
+asset::kStoredTableFileName	variable	asset	asset-kstoredtablefilename	asset.md	engine/asset/filesystem_backend.h:21
+asset::FilesystemBackend	class	asset	asset-filesystembackend	asset.md	engine/asset/filesystem_backend.h:39
+asset::FilesystemBackend::Create(const io::Path&,const TypeRegistry&,UniquePtr<FilesystemBackend>*)	function	asset	asset-filesystembackend-create-const-io-path-amp-const-typeregistry-amp-uniqueptr-lt-filesystembackend-gt-star	asset.md	engine/asset/filesystem_backend.h:46
+asset::FilesystemBackend::FilesystemBackend(const io::Path&,io::Path,const TypeRegistry&,bool)	function	asset	asset-filesystembackend-filesystembackend-const-io-path-amp-io-path-const-typeregistry-amp-bool	asset.md	engine/asset/filesystem_backend.h:49
+asset::FilesystemBackend::Name() const	function	asset	asset-filesystembackend-name-const	asset.md	engine/asset/filesystem_backend.h:51
+asset::FilesystemBackend::Capabilities() const	function	asset	asset-filesystembackend-capabilities-const	asset.md	engine/asset/filesystem_backend.h:52
+asset::FilesystemBackend::Stat(ResourceId,ResourceInfo*)	function	asset	asset-filesystembackend-stat-resourceid-resourceinfo-star	asset.md	engine/asset/filesystem_backend.h:62
+asset::FilesystemBackend::Open(ResourceId,UniquePtr<ResourceReader>*)	function	asset	asset-filesystembackend-open-resourceid-uniqueptr-lt-resourcereader-gt-star	asset.md	engine/asset/filesystem_backend.h:63
+asset::FilesystemBackend::ReadTable(ResourceTable*)	function	asset	asset-filesystembackend-readtable-resourcetable-star	asset.md	engine/asset/filesystem_backend.h:64
+asset::FilesystemBackend::Watch(Vector<ChangeRecord>*)	function	asset	asset-filesystembackend-watch-vector-lt-changerecord-gt-star	asset.md	engine/asset/filesystem_backend.h:65
+asset::LoadBuffer	class	asset	asset-loadbuffer	asset.md	engine/asset/load_buffer_pool.h:22
+asset::LoadBuffer::LoadBuffer()	function	asset	asset-loadbuffer-loadbuffer	asset.md	engine/asset/load_buffer_pool.h:25
+asset::LoadBuffer::LoadBuffer(const LoadBuffer&)	function	asset	asset-loadbuffer-loadbuffer-const-loadbuffer-amp	asset.md	engine/asset/load_buffer_pool.h:26
+asset::LoadBuffer::operator=(const LoadBuffer&)	function	asset	asset-loadbuffer-operator-eq-const-loadbuffer-amp	asset.md	engine/asset/load_buffer_pool.h:27
+asset::LoadBuffer::LoadBuffer(LoadBuffer&&) noexcept	function	asset	asset-loadbuffer-loadbuffer-loadbuffer-amp-amp-noexcept	asset.md	engine/asset/load_buffer_pool.h:29
+asset::LoadBuffer::operator=(LoadBuffer&&) noexcept	function	asset	asset-loadbuffer-operator-eq-loadbuffer-amp-amp-noexcept	asset.md	engine/asset/load_buffer_pool.h:31
+asset::LoadBuffer::~LoadBuffer()	function	asset	asset-loadbuffer-tilde-loadbuffer	asset.md	engine/asset/load_buffer_pool.h:33
+asset::LoadBuffer::Data() const	function	asset	asset-loadbuffer-data-const	asset.md	engine/asset/load_buffer_pool.h:39
+asset::LoadBuffer::Size() const	function	asset	asset-loadbuffer-size-const	asset.md	engine/asset/load_buffer_pool.h:41
+asset::LoadBuffer::Capacity() const	function	asset	asset-loadbuffer-capacity-const	asset.md	engine/asset/load_buffer_pool.h:43
+asset::LoadBuffer::IsValid() const	function	asset	asset-loadbuffer-isvalid-const	asset.md	engine/asset/load_buffer_pool.h:47
+asset::LoadBuffer::Release()	function	asset	asset-loadbuffer-release	asset.md	engine/asset/load_buffer_pool.h:50
+asset::LoadBufferPool	class	asset	asset-loadbufferpool	asset.md	engine/asset/load_buffer_pool.h:64
+asset::LoadBufferPool::LoadBufferPool(u64)	function	asset	asset-loadbufferpool-loadbufferpool-u64	asset.md	engine/asset/load_buffer_pool.h:69
+asset::LoadBufferPool::LoadBufferPool(const LoadBufferPool&)	function	asset	asset-loadbufferpool-loadbufferpool-const-loadbufferpool-amp	asset.md	engine/asset/load_buffer_pool.h:70
+asset::LoadBufferPool::operator=(const LoadBufferPool&)	function	asset	asset-loadbufferpool-operator-eq-const-loadbufferpool-amp	asset.md	engine/asset/load_buffer_pool.h:71
+asset::LoadBufferPool::~LoadBufferPool()	function	asset	asset-loadbufferpool-tilde-loadbufferpool	asset.md	engine/asset/load_buffer_pool.h:73
+asset::LoadBufferPool::Acquire(usize,LoadBuffer*)	function	asset	asset-loadbufferpool-acquire-usize-loadbuffer-star	asset.md	engine/asset/load_buffer_pool.h:81
+asset::LoadBufferPool::AllocationCount() const	function	asset	asset-loadbufferpool-allocationcount-const	asset.md	engine/asset/load_buffer_pool.h:84
+asset::LoadBufferPool::ReuseCount() const	function	asset	asset-loadbufferpool-reusecount-const	asset.md	engine/asset/load_buffer_pool.h:86
+asset::LoadBufferPool::BytesInUse() const	function	asset	asset-loadbufferpool-bytesinuse-const	asset.md	engine/asset/load_buffer_pool.h:88
+asset::LoadBufferPool::BytesIdle() const	function	asset	asset-loadbufferpool-bytesidle-const	asset.md	engine/asset/load_buffer_pool.h:90
+asset::ReleaseBytes	alias	asset	asset-releasebytes	asset.md	engine/asset/memory_backend.h:22
+asset::ResourceInUseQuery	struct	asset	asset-resourceinusequery	asset.md	engine/asset/memory_backend.h:29
+asset::ResourceInUseQuery::dependents	variable	asset	asset-resourceinusequery-dependents	asset.md	engine/asset/memory_backend.h:32
+asset::ResourceInUseQuery::unload	variable	asset	asset-resourceinusequery-unload	asset.md	engine/asset/memory_backend.h:34
+asset::ResourceInUseQuery::user	variable	asset	asset-resourceinusequery-user	asset.md	engine/asset/memory_backend.h:35
+asset::MemoryAddOptions	struct	asset	asset-memoryaddoptions	asset.md	engine/asset/memory_backend.h:41
+asset::MemoryAddOptions::paths	variable	asset	asset-memoryaddoptions-paths	asset.md	engine/asset/memory_backend.h:43
+asset::MemoryAddOptions::expected_hash	variable	asset	asset-memoryaddoptions-expected-hash	asset.md	engine/asset/memory_backend.h:44
+asset::HostMemoryBackend	class	asset	asset-hostmemorybackend	asset.md	engine/asset/memory_backend.h:59
+asset::HostMemoryBackend::HostMemoryBackend(const TypeRegistry&,u64)	function	asset	asset-hostmemorybackend-hostmemorybackend-const-typeregistry-amp-u64	asset.md	engine/asset/memory_backend.h:63
+asset::HostMemoryBackend::~HostMemoryBackend()	function	asset	asset-hostmemorybackend-tilde-hostmemorybackend	asset.md	engine/asset/memory_backend.h:65
+asset::HostMemoryBackend::EntryPtr	alias	asset	asset-hostmemorybackend-entryptr	asset.md	engine/asset/memory_backend.h:70
+asset::HostMemoryBackend::SetInUseQuery(const ResourceInUseQuery&)	function	asset	asset-hostmemorybackend-setinusequery-const-resourceinusequery-amp	asset.md	engine/asset/memory_backend.h:73
+asset::HostMemoryBackend::Add(ResourceId,ByteSpan,const MemoryAddOptions&)	function	asset	asset-hostmemorybackend-add-resourceid-bytespan-const-memoryaddoptions-amp	asset.md	engine/asset/memory_backend.h:80
+asset::HostMemoryBackend::AddBorrowed(ResourceId,ByteSpan,ReleaseBytes,void*,const MemoryAddOptions&)	function	asset	asset-hostmemorybackend-addborrowed-resourceid-bytespan-releasebytes-void-star-const-memoryaddoptions-amp	asset.md	engine/asset/memory_backend.h:86
+asset::HostMemoryBackend::Replace(ResourceId,ByteSpan,bool,Vector<ResourceId>*)	function	asset	asset-hostmemorybackend-replace-resourceid-bytespan-bool-vector-lt-resourceid-gt-star	asset.md	engine/asset/memory_backend.h:95
+asset::HostMemoryBackend::ReplaceBorrowed(ResourceId,ByteSpan,ReleaseBytes,void*,bool,Vector<ResourceId>*)	function	asset	asset-hostmemorybackend-replaceborrowed-resourceid-bytespan-releasebytes-void-star-bool-vector-lt-resourceid-gt-star	asset.md	engine/asset/memory_backend.h:100
+asset::HostMemoryBackend::Remove(ResourceId,bool,Vector<ResourceId>*)	function	asset	asset-hostmemorybackend-remove-resourceid-bool-vector-lt-resourceid-gt-star	asset.md	engine/asset/memory_backend.h:108
+asset::HostMemoryBackend::BytesHeld() const	function	asset	asset-hostmemorybackend-bytesheld-const	asset.md	engine/asset/memory_backend.h:111
+asset::HostMemoryBackend::Name() const	function	asset	asset-hostmemorybackend-name-const	asset.md	engine/asset/memory_backend.h:113
+asset::HostMemoryBackend::Capabilities() const	function	asset	asset-hostmemorybackend-capabilities-const	asset.md	engine/asset/memory_backend.h:114
+asset::HostMemoryBackend::Stat(ResourceId,ResourceInfo*)	function	asset	asset-hostmemorybackend-stat-resourceid-resourceinfo-star	asset.md	engine/asset/memory_backend.h:115
+asset::HostMemoryBackend::Open(ResourceId,UniquePtr<ResourceReader>*)	function	asset	asset-hostmemorybackend-open-resourceid-uniqueptr-lt-resourcereader-gt-star	asset.md	engine/asset/memory_backend.h:116
+asset::HostMemoryBackend::ReadTable(ResourceTable*)	function	asset	asset-hostmemorybackend-readtable-resourcetable-star	asset.md	engine/asset/memory_backend.h:117
+asset::HostMemoryBackend::Watch(Vector<ChangeRecord>*)	function	asset	asset-hostmemorybackend-watch-vector-lt-changerecord-gt-star	asset.md	engine/asset/memory_backend.h:118
+asset::MountId	alias	asset	asset-mountid	asset.md	engine/asset/mount_table.h:18
+asset::MountTable	class	asset	asset-mounttable	asset.md	engine/asset/mount_table.h:31
+asset::MountTable::MountTable()	function	asset	asset-mounttable-mounttable	asset.md	engine/asset/mount_table.h:34
+asset::MountTable::MountTable(const MountTable&)	function	asset	asset-mounttable-mounttable-const-mounttable-amp	asset.md	engine/asset/mount_table.h:35
+asset::MountTable::operator=(const MountTable&)	function	asset	asset-mounttable-operator-eq-const-mounttable-amp	asset.md	engine/asset/mount_table.h:36
+asset::MountTable::~MountTable()	function	asset	asset-mounttable-tilde-mounttable	asset.md	engine/asset/mount_table.h:38
+asset::MountTable::Mount(StringView,ResourceBackend*,i32,MountId*)	function	asset	asset-mounttable-mount-stringview-resourcebackend-star-i32-mountid-star	asset.md	engine/asset/mount_table.h:44
+asset::MountTable::Unmount(MountId)	function	asset	asset-mounttable-unmount-mountid	asset.md	engine/asset/mount_table.h:49
+asset::MountTable::Stat(ResourceId,ResourceInfo*)	function	asset	asset-mounttable-stat-resourceid-resourceinfo-star	asset.md	engine/asset/mount_table.h:56
+asset::MountTable::Open(ResourceId,UniquePtr<ResourceReader>*,MountId*)	function	asset	asset-mounttable-open-resourceid-uniqueptr-lt-resourcereader-gt-star-mountid-star	asset.md	engine/asset/mount_table.h:61
+asset::MountTable::RefreshTablesAsync()	function	asset	asset-mounttable-refreshtablesasync	asset.md	engine/asset/mount_table.h:65
+asset::MountTable::RefreshTables()	function	asset	asset-mounttable-refreshtables	asset.md	engine/asset/mount_table.h:70
+asset::MountTable::TablesReady() const	function	asset	asset-mounttable-tablesready-const	asset.md	engine/asset/mount_table.h:75
+asset::MountTable::SetTablesReadyCallback(void(*)(void*),void*)	function	asset	asset-mounttable-settablesreadycallback-void-star-void-star-void-star	asset.md	engine/asset/mount_table.h:80
+asset::MountTable::Resolve(StringView,ResourceId*) const	function	asset	asset-mounttable-resolve-stringview-resourceid-star-const	asset.md	engine/asset/mount_table.h:87
+asset::MountTable::PathsOf(ResourceId,Vector<String<HeapAllocator>>*) const	function	asset	asset-mounttable-pathsof-resourceid-vector-lt-string-lt-heapallocator-gt-gt-star-const	asset.md	engine/asset/mount_table.h:93
+asset::MountTable::Snapshot(ResourceTable*,Vector<ShadowedEntry>*) const	function	asset	asset-mounttable-snapshot-resourcetable-star-vector-lt-shadowedentry-gt-star-const	asset.md	engine/asset/mount_table.h:99
+asset::MountTable::PollChanges(Vector<ChangeRecord>*)	function	asset	asset-mounttable-pollchanges-vector-lt-changerecord-gt-star	asset.md	engine/asset/mount_table.h:105
+asset::MountTable::MountCount() const	function	asset	asset-mounttable-mountcount-const	asset.md	engine/asset/mount_table.h:108
 asset::ResourceId	class	asset	asset-resourceid	asset.md	engine/asset/resource_id.h:19
 asset::ResourceId::ResourceId()	function	asset	asset-resourceid-resourceid	asset.md	engine/asset/resource_id.h:23
 asset::ResourceId::None()	function	asset	asset-resourceid-none	asset.md	engine/asset/resource_id.h:27
@@ -4548,17 +4713,19 @@ asset::ErrorCode::Offline	enumerator	asset	asset-errorcode-offline	asset.md	engi
 asset::ErrorCode::LimitExceeded	enumerator	asset	asset-errorcode-limitexceeded	asset.md	engine/asset/status.h:30
 asset::ErrorCode::WrongTarget	enumerator	asset	asset-errorcode-wrongtarget	asset.md	engine/asset/status.h:31
 asset::ErrorCode::Invalid	enumerator	asset	asset-errorcode-invalid	asset.md	engine/asset/status.h:33
-asset::ErrorCode::Other	enumerator	asset	asset-errorcode-other	asset.md	engine/asset/status.h:34
-asset::ErrorCodeName(ErrorCode)	function	asset	asset-errorcodename-errorcode	asset.md	engine/asset/status.h:41
-asset::Status	class	asset	asset-status	asset.md	engine/asset/status.h:47
-asset::Status::Status()	function	asset	asset-status-status	asset.md	engine/asset/status.h:51
-asset::Status::Success()	function	asset	asset-status-success	asset.md	engine/asset/status.h:54
-asset::Status::Make(ErrorCode,const char*)	function	asset	asset-status-make-errorcode-const-char-star	asset.md	engine/asset/status.h:58
-asset::Status::Ok() const	function	asset	asset-status-ok-const	asset.md	engine/asset/status.h:68
-asset::Status::Failed() const	function	asset	asset-status-failed-const	asset.md	engine/asset/status.h:71
-asset::Status::Is(ErrorCode) const	function	asset	asset-status-is-errorcode-const	asset.md	engine/asset/status.h:74
-asset::Status::Code() const	function	asset	asset-status-code-const	asset.md	engine/asset/status.h:77
-asset::Status::Message() const	function	asset	asset-status-message-const	asset.md	engine/asset/status.h:82
+asset::ErrorCode::InUse	enumerator	asset	asset-errorcode-inuse	asset.md	engine/asset/status.h:34
+asset::ErrorCode::NotReady	enumerator	asset	asset-errorcode-notready	asset.md	engine/asset/status.h:35
+asset::ErrorCode::Other	enumerator	asset	asset-errorcode-other	asset.md	engine/asset/status.h:36
+asset::ErrorCodeName(ErrorCode)	function	asset	asset-errorcodename-errorcode	asset.md	engine/asset/status.h:43
+asset::Status	class	asset	asset-status	asset.md	engine/asset/status.h:49
+asset::Status::Status()	function	asset	asset-status-status	asset.md	engine/asset/status.h:53
+asset::Status::Success()	function	asset	asset-status-success	asset.md	engine/asset/status.h:56
+asset::Status::Make(ErrorCode,const char*)	function	asset	asset-status-make-errorcode-const-char-star	asset.md	engine/asset/status.h:60
+asset::Status::Ok() const	function	asset	asset-status-ok-const	asset.md	engine/asset/status.h:70
+asset::Status::Failed() const	function	asset	asset-status-failed-const	asset.md	engine/asset/status.h:73
+asset::Status::Is(ErrorCode) const	function	asset	asset-status-is-errorcode-const	asset.md	engine/asset/status.h:76
+asset::Status::Code() const	function	asset	asset-status-code-const	asset.md	engine/asset/status.h:79
+asset::Status::Message() const	function	asset	asset-status-message-const	asset.md	engine/asset/status.h:84
 database::Feature	enum	database	database-feature	database.md	engine/database/database.h:22
 database::Feature::Savepoints	enumerator	database	database-feature-savepoints	database.md	engine/database/database.h:24
 database::Feature::WithoutRowId	enumerator	database	database-feature-withoutrowid	database.md	engine/database/database.h:25

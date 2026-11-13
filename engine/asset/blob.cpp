@@ -383,4 +383,29 @@ Status BlobReader::Verify() const
     return Status::Success();
 }
 
+Status PeekBlobHeader(ByteSpan header, BlobHeaderInfo* out)
+{
+    *out = BlobHeaderInfo();
+    if (header.Size() < kBlobHeaderBytes)
+    {
+        return Status::Make(ErrorCode::Corrupt, "the blob is shorter than its header");
+    }
+    const byte* p = header.Data();
+    if (LoadLe(p, 4) != kMagic)
+    {
+        return Status::Make(ErrorCode::Corrupt, "the blob does not start with the blob magic");
+    }
+    if (LoadLe(p + 4, 4) != kContainerVersion)
+    {
+        return Status::Make(ErrorCode::UnsupportedVersion, kRemintMessage);
+    }
+    out->type = ResourceType::FromTag(static_cast<u32>(LoadLe(p + 8, 4)));
+    out->type_version = static_cast<u32>(LoadLe(p + 12, 4));
+    out->id = ResourceId::FromValue(LoadLe(p + 16, 8));
+    out->target = static_cast<u32>(LoadLe(p + 24, 4));
+    out->total_size = LoadLe(p + 40, 8);
+    MemCopy(out->content_hash.bytes, p + kHashOffset, sizeof(out->content_hash.bytes));
+    return Status::Success();
+}
+
 }  // namespace engine_placeholder::asset

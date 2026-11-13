@@ -9,6 +9,13 @@ set(ASSET_SOURCES
   content_hash.cpp  # Day 314
   blob.cpp  # Day 314
   resource_table.cpp  # Day 314
+  backend.cpp  # Day 315
+  load_buffer_pool.cpp  # Day 315
+  asset_settings.cpp  # Day 315
+  filesystem_backend.cpp  # Day 315
+  memory_backend.cpp  # Day 315
+  faulty_backend.cpp  # Day 315
+  mount_table.cpp  # Day 315
 )
 set(ASSET_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

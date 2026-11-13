@@ -7,6 +7,12 @@ set(ASSET_TEST_SOURCES
   blob_test.cpp    # Day 314
   table_test.cpp   # Day 314
   support.h        # Day 314
+  backend_conformance.h  # Day 315
+  filesystem_backend_test.cpp  # Day 315
+  memory_backend_test.cpp  # Day 315
+  mount_table_test.cpp  # Day 315
+  load_buffer_pool_test.cpp  # Day 315
+  async_table_test.cpp  # Day 315
 )
 
 find_package(Threads REQUIRED)

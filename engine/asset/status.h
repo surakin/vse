@@ -31,6 +31,8 @@ enum class ErrorCode : u8
     WrongTarget,             ///< A blob or pak was made for another target platform; the message names `asset_mint
                              ///< pack --target`.
     Invalid,                 ///< The caller broke a rule: a malformed path, a null id where one is required.
+    InUse,                   ///< A resource cannot be replaced or removed because a loaded resource depends on it.
+    NotReady,                ///< An answer needs a table that has not arrived yet (not the same as `NotFound`).
     Other,                   ///< Anything else.
 };
 
