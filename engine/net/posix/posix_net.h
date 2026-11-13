@@ -1,7 +1,8 @@
 #pragma once
 
 // The POSIX half of the socket backend (Linux and macOS share it): error mapping, endpoint <-> sockaddr conversion and
-// the hooks each OS supplies (engine/net/linux/linux_hooks.cpp). Internal to engine/net; not part of the public API.
+// the hooks each OS supplies (engine/net/linux/linux_hooks.cpp, engine/net/macos/macos_hooks.cpp). Internal to
+// engine/net; not part of the public API.
 
 #include <sys/socket.h>
 
@@ -35,8 +36,8 @@ int AcceptFd(int listener, sockaddr* address, socklen_t* length);
 // The flags that stop a write to a vanished peer from raising SIGPIPE (MSG_NOSIGNAL; 0 where the socket option does it
 // instead).
 int SendFlags();
-// The flag that makes a datagram receive report the datagram's real size when it was cut (MSG_TRUNC), or 0 where there
-// is none.
-int TruncationFlag();
+// The portable code of a failed send's errno: ErrorFromErrno, with the system's own quirks (macOS: EPROTOTYPE on a
+// connection being torn down is Closed).
+ErrorCode SendErrorCode(int error);
 
 }  // namespace engine_placeholder::net::posix

@@ -3921,8 +3921,8 @@ net::Poller::IsValid() const	function	net	net-poller-isvalid-const	net.md	engine
 net::Poller::Arm(i64,u32)	function	net	net-poller-arm-i64-u32	net.md	engine/net/poller.h:66
 net::Poller::Disarm(i64)	function	net	net-poller-disarm-i64	net.md	engine/net/poller.h:74
 net::Poller::kMaxBatch	variable	net	net-poller-kmaxbatch	net.md	engine/net/poller.h:77
-net::Poller::Wait(PollEvent*,usize,i64,usize*)	function	net	net-poller-wait-pollevent-star-usize-i64-usize-star	net.md	engine/net/poller.h:91
-net::Poller::Wake()	function	net	net-poller-wake	net.md	engine/net/poller.h:98
+net::Poller::Wait(PollEvent*,usize,i64,usize*)	function	net	net-poller-wait-pollevent-star-usize-i64-usize-star	net.md	engine/net/poller.h:92
+net::Poller::Wake()	function	net	net-poller-wake	net.md	engine/net/poller.h:99
 net::AddressGroup(const Address&)	function	net	net-addressgroup-const-address-amp	net.md	engine/net/rate_limit.h:33
 net::RateLimiterConfig	struct	net	net-ratelimiterconfig	net.md	engine/net/rate_limit.h:50
 net::RateLimiterConfig::total_per_second	variable	net	net-ratelimiterconfig-total-per-second	net.md	engine/net/rate_limit.h:52

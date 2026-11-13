@@ -272,6 +272,7 @@ TEST_CASE("FinishConnect needs a connect under way and reports an outcome once",
     if (s.Is(ErrorCode::WouldBlock))
     {
         s = Poll([&] { return client.FinishConnect(); });
+        INFO("outcome " << static_cast<int>(s.Code()) << ", os error " << s.OsError());
         CHECK(s.Is(ErrorCode::Refused));
         CHECK(client.FinishConnect().Is(ErrorCode::Invalid));  // reported once
     }
@@ -338,6 +339,7 @@ TEST_CASE("Connecting to a closed port is Refused", "[network][socket]")
     {
         s = Poll([&] { return client.FinishConnect(); });
     }
+    INFO("outcome " << static_cast<int>(s.Code()) << ", os error " << s.OsError());
     CHECK(s.Is(ErrorCode::Refused));
     CHECK(s.OsError() != 0);
 }
@@ -518,6 +520,35 @@ TEST_CASE("Options: the families and kinds they apply to, and the buffer the sys
     if (Socket::OpenTcp(AddressFamily::V6, &tcp6).Ok())
     {
         CHECK(tcp6.SetDualStack(true).Ok());
+    }
+}
+
+TEST_CASE("A connection reset before it is accepted is skipped or accepted, never Invalid", "[network][socket]")
+{
+    // Day 326's review: on macOS the options set on an accepted socket fail with EINVAL when the peer already reset
+    // it, which read as a misuse; it is an aborted connection.
+    REQUIRE_LOOPBACK(AddressFamily::V4);
+    Socket listener;
+    REQUIRE(Socket::OpenTcp(AddressFamily::V4, &listener).Ok());
+    REQUIRE(listener.Bind(Endpoint(Address::Loopback(AddressFamily::V4), 0)).Ok());
+    REQUIRE(listener.Listen().Ok());
+    Endpoint at;
+    REQUIRE(listener.LocalEndpoint(&at).Ok());
+    for (int round = 0; round < 20; ++round)
+    {
+        Socket client;
+        REQUIRE(Socket::OpenTcp(AddressFamily::V4, &client).Ok());
+        const Status c = client.Connect(at);
+        REQUIRE((c.Ok() || c.Is(ErrorCode::WouldBlock)));
+        ThisThread::SleepForMilliseconds(2);  // the connection completes in the kernel's queue
+        REQUIRE(client.SetLinger(true, 0).Ok());
+        REQUIRE(client.Close().Ok());  // abortive: a reset
+        ThisThread::SleepForMilliseconds(2);
+        Socket accepted;
+        Endpoint peer;
+        const Status a = listener.Accept(&accepted, &peer);
+        INFO("round " << round << ": " << static_cast<int>(a.Code()) << ", os error " << a.OsError());
+        CHECK((a.Ok() || a.Is(ErrorCode::WouldBlock)));
     }
 }
 

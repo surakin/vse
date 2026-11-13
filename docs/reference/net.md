@@ -3073,7 +3073,7 @@ A socket is armed for one notification: it is reported once, when it is ready (a
 | Field | Value |
 |---|---|
 | Thread-safety | thread-safe except that [`net::Poller::Wait`](#net-poller-wait-pollevent-star-usize-i64-usize-star) is called by one thread at a time. `Arm`, `Disarm` and `Wake` may be called from any thread while another waits. |
-| Ownership | owns the operating-system objects (the epoll descriptor and its wake-up descriptor; on Windows the two wake-up sockets and the set of armed sockets). |
+| Ownership | owns the operating-system objects (the epoll descriptor and its wake-up descriptor; on macOS the kqueue; on Windows the two wake-up sockets and the set of armed sockets). |
 
 ### `Poller()` {#net-poller-poller}
 
@@ -3144,7 +3144,7 @@ Arms `handle` for one notification of `interest` (`kPollRead`, `kPollWrite` or b
 | Parameter `handle` | the socket's native handle. |
 | Parameter `interest` | the `kPoll` bits to wait for. |
 | Fails | [`net::ErrorCode::Invalid`](#net-errorcode-invalid) for a handle the system refuses; [`net::ErrorCode::LimitExceeded`](#net-errorcode-limitexceeded) when out of resources. |
-| Backend | level-triggered one-shot registration (`EPOLLONESHOT`, `EPOLL_CTL_MOD`, falling back to `EPOLL_CTL_ADD`; on Windows the poller's own armed set, checked with `getsockopt(SO_TYPE)`, waking a wait in progress). |
+| Backend | level-triggered one-shot registration (`EPOLLONESHOT`, `EPOLL_CTL_MOD`, falling back to `EPOLL_CTL_ADD`; on Windows the poller's own armed set, checked with `getsockopt(SO_TYPE)`, waking a wait in progress; on macOS a one-shot kqueue filter per wanted direction, the other direction's deleted). |
 
 ### `Disarm(i64)` {#net-poller-disarm-i64}
 
@@ -3160,7 +3160,7 @@ Forgets `handle`: no notification for it is reported afterwards, and the poller 
 |---|---|
 | Parameter `handle` | the socket's native handle. |
 | Fails | never. |
-| Backend | `EPOLL_CTL_DEL` (Windows: removal from the armed set), ignoring a handle that is not registered or already closed. |
+| Backend | `EPOLL_CTL_DEL` (Windows: removal from the armed set; macOS: both kqueue filters deleted), ignoring a handle that is not registered or already closed. |
 
 ### `kMaxBatch` {#net-poller-kmaxbatch}
 
@@ -3190,7 +3190,7 @@ Waits for armed sockets to become ready, for a [`net::Poller::Wake`](#net-poller
 | Parameter `count` | receives the number of events written; 0 on a timeout, a wake-up or an interruption. |
 | Fails | the system refuses the wait for a reason other than an interruption (the poller is broken); `*count` is 0. |
 | Ownership | `events` is written during the call; nothing is retained. |
-| Backend | `epoll_wait` (the timeout is rounded up to a millisecond, so it never returns early), draining the wake-up descriptor without reporting it; on Windows `select` over a copy of the armed set (not `WSAPoll`, which reports a half-closed socket whatever was asked for). |
+| Backend | `epoll_wait` (the timeout is rounded up to a millisecond, so it never returns early), draining the wake-up descriptor without reporting it; on Windows `select` over a copy of the armed set (not `WSAPoll`, which reports a half-closed socket whatever was asked for); on macOS `kevent`, a socket's two filters merged into one event. |
 
 ### `Wake()` {#net-poller-wake}
 
@@ -3205,7 +3205,7 @@ Makes a [`net::Poller::Wait`](#net-poller-wait-pollevent-star-usize-i64-usize-st
 | Field | Value |
 |---|---|
 | Fails | never. |
-| Backend | writes the wake-up descriptor (`eventfd`; on Windows a byte to a loopback UDP socket the wait watches). |
+| Backend | writes the wake-up descriptor (`eventfd`; on macOS `NOTE_TRIGGER` on a kqueue user event; on Windows a byte to a loopback UDP socket the wait watches). |
 
 ## `AddressGroup(const Address&)` {#net-addressgroup-const-address-amp}
 

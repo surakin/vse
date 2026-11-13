@@ -42,6 +42,9 @@ ErrorCode ErrorFromErrno(int error)
     case EPROTONOSUPPORT:
     case EPROTOTYPE:
     case EOPNOTSUPP:
+#if ENOTSUP != EOPNOTSUPP
+    case ENOTSUP:  // its own number on macOS (45 against 102); the same as EOPNOTSUPP on Linux
+#endif
     case ENOPROTOOPT: return ErrorCode::Unsupported;
     case EMFILE:
     case ENFILE:

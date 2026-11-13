@@ -280,6 +280,8 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(tests/database)
   add_subdirectory(engine/storage)
   add_subdirectory(tests/storage)
+  add_subdirectory(engine/net)  # Day 326: the POSIX backend with the macOS hooks and the kqueue poller
+  add_subdirectory(tests/net)
   add_subdirectory(engine/ui)
   add_subdirectory(engine/ui_window)  # Day 314, before tests/ui, which builds its window-bound tests when the target exists
   add_subdirectory(tests/ui)
@@ -317,6 +319,7 @@ if(ENGINE_PLATFORM STREQUAL "macos")
     add_subdirectory(tools/${gate})
   endforeach()
   add_subdirectory(tools/net_access_check)  # Phase 20 Day 268 (its own line: editing the gate list above would widen scripts/test-phase.sh --affected)
+  add_subdirectory(tools/net_probe)  # Phase 26 Day 326
   add_subdirectory(tests/phase_labels)
   add_subdirectory(tests/test_phase_script)
   message(STATUS "macOS (Phase 26 Day 310): building the whole foundation (base, file, debugging and settings layers), the job system, text, UI (CPU side), ECS, "

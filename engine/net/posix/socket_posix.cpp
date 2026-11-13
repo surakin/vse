@@ -5,6 +5,7 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <sys/socket.h>
+#include <sys/uio.h>  // iovec, for recvmsg
 
 #include "cstr/mem_ops.h"
 #include "lang/status_try.h"
@@ -110,6 +111,26 @@ template <typename Call> auto RetryOnInterrupt(Call call)
         result = call();
     }
     return result;
+}
+
+// Receives one datagram with recvmsg, which reports a datagram cut to fit the buffer through its MSG_TRUNC result flag
+// on Linux and macOS alike (recvfrom's MSG_TRUNC input flag, which returns the real size, is Linux's only: Phase 26
+// Day 326). `from` may be null. Returns the bytes received, or -1 with errno set.
+long ReceiveDatagram(i64 handle, MutableByteSpan buffer, sockaddr_storage* from, bool* cut)
+{
+    *cut = false;
+    iovec part{buffer.Data(), buffer.Size()};
+    msghdr message{};
+    message.msg_name = from;
+    message.msg_namelen = from != nullptr ? sizeof(*from) : 0;
+    message.msg_iov = &part;
+    message.msg_iovlen = 1;
+    const auto n = RetryOnInterrupt([&] { return ::recvmsg(Fd(handle), &message, 0); });
+    if (n >= 0)
+    {
+        *cut = (message.msg_flags & MSG_TRUNC) != 0;
+    }
+    return static_cast<long>(n);
 }
 
 }  // namespace
@@ -300,8 +321,16 @@ Status Socket::FinishConnect()
         {
             return Status::Of(ErrorCode::WouldBlock);  // no error recorded and no peer yet: still under way
         }
+        // The connect failed between the two calls (seen on macOS under load, Phase 26 Day 326, where getpeername then
+        // fails with EINVAL): the pending error, read again, is the outcome; with none, a connection gone at once.
+        int late = 0;
+        size = sizeof(late);
         connecting_ = false;
-        return StatusFromErrno(error);
+        if (::getsockopt(Fd(handle_), SOL_SOCKET, SO_ERROR, &late, &size) == 0 && late != 0)
+        {
+            return StatusFromErrno(late);
+        }
+        return error == EINVAL ? Status::Make(ErrorCode::Reset, error) : StatusFromErrno(error);
     }
     connecting_ = false;
     return Status::Success();
@@ -318,7 +347,8 @@ Status Socket::Send(ByteSpan bytes, usize* sent)
                                     { return ::send(Fd(handle_), bytes.Data(), bytes.Size(), posix::SendFlags()); });
     if (n < 0)
     {
-        return StatusFromErrno(os::LastError());
+        const int error = os::LastError();
+        return Status::Make(posix::SendErrorCode(error), error);  // the system's errno is kept
     }
     *sent = static_cast<usize>(n);
     return Status::Success();
@@ -331,19 +361,29 @@ Status Socket::Receive(MutableByteSpan buffer, usize* received)
     {
         return Status::Of(ErrorCode::Invalid);
     }
-    const int flags = datagram_ ? posix::TruncationFlag() : 0;
-    const auto n = RetryOnInterrupt([&] { return ::recv(Fd(handle_), buffer.Data(), buffer.Size(), flags); });
+    if (datagram_)
+    {
+        bool cut = false;
+        const auto n = ReceiveDatagram(handle_, buffer, nullptr, &cut);
+        if (n < 0)
+        {
+            return StatusFromErrno(os::LastError());
+        }
+        if (cut)
+        {
+            return Status::Of(ErrorCode::MessageTooLarge);  // the rest of the datagram is gone
+        }
+        *received = static_cast<usize>(n);
+        return Status::Success();
+    }
+    const auto n = RetryOnInterrupt([&] { return ::recv(Fd(handle_), buffer.Data(), buffer.Size(), 0); });
     if (n < 0)
     {
         return StatusFromErrno(os::LastError());
     }
-    if (n == 0 && !datagram_)
+    if (n == 0)
     {
         return Status::Of(ErrorCode::Closed);  // the peer shut down its writing half
-    }
-    if (datagram_ && static_cast<usize>(n) > buffer.Size())
-    {
-        return Status::Of(ErrorCode::MessageTooLarge);  // cut: the real size, from the truncation flag
     }
     *received = static_cast<usize>(n);
     return Status::Success();
@@ -385,20 +425,15 @@ Status Socket::ReceiveFrom(MutableByteSpan buffer, usize* received, Endpoint* fr
         return Status::Of(ErrorCode::Invalid);
     }
     sockaddr_storage storage{};
-    socklen_t length = sizeof(storage);
-    const auto n = RetryOnInterrupt(
-        [&]
-        {
-            return ::recvfrom(Fd(handle_), buffer.Data(), buffer.Size(), posix::TruncationFlag(),
-                              reinterpret_cast<sockaddr*>(&storage), &length);
-        });
+    bool cut = false;
+    const auto n = ReceiveDatagram(handle_, buffer, &storage, &cut);
     if (n < 0)
     {
         return StatusFromErrno(os::LastError());
     }
-    if (static_cast<usize>(n) > buffer.Size())
+    if (cut)
     {
-        return Status::Of(ErrorCode::MessageTooLarge);  // the real size, reported by the truncation flag
+        return Status::Of(ErrorCode::MessageTooLarge);  // the rest of the datagram is gone
     }
     *received = static_cast<usize>(n);
     if (!posix::FromSockaddr(storage, from))

@@ -37,8 +37,8 @@ struct PollEvent
 ///
 /// - Thread-safety: thread-safe except that [[net::Poller::Wait]] is called by one thread at a time. `Arm`, `Disarm`
 /// and `Wake` may be called from any thread while another waits.
-/// - Ownership: owns the operating-system objects (the epoll descriptor and its wake-up descriptor; on Windows the two
-/// wake-up sockets and the set of armed sockets).
+/// - Ownership: owns the operating-system objects (the epoll descriptor and its wake-up descriptor; on macOS the
+/// kqueue; on Windows the two wake-up sockets and the set of armed sockets).
 class Poller
 {
 public:
@@ -58,7 +58,7 @@ public:
     ///
     /// - Backend: level-triggered one-shot registration (`EPOLLONESHOT`, `EPOLL_CTL_MOD`, falling back to
     /// `EPOLL_CTL_ADD`; on Windows the poller's own armed set, checked with `getsockopt(SO_TYPE)`, waking a wait in
-    /// progress).
+    /// progress; on macOS a one-shot kqueue filter per wanted direction, the other direction's deleted).
     /// - Param handle: the socket's native handle.
     /// - Param interest: the `kPoll` bits to wait for.
     /// - Fails: [[net::ErrorCode::Invalid]] for a handle the system refuses; [[net::ErrorCode::LimitExceeded]] when out
@@ -67,8 +67,8 @@ public:
 
     /// Forgets `handle`: no notification for it is reported afterwards, and the poller keeps nothing of it.
     ///
-    /// - Backend: `EPOLL_CTL_DEL` (Windows: removal from the armed set), ignoring a handle that is not registered or
-    /// already closed.
+    /// - Backend: `EPOLL_CTL_DEL` (Windows: removal from the armed set; macOS: both kqueue filters deleted), ignoring a
+    /// handle that is not registered or already closed.
     /// - Param handle: the socket's native handle.
     /// - Fails: never.
     void Disarm(i64 handle);
@@ -80,7 +80,8 @@ public:
     ///
     /// - Backend: `epoll_wait` (the timeout is rounded up to a millisecond, so it never returns early), draining the
     /// wake-up descriptor without reporting it; on Windows `select` over a copy of the armed set (not `WSAPoll`, which
-    /// reports a half-closed socket whatever was asked for).
+    /// reports a half-closed socket whatever was asked for); on macOS `kevent`, a socket's two filters merged into one
+    /// event.
     /// - Param events: receives the ready sockets.
     /// - Param capacity: how many events fit; at most [[net::Poller::kMaxBatch]] are reported.
     /// - Param timeout_nanos: the longest wait, or negative to wait for ever.
@@ -92,8 +93,8 @@ public:
 
     /// Makes a [[net::Poller::Wait]] in progress, or the next one, return at once.
     ///
-    /// - Backend: writes the wake-up descriptor (`eventfd`; on Windows a byte to a loopback UDP socket the wait
-    /// watches).
+    /// - Backend: writes the wake-up descriptor (`eventfd`; on macOS `NOTE_TRIGGER` on a kqueue user event; on Windows
+    /// a byte to a loopback UDP socket the wait watches).
     /// - Fails: never.
     void Wake();
 

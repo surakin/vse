@@ -56,9 +56,7 @@ add_subdirectory(renderer_bench)
 add_subdirectory(ecs_bench)
 add_subdirectory(spatial_demo)
 add_subdirectory(storage_demo)
-if(NOT APPLE)  # macOS builds engine/net from Phase 26 Day 326 (its kqueue backend); until then no networking program there
-  add_subdirectory(net_demo)  # Phase 20 Day 281
-endif()
+add_subdirectory(net_demo)  # Phase 20 Day 281 (macOS from Phase 26 Day 326)
 add_subdirectory(ui_demo)
 
 # The README's "Settings options" block must be the settings part of --help (so the documentation cannot drift from the registry).

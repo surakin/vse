@@ -31,6 +31,8 @@ set(NET_POSIX_SOURCES
 )
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   list(APPEND NET_POSIX_SOURCES linux/linux_hooks.cpp)  # Day 268
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  list(APPEND NET_POSIX_SOURCES macos/macos_hooks.cpp)  # Phase 26 Day 326
 endif()
 set(NET_WINDOWS_SOURCES
   windows/wsa_error.cpp  # Day 278
@@ -38,7 +40,8 @@ set(NET_WINDOWS_SOURCES
   windows/resolve_windows.cpp  # Day 278
   windows/poller_select.cpp  # Day 278
 )
-# The reactor (Day 269): the readiness core is neutral; the poller is the platform's (epoll on Linux, select on Windows).
+# The reactor (Day 269): the readiness core is neutral; the poller is the platform's (epoll on Linux, select on Windows, kqueue on
+# macOS).
 set(NET_REACTOR_SOURCES
   reactor.cpp  # Day 269
   async.cpp  # Day 269
@@ -49,6 +52,8 @@ set(NET_REACTOR_SOURCES
 )
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   list(APPEND NET_REACTOR_SOURCES linux/poller_epoll.cpp)  # Day 269
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  list(APPEND NET_REACTOR_SOURCES macos/poller_kqueue.cpp)  # Phase 26 Day 326
 endif()
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   list(APPEND NET_SOURCES ${NET_WINDOWS_SOURCES} ${NET_SOCKET_SOURCES} ${NET_REACTOR_SOURCES})

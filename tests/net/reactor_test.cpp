@@ -3,6 +3,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "containers/array.h"
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
 #include "jobs/scheduler.h"
@@ -593,23 +594,64 @@ TEST_CASE("The peer's half-close does not wake a coroutine that waits to write",
     {
         SKIP("loopback sockets are unavailable here");
     }
-    // Fill the client's send path until the socket says it is full.
+    // Fill the client's send path until the socket says it is full, and stays full: macOS's loopback moves the bytes
+    // to the peer after the send returns, so room appears a moment later (a real readiness, reported by kqueue), and
+    // the path is full only when a pause adds no room (Phase 26 Day 326).
     Vector<byte> chunk;
     chunk.Resize(usize{1} << 16);
-    Status s = Status::Success();
-    for (int i = 0; i < 4096 && s.Ok(); ++i)
+    auto fill = [&]
     {
-        usize sent = 0;
-        s = pair.client.Send(ByteSpan(chunk.Data(), chunk.Size()), &sent);
+        for (int round = 0; round < 50; ++round)
+        {
+            usize took = 0;
+            Status s = Status::Success();
+            for (int i = 0; i < 4096 && s.Ok(); ++i)
+            {
+                usize sent = 0;
+                s = pair.client.Send(ByteSpan(chunk.Data(), chunk.Size()), &sent);
+                took += sent;
+            }
+            REQUIRE(s.Is(ErrorCode::WouldBlock));
+            if (took == 0 && round > 0)
+            {
+                return;
+            }
+            ThisThread::SleepForMilliseconds(20);
+        }
+    };
+    // A writer that waits on the full socket. One that ends at once found room the fill did not see: it has done
+    // nothing wrong, so fill again and wait again, until one waits (the test then tests something).
+    Array<WaitOutcome, 10> attempts;
+    WaitOutcome* writer = nullptr;
+    for (usize a = 0; a < attempts.Size(); ++a)
+    {
+        fill();
+        writer = &attempts[a];
+        scheduler->Submit(ReactorTestWaitWritable(&reactor, &pair.client, writer));
+        ThisThread::SleepForMilliseconds(30);
+        if (NotDoneYet(*writer))
+        {
+            break;
+        }
+        WaitDone(*scheduler, *writer);
     }
-    REQUIRE(s.Is(ErrorCode::WouldBlock));
-    WaitOutcome writer;
+    REQUIRE(NotDoneYet(*writer));  // a writer waits on a full socket
     WaitOutcome reader;
-    scheduler->Submit(ReactorTestWaitWritable(&reactor, &pair.client, &writer));
     scheduler->Submit(ReactorTestWaitReadable(&reactor, &pair.client, {},
                                               &reader));  // a reader too: the registration asks for read-side hangup
+    // After the half-close a writer that ended must have had room (late room from the fill is a real readiness); one
+    // woken by the half-close itself finds the socket full.
+    auto writer_waits_or_had_room = [&]
+    {
+        if (NotDoneYet(*writer))
+        {
+            return true;
+        }
+        usize sent = 0;
+        const byte one[1] = {byte{1}};
+        return pair.client.Send(ByteSpan(one, 1), &sent).Ok() && sent == 1;
+    };
     ThisThread::SleepForMilliseconds(30);
-    CHECK(NotDoneYet(writer));
     CHECK(NotDoneYet(reader));
     // The server shuts down its writing half: the client's socket gets the end of the stream (a read-side event). The
     // reader ends (it can read the end); the writer, whose buffer is still full, must not.
@@ -617,9 +659,9 @@ TEST_CASE("The peer's half-close does not wake a coroutine that waits to write",
     WaitDone(*scheduler, reader);
     CHECK(reader.status.Ok());
     ThisThread::SleepForMilliseconds(60);
-    CHECK(NotDoneYet(writer));
+    CHECK(writer_waits_or_had_room());
     // Draining the server's receive side makes room: now the writer ends.
-    for (int i = 0; i < 20000 && NotDoneYet(writer); ++i)
+    for (int i = 0; i < 20000 && NotDoneYet(*writer); ++i)
     {
         usize got = 0;
         while (pair.server.Receive(MutableByteSpan(chunk.Data(), chunk.Size()), &got).Ok() && got != 0)
@@ -627,8 +669,8 @@ TEST_CASE("The peer's half-close does not wake a coroutine that waits to write",
         }
         ThisThread::SleepForMicroseconds(200);
     }
-    WaitDone(*scheduler, writer);
-    CHECK(writer.status.Ok());
+    WaitDone(*scheduler, *writer);
+    CHECK(writer->status.Ok());
 }
 
 namespace

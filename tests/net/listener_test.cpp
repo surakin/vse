@@ -217,6 +217,14 @@ TEST_CASE("Running out of descriptors is survived: the accept backs off and reco
     ThisThread::SleepForMilliseconds(120);
     const bool still_waiting = out.done.Load(MemoryOrder::Acquire) == 0;  // backing off, not failed and not spinning
     ::setrlimit(RLIMIT_NOFILE, &original);                                // room again
+#if ENGINE_PLATFORM_MACOS
+    // macOS takes the waiting connection off the queue when accept fails for lack of a descriptor, and drops it (Linux
+    // leaves it queued; seen on Phase 26 Day 326): what recovers is the next connection, accepted after the back-off.
+    Socket second;
+    REQUIRE(Socket::OpenTcp(AddressFamily::V4, &second).Ok());
+    const Status c2 = second.Connect(listener.LocalEndpoint());
+    REQUIRE((c2.Ok() || c2.Is(ErrorCode::WouldBlock)));
+#endif
     struct Probe
     {
         ExhaustionOutcome* out;

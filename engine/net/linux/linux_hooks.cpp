@@ -22,9 +22,9 @@ int SendFlags()
     return MSG_NOSIGNAL;
 }
 
-int TruncationFlag()
+ErrorCode SendErrorCode(int error)
 {
-    return MSG_TRUNC;
+    return ErrorFromErrno(error);
 }
 
 }  // namespace engine_placeholder::net::posix

@@ -5,8 +5,8 @@
 carries a `Backend:` label has a `###` section here, and every section names such a function. Design and reasons:
 `docs/superpowers/specs/2026-11-11-networking-design.md`.
 
-Linux and macOS share the POSIX backend in `engine/net/posix/` (`socket_posix.cpp`, `posix_error.cpp`), each adding its own hooks (`net/linux/linux_hooks.cpp`;
-`net/macos/` when Phase 26 reaches the network). Windows has its own in `engine/net/windows/` (Phase 20 Day 278: `socket_windows.cpp`, `wsa_error.cpp`,
+Linux and macOS share the POSIX backend in `engine/net/posix/` (`socket_posix.cpp`, `posix_error.cpp`, `resolve_posix.cpp`), each adding its own hooks and
+poller (`net/linux/`: `linux_hooks.cpp`, `poller_epoll.cpp`; `net/macos/`: `macos_hooks.cpp`, `poller_kqueue.cpp`, Phase 26 Day 326). Windows has its own in `engine/net/windows/` (Phase 20 Day 278: `socket_windows.cpp`, `wsa_error.cpp`,
 `poller_select.cpp`, `resolve_windows.cpp`; the Winsock headers only through `windows/winsock.h`). A new platform adds `engine/net/<platform>/` and selects it in
 `engine/net/CMakeLists.txt`. Only these
 directories may call the operating system's socket API; the gate `net_access_check` fails on a socket call anywhere else.
@@ -47,8 +47,18 @@ directories may call the operating system's socket API; the gate `net_access_che
   accepted 20 every 100 ms, 299 were refused with the setting and 291 without it (measured on Day 278). A non-blocking `send` takes the whole buffer when
   the send buffer has any room (the kernel keeps the caller's bytes), so a large write is rarely partial. Scope names go through `if_nametoindex`
   (`iphlpapi`). Libraries: `ws2_32` and `iphlpapi`, both part of Windows.
-- **macOS (Phase 26):** the POSIX backend; no `accept4`, no `SOCK_NONBLOCK`: create with `socket`, then `fcntl` the two flags immediately; `SO_NOSIGPIPE`
-  instead of `MSG_NOSIGNAL`; `MSG_TRUNC` is not available on `recvfrom` for datagrams, use `recvmsg` and its `MSG_TRUNC` result flag.
+- **macOS, as built (Phase 26 Day 326, `engine/net/macos/`):** the POSIX backend with macOS hooks. No `accept4` and no `SOCK_NONBLOCK`/`SOCK_CLOEXEC`: a
+  socket is created (or accepted) and gets `FD_CLOEXEC`, `O_NONBLOCK` and `SO_NOSIGPIPE` before the call returns, closed if one is refused. **The one window:**
+  between `socket` (or `accept`) and `FD_CLOEXEC`, another thread that forks and execs passes the descriptor to its child; macOS cannot close it for a plain
+  socket. The engine starts children only for death tests; an application that forks while sockets open should spawn with `POSIX_SPAWN_CLOEXEC_DEFAULT`.
+  `SO_NOSIGPIPE` in place of `MSG_NOSIGNAL` (the send flags are 0). Datagrams are received with `recvmsg` and its `MSG_TRUNC` result flag on both
+  POSIX systems (`recvfrom`'s `MSG_TRUNC` input flag, which returns the real size, is Linux's only). A send on a connection the peer is tearing down
+  fails with `EPROTOTYPE`, read as Closed (the `SendErrorCode` hook; the errno is kept). `ENOTSUP` (45) and `EOPNOTSUPP` (102) are both Unsupported. Keep-alive's idle time is
+  `TCP_KEEPALIVE`. A refused connect can land between `FinishConnect`'s `SO_ERROR` and `getpeername` under load (which then fails with `EINVAL`): the
+  pending error is read again, and with none an `EINVAL` is Reset. A connection the peer reset before it was accepted refuses the socket options
+  (`EINVAL`): it is reported as aborted, which `Accept` skips. **An `accept` that fails for lack of a descriptor drops the waiting connection** (Linux leaves it queued): the listener's
+  back-off still recovers, with the next connection. Name resolution is the shared `getaddrinfo` code, with no difference seen. Loopback moves sent bytes
+  to the peer after `send` returns, so a socket found full can become writable a moment later.
 - **Android and iOS (Phase 27):** the same POSIX backend; the application lifecycle closes or suspends sockets when it moves to the background, which the
   transports above must survive (Phase 27 lists it); no raw sockets.
 - **Consoles (Phase 28):** the vendor's BSD-style socket API behind the same interface; certification rules on listening sockets and on the ports in use.
@@ -158,7 +168,7 @@ Allow sending to broadcast addresses; off for every new socket.
 ## The poller
 
 `net::Poller` (`engine/net/poller.h`) is the one platform class of the readiness code: the reactor (`net/reactor.cpp`), the timers, the cancel logic and the
-asynchronous operations are neutral and sit on it. A new platform implements these four functions in `engine/net/<platform>/` (Linux: `linux/poller_epoll.cpp`).
+asynchronous operations are neutral and sit on it. A new platform implements these four functions in `engine/net/<platform>/` (Linux: `linux/poller_epoll.cpp`; macOS: `macos/poller_kqueue.cpp`).
 
 - **One-shot, by level.** A socket is armed for one notification and reported once; if it is ready when armed it is reported at once, so a registration after the
   event is not lost. After a report the socket stays known to the poller but is disarmed until armed again (the reactor re-arms the direction that still has a waiter).
@@ -170,7 +180,10 @@ asynchronous operations are neutral and sit on it. A new platform implements the
 
 Add the socket or modify its registration to one notification of the given interest (read, write or both); epoll: `EPOLL_CTL_MOD` with `EPOLLONESHOT`, falling back to
 `EPOLL_CTL_ADD`. Windows: check the handle (`getsockopt(SO_TYPE)`, as `epoll_ctl` refuses a closed descriptor), add or update the socket in the poller's own armed set
-under its lock, and wake a wait in progress so that its next copy has it.
+under its lock, and wake a wait in progress so that its next copy has it. macOS: kqueue keeps reading and writing as two filters; each wanted direction is
+added `EV_ONESHOT` (checked by level when added) and an unwanted one deleted, with `EV_RECEIPT` so a missing filter's delete is not an error and a closed
+descriptor's add is (`EBADF`, Invalid). The direction that did not fire stays armed until it does or the socket is armed again; the reactor arms what
+is still waited for after every report and ignores a report nobody waits for.
 
 Windows uses `select`, not `WSAPoll` (the Day 266 plan; changed on Day 278 after a measurement): `WSAPoll` reports `POLLHUP` for the peer's half-close whatever was
 asked for, so a socket waited on only for writing with a full send buffer would make every poll return at once; `select` reports it for writing only when it can be
@@ -180,7 +193,7 @@ the exception set, where a failed connect appears. IOCP would need a different s
 
 ### `Disarm`
 
-Forget the socket; ignore one that is unknown or already closed. Windows: remove it from the armed set; a wait in progress may still see it, and its report is dropped
+Forget the socket; ignore one that is unknown or already closed (macOS: delete both filters; closing a descriptor removes its filters). Windows: remove it from the armed set; a wait in progress may still see it, and its report is dropped
 (each registration carries a generation, so a new socket that reuses a closed handle's value is not reported for the old one).
 
 ### `Wait`
@@ -188,11 +201,13 @@ Forget the socket; ignore one that is unknown or already closed. Windows: remove
 Block for ready sockets, a wake-up or the timeout, and report the ready sockets (not the wake-up) with their readiness bits. Windows: `select` over a copy of the armed
 set taken under the lock, the timeout rounded up to a microsecond. A handle in the copy that is closed before or during `select` (the reactor disarms and closes
 from another thread while it waits) makes `select` fail with `WSAENOTSOCK`; that is not a broken poller: a closed handle still armed in the same registration is
-reported once as an error, a disarmed one is dropped, and the next wait takes a new copy (`tests/net/poller_test.cpp`, found by the Day 278 review).
+reported once as an error, a disarmed one is dropped, and the next wait takes a new copy (`tests/net/poller_test.cpp`, found by the Day 278 review). macOS: `kevent`, the
+timeout in nanoseconds and at most a million seconds per wait (kevent refuses centuries); a socket's two filters in one wait are merged into one event;
+`EV_EOF` on the write filter is a hangup, and with a pending error (`fflags`) an error.
 
 ### `Wake`
 
-Make a wait return: an `eventfd` write on Linux; on Windows, which has no `eventfd`, one byte from a UDP socket connected to a second one bound to loopback, which
+Make a wait return: an `eventfd` write on Linux; on macOS `NOTE_TRIGGER` on an `EVFILT_USER` event of the same kqueue (`EV_CLEAR`); on Windows, which has no `eventfd`, one byte from a UDP socket connected to a second one bound to loopback, which
 the wait watches for reading and drains.
 
 ## Name resolution

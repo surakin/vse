@@ -95,5 +95,16 @@ TEST_CASE("A socket closed without being disarmed is reported, not a broken wait
     poller.Disarm(handle);
 }
 
+TEST_CASE("A wait with no room for events is Invalid, not an instant return", "[network][poller]")
+{
+    // kevent with no room returns at once, which would make a waiting loop spin; epoll_wait refuses it (Day 326).
+    Poller poller;
+    REQUIRE(poller.IsValid());
+    Array<PollEvent, 1> events;
+    usize count = 7;
+    CHECK(poller.Wait(events.Data(), 0, 1'000'000, &count).Is(ErrorCode::Invalid));
+    CHECK(count == 0);
+}
+
 }  // namespace
 }  // namespace engine_placeholder::net

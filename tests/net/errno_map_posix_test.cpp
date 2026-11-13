@@ -3,6 +3,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "build_defs.h"
 #include "net/posix/posix_net.h"
 #include "os/last_error.h"
 
@@ -51,6 +52,8 @@ TEST_CASE("errno values map to portable codes", "[net][errno]")
         {EAFNOSUPPORT, ErrorCode::Unsupported},
         {EPROTONOSUPPORT, ErrorCode::Unsupported},
         {EOPNOTSUPP, ErrorCode::Unsupported},
+        {ENOTSUP, ErrorCode::Unsupported},  // a number of its own on macOS (Phase 26 Day 326)
+        {EPROTOTYPE, ErrorCode::Unsupported},
         {ENOPROTOOPT, ErrorCode::Unsupported},
         {EMFILE, ErrorCode::LimitExceeded},
         {ENFILE, ErrorCode::LimitExceeded},
@@ -68,6 +71,20 @@ TEST_CASE("errno values map to portable codes", "[net][errno]")
     const Status s = posix::StatusFromErrno(ECONNREFUSED);
     CHECK(s.Is(ErrorCode::Refused));
     CHECK(s.OsError() == ECONNREFUSED);
+}
+
+TEST_CASE("A failed send's errno is mapped with the system's quirks", "[net][errors]")
+{
+    // macOS fails a send on a connection being torn down with EPROTOTYPE (Phase 26 Day 326): Closed there; elsewhere
+    // the table's Unsupported. Every other number is the table's.
+#if ENGINE_PLATFORM_MACOS
+    CHECK(posix::SendErrorCode(EPROTOTYPE) == ErrorCode::Closed);
+#else
+    CHECK(posix::SendErrorCode(EPROTOTYPE) == ErrorCode::Unsupported);
+#endif
+    CHECK(posix::SendErrorCode(EPIPE) == ErrorCode::Closed);
+    CHECK(posix::SendErrorCode(ECONNRESET) == ErrorCode::Reset);
+    CHECK(posix::SendErrorCode(EAGAIN) == ErrorCode::WouldBlock);
 }
 
 }  // namespace

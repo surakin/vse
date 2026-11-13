@@ -81,7 +81,7 @@ flavors 16  macos: plain,asan,tsan # tests/lang, sync, cstr (Day 300)
 flavors 17  macos: plain,asan,tsan # tests/ecs (Day 310)
 flavors 18  macos: plain,asan,tsan # tests/spatial (Day 310)
 flavors 19  macos: plain,asan,tsan # the gates (Day 302), tests/database and tests/storage (Day 310)
-flavors 20  macos: plain           # the gate net_access_check (the main line's Phase 20; Day 308)
+flavors 20  macos: plain,asan,tsan # the gate net_access_check (Day 308), tests/net (Day 326)
 flavors 26  macos: plain,asan,tsan # tests/macos (Day 300)
 
 # --- Phase 0: foundation (tests/foundation) ---

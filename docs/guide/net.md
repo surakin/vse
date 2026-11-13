@@ -147,7 +147,7 @@ system granted: Linux doubles the request and caps it at `net.core.rmem_max`), `
 
 `engine/net/BACKEND.md` is the checklist for a new platform: every `Socket` operation with its rules, the error table, and the quirks of Windows, macOS,
 mobile and consoles. The test `net_backend_lists` keeps it in step with the header. Linux and macOS share `engine/net/posix/`; Windows has its own,
-`engine/net/windows/` (Day 278).
+`engine/net/windows/` (Day 278). macOS adds `engine/net/macos/` (Phase 26 Day 326): its hooks and a kqueue poller.
 
 ### On Windows
 
@@ -166,6 +166,17 @@ inside the backend, and the interface's rules hold on both:
 - A UDP socket is not reset by an ICMP "port unreachable" (`SIO_UDP_CONNRESET` is off): a datagram to a closed port is simply lost, as on Linux.
 - Host names go to `GetAddrInfoW` in UTF-16. The descriptor-limit tests of `listener_test.cpp` skip, since Windows has no per-process limit to lower.
 
+### On macOS
+
+The same interface and the same tests run on macOS (Phase 26 Day 326), through the POSIX backend with macOS's hooks and a kqueue poller. What differs:
+
+- Sockets are made non-blocking, close-on-exec and free of `SIGPIPE` (`SO_NOSIGPIPE`) right after they are created or accepted: macOS has no flags for
+  it at creation. A program that forks while another thread opens sockets can pass one to its child in that moment; spawn with
+  `POSIX_SPAWN_CLOEXEC_DEFAULT` if that matters.
+- An `accept` that fails for lack of descriptors drops the connection it would have taken (Linux leaves it waiting); the listener backs off and accepts
+  the next one when room appears.
+- Loopback hands sent bytes to the peer a moment after `send` returns, so a socket that was full can become writable shortly after.
+
 ### Tests that use real sockets
 
 Tests with real sockets are tagged `[network]`, live in the executable `net_tests_sockets` (ctest label `network`) and use loopback with ports the system
@@ -174,7 +185,7 @@ chooses. A machine that cannot bind loopback skips them with a printed reason, s
 ## The reactor: waiting without a thread per connection
 
 A non-blocking socket says `WouldBlock`; something has to wake the coroutine that wants to try again. `net::Reactor` is that something. One dedicated thread waits in
-the platform's poller (epoll on Linux, `select` on Windows) for the sockets that coroutines wait for and for the nearest timer; when a wait ends it hands the coroutine to the job system's
+the platform's poller (epoll on Linux, `select` on Windows, kqueue on macOS) for the sockets that coroutines wait for and for the nearest timer; when a wait ends it hands the coroutine to the job system's
 scheduler, so it resumes on a participant. The reactor thread runs none of your code, and there is no thread per connection.
 
 ```cpp
