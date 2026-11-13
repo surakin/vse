@@ -27,7 +27,7 @@
 - **Per-type formats and minters** (Days 317, 318-320, 321, 322): mesh, texture (with BCn), material, level (with the only optional text form); each with a version, golden old blobs and a deterministic minter.
 - **The resource manager** (Days 323, 324): handles, cache, dependency graph, fallbacks, device-reset survival, asynchronous loading with priorities, cancellation and a per-frame streaming budget.
 - **The network side** (Days 325, 326): a protocol and server over the TCP transport, and the caching, retrying, offline-capable client backend.
-- **The tool** (Day 327): `asset_mint` (mint, pack, verify, list, remint, unmint), incremental and deterministic.
+- **The tool** (Day 327): `asset_mint` (adopt, mint, pack, verify, list, remint, unmint), incremental and deterministic; `pack --target` retargets minted blobs for a platform through per-type transforms (offline only, ids and dependencies untouched).
 - **Integration** (Days 328-330): settings, the boundary gate, `asset_demo`, benchmarks, guides, closing runs on three machines and the phase review.
 
 ## Days
