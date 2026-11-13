@@ -22,6 +22,7 @@
 ## Key deliverables (broken into days below)
 
 - **Resource identity and the blob container** (Day 314): `ResourceId`, `ContentHash`, a versioned blob with bounded sections and an upgrade chain.
+- **The resource table (the user, 2026-11-13):** one id <-> path map (`asset::ResourceTable`, Day 314) that each backend supplies, stored (a `resources.table` file, a pak section, a server reply) or built on demand (a folder scan, a server query, the host's registrations), merged by the mount table by priority; the load path is id-only, paths are resolved at the edges.
 - **Backends and mounts** (Days 315, 316, 326): filesystem (loose files, for fast iteration), memory (content the host application provides at run time, reachable from Phase 23's C API), pak (the shipping default), network; upper layers ask by id and never know which served it.
 - **Per-type formats and minters** (Days 317, 318-320, 321, 322): mesh, texture (with BCn), material, level (with the only optional text form); each with a version, golden old blobs and a deterministic minter.
 - **The resource manager** (Days 323, 324): handles, cache, dependency graph, fallbacks, device-reset survival, asynchronous loading with priorities, cancellation and a per-frame streaming budget.
