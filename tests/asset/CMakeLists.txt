@@ -13,6 +13,8 @@ set(ASSET_TEST_SOURCES
   mount_table_test.cpp  # Day 315
   load_buffer_pool_test.cpp  # Day 315
   async_table_test.cpp  # Day 315
+  memory_file.h  # Day 316
+  pak_test.cpp  # Day 316
 )
 
 find_package(Threads REQUIRED)

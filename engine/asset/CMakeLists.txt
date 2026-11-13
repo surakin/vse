@@ -16,6 +16,8 @@ set(ASSET_SOURCES
   memory_backend.cpp  # Day 315
   faulty_backend.cpp  # Day 315
   mount_table.cpp  # Day 315
+  pak.cpp  # Day 316
+  pak_backend.cpp  # Day 316
 )
 set(ASSET_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

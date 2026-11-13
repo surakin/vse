@@ -4567,14 +4567,14 @@ asset::FaultyBackend::Apply(FaultOp)	function	asset	asset-faultybackend-apply-fa
 asset::FaultyBackend::ReadChunk() const	function	asset	asset-faultybackend-readchunk-const	asset.md	engine/asset/faulty_backend.h:57
 asset::kStoredTableFileName	variable	asset	asset-kstoredtablefilename	asset.md	engine/asset/filesystem_backend.h:21
 asset::FilesystemBackend	class	asset	asset-filesystembackend	asset.md	engine/asset/filesystem_backend.h:39
-asset::FilesystemBackend::Create(const io::Path&,const TypeRegistry&,UniquePtr<FilesystemBackend>*)	function	asset	asset-filesystembackend-create-const-io-path-amp-const-typeregistry-amp-uniqueptr-lt-filesystembackend-gt-star	asset.md	engine/asset/filesystem_backend.h:46
-asset::FilesystemBackend::FilesystemBackend(const io::Path&,io::Path,const TypeRegistry&,bool)	function	asset	asset-filesystembackend-filesystembackend-const-io-path-amp-io-path-const-typeregistry-amp-bool	asset.md	engine/asset/filesystem_backend.h:49
-asset::FilesystemBackend::Name() const	function	asset	asset-filesystembackend-name-const	asset.md	engine/asset/filesystem_backend.h:51
-asset::FilesystemBackend::Capabilities() const	function	asset	asset-filesystembackend-capabilities-const	asset.md	engine/asset/filesystem_backend.h:52
-asset::FilesystemBackend::Stat(ResourceId,ResourceInfo*)	function	asset	asset-filesystembackend-stat-resourceid-resourceinfo-star	asset.md	engine/asset/filesystem_backend.h:62
-asset::FilesystemBackend::Open(ResourceId,UniquePtr<ResourceReader>*)	function	asset	asset-filesystembackend-open-resourceid-uniqueptr-lt-resourcereader-gt-star	asset.md	engine/asset/filesystem_backend.h:63
-asset::FilesystemBackend::ReadTable(ResourceTable*)	function	asset	asset-filesystembackend-readtable-resourcetable-star	asset.md	engine/asset/filesystem_backend.h:64
-asset::FilesystemBackend::Watch(Vector<ChangeRecord>*)	function	asset	asset-filesystembackend-watch-vector-lt-changerecord-gt-star	asset.md	engine/asset/filesystem_backend.h:65
+asset::FilesystemBackend::Create(const io::Path&,const TypeRegistry&,UniquePtr<FilesystemBackend>*,u32)	function	asset	asset-filesystembackend-create-const-io-path-amp-const-typeregistry-amp-uniqueptr-lt-filesystembackend-gt-star-u32	asset.md	engine/asset/filesystem_backend.h:48
+asset::FilesystemBackend::FilesystemBackend(const io::Path&,io::Path,const TypeRegistry&,bool,u32)	function	asset	asset-filesystembackend-filesystembackend-const-io-path-amp-io-path-const-typeregistry-amp-bool-u32	asset.md	engine/asset/filesystem_backend.h:52
+asset::FilesystemBackend::Name() const	function	asset	asset-filesystembackend-name-const	asset.md	engine/asset/filesystem_backend.h:55
+asset::FilesystemBackend::Capabilities() const	function	asset	asset-filesystembackend-capabilities-const	asset.md	engine/asset/filesystem_backend.h:56
+asset::FilesystemBackend::Stat(ResourceId,ResourceInfo*)	function	asset	asset-filesystembackend-stat-resourceid-resourceinfo-star	asset.md	engine/asset/filesystem_backend.h:66
+asset::FilesystemBackend::Open(ResourceId,UniquePtr<ResourceReader>*)	function	asset	asset-filesystembackend-open-resourceid-uniqueptr-lt-resourcereader-gt-star	asset.md	engine/asset/filesystem_backend.h:67
+asset::FilesystemBackend::ReadTable(ResourceTable*)	function	asset	asset-filesystembackend-readtable-resourcetable-star	asset.md	engine/asset/filesystem_backend.h:68
+asset::FilesystemBackend::Watch(Vector<ChangeRecord>*)	function	asset	asset-filesystembackend-watch-vector-lt-changerecord-gt-star	asset.md	engine/asset/filesystem_backend.h:69
 asset::LoadBuffer	class	asset	asset-loadbuffer	asset.md	engine/asset/load_buffer_pool.h:22
 asset::LoadBuffer::LoadBuffer()	function	asset	asset-loadbuffer-loadbuffer	asset.md	engine/asset/load_buffer_pool.h:25
 asset::LoadBuffer::LoadBuffer(const LoadBuffer&)	function	asset	asset-loadbuffer-loadbuffer-const-loadbuffer-amp	asset.md	engine/asset/load_buffer_pool.h:26
@@ -4641,6 +4641,69 @@ asset::MountTable::PathsOf(ResourceId,Vector<String<HeapAllocator>>*) const	func
 asset::MountTable::Snapshot(ResourceTable*,Vector<ShadowedEntry>*) const	function	asset	asset-mounttable-snapshot-resourcetable-star-vector-lt-shadowedentry-gt-star-const	asset.md	engine/asset/mount_table.h:99
 asset::MountTable::PollChanges(Vector<ChangeRecord>*)	function	asset	asset-mounttable-pollchanges-vector-lt-changerecord-gt-star	asset.md	engine/asset/mount_table.h:105
 asset::MountTable::MountCount() const	function	asset	asset-mounttable-mountcount-const	asset.md	engine/asset/mount_table.h:108
+asset::kPakFormatVersion	variable	asset	asset-kpakformatversion	asset.md	engine/asset/pak.h:39
+asset::kPakHeaderBytes	variable	asset	asset-kpakheaderbytes	asset.md	engine/asset/pak.h:41
+asset::kPakIndexEntryBytes	variable	asset	asset-kpakindexentrybytes	asset.md	engine/asset/pak.h:43
+asset::kPakFooterBytes	variable	asset	asset-kpakfooterbytes	asset.md	engine/asset/pak.h:45
+asset::kMaxPakEntries	variable	asset	asset-kmaxpakentries	asset.md	engine/asset/pak.h:47
+asset::kPakFlagNames	variable	asset	asset-kpakflagnames	asset.md	engine/asset/pak.h:49
+asset::PakEntry	struct	asset	asset-pakentry	asset.md	engine/asset/pak.h:54
+asset::PakEntry::id	variable	asset	asset-pakentry-id	asset.md	engine/asset/pak.h:56
+asset::PakEntry::offset	variable	asset	asset-pakentry-offset	asset.md	engine/asset/pak.h:57
+asset::PakEntry::size	variable	asset	asset-pakentry-size	asset.md	engine/asset/pak.h:58
+asset::PakEntry::hash	variable	asset	asset-pakentry-hash	asset.md	engine/asset/pak.h:59
+asset::PakEntry::type	variable	asset	asset-pakentry-type	asset.md	engine/asset/pak.h:60
+asset::PakInfo	struct	asset	asset-pakinfo	asset.md	engine/asset/pak.h:66
+asset::PakInfo::format_version	variable	asset	asset-pakinfo-format-version	asset.md	engine/asset/pak.h:68
+asset::PakInfo::target	variable	asset	asset-pakinfo-target	asset.md	engine/asset/pak.h:69
+asset::PakInfo::has_names	variable	asset	asset-pakinfo-has-names	asset.md	engine/asset/pak.h:70
+asset::PakInfo::has_base	variable	asset	asset-pakinfo-has-base	asset.md	engine/asset/pak.h:71
+asset::PakInfo::base	variable	asset	asset-pakinfo-base	asset.md	engine/asset/pak.h:72
+asset::PakInfo::identity	variable	asset	asset-pakinfo-identity	asset.md	engine/asset/pak.h:73
+asset::PakInfo::file_size	variable	asset	asset-pakinfo-file-size	asset.md	engine/asset/pak.h:74
+asset::PakInfo::entry_count	variable	asset	asset-pakinfo-entry-count	asset.md	engine/asset/pak.h:75
+asset::PakWriterOptions	struct	asset	asset-pakwriteroptions	asset.md	engine/asset/pak.h:81
+asset::PakWriterOptions::target	variable	asset	asset-pakwriteroptions-target	asset.md	engine/asset/pak.h:83
+asset::PakWriterOptions::include_names	variable	asset	asset-pakwriteroptions-include-names	asset.md	engine/asset/pak.h:84
+asset::PakWriterOptions::first_entry_offset	variable	asset	asset-pakwriteroptions-first-entry-offset	asset.md	engine/asset/pak.h:85
+asset::PakWriter	class	asset	asset-pakwriter	asset.md	engine/asset/pak.h:96
+asset::PakWriter::PakWriter(const TypeRegistry&,const PakWriterOptions&)	function	asset	asset-pakwriter-pakwriter-const-typeregistry-amp-const-pakwriteroptions-amp	asset.md	engine/asset/pak.h:100
+asset::PakWriter::SetBase(const class PakReader*)	function	asset	asset-pakwriter-setbase-const-class-pakreader-star	asset.md	engine/asset/pak.h:105
+asset::PakWriter::Add(ResourceId,ByteSpan,StringView)	function	asset	asset-pakwriter-add-resourceid-bytespan-stringview	asset.md	engine/asset/pak.h:114
+asset::PakWriter::Finish(io::File&)	function	asset	asset-pakwriter-finish-io-file-amp	asset.md	engine/asset/pak.h:121
+asset::PakWriter::Problem	struct	asset	asset-pakwriter-problem	asset.md	engine/asset/pak.h:126
+asset::PakWriter::Problem::blob	variable	asset	asset-pakwriter-problem-blob	asset.md	engine/asset/pak.h:128
+asset::PakWriter::Problem::dependency	variable	asset	asset-pakwriter-problem-dependency	asset.md	engine/asset/pak.h:129
+asset::PakWriter::Problem::code	variable	asset	asset-pakwriter-problem-code	asset.md	engine/asset/pak.h:130
+asset::PakWriter::Problems() const	function	asset	asset-pakwriter-problems-const	asset.md	engine/asset/pak.h:134
+asset::PakReader	class	asset	asset-pakreader	asset.md	engine/asset/pak.h:163
+asset::PakReader::PakReader()	function	asset	asset-pakreader-pakreader	asset.md	engine/asset/pak.h:166
+asset::PakReader::PakReader(const PakReader&)	function	asset	asset-pakreader-pakreader-const-pakreader-amp	asset.md	engine/asset/pak.h:167
+asset::PakReader::operator=(const PakReader&)	function	asset	asset-pakreader-operator-eq-const-pakreader-amp	asset.md	engine/asset/pak.h:168
+asset::PakReader::PakReader(PakReader&&) noexcept	function	asset	asset-pakreader-pakreader-pakreader-amp-amp-noexcept	asset.md	engine/asset/pak.h:169
+asset::PakReader::operator=(PakReader&&) noexcept	function	asset	asset-pakreader-operator-eq-pakreader-amp-amp-noexcept	asset.md	engine/asset/pak.h:170
+asset::PakReader::Open(io::FilePtr,const TypeRegistry&,u32,PakReader*)	function	asset	asset-pakreader-open-io-fileptr-const-typeregistry-amp-u32-pakreader-star	asset.md	engine/asset/pak.h:180
+asset::PakReader::Detail() const	function	asset	asset-pakreader-detail-const	asset.md	engine/asset/pak.h:186
+asset::PakReader::Info() const	function	asset	asset-pakreader-info-const	asset.md	engine/asset/pak.h:189
+asset::PakReader::Count() const	function	asset	asset-pakreader-count-const	asset.md	engine/asset/pak.h:192
+asset::PakReader::At(usize) const	function	asset	asset-pakreader-at-usize-const	asset.md	engine/asset/pak.h:197
+asset::PakReader::Find(ResourceId,PakEntry*) const	function	asset	asset-pakreader-find-resourceid-pakentry-star-const	asset.md	engine/asset/pak.h:203
+asset::PakReader::TypeVersionOf(ResourceType,u32*) const	function	asset	asset-pakreader-typeversionof-resourcetype-u32-star-const	asset.md	engine/asset/pak.h:210
+asset::PakReader::ReadEntry(const PakEntry&,u64,void*,usize) const	function	asset	asset-pakreader-readentry-const-pakentry-amp-u64-void-star-usize-const	asset.md	engine/asset/pak.h:216
+asset::PakReader::ReadNames(const TypeRegistry&,ResourceTable*) const	function	asset	asset-pakreader-readnames-const-typeregistry-amp-resourcetable-star-const	asset.md	engine/asset/pak.h:222
+asset::PakReader::Verify(const TypeRegistry&) const	function	asset	asset-pakreader-verify-const-typeregistry-amp-const	asset.md	engine/asset/pak.h:227
+asset::PakBackend	class	asset	asset-pakbackend	asset.md	engine/asset/pak_backend.h:19
+asset::PakBackend::Open(const io::Path&,const TypeRegistry&,u32,UniquePtr<PakBackend>*)	function	asset	asset-pakbackend-open-const-io-path-amp-const-typeregistry-amp-u32-uniqueptr-lt-pakbackend-gt-star	asset.md	engine/asset/pak_backend.h:26
+asset::PakBackend::FromFile(io::FilePtr,const TypeRegistry&,u32,UniquePtr<PakBackend>*)	function	asset	asset-pakbackend-fromfile-io-fileptr-const-typeregistry-amp-u32-uniqueptr-lt-pakbackend-gt-star	asset.md	engine/asset/pak_backend.h:31
+asset::PakBackend::PakBackend(PakReader,const TypeRegistry&)	function	asset	asset-pakbackend-pakbackend-pakreader-const-typeregistry-amp	asset.md	engine/asset/pak_backend.h:34
+asset::PakBackend::LinkBase(const PakBackend*)	function	asset	asset-pakbackend-linkbase-const-pakbackend-star	asset.md	engine/asset/pak_backend.h:39
+asset::PakBackend::Info() const	function	asset	asset-pakbackend-info-const	asset.md	engine/asset/pak_backend.h:42
+asset::PakBackend::Reader() const	function	asset	asset-pakbackend-reader-const	asset.md	engine/asset/pak_backend.h:45
+asset::PakBackend::Name() const	function	asset	asset-pakbackend-name-const	asset.md	engine/asset/pak_backend.h:51
+asset::PakBackend::Capabilities() const	function	asset	asset-pakbackend-capabilities-const	asset.md	engine/asset/pak_backend.h:53
+asset::PakBackend::Stat(ResourceId,ResourceInfo*)	function	asset	asset-pakbackend-stat-resourceid-resourceinfo-star	asset.md	engine/asset/pak_backend.h:61
+asset::PakBackend::Open(ResourceId,UniquePtr<ResourceReader>*)	function	asset	asset-pakbackend-open-resourceid-uniqueptr-lt-resourcereader-gt-star	asset.md	engine/asset/pak_backend.h:66
+asset::PakBackend::ReadTable(ResourceTable*)	function	asset	asset-pakbackend-readtable-resourcetable-star	asset.md	engine/asset/pak_backend.h:71
 asset::ResourceId	class	asset	asset-resourceid	asset.md	engine/asset/resource_id.h:19
 asset::ResourceId::ResourceId()	function	asset	asset-resourceid-resourceid	asset.md	engine/asset/resource_id.h:23
 asset::ResourceId::None()	function	asset	asset-resourceid-none	asset.md	engine/asset/resource_id.h:27

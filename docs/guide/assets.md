@@ -1,6 +1,6 @@
 # Assets and resources: identity, blobs, backends and the resource manager
 
-Status: Phase 22. Built: the module skeleton and the container version constant (Day 313); resource ids, paths, types, the content hash, the blob container and the id <-> path table (Day 314). The backend interface, the filesystem and host-memory backends, the load buffer pool and mounts (Day 315). Next: the pak format (Day 316).
+Status: Phase 22. Built: the module skeleton and the container version constant (Day 313); resource ids, paths, types, the content hash, the blob container and the id <-> path table (Day 314). The backend interface, the filesystem and host-memory backends, the load buffer pool and mounts (Day 315). The pak format, its writer, reader and backend, and `asset_mint pack` (Day 316).
 
 **Audience:** engine and game programmers who load meshes, textures, materials and levels. Design, spikes and the benchmark pass conditions:
 `docs/superpowers/specs/2026-11-13-asset-pipeline-design.md`.
@@ -104,4 +104,58 @@ int main() {
 ```
 ```output
 256 bytes, id matches: 1
+```
+
+## The pak
+
+A pak holds many blobs in one file and finds them by id. The layout (`engine/asset/pak.h`): a 128-byte header (magic, format version, target tag, counts, the base pak's identity for a patch pak), a type table, the optional names section (the id <-> path table as a `NAMES` blob), the blobs in id order each 64-byte aligned (4096 from 1 MiB), a sorted 48-byte-per-entry index and a footer. Offsets are 64-bit. The pak's identity is its index hash.
+
+`asset::PakWriter` is an enforcement point. It refuses a blob that is not the current version of its type, whose own id differs from the id it is added under, whose content hash does not verify or that was laid out for another target, and `Finish` refuses a pak whose closure is incomplete: every dependency must be an entry of the pak, or of the base pak named with `SetBase` (`Problems()` lists each missing or wrongly typed pair). The output is deterministic: the same inputs give the same bytes.
+
+`asset::PakReader::Open` validates the header, the footer and the whole index against the file size and builds a hash table over the ids; it does not hash anything (`Verify` checks the index hash and every blob, a tool's job). It refuses a pak of another format version or a resource type version that is not current (`UnsupportedVersion`, naming `asset_mint remint`) and a pak packed for another target (`WrongTarget`; `Detail()` names both tags). `asset::PakBackend` serves a pak through the backend interface; a patch pak answers `MissingDependency` until `LinkBase` names the backend of the pak it was packed against, whose identity must match.
+
+`asset_mint pack DIRECTORY OUTPUT.pak [--target=N] [--no-names]` packs a directory of loose blobs.
+
+```cpp compile run standalone
+#include "asset/blob.h"
+#include "asset/pak.h"
+#include "asset/pak_backend.h"
+#include "io/file_system.h"
+#include "os/console.h"
+
+using namespace engine_placeholder;
+
+int main() {
+    asset::TypeRegistry types;
+    const asset::ResourceId id = asset::ResourceId::FromValue(0x42);
+    asset::BlobWriter blob_writer(types, asset::types::kLevel, id);
+    const char payload[] = "hello";
+    if (blob_writer.AddSection(16, ByteSpan(reinterpret_cast<const byte*>(payload), sizeof(payload))).Failed()) return 1;
+    Vector<byte> blob;
+    if (blob_writer.Finish(&blob).Failed()) return 1;
+
+    io::Path tmp, dir;
+    if (io::TempDirectory(&tmp).Failed() || io::CreateTempDirectory(tmp, "re_pak_sample", &dir).Failed()) return 1;
+    const io::Path file_path = dir.Join("sample.pak");
+
+    {
+        io::FilePtr file;
+        if (io::File::Open(file_path, io::OpenMode::Write, 0, &file).Failed()) return 1;
+        asset::PakWriter writer(types, asset::PakWriterOptions());
+        if (writer.Add(id, ByteSpan(blob.Data(), blob.Size()), "/levels/start.level").Failed()) return 1;
+        if (writer.Finish(*file).Failed()) return 1;
+        if (file->Close().Failed()) return 1;
+    }
+
+    UniquePtr<asset::PakBackend> pak;
+    if (asset::PakBackend::Open(file_path, types, 0, &pak).Failed()) return 1;
+    UniquePtr<asset::ResourceReader> reader;
+    if (pak->Open(id, &reader).Failed()) return 1;
+    os::Print("%u entries, %u bytes\n", static_cast<unsigned>(pak->Info().entry_count), static_cast<unsigned>(reader->Size()));
+    io::RemoveAll(dir);
+    return 0;
+}
+```
+```output
+1 entries, 256 bytes
 ```

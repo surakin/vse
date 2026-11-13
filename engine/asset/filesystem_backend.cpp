@@ -254,12 +254,13 @@ io::WalkAction FilesystemBackend::VisitEntry(void* user, const io::WalkEntry& en
 }
 
 FilesystemBackend::FilesystemBackend(const io::Path& root, io::Path canonical_root, const TypeRegistry& types,
-                                     bool stored_table)
-    : root_(root), canonical_root_(Move(canonical_root)), types_(&types), stored_table_(stored_table)
+                                     bool stored_table, u32 target)
+    : root_(root), canonical_root_(Move(canonical_root)), types_(&types), stored_table_(stored_table), target_(target)
 {
 }
 
-Status FilesystemBackend::Create(const io::Path& root, const TypeRegistry& types, UniquePtr<FilesystemBackend>* out)
+Status FilesystemBackend::Create(const io::Path& root, const TypeRegistry& types, UniquePtr<FilesystemBackend>* out,
+                                 u32 target)
 {
     io::FileInfo info;
     io::Status s = io::Stat(root, &info);
@@ -275,7 +276,7 @@ Status FilesystemBackend::Create(const io::Path& root, const TypeRegistry& types
     }
     io::FileInfo table_info;
     const bool stored = io::Stat(root / StringView(kStoredTableName), &table_info).Ok();
-    *out = MakeUnique<FilesystemBackend>(root, Move(canonical), types, stored);
+    *out = MakeUnique<FilesystemBackend>(root, Move(canonical), types, stored, target);
     if (!*out)
     {
         return Status::Make(ErrorCode::Other, "memory for the backend ran out");
@@ -429,6 +430,11 @@ Status FilesystemBackend::OpenChecked(ResourceId id, const io::Path& file, io::F
     if (header->id != id)
     {
         return Status::Make(ErrorCode::Corrupt, "the table and the file disagree on the resource id");
+    }
+    if (header->target != target_)
+    {
+        return Status::Make(ErrorCode::WrongTarget,
+                            "the blob was laid out for another target; run asset_mint pack --target");
     }
     return Status::Success();
 }

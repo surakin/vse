@@ -41,12 +41,16 @@ class FilesystemBackend : public ResourceBackend
 public:
     /// Makes a backend over `root`.
     ///
+    /// - Param target: the target tag of the running program; a blob laid out for another target is refused with
+    ///   `WrongTarget`.
     /// - Fails: `NotFound` when `root` is not a directory; `Io` when it cannot be examined.
     /// - Ownership: `*out` receives the backend on success; the caller owns it.
-    static Status Create(const io::Path& root, const TypeRegistry& types, UniquePtr<FilesystemBackend>* out);
+    static Status Create(const io::Path& root, const TypeRegistry& types, UniquePtr<FilesystemBackend>* out,
+                         u32 target = 0);
 
     /// Used by `Create`; call that instead.
-    FilesystemBackend(const io::Path& root, io::Path canonical_root, const TypeRegistry& types, bool stored_table);
+    FilesystemBackend(const io::Path& root, io::Path canonical_root, const TypeRegistry& types, bool stored_table,
+                      u32 target = 0);
 
     const char* Name() const override { return "filesystem"; }
     u32 Capabilities() const override
@@ -83,13 +87,14 @@ private:
     Status EnsureIndexLocked();
     Status ScanLocked(Vector<Item>* out) const;
     Status Locate(ResourceId id, io::Path* file);
-    static Status OpenChecked(ResourceId id, const io::Path& file, io::FilePtr* out, BlobHeaderInfo* header, u64* size);
+    Status OpenChecked(ResourceId id, const io::Path& file, io::FilePtr* out, BlobHeaderInfo* header, u64* size);
     const Item* FindLocked(ResourceId id) const;
 
     io::Path root_;
     io::Path canonical_root_;
     const TypeRegistry* types_;
     bool stored_table_;
+    u32 target_;
     mutable Mutex mutex_;
     bool indexed_ = false;
     Vector<Item> items_;  // sorted by id
