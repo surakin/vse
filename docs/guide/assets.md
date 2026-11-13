@@ -159,3 +159,54 @@ int main() {
 ```output
 1 entries, 256 bytes
 ```
+
+## Skeletons
+
+A skeleton (`asset::types::kSkeleton`, `SKEL`) is a resource of its own: the joint hierarchy, the bind pose and the inverse bind matrices that skinned meshes and animation clips refer to by id. At most 256 joints (the palette limit of the GPU skinning day), names at most 64 bytes, parents strictly before their children. The blob is a set of sections in structure-of-arrays form, each 64-byte aligned: the header (joint count, flags, the 128-bit skeleton hash, a bound of the bind pose), parents (`u16`, `0xFFFF` for a root), translations (`f32 x3`), rotations (unit quaternions `f32 x4`, w >= 0), scales (`f32 x3`), the inverse bind matrices (3x4 row-major `f32`, 48 bytes each: the exact bytes of the joint palette upload) and, optionally, the joint name hashes and names.
+
+The skeleton hash covers the joint count, the parents and the names, not the pose: a mesh or a clip records it, and a clip made for another skeleton is refused when it is bound. Retargeting between different skeletons is not supported.
+
+`asset::SkeletonView::Open` checks the whole blob once (current version only, every count, parent order, unit quaternions, finite values, name offsets and hashes) and then reads spans into the buffer, with no copy and no conversion. `FindJoint` goes by name hash, then name.
+
+The text source form is `.skel.src`, minted by `asset_mint mint-skeleton SOURCE OUTPUT [--target=N]`:
+
+```
+id 00000000000000aa
+joint root  -     0 1.0 0   0 0 0 1   1 1 1
+joint spine root  0 0.2 0   0 0 0 1   1 1 1
+ibm spine 1 0 0 0  0 1 0 -1.2  0 0 1 0
+```
+
+`joint NAME PARENT tx ty tz qx qy qz qw sx sy sz` (the parent is a name defined earlier, or `-`); the minter normalizes quaternions into the w >= 0 hemisphere and computes each inverse bind matrix in double precision from the bind pose unless an `ibm NAME` line (12 numbers, row-major 3x4) gives it. Errors name the line. The output is deterministic.
+
+```cpp compile run standalone
+#include "asset/skeleton.h"
+#include "cstr/format.h"
+#include "os/console.h"
+
+using namespace engine_placeholder;
+
+int main() {
+    asset::TypeRegistry types;
+    asset::SkeletonJoint joints[2];
+    FormatTo(joints[0].name.Data(), joints[0].name.Size(), "root");
+    FormatTo(joints[1].name.Data(), joints[1].name.Size(), "tip");
+    joints[1].parent = 0;
+    joints[1].translation = {{0.0f, 2.0f, 0.0f}};
+    asset::ComputeInverseBindMatrices(Span<asset::SkeletonJoint>(joints, 2));
+
+    Vector<byte> blob;
+    if (asset::BuildSkeletonBlob(types, asset::ResourceId::FromValue(7), Span<const asset::SkeletonJoint>(joints, 2), true,
+                                 &blob).Failed()) return 1;
+    asset::SkeletonView view;
+    if (view.Open(ByteSpan(blob.Data(), blob.Size()), types).Failed()) return 1;
+    u32 tip = 0;
+    if (!view.FindJoint("tip", &tip)) return 1;
+    os::Print("%u joints, tip is %u, parent %u, inverse bind y %.1f\n", view.JointCount(), tip,
+              static_cast<unsigned>(view.Parent(tip)), static_cast<double>(view.InverseBind(tip)[7]));
+    return 0;
+}
+```
+```output
+2 joints, tip is 1, parent 0, inverse bind y -2.0
+```

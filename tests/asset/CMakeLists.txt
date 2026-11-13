@@ -15,6 +15,8 @@ set(ASSET_TEST_SOURCES
   async_table_test.cpp  # Day 315
   memory_file.h  # Day 316
   pak_test.cpp  # Day 316
+  skeleton_test.cpp  # Day 318
+  ${CMAKE_SOURCE_DIR}/tools/asset_mint/skeleton_source.cpp  # Day 318: the minter under test
 )
 
 find_package(Threads REQUIRED)
@@ -23,7 +25,7 @@ include(Catch)
 function(engine_add_asset_tests target asset_lib suffix label)
   add_executable(${target} ${ASSET_TEST_SOURCES})
   target_link_libraries(${target} PRIVATE ${asset_lib} Catch2::Catch2WithMain Threads::Threads)
-  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tools/asset_mint)
   if(label STREQUAL "asan")
     engine_asan_runtime(${target})
   endif()

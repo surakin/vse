@@ -4749,16 +4749,57 @@ asset::types::kMesh	variable	asset	asset-types-kmesh	asset.md	engine/asset/resou
 asset::types::kTexture	variable	asset	asset-types-ktexture	asset.md	engine/asset/resource_type.h:66
 asset::types::kMaterial	variable	asset	asset-types-kmaterial	asset.md	engine/asset/resource_type.h:68
 asset::types::kLevel	variable	asset	asset-types-klevel	asset.md	engine/asset/resource_type.h:70
-asset::types::kNames	variable	asset	asset-types-knames	asset.md	engine/asset/resource_type.h:72
-asset::TypeInfo	struct	asset	asset-typeinfo	asset.md	engine/asset/resource_type.h:78
-asset::TypeInfo::type	variable	asset	asset-typeinfo-type	asset.md	engine/asset/resource_type.h:80
-asset::TypeInfo::current_version	variable	asset	asset-typeinfo-current-version	asset.md	engine/asset/resource_type.h:81
-asset::TypeInfo::name	variable	asset	asset-typeinfo-name	asset.md	engine/asset/resource_type.h:82
-asset::TypeRegistry	class	asset	asset-typeregistry	asset.md	engine/asset/resource_type.h:91
-asset::TypeRegistry::TypeRegistry()	function	asset	asset-typeregistry-typeregistry	asset.md	engine/asset/resource_type.h:95
-asset::TypeRegistry::Register(ResourceType,u32,const char*)	function	asset	asset-typeregistry-register-resourcetype-u32-const-char-star	asset.md	engine/asset/resource_type.h:101
-asset::TypeRegistry::Find(ResourceType,TypeInfo*) const	function	asset	asset-typeregistry-find-resourcetype-typeinfo-star-const	asset.md	engine/asset/resource_type.h:109
-asset::TypeRegistry::Size() const	function	asset	asset-typeregistry-size-const	asset.md	engine/asset/resource_type.h:113
+asset::types::kSkeleton	variable	asset	asset-types-kskeleton	asset.md	engine/asset/resource_type.h:72
+asset::types::kNames	variable	asset	asset-types-knames	asset.md	engine/asset/resource_type.h:74
+asset::TypeInfo	struct	asset	asset-typeinfo	asset.md	engine/asset/resource_type.h:80
+asset::TypeInfo::type	variable	asset	asset-typeinfo-type	asset.md	engine/asset/resource_type.h:82
+asset::TypeInfo::current_version	variable	asset	asset-typeinfo-current-version	asset.md	engine/asset/resource_type.h:83
+asset::TypeInfo::name	variable	asset	asset-typeinfo-name	asset.md	engine/asset/resource_type.h:84
+asset::TypeRegistry	class	asset	asset-typeregistry	asset.md	engine/asset/resource_type.h:93
+asset::TypeRegistry::TypeRegistry()	function	asset	asset-typeregistry-typeregistry	asset.md	engine/asset/resource_type.h:97
+asset::TypeRegistry::Register(ResourceType,u32,const char*)	function	asset	asset-typeregistry-register-resourcetype-u32-const-char-star	asset.md	engine/asset/resource_type.h:103
+asset::TypeRegistry::Find(ResourceType,TypeInfo*) const	function	asset	asset-typeregistry-find-resourcetype-typeinfo-star-const	asset.md	engine/asset/resource_type.h:111
+asset::TypeRegistry::Size() const	function	asset	asset-typeregistry-size-const	asset.md	engine/asset/resource_type.h:115
+asset::kMaxSkeletonJoints	variable	asset	asset-kmaxskeletonjoints	asset.md	engine/asset/skeleton.h:34
+asset::kMaxJointNameBytes	variable	asset	asset-kmaxjointnamebytes	asset.md	engine/asset/skeleton.h:36
+asset::kNoParent	variable	asset	asset-knoparent	asset.md	engine/asset/skeleton.h:38
+asset::kInverseBindBytes	variable	asset	asset-kinversebindbytes	asset.md	engine/asset/skeleton.h:40
+asset::SkeletonSection	enum	asset	asset-skeletonsection	asset.md	engine/asset/skeleton.h:43
+asset::kSkeletonSectionHeader	enumerator	asset	asset-kskeletonsectionheader	asset.md	engine/asset/skeleton.h:45
+asset::kSkeletonSectionParents	enumerator	asset	asset-kskeletonsectionparents	asset.md	engine/asset/skeleton.h:46
+asset::kSkeletonSectionTranslations	enumerator	asset	asset-kskeletonsectiontranslations	asset.md	engine/asset/skeleton.h:47
+asset::kSkeletonSectionRotations	enumerator	asset	asset-kskeletonsectionrotations	asset.md	engine/asset/skeleton.h:48
+asset::kSkeletonSectionScales	enumerator	asset	asset-kskeletonsectionscales	asset.md	engine/asset/skeleton.h:49
+asset::kSkeletonSectionInverseBind	enumerator	asset	asset-kskeletonsectioninversebind	asset.md	engine/asset/skeleton.h:50
+asset::kSkeletonSectionNameHashes	enumerator	asset	asset-kskeletonsectionnamehashes	asset.md	engine/asset/skeleton.h:51
+asset::kSkeletonSectionNames	enumerator	asset	asset-kskeletonsectionnames	asset.md	engine/asset/skeleton.h:52
+asset::JointNameHash(StringView)	function	asset	asset-jointnamehash-stringview	asset.md	engine/asset/skeleton.h:58
+asset::SkeletonJoint	struct	asset	asset-skeletonjoint	asset.md	engine/asset/skeleton.h:71
+asset::SkeletonJoint::name	variable	asset	asset-skeletonjoint-name	asset.md	engine/asset/skeleton.h:73
+asset::SkeletonJoint::parent	variable	asset	asset-skeletonjoint-parent	asset.md	engine/asset/skeleton.h:74
+asset::SkeletonJoint::translation	variable	asset	asset-skeletonjoint-translation	asset.md	engine/asset/skeleton.h:75
+asset::SkeletonJoint::rotation	variable	asset	asset-skeletonjoint-rotation	asset.md	engine/asset/skeleton.h:76
+asset::SkeletonJoint::scale	variable	asset	asset-skeletonjoint-scale	asset.md	engine/asset/skeleton.h:77
+asset::SkeletonJoint::inverse_bind	variable	asset	asset-skeletonjoint-inverse-bind	asset.md	engine/asset/skeleton.h:78
+asset::ComputeInverseBindMatrices(Span<SkeletonJoint>)	function	asset	asset-computeinversebindmatrices-span-lt-skeletonjoint-gt	asset.md	engine/asset/skeleton.h:86
+asset::ComputeSkeletonHash(Span<const SkeletonJoint>)	function	asset	asset-computeskeletonhash-span-lt-const-skeletonjoint-gt	asset.md	engine/asset/skeleton.h:92
+asset::BuildSkeletonBlob(const TypeRegistry&,ResourceId,Span<const SkeletonJoint>,bool,Vector<byte>*,u32)	function	asset	asset-buildskeletonblob-const-typeregistry-amp-resourceid-span-lt-const-skeletonjoint-gt-bool-vector-lt-byte-gt-star-u32	asset.md	engine/asset/skeleton.h:105
+asset::SkeletonView	class	asset	asset-skeletonview	asset.md	engine/asset/skeleton.h:112
+asset::SkeletonView::SkeletonView()	function	asset	asset-skeletonview-skeletonview	asset.md	engine/asset/skeleton.h:116
+asset::SkeletonView::Open(ByteSpan,const TypeRegistry&)	function	asset	asset-skeletonview-open-bytespan-const-typeregistry-amp	asset.md	engine/asset/skeleton.h:126
+asset::SkeletonView::JointCount() const	function	asset	asset-skeletonview-jointcount-const	asset.md	engine/asset/skeleton.h:130
+asset::SkeletonView::Hash() const	function	asset	asset-skeletonview-hash-const	asset.md	engine/asset/skeleton.h:133
+asset::SkeletonView::HasNames() const	function	asset	asset-skeletonview-hasnames-const	asset.md	engine/asset/skeleton.h:136
+asset::SkeletonView::BoundCenter() const	function	asset	asset-skeletonview-boundcenter-const	asset.md	engine/asset/skeleton.h:139
+asset::SkeletonView::BoundRadius() const	function	asset	asset-skeletonview-boundradius-const	asset.md	engine/asset/skeleton.h:142
+asset::SkeletonView::Parent(u32) const	function	asset	asset-skeletonview-parent-u32-const	asset.md	engine/asset/skeleton.h:146
+asset::SkeletonView::Translation(u32) const	function	asset	asset-skeletonview-translation-u32-const	asset.md	engine/asset/skeleton.h:149
+asset::SkeletonView::Rotation(u32) const	function	asset	asset-skeletonview-rotation-u32-const	asset.md	engine/asset/skeleton.h:152
+asset::SkeletonView::Scale(u32) const	function	asset	asset-skeletonview-scale-u32-const	asset.md	engine/asset/skeleton.h:155
+asset::SkeletonView::InverseBind(u32) const	function	asset	asset-skeletonview-inversebind-u32-const	asset.md	engine/asset/skeleton.h:158
+asset::SkeletonView::InverseBindBytes() const	function	asset	asset-skeletonview-inversebindbytes-const	asset.md	engine/asset/skeleton.h:161
+asset::SkeletonView::Name(u32) const	function	asset	asset-skeletonview-name-u32-const	asset.md	engine/asset/skeleton.h:164
+asset::SkeletonView::FindJoint(StringView,u32*) const	function	asset	asset-skeletonview-findjoint-stringview-u32-star-const	asset.md	engine/asset/skeleton.h:171
 asset::ErrorCode	enum	asset	asset-errorcode	asset.md	engine/asset/status.h:13
 asset::ErrorCode::Ok	enumerator	asset	asset-errorcode-ok	asset.md	engine/asset/status.h:15
 asset::ErrorCode::MissingDependency	enumerator	asset	asset-errorcode-missingdependency	asset.md	engine/asset/status.h:16

@@ -1,6 +1,7 @@
 // asset_mint: Phase 22 Day 316, the first cut (Day 332 completes the tool).
 //
 //   asset_mint pack DIRECTORY OUTPUT.pak [--target=N] [--no-names]
+//   asset_mint mint-skeleton SOURCE.skel.src OUTPUT.blob [--target=N]
 //
 // packs the blobs of a directory (found by their own headers; the path is the file's location) into one pak for target
 // N (default 0, the development target). It refuses an incomplete closure and lists each missing (blob, dependency)
@@ -12,6 +13,7 @@
 #include "io/file.h"
 #include "io/file_system.h"
 #include "io/path.h"
+#include "skeleton_source.h"
 #include "os/console.h"
 
 using namespace engine_placeholder;
@@ -22,7 +24,8 @@ namespace
 
 int Usage()
 {
-    os::PrintError("usage: asset_mint pack DIRECTORY OUTPUT.pak [--target=N] [--no-names]\n");
+    os::PrintError("usage: asset_mint pack DIRECTORY OUTPUT.pak [--target=N] [--no-names]\n"
+                   "       asset_mint mint-skeleton SOURCE.skel.src OUTPUT.blob [--target=N]\n");
     return 64;
 }
 
@@ -169,6 +172,72 @@ int Pack(int argc, char** argv)
     return 0;
 }
 
+// Mints a skeleton source into a blob (Day 318). `remint` of old blobs arrives with the whole tool on Day 332.
+int MintSkeletonCommand(int argc, char** argv)
+{
+    if (argc < 4 || argc > 5)
+    {
+        return Usage();
+    }
+    u32 target = 0;
+    if (argc == 5 && (!StartsWith(argv[4], "--target=") || !ParseNumber(argv[4] + 9, &target)))
+    {
+        return Usage();
+    }
+    io::Path source_path;
+    io::Path output;
+    if (!io::Path::Parse(StringView(argv[2], CStrLength(argv[2])), io::NativePathStyle(), &source_path) ||
+        !io::Path::Parse(StringView(argv[3], CStrLength(argv[3])), io::NativePathStyle(), &output))
+    {
+        return Usage();
+    }
+    io::FilePtr in;
+    if (io::File::Open(source_path, io::OpenMode::Read, io::kOpenNone, &in).Failed())
+    {
+        os::PrintError("asset_mint: the source file could not be opened\n");
+        return 1;
+    }
+    Vector<u8> text;
+    if (io::ReadAll(*in, &text, u64{1} << 24).Failed())
+    {
+        os::PrintError("asset_mint: the source file could not be read\n");
+        return 1;
+    }
+    TypeRegistry types;
+    Vector<byte> blob;
+    SkeletonSourceError error;
+    const Status status = MintSkeleton(StringView(reinterpret_cast<const char*>(text.Data()), text.Size()), types,
+                                       &blob, &error, target);
+    if (status.Failed())
+    {
+        if (error.line != 0)
+        {
+            os::PrintError("asset_mint: %s:%u: %s\n", argv[2], static_cast<unsigned>(error.line), error.message.Data());
+        }
+        else
+        {
+            os::PrintError("asset_mint: %s: %s\n", argv[2], error.message.Data());
+        }
+        return 1;
+    }
+    io::FilePtr file;
+    if (io::File::Open(output, io::OpenMode::Write, io::kOpenNone, &file).Failed())
+    {
+        os::PrintError("asset_mint: the output file could not be created\n");
+        return 1;
+    }
+    const io::Status written = file->Write(blob.Data(), blob.Size(), 0);
+    if (written.Failed() || file->Close().Failed())
+    {
+        file->Close();
+        io::Remove(output);
+        os::PrintError("asset_mint: writing the output failed\n");
+        return 1;
+    }
+    os::Print("minted a skeleton of %u bytes\n", static_cast<unsigned>(blob.Size()));
+    return 0;
+}
+
 }  // namespace
 
 int main(int argc, char** argv)
@@ -176,6 +245,10 @@ int main(int argc, char** argv)
     if (argc >= 2 && StringView(argv[1], CStrLength(argv[1])) == StringView("pack"))
     {
         return Pack(argc, argv);
+    }
+    if (argc >= 2 && StringView(argv[1], CStrLength(argv[1])) == StringView("mint-skeleton"))
+    {
+        return MintSkeletonCommand(argc, argv);
     }
     return Usage();
 }
