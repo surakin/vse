@@ -4433,6 +4433,8 @@ asset::CurrentContainerVersion()	function	asset	asset-currentcontainerversion	as
 asset::RegisterAssetSettings(settings::Registry*)	function	asset	asset-registerassetsettings-settings-registry-star	asset.md	engine/asset/asset_settings.h:17
 asset::BufferPoolBytesFromSettings(const settings::Registry&)	function	asset	asset-bufferpoolbytesfromsettings-const-settings-registry-amp	asset.md	engine/asset/asset_settings.h:23
 asset::MemoryBackendBytesFromSettings(const settings::Registry&)	function	asset	asset-memorybackendbytesfromsettings-const-settings-registry-amp	asset.md	engine/asset/asset_settings.h:29
+asset::AnimRotationErrorDegreesFromSettings(const settings::Registry&)	function	asset	asset-animrotationerrordegreesfromsettings-const-settings-registry-amp	asset.md	engine/asset/asset_settings.h:36
+asset::AnimTranslationErrorFromSettings(const settings::Registry&)	function	asset	asset-animtranslationerrorfromsettings-const-settings-registry-amp	asset.md	engine/asset/asset_settings.h:43
 asset::BackendCapability	enum	asset	asset-backendcapability	asset.md	engine/asset/backend.h:23
 asset::kBackendRanged	enumerator	asset	asset-kbackendranged	asset.md	engine/asset/backend.h:25
 asset::kBackendAsync	enumerator	asset	asset-kbackendasync	asset.md	engine/asset/backend.h:26
@@ -4535,6 +4537,79 @@ asset::BlobHeaderInfo::target	variable	asset	asset-blobheaderinfo-target	asset.m
 asset::BlobHeaderInfo::total_size	variable	asset	asset-blobheaderinfo-total-size	asset.md	engine/asset/blob.h:220
 asset::BlobHeaderInfo::content_hash	variable	asset	asset-blobheaderinfo-content-hash	asset.md	engine/asset/blob.h:221
 asset::PeekBlobHeader(ByteSpan,BlobHeaderInfo*)	function	asset	asset-peekblobheader-bytespan-blobheaderinfo-star	asset.md	engine/asset/blob.h:235
+asset::kMaxClipTracks	variable	asset	asset-kmaxcliptracks	asset.md	engine/asset/clip.h:33
+asset::kMaxClipKeys	variable	asset	asset-kmaxclipkeys	asset.md	engine/asset/clip.h:35
+asset::kMaxClipEvents	variable	asset	asset-kmaxclipevents	asset.md	engine/asset/clip.h:37
+asset::kClipRoleSkeleton	variable	asset	asset-kcliproleskeleton	asset.md	engine/asset/clip.h:39
+asset::ClipFlags	enum	asset	asset-clipflags	asset.md	engine/asset/clip.h:42
+asset::kClipLooping	enumerator	asset	asset-kcliplooping	asset.md	engine/asset/clip.h:44
+asset::kClipAdditive	enumerator	asset	asset-kclipadditive	asset.md	engine/asset/clip.h:45
+asset::kClipRootMotion	enumerator	asset	asset-kcliprootmotion	asset.md	engine/asset/clip.h:46
+asset::ClipSection	enum	asset	asset-clipsection	asset.md	engine/asset/clip.h:50
+asset::kClipSectionHeader	enumerator	asset	asset-kclipsectionheader	asset.md	engine/asset/clip.h:52
+asset::kClipSectionTracks	enumerator	asset	asset-kclipsectiontracks	asset.md	engine/asset/clip.h:53
+asset::kClipSectionKeys	enumerator	asset	asset-kclipsectionkeys	asset.md	engine/asset/clip.h:54
+asset::kClipSectionEvents	enumerator	asset	asset-kclipsectionevents	asset.md	engine/asset/clip.h:55
+asset::ClipKey3	struct	asset	asset-clipkey3	asset.md	engine/asset/clip.h:61
+asset::ClipKey3::time	variable	asset	asset-clipkey3-time	asset.md	engine/asset/clip.h:63
+asset::ClipKey3::value	variable	asset	asset-clipkey3-value	asset.md	engine/asset/clip.h:64
+asset::ClipKey4	struct	asset	asset-clipkey4	asset.md	engine/asset/clip.h:70
+asset::ClipKey4::time	variable	asset	asset-clipkey4-time	asset.md	engine/asset/clip.h:72
+asset::ClipKey4::value	variable	asset	asset-clipkey4-value	asset.md	engine/asset/clip.h:73
+asset::ClipTrackSource	struct	asset	asset-cliptracksource	asset.md	engine/asset/clip.h:79
+asset::ClipTrackSource::joint	variable	asset	asset-cliptracksource-joint	asset.md	engine/asset/clip.h:81
+asset::ClipTrackSource::translation	variable	asset	asset-cliptracksource-translation	asset.md	engine/asset/clip.h:82
+asset::ClipTrackSource::rotation	variable	asset	asset-cliptracksource-rotation	asset.md	engine/asset/clip.h:83
+asset::ClipTrackSource::scale	variable	asset	asset-cliptracksource-scale	asset.md	engine/asset/clip.h:84
+asset::ClipEvent	struct	asset	asset-clipevent	asset.md	engine/asset/clip.h:90
+asset::ClipEvent::time	variable	asset	asset-clipevent-time	asset.md	engine/asset/clip.h:92
+asset::ClipEvent::name_hash	variable	asset	asset-clipevent-name-hash	asset.md	engine/asset/clip.h:93
+asset::ClipEvent::payload	variable	asset	asset-clipevent-payload	asset.md	engine/asset/clip.h:94
+asset::ClipLimits	struct	asset	asset-cliplimits	asset.md	engine/asset/clip.h:100
+asset::ClipLimits::rotation_degrees	variable	asset	asset-cliplimits-rotation-degrees	asset.md	engine/asset/clip.h:102
+asset::ClipLimits::translation	variable	asset	asset-cliplimits-translation	asset.md	engine/asset/clip.h:104
+asset::ClipBuildInput	struct	asset	asset-clipbuildinput	asset.md	engine/asset/clip.h:111
+asset::ClipBuildInput::duration	variable	asset	asset-clipbuildinput-duration	asset.md	engine/asset/clip.h:113
+asset::ClipBuildInput::sample_rate	variable	asset	asset-clipbuildinput-sample-rate	asset.md	engine/asset/clip.h:114
+asset::ClipBuildInput::flags	variable	asset	asset-clipbuildinput-flags	asset.md	engine/asset/clip.h:115
+asset::ClipBuildInput::skeleton	variable	asset	asset-clipbuildinput-skeleton	asset.md	engine/asset/clip.h:116
+asset::ClipBuildInput::skeleton_hash	variable	asset	asset-clipbuildinput-skeleton-hash	asset.md	engine/asset/clip.h:117
+asset::ClipBuildInput::joint_count	variable	asset	asset-clipbuildinput-joint-count	asset.md	engine/asset/clip.h:118
+asset::ClipBuildInput::bounds_min	variable	asset	asset-clipbuildinput-bounds-min	asset.md	engine/asset/clip.h:119
+asset::ClipBuildInput::bounds_max	variable	asset	asset-clipbuildinput-bounds-max	asset.md	engine/asset/clip.h:120
+asset::ClipBuildInput::tracks	variable	asset	asset-clipbuildinput-tracks	asset.md	engine/asset/clip.h:121
+asset::ClipBuildInput::events	variable	asset	asset-clipbuildinput-events	asset.md	engine/asset/clip.h:122
+asset::ClipBuildInput::limits	variable	asset	asset-clipbuildinput-limits	asset.md	engine/asset/clip.h:123
+asset::ClipSample	struct	asset	asset-clipsample	asset.md	engine/asset/clip.h:129
+asset::ClipSample::translation	variable	asset	asset-clipsample-translation	asset.md	engine/asset/clip.h:131
+asset::ClipSample::rotation	variable	asset	asset-clipsample-rotation	asset.md	engine/asset/clip.h:132
+asset::ClipSample::scale	variable	asset	asset-clipsample-scale	asset.md	engine/asset/clip.h:133
+asset::ClipSample::has_translation	variable	asset	asset-clipsample-has-translation	asset.md	engine/asset/clip.h:134
+asset::ClipSample::has_rotation	variable	asset	asset-clipsample-has-rotation	asset.md	engine/asset/clip.h:135
+asset::ClipSample::has_scale	variable	asset	asset-clipsample-has-scale	asset.md	engine/asset/clip.h:136
+asset::BuildClipBlob(const TypeRegistry&,ResourceId,const ClipBuildInput&,Vector<byte>*,u32,f32*,f32*)	function	asset	asset-buildclipblob-const-typeregistry-amp-resourceid-const-clipbuildinput-amp-vector-lt-byte-gt-star-u32-f32-star-f32-star	asset.md	engine/asset/clip.h:150
+asset::ClipView	class	asset	asset-clipview	asset.md	engine/asset/clip.h:157
+asset::ClipView::ClipView()	function	asset	asset-clipview-clipview	asset.md	engine/asset/clip.h:161
+asset::ClipView::Open(ByteSpan,const TypeRegistry&)	function	asset	asset-clipview-open-bytespan-const-typeregistry-amp	asset.md	engine/asset/clip.h:172
+asset::ClipView::Duration() const	function	asset	asset-clipview-duration-const	asset.md	engine/asset/clip.h:175
+asset::ClipView::SampleRate() const	function	asset	asset-clipview-samplerate-const	asset.md	engine/asset/clip.h:177
+asset::ClipView::Flags() const	function	asset	asset-clipview-flags-const	asset.md	engine/asset/clip.h:179
+asset::ClipView::Looping() const	function	asset	asset-clipview-looping-const	asset.md	engine/asset/clip.h:183
+asset::ClipView::JointCount() const	function	asset	asset-clipview-jointcount-const	asset.md	engine/asset/clip.h:185
+asset::ClipView::TrackCount() const	function	asset	asset-clipview-trackcount-const	asset.md	engine/asset/clip.h:187
+asset::ClipView::Skeleton() const	function	asset	asset-clipview-skeleton-const	asset.md	engine/asset/clip.h:189
+asset::ClipView::SkeletonHash() const	function	asset	asset-clipview-skeletonhash-const	asset.md	engine/asset/clip.h:191
+asset::ClipView::RotationError() const	function	asset	asset-clipview-rotationerror-const	asset.md	engine/asset/clip.h:193
+asset::ClipView::TranslationError() const	function	asset	asset-clipview-translationerror-const	asset.md	engine/asset/clip.h:195
+asset::ClipView::BoundsMin() const	function	asset	asset-clipview-boundsmin-const	asset.md	engine/asset/clip.h:197
+asset::ClipView::BoundsMax() const	function	asset	asset-clipview-boundsmax-const	asset.md	engine/asset/clip.h:199
+asset::ClipView::EventCount() const	function	asset	asset-clipview-eventcount-const	asset.md	engine/asset/clip.h:201
+asset::ClipView::Event(u32) const	function	asset	asset-clipview-event-u32-const	asset.md	engine/asset/clip.h:205
+asset::ClipView::TrackJoint(u32) const	function	asset	asset-clipview-trackjoint-u32-const	asset.md	engine/asset/clip.h:209
+asset::ClipView::KeyCount(u32,u32) const	function	asset	asset-clipview-keycount-u32-u32-const	asset.md	engine/asset/clip.h:214
+asset::ClipView::IsConstant(u32,u32) const	function	asset	asset-clipview-isconstant-u32-u32-const	asset.md	engine/asset/clip.h:218
+asset::ClipView::Sample(u32,f32) const	function	asset	asset-clipview-sample-u32-f32-const	asset.md	engine/asset/clip.h:223
+asset::ClipView::Bind(const SkeletonView&) const	function	asset	asset-clipview-bind-const-skeletonview-amp-const	asset.md	engine/asset/clip.h:228
 asset::ContentHash	struct	asset	asset-contenthash	asset.md	engine/asset/content_hash.h:17
 asset::ContentHash::bytes	variable	asset	asset-contenthash-bytes	asset.md	engine/asset/content_hash.h:19
 asset::ContentHash::IsZero() const	function	asset	asset-contenthash-iszero-const	asset.md	engine/asset/content_hash.h:23
@@ -4843,17 +4918,18 @@ asset::types::kMesh	variable	asset	asset-types-kmesh	asset.md	engine/asset/resou
 asset::types::kTexture	variable	asset	asset-types-ktexture	asset.md	engine/asset/resource_type.h:66
 asset::types::kMaterial	variable	asset	asset-types-kmaterial	asset.md	engine/asset/resource_type.h:68
 asset::types::kLevel	variable	asset	asset-types-klevel	asset.md	engine/asset/resource_type.h:70
-asset::types::kSkeleton	variable	asset	asset-types-kskeleton	asset.md	engine/asset/resource_type.h:72
-asset::types::kNames	variable	asset	asset-types-knames	asset.md	engine/asset/resource_type.h:74
-asset::TypeInfo	struct	asset	asset-typeinfo	asset.md	engine/asset/resource_type.h:80
-asset::TypeInfo::type	variable	asset	asset-typeinfo-type	asset.md	engine/asset/resource_type.h:82
-asset::TypeInfo::current_version	variable	asset	asset-typeinfo-current-version	asset.md	engine/asset/resource_type.h:83
-asset::TypeInfo::name	variable	asset	asset-typeinfo-name	asset.md	engine/asset/resource_type.h:84
-asset::TypeRegistry	class	asset	asset-typeregistry	asset.md	engine/asset/resource_type.h:93
-asset::TypeRegistry::TypeRegistry()	function	asset	asset-typeregistry-typeregistry	asset.md	engine/asset/resource_type.h:97
-asset::TypeRegistry::Register(ResourceType,u32,const char*)	function	asset	asset-typeregistry-register-resourcetype-u32-const-char-star	asset.md	engine/asset/resource_type.h:103
-asset::TypeRegistry::Find(ResourceType,TypeInfo*) const	function	asset	asset-typeregistry-find-resourcetype-typeinfo-star-const	asset.md	engine/asset/resource_type.h:111
-asset::TypeRegistry::Size() const	function	asset	asset-typeregistry-size-const	asset.md	engine/asset/resource_type.h:115
+asset::types::kAnimation	variable	asset	asset-types-kanimation	asset.md	engine/asset/resource_type.h:72
+asset::types::kSkeleton	variable	asset	asset-types-kskeleton	asset.md	engine/asset/resource_type.h:74
+asset::types::kNames	variable	asset	asset-types-knames	asset.md	engine/asset/resource_type.h:76
+asset::TypeInfo	struct	asset	asset-typeinfo	asset.md	engine/asset/resource_type.h:82
+asset::TypeInfo::type	variable	asset	asset-typeinfo-type	asset.md	engine/asset/resource_type.h:84
+asset::TypeInfo::current_version	variable	asset	asset-typeinfo-current-version	asset.md	engine/asset/resource_type.h:85
+asset::TypeInfo::name	variable	asset	asset-typeinfo-name	asset.md	engine/asset/resource_type.h:86
+asset::TypeRegistry	class	asset	asset-typeregistry	asset.md	engine/asset/resource_type.h:95
+asset::TypeRegistry::TypeRegistry()	function	asset	asset-typeregistry-typeregistry	asset.md	engine/asset/resource_type.h:99
+asset::TypeRegistry::Register(ResourceType,u32,const char*)	function	asset	asset-typeregistry-register-resourcetype-u32-const-char-star	asset.md	engine/asset/resource_type.h:105
+asset::TypeRegistry::Find(ResourceType,TypeInfo*) const	function	asset	asset-typeregistry-find-resourcetype-typeinfo-star-const	asset.md	engine/asset/resource_type.h:113
+asset::TypeRegistry::Size() const	function	asset	asset-typeregistry-size-const	asset.md	engine/asset/resource_type.h:117
 asset::kMaxSkeletonJoints	variable	asset	asset-kmaxskeletonjoints	asset.md	engine/asset/skeleton.h:34
 asset::kMaxJointNameBytes	variable	asset	asset-kmaxjointnamebytes	asset.md	engine/asset/skeleton.h:36
 asset::kNoParent	variable	asset	asset-knoparent	asset.md	engine/asset/skeleton.h:38

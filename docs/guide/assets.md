@@ -1,6 +1,6 @@
 # Assets and resources: identity, blobs, backends and the resource manager
 
-Status: Phase 22. Built: the module skeleton and the container version constant (Day 313); resource ids, paths, types, the content hash, the blob container and the id <-> path table (Day 314). The backend interface, the filesystem and host-memory backends, the load buffer pool and mounts (Day 315). The pak format, its writer, reader and backend, and `asset_mint pack` (Day 316).
+Status: Phase 22. Built: animation clips, their source form and minter (Day 320); the module skeleton and the container version constant (Day 313); resource ids, paths, types, the content hash, the blob container and the id <-> path table (Day 314). The backend interface, the filesystem and host-memory backends, the load buffer pool and mounts (Day 315). The pak format, its writer, reader and backend, and `asset_mint pack` (Day 316).
 
 **Audience:** engine and game programmers who load meshes, textures, materials and levels. Design, spikes and the benchmark pass conditions:
 `docs/superpowers/specs/2026-11-13-asset-pipeline-design.md`.
@@ -265,4 +265,82 @@ int main() {
 ```
 ```output
 3 vertices of 24 bytes, 3 indices of 2 bytes, 4 attributes
+```
+
+## Animation clips
+
+A clip (`asset::types::kAnimation`, `ANIM`) is the keyed motion of some of a skeleton's joints. It depends on its skeleton (the role `kClipRoleSkeleton`) and records the skeleton's id, hash and joint count: `asset::ClipView::Bind` refuses a skeleton that differs in any of them, so a clip is never silently applied to another rig. Retargeting is not supported.
+
+The minter shrinks the clip offline and the loader does no conversion. Per joint there is a track with three channels (translation, rotation, scale). A channel whose keys are all equal is *constant*: its value sits in the track table and it has no keys. A keyed channel holds at least 2 keys, as `u16` times (ticks of 1 / sample rate when every key lies on that grid, so keys sampled at the authoring rate are exact; otherwise the duration mapped to 0..65535, a step that a long clip of fast motion may not be able to afford: the minter's measurement then refuses it) and 6-byte values: rotations as *smallest three* (the largest component is dropped, its index takes 2 bits, the other three are stored as 14/16/16-bit signed fixed point in +/-1/sqrt(2)), translations and scales as `UNorm16 x3` between a per-channel minimum and extent. Keys are reduced by a deterministic greedy split (the dropped key with the largest error is kept, the lowest index on a tie) until every dropped key is within 60% of the rotation bound or 50% of the translation bound (a fraction of the channel's range); the rest of the budget is left to quantization.
+
+The bounds are `ClipLimits` (settings `assets.anim_rotation_error_degrees`, default 0.05, and `assets.anim_translation_error`, default 1e-4 of the channel range, with a floor of 1e-3 units). The minter measures the real error of the finished blob against the source keys, at every source key and at 8 points inside each segment, writes the measured values to the header (`ClipView::RotationError`, `TranslationError`) and refuses the clip with `LimitExceeded` when a bound is missed.
+
+`ClipView::Open` checks the sizes, counts, joint order, key times, offsets and every constant value once; `Sample(track, time)` then reads the keys in place (time clamped to the duration; rotations interpolate with a normalized lerp on the shorter arc). The events are a time, a name hash (`JointNameHash`) and a payload, in time order.
+
+The source form `.anim.src` (`asset_mint mint-clip SOURCE OUTPUT --skeleton=SKELETON.blob [--target=N]`):
+
+```
+id 00000000000000cc
+skeleton 00000000000000bb
+duration 2
+rate 30
+flags loop
+bounds -1 -1 -1 1 3 1
+track arm
+r 0 0 0 0 1
+r 2 0 0 0.3826834 0.9238795
+track root
+t 0 0 0 0
+t 2 1 0 0
+event 0.5 footstep 7
+```
+
+`track` names a joint; `t`, `r` and `s` add translation, rotation (a unit quaternion x y z w) and scale keys to the current track, times strictly increasing within [0, duration]. Errors name the line.
+
+```cpp compile run standalone
+#include "asset/clip.h"
+#include "asset/skeleton.h"
+#include "os/console.h"
+
+using namespace engine_placeholder;
+
+int main() {
+    asset::TypeRegistry types;
+    asset::SkeletonJoint joint;
+    MemSet(&joint, 0, sizeof(joint));
+    joint.name[0] = 'a';
+    joint.parent = asset::kNoParent;
+    joint.rotation = {{0, 0, 0, 1}};
+    joint.scale = {{1, 1, 1}};
+    asset::ComputeInverseBindMatrices(Span<asset::SkeletonJoint>(&joint, 1));
+    Vector<byte> skeleton_blob;
+    if (asset::BuildSkeletonBlob(types, asset::ResourceId::FromValue(5), Span<const asset::SkeletonJoint>(&joint, 1),
+                                 true, &skeleton_blob).Failed()) return 1;
+    asset::SkeletonView skeleton;
+    if (skeleton.Open(ByteSpan(skeleton_blob.Data(), skeleton_blob.Size()), types).Failed()) return 1;
+
+    asset::ClipTrackSource track;
+    track.joint = 0;
+    asset::ClipKey3 k0;
+    k0.time = 0;
+    asset::ClipKey3 k1;
+    k1.time = 1;
+    k1.value = {{1, 0, 0}};
+    track.translation.Push(k0);
+    track.translation.Push(k1);
+    asset::ClipBuildInput input;
+    input.duration = 1;
+    input.skeleton = skeleton.Id();
+    input.skeleton_hash = skeleton.Hash();
+    input.joint_count = skeleton.JointCount();
+    input.tracks = Span<const asset::ClipTrackSource>(&track, 1);
+    Vector<byte> blob;
+    if (asset::BuildClipBlob(types, asset::ResourceId::FromValue(6), input, &blob).Failed()) return 1;
+    asset::ClipView view;
+    if (view.Open(ByteSpan(blob.Data(), blob.Size()), types).Failed()) return 1;
+    if (view.Bind(skeleton).Failed()) return 1;
+    const asset::ClipSample half = view.Sample(0, 0.5f);
+    os::Print("x at 0.5 s: %.3f\n", half.translation[0]);
+    return half.translation[0] > 0.49f && half.translation[0] < 0.51f ? 0 : 1;
+}
 ```

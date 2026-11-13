@@ -68,6 +68,8 @@ inline constexpr ResourceType kTexture = ResourceType::FromChars('T', 'E', 'X', 
 inline constexpr ResourceType kMaterial = ResourceType::FromChars('M', 'A', 'T', 'L');
 /// A level (Day 327).
 inline constexpr ResourceType kLevel = ResourceType::FromChars('L', 'E', 'V', 'L');
+/// An animation clip: per-joint keyframe tracks and events for one skeleton (Day 320).
+inline constexpr ResourceType kAnimation = ResourceType::FromChars('A', 'N', 'I', 'M');
 /// A skeleton: the joint hierarchy, bind pose and inverse bind matrices (Day 318).
 inline constexpr ResourceType kSkeleton = ResourceType::FromChars('S', 'K', 'E', 'L');
 /// The id <-> path table (a blob that is not itself a resource: its header id may be null).

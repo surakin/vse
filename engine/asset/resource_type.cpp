@@ -20,6 +20,7 @@ TypeRegistry::TypeRegistry()
     types_.Push(TypeInfo{types::kMaterial, 1, "material"});
     types_.Push(TypeInfo{types::kLevel, 1, "level"});
     types_.Push(TypeInfo{types::kSkeleton, 1, "skeleton"});
+    types_.Push(TypeInfo{types::kAnimation, 1, "animation"});
     types_.Push(TypeInfo{types::kNames, 1, "names"});
 }
 

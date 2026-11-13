@@ -3,6 +3,7 @@
 //   asset_mint pack DIRECTORY OUTPUT.pak [--target=N] [--no-names]
 //   asset_mint mint-skeleton SOURCE.skel.src OUTPUT.blob [--target=N]
 //   asset_mint mint-mesh SOURCE.mesh.src OUTPUT.blob [--skeleton=SKELETON.blob] [--target=N]
+//   asset_mint mint-clip SOURCE.anim.src OUTPUT.blob --skeleton=SKELETON.blob [--target=N]
 //
 // packs the blobs of a directory (found by their own headers; the path is the file's location) into one pak for target
 // N (default 0, the development target). It refuses an incomplete closure and lists each missing (blob, dependency)
@@ -14,6 +15,7 @@
 #include "io/file.h"
 #include "io/file_system.h"
 #include "io/path.h"
+#include "clip_source.h"
 #include "mesh_source.h"
 #include "skeleton_source.h"
 #include "os/console.h"
@@ -28,7 +30,8 @@ int Usage()
 {
     os::PrintError("usage: asset_mint pack DIRECTORY OUTPUT.pak [--target=N] [--no-names]\n"
                    "       asset_mint mint-skeleton SOURCE.skel.src OUTPUT.blob [--target=N]\n"
-                   "       asset_mint mint-mesh SOURCE.mesh.src OUTPUT.blob [--skeleton=SKELETON.blob] [--target=N]\n");
+                   "       asset_mint mint-mesh SOURCE.mesh.src OUTPUT.blob [--skeleton=SKELETON.blob] [--target=N]\n"
+                   "       asset_mint mint-clip SOURCE.anim.src OUTPUT.blob --skeleton=SKELETON.blob [--target=N]\n");
     return 64;
 }
 
@@ -345,6 +348,101 @@ int MintMeshCommand(int argc, char** argv)
     return 0;
 }
 
+// Mints a clip source into a blob (Day 320). The clip's joints are named, so the skeleton's blob is required.
+int MintClipCommand(int argc, char** argv)
+{
+    if (argc < 5)
+    {
+        return Usage();
+    }
+    u32 target = 0;
+    const char* skeleton_path = nullptr;
+    for (int i = 4; i < argc; ++i)
+    {
+        if (StartsWith(argv[i], "--target="))
+        {
+            if (!ParseNumber(argv[i] + 9, &target))
+            {
+                return Usage();
+            }
+        }
+        else if (StartsWith(argv[i], "--skeleton="))
+        {
+            skeleton_path = argv[i] + 11;
+        }
+        else
+        {
+            return Usage();
+        }
+    }
+    if (skeleton_path == nullptr)
+    {
+        return Usage();
+    }
+    io::Path output;
+    if (!io::Path::Parse(StringView(argv[3], CStrLength(argv[3])), io::NativePathStyle(), &output))
+    {
+        return Usage();
+    }
+    Vector<u8> text;
+    Vector<u8> skeleton_bytes;
+    if (!ReadWholeFile(argv[2], u64{1} << 28, &text) || !ReadWholeFile(skeleton_path, u64{1} << 24, &skeleton_bytes))
+    {
+        os::PrintError("asset_mint: the source or the skeleton blob could not be read\n");
+        return 1;
+    }
+    TypeRegistry types;
+    SkeletonView skeleton;
+    const Status opened = skeleton.Open(ByteSpan(skeleton_bytes.Data(), skeleton_bytes.Size()), types);
+    if (opened.Failed())
+    {
+        os::PrintError("asset_mint: the skeleton blob: %s: %s\n", ErrorCodeName(opened.Code()), opened.Message());
+        return 1;
+    }
+    const ClipLimits
+        limits;  // the defaults equal the `assets.anim_*` settings' defaults (Day 336 wires the tool to them)
+    Vector<byte> blob;
+    ClipSourceError error;
+    const Status status = MintClip(StringView(reinterpret_cast<const char*>(text.Data()), text.Size()), skeleton, types,
+                                   limits, &blob, &error, target);
+    if (status.Failed())
+    {
+        if (error.line != 0)
+        {
+            os::PrintError("asset_mint: %s:%u: %s\n", argv[2], static_cast<unsigned>(error.line), error.message.Data());
+        }
+        else
+        {
+            os::PrintError("asset_mint: %s: %s\n", argv[2], error.message.Data());
+        }
+        return 1;
+    }
+    io::FilePtr file;
+    if (io::File::Open(output, io::OpenMode::Write, io::kOpenNone, &file).Failed())
+    {
+        os::PrintError("asset_mint: the output file could not be created\n");
+        return 1;
+    }
+    const io::Status written = file->Write(blob.Data(), blob.Size(), 0);
+    if (written.Failed() || file->Close().Failed())
+    {
+        file->Close();
+        io::Remove(output);
+        os::PrintError("asset_mint: writing the output failed\n");
+        return 1;
+    }
+    ClipView minted;
+    if (minted.Open(ByteSpan(blob.Data(), blob.Size()), types).Ok())
+    {
+        os::Print("minted a clip of %u bytes (measured error: rotation %.4f degrees, translation %.2e of the range)\n",
+                  static_cast<unsigned>(blob.Size()), static_cast<double>(minted.RotationError()),
+                  static_cast<double>(minted.TranslationError()));
+        return 0;
+    }
+    os::Print("minted a clip of %u bytes\n", static_cast<unsigned>(blob.Size()));
+    return 0;
+}
+
 }  // namespace
 
 int main(int argc, char** argv)
@@ -356,6 +454,10 @@ int main(int argc, char** argv)
     if (argc >= 2 && StringView(argv[1], CStrLength(argv[1])) == StringView("mint-mesh"))
     {
         return MintMeshCommand(argc, argv);
+    }
+    if (argc >= 2 && StringView(argv[1], CStrLength(argv[1])) == StringView("mint-clip"))
+    {
+        return MintClipCommand(argc, argv);
     }
     if (argc >= 2 && StringView(argv[1], CStrLength(argv[1])) == StringView("mint-skeleton"))
     {
