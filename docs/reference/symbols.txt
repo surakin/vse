@@ -4430,6 +4430,135 @@ net::UdpTransport::Counters() const	function	net	net-udptransport-counters-const
 net::UdpTransport::HandshakeLimiterCounters() const	function	net	net-udptransport-handshakelimitercounters-const	net.md	engine/net/udp_transport.h:232
 asset::kContainerVersion	variable	asset	asset-kcontainerversion	asset.md	engine/asset/asset_module.h:16
 asset::CurrentContainerVersion()	function	asset	asset-currentcontainerversion	asset.md	engine/asset/asset_module.h:20
+asset::kBlobHeaderBytes	variable	asset	asset-kblobheaderbytes	asset.md	engine/asset/blob.h:40
+asset::kSectionEntryBytes	variable	asset	asset-ksectionentrybytes	asset.md	engine/asset/blob.h:42
+asset::kSectionAlignment	variable	asset	asset-ksectionalignment	asset.md	engine/asset/blob.h:44
+asset::kPageAlignedSectionBytes	variable	asset	asset-kpagealignedsectionbytes	asset.md	engine/asset/blob.h:46
+asset::kPageAlignment	variable	asset	asset-kpagealignment	asset.md	engine/asset/blob.h:48
+asset::kMaxUserSections	variable	asset	asset-kmaxusersections	asset.md	engine/asset/blob.h:50
+asset::kMaxDependencies	variable	asset	asset-kmaxdependencies	asset.md	engine/asset/blob.h:52
+asset::kSectionDependencies	variable	asset	asset-ksectiondependencies	asset.md	engine/asset/blob.h:54
+asset::kFirstUserSection	variable	asset	asset-kfirstusersection	asset.md	engine/asset/blob.h:56
+asset::kMaxBlobBytes	variable	asset	asset-kmaxblobbytes	asset.md	engine/asset/blob.h:59
+asset::kDependencyRecordBytes	variable	asset	asset-kdependencyrecordbytes	asset.md	engine/asset/blob.h:61
+asset::Dependency	struct	asset	asset-dependency	asset.md	engine/asset/blob.h:67
+asset::Dependency::id	variable	asset	asset-dependency-id	asset.md	engine/asset/blob.h:69
+asset::Dependency::type	variable	asset	asset-dependency-type	asset.md	engine/asset/blob.h:70
+asset::Dependency::type_version	variable	asset	asset-dependency-type-version	asset.md	engine/asset/blob.h:71
+asset::Dependency::role	variable	asset	asset-dependency-role	asset.md	engine/asset/blob.h:72
+asset::BlobWriter	class	asset	asset-blobwriter	asset.md	engine/asset/blob.h:79
+asset::BlobWriter::BlobWriter(const TypeRegistry&,ResourceType,ResourceId,u32)	function	asset	asset-blobwriter-blobwriter-const-typeregistry-amp-resourcetype-resourceid-u32	asset.md	engine/asset/blob.h:86
+asset::BlobWriter::AddDependency(const Dependency&)	function	asset	asset-blobwriter-adddependency-const-dependency-amp	asset.md	engine/asset/blob.h:90
+asset::BlobWriter::AddSection(u32,ByteSpan)	function	asset	asset-blobwriter-addsection-u32-bytespan	asset.md	engine/asset/blob.h:97
+asset::BlobWriter::Finish(Vector<byte>*) const	function	asset	asset-blobwriter-finish-vector-lt-byte-gt-star-const	asset.md	engine/asset/blob.h:107
+asset::BlobReader	class	asset	asset-blobreader	asset.md	engine/asset/blob.h:130
+asset::BlobReader::BlobReader()	function	asset	asset-blobreader-blobreader	asset.md	engine/asset/blob.h:134
+asset::BlobReader::Open(ByteSpan,const TypeRegistry&)	function	asset	asset-blobreader-open-bytespan-const-typeregistry-amp	asset.md	engine/asset/blob.h:143
+asset::BlobReader::Type() const	function	asset	asset-blobreader-type-const	asset.md	engine/asset/blob.h:147
+asset::BlobReader::Id() const	function	asset	asset-blobreader-id-const	asset.md	engine/asset/blob.h:150
+asset::BlobReader::TypeVersion() const	function	asset	asset-blobreader-typeversion-const	asset.md	engine/asset/blob.h:153
+asset::BlobReader::Target() const	function	asset	asset-blobreader-target-const	asset.md	engine/asset/blob.h:156
+asset::BlobReader::Flags() const	function	asset	asset-blobreader-flags-const	asset.md	engine/asset/blob.h:159
+asset::BlobReader::RecordedHash() const	function	asset	asset-blobreader-recordedhash-const	asset.md	engine/asset/blob.h:162
+asset::BlobReader::Size() const	function	asset	asset-blobreader-size-const	asset.md	engine/asset/blob.h:165
+asset::BlobReader::SectionCount() const	function	asset	asset-blobreader-sectioncount-const	asset.md	engine/asset/blob.h:169
+asset::BlobReader::FindSection(u32,ByteSpan*) const	function	asset	asset-blobreader-findsection-u32-bytespan-star-const	asset.md	engine/asset/blob.h:176
+asset::BlobReader::DependencyCount() const	function	asset	asset-blobreader-dependencycount-const	asset.md	engine/asset/blob.h:180
+asset::BlobReader::DependencyAt(usize) const	function	asset	asset-blobreader-dependencyat-usize-const	asset.md	engine/asset/blob.h:184
+asset::BlobReader::Verify() const	function	asset	asset-blobreader-verify-const	asset.md	engine/asset/blob.h:189
+asset::ContentHash	struct	asset	asset-contenthash	asset.md	engine/asset/content_hash.h:17
+asset::ContentHash::bytes	variable	asset	asset-contenthash-bytes	asset.md	engine/asset/content_hash.h:19
+asset::ContentHash::IsZero() const	function	asset	asset-contenthash-iszero-const	asset.md	engine/asset/content_hash.h:23
+asset::FormatContentHash(const ContentHash&,char(&)[33])	function	asset	asset-formatcontenthash-const-contenthash-amp-char-amp-33	asset.md	engine/asset/content_hash.h:35
+asset::ContentHasher	class	asset	asset-contenthasher	asset.md	engine/asset/content_hash.h:41
+asset::ContentHasher::ContentHasher()	function	asset	asset-contenthasher-contenthasher	asset.md	engine/asset/content_hash.h:45
+asset::ContentHasher::Update(ByteSpan)	function	asset	asset-contenthasher-update-bytespan	asset.md	engine/asset/content_hash.h:50
+asset::ContentHasher::Finish()	function	asset	asset-contenthasher-finish	asset.md	engine/asset/content_hash.h:55
+asset::ContentHasher::Reset()	function	asset	asset-contenthasher-reset	asset.md	engine/asset/content_hash.h:59
+asset::HashBytes(ByteSpan)	function	asset	asset-hashbytes-bytespan	asset.md	engine/asset/content_hash.h:74
+asset::ResourceId	class	asset	asset-resourceid	asset.md	engine/asset/resource_id.h:19
+asset::ResourceId::ResourceId()	function	asset	asset-resourceid-resourceid	asset.md	engine/asset/resource_id.h:23
+asset::ResourceId::None()	function	asset	asset-resourceid-none	asset.md	engine/asset/resource_id.h:27
+asset::ResourceId::FromValue(u64)	function	asset	asset-resourceid-fromvalue-u64	asset.md	engine/asset/resource_id.h:30
+asset::ResourceId::Value() const	function	asset	asset-resourceid-value-const	asset.md	engine/asset/resource_id.h:39
+asset::ResourceId::IsNone() const	function	asset	asset-resourceid-isnone-const	asset.md	engine/asset/resource_id.h:42
+asset::GenerateResourceId()	function	asset	asset-generateresourceid	asset.md	engine/asset/resource_id.h:63
+asset::FormatResourceId(ResourceId,char(&)[17])	function	asset	asset-formatresourceid-resourceid-char-amp-17	asset.md	engine/asset/resource_id.h:68
+asset::ParseResourceId(StringView,ResourceId*)	function	asset	asset-parseresourceid-stringview-resourceid-star	asset.md	engine/asset/resource_id.h:75
+asset::kMaxPathBytes	variable	asset	asset-kmaxpathbytes	asset.md	engine/asset/resource_id.h:78
+asset::kMaxPathSegmentBytes	variable	asset	asset-kmaxpathsegmentbytes	asset.md	engine/asset/resource_id.h:80
+asset::NormalizePath(StringView,String<HeapAllocator>*)	function	asset	asset-normalizepath-stringview-string-lt-heapallocator-gt-star	asset.md	engine/asset/resource_id.h:92
+asset::kMaxTableEntries	variable	asset	asset-kmaxtableentries	asset.md	engine/asset/resource_table.h:23
+asset::TableEntryView	struct	asset	asset-tableentryview	asset.md	engine/asset/resource_table.h:28
+asset::TableEntryView::path	variable	asset	asset-tableentryview-path	asset.md	engine/asset/resource_table.h:30
+asset::TableEntryView::id	variable	asset	asset-tableentryview-id	asset.md	engine/asset/resource_table.h:31
+asset::TableEntryView::type	variable	asset	asset-tableentryview-type	asset.md	engine/asset/resource_table.h:32
+asset::ShadowedEntry	struct	asset	asset-shadowedentry	asset.md	engine/asset/resource_table.h:38
+asset::ShadowedEntry::path	variable	asset	asset-shadowedentry-path	asset.md	engine/asset/resource_table.h:40
+asset::ShadowedEntry::shadowed_id	variable	asset	asset-shadowedentry-shadowed-id	asset.md	engine/asset/resource_table.h:41
+asset::ShadowedEntry::winning_id	variable	asset	asset-shadowedentry-winning-id	asset.md	engine/asset/resource_table.h:42
+asset::ResourceTable	class	asset	asset-resourcetable	asset.md	engine/asset/resource_table.h:50
+asset::ResourceTable::ResourceTable()	function	asset	asset-resourcetable-resourcetable	asset.md	engine/asset/resource_table.h:54
+asset::ResourceTable::Add(StringView,ResourceId,ResourceType)	function	asset	asset-resourcetable-add-stringview-resourceid-resourcetype	asset.md	engine/asset/resource_table.h:60
+asset::ResourceTable::Remove(StringView)	function	asset	asset-resourcetable-remove-stringview	asset.md	engine/asset/resource_table.h:67
+asset::ResourceTable::Resolve(StringView,ResourceId*) const	function	asset	asset-resourcetable-resolve-stringview-resourceid-star-const	asset.md	engine/asset/resource_table.h:75
+asset::ResourceTable::TypeOf(ResourceId,ResourceType*) const	function	asset	asset-resourcetable-typeof-resourceid-resourcetype-star-const	asset.md	engine/asset/resource_table.h:83
+asset::ResourceTable::PathsOf(ResourceId,Vector<StringView>*) const	function	asset	asset-resourcetable-pathsof-resourceid-vector-lt-stringview-gt-star-const	asset.md	engine/asset/resource_table.h:90
+asset::ResourceTable::ListPrefix(StringView,Vector<TableEntryView>*) const	function	asset	asset-resourcetable-listprefix-stringview-vector-lt-tableentryview-gt-star-const	asset.md	engine/asset/resource_table.h:97
+asset::ResourceTable::Size() const	function	asset	asset-resourcetable-size-const	asset.md	engine/asset/resource_table.h:101
+asset::ResourceTable::At(usize) const	function	asset	asset-resourcetable-at-usize-const	asset.md	engine/asset/resource_table.h:105
+asset::ResourceTable::Merge(const ResourceTable&,Vector<ShadowedEntry>*)	function	asset	asset-resourcetable-merge-const-resourcetable-amp-vector-lt-shadowedentry-gt-star	asset.md	engine/asset/resource_table.h:116
+asset::ResourceTable::WriteNamesBlob(const TypeRegistry&,Vector<byte>*) const	function	asset	asset-resourcetable-writenamesblob-const-typeregistry-amp-vector-lt-byte-gt-star-const	asset.md	engine/asset/resource_table.h:123
+asset::ResourceTable::ReadNamesBlob(const BlobReader&)	function	asset	asset-resourcetable-readnamesblob-const-blobreader-amp	asset.md	engine/asset/resource_table.h:129
+asset::ResourceType	class	asset	asset-resourcetype	asset.md	engine/asset/resource_type.h:16
+asset::ResourceType::ResourceType()	function	asset	asset-resourcetype-resourcetype	asset.md	engine/asset/resource_type.h:20
+asset::ResourceType::FromTag(u32)	function	asset	asset-resourcetype-fromtag-u32	asset.md	engine/asset/resource_type.h:24
+asset::ResourceType::FromChars(char,char,char,char)	function	asset	asset-resourcetype-fromchars-char-char-char-char	asset.md	engine/asset/resource_type.h:32
+asset::ResourceType::Tag() const	function	asset	asset-resourcetype-tag-const	asset.md	engine/asset/resource_type.h:40
+asset::ResourceType::IsNone() const	function	asset	asset-resourcetype-isnone-const	asset.md	engine/asset/resource_type.h:43
+asset::ResourceType::Spell(char(&)[5]) const	function	asset	asset-resourcetype-spell-char-amp-5-const	asset.md	engine/asset/resource_type.h:47
+asset::types::kMesh	variable	asset	asset-types-kmesh	asset.md	engine/asset/resource_type.h:64
+asset::types::kTexture	variable	asset	asset-types-ktexture	asset.md	engine/asset/resource_type.h:66
+asset::types::kMaterial	variable	asset	asset-types-kmaterial	asset.md	engine/asset/resource_type.h:68
+asset::types::kLevel	variable	asset	asset-types-klevel	asset.md	engine/asset/resource_type.h:70
+asset::types::kNames	variable	asset	asset-types-knames	asset.md	engine/asset/resource_type.h:72
+asset::TypeInfo	struct	asset	asset-typeinfo	asset.md	engine/asset/resource_type.h:78
+asset::TypeInfo::type	variable	asset	asset-typeinfo-type	asset.md	engine/asset/resource_type.h:80
+asset::TypeInfo::current_version	variable	asset	asset-typeinfo-current-version	asset.md	engine/asset/resource_type.h:81
+asset::TypeInfo::name	variable	asset	asset-typeinfo-name	asset.md	engine/asset/resource_type.h:82
+asset::TypeRegistry	class	asset	asset-typeregistry	asset.md	engine/asset/resource_type.h:91
+asset::TypeRegistry::TypeRegistry()	function	asset	asset-typeregistry-typeregistry	asset.md	engine/asset/resource_type.h:95
+asset::TypeRegistry::Register(ResourceType,u32,const char*)	function	asset	asset-typeregistry-register-resourcetype-u32-const-char-star	asset.md	engine/asset/resource_type.h:101
+asset::TypeRegistry::Find(ResourceType,TypeInfo*) const	function	asset	asset-typeregistry-find-resourcetype-typeinfo-star-const	asset.md	engine/asset/resource_type.h:109
+asset::TypeRegistry::Size() const	function	asset	asset-typeregistry-size-const	asset.md	engine/asset/resource_type.h:113
+asset::ErrorCode	enum	asset	asset-errorcode	asset.md	engine/asset/status.h:13
+asset::ErrorCode::Ok	enumerator	asset	asset-errorcode-ok	asset.md	engine/asset/status.h:15
+asset::ErrorCode::MissingDependency	enumerator	asset	asset-errorcode-missingdependency	asset.md	engine/asset/status.h:16
+asset::ErrorCode::DependencyTypeMismatch	enumerator	asset	asset-errorcode-dependencytypemismatch	asset.md	engine/asset/status.h:17
+asset::ErrorCode::DependencyCycle	enumerator	asset	asset-errorcode-dependencycycle	asset.md	engine/asset/status.h:18
+asset::ErrorCode::DuplicateId	enumerator	asset	asset-errorcode-duplicateid	asset.md	engine/asset/status.h:19
+asset::ErrorCode::NotFound	enumerator	asset	asset-errorcode-notfound	asset.md	engine/asset/status.h:20
+asset::ErrorCode::Corrupt	enumerator	asset	asset-errorcode-corrupt	asset.md	engine/asset/status.h:21
+asset::ErrorCode::UnsupportedVersion	enumerator	asset	asset-errorcode-unsupportedversion	asset.md	engine/asset/status.h:23
+asset::ErrorCode::TypeMismatch	enumerator	asset	asset-errorcode-typemismatch	asset.md	engine/asset/status.h:25
+asset::ErrorCode::TooLarge	enumerator	asset	asset-errorcode-toolarge	asset.md	engine/asset/status.h:26
+asset::ErrorCode::Io	enumerator	asset	asset-errorcode-io	asset.md	engine/asset/status.h:27
+asset::ErrorCode::Cancelled	enumerator	asset	asset-errorcode-cancelled	asset.md	engine/asset/status.h:28
+asset::ErrorCode::Offline	enumerator	asset	asset-errorcode-offline	asset.md	engine/asset/status.h:29
+asset::ErrorCode::LimitExceeded	enumerator	asset	asset-errorcode-limitexceeded	asset.md	engine/asset/status.h:30
+asset::ErrorCode::WrongTarget	enumerator	asset	asset-errorcode-wrongtarget	asset.md	engine/asset/status.h:31
+asset::ErrorCode::Invalid	enumerator	asset	asset-errorcode-invalid	asset.md	engine/asset/status.h:33
+asset::ErrorCode::Other	enumerator	asset	asset-errorcode-other	asset.md	engine/asset/status.h:34
+asset::ErrorCodeName(ErrorCode)	function	asset	asset-errorcodename-errorcode	asset.md	engine/asset/status.h:41
+asset::Status	class	asset	asset-status	asset.md	engine/asset/status.h:47
+asset::Status::Status()	function	asset	asset-status-status	asset.md	engine/asset/status.h:51
+asset::Status::Success()	function	asset	asset-status-success	asset.md	engine/asset/status.h:54
+asset::Status::Make(ErrorCode,const char*)	function	asset	asset-status-make-errorcode-const-char-star	asset.md	engine/asset/status.h:58
+asset::Status::Ok() const	function	asset	asset-status-ok-const	asset.md	engine/asset/status.h:68
+asset::Status::Failed() const	function	asset	asset-status-failed-const	asset.md	engine/asset/status.h:71
+asset::Status::Is(ErrorCode) const	function	asset	asset-status-is-errorcode-const	asset.md	engine/asset/status.h:74
+asset::Status::Code() const	function	asset	asset-status-code-const	asset.md	engine/asset/status.h:77
+asset::Status::Message() const	function	asset	asset-status-message-const	asset.md	engine/asset/status.h:82
 database::Feature	enum	database	database-feature	database.md	engine/database/database.h:22
 database::Feature::Savepoints	enumerator	database	database-feature-savepoints	database.md	engine/database/database.h:24
 database::Feature::WithoutRowId	enumerator	database	database-feature-withoutrowid	database.md	engine/database/database.h:25

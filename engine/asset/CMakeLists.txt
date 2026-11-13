@@ -3,6 +3,12 @@
 # only programs. Headers are included as "asset/<name>.h", rooted at engine/. Built plain, ASan and TSan from one source list.
 set(ASSET_SOURCES
   asset_module.cpp  # Day 313
+  status.cpp  # Day 314
+  resource_type.cpp  # Day 314
+  resource_id.cpp  # Day 314
+  content_hash.cpp  # Day 314
+  blob.cpp  # Day 314
+  resource_table.cpp  # Day 314
 )
 set(ASSET_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

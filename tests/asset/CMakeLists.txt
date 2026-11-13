@@ -2,6 +2,11 @@
 # the library under test is built without. One executable per sanitizer flavor.
 set(ASSET_TEST_SOURCES
   module_test.cpp  # Day 313
+  hash_test.cpp    # Day 314
+  id_test.cpp      # Day 314
+  blob_test.cpp    # Day 314
+  table_test.cpp   # Day 314
+  support.h        # Day 314
 )
 
 find_package(Threads REQUIRED)
