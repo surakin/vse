@@ -183,11 +183,11 @@ TEST_CASE("The packed vertex formats have the sizes, widths and alignments of th
         u32 alignment;
     };
     const Row rows[] = {
-        {VertexFormat::Float16x2, 4, 2, false, 2}, {VertexFormat::Float16x4, 8, 4, false, 2},
-        {VertexFormat::UNorm16x2, 4, 2, false, 2}, {VertexFormat::UNorm16x4, 8, 4, false, 2},
-        {VertexFormat::SNorm16x2, 4, 2, false, 2}, {VertexFormat::SNorm16x4, 8, 4, false, 2},
-        {VertexFormat::SNorm8x4, 4, 4, false, 1},  {VertexFormat::UNorm8x4, 4, 4, false, 1},
-        {VertexFormat::UInt8x4, 4, 4, true, 1},    {VertexFormat::UInt16x4, 8, 4, true, 2},
+        {VertexFormat::Float16x2, 4, 2, false, 4}, {VertexFormat::Float16x4, 8, 4, false, 4},
+        {VertexFormat::UNorm16x2, 4, 2, false, 4}, {VertexFormat::UNorm16x4, 8, 4, false, 4},
+        {VertexFormat::SNorm16x2, 4, 2, false, 4}, {VertexFormat::SNorm16x4, 8, 4, false, 4},
+        {VertexFormat::SNorm8x4, 4, 4, false, 4},  {VertexFormat::UNorm8x4, 4, 4, false, 4},
+        {VertexFormat::UInt8x4, 4, 4, true, 4},    {VertexFormat::UInt16x4, 8, 4, true, 4},
         {VertexFormat::Float3, 12, 3, false, 4},   {VertexFormat::UInt2, 8, 2, true, 4},
     };
     for (const Row& r : rows)
@@ -661,9 +661,12 @@ TEST_CASE("GraphicsPipelineDesc validation", "[rhi][desc]")
         CHECK(Rejects(d.Validate(), "GraphicsPipelineDesc: vertex attribute extends"));
         attrs[1].offset = 12;
 
-        attrs[1].format = VertexFormat::UNorm16x4;  // 8 bytes at offset 12: fits the stride, and 12 is 2-aligned
+        attrs[1].format = VertexFormat::UNorm16x4;  // 8 bytes at offset 12: fits the stride, and 12 is 4-aligned
         CHECK(d.Validate() == nullptr);
-        attrs[1].offset = 13;  // not a multiple of the 16-bit component size
+        attrs[1].offset = 14;  // a multiple of the 16-bit component size, not of 4: D3D12 refuses it
+        CHECK(Rejects(d.Validate(), "GraphicsPipelineDesc: vertex attribute offset is not aligned"));
+        attrs[1].format = VertexFormat::SNorm8x4;
+        attrs[1].offset = 13;  // an 8-bit format is held to 4 bytes too
         CHECK(Rejects(d.Validate(), "GraphicsPipelineDesc: vertex attribute offset is not aligned"));
         attrs[1].format = VertexFormat::Float3;
         attrs[1].offset = 12;

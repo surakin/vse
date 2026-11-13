@@ -402,7 +402,11 @@ constexpr bool VertexFormatIsInteger(VertexFormat format)
            format == VertexFormat::UInt4 || format == VertexFormat::UInt8x4 || format == VertexFormat::UInt16x4;
 }
 
-/// Returns the byte alignment an attribute of `format` needs inside its vertex (the size of one component: 1, 2 or 4).
+/// Returns the byte alignment an attribute of `format` needs inside its vertex: the smaller of its size and 4, which is
+/// 4 for every format today. Direct3D 12 refuses an input layout whose attribute offset is not a multiple of that (a
+/// 16-bit or 8-bit format aligned only to its component size fails `CreateInputLayout`, measured on the Windows PC,
+/// Phase 22 Day 317), and Metal documents a multiple of 4 for an attribute offset (not yet run on the Mac), so the RHI
+/// demands it on every backend.
 ///
 /// - Param format: a value below `VertexFormat::Count`; any other value returns 0.
 constexpr u32 VertexFormatAlignment(VertexFormat format)
@@ -411,14 +415,14 @@ constexpr u32 VertexFormatAlignment(VertexFormat format)
     {
     case VertexFormat::UNorm8x4:
     case VertexFormat::SNorm8x4:
-    case VertexFormat::UInt8x4: return 1;
+    case VertexFormat::UInt8x4:
     case VertexFormat::Float16x2:
     case VertexFormat::Float16x4:
     case VertexFormat::UNorm16x2:
     case VertexFormat::UNorm16x4:
     case VertexFormat::SNorm16x2:
     case VertexFormat::SNorm16x4:
-    case VertexFormat::UInt16x4: return 2;
+    case VertexFormat::UInt16x4:
     case VertexFormat::Float1:
     case VertexFormat::Float2:
     case VertexFormat::Float3:

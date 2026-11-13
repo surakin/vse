@@ -491,7 +491,7 @@ const char* GraphicsPipelineDesc::Validate() const
         }
         if (a.offset % VertexFormatAlignment(a.format) != 0)
         {
-            return "GraphicsPipelineDesc: vertex attribute offset is not aligned to its format's component size";
+            return "GraphicsPipelineDesc: vertex attribute offset is not aligned to 4 bytes (VertexFormatAlignment)";
         }
         for (usize j = 0; j < i; ++j)
         {

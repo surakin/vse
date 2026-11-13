@@ -49,6 +49,8 @@ Runs (CLAUDE.md "Tests run by phase"), plain build, Clang, after the review's fi
 
 Documentation: `docs/guide/assets.md` (identity, paths, the table, the blob container; one compiled and run sample), `docs/reference/` regenerated, `ARCHITECTURE.md` (what the module holds), `docs/guide/building-and-testing.md` and `CLAUDE.md` (the script's new rules).
 
+The other machines. The Mac (2026-11-13, `d9f2d94a`): the four macOS trees (x86-64 and the arm64 compile-only check, unity and non-unity) built clean; `scripts/test-phase.sh --affected` under bash 3.2 `ran 692 of 7722 tests (phases: 3 4 5 6 12 22; flavors: plain; ...)`, asan 560, tsan 383, no failure; `ctest -L docs` 7 of 7. The Windows PC (2026-11-13, `master` at `d9f2d94a`): the four trees (MSVC and clang-cl, unity and non-unity) built clean; `scripts/test-phase.sh --affected` under Git Bash: `ran 633 of 5364 tests (phases: 3 4 5 6 12 22; flavors: plain; display: excluded; crash tests: excluded)` in both MSVC trees, `ran 633 of 2927 tests (phases: 3 4 5 6 12 22; flavors: plain; display: excluded; crash tests: excluded)` in both clang-cl trees, no failure; asan `ran 499 of 5364 tests (phases: 3 4 5 6 12 22; flavors: asan; display: excluded; crash tests: excluded)` in both MSVC trees, no failure; phases 8, 9 and 13 plain in `build-msvc` and `build-clang-cl` (138, 79 and 123 tests), failing only filed flakes (`KNOWN-ISSUES.md`); `ctest -L docs` 7 of 7; the `test-phase.sh` script tests and the module-map gate ran in phase 6.
+
 ## Post-implementation code review
 
 `/code-review high`, 9 findings, over the day's diff (the code, tests and the script fix):
