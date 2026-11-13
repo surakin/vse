@@ -321,6 +321,7 @@ tests/rhi/macos/metal_pipeline_test.mm          26   # Metal shaders, pipelines,
 tests/rhi/macos/metal_commands_test.mm          26   # Metal command lists, encoders, barriers, mips (Day 320)
 tests/rhi/macos/metal_swapchain_test.mm         26   # the Metal swapchain over the Cocoa window's layer (Day 321)
 tests/rhi/macos/metal_graph_test.mm             26   # the render graph's passes as Metal encoders (Day 323)
+tests/rhi/macos/metal_lifecycle_test.mm         26   # Metal resets, stale handles, tolerant destruction (Day 325)
 test:metal_validation_planted                   26   # a planted Metal validation error must stop the program (Day 316)
 testopt:macos_*                                 26
 

@@ -187,23 +187,20 @@ struct RendererStats
     rhi::FenceValue last_fence = 0;
 };
 
-/// The backend the `backend` setting's value asks for: the value itself, except that on macOS, until the Metal backend
-/// passes the suites (Phase 26 Day 325, which removes this), `auto` in a program with no backend Auto may pick is the
-/// null backend, with `*note` saying so (and the renderer's log saying it once per program). A GPU backend that is
-/// registered but cannot run is never replaced: the device creation then fails and says why. [[rhi::PickAutoBackend]]
-/// itself never picks null; only the setting does this.
+/// The backend the `backend` setting's value asks for: the value itself on every platform (macOS's `auto` is Metal
+/// since Phase 26 Day 325; from Day 314 it was the null backend there, with a note, while Metal was asked for by name).
+/// A GPU backend that is registered but cannot run is never replaced: the device creation then fails and says why.
 ///
 /// - Param setting_value: the `backend` setting's enum value (it follows [[rhi::Backend]]).
-/// - Param note: receives the reason when the fallback was taken, else null.
+/// - Param note: receives the reason when a fallback is taken; null today, as no platform takes one.
 /// - Returns: the backend to create.
 /// - Fails: never.
-/// - Thread-safety: thread-safe (reads the backend registry).
+/// - Thread-safety: thread-safe (a pure function).
 rhi::Backend BackendForSetting(u32 setting_value, const char** note);
 
 /// Builds the description a device is created with from settings: backend, adapter, validation, sync validation and
-/// frames in flight come from `settings`, everything else from `base`. The backend is the setting's through
-/// [[renderer::BackendForSetting]]: on macOS, until Metal passes the suites (Day 325), `auto` there becomes `Null`
-/// (logged once).
+/// frames in flight come from `settings`, everything else from `base`. The backend is the setting's, through
+/// [[renderer::BackendForSetting]].
 ///
 /// - Param settings: the settings.
 /// - Param base: the rest of the description (window, application name, faults).

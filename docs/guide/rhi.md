@@ -277,8 +277,8 @@ demo with exit code 3 and a message, a failed allocation with exit code 1.
 
 The backends each platform builds, besides the `null` test backend everywhere: Vulkan on Linux, Vulkan and Direct3D 12 on Windows (see "The DX12 backend" below), and Metal on
 macOS (see "The Metal backend" below): macOS has no Vulkan (MoltenVK would be a third-party layer, Phase 26 decision 8), so `rhi_vulkan` is not built there. The Metal backend is
-built from Phase 26 Day 316 and is asked for by name only until it passes the suites (Day 325); the renderer, the scene bridge and the demos run on macOS on the null backend
-meanwhile, and the shared GPU tests skip there with "no GPU backend". The Vulkan backend needs Vulkan 1.3 with dynamic rendering, synchronization2 and timeline
+built from Phase 26 Day 316, and from Day 325 it is what `Auto` picks there (from Day 314 to Day 324 the setting's `auto` was the null backend on macOS, and Metal was
+asked for by name). The tests that run once per GPU backend run through it; the Vulkan-only tests skip. The Vulkan backend needs Vulkan 1.3 with dynamic rendering, synchronization2 and timeline
 semaphores, and presents through `VK_KHR_wayland_surface` or `VK_KHR_xlib_surface` on Linux and `VK_KHR_win32_surface`
 on Windows, depending on the window ([[os::Window]]); "Vulkan on Windows" below has the Windows details. With the NVIDIA proprietary driver, ThreadSanitizer cannot run GPU tests (the driver's threads crash
 inside its interceptors), and the X11 presentation path leaks inside a library the driver unloads; see "Building and
@@ -330,8 +330,8 @@ Vulkan everywhere, and Direct3D 12 on Windows. Test binaries do it from a Catch2
 rank ([[rhi::PickAutoBackend]]): Direct3D 12 (rank 20) on Windows, Vulkan (10) elsewhere; the null backend has rank 0, so `Auto` never picks it. A named backend that is registered but
 cannot run here (no Vulkan loader, for example) fails with the backend's own reason ([[rhi::ResolveBackend]]). The renderer's
 `backend` setting (`auto`, `null`, `vulkan`, `dx12`, `metal`) goes through the same rule when the program starts; it is not changed at run time
-(a change waits for the next start, see the render settings guide). One exception, on macOS only and only until Metal passes the suites (Day 325): the setting's `auto` in a
-program with no backend `Auto` may pick is the null backend, with a logged note ([[renderer::BackendForSetting]]); `rhi::PickAutoBackend` itself still never picks
+(a change waits for the next start, see the render settings guide). From Phase 26 Day 314 to Day 324 there was one exception, on macOS: the setting's `auto` in a
+program with no backend `Auto` may pick was the null backend, with a logged note ([[renderer::BackendForSetting]]); `rhi::PickAutoBackend` itself still never picks
 null, and a GPU backend that is registered but fails is never replaced by null.
 
 ```cpp compile standalone run
@@ -1076,7 +1076,7 @@ Direct3D 12 is the native backend on Windows (Phase 13, Days 164-172), library `
 
 Metal is the native backend on macOS (Phase 26, Days 316-325), library `rhi_metal` (Objective-C++ with ARC, the one place Metal is named: `rhi_boundary_check`),
 registered by [[rhi::RegisterCompiledBackends]] as `metal` ([[rhi::RegisterMetalBackend]]). Ask for it with `DeviceCreateInfo::backend = rhi::Backend::Metal` or
-`--rhi metal`; until it passes the Phase 4 and Phase 5 suites (Day 325) `Auto` does not pick it. Its shaders are the minted Metal libraries
+`--rhi metal`; `Auto` picks it on macOS (rank 30, from Day 325). Its shaders are the minted Metal libraries
 ([[rhi::DeviceCaps::shader_format]] `MetalLib`, see [Shaders](rhi-shaders.md)), and it reads the object index from the renderer's index stream
 ([[rhi::DeviceCaps::object_index_stream]]): Metal's instance id leaves out the base instance.
 
@@ -1090,8 +1090,10 @@ registered by [[rhi::RegisterCompiledBackends]] as `metal` ([[rhi::RegisterMetal
   run with `MTL_DEBUG_LAYER=1` (and `MTL_SHADER_VALIDATION=1`; `MTL_DEBUG_LAYER_ERROR_MODE=assert` stops at the first error). `renderer.validation` `on` without them
   logs a warning and carries on. The RHI GPU tests run with all three set, and `metal_validation_planted` shows that a validation error stops such a run.
 - **Errors and loss.** Every command buffer gets a completion handler: a failed buffer is logged with its label and Metal's error code, and an error that leaves the
-  device unusable (removed, access revoked, timeout, page fault, internal) marks it lost, as [[rhi::Device::DeviceLost]] reports. `InjectDeviceLoss` records a loss
-  the same way, since Metal has no call that removes a device.
+  device unusable (removed, access revoked, timeout, page fault, internal) marks it lost, as [[rhi::Device::DeviceLost]] reports. A device observer
+  (`MTLCopyAllDevicesWithObserver`) does the same when the system removes the GPU or asks to (an external GPU unplugged). `InjectDeviceLoss` records a loss
+  the same way, since Metal has no call that removes a device, and every later submission, upload, readback and present is refused; destroying a lost device
+  does not wait. `Auto` picks Metal on macOS from Phase 26 Day 325.
 - **Capabilities.** 8 color attachments, 16384 for 2D textures, 256-byte constant-buffer offsets, no row-pitch alignment beyond the texel size for copies; the pixel
   formats are asked with the device's family (`D24S8` only where the GPU has it, BC formats where it decodes them), and the G-buffer formats all pass.
 - **Memory.** GPU-only buffers and every texture are `Private`; readback memory (`GpuToCpu`) is `Shared`, so a persistent mapping sees the GPU's

@@ -1406,6 +1406,19 @@ Code review: 9 findings, all fixed. The worst was the UI Metal screenshot carryi
 Built in both unity modes; runs and the `ui_demo` hand checks deferred to Day 325. Next: Day 325 (lifecycle, loss, resets; Auto picks
 Metal), then the user is asked before the tests run.
 
+Phase 26 (side) **Day 325 (2026-11-13, the Mac): the Metal lifecycle, device loss and resets; `Auto` picks Metal on macOS. Days 315-325 are
+implemented, reviewed and committed; their test run waits for the user.**
+- **`Auto`:** it picks Metal on macOS, and the Day 314 null fallback is gone.
+- **Device loss:** a device observer marks the device lost when the GPU is removed. A GPU whose removal was requested is left out of the
+  next pick.
+- **Conformance:** a Metal case in the lifecycle conformance suite.
+- **`metal_lifecycle_test`:** 100 resets with the pipeline archive, a stale handle, and a loss after real work.
+- **Validation:** a change that differs from the process says it takes effect at the next start.
+- **Docs:** the lifecycle checklist is marked as built for Metal.
+
+Code review: 10 findings, 9 fixed, 1 declined. Built in both unity modes. **Next: the run of Days 315-325**
+(`scripts/test-phase.sh --affected --flavor all` with GPU and display tests, the measurements and the hand checks), when the user says go.
+
 Phase 20 **Day 278 (2026-11-12, Windows PC): the Windows socket backend.** Winsock 2 in `engine/net/windows/` (`winsock.h` the one include of the Winsock headers; the error tables; sockets not inherited and non-blocking from creation, dual stack and exclusive ports as the interface's defaults, `SIO_UDP_CONNRESET` off; `GetAddrInfoW` in UTF-16). The poller is `select`, not the planned `WSAPoll`: measured, `WSAPoll` reports a half-closed socket whatever was asked for, which would make the reactor spin; the spec and `BACKEND.md` say so. A refused loopback connect is immediate (SYN retransmission off for loopback; Windows otherwise retries for two seconds). The whole of `tests/net` runs on Windows: four trees clean, `net_tests` and `net_tests_sockets` pass in all of them, plain and asan; the five-thousand-connection listener test hung under load (ephemeral ports exhausted, the accept loop waiting for ever) and now times out and closes server-first. Run: `ran 4806 of 5083 tests (phases: all; flavors: all (plain and asan, no tsan on Windows); display: included; crash tests: excluded) in 376 s`; docs 7 of 7. Review: 4 findings, 2 fixed (a socket closed while the reactor waited broke the reactor for good: `WSAENOTSOCK` from `select`, regression test `poller_test.cpp`; stale comments), 2 declined with measurements (full-backlog refusals, the result mapping cost: `KNOWN-ISSUES.md`). The shared changes wait for the Linux machine (`KNOWN-ISSUES.md`).
 Phase 20 **Day 279 (2026-11-12, Linux machine): security basics.** `net::RateLimiter` (per-address and global token buckets, strikes and bans in a table that never grows), handshake limits on UDP (no bans: a source is not proven), accept limits and per-address caps on TCP, global receive and send budgets, `TcpStream` buffers allocated lazily (the Day 271 memory entry is closed), allocation audit checklist, fuzz tests (a million cases for the parsers, live servers fed mutated bytes) and nine attack tests; guide section "What the network layer does not protect against". Runs: plain `ran 2830 of 7520 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`, asan `ran 2251 of 7520`, tsan `ran 1927 of 7520` (only the known scene test failed); GCC, Clang non-unity, optimized pass; docs 7 of 7. Review: 4 findings, 1 fixed, 3 declined. Open: the Windows PC. **Next: Day 281 (Day 280, QUIC/TLS/encryption, is deferred by the user, 2026-11-12).**
 

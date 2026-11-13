@@ -8266,45 +8266,45 @@ renderer::RendererStats::recoveries	variable	renderer	renderer-rendererstats-rec
 renderer::RendererStats::recovery_failures	variable	renderer	renderer-rendererstats-recovery-failures	renderer.md	engine/renderer/renderer.h:183
 renderer::RendererStats::last_reset_ms	variable	renderer	renderer-rendererstats-last-reset-ms	renderer.md	engine/renderer/renderer.h:185
 renderer::RendererStats::last_fence	variable	renderer	renderer-rendererstats-last-fence	renderer.md	engine/renderer/renderer.h:187
-renderer::BackendForSetting(u32,const char**)	function	renderer	renderer-backendforsetting-u32-const-char-star-star	renderer.md	engine/renderer/renderer.h:201
-renderer::MakeDeviceCreateInfo(const RenderSettings&,const rhi::DeviceCreateInfo&,char*,rhi::DeviceCreateInfo*)	function	renderer	renderer-makedevicecreateinfo-const-rendersettings-amp-const-rhi-devicecreateinfo-amp-char-star-rhi-devicecreateinfo-star	renderer.md	engine/renderer/renderer.h:213
-renderer::MakeSwapchainDesc(const RenderSettings&)	function	renderer	renderer-makeswapchaindesc-const-rendersettings-amp	renderer.md	engine/renderer/renderer.h:220
-renderer::ApplyResult	struct	renderer	renderer-applyresult	renderer.md	engine/renderer/renderer.h:225
-renderer::ApplyResult::ok	variable	renderer	renderer-applyresult-ok	renderer.md	engine/renderer/renderer.h:228
-renderer::ApplyResult::queued	variable	renderer	renderer-applyresult-queued	renderer.md	engine/renderer/renderer.h:231
-renderer::ApplyResult::rolled_back	variable	renderer	renderer-applyresult-rolled-back	renderer.md	engine/renderer/renderer.h:233
-renderer::ApplyResult::device_lost	variable	renderer	renderer-applyresult-device-lost	renderer.md	engine/renderer/renderer.h:235
-renderer::ApplyResult::performed	variable	renderer	renderer-applyresult-performed	renderer.md	engine/renderer/renderer.h:237
-renderer::ApplyResult::change	variable	renderer	renderer-applyresult-change	renderer.md	engine/renderer/renderer.h:239
-renderer::ApplyResult::reason	variable	renderer	renderer-applyresult-reason	renderer.md	engine/renderer/renderer.h:241
-renderer::ApplyResult::total_ms	variable	renderer	renderer-applyresult-total-ms	renderer.md	engine/renderer/renderer.h:243
-renderer::ApplyResult::release_ms	variable	renderer	renderer-applyresult-release-ms	renderer.md	engine/renderer/renderer.h:245
-renderer::ApplyResult::device_ms	variable	renderer	renderer-applyresult-device-ms	renderer.md	engine/renderer/renderer.h:247
-renderer::ApplyResult::swapchain_ms	variable	renderer	renderer-applyresult-swapchain-ms	renderer.md	engine/renderer/renderer.h:249
-renderer::ApplyResult::rebuild_ms	variable	renderer	renderer-applyresult-rebuild-ms	renderer.md	engine/renderer/renderer.h:251
-renderer::ApplyResult::reset	variable	renderer	renderer-applyresult-reset	renderer.md	engine/renderer/renderer.h:254
-renderer::ResetBeginFn	alias	renderer	renderer-resetbeginfn	renderer.md	engine/renderer/renderer.h:258
-renderer::ResetEndFn	alias	renderer	renderer-resetendfn	renderer.md	engine/renderer/renderer.h:261
-renderer::Renderer	class	renderer	renderer-renderer	renderer.md	engine/renderer/renderer.h:271
-renderer::Renderer::Renderer(const RendererDesc&)	function	renderer	renderer-renderer-renderer-const-rendererdesc-amp	renderer.md	engine/renderer/renderer.h:279
-renderer::Renderer::Renderer(const Renderer&)	function	renderer	renderer-renderer-renderer-const-renderer-amp	renderer.md	engine/renderer/renderer.h:280
-renderer::Renderer::operator=(const Renderer&)	function	renderer	renderer-renderer-operator-eq-const-renderer-amp	renderer.md	engine/renderer/renderer.h:281
-renderer::Renderer::Rebind(rhi::Device*,rhi::Swapchain*)	function	renderer	renderer-renderer-rebind-rhi-device-star-rhi-swapchain-star	renderer.md	engine/renderer/renderer.h:292
-renderer::Renderer::ApplySettings(const RenderSettings&)	function	renderer	renderer-renderer-applysettings-const-rendersettings-amp	renderer.md	engine/renderer/renderer.h:310
-renderer::Renderer::ForceDeviceReset()	function	renderer	renderer-renderer-forcedevicereset	renderer.md	engine/renderer/renderer.h:318
-renderer::Renderer::Settings() const	function	renderer	renderer-renderer-settings-const	renderer.md	engine/renderer/renderer.h:322
-renderer::Renderer::LastApply() const	function	renderer	renderer-renderer-lastapply-const	renderer.md	engine/renderer/renderer.h:326
-renderer::Renderer::GetCapabilities() const	function	renderer	renderer-renderer-getcapabilities-const	renderer.md	engine/renderer/renderer.h:330
-renderer::Renderer::SetResetCallbacks(ResetBeginFn,ResetEndFn,void*)	function	renderer	renderer-renderer-setresetcallbacks-resetbeginfn-resetendfn-void-star	renderer.md	engine/renderer/renderer.h:339
-renderer::Renderer::GetDevice() const	function	renderer	renderer-renderer-getdevice-const	renderer.md	engine/renderer/renderer.h:351
-renderer::Renderer::GetSwapchain() const	function	renderer	renderer-renderer-getswapchain-const	renderer.md	engine/renderer/renderer.h:356
-renderer::Renderer::IsRecovering() const	function	renderer	renderer-renderer-isrecovering-const	renderer.md	engine/renderer/renderer.h:361
-renderer::Renderer::IsBroken() const	function	renderer	renderer-renderer-isbroken-const	renderer.md	engine/renderer/renderer.h:365
-renderer::Renderer::RenderFrame(const RenderScene*,const Camera*,const FrameTarget*)	function	renderer	renderer-renderer-renderframe-const-renderscene-star-const-camera-star-const-frametarget-star	renderer.md	engine/renderer/renderer.h:381
-renderer::Renderer::LastError() const	function	renderer	renderer-renderer-lasterror-const	renderer.md	engine/renderer/renderer.h:386
-renderer::Renderer::Stats() const	function	renderer	renderer-renderer-stats-const	renderer.md	engine/renderer/renderer.h:390
-renderer::Renderer::Pool() const	function	renderer	renderer-renderer-pool-const	renderer.md	engine/renderer/renderer.h:394
-renderer::Renderer::FrameIndex() const	function	renderer	renderer-renderer-frameindex-const	renderer.md	engine/renderer/renderer.h:398
+renderer::BackendForSetting(u32,const char**)	function	renderer	renderer-backendforsetting-u32-const-char-star-star	renderer.md	engine/renderer/renderer.h:199
+renderer::MakeDeviceCreateInfo(const RenderSettings&,const rhi::DeviceCreateInfo&,char*,rhi::DeviceCreateInfo*)	function	renderer	renderer-makedevicecreateinfo-const-rendersettings-amp-const-rhi-devicecreateinfo-amp-char-star-rhi-devicecreateinfo-star	renderer.md	engine/renderer/renderer.h:210
+renderer::MakeSwapchainDesc(const RenderSettings&)	function	renderer	renderer-makeswapchaindesc-const-rendersettings-amp	renderer.md	engine/renderer/renderer.h:217
+renderer::ApplyResult	struct	renderer	renderer-applyresult	renderer.md	engine/renderer/renderer.h:222
+renderer::ApplyResult::ok	variable	renderer	renderer-applyresult-ok	renderer.md	engine/renderer/renderer.h:225
+renderer::ApplyResult::queued	variable	renderer	renderer-applyresult-queued	renderer.md	engine/renderer/renderer.h:228
+renderer::ApplyResult::rolled_back	variable	renderer	renderer-applyresult-rolled-back	renderer.md	engine/renderer/renderer.h:230
+renderer::ApplyResult::device_lost	variable	renderer	renderer-applyresult-device-lost	renderer.md	engine/renderer/renderer.h:232
+renderer::ApplyResult::performed	variable	renderer	renderer-applyresult-performed	renderer.md	engine/renderer/renderer.h:234
+renderer::ApplyResult::change	variable	renderer	renderer-applyresult-change	renderer.md	engine/renderer/renderer.h:236
+renderer::ApplyResult::reason	variable	renderer	renderer-applyresult-reason	renderer.md	engine/renderer/renderer.h:238
+renderer::ApplyResult::total_ms	variable	renderer	renderer-applyresult-total-ms	renderer.md	engine/renderer/renderer.h:240
+renderer::ApplyResult::release_ms	variable	renderer	renderer-applyresult-release-ms	renderer.md	engine/renderer/renderer.h:242
+renderer::ApplyResult::device_ms	variable	renderer	renderer-applyresult-device-ms	renderer.md	engine/renderer/renderer.h:244
+renderer::ApplyResult::swapchain_ms	variable	renderer	renderer-applyresult-swapchain-ms	renderer.md	engine/renderer/renderer.h:246
+renderer::ApplyResult::rebuild_ms	variable	renderer	renderer-applyresult-rebuild-ms	renderer.md	engine/renderer/renderer.h:248
+renderer::ApplyResult::reset	variable	renderer	renderer-applyresult-reset	renderer.md	engine/renderer/renderer.h:251
+renderer::ResetBeginFn	alias	renderer	renderer-resetbeginfn	renderer.md	engine/renderer/renderer.h:255
+renderer::ResetEndFn	alias	renderer	renderer-resetendfn	renderer.md	engine/renderer/renderer.h:258
+renderer::Renderer	class	renderer	renderer-renderer	renderer.md	engine/renderer/renderer.h:268
+renderer::Renderer::Renderer(const RendererDesc&)	function	renderer	renderer-renderer-renderer-const-rendererdesc-amp	renderer.md	engine/renderer/renderer.h:276
+renderer::Renderer::Renderer(const Renderer&)	function	renderer	renderer-renderer-renderer-const-renderer-amp	renderer.md	engine/renderer/renderer.h:277
+renderer::Renderer::operator=(const Renderer&)	function	renderer	renderer-renderer-operator-eq-const-renderer-amp	renderer.md	engine/renderer/renderer.h:278
+renderer::Renderer::Rebind(rhi::Device*,rhi::Swapchain*)	function	renderer	renderer-renderer-rebind-rhi-device-star-rhi-swapchain-star	renderer.md	engine/renderer/renderer.h:289
+renderer::Renderer::ApplySettings(const RenderSettings&)	function	renderer	renderer-renderer-applysettings-const-rendersettings-amp	renderer.md	engine/renderer/renderer.h:307
+renderer::Renderer::ForceDeviceReset()	function	renderer	renderer-renderer-forcedevicereset	renderer.md	engine/renderer/renderer.h:315
+renderer::Renderer::Settings() const	function	renderer	renderer-renderer-settings-const	renderer.md	engine/renderer/renderer.h:319
+renderer::Renderer::LastApply() const	function	renderer	renderer-renderer-lastapply-const	renderer.md	engine/renderer/renderer.h:323
+renderer::Renderer::GetCapabilities() const	function	renderer	renderer-renderer-getcapabilities-const	renderer.md	engine/renderer/renderer.h:327
+renderer::Renderer::SetResetCallbacks(ResetBeginFn,ResetEndFn,void*)	function	renderer	renderer-renderer-setresetcallbacks-resetbeginfn-resetendfn-void-star	renderer.md	engine/renderer/renderer.h:336
+renderer::Renderer::GetDevice() const	function	renderer	renderer-renderer-getdevice-const	renderer.md	engine/renderer/renderer.h:348
+renderer::Renderer::GetSwapchain() const	function	renderer	renderer-renderer-getswapchain-const	renderer.md	engine/renderer/renderer.h:353
+renderer::Renderer::IsRecovering() const	function	renderer	renderer-renderer-isrecovering-const	renderer.md	engine/renderer/renderer.h:358
+renderer::Renderer::IsBroken() const	function	renderer	renderer-renderer-isbroken-const	renderer.md	engine/renderer/renderer.h:362
+renderer::Renderer::RenderFrame(const RenderScene*,const Camera*,const FrameTarget*)	function	renderer	renderer-renderer-renderframe-const-renderscene-star-const-camera-star-const-frametarget-star	renderer.md	engine/renderer/renderer.h:378
+renderer::Renderer::LastError() const	function	renderer	renderer-renderer-lasterror-const	renderer.md	engine/renderer/renderer.h:383
+renderer::Renderer::Stats() const	function	renderer	renderer-renderer-stats-const	renderer.md	engine/renderer/renderer.h:387
+renderer::Renderer::Pool() const	function	renderer	renderer-renderer-pool-const	renderer.md	engine/renderer/renderer.h:391
+renderer::Renderer::FrameIndex() const	function	renderer	renderer-renderer-frameindex-const	renderer.md	engine/renderer/renderer.h:395
 renderer::RendererName()	function	renderer	renderer-renderername	renderer.md	engine/renderer/renderer_info.h:13
 renderer::RenderLogV(LogVerbosity,const char*,...)	function	renderer	renderer-renderlogv-logverbosity-const-char-star	renderer.md	engine/renderer/renderer_log.h:23
 RenderLog	macro	renderer	renderlog	renderer.md	engine/renderer/renderer_log.h:46
@@ -9371,4 +9371,4 @@ rhi::dx12::Dx12Swapchain::CurrentTexture() const	function	rhi-dx12	rhi-dx12-dx12
 rhi::dx12::Dx12Swapchain::TearingAllowed() const	function	rhi-dx12	rhi-dx12-dx12swapchain-tearingallowed-const	rhi-dx12.md	engine/rhi/dx12/dx12_swapchain.h:65
 rhi::dx12::Dx12Swapchain::BufferFormat() const	function	rhi-dx12	rhi-dx12-dx12swapchain-bufferformat-const	rhi-dx12.md	engine/rhi/dx12/dx12_swapchain.h:67
 rhi::dx12::Dx12Swapchain::LatencyWaitable() const	function	rhi-dx12	rhi-dx12-dx12swapchain-latencywaitable-const	rhi-dx12.md	engine/rhi/dx12/dx12_swapchain.h:69
-rhi::RegisterMetalBackend()	function	rhi-metal	rhi-registermetalbackend	rhi-metal.md	engine/rhi/metal/metal_backend.h:19
+rhi::RegisterMetalBackend()	function	rhi-metal	rhi-registermetalbackend	rhi-metal.md	engine/rhi/metal/metal_backend.h:18

@@ -21,6 +21,11 @@ struct MetalAdapterSet
 // driver the macOS version; a device is suitable with the Mac2 family and Metal 3. False when Metal has no device.
 bool ListMetalAdapters(MetalAdapterSet* out);
 
+// Records that the system asked to remove the GPU with this registry ID (the device observer); later lists mark it
+// unsuitable, so a reset after the loss picks another GPU. Thread-safety: thread-safe.
+void NoteMetalRemovalRequested(u64 registry_id);
+bool MetalRemovalRequested(u64 registry_id);
+
 // The adapter of `device` as rhi::AdapterInfo (the fields above).
 AdapterInfo MetalAdapterInfo(id<MTLDevice> device);
 

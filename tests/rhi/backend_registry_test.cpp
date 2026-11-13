@@ -252,18 +252,16 @@ TEST_CASE("RegisterCompiledBackends registers null and Vulkan, and Direct3D 12 o
     CHECK(RegisteredBackendCount() == 2);
 #endif
 #else
-    // macOS (Phase 26 Day 316): no Vulkan; the null and Metal backends, Metal by name only until Day 325 (rank 0).
+    // macOS (Phase 26): no Vulkan; the null and Metal backends, Metal what Auto picks (from Day 325).
     CHECK(FindBackend(Backend::Vulkan) == nullptr);
     const BackendDescriptor* metal = FindBackend(Backend::Metal);
     REQUIRE(metal != nullptr);
     CHECK(StringView(metal->name) == "metal");
     CHECK(metal->shader_format == ShaderFormat::MetalLib);
-    CHECK(metal->auto_rank == 0);
+    CHECK(metal->auto_rank > 0);
     CHECK(RegisteredBackendCount() == 2);
 #endif
-    // With only the null backend registered (and on macOS, until Day 325, with Metal too: rank 0), Auto has nothing to
-    // pick, on every platform; only the backend setting turns that into the null backend on macOS
-    // (renderer::BackendForSetting).
+    // With only the null backend registered, Auto has nothing to pick, on every platform.
     ClearBackendRegistryForTest();
     REQUIRE(RegisterNullBackend());
     char reason[160] = {};
@@ -271,24 +269,17 @@ TEST_CASE("RegisterCompiledBackends registers null and Vulkan, and Direct3D 12 o
 }
 
 TEST_CASE(
-    "The backend setting's auto is the null backend on macOS only with no GPU backend built; one that is built and fails is "
-    "never replaced; metal is refused where it is not built",
+    "The backend setting's value is the backend on every platform; one that is built and fails is never replaced; metal is "
+    "refused where it is not built",
     "[rhi][registry]")
 {
-    // The macOS fallback (Phase 26 Day 314, removed on Day 325 when Metal may be picked by Auto) applies only when no
-    // backend auto may pick is registered at all: a registered backend that cannot run (here a fake) is a loud failure
-    // with its own reason, and the setting's backend stays auto.
+    // The setting's value is the backend on every platform (macOS's null fallback of Phase 26 Day 314 ended on Day
+    // 325), and a registered backend that cannot run is a loud failure with its own reason, never replaced.
     Reset reset;
     REQUIRE(RegisterNullBackend());
     const char* note = "untouched";
-#if ENGINE_PLATFORM_MACOS
-    CHECK(renderer::BackendForSetting(static_cast<u32>(Backend::Auto), &note) == Backend::Null);
-    REQUIRE(note != nullptr);
-    CHECK(CStrFind(note, "no macOS backend is picked by auto yet") != nullptr);
-#else
     CHECK(renderer::BackendForSetting(static_cast<u32>(Backend::Auto), &note) == Backend::Auto);
     CHECK(note == nullptr);
-#endif
     CHECK(renderer::BackendForSetting(static_cast<u32>(Backend::Vulkan), &note) ==
           Backend::Vulkan);  // a named backend is never replaced
     CHECK(note == nullptr);

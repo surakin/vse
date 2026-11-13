@@ -59,7 +59,7 @@ bool RegisterMetalBackend()
     d.enumerate_adapters = &EnumerateMetalAdapters;
     d.available = &MetalAvailable;
     d.shader_format = ShaderFormat::MetalLib;
-    d.auto_rank = 0;  // by name only until the suites pass on it (Day 325, which makes Auto mean Metal on macOS)
+    d.auto_rank = 30;  // the GPU backend of macOS: Auto means Metal there (Phase 26 Day 325; by name only from Day 316)
     return RegisterBackend(d);
 }
 

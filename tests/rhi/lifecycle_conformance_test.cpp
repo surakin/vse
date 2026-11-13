@@ -181,6 +181,32 @@ TEST_CASE("The Vulkan backend conforms to the device lifecycle", "[rhi][lifecycl
     RunLifecycleConformance(vulkan_backend);
 }
 
+// Phase 26 Day 325: Metal on the Mac's adapter (validation is the process's: the macOS ctests set MTL_DEBUG_LAYER).
+TEST_CASE("The Metal backend conforms to the device lifecycle", "[rhi][lifecycle][conformance][metal][gpu]")
+{
+#if ENGINE_PLATFORM_MACOS
+    ConformanceQuietLog quiet;
+    Backend_ metal_backend;
+    metal_backend.name = "metal";
+    metal_backend.info.backend = Backend::Metal;
+    metal_backend.info.validation = ValidationSetting::Off;
+    metal_backend.headless_swapchain = false;  // a CAMetalLayer swapchain needs a window
+    DevicePtr probe = CreateDevice(metal_backend.info);
+    if (probe == nullptr)
+    {
+        if (gpu_test::GpuRequired())
+        {
+            FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no Metal device could be created");
+        }
+        SKIP("no Metal device (a Mac without a Metal 3 GPU)");
+    }
+    probe.Reset();
+    RunLifecycleConformance(metal_backend);
+#else
+    SKIP("Metal is the macOS backend");
+#endif
+}
+
 // Phase 13 Day 172: Direct3D 12 on the first hardware adapter, and on WARP (a second implementation, and a GPU-free
 // check).
 TEST_CASE("The DX12 backend conforms to the device lifecycle, on hardware and on WARP",

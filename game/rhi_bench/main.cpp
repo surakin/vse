@@ -4,7 +4,7 @@
 //   rhi_bench [--draws N] [--frames N]     draw throughput for N cubes (default: 1000 and 10000)
 //             [--skip-uploads] [--skip-pipelines]
 //             [--rhi null|vulkan|dx12|metal|auto]  the graphics backend (default auto: Direct3D 12 on Windows, Vulkan
-//             on Linux; on macOS none until Metal draws, Phase 26 Day 325: a benchmark does not measure the null device
+//             on Linux; on macOS Metal, from Phase 26 Day 325: a benchmark does not measure the null device
 //             unasked)
 
 #include "os/console.h"

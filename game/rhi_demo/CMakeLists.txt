@@ -20,13 +20,11 @@ function(rhi_demo_expect name code out skip_re)
 endfunction()
 set(RHI_NO_GPU "cannot open loader library|no physical devices|no suitable GPU")
 if(APPLE)
-  # macOS: Vulkan asked for by name is not built there, and until Phase 26 Day 325 auto runs the null backend, which has no device
-  # memory for an allocation fault to hit; Metal is asked for by name (the *_metal tests).
-  string(APPEND RHI_NO_GPU "|backend is not built for macOS")
-  set(RHI_NEEDS_DEVICE_MEMORY "${RHI_NO_GPU}|using the null backend")
-else()
-  set(RHI_NEEDS_DEVICE_MEMORY "${RHI_NO_GPU}")
+  # macOS: Vulkan asked for by name is not built there (auto is Metal from Phase 26 Day 325; the *_metal tests ask for it by name).
+  # A Mac without a Metal 3 GPU (a VM, an older Mac): auto finds no backend and says why, which skips as no GPU does elsewhere.
+  string(APPEND RHI_NO_GPU "|backend is not built for macOS|this Mac has no Metal device|no Metal device of the Mac2 family")
 endif()
+set(RHI_NEEDS_DEVICE_MEMORY "${RHI_NO_GPU}")
 rhi_demo_expect(rhi_demo_device_loss_screenshot 3 "the GPU device was lost" "${RHI_NO_GPU}"
   --screenshot ${RHI_DEMO_SHOT} --frames 5 --inject-device-loss 3)
 # A lost device also leaves a trace of where it was noticed (an ensure, once), and the frame still ends as lost (exit 3).
@@ -51,7 +49,7 @@ if(WIN32)
 endif()
 set(_rhi_demo_metal_tests)
 if(APPLE)
-  # The same faults on Metal by name (Phase 26 Day 324; auto picks it from Day 325), and the listing.
+  # The same faults on Metal by name (Phase 26 Day 324; auto picks it too from Day 325), and the listing.
   rhi_demo_expect(rhi_demo_device_loss_trace_metal 3 "ENSURE FAILED[^\n]*the Metal device was lost" ""
     --screenshot ${RHI_DEMO_SHOT} --frames 5 --inject-device-loss 3 --rhi metal)
   rhi_demo_expect(rhi_demo_oom_device_metal 1 "no memory for the resource 'engine staging ring'" ""

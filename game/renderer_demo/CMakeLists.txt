@@ -30,13 +30,11 @@ function(renderer_demo_expect name code out skip_re)
 endfunction()
 set(RENDERER_NO_GPU "cannot open loader library|no physical devices|no suitable GPU")
 if(APPLE)
-  # macOS: Vulkan asked for by name is not built there, and until Phase 26 Day 325 auto runs the null backend, which has no device
-  # memory for an allocation fault to hit; Metal is asked for by name (the *_metal tests, which do not skip: every Mac here has it).
-  string(APPEND RENDERER_NO_GPU "|backend is not built for macOS")
-  set(RENDERER_NEEDS_DEVICE_MEMORY "${RENDERER_NO_GPU}|using the null backend")
-else()
-  set(RENDERER_NEEDS_DEVICE_MEMORY "${RENDERER_NO_GPU}")
+  # macOS: Vulkan asked for by name is not built there (auto is Metal from Phase 26 Day 325; the *_metal tests ask for it by name).
+  # A Mac without a Metal 3 GPU (a VM, an older Mac): auto finds no backend and says why, which skips as no GPU does elsewhere.
+  string(APPEND RENDERER_NO_GPU "|backend is not built for macOS|this Mac has no Metal device|no Metal device of the Mac2 family")
 endif()
+set(RENDERER_NEEDS_DEVICE_MEMORY "${RENDERER_NO_GPU}")
 # A normal offscreen run writes the picture and says how much it drew.
 renderer_demo_expect(renderer_demo_screenshot 0 "wrote .*renderer_demo_screenshot.ppm \\(540 objects, [0-9]+ point lights" "${RENDERER_NO_GPU}"
   --screenshot RENDERER_DEMO_SHOT --validation)
@@ -55,7 +53,7 @@ if(WIN32)
 endif()
 set(_renderer_demo_metal_tests)
 if(APPLE)
-  # Metal by name (Phase 26 Day 323; auto picks it from Day 325): the picture with validation on, the loss trace, the staging ring's OOM.
+  # Metal by name (Phase 26 Day 323; auto picks it too from Day 325): the picture with validation on, the loss trace, the staging ring's OOM.
   renderer_demo_expect(renderer_demo_screenshot_metal 0 "wrote .*renderer_demo_screenshot_metal.ppm \\(540 objects" ""
     --screenshot RENDERER_DEMO_SHOT --validation --rhi metal)
   renderer_demo_expect(renderer_demo_device_loss_trace_metal 3 "ENSURE FAILED[^\n]*the Metal device was lost" ""

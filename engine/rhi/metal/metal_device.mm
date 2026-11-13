@@ -3,6 +3,7 @@
 // released by the destructor after the GPU is idle.
 #include "rhi/metal/metal_device.h"
 
+#include "build_defs.h"
 #include "cstr/cstr.h"
 #include "cstr/format.h"
 #include "containers/array.h"
@@ -23,6 +24,8 @@ namespace engine_placeholder::rhi::metal
 
 namespace
 {
+
+Atomic<u32> g_live_observers{0};  // device observers installed and not yet removed (a test checks they balance)
 
 // What a failed command buffer's error code means; the codes are MTLCommandBufferError's.
 const char* CommandBufferErrorName(NSInteger code)
@@ -60,6 +63,11 @@ bool EnvironmentOn(const char* name)
 }
 
 }  // namespace
+
+u32 MetalDevice::LiveDeviceObservers()
+{
+    return g_live_observers.Load(MemoryOrder::Relaxed);
+}
 
 MetalDevicePtr MetalDevice::Create(const DeviceCreateInfo& info)
 {
@@ -135,15 +143,55 @@ bool MetalDevice::Initialize(const DeviceCreateInfo& info)
         queue_.label = @"engine queue";
         timeline_.label = @"engine timeline";
         timeline_.signaledValue = 0;
+#if ENGINE_PLATFORM_MACOS
+        // A device that is removed (an external GPU unplugged) or asked to be: the device is lost, as for an error that
+        // means it is gone. The handler runs on a system thread and holds the shared state, not the device.
+        const u64 registry = device_.registryID;
+        SharedPtr<MetalDeviceShared> shared = shared_;
+        id<NSObject> observer = nil;
+        // The list it returns is not needed: the device is already chosen.
+        MTLCopyAllDevicesWithObserver(&observer, ^(id<MTLDevice> changed, MTLDeviceNotificationName name) {
+          if (changed.registryID != registry)
+          {
+              return;
+          }
+          if ([name isEqualToString:MTLDeviceWasRemovedNotification])
+          {
+              NoteLost(*shared, "the device observer", "the GPU was removed");
+          }
+          else if ([name isEqualToString:MTLDeviceRemovalRequestedNotification])
+          {
+              // Let it go: the reset that follows the loss picks another GPU (ListMetalAdapters leaves this out).
+              NoteMetalRemovalRequested(registry);
+              NoteLost(*shared, "the device observer", "the system asked to remove the GPU");
+          }
+        });
+        device_observer_ = observer;
+        g_live_observers.FetchAdd(1, MemoryOrder::Relaxed);
+#endif
     }
     // Validation is the process's: Metal reads MTL_DEBUG_LAYER (and MTL_SHADER_VALIDATION) when it starts, so the
     // setting can only report it. `On` without the variable is a warning, not a failure.
     validation_ = EnvironmentOn("MTL_DEBUG_LAYER");
+    // The validation settings change on a device reset elsewhere; on Metal a reset cannot change them, so a request
+    // that differs from the process says it takes effect at the next start (Phase 26 Day 325).
     if (info.validation == ValidationSetting::On && !validation_)
     {
-        RhiLog(LogVerbosity::Warn,
-               "Metal: validation was asked for, but Metal's is an environment setting read at process start: set "
-               "MTL_DEBUG_LAYER=1 (and MTL_SHADER_VALIDATION=1, MTL_DEBUG_LAYER_ERROR_MODE=assert) before starting");
+        RhiLog(
+            LogVerbosity::Warn,
+            "Metal: validation was asked for, but Metal reads it when the process starts: it takes effect at the next "
+            "start with MTL_DEBUG_LAYER=1 (and MTL_SHADER_VALIDATION=1, MTL_DEBUG_LAYER_ERROR_MODE=assert) set");
+    }
+    else if (info.validation == ValidationSetting::Off && validation_)
+    {
+        RhiLog(
+            LogVerbosity::Info,
+            "Metal: validation off was asked for, but MTL_DEBUG_LAYER is set for this process: it takes effect at the "
+            "next start without it");
+    }
+    if (info.sync_validation)
+    {
+        RhiLog(LogVerbosity::Info, "Metal: sync_validation has no Metal counterpart (Metal tracks hazards itself)");
     }
     frames_in_flight_ = info.frames_in_flight < 1 ? 1 : (info.frames_in_flight > 3 ? 3 : info.frames_in_flight);
     lose_device_at_frame_ = info.faults.lose_device_at_frame;
@@ -214,6 +262,16 @@ MetalDevice::~MetalDevice()
         }
         swapchain_.Reset();  // leaked by the application (counted above); its texture goes before the resources
         ShutdownResources();
+#if ENGINE_PLATFORM_MACOS
+        if (device_observer_ != nil)
+        {
+            // Apple does not say a handler already running has finished when this returns: the handler holds only the
+            // shared state (never the device), which is why that is safe.
+            MTLRemoveDeviceObserver(device_observer_);
+            device_observer_ = nil;
+            g_live_observers.FetchSub(1, MemoryOrder::Relaxed);
+        }
+#endif
         listener_ = nil;
         timeline_ = nil;
         queue_ = nil;
@@ -303,7 +361,7 @@ bool MetalDevice::InjectLoss(const char* where, u32 number)
 void MetalDevice::InjectDeviceLoss()
 {
     // Metal has no call that removes a device: the loss is recorded, and every later submission is ignored, as for a
-    // real one (the real removal notifications are Day 325's).
+    // real one (a real removal comes from the device observer or a command buffer's error).
     InjectLoss("request", 0);
 }
 

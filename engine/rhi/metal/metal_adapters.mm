@@ -3,6 +3,9 @@
 
 #include "cstr/cstr.h"
 #include "cstr/format.h"
+#include "sync/mutex.h"
+
+#include "containers/array.h"
 
 #import <Foundation/Foundation.h>
 
@@ -46,6 +49,46 @@ AdapterInfo MetalAdapterInfo(id<MTLDevice> device)
     return info;
 }
 
+namespace
+{
+
+// The GPUs the system asked this process to let go of (an external GPU being ejected), by registry ID: left out of
+// every later pick, so the reset after the loss does not take the same GPU again.
+Mutex g_removal_mutex;
+Array<u64, 16> g_removal_requested = {};
+u32 g_removal_count = 0;
+
+}  // namespace
+
+void NoteMetalRemovalRequested(u64 registry_id)
+{
+    LockGuard<Mutex> lock(g_removal_mutex);
+    for (u32 i = 0; i < g_removal_count; ++i)
+    {
+        if (g_removal_requested[i] == registry_id)
+        {
+            return;
+        }
+    }
+    if (g_removal_count < g_removal_requested.Size())
+    {
+        g_removal_requested[g_removal_count++] = registry_id;
+    }
+}
+
+bool MetalRemovalRequested(u64 registry_id)
+{
+    LockGuard<Mutex> lock(g_removal_mutex);
+    for (u32 i = 0; i < g_removal_count; ++i)
+    {
+        if (g_removal_requested[i] == registry_id)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool ListMetalAdapters(MetalAdapterSet* out)
 {
     *out = MetalAdapterSet{};
@@ -61,7 +104,13 @@ bool ListMetalAdapters(MetalAdapterSet* out)
         {
             break;
         }
-        out->list.items[out->list.count++] = MetalAdapterInfo(device);
+        AdapterInfo info = MetalAdapterInfo(device);
+        if (info.suitable && MetalRemovalRequested(device.registryID))
+        {
+            info.suitable = false;
+            info.unsuitable_reason = "the system asked to remove this GPU";
+        }
+        out->list.items[out->list.count++] = info;
         [kept addObject:device];
     }
     out->devices = kept;

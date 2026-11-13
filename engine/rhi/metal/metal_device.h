@@ -184,6 +184,8 @@ public:
     // each is also a warning in the log. For tests. Thread-safety: thread-safe.
     static u64 LeakedUserObjects();
     static void ResetLeakedUserObjects();
+    // Device observers (GPU removal) installed and not yet removed, in this process (tests: one per live device).
+    static u32 LiveDeviceObservers();
     // Lists the adapters (every MTLDevice of the system), as rhi::EnumerateAdapters does for this backend.
     static bool EnumerateAdapters(const DeviceCreateInfo& info, AdapterList* out);
 
@@ -433,6 +435,7 @@ private:
     id<MTLCommandQueue> queue_ = nil;
     id<MTLSharedEvent> timeline_ = nil;
     MTLSharedEventListener* listener_ = nil;  // delivers the timeline's notifications for WaitForValue
+    id<NSObject> device_observer_ = nil;      // the removal notifications (macOS), removed by the destructor
     AdapterInfo adapter_;
     AdapterList adapters_;
     DeviceCaps caps_;

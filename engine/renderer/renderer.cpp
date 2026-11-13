@@ -99,36 +99,17 @@ void SetReason(ApplyResult* r, const char* text)
 
 rhi::Backend BackendForSetting(u32 setting_value, const char** note)
 {
+    // The value itself on every platform: macOS's `auto` is Metal since Phase 26 Day 325 (it was the null backend from
+    // Day 314, while Metal was asked for by name). The note stays for a platform that needs a fallback again.
     *note = nullptr;
-    const rhi::Backend requested = static_cast<rhi::Backend>(setting_value);  // kBackendNames follows rhi::Backend
-#if ENGINE_PLATFORM_MACOS
-    if (requested == rhi::Backend::Auto && rhi::FindBackend(rhi::Backend::Null) != nullptr)
-    {
-        for (usize i = 0; i < rhi::RegisteredBackendCount(); ++i)
-        {
-            if (rhi::RegisteredBackend(i).auto_rank != 0)
-            {
-                return requested;  // a GPU backend is built: auto is its, failures included
-            }
-        }
-        *note =
-            "auto: no macOS backend is picked by auto yet (Metal is asked for by name until Phase 26 Day 325); using the null backend";
-        static Atomic<bool> said{false};  // once per program, whichever renderer or thread asks first
-        if (!said.Exchange(true))
-        {
-            RenderLog(LogVerbosity::Warn, "Renderer: %s", *note);
-        }
-        return rhi::Backend::Null;
-    }
-#endif
-    return requested;
+    return static_cast<rhi::Backend>(setting_value);  // kBackendNames follows rhi::Backend
 }
 
 void MakeDeviceCreateInfo(const RenderSettings& settings, const rhi::DeviceCreateInfo& base, char* adapter_buffer,
                           rhi::DeviceCreateInfo* out)
 {
     *out = base;
-    const char* note = nullptr;  // logged by BackendForSetting
+    const char* note = nullptr;  // a fallback's reason, if one is ever taken (none today)
     out->backend = BackendForSetting(settings.GetEnum(settings::kBackend), &note);
     const char* adapter = settings.GetText(settings::kAdapter);
     if (adapter != nullptr && adapter[0] != '\0')

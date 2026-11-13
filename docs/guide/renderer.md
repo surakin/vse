@@ -888,6 +888,9 @@ A **lost surface** on a healthy device (the swapchain returns `Lost` but `Device
 success), counts in `RendererStats::recoveries` and `recovery_failures`, and shows `recovering (attempt N)` in the crash report. A
 settings change asked for during the lost frame is applied at the first frame boundary after the recovery, not lost.
 
+On Metal (Phase 26 Day 325) the loss comes from a command buffer's error or from the system removing the GPU (the device observer), and the
+recovery is the same reset: a new `MTLDevice` from `MTLCopyAllDevices`, every owner rebuilt from its CPU-side source.
+
 **What the application should show.** While frames return `Skipped` the window keeps its last picture; show a short "graphics device
 lost, recovering" line from the `"recovery"` callback and clear it when the end callback reports success. If the renderer gives up,
 tell the user and offer to restart the program (a driver that cannot create a device after three attempts will not on a fourth).
@@ -992,9 +995,8 @@ The renderer is written and tested on Linux with the Vulkan backend (and the nul
 with Vulkan and Direct3D 12 (Phase 13), and on macOS with Metal (Phase 26: the backend from Day 316, the renderer's GPU suites through it
 from Day 323, as on the other backends, since they run once per GPU backend). The renderer needs nothing of its own for Metal: the minted
 shader libraries carry their slots, a pass is a render encoder (so a pass that samples what an earlier one wrote is ordered by the encoder
-boundary), and a depth texture is sampled as `depth32_float` itself. Until the suites pass on it (Day 325), the `backend` setting's `auto`
-on macOS is the null backend ([[renderer::BackendForSetting]]) and `--rhi metal` asks for Metal; `renderer_demo`'s scripted and named
-ctests on macOS run on Metal. The points that shape code are in the [renderer portability
+boundary), and a depth texture is sampled as `depth32_float` itself. The `backend` setting's `auto` on macOS is Metal from Day 325 (from Day 314 it was
+the null backend there, [[renderer::BackendForSetting]]); `renderer_demo`'s scripted and named ctests on macOS run on Metal. The points that shape code are in the [renderer portability
 review](../superpowers/specs/2026-11-04-renderer-portability-review.md); a deferred G-buffer is a poor fit for tile-based mobile GPUs
 unless the passes are merged (Phase 27).
 

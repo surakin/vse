@@ -85,7 +85,7 @@ void DemoSettings::FillDeviceCreateInfo(::engine_placeholder::rhi::DeviceCreateI
 {
     const SharedPtr<const sset::SettingsSnapshot> shared = settings_->Snapshot();
     auto get = [&](const char* key) -> const sset::Value& { return shared->Get(registry_.Find(StringView(key))); };
-    const char* fallback = nullptr;  // macOS's auto until Metal, logged by BackendForSetting (renderer.h)
+    const char* fallback = nullptr;  // a fallback's reason, if one is ever taken (none today: renderer.h)
     info->backend = ::engine_placeholder::renderer::BackendForSetting(
         static_cast<u32>(get("renderer.backend").AsEnum()), &fallback);
     info->validation = static_cast<::engine_placeholder::rhi::ValidationSetting>(get("renderer.validation").AsEnum());

@@ -28,17 +28,19 @@ using namespace engine_placeholder::rhi::metal;
 
 using namespace engine_placeholder::rhi::metal::test;
 
-TEST_CASE("The metal backend is registered, takes Metal libraries, and is asked for by name only until Day 325",
-          "[rhi][metal]")
+TEST_CASE("The metal backend is registered, takes Metal libraries, and is what Auto picks on macOS", "[rhi][metal]")
 {
     RegisterCompiledBackends();
     const BackendDescriptor* d = FindBackend(Backend::Metal);
     REQUIRE(d != nullptr);
     CHECK(StringView(d->name) == "metal");
     CHECK(d->shader_format == ShaderFormat::MetalLib);
-    CHECK(d->auto_rank == 0);
+    CHECK(d->auto_rank > 0);
     char why[160] = {};
-    CHECK(PickAutoBackend(why, sizeof(why)) == nullptr);  // the null backend is never picked, Metal not yet
+    const BackendDescriptor* picked = PickAutoBackend(why, sizeof(why));
+    INFO(why);
+    REQUIRE(picked != nullptr);
+    CHECK(picked->backend == Backend::Metal);  // from Phase 26 Day 325
     char reason[160] = {};
     INFO(reason);
     CHECK(BackendAvailable(*d, reason, sizeof(reason)));
