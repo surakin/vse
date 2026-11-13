@@ -368,7 +368,7 @@ table in `PLAN.md`.
   rasterization only — text shaping for complex scripts (HarfBuzz's
   domain) is explicitly out of scope until a real need shows up; cursor/
   line-break positions instead reuse the foundation string module's
-  existing grapheme clustering. **libpng and zlib are vendored with it from Phase 26 Day 324** (the user's decision, 2026-11-10), used only by FreeType
+  existing grapheme clustering. **libpng and zlib are vendored with it from Phase 26 Day 342** (the user's decision, 2026-11-10), used only by FreeType
   to decode the PNG strikes of `CBDT`/`sbix` colored-glyph fonts; no engine file includes their headers.
 - **Gameplay scripting embeds real languages, not a custom bytecode VM —
   starting with Lua via LuaJIT** (Phase 25). Deliberate, individually

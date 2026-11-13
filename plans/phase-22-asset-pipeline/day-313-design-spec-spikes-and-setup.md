@@ -1,0 +1,47 @@
+# Phase 22 / Day 313 — Design Spec, Spikes (Pak Layout, Hashing, BC Encoding) & Phase Setup
+
+**Phase:** [Phase 22 — Asset Pipeline & Resource System](../phase-22-asset-pipeline.md)
+**Depends on:** Phase 21 complete on the Mac; Phase 20 complete; the user's answers of 2026-11-12 (custom source formats only, an own deterministic BC encoder, a read-only network backend over the TCP transport).
+
+Settle the resource system's design with measurements and set up the phase. A planning-and-spike day: the spikes are throwaway and no engine code is committed from them except the module skeleton.
+
+## Tasks
+
+- [ ] **`CURRENT_PHASE` becomes 22** in the commit of this day's first task, with the `flavors 22` line and the `tests/asset/` mapping in `tests/phases.txt`; `SIDE_PHASES` still lists 21 until its closing runs are done.
+- [ ] **Spec** `docs/superpowers/specs/2026-11-NN-asset-pipeline-design.md` (date of the day) recording each decision below with its reason (planner's defaults in brackets; a spike that disproves one amends it, and the affected day files are edited in the same commit):
+      - modules [`engine/asset`: ids, the blob container, backends, the resource manager, the per-type loaders (mesh, texture, material, level); `tools/asset_mint`: the minters, the packer and the verifier; `tools/resource_server`; nothing in `engine/asset` includes a tool header, and no game binary links a minter (a gate, Day 328)];
+      - resource identity [a `ResourceId` is a 64-bit hash of the normalized virtual path (`/textures/rock.tex`), with the type in the blob header; collisions are detected at mint time and refused; the content hash (below) is a separate thing];
+      - content hash [a 128-bit non-cryptographic hash written here from its published specification with its test vectors, or SHA-256 if the spike shows the cost is negligible: it names blobs in the network cache and detects corruption, nothing more];
+      - the blob container [magic, type id, format version, flags, payload size, content hash, then typed sections with their own sizes; every size checked against the file before allocation; little-endian; 16-byte aligned sections];
+      - versioning [each type has a current version and an `Upgrade(from, bytes) -> bytes` chain run at load; `asset_mint --remint` rewrites old blobs offline; both are tested with a golden blob of every older version];
+      - backends [`ResourceBackend`: `Stat`, `Open` a ranged reader, `List`, `Watch` (polling); filesystem, pak and network; a mount table with priorities so a loose file overrides a pak entry in development];
+      - pak format [one index (sorted by `ResourceId`, binary-searched) after the data, a footer with the index offset and a hash, entries aligned, no compression in version 1];
+      - source formats [custom only: `.mesh.src` (text), `.tex.src` (text parameters naming a raw `.rgba` or `.pgm`-like file), `.mat.src` (text), `.level.src` (text); no PNG and no glTF reader (the user, 2026-11-12); Phase 29 writes the same blob formats];
+      - texture compression [an own deterministic encoder for BC1, BC4, BC5 and a limited BC7; ASTC is Phase 27; the decoder (needed for tests and for the CPU fallback) is ours too (PLAN.md assumption #4)];
+      - determinism [minting is a pure function of the inputs and the tool version: no time stamps, no absolute paths, no hash-table order, no thread-count dependence; tested by minting twice and with 1 and 8 workers];
+      - the resource manager [a handle is a `ResourceId` plus a generation; `Load<T>` synchronous, `LoadAsync<T>` on jobs (decode on workers, GPU upload on the owner thread), reference counts, a dependency graph, `Recreatable` owners keep their loader so a device reset reloads from the backend];
+      - the network backend [read-only, over `net::TcpTransport`; a server tool serves a directory or a pak; requests: stat, list, read range; responses bounded by settings; an on-disk cache keyed by content hash; retry with back-off and an offline mode that serves the cache; no authentication and no encryption (trusted networks only, the user's deferral of 2026-11-12)];
+      - levels [the binary level format is the storage module's component records (`ComponentRegistry`) plus a resource-reference table; the text form is a line-oriented file where each entity lists components and fields by name; the text form is the only optional text format of this phase, with materials' source form];
+      - settings [`assets.*` through `settings::Registry`: mounts, cache directory and size, streaming budget, worker count, network timeouts].
+- [ ] **Spike 1: pak layout and lookup.** A throwaway packer writes 100,000 entries of mixed size; measure open time, a random lookup (binary search over the index) and a ranged read through `io::File` on Linux; decide whether a hash table in the footer is worth it.
+- [ ] **Spike 2: content hash.** Time the candidate hashes over 1 GiB on one core; pick; write the test vectors the Day 314 test will use.
+- [ ] **Spike 3: BC encoding.** Encode a 1024x1024 test image to BC1 with a range-fit encoder and measure PSNR and time; sketch the BC7 mode 6 and mode 1 search and measure PSNR against BC1 on the same image; decide the BC7 subset (modes, partitions) that fits a day. Record the numbers in the spec.
+- [ ] **Spike 4: texture upload and the reset.** Read `renderer::GpuTexture` and `TextureLoader`; confirm a loader that reads from the resource manager survives a device reset (the existing `TextureLoader` hook is the seam); note anything the renderer needs (a BC format in `rhi::Format`, a sampler default).
+- [ ] **New module skeleton** `engine/asset` (empty directory today): `CMakeLists.txt` with `_asan`/`_tsan` flavors, a `modules.txt` row, an `ARCHITECTURE.md` row (layer above `renderer`, `storage` and `net`, below the programs), `docs/reference/modules.txt`, guide `docs/guide/assets.md` started, `tests/asset/` with one passing placeholder test labeled phase 22.
+- [ ] **Plan amendments:** edit later days of this phase for anything the spikes changed; record the user's answers (custom sources, own BC encoder, read-only TCP backend) in `PLAN.md` assumption #12's neighbourhood.
+- [ ] **Runs (CLAUDE.md "Tests run by phase"):** `scripts/test-phase.sh --affected` plain; then the asan and tsan flavors when the day touched concurrency, lifetime or memory code; quote each run's final `ran X of Y tests (phases ...)` line in this file and never say "all tests pass" for a reduced run. `ctest -L docs` when a public header or a guide changed. Build clean (warnings are errors) with Clang and GCC, unity on and off. New code uses the engine's wrappers and types, never `std` (`std_usage_check`); file access only through `io::` (`file_access_check`); settings only through `settings::Registry` (`config_access_check`).
+- [ ] **Three machines (CLAUDE.md "Three machines"):** shared code is portable and checked on the Windows PC and the Mac no later than Day 330; until then the day is "open until the other machines run it" in `KNOWN-ISSUES.md`.
+- [ ] **Documentation (CLAUDE.md "Public API is documented before a day is done"):** public headers carry `///` comments with the contract labels (`docs/DOC-CONVENTIONS.md`); `docgen lint` stays at zero; `cmake --build build --target docs` output committed; new modules are added to `docs/reference/modules.txt`; the guide page `docs/guide/assets.md` is updated and its tagged samples compile and run.
+- [ ] **Module rules (CLAUDE.md "Module dependencies follow ARCHITECTURE.md"):** a new module or edge updates `ARCHITECTURE.md`, `tools/module_deps_check/modules.txt` and the CMake targets (with `_asan`/`_tsan` flavors) in the same commit; no upward edge, no cycle; every new test file has its line in `tests/phases.txt` (phase 22).
+- [ ] **Day review (CLAUDE.md, required):** `/code-review high` over the day's diff after the scoped tests; verify, fix (with a regression test that fails without the fix) or decline each finding with a reason; record the count and outcome under "Post-implementation code review" below and in `STATUS.md`.
+- [ ] `STATUS.md` and `KNOWN-ISSUES.md` updated in the same commit; commit and push.
+
+**Done:** the spec exists with every decision above, the four spikes have numbers in it, `CURRENT_PHASE` is 22, and the module skeleton builds with its placeholder test in phase 22.
+
+## Outcome
+
+(written when the day is done)
+
+## Post-implementation code review
+
+(written when the day is done)

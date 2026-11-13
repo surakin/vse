@@ -1,7 +1,7 @@
-# Phase 26 / Day 327 — `text3d_demo`, Settings Screen & Integration
+# Phase 26 / Day 345 — `text3d_demo`, Settings Screen & Integration
 
 **Phase:** [Phase 26 — 3D Text, Large 2D Text & Colored Glyphs](../phase-26-3d-text-and-color-glyphs.md)
-**Depends on:** Days 318, 321, 323 and 326; `game/ui_demo` (Phase 15).
+**Depends on:** Days 336, 339, 341 and 344; `game/ui_demo` (Phase 15).
 
 One demo that shows everything the phase adds, usable for the by-eye check and the goldens.
 
@@ -13,7 +13,7 @@ One demo that shows everything the phase adds, usable for the by-eye check and t
 - [ ] **Integration tests:** the demo runs 1000 frames with `--validation` on Wayland and X11 with exit 0; a golden frame (frame 60, fixed rotation) under `tests/golden/` per backend compared with the repository's image-compare tolerance; a reset (`ApplySettings` backend-independent change and a forced device loss in the test rig) mid-run keeps the picture; the ASCII-only atlas path is unchanged (its Phase 14 goldens still pass bit-exact).
 - [ ] **Cost table** in the guide: meshes built per second, the cost of a 100-glyph 3D string (build and draw), the mesh batch's cost at 1, 10, 100 large glyphs per frame, memory of the three caches.
 - [ ] **Runs (CLAUDE.md "Tests run by phase"):** `scripts/test-phase.sh --affected` plain; then the asan and tsan flavors if the day touched lifetime, memory or concurrency code; quote each run's final `ran X of Y tests (phases ...)` line in this file. `ctest -L docs` when a public header or a guide changed. Build clean (warnings are errors) with Clang and GCC, unity on and off. New code uses the engine's wrappers and types, never `std` (`std_usage_check`).
-- [ ] **Two machines (CLAUDE.md "Windows is a supported platform"):** shared code is built and tested on the Windows PC no later than Day 328; until then the day files "open until the other machine runs it" in `KNOWN-ISSUES.md`.
+- [ ] **Two machines (CLAUDE.md "Windows is a supported platform"):** shared code is built and tested on the Windows PC no later than Day 346; until then the day files "open until the other machine runs it" in `KNOWN-ISSUES.md`.
 - [ ] **Documentation (CLAUDE.md "Public API is documented before a day is done"):** public headers carry `///` comments with the contract labels (`docs/DOC-CONVENTIONS.md`); `docgen lint` stays at zero; `cmake --build build --target docs` output committed; `docs/guide/text.md` complete ("Large text", "3D text", "Colored glyphs", "Cost", "Limits"); `docs/guide/building-and-testing.md` demo list.
 - [ ] **Day review (CLAUDE.md, required):** `/code-review high` over the day's diff after the scoped tests; verify, fix (with a regression test that fails without the fix) or decline each finding with a reason; record the count and outcome under "Post-implementation code review" below and in `STATUS.md`.
 - [ ] `STATUS.md` and `KNOWN-ISSUES.md` updated in the same commit; commit and push.
