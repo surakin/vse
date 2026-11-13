@@ -21,7 +21,7 @@ encoders, and `FlushMappedBuffer` on `Managed` memory. Modelled on DX12 Day 165.
 - [x] **Tests:** (the Metal file; the shared backend-neutral suites join through the GPU fixture on Day 322) the shared resource tests through a Metal factory (`tests/rhi/*` that are backend-neutral), a `metal_resource_test.mm` (storage-mode
       choice per usage, the forced-`Managed` round trip, pitch alignment, every format's upload and readback round trip).
 - [x] **Documentation:** `rhi.md` Metal section (storage modes, the forced-Managed debug setting); `docgen lint` zero.
-- [ ] **Runs:** `scripts/test-phase.sh --affected --flavor all` (quote). **Deferred to Day 325 (the user's choice).**
+- [x] **Runs:** `ran 6110 of 6490 tests (phases: all; flavors: all; display: included; crash tests: excluded) in 1479 s` ([the Day 325 run](day-325-metal-lifecycle.md#the-run-of-days-315-325)). Originally: `scripts/test-phase.sh --affected --flavor all` (quote). **Deferred to Day 325 (the user's choice).**
 - [x] **End-of-day review:** `/code-review high`. Extra scrutiny: resource lifetime against in-flight command buffers, the ring's wraparound with
       completion on another thread, `didModifyRange` ranges.
 - [x] Update `STATUS.md`, `KNOWN-ISSUES.md` (the Managed coverage limit); commit and push.

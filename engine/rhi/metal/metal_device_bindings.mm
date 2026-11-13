@@ -151,7 +151,10 @@ SamplerHandle MetalDevice::CreateSampler(const SamplerDesc& desc)
         d.compareFunction = normalized.compare_enable ? CompareOf(normalized.compare_op) : MTLCompareFunctionNever;
         d.lodMinClamp = normalized.min_lod;
         d.lodMaxClamp = normalized.max_lod;
-        d.label = desc.debug_name != nullptr ? [NSString stringWithUTF8String:desc.debug_name] : nil;
+        if (desc.debug_name != nullptr)  // Metal's validation refuses a nil label
+        {
+            d.label = [NSString stringWithUTF8String:desc.debug_name];
+        }
         res.state = [device_ newSamplerStateWithDescriptor:d];
     }
     if (res.state == nil)

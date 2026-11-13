@@ -7,17 +7,17 @@ The Phase 4 golden images (triangle, compute, cube, textured cube, lit cube) thr
 
 ## Tasks
 
-- [ ] **Run the suite** (deferred to Day 325, with the numbers: the suites already run once per backend, and Metal is one of them on macOS) (`tests/rhi/golden_test.cpp`, `cube_test`, `textured_cube_test`, `lit_cube_test`, `compute_test`) with a Metal factory and
+- [x] **Run the suite** (Day 325: every golden passes through Metal with validation; the numbers are in the Day 325 file) ([the Day 325 run](day-325-metal-lifecycle.md#the-run-of-days-315-325)). Originally: (deferred to Day 325, with the numbers: the suites already run once per backend, and Metal is one of them on macOS) (`tests/rhi/golden_test.cpp`, `cube_test`, `textured_cube_test`, `lit_cube_test`, `compute_test`) with a Metal factory and
       validation on; record each image's difference numbers (max, mean, pixels over tolerance).
-- [ ] **Investigate every miss** (with the Day 325 run) before touching a tolerance: Y flip, winding after the flip, sRGB conversion on the render target, texture origin,
+- [x] **Investigate every miss** (Day 325: no miss; no tolerance changed) ([the Day 325 run](day-325-metal-lifecycle.md#the-run-of-days-315-325)). Originally: (with the Day 325 run) before touching a tolerance: Y flip, winding after the flip, sRGB conversion on the render target, texture origin,
       sampler addressing, depth range, mip filter. A real difference (rasterization rules of this GPU) changes a tolerance only with the measured numbers
       recorded here and in the test's comment; images are not re-blessed.
 - [x] **Screenshots:** the readback path for a presented image (with `framebufferOnly` off) matches the offscreen render.
-- [ ] **Per-object index:** (proved by the lit-cube and instanced tests in the Day 325 run) the lit-cube and instanced tests prove `first_instance = i` reaches the shader through the stream.
-- [ ] **Validation silent:** (the Day 325 run: every RHI ctest has the validation environment; the times with and without it are measured then) the whole suite with `MTL_DEBUG_LAYER_ERROR_MODE=assert` and shader validation; record the run time with and without
+- [x] **Per-object index:** (Day 325: the lit-cube and material tests pass through Metal) ([the Day 325 run](day-325-metal-lifecycle.md#the-run-of-days-315-325)). Originally: (proved by the lit-cube and instanced tests in the Day 325 run) the lit-cube and instanced tests prove `first_instance = i` reaches the shader through the stream.
+- [x] **Validation silent:** (Day 325: every Metal ctest ran with API and shader validation in assert mode; the rhi GPU suite 16 s with, 15 s without) ([the Day 325 run](day-325-metal-lifecycle.md#the-run-of-days-315-325)). Originally: (the Day 325 run: every RHI ctest has the validation environment; the times with and without it are measured then) the whole suite with `MTL_DEBUG_LAYER_ERROR_MODE=assert` and shader validation; record the run time with and without
       validation.
 - [x] **Documentation:** `rhi.md` notes any tolerance change; `docgen lint` zero.
-- [ ] **Runs:** `scripts/test-phase.sh --affected --flavor all` with GPU tests (quote). **Deferred to Day 325 (the user's choice; the user is asked first).**
+- [x] **Runs:** `ran 6110 of 6490 tests (phases: all; flavors: all; display: included; crash tests: excluded) in 1479 s` ([the Day 325 run](day-325-metal-lifecycle.md#the-run-of-days-315-325)). Originally: `scripts/test-phase.sh --affected --flavor all` with GPU tests (quote). **Deferred to Day 325 (the user's choice; the user is asked first).**
 - [x] **End-of-day review:** `/code-review high`. Extra scrutiny: any tolerance change and the fix that made an image pass (no fix that only works on this
       GPU).
 - [x] Update `STATUS.md`, `KNOWN-ISSUES.md`; commit and push.

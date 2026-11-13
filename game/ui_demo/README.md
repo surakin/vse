@@ -39,7 +39,7 @@ cmake --build build --target ui_demo
 | `--help` | print the options |
 
 Script words (separated by spaces): `frame:N` wait until frame N; `click:name`; `type:text` (`_` is a space); `key:Name` (`Enter`, `Tab`, `Escape`, a letter, `F1`..`F12`, with `ctrl+`, `shift+`
-or `alt+`); `resize:WxH` (offscreen only); `theme:dark|light`; `menu:File/About` (a submenu item is `View/Theme/Dark`); `openmenu:View`; `context`; `rendering`; `drag:name:dx,dy`; `wheel:name:n`;
+or `alt+`, or `shortcut+` for the command shortcuts' modifier: Command on macOS, Ctrl elsewhere); `resize:WxH` (offscreen only); `theme:dark|light`; `menu:File/About` (a submenu item is `View/Theme/Dark`); `openmenu:View`; `context`; `rendering`; `drag:name:dx,dy`; `wheel:name:n`;
 `drop:text:T`, `drop:file:/path` and `paste:T` (a drag from another program and the clipboard, played by a fake OS peer); `shot:path`; `set:key=value`, `reset`, `loss` and `gpu:next` (in a window);
 `quit`.
 

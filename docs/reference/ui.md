@@ -4188,7 +4188,7 @@ The anchor widget: a press on it while the popup is open closes the popup and is
 struct KeyChord { ... }
 ```
 
-A key and the modifiers that must be held with it (only Ctrl, Shift and Alt count).
+A key and the modifiers that must be held with it (Ctrl, Shift, Alt and Super count; Super is Command on macOS).
 
 | Field | Value |
 |---|---|
@@ -4212,7 +4212,7 @@ The key.
 u32 modifiers;
 ```
 
-A mask of `os::kModCtrl`, `os::kModShift` and `os::kModAlt`.
+A mask of `os::kModCtrl`, `os::kModShift`, `os::kModAlt` and `os::kModSuper` (`os::kModShortcut` for a command).
 
 ### `operator==(const KeyChord&)` {#ui-keychord-operator-eq-eq-const-keychord-amp-const}
 
@@ -4257,7 +4257,7 @@ The preferred side is used when the popup fits there; otherwise the opposite sid
 String<HeapAllocator> ChordText(const KeyChord& chord);
 ```
 
-Returns the text of a chord, such as "Ctrl+Shift+S" or "F10" (modifiers in the order Ctrl, Shift, Alt).
+Returns the text of a chord, such as "Ctrl+Shift+S" or "F10" (modifiers in the order Ctrl, Cmd or Super, Shift, Alt).
 
 | Field | Value |
 |---|---|

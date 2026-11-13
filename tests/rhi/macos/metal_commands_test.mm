@@ -190,6 +190,50 @@ TEST_CASE("A Metal pass clears and draws, and a strip restarts at the all-ones i
     device->DestroyBuffer(ib);
 }
 
+// Day 320's open question, answered on Day 325: a 16-bit index draw that starts at an odd index gives Metal an index
+// buffer offset that is not a multiple of 4. Run with API validation (every ctest on macOS), this shows whether Metal
+// accepts it, and that the right indices are read.
+TEST_CASE("A Metal 16-bit index draw may start at an odd index", "[rhi][metal][gpu]")
+{
+    DevicePtr device = CreateDevice(MetalInfo("metal_commands_test"));
+    REQUIRE(device);
+    const f32 vertices[3][5] = {{-1, -1, 1, 0, 0}, {0, -1, 1, 0, 0}, {-1, 0, 1, 0, 0}};
+    const u16 indices[4] = {7, 0, 1, 2};  // index 0 is out of range: drawn, it would show
+    const BufferHandle vb = Buffer(*device, sizeof(vertices), BufferUsage::Vertex | BufferUsage::CopyDst);
+    const BufferHandle ib = Buffer(*device, sizeof(indices), BufferUsage::Index | BufferUsage::CopyDst);
+    REQUIRE(device->UploadBuffer(vb, 0, vertices, sizeof(vertices)).ok);
+    REQUIRE(device->UploadBuffer(ib, 0, indices, sizeof(indices)).ok);
+    Triangle list_pipeline(*device, PrimitiveTopology::TriangleList);
+    REQUIRE(list_pipeline.pipeline.IsValid());
+    const TextureHandle target = Target(*device);
+    device->BeginFrame();
+    CommandList* list = device->CreateCommandList();
+    REQUIRE(list != nullptr);
+    list->Begin();
+    RenderingDesc rd;
+    rd.color[0].texture = target;
+    rd.color[0].load = LoadOp::Clear;
+    rd.color[0].clear_color[2] = 1.0f;  // blue
+    rd.color_count = 1;
+    list->BeginRendering(rd);
+    list->SetPipeline(list_pipeline.pipeline);
+    list->SetVertexBuffer(0, vb, 0);
+    list->SetIndexBuffer(ib, 0, IndexType::UInt16);
+    list->DrawIndexed(3, 1, 1, 0, 0);  // from index 1: a byte offset of 2
+    list->EndRendering();
+    list->End();
+    REQUIRE(device->Submit(&list, 1) != 0);
+    device->EndFrame();
+    Array<u8, 8 * 8 * 4> pixels = {};
+    REQUIRE(device->ReadbackTexture(target, 0, 0, pixels.Data(), pixels.Size(), ResourceState::ColorAttachment));
+    CHECK(Pixel(pixels, 1, 1) == kRed);   // the triangle 0, 1, 2
+    CHECK(Pixel(pixels, 6, 6) == kBlue);  // nothing else
+    list_pipeline.Destroy(*device);
+    device->DestroyTexture(target);
+    device->DestroyBuffer(vb);
+    device->DestroyBuffer(ib);
+}
+
 TEST_CASE("Metal dispatches at the minted threadgroup, and state is applied again after an encoder split",
           "[rhi][metal][gpu]")
 {

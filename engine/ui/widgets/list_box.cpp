@@ -301,7 +301,7 @@ void ListBox::MoveCurrent(usize to, bool extend)
 void ListBox::Click(usize index, u32 modifiers)
 {
     bool changed = false;
-    if (mode_ == SelectionMode::Multiple && (modifiers & os::kModCtrl) != 0)
+    if (mode_ == SelectionMode::Multiple && (modifiers & os::kModShortcut) != 0)  // Cmd+click on macOS
     {
         changed = SetSelectedFlag(index, !IsSelected(index));
         anchor_ = index;
@@ -754,7 +754,7 @@ void ListBox::OnEvent(Event& event)
             }
             break;
         case Key::A:
-            if (mode_ == SelectionMode::Multiple && (event.modifiers & os::kModCtrl) != 0 && count_ > 0)
+            if (mode_ == SelectionMode::Multiple && (event.modifiers & os::kModShortcut) != 0 && count_ > 0)
             {
                 if (SelectRange(0, count_ - 1))
                 {

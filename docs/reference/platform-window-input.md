@@ -1251,6 +1251,16 @@ This is the effective state, so a latched or locked modifier counts, not just a 
 | <a id="os-kmodcapslock"></a>`kModCapsLock` | `1u << 4` | Caps Lock is on. |
 | <a id="os-kmodnumlock"></a>`kModNumLock` | `1u << 5` | Num Lock is on. |
 
+## `kModShortcut` {#os-kmodshortcut}
+
+`variable os::kModShortcut` — defined in `engine/platform/input.h`
+
+```cpp
+inline constexpr u32 kModShortcut;
+```
+
+The modifier of the command shortcuts (copy, cut, paste, select all, undo, quit): Command ([`os::kModSuper`](#os-kmodsuper)) on macOS, Control elsewhere (Phase 26 Day 325). Word moves and Ctrl+Tab keep Control on every platform.
+
 ## `KeyboardState` {#os-keyboardstate}
 
 `struct os::KeyboardState` — defined in `engine/platform/input.h`

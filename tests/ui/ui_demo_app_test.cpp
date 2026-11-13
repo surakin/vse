@@ -138,7 +138,7 @@ TEST_CASE("Menus open and choose, the accelerators work and the About box is mod
     REQUIRE(RunScript(rig, "key:Enter"));
     CHECK(rig.h.GetSurface().ModalLayer()->ChildCount() == 0);
     CHECK_FALSE(rig.app.QuitRequested());
-    REQUIRE(RunScript(rig, "key:ctrl+q"));
+    REQUIRE(RunScript(rig, "key:shortcut+q"));
     CHECK(rig.app.QuitRequested());
 }
 
@@ -191,7 +191,7 @@ TEST_CASE("Dropped text, a dropped file, a paste and the context menu reach thei
     CHECK(name->Text().Length() > 0);
     REQUIRE(RunScript(rig, "drop:file:/tmp/scene.dat"));
     CHECK(rig.app.Status() == StringView("Dropped /tmp/scene.dat"));
-    REQUIRE(RunScript(rig, "click:text_name key:ctrl+a paste:pasted"));
+    REQUIRE(RunScript(rig, "click:text_name key:shortcut+a paste:pasted"));
     CHECK(name->Text() == StringView("pasted"));
     REQUIRE(RunScript(rig, "context"));
     CHECK(rig.h.GetSurface().PopupLayer()->ChildCount() > 0);

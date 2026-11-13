@@ -92,7 +92,8 @@ void Dialog::OnEvent(Event& event)
             Close(cancel_result_);
             return;
         }
-        if (event.key == Key::Enter && default_ != nullptr && (event.modifiers & (os::kModCtrl | os::kModAlt)) == 0)
+        if (event.key == Key::Enter && default_ != nullptr &&
+            (event.modifiers & (os::kModCtrl | os::kModAlt | os::kModSuper)) == 0)
         {
             event.handled = true;
             default_->Click();

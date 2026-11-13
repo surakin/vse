@@ -843,7 +843,8 @@ bool Surface::RunKeyFallbacks(const Event& e)
     {
         return false;  // a modal dialog blocks the accelerators and the menu bar
     }
-    const u32 mask = e.modifiers & (os::kModCtrl | os::kModShift | os::kModAlt);
+    // Super is part of a chord: it is Command on macOS, the command shortcuts' modifier (os::kModShortcut).
+    const u32 mask = e.modifiers & (os::kModCtrl | os::kModShift | os::kModAlt | os::kModSuper);
     for (usize i = 0; i < accelerators_.Size(); ++i)
     {
         const Accelerator& a = accelerators_[i];

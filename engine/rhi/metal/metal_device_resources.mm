@@ -165,32 +165,36 @@ void MetalDevice::ShutdownResources()
 
 void MetalDevice::CollectRetiredLocked(bool all)
 {
-    const u64 completed = all ? ~0ull : completed_frames_;
-    pipelines_.CollectRetired(completed, [](PipelineRes& p) { p.info = MetalPipelineInfo{}; });
-    shaders_.CollectRetired(completed,
-                            [](ShaderRes& s)
-                            {
-                                s.function = nil;
-                                s.library = nil;
-                            });
-    bind_groups_.CollectRetired(completed, [](BindGroupRes&) {});
-    bind_group_layouts_.CollectRetired(completed, [](BindGroupLayoutRes&) {});
-    samplers_.CollectRetired(completed, [](SamplerRes& s) { s.state = nil; });
-    buffers_.CollectRetired(completed,
-                            [&](BufferRes& b)
-                            {
-                                ReleaseBytes(b.bytes);
-                                b.buffer = nil;
-                            });
-    textures_.CollectRetired(completed,
-                             [&](TextureRes& t)
-                             {
-                                 if (!t.external)
+    // What Metal autoreleases here is let go here: the caller (a job thread, a test) may have no pool that drains.
+    @autoreleasepool
+    {
+        const u64 completed = all ? ~0ull : completed_frames_;
+        pipelines_.CollectRetired(completed, [](PipelineRes& p) { p.info = MetalPipelineInfo{}; });
+        shaders_.CollectRetired(completed,
+                                [](ShaderRes& s)
+                                {
+                                    s.function = nil;
+                                    s.library = nil;
+                                });
+        bind_groups_.CollectRetired(completed, [](BindGroupRes&) {});
+        bind_group_layouts_.CollectRetired(completed, [](BindGroupLayoutRes&) {});
+        samplers_.CollectRetired(completed, [](SamplerRes& s) { s.state = nil; });
+        buffers_.CollectRetired(completed,
+                                [&](BufferRes& b)
+                                {
+                                    ReleaseBytes(b.bytes);
+                                    b.buffer = nil;
+                                });
+        textures_.CollectRetired(completed,
+                                 [&](TextureRes& t)
                                  {
-                                     ReleaseBytes(t.bytes);
-                                 }
-                                 t.texture = nil;
-                             });
+                                     if (!t.external)
+                                     {
+                                         ReleaseBytes(t.bytes);
+                                     }
+                                     t.texture = nil;
+                                 });
+    }
 }
 
 bool MetalDevice::CountAllocation(const char* name)
@@ -306,34 +310,38 @@ bool MetalDevice::StageLocked(u64 size, u64 alignment, u64* offset)
 bool MetalDevice::BlitToCpu(u64 bytes, NSString* label, void (^encode)(id<MTLBlitCommandEncoder>, id<MTLBuffer>),
                             u8* dst)
 {
-    u64 temp_bytes = 0;
-    u64 value = 0;
-    id<MTLBuffer> temp = nil;
+    // What Metal autoreleases here is let go here: the caller (a job thread, a test) may have no pool that drains.
     @autoreleasepool
     {
-        temp = NewBuffer(bytes, MTLResourceStorageModeShared, "engine readback", &temp_bytes);
-        if (temp == nil)
+        u64 temp_bytes = 0;
+        u64 value = 0;
+        id<MTLBuffer> temp = nil;
+        @autoreleasepool
         {
-            return false;
+            temp = NewBuffer(bytes, MTLResourceStorageModeShared, "engine readback", &temp_bytes);
+            if (temp == nil)
+            {
+                return false;
+            }
+            LockGuard<Mutex> lock(submit_mutex_);
+            id<MTLCommandBuffer> commands = BeginInternalLocked(label);
+            if (commands != nil)
+            {
+                id<MTLBlitCommandEncoder> blit = [commands blitCommandEncoder];
+                encode(blit, temp);
+                [blit endEncoding];
+                value = CommitInternalLocked(commands);
+            }
         }
-        LockGuard<Mutex> lock(submit_mutex_);
-        id<MTLCommandBuffer> commands = BeginInternalLocked(label);
-        if (commands != nil)
+        const bool ok = value != 0 && WaitForValue(value, ~0ull);
+        if (ok)
         {
-            id<MTLBlitCommandEncoder> blit = [commands blitCommandEncoder];
-            encode(blit, temp);
-            [blit endEncoding];
-            value = CommitInternalLocked(commands);
+            MemCopy(dst, temp.contents, static_cast<usize>(bytes));
         }
+        temp = nil;
+        ReleaseBytes(temp_bytes);
+        return ok;
     }
-    const bool ok = value != 0 && WaitForValue(value, ~0ull);
-    if (ok)
-    {
-        MemCopy(dst, temp.contents, static_cast<usize>(bytes));
-    }
-    temp = nil;
-    ReleaseBytes(temp_bytes);
-    return ok;
 }
 
 bool MetalDevice::ReadGpuBuffer(id<MTLBuffer> source, u64 offset, u64 size, u8* dst)

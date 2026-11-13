@@ -609,7 +609,7 @@ TEST_CASE("ListBox: selection rules, keyboard and type-ahead", "[ui][scroll]")
         CHECK(list->IsSelected(3));
         h.Key(Key::Up, true, os::kModShift);
         CHECK(list->SelectedCount() == 2);
-        h.Key(Key::A, true, os::kModCtrl);
+        h.Key(Key::A, true, os::kModShortcut);
         CHECK(list->SelectedCount() == 5);
         h.Key(Key::Down);  // a plain arrow collapses to one
         CHECK(list->SelectedCount() == 1);
@@ -652,10 +652,10 @@ TEST_CASE("ListBox: Ctrl and Shift clicks in multiple mode", "[ui][scroll]")
         h.GetSurface().Dispatch(e);
     };
     click(2, 0);
-    click(5, os::kModCtrl);
-    click(7, os::kModCtrl);
+    click(5, os::kModShortcut);
+    click(7, os::kModShortcut);
     CHECK(list->SelectedCount() == 3);
-    click(5, os::kModCtrl);  // toggles off
+    click(5, os::kModShortcut);  // toggles off
     CHECK(list->SelectedCount() == 2);
     click(7, 0);  // a plain click selects only it
     CHECK(list->SelectedCount() == 1);

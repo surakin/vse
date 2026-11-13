@@ -185,6 +185,17 @@ MTLVertexDescriptor* MakeMetalVertexDescriptor(const GraphicsPipelineDesc& desc)
     }
     for (usize b = 0; b < desc.vertex_bindings.Size(); ++b)
     {
+        // A binding no attribute reads gets no layout: Metal refuses to serialize one (for the pipeline archive), and
+        // the shader reads nothing from it.
+        bool used = false;
+        for (usize i = 0; i < desc.vertex_attributes.Size() && !used; ++i)
+        {
+            used = desc.vertex_attributes[i].binding == b;
+        }
+        if (!used)
+        {
+            continue;
+        }
         const VertexBindingDesc& vb = desc.vertex_bindings[b];
         MTLVertexBufferLayoutDescriptor* layout = v.layouts[MetalVertexBufferSlot(static_cast<u32>(b))];
         layout.stride = vb.stride;
@@ -275,7 +286,7 @@ void MetalDevice::DestroyShader(ShaderHandle shader)
     shaders_.Retire(shader, frame_open_.Load(MemoryOrder::Relaxed) ? frame_number_ : frame_number_ + 1);
 }
 
-bool MetalDevice::ShaderParts(ShaderHandle shader, ShaderStage stage, id<MTLFunction>* function,
+bool MetalDevice::ShaderParts(ShaderHandle shader, ShaderStage stage, id<MTLFunction> __strong* function,
                               Vector<ShaderSlot>* slots, ShaderSlotTable* table, bool* has_table) const
 {
     LockGuard<Mutex> lock(resource_mutex_);
@@ -406,9 +417,9 @@ PipelineHandle MetalDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc& d
     // The RHI's winding is in framebuffer space, which the projection's Y flip keeps the same as Metal's.
     info.winding = desc.front_face == FrontFace::Clockwise ? MTLWindingClockwise : MTLWindingCounterClockwise;
     info.fill = desc.wireframe ? MTLTriangleFillModeLines : MTLTriangleFillModeFill;
-    info.depth = DepthStencilState(desc.depth_test, desc.depth_write, desc.depth_compare);
     @autoreleasepool
     {
+        info.depth = DepthStencilState(desc.depth_test, desc.depth_write, desc.depth_compare);
         MTLRenderPipelineDescriptor* d = [[MTLRenderPipelineDescriptor alloc] init];
         d.label = [NSString stringWithUTF8String:name];
         d.vertexFunction = vertex_fn;

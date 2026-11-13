@@ -8,17 +8,17 @@ Modelled on DX12 Day 171.
 
 ## Tasks
 
-- [ ] **Run the suites** (deferred to Day 325: they run once per GPU backend, Metal on macOS, now with Metal validation) with a Metal factory: `render_graph_gpu_test`, `gbuffer_gpu_test`, `lighting_gpu_test`, `renderer_demo_gpu_test`, the material
+- [x] **Run the suites** (Day 325: pass through Metal with validation) ([the Day 325 run](day-325-metal-lifecycle.md#the-run-of-days-315-325)). Originally: (deferred to Day 325: they run once per GPU backend, Metal on macOS, now with Metal validation) with a Metal factory: `render_graph_gpu_test`, `gbuffer_gpu_test`, `lighting_gpu_test`, `renderer_demo_gpu_test`, the material
       and permutation tests, `reset_golden_gpu_test`; record differences as on Day 322.
 - [x] **Graph on Metal:** the graph's barriers become what Day 320 decided; passes that write and then sample a G-buffer target land in separate render
       encoders (checked by a test counting encoders per frame); the HDR target `RGBA16Float`.
-- [ ] **Depth sampling:** (nothing to add: Metal samples `Depth32Float` as itself, no typed view; checked by the lighting suite in the Day 325 run) the depth shim the renderer uses for D3D12 (typed view of a depth texture) has its Metal counterpart; the lighting pass samples
+- [x] **Depth sampling:** (Day 325: the lighting suite passes) ([the Day 325 run](day-325-metal-lifecycle.md#the-run-of-days-315-325)). Originally: (nothing to add: Metal samples `Depth32Float` as itself, no typed view; checked by the lighting suite in the Day 325 run) the depth shim the renderer uses for D3D12 (typed view of a depth texture) has its Metal counterpart; the lighting pass samples
       `Depth32Float` correctly.
-- [ ] **`renderer_demo` on Metal:** (the ctests are set up; they run, with the F1-F10 keys by hand, in the Day 325 run) runs its script, writes `renderer_demo.ppm`, matches the golden within tolerance; F1-F10 live keys checked by hand.
-- [ ] **Baselines:** (the Day 325 run) `rhi_bench` and `renderer_bench` on Metal recorded beside the other machines' (no target; the integrated GPU and the Retina size are
+- [x] **`renderer_demo` on Metal:** (Day 325: the ctests pass; F1-F10 checked by the user, the picture right, a reset 150-360 ms; F11 is taken by macOS (Show Desktop), the overlay toggle is checked by its scripted ctest) ([the Day 325 run](day-325-metal-lifecycle.md#the-run-of-days-315-325)). Originally: (the ctests are set up; they run, with the F1-F10 keys by hand, in the Day 325 run) runs its script, writes `renderer_demo.ppm`, matches the golden within tolerance; F1-F10 live keys checked by hand.
+- [x] **Baselines:** (Day 325, Release, the Iris Plus 645: the numbers are in the Day 325 file) ([the Day 325 run](day-325-metal-lifecycle.md#the-run-of-days-315-325)). Originally: (the Day 325 run) `rhi_bench` and `renderer_bench` on Metal recorded beside the other machines' (no target; the integrated GPU and the Retina size are
       named).
 - [x] **Documentation:** `renderer.md` names Metal where it lists backends; `docgen lint` zero.
-- [ ] **Runs:** `scripts/test-phase.sh --affected --flavor all` with GPU tests (quote). **Deferred to Day 325 (the user's choice; the user is asked first).**
+- [x] **Runs:** `ran 6110 of 6490 tests (phases: all; flavors: all; display: included; crash tests: excluded) in 1479 s` ([the Day 325 run](day-325-metal-lifecycle.md#the-run-of-days-315-325)). Originally: `scripts/test-phase.sh --affected --flavor all` with GPU tests (quote). **Deferred to Day 325 (the user's choice; the user is asked first).**
 - [x] **End-of-day review:** `/code-review high`. Extra scrutiny: handle lifetime across frames in parallel recording, the encoder-count test's strength.
 - [x] Update `STATUS.md`, `KNOWN-ISSUES.md`; commit and push.
 

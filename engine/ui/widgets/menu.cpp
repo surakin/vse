@@ -568,7 +568,7 @@ void MenuView::OnEvent(Event& event)
     case EventType::KeyDown:
     {
         event.handled = true;
-        const bool plain = (event.modifiers & (os::kModCtrl | os::kModAlt)) == 0;
+        const bool plain = (event.modifiers & (os::kModCtrl | os::kModAlt | os::kModSuper)) == 0;  // Super: Command
         switch (event.key)
         {
         case Key::Down: Move(1); break;

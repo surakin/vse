@@ -565,8 +565,13 @@ TEST_CASE("Metal refuses SPIR-V, wrong stages and a layout that lacks a shader's
     device->DestroyShader(fs);
 }
 
-TEST_CASE("The Metal pipeline cache round-trips, and a damaged or foreign file is discarded", "[rhi][metal][gpu]")
+TEST_CASE("The Metal pipeline cache round-trips, and a damaged or foreign file is discarded",
+          "[rhi][metal][gpu][archive]")
 {
+    if (ShaderValidationOn())
+    {
+        SKIP("the pipeline archive is off while MTL_SHADER_VALIDATION is set (its ctest runs without it)");
+    }
     io_test::TempDir dir;
     const engine_test::Text native = dir.Native();
     Vector<byte> saved;
@@ -632,4 +637,85 @@ TEST_CASE("The Metal pipeline cache round-trips, and a damaged or foreign file i
         CHECK(all.Make(*device) == count);  // compiled again, and fine
         all.Destroy(*device);
     }
+}
+
+TEST_CASE("The Metal pipeline cache creates its directory when it is not there yet", "[rhi][metal][gpu][archive]")
+{
+    if (ShaderValidationOn())
+    {
+        SKIP("the pipeline archive is off while MTL_SHADER_VALIDATION is set (its ctest runs without it)");
+    }
+    // The user's cache directory does not exist before the first save (Day 325: Metal serialized into a missing
+    // directory, "Invalid URL", and nothing was written).
+    io_test::TempDir dir;
+    char nested[600] = {};
+    FormatTo(nested, sizeof(nested), "%s/not/there/yet", dir.Native().CStr());
+    char path[640] = {};
+    {
+        DevicePtr device = MakePipelineDevice(nested);
+        REQUIRE(device);
+        MetalDevice& metal = AsMetal(*device);
+        REQUIRE(metal.PipelineCache().GetStats().enabled);
+        FormatTo(path, sizeof(path), "%s", metal.PipelineCache().Path());
+        Everything all;
+        CHECK(all.Make(*device) > 0);
+        all.Destroy(*device);  // quiesces, which writes the file
+        CHECK(metal.PipelineCache().GetStats().saved_bytes > kMetalArchiveHeaderBytes);
+    }
+    Vector<byte> saved;
+    CHECK(ReadAll(path, &saved));
+}
+
+TEST_CASE("When Metal will not serialize the archive, a fresh one of the run's pipelines is written",
+          "[rhi][metal][gpu][archive]")
+{
+    if (ShaderValidationOn())
+    {
+        SKIP("the pipeline archive is off while MTL_SHADER_VALIDATION is set (its ctest runs without it)");
+    }
+    // Day 325: an archive read from its file, with the window's pipelines added, was refused by Metal ("missing
+    // 'vertex' stage in pipeline no. 8"), and nothing was written from then on.
+    io_test::TempDir dir;
+    const engine_test::Text native = dir.Native();
+    u32 count = 0;
+    {
+        DevicePtr device = MakePipelineDevice(native.CStr());
+        REQUIRE(device);
+        MetalDevice& metal = AsMetal(*device);
+        Everything all;
+        count = all.Make(*device);
+        metal.PipelineCache().FailNextSerializeForTest();
+        all.Destroy(*device);  // quiesces: the refused archive, then the fresh one
+        CHECK(metal.PipelineCache().GetStats().rebuilt == 1);
+        CHECK(metal.PipelineCache().GetStats().saved_bytes > kMetalArchiveHeaderBytes);
+    }
+    {
+        DevicePtr device = MakePipelineDevice(native.CStr());
+        REQUIRE(device);
+        MetalDevice& metal = AsMetal(*device);
+        CHECK(metal.PipelineCache().GetStats().loaded);
+        Everything all;
+        CHECK(all.Make(*device) == count);
+        CHECK(metal.PipelineCacheHits() == count);  // every pipeline is in the fresh archive
+        all.Destroy(*device);
+    }
+}
+
+TEST_CASE("While Metal's shader validation is on the pipeline archive is off, and pipelines are still made",
+          "[rhi][metal][gpu]")
+{
+    if (!ShaderValidationOn())
+    {
+        SKIP("MTL_SHADER_VALIDATION is not set for this process");
+    }
+    io_test::TempDir dir;
+    const engine_test::Text native = dir.Native();
+    DevicePtr device = MakePipelineDevice(native.CStr());
+    REQUIRE(device);
+    MetalDevice& metal = AsMetal(*device);
+    CHECK_FALSE(metal.PipelineCache().GetStats().enabled);  // asked for, left off (Metal stops inside it otherwise)
+    Everything all;
+    CHECK(all.Make(*device) > 0);
+    CHECK(metal.PipelineCacheHits() == 0);
+    all.Destroy(*device);
 }

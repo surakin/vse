@@ -342,6 +342,9 @@ person is needed. `tests/rhi/render_target.h` is the offscreen target (RGBA8 col
   `ENGINE_RHI_UPDATE_GOLDEN=1 ./build/tests/rhi/rhi_tests "[golden]"`). It rewrites the golden instead of comparing and
   warns. Regeneration is deliberate: open the PPM and look at it, check the analytic assertions passed, and only then
   commit it. Never regenerate to make a failing run pass without understanding the difference.
+- **The numbers of a passing run.** `ENGINE_RHI_GOLDEN_REPORT=1` prints one line per comparison, passed or not: the
+  worst channel difference and the interior and edge pixels over their tolerances (how a backend's differences are
+  recorded, Phase 26 Day 325).
 - **Validation.** GPU tests fail on any validation error. With `ENGINE_RHI_VALIDATION_FATAL=1` the whole suite is clean
   except the validation-capture tests in `vulkan_instance_test.cpp`, which provoke errors on purpose and so abort.
 

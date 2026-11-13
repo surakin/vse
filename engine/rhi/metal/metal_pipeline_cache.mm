@@ -153,6 +153,8 @@ void MetalPipelineCache::Open(id<MTLDevice> device, const DeviceCreateInfo& info
         return;
     }
     stats_.enabled = true;
+    render_used_ = [NSMutableOrderedSet orderedSet];
+    compute_used_ = [NSMutableOrderedSet orderedSet];
     identity_ = MetalArchiveIdentity(adapter.id, adapter.driver);
     FormatTo(path_, sizeof(path_), "%s/metal-%s.bin", dir, adapter.id);
     // The archive copy and the serialization file are this device's alone: the process id and the device serial.
@@ -222,6 +224,7 @@ id<MTLRenderPipelineState> MetalPipelineCache::NewRender(MTLRenderPipelineDescri
     if (state != nil)
     {
         *hit = true;
+        RecordLocked(descriptor);
         return state;
     }
     // A miss: compiled once, into the archive, then created from it.
@@ -230,6 +233,7 @@ id<MTLRenderPipelineState> MetalPipelineCache::NewRender(MTLRenderPipelineDescri
     {
         dirty_ = true;
         ++stats_.added;
+        RecordLocked(descriptor);
         state = [device_ newRenderPipelineStateWithDescriptor:descriptor
                                                       options:MTLPipelineOptionFailOnBinaryArchiveMiss
                                                    reflection:nil
@@ -265,6 +269,7 @@ id<MTLComputePipelineState> MetalPipelineCache::NewCompute(MTLComputePipelineDes
     if (state != nil)
     {
         *hit = true;
+        RecordLocked(descriptor);
         return state;
     }
     NSError* add_error = nil;
@@ -272,6 +277,7 @@ id<MTLComputePipelineState> MetalPipelineCache::NewCompute(MTLComputePipelineDes
     {
         dirty_ = true;
         ++stats_.added;
+        RecordLocked(descriptor);
         state = [device_ newComputePipelineStateWithDescriptor:descriptor
                                                        options:MTLPipelineOptionFailOnBinaryArchiveMiss
                                                     reflection:nil
@@ -293,16 +299,44 @@ id<MTLComputePipelineState> MetalPipelineCache::NewCompute(MTLComputePipelineDes
 bool MetalPipelineCache::Save()
 {
     LockGuard<Mutex> lock(mutex_);
-    if (archive_ == nil || !dirty_)
+    if (archive_ == nil || !dirty_ || given_up_)
     {
         return true;
     }
     const char* temp = temp_path_;
     bool ok = false;
+    // Metal serializes into a file beside the cache file, so the directory must be there first (the user's cache
+    // directory is not, before the first save: "Invalid URL", seen on Day 325).
+    const io::Path dir = PathOf(temp).Parent();
+    if (!dir.IsEmpty() && io::CreateDirectories(dir).Failed())
+    {
+        RhiLog(LogVerbosity::Warn, "Metal: the pipeline cache directory for %s could not be created", path_);
+        return false;
+    }
     @autoreleasepool
     {
+        NSURL* url = [NSURL fileURLWithPath:[NSString stringWithUTF8String:temp]];
         NSError* error = nil;
-        if ([archive_ serializeToURL:[NSURL fileURLWithPath:[NSString stringWithUTF8String:temp]] error:&error])
+        bool serialized = !fail_next_serialize_ && [archive_ serializeToURL:url error:&error];
+        fail_next_serialize_ = false;
+        if (!serialized)
+        {
+            RhiLog(LogVerbosity::Info,
+                   "Metal: the pipeline cache would not serialize (%s); writing a fresh one of this "
+                   "run's %lu pipeline(s)",
+                   error != nil ? error.localizedDescription.UTF8String : "no reason given",
+                   static_cast<unsigned long>(render_used_.count + compute_used_.count));
+            id<MTLBinaryArchive> fresh = RebuildLocked();
+            io::Remove(PathOf(temp));  // whatever the refused attempt left there
+            error = nil;
+            if (fresh != nil && [fresh serializeToURL:url error:&error])
+            {
+                archive_ = fresh;  // later pipelines go into the archive that serializes
+                serialized = true;
+                ++stats_.rebuilt;
+            }
+        }
+        if (serialized)
         {
             Vector<u8> bytes;
             if (io::ReadFile(PathOf(temp), &bytes).Ok() && !bytes.Empty())
@@ -321,8 +355,10 @@ bool MetalPipelineCache::Save()
         }
         else
         {
-            RhiLog(LogVerbosity::Warn, "Metal: the pipeline cache could not be serialized (%s)",
+            RhiLog(LogVerbosity::Warn,
+                   "Metal: the pipeline cache could not be serialized (%s); this device saves it no more",
                    error != nil ? error.localizedDescription.UTF8String : "no reason given");
+            given_up_ = true;
         }
     }
     io::Remove(PathOf(temp));
@@ -331,6 +367,48 @@ bool MetalPipelineCache::Save()
         RhiLog(LogVerbosity::Warn, "Metal: the pipeline cache %s was not written", path_);
     }
     return ok;
+}
+
+void MetalPipelineCache::RecordLocked(MTLRenderPipelineDescriptor* descriptor)
+{
+    MTLRenderPipelineDescriptor* used = [descriptor copy];
+    used.binaryArchives = nil;
+    [render_used_ addObject:used];  // an equal description already there is not added again
+    stats_.recorded = static_cast<u32>(render_used_.count + compute_used_.count);
+}
+
+void MetalPipelineCache::RecordLocked(MTLComputePipelineDescriptor* descriptor)
+{
+    MTLComputePipelineDescriptor* used = [descriptor copy];
+    used.binaryArchives = nil;
+    [compute_used_ addObject:used];
+    stats_.recorded = static_cast<u32>(render_used_.count + compute_used_.count);
+}
+
+id<MTLBinaryArchive> MetalPipelineCache::RebuildLocked()
+{
+    NSError* error = nil;
+    id<MTLBinaryArchive> fresh = [device_ newBinaryArchiveWithDescriptor:[[MTLBinaryArchiveDescriptor alloc] init]
+                                                                   error:&error];
+    if (fresh == nil)
+    {
+        return nil;
+    }
+    for (MTLRenderPipelineDescriptor* d in render_used_)
+    {
+        if (![fresh addRenderPipelineFunctionsWithDescriptor:d error:&error])
+        {
+            return nil;
+        }
+    }
+    for (MTLComputePipelineDescriptor* d in compute_used_)
+    {
+        if (![fresh addComputePipelineFunctionsWithDescriptor:d error:&error])
+        {
+            return nil;
+        }
+    }
+    return fresh;
 }
 
 MetalPipelineCache::Stats MetalPipelineCache::GetStats() const

@@ -254,7 +254,7 @@ void UiDemoApp::BuildMenus()
     AddCommand(file_menu_.Get(), "&Quit", &UiDemoApp::QuitCommand);
     KeyChord quit;
     quit.key = Key::Q;
-    quit.modifiers = os::kModCtrl;
+    quit.modifiers = os::kModShortcut;  // Cmd+Q on macOS, Ctrl+Q elsewhere
     quit_accelerator_ = surface_->RegisterAccelerator(
         quit, [](void* user) { static_cast<UiDemoApp*>(user)->RequestQuit(); }, this);
     file_menu_->SetItemAccelerator(file_menu_->ItemCount() - 1, quit_accelerator_);

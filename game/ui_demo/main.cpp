@@ -668,7 +668,7 @@ int RunWindow(const Options& options, RenderSettings settings)
 }
 
 const char kUsageFormat[] =
-    "usage: %s [--backend wayland|x11|win32] [--frames N] [--screenshot out.ppm] [--script WORDS] [--scale 1|1.25|2] [--no-vsync] [--validation] [--gpu ID|INDEX|NAME]\n"
+    "usage: %s [--backend wayland|x11|win32|cocoa] [--frames N] [--screenshot out.ppm] [--script WORDS] [--scale 1|1.25|2] [--no-vsync] [--validation] [--gpu ID|INDEX|NAME]\n"
     "  --backend B       display backend (default: automatic; same as ENGINE_WINDOW_BACKEND)\n"
     "  --frames N        stop after N frames\n"
     "  --screenshot P    render offscreen, no window, and write the last frame to P (a binary PPM, 960x600 logical units)\n"

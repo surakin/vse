@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
+#include "build_defs.h"
 #include "font_support.h"
 #include "scripted_window.h"
 #include "ui/surface.h"
@@ -86,7 +87,7 @@ TEST_CASE("paste from the OS clipboard shows nothing until the data arrives, the
 {
     OsRig rig;
     rig.window.clipboard_has_text = true;
-    rig.h.Key(Key::V, true, os::kModCtrl);
+    rig.h.Key(Key::V, true, os::kModShortcut);
     REQUIRE(rig.window.requests.Size() == 1);
     CHECK(rig.window.requests[0].kind == os::ClipboardKind::Clipboard);
     CHECK(rig.a->Text() == StringView(""));
@@ -104,14 +105,14 @@ TEST_CASE("a paste that times out or finds nothing inserts nothing and reports t
 {
     OsRig rig;
     rig.window.clipboard_has_text = true;
-    rig.h.Key(Key::V, true, os::kModCtrl);
+    rig.h.Key(Key::V, true, os::kModShortcut);
     rig.window.Finish(rig.window.requests[0].id, os::ClipboardStatus::Timeout, StringView());
     rig.Pump();
     CHECK(rig.a->Text() == StringView(""));
     CHECK(rig.failures == 1);
     CHECK(rig.failure == os::ClipboardStatus::Timeout);
     rig.window.refuse_requests = true;
-    rig.h.Key(Key::V, true, os::kModCtrl);
+    rig.h.Key(Key::V, true, os::kModShortcut);
     CHECK(rig.failures == 2);
     CHECK(rig.failure == os::ClipboardStatus::Failed);
     CHECK(rig.clip.PendingCount() == 0);
@@ -121,7 +122,7 @@ TEST_CASE("a field destroyed while its paste is pending is not called when the d
 {
     OsRig rig;
     rig.window.clipboard_has_text = true;
-    rig.h.Key(Key::V, true, os::kModCtrl);
+    rig.h.Key(Key::V, true, os::kModShortcut);
     REQUIRE(rig.window.requests.Size() == 1);
     const u32 id = rig.window.requests[0].id;
     rig.a->RemoveFromParent();
@@ -132,13 +133,31 @@ TEST_CASE("a field destroyed while its paste is pending is not called when the d
     CHECK(rig.b->Text() == StringView(""));
 }
 
+TEST_CASE("The command shortcuts take Command on macOS and Control elsewhere", "[ui][clipboard]")
+{
+    // Phase 26 Day 325: on macOS Ctrl+C copied and Cmd+C did nothing (found by hand in ui_demo).
+    OsRig rig;
+    rig.a->SetText(StringView("hello world"));
+    rig.a->SetSelection(0, 5);
+    const u32 other = os::kModShortcut == os::kModCtrl ? os::kModSuper : os::kModCtrl;
+    rig.h.Key(Key::C, true, other);  // the other platform's modifier copies nothing
+    CHECK(rig.window.offered.Empty());
+    rig.h.Key(Key::C, true, os::kModShortcut);
+    CHECK(rig.window.offered.Size() == 1);
+#if ENGINE_PLATFORM_MACOS
+    CHECK(os::kModShortcut == os::kModSuper);
+#else
+    CHECK(os::kModShortcut == os::kModCtrl);
+#endif
+}
+
 TEST_CASE("copy and cut offer the text to the OS; Paste enables from the window's record of the selection",
           "[ui][clipboard]")
 {
     OsRig rig;
     rig.a->SetText(StringView("hello world"));
     rig.a->SetSelection(0, 5);
-    rig.h.Key(Key::X, true, os::kModCtrl);
+    rig.h.Key(Key::X, true, os::kModShortcut);
     REQUIRE(rig.window.offered.Size() == 1);
     CHECK(rig.window.offered[0].kind == os::ClipboardKind::Clipboard);
     CHECK(rig.window.offered[0].bytes.Size() == 5);

@@ -1001,7 +1001,7 @@ int ParseLayer(const char* name)
 }
 
 const char kUsageFormat[] =
-    "usage: %s [--backend wayland|x11|win32] [--frames N] [--screenshot out.ppm] [--no-vsync] [--validation]\n"
+    "usage: %s [--backend wayland|x11|win32|cocoa] [--frames N] [--screenshot out.ppm] [--no-vsync] [--validation]\n"
     "       [--objects N] [--lights N] [--gbuffer albedo|normal|material|depth|worldpos]\n"
     "       [--inject-device-loss FRAME] [--inject-oom N] [--gpu ID|INDEX|NAME] [--list-gpus] [--prewarm]\n"
     "       [--script WORDS] [--text STRING]\n"

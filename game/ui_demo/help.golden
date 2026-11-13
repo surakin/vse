@@ -1,4 +1,4 @@
-usage: PROGRAM [--backend wayland|x11|win32] [--frames N] [--screenshot out.ppm] [--script WORDS] [--scale 1|1.25|2] [--no-vsync] [--validation] [--gpu ID|INDEX|NAME]
+usage: PROGRAM [--backend wayland|x11|win32|cocoa] [--frames N] [--screenshot out.ppm] [--script WORDS] [--scale 1|1.25|2] [--no-vsync] [--validation] [--gpu ID|INDEX|NAME]
   --backend B       display backend (default: automatic; same as ENGINE_WINDOW_BACKEND)
   --frames N        stop after N frames
   --screenshot P    render offscreen, no window, and write the last frame to P (a binary PPM, 960x600 logical units)

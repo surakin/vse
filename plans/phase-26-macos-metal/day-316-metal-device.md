@@ -29,7 +29,7 @@ and the device capabilities. Modelled on DX12 Day 164.
 - [x] **Tests:** `smoke_test`, `backend_registry_test`, `adapter_test`, a new `tests/rhi/metal_device_test.mm` (phase 26: creation, queue, events, caps,
       destruction order leaving nothing alive: ARC plus the `Resources()` counts).
 - [x] **Documentation:** `docs/guide/rhi.md` "Metal" section (adapters, validation environment, what is advisory); `docgen lint` zero.
-- [ ] **Runs:** `scripts/test-phase.sh --affected --flavor all` (quote; GPU tests under ASan and TSan too, as on Linux). **Deferred to Day 325 (the user's choice)**, with the record of the adapter's properties (the device test prints them).
+- [x] **Runs:** `ran 6110 of 6490 tests (phases: all; flavors: all; display: included; crash tests: excluded) in 1479 s` ([the Day 325 run](day-325-metal-lifecycle.md#the-run-of-days-315-325)). Originally: `scripts/test-phase.sh --affected --flavor all` (quote; GPU tests under ASan and TSan too, as on Linux). **Deferred to Day 325 (the user's choice)**, with the record of the adapter's properties (the device test prints them).
 - [x] **End-of-day review:** `/code-review high`. Extra scrutiny: ARC ownership of the device and queue against the C++ handle pools, completion
       handlers running on Metal's threads (TSan), bounded waits.
 - [x] Update `STATUS.md`, `KNOWN-ISSUES.md`; commit and push.

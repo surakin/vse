@@ -323,6 +323,7 @@ tests/rhi/macos/metal_swapchain_test.mm         26   # the Metal swapchain over 
 tests/rhi/macos/metal_graph_test.mm             26   # the render graph's passes as Metal encoders (Day 323)
 tests/rhi/macos/metal_lifecycle_test.mm         26   # Metal resets, stale handles, tolerant destruction (Day 325)
 test:metal_validation_planted                   26   # a planted Metal validation error must stop the program (Day 316)
+test:metal_autorelease_pools                     26   # no Metal object autoreleased without a pool in the reset loop (Day 325)
 testopt:macos_*                                 26
 
 # --- Phase 14: font and text (FreeType, glyph atlas, layout, cursor, the overlay text pass) ---

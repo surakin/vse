@@ -77,9 +77,10 @@ set(inc_dx_re "^[ \t]*#[ \t]*(include|import)[ \t]*[<\"][^>\"]*(d3d12|dxgi|d3dco
 # Metal (Phase 26 Day 316): the framework's headers (Metal, MetalKit, MetalPerformanceShaders, MetalFX; `#include`, `#import` or `@import`) and
 # its API names (MTLDevice, MTLGPUFamilyMac2, MTLCreateSystemDefaultDevice: MTL, a capital and at least one more name character, which the
 # library file tag "MTLB" does not have) only in engine/rhi/metal/ and the minting tool tools/metal_mint/. The window's CAMetalLayer comes
-# from QuartzCore, not Metal, and is the platform layer's.
+# from QuartzCore, not Metal, and is the platform layer's. A line's ';' reads as <SEMI> here (read_lines), so `@import Metal;`
+# is matched in that form.
 set(mtl_ident_re "(^|[^A-Za-z0-9_])MTL[A-Z][A-Za-z0-9_]+")
-set(inc_mtl_re "^[ \t]*(#[ \t]*(include|import)[ \t]*[<\"]Metal(Kit|PerformanceShaders|PerformanceShadersGraph|FX)?/[^>\"]*[>\"]|@import[ \t]+Metal(Kit|PerformanceShaders|PerformanceShadersGraph|FX)?[ \t]*[;.])")
+set(inc_mtl_re "^[ \t]*(#[ \t]*(include|import)[ \t]*[<\"]Metal(Kit|PerformanceShaders|PerformanceShadersGraph|FX)?/[^>\"]*[>\"]|@import[ \t]+Metal(Kit|PerformanceShaders|PerformanceShadersGraph|FX)?[ \t]*(<SEMI>|\\.))")
 
 set(files "")
 foreach(dir engine game tools tests/renderer)

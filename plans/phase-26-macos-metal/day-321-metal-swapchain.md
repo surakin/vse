@@ -20,12 +20,12 @@ re-creation and EDR. Modelled on DX12 Day 169.
 - [x] **Color space and HDR:** `colorspace` sRGB by default; `HdrMode::ScRgbLinear` maps to `RGBA16Float`, `kCGColorSpaceExtendedLinearSRGB` and
       `wantsExtendedDynamicRangeContent`, granted only when the screen reports `maximumPotentialExtendedDynamicRangeColorComponentValue > 1`; this MacBook's
       display is not EDR (record what it reports), so HDR stays policy-tested only; `GetColorSpace` answers.
-- [ ] **Fullscreen and Retina:** (by hand, with the Day 325 run: the user is needed at the Mac) the swapchain follows the native-fullscreen resize and a move between screens of different scale (checked by hand with
+- [x] **Fullscreen and Retina:** (Day 325, by the user: native fullscreen in and out through `renderer_demo` F5 and `ui_demo`'s green button, the picture right; EDR potential 2.00, now 1.00. A move between screens of different scale is not checked: one display) ([the Day 325 run](day-325-metal-lifecycle.md#the-run-of-days-315-325)). Originally: (by hand, with the Day 325 run: the user is needed at the Mac) the swapchain follows the native-fullscreen resize and a move between screens of different scale (checked by hand with
       an external display if one is available; recorded).
 - [x] **Tests:** (the Metal file; `swapchain_reconfigure_test` and the shared presentation tests join through the GPU fixture on Day 322) `swapchain_reconfigure_test` and the shared presentation tests through Metal in the display group; `metal_swapchain_test.mm` (present-mode
       mapping, timeout path, drawable never held, re-created layer).
 - [x] **Documentation:** `rhi.md` "Presentation" Metal notes; `KNOWN-ISSUES.md` HDR line updated with this display's numbers; `docgen lint` zero.
-- [ ] **Runs:** `scripts/test-phase.sh --affected --flavor all` with the display group (quote). **Deferred to Day 325 (the user's choice; the user is asked first).**
+- [x] **Runs:** `ran 6110 of 6490 tests (phases: all; flavors: all; display: included; crash tests: excluded) in 1479 s` ([the Day 325 run](day-325-metal-lifecycle.md#the-run-of-days-315-325)). Originally: `scripts/test-phase.sh --affected --flavor all` with the display group (quote). **Deferred to Day 325 (the user's choice; the user is asked first).**
 - [x] **End-of-day review:** `/code-review high`. Extra scrutiny: blocking in `nextDrawable` (never on a job worker without a bound), drawable lifetime,
       resize races between the main thread and recording jobs.
 - [x] Update `STATUS.md`, `KNOWN-ISSUES.md`; commit and push.

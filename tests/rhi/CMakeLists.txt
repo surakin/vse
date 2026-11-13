@@ -126,10 +126,18 @@ function(engine_add_rhi_tests target rhi_lib rhi_vulkan_lib rhi_backends_lib suf
   endif()
   # Tests that open a window share the desktop's input focus, so they hold the `display` resource and run one at a time
   # (see tests/foundation/CMakeLists.txt); the rest run in parallel. `spec` is ANDed onto each half.
-  engine_discover_tests(${target} TEST_SUFFIX "${suffix}" TEST_SPEC "~[window]~[x11]~[wayland]${spec}"
+  engine_discover_tests(${target} TEST_SUFFIX "${suffix}" TEST_SPEC "~[window]~[x11]~[wayland]~[archive]${spec}"
     PROPERTIES LABELS "${label}" ENVIRONMENT "${env}")
   engine_discover_tests(${target} TEST_SUFFIX "${suffix}" TEST_SPEC "[window]${spec},[x11]${spec},[wayland]${spec}"
     PROPERTIES LABELS "${label};display" RESOURCE_LOCK display ENVIRONMENT "${env}")
+  # The Metal pipeline archive's tests (tag [archive], Phase 26 Day 325): Metal stops inside a binary archive while its
+  # shader validation is on, and the device then leaves the archive off, so these run with the API validation alone.
+  if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    set(archive_env "${env}")
+    list(REMOVE_ITEM archive_env MTL_SHADER_VALIDATION=1)
+    engine_discover_tests(${target} TEST_SUFFIX "${suffix}" TEST_SPEC "[archive]${spec}"
+      PROPERTIES LABELS "${label}" ENVIRONMENT "${archive_env}")
+  endif()
 endfunction()
 
 engine_add_rhi_tests(rhi_tests rhi rhi_vulkan rhi_backends "" "rhi" "")
@@ -152,12 +160,24 @@ endif()
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   add_executable(metal_validation_planted macos/metal_validation_planted.mm)
   target_link_libraries(metal_validation_planted PRIVATE rhi_backends)
-  add_test(NAME metal_validation_planted COMMAND metal_validation_planted)
+  # Through a driver script: the assertion aborts the program, and ctest fails any abort whatever its output.
+  add_test(NAME metal_validation_planted COMMAND ${CMAKE_COMMAND} -DPROGRAM=$<TARGET_FILE:metal_validation_planted>
+           -P ${CMAKE_CURRENT_SOURCE_DIR}/macos/run_validation_planted.cmake)
   set_tests_properties(metal_validation_planted PROPERTIES
     ENVIRONMENT "MTL_DEBUG_LAYER=1;MTL_DEBUG_LAYER_ERROR_MODE=assert"
-    PASS_REGULAR_EXPRESSION "failed assertion"
+    PASS_REGULAR_EXPRESSION "stopped by Metal's validation"
     FAIL_REGULAR_EXPRESSION "the planted call was not caught|validation is off")
   engine_label_tests(metal_validation_planted)
+  # Every Metal object the backend's calls autorelease is drained by a pool of its own (Phase 26 Day 325): a caller
+  # with no pool (a job thread, a C++ test) would otherwise keep it, and a released object autoreleases its device, so
+  # a hundred resets held about 37 MiB. Only the test's own thread counts (tests/rhi/macos/run_autorelease_pools.cmake).
+  # Without Metal's validation layer this run also keeps the loop's memory check, which that layer's own growth defeats.
+  add_test(NAME metal_autorelease_pools COMMAND ${CMAKE_COMMAND} -DPROGRAM=$<TARGET_FILE:rhi_tests>
+           -P ${CMAKE_CURRENT_SOURCE_DIR}/macos/run_autorelease_pools.cmake)
+  set_tests_properties(metal_autorelease_pools PROPERTIES
+    ENVIRONMENT "OBJC_DEBUG_MISSING_POOLS=YES;ENGINE_RHI_PRINT_TEST_THREAD=1;ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/metal_autorelease_pools"
+    PASS_REGULAR_EXPRESSION "no Metal object autoreleased without a pool")
+  engine_label_tests(metal_autorelease_pools)
 endif()
 
 # Phase 8 Day 114: the lifecycle checklist for the DX12 and Metal backends stays in step with the interfaces, and the neutral RHI

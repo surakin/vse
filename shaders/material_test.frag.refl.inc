@@ -24,12 +24,12 @@ inline constexpr u8 kMaterialTestFragRefl[kMaterialTestFragReflByteCount] = {
     0, 0, 0, 1, 0, 0, 0, 14, 77, 97, 116, 101, 114, 105, 97, 108,
     80, 97, 114, 97, 109, 115, 112, 0, 0, 0, 5, 0, 0, 0, 10, 98,
     97, 115, 101, 95, 99, 111, 108, 111, 114, 0, 0, 0, 0, 16, 0, 0,
-    0, 1, 0, 4, 1, 0, 0, 0, 0, 0, 0, 0, 0, 8, 101, 109,
-    105, 115, 115, 105, 118, 101, 16, 0, 0, 0, 12, 0, 0, 0, 1, 0,
-    3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 9, 114, 111, 117, 103, 104,
-    110, 101, 115, 115, 28, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 1,
-    0, 0, 0, 0, 0, 0, 0, 0, 5, 102, 108, 97, 103, 115, 32, 0,
-    0, 0, 4, 0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0, 0, 0,
+    0, 1, 0, 4, 1, 0, 0, 0, 0, 0, 0, 0, 0, 9, 114, 111,
+    117, 103, 104, 110, 101, 115, 115, 16, 0, 0, 0, 4, 0, 0, 0, 0,
+    0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 5, 102, 108, 97, 103,
+    115, 20, 0, 0, 0, 4, 0, 0, 0, 0, 2, 1, 1, 0, 0, 0,
+    0, 0, 0, 0, 0, 8, 101, 109, 105, 115, 115, 105, 118, 101, 32, 0,
+    0, 0, 12, 0, 0, 0, 1, 0, 3, 1, 0, 0, 0, 0, 0, 0,
     0, 0, 12, 117, 118, 95, 116, 114, 97, 110, 115, 102, 111, 114, 109, 48,
     0, 0, 0, 64, 0, 0, 0, 2, 0, 4, 4, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 1, 255, 255, 255, 255, 0, 0, 0,
@@ -39,9 +39,9 @@ inline constexpr u8 kMaterialTestFragRefl[kMaterialTestFragReflByteCount] = {
 // Block sizes and member offsets, for static_asserts on the C++ structs copied into these blocks.
 inline constexpr u32 kMaterialTestFragMaterialParamsSize = 112;
 inline constexpr u32 kMaterialTestFragMaterialParamsBaseColorOffset = 0;
-inline constexpr u32 kMaterialTestFragMaterialParamsEmissiveOffset = 16;
-inline constexpr u32 kMaterialTestFragMaterialParamsRoughnessOffset = 28;
-inline constexpr u32 kMaterialTestFragMaterialParamsFlagsOffset = 32;
+inline constexpr u32 kMaterialTestFragMaterialParamsRoughnessOffset = 16;
+inline constexpr u32 kMaterialTestFragMaterialParamsFlagsOffset = 20;
+inline constexpr u32 kMaterialTestFragMaterialParamsEmissiveOffset = 32;
 inline constexpr u32 kMaterialTestFragMaterialParamsUvTransformOffset = 48;
 
 } // namespace engine_placeholder::shaders

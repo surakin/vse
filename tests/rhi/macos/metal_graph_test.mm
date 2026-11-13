@@ -154,8 +154,9 @@ TEST_CASE("On Metal a render graph's writing pass and the pass that samples it a
     const MetalCommandList::Counts counts = static_cast<MetalCommandList*>(list)->GetCounts();
     CHECK(counts.render_encoders == 2);  // one per pass: the encoder boundary orders the write before the read
     CHECK(counts.memory_barriers == 0);  // the graph's barriers are between encoders: nothing on Metal
-    CHECK(counts.skipped_barriers >=
-          1);  // the a: ColorAttachment -> ShaderRead transition at least (exact count: Day 325)
+    // a: Undefined -> ColorAttachment and ColorAttachment -> Sampled; out: Undefined -> ColorAttachment and
+    // ColorAttachment -> CopySrc (its final state). None is inside a compute encoder (measured on Day 325).
+    CHECK(counts.skipped_barriers == 4);
     REQUIRE(device->Submit(&list, 1) != 0);
     device->EndFrame();
     device->WaitIdle();

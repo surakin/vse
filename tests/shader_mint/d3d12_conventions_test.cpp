@@ -212,7 +212,9 @@ TEST_CASE("The Metal build's slots go into the reflection by name, one resource 
     REQUIRE(ReflectionFromJson(StringView(kFragmentJson), &r, &error));
     CHECK_FALSE(r.has_metal_slots);
     ShaderReflection good = r;
-    REQUIRE(ApplyMetalSlots(&good, StringView(kFragmentJson), StringView(kGoodMetalJson), &error));
+    const bool applied = ApplyMetalSlots(&good, StringView(kFragmentJson), StringView(kGoodMetalJson), &error);
+    INFO(error.CStr());
+    REQUIRE(applied);
     CHECK(good.has_metal_slots);
     CHECK(good.bindings[0].metal_slot == 0);  // mat: [[buffer(0)]]
     CHECK(good.bindings[1].metal_slot == 0);  // tex: [[texture(0)]], another table
@@ -249,4 +251,20 @@ TEST_CASE("The Metal build's slots go into the reflection by name, one resource 
                 .View(),
             StringView("the SPIR-V build does not declare"));
     refused(StringView("not json"), StringView("not valid JSON"));
+    // A block field the Metal build puts elsewhere (Day 325: a scalar after a float3 moves in Metal's layout), and the
+    // same field where the SPIR-V build has it.
+    auto with_tint_at = [&](const char* offset)
+    {
+        Text json = MakeText(
+            StringView(R"({"name": "mat", "binding": {"kind": "constantBuffer", "index": 0}, "type": )"
+                       R"({"kind": "constantBuffer", "elementType": {"kind": "struct", "name": "Material", )"
+                       R"("fields": [{"name": "tint", "binding": {"kind": "uniform", "offset": )"));
+        json.Append(StringView(offset));
+        json.Append(StringView(R"(, "size": 16}}]}}},)"));
+        return EditJson(good_json.View(), R"({"name": "mat", "binding": {"kind": "constantBuffer", "index": 0}},)",
+                        json.View());
+    };
+    refused(with_tint_at("16").View(), StringView("'mat.tint' is at offset 0 in the SPIR-V build but 16"));
+    ShaderReflection agreeing = r;
+    CHECK(ApplyMetalSlots(&agreeing, StringView(kFragmentJson), with_tint_at("0").View(), &error));
 }

@@ -258,7 +258,7 @@ TEST_CASE("TextField: typing, selection, deleting and Home/End", "[ui][textfield
     CHECK(r.field->Text() == StringView("helo"));
     r.Key(Key::Delete);
     CHECK(r.field->Text() == StringView("heo"));
-    r.Key(Key::A, os::kModCtrl);
+    r.Key(Key::A, os::kModShortcut);
     CHECK(r.field->SelectedText() == StringView("heo"));
     r.Key(Key::Delete);
     CHECK(r.field->Text().Length() == 0);
@@ -529,15 +529,15 @@ TEST_CASE("TextField: maximum length, validator, read-only, password and placeho
         r.Type("x");
         r.Key(Key::Backspace);
         r.Key(Key::Delete);
-        r.Key(Key::V, os::kModCtrl);
+        r.Key(Key::V, os::kModShortcut);
         CHECK(r.field->Text() == StringView("fixed"));
         r.Key(Key::Home);
         r.Key(Key::Right, os::kModShift);
         CHECK(r.field->SelectedText() == StringView("f"));
-        r.Key(Key::C, os::kModCtrl);
+        r.Key(Key::C, os::kModShortcut);
         Clipboard& clip = r.h.GetSurface().GetClipboard();
         CHECK(static_cast<LocalClipboard&>(clip).Text() == StringView("f"));
-        r.Key(Key::X, os::kModCtrl);  // cut copies but removes nothing
+        r.Key(Key::X, os::kModShortcut);  // cut copies but removes nothing
         CHECK(r.field->Text() == StringView("fixed"));
         CHECK(r.field->ReadOnly());
     }
@@ -555,9 +555,9 @@ TEST_CASE("TextField: maximum length, validator, read-only, password and placeho
         CHECK(glyphs == 3);
         r.Key(Key::Left);
         CHECK(r.field->Caret() == 2);  // moves by cluster of the real text
-        r.Key(Key::A, os::kModCtrl);
-        r.Key(Key::C, os::kModCtrl);
-        r.Key(Key::X, os::kModCtrl);
+        r.Key(Key::A, os::kModShortcut);
+        r.Key(Key::C, os::kModShortcut);
+        r.Key(Key::X, os::kModShortcut);
         CHECK(!r.h.GetSurface().GetClipboard().HasText());
         CHECK(r.field->Text() == StringView("pwe\xCC\x81"));
         // The caret x follows the bullets: three bullets, the caret at 2 is left of the end.
@@ -619,11 +619,11 @@ TEST_CASE("TextField: undo and redo with coalescing", "[ui][textfield]")
     CHECK(r.field->Text().Length() == 0);
     CHECK(!r.field->CanUndo());
     CHECK(!r.field->Undo());
-    r.Key(Key::Z, os::kModCtrl | os::kModShift);
+    r.Key(Key::Z, os::kModShortcut | os::kModShift);
     CHECK(r.field->Text() == StringView("hello"));
     r.Key(Key::Y, os::kModCtrl);
     CHECK(r.field->Text() == StringView("hello "));
-    r.Key(Key::Z, os::kModCtrl);
+    r.Key(Key::Z, os::kModShortcut);
     CHECK(r.field->Text() == StringView("hello"));
     // A new edit drops the redo history.
     r.Type("!");
@@ -634,9 +634,9 @@ TEST_CASE("TextField: undo and redo with coalescing", "[ui][textfield]")
     r.Key(Key::Left);
     r.Key(Key::Right);
     r.Type("cd");
-    r.Key(Key::Z, os::kModCtrl);
+    r.Key(Key::Z, os::kModShortcut);
     CHECK(r.field->Text() == StringView("ab"));
-    r.Key(Key::Z, os::kModCtrl);
+    r.Key(Key::Z, os::kModShortcut);
     CHECK(r.field->Text().Length() == 0);
     // A run of Backspace is one step; so is a run of Delete.
     r.field->SetText(StringView("abcdef"));
@@ -644,17 +644,17 @@ TEST_CASE("TextField: undo and redo with coalescing", "[ui][textfield]")
     r.Key(Key::Backspace);
     r.Key(Key::Backspace);
     CHECK(r.field->Text() == StringView("abc"));
-    r.Key(Key::Z, os::kModCtrl);
+    r.Key(Key::Z, os::kModShortcut);
     CHECK(r.field->Text() == StringView("abcdef"));
     CHECK(r.field->Caret() == 6);
-    r.Key(Key::Z, os::kModCtrl | os::kModShift);
+    r.Key(Key::Z, os::kModShortcut | os::kModShift);
     CHECK(r.field->Text() == StringView("abc"));
     r.field->SetText(StringView("abcdef"));
     r.Key(Key::Home);
     r.Key(Key::Delete);
     r.Key(Key::Delete);
     CHECK(r.field->Text() == StringView("cdef"));
-    r.Key(Key::Z, os::kModCtrl);
+    r.Key(Key::Z, os::kModShortcut);
     CHECK(r.field->Text() == StringView("abcdef"));
     CHECK(r.field->Caret() == 0);
     // Replacing a selection undoes to the selection.
@@ -662,7 +662,7 @@ TEST_CASE("TextField: undo and redo with coalescing", "[ui][textfield]")
     r.field->SetSelection(1, 4);
     r.Type("X");
     CHECK(r.field->Text() == StringView("aXef"));
-    r.Key(Key::Z, os::kModCtrl);
+    r.Key(Key::Z, os::kModShortcut);
     CHECK(r.field->Text() == StringView("abcdef"));
     CHECK(r.field->SelectedText() == StringView("bcd"));
     // Typing after replacing a selection joins the same step.
@@ -671,19 +671,19 @@ TEST_CASE("TextField: undo and redo with coalescing", "[ui][textfield]")
     r.Type("X");
     r.Type("Y");
     CHECK(r.field->Text() == StringView("aXYef"));
-    r.Key(Key::Z, os::kModCtrl);
+    r.Key(Key::Z, os::kModShortcut);
     CHECK(r.field->Text() == StringView("abcdef"));
     // A read-only field refuses undo and redo from the keyboard.
     r.Key(Key::End);
     r.Type("Q");
     r.field->SetReadOnly(true);
-    r.Key(Key::Z, os::kModCtrl);
+    r.Key(Key::Z, os::kModShortcut);
     CHECK(r.field->Text().Length() == 7);
     r.field->SetReadOnly(false);
-    r.Key(Key::Z, os::kModCtrl);
+    r.Key(Key::Z, os::kModShortcut);
     r.field->SetReadOnly(true);
     r.Key(Key::Y, os::kModCtrl);
-    r.Key(Key::Z, os::kModCtrl | os::kModShift);
+    r.Key(Key::Z, os::kModShortcut | os::kModShift);
     CHECK(r.field->Text() == StringView("abcdef"));
     r.field->SetReadOnly(false);
     // The history is bounded.
@@ -709,12 +709,12 @@ TEST_CASE("TextField: the clipboard, in process and asynchronous", "[ui][textfie
         Rig r;
         r.field->SetText(StringView("one two"));
         r.field->SetSelection(0, 3);
-        r.Key(Key::C, os::kModCtrl);
+        r.Key(Key::C, os::kModShortcut);
         r.Key(Key::End);
-        r.Key(Key::V, os::kModCtrl);
+        r.Key(Key::V, os::kModShortcut);
         CHECK(r.field->Text() == StringView("one twoone"));
         r.field->SetSelection(0, 4);
-        r.Key(Key::X, os::kModCtrl);
+        r.Key(Key::X, os::kModShortcut);
         CHECK(r.field->Text() == StringView("twoone"));
         r.Key(Key::Home);
         r.Key(Key::Insert, os::kModShift);
@@ -727,12 +727,12 @@ TEST_CASE("TextField: the clipboard, in process and asynchronous", "[ui][textfie
         r.field->SetSelection(0, 3);
         r.Key(Key::Delete, os::kModShift);
         CHECK(r.field->Text() == StringView(" twoone"));
-        r.Key(Key::V, os::kModCtrl);
+        r.Key(Key::V, os::kModShortcut);
         CHECK(r.field->Text() == StringView("one twoone"));
         // An empty clipboard pastes nothing; a pasted second line is dropped.
         r.h.GetSurface().GetClipboard().SetText(StringView("line one\nline two"));
         r.field->SetText(StringView());
-        r.Key(Key::V, os::kModCtrl);
+        r.Key(Key::V, os::kModShortcut);
         CHECK(r.field->Text() == StringView("line one"));
     }
     SECTION("a paste that arrives later")
@@ -741,12 +741,12 @@ TEST_CASE("TextField: the clipboard, in process and asynchronous", "[ui][textfie
         DelayedClipboard clip;
         r.h.GetSurface().SetClipboard(&clip);
         clip.SetText(StringView("later"));
-        r.Key(Key::V, os::kModCtrl);
+        r.Key(Key::V, os::kModShortcut);
         CHECK(r.field->Text().Length() == 0);
         CHECK(clip.Deliver());
         CHECK(r.field->Text() == StringView("later"));
         // Destroying the field cancels the request: a late answer has nobody to go to.
-        r.Key(Key::V, os::kModCtrl);
+        r.Key(Key::V, os::kModShortcut);
         r.field->RemoveFromParent();
         r.h.GetSurface().SetClipboard(nullptr);
         CHECK(clip.cancelled == 1);
@@ -913,7 +913,7 @@ TEST_CASE("TextField: a seeded random edit sequence agrees with a simple model",
             break;
         }
         default:
-            r.Key(Key::A, os::kModCtrl);
+            r.Key(Key::A, os::kModShortcut);
             model.anchor = 0;
             model.caret = len;
             break;
@@ -959,7 +959,7 @@ TEST_CASE("SpinBox: typing a number, Enter commits, bad text reverts", "[ui][tex
     TextField* field = box->Field();
     CHECK(field->Bounds().w < box->Bounds().w);  // the buttons are outside the field
     h.GetSurface().SetFocus(field);
-    h.Key(Key::A, true, os::kModCtrl);
+    h.Key(Key::A, true, os::kModShortcut);
     h.TypeText(StringView("4x2"));  // the letter is refused
     CHECK(field->Text() == StringView("42"));
     CHECK(box->Value() == 0);  // not committed yet
@@ -967,17 +967,17 @@ TEST_CASE("SpinBox: typing a number, Enter commits, bad text reverts", "[ui][tex
     CHECK(box->Value() == 42);
     CHECK(changes == 1);
     // Out of range: the clamp policy pulls it in.
-    h.Key(Key::A, true, os::kModCtrl);
+    h.Key(Key::A, true, os::kModShortcut);
     h.TypeText(StringView("500"));
     h.Key(Key::Enter);
     CHECK(box->Value() == 100);
     CHECK(field->Text() == StringView("100"));
     // A minus sign is refused while the range has no negatives; a point while there are no decimals.
-    h.Key(Key::A, true, os::kModCtrl);
+    h.Key(Key::A, true, os::kModShortcut);
     h.TypeText(StringView("-7.5"));
     CHECK(field->Text() == StringView("75"));
     // Empty or partial text reverts on Enter and on losing the focus.
-    h.Key(Key::A, true, os::kModCtrl);
+    h.Key(Key::A, true, os::kModShortcut);
     h.Key(Key::Backspace);
     h.Key(Key::Enter);
     CHECK(box->Value() == 100);
@@ -987,7 +987,7 @@ TEST_CASE("SpinBox: typing a number, Enter commits, bad text reverts", "[ui][tex
     CHECK(box->Value() == 100);
     // Escape reverts what was typed.
     h.GetSurface().SetFocus(field);
-    h.Key(Key::A, true, os::kModCtrl);
+    h.Key(Key::A, true, os::kModShortcut);
     h.TypeText(StringView("8"));
     h.Key(Key::Escape);
     CHECK(field->Text() == StringView("100"));
@@ -1000,7 +1000,7 @@ TEST_CASE("SpinBox: typing a number, Enter commits, bad text reverts", "[ui][tex
     box->SetRange(range);
     box->SetDecimals(2);
     box->SetValue(0);
-    h.Key(Key::A, true, os::kModCtrl);
+    h.Key(Key::A, true, os::kModShortcut);
     h.TypeText(StringView("-1.30"));
     CHECK(field->Text() == StringView("-1.30"));
     h.TypeText(StringView("9"));  // a third decimal is refused
@@ -1015,7 +1015,7 @@ TEST_CASE("SpinBox: typing a number, Enter commits, bad text reverts", "[ui][tex
     // Reject policy: out of range goes back to the old value.
     range.policy = RangePolicy::Reject;
     box->SetRange(range);
-    h.Key(Key::A, true, os::kModCtrl);
+    h.Key(Key::A, true, os::kModShortcut);
     h.TypeText(StringView("9"));
     h.Key(Key::Enter);
     CHECK(box->Value() == -1.0);
@@ -1028,9 +1028,9 @@ TEST_CASE("A paste that holds nothing printable leaves the selection alone", "[u
     r.field->SetText(StringView("keep me"));
     r.field->SetSelection(0, 4);
     r.h.GetSurface().GetClipboard().SetText(StringView("\t\x1b"));
-    r.Key(Key::V, os::kModCtrl);
+    r.Key(Key::V, os::kModShortcut);
     CHECK(r.field->Text() == StringView("keep me"));  // the selection was deleted before the fix
     r.h.GetSurface().GetClipboard().SetText(StringView("a\tb\nignored"));
-    r.Key(Key::V, os::kModCtrl);
+    r.Key(Key::V, os::kModShortcut);
     CHECK(r.field->Text() == StringView("ab me"));  // the tab is dropped, the second line is not pasted
 }

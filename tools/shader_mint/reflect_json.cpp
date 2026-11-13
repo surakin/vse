@@ -836,11 +836,55 @@ static bool CheckD3D12RegistersImpl(const renderer::ShaderReflection& reflection
     return true;
 }
 
+// The uniform offsets of every field under a parameter's type, by path (`block.field.inner`): a constant buffer's
+// element, a structured buffer's result, nested structs and arrays of structs (Phase 26 Day 325).
+static void CollectUniformOffsets(const json& type, const std::string& prefix,
+                                  std::vector<std::pair<std::string, u32>>* out)
+{
+    const json* element = &type;
+    const std::string kind = JsonText(type, "kind");
+    if (kind == "constantBuffer" || kind == "parameterBlock" || kind == "array")
+    {
+        element = Field(type, "elementType");
+    }
+    else if (kind == "resource")
+    {
+        element = Field(type, "resultType");
+    }
+    if (element == nullptr || element == &type)
+    {
+        element = &type;
+    }
+    if (JsonText(*element, "kind") == "array")
+    {
+        CollectUniformOffsets(*element, prefix + "[]", out);
+        return;
+    }
+    const json* fields = JsonText(*element, "kind") == "struct" ? Field(*element, "fields") : nullptr;
+    if (fields == nullptr || !fields->is_array())
+    {
+        return;
+    }
+    for (const json& f : *fields)
+    {
+        const std::string path = prefix + "." + JsonText(f, "name");
+        const json* binding = Field(f, "binding");
+        if (binding != nullptr && JsonText(*binding, "kind") == "uniform")
+        {
+            out->push_back({path, Number(*binding, "offset", ~0u)});
+        }
+        if (const json* inner = Field(f, "type"))
+        {
+            CollectUniformOffsets(*inner, path, out);
+        }
+    }
+}
+
 // The Metal build's slots (Phase 26 Day 315): each binding of the SPIR-V reflection, matched by name, gets the index
 // slangc gave it in the Metal build, in the argument table its type implies (a buffer is a "constantBuffer", a texture
 // a "shaderResource" or an "unorderedAccess", a sampler a "samplerState"); the push-constant block (named in the SPIR-V
 // build's reflection, kind "pushConstantBuffer") gets its buffer slot. Every Metal parameter must be one the SPIR-V
-// build declares.
+// build declares, and every block field must sit at the same offset in both builds (Day 325).
 static bool ApplyMetalSlotsImpl(renderer::ShaderReflection* out, const std::string& spirv_json,
                                 const std::string& metal_json, std::string* error)
 {
@@ -864,6 +908,18 @@ static bool ApplyMetalSlotsImpl(renderer::ShaderReflection* out, const std::stri
         if (binding != nullptr && JsonText(*binding, "kind") == "pushConstantBuffer")
         {
             push_name = JsonText(p, "name");
+        }
+        // A block that also names its D3D12 register is reported with both bindings (ReflectionFromJson reads it so).
+        const json* several = Field(p, "bindings");
+        if (binding == nullptr && several != nullptr && several->is_array())
+        {
+            for (const json& candidate : *several)
+            {
+                if (JsonText(candidate, "kind") == "pushConstantBuffer")
+                {
+                    push_name = JsonText(p, "name");
+                }
+            }
         }
     }
     for (u32 i = 0; i < reflection->binding_count; ++i)
@@ -936,6 +992,42 @@ static bool ApplyMetalSlotsImpl(renderer::ShaderReflection* out, const std::stri
         {
             *error = "the Metal build has a parameter '" + name + "' the SPIR-V build does not declare";
             return false;
+        }
+    }
+    // The CPU writes a block at the SPIR-V build's (std140) offsets, so the Metal build must lay it out the same:
+    // Metal's float3 is 16 bytes, so a scalar right after one moves (material_test.frag's roughness was at 28 against
+    // 32).
+    for (const json& q : *spirv_parameters)
+    {
+        const json* spirv_type = Field(q, "type");
+        const json* metal_type = nullptr;
+        for (const json& p : *parameters)
+        {
+            if (JsonText(p, "name") == JsonText(q, "name"))
+            {
+                metal_type = Field(p, "type");
+            }
+        }
+        if (spirv_type == nullptr || metal_type == nullptr)
+        {
+            continue;
+        }
+        std::vector<std::pair<std::string, u32>> spirv_offsets;
+        std::vector<std::pair<std::string, u32>> metal_offsets;
+        CollectUniformOffsets(*spirv_type, JsonText(q, "name"), &spirv_offsets);
+        CollectUniformOffsets(*metal_type, JsonText(q, "name"), &metal_offsets);
+        for (const auto& a : spirv_offsets)
+        {
+            for (const auto& b : metal_offsets)
+            {
+                if (a.first == b.first && a.second != b.second)
+                {
+                    *error = "'" + a.first + "' is at offset " + std::to_string(a.second) +
+                             " in the SPIR-V build but " + std::to_string(b.second) +
+                             " in the Metal build (a float3 takes 16 bytes in Metal: put nothing after one in its 16)";
+                    return false;
+                }
+            }
         }
     }
     reflection->has_metal_slots = true;

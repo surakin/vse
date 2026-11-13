@@ -295,7 +295,7 @@ TEST_CASE("Equal Metal sampler descriptions share one sampler until the last is 
     d.min_filter = FilterMode::Nearest;
     d.address_u = AddressMode::ClampToBorder;
     d.border_color = BorderColor::OpaqueWhite;
-    d.max_anisotropy = 64.0f;  // clamped to the device's 16
+    d.max_anisotropy = 16.0f;  // the largest a description may ask for
     const SamplerHandle first = device->CreateSampler(d);
     d.debug_name = "the same, named";
     const SamplerHandle second = device->CreateSampler(d);

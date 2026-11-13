@@ -6,10 +6,15 @@
 #include "backend_fixture.h"
 #include "gpu_fixture.h"
 #include "image_compare.h"
+#include "os/console.h"
 #include "os/os.h"
 #include "reset_rig.h"
 #include "rhi/rhi_log.h"
 #include "build_defs.h"
+
+#if ENGINE_PLATFORM_MACOS
+#include <pthread.h>  // pthread_self: the thread the Objective-C runtime names in its missing-pool reports
+#endif
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
@@ -86,6 +91,15 @@ TEST_CASE("The demo picture is identical before and after a device reset and sti
 TEST_CASE("Resets in a loop on a real device leave the counts, memory and descriptors where they were",
           "[rhi][gpu][reset]")
 {
+#if ENGINE_PLATFORM_MACOS
+    // For the ctest metal_autorelease_pools (tests/rhi/macos/run_autorelease_pools.cmake): the reports it fails on are
+    // this thread's, the engine's calls; Metal's own threads release what it held and report too (Day 325).
+    const char* print_thread = os::GetEnvironment("ENGINE_RHI_PRINT_TEST_THREAD");
+    if (print_thread != nullptr && print_thread[0] == '1')
+    {
+        os::Print("test thread (%p)\n", reinterpret_cast<const void*>(::pthread_self()));
+    }
+#endif
     FOR_EACH_GPU_BACKEND(backend)
     {
         gpu_test::BackendValidation validation(backend);
@@ -141,7 +155,16 @@ TEST_CASE("Resets in a loop on a real device leave the counts, memory and descri
         // A leak per reset would show about one handle per reset. Direct3D 12's drift over 100 resets ranged from -1 to
         // 3 on the Radeon 860M (Day 172, five runs, one of them beside other tests), Vulkan's stays at 0.
         CHECK(handle_drift <= (backend == rhi::Backend::Dx12 ? 4 : 2));
-        if (!Sanitized() && early_low != 0 && late_low != 0)
+        // Metal's validation layer in assert mode grows the process by 8 to 13 MiB over the 100 resets (Phase 26 Day
+        // 325, four runs), in its own completion handlers on Metal's thread; without it the drift is 1.4 to 3.4 MiB.
+        // The ctest metal_autorelease_pools runs this test without validation, so the check still holds for the engine.
+        const char* metal_layer = os::GetEnvironment("MTL_DEBUG_LAYER");
+        const bool metal_validation = backend == rhi::Backend::Metal && metal_layer != nullptr && metal_layer[0] == '1';
+        if (metal_validation)
+        {
+            WARN("memory drift not checked: Metal's validation layer is on (see metal_autorelease_pools)");
+        }
+        if (!Sanitized() && !metal_validation && early_low != 0 && late_low != 0)
         {
             i64 allowed_kib = 8 * 1024;
 #if ENGINE_PLATFORM_WINDOWS

@@ -6,6 +6,7 @@
 // engine's once a test file's `using namespace` is in scope, which a unity build merges ahead of later files.
 #import <AppKit/AppKit.h>
 
+#include "os/console.h"
 #include "rhi/backends/backends.h"
 #include "rhi/metal/metal_device.h"
 #include "rhi/rhi.h"
@@ -37,6 +38,14 @@ inline ShaderHandle MetalShader(Device& device, const ShaderBlobSet& set, Shader
 inline MetalDevice& AsMetal(Device& device)
 {
     return static_cast<MetalDevice&>(device);
+}
+
+// Whether Metal's shader validation is on for this process, which leaves the pipeline archive off (Day 325). The
+// archive tests carry the tag [archive] and run in a ctest of their own without it (tests/rhi/CMakeLists.txt).
+inline bool ShaderValidationOn()
+{
+    const char* value = os::GetEnvironment("MTL_SHADER_VALIDATION");
+    return value != nullptr && value[0] != '\0' && value[0] != '0';
 }
 
 }  // namespace engine_placeholder::rhi::metal::test

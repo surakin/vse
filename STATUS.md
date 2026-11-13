@@ -1406,18 +1406,27 @@ Code review: 9 findings, all fixed. The worst was the UI Metal screenshot carryi
 Built in both unity modes; runs and the `ui_demo` hand checks deferred to Day 325. Next: Day 325 (lifecycle, loss, resets; Auto picks
 Metal), then the user is asked before the tests run.
 
-Phase 26 (side) **Day 325 (2026-11-13, the Mac): the Metal lifecycle, device loss and resets; `Auto` picks Metal on macOS. Days 315-325 are
-implemented, reviewed and committed; their test run waits for the user.**
+Phase 26 (side) **Day 325 (2026-11-13, the Mac): the Metal lifecycle, device loss and resets; `Auto` picks Metal on macOS. Days 315-325
+are run: the Metal backend passes the RHI, renderer, text, UI and scene suites with Metal's validation in three flavors.**
 - **`Auto`:** it picks Metal on macOS, and the Day 314 null fallback is gone.
 - **Device loss:** a device observer marks the device lost when the GPU is removed. A GPU whose removal was requested is left out of the
   next pick.
-- **Conformance:** a Metal case in the lifecycle conformance suite.
-- **`metal_lifecycle_test`:** 100 resets with the pipeline archive, a stale handle, and a loss after real work.
+- **Conformance:** a Metal case in the lifecycle conformance suite; `metal_lifecycle_test` (100 resets with the archive, a stale handle, a
+  loss after real work).
 - **Validation:** a change that differs from the process says it takes effect at the next start.
-- **Docs:** the lifecycle checklist is marked as built for Metal.
 
-Code review: 10 findings, 9 fixed, 1 declined. Built in both unity modes. **Next: the run of Days 315-325**
-(`scripts/test-phase.sh --affected --flavor all` with GPU and display tests, the measurements and the hand checks), when the user says go.
+Code review: 10 findings, 9 fixed, 1 declined.
+
+**The run of Days 315-325** (after the user said go; Day 325 file): `ran 6110 of 6490 tests (phases: all; flavors: all; display: included; crash tests: excluded) in 1479 s`; left only the known stale DXIL test (the PC re-mints `fill.comp`,
+`saxpy.comp` and `material_test.frag`) and the known flaky `Throughput scales with participant count` (phase 2, plain; failed in three of the four three-flavor runs, passed 3 of 3 reruns each time). The first plain run failed 62 of 2376; the fixes: a nil sampler label (fatal under
+validation), an unused vertex layout, the archive off under shader validation (Metal stops inside it), autorelease pools (a leak of about
+37 MiB per 100 resets; ctest `metal_autorelease_pools`), a capture-free timeline block (TSan), `material_test.frag`'s `float3` layout (and
+`shader_mint` refusing a Metal offset mismatch), the cache directory created before serializing, a fresh archive when Metal will not
+re-serialize, the command shortcuts on Command (`os::kModShortcut`, found by the user), and test, gate and demo-test fixes. Measured: goldens
+within tolerance (none changed), a reset 43 ms mean, `rhi_bench` 0.64-0.89 us per draw, `renderer_bench` 1.4-1.5 ms for 1000 objects. Hand
+checks by the user: `renderer_demo` F1-F10 (F11 is macOS's) and `ui_demo` input, clipboard, Finder drop and fullscreen. Review of the run's
+fixes: 10 findings, 8 fixed, 1 in part, 1 declined. Both unity modes clean; docs 6 of 6. Waiting: the Linux and PC runs of the shared files
+(`KNOWN-ISSUES.md`). **Next: Day 326.**
 
 Phase 20 **Day 278 (2026-11-12, Windows PC): the Windows socket backend.** Winsock 2 in `engine/net/windows/` (`winsock.h` the one include of the Winsock headers; the error tables; sockets not inherited and non-blocking from creation, dual stack and exclusive ports as the interface's defaults, `SIO_UDP_CONNRESET` off; `GetAddrInfoW` in UTF-16). The poller is `select`, not the planned `WSAPoll`: measured, `WSAPoll` reports a half-closed socket whatever was asked for, which would make the reactor spin; the spec and `BACKEND.md` say so. A refused loopback connect is immediate (SYN retransmission off for loopback; Windows otherwise retries for two seconds). The whole of `tests/net` runs on Windows: four trees clean, `net_tests` and `net_tests_sockets` pass in all of them, plain and asan; the five-thousand-connection listener test hung under load (ephemeral ports exhausted, the accept loop waiting for ever) and now times out and closes server-first. Run: `ran 4806 of 5083 tests (phases: all; flavors: all (plain and asan, no tsan on Windows); display: included; crash tests: excluded) in 376 s`; docs 7 of 7. Review: 4 findings, 2 fixed (a socket closed while the reactor waited broke the reactor for good: `WSAENOTSOCK` from `select`, regression test `poller_test.cpp`; stale comments), 2 declined with measurements (full-backlog refusals, the result mapping cost: `KNOWN-ISSUES.md`). The shared changes wait for the Linux machine (`KNOWN-ISSUES.md`).
 Phase 20 **Day 279 (2026-11-12, Linux machine): security basics.** `net::RateLimiter` (per-address and global token buckets, strikes and bans in a table that never grows), handshake limits on UDP (no bans: a source is not proven), accept limits and per-address caps on TCP, global receive and send budgets, `TcpStream` buffers allocated lazily (the Day 271 memory entry is closed), allocation audit checklist, fuzz tests (a million cases for the parsers, live servers fed mutated bytes) and nine attack tests; guide section "What the network layer does not protect against". Runs: plain `ran 2830 of 7520 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`, asan `ran 2251 of 7520`, tsan `ran 1927 of 7520` (only the known scene test failed); GCC, Clang non-unity, optimized pass; docs 7 of 7. Review: 4 findings, 1 fixed, 3 declined. Open: the Windows PC. **Next: Day 281 (Day 280, QUIC/TLS/encryption, is deferred by the user, 2026-11-12).**

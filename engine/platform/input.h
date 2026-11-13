@@ -1,5 +1,6 @@
 #pragma once
 
+#include "build_defs.h"
 #include "types.h"
 
 //! Keyboard and mouse input types shared by every platform backend.
@@ -119,6 +120,10 @@ enum ModifierBit : u32
     kModCapsLock = 1u << 4,  ///< Caps Lock is on.
     kModNumLock = 1u << 5,   ///< Num Lock is on.
 };
+
+/// The modifier of the command shortcuts (copy, cut, paste, select all, undo, quit): Command ([[os::kModSuper]]) on
+/// macOS, Control elsewhere (Phase 26 Day 325). Word moves and Ctrl+Tab keep Control on every platform.
+inline constexpr u32 kModShortcut = ENGINE_PLATFORM_MACOS ? kModSuper : kModCtrl;
 
 /// Per-key down state plus the modifier mask; part of [[os::InputState]].
 ///

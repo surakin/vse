@@ -35,10 +35,11 @@ namespace
 struct MaterialParams
 {
     f32 base_color[4];
-    f32 emissive[3];
     f32 roughness;
     u32 flags;
-    u32 pad[3];
+    u32 pad[2];
+    f32 emissive[3];
+    f32 pad2;  // Metal's float3 is 16 bytes: nothing shares them
     Mat4 uv_transform;
 };
 static_assert(sizeof(MaterialParams) == 112);
@@ -52,6 +53,10 @@ PermutationModule VertexModule()
     m.reflection_size = shaders::kMaterialTestVertReflByteCount;
     m.dxil = shaders::kMaterialTestVertDxil;
     m.dxil_size = shaders::kMaterialTestVertDxilByteCount;
+    m.metallib = shaders::kMaterialTestVertMetallib;
+    m.metallib_size = shaders::kMaterialTestVertMetallibByteCount;
+    m.metallib_entry = shaders::kMaterialTestVertMetallibEntry;
+    m.metallib_slots = &shaders::kMaterialTestVertMetallibSlots;
     return m;
 }
 
@@ -132,7 +137,7 @@ TEST_CASE("Parameter writes land at the shader's std140 offsets", "[renderer][ma
 
     CHECK(sys.SetVec4(m, "base_color", Vec4(0.1f, 0.2f, 0.3f, 0.4f)));
     CHECK(sys.SetVec3(m, "emissive", Vec3(1, 2, 3)));
-    CHECK(sys.SetFloat(m, "roughness", 0.75f));  // packs into the 4 bytes after the float3
+    CHECK(sys.SetFloat(m, "roughness", 0.75f));
     CHECK(sys.SetUInt(m, "flags", 7));
     // A matrix that is not its own transpose, so a layout mix-up shows.
     const Mat4 skew = Mat4::FromColumns(Vec4(1, 2, 3, 4), Vec4(5, 6, 7, 8), Vec4(9, 10, 11, 12), Vec4(13, 14, 15, 16));
@@ -145,9 +150,9 @@ TEST_CASE("Parameter writes land at the shader's std140 offsets", "[renderer][ma
     CHECK(region.size == sizeof(MaterialParams));
     MaterialParams got;
     REQUIRE(f.device->PeekBuffer(region.buffer, region.offset, &got, sizeof(got)));
-    CHECK(ENGINE_OFFSET_OF(MaterialParams, emissive) == 16);
-    CHECK(ENGINE_OFFSET_OF(MaterialParams, roughness) == 28);
-    CHECK(ENGINE_OFFSET_OF(MaterialParams, flags) == 32);
+    CHECK(ENGINE_OFFSET_OF(MaterialParams, roughness) == 16);
+    CHECK(ENGINE_OFFSET_OF(MaterialParams, flags) == 20);
+    CHECK(ENGINE_OFFSET_OF(MaterialParams, emissive) == 32);
     CHECK(ENGINE_OFFSET_OF(MaterialParams, uv_transform) == 48);
     CHECK(got.base_color[0] == 0.1f);
     CHECK(got.base_color[3] == 0.4f);
@@ -225,6 +230,10 @@ TEST_CASE("Templates and materials that break the conventions are rejected", "[r
         d.fragment.reflection_size = shaders::kLitFragReflByteCount;
         d.fragment.dxil = shaders::kLitFragDxil;
         d.fragment.dxil_size = shaders::kLitFragDxilByteCount;
+        d.fragment.metallib = shaders::kLitFragMetallib;
+        d.fragment.metallib_size = shaders::kLitFragMetallibByteCount;
+        d.fragment.metallib_entry = shaders::kLitFragMetallibEntry;
+        d.fragment.metallib_slots = &shaders::kLitFragMetallibSlots;
         const TemplateId t = sys.CreateTemplate(d);
         REQUIRE(t.IsValid());  // the vertex stage is fine; the fragment is checked per material
         CHECK_FALSE(sys.CreateMaterial(t, PermutationKey{}, "x").IsValid());
@@ -263,6 +272,10 @@ TEST_CASE("A fragment shader without material resources still makes a material",
     d.fragment.reflection_size = shaders::kPermuteTestFragReflByteCount;
     d.fragment.dxil = shaders::kPermuteTestFragDxil;
     d.fragment.dxil_size = shaders::kPermuteTestFragDxilByteCount;
+    d.fragment.metallib = shaders::kPermuteTestFragMetallib;
+    d.fragment.metallib_size = shaders::kPermuteTestFragMetallibByteCount;
+    d.fragment.metallib_entry = shaders::kPermuteTestFragMetallibEntry;
+    d.fragment.metallib_slots = &shaders::kPermuteTestFragMetallibSlots;
     const TemplateId t = sys.CreateTemplate(d);
     REQUIRE(t.IsValid());
     const MaterialId m = sys.CreateMaterial(t, PermutationKey{}, "flat");
@@ -659,6 +672,7 @@ TEST_CASE("Two objects drawn through two materials show their own transform and 
             auto at = [&](int x, int y, int c) { return static_cast<int>(px[(y * 64 + x) * 4 + c]); };
             auto near = [](int got, int want) { return got - want <= 3 && want - got <= 3; };
             // Left object, material A: red * (1 - 0.5 * 0.5) = 0.75.
+            INFO("left pixel " << at(15, 16, 0) << " " << at(15, 16, 1) << " " << at(15, 16, 2));
             CHECK(near(at(15, 16, 0), 191));
             CHECK(near(at(15, 16, 1), 0));
             CHECK(near(at(15, 16, 2), 0));

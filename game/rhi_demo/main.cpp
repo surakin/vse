@@ -630,18 +630,18 @@ bool ParseCount(const char* text, long* out)
     return true;
 }
 
-const char kUsageFormat
-    [] = "usage: %s [--backend wayland|x11|win32] [--frames N] [--screenshot out.ppm] [--no-vsync] [--validation]\n"
-         "       [--inject-device-loss FRAME] [--inject-oom N] [--gpu ID|INDEX|NAME] [--list-gpus]\n"
-         "  --backend B       display backend (default: automatic; same as ENGINE_WINDOW_BACKEND)\n"
-         "  --frames N        stop after N frames (also RHI_DEMO_FRAMES=N)\n"
-         "  --screenshot P    render offscreen, no window, and write the last frame to P (a binary PPM)\n"
-         "  --no-vsync        present without waiting for the display\n"
-         "  --gpu G           the GPU to use: an id from --list-gpus, an index, or part of the name\n"
-         "  --list-gpus       print the GPUs and exit\n"
-         "  --validation      enable the validation layer with synchronization validation\n"
-         "  --inject-device-loss F  fault injection: lose the GPU device at frame F (exit code 3)\n"
-         "  --inject-oom N    fault injection: fail device-memory allocation number N and every one after it\n";
+const char kUsageFormat[] =
+    "usage: %s [--backend wayland|x11|win32|cocoa] [--frames N] [--screenshot out.ppm] [--no-vsync] [--validation]\n"
+    "       [--inject-device-loss FRAME] [--inject-oom N] [--gpu ID|INDEX|NAME] [--list-gpus]\n"
+    "  --backend B       display backend (default: automatic; same as ENGINE_WINDOW_BACKEND)\n"
+    "  --frames N        stop after N frames (also RHI_DEMO_FRAMES=N)\n"
+    "  --screenshot P    render offscreen, no window, and write the last frame to P (a binary PPM)\n"
+    "  --no-vsync        present without waiting for the display\n"
+    "  --gpu G           the GPU to use: an id from --list-gpus, an index, or part of the name\n"
+    "  --list-gpus       print the GPUs and exit\n"
+    "  --validation      enable the validation layer with synchronization validation\n"
+    "  --inject-device-loss F  fault injection: lose the GPU device at frame F (exit code 3)\n"
+    "  --inject-oom N    fault injection: fail device-memory allocation number N and every one after it\n";
 
 int Usage(const char* program, int code)
 {

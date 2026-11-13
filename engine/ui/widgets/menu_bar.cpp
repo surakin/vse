@@ -282,7 +282,7 @@ void MenuBar::OnEvent(Event& event)
     case EventType::KeyDown:
     {
         const bool alt = (event.modifiers & os::kModAlt) != 0;
-        const bool plain = (event.modifiers & (os::kModCtrl | os::kModAlt | os::kModShift)) == 0;
+        const bool plain = (event.modifiers & (os::kModCtrl | os::kModAlt | os::kModShift | os::kModSuper)) == 0;
         const char letter = KeyLetter(event.key);
         if (event.key == Key::F10 && plain)
         {

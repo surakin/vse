@@ -27,7 +27,6 @@ using namespace engine_placeholder::rhi::metal::test;
 namespace metal_lifecycle_test
 {
 
-// Owns one buffer per device, as a renderer's resources would: made on creation, destroyed on release.
 // Owns a buffer and a compute pipeline per device, as a renderer's resources would: made on creation (the pipeline
 // through the device's pipeline archive), destroyed on release.
 struct BufferOwner final : DeviceObserver
@@ -86,8 +85,12 @@ struct BufferOwner final : DeviceObserver
 using namespace metal_lifecycle_test;
 
 TEST_CASE("A hundred Metal device resets keep the counts and memory, change the epoch, and leave nothing behind",
-          "[rhi][metal][gpu][reset]")
+          "[rhi][metal][gpu][reset][archive]")
 {
+    if (ShaderValidationOn())
+    {
+        SKIP("the pipeline archive is off while MTL_SHADER_VALIDATION is set (its ctest runs without it)");
+    }
     MetalDevice::ResetLeakedUserObjects();
     const u32 observers_before = MetalDevice::LiveDeviceObservers();
     io_test::TempDir dir;

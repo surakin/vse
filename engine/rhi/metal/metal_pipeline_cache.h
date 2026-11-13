@@ -53,6 +53,9 @@ public:
     id<MTLRenderPipelineState> NewRender(MTLRenderPipelineDescriptor* descriptor, bool* hit, NSError** error);
     id<MTLComputePipelineState> NewCompute(MTLComputePipelineDescriptor* descriptor, bool* hit, NSError** error);
     // Writes the file when pipelines were added since it was read or written. True when nothing was to do or it wrote.
+    // Metal sometimes refuses to serialize an archive read from a file with pipelines added to it (macOS 15.8, "missing
+    // 'vertex' stage in pipeline no. N", seen on Day 325): the file is then written from a fresh archive of the
+    // pipelines this device made, which replaces the loaded one. If that fails too the device stops saving.
     bool Save();
 
     // What happened (tests and logs).
@@ -63,8 +66,16 @@ public:
         bool discarded = false;  // a file was there and was refused (stale or damaged)
         u32 added = 0;           // pipelines added since Open
         u64 saved_bytes = 0;     // the last file written
+        u32 recorded = 0;        // distinct pipeline descriptions kept for a rebuild
+        u32 rebuilt = 0;         // saves that wrote a fresh archive of this run's pipelines (the loaded one would not)
     };
     Stats GetStats() const;
+    // Test hook: the next save treats the archive as refused, as Metal does in the case above.
+    void FailNextSerializeForTest()
+    {
+        LockGuard<Mutex> lock(mutex_);
+        fail_next_serialize_ = true;
+    }
     // The cache file's native path; empty when off.
     const char* Path() const { return path_; }
 
@@ -77,6 +88,19 @@ private:
     char temp_path_[560] = {};     // where Metal serializes it (this device's)
     u64 identity_ = 0;
     bool dirty_ = false;
+    bool given_up_ = false;
+    bool fail_next_serialize_ = false;
+    // A fresh archive with every pipeline in render_used_ and compute_used_; nil when Metal refuses one.
+    id<MTLBinaryArchive> RebuildLocked();  // neither archive serialized: no more saves for this device (logged once)
+    // Copies of the descriptors of every pipeline made through the archive since Open, hits and misses: a fresh
+    // archive is built from them when the loaded one, with pipelines added, will not serialize (Day 325).
+    // One entry per distinct description (equal ones are kept once), held for the device's life: a device reset ends
+    // it.
+    NSMutableOrderedSet<MTLRenderPipelineDescriptor*>* render_used_ = nil;
+    NSMutableOrderedSet<MTLComputePipelineDescriptor*>* compute_used_ = nil;
+    // Records a pipeline the archive holds (a hit, or a miss it took), for RebuildLocked.
+    void RecordLocked(MTLRenderPipelineDescriptor* descriptor);
+    void RecordLocked(MTLComputePipelineDescriptor* descriptor);
     Stats stats_;
 };
 

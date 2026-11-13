@@ -138,6 +138,10 @@ target can ask (SPIR-V, DXIL) the count is also bounded by the buffers' lengths.
   `#pragma pack_matrix(column_major)` and keeps `mul(M, v)`; the Metal output declares column-major storage structs
   (`_MatrixStorage_float4x4_ColMajor...`). `row-major` flips both (`#pragma pack_matrix(row_major)`) and would transpose every
   matrix, so never drop the flag.
+- **A `float3` in a block takes 16 bytes in Metal.** std140 (SPIR-V, and what the CPU writes) puts a scalar in the 4 bytes after
+  a `float3`; Metal's layout does not, so the scalar moves and every later field with it. Put a `float3` before a 16-byte aligned
+  member (a `float4`, a matrix, the block's end), never before a scalar: `material_test.frag` had `roughness` at 28 against
+  Metal's 32 (Phase 26 Day 325). `shader_mint` compares every block field's offset in the two builds and refuses a mismatch.
 - **Metal renames `main`** (`warning E40100: entry point 'main' has been renamed to 'main_0'`), because `main` is
   reserved in Metal Shading Language. `tools/metal_mint` reads the name the minted library exports and `shader_mint` records it
   beside the blob (`<Base>MetallibEntry`, carried by `rhi::MetalLibBlob`), so `ShaderDesc::SetCode` passes it and no backend

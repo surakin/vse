@@ -1,5 +1,7 @@
 #include "ui/popup.h"
 
+#include "build_defs.h"
+
 #include "string/string.h"
 
 namespace engine_placeholder::ui
@@ -79,6 +81,10 @@ String<HeapAllocator> ChordText(const KeyChord& chord)
     if ((chord.modifiers & os::kModCtrl) != 0)
     {
         sb.Append(StringView("Ctrl+"));
+    }
+    if ((chord.modifiers & os::kModSuper) != 0)
+    {
+        sb.Append(StringView(ENGINE_PLATFORM_MACOS ? "Cmd+" : "Super+"));
     }
     if ((chord.modifiers & os::kModShift) != 0)
     {

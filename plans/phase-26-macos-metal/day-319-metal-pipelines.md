@@ -22,7 +22,7 @@ Modelled on DX12 Day 167.
 - [x] **Tests:** (the Metal file; `shader_test`, `shader_interface_test` and `pipeline_cache_file_test` through Metal join with the GPU fixture on Day 322) `shader_test`, `shader_interface_test`, `pipeline_cache_file_test` through Metal; `metal_pipeline_test.mm` (vertex descriptor, depth
       state cache, threadgroup size, archive round trip and corruption).
 - [x] **Documentation:** `rhi.md` Metal section (the archive, threadgroups); `docgen lint` zero.
-- [ ] **Runs:** `scripts/test-phase.sh --affected --flavor all` (quote). **Deferred to Day 325 (the user's choice).**
+- [x] **Runs:** `ran 6110 of 6490 tests (phases: all; flavors: all; display: included; crash tests: excluded) in 1479 s` ([the Day 325 run](day-325-metal-lifecycle.md#the-run-of-days-315-325)). Originally: `scripts/test-phase.sh --affected --flavor all` (quote). **Deferred to Day 325 (the user's choice).**
 - [x] **End-of-day review:** `/code-review high`. Extra scrutiny: the archive file's write atomicity (through `WriteFileAtomic`), concurrent pipeline creation
       from jobs (TSan), lifetime of the library behind a function.
 - [x] Update `STATUS.md`, `KNOWN-ISSUES.md`; commit and push.

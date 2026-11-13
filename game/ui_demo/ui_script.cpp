@@ -253,6 +253,11 @@ bool UiScript::RunWord(StringView word, UiDemoApp* app, Surface* surface, Script
                 modifiers |= os::kModCtrl;
                 name = After(name, "ctrl+");
             }
+            else if (StartsWithWord(name, "shortcut+"))  // the command shortcuts' modifier: Command on macOS
+            {
+                modifiers |= os::kModShortcut;
+                name = After(name, "shortcut+");
+            }
             else if (StartsWithWord(name, "shift+"))
             {
                 modifiers |= os::kModShift;
@@ -416,7 +421,7 @@ bool UiScript::RunWord(StringView word, UiDemoApp* app, Surface* surface, Script
         Event e;
         e.type = EventType::KeyDown;
         e.key = Key::V;
-        e.modifiers = os::kModCtrl;
+        e.modifiers = os::kModShortcut;
         surface->Post(e);
         e.type = EventType::KeyUp;
         surface->Post(e);

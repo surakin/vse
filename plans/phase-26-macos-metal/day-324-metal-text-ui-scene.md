@@ -10,15 +10,15 @@ scene bridge drawing ECS entities, all through Metal; plus any GPU path a main-l
 
 - [x] **Inventory at the start:** (made from the code below; the runs themselves are Day 325's) every GPU test on `master` outside the Phase 4 and 5 suites (`text_golden_gpu_test`, `ui_golden_gpu_test`,
       `ui_demo_gpu_test`, scene and culling GPU tests, anything newer), each run with a Metal factory.
-- [ ] **Text:** (the Day 325 run: the text tests run once per backend) the atlas texture (`R8` pages, partial uploads), the text pass, the large-text stand-in; the text golden images within tolerance;
+- [x] **Text:** (Day 325: the text tests pass through Metal) ([the Day 325 run](day-325-metal-lifecycle.md#the-run-of-days-315-325)). Originally: (the Day 325 run: the text tests run once per backend) the atlas texture (`R8` pages, partial uploads), the text pass, the large-text stand-in; the text golden images within tolerance;
       Retina scale (text rasterized at the backing scale).
-- [ ] **UI:** (the Day 325 run) `UiRenderer`'s draw list (scissors, nine-slice, images by `ImageId`), the viewport widget hosting a rendered world, UI surfaces to textures
+- [x] **UI:** (Day 325: the UI goldens pass through Metal) ([the Day 325 run](day-325-metal-lifecycle.md#the-run-of-days-315-325)). Originally: (the Day 325 run) `UiRenderer`'s draw list (scissors, nine-slice, images by `ImageId`), the viewport widget hosting a rendered world, UI surfaces to textures
       sampled in the 3D scene; `ui_golden_gpu_test` and `ui_demo_gpu_test` pass.
-- [ ] **Scene bridge and culling:** (the Day 325 run) the ECS scene through `RenderSync` draws the same images as on Linux; the renderer's frustum culling through spatial
+- [x] **Scene bridge and culling:** (Day 325: the scene tests pass through Metal) ([the Day 325 run](day-325-metal-lifecycle.md#the-run-of-days-315-325)). Originally: (the Day 325 run) the ECS scene through `RenderSync` draws the same images as on Linux; the renderer's frustum culling through spatial
       (if built by today) gives the same visible set.
-- [ ] **`ui_demo` on Metal:** (the ctests are set up; the run and the hand checks with the Day 325 run) runs its script; checked by hand with the trackpad, keyboard, clipboard and a file dropped from Finder (recorded).
+- [x] **`ui_demo` on Metal:** (Day 325: the ctests pass; checked by the user with the trackpad, keyboard, clipboard, a Finder drop and fullscreen, after the Command-key fix) ([the Day 325 run](day-325-metal-lifecycle.md#the-run-of-days-315-325)). Originally: (the ctests are set up; the run and the hand checks with the Day 325 run) runs its script; checked by hand with the trackpad, keyboard, clipboard and a file dropped from Finder (recorded).
 - [x] **Documentation:** `text.md`, `ui.md` name Metal; `docgen lint` zero.
-- [ ] **Runs:** `scripts/test-phase.sh --affected --flavor all` with GPU and display tests (quote). **Deferred to Day 325 (the user's choice; the user is asked first).**
+- [x] **Runs:** `ran 6110 of 6490 tests (phases: all; flavors: all; display: included; crash tests: excluded) in 1479 s` ([the Day 325 run](day-325-metal-lifecycle.md#the-run-of-days-315-325)). Originally: `scripts/test-phase.sh --affected --flavor all` with GPU and display tests (quote). **Deferred to Day 325 (the user's choice; the user is asked first).**
 - [x] **End-of-day review:** `/code-review high`. Extra scrutiny: partial atlas uploads against in-flight frames, scissor rectangles in pixels at Retina
       scale.
 - [x] Update `STATUS.md`, `KNOWN-ISSUES.md`; commit and push.

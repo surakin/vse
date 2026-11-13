@@ -50,65 +50,71 @@ CommandList* MetalDevice::CreateCommandList()
 
 FenceValue MetalDevice::Submit(CommandList* const* lists, usize count)
 {
-    ENGINE_ASSERT(frame_open_.Load(MemoryOrder::Acquire), "Submit: no frame is open (call BeginFrame first)");
-    ENGINE_ASSERT(count == 0 || lists != nullptr, "Submit: lists is null but count is not zero");
-    const u64 frame = FrameNumber();
-    // Under the submission lock: the queue's order is the order of the commits, and two threads that wrongly submit one
-    // list are serialized so the second one's check fails.
-    LockGuard<Mutex> lock(submit_mutex_);
-    for (usize i = 0; i < count; ++i)
+    // What Metal autoreleases here is let go here: the caller (a job thread, a test) may have no pool that drains.
+    @autoreleasepool
     {
-        auto* list = static_cast<MetalCommandList*>(lists[i]);
-        ENGINE_ASSERT(list != nullptr && list->Owner() == this, "Submit: a list is null or belongs to another device");
-        ENGINE_ASSERT(list->GetPhase() == MetalCommandList::Phase::Ended,
-                      "Submit: a list was not ended, or was already submitted or listed twice");
-        ENGINE_ASSERT(list->Frame() == frame, "Submit: a list is from an earlier frame");
-        // Marked at once, so the same list later in this batch fails the check above (a second commit of one command
-        // buffer would raise inside Metal).
-        list->SetPhase(MetalCommandList::Phase::Submitted);
-    }
-    auto finish = [&]()
-    {
+        ENGINE_ASSERT(frame_open_.Load(MemoryOrder::Acquire), "Submit: no frame is open (call BeginFrame first)");
+        ENGINE_ASSERT(count == 0 || lists != nullptr, "Submit: lists is null but count is not zero");
+        const u64 frame = FrameNumber();
+        // Under the submission lock: the queue's order is the order of the commits, and two threads that wrongly submit
+        // one list are serialized so the second one's check fails.
+        LockGuard<Mutex> lock(submit_mutex_);
         for (usize i = 0; i < count; ++i)
         {
-            static_cast<MetalCommandList*>(lists[i])->SetPhase(MetalCommandList::Phase::Submitted);
+            auto* list = static_cast<MetalCommandList*>(lists[i]);
+            ENGINE_ASSERT(list != nullptr && list->Owner() == this,
+                          "Submit: a list is null or belongs to another device");
+            ENGINE_ASSERT(list->GetPhase() == MetalCommandList::Phase::Ended,
+                          "Submit: a list was not ended, or was already submitted or listed twice");
+            ENGINE_ASSERT(list->Frame() == frame, "Submit: a list is from an earlier frame");
+            // Marked at once, so the same list later in this batch fails the check above (a second commit of one
+            // command buffer would raise inside Metal).
+            list->SetPhase(MetalCommandList::Phase::Submitted);
         }
-    };
-    if (DeviceLost())
-    {
-        finish();
-        return 0;
-    }
-    if (count == 0)
-    {
-        return last_signaled_;  // nothing new: the fence for everything submitted so far
-    }
-    if (lose_device_at_submit_ != 0 && submit_count_.FetchAdd(1, MemoryOrder::Relaxed) + 1 == lose_device_at_submit_ &&
-        InjectLoss("submit", lose_device_at_submit_))
-    {
-        finish();
-        return 0;
-    }
-    for (usize i = 0; i < count; ++i)
-    {
-        auto* list = static_cast<MetalCommandList*>(lists[i]);
-        if (list->Failed() || list->Buffer() == nil)
+        auto finish = [&]()
         {
-            RhiLog(LogVerbosity::Error,
-                   "Submit: list %zu failed while recording and was not submitted (nothing in the batch ran)", i);
+            for (usize i = 0; i < count; ++i)
+            {
+                static_cast<MetalCommandList*>(lists[i])->SetPhase(MetalCommandList::Phase::Submitted);
+            }
+        };
+        if (DeviceLost())
+        {
             finish();
             return 0;
         }
+        if (count == 0)
+        {
+            return last_signaled_;  // nothing new: the fence for everything submitted so far
+        }
+        if (lose_device_at_submit_ != 0 &&
+            submit_count_.FetchAdd(1, MemoryOrder::Relaxed) + 1 == lose_device_at_submit_ &&
+            InjectLoss("submit", lose_device_at_submit_))
+        {
+            finish();
+            return 0;
+        }
+        for (usize i = 0; i < count; ++i)
+        {
+            auto* list = static_cast<MetalCommandList*>(lists[i]);
+            if (list->Failed() || list->Buffer() == nil)
+            {
+                RhiLog(LogVerbosity::Error,
+                       "Submit: list %zu failed while recording and was not submitted (nothing in the batch ran)", i);
+                finish();
+                return 0;
+            }
+        }
+        for (usize i = 0; i < count; ++i)
+        {
+            id<MTLCommandBuffer> buffer = static_cast<MetalCommandList*>(lists[i])->Buffer();
+            WatchCommandBuffer(buffer);
+            [buffer commit];
+        }
+        finish();
+        // One signal after the batch: a separate command buffer, ordered after the lists by the queue.
+        return SignalLocked();
     }
-    for (usize i = 0; i < count; ++i)
-    {
-        id<MTLCommandBuffer> buffer = static_cast<MetalCommandList*>(lists[i])->Buffer();
-        WatchCommandBuffer(buffer);
-        [buffer commit];
-    }
-    finish();
-    // One signal after the batch: a separate command buffer, ordered after the lists by the queue.
-    return SignalLocked();
 }
 
 id<MTLTexture> MetalDevice::TextureObject(TextureHandle texture, Format* format) const

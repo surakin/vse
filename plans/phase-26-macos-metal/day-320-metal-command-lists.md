@@ -23,7 +23,7 @@ render graph's barriers mapped to what Metal needs, mip generation, and recordin
 - [x] **Tests:** (the Metal file; `compute_test` and the shared command tests join through the GPU fixture on Day 322) `compute_test`, the command tests through Metal, `metal_commands_test.mm` (encoder splits, re-applied state after a split, parallel
       recording order, strips with restart, mips).
 - [x] **Documentation:** `rhi.md` Metal section (encoders, barriers, restart); `docgen lint` zero.
-- [ ] **Runs:** `scripts/test-phase.sh --affected --flavor all` (quote). **Deferred to Day 325 (the user's choice).**
+- [x] **Runs:** `ran 6110 of 6490 tests (phases: all; flavors: all; display: included; crash tests: excluded) in 1479 s` ([the Day 325 run](day-325-metal-lifecycle.md#the-run-of-days-315-325)). Originally: `scripts/test-phase.sh --affected --flavor all` (quote). **Deferred to Day 325 (the user's choice).**
 - [x] **End-of-day review:** `/code-review high`. Extra scrutiny: state re-application after every split, submission order across parallel recording,
       command-buffer lifetime until completion.
 - [x] Update `STATUS.md`, `KNOWN-ISSUES.md`; commit and push.

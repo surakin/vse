@@ -386,8 +386,8 @@ private:
     };
     // A shader's function and slot table, copied out (the table's `slots` point into `*slots`); false for an invalid
     // handle or one of another stage.
-    bool ShaderParts(ShaderHandle shader, ShaderStage stage, id<MTLFunction>* function, Vector<ShaderSlot>* slots,
-                     ShaderSlotTable* table, bool* has_table) const;
+    bool ShaderParts(ShaderHandle shader, ShaderStage stage, id<MTLFunction> __strong* function,
+                     Vector<ShaderSlot>* slots, ShaderSlotTable* table, bool* has_table) const;
     void ReleaseSamplerLocked(SamplerHandle sampler);
 
     struct BufferRes

@@ -15,13 +15,13 @@ The RHI's bind groups (sets 0/1/2: frame, material, objects) on Metal. Planned d
       the bound stages, skipping unchanged slots; push constants as `setVertexBytes:`/`setFragmentBytes:` up to 4 KiB.
 - [x] **Samplers:** `MTLSamplerDescriptor` from `SamplerDesc` (anisotropy, compare functions, `ClampToBorder` with border colors supported on macOS;
       the iOS refusal noted for Phase 27); cached by description.
-- [ ] **Measure:** (deferred to Day 325: `SetBindGroup` is timed through command lists, which come on Day 320; the argument-buffer tier is printed by `metal_device_test`) `SetBindGroup` cost with direct binding against the Vulkan and DX12 numbers in `rhi_bench` (different machines; recorded, no target),
+- [x] **Measure:** (Day 325: argument buffers tier 1, read-write textures tier 1; `rhi_bench`, which binds groups per draw, 0.64-0.89 us per draw on Metal against 0.73-0.87 on the Radeon 860M (D3D12) and 0.5-0.6 on the RTX 3060 (Vulkan): direct binding stays, decision 9 confirmed) ([the Day 325 run](day-325-metal-lifecycle.md#the-run-of-days-315-325)). Originally: (deferred to Day 325: `SetBindGroup` is timed through command lists, which come on Day 320; the argument-buffer tier is printed by `metal_device_test`) `SetBindGroup` cost with direct binding against the Vulkan and DX12 numbers in `rhi_bench` (different machines; recorded, no target),
       and the argument-buffer tier this device reports; amend decision 9 only if direct binding is clearly the bottleneck in the renderer benchmark (then
       a follow-up day is inserted, renumbering per CLAUDE.md).
 - [x] **Tests:** (the Metal file; the shared binding tests join through the GPU fixture on Day 322) the shared binding tests through Metal; `metal_bindings_test.mm` (slot mapping from reflection, a deliberate mismatch rejected, unchanged
       slots skipped, sampler cache).
 - [x] **Documentation:** `rhi.md` Metal section (slots, push constants limit); `docgen lint` zero.
-- [ ] **Runs:** `scripts/test-phase.sh --affected --flavor all` (quote). **Deferred to Day 325 (the user's choice).**
+- [x] **Runs:** `ran 6110 of 6490 tests (phases: all; flavors: all; display: included; crash tests: excluded) in 1479 s` ([the Day 325 run](day-325-metal-lifecycle.md#the-run-of-days-315-325)). Originally: `scripts/test-phase.sh --affected --flavor all` (quote). **Deferred to Day 325 (the user's choice).**
 - [x] **End-of-day review:** `/code-review high`. Extra scrutiny: stale-slot skipping across encoder boundaries (a new encoder starts empty), handles
       resolved at record time.
 - [x] Update `STATUS.md`, `KNOWN-ISSUES.md`; commit and push.

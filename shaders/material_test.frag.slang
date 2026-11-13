@@ -16,8 +16,9 @@
 //   input  location 1: float2 uv
 //   input  location 2: float4 tangent (unused)
 //   output location 0: float4 color
-//   set 1, binding 0: uniform buffer MaterialParams (std140):
-//       float4 base_color @0; float3 emissive @16; float roughness @28; uint flags @32; float4x4 uv_transform @48;  (112 bytes)
+//   set 1, binding 0: uniform buffer MaterialParams (std140, and the same in Metal's layout):
+//       float4 base_color @0; float roughness @16; uint flags @20; float3 emissive @32; float4x4 uv_transform @48;
+//       (112 bytes). Nothing follows the float3 in its 16 bytes: Metal's float3 fills them (shaders/README.md).
 //   set 1, binding 1: sampled texture albedo_tex
 //   set 1, binding 2: sampled texture normal_tex
 //   set 1, binding 3: sampler linear_sampler
@@ -28,9 +29,9 @@
 
 struct MaterialParams {
     float4 base_color;
-    float3 emissive;
     float roughness;
     uint flags;
+    float3 emissive;
     float4x4 uv_transform;
 };
 

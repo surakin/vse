@@ -1000,6 +1000,7 @@ void TextField::OnEvent(Event& event)
     case EventType::KeyDown:
     {
         const bool ctrl = (event.modifiers & os::kModCtrl) != 0;
+        const bool command = (event.modifiers & os::kModShortcut) != 0;  // Command on macOS, Control elsewhere
         const bool shift = (event.modifiers & os::kModShift) != 0;
         event.handled = true;
         switch (event.key)
@@ -1058,7 +1059,7 @@ void TextField::OnEvent(Event& event)
             }
             break;
         case Key::A:
-            if (ctrl)
+            if (command)
             {
                 SelectAll();
             }
@@ -1068,7 +1069,7 @@ void TextField::OnEvent(Event& event)
             }
             break;
         case Key::C:
-            if (ctrl)
+            if (command)
             {
                 Copy(false);
             }
@@ -1078,7 +1079,7 @@ void TextField::OnEvent(Event& event)
             }
             break;
         case Key::X:
-            if (ctrl)
+            if (command)
             {
                 Copy(true);
             }
@@ -1088,7 +1089,7 @@ void TextField::OnEvent(Event& event)
             }
             break;
         case Key::V:
-            if (ctrl)
+            if (command)
             {
                 Paste();
             }
@@ -1098,7 +1099,7 @@ void TextField::OnEvent(Event& event)
             }
             break;
         case Key::Z:
-            if (!ctrl)
+            if (!command)
             {
                 event.handled = false;
             }

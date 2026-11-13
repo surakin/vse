@@ -32,11 +32,15 @@ MTLStoreAction StoreOf(StoreOp op)
 
 void MetalCommandList::Recycle(u64 frame)
 {
-    ENGINE_ASSERT(phase_ != Phase::Recording, "CreateCommandList: a list from this slot is still recording");
-    phase_ = Phase::Idle;
-    frame_ = frame;
-    failed_ = false;
-    buffer_ = nil;
+    // What Metal autoreleases here is let go here: the caller (a job thread, a test) may have no pool that drains.
+    @autoreleasepool
+    {
+        ENGINE_ASSERT(phase_ != Phase::Recording, "CreateCommandList: a list from this slot is still recording");
+        phase_ = Phase::Idle;
+        frame_ = frame;
+        failed_ = false;
+        buffer_ = nil;
+    }
 }
 
 bool MetalCommandList::Recording()
@@ -177,105 +181,119 @@ id<MTLComputeCommandEncoder> MetalCommandList::Compute()
 
 void MetalCommandList::CopyBuffer(BufferHandle src, BufferHandle dst, u64 src_offset, u64 dst_offset, u64 size)
 {
-    if (!Recording())
+    // What Metal autoreleases here is let go here: the caller (a job thread, a test) may have no pool that drains.
+    @autoreleasepool
     {
-        return;
+        if (!Recording())
+        {
+            return;
+        }
+        ENGINE_ASSERT(!in_pass_, "CopyBuffer: inside a rendering pass");
+        // Metal on macOS copies between buffers in 4-byte units (the RHI's contract lets a backend ask it).
+        ENGINE_ASSERT(src_offset % 4 == 0 && dst_offset % 4 == 0 && size % 4 == 0,
+                      "CopyBuffer: Metal needs offsets and a size that are multiples of 4");
+        id<MTLBuffer> s = device_->BufferObject(src);
+        id<MTLBuffer> d = device_->BufferObject(dst);
+        if (s == nil || d == nil)
+        {
+            Fail("CopyBuffer", "a buffer is invalid or destroyed");
+            return;
+        }
+        if (size == 0)
+        {
+            return;
+        }
+        [Blit() copyFromBuffer:s sourceOffset:src_offset toBuffer:d destinationOffset:dst_offset size:size];
     }
-    ENGINE_ASSERT(!in_pass_, "CopyBuffer: inside a rendering pass");
-    // Metal on macOS copies between buffers in 4-byte units (the RHI's contract lets a backend ask it).
-    ENGINE_ASSERT(src_offset % 4 == 0 && dst_offset % 4 == 0 && size % 4 == 0,
-                  "CopyBuffer: Metal needs offsets and a size that are multiples of 4");
-    id<MTLBuffer> s = device_->BufferObject(src);
-    id<MTLBuffer> d = device_->BufferObject(dst);
-    if (s == nil || d == nil)
-    {
-        Fail("CopyBuffer", "a buffer is invalid or destroyed");
-        return;
-    }
-    if (size == 0)
-    {
-        return;
-    }
-    [Blit() copyFromBuffer:s sourceOffset:src_offset toBuffer:d destinationOffset:dst_offset size:size];
 }
 
 void MetalCommandList::CopyBufferToTexture(BufferHandle src, TextureHandle dst, const BufferTextureCopy& region)
 {
-    if (!Recording())
+    // What Metal autoreleases here is let go here: the caller (a job thread, a test) may have no pool that drains.
+    @autoreleasepool
     {
-        return;
+        if (!Recording())
+        {
+            return;
+        }
+        ENGINE_ASSERT(!in_pass_, "CopyBufferToTexture: inside a rendering pass");
+        id<MTLBuffer> s = device_->BufferObject(src);
+        Format format = Format::Undefined;
+        id<MTLTexture> t = device_->TextureObject(dst, &format);
+        if (s == nil || t == nil)
+        {
+            Fail("CopyBufferToTexture", "a buffer or texture is invalid or destroyed");
+            return;
+        }
+        ENGINE_ASSERT(region.mip_level < t.mipmapLevelCount && region.array_layer < t.arrayLength,
+                      "CopyBufferToTexture: mip or layer out of range");
+        const FormatProperties& fp = FormatInfo(format);
+        const u32 width = MipExtent(static_cast<u32>(t.width), region.mip_level);
+        const u32 height = MipExtent(static_cast<u32>(t.height), region.mip_level);
+        const u32 depth = t.textureType == MTLTextureType3D ? MipExtent(static_cast<u32>(t.depth), region.mip_level)
+                                                            : 1;
+        const u64 row = FormatRowBytes(format, width);
+        const u64 pitch = region.buffer_row_pitch != 0 ? region.buffer_row_pitch : row;
+        const u32 block_rows = (height + fp.block_height - 1) / fp.block_height;
+        ENGINE_ASSERT(pitch >= row && pitch % fp.bytes_per_block == 0 && region.buffer_offset % fp.bytes_per_block == 0,
+                      "CopyBufferToTexture: a row pitch or offset that is not a multiple of the texel size");
+        ENGINE_ASSERT(region.buffer_offset + pitch * block_rows * depth <= s.length,
+                      "CopyBufferToTexture: the buffer is too small for the level");
+        [Blit() copyFromBuffer:s
+                   sourceOffset:region.buffer_offset
+              sourceBytesPerRow:pitch
+            sourceBytesPerImage:pitch * block_rows
+                     sourceSize:MTLSizeMake(width, height, depth)
+                      toTexture:t
+               destinationSlice:t.textureType == MTLTextureType3D ? 0 : region.array_layer
+               destinationLevel:region.mip_level
+              destinationOrigin:MTLOriginMake(0, 0, 0)];
     }
-    ENGINE_ASSERT(!in_pass_, "CopyBufferToTexture: inside a rendering pass");
-    id<MTLBuffer> s = device_->BufferObject(src);
-    Format format = Format::Undefined;
-    id<MTLTexture> t = device_->TextureObject(dst, &format);
-    if (s == nil || t == nil)
-    {
-        Fail("CopyBufferToTexture", "a buffer or texture is invalid or destroyed");
-        return;
-    }
-    ENGINE_ASSERT(region.mip_level < t.mipmapLevelCount && region.array_layer < t.arrayLength,
-                  "CopyBufferToTexture: mip or layer out of range");
-    const FormatProperties& fp = FormatInfo(format);
-    const u32 width = MipExtent(static_cast<u32>(t.width), region.mip_level);
-    const u32 height = MipExtent(static_cast<u32>(t.height), region.mip_level);
-    const u32 depth = t.textureType == MTLTextureType3D ? MipExtent(static_cast<u32>(t.depth), region.mip_level) : 1;
-    const u64 row = FormatRowBytes(format, width);
-    const u64 pitch = region.buffer_row_pitch != 0 ? region.buffer_row_pitch : row;
-    const u32 block_rows = (height + fp.block_height - 1) / fp.block_height;
-    ENGINE_ASSERT(pitch >= row && pitch % fp.bytes_per_block == 0 && region.buffer_offset % fp.bytes_per_block == 0,
-                  "CopyBufferToTexture: a row pitch or offset that is not a multiple of the texel size");
-    ENGINE_ASSERT(region.buffer_offset + pitch * block_rows * depth <= s.length,
-                  "CopyBufferToTexture: the buffer is too small for the level");
-    [Blit() copyFromBuffer:s
-               sourceOffset:region.buffer_offset
-          sourceBytesPerRow:pitch
-        sourceBytesPerImage:pitch * block_rows
-                 sourceSize:MTLSizeMake(width, height, depth)
-                  toTexture:t
-           destinationSlice:t.textureType == MTLTextureType3D ? 0 : region.array_layer
-           destinationLevel:region.mip_level
-          destinationOrigin:MTLOriginMake(0, 0, 0)];
 }
 
 void MetalCommandList::CopyTextureToBuffer(TextureHandle src, BufferHandle dst, const BufferTextureCopy& region)
 {
-    if (!Recording())
+    // What Metal autoreleases here is let go here: the caller (a job thread, a test) may have no pool that drains.
+    @autoreleasepool
     {
-        return;
+        if (!Recording())
+        {
+            return;
+        }
+        ENGINE_ASSERT(!in_pass_, "CopyTextureToBuffer: inside a rendering pass");
+        Format format = Format::Undefined;
+        id<MTLTexture> t = device_->TextureObject(src, &format);
+        id<MTLBuffer> d = device_->BufferObject(dst);
+        if (t == nil || d == nil)
+        {
+            Fail("CopyTextureToBuffer", "a buffer or texture is invalid or destroyed");
+            return;
+        }
+        ENGINE_ASSERT(region.mip_level < t.mipmapLevelCount && region.array_layer < t.arrayLength,
+                      "CopyTextureToBuffer: mip or layer out of range");
+        ENGINE_ASSERT(t.sampleCount == 1, "CopyTextureToBuffer: a multisampled texture cannot be copied (resolve it)");
+        const FormatProperties& fp = FormatInfo(format);
+        const u32 width = MipExtent(static_cast<u32>(t.width), region.mip_level);
+        const u32 height = MipExtent(static_cast<u32>(t.height), region.mip_level);
+        const u32 depth = t.textureType == MTLTextureType3D ? MipExtent(static_cast<u32>(t.depth), region.mip_level)
+                                                            : 1;
+        const u64 row = FormatRowBytes(format, width);
+        const u64 pitch = region.buffer_row_pitch != 0 ? region.buffer_row_pitch : row;
+        const u32 block_rows = (height + fp.block_height - 1) / fp.block_height;
+        ENGINE_ASSERT(pitch >= row && pitch % fp.bytes_per_block == 0 && region.buffer_offset % fp.bytes_per_block == 0,
+                      "CopyTextureToBuffer: a row pitch or offset that is not a multiple of the texel size");
+        ENGINE_ASSERT(region.buffer_offset + pitch * block_rows * depth <= d.length,
+                      "CopyTextureToBuffer: the buffer is too small for the level");
+        [Blit() copyFromTexture:t
+                         sourceSlice:t.textureType == MTLTextureType3D ? 0 : region.array_layer
+                         sourceLevel:region.mip_level
+                        sourceOrigin:MTLOriginMake(0, 0, 0)
+                          sourceSize:MTLSizeMake(width, height, depth)
+                            toBuffer:d
+                   destinationOffset:region.buffer_offset
+              destinationBytesPerRow:pitch
+            destinationBytesPerImage:pitch * block_rows];
     }
-    ENGINE_ASSERT(!in_pass_, "CopyTextureToBuffer: inside a rendering pass");
-    Format format = Format::Undefined;
-    id<MTLTexture> t = device_->TextureObject(src, &format);
-    id<MTLBuffer> d = device_->BufferObject(dst);
-    if (t == nil || d == nil)
-    {
-        Fail("CopyTextureToBuffer", "a buffer or texture is invalid or destroyed");
-        return;
-    }
-    ENGINE_ASSERT(region.mip_level < t.mipmapLevelCount && region.array_layer < t.arrayLength,
-                  "CopyTextureToBuffer: mip or layer out of range");
-    ENGINE_ASSERT(t.sampleCount == 1, "CopyTextureToBuffer: a multisampled texture cannot be copied (resolve it)");
-    const FormatProperties& fp = FormatInfo(format);
-    const u32 width = MipExtent(static_cast<u32>(t.width), region.mip_level);
-    const u32 height = MipExtent(static_cast<u32>(t.height), region.mip_level);
-    const u32 depth = t.textureType == MTLTextureType3D ? MipExtent(static_cast<u32>(t.depth), region.mip_level) : 1;
-    const u64 row = FormatRowBytes(format, width);
-    const u64 pitch = region.buffer_row_pitch != 0 ? region.buffer_row_pitch : row;
-    const u32 block_rows = (height + fp.block_height - 1) / fp.block_height;
-    ENGINE_ASSERT(pitch >= row && pitch % fp.bytes_per_block == 0 && region.buffer_offset % fp.bytes_per_block == 0,
-                  "CopyTextureToBuffer: a row pitch or offset that is not a multiple of the texel size");
-    ENGINE_ASSERT(region.buffer_offset + pitch * block_rows * depth <= d.length,
-                  "CopyTextureToBuffer: the buffer is too small for the level");
-    [Blit() copyFromTexture:t
-                     sourceSlice:t.textureType == MTLTextureType3D ? 0 : region.array_layer
-                     sourceLevel:region.mip_level
-                    sourceOrigin:MTLOriginMake(0, 0, 0)
-                      sourceSize:MTLSizeMake(width, height, depth)
-                        toBuffer:d
-               destinationOffset:region.buffer_offset
-          destinationBytesPerRow:pitch
-        destinationBytesPerImage:pitch * block_rows];
 }
 
 void MetalCommandList::Barrier(BufferHandle buffer, ResourceState before, ResourceState)
@@ -316,23 +334,27 @@ void MetalCommandList::Barrier(TextureHandle texture, ResourceState before, Reso
 
 void MetalCommandList::GenerateMips(TextureHandle texture)
 {
-    if (!Recording())
+    // What Metal autoreleases here is let go here: the caller (a job thread, a test) may have no pool that drains.
+    @autoreleasepool
     {
-        return;
+        if (!Recording())
+        {
+            return;
+        }
+        ENGINE_ASSERT(!in_pass_, "GenerateMips: inside a rendering pass");
+        Format format = Format::Undefined;
+        id<MTLTexture> t = device_->TextureObject(texture, &format);
+        if (t == nil)
+        {
+            Fail("GenerateMips", "the texture is invalid or destroyed");
+            return;
+        }
+        ENGINE_ASSERT(t.mipmapLevelCount > 1, "GenerateMips: the texture has one mip level");
+        ENGINE_ASSERT(device_->CanGenerateMips(format),
+                      "GenerateMips: the format cannot be filtered and rendered (Device::CanGenerateMips)");
+        // Metal halves each level with a linear filter in a blit: no compute shader.
+        [Blit() generateMipmapsForTexture:t];
     }
-    ENGINE_ASSERT(!in_pass_, "GenerateMips: inside a rendering pass");
-    Format format = Format::Undefined;
-    id<MTLTexture> t = device_->TextureObject(texture, &format);
-    if (t == nil)
-    {
-        Fail("GenerateMips", "the texture is invalid or destroyed");
-        return;
-    }
-    ENGINE_ASSERT(t.mipmapLevelCount > 1, "GenerateMips: the texture has one mip level");
-    ENGINE_ASSERT(device_->CanGenerateMips(format),
-                  "GenerateMips: the format cannot be filtered and rendered (Device::CanGenerateMips)");
-    // Metal halves each level with a linear filter in a blit: no compute shader.
-    [Blit() generateMipmapsForTexture:t];
 }
 
 // ---- rendering ----
@@ -596,39 +618,47 @@ bool MetalCommandList::ApplyRender()
 
 void MetalCommandList::Draw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance)
 {
-    if (!Recording() || !ApplyRender() || vertex_count == 0 || instance_count == 0)
+    // What Metal autoreleases here is let go here: the caller (a job thread, a test) may have no pool that drains.
+    @autoreleasepool
     {
-        return;
+        if (!Recording() || !ApplyRender() || vertex_count == 0 || instance_count == 0)
+        {
+            return;
+        }
+        [render_ drawPrimitives:info_.primitive
+                    vertexStart:first_vertex
+                    vertexCount:vertex_count
+                  instanceCount:instance_count
+                   baseInstance:first_instance];
     }
-    [render_ drawPrimitives:info_.primitive
-                vertexStart:first_vertex
-                vertexCount:vertex_count
-              instanceCount:instance_count
-               baseInstance:first_instance];
 }
 
 void MetalCommandList::DrawIndexed(u32 index_count, u32 instance_count, u32 first_index, i32 vertex_offset,
                                    u32 first_instance)
 {
-    if (!Recording())
+    // What Metal autoreleases here is let go here: the caller (a job thread, a test) may have no pool that drains.
+    @autoreleasepool
     {
-        return;
+        if (!Recording())
+        {
+            return;
+        }
+        ENGINE_ASSERT(index_buffer_ != nil, "DrawIndexed: no index buffer bound");
+        if (!ApplyRender() || index_buffer_ == nil || index_count == 0 || instance_count == 0)
+        {
+            return;
+        }
+        const u64 size = index_type_ == IndexType::UInt16 ? 2 : 4;
+        // Strips restart at the all-ones index on Metal always (the RHI's primitive_restart asks for the same).
+        [render_ drawIndexedPrimitives:info_.primitive
+                            indexCount:index_count
+                             indexType:index_type_ == IndexType::UInt16 ? MTLIndexTypeUInt16 : MTLIndexTypeUInt32
+                           indexBuffer:index_buffer_
+                     indexBufferOffset:index_offset_ + first_index * size
+                         instanceCount:instance_count
+                            baseVertex:vertex_offset
+                          baseInstance:first_instance];
     }
-    ENGINE_ASSERT(index_buffer_ != nil, "DrawIndexed: no index buffer bound");
-    if (!ApplyRender() || index_buffer_ == nil || index_count == 0 || instance_count == 0)
-    {
-        return;
-    }
-    const u64 size = index_type_ == IndexType::UInt16 ? 2 : 4;
-    // Strips restart at the all-ones index on Metal always (the RHI's primitive_restart asks for the same).
-    [render_ drawIndexedPrimitives:info_.primitive
-                        indexCount:index_count
-                         indexType:index_type_ == IndexType::UInt16 ? MTLIndexTypeUInt16 : MTLIndexTypeUInt32
-                       indexBuffer:index_buffer_
-                 indexBufferOffset:index_offset_ + first_index * size
-                     instanceCount:instance_count
-                        baseVertex:vertex_offset
-                      baseInstance:first_instance];
 }
 
 bool MetalCommandList::ApplyCompute()
@@ -668,11 +698,15 @@ bool MetalCommandList::ApplyCompute()
 
 void MetalCommandList::Dispatch(u32 x, u32 y, u32 z)
 {
-    if (!Recording() || !ApplyCompute() || x == 0 || y == 0 || z == 0)
+    // What Metal autoreleases here is let go here: the caller (a job thread, a test) may have no pool that drains.
+    @autoreleasepool
     {
-        return;
+        if (!Recording() || !ApplyCompute() || x == 0 || y == 0 || z == 0)
+        {
+            return;
+        }
+        [compute_ dispatchThreadgroups:MTLSizeMake(x, y, z) threadsPerThreadgroup:info_.threadgroup];
     }
-    [compute_ dispatchThreadgroups:MTLSizeMake(x, y, z) threadsPerThreadgroup:info_.threadgroup];
 }
 
 // ---- debug labels ----

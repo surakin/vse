@@ -34,12 +34,13 @@ public:
 ///
 /// The words: `frame:N` waits until frame N; `click:name` clicks the middle of the widget called `name`; `type:text`
 /// types text (`_` is a space); `key:Name` presses a key (`Enter`, `Tab`, `Escape`, `Space`, `Left`, `Right`, `Up`,
-/// `Down`, a letter, `F1`..`F12`, with `ctrl+`, `shift+` or `alt+` before it); `resize:WxH`; `theme:dark|light`;
-/// `menu:File/About` chooses an item (`Theme/Dark` for one in a submenu); `openmenu:File` opens a menu and leaves it
-/// open; `context` opens the context menu of the left panel; `rendering` opens the rendering settings dialog;
-/// `drag:name:dx,dy` drags from the middle of the widget by (dx, dy); `wheel:name:n` turns the wheel n notches over the
-/// widget; `drop:text:...` and `drop:file:/path` drop text or a file on the widget under the middle of the left panel's
-/// text field; `paste:text` puts text on the clipboard and presses Ctrl+V; `shot:path` saves a picture; `quit`.
+/// `Down`, a letter, `F1`..`F12`, with `ctrl+`, `shortcut+` (Command on macOS, Ctrl elsewhere), `shift+` or `alt+`
+/// before it); `resize:WxH`; `theme:dark|light`; `menu:File/About` chooses an item (`Theme/Dark` for one in a submenu);
+/// `openmenu:File` opens a menu and leaves it open; `context` opens the context menu of the left panel; `rendering`
+/// opens the rendering settings dialog; `drag:name:dx,dy` drags from the middle of the widget by (dx, dy);
+/// `wheel:name:n` turns the wheel n notches over the widget; `drop:text:...` and `drop:file:/path` drop text or a file
+/// on the widget under the middle of the left panel's text field; `paste:text` puts text on the clipboard and presses
+/// the paste shortcut (Cmd+V on macOS, Ctrl+V elsewhere); `shot:path` saves a picture; `quit`.
 ///
 /// - Thread-safety: owner-thread-only.
 /// - Ownership: owns the words; borrows the app, the surface and the host.

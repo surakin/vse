@@ -7,6 +7,8 @@
 #include "cstr/cstr.h"
 #include "cstr/format.h"
 #include "containers/array.h"
+#include "containers/vector.h"
+#include "sync/mutex.h"
 #include "sync/atomic.h"
 #include "log/assert.h"
 #include "os/console.h"
@@ -62,6 +64,80 @@ bool EnvironmentOn(const char* name)
     return value != nullptr && value[0] != '\0' && value[0] != '0';
 }
 
+// The waits for a timeline value (Phase 26 Day 325). The listener's block captures nothing, so it is a global block:
+// a block with captures is copied on the waiting thread and read on Metal's notification thread, a hand-off made in
+// IOSurface that ThreadSanitizer cannot see (it reported the capture as a race). The block finds its semaphores here,
+// under a lock: an event and the value each waits for, and the semaphore, retained while the wait is registered.
+struct TimelineWaiter
+{
+    const void* event = nullptr;
+    u64 value = 0;
+    void* semaphore = nullptr;  // a retained dispatch_semaphore_t
+};
+
+struct TimelineWaiters
+{
+    Mutex mutex;
+    Vector<TimelineWaiter> waiting;  // under mutex
+};
+
+TimelineWaiters& Waiters()
+{
+    static TimelineWaiters waiters;
+    return waiters;
+}
+
+// Signals every wait on `event` for a value it has reached; a wait that already ended is not there any more.
+void SignalTimelineWaiters(const void* event, u64 value)
+{
+    TimelineWaiters& w = Waiters();
+    LockGuard<Mutex> lock(w.mutex);
+    for (usize i = 0; i < w.waiting.Size(); ++i)
+    {
+        if (w.waiting[i].event == event && w.waiting[i].value <= value)
+        {
+            dispatch_semaphore_signal((__bridge dispatch_semaphore_t)w.waiting[i].semaphore);
+        }
+    }
+}
+
+// Takes the last reference: ARC releases the argument when this returns.
+void Release(dispatch_semaphore_t) {}
+
+// One wait's registration, removed (and its semaphore released) when the wait returns.
+class TimelineWaitRegistration
+{
+public:
+    TimelineWaitRegistration(id<MTLSharedEvent> event, u64 value, dispatch_semaphore_t semaphore)
+        : event_((__bridge const void*)event), semaphore_((__bridge_retained void*)semaphore)
+    {
+        TimelineWaiters& w = Waiters();
+        LockGuard<Mutex> lock(w.mutex);
+        w.waiting.Push(TimelineWaiter{event_, value, semaphore_});
+    }
+    ~TimelineWaitRegistration()
+    {
+        TimelineWaiters& w = Waiters();
+        LockGuard<Mutex> lock(w.mutex);
+        for (usize i = 0; i < w.waiting.Size(); ++i)
+        {
+            if (w.waiting[i].semaphore == semaphore_)
+            {
+                w.waiting[i] = w.waiting[w.waiting.Size() - 1];
+                w.waiting.Pop();
+                break;
+            }
+        }
+        Release((__bridge_transfer dispatch_semaphore_t)semaphore_);
+    }
+    TimelineWaitRegistration(const TimelineWaitRegistration&) = delete;
+    TimelineWaitRegistration& operator=(const TimelineWaitRegistration&) = delete;
+
+private:
+    const void* event_;
+    void* semaphore_;
+};
+
 }  // namespace
 
 u32 MetalDevice::LiveDeviceObservers()
@@ -73,7 +149,12 @@ MetalDevicePtr MetalDevice::Create(const DeviceCreateInfo& info)
 {
     // Held with the plain deleter until initialization succeeds: a half-built device must not be waited on.
     UniquePtr<MetalDevice> device = MakeUnique<MetalDevice>();
-    if (!device || !device->Initialize(info))
+    bool ok = false;
+    @autoreleasepool  // what initialization autoreleases is let go here, not by a pool the caller may never drain
+    {
+        ok = device && device->Initialize(info);
+    }
+    if (!ok)
     {
         return MetalDevicePtr();
     }
@@ -206,7 +287,20 @@ bool MetalDevice::Initialize(const DeviceCreateInfo& info)
     {
         return false;
     }
-    pipeline_cache_.Open(device_, info, adapter_, epoch_);  // running without a cache is not a failure
+    // Metal's shader validation and a binary archive do not mix on macOS 15.8: adding a pipeline to an archive
+    // read from a file stops the process inside Metal (an unbalanced dispatch_group_leave in the compiler's variant
+    // cache, seen on Day 325). The archive is left off while shader validation is on.
+    if (info.pipeline_cache && EnvironmentOn("MTL_SHADER_VALIDATION"))
+    {
+        RhiLog(LogVerbosity::Info, "Metal: the pipeline archive is off while MTL_SHADER_VALIDATION is set");
+        DeviceCreateInfo without = info;
+        without.pipeline_cache = false;
+        pipeline_cache_.Open(device_, without, adapter_, epoch_);
+    }
+    else
+    {
+        pipeline_cache_.Open(device_, info, adapter_, epoch_);  // running without a cache is not a failure
+    }
     RhiLog(LogVerbosity::Info, "Metal: device on '%s' (%s), validation %s%s, %s memory", adapter_.name, adapter_.id,
            validation_ ? "on" : "off", EnvironmentOn("MTL_SHADER_VALIDATION") ? " with shader validation" : "",
            managed_ ? "managed" : "shared");
@@ -261,6 +355,10 @@ MetalDevice::~MetalDevice()
             pipeline_cache_.Save();
         }
         swapchain_.Reset();  // leaked by the application (counted above); its texture goes before the resources
+        for (ListPool& pool : list_pools_)
+        {
+            pool.lists.Clear();  // inside this pool: a list's command buffer autoreleases the device as it goes
+        }
         ShutdownResources();
 #if ENGINE_PLATFORM_MACOS
         if (device_observer_ != nil)
@@ -408,14 +506,14 @@ bool MetalDevice::WaitForValue(u64 value, u64 timeout_ns)
     {
         return false;
     }
-    // The listener signals a semaphore when the timeline reaches the value; the wait takes it in slices, so a lost
-    // device (whose buffers never finish) ends it within one slice. A late notification signals a semaphore nobody
-    // waits on, which the block keeps alive.
+    // The listener signals the wait's semaphore when the timeline reaches the value; the wait takes it in slices, so a
+    // lost device (whose buffers never finish) ends it within one slice. A late notification finds no registration.
     dispatch_semaphore_t reached = dispatch_semaphore_create(0);
+    const TimelineWaitRegistration registration(timeline_, value, reached);
     [timeline_ notifyListener:listener_
                       atValue:value
-                        block:^(id<MTLSharedEvent>, uint64_t) {
-                          dispatch_semaphore_signal(reached);
+                        block:^(id<MTLSharedEvent> event, u64 reached_value) {
+                          SignalTimelineWaiters((__bridge const void*)event, reached_value);
                         }];
     const u64 start = os::MonotonicTimeNanos();
     for (;;)
@@ -430,7 +528,7 @@ bool MetalDevice::WaitForValue(u64 value, u64 timeout_ns)
             }
             slice_ns = timeout_ns - elapsed < slice_ns ? timeout_ns - elapsed : slice_ns;
         }
-        if (dispatch_semaphore_wait(reached, dispatch_time(DISPATCH_TIME_NOW, static_cast<int64_t>(slice_ns))) == 0 ||
+        if (dispatch_semaphore_wait(reached, dispatch_time(DISPATCH_TIME_NOW, static_cast<i64>(slice_ns))) == 0 ||
             timeline_.signaledValue >= value)
         {
             return true;

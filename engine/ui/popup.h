@@ -36,13 +36,14 @@ struct PopupOptions
                               ///< consumed; destroying it closes the popup.
 };
 
-/// A key and the modifiers that must be held with it (only Ctrl, Shift and Alt count).
+/// A key and the modifiers that must be held with it (Ctrl, Shift, Alt and Super count; Super is Command on macOS).
 ///
 /// - Thread-safety: thread-compatible plain data.
 struct KeyChord
 {
     Key key = Key::Unknown;  ///< The key.
-    u32 modifiers = 0;       ///< A mask of `os::kModCtrl`, `os::kModShift` and `os::kModAlt`.
+    u32 modifiers = 0;       ///< A mask of `os::kModCtrl`, `os::kModShift`, `os::kModAlt` and `os::kModSuper`
+                             ///< (`os::kModShortcut` for a command).
 
     /// Returns whether both fields are equal.
     ///
@@ -65,7 +66,8 @@ struct KeyChord
 /// - Fails: never.
 Rect PlacePopup(Size size, const Rect& anchor, Placement placement, const Rect& bounds);
 
-/// Returns the text of a chord, such as "Ctrl+Shift+S" or "F10" (modifiers in the order Ctrl, Shift, Alt).
+/// Returns the text of a chord, such as "Ctrl+Shift+S" or "F10" (modifiers in the order Ctrl, Cmd or Super, Shift,
+/// Alt).
 ///
 /// - Param chord: the chord.
 /// - Returns: the text; letters are upper case.

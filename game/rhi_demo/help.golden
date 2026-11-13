@@ -1,4 +1,4 @@
-usage: PROGRAM [--backend wayland|x11|win32] [--frames N] [--screenshot out.ppm] [--no-vsync] [--validation]
+usage: PROGRAM [--backend wayland|x11|win32|cocoa] [--frames N] [--screenshot out.ppm] [--no-vsync] [--validation]
        [--inject-device-loss FRAME] [--inject-oom N] [--gpu ID|INDEX|NAME] [--list-gpus]
   --backend B       display backend (default: automatic; same as ENGINE_WINDOW_BACKEND)
   --frames N        stop after N frames (also RHI_DEMO_FRAMES=N)
