@@ -9,7 +9,7 @@
 //!     joint NAME PARENT tx ty tz  qx qy qz qw  sx sy sz
 //!     ibm NAME m00 m01 ... m11
 //!
-//! `id` comes first (written by `asset_mint adopt`, Day 332). `joint` records come in parent-first order; PARENT is a
+//! `id` comes first (written by `asset_mint adopt`, Day 333). `joint` records come in parent-first order; PARENT is a
 //! joint name or `-` for a root. `ibm` (12 numbers, a 3x4 row-major matrix) overrides one joint's computed inverse bind
 //! matrix.
 

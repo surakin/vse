@@ -324,7 +324,7 @@ The events.
 class AnimationResolver { ... }
 ```
 
-Finds the views an update needs. Implemented by the resource manager (Day 328) or a test; called from several jobs at once, so it must be safe to read concurrently.
+Finds the views an update needs. Implemented by the resource manager's animation adapter (Day 329) or a test; called from several jobs at once, so it must be safe to read concurrently.
 
 | Field | Value |
 |---|---|

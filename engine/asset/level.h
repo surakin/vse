@@ -46,7 +46,7 @@ enum LevelComponentIds : u32
     kEntityNameId = 51,     ///< [[asset::EntityName]]: stored.
 };
 
-/// The stored form of what draws an entity: a mesh and a material named by id. The resource manager (Day 328) turns it
+/// The stored form of what draws an entity: a mesh and a material named by id. The level spawner (Day 329) turns it
 /// into a `scene::MeshRenderer` with the loaded geometry; the level never holds a pointer.
 ///
 /// - Thread-safety: thread-compatible plain data.

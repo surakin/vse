@@ -2756,7 +2756,7 @@ Stable ids of the level components in the storage registry (the engine's own ran
 struct MeshReference { ... }
 ```
 
-The stored form of what draws an entity: a mesh and a material named by id. The resource manager (Day 328) turns it into a `scene::MeshRenderer` with the loaded geometry; the level never holds a pointer.
+The stored form of what draws an entity: a mesh and a material named by id. The level spawner (Day 329) turns it into a `scene::MeshRenderer` with the loaded geometry; the level never holds a pointer.
 
 | Field | Value |
 |---|---|
@@ -3820,7 +3820,7 @@ Source-alpha blending.
 struct MaterialAssetData { ... }
 ```
 
-The CPU description of a material: what the minter builds and the loader returns. The resource manager (Day 328) turns it into a `renderer::MaterialId`.
+The CPU description of a material: what the minter builds and the loader returns. The resource manager (Day 329) turns it into a `renderer::MaterialId`.
 
 | Field | Value |
 |---|---|

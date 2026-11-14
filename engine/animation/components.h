@@ -85,8 +85,8 @@ struct AnimationEvents
     Vector<AnimationEvent> events;  ///< The events.
 };
 
-/// Finds the views an update needs. Implemented by the resource manager (Day 328) or a test; called from several jobs
-/// at once, so it must be safe to read concurrently.
+/// Finds the views an update needs. Implemented by the resource manager's animation adapter (Day 329) or a test; called
+/// from several jobs at once, so it must be safe to read concurrently.
 ///
 /// - Thread-safety: thread-safe for concurrent calls.
 class AnimationResolver

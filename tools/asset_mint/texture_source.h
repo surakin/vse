@@ -14,7 +14,7 @@
 //!     filter box              (or `kaiser`; default box)
 //!     alpha straight          (or `premultiply` or `ignore`; default straight for rgba8, ignore otherwise)
 //!
-//! `id` comes first (written by `asset_mint adopt`, Day 332). The images are raw files: a 24-byte header (`RAW1`,
+//! `id` comes first (written by `asset_mint adopt`, Day 333). The images are raw files: a 24-byte header (`RAW1`,
 //! width, height, the id as a `u64`, a reserved `u32`) and `width * height * 4` bytes of RGBA8 rows. No PNG.
 
 #include "asset/block_compress.h"

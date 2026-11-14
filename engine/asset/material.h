@@ -4,8 +4,8 @@
 //! template's uniform layout, texture bindings by resource id, sampler descriptions and render-state overrides.
 //! Built by [[asset::BuildMaterialBlob]] and read by [[asset::LoadMaterialBlob]]. Phase 22 Day 326.
 //!
-//! Sections (ids from [[asset::kFirstUserSection]]): 16 the header (96 bytes: flags, counts, the state overrides and the
-//! 48-byte template name), 17 the parameter block (the bytes copied into the material's uniform buffer, laid out as
+//! Sections (ids from [[asset::kFirstUserSection]]): 16 the header (96 bytes: flags, counts, the state overrides and
+//! the 48-byte template name), 17 the parameter block (the bytes copied into the material's uniform buffer, laid out as
 //! the template's block, so loading copies one block), 18 the parameter table (name, type, offset and size of each
 //! value the source set; 64 bytes each), 19 the texture bindings (slot name and resource id; 64 bytes each), 20 the
 //! samplers (64 bytes each), 21 the permutation options (48-byte names). Every texture id is also a dependency of the
@@ -67,10 +67,10 @@ enum class MaterialParamType : u8
 /// - Thread-safety: thread-compatible plain data.
 struct MaterialParam
 {
-    MaterialName name;                              ///< The block member's name.
+    MaterialName name;                                  ///< The block member's name.
     MaterialParamType type = MaterialParamType::Float;  ///< The type.
-    u32 offset = 0;                                 ///< Byte offset in the block.
-    u32 size = 0;                                   ///< Bytes of the value.
+    u32 offset = 0;                                     ///< Byte offset in the block.
+    u32 size = 0;                                       ///< Bytes of the value.
 };
 
 /// A texture slot bound to a texture resource.
@@ -78,7 +78,7 @@ struct MaterialParam
 /// - Thread-safety: thread-compatible plain data.
 struct MaterialTextureBinding
 {
-    MaterialName slot;  ///< The shader's texture variable name.
+    MaterialName slot;   ///< The shader's texture variable name.
     ResourceId texture;  ///< The texture (never null).
 };
 
@@ -102,13 +102,13 @@ enum class MaterialAddress : u8
 /// - Thread-safety: thread-compatible plain data.
 struct MaterialSampler
 {
-    MaterialName slot;                              ///< The shader's sampler variable name.
-    MaterialFilter min_filter = MaterialFilter::Linear;  ///< Minification.
-    MaterialFilter mag_filter = MaterialFilter::Linear;  ///< Magnification.
-    MaterialFilter mip_filter = MaterialFilter::Linear;  ///< Between mip levels.
+    MaterialName slot;                                    ///< The shader's sampler variable name.
+    MaterialFilter min_filter = MaterialFilter::Linear;   ///< Minification.
+    MaterialFilter mag_filter = MaterialFilter::Linear;   ///< Magnification.
+    MaterialFilter mip_filter = MaterialFilter::Linear;   ///< Between mip levels.
     MaterialAddress address_u = MaterialAddress::Repeat;  ///< Horizontal addressing.
     MaterialAddress address_v = MaterialAddress::Repeat;  ///< Vertical addressing.
-    u8 max_anisotropy = 1;                          ///< 1 to 16.
+    u8 max_anisotropy = 1;                                ///< 1 to 16.
 };
 
 /// Which render-state fields a material overrides, and their values (the fields of the renderer's
@@ -129,21 +129,21 @@ struct MaterialStateOverride
     bool alpha_blend = false;        ///< Source-alpha blending.
 };
 
-/// The CPU description of a material: what the minter builds and the loader returns. The resource manager (Day 328)
+/// The CPU description of a material: what the minter builds and the loader returns. The resource manager (Day 329)
 /// turns it into a `renderer::MaterialId`.
 ///
 /// - Thread-safety: thread-compatible.
 /// - Ownership: owns its vectors.
 struct MaterialAssetData
 {
-    MaterialName template_name;             ///< The built-in template (`gbuffer` and the like).
-    u32 flags = 0;                          ///< [[asset::MaterialFlags]].
-    MaterialStateOverride state;            ///< The render-state overrides.
-    Vector<MaterialName> options;           ///< The fragment permutation options the material enables.
-    Vector<byte> block;                     ///< The parameter block (the template's uniform layout), up to 1024 bytes.
-    Vector<MaterialParam> params;           ///< The values the source set, with their place in `block`.
+    MaterialName template_name;    ///< The built-in template (`gbuffer` and the like).
+    u32 flags = 0;                 ///< [[asset::MaterialFlags]].
+    MaterialStateOverride state;   ///< The render-state overrides.
+    Vector<MaterialName> options;  ///< The fragment permutation options the material enables.
+    Vector<byte> block;            ///< The parameter block (the template's uniform layout), up to 1024 bytes.
+    Vector<MaterialParam> params;  ///< The values the source set, with their place in `block`.
     Vector<MaterialTextureBinding> textures;  ///< The texture slots, in a stable order.
-    Vector<MaterialSampler> samplers;       ///< The sampler slots.
+    Vector<MaterialSampler> samplers;         ///< The sampler slots.
 };
 
 /// Copies `text` into a name field.
@@ -162,7 +162,8 @@ bool MakeMaterialName(const char* text, usize length, MaterialName* out);
 /// - Param data: the description.
 /// - Param out: replaced by the blob.
 /// - Param target: the target tag recorded in the header.
-/// - Fails: `Invalid` for a null id, an empty or unterminated name, a repeated name, counts or sizes above the limits, a
+/// - Fails: `Invalid` for a null id, an empty or unterminated name, a repeated name, counts or sizes above the limits,
+/// a
 ///   parameter outside the block, overlapping parameters, a null or repeated texture id, a repeated slot, a sampler
 ///   outside its ranges or a state value outside its enum; `LimitExceeded` when memory runs out.
 /// - Ownership: borrows `data` for the call; `*out` is replaced.
@@ -179,6 +180,7 @@ Status BuildMaterialBlob(const TypeRegistry& types, ResourceId id, const Materia
 /// - Fails: `Corrupt` for any inconsistency; `UnsupportedVersion` (the message names `asset_mint remint`) for another
 ///   container or type version; `TypeMismatch` for a blob of another type; `LimitExceeded` when memory runs out.
 /// - Ownership: borrows `bytes` for the call; `*out` is replaced.
-Status LoadMaterialBlob(ByteSpan bytes, const TypeRegistry& types, MaterialAssetData* out, ResourceId* id_out = nullptr);
+Status LoadMaterialBlob(ByteSpan bytes, const TypeRegistry& types, MaterialAssetData* out,
+                        ResourceId* id_out = nullptr);
 
 }  // namespace engine_placeholder::asset

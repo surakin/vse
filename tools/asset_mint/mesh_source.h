@@ -14,7 +14,7 @@
 //!     slot NAME FIRST COUNT             (a material slot: a range of indices)
 //!     skin VERTEX JOINT WEIGHT [JOINT WEIGHT ...]
 //!
-//! `id` comes first (written by `asset_mint adopt`, Day 332). All `v` records come before the first `i`, `skin` or
+//! `id` comes first (written by `asset_mint adopt`, Day 333). All `v` records come before the first `i`, `skin` or
 //! `lod`/`slot` record that refers to them.
 
 #include "asset/mesh.h"

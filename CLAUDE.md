@@ -372,7 +372,7 @@ table in `PLAN.md`.
   rasterization only — text shaping for complex scripts (HarfBuzz's
   domain) is explicitly out of scope until a real need shows up; cursor/
   line-break positions instead reuse the foundation string module's
-  existing grapheme clustering. **libpng and zlib are vendored (first for the glTF importer in `asset_mint`, Phase 22 Day 335, then enabled in FreeType on Phase 27 Day 350)** (the user's decision, 2026-11-10), used only by FreeType
+  existing grapheme clustering. **libpng and zlib are vendored (first for the glTF importer in `asset_mint`, Phase 22 Day 336, then enabled in FreeType on Phase 27 Day 351)** (the user's decision, 2026-11-10), used only by FreeType
   to decode the PNG strikes of `CBDT`/`sbix` colored-glyph fonts; no engine file includes their headers.
 - **Gameplay scripting embeds real languages, not a custom bytecode VM —
   starting with Lua via LuaJIT** (Phase 26). Deliberate, individually
@@ -421,7 +421,7 @@ table in `PLAN.md`.
 - **Offline tools may use a vetted third-party library** where the job is
   solved and not engine-differentiating - today only nlohmann/json
   (vendored under `third_party/nlohmann_json/`) in `tools/shader_mint`,
-  to read `slangc` reflection (`PLAN.md` assumption #19); from Phase 22 Day 333 also in `tools/asset_mint`'s glTF importer, with zlib, libpng and a JPEG decoder for its images (Day 335; amended 2026-11-14). Never linked
+  to read `slangc` reflection (`PLAN.md` assumption #19); from Phase 22 Day 334 also in `tools/asset_mint`'s glTF importer, with zlib, libpng and a JPEG decoder for its images (Day 336; amended 2026-11-14). Never linked
   into the engine, a game, the renderer or an engine test target (the tool's own tests link it); anything else
   needs its own entry in `PLAN.md`. That tool and its tests may use `std::string`/`std::vector` (the library
   requires them); the engine's runtime libraries still do not.

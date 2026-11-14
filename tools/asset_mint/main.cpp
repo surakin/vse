@@ -1,4 +1,4 @@
-// asset_mint: Phase 22 Day 316, the first cut (Day 332 completes the tool).
+// asset_mint: Phase 22 Day 316, the first cut (Day 333 completes the tool).
 //
 //   asset_mint pack DIRECTORY OUTPUT.pak [--target=N] [--no-names]
 //   asset_mint mint-skeleton SOURCE.skel.src OUTPUT.blob [--target=N]
@@ -193,7 +193,7 @@ int Pack(int argc, char** argv)
     return 0;
 }
 
-// Mints a skeleton source into a blob (Day 318). `remint` of old blobs arrives with the whole tool on Day 332.
+// Mints a skeleton source into a blob (Day 318). `remint` of old blobs arrives with the whole tool on Day 333.
 int MintSkeletonCommand(int argc, char** argv)
 {
     if (argc < 4 || argc > 5)
@@ -619,7 +619,7 @@ int MintClipCommand(int argc, char** argv)
         return 1;
     }
     const ClipLimits
-        limits;  // the defaults equal the `assets.anim_*` settings' defaults (Day 336 wires the tool to them)
+        limits;  // the defaults equal the `assets.anim_*` settings' defaults (Day 337 wires the tool to them)
     Vector<byte> blob;
     ClipSourceError error;
     const Status status = MintClip(StringView(reinterpret_cast<const char*>(text.Data()), text.Size()), skeleton, types,
