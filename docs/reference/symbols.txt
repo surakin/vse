@@ -4537,26 +4537,28 @@ asset::BlobHeaderInfo::target	variable	asset	asset-blobheaderinfo-target	asset.m
 asset::BlobHeaderInfo::total_size	variable	asset	asset-blobheaderinfo-total-size	asset.md	engine/asset/blob.h:220
 asset::BlobHeaderInfo::content_hash	variable	asset	asset-blobheaderinfo-content-hash	asset.md	engine/asset/blob.h:221
 asset::PeekBlobHeader(ByteSpan,BlobHeaderInfo*)	function	asset	asset-peekblobheader-bytespan-blobheaderinfo-star	asset.md	engine/asset/blob.h:235
-asset::BcKind	enum	asset	asset-bckind	asset.md	engine/asset/block_compress.h:25
-asset::BcKind::Bc1	enumerator	asset	asset-bckind-bc1	asset.md	engine/asset/block_compress.h:27
-asset::BcKind::Bc2	enumerator	asset	asset-bckind-bc2	asset.md	engine/asset/block_compress.h:28
-asset::BcKind::Bc3	enumerator	asset	asset-bckind-bc3	asset.md	engine/asset/block_compress.h:29
-asset::BcKind::Bc4	enumerator	asset	asset-bckind-bc4	asset.md	engine/asset/block_compress.h:30
-asset::BcKind::Bc5	enumerator	asset	asset-bckind-bc5	asset.md	engine/asset/block_compress.h:31
-asset::BcQuality	enum	asset	asset-bcquality	asset.md	engine/asset/block_compress.h:35
-asset::BcQuality::Fast	enumerator	asset	asset-bcquality-fast	asset.md	engine/asset/block_compress.h:37
-asset::BcQuality::Normal	enumerator	asset	asset-bcquality-normal	asset.md	engine/asset/block_compress.h:38
-asset::BcQuality::High	enumerator	asset	asset-bcquality-high	asset.md	engine/asset/block_compress.h:39
-asset::BcEncodeOptions	struct	asset	asset-bcencodeoptions	asset.md	engine/asset/block_compress.h:45
-asset::BcEncodeOptions::quality	variable	asset	asset-bcencodeoptions-quality	asset.md	engine/asset/block_compress.h:47
-asset::BcEncodeOptions::punchthrough_alpha	variable	asset	asset-bcencodeoptions-punchthrough-alpha	asset.md	engine/asset/block_compress.h:48
-asset::BcBlockBytes(BcKind)	function	asset	asset-bcblockbytes-bckind	asset.md	engine/asset/block_compress.h:54
-asset::IsBcFormat(rhi::Format)	function	asset	asset-isbcformat-rhi-format	asset.md	engine/asset/block_compress.h:59
-asset::BcKindOf(rhi::Format)	function	asset	asset-bckindof-rhi-format	asset.md	engine/asset/block_compress.h:65
-asset::DecodeBlock(BcKind,const byte*,byte*)	function	asset	asset-decodeblock-bckind-const-byte-star-byte-star	asset.md	engine/asset/block_compress.h:74
-asset::DecodeImage(BcKind,u32,u32,ByteSpan,Vector<byte>*)	function	asset	asset-decodeimage-bckind-u32-u32-bytespan-vector-lt-byte-gt-star	asset.md	engine/asset/block_compress.h:85
-asset::EncodeBlock(BcKind,const byte*,const BcEncodeOptions&,byte*)	function	asset	asset-encodeblock-bckind-const-byte-star-const-bcencodeoptions-amp-byte-star	asset.md	engine/asset/block_compress.h:95
-asset::EncodeImage(BcKind,u32,u32,ByteSpan,const BcEncodeOptions&,jobs::Scheduler*,Vector<byte>*)	function	asset	asset-encodeimage-bckind-u32-u32-bytespan-const-bcencodeoptions-amp-jobs-scheduler-star-vector-lt-byte-gt-star	asset.md	engine/asset/block_compress.h:111
+asset::BcKind	enum	asset	asset-bckind	asset.md	engine/asset/block_compress.h:26
+asset::BcKind::Bc1	enumerator	asset	asset-bckind-bc1	asset.md	engine/asset/block_compress.h:28
+asset::BcKind::Bc2	enumerator	asset	asset-bckind-bc2	asset.md	engine/asset/block_compress.h:29
+asset::BcKind::Bc3	enumerator	asset	asset-bckind-bc3	asset.md	engine/asset/block_compress.h:30
+asset::BcKind::Bc4	enumerator	asset	asset-bckind-bc4	asset.md	engine/asset/block_compress.h:31
+asset::BcKind::Bc5	enumerator	asset	asset-bckind-bc5	asset.md	engine/asset/block_compress.h:32
+asset::BcKind::Bc7	enumerator	asset	asset-bckind-bc7	asset.md	engine/asset/block_compress.h:33
+asset::BcQuality	enum	asset	asset-bcquality	asset.md	engine/asset/block_compress.h:37
+asset::BcQuality::Fast	enumerator	asset	asset-bcquality-fast	asset.md	engine/asset/block_compress.h:39
+asset::BcQuality::Normal	enumerator	asset	asset-bcquality-normal	asset.md	engine/asset/block_compress.h:40
+asset::BcQuality::High	enumerator	asset	asset-bcquality-high	asset.md	engine/asset/block_compress.h:41
+asset::BcEncodeOptions	struct	asset	asset-bcencodeoptions	asset.md	engine/asset/block_compress.h:47
+asset::BcEncodeOptions::quality	variable	asset	asset-bcencodeoptions-quality	asset.md	engine/asset/block_compress.h:49
+asset::BcEncodeOptions::punchthrough_alpha	variable	asset	asset-bcencodeoptions-punchthrough-alpha	asset.md	engine/asset/block_compress.h:50
+asset::BcEncodeOptions::drop_alpha	variable	asset	asset-bcencodeoptions-drop-alpha	asset.md	engine/asset/block_compress.h:51
+asset::BcBlockBytes(BcKind)	function	asset	asset-bcblockbytes-bckind	asset.md	engine/asset/block_compress.h:57
+asset::IsBcFormat(rhi::Format)	function	asset	asset-isbcformat-rhi-format	asset.md	engine/asset/block_compress.h:62
+asset::BcKindOf(rhi::Format)	function	asset	asset-bckindof-rhi-format	asset.md	engine/asset/block_compress.h:68
+asset::DecodeBlock(BcKind,const byte*,byte*)	function	asset	asset-decodeblock-bckind-const-byte-star-byte-star	asset.md	engine/asset/block_compress.h:77
+asset::DecodeImage(BcKind,u32,u32,ByteSpan,Vector<byte>*)	function	asset	asset-decodeimage-bckind-u32-u32-bytespan-vector-lt-byte-gt-star	asset.md	engine/asset/block_compress.h:88
+asset::EncodeBlock(BcKind,const byte*,const BcEncodeOptions&,byte*)	function	asset	asset-encodeblock-bckind-const-byte-star-const-bcencodeoptions-amp-byte-star	asset.md	engine/asset/block_compress.h:98
+asset::EncodeImage(BcKind,u32,u32,ByteSpan,const BcEncodeOptions&,jobs::Scheduler*,Vector<byte>*)	function	asset	asset-encodeimage-bckind-u32-u32-bytespan-const-bcencodeoptions-amp-jobs-scheduler-star-vector-lt-byte-gt-star	asset.md	engine/asset/block_compress.h:114
 asset::kMaxClipTracks	variable	asset	asset-kmaxcliptracks	asset.md	engine/asset/clip.h:33
 asset::kMaxClipKeys	variable	asset	asset-kmaxclipkeys	asset.md	engine/asset/clip.h:35
 asset::kMaxClipEvents	variable	asset	asset-kmaxclipevents	asset.md	engine/asset/clip.h:37

@@ -196,6 +196,11 @@ Status ParseTextureSource(StringView text, TextureSource* out, TextureSourceErro
             {
                 base = rhi::Format::BC1_UNorm;
             }
+            else if (v == StringView("bc7") || v == StringView("bc7-alpha"))
+            {
+                base = rhi::Format::BC7_UNorm;
+                out->drop_alpha = v == StringView("bc7");
+            }
             else if (v == StringView("bc4"))
             {
                 base = rhi::Format::BC4_UNorm;
@@ -206,7 +211,8 @@ Status ParseTextureSource(StringView text, TextureSource* out, TextureSourceErro
             }
             else
             {
-                return TxFail(error, line_number, "format is r8, rg8, rgba8, r16f, rgba16f, bc1, bc4 or bc5");
+                return TxFail(error, line_number,
+                              "format is r8, rg8, rgba8, r16f, rgba16f, bc1, bc4, bc5, bc7 or bc7-alpha");
             }
         }
         else if (kind == StringView("srgb"))
@@ -297,10 +303,15 @@ Status ParseTextureSource(StringView text, TextureSource* out, TextureSourceErro
     {
         out->format = rhi::Format::BC1_SRGB;
     }
+    if (base == rhi::Format::BC7_UNorm && out->srgb)
+    {
+        out->format = rhi::Format::BC7_SRGB;
+    }
     if (!alpha_given)
     {
-        out->alpha = (base == rhi::Format::RGBA8_UNorm || base == rhi::Format::BC1_UNorm) ? MipAlpha::Straight
-                                                                                          : MipAlpha::Ignore;
+        const bool keeps_alpha = base == rhi::Format::RGBA8_UNorm || base == rhi::Format::BC1_UNorm ||
+                                 (base == rhi::Format::BC7_UNorm && !out->drop_alpha);
+        out->alpha = keeps_alpha ? MipAlpha::Straight : MipAlpha::Ignore;
     }
     if (half && out->alpha == MipAlpha::Straight)
     {
@@ -395,7 +406,8 @@ Status MintTexture(StringView text, Span<const ByteSpan> images, const TypeRegis
         }
         // A compressed texture is filtered as 8-bit RGBA, then each stored level is compressed.
         const bool compressed = IsBcFormat(source.format);
-        const bool storage_srgb = source.format == rhi::Format::RGBA8_SRGB || source.format == rhi::Format::BC1_SRGB;
+        const bool storage_srgb = source.format == rhi::Format::RGBA8_SRGB || source.format == rhi::Format::BC1_SRGB ||
+                                  source.format == rhi::Format::BC7_SRGB;
         const rhi::Format work_format = !compressed
                                             ? source.format
                                             : (storage_srgb ? rhi::Format::RGBA8_SRGB : rhi::Format::RGBA8_UNorm);
@@ -434,10 +446,13 @@ Status MintTexture(StringView text, Span<const ByteSpan> images, const TypeRegis
     if (IsBcFormat(source.format))
     {
         // Compress the first `stored` RGBA8 levels of every chain.
-        const rhi::Format work_format = source.format == rhi::Format::BC1_SRGB ? rhi::Format::RGBA8_SRGB
-                                                                               : rhi::Format::RGBA8_UNorm;
+        const rhi::Format work_format = (source.format == rhi::Format::BC1_SRGB ||
+                                         source.format == rhi::Format::BC7_SRGB)
+                                            ? rhi::Format::RGBA8_SRGB
+                                            : rhi::Format::RGBA8_UNorm;
         BcEncodeOptions encode;
         encode.punchthrough_alpha = source.alpha != MipAlpha::Ignore;
+        encode.drop_alpha = source.drop_alpha;
         for (usize layer = 0; layer < chains.Size(); ++layer)
         {
             Vector<byte> packed;

@@ -8,7 +8,7 @@
 //!     id 0123456789abcdef
 //!     kind 2d                 (or `cube` or `array`; optional, default 2d)
 //!     source rock.raw         (one file for 2d, six for a cube: +X -X +Y -Y +Z -Z, one per layer for an array)
-//!     format rgba8            (r8, rg8, rgba8, r16f, rgba16f, bc1, bc4 or bc5; default rgba8)
+//!     format rgba8            (r8, rg8, rgba8, r16f, rgba16f, bc1, bc4, bc5, bc7 or bc7-alpha; default rgba8)
 //!     srgb true               (rgba8: store sRGB-encoded; r16f/rgba16f: the source colors are sRGB; default false)
 //!     mips full               (or a count; default full)
 //!     filter box              (or `kaiser`; default box)
@@ -49,6 +49,7 @@ struct TextureSource
     TextureKind kind = TextureKind::Tex2D;          ///< The `kind` record.
     Vector<TextureSourceFile> sources;              ///< The `source` records, in order.
     rhi::Format format = rhi::Format::RGBA8_UNorm;  ///< The storage format (`srgb` already applied).
+    bool drop_alpha = false;                        ///< `format bc7`: alpha is encoded as 255 (`bc7-alpha` keeps it).
     bool srgb = false;                              ///< The `srgb` record.
     u32 mips = 0;                                   ///< The `mips` record (0: the full chain).
     MipFilter filter = MipFilter::Box;              ///< The `filter` record.
@@ -105,7 +106,8 @@ Status BuildRawImage(u32 width, u32 height, ByteSpan rgba, u64 id, Vector<byte>*
 /// - Fails: `Invalid` with `error` filled in as for [[asset::ParseTextureSource]], plus: a number of files that is
 ///   not the number of `source` records, a raw file that is malformed, images of different sizes, a cube whose faces
 ///   are not square, a requested mip count above the full chain; and as [[asset::BuildTextureBlob]].
-/// - Param scheduler: where the block compression of `bc1`, `bc4` and `bc5` textures fans out, or null for the calling
+/// - Param scheduler: where the block compression of `bc1`, `bc4`, `bc5` and `bc7` textures fans out, or null for the
+/// calling
 ///   thread; the blob is the same either way (the caller must be the scheduler's participant 0 outside any job).
 /// - Ownership: borrows its arguments for the call; `*out` is replaced.
 Status MintTexture(StringView text, Span<const ByteSpan> images, const TypeRegistry& types, Vector<byte>* out,

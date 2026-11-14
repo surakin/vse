@@ -293,7 +293,7 @@ struct Bc1Block
 {
     i32 pix[16][3];
     bool valid[16];
-    u32 count = 0;       // valid texels
+    u32 count = 0;  // valid texels
     bool has_transparent = false;
 };
 
@@ -564,6 +564,514 @@ void Bc1EncodeBlock(const byte* rgba, const BcEncodeOptions& options, byte* out)
     Bc1Write(best, out);
 }
 
+// ---- BC7 ----
+
+// The per-mode facts of the format: subsets, partition bits, rotation bits, index-selection bits, color and alpha
+// endpoint bits, the p-bit kind (0 none, 1 one per endpoint, 2 one per subset) and the index widths.
+struct Bc7Mode
+{
+    u8 subsets;
+    u8 partition_bits;
+    u8 rotation_bits;
+    u8 selector_bits;
+    u8 color_bits;
+    u8 alpha_bits;
+    u8 pbit_kind;
+    u8 index_bits;
+    u8 index2_bits;
+};
+
+constexpr Bc7Mode kBc7Modes[8] = {
+    {3, 4, 0, 0, 4, 0, 1, 3, 0}, {2, 6, 0, 0, 6, 0, 2, 3, 0}, {3, 6, 0, 0, 5, 0, 0, 2, 0}, {2, 6, 0, 0, 7, 0, 1, 2, 0},
+    {1, 0, 2, 1, 5, 6, 0, 2, 3}, {1, 0, 2, 0, 7, 8, 0, 2, 2}, {1, 0, 0, 0, 7, 7, 1, 4, 0}, {2, 6, 0, 0, 5, 5, 1, 2, 0},
+};
+
+// The partitions: for two subsets a mask of the texels in subset 1, for three two bits per texel; the anchor texel
+// of each later subset (the texel whose index loses its top bit). Taken from the format's published tables.
+constexpr u16 kBc7Partition2[64] = {
+    0xcccc, 0x8888, 0xeeee, 0xecc8, 0xc880, 0xfeec, 0xfec8, 0xec80, 0xc800, 0xffec, 0xfe80, 0xe800, 0xffe8,
+    0xff00, 0xfff0, 0xf000, 0xf710, 0x008e, 0x7100, 0x08ce, 0x008c, 0x7310, 0x3100, 0x8cce, 0x088c, 0x3110,
+    0x6666, 0x366c, 0x17e8, 0x0ff0, 0x718e, 0x399c, 0xaaaa, 0xf0f0, 0x5a5a, 0x33cc, 0x3c3c, 0x55aa, 0x9696,
+    0xa55a, 0x73ce, 0x13c8, 0x324c, 0x3bdc, 0x6996, 0xc33c, 0x9966, 0x0660, 0x0272, 0x04e4, 0x4e40, 0x2720,
+    0xc936, 0x936c, 0x39c6, 0x639c, 0x9336, 0x9cc6, 0x817e, 0xe718, 0xccf0, 0x0fcc, 0x7744, 0xee22,
+};
+constexpr u8 kBc7Anchor2[64] = {
+    15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 2,  8, 2,  2, 8,
+    8,  15, 2,  8,  2,  2,  8,  8,  2,  2,  15, 15, 6,  8,  2,  8,  15, 15, 2, 8,  2, 2,
+    2,  15, 15, 6,  6,  2,  6,  8,  15, 15, 2,  2,  15, 15, 15, 15, 15, 2,  2, 15,
+};
+constexpr u32 kBc7Partition3[64] = {
+    0xaa685050u, 0x6a5a5040u, 0x5a5a4200u, 0x5450a0a8u, 0xa5a50000u, 0xa0a05050u, 0x5555a0a0u, 0x5a5a5050u,
+    0xaa550000u, 0xaa555500u, 0xaaaa5500u, 0x90909090u, 0x94949494u, 0xa4a4a4a4u, 0xa9a59450u, 0x2a0a4250u,
+    0xa5945040u, 0x0a425054u, 0xa5a5a500u, 0x55a0a0a0u, 0xa8a85454u, 0x6a6a4040u, 0xa4a45000u, 0x1a1a0500u,
+    0x0050a4a4u, 0xaaa59090u, 0x14696914u, 0x69691400u, 0xa08585a0u, 0xaa821414u, 0x50a4a450u, 0x6a5a0200u,
+    0xa9a58000u, 0x5090a0a8u, 0xa8a09050u, 0x24242424u, 0x00aa5500u, 0x24924924u, 0x24499224u, 0x50a50a50u,
+    0x500aa550u, 0xaaaa4444u, 0x66660000u, 0xa5a0a5a0u, 0x50a050a0u, 0x69286928u, 0x44aaaa44u, 0x66666600u,
+    0xaa444444u, 0x54a854a8u, 0x95809580u, 0x96969600u, 0xa85454a8u, 0x80959580u, 0xaa141414u, 0x96960000u,
+    0xaaaa1414u, 0xa05050a0u, 0xa0a5a5a0u, 0x96000000u, 0x40804080u, 0xa9a8a9a8u, 0xaaaaaa44u, 0x2a4a5254u,
+};
+constexpr u8 kBc7Anchor3a[64] = {
+    3, 3,  15, 15, 8, 3,  15, 15, 8,  8, 6,  6, 6,  5,  3,  3,  3, 3,  8, 15, 3, 3, 6, 10, 5, 8,  8, 6,  8,  5,  15, 15,
+    8, 15, 3,  5,  6, 10, 8,  15, 15, 3, 15, 5, 15, 15, 15, 15, 3, 15, 5, 5,  5, 8, 5, 10, 5, 10, 8, 13, 15, 12, 3,  3,
+};
+constexpr u8 kBc7Anchor3b[64] = {
+    15, 8, 8, 3,  15, 15, 3,  8,  15, 15, 15, 15, 15, 15, 15, 8,  15, 8,  15, 3,  15, 8,
+    15, 8, 3, 15, 6,  10, 15, 15, 10, 8,  15, 3,  15, 10, 10, 8,  9,  10, 6,  15, 8,  15,
+    3,  6, 6, 8,  15, 3,  15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 3,  15, 15, 8,
+};
+
+constexpr u8 kBc7Weights2[4] = {0, 21, 43, 64};
+constexpr u8 kBc7Weights3[8] = {0, 9, 18, 27, 37, 46, 55, 64};
+constexpr u8 kBc7Weights4[16] = {0, 4, 9, 13, 17, 21, 26, 30, 34, 38, 43, 47, 51, 55, 60, 64};
+
+u32 Bc7Weight(u32 bits, u32 index)
+{
+    return bits == 2 ? kBc7Weights2[index] : (bits == 3 ? kBc7Weights3[index] : kBc7Weights4[index]);
+}
+
+// Reads bit fields from the 128-bit block, least significant bit first.
+class Bc7Reader
+{
+public:
+    explicit Bc7Reader(const byte* block) : block_(block) {}
+    u32 Get(u32 bits)
+    {
+        u32 v = 0;
+        for (u32 i = 0; i < bits; ++i, ++pos_)
+        {
+            v |= static_cast<u32>((block_[pos_ >> 3] >> (pos_ & 7)) & 1u) << i;
+        }
+        return v;
+    }
+
+private:
+    const byte* block_;
+    u32 pos_ = 0;
+};
+
+u32 Bc7SubsetOf(u32 subsets, u32 partition, u32 texel)
+{
+    if (subsets == 1)
+    {
+        return 0;
+    }
+    if (subsets == 2)
+    {
+        return (kBc7Partition2[partition] >> texel) & 1u;
+    }
+    return (kBc7Partition3[partition] >> (2 * texel)) & 3u;
+}
+
+bool Bc7IsAnchor(u32 subsets, u32 partition, u32 texel)
+{
+    if (texel == 0)
+    {
+        return true;
+    }
+    if (subsets == 2)
+    {
+        return kBc7Anchor2[partition] == texel;
+    }
+    if (subsets == 3)
+    {
+        return kBc7Anchor3a[partition] == texel || kBc7Anchor3b[partition] == texel;
+    }
+    return false;
+}
+
+i32 Bc7Interpolate(i32 a, i32 b, u32 weight)
+{
+    return ((64 - static_cast<i32>(weight)) * a + static_cast<i32>(weight) * b + 32) >> 6;
+}
+
+void Bc7Decode(const byte* block, byte* rgba)
+{
+    u32 mode = 0;
+    while (mode < 8 && ((block[0] >> mode) & 1u) == 0)
+    {
+        ++mode;
+    }
+    if (mode == 8)
+    {
+        MemSet(rgba, 0, 64);  // the reserved mode: transparent black
+        return;
+    }
+    const Bc7Mode& m = kBc7Modes[mode];
+    Bc7Reader in(block);
+    in.Get(mode + 1);
+    const u32 partition = in.Get(m.partition_bits);
+    const u32 rotation = in.Get(m.rotation_bits);
+    const u32 selector = in.Get(m.selector_bits);
+    const u32 endpoints = 2u * m.subsets;
+    i32 ep[6][4];
+    for (u32 c = 0; c < 3; ++c)
+    {
+        for (u32 e = 0; e < endpoints; ++e)
+        {
+            ep[e][c] = static_cast<i32>(in.Get(m.color_bits));
+        }
+    }
+    for (u32 e = 0; e < endpoints; ++e)
+    {
+        ep[e][3] = m.alpha_bits != 0 ? static_cast<i32>(in.Get(m.alpha_bits)) : 0;
+    }
+    u32 pbit[6] = {0, 0, 0, 0, 0, 0};
+    if (m.pbit_kind == 1)
+    {
+        for (u32 e = 0; e < endpoints; ++e)
+        {
+            pbit[e] = in.Get(1);
+        }
+    }
+    else if (m.pbit_kind == 2)
+    {
+        for (u32 s = 0; s < m.subsets; ++s)
+        {
+            pbit[2 * s] = pbit[2 * s + 1] = in.Get(1);
+        }
+    }
+    for (u32 e = 0; e < endpoints; ++e)
+    {
+        for (u32 c = 0; c < 4; ++c)
+        {
+            const u32 bits = c < 3 ? m.color_bits : m.alpha_bits;
+            if (bits == 0)
+            {
+                ep[e][c] = 255;
+                continue;
+            }
+            u32 v = static_cast<u32>(ep[e][c]);
+            u32 total = bits;
+            if (m.pbit_kind != 0)
+            {
+                v = (v << 1) | pbit[e];
+                total = bits + 1;
+            }
+            ep[e][c] = static_cast<i32>((v << (8 - total)) | (v >> (2 * total - 8)));
+        }
+    }
+    // The indices: the first set, then (modes 4 and 5) the second set.
+    u32 index[16];
+    u32 index2[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    for (u32 i = 0; i < 16; ++i)
+    {
+        const u32 bits = m.index_bits - (Bc7IsAnchor(m.subsets, partition, i) ? 1u : 0u);
+        index[i] = in.Get(bits);
+    }
+    for (u32 i = 0; i < 16 && m.index2_bits != 0; ++i)
+    {
+        const u32 bits = m.index2_bits - (i == 0 ? 1u : 0u);
+        index2[i] = in.Get(bits);
+    }
+    for (u32 i = 0; i < 16; ++i)
+    {
+        const u32 s = Bc7SubsetOf(m.subsets, partition, i);
+        const i32* a = ep[2 * s];
+        const i32* b = ep[2 * s + 1];
+        u32 color_weight;
+        u32 alpha_weight;
+        if (m.index2_bits == 0)
+        {
+            color_weight = alpha_weight = Bc7Weight(m.index_bits, index[i]);
+        }
+        else if (selector == 0)
+        {
+            color_weight = Bc7Weight(m.index_bits, index[i]);
+            alpha_weight = Bc7Weight(m.index2_bits, index2[i]);
+        }
+        else
+        {
+            color_weight = Bc7Weight(m.index2_bits, index2[i]);
+            alpha_weight = Bc7Weight(m.index_bits, index[i]);
+        }
+        i32 px[4];
+        for (u32 c = 0; c < 3; ++c)
+        {
+            px[c] = Bc7Interpolate(a[c], b[c], color_weight);
+        }
+        px[3] = Bc7Interpolate(a[3], b[3], alpha_weight);
+        if (rotation != 0)
+        {
+            const i32 t = px[3];
+            px[3] = px[rotation - 1];
+            px[rotation - 1] = t;
+        }
+        for (u32 c = 0; c < 4; ++c)
+        {
+            rgba[i * 4 + c] = static_cast<byte>(px[c]);
+        }
+    }
+}
+
+// The mode 6 encoder: one subset, RGBA, 7-bit endpoints each with its own p-bit, 4-bit indices.
+struct Bc7Fit
+{
+    u32 error = 0xffffffffu;
+    i32 end[2][4] = {{0, 0, 0, 0}, {0, 0, 0, 0}};  // the decoded 8-bit endpoint values
+    u32 pbit[2] = {0, 0};
+    u32 index[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+};
+
+// The best fit for one choice of the two p-bits: endpoints rounded to the 7-bit grid, the nearest of the 16 steps.
+Bc7Fit Bc7EvaluatePbits(const i32 (*pix)[4], const i32* t0, const i32* t1, u32 p0, u32 p1)
+{
+    Bc7Fit fit;
+    fit.pbit[0] = p0;
+    fit.pbit[1] = p1;
+    for (u32 c = 0; c < 4; ++c)
+    {
+        for (u32 e = 0; e < 2; ++e)
+        {
+            const i32 t = e == 0 ? t0[c] : t1[c];
+            const i32 p = static_cast<i32>(e == 0 ? p0 : p1);
+            i32 q = t >= p ? (t - p + 1) >> 1 : 0;
+            q = q > 127 ? 127 : q;
+            fit.end[e][c] = 2 * q + p;
+        }
+    }
+    i32 pal[16][4];
+    for (u32 k = 0; k < 16; ++k)
+    {
+        for (u32 c = 0; c < 4; ++c)
+        {
+            pal[k][c] = Bc7Interpolate(fit.end[0][c], fit.end[1][c], kBc7Weights4[k]);
+        }
+    }
+    fit.error = 0;
+    for (u32 i = 0; i < 16; ++i)
+    {
+        i32 best_d = 1 << 30;
+        u32 best = 0;
+        for (u32 k = 0; k < 16; ++k)
+        {
+            i32 d = 0;
+            for (u32 c = 0; c < 4; ++c)
+            {
+                const i32 e = pix[i][c] - pal[k][c];
+                d += e * e;
+            }
+            if (d < best_d)
+            {
+                best_d = d;
+                best = k;
+            }
+        }
+        fit.index[i] = best;
+        fit.error += static_cast<u32>(best_d);
+    }
+    return fit;
+}
+
+// The best of the allowed p-bit combinations (bit `combo` of `allowed`; the first on a tie), with the anchor texel's
+// index brought below 8 by swapping the endpoints.
+Bc7Fit Bc7Evaluate(const i32 (*pix)[4], const i32* t0, const i32* t1, u32 allowed)
+{
+    Bc7Fit best;
+    for (u32 combo = 0; combo < 4; ++combo)
+    {
+        if (((allowed >> combo) & 1u) == 0)
+        {
+            continue;
+        }
+        const Bc7Fit fit = Bc7EvaluatePbits(pix, t0, t1, combo & 1u, combo >> 1);
+        if (fit.error < best.error)
+        {
+            best = fit;
+        }
+    }
+    if (best.index[0] >= 8)
+    {
+        for (u32 c = 0; c < 4; ++c)
+        {
+            const i32 t = best.end[0][c];
+            best.end[0][c] = best.end[1][c];
+            best.end[1][c] = t;
+        }
+        const u32 p = best.pbit[0];
+        best.pbit[0] = best.pbit[1];
+        best.pbit[1] = p;
+        for (u32 i = 0; i < 16; ++i)
+        {
+            best.index[i] = 15 - best.index[i];
+        }
+    }
+    return best;
+}
+
+void Bc7WriteBits(byte* block, u32* pos, u32 value, u32 bits)
+{
+    for (u32 i = 0; i < bits; ++i, ++*pos)
+    {
+        if (((value >> i) & 1u) != 0)
+        {
+            block[*pos >> 3] = static_cast<byte>(block[*pos >> 3] | (1u << (*pos & 7)));
+        }
+    }
+}
+
+void Bc7EncodeBlock(const byte* rgba, const BcEncodeOptions& options, byte* out)
+{
+    i32 pix[16][4];
+    i32 lo_c[4] = {255, 255, 255, 255};
+    i32 hi_c[4] = {0, 0, 0, 0};
+    i64 sum[4] = {0, 0, 0, 0};
+    for (u32 i = 0; i < 16; ++i)
+    {
+        for (u32 c = 0; c < 4; ++c)
+        {
+            pix[i][c] = (c == 3 && options.drop_alpha) ? 255 : rgba[i * 4 + c];
+            lo_c[c] = pix[i][c] < lo_c[c] ? pix[i][c] : lo_c[c];
+            hi_c[c] = pix[i][c] > hi_c[c] ? pix[i][c] : hi_c[c];
+            sum[c] += pix[i][c];
+        }
+    }
+    i32 mean[4];
+    for (u32 c = 0; c < 4; ++c)
+    {
+        mean[c] = static_cast<i32>(BcDivRound(sum[c], 16));
+    }
+    i64 cov[4][4];
+    for (u32 r = 0; r < 4; ++r)
+    {
+        for (u32 c = 0; c < 4; ++c)
+        {
+            cov[r][c] = 0;
+        }
+    }
+    for (u32 i = 0; i < 16; ++i)
+    {
+        for (u32 r = 0; r < 4; ++r)
+        {
+            for (u32 c = 0; c < 4; ++c)
+            {
+                cov[r][c] += static_cast<i64>(pix[i][r] - mean[r]) * (pix[i][c] - mean[c]);
+            }
+        }
+    }
+    i64 axis[4];
+    for (u32 c = 0; c < 4; ++c)
+    {
+        axis[c] = hi_c[c] - lo_c[c];
+    }
+    for (u32 iter = 0; iter < 4; ++iter)
+    {
+        i64 next[4];
+        i64 m = 0;
+        for (u32 r = 0; r < 4; ++r)
+        {
+            next[r] = cov[r][0] * axis[0] + cov[r][1] * axis[1] + cov[r][2] * axis[2] + cov[r][3] * axis[3];
+            const i64 a = next[r] < 0 ? -next[r] : next[r];
+            m = a > m ? a : m;
+        }
+        if (m == 0)
+        {
+            break;
+        }
+        for (u32 r = 0; r < 4; ++r)
+        {
+            axis[r] = next[r] * 1024 / m;
+        }
+    }
+    u32 lo_i = 0;
+    u32 hi_i = 0;
+    i64 lo_d = 0;
+    i64 hi_d = 0;
+    for (u32 i = 0; i < 16; ++i)
+    {
+        i64 d = 0;
+        for (u32 c = 0; c < 4; ++c)
+        {
+            d += axis[c] * (pix[i][c] - mean[c]);
+        }
+        if (i == 0 || d < lo_d)
+        {
+            lo_d = d;
+            lo_i = i;
+        }
+        if (i == 0 || d > hi_d)
+        {
+            hi_d = d;
+            hi_i = i;
+        }
+    }
+    // An opaque block keeps both p-bits at 1, so that alpha 255 is exact (an endpoint is `2 * q + p`); any other block
+    // tries all four combinations.
+    const u32 allowed = (lo_c[3] == 255) ? 8u : 15u;
+    // The range fit: the extremes and the same pair pulled in by 1/16 and 1/8 of the span.
+    Bc7Fit best = Bc7Evaluate(pix, pix[hi_i], pix[lo_i], allowed);
+    for (i32 inset = 16; inset >= 8 && best.error != 0; inset -= 8)
+    {
+        i32 pa[4];
+        i32 pb[4];
+        for (u32 c = 0; c < 4; ++c)
+        {
+            const i32 span = pix[hi_i][c] - pix[lo_i][c];
+            pa[c] = pix[hi_i][c] - static_cast<i32>(BcDivRound(span, inset));
+            pb[c] = pix[lo_i][c] + static_cast<i32>(BcDivRound(span, inset));
+        }
+        const Bc7Fit candidate = Bc7Evaluate(pix, pa, pb, allowed);
+        if (candidate.error < best.error)
+        {
+            best = candidate;
+        }
+    }
+    const u32 passes = options.quality == BcQuality::Fast ? 0 : (options.quality == BcQuality::Normal ? 2 : 6);
+    for (u32 pass = 0; pass < passes && best.error != 0; ++pass)
+    {
+        // Least squares for the endpoints given the indices (positions are the 64ths weights).
+        i64 sww = 0;
+        i64 suu = 0;
+        i64 swu = 0;
+        i64 swp[4] = {0, 0, 0, 0};
+        i64 sup[4] = {0, 0, 0, 0};
+        for (u32 i = 0; i < 16; ++i)
+        {
+            const i64 x = kBc7Weights4[best.index[i]];
+            const i64 w = 64 - x;
+            sww += w * w;
+            suu += x * x;
+            swu += w * x;
+            for (u32 c = 0; c < 4; ++c)
+            {
+                swp[c] += w * pix[i][c];
+                sup[c] += x * pix[i][c];
+            }
+        }
+        const i64 det = sww * suu - swu * swu;
+        if (det == 0)
+        {
+            break;
+        }
+        i32 ea[4];
+        i32 eb[4];
+        for (u32 c = 0; c < 4; ++c)
+        {
+            ea[c] = BcClamp255(BcDivRound(64 * (swp[c] * suu - sup[c] * swu), det));
+            eb[c] = BcClamp255(BcDivRound(64 * (sup[c] * sww - swp[c] * swu), det));
+        }
+        const Bc7Fit next = Bc7Evaluate(pix, ea, eb, allowed);
+        if (next.error >= best.error)
+        {
+            break;
+        }
+        best = next;
+    }
+    MemSet(out, 0, 16);
+    u32 pos = 0;
+    Bc7WriteBits(out, &pos, 0x40, 7);  // mode 6
+    for (u32 c = 0; c < 4; ++c)
+    {
+        Bc7WriteBits(out, &pos, static_cast<u32>(best.end[0][c]) >> 1, 7);
+        Bc7WriteBits(out, &pos, static_cast<u32>(best.end[1][c]) >> 1, 7);
+    }
+    Bc7WriteBits(out, &pos, best.pbit[0], 1);
+    Bc7WriteBits(out, &pos, best.pbit[1], 1);
+    for (u32 i = 0; i < 16; ++i)
+    {
+        Bc7WriteBits(out, &pos, best.index[i], i == 0 ? 3 : 4);
+    }
+}
+
 // ---- the public block functions ----
 
 void Bc2DecodeAlpha(const byte* block, byte* alpha16)
@@ -621,7 +1129,7 @@ u32 BcBlockBytes(BcKind kind)
 bool IsBcFormat(rhi::Format format)
 {
     return format == rhi::Format::BC1_UNorm || format == rhi::Format::BC1_SRGB || format == rhi::Format::BC4_UNorm ||
-           format == rhi::Format::BC5_UNorm;
+           format == rhi::Format::BC5_UNorm || format == rhi::Format::BC7_UNorm || format == rhi::Format::BC7_SRGB;
 }
 
 BcKind BcKindOf(rhi::Format format)
@@ -629,12 +1137,11 @@ BcKind BcKindOf(rhi::Format format)
     ENGINE_ASSERT(IsBcFormat(format), "BcKindOf: the format is not one the minter compresses");
     switch (format)
     {
-        case rhi::Format::BC4_UNorm:
-            return BcKind::Bc4;
-        case rhi::Format::BC5_UNorm:
-            return BcKind::Bc5;
-        default:
-            return BcKind::Bc1;
+    case rhi::Format::BC4_UNorm: return BcKind::Bc4;
+    case rhi::Format::BC5_UNorm: return BcKind::Bc5;
+    case rhi::Format::BC7_UNorm:
+    case rhi::Format::BC7_SRGB: return BcKind::Bc7;
+    default: return BcKind::Bc1;
     }
 }
 
@@ -642,47 +1149,46 @@ void DecodeBlock(BcKind kind, const byte* block, byte* rgba)
 {
     switch (kind)
     {
-        case BcKind::Bc1:
-            Bc1DecodeColor(block, false, rgba);
-            return;
-        case BcKind::Bc2:
-        case BcKind::Bc3:
+    case BcKind::Bc1: Bc1DecodeColor(block, false, rgba); return;
+    case BcKind::Bc2:
+    case BcKind::Bc3:
+    {
+        Bc1DecodeColor(block + 8, true, rgba);
+        byte alpha[16];
+        if (kind == BcKind::Bc2)
         {
-            Bc1DecodeColor(block + 8, true, rgba);
-            byte alpha[16];
-            if (kind == BcKind::Bc2)
-            {
-                Bc2DecodeAlpha(block, alpha);
-            }
-            else
-            {
-                Bc4DecodeChannel(block, alpha);
-            }
-            for (u32 i = 0; i < 16; ++i)
-            {
-                rgba[i * 4 + 3] = alpha[i];
-            }
-            return;
+            Bc2DecodeAlpha(block, alpha);
         }
-        case BcKind::Bc4:
-        case BcKind::Bc5:
+        else
         {
-            byte red[16];
-            byte green[16];
-            Bc4DecodeChannel(block, red);
-            if (kind == BcKind::Bc5)
-            {
-                Bc4DecodeChannel(block + 8, green);
-            }
-            for (u32 i = 0; i < 16; ++i)
-            {
-                rgba[i * 4 + 0] = red[i];
-                rgba[i * 4 + 1] = kind == BcKind::Bc5 ? green[i] : byte{0};
-                rgba[i * 4 + 2] = 0;
-                rgba[i * 4 + 3] = 255;
-            }
-            return;
+            Bc4DecodeChannel(block, alpha);
         }
+        for (u32 i = 0; i < 16; ++i)
+        {
+            rgba[i * 4 + 3] = alpha[i];
+        }
+        return;
+    }
+    case BcKind::Bc7: Bc7Decode(block, rgba); return;
+    case BcKind::Bc4:
+    case BcKind::Bc5:
+    {
+        byte red[16];
+        byte green[16];
+        Bc4DecodeChannel(block, red);
+        if (kind == BcKind::Bc5)
+        {
+            Bc4DecodeChannel(block + 8, green);
+        }
+        for (u32 i = 0; i < 16; ++i)
+        {
+            rgba[i * 4 + 0] = red[i];
+            rgba[i * 4 + 1] = kind == BcKind::Bc5 ? green[i] : byte{0};
+            rgba[i * 4 + 2] = 0;
+            rgba[i * 4 + 3] = 255;
+        }
+        return;
+    }
     }
 }
 
@@ -726,8 +1232,13 @@ Status DecodeImage(BcKind kind, u32 width, u32 height, ByteSpan blocks, Vector<b
 
 void EncodeBlock(BcKind kind, const byte* rgba, const BcEncodeOptions& options, byte* block)
 {
-    ENGINE_ASSERT(kind == BcKind::Bc1 || kind == BcKind::Bc4 || kind == BcKind::Bc5,
-                  "EncodeBlock: only BC1, BC4 and BC5 can be encoded");
+    ENGINE_ASSERT(kind == BcKind::Bc1 || kind == BcKind::Bc4 || kind == BcKind::Bc5 || kind == BcKind::Bc7,
+                  "EncodeBlock: only BC1, BC4, BC5 and BC7 can be encoded");
+    if (kind == BcKind::Bc7)
+    {
+        Bc7EncodeBlock(rgba, options, block);
+        return;
+    }
     if (kind == BcKind::Bc1)
     {
         Bc1EncodeBlock(rgba, options, block);
@@ -748,9 +1259,9 @@ void EncodeBlock(BcKind kind, const byte* rgba, const BcEncodeOptions& options, 
 Status EncodeImage(BcKind kind, u32 width, u32 height, ByteSpan rgba, const BcEncodeOptions& options,
                    jobs::Scheduler* scheduler, Vector<byte>* blocks)
 {
-    if (kind != BcKind::Bc1 && kind != BcKind::Bc4 && kind != BcKind::Bc5)
+    if (kind != BcKind::Bc1 && kind != BcKind::Bc4 && kind != BcKind::Bc5 && kind != BcKind::Bc7)
     {
-        return Status::Make(ErrorCode::Invalid, "only BC1, BC4 and BC5 can be encoded");
+        return Status::Make(ErrorCode::Invalid, "only BC1, BC4, BC5 and BC7 can be encoded");
     }
     if (width == 0 || height == 0 || width > kMaxTextureSize || height > kMaxTextureSize ||
         rgba.Size() != static_cast<usize>(width) * height * 4)

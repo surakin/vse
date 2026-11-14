@@ -16,9 +16,9 @@ Layout (all integers little-endian, no padding other than the alignment gaps, wh
 
 Every section starts at a multiple of 64 bytes (of 4096 when it is 1 MiB or larger) so a loader can hand a span of the file buffer straight to the GPU upload. Section 1 is the standard dependency section (a `u32` count, then `(id u64, type u32, type version u32, role u32)` records strictly sorted by id); ids below 16 are reserved.
 
-Block compression for the texture minter: decoders for BC1, BC2, BC3, BC4 and BC5, and encoders for BC1, BC4 and BC5, in exact integer arithmetic so the output is byte-identical on every compiler, machine and worker count. Phase 22 Day 324.
+Block compression for the texture minter: decoders for BC1, BC2, BC3, BC4, BC5 and BC7, and encoders for BC1, BC4, BC5 and BC7, in exact integer arithmetic so the output is byte-identical on every compiler, machine and worker count. Phase 22 Day 324.
 
-A block is 4x4 texels, row-major, stored in 8 bytes (BC1, BC4) or 16 bytes (BC2, BC3, BC5). The decoders give 8-bit RGBA texels (BC4 puts its channel in red and BC5 its two in red and green; the others read 0 and alpha 255). The interpolated colors of BC1 are `(2a + b) / 3` and `(a + b) / 2` of the 8-bit expanded endpoints, truncated: the decoder is the reference of this engine, GPUs differ by at most one step. The encoders choose among endpoint sets by the sum of squared channel errors and break every tie in favor of the lower index or the first candidate tried, so the result depends on the input texels only. A partial block at the right or bottom edge repeats its last column and row.
+A block is 4x4 texels, row-major, stored in 8 bytes (BC1, BC4) or 16 bytes (BC2, BC3, BC5, BC7). The decoders give 8-bit RGBA texels (BC4 puts its channel in red and BC5 its two in red and green; the others read 0 and alpha 255). The interpolated colors of BC1 are `(2a + b) / 3` and `(a + b) / 2` of the 8-bit expanded endpoints, truncated: the decoder is the reference of this engine, GPUs differ by at most one step. The encoders choose among endpoint sets by the sum of squared channel errors and break every tie in favor of the lower index or the first candidate tried, so the result depends on the input texels only. A partial block at the right or bottom edge repeats its last column and row.
 
 The animation clip blob (type `ANIM`, version 1): per-joint keyframe tracks and events for one skeleton, built by [`asset::BuildClipBlob`](#asset-buildclipblob-const-typeregistry-amp-resourceid-const-clipbuildinput-amp-vector-lt-byte-gt-star-u32-f32-star-f32-star) and read in place through [`asset::ClipView`](#asset-clipview). Phase 22 Day 320.
 
@@ -1348,6 +1348,7 @@ A block-compression scheme the decoders know.
 | <a id="asset-bckind-bc3"></a>`Bc3` | `2` | Color with interpolated alpha, 16 bytes. |
 | <a id="asset-bckind-bc4"></a>`Bc4` | `3` | One channel, 8 bytes. |
 | <a id="asset-bckind-bc5"></a>`Bc5` | `4` | Two channels, 16 bytes. |
+| <a id="asset-bckind-bc7"></a>`Bc7` | `5` | High-quality color with alpha, 16 bytes (eight modes to decode; the encoder writes mode 6). |
 
 ## `BcQuality` {#asset-bcquality}
 
@@ -1399,6 +1400,16 @@ bool punchthrough_alpha;
 
 BC1: texels with alpha below 128 become transparent (the 3-color mode).
 
+### `drop_alpha` {#asset-bcencodeoptions-drop-alpha}
+
+`variable asset::BcEncodeOptions::drop_alpha` — defined in `engine/asset/block_compress.h`
+
+```cpp
+bool drop_alpha;
+```
+
+BC7: the alpha channel is encoded as 255 whatever the texels hold.
+
 ## `BcBlockBytes(BcKind)` {#asset-bcblockbytes-bckind}
 
 `function asset::BcBlockBytes` — defined in `engine/asset/block_compress.h`
@@ -1421,7 +1432,7 @@ The bytes of one 4x4 block of `kind`: 8 or 16.
 bool IsBcFormat(rhi::Format format);
 ```
 
-Returns whether `format` is a block-compressed format the minter stores in this version (BC1, BC4 and BC5).
+Returns whether `format` is a block-compressed format the minter stores in this version (BC1, BC4, BC5 and BC7).
 
 | Field | Value |
 |---|---|
@@ -1492,11 +1503,11 @@ Encodes one block from 16 RGBA8 texels (64 bytes, row-major) into `BcBlockBytes(
 
 | Field | Value |
 |---|---|
-| Parameter `kind` | `Bc1`, `Bc4` or `Bc5`. |
+| Parameter `kind` | `Bc1`, `Bc4`, `Bc5` or `Bc7`. |
 | Parameter `rgba` | 64 bytes. |
 | Parameter `options` | the effort and the BC1 alpha rule. |
 | Parameter `block` | receives the block. |
-| Aborts | `kind` is not one of the three encodable schemes. |
+| Aborts | `kind` is not one of the four encodable schemes. |
 | Ownership | borrows `rgba` and `block` for the call. |
 
 ## `EncodeImage(BcKind,u32,u32,ByteSpan,const BcEncodeOptions&,jobs::Scheduler*,Vector<byte>*)` {#asset-encodeimage-bckind-u32-u32-bytespan-const-bcencodeoptions-amp-jobs-scheduler-star-vector-lt-byte-gt-star}
@@ -1511,7 +1522,7 @@ Encodes a whole image: tight RGBA8 texels in, rows of tightly packed blocks out.
 
 | Field | Value |
 |---|---|
-| Parameter `kind` | `Bc1`, `Bc4` or `Bc5`. |
+| Parameter `kind` | `Bc1`, `Bc4`, `Bc5` or `Bc7`. |
 | Parameter `width` | 1 to [`asset::kMaxTextureSize`](#asset-kmaxtexturesize). |
 | Parameter `height` | 1 to [`asset::kMaxTextureSize`](#asset-kmaxtexturesize). |
 | Parameter `rgba` | `width * height * 4` bytes. |

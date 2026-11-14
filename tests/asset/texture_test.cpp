@@ -213,7 +213,9 @@ TEST_CASE("texture: the layouts of the targets and the full chain length", "[ass
     CHECK(FullMipCount(5, 3) == 3);
     CHECK(FullMipCount(1, 7) == 3);
     CHECK(TightLevelBytes(rhi::Format::RGBA16_Float, 3, 2) == 48);
-    CHECK(TightLevelBytes(rhi::Format::BC7_UNorm, 4, 4) == 0);  // compressed formats arrive on Days 324 and 325
+    CHECK(TightLevelBytes(rhi::Format::BC7_UNorm, 4, 4) == 16);
+    CHECK(TightLevelBytes(rhi::Format::BC1_UNorm, 5, 5) == 32);
+    CHECK(TightLevelBytes(rhi::Format::BC3_UNorm, 4, 4) == 0);  // decodable, but the minter has no BC3 encoder
 }
 
 TEST_CASE("mips: the box filter averages 2x2 texels exactly and halves odd sizes", "[asset][texture][mips]")

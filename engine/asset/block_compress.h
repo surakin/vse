@@ -1,11 +1,12 @@
 #pragma once
 
-//! Block compression for the texture minter: decoders for BC1, BC2, BC3, BC4 and BC5, and encoders for BC1, BC4 and BC5, in
-//! exact integer arithmetic so the output is byte-identical on every compiler, machine and worker count. Phase 22 Day 324.
+//! Block compression for the texture minter: decoders for BC1, BC2, BC3, BC4, BC5 and BC7, and encoders for BC1, BC4,
+//! BC5 and BC7, in exact integer arithmetic so the output is byte-identical on every compiler, machine and worker
+//! count. Phase 22 Day 324.
 //!
-//! A block is 4x4 texels, row-major, stored in 8 bytes (BC1, BC4) or 16 bytes (BC2, BC3, BC5). The decoders give 8-bit
-//! RGBA texels (BC4 puts its channel in red and BC5 its two in red and green; the others read 0 and alpha 255). The
-//! interpolated colors of BC1 are `(2a + b) / 3` and `(a + b) / 2` of the 8-bit expanded endpoints, truncated: the
+//! A block is 4x4 texels, row-major, stored in 8 bytes (BC1, BC4) or 16 bytes (BC2, BC3, BC5, BC7). The decoders give
+//! 8-bit RGBA texels (BC4 puts its channel in red and BC5 its two in red and green; the others read 0 and alpha 255).
+//! The interpolated colors of BC1 are `(2a + b) / 3` and `(a + b) / 2` of the 8-bit expanded endpoints, truncated: the
 //! decoder is the reference of this engine, GPUs differ by at most one step. The encoders choose among endpoint sets by
 //! the sum of squared channel errors and break every tie in favor of the lower index or the first candidate tried, so
 //! the result depends on the input texels only. A partial block at the right or bottom edge repeats its last column and
@@ -29,6 +30,7 @@ enum class BcKind : u32
     Bc3 = 2,  ///< Color with interpolated alpha, 16 bytes.
     Bc4 = 3,  ///< One channel, 8 bytes.
     Bc5 = 4,  ///< Two channels, 16 bytes.
+    Bc7 = 5,  ///< High-quality color with alpha, 16 bytes (eight modes to decode; the encoder writes mode 6).
 };
 
 /// The encoder's effort: more refinement passes find lower errors and cost more time.
@@ -46,6 +48,7 @@ struct BcEncodeOptions
 {
     BcQuality quality = BcQuality::Normal;  ///< The effort.
     bool punchthrough_alpha = false;        ///< BC1: texels with alpha below 128 become transparent (the 3-color mode).
+    bool drop_alpha = false;                ///< BC7: the alpha channel is encoded as 255 whatever the texels hold.
 };
 
 /// The bytes of one 4x4 block of `kind`: 8 or 16.
@@ -53,7 +56,7 @@ struct BcEncodeOptions
 /// - Fails: never.
 u32 BcBlockBytes(BcKind kind);
 
-/// Returns whether `format` is a block-compressed format the minter stores in this version (BC1, BC4 and BC5).
+/// Returns whether `format` is a block-compressed format the minter stores in this version (BC1, BC4, BC5 and BC7).
 ///
 /// - Fails: never.
 bool IsBcFormat(rhi::Format format);
@@ -86,18 +89,18 @@ Status DecodeImage(BcKind kind, u32 width, u32 height, ByteSpan blocks, Vector<b
 
 /// Encodes one block from 16 RGBA8 texels (64 bytes, row-major) into `BcBlockBytes(kind)` bytes.
 ///
-/// - Param kind: `Bc1`, `Bc4` or `Bc5`.
+/// - Param kind: `Bc1`, `Bc4`, `Bc5` or `Bc7`.
 /// - Param rgba: 64 bytes.
 /// - Param options: the effort and the BC1 alpha rule.
 /// - Param block: receives the block.
-/// - Aborts: `kind` is not one of the three encodable schemes.
+/// - Aborts: `kind` is not one of the four encodable schemes.
 /// - Ownership: borrows `rgba` and `block` for the call.
 void EncodeBlock(BcKind kind, const byte* rgba, const BcEncodeOptions& options, byte* block);
 
 /// Encodes a whole image: tight RGBA8 texels in, rows of tightly packed blocks out. Block rows are spread over
 /// `scheduler` when it is not null (the output does not depend on the worker count).
 ///
-/// - Param kind: `Bc1`, `Bc4` or `Bc5`.
+/// - Param kind: `Bc1`, `Bc4`, `Bc5` or `Bc7`.
 /// - Param width: 1 to [[asset::kMaxTextureSize]].
 /// - Param height: 1 to [[asset::kMaxTextureSize]].
 /// - Param rgba: `width * height * 4` bytes.
