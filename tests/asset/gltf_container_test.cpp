@@ -684,10 +684,10 @@ TEST_CASE("gltf: ImportGltf reads a valid file's container and reports what it h
     GltfError error;
     const Vector<byte> glb = TriangleGlb();
     const Status status = ImportGltf(ByteSpan(glb.Data(), glb.Size()), none, ImportOptions(), &result, &error);
-    CHECK(status.Is(ErrorCode::Unsupported));  // no resource kind is imported before Day 336
+    CHECK(status.Ok());
     CHECK(result.report.meshes == 1);
     CHECK(result.report.accessors == 2);
-    CHECK(result.resources.Size() == 0);
+    CHECK(result.resources.Size() == 1);
     GltfError bad;
     const Vector<byte> junk = test::MakeTestBlob(test::MakeBackendRegistry(), test::Rid(1), 32, 1);
     CHECK(ImportGltf(ByteSpan(junk.Data(), junk.Size()), none, ImportOptions(), &result, &bad).Is(ErrorCode::Invalid));

@@ -1,6 +1,7 @@
 #include "asset_import/gltf_import.h"
 
 #include "asset_import/gltf_container.h"
+#include "asset_import/gltf_mesh.h"
 #include "algorithm.h"
 #include "cstr/format.h"
 #include "cstr/mem_ops.h"
@@ -285,12 +286,12 @@ void ImportManifest::Match(ImportKind kind, Span<const ManifestObject> objects, 
 
 void ImportManifest::Add(ImportKind kind, u32 index, StringView name, ResourceId id)
 {
-    ManifestEntry entry;
+    ImportManifestEntry entry;
     entry.kind = kind;
     entry.index = index;
     entry.name = String<HeapAllocator>(HeapAllocator::Default(), name);
     entry.id = id;
-    entries_.Push(static_cast<ManifestEntry&&>(entry));
+    entries_.Push(static_cast<ImportManifestEntry&&>(entry));
 }
 
 void ImportManifest::Format(String<HeapAllocator>* out) const
@@ -298,7 +299,7 @@ void ImportManifest::Format(String<HeapAllocator>* out) const
     *out = String<HeapAllocator>(HeapAllocator::Default(), StringView("gltf-import 1\n"));
     for (usize i = 0; i < entries_.Size(); ++i)
     {
-        const ManifestEntry& e = entries_[i];
+        const ImportManifestEntry& e = entries_[i];
         char id[17];
         FormatResourceId(e.id, id);
         char line[64];
@@ -416,11 +417,26 @@ Status ImportGltf(ByteSpan file, GltfSource& source, const ImportOptions& option
     report.animations = static_cast<u32>(document.root.Get("animations").Size());
     report.nodes = static_cast<u32>(document.root.Get("nodes").Size());
     report.accessors = static_cast<u32>(document.accessors.Size());
-    error->Set(
-        StringView(),
-        StringView(
-            "the importer reads the container so far; it imports meshes from Day 336, skeletons and clips from Day 337 and images, textures and materials from Day 338"));
-    return Status::Make(ErrorCode::Unsupported, "no resource kind is imported yet");
+    const struct
+    {
+        const char* name;
+        u32 count;
+    } pending[] = {{"skins", report.skins},
+                   {"animations", report.animations},
+                   {"materials", report.materials},
+                   {"textures", report.textures},
+                   {"images", report.images}};
+    for (const auto& kind : pending)
+    {
+        if (kind.count != 0)
+        {
+            char text[64];
+            FormatTo(text, sizeof(text), "%u not imported yet", static_cast<unsigned>(kind.count));
+            AddImportWarning(&report, StringView(kind.name), StringView(text, CStrLength(text)));
+        }
+    }
+    const TypeRegistry types;
+    return ImportMeshes(document, options, types, Span<const MeshSkeletonBinding>(), result, error);
 }
 
 Status ImportIntoBackend(HostMemoryBackend& backend, const ImportResult& result)

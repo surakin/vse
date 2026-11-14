@@ -6,6 +6,7 @@ set(ASSET_IMPORT_SOURCES
   gltf_container.cpp  # Day 335
   gltf_accessor.cpp  # Day 335
   gltf_import.cpp  # Day 335
+  gltf_mesh.cpp  # Day 336
 )
 set(ASSET_IMPORT_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

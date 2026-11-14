@@ -153,10 +153,10 @@ const char* ImportKindName(ImportKind kind);
 ///
 /// - Thread-safety: thread-compatible.
 /// - Ownership: owns its name.
-struct ManifestEntry
+struct ImportManifestEntry
 {
     /// An empty entry.
-    ManifestEntry() : name(HeapAllocator::Default()) {}
+    ImportManifestEntry() : name(HeapAllocator::Default()) {}
     ImportKind kind = ImportKind::Mesh;  ///< What it is.
     u32 index = 0;                       ///< Its index in the glTF's array of that kind.
     String<HeapAllocator> name;          ///< Its name in the glTF (may be empty).
@@ -183,7 +183,9 @@ struct ManifestObject
 class ImportManifest
 {
 public:
-    /// Finds the ids an earlier import gave a set of objects of one kind: first by name (an object whose name is the
+    /// Finds the ids an earlier import gave a set of objects of one kind.
+    ///
+    /// First by name (an object whose name is the
     /// name of exactly one entry, and no other object has it), then, for what is left, by index (the entry at that
     /// index, when its name is the object's or is the name of none of the objects: the object was renamed). No two
     /// objects get one id. The matching is made for all the objects at once, so that the result does not depend on
@@ -200,7 +202,7 @@ public:
     void Add(ImportKind kind, u32 index, StringView name, ResourceId id);
 
     /// The entries, in the order they were added.
-    const Vector<ManifestEntry>& Entries() const { return entries_; }
+    const Vector<ImportManifestEntry>& Entries() const { return entries_; }
 
     /// The text form: one line per entry, `kind index id name` with the name percent-escaped, after a `gltf-import 1`
     /// line.
@@ -217,7 +219,7 @@ public:
     Status Parse(StringView text, GltfError* error);
 
 private:
-    Vector<ManifestEntry> entries_;
+    Vector<ImportManifestEntry> entries_;
 };
 
 /// What an import was asked.
@@ -230,6 +232,9 @@ struct ImportOptions
     IdSource* ids = nullptr;                   ///< Where new ids come from (null: a `RandomIdSource`).
     const ImportManifest* manifest = nullptr;  ///< The manifest of an earlier import of this file, or null.
     StringView path_prefix;                    ///< The resource paths of the result start with this (default: `/gltf`).
+    bool flat_normals = false;        ///< A mesh without normals gets flat ones (default: smooth, area-weighted).
+    bool drop_morph_targets = false;  ///< Import the base shape of a primitive with morph targets (a warning).
+    f32 scale = 1.0f;                 ///< Positions are multiplied by it (glTF is in metres).
 };
 
 /// One resource an import made.

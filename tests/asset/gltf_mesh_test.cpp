@@ -1,0 +1,949 @@
+// Phase 22 Day 336: importing glTF meshes (asset_import/gltf_mesh.h) and the first in-memory loop: a glTF in memory,
+// mesh blobs in a HostMemoryBackend, the resource manager loading them.
+
+#include <catch2/catch_test_macros.hpp>
+
+#include "asset/async_loader.h"
+#include "asset/cpu_loaders.h"
+#include "asset/memory_backend.h"
+#include "asset/mesh.h"
+#include "asset/resource_manager.h"
+#include "asset_import/gltf_mesh.h"
+#include "cstr/cstr.h"
+#include "cstr/format.h"
+#include "cstr/mem_ops.h"
+#include "gltf_writer.h"
+#include "jobs/scheduler.h"
+#include "lang/limits.h"
+#include "support.h"
+
+namespace engine_placeholder::asset
+{
+namespace
+{
+
+using test::GltfWriter;
+
+u32 ComponentsOf(const char* type)
+{
+    const StringView name(type);
+    return name == StringView("SCALAR") ? 1 : static_cast<u32>(type[3] - '0');
+}
+
+// An accessor over `count` array elements (the accessor's own count is the number of whole vectors in them).
+template <typename T>
+u32 Acc(GltfWriter* w, const T* values, usize count, u32 component_type, const char* type, const char* extra = "")
+{
+    return w->AddAccessor(w->AddView(values, count * sizeof(T)), component_type,
+                          static_cast<u32>(count) / ComponentsOf(type), type, extra);
+}
+
+const f32 kTrianglePositions[9] = {0, 0, 0, 1, 0, 0, 0, 1, 0};
+const f32 kTriangleUvs[6] = {0, 0, 1, 0, 0, 1};
+
+// A glb with one mesh `name` of one triangle (POSITION only unless `full`).
+Vector<byte> TriangleGlb(const char* name, bool full)
+{
+    GltfWriter w;
+    const u16 indices[3] = {0, 1, 2};
+    const f32 normals[9] = {0, 0, 1, 0, 0, 1, 0, 0, 1};
+    const u32 pos = Acc(&w, kTrianglePositions, 9, 5126, "VEC3");
+    const u32 idx = Acc(&w, indices, 3, 5123, "SCALAR");
+    char json[400];
+    if (full)
+    {
+        const u32 nor = Acc(&w, normals, 9, 5126, "VEC3");
+        const u32 uv = Acc(&w, kTriangleUvs, 6, 5126, "VEC2");
+        FormatTo(json, sizeof(json),
+                 "\"meshes\":[{\"name\":\"%s\",\"primitives\":[{\"attributes\":{\"POSITION\":%u,\"NORMAL\":%u,"
+                 "\"TEXCOORD_0\":%u},\"indices\":%u}]}]",
+                 name, pos, nor, uv, idx);
+    }
+    else
+    {
+        FormatTo(json, sizeof(json),
+                 "\"meshes\":[{\"name\":\"%s\",\"primitives\":[{\"attributes\":{\"POSITION\":%u},"
+                 "\"indices\":%u}]}]",
+                 name, pos, idx);
+    }
+    w.AddRoot(json);
+    return w.Glb();
+}
+
+Status Import(const Vector<byte>& glb, ImportResult* result, GltfError* error, ImportOptions options = ImportOptions())
+{
+    NoGltfSource none;
+    SeededIdSource ids(7);
+    if (options.ids == nullptr)
+    {
+        options.ids = &ids;
+    }
+    const Status status = ImportGltf(ByteSpan(glb.Data(), glb.Size()), none, options, result, error);
+    if (status.Failed())
+    {
+        UNSCOPED_INFO("ImportGltf: " << GltfMessage(*error, status));
+    }
+    return status;
+}
+
+bool Says(const GltfError& error, const char* text)
+{
+    return StringView(error.message.Data(), CStrLength(error.message.Data())).Contains(StringView(text));
+}
+
+MeshVertex Vertex(f32 x, f32 y, f32 z, f32 nx, f32 ny, f32 nz, f32 u, f32 v)
+{
+    MeshVertex vertex;
+    vertex.position = {{x, y, z}};
+    vertex.normal = {{nx, ny, nz}};
+    vertex.tangent = {{1, 0, 0, 1}};
+    vertex.uv = {{u, v}};
+    return vertex;
+}
+
+Array<char, kMaxSlotNameBytes + 1> Name(const char* text)
+{
+    Array<char, kMaxSlotNameBytes + 1> name = {};
+    MemCopy(name.Data(), text, CStrLength(text));
+    return name;
+}
+
+bool SameBytes(const Vector<byte>& a, const Vector<byte>& b)
+{
+    return a.Size() == b.Size() && MemCompare(a.Data(), b.Data(), a.Size()) == 0;
+}
+
+}  // namespace
+
+TEST_CASE("gltf mesh: a triangle with every attribute equals the blob built from the same data", "[asset][gltf]")
+{
+    ImportResult result;
+    GltfError error;
+    REQUIRE(Import(TriangleGlb("tri", true), &result, &error).Ok());
+    REQUIRE(result.resources.Size() == 1);
+    CHECK(result.resources[0].type == types::kMesh);
+    CHECK(result.resources[0].path.View() == StringView("/gltf/meshes/tri"));
+    CHECK(result.report.warnings == 0);
+    CHECK(result.manifest.Entries().Size() == 1);
+    CHECK(result.manifest.Entries()[0].id == result.resources[0].id);
+
+    const MeshVertex vertices[3] = {Vertex(0, 0, 0, 0, 0, 1, 0, 0), Vertex(1, 0, 0, 0, 0, 1, 1, 0),
+                                    Vertex(0, 1, 0, 0, 0, 1, 0, 1)};
+    const u32 indices[3] = {0, 1, 2};
+    MeshSlot slot;
+    slot.name = Name("primitive0");
+    slot.index_count = 3;
+    MeshBuildInput input;
+    input.vertices = Span<const MeshVertex>(vertices, 3);
+    input.indices = Span<const u32>(indices, 3);
+    input.slots = Span<const MeshSlot>(&slot, 1);
+    const TypeRegistry types;
+    Vector<byte> expected;
+    REQUIRE(BuildMeshBlob(types, result.resources[0].id, input, &expected).Ok());
+    CHECK(SameBytes(result.resources[0].blob, expected));
+}
+
+TEST_CASE("gltf mesh: missing normals, tangents and texture coordinates are made, with a counted warning",
+          "[asset][gltf]")
+{
+    ImportResult result;
+    GltfError error;
+    REQUIRE(Import(TriangleGlb("bare", false), &result, &error).Ok());
+    CHECK(result.report.warnings == 1);
+    REQUIRE(result.report.notes.Size() == 1);
+    CHECK(result.report.notes[0].View().Contains(StringView("TEXCOORD_0")));
+    CHECK(result.report.notes[0].View().Contains(StringView("meshes[0].primitives[0]")));
+    const MeshVertex vertices[3] = {Vertex(0, 0, 0, 0, 0, 1, 0, 0), Vertex(1, 0, 0, 0, 0, 1, 0, 0),
+                                    Vertex(0, 1, 0, 0, 0, 1, 0, 0)};
+    const u32 indices[3] = {0, 1, 2};
+    MeshSlot slot;
+    slot.name = Name("primitive0");
+    slot.index_count = 3;
+    MeshBuildInput input;
+    input.vertices = Span<const MeshVertex>(vertices, 3);
+    input.indices = Span<const u32>(indices, 3);
+    input.slots = Span<const MeshSlot>(&slot, 1);
+    const TypeRegistry types;
+    Vector<byte> expected;
+    REQUIRE(BuildMeshBlob(types, result.resources[0].id, input, &expected).Ok());
+    CHECK(SameBytes(result.resources[0].blob, expected));
+}
+
+TEST_CASE("gltf mesh: tangents follow the texture coordinates and their handedness", "[asset][gltf]")
+{
+    // The same triangle with v flipped: the tangent is still +x and the bitangent sign turns negative.
+    GltfWriter w;
+    const u16 indices[3] = {0, 1, 2};
+    const f32 flipped[6] = {0, 1, 1, 1, 0, 0};
+    const u32 pos = Acc(&w, kTrianglePositions, 9, 5126, "VEC3");
+    const u32 uv = Acc(&w, flipped, 6, 5126, "VEC2");
+    const u32 idx = Acc(&w, indices, 3, 5123, "SCALAR");
+    char json[300];
+    FormatTo(json, sizeof(json),
+             "\"meshes\":[{\"primitives\":[{\"attributes\":{\"POSITION\":%u,\"TEXCOORD_0\":%u},\"indices\":%u}]}]", pos,
+             uv, idx);
+    w.AddRoot(json);
+    ImportResult result;
+    GltfError error;
+    REQUIRE(Import(w.Glb(), &result, &error).Ok());
+    MeshVertex vertices[3] = {Vertex(0, 0, 0, 0, 0, 1, 0, 1), Vertex(1, 0, 0, 0, 0, 1, 1, 1),
+                              Vertex(0, 1, 0, 0, 0, 1, 0, 0)};
+    for (MeshVertex& v : vertices)
+    {
+        v.tangent = {{1, 0, 0, -1}};
+    }
+    const u32 expected_indices[3] = {0, 1, 2};
+    MeshSlot slot;
+    slot.name = Name("primitive0");
+    slot.index_count = 3;
+    MeshBuildInput input;
+    input.vertices = Span<const MeshVertex>(vertices, 3);
+    input.indices = Span<const u32>(expected_indices, 3);
+    input.slots = Span<const MeshSlot>(&slot, 1);
+    const TypeRegistry types;
+    Vector<byte> expected;
+    REQUIRE(BuildMeshBlob(types, result.resources[0].id, input, &expected).Ok());
+    CHECK(SameBytes(result.resources[0].blob, expected));
+}
+
+TEST_CASE("gltf mesh: primitives become slots named after their materials", "[asset][gltf]")
+{
+    GltfWriter w;
+    const f32 quad[12] = {0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0};
+    const u16 indices[6] = {0, 1, 2, 0, 2, 3};
+    const u32 pos = Acc(&w, quad, 12, 5126, "VEC3");
+    const u32 idx = Acc(&w, indices, 6, 5123, "SCALAR");
+    char json[900];
+    FormatTo(json, sizeof(json),
+             "\"materials\":[{\"name\":\"red\"},{\"name\":\"a/very/long/material/name/past/thirty-one/bytes\"}],"
+             "\"meshes\":[{\"name\":\"quads\",\"primitives\":["
+             "{\"attributes\":{\"POSITION\":%u},\"indices\":%u,\"material\":0},"
+             "{\"attributes\":{\"POSITION\":%u},\"indices\":%u,\"material\":1},"
+             "{\"attributes\":{\"POSITION\":%u},\"indices\":%u},"
+             "{\"attributes\":{\"POSITION\":%u},\"indices\":%u,\"material\":0}]}]",
+             pos, idx, pos, idx, pos, idx, pos, idx);
+    w.AddRoot(json);
+    ImportResult result;
+    GltfError error;
+    REQUIRE(Import(w.Glb(), &result, &error).Ok());
+    TypeRegistry types;
+    MeshView view;
+    REQUIRE(view.Open(ByteSpan(result.resources[0].blob.Data(), result.resources[0].blob.Size()), types).Ok());
+    REQUIRE(view.SlotCount() == 4);
+    CHECK(view.VertexCount() == 16);
+    CHECK(view.IndexCount() == 24);
+    CHECK(StringView(view.Slot(0).name.Data()) == StringView("red"));
+    CHECK(StringView(view.Slot(1).name.Data()) == StringView("a_very_long_material_name_past_"));
+    CHECK(StringView(view.Slot(2).name.Data()) == StringView("primitive2"));
+    CHECK(StringView(view.Slot(3).name.Data()) == StringView("primitive3"));  // `red` again: the name is taken
+    for (u32 s = 0; s < 4; ++s)
+    {
+        CHECK(view.Slot(s).first_index == s * 6);
+        CHECK(view.Slot(s).index_count == 6);
+    }
+    CHECK(view.CheckIndices().Ok());
+}
+
+TEST_CASE("gltf mesh: strips and fans become triangle lists", "[asset][gltf]")
+{
+    GltfWriter w;
+    const f32 points[15] = {0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 2, 0, 0};
+    const u8 strip[5] = {0, 1, 2, 3, 4};
+    const u32 pos = Acc(&w, points, 15, 5126, "VEC3");
+    const u32 idx = Acc(&w, strip, 5, 5121, "SCALAR");
+    char json[400];
+    FormatTo(
+        json, sizeof(json),
+        "\"meshes\":[{\"name\":\"s\",\"primitives\":[{\"attributes\":{\"POSITION\":%u},\"indices\":%u,\"mode\":5}]},"
+        "{\"name\":\"f\",\"primitives\":[{\"attributes\":{\"POSITION\":%u},\"indices\":%u,\"mode\":6}]}]",
+        pos, idx, pos, idx);
+    w.AddRoot(json);
+    ImportResult result;
+    GltfError error;
+    REQUIRE(Import(w.Glb(), &result, &error).Ok());
+    REQUIRE(result.resources.Size() == 2);
+    TypeRegistry types;
+    MeshView strip_view;
+    MeshView fan_view;
+    REQUIRE(strip_view.Open(ByteSpan(result.resources[0].blob.Data(), result.resources[0].blob.Size()), types).Ok());
+    REQUIRE(fan_view.Open(ByteSpan(result.resources[1].blob.Data(), result.resources[1].blob.Size()), types).Ok());
+    CHECK(strip_view.IndexCount() == 9);  // 5 - 2 triangles
+    CHECK(fan_view.IndexCount() == 9);
+    // 16-bit indices: the strip's triangles are (0 1 2) (2 1 3) (2 3 4), the fan's (0 1 2) (0 2 3) (0 3 4).
+    const u16* strip_indices = reinterpret_cast<const u16*>(strip_view.IndexBytes().Data());
+    const u16* fan_indices = reinterpret_cast<const u16*>(fan_view.IndexBytes().Data());
+    const u16 want_strip[9] = {0, 1, 2, 2, 1, 3, 2, 3, 4};
+    const u16 want_fan[9] = {0, 1, 2, 0, 2, 3, 0, 3, 4};
+    for (usize i = 0; i < 9; ++i)
+    {
+        CHECK(strip_indices[i] == want_strip[i]);
+        CHECK(fan_indices[i] == want_fan[i]);
+    }
+}
+
+TEST_CASE("gltf mesh: normals made from the faces are smooth, or flat when asked", "[asset][gltf]")
+{
+    // Two triangles sharing an edge, folded 90 degrees: the shared vertices' smooth normal leans between the faces.
+    GltfWriter w;
+    const f32 points[12] = {0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1};
+    const u16 indices[6] = {0, 1, 2, 0, 3, 1};
+    const u32 pos = Acc(&w, points, 12, 5126, "VEC3");
+    const u32 idx = Acc(&w, indices, 6, 5123, "SCALAR");
+    char json[300];
+    FormatTo(json, sizeof(json), "\"meshes\":[{\"primitives\":[{\"attributes\":{\"POSITION\":%u},\"indices\":%u}]}]",
+             pos, idx);
+    w.AddRoot(json);
+    const Vector<byte> glb = w.Glb();
+    ImportResult smooth;
+    ImportResult flat;
+    GltfError error;
+    REQUIRE(Import(glb, &smooth, &error).Ok());
+    ImportOptions options;
+    options.flat_normals = true;
+    REQUIRE(Import(glb, &flat, &error, options).Ok());
+    TypeRegistry types;
+    MeshView smooth_view;
+    MeshView flat_view;
+    REQUIRE(smooth_view.Open(ByteSpan(smooth.resources[0].blob.Data(), smooth.resources[0].blob.Size()), types).Ok());
+    REQUIRE(flat_view.Open(ByteSpan(flat.resources[0].blob.Data(), flat.resources[0].blob.Size()), types).Ok());
+    CHECK(smooth_view.VertexCount() == 4);  // shared
+    CHECK(flat_view.VertexCount() == 6);    // one per triangle corner
+    CHECK_FALSE(SameBytes(smooth.resources[0].blob, flat.resources[0].blob));
+}
+
+TEST_CASE("gltf mesh: a sparse accessor's overrides are in the mesh", "[asset][gltf]")
+{
+    GltfWriter w;
+    // POSITION: no buffer view (zeros) with the third element moved to (0, 2, 0) by a sparse override.
+    const u8 sparse_indices[4] = {2, 0, 0, 0};
+    const f32 sparse_values[3] = {0, 2, 0};
+    const u32 iv = w.AddView(sparse_indices, 1);
+    const u32 vv = w.AddView(sparse_values, sizeof(sparse_values));
+    char extra[200];
+    FormatTo(extra, sizeof(extra),
+             ",\"sparse\":{\"count\":1,\"indices\":{\"bufferView\":%u,\"componentType\":5121},"
+             "\"values\":{\"bufferView\":%u}}",
+             iv, vv);
+    const u32 pos = w.AddAccessor(-1, 5126, 3, "VEC3", extra);
+    char json[200];
+    FormatTo(json, sizeof(json), "\"meshes\":[{\"primitives\":[{\"attributes\":{\"POSITION\":%u}}]}]", pos);
+    w.AddRoot(json);
+    ImportResult result;
+    GltfError error;
+    REQUIRE(Import(w.Glb(), &result, &error).Ok());
+    TypeRegistry types;
+    MeshView view;
+    REQUIRE(view.Open(ByteSpan(result.resources[0].blob.Data(), result.resources[0].blob.Size()), types).Ok());
+    CHECK(view.BoundsMax()[1] == 2.0f);
+    CHECK(view.BoundsMax()[0] == 0.0f);
+}
+
+TEST_CASE("gltf mesh: morph targets are refused, or dropped with a warning", "[asset][gltf]")
+{
+    GltfWriter w;
+    const u16 indices[3] = {0, 1, 2};
+    const u32 pos = Acc(&w, kTrianglePositions, 9, 5126, "VEC3");
+    const u32 idx = Acc(&w, indices, 3, 5123, "SCALAR");
+    char json[300];
+    FormatTo(json, sizeof(json),
+             "\"meshes\":[{\"primitives\":[{\"attributes\":{\"POSITION\":%u},\"indices\":%u,"
+             "\"targets\":[{\"POSITION\":%u}]}],\"weights\":[0]}]",
+             pos, idx, pos);
+    w.AddRoot(json);
+    const Vector<byte> glb = w.Glb();
+    ImportResult result;
+    GltfError error;
+    CHECK(Import(glb, &result, &error).Is(ErrorCode::Unsupported));
+    CHECK(Says(error, "meshes[0].primitives[0].targets"));
+    ImportOptions options;
+    options.drop_morph_targets = true;
+    REQUIRE(Import(glb, &result, &error, options).Ok());
+    CHECK(result.report.warnings == 2);  // the morph targets, and the texture coordinates the file lacks
+    CHECK(result.resources.Size() == 1);
+}
+
+TEST_CASE("gltf mesh: other attributes are dropped with a counted warning", "[asset][gltf]")
+{
+    GltfWriter w;
+    const u16 indices[3] = {0, 1, 2};
+    const f32 colors[12] = {1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1};
+    const u32 pos = Acc(&w, kTrianglePositions, 9, 5126, "VEC3");
+    const u32 uv = Acc(&w, kTriangleUvs, 6, 5126, "VEC2");
+    const u32 col = Acc(&w, colors, 12, 5126, "VEC4");
+    const u32 idx = Acc(&w, indices, 3, 5123, "SCALAR");
+    char json[300];
+    FormatTo(json, sizeof(json),
+             "\"meshes\":[{\"primitives\":[{\"attributes\":{\"POSITION\":%u,\"TEXCOORD_0\":%u,\"TEXCOORD_1\":%u,"
+             "\"COLOR_0\":%u},\"indices\":%u}]}]",
+             pos, uv, uv, col, idx);
+    w.AddRoot(json);
+    ImportResult result;
+    GltfError error;
+    REQUIRE(Import(w.Glb(), &result, &error).Ok());
+    CHECK(result.report.warnings == 2);  // TEXCOORD_1 and COLOR_0
+}
+
+TEST_CASE("gltf mesh: the scale multiplies the positions", "[asset][gltf]")
+{
+    ImportOptions options;
+    options.scale = 0.01f;
+    ImportResult result;
+    GltfError error;
+    REQUIRE(Import(TriangleGlb("t", true), &result, &error, options).Ok());
+    TypeRegistry types;
+    MeshView view;
+    REQUIRE(view.Open(ByteSpan(result.resources[0].blob.Data(), result.resources[0].blob.Size()), types).Ok());
+    CHECK(view.BoundsMax()[0] == 0.01f);
+    options.scale = 0.0f;
+    CHECK(Import(TriangleGlb("t", true), &result, &error, options).Is(ErrorCode::Invalid));
+}
+
+TEST_CASE("gltf mesh: a skinned primitive is skinned to its mesh's skeleton, or imported without the skin",
+          "[asset][gltf]")
+{
+    GltfWriter w;
+    const u16 indices[3] = {0, 1, 2};
+    const u8 joints[12] = {0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0};
+    const f32 weights[12] = {0.75f, 0.25f, 0, 0, 1, 0, 0, 0, 0.5f, 0.5f, 0, 0};
+    const u32 pos = Acc(&w, kTrianglePositions, 9, 5126, "VEC3");
+    const u32 jnt = Acc(&w, joints, 12, 5121, "VEC4");
+    const u32 wgt = Acc(&w, weights, 12, 5126, "VEC4");
+    const u32 idx = Acc(&w, indices, 3, 5123, "SCALAR");
+    char json[300];
+    FormatTo(json, sizeof(json),
+             "\"meshes\":[{\"name\":\"skinned\",\"primitives\":[{\"attributes\":{\"POSITION\":%u,\"JOINTS_0\":%u,"
+             "\"WEIGHTS_0\":%u},\"indices\":%u}]}]",
+             pos, jnt, wgt, idx);
+    w.AddRoot(json);
+    const Vector<byte> glb = w.Glb();
+
+    NoGltfSource none;
+    GltfDocument document;
+    GltfError error;
+    REQUIRE(ParseGltf(ByteSpan(glb.Data(), glb.Size()), none, ImportLimits(), &document, &error).Ok());
+    const TypeRegistry types;
+    SeededIdSource ids(3);
+    ImportOptions options;
+    options.ids = &ids;
+
+    MeshSkeletonBinding binding;
+    binding.present = true;
+    binding.skeleton = test::Rid(0xaa);
+    binding.joint_count = 2;
+    ImportResult skinned;
+    REQUIRE(
+        ImportMeshes(document, options, types, Span<const MeshSkeletonBinding>(&binding, 1), &skinned, &error).Ok());
+    MeshView view;
+    REQUIRE(view.Open(ByteSpan(skinned.resources[0].blob.Data(), skinned.resources[0].blob.Size()), types).Ok());
+    CHECK(view.Skinned());
+    CHECK(view.Skeleton() == test::Rid(0xaa));
+    CHECK(view.SkinJointCount() == 2);
+    CHECK(view.CheckSkin().Ok());
+    const MeshVertex vertices[3] = {Vertex(0, 0, 0, 0, 0, 1, 0, 0), Vertex(1, 0, 0, 0, 0, 1, 0, 0),
+                                    Vertex(0, 1, 0, 0, 0, 1, 0, 0)};
+    const u32 want_indices[3] = {0, 1, 2};
+    MeshSkinInfluence skin[3];
+    const u32 j0[2] = {0, 1};
+    const f64 w0[2] = {0.75, 0.25};
+    REQUIRE(QuantizeSkinInfluences(j0, w0, 2, &skin[0]));
+    const u32 j1[1] = {1};
+    const f64 w1[1] = {1.0};
+    REQUIRE(QuantizeSkinInfluences(j1, w1, 1, &skin[1]));
+    const u32 j2[2] = {0, 1};
+    const f64 w2[2] = {0.5, 0.5};
+    REQUIRE(QuantizeSkinInfluences(j2, w2, 2, &skin[2]));
+    MeshSlot slot;
+    slot.name = Name("primitive0");
+    slot.index_count = 3;
+    MeshBuildInput input;
+    input.vertices = Span<const MeshVertex>(vertices, 3);
+    input.indices = Span<const u32>(want_indices, 3);
+    input.slots = Span<const MeshSlot>(&slot, 1);
+    input.skin = Span<const MeshSkinInfluence>(skin, 3);
+    input.skeleton = binding.skeleton;
+    input.skeleton_joint_count = 2;
+    Vector<byte> expected;
+    REQUIRE(BuildMeshBlob(types, skinned.resources[0].id, input, &expected).Ok());
+    CHECK(SameBytes(skinned.resources[0].blob, expected));
+
+    // A joint past the skeleton is refused, naming the primitive.
+    binding.joint_count = 1;
+    CHECK(ImportMeshes(document, options, types, Span<const MeshSkeletonBinding>(&binding, 1), &skinned, &error)
+              .Is(ErrorCode::Invalid));
+    CHECK(Says(error, "meshes[0].primitives[0]"));
+
+    // Without a skeleton the mesh imports unskinned, with a warning.
+    ImportResult bare;
+    REQUIRE(Import(glb, &bare, &error).Ok());
+    REQUIRE(view.Open(ByteSpan(bare.resources[0].blob.Data(), bare.resources[0].blob.Size()), types).Ok());
+    CHECK_FALSE(view.Skinned());
+    CHECK(bare.report.warnings >= 1);
+}
+
+TEST_CASE("gltf mesh: more than four influences keep the four largest", "[asset][gltf]")
+{
+    GltfWriter w;
+    const u16 indices[3] = {0, 1, 2};
+    const u8 joints0[12] = {0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3};
+    const u8 joints1[12] = {4, 5, 6, 7, 4, 5, 6, 7, 4, 5, 6, 7};
+    const f32 weights0[12] = {0.05f, 0.1f, 0.15f, 0.2f, 0.05f, 0.1f, 0.15f, 0.2f, 0.05f, 0.1f, 0.15f, 0.2f};
+    const f32 weights1[12] = {0.25f, 0.1f, 0.05f, 0.05f, 0.25f, 0.1f, 0.05f, 0.05f, 0.25f, 0.1f, 0.05f, 0.05f};
+    const u32 pos = Acc(&w, kTrianglePositions, 9, 5126, "VEC3");
+    const u32 j0 = Acc(&w, joints0, 12, 5121, "VEC4");
+    const u32 j1 = Acc(&w, joints1, 12, 5121, "VEC4");
+    const u32 w0 = Acc(&w, weights0, 12, 5126, "VEC4");
+    const u32 w1 = Acc(&w, weights1, 12, 5126, "VEC4");
+    const u32 idx = Acc(&w, indices, 3, 5123, "SCALAR");
+    char json[400];
+    FormatTo(json, sizeof(json),
+             "\"meshes\":[{\"primitives\":[{\"attributes\":{\"POSITION\":%u,\"JOINTS_0\":%u,\"WEIGHTS_0\":%u,"
+             "\"JOINTS_1\":%u,\"WEIGHTS_1\":%u},\"indices\":%u}]}]",
+             pos, j0, w0, j1, w1, idx);
+    w.AddRoot(json);
+    const Vector<byte> glb = w.Glb();
+    NoGltfSource none;
+    GltfDocument document;
+    GltfError error;
+    REQUIRE(ParseGltf(ByteSpan(glb.Data(), glb.Size()), none, ImportLimits(), &document, &error).Ok());
+    const TypeRegistry types;
+    MeshSkeletonBinding binding;
+    binding.present = true;
+    binding.skeleton = test::Rid(0xaa);
+    binding.joint_count = 8;
+    ImportResult result;
+    REQUIRE(
+        ImportMeshes(document, ImportOptions(), types, Span<const MeshSkeletonBinding>(&binding, 1), &result, &error)
+            .Ok());
+    CHECK(result.report.warnings >= 1);
+    TypeRegistry registry;
+    MeshView view;
+    REQUIRE(view.Open(ByteSpan(result.resources[0].blob.Data(), result.resources[0].blob.Size()), registry).Ok());
+    CHECK(view.CheckSkin().Ok());
+}
+
+TEST_CASE("gltf mesh: review findings: skin sets, scaling, slot names and warnings", "[asset][gltf]")
+{
+    const TypeRegistry types;
+    // Skin sets with a gap (JOINTS_1 without JOINTS_0), and a joint past the skeleton on a vertex whose weight is zero.
+    {
+        GltfWriter w;
+        const u16 indices[3] = {0, 1, 2};
+        const u8 joints[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        const u8 far_joints[12] = {5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        const f32 weights[12] = {1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0};
+        const f32 zeros[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        const u32 pos = Acc(&w, kTrianglePositions, 9, 5126, "VEC3");
+        const u32 j0 = Acc(&w, joints, 12, 5121, "VEC4");
+        const u32 w0 = Acc(&w, weights, 12, 5126, "VEC4");
+        const u32 jf = Acc(&w, far_joints, 12, 5121, "VEC4");
+        const u32 wz = Acc(&w, zeros, 12, 5126, "VEC4");
+        const u32 idx = Acc(&w, indices, 3, 5123, "SCALAR");
+        char json[500];
+        FormatTo(json, sizeof(json),
+                 "\"meshes\":[{\"name\":\"gap\",\"primitives\":[{\"attributes\":{\"POSITION\":%u,\"JOINTS_1\":%u,"
+                 "\"WEIGHTS_1\":%u},\"indices\":%u}]},"
+                 "{\"name\":\"far\",\"primitives\":[{\"attributes\":{\"POSITION\":%u,\"JOINTS_0\":%u,"
+                 "\"WEIGHTS_0\":%u,\"JOINTS_1\":%u,\"WEIGHTS_1\":%u},\"indices\":%u}]}]",
+                 pos, j0, w0, idx, pos, j0, w0, jf, wz, idx);
+        w.AddRoot(json);
+        const Vector<byte> glb = w.Glb();
+        NoGltfSource none;
+        GltfDocument document;
+        GltfError error;
+        REQUIRE(ParseGltf(ByteSpan(glb.Data(), glb.Size()), none, ImportLimits(), &document, &error).Ok());
+        MeshSkeletonBinding bindings[2];
+        for (MeshSkeletonBinding& b : bindings)
+        {
+            b.present = true;
+            b.skeleton = test::Rid(0xaa);
+            b.joint_count = 2;
+        }
+        ImportResult result;
+        CHECK(ImportMeshes(document, ImportOptions(), types, Span<const MeshSkeletonBinding>(bindings, 2), &result,
+                           &error)
+                  .Is(ErrorCode::Invalid));
+        CHECK(Says(error, "meshes[0].primitives[0].attributes"));
+        CHECK(Says(error, "without a gap"));
+    }
+    // A second set that is all zeros keeps every influence: no "more than four" warning; the joint past the skeleton on
+    // a zero weight is still refused.
+    {
+        GltfWriter w;
+        const u16 indices[3] = {0, 1, 2};
+        const u8 joints[12] = {0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0};
+        const u8 more[12] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+        const f32 weights[12] = {0.5f, 0.5f, 0, 0, 0.5f, 0.5f, 0, 0, 0.5f, 0.5f, 0, 0};
+        const f32 zeros[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        const u32 pos = Acc(&w, kTrianglePositions, 9, 5126, "VEC3");
+        const u32 j0 = Acc(&w, joints, 12, 5121, "VEC4");
+        const u32 w0 = Acc(&w, weights, 12, 5126, "VEC4");
+        const u32 j1 = Acc(&w, more, 12, 5121, "VEC4");
+        const u32 w1 = Acc(&w, zeros, 12, 5126, "VEC4");
+        const u32 idx = Acc(&w, indices, 3, 5123, "SCALAR");
+        char json[400];
+        FormatTo(json, sizeof(json),
+                 "\"meshes\":[{\"primitives\":[{\"attributes\":{\"POSITION\":%u,\"JOINTS_0\":%u,\"WEIGHTS_0\":%u,"
+                 "\"JOINTS_1\":%u,\"WEIGHTS_1\":%u},\"indices\":%u}]}]",
+                 pos, j0, w0, j1, w1, idx);
+        w.AddRoot(json);
+        const Vector<byte> glb = w.Glb();
+        NoGltfSource none;
+        GltfDocument document;
+        GltfError error;
+        REQUIRE(ParseGltf(ByteSpan(glb.Data(), glb.Size()), none, ImportLimits(), &document, &error).Ok());
+        MeshSkeletonBinding binding;
+        binding.present = true;
+        binding.skeleton = test::Rid(0xaa);
+        binding.joint_count = 2;
+        ImportResult result;
+        REQUIRE(ImportMeshes(document, ImportOptions(), types, Span<const MeshSkeletonBinding>(&binding, 1), &result,
+                             &error)
+                    .Ok());
+        CHECK(result.report.warnings == 1);  // only the missing texture coordinates
+    }
+    // A scale that takes a position out of the float range is refused, naming the accessor reference.
+    {
+        GltfWriter w;
+        const f32 huge[9] = {0, 0, 0, 1e30f, 0, 0, 0, 1, 0};
+        const u16 indices[3] = {0, 1, 2};
+        const u32 pos = Acc(&w, huge, 9, 5126, "VEC3");
+        const u32 idx = Acc(&w, indices, 3, 5123, "SCALAR");
+        char json[200];
+        FormatTo(json, sizeof(json),
+                 "\"meshes\":[{\"primitives\":[{\"attributes\":{\"POSITION\":%u},\"indices\":%u}]}]", pos, idx);
+        w.AddRoot(json);
+        ImportOptions options;
+        options.scale = 1e12f;
+        ImportResult result;
+        GltfError error;
+        CHECK(Import(w.Glb(), &result, &error, options).Is(ErrorCode::Invalid));
+        CHECK(Says(error, "meshes[0].primitives[0].attributes.POSITION"));
+    }
+    // Materials named like the generated slot names still give distinct slots.
+    {
+        GltfWriter w;
+        const u16 indices[3] = {0, 1, 2};
+        const u32 pos = Acc(&w, kTrianglePositions, 9, 5126, "VEC3");
+        const u32 idx = Acc(&w, indices, 3, 5123, "SCALAR");
+        char prim[3][120];
+        for (u32 i = 0; i < 3; ++i)
+        {
+            FormatTo(prim[i], sizeof(prim[i]), "{\"attributes\":{\"POSITION\":%u},\"indices\":%u,\"material\":%u}", pos,
+                     idx, i);
+        }
+        char json[700];
+        FormatTo(json, sizeof(json),
+                 "\"materials\":[{\"name\":\"x\"},{\"name\":\"primitive2\"},{\"name\":\"primitive2\"}],"
+                 "\"meshes\":[{\"primitives\":[%s,%s,%s,%s]}]",
+                 prim[0], prim[1], prim[2], prim[1]);
+        w.AddRoot(json);
+        ImportResult result;
+        GltfError error;
+        REQUIRE(Import(w.Glb(), &result, &error).Ok());
+        TypeRegistry registry;
+        MeshView view;
+        REQUIRE(view.Open(ByteSpan(result.resources[0].blob.Data(), result.resources[0].blob.Size()), registry).Ok());
+        REQUIRE(view.SlotCount() == 4);
+        for (u32 i = 0; i < 4; ++i)
+        {
+            for (u32 k = i + 1; k < 4; ++k)
+            {
+                CHECK(StringView(view.Slot(i).name.Data()) != StringView(view.Slot(k).name.Data()));
+            }
+        }
+    }
+    // The kinds not imported yet are counted in the report, so Ok is not mistaken for complete.
+    {
+        GltfWriter w;
+        const u16 indices[3] = {0, 1, 2};
+        const u32 pos = Acc(&w, kTrianglePositions, 9, 5126, "VEC3");
+        const u32 idx = Acc(&w, indices, 3, 5123, "SCALAR");
+        char json[300];
+        FormatTo(json, sizeof(json),
+                 "\"materials\":[{}],\"meshes\":[{\"primitives\":[{\"attributes\":{\"POSITION\":%u},"
+                 "\"indices\":%u}]}]",
+                 pos, idx);
+        w.AddRoot(json);
+        ImportResult result;
+        GltfError error;
+        REQUIRE(Import(w.Glb(), &result, &error).Ok());
+        bool noted = false;
+        for (usize i = 0; i < result.report.notes.Size(); ++i)
+        {
+            noted = noted || result.report.notes[i].View().Contains(StringView("materials: 1 not imported yet"));
+        }
+        CHECK(noted);
+    }
+}
+
+TEST_CASE("gltf mesh: a JOINTS accessor of the wrong size is refused before it is read", "[asset][gltf]")
+{
+    GltfWriter w;
+    const u16 indices[3] = {0, 1, 2};
+    const u8 joints[40] = {};
+    const f32 weights[40] = {};
+    const u32 pos = Acc(&w, kTrianglePositions, 9, 5126, "VEC3");
+    const u32 j = Acc(&w, joints, 40, 5121, "VEC4");
+    const u32 wt = Acc(&w, weights, 40, 5126, "VEC4");
+    const u32 idx = Acc(&w, indices, 3, 5123, "SCALAR");
+    char json[300];
+    FormatTo(json, sizeof(json),
+             "\"meshes\":[{\"primitives\":[{\"attributes\":{\"POSITION\":%u,\"JOINTS_0\":%u,\"WEIGHTS_0\":%u},"
+             "\"indices\":%u}]}]",
+             pos, j, wt, idx);
+    w.AddRoot(json);
+    ImportResult result;
+    GltfError error;
+    CHECK(Import(w.Glb(), &result, &error).Is(ErrorCode::Invalid));
+    CHECK(Says(error, "meshes[0].primitives[0].attributes.JOINTS_0"));
+    CHECK(Says(error, "different number of elements"));
+}
+
+TEST_CASE("gltf mesh: hostile meshes are refused, naming the mesh and primitive", "[asset][gltf]")
+{
+    struct Case
+    {
+        const char* primitive;  // the primitive's JSON members, after the attributes
+        const char* attributes;
+        const char* says;
+        ErrorCode code;
+    };
+    // Accessors: 0 positions (3 vec3), 1 u16 indices (3), 2 u16 indices past the vertices, 3 vec3 (2 elements),
+    // 4 positions with a NaN, 5 u16 indices (2).
+    const Case cases[] = {
+        {",\"mode\":0", "\"POSITION\":0", "meshes[0].primitives[0]", ErrorCode::Unsupported},
+        {",\"mode\":1", "\"POSITION\":0", "only triangles", ErrorCode::Unsupported},
+        {",\"indices\":1", "\"NORMAL\":0", "no POSITION", ErrorCode::Invalid},
+        {",\"indices\":2", "\"POSITION\":0", "index past the vertices", ErrorCode::Invalid},
+        {",\"indices\":1", "\"POSITION\":0,\"NORMAL\":3", "different number of elements", ErrorCode::Invalid},
+        {",\"indices\":1", "\"POSITION\":4", "accessors[4]", ErrorCode::Invalid},
+        {",\"indices\":5,\"mode\":5", "\"POSITION\":0", "at least three indices", ErrorCode::Invalid},
+        {",\"indices\":5", "\"POSITION\":0", "multiple of three", ErrorCode::Invalid},
+        {",\"indices\":1,\"material\":4", "\"POSITION\":0", "primitives[0].material", ErrorCode::Invalid},
+        {",\"indices\":1", "\"POSITION\":9", "primitives[0].attributes.POSITION", ErrorCode::Invalid},
+        {",\"indices\":1", "\"POSITION\":1", "wrong element type", ErrorCode::Invalid},
+    };
+    for (const Case& c : cases)
+    {
+        GltfWriter w;
+        const u16 indices[3] = {0, 1, 2};
+        const u16 past[3] = {0, 1, 3};
+        const f32 two[6] = {0, 0, 0, 1, 0, 0};
+        const f32 nan_bits[9] = {0, 0, 0, 1, 0, 0, 0, 1, 0};
+        u32 nan_word = 0x7fc00000u;
+        f32 nan_value;
+        MemCopy(&nan_value, &nan_word, 4);
+        f32 with_nan[9];
+        MemCopy(with_nan, nan_bits, sizeof(with_nan));
+        with_nan[4] = nan_value;
+        const u16 pair[2] = {0, 1};
+        Acc(&w, kTrianglePositions, 9, 5126, "VEC3");
+        Acc(&w, indices, 3, 5123, "SCALAR");
+        Acc(&w, past, 3, 5123, "SCALAR");
+        Acc(&w, two, 6, 5126, "VEC3");
+        Acc(&w, with_nan, 9, 5126, "VEC3");
+        Acc(&w, pair, 2, 5123, "SCALAR");
+        char json[400];
+        FormatTo(json, sizeof(json), "\"meshes\":[{\"name\":\"bad\",\"primitives\":[{\"attributes\":{%s}%s}]}]",
+                 c.attributes, c.primitive);
+        w.AddRoot(json);
+        ImportResult result;
+        GltfError error;
+        const Vector<byte> glb = w.Glb();
+        NoGltfSource none;
+        SeededIdSource ids(1);
+        ImportOptions options;
+        options.ids = &ids;
+        const Status status = ImportGltf(ByteSpan(glb.Data(), glb.Size()), none, options, &result, &error);
+        INFO(c.attributes << c.primitive);
+        INFO(GltfMessage(error, status));
+        CHECK(status.Failed());
+        CHECK(status.Is(c.code));
+        CHECK(Says(error, c.says));
+        CHECK(result.resources.Size() == 0);
+    }
+}
+
+TEST_CASE("gltf mesh: a mesh with no primitives or a NaN position is refused", "[asset][gltf]")
+{
+    GltfWriter w;
+    u32 nan_word = 0x7fc00000u;
+    f32 nan_value;
+    MemCopy(&nan_value, &nan_word, 4);
+    const f32 points[9] = {0, 0, 0, nan_value, 0, 0, 0, 1, 0};
+    Acc(&w, points, 9, 5126, "VEC3");
+    w.AddRoot("\"meshes\":[{\"name\":\"empty\",\"primitives\":[]}]");
+    ImportResult result;
+    GltfError error;
+    CHECK(Import(w.Glb(), &result, &error).Is(ErrorCode::Invalid));
+    CHECK(Says(error, "meshes[0]"));
+    GltfWriter n;
+    const u16 indices[3] = {0, 1, 2};
+    const u32 pos = Acc(&n, points, 9, 5126, "VEC3");
+    const u32 idx = Acc(&n, indices, 3, 5123, "SCALAR");
+    char json[200];
+    FormatTo(json, sizeof(json), "\"meshes\":[{\"primitives\":[{\"attributes\":{\"POSITION\":%u},\"indices\":%u}]}]",
+             pos, idx);
+    n.AddRoot(json);
+    CHECK(Import(n.Glb(), &result, &error).Failed());
+}
+
+TEST_CASE("gltf mesh: an import is deterministic and keeps its ids when the meshes are reordered", "[asset][gltf]")
+{
+    auto build = [](bool swapped)
+    {
+        GltfWriter w;
+        const u16 indices[3] = {0, 1, 2};
+        const f32 other[9] = {0, 0, 0, 2, 0, 0, 0, 2, 0};
+        const u32 a = Acc(&w, kTrianglePositions, 9, 5126, "VEC3");
+        const u32 b = Acc(&w, other, 9, 5126, "VEC3");
+        const u32 idx = Acc(&w, indices, 3, 5123, "SCALAR");
+        char first[160];
+        char second[160];
+        FormatTo(first, sizeof(first),
+                 "{\"name\":\"alpha\",\"primitives\":[{\"attributes\":{\"POSITION\":%u},\"indices\":%u}]}", a, idx);
+        FormatTo(second, sizeof(second),
+                 "{\"name\":\"beta\",\"primitives\":[{\"attributes\":{\"POSITION\":%u},\"indices\":%u}]}", b, idx);
+        char json[400];
+        FormatTo(json, sizeof(json), "\"meshes\":[%s,%s]", swapped ? second : first, swapped ? first : second);
+        w.AddRoot(json);
+        return w.Glb();
+    };
+    const Vector<byte> original = build(false);
+    ImportResult one;
+    ImportResult two;
+    GltfError error;
+    REQUIRE(Import(original, &one, &error).Ok());
+    REQUIRE(Import(original, &two, &error).Ok());
+    REQUIRE(one.resources.Size() == 2);
+    for (usize i = 0; i < 2; ++i)
+    {
+        CHECK(one.resources[i].id == two.resources[i].id);
+        CHECK(SameBytes(one.resources[i].blob, two.resources[i].blob));
+    }
+    String<HeapAllocator> text_one(HeapAllocator::Default());
+    String<HeapAllocator> text_two(HeapAllocator::Default());
+    one.manifest.Format(&text_one);
+    two.manifest.Format(&text_two);
+    CHECK(text_one.View() == text_two.View());
+
+    // The same file with its meshes swapped, imported with the first import's manifest: the ids follow the names.
+    ImportOptions options;
+    options.manifest = &one.manifest;
+    SeededIdSource fresh(99);
+    options.ids = &fresh;
+    ImportResult swapped;
+    NoGltfSource none;
+    const Vector<byte> reordered = build(true);
+    REQUIRE(ImportGltf(ByteSpan(reordered.Data(), reordered.Size()), none, options, &swapped, &error).Ok());
+    REQUIRE(swapped.resources.Size() == 2);
+    CHECK(swapped.resources[0].path.View() == StringView("/gltf/meshes/beta"));
+    CHECK(swapped.resources[0].id == one.resources[1].id);
+    CHECK(swapped.resources[1].id == one.resources[0].id);
+}
+
+TEST_CASE("gltf mesh: names that clash or hold a slash become distinct path segments", "[asset][gltf]")
+{
+    GltfWriter w;
+    const u16 indices[3] = {0, 1, 2};
+    const u32 pos = Acc(&w, kTrianglePositions, 9, 5126, "VEC3");
+    const u32 idx = Acc(&w, indices, 3, 5123, "SCALAR");
+    char prim[100];
+    FormatTo(prim, sizeof(prim), "{\"attributes\":{\"POSITION\":%u},\"indices\":%u}", pos, idx);
+    char json[700];
+    FormatTo(json, sizeof(json),
+             "\"meshes\":[{\"name\":\"a\",\"primitives\":[%s]},{\"name\":\"a\",\"primitives\":[%s]},"
+             "{\"name\":\"a_1\",\"primitives\":[%s]},{\"name\":\"x/y\",\"primitives\":[%s]},"
+             "{\"name\":\"..\",\"primitives\":[%s]},{\"primitives\":[%s]}]",
+             prim, prim, prim, prim, prim, prim);
+    w.AddRoot(json);
+    ImportResult result;
+    GltfError error;
+    REQUIRE(Import(w.Glb(), &result, &error).Ok());
+    REQUIRE(result.resources.Size() == 6);
+    for (usize i = 0; i < 6; ++i)
+    {
+        for (usize k = i + 1; k < 6; ++k)
+        {
+            CHECK(result.resources[i].path.View() != result.resources[k].path.View());
+        }
+    }
+    CHECK(result.resources[3].path.View() == StringView("/gltf/meshes/x_y"));
+    CHECK(result.resources[4].path.View() == StringView("/gltf/meshes/_"));
+    CHECK(result.resources[5].path.View() == StringView("/gltf/meshes/mesh5"));
+    TypeRegistry types;
+    HostMemoryBackend backend(types, u64{16} << 20);
+    CHECK(ImportIntoBackend(backend, result).Ok());
+}
+
+TEST_CASE("gltf mesh: imported meshes load through the resource manager from a memory backend", "[asset][gltf]")
+{
+    ImportResult result;
+    GltfError error;
+    REQUIRE(Import(TriangleGlb("tri", true), &result, &error).Ok());
+    TypeRegistry types;
+    HostMemoryBackend backend(types, u64{16} << 20);
+    REQUIRE(ImportIntoBackend(backend, result).Ok());
+    ManagerConfig config;
+    config.buffer_pool_bytes = u64{16} << 20;
+    ResourceManager manager(types, config);
+    RegisterCpuLoaders(&manager);
+    REQUIRE(manager.Mount(StringView("/"), &backend, 0).Ok());
+
+    REQUIRE(manager.Mounts().RefreshTables().Ok());  // the tables a path is resolved through
+    Handle<MeshView> by_path;
+    const Status loaded = manager.LoadPath<MeshView>(StringView("/gltf/meshes/tri"), &by_path);
+    INFO(loaded.Message());
+    REQUIRE(loaded.Ok());
+    REQUIRE(by_path.Get() != nullptr);
+    CHECK(by_path.Get()->VertexCount() == 3);
+    CHECK(by_path.Get()->IndexCount() == 3);
+    CHECK(by_path.Get()->CheckIndices().Ok());
+    Handle<MeshView> by_id;
+    REQUIRE(manager.Load<MeshView>(result.resources[0].id, &by_id).Ok());
+    CHECK(by_id.Get() == by_path.Get());  // one loaded object
+
+    // The asynchronous path.
+    by_id.Reset();
+    by_path.Reset();
+    jobs::Scheduler::Config scheduler_config;
+    scheduler_config.participants = 3;
+    scheduler_config.pin = false;
+    jobs::Scheduler scheduler(scheduler_config);
+    AsyncLoader loader(manager, scheduler);
+    LoadTicket ticket = loader.LoadPathAsync<MeshView>(StringView("/gltf/meshes/tri"));
+    REQUIRE(ticket.Valid());
+    CHECK(loader.Wait(ticket).Ok());
+    Handle<MeshView> async;
+    REQUIRE(ticket.Finish(&async).Ok());
+    CHECK(async.Get()->VertexCount() == 3);
+
+    // A re-import with the first import's manifest replaces the blob under the same id, and the manager reloads it.
+    GltfWriter w;
+    const f32 moved[9] = {0, 0, 0, 4, 0, 0, 0, 4, 0};
+    const u16 indices[3] = {0, 1, 2};
+    const u32 pos = Acc(&w, moved, 9, 5126, "VEC3");
+    const u32 idx = Acc(&w, indices, 3, 5123, "SCALAR");
+    char json[300];
+    FormatTo(json, sizeof(json),
+             "\"meshes\":[{\"name\":\"tri\",\"primitives\":[{\"attributes\":{\"POSITION\":%u},\"indices\":%u}]}]", pos,
+             idx);
+    w.AddRoot(json);
+    ImportOptions options;
+    options.manifest = &result.manifest;
+    ImportResult again;
+    REQUIRE(Import(w.Glb(), &again, &error, options).Ok());
+    REQUIRE(again.resources.Size() == 1);
+    CHECK(again.resources[0].id == result.resources[0].id);
+    Vector<ReloadResult> reloads;
+    REQUIRE(manager.PollChanges(&reloads).Ok());  // the adds
+    REQUIRE(
+        backend.Replace(again.resources[0].id, ByteSpan(again.resources[0].blob.Data(), again.resources[0].blob.Size()))
+            .Ok());
+    REQUIRE(manager.PollChanges(&reloads).Ok());
+    REQUIRE(reloads.Size() == 1);
+    CHECK(reloads[0].status.Ok());
+    CHECK(async.Get()->BoundsMax()[0] == 4.0f);
+}
+
+}  // namespace engine_placeholder::asset

@@ -5695,49 +5695,60 @@ asset::ImportKind::Mesh	enumerator	asset_import	asset-importkind-mesh	asset_impo
 asset::ImportKind::Clip	enumerator	asset_import	asset-importkind-clip	asset_import.md	engine/asset_import/gltf_import.h:142
 asset::ImportKind::Level	enumerator	asset_import	asset-importkind-level	asset_import.md	engine/asset_import/gltf_import.h:143
 asset::ImportKindName(ImportKind)	function	asset_import	asset-importkindname-importkind	asset_import.md	engine/asset_import/gltf_import.h:150
-asset::ManifestEntry	struct	asset_import	asset-manifestentry	asset_import.md	engine/asset_import/gltf_import.h:156
-asset::ManifestEntry::ManifestEntry()	function	asset_import	asset-manifestentry-manifestentry	asset_import.md	engine/asset_import/gltf_import.h:159
-asset::ManifestEntry::kind	variable	asset_import	asset-manifestentry-kind	asset_import.md	engine/asset_import/gltf_import.h:160
-asset::ManifestEntry::index	variable	asset_import	asset-manifestentry-index	asset_import.md	engine/asset_import/gltf_import.h:161
-asset::ManifestEntry::name	variable	asset_import	asset-manifestentry-name	asset_import.md	engine/asset_import/gltf_import.h:162
-asset::ManifestEntry::id	variable	asset_import	asset-manifestentry-id	asset_import.md	engine/asset_import/gltf_import.h:163
+asset::ImportManifestEntry	struct	asset_import	asset-importmanifestentry	asset_import.md	engine/asset_import/gltf_import.h:156
+asset::ImportManifestEntry::ImportManifestEntry()	function	asset_import	asset-importmanifestentry-importmanifestentry	asset_import.md	engine/asset_import/gltf_import.h:159
+asset::ImportManifestEntry::kind	variable	asset_import	asset-importmanifestentry-kind	asset_import.md	engine/asset_import/gltf_import.h:160
+asset::ImportManifestEntry::index	variable	asset_import	asset-importmanifestentry-index	asset_import.md	engine/asset_import/gltf_import.h:161
+asset::ImportManifestEntry::name	variable	asset_import	asset-importmanifestentry-name	asset_import.md	engine/asset_import/gltf_import.h:162
+asset::ImportManifestEntry::id	variable	asset_import	asset-importmanifestentry-id	asset_import.md	engine/asset_import/gltf_import.h:163
 asset::ManifestObject	struct	asset_import	asset-manifestobject	asset_import.md	engine/asset_import/gltf_import.h:169
 asset::ManifestObject::index	variable	asset_import	asset-manifestobject-index	asset_import.md	engine/asset_import/gltf_import.h:171
 asset::ManifestObject::name	variable	asset_import	asset-manifestobject-name	asset_import.md	engine/asset_import/gltf_import.h:172
 asset::ImportManifest	class	asset_import	asset-importmanifest	asset_import.md	engine/asset_import/gltf_import.h:183
-asset::ImportManifest::Match(ImportKind,Span<const ManifestObject>,Vector<ResourceId>*) const	function	asset_import	asset-importmanifest-match-importkind-span-lt-const-manifestobject-gt-vector-lt-resourceid-gt-star-const	asset_import.md	engine/asset_import/gltf_import.h:197
-asset::ImportManifest::Add(ImportKind,u32,StringView,ResourceId)	function	asset_import	asset-importmanifest-add-importkind-u32-stringview-resourceid	asset_import.md	engine/asset_import/gltf_import.h:200
-asset::ImportManifest::Entries() const	function	asset_import	asset-importmanifest-entries-const	asset_import.md	engine/asset_import/gltf_import.h:203
-asset::ImportManifest::Format(String<HeapAllocator>*) const	function	asset_import	asset-importmanifest-format-string-lt-heapallocator-gt-star-const	asset_import.md	engine/asset_import/gltf_import.h:210
-asset::ImportManifest::Parse(StringView,GltfError*)	function	asset_import	asset-importmanifest-parse-stringview-gltferror-star	asset_import.md	engine/asset_import/gltf_import.h:217
-asset::ImportOptions	struct	asset_import	asset-importoptions	asset_import.md	engine/asset_import/gltf_import.h:227
-asset::ImportOptions::limits	variable	asset_import	asset-importoptions-limits	asset_import.md	engine/asset_import/gltf_import.h:229
-asset::ImportOptions::ids	variable	asset_import	asset-importoptions-ids	asset_import.md	engine/asset_import/gltf_import.h:230
-asset::ImportOptions::manifest	variable	asset_import	asset-importoptions-manifest	asset_import.md	engine/asset_import/gltf_import.h:231
-asset::ImportOptions::path_prefix	variable	asset_import	asset-importoptions-path-prefix	asset_import.md	engine/asset_import/gltf_import.h:232
-asset::ImportedResource	struct	asset_import	asset-importedresource	asset_import.md	engine/asset_import/gltf_import.h:239
-asset::ImportedResource::ImportedResource()	function	asset_import	asset-importedresource-importedresource	asset_import.md	engine/asset_import/gltf_import.h:242
-asset::ImportedResource::id	variable	asset_import	asset-importedresource-id	asset_import.md	engine/asset_import/gltf_import.h:243
-asset::ImportedResource::type	variable	asset_import	asset-importedresource-type	asset_import.md	engine/asset_import/gltf_import.h:244
-asset::ImportedResource::path	variable	asset_import	asset-importedresource-path	asset_import.md	engine/asset_import/gltf_import.h:245
-asset::ImportedResource::blob	variable	asset_import	asset-importedresource-blob	asset_import.md	engine/asset_import/gltf_import.h:246
-asset::ImportReport	struct	asset_import	asset-importreport	asset_import.md	engine/asset_import/gltf_import.h:252
-asset::ImportReport::meshes	variable	asset_import	asset-importreport-meshes	asset_import.md	engine/asset_import/gltf_import.h:254
-asset::ImportReport::materials	variable	asset_import	asset-importreport-materials	asset_import.md	engine/asset_import/gltf_import.h:255
-asset::ImportReport::textures	variable	asset_import	asset-importreport-textures	asset_import.md	engine/asset_import/gltf_import.h:256
-asset::ImportReport::images	variable	asset_import	asset-importreport-images	asset_import.md	engine/asset_import/gltf_import.h:257
-asset::ImportReport::skins	variable	asset_import	asset-importreport-skins	asset_import.md	engine/asset_import/gltf_import.h:258
-asset::ImportReport::animations	variable	asset_import	asset-importreport-animations	asset_import.md	engine/asset_import/gltf_import.h:259
-asset::ImportReport::nodes	variable	asset_import	asset-importreport-nodes	asset_import.md	engine/asset_import/gltf_import.h:260
-asset::ImportReport::accessors	variable	asset_import	asset-importreport-accessors	asset_import.md	engine/asset_import/gltf_import.h:261
-asset::ImportReport::warnings	variable	asset_import	asset-importreport-warnings	asset_import.md	engine/asset_import/gltf_import.h:262
-asset::ImportReport::notes	variable	asset_import	asset-importreport-notes	asset_import.md	engine/asset_import/gltf_import.h:263
-asset::ImportResult	struct	asset_import	asset-importresult	asset_import.md	engine/asset_import/gltf_import.h:270
-asset::ImportResult::resources	variable	asset_import	asset-importresult-resources	asset_import.md	engine/asset_import/gltf_import.h:272
-asset::ImportResult::manifest	variable	asset_import	asset-importresult-manifest	asset_import.md	engine/asset_import/gltf_import.h:273
-asset::ImportResult::report	variable	asset_import	asset-importresult-report	asset_import.md	engine/asset_import/gltf_import.h:274
-asset::ImportGltf(ByteSpan,GltfSource&,const ImportOptions&,ImportResult*,GltfError*)	function	asset_import	asset-importgltf-bytespan-gltfsource-amp-const-importoptions-amp-importresult-star-gltferror-star	asset_import.md	engine/asset_import/gltf_import.h:294
-asset::ImportIntoBackend(HostMemoryBackend&,const ImportResult&)	function	asset_import	asset-importintobackend-hostmemorybackend-amp-const-importresult-amp	asset_import.md	engine/asset_import/gltf_import.h:304
+asset::ImportManifest::Match(ImportKind,Span<const ManifestObject>,Vector<ResourceId>*) const	function	asset_import	asset-importmanifest-match-importkind-span-lt-const-manifestobject-gt-vector-lt-resourceid-gt-star-const	asset_import.md	engine/asset_import/gltf_import.h:199
+asset::ImportManifest::Add(ImportKind,u32,StringView,ResourceId)	function	asset_import	asset-importmanifest-add-importkind-u32-stringview-resourceid	asset_import.md	engine/asset_import/gltf_import.h:202
+asset::ImportManifest::Entries() const	function	asset_import	asset-importmanifest-entries-const	asset_import.md	engine/asset_import/gltf_import.h:205
+asset::ImportManifest::Format(String<HeapAllocator>*) const	function	asset_import	asset-importmanifest-format-string-lt-heapallocator-gt-star-const	asset_import.md	engine/asset_import/gltf_import.h:212
+asset::ImportManifest::Parse(StringView,GltfError*)	function	asset_import	asset-importmanifest-parse-stringview-gltferror-star	asset_import.md	engine/asset_import/gltf_import.h:219
+asset::ImportOptions	struct	asset_import	asset-importoptions	asset_import.md	engine/asset_import/gltf_import.h:229
+asset::ImportOptions::limits	variable	asset_import	asset-importoptions-limits	asset_import.md	engine/asset_import/gltf_import.h:231
+asset::ImportOptions::ids	variable	asset_import	asset-importoptions-ids	asset_import.md	engine/asset_import/gltf_import.h:232
+asset::ImportOptions::manifest	variable	asset_import	asset-importoptions-manifest	asset_import.md	engine/asset_import/gltf_import.h:233
+asset::ImportOptions::path_prefix	variable	asset_import	asset-importoptions-path-prefix	asset_import.md	engine/asset_import/gltf_import.h:234
+asset::ImportOptions::flat_normals	variable	asset_import	asset-importoptions-flat-normals	asset_import.md	engine/asset_import/gltf_import.h:235
+asset::ImportOptions::drop_morph_targets	variable	asset_import	asset-importoptions-drop-morph-targets	asset_import.md	engine/asset_import/gltf_import.h:236
+asset::ImportOptions::scale	variable	asset_import	asset-importoptions-scale	asset_import.md	engine/asset_import/gltf_import.h:237
+asset::ImportedResource	struct	asset_import	asset-importedresource	asset_import.md	engine/asset_import/gltf_import.h:244
+asset::ImportedResource::ImportedResource()	function	asset_import	asset-importedresource-importedresource	asset_import.md	engine/asset_import/gltf_import.h:247
+asset::ImportedResource::id	variable	asset_import	asset-importedresource-id	asset_import.md	engine/asset_import/gltf_import.h:248
+asset::ImportedResource::type	variable	asset_import	asset-importedresource-type	asset_import.md	engine/asset_import/gltf_import.h:249
+asset::ImportedResource::path	variable	asset_import	asset-importedresource-path	asset_import.md	engine/asset_import/gltf_import.h:250
+asset::ImportedResource::blob	variable	asset_import	asset-importedresource-blob	asset_import.md	engine/asset_import/gltf_import.h:251
+asset::ImportReport	struct	asset_import	asset-importreport	asset_import.md	engine/asset_import/gltf_import.h:257
+asset::ImportReport::meshes	variable	asset_import	asset-importreport-meshes	asset_import.md	engine/asset_import/gltf_import.h:259
+asset::ImportReport::materials	variable	asset_import	asset-importreport-materials	asset_import.md	engine/asset_import/gltf_import.h:260
+asset::ImportReport::textures	variable	asset_import	asset-importreport-textures	asset_import.md	engine/asset_import/gltf_import.h:261
+asset::ImportReport::images	variable	asset_import	asset-importreport-images	asset_import.md	engine/asset_import/gltf_import.h:262
+asset::ImportReport::skins	variable	asset_import	asset-importreport-skins	asset_import.md	engine/asset_import/gltf_import.h:263
+asset::ImportReport::animations	variable	asset_import	asset-importreport-animations	asset_import.md	engine/asset_import/gltf_import.h:264
+asset::ImportReport::nodes	variable	asset_import	asset-importreport-nodes	asset_import.md	engine/asset_import/gltf_import.h:265
+asset::ImportReport::accessors	variable	asset_import	asset-importreport-accessors	asset_import.md	engine/asset_import/gltf_import.h:266
+asset::ImportReport::warnings	variable	asset_import	asset-importreport-warnings	asset_import.md	engine/asset_import/gltf_import.h:267
+asset::ImportReport::notes	variable	asset_import	asset-importreport-notes	asset_import.md	engine/asset_import/gltf_import.h:268
+asset::ImportResult	struct	asset_import	asset-importresult	asset_import.md	engine/asset_import/gltf_import.h:275
+asset::ImportResult::resources	variable	asset_import	asset-importresult-resources	asset_import.md	engine/asset_import/gltf_import.h:277
+asset::ImportResult::manifest	variable	asset_import	asset-importresult-manifest	asset_import.md	engine/asset_import/gltf_import.h:278
+asset::ImportResult::report	variable	asset_import	asset-importresult-report	asset_import.md	engine/asset_import/gltf_import.h:279
+asset::ImportGltf(ByteSpan,GltfSource&,const ImportOptions&,ImportResult*,GltfError*)	function	asset_import	asset-importgltf-bytespan-gltfsource-amp-const-importoptions-amp-importresult-star-gltferror-star	asset_import.md	engine/asset_import/gltf_import.h:299
+asset::ImportIntoBackend(HostMemoryBackend&,const ImportResult&)	function	asset_import	asset-importintobackend-hostmemorybackend-amp-const-importresult-amp	asset_import.md	engine/asset_import/gltf_import.h:309
+asset::MeshSkeletonBinding	struct	asset_import	asset-meshskeletonbinding	asset_import.md	engine/asset_import/gltf_mesh.h:23
+asset::MeshSkeletonBinding::present	variable	asset_import	asset-meshskeletonbinding-present	asset_import.md	engine/asset_import/gltf_mesh.h:25
+asset::MeshSkeletonBinding::skeleton	variable	asset_import	asset-meshskeletonbinding-skeleton	asset_import.md	engine/asset_import/gltf_mesh.h:26
+asset::MeshSkeletonBinding::skeleton_hash	variable	asset_import	asset-meshskeletonbinding-skeleton-hash	asset_import.md	engine/asset_import/gltf_mesh.h:27
+asset::MeshSkeletonBinding::joint_count	variable	asset_import	asset-meshskeletonbinding-joint-count	asset_import.md	engine/asset_import/gltf_mesh.h:28
+asset::ImportMeshes(const GltfDocument&,const ImportOptions&,const TypeRegistry&,Span<const MeshSkeletonBinding>,ImportResult*,GltfError*)	function	asset_import	asset-importmeshes-const-gltfdocument-amp-const-importoptions-amp-const-typeregistry-amp-span-lt-const-meshskeletonbinding-gt-importresult-star-gltferror-star	asset_import.md	engine/asset_import/gltf_mesh.h:50
+asset::CleanPathSegment(StringView,String<HeapAllocator>*)	function	asset_import	asset-cleanpathsegment-stringview-string-lt-heapallocator-gt-star	asset_import.md	engine/asset_import/gltf_mesh.h:59
+asset::AddImportWarning(ImportReport*,StringView,StringView)	function	asset_import	asset-addimportwarning-importreport-star-stringview-stringview	asset_import.md	engine/asset_import/gltf_mesh.h:68
 asset::JsonValue	class	asset_import	asset-jsonvalue	asset_import.md	engine/asset_import/json_view.h:29
 asset::JsonValue::JsonValue()	function	asset_import	asset-jsonvalue-jsonvalue	asset_import.md	engine/asset_import/json_view.h:33
 asset::JsonValue::Exists() const	function	asset_import	asset-jsonvalue-exists-const	asset_import.md	engine/asset_import/json_view.h:37
