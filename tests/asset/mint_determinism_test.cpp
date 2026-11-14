@@ -4,6 +4,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "asset/blob.h"
+#include "asset/pak.h"
 #include "containers/vector.h"
 #include "cstr/cstr.h"
 #include "cstr/mem_ops.h"
@@ -166,6 +167,16 @@ TEST_CASE("asset_mint: the output is the same for 1 and 8 workers, after touchin
         REQUIRE(project.Pack(&diagnostics).Ok());
     }
     CHECK(SameFile(one.Path() / StringView("out/sample.pak"), eight.Path() / StringView("out/sample.pak")));
+    {
+        // The pak holds the seven resources (a pak with none would be the same bytes for both, too).
+        TypeRegistry types;
+        io::FilePtr file;
+        REQUIRE(
+            io::File::Open(one.Path() / StringView("out/sample.pak"), io::OpenMode::Read, io::kOpenNone, &file).Ok());
+        PakReader pak;
+        REQUIRE(PakReader::Open(static_cast<io::FilePtr&&>(file), types, 0, &pak).Ok());
+        CHECK(pak.Count() == 7);
+    }
 
     // Touching every source (the same bytes written again: new modification times) changes nothing.
     WriteSample(one.Path());

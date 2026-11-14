@@ -41,16 +41,20 @@ namespace
 
 int Usage()
 {
-    os::PrintError("usage: asset_mint adopt|mint|pack|verify|list|check PROJECT.project [--force] [--workers=N]\n"
-                   "                  [--quiet] [--verbose] [--skeletons]\n"
-                   "       asset_mint pack DIRECTORY OUTPUT.pak [--target=N] [--no-names]\n"
-                   "       asset_mint mint-skeleton SOURCE.skel.src OUTPUT.blob [--target=N]\n"
-                   "       asset_mint mint-mesh SOURCE.mesh.src OUTPUT.blob [--skeleton=SKELETON.blob] [--target=N]\n"
-                   "       asset_mint mint-clip SOURCE.anim.src OUTPUT.blob --skeleton=SKELETON.blob [--target=N]\n"
-                   "       asset_mint mint-texture SOURCE.tex.src OUTPUT.blob [--target=N]\n"
-                   "       asset_mint mint-material SOURCE.mat.src OUTPUT.blob [--target=N]\n"
-                   "       asset_mint mint-level SOURCE.level.src OUTPUT.blob [--root=DIR] [--target=N]\n"
-                   "       asset_mint unmint-level LEVEL.blob OUTPUT.level.src [--root=DIR]\n");
+    os::PrintError(
+        "usage: asset_mint adopt|mint|pack|verify|list|check|remint PROJECT.project [--force] [--workers=N]\n"
+        "                  [--quiet] [--verbose] [--skeletons] [--target=N] [--require-current]\n"
+        "       asset_mint refs|delete|reid|unmint PROJECT.project ASSET [--with-dependents] [--update-references] [--out=FILE]\n"
+        "       asset_mint rename|move|copy PROJECT.project ASSET NEWNAME|NEWFOLDER|NEWPATH\n"
+        "       asset_mint remint DIRECTORY\n"
+        "       asset_mint pack DIRECTORY OUTPUT.pak [--target=N] [--no-names]\n"
+        "       asset_mint mint-skeleton SOURCE.skel.src OUTPUT.blob [--target=N]\n"
+        "       asset_mint mint-mesh SOURCE.mesh.src OUTPUT.blob [--skeleton=SKELETON.blob] [--target=N]\n"
+        "       asset_mint mint-clip SOURCE.anim.src OUTPUT.blob --skeleton=SKELETON.blob [--target=N]\n"
+        "       asset_mint mint-texture SOURCE.tex.src OUTPUT.blob [--target=N]\n"
+        "       asset_mint mint-material SOURCE.mat.src OUTPUT.blob [--target=N]\n"
+        "       asset_mint mint-level SOURCE.level.src OUTPUT.blob [--root=DIR] [--target=N]\n"
+        "       asset_mint unmint-level LEVEL.blob OUTPUT.level.src [--root=DIR]\n");
     return 64;
 }
 
@@ -80,9 +84,19 @@ bool ParseNumber(const char* text, u32* out)
 using Line = os::CommandLine<HeapAllocator>;
 
 // Every option any command takes; each command checks that the line holds only its own (OnlyOptions).
-constexpr os::CommandLineOption kCliOptions[] = {{"target", true},    {"skeleton", true}, {"root", true},
-                                                 {"no-names", false}, {"force", false},   {"workers", true},
-                                                 {"quiet", false},    {"verbose", false}, {"skeletons", false}};
+constexpr os::CommandLineOption kCliOptions[] = {{"target", true},
+                                                 {"skeleton", true},
+                                                 {"root", true},
+                                                 {"no-names", false},
+                                                 {"force", false},
+                                                 {"workers", true},
+                                                 {"quiet", false},
+                                                 {"verbose", false},
+                                                 {"skeletons", false},
+                                                 {"with-dependents", false},
+                                                 {"update-references", false},
+                                                 {"require-current", false},
+                                                 {"out", true}};
 
 // True when the line holds no option outside `allowed`.
 bool OnlyOptions(const Line& line, const char* const* allowed, usize count)
@@ -785,15 +799,65 @@ int UnmintLevelCommand(const Line& line)
 }
 
 // The project commands (Day 333): `asset_mint COMMAND PROJECT.project [options]`.
+// How many arguments after the project a command takes.
+bool ExtraArguments(StringView command, usize* count)
+{
+    static const struct
+    {
+        const char* name;
+        usize extra;
+    } kCommands[] = {{"adopt", 0}, {"mint", 0},   {"pack", 0}, {"verify", 0}, {"list", 0}, {"check", 0}, {"remint", 0},
+                     {"refs", 1},  {"rename", 2}, {"move", 2}, {"delete", 1}, {"copy", 2}, {"reid", 1},  {"unmint", 1}};
+    for (const auto& c : kCommands)
+    {
+        if (command == StringView(c.name))
+        {
+            *count = c.extra;
+            return true;
+        }
+    }
+    return false;
+}
+
+// True when an option is given to a command that has no use for it.
+bool OptionMisused(const Line& line, StringView command)
+{
+    static const struct
+    {
+        const char* option;
+        const char* commands;  // the commands that take it, each between spaces
+    } kUses[] = {{"force", " mint remint "},      {"workers", " mint remint "},
+                 {"skeletons", " list "},         {"with-dependents", " delete "},
+                 {"update-references", " reid "}, {"require-current", " verify "},
+                 {"target", " pack verify "},     {"out", " unmint "}};
+    String<HeapAllocator> padded(HeapAllocator::Default(), StringView(" "));
+    padded.Append(command);
+    padded.Append(StringView(" "));
+    for (const auto& u : kUses)
+    {
+        if (line.HasFlag(u.option) && !StringView(u.commands).Contains(padded.View()))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 int ProjectCommand(const Line& line)
 {
     const StringView command = line.Arg(0);
-    static const char* const allowed[] = {"force", "workers", "quiet", "verbose", "skeletons"};
+    static const char* const allowed[] = {
+        "force",           "workers",           "quiet",           "verbose", "skeletons",
+        "with-dependents", "update-references", "require-current", "target",  "out"};
     MintOptions options;
     StringView workers;
-    if (line.ArgCount() != 2 || !OnlyOptions(line, allowed, 5) ||
-        (line.HasFlag("skeletons") && command != StringView("list")) ||
-        (line.TryGetOption(StringView("workers"), workers) && !ParseNumber(workers.Data(), &options.workers)))
+    StringView target_text;
+    usize extra = 0;
+    u32 target = 0;
+    if (!ExtraArguments(command, &extra) || line.ArgCount() != 2 + extra || !OnlyOptions(line, allowed, 10) ||
+        OptionMisused(line, command) ||
+        (line.TryGetOption(StringView("workers"), workers) && !ParseNumber(workers.Data(), &options.workers)) ||
+        (line.TryGetOption(StringView("target"), target_text) && !ParseNumber(target_text.Data(), &target)))
     {
         return Usage();
     }
@@ -861,20 +925,93 @@ int ProjectCommand(const Line& line)
                           static_cast<unsigned>(stats.failed));
             }
         }
-        else if (command == StringView("pack"))
+        else if (command == StringView("remint"))
         {
-            status = project.Pack(&diagnostics);
+            // The sources are minted again (a blob of an older version is replaced by a fresh mint), then the output is
+            // checked: nothing in it may be of an older version.
+            options.force = true;
+            status = project.Mint(options, &diagnostics, &stats);
+            if (status.Ok())
+            {
+                VerifyOptions verify_options;
+                verify_options.require_current = true;
+                status = project.Verify(&diagnostics, verify_options);
+            }
             if (status.Ok() && !quiet)
             {
-                os::Print("packed the project into %s\n", project.Config().pak.CStr());
+                os::Print("%u sources minted again; the output is the current version\n",
+                          static_cast<unsigned>(stats.sources));
+            }
+        }
+        else if (command == StringView("pack"))
+        {
+            PackOptions pack_options;
+            pack_options.has_target = line.HasFlag("target");
+            pack_options.target = target;
+            status = project.Pack(&diagnostics, pack_options);
+            if (status.Ok() && !quiet)
+            {
+                os::Print("packed the project for target %u\n",
+                          static_cast<unsigned>(pack_options.has_target ? target : project.Config().target));
             }
         }
         else if (command == StringView("verify"))
         {
-            status = project.Verify(&diagnostics);
+            VerifyOptions verify_options;
+            verify_options.require_current = line.HasFlag("require-current");
+            verify_options.has_target = line.HasFlag("target");
+            verify_options.target = target;
+            status = project.Verify(&diagnostics, verify_options);
             if (status.Ok() && !quiet)
             {
                 os::Print("the output verifies\n");
+            }
+        }
+        else if (command == StringView("refs"))
+        {
+            status = project.Refs(line.Arg(2), &diagnostics, &listing);
+            if (status.Ok() && !quiet)
+            {
+                os::Print("%s", listing.CStr());
+            }
+        }
+        else if (command == StringView("rename"))
+        {
+            status = project.Rename(line.Arg(2), line.Arg(3), &diagnostics);
+        }
+        else if (command == StringView("move"))
+        {
+            status = project.Move(line.Arg(2), line.Arg(3), &diagnostics);
+        }
+        else if (command == StringView("delete"))
+        {
+            status = project.Delete(line.Arg(2), line.HasFlag("with-dependents"), &diagnostics);
+        }
+        else if (command == StringView("copy"))
+        {
+            status = project.Copy(line.Arg(2), line.Arg(3), &diagnostics);
+        }
+        else if (command == StringView("reid"))
+        {
+            status = project.Reid(line.Arg(2), line.HasFlag("update-references"), &diagnostics);
+        }
+        else if (command == StringView("unmint"))
+        {
+            status = project.Unmint(line.Arg(2), &diagnostics, &listing);
+            StringView out_path;
+            if (status.Ok() && line.TryGetOption(StringView("out"), out_path))
+            {
+                io::Path path;
+                if (!io::Path::Parse(out_path, io::NativePathStyle(), &path) ||
+                    io::WriteFileAtomic(path, listing.CStr(), listing.Length()).Failed())
+                {
+                    diagnostics.Error(out_path, 0, StringView("the output file cannot be written"));
+                    status = Status::Make(ErrorCode::Io, "the output file cannot be written");
+                }
+            }
+            else if (status.Ok() && !quiet)
+            {
+                os::Print("%s", listing.CStr());
             }
         }
         else if (command == StringView("list"))
@@ -898,7 +1035,9 @@ int ProjectCommand(const Line& line)
     {
         const String<HeapAllocator>& text = diagnostics.Lines()[i];
         const bool is_error = text.View().StartsWith(StringView("error:"));
-        if (is_error || verbose)
+        const bool is_note = text.View().StartsWith(StringView("note:"));
+        if (is_error || verbose ||
+            (is_note && !quiet && extra != 0 && command != StringView("refs") && command != StringView("unmint")))
         {
             os::PrintError("asset_mint: %s\n", text.CStr());
         }
@@ -906,11 +1045,34 @@ int ProjectCommand(const Line& line)
     return status.Ok() && diagnostics.ErrorCount() == 0 ? 0 : 1;
 }
 
+// `asset_mint remint DIRECTORY`: the blobs of a folder, rewritten to the current version through the upgrade chains.
+int RemintCommand(const Line& line)
+{
+    io::Path directory;
+    if (!OnlyOptions(line, nullptr, 0) || !io::Path::Parse(line.Arg(1), io::NativePathStyle(), &directory))
+    {
+        return Usage();
+    }
+    TypeRegistry types;
+    UpgradeChains chains;  // no built-in type has an older version yet: see upgrade.h
+    MintDiagnostics diagnostics;
+    RemintStats stats;
+    const Status status = RemintDirectory(directory, types, chains, &diagnostics, &stats);
+    for (usize i = 0; i < diagnostics.Lines().Size(); ++i)
+    {
+        os::PrintError("asset_mint: %s\n", diagnostics.Lines()[i].CStr());
+    }
+    os::Print("%u blobs: %u current, %u upgraded, %u failed\n", static_cast<unsigned>(stats.blobs),
+              static_cast<unsigned>(stats.current), static_cast<unsigned>(stats.upgraded),
+              static_cast<unsigned>(stats.failed));
+    return status.Ok() ? 0 : 1;
+}
+
 }  // namespace
 
 int main(int argc, char** argv)
 {
-    const Line line(HeapAllocator::Default(), argc, argv, Span<const os::CommandLineOption>(kCliOptions, 9));
+    const Line line(HeapAllocator::Default(), argc, argv, Span<const os::CommandLineOption>(kCliOptions, 13));
     if (!line.Ok())
     {
         os::PrintError("asset_mint: %s\n", line.Error().Data());
@@ -921,14 +1083,21 @@ int main(int argc, char** argv)
         return Usage();
     }
     const StringView command = line.Arg(0);
+    const bool has_project = line.ArgCount() >= 2 && line.Arg(1).EndsWith(StringView(".project"));
     const bool project_command = command == StringView("adopt") || command == StringView("mint") ||
                                  command == StringView("verify") || command == StringView("list") ||
-                                 command == StringView("check") ||
-                                 (command == StringView("pack") && line.ArgCount() == 2 &&
-                                  line.Arg(1).EndsWith(StringView(".project")));
+                                 command == StringView("check") || command == StringView("refs") ||
+                                 command == StringView("rename") || command == StringView("move") ||
+                                 command == StringView("delete") || command == StringView("copy") ||
+                                 command == StringView("reid") || command == StringView("unmint") ||
+                                 ((command == StringView("pack") || command == StringView("remint")) && has_project);
     if (project_command)
     {
         return ProjectCommand(line);
+    }
+    if (command == StringView("remint") && line.ArgCount() == 2)
+    {
+        return RemintCommand(line);
     }
     if (command == StringView("pack"))
     {

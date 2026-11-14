@@ -4618,7 +4618,8 @@ asset::BlobHeaderInfo::target	variable	asset	asset-blobheaderinfo-target	asset.m
 asset::BlobHeaderInfo::total_size	variable	asset	asset-blobheaderinfo-total-size	asset.md	engine/asset/blob.h:220
 asset::BlobHeaderInfo::content_hash	variable	asset	asset-blobheaderinfo-content-hash	asset.md	engine/asset/blob.h:221
 asset::ComputeBlobHash(ByteSpan)	function	asset	asset-computeblobhash-bytespan	asset.md	engine/asset/blob.h:231
-asset::PeekBlobHeader(ByteSpan,BlobHeaderInfo*)	function	asset	asset-peekblobheader-bytespan-blobheaderinfo-star	asset.md	engine/asset/blob.h:244
+asset::SetBlobTarget(ByteSpan,u32,Vector<byte>*)	function	asset	asset-setblobtarget-bytespan-u32-vector-lt-byte-gt-star	asset.md	engine/asset/blob.h:243
+asset::PeekBlobHeader(ByteSpan,BlobHeaderInfo*)	function	asset	asset-peekblobheader-bytespan-blobheaderinfo-star	asset.md	engine/asset/blob.h:256
 asset::BlobCacheStats	struct	asset	asset-blobcachestats	asset.md	engine/asset/blob_cache.h:28
 asset::BlobCacheStats::entries	variable	asset	asset-blobcachestats-entries	asset.md	engine/asset/blob_cache.h:30
 asset::BlobCacheStats::bytes	variable	asset	asset-blobcachestats-bytes	asset.md	engine/asset/blob_cache.h:31

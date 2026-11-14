@@ -13,6 +13,7 @@ namespace
 constexpr u32 kMagic = static_cast<u32>('A') | (static_cast<u32>('B') << 8) | (static_cast<u32>('L') << 16) |
                        (static_cast<u32>('B') << 24);
 constexpr usize kHashOffset = 48;
+constexpr usize kTargetOffset = 24;
 
 u64 LoadLe(const byte* p, u32 width)
 {
@@ -395,6 +396,21 @@ ContentHash ComputeBlobHash(ByteSpan blob)
     hasher.Update(ByteSpan(zero, sizeof(zero)));
     hasher.Update(blob.Subspan(kHashOffset + sizeof(zero)));
     return hasher.Finish();
+}
+
+Status SetBlobTarget(ByteSpan blob, u32 target, Vector<byte>* out)
+{
+    BlobHeaderInfo info;
+    ENGINE_TRY(PeekBlobHeader(blob, &info));
+    out->Resize(blob.Size());
+    MemCopy(out->Data(), blob.Data(), blob.Size());
+    for (u32 i = 0; i < 4; ++i)
+    {
+        (*out)[kTargetOffset + i] = static_cast<byte>(target >> (8 * i));
+    }
+    const ContentHash hash = ComputeBlobHash(ByteSpan(out->Data(), out->Size()));
+    MemCopy(out->Data() + kHashOffset, hash.bytes, sizeof(hash.bytes));
+    return Status::Success();
 }
 
 Status PeekBlobHeader(ByteSpan header, BlobHeaderInfo* out)

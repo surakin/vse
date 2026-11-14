@@ -33,7 +33,10 @@ set(ASSET_TEST_SOURCES
   resource_server_test.cpp  # Day 331
   network_backend_test.cpp  # Day 332
   mint_determinism_test.cpp  # Day 333
+  mint_edit_test.cpp  # Day 334
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/project.cpp  # Day 333: the project side of the minter under test
+  ${CMAKE_SOURCE_DIR}/tools/asset_mint/target_transform.cpp  # Day 334
+  ${CMAKE_SOURCE_DIR}/tools/asset_mint/upgrade.cpp  # Day 334
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/level_source.cpp  # Day 327: the level minter under test
 )
 

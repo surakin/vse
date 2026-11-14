@@ -4,6 +4,9 @@
 
 #include "asset/level.h"
 #include "cstr/cstr.h"
+#include "cstr/number.h"
+#include "os/console.h"
+#include "os/os.h"
 #include "cstr/format.h"
 #include "ecs/transform.h"
 #include "level_source.h"
@@ -738,6 +741,71 @@ TEST_CASE("The level summary checks its header against its sections", "[asset][l
     }
     shifted[table_at + 2 * 32 + 24] = static_cast<byte>(shifted[table_at + 2 * 32 + 24] + 1);  // the last size
     CHECK(ReadLevelSummary(AsBytes(shifted), rig.types, &summary).Is(ErrorCode::Corrupt));
+}
+
+// The figures behind the decision about column images (Phase 22 Day 334, spike 5): how long the loader takes for
+// 100,000 entities, and how much of that is entity creation that any loader pays.
+TEST_CASE("A level of 100,000 entities: load time and the floor of creating the entities", "[.][asset-bench]")
+{
+    Rig rig;
+    const char* count_env = os::GetEnvironment("LEVEL_BENCH_ENTITIES");
+    const u32 kCount = count_env != nullptr ? static_cast<u32>(CStrToLong(count_env)) : 100000;
+    String<HeapAllocator> source(HeapAllocator::Default());
+    source.Append(StringView("id 0000000000000001\n"));
+    for (u32 i = 0; i < kCount; ++i)
+    {
+        char buffer[256];
+        FormatTo(
+            buffer, sizeof(buffer),
+            "entity key @%032x\n  component local_transform\n    position = %u 0.25 -%u\n  component mesh_reference\n"
+            "    mesh = /meshes/rock\n    material = /materials/stone\n",
+            static_cast<unsigned>(i + 1), static_cast<unsigned>(i), static_cast<unsigned>(i));
+        source.Append(Vp(buffer));
+    }
+    Vector<byte> blob;
+    LevelSourceError error;
+    const u64 m0 = os::MonotonicTimeNanos();
+    REQUIRE(rig.Mint(source, &blob, &error).Ok());
+    const u64 m1 = os::MonotonicTimeNanos();
+    u64 best = ~u64{0};
+    for (u32 round = 0; round < 3; ++round)
+    {
+        ecs::World world;
+        storage::KeyIndex index;
+        const u64 t0 = os::MonotonicTimeNanos();
+        REQUIRE(LoadLevelBlob(AsBytes(blob), rig.types, rig.registry, world, index).Ok());
+        const u64 t1 = os::MonotonicTimeNanos();
+        best = t1 - t0 < best ? t1 - t0 : best;
+    }
+    // The decoding alone (the records parsed and checked, no world).
+    u64 parse = ~u64{0};
+    for (u32 round = 0; round < 3; ++round)
+    {
+        LevelData data;
+        const u64 t0 = os::MonotonicTimeNanos();
+        REQUIRE(ParseLevelBlob(AsBytes(blob), rig.types, rig.registry, &data).Ok());
+        const u64 t1 = os::MonotonicTimeNanos();
+        parse = t1 - t0 < parse ? t1 - t0 : parse;
+    }
+    // The floor: the entities and their two components made directly, with no decoding and no key index.
+    u64 floor = ~u64{0};
+    for (u32 round = 0; round < 3; ++round)
+    {
+        ecs::World world;
+        const u64 t0 = os::MonotonicTimeNanos();
+        for (u32 i = 0; i < kCount; ++i)
+        {
+            world.Create(ecs::LocalTransform(), MeshReference());
+        }
+        const u64 t1 = os::MonotonicTimeNanos();
+        floor = t1 - t0 < floor ? t1 - t0 : floor;
+    }
+    os::Print(
+        "level of %u entities: %zu bytes; mint %.1f ms; load %.1f ms (%.0f ns per entity), of which parsing %.1f ms; "
+        "creating the entities alone %.1f ms (%.0f ns per entity)\n",
+        static_cast<unsigned>(kCount), static_cast<size_t>(blob.Size()), static_cast<double>(m1 - m0) / 1e6,
+        static_cast<double>(best) / 1e6, static_cast<double>(best) / kCount, static_cast<double>(parse) / 1e6,
+        static_cast<double>(floor) / 1e6, static_cast<double>(floor) / kCount);
 }
 
 }  // namespace engine_placeholder::asset

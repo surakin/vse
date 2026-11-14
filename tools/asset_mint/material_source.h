@@ -31,6 +31,8 @@
 #include "containers/array.h"
 #include "containers/span.h"
 #include "containers/vector.h"
+#include "mem/heap_allocator.h"
+#include "string/string.h"
 #include "string_view.h"
 #include "types.h"
 
@@ -80,5 +82,27 @@ public:
 /// - Ownership: borrows its arguments for the call; `*out` is replaced.
 Status MintMaterial(StringView text, const MaterialReferenceResolver& resolver, const TypeRegistry& types,
                     Vector<byte>* out, MaterialSourceError* error, u32 target = 0);
+
+/// Finds the path of a texture by its id, for [[asset::FormatMaterialBlob]].
+///
+/// - Param user: the pointer given with the function.
+/// - Param id: the texture's id.
+/// - Param path: receives the resource path.
+/// - Returns: false when the project has no path for the id.
+using MaterialPathOf = bool (*)(void* user, ResourceId id, String<HeapAllocator>* path);
+
+/// Prints a material blob back as its source text: minting the text gives the same blob (the text is canonical: the
+/// parameters the source set, in their order, then the textures, samplers and state overrides).
+///
+/// - Param blob: a material blob.
+/// - Param types: the registry.
+/// - Param path_of: gives the path of each texture (a texture without a path is written as `@` and its id).
+/// - Param out: replaced by the text.
+/// - Param error: receives the reason of a refusal.
+/// - Fails: the failures of [[asset::LoadMaterialBlob]]; `Invalid` for a sampler whose filters or addresses differ (the
+///   source form cannot say it).
+/// - Ownership: borrows its arguments for the call; `*out` is replaced.
+Status FormatMaterialBlob(ByteSpan blob, const TypeRegistry& types, MaterialPathOf path_of, void* user,
+                          String<HeapAllocator>* out, MaterialSourceError* error);
 
 }  // namespace engine_placeholder::asset

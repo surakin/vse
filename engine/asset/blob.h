@@ -230,6 +230,18 @@ struct BlobHeaderInfo
 /// - Fails: never.
 ContentHash ComputeBlobHash(ByteSpan blob);
 
+/// Copies a blob with another target tag in its header and the content hash recomputed (the bytes after the header are
+/// the same). The layout of the blob is not changed: a type whose layout depends on the target (a texture) is laid out
+/// again by its own function (`RetargetTextureBlob`).
+///
+/// - Param blob: the blob.
+/// - Param target: the new target tag.
+/// - Param out: replaced by the copy.
+/// - Fails: `Corrupt` for bytes that are not a blob header; `UnsupportedVersion` for another container version.
+/// - Ownership: borrows `blob` for the call only; `*out` is replaced.
+/// - Thread-safety: thread-safe.
+Status SetBlobTarget(ByteSpan blob, u32 target, Vector<byte>* out);
+
 /// Reads the header fields of a blob from its first `kBlobHeaderBytes` bytes, so a backend can learn a file's id and
 /// type without reading the file.
 ///

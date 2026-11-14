@@ -2063,6 +2063,25 @@ The content hash a blob of these bytes should record: the hash of the whole blob
 | Thread-safety | thread-safe. |
 | Ownership | borrows `blob` for the call only. |
 
+## `SetBlobTarget(ByteSpan,u32,Vector<byte>*)` {#asset-setblobtarget-bytespan-u32-vector-lt-byte-gt-star}
+
+`function asset::SetBlobTarget` — defined in `engine/asset/blob.h`
+
+```cpp
+Status SetBlobTarget(ByteSpan blob, u32 target, Vector<byte>* out);
+```
+
+Copies a blob with another target tag in its header and the content hash recomputed (the bytes after the header are the same). The layout of the blob is not changed: a type whose layout depends on the target (a texture) is laid out again by its own function (`RetargetTextureBlob`).
+
+| Field | Value |
+|---|---|
+| Parameter `blob` | the blob. |
+| Parameter `target` | the new target tag. |
+| Parameter `out` | replaced by the copy. |
+| Fails | `Corrupt` for bytes that are not a blob header; `UnsupportedVersion` for another container version. |
+| Thread-safety | thread-safe. |
+| Ownership | borrows `blob` for the call only; `*out` is replaced. |
+
 ## `PeekBlobHeader(ByteSpan,BlobHeaderInfo*)` {#asset-peekblobheader-bytespan-blobheaderinfo-star}
 
 `function asset::PeekBlobHeader` — defined in `engine/asset/blob.h`

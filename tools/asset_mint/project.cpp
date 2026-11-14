@@ -20,6 +20,8 @@
 #include "io/file_system.h"
 #include "jobs/parallel_for.h"
 #include "jobs/scheduler.h"
+#include "target_transform.h"
+#include "upgrade.h"
 #include "level_source.h"
 #include "material_source.h"
 #include "mesh_source.h"
@@ -209,6 +211,21 @@ bool MintDiagnostics::Mentions(StringView text) const
         }
     }
     return false;
+}
+
+// The pak's file name for a target: the project's own name for its own target, else `name.t<N>.pak`.
+static String<HeapAllocator> PakNameFor(const ProjectConfig& config, u32 target)
+{
+    if (target == config.target)
+    {
+        return Str(config.pak.View());
+    }
+    const StringView name = config.pak.View();
+    const usize dot = name.LastIndexOf('.');
+    String<HeapAllocator> out = Str(dot == name.Length() ? name : name.Substring(0, dot));
+    out.Append(Fmt(".t%u", static_cast<unsigned>(target)).View());
+    out.Append(dot == name.Length() ? StringView() : name.Substring(dot));
+    return out;
 }
 
 const char* SourceKindName(SourceKind kind)
@@ -1422,7 +1439,13 @@ Status Project::Mint(const MintOptions& options, MintDiagnostics* diagnostics, M
     }
     for (usize m = 0; m < manifest.Size(); ++m)
     {
-        if (impl.FindId(manifest[m].id) >= 0)
+        bool still_there = impl.FindId(manifest[m].id) >= 0;
+        for (usize i = 0; i < impl.sources.Size() && !still_there; ++i)
+        {
+            still_there = impl.sources[i]->rel.View() ==
+                          manifest[m].rel.View();  // given another id (reid), not removed
+        }
+        if (still_there)
         {
             continue;
         }
@@ -1653,6 +1676,7 @@ struct OutputBlob
     Vector<byte> bytes;
     BlobHeaderInfo header;
     bool ok = false;
+    bool old = false;  // an older version of its type: checked by its header and hash only
 };
 
 struct BlobWalk
@@ -1677,8 +1701,8 @@ io::WalkAction VisitBlob(void* user, const io::WalkEntry& entry)
     return io::WalkAction::Continue;
 }
 
-Status CollectBlobs(const io::Path& root, const TypeRegistry& types, bool check_hash, MintDiagnostics* diagnostics,
-                    Vector<UniquePtr<OutputBlob>>* out)
+Status CollectBlobs(const io::Path& root, const TypeRegistry& types, bool check_hash, bool require_current,
+                    MintDiagnostics* diagnostics, Vector<UniquePtr<OutputBlob>>* out)
 {
     Vector<String<HeapAllocator>> files;
     BlobWalk walk{&root, &files};
@@ -1706,6 +1730,46 @@ Status CollectBlobs(const io::Path& root, const TypeRegistry& types, bool check_
         MemCopy(blob->bytes.Data(), bytes.Data(), bytes.Size());
         BlobReader reader;
         const Status opened = reader.Open(ByteSpan(blob->bytes.Data(), blob->bytes.Size()), types);
+        if (opened.Is(ErrorCode::UnsupportedVersion) &&
+            PeekBlobHeader(ByteSpan(blob->bytes.Data(), blob->bytes.Size()), &blob->header).Ok())
+        {
+            TypeInfo type;
+            const bool known = types.Find(blob->header.type, &type);
+            if (known && blob->header.type_version > type.current_version)
+            {
+                diagnostics->Error(
+                    files[i].View(), 0,
+                    Fmt("it is version %u of %s, newer than the version %u this tool knows (a newer tool "
+                        "made it)",
+                        static_cast<unsigned>(blob->header.type_version), type.name,
+                        static_cast<unsigned>(type.current_version))
+                        .View());
+                all_ok = false;
+                continue;
+            }
+            if (require_current || !known)
+            {
+                diagnostics->Error(files[i].View(), 0,
+                                   Fmt("it is version %u of %s, the current version is %u: run `asset_mint remint`",
+                                       static_cast<unsigned>(blob->header.type_version),
+                                       known ? type.name : "an unknown type",
+                                       static_cast<unsigned>(known ? type.current_version : 0))
+                                       .View());
+                all_ok = false;
+                continue;
+            }
+            if (check_hash &&
+                ComputeBlobHash(ByteSpan(blob->bytes.Data(), blob->bytes.Size())) != blob->header.content_hash)
+            {
+                diagnostics->Error(files[i].View(), 0, StringView("the content hash does not match the bytes"));
+                all_ok = false;
+                continue;
+            }
+            blob->old = true;
+            blob->ok = true;
+            out->Push(static_cast<UniquePtr<OutputBlob>&&>(blob));
+            continue;
+        }
         if (opened.Failed())
         {
             diagnostics->Error(files[i].View(), 0,
@@ -1765,45 +1829,186 @@ void RemoveStaleBlobs(const io::Path& root, const Vector<UniquePtr<Project::Sour
     }
 }
 
-Status PackDirectory(const io::Path& directory, const io::Path& output, u32 target, bool names,
-                     MintDiagnostics* diagnostics)
+namespace
 {
-    TypeRegistry types;
-    UniquePtr<FilesystemBackend> source;
-    Status status = FilesystemBackend::Create(directory, types, &source, target);
+
+// One resource to pack: its id, the path the pak names it by, and its blob.
+struct PackEntry
+{
+    PackEntry() : path(HeapAllocator::Default()) {}
+    ResourceId id;
+    String<HeapAllocator> path;
+    Vector<byte> bytes;
+};
+
+// The blobs of a folder that has a `resources.table` (a minted project output): the table gives each blob's resource
+// path (`/meshes/rock`), which is not the blob's file location (`meshes/rock.mesh.blob`); the files are found by their
+// ids. A blob file the table does not name is an error, as is a table entry without a blob.
+Status ReadTableEntries(const io::Path& directory, const TypeRegistry& types, MintDiagnostics* diagnostics,
+                        Vector<UniquePtr<PackEntry>>* out)
+{
+    Vector<u8> table_bytes;
+    BlobReader table_reader;
     ResourceTable table;
+    Status status = ReadFileText(directory / StringView(kTableName), u64{1} << 30, &table_bytes)
+                        ? table_reader.Open(ByteSpan(table_bytes.Data(), table_bytes.Size()), types)
+                        : Status::Make(ErrorCode::Io, "resources.table cannot be read");
+    if (status.Ok())
+    {
+        status = table.ReadNamesBlob(table_reader);
+    }
+    if (status.Failed())
+    {
+        diagnostics->Error(StringView(kTableName), 0,
+                           Fmt("%s: %s", ErrorCodeName(status.Code()), status.Message()).View());
+        return status;
+    }
+    Vector<String<HeapAllocator>> files;
+    BlobWalk walk{&directory, &files};
+    io::WalkOptions options;
+    options.sorted = true;
+    options.max_depth = 64;
+    if (io::WalkDirectory(directory, options, &VisitBlob, &walk).Failed())
+    {
+        diagnostics->Error(directory.View(), 0, StringView("the folder cannot be read"));
+        return Status::Make(ErrorCode::NotFound, "the folder cannot be read");
+    }
+    bool all_ok = true;
+    for (usize i = 0; i < files.Size(); ++i)
+    {
+        UniquePtr<PackEntry> entry = MakeUnique<PackEntry>();
+        Vector<u8> bytes;
+        BlobHeaderInfo header;
+        if (!ReadFileText(directory / files[i].View(), u64{1} << 31, &bytes) ||
+            PeekBlobHeader(ByteSpan(bytes.Data(), bytes.Size()), &header).Failed())
+        {
+            diagnostics->Error(files[i].View(), 0, StringView("it is not a blob"));
+            all_ok = false;
+            continue;
+        }
+        Vector<StringView> paths;
+        if (table.PathsOf(header.id, &paths) == 0)
+        {
+            diagnostics->Error(files[i].View(), 0, StringView("resources.table has no entry for it"));
+            all_ok = false;
+            continue;
+        }
+        entry->id = header.id;
+        entry->path = Str(paths[0]);
+        entry->bytes.Resize(bytes.Size());
+        MemCopy(entry->bytes.Data(), bytes.Data(), bytes.Size());
+        out->Push(static_cast<UniquePtr<PackEntry>&&>(entry));
+    }
+    HashMap<u64, u32, HeapAllocator> present(HeapAllocator::Default());
+    for (usize k = 0; k < out->Size(); ++k)
+    {
+        present.Insert((*out)[k]->id.Value(), static_cast<u32>(k));
+    }
+    for (usize i = 0; i < table.Size(); ++i)
+    {
+        if (present.Find(table.At(i).id.Value()) == nullptr)
+        {
+            const TableEntryView e = table.At(i);
+            diagnostics->Error(
+                StringView(kTableName), 0,
+                Fmt("the entry %.*s has no blob", static_cast<int>(e.path.Length()), e.path.Data()).View());
+            all_ok = false;
+        }
+    }
+    return all_ok ? Status::Success() : Status::Make(ErrorCode::Invalid, "the folder does not match its table");
+}
+
+// The blobs of a folder without a table: found by their headers, named by their file locations (a FilesystemBackend).
+Status ReadScannedEntries(const io::Path& directory, const TypeRegistry& types, u32 blob_target,
+                          MintDiagnostics* diagnostics, Vector<UniquePtr<PackEntry>>* out)
+{
+    UniquePtr<FilesystemBackend> source;
+    ResourceTable table;
+    Status status = FilesystemBackend::Create(directory, types, &source, blob_target);
     if (status.Ok())
     {
         status = source->ReadTable(&table);
     }
+    bool all_ok = status.Ok();
+    for (usize i = 0; status.Ok() && i < table.Size(); ++i)
+    {
+        const TableEntryView e = table.At(i);
+        UniquePtr<PackEntry> entry = MakeUnique<PackEntry>();
+        entry->id = e.id;
+        entry->path = Str(e.path);
+        UniquePtr<ResourceReader> reader;
+        Status read = source->Open(e.id, &reader);
+        if (read.Ok())
+        {
+            entry->bytes.Resize(static_cast<usize>(reader->Size()));
+            read = reader->ReadAt(0, entry->bytes.Data(), entry->bytes.Size());
+        }
+        if (read.Failed())
+        {
+            diagnostics->Error(entry->path.View(), 0, Fmt("%s: %s", ErrorCodeName(read.Code()), read.Message()).View());
+            all_ok = false;
+            continue;
+        }
+        out->Push(static_cast<UniquePtr<PackEntry>&&>(entry));
+    }
     if (status.Failed())
     {
         diagnostics->Error(directory.View(), 0, Fmt("%s: %s", ErrorCodeName(status.Code()), status.Message()).View());
+    }
+    return all_ok ? Status::Success()
+                  : (status.Failed() ? status : Status::Make(ErrorCode::Invalid, "some blobs cannot be read"));
+}
+
+}  // namespace
+
+Status PackDirectory(const io::Path& directory, const io::Path& output, const PackRequest& request,
+                     MintDiagnostics* diagnostics)
+{
+    const u32 target = request.pak_target;
+    const bool names = request.names;
+    const TargetTransforms builtin = TargetTransforms::Builtin();
+    const TargetTransforms& transforms = request.transforms != nullptr ? *request.transforms : builtin;
+    TypeRegistry types;
+    Vector<UniquePtr<PackEntry>> entries;
+    Status status = io::Exists(directory / StringView(kTableName))
+                        ? ReadTableEntries(directory, types, diagnostics, &entries)
+                        : ReadScannedEntries(directory, types, request.blob_target, diagnostics, &entries);
+    if (status.Failed())
+    {
         return status;
     }
+    // The pak lists its entries in id order whatever order the files were found in.
+    Sort(Span<UniquePtr<PackEntry>>(entries.Data(), entries.Size()),
+         [](const UniquePtr<PackEntry>& a, const UniquePtr<PackEntry>& b) { return a->id < b->id; });
     PakWriterOptions options;
     options.target = target;
     options.include_names = names;
     PakWriter writer(types, options);
-    Vector<Vector<byte>> blobs;  // the writer borrows them until Finish
     bool all_ok = true;
-    for (usize i = 0; i < table.Size(); ++i)
+    for (usize i = 0; i < entries.Size(); ++i)
     {
-        const TableEntryView entry = table.At(i);
-        String<HeapAllocator> path = Str(entry.path);
-        UniquePtr<ResourceReader> reader;
-        status = source->Open(entry.id, &reader);
-        Vector<byte> bytes;
-        if (status.Ok())
+        PackEntry& entry = *entries[i];
+        status = Status::Success();
+        if (target != request.blob_target)
         {
-            bytes.Resize(static_cast<usize>(reader->Size()));
-            status = reader->ReadAt(0, bytes.Data(), bytes.Size());
+            // Laid out for another target: converted, and the result checked (same type, id and references).
+            TransformContext context;
+            context.types = &types;
+            context.target = target;
+            context.source_of = request.source_of;
+            context.source_user = request.source_user;
+            Vector<byte> converted;
+            status = TransformBlob(transforms, context, ByteSpan(entry.bytes.Data(), entry.bytes.Size()), &converted);
+            if (status.Ok())
+            {
+                entry.bytes = static_cast<Vector<byte>&&>(converted);
+            }
         }
         if (status.Ok())
         {
             // Only a current-version blob whose hash holds goes into a pak.
             BlobReader checked;
-            status = checked.Open(ByteSpan(bytes.Data(), bytes.Size()), types);
+            status = checked.Open(ByteSpan(entry.bytes.Data(), entry.bytes.Size()), types);
             if (status.Ok())
             {
                 status = checked.Verify();
@@ -1811,13 +2016,12 @@ Status PackDirectory(const io::Path& directory, const io::Path& output, u32 targ
         }
         if (status.Ok())
         {
-            blobs.Push(static_cast<Vector<byte>&&>(bytes));
-            status = writer.Add(entry.id, ByteSpan(blobs[blobs.Size() - 1].Data(), blobs[blobs.Size() - 1].Size()),
-                                path.View());
+            status = writer.Add(entry.id, ByteSpan(entry.bytes.Data(), entry.bytes.Size()), entry.path.View());
         }
         if (status.Failed())
         {
-            diagnostics->Error(path.View(), 0, Fmt("%s: %s", ErrorCodeName(status.Code()), status.Message()).View());
+            diagnostics->Error(entry.path.View(), 0,
+                               Fmt("%s: %s", ErrorCodeName(status.Code()), status.Message()).View());
             all_ok = false;
         }
     }
@@ -1856,21 +2060,41 @@ Status PackDirectory(const io::Path& directory, const io::Path& output, u32 targ
     return Status::Success();
 }
 
-Status Project::Pack(MintDiagnostics* diagnostics)
+static bool SourceTextOf(void* user, ResourceId id, Vector<byte>* text)
 {
-    return PackDirectory(output_root_, output_root_ / config_.pak.View(), config_.target, true, diagnostics);
+    const Project::Impl& impl = *static_cast<const Project::Impl*>(user);
+    const i64 index = impl.FindId(id);
+    if (index < 0)
+    {
+        return false;
+    }
+    const Project::Source& s = *impl.sources[static_cast<usize>(index)];
+    text->Resize(s.text.Size());
+    MemCopy(text->Data(), s.text.Data(), s.text.Size());
+    return true;
 }
 
-Status Project::Verify(MintDiagnostics* diagnostics)
+Status Project::Pack(MintDiagnostics* diagnostics, const PackOptions& options)
 {
-    TypeRegistry types;
+    PackRequest request;
+    request.blob_target = config_.target;
+    request.pak_target = options.has_target ? options.target : config_.target;
+    request.source_of = &SourceTextOf;
+    request.source_user = impl_.Get();
+    const String<HeapAllocator> name = PakNameFor(config_, request.pak_target);
+    return PackDirectory(output_root_, output_root_ / name.View(), request, diagnostics);
+}
+
+Status VerifyDirectory(const io::Path& root, const io::Path& pak_path, u32 pak_target, const TypeRegistry& types,
+                       const VerifyOptions& options, MintDiagnostics* diagnostics)
+{
     Vector<UniquePtr<OutputBlob>> blobs;
-    bool ok = CollectBlobs(output_root_, types, true, diagnostics, &blobs).Ok();
+    bool ok = CollectBlobs(root, types, true, options.require_current, diagnostics, &blobs).Ok();
     // The closure: every dependency is a blob of the output, of the type the reference declared.
     for (usize i = 0; i < blobs.Size(); ++i)
     {
         BlobReader reader;
-        if (reader.Open(ByteSpan(blobs[i]->bytes.Data(), blobs[i]->bytes.Size()), types).Failed())
+        if (blobs[i]->old || reader.Open(ByteSpan(blobs[i]->bytes.Data(), blobs[i]->bytes.Size()), types).Failed())
         {
             continue;
         }
@@ -1908,7 +2132,7 @@ Status Project::Verify(MintDiagnostics* diagnostics)
     }
     // The table: every entry names a blob of the output, of the same type.
     Vector<u8> table_bytes;
-    if (ReadFileText(output_root_ / StringView(kTableName), u64{1} << 30, &table_bytes))
+    if (ReadFileText(root / StringView(kTableName), u64{1} << 30, &table_bytes))
     {
         BlobReader reader;
         ResourceTable table;
@@ -1951,21 +2175,28 @@ Status Project::Verify(MintDiagnostics* diagnostics)
         }
     }
     // The pak, when there is one.
-    const io::Path pak_path = output_root_ / config_.pak.View();
-    if (io::Exists(pak_path))
+    if (!pak_path.IsEmpty() && options.has_target && !io::Exists(pak_path))
+    {
+        diagnostics->Error(pak_path.FileName(), 0,
+                           Fmt("there is no pak for target %u: run `asset_mint pack --target %u`",
+                               static_cast<unsigned>(pak_target), static_cast<unsigned>(pak_target))
+                               .View());
+        ok = false;
+    }
+    if (!pak_path.IsEmpty() && io::Exists(pak_path))
     {
         io::FilePtr file;
         PakReader pak;
         Status status = io::File::Open(pak_path, io::OpenMode::Read, io::kOpenNone, &file).Failed()
                             ? Status::Make(ErrorCode::Io, "the pak cannot be opened")
-                            : PakReader::Open(static_cast<io::FilePtr&&>(file), types, config_.target, &pak);
+                            : PakReader::Open(static_cast<io::FilePtr&&>(file), types, pak_target, &pak);
         if (status.Ok())
         {
             status = pak.Verify(types);
         }
         if (status.Failed())
         {
-            diagnostics->Error(config_.pak.View(), 0,
+            diagnostics->Error(pak_path.FileName(), 0,
                                Fmt("%s: %s", ErrorCodeName(status.Code()), status.Message()).View());
             ok = false;
         }
@@ -1973,11 +2204,19 @@ Status Project::Verify(MintDiagnostics* diagnostics)
     return ok ? Status::Success() : Status::Make(ErrorCode::Invalid, "the output has problems");
 }
 
+Status Project::Verify(MintDiagnostics* diagnostics, const VerifyOptions& options)
+{
+    TypeRegistry types;
+    const u32 target = options.has_target ? options.target : config_.target;
+    const String<HeapAllocator> name = PakNameFor(config_, target);
+    return VerifyDirectory(output_root_, output_root_ / name.View(), target, types, options, diagnostics);
+}
+
 Status Project::List(bool skeletons, MintDiagnostics* diagnostics, String<HeapAllocator>* out)
 {
     TypeRegistry types;
     Vector<UniquePtr<OutputBlob>> blobs;
-    if (CollectBlobs(output_root_, types, false, diagnostics, &blobs).Failed())
+    if (CollectBlobs(output_root_, types, false, false, diagnostics, &blobs).Failed())
     {
         return Status::Make(ErrorCode::Invalid, "some blobs are not valid");
     }
@@ -2049,6 +2288,850 @@ Status Project::List(bool skeletons, MintDiagnostics* diagnostics, String<HeapAl
         }
     }
     return Status::Success();
+}
+
+Status PackDirectory(const io::Path& directory, const io::Path& output, u32 target, bool names,
+                     MintDiagnostics* diagnostics)
+{
+    PackRequest request;
+    request.blob_target = target;
+    request.pak_target = target;
+    request.names = names;
+    return PackDirectory(directory, output, request, diagnostics);
+}
+
+Status RemintDirectory(const io::Path& root, const TypeRegistry& types, const UpgradeChains& chains,
+                       MintDiagnostics* diagnostics, RemintStats* stats)
+{
+    *stats = RemintStats();
+    Vector<String<HeapAllocator>> files;
+    BlobWalk walk{&root, &files};
+    io::WalkOptions options;
+    options.sorted = true;
+    options.max_depth = 64;
+    if (io::WalkDirectory(root, options, &VisitBlob, &walk).Failed())
+    {
+        diagnostics->Error(root.View(), 0, StringView("the folder cannot be read"));
+        return Status::Make(ErrorCode::NotFound, "the folder cannot be read");
+    }
+    for (usize i = 0; i < files.Size(); ++i)
+    {
+        stats->blobs += 1;
+        Vector<u8> bytes;
+        BlobHeaderInfo header;
+        TypeInfo type;
+        if (!ReadFileText(root / files[i].View(), u64{1} << 31, &bytes) ||
+            PeekBlobHeader(ByteSpan(bytes.Data(), bytes.Size()), &header).Failed() || !types.Find(header.type, &type))
+        {
+            diagnostics->Error(files[i].View(), 0, StringView("it is not a blob of a known type"));
+            stats->failed += 1;
+            continue;
+        }
+        if (header.type_version == type.current_version)
+        {
+            stats->current += 1;
+            continue;
+        }
+        Vector<byte> upgraded;
+        Status status = UpgradeBlob(chains, types, ByteSpan(bytes.Data(), bytes.Size()), &upgraded);
+        if (status.Ok())
+        {
+            BlobReader reader;
+            status = reader.Open(ByteSpan(upgraded.Data(), upgraded.Size()), types);
+            if (status.Ok())
+            {
+                status = reader.Verify();
+            }
+        }
+        if (status.Ok() && io::WriteFileAtomic(root / files[i].View(), upgraded.Data(), upgraded.Size()).Failed())
+        {
+            status = Status::Make(ErrorCode::Io, "the blob cannot be written");
+        }
+        if (status.Failed())
+        {
+            diagnostics->Error(files[i].View(), 0,
+                               Fmt("version %u of %s cannot be upgraded: %s: %s",
+                                   static_cast<unsigned>(header.type_version), type.name, ErrorCodeName(status.Code()),
+                                   status.Message())
+                                   .View());
+            stats->failed += 1;
+            continue;
+        }
+        stats->upgraded += 1;
+    }
+    return stats->failed == 0 ? Status::Success()
+                              : Status::Make(ErrorCode::Invalid, "some blobs could not be upgraded");
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Edits that keep references whole: refs, rename, move, delete, copy, reid, unmint
+
+namespace
+{
+
+// The index of the source an `asset` argument names: a resource path, an id, or a source path below the source root.
+i64 FindAsset(const Project::Impl& impl, StringView asset)
+{
+    if (asset.Length() != 0 && asset[0] == '/')
+    {
+        String<HeapAllocator> normal(HeapAllocator::Default());
+        return NormalizePath(asset, &normal).Ok() ? impl.FindPath(normal.View()) : -1;
+    }
+    StringView id_text = asset.Length() == 17 && asset[0] == '@' ? asset.Substring(1) : asset;
+    if (IsIdText(id_text))
+    {
+        ResourceId id;
+        return ParseResourceId(id_text, &id).Ok() ? impl.FindId(id) : -1;
+    }
+    for (usize i = 0; i < impl.sources.Size(); ++i)
+    {
+        if (impl.sources[i]->rel.View() == asset)
+        {
+            return static_cast<i64>(i);
+        }
+    }
+    return -1;
+}
+
+// How a rewrite recognizes a reference in a source.
+struct RewriteSpec
+{
+    bool by_path = false;  // a path that resolves to `old_vpath`
+    bool by_id = false;    // `@old_id` anywhere, or the bare id after `skeleton`
+    StringView old_vpath;
+    StringView new_vpath;
+    ResourceId old_id;
+    ResourceId new_id;
+};
+
+// The text of `owner` with the references the spec names replaced; `*changed` says whether any was.
+String<HeapAllocator> RewriteReferences(const Project::Source& owner, const RewriteSpec& spec, bool* changed)
+{
+    *changed = false;
+    String<HeapAllocator> out(HeapAllocator::Default());
+    const StringView all(reinterpret_cast<const char*>(owner.text.Data()), owner.text.Size());
+    char old_id_text[17];
+    char new_id_text[17];
+    FormatResourceId(spec.old_id, old_id_text);
+    FormatResourceId(spec.new_id, new_id_text);
+    usize pos = 0;
+    while (pos < all.Length())
+    {
+        usize end = pos;
+        while (end < all.Length() && all[end] != '\n')
+        {
+            ++end;
+        }
+        const StringView line = all.Substring(pos, end - pos);
+        const srctext::LineTokens t = srctext::Tokenize(line);
+        usize copied = 0;
+        const bool scan = owner.kind != SourceKind::Skeleton && owner.kind != SourceKind::Texture;
+        for (usize k = 0; scan && k < t.count; ++k)
+        {
+            StringView token = t.tokens[k];
+            usize start = static_cast<usize>(token.Data() - line.Data());
+            if (token.Length() >= 2 && token[0] == '"' && token[token.Length() - 1] == '"')
+            {
+                token = token.Substring(1, token.Length() - 2);
+                start += 1;
+            }
+            String<HeapAllocator> replacement(HeapAllocator::Default());
+            if (spec.by_id && token.Length() == 17 && token[0] == '@' &&
+                token.Substring(1) == StringView(old_id_text, 16))
+            {
+                replacement.Append('@');
+                replacement.Append(StringView(new_id_text, 16));
+            }
+            else if (spec.by_id && k == 1 && t.tokens[0] == StringView("skeleton") &&
+                     token == StringView(old_id_text, 16))
+            {
+                replacement.Append(StringView(new_id_text, 16));
+            }
+            else if (spec.by_path && token.Length() != 0 &&
+                     (token[0] == '/' ||
+                      (owner.kind == SourceKind::Material && k == 2 && t.tokens[0] == StringView("texture"))))
+            {
+                String<HeapAllocator> vpath(HeapAllocator::Default());
+                if (TokenPath(token, owner.vpath.View(), &vpath) && vpath.View() == spec.old_vpath)
+                {
+                    replacement.Append(spec.new_vpath);
+                }
+            }
+            if (replacement.Length() != 0)
+            {
+                out.Append(line.Substring(copied, start - copied));
+                out.Append(replacement.View());
+                copied = start + token.Length();
+                *changed = true;
+            }
+        }
+        out.Append(line.Substring(copied));
+        if (end < all.Length())
+        {
+            out.Append('\n');
+        }
+        pos = end + 1;
+    }
+    return out;
+}
+
+bool WriteSourceText(Project::Source* s, const String<HeapAllocator>& text)
+{
+    if (io::WriteFileAtomic(s->file, text.CStr(), text.Length()).Failed())
+    {
+        return false;
+    }
+    s->text.Resize(text.Length());
+    MemCopy(s->text.Data(), text.CStr(), text.Length());
+    return true;
+}
+
+// The sources that name `index` by path or id (the dependency graph found by `Load`, plus references by id).
+void Referrers(const Project::Impl& impl, usize index, Vector<u32>* out)
+{
+    for (usize i = 0; i < impl.sources.Size(); ++i)
+    {
+        for (usize d = 0; d < impl.sources[i]->deps.Size(); ++d)
+        {
+            if (impl.sources[i]->deps[d] == index)
+            {
+                out->Push(static_cast<u32>(i));
+            }
+        }
+    }
+}
+
+// The source text with its `id` line replaced.
+String<HeapAllocator> WithId(const Project::Source& s, ResourceId id)
+{
+    String<HeapAllocator> out(HeapAllocator::Default());
+    const StringView all(reinterpret_cast<const char*>(s.text.Data()), s.text.Size());
+    char id_text[17];
+    FormatResourceId(id, id_text);
+    usize pos = 0;
+    bool done = false;
+    while (pos < all.Length())
+    {
+        usize end = pos;
+        while (end < all.Length() && all[end] != '\n')
+        {
+            ++end;
+        }
+        const StringView line = all.Substring(pos, end - pos);
+        const srctext::LineTokens t = srctext::Tokenize(line);
+        if (!done && t.count != 0 && t.tokens[0] == StringView("id"))
+        {
+            out.Append(StringView("id "));
+            out.Append(StringView(id_text, 16));
+            done = true;
+        }
+        else
+        {
+            out.Append(line);
+        }
+        if (end < all.Length())
+        {
+            out.Append('\n');
+        }
+        pos = end + 1;
+    }
+    return out;
+}
+
+bool PathOfId(void* user, ResourceId id, String<HeapAllocator>* path)
+{
+    const Project::Impl& impl = *static_cast<const Project::Impl*>(user);
+    const i64 index = impl.FindId(id);
+    if (index < 0)
+    {
+        return false;
+    }
+    *path = Str(impl.sources[static_cast<usize>(index)]->vpath.View());
+    return true;
+}
+
+// The level formatter's resolver over the output folder: paths from the sources, blobs from the files.
+class OutputResolver final : public LevelReferenceResolver
+{
+public:
+    OutputResolver(const Project::Impl& impl, const io::Path& output)
+        : impl_(impl), output_(output), cache_(HeapAllocator::Default())
+    {
+    }
+    Status ResolvePath(StringView path, ResourceId* id, ByteSpan* blob) const override
+    {
+        const i64 index = impl_.FindPath(path);
+        if (index < 0)
+        {
+            return Status::Make(ErrorCode::NotFound, "the project has no such path");
+        }
+        *id = impl_.sources[static_cast<usize>(index)]->id;
+        return ResolveId(*id, blob);
+    }
+    Status ResolveId(ResourceId id, ByteSpan* blob) const override
+    {
+        const i64 index = impl_.FindId(id);
+        if (index < 0)
+        {
+            return Status::Make(ErrorCode::NotFound, "the project has no such resource");
+        }
+        const u32* cached = cache_.Find(id.Value());
+        if (cached == nullptr)
+        {
+            Vector<u8> bytes;
+            if (!ReadFileText(output_ / impl_.sources[static_cast<usize>(index)]->blob_rel.View(), u64{1} << 31,
+                              &bytes))
+            {
+                return Status::Make(ErrorCode::NotFound, "the resource has not been minted");
+            }
+            files_.Push(static_cast<Vector<u8>&&>(bytes));
+            cache_.Insert(id.Value(), static_cast<u32>(files_.Size() - 1));
+            cached = cache_.Find(id.Value());
+        }
+        const Vector<u8>& kept = files_[*cached];
+        *blob = ByteSpan(kept.Data(), kept.Size());
+        return Status::Success();
+    }
+    Status PathOf(ResourceId id, String<HeapAllocator>* path) const override
+    {
+        return PathOfId(const_cast<Project::Impl*>(&impl_), id, path) ? Status::Success()
+                                                                      : Status::Make(ErrorCode::NotFound, "no path");
+    }
+
+private:
+    const Project::Impl& impl_;
+    io::Path output_;
+    mutable Vector<Vector<u8>> files_;                // each blob is read once; the inner buffers do not move
+    mutable HashMap<u64, u32, HeapAllocator> cache_;  // id to place in files_
+};
+
+}  // namespace
+
+Status Project::Refs(StringView asset, MintDiagnostics* diagnostics, String<HeapAllocator>* out)
+{
+    Impl& impl = *impl_;
+    const i64 found = impl.loaded ? FindAsset(impl, asset) : -1;
+    if (found < 0)
+    {
+        diagnostics->Error(asset, 0, StringView("the project has no such asset"));
+        return Status::Make(ErrorCode::NotFound, "no such asset");
+    }
+    const Source& s = *impl.sources[static_cast<usize>(found)];
+    char id_text[17];
+    FormatResourceId(s.id, id_text);
+    *out = Str(StringView());
+    out->Append(Fmt("%s  %s  %s (%s)\n", id_text, s.vpath.CStr(), s.rel.CStr(), InfoOf(s.kind).name).View());
+    out->Append(StringView("references:\n"));
+    for (usize d = 0; d < s.deps.Size(); ++d)
+    {
+        const Source& dep = *impl.sources[s.deps[d]];
+        FormatResourceId(dep.id, id_text);
+        out->Append(Fmt("  %s  %s  %s\n", id_text, dep.vpath.CStr(), dep.rel.CStr()).View());
+    }
+    out->Append(StringView("referenced by:\n"));
+    Vector<u32> referrers;
+    Referrers(impl, static_cast<usize>(found), &referrers);
+    for (usize i = 0; i < referrers.Size(); ++i)
+    {
+        const Source& r = *impl.sources[referrers[i]];
+        FormatResourceId(r.id, id_text);
+        out->Append(Fmt("  %s  %s  %s\n", id_text, r.vpath.CStr(), r.rel.CStr()).View());
+    }
+    return Status::Success();
+}
+
+namespace
+{
+
+// The image files a texture source names, as written (relative to the source's folder).
+void ImageNames(const Project::Source& s, Vector<String<HeapAllocator>>* names)
+{
+    TextureSource texture;
+    TextureSourceError error;
+    if (ParseTextureSource(StringView(reinterpret_cast<const char*>(s.text.Data()), s.text.Size()), &texture, &error)
+            .Failed())
+    {
+        return;
+    }
+    for (usize i = 0; i < texture.sources.Size(); ++i)
+    {
+        names->Push(Str(StringView(texture.sources[i].name.Data(), CStrLength(texture.sources[i].name.Data()))));
+    }
+}
+
+// Brings the image files of a texture to the folder its source moves or is copied to; a moved image goes from the old
+// folder unless another texture source still names it there.
+Status CarryImages(const Project::Impl& impl, const Project::Source& s, const io::Path& from_dir,
+                   const io::Path& to_dir, bool remove_old, MintDiagnostics* diagnostics)
+{
+    Vector<String<HeapAllocator>> names;
+    ImageNames(s, &names);
+    for (usize i = 0; i < names.Size(); ++i)
+    {
+        const io::Path from = from_dir / names[i].View();
+        const io::Path to = to_dir / names[i].View();
+        if (from.View() == to.View())
+        {
+            continue;
+        }
+        if (io::CreateDirectories(to.Parent()).Failed() || io::Copy(from, to, false).Failed())
+        {
+            diagnostics->Error(names[i].View(), 0, StringView("the image file cannot be brought to the new folder"));
+            return Status::Make(ErrorCode::Io, "an image file cannot be moved");
+        }
+        bool used_elsewhere = false;
+        for (usize k = 0; remove_old && k < impl.sources.Size(); ++k)
+        {
+            const Project::Source& other = *impl.sources[k];
+            if (&other == &s || other.kind != SourceKind::Texture)
+            {
+                continue;
+            }
+            Vector<String<HeapAllocator>> other_names;
+            ImageNames(other, &other_names);
+            for (usize n = 0; n < other_names.Size(); ++n)
+            {
+                used_elsewhere = used_elsewhere || (other.file.Parent() / other_names[n].View()).View() == from.View();
+            }
+        }
+        if (remove_old && !used_elsewhere)
+        {
+            (void)io::Remove(from);  // a leftover file is harmless
+        }
+    }
+    return Status::Success();
+}
+
+// The text of a material with its relative texture paths written as full resource paths, so that it means the same in
+// another folder.
+String<HeapAllocator> AbsolutizeTextures(const Project::Source& owner, const String<HeapAllocator>& text)
+{
+    String<HeapAllocator> out(HeapAllocator::Default());
+    const StringView all = text.View();
+    usize pos = 0;
+    while (pos < all.Length())
+    {
+        usize end = pos;
+        while (end < all.Length() && all[end] != '\n')
+        {
+            ++end;
+        }
+        const StringView line = all.Substring(pos, end - pos);
+        const srctext::LineTokens t = srctext::Tokenize(line);
+        usize copied = 0;
+        if (t.count == 3 && t.tokens[0] == StringView("texture") && t.tokens[2].Length() != 0 && t.tokens[2][0] != '/')
+        {
+            String<HeapAllocator> vpath(HeapAllocator::Default());
+            if (TokenPath(t.tokens[2], owner.vpath.View(), &vpath))
+            {
+                const usize start = static_cast<usize>(t.tokens[2].Data() - line.Data());
+                out.Append(line.Substring(0, start));
+                out.Append(vpath.View());
+                copied = start + t.tokens[2].Length();
+            }
+        }
+        out.Append(line.Substring(copied));
+        if (end < all.Length())
+        {
+            out.Append('\n');
+        }
+        pos = end + 1;
+    }
+    return out;
+}
+
+// Renames the file of a source to `new_rel` (below the source root) and rewrites the references to its old path.
+Status RelocateSource(Project::Impl* impl, const io::Path& source_root, usize index,
+                      const String<HeapAllocator>& new_rel, MintDiagnostics* diagnostics)
+{
+    Project::Source& s = *impl->sources[index];
+    const KindInfo& info = InfoOf(s.kind);
+    if (!new_rel.View().EndsWith(StringView(info.extension)))
+    {
+        diagnostics->Error(new_rel.View(), 0, StringView("the new name does not keep the kind of the source"));
+        return Status::Make(ErrorCode::Invalid, "the new name does not keep the kind");
+    }
+    String<HeapAllocator> raw = Str(StringView("/"));
+    raw.Append(new_rel.View().Substring(0, new_rel.Length() - CStrLength(info.extension)));
+    String<HeapAllocator> new_vpath(HeapAllocator::Default());
+    if (NormalizePath(raw.View(), &new_vpath).Failed())
+    {
+        diagnostics->Error(new_rel.View(), 0, StringView("the new path is not a valid resource path"));
+        return Status::Make(ErrorCode::Invalid, "the new path is not valid");
+    }
+    const io::Path target = source_root / new_rel.View();
+    if (impl->FindPath(new_vpath.View()) >= 0 || io::Exists(target))
+    {
+        diagnostics->Error(new_rel.View(), 0, StringView("that path is already taken"));
+        return Status::Make(ErrorCode::DuplicateId, "that path is already taken");
+    }
+    const io::Path old_dir = s.file.Parent();
+    if (io::CreateDirectories(target.Parent()).Failed() || io::Rename(s.file, target).Failed())
+    {
+        diagnostics->Error(s.rel.View(), 0, StringView("the source cannot be moved"));
+        return Status::Make(ErrorCode::Io, "the source cannot be moved");
+    }
+    // What a source names relative to its own folder keeps its meaning in the new one: a material's texture paths
+    // become full resource paths, a texture's image files come along.
+    if (old_dir.View() != target.Parent().View())
+    {
+        if (s.kind == SourceKind::Material)
+        {
+            const String<HeapAllocator> own(HeapAllocator::Default(),
+                                            StringView(reinterpret_cast<const char*>(s.text.Data()), s.text.Size()));
+            const String<HeapAllocator> absolute = AbsolutizeTextures(s, own);
+            if (io::WriteFileAtomic(target, absolute.CStr(), absolute.Length()).Failed())
+            {
+                diagnostics->Error(new_rel.View(), 0, StringView("the source cannot be written"));
+                return Status::Make(ErrorCode::Io, "the source cannot be written");
+            }
+        }
+        else if (s.kind == SourceKind::Texture)
+        {
+            ENGINE_TRY(CarryImages(*impl, s, old_dir, target.Parent(), true, diagnostics));
+        }
+    }
+    // Every source that names the old path now names the new one (ids are what blobs hold, so no blob changes).
+    RewriteSpec spec;
+    spec.by_path = true;
+    spec.old_vpath = s.vpath.View();
+    spec.new_vpath = new_vpath.View();
+    Vector<u32> referrers;
+    Referrers(*impl, index, &referrers);
+    for (usize i = 0; i < referrers.Size(); ++i)
+    {
+        Project::Source& r = *impl->sources[referrers[i]];
+        bool changed = false;
+        const String<HeapAllocator> text = RewriteReferences(r, spec, &changed);
+        if (changed && !WriteSourceText(&r, text))
+        {
+            diagnostics->Error(r.rel.View(), 0, StringView("the source cannot be written"));
+            return Status::Make(ErrorCode::Io, "the source cannot be written");
+        }
+    }
+    diagnostics->Note(Fmt("%s -> %s", s.rel.CStr(), new_rel.CStr()).View());
+    return Status::Success();
+}
+
+}  // namespace
+
+Status Project::Rename(StringView asset, StringView new_name, MintDiagnostics* diagnostics)
+{
+    Impl& impl = *impl_;
+    const i64 found = impl.loaded ? FindAsset(impl, asset) : -1;
+    if (found < 0)
+    {
+        diagnostics->Error(asset, 0, StringView("the project has no such asset"));
+        return Status::Make(ErrorCode::NotFound, "no such asset");
+    }
+    const Source& s = *impl.sources[static_cast<usize>(found)];
+    bool plain = new_name.Length() != 0;
+    for (usize i = 0; i < new_name.Length(); ++i)
+    {
+        plain = plain && new_name[i] != '/' && new_name[i] != '\\' && new_name[i] != ' ';
+    }
+    if (!plain)
+    {
+        diagnostics->Error(new_name, 0, StringView("a new name is one word without a folder (use move for a folder)"));
+        return Status::Make(ErrorCode::Invalid, "the new name is not valid");
+    }
+    const StringView rel = s.rel.View();
+    usize slash = 0;
+    bool has_slash = false;
+    for (usize i = 0; i < rel.Length(); ++i)
+    {
+        if (rel[i] == '/')
+        {
+            slash = i + 1;
+            has_slash = true;
+        }
+    }
+    String<HeapAllocator> new_rel = Str(has_slash ? rel.Substring(0, slash) : StringView());
+    new_rel.Append(new_name);
+    new_rel.Append(StringView(InfoOf(s.kind).extension));
+    return RelocateSource(&impl, source_root_, static_cast<usize>(found), new_rel, diagnostics);
+}
+
+Status Project::Move(StringView asset, StringView new_folder, MintDiagnostics* diagnostics)
+{
+    Impl& impl = *impl_;
+    const i64 found = impl.loaded ? FindAsset(impl, asset) : -1;
+    if (found < 0)
+    {
+        diagnostics->Error(asset, 0, StringView("the project has no such asset"));
+        return Status::Make(ErrorCode::NotFound, "no such asset");
+    }
+    const Source& s = *impl.sources[static_cast<usize>(found)];
+    StringView folder = new_folder;
+    while (folder.Length() != 0 && folder[folder.Length() - 1] == '/')
+    {
+        folder = folder.Substring(0, folder.Length() - 1);
+    }
+    if (folder.Length() != 0 && !SafeRelative(folder))
+    {
+        diagnostics->Error(new_folder, 0, StringView("the folder must be a path below the source root"));
+        return Status::Make(ErrorCode::Invalid, "the folder is not valid");
+    }
+    const StringView rel = s.rel.View();
+    usize slash = 0;
+    for (usize i = 0; i < rel.Length(); ++i)
+    {
+        slash = rel[i] == '/' ? i + 1 : slash;
+    }
+    String<HeapAllocator> new_rel = Str(folder);
+    if (folder.Length() != 0)
+    {
+        new_rel.Append('/');
+    }
+    new_rel.Append(rel.Substring(slash));
+    return RelocateSource(&impl, source_root_, static_cast<usize>(found), new_rel, diagnostics);
+}
+
+Status Project::Delete(StringView asset, bool with_dependents, MintDiagnostics* diagnostics)
+{
+    Impl& impl = *impl_;
+    const i64 found = impl.loaded ? FindAsset(impl, asset) : -1;
+    if (found < 0)
+    {
+        diagnostics->Error(asset, 0, StringView("the project has no such asset"));
+        return Status::Make(ErrorCode::NotFound, "no such asset");
+    }
+    Project::Source& s = *impl.sources[static_cast<usize>(found)];
+    Vector<u32> referrers;
+    Referrers(impl, static_cast<usize>(found), &referrers);
+    if (referrers.Size() != 0)
+    {
+        for (usize i = 0; i < referrers.Size(); ++i)
+        {
+            diagnostics->Error(impl.sources[referrers[i]]->rel.View(), 0,
+                               Fmt("it references %s: nothing was removed", s.rel.CStr()).View());
+        }
+        if (with_dependents)
+        {
+            // Everything that would have to go first: the referrers, and what references them.
+            Vector<u32> all;
+            for (usize i = 0; i < referrers.Size(); ++i)
+            {
+                all.Push(referrers[i]);
+            }
+            for (usize k = 0; k < all.Size(); ++k)
+            {
+                Vector<u32> more;
+                Referrers(impl, all[k], &more);
+                for (usize m = 0; m < more.Size(); ++m)
+                {
+                    bool known = false;
+                    for (usize n = 0; n < all.Size(); ++n)
+                    {
+                        known = known || all[n] == more[m];
+                    }
+                    if (!known && more[m] != static_cast<u32>(found))
+                    {
+                        all.Push(more[m]);
+                    }
+                }
+            }
+            for (usize k = referrers.Size(); k < all.Size(); ++k)
+            {
+                diagnostics->Error(impl.sources[all[k]]->rel.View(), 0,
+                                   Fmt("it references what references %s", s.rel.CStr()).View());
+            }
+        }
+        return Status::Make(ErrorCode::Invalid, "the asset is referenced");
+    }
+    if (io::Remove(s.file).Failed())
+    {
+        diagnostics->Error(s.rel.View(), 0, StringView("the source cannot be removed"));
+        return Status::Make(ErrorCode::Io, "the source cannot be removed");
+    }
+    diagnostics->Note(Fmt("removed %s", s.rel.CStr()).View());
+    return Status::Success();
+}
+
+Status Project::Copy(StringView asset, StringView new_path, MintDiagnostics* diagnostics)
+{
+    Impl& impl = *impl_;
+    const i64 found = impl.loaded ? FindAsset(impl, asset) : -1;
+    if (found < 0)
+    {
+        diagnostics->Error(asset, 0, StringView("the project has no such asset"));
+        return Status::Make(ErrorCode::NotFound, "no such asset");
+    }
+    const Source& s = *impl.sources[static_cast<usize>(found)];
+    if (!s.has_id)
+    {
+        diagnostics->Error(s.rel.View(), 0,
+                           StringView("the source has no id: run `asset_mint adopt` before copying it"));
+        return Status::Make(ErrorCode::Invalid, "the source has no id");
+    }
+    String<HeapAllocator> vpath(HeapAllocator::Default());
+    if (NormalizePath(new_path, &vpath).Failed())
+    {
+        diagnostics->Error(new_path, 0, StringView("the new path is not a valid resource path"));
+        return Status::Make(ErrorCode::Invalid, "the new path is not valid");
+    }
+    String<HeapAllocator> rel = Str(vpath.View().Substring(1));
+    rel.Append(StringView(InfoOf(s.kind).extension));
+    const io::Path target = source_root_ / rel.View();
+    if (impl.FindPath(vpath.View()) >= 0 || io::Exists(target))
+    {
+        diagnostics->Error(rel.View(), 0, StringView("that path is already taken"));
+        return Status::Make(ErrorCode::DuplicateId, "that path is already taken");
+    }
+    ResourceId id = GenerateResourceId();
+    while (impl.FindId(id) >= 0)
+    {
+        id = GenerateResourceId();
+    }
+    String<HeapAllocator> text = WithId(s, id);
+    if (s.kind == SourceKind::Material && s.file.Parent().View() != target.Parent().View())
+    {
+        text = AbsolutizeTextures(s, text);  // its relative texture paths keep their meaning in the new folder
+    }
+    if (io::CreateDirectories(target.Parent()).Failed() ||
+        io::WriteFileAtomic(target, text.CStr(), text.Length()).Failed())
+    {
+        diagnostics->Error(rel.View(), 0, StringView("the copy cannot be written"));
+        return Status::Make(ErrorCode::Io, "the copy cannot be written");
+    }
+    if (s.kind == SourceKind::Texture)
+    {
+        ENGINE_TRY(CarryImages(impl, s, s.file.Parent(), target.Parent(), false, diagnostics));
+    }
+    char id_text[17];
+    FormatResourceId(id, id_text);
+    diagnostics->Note(Fmt("%s -> %s with id %s", s.rel.CStr(), rel.CStr(), id_text).View());
+    return Status::Success();
+}
+
+Status Project::Reid(StringView asset, bool update_references, MintDiagnostics* diagnostics)
+{
+    Impl& impl = *impl_;
+    const i64 found = impl.loaded ? FindAsset(impl, asset) : -1;
+    if (found < 0)
+    {
+        diagnostics->Error(asset, 0, StringView("the project has no such asset"));
+        return Status::Make(ErrorCode::NotFound, "no such asset");
+    }
+    Source& s = *impl.sources[static_cast<usize>(found)];
+    if (!s.has_id)
+    {
+        diagnostics->Error(s.rel.View(), 0, StringView("the source has no id: run `asset_mint adopt`"));
+        return Status::Make(ErrorCode::Invalid, "the source has no id");
+    }
+    usize sharing = 0;
+    for (usize i = 0; i < impl.sources.Size(); ++i)
+    {
+        sharing += impl.sources[i]->has_id && impl.sources[i]->id == s.id ? 1 : 0;
+    }
+    ResourceId id = GenerateResourceId();
+    while (impl.FindId(id) >= 0)
+    {
+        id = GenerateResourceId();
+    }
+    // References by id to an id only this source has would be left pointing at nothing.
+    RewriteSpec spec;
+    spec.by_id = true;
+    spec.old_id = s.id;
+    spec.new_id = id;
+    Vector<u32> to_rewrite;                   // the sources that name the id
+    Vector<String<HeapAllocator>> rewritten;  // their texts with the new id, in the same order
+    for (usize i = 0; sharing == 1 && i < impl.sources.Size(); ++i)
+    {
+        bool changed = false;
+        if (i == static_cast<usize>(found))
+        {
+            continue;
+        }
+        String<HeapAllocator> text = RewriteReferences(*impl.sources[i], spec, &changed);
+        if (changed)
+        {
+            to_rewrite.Push(static_cast<u32>(i));
+            rewritten.Push(static_cast<String<HeapAllocator>&&>(text));
+        }
+    }
+    if (to_rewrite.Size() != 0 && !update_references)
+    {
+        for (usize i = 0; i < to_rewrite.Size(); ++i)
+        {
+            diagnostics->Error(
+                impl.sources[to_rewrite[i]]->rel.View(), 0,
+                Fmt("it references %s by id: nothing was changed (--update-references rewrites it)", s.rel.CStr())
+                    .View());
+        }
+        return Status::Make(ErrorCode::Invalid, "the id is referenced");
+    }
+    for (usize i = 0; i < to_rewrite.Size(); ++i)
+    {
+        Source& r = *impl.sources[to_rewrite[i]];
+        if (!WriteSourceText(&r, rewritten[i]))
+        {
+            diagnostics->Error(r.rel.View(), 0, StringView("the source cannot be written"));
+            return Status::Make(ErrorCode::Io, "the source cannot be written");
+        }
+    }
+    const String<HeapAllocator> text = WithId(s, id);
+    if (!WriteSourceText(&s, text))
+    {
+        diagnostics->Error(s.rel.View(), 0, StringView("the source cannot be written"));
+        return Status::Make(ErrorCode::Io, "the source cannot be written");
+    }
+    char id_text[17];
+    FormatResourceId(id, id_text);
+    diagnostics->Note(Fmt("%s: id %s", s.rel.CStr(), id_text).View());
+    return Status::Success();
+}
+
+Status Project::Unmint(StringView asset, MintDiagnostics* diagnostics, String<HeapAllocator>* out)
+{
+    Impl& impl = *impl_;
+    const i64 found = impl.loaded ? FindAsset(impl, asset) : -1;
+    if (found < 0)
+    {
+        diagnostics->Error(asset, 0, StringView("the project has no such asset"));
+        return Status::Make(ErrorCode::NotFound, "no such asset");
+    }
+    const Source& s = *impl.sources[static_cast<usize>(found)];
+    if (s.kind != SourceKind::Level && s.kind != SourceKind::Material)
+    {
+        diagnostics->Error(s.rel.View(), 0, StringView("only levels and materials can be written back as text"));
+        return Status::Make(ErrorCode::Invalid, "only levels and materials");
+    }
+    Vector<u8> blob;
+    if (!ReadFileText(output_root_ / s.blob_rel.View(), u64{1} << 31, &blob))
+    {
+        diagnostics->Error(s.rel.View(), 0, StringView("it has not been minted: run `asset_mint mint`"));
+        return Status::Make(ErrorCode::NotFound, "not minted");
+    }
+    if (!impl.components_ready)
+    {
+        if (!RegisterLevelRegistry(&impl.components))
+        {
+            diagnostics->Error(project_file_.View(), 0, StringView("the components could not be registered"));
+            return Status::Make(ErrorCode::Other, "the components could not be registered");
+        }
+        impl.components_ready = true;
+    }
+    if (s.kind == SourceKind::Material)
+    {
+        MaterialSourceError error;
+        const Status status = FormatMaterialBlob(ByteSpan(blob.Data(), blob.Size()), impl.types, &PathOfId, &impl, out,
+                                                 &error);
+        if (status.Failed())
+        {
+            diagnostics->Error(s.rel.View(), error.line, StringView(error.message.Data()));
+        }
+        return status;
+    }
+    OutputResolver resolver(impl, output_root_);
+    LevelSourceError error;
+    const Status status = FormatLevelBlob(ByteSpan(blob.Data(), blob.Size()), impl.types, impl.components, resolver,
+                                          out, &error);
+    if (status.Failed())
+    {
+        diagnostics->Error(s.rel.View(), error.line, StringView(error.message.Data()));
+    }
+    return status;
 }
 
 }  // namespace engine_placeholder::asset

@@ -21,6 +21,8 @@
 #include "asset/resource_id.h"
 #include "asset/resource_type.h"
 #include "asset/status.h"
+#include "target_transform.h"
+#include "upgrade.h"
 #include "containers/array.h"
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
@@ -124,6 +126,22 @@ struct MintOptions
     u32 workers = 0;     ///< Participants of the job system (0: the default).
 };
 
+/// What `pack` is asked for.
+struct PackOptions
+{
+    bool has_target = false;  ///< Pack for `target` instead of the project's own target.
+    u32 target = 0;           ///< The target tag of the pak.
+};
+
+/// What `verify` is asked for.
+struct VerifyOptions
+{
+    bool require_current = false;  ///< An old-version blob is an error (it is named, with the fix); otherwise it is
+                                   ///< only checked structurally.
+    bool has_target = false;       ///< Check the pak packed for `target` (the pak of that target's name).
+    u32 target = 0;                ///< The target tag.
+};
+
 /// A project on disk.
 ///
 /// - Thread-safety: thread-compatible.
@@ -174,13 +192,59 @@ public:
     ///
     /// - Fails: the failures of the pak writer (an incomplete closure lists each missing pair), `Invalid` for a blob
     ///   that is not the current version or whose hash does not match.
-    Status Pack(MintDiagnostics* diagnostics);
+    Status Pack(MintDiagnostics* diagnostics, const PackOptions& options = PackOptions());
 
     /// Checks every blob under the output root (header, hash, current version, the closure complete and typed), the
     /// table against the blobs, and the pak when there is one.
     ///
     /// - Fails: `Invalid` when anything is wrong (every problem is reported).
-    Status Verify(MintDiagnostics* diagnostics);
+    Status Verify(MintDiagnostics* diagnostics, const VerifyOptions& options = VerifyOptions());
+
+    /// Prints what the asset references and what references it (sources, by path and id).
+    ///
+    /// - Param asset: a resource path (`/meshes/rock`), an id (`0000000000000b02`) or a source path below the source
+    /// root.
+    /// - Fails: `NotFound`.
+    Status Refs(StringView asset, MintDiagnostics* diagnostics, String<HeapAllocator>* out);
+
+    /// Changes the name of a source (its file stem; the folder stays) and rewrites the references to it in the other
+    /// sources; the id does not change, so no blob of a dependent changes.
+    ///
+    /// - Param asset: as for `Refs`.
+    /// - Param new_name: the new name without folder or extension.
+    /// - Fails: `NotFound`, `DuplicateId` (the target path is taken), `Invalid`, `Io`.
+    Status Rename(StringView asset, StringView new_name, MintDiagnostics* diagnostics);
+
+    /// Moves a source to another folder below the source root (its name stays) and rewrites the references to it.
+    ///
+    /// - Param new_folder: a path below the source root (`props/stone`).
+    /// - Fails: as `Rename`.
+    Status Move(StringView asset, StringView new_folder, MintDiagnostics* diagnostics);
+
+    /// Removes a source, refused while another source references it (the referrers are named and nothing changes).
+    ///
+    /// - Param with_dependents: list everything that would have to go first (the referrers, and theirs); nothing is
+    ///   removed in either case while a reference exists.
+    /// - Fails: `Invalid` (referenced), `NotFound`, `Io`.
+    Status Delete(StringView asset, bool with_dependents, MintDiagnostics* diagnostics);
+
+    /// Copies a source to a new resource path with a fresh id.
+    ///
+    /// - Param new_path: the resource path of the copy (`/props/rock2`).
+    /// - Fails: `NotFound`, `DuplicateId` (the new path is taken), `Invalid`, `Io`.
+    Status Copy(StringView asset, StringView new_path, MintDiagnostics* diagnostics);
+
+    /// Gives a source a fresh id (the fix for two sources that share one). A source other sources reference by id is
+    /// refused unless `update_references` rewrites those references or the id is shared.
+    ///
+    /// - Param asset: the source's path below the source root when the id is shared, else as for `Refs`.
+    /// - Fails: `NotFound`, `Invalid`, `Io`.
+    Status Reid(StringView asset, bool update_references, MintDiagnostics* diagnostics);
+
+    /// Prints a minted level or material back as source text (from its blob in the output).
+    ///
+    /// - Fails: `NotFound`, `Invalid` (another kind of resource), and the formatter's failures.
+    Status Unmint(StringView asset, MintDiagnostics* diagnostics, String<HeapAllocator>* out);
 
     /// Checks the sources without minting: ids, paths, references and their kinds, cycles.
     ///
@@ -200,6 +264,52 @@ private:
     io::Path output_root_;
     UniquePtr<Impl> impl_;
 };
+
+/// What `PackDirectory` is asked for.
+struct PackRequest
+{
+    u32 blob_target = 0;                           ///< The target the blobs of the directory are laid out for.
+    u32 pak_target = 0;                            ///< The target of the pak; blobs are transformed when it differs.
+    bool names = true;                             ///< Include the resource paths in the pak.
+    const TargetTransforms* transforms = nullptr;  ///< The transforms (null: the built-in set).
+    bool (*source_of)(void* user, ResourceId id,
+                      Vector<byte>* text) = nullptr;  ///< Source text for a transform, or null.
+    void* source_user = nullptr;                      ///< Passed to `source_of`.
+};
+
+/// Packs the blobs of a directory into a pak for `request.pak_target`, transforming each blob that is laid out for
+/// another target (`TransformBlob`) and checking the result.
+///
+/// - Fails: see `Project::Pack`; `Invalid` when a transform breaks a rule.
+Status PackDirectory(const io::Path& directory, const io::Path& output, const PackRequest& request,
+                     MintDiagnostics* diagnostics);
+
+/// Checks the blobs, the closure, the table and the pak of an output folder (what `Project::Verify` does).
+///
+/// - Param pak_path: the pak to check, or an empty path for none.
+/// - Param pak_target: the target the pak must have been packed for.
+/// - Param types: the resource types (tests pass their own).
+/// - Fails: `Invalid` when anything is wrong (every problem is reported).
+Status VerifyDirectory(const io::Path& root, const io::Path& pak_path, u32 pak_target, const TypeRegistry& types,
+                       const VerifyOptions& options, MintDiagnostics* diagnostics);
+
+/// What `RemintDirectory` did.
+///
+/// - Thread-safety: immutable value.
+struct RemintStats
+{
+    u32 blobs = 0;     ///< Blobs found.
+    u32 current = 0;   ///< Of those, already the current version.
+    u32 upgraded = 0;  ///< Rewritten to the current version.
+    u32 failed = 0;    ///< Left alone: no step, or a step failed.
+};
+
+/// Rewrites every old-version blob under `root` to the current version through the upgrade chains, in place (a file is
+/// replaced whole, never partly written). The result is checked: it opens at the current version and its hash holds.
+///
+/// - Fails: `Invalid` when some blob could not be upgraded (each is named).
+Status RemintDirectory(const io::Path& root, const TypeRegistry& types, const UpgradeChains& chains,
+                       MintDiagnostics* diagnostics, RemintStats* stats);
 
 /// Packs the blobs of a directory into a pak: the engine of `asset_mint pack DIRECTORY OUTPUT.pak`.
 ///

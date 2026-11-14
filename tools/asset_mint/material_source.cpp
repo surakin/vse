@@ -4,6 +4,7 @@
 #include "cstr/cstr.h"
 #include "cstr/format.h"
 #include "cstr/mem_ops.h"
+#include "cstr/varargs.h"
 #include "renderer/gbuffer.h"
 #include "renderer/shader_permutation.h"
 #include "renderer/shader_reflection.h"
@@ -783,6 +784,168 @@ Status MintMaterial(StringView text, const MaterialReferenceResolver& resolver, 
         MsSetError(error, 0, built.Message());
     }
     return built;
+}
+
+namespace
+{
+
+void MsAppend(String<HeapAllocator>* out, const char* format, ...) ENGINE_PRINTF_FORMAT(2, 3);
+
+void MsAppend(String<HeapAllocator>* out, const char* format, ...)
+{
+    char buffer[512];
+    VarArgs args;
+    ENGINE_VA_START(args, format);
+    VFormatTo(buffer, sizeof(buffer), format, args);
+    ENGINE_VA_END(args);
+    out->Append(StringView(buffer, CStrLength(buffer)));
+}
+
+// A float that reads back as the same f32 (nine significant digits).
+void MsAppendFloat(String<HeapAllocator>* out, f32 value)
+{
+    MsAppend(out, " %.9g", static_cast<double>(value));
+}
+
+}  // namespace
+
+Status FormatMaterialBlob(ByteSpan blob, const TypeRegistry& types, MaterialPathOf path_of, void* user,
+                          String<HeapAllocator>* out, MaterialSourceError* error)
+{
+    *error = MaterialSourceError();
+    MaterialAssetData data;
+    BlobReader reader;
+    ENGINE_TRY(reader.Open(blob, types));
+    ENGINE_TRY(LoadMaterialBlob(blob, types, &data));
+    *out = String<HeapAllocator>(HeapAllocator::Default());
+    char id_text[17];
+    FormatResourceId(reader.Id(), id_text);
+    MsAppend(out, "id %s\ntemplate %s\n", id_text, data.template_name.text);
+    for (usize i = 0; i < data.options.Size(); ++i)
+    {
+        MsAppend(out, "option %s\n", data.options[i].text);
+    }
+    for (usize i = 0; i < data.params.Size(); ++i)
+    {
+        const MaterialParam& p = data.params[i];
+        const char* kind = "float";
+        usize count = 1;
+        switch (p.type)
+        {
+        case MaterialParamType::Float:
+            kind = "float";
+            count = 1;
+            break;
+        case MaterialParamType::Int:
+            kind = "int";
+            count = 1;
+            break;
+        case MaterialParamType::UInt:
+            kind = "uint";
+            count = 1;
+            break;
+        case MaterialParamType::Vec2:
+            kind = "vec2";
+            count = 2;
+            break;
+        case MaterialParamType::Vec3:
+            kind = "vec3";
+            count = 3;
+            break;
+        case MaterialParamType::Vec4:
+            kind = "vec4";
+            count = 4;
+            break;
+        case MaterialParamType::Mat4:
+            kind = "mat4";
+            count = 16;
+            break;
+        case MaterialParamType::Color3:
+            kind = "color";
+            count = 3;
+            break;
+        case MaterialParamType::Color4:
+            kind = "color";
+            count = 4;
+            break;
+        }
+        MsAppend(out, "param %s %s", p.name.text, kind);
+        for (usize k = 0; k < count; ++k)
+        {
+            const byte* at = data.block.Data() + p.offset + 4 * k;
+            if (p.type == MaterialParamType::Int)
+            {
+                i32 v = 0;
+                MemCopy(&v, at, 4);
+                MsAppend(out, " %d", static_cast<int>(v));
+            }
+            else if (p.type == MaterialParamType::UInt)
+            {
+                u32 v = 0;
+                MemCopy(&v, at, 4);
+                MsAppend(out, " %u", static_cast<unsigned>(v));
+            }
+            else
+            {
+                f32 v = 0;
+                MemCopy(&v, at, 4);
+                MsAppendFloat(out, v);
+            }
+        }
+        out->Append('\n');
+    }
+    for (usize i = 0; i < data.textures.Size(); ++i)
+    {
+        String<HeapAllocator> path(HeapAllocator::Default());
+        if (path_of != nullptr && path_of(user, data.textures[i].texture, &path))
+        {
+            MsAppend(out, "texture %s %s\n", data.textures[i].slot.text, path.CStr());
+        }
+        else
+        {
+            char texture_text[17];
+            FormatResourceId(data.textures[i].texture, texture_text);
+            MsAppend(out, "texture %s @%s\n", data.textures[i].slot.text, texture_text);
+        }
+    }
+    static const char* const kFilter[2] = {"nearest", "linear"};
+    static const char* const kAddress[3] = {"repeat", "clamp", "mirror"};
+    for (usize i = 0; i < data.samplers.Size(); ++i)
+    {
+        const MaterialSampler& s = data.samplers[i];
+        if (s.min_filter != s.mag_filter || s.mag_filter != s.mip_filter || s.address_u != s.address_v)
+        {
+            return MsFail(error, 0, "a sampler with different filters or addresses cannot be written as source text");
+        }
+        MsAppend(out, "sampler %s filter %s address %s anisotropy %u\n", s.slot.text,
+                 kFilter[static_cast<u32>(s.min_filter)], kAddress[static_cast<u32>(s.address_u)],
+                 static_cast<unsigned>(s.max_anisotropy));
+    }
+    static const char* const kCull[3] = {"none", "front", "back"};
+    static const char* const kOps[8] = {"never",   "less",     "equal",        "lessequal",
+                                        "greater", "notequal", "greaterequal", "always"};
+    const MaterialStateOverride& st = data.state;
+    if (st.set_cull)
+    {
+        MsAppend(out, "state cull %s\n", kCull[st.cull < 3 ? st.cull : 2]);
+    }
+    if (st.set_depth_test)
+    {
+        MsAppend(out, "state depth_test %s\n", st.depth_test ? "on" : "off");
+    }
+    if (st.set_depth_write)
+    {
+        MsAppend(out, "state depth_write %s\n", st.depth_write ? "on" : "off");
+    }
+    if (st.set_depth_compare)
+    {
+        MsAppend(out, "state depth_compare %s\n", kOps[st.depth_compare < 8 ? st.depth_compare : 0]);
+    }
+    if (st.set_alpha_blend)
+    {
+        MsAppend(out, "state alpha_blend %s\n", st.alpha_blend ? "on" : "off");
+    }
+    return Status::Success();
 }
 
 }  // namespace engine_placeholder::asset
