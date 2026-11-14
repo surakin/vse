@@ -234,7 +234,9 @@ struct ImportOptions
     StringView path_prefix;                    ///< The resource paths of the result start with this (default: `/gltf`).
     bool flat_normals = false;        ///< A mesh without normals gets flat ones (default: smooth, area-weighted).
     bool drop_morph_targets = false;  ///< Import the base shape of a primitive with morph targets (a warning).
-    f32 scale = 1.0f;                 ///< Positions are multiplied by it (glTF is in metres).
+    f32 clip_rate = 30.0f;            ///< The rate cubic-spline channels are resampled at, and the clips' rate hint.
+    Span<const StringView> looping_clips;  ///< Animations (or clips, `<animation>_<skin>`) with these names loop.
+    f32 scale = 1.0f;                      ///< Positions are multiplied by it (glTF is in metres).
 };
 
 /// One resource an import made.
@@ -256,15 +258,20 @@ struct ImportedResource
 /// - Thread-safety: thread-compatible plain data.
 struct ImportReport
 {
-    u32 meshes = 0;                       ///< `meshes` in the file.
-    u32 materials = 0;                    ///< `materials`.
-    u32 textures = 0;                     ///< `textures`.
-    u32 images = 0;                       ///< `images`.
-    u32 skins = 0;                        ///< `skins`.
-    u32 animations = 0;                   ///< `animations`.
-    u32 nodes = 0;                        ///< `nodes`.
-    u32 accessors = 0;                    ///< `accessors`.
-    u32 warnings = 0;                     ///< Features dropped or approximated, each described in `notes`.
+    u32 meshes = 0;                        ///< `meshes` in the file.
+    u32 materials = 0;                     ///< `materials`.
+    u32 textures = 0;                      ///< `textures`.
+    u32 images = 0;                        ///< `images`.
+    u32 skins = 0;                         ///< `skins`.
+    u32 animations = 0;                    ///< `animations`.
+    u32 nodes = 0;                         ///< `nodes`.
+    u32 accessors = 0;                     ///< `accessors`.
+    f32 resampling_translation_error = 0;  ///< The largest error resampling a cubic-spline translation or scale channel
+                                           ///< made.
+    f32 resampling_rotation_degrees = 0;   ///< The largest error (degrees) resampling a cubic-spline rotation channel
+                                           ///< made.
+    u64 output_bytes = 0;  ///< The bytes of the blobs made so far (checked against `ImportLimits::max_output_bytes`).
+    u32 warnings = 0;      ///< Features dropped or approximated, each described in `notes`.
     Vector<String<HeapAllocator>> notes;  ///< One line per warning, naming the glTF object.
 };
 

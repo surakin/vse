@@ -244,12 +244,28 @@ JsonValue JsonValue::At(usize index) const
     {
         return result;
     }
-    const yyjson_val* found = yyjson_arr_get(const_cast<yyjson_val*>(Node(node_)), index);
-    if (found != nullptr)
+    yyjson_val* array = const_cast<yyjson_val*>(Node(node_));
+    if (index >= yyjson_arr_size(array))
     {
-        result.node_ = found;
-        result.Extend(*this, StringView(), true, index);
+        return result;
     }
+    const yyjson_val* found = nullptr;
+    if (cursor_node_ != nullptr && cursor_index_ <= index)
+    {
+        found = static_cast<const yyjson_val*>(cursor_node_);
+        for (usize steps = index - cursor_index_; steps > 0; --steps)
+        {
+            found = unsafe_yyjson_get_next(found);
+        }
+    }
+    else
+    {
+        found = yyjson_arr_get(array, index);
+    }
+    cursor_node_ = found;
+    cursor_index_ = index;
+    result.node_ = found;
+    result.Extend(*this, StringView(), true, index);
     return result;
 }
 

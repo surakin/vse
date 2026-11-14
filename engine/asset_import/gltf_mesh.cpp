@@ -2,6 +2,7 @@
 
 #include "algorithm.h"
 #include "asset_import/gltf_accessor.h"
+#include "asset_import/gltf_names.h"
 #include "cstr/format.h"
 #include "cstr/mem_ops.h"
 #include "lang/scalar.h"
@@ -17,9 +18,8 @@ constexpr u32 kComponentUByte = 5121;
 constexpr u32 kComponentUShort = 5123;
 constexpr u32 kComponentFloat = 5126;
 constexpr u32 kMaxSkinSets = 8;
-constexpr usize kMaxNotes = 256;
 
-Status Refuse(GltfError* error, StringView where, StringView what, ErrorCode code = ErrorCode::Invalid)
+Status RefuseMesh(GltfError* error, StringView where, StringView what, ErrorCode code = ErrorCode::Invalid)
 {
     error->Set(where, what);
     return Status::Make(code, "a glTF mesh is refused");
@@ -84,13 +84,13 @@ Status ReadFloatAttribute(const GltfDocument& document, const JsonValue& value, 
     const GltfAccessor& accessor = document.accessors[index];
     if (accessor.type != type)
     {
-        return Refuse(error, value.Path(), StringView("is an accessor of the wrong element type"));
+        return RefuseMesh(error, value.Path(), StringView("is an accessor of the wrong element type"));
     }
     const bool integer_ok = normalized_integers && accessor.normalized &&
                             (accessor.component_type == kComponentUByte || accessor.component_type == kComponentUShort);
     if (accessor.component_type != kComponentFloat && !integer_ok)
     {
-        return Refuse(error, value.Path(), StringView("is an accessor of the wrong component type"));
+        return RefuseMesh(error, value.Path(), StringView("is an accessor of the wrong component type"));
     }
     if (expected_count != 0 && accessor.count != expected_count)
     {
@@ -111,7 +111,7 @@ Status ReadJointAttribute(const GltfDocument& document, const JsonValue& value, 
     if (accessor.type != GltfAccessorType::Vec4 ||
         (accessor.component_type != kComponentUByte && accessor.component_type != kComponentUShort))
     {
-        return Refuse(error, value.Path(), StringView("is not a VEC4 of unsigned bytes or shorts"));
+        return RefuseMesh(error, value.Path(), StringView("is not a VEC4 of unsigned bytes or shorts"));
     }
     if (accessor.count != expected_count)
     {
@@ -160,7 +160,7 @@ Status MakeTriangles(const Vector<u32>& source, u64 mode, StringView where, Vect
     {
         if (n < 3 || n % 3 != 0)
         {
-            return Refuse(error, where, StringView("TRIANGLES needs a multiple of three indices, at least three"));
+            return RefuseMesh(error, where, StringView("TRIANGLES needs a multiple of three indices, at least three"));
         }
         for (usize i = 0; i < n; ++i)
         {
@@ -170,7 +170,7 @@ Status MakeTriangles(const Vector<u32>& source, u64 mode, StringView where, Vect
     }
     if (n < 3)
     {
-        return Refuse(error, where, StringView("a strip or fan needs at least three indices"));
+        return RefuseMesh(error, where, StringView("a strip or fan needs at least three indices"));
     }
     for (usize i = 0; i + 2 < n; ++i)
     {
@@ -323,81 +323,6 @@ void MakeTangents(PrimData* prim, bool has_uv)
 // ---------------------------------------------------------------------------------------------------------------------
 // Names
 
-u64 NameHash(StringView name)
-{
-    u64 h = 1469598103934665603ull;
-    for (usize i = 0; i < name.Length(); ++i)
-    {
-        h = (h ^ static_cast<u8>(name[i])) * 1099511628211ull;
-    }
-    return h;
-}
-
-struct HashedName
-{
-    u64 hash;
-    u32 position;
-};
-
-bool HashedNameLess(const HashedName& a, const HashedName& b)
-{
-    return a.hash != b.hash ? a.hash < b.hash : a.position < b.position;
-}
-
-// Makes the names distinct: a name seen before gets `_<position>` appended, for a few passes (it is the rare clash with
-// another name that needs more); what is left is settled one by one against the names before it, so the result is
-// always distinct.
-void MakeNamesUnique(Vector<String<HeapAllocator>>* names)
-{
-    for (u32 pass = 0; pass < 4; ++pass)
-    {
-        Vector<HashedName> keys;
-        for (usize i = 0; i < names->Size(); ++i)
-        {
-            keys.Push(HashedName{NameHash((*names)[i].View()), static_cast<u32>(i)});
-        }
-        Sort(Span<HashedName>(keys.Data(), keys.Size()), &HashedNameLess);
-        bool changed = false;
-        Vector<u32> firsts;  // in a run of one hash: the first position of each distinct name
-        for (usize i = 0; i < keys.Size(); ++i)
-        {
-            if (i == 0 || keys[i].hash != keys[i - 1].hash)
-            {
-                firsts.Clear();
-            }
-            bool seen = false;
-            for (usize f = 0; f < firsts.Size(); ++f)
-            {
-                seen = seen || (*names)[firsts[f]].View() == (*names)[keys[i].position].View();
-            }
-            if (!seen)
-            {
-                firsts.Push(keys[i].position);
-                continue;
-            }
-            char suffix[16];
-            FormatTo(suffix, sizeof(suffix), "_%u", static_cast<unsigned>(keys[i].position));
-            (*names)[keys[i].position].Append(StringView(suffix, CStrLength(suffix)));
-            changed = true;
-        }
-        if (!changed)
-        {
-            return;
-        }
-    }
-    for (usize i = 1; i < names->Size(); ++i)
-    {
-        for (usize k = 0; k < i; ++k)
-        {
-            if ((*names)[k].View() == (*names)[i].View())
-            {
-                (*names)[i].Append('_');
-                k = static_cast<usize>(-1);  // compare with the names before it again
-            }
-        }
-    }
-}
-
 // A slot name: the material's name, else `primitive<N>`, cut to the format's length at a character boundary.
 void SlotName(StringView material_name, u32 primitive, Array<char, kMaxSlotNameBytes + 1>* out)
 {
@@ -467,23 +392,23 @@ Status ImportPrimitive(const GltfDocument& document, const ImportOptions& option
     ENGINE_TRY(primitive.OptionalUnsigned("mode", &mode, 6, &present, error));
     if (mode < 4)
     {
-        return Refuse(error, where, StringView("is made of points or lines; only triangles are imported"),
-                      ErrorCode::Unsupported);
+        return RefuseMesh(error, where, StringView("is made of points or lines; only triangles are imported"),
+                          ErrorCode::Unsupported);
     }
     const JsonValue attributes = primitive.Get("attributes");
     if (!attributes.IsObject())
     {
-        return Refuse(error, where, StringView("has no `attributes` object"));
+        return RefuseMesh(error, where, StringView("has no `attributes` object"));
     }
     const JsonValue targets = primitive.Get("targets");
     if (targets.Exists() && targets.Size() != 0)
     {
         if (!options.drop_morph_targets)
         {
-            return Refuse(error, targets.Path(),
-                          StringView("has morph targets, which the mesh format does not hold (drop them with "
-                                     "drop-morph-targets)"),
-                          ErrorCode::Unsupported);
+            return RefuseMesh(error, targets.Path(),
+                              StringView("has morph targets, which the mesh format does not hold (drop them with "
+                                         "drop-morph-targets)"),
+                              ErrorCode::Unsupported);
         }
         AddImportWarning(report, where, StringView("morph targets dropped; the base shape is imported"));
     }
@@ -505,7 +430,7 @@ Status ImportPrimitive(const GltfDocument& document, const ImportOptions& option
     const JsonValue position_value = attributes.Get("POSITION");
     if (!position_value.Exists())
     {
-        return Refuse(error, attributes.Path(), StringView("has no POSITION"));
+        return RefuseMesh(error, attributes.Path(), StringView("has no POSITION"));
     }
     Vector<f32> positions;
     u64 count = 0;
@@ -513,8 +438,8 @@ Status ImportPrimitive(const GltfDocument& document, const ImportOptions& option
         ReadFloatAttribute(document, position_value, GltfAccessorType::Vec3, false, 0, &positions, &count, error));
     if (count > kMaxMeshVertices)
     {
-        return Refuse(error, position_value.Path(), StringView("has more vertices than a mesh may hold"),
-                      ErrorCode::TooLarge);
+        return RefuseMesh(error, position_value.Path(), StringView("has more vertices than a mesh may hold"),
+                          ErrorCode::TooLarge);
     }
     const usize vertex_count = static_cast<usize>(count);
     Vector<f32> normals;
@@ -559,7 +484,7 @@ Status ImportPrimitive(const GltfDocument& document, const ImportOptions& option
         }
         if (!joints.Exists() || !weights.Exists())
         {
-            return Refuse(error, attributes.Path(), StringView("has JOINTS_n without WEIGHTS_n or the reverse"));
+            return RefuseMesh(error, attributes.Path(), StringView("has JOINTS_n without WEIGHTS_n or the reverse"));
         }
         Vector<u32> joint_values;
         Vector<f32> weight_values;
@@ -578,9 +503,10 @@ Status ImportPrimitive(const GltfDocument& document, const ImportOptions& option
         FormatTo(weights_name, sizeof(weights_name), "WEIGHTS_%u", static_cast<unsigned>(k));
         if (attributes.Get(StringView(joints_name)).Exists() || attributes.Get(StringView(weights_name)).Exists())
         {
-            return Refuse(error, attributes.Path(),
-                          StringView("has a JOINTS_n or WEIGHTS_n after a missing set: the sets are numbered from 0 "
-                                     "without a gap"));
+            return RefuseMesh(
+                error, attributes.Path(),
+                StringView("has a JOINTS_n or WEIGHTS_n after a missing set: the sets are numbered from 0 "
+                           "without a gap"));
         }
     }
     const bool has_skin = joint_sets.Size() != 0;
@@ -598,7 +524,7 @@ Status ImportPrimitive(const GltfDocument& document, const ImportOptions& option
         ENGINE_TRY(index_value.AsIndex(&accessor_index, document.accessors.Size(), error));
         if (document.accessors[accessor_index].type != GltfAccessorType::Scalar)
         {
-            return Refuse(error, index_value.Path(), StringView("is not a SCALAR accessor"));
+            return RefuseMesh(error, index_value.Path(), StringView("is not a SCALAR accessor"));
         }
         ENGINE_TRY(ReadAccessorUnsigned(document, accessor_index, &source, error));
     }
@@ -606,8 +532,8 @@ Status ImportPrimitive(const GltfDocument& document, const ImportOptions& option
     {
         if (count > kMaxMeshIndices)
         {
-            return Refuse(error, where, StringView("has more vertices than a mesh may hold indices"),
-                          ErrorCode::TooLarge);
+            return RefuseMesh(error, where, StringView("has more vertices than a mesh may hold indices"),
+                              ErrorCode::TooLarge);
         }
         for (u32 i = 0; i < vertex_count; ++i)
         {
@@ -616,7 +542,7 @@ Status ImportPrimitive(const GltfDocument& document, const ImportOptions& option
     }
     if (source.Size() > kMaxMeshIndices)
     {
-        return Refuse(error, where, StringView("has more indices than a mesh may hold"), ErrorCode::TooLarge);
+        return RefuseMesh(error, where, StringView("has more indices than a mesh may hold"), ErrorCode::TooLarge);
     }
     for (usize i = 0; i < source.Size(); ++i)
     {
@@ -630,7 +556,7 @@ Status ImportPrimitive(const GltfDocument& document, const ImportOptions& option
     ENGINE_TRY(MakeTriangles(source, mode, where, &out->indices, error));
     if (out->indices.Size() == 0)
     {
-        return Refuse(error, where, StringView("has no triangles"));
+        return RefuseMesh(error, where, StringView("has no triangles"));
     }
     // The vertices.
     const f64 scale = static_cast<f64>(options.scale);
@@ -642,7 +568,8 @@ Status ImportPrimitive(const GltfDocument& document, const ImportOptions& option
             vertex.position[k] = static_cast<f32>(static_cast<f64>(positions[v * 3 + k]) * scale);
             if (!IsFinite(vertex.position[k]))
             {
-                return Refuse(error, position_value.Path(), StringView("is past the range of a float after scaling"));
+                return RefuseMesh(error, position_value.Path(),
+                                  StringView("is past the range of a float after scaling"));
             }
         }
         if (normals.Size() != 0)
@@ -676,13 +603,17 @@ Status ImportPrimitive(const GltfDocument& document, const ImportOptions& option
             {
                 for (usize k = 0; k < 4; ++k)
                 {
-                    const u32 joint = joint_sets[s][v * 4 + k];
+                    u32 joint = joint_sets[s][v * 4 + k];
                     const f32 weight = weight_sets[s][v * 4 + k];
                     if (joint >= binding->joint_count)
                     {
                         error->SetNumber(attributes.Path(), StringView("has a joint past the skeleton's joints: "),
                                          joint);
                         return Status::Make(ErrorCode::Invalid, "a glTF mesh is refused");
+                    }
+                    if (binding->joint_remap.Size() != 0)
+                    {
+                        joint = binding->joint_remap[joint];  // the skin's joint slot, as the skeleton orders it
                     }
                     if (!(weight > 0.0f))
                     {
@@ -743,36 +674,6 @@ Status ImportPrimitive(const GltfDocument& document, const ImportOptions& option
 
 }  // namespace
 
-void CleanPathSegment(StringView name, String<HeapAllocator>* out)
-{
-    *out = String<HeapAllocator>(HeapAllocator::Default());
-    for (usize i = 0; i < name.Length(); ++i)
-    {
-        const u8 c = static_cast<u8>(name[i]);
-        out->Append((c < 0x20 || c == 0x7f || c == '/' || c == '\\') ? '_' : static_cast<char>(c));
-    }
-    if (out->View() == StringView(".") || out->View() == StringView(".."))
-    {
-        *out = String<HeapAllocator>(HeapAllocator::Default(), StringView("_"));
-    }
-}
-
-void AddImportWarning(ImportReport* report, StringView where, StringView what)
-{
-    report->warnings += 1;
-    if (report->notes.Size() >= kMaxNotes)
-    {
-        return;
-    }
-    String<HeapAllocator> note(HeapAllocator::Default(), where);
-    if (where.Length() != 0)
-    {
-        note.Append(StringView(": "));
-    }
-    note.Append(what);
-    report->notes.Push(static_cast<String<HeapAllocator>&&>(note));
-}
-
 Status ImportMeshes(const GltfDocument& document, const ImportOptions& options, const TypeRegistry& types,
                     Span<const MeshSkeletonBinding> bindings, ImportResult* result, GltfError* error)
 {
@@ -799,30 +700,9 @@ Status ImportMeshes(const GltfDocument& document, const ImportOptions& options, 
         objects.Push(ManifestObject{static_cast<u32>(m), has_name ? name : StringView()});
     }
     Vector<ResourceId> ids;
-    if (options.manifest != nullptr)
-    {
-        options.manifest->Match(ImportKind::Mesh, Span<const ManifestObject>(objects.Data(), objects.Size()), &ids);
-    }
-    while (ids.Size() < mesh_count)
-    {
-        ids.Push(ResourceId());
-    }
-    RandomIdSource random_ids;
-    IdSource& id_source = options.ids != nullptr ? *options.ids : static_cast<IdSource&>(random_ids);
-    for (usize m = 0; m < mesh_count; ++m)
-    {
-        if (ids[m].IsNone())
-        {
-            ids[m] = id_source.Next();
-        }
-    }
+    AssignIds(options, ImportKind::Mesh, Span<const ManifestObject>(objects.Data(), objects.Size()), &ids);
     // Paths: `<prefix>/meshes/<name>`, distinct.
-    String<HeapAllocator> prefix(HeapAllocator::Default(),
-                                 options.path_prefix.Length() != 0 ? options.path_prefix : StringView("/gltf"));
-    while (prefix.Length() > 1 && prefix.View()[prefix.Length() - 1] == '/')
-    {
-        prefix = String<HeapAllocator>(HeapAllocator::Default(), prefix.View().Substring(0, prefix.Length() - 1));
-    }
+    const String<HeapAllocator> prefix = ImportPathPrefix(options);
     Vector<String<HeapAllocator>> segments;
     for (usize m = 0; m < mesh_count; ++m)
     {
@@ -838,14 +718,13 @@ Status ImportMeshes(const GltfDocument& document, const ImportOptions& options, 
     }
     MakeNamesUnique(&segments);
     const JsonValue materials = document.root.Get("materials");
-    u64 output_bytes = 0;
     for (usize m = 0; m < mesh_count; ++m)
     {
         const JsonValue mesh = meshes.At(m);
         const JsonValue primitives = mesh.Get("primitives");
         if (!primitives.IsArray() || primitives.Size() == 0)
         {
-            return Refuse(error, mesh.Path(), StringView("has no primitives"));
+            return RefuseMesh(error, mesh.Path(), StringView("has no primitives"));
         }
         if (primitives.Size() > options.limits.max_primitives_per_mesh || primitives.Size() > kMaxMeshSlots)
         {
@@ -886,8 +765,8 @@ Status ImportMeshes(const GltfDocument& document, const ImportOptions& options, 
             if (vertices.Size() + data.vertices.Size() > kMaxMeshVertices ||
                 indices.Size() + data.indices.Size() > kMaxMeshIndices)
             {
-                return Refuse(error, mesh.Path(), StringView("has more vertices or indices than a mesh may hold"),
-                              ErrorCode::TooLarge);
+                return RefuseMesh(error, mesh.Path(), StringView("has more vertices or indices than a mesh may hold"),
+                                  ErrorCode::TooLarge);
             }
             const u32 base = static_cast<u32>(vertices.Size());
             slots[p].first_index = static_cast<u32>(indices.Size());
@@ -937,8 +816,8 @@ Status ImportMeshes(const GltfDocument& document, const ImportOptions& options, 
             error->Set(mesh.Path(), StringView(built.Message()));
             return built;
         }
-        output_bytes += resource.blob.Size();
-        if (output_bytes > options.limits.max_output_bytes)
+        result->report.output_bytes += resource.blob.Size();
+        if (result->report.output_bytes > options.limits.max_output_bytes)
         {
             error->Set(mesh.Path(), StringView("takes the import past the limit on the bytes it may make"));
             return Status::Make(ErrorCode::TooLarge, "the import is too large");

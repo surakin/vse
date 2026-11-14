@@ -12,6 +12,7 @@
 #include "asset/mesh.h"
 #include "asset_import/gltf_container.h"
 #include "asset_import/gltf_import.h"
+#include "asset_import/gltf_names.h"
 #include "containers/span.h"
 
 namespace engine_placeholder::asset
@@ -26,6 +27,8 @@ struct MeshSkeletonBinding
     ResourceId skeleton;        ///< The skeleton resource.
     ContentHash skeleton_hash;  ///< Its content hash.
     u32 joint_count = 0;        ///< Its joint count (1 to 256).
+    Span<const u32>
+        joint_remap;  ///< A `JOINTS_n` value (a slot of the skin) to the skeleton's joint index; empty: the same.
 };
 
 /// Imports every mesh of a parsed glTF.
@@ -49,22 +52,5 @@ struct MeshSkeletonBinding
 /// - Ownership: borrows its arguments for the call only; `*result` owns what it receives.
 Status ImportMeshes(const GltfDocument& document, const ImportOptions& options, const TypeRegistry& types,
                     Span<const MeshSkeletonBinding> bindings, ImportResult* result, GltfError* error);
-
-/// Cleans a glTF name into one resource-path segment: `/`, `\`, control characters become `_`, `.` and `..` become `_`.
-///
-/// - Param name: the name as written.
-/// - Param out: replaced by the segment (empty for an empty name).
-/// - Ownership: borrows its arguments for the call only; nothing is retained.
-/// - Fails: never.
-void CleanPathSegment(StringView name, String<HeapAllocator>* out);
-
-/// Appends a warning to a report: counts it and keeps its sentence (the first 256 are kept).
-///
-/// - Param report: the report.
-/// - Param where: the glTF object.
-/// - Param what: what was dropped or approximated.
-/// - Ownership: borrows its arguments for the call only; nothing is retained.
-/// - Fails: never.
-void AddImportWarning(ImportReport* report, StringView where, StringView what);
 
 }  // namespace engine_placeholder::asset

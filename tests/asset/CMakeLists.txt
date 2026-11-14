@@ -38,6 +38,7 @@ set(ASSET_TEST_SOURCES
   gltf_json_test.cpp  # Day 335
   gltf_container_test.cpp  # Day 335
   gltf_mesh_test.cpp  # Day 336
+  gltf_skin_test.cpp  # Day 337
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/project.cpp  # Day 333: the project side of the minter under test
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/target_transform.cpp  # Day 334
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/upgrade.cpp  # Day 334

@@ -134,6 +134,10 @@ private:
     friend class JsonDocument;
     friend class JsonMembers;
     const void* node_ = nullptr;
+    // The element `At` returned last, so that reading an array of objects from the first element to the last takes
+    // linear time (finding element `i` of such an array otherwise walks `i` siblings).
+    mutable const void* cursor_node_ = nullptr;
+    mutable usize cursor_index_ = 0;
     Array<char, 96> path_ = {};
     void Extend(const JsonValue& parent, StringView key, bool index_form, usize index);
 };

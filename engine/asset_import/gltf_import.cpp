@@ -1,7 +1,10 @@
 #include "asset_import/gltf_import.h"
 
 #include "asset_import/gltf_container.h"
+#include "asset_import/gltf_clip.h"
 #include "asset_import/gltf_mesh.h"
+#include "asset_import/gltf_names.h"
+#include "asset_import/gltf_skin.h"
 #include "algorithm.h"
 #include "cstr/format.h"
 #include "cstr/mem_ops.h"
@@ -421,11 +424,7 @@ Status ImportGltf(ByteSpan file, GltfSource& source, const ImportOptions& option
     {
         const char* name;
         u32 count;
-    } pending[] = {{"skins", report.skins},
-                   {"animations", report.animations},
-                   {"materials", report.materials},
-                   {"textures", report.textures},
-                   {"images", report.images}};
+    } pending[] = {{"materials", report.materials}, {"textures", report.textures}, {"images", report.images}};
     for (const auto& kind : pending)
     {
         if (kind.count != 0)
@@ -436,7 +435,37 @@ Status ImportGltf(ByteSpan file, GltfSource& source, const ImportOptions& option
         }
     }
     const TypeRegistry types;
-    return ImportMeshes(document, options, types, Span<const MeshSkeletonBinding>(), result, error);
+    GltfNodeGraph graph;
+    ENGINE_TRY(ReadNodeGraph(document, &graph, error));
+    // Skeletons first (meshes and clips refer to them), then the meshes skinned to them, then the clips.
+    Vector<ImportedSkin> skins;
+    ENGINE_TRY(ImportSkins(document, graph, options, types, result, &skins, error));
+    Vector<MeshSkeletonBinding> bindings;
+    bindings.Resize(report.meshes);
+    for (usize n = 0; n < graph.nodes.Size(); ++n)
+    {
+        const GltfNode& node = graph.nodes[n];
+        if (node.mesh == kNoGltfIndex || node.skin == kNoGltfIndex)
+        {
+            continue;
+        }
+        MeshSkeletonBinding& binding = bindings[node.mesh];
+        const ImportedSkin& skin = skins[node.skin];
+        if (binding.present && binding.skeleton != skin.id)
+        {
+            error->Set(document.root.Get("meshes").At(node.mesh).Path(), StringView("is used with two skins"));
+            return Status::Make(ErrorCode::Invalid, "a mesh has two skins");
+        }
+        binding.present = true;
+        binding.skeleton = skin.id;
+        binding.skeleton_hash = skin.hash;
+        binding.joint_count = skin.joint_count;
+        binding.joint_remap = Span<const u32>(skin.joint_of_slot.Data(), skin.joint_of_slot.Size());
+    }
+    ENGINE_TRY(ImportMeshes(document, options, types, Span<const MeshSkeletonBinding>(bindings.Data(), bindings.Size()),
+                            result, error));
+    return ImportClips(document, graph, options, types, Span<const ImportedSkin>(skins.Data(), skins.Size()), result,
+                       error);
 }
 
 Status ImportIntoBackend(HostMemoryBackend& backend, const ImportResult& result)

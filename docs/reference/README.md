@@ -26,7 +26,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Spatial Partitioning](spatial.md) | 12 | 333 |
 | [Networking](net.md) | 31 | 730 |
 | [Assets and resources](asset.md) | 32 | 1154 |
-| [glTF importer](asset_import.md) | 6 | 181 |
+| [glTF importer](asset_import.md) | 10 | 228 |
 | [Animation runtime](animation.md) | 4 | 80 |
 | [Database](database.md) | 9 | 161 |
 | [Storage](storage.md) | 18 | 427 |
