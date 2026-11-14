@@ -1,4 +1,4 @@
-# Phase 22 / Day 337 — Settings, the No-Tools-In-The-Game Gate & the `asset_demo`
+# Phase 22 / Day 338 — Settings, the No-Tools-In-The-Game Gate & the `asset_demo`
 
 **Phase:** [Phase 22 — Asset Pipeline & Resource System](../phase-22-asset-pipeline.md)
 **Depends on:** Days 313-333; Phase 5 and Phase 17 (the renderer and the scene bridge, for the demo).
@@ -17,7 +17,7 @@ Close the loops: every knob a setting, a gate that keeps tool code out of the ga
 - [ ] **Hot reload of loose files** (development): `Watch` plus the manager reloads a changed texture or material in place (handles stay valid); tested with a modified file on disk.
 - [ ] **`docs/tutorials/loading-a-level.md`:** mint a project, load it from a pak and from a server; compiled sample.
 - [ ] **Runs (CLAUDE.md "Tests run by phase"):** `scripts/test-phase.sh --affected` plain; then the asan and tsan flavors when the day touched concurrency, lifetime or memory code; quote each run's final `ran X of Y tests (phases ...)` line in this file and never say "all tests pass" for a reduced run. `ctest -L docs` when a public header or a guide changed. Build clean (warnings are errors) with Clang and GCC, unity on and off. New code uses the engine's wrappers and types, never `std` (`std_usage_check`); file access only through `io::` (`file_access_check`); settings only through `settings::Registry` (`config_access_check`).
-- [ ] **Three machines (CLAUDE.md "Three machines"):** shared code is portable and checked on the Windows PC and the Mac no later than Day 339; until then the day is "open until the other machines run it" in `KNOWN-ISSUES.md`.
+- [ ] **Three machines (CLAUDE.md "Three machines"):** shared code is portable and checked on the Windows PC and the Mac no later than Day 340; until then the day is "open until the other machines run it" in `KNOWN-ISSUES.md`.
 - [ ] **Documentation (CLAUDE.md "Public API is documented before a day is done"):** public headers carry `///` comments with the contract labels (`docs/DOC-CONVENTIONS.md`); `docgen lint` stays at zero; `cmake --build build --target docs` output committed; new modules are added to `docs/reference/modules.txt`; the guide page `docs/guide/assets.md` is updated and its tagged samples compile and run.
 - [ ] **Module rules (CLAUDE.md "Module dependencies follow ARCHITECTURE.md"):** a new module or edge updates `ARCHITECTURE.md`, `tools/module_deps_check/modules.txt` and the CMake targets (with `_asan`/`_tsan` flavors) in the same commit; no upward edge, no cycle; every new test file has its line in `tests/phases.txt` (phase 22).
 - [ ] **Day review (CLAUDE.md, required):** `/code-review high` over the day's diff after the scoped tests; verify, fix (with a regression test that fails without the fix) or decline each finding with a reason; record the count and outcome under "Post-implementation code review" below and in `STATUS.md`.

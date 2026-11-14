@@ -306,7 +306,7 @@ TEST_CASE("The skinned image survives a reset of the mesh, the palette buffer an
     }
 }
 
-// Hidden benchmark for Day 338: 1,000 and 10,000 skinned instances of a 5,000-vertex, 40-joint mesh. Prints the CPU
+// Hidden benchmark for Day 339: 1,000 and 10,000 skinned instances of a 5,000-vertex, 40-joint mesh. Prints the CPU
 // time of `GBufferPass::Prepare` (cull, palette copy, object data, sort) and of a whole frame with readback (CPU
 // recording plus the GPU time, the backend reports no separate figure here).
 TEST_CASE("Skinned instances: CPU prepare and frame time (recorded)", "[.][render-bench][skinning]")

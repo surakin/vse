@@ -23,15 +23,15 @@ the text pipeline survive an RHI reset (CLAUDE.md "RHI can be reset at run time"
 
 ## Days (Days 175-183; the day files carry the sub-tasks)
 
-1. [Day 175 — Design spec, FreeType vendored, the font, the module](phase-14-font-text-rendering/day-175-design-spec-and-freetype.md)
-2. [Day 176 — Font faces: loading, metrics, glyph lookup, kerning](phase-14-font-text-rendering/day-176-font-face.md)
-3. [Day 177 — Glyph rasterization and the atlas packer (CPU)](phase-14-font-text-rendering/day-177-glyph-raster-and-atlas.md)
-4. [Day 178 — Text layout](phase-14-font-text-rendering/day-178-text-layout.md)
-5. [Day 179 — Cursor placement and hit-testing](phase-14-font-text-rendering/day-179-cursor-and-hit-testing.md)
-6. [Day 180 — The atlas texture, the text pipeline and shaders](phase-14-font-text-rendering/day-180-atlas-texture-and-text-material.md)
-7. [Day 181 — The overlay text pass and the draw API](phase-14-font-text-rendering/day-181-overlay-text-pass.md)
-8. [Day 182 — Hello world in the demos, reset and loss, golden images](phase-14-font-text-rendering/day-182-hello-world-demo-and-golden.md)
-9. [Day 183 — Guide, benchmark, closing runs, phase review](phase-14-font-text-rendering/day-183-docs-and-closing-run.md)
+175. [Day 175 — Design spec, FreeType vendored, the font, the module](phase-14-font-text-rendering/day-175-design-spec-and-freetype.md)
+176. [Day 176 — Font faces: loading, metrics, glyph lookup, kerning](phase-14-font-text-rendering/day-176-font-face.md)
+177. [Day 177 — Glyph rasterization and the atlas packer (CPU)](phase-14-font-text-rendering/day-177-glyph-raster-and-atlas.md)
+178. [Day 178 — Text layout](phase-14-font-text-rendering/day-178-text-layout.md)
+179. [Day 179 — Cursor placement and hit-testing](phase-14-font-text-rendering/day-179-cursor-and-hit-testing.md)
+180. [Day 180 — The atlas texture, the text pipeline and shaders](phase-14-font-text-rendering/day-180-atlas-texture-and-text-material.md)
+181. [Day 181 — The overlay text pass and the draw API](phase-14-font-text-rendering/day-181-overlay-text-pass.md)
+182. [Day 182 — Hello world in the demos, reset and loss, golden images](phase-14-font-text-rendering/day-182-hello-world-demo-and-golden.md)
+183. [Day 183 — Guide, benchmark, closing runs, phase review](phase-14-font-text-rendering/day-183-docs-and-closing-run.md)
 
 ## Key deliverables
 

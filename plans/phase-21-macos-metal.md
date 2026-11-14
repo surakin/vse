@@ -74,8 +74,8 @@ order. The user asked to start with the foundation (Days 284-293) and then plan 
 308. [Text, UI and the Scene Bridge on Metal](phase-21-macos-metal/day-308-metal-text-ui-scene.md)
 309. [Metal Lifecycle, Device Loss and Resets](phase-21-macos-metal/day-309-metal-lifecycle.md)
 310. [Networking on macOS: the Socket Hooks, the kqueue Poller, Name Resolution](phase-21-macos-metal/day-310-macos-networking.md) (added 2026-11-12)
-310. [Demos, Benchmarks, Catch-up and the arm64 Compile Check](phase-21-macos-metal/day-311-demos-benches-arm64.md)
-311. [Guides, Closing Full Runs on Three Machines & Wrap-up](phase-21-macos-metal/day-312-docs-and-closing-run.md)
+311. [Demos, Benchmarks, Catch-up and the arm64 Compile Check](phase-21-macos-metal/day-311-demos-benches-arm64.md)
+312. [Guides, Closing Full Runs on Three Machines & Wrap-up](phase-21-macos-metal/day-312-docs-and-closing-run.md)
 
 Order reasoning: the spike comes first because its answer (driver-minted `.metallib` or Xcode) changes `BUILD.md`, the prerequisites and Day 299, and it
 needs no build of the engine. Then the stack bottom-up, one layer per day as Phase 13 did (`ARCHITECTURE.md`): the build, `os`, the test tooling (so every
