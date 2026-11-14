@@ -283,7 +283,7 @@ Every `ENGINE_ASSERT`, `ENGINE_VERIFY` and `ENGINE_CHECK_SLOW` under `engine/` (
 - line 637: GpuMesh::Create: the mesh data is empty
 - line 662: GpuMesh::MakeRecreatable: the mesh is empty
 - line 663: GpuMesh::MakeRecreatable: no source
-- line 676: GpuMesh::AdoptSource: the mesh or the data is empty
+- line 676: GpuMesh::MakeRecreatable: the mesh or the data is empty
 - line 701: GpuMesh::Recreate: the mesh still holds buffers
 - line 764: GpuMesh::RecordPrepare: empty mesh or null list
 - line 774: GpuMesh::Draw: the mesh is empty or RecordPrepare was never called

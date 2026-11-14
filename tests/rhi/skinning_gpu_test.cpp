@@ -261,9 +261,7 @@ TEST_CASE("The skinned image survives a reset of the mesh, the palette buffer an
             REQUIRE(MakeRibbon(&data));
             GpuMesh mesh;
             REQUIRE(mesh.Create(device.Get(), data, "ribbon"));
-            MeshData kept;
-            REQUIRE(MakeRibbon(&kept));
-            REQUIRE(mesh.AdoptSource(&registry, static_cast<MeshData&&>(kept), "ribbon"));
+            REQUIRE(mesh.MakeRecreatable(&registry, data, "ribbon"));
             rig.Prepare(&mesh);
             GBufferOptions options;
             options.skinned = true;

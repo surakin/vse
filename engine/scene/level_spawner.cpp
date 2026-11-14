@@ -67,9 +67,7 @@ asset::Status Spawn(asset::ResourceManager& manager, asset::ResourceId id, const
         asset::Handle<asset::GpuMeshAsset> mesh;
         ENGINE_TRY(manager.Load<asset::GpuMeshAsset>(asset::ResourceId::FromValue(reference->mesh.id), &mesh));
         MeshRenderer renderer_component;
-        SharedPtr<MeshAsset> holder = MakeShared<MeshAsset>();
-        holder->shared = mesh.Get()->mesh;
-        renderer_component.mesh = holder;
+        renderer_component.mesh = mesh.Get()->mesh;
         renderer_component.flags = reference->flags;
         if (reference->material.id != 0)
         {

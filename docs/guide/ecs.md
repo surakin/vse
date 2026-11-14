@@ -583,13 +583,13 @@ or removing the component, appends an entry with the entity, the value at that m
 
 Include `scene/render_sync.h` and link `scene` (module `engine/scene`, above `ecs` and `renderer`; neither includes it). It mirrors entities into a `renderer::RenderScene`, which is unchanged.
 
-- **Components.** `scene::MeshRenderer { SharedPtr<MeshAsset> mesh; u32 material; u32 flags; }` with the `WorldTransform` draws a mesh; `scene::MeshAsset` is the ref-counted holder of a
-  `renderer::GpuMesh` (prepare its upload barriers and `MarkReady` it, as for any mesh). `scene::LightSource` makes a light (a point light at the entity's position, a directional one pointing along
+- **Components.** `scene::MeshRenderer { renderer::GpuMeshPtr mesh; u32 material; u32 flags; }` with the `WorldTransform` draws a mesh; the mesh is shared by every entity that draws it
+  (prepare its upload barriers and `MarkReady` it, as for any mesh). `scene::LightSource` makes a light (a point light at the entity's position, a directional one pointing along
   its `direction` turned by the entity's rotation). The `scene::Hidden` tag sets `ObjectFlags::kHidden`. An entity mirrors a mesh or a light, not both.
 - **The system.** `MakeRenderSyncSystem(name)` in `ecs::kRender` needs the resources `SceneLink { RenderScene* }` and `SceneSyncReport`. It keeps a `RenderHandle` (the object and light ids, with removal
   tracking) on each mirrored entity and calls the scene only for what changed: `AddObject` for new entities, `SetTransform` when the matrix differs from the scene's, `SetFlags`, a remove and add
   when the mesh or material changed, `RemoveObject`/`RemoveLight` for destroyed entities or ones that lost the component. A scene with nothing changing costs the `Changed` queries and no calls.
-- **Lifetime.** The sync holds a reference to each object's `MeshAsset`, so the geometry outlives its scene entry even if the entity was destroyed first.
+- **Lifetime.** The sync holds a share of each object's mesh, so the geometry outlives its scene entry even if the entity was destroyed first.
 - **Limits.** A full `RenderScene` is a counted refusal (`SceneSyncReport::refused_full`), retried each frame. A missing or empty mesh, or a light the scene would abort on (a point light without a radius,
   a value that is not finite) is skipped and counted in `invalid`. The linked scene must not change between frames.
 - **The camera.** `MakeCameraSystem(name)` builds `CameraOutput` (a `renderer::Camera`) from the `ActiveCamera` resource's entity, which carries a `scene::Camera` and a `WorldTransform`

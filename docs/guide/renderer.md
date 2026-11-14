@@ -759,8 +759,8 @@ alignments from the new device's caps again rather than keeping the old ones, an
 backend. `tests/rhi/adapter_switch_gpu_test.cpp` switches a running renderer from the Radeon to WARP and back and checks the picture
 against the golden on each.
 
-[[renderer::GpuMesh]] gets its source with `MakeRecreatable` (a borrowed [[renderer::MeshData]] or a loader) or `AdoptSource` (the mesh
-keeps the data); [[renderer::GpuTexture]] holds a [[renderer::TextureImage]] or a [[renderer::TextureLoader]] (an asset file is read again
+[[renderer::GpuMesh]] gets its source with `MakeRecreatable` (it copies the [[renderer::MeshData]] into a shared byte region it keeps) or is made
+by `CreateFromGeometry` over a [[renderer::MeshGeometry]], which shares the bytes it was given (a loaded blob) instead of copying them; [[renderer::GpuTexture]] holds a [[renderer::TextureImage]] or a [[renderer::TextureLoader]] (an asset file is read again
 at every recreate, so its pixels are not kept in memory); [[renderer::GpuSampler]] keeps its description. A device with smaller limits
 (`max_texture_dimension_2d`, a missing format) makes `Recreate` fail with a log line; a texture that cannot get its mip chain
 generated falls back to the levels its source holds.

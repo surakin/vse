@@ -701,12 +701,14 @@ TEST_CASE("bc: a compressed blob with a mismatched format is refused and one upl
     CHECK(refused.Open(ByteSpan(hostile.Data(), hostile.Size()), types).Failed());
 
     // The upload: every level goes up with its block-row pitch.
-    Vector<renderer::TextureLevelRef> refs;
+    const SharedBytesPtr shared = CopyShared(blob);  // the texture shares a copy of the blob
+    Vector<renderer::TextureLevelSpan> refs;
     for (u32 mip = 0; mip < view.MipCount(); ++mip)
     {
         const TextureLevel level = view.Level(0, mip);
-        renderer::TextureLevelRef ref;
-        ref.data = level.bytes.Data();
+        renderer::TextureLevelSpan ref;
+        ref.offset = static_cast<u64>(level.bytes.Data() - blob.Data());  // where it is in the blob
+        ref.bytes = level.bytes.Size();
         ref.row_pitch = level.row_pitch;
         ref.mip = mip;
         ref.layer = 0;
@@ -718,8 +720,9 @@ TEST_CASE("bc: a compressed blob with a mismatched format is refused and one upl
     rhi::NullDevicePtr device = rhi::CreateNullDevice(rhi::NullDeviceOptions{});
     REQUIRE(registry.OnDeviceCreated(device.Get(), device->Epoch()));
     renderer::GpuTexture texture;
-    CHECK(texture.CreateFromLevels(device.Get(), view.Desc(rhi::TextureUsage::Sampled),
-                                   Span<const renderer::TextureLevelRef>(refs.Data(), refs.Size()), &registry, "bc"));
+    CHECK(texture.CreateFromSharedLevels(device.Get(), view.Desc(rhi::TextureUsage::Sampled), shared,
+                                         Span<const renderer::TextureLevelSpan>(refs.Data(), refs.Size()), &registry,
+                                         "bc"));
     CHECK(texture.Desc().format == rhi::Format::BC1_UNorm);
     texture.Destroy();
     LogRender.SetEnabled(was);

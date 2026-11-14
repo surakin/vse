@@ -199,11 +199,11 @@ TEST_CASE("A mesh survives a device change with identical content and the same s
     vertices.Resize(static_cast<usize>(data.VertexBytes()));
     MemCopy(vertices.Data(), data.Vertices(), vertices.Size());
 
-    SECTION("borrowed source")
+    SECTION("a copy of the geometry is the source")
     {
         GpuMesh mesh;
         REQUIRE(mesh.Create(rig.host.GetDevice(), data, "sphere"));
-        REQUIRE(mesh.MakeRecreatable(&rig.registry, GpuMesh::Source{&data, nullptr, nullptr}, "sphere"));
+        REQUIRE(mesh.MakeRecreatable(&rig.registry, data, "sphere"));
         const u32 sort_id = mesh.SortId();
         const rhi::BufferHandle old_vb = mesh.VertexBuffer();
         REQUIRE(rig.Reset());
@@ -220,11 +220,9 @@ TEST_CASE("A mesh survives a device change with identical content and the same s
     }
     SECTION("owned source, moved around")
     {
-        MeshData copy;
-        REQUIRE(MakeSphereMesh(1.0f, 12, 6, &copy) == nullptr);
         GpuMesh original;
         REQUIRE(original.Create(rig.host.GetDevice(), data, "owned"));
-        REQUIRE(original.AdoptSource(&rig.registry, static_cast<MeshData&&>(copy), "owned"));
+        REQUIRE(original.MakeRecreatable(&rig.registry, data, "owned"));
         GpuMesh moved = static_cast<GpuMesh&&>(original);  // the registration follows the move
         CHECK(rig.registry.Count() == 1);
         REQUIRE(rig.Reset());
@@ -236,17 +234,18 @@ TEST_CASE("A mesh survives a device change with identical content and the same s
         REQUIRE(null_device->PeekBuffer(moved.VertexBuffer(), 0, after.Data(), after.Size()));
         CHECK(renderer_test::SameBytes(after, vertices));
     }
-    SECTION("loader source")
+    SECTION("a point list survives a reset like any other topology")
     {
-        struct Loader
-        {
-            static bool Load(void*, MeshData* out) { return MakeSphereMesh(1.0f, 12, 6, out) == nullptr; }
-        };
+        const u16 idx[3] = {0, 1, 2};
+        MeshData points;
+        REQUIRE(points.Set(data.Layout(), 0, data.Vertices(), data.VertexCount(), rhi::IndexType::UInt16, idx, 3,
+                           rhi::PrimitiveTopology::PointList) == nullptr);
         GpuMesh mesh;
-        REQUIRE(mesh.Create(rig.host.GetDevice(), data, "loaded"));
-        REQUIRE(mesh.MakeRecreatable(&rig.registry, GpuMesh::Source{nullptr, &Loader::Load, nullptr}, "loaded"));
+        REQUIRE(mesh.Create(rig.host.GetDevice(), points, "points"));
+        REQUIRE(mesh.MakeRecreatable(&rig.registry, points, "points"));
         REQUIRE(rig.Reset());
         CHECK(mesh.Valid());
+        CHECK(mesh.Topology() == rhi::PrimitiveTopology::PointList);
     }
     SECTION("a mesh with no source fails the reset and says which")
     {
@@ -254,10 +253,10 @@ TEST_CASE("A mesh survives a device change with identical content and the same s
         REQUIRE(mesh.Create(rig.host.GetDevice(), data, "bare"));
         // Registered through a tiny wrapper that has no source: simulate by making it recreatable then losing the
         // source.
-        REQUIRE(mesh.MakeRecreatable(&rig.registry, GpuMesh::Source{&data, nullptr, nullptr}, "bare"));
+        REQUIRE(mesh.MakeRecreatable(&rig.registry, data, "bare"));
         MeshData small;
         REQUIRE(MakeCubeMesh(1.0f, &small) == nullptr);
-        mesh.MakeRecreatable(&rig.registry, GpuMesh::Source{&small, nullptr, nullptr}, "bare");  // wrong geometry
+        mesh.MakeRecreatable(&rig.registry, small, "bare");  // wrong geometry
         CHECK_FALSE(rig.Reset());
         CHECK(CStrCompare(rig.registry.FailedOwner(), "bare") == 0);
     }
@@ -272,7 +271,7 @@ TEST_CASE("Destroying meshes and textures leaves nothing on the device", "[devic
         REQUIRE(MakeCubeMesh(1.0f, &data) == nullptr);
         GpuMesh mesh;
         REQUIRE(mesh.Create(rig.host.GetDevice(), data, "cube"));
-        REQUIRE(mesh.MakeRecreatable(&rig.registry, GpuMesh::Source{&data, nullptr, nullptr}, "cube"));
+        REQUIRE(mesh.MakeRecreatable(&rig.registry, data, "cube"));
         GpuTexture texture;
         TextureImage image;
         image.desc.width = image.desc.height = 4;
@@ -416,7 +415,7 @@ TEST_CASE("A mesh that was ready before a reset is ready after it", "[device_res
     REQUIRE(MakeCubeMesh(1.0f, &data) == nullptr);
     GpuMesh mesh;
     REQUIRE(mesh.Create(rig.host.GetDevice(), data, "cube"));
-    REQUIRE(mesh.MakeRecreatable(&rig.registry, GpuMesh::Source{&data, nullptr, nullptr}, "cube"));
+    REQUIRE(mesh.MakeRecreatable(&rig.registry, data, "cube"));
     rig.host.GetDevice()->BeginFrame();
     rhi::CommandList* list = rig.host.GetDevice()->CreateCommandList();
     list->Begin();

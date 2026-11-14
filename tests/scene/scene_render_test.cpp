@@ -14,7 +14,6 @@
 using namespace engine_placeholder;
 using scene::LightSource;
 using scene::MakeRenderSyncSystem;
-using scene::MeshAsset;
 using scene::MeshRenderer;
 using scene::SceneLink;
 using scene::SceneSyncReport;
@@ -104,14 +103,14 @@ TEST_CASE("An entity-built scene renders the same pixels as the hand-built Rende
                 REQUIRE(frame.Materials()->SetVec4(
                     materials[m], "base_color", m == 0 ? Vec4(0.8f, 0.1f, 0.1f, 1.0f) : Vec4(0.1f, 0.2f, 0.8f, 1.0f)));
             }
-            auto cube = MakeShared<MeshAsset>();
-            auto sphere = MakeShared<MeshAsset>();
+            auto cube = MakeShared<renderer::GpuMesh>();
+            auto sphere = MakeShared<renderer::GpuMesh>();
             renderer::MeshData data;
             REQUIRE(renderer::MakeCubeMesh(1.0f, &data) == nullptr);
-            REQUIRE(cube->mesh.Create(device.Get(), data, "cube"));
+            REQUIRE(cube->Create(device.Get(), data, "cube"));
             renderer::MeshData round;
             REQUIRE(renderer::MakeSphereMesh(0.7f, 16, 8, &round) == nullptr);
-            REQUIRE(sphere->mesh.Create(device.Get(), round, "sphere"));
+            REQUIRE(sphere->Create(device.Get(), round, "sphere"));
 
             // The barriers that move the buffers out of their upload state, in one submission (as the demo scene does).
             {
@@ -119,15 +118,15 @@ TEST_CASE("An entity-built scene renders the same pixels as the hand-built Rende
                 rhi::CommandList* list = device->CreateCommandList();
                 REQUIRE(list != nullptr);
                 list->Begin();
-                cube->mesh.RecordPrepare(list);
-                sphere->mesh.RecordPrepare(list);
+                cube->RecordPrepare(list);
+                sphere->RecordPrepare(list);
                 list->End();
                 rhi::CommandList* lists[] = {list};
                 REQUIRE(device->Submit(lists, 1) != 0);
                 device->EndFrame();
                 device->WaitIdle();
-                cube->mesh.MarkReady();
-                sphere->mesh.MarkReady();
+                cube->MarkReady();
+                sphere->MarkReady();
             }
 
             renderer::Camera camera;
@@ -144,7 +143,7 @@ TEST_CASE("An entity-built scene renders the same pixels as the hand-built Rende
             for (const Placement& p : kPlacements)
             {
                 renderer::RenderObjectDesc od;
-                od.mesh = p.sphere ? &sphere->mesh : &cube->mesh;
+                od.mesh = p.sphere ? sphere.Get() : cube.Get();
                 od.material = materials[p.material].index;
                 od.transform = Mat4::FromBasis(Vec3(1, 0, 0), Vec3(0, 1, 0), Vec3(0, 0, 1), Vec3(p.x, p.y, p.z));
                 REQUIRE(by_hand.AddObject(od).IsValid());

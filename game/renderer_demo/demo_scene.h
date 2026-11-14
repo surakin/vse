@@ -21,11 +21,6 @@ namespace engine_placeholder::ecs
 class World;
 class Schedule;
 }  // namespace engine_placeholder::ecs
-namespace engine_placeholder::scene
-{
-struct MeshAsset;
-}  // namespace engine_placeholder::scene
-
 namespace renderer_demo
 {
 
@@ -108,13 +103,12 @@ public:
 private:
     rhi::Device* device_ = nullptr;
     renderer::MaterialSystem* materials_ = nullptr;
-    // The meshes are shared with the entities that draw them (scene::MeshAsset keeps one alive while a scene entry uses
-    // it).
-    SharedPtr<scene::MeshAsset> sphere_;
-    SharedPtr<scene::MeshAsset> colored_sphere_;
-    SharedPtr<scene::MeshAsset> cube_;
-    SharedPtr<scene::MeshAsset> tile_;
-    renderer::GpuTexture textures_[3];
+    // The meshes are shared with the entities that draw them and with the render sync.
+    renderer::GpuMeshPtr sphere_;
+    renderer::GpuMeshPtr colored_sphere_;
+    renderer::GpuMeshPtr cube_;
+    renderer::GpuMeshPtr tile_;
+    renderer::GpuTexturePtr textures_[3];
     TextureLoadInfo load_info_[3];  // how each texture is loaded again after a reset
     char asset_dir_[512] = {};
     // The scene is built from entities: the world holds them, the schedule animates the lights, propagates transforms

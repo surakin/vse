@@ -114,7 +114,7 @@ struct MeshGeometry
     ///
     /// - Returns: null when the geometry can be uploaded, otherwise a static message.
     /// - Fails: no region, a section outside it, a zero count or stride, an index count that does not fit the topology,
-    ///   a topology the renderer does not draw, a skinned layout without a joint count of 1 to 256 or with a stride
+    ///   a skinned layout without a joint count of 1 to 256 or with a stride
     ///   other than 8, or a joint count with a rigid layout.
     /// - Ownership: reads the shared bytes only to learn their size; the message is static.
     const char* Validate() const;
@@ -216,6 +216,12 @@ public:
     rhi::IndexType IndexFormat() const { return index_type_; }
     /// Returns the size of the index data in bytes.
     u64 IndexBytes() const { return static_cast<u64>(index_count_) * (index_type_ == rhi::IndexType::UInt16 ? 2 : 4); }
+    /// Copies the vertices, indices and skin stream into one shared region and describes them.
+    ///
+    /// - Returns: the geometry over the new region; empty (no region) for an empty mesh.
+    /// - Fails: never.
+    /// - Ownership: the returned geometry owns the copy through its shared bytes; this mesh is not referenced.
+    MeshGeometry CopyGeometry() const;
     /// Returns the object-space bounds.
     const Bounds& GetBounds() const { return bounds_; }
     /// Returns how the indices form primitives.
@@ -418,20 +424,6 @@ public:
     /// called by the destructor.
     void Destroy();
 
-    /// How a mesh gets its geometry again after a device reset.
-    ///
-    /// - Thread-safety: thread-compatible plain data.
-    /// - Ownership: `borrowed` is not owned; `load` and `user` are borrowed.
-    struct Source
-    {
-        /// Geometry the caller keeps alive for as long as the mesh is registered, or null.
-        const MeshData* borrowed = nullptr;
-        /// Or a function that loads the geometry into `*out` (called at every recreate), or null.
-        bool (*load)(void* user, MeshData* out) = nullptr;
-        /// Passed to `load`.
-        void* user = nullptr;
-    };
-
     /// Creates the buffers from geometry read in place and keeps the geometry (and with it a share of its bytes) as the
     /// source for a device reset: the bytes are uploaded from where they are, now and after every reset, and the mesh
     /// registers with `resources` (a mesh without a registry does not survive a reset).
@@ -447,29 +439,20 @@ public:
     bool CreateFromGeometry(rhi::Device* device, const MeshGeometry& geometry, DeviceResources* resources,
                             const char* debug_name);
 
-    /// Makes this mesh survive a device reset: records where the geometry comes from and registers with `resources`.
+    /// Makes this mesh survive a device reset: copies `data` into a shared region kept as the source, and registers
+    /// with `resources`.
     ///
     /// After this, `Release` and `Recreate` work and the registry calls them on every reset. Call after a successful
-    /// `Create`.
+    /// `Create` from the same geometry; a source that no longer matches the mesh fails the reset, naming the mesh.
     ///
-    /// - Param resources: the registry; null records the source but registers nothing.
-    /// - Param source: where to get the geometry again; `borrowed` or `load` must be set.
+    /// - Param resources: the registry; null records nothing and registers nothing.
+    /// - Param data: the geometry the mesh was created from.
     /// - Param debug_name: a label for the rebuilt buffers; copied, may be null.
     /// - Returns: true if registered (or `resources` is null).
     /// - Fails: returns false if the registry refused; the mesh is then still valid but will not survive a reset.
-    /// - Aborts: the mesh is empty, or `source` names nothing.
-    /// - Ownership: the registry and the source are borrowed.
-    bool MakeRecreatable(DeviceResources* resources, const Source& source, const char* debug_name);
-
-    /// As [[renderer::GpuMesh::MakeRecreatable]], keeping the geometry itself: `data` is moved into the mesh.
-    ///
-    /// - Param resources: the registry; may be null.
-    /// - Param data: the geometry; must be what the mesh was created from.
-    /// - Param debug_name: a label for the rebuilt buffers; copied, may be null.
-    /// - Returns: true if registered (or `resources` is null).
-    /// - Aborts: the mesh is empty or `data` is empty.
-    /// - Ownership: borrowed for the call; nothing is kept unless the description above says so.
-    bool AdoptSource(DeviceResources* resources, MeshData&& data, const char* debug_name);
+    /// - Aborts: the mesh is empty, or `data` is empty.
+    /// - Ownership: `data` is read during the call only; the copy is owned by this mesh.
+    bool MakeRecreatable(DeviceResources* resources, const MeshData& data, const char* debug_name);
 
     /// Destroys the buffers and keeps everything else (the source, the bounds, the sort id). The mesh reads as not
     /// `Valid` until `Recreate`. Safe on a released mesh.
@@ -558,10 +541,8 @@ private:
                 rhi::BufferHandle* ib, rhi::BufferHandle* sb);
     void MoveFrom(GpuMesh& other);
 
-    Source source_;
-    MeshGeometry geometry_;  // the in-place source of CreateFromGeometry
+    MeshGeometry geometry_;  // the source for a device reset: shares the bytes
     bool has_geometry_ = false;
-    MeshData owned_;
     char name_[48] = "mesh";
     bool recreatable_ = false;
     bool was_ready_ = false;  // the buffers were in their read states when released; Recreate restores that

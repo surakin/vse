@@ -276,9 +276,7 @@ TEST_CASE("A level spawns entities that share the manager's meshes and materials
         [&](ecs::Entity, const scene::MeshRenderer& mr)
         {
             REQUIRE(mr.mesh);
-            REQUIRE(mr.mesh->shared);
-            CHECK(mr.mesh->Geometry().Valid());
-            CHECK(mr.mesh->mesh.Valid() == false);  // the holder owns nothing: the manager does
+            CHECK(mr.mesh->Valid());
             ++drawn;
         });
     CHECK(drawn == 5);
@@ -288,7 +286,7 @@ TEST_CASE("A level spawns entities that share the manager's meshes and materials
     usize shared = 0;
     world.Query<ecs::Read<scene::MeshRenderer>>().ForEach(
         [&](ecs::Entity, const scene::MeshRenderer& mr)
-        { shared += mr.mesh->shared.Get() == cube.Get()->mesh.Get() ? 1u : 0u; });
+        { shared += mr.mesh.Get() == cube.Get()->mesh.Get() ? 1u : 0u; });
     CHECK(shared == 2);
     CHECK(rig.manager->Stats().fallbacks_used == 0);
     CHECK(rig.manager->Stats().load_conversions == 0);

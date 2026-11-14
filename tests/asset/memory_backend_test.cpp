@@ -14,22 +14,6 @@ namespace engine_placeholder::asset
 namespace
 {
 
-// Counts the release callbacks of borrowed bytes.
-struct Releases
-{
-    int count = 0;
-    const void* last_data = nullptr;
-    usize last_size = 0;
-};
-
-void OnRelease(void* user, const void* data, usize size)
-{
-    Releases* r = static_cast<Releases*>(user);
-    ++r->count;
-    r->last_data = data;
-    r->last_size = size;
-}
-
 struct Dependents
 {
     Vector<ResourceId> dependents;  // of every id
@@ -90,49 +74,32 @@ TEST_CASE("Copied bytes outlive the host's buffer", "[asset][backend][memory]")
     CHECK(MemCompare(read.Data(), original.Data(), original.Size()) == 0);
 }
 
-TEST_CASE("Borrowed bytes are released once, after the last reader closes", "[asset][backend][memory]")
+TEST_CASE("A removed resource stays readable through a reader that is open", "[asset][backend][memory]")
 {
     TypeRegistry registry = test::MakeBackendRegistry();
     HostMemoryBackend backend(registry, kBudget);
     const Vector<byte> blob = test::MakeTestBlob(registry, test::Rid(2), 64, 2);
-    Releases releases;
-    REQUIRE(backend.AddBorrowed(test::Rid(2), test::AsBytes(blob), &OnRelease, &releases).Ok());
-    CHECK(releases.count == 0);
-
+    REQUIRE(backend.Add(test::Rid(2), test::AsBytes(blob)).Ok());
     UniquePtr<ResourceReader> reader;
     REQUIRE(backend.Open(test::Rid(2), &reader).Ok());
     REQUIRE(backend.Remove(test::Rid(2)).Ok());
-    CHECK(releases.count == 0);  // a reader of it is open
     Vector<byte> read;
     read.Resize(blob.Size());
     REQUIRE(reader->ReadAt(0, read.Data(), read.Size()).Ok());  // still readable
     CHECK(MemCompare(read.Data(), blob.Data(), blob.Size()) == 0);
-    reader.Reset();
-    CHECK(releases.count == 1);
-    CHECK(releases.last_data == blob.Data());
-    CHECK(releases.last_size == blob.Size());
 }
 
-TEST_CASE("Borrowed bytes are released when the backend is destroyed, and a refused add keeps them the host's",
-          "[asset][backend][memory]")
+TEST_CASE("A refused add changes nothing", "[asset][backend][memory]")
 {
     TypeRegistry registry = test::MakeBackendRegistry();
     const Vector<byte> blob = test::MakeTestBlob(registry, test::Rid(3), 64, 3);
     const Vector<byte> other = test::MakeTestBlob(registry, test::Rid(4), 64, 4);
-    Releases releases;
-    Releases refused;
-    {
-        HostMemoryBackend backend(registry, kBudget);
-        REQUIRE(backend.AddBorrowed(test::Rid(3), test::AsBytes(blob), &OnRelease, &releases).Ok());
-        // A duplicate id: refused, and the release function is not called for it.
-        CHECK(backend.AddBorrowed(test::Rid(3), test::AsBytes(blob), &OnRelease, &refused).Is(ErrorCode::DuplicateId));
-        // The blob's own id is 4, not 3: refused.
-        CHECK(backend.AddBorrowed(test::Rid(5), test::AsBytes(other), &OnRelease, &refused).Is(ErrorCode::Corrupt));
-        CHECK(refused.count == 0);
-        CHECK(releases.count == 0);
-    }
-    CHECK(releases.count == 1);
-    CHECK(refused.count == 0);
+    HostMemoryBackend backend(registry, kBudget);
+    REQUIRE(backend.Add(test::Rid(3), test::AsBytes(blob)).Ok());
+    const u64 held = backend.BytesHeld();
+    CHECK(backend.Add(test::Rid(3), test::AsBytes(blob)).Is(ErrorCode::DuplicateId));  // the id is live
+    CHECK(backend.Add(test::Rid(5), test::AsBytes(other)).Is(ErrorCode::Corrupt));     // the blob's own id is 4
+    CHECK(backend.BytesHeld() == held);
 }
 
 TEST_CASE("A replace while a reader is open does not tear the read", "[asset][backend][memory]")
@@ -380,61 +347,6 @@ TEST_CASE("Concurrent add, replace, remove and read keep the backend consistent"
     r1.Join();
     r2.Join();
     CHECK(shared.bad.Load() == 0);
-}
-
-namespace
-{
-
-// A release function that calls back into the backend: it must not run under the backend's locks.
-struct Reentrant
-{
-    HostMemoryBackend* backend = nullptr;
-    ByteSpan other;
-    int calls = 0;
-    Status add_status;
-};
-
-void ReleaseAndAdd(void* user, const void*, usize)
-{
-    Reentrant* r = static_cast<Reentrant*>(user);
-    ++r->calls;
-    r->add_status = r->backend->Add(test::Rid(61), r->other);
-}
-
-}  // namespace
-
-TEST_CASE("Borrowed bytes are released after a replace, and the release may call back into the backend",
-          "[asset][backend][memory]")
-{
-    TypeRegistry registry = test::MakeBackendRegistry();
-    HostMemoryBackend backend(registry, kBudget);
-    const Vector<byte> first = test::MakeTestBlob(registry, test::Rid(60), 80, 1);
-    const Vector<byte> second = test::MakeTestBlob(registry, test::Rid(60), 90, 2);
-    const Vector<byte> other = test::MakeTestBlob(registry, test::Rid(61), 40, 3);
-    Reentrant reentrant;
-    reentrant.backend = &backend;
-    reentrant.other = test::AsBytes(other);
-    REQUIRE(backend.AddBorrowed(test::Rid(60), test::AsBytes(first), &ReleaseAndAdd, &reentrant).Ok());
-    REQUIRE(backend.Replace(test::Rid(60), test::AsBytes(second)).Ok());
-    CHECK(reentrant.calls == 1);  // the old bytes are released at the replace, no reader being open
-    CHECK(reentrant.add_status.Ok());
-    ResourceInfo info;
-    CHECK(backend.Stat(test::Rid(61), &info).Ok());
-}
-
-TEST_CASE("Removing a borrowed resource releases it at once when no reader is open", "[asset][backend][memory]")
-{
-    TypeRegistry registry = test::MakeBackendRegistry();
-    HostMemoryBackend backend(registry, kBudget);
-    const Vector<byte> blob = test::MakeTestBlob(registry, test::Rid(62), 80, 1);
-    const Vector<byte> other = test::MakeTestBlob(registry, test::Rid(61), 40, 3);
-    Reentrant reentrant;
-    reentrant.backend = &backend;
-    reentrant.other = test::AsBytes(other);
-    REQUIRE(backend.AddBorrowed(test::Rid(62), test::AsBytes(blob), &ReleaseAndAdd, &reentrant).Ok());
-    REQUIRE(backend.Remove(test::Rid(62)).Ok());
-    CHECK(reentrant.calls == 1);
-    CHECK(reentrant.add_status.Ok());
 }
 
 TEST_CASE("A forced replace that cannot happen unloads nothing", "[asset][backend][memory]")

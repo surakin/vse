@@ -265,11 +265,10 @@ Status LoadGpuMaterial(const LoadContext& context, GpuMaterialAsset* asset, void
             return Status::Make(ErrorCode::DependencyTypeMismatch,
                                 "a material's texture is not loaded as a GPU texture");
         }
-        if (!gpu->materials->SetTexture(out->id, data.textures[i].slot.text, texture->texture.Get()))
+        if (!gpu->materials->SetTexture(out->id, data.textures[i].slot.text, texture->texture))
         {
             return Status::Make(ErrorCode::Corrupt, "the material binds a texture slot the template does not have");
         }
-        out->textures.Push(texture->texture);
     }
     for (usize i = 0; i < data.samplers.Size(); ++i)
     {
@@ -286,11 +285,10 @@ Status LoadGpuMaterial(const LoadContext& context, GpuMaterialAsset* asset, void
         {
             return DeviceRefused("the device refused a sampler");
         }
-        if (!gpu->materials->SetSampler(out->id, s.slot.text, sampler.Get()))
+        if (!gpu->materials->SetSampler(out->id, s.slot.text, sampler))
         {
             return Status::Make(ErrorCode::Corrupt, "the material binds a sampler slot the template does not have");
         }
-        out->samplers.Push(static_cast<renderer::GpuSamplerPtr&&>(sampler));
     }
     return Status::Success();
 }

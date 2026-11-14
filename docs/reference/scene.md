@@ -12,58 +12,6 @@ Spawning a level into a world through the resource manager. Phase 22 Day 329.
 
 The bridge from ECS entities to the renderer: a system that mirrors renderable entities into a [`renderer::RenderScene`](renderer.md#renderer-renderscene) and one that builds the camera.
 
-## `MeshAsset` {#scene-meshasset}
-
-`struct scene::MeshAsset` — defined in `engine/scene/components.h`
-
-```cpp
-struct MeshAsset { ... }
-```
-
-A mesh shared by the entities that draw it: the holder that keeps a [`renderer::GpuMesh`](renderer.md#renderer-gpumesh) alive while any entity or scene entry uses it.
-
-An entity names it through a `SharedPtr<MeshAsset>`; the render sync holds one more reference per object it added, so the geometry outlives the scene entry even when the entity that drew it is destroyed first.
-
-| Field | Value |
-|---|---|
-| Thread-safety | thread-compatible; the reference count is atomic. |
-| Ownership | owns the mesh and, through it, the device buffers; the device must outlive it. |
-
-### `mesh` {#scene-meshasset-mesh}
-
-`variable scene::MeshAsset::mesh` — defined in `engine/scene/components.h`
-
-```cpp
-renderer::GpuMesh mesh;
-```
-
-The geometry, when this holder owns it (a hand-built mesh).
-
-### `shared` {#scene-meshasset-shared}
-
-`variable scene::MeshAsset::shared` — defined in `engine/scene/components.h`
-
-```cpp
-renderer::GpuMeshPtr shared;
-```
-
-A mesh shared with whoever else draws it (the resource manager's), or empty: the holder then owns nothing, and the mesh lives as long as any holder does.
-
-### `Geometry()` {#scene-meshasset-geometry-const}
-
-`method scene::MeshAsset::Geometry` — defined in `engine/scene/components.h`
-
-```cpp
-const renderer::GpuMesh& Geometry() const;
-```
-
-The geometry, whichever way it is held.
-
-| Field | Value |
-|---|---|
-| Fails | never. |
-| Ownership | the mesh belongs to this holder or is shared with it. |
-
 ## `MeshRenderer` {#scene-meshrenderer}
 
 `struct scene::MeshRenderer` — defined in `engine/scene/components.h`
@@ -76,7 +24,7 @@ Draws a mesh at the entity's `WorldTransform`.
 
 | Field | Value |
 |---|---|
-| Thread-safety | thread-compatible plain data. |
+| Thread-safety | thread-compatible plain data. The mesh is shared by every entity that draws it; the render sync holds one more share per object it added, so the geometry outlives the scene entry even when the entity that drew it is destroyed first. |
 | Ownership | shares `mesh`. |
 
 ### `mesh` {#scene-meshrenderer-mesh}
@@ -84,7 +32,7 @@ Draws a mesh at the entity's `WorldTransform`.
 `variable scene::MeshRenderer::mesh` — defined in `engine/scene/components.h`
 
 ```cpp
-SharedPtr<MeshAsset> mesh;
+renderer::GpuMeshPtr mesh;
 ```
 
 The geometry; null or an empty mesh means "draw nothing" (counted as invalid by the sync).

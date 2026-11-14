@@ -612,7 +612,6 @@ Status ResourceManager::BuildLocked(ResourceId id, const Expect& expect, BlobBuf
 
     LoadContext context;
     context.id_ = id;
-    context.bytes_ = bytes;
     context.buffer_ = buffer;
     context.blob_ = &reader;
     context.types_ = &types_;
@@ -1037,7 +1036,6 @@ Status ResourceManager::ReloadLocked(ResourceId id, u32* reloaded)
     {
         LoadContext context;
         context.id_ = id;
-        context.bytes_ = bytes;
         context.buffer_ = buffer;
         context.blob_ = &reader;
         context.types_ = &types_;
@@ -1149,7 +1147,6 @@ Status ResourceManager::ReloadLocked(ResourceId id, u32* reloaded)
         }
         LoadContext context;
         context.id_ = dependent.id;
-        context.bytes_ = dependent_bytes;
         context.buffer_ = dependent.buffer;
         context.blob_ = &dependent_reader;
         context.types_ = &types_;

@@ -30,19 +30,6 @@ struct TextureImage
     bool generate_mips = false;
 };
 
-/// One mip level of one layer of a texture whose texels live in memory the caller keeps (a loaded asset blob): the
-/// zero-copy entry of [[renderer::GpuTexture::CreateFromLevels]].
-///
-/// - Thread-safety: thread-compatible (a plain value).
-/// - Ownership: borrows `data`.
-struct TextureLevelRef
-{
-    const void* data = nullptr;  ///< The level's rows, `row_pitch` bytes apart.
-    u32 row_pitch = 0;           ///< Bytes between rows (0: tightly packed); a multiple of the texel size.
-    u32 mip = 0;                 ///< The mip level.
-    u32 layer = 0;               ///< The array layer.
-};
-
 /// One mip level of one layer of a texture whose texels are in a region of shared bytes: the entry of
 /// [[renderer::GpuTexture::CreateFromSharedLevels]]. It names the level by where it is, not by a pointer.
 ///
@@ -98,27 +85,10 @@ public:
     /// - Ownership: borrowed for the call; nothing is kept unless the description above says so.
     bool Create(rhi::Device* device, TextureImage&& image, DeviceResources* resources, const char* debug_name);
 
-    /// Creates the texture from every level of every layer, uploaded straight from memory the caller owns (the mip
+    /// Creates the texture from every level of every layer, uploaded straight from a region of shared bytes (the mip
     /// sections of an asset blob): the staging copy into device memory is the only copy, and no mip is generated. The
-    /// texture keeps only the descriptions of the levels, so a reset uploads from the same memory again.
-    ///
-    /// - Param device: the device.
-    /// - Param desc: the finished texture; `usage` gets `CopyDst` added; `debug_name` is ignored.
-    /// - Param levels: exactly one entry for each of `desc.mip_levels * desc.array_layers` subresources.
-    /// - Param resources: the registry, or null for a texture that does not need to survive a reset.
-    /// - Param debug_name: a label; copied, may be null.
-    /// - Returns: true on success.
-    /// - Fails: returns false, logging the reason, for an invalid description, a missing, repeated or out-of-range
-    ///   level, a size or format the device cannot hold, or a failed upload.
-    /// - Aborts: the texture already exists.
-    /// - Ownership: `levels[i].data` is borrowed until the texture is destroyed (and across a reset, when `resources`
-    ///   is given): the bytes must outlive the texture.
-    bool CreateFromLevels(rhi::Device* device, const rhi::TextureDesc& desc, Span<const TextureLevelRef> levels,
-                          DeviceResources* resources, const char* debug_name);
-
-    /// As [[renderer::GpuTexture::CreateFromLevels]], with the texels in a region of shared bytes: the texture keeps a
-    /// share of the region and the offsets of the levels, no pointer into it, so a reset uploads from the same bytes
-    /// for as long as the texture lives, whoever else lets go of them.
+    /// texture keeps a share of the region and the offsets of the levels, no pointer into it, so a reset uploads from
+    /// the same bytes for as long as the texture lives, whoever else lets go of them.
     ///
     /// - Param device: the device.
     /// - Param desc: the finished texture; `usage` gets `CopyDst` added; `debug_name` is ignored.
@@ -168,13 +138,11 @@ public:
 
 private:
     bool Make(rhi::Device* device, const TextureImage& image);
-    bool MakeFromLevels(rhi::Device* device, Span<const TextureLevelRef> levels);
     bool MakeFromSharedLevels(rhi::Device* device);
     void MoveFrom(GpuTexture& other);
 
     TextureImage image_;
-    Vector<TextureLevelRef> levels_;  // the borrowed levels of CreateFromLevels (image_.desc is its description)
-    SharedBytesPtr shared_bytes_;     // the region of CreateFromSharedLevels
+    SharedBytesPtr shared_bytes_;             // the region of CreateFromSharedLevels (image_.desc is its description)
     Vector<TextureLevelSpan> shared_levels_;  // where its levels are (image_.desc is its description)
     TextureLoader loader_ = nullptr;
     void* loader_user_ = nullptr;

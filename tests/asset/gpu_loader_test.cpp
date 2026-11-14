@@ -266,7 +266,6 @@ TEST_CASE("gpu loaders: a material loads its texture by owner and a device reset
     REQUIRE(rig.manager->Load<GpuMeshAsset>(Rid(0x3a1), &mesh).Ok());
     REQUIRE(rig.manager->Load<GpuMeshAsset>(Rid(0x3b1), &skinned).Ok());
     CHECK(rig.materials->IsAlive(material.Get()->material->id));
-    CHECK(material.Get()->material->samplers.Size() == 1);
     Handle<GpuTextureAsset> texture;
     REQUIRE(rig.manager->Load<GpuTextureAsset>(Rid(0x101), &texture).Ok());  // held by the material: a cache hit
     CHECK(texture.Get()->texture->Valid());

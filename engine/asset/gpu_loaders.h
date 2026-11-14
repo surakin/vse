@@ -55,13 +55,13 @@ struct GpuTextureAsset
     renderer::GpuTexturePtr texture;  ///< The texture, shared with the materials that bind it.
 };
 
-/// A material in the material system, with its textures bound by owner and its samplers. It holds a share of every
-/// texture and sampler it binds, so none can go while the material uses it, and it is shared itself: a spawned level's
-/// entities name its slot in the material system, so the level holds a share of the material and a reload of the
-/// resource does not destroy the material under them.
+/// A material in the material system, with its textures bound by owner and its samplers. The material system holds a
+/// share of every texture and sampler the material binds, so none can go while the material uses it; this holder is
+/// shared itself: a spawned level's entities name its slot in the material system, so the level holds a share of the
+/// holder and a reload of the resource does not destroy the material under them.
 ///
 /// - Thread-safety: thread-compatible; owner-thread-only.
-/// - Ownership: owns the material (destroyed with the last share); shares its textures and samplers.
+/// - Ownership: owns the material (destroyed with the last share).
 struct GpuMaterial
 {
     GpuMaterial() = default;
@@ -73,8 +73,6 @@ struct GpuMaterial
     renderer::MaterialSystem* materials = nullptr;  ///< The system that owns the material.
     renderer::MaterialId id;                        ///< The material.
     u32 flags = 0;                                  ///< [[asset::MaterialFlags]].
-    Vector<renderer::GpuTexturePtr> textures;       ///< The textures the material's slots use.
-    Vector<renderer::GpuSamplerPtr> samplers;       ///< The samplers the material's slots use.
 };
 
 /// How a [[asset::GpuMaterial]] is held: shared.

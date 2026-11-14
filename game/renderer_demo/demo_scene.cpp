@@ -148,17 +148,13 @@ void DemoScene::Destroy()
     schedule_.Reset();  // the sync's references to the meshes
     world_.Reset();     // the entities' references
     scene_.Reset();
-    for (SharedPtr<scene::MeshAsset>* mesh : {&sphere_, &colored_sphere_, &cube_, &tile_})
+    for (renderer::GpuMeshPtr* mesh : {&sphere_, &colored_sphere_, &cube_, &tile_})
     {
-        if (*mesh)
-        {
-            (*mesh)->mesh.Destroy();
-        }
-        mesh->Reset();
+        mesh->Reset();  // the last share destroys the buffers (the device is idle)
     }
-    for (renderer::GpuTexture& t : textures_)
+    for (renderer::GpuTexturePtr& t : textures_)
     {
-        t.Destroy();
+        t.Reset();  // the materials that bind a texture still share it; the last share destroys it (the device is idle)
     }
     screen_material_ = MaterialId();
     device_ = nullptr;
@@ -180,10 +176,10 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
     device_ = device;
     materials_ = materials;
 
-    sphere_ = MakeShared<scene::MeshAsset>();
-    colored_sphere_ = MakeShared<scene::MeshAsset>();
-    cube_ = MakeShared<scene::MeshAsset>();
-    tile_ = MakeShared<scene::MeshAsset>();
+    sphere_ = MakeShared<renderer::GpuMesh>();
+    colored_sphere_ = MakeShared<renderer::GpuMesh>();
+    cube_ = MakeShared<renderer::GpuMesh>();
+    tile_ = MakeShared<renderer::GpuMesh>();
 
     // Meshes.
     MeshData sphere, cube, tile, colored;
@@ -218,9 +214,8 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
         Destroy();
         return false;
     }
-    if (!sphere_->mesh.Create(device, sphere, "sphere") ||
-        !colored_sphere_->mesh.Create(device, colored, "colored sphere") || !cube_->mesh.Create(device, cube, "cube") ||
-        !tile_->mesh.Create(device, tile, "ground tile"))
+    if (!sphere_->Create(device, sphere, "sphere") || !colored_sphere_->Create(device, colored, "colored sphere") ||
+        !cube_->Create(device, cube, "cube") || !tile_->Create(device, tile, "ground tile"))
     {
         rhi::RhiLogV(LogVerbosity::Error, "renderer_demo: uploading a mesh failed");
         Destroy();
@@ -229,10 +224,10 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
     if (options.resources != nullptr)
     {
         // Keep the geometry so the meshes can be uploaded again after a device reset.
-        if (!sphere_->mesh.AdoptSource(options.resources, static_cast<MeshData&&>(sphere), "sphere") ||
-            !colored_sphere_->mesh.AdoptSource(options.resources, static_cast<MeshData&&>(colored), "colored sphere") ||
-            !cube_->mesh.AdoptSource(options.resources, static_cast<MeshData&&>(cube), "cube") ||
-            !tile_->mesh.AdoptSource(options.resources, static_cast<MeshData&&>(tile), "ground tile"))
+        if (!sphere_->MakeRecreatable(options.resources, sphere, "sphere") ||
+            !colored_sphere_->MakeRecreatable(options.resources, colored, "colored sphere") ||
+            !cube_->MakeRecreatable(options.resources, cube, "cube") ||
+            !tile_->MakeRecreatable(options.resources, tile, "ground tile"))
         {
             rhi::RhiLogV(LogVerbosity::Error, "renderer_demo: registering the meshes failed");
             Destroy();
@@ -250,10 +245,10 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
             return false;
         }
         list->Begin();
-        sphere_->mesh.RecordPrepare(list);
-        colored_sphere_->mesh.RecordPrepare(list);
-        cube_->mesh.RecordPrepare(list);
-        tile_->mesh.RecordPrepare(list);
+        sphere_->RecordPrepare(list);
+        colored_sphere_->RecordPrepare(list);
+        cube_->RecordPrepare(list);
+        tile_->RecordPrepare(list);
         list->End();
         rhi::CommandList* lists[] = {list};
         const bool submitted = device->Submit(lists, 1) != 0;
@@ -265,10 +260,10 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
             Destroy();
             return false;
         }
-        sphere_->mesh.MarkReady();
-        colored_sphere_->mesh.MarkReady();
-        cube_->mesh.MarkReady();
-        tile_->mesh.MarkReady();
+        sphere_->MarkReady();
+        colored_sphere_->MarkReady();
+        cube_->MarkReady();
+        tile_->MarkReady();
     }
 
     // Textures and materials.
@@ -282,8 +277,9 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
         }
         load_info_[i].asset_dir = options.asset_dir != nullptr ? asset_dir_ : nullptr;
         load_info_[i].texture = &texture_table[i];
-        if (!textures_[i].CreateFromLoader(device, &LoadTextureImage, &load_info_[i], options.resources,
-                                           texture_table[i].file))
+        textures_[i] = MakeShared<renderer::GpuTexture>();
+        if (!textures_[i]->CreateFromLoader(device, &LoadTextureImage, &load_info_[i], options.resources,
+                                            texture_table[i].file))
         {
             rhi::RhiLogV(LogVerbosity::Error, "renderer_demo: could not create the texture %s", texture_table[i].file);
             Destroy();
@@ -326,10 +322,10 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
     }
     if (ok)
     {
-        ok = materials->SetTexture(ids[kGround], "albedo_tex", &textures_[0]) &&
-             materials->SetTexture(ids[kChecker], "albedo_tex", &textures_[0]) &&
-             materials->SetTexture(ids[kStripes], "albedo_tex", &textures_[1]) &&
-             materials->SetTexture(ids[kBumps], "normal_tex", &textures_[2]);  // owners, so a device reset keeps them
+        ok = materials->SetTexture(ids[kGround], "albedo_tex", textures_[0]) &&
+             materials->SetTexture(ids[kChecker], "albedo_tex", textures_[0]) &&
+             materials->SetTexture(ids[kStripes], "albedo_tex", textures_[1]) &&
+             materials->SetTexture(ids[kBumps], "normal_tex", textures_[2]);  // owners, so a device reset keeps them
     }
     if (!ok)
     {
@@ -415,7 +411,7 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
     world_->SetResource(DemoClock{});
     // Objects are entities created in the order the scene adds them (the sync mirrors them in that order, which the
     // picture and the tests rely on).
-    const SharedPtr<scene::MeshAsset> meshes[4] = {sphere_, cube_, colored_sphere_, tile_};
+    const renderer::GpuMeshPtr meshes[4] = {sphere_, cube_, colored_sphere_, tile_};
     for (usize i = 0; i < order.Size(); ++i)
     {
         const Placement& p = placements[order[i]];

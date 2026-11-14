@@ -498,8 +498,8 @@ TEST_CASE("MeshGeometry: invalid views are refused, a valid one uploads in place
     bad.index_count = 4;  // a triangle list takes a multiple of 3
     CHECK(bad.Validate() != nullptr);
     bad = good;
-    bad.topology = rhi::PrimitiveTopology::PointList;
-    CHECK(bad.Validate() != nullptr);
+    bad.topology = rhi::PrimitiveTopology::PointList;  // MeshData accepts it, so the geometry copied from one does
+    CHECK(bad.Validate() == nullptr);
     bad = good;
     bad.index_offset = region->data.Size();  // the indices would lie outside the region
     CHECK(bad.Validate() != nullptr);

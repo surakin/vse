@@ -162,7 +162,7 @@ public:
     /// The resource's own id.
     ResourceId Id() const { return id_; }
     /// The whole blob.
-    ByteSpan Bytes() const { return bytes_; }
+    ByteSpan Bytes() const { return buffer_->Bytes(); }
     /// The shared region the blob's bytes are in: what an object that outlives the load (a GPU mesh uploaded again
     /// after a device reset) holds instead of a pointer into the bytes.
     ///
@@ -196,7 +196,6 @@ private:
     const LoadedObject* Find(ResourceId id) const { return find_(find_user_, id); }
 
     ResourceId id_;
-    ByteSpan bytes_;
     SharedBytesPtr buffer_;
     const BlobReader* blob_ = nullptr;
     const TypeRegistry* types_ = nullptr;

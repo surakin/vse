@@ -18,7 +18,6 @@ using scene::Hidden;
 using scene::LightSource;
 using scene::MakeCameraSystem;
 using scene::MakeRenderSyncSystem;
-using scene::MeshAsset;
 using scene::MeshRenderer;
 using scene::RenderHandle;
 using scene::SceneLink;
@@ -42,19 +41,19 @@ struct Rig
     renderer::RenderScene render_scene;
     ecs::World world;
     ecs::Schedule schedule;
-    SharedPtr<MeshAsset> cube;
-    SharedPtr<MeshAsset> sphere;
+    renderer::GpuMeshPtr cube;
+    renderer::GpuMeshPtr sphere;
 
     explicit Rig(u32 max_objects = 1024, u32 max_lights = 64) : render_scene(MakeDesc(max_objects, max_lights))
     {
         renderer::MeshData data;
         REQUIRE(renderer::MakeCubeMesh(1.0f, &data) == nullptr);
-        cube = MakeShared<MeshAsset>();
-        REQUIRE(cube->mesh.Create(device.Get(), data, "cube"));
+        cube = MakeShared<renderer::GpuMesh>();
+        REQUIRE(cube->Create(device.Get(), data, "cube"));
         renderer::MeshData round;
         REQUIRE(renderer::MakeSphereMesh(1.0f, 8, 4, &round) == nullptr);
-        sphere = MakeShared<MeshAsset>();
-        REQUIRE(sphere->mesh.Create(device.Get(), round, "sphere"));
+        sphere = MakeShared<renderer::GpuMesh>();
+        REQUIRE(sphere->Create(device.Get(), round, "sphere"));
         world.SetResource(ecs::TransformReport{});
         world.SetResource(SceneLink{&render_scene});
         world.SetResource(SceneSyncReport{});
@@ -74,7 +73,7 @@ struct Rig
     }
     void Frame() { schedule.Run(world, 0.016f); }
     const SceneSyncReport& Report() { return world.Resource<SceneSyncReport>(); }
-    ecs::Entity Spawn(f32 x, f32 y, f32 z, const SharedPtr<MeshAsset>& mesh, u32 material = 0)
+    ecs::Entity Spawn(f32 x, f32 y, f32 z, const renderer::GpuMeshPtr& mesh, u32 material = 0)
     {
         MeshRenderer mr;
         mr.mesh = mesh;
@@ -110,7 +109,7 @@ TEST_CASE("Scene sync: N entities add N objects with the entities' matrices", "[
         CHECK(object->transform.col[3].x == static_cast<f32>(i));
         CHECK(object->transform.col[3].y == 2.0f);
         CHECK(object->material == i);
-        CHECK(object->mesh == &rig.cube->mesh);
+        CHECK(object->mesh == rig.cube.Get());
     }
 }
 
@@ -206,11 +205,11 @@ TEST_CASE("Scene sync: swapping the mesh or material re-adds the object", "[scen
     const ecs::Entity e = rig.Spawn(4, 0, 0, rig.cube, 1);
     rig.Frame();
     rig.Frame();
-    CHECK(rig.ObjectOf(e)->mesh == &rig.cube->mesh);
+    CHECK(rig.ObjectOf(e)->mesh == rig.cube.Get());
     rig.world.Get<MeshRenderer>(e)->mesh = rig.sphere;
     rig.Frame();
     REQUIRE(rig.ObjectOf(e) != nullptr);
-    CHECK(rig.ObjectOf(e)->mesh == &rig.sphere->mesh);
+    CHECK(rig.ObjectOf(e)->mesh == rig.sphere.Get());
     CHECK(rig.ObjectOf(e)->transform.col[3].x == 4.0f);
     CHECK(rig.render_scene.ObjectCount() == 1);
     CHECK(rig.Report().readded == 1);
@@ -294,19 +293,19 @@ TEST_CASE("Scene sync: a static scene makes no render scene calls", "[scene]")
 TEST_CASE("Scene sync: the mesh asset outlives its entity until the scene entry is gone", "[scene]")
 {
     Rig rig;
-    SharedPtr<MeshAsset> temporary = MakeShared<MeshAsset>();
+    renderer::GpuMeshPtr temporary = MakeShared<renderer::GpuMesh>();
     renderer::MeshData data;
     REQUIRE(renderer::MakeCubeMesh(2.0f, &data) == nullptr);
-    REQUIRE(temporary->mesh.Create(rig.device.Get(), data, "temporary"));
-    const MeshAsset* raw = temporary.Get();
+    REQUIRE(temporary->Create(rig.device.Get(), data, "temporary"));
+    const renderer::GpuMesh* raw = temporary.Get();  // only to compare with the scene entry
     const ecs::Entity e = rig.Spawn(0, 0, 0, temporary);
     rig.Frame();
     rig.Frame();
     temporary.Reset();     // the test lets go
     rig.world.Destroy(e);  // the entity's reference goes with it
     CHECK(rig.render_scene.ObjectCount() == 1);
-    CHECK(rig.render_scene.ObjectAt(0).mesh == &raw->mesh);
-    CHECK(raw->mesh.Valid());  // still alive: the sync's reference
+    CHECK(rig.render_scene.ObjectAt(0).mesh == raw);
+    CHECK(raw->Valid());  // still alive: the sync's reference
     rig.Frame();
     CHECK(rig.render_scene.ObjectCount() == 0);  // after the sync removed the entry, the asset is freed
 }
@@ -426,8 +425,8 @@ TEST_CASE("Scene sync: a skinned entity's joint palette is mirrored by address, 
         e[4] = 255;  // all weight on joint 0
     }
     REQUIRE(data.SetSkin(skin.Data(), 2) == nullptr);
-    SharedPtr<MeshAsset> ribbon = MakeShared<MeshAsset>();
-    REQUIRE(ribbon->mesh.Create(rig.device.Get(), data, "ribbon"));
+    renderer::GpuMeshPtr ribbon = MakeShared<renderer::GpuMesh>();
+    REQUIRE(ribbon->Create(rig.device.Get(), data, "ribbon"));
 
     animation::SkeletonInstance instance;
     instance.skeleton = 7;

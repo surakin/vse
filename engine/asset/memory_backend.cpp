@@ -10,19 +10,8 @@ struct HostMemoryBackend::Entry
     Entry() = default;
     Entry(const Entry&) = delete;
     Entry& operator=(const Entry&) = delete;
-    ~Entry()
-    {
-        if (release != nullptr)
-        {
-            release(release_user, data, size);
-        }
-    }
 
-    Vector<u8> copy;           // the bytes, when copied
-    const u8* data = nullptr;  // the bytes (inside `copy` or the host's)
-    usize size = 0;
-    ReleaseBytes release = nullptr;  // borrowed only
-    void* release_user = nullptr;
+    Vector<u8> bytes;  // the resource's bytes: a copy of what the host gave
     ContentHash hash;
     ResourceType type;
     i64 stamp = 0;
@@ -36,14 +25,14 @@ class MemoryReader : public ResourceReader
 {
 public:
     explicit MemoryReader(SharedPtr<HostMemoryBackend::Entry> entry) : entry_(Move(entry)) {}
-    u64 Size() const override { return entry_->size; }
+    u64 Size() const override { return entry_->bytes.Size(); }
     Status ReadAt(u64 offset, void* buffer, usize length) override
     {
-        if (offset > entry_->size || length > entry_->size - offset)
+        if (offset > entry_->bytes.Size() || length > entry_->bytes.Size() - offset)
         {
             return Status::Make(ErrorCode::Invalid, "the read is not inside the resource");
         }
-        MemCopy(buffer, entry_->data + offset, length);
+        MemCopy(buffer, entry_->bytes.Data() + offset, length);
         return Status::Success();
     }
 
@@ -121,9 +110,8 @@ void HostMemoryBackend::UnloadDependents(const ResourceInUseQuery& query, const 
     }
 }
 
-Status HostMemoryBackend::Install(ResourceId id, ByteSpan bytes, bool borrowed, ReleaseBytes release,
-                                  void* release_user, const MemoryAddOptions& options, bool replacing, bool force,
-                                  Vector<ResourceId>* dependents, EntryPtr* replaced)
+Status HostMemoryBackend::Install(ResourceId id, ByteSpan bytes, const MemoryAddOptions& options, bool replacing,
+                                  bool force, Vector<ResourceId>* dependents, EntryPtr* replaced)
 {
     if (id.IsNone())
     {
@@ -182,22 +170,11 @@ Status HostMemoryBackend::Install(ResourceId id, ByteSpan bytes, bool borrowed, 
     {
         return Status::Make(ErrorCode::Other, "memory for the resource ran out");
     }
-    if (borrowed)
+    if (!entry->bytes.TryResizeUninitialized(bytes.Size()))
     {
-        entry->data = bytes.Data();
-        entry->release = release;
-        entry->release_user = release_user;
+        return Status::Make(ErrorCode::Other, "memory for the resource ran out");
     }
-    else
-    {
-        if (!entry->copy.TryResizeUninitialized(bytes.Size()))
-        {
-            return Status::Make(ErrorCode::Other, "memory for the resource ran out");
-        }
-        MemCopy(entry->copy.Data(), bytes.Data(), bytes.Size());
-        entry->data = entry->copy.Data();
-    }
-    entry->size = bytes.Size();
+    MemCopy(entry->bytes.Data(), bytes.Data(), bytes.Size());
     entry->hash = hash;
     entry->type = blob.Type();
 
@@ -210,12 +187,9 @@ Status HostMemoryBackend::Install(ResourceId id, ByteSpan bytes, bool borrowed, 
         {
             old = *entries_.Find(id.Value());
         }
-        const u64 held_without_old = held_ - (old ? old->size : 0);
+        const u64 held_without_old = held_ - (old ? old->bytes.Size() : 0);
         if (held_without_old + bytes.Size() > budget_)
         {
-            // The new entry must not run the release function of bytes the host still owns: a refused borrow stays the
-            // host's.
-            entry->release = nullptr;
             return Status::Make(ErrorCode::LimitExceeded, "the memory backend budget is exhausted");
         }
         // Paths: a replace keeps the old ones unless the host names new ones; none may belong to another id.
@@ -231,7 +205,6 @@ Status HostMemoryBackend::Install(ResourceId id, ByteSpan bytes, bool borrowed, 
             ResourceId owner;
             if (table_.Resolve(paths[i].View(), &owner) && owner != id)
             {
-                entry->release = nullptr;
                 return Status::Make(ErrorCode::DuplicateId, "a path belongs to another resource");
             }
         }
@@ -239,7 +212,7 @@ Status HostMemoryBackend::Install(ResourceId id, ByteSpan bytes, bool borrowed, 
     UnloadDependents(query, to_unload);  // outside mutex_: the manager's unload reads through this backend
     {
         LockGuard<Mutex> lock(mutex_);
-        const u64 held_without_old = held_ - (old ? old->size : 0);
+        const u64 held_without_old = held_ - (old ? old->bytes.Size() : 0);
         if (replacing)
         {
             for (usize i = 0; i < old->paths.Size(); ++i)
@@ -252,7 +225,6 @@ Status HostMemoryBackend::Install(ResourceId id, ByteSpan bytes, bool borrowed, 
             const Status added = table_.Add(paths[i].View(), id, entry->type);
             if (added.Failed())
             {
-                entry->release = nullptr;
                 return added;  // only memory running out reaches here; the table may lack this resource's paths
             }
         }
@@ -269,32 +241,18 @@ Status HostMemoryBackend::Install(ResourceId id, ByteSpan bytes, bool borrowed, 
 Status HostMemoryBackend::Add(ResourceId id, ByteSpan bytes, const MemoryAddOptions& options)
 {
     EntryPtr replaced;  // released after the change lock
-    return Install(id, bytes, false, nullptr, nullptr, options, false, false, nullptr, &replaced);
-}
-
-Status HostMemoryBackend::AddBorrowed(ResourceId id, ByteSpan bytes, ReleaseBytes release, void* release_user,
-                                      const MemoryAddOptions& options)
-{
-    EntryPtr replaced;  // released after the change lock
-    return Install(id, bytes, true, release, release_user, options, false, false, nullptr, &replaced);
+    return Install(id, bytes, options, false, false, nullptr, &replaced);
 }
 
 Status HostMemoryBackend::Replace(ResourceId id, ByteSpan bytes, bool force, Vector<ResourceId>* dependents)
 {
     EntryPtr replaced;  // released after the change lock
-    return Install(id, bytes, false, nullptr, nullptr, MemoryAddOptions(), true, force, dependents, &replaced);
-}
-
-Status HostMemoryBackend::ReplaceBorrowed(ResourceId id, ByteSpan bytes, ReleaseBytes release, void* release_user,
-                                          bool force, Vector<ResourceId>* dependents)
-{
-    EntryPtr replaced;  // released after the change lock
-    return Install(id, bytes, true, release, release_user, MemoryAddOptions(), true, force, dependents, &replaced);
+    return Install(id, bytes, MemoryAddOptions(), true, force, dependents, &replaced);
 }
 
 Status HostMemoryBackend::Remove(ResourceId id, bool force, Vector<ResourceId>* dependents)
 {
-    EntryPtr old;  // released last, after both locks: the host's release function may call back in
+    EntryPtr old;  // released last, after both locks
     LockGuard<Mutex> change(change_mutex_);
     {
         LockGuard<Mutex> lock(mutex_);
@@ -317,7 +275,7 @@ Status HostMemoryBackend::Remove(ResourceId id, bool force, Vector<ResourceId>* 
             table_.Remove(old->paths[i].View());
         }
         entries_.Remove(id.Value());
-        held_ -= old->size;
+        held_ -= old->bytes.Size();
         changes_.Push(ChangeRecord{id, ChangeKind::Removed});
     }
     return Status::Success();  // `old` is released after this returns, outside both locks
@@ -331,7 +289,7 @@ Status HostMemoryBackend::Stat(ResourceId id, ResourceInfo* out)
     {
         return Status::Make(ErrorCode::NotFound, "the backend does not have the resource");
     }
-    out->size = (*entry)->size;
+    out->size = (*entry)->bytes.Size();
     out->hash = (*entry)->hash;
     out->has_hash = true;
     out->modified_ns = (*entry)->stamp;

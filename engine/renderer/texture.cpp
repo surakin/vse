@@ -53,7 +53,6 @@ GpuTexture& GpuTexture::operator=(GpuTexture&& other) noexcept
 void GpuTexture::MoveFrom(GpuTexture& other)
 {
     image_ = static_cast<TextureImage&&>(other.image_);
-    levels_ = static_cast<Vector<TextureLevelRef>&&>(other.levels_);
     shared_bytes_ = static_cast<SharedBytesPtr&&>(other.shared_bytes_);
     shared_levels_ = static_cast<Vector<TextureLevelSpan>&&>(other.shared_levels_);
     loader_ = other.loader_;
@@ -182,7 +181,7 @@ bool GpuTexture::Make(rhi::Device* device, const TextureImage& image)
     return true;
 }
 
-bool GpuTexture::MakeFromLevels(rhi::Device* device, Span<const TextureLevelRef> levels)
+bool GpuTexture::MakeFromSharedLevels(rhi::Device* device)
 {
     rhi::TextureDesc desc = image_.desc;
     desc.usage = desc.usage | rhi::TextureUsage::CopyDst;
@@ -210,10 +209,12 @@ bool GpuTexture::MakeFromLevels(rhi::Device* device, Span<const TextureLevelRef>
     {
         return false;
     }
-    for (usize i = 0; i < levels.Size(); ++i)
+    // The pointers live for this call only: the texture keeps the region and the offsets.
+    const byte* base = shared_bytes_->Bytes().Data();
+    for (usize i = 0; i < shared_levels_.Size(); ++i)
     {
-        const TextureLevelRef& level = levels[i];
-        if (!device->UploadTexture(texture, level.mip, level.layer, level.data, level.row_pitch).ok)
+        const TextureLevelSpan& level = shared_levels_[i];
+        if (!device->UploadTexture(texture, level.mip, level.layer, base + level.offset, level.row_pitch).ok)
         {
             device->DestroyTexture(texture);
             return false;
@@ -223,28 +224,6 @@ bool GpuTexture::MakeFromLevels(rhi::Device* device, Span<const TextureLevelRef>
     desc_ = desc;
     handle_ = texture;
     return true;
-}
-
-bool GpuTexture::MakeFromSharedLevels(rhi::Device* device)
-{
-    // The pointers live for this call only: the texture keeps the region and the offsets.
-    const byte* base = shared_bytes_->Bytes().Data();
-    Vector<TextureLevelRef> resolved;
-    if (!resolved.TryReserve(shared_levels_.Size()))
-    {
-        RenderLog(LogVerbosity::Error, "GpuTexture '%s': out of memory", name_);
-        return false;
-    }
-    for (usize i = 0; i < shared_levels_.Size(); ++i)
-    {
-        TextureLevelRef ref;
-        ref.data = base + shared_levels_[i].offset;
-        ref.row_pitch = shared_levels_[i].row_pitch;
-        ref.mip = shared_levels_[i].mip;
-        ref.layer = shared_levels_[i].layer;
-        resolved.Push(ref);
-    }
-    return MakeFromLevels(device, Span<const TextureLevelRef>(resolved.Data(), resolved.Size()));
 }
 
 bool GpuTexture::CreateFromSharedLevels(rhi::Device* device, const rhi::TextureDesc& desc, SharedBytesPtr bytes,
@@ -325,58 +304,6 @@ bool GpuTexture::CreateFromSharedLevels(rhi::Device* device, const rhi::TextureD
     return true;
 }
 
-bool GpuTexture::CreateFromLevels(rhi::Device* device, const rhi::TextureDesc& desc, Span<const TextureLevelRef> levels,
-                                  DeviceResources* resources, const char* debug_name)
-{
-    ENGINE_ASSERT(!Valid() && device != nullptr,
-                  "GpuTexture::CreateFromLevels: the texture exists or the device is null");
-    CopyName(name_, sizeof(name_), debug_name, "texture");
-    const u64 expected = static_cast<u64>(desc.mip_levels) * desc.array_layers;
-    if (desc.mip_levels == 0 || desc.array_layers == 0 || levels.Size() != expected)
-    {
-        RenderLog(LogVerbosity::Error, "GpuTexture '%s': %u levels given for %u mips of %u layers", name_,
-                  static_cast<unsigned>(levels.Size()), desc.mip_levels, desc.array_layers);
-        return false;
-    }
-    // Every (mip, layer) exactly once.
-    Vector<u8> seen;
-    if (!seen.TryResize(static_cast<usize>(expected)) || !levels_.TryReserve(levels.Size()))
-    {
-        RenderLog(LogVerbosity::Error, "GpuTexture '%s': out of memory", name_);
-        return false;
-    }
-    MemSet(seen.Data(), 0, seen.Size());
-    for (usize i = 0; i < levels.Size(); ++i)
-    {
-        const TextureLevelRef& level = levels[i];
-        if (level.data == nullptr || level.mip >= desc.mip_levels || level.layer >= desc.array_layers ||
-            seen[static_cast<usize>(level.layer) * desc.mip_levels + level.mip] != 0)
-        {
-            RenderLog(LogVerbosity::Error, "GpuTexture '%s': level %u has no data, is out of range or repeats", name_,
-                      static_cast<unsigned>(i));
-            levels_.Reset();
-            return false;
-        }
-        seen[static_cast<usize>(level.layer) * desc.mip_levels + level.mip] = 1;
-        levels_.Push(level);
-    }
-    image_ = TextureImage{};
-    image_.desc = desc;
-    if (!MakeFromLevels(device, Span<const TextureLevelRef>(levels_.Data(), levels_.Size())))
-    {
-        levels_.Reset();
-        image_ = TextureImage{};
-        return false;
-    }
-    has_source_ = true;
-    if (resources != nullptr && !registration_.Attach(resources, this, tiers::kTextures))
-    {
-        Destroy();
-        return false;
-    }
-    return true;
-}
-
 bool GpuTexture::Create(rhi::Device* device, TextureImage&& image, DeviceResources* resources, const char* debug_name)
 {
     ENGINE_ASSERT(!Valid() && device != nullptr, "GpuTexture::Create: the texture exists or the device is null");
@@ -437,10 +364,6 @@ bool GpuTexture::Recreate(rhi::Device* device)
         RenderLog(LogVerbosity::Error, "GpuTexture '%s': no source to recreate it from", name_);
         return false;
     }
-    if (levels_.Size() != 0)
-    {
-        return MakeFromLevels(device, Span<const TextureLevelRef>(levels_.Data(), levels_.Size()));
-    }
     if (shared_bytes_)
     {
         return MakeFromSharedLevels(device);
@@ -463,7 +386,6 @@ void GpuTexture::Destroy()
     registration_.Reset();
     Release();
     image_ = TextureImage{};
-    levels_.Reset();
     shared_bytes_.Reset();
     shared_levels_.Reset();
     loader_ = nullptr;

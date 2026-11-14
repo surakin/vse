@@ -210,27 +210,45 @@ TEST_CASE("A material follows a texture owner that was rebuilt on its own", "[re
         }
     }
     REQUIRE(plastic.IsValid());
-    GpuTexture mine;
+    GpuTexturePtr mine = MakeShared<GpuTexture>();
     TextureImage image;
     image.desc.width = image.desc.height = 4;
     image.desc.format = rhi::Format::RGBA8_UNorm;
     image.desc.usage = rhi::TextureUsage::Sampled;
     image.pixels.Resize(64);
-    REQUIRE(mine.Create(rig.host.GetDevice(), static_cast<TextureImage&&>(image), &rig.registry, "mine"));
-    REQUIRE(materials->SetTexture(plastic, "albedo_tex", &mine));
+    REQUIRE(mine->Create(rig.host.GetDevice(), static_cast<TextureImage&&>(image), &rig.registry, "mine"));
+    REQUIRE(materials->SetTexture(plastic, "albedo_tex", mine));
     materials->BeginFrame(1);
     materials->FlushMaterials();
     const rhi::TextureHandle first = materials->EffectiveTexture(plastic, "albedo_tex");
     const u32 rebuilds = materials->BindGroupRebuilds(plastic);
     // The owner alone is rebuilt (no device change): the material must pick up the new handle at the next flush.
-    mine.Release();
-    REQUIRE(mine.Recreate(rig.host.GetDevice()));
+    mine->Release();
+    REQUIRE(mine->Recreate(rig.host.GetDevice()));
     materials->BeginFrame(2);
     materials->FlushMaterials();
-    CHECK(materials->EffectiveTexture(plastic, "albedo_tex") == mine.Handle());
-    CHECK(mine.Handle() != first);
+    CHECK(materials->EffectiveTexture(plastic, "albedo_tex") == mine->Handle());
+    CHECK(mine->Handle() != first);
     CHECK(materials->BindGroupRebuilds(plastic) == rebuilds + 1);
-    materials->SetTexture(plastic, "albedo_tex", static_cast<const GpuTexture*>(nullptr));  // unbind before `mine` goes
-    mine.Destroy();
+    materials->SetTexture(plastic, "albedo_tex", GpuTextureConstPtr{});  // unbind before `mine` goes
+    mine->Destroy();
+
+    // A material that follows a texture shares it: the texture outlives the caller's pointer, and goes with the
+    // material.
+    {
+        GpuTexturePtr kept = MakeShared<GpuTexture>();
+        TextureImage again;
+        again.desc.width = again.desc.height = 4;
+        again.desc.format = rhi::Format::RGBA8_UNorm;
+        again.desc.usage = rhi::TextureUsage::Sampled;
+        again.pixels.Resize(64);
+        REQUIRE(kept->Create(rig.host.GetDevice(), static_cast<TextureImage&&>(again), &rig.registry, "kept"));
+        const u32 with_texture = rig.host.GetDevice()->Resources().textures;
+        REQUIRE(materials->SetTexture(plastic, "albedo_tex", kept));
+        kept.Reset();  // the caller lets go; the material still holds it
+        CHECK(rig.host.GetDevice()->Resources().textures == with_texture);
+        materials->DestroyMaterial(plastic);  // the material's share was the last one
+        CHECK(rig.host.GetDevice()->Resources().textures == with_texture - 1);
+    }
     rig.TearDown();
 }

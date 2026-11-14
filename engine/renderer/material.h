@@ -13,15 +13,13 @@
 #include "renderer/device_resources.h"
 #include "renderer/frame_data.h"
 #include "renderer/shader_permutation.h"
+#include "renderer/texture.h"
 #include "renderer/shader_reflection.h"
 #include "rhi/rhi.h"
 #include "types.h"
 
 namespace engine_placeholder::renderer
 {
-
-class GpuTexture;
-class GpuSampler;
 
 /// Descriptor set of the frame uniform.
 inline constexpr u32 kFrameSet = 0;
@@ -427,23 +425,23 @@ public:
     ///
     /// - Param id: the material.
     /// - Param name: the texture slot's name.
-    /// - Param texture: the owner, or null to unbind; borrowed, must outlive the material or be unbound first.
+    /// - Param texture: the owner, or empty to unbind; the material shares it until it is unbound or replaced.
     /// - Returns: true if the slot exists.
     /// - Fails: returns false, logging the reason, if the material has no such slot.
     /// - Aborts: `id` is invalid or stale.
-    /// - Ownership: the owner is borrowed.
-    bool SetTexture(MaterialId id, const char* name, const GpuTexture* texture);
+    /// - Ownership: the material holds a share of the owner.
+    bool SetTexture(MaterialId id, const char* name, const GpuTextureConstPtr& texture);
 
     /// Binds a sampler owner; see the texture overload.
     ///
     /// - Param id: the material.
     /// - Param name: the sampler slot's name.
-    /// - Param sampler: the owner, or null to unbind; borrowed.
+    /// - Param sampler: the owner, or empty to unbind; the material shares it until it is unbound or replaced.
     /// - Returns: true if the slot exists.
     /// - Fails: returns false, logging the reason, if the material has no such slot.
     /// - Aborts: `id` is invalid or stale.
-    /// - Ownership: the owner is borrowed.
-    bool SetSampler(MaterialId id, const char* name, const GpuSampler* sampler);
+    /// - Ownership: the material holds a share of the owner.
+    bool SetSampler(MaterialId id, const char* name, const GpuSamplerConstPtr& sampler);
 
     /// Sets a sampler slot. The bind groups are rebuilt at the next flush.
     ///

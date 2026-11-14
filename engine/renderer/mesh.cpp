@@ -79,13 +79,13 @@ const char* MeshGeometry::Validate() const
     switch (topology)
     {
     case rhi::PrimitiveTopology::TriangleList: break;
+    case rhi::PrimitiveTopology::PointList: primitive = 1; break;
     case rhi::PrimitiveTopology::LineList: primitive = 2; break;
     case rhi::PrimitiveTopology::TriangleStrip: strip = true; break;
     case rhi::PrimitiveTopology::LineStrip:
         primitive = 2;
         strip = true;
         break;
-    case rhi::PrimitiveTopology::PointList: return "mesh: geometry has a topology the renderer does not draw";
     }
     if (strip ? index_count < primitive : index_count % primitive != 0)
     {
@@ -917,6 +917,38 @@ const char* ListToStrip(const MeshData& list, StripJoin join, MeshData* out)
     return error;
 }
 
+MeshGeometry MeshData::CopyGeometry() const
+{
+    MeshGeometry g;
+    if (!Valid())
+    {
+        return g;
+    }
+    Vector<byte> region;
+    const usize vertex_bytes = static_cast<usize>(VertexBytes());
+    const usize index_bytes = static_cast<usize>(IndexBytes());
+    const usize skin_bytes = static_cast<usize>(SkinByteCount());
+    region.Resize(vertex_bytes + index_bytes + skin_bytes);
+    MemCopy(region.Data(), Vertices(), vertex_bytes);
+    MemCopy(region.Data() + vertex_bytes, Indices(), index_bytes);
+    if (skin_bytes != 0)
+    {
+        MemCopy(region.Data() + vertex_bytes + index_bytes, SkinBytes(), skin_bytes);
+    }
+    g.layout = layout_;
+    g.vertex_offset = 0;
+    g.vertex_count = vertex_count_;
+    g.index_type = index_type_;
+    g.index_offset = vertex_bytes;
+    g.index_count = index_count_;
+    g.topology = topology_;
+    g.bounds = bounds_;
+    g.skin_offset = vertex_bytes + index_bytes;
+    g.skin_joint_count = skin_joint_count_;
+    g.bytes = MakeShared<OwnedBytes>(static_cast<Vector<byte>&&>(region));
+    return g;
+}
+
 // ---- GpuMesh ----
 
 GpuMesh::GpuMesh(GpuMesh&& other) noexcept
@@ -936,18 +968,12 @@ GpuMesh& GpuMesh::operator=(GpuMesh&& other) noexcept
 
 void GpuMesh::MoveFrom(GpuMesh& other)
 {
-    owned_ = static_cast<MeshData&&>(other.owned_);
     was_ready_ = other.was_ready_;
     other.was_ready_ = false;
     geometry_ = static_cast<MeshGeometry&&>(other.geometry_);
     has_geometry_ = other.has_geometry_;
     other.geometry_ = MeshGeometry{};
     other.has_geometry_ = false;
-    source_ = other.source_;
-    if (source_.borrowed == &other.owned_)
-    {
-        source_.borrowed = &owned_;
-    }
     MemCopy(name_, other.name_, sizeof(name_));
     recreatable_ = other.recreatable_;
     registration_.Adopt(&other.registration_, this);
@@ -966,7 +992,6 @@ void GpuMesh::MoveFrom(GpuMesh& other)
     sort_id_ = other.sort_id_;
     ready_ = other.ready_;
     prepared_ = other.prepared_;
-    other.source_ = Source{};
     other.recreatable_ = false;
     other.sort_id_ = 0;
     other.device_ = nullptr;
@@ -1147,34 +1172,25 @@ bool GpuMesh::CreateFromGeometry(rhi::Device* device, const MeshGeometry& geomet
     return true;
 }
 
-bool GpuMesh::MakeRecreatable(DeviceResources* resources, const Source& source, const char* debug_name)
+bool GpuMesh::MakeRecreatable(DeviceResources* resources, const MeshData& data, const char* debug_name)
 {
-    ENGINE_ASSERT(Valid(), "GpuMesh::MakeRecreatable: the mesh is empty");
-    ENGINE_ASSERT(!has_geometry_, "GpuMesh::MakeRecreatable: the mesh already has its geometry as its source");
-    ENGINE_ASSERT(source.borrowed != nullptr || source.load != nullptr, "GpuMesh::MakeRecreatable: no source");
-    source_ = source;
+    ENGINE_ASSERT(Valid() && data.Valid(), "GpuMesh::MakeRecreatable: the mesh or the data is empty");
+    if (resources == nullptr)
+    {
+        return true;  // nothing could use the copy
+    }
+    geometry_ = data.CopyGeometry();
+    has_geometry_ = true;
     FormatTo(name_, sizeof(name_), "%s", debug_name != nullptr ? debug_name : "mesh");
     recreatable_ = true;
     if (!registration_.Attach(resources, this, tiers::kMeshes))
     {
         recreatable_ = false;
-        source_ = Source{};
+        has_geometry_ = false;
+        geometry_ = MeshGeometry{};
         return false;
     }
     return true;
-}
-
-bool GpuMesh::AdoptSource(DeviceResources* resources, MeshData&& data, const char* debug_name)
-{
-    ENGINE_ASSERT(Valid() && data.Valid(), "GpuMesh::AdoptSource: the mesh or the data is empty");
-    if (resources == nullptr)
-    {
-        return true;  // nothing could use the data
-    }
-    owned_ = static_cast<MeshData&&>(data);
-    Source source;
-    source.borrowed = &owned_;
-    return MakeRecreatable(resources, source, debug_name);
 }
 
 void GpuMesh::Release()
@@ -1212,47 +1228,21 @@ bool GpuMesh::Recreate(rhi::Device* device)
         RenderLog(LogVerbosity::Error, "GpuMesh '%s': no source to recreate it from", name_);
         return false;
     }
-    MeshData loaded;
-    detail::MeshUploadView view;
-    u32 vertices = 0;
-    u32 indices = 0;
-    u32 joints = 0;
-    bool skinned = false;
-    if (has_geometry_)
+    if (!has_geometry_)
     {
-        if (const char* why = geometry_.Validate())
-        {
-            RenderLog(LogVerbosity::Error, "GpuMesh '%s': %s", name_, why);
-            return false;
-        }
-        view = ViewOfGeometry(geometry_);
-        vertices = geometry_.vertex_count;
-        indices = geometry_.index_count;
-        joints = geometry_.skin_joint_count;
-        skinned = geometry_.layout.skin_stride != 0;
+        RenderLog(LogVerbosity::Error, "GpuMesh '%s': no source to recreate it from", name_);
+        return false;
     }
-    else
+    if (const char* why = geometry_.Validate())
     {
-        const MeshData* data = source_.borrowed;
-        if (data == nullptr)
-        {
-            if (!source_.load(source_.user, &loaded) || !loaded.Valid())
-            {
-                RenderLog(LogVerbosity::Error, "GpuMesh '%s': the loader failed", name_);
-                return false;
-            }
-            data = &loaded;
-        }
-        view = ViewOfData(*data);
-        vertices = data->VertexCount();
-        indices = data->IndexCount();
-        joints = data->SkinJointCount();
-        skinned = data->Skinned();
-        if (!data->Valid())
-        {
-            vertices = 0;
-        }
+        RenderLog(LogVerbosity::Error, "GpuMesh '%s': %s", name_, why);
+        return false;
     }
+    const detail::MeshUploadView view = ViewOfGeometry(geometry_);
+    const u32 vertices = geometry_.vertex_count;
+    const u32 indices = geometry_.index_count;
+    const u32 joints = geometry_.skin_joint_count;
+    const bool skinned = geometry_.layout.skin_stride != 0;
     if (vertices == 0 || vertices != vertex_count_ || indices != index_count_ ||
         skinned != (layout_.skin_stride != 0) || joints != skin_joint_count_)
     {
@@ -1311,8 +1301,6 @@ void GpuMesh::Destroy()
 {
     registration_.Reset();
     Release();
-    owned_ = MeshData{};
-    source_ = Source{};
     geometry_ = MeshGeometry{};
     has_geometry_ = false;
     recreatable_ = false;

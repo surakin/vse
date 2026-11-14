@@ -3210,12 +3210,12 @@ The texture, shared with the materials that bind it.
 struct GpuMaterial { ... }
 ```
 
-A material in the material system, with its textures bound by owner and its samplers. It holds a share of every texture and sampler it binds, so none can go while the material uses it, and it is shared itself: a spawned level's entities name its slot in the material system, so the level holds a share of the material and a reload of the resource does not destroy the material under them.
+A material in the material system, with its textures bound by owner and its samplers. The material system holds a share of every texture and sampler the material binds, so none can go while the material uses it; this holder is shared itself: a spawned level's entities name its slot in the material system, so the level holds a share of the holder and a reload of the resource does not destroy the material under them.
 
 | Field | Value |
 |---|---|
 | Thread-safety | thread-compatible; owner-thread-only. |
-| Ownership | owns the material (destroyed with the last share); shares its textures and samplers. |
+| Ownership | owns the material (destroyed with the last share). |
 
 ### `GpuMaterial()` {#asset-gpumaterial-gpumaterial}
 
@@ -3286,26 +3286,6 @@ u32 flags;
 ```
 
 [`asset::MaterialFlags`](#asset-materialflags).
-
-### `textures` {#asset-gpumaterial-textures}
-
-`variable asset::GpuMaterial::textures` — defined in `engine/asset/gpu_loaders.h`
-
-```cpp
-Vector<renderer::GpuTexturePtr> textures;
-```
-
-The textures the material's slots use.
-
-### `samplers` {#asset-gpumaterial-samplers}
-
-`variable asset::GpuMaterial::samplers` — defined in `engine/asset/gpu_loaders.h`
-
-```cpp
-Vector<renderer::GpuSamplerPtr> samplers;
-```
-
-The samplers the material's slots use.
 
 ## `GpuMaterialPtr` {#asset-gpumaterialptr}
 
@@ -4823,16 +4803,6 @@ Reads a material blob into a description. Everything is validated: the sections'
 | Fails | `Corrupt` for any inconsistency; `UnsupportedVersion` (the message names `asset_mint remint`) for another container or type version; `TypeMismatch` for a blob of another type; `LimitExceeded` when memory runs out. |
 | Ownership | borrows `bytes` for the call; `*out` is replaced. |
 
-## `ReleaseBytes` {#asset-releasebytes}
-
-`alias asset::ReleaseBytes` — defined in `engine/asset/memory_backend.h`
-
-```cpp
-using ReleaseBytes = void (*)(void* user, const void* data, usize size);
-```
-
-Called exactly once when a borrowed resource's bytes are no longer used (replaced, removed or the backend gone, and no reader of them open): the host may free or reuse `data` from then on.
-
 ## `ResourceInUseQuery` {#asset-resourceinusequery}
 
 `struct asset::ResourceInUseQuery` — defined in `engine/asset/memory_backend.h`
@@ -4921,12 +4891,12 @@ class HostMemoryBackend : public ResourceBackend { ... }
 
 Resources provided by the host.
 
-The bytes of every resource are a complete blob (Day 314): `Add` checks the container, that the blob's own id is the id the host passed, that the content hash verifies and, when the host passes one, that it equals the host's hash. Bytes are *copied* into memory the backend owns, or *borrowed* (the host keeps them alive and gives a release function, called exactly once, after the resource was replaced or removed and its last open reader closed). A replace never tears a read: an open reader keeps the bytes it opened. Every add, replace and remove leaves a `Watch` record. The bytes of all resources count against the budget (`assets.memory_backend_bytes`); an add past it returns `LimitExceeded` (back-pressure, never eviction: the host owns the content).
+The bytes of every resource are a complete blob (Day 314): `Add` checks the container, that the blob's own id is the id the host passed, that the content hash verifies and, when the host passes one, that it equals the host's hash. Bytes are copied into memory the backend owns. A replace never tears a read: an open reader keeps the bytes it opened. Every add, replace and remove leaves a `Watch` record. The bytes of all resources count against the budget (`assets.memory_backend_bytes`); an add past it returns `LimitExceeded` (back-pressure, never eviction: the host owns the content).
 
 | Field | Value |
 |---|---|
 | Thread-safety | thread-safe; adds, replaces and removes may run concurrently with reads. |
-| Ownership | owns copied bytes; borrowed bytes belong to the host until their release function ran. Readers must not outlive the backend object, but the bytes they read outlive a replacement. |
+| Ownership | owns its bytes. Readers must not outlive the backend object, but the bytes they read outlive a replacement. |
 
 ### `HostMemoryBackend(const TypeRegistry&,u64)` {#asset-hostmemorybackend-hostmemorybackend-const-typeregistry-amp-u64}
 
@@ -4946,7 +4916,7 @@ Makes a backend that checks blobs against `types` (which must outlive it) and ho
 ~HostMemoryBackend() override;
 ```
 
-Releases every borrowed resource whose last reader is closed (the others when their reader closes).
+Frees the resources it holds (a reader keeps the bytes it opened).
 
 ### `EntryPtr` {#asset-hostmemorybackend-entryptr}
 
@@ -4982,21 +4952,6 @@ Registers `bytes`, copied.
 |---|---|
 | Fails | `Invalid` (null id, a malformed path); `DuplicateId` (the id is live, or a path belongs to another id); `Corrupt` (not a blob, the blob's id is not `id`, the hash does not verify or differs from the host's); `UnsupportedVersion`, `TypeMismatch` (as `BlobReader::Open`); `LimitExceeded` (the budget); `Other` (memory). |
 
-### `AddBorrowed(ResourceId,ByteSpan,ReleaseBytes,void*,const MemoryAddOptions&)` {#asset-hostmemorybackend-addborrowed-resourceid-bytespan-releasebytes-void-star-const-memoryaddoptions-amp}
-
-`method asset::HostMemoryBackend::AddBorrowed` — defined in `engine/asset/memory_backend.h`
-
-```cpp
-Status AddBorrowed(ResourceId id, ByteSpan bytes, ReleaseBytes release, void* release_user, const MemoryAddOptions& options = MemoryAddOptions());
-```
-
-Registers `bytes` without copying them: the host keeps them valid until `release` ran.
-
-| Field | Value |
-|---|---|
-| Fails | as `Add`; the release function is not called for a refused add (the host still owns the bytes). |
-| Ownership | borrows `bytes` until `release` has run; `release_user` stays the host's. |
-
 ### `Replace(ResourceId,ByteSpan,bool,Vector<ResourceId>*)` {#asset-hostmemorybackend-replace-resourceid-bytespan-bool-vector-lt-resourceid-gt-star}
 
 `method asset::HostMemoryBackend::Replace` — defined in `engine/asset/memory_backend.h`
@@ -5011,20 +4966,6 @@ Replaces the bytes of a live resource with `bytes`, copied. Its paths stay.
 |---|---|
 | Fails | `NotFound`; `InUse` (dependents named in `*dependents` when it is not null; `force` unloads them first); the failures of `Add` for the new bytes. |
 | Ownership | borrows its pointer arguments for the call only; nothing is retained. |
-
-### `ReplaceBorrowed(ResourceId,ByteSpan,ReleaseBytes,void*,bool,Vector<ResourceId>*)` {#asset-hostmemorybackend-replaceborrowed-resourceid-bytespan-releasebytes-void-star-bool-vector-lt-resourceid-gt-star}
-
-`method asset::HostMemoryBackend::ReplaceBorrowed` — defined in `engine/asset/memory_backend.h`
-
-```cpp
-Status ReplaceBorrowed(ResourceId id, ByteSpan bytes, ReleaseBytes release, void* release_user, bool force = false, Vector<ResourceId>* dependents = nullptr);
-```
-
-As `Replace`, borrowing the new bytes.
-
-| Field | Value |
-|---|---|
-| Ownership | borrows `bytes` until `release` has run; `release_user` stays the host's. |
 
 ### `Remove(ResourceId,bool,Vector<ResourceId>*)` {#asset-hostmemorybackend-remove-resourceid-bool-vector-lt-resourceid-gt-star}
 
@@ -5049,7 +4990,7 @@ Removes a resource and its paths.
 u64 BytesHeld() const;
 ```
 
-Bytes held now (copied and borrowed).
+Bytes held now.
 
 ### `Name()` {#asset-hostmemorybackend-name-const}
 

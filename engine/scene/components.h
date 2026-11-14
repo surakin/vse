@@ -14,37 +14,17 @@
 namespace engine_placeholder::scene
 {
 
-/// A mesh shared by the entities that draw it: the holder that keeps a [[renderer::GpuMesh]] alive while any entity or
-/// scene entry uses it.
-///
-/// An entity names it through a `SharedPtr<MeshAsset>`; the render sync holds one more reference per object it added,
-/// so the geometry outlives the scene entry even when the entity that drew it is destroyed first.
-///
-/// - Thread-safety: thread-compatible; the reference count is atomic.
-/// - Ownership: owns the mesh and, through it, the device buffers; the device must outlive it.
-struct MeshAsset
-{
-    /// The geometry, when this holder owns it (a hand-built mesh).
-    renderer::GpuMesh mesh;
-    /// A mesh shared with whoever else draws it (the resource manager's), or empty: the holder then owns nothing, and
-    /// the mesh lives as long as any holder does.
-    renderer::GpuMeshPtr shared;
-
-    /// The geometry, whichever way it is held.
-    ///
-    /// - Fails: never.
-    /// - Ownership: the mesh belongs to this holder or is shared with it.
-    const renderer::GpuMesh& Geometry() const { return shared ? *shared : mesh; }
-};
-
 /// Draws a mesh at the entity's `WorldTransform`.
 ///
 /// - Thread-safety: thread-compatible plain data.
+/// The mesh is shared by every entity that draws it; the render sync holds one more share per object it added, so the
+/// geometry outlives the scene entry even when the entity that drew it is destroyed first.
+///
 /// - Ownership: shares `mesh`.
 struct MeshRenderer
 {
     /// The geometry; null or an empty mesh means "draw nothing" (counted as invalid by the sync).
-    SharedPtr<MeshAsset> mesh;
+    renderer::GpuMeshPtr mesh;
     /// The material id (see [[renderer::RenderObjectDesc::material]]).
     u32 material = 0;
     /// Extra `renderer::ObjectFlags` bits; [[scene::Hidden]] adds `kHidden`.

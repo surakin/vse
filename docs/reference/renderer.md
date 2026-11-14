@@ -4473,12 +4473,12 @@ Sets a texture slot. The bind groups are rebuilt at the next flush.
 | Aborts | `id` is invalid or stale. |
 | Ownership | `texture` is borrowed; it must outlive the material's use of it. |
 
-### `SetTexture(MaterialId,const char*,const GpuTexture*)` {#renderer-materialsystem-settexture-materialid-const-char-star-const-gputexture-star}
+### `SetTexture(MaterialId,const char*,const GpuTextureConstPtr&)` {#renderer-materialsystem-settexture-materialid-const-char-star-const-gputextureconstptr-amp}
 
 `method renderer::MaterialSystem::SetTexture` — defined in `engine/renderer/material.h`
 
 ```cpp
-bool SetTexture(MaterialId id, const char* name, const GpuTexture* texture);
+bool SetTexture(MaterialId id, const char* name, const GpuTextureConstPtr& texture);
 ```
 
 Binds a texture owner: the material follows the owner's handle through a device reset. Preferred over the raw handle.
@@ -4487,18 +4487,18 @@ Binds a texture owner: the material follows the owner's handle through a device 
 |---|---|
 | Parameter `id` | the material. |
 | Parameter `name` | the texture slot's name. |
-| Parameter `texture` | the owner, or null to unbind; borrowed, must outlive the material or be unbound first. |
+| Parameter `texture` | the owner, or empty to unbind; the material shares it until it is unbound or replaced. |
 | Returns | true if the slot exists. |
 | Fails | returns false, logging the reason, if the material has no such slot. |
 | Aborts | `id` is invalid or stale. |
-| Ownership | the owner is borrowed. |
+| Ownership | the material holds a share of the owner. |
 
-### `SetSampler(MaterialId,const char*,const GpuSampler*)` {#renderer-materialsystem-setsampler-materialid-const-char-star-const-gpusampler-star}
+### `SetSampler(MaterialId,const char*,const GpuSamplerConstPtr&)` {#renderer-materialsystem-setsampler-materialid-const-char-star-const-gpusamplerconstptr-amp}
 
 `method renderer::MaterialSystem::SetSampler` — defined in `engine/renderer/material.h`
 
 ```cpp
-bool SetSampler(MaterialId id, const char* name, const GpuSampler* sampler);
+bool SetSampler(MaterialId id, const char* name, const GpuSamplerConstPtr& sampler);
 ```
 
 Binds a sampler owner; see the texture overload.
@@ -4507,11 +4507,11 @@ Binds a sampler owner; see the texture overload.
 |---|---|
 | Parameter `id` | the material. |
 | Parameter `name` | the sampler slot's name. |
-| Parameter `sampler` | the owner, or null to unbind; borrowed. |
+| Parameter `sampler` | the owner, or empty to unbind; the material shares it until it is unbound or replaced. |
 | Returns | true if the slot exists. |
 | Fails | returns false, logging the reason, if the material has no such slot. |
 | Aborts | `id` is invalid or stale. |
-| Ownership | the owner is borrowed. |
+| Ownership | the material holds a share of the owner. |
 
 ### `SetSampler(MaterialId,const char*,rhi::SamplerHandle)` {#renderer-materialsystem-setsampler-materialid-const-char-star-rhi-samplerhandle}
 
@@ -5175,7 +5175,7 @@ Checks the sections against the region and the counts against each other (not th
 | Field | Value |
 |---|---|
 | Returns | null when the geometry can be uploaded, otherwise a static message. |
-| Fails | no region, a section outside it, a zero count or stride, an index count that does not fit the topology, a topology the renderer does not draw, a skinned layout without a joint count of 1 to 256 or with a stride other than 8, or a joint count with a rigid layout. |
+| Fails | no region, a section outside it, a zero count or stride, an index count that does not fit the topology, a skinned layout without a joint count of 1 to 256 or with a stride other than 8, or a joint count with a rigid layout. |
 | Ownership | reads the shared bytes only to learn their size; the message is static. |
 
 ## `MeshData` {#renderer-meshdata}
@@ -5458,6 +5458,22 @@ u64 IndexBytes() const;
 ```
 
 Returns the size of the index data in bytes.
+
+### `CopyGeometry()` {#renderer-meshdata-copygeometry-const}
+
+`method renderer::MeshData::CopyGeometry` — defined in `engine/renderer/mesh.h`
+
+```cpp
+MeshGeometry CopyGeometry() const;
+```
+
+Copies the vertices, indices and skin stream into one shared region and describes them.
+
+| Field | Value |
+|---|---|
+| Returns | the geometry over the new region; empty (no region) for an empty mesh. |
+| Fails | never. |
+| Ownership | the returned geometry owns the copy through its shared bytes; this mesh is not referenced. |
 
 ### `GetBounds()` {#renderer-meshdata-getbounds-const}
 
@@ -5854,51 +5870,6 @@ void Destroy();
 
 Destroys the buffers through the device and forgets the source and the registration. Safe on an empty mesh and called by the destructor.
 
-### `Source` {#renderer-gpumesh-source}
-
-`struct renderer::GpuMesh::Source` — defined in `engine/renderer/mesh.h`
-
-```cpp
-struct Source { ... }
-```
-
-How a mesh gets its geometry again after a device reset.
-
-| Field | Value |
-|---|---|
-| Thread-safety | thread-compatible plain data. |
-| Ownership | `borrowed` is not owned; `load` and `user` are borrowed. |
-
-#### `borrowed` {#renderer-gpumesh-source-borrowed}
-
-`variable renderer::GpuMesh::Source::borrowed` — defined in `engine/renderer/mesh.h`
-
-```cpp
-const MeshData* borrowed;
-```
-
-Geometry the caller keeps alive for as long as the mesh is registered, or null.
-
-#### `load` {#renderer-gpumesh-source-load}
-
-`variable renderer::GpuMesh::Source::load` — defined in `engine/renderer/mesh.h`
-
-```cpp
-bool (*load)(void* user, MeshData* out);
-```
-
-Or a function that loads the geometry into `*out` (called at every recreate), or null.
-
-#### `user` {#renderer-gpumesh-source-user}
-
-`variable renderer::GpuMesh::Source::user` — defined in `engine/renderer/mesh.h`
-
-```cpp
-void* user;
-```
-
-Passed to `load`.
-
 ### `CreateFromGeometry(rhi::Device*,const MeshGeometry&,DeviceResources*,const char*)` {#renderer-gpumesh-createfromgeometry-rhi-device-star-const-meshgeometry-amp-deviceresources-star-const-char-star}
 
 `method renderer::GpuMesh::CreateFromGeometry` — defined in `engine/renderer/mesh.h`
@@ -5920,46 +5891,27 @@ Creates the buffers from geometry read in place and keeps the geometry (and with
 | Aborts | this mesh already holds buffers. |
 | Ownership | shares the bytes `geometry` holds; they live as long as this mesh does. |
 
-### `MakeRecreatable(DeviceResources*,const Source&,const char*)` {#renderer-gpumesh-makerecreatable-deviceresources-star-const-source-amp-const-char-star}
+### `MakeRecreatable(DeviceResources*,const MeshData&,const char*)` {#renderer-gpumesh-makerecreatable-deviceresources-star-const-meshdata-amp-const-char-star}
 
 `method renderer::GpuMesh::MakeRecreatable` — defined in `engine/renderer/mesh.h`
 
 ```cpp
-bool MakeRecreatable(DeviceResources* resources, const Source& source, const char* debug_name);
+bool MakeRecreatable(DeviceResources* resources, const MeshData& data, const char* debug_name);
 ```
 
-Makes this mesh survive a device reset: records where the geometry comes from and registers with `resources`.
+Makes this mesh survive a device reset: copies `data` into a shared region kept as the source, and registers with `resources`.
 
-After this, `Release` and `Recreate` work and the registry calls them on every reset. Call after a successful `Create`.
+After this, `Release` and `Recreate` work and the registry calls them on every reset. Call after a successful `Create` from the same geometry; a source that no longer matches the mesh fails the reset, naming the mesh.
 
 | Field | Value |
 |---|---|
-| Parameter `resources` | the registry; null records the source but registers nothing. |
-| Parameter `source` | where to get the geometry again; `borrowed` or `load` must be set. |
+| Parameter `resources` | the registry; null records nothing and registers nothing. |
+| Parameter `data` | the geometry the mesh was created from. |
 | Parameter `debug_name` | a label for the rebuilt buffers; copied, may be null. |
 | Returns | true if registered (or `resources` is null). |
 | Fails | returns false if the registry refused; the mesh is then still valid but will not survive a reset. |
-| Aborts | the mesh is empty, or `source` names nothing. |
-| Ownership | the registry and the source are borrowed. |
-
-### `AdoptSource(DeviceResources*,MeshData&&,const char*)` {#renderer-gpumesh-adoptsource-deviceresources-star-meshdata-amp-amp-const-char-star}
-
-`method renderer::GpuMesh::AdoptSource` — defined in `engine/renderer/mesh.h`
-
-```cpp
-bool AdoptSource(DeviceResources* resources, MeshData&& data, const char* debug_name);
-```
-
-As [`renderer::GpuMesh::MakeRecreatable`](#renderer-gpumesh-makerecreatable-deviceresources-star-const-source-amp-const-char-star), keeping the geometry itself: `data` is moved into the mesh.
-
-| Field | Value |
-|---|---|
-| Parameter `resources` | the registry; may be null. |
-| Parameter `data` | the geometry; must be what the mesh was created from. |
-| Parameter `debug_name` | a label for the rebuilt buffers; copied, may be null. |
-| Returns | true if registered (or `resources` is null). |
-| Aborts | the mesh is empty or `data` is empty. |
-| Ownership | borrowed for the call; nothing is kept unless the description above says so. |
+| Aborts | the mesh is empty, or `data` is empty. |
+| Ownership | `data` is read during the call only; the copy is owned by this mesh. |
 
 ### `Release()` {#renderer-gpumesh-release}
 
@@ -12698,61 +12650,6 @@ bool generate_mips;
 
 Whether to build the levels that `pixels` does not hold on the GPU (needs `desc.mip_levels` above 1 and a format and device that can; otherwise the texture has one level).
 
-## `TextureLevelRef` {#renderer-texturelevelref}
-
-`struct renderer::TextureLevelRef` — defined in `engine/renderer/texture.h`
-
-```cpp
-struct TextureLevelRef { ... }
-```
-
-One mip level of one layer of a texture whose texels live in memory the caller keeps (a loaded asset blob): the zero-copy entry of [`renderer::GpuTexture::CreateFromLevels`](#renderer-gputexture-createfromlevels-rhi-device-star-const-rhi-texturedesc-amp-span-lt-const-texturelevelref-gt-deviceresources-star-const-char-star).
-
-| Field | Value |
-|---|---|
-| Thread-safety | thread-compatible (a plain value). |
-| Ownership | borrows `data`. |
-
-### `data` {#renderer-texturelevelref-data}
-
-`variable renderer::TextureLevelRef::data` — defined in `engine/renderer/texture.h`
-
-```cpp
-const void* data;
-```
-
-The level's rows, `row_pitch` bytes apart.
-
-### `row_pitch` {#renderer-texturelevelref-row-pitch}
-
-`variable renderer::TextureLevelRef::row_pitch` — defined in `engine/renderer/texture.h`
-
-```cpp
-u32 row_pitch;
-```
-
-Bytes between rows (0: tightly packed); a multiple of the texel size.
-
-### `mip` {#renderer-texturelevelref-mip}
-
-`variable renderer::TextureLevelRef::mip` — defined in `engine/renderer/texture.h`
-
-```cpp
-u32 mip;
-```
-
-The mip level.
-
-### `layer` {#renderer-texturelevelref-layer}
-
-`variable renderer::TextureLevelRef::layer` — defined in `engine/renderer/texture.h`
-
-```cpp
-u32 layer;
-```
-
-The array layer.
-
 ## `TextureLevelSpan` {#renderer-texturelevelspan}
 
 `struct renderer::TextureLevelSpan` — defined in `engine/renderer/texture.h`
@@ -12927,28 +12824,6 @@ Creates the texture from `image` and keeps `image` as the source.
 | Aborts | the texture already exists. |
 | Ownership | borrowed for the call; nothing is kept unless the description above says so. |
 
-### `CreateFromLevels(rhi::Device*,const rhi::TextureDesc&,Span<const TextureLevelRef>,DeviceResources*,const char*)` {#renderer-gputexture-createfromlevels-rhi-device-star-const-rhi-texturedesc-amp-span-lt-const-texturelevelref-gt-deviceresources-star-const-char-star}
-
-`method renderer::GpuTexture::CreateFromLevels` — defined in `engine/renderer/texture.h`
-
-```cpp
-bool CreateFromLevels(rhi::Device* device, const rhi::TextureDesc& desc, Span<const TextureLevelRef> levels, DeviceResources* resources, const char* debug_name);
-```
-
-Creates the texture from every level of every layer, uploaded straight from memory the caller owns (the mip sections of an asset blob): the staging copy into device memory is the only copy, and no mip is generated. The texture keeps only the descriptions of the levels, so a reset uploads from the same memory again.
-
-| Field | Value |
-|---|---|
-| Parameter `device` | the device. |
-| Parameter `desc` | the finished texture; `usage` gets `CopyDst` added; `debug_name` is ignored. |
-| Parameter `levels` | exactly one entry for each of `desc.mip_levels * desc.array_layers` subresources. |
-| Parameter `resources` | the registry, or null for a texture that does not need to survive a reset. |
-| Parameter `debug_name` | a label; copied, may be null. |
-| Returns | true on success. |
-| Fails | returns false, logging the reason, for an invalid description, a missing, repeated or out-of-range level, a size or format the device cannot hold, or a failed upload. |
-| Aborts | the texture already exists. |
-| Ownership | `levels[i].data` is borrowed until the texture is destroyed (and across a reset, when `resources` is given): the bytes must outlive the texture. |
-
 ### `CreateFromSharedLevels(rhi::Device*,const rhi::TextureDesc&,SharedBytesPtr,Span<const TextureLevelSpan>,DeviceResources*,const char*)` {#renderer-gputexture-createfromsharedlevels-rhi-device-star-const-rhi-texturedesc-amp-sharedbytesptr-span-lt-const-texturelevelspan-gt-deviceresources-star-const-char-star}
 
 `method renderer::GpuTexture::CreateFromSharedLevels` — defined in `engine/renderer/texture.h`
@@ -12957,7 +12832,7 @@ Creates the texture from every level of every layer, uploaded straight from memo
 bool CreateFromSharedLevels(rhi::Device* device, const rhi::TextureDesc& desc, SharedBytesPtr bytes, Span<const TextureLevelSpan> levels, DeviceResources* resources, const char* debug_name);
 ```
 
-As [`renderer::GpuTexture::CreateFromLevels`](#renderer-gputexture-createfromlevels-rhi-device-star-const-rhi-texturedesc-amp-span-lt-const-texturelevelref-gt-deviceresources-star-const-char-star), with the texels in a region of shared bytes: the texture keeps a share of the region and the offsets of the levels, no pointer into it, so a reset uploads from the same bytes for as long as the texture lives, whoever else lets go of them.
+Creates the texture from every level of every layer, uploaded straight from a region of shared bytes (the mip sections of an asset blob): the staging copy into device memory is the only copy, and no mip is generated. The texture keeps a share of the region and the offsets of the levels, no pointer into it, so a reset uploads from the same bytes for as long as the texture lives, whoever else lets go of them.
 
 | Field | Value |
 |---|---|

@@ -694,6 +694,56 @@ The bytes.
 | Fails | never. |
 | Ownership | the span borrows the storage for as long as the caller holds a `SharedPtr` to this object. |
 
+## `OwnedBytes` {#ownedbytes}
+
+`class OwnedBytes` — defined in `engine/foundation/containers/shared_bytes.h`
+
+```cpp
+class OwnedBytes final : public SharedBytes { ... }
+```
+
+A [`SharedBytes`](#sharedbytes) that owns its bytes in a vector: the way to make a shared region from bytes built in memory (a generated mesh, a test's data).
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-safe to read once constructed. |
+| Ownership | owns the vector it was given. |
+
+### `OwnedBytes(Vector<byte>&&)` {#ownedbytes-ownedbytes-vector-lt-byte-gt-amp-amp}
+
+`constructor OwnedBytes::OwnedBytes` — defined in `engine/foundation/containers/shared_bytes.h`
+
+```cpp
+explicit OwnedBytes(Vector<byte>&& bytes);
+```
+
+Takes `bytes`.
+
+### `OwnedBytes(Vector<byte>&&,usize,usize)` {#ownedbytes-ownedbytes-vector-lt-byte-gt-amp-amp-usize-usize}
+
+`constructor OwnedBytes::OwnedBytes` — defined in `engine/foundation/containers/shared_bytes.h`
+
+```cpp
+OwnedBytes(Vector<byte>&& bytes, usize skip, usize length);
+```
+
+Takes `bytes`, of which the region is `length` bytes starting `skip` bytes in (so a copy can be placed at an aligned address).
+
+### `Bytes()` {#ownedbytes-bytes-const}
+
+`method OwnedBytes::Bytes` — defined in `engine/foundation/containers/shared_bytes.h`
+
+```cpp
+ByteSpan Bytes() const override;
+```
+
+The bytes.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+| Ownership | borrowed from this object. |
+
 ## `SharedBytesPtr` {#sharedbytesptr}
 
 `alias SharedBytesPtr` — defined in `engine/foundation/containers/shared_bytes.h`
@@ -703,6 +753,36 @@ using SharedBytesPtr = SharedPtr<const SharedBytes>;
 ```
 
 The way to hold a [`SharedBytes`](#sharedbytes): shared and read-only.
+
+## `CopyShared(ByteSpan)` {#copyshared-bytespan}
+
+`function CopyShared` — defined in `engine/foundation/containers/shared_bytes.h`
+
+```cpp
+inline SharedBytesPtr CopyShared(ByteSpan bytes);
+```
+
+Copies `bytes` into a new shared region: for a caller that has a span or a vector and needs to hand a share to something that keeps it (a tool or a test; a loader already holds the region it read).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+| Ownership | `bytes` is read during the call only; the share owns the copy, which is 64-byte aligned. |
+
+## `CopyShared(const Vector<byte>&)` {#copyshared-const-vector-lt-byte-gt-amp}
+
+`function CopyShared` — defined in `engine/foundation/containers/shared_bytes.h`
+
+```cpp
+inline SharedBytesPtr CopyShared(const Vector<byte>& bytes);
+```
+
+As above, for a vector.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+| Ownership | as above. |
 
 ## `AtomicRefCount` {#atomicrefcount}
 

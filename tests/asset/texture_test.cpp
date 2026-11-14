@@ -894,18 +894,20 @@ TEST_CASE("texture: a blob uploads to the device from its own bytes and survives
     const Vector<byte> blob = TtMintOne("srgb true\n", 16, 8, TtNoise(16, 8, 6));
     TextureView view;
     REQUIRE(view.Open(ByteSpan(blob.Data(), blob.Size()), types).Ok());
-    Vector<renderer::TextureLevelRef> refs;
+    const SharedBytesPtr shared = CopyShared(blob);  // the texture shares a copy of the blob
+    Vector<renderer::TextureLevelSpan> refs;
     for (u32 mip = 0; mip < view.MipCount(); ++mip)
     {
         const TextureLevel level = view.Level(0, mip);
-        renderer::TextureLevelRef ref;
-        ref.data = level.bytes.Data();
+        renderer::TextureLevelSpan ref;
+        ref.offset = static_cast<u64>(level.bytes.Data() - blob.Data());  // where it is in the blob
+        ref.bytes = level.bytes.Size();
         ref.row_pitch = level.row_pitch;
         ref.mip = mip;
         ref.layer = 0;
         refs.Push(ref);
     }
-    const Span<const renderer::TextureLevelRef> levels(refs.Data(), refs.Size());
+    const Span<const renderer::TextureLevelSpan> levels(refs.Data(), refs.Size());
 
     const bool was = LogRender.Enabled();
     LogRender.SetEnabled(false);
@@ -913,29 +915,30 @@ TEST_CASE("texture: a blob uploads to the device from its own bytes and survives
     rhi::NullDevicePtr first = rhi::CreateNullDevice(rhi::NullDeviceOptions{});
     REQUIRE(registry.OnDeviceCreated(first.Get(), first->Epoch()));
     renderer::GpuTexture texture;
-    REQUIRE(texture.CreateFromLevels(first.Get(), view.Desc(rhi::TextureUsage::Sampled), levels, &registry, "blob"));
+    REQUIRE(texture.CreateFromSharedLevels(first.Get(), view.Desc(rhi::TextureUsage::Sampled), shared, levels,
+                                           &registry, "blob"));
     CHECK(texture.Desc().mip_levels == 5);
     CHECK(first->Resources().textures == 1);
 
     // Levels that are missing, repeated, out of range or without data are refused and leave nothing behind.
     renderer::GpuTexture refused;
-    CHECK_FALSE(refused.CreateFromLevels(first.Get(), view.Desc(rhi::TextureUsage::Sampled),
-                                         Span<const renderer::TextureLevelRef>(refs.Data(), refs.Size() - 1), &registry,
-                                         "short"));
-    Vector<renderer::TextureLevelRef> repeated;
+    CHECK_FALSE(refused.CreateFromSharedLevels(first.Get(), view.Desc(rhi::TextureUsage::Sampled), shared,
+                                               Span<const renderer::TextureLevelSpan>(refs.Data(), refs.Size() - 1),
+                                               &registry, "short"));
+    Vector<renderer::TextureLevelSpan> repeated;
     for (usize i = 0; i < refs.Size(); ++i)
     {
         repeated.Push(refs[i]);
     }
     repeated[2].mip = 1;
-    CHECK_FALSE(refused.CreateFromLevels(first.Get(), view.Desc(rhi::TextureUsage::Sampled),
-                                         Span<const renderer::TextureLevelRef>(repeated.Data(), repeated.Size()),
-                                         &registry, "repeat"));
+    CHECK_FALSE(refused.CreateFromSharedLevels(first.Get(), view.Desc(rhi::TextureUsage::Sampled), shared,
+                                               Span<const renderer::TextureLevelSpan>(repeated.Data(), repeated.Size()),
+                                               &registry, "repeat"));
     repeated[2] = refs[2];
-    repeated[3].data = nullptr;
-    CHECK_FALSE(refused.CreateFromLevels(first.Get(), view.Desc(rhi::TextureUsage::Sampled),
-                                         Span<const renderer::TextureLevelRef>(repeated.Data(), repeated.Size()),
-                                         &registry, "null"));
+    repeated[3].offset = ~0ull >> 1;  // outside the region
+    CHECK_FALSE(refused.CreateFromSharedLevels(first.Get(), view.Desc(rhi::TextureUsage::Sampled), shared,
+                                               Span<const renderer::TextureLevelSpan>(repeated.Data(), repeated.Size()),
+                                               &registry, "null"));
     CHECK(first->Resources().textures == 1);
 
     // A reset: the texture is made again from the same blob bytes.

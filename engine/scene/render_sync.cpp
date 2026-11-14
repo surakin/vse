@@ -79,7 +79,7 @@ renderer::Light MakeLight(const LightSource& source, const Mat4& world)
 
 bool MeshUsable(const MeshRenderer& mr)
 {
-    return mr.mesh && mr.mesh->Geometry().Valid();
+    return mr.mesh && mr.mesh->Valid();
 }
 
 u32 FlagsOf(const MeshRenderer& mr, bool hidden)
@@ -224,7 +224,7 @@ private:
             return renderer::ObjectId{};
         }
         renderer::RenderObjectDesc desc;
-        desc.mesh = &mr.mesh->Geometry();
+        desc.mesh = mr.mesh.Get();
         desc.material = mr.material;
         desc.transform = world;
         desc.flags = FlagsOf(mr, hidden);
@@ -249,7 +249,7 @@ private:
         {
             return;
         }
-        const bool same_mesh = MeshUsable(mr) && object->mesh == &mr.mesh->Geometry();
+        const bool same_mesh = MeshUsable(mr) && object->mesh == mr.mesh.Get();
         if (!same_mesh || object->material != mr.material)
         {
             DropObject(scene, handle.object, report);
@@ -469,7 +469,7 @@ private:
     UniquePtr<ObjectOrphans> object_orphans_;
     UniquePtr<LightOrphans> light_orphans_;
     Vector<Pending> pending_;
-    Vector<SharedPtr<MeshAsset>> keep_;
+    Vector<renderer::GpuMeshPtr> keep_;
     renderer::RenderScene* scene_ = nullptr;
     u64 world_id_ = 0;
     u64 last_removal_seq_ = 0;

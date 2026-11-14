@@ -239,8 +239,8 @@ struct MaterialSystem::MaterialSlot
     u32 dirty_slots = 0;
     rhi::TextureHandle textures[kMaxMaterialTextures];
     rhi::SamplerHandle samplers[kMaxMaterialSamplers];
-    const GpuTexture* texture_owners[kMaxMaterialTextures] = {};  // when set, the slot follows the owner's handle
-    const GpuSampler* sampler_owners[kMaxMaterialSamplers] = {};
+    GpuTextureConstPtr texture_owners[kMaxMaterialTextures];  // when set, the slot follows the owner's handle
+    GpuSamplerConstPtr sampler_owners[kMaxMaterialSamplers];
     rhi::TextureHandle applied_textures[kMaxMaterialTextures];  // what the current bind groups were built from
     rhi::SamplerHandle applied_samplers[kMaxMaterialSamplers];
     rhi::BindGroupHandle groups[kSlots];
@@ -461,6 +461,19 @@ MaterialSystem::~MaterialSystem()
 {
     registration_.Reset();
     Release();
+    // The shares of the texture and sampler owners go now, while the system's own state is whole, not at some later
+    // point of the member destruction.
+    for (u32 i = 0; i < desc_.max_materials; ++i)
+    {
+        for (GpuTextureConstPtr& owner : materials_[i].texture_owners)
+        {
+            owner.Reset();
+        }
+        for (GpuSamplerConstPtr& owner : materials_[i].sampler_owners)
+        {
+            owner.Reset();
+        }
+    }
 }
 
 void MaterialSystem::Release()
@@ -497,7 +510,7 @@ void MaterialSystem::Release()
         // Raw handles belong to the old device; owner bindings are kept and followed again after the rebuild.
         for (u32 k = 0; k < kMaxMaterialTextures; ++k)
         {
-            if (m.texture_owners[k] == nullptr)
+            if (!m.texture_owners[k])
             {
                 m.textures[k] = {};
             }
@@ -505,7 +518,7 @@ void MaterialSystem::Release()
         }
         for (u32 k = 0; k < kMaxMaterialSamplers; ++k)
         {
-            if (m.sampler_owners[k] == nullptr)
+            if (!m.sampler_owners[k])
             {
                 m.samplers[k] = {};
             }
@@ -635,14 +648,14 @@ bool MaterialSystem::Recreate(rhi::Device* device)
         m.dirty_slots = m.shadow_size != 0 ? (1u << kSlots) - 1 : 0;
         for (u32 k = 0; k < kMaxMaterialTextures; ++k)
         {
-            if (m.texture_owners[k] != nullptr)
+            if (m.texture_owners[k])
             {
                 m.textures[k] = m.texture_owners[k]->Handle();
             }
         }
         for (u32 k = 0; k < kMaxMaterialSamplers; ++k)
         {
-            if (m.sampler_owners[k] != nullptr)
+            if (m.sampler_owners[k])
             {
                 m.samplers[k] = m.sampler_owners[k]->Handle();
             }
@@ -1340,6 +1353,14 @@ void MaterialSystem::DestroyMaterialObjects(MaterialSlot& m)
     m.mapped = nullptr;
     m.params = {};
     m.shadow.Reset();
+    for (GpuTextureConstPtr& owner : m.texture_owners)
+    {
+        owner.Reset();  // the shares of the owners the material followed
+    }
+    for (GpuSamplerConstPtr& owner : m.sampler_owners)
+    {
+        owner.Reset();
+    }
     m.alive = false;
 }
 
@@ -1443,7 +1464,7 @@ bool MaterialSystem::SetTexture(MaterialId id, const char* name, rhi::TextureHan
     {
         if (CStrCompare(v.textures[i].name, name) == 0)
         {
-            m.texture_owners[i] = nullptr;
+            m.texture_owners[i] = GpuTextureConstPtr{};
             if (!(m.textures[i] == texture))
             {
                 m.textures[i] = texture;
@@ -1464,7 +1485,7 @@ bool MaterialSystem::SetSampler(MaterialId id, const char* name, rhi::SamplerHan
     {
         if (CStrCompare(v.samplers[i].name, name) == 0)
         {
-            m.sampler_owners[i] = nullptr;
+            m.sampler_owners[i] = GpuSamplerConstPtr{};
             if (!(m.samplers[i] == sampler))
             {
                 m.samplers[i] = sampler;
@@ -1477,7 +1498,7 @@ bool MaterialSystem::SetSampler(MaterialId id, const char* name, rhi::SamplerHan
     return false;
 }
 
-bool MaterialSystem::SetTexture(MaterialId id, const char* name, const GpuTexture* texture)
+bool MaterialSystem::SetTexture(MaterialId id, const char* name, const GpuTextureConstPtr& texture)
 {
     MaterialSlot& m = Get(id);
     const Variant& v = templates_[m.template_index].variants[m.variant_index];
@@ -1499,7 +1520,7 @@ bool MaterialSystem::SetTexture(MaterialId id, const char* name, const GpuTextur
     return false;
 }
 
-bool MaterialSystem::SetSampler(MaterialId id, const char* name, const GpuSampler* sampler)
+bool MaterialSystem::SetSampler(MaterialId id, const char* name, const GpuSamplerConstPtr& sampler)
 {
     MaterialSlot& m = Get(id);
     const Variant& v = templates_[m.template_index].variants[m.variant_index];
@@ -1542,7 +1563,7 @@ void MaterialSystem::FlushMaterials()
         // A material bound to an owner follows the owner's current handle (it changes after a device reset).
         for (u32 k = 0; k < kMaxMaterialTextures; ++k)
         {
-            if (m.texture_owners[k] != nullptr && !(m.textures[k] == m.texture_owners[k]->Handle()))
+            if (m.texture_owners[k] && !(m.textures[k] == m.texture_owners[k]->Handle()))
             {
                 m.textures[k] = m.texture_owners[k]->Handle();
                 m.groups_dirty = true;
@@ -1550,7 +1571,7 @@ void MaterialSystem::FlushMaterials()
         }
         for (u32 k = 0; k < kMaxMaterialSamplers; ++k)
         {
-            if (m.sampler_owners[k] != nullptr && !(m.samplers[k] == m.sampler_owners[k]->Handle()))
+            if (m.sampler_owners[k] && !(m.samplers[k] == m.sampler_owners[k]->Handle()))
             {
                 m.samplers[k] = m.sampler_owners[k]->Handle();
                 m.groups_dirty = true;
@@ -1606,8 +1627,7 @@ rhi::TextureHandle MaterialSystem::EffectiveTexture(MaterialId id, const char* n
     {
         if (CStrCompare(v.textures[i].name, name) == 0)
         {
-            const rhi::TextureHandle bound = m.texture_owners[i] != nullptr ? m.texture_owners[i]->Handle()
-                                                                            : m.textures[i];
+            const rhi::TextureHandle bound = m.texture_owners[i] ? m.texture_owners[i]->Handle() : m.textures[i];
             return bound.IsValid() ? bound : defaults_[static_cast<u32>(v.textures[i].fallback)];
         }
     }
