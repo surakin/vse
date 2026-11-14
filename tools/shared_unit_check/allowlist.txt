@@ -1,0 +1,22 @@
+# path|reason - files that break rule 1 of check.cmake today. Each is a debt of the shared-ownership refactor (the user's rule of 2026-11-14),
+# not an exception: the refactor removes the member and its line here. An entry that exempts nothing fails the gate.
+engine/asset/blob.h|BlobReader keeps a ByteSpan of the bytes it was opened over (a view over caller-owned bytes); to hold a SharedBytesPtr and offsets.
+engine/asset/clip.h|ClipView keeps ByteSpans of the track, key and event sections of the bytes it was opened over; to hold a SharedBytesPtr and offsets.
+engine/asset/level.h|LevelSummary::bytes is a ByteSpan of the manager's buffer; to hold a SharedBytesPtr.
+engine/asset/mesh.h|MeshView keeps ByteSpans of the sections of the bytes it was opened over; to hold a SharedBytesPtr and offsets.
+engine/asset/pak.h|PakWriter's entry keeps a ByteSpan of the blob it was given until Finish; to hold a SharedBytesPtr.
+engine/asset/resource_manager.h|LoadContext::bytes_ is a call-scoped span of the buffer a loader reads (the shared region is LoadContext::Buffer()); to be replaced by it.
+engine/asset/skeleton.h|SkeletonView keeps ByteSpans of the sections of the bytes it was opened over; to hold a SharedBytesPtr and offsets.
+engine/asset/texture.h|TextureView keeps ByteSpans of the bytes it was opened over; to hold a SharedBytesPtr and offsets.
+engine/renderer/gbuffer.cpp|The G-buffer pass's draw record keeps a const GpuMesh* for one frame; to hold a GpuMeshConstPtr or an index into the scene.
+engine/renderer/gbuffer.h|The G-buffer pass's draw record keeps a const GpuMesh* for one frame; to hold a GpuMeshConstPtr or an index into the scene.
+engine/renderer/material.cpp|MaterialSystem's per-material texture_owners and sampler_owners are raw owner pointers (SetTexture(owner)); to hold GpuTextureConstPtr and GpuSamplerConstPtr.
+engine/renderer/mesh.h|GpuMesh::Source::borrowed is a const MeshData* into someone else's geometry; to go (a GpuMesh recreates from its MeshGeometry over shared bytes).
+engine/renderer/render_scene.h|RenderObject and RenderObjectDesc hold a const GpuMesh*; kept alive by scene::RenderSync's list by convention; to hold a GpuMeshConstPtr.
+engine/renderer/ui_renderer.h|GpuTextureImage holds a const GpuTexture*; to hold a GpuTextureConstPtr.
+tests/asset/manager_test.cpp|The test double RawBackend::Reader keeps a pointer-like ByteSpan view of its entry's bytes; a test of the loader, to hold a SharedBytesPtr when the views do.
+tests/asset/memory_backend_test.cpp|A test double keeps a ByteSpan of the bytes it serves; to hold a SharedBytesPtr when the backend does.
+tests/renderer/gbuffer_test.cpp|A test record keeps a const GpuMesh*; to hold a GpuMeshConstPtr when the pass does.
+tests/rhi/gbuffer_gpu_test.cpp|A test record keeps a const GpuMesh*; to hold a GpuMeshConstPtr when the pass does.
+tools/asset_mint/level_source.cpp|The minter's resolved-resource record keeps a ByteSpan of a blob the resolver owns; to hold a SharedBytesPtr.
+tools/asset_mint/texture_source.h|The texture minter's input keeps ByteSpans of the images the caller owns; to hold SharedBytesPtrs.

@@ -5067,7 +5067,7 @@ The attributes (any vertex format the RHI has); `skin_stride` is 8 or 0.
 `variable renderer::MeshGeometry::bytes` — defined in `engine/renderer/mesh.h`
 
 ```cpp
-SharedPtr<const SharedBytes> bytes;
+SharedBytesPtr bytes;
 ```
 
 The region the three sections are in.
@@ -5539,6 +5539,26 @@ Returns a pointer to the position of vertex `i`.
 |---|---|
 | Aborts | `i` is out of range. |
 | Ownership | borrowed; valid until the mesh is changed, moved from or destroyed. |
+
+## `MeshDataPtr` {#renderer-meshdataptr}
+
+`alias renderer::MeshDataPtr` — defined in `engine/renderer/mesh.h`
+
+```cpp
+using MeshDataPtr = SharedPtr<MeshData>;
+```
+
+How a [`renderer::MeshData`](#renderer-meshdata) is held when it is shared.
+
+## `MeshDataConstPtr` {#renderer-meshdataconstptr}
+
+`alias renderer::MeshDataConstPtr` — defined in `engine/renderer/mesh.h`
+
+```cpp
+using MeshDataConstPtr = SharedPtr<const MeshData>;
+```
+
+A read-only share of a [`renderer::MeshData`](#renderer-meshdata).
 
 ## `MakeCubeMesh(f32,MeshData*)` {#renderer-makecubemesh-f32-meshdata-star}
 
@@ -6217,6 +6237,26 @@ Binds the buffers and draws all indices for `instance_count` instances starting 
 | Parameter `first_instance` | the first instance index (the per-object data index, see [`renderer::FrameResources`](#renderer-frameresources)). |
 | Aborts | this mesh is empty, or as for [`rhi::CommandList::DrawIndexed`](rhi.md#rhi-commandlist-drawindexed-u32-u32-u32-i32-u32). |
 | Ownership | `list` is borrowed for the call. |
+
+## `GpuMeshPtr` {#renderer-gpumeshptr}
+
+`alias renderer::GpuMeshPtr` — defined in `engine/renderer/mesh.h`
+
+```cpp
+using GpuMeshPtr = SharedPtr<GpuMesh>;
+```
+
+How a [`renderer::GpuMesh`](#renderer-gpumesh) is held: shared, never pointed at.
+
+## `GpuMeshConstPtr` {#renderer-gpumeshconstptr}
+
+`alias renderer::GpuMeshConstPtr` — defined in `engine/renderer/mesh.h`
+
+```cpp
+using GpuMeshConstPtr = SharedPtr<const GpuMesh>;
+```
+
+A read-only share of a [`renderer::GpuMesh`](#renderer-gpumesh).
 
 ## `kMaxGraphErrors` {#renderer-kmaxgrapherrors}
 
@@ -12721,7 +12761,7 @@ The array layer.
 struct TextureLevelSpan { ... }
 ```
 
-One mip level of one layer of a texture whose texels are in a region of shared bytes: the entry of [`renderer::GpuTexture::CreateFromSharedLevels`](#renderer-gputexture-createfromsharedlevels-rhi-device-star-const-rhi-texturedesc-amp-sharedptr-lt-const-sharedbytes-gt-span-lt-const-texturelevelspan-gt-deviceresources-star-const-char-star). It names the level by where it is, not by a pointer.
+One mip level of one layer of a texture whose texels are in a region of shared bytes: the entry of [`renderer::GpuTexture::CreateFromSharedLevels`](#renderer-gputexture-createfromsharedlevels-rhi-device-star-const-rhi-texturedesc-amp-sharedbytesptr-span-lt-const-texturelevelspan-gt-deviceresources-star-const-char-star). It names the level by where it is, not by a pointer.
 
 | Field | Value |
 |---|---|
@@ -12909,12 +12949,12 @@ Creates the texture from every level of every layer, uploaded straight from memo
 | Aborts | the texture already exists. |
 | Ownership | `levels[i].data` is borrowed until the texture is destroyed (and across a reset, when `resources` is given): the bytes must outlive the texture. |
 
-### `CreateFromSharedLevels(rhi::Device*,const rhi::TextureDesc&,SharedPtr<const SharedBytes>,Span<const TextureLevelSpan>,DeviceResources*,const char*)` {#renderer-gputexture-createfromsharedlevels-rhi-device-star-const-rhi-texturedesc-amp-sharedptr-lt-const-sharedbytes-gt-span-lt-const-texturelevelspan-gt-deviceresources-star-const-char-star}
+### `CreateFromSharedLevels(rhi::Device*,const rhi::TextureDesc&,SharedBytesPtr,Span<const TextureLevelSpan>,DeviceResources*,const char*)` {#renderer-gputexture-createfromsharedlevels-rhi-device-star-const-rhi-texturedesc-amp-sharedbytesptr-span-lt-const-texturelevelspan-gt-deviceresources-star-const-char-star}
 
 `method renderer::GpuTexture::CreateFromSharedLevels` — defined in `engine/renderer/texture.h`
 
 ```cpp
-bool CreateFromSharedLevels(rhi::Device* device, const rhi::TextureDesc& desc, SharedPtr<const SharedBytes> bytes, Span<const TextureLevelSpan> levels, DeviceResources* resources, const char* debug_name);
+bool CreateFromSharedLevels(rhi::Device* device, const rhi::TextureDesc& desc, SharedBytesPtr bytes, Span<const TextureLevelSpan> levels, DeviceResources* resources, const char* debug_name);
 ```
 
 As [`renderer::GpuTexture::CreateFromLevels`](#renderer-gputexture-createfromlevels-rhi-device-star-const-rhi-texturedesc-amp-span-lt-const-texturelevelref-gt-deviceresources-star-const-char-star), with the texels in a region of shared bytes: the texture keeps a share of the region and the offsets of the levels, no pointer into it, so a reset uploads from the same bytes for as long as the texture lives, whoever else lets go of them.
@@ -13045,6 +13085,26 @@ const rhi::TextureDesc& Desc() const;
 ```
 
 Returns the description of the finished texture (with the levels it really has).
+
+## `GpuTexturePtr` {#renderer-gputextureptr}
+
+`alias renderer::GpuTexturePtr` — defined in `engine/renderer/texture.h`
+
+```cpp
+using GpuTexturePtr = SharedPtr<GpuTexture>;
+```
+
+How a [`renderer::GpuTexture`](#renderer-gputexture) is held: shared, never pointed at.
+
+## `GpuTextureConstPtr` {#renderer-gputextureconstptr}
+
+`alias renderer::GpuTextureConstPtr` — defined in `engine/renderer/texture.h`
+
+```cpp
+using GpuTextureConstPtr = SharedPtr<const GpuTexture>;
+```
+
+A read-only share of a [`renderer::GpuTexture`](#renderer-gputexture).
 
 ## `GpuSampler` {#renderer-gpusampler}
 
@@ -13223,6 +13283,26 @@ rhi::SamplerHandle Handle() const;
 ```
 
 Returns the current handle; changes after a reset.
+
+## `GpuSamplerPtr` {#renderer-gpusamplerptr}
+
+`alias renderer::GpuSamplerPtr` — defined in `engine/renderer/texture.h`
+
+```cpp
+using GpuSamplerPtr = SharedPtr<GpuSampler>;
+```
+
+How a [`renderer::GpuSampler`](#renderer-gpusampler) is held: shared, never pointed at.
+
+## `GpuSamplerConstPtr` {#renderer-gpusamplerconstptr}
+
+`alias renderer::GpuSamplerConstPtr` — defined in `engine/renderer/texture.h`
+
+```cpp
+using GpuSamplerConstPtr = SharedPtr<const GpuSampler>;
+```
+
+A read-only share of a [`renderer::GpuSampler`](#renderer-gpusampler).
 
 ## `TransientPoolDesc` {#renderer-transientpooldesc}
 

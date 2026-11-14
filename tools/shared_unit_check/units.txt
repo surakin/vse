@@ -1,0 +1,10 @@
+# Shared units (the user's rule of 2026-11-14): a class whose instances several holders share is held by `SharedPtr`, always under
+# its alias, and never pointed at by a member of another class. Format: Type|Alias|ConstAlias|Header (the header defines the aliases;
+# an empty alias is not defined). A new shared unit is added here with its aliases in the same commit.
+GpuMesh|GpuMeshPtr|GpuMeshConstPtr|engine/renderer/mesh.h
+GpuTexture|GpuTexturePtr|GpuTextureConstPtr|engine/renderer/texture.h
+GpuSampler|GpuSamplerPtr|GpuSamplerConstPtr|engine/renderer/texture.h
+GpuMaterial|GpuMaterialPtr||engine/asset/gpu_loaders.h
+BlobBuffer|BlobBufferPtr||engine/asset/resource_manager.h
+SharedBytes||SharedBytesPtr|engine/foundation/containers/shared_bytes.h
+MeshData|MeshDataPtr|MeshDataConstPtr|engine/renderer/mesh.h

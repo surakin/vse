@@ -54,7 +54,7 @@ void GpuTexture::MoveFrom(GpuTexture& other)
 {
     image_ = static_cast<TextureImage&&>(other.image_);
     levels_ = static_cast<Vector<TextureLevelRef>&&>(other.levels_);
-    shared_bytes_ = static_cast<SharedPtr<const SharedBytes>&&>(other.shared_bytes_);
+    shared_bytes_ = static_cast<SharedBytesPtr&&>(other.shared_bytes_);
     shared_levels_ = static_cast<Vector<TextureLevelSpan>&&>(other.shared_levels_);
     loader_ = other.loader_;
     loader_user_ = other.loader_user_;
@@ -247,9 +247,9 @@ bool GpuTexture::MakeFromSharedLevels(rhi::Device* device)
     return MakeFromLevels(device, Span<const TextureLevelRef>(resolved.Data(), resolved.Size()));
 }
 
-bool GpuTexture::CreateFromSharedLevels(rhi::Device* device, const rhi::TextureDesc& desc,
-                                        SharedPtr<const SharedBytes> bytes, Span<const TextureLevelSpan> levels,
-                                        DeviceResources* resources, const char* debug_name)
+bool GpuTexture::CreateFromSharedLevels(rhi::Device* device, const rhi::TextureDesc& desc, SharedBytesPtr bytes,
+                                        Span<const TextureLevelSpan> levels, DeviceResources* resources,
+                                        const char* debug_name)
 {
     ENGINE_ASSERT(!Valid() && device != nullptr,
                   "GpuTexture::CreateFromSharedLevels: the texture exists or the device is null");
@@ -306,7 +306,7 @@ bool GpuTexture::CreateFromSharedLevels(rhi::Device* device, const rhi::TextureD
         seen[static_cast<usize>(level.layer) * desc.mip_levels + level.mip] = 1;
         shared_levels_.Push(level);
     }
-    shared_bytes_ = static_cast<SharedPtr<const SharedBytes>&&>(bytes);
+    shared_bytes_ = static_cast<SharedBytesPtr&&>(bytes);
     image_ = TextureImage{};
     image_.desc = desc;
     if (!MakeFromSharedLevels(device))

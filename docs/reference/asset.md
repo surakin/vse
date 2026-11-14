@@ -3132,7 +3132,7 @@ The blob, read in place.
 `variable asset::GpuMeshAsset::bytes` — defined in `engine/asset/gpu_loaders.h`
 
 ```cpp
-SharedPtr<const SharedBytes> bytes;
+SharedBytesPtr bytes;
 ```
 
 The region `view` reads and `geometry` names.
@@ -3152,7 +3152,7 @@ The geometry as the renderer sees it.
 `variable asset::GpuMeshAsset::mesh` — defined in `engine/asset/gpu_loaders.h`
 
 ```cpp
-SharedPtr<renderer::GpuMesh> mesh;
+renderer::GpuMeshPtr mesh;
 ```
 
 The buffers, shared with whoever draws them.
@@ -3187,7 +3187,7 @@ The blob, read in place.
 `variable asset::GpuTextureAsset::bytes` — defined in `engine/asset/gpu_loaders.h`
 
 ```cpp
-SharedPtr<const SharedBytes> bytes;
+SharedBytesPtr bytes;
 ```
 
 The region `view` reads.
@@ -3197,7 +3197,7 @@ The region `view` reads.
 `variable asset::GpuTextureAsset::texture` — defined in `engine/asset/gpu_loaders.h`
 
 ```cpp
-SharedPtr<renderer::GpuTexture> texture;
+renderer::GpuTexturePtr texture;
 ```
 
 The texture, shared with the materials that bind it.
@@ -3292,7 +3292,7 @@ u32 flags;
 `variable asset::GpuMaterial::textures` — defined in `engine/asset/gpu_loaders.h`
 
 ```cpp
-Vector<SharedPtr<renderer::GpuTexture>> textures;
+Vector<renderer::GpuTexturePtr> textures;
 ```
 
 The textures the material's slots use.
@@ -3302,10 +3302,20 @@ The textures the material's slots use.
 `variable asset::GpuMaterial::samplers` — defined in `engine/asset/gpu_loaders.h`
 
 ```cpp
-Vector<SharedPtr<renderer::GpuSampler>> samplers;
+Vector<renderer::GpuSamplerPtr> samplers;
 ```
 
 The samplers the material's slots use.
+
+## `GpuMaterialPtr` {#asset-gpumaterialptr}
+
+`alias asset::GpuMaterialPtr` — defined in `engine/asset/gpu_loaders.h`
+
+```cpp
+using GpuMaterialPtr = SharedPtr<GpuMaterial>;
+```
+
+How a [`asset::GpuMaterial`](#asset-gpumaterial) is held: shared.
 
 ## `GpuMaterialAsset` {#asset-gpumaterialasset}
 
@@ -3327,7 +3337,7 @@ What a material blob is once the GPU loaders are registered: a share of its [`as
 `variable asset::GpuMaterialAsset::material` — defined in `engine/asset/gpu_loaders.h`
 
 ```cpp
-SharedPtr<GpuMaterial> material;
+GpuMaterialPtr material;
 ```
 
 The material, shared with the levels that draw with it.
@@ -7400,6 +7410,16 @@ The blob's bytes.
 |---|---|
 | Fails | never. |
 
+## `BlobBufferPtr` {#asset-blobbufferptr}
+
+`alias asset::BlobBufferPtr` — defined in `engine/asset/resource_manager.h`
+
+```cpp
+using BlobBufferPtr = SharedPtr<BlobBuffer>;
+```
+
+How a [`asset::BlobBuffer`](#asset-blobbuffer) is held: shared.
+
 ## `LoadContext` {#asset-loadcontext}
 
 `class asset::LoadContext` — defined in `engine/asset/resource_manager.h`
@@ -7440,7 +7460,7 @@ The whole blob.
 `method asset::LoadContext::Buffer` — defined in `engine/asset/resource_manager.h`
 
 ```cpp
-const SharedPtr<const SharedBytes>& Buffer() const;
+const SharedBytesPtr& Buffer() const;
 ```
 
 The shared region the blob's bytes are in: what an object that outlives the load (a GPU mesh uploaded again after a device reset) holds instead of a pointer into the bytes.

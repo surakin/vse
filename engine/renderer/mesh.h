@@ -98,10 +98,10 @@ struct MeshUploadView;  // what one upload reads (defined in mesh.cpp)
 /// - Ownership: shares `bytes`.
 struct MeshGeometry
 {
-    VertexLayoutData layout;             ///< The attributes (any vertex format the RHI has); `skin_stride` is 8 or 0.
-    SharedPtr<const SharedBytes> bytes;  ///< The region the three sections are in.
-    u64 vertex_offset = 0;               ///< Where the vertices start in `bytes`; `vertex_count * layout.stride` bytes.
-    u32 vertex_count = 0;                ///< At least 1.
+    VertexLayoutData layout;  ///< The attributes (any vertex format the RHI has); `skin_stride` is 8 or 0.
+    SharedBytesPtr bytes;     ///< The region the three sections are in.
+    u64 vertex_offset = 0;    ///< Where the vertices start in `bytes`; `vertex_count * layout.stride` bytes.
+    u32 vertex_count = 0;     ///< At least 1.
     rhi::IndexType index_type = rhi::IndexType::UInt16;                      ///< The width of the indices.
     u64 index_offset = 0;                                                    ///< Where the indices start in `bytes`.
     u32 index_count = 0;                                                     ///< At least 1; fits `topology`.
@@ -253,6 +253,11 @@ private:
     bool has_restart_ = false;
     Bounds bounds_;
 };
+
+/// How a [[renderer::MeshData]] is held when it is shared.
+using MeshDataPtr = SharedPtr<MeshData>;
+/// A read-only share of a [[renderer::MeshData]].
+using MeshDataConstPtr = SharedPtr<const MeshData>;
 
 /// Builds an axis-aligned cube centered on the origin: 24 vertices (4 per face) and 36 16-bit indices, outward normals,
 /// counter-clockwise faces, UV (0, 0) to (1, 1) on every face.
@@ -577,5 +582,10 @@ private:
     bool prepared_ = false;  // RecordPrepare was called, in a list that may not be submitted yet
     bool ready_ = false;
 };
+
+/// How a [[renderer::GpuMesh]] is held: shared, never pointed at.
+using GpuMeshPtr = SharedPtr<GpuMesh>;
+/// A read-only share of a [[renderer::GpuMesh]].
+using GpuMeshConstPtr = SharedPtr<const GpuMesh>;
 
 }  // namespace engine_placeholder::renderer

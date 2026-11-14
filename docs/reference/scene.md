@@ -44,7 +44,7 @@ The geometry, when this holder owns it (a hand-built mesh).
 `variable scene::MeshAsset::shared` — defined in `engine/scene/components.h`
 
 ```cpp
-SharedPtr<renderer::GpuMesh> shared;
+renderer::GpuMeshPtr shared;
 ```
 
 A mesh shared with whoever else draws it (the resource manager's), or empty: the holder then owns nothing, and the mesh lives as long as any holder does.
@@ -373,7 +373,7 @@ The level and the ones it includes.
 `variable scene::SpawnedLevel::materials` — defined in `engine/scene/level_spawner.h`
 
 ```cpp
-Vector<SharedPtr<asset::GpuMaterial>> materials;
+Vector<asset::GpuMaterialPtr> materials;
 ```
 
 The materials its entities draw with (shared: a reload of the resource leaves them).

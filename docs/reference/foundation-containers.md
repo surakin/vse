@@ -694,6 +694,16 @@ The bytes.
 | Fails | never. |
 | Ownership | the span borrows the storage for as long as the caller holds a `SharedPtr` to this object. |
 
+## `SharedBytesPtr` {#sharedbytesptr}
+
+`alias SharedBytesPtr` — defined in `engine/foundation/containers/shared_bytes.h`
+
+```cpp
+using SharedBytesPtr = SharedPtr<const SharedBytes>;
+```
+
+The way to hold a [`SharedBytes`](#sharedbytes): shared and read-only.
+
 ## `AtomicRefCount` {#atomicrefcount}
 
 `struct AtomicRefCount` — defined in `engine/foundation/containers/shared_ptr.h`

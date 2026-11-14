@@ -202,8 +202,8 @@ TEST_CASE("gpu loaders: a holder of the mesh keeps it, and its bytes, after the 
           "[asset][gpu]")
 {
     GpuRig rig;
-    SharedPtr<renderer::GpuMesh> held;
-    SharedPtr<renderer::GpuTexture> held_texture;
+    renderer::GpuMeshPtr held;
+    renderer::GpuTexturePtr held_texture;
     {
         Handle<GpuMeshAsset> mesh;
         REQUIRE(rig.manager->Load<GpuMeshAsset>(Rid(0x3a1), &mesh).Ok());
@@ -413,7 +413,7 @@ TEST_CASE("gpu loaders: a texture over shared bytes refuses levels that are not 
     wrapped.offset = ~u64{0};  // an offset that overflows when the size is added
     CHECK_FALSE(refused.CreateFromSharedLevels(rig.device.Get(), desc, region,
                                                Span<const renderer::TextureLevelSpan>(&wrapped, 1), nullptr, "c"));
-    CHECK_FALSE(refused.CreateFromSharedLevels(rig.device.Get(), desc, SharedPtr<const SharedBytes>(),
+    CHECK_FALSE(refused.CreateFromSharedLevels(rig.device.Get(), desc, SharedBytesPtr(),
                                                Span<const renderer::TextureLevelSpan>(&good, 1), nullptr, "d"));
     CHECK_FALSE(refused.Valid());
     CHECK(rig.device->Resources().textures == before.textures + 1);  // nothing left behind

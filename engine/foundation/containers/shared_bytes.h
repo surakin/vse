@@ -4,6 +4,7 @@
 //! file and the GPU object uploaded from it, and uploaded again after a device reset) do not point into each other:
 //! both hold a [[SharedPtr]] to one of these.
 
+#include "containers/shared_ptr.h"
 #include "containers/span.h"
 
 namespace engine_placeholder
@@ -26,5 +27,8 @@ public:
     /// - Ownership: the span borrows the storage for as long as the caller holds a `SharedPtr` to this object.
     virtual ByteSpan Bytes() const = 0;
 };
+
+/// The way to hold a [[SharedBytes]]: shared and read-only.
+using SharedBytesPtr = SharedPtr<const SharedBytes>;
 
 }  // namespace engine_placeholder

@@ -380,9 +380,10 @@ HashMap::Remove(const K&)	function	foundation/containers	hashmap-remove-const-k-
 HashMap::Size() const	function	foundation/containers	hashmap-size-const	foundation-containers.md	engine/foundation/containers/hash_map.h:209
 HashMap::SlotCapacity() const	function	foundation/containers	hashmap-slotcapacity-const	foundation-containers.md	engine/foundation/containers/hash_map.h:214
 HashMap::TombstoneCount() const	function	foundation/containers	hashmap-tombstonecount-const	foundation-containers.md	engine/foundation/containers/hash_map.h:220
-SharedBytes	class	foundation/containers	sharedbytes	foundation-containers.md	engine/foundation/containers/shared_bytes.h:18
-SharedBytes::~SharedBytes()	function	foundation/containers	sharedbytes-tilde-sharedbytes	foundation-containers.md	engine/foundation/containers/shared_bytes.h:21
-SharedBytes::Bytes() const	function	foundation/containers	sharedbytes-bytes-const	foundation-containers.md	engine/foundation/containers/shared_bytes.h:27
+SharedBytes	class	foundation/containers	sharedbytes	foundation-containers.md	engine/foundation/containers/shared_bytes.h:19
+SharedBytes::~SharedBytes()	function	foundation/containers	sharedbytes-tilde-sharedbytes	foundation-containers.md	engine/foundation/containers/shared_bytes.h:22
+SharedBytes::Bytes() const	function	foundation/containers	sharedbytes-bytes-const	foundation-containers.md	engine/foundation/containers/shared_bytes.h:28
+SharedBytesPtr	alias	foundation/containers	sharedbytesptr	foundation-containers.md	engine/foundation/containers/shared_bytes.h:32
 AtomicRefCount	struct	foundation/containers	atomicrefcount	foundation-containers.md	engine/foundation/containers/shared_ptr.h:16
 AtomicRefCount::count	variable	foundation/containers	atomicrefcount-count	foundation-containers.md	engine/foundation/containers/shared_ptr.h:19
 AtomicRefCount::Increment()	function	foundation/containers	atomicrefcount-increment	foundation-containers.md	engine/foundation/containers/shared_ptr.h:21
@@ -4724,22 +4725,23 @@ asset::GpuMaterial::id	variable	asset	asset-gpumaterial-id	asset.md	engine/asset
 asset::GpuMaterial::flags	variable	asset	asset-gpumaterial-flags	asset.md	engine/asset/gpu_loaders.h:75
 asset::GpuMaterial::textures	variable	asset	asset-gpumaterial-textures	asset.md	engine/asset/gpu_loaders.h:76
 asset::GpuMaterial::samplers	variable	asset	asset-gpumaterial-samplers	asset.md	engine/asset/gpu_loaders.h:77
-asset::GpuMaterialAsset	struct	asset	asset-gpumaterialasset	asset.md	engine/asset/gpu_loaders.h:84
-asset::GpuMaterialAsset::material	variable	asset	asset-gpumaterialasset-material	asset.md	engine/asset/gpu_loaders.h:86
-asset::ResourceTraits<GpuMeshAsset>	struct	asset	asset-resourcetraits-lt-gpumeshasset-gt	asset.md	engine/asset/gpu_loaders.h:92
-asset::ResourceTraits<GpuMeshAsset>::kType	variable	asset	asset-resourcetraits-lt-gpumeshasset-gt-ktype	asset.md	engine/asset/gpu_loaders.h:94
-asset::ResourceTraits<GpuMeshAsset>::kKind	variable	asset	asset-resourcetraits-lt-gpumeshasset-gt-kkind	asset.md	engine/asset/gpu_loaders.h:95
-asset::ResourceTraits<GpuTextureAsset>	struct	asset	asset-resourcetraits-lt-gputextureasset-gt	asset.md	engine/asset/gpu_loaders.h:100
-asset::ResourceTraits<GpuTextureAsset>::kType	variable	asset	asset-resourcetraits-lt-gputextureasset-gt-ktype	asset.md	engine/asset/gpu_loaders.h:102
-asset::ResourceTraits<GpuTextureAsset>::kKind	variable	asset	asset-resourcetraits-lt-gputextureasset-gt-kkind	asset.md	engine/asset/gpu_loaders.h:103
-asset::ResourceTraits<GpuMaterialAsset>	struct	asset	asset-resourcetraits-lt-gpumaterialasset-gt	asset.md	engine/asset/gpu_loaders.h:108
-asset::ResourceTraits<GpuMaterialAsset>::kType	variable	asset	asset-resourcetraits-lt-gpumaterialasset-gt-ktype	asset.md	engine/asset/gpu_loaders.h:110
-asset::ResourceTraits<GpuMaterialAsset>::kKind	variable	asset	asset-resourcetraits-lt-gpumaterialasset-gt-kkind	asset.md	engine/asset/gpu_loaders.h:111
-asset::kFallbackMeshId	variable	asset	asset-kfallbackmeshid	asset.md	engine/asset/gpu_loaders.h:115
-asset::kFallbackTextureId	variable	asset	asset-kfallbacktextureid	asset.md	engine/asset/gpu_loaders.h:116
-asset::kFallbackMaterialId	variable	asset	asset-kfallbackmaterialid	asset.md	engine/asset/gpu_loaders.h:117
-asset::RegisterGpuFallbacks(ResourceManager*)	function	asset	asset-registergpufallbacks-resourcemanager-star	asset.md	engine/asset/gpu_loaders.h:127
-asset::RegisterGpuLoaders(ResourceManager*,GpuAssetContext*)	function	asset	asset-registergpuloaders-resourcemanager-star-gpuassetcontext-star	asset.md	engine/asset/gpu_loaders.h:137
+asset::GpuMaterialPtr	alias	asset	asset-gpumaterialptr	asset.md	engine/asset/gpu_loaders.h:81
+asset::GpuMaterialAsset	struct	asset	asset-gpumaterialasset	asset.md	engine/asset/gpu_loaders.h:87
+asset::GpuMaterialAsset::material	variable	asset	asset-gpumaterialasset-material	asset.md	engine/asset/gpu_loaders.h:89
+asset::ResourceTraits<GpuMeshAsset>	struct	asset	asset-resourcetraits-lt-gpumeshasset-gt	asset.md	engine/asset/gpu_loaders.h:95
+asset::ResourceTraits<GpuMeshAsset>::kType	variable	asset	asset-resourcetraits-lt-gpumeshasset-gt-ktype	asset.md	engine/asset/gpu_loaders.h:97
+asset::ResourceTraits<GpuMeshAsset>::kKind	variable	asset	asset-resourcetraits-lt-gpumeshasset-gt-kkind	asset.md	engine/asset/gpu_loaders.h:98
+asset::ResourceTraits<GpuTextureAsset>	struct	asset	asset-resourcetraits-lt-gputextureasset-gt	asset.md	engine/asset/gpu_loaders.h:103
+asset::ResourceTraits<GpuTextureAsset>::kType	variable	asset	asset-resourcetraits-lt-gputextureasset-gt-ktype	asset.md	engine/asset/gpu_loaders.h:105
+asset::ResourceTraits<GpuTextureAsset>::kKind	variable	asset	asset-resourcetraits-lt-gputextureasset-gt-kkind	asset.md	engine/asset/gpu_loaders.h:106
+asset::ResourceTraits<GpuMaterialAsset>	struct	asset	asset-resourcetraits-lt-gpumaterialasset-gt	asset.md	engine/asset/gpu_loaders.h:111
+asset::ResourceTraits<GpuMaterialAsset>::kType	variable	asset	asset-resourcetraits-lt-gpumaterialasset-gt-ktype	asset.md	engine/asset/gpu_loaders.h:113
+asset::ResourceTraits<GpuMaterialAsset>::kKind	variable	asset	asset-resourcetraits-lt-gpumaterialasset-gt-kkind	asset.md	engine/asset/gpu_loaders.h:114
+asset::kFallbackMeshId	variable	asset	asset-kfallbackmeshid	asset.md	engine/asset/gpu_loaders.h:118
+asset::kFallbackTextureId	variable	asset	asset-kfallbacktextureid	asset.md	engine/asset/gpu_loaders.h:119
+asset::kFallbackMaterialId	variable	asset	asset-kfallbackmaterialid	asset.md	engine/asset/gpu_loaders.h:120
+asset::RegisterGpuFallbacks(ResourceManager*)	function	asset	asset-registergpufallbacks-resourcemanager-star	asset.md	engine/asset/gpu_loaders.h:130
+asset::RegisterGpuLoaders(ResourceManager*,GpuAssetContext*)	function	asset	asset-registergpuloaders-resourcemanager-star-gpuassetcontext-star	asset.md	engine/asset/gpu_loaders.h:140
 asset::LevelComponentIds	enum	asset	asset-levelcomponentids	asset.md	engine/asset/level.h:43
 asset::kMeshReferenceId	enumerator	asset	asset-kmeshreferenceid	asset.md	engine/asset/level.h:45
 asset::kEntityNameId	enumerator	asset	asset-kentitynameid	asset.md	engine/asset/level.h:46
@@ -5095,91 +5097,92 @@ asset::ResidentBytes::Sub(u64)	function	asset	asset-residentbytes-sub-u64	asset.
 asset::ResidentBytes::Get() const	function	asset	asset-residentbytes-get-const	asset.md	engine/asset/resource_manager.h:111
 asset::BlobBuffer	class	asset	asset-blobbuffer	asset.md	engine/asset/resource_manager.h:123
 asset::BlobBuffer::BlobBuffer(SharedPtr<LoadBufferPool>,SharedPtr<ResidentBytes>,LoadBuffer&&,usize)	function	asset	asset-blobbuffer-blobbuffer-sharedptr-lt-loadbufferpool-gt-sharedptr-lt-residentbytes-gt-loadbuffer-amp-amp-usize	asset.md	engine/asset/resource_manager.h:129
-asset::BlobBuffer::~BlobBuffer()	function	asset	asset-blobbuffer-tilde-blobbuffer	asset.md	engine/asset/resource_manager.h:136
-asset::BlobBuffer::Bytes() const	function	asset	asset-blobbuffer-bytes-const	asset.md	engine/asset/resource_manager.h:141
-asset::LoadContext	class	asset	asset-loadcontext	asset.md	engine/asset/resource_manager.h:155
-asset::LoadContext::Id() const	function	asset	asset-loadcontext-id-const	asset.md	engine/asset/resource_manager.h:159
-asset::LoadContext::Bytes() const	function	asset	asset-loadcontext-bytes-const	asset.md	engine/asset/resource_manager.h:161
-asset::LoadContext::Buffer() const	function	asset	asset-loadcontext-buffer-const	asset.md	engine/asset/resource_manager.h:167
-asset::LoadContext::Blob() const	function	asset	asset-loadcontext-blob-const	asset.md	engine/asset/resource_manager.h:169
-asset::LoadContext::Types() const	function	asset	asset-loadcontext-types-const	asset.md	engine/asset/resource_manager.h:171
-asset::LoadContext::Dependency(ResourceId) const	function	asset	asset-loadcontext-dependency-resourceid-const	asset.md	engine/asset/resource_manager.h:177
-asset::LoadContext::CountConversion() const	function	asset	asset-loadcontext-countconversion-const	asset.md	engine/asset/resource_manager.h:188
-asset::LoaderFn	alias	asset	asset-loaderfn	asset.md	engine/asset/resource_manager.h:205
-asset::LoaderBase	class	asset	asset-loaderbase	asset.md	engine/asset/resource_manager.h:211
-asset::LoaderBase::~LoaderBase()	function	asset	asset-loaderbase-tilde-loaderbase	asset.md	engine/asset/resource_manager.h:214
-asset::LoaderBase::Key() const	function	asset	asset-loaderbase-key-const	asset.md	engine/asset/resource_manager.h:218
-asset::LoaderBase::Load(const LoadContext&,UniquePtr<LoadedObject>*)	function	asset	asset-loaderbase-load-const-loadcontext-amp-uniqueptr-lt-loadedobject-gt-star	asset.md	engine/asset/resource_manager.h:223
-asset::TypedLoader	class	asset	asset-typedloader	asset.md	engine/asset/resource_manager.h:230
-asset::TypedLoader::TypedLoader(LoaderFn<T>,void*)	function	asset	asset-typedloader-typedloader-loaderfn-lt-t-gt-void-star	asset.md	engine/asset/resource_manager.h:236
-asset::TypedLoader::Key() const	function	asset	asset-typedloader-key-const	asset.md	engine/asset/resource_manager.h:237
-asset::TypedLoader::Load(const LoadContext&,UniquePtr<LoadedObject>*)	function	asset	asset-typedloader-load-const-loadcontext-amp-uniqueptr-lt-loadedobject-gt-star	asset.md	engine/asset/resource_manager.h:238
-asset::ManagerConfig	struct	asset	asset-managerconfig	asset.md	engine/asset/resource_manager.h:254
-asset::ManagerConfig::buffer_pool_bytes	variable	asset	asset-managerconfig-buffer-pool-bytes	asset.md	engine/asset/resource_manager.h:256
-asset::ManagerConfig::cache_bytes	variable	asset	asset-managerconfig-cache-bytes	asset.md	engine/asset/resource_manager.h:257
-asset::ManagerConfig::allow_fallbacks	variable	asset	asset-managerconfig-allow-fallbacks	asset.md	engine/asset/resource_manager.h:258
-asset::ManagerConfig::verify_on_load	variable	asset	asset-managerconfig-verify-on-load	asset.md	engine/asset/resource_manager.h:259
-asset::ManagerConfig::target	variable	asset	asset-managerconfig-target	asset.md	engine/asset/resource_manager.h:260
-asset::ManagerConfigFromSettings(const settings::Registry&)	function	asset	asset-managerconfigfromsettings-const-settings-registry-amp	asset.md	engine/asset/resource_manager.h:268
-asset::MountReads	struct	asset	asset-mountreads	asset.md	engine/asset/resource_manager.h:273
-asset::MountReads::mount	variable	asset	asset-mountreads-mount	asset.md	engine/asset/resource_manager.h:275
-asset::MountReads::reads	variable	asset	asset-mountreads-reads	asset.md	engine/asset/resource_manager.h:276
-asset::MountReads::bytes	variable	asset	asset-mountreads-bytes	asset.md	engine/asset/resource_manager.h:277
-asset::ResourceStats	struct	asset	asset-resourcestats	asset.md	engine/asset/resource_manager.h:283
-asset::ResourceStats::loads	variable	asset	asset-resourcestats-loads	asset.md	engine/asset/resource_manager.h:285
-asset::ResourceStats::cache_hits	variable	asset	asset-resourcestats-cache-hits	asset.md	engine/asset/resource_manager.h:286
-asset::ResourceStats::bytes_resident	variable	asset	asset-resourcestats-bytes-resident	asset.md	engine/asset/resource_manager.h:287
-asset::ResourceStats::resident	variable	asset	asset-resourcestats-resident	asset.md	engine/asset/resource_manager.h:288
-asset::ResourceStats::fallbacks_used	variable	asset	asset-resourcestats-fallbacks-used	asset.md	engine/asset/resource_manager.h:289
-asset::ResourceStats::load_conversions	variable	asset	asset-resourcestats-load-conversions	asset.md	engine/asset/resource_manager.h:290
-asset::ResourceStats::rejected_old_version	variable	asset	asset-resourcestats-rejected-old-version	asset.md	engine/asset/resource_manager.h:291
-asset::ResourceStats::bytes_read	variable	asset	asset-resourcestats-bytes-read	asset.md	engine/asset/resource_manager.h:292
-asset::ResourceStats::read_nanos	variable	asset	asset-resourcestats-read-nanos	asset.md	engine/asset/resource_manager.h:293
-asset::ResourceStats::mounts	variable	asset	asset-resourcestats-mounts	asset.md	engine/asset/resource_manager.h:294
-asset::LoadFailure	struct	asset	asset-loadfailure	asset.md	engine/asset/resource_manager.h:301
-asset::LoadFailure::resource	variable	asset	asset-loadfailure-resource	asset.md	engine/asset/resource_manager.h:303
-asset::LoadFailure::chain	variable	asset	asset-loadfailure-chain	asset.md	engine/asset/resource_manager.h:304
-asset::ReloadResult	struct	asset	asset-reloadresult	asset.md	engine/asset/resource_manager.h:310
-asset::ReloadResult::id	variable	asset	asset-reloadresult-id	asset.md	engine/asset/resource_manager.h:312
-asset::ReloadResult::status	variable	asset	asset-reloadresult-status	asset.md	engine/asset/resource_manager.h:313
-asset::ReloadResult::reloaded	variable	asset	asset-reloadresult-reloaded	asset.md	engine/asset/resource_manager.h:314
-asset::HandleBase	class	asset	asset-handlebase	asset.md	engine/asset/resource_manager.h:321
-asset::HandleBase::HandleBase()	function	asset	asset-handlebase-handlebase	asset.md	engine/asset/resource_manager.h:324
-asset::HandleBase::HandleBase(const HandleBase&)	function	asset	asset-handlebase-handlebase-const-handlebase-amp	asset.md	engine/asset/resource_manager.h:326
-asset::HandleBase::operator=(const HandleBase&)	function	asset	asset-handlebase-operator-eq-const-handlebase-amp	asset.md	engine/asset/resource_manager.h:328
-asset::HandleBase::HandleBase(HandleBase&&) noexcept	function	asset	asset-handlebase-handlebase-handlebase-amp-amp-noexcept	asset.md	engine/asset/resource_manager.h:330
-asset::HandleBase::operator=(HandleBase&&) noexcept	function	asset	asset-handlebase-operator-eq-handlebase-amp-amp-noexcept	asset.md	engine/asset/resource_manager.h:332
-asset::HandleBase::~HandleBase()	function	asset	asset-handlebase-tilde-handlebase	asset.md	engine/asset/resource_manager.h:334
-asset::HandleBase::Reset()	function	asset	asset-handlebase-reset	asset.md	engine/asset/resource_manager.h:337
-asset::HandleBase::IsValid() const	function	asset	asset-handlebase-isvalid-const	asset.md	engine/asset/resource_manager.h:341
-asset::HandleBase::Id() const	function	asset	asset-handlebase-id-const	asset.md	engine/asset/resource_manager.h:345
-asset::Handle	class	asset	asset-handle	asset.md	engine/asset/resource_manager.h:360
-asset::Handle::Get() const	function	asset	asset-handle-get-const	asset.md	engine/asset/resource_manager.h:368
-asset::ResourceManager	class	asset	asset-resourcemanager	asset.md	engine/asset/resource_manager.h:378
-asset::ResourceManager::ResourceManager(const TypeRegistry&,const ManagerConfig&)	function	asset	asset-resourcemanager-resourcemanager-const-typeregistry-amp-const-managerconfig-amp	asset.md	engine/asset/resource_manager.h:385
-asset::ResourceManager::ResourceManager(const ResourceManager&)	function	asset	asset-resourcemanager-resourcemanager-const-resourcemanager-amp	asset.md	engine/asset/resource_manager.h:386
-asset::ResourceManager::operator=(const ResourceManager&)	function	asset	asset-resourcemanager-operator-eq-const-resourcemanager-amp	asset.md	engine/asset/resource_manager.h:387
-asset::ResourceManager::~ResourceManager()	function	asset	asset-resourcemanager-tilde-resourcemanager	asset.md	engine/asset/resource_manager.h:389
-asset::ResourceManager::Mount(StringView,ResourceBackend*,i32,MountId*)	function	asset	asset-resourcemanager-mount-stringview-resourcebackend-star-i32-mountid-star	asset.md	engine/asset/resource_manager.h:399
-asset::ResourceManager::MountOwned(StringView,UniquePtr<ResourceBackend>,i32,MountId*)	function	asset	asset-resourcemanager-mountowned-stringview-uniqueptr-lt-resourcebackend-gt-i32-mountid-star	asset.md	engine/asset/resource_manager.h:404
-asset::ResourceManager::MountPath(StringView,const io::Path&,i32,MountId*)	function	asset	asset-resourcemanager-mountpath-stringview-const-io-path-amp-i32-mountid-star	asset.md	engine/asset/resource_manager.h:411
-asset::ResourceManager::MountFromSettings(const settings::Registry&)	function	asset	asset-resourcemanager-mountfromsettings-const-settings-registry-amp	asset.md	engine/asset/resource_manager.h:415
-asset::ResourceManager::Mounts()	function	asset	asset-resourcemanager-mounts	asset.md	engine/asset/resource_manager.h:417
-asset::ResourceManager::RegisterLoader(LoaderFn<T>,void*)	function	asset	asset-resourcemanager-registerloader-loaderfn-lt-t-gt-void-star	asset.md	engine/asset/resource_manager.h:424
-asset::ResourceManager::RegisterFallback(ResourceType,ByteSpan)	function	asset	asset-resourcemanager-registerfallback-resourcetype-bytespan	asset.md	engine/asset/resource_manager.h:437
-asset::ResourceManager::Load(ResourceId,Handle<T>*,LoadFailure*)	function	asset	asset-resourcemanager-load-resourceid-handle-lt-t-gt-star-loadfailure-star	asset.md	engine/asset/resource_manager.h:453
-asset::ResourceManager::LoadPath(StringView,Handle<T>*,LoadFailure*)	function	asset	asset-resourcemanager-loadpath-stringview-handle-lt-t-gt-star-loadfailure-star	asset.md	engine/asset/resource_manager.h:461
-asset::ResourceManager::Unload(ResourceId,bool,Vector<ResourceId>*)	function	asset	asset-resourcemanager-unload-resourceid-bool-vector-lt-resourceid-gt-star	asset.md	engine/asset/resource_manager.h:474
-asset::ResourceManager::Pin(ResourceId)	function	asset	asset-resourcemanager-pin-resourceid	asset.md	engine/asset/resource_manager.h:479
-asset::ResourceManager::Unpin(ResourceId)	function	asset	asset-resourcemanager-unpin-resourceid	asset.md	engine/asset/resource_manager.h:483
-asset::ResourceManager::ResourceInUse(ResourceId,Vector<ResourceId>*) const	function	asset	asset-resourcemanager-resourceinuse-resourceid-vector-lt-resourceid-gt-star-const	asset.md	engine/asset/resource_manager.h:491
-asset::ResourceManager::InUseQuery()	function	asset	asset-resourcemanager-inusequery	asset.md	engine/asset/resource_manager.h:497
-asset::ResourceManager::PollChanges(Vector<ReloadResult>*)	function	asset	asset-resourcemanager-pollchanges-vector-lt-reloadresult-gt-star	asset.md	engine/asset/resource_manager.h:507
-asset::ResourceManager::Stats() const	function	asset	asset-resourcemanager-stats-const	asset.md	engine/asset/resource_manager.h:512
-asset::ResourceManager::Find(ResourceId) const	function	asset	asset-resourcemanager-find-resourceid-const	asset.md	engine/asset/resource_manager.h:520
-asset::ResourceManager::LoadedIds(Vector<ResourceId>*) const	function	asset	asset-resourcemanager-loadedids-vector-lt-resourceid-gt-star-const	asset.md	engine/asset/resource_manager.h:533
-asset::ResourceManager::Pool()	function	asset	asset-resourcemanager-pool	asset.md	engine/asset/resource_manager.h:535
-asset::ResourceManager::Types() const	function	asset	asset-resourcemanager-types-const	asset.md	engine/asset/resource_manager.h:537
+asset::BlobBuffer::~BlobBuffer()	function	asset	asset-blobbuffer-tilde-blobbuffer	asset.md	engine/asset/resource_manager.h:137
+asset::BlobBuffer::Bytes() const	function	asset	asset-blobbuffer-bytes-const	asset.md	engine/asset/resource_manager.h:142
+asset::BlobBufferPtr	alias	asset	asset-blobbufferptr	asset.md	engine/asset/resource_manager.h:152
+asset::LoadContext	class	asset	asset-loadcontext	asset.md	engine/asset/resource_manager.h:159
+asset::LoadContext::Id() const	function	asset	asset-loadcontext-id-const	asset.md	engine/asset/resource_manager.h:163
+asset::LoadContext::Bytes() const	function	asset	asset-loadcontext-bytes-const	asset.md	engine/asset/resource_manager.h:165
+asset::LoadContext::Buffer() const	function	asset	asset-loadcontext-buffer-const	asset.md	engine/asset/resource_manager.h:171
+asset::LoadContext::Blob() const	function	asset	asset-loadcontext-blob-const	asset.md	engine/asset/resource_manager.h:173
+asset::LoadContext::Types() const	function	asset	asset-loadcontext-types-const	asset.md	engine/asset/resource_manager.h:175
+asset::LoadContext::Dependency(ResourceId) const	function	asset	asset-loadcontext-dependency-resourceid-const	asset.md	engine/asset/resource_manager.h:181
+asset::LoadContext::CountConversion() const	function	asset	asset-loadcontext-countconversion-const	asset.md	engine/asset/resource_manager.h:192
+asset::LoaderFn	alias	asset	asset-loaderfn	asset.md	engine/asset/resource_manager.h:209
+asset::LoaderBase	class	asset	asset-loaderbase	asset.md	engine/asset/resource_manager.h:215
+asset::LoaderBase::~LoaderBase()	function	asset	asset-loaderbase-tilde-loaderbase	asset.md	engine/asset/resource_manager.h:218
+asset::LoaderBase::Key() const	function	asset	asset-loaderbase-key-const	asset.md	engine/asset/resource_manager.h:222
+asset::LoaderBase::Load(const LoadContext&,UniquePtr<LoadedObject>*)	function	asset	asset-loaderbase-load-const-loadcontext-amp-uniqueptr-lt-loadedobject-gt-star	asset.md	engine/asset/resource_manager.h:227
+asset::TypedLoader	class	asset	asset-typedloader	asset.md	engine/asset/resource_manager.h:234
+asset::TypedLoader::TypedLoader(LoaderFn<T>,void*)	function	asset	asset-typedloader-typedloader-loaderfn-lt-t-gt-void-star	asset.md	engine/asset/resource_manager.h:240
+asset::TypedLoader::Key() const	function	asset	asset-typedloader-key-const	asset.md	engine/asset/resource_manager.h:241
+asset::TypedLoader::Load(const LoadContext&,UniquePtr<LoadedObject>*)	function	asset	asset-typedloader-load-const-loadcontext-amp-uniqueptr-lt-loadedobject-gt-star	asset.md	engine/asset/resource_manager.h:242
+asset::ManagerConfig	struct	asset	asset-managerconfig	asset.md	engine/asset/resource_manager.h:258
+asset::ManagerConfig::buffer_pool_bytes	variable	asset	asset-managerconfig-buffer-pool-bytes	asset.md	engine/asset/resource_manager.h:260
+asset::ManagerConfig::cache_bytes	variable	asset	asset-managerconfig-cache-bytes	asset.md	engine/asset/resource_manager.h:261
+asset::ManagerConfig::allow_fallbacks	variable	asset	asset-managerconfig-allow-fallbacks	asset.md	engine/asset/resource_manager.h:262
+asset::ManagerConfig::verify_on_load	variable	asset	asset-managerconfig-verify-on-load	asset.md	engine/asset/resource_manager.h:263
+asset::ManagerConfig::target	variable	asset	asset-managerconfig-target	asset.md	engine/asset/resource_manager.h:264
+asset::ManagerConfigFromSettings(const settings::Registry&)	function	asset	asset-managerconfigfromsettings-const-settings-registry-amp	asset.md	engine/asset/resource_manager.h:272
+asset::MountReads	struct	asset	asset-mountreads	asset.md	engine/asset/resource_manager.h:277
+asset::MountReads::mount	variable	asset	asset-mountreads-mount	asset.md	engine/asset/resource_manager.h:279
+asset::MountReads::reads	variable	asset	asset-mountreads-reads	asset.md	engine/asset/resource_manager.h:280
+asset::MountReads::bytes	variable	asset	asset-mountreads-bytes	asset.md	engine/asset/resource_manager.h:281
+asset::ResourceStats	struct	asset	asset-resourcestats	asset.md	engine/asset/resource_manager.h:287
+asset::ResourceStats::loads	variable	asset	asset-resourcestats-loads	asset.md	engine/asset/resource_manager.h:289
+asset::ResourceStats::cache_hits	variable	asset	asset-resourcestats-cache-hits	asset.md	engine/asset/resource_manager.h:290
+asset::ResourceStats::bytes_resident	variable	asset	asset-resourcestats-bytes-resident	asset.md	engine/asset/resource_manager.h:291
+asset::ResourceStats::resident	variable	asset	asset-resourcestats-resident	asset.md	engine/asset/resource_manager.h:292
+asset::ResourceStats::fallbacks_used	variable	asset	asset-resourcestats-fallbacks-used	asset.md	engine/asset/resource_manager.h:293
+asset::ResourceStats::load_conversions	variable	asset	asset-resourcestats-load-conversions	asset.md	engine/asset/resource_manager.h:294
+asset::ResourceStats::rejected_old_version	variable	asset	asset-resourcestats-rejected-old-version	asset.md	engine/asset/resource_manager.h:295
+asset::ResourceStats::bytes_read	variable	asset	asset-resourcestats-bytes-read	asset.md	engine/asset/resource_manager.h:296
+asset::ResourceStats::read_nanos	variable	asset	asset-resourcestats-read-nanos	asset.md	engine/asset/resource_manager.h:297
+asset::ResourceStats::mounts	variable	asset	asset-resourcestats-mounts	asset.md	engine/asset/resource_manager.h:298
+asset::LoadFailure	struct	asset	asset-loadfailure	asset.md	engine/asset/resource_manager.h:305
+asset::LoadFailure::resource	variable	asset	asset-loadfailure-resource	asset.md	engine/asset/resource_manager.h:307
+asset::LoadFailure::chain	variable	asset	asset-loadfailure-chain	asset.md	engine/asset/resource_manager.h:308
+asset::ReloadResult	struct	asset	asset-reloadresult	asset.md	engine/asset/resource_manager.h:314
+asset::ReloadResult::id	variable	asset	asset-reloadresult-id	asset.md	engine/asset/resource_manager.h:316
+asset::ReloadResult::status	variable	asset	asset-reloadresult-status	asset.md	engine/asset/resource_manager.h:317
+asset::ReloadResult::reloaded	variable	asset	asset-reloadresult-reloaded	asset.md	engine/asset/resource_manager.h:318
+asset::HandleBase	class	asset	asset-handlebase	asset.md	engine/asset/resource_manager.h:325
+asset::HandleBase::HandleBase()	function	asset	asset-handlebase-handlebase	asset.md	engine/asset/resource_manager.h:328
+asset::HandleBase::HandleBase(const HandleBase&)	function	asset	asset-handlebase-handlebase-const-handlebase-amp	asset.md	engine/asset/resource_manager.h:330
+asset::HandleBase::operator=(const HandleBase&)	function	asset	asset-handlebase-operator-eq-const-handlebase-amp	asset.md	engine/asset/resource_manager.h:332
+asset::HandleBase::HandleBase(HandleBase&&) noexcept	function	asset	asset-handlebase-handlebase-handlebase-amp-amp-noexcept	asset.md	engine/asset/resource_manager.h:334
+asset::HandleBase::operator=(HandleBase&&) noexcept	function	asset	asset-handlebase-operator-eq-handlebase-amp-amp-noexcept	asset.md	engine/asset/resource_manager.h:336
+asset::HandleBase::~HandleBase()	function	asset	asset-handlebase-tilde-handlebase	asset.md	engine/asset/resource_manager.h:338
+asset::HandleBase::Reset()	function	asset	asset-handlebase-reset	asset.md	engine/asset/resource_manager.h:341
+asset::HandleBase::IsValid() const	function	asset	asset-handlebase-isvalid-const	asset.md	engine/asset/resource_manager.h:345
+asset::HandleBase::Id() const	function	asset	asset-handlebase-id-const	asset.md	engine/asset/resource_manager.h:349
+asset::Handle	class	asset	asset-handle	asset.md	engine/asset/resource_manager.h:364
+asset::Handle::Get() const	function	asset	asset-handle-get-const	asset.md	engine/asset/resource_manager.h:372
+asset::ResourceManager	class	asset	asset-resourcemanager	asset.md	engine/asset/resource_manager.h:382
+asset::ResourceManager::ResourceManager(const TypeRegistry&,const ManagerConfig&)	function	asset	asset-resourcemanager-resourcemanager-const-typeregistry-amp-const-managerconfig-amp	asset.md	engine/asset/resource_manager.h:389
+asset::ResourceManager::ResourceManager(const ResourceManager&)	function	asset	asset-resourcemanager-resourcemanager-const-resourcemanager-amp	asset.md	engine/asset/resource_manager.h:390
+asset::ResourceManager::operator=(const ResourceManager&)	function	asset	asset-resourcemanager-operator-eq-const-resourcemanager-amp	asset.md	engine/asset/resource_manager.h:391
+asset::ResourceManager::~ResourceManager()	function	asset	asset-resourcemanager-tilde-resourcemanager	asset.md	engine/asset/resource_manager.h:393
+asset::ResourceManager::Mount(StringView,ResourceBackend*,i32,MountId*)	function	asset	asset-resourcemanager-mount-stringview-resourcebackend-star-i32-mountid-star	asset.md	engine/asset/resource_manager.h:403
+asset::ResourceManager::MountOwned(StringView,UniquePtr<ResourceBackend>,i32,MountId*)	function	asset	asset-resourcemanager-mountowned-stringview-uniqueptr-lt-resourcebackend-gt-i32-mountid-star	asset.md	engine/asset/resource_manager.h:408
+asset::ResourceManager::MountPath(StringView,const io::Path&,i32,MountId*)	function	asset	asset-resourcemanager-mountpath-stringview-const-io-path-amp-i32-mountid-star	asset.md	engine/asset/resource_manager.h:415
+asset::ResourceManager::MountFromSettings(const settings::Registry&)	function	asset	asset-resourcemanager-mountfromsettings-const-settings-registry-amp	asset.md	engine/asset/resource_manager.h:419
+asset::ResourceManager::Mounts()	function	asset	asset-resourcemanager-mounts	asset.md	engine/asset/resource_manager.h:421
+asset::ResourceManager::RegisterLoader(LoaderFn<T>,void*)	function	asset	asset-resourcemanager-registerloader-loaderfn-lt-t-gt-void-star	asset.md	engine/asset/resource_manager.h:428
+asset::ResourceManager::RegisterFallback(ResourceType,ByteSpan)	function	asset	asset-resourcemanager-registerfallback-resourcetype-bytespan	asset.md	engine/asset/resource_manager.h:441
+asset::ResourceManager::Load(ResourceId,Handle<T>*,LoadFailure*)	function	asset	asset-resourcemanager-load-resourceid-handle-lt-t-gt-star-loadfailure-star	asset.md	engine/asset/resource_manager.h:457
+asset::ResourceManager::LoadPath(StringView,Handle<T>*,LoadFailure*)	function	asset	asset-resourcemanager-loadpath-stringview-handle-lt-t-gt-star-loadfailure-star	asset.md	engine/asset/resource_manager.h:465
+asset::ResourceManager::Unload(ResourceId,bool,Vector<ResourceId>*)	function	asset	asset-resourcemanager-unload-resourceid-bool-vector-lt-resourceid-gt-star	asset.md	engine/asset/resource_manager.h:478
+asset::ResourceManager::Pin(ResourceId)	function	asset	asset-resourcemanager-pin-resourceid	asset.md	engine/asset/resource_manager.h:483
+asset::ResourceManager::Unpin(ResourceId)	function	asset	asset-resourcemanager-unpin-resourceid	asset.md	engine/asset/resource_manager.h:487
+asset::ResourceManager::ResourceInUse(ResourceId,Vector<ResourceId>*) const	function	asset	asset-resourcemanager-resourceinuse-resourceid-vector-lt-resourceid-gt-star-const	asset.md	engine/asset/resource_manager.h:495
+asset::ResourceManager::InUseQuery()	function	asset	asset-resourcemanager-inusequery	asset.md	engine/asset/resource_manager.h:501
+asset::ResourceManager::PollChanges(Vector<ReloadResult>*)	function	asset	asset-resourcemanager-pollchanges-vector-lt-reloadresult-gt-star	asset.md	engine/asset/resource_manager.h:511
+asset::ResourceManager::Stats() const	function	asset	asset-resourcemanager-stats-const	asset.md	engine/asset/resource_manager.h:516
+asset::ResourceManager::Find(ResourceId) const	function	asset	asset-resourcemanager-find-resourceid-const	asset.md	engine/asset/resource_manager.h:524
+asset::ResourceManager::LoadedIds(Vector<ResourceId>*) const	function	asset	asset-resourcemanager-loadedids-vector-lt-resourceid-gt-star-const	asset.md	engine/asset/resource_manager.h:537
+asset::ResourceManager::Pool()	function	asset	asset-resourcemanager-pool	asset.md	engine/asset/resource_manager.h:539
+asset::ResourceManager::Types() const	function	asset	asset-resourcemanager-types-const	asset.md	engine/asset/resource_manager.h:541
 asset::kMaxTableEntries	variable	asset	asset-kmaxtableentries	asset.md	engine/asset/resource_table.h:23
 asset::TableEntryView	struct	asset	asset-tableentryview	asset.md	engine/asset/resource_table.h:28
 asset::TableEntryView::path	variable	asset	asset-tableentryview-path	asset.md	engine/asset/resource_table.h:30
@@ -6064,9 +6067,9 @@ scene::CameraOutput::valid	variable	scene	scene-cameraoutput-valid	scene.md	engi
 scene::SpawnedLevel	struct	scene	scene-spawnedlevel	scene.md	engine/scene/level_spawner.h:28
 scene::SpawnedLevel::levels	variable	scene	scene-spawnedlevel-levels	scene.md	engine/scene/level_spawner.h:30
 scene::SpawnedLevel::materials	variable	scene	scene-spawnedlevel-materials	scene.md	engine/scene/level_spawner.h:31
-scene::SpawnedLevel::entities	variable	scene	scene-spawnedlevel-entities	scene.md	engine/scene/level_spawner.h:32
-scene::SpawnLevel(asset::ResourceManager&,asset::ResourceId,const storage::ComponentRegistry&,ecs::World&,storage::KeyIndex&,SpawnedLevel*)	function	scene	scene-spawnlevel-asset-resourcemanager-amp-asset-resourceid-const-storage-componentregistry-amp-ecs-world-amp-storage-keyindex-amp-spawnedlevel-star	scene.md	engine/scene/level_spawner.h:53
-scene::DestroyLevel(SpawnedLevel*,ecs::World&,storage::KeyIndex&)	function	scene	scene-destroylevel-spawnedlevel-star-ecs-world-amp-storage-keyindex-amp	scene.md	engine/scene/level_spawner.h:63
+scene::SpawnedLevel::entities	variable	scene	scene-spawnedlevel-entities	scene.md	engine/scene/level_spawner.h:33
+scene::SpawnLevel(asset::ResourceManager&,asset::ResourceId,const storage::ComponentRegistry&,ecs::World&,storage::KeyIndex&,SpawnedLevel*)	function	scene	scene-spawnlevel-asset-resourcemanager-amp-asset-resourceid-const-storage-componentregistry-amp-ecs-world-amp-storage-keyindex-amp-spawnedlevel-star	scene.md	engine/scene/level_spawner.h:54
+scene::DestroyLevel(SpawnedLevel*,ecs::World&,storage::KeyIndex&)	function	scene	scene-destroylevel-spawnedlevel-star-ecs-world-amp-storage-keyindex-amp	scene.md	engine/scene/level_spawner.h:64
 scene::SceneLink	struct	scene	scene-scenelink	scene.md	engine/scene/render_sync.h:19
 scene::SceneLink::scene	variable	scene	scene-scenelink-scene	scene.md	engine/scene/render_sync.h:22
 scene::SceneSyncReport	struct	scene	scene-scenesyncreport	scene.md	engine/scene/render_sync.h:28
@@ -8988,55 +8991,59 @@ renderer::MeshData::HasPrimitiveRestart() const	function	renderer	renderer-meshd
 renderer::MeshData::PositionOffset() const	function	renderer	renderer-meshdata-positionoffset-const	renderer.md	engine/renderer/mesh.h:231
 renderer::MeshData::IndexAt(u32) const	function	renderer	renderer-meshdata-indexat-u32-const	renderer.md	engine/renderer/mesh.h:234
 renderer::MeshData::PositionAt(u32) const	function	renderer	renderer-meshdata-positionat-u32-const	renderer.md	engine/renderer/mesh.h:238
-renderer::MakeCubeMesh(f32,MeshData*)	function	renderer	renderer-makecubemesh-f32-meshdata-star	renderer.md	engine/renderer/mesh.h:267
-renderer::MakeSphereMesh(f32,u32,u32,MeshData*)	function	renderer	renderer-makespheremesh-f32-u32-u32-meshdata-star	renderer.md	engine/renderer/mesh.h:283
-renderer::MakePlaneMesh(f32,f32,u32,u32,MeshData*)	function	renderer	renderer-makeplanemesh-f32-f32-u32-u32-meshdata-star	renderer.md	engine/renderer/mesh.h:298
-renderer::MakePlaneStripMesh(f32,f32,u32,u32,MeshData*)	function	renderer	renderer-makeplanestripmesh-f32-f32-u32-u32-meshdata-star	renderer.md	engine/renderer/mesh.h:314
-renderer::MakeColoredMesh(const MeshData&,const u8*,u32,MeshData*)	function	renderer	renderer-makecoloredmesh-const-meshdata-amp-const-u8-star-u32-meshdata-star	renderer.md	engine/renderer/mesh.h:329
-renderer::MakeUniformColoredMesh(const MeshData&,const u8[4],MeshData*)	function	renderer	renderer-makeuniformcoloredmesh-const-meshdata-amp-const-u8-4-meshdata-star	renderer.md	engine/renderer/mesh.h:340
-renderer::StripJoin	enum	renderer	renderer-stripjoin	renderer.md	engine/renderer/mesh.h:343
-renderer::StripJoin::Restart	enumerator	renderer	renderer-stripjoin-restart	renderer.md	engine/renderer/mesh.h:345
-renderer::StripJoin::Degenerate	enumerator	renderer	renderer-stripjoin-degenerate	renderer.md	engine/renderer/mesh.h:346
-renderer::StripToList(const MeshData&,MeshData*)	function	renderer	renderer-striptolist-const-meshdata-amp-meshdata-star	renderer.md	engine/renderer/mesh.h:359
-renderer::ListToStrip(const MeshData&,StripJoin,MeshData*)	function	renderer	renderer-listtostrip-const-meshdata-amp-stripjoin-meshdata-star	renderer.md	engine/renderer/mesh.h:376
-renderer::GpuMesh	class	renderer	renderer-gpumesh	renderer.md	engine/renderer/mesh.h:388
-renderer::GpuMesh::GpuMesh()	function	renderer	renderer-gpumesh-gpumesh	renderer.md	engine/renderer/mesh.h:391
-renderer::GpuMesh::~GpuMesh()	function	renderer	renderer-gpumesh-tilde-gpumesh	renderer.md	engine/renderer/mesh.h:393
-renderer::GpuMesh::GpuMesh(GpuMesh&&) noexcept	function	renderer	renderer-gpumesh-gpumesh-gpumesh-amp-amp-noexcept	renderer.md	engine/renderer/mesh.h:395
-renderer::GpuMesh::operator=(GpuMesh&&) noexcept	function	renderer	renderer-gpumesh-operator-eq-gpumesh-amp-amp-noexcept	renderer.md	engine/renderer/mesh.h:397
-renderer::GpuMesh::GpuMesh(const GpuMesh&)	function	renderer	renderer-gpumesh-gpumesh-const-gpumesh-amp	renderer.md	engine/renderer/mesh.h:398
-renderer::GpuMesh::operator=(const GpuMesh&)	function	renderer	renderer-gpumesh-operator-eq-const-gpumesh-amp	renderer.md	engine/renderer/mesh.h:399
-renderer::GpuMesh::Create(rhi::Device*,const MeshData&,const char*)	function	renderer	renderer-gpumesh-create-rhi-device-star-const-meshdata-amp-const-char-star	renderer.md	engine/renderer/mesh.h:410
-renderer::GpuMesh::Destroy()	function	renderer	renderer-gpumesh-destroy	renderer.md	engine/renderer/mesh.h:414
-renderer::GpuMesh::Source	struct	renderer	renderer-gpumesh-source	renderer.md	engine/renderer/mesh.h:420
-renderer::GpuMesh::Source::borrowed	variable	renderer	renderer-gpumesh-source-borrowed	renderer.md	engine/renderer/mesh.h:423
-renderer::GpuMesh::Source::load	variable	renderer	renderer-gpumesh-source-load	renderer.md	engine/renderer/mesh.h:425
-renderer::GpuMesh::Source::user	variable	renderer	renderer-gpumesh-source-user	renderer.md	engine/renderer/mesh.h:427
-renderer::GpuMesh::CreateFromGeometry(rhi::Device*,const MeshGeometry&,DeviceResources*,const char*)	function	renderer	renderer-gpumesh-createfromgeometry-rhi-device-star-const-meshgeometry-amp-deviceresources-star-const-char-star	renderer.md	engine/renderer/mesh.h:442
-renderer::GpuMesh::MakeRecreatable(DeviceResources*,const Source&,const char*)	function	renderer	renderer-gpumesh-makerecreatable-deviceresources-star-const-source-amp-const-char-star	renderer.md	engine/renderer/mesh.h:457
-renderer::GpuMesh::AdoptSource(DeviceResources*,MeshData&&,const char*)	function	renderer	renderer-gpumesh-adoptsource-deviceresources-star-meshdata-amp-amp-const-char-star	renderer.md	engine/renderer/mesh.h:467
-renderer::GpuMesh::Release()	function	renderer	renderer-gpumesh-release	renderer.md	engine/renderer/mesh.h:471
-renderer::GpuMesh::Recreate(rhi::Device*)	function	renderer	renderer-gpumesh-recreate-rhi-device-star	renderer.md	engine/renderer/mesh.h:480
-renderer::GpuMesh::Live() const	function	renderer	renderer-gpumesh-live-const	renderer.md	engine/renderer/mesh.h:485
-renderer::GpuMesh::RecreatableName() const	function	renderer	renderer-gpumesh-recreatablename-const	renderer.md	engine/renderer/mesh.h:486
-renderer::GpuMesh::Valid() const	function	renderer	renderer-gpumesh-valid-const	renderer.md	engine/renderer/mesh.h:490
-renderer::GpuMesh::VertexBuffer() const	function	renderer	renderer-gpumesh-vertexbuffer-const	renderer.md	engine/renderer/mesh.h:492
-renderer::GpuMesh::IndexBuffer() const	function	renderer	renderer-gpumesh-indexbuffer-const	renderer.md	engine/renderer/mesh.h:494
-renderer::GpuMesh::SkinBuffer() const	function	renderer	renderer-gpumesh-skinbuffer-const	renderer.md	engine/renderer/mesh.h:496
-renderer::GpuMesh::SkinJointCount() const	function	renderer	renderer-gpumesh-skinjointcount-const	renderer.md	engine/renderer/mesh.h:500
-renderer::GpuMesh::Skinned() const	function	renderer	renderer-gpumesh-skinned-const	renderer.md	engine/renderer/mesh.h:503
-renderer::GpuMesh::IndexCount() const	function	renderer	renderer-gpumesh-indexcount-const	renderer.md	engine/renderer/mesh.h:505
-renderer::GpuMesh::VertexCount() const	function	renderer	renderer-gpumesh-vertexcount-const	renderer.md	engine/renderer/mesh.h:507
-renderer::GpuMesh::IndexFormat() const	function	renderer	renderer-gpumesh-indexformat-const	renderer.md	engine/renderer/mesh.h:509
-renderer::GpuMesh::Layout() const	function	renderer	renderer-gpumesh-layout-const	renderer.md	engine/renderer/mesh.h:511
-renderer::GpuMesh::Topology() const	function	renderer	renderer-gpumesh-topology-const	renderer.md	engine/renderer/mesh.h:514
-renderer::GpuMesh::HasPrimitiveRestart() const	function	renderer	renderer-gpumesh-hasprimitiverestart-const	renderer.md	engine/renderer/mesh.h:517
-renderer::GpuMesh::GetBounds() const	function	renderer	renderer-gpumesh-getbounds-const	renderer.md	engine/renderer/mesh.h:519
-renderer::GpuMesh::SortId() const	function	renderer	renderer-gpumesh-sortid-const	renderer.md	engine/renderer/mesh.h:523
-renderer::GpuMesh::RecordPrepare(rhi::CommandList*)	function	renderer	renderer-gpumesh-recordprepare-rhi-commandlist-star	renderer.md	engine/renderer/mesh.h:531
-renderer::GpuMesh::MarkReady()	function	renderer	renderer-gpumesh-markready	renderer.md	engine/renderer/mesh.h:534
-renderer::GpuMesh::Ready() const	function	renderer	renderer-gpumesh-ready-const	renderer.md	engine/renderer/mesh.h:538
-renderer::GpuMesh::Draw(rhi::CommandList*,u32,u32) const	function	renderer	renderer-gpumesh-draw-rhi-commandlist-star-u32-u32-const	renderer.md	engine/renderer/mesh.h:549
+renderer::MeshDataPtr	alias	renderer	renderer-meshdataptr	renderer.md	engine/renderer/mesh.h:258
+renderer::MeshDataConstPtr	alias	renderer	renderer-meshdataconstptr	renderer.md	engine/renderer/mesh.h:260
+renderer::MakeCubeMesh(f32,MeshData*)	function	renderer	renderer-makecubemesh-f32-meshdata-star	renderer.md	engine/renderer/mesh.h:272
+renderer::MakeSphereMesh(f32,u32,u32,MeshData*)	function	renderer	renderer-makespheremesh-f32-u32-u32-meshdata-star	renderer.md	engine/renderer/mesh.h:288
+renderer::MakePlaneMesh(f32,f32,u32,u32,MeshData*)	function	renderer	renderer-makeplanemesh-f32-f32-u32-u32-meshdata-star	renderer.md	engine/renderer/mesh.h:303
+renderer::MakePlaneStripMesh(f32,f32,u32,u32,MeshData*)	function	renderer	renderer-makeplanestripmesh-f32-f32-u32-u32-meshdata-star	renderer.md	engine/renderer/mesh.h:319
+renderer::MakeColoredMesh(const MeshData&,const u8*,u32,MeshData*)	function	renderer	renderer-makecoloredmesh-const-meshdata-amp-const-u8-star-u32-meshdata-star	renderer.md	engine/renderer/mesh.h:334
+renderer::MakeUniformColoredMesh(const MeshData&,const u8[4],MeshData*)	function	renderer	renderer-makeuniformcoloredmesh-const-meshdata-amp-const-u8-4-meshdata-star	renderer.md	engine/renderer/mesh.h:345
+renderer::StripJoin	enum	renderer	renderer-stripjoin	renderer.md	engine/renderer/mesh.h:348
+renderer::StripJoin::Restart	enumerator	renderer	renderer-stripjoin-restart	renderer.md	engine/renderer/mesh.h:350
+renderer::StripJoin::Degenerate	enumerator	renderer	renderer-stripjoin-degenerate	renderer.md	engine/renderer/mesh.h:351
+renderer::StripToList(const MeshData&,MeshData*)	function	renderer	renderer-striptolist-const-meshdata-amp-meshdata-star	renderer.md	engine/renderer/mesh.h:364
+renderer::ListToStrip(const MeshData&,StripJoin,MeshData*)	function	renderer	renderer-listtostrip-const-meshdata-amp-stripjoin-meshdata-star	renderer.md	engine/renderer/mesh.h:381
+renderer::GpuMesh	class	renderer	renderer-gpumesh	renderer.md	engine/renderer/mesh.h:393
+renderer::GpuMesh::GpuMesh()	function	renderer	renderer-gpumesh-gpumesh	renderer.md	engine/renderer/mesh.h:396
+renderer::GpuMesh::~GpuMesh()	function	renderer	renderer-gpumesh-tilde-gpumesh	renderer.md	engine/renderer/mesh.h:398
+renderer::GpuMesh::GpuMesh(GpuMesh&&) noexcept	function	renderer	renderer-gpumesh-gpumesh-gpumesh-amp-amp-noexcept	renderer.md	engine/renderer/mesh.h:400
+renderer::GpuMesh::operator=(GpuMesh&&) noexcept	function	renderer	renderer-gpumesh-operator-eq-gpumesh-amp-amp-noexcept	renderer.md	engine/renderer/mesh.h:402
+renderer::GpuMesh::GpuMesh(const GpuMesh&)	function	renderer	renderer-gpumesh-gpumesh-const-gpumesh-amp	renderer.md	engine/renderer/mesh.h:403
+renderer::GpuMesh::operator=(const GpuMesh&)	function	renderer	renderer-gpumesh-operator-eq-const-gpumesh-amp	renderer.md	engine/renderer/mesh.h:404
+renderer::GpuMesh::Create(rhi::Device*,const MeshData&,const char*)	function	renderer	renderer-gpumesh-create-rhi-device-star-const-meshdata-amp-const-char-star	renderer.md	engine/renderer/mesh.h:415
+renderer::GpuMesh::Destroy()	function	renderer	renderer-gpumesh-destroy	renderer.md	engine/renderer/mesh.h:419
+renderer::GpuMesh::Source	struct	renderer	renderer-gpumesh-source	renderer.md	engine/renderer/mesh.h:425
+renderer::GpuMesh::Source::borrowed	variable	renderer	renderer-gpumesh-source-borrowed	renderer.md	engine/renderer/mesh.h:428
+renderer::GpuMesh::Source::load	variable	renderer	renderer-gpumesh-source-load	renderer.md	engine/renderer/mesh.h:430
+renderer::GpuMesh::Source::user	variable	renderer	renderer-gpumesh-source-user	renderer.md	engine/renderer/mesh.h:432
+renderer::GpuMesh::CreateFromGeometry(rhi::Device*,const MeshGeometry&,DeviceResources*,const char*)	function	renderer	renderer-gpumesh-createfromgeometry-rhi-device-star-const-meshgeometry-amp-deviceresources-star-const-char-star	renderer.md	engine/renderer/mesh.h:447
+renderer::GpuMesh::MakeRecreatable(DeviceResources*,const Source&,const char*)	function	renderer	renderer-gpumesh-makerecreatable-deviceresources-star-const-source-amp-const-char-star	renderer.md	engine/renderer/mesh.h:462
+renderer::GpuMesh::AdoptSource(DeviceResources*,MeshData&&,const char*)	function	renderer	renderer-gpumesh-adoptsource-deviceresources-star-meshdata-amp-amp-const-char-star	renderer.md	engine/renderer/mesh.h:472
+renderer::GpuMesh::Release()	function	renderer	renderer-gpumesh-release	renderer.md	engine/renderer/mesh.h:476
+renderer::GpuMesh::Recreate(rhi::Device*)	function	renderer	renderer-gpumesh-recreate-rhi-device-star	renderer.md	engine/renderer/mesh.h:485
+renderer::GpuMesh::Live() const	function	renderer	renderer-gpumesh-live-const	renderer.md	engine/renderer/mesh.h:490
+renderer::GpuMesh::RecreatableName() const	function	renderer	renderer-gpumesh-recreatablename-const	renderer.md	engine/renderer/mesh.h:491
+renderer::GpuMesh::Valid() const	function	renderer	renderer-gpumesh-valid-const	renderer.md	engine/renderer/mesh.h:495
+renderer::GpuMesh::VertexBuffer() const	function	renderer	renderer-gpumesh-vertexbuffer-const	renderer.md	engine/renderer/mesh.h:497
+renderer::GpuMesh::IndexBuffer() const	function	renderer	renderer-gpumesh-indexbuffer-const	renderer.md	engine/renderer/mesh.h:499
+renderer::GpuMesh::SkinBuffer() const	function	renderer	renderer-gpumesh-skinbuffer-const	renderer.md	engine/renderer/mesh.h:501
+renderer::GpuMesh::SkinJointCount() const	function	renderer	renderer-gpumesh-skinjointcount-const	renderer.md	engine/renderer/mesh.h:505
+renderer::GpuMesh::Skinned() const	function	renderer	renderer-gpumesh-skinned-const	renderer.md	engine/renderer/mesh.h:508
+renderer::GpuMesh::IndexCount() const	function	renderer	renderer-gpumesh-indexcount-const	renderer.md	engine/renderer/mesh.h:510
+renderer::GpuMesh::VertexCount() const	function	renderer	renderer-gpumesh-vertexcount-const	renderer.md	engine/renderer/mesh.h:512
+renderer::GpuMesh::IndexFormat() const	function	renderer	renderer-gpumesh-indexformat-const	renderer.md	engine/renderer/mesh.h:514
+renderer::GpuMesh::Layout() const	function	renderer	renderer-gpumesh-layout-const	renderer.md	engine/renderer/mesh.h:516
+renderer::GpuMesh::Topology() const	function	renderer	renderer-gpumesh-topology-const	renderer.md	engine/renderer/mesh.h:519
+renderer::GpuMesh::HasPrimitiveRestart() const	function	renderer	renderer-gpumesh-hasprimitiverestart-const	renderer.md	engine/renderer/mesh.h:522
+renderer::GpuMesh::GetBounds() const	function	renderer	renderer-gpumesh-getbounds-const	renderer.md	engine/renderer/mesh.h:524
+renderer::GpuMesh::SortId() const	function	renderer	renderer-gpumesh-sortid-const	renderer.md	engine/renderer/mesh.h:528
+renderer::GpuMesh::RecordPrepare(rhi::CommandList*)	function	renderer	renderer-gpumesh-recordprepare-rhi-commandlist-star	renderer.md	engine/renderer/mesh.h:536
+renderer::GpuMesh::MarkReady()	function	renderer	renderer-gpumesh-markready	renderer.md	engine/renderer/mesh.h:539
+renderer::GpuMesh::Ready() const	function	renderer	renderer-gpumesh-ready-const	renderer.md	engine/renderer/mesh.h:543
+renderer::GpuMesh::Draw(rhi::CommandList*,u32,u32) const	function	renderer	renderer-gpumesh-draw-rhi-commandlist-star-u32-u32-const	renderer.md	engine/renderer/mesh.h:554
+renderer::GpuMeshPtr	alias	renderer	renderer-gpumeshptr	renderer.md	engine/renderer/mesh.h:587
+renderer::GpuMeshConstPtr	alias	renderer	renderer-gpumeshconstptr	renderer.md	engine/renderer/mesh.h:589
 renderer::kMaxGraphErrors	variable	renderer	renderer-kmaxgrapherrors	renderer.md	engine/renderer/render_graph.h:32
 renderer::kGraphErrorLength	variable	renderer	renderer-kgrapherrorlength	renderer.md	engine/renderer/render_graph.h:34
 renderer::kNeverUsed	variable	renderer	renderer-kneverused	renderer.md	engine/renderer/render_graph.h:36
@@ -9617,7 +9624,7 @@ renderer::GpuTexture::GpuTexture(const GpuTexture&)	function	renderer	renderer-g
 renderer::GpuTexture::operator=(const GpuTexture&)	function	renderer	renderer-gputexture-operator-eq-const-gputexture-amp	renderer.md	engine/renderer/texture.h:84
 renderer::GpuTexture::Create(rhi::Device*,TextureImage&&,DeviceResources*,const char*)	function	renderer	renderer-gputexture-create-rhi-device-star-textureimage-amp-amp-deviceresources-star-const-char-star	renderer.md	engine/renderer/texture.h:99
 renderer::GpuTexture::CreateFromLevels(rhi::Device*,const rhi::TextureDesc&,Span<const TextureLevelRef>,DeviceResources*,const char*)	function	renderer	renderer-gputexture-createfromlevels-rhi-device-star-const-rhi-texturedesc-amp-span-lt-const-texturelevelref-gt-deviceresources-star-const-char-star	renderer.md	engine/renderer/texture.h:116
-renderer::GpuTexture::CreateFromSharedLevels(rhi::Device*,const rhi::TextureDesc&,SharedPtr<const SharedBytes>,Span<const TextureLevelSpan>,DeviceResources*,const char*)	function	renderer	renderer-gputexture-createfromsharedlevels-rhi-device-star-const-rhi-texturedesc-amp-sharedptr-lt-const-sharedbytes-gt-span-lt-const-texturelevelspan-gt-deviceresources-star-const-char-star	renderer.md	engine/renderer/texture.h:135
+renderer::GpuTexture::CreateFromSharedLevels(rhi::Device*,const rhi::TextureDesc&,SharedBytesPtr,Span<const TextureLevelSpan>,DeviceResources*,const char*)	function	renderer	renderer-gputexture-createfromsharedlevels-rhi-device-star-const-rhi-texturedesc-amp-sharedbytesptr-span-lt-const-texturelevelspan-gt-deviceresources-star-const-char-star	renderer.md	engine/renderer/texture.h:135
 renderer::GpuTexture::CreateFromLoader(rhi::Device*,TextureLoader,void*,DeviceResources*,const char*)	function	renderer	renderer-gputexture-createfromloader-rhi-device-star-textureloader-void-star-deviceresources-star-const-char-star	renderer.md	engine/renderer/texture.h:150
 renderer::GpuTexture::Destroy()	function	renderer	renderer-gputexture-destroy	renderer.md	engine/renderer/texture.h:154
 renderer::GpuTexture::Release()	function	renderer	renderer-gputexture-release	renderer.md	engine/renderer/texture.h:156
@@ -9627,21 +9634,25 @@ renderer::GpuTexture::RecreatableName() const	function	renderer	renderer-gputext
 renderer::GpuTexture::Valid() const	function	renderer	renderer-gputexture-valid-const	renderer.md	engine/renderer/texture.h:163
 renderer::GpuTexture::Handle() const	function	renderer	renderer-gputexture-handle-const	renderer.md	engine/renderer/texture.h:165
 renderer::GpuTexture::Desc() const	function	renderer	renderer-gputexture-desc-const	renderer.md	engine/renderer/texture.h:167
-renderer::GpuSampler	class	renderer	renderer-gpusampler	renderer.md	engine/renderer/texture.h:193
-renderer::GpuSampler::GpuSampler()	function	renderer	renderer-gpusampler-gpusampler	renderer.md	engine/renderer/texture.h:196
-renderer::GpuSampler::~GpuSampler()	function	renderer	renderer-gpusampler-tilde-gpusampler	renderer.md	engine/renderer/texture.h:198
-renderer::GpuSampler::GpuSampler(GpuSampler&&) noexcept	function	renderer	renderer-gpusampler-gpusampler-gpusampler-amp-amp-noexcept	renderer.md	engine/renderer/texture.h:200
-renderer::GpuSampler::operator=(GpuSampler&&) noexcept	function	renderer	renderer-gpusampler-operator-eq-gpusampler-amp-amp-noexcept	renderer.md	engine/renderer/texture.h:202
-renderer::GpuSampler::GpuSampler(const GpuSampler&)	function	renderer	renderer-gpusampler-gpusampler-const-gpusampler-amp	renderer.md	engine/renderer/texture.h:203
-renderer::GpuSampler::operator=(const GpuSampler&)	function	renderer	renderer-gpusampler-operator-eq-const-gpusampler-amp	renderer.md	engine/renderer/texture.h:204
-renderer::GpuSampler::Create(rhi::Device*,const rhi::SamplerDesc&,DeviceResources*,const char*)	function	renderer	renderer-gpusampler-create-rhi-device-star-const-rhi-samplerdesc-amp-deviceresources-star-const-char-star	renderer.md	engine/renderer/texture.h:216
-renderer::GpuSampler::Destroy()	function	renderer	renderer-gpusampler-destroy	renderer.md	engine/renderer/texture.h:219
-renderer::GpuSampler::Release()	function	renderer	renderer-gpusampler-release	renderer.md	engine/renderer/texture.h:221
-renderer::GpuSampler::Recreate(rhi::Device*)	function	renderer	renderer-gpusampler-recreate-rhi-device-star	renderer.md	engine/renderer/texture.h:222
-renderer::GpuSampler::Live() const	function	renderer	renderer-gpusampler-live-const	renderer.md	engine/renderer/texture.h:223
-renderer::GpuSampler::RecreatableName() const	function	renderer	renderer-gpusampler-recreatablename-const	renderer.md	engine/renderer/texture.h:224
-renderer::GpuSampler::Valid() const	function	renderer	renderer-gpusampler-valid-const	renderer.md	engine/renderer/texture.h:228
-renderer::GpuSampler::Handle() const	function	renderer	renderer-gpusampler-handle-const	renderer.md	engine/renderer/texture.h:230
+renderer::GpuTexturePtr	alias	renderer	renderer-gputextureptr	renderer.md	engine/renderer/texture.h:190
+renderer::GpuTextureConstPtr	alias	renderer	renderer-gputextureconstptr	renderer.md	engine/renderer/texture.h:192
+renderer::GpuSampler	class	renderer	renderer-gpusampler	renderer.md	engine/renderer/texture.h:198
+renderer::GpuSampler::GpuSampler()	function	renderer	renderer-gpusampler-gpusampler	renderer.md	engine/renderer/texture.h:201
+renderer::GpuSampler::~GpuSampler()	function	renderer	renderer-gpusampler-tilde-gpusampler	renderer.md	engine/renderer/texture.h:203
+renderer::GpuSampler::GpuSampler(GpuSampler&&) noexcept	function	renderer	renderer-gpusampler-gpusampler-gpusampler-amp-amp-noexcept	renderer.md	engine/renderer/texture.h:205
+renderer::GpuSampler::operator=(GpuSampler&&) noexcept	function	renderer	renderer-gpusampler-operator-eq-gpusampler-amp-amp-noexcept	renderer.md	engine/renderer/texture.h:207
+renderer::GpuSampler::GpuSampler(const GpuSampler&)	function	renderer	renderer-gpusampler-gpusampler-const-gpusampler-amp	renderer.md	engine/renderer/texture.h:208
+renderer::GpuSampler::operator=(const GpuSampler&)	function	renderer	renderer-gpusampler-operator-eq-const-gpusampler-amp	renderer.md	engine/renderer/texture.h:209
+renderer::GpuSampler::Create(rhi::Device*,const rhi::SamplerDesc&,DeviceResources*,const char*)	function	renderer	renderer-gpusampler-create-rhi-device-star-const-rhi-samplerdesc-amp-deviceresources-star-const-char-star	renderer.md	engine/renderer/texture.h:221
+renderer::GpuSampler::Destroy()	function	renderer	renderer-gpusampler-destroy	renderer.md	engine/renderer/texture.h:224
+renderer::GpuSampler::Release()	function	renderer	renderer-gpusampler-release	renderer.md	engine/renderer/texture.h:226
+renderer::GpuSampler::Recreate(rhi::Device*)	function	renderer	renderer-gpusampler-recreate-rhi-device-star	renderer.md	engine/renderer/texture.h:227
+renderer::GpuSampler::Live() const	function	renderer	renderer-gpusampler-live-const	renderer.md	engine/renderer/texture.h:228
+renderer::GpuSampler::RecreatableName() const	function	renderer	renderer-gpusampler-recreatablename-const	renderer.md	engine/renderer/texture.h:229
+renderer::GpuSampler::Valid() const	function	renderer	renderer-gpusampler-valid-const	renderer.md	engine/renderer/texture.h:233
+renderer::GpuSampler::Handle() const	function	renderer	renderer-gpusampler-handle-const	renderer.md	engine/renderer/texture.h:235
+renderer::GpuSamplerPtr	alias	renderer	renderer-gpusamplerptr	renderer.md	engine/renderer/texture.h:249
+renderer::GpuSamplerConstPtr	alias	renderer	renderer-gpusamplerconstptr	renderer.md	engine/renderer/texture.h:251
 renderer::TransientPoolDesc	struct	renderer	renderer-transientpooldesc	renderer.md	engine/renderer/transient_pool.h:21
 renderer::TransientPoolDesc::max_textures	variable	renderer	renderer-transientpooldesc-max-textures	renderer.md	engine/renderer/transient_pool.h:24
 renderer::TransientPoolDesc::max_buffers	variable	renderer	renderer-transientpooldesc-max-buffers	renderer.md	engine/renderer/transient_pool.h:26

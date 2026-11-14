@@ -132,7 +132,7 @@ public:
     ///   failed upload.
     /// - Aborts: the texture already exists.
     /// - Ownership: shares `bytes`; `levels` is read during the call and copied.
-    bool CreateFromSharedLevels(rhi::Device* device, const rhi::TextureDesc& desc, SharedPtr<const SharedBytes> bytes,
+    bool CreateFromSharedLevels(rhi::Device* device, const rhi::TextureDesc& desc, SharedBytesPtr bytes,
                                 Span<const TextureLevelSpan> levels, DeviceResources* resources,
                                 const char* debug_name);
 
@@ -174,8 +174,8 @@ private:
 
     TextureImage image_;
     Vector<TextureLevelRef> levels_;  // the borrowed levels of CreateFromLevels (image_.desc is its description)
-    SharedPtr<const SharedBytes> shared_bytes_;  // the region of CreateFromSharedLevels
-    Vector<TextureLevelSpan> shared_levels_;     // where its levels are (image_.desc is its description)
+    SharedBytesPtr shared_bytes_;     // the region of CreateFromSharedLevels
+    Vector<TextureLevelSpan> shared_levels_;  // where its levels are (image_.desc is its description)
     TextureLoader loader_ = nullptr;
     void* loader_user_ = nullptr;
     bool has_source_ = false;
@@ -185,6 +185,11 @@ private:
     rhi::TextureDesc desc_;
     rhi::TextureHandle handle_;
 };
+
+/// How a [[renderer::GpuTexture]] is held: shared, never pointed at.
+using GpuTexturePtr = SharedPtr<GpuTexture>;
+/// A read-only share of a [[renderer::GpuTexture]].
+using GpuTextureConstPtr = SharedPtr<const GpuTexture>;
 
 /// A sampler that survives a device reset.
 ///
@@ -239,5 +244,10 @@ private:
     rhi::Device* device_ = nullptr;
     rhi::SamplerHandle handle_;
 };
+
+/// How a [[renderer::GpuSampler]] is held: shared, never pointed at.
+using GpuSamplerPtr = SharedPtr<GpuSampler>;
+/// A read-only share of a [[renderer::GpuSampler]].
+using GpuSamplerConstPtr = SharedPtr<const GpuSampler>;
 
 }  // namespace engine_placeholder::renderer

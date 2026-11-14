@@ -148,6 +148,9 @@ private:
     usize size_;
 };
 
+/// How a [[asset::BlobBuffer]] is held: shared.
+using BlobBufferPtr = SharedPtr<BlobBuffer>;
+
 /// What a loader is given: the blob, its bytes and the objects of its dependencies.
 ///
 /// - Thread-safety: thread-compatible; valid during the loader call only.
@@ -165,7 +168,7 @@ public:
     ///
     /// - Fails: never.
     /// - Ownership: the caller may keep the share.
-    const SharedPtr<const SharedBytes>& Buffer() const { return buffer_; }
+    const SharedBytesPtr& Buffer() const { return buffer_; }
     /// The opened blob (sections, dependencies).
     const BlobReader& Blob() const { return *blob_; }
     /// The registry of resource types.
@@ -194,7 +197,7 @@ private:
 
     ResourceId id_;
     ByteSpan bytes_;
-    SharedPtr<const SharedBytes> buffer_;
+    SharedBytesPtr buffer_;
     const BlobReader* blob_ = nullptr;
     const TypeRegistry* types_ = nullptr;
     const LoadedObject* (*find_)(void* user, ResourceId id) = nullptr;
@@ -552,9 +555,9 @@ private:
     Status LoadFallback(ResourceType type, u32 key, HandleBase* out);
     Status AcquireLocked(ResourceId id, const Expect& expect, Vector<ResourceId>* chain, u32* slot,
                          LoadFailure* failure);
-    Status ReadBlobLocked(ResourceId id, u64 reclaim, SharedPtr<BlobBuffer>* buffer, usize* size);
-    Status BuildLocked(ResourceId id, const Expect& expect, SharedPtr<BlobBuffer> buffer, usize size,
-                       Vector<ResourceId>* chain, u32* slot, LoadFailure* failure);
+    Status ReadBlobLocked(ResourceId id, u64 reclaim, BlobBufferPtr* buffer, usize* size);
+    Status BuildLocked(ResourceId id, const Expect& expect, BlobBufferPtr buffer, usize size, Vector<ResourceId>* chain,
+                       u32* slot, LoadFailure* failure);
     void NoteFailure(LoadFailure* failure, const Vector<ResourceId>& chain, ResourceId failing);
     void AddRefLocked(u32 index);
     void ReleaseLocked(u32 index);

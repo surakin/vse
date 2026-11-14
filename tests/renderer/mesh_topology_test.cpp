@@ -489,7 +489,7 @@ TEST_CASE("MeshGeometry: invalid views are refused, a valid one uploads in place
     CHECK(good.Validate() == nullptr);
 
     MeshGeometry bad = good;
-    bad.bytes = SharedPtr<const SharedBytes>();
+    bad.bytes = SharedBytesPtr();
     CHECK(bad.Validate() != nullptr);
     bad = good;
     bad.index_count = 0;

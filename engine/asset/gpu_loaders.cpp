@@ -281,7 +281,7 @@ Status LoadGpuMaterial(const LoadContext& context, GpuMaterialAsset* asset, void
         desc.address_u = AddressOf(s.address_u);
         desc.address_v = AddressOf(s.address_v);
         desc.max_anisotropy = static_cast<f32>(s.max_anisotropy);
-        SharedPtr<renderer::GpuSampler> sampler = MakeShared<renderer::GpuSampler>();
+        renderer::GpuSamplerPtr sampler = MakeShared<renderer::GpuSampler>();
         if (!sampler->Create(gpu->device, desc, gpu->resources, s.slot.text))
         {
             return DeviceRefused("the device refused a sampler");
@@ -290,7 +290,7 @@ Status LoadGpuMaterial(const LoadContext& context, GpuMaterialAsset* asset, void
         {
             return Status::Make(ErrorCode::Corrupt, "the material binds a sampler slot the template does not have");
         }
-        out->samplers.Push(static_cast<SharedPtr<renderer::GpuSampler>&&>(sampler));
+        out->samplers.Push(static_cast<renderer::GpuSamplerPtr&&>(sampler));
     }
     return Status::Success();
 }

@@ -245,6 +245,10 @@ order untouched (it is part of the build: the unity enable/disable pairs). Do no
 - **clang-tidy** (`.clang-tidy`, `scripts/tidy.sh`) runs on demand over a non-unity compile database; fix a finding or suppress it on its line with
   `// NOLINT(check): reason` (a reason is required). It is not in the hook.
 
+## Shared representations: share a `SharedPtr` to a small class, never a pointer into another class (required, 2026-11-14)
+
+When classes need the same data, put the data in a small class and let each of them hold a `SharedPtr` to it. **Never keep a raw pointer or reference (or a span) into another class's storage, and never give a class two members for the same thing ("owned" and "shared").** One way to hold each shared thing: the shared units are listed in `tools/shared_unit_check/units.txt` (today `GpuMesh`, `GpuTexture`, `GpuSampler`, `GpuMaterial`, `MeshData`, `BlobBuffer`, `SharedBytes`) and each has aliases for its `SharedPtr`, written `TypePtr` and `TypeConstPtr` (`GpuMeshPtr`, `SharedBytesPtr`): **spell the alias, never `SharedPtr<Type>`**, and define the aliases beside the class. Bytes that several classes read (a loaded blob, the geometry and texels uploaded from it) are a `SharedBytes` held by `SharedBytesPtr` and named by offsets, not pointers. The gate `shared_unit_check` (`tools/shared_unit_check`, ctest `shared_unit_check`) fails on a data member that is a raw pointer or reference to a shared unit, on a `ByteSpan` member in the blob and renderer code, and on a spelled-out `SharedPtr<Unit>`; its `allowlist.txt` lists today's debts (`path|reason`, removed by the shared-ownership refactor; a stale entry fails). A new shared unit is added to `units.txt` with its aliases in the same commit; do not add to the allow list.
+
 ## Always use the wrapped types, never `std` (required, Phase 16)
 
 Code in `engine/`, `game/`, `tools/` and `tests/` includes no standard header, spells no `std::` name, calls no unqualified C library function (`strlen`, `memcpy`, `printf`, `qsort`, ...) and spells no raw `unsigned char` / `(std::)u?int(8|16|32|64)_t`.

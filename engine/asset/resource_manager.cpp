@@ -25,7 +25,7 @@ struct ResourceManager::Slot
     ResourceType type;
     u32 type_version = 0;
     u32 refs = 0;
-    SharedPtr<BlobBuffer> buffer;
+    BlobBufferPtr buffer;
     usize size = 0;
     UniquePtr<LoadedObject> object;
     Vector<ResourceId> deps;  // the ids of the dependencies this slot holds a reference on
@@ -426,7 +426,7 @@ const LoadedObject* ResourceManager::FindInContext(void* user, ResourceId id)
 // ---------------------------------------------------------------------------------------------------------------------
 // Loading
 
-Status ResourceManager::ReadBlobLocked(ResourceId id, u64 reclaim, SharedPtr<BlobBuffer>* buffer, usize* size)
+Status ResourceManager::ReadBlobLocked(ResourceId id, u64 reclaim, BlobBufferPtr* buffer, usize* size)
 {
     const u64 started = os::MonotonicTimeNanos();
     UniquePtr<ResourceReader> reader;
@@ -504,7 +504,7 @@ Status ResourceManager::AcquireLocked(ResourceId id, const Expect& expect, Vecto
             return Fail(ErrorCode::DependencyCycle, "the resources depend on each other in a cycle");
         }
     }
-    SharedPtr<BlobBuffer> buffer;
+    BlobBufferPtr buffer;
     usize size = 0;
     const Status read = ReadBlobLocked(id, 0, &buffer, &size);
     if (read.Failed())
@@ -516,10 +516,10 @@ Status ResourceManager::AcquireLocked(ResourceId id, const Expect& expect, Vecto
         }
         return read;
     }
-    return BuildLocked(id, expect, static_cast<SharedPtr<BlobBuffer>&&>(buffer), size, chain, slot, failure);
+    return BuildLocked(id, expect, static_cast<BlobBufferPtr&&>(buffer), size, chain, slot, failure);
 }
 
-Status ResourceManager::BuildLocked(ResourceId id, const Expect& expect, SharedPtr<BlobBuffer> buffer, usize size,
+Status ResourceManager::BuildLocked(ResourceId id, const Expect& expect, BlobBufferPtr buffer, usize size,
                                     Vector<ResourceId>* chain, u32* slot_out, LoadFailure* failure)
 {
     BlobReader reader;
@@ -655,7 +655,7 @@ Status ResourceManager::BuildLocked(ResourceId id, const Expect& expect, SharedP
     slot.type = reader.Type();
     slot.type_version = reader.TypeVersion();
     slot.refs = 1;
-    slot.buffer = static_cast<SharedPtr<BlobBuffer>&&>(buffer);
+    slot.buffer = static_cast<BlobBufferPtr&&>(buffer);
     slot.size = size;
     slot.object = static_cast<UniquePtr<LoadedObject>&&>(object);
     slot.deps = static_cast<Vector<ResourceId>&&>(dep_ids);
@@ -741,15 +741,14 @@ Status ResourceManager::LoadFallback(ResourceType type, u32 key, HandleBase* out
         LoadBuffer raw;
         ENGINE_TRY(pool_->Acquire(blob.Size(), &raw));
         MemCopy(raw.Data(), blob.Data(), blob.Size());
-        SharedPtr<BlobBuffer> buffer = MakeShared<BlobBuffer>(pool_, resident_, static_cast<LoadBuffer&&>(raw),
-                                                              blob.Size());
+        BlobBufferPtr buffer = MakeShared<BlobBuffer>(pool_, resident_, static_cast<LoadBuffer&&>(raw), blob.Size());
         Expect expect;
         expect.check_type = true;
         expect.type = type;
         expect.key = key;
         Vector<ResourceId> chain;
-        ENGINE_TRY(BuildLocked(reader.Id(), expect, static_cast<SharedPtr<BlobBuffer>&&>(buffer), blob.Size(), &chain,
-                               &slot, nullptr));
+        ENGINE_TRY(BuildLocked(reader.Id(), expect, static_cast<BlobBufferPtr&&>(buffer), blob.Size(), &chain, &slot,
+                               nullptr));
     }
     stats_.fallbacks_used += 1;
     out->manager_ = this;
@@ -921,7 +920,7 @@ Status ResourceManager::ReloadLocked(ResourceId id, u32* reloaded)
 {
     const u32 index = *by_id_.Find(id.Value());
     // The replacement blob, read afresh.
-    SharedPtr<BlobBuffer> buffer;
+    BlobBufferPtr buffer;
     usize size = 0;
     ENGINE_TRY(ReadBlobLocked(id, slots_[index]->size, &buffer, &size));
     BlobReader reader;
@@ -1186,7 +1185,7 @@ Status ResourceManager::ReloadLocked(ResourceId id, u32* reloaded)
         old_deps.Push(target.dep_slots[i]);
     }
     target.object = static_cast<UniquePtr<LoadedObject>&&>(fresh);
-    target.buffer = static_cast<SharedPtr<BlobBuffer>&&>(buffer);
+    target.buffer = static_cast<BlobBufferPtr&&>(buffer);
     target.size = size;
     target.type_version = reader.TypeVersion();
     target.deps = static_cast<Vector<ResourceId>&&>(dep_ids);

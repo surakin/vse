@@ -369,6 +369,7 @@ tests/scene/CMakeLists.txt                      17
 tests/net/                                      20   # Phase 20 Day 267
 test:net_backend_lists*                         20   # the socket backend checklist (Day 268)
 test:net_access_check*                          20   # the socket access gate (Day 268)
+test:shared_unit_check*                         22   # the shared-ownership gate (Phase 22)
 
 # --- Phase 22: asset pipeline and resource system ---
 tests/asset/                                    22   # Phase 22 Day 313

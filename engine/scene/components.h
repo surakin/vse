@@ -28,7 +28,7 @@ struct MeshAsset
     renderer::GpuMesh mesh;
     /// A mesh shared with whoever else draws it (the resource manager's), or empty: the holder then owns nothing, and
     /// the mesh lives as long as any holder does.
-    SharedPtr<renderer::GpuMesh> shared;
+    renderer::GpuMeshPtr shared;
 
     /// The geometry, whichever way it is held.
     ///

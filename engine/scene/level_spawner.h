@@ -28,7 +28,7 @@ namespace engine_placeholder::scene
 struct SpawnedLevel
 {
     Vector<asset::Handle<asset::LevelSummary>> levels;  ///< The level and the ones it includes.
-    Vector<SharedPtr<asset::GpuMaterial>>
+    Vector<asset::GpuMaterialPtr>
         materials;  ///< The materials its entities draw with (shared: a reload of the resource leaves them).
     Vector<storage::EntityKey> entities;  ///< The entities it made, in the order they were created.
 };

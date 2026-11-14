@@ -37,10 +37,10 @@ struct GpuAssetContext
 /// - Ownership: shares the blob bytes and the mesh.
 struct GpuMeshAsset
 {
-    MeshView view;                       ///< The blob, read in place.
-    SharedPtr<const SharedBytes> bytes;  ///< The region `view` reads and `geometry` names.
-    renderer::MeshGeometry geometry;     ///< The geometry as the renderer sees it.
-    SharedPtr<renderer::GpuMesh> mesh;   ///< The buffers, shared with whoever draws them.
+    MeshView view;                    ///< The blob, read in place.
+    SharedBytesPtr bytes;             ///< The region `view` reads and `geometry` names.
+    renderer::MeshGeometry geometry;  ///< The geometry as the renderer sees it.
+    renderer::GpuMeshPtr mesh;        ///< The buffers, shared with whoever draws them.
 };
 
 /// A texture on the GPU, uploaded from the blob's mip sections; the texture holds a share of the blob bytes, so a reset
@@ -50,9 +50,9 @@ struct GpuMeshAsset
 /// - Ownership: shares the blob bytes and the texture.
 struct GpuTextureAsset
 {
-    TextureView view;                         ///< The blob, read in place.
-    SharedPtr<const SharedBytes> bytes;       ///< The region `view` reads.
-    SharedPtr<renderer::GpuTexture> texture;  ///< The texture, shared with the materials that bind it.
+    TextureView view;                 ///< The blob, read in place.
+    SharedBytesPtr bytes;             ///< The region `view` reads.
+    renderer::GpuTexturePtr texture;  ///< The texture, shared with the materials that bind it.
 };
 
 /// A material in the material system, with its textures bound by owner and its samplers. It holds a share of every
@@ -70,12 +70,15 @@ struct GpuMaterial
     /// Destroys the material.
     ~GpuMaterial();
 
-    renderer::MaterialSystem* materials = nullptr;     ///< The system that owns the material.
-    renderer::MaterialId id;                           ///< The material.
-    u32 flags = 0;                                     ///< [[asset::MaterialFlags]].
-    Vector<SharedPtr<renderer::GpuTexture>> textures;  ///< The textures the material's slots use.
-    Vector<SharedPtr<renderer::GpuSampler>> samplers;  ///< The samplers the material's slots use.
+    renderer::MaterialSystem* materials = nullptr;  ///< The system that owns the material.
+    renderer::MaterialId id;                        ///< The material.
+    u32 flags = 0;                                  ///< [[asset::MaterialFlags]].
+    Vector<renderer::GpuTexturePtr> textures;       ///< The textures the material's slots use.
+    Vector<renderer::GpuSamplerPtr> samplers;       ///< The samplers the material's slots use.
 };
+
+/// How a [[asset::GpuMaterial]] is held: shared.
+using GpuMaterialPtr = SharedPtr<GpuMaterial>;
 
 /// What a material blob is once the GPU loaders are registered: a share of its [[asset::GpuMaterial]].
 ///
@@ -83,7 +86,7 @@ struct GpuMaterial
 /// - Ownership: shares the material.
 struct GpuMaterialAsset
 {
-    SharedPtr<GpuMaterial> material;  ///< The material, shared with the levels that draw with it.
+    GpuMaterialPtr material;  ///< The material, shared with the levels that draw with it.
 };
 
 /// A GPU mesh is the object of a mesh blob once the GPU loaders are registered.
