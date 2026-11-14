@@ -26,6 +26,8 @@ set(ASSET_SOURCES
   block_compress.cpp  # Day 324
   material.cpp  # Day 326
   level.cpp  # Day 327
+  resource_manager.cpp  # Day 328
+  cpu_loaders.cpp  # Day 328
 )
 set(ASSET_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

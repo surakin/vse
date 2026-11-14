@@ -403,6 +403,86 @@ Status BuildLevelBlob(const TypeRegistry& types, const storage::ComponentRegistr
     return writer.Finish(out);
 }
 
+Status ReadLevelSummary(ByteSpan bytes, const TypeRegistry& types, LevelSummary* out)
+{
+    BlobReader reader;
+    ENGINE_TRY(reader.Open(bytes, types));
+    if (reader.Type() != types::kLevel)
+    {
+        return Status::Make(ErrorCode::TypeMismatch, "the blob is not a level");
+    }
+    ByteSpan header;
+    ByteSpan table;
+    ByteSpan containers;
+    ByteSpan refs;
+    if (!reader.FindSection(kLevelSectionHeader, &header) || !reader.FindSection(kLevelSectionEntities, &table) ||
+        !reader.FindSection(kLevelSectionContainers, &containers) ||
+        !reader.FindSection(kLevelSectionReferences, &refs) || header.Size() != kLevelHeaderBytes)
+    {
+        return Status::Make(ErrorCode::Corrupt, "the level lacks one of its sections");
+    }
+    bytes::ByteReader h(header);
+    LevelSummary summary;
+    u32 include_count = 0;
+    if (h.ReadU32(&summary.entity_count) != bytes::ByteError::Ok ||
+        h.ReadU32(&summary.record_count) != bytes::ByteError::Ok ||
+        h.ReadU32(&summary.reference_count) != bytes::ByteError::Ok ||
+        h.ReadU32(&include_count) != bytes::ByteError::Ok)
+    {
+        return Status::Make(ErrorCode::Corrupt, "the level's header is truncated");
+    }
+    if (summary.record_count >
+        static_cast<u64>(summary.entity_count) * storage::CodecLimits().max_components_per_entity)
+    {
+        return Status::Make(ErrorCode::Corrupt, "the level's record count is more than its entities can hold");
+    }
+    if (summary.entity_count > kMaxLevelEntities ||
+        table.Size() != static_cast<u64>(summary.entity_count) * kLevelEntityEntryBytes ||
+        refs.Size() != static_cast<u64>(summary.reference_count) * kLevelReferenceEntryBytes)
+    {
+        return Status::Make(ErrorCode::Corrupt, "a level section does not have the size its counts give");
+    }
+    // The entity table must tile the containers section: its last entry ends where the section ends.
+    u64 expected_end = 0;
+    if (summary.entity_count != 0)
+    {
+        bytes::ByteReader last(
+            ByteSpan(table.Data() + (summary.entity_count - 1) * kLevelEntityEntryBytes, kLevelEntityEntryBytes));
+        u64 key_high = 0;
+        u64 key_low = 0;
+        u64 offset = 0;
+        u32 size = 0;
+        if (last.ReadU64(&key_high) != bytes::ByteError::Ok || last.ReadU64(&key_low) != bytes::ByteError::Ok ||
+            last.ReadU64(&offset) != bytes::ByteError::Ok || last.ReadU32(&size) != bytes::ByteError::Ok)
+        {
+            return Status::Make(ErrorCode::Corrupt, "the level's entity table is truncated");
+        }
+        expected_end = offset + size;
+    }
+    if (expected_end != containers.Size())
+    {
+        return Status::Make(ErrorCode::Corrupt, "the entity containers do not fill their section");
+    }
+    u32 includes = 0;
+    for (usize i = 0; i < reader.DependencyCount(); ++i)
+    {
+        const Dependency d = reader.DependencyAt(i);
+        LevelResource resource;
+        resource.id = d.id;
+        resource.type = d.type;
+        resource.type_version = d.type_version;
+        resource.roles = d.role;
+        summary.resources.Push(resource);
+        includes += (d.role & kLevelRoleInclude) != 0 ? 1u : 0u;
+    }
+    if (includes != include_count)
+    {
+        return Status::Make(ErrorCode::Corrupt, "the include count disagrees with the dependency list");
+    }
+    *out = static_cast<LevelSummary&&>(summary);
+    return Status::Success();
+}
+
 Status ParseLevelBlob(ByteSpan bytes, const TypeRegistry& types, const storage::ComponentRegistry& registry,
                       LevelData* out, ResourceId* id_out, const storage::CodecLimits& limits)
 {

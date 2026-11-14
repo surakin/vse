@@ -526,3 +526,54 @@ entity lamp key @0000000000000000000000000000002a
 `id` comes first (`asset_mint adopt` writes it). `entity NAME` starts an entity; its key is derived from the level's id and the name (`asset::LevelEntityKey`), so the same text always gives the same keys and two levels may use one name, and `key @HEX32` pins one. `component TYPE` starts a record named as the registry names it, and `FIELD = VALUE` lines set its fields: the names and kinds come from the registry, so a new component needs no change to the parser, and a field left out keeps the value of a default-constructed component. `parent NAME` links the entity to its parent. `skeleton PATH` and `animation PATH [loop|once] [speed X]` are shorthand for the `skeleton_instance` and `animation_player` components; the printer always writes the long form. Includes come before the first entity and may not form a cycle.
 
 The minter refuses with the line and the entity or field: an unknown component or field (listing the registry's names), a value that does not fit its field, a path that does not exist, a resource of another type than the field declares (a material where a mesh is wanted), a null in a field that is not nullable, a `parent` that is nowhere, an include that is not a level or that includes this level again, and a clip made for another skeleton than the entity's. It then loads the result into a scratch world the way the loader will. The printer writes entities in name order (unnamed ones last, by key) and the components in the order they are stored, so a level printed, minted and printed again is byte-identical, and `asset::FormatWorld` prints a loaded world as the same text.
+
+## The resource manager
+
+`asset::ResourceManager` is how a program asks for a resource: by id, getting a handle, never knowing which backend served it. It owns the mount table (Day 315), the load buffer pool and a cache of loaded resources. `Mount` borrows a backend, `MountPath` opens a directory of loose blobs or a pak file and keeps it, and `MountFromSettings` mounts every entry of `assets.mounts` (`PREFIX=PATH` separated by `;`, later entries win). `Load<T>(id, &handle)` reads the blob into one aligned buffer from the pool, checks its container and version, loads its **closure first** and then calls the loader registered for the type; `LoadPath<T>` resolves a path through the mounts' tables first.
+
+The closure follows only the dependencies the blob declares, each of the type and version the declaration says. The handle is published only when every one of them loaded, so a resource is never half loaded: a missing member is `MissingDependency` (the `LoadFailure` names the chain, `/levels/a -> /materials/m -> /textures/t`, with paths where the mounts know them), a member of another type or version is `DependencyTypeMismatch` (this is what a loose file shadowing a pak entry with the wrong content looks like), a cycle in hostile content is `DependencyCycle`, and a blob that is not the current version is `UnsupportedVersion`, naming `asset_mint remint`, counted in `Stats().rejected_old_version`. A loaded resource holds a reference on each of its dependencies, so one cannot go while a dependent is loaded: `Unload` answers `InUse` and names the dependents, and `Unload(id, true)` takes them with it (their handles go stale). The same answer is what `HostMemoryBackend` asks for through `InUseQuery()`, so it refuses to replace or remove a resource something loaded depends on.
+
+A handle is an owning, reference-counted reference with a generation: a copy adds one, the last one frees the resource unless it is pinned (`Pin`, `Unpin`), and a handle whose resource was unloaded reads as invalid, never as the resource that took its slot. `handle.Get()` is the loaded value; it stays valid while a handle exists and until `PollChanges` reloads the resource. `PollChanges` takes the changes the mounts report (a watched directory, the memory backend) and reloads each changed resource **with its dependents, atomically**: the new objects are made first, the closure rules are checked again, and they replace the old ones only when all of that succeeded; otherwise the old version stays loaded and the result says why.
+
+There is no silent fallback. A missing or invalid resource returns the status and no handle. Behind the development setting `assets.allow_fallbacks` (default off), a type with a registered fallback blob (`RegisterFallback`) gets it instead of a failure, logged and counted in `Stats().fallbacks_used`; a fallback never stands in for a dependency, so a closure with a missing member fails whole. `Stats()` also counts loads, cache hits, resident bytes, reads per mount, and `load_conversions`, the copies a loader made beyond the one read into the aligned buffer: it is zero for minted data, and a test asserts it. `assets.verify_on_load` (default off) hashes every blob as it loads, `assets.cache_bytes` bounds the resident bytes (a load past it is `LimitExceeded`; nothing is evicted behind a handle's back).
+
+A loader turns a blob into an object of its C++ type (`RegisterLoader<T>(function)`, `ResourceTraits<T>` names the resource type). `asset::RegisterCpuLoaders` registers the ones that need no GPU: skeletons and clips and meshes and textures as their views over the manager's buffer (so a load copies nothing), materials as their description, levels as their summary. A clip is published only when the skeleton it was made for is loaded and its hash and joint count match, and a skinned mesh likewise (`DependencyTypeMismatch`); a later registration for a type replaces the earlier one, which is how the GPU-backed loaders of Day 329 take over.
+
+```cpp compile run standalone
+#include "asset/cpu_loaders.h"
+#include "asset/level.h"
+#include "asset/memory_backend.h"
+#include "asset/resource_manager.h"
+#include "os/console.h"
+#include "storage/builtin_components.h"
+
+using namespace engine_placeholder;
+
+int main() {
+    asset::TypeRegistry types;
+    storage::ComponentRegistry registry;
+    if (storage::RegisterBuiltinComponents(&registry).Failed()) return 1;
+
+    // A level with no entities, made in memory, in a backend.
+    Vector<byte> blob;
+    if (asset::BuildLevelBlob(types, registry, asset::ResourceId::FromValue(7), asset::LevelData(), &blob).Failed()) return 1;
+    asset::HostMemoryBackend backend(types, u64{1} << 20);
+    if (backend.Add(asset::ResourceId::FromValue(7), ByteSpan(blob.Data(), blob.Size())).Failed()) return 1;
+
+    asset::ManagerConfig config;
+    config.buffer_pool_bytes = u64{8} << 20;
+    asset::ResourceManager manager(types, config);
+    asset::RegisterCpuLoaders(&manager);
+    if (manager.Mount(StringView("/"), &backend, 0).Failed()) return 1;
+
+    asset::Handle<asset::LevelSummary> level;
+    if (manager.Load<asset::LevelSummary>(asset::ResourceId::FromValue(7), &level).Failed()) return 1;
+    const asset::ResourceStats stats = manager.Stats();
+    os::Print("%u entities, %u loaded, %u conversions\n", level.Get()->entity_count, static_cast<unsigned>(stats.resident),
+              static_cast<unsigned>(stats.load_conversions));
+    return stats.resident == 1 && stats.load_conversions == 0 ? 0 : 1;
+}
+```
+```output
+0 entities, 1 loaded, 0 conversions
+```

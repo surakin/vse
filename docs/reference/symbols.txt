@@ -4430,11 +4430,17 @@ net::UdpTransport::Counters() const	function	net	net-udptransport-counters-const
 net::UdpTransport::HandshakeLimiterCounters() const	function	net	net-udptransport-handshakelimitercounters-const	net.md	engine/net/udp_transport.h:232
 asset::kContainerVersion	variable	asset	asset-kcontainerversion	asset.md	engine/asset/asset_module.h:16
 asset::CurrentContainerVersion()	function	asset	asset-currentcontainerversion	asset.md	engine/asset/asset_module.h:20
-asset::RegisterAssetSettings(settings::Registry*)	function	asset	asset-registerassetsettings-settings-registry-star	asset.md	engine/asset/asset_settings.h:17
-asset::BufferPoolBytesFromSettings(const settings::Registry&)	function	asset	asset-bufferpoolbytesfromsettings-const-settings-registry-amp	asset.md	engine/asset/asset_settings.h:23
-asset::MemoryBackendBytesFromSettings(const settings::Registry&)	function	asset	asset-memorybackendbytesfromsettings-const-settings-registry-amp	asset.md	engine/asset/asset_settings.h:29
-asset::AnimRotationErrorDegreesFromSettings(const settings::Registry&)	function	asset	asset-animrotationerrordegreesfromsettings-const-settings-registry-amp	asset.md	engine/asset/asset_settings.h:36
-asset::AnimTranslationErrorFromSettings(const settings::Registry&)	function	asset	asset-animtranslationerrorfromsettings-const-settings-registry-amp	asset.md	engine/asset/asset_settings.h:43
+asset::RegisterAssetSettings(settings::Registry*)	function	asset	asset-registerassetsettings-settings-registry-star	asset.md	engine/asset/asset_settings.h:20
+asset::BufferPoolBytesFromSettings(const settings::Registry&)	function	asset	asset-bufferpoolbytesfromsettings-const-settings-registry-amp	asset.md	engine/asset/asset_settings.h:26
+asset::MemoryBackendBytesFromSettings(const settings::Registry&)	function	asset	asset-memorybackendbytesfromsettings-const-settings-registry-amp	asset.md	engine/asset/asset_settings.h:32
+asset::AnimRotationErrorDegreesFromSettings(const settings::Registry&)	function	asset	asset-animrotationerrordegreesfromsettings-const-settings-registry-amp	asset.md	engine/asset/asset_settings.h:39
+asset::AnimTranslationErrorFromSettings(const settings::Registry&)	function	asset	asset-animtranslationerrorfromsettings-const-settings-registry-amp	asset.md	engine/asset/asset_settings.h:46
+asset::RegisterManagerSettings(settings::Registry*)	function	asset	asset-registermanagersettings-settings-registry-star	asset.md	engine/asset/asset_settings.h:57
+asset::MountSpec	struct	asset	asset-mountspec	asset.md	engine/asset/asset_settings.h:63
+asset::MountSpec::prefix	variable	asset	asset-mountspec-prefix	asset.md	engine/asset/asset_settings.h:65
+asset::MountSpec::path	variable	asset	asset-mountspec-path	asset.md	engine/asset/asset_settings.h:66
+asset::MountSpec::priority	variable	asset	asset-mountspec-priority	asset.md	engine/asset/asset_settings.h:67
+asset::MountSpecsFromSettings(const settings::Registry&,Vector<MountSpec>*)	function	asset	asset-mountspecsfromsettings-const-settings-registry-amp-vector-lt-mountspec-gt-star	asset.md	engine/asset/asset_settings.h:78
 asset::BackendCapability	enum	asset	asset-backendcapability	asset.md	engine/asset/backend.h:23
 asset::kBackendRanged	enumerator	asset	asset-kbackendranged	asset.md	engine/asset/backend.h:25
 asset::kBackendAsync	enumerator	asset	asset-kbackendasync	asset.md	engine/asset/backend.h:26
@@ -4642,6 +4648,25 @@ asset::ContentHasher::Update(ByteSpan)	function	asset	asset-contenthasher-update
 asset::ContentHasher::Finish()	function	asset	asset-contenthasher-finish	asset.md	engine/asset/content_hash.h:55
 asset::ContentHasher::Reset()	function	asset	asset-contenthasher-reset	asset.md	engine/asset/content_hash.h:59
 asset::HashBytes(ByteSpan)	function	asset	asset-hashbytes-bytespan	asset.md	engine/asset/content_hash.h:74
+asset::ResourceTraits<SkeletonView>	struct	asset	asset-resourcetraits-lt-skeletonview-gt	asset.md	engine/asset/cpu_loaders.h:20
+asset::ResourceTraits<SkeletonView>::kType	variable	asset	asset-resourcetraits-lt-skeletonview-gt-ktype	asset.md	engine/asset/cpu_loaders.h:22
+asset::ResourceTraits<SkeletonView>::kKind	variable	asset	asset-resourcetraits-lt-skeletonview-gt-kkind	asset.md	engine/asset/cpu_loaders.h:23
+asset::ResourceTraits<ClipView>	struct	asset	asset-resourcetraits-lt-clipview-gt	asset.md	engine/asset/cpu_loaders.h:28
+asset::ResourceTraits<ClipView>::kType	variable	asset	asset-resourcetraits-lt-clipview-gt-ktype	asset.md	engine/asset/cpu_loaders.h:30
+asset::ResourceTraits<ClipView>::kKind	variable	asset	asset-resourcetraits-lt-clipview-gt-kkind	asset.md	engine/asset/cpu_loaders.h:31
+asset::ResourceTraits<MeshView>	struct	asset	asset-resourcetraits-lt-meshview-gt	asset.md	engine/asset/cpu_loaders.h:36
+asset::ResourceTraits<MeshView>::kType	variable	asset	asset-resourcetraits-lt-meshview-gt-ktype	asset.md	engine/asset/cpu_loaders.h:38
+asset::ResourceTraits<MeshView>::kKind	variable	asset	asset-resourcetraits-lt-meshview-gt-kkind	asset.md	engine/asset/cpu_loaders.h:39
+asset::ResourceTraits<TextureView>	struct	asset	asset-resourcetraits-lt-textureview-gt	asset.md	engine/asset/cpu_loaders.h:44
+asset::ResourceTraits<TextureView>::kType	variable	asset	asset-resourcetraits-lt-textureview-gt-ktype	asset.md	engine/asset/cpu_loaders.h:46
+asset::ResourceTraits<TextureView>::kKind	variable	asset	asset-resourcetraits-lt-textureview-gt-kkind	asset.md	engine/asset/cpu_loaders.h:47
+asset::ResourceTraits<MaterialAssetData>	struct	asset	asset-resourcetraits-lt-materialassetdata-gt	asset.md	engine/asset/cpu_loaders.h:52
+asset::ResourceTraits<MaterialAssetData>::kType	variable	asset	asset-resourcetraits-lt-materialassetdata-gt-ktype	asset.md	engine/asset/cpu_loaders.h:54
+asset::ResourceTraits<MaterialAssetData>::kKind	variable	asset	asset-resourcetraits-lt-materialassetdata-gt-kkind	asset.md	engine/asset/cpu_loaders.h:55
+asset::ResourceTraits<LevelSummary>	struct	asset	asset-resourcetraits-lt-levelsummary-gt	asset.md	engine/asset/cpu_loaders.h:60
+asset::ResourceTraits<LevelSummary>::kType	variable	asset	asset-resourcetraits-lt-levelsummary-gt-ktype	asset.md	engine/asset/cpu_loaders.h:62
+asset::ResourceTraits<LevelSummary>::kKind	variable	asset	asset-resourcetraits-lt-levelsummary-gt-kkind	asset.md	engine/asset/cpu_loaders.h:63
+asset::RegisterCpuLoaders(ResourceManager*)	function	asset	asset-registercpuloaders-resourcemanager-star	asset.md	engine/asset/cpu_loaders.h:72
 asset::FaultOp	enum	asset	asset-faultop	asset.md	engine/asset/faulty_backend.h:14
 asset::FaultOp::Stat	enumerator	asset	asset-faultop-stat	asset.md	engine/asset/faulty_backend.h:16
 asset::FaultOp::Open	enumerator	asset	asset-faultop-open	asset.md	engine/asset/faulty_backend.h:17
@@ -4703,9 +4728,15 @@ asset::LevelData	struct	asset	asset-leveldata	asset.md	engine/asset/level.h:129
 asset::LevelData::entities	variable	asset	asset-leveldata-entities	asset.md	engine/asset/level.h:131
 asset::LevelData::resources	variable	asset	asset-leveldata-resources	asset.md	engine/asset/level.h:132
 asset::LevelData::references	variable	asset	asset-leveldata-references	asset.md	engine/asset/level.h:133
-asset::BuildLevelBlob(const TypeRegistry&,const storage::ComponentRegistry&,ResourceId,const LevelData&,Vector<byte>*,u32,const storage::CodecLimits&)	function	asset	asset-buildlevelblob-const-typeregistry-amp-const-storage-componentregistry-amp-resourceid-const-leveldata-amp-vector-lt-byte-gt-star-u32-const-storage-codeclimits-amp	asset.md	engine/asset/level.h:153
-asset::ParseLevelBlob(ByteSpan,const TypeRegistry&,const storage::ComponentRegistry&,LevelData*,ResourceId*,const storage::CodecLimits&)	function	asset	asset-parselevelblob-bytespan-const-typeregistry-amp-const-storage-componentregistry-amp-leveldata-star-resourceid-star-const-storage-codeclimits-amp	asset.md	engine/asset/level.h:171
-asset::LoadLevelBlob(ByteSpan,const TypeRegistry&,const storage::ComponentRegistry&,ecs::World&,storage::KeyIndex&,LevelData*,const storage::CodecLimits&)	function	asset	asset-loadlevelblob-bytespan-const-typeregistry-amp-const-storage-componentregistry-amp-ecs-world-amp-storage-keyindex-amp-leveldata-star-const-storage-codeclimits-amp	asset.md	engine/asset/level.h:191
+asset::LevelSummary	struct	asset	asset-levelsummary	asset.md	engine/asset/level.h:141
+asset::LevelSummary::entity_count	variable	asset	asset-levelsummary-entity-count	asset.md	engine/asset/level.h:143
+asset::LevelSummary::record_count	variable	asset	asset-levelsummary-record-count	asset.md	engine/asset/level.h:144
+asset::LevelSummary::reference_count	variable	asset	asset-levelsummary-reference-count	asset.md	engine/asset/level.h:145
+asset::LevelSummary::resources	variable	asset	asset-levelsummary-resources	asset.md	engine/asset/level.h:146
+asset::ReadLevelSummary(ByteSpan,const TypeRegistry&,LevelSummary*)	function	asset	asset-readlevelsummary-bytespan-const-typeregistry-amp-levelsummary-star	asset.md	engine/asset/level.h:162
+asset::BuildLevelBlob(const TypeRegistry&,const storage::ComponentRegistry&,ResourceId,const LevelData&,Vector<byte>*,u32,const storage::CodecLimits&)	function	asset	asset-buildlevelblob-const-typeregistry-amp-const-storage-componentregistry-amp-resourceid-const-leveldata-amp-vector-lt-byte-gt-star-u32-const-storage-codeclimits-amp	asset.md	engine/asset/level.h:181
+asset::ParseLevelBlob(ByteSpan,const TypeRegistry&,const storage::ComponentRegistry&,LevelData*,ResourceId*,const storage::CodecLimits&)	function	asset	asset-parselevelblob-bytespan-const-typeregistry-amp-const-storage-componentregistry-amp-leveldata-star-resourceid-star-const-storage-codeclimits-amp	asset.md	engine/asset/level.h:199
+asset::LoadLevelBlob(ByteSpan,const TypeRegistry&,const storage::ComponentRegistry&,ecs::World&,storage::KeyIndex&,LevelData*,const storage::CodecLimits&)	function	asset	asset-loadlevelblob-bytespan-const-typeregistry-amp-const-storage-componentregistry-amp-ecs-world-amp-storage-keyindex-amp-leveldata-star-const-storage-codeclimits-amp	asset.md	engine/asset/level.h:219
 asset::LoadBuffer	class	asset	asset-loadbuffer	asset.md	engine/asset/load_buffer_pool.h:22
 asset::LoadBuffer::LoadBuffer()	function	asset	asset-loadbuffer-loadbuffer	asset.md	engine/asset/load_buffer_pool.h:25
 asset::LoadBuffer::LoadBuffer(const LoadBuffer&)	function	asset	asset-loadbuffer-loadbuffer-const-loadbuffer-amp	asset.md	engine/asset/load_buffer_pool.h:26
@@ -4792,8 +4823,8 @@ asset::MaterialAssetData::params	variable	asset	asset-materialassetdata-params	a
 asset::MaterialAssetData::textures	variable	asset	asset-materialassetdata-textures	asset.md	engine/asset/material.h:145
 asset::MaterialAssetData::samplers	variable	asset	asset-materialassetdata-samplers	asset.md	engine/asset/material.h:146
 asset::MakeMaterialName(const char*,usize,MaterialName*)	function	asset	asset-makematerialname-const-char-star-usize-materialname-star	asset.md	engine/asset/material.h:156
-asset::BuildMaterialBlob(const TypeRegistry&,ResourceId,const MaterialAssetData&,Vector<byte>*,u32)	function	asset	asset-buildmaterialblob-const-typeregistry-amp-resourceid-const-materialassetdata-amp-vector-lt-byte-gt-star-u32	asset.md	engine/asset/material.h:169
-asset::LoadMaterialBlob(ByteSpan,const TypeRegistry&,MaterialAssetData*,ResourceId*)	function	asset	asset-loadmaterialblob-bytespan-const-typeregistry-amp-materialassetdata-star-resourceid-star	asset.md	engine/asset/material.h:182
+asset::BuildMaterialBlob(const TypeRegistry&,ResourceId,const MaterialAssetData&,Vector<byte>*,u32)	function	asset	asset-buildmaterialblob-const-typeregistry-amp-resourceid-const-materialassetdata-amp-vector-lt-byte-gt-star-u32	asset.md	engine/asset/material.h:170
+asset::LoadMaterialBlob(ByteSpan,const TypeRegistry&,MaterialAssetData*,ResourceId*)	function	asset	asset-loadmaterialblob-bytespan-const-typeregistry-amp-materialassetdata-star-resourceid-star	asset.md	engine/asset/material.h:183
 asset::ReleaseBytes	alias	asset	asset-releasebytes	asset.md	engine/asset/memory_backend.h:22
 asset::ResourceInUseQuery	struct	asset	asset-resourceinusequery	asset.md	engine/asset/memory_backend.h:29
 asset::ResourceInUseQuery::dependents	variable	asset	asset-resourceinusequery-dependents	asset.md	engine/asset/memory_backend.h:32
@@ -5007,6 +5038,94 @@ asset::ParseResourceId(StringView,ResourceId*)	function	asset	asset-parseresourc
 asset::kMaxPathBytes	variable	asset	asset-kmaxpathbytes	asset.md	engine/asset/resource_id.h:78
 asset::kMaxPathSegmentBytes	variable	asset	asset-kmaxpathsegmentbytes	asset.md	engine/asset/resource_id.h:80
 asset::NormalizePath(StringView,String<HeapAllocator>*)	function	asset	asset-normalizepath-stringview-string-lt-heapallocator-gt-star	asset.md	engine/asset/resource_id.h:92
+asset::ObjectKey()	function	asset	asset-objectkey	asset.md	engine/asset/resource_manager.h:57
+asset::LoadedObject	class	asset	asset-loadedobject	asset.md	engine/asset/resource_manager.h:66
+asset::LoadedObject::~LoadedObject()	function	asset	asset-loadedobject-tilde-loadedobject	asset.md	engine/asset/resource_manager.h:69
+asset::LoadedObject::Key() const	function	asset	asset-loadedobject-key-const	asset.md	engine/asset/resource_manager.h:73
+asset::LoadedValue	class	asset	asset-loadedvalue	asset.md	engine/asset/resource_manager.h:84
+asset::LoadedValue::LoadedValue()	function	asset	asset-loadedvalue-loadedvalue	asset.md	engine/asset/resource_manager.h:88
+asset::LoadedValue::value	variable	asset	asset-loadedvalue-value	asset.md	engine/asset/resource_manager.h:90
+asset::LoadContext	class	asset	asset-loadcontext	asset.md	engine/asset/resource_manager.h:98
+asset::LoadContext::Id() const	function	asset	asset-loadcontext-id-const	asset.md	engine/asset/resource_manager.h:102
+asset::LoadContext::Bytes() const	function	asset	asset-loadcontext-bytes-const	asset.md	engine/asset/resource_manager.h:104
+asset::LoadContext::Blob() const	function	asset	asset-loadcontext-blob-const	asset.md	engine/asset/resource_manager.h:106
+asset::LoadContext::Types() const	function	asset	asset-loadcontext-types-const	asset.md	engine/asset/resource_manager.h:108
+asset::LoadContext::Dependency(ResourceId) const	function	asset	asset-loadcontext-dependency-resourceid-const	asset.md	engine/asset/resource_manager.h:114
+asset::LoadContext::CountConversion() const	function	asset	asset-loadcontext-countconversion-const	asset.md	engine/asset/resource_manager.h:125
+asset::LoaderFn	alias	asset	asset-loaderfn	asset.md	engine/asset/resource_manager.h:141
+asset::LoaderBase	class	asset	asset-loaderbase	asset.md	engine/asset/resource_manager.h:147
+asset::LoaderBase::~LoaderBase()	function	asset	asset-loaderbase-tilde-loaderbase	asset.md	engine/asset/resource_manager.h:150
+asset::LoaderBase::Key() const	function	asset	asset-loaderbase-key-const	asset.md	engine/asset/resource_manager.h:154
+asset::LoaderBase::Load(const LoadContext&,UniquePtr<LoadedObject>*)	function	asset	asset-loaderbase-load-const-loadcontext-amp-uniqueptr-lt-loadedobject-gt-star	asset.md	engine/asset/resource_manager.h:159
+asset::TypedLoader	class	asset	asset-typedloader	asset.md	engine/asset/resource_manager.h:166
+asset::TypedLoader::TypedLoader(LoaderFn<T>,void*)	function	asset	asset-typedloader-typedloader-loaderfn-lt-t-gt-void-star	asset.md	engine/asset/resource_manager.h:172
+asset::TypedLoader::Key() const	function	asset	asset-typedloader-key-const	asset.md	engine/asset/resource_manager.h:173
+asset::TypedLoader::Load(const LoadContext&,UniquePtr<LoadedObject>*)	function	asset	asset-typedloader-load-const-loadcontext-amp-uniqueptr-lt-loadedobject-gt-star	asset.md	engine/asset/resource_manager.h:174
+asset::ManagerConfig	struct	asset	asset-managerconfig	asset.md	engine/asset/resource_manager.h:190
+asset::ManagerConfig::buffer_pool_bytes	variable	asset	asset-managerconfig-buffer-pool-bytes	asset.md	engine/asset/resource_manager.h:192
+asset::ManagerConfig::cache_bytes	variable	asset	asset-managerconfig-cache-bytes	asset.md	engine/asset/resource_manager.h:193
+asset::ManagerConfig::allow_fallbacks	variable	asset	asset-managerconfig-allow-fallbacks	asset.md	engine/asset/resource_manager.h:194
+asset::ManagerConfig::verify_on_load	variable	asset	asset-managerconfig-verify-on-load	asset.md	engine/asset/resource_manager.h:195
+asset::ManagerConfig::target	variable	asset	asset-managerconfig-target	asset.md	engine/asset/resource_manager.h:196
+asset::ManagerConfigFromSettings(const settings::Registry&)	function	asset	asset-managerconfigfromsettings-const-settings-registry-amp	asset.md	engine/asset/resource_manager.h:204
+asset::MountReads	struct	asset	asset-mountreads	asset.md	engine/asset/resource_manager.h:209
+asset::MountReads::mount	variable	asset	asset-mountreads-mount	asset.md	engine/asset/resource_manager.h:211
+asset::MountReads::reads	variable	asset	asset-mountreads-reads	asset.md	engine/asset/resource_manager.h:212
+asset::MountReads::bytes	variable	asset	asset-mountreads-bytes	asset.md	engine/asset/resource_manager.h:213
+asset::ResourceStats	struct	asset	asset-resourcestats	asset.md	engine/asset/resource_manager.h:219
+asset::ResourceStats::loads	variable	asset	asset-resourcestats-loads	asset.md	engine/asset/resource_manager.h:221
+asset::ResourceStats::cache_hits	variable	asset	asset-resourcestats-cache-hits	asset.md	engine/asset/resource_manager.h:222
+asset::ResourceStats::bytes_resident	variable	asset	asset-resourcestats-bytes-resident	asset.md	engine/asset/resource_manager.h:223
+asset::ResourceStats::resident	variable	asset	asset-resourcestats-resident	asset.md	engine/asset/resource_manager.h:224
+asset::ResourceStats::fallbacks_used	variable	asset	asset-resourcestats-fallbacks-used	asset.md	engine/asset/resource_manager.h:225
+asset::ResourceStats::load_conversions	variable	asset	asset-resourcestats-load-conversions	asset.md	engine/asset/resource_manager.h:226
+asset::ResourceStats::rejected_old_version	variable	asset	asset-resourcestats-rejected-old-version	asset.md	engine/asset/resource_manager.h:227
+asset::ResourceStats::bytes_read	variable	asset	asset-resourcestats-bytes-read	asset.md	engine/asset/resource_manager.h:228
+asset::ResourceStats::read_nanos	variable	asset	asset-resourcestats-read-nanos	asset.md	engine/asset/resource_manager.h:229
+asset::ResourceStats::mounts	variable	asset	asset-resourcestats-mounts	asset.md	engine/asset/resource_manager.h:230
+asset::LoadFailure	struct	asset	asset-loadfailure	asset.md	engine/asset/resource_manager.h:237
+asset::LoadFailure::resource	variable	asset	asset-loadfailure-resource	asset.md	engine/asset/resource_manager.h:239
+asset::LoadFailure::chain	variable	asset	asset-loadfailure-chain	asset.md	engine/asset/resource_manager.h:240
+asset::ReloadResult	struct	asset	asset-reloadresult	asset.md	engine/asset/resource_manager.h:246
+asset::ReloadResult::id	variable	asset	asset-reloadresult-id	asset.md	engine/asset/resource_manager.h:248
+asset::ReloadResult::status	variable	asset	asset-reloadresult-status	asset.md	engine/asset/resource_manager.h:249
+asset::ReloadResult::reloaded	variable	asset	asset-reloadresult-reloaded	asset.md	engine/asset/resource_manager.h:250
+asset::HandleBase	class	asset	asset-handlebase	asset.md	engine/asset/resource_manager.h:257
+asset::HandleBase::HandleBase()	function	asset	asset-handlebase-handlebase	asset.md	engine/asset/resource_manager.h:260
+asset::HandleBase::HandleBase(const HandleBase&)	function	asset	asset-handlebase-handlebase-const-handlebase-amp	asset.md	engine/asset/resource_manager.h:262
+asset::HandleBase::operator=(const HandleBase&)	function	asset	asset-handlebase-operator-eq-const-handlebase-amp	asset.md	engine/asset/resource_manager.h:264
+asset::HandleBase::HandleBase(HandleBase&&) noexcept	function	asset	asset-handlebase-handlebase-handlebase-amp-amp-noexcept	asset.md	engine/asset/resource_manager.h:266
+asset::HandleBase::operator=(HandleBase&&) noexcept	function	asset	asset-handlebase-operator-eq-handlebase-amp-amp-noexcept	asset.md	engine/asset/resource_manager.h:268
+asset::HandleBase::~HandleBase()	function	asset	asset-handlebase-tilde-handlebase	asset.md	engine/asset/resource_manager.h:270
+asset::HandleBase::Reset()	function	asset	asset-handlebase-reset	asset.md	engine/asset/resource_manager.h:273
+asset::HandleBase::IsValid() const	function	asset	asset-handlebase-isvalid-const	asset.md	engine/asset/resource_manager.h:277
+asset::HandleBase::Id() const	function	asset	asset-handlebase-id-const	asset.md	engine/asset/resource_manager.h:281
+asset::Handle	class	asset	asset-handle	asset.md	engine/asset/resource_manager.h:296
+asset::Handle::Get() const	function	asset	asset-handle-get-const	asset.md	engine/asset/resource_manager.h:304
+asset::ResourceManager	class	asset	asset-resourcemanager	asset.md	engine/asset/resource_manager.h:314
+asset::ResourceManager::ResourceManager(const TypeRegistry&,const ManagerConfig&)	function	asset	asset-resourcemanager-resourcemanager-const-typeregistry-amp-const-managerconfig-amp	asset.md	engine/asset/resource_manager.h:321
+asset::ResourceManager::ResourceManager(const ResourceManager&)	function	asset	asset-resourcemanager-resourcemanager-const-resourcemanager-amp	asset.md	engine/asset/resource_manager.h:322
+asset::ResourceManager::operator=(const ResourceManager&)	function	asset	asset-resourcemanager-operator-eq-const-resourcemanager-amp	asset.md	engine/asset/resource_manager.h:323
+asset::ResourceManager::~ResourceManager()	function	asset	asset-resourcemanager-tilde-resourcemanager	asset.md	engine/asset/resource_manager.h:325
+asset::ResourceManager::Mount(StringView,ResourceBackend*,i32,MountId*)	function	asset	asset-resourcemanager-mount-stringview-resourcebackend-star-i32-mountid-star	asset.md	engine/asset/resource_manager.h:335
+asset::ResourceManager::MountOwned(StringView,UniquePtr<ResourceBackend>,i32,MountId*)	function	asset	asset-resourcemanager-mountowned-stringview-uniqueptr-lt-resourcebackend-gt-i32-mountid-star	asset.md	engine/asset/resource_manager.h:340
+asset::ResourceManager::MountPath(StringView,const io::Path&,i32,MountId*)	function	asset	asset-resourcemanager-mountpath-stringview-const-io-path-amp-i32-mountid-star	asset.md	engine/asset/resource_manager.h:347
+asset::ResourceManager::MountFromSettings(const settings::Registry&)	function	asset	asset-resourcemanager-mountfromsettings-const-settings-registry-amp	asset.md	engine/asset/resource_manager.h:351
+asset::ResourceManager::Mounts()	function	asset	asset-resourcemanager-mounts	asset.md	engine/asset/resource_manager.h:353
+asset::ResourceManager::RegisterLoader(LoaderFn<T>,void*)	function	asset	asset-resourcemanager-registerloader-loaderfn-lt-t-gt-void-star	asset.md	engine/asset/resource_manager.h:360
+asset::ResourceManager::RegisterFallback(ResourceType,ByteSpan)	function	asset	asset-resourcemanager-registerfallback-resourcetype-bytespan	asset.md	engine/asset/resource_manager.h:373
+asset::ResourceManager::Load(ResourceId,Handle<T>*,LoadFailure*)	function	asset	asset-resourcemanager-load-resourceid-handle-lt-t-gt-star-loadfailure-star	asset.md	engine/asset/resource_manager.h:389
+asset::ResourceManager::LoadPath(StringView,Handle<T>*,LoadFailure*)	function	asset	asset-resourcemanager-loadpath-stringview-handle-lt-t-gt-star-loadfailure-star	asset.md	engine/asset/resource_manager.h:397
+asset::ResourceManager::Unload(ResourceId,bool,Vector<ResourceId>*)	function	asset	asset-resourcemanager-unload-resourceid-bool-vector-lt-resourceid-gt-star	asset.md	engine/asset/resource_manager.h:410
+asset::ResourceManager::Pin(ResourceId)	function	asset	asset-resourcemanager-pin-resourceid	asset.md	engine/asset/resource_manager.h:415
+asset::ResourceManager::Unpin(ResourceId)	function	asset	asset-resourcemanager-unpin-resourceid	asset.md	engine/asset/resource_manager.h:419
+asset::ResourceManager::ResourceInUse(ResourceId,Vector<ResourceId>*) const	function	asset	asset-resourcemanager-resourceinuse-resourceid-vector-lt-resourceid-gt-star-const	asset.md	engine/asset/resource_manager.h:427
+asset::ResourceManager::InUseQuery()	function	asset	asset-resourcemanager-inusequery	asset.md	engine/asset/resource_manager.h:433
+asset::ResourceManager::PollChanges(Vector<ReloadResult>*)	function	asset	asset-resourcemanager-pollchanges-vector-lt-reloadresult-gt-star	asset.md	engine/asset/resource_manager.h:443
+asset::ResourceManager::Stats() const	function	asset	asset-resourcemanager-stats-const	asset.md	engine/asset/resource_manager.h:448
+asset::ResourceManager::LoadedIds(Vector<ResourceId>*) const	function	asset	asset-resourcemanager-loadedids-vector-lt-resourceid-gt-star-const	asset.md	engine/asset/resource_manager.h:453
+asset::ResourceManager::Pool()	function	asset	asset-resourcemanager-pool	asset.md	engine/asset/resource_manager.h:455
+asset::ResourceManager::Types() const	function	asset	asset-resourcemanager-types-const	asset.md	engine/asset/resource_manager.h:457
 asset::kMaxTableEntries	variable	asset	asset-kmaxtableentries	asset.md	engine/asset/resource_table.h:23
 asset::TableEntryView	struct	asset	asset-tableentryview	asset.md	engine/asset/resource_table.h:28
 asset::TableEntryView::path	variable	asset	asset-tableentryview-path	asset.md	engine/asset/resource_table.h:30

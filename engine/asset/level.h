@@ -133,6 +133,34 @@ struct LevelData
     Vector<LevelReference> references;       ///< Filled by the builder and the parser: every non-null use.
 };
 
+/// What the resource manager needs to know about a level without reading its records: the counts and the list of
+/// resources it depends on.
+///
+/// - Thread-safety: thread-compatible plain data.
+/// - Ownership: owns its vector.
+struct LevelSummary
+{
+    u32 entity_count = 0;             ///< Entities in the level.
+    u32 record_count = 0;             ///< Component records over all entities.
+    u32 reference_count = 0;          ///< Entries of the reference table.
+    Vector<LevelResource> resources;  ///< Every distinct resource, in increasing id order.
+};
+
+/// Reads the header and the dependency list of a level blob, checking only the container and the header's own
+/// consistency (the sizes of the sections against the counts, the entity table against the containers' section); the
+/// records are not read. The loader of the resource
+/// manager uses it so that loading a level copies nothing; spawning the level ([[asset::LoadLevelBlob]]) validates the
+/// records.
+///
+/// - Param bytes: the blob.
+/// - Param types: the registry of resource types.
+/// - Param out: replaced by the summary.
+/// - Fails: `Corrupt` for an inconsistent header or section; `UnsupportedVersion` (the message names `asset_mint
+///   remint`) for another container or type version; `TypeMismatch` for a blob of another type; `LimitExceeded` when
+///   memory runs out.
+/// - Ownership: borrows `bytes` for the call; `*out` is replaced.
+Status ReadLevelSummary(ByteSpan bytes, const TypeRegistry& types, LevelSummary* out);
+
 /// Builds a level blob for `id`: validates every entity container against `registry`, finds the references and checks
 /// them against `data.resources`, and writes the sections.
 ///

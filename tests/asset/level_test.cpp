@@ -703,4 +703,41 @@ TEST_CASE("Two entities with one name cannot be printed", "[asset][level]")
     CHECK(Contains(error.message.Data(), "two entities are called 'a'"));
 }
 
+TEST_CASE("The level summary checks its header against its sections", "[asset][level]")
+{
+    Rig rig;
+    Vector<byte> blob;
+    LevelSourceError error;
+    REQUIRE(rig.Mint(kSmall, &blob, &error).Ok());
+    LevelSummary summary;
+    REQUIRE(ReadLevelSummary(AsBytes(blob), rig.types, &summary).Ok());
+    CHECK(summary.entity_count == 3);
+    CHECK(summary.resources.Size() == 4);
+
+    BlobReader reader;
+    REQUIRE(reader.Open(AsBytes(blob), rig.types).Ok());
+    ByteSpan header;
+    REQUIRE(reader.FindSection(16, &header));
+    const usize header_at = static_cast<usize>(header.Data() - blob.Data());
+    // A record count no entity count can hold.
+    Vector<byte> many;
+    for (usize i = 0; i < blob.Size(); ++i)
+    {
+        many.Push(blob[i]);
+    }
+    many[header_at + 7] = 0x7f;
+    CHECK(ReadLevelSummary(AsBytes(many), rig.types, &summary).Is(ErrorCode::Corrupt));
+    // An entity table whose last entry does not end where the containers end.
+    ByteSpan table;
+    REQUIRE(reader.FindSection(17, &table));
+    const usize table_at = static_cast<usize>(table.Data() - blob.Data());
+    Vector<byte> shifted;
+    for (usize i = 0; i < blob.Size(); ++i)
+    {
+        shifted.Push(blob[i]);
+    }
+    shifted[table_at + 2 * 32 + 24] = static_cast<byte>(shifted[table_at + 2 * 32 + 24] + 1);  // the last size
+    CHECK(ReadLevelSummary(AsBytes(shifted), rig.types, &summary).Is(ErrorCode::Corrupt));
+}
+
 }  // namespace engine_placeholder::asset

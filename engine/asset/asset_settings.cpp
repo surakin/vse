@@ -55,6 +55,80 @@ void RegisterAssetSettings(settings::Registry* registry)
             "the largest translation or scale error, relative to the channel's extent, a minted clip may have");
 }
 
+void RegisterManagerSettings(settings::Registry* registry)
+{
+    Declare(registry, settings::MakeInt("assets.cache_bytes", 0, 0, i64(1) << 44), "ENGINE_ASSETS_CACHE_BYTES",
+            "assets-cache-bytes", "Resident resource budget",
+            "the most bytes of resources the manager keeps loaded; a load past it is refused (0 for no limit)");
+    Declare(registry, settings::MakeBool("assets.allow_fallbacks", false), "ENGINE_ASSETS_ALLOW_FALLBACKS",
+            "assets-allow-fallbacks", "Allow fallback resources (development)",
+            "replace a missing or invalid resource of a type that has a fallback by it, logged and counted; off by "
+            "default, because minted data must load");
+    Declare(registry, settings::MakeBool("assets.verify_on_load", false), "ENGINE_ASSETS_VERIFY_ON_LOAD",
+            "assets-verify-on-load", "Verify the content hash of every blob on load (development)",
+            "hash every blob as it is loaded and refuse one that does not match its recorded hash");
+    Declare(registry, settings::MakeText("assets.mounts", ""), "ENGINE_ASSETS_MOUNTS", "assets-mounts",
+            "Resource mounts",
+            "PREFIX=PATH entries separated by ';': a directory of loose blobs or a pak file mounted under the prefix "
+            "(/ when none is written); a later entry wins over an earlier one");
+}
+
+Status MountSpecsFromSettings(const settings::Registry& registry, Vector<MountSpec>* out)
+{
+    const settings::SettingId id = registry.Find(StringView("assets.mounts"));
+    settings::TextSetting text(registry, id);
+    char buffer[4096];
+    const usize length = text.Get(buffer, sizeof(buffer) - 1);
+    if (length >= sizeof(buffer) - 1)
+    {
+        return Status::Make(ErrorCode::LimitExceeded, "assets.mounts is longer than 4095 bytes");
+    }
+    out->Clear();
+    const StringView all(buffer, length);
+    usize pos = 0;
+    while (pos <= all.Length())
+    {
+        usize end = pos;
+        while (end < all.Length() && all[end] != ';')
+        {
+            ++end;
+        }
+        StringView entry = all.Substring(pos, end - pos);
+        pos = end + 1;
+        while (entry.Length() != 0 && (entry[0] == ' ' || entry[0] == '\t'))
+        {
+            entry = entry.Substring(1, entry.Length() - 1);
+        }
+        while (entry.Length() != 0 && (entry[entry.Length() - 1] == ' ' || entry[entry.Length() - 1] == '\t'))
+        {
+            entry = entry.Substring(0, entry.Length() - 1);
+        }
+        if (entry.Length() == 0)
+        {
+            continue;
+        }
+        MountSpec spec;
+        const usize eq = entry.Find(StringView("="));
+        if (eq == entry.Length())
+        {
+            spec.prefix.Append(StringView("/"));
+            spec.path.Append(entry);
+        }
+        else
+        {
+            spec.prefix.Append(entry.Substring(0, eq));
+            spec.path.Append(entry.Substring(eq + 1, entry.Length() - eq - 1));
+        }
+        if (spec.path.Length() == 0)
+        {
+            return Status::Make(ErrorCode::Invalid, "an assets.mounts entry has no path");
+        }
+        spec.priority = static_cast<i32>(out->Size());
+        out->Push(static_cast<MountSpec&&>(spec));
+    }
+    return Status::Success();
+}
+
 u64 BufferPoolBytesFromSettings(const settings::Registry& registry)
 {
     return Read(registry, "assets.buffer_pool_bytes");
