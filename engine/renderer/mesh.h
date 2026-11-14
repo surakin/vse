@@ -65,6 +65,23 @@ static_assert(sizeof(ColorVertex) == 52, "ColorVertex is 52 bytes");
 /// - Thread-safety: thread-safe. A pure function.
 VertexLayoutData ColorVertexLayout();
 
+/// The skinned form of a mesh layout: `base` plus the skin stream in vertex binding 1, joint indices (`UInt8x4`) at
+/// location [[renderer::kSkinJointsLocation]] and weights (`UNorm8x4`) at [[renderer::kSkinWeightsLocation]], 8 bytes
+/// per vertex (`skin_stride`). Rigid layouts are unchanged.
+///
+/// - Param base: a layout without a skin stream.
+/// - Returns: the layout.
+/// - Aborts: `base` already has a skin stream or has no room for two more attributes.
+/// - Thread-safety: thread-safe. A pure function of its argument.
+VertexLayoutData SkinnedVertexLayout(const VertexLayoutData& base);
+
+/// The shader input location of the skin joint indices (vertex binding 1).
+inline constexpr u32 kSkinJointsLocation = 5;
+/// The shader input location of the skin weights (vertex binding 1).
+inline constexpr u32 kSkinWeightsLocation = 6;
+/// Bytes of one vertex of the skin stream.
+inline constexpr u32 kSkinVertexBytes = 8;
+
 /// Geometry on the CPU: interleaved vertex bytes, indices and bounds. Owns its memory.
 ///
 /// A mesh is built once with [[renderer::MeshData::Set]] (or by one of the `Make...Mesh` functions) and is read-only
@@ -108,6 +125,35 @@ public:
     const char* Set(const VertexLayoutData& layout, u32 position_offset, const void* vertices, u32 vertex_count,
                     rhi::IndexType index_type, const void* indices, u32 index_count,
                     rhi::PrimitiveTopology topology = rhi::PrimitiveTopology::TriangleList);
+
+    /// Adds the skin stream of a skinned mesh: eight bytes per vertex, joint indices (`UInt8x4`) then weights
+    /// (`UNorm8x4`), the layout of the mesh blob's skin section. The mesh's layout then carries `skin_stride` 8 and
+    /// the two skin attributes ([[renderer::SkinnedVertexLayout]]). Call it after [[renderer::MeshData::Set]]; a later
+    /// `Set` drops the skin stream.
+    ///
+    /// - Param skin: `VertexCount() * 8` bytes, copied.
+    /// - Param joint_count: the skeleton's joint count; every index of a vertex with a nonzero weight must be below it.
+    /// - Returns: null, or a message (the mesh is empty or already skinned, a weight does not sum to 255, a weighted
+    ///   joint is out of range, out of memory); on failure the mesh is unchanged.
+    /// - Fails: reported through the return value.
+    /// - Ownership: the bytes are copied.
+    /// - Thread-safety: thread-compatible.
+    const char* SetSkin(const void* skin, u32 joint_count);
+
+    /// Returns whether the mesh has a skin stream.
+    /// - Fails: never.
+    bool Skinned() const { return layout_.skin_stride != 0; }
+    /// Returns the skin stream (`VertexCount() * 8` bytes), or null for a rigid mesh.
+    /// - Fails: never.
+    /// - Ownership: the bytes belong to the mesh.
+    const void* SkinBytes() const { return skin_.Data(); }
+    /// Returns the size of the skin stream in bytes (0 for a rigid mesh).
+    /// - Fails: never.
+    u64 SkinByteCount() const { return skin_.Size(); }
+    /// Returns the joint count given to `SetSkin` (0 for a rigid mesh): a palette drawn with the mesh needs at least
+    /// this many matrices.
+    /// - Fails: never.
+    u32 SkinJointCount() const { return skin_joint_count_; }
 
     /// Returns whether the mesh holds geometry.
     /// - Fails: never.
@@ -159,6 +205,8 @@ private:
     VertexLayoutData layout_;
     u32 position_offset_ = 0;
     Vector<byte> vertices_;
+    Vector<byte> skin_;
+    u32 skin_joint_count_ = 0;
     u32 vertex_count_ = 0;
     Vector<byte> indices_;
     u32 index_count_ = 0;
@@ -391,6 +439,15 @@ public:
     rhi::BufferHandle VertexBuffer() const { return vertex_buffer_; }
     /// Returns the index buffer.
     rhi::BufferHandle IndexBuffer() const { return index_buffer_; }
+    /// Returns the skin stream (vertex binding 1), or an invalid handle for a rigid mesh.
+    rhi::BufferHandle SkinBuffer() const { return skin_buffer_; }
+    /// Returns the joint count of the skin stream (0 for a rigid mesh): a palette drawn with the mesh needs at least
+    /// this many matrices.
+    /// - Fails: never.
+    u32 SkinJointCount() const { return skin_joint_count_; }
+    /// Returns whether the mesh has a skin stream.
+    /// - Fails: never.
+    bool Skinned() const { return layout_.skin_stride != 0; }
     /// Returns the number of indices.
     u32 IndexCount() const { return index_count_; }
     /// Returns the number of vertices.
@@ -440,7 +497,7 @@ public:
 
 private:
     bool Upload(rhi::Device* device, const MeshData& data, const char* debug_name, rhi::BufferHandle* vb,
-                rhi::BufferHandle* ib);
+                rhi::BufferHandle* ib, rhi::BufferHandle* sb);
     void MoveFrom(GpuMesh& other);
 
     Source source_;
@@ -452,6 +509,8 @@ private:
     rhi::Device* device_ = nullptr;
     rhi::BufferHandle vertex_buffer_;
     rhi::BufferHandle index_buffer_;
+    rhi::BufferHandle skin_buffer_;
+    u32 skin_joint_count_ = 0;
     u32 vertex_count_ = 0;
     u32 index_count_ = 0;
     rhi::IndexType index_type_ = rhi::IndexType::UInt16;

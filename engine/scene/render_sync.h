@@ -43,6 +43,8 @@ struct SceneSyncReport
     u64 readded = 0;
     /// `SetTransform` calls (only for objects whose matrix really differs).
     u64 transforms_set = 0;
+    /// Joint palettes pointed at a skinned object (a new object, or a palette that moved or changed length).
+    u64 joints_set = 0;
     /// `SetFlags` calls.
     u64 flags_set = 0;
     /// `SetLight` calls.

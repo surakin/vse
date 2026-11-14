@@ -46,11 +46,11 @@ The names refer to renderer objects explained in [The RHI](rhi.md) and [Renderer
 | `Dynamic` | the next frame reads a new parameter | `gbuffer_debug_layer`, `render_scale` |
 | `Swapchain` | recreate the swapchain and what depends on its size or format | `present_mode`, `width`, `height`, `fullscreen`, `swapchain_format`, `hdr` |
 | `PipelineRebuild` | recreate pipelines, material bind groups and passes; the device stays | `shader_quality` |
-| `DeviceReset` | destroy and create the device; every device-dependent object is rebuilt | `adapter`, `validation`, `sync_validation`, `frames_in_flight` |
+| `DeviceReset` | destroy and create the device; every device-dependent object is rebuilt | `adapter`, `validation`, `sync_validation`, `frames_in_flight`, `joint_palette_bytes` |
 
 `render_scale` and `shader_quality` are marked `mechanism_only`: they exist to exercise the mechanism and nothing reads them yet.
 
-`backend` takes `null`, `vulkan`, `dx12` or `auto` (the default: Direct3D 12 on Windows, Vulkan elsewhere). It is the one setting
+`backend` takes `null`, `vulkan`, `dx12` or `auto` (the default: Direct3D 12 on Windows, Vulkan elsewhere). It is, with `joint_palette_bytes` (the size of the joint palette buffers, fixed when the program makes its `FrameResources`), one of the two settings
 that takes effect only when the program starts (`SettingDesc::restart_required`): there is no run-time switch between graphics APIs,
 since a game has no reason to change its API while it runs. A change at run time is not applied: `DiffSettings` lists it in
 `SettingsChange::restart` instead of `changed`, `ResolveSettings` puts it back, and `Renderer::ApplySettings` applies the rest of the
@@ -176,9 +176,9 @@ adapter =
 
 ## Rendering settings in the shared system
 
-`renderer::RegisterSharedSettings(&registry)` (`engine/renderer/shared_settings.h`) declares the 14 built-in settings in a `settings::Registry` as `renderer.backend`, `renderer.adapter`, `renderer.validation`,
+`renderer::RegisterSharedSettings(&registry)` (`engine/renderer/shared_settings.h`) declares the 15 built-in settings in a `settings::Registry` as `renderer.backend`, `renderer.adapter`, `renderer.validation`,
 `renderer.sync_validation`, `renderer.frames_in_flight`, `renderer.present_mode`, `renderer.width`, `renderer.height`, `renderer.fullscreen`, `renderer.swapchain_format`, `renderer.hdr`, `renderer.shader_quality`,
-`renderer.gbuffer_debug_layer` and `renderer.render_scale`, with the types, defaults, ranges, range policies and capabilities above. A setting's **cost class** is its **apply class**: the number
+`renderer.gbuffer_debug_layer`, `renderer.render_scale` and `renderer.joint_palette_bytes` (the room for skinned meshes' joint matrices per frame, 48 bytes a joint, default 16 MiB; read when the program makes its `FrameResources`, so a change waits for the next start), with the types, defaults, ranges, range policies and capabilities above. A setting's **cost class** is its **apply class**: the number
 `CostClass` has (`none` 0, `dynamic` 1, `swapchain` 2, `pipeline-rebuild` 3, `device-reset` 4), which a listener reads from the `ChangeEvent` to do the cheapest sufficient thing. `RenderSettings` stays the renderer's own
 value type; `RenderSettingsFromSnapshot` builds one from a `settings::Settings` snapshot (to start the renderer with the loaded settings) and `RenderSettingsToChanges` goes the other way.
 

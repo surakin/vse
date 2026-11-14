@@ -76,6 +76,16 @@ struct RenderObjectDesc
     Mat4 transform = Mat4::Identity();
     /// `ObjectFlags` bits.
     u32 flags = 0;
+    /// The joint palette of a skinned mesh: `joint_count` row-major 3x4 matrices (12 `f32` each, the animation
+    /// runtime's `SkeletonInstance::palette`). Null for a rigid mesh. Borrowed: the memory must stay valid, and hold
+    /// the pose to draw, until the frame that reads it has been prepared; the renderer copies it into the frame's
+    /// palette buffer then and keeps no pointer to it afterwards.
+    const f32* joint_matrices = nullptr;
+    /// The number of matrices at `joint_matrices`; at most 256.
+    u32 joint_count = 0;
+    /// Scales the mesh's bind-pose bounds about their center for culling (1 = as authored). A pose can move vertices
+    /// outside the bind-pose box; the game sets this above 1 for a clip that does.
+    f32 skin_bounds_scale = 1.0f;
 };
 
 /// One object in a scene, as stored.
@@ -94,6 +104,16 @@ struct RenderObject
     u32 flags = 0;
     /// World-space bounds, kept in step with `transform` by the scene.
     Bounds bounds;
+    /// The joint palette of a skinned mesh: `joint_count` row-major 3x4 matrices (12 `f32` each, the animation
+    /// runtime's `SkeletonInstance::palette`). Null for a rigid mesh. Borrowed: the memory must stay valid, and hold
+    /// the pose to draw, until the frame that reads it has been prepared; the renderer copies it into the frame's
+    /// palette buffer then and keeps no pointer to it afterwards.
+    const f32* joint_matrices = nullptr;
+    /// The number of matrices at `joint_matrices`; at most 256.
+    u32 joint_count = 0;
+    /// Scales the mesh's bind-pose bounds about their center for culling (1 = as authored). A pose can move vertices
+    /// outside the bind-pose box; the game sets this above 1 for a clip that does.
+    f32 skin_bounds_scale = 1.0f;
 };
 
 /// The kind of a light.
@@ -191,6 +211,16 @@ public:
     /// - Param flags: `ObjectFlags` bits.
     /// - Aborts: `id` is invalid or stale.
     void SetFlags(ObjectId id, u32 flags);
+
+    /// Replaces the borrowed joint palette of a skinned object (see [[renderer::RenderObjectDesc::joint_matrices]]).
+    /// The culling bounds do not change.
+    ///
+    /// - Param id: a live object whose mesh has a skin stream.
+    /// - Param matrices: `count` 3x4 matrices, or null to draw nothing until a palette is set.
+    /// - Param count: from 1 to 256 when `matrices` is not null.
+    /// - Aborts: `id` is invalid or stale, or the mesh is rigid.
+    /// - Thread-safety: thread-compatible.
+    void SetJointMatrices(ObjectId id, const f32* matrices, u32 count);
 
     /// Looks an object up.
     ///

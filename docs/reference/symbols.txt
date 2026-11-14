@@ -5686,12 +5686,13 @@ scene::SceneSyncReport::lights_added	variable	scene	scene-scenesyncreport-lights
 scene::SceneSyncReport::lights_removed	variable	scene	scene-scenesyncreport-lights-removed	scene.md	engine/scene/render_sync.h:41
 scene::SceneSyncReport::readded	variable	scene	scene-scenesyncreport-readded	scene.md	engine/scene/render_sync.h:43
 scene::SceneSyncReport::transforms_set	variable	scene	scene-scenesyncreport-transforms-set	scene.md	engine/scene/render_sync.h:45
-scene::SceneSyncReport::flags_set	variable	scene	scene-scenesyncreport-flags-set	scene.md	engine/scene/render_sync.h:47
-scene::SceneSyncReport::lights_set	variable	scene	scene-scenesyncreport-lights-set	scene.md	engine/scene/render_sync.h:49
-scene::SceneSyncReport::refused_full	variable	scene	scene-scenesyncreport-refused-full	scene.md	engine/scene/render_sync.h:51
-scene::SceneSyncReport::invalid	variable	scene	scene-scenesyncreport-invalid	scene.md	engine/scene/render_sync.h:53
-scene::MakeRenderSyncSystem(const char*)	function	scene	scene-makerendersyncsystem-const-char-star	scene.md	engine/scene/render_sync.h:80
-scene::MakeCameraSystem(const char*)	function	scene	scene-makecamerasystem-const-char-star	scene.md	engine/scene/render_sync.h:91
+scene::SceneSyncReport::joints_set	variable	scene	scene-scenesyncreport-joints-set	scene.md	engine/scene/render_sync.h:47
+scene::SceneSyncReport::flags_set	variable	scene	scene-scenesyncreport-flags-set	scene.md	engine/scene/render_sync.h:49
+scene::SceneSyncReport::lights_set	variable	scene	scene-scenesyncreport-lights-set	scene.md	engine/scene/render_sync.h:51
+scene::SceneSyncReport::refused_full	variable	scene	scene-scenesyncreport-refused-full	scene.md	engine/scene/render_sync.h:53
+scene::SceneSyncReport::invalid	variable	scene	scene-scenesyncreport-invalid	scene.md	engine/scene/render_sync.h:55
+scene::MakeRenderSyncSystem(const char*)	function	scene	scene-makerendersyncsystem-const-char-star	scene.md	engine/scene/render_sync.h:82
+scene::MakeCameraSystem(const char*)	function	scene	scene-makecamerasystem-const-char-star	scene.md	engine/scene/render_sync.h:93
 ui::ConnectionId	alias	ui	ui-connectionid	ui.md	engine/ui/callback.h:13
 ui::Callback	class	ui	ui-callback	ui.md	engine/ui/callback.h:24
 ui::Callback::Function	alias	ui	ui-callback-function	ui.md	engine/ui/callback.h:28
@@ -8234,45 +8235,52 @@ renderer::FrameData::time	variable	renderer	renderer-framedata-time	renderer.md	
 renderer::ObjectData	struct	renderer	renderer-objectdata	renderer.md	engine/renderer/frame_data.h:43
 renderer::ObjectData::world	variable	renderer	renderer-objectdata-world	renderer.md	engine/renderer/frame_data.h:46
 renderer::ObjectData::normal	variable	renderer	renderer-objectdata-normal	renderer.md	engine/renderer/frame_data.h:48
-renderer::MakeFrameData(const Camera&,u32,u32,f32,f32,u64)	function	renderer	renderer-makeframedata-const-camera-amp-u32-u32-f32-f32-u64	renderer.md	engine/renderer/frame_data.h:63
-renderer::BufferRegion	struct	renderer	renderer-bufferregion	renderer.md	engine/renderer/frame_data.h:69
-renderer::BufferRegion::buffer	variable	renderer	renderer-bufferregion-buffer	renderer.md	engine/renderer/frame_data.h:72
-renderer::BufferRegion::offset	variable	renderer	renderer-bufferregion-offset	renderer.md	engine/renderer/frame_data.h:74
-renderer::BufferRegion::size	variable	renderer	renderer-bufferregion-size	renderer.md	engine/renderer/frame_data.h:76
-renderer::LightData	struct	renderer	renderer-lightdata	renderer.md	engine/renderer/frame_data.h:82
-renderer::LightData::direction	variable	renderer	renderer-lightdata-direction	renderer.md	engine/renderer/frame_data.h:86
-renderer::LightData::color	variable	renderer	renderer-lightdata-color	renderer.md	engine/renderer/frame_data.h:88
-renderer::LightData::position_radius	variable	renderer	renderer-lightdata-position-radius	renderer.md	engine/renderer/frame_data.h:90
-renderer::LightSummary	struct	renderer	renderer-lightsummary	renderer.md	engine/renderer/frame_data.h:97
-renderer::LightSummary::ambient	variable	renderer	renderer-lightsummary-ambient	renderer.md	engine/renderer/frame_data.h:100
-renderer::LightSummary::directional_count	variable	renderer	renderer-lightsummary-directional-count	renderer.md	engine/renderer/frame_data.h:102
-renderer::LightSummary::point_count	variable	renderer	renderer-lightsummary-point-count	renderer.md	engine/renderer/frame_data.h:104
-renderer::LightSummary::point_culled	variable	renderer	renderer-lightsummary-point-culled	renderer.md	engine/renderer/frame_data.h:106
-renderer::LightSummary::dropped	variable	renderer	renderer-lightsummary-dropped	renderer.md	engine/renderer/frame_data.h:110
-renderer::FrameResources	class	renderer	renderer-frameresources	renderer.md	engine/renderer/frame_data.h:121
-renderer::FrameResources::kSlots	variable	renderer	renderer-frameresources-kslots	renderer.md	engine/renderer/frame_data.h:125
-renderer::FrameResources::FrameResources(rhi::Device*,u32,u32)	function	renderer	renderer-frameresources-frameresources-rhi-device-star-u32-u32	renderer.md	engine/renderer/frame_data.h:134
-renderer::FrameResources::~FrameResources()	function	renderer	renderer-frameresources-tilde-frameresources	renderer.md	engine/renderer/frame_data.h:136
-renderer::FrameResources::FrameResources(const FrameResources&)	function	renderer	renderer-frameresources-frameresources-const-frameresources-amp	renderer.md	engine/renderer/frame_data.h:137
-renderer::FrameResources::operator=(const FrameResources&)	function	renderer	renderer-frameresources-operator-eq-const-frameresources-amp	renderer.md	engine/renderer/frame_data.h:138
-renderer::FrameResources::RegisterWith(DeviceResources*)	function	renderer	renderer-frameresources-registerwith-deviceresources-star	renderer.md	engine/renderer/frame_data.h:147
-renderer::FrameResources::Release()	function	renderer	renderer-frameresources-release	renderer.md	engine/renderer/frame_data.h:150
-renderer::FrameResources::Recreate(rhi::Device*)	function	renderer	renderer-frameresources-recreate-rhi-device-star	renderer.md	engine/renderer/frame_data.h:158
-renderer::FrameResources::Live() const	function	renderer	renderer-frameresources-live-const	renderer.md	engine/renderer/frame_data.h:159
-renderer::FrameResources::RecreatableName() const	function	renderer	renderer-frameresources-recreatablename-const	renderer.md	engine/renderer/frame_data.h:160
-renderer::FrameResources::Valid() const	function	renderer	renderer-frameresources-valid-const	renderer.md	engine/renderer/frame_data.h:164
-renderer::FrameResources::BeginFrame(u64)	function	renderer	renderer-frameresources-beginframe-u64	renderer.md	engine/renderer/frame_data.h:170
-renderer::FrameResources::WriteFrameData(const FrameData&)	function	renderer	renderer-frameresources-writeframedata-const-framedata-amp	renderer.md	engine/renderer/frame_data.h:176
-renderer::FrameResources::WriteObjects(const RenderScene&,const u32*,u32)	function	renderer	renderer-frameresources-writeobjects-const-renderscene-amp-const-u32-star-u32	renderer.md	engine/renderer/frame_data.h:186
-renderer::FrameResources::WriteLights(const RenderScene&,const FrameData&)	function	renderer	renderer-frameresources-writelights-const-renderscene-amp-const-framedata-amp	renderer.md	engine/renderer/frame_data.h:203
-renderer::FrameResources::WrittenLights() const	function	renderer	renderer-frameresources-writtenlights-const	renderer.md	engine/renderer/frame_data.h:210
-renderer::FrameResources::WrittenLightCount() const	function	renderer	renderer-frameresources-writtenlightcount-const	renderer.md	engine/renderer/frame_data.h:212
-renderer::FrameResources::Flush()	function	renderer	renderer-frameresources-flush	renderer.md	engine/renderer/frame_data.h:217
-renderer::FrameResources::FrameRegion() const	function	renderer	renderer-frameresources-frameregion-const	renderer.md	engine/renderer/frame_data.h:221
-renderer::FrameResources::ObjectRegion() const	function	renderer	renderer-frameresources-objectregion-const	renderer.md	engine/renderer/frame_data.h:224
-renderer::FrameResources::LightRegion() const	function	renderer	renderer-frameresources-lightregion-const	renderer.md	engine/renderer/frame_data.h:227
-renderer::FrameResources::MaxLights() const	function	renderer	renderer-frameresources-maxlights-const	renderer.md	engine/renderer/frame_data.h:229
-renderer::FrameResources::MaxObjects() const	function	renderer	renderer-frameresources-maxobjects-const	renderer.md	engine/renderer/frame_data.h:231
+renderer::kJointMatrixBytes	variable	renderer	renderer-kjointmatrixbytes	renderer.md	engine/renderer/frame_data.h:54
+renderer::kNoJoints	variable	renderer	renderer-knojoints	renderer.md	engine/renderer/frame_data.h:56
+renderer::kMaxJointMatrices	variable	renderer	renderer-kmaxjointmatrices	renderer.md	engine/renderer/frame_data.h:58
+renderer::MakeFrameData(const Camera&,u32,u32,f32,f32,u64)	function	renderer	renderer-makeframedata-const-camera-amp-u32-u32-f32-f32-u64	renderer.md	engine/renderer/frame_data.h:71
+renderer::BufferRegion	struct	renderer	renderer-bufferregion	renderer.md	engine/renderer/frame_data.h:77
+renderer::BufferRegion::buffer	variable	renderer	renderer-bufferregion-buffer	renderer.md	engine/renderer/frame_data.h:80
+renderer::BufferRegion::offset	variable	renderer	renderer-bufferregion-offset	renderer.md	engine/renderer/frame_data.h:82
+renderer::BufferRegion::size	variable	renderer	renderer-bufferregion-size	renderer.md	engine/renderer/frame_data.h:84
+renderer::LightData	struct	renderer	renderer-lightdata	renderer.md	engine/renderer/frame_data.h:90
+renderer::LightData::direction	variable	renderer	renderer-lightdata-direction	renderer.md	engine/renderer/frame_data.h:94
+renderer::LightData::color	variable	renderer	renderer-lightdata-color	renderer.md	engine/renderer/frame_data.h:96
+renderer::LightData::position_radius	variable	renderer	renderer-lightdata-position-radius	renderer.md	engine/renderer/frame_data.h:98
+renderer::LightSummary	struct	renderer	renderer-lightsummary	renderer.md	engine/renderer/frame_data.h:105
+renderer::LightSummary::ambient	variable	renderer	renderer-lightsummary-ambient	renderer.md	engine/renderer/frame_data.h:108
+renderer::LightSummary::directional_count	variable	renderer	renderer-lightsummary-directional-count	renderer.md	engine/renderer/frame_data.h:110
+renderer::LightSummary::point_count	variable	renderer	renderer-lightsummary-point-count	renderer.md	engine/renderer/frame_data.h:112
+renderer::LightSummary::point_culled	variable	renderer	renderer-lightsummary-point-culled	renderer.md	engine/renderer/frame_data.h:114
+renderer::LightSummary::dropped	variable	renderer	renderer-lightsummary-dropped	renderer.md	engine/renderer/frame_data.h:118
+renderer::FrameResources	class	renderer	renderer-frameresources	renderer.md	engine/renderer/frame_data.h:129
+renderer::FrameResources::kSlots	variable	renderer	renderer-frameresources-kslots	renderer.md	engine/renderer/frame_data.h:133
+renderer::FrameResources::FrameResources(rhi::Device*,u32,u32,u32)	function	renderer	renderer-frameresources-frameresources-rhi-device-star-u32-u32-u32	renderer.md	engine/renderer/frame_data.h:145
+renderer::FrameResources::~FrameResources()	function	renderer	renderer-frameresources-tilde-frameresources	renderer.md	engine/renderer/frame_data.h:147
+renderer::FrameResources::FrameResources(const FrameResources&)	function	renderer	renderer-frameresources-frameresources-const-frameresources-amp	renderer.md	engine/renderer/frame_data.h:148
+renderer::FrameResources::operator=(const FrameResources&)	function	renderer	renderer-frameresources-operator-eq-const-frameresources-amp	renderer.md	engine/renderer/frame_data.h:149
+renderer::FrameResources::RegisterWith(DeviceResources*)	function	renderer	renderer-frameresources-registerwith-deviceresources-star	renderer.md	engine/renderer/frame_data.h:158
+renderer::FrameResources::Release()	function	renderer	renderer-frameresources-release	renderer.md	engine/renderer/frame_data.h:161
+renderer::FrameResources::Recreate(rhi::Device*)	function	renderer	renderer-frameresources-recreate-rhi-device-star	renderer.md	engine/renderer/frame_data.h:169
+renderer::FrameResources::Live() const	function	renderer	renderer-frameresources-live-const	renderer.md	engine/renderer/frame_data.h:170
+renderer::FrameResources::RecreatableName() const	function	renderer	renderer-frameresources-recreatablename-const	renderer.md	engine/renderer/frame_data.h:171
+renderer::FrameResources::Valid() const	function	renderer	renderer-frameresources-valid-const	renderer.md	engine/renderer/frame_data.h:175
+renderer::FrameResources::BeginFrame(u64)	function	renderer	renderer-frameresources-beginframe-u64	renderer.md	engine/renderer/frame_data.h:185
+renderer::FrameResources::WriteFrameData(const FrameData&)	function	renderer	renderer-frameresources-writeframedata-const-framedata-amp	renderer.md	engine/renderer/frame_data.h:191
+renderer::FrameResources::WriteObjects(const RenderScene&,const u32*,u32,const u32*)	function	renderer	renderer-frameresources-writeobjects-const-renderscene-amp-const-u32-star-u32-const-u32-star	renderer.md	engine/renderer/frame_data.h:201
+renderer::FrameResources::WriteJoints(const f32*,u32)	function	renderer	renderer-frameresources-writejoints-const-f32-star-u32	renderer.md	engine/renderer/frame_data.h:211
+renderer::FrameResources::JointRegion() const	function	renderer	renderer-frameresources-jointregion-const	renderer.md	engine/renderer/frame_data.h:214
+renderer::FrameResources::MaxJointMatrices() const	function	renderer	renderer-frameresources-maxjointmatrices-const	renderer.md	engine/renderer/frame_data.h:217
+renderer::FrameResources::JointsWritten() const	function	renderer	renderer-frameresources-jointswritten-const	renderer.md	engine/renderer/frame_data.h:220
+renderer::FrameResources::WriteLights(const RenderScene&,const FrameData&)	function	renderer	renderer-frameresources-writelights-const-renderscene-amp-const-framedata-amp	renderer.md	engine/renderer/frame_data.h:237
+renderer::FrameResources::WrittenLights() const	function	renderer	renderer-frameresources-writtenlights-const	renderer.md	engine/renderer/frame_data.h:244
+renderer::FrameResources::WrittenLightCount() const	function	renderer	renderer-frameresources-writtenlightcount-const	renderer.md	engine/renderer/frame_data.h:246
+renderer::FrameResources::Flush()	function	renderer	renderer-frameresources-flush	renderer.md	engine/renderer/frame_data.h:251
+renderer::FrameResources::FrameRegion() const	function	renderer	renderer-frameresources-frameregion-const	renderer.md	engine/renderer/frame_data.h:255
+renderer::FrameResources::ObjectRegion() const	function	renderer	renderer-frameresources-objectregion-const	renderer.md	engine/renderer/frame_data.h:258
+renderer::FrameResources::LightRegion() const	function	renderer	renderer-frameresources-lightregion-const	renderer.md	engine/renderer/frame_data.h:261
+renderer::FrameResources::MaxLights() const	function	renderer	renderer-frameresources-maxlights-const	renderer.md	engine/renderer/frame_data.h:263
+renderer::FrameResources::MaxObjects() const	function	renderer	renderer-frameresources-maxobjects-const	renderer.md	engine/renderer/frame_data.h:265
 renderer::kGBufferAlbedoFormat	variable	renderer	renderer-kgbufferalbedoformat	renderer.md	engine/renderer/gbuffer.h:34
 renderer::kGBufferNormalFormat	variable	renderer	renderer-kgbuffernormalformat	renderer.md	engine/renderer/gbuffer.h:36
 renderer::kGBufferMaterialFormat	variable	renderer	renderer-kgbuffermaterialformat	renderer.md	engine/renderer/gbuffer.h:38
@@ -8294,46 +8302,50 @@ renderer::GBufferOptions	struct	renderer	renderer-gbufferoptions	renderer.md	eng
 renderer::GBufferOptions::normal_map	variable	renderer	renderer-gbufferoptions-normal-map	renderer.md	engine/renderer/gbuffer.h:123
 renderer::GBufferOptions::alpha_test	variable	renderer	renderer-gbufferoptions-alpha-test	renderer.md	engine/renderer/gbuffer.h:126
 renderer::GBufferOptions::vertex_color	variable	renderer	renderer-gbufferoptions-vertex-color	renderer.md	engine/renderer/gbuffer.h:129
-renderer::GBufferTemplates	struct	renderer	renderer-gbuffertemplates	renderer.md	engine/renderer/gbuffer.h:135
-renderer::GBufferTemplates::plain	variable	renderer	renderer-gbuffertemplates-plain	renderer.md	engine/renderer/gbuffer.h:138
-renderer::GBufferTemplates::colored	variable	renderer	renderer-gbuffertemplates-colored	renderer.md	engine/renderer/gbuffer.h:140
-renderer::CreateGBufferTemplates(MaterialSystem*)	function	renderer	renderer-creategbuffertemplates-materialsystem-star	renderer.md	engine/renderer/gbuffer.h:150
-renderer::CreateGBufferMaterial(MaterialSystem*,const GBufferTemplates&,const GBufferOptions&,const char*)	function	renderer	renderer-creategbuffermaterial-materialsystem-star-const-gbuffertemplates-amp-const-gbufferoptions-amp-const-char-star	renderer.md	engine/renderer/gbuffer.h:166
-renderer::GBufferTargets	struct	renderer	renderer-gbuffertargets	renderer.md	engine/renderer/gbuffer.h:172
-renderer::GBufferTargets::albedo	variable	renderer	renderer-gbuffertargets-albedo	renderer.md	engine/renderer/gbuffer.h:175
-renderer::GBufferTargets::normal	variable	renderer	renderer-gbuffertargets-normal	renderer.md	engine/renderer/gbuffer.h:177
-renderer::GBufferTargets::material	variable	renderer	renderer-gbuffertargets-material	renderer.md	engine/renderer/gbuffer.h:179
-renderer::GBufferTargets::depth	variable	renderer	renderer-gbuffertargets-depth	renderer.md	engine/renderer/gbuffer.h:182
-renderer::GBufferStats	struct	renderer	renderer-gbufferstats	renderer.md	engine/renderer/gbuffer.h:188
-renderer::GBufferStats::visible	variable	renderer	renderer-gbufferstats-visible	renderer.md	engine/renderer/gbuffer.h:191
-renderer::GBufferStats::drawn_objects	variable	renderer	renderer-gbufferstats-drawn-objects	renderer.md	engine/renderer/gbuffer.h:193
-renderer::GBufferStats::draws	variable	renderer	renderer-gbufferstats-draws	renderer.md	engine/renderer/gbuffer.h:195
-renderer::GBufferStats::rejected	variable	renderer	renderer-gbufferstats-rejected	renderer.md	engine/renderer/gbuffer.h:197
-renderer::GBufferStats::pipeline_binds	variable	renderer	renderer-gbufferstats-pipeline-binds	renderer.md	engine/renderer/gbuffer.h:199
-renderer::GBufferStats::material_binds	variable	renderer	renderer-gbufferstats-material-binds	renderer.md	engine/renderer/gbuffer.h:201
-renderer::GBufferPass	class	renderer	renderer-gbufferpass	renderer.md	engine/renderer/gbuffer.h:209
-renderer::GBufferPass::GBufferPass(rhi::Device*,MaterialSystem*,FrameResources*)	function	renderer	renderer-gbufferpass-gbufferpass-rhi-device-star-materialsystem-star-frameresources-star	renderer.md	engine/renderer/gbuffer.h:219
-renderer::GBufferPass::~GBufferPass()	function	renderer	renderer-gbufferpass-tilde-gbufferpass	renderer.md	engine/renderer/gbuffer.h:221
-renderer::GBufferPass::GBufferPass(const GBufferPass&)	function	renderer	renderer-gbufferpass-gbufferpass-const-gbufferpass-amp	renderer.md	engine/renderer/gbuffer.h:222
-renderer::GBufferPass::operator=(const GBufferPass&)	function	renderer	renderer-gbufferpass-operator-eq-const-gbufferpass-amp	renderer.md	engine/renderer/gbuffer.h:223
-renderer::GBufferPass::Prepare(const RenderScene&,const Frustum&)	function	renderer	renderer-gbufferpass-prepare-const-renderscene-amp-const-frustum-amp	renderer.md	engine/renderer/gbuffer.h:239
-renderer::GBufferPass::AddToGraph(RenderGraph*,u32,u32)	function	renderer	renderer-gbufferpass-addtograph-rendergraph-star-u32-u32	renderer.md	engine/renderer/gbuffer.h:250
-renderer::GBufferPass::SetExtraTargetUsage(rhi::TextureUsage)	function	renderer	renderer-gbufferpass-setextratargetusage-rhi-textureusage	renderer.md	engine/renderer/gbuffer.h:259
-renderer::GBufferPass::LastError() const	function	renderer	renderer-gbufferpass-lasterror-const	renderer.md	engine/renderer/gbuffer.h:264
-renderer::GBufferPass::Stats() const	function	renderer	renderer-gbufferpass-stats-const	renderer.md	engine/renderer/gbuffer.h:267
-renderer::GBufferDebugView	class	renderer	renderer-gbufferdebugview	renderer.md	engine/renderer/gbuffer.h:309
-renderer::GBufferDebugView::GBufferDebugView(rhi::Device*)	function	renderer	renderer-gbufferdebugview-gbufferdebugview-rhi-device-star	renderer.md	engine/renderer/gbuffer.h:317
-renderer::GBufferDebugView::~GBufferDebugView()	function	renderer	renderer-gbufferdebugview-tilde-gbufferdebugview	renderer.md	engine/renderer/gbuffer.h:319
-renderer::GBufferDebugView::GBufferDebugView(const GBufferDebugView&)	function	renderer	renderer-gbufferdebugview-gbufferdebugview-const-gbufferdebugview-amp	renderer.md	engine/renderer/gbuffer.h:320
-renderer::GBufferDebugView::operator=(const GBufferDebugView&)	function	renderer	renderer-gbufferdebugview-operator-eq-const-gbufferdebugview-amp	renderer.md	engine/renderer/gbuffer.h:321
-renderer::GBufferDebugView::RegisterWith(DeviceResources*)	function	renderer	renderer-gbufferdebugview-registerwith-deviceresources-star	renderer.md	engine/renderer/gbuffer.h:329
-renderer::GBufferDebugView::Release()	function	renderer	renderer-gbufferdebugview-release	renderer.md	engine/renderer/gbuffer.h:332
-renderer::GBufferDebugView::Recreate(rhi::Device*)	function	renderer	renderer-gbufferdebugview-recreate-rhi-device-star	renderer.md	engine/renderer/gbuffer.h:340
-renderer::GBufferDebugView::Live() const	function	renderer	renderer-gbufferdebugview-live-const	renderer.md	engine/renderer/gbuffer.h:341
-renderer::GBufferDebugView::RecreatableName() const	function	renderer	renderer-gbufferdebugview-recreatablename-const	renderer.md	engine/renderer/gbuffer.h:342
-renderer::GBufferDebugView::Valid() const	function	renderer	renderer-gbufferdebugview-valid-const	renderer.md	engine/renderer/gbuffer.h:346
-renderer::GBufferDebugView::SetInverseViewProjection(const Mat4&)	function	renderer	renderer-gbufferdebugview-setinverseviewprojection-const-mat4-amp	renderer.md	engine/renderer/gbuffer.h:354
-renderer::GBufferDebugView::AddToGraph(RenderGraph*,const GBufferTargets&,GBufferLayer,GraphResource,rhi::Format,f32,f32)	function	renderer	renderer-gbufferdebugview-addtograph-rendergraph-star-const-gbuffertargets-amp-gbufferlayer-graphresource-rhi-format-f32-f32	renderer.md	engine/renderer/gbuffer.h:377
+renderer::GBufferOptions::skinned	variable	renderer	renderer-gbufferoptions-skinned	renderer.md	engine/renderer/gbuffer.h:132
+renderer::GBufferTemplates	struct	renderer	renderer-gbuffertemplates	renderer.md	engine/renderer/gbuffer.h:138
+renderer::GBufferTemplates::plain	variable	renderer	renderer-gbuffertemplates-plain	renderer.md	engine/renderer/gbuffer.h:141
+renderer::GBufferTemplates::colored	variable	renderer	renderer-gbuffertemplates-colored	renderer.md	engine/renderer/gbuffer.h:143
+renderer::GBufferTemplates::skinned	variable	renderer	renderer-gbuffertemplates-skinned	renderer.md	engine/renderer/gbuffer.h:145
+renderer::GBufferTemplates::skinned_colored	variable	renderer	renderer-gbuffertemplates-skinned-colored	renderer.md	engine/renderer/gbuffer.h:147
+renderer::CreateGBufferTemplates(MaterialSystem*)	function	renderer	renderer-creategbuffertemplates-materialsystem-star	renderer.md	engine/renderer/gbuffer.h:157
+renderer::CreateGBufferMaterial(MaterialSystem*,const GBufferTemplates&,const GBufferOptions&,const char*)	function	renderer	renderer-creategbuffermaterial-materialsystem-star-const-gbuffertemplates-amp-const-gbufferoptions-amp-const-char-star	renderer.md	engine/renderer/gbuffer.h:173
+renderer::GBufferTargets	struct	renderer	renderer-gbuffertargets	renderer.md	engine/renderer/gbuffer.h:179
+renderer::GBufferTargets::albedo	variable	renderer	renderer-gbuffertargets-albedo	renderer.md	engine/renderer/gbuffer.h:182
+renderer::GBufferTargets::normal	variable	renderer	renderer-gbuffertargets-normal	renderer.md	engine/renderer/gbuffer.h:184
+renderer::GBufferTargets::material	variable	renderer	renderer-gbuffertargets-material	renderer.md	engine/renderer/gbuffer.h:186
+renderer::GBufferTargets::depth	variable	renderer	renderer-gbuffertargets-depth	renderer.md	engine/renderer/gbuffer.h:189
+renderer::GBufferStats	struct	renderer	renderer-gbufferstats	renderer.md	engine/renderer/gbuffer.h:195
+renderer::GBufferStats::visible	variable	renderer	renderer-gbufferstats-visible	renderer.md	engine/renderer/gbuffer.h:198
+renderer::GBufferStats::drawn_objects	variable	renderer	renderer-gbufferstats-drawn-objects	renderer.md	engine/renderer/gbuffer.h:200
+renderer::GBufferStats::draws	variable	renderer	renderer-gbufferstats-draws	renderer.md	engine/renderer/gbuffer.h:202
+renderer::GBufferStats::rejected	variable	renderer	renderer-gbufferstats-rejected	renderer.md	engine/renderer/gbuffer.h:204
+renderer::GBufferStats::pipeline_binds	variable	renderer	renderer-gbufferstats-pipeline-binds	renderer.md	engine/renderer/gbuffer.h:206
+renderer::GBufferStats::material_binds	variable	renderer	renderer-gbufferstats-material-binds	renderer.md	engine/renderer/gbuffer.h:208
+renderer::GBufferStats::skinned_dropped	variable	renderer	renderer-gbufferstats-skinned-dropped	renderer.md	engine/renderer/gbuffer.h:211
+renderer::GBufferPass	class	renderer	renderer-gbufferpass	renderer.md	engine/renderer/gbuffer.h:219
+renderer::GBufferPass::GBufferPass(rhi::Device*,MaterialSystem*,FrameResources*)	function	renderer	renderer-gbufferpass-gbufferpass-rhi-device-star-materialsystem-star-frameresources-star	renderer.md	engine/renderer/gbuffer.h:229
+renderer::GBufferPass::~GBufferPass()	function	renderer	renderer-gbufferpass-tilde-gbufferpass	renderer.md	engine/renderer/gbuffer.h:231
+renderer::GBufferPass::GBufferPass(const GBufferPass&)	function	renderer	renderer-gbufferpass-gbufferpass-const-gbufferpass-amp	renderer.md	engine/renderer/gbuffer.h:232
+renderer::GBufferPass::operator=(const GBufferPass&)	function	renderer	renderer-gbufferpass-operator-eq-const-gbufferpass-amp	renderer.md	engine/renderer/gbuffer.h:233
+renderer::GBufferPass::Prepare(const RenderScene&,const Frustum&)	function	renderer	renderer-gbufferpass-prepare-const-renderscene-amp-const-frustum-amp	renderer.md	engine/renderer/gbuffer.h:249
+renderer::GBufferPass::AddToGraph(RenderGraph*,u32,u32)	function	renderer	renderer-gbufferpass-addtograph-rendergraph-star-u32-u32	renderer.md	engine/renderer/gbuffer.h:260
+renderer::GBufferPass::SetExtraTargetUsage(rhi::TextureUsage)	function	renderer	renderer-gbufferpass-setextratargetusage-rhi-textureusage	renderer.md	engine/renderer/gbuffer.h:269
+renderer::GBufferPass::LastError() const	function	renderer	renderer-gbufferpass-lasterror-const	renderer.md	engine/renderer/gbuffer.h:274
+renderer::GBufferPass::Stats() const	function	renderer	renderer-gbufferpass-stats-const	renderer.md	engine/renderer/gbuffer.h:277
+renderer::GBufferDebugView	class	renderer	renderer-gbufferdebugview	renderer.md	engine/renderer/gbuffer.h:322
+renderer::GBufferDebugView::GBufferDebugView(rhi::Device*)	function	renderer	renderer-gbufferdebugview-gbufferdebugview-rhi-device-star	renderer.md	engine/renderer/gbuffer.h:330
+renderer::GBufferDebugView::~GBufferDebugView()	function	renderer	renderer-gbufferdebugview-tilde-gbufferdebugview	renderer.md	engine/renderer/gbuffer.h:332
+renderer::GBufferDebugView::GBufferDebugView(const GBufferDebugView&)	function	renderer	renderer-gbufferdebugview-gbufferdebugview-const-gbufferdebugview-amp	renderer.md	engine/renderer/gbuffer.h:333
+renderer::GBufferDebugView::operator=(const GBufferDebugView&)	function	renderer	renderer-gbufferdebugview-operator-eq-const-gbufferdebugview-amp	renderer.md	engine/renderer/gbuffer.h:334
+renderer::GBufferDebugView::RegisterWith(DeviceResources*)	function	renderer	renderer-gbufferdebugview-registerwith-deviceresources-star	renderer.md	engine/renderer/gbuffer.h:342
+renderer::GBufferDebugView::Release()	function	renderer	renderer-gbufferdebugview-release	renderer.md	engine/renderer/gbuffer.h:345
+renderer::GBufferDebugView::Recreate(rhi::Device*)	function	renderer	renderer-gbufferdebugview-recreate-rhi-device-star	renderer.md	engine/renderer/gbuffer.h:353
+renderer::GBufferDebugView::Live() const	function	renderer	renderer-gbufferdebugview-live-const	renderer.md	engine/renderer/gbuffer.h:354
+renderer::GBufferDebugView::RecreatableName() const	function	renderer	renderer-gbufferdebugview-recreatablename-const	renderer.md	engine/renderer/gbuffer.h:355
+renderer::GBufferDebugView::Valid() const	function	renderer	renderer-gbufferdebugview-valid-const	renderer.md	engine/renderer/gbuffer.h:359
+renderer::GBufferDebugView::SetInverseViewProjection(const Mat4&)	function	renderer	renderer-gbufferdebugview-setinverseviewprojection-const-mat4-amp	renderer.md	engine/renderer/gbuffer.h:367
+renderer::GBufferDebugView::AddToGraph(RenderGraph*,const GBufferTargets&,GBufferLayer,GraphResource,rhi::Format,f32,f32)	function	renderer	renderer-gbufferdebugview-addtograph-rendergraph-star-const-gbuffertargets-amp-gbufferlayer-graphresource-rhi-format-f32-f32	renderer.md	engine/renderer/gbuffer.h:390
 renderer::GlyphAtlasTexture	class	renderer	renderer-glyphatlastexture	renderer.md	engine/renderer/glyph_atlas_texture.h:28
 renderer::GlyphAtlasTexture::GlyphAtlasTexture()	function	renderer	renderer-glyphatlastexture-glyphatlastexture	renderer.md	engine/renderer/glyph_atlas_texture.h:31
 renderer::GlyphAtlasTexture::~GlyphAtlasTexture()	function	renderer	renderer-glyphatlastexture-tilde-glyphatlastexture	renderer.md	engine/renderer/glyph_atlas_texture.h:33
@@ -8432,73 +8444,77 @@ renderer::MaterialTemplateDesc::fragment_permutations	variable	renderer	renderer
 renderer::MaterialTemplateDesc::state	variable	renderer	renderer-materialtemplatedesc-state	renderer.md	engine/renderer/material.h:131
 renderer::MaterialTemplateDesc::texture_defaults	variable	renderer	renderer-materialtemplatedesc-texture-defaults	renderer.md	engine/renderer/material.h:134
 renderer::MaterialTemplateDesc::texture_default_count	variable	renderer	renderer-materialtemplatedesc-texture-default-count	renderer.md	engine/renderer/material.h:136
-renderer::PipelineTarget	struct	renderer	renderer-pipelinetarget	renderer.md	engine/renderer/material.h:142
-renderer::PipelineTarget::color_formats	variable	renderer	renderer-pipelinetarget-color-formats	renderer.md	engine/renderer/material.h:145
-renderer::PipelineTarget::color_count	variable	renderer	renderer-pipelinetarget-color-count	renderer.md	engine/renderer/material.h:147
-renderer::PipelineTarget::depth_format	variable	renderer	renderer-pipelinetarget-depth-format	renderer.md	engine/renderer/material.h:149
-renderer::PipelineLookup	struct	renderer	renderer-pipelinelookup	renderer.md	engine/renderer/material.h:155
-renderer::PipelineLookup::pipeline	variable	renderer	renderer-pipelinelookup-pipeline	renderer.md	engine/renderer/material.h:158
-renderer::PipelineLookup::index	variable	renderer	renderer-pipelinelookup-index	renderer.md	engine/renderer/material.h:160
-renderer::MaterialStats	struct	renderer	renderer-materialstats	renderer.md	engine/renderer/material.h:166
-renderer::MaterialStats::pipeline_hits	variable	renderer	renderer-materialstats-pipeline-hits	renderer.md	engine/renderer/material.h:169
-renderer::MaterialStats::pipeline_misses	variable	renderer	renderer-materialstats-pipeline-misses	renderer.md	engine/renderer/material.h:171
-renderer::MaterialStats::pipelines	variable	renderer	renderer-materialstats-pipelines	renderer.md	engine/renderer/material.h:173
-renderer::MaterialStats::bind_group_rebuilds	variable	renderer	renderer-materialstats-bind-group-rebuilds	renderer.md	engine/renderer/material.h:175
-renderer::MaterialStats::parameter_flushes	variable	renderer	renderer-materialstats-parameter-flushes	renderer.md	engine/renderer/material.h:177
-renderer::MaterialStats::rebuilds	variable	renderer	renderer-materialstats-rebuilds	renderer.md	engine/renderer/material.h:179
-renderer::MaterialSystemDesc	struct	renderer	renderer-materialsystemdesc	renderer.md	engine/renderer/material.h:185
-renderer::MaterialSystemDesc::max_templates	variable	renderer	renderer-materialsystemdesc-max-templates	renderer.md	engine/renderer/material.h:188
-renderer::MaterialSystemDesc::max_materials	variable	renderer	renderer-materialsystemdesc-max-materials	renderer.md	engine/renderer/material.h:190
-renderer::MaterialSystemDesc::max_pipelines	variable	renderer	renderer-materialsystemdesc-max-pipelines	renderer.md	engine/renderer/material.h:192
-renderer::MaterialSystemDesc::resources	variable	renderer	renderer-materialsystemdesc-resources	renderer.md	engine/renderer/material.h:194
-renderer::MaterialSystemDesc::prewarm_pipelines	variable	renderer	renderer-materialsystemdesc-prewarm-pipelines	renderer.md	engine/renderer/material.h:198
-renderer::MakeDrawSortKey(u32,u32,u32)	function	renderer	renderer-makedrawsortkey-u32-u32-u32	renderer.md	engine/renderer/material.h:211
-renderer::MaterialSystem	class	renderer	renderer-materialsystem	renderer.md	engine/renderer/material.h:231
-renderer::MaterialSystem::MaterialSystem(rhi::Device*,const MaterialSystemDesc&)	function	renderer	renderer-materialsystem-materialsystem-rhi-device-star-const-materialsystemdesc-amp	renderer.md	engine/renderer/material.h:242
-renderer::MaterialSystem::~MaterialSystem()	function	renderer	renderer-materialsystem-tilde-materialsystem	renderer.md	engine/renderer/material.h:245
-renderer::MaterialSystem::MaterialSystem(const MaterialSystem&)	function	renderer	renderer-materialsystem-materialsystem-const-materialsystem-amp	renderer.md	engine/renderer/material.h:246
-renderer::MaterialSystem::operator=(const MaterialSystem&)	function	renderer	renderer-materialsystem-operator-eq-const-materialsystem-amp	renderer.md	engine/renderer/material.h:247
-renderer::MaterialSystem::Valid() const	function	renderer	renderer-materialsystem-valid-const	renderer.md	engine/renderer/material.h:251
-renderer::MaterialSystem::CreateTemplate(const MaterialTemplateDesc&)	function	renderer	renderer-materialsystem-createtemplate-const-materialtemplatedesc-amp	renderer.md	engine/renderer/material.h:262
-renderer::MaterialSystem::DestroyTemplate(TemplateId)	function	renderer	renderer-materialsystem-destroytemplate-templateid	renderer.md	engine/renderer/material.h:268
-renderer::MaterialSystem::CreateMaterial(TemplateId,PermutationKey,const char*)	function	renderer	renderer-materialsystem-creatematerial-templateid-permutationkey-const-char-star	renderer.md	engine/renderer/material.h:286
-renderer::MaterialSystem::DestroyMaterial(MaterialId)	function	renderer	renderer-materialsystem-destroymaterial-materialid	renderer.md	engine/renderer/material.h:292
-renderer::MaterialSystem::IsAlive(MaterialId) const	function	renderer	renderer-materialsystem-isalive-materialid-const	renderer.md	engine/renderer/material.h:296
-renderer::MaterialSystem::MaterialAtIndex(u32) const	function	renderer	renderer-materialsystem-materialatindex-u32-const	renderer.md	engine/renderer/material.h:302
-renderer::MaterialSystem::FrameBindGroup(const BufferRegion&)	function	renderer	renderer-materialsystem-framebindgroup-const-bufferregion-amp	renderer.md	engine/renderer/material.h:316
-renderer::MaterialSystem::ObjectBindGroup(const BufferRegion&)	function	renderer	renderer-materialsystem-objectbindgroup-const-bufferregion-amp	renderer.md	engine/renderer/material.h:324
-renderer::MaterialSystem::ReadsVertexInput(MaterialId,u32) const	function	renderer	renderer-materialsystem-readsvertexinput-materialid-u32-const	renderer.md	engine/renderer/material.h:331
-renderer::MaterialSystem::SetFloat(MaterialId,const char*,f32)	function	renderer	renderer-materialsystem-setfloat-materialid-const-char-star-f32	renderer.md	engine/renderer/material.h:341
-renderer::MaterialSystem::SetInt(MaterialId,const char*,i32)	function	renderer	renderer-materialsystem-setint-materialid-const-char-star-i32	renderer.md	engine/renderer/material.h:350
-renderer::MaterialSystem::SetUInt(MaterialId,const char*,u32)	function	renderer	renderer-materialsystem-setuint-materialid-const-char-star-u32	renderer.md	engine/renderer/material.h:359
-renderer::MaterialSystem::SetVec2(MaterialId,const char*,const Vec2&)	function	renderer	renderer-materialsystem-setvec2-materialid-const-char-star-const-vec2-amp	renderer.md	engine/renderer/material.h:368
-renderer::MaterialSystem::SetVec3(MaterialId,const char*,const Vec3&)	function	renderer	renderer-materialsystem-setvec3-materialid-const-char-star-const-vec3-amp	renderer.md	engine/renderer/material.h:377
-renderer::MaterialSystem::SetVec4(MaterialId,const char*,const Vec4&)	function	renderer	renderer-materialsystem-setvec4-materialid-const-char-star-const-vec4-amp	renderer.md	engine/renderer/material.h:386
-renderer::MaterialSystem::SetMat4(MaterialId,const char*,const Mat4&)	function	renderer	renderer-materialsystem-setmat4-materialid-const-char-star-const-mat4-amp	renderer.md	engine/renderer/material.h:395
-renderer::MaterialSystem::SetTexture(MaterialId,const char*,rhi::TextureHandle)	function	renderer	renderer-materialsystem-settexture-materialid-const-char-star-rhi-texturehandle	renderer.md	engine/renderer/material.h:407
-renderer::MaterialSystem::SetTexture(MaterialId,const char*,const GpuTexture*)	function	renderer	renderer-materialsystem-settexture-materialid-const-char-star-const-gputexture-star	renderer.md	engine/renderer/material.h:419
-renderer::MaterialSystem::SetSampler(MaterialId,const char*,const GpuSampler*)	function	renderer	renderer-materialsystem-setsampler-materialid-const-char-star-const-gpusampler-star	renderer.md	engine/renderer/material.h:430
-renderer::MaterialSystem::SetSampler(MaterialId,const char*,rhi::SamplerHandle)	function	renderer	renderer-materialsystem-setsampler-materialid-const-char-star-rhi-samplerhandle	renderer.md	engine/renderer/material.h:441
-renderer::MaterialSystem::BeginFrame(u64)	function	renderer	renderer-materialsystem-beginframe-u64	renderer.md	engine/renderer/material.h:446
-renderer::MaterialSystem::FlushMaterials()	function	renderer	renderer-materialsystem-flushmaterials	renderer.md	engine/renderer/material.h:452
-renderer::MaterialSystem::MaterialBindGroup(MaterialId) const	function	renderer	renderer-materialsystem-materialbindgroup-materialid-const	renderer.md	engine/renderer/material.h:460
-renderer::MaterialSystem::ParameterRegion(MaterialId) const	function	renderer	renderer-materialsystem-parameterregion-materialid-const	renderer.md	engine/renderer/material.h:467
-renderer::MaterialSystem::FrameLayout() const	function	renderer	renderer-materialsystem-framelayout-const	renderer.md	engine/renderer/material.h:471
-renderer::MaterialSystem::ObjectLayout() const	function	renderer	renderer-materialsystem-objectlayout-const	renderer.md	engine/renderer/material.h:474
-renderer::MaterialSystem::ObjectIndexStream() const	function	renderer	renderer-materialsystem-objectindexstream-const	renderer.md	engine/renderer/material.h:484
-renderer::MaterialSystem::ObjectIndexSlot()	function	renderer	renderer-materialsystem-objectindexslot	renderer.md	engine/renderer/material.h:490
-renderer::MaterialSystem::AddObjectIndexAttribute(const rhi::Device&,rhi::VertexBindingDesc*,u32*,u32,rhi::VertexAttributeDesc*,u32*,u32,u32)	function	renderer	renderer-materialsystem-addobjectindexattribute-const-rhi-device-amp-rhi-vertexbindingdesc-star-u32-star-u32-rhi-vertexattributedesc-star-u32-star-u32-u32	renderer.md	engine/renderer/material.h:508
-renderer::MaterialSystem::MaterialLayout(MaterialId) const	function	renderer	renderer-materialsystem-materiallayout-materialid-const	renderer.md	engine/renderer/material.h:515
-renderer::MaterialSystem::EffectiveTexture(MaterialId,const char*) const	function	renderer	renderer-materialsystem-effectivetexture-materialid-const-char-star-const	renderer.md	engine/renderer/material.h:525
-renderer::MaterialSystem::GetDefaultTexture(DefaultTexture) const	function	renderer	renderer-materialsystem-getdefaulttexture-defaulttexture-const	renderer.md	engine/renderer/material.h:533
-renderer::MaterialSystem::GetPipeline(MaterialId,const PipelineTarget&,const VertexLayoutData&,rhi::PrimitiveTopology,bool)	function	renderer	renderer-materialsystem-getpipeline-materialid-const-pipelinetarget-amp-const-vertexlayoutdata-amp-rhi-primitivetopology-bool	renderer.md	engine/renderer/material.h:553
-renderer::MaterialSystem::Warmup(MaterialId,const PipelineTarget&,const VertexLayoutData&,rhi::PrimitiveTopology,bool)	function	renderer	renderer-materialsystem-warmup-materialid-const-pipelinetarget-amp-const-vertexlayoutdata-amp-rhi-primitivetopology-bool	renderer.md	engine/renderer/material.h:567
-renderer::MaterialSystem::BindGroupRebuilds(MaterialId) const	function	renderer	renderer-materialsystem-bindgrouprebuilds-materialid-const	renderer.md	engine/renderer/material.h:574
-renderer::MaterialSystem::Stats() const	function	renderer	renderer-materialsystem-stats-const	renderer.md	engine/renderer/material.h:578
-renderer::MaterialSystem::Release()	function	renderer	renderer-materialsystem-release	renderer.md	engine/renderer/material.h:583
-renderer::MaterialSystem::Recreate(rhi::Device*)	function	renderer	renderer-materialsystem-recreate-rhi-device-star	renderer.md	engine/renderer/material.h:591
-renderer::MaterialSystem::Live() const	function	renderer	renderer-materialsystem-live-const	renderer.md	engine/renderer/material.h:592
-renderer::MaterialSystem::RecreatableName() const	function	renderer	renderer-materialsystem-recreatablename-const	renderer.md	engine/renderer/material.h:593
+renderer::MaterialTemplateDesc::skinned	variable	renderer	renderer-materialtemplatedesc-skinned	renderer.md	engine/renderer/material.h:141
+renderer::PipelineTarget	struct	renderer	renderer-pipelinetarget	renderer.md	engine/renderer/material.h:147
+renderer::PipelineTarget::color_formats	variable	renderer	renderer-pipelinetarget-color-formats	renderer.md	engine/renderer/material.h:150
+renderer::PipelineTarget::color_count	variable	renderer	renderer-pipelinetarget-color-count	renderer.md	engine/renderer/material.h:152
+renderer::PipelineTarget::depth_format	variable	renderer	renderer-pipelinetarget-depth-format	renderer.md	engine/renderer/material.h:154
+renderer::PipelineLookup	struct	renderer	renderer-pipelinelookup	renderer.md	engine/renderer/material.h:160
+renderer::PipelineLookup::pipeline	variable	renderer	renderer-pipelinelookup-pipeline	renderer.md	engine/renderer/material.h:163
+renderer::PipelineLookup::index	variable	renderer	renderer-pipelinelookup-index	renderer.md	engine/renderer/material.h:165
+renderer::MaterialStats	struct	renderer	renderer-materialstats	renderer.md	engine/renderer/material.h:171
+renderer::MaterialStats::pipeline_hits	variable	renderer	renderer-materialstats-pipeline-hits	renderer.md	engine/renderer/material.h:174
+renderer::MaterialStats::pipeline_misses	variable	renderer	renderer-materialstats-pipeline-misses	renderer.md	engine/renderer/material.h:176
+renderer::MaterialStats::pipelines	variable	renderer	renderer-materialstats-pipelines	renderer.md	engine/renderer/material.h:178
+renderer::MaterialStats::bind_group_rebuilds	variable	renderer	renderer-materialstats-bind-group-rebuilds	renderer.md	engine/renderer/material.h:180
+renderer::MaterialStats::parameter_flushes	variable	renderer	renderer-materialstats-parameter-flushes	renderer.md	engine/renderer/material.h:182
+renderer::MaterialStats::rebuilds	variable	renderer	renderer-materialstats-rebuilds	renderer.md	engine/renderer/material.h:184
+renderer::MaterialSystemDesc	struct	renderer	renderer-materialsystemdesc	renderer.md	engine/renderer/material.h:190
+renderer::MaterialSystemDesc::max_templates	variable	renderer	renderer-materialsystemdesc-max-templates	renderer.md	engine/renderer/material.h:193
+renderer::MaterialSystemDesc::max_materials	variable	renderer	renderer-materialsystemdesc-max-materials	renderer.md	engine/renderer/material.h:195
+renderer::MaterialSystemDesc::max_pipelines	variable	renderer	renderer-materialsystemdesc-max-pipelines	renderer.md	engine/renderer/material.h:197
+renderer::MaterialSystemDesc::resources	variable	renderer	renderer-materialsystemdesc-resources	renderer.md	engine/renderer/material.h:199
+renderer::MaterialSystemDesc::prewarm_pipelines	variable	renderer	renderer-materialsystemdesc-prewarm-pipelines	renderer.md	engine/renderer/material.h:203
+renderer::MakeDrawSortKey(u32,u32,u32)	function	renderer	renderer-makedrawsortkey-u32-u32-u32	renderer.md	engine/renderer/material.h:216
+renderer::MaterialSystem	class	renderer	renderer-materialsystem	renderer.md	engine/renderer/material.h:236
+renderer::MaterialSystem::MaterialSystem(rhi::Device*,const MaterialSystemDesc&)	function	renderer	renderer-materialsystem-materialsystem-rhi-device-star-const-materialsystemdesc-amp	renderer.md	engine/renderer/material.h:247
+renderer::MaterialSystem::~MaterialSystem()	function	renderer	renderer-materialsystem-tilde-materialsystem	renderer.md	engine/renderer/material.h:250
+renderer::MaterialSystem::MaterialSystem(const MaterialSystem&)	function	renderer	renderer-materialsystem-materialsystem-const-materialsystem-amp	renderer.md	engine/renderer/material.h:251
+renderer::MaterialSystem::operator=(const MaterialSystem&)	function	renderer	renderer-materialsystem-operator-eq-const-materialsystem-amp	renderer.md	engine/renderer/material.h:252
+renderer::MaterialSystem::Valid() const	function	renderer	renderer-materialsystem-valid-const	renderer.md	engine/renderer/material.h:256
+renderer::MaterialSystem::CreateTemplate(const MaterialTemplateDesc&)	function	renderer	renderer-materialsystem-createtemplate-const-materialtemplatedesc-amp	renderer.md	engine/renderer/material.h:267
+renderer::MaterialSystem::DestroyTemplate(TemplateId)	function	renderer	renderer-materialsystem-destroytemplate-templateid	renderer.md	engine/renderer/material.h:273
+renderer::MaterialSystem::CreateMaterial(TemplateId,PermutationKey,const char*)	function	renderer	renderer-materialsystem-creatematerial-templateid-permutationkey-const-char-star	renderer.md	engine/renderer/material.h:291
+renderer::MaterialSystem::DestroyMaterial(MaterialId)	function	renderer	renderer-materialsystem-destroymaterial-materialid	renderer.md	engine/renderer/material.h:297
+renderer::MaterialSystem::IsAlive(MaterialId) const	function	renderer	renderer-materialsystem-isalive-materialid-const	renderer.md	engine/renderer/material.h:301
+renderer::MaterialSystem::MaterialAtIndex(u32) const	function	renderer	renderer-materialsystem-materialatindex-u32-const	renderer.md	engine/renderer/material.h:307
+renderer::MaterialSystem::FrameBindGroup(const BufferRegion&)	function	renderer	renderer-materialsystem-framebindgroup-const-bufferregion-amp	renderer.md	engine/renderer/material.h:321
+renderer::MaterialSystem::ObjectBindGroup(const BufferRegion&)	function	renderer	renderer-materialsystem-objectbindgroup-const-bufferregion-amp	renderer.md	engine/renderer/material.h:329
+renderer::MaterialSystem::JointBindGroup(const BufferRegion&)	function	renderer	renderer-materialsystem-jointbindgroup-const-bufferregion-amp	renderer.md	engine/renderer/material.h:338
+renderer::MaterialSystem::kJointSet	variable	renderer	renderer-materialsystem-kjointset	renderer.md	engine/renderer/material.h:340
+renderer::MaterialSystem::ReadsVertexInput(MaterialId,u32) const	function	renderer	renderer-materialsystem-readsvertexinput-materialid-u32-const	renderer.md	engine/renderer/material.h:347
+renderer::MaterialSystem::SetFloat(MaterialId,const char*,f32)	function	renderer	renderer-materialsystem-setfloat-materialid-const-char-star-f32	renderer.md	engine/renderer/material.h:357
+renderer::MaterialSystem::SetInt(MaterialId,const char*,i32)	function	renderer	renderer-materialsystem-setint-materialid-const-char-star-i32	renderer.md	engine/renderer/material.h:366
+renderer::MaterialSystem::SetUInt(MaterialId,const char*,u32)	function	renderer	renderer-materialsystem-setuint-materialid-const-char-star-u32	renderer.md	engine/renderer/material.h:375
+renderer::MaterialSystem::SetVec2(MaterialId,const char*,const Vec2&)	function	renderer	renderer-materialsystem-setvec2-materialid-const-char-star-const-vec2-amp	renderer.md	engine/renderer/material.h:384
+renderer::MaterialSystem::SetVec3(MaterialId,const char*,const Vec3&)	function	renderer	renderer-materialsystem-setvec3-materialid-const-char-star-const-vec3-amp	renderer.md	engine/renderer/material.h:393
+renderer::MaterialSystem::SetVec4(MaterialId,const char*,const Vec4&)	function	renderer	renderer-materialsystem-setvec4-materialid-const-char-star-const-vec4-amp	renderer.md	engine/renderer/material.h:402
+renderer::MaterialSystem::SetMat4(MaterialId,const char*,const Mat4&)	function	renderer	renderer-materialsystem-setmat4-materialid-const-char-star-const-mat4-amp	renderer.md	engine/renderer/material.h:411
+renderer::MaterialSystem::SetTexture(MaterialId,const char*,rhi::TextureHandle)	function	renderer	renderer-materialsystem-settexture-materialid-const-char-star-rhi-texturehandle	renderer.md	engine/renderer/material.h:423
+renderer::MaterialSystem::SetTexture(MaterialId,const char*,const GpuTexture*)	function	renderer	renderer-materialsystem-settexture-materialid-const-char-star-const-gputexture-star	renderer.md	engine/renderer/material.h:435
+renderer::MaterialSystem::SetSampler(MaterialId,const char*,const GpuSampler*)	function	renderer	renderer-materialsystem-setsampler-materialid-const-char-star-const-gpusampler-star	renderer.md	engine/renderer/material.h:446
+renderer::MaterialSystem::SetSampler(MaterialId,const char*,rhi::SamplerHandle)	function	renderer	renderer-materialsystem-setsampler-materialid-const-char-star-rhi-samplerhandle	renderer.md	engine/renderer/material.h:457
+renderer::MaterialSystem::BeginFrame(u64)	function	renderer	renderer-materialsystem-beginframe-u64	renderer.md	engine/renderer/material.h:462
+renderer::MaterialSystem::FlushMaterials()	function	renderer	renderer-materialsystem-flushmaterials	renderer.md	engine/renderer/material.h:468
+renderer::MaterialSystem::MaterialBindGroup(MaterialId) const	function	renderer	renderer-materialsystem-materialbindgroup-materialid-const	renderer.md	engine/renderer/material.h:476
+renderer::MaterialSystem::ParameterRegion(MaterialId) const	function	renderer	renderer-materialsystem-parameterregion-materialid-const	renderer.md	engine/renderer/material.h:483
+renderer::MaterialSystem::FrameLayout() const	function	renderer	renderer-materialsystem-framelayout-const	renderer.md	engine/renderer/material.h:487
+renderer::MaterialSystem::ObjectLayout() const	function	renderer	renderer-materialsystem-objectlayout-const	renderer.md	engine/renderer/material.h:490
+renderer::MaterialSystem::ObjectIndexStream() const	function	renderer	renderer-materialsystem-objectindexstream-const	renderer.md	engine/renderer/material.h:500
+renderer::MaterialSystem::ObjectIndexSlot()	function	renderer	renderer-materialsystem-objectindexslot	renderer.md	engine/renderer/material.h:506
+renderer::MaterialSystem::ObjectIndexSlotFor(bool)	function	renderer	renderer-materialsystem-objectindexslotfor-bool	renderer.md	engine/renderer/material.h:513
+renderer::MaterialSystem::AddObjectIndexAttribute(const rhi::Device&,rhi::VertexBindingDesc*,u32*,u32,rhi::VertexAttributeDesc*,u32*,u32,u32)	function	renderer	renderer-materialsystem-addobjectindexattribute-const-rhi-device-amp-rhi-vertexbindingdesc-star-u32-star-u32-rhi-vertexattributedesc-star-u32-star-u32-u32	renderer.md	engine/renderer/material.h:531
+renderer::MaterialSystem::MaterialLayout(MaterialId) const	function	renderer	renderer-materialsystem-materiallayout-materialid-const	renderer.md	engine/renderer/material.h:538
+renderer::MaterialSystem::EffectiveTexture(MaterialId,const char*) const	function	renderer	renderer-materialsystem-effectivetexture-materialid-const-char-star-const	renderer.md	engine/renderer/material.h:548
+renderer::MaterialSystem::GetDefaultTexture(DefaultTexture) const	function	renderer	renderer-materialsystem-getdefaulttexture-defaulttexture-const	renderer.md	engine/renderer/material.h:556
+renderer::MaterialSystem::GetPipeline(MaterialId,const PipelineTarget&,const VertexLayoutData&,rhi::PrimitiveTopology,bool)	function	renderer	renderer-materialsystem-getpipeline-materialid-const-pipelinetarget-amp-const-vertexlayoutdata-amp-rhi-primitivetopology-bool	renderer.md	engine/renderer/material.h:576
+renderer::MaterialSystem::Warmup(MaterialId,const PipelineTarget&,const VertexLayoutData&,rhi::PrimitiveTopology,bool)	function	renderer	renderer-materialsystem-warmup-materialid-const-pipelinetarget-amp-const-vertexlayoutdata-amp-rhi-primitivetopology-bool	renderer.md	engine/renderer/material.h:590
+renderer::MaterialSystem::BindGroupRebuilds(MaterialId) const	function	renderer	renderer-materialsystem-bindgrouprebuilds-materialid-const	renderer.md	engine/renderer/material.h:597
+renderer::MaterialSystem::Stats() const	function	renderer	renderer-materialsystem-stats-const	renderer.md	engine/renderer/material.h:601
+renderer::MaterialSystem::Release()	function	renderer	renderer-materialsystem-release	renderer.md	engine/renderer/material.h:606
+renderer::MaterialSystem::Recreate(rhi::Device*)	function	renderer	renderer-materialsystem-recreate-rhi-device-star	renderer.md	engine/renderer/material.h:614
+renderer::MaterialSystem::Live() const	function	renderer	renderer-materialsystem-live-const	renderer.md	engine/renderer/material.h:615
+renderer::MaterialSystem::RecreatableName() const	function	renderer	renderer-materialsystem-recreatablename-const	renderer.md	engine/renderer/material.h:616
 renderer::StandardVertex	struct	renderer	renderer-standardvertex	renderer.md	engine/renderer/mesh.h:22
 renderer::StandardVertex::position	variable	renderer	renderer-standardvertex-position	renderer.md	engine/renderer/mesh.h:25
 renderer::StandardVertex::normal	variable	renderer	renderer-standardvertex-normal	renderer.md	engine/renderer/mesh.h:27
@@ -8509,74 +8525,86 @@ renderer::ColorVertex	struct	renderer	renderer-colorvertex	renderer.md	engine/re
 renderer::ColorVertex::base	variable	renderer	renderer-colorvertex-base	renderer.md	engine/renderer/mesh.h:55
 renderer::ColorVertex::color	variable	renderer	renderer-colorvertex-color	renderer.md	engine/renderer/mesh.h:57
 renderer::ColorVertexLayout()	function	renderer	renderer-colorvertexlayout	renderer.md	engine/renderer/mesh.h:66
-renderer::MeshData	class	renderer	renderer-meshdata	renderer.md	engine/renderer/mesh.h:75
-renderer::MeshData::MeshData()	function	renderer	renderer-meshdata-meshdata	renderer.md	engine/renderer/mesh.h:78
-renderer::MeshData::~MeshData()	function	renderer	renderer-meshdata-tilde-meshdata	renderer.md	engine/renderer/mesh.h:80
-renderer::MeshData::MeshData(MeshData&&) noexcept	function	renderer	renderer-meshdata-meshdata-meshdata-amp-amp-noexcept	renderer.md	engine/renderer/mesh.h:82
-renderer::MeshData::operator=(MeshData&&) noexcept	function	renderer	renderer-meshdata-operator-eq-meshdata-amp-amp-noexcept	renderer.md	engine/renderer/mesh.h:84
-renderer::MeshData::MeshData(const MeshData&)	function	renderer	renderer-meshdata-meshdata-const-meshdata-amp	renderer.md	engine/renderer/mesh.h:85
-renderer::MeshData::operator=(const MeshData&)	function	renderer	renderer-meshdata-operator-eq-const-meshdata-amp	renderer.md	engine/renderer/mesh.h:86
-renderer::MeshData::Set(const VertexLayoutData&,u32,const void*,u32,rhi::IndexType,const void*,u32,rhi::PrimitiveTopology)	function	renderer	renderer-meshdata-set-const-vertexlayoutdata-amp-u32-const-void-star-u32-rhi-indextype-const-void-star-u32-rhi-primitivetopology	renderer.md	engine/renderer/mesh.h:108
-renderer::MeshData::Valid() const	function	renderer	renderer-meshdata-valid-const	renderer.md	engine/renderer/mesh.h:114
-renderer::MeshData::Layout() const	function	renderer	renderer-meshdata-layout-const	renderer.md	engine/renderer/mesh.h:116
-renderer::MeshData::Vertices() const	function	renderer	renderer-meshdata-vertices-const	renderer.md	engine/renderer/mesh.h:120
-renderer::MeshData::VertexCount() const	function	renderer	renderer-meshdata-vertexcount-const	renderer.md	engine/renderer/mesh.h:122
-renderer::MeshData::VertexBytes() const	function	renderer	renderer-meshdata-vertexbytes-const	renderer.md	engine/renderer/mesh.h:124
-renderer::MeshData::Indices() const	function	renderer	renderer-meshdata-indices-const	renderer.md	engine/renderer/mesh.h:128
-renderer::MeshData::IndexCount() const	function	renderer	renderer-meshdata-indexcount-const	renderer.md	engine/renderer/mesh.h:130
-renderer::MeshData::IndexFormat() const	function	renderer	renderer-meshdata-indexformat-const	renderer.md	engine/renderer/mesh.h:132
-renderer::MeshData::IndexBytes() const	function	renderer	renderer-meshdata-indexbytes-const	renderer.md	engine/renderer/mesh.h:134
-renderer::MeshData::GetBounds() const	function	renderer	renderer-meshdata-getbounds-const	renderer.md	engine/renderer/mesh.h:136
-renderer::MeshData::Topology() const	function	renderer	renderer-meshdata-topology-const	renderer.md	engine/renderer/mesh.h:139
-renderer::MeshData::HasPrimitiveRestart() const	function	renderer	renderer-meshdata-hasprimitiverestart-const	renderer.md	engine/renderer/mesh.h:143
-renderer::MeshData::PositionOffset() const	function	renderer	renderer-meshdata-positionoffset-const	renderer.md	engine/renderer/mesh.h:147
-renderer::MeshData::IndexAt(u32) const	function	renderer	renderer-meshdata-indexat-u32-const	renderer.md	engine/renderer/mesh.h:150
-renderer::MeshData::PositionAt(u32) const	function	renderer	renderer-meshdata-positionat-u32-const	renderer.md	engine/renderer/mesh.h:154
-renderer::MakeCubeMesh(f32,MeshData*)	function	renderer	renderer-makecubemesh-f32-meshdata-star	renderer.md	engine/renderer/mesh.h:181
-renderer::MakeSphereMesh(f32,u32,u32,MeshData*)	function	renderer	renderer-makespheremesh-f32-u32-u32-meshdata-star	renderer.md	engine/renderer/mesh.h:197
-renderer::MakePlaneMesh(f32,f32,u32,u32,MeshData*)	function	renderer	renderer-makeplanemesh-f32-f32-u32-u32-meshdata-star	renderer.md	engine/renderer/mesh.h:212
-renderer::MakePlaneStripMesh(f32,f32,u32,u32,MeshData*)	function	renderer	renderer-makeplanestripmesh-f32-f32-u32-u32-meshdata-star	renderer.md	engine/renderer/mesh.h:228
-renderer::MakeColoredMesh(const MeshData&,const u8*,u32,MeshData*)	function	renderer	renderer-makecoloredmesh-const-meshdata-amp-const-u8-star-u32-meshdata-star	renderer.md	engine/renderer/mesh.h:243
-renderer::MakeUniformColoredMesh(const MeshData&,const u8[4],MeshData*)	function	renderer	renderer-makeuniformcoloredmesh-const-meshdata-amp-const-u8-4-meshdata-star	renderer.md	engine/renderer/mesh.h:254
-renderer::StripJoin	enum	renderer	renderer-stripjoin	renderer.md	engine/renderer/mesh.h:257
-renderer::StripJoin::Restart	enumerator	renderer	renderer-stripjoin-restart	renderer.md	engine/renderer/mesh.h:259
-renderer::StripJoin::Degenerate	enumerator	renderer	renderer-stripjoin-degenerate	renderer.md	engine/renderer/mesh.h:260
-renderer::StripToList(const MeshData&,MeshData*)	function	renderer	renderer-striptolist-const-meshdata-amp-meshdata-star	renderer.md	engine/renderer/mesh.h:273
-renderer::ListToStrip(const MeshData&,StripJoin,MeshData*)	function	renderer	renderer-listtostrip-const-meshdata-amp-stripjoin-meshdata-star	renderer.md	engine/renderer/mesh.h:290
-renderer::GpuMesh	class	renderer	renderer-gpumesh	renderer.md	engine/renderer/mesh.h:302
-renderer::GpuMesh::GpuMesh()	function	renderer	renderer-gpumesh-gpumesh	renderer.md	engine/renderer/mesh.h:305
-renderer::GpuMesh::~GpuMesh()	function	renderer	renderer-gpumesh-tilde-gpumesh	renderer.md	engine/renderer/mesh.h:307
-renderer::GpuMesh::GpuMesh(GpuMesh&&) noexcept	function	renderer	renderer-gpumesh-gpumesh-gpumesh-amp-amp-noexcept	renderer.md	engine/renderer/mesh.h:309
-renderer::GpuMesh::operator=(GpuMesh&&) noexcept	function	renderer	renderer-gpumesh-operator-eq-gpumesh-amp-amp-noexcept	renderer.md	engine/renderer/mesh.h:311
-renderer::GpuMesh::GpuMesh(const GpuMesh&)	function	renderer	renderer-gpumesh-gpumesh-const-gpumesh-amp	renderer.md	engine/renderer/mesh.h:312
-renderer::GpuMesh::operator=(const GpuMesh&)	function	renderer	renderer-gpumesh-operator-eq-const-gpumesh-amp	renderer.md	engine/renderer/mesh.h:313
-renderer::GpuMesh::Create(rhi::Device*,const MeshData&,const char*)	function	renderer	renderer-gpumesh-create-rhi-device-star-const-meshdata-amp-const-char-star	renderer.md	engine/renderer/mesh.h:324
-renderer::GpuMesh::Destroy()	function	renderer	renderer-gpumesh-destroy	renderer.md	engine/renderer/mesh.h:328
-renderer::GpuMesh::Source	struct	renderer	renderer-gpumesh-source	renderer.md	engine/renderer/mesh.h:334
-renderer::GpuMesh::Source::borrowed	variable	renderer	renderer-gpumesh-source-borrowed	renderer.md	engine/renderer/mesh.h:337
-renderer::GpuMesh::Source::load	variable	renderer	renderer-gpumesh-source-load	renderer.md	engine/renderer/mesh.h:339
-renderer::GpuMesh::Source::user	variable	renderer	renderer-gpumesh-source-user	renderer.md	engine/renderer/mesh.h:341
-renderer::GpuMesh::MakeRecreatable(DeviceResources*,const Source&,const char*)	function	renderer	renderer-gpumesh-makerecreatable-deviceresources-star-const-source-amp-const-char-star	renderer.md	engine/renderer/mesh.h:356
-renderer::GpuMesh::AdoptSource(DeviceResources*,MeshData&&,const char*)	function	renderer	renderer-gpumesh-adoptsource-deviceresources-star-meshdata-amp-amp-const-char-star	renderer.md	engine/renderer/mesh.h:366
-renderer::GpuMesh::Release()	function	renderer	renderer-gpumesh-release	renderer.md	engine/renderer/mesh.h:370
-renderer::GpuMesh::Recreate(rhi::Device*)	function	renderer	renderer-gpumesh-recreate-rhi-device-star	renderer.md	engine/renderer/mesh.h:379
-renderer::GpuMesh::Live() const	function	renderer	renderer-gpumesh-live-const	renderer.md	engine/renderer/mesh.h:384
-renderer::GpuMesh::RecreatableName() const	function	renderer	renderer-gpumesh-recreatablename-const	renderer.md	engine/renderer/mesh.h:385
-renderer::GpuMesh::Valid() const	function	renderer	renderer-gpumesh-valid-const	renderer.md	engine/renderer/mesh.h:389
-renderer::GpuMesh::VertexBuffer() const	function	renderer	renderer-gpumesh-vertexbuffer-const	renderer.md	engine/renderer/mesh.h:391
-renderer::GpuMesh::IndexBuffer() const	function	renderer	renderer-gpumesh-indexbuffer-const	renderer.md	engine/renderer/mesh.h:393
-renderer::GpuMesh::IndexCount() const	function	renderer	renderer-gpumesh-indexcount-const	renderer.md	engine/renderer/mesh.h:395
-renderer::GpuMesh::VertexCount() const	function	renderer	renderer-gpumesh-vertexcount-const	renderer.md	engine/renderer/mesh.h:397
-renderer::GpuMesh::IndexFormat() const	function	renderer	renderer-gpumesh-indexformat-const	renderer.md	engine/renderer/mesh.h:399
-renderer::GpuMesh::Layout() const	function	renderer	renderer-gpumesh-layout-const	renderer.md	engine/renderer/mesh.h:401
-renderer::GpuMesh::Topology() const	function	renderer	renderer-gpumesh-topology-const	renderer.md	engine/renderer/mesh.h:404
-renderer::GpuMesh::HasPrimitiveRestart() const	function	renderer	renderer-gpumesh-hasprimitiverestart-const	renderer.md	engine/renderer/mesh.h:407
-renderer::GpuMesh::GetBounds() const	function	renderer	renderer-gpumesh-getbounds-const	renderer.md	engine/renderer/mesh.h:409
-renderer::GpuMesh::SortId() const	function	renderer	renderer-gpumesh-sortid-const	renderer.md	engine/renderer/mesh.h:413
-renderer::GpuMesh::RecordPrepare(rhi::CommandList*)	function	renderer	renderer-gpumesh-recordprepare-rhi-commandlist-star	renderer.md	engine/renderer/mesh.h:421
-renderer::GpuMesh::MarkReady()	function	renderer	renderer-gpumesh-markready	renderer.md	engine/renderer/mesh.h:424
-renderer::GpuMesh::Ready() const	function	renderer	renderer-gpumesh-ready-const	renderer.md	engine/renderer/mesh.h:428
-renderer::GpuMesh::Draw(rhi::CommandList*,u32,u32) const	function	renderer	renderer-gpumesh-draw-rhi-commandlist-star-u32-u32-const	renderer.md	engine/renderer/mesh.h:439
+renderer::SkinnedVertexLayout(const VertexLayoutData&)	function	renderer	renderer-skinnedvertexlayout-const-vertexlayoutdata-amp	renderer.md	engine/renderer/mesh.h:76
+renderer::kSkinJointsLocation	variable	renderer	renderer-kskinjointslocation	renderer.md	engine/renderer/mesh.h:79
+renderer::kSkinWeightsLocation	variable	renderer	renderer-kskinweightslocation	renderer.md	engine/renderer/mesh.h:81
+renderer::kSkinVertexBytes	variable	renderer	renderer-kskinvertexbytes	renderer.md	engine/renderer/mesh.h:83
+renderer::MeshData	class	renderer	renderer-meshdata	renderer.md	engine/renderer/mesh.h:92
+renderer::MeshData::MeshData()	function	renderer	renderer-meshdata-meshdata	renderer.md	engine/renderer/mesh.h:95
+renderer::MeshData::~MeshData()	function	renderer	renderer-meshdata-tilde-meshdata	renderer.md	engine/renderer/mesh.h:97
+renderer::MeshData::MeshData(MeshData&&) noexcept	function	renderer	renderer-meshdata-meshdata-meshdata-amp-amp-noexcept	renderer.md	engine/renderer/mesh.h:99
+renderer::MeshData::operator=(MeshData&&) noexcept	function	renderer	renderer-meshdata-operator-eq-meshdata-amp-amp-noexcept	renderer.md	engine/renderer/mesh.h:101
+renderer::MeshData::MeshData(const MeshData&)	function	renderer	renderer-meshdata-meshdata-const-meshdata-amp	renderer.md	engine/renderer/mesh.h:102
+renderer::MeshData::operator=(const MeshData&)	function	renderer	renderer-meshdata-operator-eq-const-meshdata-amp	renderer.md	engine/renderer/mesh.h:103
+renderer::MeshData::Set(const VertexLayoutData&,u32,const void*,u32,rhi::IndexType,const void*,u32,rhi::PrimitiveTopology)	function	renderer	renderer-meshdata-set-const-vertexlayoutdata-amp-u32-const-void-star-u32-rhi-indextype-const-void-star-u32-rhi-primitivetopology	renderer.md	engine/renderer/mesh.h:125
+renderer::MeshData::SetSkin(const void*,u32)	function	renderer	renderer-meshdata-setskin-const-void-star-u32	renderer.md	engine/renderer/mesh.h:141
+renderer::MeshData::Skinned() const	function	renderer	renderer-meshdata-skinned-const	renderer.md	engine/renderer/mesh.h:145
+renderer::MeshData::SkinBytes() const	function	renderer	renderer-meshdata-skinbytes-const	renderer.md	engine/renderer/mesh.h:149
+renderer::MeshData::SkinByteCount() const	function	renderer	renderer-meshdata-skinbytecount-const	renderer.md	engine/renderer/mesh.h:152
+renderer::MeshData::SkinJointCount() const	function	renderer	renderer-meshdata-skinjointcount-const	renderer.md	engine/renderer/mesh.h:156
+renderer::MeshData::Valid() const	function	renderer	renderer-meshdata-valid-const	renderer.md	engine/renderer/mesh.h:160
+renderer::MeshData::Layout() const	function	renderer	renderer-meshdata-layout-const	renderer.md	engine/renderer/mesh.h:162
+renderer::MeshData::Vertices() const	function	renderer	renderer-meshdata-vertices-const	renderer.md	engine/renderer/mesh.h:166
+renderer::MeshData::VertexCount() const	function	renderer	renderer-meshdata-vertexcount-const	renderer.md	engine/renderer/mesh.h:168
+renderer::MeshData::VertexBytes() const	function	renderer	renderer-meshdata-vertexbytes-const	renderer.md	engine/renderer/mesh.h:170
+renderer::MeshData::Indices() const	function	renderer	renderer-meshdata-indices-const	renderer.md	engine/renderer/mesh.h:174
+renderer::MeshData::IndexCount() const	function	renderer	renderer-meshdata-indexcount-const	renderer.md	engine/renderer/mesh.h:176
+renderer::MeshData::IndexFormat() const	function	renderer	renderer-meshdata-indexformat-const	renderer.md	engine/renderer/mesh.h:178
+renderer::MeshData::IndexBytes() const	function	renderer	renderer-meshdata-indexbytes-const	renderer.md	engine/renderer/mesh.h:180
+renderer::MeshData::GetBounds() const	function	renderer	renderer-meshdata-getbounds-const	renderer.md	engine/renderer/mesh.h:182
+renderer::MeshData::Topology() const	function	renderer	renderer-meshdata-topology-const	renderer.md	engine/renderer/mesh.h:185
+renderer::MeshData::HasPrimitiveRestart() const	function	renderer	renderer-meshdata-hasprimitiverestart-const	renderer.md	engine/renderer/mesh.h:189
+renderer::MeshData::PositionOffset() const	function	renderer	renderer-meshdata-positionoffset-const	renderer.md	engine/renderer/mesh.h:193
+renderer::MeshData::IndexAt(u32) const	function	renderer	renderer-meshdata-indexat-u32-const	renderer.md	engine/renderer/mesh.h:196
+renderer::MeshData::PositionAt(u32) const	function	renderer	renderer-meshdata-positionat-u32-const	renderer.md	engine/renderer/mesh.h:200
+renderer::MakeCubeMesh(f32,MeshData*)	function	renderer	renderer-makecubemesh-f32-meshdata-star	renderer.md	engine/renderer/mesh.h:229
+renderer::MakeSphereMesh(f32,u32,u32,MeshData*)	function	renderer	renderer-makespheremesh-f32-u32-u32-meshdata-star	renderer.md	engine/renderer/mesh.h:245
+renderer::MakePlaneMesh(f32,f32,u32,u32,MeshData*)	function	renderer	renderer-makeplanemesh-f32-f32-u32-u32-meshdata-star	renderer.md	engine/renderer/mesh.h:260
+renderer::MakePlaneStripMesh(f32,f32,u32,u32,MeshData*)	function	renderer	renderer-makeplanestripmesh-f32-f32-u32-u32-meshdata-star	renderer.md	engine/renderer/mesh.h:276
+renderer::MakeColoredMesh(const MeshData&,const u8*,u32,MeshData*)	function	renderer	renderer-makecoloredmesh-const-meshdata-amp-const-u8-star-u32-meshdata-star	renderer.md	engine/renderer/mesh.h:291
+renderer::MakeUniformColoredMesh(const MeshData&,const u8[4],MeshData*)	function	renderer	renderer-makeuniformcoloredmesh-const-meshdata-amp-const-u8-4-meshdata-star	renderer.md	engine/renderer/mesh.h:302
+renderer::StripJoin	enum	renderer	renderer-stripjoin	renderer.md	engine/renderer/mesh.h:305
+renderer::StripJoin::Restart	enumerator	renderer	renderer-stripjoin-restart	renderer.md	engine/renderer/mesh.h:307
+renderer::StripJoin::Degenerate	enumerator	renderer	renderer-stripjoin-degenerate	renderer.md	engine/renderer/mesh.h:308
+renderer::StripToList(const MeshData&,MeshData*)	function	renderer	renderer-striptolist-const-meshdata-amp-meshdata-star	renderer.md	engine/renderer/mesh.h:321
+renderer::ListToStrip(const MeshData&,StripJoin,MeshData*)	function	renderer	renderer-listtostrip-const-meshdata-amp-stripjoin-meshdata-star	renderer.md	engine/renderer/mesh.h:338
+renderer::GpuMesh	class	renderer	renderer-gpumesh	renderer.md	engine/renderer/mesh.h:350
+renderer::GpuMesh::GpuMesh()	function	renderer	renderer-gpumesh-gpumesh	renderer.md	engine/renderer/mesh.h:353
+renderer::GpuMesh::~GpuMesh()	function	renderer	renderer-gpumesh-tilde-gpumesh	renderer.md	engine/renderer/mesh.h:355
+renderer::GpuMesh::GpuMesh(GpuMesh&&) noexcept	function	renderer	renderer-gpumesh-gpumesh-gpumesh-amp-amp-noexcept	renderer.md	engine/renderer/mesh.h:357
+renderer::GpuMesh::operator=(GpuMesh&&) noexcept	function	renderer	renderer-gpumesh-operator-eq-gpumesh-amp-amp-noexcept	renderer.md	engine/renderer/mesh.h:359
+renderer::GpuMesh::GpuMesh(const GpuMesh&)	function	renderer	renderer-gpumesh-gpumesh-const-gpumesh-amp	renderer.md	engine/renderer/mesh.h:360
+renderer::GpuMesh::operator=(const GpuMesh&)	function	renderer	renderer-gpumesh-operator-eq-const-gpumesh-amp	renderer.md	engine/renderer/mesh.h:361
+renderer::GpuMesh::Create(rhi::Device*,const MeshData&,const char*)	function	renderer	renderer-gpumesh-create-rhi-device-star-const-meshdata-amp-const-char-star	renderer.md	engine/renderer/mesh.h:372
+renderer::GpuMesh::Destroy()	function	renderer	renderer-gpumesh-destroy	renderer.md	engine/renderer/mesh.h:376
+renderer::GpuMesh::Source	struct	renderer	renderer-gpumesh-source	renderer.md	engine/renderer/mesh.h:382
+renderer::GpuMesh::Source::borrowed	variable	renderer	renderer-gpumesh-source-borrowed	renderer.md	engine/renderer/mesh.h:385
+renderer::GpuMesh::Source::load	variable	renderer	renderer-gpumesh-source-load	renderer.md	engine/renderer/mesh.h:387
+renderer::GpuMesh::Source::user	variable	renderer	renderer-gpumesh-source-user	renderer.md	engine/renderer/mesh.h:389
+renderer::GpuMesh::MakeRecreatable(DeviceResources*,const Source&,const char*)	function	renderer	renderer-gpumesh-makerecreatable-deviceresources-star-const-source-amp-const-char-star	renderer.md	engine/renderer/mesh.h:404
+renderer::GpuMesh::AdoptSource(DeviceResources*,MeshData&&,const char*)	function	renderer	renderer-gpumesh-adoptsource-deviceresources-star-meshdata-amp-amp-const-char-star	renderer.md	engine/renderer/mesh.h:414
+renderer::GpuMesh::Release()	function	renderer	renderer-gpumesh-release	renderer.md	engine/renderer/mesh.h:418
+renderer::GpuMesh::Recreate(rhi::Device*)	function	renderer	renderer-gpumesh-recreate-rhi-device-star	renderer.md	engine/renderer/mesh.h:427
+renderer::GpuMesh::Live() const	function	renderer	renderer-gpumesh-live-const	renderer.md	engine/renderer/mesh.h:432
+renderer::GpuMesh::RecreatableName() const	function	renderer	renderer-gpumesh-recreatablename-const	renderer.md	engine/renderer/mesh.h:433
+renderer::GpuMesh::Valid() const	function	renderer	renderer-gpumesh-valid-const	renderer.md	engine/renderer/mesh.h:437
+renderer::GpuMesh::VertexBuffer() const	function	renderer	renderer-gpumesh-vertexbuffer-const	renderer.md	engine/renderer/mesh.h:439
+renderer::GpuMesh::IndexBuffer() const	function	renderer	renderer-gpumesh-indexbuffer-const	renderer.md	engine/renderer/mesh.h:441
+renderer::GpuMesh::SkinBuffer() const	function	renderer	renderer-gpumesh-skinbuffer-const	renderer.md	engine/renderer/mesh.h:443
+renderer::GpuMesh::SkinJointCount() const	function	renderer	renderer-gpumesh-skinjointcount-const	renderer.md	engine/renderer/mesh.h:447
+renderer::GpuMesh::Skinned() const	function	renderer	renderer-gpumesh-skinned-const	renderer.md	engine/renderer/mesh.h:450
+renderer::GpuMesh::IndexCount() const	function	renderer	renderer-gpumesh-indexcount-const	renderer.md	engine/renderer/mesh.h:452
+renderer::GpuMesh::VertexCount() const	function	renderer	renderer-gpumesh-vertexcount-const	renderer.md	engine/renderer/mesh.h:454
+renderer::GpuMesh::IndexFormat() const	function	renderer	renderer-gpumesh-indexformat-const	renderer.md	engine/renderer/mesh.h:456
+renderer::GpuMesh::Layout() const	function	renderer	renderer-gpumesh-layout-const	renderer.md	engine/renderer/mesh.h:458
+renderer::GpuMesh::Topology() const	function	renderer	renderer-gpumesh-topology-const	renderer.md	engine/renderer/mesh.h:461
+renderer::GpuMesh::HasPrimitiveRestart() const	function	renderer	renderer-gpumesh-hasprimitiverestart-const	renderer.md	engine/renderer/mesh.h:464
+renderer::GpuMesh::GetBounds() const	function	renderer	renderer-gpumesh-getbounds-const	renderer.md	engine/renderer/mesh.h:466
+renderer::GpuMesh::SortId() const	function	renderer	renderer-gpumesh-sortid-const	renderer.md	engine/renderer/mesh.h:470
+renderer::GpuMesh::RecordPrepare(rhi::CommandList*)	function	renderer	renderer-gpumesh-recordprepare-rhi-commandlist-star	renderer.md	engine/renderer/mesh.h:478
+renderer::GpuMesh::MarkReady()	function	renderer	renderer-gpumesh-markready	renderer.md	engine/renderer/mesh.h:481
+renderer::GpuMesh::Ready() const	function	renderer	renderer-gpumesh-ready-const	renderer.md	engine/renderer/mesh.h:485
+renderer::GpuMesh::Draw(rhi::CommandList*,u32,u32) const	function	renderer	renderer-gpumesh-draw-rhi-commandlist-star-u32-u32-const	renderer.md	engine/renderer/mesh.h:496
 renderer::kMaxGraphErrors	variable	renderer	renderer-kmaxgrapherrors	renderer.md	engine/renderer/render_graph.h:32
 renderer::kGraphErrorLength	variable	renderer	renderer-kgrapherrorlength	renderer.md	engine/renderer/render_graph.h:34
 renderer::kNeverUsed	variable	renderer	renderer-kneverused	renderer.md	engine/renderer/render_graph.h:36
@@ -8700,57 +8728,64 @@ renderer::RenderObjectDesc::mesh	variable	renderer	renderer-renderobjectdesc-mes
 renderer::RenderObjectDesc::material	variable	renderer	renderer-renderobjectdesc-material	renderer.md	engine/renderer/render_scene.h:74
 renderer::RenderObjectDesc::transform	variable	renderer	renderer-renderobjectdesc-transform	renderer.md	engine/renderer/render_scene.h:76
 renderer::RenderObjectDesc::flags	variable	renderer	renderer-renderobjectdesc-flags	renderer.md	engine/renderer/render_scene.h:78
-renderer::RenderObject	struct	renderer	renderer-renderobject	renderer.md	engine/renderer/render_scene.h:85
-renderer::RenderObject::mesh	variable	renderer	renderer-renderobject-mesh	renderer.md	engine/renderer/render_scene.h:88
-renderer::RenderObject::material	variable	renderer	renderer-renderobject-material	renderer.md	engine/renderer/render_scene.h:90
-renderer::RenderObject::transform	variable	renderer	renderer-renderobject-transform	renderer.md	engine/renderer/render_scene.h:92
-renderer::RenderObject::flags	variable	renderer	renderer-renderobject-flags	renderer.md	engine/renderer/render_scene.h:94
-renderer::RenderObject::bounds	variable	renderer	renderer-renderobject-bounds	renderer.md	engine/renderer/render_scene.h:96
-renderer::LightType	enum	renderer	renderer-lighttype	renderer.md	engine/renderer/render_scene.h:100
-renderer::LightType::Directional	enumerator	renderer	renderer-lighttype-directional	renderer.md	engine/renderer/render_scene.h:102
-renderer::LightType::Point	enumerator	renderer	renderer-lighttype-point	renderer.md	engine/renderer/render_scene.h:103
-renderer::LightType::Ambient	enumerator	renderer	renderer-lighttype-ambient	renderer.md	engine/renderer/render_scene.h:104
-renderer::Light	struct	renderer	renderer-light	renderer.md	engine/renderer/render_scene.h:111
-renderer::Light::type	variable	renderer	renderer-light-type	renderer.md	engine/renderer/render_scene.h:114
-renderer::Light::color	variable	renderer	renderer-light-color	renderer.md	engine/renderer/render_scene.h:116
-renderer::Light::intensity	variable	renderer	renderer-light-intensity	renderer.md	engine/renderer/render_scene.h:118
-renderer::Light::direction	variable	renderer	renderer-light-direction	renderer.md	engine/renderer/render_scene.h:120
-renderer::Light::position	variable	renderer	renderer-light-position	renderer.md	engine/renderer/render_scene.h:122
-renderer::Light::radius	variable	renderer	renderer-light-radius	renderer.md	engine/renderer/render_scene.h:125
-renderer::kMaxLights	variable	renderer	renderer-kmaxlights	renderer.md	engine/renderer/render_scene.h:133
-renderer::RenderSceneDesc	struct	renderer	renderer-renderscenedesc	renderer.md	engine/renderer/render_scene.h:138
-renderer::RenderSceneDesc::max_objects	variable	renderer	renderer-renderscenedesc-max-objects	renderer.md	engine/renderer/render_scene.h:141
-renderer::RenderSceneDesc::max_lights	variable	renderer	renderer-renderscenedesc-max-lights	renderer.md	engine/renderer/render_scene.h:143
-renderer::RenderScene	class	renderer	renderer-renderscene	renderer.md	engine/renderer/render_scene.h:154
-renderer::RenderScene::RenderScene(const RenderSceneDesc&)	function	renderer	renderer-renderscene-renderscene-const-renderscenedesc-amp	renderer.md	engine/renderer/render_scene.h:161
-renderer::RenderScene::~RenderScene()	function	renderer	renderer-renderscene-tilde-renderscene	renderer.md	engine/renderer/render_scene.h:163
-renderer::RenderScene::RenderScene(const RenderScene&)	function	renderer	renderer-renderscene-renderscene-const-renderscene-amp	renderer.md	engine/renderer/render_scene.h:164
-renderer::RenderScene::operator=(const RenderScene&)	function	renderer	renderer-renderscene-operator-eq-const-renderscene-amp	renderer.md	engine/renderer/render_scene.h:165
-renderer::RenderScene::AddObject(const RenderObjectDesc&)	function	renderer	renderer-renderscene-addobject-const-renderobjectdesc-amp	renderer.md	engine/renderer/render_scene.h:173
-renderer::RenderScene::RemoveObject(ObjectId)	function	renderer	renderer-renderscene-removeobject-objectid	renderer.md	engine/renderer/render_scene.h:179
-renderer::RenderScene::SetTransform(ObjectId,const Mat4&)	function	renderer	renderer-renderscene-settransform-objectid-const-mat4-amp	renderer.md	engine/renderer/render_scene.h:186
-renderer::RenderScene::SetFlags(ObjectId,u32)	function	renderer	renderer-renderscene-setflags-objectid-u32	renderer.md	engine/renderer/render_scene.h:193
-renderer::RenderScene::FindObject(ObjectId) const	function	renderer	renderer-renderscene-findobject-objectid-const	renderer.md	engine/renderer/render_scene.h:201
-renderer::RenderScene::ObjectCount() const	function	renderer	renderer-renderscene-objectcount-const	renderer.md	engine/renderer/render_scene.h:204
-renderer::RenderScene::ObjectCapacity() const	function	renderer	renderer-renderscene-objectcapacity-const	renderer.md	engine/renderer/render_scene.h:206
-renderer::RenderScene::SlotCount() const	function	renderer	renderer-renderscene-slotcount-const	renderer.md	engine/renderer/render_scene.h:209
-renderer::RenderScene::SlotAlive(u32) const	function	renderer	renderer-renderscene-slotalive-u32-const	renderer.md	engine/renderer/render_scene.h:212
-renderer::RenderScene::ObjectAt(u32) const	function	renderer	renderer-renderscene-objectat-u32-const	renderer.md	engine/renderer/render_scene.h:215
-renderer::RenderScene::AddLight(const Light&)	function	renderer	renderer-renderscene-addlight-const-light-amp	renderer.md	engine/renderer/render_scene.h:224
-renderer::RenderScene::RemoveLight(LightId)	function	renderer	renderer-renderscene-removelight-lightid	renderer.md	engine/renderer/render_scene.h:230
-renderer::RenderScene::SetLight(LightId,const Light&)	function	renderer	renderer-renderscene-setlight-lightid-const-light-amp	renderer.md	engine/renderer/render_scene.h:237
-renderer::RenderScene::FindLight(LightId) const	function	renderer	renderer-renderscene-findlight-lightid-const	renderer.md	engine/renderer/render_scene.h:245
-renderer::RenderScene::LightCount() const	function	renderer	renderer-renderscene-lightcount-const	renderer.md	engine/renderer/render_scene.h:248
-renderer::RenderScene::LightSlotCount() const	function	renderer	renderer-renderscene-lightslotcount-const	renderer.md	engine/renderer/render_scene.h:250
-renderer::RenderScene::LightSlotAlive(u32) const	function	renderer	renderer-renderscene-lightslotalive-u32-const	renderer.md	engine/renderer/render_scene.h:253
-renderer::RenderScene::LightAt(u32) const	function	renderer	renderer-renderscene-lightat-u32-const	renderer.md	engine/renderer/render_scene.h:256
-renderer::RenderScene::Cull(const Frustum&,u32*,u32) const	function	renderer	renderer-renderscene-cull-const-frustum-amp-u32-star-u32-const	renderer.md	engine/renderer/render_scene.h:266
-renderer::RenderScene::CullMode	enum	renderer	renderer-renderscene-cullmode	renderer.md	engine/renderer/render_scene.h:269
-renderer::RenderScene::CullMode::Bvh	enumerator	renderer	renderer-renderscene-cullmode-bvh	renderer.md	engine/renderer/render_scene.h:271
-renderer::RenderScene::CullMode::Flat	enumerator	renderer	renderer-renderscene-cullmode-flat	renderer.md	engine/renderer/render_scene.h:273
-renderer::RenderScene::SetCullMode(CullMode)	function	renderer	renderer-renderscene-setcullmode-cullmode	renderer.md	engine/renderer/render_scene.h:277
-renderer::RenderScene::GetCullMode() const	function	renderer	renderer-renderscene-getcullmode-const	renderer.md	engine/renderer/render_scene.h:280
-renderer::RenderScene::OptimizeCulling(u32)	function	renderer	renderer-renderscene-optimizeculling-u32	renderer.md	engine/renderer/render_scene.h:284
+renderer::RenderObjectDesc::joint_matrices	variable	renderer	renderer-renderobjectdesc-joint-matrices	renderer.md	engine/renderer/render_scene.h:83
+renderer::RenderObjectDesc::joint_count	variable	renderer	renderer-renderobjectdesc-joint-count	renderer.md	engine/renderer/render_scene.h:85
+renderer::RenderObjectDesc::skin_bounds_scale	variable	renderer	renderer-renderobjectdesc-skin-bounds-scale	renderer.md	engine/renderer/render_scene.h:88
+renderer::RenderObject	struct	renderer	renderer-renderobject	renderer.md	engine/renderer/render_scene.h:95
+renderer::RenderObject::mesh	variable	renderer	renderer-renderobject-mesh	renderer.md	engine/renderer/render_scene.h:98
+renderer::RenderObject::material	variable	renderer	renderer-renderobject-material	renderer.md	engine/renderer/render_scene.h:100
+renderer::RenderObject::transform	variable	renderer	renderer-renderobject-transform	renderer.md	engine/renderer/render_scene.h:102
+renderer::RenderObject::flags	variable	renderer	renderer-renderobject-flags	renderer.md	engine/renderer/render_scene.h:104
+renderer::RenderObject::bounds	variable	renderer	renderer-renderobject-bounds	renderer.md	engine/renderer/render_scene.h:106
+renderer::RenderObject::joint_matrices	variable	renderer	renderer-renderobject-joint-matrices	renderer.md	engine/renderer/render_scene.h:111
+renderer::RenderObject::joint_count	variable	renderer	renderer-renderobject-joint-count	renderer.md	engine/renderer/render_scene.h:113
+renderer::RenderObject::skin_bounds_scale	variable	renderer	renderer-renderobject-skin-bounds-scale	renderer.md	engine/renderer/render_scene.h:116
+renderer::LightType	enum	renderer	renderer-lighttype	renderer.md	engine/renderer/render_scene.h:120
+renderer::LightType::Directional	enumerator	renderer	renderer-lighttype-directional	renderer.md	engine/renderer/render_scene.h:122
+renderer::LightType::Point	enumerator	renderer	renderer-lighttype-point	renderer.md	engine/renderer/render_scene.h:123
+renderer::LightType::Ambient	enumerator	renderer	renderer-lighttype-ambient	renderer.md	engine/renderer/render_scene.h:124
+renderer::Light	struct	renderer	renderer-light	renderer.md	engine/renderer/render_scene.h:131
+renderer::Light::type	variable	renderer	renderer-light-type	renderer.md	engine/renderer/render_scene.h:134
+renderer::Light::color	variable	renderer	renderer-light-color	renderer.md	engine/renderer/render_scene.h:136
+renderer::Light::intensity	variable	renderer	renderer-light-intensity	renderer.md	engine/renderer/render_scene.h:138
+renderer::Light::direction	variable	renderer	renderer-light-direction	renderer.md	engine/renderer/render_scene.h:140
+renderer::Light::position	variable	renderer	renderer-light-position	renderer.md	engine/renderer/render_scene.h:142
+renderer::Light::radius	variable	renderer	renderer-light-radius	renderer.md	engine/renderer/render_scene.h:145
+renderer::kMaxLights	variable	renderer	renderer-kmaxlights	renderer.md	engine/renderer/render_scene.h:153
+renderer::RenderSceneDesc	struct	renderer	renderer-renderscenedesc	renderer.md	engine/renderer/render_scene.h:158
+renderer::RenderSceneDesc::max_objects	variable	renderer	renderer-renderscenedesc-max-objects	renderer.md	engine/renderer/render_scene.h:161
+renderer::RenderSceneDesc::max_lights	variable	renderer	renderer-renderscenedesc-max-lights	renderer.md	engine/renderer/render_scene.h:163
+renderer::RenderScene	class	renderer	renderer-renderscene	renderer.md	engine/renderer/render_scene.h:174
+renderer::RenderScene::RenderScene(const RenderSceneDesc&)	function	renderer	renderer-renderscene-renderscene-const-renderscenedesc-amp	renderer.md	engine/renderer/render_scene.h:181
+renderer::RenderScene::~RenderScene()	function	renderer	renderer-renderscene-tilde-renderscene	renderer.md	engine/renderer/render_scene.h:183
+renderer::RenderScene::RenderScene(const RenderScene&)	function	renderer	renderer-renderscene-renderscene-const-renderscene-amp	renderer.md	engine/renderer/render_scene.h:184
+renderer::RenderScene::operator=(const RenderScene&)	function	renderer	renderer-renderscene-operator-eq-const-renderscene-amp	renderer.md	engine/renderer/render_scene.h:185
+renderer::RenderScene::AddObject(const RenderObjectDesc&)	function	renderer	renderer-renderscene-addobject-const-renderobjectdesc-amp	renderer.md	engine/renderer/render_scene.h:193
+renderer::RenderScene::RemoveObject(ObjectId)	function	renderer	renderer-renderscene-removeobject-objectid	renderer.md	engine/renderer/render_scene.h:199
+renderer::RenderScene::SetTransform(ObjectId,const Mat4&)	function	renderer	renderer-renderscene-settransform-objectid-const-mat4-amp	renderer.md	engine/renderer/render_scene.h:206
+renderer::RenderScene::SetFlags(ObjectId,u32)	function	renderer	renderer-renderscene-setflags-objectid-u32	renderer.md	engine/renderer/render_scene.h:213
+renderer::RenderScene::SetJointMatrices(ObjectId,const f32*,u32)	function	renderer	renderer-renderscene-setjointmatrices-objectid-const-f32-star-u32	renderer.md	engine/renderer/render_scene.h:223
+renderer::RenderScene::FindObject(ObjectId) const	function	renderer	renderer-renderscene-findobject-objectid-const	renderer.md	engine/renderer/render_scene.h:231
+renderer::RenderScene::ObjectCount() const	function	renderer	renderer-renderscene-objectcount-const	renderer.md	engine/renderer/render_scene.h:234
+renderer::RenderScene::ObjectCapacity() const	function	renderer	renderer-renderscene-objectcapacity-const	renderer.md	engine/renderer/render_scene.h:236
+renderer::RenderScene::SlotCount() const	function	renderer	renderer-renderscene-slotcount-const	renderer.md	engine/renderer/render_scene.h:239
+renderer::RenderScene::SlotAlive(u32) const	function	renderer	renderer-renderscene-slotalive-u32-const	renderer.md	engine/renderer/render_scene.h:242
+renderer::RenderScene::ObjectAt(u32) const	function	renderer	renderer-renderscene-objectat-u32-const	renderer.md	engine/renderer/render_scene.h:245
+renderer::RenderScene::AddLight(const Light&)	function	renderer	renderer-renderscene-addlight-const-light-amp	renderer.md	engine/renderer/render_scene.h:254
+renderer::RenderScene::RemoveLight(LightId)	function	renderer	renderer-renderscene-removelight-lightid	renderer.md	engine/renderer/render_scene.h:260
+renderer::RenderScene::SetLight(LightId,const Light&)	function	renderer	renderer-renderscene-setlight-lightid-const-light-amp	renderer.md	engine/renderer/render_scene.h:267
+renderer::RenderScene::FindLight(LightId) const	function	renderer	renderer-renderscene-findlight-lightid-const	renderer.md	engine/renderer/render_scene.h:275
+renderer::RenderScene::LightCount() const	function	renderer	renderer-renderscene-lightcount-const	renderer.md	engine/renderer/render_scene.h:278
+renderer::RenderScene::LightSlotCount() const	function	renderer	renderer-renderscene-lightslotcount-const	renderer.md	engine/renderer/render_scene.h:280
+renderer::RenderScene::LightSlotAlive(u32) const	function	renderer	renderer-renderscene-lightslotalive-u32-const	renderer.md	engine/renderer/render_scene.h:283
+renderer::RenderScene::LightAt(u32) const	function	renderer	renderer-renderscene-lightat-u32-const	renderer.md	engine/renderer/render_scene.h:286
+renderer::RenderScene::Cull(const Frustum&,u32*,u32) const	function	renderer	renderer-renderscene-cull-const-frustum-amp-u32-star-u32-const	renderer.md	engine/renderer/render_scene.h:296
+renderer::RenderScene::CullMode	enum	renderer	renderer-renderscene-cullmode	renderer.md	engine/renderer/render_scene.h:299
+renderer::RenderScene::CullMode::Bvh	enumerator	renderer	renderer-renderscene-cullmode-bvh	renderer.md	engine/renderer/render_scene.h:301
+renderer::RenderScene::CullMode::Flat	enumerator	renderer	renderer-renderscene-cullmode-flat	renderer.md	engine/renderer/render_scene.h:303
+renderer::RenderScene::SetCullMode(CullMode)	function	renderer	renderer-renderscene-setcullmode-cullmode	renderer.md	engine/renderer/render_scene.h:307
+renderer::RenderScene::GetCullMode() const	function	renderer	renderer-renderscene-getcullmode-const	renderer.md	engine/renderer/render_scene.h:310
+renderer::RenderScene::OptimizeCulling(u32)	function	renderer	renderer-renderscene-optimizeculling-u32	renderer.md	engine/renderer/render_scene.h:314
 renderer::kMaxSettings	variable	renderer	renderer-kmaxsettings	renderer.md	engine/renderer/render_settings.h:19
 renderer::kSettingTextBytes	variable	renderer	renderer-ksettingtextbytes	renderer.md	engine/renderer/render_settings.h:21
 renderer::kMaxCapabilities	variable	renderer	renderer-kmaxcapabilities	renderer.md	engine/renderer/render_settings.h:23
@@ -8814,64 +8849,65 @@ renderer::settings::kHdr	variable	renderer	renderer-settings-khdr	renderer.md	en
 renderer::settings::kShaderQuality	variable	renderer	renderer-settings-kshaderquality	renderer.md	engine/renderer/render_settings.h:202
 renderer::settings::kGBufferDebugLayer	variable	renderer	renderer-settings-kgbufferdebuglayer	renderer.md	engine/renderer/render_settings.h:204
 renderer::settings::kRenderScale	variable	renderer	renderer-settings-krenderscale	renderer.md	engine/renderer/render_settings.h:206
-renderer::RegisterBuiltinSettings(SettingsRegistry*)	function	renderer	renderer-registerbuiltinsettings-settingsregistry-star	renderer.md	engine/renderer/render_settings.h:214
-renderer::SetStatus	enum	renderer	renderer-setstatus	renderer.md	engine/renderer/render_settings.h:217
-renderer::SetStatus::Ok	enumerator	renderer	renderer-setstatus-ok	renderer.md	engine/renderer/render_settings.h:219
-renderer::SetStatus::Clamped	enumerator	renderer	renderer-setstatus-clamped	renderer.md	engine/renderer/render_settings.h:220
-renderer::SetStatus::OutOfRange	enumerator	renderer	renderer-setstatus-outofrange	renderer.md	engine/renderer/render_settings.h:221
-renderer::SetStatus::WrongType	enumerator	renderer	renderer-setstatus-wrongtype	renderer.md	engine/renderer/render_settings.h:222
-renderer::SetStatus::UnknownId	enumerator	renderer	renderer-setstatus-unknownid	renderer.md	engine/renderer/render_settings.h:223
-renderer::SetStatus::BadText	enumerator	renderer	renderer-setstatus-badtext	renderer.md	engine/renderer/render_settings.h:224
-renderer::RenderSettings	class	renderer	renderer-rendersettings	renderer.md	engine/renderer/render_settings.h:234
-renderer::RenderSettings::RenderSettings(const SettingsRegistry&)	function	renderer	renderer-rendersettings-rendersettings-const-settingsregistry-amp	renderer.md	engine/renderer/render_settings.h:240
-renderer::RenderSettings::Registry() const	function	renderer	renderer-rendersettings-registry-const	renderer.md	engine/renderer/render_settings.h:244
-renderer::RenderSettings::GetBool(SettingId) const	function	renderer	renderer-rendersettings-getbool-settingid-const	renderer.md	engine/renderer/render_settings.h:250
-renderer::RenderSettings::GetInt(SettingId) const	function	renderer	renderer-rendersettings-getint-settingid-const	renderer.md	engine/renderer/render_settings.h:255
-renderer::RenderSettings::GetEnum(SettingId) const	function	renderer	renderer-rendersettings-getenum-settingid-const	renderer.md	engine/renderer/render_settings.h:260
-renderer::RenderSettings::GetFloat(SettingId) const	function	renderer	renderer-rendersettings-getfloat-settingid-const	renderer.md	engine/renderer/render_settings.h:265
-renderer::RenderSettings::GetText(SettingId) const	function	renderer	renderer-rendersettings-gettext-settingid-const	renderer.md	engine/renderer/render_settings.h:271
-renderer::RenderSettings::SetBool(SettingId,bool)	function	renderer	renderer-rendersettings-setbool-settingid-bool	renderer.md	engine/renderer/render_settings.h:277
-renderer::RenderSettings::SetInt(SettingId,i64)	function	renderer	renderer-rendersettings-setint-settingid-i64	renderer.md	engine/renderer/render_settings.h:282
-renderer::RenderSettings::SetEnum(SettingId,u32)	function	renderer	renderer-rendersettings-setenum-settingid-u32	renderer.md	engine/renderer/render_settings.h:287
-renderer::RenderSettings::SetFloat(SettingId,f32)	function	renderer	renderer-rendersettings-setfloat-settingid-f32	renderer.md	engine/renderer/render_settings.h:292
-renderer::RenderSettings::SetText(SettingId,const char*)	function	renderer	renderer-rendersettings-settext-settingid-const-char-star	renderer.md	engine/renderer/render_settings.h:299
-renderer::RenderSettings::SetFromString(SettingId,const char*)	function	renderer	renderer-rendersettings-setfromstring-settingid-const-char-star	renderer.md	engine/renderer/render_settings.h:307
-renderer::RenderSettings::ValueToString(SettingId,char*,usize) const	function	renderer	renderer-rendersettings-valuetostring-settingid-char-star-usize-const	renderer.md	engine/renderer/render_settings.h:317
-renderer::RenderSettings::Generation() const	function	renderer	renderer-rendersettings-generation-const	renderer.md	engine/renderer/render_settings.h:321
-renderer::RenderSettings::SetGeneration(u64)	function	renderer	renderer-rendersettings-setgeneration-u64	renderer.md	engine/renderer/render_settings.h:324
-renderer::RenderSettings::operator==(const RenderSettings&) const	function	renderer	renderer-rendersettings-operator-eq-eq-const-rendersettings-amp-const	renderer.md	engine/renderer/render_settings.h:330
-renderer::RenderSettings::operator!=(const RenderSettings&) const	function	renderer	renderer-rendersettings-operator-not-eq-const-rendersettings-amp-const	renderer.md	engine/renderer/render_settings.h:333
-renderer::Capabilities	class	renderer	renderer-capabilities	renderer.md	engine/renderer/render_settings.h:357
-renderer::Capabilities::Add(const char*)	function	renderer	renderer-capabilities-add-const-char-star	renderer.md	engine/renderer/render_settings.h:363
-renderer::Capabilities::Has(const char*) const	function	renderer	renderer-capabilities-has-const-char-star-const	renderer.md	engine/renderer/render_settings.h:367
-renderer::Capabilities::SetAdapterCount(u32)	function	renderer	renderer-capabilities-setadaptercount-u32	renderer.md	engine/renderer/render_settings.h:373
-renderer::Capabilities::AdapterCount() const	function	renderer	renderer-capabilities-adaptercount-const	renderer.md	engine/renderer/render_settings.h:375
-renderer::UnsupportedSetting	struct	renderer	renderer-unsupportedsetting	renderer.md	engine/renderer/render_settings.h:386
-renderer::UnsupportedSetting::id	variable	renderer	renderer-unsupportedsetting-id	renderer.md	engine/renderer/render_settings.h:389
-renderer::UnsupportedSetting::capability	variable	renderer	renderer-unsupportedsetting-capability	renderer.md	engine/renderer/render_settings.h:391
-renderer::SettingsChange	struct	renderer	renderer-settingschange	renderer.md	engine/renderer/render_settings.h:397
-renderer::SettingsChange::cost	variable	renderer	renderer-settingschange-cost	renderer.md	engine/renderer/render_settings.h:400
-renderer::SettingsChange::changed_count	variable	renderer	renderer-settingschange-changed-count	renderer.md	engine/renderer/render_settings.h:402
-renderer::SettingsChange::changed	variable	renderer	renderer-settingschange-changed	renderer.md	engine/renderer/render_settings.h:404
-renderer::SettingsChange::unsupported_count	variable	renderer	renderer-settingschange-unsupported-count	renderer.md	engine/renderer/render_settings.h:406
-renderer::SettingsChange::unsupported	variable	renderer	renderer-settingschange-unsupported	renderer.md	engine/renderer/render_settings.h:408
-renderer::SettingsChange::restart_count	variable	renderer	renderer-settingschange-restart-count	renderer.md	engine/renderer/render_settings.h:410
-renderer::SettingsChange::restart	variable	renderer	renderer-settingschange-restart	renderer.md	engine/renderer/render_settings.h:414
-renderer::SettingsChange::Any() const	function	renderer	renderer-settingschange-any-const	renderer.md	engine/renderer/render_settings.h:418
-renderer::DiffSettings(const RenderSettings&,const RenderSettings&,const Capabilities&)	function	renderer	renderer-diffsettings-const-rendersettings-amp-const-rendersettings-amp-const-capabilities-amp	renderer.md	engine/renderer/render_settings.h:430
-renderer::ResolveSettings(const RenderSettings&,const RenderSettings&,const Capabilities&)	function	renderer	renderer-resolvesettings-const-rendersettings-amp-const-rendersettings-amp-const-capabilities-amp	renderer.md	engine/renderer/render_settings.h:440
-renderer::SerializeSettings(const RenderSettings&,char*,usize)	function	renderer	renderer-serializesettings-const-rendersettings-amp-char-star-usize	renderer.md	engine/renderer/render_settings.h:454
-renderer::SettingsProblem	struct	renderer	renderer-settingsproblem	renderer.md	engine/renderer/render_settings.h:459
-renderer::SettingsProblem::line	variable	renderer	renderer-settingsproblem-line	renderer.md	engine/renderer/render_settings.h:462
-renderer::SettingsProblem::message	variable	renderer	renderer-settingsproblem-message	renderer.md	engine/renderer/render_settings.h:464
-renderer::SettingsParseReport	struct	renderer	renderer-settingsparsereport	renderer.md	engine/renderer/render_settings.h:470
-renderer::SettingsParseReport::version	variable	renderer	renderer-settingsparsereport-version	renderer.md	engine/renderer/render_settings.h:473
-renderer::SettingsParseReport::error_count	variable	renderer	renderer-settingsparsereport-error-count	renderer.md	engine/renderer/render_settings.h:475
-renderer::SettingsParseReport::errors	variable	renderer	renderer-settingsparsereport-errors	renderer.md	engine/renderer/render_settings.h:477
-renderer::SettingsParseReport::warning_count	variable	renderer	renderer-settingsparsereport-warning-count	renderer.md	engine/renderer/render_settings.h:479
-renderer::SettingsParseReport::warnings	variable	renderer	renderer-settingsparsereport-warnings	renderer.md	engine/renderer/render_settings.h:481
-renderer::SettingsKeyMigrationFn	alias	renderer	renderer-settingskeymigrationfn	renderer.md	engine/renderer/render_settings.h:488
-renderer::ParseSettings(const char*,usize,RenderSettings*,SettingsParseReport*,SettingsKeyMigrationFn)	function	renderer	renderer-parsesettings-const-char-star-usize-rendersettings-star-settingsparsereport-star-settingskeymigrationfn	renderer.md	engine/renderer/render_settings.h:505
+renderer::settings::kJointPaletteBytes	variable	renderer	renderer-settings-kjointpalettebytes	renderer.md	engine/renderer/render_settings.h:209
+renderer::RegisterBuiltinSettings(SettingsRegistry*)	function	renderer	renderer-registerbuiltinsettings-settingsregistry-star	renderer.md	engine/renderer/render_settings.h:217
+renderer::SetStatus	enum	renderer	renderer-setstatus	renderer.md	engine/renderer/render_settings.h:220
+renderer::SetStatus::Ok	enumerator	renderer	renderer-setstatus-ok	renderer.md	engine/renderer/render_settings.h:222
+renderer::SetStatus::Clamped	enumerator	renderer	renderer-setstatus-clamped	renderer.md	engine/renderer/render_settings.h:223
+renderer::SetStatus::OutOfRange	enumerator	renderer	renderer-setstatus-outofrange	renderer.md	engine/renderer/render_settings.h:224
+renderer::SetStatus::WrongType	enumerator	renderer	renderer-setstatus-wrongtype	renderer.md	engine/renderer/render_settings.h:225
+renderer::SetStatus::UnknownId	enumerator	renderer	renderer-setstatus-unknownid	renderer.md	engine/renderer/render_settings.h:226
+renderer::SetStatus::BadText	enumerator	renderer	renderer-setstatus-badtext	renderer.md	engine/renderer/render_settings.h:227
+renderer::RenderSettings	class	renderer	renderer-rendersettings	renderer.md	engine/renderer/render_settings.h:237
+renderer::RenderSettings::RenderSettings(const SettingsRegistry&)	function	renderer	renderer-rendersettings-rendersettings-const-settingsregistry-amp	renderer.md	engine/renderer/render_settings.h:243
+renderer::RenderSettings::Registry() const	function	renderer	renderer-rendersettings-registry-const	renderer.md	engine/renderer/render_settings.h:247
+renderer::RenderSettings::GetBool(SettingId) const	function	renderer	renderer-rendersettings-getbool-settingid-const	renderer.md	engine/renderer/render_settings.h:253
+renderer::RenderSettings::GetInt(SettingId) const	function	renderer	renderer-rendersettings-getint-settingid-const	renderer.md	engine/renderer/render_settings.h:258
+renderer::RenderSettings::GetEnum(SettingId) const	function	renderer	renderer-rendersettings-getenum-settingid-const	renderer.md	engine/renderer/render_settings.h:263
+renderer::RenderSettings::GetFloat(SettingId) const	function	renderer	renderer-rendersettings-getfloat-settingid-const	renderer.md	engine/renderer/render_settings.h:268
+renderer::RenderSettings::GetText(SettingId) const	function	renderer	renderer-rendersettings-gettext-settingid-const	renderer.md	engine/renderer/render_settings.h:274
+renderer::RenderSettings::SetBool(SettingId,bool)	function	renderer	renderer-rendersettings-setbool-settingid-bool	renderer.md	engine/renderer/render_settings.h:280
+renderer::RenderSettings::SetInt(SettingId,i64)	function	renderer	renderer-rendersettings-setint-settingid-i64	renderer.md	engine/renderer/render_settings.h:285
+renderer::RenderSettings::SetEnum(SettingId,u32)	function	renderer	renderer-rendersettings-setenum-settingid-u32	renderer.md	engine/renderer/render_settings.h:290
+renderer::RenderSettings::SetFloat(SettingId,f32)	function	renderer	renderer-rendersettings-setfloat-settingid-f32	renderer.md	engine/renderer/render_settings.h:295
+renderer::RenderSettings::SetText(SettingId,const char*)	function	renderer	renderer-rendersettings-settext-settingid-const-char-star	renderer.md	engine/renderer/render_settings.h:302
+renderer::RenderSettings::SetFromString(SettingId,const char*)	function	renderer	renderer-rendersettings-setfromstring-settingid-const-char-star	renderer.md	engine/renderer/render_settings.h:310
+renderer::RenderSettings::ValueToString(SettingId,char*,usize) const	function	renderer	renderer-rendersettings-valuetostring-settingid-char-star-usize-const	renderer.md	engine/renderer/render_settings.h:320
+renderer::RenderSettings::Generation() const	function	renderer	renderer-rendersettings-generation-const	renderer.md	engine/renderer/render_settings.h:324
+renderer::RenderSettings::SetGeneration(u64)	function	renderer	renderer-rendersettings-setgeneration-u64	renderer.md	engine/renderer/render_settings.h:327
+renderer::RenderSettings::operator==(const RenderSettings&) const	function	renderer	renderer-rendersettings-operator-eq-eq-const-rendersettings-amp-const	renderer.md	engine/renderer/render_settings.h:333
+renderer::RenderSettings::operator!=(const RenderSettings&) const	function	renderer	renderer-rendersettings-operator-not-eq-const-rendersettings-amp-const	renderer.md	engine/renderer/render_settings.h:336
+renderer::Capabilities	class	renderer	renderer-capabilities	renderer.md	engine/renderer/render_settings.h:360
+renderer::Capabilities::Add(const char*)	function	renderer	renderer-capabilities-add-const-char-star	renderer.md	engine/renderer/render_settings.h:366
+renderer::Capabilities::Has(const char*) const	function	renderer	renderer-capabilities-has-const-char-star-const	renderer.md	engine/renderer/render_settings.h:370
+renderer::Capabilities::SetAdapterCount(u32)	function	renderer	renderer-capabilities-setadaptercount-u32	renderer.md	engine/renderer/render_settings.h:376
+renderer::Capabilities::AdapterCount() const	function	renderer	renderer-capabilities-adaptercount-const	renderer.md	engine/renderer/render_settings.h:378
+renderer::UnsupportedSetting	struct	renderer	renderer-unsupportedsetting	renderer.md	engine/renderer/render_settings.h:389
+renderer::UnsupportedSetting::id	variable	renderer	renderer-unsupportedsetting-id	renderer.md	engine/renderer/render_settings.h:392
+renderer::UnsupportedSetting::capability	variable	renderer	renderer-unsupportedsetting-capability	renderer.md	engine/renderer/render_settings.h:394
+renderer::SettingsChange	struct	renderer	renderer-settingschange	renderer.md	engine/renderer/render_settings.h:400
+renderer::SettingsChange::cost	variable	renderer	renderer-settingschange-cost	renderer.md	engine/renderer/render_settings.h:403
+renderer::SettingsChange::changed_count	variable	renderer	renderer-settingschange-changed-count	renderer.md	engine/renderer/render_settings.h:405
+renderer::SettingsChange::changed	variable	renderer	renderer-settingschange-changed	renderer.md	engine/renderer/render_settings.h:407
+renderer::SettingsChange::unsupported_count	variable	renderer	renderer-settingschange-unsupported-count	renderer.md	engine/renderer/render_settings.h:409
+renderer::SettingsChange::unsupported	variable	renderer	renderer-settingschange-unsupported	renderer.md	engine/renderer/render_settings.h:411
+renderer::SettingsChange::restart_count	variable	renderer	renderer-settingschange-restart-count	renderer.md	engine/renderer/render_settings.h:413
+renderer::SettingsChange::restart	variable	renderer	renderer-settingschange-restart	renderer.md	engine/renderer/render_settings.h:417
+renderer::SettingsChange::Any() const	function	renderer	renderer-settingschange-any-const	renderer.md	engine/renderer/render_settings.h:421
+renderer::DiffSettings(const RenderSettings&,const RenderSettings&,const Capabilities&)	function	renderer	renderer-diffsettings-const-rendersettings-amp-const-rendersettings-amp-const-capabilities-amp	renderer.md	engine/renderer/render_settings.h:433
+renderer::ResolveSettings(const RenderSettings&,const RenderSettings&,const Capabilities&)	function	renderer	renderer-resolvesettings-const-rendersettings-amp-const-rendersettings-amp-const-capabilities-amp	renderer.md	engine/renderer/render_settings.h:443
+renderer::SerializeSettings(const RenderSettings&,char*,usize)	function	renderer	renderer-serializesettings-const-rendersettings-amp-char-star-usize	renderer.md	engine/renderer/render_settings.h:457
+renderer::SettingsProblem	struct	renderer	renderer-settingsproblem	renderer.md	engine/renderer/render_settings.h:462
+renderer::SettingsProblem::line	variable	renderer	renderer-settingsproblem-line	renderer.md	engine/renderer/render_settings.h:465
+renderer::SettingsProblem::message	variable	renderer	renderer-settingsproblem-message	renderer.md	engine/renderer/render_settings.h:467
+renderer::SettingsParseReport	struct	renderer	renderer-settingsparsereport	renderer.md	engine/renderer/render_settings.h:473
+renderer::SettingsParseReport::version	variable	renderer	renderer-settingsparsereport-version	renderer.md	engine/renderer/render_settings.h:476
+renderer::SettingsParseReport::error_count	variable	renderer	renderer-settingsparsereport-error-count	renderer.md	engine/renderer/render_settings.h:478
+renderer::SettingsParseReport::errors	variable	renderer	renderer-settingsparsereport-errors	renderer.md	engine/renderer/render_settings.h:480
+renderer::SettingsParseReport::warning_count	variable	renderer	renderer-settingsparsereport-warning-count	renderer.md	engine/renderer/render_settings.h:482
+renderer::SettingsParseReport::warnings	variable	renderer	renderer-settingsparsereport-warnings	renderer.md	engine/renderer/render_settings.h:484
+renderer::SettingsKeyMigrationFn	alias	renderer	renderer-settingskeymigrationfn	renderer.md	engine/renderer/render_settings.h:491
+renderer::ParseSettings(const char*,usize,RenderSettings*,SettingsParseReport*,SettingsKeyMigrationFn)	function	renderer	renderer-parsesettings-const-char-star-usize-rendersettings-star-settingsparsereport-star-settingskeymigrationfn	renderer.md	engine/renderer/render_settings.h:508
 renderer::FrameStatus	enum	renderer	renderer-framestatus	renderer.md	engine/renderer/renderer.h:32
 renderer::FrameStatus::Ok	enumerator	renderer	renderer-framestatus-ok	renderer.md	engine/renderer/renderer.h:34
 renderer::FrameStatus::Skipped	enumerator	renderer	renderer-framestatus-skipped	renderer.md	engine/renderer/renderer.h:35
@@ -9086,7 +9122,8 @@ renderer::VertexLayoutData	struct	renderer	renderer-vertexlayoutdata	renderer.md
 renderer::VertexLayoutData::attributes	variable	renderer	renderer-vertexlayoutdata-attributes	renderer.md	engine/renderer/shader_reflection.h:302
 renderer::VertexLayoutData::attribute_count	variable	renderer	renderer-vertexlayoutdata-attribute-count	renderer.md	engine/renderer/shader_reflection.h:304
 renderer::VertexLayoutData::stride	variable	renderer	renderer-vertexlayoutdata-stride	renderer.md	engine/renderer/shader_reflection.h:306
-renderer::BuildVertexLayout(const ShaderReflection&,u32,VertexLayoutData*,ReflectionError*)	function	renderer	renderer-buildvertexlayout-const-shaderreflection-amp-u32-vertexlayoutdata-star-reflectionerror-star	renderer.md	engine/renderer/shader_reflection.h:322
+renderer::VertexLayoutData::skin_stride	variable	renderer	renderer-vertexlayoutdata-skin-stride	renderer.md	engine/renderer/shader_reflection.h:309
+renderer::BuildVertexLayout(const ShaderReflection&,u32,VertexLayoutData*,ReflectionError*)	function	renderer	renderer-buildvertexlayout-const-shaderreflection-amp-u32-vertexlayoutdata-star-reflectionerror-star	renderer.md	engine/renderer/shader_reflection.h:325
 renderer::kRendererSchemaVersion	variable	renderer	renderer-krendererschemaversion	renderer.md	engine/renderer/shared_settings.h:26
 renderer::RegisterSharedSettings(::engine_placeholder::settings::Registry*)	function	renderer	renderer-registersharedsettings-engine-placeholder-settings-registry-star	renderer.md	engine/renderer/shared_settings.h:35
 renderer::AddRendererMigrations(::engine_placeholder::settings::MigrationSet*)	function	renderer	renderer-addrenderermigrations-engine-placeholder-settings-migrationset-star	renderer.md	engine/renderer/shared_settings.h:41

@@ -204,6 +204,9 @@ inline constexpr SettingId kShaderQuality{12};
 inline constexpr SettingId kGBufferDebugLayer{13};
 /// Render scale, 0.25 to 2. `Dynamic`; mechanism only until the targets read it.
 inline constexpr SettingId kRenderScale{14};
+/// The joint palette's room per frame in bytes (default 16 MiB, about 350,000 joints; 48 to 768 MiB): read when the
+/// program makes its `FrameResources`, so a change takes effect at the next start. `DeviceReset`, restart required.
+inline constexpr SettingId kJointPaletteBytes{15};
 }  // namespace settings
 
 /// Registers the built-in settings (the ids in the `settings` namespace) into an empty registry, in id order.

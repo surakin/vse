@@ -22,6 +22,7 @@ renderer.fullscreen                  false          default false        from de
 renderer.gbuffer_debug_layer         none           default none         from defaults                           show a G-buffer layer instead of the lit picture
 renderer.hdr                         off            default off          from defaults                           HDR output: off, scrgb or hdr10 (needs the hdr capability)
 renderer.height                      0              default 0            from defaults                           the window height in pixels (0: the default size)
+renderer.joint_palette_bytes         16777216       default 16777216     from defaults                           the room for skinned meshes' joint matrices per frame in bytes (48 per joint); objects that do not fit are not drawn
 renderer.present_mode                fifo           default fifo         from defaults                           how frames reach the display: fifo (vsync), mailbox or immediate
 renderer.render_scale                1.0            default 1.0          from defaults                           the internal resolution as a fraction of the window
 renderer.shader_quality              high           default high         from defaults                           shader quality: low, medium or high

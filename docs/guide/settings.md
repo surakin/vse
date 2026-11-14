@@ -421,7 +421,7 @@ Every program built this way understands the same options, and `--help` prints t
   provenance. Some variables are not settings: `ENGINE_JOB_THREADS`, `ENGINE_CRASH_HANDLER`, `ENGINE_RHI_VALIDATION_BEST_PRACTICES` and the window host read them before any `Settings` exists, and nothing in a settings file changes them (the configuration check lists them as exceptions).
 
 The engine's own settings are `platform.window_backend`, `rhi.pipeline_cache` and `rhi.pipeline_cache_dir`
-(`settings::RegisterEngineSettings`), the 14 rendering settings (`renderer::RegisterSharedSettings`), and, for every log channel that exists, `log.<channel>.verbosity` and `log.<channel>.enabled`
+(`settings::RegisterEngineSettings`), the 15 rendering settings (`renderer::RegisterSharedSettings`), and, for every log channel that exists, `log.<channel>.verbosity` and `log.<channel>.enabled`
 (`settings::RegisterLogSettings` and `AttachLogSettings`, which applies them to the channels and keeps them in step). The old `log::LoadConfig` file form (`Channel.verbosity=Info` lines) was retired in Phase 12: nothing in the engine called it; use `--set log.<channel>.verbosity=Info`, a settings file or the environment (`ENGINE_SETTING_<KEY>`).
 
 ## Keeping configuration in one place

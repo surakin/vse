@@ -855,6 +855,15 @@ inline constexpr u8 kGbufferVertPerm1Dxil[kGbufferVertPerm1DxilByteCount] = {
 // The FNV-1a hash of the SPIR-V this DXIL was minted beside: a test compares it with the SPIR-V that is committed now.
 inline constexpr u64 kGbufferVertPerm1DxilSpirvFnv = 0x7b0072ad647b67ecull;
 
+// Modules 2 and 3 (the SKINNED permutations, Phase 22 Day 322) were added on a machine without dxc: no DXIL yet. The Windows
+// PC mints them (`shaders` target); until then a Direct3D 12 device finds no bytecode for them (KNOWN-ISSUES.md).
+inline constexpr const u8* kGbufferVertPerm2Dxil = nullptr;
+inline constexpr usize kGbufferVertPerm2DxilByteCount = 0;
+inline constexpr u64 kGbufferVertPerm2DxilSpirvFnv = 0;
+inline constexpr const u8* kGbufferVertPerm3Dxil = nullptr;
+inline constexpr usize kGbufferVertPerm3DxilByteCount = 0;
+inline constexpr u64 kGbufferVertPerm3DxilSpirvFnv = 0;
+
 // The shader in every format it was minted in.
 inline constexpr rhi::ShaderBlobSet kGbufferVertShader = {"gbuffer.vert", rhi::SpirvBlob(kGbufferVertSpv, kGbufferVertSpvWordCount), rhi::DxilBlob(kGbufferVertDxil, kGbufferVertDxilByteCount), rhi::MetalLibBlob(kGbufferVertMetallib, kGbufferVertMetallibByteCount, kGbufferVertMetallibEntry, &kGbufferVertMetallibSlots)};
 

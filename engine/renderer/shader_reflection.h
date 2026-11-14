@@ -304,6 +304,9 @@ struct VertexLayoutData
     u32 attribute_count = 0;
     /// Bytes per vertex: the end of the last attribute.
     u32 stride = 0;
+    /// Bytes per vertex of the skin stream (vertex binding 1), or 0 for a rigid mesh. The attributes of binding 1 are
+    /// the joint indices and weights ([[renderer::SkinnedVertexLayout]]).
+    u32 skin_stride = 0;
 };
 
 /// Builds a tightly packed, interleaved vertex layout for the inputs of a vertex shader.

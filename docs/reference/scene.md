@@ -433,6 +433,16 @@ u64 transforms_set;
 
 `SetTransform` calls (only for objects whose matrix really differs).
 
+### `joints_set` {#scene-scenesyncreport-joints-set}
+
+`variable scene::SceneSyncReport::joints_set` — defined in `engine/scene/render_sync.h`
+
+```cpp
+u64 joints_set;
+```
+
+Joint palettes pointed at a skinned object (a new object, or a palette that moved or changed length).
+
 ### `flags_set` {#scene-scenesyncreport-flags-set}
 
 `variable scene::SceneSyncReport::flags_set` — defined in `engine/scene/render_sync.h`

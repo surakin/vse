@@ -71,7 +71,7 @@ static_assert(sizeof(shaders::kPermuteTestFragModules) / sizeof(shaders::kPermut
               "permute_test.frag has another module count: update this list");
 static_assert(sizeof(shaders::kMaterialTestFragModules) / sizeof(shaders::kMaterialTestFragModules[0]) == 2,
               "material_test.frag has another module count: update this list");
-static_assert(sizeof(shaders::kGbufferVertModules) / sizeof(shaders::kGbufferVertModules[0]) == 2,
+static_assert(sizeof(shaders::kGbufferVertModules) / sizeof(shaders::kGbufferVertModules[0]) == 4,
               "gbuffer.vert has another module count: update this list");
 static_assert(sizeof(shaders::kGbufferFragModules) / sizeof(shaders::kGbufferFragModules[0]) == 8,
               "gbuffer.frag has another module count: update this list");
@@ -139,6 +139,12 @@ const MintedModule kModules[] = {
     {"gbuffer.vert module 1", rhi::ShaderStage::Vertex, shaders::kGbufferVertModules[1].words,
      shaders::kGbufferVertModules[1].word_count, shaders::kGbufferVertModules[1].dxil,
      shaders::kGbufferVertModules[1].dxil_size, shaders::kGbufferVertPerm1DxilSpirvFnv},
+    {"gbuffer.vert module 2", rhi::ShaderStage::Vertex, shaders::kGbufferVertModules[2].words,
+     shaders::kGbufferVertModules[2].word_count, shaders::kGbufferVertModules[2].dxil,
+     shaders::kGbufferVertModules[2].dxil_size, shaders::kGbufferVertPerm2DxilSpirvFnv},
+    {"gbuffer.vert module 3", rhi::ShaderStage::Vertex, shaders::kGbufferVertModules[3].words,
+     shaders::kGbufferVertModules[3].word_count, shaders::kGbufferVertModules[3].dxil,
+     shaders::kGbufferVertModules[3].dxil_size, shaders::kGbufferVertPerm3DxilSpirvFnv},
     {"gbuffer.frag", rhi::ShaderStage::Fragment, shaders::kGbufferFragSpv, shaders::kGbufferFragSpvWordCount,
      shaders::kGbufferFragDxil, shaders::kGbufferFragDxilByteCount, shaders::kGbufferFragDxilSpirvFnv},
     {"gbuffer.frag module 1", rhi::ShaderStage::Fragment, shaders::kGbufferFragModules[1].words,

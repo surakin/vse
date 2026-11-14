@@ -85,15 +85,26 @@ void SetMessage(ReflectionError* e, const char* fmt, const char* a, const char* 
 }
 
 // The renderer's descriptor-set convention: set 0 one uniform buffer at binding 0, set 2 one storage buffer at binding
-// 0, set 1 the material (uniform block, sampled textures, samplers), nothing else.
-bool CheckConvention(const ShaderReflection& r, const char* what, ReflectionError* error)
+// 0, set 1 the material (uniform block, sampled textures, samplers), nothing else. A skinned template's vertex shader
+// also has set 3: one read-only storage buffer at binding 0, the joint palette.
+bool CheckConvention(const ShaderReflection& r, const char* what, ReflectionError* error, bool joint_set = false)
 {
     for (u32 i = 0; i < r.binding_count; ++i)
     {
         const ReflectedBinding& b = r.bindings[i];
-        if (b.set > kObjectSet)
+        if (b.set > (joint_set ? MaterialSystem::kJointSet : kObjectSet))
         {
-            SetMessage(error, "%s: '%s' uses a descriptor set above 2", what, b.name);
+            SetMessage(error, "%s: '%s' uses a descriptor set above 2 (3 for a skinned template's vertex shader)", what,
+                       b.name);
+            return false;
+        }
+        if (b.set == MaterialSystem::kJointSet &&
+            !(b.binding == 0 && b.type == rhi::BindingType::ReadOnlyStorageBuffer))
+        {
+            SetMessage(
+                error,
+                "%s: set 3 must be a single read-only storage buffer (the joint palette) at binding 0, but '%s' is not",
+                what, b.name);
             return false;
         }
         if (b.count != 1)
@@ -127,7 +138,7 @@ bool CheckConvention(const ShaderReflection& r, const char* what, ReflectionErro
 
 bool SameLayout(const VertexLayoutData& a, const VertexLayoutData& b)
 {
-    if (a.stride != b.stride || a.attribute_count != b.attribute_count)
+    if (a.stride != b.stride || a.skin_stride != b.skin_stride || a.attribute_count != b.attribute_count)
     {
         return false;
     }
@@ -297,13 +308,24 @@ bool MaterialSystem::CreateDefaults()
     ol.debug_name = "object layout";
     object_layout_ = device_->CreateBindGroupLayout(ol);
 
+    rhi::BindingDesc joint_binding;
+    joint_binding.binding = 0;
+    joint_binding.type = rhi::BindingType::ReadOnlyStorageBuffer;
+    joint_binding.stride = 48;  // StructuredBuffer<float3x4> joints (the palette layout of Days 318 and 321)
+    joint_binding.stages = rhi::ShaderStage::AllGraphics;
+    rhi::BindGroupLayoutDesc jl;
+    jl.entries = rhi::Span<rhi::BindingDesc>(&joint_binding, 1);
+    jl.debug_name = "joint layout";
+    joint_layout_ = device_->CreateBindGroupLayout(jl);
+
     rhi::SamplerDesc sd;
     sd.debug_name = "default sampler";
     default_sampler_ = device_->CreateSampler(sd);
 
     const byte pixels[3][4] = {{255, 255, 255, 255}, {0, 0, 0, 255}, {128, 128, 255, 255}};
     const char* names[3] = {"default white", "default black", "default flat normal"};
-    bool ok = frame_layout_.IsValid() && object_layout_.IsValid() && default_sampler_.IsValid();
+    bool ok = frame_layout_.IsValid() && object_layout_.IsValid() && joint_layout_.IsValid() &&
+              default_sampler_.IsValid();
     for (u32 i = 0; i < 3 && ok; ++i)
     {
         rhi::TextureDesc td;
@@ -423,6 +445,11 @@ void MaterialSystem::DestroyDefaults()
         device_->DestroyBindGroupLayout(object_layout_);
     }
     object_layout_ = {};
+    if (joint_layout_.IsValid())
+    {
+        device_->DestroyBindGroupLayout(joint_layout_);
+    }
+    joint_layout_ = {};
     if (object_index_stream_.IsValid())
     {
         device_->DestroyBuffer(object_index_stream_);
@@ -530,8 +557,13 @@ void MaterialSystem::Release()
     {
         device_->DestroyBindGroup(object_groups_[i].group);
     }
+    for (u32 i = 0; i < joint_group_count_; ++i)
+    {
+        device_->DestroyBindGroup(joint_groups_[i].group);
+    }
     frame_group_count_ = 0;
     object_group_count_ = 0;
+    joint_group_count_ = 0;
     DestroyDefaults();
     released_ = true;
 }
@@ -727,7 +759,7 @@ TemplateId MaterialSystem::CreateTemplate(const MaterialTemplateDesc& desc)
             name);
         return TemplateId{};
     }
-    if (!CheckConvention(t.vertex_reflection, "vertex shader", &error))
+    if (!CheckConvention(t.vertex_reflection, "vertex shader", &error, desc.skinned))
     {
         RenderLog(LogVerbosity::Error, "MaterialSystem: template '%s' not created: %s", name, error.message);
         return TemplateId{};
@@ -1103,6 +1135,11 @@ rhi::BindGroupHandle MaterialSystem::FrameBindGroup(const BufferRegion& region)
 rhi::BindGroupHandle MaterialSystem::ObjectBindGroup(const BufferRegion& region)
 {
     return CachedBindGroup(object_groups_, &object_group_count_, object_layout_, region);
+}
+
+rhi::BindGroupHandle MaterialSystem::JointBindGroup(const BufferRegion& region)
+{
+    return CachedBindGroup(joint_groups_, &joint_group_count_, joint_layout_, region);
 }
 
 MaterialId MaterialSystem::MaterialAtIndex(u32 index) const
@@ -1606,9 +1643,15 @@ rhi::PipelineHandle MaterialSystem::MakePipeline(TemplateSlot& t, const Variant&
                                                  bool primitive_restart)
 {
     const char* tname = t.name;
-    rhi::VertexBindingDesc bindings[2];
+    rhi::VertexBindingDesc bindings[3];
     bindings[0].stride = vertex_layout.stride;
     u32 binding_count = 1;
+    const bool skinned = vertex_layout.skin_stride != 0;
+    if (skinned)
+    {
+        bindings[1].stride = vertex_layout.skin_stride;
+        binding_count = 2;
+    }
     rhi::VertexAttributeDesc attributes[rhi::kMaxVertexAttributes];
     u32 attribute_count = vertex_layout.attribute_count;
     for (u32 i = 0; i < attribute_count; ++i)
@@ -1617,8 +1660,8 @@ rhi::PipelineHandle MaterialSystem::MakePipeline(TemplateSlot& t, const Variant&
     }
     // On Direct3D 12 the object index arrives as an instance-rate attribute from the stream at slot 1
     // (DeviceCaps::object_index_stream).
-    if (!AddObjectIndexAttribute(*device_, bindings, &binding_count, 2, attributes, &attribute_count,
-                                 rhi::kMaxVertexAttributes, ObjectIndexSlot()))
+    if (!AddObjectIndexAttribute(*device_, bindings, &binding_count, 3, attributes, &attribute_count,
+                                 rhi::kMaxVertexAttributes, ObjectIndexSlotFor(skinned)))
     {
         RenderLog(LogVerbosity::Error,
                   "MaterialSystem: template '%s': no room for the object index attribute (%u attributes)", tname,
@@ -1655,6 +1698,11 @@ rhi::PipelineHandle MaterialSystem::MakePipeline(TemplateSlot& t, const Variant&
     pd.bind_group_layouts[1] = v.layout;
     pd.bind_group_layouts[2] = object_layout_;
     pd.bind_group_layout_count = 3;
+    if (t.desc.skinned)
+    {
+        pd.bind_group_layouts[kJointSet] = joint_layout_;
+        pd.bind_group_layout_count = 4;
+    }
     pd.debug_name = tname;
     const rhi::PipelineHandle pipeline = device_->CreateGraphicsPipeline(pd);
     if (!pipeline.IsValid())
@@ -1740,6 +1788,15 @@ PipelineLookup MaterialSystem::GetPipeline(MaterialId id, const PipelineTarget& 
                       i);
             return PipelineLookup{};
         }
+    }
+    if ((vertex_layout.skin_stride != 0) != t.desc.skinned)
+    {
+        RenderLog(
+            LogVerbosity::Error,
+            "MaterialSystem: pipeline for '%s': the template is %s but the mesh layout is %s; use a %s material for this mesh",
+            tname, t.desc.skinned ? "skinned" : "rigid", vertex_layout.skin_stride != 0 ? "skinned" : "rigid",
+            vertex_layout.skin_stride != 0 ? "skinned" : "rigid");
+        return PipelineLookup{};
     }
     if (vertex_layout.attribute_count > rhi::kMaxVertexAttributes || vertex_layout.stride == 0)
     {

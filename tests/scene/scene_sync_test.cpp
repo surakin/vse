@@ -1,7 +1,9 @@
 #include <catch2/catch_test_macros.hpp>
 
+#include "animation/components.h"
 #include "containers/shared_ptr.h"
 #include "containers/vector.h"
+#include "cstr/mem_ops.h"
 #include "ecs/schedule.h"
 #include "ecs/transform.h"
 #include "renderer/mesh.h"
@@ -407,4 +409,57 @@ TEST_CASE("Scene sync: a world with fresh removal numbers still removes", "[scen
     second.Destroy(e);
     rig.schedule.Run(second, 0.016f);
     CHECK(rig.render_scene.ObjectCount() == 0);
+}
+
+TEST_CASE("Scene sync: a skinned entity's joint palette is mirrored by address, and only when the address changes",
+          "[scene][skinning]")
+{
+    Rig rig;
+    renderer::MeshData data;
+    REQUIRE(renderer::MakePlaneMesh(4.0f, 1.0f, 4, 1, &data) == nullptr);
+    Vector<u8> skin;
+    REQUIRE(skin.TryResize(static_cast<usize>(data.VertexCount()) * renderer::kSkinVertexBytes));
+    for (u32 i = 0; i < data.VertexCount(); ++i)
+    {
+        u8* e = skin.Data() + static_cast<usize>(i) * renderer::kSkinVertexBytes;
+        MemSet(e, 0, renderer::kSkinVertexBytes);
+        e[4] = 255;  // all weight on joint 0
+    }
+    REQUIRE(data.SetSkin(skin.Data(), 2) == nullptr);
+    SharedPtr<MeshAsset> ribbon = MakeShared<MeshAsset>();
+    REQUIRE(ribbon->mesh.Create(rig.device.Get(), data, "ribbon"));
+
+    animation::SkeletonInstance instance;
+    instance.skeleton = 7;
+    REQUIRE(instance.palette.TryResize(2));
+    MeshRenderer mr;
+    mr.mesh = ribbon;
+    const ecs::Entity skinned = rig.world.Create(At(0, 0, 0), ecs::WorldTransform{}, mr,
+                                                 static_cast<animation::SkeletonInstance&&>(instance));
+    const ecs::Entity rigid = rig.world.Create(At(1, 0, 0), ecs::WorldTransform{}, MeshRenderer{rig.cube, 0, 0});
+    rig.Frame();
+    rig.Frame();
+    const animation::SkeletonInstance* live = rig.world.Get<animation::SkeletonInstance>(skinned);
+    REQUIRE(live != nullptr);
+    const renderer::RenderObject* object = rig.ObjectOf(skinned);
+    REQUIRE(object != nullptr);
+    CHECK(object->joint_matrices == live->palette.Data()->Data());
+    CHECK(object->joint_count == 2);
+    CHECK(rig.Report().joints_set == 1);
+    REQUIRE(rig.ObjectOf(rigid) != nullptr);
+    CHECK(rig.ObjectOf(rigid)->joint_matrices == nullptr);
+
+    // Frames that change nothing write nothing.
+    rig.Frame();
+    rig.Frame();
+    CHECK(rig.Report().joints_set == 1);
+
+    // A palette that grows lives at another address: the object follows it.
+    animation::SkeletonInstance* edit = rig.world.Get<animation::SkeletonInstance>(skinned);
+    REQUIRE(edit != nullptr);
+    REQUIRE(edit->palette.TryResize(64));
+    rig.Frame();
+    CHECK(rig.ObjectOf(skinned)->joint_count == 64);
+    CHECK(rig.ObjectOf(skinned)->joint_matrices == edit->palette.Data()->Data());
+    CHECK(rig.Report().joints_set == 2);
 }

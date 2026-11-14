@@ -129,13 +129,13 @@ engine_test::Text Slurp(const io::Path& path)
 }  // namespace
 
 TEST_CASE(
-    "The 14 rendering settings are declared under renderer. with the same types, defaults, ranges and apply classes",
+    "The 15 rendering settings are declared under renderer. with the same types, defaults, ranges and apply classes",
     "[shared_settings]")
 {
     Rig rig;
     const rs::SettingsRegistry& builtin = rs::SettingsRegistry::Builtin();
     REQUIRE(rig.registry.Count() == builtin.Count());
-    CHECK(rig.registry.Count() == 14);
+    CHECK(rig.registry.Count() == 15);
     CHECK(rig.registry.SchemaVersion("renderer") == rs::kRendererSchemaVersion);
     for (u32 i = 1; i <= builtin.Count(); ++i)
     {

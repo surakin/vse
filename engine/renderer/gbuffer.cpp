@@ -197,55 +197,83 @@ void FitCameraDepthRange(const RenderScene& scene, Camera* camera, f32 min_near)
 GBufferTemplates CreateGBufferTemplates(MaterialSystem* materials)
 {
     ENGINE_ASSERT(materials != nullptr, "CreateGBufferTemplates: materials is null");
-    GBufferTemplates out;
     const TextureDefault defaults[2] = {{"albedo_tex", DefaultTexture::White},
                                         {"normal_tex", DefaultTexture::FlatNormal}};
-    for (int colored = 0; colored < 2; ++colored)
+    TemplateId ids[4];  // plain, colored, skinned, skinned_colored
+    for (u32 variant = 0; variant < 4; ++variant)
     {
+        const bool colored = (variant & 1) != 0;
+        const bool skinned = (variant & 2) != 0;
         PermutationKey vkey;
         ReflectionError error;
-        const char* names[1] = {"VERTEX_COLOR"};
-        if (!MakePermutationKey(shaders::kGbufferVertPermutations, colored ? names : nullptr, colored ? 1u : 0u, &vkey,
+        const char* names[2];
+        u32 name_count = 0;
+        if (colored)
+        {
+            names[name_count++] = "VERTEX_COLOR";
+        }
+        if (skinned)
+        {
+            names[name_count++] = "SKINNED";
+        }
+        const PermutationModule* vertex = nullptr;
+        if (!MakePermutationKey(shaders::kGbufferVertPermutations, name_count != 0 ? names : nullptr, name_count, &vkey,
                                 &error))
         {
             RenderLog(LogVerbosity::Error, "G-buffer: vertex shader permutation: %s", error.message);
-            if (out.plain.IsValid())
-            {
-                materials->DestroyTemplate(out.plain);
-            }
-            return GBufferTemplates{};
         }
-        const PermutationModule* vertex = FindPermutation(shaders::kGbufferVertPermutations, vkey, &error);
-        if (vertex == nullptr)
+        else
         {
-            RenderLog(LogVerbosity::Error, "G-buffer: vertex shader permutation: %s", error.message);
-            if (out.plain.IsValid())
+            vertex = FindPermutation(shaders::kGbufferVertPermutations, vkey, &error);
+            if (vertex == nullptr)
             {
-                materials->DestroyTemplate(out.plain);
+                RenderLog(LogVerbosity::Error, "G-buffer: vertex shader permutation: %s", error.message);
             }
-            return GBufferTemplates{};
         }
-        MaterialTemplateDesc d;
-        d.name = colored ? "gbuffer_color" : "gbuffer";
-        d.vertex = *vertex;
-        d.fragment_permutations = &shaders::kGbufferFragPermutations;
-        d.state.cull = rhi::CullMode::Back;
-        d.state.depth_test = true;
-        d.state.depth_write = true;
-        d.state.depth_compare = rhi::CompareOp::Less;
-        d.texture_defaults = defaults;
-        d.texture_default_count = 2;
-        const TemplateId id = materials->CreateTemplate(d);
+        TemplateId id;
+        if (vertex != nullptr)
+        {
+            MaterialTemplateDesc d;
+            static const char* const kNames[4] = {"gbuffer", "gbuffer_color", "gbuffer_skinned",
+                                                  "gbuffer_skinned_color"};
+            d.name = kNames[variant];
+            d.vertex = *vertex;
+            d.fragment_permutations = &shaders::kGbufferFragPermutations;
+            d.state.cull = rhi::CullMode::Back;
+            d.state.depth_test = true;
+            d.state.depth_write = true;
+            d.state.depth_compare = rhi::CompareOp::Less;
+            d.texture_defaults = defaults;
+            d.texture_default_count = 2;
+            d.skinned = skinned;
+            id = materials->CreateTemplate(d);
+        }
+        if (!id.IsValid() && skinned)
+        {
+            // A device without bytecode for the skinned modules (a format not minted yet) still draws rigid meshes.
+            RenderLog(LogVerbosity::Warn,
+                      "G-buffer: the %s template could not be created; skinned meshes will not draw",
+                      colored ? "skinned color" : "skinned");
+            continue;
+        }
         if (!id.IsValid())
         {
-            if (out.plain.IsValid())
+            for (u32 i = 0; i < variant; ++i)
             {
-                materials->DestroyTemplate(out.plain);
+                if (ids[i].IsValid())
+                {
+                    materials->DestroyTemplate(ids[i]);
+                }
             }
             return GBufferTemplates{};
         }
-        (colored ? out.colored : out.plain) = id;
+        ids[variant] = id;
     }
+    GBufferTemplates out;
+    out.plain = ids[0];
+    out.colored = ids[1];
+    out.skinned = ids[2];
+    out.skinned_colored = ids[3];
     return out;
 }
 
@@ -253,10 +281,11 @@ MaterialId CreateGBufferMaterial(MaterialSystem* materials, const GBufferTemplat
                                  const GBufferOptions& options, const char* name)
 {
     ENGINE_ASSERT(materials != nullptr, "CreateGBufferMaterial: materials is null");
-    const TemplateId tmpl = options.vertex_color ? templates.colored : templates.plain;
+    const TemplateId tmpl = options.skinned ? (options.vertex_color ? templates.skinned_colored : templates.skinned)
+                                            : (options.vertex_color ? templates.colored : templates.plain);
     if (!tmpl.IsValid())
     {
-        RenderLog(LogVerbosity::Error, "G-buffer: the %s template is invalid",
+        RenderLog(LogVerbosity::Error, "G-buffer: the %s%s template is invalid", options.skinned ? "skinned " : "",
                   options.vertex_color ? "vertex color" : "plain");
         return MaterialId{};
     }
@@ -305,6 +334,7 @@ struct GBufferPass::SortEntry
     rhi::PipelineHandle pipeline;
     rhi::BindGroupHandle material_group;
     const GpuMesh* mesh = nullptr;
+    u32 joint_offset = kNoJoints;
 };
 
 GBufferPass::GBufferPass(rhi::Device* device, MaterialSystem* materials, FrameResources* frame)
@@ -313,11 +343,13 @@ GBufferPass::GBufferPass(rhi::Device* device, MaterialSystem* materials, FrameRe
     ENGINE_ASSERT(device != nullptr && materials != nullptr && frame != nullptr,
                   "GBufferPass: device, materials or frame is null");
     const u32 cap = frame->MaxObjects();
-    if (!draws_.TryResize(cap) || !slots_.TryResize(cap) || !sort_scratch_.TryResize(cap))
+    if (!draws_.TryResize(cap) || !slots_.TryResize(cap) || !joint_offsets_.TryResize(cap) ||
+        !sort_scratch_.TryResize(cap))
     {
         RenderLog(LogVerbosity::Error, "GBufferPass: out of memory for %u objects", cap);
         draws_.Reset();
         slots_.Reset();
+        joint_offsets_.Reset();
         sort_scratch_.Reset();
     }
     else
@@ -357,6 +389,7 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum)
     // The per-frame groups are cached by the material system; creating them is rare.
     frame_group_ = materials_->FrameBindGroup(frame_->FrameRegion());
     object_group_ = materials_->ObjectBindGroup(frame_->ObjectRegion());
+    joint_group_ = rhi::BindGroupHandle{};  // made on the first skinned object of the frame
     object_index_stream_ = materials_
                                ->ObjectIndexStream();  // valid only where shaders read the index from it (Direct3D 12)
     if (object_index_stream_.IsValid() && cap > kMaxObjectIndices)
@@ -445,7 +478,40 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum)
                    object.material);
             continue;
         }
+        u32 joint_offset = kNoJoints;
+        if (mesh->Skinned())
+        {
+            if (object.joint_matrices == nullptr || object.joint_count == 0)
+            {
+                Reject("G-buffer: the skinned object in slot %u has no joint palette", slot);
+                continue;
+            }
+            if (object.joint_count < mesh->SkinJointCount())
+            {
+                // The shader would read the matrices of the next object (or last frame's) for the missing joints.
+                Reject(
+                    "G-buffer: the skinned object in slot %u has a palette of fewer matrices than its mesh has joints",
+                    slot);
+                continue;
+            }
+            if (!joint_group_.IsValid())
+            {
+                joint_group_ = materials_->JointBindGroup(frame_->JointRegion());
+                if (!joint_group_.IsValid())
+                {
+                    Reject("G-buffer: the joint palette bind group could not be created");
+                    continue;
+                }
+            }
+            joint_offset = frame_->WriteJoints(object.joint_matrices, object.joint_count);
+            if (joint_offset == kNoJoints)
+            {
+                ++stats_.skinned_dropped;  // the budget is full: this object is left out whole
+                continue;
+            }
+        }
         SortEntry& e = entries[entry_count++];
+        e.joint_offset = joint_offset;
         e.key = MakeDrawSortKey(pipeline.index, material.index, mesh->SortId());
         e.slot = slot;
         e.pipeline = pipeline.pipeline;
@@ -471,8 +537,16 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum)
     for (u32 i = 0; i < entry_count; ++i)
     {
         slots_[i] = entries[i].slot;
+        joint_offsets_[i] = entries[i].joint_offset;
     }
-    frame_->WriteObjects(scene, slots_.Data(), entry_count);
+    if (stats_.skinned_dropped > 0)
+    {
+        RenderLog(
+            LogVerbosity::Warn,
+            "G-buffer: the joint palette is full (%u matrices): %u skinned objects were not drawn this frame; raise renderer.joint_palette_bytes",
+            frame_->MaxJointMatrices(), stats_.skinned_dropped);
+    }
+    frame_->WriteObjects(scene, slots_.Data(), entry_count, joint_offsets_.Data());
 
     // Runs of the same material and mesh become one instanced draw; the object data is in the same order, so the
     // instances of a run are consecutive entries.
@@ -496,6 +570,7 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum)
         d.mesh = e.mesh;
         d.first_instance = i;
         d.instance_count = 1;
+        d.skinned = e.mesh->Skinned();
         if (!(d.pipeline == last_pipeline))
         {
             ++stats_.pipeline_binds;
@@ -577,14 +652,10 @@ void GBufferPass::Record(const PassExecuteContext& context, void* user)
     {
         list->SetBindGroup(kFrameSet, self->frame_group_);
         list->SetBindGroup(kObjectSet, self->object_group_);
-        if (self->object_index_stream_.IsValid())
-        {
-            // Draw i is issued with first_instance = i; Direct3D 12 fetches this instance-rate stream at that index.
-            list->SetVertexBuffer(MaterialSystem::ObjectIndexSlot(), self->object_index_stream_, 0);
-        }
     }
     rhi::PipelineHandle pipeline;
     rhi::BindGroupHandle group;
+    u32 index_slot = 0;  // the slot the object index stream is bound at (0: not bound)
     for (u32 i = 0; i < self->draw_count_; ++i)
     {
         const Draw& d = self->draws_[i];
@@ -593,6 +664,17 @@ void GBufferPass::Record(const PassExecuteContext& context, void* user)
             list->SetPipeline(d.pipeline);
             pipeline = d.pipeline;
             group = rhi::BindGroupHandle{};  // a new pipeline layout: rebind the material group
+            if (d.skinned)
+            {
+                list->SetBindGroup(MaterialSystem::kJointSet, self->joint_group_);
+            }
+        }
+        if (self->object_index_stream_.IsValid() && index_slot != MaterialSystem::ObjectIndexSlotFor(d.skinned))
+        {
+            // Draw i is issued with first_instance = i; Direct3D 12 fetches this instance-rate stream at that index.
+            // It follows the mesh's streams, so a skinned mesh (two streams) has it one slot later.
+            index_slot = MaterialSystem::ObjectIndexSlotFor(d.skinned);
+            list->SetVertexBuffer(index_slot, self->object_index_stream_, 0);
         }
         if (!(d.material_group == group))
         {

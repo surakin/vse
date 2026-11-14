@@ -103,3 +103,10 @@ int main() {
     return palette[0][3] > 0.99f && palette[0][3] < 1.01f ? 0 : 1;
 }
 ```
+
+## Drawing a skinned entity
+
+The renderer takes the palette this module fills: `scene::RenderSync` (module `scene`, which therefore reads `animation::SkeletonInstance`) points the
+`renderer::RenderObject` of an entity that has a `MeshRenderer` with a skinned mesh at the entity's `palette` and copies it into the frame's joint palette
+when the frame is prepared. Run the `AnimationSystem` before the render stage so the palette holds this frame's pose. See "Skinned meshes" in
+[Renderer](renderer.md).

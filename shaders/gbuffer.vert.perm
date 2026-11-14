@@ -1,3 +1,5 @@
-# Keys to build for gbuffer.vert: the plain mesh and the mesh with per-vertex colors.
+# Keys to build for gbuffer.vert: the plain mesh, the mesh with per-vertex colors, and each of them skinned.
 key -
 key VERTEX_COLOR
+key SKINNED
+key VERTEX_COLOR SKINNED

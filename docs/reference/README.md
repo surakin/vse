@@ -29,12 +29,12 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Animation runtime](animation.md) | 3 | 76 |
 | [Database](database.md) | 9 | 161 |
 | [Storage](storage.md) | 17 | 410 |
-| [Scene bridge](scene.md) | 2 | 44 |
+| [Scene bridge](scene.md) | 2 | 45 |
 | [The UI Toolkit](ui.md) | 46 | 1420 |
 | [The UI Window Adapter](ui_window.md) | 2 | 25 |
 | [The Job System](jobs.md) | 13 | 203 |
 | [The Render Hardware Interface](rhi.md) | 21 | 824 |
-| [The renderer](renderer.md) | 25 | 1111 |
+| [The renderer](renderer.md) | 25 | 1147 |
 | [The Vulkan backend (loader, function tables, result helpers)](rhi-vulkan.md) | 17 | 441 |
 | [The Direct3D 12 backend (Windows)](rhi-dx12.md) | 12 | 319 |
 | [The Metal backend (macOS)](rhi-metal.md) | 1 | 1 |

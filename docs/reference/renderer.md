@@ -985,6 +985,36 @@ Mat4 normal;
 
 Carries normals to world space ([`renderer::NormalMatrix`](#renderer-normalmatrix-const-mat4-amp) of `world`).
 
+## `kJointMatrixBytes` {#renderer-kjointmatrixbytes}
+
+`variable renderer::kJointMatrixBytes` — defined in `engine/renderer/frame_data.h`
+
+```cpp
+inline constexpr u32 kJointMatrixBytes;
+```
+
+The bytes of one joint matrix in the palette: a row-major 3x4 matrix of `f32` (the layout of the skeleton's inverse bind matrices and of the animation runtime's palette).
+
+## `kNoJoints` {#renderer-knojoints}
+
+`variable renderer::kNoJoints` — defined in `engine/renderer/frame_data.h`
+
+```cpp
+inline constexpr u32 kNoJoints;
+```
+
+The `WriteJoints` result for a palette that did not fit.
+
+## `kMaxJointMatrices` {#renderer-kmaxjointmatrices}
+
+`variable renderer::kMaxJointMatrices` — defined in `engine/renderer/frame_data.h`
+
+```cpp
+inline constexpr u32 kMaxJointMatrices;
+```
+
+The most joint matrices a palette holds: the offset travels in a `f32` of the object data, exact up to 2^24.
+
 ## `MakeFrameData(const Camera&,u32,u32,f32,f32,u64)` {#renderer-makeframedata-const-camera-amp-u32-u32-f32-f32-u64}
 
 `function renderer::MakeFrameData` — defined in `engine/renderer/frame_data.h`
@@ -1188,12 +1218,12 @@ static constexpr u32 kSlots;
 
 The number of rotating regions; the largest frames in flight a device allows.
 
-### `FrameResources(rhi::Device*,u32,u32)` {#renderer-frameresources-frameresources-rhi-device-star-u32-u32}
+### `FrameResources(rhi::Device*,u32,u32,u32)` {#renderer-frameresources-frameresources-rhi-device-star-u32-u32-u32}
 
 `constructor renderer::FrameResources::FrameResources` — defined in `engine/renderer/frame_data.h`
 
 ```cpp
-FrameResources(rhi::Device* device, u32 max_objects, u32 max_lights = 64);
+FrameResources(rhi::Device* device, u32 max_objects, u32 max_lights = 64, u32 max_joint_matrices = 1024);
 ```
 
 Creates the buffers.
@@ -1203,7 +1233,8 @@ Creates the buffers.
 | Parameter `device` | the device; must outlive this object. |
 | Parameter `max_objects` | the most objects one frame writes, at least 1. |
 | Parameter `max_lights` | the most lights one frame writes, from 1 to [`renderer::kMaxLights`](#renderer-kmaxlights). |
-| Aborts | `device` is null, `max_objects` is 0, or `max_lights` is 0 or above [`renderer::kMaxLights`](#renderer-kmaxlights). |
+| Parameter `max_joint_matrices` | the joint palette's room per frame, in 48-byte matrices, from 1 to [`renderer::kMaxJointMatrices`](#renderer-kmaxjointmatrices) (the setting `renderer.joint_palette_bytes` divided by 48). |
+| Aborts | `device` is null, `max_objects` is 0, `max_lights` is 0 or above [`renderer::kMaxLights`](#renderer-kmaxlights), or `max_joint_matrices` is 0 or above [`renderer::kMaxJointMatrices`](#renderer-kmaxjointmatrices). |
 | Ownership | check [`renderer::FrameResources::Valid`](#renderer-frameresources-valid-const). |
 
 ### `~FrameResources()` {#renderer-frameresources-tilde-frameresources}
@@ -1348,12 +1379,12 @@ Writes the frame block into this frame's region.
 | Parameter `data` | the block. |
 | Aborts | [`renderer::FrameResources::BeginFrame`](#renderer-frameresources-beginframe-u64) was not called. |
 
-### `WriteObjects(const RenderScene&,const u32*,u32)` {#renderer-frameresources-writeobjects-const-renderscene-amp-const-u32-star-u32}
+### `WriteObjects(const RenderScene&,const u32*,u32,const u32*)` {#renderer-frameresources-writeobjects-const-renderscene-amp-const-u32-star-u32-const-u32-star}
 
 `method renderer::FrameResources::WriteObjects` — defined in `engine/renderer/frame_data.h`
 
 ```cpp
-u32 WriteObjects(const RenderScene& scene, const u32* slots, u32 count);
+u32 WriteObjects(const RenderScene& scene, const u32* slots, u32 count, const u32* joint_offsets = nullptr);
 ```
 
 Writes one [`renderer::ObjectData`](#renderer-objectdata) per listed object, in list order: draw `i` uses instance index `i`.
@@ -1366,6 +1397,62 @@ Writes one [`renderer::ObjectData`](#renderer-objectdata) per listed object, in 
 | Returns | the number written (`count`). |
 | Aborts | `BeginFrame` was not called, `count` exceeds the capacity, or a slot is dead. |
 | Ownership | `slots` is borrowed for the call. |
+
+### `WriteJoints(const f32*,u32)` {#renderer-frameresources-writejoints-const-f32-star-u32}
+
+`method renderer::FrameResources::WriteJoints` — defined in `engine/renderer/frame_data.h`
+
+```cpp
+u32 WriteJoints(const f32* matrices, u32 count);
+```
+
+Appends one skinned instance's joint matrices to this frame's palette.
+
+| Field | Value |
+|---|---|
+| Parameter `matrices` | `count` row-major 3x4 matrices (12 `f32` each), copied. |
+| Parameter `count` | from 1 to the remaining room. |
+| Returns | the index of the first matrix (the offset to give [`renderer::FrameResources::WriteObjects`](#renderer-frameresources-writeobjects-const-renderscene-amp-const-u32-star-u32-const-u32-star)), or [`renderer::kNoJoints`](#renderer-knojoints) when the palette does not have `count` matrices left (nothing is written). |
+| Aborts | `BeginFrame` was not called, or `matrices` is null. |
+| Thread-safety | thread-compatible; call from the thread that prepares the frame. |
+
+### `JointRegion()` {#renderer-frameresources-jointregion-const}
+
+`method renderer::FrameResources::JointRegion` — defined in `engine/renderer/frame_data.h`
+
+```cpp
+BufferRegion JointRegion() const;
+```
+
+Returns the region of the joint palette buffer for this frame: `MaxJointMatrices()` matrices.
+
+### `MaxJointMatrices()` {#renderer-frameresources-maxjointmatrices-const}
+
+`method renderer::FrameResources::MaxJointMatrices` — defined in `engine/renderer/frame_data.h`
+
+```cpp
+u32 MaxJointMatrices() const;
+```
+
+Returns the palette's room in matrices.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `JointsWritten()` {#renderer-frameresources-jointswritten-const}
+
+`method renderer::FrameResources::JointsWritten` — defined in `engine/renderer/frame_data.h`
+
+```cpp
+u32 JointsWritten() const;
+```
+
+Returns the matrices written so far this frame.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
 
 ### `WriteLights(const RenderScene&,const FrameData&)` {#renderer-frameresources-writelights-const-renderscene-amp-const-framedata-amp}
 
@@ -1710,6 +1797,16 @@ bool vertex_color;
 
 Multiply the albedo by the mesh's per-vertex color (sRGB bytes, converted to linear in the shader). The mesh must have one.
 
+### `skinned` {#renderer-gbufferoptions-skinned}
+
+`variable renderer::GBufferOptions::skinned` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+bool skinned;
+```
+
+Skin the mesh's vertices with the joint palette: for meshes with a skin stream, and only for them (a rigid mesh with a skinned material, or the reverse, is rejected with a message naming both).
+
 ## `GBufferTemplates` {#renderer-gbuffertemplates}
 
 `struct renderer::GBufferTemplates` — defined in `engine/renderer/gbuffer.h`
@@ -1743,6 +1840,26 @@ TemplateId colored;
 ```
 
 The template for meshes in the [`renderer::ColorVertexLayout`](#renderer-colorvertexlayout).
+
+### `skinned` {#renderer-gbuffertemplates-skinned}
+
+`variable renderer::GBufferTemplates::skinned` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+TemplateId skinned;
+```
+
+The template for skinned meshes of the standard layout (`SkinnedVertexLayout(StandardVertexLayout())`).
+
+### `skinned_colored` {#renderer-gbuffertemplates-skinned-colored}
+
+`variable renderer::GBufferTemplates::skinned_colored` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+TemplateId skinned_colored;
+```
+
+The template for skinned meshes of the color layout.
 
 ## `CreateGBufferTemplates(MaterialSystem*)` {#renderer-creategbuffertemplates-materialsystem-star}
 
@@ -1912,6 +2029,16 @@ u32 material_binds;
 ```
 
 Material bind-group binds the pass will record.
+
+### `skinned_dropped` {#renderer-gbufferstats-skinned-dropped}
+
+`variable renderer::GBufferStats::skinned_dropped` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+u32 skinned_dropped;
+```
+
+Skinned objects not drawn because the frame's joint palette had no room for their matrices (the budget is `renderer.joint_palette_bytes`); each is skipped whole, never drawn with a stale or partial pose.
 
 ## `GBufferPass` {#renderer-gbufferpass}
 
@@ -3462,6 +3589,16 @@ u32 texture_default_count;
 
 Number of entries in `texture_defaults`.
 
+### `skinned` {#renderer-materialtemplatedesc-skinned}
+
+`variable renderer::MaterialTemplateDesc::skinned` — defined in `engine/renderer/material.h`
+
+```cpp
+bool skinned;
+```
+
+True for a template whose vertex shader skins: it reads the skin stream (vertex binding 1, locations [`renderer::kSkinJointsLocation`](#renderer-kskinjointslocation) and [`renderer::kSkinWeightsLocation`](#renderer-kskinweightslocation)) and the joint palette in the bind group at set [`renderer::MaterialSystem::kJointSet`](#renderer-materialsystem-kjointset). Its pipelines are built only for skinned mesh layouts, and a rigid template only for rigid ones: [`renderer::MaterialSystem::GetPipeline`](#renderer-materialsystem-getpipeline-materialid-const-pipelinetarget-amp-const-vertexlayoutdata-amp-rhi-primitivetopology-bool) reports the mismatch.
+
 ## `PipelineTarget` {#renderer-pipelinetarget}
 
 `struct renderer::PipelineTarget` — defined in `engine/renderer/material.h`
@@ -3915,6 +4052,33 @@ Returns the bind group that binds `region` of a buffer as the set-2 per-object s
 | Thread-safety | thread-compatible; call from one thread (the one preparing the frame). |
 | Ownership | as for [`renderer::MaterialSystem::FrameBindGroup`](#renderer-materialsystem-framebindgroup-const-bufferregion-amp). |
 
+### `JointBindGroup(const BufferRegion&)` {#renderer-materialsystem-jointbindgroup-const-bufferregion-amp}
+
+`method renderer::MaterialSystem::JointBindGroup` — defined in `engine/renderer/material.h`
+
+```cpp
+rhi::BindGroupHandle JointBindGroup(const BufferRegion& region);
+```
+
+Returns the bind group of the joint palette (set [`renderer::MaterialSystem::kJointSet`](#renderer-materialsystem-kjointset), one read-only storage buffer of 48-byte matrices), cached by buffer, offset and size like [`renderer::MaterialSystem::ObjectBindGroup`](#renderer-materialsystem-objectbindgroup-const-bufferregion-amp).
+
+| Field | Value |
+|---|---|
+| Parameter `region` | the palette region from [`renderer::FrameResources::JointRegion`](#renderer-frameresources-jointregion-const). |
+| Returns | the group, or an invalid handle when the device cannot create it (logged). |
+| Thread-safety | thread-compatible; call from one thread (the one preparing the frame). |
+| Ownership | as for [`renderer::MaterialSystem::FrameBindGroup`](#renderer-materialsystem-framebindgroup-const-bufferregion-amp). |
+
+### `kJointSet` {#renderer-materialsystem-kjointset}
+
+`variable renderer::MaterialSystem::kJointSet` — defined in `engine/renderer/material.h`
+
+```cpp
+static constexpr u32 kJointSet;
+```
+
+The bind group set of the joint palette in skinned pipelines.
+
 ### `ReadsVertexInput(MaterialId,u32)` {#renderer-materialsystem-readsvertexinput-materialid-u32-const}
 
 `method renderer::MaterialSystem::ReadsVertexInput` — defined in `engine/renderer/material.h`
@@ -4242,7 +4406,7 @@ Returns the layout of the object storage group (set 2).
 rhi::BufferHandle ObjectIndexStream() const;
 ```
 
-Returns the object index stream: a vertex buffer holding the indices `0 .. kMaxObjectIndices - 1` as `u32`, which a pass binds at [`renderer::MaterialSystem::ObjectIndexSlot`](#renderer-materialsystem-objectindexslot) once before drawing objects, on a device whose shaders read the index from an instance-rate attribute ([`rhi::DeviceCaps::object_index_stream`](rhi.md#rhi-devicecaps-object-index-stream), Direct3D 12). Draw `i` with `first_instance = i` then reads `i`.
+Returns the object index stream: a vertex buffer holding the indices `0 .. kMaxObjectIndices - 1` as `u32`, which a pass binds at [`renderer::MaterialSystem::ObjectIndexSlotFor`](#renderer-materialsystem-objectindexslotfor-bool) once before drawing objects, on a device whose shaders read the index from an instance-rate attribute ([`rhi::DeviceCaps::object_index_stream`](rhi.md#rhi-devicecaps-object-index-stream), Direct3D 12). Draw `i` with `first_instance = i` then reads `i`.
 
 | Field | Value |
 |---|---|
@@ -4262,6 +4426,21 @@ Returns the vertex-buffer slot the object index stream uses in the material pipe
 
 | Field | Value |
 |---|---|
+| Fails | never. |
+
+### `ObjectIndexSlotFor(bool)` {#renderer-materialsystem-objectindexslotfor-bool}
+
+`method renderer::MaterialSystem::ObjectIndexSlotFor` — defined in `engine/renderer/material.h`
+
+```cpp
+static constexpr u32 ObjectIndexSlotFor(bool skinned);
+```
+
+Returns the vertex-buffer slot the object index stream uses for a mesh layout: 1 after the mesh's geometry stream, 2 after its skin stream when it has one.
+
+| Field | Value |
+|---|---|
+| Parameter `skinned` | whether the layout has a skin stream (`VertexLayoutData::skin_stride != 0`). |
 | Fails | never. |
 
 ### `AddObjectIndexAttribute(const rhi::Device&,rhi::VertexBindingDesc*,u32*,u32,rhi::VertexAttributeDesc*,u32*,u32,u32)` {#renderer-materialsystem-addobjectindexattribute-const-rhi-device-amp-rhi-vertexbindingdesc-star-u32-star-u32-rhi-vertexattributedesc-star-u32-star-u32-u32}
@@ -4587,6 +4766,53 @@ The layout of [`renderer::ColorVertex`](#renderer-colorvertex): the four standar
 | Fails | never. |
 | Thread-safety | thread-safe. A pure function. |
 
+## `SkinnedVertexLayout(const VertexLayoutData&)` {#renderer-skinnedvertexlayout-const-vertexlayoutdata-amp}
+
+`function renderer::SkinnedVertexLayout` — defined in `engine/renderer/mesh.h`
+
+```cpp
+VertexLayoutData SkinnedVertexLayout(const VertexLayoutData& base);
+```
+
+The skinned form of a mesh layout: `base` plus the skin stream in vertex binding 1, joint indices (`UInt8x4`) at location [`renderer::kSkinJointsLocation`](#renderer-kskinjointslocation) and weights (`UNorm8x4`) at [`renderer::kSkinWeightsLocation`](#renderer-kskinweightslocation), 8 bytes per vertex (`skin_stride`). Rigid layouts are unchanged.
+
+| Field | Value |
+|---|---|
+| Parameter `base` | a layout without a skin stream. |
+| Returns | the layout. |
+| Aborts | `base` already has a skin stream or has no room for two more attributes. |
+| Thread-safety | thread-safe. A pure function of its argument. |
+
+## `kSkinJointsLocation` {#renderer-kskinjointslocation}
+
+`variable renderer::kSkinJointsLocation` — defined in `engine/renderer/mesh.h`
+
+```cpp
+inline constexpr u32 kSkinJointsLocation;
+```
+
+The shader input location of the skin joint indices (vertex binding 1).
+
+## `kSkinWeightsLocation` {#renderer-kskinweightslocation}
+
+`variable renderer::kSkinWeightsLocation` — defined in `engine/renderer/mesh.h`
+
+```cpp
+inline constexpr u32 kSkinWeightsLocation;
+```
+
+The shader input location of the skin weights (vertex binding 1).
+
+## `kSkinVertexBytes` {#renderer-kskinvertexbytes}
+
+`variable renderer::kSkinVertexBytes` — defined in `engine/renderer/mesh.h`
+
+```cpp
+inline constexpr u32 kSkinVertexBytes;
+```
+
+Bytes of one vertex of the skin stream.
+
 ## `MeshData` {#renderer-meshdata}
 
 `class renderer::MeshData` — defined in `engine/renderer/mesh.h`
@@ -4687,6 +4913,82 @@ Replaces the contents with copies of the given geometry and computes its bounds.
 | Returns | null on success, otherwise a static message naming the problem (this mesh is then empty). |
 | Fails | a zero or oversized stride, a stride or position offset that is not a multiple of 4, a position outside the vertex, no vertices or indices, an index count that does not fit the topology, 16-bit indices with more than 65536 vertices (65535 for a strip, whose last index value is the restart marker), an index at or past `vertex_count`, or a non-finite position. |
 | Ownership | `vertices` and `indices` are borrowed for the call and copied. |
+
+### `SetSkin(const void*,u32)` {#renderer-meshdata-setskin-const-void-star-u32}
+
+`method renderer::MeshData::SetSkin` — defined in `engine/renderer/mesh.h`
+
+```cpp
+const char* SetSkin(const void* skin, u32 joint_count);
+```
+
+Adds the skin stream of a skinned mesh: eight bytes per vertex, joint indices (`UInt8x4`) then weights (`UNorm8x4`), the layout of the mesh blob's skin section. The mesh's layout then carries `skin_stride` 8 and the two skin attributes ([`renderer::SkinnedVertexLayout`](#renderer-skinnedvertexlayout-const-vertexlayoutdata-amp)). Call it after [`renderer::MeshData::Set`](#renderer-meshdata-set-const-vertexlayoutdata-amp-u32-const-void-star-u32-rhi-indextype-const-void-star-u32-rhi-primitivetopology); a later `Set` drops the skin stream.
+
+| Field | Value |
+|---|---|
+| Parameter `skin` | `VertexCount() * 8` bytes, copied. |
+| Parameter `joint_count` | the skeleton's joint count; every index of a vertex with a nonzero weight must be below it. |
+| Returns | null, or a message (the mesh is empty or already skinned, a weight does not sum to 255, a weighted joint is out of range, out of memory); on failure the mesh is unchanged. |
+| Fails | reported through the return value. |
+| Thread-safety | thread-compatible. |
+| Ownership | the bytes are copied. |
+
+### `Skinned()` {#renderer-meshdata-skinned-const}
+
+`method renderer::MeshData::Skinned` — defined in `engine/renderer/mesh.h`
+
+```cpp
+bool Skinned() const;
+```
+
+Returns whether the mesh has a skin stream.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `SkinBytes()` {#renderer-meshdata-skinbytes-const}
+
+`method renderer::MeshData::SkinBytes` — defined in `engine/renderer/mesh.h`
+
+```cpp
+const void* SkinBytes() const;
+```
+
+Returns the skin stream (`VertexCount() * 8` bytes), or null for a rigid mesh.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+| Ownership | the bytes belong to the mesh. |
+
+### `SkinByteCount()` {#renderer-meshdata-skinbytecount-const}
+
+`method renderer::MeshData::SkinByteCount` — defined in `engine/renderer/mesh.h`
+
+```cpp
+u64 SkinByteCount() const;
+```
+
+Returns the size of the skin stream in bytes (0 for a rigid mesh).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `SkinJointCount()` {#renderer-meshdata-skinjointcount-const}
+
+`method renderer::MeshData::SkinJointCount` — defined in `engine/renderer/mesh.h`
+
+```cpp
+u32 SkinJointCount() const;
+```
+
+Returns the joint count given to `SetSkin` (0 for a rigid mesh): a palette drawn with the mesh needs at least this many matrices.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
 
 ### `Valid()` {#renderer-meshdata-valid-const}
 
@@ -5341,6 +5643,44 @@ rhi::BufferHandle IndexBuffer() const;
 ```
 
 Returns the index buffer.
+
+### `SkinBuffer()` {#renderer-gpumesh-skinbuffer-const}
+
+`method renderer::GpuMesh::SkinBuffer` — defined in `engine/renderer/mesh.h`
+
+```cpp
+rhi::BufferHandle SkinBuffer() const;
+```
+
+Returns the skin stream (vertex binding 1), or an invalid handle for a rigid mesh.
+
+### `SkinJointCount()` {#renderer-gpumesh-skinjointcount-const}
+
+`method renderer::GpuMesh::SkinJointCount` — defined in `engine/renderer/mesh.h`
+
+```cpp
+u32 SkinJointCount() const;
+```
+
+Returns the joint count of the skin stream (0 for a rigid mesh): a palette drawn with the mesh needs at least this many matrices.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `Skinned()` {#renderer-gpumesh-skinned-const}
+
+`method renderer::GpuMesh::Skinned` — defined in `engine/renderer/mesh.h`
+
+```cpp
+bool Skinned() const;
+```
+
+Returns whether the mesh has a skin stream.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
 
 ### `IndexCount()` {#renderer-gpumesh-indexcount-const}
 
@@ -6940,6 +7280,36 @@ u32 flags;
 
 `ObjectFlags` bits.
 
+### `joint_matrices` {#renderer-renderobjectdesc-joint-matrices}
+
+`variable renderer::RenderObjectDesc::joint_matrices` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+const f32* joint_matrices;
+```
+
+The joint palette of a skinned mesh: `joint_count` row-major 3x4 matrices (12 `f32` each, the animation runtime's `SkeletonInstance::palette`). Null for a rigid mesh. Borrowed: the memory must stay valid, and hold the pose to draw, until the frame that reads it has been prepared; the renderer copies it into the frame's palette buffer then and keeps no pointer to it afterwards.
+
+### `joint_count` {#renderer-renderobjectdesc-joint-count}
+
+`variable renderer::RenderObjectDesc::joint_count` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+u32 joint_count;
+```
+
+The number of matrices at `joint_matrices`; at most 256.
+
+### `skin_bounds_scale` {#renderer-renderobjectdesc-skin-bounds-scale}
+
+`variable renderer::RenderObjectDesc::skin_bounds_scale` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+f32 skin_bounds_scale;
+```
+
+Scales the mesh's bind-pose bounds about their center for culling (1 = as authored). A pose can move vertices outside the bind-pose box; the game sets this above 1 for a clip that does.
+
 ## `RenderObject` {#renderer-renderobject}
 
 `struct renderer::RenderObject` — defined in `engine/renderer/render_scene.h`
@@ -7004,6 +7374,36 @@ Bounds bounds;
 ```
 
 World-space bounds, kept in step with `transform` by the scene.
+
+### `joint_matrices` {#renderer-renderobject-joint-matrices}
+
+`variable renderer::RenderObject::joint_matrices` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+const f32* joint_matrices;
+```
+
+The joint palette of a skinned mesh: `joint_count` row-major 3x4 matrices (12 `f32` each, the animation runtime's `SkeletonInstance::palette`). Null for a rigid mesh. Borrowed: the memory must stay valid, and hold the pose to draw, until the frame that reads it has been prepared; the renderer copies it into the frame's palette buffer then and keeps no pointer to it afterwards.
+
+### `joint_count` {#renderer-renderobject-joint-count}
+
+`variable renderer::RenderObject::joint_count` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+u32 joint_count;
+```
+
+The number of matrices at `joint_matrices`; at most 256.
+
+### `skin_bounds_scale` {#renderer-renderobject-skin-bounds-scale}
+
+`variable renderer::RenderObject::skin_bounds_scale` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+f32 skin_bounds_scale;
+```
+
+Scales the mesh's bind-pose bounds about their center for culling (1 = as authored). A pose can move vertices outside the bind-pose box; the game sets this above 1 for a clip that does.
 
 ## `LightType` {#renderer-lighttype}
 
@@ -7266,6 +7666,24 @@ Replaces an object's flag bits.
 | Parameter `id` | a live object. |
 | Parameter `flags` | `ObjectFlags` bits. |
 | Aborts | `id` is invalid or stale. |
+
+### `SetJointMatrices(ObjectId,const f32*,u32)` {#renderer-renderscene-setjointmatrices-objectid-const-f32-star-u32}
+
+`method renderer::RenderScene::SetJointMatrices` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+void SetJointMatrices(ObjectId id, const f32* matrices, u32 count);
+```
+
+Replaces the borrowed joint palette of a skinned object (see [`renderer::RenderObjectDesc::joint_matrices`](#renderer-renderobjectdesc-joint-matrices)). The culling bounds do not change.
+
+| Field | Value |
+|---|---|
+| Parameter `id` | a live object whose mesh has a skin stream. |
+| Parameter `matrices` | `count` 3x4 matrices, or null to draw nothing until a palette is set. |
+| Parameter `count` | from 1 to 256 when `matrices` is not null. |
+| Aborts | `id` is invalid or stale, or the mesh is rigid. |
+| Thread-safety | thread-compatible. |
 
 ### `FindObject(ObjectId)` {#renderer-renderscene-findobject-objectid-const}
 
@@ -8118,6 +8536,16 @@ inline constexpr SettingId kRenderScale;
 ```
 
 Render scale, 0.25 to 2. `Dynamic`; mechanism only until the targets read it.
+
+## `kJointPaletteBytes` {#renderer-settings-kjointpalettebytes}
+
+`variable renderer::settings::kJointPaletteBytes` — defined in `engine/renderer/render_settings.h`
+
+```cpp
+inline constexpr SettingId kJointPaletteBytes;
+```
+
+The joint palette's room per frame in bytes (default 16 MiB, about 350,000 joints; 48 to 768 MiB): read when the program makes its `FrameResources`, so a change takes effect at the next start. `DeviceReset`, restart required.
 
 ## `RegisterBuiltinSettings(SettingsRegistry*)` {#renderer-registerbuiltinsettings-settingsregistry-star}
 
@@ -11254,6 +11682,16 @@ u32 stride;
 ```
 
 Bytes per vertex: the end of the last attribute.
+
+### `skin_stride` {#renderer-vertexlayoutdata-skin-stride}
+
+`variable renderer::VertexLayoutData::skin_stride` — defined in `engine/renderer/shader_reflection.h`
+
+```cpp
+u32 skin_stride;
+```
+
+Bytes per vertex of the skin stream (vertex binding 1), or 0 for a rigid mesh. The attributes of binding 1 are the joint indices and weights ([`renderer::SkinnedVertexLayout`](#renderer-skinnedvertexlayout-const-vertexlayoutdata-amp)).
 
 ## `BuildVertexLayout(const ShaderReflection&,u32,VertexLayoutData*,ReflectionError*)` {#renderer-buildvertexlayout-const-shaderreflection-amp-u32-vertexlayoutdata-star-reflectionerror-star}
 

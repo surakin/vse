@@ -40,6 +40,7 @@ set(RHI_TEST_SOURCES
   vulkan_vertex_format_test.cpp  # Phase 22 Day 317
   gbuffer_gpu_test.cpp
   lighting_gpu_test.cpp
+  skinning_gpu_test.cpp  # Phase 22 Day 322
   renderer_demo_gpu_test.cpp
   ui_demo_gpu_test.cpp
   ${CMAKE_SOURCE_DIR}/game/ui_demo/ui_demo_app.cpp

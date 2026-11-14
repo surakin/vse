@@ -14,6 +14,7 @@ set(RENDERER_TEST_SOURCES
   render_graph_barrier_test.cpp
   renderer_test.cpp
   gbuffer_test.cpp
+  skinning_test.cpp  # Phase 22 Day 322
   lighting_test.cpp
   renderer_fault_test.cpp
   render_settings_test.cpp

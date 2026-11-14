@@ -26,6 +26,17 @@ VertexLayoutData StandardVertexLayout()
     return layout;
 }
 
+VertexLayoutData SkinnedVertexLayout(const VertexLayoutData& base)
+{
+    ENGINE_ASSERT(base.skin_stride == 0 && base.attribute_count + 2 <= rhi::kMaxVertexAttributes,
+                  "SkinnedVertexLayout: the layout is already skinned or has no room for the skin attributes");
+    VertexLayoutData layout = base;
+    layout.attributes[layout.attribute_count++] = {kSkinJointsLocation, 1, rhi::VertexFormat::UInt8x4, 0};
+    layout.attributes[layout.attribute_count++] = {kSkinWeightsLocation, 1, rhi::VertexFormat::UNorm8x4, 4};
+    layout.skin_stride = kSkinVertexBytes;
+    return layout;
+}
+
 VertexLayoutData ColorVertexLayout()
 {
     VertexLayoutData layout = StandardVertexLayout();
@@ -55,6 +66,8 @@ MeshData& MeshData::operator=(MeshData&& other) noexcept
         layout_ = other.layout_;
         position_offset_ = other.position_offset_;
         vertices_ = static_cast<Vector<byte>&&>(other.vertices_);
+        skin_ = static_cast<Vector<byte>&&>(other.skin_);
+        skin_joint_count_ = other.skin_joint_count_;
         vertex_count_ = other.vertex_count_;
         indices_ = static_cast<Vector<byte>&&>(other.indices_);
         index_count_ = other.index_count_;
@@ -71,6 +84,8 @@ MeshData& MeshData::operator=(MeshData&& other) noexcept
 void MeshData::Release()
 {
     vertices_.Reset();
+    skin_.Reset();
+    skin_joint_count_ = 0;
     indices_.Reset();
     vertex_count_ = 0;
     index_count_ = 0;
@@ -202,6 +217,46 @@ const char* MeshData::Set(const VertexLayoutData& layout, u32 position_offset, c
     topology_ = topology;
     has_restart_ = has_restart;
     bounds_ = ComputeBounds(vertices_.Data() + position_offset, vertex_count, layout.stride);
+    return nullptr;
+}
+
+const char* MeshData::SetSkin(const void* skin, u32 joint_count)
+{
+    if (!Valid() || layout_.skin_stride != 0 || layout_.attribute_count + 2 > rhi::kMaxVertexAttributes)
+    {
+        return "mesh: the skin stream needs a valid rigid mesh with room for two more attributes";
+    }
+    if (skin == nullptr || joint_count == 0 || joint_count > 256)
+    {
+        return "mesh: a skin stream needs its bytes and 1 to 256 joints";
+    }
+    const byte* bytes = static_cast<const byte*>(skin);
+    for (u32 v = 0; v < vertex_count_; ++v)
+    {
+        const byte* e = bytes + static_cast<usize>(v) * kSkinVertexBytes;
+        u32 sum = 0;
+        for (u32 k = 0; k < 4; ++k)
+        {
+            sum += static_cast<u32>(e[4 + k]);
+            if (e[4 + k] != 0 && static_cast<u32>(e[k]) >= joint_count)
+            {
+                return "mesh: a skin weight refers to a joint the skeleton does not have";
+            }
+        }
+        if (sum != 255)
+        {
+            return "mesh: the skin weights of a vertex must sum to exactly 255";
+        }
+    }
+    Vector<byte> copy;
+    if (!copy.TryResizeUninitialized(static_cast<usize>(vertex_count_) * kSkinVertexBytes))
+    {
+        return "mesh: out of memory";
+    }
+    MemCopy(copy.Data(), skin, copy.Size());
+    skin_ = static_cast<Vector<byte>&&>(copy);
+    skin_joint_count_ = joint_count;
+    layout_ = SkinnedVertexLayout(layout_);
     return nullptr;
 }
 
@@ -795,12 +850,14 @@ void GpuMesh::MoveFrom(GpuMesh& other)
     device_ = other.device_;
     vertex_buffer_ = other.vertex_buffer_;
     index_buffer_ = other.index_buffer_;
+    skin_buffer_ = other.skin_buffer_;
     vertex_count_ = other.vertex_count_;
     index_count_ = other.index_count_;
     index_type_ = other.index_type_;
     topology_ = other.topology_;
     has_restart_ = other.has_restart_;
     layout_ = other.layout_;
+    skin_joint_count_ = other.skin_joint_count_;
     bounds_ = other.bounds_;
     sort_id_ = other.sort_id_;
     ready_ = other.ready_;
@@ -810,6 +867,7 @@ void GpuMesh::MoveFrom(GpuMesh& other)
     other.sort_id_ = 0;
     other.device_ = nullptr;
     other.vertex_buffer_ = {};
+    other.skin_buffer_ = {};
     other.index_buffer_ = {};
     other.vertex_count_ = 0;
     other.index_count_ = 0;
@@ -818,7 +876,7 @@ void GpuMesh::MoveFrom(GpuMesh& other)
 }
 
 bool GpuMesh::Upload(rhi::Device* device, const MeshData& data, const char* debug_name, rhi::BufferHandle* vb,
-                     rhi::BufferHandle* ib)
+                     rhi::BufferHandle* ib, rhi::BufferHandle* sb)
 {
     rhi::BufferDesc bd;
     bd.location = rhi::MemoryLocation::GpuOnly;
@@ -830,11 +888,19 @@ bool GpuMesh::Upload(rhi::Device* device, const MeshData& data, const char* debu
     bd.usage = rhi::BufferUsage::Index | rhi::BufferUsage::CopyDst;
     const rhi::BufferHandle index_buffer = device->CreateBuffer(bd);
 
-    bool ok = vertex_buffer.IsValid() && index_buffer.IsValid();
+    rhi::BufferHandle skin_buffer;
+    if (data.Skinned())
+    {
+        bd.size = data.SkinByteCount();
+        bd.usage = rhi::BufferUsage::Vertex | rhi::BufferUsage::CopyDst;
+        skin_buffer = device->CreateBuffer(bd);
+    }
+    bool ok = vertex_buffer.IsValid() && index_buffer.IsValid() && (!data.Skinned() || skin_buffer.IsValid());
     if (ok)
     {
         ok = device->UploadBuffer(vertex_buffer, 0, data.Vertices(), data.VertexBytes()).ok &&
-             device->UploadBuffer(index_buffer, 0, data.Indices(), data.IndexBytes()).ok;
+             device->UploadBuffer(index_buffer, 0, data.Indices(), data.IndexBytes()).ok &&
+             (!data.Skinned() || device->UploadBuffer(skin_buffer, 0, data.SkinBytes(), data.SkinByteCount()).ok);
     }
     if (!ok)
     {
@@ -848,10 +914,15 @@ bool GpuMesh::Upload(rhi::Device* device, const MeshData& data, const char* debu
         {
             device->DestroyBuffer(index_buffer);
         }
+        if (skin_buffer.IsValid())
+        {
+            device->DestroyBuffer(skin_buffer);
+        }
         return false;
     }
     *vb = vertex_buffer;
     *ib = index_buffer;
+    *sb = skin_buffer;
     return true;
 }
 
@@ -863,19 +934,22 @@ bool GpuMesh::Create(rhi::Device* device, const MeshData& data, const char* debu
 
     rhi::BufferHandle vertex_buffer;
     rhi::BufferHandle index_buffer;
-    if (!Upload(device, data, debug_name, &vertex_buffer, &index_buffer))
+    rhi::BufferHandle skin_buffer;
+    if (!Upload(device, data, debug_name, &vertex_buffer, &index_buffer, &skin_buffer))
     {
         return false;
     }
     device_ = device;
     vertex_buffer_ = vertex_buffer;
     index_buffer_ = index_buffer;
+    skin_buffer_ = skin_buffer;
     vertex_count_ = data.VertexCount();
     index_count_ = data.IndexCount();
     index_type_ = data.IndexFormat();
     topology_ = data.Topology();
     has_restart_ = data.HasPrimitiveRestart();
     layout_ = data.Layout();
+    skin_joint_count_ = data.SkinJointCount();
     bounds_ = data.GetBounds();
     static Atomic<u32> next_sort_id{1};
     sort_id_ = next_sort_id.FetchAdd(1, MemoryOrder::Relaxed) % 0xffffffu + 1;  // 1 to 2^24 - 1, never 0
@@ -919,6 +993,10 @@ void GpuMesh::Release()
     {
         return;
     }
+    if (skin_buffer_.IsValid())
+    {
+        device_->DestroyBuffer(skin_buffer_);
+    }
     if (index_buffer_.IsValid())
     {
         device_->DestroyBuffer(index_buffer_);
@@ -927,6 +1005,7 @@ void GpuMesh::Release()
     {
         device_->DestroyBuffer(vertex_buffer_);
     }
+    skin_buffer_ = {};
     index_buffer_ = {};
     vertex_buffer_ = {};
     was_ready_ = was_ready_ || ready_;
@@ -954,12 +1033,13 @@ bool GpuMesh::Recreate(rhi::Device* device)
         }
         data = &loaded;
     }
-    if (!data->Valid() || data->VertexCount() != vertex_count_ || data->IndexCount() != index_count_)
+    if (!data->Valid() || data->VertexCount() != vertex_count_ || data->IndexCount() != index_count_ ||
+        data->Skinned() != (layout_.skin_stride != 0) || data->SkinJointCount() != skin_joint_count_)
     {
         RenderLog(LogVerbosity::Error, "GpuMesh '%s': the source no longer matches the mesh", name_);
         return false;
     }
-    if (!Upload(device, *data, name_, &vertex_buffer_, &index_buffer_))
+    if (!Upload(device, *data, name_, &vertex_buffer_, &index_buffer_, &skin_buffer_))
     {
         return false;
     }
@@ -1029,6 +1109,10 @@ void GpuMesh::RecordPrepare(rhi::CommandList* list)
     }
     list->Barrier(vertex_buffer_, rhi::ResourceState::CopyDst, rhi::ResourceState::VertexBuffer);
     list->Barrier(index_buffer_, rhi::ResourceState::CopyDst, rhi::ResourceState::IndexBuffer);
+    if (skin_buffer_.IsValid())
+    {
+        list->Barrier(skin_buffer_, rhi::ResourceState::CopyDst, rhi::ResourceState::VertexBuffer);
+    }
     prepared_ = true;
 }
 
@@ -1037,6 +1121,10 @@ void GpuMesh::Draw(rhi::CommandList* list, u32 instance_count, u32 first_instanc
     ENGINE_ASSERT(Valid() && (prepared_ || ready_),
                   "GpuMesh::Draw: the mesh is empty or RecordPrepare was never called");
     list->SetVertexBuffer(0, vertex_buffer_, 0);
+    if (skin_buffer_.IsValid())
+    {
+        list->SetVertexBuffer(1, skin_buffer_, 0);
+    }
     list->SetIndexBuffer(index_buffer_, 0, index_type_);
     list->DrawIndexed(index_count_, instance_count, 0, 0, first_instance);
 }

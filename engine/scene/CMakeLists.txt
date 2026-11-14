@@ -9,7 +9,7 @@ function(engine_add_scene_lib suffix)
   add_library(scene${suffix} STATIC ${SCENE_SOURCES})
   target_include_directories(scene${suffix} PUBLIC ${SCENE_INCLUDE_ROOT})
   target_compile_options(scene${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
-  target_link_libraries(scene${suffix} PUBLIC ecs${suffix} renderer${suffix})
+  target_link_libraries(scene${suffix} PUBLIC ecs${suffix} renderer${suffix} animation${suffix})
 endfunction()
 
 engine_add_scene_lib("")

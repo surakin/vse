@@ -110,9 +110,31 @@ void RenderScene::OptimizeCulling(u32 budget)
     }
 }
 
+namespace
+{
+
+// The bind-pose bounds of a mesh, inflated about their center by a skinned object's bounds scale.
+Bounds SkinBounds(const GpuMesh& mesh, f32 scale)
+{
+    Bounds b = mesh.GetBounds();
+    if (mesh.Skinned() && scale != 1.0f && scale > 0.0f)
+    {
+        const Vec3 center = b.box.Center();
+        b.box.min = center + (b.box.min - center) * scale;
+        b.box.max = center + (b.box.max - center) * scale;
+        b.sphere.radius *= scale;
+    }
+    return b;
+}
+
+}  // namespace
+
 ObjectId RenderScene::AddObject(const RenderObjectDesc& desc)
 {
     ENGINE_ASSERT(desc.mesh != nullptr && desc.mesh->Valid(), "AddObject: the mesh is null or empty");
+    ENGINE_ASSERT(desc.joint_matrices == nullptr ||
+                      (desc.mesh->Skinned() && desc.joint_count > 0 && desc.joint_count <= 256),
+                  "AddObject: a palette needs a skinned mesh and 1 to 256 matrices");
     u32 slot;
     if (free_object_ != kNoSlot)
     {
@@ -133,7 +155,10 @@ ObjectId RenderScene::AddObject(const RenderObjectDesc& desc)
     s.object.material = desc.material;
     s.object.transform = desc.transform;
     s.object.flags = desc.flags;
-    s.object.bounds = TransformBounds(desc.mesh->GetBounds(), desc.transform);
+    s.object.joint_matrices = desc.joint_matrices;
+    s.object.joint_count = desc.joint_count;
+    s.object.skin_bounds_scale = desc.skin_bounds_scale;
+    s.object.bounds = TransformBounds(SkinBounds(*desc.mesh, desc.skin_bounds_scale), desc.transform);
     ++object_count_;
     IndexObject(slot);
     return ObjectId{slot, s.generation};
@@ -157,7 +182,7 @@ void RenderScene::SetTransform(ObjectId id, const Mat4& transform)
     ENGINE_ASSERT(FindObject(id) != nullptr, "SetTransform: the id is invalid or stale");
     RenderObject& o = objects_[id.index].object;
     o.transform = transform;
-    o.bounds = TransformBounds(o.mesh->GetBounds(), transform);
+    o.bounds = TransformBounds(SkinBounds(*o.mesh, o.skin_bounds_scale), transform);
     CullIndex& index = *cull_index_;
     if (index.handle[id.index] != spatial::kInvalidSetHandle && UsableBox(o.bounds.box))
     {
@@ -168,6 +193,16 @@ void RenderScene::SetTransform(ObjectId id, const Mat4& transform)
         UnindexObject(id.index);
         IndexObject(id.index);
     }
+}
+
+void RenderScene::SetJointMatrices(ObjectId id, const f32* matrices, u32 count)
+{
+    ENGINE_ASSERT(FindObject(id) != nullptr, "SetJointMatrices: the id is invalid or stale");
+    RenderObject& o = objects_[id.index].object;
+    ENGINE_ASSERT(o.mesh->Skinned() && (matrices == nullptr || (count > 0 && count <= 256)),
+                  "SetJointMatrices: the mesh is rigid or the count is outside 1 to 256");
+    o.joint_matrices = matrices;
+    o.joint_count = matrices != nullptr ? count : 0;
 }
 
 void RenderScene::SetFlags(ObjectId id, u32 flags)

@@ -134,6 +134,11 @@ struct MaterialTemplateDesc
     const TextureDefault* texture_defaults = nullptr;
     /// Number of entries in `texture_defaults`.
     u32 texture_default_count = 0;
+    /// True for a template whose vertex shader skins: it reads the skin stream (vertex binding 1, locations
+    /// [[renderer::kSkinJointsLocation]] and [[renderer::kSkinWeightsLocation]]) and the joint palette in the bind
+    /// group at set [[renderer::MaterialSystem::kJointSet]]. Its pipelines are built only for skinned mesh layouts, and
+    /// a rigid template only for rigid ones: [[renderer::MaterialSystem::GetPipeline]] reports the mismatch.
+    bool skinned = false;
 };
 
 /// What a pipeline renders into; part of the pipeline cache key.
@@ -322,6 +327,17 @@ public:
     /// - Ownership: as for [[renderer::MaterialSystem::FrameBindGroup]].
     /// - Thread-safety: thread-compatible; call from one thread (the one preparing the frame).
     rhi::BindGroupHandle ObjectBindGroup(const BufferRegion& region);
+    /// Returns the bind group of the joint palette (set [[renderer::MaterialSystem::kJointSet]], one read-only storage
+    /// buffer of 48-byte matrices), cached by buffer, offset and size like
+    /// [[renderer::MaterialSystem::ObjectBindGroup]].
+    ///
+    /// - Param region: the palette region from [[renderer::FrameResources::JointRegion]].
+    /// - Returns: the group, or an invalid handle when the device cannot create it (logged).
+    /// - Ownership: as for [[renderer::MaterialSystem::FrameBindGroup]].
+    /// - Thread-safety: thread-compatible; call from one thread (the one preparing the frame).
+    rhi::BindGroupHandle JointBindGroup(const BufferRegion& region);
+    /// The bind group set of the joint palette in skinned pipelines.
+    static constexpr u32 kJointSet = 3;
     /// Returns whether the material's vertex shader reads the vertex attribute at `location`.
     ///
     /// - Param id: a live material.
@@ -474,7 +490,7 @@ public:
     rhi::BindGroupLayoutHandle ObjectLayout() const;
 
     /// Returns the object index stream: a vertex buffer holding the indices `0 .. kMaxObjectIndices - 1` as `u32`,
-    /// which a pass binds at [[renderer::MaterialSystem::ObjectIndexSlot]] once before drawing objects, on a device
+    /// which a pass binds at [[renderer::MaterialSystem::ObjectIndexSlotFor]] once before drawing objects, on a device
     /// whose shaders read the index from an instance-rate attribute ([[rhi::DeviceCaps::object_index_stream]], Direct3D
     /// 12). Draw `i` with `first_instance = i` then reads `i`.
     ///
@@ -488,6 +504,13 @@ public:
     ///
     /// - Fails: never.
     static constexpr u32 ObjectIndexSlot() { return 1; }
+
+    /// Returns the vertex-buffer slot the object index stream uses for a mesh layout: 1 after the mesh's geometry
+    /// stream, 2 after its skin stream when it has one.
+    ///
+    /// - Param skinned: whether the layout has a skin stream (`VertexLayoutData::skin_stride != 0`).
+    /// - Fails: never.
+    static constexpr u32 ObjectIndexSlotFor(bool skinned) { return skinned ? 2 : 1; }
 
     /// Adds the object index attribute to a pipeline's vertex input when the device needs it: binding `slot`, instance
     /// rate, 4-byte stride, attribute location [[renderer::kObjectIndexLocation]] as `UInt1`. Does nothing when
@@ -623,6 +646,7 @@ private:
     u32 material_high_ = 0;  // one past the highest material slot ever used
     rhi::BindGroupLayoutHandle frame_layout_;
     rhi::BindGroupLayoutHandle object_layout_;
+    rhi::BindGroupLayoutHandle joint_layout_;
     rhi::TextureHandle defaults_[3];
     rhi::SamplerHandle default_sampler_;
     rhi::BufferHandle object_index_stream_;  // only on a device with DeviceCaps::object_index_stream
@@ -644,8 +668,10 @@ private:
                                          const BufferRegion& region);
     CachedGroup frame_groups_[kMaxCachedGroups];
     CachedGroup object_groups_[kMaxCachedGroups];
+    CachedGroup joint_groups_[kMaxCachedGroups];
     u32 frame_group_count_ = 0;
     u32 object_group_count_ = 0;
+    u32 joint_group_count_ = 0;
 };
 
 }  // namespace engine_placeholder::renderer

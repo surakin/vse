@@ -49,6 +49,14 @@ struct ObjectData
 };
 static_assert(sizeof(ObjectData) == 128, "ObjectData is 2 mat4");
 
+/// The bytes of one joint matrix in the palette: a row-major 3x4 matrix of `f32` (the layout of the skeleton's inverse
+/// bind matrices and of the animation runtime's palette).
+inline constexpr u32 kJointMatrixBytes = 48;
+/// The `WriteJoints` result for a palette that did not fit.
+inline constexpr u32 kNoJoints = 0xffffffffu;
+/// The most joint matrices a palette holds: the offset travels in a `f32` of the object data, exact up to 2^24.
+inline constexpr u32 kMaxJointMatrices = 1u << 24;
+
 /// Fills a [[renderer::FrameData]].
 ///
 /// - Param camera: the camera; its projection parameters must be valid.
@@ -129,9 +137,12 @@ public:
     /// - Param device: the device; must outlive this object.
     /// - Param max_objects: the most objects one frame writes, at least 1.
     /// - Param max_lights: the most lights one frame writes, from 1 to [[renderer::kMaxLights]].
+    /// - Param max_joint_matrices: the joint palette's room per frame, in 48-byte matrices, from 1 to
+    ///   [[renderer::kMaxJointMatrices]] (the setting `renderer.joint_palette_bytes` divided by 48).
     /// - Ownership: check [[renderer::FrameResources::Valid]].
-    /// - Aborts: `device` is null, `max_objects` is 0, or `max_lights` is 0 or above [[renderer::kMaxLights]].
-    FrameResources(rhi::Device* device, u32 max_objects, u32 max_lights = 64);
+    /// - Aborts: `device` is null, `max_objects` is 0, `max_lights` is 0 or above [[renderer::kMaxLights]], or
+    ///   `max_joint_matrices` is 0 or above [[renderer::kMaxJointMatrices]].
+    FrameResources(rhi::Device* device, u32 max_objects, u32 max_lights = 64, u32 max_joint_matrices = 1024);
     /// Unmaps and destroys the buffers.
     ~FrameResources() override;
     FrameResources(const FrameResources&) = delete;
@@ -161,7 +172,11 @@ public:
 
     /// Returns whether both buffers were created and mapped.
     /// - Fails: never; false means creation failed (logged) and every write will fail.
-    bool Valid() const { return frame_mapped_ != nullptr && object_mapped_ != nullptr && light_mapped_ != nullptr; }
+    bool Valid() const
+    {
+        return frame_mapped_ != nullptr && object_mapped_ != nullptr && light_mapped_ != nullptr &&
+               joint_mapped_ != nullptr;
+    }
 
     /// Selects the region for this frame: `frame_index % kSlots`.
     ///
@@ -183,7 +198,26 @@ public:
     /// - Returns: the number written (`count`).
     /// - Aborts: `BeginFrame` was not called, `count` exceeds the capacity, or a slot is dead.
     /// - Ownership: `slots` is borrowed for the call.
-    u32 WriteObjects(const RenderScene& scene, const u32* slots, u32 count);
+    u32 WriteObjects(const RenderScene& scene, const u32* slots, u32 count, const u32* joint_offsets = nullptr);
+
+    /// Appends one skinned instance's joint matrices to this frame's palette.
+    ///
+    /// - Param matrices: `count` row-major 3x4 matrices (12 `f32` each), copied.
+    /// - Param count: from 1 to the remaining room.
+    /// - Returns: the index of the first matrix (the offset to give [[renderer::FrameResources::WriteObjects]]), or
+    ///   [[renderer::kNoJoints]] when the palette does not have `count` matrices left (nothing is written).
+    /// - Aborts: `BeginFrame` was not called, or `matrices` is null.
+    /// - Thread-safety: thread-compatible; call from the thread that prepares the frame.
+    u32 WriteJoints(const f32* matrices, u32 count);
+
+    /// Returns the region of the joint palette buffer for this frame: `MaxJointMatrices()` matrices.
+    BufferRegion JointRegion() const;
+    /// Returns the palette's room in matrices.
+    /// - Fails: never.
+    u32 MaxJointMatrices() const { return max_joints_; }
+    /// Returns the matrices written so far this frame.
+    /// - Fails: never.
+    u32 JointsWritten() const { return joints_written_; }
 
     /// Writes the scene's lights into this frame's region: directional lights first, then the visible point lights, and
     /// sums the ambient lights.
@@ -256,6 +290,11 @@ private:
     u64 frame_stride_ = 0;   // bytes between the frame regions: sizeof(FrameData) rounded to the offset alignment
     u64 object_stride_ = 0;  // bytes between the object regions
     u32 max_objects_ = 0;
+    rhi::BufferHandle joint_buffer_;
+    byte* joint_mapped_ = nullptr;
+    u64 joint_stride_ = 0;
+    u32 max_joints_ = 0;
+    u32 joints_written_ = 0;
     u32 slot_ = 0;
     bool begun_ = false;
     u32 objects_written_ = 0;

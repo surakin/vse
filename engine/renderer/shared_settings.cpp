@@ -130,6 +130,9 @@ void RegisterSharedSettings(sset::Registry* registry)
             {"shader_quality", "shader quality: low, medium or high", nullptr, nullptr},
             {"gbuffer_debug_layer", "show a G-buffer layer instead of the lit picture", nullptr, nullptr},
             {"render_scale", "the internal resolution as a fraction of the window", nullptr, nullptr},
+            {"joint_palette_bytes",
+             "the room for skinned meshes' joint matrices per frame in bytes (48 per joint); objects that do not fit are not drawn",
+             nullptr, nullptr},
         };
         for (const auto& info : kInfo)
         {

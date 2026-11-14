@@ -127,6 +127,9 @@ struct GBufferOptions
     /// Multiply the albedo by the mesh's per-vertex color (sRGB bytes, converted to linear in the shader). The mesh
     /// must have one.
     bool vertex_color = false;
+    /// Skin the mesh's vertices with the joint palette: for meshes with a skin stream, and only for them (a rigid
+    /// mesh with a skinned material, or the reverse, is rejected with a message naming both).
+    bool skinned = false;
 };
 
 /// The two material templates of the G-buffer shaders: for meshes without and with per-vertex colors.
@@ -138,6 +141,10 @@ struct GBufferTemplates
     TemplateId plain;
     /// The template for meshes in the [[renderer::ColorVertexLayout]].
     TemplateId colored;
+    /// The template for skinned meshes of the standard layout (`SkinnedVertexLayout(StandardVertexLayout())`).
+    TemplateId skinned;
+    /// The template for skinned meshes of the color layout.
+    TemplateId skinned_colored;
 };
 
 /// Creates the G-buffer material templates.
@@ -199,6 +206,9 @@ struct GBufferStats
     u32 pipeline_binds = 0;
     /// Material bind-group binds the pass will record.
     u32 material_binds = 0;
+    /// Skinned objects not drawn because the frame's joint palette had no room for their matrices (the budget is
+    /// `renderer.joint_palette_bytes`); each is skipped whole, never drawn with a stale or partial pose.
+    u32 skinned_dropped = 0;
 };
 
 /// Draws the scene's visible objects into the G-buffer.
@@ -275,6 +285,7 @@ private:
         const GpuMesh* mesh = nullptr;
         u32 first_instance = 0;
         u32 instance_count = 0;
+        bool skinned = false;
     };
     static void Record(const PassExecuteContext& context, void* user);
     void Reject(const char* fmt, ...) ENGINE_PRINTF_FORMAT(2, 3);
@@ -284,12 +295,14 @@ private:
     Vector<Draw> draws_;
     u32 draw_count_ = 0;
     Vector<u32> slots_;
-    Vector<u32> cull_slots_;  // grown when the scene has more slots than the frame resources hold objects
+    Vector<u32> joint_offsets_;  // parallel to slots_: the palette offset of each drawn object, kNoJoints if rigid
+    Vector<u32> cull_slots_;     // grown when the scene has more slots than the frame resources hold objects
     bool added_ = false;
     bool storage_ok_ = false;  // the draw, slot and sort arrays were allocated
     Vector<SortEntry> sort_scratch_;
     rhi::BindGroupHandle frame_group_;
     rhi::BindGroupHandle object_group_;
+    rhi::BindGroupHandle joint_group_;       // the frame's joint palette (set 3), bound for skinned draws only
     rhi::BufferHandle object_index_stream_;  // MaterialSystem::ObjectIndexStream of this frame; invalid on Vulkan
     GBufferTargets targets_;
     rhi::TextureUsage extra_usage_ = rhi::TextureUsage::None;

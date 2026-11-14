@@ -30,7 +30,7 @@ const char* const kLevelNames[] = {"off", "on"};
 TEST_CASE("built-in settings have the ids, classes and defaults of the plan", "[render_settings]")
 {
     const SettingsRegistry& r = SettingsRegistry::Builtin();
-    REQUIRE(r.Count() == 14);
+    REQUIRE(r.Count() == 15);
     struct Row
     {
         SettingId id;
@@ -52,6 +52,7 @@ TEST_CASE("built-in settings have the ids, classes and defaults of the plan", "[
         {settings::kShaderQuality, "shader_quality", CostClass::PipelineRebuild},
         {settings::kGBufferDebugLayer, "gbuffer_debug_layer", CostClass::Dynamic},
         {settings::kRenderScale, "render_scale", CostClass::Dynamic},
+        {settings::kJointPaletteBytes, "joint_palette_bytes", CostClass::DeviceReset},
     };
     for (const Row& row : rows)
     {
@@ -69,6 +70,8 @@ TEST_CASE("built-in settings have the ids, classes and defaults of the plan", "[
     CHECK_FALSE(s.GetBool(settings::kFullscreen));
     CHECK(r.Find(settings::kRenderScale)->mechanism_only);
     CHECK_FALSE(r.Find(settings::kBackend)->mechanism_only);
+    CHECK(s.GetInt(settings::kJointPaletteBytes) == 16 * 1024 * 1024);
+    CHECK(r.Find(settings::kJointPaletteBytes)->restart_required);
     CHECK(CStrCompare(CostClassName(CostClass::PipelineRebuild), "pipeline-rebuild") == 0);
 }
 
@@ -600,14 +603,15 @@ TEST_CASE("random pairs: the diff class is the maximum over single changes", "[r
     }
 }
 
-TEST_CASE("only the backend waits for the next start, and resolving puts it back", "[render_settings]")
+TEST_CASE("only the backend and the joint palette size wait for the next start, and resolving puts them back",
+          "[render_settings]")
 {
     const SettingsRegistry& r = SettingsRegistry::Builtin();
     for (u32 i = 1; i <= r.Count(); ++i)
     {
         const SettingId id{static_cast<u16>(i)};
         INFO(r.Find(id)->name);
-        CHECK(r.Find(id)->restart_required == (id == settings::kBackend));
+        CHECK(r.Find(id)->restart_required == (id == settings::kBackend || id == settings::kJointPaletteBytes));
     }
     const RenderSettings current;
     RenderSettings wanted = current;

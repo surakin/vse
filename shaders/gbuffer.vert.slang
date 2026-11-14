@@ -6,18 +6,25 @@
 //   clip    = frame.view_projection * world
 //   normal  = normalize-later(float3x3(objects[instance].normal) * in_normal)   (unnormalized; the fragment shader normalizes)
 //   tangent = (float3x3(objects[instance].world) * in_tangent.xyz, in_tangent.w)
+// Option SKINNED (Phase 22 Day 322) blends the position, normal and tangent by up to four joint matrices before the object
+// transform: the mesh's skin stream (vertex binding 1) gives four joint indices and four weights (summing to 1 exactly, as
+// 255 of 255 in the mesh blob, so no renormalization), the joint palette is the 3x4 row-major matrices of set 3, and the
+// palette offset of the object is the translation x of its normal matrix (renderer::FrameResources::WriteObjects). The
+// normal and tangent use each matrix's 3x3 part, which is correct while a pose has uniform scale per joint (non-uniform
+// scale in a pose is out of scope).
 // Option VERTEX_COLOR reads the mesh's per-vertex color (location 4, UNorm8x4, sRGB-encoded) and passes it on unchanged;
 // the fragment shader converts it to linear.
 //
 // Interface
 //   vertex input  location 0: float3 position; 1: float3 normal; 2: float4 tangent; 3: float2 uv;
-//                 4: float4 color (only with VERTEX_COLOR)
+//                 4: float4 color (only with VERTEX_COLOR); 5: uint4 joints, 6: float4 weights (only with SKINNED)
 //   vertex output location 0: float3 world normal; 1: float2 uv; 2: float4 world tangent;
 //                 3: float4 color (only with VERTEX_COLOR)
 //   set 0, binding 0: uniform buffer FrameData (renderer::FrameData, 304 bytes)
 //   set 2, binding 0: storage buffer of ObjectData (renderer::ObjectData, 128 bytes each)
+//   set 3, binding 0: storage buffer of JointMatrix, 48 bytes each (only with SKINNED)
 
-// permutation-options: VERTEX_COLOR
+// permutation-options: VERTEX_COLOR SKINNED
 
 #include "target_common.slang"
 
@@ -39,6 +46,17 @@ struct ObjectData {
 [[vk::binding(0, 0)]] ConstantBuffer<FrameData> frame ENGINE_REGISTER(b0, space0);
 [[vk::binding(0, 2)]] StructuredBuffer<ObjectData> objects ENGINE_REGISTER(t0, space2);
 
+#ifdef SKINNED
+// One joint matrix: the three rows of a 3x4 row-major matrix (renderer::kJointMatrixBytes).
+struct JointMatrix {
+    float4 row0;
+    float4 row1;
+    float4 row2;
+};
+
+[[vk::binding(0, 3)]] StructuredBuffer<JointMatrix> joints ENGINE_REGISTER(t0, space3);
+#endif
+
 struct VertexInput {
     [[vk::location(0)]] float3 position : TEXCOORD0;
     [[vk::location(1)]] float3 normal : TEXCOORD1;
@@ -46,6 +64,10 @@ struct VertexInput {
     [[vk::location(3)]] float2 uv : TEXCOORD3;
 #ifdef VERTEX_COLOR
     [[vk::location(4)]] float4 color : TEXCOORD4;
+#endif
+#ifdef SKINNED
+    [[vk::location(5)]] uint4 joint_indices : TEXCOORD5;
+    [[vk::location(6)]] float4 joint_weights : TEXCOORD6;
 #endif
 #ifdef ENGINE_OBJECT_INDEX_STREAM
     [[vk::location(15)]] uint instance : TEXCOORD15; // renderer::ObjectIndexStream (D3D12: no base instance)
@@ -68,10 +90,31 @@ struct VertexOutput {
 VertexOutput main(VertexInput input) {
     ObjectData object = objects[input.instance];
     VertexOutput output;
-    output.position = ENGINE_CLIP(mul(frame.view_projection, mul(object.world, float4(input.position, 1.0))));
-    output.normal = mul((float3x3)object.normal, input.normal);
+    float3 position = input.position;
+    float3 normal = input.normal;
+    float3 tangent = input.tangent.xyz;
+#ifdef SKINNED
+    // The palette offset travels in the normal matrix's translation (its fourth column), which nothing else reads.
+    uint base = (uint)(mul(object.normal, float4(0.0, 0.0, 0.0, 1.0)).x + 0.5);
+    float3 skinned_position = float3(0.0, 0.0, 0.0);
+    float3 skinned_normal = float3(0.0, 0.0, 0.0);
+    float3 skinned_tangent = float3(0.0, 0.0, 0.0);
+    float4 p = float4(input.position, 1.0);
+    for (int k = 0; k < 4; ++k) {
+        float w = input.joint_weights[k];
+        JointMatrix m = joints[base + input.joint_indices[k]];
+        skinned_position += w * float3(dot(m.row0, p), dot(m.row1, p), dot(m.row2, p));
+        skinned_normal += w * float3(dot(m.row0.xyz, input.normal), dot(m.row1.xyz, input.normal), dot(m.row2.xyz, input.normal));
+        skinned_tangent += w * float3(dot(m.row0.xyz, tangent), dot(m.row1.xyz, tangent), dot(m.row2.xyz, tangent));
+    }
+    position = skinned_position;
+    normal = skinned_normal;
+    tangent = skinned_tangent;
+#endif
+    output.position = ENGINE_CLIP(mul(frame.view_projection, mul(object.world, float4(position, 1.0))));
+    output.normal = mul((float3x3)object.normal, normal);
     output.uv = input.uv;
-    output.tangent = float4(mul((float3x3)object.world, input.tangent.xyz), input.tangent.w);
+    output.tangent = float4(mul((float3x3)object.world, tangent), input.tangent.w);
 #ifdef VERTEX_COLOR
     output.color = input.color;
 #endif

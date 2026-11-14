@@ -591,6 +591,29 @@ octahedral (0.707, -0.780) -> (0.360, -0.480, -0.800)
 a vertex color material reads the color attribute: yes
 ```
 
+### Skinned meshes
+
+A skinned mesh is a rigid mesh plus a **skin stream**: vertex binding 1 holds eight bytes per vertex, four joint indices (`UInt8x4`, shader
+location 5) and four weights (`UNorm8x4`, location 6) that sum to exactly 255. `MeshData::SetSkin(bytes, joint_count)` adds it to a mesh made with
+`Set` (it refuses weights that do not sum to 255 and weighted joints past `joint_count`), and `GpuMesh` uploads it as a second vertex buffer; the mesh's
+`Layout()` then has `skin_stride` 8 and the two attributes (`SkinnedVertexLayout`). A mesh without the stream is rigid and unchanged.
+
+The **joint palette** is one storage buffer per frame slot of 48-byte matrices (row-major 3x4: the layout of the skeleton's inverse bind matrices and of the
+animation runtime's `SkeletonInstance::palette`), owned by `FrameResources`. Its room is `renderer.joint_palette_bytes` (default 16 MiB, about 350,000
+joints, read when the program makes its `FrameResources`; the constructor takes it as a matrix count). An object gives `RenderObjectDesc::joint_matrices`
+and `joint_count` (borrowed memory: the G-buffer pass copies the matrices into the frame's palette when it prepares, and keeps no pointer after; the pointer must stay valid from `RenderSync` until `GBufferPass::Prepare`, so make no structural ECS change between them) and
+`RenderScene::SetJointMatrices` changes them. A palette with fewer matrices than the mesh has joints (`GpuMesh::SkinJointCount`) is rejected and counted in `rejected`. An object whose palette does not fit is **not drawn**, counted in `GBufferStats::skinned_dropped` with one
+warning per frame: never a crash, never a stale or half-written pose. `skin_bounds_scale` inflates the bind-pose bounds used for culling (a pose can reach
+outside them).
+
+A skinned draw needs a skinned material: `GBufferOptions::skinned` selects the `SKINNED` permutation of `gbuffer.vert`, which blends the position, normal
+and tangent by the weighted sum of the four joint matrices (the 3x3 part for normals and tangents: correct for uniform scale per joint) before the object
+transform. A rigid material on a skinned mesh, or the reverse, is refused when the pipeline is built, with a message naming both. Every instance of a
+mesh and material shares one pipeline and one instanced draw; each instance finds its palette through an offset kept in the translation column of its
+normal matrix (`FrameResources::WriteObjects`). On Direct3D 12 the object index stream follows the skin stream (`MaterialSystem::ObjectIndexSlotFor`).
+`scene::RenderSync` points an entity's skinned object at its `animation::SkeletonInstance` palette and rewrites that pointer only when the palette's
+address or length changes.
+
 ### Deferred lighting and the tonemap
 
 `LightingPass` turns the G-buffer into linear HDR light. `Prepare(scene, frame_data)` writes the scene's lights through

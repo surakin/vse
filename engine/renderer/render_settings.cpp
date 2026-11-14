@@ -330,6 +330,12 @@ void RegisterBuiltinSettings(SettingsRegistry* registry)
         d.max_float = 2.0f;
         add(d, settings::kRenderScale);
     }
+    {
+        // The palette buffers are sized when the program makes its FrameResources (3 slots of this size).
+        SettingDesc d = MakeInt("joint_palette_bytes", CostClass::DeviceReset, 16 * 1024 * 1024, 48, 768 * 1024 * 1024);
+        d.restart_required = true;
+        add(d, settings::kJointPaletteBytes);
+    }
 }
 
 RenderSettings::RenderSettings(const SettingsRegistry& registry) : registry_(&registry) {}

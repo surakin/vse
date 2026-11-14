@@ -3,6 +3,7 @@
 #include "containers/shared_ptr.h"
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
+#include "animation/components.h"
 #include "ecs/query.h"
 #include "ecs/transform.h"
 #include "lang/scalar.h"
@@ -103,6 +104,7 @@ using LightCreate = Query<Read<LightSource>, Read<ecs::WorldTransform>, Without<
 using LightEdited = Query<Changed<LightSource>, Read<LightSource>, Read<ecs::WorldTransform>, Read<RenderHandle>,
                           Without<MeshRenderer>>;
 using TransformMoved = Query<Changed<ecs::WorldTransform>, Read<ecs::WorldTransform>, Read<RenderHandle>>;
+using SkinnedPalettes = Query<Read<animation::SkeletonInstance>, Read<RenderHandle>>;
 using ObjectOrphans = Query<Added<RenderHandle>, Write<RenderHandle>, Without<MeshRenderer>>;
 using LightOrphans = Query<Added<RenderHandle>, Write<RenderHandle>, Without<LightSource>>;
 
@@ -160,6 +162,7 @@ private:
                           Without<MeshRenderer>>());
         transform_moved_ = MakeUnique<TransformMoved>(
             context.Query<Changed<ecs::WorldTransform>, Read<ecs::WorldTransform>, Read<RenderHandle>>());
+        skinned_ = MakeUnique<SkinnedPalettes>(context.Query<Read<animation::SkeletonInstance>, Read<RenderHandle>>());
         object_orphans_ = MakeUnique<ObjectOrphans>(
             context.Query<Added<RenderHandle>, Write<RenderHandle>, Without<MeshRenderer>>());
         light_orphans_ = MakeUnique<LightOrphans>(
@@ -184,6 +187,30 @@ private:
         {
             scene.RemoveLight(id);
             ++report.lights_removed;
+        }
+    }
+
+    // Points a skinned object at the entity's joint palette (the animation runtime's SkeletonInstance): the renderer
+    // borrows the memory and copies it when the frame is prepared, so only a changed pointer or count is written here.
+    void ApplySkin(renderer::RenderScene& scene, renderer::ObjectId id, const animation::SkeletonInstance* skeleton,
+                   SceneSyncReport& report)
+    {
+        const renderer::RenderObject* object = id.IsValid() ? scene.FindObject(id) : nullptr;
+        if (object == nullptr || !object->mesh->Skinned())
+        {
+            return;
+        }
+        const f32* matrices = nullptr;
+        u32 count = 0;
+        if (skeleton != nullptr && skeleton->palette.Size() > 0 && skeleton->palette.Size() <= 256)
+        {
+            matrices = skeleton->palette.Data()->Data();
+            count = static_cast<u32>(skeleton->palette.Size());
+        }
+        if (object->joint_matrices != matrices || object->joint_count != count)
+        {
+            scene.SetJointMatrices(id, matrices, count);
+            ++report.joints_set;
         }
     }
 
@@ -227,6 +254,7 @@ private:
         {
             DropObject(scene, handle.object, report);
             handle.object = AddObject(scene, mr, world, hidden, report);
+            ApplySkin(scene, handle.object, context.Peek<animation::SkeletonInstance>(entity), report);
             ++report.readded;
             if (!handle.object.IsValid() && !handle.light.IsValid())
             {
@@ -293,6 +321,7 @@ private:
                 const renderer::ObjectId id = AddObject(scene, mr, w.matrix, hidden, report);
                 if (id.IsValid())
                 {
+                    ApplySkin(scene, id, context.Peek<animation::SkeletonInstance>(entity), report);
                     RenderHandle handle;
                     handle.object = id;
                     context.Commands().Add<RenderHandle>(entity, handle);
@@ -380,6 +409,11 @@ private:
         light_edited_->ForEach([&](const LightSource& source, const ecs::WorldTransform& w, const RenderHandle& handle)
                                { SetLightIfChanged(scene, handle.light, source, w.matrix, report); });
 
+        // 4b. Joint palettes: an entity's palette may have been rebuilt at another address (the animation system fills
+        // it in place, but a skeleton change or a first fill reallocates it).
+        skinned_->ForEach([&](const animation::SkeletonInstance& skeleton, const RenderHandle& handle)
+                          { ApplySkin(scene, handle.object, &skeleton, report); });
+
         // 5. New entities.
         CreateMesh(context, scene, yes_, report);
         CreateMesh(context, scene, no_, report);
@@ -414,6 +448,7 @@ private:
         light_create_->Finish();
         light_edited_->Finish();
         transform_moved_->Finish();
+        skinned_->Finish();
         object_orphans_->Finish();
         light_orphans_->Finish();
     }
@@ -430,6 +465,7 @@ private:
     UniquePtr<LightCreate> light_create_;
     UniquePtr<LightEdited> light_edited_;
     UniquePtr<TransformMoved> transform_moved_;
+    UniquePtr<SkinnedPalettes> skinned_;
     UniquePtr<ObjectOrphans> object_orphans_;
     UniquePtr<LightOrphans> light_orphans_;
     Vector<Pending> pending_;
@@ -451,7 +487,7 @@ ecs::SystemDesc MakeRenderSyncSystem(const char* name)
 {
     ecs::SystemDesc desc(name, ecs::detail::SystemFn(RenderSync()));
     return Move(desc)
-        .Reads<MeshRenderer, LightSource, ecs::WorldTransform>()
+        .Reads<MeshRenderer, LightSource, ecs::WorldTransform, animation::SkeletonInstance>()
         .Writes<RenderHandle>()
         .WritesResource<SceneLink>()
         .WritesResource<SceneSyncReport>();

@@ -152,6 +152,7 @@ forbid renderer rhi/metal
 forbid renderer rhi/backends
 # 13 scene (Phase 17 Day 233): the bridge from ECS entities to the renderer's RenderScene; ecs and renderer below it, nothing in ecs or renderer includes it
 module engine/scene/ scene 13
+allow scene animation   # Phase 22 Day 322: RenderSync points skinned objects at the animation runtime's joint palettes
 # 13 asset (Phase 22 Day 313): resource identity, blob containers, backends (filesystem, pak, network) and the resource manager; foundation, jobs, ecs, storage, net, rhi and renderer below it, nothing includes it but programs
 module engine/asset/ asset 13
 # 13 animation (Phase 22 Day 321): poses, the clip sampler, skinning matrices and the ECS components and parallel system that play clips; reads asset's skeleton and clip views (allowed below, same layer), ecs, storage, jobs and the foundation; nothing includes it but programs
