@@ -1030,8 +1030,8 @@ Status ClipView::Open(ByteSpan data, const TypeRegistry& types)
         previous_joint = joint;
         for (u32 c = 0; c < 3; ++c)
         {
-            const bool keyed = (mask & (1u << c)) != 0;
-            const bool constant = (mask & (1u << (4 + c))) != 0;
+            const bool keyed = (mask & (1ull << c)) != 0;
+            const bool constant = (mask & (1ull << (4 + c))) != 0;
             if (keyed && constant)
             {
                 return ClpCorrupt("a channel is both constant and keyed");
@@ -1157,7 +1157,7 @@ u32 ClipView::KeyCount(u32 i, u32 channel) const
 bool ClipView::IsConstant(u32 i, u32 channel) const
 {
     ENGINE_ASSERT(i < track_count_ && channel < 3, "ClipView::IsConstant: index out of range");
-    return (ClpLoad(tracks_.Data() + i * kClpTrackBytes + 4, 4) & (1u << (4 + channel))) != 0;
+    return (ClpLoad(tracks_.Data() + i * kClpTrackBytes + 4, 4) & (1ull << (4 + channel))) != 0;
 }
 
 ClipSample ClipView::Sample(u32 i, f32 time, u32* cursors) const
@@ -1172,8 +1172,8 @@ ClipSample ClipView::Sample(u32 i, f32 time, u32* cursors) const
     ClipSample out;
     for (u32 c = 0; c < 3; ++c)
     {
-        const bool keyed = (mask & (1u << c)) != 0;
-        const bool constant = (mask & (1u << (4 + c))) != 0;
+        const bool keyed = (mask & (1ull << c)) != 0;
+        const bool constant = (mask & (1ull << (4 + c))) != 0;
         if (!keyed && !constant)
         {
             continue;
