@@ -1,0 +1,7 @@
+id 0000000000000f01
+entity rock
+  component local_transform
+    position = 1 0 2
+  component mesh_reference
+    mesh = /meshes/rock
+    material = /materials/brick

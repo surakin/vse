@@ -1,0 +1,4 @@
+id 0000000000000e01
+template gbuffer
+param roughness float 0.5
+texture albedo_tex /textures/brick

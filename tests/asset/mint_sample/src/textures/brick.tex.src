@@ -1,0 +1,5 @@
+id 0000000000000d01
+source brick.raw
+format rgba8
+srgb true
+mips full

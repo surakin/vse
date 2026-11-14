@@ -371,6 +371,7 @@ test:net_backend_lists*                         20   # the socket backend checkl
 test:net_access_check*                          20   # the socket access gate (Day 268)
 test:shared_unit_check*                         22   # the shared-ownership gate (Phase 22)
 test:resource_server_*                           22   # the resource server tool (Day 331)
+test:asset_mint_*                                22   # the minting tool's script tests (Day 333)
 
 # --- Phase 22: asset pipeline and resource system ---
 tests/asset/                                    22   # Phase 22 Day 313

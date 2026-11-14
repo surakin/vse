@@ -700,3 +700,28 @@ A skinned mesh is refused unless the skeleton it was made for is loaded (the clo
 - **Settings.** `asset::RegisterNetworkSettings` declares `assets.net.timeout_ms`, `assets.net.max_retries`, `assets.net.backoff_ms`, `assets.net.prefetch_bytes`, `assets.net.cache_bytes` and `assets.cache_dir`; `asset::NetworkBackendConfigFromSettings` reads them.
 
 The tests run the conformance suite over real loopback sockets (`asset_tests_sockets`, label `network`) and, with simulated streams and a manual clock, the cache hit, miss and eviction, a server that disappears and returns, offline serving, `Watch`, the asynchronous table read and the `Changes` request.
+
+## The `asset_mint` project
+
+`asset_mint COMMAND PROJECT.project [--force] [--workers=N] [--quiet] [--verbose]` works on a whole source tree (`tools/asset_mint/project.h`; the one-file commands `mint-skeleton`, `mint-mesh` and the others stay). The project file is text:
+
+```
+source_root src         # where the sources are (relative to the project file)
+output_root out         # blobs, resources.table, assets.manifest and the pak
+pak game.pak
+target 0
+exclude drafts          # a path prefix below source_root that is not part of the project
+rule .tex.src skip      # the only rule option so far: leave a kind of source out
+```
+
+A source is a file named `NAME.KIND.src` (`.skel.src`, `.mesh.src`, `.anim.src`, `.tex.src`, `.mat.src`, `.level.src`) whose first record is `id HEX16`. Its resource path is its path below `source_root` without the extensions (`meshes/rock.mesh.src` is `/meshes/rock`, normalized to NFC) and its blob is `meshes/rock.mesh.blob` below `output_root`. A reference in a source is a resource path (absolute, or relative to the source's folder) or the id as `@HEX16`; the tool finds them by reading every source for `@HEX16`, a bare id after `skeleton`, a word that starts with `/` and a material's `texture SLOT PATH` path, and matching them against the project's paths and ids (any other word is not a reference). The blobs of a mint are kept in memory only while a source that needs them is still to be minted.
+
+- `adopt` writes a fresh id into every source that has none (the only command that writes an id; running it again changes nothing).
+- `mint` mints every source whose inputs changed. The order follows the references (a wave per depth, the sources of a wave in parallel on the job system, textures one at a time because a block-compressed one fans out over the workers itself). The result does not depend on the worker count or on the file system's listing order. Every error is reported with its file and line, a source that needs a failed one is reported as not minted, and the others are still minted; the exit code is 1 when anything failed. A project with a source problem (a missing id, two sources with one id, a cycle, or a `skeleton`, `include`, `animation` or `texture` line that names no source) mints nothing; a reference elsewhere in a level that names nothing is the minter's error, reported with its line.
+- The manifest `assets.manifest` records for each blob the hash of its inputs (the source text, a texture's image files, the hash and id of every blob the source references, directly or through others, the target, the type's version and the tool's version) and the blob's hash. A source whose inputs match and whose file is intact is not minted; a minted blob equal to the file on disk is not written again (so the file's time does not move); `--force` mints everything. A source removed by hand makes the next `mint` name every blob that referenced it and mint none of them; a blob no source maps to any more (a removed, renamed or moved source) is deleted once a mint succeeds.
+- `pack` packs the blobs of the output root into the pak (it refuses a blob that is not the current version or whose hash does not hold, and an incomplete closure).
+- `verify` checks every blob (header, current version, hash, one blob per id), the closure (every reference is a blob of the output, of the declared type), `resources.table` against the blobs (both ways) and the pak.
+- `list` prints id, type, size and path of the output; `list --skeletons` prints each skeleton's joint count, its hash and the meshes and clips made for it.
+- `check` checks the sources without minting.
+
+The sample project of the tests is `tests/asset/mint_sample`.

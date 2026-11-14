@@ -1,0 +1,6 @@
+# The sample project of the asset_mint tests (Phase 22 Day 333).
+source_root src
+output_root out
+pak sample.pak
+target 0
+exclude drafts

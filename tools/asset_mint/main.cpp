@@ -26,6 +26,7 @@
 #include "level_source.h"
 #include "material_source.h"
 #include "mesh_source.h"
+#include "project.h"
 #include "skeleton_source.h"
 #include "texture_source.h"
 #include "os/console.h"
@@ -39,7 +40,9 @@ namespace
 
 int Usage()
 {
-    os::PrintError("usage: asset_mint pack DIRECTORY OUTPUT.pak [--target=N] [--no-names]\n"
+    os::PrintError("usage: asset_mint adopt|mint|pack|verify|list|check PROJECT.project [--force] [--workers=N]\n"
+                   "                  [--quiet] [--verbose] [--skeletons]\n"
+                   "       asset_mint pack DIRECTORY OUTPUT.pak [--target=N] [--no-names]\n"
                    "       asset_mint mint-skeleton SOURCE.skel.src OUTPUT.blob [--target=N]\n"
                    "       asset_mint mint-mesh SOURCE.mesh.src OUTPUT.blob [--skeleton=SKELETON.blob] [--target=N]\n"
                    "       asset_mint mint-clip SOURCE.anim.src OUTPUT.blob --skeleton=SKELETON.blob [--target=N]\n"
@@ -112,84 +115,17 @@ int Pack(int argc, char** argv)
         return Usage();
     }
 
-    TypeRegistry types;
-    UniquePtr<FilesystemBackend> source;
-    Status status = FilesystemBackend::Create(directory, types, &source, target);
-    if (status.Failed())
+    MintDiagnostics diagnostics;
+    const Status packed = PackDirectory(directory, output, target, names, &diagnostics);
+    for (usize i = 0; i < diagnostics.Lines().Size(); ++i)
     {
-        os::PrintError("asset_mint: %s: %s\n", ErrorCodeName(status.Code()), status.Message());
+        os::PrintError("asset_mint: %s\n", diagnostics.Lines()[i].CStr());
+    }
+    if (packed.Failed())
+    {
         return 1;
     }
-    ResourceTable table;
-    status = source->ReadTable(&table);
-    if (status.Failed())
-    {
-        os::PrintError("asset_mint: %s: %s\n", ErrorCodeName(status.Code()), status.Message());
-        return 1;
-    }
-
-    PakWriterOptions options;
-    options.target = target;
-    options.include_names = names;
-    PakWriter writer(types, options);
-    Vector<Vector<byte>> blobs;  // the writer borrows them until Finish
-    for (usize i = 0; i < table.Size(); ++i)
-    {
-        const TableEntryView entry = table.At(i);
-        UniquePtr<ResourceReader> reader;
-        status = source->Open(entry.id, &reader);
-        if (status.Failed())
-        {
-            os::PrintError("asset_mint: %.*s: %s: %s\n", static_cast<int>(entry.path.Length()), entry.path.Data(),
-                           ErrorCodeName(status.Code()), status.Message());
-            return 1;
-        }
-        blobs.Push(Vector<byte>());
-        Vector<byte>& bytes = blobs[blobs.Size() - 1];
-        bytes.Resize(static_cast<usize>(reader->Size()));
-        status = reader->ReadAt(0, bytes.Data(), bytes.Size());
-        if (status.Ok())
-        {
-            status = writer.Add(entry.id, ByteSpan(bytes.Data(), bytes.Size()), entry.path);
-        }
-        if (status.Failed())
-        {
-            os::PrintError("asset_mint: %.*s: %s: %s\n", static_cast<int>(entry.path.Length()), entry.path.Data(),
-                           ErrorCodeName(status.Code()), status.Message());
-            return 1;
-        }
-    }
-
-    io::FilePtr file;
-    const io::Status opened = io::File::Open(output, io::OpenMode::Write, io::kOpenNone, &file);
-    if (opened.Failed())
-    {
-        os::PrintError("asset_mint: the output file could not be created\n");
-        return 1;
-    }
-    status = writer.Finish(*file);
-    if (status.Ok() && file->Close().Failed())
-    {
-        status = Status::Make(ErrorCode::Io, "closing the pak failed");
-    }
-    if (status.Failed())
-    {
-        file->Close();
-        io::Remove(output);  // never leave a partial pak behind
-        os::PrintError("asset_mint: %s: %s\n", ErrorCodeName(status.Code()), status.Message());
-        for (usize i = 0; i < writer.Problems().Size(); ++i)
-        {
-            const PakWriter::Problem& p = writer.Problems()[i];
-            char blob[17];
-            char dependency[17];
-            FormatResourceId(p.blob, blob);
-            FormatResourceId(p.dependency, dependency);
-            os::PrintError("  blob %s: %s: dependency %s\n", blob, ErrorCodeName(p.code), dependency);
-        }
-        return 1;
-    }
-    os::Print("packed %u resources for target %u\n", static_cast<unsigned>(table.Size()),
-              static_cast<unsigned>(target));
+    os::Print("packed %s for target %u\n", argv[2], static_cast<unsigned>(target));
     return 0;
 }
 
@@ -888,10 +824,166 @@ int UnmintLevelCommand(int argc, char** argv)
     return 0;
 }
 
+// The project commands (Day 333): `asset_mint COMMAND PROJECT.project [options]`.
+int ProjectCommand(StringView command, int argc, char** argv)
+{
+    MintOptions options;
+    bool quiet = false;
+    bool verbose = false;
+    bool skeletons = false;
+    for (int i = 3; i < argc; ++i)
+    {
+        const StringView arg(argv[i], CStrLength(argv[i]));
+        if (arg == StringView("--force"))
+        {
+            options.force = true;
+        }
+        else if (arg == StringView("--quiet"))
+        {
+            quiet = true;
+        }
+        else if (arg == StringView("--verbose"))
+        {
+            verbose = true;
+        }
+        else if (arg == StringView("--skeletons") && command == StringView("list"))
+        {
+            skeletons = true;
+        }
+        else if (StartsWith(argv[i], "--workers="))
+        {
+            if (!ParseNumber(argv[i] + 10, &options.workers))
+            {
+                return Usage();
+            }
+        }
+        else
+        {
+            return Usage();
+        }
+    }
+    io::Path project_file;
+    if (!io::Path::Parse(StringView(argv[2], CStrLength(argv[2])), io::NativePathStyle(), &project_file))
+    {
+        return Usage();
+    }
+    MintDiagnostics diagnostics;
+    Project project;
+    Status status;
+    if (command == StringView("adopt"))
+    {
+        // Adopting is what a missing id asks for: load without complaining about those, adopt, then load for real.
+        MintDiagnostics before;
+        status = project.Load(project_file, &before);
+        u32 adopted = 0;
+        status = project.Adopt(&before, &adopted);
+        if (status.Failed())
+        {
+            for (usize i = 0; i < before.Lines().Size(); ++i)
+            {
+                os::PrintError("asset_mint: %s\n", before.Lines()[i].CStr());
+            }
+            return 1;
+        }
+        if (!quiet)
+        {
+            os::Print("adopted %u sources\n", static_cast<unsigned>(adopted));
+        }
+        if (verbose)
+        {
+            for (usize i = 0; i < before.Lines().Size(); ++i)
+            {
+                if (before.Lines()[i].View().StartsWith(StringView("note:")))
+                {
+                    os::PrintError("asset_mint: %s\n", before.Lines()[i].CStr());
+                }
+            }
+        }
+        status = project.Load(project_file, &diagnostics);
+        for (usize i = 0; i < diagnostics.Lines().Size(); ++i)
+        {
+            os::PrintError("asset_mint: %s\n", diagnostics.Lines()[i].CStr());
+        }
+        return status.Ok() ? 0 : 1;
+    }
+    status = project.Load(project_file, &diagnostics);
+    MintStats stats;
+    String<HeapAllocator> listing(HeapAllocator::Default());
+    if (project.IsLoaded())
+    {
+        if (command == StringView("mint"))
+        {
+            status = project.Mint(options, &diagnostics, &stats);
+            if (!quiet)
+            {
+                os::Print("%u sources: %u minted, %u unchanged, %u blob files written, %u failed\n",
+                          static_cast<unsigned>(stats.sources), static_cast<unsigned>(stats.minted),
+                          static_cast<unsigned>(stats.unchanged), static_cast<unsigned>(stats.rewritten),
+                          static_cast<unsigned>(stats.failed));
+            }
+        }
+        else if (command == StringView("pack"))
+        {
+            status = project.Pack(&diagnostics);
+            if (status.Ok() && !quiet)
+            {
+                os::Print("packed the project into %s\n", project.Config().pak.CStr());
+            }
+        }
+        else if (command == StringView("verify"))
+        {
+            status = project.Verify(&diagnostics);
+            if (status.Ok() && !quiet)
+            {
+                os::Print("the output verifies\n");
+            }
+        }
+        else if (command == StringView("list"))
+        {
+            status = project.List(skeletons, &diagnostics, &listing);
+            if (status.Ok() && !quiet)
+            {
+                os::Print("%s", listing.CStr());
+            }
+        }
+        else if (command == StringView("check"))
+        {
+            status = project.Check(&diagnostics);
+            if (status.Ok() && !quiet)
+            {
+                os::Print("the project of %u sources is consistent\n", static_cast<unsigned>(project.SourceCount()));
+            }
+        }
+    }
+    for (usize i = 0; i < diagnostics.Lines().Size(); ++i)
+    {
+        const String<HeapAllocator>& line = diagnostics.Lines()[i];
+        const bool is_error = line.View().StartsWith(StringView("error:"));
+        if (is_error || verbose)
+        {
+            os::PrintError("asset_mint: %s\n", line.CStr());
+        }
+    }
+    return status.Ok() && diagnostics.ErrorCount() == 0 ? 0 : 1;
+}
+
 }  // namespace
 
 int main(int argc, char** argv)
 {
+    if (argc >= 3)
+    {
+        const StringView command(argv[1], CStrLength(argv[1]));
+        const StringView target(argv[2], CStrLength(argv[2]));
+        const bool project_command = command == StringView("adopt") || command == StringView("mint") ||
+                                     command == StringView("verify") || command == StringView("list") ||
+                                     command == StringView("check") ||
+                                     (command == StringView("pack") && target.EndsWith(StringView(".project")));
+        if (project_command)
+        {
+            return ProjectCommand(command, argc, argv);
+        }
+    }
     if (argc >= 2 && StringView(argv[1], CStrLength(argv[1])) == StringView("pack"))
     {
         return Pack(argc, argv);
