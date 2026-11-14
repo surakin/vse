@@ -637,6 +637,37 @@ TEST_CASE("resource server: the generation is a hash of the table, and new bytes
     CHECK(a->ResponseTo(501)->generation == generation);
 }
 
+TEST_CASE("resource server: Changes answers what the backend changed since an epoch, or a reset", "[asset][server]")
+{
+    RsRig rig;
+    rig.Add(0x1, 100, "/c/a.bk");
+    UniquePtr<RsClient> client = rig.Greeted();
+    auto ask = [&](u32 request, u64 since) -> const ProtoData*
+    {
+        ProtoData message = Request(ProtoMessage::Changes, request);
+        message.since = since;
+        client->Send(message);
+        rig.Pump(*client, 40);
+        return client->ResponseTo(request);
+    };
+    const ProtoData* first = ask(10, ~u64{0});  // an epoch the server has not reached: a reset that tells the epoch
+    REQUIRE(first != nullptr);
+    REQUIRE(first->type == ProtoMessage::ChangesOk);
+    CHECK(first->reset);
+    const u64 epoch = first->epoch;
+    const ProtoData* none = ask(11, epoch);
+    REQUIRE(none != nullptr);
+    CHECK_FALSE(none->reset);
+    CHECK(none->ids.Size() == 0);
+    rig.Add(0x2, 100, "/c/b.bk");
+    const ProtoData* added = ask(12, epoch);
+    REQUIRE(added != nullptr);
+    CHECK_FALSE(added->reset);
+    REQUIRE(added->ids.Size() == 1);
+    CHECK(added->ids[0] == 0x2);
+    CHECK(added->epoch > epoch);
+}
+
 TEST_CASE("resource server: a Hello of another version is answered Unsupported and the connection ends",
           "[asset][server]")
 {

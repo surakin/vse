@@ -221,6 +221,15 @@ struct BlobHeaderInfo
     ContentHash content_hash;  ///< The recorded content hash.
 };
 
+/// The content hash a blob of these bytes should record: the hash of the whole blob with the recorded hash field taken
+/// as zeros (what [[asset::BlobReader::Verify]] compares with).
+///
+/// - Param blob: the whole blob; at least [[asset::kBlobHeaderBytes]] bytes (anything shorter hashes as is).
+/// - Thread-safety: thread-safe.
+/// - Ownership: borrows `blob` for the call only.
+/// - Fails: never.
+ContentHash ComputeBlobHash(ByteSpan blob);
+
 /// Reads the header fields of a blob from its first `kBlobHeaderBytes` bytes, so a backend can learn a file's id and
 /// type without reading the file.
 ///

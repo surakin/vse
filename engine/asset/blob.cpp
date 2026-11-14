@@ -383,6 +383,20 @@ Status BlobReader::Verify() const
     return Status::Success();
 }
 
+ContentHash ComputeBlobHash(ByteSpan blob)
+{
+    if (blob.Size() < kBlobHeaderBytes)
+    {
+        return HashBytes(blob);
+    }
+    byte zero[16] = {};
+    ContentHasher hasher;
+    hasher.Update(blob.First(kHashOffset));
+    hasher.Update(ByteSpan(zero, sizeof(zero)));
+    hasher.Update(blob.Subspan(kHashOffset + sizeof(zero)));
+    return hasher.Finish();
+}
+
 Status PeekBlobHeader(ByteSpan header, BlobHeaderInfo* out)
 {
     *out = BlobHeaderInfo();

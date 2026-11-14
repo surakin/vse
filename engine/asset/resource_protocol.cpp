@@ -1,5 +1,6 @@
 #include "asset/resource_protocol.h"
 
+#include "asset/backend.h"
 #include "net/codec.h"
 
 namespace engine_placeholder::asset
@@ -111,6 +112,21 @@ ProtoError EncodeProto(const ProtoData& message, ByteSpan payload, MutableByteSp
         PROTO_WRITE(w.WriteU64(message.offset));
         PROTO_WRITE(w.WriteU32(message.length));
         break;
+    case ProtoMessage::Changes: PROTO_WRITE(w.WriteU64(message.since)); break;
+    case ProtoMessage::ChangesOk:
+        if (message.ids.Size() > kProtoMaxPageEntries || message.kinds.Size() != message.ids.Size())
+        {
+            return ProtoError::TooLarge;
+        }
+        PROTO_WRITE(w.WriteU64(message.epoch));
+        PROTO_WRITE(w.WriteBool(message.reset));
+        PROTO_WRITE(w.WriteVarint(message.ids.Size()));
+        for (usize i = 0; i < message.ids.Size(); ++i)
+        {
+            PROTO_WRITE(w.WriteU8(message.kinds[i]));
+            PROTO_WRITE(w.WriteU64(message.ids[i]));
+        }
+        break;
     case ProtoMessage::ReadOk:
         PROTO_WRITE(w.WriteU64(message.offset));
         PROTO_WRITE(w.WriteBytes(payload, payload.Size()));
@@ -203,6 +219,32 @@ ProtoError DecodeProto(ByteSpan bytes, u32 max_read_bytes, ProtoData* out)
         PROTO_READ(r.ReadU64(&out->offset));
         PROTO_READ(r.ReadU32(&out->length));
         break;
+    case ProtoMessage::Changes: PROTO_READ(r.ReadU64(&out->since)); break;
+    case ProtoMessage::ChangesOk:
+    {
+        PROTO_READ(r.ReadU64(&out->epoch));
+        PROTO_READ(r.ReadBool(&out->reset));
+        u64 count = 0;
+        PROTO_READ(r.ReadVarint(&count));
+        if (count > kProtoMaxPageEntries || count * 72 > r.BitsLeft())
+        {
+            return ProtoError::Malformed;
+        }
+        for (u64 i = 0; i < count; ++i)
+        {
+            u8 kind = 0;
+            u64 id = 0;
+            PROTO_READ(r.ReadU8(&kind));
+            PROTO_READ(r.ReadU64(&id));
+            if (kind > static_cast<u8>(ChangeKind::Removed))
+            {
+                return ProtoError::Malformed;
+            }
+            out->kinds.Push(kind);
+            out->ids.Push(id);
+        }
+        break;
+    }
     case ProtoMessage::ReadOk:
         PROTO_READ(r.ReadU64(&out->offset));
         PROTO_READ(r.ReadBytes(max_read_bytes, &out->data));

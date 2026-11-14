@@ -31,6 +31,7 @@ set(ASSET_TEST_SOURCES
   gpu_loader_test.cpp  # Day 329
   async_loader_test.cpp  # Day 330
   resource_server_test.cpp  # Day 331
+  network_backend_test.cpp  # Day 332
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/level_source.cpp  # Day 327: the level minter under test
 )
 
@@ -49,10 +50,25 @@ function(engine_add_asset_tests target asset_lib suffix label)
   engine_discover_tests(${target} TEST_SUFFIX "${suffix}" PROPERTIES LABELS "${label}")
 endfunction()
 
+# Day 332: the network backend over real loopback sockets, labelled `network`.
+set(ASSET_SOCKET_TEST_SOURCES network_socket_test.cpp support.h backend_conformance.h)
+function(engine_add_asset_socket_tests target asset_lib suffix label)
+  add_executable(${target} ${ASSET_SOCKET_TEST_SOURCES})
+  target_link_libraries(${target} PRIVATE ${asset_lib} Catch2::Catch2WithMain Threads::Threads)
+  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+  if(label STREQUAL "asan")
+    engine_asan_runtime(${target})
+  endif()
+  engine_discover_tests(${target} TEST_SUFFIX "${suffix}" PROPERTIES LABELS "${label};network")
+endfunction()
+
 engine_add_asset_tests(asset_tests asset "" "asset")
+engine_add_asset_socket_tests(asset_tests_sockets asset "" "asset")
 if(ENGINE_HAVE_ASAN)
   engine_add_asset_tests(asset_tests_asan asset_asan " [asan]" "asan")
+  engine_add_asset_socket_tests(asset_tests_asan_sockets asset_asan " [asan]" "asan")
 endif()
 if(ENGINE_HAVE_TSAN)  # not with MSVC
   engine_add_asset_tests(asset_tests_tsan asset_tsan " [tsan]" "tsan")
+  engine_add_asset_socket_tests(asset_tests_tsan_sockets asset_tsan " [tsan]" "tsan")
 endif()

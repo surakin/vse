@@ -2,6 +2,7 @@
 
 #include "asset/content_hash.h"
 #include "cstr/mem_ops.h"
+#include "os/os.h"
 #include "settings/setting.h"
 
 namespace engine_placeholder::asset
@@ -28,7 +29,9 @@ ResourceServerConfig ResourceServerConfigFromSettings(const settings::Registry& 
 }
 
 ResourceServer::ResourceServer(ResourceBackend& backend, net::Transport& transport, const ResourceServerConfig& config)
-    : backend_(&backend), transport_(&transport), config_(config)
+    : backend_(&backend), transport_(&transport), config_(config),
+      epoch_(
+          os::MonotonicTimeNanos())  // a server that starts again has another epoch, so a client's old one is a reset
 {
     usize buffer = transport.MaxMessageBytes();
     if (buffer > kMaxBufferBytes)
@@ -181,21 +184,41 @@ void ResourceServer::Fail(Connection& connection, u32 request, ProtoError error)
     Reply(connection, response);
 }
 
-bool ResourceServer::EnsureTable()
+void ResourceServer::PollBackend()
 {
-    // The backend is asked about changes only when a client asks for the table (a scan can be costly).
+    // The backend is asked about changes only when a client asks for the table or the changes (a scan can be costly).
+    constexpr usize kLogEntries = 4096;
     Vector<ChangeRecord> changes;
-    if (backend_->Watch(&changes).Ok())
+    if (backend_->Watch(&changes).Failed())
     {
-        for (usize i = 0; i < changes.Size(); ++i)
+        return;
+    }
+    for (usize i = 0; i < changes.Size(); ++i)
+    {
+        if (changes[i].kind != ChangeKind::Replaced)
         {
-            if (changes[i].kind != ChangeKind::Replaced)
+            table_valid_ = false;  // an id or a path appeared or went; new bytes under the same names change nothing
+        }
+        if (log_.Size() >= 2 * kLogEntries)
+        {
+            // Dropped in one go (the oldest half), so a burst of changes does not move the log for each of them.
+            for (usize k = kLogEntries; k < log_.Size(); ++k)
             {
-                table_valid_ = false;  // an id or a path appeared or went; new bytes under the same names change
-                                       // nothing
+                log_[k - kLogEntries] = log_[k];
+            }
+            while (log_.Size() > kLogEntries)
+            {
+                log_.Pop();
             }
         }
+        log_.Push(changes[i]);
+        epoch_ += 1;
     }
+}
+
+bool ResourceServer::EnsureTable()
+{
+    PollBackend();
     if (table_valid_)
     {
         return true;
@@ -280,7 +303,8 @@ void ResourceServer::Handle(Connection& connection, ByteSpan message)
         return;
     }
     if (request.type != ProtoMessage::Stat && request.type != ProtoMessage::Table &&
-        request.type != ProtoMessage::List && request.type != ProtoMessage::Read)
+        request.type != ProtoMessage::List && request.type != ProtoMessage::Read &&
+        request.type != ProtoMessage::Changes)
     {
         Violation(connection.id);  // a response, or a message the server never takes
         return;
@@ -379,6 +403,28 @@ void ResourceServer::Serve(Connection& connection, const ProtoData& request)
             response.ids.Push(found[i].id.Value());
         }
         response.more = found.Size() > first + per_page;
+        Reply(connection, response);
+        return;
+    }
+    case ProtoMessage::Changes:
+    {
+        PollBackend();
+        response.type = ProtoMessage::ChangesOk;
+        response.epoch = epoch_;
+        const u64 held = log_.Size();
+        // The client continues from its epoch when the log still holds everything after it; otherwise it starts over.
+        if (request.since > epoch_ || epoch_ - request.since > held || epoch_ - request.since > kProtoMaxPageEntries)
+        {
+            response.reset = true;
+        }
+        else
+        {
+            for (usize i = log_.Size() - static_cast<usize>(epoch_ - request.since); i < log_.Size(); ++i)
+            {
+                response.kinds.Push(static_cast<u8>(log_[i].kind));
+                response.ids.Push(log_[i].id.Value());
+            }
+        }
         Reply(connection, response);
         return;
     }

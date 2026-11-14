@@ -32,6 +32,8 @@ set(ASSET_SOURCES
   async_loader.cpp  # Day 330
   resource_protocol.cpp  # Day 331
   resource_server.cpp  # Day 331
+  blob_cache.cpp  # Day 332
+  network_backend.cpp  # Day 332
 )
 set(ASSET_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

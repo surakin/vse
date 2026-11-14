@@ -97,6 +97,7 @@ private:
     void Reply(Connection& connection, const ProtoData& response, ByteSpan payload = ByteSpan());
     void Fail(Connection& connection, u32 request, ProtoError error);
     bool EnsureTable();
+    void PollBackend();
     void Serve(Connection& connection, const ProtoData& request);
 
     ResourceBackend* backend_;
@@ -109,6 +110,9 @@ private:
     UniquePtr<ResourceTable> table_;
     bool table_valid_ = false;
     u64 generation_ = 0;
+    Vector<ChangeRecord> log_;  // the last changes the backend reported, oldest first
+    u64 epoch_;  // the changes reported so far, counted from a value of this run; the log holds the last `log_.Size()`
+                 // of them
     ResourceServerStats stats_;
 };
 

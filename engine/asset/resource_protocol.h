@@ -45,17 +45,19 @@ inline constexpr usize kProtoHeaderSlack = 64;
 /// The kind of a message.
 enum class ProtoMessage : u8
 {
-    Hello = 1,      ///< A request: the version and the response size the client takes.
-    Stat = 2,       ///< A request: the size of a resource.
-    Table = 3,      ///< A request: a page of the id and path table.
-    List = 4,       ///< A request: a page of the ids under a path prefix.
-    Read = 5,       ///< A request: a range of a resource.
-    HelloAck = 33,  ///< A response: the version and the limits.
-    StatOk = 34,    ///< A response: the size.
-    TableOk = 35,   ///< A response: a page of the table, or that it is unchanged.
-    ListOk = 36,    ///< A response: a page of ids.
-    ReadOk = 37,    ///< A response: the bytes.
-    Error = 63,     ///< A response: a request failed.
+    Hello = 1,       ///< A request: the version and the response size the client takes.
+    Stat = 2,        ///< A request: the size of a resource.
+    Table = 3,       ///< A request: a page of the id and path table.
+    List = 4,        ///< A request: a page of the ids under a path prefix.
+    Read = 5,        ///< A request: a range of a resource.
+    Changes = 6,     ///< A request: what changed since an epoch.
+    HelloAck = 33,   ///< A response: the version and the limits.
+    StatOk = 34,     ///< A response: the size.
+    TableOk = 35,    ///< A response: a page of the table, or that it is unchanged.
+    ListOk = 36,     ///< A response: a page of ids.
+    ReadOk = 37,     ///< A response: the bytes.
+    ChangesOk = 38,  ///< A response: the changes, or that the client must read the table again.
+    Error = 63,      ///< A response: a request failed.
 };
 
 /// Why a request failed (the code of an `Error` message), or why a message could not be encoded or decoded.
@@ -117,7 +119,11 @@ struct ProtoData
     String<HeapAllocator> prefix;             ///< `List`.
     Vector<ProtoEntry> entries;               ///< `TableOk`.
     Vector<u64> ids;                          ///< `ListOk`.
-    Vector<byte> data;                    ///< `ReadOk` when decoded (an encoded one takes its bytes as an argument).
+    Vector<byte> data;   ///< `ReadOk` when decoded (an encoded one takes its bytes as an argument).
+    u64 since = 0;       ///< `Changes`: the epoch the client has.
+    u64 epoch = 0;       ///< `ChangesOk`: the server's epoch.
+    bool reset = false;  ///< `ChangesOk`: the server cannot continue from the client's epoch.
+    Vector<u8> kinds;    ///< `ChangesOk`: the kind ([[asset::ChangeKind]]) of each change, beside `ids`.
     ProtoError error = ProtoError::None;  ///< `Error`.
 };
 
