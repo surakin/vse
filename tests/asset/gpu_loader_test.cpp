@@ -4,6 +4,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "asset/gpu_loaders.h"
+#include "asset/async_loader.h"
 #include "asset/memory_backend.h"
 #include "asset/pak.h"
 #include "asset/pak_backend.h"
@@ -231,6 +232,40 @@ TEST_CASE("gpu loaders: a holder of the mesh keeps it, and its bytes, after the 
     CHECK(rig.manager->Pool().BytesInUse() == 0);  // the last holder returned the bytes
     CHECK(rig.manager->Stats().bytes_resident == 0);
     rig.registry.OnDeviceReleasing(second->Epoch());
+}
+
+TEST_CASE("gpu loaders: a device reset between an asynchronous read and its build uploads to the new device",
+          "[asset][gpu][async]")
+{
+    GpuRig rig;
+    jobs::Scheduler::Config config;
+    config.participants = 3;
+    config.pin = false;
+    jobs::Scheduler scheduler(config);
+    AsyncLoader loader(*rig.manager, scheduler);
+    LoadTicket ticket = loader.LoadAsync<GpuMeshAsset>(Rid(0x3a1));
+    for (u32 i = 0; i < 10000 && loader.Stats().ready == 0; ++i)
+    {
+        ThisThread::SleepForMilliseconds(1);  // the blob is read; nothing is on the device yet
+    }
+    REQUIRE(loader.Stats().ready == 1);
+    rig.registry.OnDeviceReleasing(rig.device->Epoch());
+    rhi::NullDevicePtr second = rhi::CreateNullDevice(rhi::NullDeviceOptions{});
+    REQUIRE(rig.registry.OnDeviceCreated(second.Get(), second->Epoch()));
+    rig.context.device = second.Get();  // the application points the loaders at the device that exists now
+    CHECK(loader.Wait(ticket).Ok());
+    Handle<GpuMeshAsset> mesh;
+    REQUIRE(ticket.Finish(&mesh).Ok());
+    CHECK(mesh.Get()->mesh->Valid());
+    CHECK(second->Resources().buffers == 2);  // vertices and indices, on the device that exists now
+    // Another reset with the mesh loaded: it follows.
+    rig.registry.OnDeviceReleasing(second->Epoch());
+    rhi::NullDevicePtr third = rhi::CreateNullDevice(rhi::NullDeviceOptions{});
+    REQUIRE(rig.registry.OnDeviceCreated(third.Get(), third->Epoch()));
+    CHECK(mesh.Get()->mesh->Valid());
+    CHECK(third->Resources().buffers == 2);
+    mesh.Reset();
+    rig.registry.OnDeviceReleasing(third->Epoch());
 }
 
 TEST_CASE("gpu loaders: a skinned mesh needs its skeleton, adds the skin stream and is refused with another",

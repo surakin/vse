@@ -29,6 +29,7 @@ set(ASSET_SOURCES
   resource_manager.cpp  # Day 328
   cpu_loaders.cpp  # Day 328
   gpu_loaders.cpp  # Day 329
+  async_loader.cpp  # Day 330
 )
 set(ASSET_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

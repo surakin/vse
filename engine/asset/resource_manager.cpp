@@ -73,6 +73,9 @@ ManagerConfig ManagerConfigFromSettings(const settings::Registry& registry)
         settings::Setting<i64>::Find(registry, StringView("assets.cache_bytes")).Get());
     config.allow_fallbacks = settings::Setting<bool>::Find(registry, StringView("assets.allow_fallbacks")).Get();
     config.verify_on_load = settings::Setting<bool>::Find(registry, StringView("assets.verify_on_load")).Get();
+    config.max_inflight = static_cast<u32>(
+        settings::Setting<i64>::Find(registry, StringView("assets.max_inflight")).Get());
+    config.max_queued = static_cast<u32>(settings::Setting<i64>::Find(registry, StringView("assets.max_queued")).Get());
     return config;
 }
 
@@ -426,12 +429,12 @@ const LoadedObject* ResourceManager::FindInContext(void* user, ResourceId id)
 // ---------------------------------------------------------------------------------------------------------------------
 // Loading
 
-Status ResourceManager::ReadBlobLocked(ResourceId id, u64 reclaim, BlobBufferPtr* buffer, usize* size)
+Status ResourceManager::ReadBlobUnlocked(ResourceId id, u64 reclaim, BlobBufferPtr* buffer, usize* size, MountId* mount,
+                                         u64* nanos)
 {
     const u64 started = os::MonotonicTimeNanos();
     UniquePtr<ResourceReader> reader;
-    MountId mount = 0;
-    ENGINE_TRY(mounts_.Open(id, &reader, &mount));
+    ENGINE_TRY(mounts_.Open(id, &reader, mount));
     const u64 total = reader->Size();
     if (total < kBlobHeaderBytes || total >= kMaxBlobBytes)
     {
@@ -446,8 +449,15 @@ Status ResourceManager::ReadBlobLocked(ResourceId id, u64 reclaim, BlobBufferPtr
     ENGINE_TRY(reader->ReadAt(0, raw.Data(), static_cast<usize>(total)));
     *buffer = MakeShared<BlobBuffer>(pool_, resident_, static_cast<LoadBuffer&&>(raw), static_cast<usize>(total));
     *size = static_cast<usize>(total);
-    stats_.bytes_read += total;
-    stats_.read_nanos += os::MonotonicTimeNanos() - started;
+    *nanos = os::MonotonicTimeNanos() - started;
+    return Status::Success();
+}
+
+void ResourceManager::NoteReadLocked(MountId mount, u64 bytes, u64 nanos)
+{
+    LockGuard<Mutex> lock(read_stats_mutex_);
+    stats_.bytes_read += bytes;
+    stats_.read_nanos += nanos;
     usize at = stats_.mounts.Size();
     for (usize i = 0; i < stats_.mounts.Size(); ++i)
     {
@@ -463,8 +473,77 @@ Status ResourceManager::ReadBlobLocked(ResourceId id, u64 reclaim, BlobBufferPtr
         stats_.mounts.Push(reads);
     }
     stats_.mounts[at].reads += 1;
-    stats_.mounts[at].bytes += total;
+    stats_.mounts[at].bytes += bytes;
+}
+
+Status ResourceManager::ReadBlobLocked(ResourceId id, u64 reclaim, BlobBufferPtr* buffer, usize* size)
+{
+    if (prefetched_ != nullptr)
+    {
+        const BlobBufferPtr ahead = prefetched_->Find(id);
+        if (ahead)
+        {
+            *buffer = ahead;
+            *size = ahead->Bytes().Size();
+            return Status::Success();  // counted when it was read
+        }
+    }
+    MountId mount = 0;
+    u64 nanos = 0;
+    ENGINE_TRY(ReadBlobUnlocked(id, reclaim, buffer, size, &mount, &nanos));
+    NoteReadLocked(mount, *size, nanos);
     return Status::Success();
+}
+
+Status ResourceManager::ReadBlob(ResourceId id, BlobBufferPtr* out)
+{
+    MountId mount = 0;
+    u64 nanos = 0;
+    usize size = 0;
+    ENGINE_TRY(ReadBlobUnlocked(id, 0, out, &size, &mount, &nanos));
+    NoteReadLocked(mount, size, nanos);  // its own lock: a build in progress does not hold a read back
+    return Status::Success();
+}
+
+bool ResourceManager::IsLoaded(ResourceId id) const
+{
+    LockGuard<RecursiveMutex> lock(mutex_);
+    return by_id_.Find(id.Value()) != nullptr;
+}
+
+bool ResourceManager::MayBeLoaded(ResourceId id) const
+{
+    if (!mutex_.TryLock())
+    {
+        return false;
+    }
+    const bool loaded = by_id_.Find(id.Value()) != nullptr;
+    mutex_.Unlock();
+    return loaded;
+}
+
+u32 ResourceManager::LoaderKeyOf(ResourceType type) const
+{
+    LockGuard<RecursiveMutex> lock(mutex_);
+    for (usize i = 0; i < loaders_.Size(); ++i)
+    {
+        if (loaders_[i].type == type)
+        {
+            return loaders_[i].loader->Key();
+        }
+    }
+    return 0;
+}
+
+Status ResourceManager::LoadPrefetchedRaw(ResourceId id, ResourceType type, u32 key, const PrefetchedBlobs& prefetched,
+                                          HandleBase* out, LoadFailure* failure)
+{
+    LockGuard<RecursiveMutex> lock(mutex_);
+    const PrefetchedBlobs* before = prefetched_;
+    prefetched_ = &prefetched;
+    const Status status = LoadRaw(id, type, key, out, failure);
+    prefetched_ = before;
+    return status;
 }
 
 Status ResourceManager::AcquireLocked(ResourceId id, const Expect& expect, Vector<ResourceId>* chain, u32* slot,
@@ -625,7 +704,10 @@ Status ResourceManager::BuildLocked(ResourceId id, const Expect& expect, BlobBuf
     UniquePtr<LoadedObject> object;
     const u64 loading = os::MonotonicTimeNanos();
     status = loader->Load(context, &object);
-    stats_.read_nanos += os::MonotonicTimeNanos() - loading;
+    {
+        LockGuard<Mutex> read_lock(read_stats_mutex_);
+        stats_.read_nanos += os::MonotonicTimeNanos() - loading;
+    }
     if (status.Failed())
     {
         for (usize i = 0; i < dep_slots.Size(); ++i)
@@ -878,11 +960,14 @@ ResourceStats ResourceManager::Stats() const
     copy.fallbacks_used = stats_.fallbacks_used;
     copy.load_conversions = stats_.load_conversions;
     copy.rejected_old_version = stats_.rejected_old_version;
-    copy.bytes_read = stats_.bytes_read;
-    copy.read_nanos = stats_.read_nanos;
-    for (usize i = 0; i < stats_.mounts.Size(); ++i)
     {
-        copy.mounts.Push(stats_.mounts[i]);
+        LockGuard<Mutex> read_lock(read_stats_mutex_);
+        copy.bytes_read = stats_.bytes_read;
+        copy.read_nanos = stats_.read_nanos;
+        for (usize i = 0; i < stats_.mounts.Size(); ++i)
+        {
+            copy.mounts.Push(stats_.mounts[i]);
+        }
     }
     for (usize i = 0; i < slots_.Size(); ++i)
     {

@@ -580,6 +580,57 @@ int main() {
 
 ### GPU-backed resources and the level spawner
 
+### Loading without stalling the frame
+
+`asset::AsyncLoader` (`asset/async_loader.h`) loads on the job scheduler's workers and builds on the owner thread. `LoadAsync<T>(id, priority, cancel)` returns an `asset::LoadTicket`; the blob and the blobs of its closure are read into the manager's buffer pool on the workers, and `Update(max_microseconds, max_bytes)`, once per frame on the thread that owns the GPU objects, builds the objects (the loaders, GPU uploads among them) until the budget is spent, so a frame's cost is bounded; the leftovers wait for the next call and `Stats().ready` is the backlog. At most `assets.max_inflight` requests read at once, the others wait by priority (`Immediate`, `Normal`, `Background`; earlier first among equals), and when `assets.max_queued` are waiting the next request is a ticket that is already done with `LimitExceeded`. Two requests for one resource share one load (the more urgent priority wins), a request for a resource that is loaded is answered at once, and a failed load is not remembered: the next request is a new load. A ticket can be polled (`IsDone`, `Progress`), waited for through the loader (`Wait` runs `Update` without a budget), finished into a handle (`Finish`) or cancelled (`Cancel`, a `storage::CancelToken`, or destroying the ticket); a load nobody waits for is cancelled before it starts, while it reads (the check is between blobs) or before it is built, and nothing leaks. `LoadPathAsync<T>(path, ...)` resolves through the mounts' tables and stays pending while a table has not arrived. `LoadLevelAsync(id)` reads the level, then the levels it includes, then the rest in the order the level lists them, and `Progress` reports blobs read of blobs known; the level and everything it names are built together, as `Load` builds a closure, so the level is active when its ticket is done. Destroying the loader cancels every load and waits for the reading jobs. A device reset between a read and its build is harmless; point `GpuAssetContext::device` at the new device before the build.
+
+```cpp compile run standalone
+#include "asset/async_loader.h"
+#include "asset/cpu_loaders.h"
+#include "asset/level.h"
+#include "asset/memory_backend.h"
+#include "jobs/scheduler.h"
+#include "os/console.h"
+#include "storage/builtin_components.h"
+
+using namespace engine_placeholder;
+
+int main() {
+    asset::TypeRegistry types;
+    storage::ComponentRegistry registry;
+    if (storage::RegisterBuiltinComponents(&registry).Failed()) return 1;
+
+    Vector<byte> blob;
+    if (asset::BuildLevelBlob(types, registry, asset::ResourceId::FromValue(7), asset::LevelData(), &blob).Failed()) return 1;
+    asset::HostMemoryBackend backend(types, u64{1} << 20);
+    if (backend.Add(asset::ResourceId::FromValue(7), ByteSpan(blob.Data(), blob.Size())).Failed()) return 1;
+
+    asset::ManagerConfig config;
+    config.buffer_pool_bytes = u64{8} << 20;
+    asset::ResourceManager manager(types, config);
+    asset::RegisterCpuLoaders(&manager);
+    if (manager.Mount(StringView("/"), &backend, 0).Failed()) return 1;
+
+    jobs::Scheduler::Config workers;
+    workers.participants = 2;  // this thread and one worker
+    workers.pin = false;
+    jobs::Scheduler scheduler(workers);
+    asset::AsyncLoader loader(manager, scheduler);
+    asset::LoadTicket ticket = loader.LoadAsync<asset::LevelSummary>(asset::ResourceId::FromValue(7), asset::LoadPriority::Normal);
+    while (!ticket.IsDone()) {
+        loader.Update(2000, u64{1} << 20);  // a frame: at most 2 ms of building and 1 MiB of blobs
+    }
+    asset::Handle<asset::LevelSummary> level;
+    if (ticket.Finish(&level).Failed()) return 1;
+    os::Print("%u entities, %u loaded, %u in the backlog\n", level.Get()->entity_count,
+              static_cast<unsigned>(manager.Stats().resident), static_cast<unsigned>(loader.Stats().ready));
+    return level.Get()->entity_count == 0 && loader.Stats().ready == 0 ? 0 : 1;
+}
+```
+```output
+0 entities, 1 loaded, 0 in the backlog
+```
+
 `asset::RegisterGpuLoaders(&manager, &context)` registers loaders for the types that live on the GPU, over the CPU loaders of the same resource types (a later registration replaces the earlier one, and the C++ type of the loaded object tells the two apart: `Handle<asset::GpuMeshAsset>`, `Handle<asset::GpuTextureAsset>`, `Handle<asset::GpuMaterialAsset>`). The context names the device, the `renderer::DeviceResources` the objects register with, the material system and the G-buffer templates.
 
 The blob's bytes are shared, not pointed at. The manager reads a blob into one `asset::BlobBuffer` (a `SharedBytes`), and the GPU objects hold a share of it: a `renderer::MeshGeometry` names the vertex, index and skin sections by offset, and `GpuTexture::CreateFromSharedLevels` takes the levels as offsets too. A mesh uploads from where the bytes are (nothing is copied; `Stats().load_conversions` stays 0), and after a device reset it uploads again from the same shared bytes, even when the manager has unloaded or reloaded the resource meanwhile: the last holder of the mesh or texture is what returns the buffer to the pool. A material holds a share of the textures and samplers it binds. Rule for new code: classes that need the same data share a `SharedPtr` to a small class that holds it, and never keep a raw pointer into each other's storage.

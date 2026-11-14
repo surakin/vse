@@ -67,6 +67,13 @@ void RegisterManagerSettings(settings::Registry* registry)
     Declare(registry, settings::MakeBool("assets.verify_on_load", false), "ENGINE_ASSETS_VERIFY_ON_LOAD",
             "assets-verify-on-load", "Verify the content hash of every blob on load (development)",
             "hash every blob as it is loaded and refuse one that does not match its recorded hash");
+    Declare(
+        registry, settings::MakeInt("assets.max_inflight", 4, 1, 256), "ENGINE_ASSETS_MAX_INFLIGHT",
+        "assets-max-inflight", "Asynchronous loads reading at once",
+        "the most asynchronous loads whose blobs are being read on workers at one time; the others wait in a queue");
+    Declare(registry, settings::MakeInt("assets.max_queued", 256, 0, 1000000), "ENGINE_ASSETS_MAX_QUEUED",
+            "assets-max-queued", "Asynchronous loads waiting",
+            "the most asynchronous loads waiting for a free reading slot; a request past it fails with LimitExceeded");
     Declare(registry, settings::MakeText("assets.mounts", ""), "ENGINE_ASSETS_MOUNTS", "assets-mounts",
             "Resource mounts",
             "PREFIX=PATH entries separated by ';': a directory of loose blobs or a pak file mounted under the prefix "
