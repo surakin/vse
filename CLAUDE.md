@@ -438,7 +438,7 @@ table in `PLAN.md`.
   needs its own entry in `PLAN.md`. That tool and its tests may use `std::string`/`std::vector` (the library
   requires them); the engine's runtime libraries still do not.
 - **glTF import is an in-memory library an application may link** (Phase 22 Days 335-338, `engine/asset_import`, amended 2026-11-14 for the host): bytes in, minted blobs out (`ImportGltf`, `ImportGltfAsync`, `ImportIntoBackend` into a `HostMemoryBackend`), with our
-  own bounded JSON reader (no nlohmann/json: hostile input, no exceptions, no abort), vendored zlib, libpng and a JPEG decoder (pinned under `third_party/`, failing by return value), and `asset_mint import-gltf` as a thin command over it. **The runtime
+  a vendored JSON library chosen by a spike on Day 335 (yyjson by default, pinned under `third_party/`, included only by `json_view.*`; not nlohmann/json, which stays in `tools/shader_mint`: hostile input, no exceptions, no abort), vendored zlib, libpng and a JPEG decoder (pinned under `third_party/`, failing by return value), and `asset_mint import-gltf` as a thin command over it. **The runtime
   libraries (`asset`, `renderer`, `scene`, every engine module except `asset_import`) never depend on it and never read glTF, PNG or JPEG**; a program opts in by linking it (`asset_boundary_check`, Day 339). Importer code uses the engine's types, never `std`.
 - **Terminology: we mint assets, we do not cook them.** Offline
   asset/shader processing tools are "mints"/"minters" (`tools/shader_mint`,
