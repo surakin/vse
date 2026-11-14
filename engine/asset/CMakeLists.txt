@@ -28,6 +28,7 @@ set(ASSET_SOURCES
   level.cpp  # Day 327
   resource_manager.cpp  # Day 328
   cpu_loaders.cpp  # Day 328
+  gpu_loaders.cpp  # Day 329
 )
 set(ASSET_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
@@ -40,7 +41,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_library(asset${suffix} STATIC ${ASSET_SOURCES})
     target_include_directories(asset${suffix} PUBLIC ${ASSET_INCLUDE_ROOT})
     target_compile_options(asset${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
-    target_link_libraries(asset${suffix} PUBLIC storage${suffix} ecs${suffix} jobs${suffix} foundation${suffix})  # storage and ecs: the level format, Day 327
+    target_link_libraries(asset${suffix} PUBLIC renderer_passes${suffix} renderer${suffix} storage${suffix} ecs${suffix} jobs${suffix} foundation${suffix})  # storage and ecs: the level format, Day 327
   endforeach()
   return()
 endif()
@@ -49,5 +50,5 @@ foreach(suffix "" "_asan" "_tsan")
   add_library(asset${suffix} STATIC ${ASSET_SOURCES})
   target_include_directories(asset${suffix} PUBLIC ${ASSET_INCLUDE_ROOT})
   target_compile_options(asset${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
-  target_link_libraries(asset${suffix} PUBLIC storage${suffix} ecs${suffix} jobs${suffix} foundation${suffix})  # storage and ecs: the level format, Day 327
+  target_link_libraries(asset${suffix} PUBLIC renderer_passes${suffix} renderer${suffix} storage${suffix} ecs${suffix} jobs${suffix} foundation${suffix})  # storage and ecs: the level format, Day 327
 endforeach()

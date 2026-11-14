@@ -27,6 +27,8 @@
 #include "asset/status.h"
 #include "containers/array.h"
 #include "containers/hash_map.h"
+#include "containers/shared_bytes.h"
+#include "containers/shared_ptr.h"
 #include "containers/span.h"
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
@@ -90,6 +92,62 @@ public:
     T value;
 };
 
+/// The bytes of blob buffers that are alive, counted where the buffers are made and unmade: the manager and every
+/// [[asset::BlobBuffer]] share one, so a buffer that a GPU object keeps after the manager let go of the resource still
+/// counts as resident until the last holder returns it.
+///
+/// - Thread-safety: thread-safe.
+/// - Ownership: shared by the manager and the buffers.
+class ResidentBytes
+{
+public:
+    /// Adds `n` bytes.
+    void Add(u64 n) { bytes_.FetchAdd(n, MemoryOrder::Relaxed); }
+    /// Removes `n` bytes.
+    void Sub(u64 n) { bytes_.FetchSub(n, MemoryOrder::Relaxed); }
+    /// The bytes now.
+    ///
+    /// - Fails: never.
+    u64 Get() const { return bytes_.Load(MemoryOrder::Relaxed); }
+
+private:
+    Atomic<u64> bytes_{0};
+};
+
+/// One blob read into a pooled buffer, shared by everything that views it: the manager's slot, the loaded object, and
+/// the GPU objects uploaded from it (a mesh that is uploaded again after a device reset reads these bytes). It holds
+/// the pool too, so the buffer goes back to a pool that is still there however the holders die.
+///
+/// - Thread-safety: thread-safe to read; the bytes never change.
+/// - Ownership: owns the buffer and shares the pool.
+class BlobBuffer final : public SharedBytes
+{
+public:
+    /// Wraps `buffer`, of which the first `size` bytes are the blob.
+    ///
+    /// - Ownership: takes `buffer` and shares `pool` and `resident`.
+    BlobBuffer(SharedPtr<LoadBufferPool> pool, SharedPtr<ResidentBytes> resident, LoadBuffer&& buffer, usize size)
+        : pool_(static_cast<SharedPtr<LoadBufferPool>&&>(pool)),
+          resident_(static_cast<SharedPtr<ResidentBytes>&&>(resident)), buffer_(static_cast<LoadBuffer&&>(buffer)),
+          size_(size)
+    {
+        resident_->Add(size_);
+    }
+    /// Gives the bytes back to the count, then the buffer to the pool.
+    ~BlobBuffer() override { resident_->Sub(size_); }
+
+    /// The blob's bytes.
+    ///
+    /// - Fails: never.
+    ByteSpan Bytes() const override { return ByteSpan(buffer_.Data(), size_); }
+
+private:
+    SharedPtr<LoadBufferPool> pool_;  // declared first: destroyed after the buffer goes back to it
+    SharedPtr<ResidentBytes> resident_;
+    LoadBuffer buffer_;
+    usize size_;
+};
+
 /// What a loader is given: the blob, its bytes and the objects of its dependencies.
 ///
 /// - Thread-safety: thread-compatible; valid during the loader call only.
@@ -102,6 +160,12 @@ public:
     ResourceId Id() const { return id_; }
     /// The whole blob.
     ByteSpan Bytes() const { return bytes_; }
+    /// The shared region the blob's bytes are in: what an object that outlives the load (a GPU mesh uploaded again
+    /// after a device reset) holds instead of a pointer into the bytes.
+    ///
+    /// - Fails: never.
+    /// - Ownership: the caller may keep the share.
+    const SharedPtr<const SharedBytes>& Buffer() const { return buffer_; }
     /// The opened blob (sections, dependencies).
     const BlobReader& Blob() const { return *blob_; }
     /// The registry of resource types.
@@ -130,6 +194,7 @@ private:
 
     ResourceId id_;
     ByteSpan bytes_;
+    SharedPtr<const SharedBytes> buffer_;
     const BlobReader* blob_ = nullptr;
     const TypeRegistry* types_ = nullptr;
     const LoadedObject* (*find_)(void* user, ResourceId id) = nullptr;
@@ -446,13 +511,29 @@ public:
     ///
     /// - Thread-safety: thread-safe.
     ResourceStats Stats() const;
+    /// The loaded object of `id` when it is loaded as a `T`, without taking a reference: for a reader that knows the
+    /// resource is held by something else (an animation system reading the skeletons a level holds).
+    ///
+    /// - Returns: null when the resource is not loaded or is not a `T`.
+    /// - Fails: returns null as described.
+    /// - Thread-safety: thread-safe; the pointer is valid while something holds the resource.
+    /// - Ownership: the object belongs to the manager.
+    template <class T> const T* Find(ResourceId id) const
+    {
+        const LoadedObject* object = FindObject(id);
+        if (object == nullptr || object->Key() != ObjectKey<T>())
+        {
+            return nullptr;
+        }
+        return &static_cast<const LoadedValue<T>*>(object)->value;
+    }
     /// The ids of the loaded resources, in id order (for tests and tools).
     ///
     /// - Ownership: `*out` is appended to.
     /// - Fails: never.
     void LoadedIds(Vector<ResourceId>* out) const;
     /// The pool the blobs are read into.
-    LoadBufferPool& Pool() { return pool_; }
+    LoadBufferPool& Pool() { return *pool_; }
     /// The registry of resource types.
     const TypeRegistry& Types() const { return types_; }
 
@@ -464,15 +545,16 @@ private:
     struct Staged;
     struct FindState;
 
+    const LoadedObject* FindObject(ResourceId id) const;
     void AddLoader(ResourceType type, UniquePtr<LoaderBase> loader);
     Status ResolveForLoad(StringView path, ResourceId* id);
     Status LoadRaw(ResourceId id, ResourceType type, u32 key, HandleBase* out, LoadFailure* failure);
     Status LoadFallback(ResourceType type, u32 key, HandleBase* out);
     Status AcquireLocked(ResourceId id, const Expect& expect, Vector<ResourceId>* chain, u32* slot,
                          LoadFailure* failure);
-    Status ReadBlobLocked(ResourceId id, u64 reclaim, LoadBuffer* buffer, usize* size);
-    Status BuildLocked(ResourceId id, const Expect& expect, LoadBuffer buffer, usize size, Vector<ResourceId>* chain,
-                       u32* slot, LoadFailure* failure);
+    Status ReadBlobLocked(ResourceId id, u64 reclaim, SharedPtr<BlobBuffer>* buffer, usize* size);
+    Status BuildLocked(ResourceId id, const Expect& expect, SharedPtr<BlobBuffer> buffer, usize size,
+                       Vector<ResourceId>* chain, u32* slot, LoadFailure* failure);
     void NoteFailure(LoadFailure* failure, const Vector<ResourceId>& chain, ResourceId failing);
     void AddRefLocked(u32 index);
     void ReleaseLocked(u32 index);
@@ -494,7 +576,8 @@ private:
     Vector<UniquePtr<ResourceBackend>>
         owned_backends_;  // before the mounts: destroyed after them (table reads use them)
     MountTable mounts_;
-    LoadBufferPool pool_;
+    SharedPtr<LoadBufferPool> pool_;
+    SharedPtr<ResidentBytes> resident_;
     mutable RecursiveMutex mutex_;
     struct LoaderEntry
     {

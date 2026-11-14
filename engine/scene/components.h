@@ -24,8 +24,17 @@ namespace engine_placeholder::scene
 /// - Ownership: owns the mesh and, through it, the device buffers; the device must outlive it.
 struct MeshAsset
 {
-    /// The geometry.
+    /// The geometry, when this holder owns it (a hand-built mesh).
     renderer::GpuMesh mesh;
+    /// A mesh shared with whoever else draws it (the resource manager's), or empty: the holder then owns nothing, and
+    /// the mesh lives as long as any holder does.
+    SharedPtr<renderer::GpuMesh> shared;
+
+    /// The geometry, whichever way it is held.
+    ///
+    /// - Fails: never.
+    /// - Ownership: the mesh belongs to this holder or is shared with it.
+    const renderer::GpuMesh& Geometry() const { return shared ? *shared : mesh; }
 };
 
 /// Draws a mesh at the entity's `WorldTransform`.

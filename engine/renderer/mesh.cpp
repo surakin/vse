@@ -1,5 +1,7 @@
 #include "renderer/mesh.h"
 
+#include "lang/limits.h"
+
 #include "sync/atomic.h"
 #include "lang/scalar.h"
 
@@ -47,6 +49,104 @@ VertexLayoutData ColorVertexLayout()
 }
 
 // ---- MeshData ----
+
+// A range of `count` items of `size` bytes starting at `offset` lies inside a region of `total` bytes.
+static bool InRegion(u64 offset, u64 count, u64 size, u64 total)
+{
+    if (size != 0 && count > (Limits<u64>::Max() - offset) / size)
+    {
+        return false;
+    }
+    return offset + count * size <= total;
+}
+
+const char* MeshGeometry::Validate() const
+{
+    if (!bytes || vertex_count == 0 || index_count == 0 || layout.stride == 0 || layout.attribute_count == 0)
+    {
+        return "mesh: geometry needs a region of bytes, vertices, indices and a layout";
+    }
+    const u64 total = bytes->Bytes().Size();
+    const bool skinned = layout.skin_stride != 0;
+    if (!InRegion(vertex_offset, vertex_count, layout.stride, total) ||
+        !InRegion(index_offset, index_count, index_type == rhi::IndexType::UInt16 ? 2 : 4, total) ||
+        (skinned && !InRegion(skin_offset, vertex_count, kSkinVertexBytes, total)))
+    {
+        return "mesh: a section of the geometry lies outside its bytes";
+    }
+    u32 primitive = 3;
+    bool strip = false;
+    switch (topology)
+    {
+    case rhi::PrimitiveTopology::TriangleList: break;
+    case rhi::PrimitiveTopology::LineList: primitive = 2; break;
+    case rhi::PrimitiveTopology::TriangleStrip: strip = true; break;
+    case rhi::PrimitiveTopology::LineStrip:
+        primitive = 2;
+        strip = true;
+        break;
+    case rhi::PrimitiveTopology::PointList: return "mesh: geometry has a topology the renderer does not draw";
+    }
+    if (strip ? index_count < primitive : index_count % primitive != 0)
+    {
+        return "mesh: the index count does not fit the topology";
+    }
+    if (skinned ? (skin_joint_count == 0 || skin_joint_count > 256 || layout.skin_stride != kSkinVertexBytes)
+                : skin_joint_count != 0)
+    {
+        return "mesh: a skinned layout needs 1 to 256 joints and a stride of 8, and a rigid one no joints";
+    }
+    return nullptr;
+}
+
+// What an upload reads, as pointers that live for the call only.
+namespace detail
+{
+struct MeshUploadView
+{
+    const void* vertices = nullptr;
+    u64 vertex_bytes = 0;
+    const void* indices = nullptr;
+    u64 index_bytes = 0;
+    const void* skin = nullptr;
+    u64 skin_bytes = 0;
+    bool skinned = false;
+};
+}  // namespace detail
+
+namespace
+{
+
+using detail::MeshUploadView;
+
+MeshUploadView ViewOfData(const MeshData& data)
+{
+    MeshUploadView v;
+    v.vertices = data.Vertices();
+    v.vertex_bytes = data.VertexBytes();
+    v.indices = data.Indices();
+    v.index_bytes = data.IndexBytes();
+    v.skin = data.SkinBytes();
+    v.skin_bytes = data.SkinByteCount();
+    v.skinned = data.Skinned();
+    return v;
+}
+
+MeshUploadView ViewOfGeometry(const MeshGeometry& g)
+{
+    MeshUploadView v;
+    const byte* base = g.bytes->Bytes().Data();
+    v.vertices = base + g.vertex_offset;
+    v.vertex_bytes = static_cast<u64>(g.vertex_count) * g.layout.stride;
+    v.indices = base + g.index_offset;
+    v.index_bytes = static_cast<u64>(g.index_count) * (g.index_type == rhi::IndexType::UInt16 ? 2 : 4);
+    v.skinned = g.layout.skin_stride != 0;
+    v.skin = v.skinned ? base + g.skin_offset : nullptr;
+    v.skin_bytes = v.skinned ? static_cast<u64>(g.vertex_count) * kSkinVertexBytes : 0;
+    return v;
+}
+
+}  // namespace
 
 MeshData::~MeshData()
 {
@@ -839,6 +939,10 @@ void GpuMesh::MoveFrom(GpuMesh& other)
     owned_ = static_cast<MeshData&&>(other.owned_);
     was_ready_ = other.was_ready_;
     other.was_ready_ = false;
+    geometry_ = static_cast<MeshGeometry&&>(other.geometry_);
+    has_geometry_ = other.has_geometry_;
+    other.geometry_ = MeshGeometry{};
+    other.has_geometry_ = false;
     source_ = other.source_;
     if (source_.borrowed == &other.owned_)
     {
@@ -875,32 +979,36 @@ void GpuMesh::MoveFrom(GpuMesh& other)
     other.prepared_ = false;
 }
 
-bool GpuMesh::Upload(rhi::Device* device, const MeshData& data, const char* debug_name, rhi::BufferHandle* vb,
-                     rhi::BufferHandle* ib, rhi::BufferHandle* sb)
+bool GpuMesh::Upload(rhi::Device* device, const detail::MeshUploadView& data, const char* debug_name,
+                     rhi::BufferHandle* vb, rhi::BufferHandle* ib, rhi::BufferHandle* sb)
 {
     rhi::BufferDesc bd;
     bd.location = rhi::MemoryLocation::GpuOnly;
-    bd.size = data.VertexBytes();
+    const u64 vertex_bytes = data.vertex_bytes;
+    const u64 index_bytes = data.index_bytes;
+    const bool skinned = data.skinned;
+    const u64 skin_bytes = data.skin_bytes;
+    bd.size = vertex_bytes;
     bd.usage = rhi::BufferUsage::Vertex | rhi::BufferUsage::CopyDst;
     bd.debug_name = debug_name;
     const rhi::BufferHandle vertex_buffer = device->CreateBuffer(bd);
-    bd.size = data.IndexBytes();
+    bd.size = index_bytes;
     bd.usage = rhi::BufferUsage::Index | rhi::BufferUsage::CopyDst;
     const rhi::BufferHandle index_buffer = device->CreateBuffer(bd);
 
     rhi::BufferHandle skin_buffer;
-    if (data.Skinned())
+    if (skinned)
     {
-        bd.size = data.SkinByteCount();
+        bd.size = skin_bytes;
         bd.usage = rhi::BufferUsage::Vertex | rhi::BufferUsage::CopyDst;
         skin_buffer = device->CreateBuffer(bd);
     }
-    bool ok = vertex_buffer.IsValid() && index_buffer.IsValid() && (!data.Skinned() || skin_buffer.IsValid());
+    bool ok = vertex_buffer.IsValid() && index_buffer.IsValid() && (!skinned || skin_buffer.IsValid());
     if (ok)
     {
-        ok = device->UploadBuffer(vertex_buffer, 0, data.Vertices(), data.VertexBytes()).ok &&
-             device->UploadBuffer(index_buffer, 0, data.Indices(), data.IndexBytes()).ok &&
-             (!data.Skinned() || device->UploadBuffer(skin_buffer, 0, data.SkinBytes(), data.SkinByteCount()).ok);
+        ok = device->UploadBuffer(vertex_buffer, 0, data.vertices, vertex_bytes).ok &&
+             device->UploadBuffer(index_buffer, 0, data.indices, index_bytes).ok &&
+             (!skinned || device->UploadBuffer(skin_buffer, 0, data.skin, skin_bytes).ok);
     }
     if (!ok)
     {
@@ -926,6 +1034,18 @@ bool GpuMesh::Upload(rhi::Device* device, const MeshData& data, const char* debu
     return true;
 }
 
+namespace
+{
+
+// One counter for every way a mesh is made: ids differ between meshes created one after another (1 to 2^24 - 1).
+u32 NextSortId()
+{
+    static Atomic<u32> next_sort_id{1};
+    return next_sort_id.FetchAdd(1, MemoryOrder::Relaxed) % 0xffffffu + 1;
+}
+
+}  // namespace
+
 bool GpuMesh::Create(rhi::Device* device, const MeshData& data, const char* debug_name)
 {
     ENGINE_ASSERT(device != nullptr, "GpuMesh::Create: device is null");
@@ -935,7 +1055,7 @@ bool GpuMesh::Create(rhi::Device* device, const MeshData& data, const char* debu
     rhi::BufferHandle vertex_buffer;
     rhi::BufferHandle index_buffer;
     rhi::BufferHandle skin_buffer;
-    if (!Upload(device, data, debug_name, &vertex_buffer, &index_buffer, &skin_buffer))
+    if (!Upload(device, ViewOfData(data), debug_name, &vertex_buffer, &index_buffer, &skin_buffer))
     {
         return false;
     }
@@ -951,16 +1071,86 @@ bool GpuMesh::Create(rhi::Device* device, const MeshData& data, const char* debu
     layout_ = data.Layout();
     skin_joint_count_ = data.SkinJointCount();
     bounds_ = data.GetBounds();
-    static Atomic<u32> next_sort_id{1};
-    sort_id_ = next_sort_id.FetchAdd(1, MemoryOrder::Relaxed) % 0xffffffu + 1;  // 1 to 2^24 - 1, never 0
+    sort_id_ = NextSortId();
     ready_ = false;
     prepared_ = false;
+    return true;
+}
+
+bool GpuMesh::CreateFromGeometry(rhi::Device* device, const MeshGeometry& geometry, DeviceResources* resources,
+                                 const char* debug_name)
+{
+    ENGINE_ASSERT(device != nullptr, "GpuMesh::CreateFromGeometry: device is null");
+    ENGINE_ASSERT(!Valid(), "GpuMesh::CreateFromGeometry: this mesh already holds buffers");
+    if (const char* refused = geometry.Validate())
+    {
+        RenderLog(LogVerbosity::Error, "GpuMesh '%s': %s", debug_name != nullptr ? debug_name : "", refused);
+        return false;
+    }
+    rhi::BufferHandle vertex_buffer;
+    rhi::BufferHandle index_buffer;
+    rhi::BufferHandle skin_buffer;
+    if (!Upload(device, ViewOfGeometry(geometry), debug_name, &vertex_buffer, &index_buffer, &skin_buffer))
+    {
+        return false;
+    }
+    device_ = device;
+    vertex_buffer_ = vertex_buffer;
+    index_buffer_ = index_buffer;
+    skin_buffer_ = skin_buffer;
+    vertex_count_ = geometry.vertex_count;
+    index_count_ = geometry.index_count;
+    index_type_ = geometry.index_type;
+    topology_ = geometry.topology;
+    layout_ = geometry.layout;
+    skin_joint_count_ = geometry.skin_joint_count;
+    bounds_ = geometry.bounds;
+    has_restart_ = false;
+    if (topology_ == rhi::PrimitiveTopology::TriangleStrip || topology_ == rhi::PrimitiveTopology::LineStrip)
+    {
+        const byte* raw = geometry.bytes->Bytes().Data() + geometry.index_offset;
+        for (u32 i = 0; i < index_count_ && !has_restart_; ++i)
+        {
+            if (index_type_ == rhi::IndexType::UInt16)
+            {
+                u16 v;
+                MemCopy(&v, raw + static_cast<usize>(i) * 2, 2);
+                has_restart_ = v == 0xFFFFu;
+            }
+            else
+            {
+                u32 v;
+                MemCopy(&v, raw + static_cast<usize>(i) * 4, 4);
+                has_restart_ = v == 0xFFFFFFFFu;
+            }
+        }
+    }
+    sort_id_ = NextSortId();
+    ready_ = false;
+    prepared_ = false;
+    geometry_ = geometry;
+    has_geometry_ = true;
+    FormatTo(name_, sizeof(name_), "%s", debug_name != nullptr ? debug_name : "mesh");
+    recreatable_ = true;
+    if (!registration_.Attach(resources, this, tiers::kMeshes))
+    {
+        // Nothing stays allocated: the buffers, the source and the share of the bytes go.
+        Release();
+        recreatable_ = false;
+        has_geometry_ = false;
+        geometry_ = MeshGeometry{};
+        vertex_count_ = 0;
+        index_count_ = 0;
+        sort_id_ = 0;
+        return false;
+    }
     return true;
 }
 
 bool GpuMesh::MakeRecreatable(DeviceResources* resources, const Source& source, const char* debug_name)
 {
     ENGINE_ASSERT(Valid(), "GpuMesh::MakeRecreatable: the mesh is empty");
+    ENGINE_ASSERT(!has_geometry_, "GpuMesh::MakeRecreatable: the mesh already has its geometry as its source");
     ENGINE_ASSERT(source.borrowed != nullptr || source.load != nullptr, "GpuMesh::MakeRecreatable: no source");
     source_ = source;
     FormatTo(name_, sizeof(name_), "%s", debug_name != nullptr ? debug_name : "mesh");
@@ -1023,23 +1213,53 @@ bool GpuMesh::Recreate(rhi::Device* device)
         return false;
     }
     MeshData loaded;
-    const MeshData* data = source_.borrowed;
-    if (data == nullptr)
+    detail::MeshUploadView view;
+    u32 vertices = 0;
+    u32 indices = 0;
+    u32 joints = 0;
+    bool skinned = false;
+    if (has_geometry_)
     {
-        if (!source_.load(source_.user, &loaded) || !loaded.Valid())
+        if (const char* why = geometry_.Validate())
         {
-            RenderLog(LogVerbosity::Error, "GpuMesh '%s': the loader failed", name_);
+            RenderLog(LogVerbosity::Error, "GpuMesh '%s': %s", name_, why);
             return false;
         }
-        data = &loaded;
+        view = ViewOfGeometry(geometry_);
+        vertices = geometry_.vertex_count;
+        indices = geometry_.index_count;
+        joints = geometry_.skin_joint_count;
+        skinned = geometry_.layout.skin_stride != 0;
     }
-    if (!data->Valid() || data->VertexCount() != vertex_count_ || data->IndexCount() != index_count_ ||
-        data->Skinned() != (layout_.skin_stride != 0) || data->SkinJointCount() != skin_joint_count_)
+    else
+    {
+        const MeshData* data = source_.borrowed;
+        if (data == nullptr)
+        {
+            if (!source_.load(source_.user, &loaded) || !loaded.Valid())
+            {
+                RenderLog(LogVerbosity::Error, "GpuMesh '%s': the loader failed", name_);
+                return false;
+            }
+            data = &loaded;
+        }
+        view = ViewOfData(*data);
+        vertices = data->VertexCount();
+        indices = data->IndexCount();
+        joints = data->SkinJointCount();
+        skinned = data->Skinned();
+        if (!data->Valid())
+        {
+            vertices = 0;
+        }
+    }
+    if (vertices == 0 || vertices != vertex_count_ || indices != index_count_ ||
+        skinned != (layout_.skin_stride != 0) || joints != skin_joint_count_)
     {
         RenderLog(LogVerbosity::Error, "GpuMesh '%s': the source no longer matches the mesh", name_);
         return false;
     }
-    if (!Upload(device, *data, name_, &vertex_buffer_, &index_buffer_, &skin_buffer_))
+    if (!Upload(device, view, name_, &vertex_buffer_, &index_buffer_, &skin_buffer_))
     {
         return false;
     }
@@ -1093,6 +1313,8 @@ void GpuMesh::Destroy()
     Release();
     owned_ = MeshData{};
     source_ = Source{};
+    geometry_ = MeshGeometry{};
+    has_geometry_ = false;
     recreatable_ = false;
     was_ready_ = false;
     vertex_count_ = 0;

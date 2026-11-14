@@ -25,7 +25,7 @@ struct ResourceManager::Slot
     ResourceType type;
     u32 type_version = 0;
     u32 refs = 0;
-    LoadBuffer buffer;
+    SharedPtr<BlobBuffer> buffer;
     usize size = 0;
     UniquePtr<LoadedObject> object;
     Vector<ResourceId> deps;  // the ids of the dependencies this slot holds a reference on
@@ -140,7 +140,8 @@ bool HandleBase::IsValid() const
 // The manager
 
 ResourceManager::ResourceManager(const TypeRegistry& types, const ManagerConfig& config)
-    : types_(types), config_(config), pool_(config.buffer_pool_bytes), by_id_(HeapAllocator::Default())
+    : types_(types), config_(config), pool_(MakeShared<LoadBufferPool>(config.buffer_pool_bytes)),
+      resident_(MakeShared<ResidentBytes>()), by_id_(HeapAllocator::Default())
 {
 }
 
@@ -209,6 +210,13 @@ Status ResourceManager::MountFromSettings(const settings::Registry& registry)
         ENGINE_TRY(MountPath(specs[i].prefix.View(), path, specs[i].priority));
     }
     return Status::Success();
+}
+
+const LoadedObject* ResourceManager::FindObject(ResourceId id) const
+{
+    LockGuard<RecursiveMutex> lock(mutex_);
+    const u32* found = by_id_.Find(id.Value());
+    return found == nullptr ? nullptr : slots_[*found]->object.Get();
 }
 
 void ResourceManager::AddLoader(ResourceType type, UniquePtr<LoaderBase> loader)
@@ -323,9 +331,8 @@ void ResourceManager::FreeLocked(u32 index)
     slot.live = false;
     slot.pinned = false;
     by_id_.Remove(slot.id.Value());
-    stats_.bytes_resident -= slot.size;
     slot.object.Reset();
-    slot.buffer.Release();
+    slot.buffer.Reset();
     slot.size = 0;
     slot.refs = 0;
     slot.generation += 1;
@@ -419,7 +426,7 @@ const LoadedObject* ResourceManager::FindInContext(void* user, ResourceId id)
 // ---------------------------------------------------------------------------------------------------------------------
 // Loading
 
-Status ResourceManager::ReadBlobLocked(ResourceId id, u64 reclaim, LoadBuffer* buffer, usize* size)
+Status ResourceManager::ReadBlobLocked(ResourceId id, u64 reclaim, SharedPtr<BlobBuffer>* buffer, usize* size)
 {
     const u64 started = os::MonotonicTimeNanos();
     UniquePtr<ResourceReader> reader;
@@ -430,12 +437,14 @@ Status ResourceManager::ReadBlobLocked(ResourceId id, u64 reclaim, LoadBuffer* b
     {
         return Fail(ErrorCode::Corrupt, "a resource's size is not that of a blob");
     }
-    if (config_.cache_bytes != 0 && stats_.bytes_resident - reclaim + total > config_.cache_bytes)
+    if (config_.cache_bytes != 0 && resident_->Get() - reclaim + total > config_.cache_bytes)
     {
         return Fail(ErrorCode::LimitExceeded, "loading the resource would pass assets.cache_bytes");
     }
-    ENGINE_TRY(pool_.Acquire(static_cast<usize>(total), buffer));
-    ENGINE_TRY(reader->ReadAt(0, buffer->Data(), static_cast<usize>(total)));
+    LoadBuffer raw;
+    ENGINE_TRY(pool_->Acquire(static_cast<usize>(total), &raw));
+    ENGINE_TRY(reader->ReadAt(0, raw.Data(), static_cast<usize>(total)));
+    *buffer = MakeShared<BlobBuffer>(pool_, resident_, static_cast<LoadBuffer&&>(raw), static_cast<usize>(total));
     *size = static_cast<usize>(total);
     stats_.bytes_read += total;
     stats_.read_nanos += os::MonotonicTimeNanos() - started;
@@ -495,7 +504,7 @@ Status ResourceManager::AcquireLocked(ResourceId id, const Expect& expect, Vecto
             return Fail(ErrorCode::DependencyCycle, "the resources depend on each other in a cycle");
         }
     }
-    LoadBuffer buffer;
+    SharedPtr<BlobBuffer> buffer;
     usize size = 0;
     const Status read = ReadBlobLocked(id, 0, &buffer, &size);
     if (read.Failed())
@@ -507,14 +516,14 @@ Status ResourceManager::AcquireLocked(ResourceId id, const Expect& expect, Vecto
         }
         return read;
     }
-    return BuildLocked(id, expect, static_cast<LoadBuffer&&>(buffer), size, chain, slot, failure);
+    return BuildLocked(id, expect, static_cast<SharedPtr<BlobBuffer>&&>(buffer), size, chain, slot, failure);
 }
 
-Status ResourceManager::BuildLocked(ResourceId id, const Expect& expect, LoadBuffer buffer, usize size,
+Status ResourceManager::BuildLocked(ResourceId id, const Expect& expect, SharedPtr<BlobBuffer> buffer, usize size,
                                     Vector<ResourceId>* chain, u32* slot_out, LoadFailure* failure)
 {
     BlobReader reader;
-    const ByteSpan bytes(buffer.Data(), size);
+    const ByteSpan bytes = buffer->Bytes();
     const Status opened = reader.Open(bytes, types_);
     if (opened.Failed())
     {
@@ -604,6 +613,7 @@ Status ResourceManager::BuildLocked(ResourceId id, const Expect& expect, LoadBuf
     LoadContext context;
     context.id_ = id;
     context.bytes_ = bytes;
+    context.buffer_ = buffer;
     context.blob_ = &reader;
     context.types_ = &types_;
     FindState state;
@@ -645,14 +655,13 @@ Status ResourceManager::BuildLocked(ResourceId id, const Expect& expect, LoadBuf
     slot.type = reader.Type();
     slot.type_version = reader.TypeVersion();
     slot.refs = 1;
-    slot.buffer = static_cast<LoadBuffer&&>(buffer);
+    slot.buffer = static_cast<SharedPtr<BlobBuffer>&&>(buffer);
     slot.size = size;
     slot.object = static_cast<UniquePtr<LoadedObject>&&>(object);
     slot.deps = static_cast<Vector<ResourceId>&&>(dep_ids);
     slot.dep_slots = static_cast<Vector<u32>&&>(dep_slots);
     by_id_.Insert(id.Value(), index);
     stats_.loads += 1;
-    stats_.bytes_resident += size;
     *slot_out = index;
     return Status::Success();
 }
@@ -729,16 +738,18 @@ Status ResourceManager::LoadFallback(ResourceType type, u32 key, HandleBase* out
     }
     else
     {
-        LoadBuffer buffer;
-        ENGINE_TRY(pool_.Acquire(blob.Size(), &buffer));
-        MemCopy(buffer.Data(), blob.Data(), blob.Size());
+        LoadBuffer raw;
+        ENGINE_TRY(pool_->Acquire(blob.Size(), &raw));
+        MemCopy(raw.Data(), blob.Data(), blob.Size());
+        SharedPtr<BlobBuffer> buffer = MakeShared<BlobBuffer>(pool_, resident_, static_cast<LoadBuffer&&>(raw),
+                                                              blob.Size());
         Expect expect;
         expect.check_type = true;
         expect.type = type;
         expect.key = key;
         Vector<ResourceId> chain;
-        ENGINE_TRY(
-            BuildLocked(reader.Id(), expect, static_cast<LoadBuffer&&>(buffer), blob.Size(), &chain, &slot, nullptr));
+        ENGINE_TRY(BuildLocked(reader.Id(), expect, static_cast<SharedPtr<BlobBuffer>&&>(buffer), blob.Size(), &chain,
+                               &slot, nullptr));
     }
     stats_.fallbacks_used += 1;
     out->manager_ = this;
@@ -865,7 +876,7 @@ ResourceStats ResourceManager::Stats() const
     ResourceStats copy;
     copy.loads = stats_.loads;
     copy.cache_hits = stats_.cache_hits;
-    copy.bytes_resident = stats_.bytes_resident;
+    copy.bytes_resident = resident_->Get();
     copy.fallbacks_used = stats_.fallbacks_used;
     copy.load_conversions = stats_.load_conversions;
     copy.rejected_old_version = stats_.rejected_old_version;
@@ -910,11 +921,11 @@ Status ResourceManager::ReloadLocked(ResourceId id, u32* reloaded)
 {
     const u32 index = *by_id_.Find(id.Value());
     // The replacement blob, read afresh.
-    LoadBuffer buffer;
+    SharedPtr<BlobBuffer> buffer;
     usize size = 0;
     ENGINE_TRY(ReadBlobLocked(id, slots_[index]->size, &buffer, &size));
     BlobReader reader;
-    const ByteSpan bytes(buffer.Data(), size);
+    const ByteSpan bytes = buffer->Bytes();
     const Status opened = reader.Open(bytes, types_);
     if (opened.Failed())
     {
@@ -1028,6 +1039,7 @@ Status ResourceManager::ReloadLocked(ResourceId id, u32* reloaded)
         LoadContext context;
         context.id_ = id;
         context.bytes_ = bytes;
+        context.buffer_ = buffer;
         context.blob_ = &reader;
         context.types_ = &types_;
         FindState state;
@@ -1104,7 +1116,7 @@ Status ResourceManager::ReloadLocked(ResourceId id, u32* reloaded)
     {
         Slot& dependent = *slots_[order[o]];
         BlobReader dependent_reader;
-        const ByteSpan dependent_bytes(dependent.buffer.Data(), dependent.size);
+        const ByteSpan dependent_bytes = dependent.buffer->Bytes();
         status = dependent_reader.Open(dependent_bytes, types_);
         if (status.Failed())
         {
@@ -1139,6 +1151,7 @@ Status ResourceManager::ReloadLocked(ResourceId id, u32* reloaded)
         LoadContext context;
         context.id_ = dependent.id;
         context.bytes_ = dependent_bytes;
+        context.buffer_ = dependent.buffer;
         context.blob_ = &dependent_reader;
         context.types_ = &types_;
         FindState state;
@@ -1172,9 +1185,8 @@ Status ResourceManager::ReloadLocked(ResourceId id, u32* reloaded)
     {
         old_deps.Push(target.dep_slots[i]);
     }
-    stats_.bytes_resident = stats_.bytes_resident - target.size + size;
     target.object = static_cast<UniquePtr<LoadedObject>&&>(fresh);
-    target.buffer = static_cast<LoadBuffer&&>(buffer);
+    target.buffer = static_cast<SharedPtr<BlobBuffer>&&>(buffer);
     target.size = size;
     target.type_version = reader.TypeVersion();
     target.deps = static_cast<Vector<ResourceId>&&>(dep_ids);

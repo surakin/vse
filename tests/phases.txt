@@ -362,6 +362,7 @@ tests/scene/visibility_test.cpp                 18   # Phase 18 Day 247
 tests/scene/scene_sync_test.cpp                     17   # Phase 17 Day 233
 tests/scene/scene_render_test.cpp                   17   # Phase 17 Day 233
 tests/scene/scene_cost_test.cpp                     17   # Phase 17 Day 233
+tests/scene/level_spawner_test.cpp               22   # Phase 22 Day 329
 tests/scene/CMakeLists.txt                      17
 
 # --- Phase 20: networking ---

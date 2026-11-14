@@ -5037,6 +5037,147 @@ inline constexpr u32 kSkinVertexBytes;
 
 Bytes of one vertex of the skin stream.
 
+## `MeshGeometry` {#renderer-meshgeometry}
+
+`struct renderer::MeshGeometry` — defined in `engine/renderer/mesh.h`
+
+```cpp
+struct MeshGeometry { ... }
+```
+
+Geometry read in place: what [`renderer::GpuMesh`](#renderer-gpumesh) uploads, and uploads again after a device reset, without copying a byte of it. A loaded mesh blob hands its sections over this way (the minter laid them out exactly as the buffers hold them). The bytes are not pointed at: the geometry holds a share of the region they are in and the offsets of the three sections, so the region lives as long as the mesh that uploads from it, whoever else lets go.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data (the shared region is immutable). |
+| Ownership | shares `bytes`. |
+
+### `layout` {#renderer-meshgeometry-layout}
+
+`variable renderer::MeshGeometry::layout` — defined in `engine/renderer/mesh.h`
+
+```cpp
+VertexLayoutData layout;
+```
+
+The attributes (any vertex format the RHI has); `skin_stride` is 8 or 0.
+
+### `bytes` {#renderer-meshgeometry-bytes}
+
+`variable renderer::MeshGeometry::bytes` — defined in `engine/renderer/mesh.h`
+
+```cpp
+SharedPtr<const SharedBytes> bytes;
+```
+
+The region the three sections are in.
+
+### `vertex_offset` {#renderer-meshgeometry-vertex-offset}
+
+`variable renderer::MeshGeometry::vertex_offset` — defined in `engine/renderer/mesh.h`
+
+```cpp
+u64 vertex_offset;
+```
+
+Where the vertices start in `bytes`; `vertex_count * layout.stride` bytes.
+
+### `vertex_count` {#renderer-meshgeometry-vertex-count}
+
+`variable renderer::MeshGeometry::vertex_count` — defined in `engine/renderer/mesh.h`
+
+```cpp
+u32 vertex_count;
+```
+
+At least 1.
+
+### `index_type` {#renderer-meshgeometry-index-type}
+
+`variable renderer::MeshGeometry::index_type` — defined in `engine/renderer/mesh.h`
+
+```cpp
+rhi::IndexType index_type;
+```
+
+The width of the indices.
+
+### `index_offset` {#renderer-meshgeometry-index-offset}
+
+`variable renderer::MeshGeometry::index_offset` — defined in `engine/renderer/mesh.h`
+
+```cpp
+u64 index_offset;
+```
+
+Where the indices start in `bytes`.
+
+### `index_count` {#renderer-meshgeometry-index-count}
+
+`variable renderer::MeshGeometry::index_count` — defined in `engine/renderer/mesh.h`
+
+```cpp
+u32 index_count;
+```
+
+At least 1; fits `topology`.
+
+### `topology` {#renderer-meshgeometry-topology}
+
+`variable renderer::MeshGeometry::topology` — defined in `engine/renderer/mesh.h`
+
+```cpp
+rhi::PrimitiveTopology topology;
+```
+
+How the indices form primitives.
+
+### `bounds` {#renderer-meshgeometry-bounds}
+
+`variable renderer::MeshGeometry::bounds` — defined in `engine/renderer/mesh.h`
+
+```cpp
+Bounds bounds;
+```
+
+The object-space bounds.
+
+### `skin_offset` {#renderer-meshgeometry-skin-offset}
+
+`variable renderer::MeshGeometry::skin_offset` — defined in `engine/renderer/mesh.h`
+
+```cpp
+u64 skin_offset;
+```
+
+Where the skin stream starts (`vertex_count * 8` bytes); skinned only.
+
+### `skin_joint_count` {#renderer-meshgeometry-skin-joint-count}
+
+`variable renderer::MeshGeometry::skin_joint_count` — defined in `engine/renderer/mesh.h`
+
+```cpp
+u32 skin_joint_count;
+```
+
+The skeleton's joint count (1 to 256) for a skinned layout, else 0.
+
+### `Validate()` {#renderer-meshgeometry-validate-const}
+
+`method renderer::MeshGeometry::Validate` — defined in `engine/renderer/mesh.h`
+
+```cpp
+const char* Validate() const;
+```
+
+Checks the sections against the region and the counts against each other (not the values in the bytes).
+
+| Field | Value |
+|---|---|
+| Returns | null when the geometry can be uploaded, otherwise a static message. |
+| Fails | no region, a section outside it, a zero count or stride, an index count that does not fit the topology, a topology the renderer does not draw, a skinned layout without a joint count of 1 to 256 or with a stride other than 8, or a joint count with a rigid layout. |
+| Ownership | reads the shared bytes only to learn their size; the message is static. |
+
 ## `MeshData` {#renderer-meshdata}
 
 `class renderer::MeshData` — defined in `engine/renderer/mesh.h`
@@ -5737,6 +5878,27 @@ void* user;
 ```
 
 Passed to `load`.
+
+### `CreateFromGeometry(rhi::Device*,const MeshGeometry&,DeviceResources*,const char*)` {#renderer-gpumesh-createfromgeometry-rhi-device-star-const-meshgeometry-amp-deviceresources-star-const-char-star}
+
+`method renderer::GpuMesh::CreateFromGeometry` — defined in `engine/renderer/mesh.h`
+
+```cpp
+bool CreateFromGeometry(rhi::Device* device, const MeshGeometry& geometry, DeviceResources* resources, const char* debug_name);
+```
+
+Creates the buffers from geometry read in place and keeps the geometry (and with it a share of its bytes) as the source for a device reset: the bytes are uploaded from where they are, now and after every reset, and the mesh registers with `resources` (a mesh without a registry does not survive a reset).
+
+| Field | Value |
+|---|---|
+| Parameter `device` | the device; must outlive this object. |
+| Parameter `geometry` | the geometry; valid ([`renderer::MeshGeometry::Validate`](#renderer-meshgeometry-validate-const)). |
+| Parameter `resources` | the registry, or null. |
+| Parameter `debug_name` | a label for the buffers; copied, may be null. |
+| Returns | true on success; on failure nothing stays allocated and the failure was logged. |
+| Fails | invalid geometry, or the device cannot allocate or upload. |
+| Aborts | this mesh already holds buffers. |
+| Ownership | shares the bytes `geometry` holds; they live as long as this mesh does. |
 
 ### `MakeRecreatable(DeviceResources*,const Source&,const char*)` {#renderer-gpumesh-makerecreatable-deviceresources-star-const-source-amp-const-char-star}
 
@@ -12551,6 +12713,70 @@ u32 layer;
 
 The array layer.
 
+## `TextureLevelSpan` {#renderer-texturelevelspan}
+
+`struct renderer::TextureLevelSpan` — defined in `engine/renderer/texture.h`
+
+```cpp
+struct TextureLevelSpan { ... }
+```
+
+One mip level of one layer of a texture whose texels are in a region of shared bytes: the entry of [`renderer::GpuTexture::CreateFromSharedLevels`](#renderer-gputexture-createfromsharedlevels-rhi-device-star-const-rhi-texturedesc-amp-sharedptr-lt-const-sharedbytes-gt-span-lt-const-texturelevelspan-gt-deviceresources-star-const-char-star). It names the level by where it is, not by a pointer.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible (a plain value). |
+
+### `offset` {#renderer-texturelevelspan-offset}
+
+`variable renderer::TextureLevelSpan::offset` — defined in `engine/renderer/texture.h`
+
+```cpp
+u64 offset;
+```
+
+Where the level's rows start in the region.
+
+### `bytes` {#renderer-texturelevelspan-bytes}
+
+`variable renderer::TextureLevelSpan::bytes` — defined in `engine/renderer/texture.h`
+
+```cpp
+u64 bytes;
+```
+
+How many bytes the level occupies (`row_pitch` times its rows, the last padded too).
+
+### `row_pitch` {#renderer-texturelevelspan-row-pitch}
+
+`variable renderer::TextureLevelSpan::row_pitch` — defined in `engine/renderer/texture.h`
+
+```cpp
+u32 row_pitch;
+```
+
+Bytes between rows (0: tightly packed); a multiple of the texel size.
+
+### `mip` {#renderer-texturelevelspan-mip}
+
+`variable renderer::TextureLevelSpan::mip` — defined in `engine/renderer/texture.h`
+
+```cpp
+u32 mip;
+```
+
+The mip level.
+
+### `layer` {#renderer-texturelevelspan-layer}
+
+`variable renderer::TextureLevelSpan::layer` — defined in `engine/renderer/texture.h`
+
+```cpp
+u32 layer;
+```
+
+The array layer.
+
 ## `TextureLoader` {#renderer-textureloader}
 
 `alias renderer::TextureLoader` — defined in `engine/renderer/texture.h`
@@ -12682,6 +12908,29 @@ Creates the texture from every level of every layer, uploaded straight from memo
 | Fails | returns false, logging the reason, for an invalid description, a missing, repeated or out-of-range level, a size or format the device cannot hold, or a failed upload. |
 | Aborts | the texture already exists. |
 | Ownership | `levels[i].data` is borrowed until the texture is destroyed (and across a reset, when `resources` is given): the bytes must outlive the texture. |
+
+### `CreateFromSharedLevels(rhi::Device*,const rhi::TextureDesc&,SharedPtr<const SharedBytes>,Span<const TextureLevelSpan>,DeviceResources*,const char*)` {#renderer-gputexture-createfromsharedlevels-rhi-device-star-const-rhi-texturedesc-amp-sharedptr-lt-const-sharedbytes-gt-span-lt-const-texturelevelspan-gt-deviceresources-star-const-char-star}
+
+`method renderer::GpuTexture::CreateFromSharedLevels` — defined in `engine/renderer/texture.h`
+
+```cpp
+bool CreateFromSharedLevels(rhi::Device* device, const rhi::TextureDesc& desc, SharedPtr<const SharedBytes> bytes, Span<const TextureLevelSpan> levels, DeviceResources* resources, const char* debug_name);
+```
+
+As [`renderer::GpuTexture::CreateFromLevels`](#renderer-gputexture-createfromlevels-rhi-device-star-const-rhi-texturedesc-amp-span-lt-const-texturelevelref-gt-deviceresources-star-const-char-star), with the texels in a region of shared bytes: the texture keeps a share of the region and the offsets of the levels, no pointer into it, so a reset uploads from the same bytes for as long as the texture lives, whoever else lets go of them.
+
+| Field | Value |
+|---|---|
+| Parameter `device` | the device. |
+| Parameter `desc` | the finished texture; `usage` gets `CopyDst` added; `debug_name` is ignored. |
+| Parameter `bytes` | the region the levels are in. |
+| Parameter `levels` | exactly one entry for each of `desc.mip_levels * desc.array_layers` subresources. |
+| Parameter `resources` | the registry, or null for a texture that does not need to survive a reset. |
+| Parameter `debug_name` | a label; copied, may be null. |
+| Returns | true on success. |
+| Fails | returns false, logging the reason, for no region, an invalid description, a missing, repeated or out-of-range level, a level that is not inside the region, a size or format the device cannot hold, or a failed upload. |
+| Aborts | the texture already exists. |
+| Ownership | shares `bytes`; `levels` is read during the call and copied. |
 
 ### `CreateFromLoader(rhi::Device*,TextureLoader,void*,DeviceResources*,const char*)` {#renderer-gputexture-createfromloader-rhi-device-star-textureloader-void-star-deviceresources-star-const-char-star}
 

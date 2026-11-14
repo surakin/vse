@@ -2,6 +2,8 @@
 
 //! CPU-side geometry ([[renderer::MeshData]]), its GPU copy ([[renderer::GpuMesh]]) and procedural shapes.
 
+#include "containers/shared_bytes.h"
+#include "containers/shared_ptr.h"
 #include "containers/vector.h"
 #include "renderer/bounds.h"
 #include "renderer/device_resources.h"
@@ -81,6 +83,42 @@ inline constexpr u32 kSkinJointsLocation = 5;
 inline constexpr u32 kSkinWeightsLocation = 6;
 /// Bytes of one vertex of the skin stream.
 inline constexpr u32 kSkinVertexBytes = 8;
+
+namespace detail
+{
+struct MeshUploadView;  // what one upload reads (defined in mesh.cpp)
+}  // namespace detail
+
+/// Geometry read in place: what [[renderer::GpuMesh]] uploads, and uploads again after a device reset, without copying
+/// a byte of it. A loaded mesh blob hands its sections over this way (the minter laid them out exactly as the buffers
+/// hold them). The bytes are not pointed at: the geometry holds a share of the region they are in and the offsets of
+/// the three sections, so the region lives as long as the mesh that uploads from it, whoever else lets go.
+///
+/// - Thread-safety: thread-compatible plain data (the shared region is immutable).
+/// - Ownership: shares `bytes`.
+struct MeshGeometry
+{
+    VertexLayoutData layout;             ///< The attributes (any vertex format the RHI has); `skin_stride` is 8 or 0.
+    SharedPtr<const SharedBytes> bytes;  ///< The region the three sections are in.
+    u64 vertex_offset = 0;               ///< Where the vertices start in `bytes`; `vertex_count * layout.stride` bytes.
+    u32 vertex_count = 0;                ///< At least 1.
+    rhi::IndexType index_type = rhi::IndexType::UInt16;                      ///< The width of the indices.
+    u64 index_offset = 0;                                                    ///< Where the indices start in `bytes`.
+    u32 index_count = 0;                                                     ///< At least 1; fits `topology`.
+    rhi::PrimitiveTopology topology = rhi::PrimitiveTopology::TriangleList;  ///< How the indices form primitives.
+    Bounds bounds;                                                           ///< The object-space bounds.
+    u64 skin_offset = 0;       ///< Where the skin stream starts (`vertex_count * 8` bytes); skinned only.
+    u32 skin_joint_count = 0;  ///< The skeleton's joint count (1 to 256) for a skinned layout, else 0.
+
+    /// Checks the sections against the region and the counts against each other (not the values in the bytes).
+    ///
+    /// - Returns: null when the geometry can be uploaded, otherwise a static message.
+    /// - Fails: no region, a section outside it, a zero count or stride, an index count that does not fit the topology,
+    ///   a topology the renderer does not draw, a skinned layout without a joint count of 1 to 256 or with a stride
+    ///   other than 8, or a joint count with a rigid layout.
+    /// - Ownership: reads the shared bytes only to learn their size; the message is static.
+    const char* Validate() const;
+};
 
 /// Geometry on the CPU: interleaved vertex bytes, indices and bounds. Owns its memory.
 ///
@@ -389,6 +427,21 @@ public:
         void* user = nullptr;
     };
 
+    /// Creates the buffers from geometry read in place and keeps the geometry (and with it a share of its bytes) as the
+    /// source for a device reset: the bytes are uploaded from where they are, now and after every reset, and the mesh
+    /// registers with `resources` (a mesh without a registry does not survive a reset).
+    ///
+    /// - Param device: the device; must outlive this object.
+    /// - Param geometry: the geometry; valid ([[renderer::MeshGeometry::Validate]]).
+    /// - Param resources: the registry, or null.
+    /// - Param debug_name: a label for the buffers; copied, may be null.
+    /// - Returns: true on success; on failure nothing stays allocated and the failure was logged.
+    /// - Fails: invalid geometry, or the device cannot allocate or upload.
+    /// - Aborts: this mesh already holds buffers.
+    /// - Ownership: shares the bytes `geometry` holds; they live as long as this mesh does.
+    bool CreateFromGeometry(rhi::Device* device, const MeshGeometry& geometry, DeviceResources* resources,
+                            const char* debug_name);
+
     /// Makes this mesh survive a device reset: records where the geometry comes from and registers with `resources`.
     ///
     /// After this, `Release` and `Recreate` work and the registry calls them on every reset. Call after a successful
@@ -496,11 +549,13 @@ public:
     void Draw(rhi::CommandList* list, u32 instance_count, u32 first_instance) const;
 
 private:
-    bool Upload(rhi::Device* device, const MeshData& data, const char* debug_name, rhi::BufferHandle* vb,
+    bool Upload(rhi::Device* device, const detail::MeshUploadView& data, const char* debug_name, rhi::BufferHandle* vb,
                 rhi::BufferHandle* ib, rhi::BufferHandle* sb);
     void MoveFrom(GpuMesh& other);
 
     Source source_;
+    MeshGeometry geometry_;  // the in-place source of CreateFromGeometry
+    bool has_geometry_ = false;
     MeshData owned_;
     char name_[48] = "mesh";
     bool recreatable_ = false;

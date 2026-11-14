@@ -10,7 +10,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Language support](foundation-lang.md) | 8 | 127 |
 | [Foundation: C library](foundation-cstr.md) | 5 | 60 |
 | [Foundation: Synchronization](foundation-sync.md) | 3 | 113 |
-| [Foundation: Containers](foundation-containers.md) | 7 | 166 |
+| [Foundation: Containers](foundation-containers.md) | 8 | 169 |
 | [Foundation: Strings](foundation-strings.md) | 6 | 98 |
 | [Foundation: Paths and Files](foundation-io.md) | 5 | 265 |
 | [Foundation: Math](foundation-math.md) | 6 | 157 |
@@ -25,16 +25,16 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [ECS](ecs.md) | 12 | 406 |
 | [Spatial Partitioning](spatial.md) | 12 | 333 |
 | [Networking](net.md) | 31 | 730 |
-| [Assets and resources](asset.md) | 26 | 882 |
-| [Animation runtime](animation.md) | 3 | 76 |
+| [Assets and resources](asset.md) | 27 | 933 |
+| [Animation runtime](animation.md) | 4 | 80 |
 | [Database](database.md) | 9 | 161 |
 | [Storage](storage.md) | 18 | 427 |
-| [Scene bridge](scene.md) | 2 | 45 |
+| [Scene bridge](scene.md) | 3 | 53 |
 | [The UI Toolkit](ui.md) | 46 | 1420 |
 | [The UI Window Adapter](ui_window.md) | 2 | 25 |
 | [The Job System](jobs.md) | 13 | 203 |
 | [The Render Hardware Interface](rhi.md) | 21 | 825 |
-| [The renderer](renderer.md) | 25 | 1178 |
+| [The renderer](renderer.md) | 25 | 1199 |
 | [The Vulkan backend (loader, function tables, result helpers)](rhi-vulkan.md) | 17 | 441 |
 | [The Direct3D 12 backend (Windows)](rhi-dx12.md) | 12 | 319 |
 | [The Metal backend (macOS)](rhi-metal.md) | 1 | 1 |

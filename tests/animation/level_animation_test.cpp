@@ -4,6 +4,9 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "animation/components.h"
+#include "animation/manager_resolver.h"
+#include "asset/memory_backend.h"
+#include "asset/cpu_loaders.h"
 #include "asset/level.h"
 #include "cstr/cstr.h"
 #include "cstr/format.h"
@@ -266,6 +269,45 @@ TEST_CASE("level: the skeleton and the animation lines refuse what the component
         CHECK(error.line == c.line);
         CHECK(Has(error.message.Data(), c.needle));
     }
+}
+
+TEST_CASE("level: the animation system finds skeletons and clips in the resource manager", "[animation][level]")
+{
+    World w;
+    asset::HostMemoryBackend backend(w.types, u64{1} << 20);
+    for (usize i = 0; i < w.resolver.entries.Size(); ++i)
+    {
+        const LaResolver::Entry& e = w.resolver.entries[i];
+        if (e.id == ResourceId::FromValue(0xb0) || e.id == ResourceId::FromValue(0xc0))
+        {
+            REQUIRE(backend.Add(e.id, ByteSpan(e.blob.Data(), e.blob.Size())).Ok());
+        }
+    }
+    asset::ManagerConfig config;
+    config.buffer_pool_bytes = u64{8} << 20;
+    asset::ResourceManager manager(w.types, config);
+    asset::RegisterCpuLoaders(&manager);
+    REQUIRE(manager.Mount(StringView("/"), &backend, 0).Ok());
+    ManagerResolver resolver(&manager);
+    CHECK(resolver.FindSkeleton(ResourceId::FromValue(0xb0)) == nullptr);  // not loaded yet: nothing is found
+
+    asset::Handle<asset::ClipView> clip;  // the clip's closure holds the skeleton
+    REQUIRE(manager.Load<asset::ClipView>(ResourceId::FromValue(0xc0), &clip).Ok());
+    REQUIRE(resolver.FindSkeleton(ResourceId::FromValue(0xb0)) != nullptr);
+    REQUIRE(resolver.FindClip(ResourceId::FromValue(0xc0)) != nullptr);
+    CHECK(resolver.FindClip(ResourceId::FromValue(0xb0)) == nullptr);  // not a clip
+
+    ecs::World world;
+    const ecs::Entity e = world.Create(AnimationPlayer{}, SkeletonInstance{});
+    world.Get<AnimationPlayer>(e)->clip = 0xc0;
+    world.Get<SkeletonInstance>(e)->skeleton = 0xb0;
+    AnimationSystem animator(&resolver);
+    const AnimationStats stats = animator.Update(&world, nullptr, 0.1f);
+    CHECK(stats.players_updated == 1);
+    CHECK(stats.refused == 0);
+    CHECK(world.Peek<SkeletonInstance>(e)->palette.Size() == 3);
+    clip.Reset();
+    CHECK(resolver.FindSkeleton(ResourceId::FromValue(0xb0)) == nullptr);  // unloaded with the clip
 }
 
 }  // namespace engine_placeholder::animation

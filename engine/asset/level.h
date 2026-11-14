@@ -137,13 +137,14 @@ struct LevelData
 /// resources it depends on.
 ///
 /// - Thread-safety: thread-compatible plain data.
-/// - Ownership: owns its vector.
+/// - Ownership: owns its vector; `bytes` borrows the blob it was read from.
 struct LevelSummary
 {
     u32 entity_count = 0;             ///< Entities in the level.
     u32 record_count = 0;             ///< Component records over all entities.
     u32 reference_count = 0;          ///< Entries of the reference table.
     Vector<LevelResource> resources;  ///< Every distinct resource, in increasing id order.
+    ByteSpan bytes;  ///< The whole blob, for [[asset::LoadLevelBlob]]; borrowed from the caller's buffer.
 };
 
 /// Reads the header and the dependency list of a level blob, checking only the container and the header's own

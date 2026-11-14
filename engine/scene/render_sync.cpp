@@ -79,7 +79,7 @@ renderer::Light MakeLight(const LightSource& source, const Mat4& world)
 
 bool MeshUsable(const MeshRenderer& mr)
 {
-    return mr.mesh && mr.mesh->mesh.Valid();
+    return mr.mesh && mr.mesh->Geometry().Valid();
 }
 
 u32 FlagsOf(const MeshRenderer& mr, bool hidden)
@@ -224,7 +224,7 @@ private:
             return renderer::ObjectId{};
         }
         renderer::RenderObjectDesc desc;
-        desc.mesh = &mr.mesh->mesh;
+        desc.mesh = &mr.mesh->Geometry();
         desc.material = mr.material;
         desc.transform = world;
         desc.flags = FlagsOf(mr, hidden);
@@ -249,7 +249,7 @@ private:
         {
             return;
         }
-        const bool same_mesh = MeshUsable(mr) && object->mesh == &mr.mesh->mesh;
+        const bool same_mesh = MeshUsable(mr) && object->mesh == &mr.mesh->Geometry();
         if (!same_mesh || object->material != mr.material)
         {
             DropObject(scene, handle.object, report);

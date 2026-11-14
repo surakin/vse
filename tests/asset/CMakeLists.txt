@@ -28,6 +28,7 @@ set(ASSET_TEST_SOURCES
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/material_source.cpp  # Day 326: the material minter under test
   level_test.cpp  # Day 327
   manager_test.cpp  # Day 328
+  gpu_loader_test.cpp  # Day 329
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/level_source.cpp  # Day 327: the level minter under test
 )
 

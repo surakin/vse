@@ -9,6 +9,7 @@
 #include "containers/vector.h"
 #include "string_view.h"
 #include "lang/new.h"
+#include "renderer/device_resources.h"
 #include "renderer/frame_data.h"
 #include "renderer/render_scene.h"
 #include "rhi/null/null_device.h"
@@ -444,4 +445,201 @@ TEST_CASE("A uniform color needs a color", "[renderer][mesh][topology]")
     MeshData plane = PlaneList(1, 1);
     MeshData out;
     CHECK(MeshMsg(MakeUniformColoredMesh(plane, nullptr, &out)) == "colored mesh: the color is null");
+}
+
+namespace
+{
+
+// A region of bytes with a shared owner.
+class VectorBytes final : public SharedBytes
+{
+public:
+    ByteSpan Bytes() const override { return ByteSpan(data.Data(), data.Size()); }
+    Vector<byte> data;
+};
+
+}  // namespace
+
+TEST_CASE("MeshGeometry: invalid views are refused, a valid one uploads in place and survives a device reset",
+          "[renderer][mesh][geometry]")
+{
+    MeshData cube;
+    REQUIRE(MakeCubeMesh(1.0f, &cube) == nullptr);
+    // The sections in one shared region: vertices, then indices.
+    SharedPtr<VectorBytes> region = MakeShared<VectorBytes>();
+    for (u64 i = 0; i < cube.VertexBytes(); ++i)
+    {
+        region->data.Push(static_cast<const byte*>(cube.Vertices())[i]);
+    }
+    const u64 index_offset = region->data.Size();
+    for (u64 i = 0; i < cube.IndexBytes(); ++i)
+    {
+        region->data.Push(static_cast<const byte*>(cube.Indices())[i]);
+    }
+    MeshGeometry good;
+    good.layout = cube.Layout();
+    good.bytes = region;
+    good.vertex_offset = 0;
+    good.vertex_count = cube.VertexCount();
+    good.index_type = cube.IndexFormat();
+    good.index_offset = index_offset;
+    good.index_count = cube.IndexCount();
+    good.topology = rhi::PrimitiveTopology::TriangleList;
+    good.bounds = cube.GetBounds();
+    CHECK(good.Validate() == nullptr);
+
+    MeshGeometry bad = good;
+    bad.bytes = SharedPtr<const SharedBytes>();
+    CHECK(bad.Validate() != nullptr);
+    bad = good;
+    bad.index_count = 0;
+    CHECK(bad.Validate() != nullptr);
+    bad = good;
+    bad.index_count = 4;  // a triangle list takes a multiple of 3
+    CHECK(bad.Validate() != nullptr);
+    bad = good;
+    bad.topology = rhi::PrimitiveTopology::PointList;
+    CHECK(bad.Validate() != nullptr);
+    bad = good;
+    bad.index_offset = region->data.Size();  // the indices would lie outside the region
+    CHECK(bad.Validate() != nullptr);
+    bad = good;
+    bad.vertex_count = 1u << 30;  // far more vertices than the region holds, and an overflow on the way
+    CHECK(bad.Validate() != nullptr);
+    bad = good;
+    bad.skin_joint_count = 3;  // joints with a rigid layout
+    CHECK(bad.Validate() != nullptr);
+    bad = good;
+    bad.layout.skin_stride = 8;  // a skinned layout without joints, and without room for the skin stream
+    CHECK(bad.Validate() != nullptr);
+
+    DeviceResources registry;
+    rhi::NullDevicePtr first = rhi::CreateNullDevice(rhi::NullDeviceOptions{});
+    REQUIRE(registry.OnDeviceCreated(first.Get(), first->Epoch()));
+    GpuMesh mesh;
+    REQUIRE(mesh.CreateFromGeometry(first.Get(), good, &registry, "view"));
+    CHECK(mesh.Valid());
+    CHECK(mesh.VertexCount() == cube.VertexCount());
+    CHECK(first->Resources().buffers == 2);
+    const u32 sort_id = mesh.SortId();
+
+    // The mesh holds a share of the region: the original holders can go and a reset still has its bytes.
+    region.Reset();
+    good = MeshGeometry{};
+    registry.OnDeviceReleasing(first->Epoch());
+    CHECK_FALSE(mesh.Valid());
+    first.Reset();
+    rhi::NullDevicePtr second = rhi::CreateNullDevice(rhi::NullDeviceOptions{});
+    REQUIRE(registry.OnDeviceCreated(second.Get(), second->Epoch()));
+    CHECK(mesh.Valid());
+    CHECK(second->Resources().buffers == 2);
+    CHECK(mesh.SortId() == sort_id);
+
+    // An invalid view creates nothing.
+    GpuMesh refused;
+    CHECK_FALSE(refused.CreateFromGeometry(second.Get(), bad, &registry, "bad"));
+    CHECK_FALSE(refused.Valid());
+    CHECK(second->Resources().buffers == 2);
+
+    // A strip with a restart marker is noticed in place.
+    SharedPtr<VectorBytes> strip_region = MakeShared<VectorBytes>();
+    for (u64 i = 0; i < cube.VertexBytes(); ++i)
+    {
+        strip_region->data.Push(static_cast<const byte*>(cube.Vertices())[i]);
+    }
+    const u64 strip_index_offset = strip_region->data.Size();
+    const u16 strip_indices[] = {0, 1, 2, 0xFFFF, 1, 2, 3};
+    for (const u16 index : strip_indices)
+    {
+        strip_region->data.Push(static_cast<byte>(index & 0xff));  // little-endian, as the index buffer holds them
+        strip_region->data.Push(static_cast<byte>(index >> 8));
+    }
+    MeshGeometry strip;
+    strip.layout = cube.Layout();
+    strip.bytes = strip_region;
+    strip.vertex_count = cube.VertexCount();
+    strip.index_type = rhi::IndexType::UInt16;
+    strip.index_offset = strip_index_offset;
+    strip.index_count = 7;
+    strip.topology = rhi::PrimitiveTopology::TriangleStrip;
+    strip.bounds = cube.GetBounds();
+    GpuMesh striped;
+    REQUIRE(striped.CreateFromGeometry(second.Get(), strip, nullptr, "strip"));
+    CHECK(striped.HasPrimitiveRestart());
+    striped.Destroy();
+    mesh.Destroy();
+    registry.OnDeviceReleasing(second->Epoch());
+}
+
+namespace
+{
+
+// An owner that only fills a slot of the registry.
+struct FillerOwner final : Recreatable
+{
+    void Release() override {}
+    bool Recreate(rhi::Device*) override { return true; }
+    bool Live() const override { return false; }
+    const char* RecreatableName() const override { return "filler"; }
+};
+
+}  // namespace
+
+TEST_CASE(
+    "MeshGeometry: sort ids are unique across both ways to make a mesh, and a refused registration leaves nothing",
+    "[renderer][mesh][geometry]")
+{
+    MeshData cube;
+    REQUIRE(MakeCubeMesh(1.0f, &cube) == nullptr);
+    SharedPtr<VectorBytes> region = MakeShared<VectorBytes>();
+    for (u64 i = 0; i < cube.VertexBytes(); ++i)
+    {
+        region->data.Push(static_cast<const byte*>(cube.Vertices())[i]);
+    }
+    const u64 index_offset = region->data.Size();
+    for (u64 i = 0; i < cube.IndexBytes(); ++i)
+    {
+        region->data.Push(static_cast<const byte*>(cube.Indices())[i]);
+    }
+    MeshGeometry geometry;
+    geometry.layout = cube.Layout();
+    geometry.bytes = region;
+    geometry.vertex_count = cube.VertexCount();
+    geometry.index_type = cube.IndexFormat();
+    geometry.index_offset = index_offset;
+    geometry.index_count = cube.IndexCount();
+    geometry.bounds = cube.GetBounds();
+
+    rhi::NullDevicePtr device = rhi::CreateNullDevice(rhi::NullDeviceOptions{});
+    GpuMesh from_data;
+    REQUIRE(from_data.Create(device.Get(), cube, "data"));
+    GpuMesh from_geometry;
+    REQUIRE(from_geometry.CreateFromGeometry(device.Get(), geometry, nullptr, "geometry"));
+    GpuMesh another;
+    REQUIRE(another.Create(device.Get(), cube, "another"));
+    CHECK(from_data.SortId() != from_geometry.SortId());
+    CHECK(from_geometry.SortId() != another.SortId());
+    CHECK(from_data.SortId() != another.SortId());
+
+    // A registry with no room refuses: the create fails and no buffer, share or id is left behind.
+    DeviceResources full;
+    REQUIRE(full.OnDeviceCreated(device.Get(), device->Epoch()));
+    Vector<UniquePtr<FillerOwner>> fillers;
+    for (usize i = 0; i < DeviceResources::kMaxOwners; ++i)
+    {
+        UniquePtr<FillerOwner> owner = MakeUnique<FillerOwner>();
+        REQUIRE(full.Register(owner.Get(), 0));
+        fillers.Push(static_cast<UniquePtr<FillerOwner>&&>(owner));
+    }
+    const rhi::ResourceCounts before = device->Resources();
+    const usize shares_before = region.UseCount();
+    GpuMesh refused;
+    CHECK_FALSE(refused.CreateFromGeometry(device.Get(), geometry, &full, "refused"));
+    CHECK_FALSE(refused.Valid());
+    CHECK(device->Resources().buffers == before.buffers);
+    CHECK(region.UseCount() == shares_before);  // the refused mesh holds no share of the bytes
+    for (usize i = 0; i < fillers.Size(); ++i)
+    {
+        full.Unregister(fillers[i].Get());
+    }
 }

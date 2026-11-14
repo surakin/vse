@@ -479,6 +479,7 @@ Status ReadLevelSummary(ByteSpan bytes, const TypeRegistry& types, LevelSummary*
     {
         return Status::Make(ErrorCode::Corrupt, "the include count disagrees with the dependency list");
     }
+    summary.bytes = bytes;
     *out = static_cast<LevelSummary&&>(summary);
     return Status::Success();
 }

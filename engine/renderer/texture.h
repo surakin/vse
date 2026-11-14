@@ -1,5 +1,7 @@
 #pragma once
 
+#include "containers/shared_bytes.h"
+#include "containers/shared_ptr.h"
 #include "containers/span.h"
 #include "containers/vector.h"
 #include "renderer/device_resources.h"
@@ -39,6 +41,19 @@ struct TextureLevelRef
     u32 row_pitch = 0;           ///< Bytes between rows (0: tightly packed); a multiple of the texel size.
     u32 mip = 0;                 ///< The mip level.
     u32 layer = 0;               ///< The array layer.
+};
+
+/// One mip level of one layer of a texture whose texels are in a region of shared bytes: the entry of
+/// [[renderer::GpuTexture::CreateFromSharedLevels]]. It names the level by where it is, not by a pointer.
+///
+/// - Thread-safety: thread-compatible (a plain value).
+struct TextureLevelSpan
+{
+    u64 offset = 0;     ///< Where the level's rows start in the region.
+    u64 bytes = 0;      ///< How many bytes the level occupies (`row_pitch` times its rows, the last padded too).
+    u32 row_pitch = 0;  ///< Bytes between rows (0: tightly packed); a multiple of the texel size.
+    u32 mip = 0;        ///< The mip level.
+    u32 layer = 0;      ///< The array layer.
 };
 
 /// A function that produces a texture's image again, called at every (re)creation; for textures backed by an asset
@@ -101,6 +116,26 @@ public:
     bool CreateFromLevels(rhi::Device* device, const rhi::TextureDesc& desc, Span<const TextureLevelRef> levels,
                           DeviceResources* resources, const char* debug_name);
 
+    /// As [[renderer::GpuTexture::CreateFromLevels]], with the texels in a region of shared bytes: the texture keeps a
+    /// share of the region and the offsets of the levels, no pointer into it, so a reset uploads from the same bytes
+    /// for as long as the texture lives, whoever else lets go of them.
+    ///
+    /// - Param device: the device.
+    /// - Param desc: the finished texture; `usage` gets `CopyDst` added; `debug_name` is ignored.
+    /// - Param bytes: the region the levels are in.
+    /// - Param levels: exactly one entry for each of `desc.mip_levels * desc.array_layers` subresources.
+    /// - Param resources: the registry, or null for a texture that does not need to survive a reset.
+    /// - Param debug_name: a label; copied, may be null.
+    /// - Returns: true on success.
+    /// - Fails: returns false, logging the reason, for no region, an invalid description, a missing, repeated or
+    ///   out-of-range level, a level that is not inside the region, a size or format the device cannot hold, or a
+    ///   failed upload.
+    /// - Aborts: the texture already exists.
+    /// - Ownership: shares `bytes`; `levels` is read during the call and copied.
+    bool CreateFromSharedLevels(rhi::Device* device, const rhi::TextureDesc& desc, SharedPtr<const SharedBytes> bytes,
+                                Span<const TextureLevelSpan> levels, DeviceResources* resources,
+                                const char* debug_name);
+
     /// Creates the texture from `loader` and keeps only the loader; the pixels are read again at every recreate.
     ///
     /// - Param device: the device.
@@ -133,11 +168,14 @@ public:
 
 private:
     bool Make(rhi::Device* device, const TextureImage& image);
-    bool MakeFromLevels(rhi::Device* device);
+    bool MakeFromLevels(rhi::Device* device, Span<const TextureLevelRef> levels);
+    bool MakeFromSharedLevels(rhi::Device* device);
     void MoveFrom(GpuTexture& other);
 
     TextureImage image_;
     Vector<TextureLevelRef> levels_;  // the borrowed levels of CreateFromLevels (image_.desc is its description)
+    SharedPtr<const SharedBytes> shared_bytes_;  // the region of CreateFromSharedLevels
+    Vector<TextureLevelSpan> shared_levels_;     // where its levels are (image_.desc is its description)
     TextureLoader loader_ = nullptr;
     void* loader_user_ = nullptr;
     bool has_source_ = false;
