@@ -1,7 +1,7 @@
-# Phase 27 / Day 350 — Test Font Builder & COLR v0 Layers
+# Phase 27 / Day 351 — Test Font Builder & COLR v0 Layers
 
 **Phase:** [Phase 27 — 3D Text, Large 2D Text & Colored Glyphs](../phase-27-3d-text-and-color-glyphs.md)
-**Depends on:** Days 342-349; FreeType color API (`FT_Palette_Select`, `FT_Get_Color_Glyph_Layer`).
+**Depends on:** Days 343-350; FreeType color API (`FT_Palette_Select`, `FT_Get_Color_Glyph_Layer`).
 
 Build the fonts the color tests need, and read layered color glyphs.
 
@@ -12,7 +12,7 @@ Build the fonts the color tests need, and read layered color glyphs.
 - [ ] **Unsupported formats fall back, logged once per font and format:** `COLR` version 1 (only the v0 records are read if present, else the monochrome outline), the `SVG ` table (ignored: monochrome outline), a glyph absent from the font (`.notdef`, already the Phase 14 behavior); `FontColorStats { color_glyphs, fallbacks_v1, fallbacks_svg }`.
 - [ ] **Tests** (`tests/text/color_layers_test.cpp`): the builder's font round-trips (cmap, metrics, outline equal to the description); a glyph with three layers returns them in order with the palette colors; palette 1 differs from palette 0; the foreground index maps to `uses_foreground`; a v1 font logs once, returns the monochrome fallback and counts it; an `SVG ` font likewise; a truncated COLR table (every prefix length of a valid table, fixed seed for the cut points) never crashes and returns a `Status` failure or the fallback.
 - [ ] **Runs (CLAUDE.md "Tests run by phase"):** `scripts/test-phase.sh --affected` plain; then the asan and tsan flavors (FreeType allocation counting: run asan on the new tests); quote each run's final `ran X of Y tests (phases ...)` line in this file. `ctest -L docs` when a public header or a guide changed. Build clean (warnings are errors) with Clang and GCC, unity on and off. New code uses the engine's wrappers and types, never `std` (`std_usage_check`).
-- [ ] **Two machines (CLAUDE.md "Windows is a supported platform"):** shared code is built and tested on the Windows PC no later than Day 356; until then the day files "open until the other machine runs it" in `KNOWN-ISSUES.md`.
+- [ ] **Two machines (CLAUDE.md "Windows is a supported platform"):** shared code is built and tested on the Windows PC no later than Day 357; until then the day files "open until the other machine runs it" in `KNOWN-ISSUES.md`.
 - [ ] **Documentation (CLAUDE.md "Public API is documented before a day is done"):** public headers carry `///` comments with the contract labels (`docs/DOC-CONVENTIONS.md`); `docgen lint` stays at zero; `cmake --build build --target docs` output committed; `docs/guide/text.md` "Colored glyphs" (formats, palettes, fallback).
 - [ ] **Day review (CLAUDE.md, required):** `/code-review high` over the day's diff after the scoped tests; verify, fix (with a regression test that fails without the fix) or decline each finding with a reason; record the count and outcome under "Post-implementation code review" below and in `STATUS.md`.
 - [ ] `STATUS.md` and `KNOWN-ISSUES.md` updated in the same commit; commit and push.

@@ -384,7 +384,7 @@ table in `PLAN.md`.
   rasterization only — text shaping for complex scripts (HarfBuzz's
   domain) is explicitly out of scope until a real need shows up; cursor/
   line-break positions instead reuse the foundation string module's
-  existing grapheme clustering. **libpng and zlib are vendored (first for the glTF importer in `asset_mint`, Phase 22 Day 337, then enabled in FreeType on Phase 27 Day 352)** (the user's decision, 2026-11-10), used only by FreeType
+  existing grapheme clustering. **libpng and zlib are vendored (first for the glTF importer in `asset_mint`, Phase 22 Day 338, then enabled in FreeType on Phase 27 Day 353)** (the user's decision, 2026-11-10), used only by FreeType
   to decode the PNG strikes of `CBDT`/`sbix` colored-glyph fonts; no engine file includes their headers.
 - **Gameplay scripting embeds real languages, not a custom bytecode VM —
   starting with Lua via LuaJIT** (Phase 26). Deliberate, individually
@@ -433,10 +433,13 @@ table in `PLAN.md`.
 - **Offline tools may use a vetted third-party library** where the job is
   solved and not engine-differentiating - today only nlohmann/json
   (vendored under `third_party/nlohmann_json/`) in `tools/shader_mint`,
-  to read `slangc` reflection (`PLAN.md` assumption #19); from Phase 22 Day 335 also in `tools/asset_mint`'s glTF importer, with zlib, libpng and a JPEG decoder for its images (Day 337; amended 2026-11-14). Never linked
+  to read `slangc` reflection (`PLAN.md` assumption #19). Never linked
   into the engine, a game, the renderer or an engine test target (the tool's own tests link it); anything else
   needs its own entry in `PLAN.md`. That tool and its tests may use `std::string`/`std::vector` (the library
   requires them); the engine's runtime libraries still do not.
+- **glTF import is an in-memory library an application may link** (Phase 22 Days 335-338, `engine/asset_import`, amended 2026-11-14 for the host): bytes in, minted blobs out (`ImportGltf`, `ImportGltfAsync`, `ImportIntoBackend` into a `HostMemoryBackend`), with our
+  own bounded JSON reader (no nlohmann/json: hostile input, no exceptions, no abort), vendored zlib, libpng and a JPEG decoder (pinned under `third_party/`, failing by return value), and `asset_mint import-gltf` as a thin command over it. **The runtime
+  libraries (`asset`, `renderer`, `scene`, every engine module except `asset_import`) never depend on it and never read glTF, PNG or JPEG**; a program opts in by linking it (`asset_boundary_check`, Day 339). Importer code uses the engine's types, never `std`.
 - **Terminology: we mint assets, we do not cook them.** Offline
   asset/shader processing tools are "mints"/"minters" (`tools/shader_mint`,
   the Phase 22 asset minter) and their outputs are "minted". "Cook" appears

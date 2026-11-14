@@ -541,7 +541,7 @@ int MintClipCommand(const Line& line)
         return 1;
     }
     const ClipLimits
-        limits;  // the defaults equal the `assets.anim_*` settings' defaults (Day 338 wires the tool to them)
+        limits;  // the defaults equal the `assets.anim_*` settings' defaults (Day 339 wires the tool to them)
     Vector<byte> blob;
     ClipSourceError error;
     const Status status = MintClip(StringView(reinterpret_cast<const char*>(text.Data()), text.Size()), skeleton, types,
