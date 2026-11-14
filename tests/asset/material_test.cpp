@@ -272,8 +272,8 @@ TEST_CASE("the loader refuses hostile material blobs", "[asset][material]")
     {
         CHECK(LoadMaterialBlob(ByteSpan(good.Data(), n), types, &m).Failed());
     }
-    // A flipped byte must come back as a status or a different valid material, never a crash; the bytes the loader checks
-    // (the container header, the material header's reserved bytes and counts) are refused.
+    // A flipped byte must come back as a status or a different valid material, never a crash; the bytes the loader
+    // checks (the container header, the material header's reserved bytes and counts) are refused.
     ByteSpan header;
     BlobReader reader;
     REQUIRE(reader.Open(ByteSpan(good.Data(), good.Size()), types).Ok());

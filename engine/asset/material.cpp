@@ -79,20 +79,15 @@ u32 MatParamSize(MaterialParamType type)
 {
     switch (type)
     {
-        case MaterialParamType::Float:
-        case MaterialParamType::Int:
-        case MaterialParamType::UInt:
-            return 4;
-        case MaterialParamType::Vec2:
-            return 8;
-        case MaterialParamType::Vec3:
-        case MaterialParamType::Color3:
-            return 12;
-        case MaterialParamType::Vec4:
-        case MaterialParamType::Color4:
-            return 16;
-        case MaterialParamType::Mat4:
-            return 64;
+    case MaterialParamType::Float:
+    case MaterialParamType::Int:
+    case MaterialParamType::UInt: return 4;
+    case MaterialParamType::Vec2: return 8;
+    case MaterialParamType::Vec3:
+    case MaterialParamType::Color3: return 12;
+    case MaterialParamType::Vec4:
+    case MaterialParamType::Color4: return 16;
+    case MaterialParamType::Mat4: return 64;
     }
     return 0;
 }
@@ -100,9 +95,8 @@ u32 MatParamSize(MaterialParamType type)
 // Everything the description must satisfy, shared by the builder and the loader.
 Status MatValidate(const MaterialAssetData& d, bool from_blob)
 {
-    const auto fail = [from_blob](const char* message) {
-        return from_blob ? MatCorrupt(message) : MatInvalid(message);
-    };
+    const auto fail = [from_blob](const char* message)
+    { return from_blob ? MatCorrupt(message) : MatInvalid(message); };
     if (!MatNameOk(d.template_name))
     {
         return fail("the template name is empty, too long or not printable");

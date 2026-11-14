@@ -105,20 +105,15 @@ u32 MsValueCount(MaterialParamType type)
 {
     switch (type)
     {
-        case MaterialParamType::Float:
-        case MaterialParamType::Int:
-        case MaterialParamType::UInt:
-            return 1;
-        case MaterialParamType::Vec2:
-            return 2;
-        case MaterialParamType::Vec3:
-        case MaterialParamType::Color3:
-            return 3;
-        case MaterialParamType::Vec4:
-        case MaterialParamType::Color4:
-            return 4;
-        case MaterialParamType::Mat4:
-            return 16;
+    case MaterialParamType::Float:
+    case MaterialParamType::Int:
+    case MaterialParamType::UInt: return 1;
+    case MaterialParamType::Vec2: return 2;
+    case MaterialParamType::Vec3:
+    case MaterialParamType::Color3: return 3;
+    case MaterialParamType::Vec4:
+    case MaterialParamType::Color4: return 4;
+    case MaterialParamType::Mat4: return 16;
     }
     return 0;
 }
@@ -407,7 +402,7 @@ Status MsParse(StringView text, MsSource* out, MaterialSourceError* error)
             else if (field == StringView("depth_compare"))
             {
                 index = 3;
-                static const char* const kOps[8] = {"never", "less",    "equal",        "lessequal",
+                static const char* const kOps[8] = {"never",   "less",     "equal",        "lessequal",
                                                     "greater", "notequal", "greaterequal", "always"};
                 bool found = false;
                 for (u32 i = 0; i < 8; ++i)
@@ -497,22 +492,18 @@ bool MsFits(MaterialParamType type, const renderer::ReflectedMember& m)
     using renderer::ScalarType;
     switch (type)
     {
-        case MaterialParamType::Float:
-            return m.kind == MemberKind::Scalar && m.scalar == ScalarType::Float32;
-        case MaterialParamType::Int:
-            return m.kind == MemberKind::Scalar && m.scalar == ScalarType::Int32;
-        case MaterialParamType::UInt:
-            return m.kind == MemberKind::Scalar && m.scalar == ScalarType::UInt32;
-        case MaterialParamType::Vec2:
-            return m.kind == MemberKind::Vector && m.scalar == ScalarType::Float32 && m.rows == 2;
-        case MaterialParamType::Vec3:
-        case MaterialParamType::Color3:
-            return m.kind == MemberKind::Vector && m.scalar == ScalarType::Float32 && m.rows == 3;
-        case MaterialParamType::Vec4:
-        case MaterialParamType::Color4:
-            return m.kind == MemberKind::Vector && m.scalar == ScalarType::Float32 && m.rows == 4;
-        case MaterialParamType::Mat4:
-            return m.kind == MemberKind::Matrix && m.scalar == ScalarType::Float32 && m.rows == 4 && m.columns == 4;
+    case MaterialParamType::Float: return m.kind == MemberKind::Scalar && m.scalar == ScalarType::Float32;
+    case MaterialParamType::Int: return m.kind == MemberKind::Scalar && m.scalar == ScalarType::Int32;
+    case MaterialParamType::UInt: return m.kind == MemberKind::Scalar && m.scalar == ScalarType::UInt32;
+    case MaterialParamType::Vec2: return m.kind == MemberKind::Vector && m.scalar == ScalarType::Float32 && m.rows == 2;
+    case MaterialParamType::Vec3:
+    case MaterialParamType::Color3:
+        return m.kind == MemberKind::Vector && m.scalar == ScalarType::Float32 && m.rows == 3;
+    case MaterialParamType::Vec4:
+    case MaterialParamType::Color4:
+        return m.kind == MemberKind::Vector && m.scalar == ScalarType::Float32 && m.rows == 4;
+    case MaterialParamType::Mat4:
+        return m.kind == MemberKind::Matrix && m.scalar == ScalarType::Float32 && m.rows == 4 && m.columns == 4;
     }
     return false;
 }
@@ -529,8 +520,8 @@ Status MsParamError(MaterialSourceError* error, u32 line, const char* what, cons
         {
             char type[24];
             MsMemberType(block->members[i], type, sizeof(type));
-            used += static_cast<usize>(
-                FormatTo(list + used, sizeof(list) - used, "%s%s (%s)", i == 0 ? "" : ", ", block->members[i].name, type));
+            used += static_cast<usize>(FormatTo(list + used, sizeof(list) - used, "%s%s (%s)", i == 0 ? "" : ", ",
+                                                block->members[i].name, type));
         }
     }
     char message[256];
@@ -579,8 +570,8 @@ Status MintMaterial(StringView text, const MaterialReferenceResolver& resolver, 
     {
         return MsFail(error, 0, reflection_error.message);
     }
-    const renderer::PermutationModule* module =
-        renderer::FindPermutation(*info->fragment_permutations, key, &reflection_error);
+    const renderer::PermutationModule* module = renderer::FindPermutation(*info->fragment_permutations, key,
+                                                                          &reflection_error);
     if (module == nullptr)
     {
         return MsFail(error, 0, reflection_error.message);
@@ -735,16 +726,16 @@ Status MintMaterial(StringView text, const MaterialReferenceResolver& resolver, 
             FormatTo(message, sizeof(message), "'%s' is not a texture blob of the current version", tex.path.Data());
             return MsFail(error, tex.line, message);
         }
-        const bool shape_ok =
-            (rule->shape == renderer::SlotShape::Texture2D && view.Kind() == TextureKind::Tex2D) ||
-            (rule->shape == renderer::SlotShape::Cube && view.Kind() == TextureKind::Cube) ||
-            (rule->shape == renderer::SlotShape::Array2D && view.Kind() == TextureKind::Array2D);
+        const bool shape_ok = (rule->shape == renderer::SlotShape::Texture2D && view.Kind() == TextureKind::Tex2D) ||
+                              (rule->shape == renderer::SlotShape::Cube && view.Kind() == TextureKind::Cube) ||
+                              (rule->shape == renderer::SlotShape::Array2D && view.Kind() == TextureKind::Array2D);
         if (!shape_ok)
         {
             char message[256];
             FormatTo(message, sizeof(message), "slot '%s' takes a %s texture; '%s' is %s", tex.slot.text,
                      MsShapeName(rule->shape), tex.path.Data(),
-                     view.Kind() == TextureKind::Tex2D ? "2D" : (view.Kind() == TextureKind::Cube ? "a cube" : "an array"));
+                     view.Kind() == TextureKind::Tex2D ? "2D"
+                                                       : (view.Kind() == TextureKind::Cube ? "a cube" : "an array"));
             return MsFail(error, tex.line, message);
         }
         if ((rule->color_space == renderer::SlotColorSpace::Srgb && !view.Srgb()) ||
