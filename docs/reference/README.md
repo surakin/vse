@@ -26,6 +26,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Spatial Partitioning](spatial.md) | 12 | 333 |
 | [Networking](net.md) | 31 | 730 |
 | [Assets and resources](asset.md) | 19 | 573 |
+| [Animation runtime](animation.md) | 3 | 76 |
 | [Database](database.md) | 9 | 161 |
 | [Storage](storage.md) | 17 | 410 |
 | [Scene bridge](scene.md) | 2 | 44 |

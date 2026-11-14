@@ -217,10 +217,15 @@ public:
     /// - Aborts: as `KeyCount`.
     bool IsConstant(u32 i, u32 channel) const;
 
-    /// Samples track `i` at `time` (clamped to [0, duration]).
+    /// Samples track `i` at `time` (clamped to [0, duration]; a NaN time reads as 0).
+    ///
+    /// `cursors`, when given, points at 3 `u32` (translation, rotation, scale) that remember the key segment found by
+    /// the last call: forward playback then costs O(1) per channel, and the result is the same as without them (any
+    /// start value is valid; keep one set per track and clip).
     ///
     /// - Aborts: `i` is not below `TrackCount()`.
-    ClipSample Sample(u32 i, f32 time) const;
+    /// - Ownership: borrows its arguments for the call.
+    ClipSample Sample(u32 i, f32 time, u32* cursors = nullptr) const;
 
     /// Checks that `skeleton` is the one the clip was made for (id, hash and joint count).
     ///

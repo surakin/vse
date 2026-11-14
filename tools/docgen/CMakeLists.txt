@@ -146,6 +146,8 @@ else()
 endif()
 # The asset library (Phase 22 Day 314) comes first: it depends on the libraries listed after it.
 list(INSERT DOCGEN_LINK_ARGS 0 --link $<TARGET_LINKER_FILE:asset>)
+# The animation library (Phase 22 Day 321) depends on asset, so it comes before it.
+list(INSERT DOCGEN_LINK_ARGS 0 --link $<TARGET_LINKER_FILE:animation>)
 # The guide's text samples open the shipped font; samples run in a scratch directory, so they get its absolute path as a macro.
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   set(DOCGEN_FONT_FLAG "/DDOCS_FONT_FILE=\"${CMAKE_SOURCE_DIR}/assets/fonts/LiberationSans-Regular.ttf\"")

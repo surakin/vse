@@ -4608,8 +4608,8 @@ asset::ClipView::Event(u32) const	function	asset	asset-clipview-event-u32-const	
 asset::ClipView::TrackJoint(u32) const	function	asset	asset-clipview-trackjoint-u32-const	asset.md	engine/asset/clip.h:209
 asset::ClipView::KeyCount(u32,u32) const	function	asset	asset-clipview-keycount-u32-u32-const	asset.md	engine/asset/clip.h:214
 asset::ClipView::IsConstant(u32,u32) const	function	asset	asset-clipview-isconstant-u32-u32-const	asset.md	engine/asset/clip.h:218
-asset::ClipView::Sample(u32,f32) const	function	asset	asset-clipview-sample-u32-f32-const	asset.md	engine/asset/clip.h:223
-asset::ClipView::Bind(const SkeletonView&) const	function	asset	asset-clipview-bind-const-skeletonview-amp-const	asset.md	engine/asset/clip.h:228
+asset::ClipView::Sample(u32,f32,u32*) const	function	asset	asset-clipview-sample-u32-f32-u32-star-const	asset.md	engine/asset/clip.h:228
+asset::ClipView::Bind(const SkeletonView&) const	function	asset	asset-clipview-bind-const-skeletonview-amp-const	asset.md	engine/asset/clip.h:233
 asset::ContentHash	struct	asset	asset-contenthash	asset.md	engine/asset/content_hash.h:17
 asset::ContentHash::bytes	variable	asset	asset-contenthash-bytes	asset.md	engine/asset/content_hash.h:19
 asset::ContentHash::IsZero() const	function	asset	asset-contenthash-iszero-const	asset.md	engine/asset/content_hash.h:23
@@ -5001,6 +5001,82 @@ asset::Status::Failed() const	function	asset	asset-status-failed-const	asset.md	
 asset::Status::Is(ErrorCode) const	function	asset	asset-status-is-errorcode-const	asset.md	engine/asset/status.h:76
 asset::Status::Code() const	function	asset	asset-status-code-const	asset.md	engine/asset/status.h:79
 asset::Status::Message() const	function	asset	asset-status-message-const	asset.md	engine/asset/status.h:84
+animation::ComponentIds	enum	animation	animation-componentids	animation.md	engine/animation/components.h:21
+animation::kAnimationPlayerId	enumerator	animation	animation-kanimationplayerid	animation.md	engine/animation/components.h:23
+animation::kSkeletonInstanceId	enumerator	animation	animation-kskeletoninstanceid	animation.md	engine/animation/components.h:24
+animation::kRootMotionId	enumerator	animation	animation-krootmotionid	animation.md	engine/animation/components.h:25
+animation::AnimationPlayer	struct	animation	animation-animationplayer	animation.md	engine/animation/components.h:31
+animation::AnimationPlayer::clip	variable	animation	animation-animationplayer-clip	animation.md	engine/animation/components.h:33
+animation::AnimationPlayer::time	variable	animation	animation-animationplayer-time	animation.md	engine/animation/components.h:34
+animation::AnimationPlayer::speed	variable	animation	animation-animationplayer-speed	animation.md	engine/animation/components.h:35
+animation::AnimationPlayer::weight	variable	animation	animation-animationplayer-weight	animation.md	engine/animation/components.h:36
+animation::AnimationPlayer::playing	variable	animation	animation-animationplayer-playing	animation.md	engine/animation/components.h:37
+animation::AnimationPlayer::looping	variable	animation	animation-animationplayer-looping	animation.md	engine/animation/components.h:38
+animation::AnimationPlayer::finished	variable	animation	animation-animationplayer-finished	animation.md	engine/animation/components.h:39
+animation::AnimationPlayer::started	variable	animation	animation-animationplayer-started	animation.md	engine/animation/components.h:40
+animation::AnimationPlayer::step_from	variable	animation	animation-animationplayer-step-from	animation.md	engine/animation/components.h:42
+animation::AnimationPlayer::step_wraps	variable	animation	animation-animationplayer-step-wraps	animation.md	engine/animation/components.h:43
+animation::AnimationPlayer::step_time	variable	animation	animation-animationplayer-step-time	animation.md	engine/animation/components.h:44
+animation::AnimationPlayer::step_include	variable	animation	animation-animationplayer-step-include	animation.md	engine/animation/components.h:45
+animation::AnimationPlayer::step_valid	variable	animation	animation-animationplayer-step-valid	animation.md	engine/animation/components.h:46
+animation::AnimationPlayer::sampler	variable	animation	animation-animationplayer-sampler	animation.md	engine/animation/components.h:47
+animation::SkeletonInstance	struct	animation	animation-skeletoninstance	animation.md	engine/animation/components.h:53
+animation::SkeletonInstance::skeleton	variable	animation	animation-skeletoninstance-skeleton	animation.md	engine/animation/components.h:55
+animation::SkeletonInstance::palette	variable	animation	animation-skeletoninstance-palette	animation.md	engine/animation/components.h:56
+animation::RootMotion	struct	animation	animation-rootmotion	animation.md	engine/animation/components.h:63
+animation::RootMotion::delta	variable	animation	animation-rootmotion-delta	animation.md	engine/animation/components.h:65
+animation::AnimationEvent	struct	animation	animation-animationevent	animation.md	engine/animation/components.h:71
+animation::AnimationEvent::entity	variable	animation	animation-animationevent-entity	animation.md	engine/animation/components.h:73
+animation::AnimationEvent::time	variable	animation	animation-animationevent-time	animation.md	engine/animation/components.h:74
+animation::AnimationEvent::name_hash	variable	animation	animation-animationevent-name-hash	animation.md	engine/animation/components.h:75
+animation::AnimationEvent::payload	variable	animation	animation-animationevent-payload	animation.md	engine/animation/components.h:76
+animation::AnimationEvents	struct	animation	animation-animationevents	animation.md	engine/animation/components.h:83
+animation::AnimationEvents::events	variable	animation	animation-animationevents-events	animation.md	engine/animation/components.h:85
+animation::AnimationResolver	class	animation	animation-animationresolver	animation.md	engine/animation/components.h:92
+animation::AnimationResolver::~AnimationResolver()	function	animation	animation-animationresolver-tilde-animationresolver	animation.md	engine/animation/components.h:95
+animation::AnimationResolver::FindSkeleton(asset::ResourceId) const	function	animation	animation-animationresolver-findskeleton-asset-resourceid-const	animation.md	engine/animation/components.h:100
+animation::AnimationResolver::FindClip(asset::ResourceId) const	function	animation	animation-animationresolver-findclip-asset-resourceid-const	animation.md	engine/animation/components.h:105
+animation::AnimationStats	struct	animation	animation-animationstats	animation.md	engine/animation/components.h:111
+animation::AnimationStats::players_updated	variable	animation	animation-animationstats-players-updated	animation.md	engine/animation/components.h:113
+animation::AnimationStats::refused	variable	animation	animation-animationstats-refused	animation.md	engine/animation/components.h:114
+animation::AnimationStats::events	variable	animation	animation-animationstats-events	animation.md	engine/animation/components.h:115
+animation::AnimationStats::events_dropped	variable	animation	animation-animationstats-events-dropped	animation.md	engine/animation/components.h:116
+animation::RegisterAnimationComponents(storage::ComponentRegistry*)	function	animation	animation-registeranimationcomponents-storage-componentregistry-star	animation.md	engine/animation/components.h:123
+animation::AnimationSystem	class	animation	animation-animationsystem	animation.md	engine/animation/components.h:131
+animation::AnimationSystem::AnimationSystem(const AnimationResolver*)	function	animation	animation-animationsystem-animationsystem-const-animationresolver-star	animation.md	engine/animation/components.h:137
+animation::AnimationSystem::Update(ecs::World*,jobs::Scheduler*,f32)	function	animation	animation-animationsystem-update-ecs-world-star-jobs-scheduler-star-f32	animation.md	engine/animation/components.h:147
+animation::kMaxPoseJoints	variable	animation	animation-kmaxposejoints	animation.md	engine/animation/pose.h:16
+animation::Mat3x4	alias	animation	animation-mat3x4	animation.md	engine/animation/pose.h:19
+animation::LocalPose	struct	animation	animation-localpose	animation.md	engine/animation/pose.h:25
+animation::LocalPose::joint_count	variable	animation	animation-localpose-joint-count	animation.md	engine/animation/pose.h:27
+animation::LocalPose::translation	variable	animation	animation-localpose-translation	animation.md	engine/animation/pose.h:28
+animation::LocalPose::rotation	variable	animation	animation-localpose-rotation	animation.md	engine/animation/pose.h:29
+animation::LocalPose::scale	variable	animation	animation-localpose-scale	animation.md	engine/animation/pose.h:30
+animation::ModelPose	struct	animation	animation-modelpose	animation.md	engine/animation/pose.h:36
+animation::ModelPose::joint_count	variable	animation	animation-modelpose-joint-count	animation.md	engine/animation/pose.h:38
+animation::ModelPose::matrix	variable	animation	animation-modelpose-matrix	animation.md	engine/animation/pose.h:39
+animation::JointMask	struct	animation	animation-jointmask	animation.md	engine/animation/pose.h:45
+animation::JointMask::weight	variable	animation	animation-jointmask-weight	animation.md	engine/animation/pose.h:47
+animation::SetBindPose(const asset::SkeletonView&,LocalPose*)	function	animation	animation-setbindpose-const-asset-skeletonview-amp-localpose-star	animation.md	engine/animation/pose.h:55
+animation::SetIdentityPose(u32,LocalPose*)	function	animation	animation-setidentitypose-u32-localpose-star	animation.md	engine/animation/pose.h:63
+animation::Blend(LocalPose*,const LocalPose&,f32)	function	animation	animation-blend-localpose-star-const-localpose-amp-f32	animation.md	engine/animation/pose.h:71
+animation::BlendMasked(LocalPose*,const LocalPose&,f32,const JointMask&)	function	animation	animation-blendmasked-localpose-star-const-localpose-amp-f32-const-jointmask-amp	animation.md	engine/animation/pose.h:78
+animation::AddAdditive(LocalPose*,const LocalPose&,f32)	function	animation	animation-addadditive-localpose-star-const-localpose-amp-f32	animation.md	engine/animation/pose.h:88
+animation::ModelFromLocal(const asset::SkeletonView&,const LocalPose&,ModelPose*)	function	animation	animation-modelfromlocal-const-asset-skeletonview-amp-const-localpose-amp-modelpose-star	animation.md	engine/animation/pose.h:94
+animation::SkinningMatrices(const asset::SkeletonView&,const ModelPose&,Span<Mat3x4>)	function	animation	animation-skinningmatrices-const-asset-skeletonview-amp-const-modelpose-amp-span-lt-mat3x4-gt	animation.md	engine/animation/pose.h:101
+animation::SamplerState	struct	animation	animation-samplerstate	animation.md	engine/animation/sampler.h:22
+animation::SamplerState::cursor	variable	animation	animation-samplerstate-cursor	animation.md	engine/animation/sampler.h:24
+animation::RootMotionDelta	struct	animation	animation-rootmotiondelta	animation.md	engine/animation/sampler.h:31
+animation::RootMotionDelta::translation	variable	animation	animation-rootmotiondelta-translation	animation.md	engine/animation/sampler.h:33
+animation::RootMotionDelta::rotation	variable	animation	animation-rootmotiondelta-rotation	animation.md	engine/animation/sampler.h:34
+animation::TimeAdvance	struct	animation	animation-timeadvance	animation.md	engine/animation/sampler.h:40
+animation::TimeAdvance::time	variable	animation	animation-timeadvance-time	animation.md	engine/animation/sampler.h:42
+animation::TimeAdvance::wraps	variable	animation	animation-timeadvance-wraps	animation.md	engine/animation/sampler.h:43
+animation::TimeAdvance::finished	variable	animation	animation-timeadvance-finished	animation.md	engine/animation/sampler.h:44
+animation::AdvanceTime(const asset::ClipView&,f32,f32,bool)	function	animation	animation-advancetime-const-asset-clipview-amp-f32-f32-bool	animation.md	engine/animation/sampler.h:51
+animation::SampleClip(const asset::ClipView&,const asset::SkeletonView&,f32,bool,SamplerState*,LocalPose*)	function	animation	animation-sampleclip-const-asset-clipview-amp-const-asset-skeletonview-amp-f32-bool-samplerstate-star-localpose-star	animation.md	engine/animation/sampler.h:60
+animation::RootMotionOver(const asset::ClipView&,const asset::SkeletonView&,f32,f32,bool)	function	animation	animation-rootmotionover-const-asset-clipview-amp-const-asset-skeletonview-amp-f32-f32-bool	animation.md	engine/animation/sampler.h:67
+animation::CollectEvents(const asset::ClipView&,f32,const TimeAdvance&,bool,Span<asset::ClipEvent>,bool*)	function	animation	animation-collectevents-const-asset-clipview-amp-f32-const-timeadvance-amp-bool-span-lt-asset-clipevent-gt-bool-star	animation.md	engine/animation/sampler.h:78
 database::Feature	enum	database	database-feature	database.md	engine/database/database.h:22
 database::Feature::Savepoints	enumerator	database	database-feature-savepoints	database.md	engine/database/database.h:24
 database::Feature::WithoutRowId	enumerator	database	database-feature-withoutrowid	database.md	engine/database/database.h:25

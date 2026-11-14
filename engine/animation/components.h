@@ -1,0 +1,153 @@
+#pragma once
+
+//! The animation components and the system that plays them. Phase 22 Day 321.
+
+#include "animation/pose.h"
+#include "animation/sampler.h"
+#include "asset/clip.h"
+#include "asset/resource_id.h"
+#include "asset/skeleton.h"
+#include "containers/vector.h"
+#include "ecs/entity.h"
+#include "ecs/world.h"
+#include "jobs/scheduler.h"
+#include "storage/component_registry.h"
+#include "types.h"
+
+namespace engine_placeholder::animation
+{
+
+/// Stable ids of the animation components in the storage registry (the engine's own range, below 1000).
+enum ComponentIds : u32
+{
+    kAnimationPlayerId = 40,   ///< [[animation::AnimationPlayer]]: stored.
+    kSkeletonInstanceId = 41,  ///< [[animation::SkeletonInstance]]: stored (the skeleton id only).
+    kRootMotionId = 42,        ///< [[animation::RootMotion]]: derived.
+};
+
+/// Plays one clip on an entity: the clip, the time and how it advances. Stored with its entity.
+///
+/// - Thread-safety: thread-compatible plain data; the system writes it from a job that owns the entity's chunk.
+struct AnimationPlayer
+{
+    u64 clip = 0;           ///< The clip's resource id (`asset::ResourceId::Value()`); 0 plays nothing.
+    f32 time = 0;           ///< The play position in seconds.
+    f32 speed = 1.0f;       ///< Seconds of clip per second of frame time; a negative speed counts as 0.
+    f32 weight = 1.0f;      ///< The blend weight of the sampled pose against the bind pose, in [0, 1].
+    bool playing = true;    ///< Whether time advances.
+    bool looping = true;    ///< Whether time wraps at the end.
+    bool finished = false;  ///< Set when a clip that does not loop reached its end (runtime state, not stored).
+    bool started = false;   ///< Runtime state, not stored: false until the first update, which then includes events at
+                            ///< the starting time.
+    f32 step_from = 0;      ///< Set by the system; the time at the start of the last update.
+    u32 step_wraps = 0;     ///< Set by the system; the loops the last update passed.
+    f32 step_time = 0;      ///< Set by the system; the time at the end of the last update.
+    bool step_include = false;  ///< Set by the system; the last update included events at its start.
+    bool step_valid = false;  ///< Set by the system; the last update advanced the clip (events are read from the step).
+    SamplerState sampler;     ///< Set by the system; the cursors.
+};
+
+/// The skeleton an entity is drawn with and the skinning palette the system fills each update.
+///
+/// - Thread-safety: thread-compatible; the system writes it from a job that owns the entity's chunk.
+struct SkeletonInstance
+{
+    u64 skeleton = 0;        ///< The skeleton's resource id (`asset::ResourceId::Value()`).
+    Vector<Mat3x4> palette;  ///< Set by the system; one 48-byte matrix per joint, the GPU palette layout.
+};
+
+/// The root joint's movement over the last update, for a clip flagged root motion: the game applies it. Present only
+/// when the entity has the component.
+///
+/// - Thread-safety: thread-compatible plain data.
+struct RootMotion
+{
+    RootMotionDelta delta;  ///< Over the last update.
+};
+
+/// One event crossed during an update.
+///
+/// - Thread-safety: thread-compatible plain data.
+struct AnimationEvent
+{
+    ecs::Entity entity;  ///< The entity whose player crossed it.
+    f32 time = 0;        ///< The event's time in its clip.
+    u32 name_hash = 0;   ///< `asset::JointNameHash` of the event's name.
+    u32 payload = 0;     ///< The event's payload.
+};
+
+/// The events crossed by the last [[animation::AnimationSystem::Update]], in entity order and, per entity, time order.
+/// A world resource; the system clears and refills it each update when it exists.
+///
+/// - Thread-safety: thread-compatible.
+struct AnimationEvents
+{
+    Vector<AnimationEvent> events;  ///< The events.
+};
+
+/// Finds the views an update needs. Implemented by the resource manager (Day 328) or a test; called from several jobs
+/// at once, so it must be safe to read concurrently.
+///
+/// - Thread-safety: thread-safe for concurrent calls.
+class AnimationResolver
+{
+public:
+    virtual ~AnimationResolver() = default;
+    /// The skeleton with this id, or null when it is not loaded.
+    ///
+    /// - Fails: never.
+    /// - Ownership: the view belongs to the resolver and stays valid while it is loaded.
+    virtual const asset::SkeletonView* FindSkeleton(asset::ResourceId id) const = 0;
+    /// The clip with this id, or null when it is not loaded.
+    ///
+    /// - Fails: never.
+    /// - Ownership: the view belongs to the resolver and stays valid while it is loaded.
+    virtual const asset::ClipView* FindClip(asset::ResourceId id) const = 0;
+};
+
+/// What one update did.
+///
+/// - Thread-safety: thread-compatible plain data.
+struct AnimationStats
+{
+    u64 players_updated = 0;  ///< Entities sampled.
+    u64 refused = 0;          ///< Entities skipped: unknown skeleton or clip, or a clip made for another skeleton.
+    u64 events = 0;           ///< Events published.
+    u64 events_dropped = 0;   ///< Events that did not fit one update's per-entity capacity.
+};
+
+/// Registers the animation components with the storage registry so levels save them.
+///
+/// - Fails: an id or name already registered.
+/// - Ownership: borrows its arguments for the call.
+storage::Status RegisterAnimationComponents(storage::ComponentRegistry* registry);
+
+/// Advances and samples every entity that has an [[animation::AnimationPlayer]] and a [[animation::SkeletonInstance]],
+/// in parallel over the chunks (an additive clip is refused: it is a difference to layer on a pose, not a pose), then
+/// publishes the events in entity order. Each entity's result depends only on its own
+/// components, so the palettes are the same at any worker count.
+///
+/// - Thread-safety: thread-compatible; one update at a time.
+class AnimationSystem
+{
+public:
+    /// Makes a system that resolves resources through `resolver`.
+    ///
+    /// - Ownership: borrows `resolver` for the system's life.
+    explicit AnimationSystem(const AnimationResolver* resolver) : resolver_(resolver) {}
+
+    /// Runs one update of `dt` seconds. An entity whose skeleton or clip the resolver does not know, or whose clip was
+    /// made for another skeleton (id, hash or joint count), is skipped and counted in `refused`, with one log line the
+    /// first time per entity.
+    ///
+    /// - Param scheduler: the job scheduler, or null to run on the calling thread.
+    /// - Fails: never.
+    /// - Aborts: `world` is being iterated.
+    /// - Ownership: borrows its arguments for the call.
+    AnimationStats Update(ecs::World* world, jobs::Scheduler* scheduler, f32 dt);
+
+private:
+    const AnimationResolver* resolver_ = nullptr;
+};
+
+}  // namespace engine_placeholder::animation

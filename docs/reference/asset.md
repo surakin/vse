@@ -2034,19 +2034,22 @@ True when channel `channel` of track `i` is constant (its value sits in the trac
 |---|---|
 | Aborts | as `KeyCount`. |
 
-### `Sample(u32,f32)` {#asset-clipview-sample-u32-f32-const}
+### `Sample(u32,f32,u32*)` {#asset-clipview-sample-u32-f32-u32-star-const}
 
 `method asset::ClipView::Sample` — defined in `engine/asset/clip.h`
 
 ```cpp
-ClipSample Sample(u32 i, f32 time) const;
+ClipSample Sample(u32 i, f32 time, u32* cursors = nullptr) const;
 ```
 
-Samples track `i` at `time` (clamped to [0, duration]).
+Samples track `i` at `time` (clamped to [0, duration]; a NaN time reads as 0).
+
+`cursors`, when given, points at 3 `u32` (translation, rotation, scale) that remember the key segment found by the last call: forward playback then costs O(1) per channel, and the result is the same as without them (any start value is valid; keep one set per track and clip).
 
 | Field | Value |
 |---|---|
 | Aborts | `i` is not below `TrackCount()`. |
+| Ownership | borrows its arguments for the call. |
 
 ### `Bind(const SkeletonView&)` {#asset-clipview-bind-const-skeletonview-amp-const}
 

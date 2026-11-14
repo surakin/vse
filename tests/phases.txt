@@ -369,3 +369,4 @@ test:net_access_check*                          20   # the socket access gate (D
 
 # --- Phase 22: asset pipeline and resource system ---
 tests/asset/                                    22   # Phase 22 Day 313
+tests/animation/                                22   # Phase 22 Day 321

@@ -111,6 +111,12 @@ module asset "Assets and resources"
   strict ownership
   strict failure
 
+module animation "Animation runtime"
+  header engine/animation/*.h
+  strict thread-safety
+  strict ownership
+  strict failure
+
 module database "Database"
   header engine/database/*.h
   header engine/database/sqlite/*.h

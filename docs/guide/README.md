@@ -44,3 +44,4 @@ the pages in the order below; each builds on the ones before it. The generated [
 21. [storage](storage.md): the component registry and the canonical encoding (Phase 19).
 22. [net](net.md): addresses, endpoints and network errors (Phase 20).
 23. [assets](assets.md): asset identity, blobs, backends and the resource manager (Phase 22).
+24. [animation](animation.md): poses, the clip sampler, skinning matrices and the animation system (Phase 22).

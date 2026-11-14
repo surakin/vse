@@ -151,7 +151,7 @@ void ClpDecodeRot(const ClpBlock& b, u32 i, f64* out)
 }
 
 // Finds the keys around a quantized time and the interpolation factor.
-void ClpSegment(const ClpBlock& b, f64 tq, u32* lo, u32* hi, f64* u)
+void ClpSegment(const ClpBlock& b, f64 tq, u32* lo, u32* hi, f64* u, u32* hint = nullptr)
 {
     const f64 first = static_cast<f64>(ClpTimeAt(b, 0));
     const f64 last = static_cast<f64>(ClpTimeAt(b, b.count - 1));
@@ -169,6 +169,22 @@ void ClpSegment(const ClpBlock& b, f64 tq, u32* lo, u32* hi, f64* u)
     }
     u32 a = 0;
     u32 z = b.count - 1;
+    if (hint != nullptr)
+    {
+        // Steady playback stays in the segment of the last call or moves to the next one.
+        const u32 h = *hint;
+        if (h + 1 < b.count && static_cast<f64>(ClpTimeAt(b, h)) <= tq && tq < static_cast<f64>(ClpTimeAt(b, h + 1)))
+        {
+            a = h;
+            z = h + 1;
+        }
+        else if (h + 2 < b.count && static_cast<f64>(ClpTimeAt(b, h + 1)) <= tq &&
+                 tq < static_cast<f64>(ClpTimeAt(b, h + 2)))
+        {
+            a = h + 1;
+            z = h + 2;
+        }
+    }
     while (z - a > 1)
     {
         const u32 mid = (a + z) / 2;
@@ -183,6 +199,10 @@ void ClpSegment(const ClpBlock& b, f64 tq, u32* lo, u32* hi, f64* u)
     }
     *lo = a;
     *hi = z;
+    if (hint != nullptr)
+    {
+        *hint = a;
+    }
     const f64 t0 = static_cast<f64>(ClpTimeAt(b, a));
     const f64 t1 = static_cast<f64>(ClpTimeAt(b, z));
     *u = (tq - t0) / (t1 - t0);
@@ -1140,7 +1160,7 @@ bool ClipView::IsConstant(u32 i, u32 channel) const
     return (ClpLoad(tracks_.Data() + i * kClpTrackBytes + 4, 4) & (1u << (4 + channel))) != 0;
 }
 
-ClipSample ClipView::Sample(u32 i, f32 time) const
+ClipSample ClipView::Sample(u32 i, f32 time, u32* cursors) const
 {
     ENGINE_ASSERT(i < track_count_, "ClipView::Sample: index out of range");
     const byte* e = tracks_.Data() + i * kClpTrackBytes;
@@ -1174,7 +1194,7 @@ ClipSample ClipView::Sample(u32 i, f32 time) const
                                          static_cast<u32>(ClpLoad(e + 52 + c * 8, 4)));
             u32 lo, hi;
             f64 u;
-            ClpSegment(b, tq, &lo, &hi, &u);
+            ClpSegment(b, tq, &lo, &hi, &u, cursors != nullptr ? &cursors[c] : nullptr);
             if (c == kClpR)
             {
                 f64 a[4], z[4];
