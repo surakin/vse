@@ -87,3 +87,15 @@ Measured with the hidden case `A level of 100,000 entities: load time and the fl
 
 Why not: (1) the ECS has no way to adopt a column: an archetype chunk is filled row by row (`World::CreateIn`, a `RowRef`), and every entity still needs its id, its `entity_key` and a `KeyIndex` entry, which are per-entity work whatever the components cost. (2) The best case, decoding for free, saves part of the 73 % and leaves the key and entity work; the parse part is already 0.29 µs. A level of 100,000 keyed entities is far above what a scene holds, and at about 100 ms it loads inside the streaming budget of Day 330 (the level is built on the owner thread in steps, and the closure is read on the workers). (3) A memory image makes the file depend on the layout of a C++ struct (padding, alignment, field order, endianness): a fingerprint refuses a mismatch but does not make the format portable, and a second form of the same data would need its own minter, verifier, upgrade chain and tests. The text form, the record form and the world must stay one thing (`FormatWorld` and `FormatLevelBlob` print the same text; Day 327). The decision is revisited if a measurement of a real level shows the load time above its budget; the first step would then be a batched record decoder, not an image.
 
+## The JSON library (Phase 22 Day 335, the spike)
+
+The in-memory glTF importer (`engine/asset_import`) parses files that may come from the network, so the library is judged on hostile input without exceptions, not on convenience. The user's rule: no hand-written JSON parser.
+
+| Candidate | Verdict |
+|---|---|
+| **yyjson 0.13.0** (MIT, C99, `yyjson.c` 11,480 lines and `yyjson.h` 8,467) | **Chosen.** Builds clean with `-Wall -Wextra -Werror` as C99 on Clang and GCC. Strict RFC 8259 by default (a leading zero, a trailing comma, `NaN`, a BOM, invalid UTF-8, trailing bytes and `1e999` are refused); an iterative reader, with `YYJSON_READER_DEPTH_LIMIT` at 128 a nesting bomb of 2,000,000 `[` is refused (the default is no limit, so the definition is set); `yyjson_alc_pool_init` over a buffer of `yyjson_read_max_memory_usage(length)` bytes bounds a parse's memory by the input's length, with no `malloc` call; `YYJSON_DISABLE_FILE` removes `fopen`. A fuzz run of 20,000 mutated and truncated documents under asan and ubsan with the pool allocator: 1,328 accepted, 18,672 refused, no finding. It accepts a repeated object key (the importer's wrapper refuses it) and a big integer (read as a double). |
+| RapidJSON 1.1.0 | Not chosen: the last release is from 2016, and its default parse recurses; kept as the fallback. |
+| simdjson | Not chosen: a large C++ surface with SIMD code paths that would have to be proved deterministic and portable to every target (consoles, mobile) for no benefit at glTF sizes. |
+| jsmn | Not chosen: a tokenizer only, so strings, numbers and UTF-8 would be ours to write. |
+| nlohmann/json 3.12 | Not for this module: it throws, or aborts without exceptions, on a wrong type, and it needs `std` types. It stays in `tools/shader_mint`. |
+

@@ -34,6 +34,9 @@ set(ASSET_TEST_SOURCES
   network_backend_test.cpp  # Day 332
   mint_determinism_test.cpp  # Day 333
   mint_edit_test.cpp  # Day 334
+  gltf_writer.h  # Day 335
+  gltf_json_test.cpp  # Day 335
+  gltf_container_test.cpp  # Day 335
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/project.cpp  # Day 333: the project side of the minter under test
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/target_transform.cpp  # Day 334
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/upgrade.cpp  # Day 334
@@ -47,8 +50,9 @@ function(engine_add_asset_tests target asset_lib suffix label)
   add_executable(${target} ${ASSET_TEST_SOURCES})
   string(REPLACE "asset" "" renderer_suffix ${asset_lib})  # Day 326: the material minter reads the passes' template tables
   string(REPLACE "asset" "renderer" renderer_lib ${asset_lib})  # Day 323: the texture test uploads a blob to a null device
+  string(REPLACE "asset" "asset_import" import_lib ${asset_lib})  # Day 335: the glTF importer under test
   string(REPLACE "asset" "animation" animation_lib ${asset_lib})  # Day 333: the project side of the minter registers the animation components
-  target_link_libraries(${target} PRIVATE ${asset_lib} ${animation_lib} renderer_passes${renderer_suffix} ${renderer_lib} Catch2::Catch2WithMain Threads::Threads)
+  target_link_libraries(${target} PRIVATE ${import_lib} ${asset_lib} ${animation_lib} renderer_passes${renderer_suffix} ${renderer_lib} Catch2::Catch2WithMain Threads::Threads)
   target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tools/asset_mint)
   if(label STREQUAL "asan")
     engine_asan_runtime(${target})

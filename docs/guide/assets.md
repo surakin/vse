@@ -737,3 +737,26 @@ More commands of `asset_mint COMMAND PROJECT.project ...` (Day 334):
 - `unmint ASSET [--out FILE]` writes a minted level or material back as source text; minting the text gives the same blob.
 - `pack --target N` packs for another target (`sample.t1.pak`): each blob is converted by the transform of its type (`tools/asset_mint/target_transform.h`): textures are laid out again for the target's row pitch and slice alignment, every other type is retagged (the target tag in the header and the hash change, nothing else). The result is checked (the same type, id and references, a valid hash); a transform that adds a reference or ignores the target is refused, and a target no layout is known for fails naming the texture. Two packs for one target are the same bytes, and a pak for one target is refused by a program that runs another (`WrongTarget`). `verify --target N` checks that pak.
 - `verify --require-current` fails, naming every blob that is not the current version of its type, with the fix. Without it an old blob is only checked by its header and hash. `pack` refuses an old blob. `remint PROJECT.project` mints every source again and then requires the output to be current; `remint DIRECTORY` rewrites old-version blobs of a folder through the upgrade chains (`tools/asset_mint/upgrade.h`: one function per type and version). No built-in type has an older version yet (all are at version 1), so no chain is registered; the manifest includes each type's version in the hash of every source, so a bump makes the next `mint` rebuild that type's blobs.
+
+## Importing glTF
+
+`engine/asset_import` (`asset_import/gltf_import.h`) imports glTF 2.0 files (`.gltf` and `.glb`) into the engine's own resources, in memory: bytes in, blobs out. It is a library a program opts into (a host such as the host that fetches `.glb` files at run time, and `asset_mint import-gltf`, which is a thin command over it); no runtime engine module includes it, and the runtime still reads only its own formats.
+
+```cpp
+asset::NoGltfSource none;                       // a .glb has everything inside it
+asset::ImportOptions options;                   // limits, an id source, the manifest of an earlier import
+asset::ImportResult result;
+asset::GltfError error;
+const asset::Status status = asset::ImportGltf(file_bytes, none, options, &result, &error);
+if (status.Ok()) { asset::ImportIntoBackend(host_memory_backend, result); }   // then mount the backend
+```
+
+**Built so far (Day 335):** the container, the accessors, the limits, the id sources, the import manifest and `ImportIntoBackend`; `ImportGltf` reads and checks the container and reports what the file holds, and imports resources from Day 336 (meshes), Day 337 (skeletons and clips) and Day 338 (images, textures, materials).
+
+- **Hostile input.** A file may come from the network. Nothing aborts: every failure is a `Status` and a `GltfError` sentence that names the glTF object (`accessors[3]: does not lie inside its buffer view`). Every count and size is checked against `ImportLimits` before memory is allocated for it (the settings `assets.import.*` arrive on Day 339); every offset and count is computed with checked arithmetic, so no accessor can read outside its buffer.
+- **The container.** `.glb` (the 12-byte header, the JSON chunk, an optional BIN chunk, lengths and padding checked) and `.gltf` (JSON with external files and base64 `data:` URIs). Only glTF 2.0 is read; `extensionsRequired` is checked against the supported list (`KHR_materials_emissive_strength`, `KHR_texture_transform`) and anything else is refused naming it.
+- **External files.** A URI is turned into a clean relative name (percent-escapes decoded; no `..`, no absolute path, no scheme, no backslash, no empty segment) and handed to a `GltfSource`, which the host implements: the tool reads files inside the glTF's folder, a host reads from wherever it fetched the glTF. `NoGltfSource` is for a `.glb`.
+- **JSON.** The parser is yyjson, vendored (`third_party/yyjson`), reached only through `json_view.*` (the gate `json_boundary_check`): strict RFC 8259, nesting at most 128 deep, memory bounded by the length of the input; a repeated key is refused.
+- **Accessors.** `ReadAccessorFloats` and `ReadAccessorUnsigned` read every component type, `normalized` values, `byteStride`, matrices (columns padded to four bytes), accessors with no buffer view (zeros) and sparse overrides (indices strictly increasing and below the count); a float that is not finite is refused.
+- **Ids.** A new resource gets an id from an `IdSource` (`RandomIdSource` by default, `SeededIdSource` for byte-identical imports). `ImportManifest` records the ids an import gave, as text (`Format`/`Parse`), so a re-import of the same file keeps them: an object matches by kind and name when the name is unique, else by kind and index.
+- **Into the engine.** `ImportIntoBackend(backend, result)` adds every resource to a `HostMemoryBackend` under its path, atomically: when one is refused, the ones added before are removed again.

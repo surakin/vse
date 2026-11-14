@@ -36,6 +36,7 @@ include-dir shaders
 include-dir tools/docgen/src
 include-dir tools/shader_mint
 include-dir third_party/nlohmann_json
+include-dir third_party/yyjson
 system-include ^wayland-[a-z-]*\.h$
 
 # --- layers (ARCHITECTURE.md section 1) --------------------------------------------------------------------------------
@@ -156,6 +157,9 @@ allow scene asset   # Phase 22 Day 329: the level spawner and the shared mesh re
 allow scene animation   # Phase 22 Day 322: RenderSync points skinned objects at the animation runtime's joint palettes
 # 13 asset (Phase 22 Day 313): resource identity, blob containers, backends (filesystem, pak, network) and the resource manager; foundation, jobs, ecs, storage, net, rhi and renderer below it, nothing includes it but programs
 module engine/asset/ asset 13
+# 13 asset_import (Phase 22 Day 335): the glTF importer, a library a program opts into; reads asset (below, same layer) and the foundation; yyjson only in json_view.cpp; nothing includes it but programs
+module engine/asset_import/ asset_import 13
+allow asset_import asset
 # 13 animation (Phase 22 Day 321): poses, the clip sampler, skinning matrices and the ECS components and parallel system that play clips; reads asset's skeleton and clip views (allowed below, same layer), ecs, storage, jobs and the foundation; nothing includes it but programs
 module engine/animation/ animation 13
 allow animation asset
@@ -186,6 +190,7 @@ module tools/file_access_check/ tools/gates 14
 module tools/net_access_check/ tools/gates 14
 module tools/shared_unit_check/ tools/gates 14
 module tools/cmdline_access_check/ tools/gates 14
+module tools/json_boundary_check/ tools/gates 14
 module tools/sqlite_boundary_check/ tools/gates 14
 module tools/database_sql_check/ tools/gates 14
 module tools/module_deps_check/ tools/gates 14
@@ -255,6 +260,7 @@ target database database
 target storage storage
 target net net
 target asset asset
+target asset_import asset_import
 target animation animation
 target database_sqlite database
 target platform platform

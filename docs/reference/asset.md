@@ -11824,6 +11824,7 @@ What went wrong.
 | <a id="asset-errorcode-invalid"></a>`Invalid` |  | The caller broke a rule: a malformed path, a null id where one is required. |
 | <a id="asset-errorcode-inuse"></a>`InUse` |  | A resource cannot be replaced or removed because a loaded resource depends on it. |
 | <a id="asset-errorcode-notready"></a>`NotReady` |  | An answer needs a table that has not arrived yet (not the same as `NotFound`). |
+| <a id="asset-errorcode-unsupported"></a>`Unsupported` |  | A file uses a feature this version does not import (the importer names it). |
 | <a id="asset-errorcode-other"></a>`Other` |  | Anything else. |
 
 ## `ErrorCodeName(ErrorCode)` {#asset-errorcodename-errorcode}

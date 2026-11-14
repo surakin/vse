@@ -520,6 +520,15 @@ interpretations keep it buildable — flag any that don't match intent:
     runtime libraries, which stay on the foundation containers. Any further
     third-party library in a tool or in the engine still needs its own
     justified entry here.
+    **Amendment (2026-11-14, Phase 22 Day 335, the user: no hand-written JSON parser): yyjson 0.13.0 for the glTF importer.** The in-memory
+    importer (`engine/asset_import`) reads files that may be hostile and untrusted, and exceptions are disabled, so nlohmann/json (which throws or
+    aborts on a wrong type and needs `std` types) is not used there. A spike on Day 335 chose **yyjson** (MIT, C99, one `.c` and one `.h`,
+    `third_party/yyjson/`, pinned by commit and SHA-256 in `VENDORED.md`): strict RFC 8259 by default, an iterative reader with a configured depth limit
+    (128), errors by return value with a position, a pool allocator so a parse can use only the memory computed from the input's length, no file or
+    `malloc` use as built (`YYJSON_DISABLE_FILE`), and 5,000 mutated documents under asan and ubsan without a finding. It is included only by
+    `engine/asset_import/json_view.cpp` (gate `json_boundary_check`) and reaches the rest of the importer through the typed `JsonValue`; a repeated
+    object key, which it accepts, is refused by the wrapper. nlohmann/json stays in `tools/shader_mint`. The record of the spike is in
+    `docs/superpowers/specs/2026-11-13-asset-pipeline-design.md` ("The JSON library").
 
 20. **Debugging facilities (Phase 7) are built on existing libraries, not hand-rolled — a deliberate, individually
     justified exception to the zero-third-party-dependencies rule (decided 2026-11-06, libraries chosen by spike on

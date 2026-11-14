@@ -33,6 +33,7 @@ enum class ErrorCode : u8
     Invalid,                 ///< The caller broke a rule: a malformed path, a null id where one is required.
     InUse,                   ///< A resource cannot be replaced or removed because a loaded resource depends on it.
     NotReady,                ///< An answer needs a table that has not arrived yet (not the same as `NotFound`).
+    Unsupported,             ///< A file uses a feature this version does not import (the importer names it).
     Other,                   ///< Anything else.
 };
 

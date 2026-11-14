@@ -173,6 +173,7 @@ add_subdirectory(third_party/catch2)
 # Every platform, macOS since Phase 21 Day 294 (text and the database arrived there that day).
 add_subdirectory(third_party/freetype)  # Phase 14 Day 175: FreeType, vendored (PLAN.md assumption #17)
 add_subdirectory(third_party/sqlite)  # Phase 19 Day 251: SQLite, vendored (PLAN.md assumption #25), used only behind engine/database/sqlite/
+add_subdirectory(third_party/yyjson)  # Phase 22 Day 335: yyjson, vendored (PLAN.md assumption #19), used only by engine/asset_import/json_view.cpp
 # Catch2's REQUIRE/CHECK throw: exceptions on for Catch2 and, through PUBLIC, every test executable that links it.
 if(ENGINE_EXCEPTIONS_COMPILE_OPTIONS)
   target_compile_options(Catch2 PUBLIC ${ENGINE_EXCEPTIONS_COMPILE_OPTIONS})
@@ -246,6 +247,7 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(engine/renderer)  # Day 161: the renderer and its suite (tests/rhi links it from Day 160)
   add_subdirectory(engine/scene)  # Phase 17 Day 233
   add_subdirectory(engine/asset)  # Phase 22 Day 313
+  add_subdirectory(engine/asset_import)  # Phase 22 Day 335: the glTF importer (a leaf above asset)
   add_subdirectory(engine/animation)  # Phase 22 Day 321
   add_subdirectory(tools/asset_mint)  # Phase 22 Day 316
   add_subdirectory(tools/resource_server)  # Phase 22 Day 331
@@ -265,6 +267,7 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(tools/net_access_check)  # Phase 20 Day 268 (its own line: editing the gate list above would widen scripts/test-phase.sh --affected)
   add_subdirectory(tools/shared_unit_check)  # Phase 22 (the shared-ownership gate; its own line, as net_access_check)
   add_subdirectory(tools/cmdline_access_check)  # the command-line gate (out of plan, 2026-11-14; its own line, as net_access_check)
+  add_subdirectory(tools/json_boundary_check)  # Phase 22 Day 335: yyjson is included only by asset_import/json_view.cpp
   add_subdirectory(tools/net_probe)  # Phase 20 Day 281
   add_subdirectory(tests/phase_labels)
   add_subdirectory(tests/test_phase_script)
@@ -315,6 +318,7 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(engine/renderer)
   add_subdirectory(engine/scene)
   add_subdirectory(engine/asset)
+  add_subdirectory(engine/asset_import)  # Phase 22 Day 335: the glTF importer (a leaf above asset)
   add_subdirectory(engine/animation)
   add_subdirectory(tools/asset_mint)  # Phase 22 Day 316
   add_subdirectory(tools/resource_server)  # Phase 22 Day 331
@@ -349,6 +353,7 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(tools/net_access_check)  # Phase 20 Day 268 (its own line: editing the gate list above would widen scripts/test-phase.sh --affected)
   add_subdirectory(tools/shared_unit_check)  # Phase 22 (the shared-ownership gate; its own line, as net_access_check)
   add_subdirectory(tools/cmdline_access_check)  # the command-line gate (out of plan, 2026-11-14; its own line, as net_access_check)
+  add_subdirectory(tools/json_boundary_check)  # Phase 22 Day 335: yyjson is included only by asset_import/json_view.cpp
   add_subdirectory(tools/net_probe)  # Phase 21 Day 310
   add_subdirectory(tests/phase_labels)
   add_subdirectory(tests/test_phase_script)
@@ -391,6 +396,7 @@ add_subdirectory(engine/rhi)
 add_subdirectory(engine/renderer)
 add_subdirectory(engine/scene)  # Phase 17 Day 233
 add_subdirectory(engine/asset)  # Phase 22 Day 313
+add_subdirectory(engine/asset_import)  # Phase 22 Day 335: the glTF importer (a leaf above asset)
 add_subdirectory(engine/animation)  # Phase 22 Day 321
 add_subdirectory(tools/asset_mint)  # Phase 22 Day 316
 add_subdirectory(tools/resource_server)  # Phase 22 Day 331
@@ -411,6 +417,7 @@ add_subdirectory(tools/database_sql_check)  # Phase 19 Day 252
 add_subdirectory(tools/net_access_check)  # Phase 20 Day 268
 add_subdirectory(tools/shared_unit_check)  # Phase 22: shared units are held by SharedPtr aliases and never pointed at
 add_subdirectory(tools/cmdline_access_check)  # programs read their command line through os::CommandLine, never by indexing argv
+add_subdirectory(tools/json_boundary_check)  # Phase 22 Day 335: yyjson is included only by asset_import/json_view.cpp
 add_subdirectory(tools/net_probe)  # Phase 20 Day 281
 add_subdirectory(tools/crash_extract)
 add_subdirectory(tests/foundation)

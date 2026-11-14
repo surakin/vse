@@ -5524,17 +5524,18 @@ asset::ErrorCode::WrongTarget	enumerator	asset	asset-errorcode-wrongtarget	asset
 asset::ErrorCode::Invalid	enumerator	asset	asset-errorcode-invalid	asset.md	engine/asset/status.h:33
 asset::ErrorCode::InUse	enumerator	asset	asset-errorcode-inuse	asset.md	engine/asset/status.h:34
 asset::ErrorCode::NotReady	enumerator	asset	asset-errorcode-notready	asset.md	engine/asset/status.h:35
-asset::ErrorCode::Other	enumerator	asset	asset-errorcode-other	asset.md	engine/asset/status.h:36
-asset::ErrorCodeName(ErrorCode)	function	asset	asset-errorcodename-errorcode	asset.md	engine/asset/status.h:43
-asset::Status	class	asset	asset-status	asset.md	engine/asset/status.h:49
-asset::Status::Status()	function	asset	asset-status-status	asset.md	engine/asset/status.h:53
-asset::Status::Success()	function	asset	asset-status-success	asset.md	engine/asset/status.h:56
-asset::Status::Make(ErrorCode,const char*)	function	asset	asset-status-make-errorcode-const-char-star	asset.md	engine/asset/status.h:60
-asset::Status::Ok() const	function	asset	asset-status-ok-const	asset.md	engine/asset/status.h:70
-asset::Status::Failed() const	function	asset	asset-status-failed-const	asset.md	engine/asset/status.h:73
-asset::Status::Is(ErrorCode) const	function	asset	asset-status-is-errorcode-const	asset.md	engine/asset/status.h:76
-asset::Status::Code() const	function	asset	asset-status-code-const	asset.md	engine/asset/status.h:79
-asset::Status::Message() const	function	asset	asset-status-message-const	asset.md	engine/asset/status.h:84
+asset::ErrorCode::Unsupported	enumerator	asset	asset-errorcode-unsupported	asset.md	engine/asset/status.h:36
+asset::ErrorCode::Other	enumerator	asset	asset-errorcode-other	asset.md	engine/asset/status.h:37
+asset::ErrorCodeName(ErrorCode)	function	asset	asset-errorcodename-errorcode	asset.md	engine/asset/status.h:44
+asset::Status	class	asset	asset-status	asset.md	engine/asset/status.h:50
+asset::Status::Status()	function	asset	asset-status-status	asset.md	engine/asset/status.h:54
+asset::Status::Success()	function	asset	asset-status-success	asset.md	engine/asset/status.h:57
+asset::Status::Make(ErrorCode,const char*)	function	asset	asset-status-make-errorcode-const-char-star	asset.md	engine/asset/status.h:61
+asset::Status::Ok() const	function	asset	asset-status-ok-const	asset.md	engine/asset/status.h:71
+asset::Status::Failed() const	function	asset	asset-status-failed-const	asset.md	engine/asset/status.h:74
+asset::Status::Is(ErrorCode) const	function	asset	asset-status-is-errorcode-const	asset.md	engine/asset/status.h:77
+asset::Status::Code() const	function	asset	asset-status-code-const	asset.md	engine/asset/status.h:80
+asset::Status::Message() const	function	asset	asset-status-message-const	asset.md	engine/asset/status.h:85
 asset::kMaxTextureLayers	variable	asset	asset-kmaxtexturelayers	asset.md	engine/asset/texture.h:30
 asset::kCubeFaces	variable	asset	asset-kcubefaces	asset.md	engine/asset/texture.h:32
 asset::TextureSection	enum	asset	asset-texturesection	asset.md	engine/asset/texture.h:35
@@ -5603,6 +5604,176 @@ asset::TightLevelBytes(rhi::Format,u32,u32)	function	asset	asset-tightlevelbytes
 asset::PremultiplyAlphaRgba8(bool,MutableByteSpan)	function	asset	asset-premultiplyalphargba8-bool-mutablebytespan	asset.md	engine/asset/texture_mips.h:94
 asset::ConvertRgba8(rhi::Format,bool,u32,u32,ByteSpan,Vector<byte>*)	function	asset	asset-convertrgba8-rhi-format-bool-u32-u32-bytespan-vector-lt-byte-gt-star	asset.md	engine/asset/texture_mips.h:105
 asset::GenerateMipChain(rhi::Format,u32,u32,ByteSpan,const MipOptions&,Vector<byte>*)	function	asset	asset-generatemipchain-rhi-format-u32-u32-bytespan-const-mipoptions-amp-vector-lt-byte-gt-star	asset.md	engine/asset/texture_mips.h:118
+asset::ReadAccessorFloats(const GltfDocument&,u32,Vector<f32>*,GltfError*)	function	asset_import	asset-readaccessorfloats-const-gltfdocument-amp-u32-vector-lt-f32-gt-star-gltferror-star	asset_import.md	engine/asset_import/gltf_accessor.h:29
+asset::ReadAccessorUnsigned(const GltfDocument&,u32,Vector<u32>*,GltfError*)	function	asset_import	asset-readaccessorunsigned-const-gltfdocument-amp-u32-vector-lt-u32-gt-star-gltferror-star	asset_import.md	engine/asset_import/gltf_accessor.h:38
+asset::GltfBufferView	struct	asset_import	asset-gltfbufferview	asset_import.md	engine/asset_import/gltf_container.h:20
+asset::GltfBufferView::buffer	variable	asset_import	asset-gltfbufferview-buffer	asset_import.md	engine/asset_import/gltf_container.h:22
+asset::GltfBufferView::offset	variable	asset_import	asset-gltfbufferview-offset	asset_import.md	engine/asset_import/gltf_container.h:23
+asset::GltfBufferView::length	variable	asset_import	asset-gltfbufferview-length	asset_import.md	engine/asset_import/gltf_container.h:24
+asset::GltfBufferView::stride	variable	asset_import	asset-gltfbufferview-stride	asset_import.md	engine/asset_import/gltf_container.h:25
+asset::GltfAccessorType	enum	asset_import	asset-gltfaccessortype	asset_import.md	engine/asset_import/gltf_container.h:29
+asset::GltfAccessorType::Scalar	enumerator	asset_import	asset-gltfaccessortype-scalar	asset_import.md	engine/asset_import/gltf_container.h:31
+asset::GltfAccessorType::Vec2	enumerator	asset_import	asset-gltfaccessortype-vec2	asset_import.md	engine/asset_import/gltf_container.h:32
+asset::GltfAccessorType::Vec3	enumerator	asset_import	asset-gltfaccessortype-vec3	asset_import.md	engine/asset_import/gltf_container.h:33
+asset::GltfAccessorType::Vec4	enumerator	asset_import	asset-gltfaccessortype-vec4	asset_import.md	engine/asset_import/gltf_container.h:34
+asset::GltfAccessorType::Mat2	enumerator	asset_import	asset-gltfaccessortype-mat2	asset_import.md	engine/asset_import/gltf_container.h:35
+asset::GltfAccessorType::Mat3	enumerator	asset_import	asset-gltfaccessortype-mat3	asset_import.md	engine/asset_import/gltf_container.h:36
+asset::GltfAccessorType::Mat4	enumerator	asset_import	asset-gltfaccessortype-mat4	asset_import.md	engine/asset_import/gltf_container.h:37
+asset::GltfSparse	struct	asset_import	asset-gltfsparse	asset_import.md	engine/asset_import/gltf_container.h:43
+asset::GltfSparse::present	variable	asset_import	asset-gltfsparse-present	asset_import.md	engine/asset_import/gltf_container.h:45
+asset::GltfSparse::count	variable	asset_import	asset-gltfsparse-count	asset_import.md	engine/asset_import/gltf_container.h:46
+asset::GltfSparse::index_view	variable	asset_import	asset-gltfsparse-index-view	asset_import.md	engine/asset_import/gltf_container.h:47
+asset::GltfSparse::index_offset	variable	asset_import	asset-gltfsparse-index-offset	asset_import.md	engine/asset_import/gltf_container.h:48
+asset::GltfSparse::index_type	variable	asset_import	asset-gltfsparse-index-type	asset_import.md	engine/asset_import/gltf_container.h:49
+asset::GltfSparse::value_view	variable	asset_import	asset-gltfsparse-value-view	asset_import.md	engine/asset_import/gltf_container.h:50
+asset::GltfSparse::value_offset	variable	asset_import	asset-gltfsparse-value-offset	asset_import.md	engine/asset_import/gltf_container.h:51
+asset::GltfAccessor	struct	asset_import	asset-gltfaccessor	asset_import.md	engine/asset_import/gltf_container.h:57
+asset::GltfAccessor::component_type	variable	asset_import	asset-gltfaccessor-component-type	asset_import.md	engine/asset_import/gltf_container.h:59
+asset::GltfAccessor::type	variable	asset_import	asset-gltfaccessor-type	asset_import.md	engine/asset_import/gltf_container.h:60
+asset::GltfAccessor::components	variable	asset_import	asset-gltfaccessor-components	asset_import.md	engine/asset_import/gltf_container.h:61
+asset::GltfAccessor::count	variable	asset_import	asset-gltfaccessor-count	asset_import.md	engine/asset_import/gltf_container.h:62
+asset::GltfAccessor::normalized	variable	asset_import	asset-gltfaccessor-normalized	asset_import.md	engine/asset_import/gltf_container.h:63
+asset::GltfAccessor::has_view	variable	asset_import	asset-gltfaccessor-has-view	asset_import.md	engine/asset_import/gltf_container.h:64
+asset::GltfAccessor::view	variable	asset_import	asset-gltfaccessor-view	asset_import.md	engine/asset_import/gltf_container.h:65
+asset::GltfAccessor::offset	variable	asset_import	asset-gltfaccessor-offset	asset_import.md	engine/asset_import/gltf_container.h:66
+asset::GltfAccessor::stride	variable	asset_import	asset-gltfaccessor-stride	asset_import.md	engine/asset_import/gltf_container.h:67
+asset::GltfAccessor::element_bytes	variable	asset_import	asset-gltfaccessor-element-bytes	asset_import.md	engine/asset_import/gltf_container.h:68
+asset::GltfAccessor::sparse	variable	asset_import	asset-gltfaccessor-sparse	asset_import.md	engine/asset_import/gltf_container.h:69
+asset::GltfDocument	struct	asset_import	asset-gltfdocument	asset_import.md	engine/asset_import/gltf_container.h:76
+asset::GltfDocument::json	variable	asset_import	asset-gltfdocument-json	asset_import.md	engine/asset_import/gltf_container.h:78
+asset::GltfDocument::root	variable	asset_import	asset-gltfdocument-root	asset_import.md	engine/asset_import/gltf_container.h:79
+asset::GltfDocument::is_glb	variable	asset_import	asset-gltfdocument-is-glb	asset_import.md	engine/asset_import/gltf_container.h:80
+asset::GltfDocument::buffers	variable	asset_import	asset-gltfdocument-buffers	asset_import.md	engine/asset_import/gltf_container.h:81
+asset::GltfDocument::views	variable	asset_import	asset-gltfdocument-views	asset_import.md	engine/asset_import/gltf_container.h:82
+asset::GltfDocument::accessors	variable	asset_import	asset-gltfdocument-accessors	asset_import.md	engine/asset_import/gltf_container.h:83
+asset::SupportedRequiredExtensions(usize*)	function	asset_import	asset-supportedrequiredextensions-usize-star	asset_import.md	engine/asset_import/gltf_container.h:91
+asset::ParseGltf(ByteSpan,GltfSource&,const ImportLimits&,GltfDocument*,GltfError*)	function	asset_import	asset-parsegltf-bytespan-gltfsource-amp-const-importlimits-amp-gltfdocument-star-gltferror-star	asset_import.md	engine/asset_import/gltf_container.h:108
+asset::CleanRelativeUri(StringView,String<HeapAllocator>*,GltfError*)	function	asset_import	asset-cleanrelativeuri-stringview-string-lt-heapallocator-gt-star-gltferror-star	asset_import.md	engine/asset_import/gltf_container.h:120
+asset::DecodeBase64(StringView,u64,Vector<byte>*,GltfError*)	function	asset_import	asset-decodebase64-stringview-u64-vector-lt-byte-gt-star-gltferror-star	asset_import.md	engine/asset_import/gltf_container.h:130
+asset::GltfError	struct	asset_import	asset-gltferror	asset_import.md	engine/asset_import/gltf_error.h:20
+asset::GltfError::message	variable	asset_import	asset-gltferror-message	asset_import.md	engine/asset_import/gltf_error.h:23
+asset::GltfError::Set(StringView,StringView)	function	asset_import	asset-gltferror-set-stringview-stringview	asset_import.md	engine/asset_import/gltf_error.h:26
+asset::GltfError::SetNumber(StringView,StringView,u64)	function	asset_import	asset-gltferror-setnumber-stringview-stringview-u64	asset_import.md	engine/asset_import/gltf_error.h:28
+asset::GltfMessage(const GltfError&,const Status&)	function	asset_import	asset-gltfmessage-const-gltferror-amp-const-status-amp	asset_import.md	engine/asset_import/gltf_error.h:35
+asset::ImportLimits	struct	asset_import	asset-importlimits	asset_import.md	engine/asset_import/gltf_import.h:41
+asset::ImportLimits::max_file_bytes	variable	asset_import	asset-importlimits-max-file-bytes	asset_import.md	engine/asset_import/gltf_import.h:43
+asset::ImportLimits::max_json_bytes	variable	asset_import	asset-importlimits-max-json-bytes	asset_import.md	engine/asset_import/gltf_import.h:44
+asset::ImportLimits::max_buffer_bytes	variable	asset_import	asset-importlimits-max-buffer-bytes	asset_import.md	engine/asset_import/gltf_import.h:45
+asset::ImportLimits::max_buffers	variable	asset_import	asset-importlimits-max-buffers	asset_import.md	engine/asset_import/gltf_import.h:46
+asset::ImportLimits::max_buffer_views	variable	asset_import	asset-importlimits-max-buffer-views	asset_import.md	engine/asset_import/gltf_import.h:47
+asset::ImportLimits::max_accessors	variable	asset_import	asset-importlimits-max-accessors	asset_import.md	engine/asset_import/gltf_import.h:48
+asset::ImportLimits::max_accessor_elements	variable	asset_import	asset-importlimits-max-accessor-elements	asset_import.md	engine/asset_import/gltf_import.h:49
+asset::ImportLimits::max_meshes	variable	asset_import	asset-importlimits-max-meshes	asset_import.md	engine/asset_import/gltf_import.h:51
+asset::ImportLimits::max_primitives_per_mesh	variable	asset_import	asset-importlimits-max-primitives-per-mesh	asset_import.md	engine/asset_import/gltf_import.h:52
+asset::ImportLimits::max_nodes	variable	asset_import	asset-importlimits-max-nodes	asset_import.md	engine/asset_import/gltf_import.h:53
+asset::ImportLimits::max_images	variable	asset_import	asset-importlimits-max-images	asset_import.md	engine/asset_import/gltf_import.h:54
+asset::ImportLimits::max_textures	variable	asset_import	asset-importlimits-max-textures	asset_import.md	engine/asset_import/gltf_import.h:55
+asset::ImportLimits::max_materials	variable	asset_import	asset-importlimits-max-materials	asset_import.md	engine/asset_import/gltf_import.h:56
+asset::ImportLimits::max_skins	variable	asset_import	asset-importlimits-max-skins	asset_import.md	engine/asset_import/gltf_import.h:57
+asset::ImportLimits::max_animations	variable	asset_import	asset-importlimits-max-animations	asset_import.md	engine/asset_import/gltf_import.h:58
+asset::ImportLimits::max_pixels	variable	asset_import	asset-importlimits-max-pixels	asset_import.md	engine/asset_import/gltf_import.h:59
+asset::ImportLimits::max_output_bytes	variable	asset_import	asset-importlimits-max-output-bytes	asset_import.md	engine/asset_import/gltf_import.h:60
+asset::GltfSource	class	asset_import	asset-gltfsource	asset_import.md	engine/asset_import/gltf_import.h:69
+asset::GltfSource::~GltfSource()	function	asset_import	asset-gltfsource-tilde-gltfsource	asset_import.md	engine/asset_import/gltf_import.h:72
+asset::GltfSource::Read(StringView,u64,Vector<byte>*)	function	asset_import	asset-gltfsource-read-stringview-u64-vector-lt-byte-gt-star	asset_import.md	engine/asset_import/gltf_import.h:85
+asset::NoGltfSource	class	asset_import	asset-nogltfsource	asset_import.md	engine/asset_import/gltf_import.h:91
+asset::NoGltfSource::Read(StringView,u64,Vector<byte>*)	function	asset_import	asset-nogltfsource-read-stringview-u64-vector-lt-byte-gt-star	asset_import.md	engine/asset_import/gltf_import.h:96
+asset::IdSource	class	asset_import	asset-idsource	asset_import.md	engine/asset_import/gltf_import.h:102
+asset::IdSource::~IdSource()	function	asset_import	asset-idsource-tilde-idsource	asset_import.md	engine/asset_import/gltf_import.h:105
+asset::IdSource::Next()	function	asset_import	asset-idsource-next	asset_import.md	engine/asset_import/gltf_import.h:107
+asset::RandomIdSource	class	asset_import	asset-randomidsource	asset_import.md	engine/asset_import/gltf_import.h:112
+asset::RandomIdSource::Next()	function	asset_import	asset-randomidsource-next	asset_import.md	engine/asset_import/gltf_import.h:116
+asset::SeededIdSource	class	asset_import	asset-seededidsource	asset_import.md	engine/asset_import/gltf_import.h:122
+asset::SeededIdSource::SeededIdSource(u64)	function	asset_import	asset-seededidsource-seededidsource-u64	asset_import.md	engine/asset_import/gltf_import.h:126
+asset::SeededIdSource::Next()	function	asset_import	asset-seededidsource-next	asset_import.md	engine/asset_import/gltf_import.h:128
+asset::ImportKind	enum	asset_import	asset-importkind	asset_import.md	engine/asset_import/gltf_import.h:135
+asset::ImportKind::Image	enumerator	asset_import	asset-importkind-image	asset_import.md	engine/asset_import/gltf_import.h:137
+asset::ImportKind::Texture	enumerator	asset_import	asset-importkind-texture	asset_import.md	engine/asset_import/gltf_import.h:138
+asset::ImportKind::Material	enumerator	asset_import	asset-importkind-material	asset_import.md	engine/asset_import/gltf_import.h:139
+asset::ImportKind::Skeleton	enumerator	asset_import	asset-importkind-skeleton	asset_import.md	engine/asset_import/gltf_import.h:140
+asset::ImportKind::Mesh	enumerator	asset_import	asset-importkind-mesh	asset_import.md	engine/asset_import/gltf_import.h:141
+asset::ImportKind::Clip	enumerator	asset_import	asset-importkind-clip	asset_import.md	engine/asset_import/gltf_import.h:142
+asset::ImportKind::Level	enumerator	asset_import	asset-importkind-level	asset_import.md	engine/asset_import/gltf_import.h:143
+asset::ImportKindName(ImportKind)	function	asset_import	asset-importkindname-importkind	asset_import.md	engine/asset_import/gltf_import.h:150
+asset::ManifestEntry	struct	asset_import	asset-manifestentry	asset_import.md	engine/asset_import/gltf_import.h:156
+asset::ManifestEntry::ManifestEntry()	function	asset_import	asset-manifestentry-manifestentry	asset_import.md	engine/asset_import/gltf_import.h:159
+asset::ManifestEntry::kind	variable	asset_import	asset-manifestentry-kind	asset_import.md	engine/asset_import/gltf_import.h:160
+asset::ManifestEntry::index	variable	asset_import	asset-manifestentry-index	asset_import.md	engine/asset_import/gltf_import.h:161
+asset::ManifestEntry::name	variable	asset_import	asset-manifestentry-name	asset_import.md	engine/asset_import/gltf_import.h:162
+asset::ManifestEntry::id	variable	asset_import	asset-manifestentry-id	asset_import.md	engine/asset_import/gltf_import.h:163
+asset::ManifestObject	struct	asset_import	asset-manifestobject	asset_import.md	engine/asset_import/gltf_import.h:169
+asset::ManifestObject::index	variable	asset_import	asset-manifestobject-index	asset_import.md	engine/asset_import/gltf_import.h:171
+asset::ManifestObject::name	variable	asset_import	asset-manifestobject-name	asset_import.md	engine/asset_import/gltf_import.h:172
+asset::ImportManifest	class	asset_import	asset-importmanifest	asset_import.md	engine/asset_import/gltf_import.h:183
+asset::ImportManifest::Match(ImportKind,Span<const ManifestObject>,Vector<ResourceId>*) const	function	asset_import	asset-importmanifest-match-importkind-span-lt-const-manifestobject-gt-vector-lt-resourceid-gt-star-const	asset_import.md	engine/asset_import/gltf_import.h:197
+asset::ImportManifest::Add(ImportKind,u32,StringView,ResourceId)	function	asset_import	asset-importmanifest-add-importkind-u32-stringview-resourceid	asset_import.md	engine/asset_import/gltf_import.h:200
+asset::ImportManifest::Entries() const	function	asset_import	asset-importmanifest-entries-const	asset_import.md	engine/asset_import/gltf_import.h:203
+asset::ImportManifest::Format(String<HeapAllocator>*) const	function	asset_import	asset-importmanifest-format-string-lt-heapallocator-gt-star-const	asset_import.md	engine/asset_import/gltf_import.h:210
+asset::ImportManifest::Parse(StringView,GltfError*)	function	asset_import	asset-importmanifest-parse-stringview-gltferror-star	asset_import.md	engine/asset_import/gltf_import.h:217
+asset::ImportOptions	struct	asset_import	asset-importoptions	asset_import.md	engine/asset_import/gltf_import.h:227
+asset::ImportOptions::limits	variable	asset_import	asset-importoptions-limits	asset_import.md	engine/asset_import/gltf_import.h:229
+asset::ImportOptions::ids	variable	asset_import	asset-importoptions-ids	asset_import.md	engine/asset_import/gltf_import.h:230
+asset::ImportOptions::manifest	variable	asset_import	asset-importoptions-manifest	asset_import.md	engine/asset_import/gltf_import.h:231
+asset::ImportOptions::path_prefix	variable	asset_import	asset-importoptions-path-prefix	asset_import.md	engine/asset_import/gltf_import.h:232
+asset::ImportedResource	struct	asset_import	asset-importedresource	asset_import.md	engine/asset_import/gltf_import.h:239
+asset::ImportedResource::ImportedResource()	function	asset_import	asset-importedresource-importedresource	asset_import.md	engine/asset_import/gltf_import.h:242
+asset::ImportedResource::id	variable	asset_import	asset-importedresource-id	asset_import.md	engine/asset_import/gltf_import.h:243
+asset::ImportedResource::type	variable	asset_import	asset-importedresource-type	asset_import.md	engine/asset_import/gltf_import.h:244
+asset::ImportedResource::path	variable	asset_import	asset-importedresource-path	asset_import.md	engine/asset_import/gltf_import.h:245
+asset::ImportedResource::blob	variable	asset_import	asset-importedresource-blob	asset_import.md	engine/asset_import/gltf_import.h:246
+asset::ImportReport	struct	asset_import	asset-importreport	asset_import.md	engine/asset_import/gltf_import.h:252
+asset::ImportReport::meshes	variable	asset_import	asset-importreport-meshes	asset_import.md	engine/asset_import/gltf_import.h:254
+asset::ImportReport::materials	variable	asset_import	asset-importreport-materials	asset_import.md	engine/asset_import/gltf_import.h:255
+asset::ImportReport::textures	variable	asset_import	asset-importreport-textures	asset_import.md	engine/asset_import/gltf_import.h:256
+asset::ImportReport::images	variable	asset_import	asset-importreport-images	asset_import.md	engine/asset_import/gltf_import.h:257
+asset::ImportReport::skins	variable	asset_import	asset-importreport-skins	asset_import.md	engine/asset_import/gltf_import.h:258
+asset::ImportReport::animations	variable	asset_import	asset-importreport-animations	asset_import.md	engine/asset_import/gltf_import.h:259
+asset::ImportReport::nodes	variable	asset_import	asset-importreport-nodes	asset_import.md	engine/asset_import/gltf_import.h:260
+asset::ImportReport::accessors	variable	asset_import	asset-importreport-accessors	asset_import.md	engine/asset_import/gltf_import.h:261
+asset::ImportReport::warnings	variable	asset_import	asset-importreport-warnings	asset_import.md	engine/asset_import/gltf_import.h:262
+asset::ImportReport::notes	variable	asset_import	asset-importreport-notes	asset_import.md	engine/asset_import/gltf_import.h:263
+asset::ImportResult	struct	asset_import	asset-importresult	asset_import.md	engine/asset_import/gltf_import.h:270
+asset::ImportResult::resources	variable	asset_import	asset-importresult-resources	asset_import.md	engine/asset_import/gltf_import.h:272
+asset::ImportResult::manifest	variable	asset_import	asset-importresult-manifest	asset_import.md	engine/asset_import/gltf_import.h:273
+asset::ImportResult::report	variable	asset_import	asset-importresult-report	asset_import.md	engine/asset_import/gltf_import.h:274
+asset::ImportGltf(ByteSpan,GltfSource&,const ImportOptions&,ImportResult*,GltfError*)	function	asset_import	asset-importgltf-bytespan-gltfsource-amp-const-importoptions-amp-importresult-star-gltferror-star	asset_import.md	engine/asset_import/gltf_import.h:294
+asset::ImportIntoBackend(HostMemoryBackend&,const ImportResult&)	function	asset_import	asset-importintobackend-hostmemorybackend-amp-const-importresult-amp	asset_import.md	engine/asset_import/gltf_import.h:304
+asset::JsonValue	class	asset_import	asset-jsonvalue	asset_import.md	engine/asset_import/json_view.h:29
+asset::JsonValue::JsonValue()	function	asset_import	asset-jsonvalue-jsonvalue	asset_import.md	engine/asset_import/json_view.h:33
+asset::JsonValue::Exists() const	function	asset_import	asset-jsonvalue-exists-const	asset_import.md	engine/asset_import/json_view.h:37
+asset::JsonValue::IsObject() const	function	asset_import	asset-jsonvalue-isobject-const	asset_import.md	engine/asset_import/json_view.h:40
+asset::JsonValue::IsArray() const	function	asset_import	asset-jsonvalue-isarray-const	asset_import.md	engine/asset_import/json_view.h:43
+asset::JsonValue::IsString() const	function	asset_import	asset-jsonvalue-isstring-const	asset_import.md	engine/asset_import/json_view.h:47
+asset::JsonValue::IsNumber() const	function	asset_import	asset-jsonvalue-isnumber-const	asset_import.md	engine/asset_import/json_view.h:51
+asset::JsonValue::IsBool() const	function	asset_import	asset-jsonvalue-isbool-const	asset_import.md	engine/asset_import/json_view.h:55
+asset::JsonValue::IsNull() const	function	asset_import	asset-jsonvalue-isnull-const	asset_import.md	engine/asset_import/json_view.h:59
+asset::JsonValue::Path() const	function	asset_import	asset-jsonvalue-path-const	asset_import.md	engine/asset_import/json_view.h:64
+asset::JsonValue::Get(StringView) const	function	asset_import	asset-jsonvalue-get-stringview-const	asset_import.md	engine/asset_import/json_view.h:67
+asset::JsonValue::Size() const	function	asset_import	asset-jsonvalue-size-const	asset_import.md	engine/asset_import/json_view.h:69
+asset::JsonValue::At(usize) const	function	asset_import	asset-jsonvalue-at-usize-const	asset_import.md	engine/asset_import/json_view.h:71
+asset::JsonValue::AsString(StringView*,GltfError*) const	function	asset_import	asset-jsonvalue-asstring-stringview-star-gltferror-star-const	asset_import.md	engine/asset_import/json_view.h:77
+asset::JsonValue::AsBool(bool*,GltfError*) const	function	asset_import	asset-jsonvalue-asbool-bool-star-gltferror-star-const	asset_import.md	engine/asset_import/json_view.h:82
+asset::JsonValue::AsDouble(f64*,GltfError*) const	function	asset_import	asset-jsonvalue-asdouble-f64-star-gltferror-star-const	asset_import.md	engine/asset_import/json_view.h:87
+asset::JsonValue::AsUnsigned(u64*,u64,GltfError*) const	function	asset_import	asset-jsonvalue-asunsigned-u64-star-u64-gltferror-star-const	asset_import.md	engine/asset_import/json_view.h:92
+asset::JsonValue::AsIndex(u32*,u64,GltfError*) const	function	asset_import	asset-jsonvalue-asindex-u32-star-u64-gltferror-star-const	asset_import.md	engine/asset_import/json_view.h:97
+asset::JsonValue::OptionalString(StringView,StringView*,bool*,GltfError*) const	function	asset_import	asset-jsonvalue-optionalstring-stringview-stringview-star-bool-star-gltferror-star-const	asset_import.md	engine/asset_import/json_view.h:104
+asset::JsonValue::OptionalUnsigned(StringView,u64*,u64,bool*,GltfError*) const	function	asset_import	asset-jsonvalue-optionalunsigned-stringview-u64-star-u64-bool-star-gltferror-star-const	asset_import.md	engine/asset_import/json_view.h:107
+asset::JsonValue::OptionalBool(StringView,bool*,GltfError*) const	function	asset_import	asset-jsonvalue-optionalbool-stringview-bool-star-gltferror-star-const	asset_import.md	engine/asset_import/json_view.h:110
+asset::JsonValue::RequiredString(StringView,StringView*,GltfError*) const	function	asset_import	asset-jsonvalue-requiredstring-stringview-stringview-star-gltferror-star-const	asset_import.md	engine/asset_import/json_view.h:115
+asset::JsonValue::RequiredUnsigned(StringView,u64*,u64,GltfError*) const	function	asset_import	asset-jsonvalue-requiredunsigned-stringview-u64-star-u64-gltferror-star-const	asset_import.md	engine/asset_import/json_view.h:120
+asset::JsonValue::RequiredIndex(StringView,u32*,u64,GltfError*) const	function	asset_import	asset-jsonvalue-requiredindex-stringview-u32-star-u64-gltferror-star-const	asset_import.md	engine/asset_import/json_view.h:125
+asset::JsonValue::Members(class JsonMembers*) const	function	asset_import	asset-jsonvalue-members-class-jsonmembers-star-const	asset_import.md	engine/asset_import/json_view.h:131
+asset::JsonMembers	class	asset_import	asset-jsonmembers	asset_import.md	engine/asset_import/json_view.h:144
+asset::JsonMembers::Next(StringView*,JsonValue*)	function	asset_import	asset-jsonmembers-next-stringview-star-jsonvalue-star	asset_import.md	engine/asset_import/json_view.h:151
+asset::JsonDocument	class	asset_import	asset-jsondocument	asset_import.md	engine/asset_import/json_view.h:163
+asset::JsonDocument::JsonDocument()	function	asset_import	asset-jsondocument-jsondocument	asset_import.md	engine/asset_import/json_view.h:167
+asset::JsonDocument::JsonDocument(const JsonDocument&)	function	asset_import	asset-jsondocument-jsondocument-const-jsondocument-amp	asset_import.md	engine/asset_import/json_view.h:168
+asset::JsonDocument::operator=(const JsonDocument&)	function	asset_import	asset-jsondocument-operator-eq-const-jsondocument-amp	asset_import.md	engine/asset_import/json_view.h:169
+asset::JsonDocument::JsonDocument(JsonDocument&&) noexcept	function	asset_import	asset-jsondocument-jsondocument-jsondocument-amp-amp-noexcept	asset_import.md	engine/asset_import/json_view.h:171
+asset::JsonDocument::operator=(JsonDocument&&) noexcept	function	asset_import	asset-jsondocument-operator-eq-jsondocument-amp-amp-noexcept	asset_import.md	engine/asset_import/json_view.h:173
+asset::JsonDocument::~JsonDocument()	function	asset_import	asset-jsondocument-tilde-jsondocument	asset_import.md	engine/asset_import/json_view.h:174
+asset::JsonDocument::Parse(ByteSpan,u64,GltfError*)	function	asset_import	asset-jsondocument-parse-bytespan-u64-gltferror-star	asset_import.md	engine/asset_import/json_view.h:189
+asset::JsonDocument::Root() const	function	asset_import	asset-jsondocument-root-const	asset_import.md	engine/asset_import/json_view.h:192
 animation::ComponentIds	enum	animation	animation-componentids	animation.md	engine/animation/components.h:21
 animation::kAnimationPlayerId	enumerator	animation	animation-kanimationplayerid	animation.md	engine/animation/components.h:23
 animation::kSkeletonInstanceId	enumerator	animation	animation-kskeletoninstanceid	animation.md	engine/animation/components.h:24

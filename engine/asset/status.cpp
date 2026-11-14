@@ -25,6 +25,7 @@ const char* ErrorCodeName(ErrorCode code)
     case ErrorCode::Invalid: return "invalid";
     case ErrorCode::InUse: return "in use";
     case ErrorCode::NotReady: return "not ready";
+    case ErrorCode::Unsupported: return "unsupported";
     case ErrorCode::Other: return "other";
     }
     return "other";

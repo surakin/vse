@@ -58,6 +58,9 @@ tools/file_access_check 9
 tools/net_access_check 20
 tools/shared_unit_check 22
 tools/cmdline_access_check 22
+tools/json_boundary_check 22
+engine/asset_import 22
+third_party/yyjson 22
 tools/std_usage_check 10
 tools/settings_fixtures_check 11
 tools/config_access_check 11

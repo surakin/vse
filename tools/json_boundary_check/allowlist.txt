@@ -1,0 +1,4 @@
+# path|reason - files (or directories, with a trailing /) outside engine/asset_import/json_view.cpp allowed to name yyjson (the header, an yyjson_ function,
+# a YYJSON_ macro, or a link to the yyjson target). An entry that no longer exempts anything fails the gate (remove it).
+# Empty on purpose: the rule is PLAN.md assumption #19 ("only its implementation file includes its header") and
+# docs/superpowers/specs/2026-11-11-asset-pipeline-design.md ("The JSON library").
