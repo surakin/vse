@@ -12272,6 +12272,61 @@ bool generate_mips;
 
 Whether to build the levels that `pixels` does not hold on the GPU (needs `desc.mip_levels` above 1 and a format and device that can; otherwise the texture has one level).
 
+## `TextureLevelRef` {#renderer-texturelevelref}
+
+`struct renderer::TextureLevelRef` — defined in `engine/renderer/texture.h`
+
+```cpp
+struct TextureLevelRef { ... }
+```
+
+One mip level of one layer of a texture whose texels live in memory the caller keeps (a loaded asset blob): the zero-copy entry of [`renderer::GpuTexture::CreateFromLevels`](#renderer-gputexture-createfromlevels-rhi-device-star-const-rhi-texturedesc-amp-span-lt-const-texturelevelref-gt-deviceresources-star-const-char-star).
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible (a plain value). |
+| Ownership | borrows `data`. |
+
+### `data` {#renderer-texturelevelref-data}
+
+`variable renderer::TextureLevelRef::data` — defined in `engine/renderer/texture.h`
+
+```cpp
+const void* data;
+```
+
+The level's rows, `row_pitch` bytes apart.
+
+### `row_pitch` {#renderer-texturelevelref-row-pitch}
+
+`variable renderer::TextureLevelRef::row_pitch` — defined in `engine/renderer/texture.h`
+
+```cpp
+u32 row_pitch;
+```
+
+Bytes between rows (0: tightly packed); a multiple of the texel size.
+
+### `mip` {#renderer-texturelevelref-mip}
+
+`variable renderer::TextureLevelRef::mip` — defined in `engine/renderer/texture.h`
+
+```cpp
+u32 mip;
+```
+
+The mip level.
+
+### `layer` {#renderer-texturelevelref-layer}
+
+`variable renderer::TextureLevelRef::layer` — defined in `engine/renderer/texture.h`
+
+```cpp
+u32 layer;
+```
+
+The array layer.
+
 ## `TextureLoader` {#renderer-textureloader}
 
 `alias renderer::TextureLoader` — defined in `engine/renderer/texture.h`
@@ -12381,6 +12436,28 @@ Creates the texture from `image` and keeps `image` as the source.
 | Fails | returns false, logging the reason, if the description is invalid, exceeds the device limits, the format is not supported, or the upload fails. |
 | Aborts | the texture already exists. |
 | Ownership | borrowed for the call; nothing is kept unless the description above says so. |
+
+### `CreateFromLevels(rhi::Device*,const rhi::TextureDesc&,Span<const TextureLevelRef>,DeviceResources*,const char*)` {#renderer-gputexture-createfromlevels-rhi-device-star-const-rhi-texturedesc-amp-span-lt-const-texturelevelref-gt-deviceresources-star-const-char-star}
+
+`method renderer::GpuTexture::CreateFromLevels` — defined in `engine/renderer/texture.h`
+
+```cpp
+bool CreateFromLevels(rhi::Device* device, const rhi::TextureDesc& desc, Span<const TextureLevelRef> levels, DeviceResources* resources, const char* debug_name);
+```
+
+Creates the texture from every level of every layer, uploaded straight from memory the caller owns (the mip sections of an asset blob): the staging copy into device memory is the only copy, and no mip is generated. The texture keeps only the descriptions of the levels, so a reset uploads from the same memory again.
+
+| Field | Value |
+|---|---|
+| Parameter `device` | the device. |
+| Parameter `desc` | the finished texture; `usage` gets `CopyDst` added; `debug_name` is ignored. |
+| Parameter `levels` | exactly one entry for each of `desc.mip_levels * desc.array_layers` subresources. |
+| Parameter `resources` | the registry, or null for a texture that does not need to survive a reset. |
+| Parameter `debug_name` | a label; copied, may be null. |
+| Returns | true on success. |
+| Fails | returns false, logging the reason, for an invalid description, a missing, repeated or out-of-range level, a size or format the device cannot hold, or a failed upload. |
+| Aborts | the texture already exists. |
+| Ownership | `levels[i].data` is borrowed until the texture is destroyed (and across a reset, when `resources` is given): the bytes must outlive the texture. |
 
 ### `CreateFromLoader(rhi::Device*,TextureLoader,void*,DeviceResources*,const char*)` {#renderer-gputexture-createfromloader-rhi-device-star-textureloader-void-star-deviceresources-star-const-char-star}
 

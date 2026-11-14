@@ -21,6 +21,8 @@ set(ASSET_SOURCES
   skeleton.cpp  # Day 318
   mesh.cpp  # Day 319
   clip.cpp  # Day 320
+  texture_mips.cpp  # Day 323
+  texture.cpp  # Day 323
 )
 set(ASSET_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

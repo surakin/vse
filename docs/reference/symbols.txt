@@ -5001,6 +5001,71 @@ asset::Status::Failed() const	function	asset	asset-status-failed-const	asset.md	
 asset::Status::Is(ErrorCode) const	function	asset	asset-status-is-errorcode-const	asset.md	engine/asset/status.h:76
 asset::Status::Code() const	function	asset	asset-status-code-const	asset.md	engine/asset/status.h:79
 asset::Status::Message() const	function	asset	asset-status-message-const	asset.md	engine/asset/status.h:84
+asset::kMaxTextureLayers	variable	asset	asset-kmaxtexturelayers	asset.md	engine/asset/texture.h:29
+asset::kCubeFaces	variable	asset	asset-kcubefaces	asset.md	engine/asset/texture.h:31
+asset::TextureSection	enum	asset	asset-texturesection	asset.md	engine/asset/texture.h:34
+asset::kTextureSectionHeader	enumerator	asset	asset-ktexturesectionheader	asset.md	engine/asset/texture.h:36
+asset::kTextureSectionLevels	enumerator	asset	asset-ktexturesectionlevels	asset.md	engine/asset/texture.h:37
+asset::kTextureSectionData	enumerator	asset	asset-ktexturesectiondata	asset.md	engine/asset/texture.h:38
+asset::TextureKind	enum	asset	asset-texturekind	asset.md	engine/asset/texture.h:42
+asset::TextureKind::Tex2D	enumerator	asset	asset-texturekind-tex2d	asset.md	engine/asset/texture.h:44
+asset::TextureKind::Cube	enumerator	asset	asset-texturekind-cube	asset.md	engine/asset/texture.h:45
+asset::TextureKind::Array2D	enumerator	asset	asset-texturekind-array2d	asset.md	engine/asset/texture.h:46
+asset::TextureLayout	struct	asset	asset-texturelayout	asset.md	engine/asset/texture.h:52
+asset::TextureLayout::row_alignment	variable	asset	asset-texturelayout-row-alignment	asset.md	engine/asset/texture.h:54
+asset::TextureLayout::subresource_alignment	variable	asset	asset-texturelayout-subresource-alignment	asset.md	engine/asset/texture.h:55
+asset::TextureLayoutForTarget(u32,TextureLayout*)	function	asset	asset-texturelayoutfortarget-u32-texturelayout-star	asset.md	engine/asset/texture.h:64
+asset::TextureBuildInput	struct	asset	asset-texturebuildinput	asset.md	engine/asset/texture.h:70
+asset::TextureBuildInput::kind	variable	asset	asset-texturebuildinput-kind	asset.md	engine/asset/texture.h:72
+asset::TextureBuildInput::format	variable	asset	asset-texturebuildinput-format	asset.md	engine/asset/texture.h:73
+asset::TextureBuildInput::width	variable	asset	asset-texturebuildinput-width	asset.md	engine/asset/texture.h:74
+asset::TextureBuildInput::height	variable	asset	asset-texturebuildinput-height	asset.md	engine/asset/texture.h:75
+asset::TextureBuildInput::layers	variable	asset	asset-texturebuildinput-layers	asset.md	engine/asset/texture.h:76
+asset::TextureBuildInput::mip_count	variable	asset	asset-texturebuildinput-mip-count	asset.md	engine/asset/texture.h:77
+asset::TextureBuildInput::subresources	variable	asset	asset-texturebuildinput-subresources	asset.md	engine/asset/texture.h:78
+asset::TextureBuildInput::filter	variable	asset	asset-texturebuildinput-filter	asset.md	engine/asset/texture.h:79
+asset::TextureBuildInput::alpha	variable	asset	asset-texturebuildinput-alpha	asset.md	engine/asset/texture.h:80
+asset::BuildTextureBlob(const TypeRegistry&,ResourceId,const TextureBuildInput&,Vector<byte>*,u32)	function	asset	asset-buildtextureblob-const-typeregistry-amp-resourceid-const-texturebuildinput-amp-vector-lt-byte-gt-star-u32	asset.md	engine/asset/texture.h:89
+asset::TextureLevel	struct	asset	asset-texturelevel	asset.md	engine/asset/texture.h:96
+asset::TextureLevel::bytes	variable	asset	asset-texturelevel-bytes	asset.md	engine/asset/texture.h:98
+asset::TextureLevel::row_pitch	variable	asset	asset-texturelevel-row-pitch	asset.md	engine/asset/texture.h:99
+asset::TextureLevel::width	variable	asset	asset-texturelevel-width	asset.md	engine/asset/texture.h:100
+asset::TextureLevel::height	variable	asset	asset-texturelevel-height	asset.md	engine/asset/texture.h:101
+asset::TextureView	class	asset	asset-textureview	asset.md	engine/asset/texture.h:108
+asset::TextureView::TextureView()	function	asset	asset-textureview-textureview	asset.md	engine/asset/texture.h:112
+asset::TextureView::Open(ByteSpan,const TypeRegistry&)	function	asset	asset-textureview-open-bytespan-const-typeregistry-amp	asset.md	engine/asset/texture.h:121
+asset::TextureView::Id() const	function	asset	asset-textureview-id-const	asset.md	engine/asset/texture.h:124
+asset::TextureView::Kind() const	function	asset	asset-textureview-kind-const	asset.md	engine/asset/texture.h:126
+asset::TextureView::Format() const	function	asset	asset-textureview-format-const	asset.md	engine/asset/texture.h:128
+asset::TextureView::Srgb() const	function	asset	asset-textureview-srgb-const	asset.md	engine/asset/texture.h:132
+asset::TextureView::Premultiplied() const	function	asset	asset-textureview-premultiplied-const	asset.md	engine/asset/texture.h:136
+asset::TextureView::Width() const	function	asset	asset-textureview-width-const	asset.md	engine/asset/texture.h:138
+asset::TextureView::Height() const	function	asset	asset-textureview-height-const	asset.md	engine/asset/texture.h:140
+asset::TextureView::Layers() const	function	asset	asset-textureview-layers-const	asset.md	engine/asset/texture.h:142
+asset::TextureView::MipCount() const	function	asset	asset-textureview-mipcount-const	asset.md	engine/asset/texture.h:144
+asset::TextureView::Filter() const	function	asset	asset-textureview-filter-const	asset.md	engine/asset/texture.h:146
+asset::TextureView::Alpha() const	function	asset	asset-textureview-alpha-const	asset.md	engine/asset/texture.h:148
+asset::TextureView::Layout() const	function	asset	asset-textureview-layout-const	asset.md	engine/asset/texture.h:150
+asset::TextureView::Level(u32,u32) const	function	asset	asset-textureview-level-u32-u32-const	asset.md	engine/asset/texture.h:155
+asset::TextureView::Desc(rhi::TextureUsage) const	function	asset	asset-textureview-desc-rhi-textureusage-const	asset.md	engine/asset/texture.h:161
+asset::RetargetTextureBlob(const TypeRegistry&,ByteSpan,u32,Vector<byte>*)	function	asset	asset-retargettextureblob-const-typeregistry-amp-bytespan-u32-vector-lt-byte-gt-star	asset.md	engine/asset/texture.h:182
+asset::kMaxTextureSize	variable	asset	asset-kmaxtexturesize	asset.md	engine/asset/texture_mips.h:26
+asset::MipFilter	enum	asset	asset-mipfilter	asset.md	engine/asset/texture_mips.h:29
+asset::MipFilter::Box	enumerator	asset	asset-mipfilter-box	asset.md	engine/asset/texture_mips.h:31
+asset::MipFilter::Kaiser	enumerator	asset	asset-mipfilter-kaiser	asset.md	engine/asset/texture_mips.h:32
+asset::MipAlpha	enum	asset	asset-mipalpha	asset.md	engine/asset/texture_mips.h:36
+asset::MipAlpha::Straight	enumerator	asset	asset-mipalpha-straight	asset.md	engine/asset/texture_mips.h:38
+asset::MipAlpha::Premultiply	enumerator	asset	asset-mipalpha-premultiply	asset.md	engine/asset/texture_mips.h:39
+asset::MipAlpha::Ignore	enumerator	asset	asset-mipalpha-ignore	asset.md	engine/asset/texture_mips.h:41
+asset::MipOptions	struct	asset	asset-mipoptions	asset.md	engine/asset/texture_mips.h:47
+asset::MipOptions::filter	variable	asset	asset-mipoptions-filter	asset.md	engine/asset/texture_mips.h:49
+asset::MipOptions::alpha	variable	asset	asset-mipoptions-alpha	asset.md	engine/asset/texture_mips.h:50
+asset::IsTextureFormat(rhi::Format)	function	asset	asset-istextureformat-rhi-format	asset.md	engine/asset/texture_mips.h:56
+asset::FullMipCount(u32,u32)	function	asset	asset-fullmipcount-u32-u32	asset.md	engine/asset/texture_mips.h:61
+asset::TightLevelBytes(rhi::Format,u32,u32)	function	asset	asset-tightlevelbytes-rhi-format-u32-u32	asset.md	engine/asset/texture_mips.h:67
+asset::PremultiplyAlphaRgba8(bool,MutableByteSpan)	function	asset	asset-premultiplyalphargba8-bool-mutablebytespan	asset.md	engine/asset/texture_mips.h:75
+asset::ConvertRgba8(rhi::Format,bool,u32,u32,ByteSpan,Vector<byte>*)	function	asset	asset-convertrgba8-rhi-format-bool-u32-u32-bytespan-vector-lt-byte-gt-star	asset.md	engine/asset/texture_mips.h:86
+asset::GenerateMipChain(rhi::Format,u32,u32,ByteSpan,const MipOptions&,Vector<byte>*)	function	asset	asset-generatemipchain-rhi-format-u32-u32-bytespan-const-mipoptions-amp-vector-lt-byte-gt-star	asset.md	engine/asset/texture_mips.h:99
 animation::ComponentIds	enum	animation	animation-componentids	animation.md	engine/animation/components.h:21
 animation::kAnimationPlayerId	enumerator	animation	animation-kanimationplayerid	animation.md	engine/animation/components.h:23
 animation::kSkeletonInstanceId	enumerator	animation	animation-kskeletoninstanceid	animation.md	engine/animation/components.h:24
@@ -9160,43 +9225,49 @@ renderer::TextRenderer::Release()	function	renderer	renderer-textrenderer-releas
 renderer::TextRenderer::Recreate(rhi::Device*)	function	renderer	renderer-textrenderer-recreate-rhi-device-star	renderer.md	engine/renderer/text_renderer.h:174
 renderer::TextRenderer::Live() const	function	renderer	renderer-textrenderer-live-const	renderer.md	engine/renderer/text_renderer.h:175
 renderer::TextRenderer::RecreatableName() const	function	renderer	renderer-textrenderer-recreatablename-const	renderer.md	engine/renderer/text_renderer.h:176
-renderer::TextureImage	struct	renderer	renderer-textureimage	renderer.md	engine/renderer/texture.h:17
-renderer::TextureImage::desc	variable	renderer	renderer-textureimage-desc	renderer.md	engine/renderer/texture.h:21
-renderer::TextureImage::pixels	variable	renderer	renderer-textureimage-pixels	renderer.md	engine/renderer/texture.h:24
-renderer::TextureImage::generate_mips	variable	renderer	renderer-textureimage-generate-mips	renderer.md	engine/renderer/texture.h:27
-renderer::TextureLoader	alias	renderer	renderer-textureloader	renderer.md	engine/renderer/texture.h:34
-renderer::GpuTexture	class	renderer	renderer-gputexture	renderer.md	engine/renderer/texture.h:44
-renderer::GpuTexture::GpuTexture()	function	renderer	renderer-gputexture-gputexture	renderer.md	engine/renderer/texture.h:47
-renderer::GpuTexture::~GpuTexture()	function	renderer	renderer-gputexture-tilde-gputexture	renderer.md	engine/renderer/texture.h:49
-renderer::GpuTexture::GpuTexture(GpuTexture&&) noexcept	function	renderer	renderer-gputexture-gputexture-gputexture-amp-amp-noexcept	renderer.md	engine/renderer/texture.h:51
-renderer::GpuTexture::operator=(GpuTexture&&) noexcept	function	renderer	renderer-gputexture-operator-eq-gputexture-amp-amp-noexcept	renderer.md	engine/renderer/texture.h:53
-renderer::GpuTexture::GpuTexture(const GpuTexture&)	function	renderer	renderer-gputexture-gputexture-const-gputexture-amp	renderer.md	engine/renderer/texture.h:54
-renderer::GpuTexture::operator=(const GpuTexture&)	function	renderer	renderer-gputexture-operator-eq-const-gputexture-amp	renderer.md	engine/renderer/texture.h:55
-renderer::GpuTexture::Create(rhi::Device*,TextureImage&&,DeviceResources*,const char*)	function	renderer	renderer-gputexture-create-rhi-device-star-textureimage-amp-amp-deviceresources-star-const-char-star	renderer.md	engine/renderer/texture.h:70
-renderer::GpuTexture::CreateFromLoader(rhi::Device*,TextureLoader,void*,DeviceResources*,const char*)	function	renderer	renderer-gputexture-createfromloader-rhi-device-star-textureloader-void-star-deviceresources-star-const-char-star	renderer.md	engine/renderer/texture.h:83
-renderer::GpuTexture::Destroy()	function	renderer	renderer-gputexture-destroy	renderer.md	engine/renderer/texture.h:87
-renderer::GpuTexture::Release()	function	renderer	renderer-gputexture-release	renderer.md	engine/renderer/texture.h:89
-renderer::GpuTexture::Recreate(rhi::Device*)	function	renderer	renderer-gputexture-recreate-rhi-device-star	renderer.md	engine/renderer/texture.h:90
-renderer::GpuTexture::Live() const	function	renderer	renderer-gputexture-live-const	renderer.md	engine/renderer/texture.h:91
-renderer::GpuTexture::RecreatableName() const	function	renderer	renderer-gputexture-recreatablename-const	renderer.md	engine/renderer/texture.h:92
-renderer::GpuTexture::Valid() const	function	renderer	renderer-gputexture-valid-const	renderer.md	engine/renderer/texture.h:96
-renderer::GpuTexture::Handle() const	function	renderer	renderer-gputexture-handle-const	renderer.md	engine/renderer/texture.h:98
-renderer::GpuTexture::Desc() const	function	renderer	renderer-gputexture-desc-const	renderer.md	engine/renderer/texture.h:100
-renderer::GpuSampler	class	renderer	renderer-gpusampler	renderer.md	engine/renderer/texture.h:121
-renderer::GpuSampler::GpuSampler()	function	renderer	renderer-gpusampler-gpusampler	renderer.md	engine/renderer/texture.h:124
-renderer::GpuSampler::~GpuSampler()	function	renderer	renderer-gpusampler-tilde-gpusampler	renderer.md	engine/renderer/texture.h:126
-renderer::GpuSampler::GpuSampler(GpuSampler&&) noexcept	function	renderer	renderer-gpusampler-gpusampler-gpusampler-amp-amp-noexcept	renderer.md	engine/renderer/texture.h:128
-renderer::GpuSampler::operator=(GpuSampler&&) noexcept	function	renderer	renderer-gpusampler-operator-eq-gpusampler-amp-amp-noexcept	renderer.md	engine/renderer/texture.h:130
-renderer::GpuSampler::GpuSampler(const GpuSampler&)	function	renderer	renderer-gpusampler-gpusampler-const-gpusampler-amp	renderer.md	engine/renderer/texture.h:131
-renderer::GpuSampler::operator=(const GpuSampler&)	function	renderer	renderer-gpusampler-operator-eq-const-gpusampler-amp	renderer.md	engine/renderer/texture.h:132
-renderer::GpuSampler::Create(rhi::Device*,const rhi::SamplerDesc&,DeviceResources*,const char*)	function	renderer	renderer-gpusampler-create-rhi-device-star-const-rhi-samplerdesc-amp-deviceresources-star-const-char-star	renderer.md	engine/renderer/texture.h:144
-renderer::GpuSampler::Destroy()	function	renderer	renderer-gpusampler-destroy	renderer.md	engine/renderer/texture.h:147
-renderer::GpuSampler::Release()	function	renderer	renderer-gpusampler-release	renderer.md	engine/renderer/texture.h:149
-renderer::GpuSampler::Recreate(rhi::Device*)	function	renderer	renderer-gpusampler-recreate-rhi-device-star	renderer.md	engine/renderer/texture.h:150
-renderer::GpuSampler::Live() const	function	renderer	renderer-gpusampler-live-const	renderer.md	engine/renderer/texture.h:151
-renderer::GpuSampler::RecreatableName() const	function	renderer	renderer-gpusampler-recreatablename-const	renderer.md	engine/renderer/texture.h:152
-renderer::GpuSampler::Valid() const	function	renderer	renderer-gpusampler-valid-const	renderer.md	engine/renderer/texture.h:156
-renderer::GpuSampler::Handle() const	function	renderer	renderer-gpusampler-handle-const	renderer.md	engine/renderer/texture.h:158
+renderer::TextureImage	struct	renderer	renderer-textureimage	renderer.md	engine/renderer/texture.h:18
+renderer::TextureImage::desc	variable	renderer	renderer-textureimage-desc	renderer.md	engine/renderer/texture.h:22
+renderer::TextureImage::pixels	variable	renderer	renderer-textureimage-pixels	renderer.md	engine/renderer/texture.h:25
+renderer::TextureImage::generate_mips	variable	renderer	renderer-textureimage-generate-mips	renderer.md	engine/renderer/texture.h:28
+renderer::TextureLevelRef	struct	renderer	renderer-texturelevelref	renderer.md	engine/renderer/texture.h:36
+renderer::TextureLevelRef::data	variable	renderer	renderer-texturelevelref-data	renderer.md	engine/renderer/texture.h:38
+renderer::TextureLevelRef::row_pitch	variable	renderer	renderer-texturelevelref-row-pitch	renderer.md	engine/renderer/texture.h:39
+renderer::TextureLevelRef::mip	variable	renderer	renderer-texturelevelref-mip	renderer.md	engine/renderer/texture.h:40
+renderer::TextureLevelRef::layer	variable	renderer	renderer-texturelevelref-layer	renderer.md	engine/renderer/texture.h:41
+renderer::TextureLoader	alias	renderer	renderer-textureloader	renderer.md	engine/renderer/texture.h:48
+renderer::GpuTexture	class	renderer	renderer-gputexture	renderer.md	engine/renderer/texture.h:58
+renderer::GpuTexture::GpuTexture()	function	renderer	renderer-gputexture-gputexture	renderer.md	engine/renderer/texture.h:61
+renderer::GpuTexture::~GpuTexture()	function	renderer	renderer-gputexture-tilde-gputexture	renderer.md	engine/renderer/texture.h:63
+renderer::GpuTexture::GpuTexture(GpuTexture&&) noexcept	function	renderer	renderer-gputexture-gputexture-gputexture-amp-amp-noexcept	renderer.md	engine/renderer/texture.h:65
+renderer::GpuTexture::operator=(GpuTexture&&) noexcept	function	renderer	renderer-gputexture-operator-eq-gputexture-amp-amp-noexcept	renderer.md	engine/renderer/texture.h:67
+renderer::GpuTexture::GpuTexture(const GpuTexture&)	function	renderer	renderer-gputexture-gputexture-const-gputexture-amp	renderer.md	engine/renderer/texture.h:68
+renderer::GpuTexture::operator=(const GpuTexture&)	function	renderer	renderer-gputexture-operator-eq-const-gputexture-amp	renderer.md	engine/renderer/texture.h:69
+renderer::GpuTexture::Create(rhi::Device*,TextureImage&&,DeviceResources*,const char*)	function	renderer	renderer-gputexture-create-rhi-device-star-textureimage-amp-amp-deviceresources-star-const-char-star	renderer.md	engine/renderer/texture.h:84
+renderer::GpuTexture::CreateFromLevels(rhi::Device*,const rhi::TextureDesc&,Span<const TextureLevelRef>,DeviceResources*,const char*)	function	renderer	renderer-gputexture-createfromlevels-rhi-device-star-const-rhi-texturedesc-amp-span-lt-const-texturelevelref-gt-deviceresources-star-const-char-star	renderer.md	engine/renderer/texture.h:101
+renderer::GpuTexture::CreateFromLoader(rhi::Device*,TextureLoader,void*,DeviceResources*,const char*)	function	renderer	renderer-gputexture-createfromloader-rhi-device-star-textureloader-void-star-deviceresources-star-const-char-star	renderer.md	engine/renderer/texture.h:115
+renderer::GpuTexture::Destroy()	function	renderer	renderer-gputexture-destroy	renderer.md	engine/renderer/texture.h:119
+renderer::GpuTexture::Release()	function	renderer	renderer-gputexture-release	renderer.md	engine/renderer/texture.h:121
+renderer::GpuTexture::Recreate(rhi::Device*)	function	renderer	renderer-gputexture-recreate-rhi-device-star	renderer.md	engine/renderer/texture.h:122
+renderer::GpuTexture::Live() const	function	renderer	renderer-gputexture-live-const	renderer.md	engine/renderer/texture.h:123
+renderer::GpuTexture::RecreatableName() const	function	renderer	renderer-gputexture-recreatablename-const	renderer.md	engine/renderer/texture.h:124
+renderer::GpuTexture::Valid() const	function	renderer	renderer-gputexture-valid-const	renderer.md	engine/renderer/texture.h:128
+renderer::GpuTexture::Handle() const	function	renderer	renderer-gputexture-handle-const	renderer.md	engine/renderer/texture.h:130
+renderer::GpuTexture::Desc() const	function	renderer	renderer-gputexture-desc-const	renderer.md	engine/renderer/texture.h:132
+renderer::GpuSampler	class	renderer	renderer-gpusampler	renderer.md	engine/renderer/texture.h:155
+renderer::GpuSampler::GpuSampler()	function	renderer	renderer-gpusampler-gpusampler	renderer.md	engine/renderer/texture.h:158
+renderer::GpuSampler::~GpuSampler()	function	renderer	renderer-gpusampler-tilde-gpusampler	renderer.md	engine/renderer/texture.h:160
+renderer::GpuSampler::GpuSampler(GpuSampler&&) noexcept	function	renderer	renderer-gpusampler-gpusampler-gpusampler-amp-amp-noexcept	renderer.md	engine/renderer/texture.h:162
+renderer::GpuSampler::operator=(GpuSampler&&) noexcept	function	renderer	renderer-gpusampler-operator-eq-gpusampler-amp-amp-noexcept	renderer.md	engine/renderer/texture.h:164
+renderer::GpuSampler::GpuSampler(const GpuSampler&)	function	renderer	renderer-gpusampler-gpusampler-const-gpusampler-amp	renderer.md	engine/renderer/texture.h:165
+renderer::GpuSampler::operator=(const GpuSampler&)	function	renderer	renderer-gpusampler-operator-eq-const-gpusampler-amp	renderer.md	engine/renderer/texture.h:166
+renderer::GpuSampler::Create(rhi::Device*,const rhi::SamplerDesc&,DeviceResources*,const char*)	function	renderer	renderer-gpusampler-create-rhi-device-star-const-rhi-samplerdesc-amp-deviceresources-star-const-char-star	renderer.md	engine/renderer/texture.h:178
+renderer::GpuSampler::Destroy()	function	renderer	renderer-gpusampler-destroy	renderer.md	engine/renderer/texture.h:181
+renderer::GpuSampler::Release()	function	renderer	renderer-gpusampler-release	renderer.md	engine/renderer/texture.h:183
+renderer::GpuSampler::Recreate(rhi::Device*)	function	renderer	renderer-gpusampler-recreate-rhi-device-star	renderer.md	engine/renderer/texture.h:184
+renderer::GpuSampler::Live() const	function	renderer	renderer-gpusampler-live-const	renderer.md	engine/renderer/texture.h:185
+renderer::GpuSampler::RecreatableName() const	function	renderer	renderer-gpusampler-recreatablename-const	renderer.md	engine/renderer/texture.h:186
+renderer::GpuSampler::Valid() const	function	renderer	renderer-gpusampler-valid-const	renderer.md	engine/renderer/texture.h:190
+renderer::GpuSampler::Handle() const	function	renderer	renderer-gpusampler-handle-const	renderer.md	engine/renderer/texture.h:192
 renderer::TransientPoolDesc	struct	renderer	renderer-transientpooldesc	renderer.md	engine/renderer/transient_pool.h:21
 renderer::TransientPoolDesc::max_textures	variable	renderer	renderer-transientpooldesc-max-textures	renderer.md	engine/renderer/transient_pool.h:24
 renderer::TransientPoolDesc::max_buffers	variable	renderer	renderer-transientpooldesc-max-buffers	renderer.md	engine/renderer/transient_pool.h:26

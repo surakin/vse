@@ -4,6 +4,7 @@
 //   asset_mint mint-skeleton SOURCE.skel.src OUTPUT.blob [--target=N]
 //   asset_mint mint-mesh SOURCE.mesh.src OUTPUT.blob [--skeleton=SKELETON.blob] [--target=N]
 //   asset_mint mint-clip SOURCE.anim.src OUTPUT.blob --skeleton=SKELETON.blob [--target=N]
+//   asset_mint mint-texture SOURCE.tex.src OUTPUT.blob [--target=N]
 //
 // packs the blobs of a directory (found by their own headers; the path is the file's location) into one pak for target
 // N (default 0, the development target). It refuses an incomplete closure and lists each missing (blob, dependency)
@@ -18,6 +19,7 @@
 #include "clip_source.h"
 #include "mesh_source.h"
 #include "skeleton_source.h"
+#include "texture_source.h"
 #include "os/console.h"
 
 using namespace engine_placeholder;
@@ -31,7 +33,8 @@ int Usage()
     os::PrintError("usage: asset_mint pack DIRECTORY OUTPUT.pak [--target=N] [--no-names]\n"
                    "       asset_mint mint-skeleton SOURCE.skel.src OUTPUT.blob [--target=N]\n"
                    "       asset_mint mint-mesh SOURCE.mesh.src OUTPUT.blob [--skeleton=SKELETON.blob] [--target=N]\n"
-                   "       asset_mint mint-clip SOURCE.anim.src OUTPUT.blob --skeleton=SKELETON.blob [--target=N]\n");
+                   "       asset_mint mint-clip SOURCE.anim.src OUTPUT.blob --skeleton=SKELETON.blob [--target=N]\n"
+                   "       asset_mint mint-texture SOURCE.tex.src OUTPUT.blob [--target=N]\n");
     return 64;
 }
 
@@ -244,6 +247,16 @@ int MintSkeletonCommand(int argc, char** argv)
     return 0;
 }
 
+bool ReadWholeFilePath(const io::Path& path, u64 max_bytes, Vector<u8>* out)
+{
+    io::FilePtr in;
+    if (io::File::Open(path, io::OpenMode::Read, io::kOpenNone, &in).Failed())
+    {
+        return false;
+    }
+    return io::ReadAll(*in, out, max_bytes).Ok();
+}
+
 bool ReadWholeFile(const char* path_text, u64 max_bytes, Vector<u8>* out)
 {
     io::Path path;
@@ -345,6 +358,96 @@ int MintMeshCommand(int argc, char** argv)
         return 1;
     }
     os::Print("minted a mesh of %u bytes\n", static_cast<unsigned>(blob.Size()));
+    return 0;
+}
+
+// Mints a texture source into a blob (Day 323). The raw image files are found next to the source file.
+int MintTextureCommand(int argc, char** argv)
+{
+    if (argc < 4)
+    {
+        return Usage();
+    }
+    u32 target = 0;
+    for (int i = 4; i < argc; ++i)
+    {
+        if (!StartsWith(argv[i], "--target=") || !ParseNumber(argv[i] + 9, &target))
+        {
+            return Usage();
+        }
+    }
+    io::Path source_path;
+    io::Path output;
+    if (!io::Path::Parse(StringView(argv[2], CStrLength(argv[2])), io::NativePathStyle(), &source_path) ||
+        !io::Path::Parse(StringView(argv[3], CStrLength(argv[3])), io::NativePathStyle(), &output))
+    {
+        return Usage();
+    }
+    Vector<u8> text;
+    if (!ReadWholeFile(argv[2], u64{1} << 24, &text))
+    {
+        os::PrintError("asset_mint: the source file could not be read\n");
+        return 1;
+    }
+    const StringView text_view(reinterpret_cast<const char*>(text.Data()), text.Size());
+    TextureSource source;
+    TextureSourceError error;
+    if (ParseTextureSource(text_view, &source, &error).Failed())
+    {
+        os::PrintError("asset_mint: %s:%u: %s\n", argv[2], static_cast<unsigned>(error.line), error.message.Data());
+        return 1;
+    }
+    const io::Path directory = source_path.Parent();
+    Vector<Vector<u8>> files;
+    Vector<ByteSpan> spans;
+    files.Reserve(source.sources.Size());
+    for (usize i = 0; i < source.sources.Size(); ++i)
+    {
+        io::Path image_path;
+        io::Path relative;
+        if (!io::Path::Parse(StringView(source.sources[i].name.Data(), CStrLength(source.sources[i].name.Data())),
+                             io::NativePathStyle(), &relative) ||
+            !directory.TryJoin(relative, &image_path))
+        {
+            os::PrintError("asset_mint: %s:%u: the image path is not valid\n", argv[2],
+                           static_cast<unsigned>(source.sources[i].line));
+            return 1;
+        }
+        Vector<u8> bytes;
+        if (!ReadWholeFilePath(image_path, u64{1} << 31, &bytes))
+        {
+            os::PrintError("asset_mint: %s:%u: the image file could not be read\n", argv[2],
+                           static_cast<unsigned>(source.sources[i].line));
+            return 1;
+        }
+        files.Push(static_cast<Vector<u8>&&>(bytes));
+    }
+    for (usize i = 0; i < files.Size(); ++i)
+    {
+        spans.Push(ByteSpan(files[i].Data(), files[i].Size()));
+    }
+    TypeRegistry types;
+    Vector<byte> blob;
+    if (MintTexture(text_view, Span<const ByteSpan>(spans.Data(), spans.Size()), types, &blob, &error, target).Failed())
+    {
+        os::PrintError("asset_mint: %s:%u: %s\n", argv[2], static_cast<unsigned>(error.line), error.message.Data());
+        return 1;
+    }
+    io::FilePtr file;
+    if (io::File::Open(output, io::OpenMode::Write, io::kOpenNone, &file).Failed())
+    {
+        os::PrintError("asset_mint: the output file could not be created\n");
+        return 1;
+    }
+    const io::Status written = file->Write(blob.Data(), blob.Size(), 0);
+    if (written.Failed() || file->Close().Failed())
+    {
+        file->Close();
+        io::Remove(output);
+        os::PrintError("asset_mint: writing the output failed\n");
+        return 1;
+    }
+    os::Print("minted a texture of %u bytes\n", static_cast<unsigned>(blob.Size()));
     return 0;
 }
 
@@ -454,6 +557,10 @@ int main(int argc, char** argv)
     if (argc >= 2 && StringView(argv[1], CStrLength(argv[1])) == StringView("mint-mesh"))
     {
         return MintMeshCommand(argc, argv);
+    }
+    if (argc >= 2 && StringView(argv[1], CStrLength(argv[1])) == StringView("mint-texture"))
+    {
+        return MintTextureCommand(argc, argv);
     }
     if (argc >= 2 && StringView(argv[1], CStrLength(argv[1])) == StringView("mint-clip"))
     {

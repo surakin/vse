@@ -53,6 +53,7 @@ GpuTexture& GpuTexture::operator=(GpuTexture&& other) noexcept
 void GpuTexture::MoveFrom(GpuTexture& other)
 {
     image_ = static_cast<TextureImage&&>(other.image_);
+    levels_ = static_cast<Vector<TextureLevelRef>&&>(other.levels_);
     loader_ = other.loader_;
     loader_user_ = other.loader_user_;
     has_source_ = other.has_source_;
@@ -179,6 +180,101 @@ bool GpuTexture::Make(rhi::Device* device, const TextureImage& image)
     return true;
 }
 
+bool GpuTexture::MakeFromLevels(rhi::Device* device)
+{
+    rhi::TextureDesc desc = image_.desc;
+    desc.usage = desc.usage | rhi::TextureUsage::CopyDst;
+    desc.debug_name = name_;
+    const char* why = desc.Validate();
+    if (why != nullptr)
+    {
+        RenderLog(LogVerbosity::Error, "GpuTexture '%s': %s", name_, why);
+        return false;
+    }
+    const rhi::DeviceCaps& caps = device->Caps();
+    if (desc.width > caps.max_texture_dimension_2d || desc.height > caps.max_texture_dimension_2d)
+    {
+        RenderLog(LogVerbosity::Error, "GpuTexture '%s': %ux%u exceeds the device limit of %u", name_, desc.width,
+                  desc.height, caps.max_texture_dimension_2d);
+        return false;
+    }
+    if (!device->FormatSupport(desc.format, desc.usage))
+    {
+        RenderLog(LogVerbosity::Error, "GpuTexture '%s': the device does not support this format and usage", name_);
+        return false;
+    }
+    const rhi::TextureHandle texture = device->CreateTexture(desc);
+    if (!texture.IsValid())
+    {
+        return false;
+    }
+    for (usize i = 0; i < levels_.Size(); ++i)
+    {
+        const TextureLevelRef& level = levels_[i];
+        if (!device->UploadTexture(texture, level.mip, level.layer, level.data, level.row_pitch).ok)
+        {
+            device->DestroyTexture(texture);
+            return false;
+        }
+    }
+    device_ = device;
+    desc_ = desc;
+    handle_ = texture;
+    return true;
+}
+
+bool GpuTexture::CreateFromLevels(rhi::Device* device, const rhi::TextureDesc& desc, Span<const TextureLevelRef> levels,
+                                  DeviceResources* resources, const char* debug_name)
+{
+    ENGINE_ASSERT(!Valid() && device != nullptr,
+                  "GpuTexture::CreateFromLevels: the texture exists or the device is null");
+    CopyName(name_, sizeof(name_), debug_name, "texture");
+    const u64 expected = static_cast<u64>(desc.mip_levels) * desc.array_layers;
+    if (desc.mip_levels == 0 || desc.array_layers == 0 || levels.Size() != expected)
+    {
+        RenderLog(LogVerbosity::Error, "GpuTexture '%s': %u levels given for %u mips of %u layers", name_,
+                  static_cast<unsigned>(levels.Size()), desc.mip_levels, desc.array_layers);
+        return false;
+    }
+    // Every (mip, layer) exactly once.
+    Vector<u8> seen;
+    if (!seen.TryResize(static_cast<usize>(expected)) || !levels_.TryReserve(levels.Size()))
+    {
+        RenderLog(LogVerbosity::Error, "GpuTexture '%s': out of memory", name_);
+        return false;
+    }
+    MemSet(seen.Data(), 0, seen.Size());
+    for (usize i = 0; i < levels.Size(); ++i)
+    {
+        const TextureLevelRef& level = levels[i];
+        if (level.data == nullptr || level.mip >= desc.mip_levels || level.layer >= desc.array_layers ||
+            seen[static_cast<usize>(level.layer) * desc.mip_levels + level.mip] != 0)
+        {
+            RenderLog(LogVerbosity::Error, "GpuTexture '%s': level %u has no data, is out of range or repeats", name_,
+                      static_cast<unsigned>(i));
+            levels_.Reset();
+            return false;
+        }
+        seen[static_cast<usize>(level.layer) * desc.mip_levels + level.mip] = 1;
+        levels_.Push(level);
+    }
+    image_ = TextureImage{};
+    image_.desc = desc;
+    if (!MakeFromLevels(device))
+    {
+        levels_.Reset();
+        image_ = TextureImage{};
+        return false;
+    }
+    has_source_ = true;
+    if (resources != nullptr && !registration_.Attach(resources, this, tiers::kTextures))
+    {
+        Destroy();
+        return false;
+    }
+    return true;
+}
+
 bool GpuTexture::Create(rhi::Device* device, TextureImage&& image, DeviceResources* resources, const char* debug_name)
 {
     ENGINE_ASSERT(!Valid() && device != nullptr, "GpuTexture::Create: the texture exists or the device is null");
@@ -239,6 +335,10 @@ bool GpuTexture::Recreate(rhi::Device* device)
         RenderLog(LogVerbosity::Error, "GpuTexture '%s': no source to recreate it from", name_);
         return false;
     }
+    if (levels_.Size() != 0)
+    {
+        return MakeFromLevels(device);
+    }
     if (loader_ != nullptr)
     {
         TextureImage image;
@@ -257,6 +357,7 @@ void GpuTexture::Destroy()
     registration_.Reset();
     Release();
     image_ = TextureImage{};
+    levels_.Reset();
     loader_ = nullptr;
     loader_user_ = nullptr;
     has_source_ = false;

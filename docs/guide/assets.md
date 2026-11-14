@@ -1,6 +1,6 @@
 # Assets and resources: identity, blobs, backends and the resource manager
 
-Status: Phase 22. Built: animation clips, their source form and minter (Day 320); the module skeleton and the container version constant (Day 313); resource ids, paths, types, the content hash, the blob container and the id <-> path table (Day 314). The backend interface, the filesystem and host-memory backends, the load buffer pool and mounts (Day 315). The pak format, its writer, reader and backend, and `asset_mint pack` (Day 316).
+Status: Phase 22. Built: textures with their mip chains, the `.tex.src` source form and the texture minter (Day 323); animation clips, their source form and minter (Day 320); the module skeleton and the container version constant (Day 313); resource ids, paths, types, the content hash, the blob container and the id <-> path table (Day 314). The backend interface, the filesystem and host-memory backends, the load buffer pool and mounts (Day 315). The pak format, its writer, reader and backend, and `asset_mint pack` (Day 316).
 
 **Audience:** engine and game programmers who load meshes, textures, materials and levels. Design, spikes and the benchmark pass conditions:
 `docs/superpowers/specs/2026-11-13-asset-pipeline-design.md`.
@@ -342,5 +342,65 @@ int main() {
     const asset::ClipSample half = view.Sample(0, 0.5f);
     os::Print("x at 0.5 s: %.3f\n", half.translation[0]);
     return half.translation[0] > 0.49f && half.translation[0] < 0.51f ? 0 : 1;
+}
+```
+
+## Textures
+
+A texture (`asset::types::kTexture`, `TEXR`) stores **every mip level of every layer**: there is no "generate at load" flag, because the mip filter, the sRGB handling and the premultiplication all happen in the minter. The kinds are a 2D image, a cube map (six square layers, +X -X +Y -Y +Z -Z) and an array of 1 to 2048 layers. The formats of this day are `R8_UNorm`, `RG8_UNorm`, `RGBA8_UNorm`, `RGBA8_SRGB`, `R16_Float` and `RGBA16_Float`; block-compressed formats join behind the same layout on Days 324 and 325.
+
+The blob has a header, a table of subresources (`layer * mip_count + mip`: offset, size, row pitch) and one data section. Each subresource starts at the target's subresource alignment and its rows are `row_pitch` bytes apart, so `TextureView::Level(layer, mip)` gives spans that go to `Device::UploadTexture` unchanged (`row_pitch` is its argument). The alignments are the target API's: `TextureLayoutForTarget` gives rows of 4 and subresources of 16 for the development target 0 (Vulkan), 256 and 512 for Direct3D 12 (target 1), 16 and 16 for Metal (target 2). `asset_mint pack --target` (Day 332) re-lays a blob out with `RetargetTextureBlob`; minting for a target (`mint-texture ... --target=N`) gives the same bytes.
+
+`renderer::GpuTexture::CreateFromLevels(device, view.Desc(usage), levels, &registry, name)` is the zero-copy entry: each `TextureLevelRef` points into the blob and the staging copy into device memory is the only copy. The texture keeps only the descriptions, so the blob bytes must outlive it, and a device reset uploads from the same bytes again. A cube is created as a 6-layer array (the cube view is the material system's, Day 326).
+
+**Mip generation** (`asset/texture_mips.h`) uses exact integer arithmetic only, so the bytes are the same on every compiler, machine and thread count. Destination texel `i` of an axis covers the source range `[i * s / d, (i + 1) * s / d)`; the box filter averages it, the Kaiser filter is the fixed 6-tap kernel `-5 24 109 109 24 -5` over the texels `lo - 2 .. lo + 3` (clamped at the edges, the result clamped to the value range). sRGB data is filtered in linear light through a fixed 16-bit table. Alpha is `straight` (the colors are weighted by alpha while filtering, so a transparent texel's color does not bleed in; stored straight), `premultiply` (the minter multiplies level 0 by alpha, in linear light for sRGB, and all levels stay premultiplied) or `ignore`. Half-float texels are exact multiples of 2^-24 and are filtered as integers; `straight` is refused for them. A cube's faces are filtered independently (no filtering across the seams).
+
+The source form `.tex.src` (`asset_mint mint-texture SOURCE OUTPUT [--target=N]`; the images are raw files next to it):
+
+```
+id 00000000000000dd
+kind cube              # 2d (default), cube or array
+source px.raw          # one per layer: 1 for 2d, 6 for a cube
+format rgba8           # r8 rg8 rgba8 r16f rgba16f
+srgb true              # rgba8: store sRGB; half floats: the source is sRGB
+mips full              # or a count
+filter box             # or kaiser
+alpha straight         # or premultiply, ignore
+```
+
+A raw image is `RAW1`, width, height, an id field and a reserved `u32` (24 bytes, little-endian), then `width * height * 4` bytes of RGBA8: no PNG. Errors name the line; a missing `id` line names `asset_mint adopt`.
+
+```cpp compile run standalone
+#include "asset/texture.h"
+#include "os/console.h"
+
+using namespace engine_placeholder;
+
+int main() {
+    asset::TypeRegistry types;
+    Vector<byte> level0;  // a 4 x 4 R8 gradient
+    for (u32 i = 0; i < 16; ++i) level0.Push(static_cast<byte>(i * 16));
+    Vector<byte> chain;
+    asset::MipOptions options;
+    if (asset::GenerateMipChain(rhi::Format::R8_UNorm, 4, 4, ByteSpan(level0.Data(), level0.Size()), options, &chain)
+            .Failed()) return 1;
+    Vector<ByteSpan> levels;  // 4x4, 2x2, 1x1
+    levels.Push(ByteSpan(chain.Data(), 16));
+    levels.Push(ByteSpan(chain.Data() + 16, 4));
+    levels.Push(ByteSpan(chain.Data() + 20, 1));
+    asset::TextureBuildInput input;
+    input.format = rhi::Format::R8_UNorm;
+    input.width = 4;
+    input.height = 4;
+    input.mip_count = 3;
+    input.subresources = Span<const ByteSpan>(levels.Data(), levels.Size());
+    Vector<byte> blob;
+    if (asset::BuildTextureBlob(types, asset::ResourceId::FromValue(7), input, &blob, 1).Failed()) return 1;
+    asset::TextureView view;
+    if (view.Open(ByteSpan(blob.Data(), blob.Size()), types).Failed()) return 1;
+    const asset::TextureLevel top = view.Level(0, 0);
+    os::Print("%u mips, row pitch %u, level 1 texel %u\n", view.MipCount(), top.row_pitch,
+              static_cast<unsigned>(view.Level(0, 1).bytes[0]));
+    return view.MipCount() == 3 && top.row_pitch == 256 ? 0 : 1;
 }
 ```
