@@ -435,34 +435,31 @@ int main(int argc, char** argv)
     u32 frames = 60;
     bool columns = false;
     const char* file = nullptr;
-    for (int i = 1; i < argc; ++i)
+    static const os::CommandLineOption kCliOptions[] = {
+        {"entities", true}, {"frames", true},           {"file", true},
+        {"columns", false}, debug::kCrashHandlerOption, debug::kCrashTestOption};
+    const os::CommandLine<HeapAllocator> line(HeapAllocator::Default(), argc, argv,
+                                              Span<const os::CommandLineOption>(kCliOptions, 6));
+    const char* program = line.ProgramName().Data();
+    if (!line.Ok() || line.ArgCount() != 0)
     {
-        if (debug::IsProgramDebugArgument(argv[i]))
-        {
-            continue;
-        }
-        if (CStrCompare(argv[i], "--entities") == 0 && i + 1 < argc)
-        {
-            entities = static_cast<u32>(CStrToLong(argv[++i]));
-        }
-        else if (CStrCompare(argv[i], "--frames") == 0 && i + 1 < argc)
-        {
-            frames = static_cast<u32>(CStrToLong(argv[++i]));
-        }
-        else if (CStrCompare(argv[i], "--file") == 0 && i + 1 < argc)
-        {
-            file = argv[++i];
-        }
-        else if (CStrCompare(argv[i], "--columns") == 0)
-        {
-            columns = true;
-        }
-        else
-        {
-            os::PrintError("usage: %s [--entities N] [--frames N] [--file PATH] [--columns]\n", argv[0]);
-            return 2;
-        }
+        os::PrintError("usage: %s [--entities N] [--frames N] [--file PATH] [--columns]\n", program);
+        return 2;
     }
+    StringView value;
+    if (line.TryGetOption("entities", value))
+    {
+        entities = static_cast<u32>(CStrToLong(value.Data()));
+    }
+    if (line.TryGetOption("frames", value))
+    {
+        frames = static_cast<u32>(CStrToLong(value.Data()));
+    }
+    if (line.TryGetOption("file", value))
+    {
+        file = value.Data();
+    }
+    columns = line.HasFlag("columns");
     if (entities == 0 || entities > 2000000)
     {
         entities = 20000;

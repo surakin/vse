@@ -328,40 +328,35 @@ int main(int argc, char** argv)
     long frames = 30;
     bool uploads = true;
     bool pipelines = true;
-    for (int i = 1; i < argc; ++i)
+    static const os::CommandLineOption kCliOptions[] = {{"draws", true},
+                                                        {"frames", true},
+                                                        {"skip-uploads", false},
+                                                        {"skip-pipelines", false},
+                                                        {"rhi", true},
+                                                        engine_placeholder::debug::kCrashHandlerOption,
+                                                        engine_placeholder::debug::kCrashTestOption};
+    const os::CommandLine<HeapAllocator> line(HeapAllocator::Default(), argc, argv,
+                                              engine_placeholder::Span<const os::CommandLineOption>(kCliOptions, 7));
+    const char* program = line.ProgramName().Data();
+    StringView value;
+    if (!line.Ok() || line.ArgCount() != 0 ||
+        (line.TryGetOption("rhi", value) && !demo::ParseRhiBackend(value.Data(), &g_backend)))
     {
-        if (engine_placeholder::debug::IsProgramDebugArgument(argv[i]))
-        {
-            continue;  // --crash-handler=... and --crash-test=... are handled by StartProgramDebugging
-        }
-        if (CStrCompare(argv[i], "--draws") == 0 && i + 1 < argc)
-        {
-            draws = CStrToLong(argv[++i]);
-        }
-        else if (CStrCompare(argv[i], "--frames") == 0 && i + 1 < argc)
-        {
-            frames = CStrToLong(argv[++i]);
-        }
-        else if (CStrCompare(argv[i], "--skip-uploads") == 0)
-        {
-            uploads = false;
-        }
-        else if (CStrCompare(argv[i], "--skip-pipelines") == 0)
-        {
-            pipelines = false;
-        }
-        else if (CStrCompare(argv[i], "--rhi") == 0 && i + 1 < argc && demo::ParseRhiBackend(argv[i + 1], &g_backend))
-        {
-            ++i;
-        }
-        else
-        {
-            os::PrintError(
-                "usage: %s [--draws N] [--frames N] [--skip-uploads] [--skip-pipelines] [--rhi null|vulkan|dx12|metal|auto]\n",
-                argv[0]);
-            return 2;
-        }
+        os::PrintError(
+            "usage: %s [--draws N] [--frames N] [--skip-uploads] [--skip-pipelines] [--rhi null|vulkan|dx12|metal|auto]\n",
+            program);
+        return 2;
     }
+    if (line.TryGetOption("draws", value))
+    {
+        draws = CStrToLong(value.Data());
+    }
+    if (line.TryGetOption("frames", value))
+    {
+        frames = CStrToLong(value.Data());
+    }
+    uploads = !line.HasFlag("skip-uploads");
+    pipelines = !line.HasFlag("skip-pipelines");
     if (frames < 1)
     {
         frames = 1;

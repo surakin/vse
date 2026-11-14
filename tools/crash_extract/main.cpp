@@ -25,6 +25,7 @@
 #include "minidump.h"
 #include "resolve.h"
 
+#include "os/command_line.h"
 #include "os/console.h"
 #include "cstr/cstr.h"
 
@@ -336,34 +337,41 @@ int Usage()
 
 int main(int argc, char** argv)
 {
-    if (argc < 2)
+    // The modes are flags that take no value; what they work on follows as positional arguments.
+    static const engine_placeholder::os::CommandLineOption options[] = {
+        {"modules", false}, {"report", false}, {"image", false}, {"resolve", false}, {"lldb", false}};
+    const engine_placeholder::os::CommandLine<engine_placeholder::HeapAllocator> line(
+        engine_placeholder::HeapAllocator::Default(), argc, argv,
+        engine_placeholder::Span<const engine_placeholder::os::CommandLineOption>(options, 5));
+    if (!line.Ok() || line.ArgCount() < 1)
     {
         return Usage();
     }
-    const char* mode = argv[1];
-    if (engine_placeholder::CStrCompare(mode, "--modules") == 0)
+    const engine_placeholder::usize n = line.ArgCount();
+    if (line.FlagCount() > 1)
     {
-        return argc == 3 ? ListModules(argv[2]) : Usage();
+        return Usage();  // one mode at a time
     }
-    if (engine_placeholder::CStrCompare(mode, "--report") == 0)
+    if (line.HasFlag("modules"))
     {
-        return argc == 3 ? PrintReport(argv[2]) : Usage();
+        return n == 1 ? ListModules(line.Arg(0).Data()) : Usage();
     }
-    if (engine_placeholder::CStrCompare(mode, "--image") == 0)
+    if (line.HasFlag("report"))
     {
-        return argc == 3 ? DescribeImage(argv[2]) : Usage();
+        return n == 1 ? PrintReport(line.Arg(0).Data()) : Usage();
     }
-    if (engine_placeholder::CStrCompare(mode, "--resolve") == 0)
+    if (line.HasFlag("image"))
     {
-        return argc == 4 || argc == 5 ? Resolve(argv[2], argv[3], argc == 5 ? argv[4] : nullptr) : Usage();
+        return n == 1 ? DescribeImage(line.Arg(0).Data()) : Usage();
     }
-    if (engine_placeholder::CStrCompare(mode, "--lldb") == 0)
+    if (line.HasFlag("resolve"))
     {
-        return argc == 4 ? WriteForLldb(argv[2], argv[3]) : Usage();
+        return n == 2 || n == 3 ? Resolve(line.Arg(0).Data(), line.Arg(1).Data(), n == 3 ? line.Arg(2).Data() : nullptr)
+                                : Usage();
     }
-    if (mode[0] == '-' && mode[1] == '-')
+    if (line.HasFlag("lldb"))
     {
-        return Usage();
+        return n == 2 ? WriteForLldb(line.Arg(0).Data(), line.Arg(1).Data()) : Usage();
     }
-    return argc <= 3 ? Extract(argv[1], argc == 3 ? argv[2] : nullptr) : Usage();
+    return n <= 2 ? Extract(line.Arg(0).Data(), n == 2 ? line.Arg(1).Data() : nullptr) : Usage();
 }

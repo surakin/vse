@@ -9,6 +9,7 @@
 #include "asset/filesystem_backend.h"
 #include "asset/pak_backend.h"
 #include "asset/resource_server.h"
+#include "containers/span.h"
 #include "cstr/cstr.h"
 #include "cstr/number.h"
 #include "io/path.h"
@@ -16,6 +17,7 @@
 #include "net/endpoint.h"
 #include "net/socket_stream.h"
 #include "net/tcp_transport.h"
+#include "os/command_line.h"
 #include "os/console.h"
 #include "sync/thread.h"
 
@@ -30,35 +32,23 @@ int Usage()
     return 64;
 }
 
-// The value of --name=value or of --name value, or null.
-const char* Option(int argc, char** argv, const char* name)
-{
-    const usize n = CStrLength(name);
-    for (int i = 1; i < argc; ++i)
-    {
-        if (CStrCompareN(argv[i], name, n) == 0)
-        {
-            if (argv[i][n] == '=')
-            {
-                return argv[i] + n + 1;
-            }
-            if (argv[i][n] == '\0' && i + 1 < argc)
-            {
-                return argv[i + 1];
-            }
-        }
-    }
-    return nullptr;
-}
+constexpr os::CommandLineOption kOptions[] = {{"root", true}, {"pak", true}, {"listen", true}, {"seconds", true}};
 
 }  // namespace
 
 int main(int argc, char** argv)
 {
-    const char* root = Option(argc, argv, "--root");
-    const char* pak = Option(argc, argv, "--pak");
-    const char* listen = Option(argc, argv, "--listen");
-    const char* seconds = Option(argc, argv, "--seconds");
+    os::CommandLine<HeapAllocator> line(HeapAllocator::Default(), argc, argv,
+                                        Span<const os::CommandLineOption>(kOptions, 4));
+    if (!line.Ok() || line.ArgCount() != 0)
+    {
+        os::PrintError("resource_server: %s\n", line.Ok() ? "unexpected argument" : line.Error().Data());
+        return Usage();
+    }
+    const char* root = line.OptionOr("root", nullptr);
+    const char* pak = line.OptionOr("pak", nullptr);
+    const char* listen = line.OptionOr("listen", nullptr);
+    const char* seconds = line.OptionOr("seconds", nullptr);
     if ((root == nullptr) == (pak == nullptr) || listen == nullptr)
     {
         return Usage();

@@ -742,60 +742,62 @@ int main(int argc, char** argv)
     engine_placeholder::debug::RunCrashTest(
         debug_setup.crash_test);  // --crash-test=segv|abort|assert|ensure, before any window or device
     Options o;
-    for (int i = 1; i < argc; ++i)
+    static const engine_placeholder::os::CommandLineOption kCliOptions[] = {
+        {"section", true},
+        {"rhi", true},
+        {"device", true},
+        {"frames", true},
+        {"objects", true},
+        {"single", false},
+        {"threads", true},
+        engine_placeholder::debug::kCrashHandlerOption,
+        engine_placeholder::debug::kCrashTestOption};
+    const engine_placeholder::os::CommandLine<engine_placeholder::HeapAllocator> line(
+        engine_placeholder::HeapAllocator::Default(), argc, argv,
+        engine_placeholder::Span<const engine_placeholder::os::CommandLineOption>(kCliOptions, 9));
+    const char* program = line.ProgramName().Data();
+    if (!line.Ok() || line.ArgCount() != 0)
     {
-        if (engine_placeholder::debug::IsProgramDebugArgument(argv[i]))
+        engine_placeholder::os::PrintError("%s: %s\n", program,
+                                           line.Ok() ? "unexpected argument" : line.Error().Data());
+        return Usage(program);
+    }
+    StringView value;
+    if (line.TryGetOption("section", value))
+    {
+        o.section = value.Data();
+        if (!Section(o, "graph") && !Section(o, "frame") && !Section(o, "lights") && !Section(o, "pool") &&
+            !Section(o, "text") && !Section(o, "ui"))
         {
-            continue;  // --crash-handler=... and --crash-test=... are handled by StartProgramDebugging
+            return Usage(program);
         }
-        const bool has_value = i + 1 < argc;
-        if (CStrCompare(argv[i], "--section") == 0 && has_value)
+    }
+    // --device is the old name of --rhi: one of them, not both.
+    if (line.HasFlag("rhi") && line.HasFlag("device"))
+    {
+        return Usage(program);
+    }
+    if (line.TryGetOption("rhi", value) || line.TryGetOption("device", value))
+    {
+        if (!demo::ParseRhiBackend(value.Data(), &o.backend))
         {
-            o.section = argv[++i];
-            if (!Section(o, "graph") && !Section(o, "frame") && !Section(o, "lights") && !Section(o, "pool") &&
-                !Section(o, "text") && !Section(o, "ui"))
-            {
-                return Usage(argv[0]);
-            }
+            return Usage(program);
         }
-        else if ((CStrCompare(argv[i], "--rhi") == 0 || CStrCompare(argv[i], "--device") == 0) && has_value)
-        {
-            if (!demo::ParseRhiBackend(argv[++i], &o.backend))
-            {
-                return Usage(argv[0]);
-            }
-            o.null_device = o.backend == rhi::Backend::Null;
-        }
-        else if (CStrCompare(argv[i], "--frames") == 0 && has_value)
-        {
-            if (!ParseCount(argv[++i], &o.frames, 500) || o.frames == 0)
-            {
-                return Usage(argv[0]);
-            }
-        }
-        else if (CStrCompare(argv[i], "--objects") == 0 && has_value)
-        {
-            if (!ParseCount(argv[++i], &o.objects, 50000) ||
-                (o.objects != 1000 && o.objects != 10000 && o.objects != 50000))
-            {
-                return Usage(argv[0]);
-            }
-        }
-        else if (CStrCompare(argv[i], "--single") == 0)
-        {
-            o.single_only = true;
-        }
-        else if (CStrCompare(argv[i], "--threads") == 0 && has_value)
-        {
-            if (!ParseCount(argv[++i], &o.threads, 64))
-            {
-                return Usage(argv[0]);
-            }
-        }
-        else
-        {
-            return Usage(argv[0]);
-        }
+        o.null_device = o.backend == rhi::Backend::Null;
+    }
+    if (line.TryGetOption("frames", value) && (!ParseCount(value.Data(), &o.frames, 500) || o.frames == 0))
+    {
+        return Usage(program);
+    }
+    if (line.TryGetOption("objects", value) && (!ParseCount(value.Data(), &o.objects, 50000) ||
+                                                (o.objects != 1000 && o.objects != 10000 && o.objects != 50000)))
+    {
+        return Usage(program);
+    }
+    o.single_only = line.HasFlag("single");
+    if (line.TryGetOption("threads", value) && !ParseCount(value.Data(), &o.threads, 64))
+    {
+        return Usage(program);
     }
     if (!o.null_device && (Section(o, "frame") || Section(o, "lights") || Section(o, "pool")))
     {

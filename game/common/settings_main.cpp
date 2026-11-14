@@ -1,5 +1,7 @@
 #include "settings_main.h"
 
+#include "os/command_line.h"
+
 #include "renderer/renderer.h"
 
 #include "os/console.h"
@@ -30,7 +32,8 @@ DemoSettings::~DemoSettings() = default;
 bool DemoSettings::Begin(const char* app_name, const char* usage, int argc, char** argv)
 {
     usage_ = String<HeapAllocator>(HeapAllocator::Default(), StringView(usage));
-    program_ = String<HeapAllocator>(HeapAllocator::Default(), StringView(argv[0]));
+    const ::engine_placeholder::os::CommandLine<HeapAllocator> native(HeapAllocator::Default(), argc, argv);
+    program_ = String<HeapAllocator>(HeapAllocator::Default(), native.ProgramName());
     ::engine_placeholder::renderer::RegisterSharedSettings(&registry_);
     sset::RegisterEngineSettings(&registry_);
     sset::RegisterLogSettings(&registry_);
@@ -54,7 +57,7 @@ bool DemoSettings::Begin(const char* app_name, const char* usage, int argc, char
         engine_placeholder::os::PrintError("%s: settings: %s: %s\n", app_name, n.layer, n.message);
     }
     const sset::CommandLineResult& cli = settings_->CommandLine();
-    rest_storage_.Push(String<HeapAllocator>(HeapAllocator::Default(), StringView(argv[0])));
+    rest_storage_.Push(String<HeapAllocator>(HeapAllocator::Default(), native.ProgramName()));
     for (usize i = 0; i < cli.rest.Size(); ++i)
     {
         rest_storage_.Push(String<HeapAllocator>(HeapAllocator::Default(), cli.rest[i].View()));

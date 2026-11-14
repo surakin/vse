@@ -52,6 +52,7 @@
 #include "renderer/shader_reflection.h"
 #include "types.h"
 #include "debug/failure_hooks.h"
+#include "os/command_line.h"
 #include "os/console.h"
 
 using namespace engine_placeholder;
@@ -681,118 +682,56 @@ int main(int argc, char** argv)
     Vector<Text> slang_args;
     Vector<Text> dxil_args;
     Vector<Text> metal_args;
-    bool permute = false;
-    for (int i = 1; i < argc; ++i)
+    static const os::CommandLineOption cli_options[] = {
+        {"permute", false},         {"name", true},           {"source", true},
+        {"source-path", true},      {"compiler", true},       {"spv", true},
+        {"reflection", true},       {"spv-out", true},        {"refl-out", true},
+        {"perm-out", true},         {"manifest", true},       {"slangc", true},
+        {"spirv-val", true},        {"work-dir", true},       {"dxil", true},
+        {"dxil-reflection", true},  {"dxil-out", true},       {"dxil-compiler", true},
+        {"metal-reflection", true}, {"metallib", true},       {"metallib-info", true},
+        {"metallib-out", true},     {"metal-mint", true},     {"slang-arg", true, true},
+        {"dxil-arg", true, true},   {"metal-arg", true, true}};
+    const os::CommandLine<HeapAllocator> line(HeapAllocator::Default(), argc, argv,
+                                              Span<const os::CommandLineOption>(cli_options, 26));
+    if (!line.Ok() || line.ArgCount() != 0)
     {
-        const bool has_value = i + 1 < argc;
-        if (CStrCompare(argv[i], "--permute") == 0)
-        {
-            permute = true;
-        }
-        else if (CStrCompare(argv[i], "--name") == 0 && has_value)
-        {
-            name = argv[++i];
-        }
-        else if (CStrCompare(argv[i], "--source") == 0 && has_value)
-        {
-            source = argv[++i];
-        }
-        else if (CStrCompare(argv[i], "--source-path") == 0 && has_value)
-        {
-            source_path = argv[++i];
-        }
-        else if (CStrCompare(argv[i], "--compiler") == 0 && has_value)
-        {
-            compiler = argv[++i];
-        }
-        else if (CStrCompare(argv[i], "--spv") == 0 && has_value)
-        {
-            spv_path = argv[++i];
-        }
-        else if (CStrCompare(argv[i], "--reflection") == 0 && has_value)
-        {
-            json_path = argv[++i];
-        }
-        else if (CStrCompare(argv[i], "--spv-out") == 0 && has_value)
-        {
-            spv_out = argv[++i];
-        }
-        else if (CStrCompare(argv[i], "--refl-out") == 0 && has_value)
-        {
-            refl_out = argv[++i];
-        }
-        else if (CStrCompare(argv[i], "--perm-out") == 0 && has_value)
-        {
-            perm_out = argv[++i];
-        }
-        else if (CStrCompare(argv[i], "--manifest") == 0 && has_value)
-        {
-            manifest_path = argv[++i];
-        }
-        else if (CStrCompare(argv[i], "--slangc") == 0 && has_value)
-        {
-            slangc = argv[++i];
-        }
-        else if (CStrCompare(argv[i], "--slang-arg") == 0 && has_value)
-        {
-            slang_args.Push(MakeText(StringView(argv[++i])));
-        }
-        else if (CStrCompare(argv[i], "--spirv-val") == 0 && has_value)
-        {
-            spirv_val = argv[++i];
-        }
-        else if (CStrCompare(argv[i], "--work-dir") == 0 && has_value)
-        {
-            work_dir = argv[++i];
-        }
-        else if (CStrCompare(argv[i], "--dxil") == 0 && has_value)
-        {
-            dxil_path = argv[++i];
-        }
-        else if (CStrCompare(argv[i], "--dxil-reflection") == 0 && has_value)
-        {
-            dxil_json_path = argv[++i];
-        }
-        else if (CStrCompare(argv[i], "--dxil-out") == 0 && has_value)
-        {
-            dxil_out = argv[++i];
-        }
-        else if (CStrCompare(argv[i], "--dxil-compiler") == 0 && has_value)
-        {
-            dxil_compiler = argv[++i];
-        }
-        else if (CStrCompare(argv[i], "--dxil-arg") == 0 && has_value)
-        {
-            dxil_args.Push(MakeText(StringView(argv[++i])));
-        }
-        else if (CStrCompare(argv[i], "--metal-reflection") == 0 && has_value)
-        {
-            metal_json_path = argv[++i];
-        }
-        else if (CStrCompare(argv[i], "--metallib") == 0 && has_value)
-        {
-            metallib_path = argv[++i];
-        }
-        else if (CStrCompare(argv[i], "--metallib-info") == 0 && has_value)
-        {
-            metallib_info_path = argv[++i];
-        }
-        else if (CStrCompare(argv[i], "--metallib-out") == 0 && has_value)
-        {
-            metallib_out = argv[++i];
-        }
-        else if (CStrCompare(argv[i], "--metal-mint") == 0 && has_value)
-        {
-            metal_mint = argv[++i];
-        }
-        else if (CStrCompare(argv[i], "--metal-arg") == 0 && has_value)
-        {
-            metal_args.Push(MakeText(StringView(argv[++i])));
-        }
-        else
-        {
-            return Usage();
-        }
+        return Usage();
+    }
+    const bool permute = line.HasFlag("permute");
+    name = line.OptionOr("name", nullptr);
+    source = line.OptionOr("source", nullptr);
+    source_path = line.OptionOr("source-path", nullptr);
+    compiler = line.OptionOr("compiler", nullptr);
+    spv_path = line.OptionOr("spv", nullptr);
+    json_path = line.OptionOr("reflection", nullptr);
+    spv_out = line.OptionOr("spv-out", nullptr);
+    refl_out = line.OptionOr("refl-out", nullptr);
+    perm_out = line.OptionOr("perm-out", nullptr);
+    manifest_path = line.OptionOr("manifest", nullptr);
+    slangc = line.OptionOr("slangc", nullptr);
+    spirv_val = line.OptionOr("spirv-val", nullptr);
+    work_dir = line.OptionOr("work-dir", nullptr);
+    dxil_path = line.OptionOr("dxil", nullptr);
+    dxil_json_path = line.OptionOr("dxil-reflection", nullptr);
+    dxil_out = line.OptionOr("dxil-out", nullptr);
+    dxil_compiler = line.OptionOr("dxil-compiler", nullptr);
+    metal_json_path = line.OptionOr("metal-reflection", nullptr);
+    metallib_path = line.OptionOr("metallib", nullptr);
+    metallib_info_path = line.OptionOr("metallib-info", nullptr);
+    metallib_out = line.OptionOr("metallib-out", nullptr);
+    metal_mint = line.OptionOr("metal-mint", nullptr);
+    for (usize k = 0; k < line.OptionCount("slang-arg"); ++k)
+    {
+        slang_args.Push(MakeText(line.OptionAt("slang-arg", k)));
+    }
+    for (usize k = 0; k < line.OptionCount("dxil-arg"); ++k)
+    {
+        dxil_args.Push(MakeText(line.OptionAt("dxil-arg", k)));
+    }
+    for (usize k = 0; k < line.OptionCount("metal-arg"); ++k)
+    {
+        metal_args.Push(MakeText(line.OptionAt("metal-arg", k)));
     }
     if (!IsIdentifier(name) || source == nullptr || compiler == nullptr || spv_out == nullptr || refl_out == nullptr)
     {

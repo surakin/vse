@@ -29,6 +29,7 @@
 #include "project.h"
 #include "skeleton_source.h"
 #include "texture_source.h"
+#include "os/command_line.h"
 #include "os/console.h"
 #include "storage/builtin_components.h"
 
@@ -76,41 +77,54 @@ bool ParseNumber(const char* text, u32* out)
     return true;
 }
 
-bool StartsWith(const char* text, const char* prefix)
+using Line = os::CommandLine<HeapAllocator>;
+
+// Every option any command takes; each command checks that the line holds only its own (OnlyOptions).
+constexpr os::CommandLineOption kCliOptions[] = {{"target", true},    {"skeleton", true}, {"root", true},
+                                                 {"no-names", false}, {"force", false},   {"workers", true},
+                                                 {"quiet", false},    {"verbose", false}, {"skeletons", false}};
+
+// True when the line holds no option outside `allowed`.
+bool OnlyOptions(const Line& line, const char* const* allowed, usize count)
 {
-    return StringView(text, CStrLength(text)).StartsWith(StringView(prefix, CStrLength(prefix)));
+    for (usize i = 0; i < line.FlagCount(); ++i)
+    {
+        bool found = false;
+        for (usize k = 0; k < count; ++k)
+        {
+            found = found || line.FlagName(i) == StringView(allowed[k]);
+        }
+        if (!found)
+        {
+            return false;
+        }
+    }
+    return true;
 }
 
-int Pack(int argc, char** argv)
+// --target N, or 0; false for something that is not a number.
+bool TargetOption(const Line& line, u32* target)
 {
-    if (argc < 4)
+    StringView text;
+    *target = 0;
+    return !line.TryGetOption(StringView("target"), text) || ParseNumber(text.Data(), target);
+}
+
+int Pack(const Line& line)
+{
+    static const char* const allowed[] = {"target", "no-names"};
+    u32 target = 0;
+    if (line.ArgCount() != 3 || !OnlyOptions(line, allowed, 2) || !TargetOption(line, &target))
     {
         return Usage();
     }
-    u32 target = 0;
-    bool names = true;
-    for (int i = 4; i < argc; ++i)
-    {
-        if (StartsWith(argv[i], "--target="))
-        {
-            if (!ParseNumber(argv[i] + 9, &target))
-            {
-                return Usage();
-            }
-        }
-        else if (StringView(argv[i], CStrLength(argv[i])) == StringView("--no-names"))
-        {
-            names = false;
-        }
-        else
-        {
-            return Usage();
-        }
-    }
+    const bool names = !line.HasFlag("no-names");
+    const char* in_path = line.Arg(1).Data();
+    const char* out_path = line.Arg(2).Data();
     io::Path directory;
     io::Path output;
-    if (!io::Path::Parse(StringView(argv[2], CStrLength(argv[2])), io::NativePathStyle(), &directory) ||
-        !io::Path::Parse(StringView(argv[3], CStrLength(argv[3])), io::NativePathStyle(), &output))
+    if (!io::Path::Parse(StringView(in_path, CStrLength(in_path)), io::NativePathStyle(), &directory) ||
+        !io::Path::Parse(StringView(out_path, CStrLength(out_path)), io::NativePathStyle(), &output))
     {
         return Usage();
     }
@@ -125,26 +139,25 @@ int Pack(int argc, char** argv)
     {
         return 1;
     }
-    os::Print("packed %s for target %u\n", argv[2], static_cast<unsigned>(target));
+    os::Print("packed %s for target %u\n", in_path, static_cast<unsigned>(target));
     return 0;
 }
 
 // Mints a skeleton source into a blob (Day 318). `remint` of old blobs arrives with the whole tool on Day 333.
-int MintSkeletonCommand(int argc, char** argv)
+int MintSkeletonCommand(const Line& line)
 {
-    if (argc < 4 || argc > 5)
-    {
-        return Usage();
-    }
+    static const char* const allowed[] = {"target"};
     u32 target = 0;
-    if (argc == 5 && (!StartsWith(argv[4], "--target=") || !ParseNumber(argv[4] + 9, &target)))
+    if (line.ArgCount() != 3 || !OnlyOptions(line, allowed, 1) || !TargetOption(line, &target))
     {
         return Usage();
     }
+    const char* in_path = line.Arg(1).Data();
+    const char* out_path = line.Arg(2).Data();
     io::Path source_path;
     io::Path output;
-    if (!io::Path::Parse(StringView(argv[2], CStrLength(argv[2])), io::NativePathStyle(), &source_path) ||
-        !io::Path::Parse(StringView(argv[3], CStrLength(argv[3])), io::NativePathStyle(), &output))
+    if (!io::Path::Parse(StringView(in_path, CStrLength(in_path)), io::NativePathStyle(), &source_path) ||
+        !io::Path::Parse(StringView(out_path, CStrLength(out_path)), io::NativePathStyle(), &output))
     {
         return Usage();
     }
@@ -169,11 +182,11 @@ int MintSkeletonCommand(int argc, char** argv)
     {
         if (error.line != 0)
         {
-            os::PrintError("asset_mint: %s:%u: %s\n", argv[2], static_cast<unsigned>(error.line), error.message.Data());
+            os::PrintError("asset_mint: %s:%u: %s\n", in_path, static_cast<unsigned>(error.line), error.message.Data());
         }
         else
         {
-            os::PrintError("asset_mint: %s: %s\n", argv[2], error.message.Data());
+            os::PrintError("asset_mint: %s: %s\n", in_path, error.message.Data());
         }
         return 1;
     }
@@ -221,39 +234,24 @@ bool ReadWholeFile(const char* path_text, u64 max_bytes, Vector<u8>* out)
 }
 
 // Mints a mesh source into a blob (Day 319). A skinned mesh needs the skeleton's blob (`--skeleton=`).
-int MintMeshCommand(int argc, char** argv)
+int MintMeshCommand(const Line& line)
 {
-    if (argc < 4)
+    static const char* const allowed[] = {"target", "skeleton"};
+    u32 target = 0;
+    if (line.ArgCount() != 3 || !OnlyOptions(line, allowed, 2) || !TargetOption(line, &target))
     {
         return Usage();
     }
-    u32 target = 0;
-    const char* skeleton_path = nullptr;
-    for (int i = 4; i < argc; ++i)
-    {
-        if (StartsWith(argv[i], "--target="))
-        {
-            if (!ParseNumber(argv[i] + 9, &target))
-            {
-                return Usage();
-            }
-        }
-        else if (StartsWith(argv[i], "--skeleton="))
-        {
-            skeleton_path = argv[i] + 11;
-        }
-        else
-        {
-            return Usage();
-        }
-    }
+    const char* skeleton_path = line.OptionOr("skeleton", nullptr);
+    const char* in_path = line.Arg(1).Data();
+    const char* out_path = line.Arg(2).Data();
     io::Path output;
-    if (!io::Path::Parse(StringView(argv[3], CStrLength(argv[3])), io::NativePathStyle(), &output))
+    if (!io::Path::Parse(StringView(out_path, CStrLength(out_path)), io::NativePathStyle(), &output))
     {
         return Usage();
     }
     Vector<u8> text;
-    if (!ReadWholeFile(argv[2], u64{1} << 30, &text))
+    if (!ReadWholeFile(in_path, u64{1} << 30, &text))
     {
         os::PrintError("asset_mint: the source file could not be read\n");
         return 1;
@@ -283,11 +281,11 @@ int MintMeshCommand(int argc, char** argv)
     {
         if (error.line != 0)
         {
-            os::PrintError("asset_mint: %s:%u: %s\n", argv[2], static_cast<unsigned>(error.line), error.message.Data());
+            os::PrintError("asset_mint: %s:%u: %s\n", in_path, static_cast<unsigned>(error.line), error.message.Data());
         }
         else
         {
-            os::PrintError("asset_mint: %s: %s\n", argv[2], error.message.Data());
+            os::PrintError("asset_mint: %s: %s\n", in_path, error.message.Data());
         }
         return 1;
     }
@@ -310,29 +308,25 @@ int MintMeshCommand(int argc, char** argv)
 }
 
 // Mints a texture source into a blob (Day 323). The raw image files are found next to the source file.
-int MintTextureCommand(int argc, char** argv)
+int MintTextureCommand(const Line& line)
 {
-    if (argc < 4)
+    static const char* const allowed[] = {"target"};
+    u32 target = 0;
+    if (line.ArgCount() != 3 || !OnlyOptions(line, allowed, 1) || !TargetOption(line, &target))
     {
         return Usage();
     }
-    u32 target = 0;
-    for (int i = 4; i < argc; ++i)
-    {
-        if (!StartsWith(argv[i], "--target=") || !ParseNumber(argv[i] + 9, &target))
-        {
-            return Usage();
-        }
-    }
+    const char* in_path = line.Arg(1).Data();
+    const char* out_path = line.Arg(2).Data();
     io::Path source_path;
     io::Path output;
-    if (!io::Path::Parse(StringView(argv[2], CStrLength(argv[2])), io::NativePathStyle(), &source_path) ||
-        !io::Path::Parse(StringView(argv[3], CStrLength(argv[3])), io::NativePathStyle(), &output))
+    if (!io::Path::Parse(StringView(in_path, CStrLength(in_path)), io::NativePathStyle(), &source_path) ||
+        !io::Path::Parse(StringView(out_path, CStrLength(out_path)), io::NativePathStyle(), &output))
     {
         return Usage();
     }
     Vector<u8> text;
-    if (!ReadWholeFile(argv[2], u64{1} << 24, &text))
+    if (!ReadWholeFile(in_path, u64{1} << 24, &text))
     {
         os::PrintError("asset_mint: the source file could not be read\n");
         return 1;
@@ -342,7 +336,7 @@ int MintTextureCommand(int argc, char** argv)
     TextureSourceError error;
     if (ParseTextureSource(text_view, &source, &error).Failed())
     {
-        os::PrintError("asset_mint: %s:%u: %s\n", argv[2], static_cast<unsigned>(error.line), error.message.Data());
+        os::PrintError("asset_mint: %s:%u: %s\n", in_path, static_cast<unsigned>(error.line), error.message.Data());
         return 1;
     }
     const io::Path directory = source_path.Parent();
@@ -357,14 +351,14 @@ int MintTextureCommand(int argc, char** argv)
                              io::NativePathStyle(), &relative) ||
             !directory.TryJoin(relative, &image_path))
         {
-            os::PrintError("asset_mint: %s:%u: the image path is not valid\n", argv[2],
+            os::PrintError("asset_mint: %s:%u: the image path is not valid\n", in_path,
                            static_cast<unsigned>(source.sources[i].line));
             return 1;
         }
         Vector<u8> bytes;
         if (!ReadWholeFilePath(image_path, u64{1} << 31, &bytes))
         {
-            os::PrintError("asset_mint: %s:%u: the image file could not be read\n", argv[2],
+            os::PrintError("asset_mint: %s:%u: the image file could not be read\n", in_path,
                            static_cast<unsigned>(source.sources[i].line));
             return 1;
         }
@@ -387,7 +381,7 @@ int MintTextureCommand(int argc, char** argv)
                     scheduler.Get())
             .Failed())
     {
-        os::PrintError("asset_mint: %s:%u: %s\n", argv[2], static_cast<unsigned>(error.line), error.message.Data());
+        os::PrintError("asset_mint: %s:%u: %s\n", in_path, static_cast<unsigned>(error.line), error.message.Data());
         return 1;
     }
     io::FilePtr file;
@@ -447,29 +441,25 @@ private:
 };
 
 // Mints a material source into a blob (Day 326).
-int MintMaterialCommand(int argc, char** argv)
+int MintMaterialCommand(const Line& line)
 {
-    if (argc < 4)
+    static const char* const allowed[] = {"target"};
+    u32 target = 0;
+    if (line.ArgCount() != 3 || !OnlyOptions(line, allowed, 1) || !TargetOption(line, &target))
     {
         return Usage();
     }
-    u32 target = 0;
-    for (int i = 4; i < argc; ++i)
-    {
-        if (!StartsWith(argv[i], "--target=") || !ParseNumber(argv[i] + 9, &target))
-        {
-            return Usage();
-        }
-    }
+    const char* in_path = line.Arg(1).Data();
+    const char* out_path = line.Arg(2).Data();
     io::Path source_path;
     io::Path output;
-    if (!io::Path::Parse(StringView(argv[2], CStrLength(argv[2])), io::NativePathStyle(), &source_path) ||
-        !io::Path::Parse(StringView(argv[3], CStrLength(argv[3])), io::NativePathStyle(), &output))
+    if (!io::Path::Parse(StringView(in_path, CStrLength(in_path)), io::NativePathStyle(), &source_path) ||
+        !io::Path::Parse(StringView(out_path, CStrLength(out_path)), io::NativePathStyle(), &output))
     {
         return Usage();
     }
     Vector<u8> text;
-    if (!ReadWholeFile(argv[2], u64{1} << 24, &text))
+    if (!ReadWholeFile(in_path, u64{1} << 24, &text))
     {
         os::PrintError("asset_mint: the source file could not be read\n");
         return 1;
@@ -482,7 +472,7 @@ int MintMaterialCommand(int argc, char** argv)
                      &error, target)
             .Failed())
     {
-        os::PrintError("asset_mint: %s:%u: %s\n", argv[2], static_cast<unsigned>(error.line), error.message.Data());
+        os::PrintError("asset_mint: %s:%u: %s\n", in_path, static_cast<unsigned>(error.line), error.message.Data());
         return 1;
     }
     io::FilePtr file;
@@ -504,44 +494,26 @@ int MintMaterialCommand(int argc, char** argv)
 }
 
 // Mints a clip source into a blob (Day 320). The clip's joints are named, so the skeleton's blob is required.
-int MintClipCommand(int argc, char** argv)
+int MintClipCommand(const Line& line)
 {
-    if (argc < 5)
-    {
-        return Usage();
-    }
+    static const char* const allowed[] = {"target", "skeleton"};
     u32 target = 0;
-    const char* skeleton_path = nullptr;
-    for (int i = 4; i < argc; ++i)
-    {
-        if (StartsWith(argv[i], "--target="))
-        {
-            if (!ParseNumber(argv[i] + 9, &target))
-            {
-                return Usage();
-            }
-        }
-        else if (StartsWith(argv[i], "--skeleton="))
-        {
-            skeleton_path = argv[i] + 11;
-        }
-        else
-        {
-            return Usage();
-        }
-    }
-    if (skeleton_path == nullptr)
+    const char* skeleton_path = line.OptionOr("skeleton", nullptr);
+    if (line.ArgCount() != 3 || !OnlyOptions(line, allowed, 2) || !TargetOption(line, &target) ||
+        skeleton_path == nullptr)
     {
         return Usage();
     }
+    const char* in_path = line.Arg(1).Data();
+    const char* out_path = line.Arg(2).Data();
     io::Path output;
-    if (!io::Path::Parse(StringView(argv[3], CStrLength(argv[3])), io::NativePathStyle(), &output))
+    if (!io::Path::Parse(StringView(out_path, CStrLength(out_path)), io::NativePathStyle(), &output))
     {
         return Usage();
     }
     Vector<u8> text;
     Vector<u8> skeleton_bytes;
-    if (!ReadWholeFile(argv[2], u64{1} << 28, &text) || !ReadWholeFile(skeleton_path, u64{1} << 24, &skeleton_bytes))
+    if (!ReadWholeFile(in_path, u64{1} << 28, &text) || !ReadWholeFile(skeleton_path, u64{1} << 24, &skeleton_bytes))
     {
         os::PrintError("asset_mint: the source or the skeleton blob could not be read\n");
         return 1;
@@ -564,11 +536,11 @@ int MintClipCommand(int argc, char** argv)
     {
         if (error.line != 0)
         {
-            os::PrintError("asset_mint: %s:%u: %s\n", argv[2], static_cast<unsigned>(error.line), error.message.Data());
+            os::PrintError("asset_mint: %s:%u: %s\n", in_path, static_cast<unsigned>(error.line), error.message.Data());
         }
         else
         {
-            os::PrintError("asset_mint: %s: %s\n", argv[2], error.message.Data());
+            os::PrintError("asset_mint: %s: %s\n", in_path, error.message.Data());
         }
         return 1;
     }
@@ -687,11 +659,13 @@ bool WriteOutput(const io::Path& output, const void* data, usize size)
     return true;
 }
 
-// Reads `--root=DIR` and `--target=N` after the two paths. The root defaults to the folder of `first`.
-bool LevelOptions(int argc, char** argv, io::Path* root, u32* target)
+// Reads `--root DIR` and `--target N`. The root defaults to the folder of the first path.
+bool LevelOptions(const Line& line, io::Path* root, u32* target)
 {
+    static const char* const allowed[] = {"root", "target"};
     io::Path first;
-    if (!io::Path::Parse(StringView(argv[2], CStrLength(argv[2])), io::NativePathStyle(), &first))
+    if (line.ArgCount() != 3 || !OnlyOptions(line, allowed, 2) ||
+        !io::Path::Parse(line.Arg(1), io::NativePathStyle(), &first))
     {
         return false;
     }
@@ -700,43 +674,28 @@ bool LevelOptions(int argc, char** argv, io::Path* root, u32* target)
     {
         return false;
     }
-    for (int i = 4; i < argc; ++i)
+    if (target != nullptr && !TargetOption(line, target))
     {
-        if (StartsWith(argv[i], "--target=") && target != nullptr)
-        {
-            if (!ParseNumber(argv[i] + 9, target))
-            {
-                return false;
-            }
-        }
-        else if (StartsWith(argv[i], "--root="))
-        {
-            if (!io::Path::Parse(StringView(argv[i] + 7, CStrLength(argv[i] + 7)), io::NativePathStyle(), root))
-            {
-                return false;
-            }
-        }
-        else
-        {
-            return false;
-        }
+        return false;
     }
-    return true;
+    StringView root_text;
+    return !line.TryGetOption(StringView("root"), root_text) || io::Path::Parse(root_text, io::NativePathStyle(), root);
 }
 
 // Mints a level source into a blob (Day 327).
-int MintLevelCommand(int argc, char** argv)
+int MintLevelCommand(const Line& line)
 {
     io::Path root;
     u32 target = 0;
     io::Path output;
-    if (argc < 4 || !LevelOptions(argc, argv, &root, &target) ||
-        !io::Path::Parse(StringView(argv[3], CStrLength(argv[3])), io::NativePathStyle(), &output))
+    const char* in_path = line.ArgCount() >= 2 ? line.Arg(1).Data() : "";  // used after LevelOptions checked the count
+    if (line.ArgCount() != 3 || !LevelOptions(line, &root, &target) ||
+        !io::Path::Parse(line.Arg(2), io::NativePathStyle(), &output))
     {
         return Usage();
     }
     Vector<u8> text;
-    if (!ReadWholeFile(argv[2], u64{1} << 26, &text))
+    if (!ReadWholeFile(in_path, u64{1} << 26, &text))
     {
         os::PrintError("asset_mint: the source file could not be read\n");
         return 1;
@@ -763,11 +722,11 @@ int MintLevelCommand(int argc, char** argv)
     {
         if (error.line == 0)
         {
-            os::PrintError("asset_mint: %s: %s\n", argv[2], error.message.Data());
+            os::PrintError("asset_mint: %s: %s\n", in_path, error.message.Data());
         }
         else
         {
-            os::PrintError("asset_mint: %s:%u: %s\n", argv[2], static_cast<unsigned>(error.line), error.message.Data());
+            os::PrintError("asset_mint: %s:%u: %s\n", in_path, static_cast<unsigned>(error.line), error.message.Data());
         }
         return 1;
     }
@@ -780,17 +739,18 @@ int MintLevelCommand(int argc, char** argv)
 }
 
 // Prints a level blob back as its canonical text (Day 327).
-int UnmintLevelCommand(int argc, char** argv)
+int UnmintLevelCommand(const Line& line)
 {
     io::Path root;
     io::Path output;
-    if (argc < 4 || !LevelOptions(argc, argv, &root, nullptr) ||
-        !io::Path::Parse(StringView(argv[3], CStrLength(argv[3])), io::NativePathStyle(), &output))
+    const char* in_path = line.ArgCount() >= 2 ? line.Arg(1).Data() : "";  // used after LevelOptions checked the count
+    if (line.ArgCount() != 3 || !LevelOptions(line, &root, nullptr) ||
+        !io::Path::Parse(line.Arg(2), io::NativePathStyle(), &output))
     {
         return Usage();
     }
     Vector<u8> blob;
-    if (!ReadWholeFile(argv[2], u64{1} << 31, &blob))
+    if (!ReadWholeFile(in_path, u64{1} << 31, &blob))
     {
         os::PrintError("asset_mint: the level file could not be read\n");
         return 1;
@@ -813,7 +773,7 @@ int UnmintLevelCommand(int argc, char** argv)
     LevelSourceError error;
     if (FormatLevelBlob(ByteSpan(blob.Data(), blob.Size()), types, registry, resolver, &text, &error).Failed())
     {
-        os::PrintError("asset_mint: %s: %s\n", argv[2], error.message.Data());
+        os::PrintError("asset_mint: %s: %s\n", in_path, error.message.Data());
         return 1;
     }
     if (!WriteOutput(output, text.View().Data(), text.Length()))
@@ -825,45 +785,24 @@ int UnmintLevelCommand(int argc, char** argv)
 }
 
 // The project commands (Day 333): `asset_mint COMMAND PROJECT.project [options]`.
-int ProjectCommand(StringView command, int argc, char** argv)
+int ProjectCommand(const Line& line)
 {
+    const StringView command = line.Arg(0);
+    static const char* const allowed[] = {"force", "workers", "quiet", "verbose", "skeletons"};
     MintOptions options;
-    bool quiet = false;
-    bool verbose = false;
-    bool skeletons = false;
-    for (int i = 3; i < argc; ++i)
+    StringView workers;
+    if (line.ArgCount() != 2 || !OnlyOptions(line, allowed, 5) ||
+        (line.HasFlag("skeletons") && command != StringView("list")) ||
+        (line.TryGetOption(StringView("workers"), workers) && !ParseNumber(workers.Data(), &options.workers)))
     {
-        const StringView arg(argv[i], CStrLength(argv[i]));
-        if (arg == StringView("--force"))
-        {
-            options.force = true;
-        }
-        else if (arg == StringView("--quiet"))
-        {
-            quiet = true;
-        }
-        else if (arg == StringView("--verbose"))
-        {
-            verbose = true;
-        }
-        else if (arg == StringView("--skeletons") && command == StringView("list"))
-        {
-            skeletons = true;
-        }
-        else if (StartsWith(argv[i], "--workers="))
-        {
-            if (!ParseNumber(argv[i] + 10, &options.workers))
-            {
-                return Usage();
-            }
-        }
-        else
-        {
-            return Usage();
-        }
+        return Usage();
     }
+    options.force = line.HasFlag("force");
+    const bool quiet = line.HasFlag("quiet");
+    const bool verbose = line.HasFlag("verbose");
+    const bool skeletons = line.HasFlag("skeletons");
     io::Path project_file;
-    if (!io::Path::Parse(StringView(argv[2], CStrLength(argv[2])), io::NativePathStyle(), &project_file))
+    if (!io::Path::Parse(line.Arg(1), io::NativePathStyle(), &project_file))
     {
         return Usage();
     }
@@ -957,11 +896,11 @@ int ProjectCommand(StringView command, int argc, char** argv)
     }
     for (usize i = 0; i < diagnostics.Lines().Size(); ++i)
     {
-        const String<HeapAllocator>& line = diagnostics.Lines()[i];
-        const bool is_error = line.View().StartsWith(StringView("error:"));
+        const String<HeapAllocator>& text = diagnostics.Lines()[i];
+        const bool is_error = text.View().StartsWith(StringView("error:"));
         if (is_error || verbose)
         {
-            os::PrintError("asset_mint: %s\n", line.CStr());
+            os::PrintError("asset_mint: %s\n", text.CStr());
         }
     }
     return status.Ok() && diagnostics.ErrorCount() == 0 ? 0 : 1;
@@ -971,50 +910,57 @@ int ProjectCommand(StringView command, int argc, char** argv)
 
 int main(int argc, char** argv)
 {
-    if (argc >= 3)
+    const Line line(HeapAllocator::Default(), argc, argv, Span<const os::CommandLineOption>(kCliOptions, 9));
+    if (!line.Ok())
     {
-        const StringView command(argv[1], CStrLength(argv[1]));
-        const StringView target(argv[2], CStrLength(argv[2]));
-        const bool project_command = command == StringView("adopt") || command == StringView("mint") ||
-                                     command == StringView("verify") || command == StringView("list") ||
-                                     command == StringView("check") ||
-                                     (command == StringView("pack") && target.EndsWith(StringView(".project")));
-        if (project_command)
-        {
-            return ProjectCommand(command, argc, argv);
-        }
+        os::PrintError("asset_mint: %s\n", line.Error().Data());
+        return Usage();
     }
-    if (argc >= 2 && StringView(argv[1], CStrLength(argv[1])) == StringView("pack"))
+    if (line.ArgCount() < 1)
     {
-        return Pack(argc, argv);
+        return Usage();
     }
-    if (argc >= 2 && StringView(argv[1], CStrLength(argv[1])) == StringView("mint-mesh"))
+    const StringView command = line.Arg(0);
+    const bool project_command = command == StringView("adopt") || command == StringView("mint") ||
+                                 command == StringView("verify") || command == StringView("list") ||
+                                 command == StringView("check") ||
+                                 (command == StringView("pack") && line.ArgCount() == 2 &&
+                                  line.Arg(1).EndsWith(StringView(".project")));
+    if (project_command)
     {
-        return MintMeshCommand(argc, argv);
+        return ProjectCommand(line);
     }
-    if (argc >= 2 && StringView(argv[1], CStrLength(argv[1])) == StringView("mint-texture"))
+    if (command == StringView("pack"))
     {
-        return MintTextureCommand(argc, argv);
+        return Pack(line);
     }
-    if (argc >= 2 && StringView(argv[1], CStrLength(argv[1])) == StringView("mint-material"))
+    if (command == StringView("mint-mesh"))
     {
-        return MintMaterialCommand(argc, argv);
+        return MintMeshCommand(line);
     }
-    if (argc >= 2 && StringView(argv[1], CStrLength(argv[1])) == StringView("mint-level"))
+    if (command == StringView("mint-texture"))
     {
-        return MintLevelCommand(argc, argv);
+        return MintTextureCommand(line);
     }
-    if (argc >= 2 && StringView(argv[1], CStrLength(argv[1])) == StringView("unmint-level"))
+    if (command == StringView("mint-material"))
     {
-        return UnmintLevelCommand(argc, argv);
+        return MintMaterialCommand(line);
     }
-    if (argc >= 2 && StringView(argv[1], CStrLength(argv[1])) == StringView("mint-clip"))
+    if (command == StringView("mint-level"))
     {
-        return MintClipCommand(argc, argv);
+        return MintLevelCommand(line);
     }
-    if (argc >= 2 && StringView(argv[1], CStrLength(argv[1])) == StringView("mint-skeleton"))
+    if (command == StringView("unmint-level"))
     {
-        return MintSkeletonCommand(argc, argv);
+        return UnmintLevelCommand(line);
+    }
+    if (command == StringView("mint-clip"))
+    {
+        return MintClipCommand(line);
+    }
+    if (command == StringView("mint-skeleton"))
+    {
+        return MintSkeletonCommand(line);
     }
     return Usage();
 }

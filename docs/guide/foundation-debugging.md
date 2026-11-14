@@ -273,8 +273,9 @@ debug::RunCrashTest(setup.crash_test);
 It prepares the stack-trace facilities and the crash context, logs the build id, and installs the crash handler **if wanted**:
 `--crash-handler=on|off` wins, then the environment variable `ENGINE_CRASH_HANDLER` (`1`/`0`), then the build's default, which is
 **on in Debug and RelWithDebInfo and off in Release**. A program with no command line (mobile, console) passes `0, nullptr` and
-uses the environment and the default. A program with its own argument parser skips these arguments with
-[[debug::IsProgramDebugArgument]].
+uses the environment and the default. A program that declares its options to [[os::CommandLine]] lists
+`debug::kCrashHandlerOption` and `debug::kCrashTestOption` among them (both `--crash-test=segv` and `--crash-test segv` work);
+[[debug::IsProgramDebugArgument]] tells whether one raw argument is one of these two in the `=` form.
 
 `--crash-test=segv|abort|assert|ensure` makes the program cause that fault right away, before it opens a window or a device,
 for checking the whole crash path by hand (the demos and benches all take it):

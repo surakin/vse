@@ -1,0 +1,13 @@
+# path|reason - files allowed to index argv outside os::CommandLine. A path ending in / allows the directory. A stale entry fails the gate.
+# The rule: CLAUDE.md ("The command line goes through os::CommandLine") and engine/foundation/os/command_line.h.
+engine/foundation/os/command_line.h|The command-line class itself (its documentation mentions argv[0]; Parse reads the process arguments).
+engine/foundation/settings/command_line_source.cpp|The settings system's own command-line layer: it parses --set, --settings and the flags that name settings from the raw arguments (it consumes what it knows and hands the rest on).
+engine/foundation/debug/program_setup.cpp|StartProgramDebugging reads --crash-handler= and --crash-test= from the raw arguments before anything else exists (no allocator, no settings).
+engine/foundation/debug/crash_context.cpp|InitCrashContext copies the raw arguments into the crash report before the process can fail; it runs before any allocator-owned object is wanted.
+engine/platform/windows/entry_point_windows.cpp|Builds the UTF-8 argv from the Windows command line for the windowed programs' entry point.
+tools/docgen/src/child_process_posix.cpp|Builds the argv array of a child process for execvp (not the program's own arguments).
+tools/shader_mint/run_process_posix.cpp|Builds the argv array of a child process for execvp (not the program's own arguments).
+tests/debug/macos/stack_trace_macos_test.cpp|Builds the argv of a child process (posix_spawn) in a test.
+tests/settings/layers_test.cpp|Builds a synthetic argv for the settings system's command-line layer and takes its size with sizeof.
+tests/shader_mint/args_probe.cpp|A child program that echoes its raw arguments, to test that shader_mint's process runner passes them through unchanged.
+tests/windows/|Windows test programs that echo or check the raw process arguments (the UTF-8 argv of the entry point).

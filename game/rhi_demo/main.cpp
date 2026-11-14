@@ -670,75 +670,70 @@ int EngineMain(int argc, char** argv)
     LogRhi.SetVerbosity(LogVerbosity::Info);  // the frame-time line is Info
     demo::DemoSettings demo_settings;
     char usage_text[2048];
-    FormatTo(usage_text, sizeof(usage_text), kUsageFormat, argv[0]);
+    const os::CommandLine<HeapAllocator> native(HeapAllocator::Default(), argc, argv);
+    FormatTo(usage_text, sizeof(usage_text), kUsageFormat, native.ProgramName().Data());
     if (!demo_settings.Begin("rhi_demo", usage_text, argc, argv))
     {
         return kExitUsage;
     }
     g_demo_settings = &demo_settings;
-    argc = demo_settings.RestCount();  // what the settings system did not take: --set, --settings, --gpu, --backend,
-                                       // ... are handled there
-    argv = demo_settings.RestArgs();
+    // What the settings system did not take: --set, --settings, --gpu, --backend, ... are handled there.
+    static const os::CommandLineOption kCliOptions[] = {{"frames", true},
+                                                        {"screenshot", true},
+                                                        {"backend", true},
+                                                        {"gpu", true},
+                                                        {"list-gpus", false},
+                                                        {"no-vsync", false},
+                                                        {"validation", false},
+                                                        {"inject-device-loss", true},
+                                                        {"inject-oom", true},
+                                                        {"help", false},
+                                                        {"-h", false},
+                                                        engine_placeholder::debug::kCrashHandlerOption,
+                                                        engine_placeholder::debug::kCrashTestOption};
+    const os::CommandLine<HeapAllocator> line(HeapAllocator::Default(), demo_settings.RestCount(),
+                                              demo_settings.RestArgs(),
+                                              engine_placeholder::Span<const os::CommandLineOption>(kCliOptions, 13));
+    const char* program = line.ProgramName().Data();
     Options options;
     const char* frames_env = os::GetEnvironment("RHI_DEMO_FRAMES");
     options.frames = frames_env != nullptr ? CStrToLong(frames_env) : 0;
-    for (int i = 1; i < argc; ++i)
+    if (line.HasFlag("help") || line.HasFlag("-h"))
     {
-        if (engine_placeholder::debug::IsProgramDebugArgument(argv[i]))
-        {
-            continue;  // --crash-handler=... and --crash-test=... are handled by StartProgramDebugging
-        }
-        const bool has_value = i + 1 < argc;
-        if (CStrCompare(argv[i], "--frames") == 0 && has_value)
-        {
-            options.frames = CStrToLong(argv[++i]);
-        }
-        else if (CStrCompare(argv[i], "--screenshot") == 0 && has_value)
-        {
-            options.screenshot = argv[++i];
-        }
-        else if (CStrCompare(argv[i], "--backend") == 0 && has_value)
-        {
-            options.backend = argv[++i];
-        }
-        else if (CStrCompare(argv[i], "--gpu") == 0 && has_value)
-        {
-            options.gpu = argv[++i];
-        }
-        else if (CStrCompare(argv[i], "--list-gpus") == 0)
-        {
-            options.list_gpus = true;
-        }
-        else if (CStrCompare(argv[i], "--no-vsync") == 0)
-        {
-            options.no_vsync = true;
-        }
-        else if (CStrCompare(argv[i], "--validation") == 0)
-        {
-            options.validation = true;
-        }
-        else if (CStrCompare(argv[i], "--inject-device-loss") == 0 && has_value)
-        {
-            if (!ParseCount(argv[++i], &options.inject_device_loss))
-            {
-                return Usage(argv[0], kExitUsage);
-            }
-        }
-        else if (CStrCompare(argv[i], "--inject-oom") == 0 && has_value)
-        {
-            if (!ParseCount(argv[++i], &options.inject_oom))
-            {
-                return Usage(argv[0], kExitUsage);
-            }
-        }
-        else if (CStrCompare(argv[i], "--help") == 0 || CStrCompare(argv[i], "-h") == 0)
-        {
-            return Usage(argv[0], kExitOk);
-        }
-        else
-        {
-            return Usage(argv[0], kExitUsage);
-        }
+        return Usage(program, kExitOk);
+    }
+    if (!line.Ok() || line.ArgCount() != 0)
+    {
+        os::PrintError("%s: %s\n", program, line.Ok() ? "unexpected argument" : line.Error().Data());
+        return Usage(program, kExitUsage);
+    }
+    StringView value;
+    if (line.TryGetOption("frames", value))
+    {
+        options.frames = CStrToLong(value.Data());
+    }
+    if (line.TryGetOption("screenshot", value))
+    {
+        options.screenshot = value.Data();
+    }
+    if (line.TryGetOption("backend", value))
+    {
+        options.backend = value.Data();
+    }
+    if (line.TryGetOption("gpu", value))
+    {
+        options.gpu = value.Data();
+    }
+    options.list_gpus = line.HasFlag("list-gpus");
+    options.no_vsync = line.HasFlag("no-vsync");
+    options.validation = line.HasFlag("validation");
+    if (line.TryGetOption("inject-device-loss", value) && !ParseCount(value.Data(), &options.inject_device_loss))
+    {
+        return Usage(program, kExitUsage);
+    }
+    if (line.TryGetOption("inject-oom", value) && !ParseCount(value.Data(), &options.inject_oom))
+    {
+        return Usage(program, kExitUsage);
     }
     // The flags of this program that are settings: put them into the settings, so --list-settings and --save-settings
     // show them.

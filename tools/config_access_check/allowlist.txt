@@ -20,12 +20,6 @@ engine/rhi/pipeline_cache_file.cpp|ENGINE_RHI_CACHE_DIR is read when a backend o
 game/renderer_demo/main.cpp|The demo's launch-only options (--frames, --screenshot, --objects, --lights, --gbuffer, --script, --text, --inject-*, ...) and RENDERER_DEMO_FRAMES: scene and test parameters, not settings; the settings options are handled by demo::DemoSettings.
 game/ui_demo/main.cpp|The demo's launch-only options (--frames, --screenshot, --script, --scale): run parameters, not settings; the settings options are handled by demo::DemoSettings.
 game/rhi_demo/main.cpp|The demo's launch-only options (--frames, --screenshot, --inject-*, --list-gpus) and RHI_DEMO_FRAMES: test parameters, not settings; the settings options are handled by demo::DemoSettings.
-game/renderer_bench/main.cpp|Benchmark parameters (--threads, --draws, --section, ...): not configuration of the engine.
-game/rhi_bench/main.cpp|Benchmark parameters (--section, --draws, --skip-uploads, ...): not configuration of the engine.
-game/ecs_bench/main.cpp|Benchmark parameters (--entities, --frames, --threads, --csv): not configuration of the engine.
-game/spatial_demo/main.cpp|Launch-only demo parameters (--entities, --frames, --stats, --debug-draw, --serial): not configuration of the engine.
-game/storage_demo/main.cpp|Launch-only demo parameters (--entities, --frames); --file and --columns only publish storage.path and storage.layout into the demo's own registry (it has no settings service).
-game/net_demo/main.cpp|Launch-only demo parameters (--simulated, --large): run parameters, not settings; every limit comes from the net.* settings.
 engine/foundation/os/windows/debug/post_mortem.cpp|Reads Windows Error Reporting's LocalDumps values (HKLM) to report where a post-mortem dump would go: the system's configuration, never written, not the program's.
 engine/foundation/settings/|The settings system itself: it parses the --set, --settings, --save-settings, --list-settings and --help options and the ENGINE_* environment on behalf of every program.
 engine/foundation/os/console.h|The os::GetEnvironment wrapper (Phase 16) is the one place that calls the C library getenv; the callers it serves are listed here under their own reasons.

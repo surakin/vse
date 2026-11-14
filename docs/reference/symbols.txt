@@ -1792,23 +1792,33 @@ bytes::ByteWriter::Bytes() const	function	foundation/bytes	bytes-bytewriter-byte
 bytes::ByteWriter::Size() const	function	foundation/bytes	bytes-bytewriter-size-const	foundation-bytes.md	engine/foundation/bytes/byte_writer.h:92
 bytes::ByteWriter::Clear()	function	foundation/bytes	bytes-bytewriter-clear	foundation-bytes.md	engine/foundation/bytes/byte_writer.h:94
 bytes::ByteWriter::Truncate(usize)	function	foundation/bytes	bytes-bytewriter-truncate-usize	foundation-bytes.md	engine/foundation/bytes/byte_writer.h:97
-os::StashNativeCommandLine(int,char**)	function	platform/os	os-stashnativecommandline-int-char-star-star	platform-os.md	engine/foundation/os/command_line.h:22
-os::CommandLine	class	platform/os	os-commandline	platform-os.md	engine/foundation/os/command_line.h:40
-os::CommandLine::CommandLine(Allocator&,int,char**)	function	platform/os	os-commandline-commandline-allocator-amp-int-char-star-star	platform-os.md	engine/foundation/os/command_line.h:51
-os::CommandLine::FromNative(Allocator&)	function	platform/os	os-commandline-fromnative-allocator-amp	platform-os.md	engine/foundation/os/command_line.h:84
-os::CommandLine::CommandLine(const CommandLine&)	function	platform/os	os-commandline-commandline-const-commandline-amp	platform-os.md	engine/foundation/os/command_line.h:92
-os::CommandLine::operator=(const CommandLine&)	function	platform/os	os-commandline-operator-eq-const-commandline-amp	platform-os.md	engine/foundation/os/command_line.h:93
-os::CommandLine::CommandLine(CommandLine&&) noexcept	function	platform/os	os-commandline-commandline-commandline-amp-amp-noexcept	platform-os.md	engine/foundation/os/command_line.h:94
-os::CommandLine::operator=(CommandLine&&) noexcept	function	platform/os	os-commandline-operator-eq-commandline-amp-amp-noexcept	platform-os.md	engine/foundation/os/command_line.h:95
-os::CommandLine::ProgramName() const	function	platform/os	os-commandline-programname-const	platform-os.md	engine/foundation/os/command_line.h:99
-os::CommandLine::ArgCount() const	function	platform/os	os-commandline-argcount-const	platform-os.md	engine/foundation/os/command_line.h:102
-os::CommandLine::Arg(usize) const	function	platform/os	os-commandline-arg-usize-const	platform-os.md	engine/foundation/os/command_line.h:108
-os::CommandLine::HasFlag(StringView) const	function	platform/os	os-commandline-hasflag-stringview-const	platform-os.md	engine/foundation/os/command_line.h:116
-os::CommandLine::TryGetOption(StringView,StringView&) const	function	platform/os	os-commandline-trygetoption-stringview-stringview-amp-const	platform-os.md	engine/foundation/os/command_line.h:124
-os::CommandLine::FlagCount() const	function	platform/os	os-commandline-flagcount-const	platform-os.md	engine/foundation/os/command_line.h:136
-os::CommandLine::FlagName(usize) const	function	platform/os	os-commandline-flagname-usize-const	platform-os.md	engine/foundation/os/command_line.h:142
-os::CommandLine::FlagHasValue(usize) const	function	platform/os	os-commandline-flaghasvalue-usize-const	platform-os.md	engine/foundation/os/command_line.h:151
-os::CommandLine::FlagValue(usize) const	function	platform/os	os-commandline-flagvalue-usize-const	platform-os.md	engine/foundation/os/command_line.h:161
+os::StashNativeCommandLine(int,char**)	function	platform/os	os-stashnativecommandline-int-char-star-star	platform-os.md	engine/foundation/os/command_line.h:24
+os::CommandLineOption	struct	platform/os	os-commandlineoption	platform-os.md	engine/foundation/os/command_line.h:38
+os::CommandLineOption::name	variable	platform/os	os-commandlineoption-name	platform-os.md	engine/foundation/os/command_line.h:41
+os::CommandLineOption::takes_value	variable	platform/os	os-commandlineoption-takes-value	platform-os.md	engine/foundation/os/command_line.h:43
+os::CommandLineOption::repeatable	variable	platform/os	os-commandlineoption-repeatable	platform-os.md	engine/foundation/os/command_line.h:45
+os::CommandLine	class	platform/os	os-commandline	platform-os.md	engine/foundation/os/command_line.h:61
+os::CommandLine::CommandLine(Allocator&,int,char**)	function	platform/os	os-commandline-commandline-allocator-amp-int-char-star-star	platform-os.md	engine/foundation/os/command_line.h:72
+os::CommandLine::CommandLine(Allocator&,int,char**,Span<const CommandLineOption>)	function	platform/os	os-commandline-commandline-allocator-amp-int-char-star-star-span-lt-const-commandlineoption-gt	platform-os.md	engine/foundation/os/command_line.h:87
+os::CommandLine::FromNative(Allocator&)	function	platform/os	os-commandline-fromnative-allocator-amp	platform-os.md	engine/foundation/os/command_line.h:98
+os::CommandLine::CommandLine(const CommandLine&)	function	platform/os	os-commandline-commandline-const-commandline-amp	platform-os.md	engine/foundation/os/command_line.h:106
+os::CommandLine::operator=(const CommandLine&)	function	platform/os	os-commandline-operator-eq-const-commandline-amp	platform-os.md	engine/foundation/os/command_line.h:107
+os::CommandLine::CommandLine(CommandLine&&) noexcept	function	platform/os	os-commandline-commandline-commandline-amp-amp-noexcept	platform-os.md	engine/foundation/os/command_line.h:108
+os::CommandLine::operator=(CommandLine&&) noexcept	function	platform/os	os-commandline-operator-eq-commandline-amp-amp-noexcept	platform-os.md	engine/foundation/os/command_line.h:109
+os::CommandLine::Ok() const	function	platform/os	os-commandline-ok-const	platform-os.md	engine/foundation/os/command_line.h:112
+os::CommandLine::Error() const	function	platform/os	os-commandline-error-const	platform-os.md	engine/foundation/os/command_line.h:116
+os::CommandLine::ProgramName() const	function	platform/os	os-commandline-programname-const	platform-os.md	engine/foundation/os/command_line.h:120
+os::CommandLine::ArgCount() const	function	platform/os	os-commandline-argcount-const	platform-os.md	engine/foundation/os/command_line.h:123
+os::CommandLine::Arg(usize) const	function	platform/os	os-commandline-arg-usize-const	platform-os.md	engine/foundation/os/command_line.h:129
+os::CommandLine::HasFlag(StringView) const	function	platform/os	os-commandline-hasflag-stringview-const	platform-os.md	engine/foundation/os/command_line.h:137
+os::CommandLine::TryGetOption(StringView,StringView&) const	function	platform/os	os-commandline-trygetoption-stringview-stringview-amp-const	platform-os.md	engine/foundation/os/command_line.h:145
+os::CommandLine::OptionOr(StringView,const char*) const	function	platform/os	os-commandline-optionor-stringview-const-char-star-const	platform-os.md	engine/foundation/os/command_line.h:161
+os::CommandLine::OptionCount(StringView) const	function	platform/os	os-commandline-optioncount-stringview-const	platform-os.md	engine/foundation/os/command_line.h:169
+os::CommandLine::OptionAt(StringView,usize) const	function	platform/os	os-commandline-optionat-stringview-usize-const	platform-os.md	engine/foundation/os/command_line.h:187
+os::CommandLine::FlagCount() const	function	platform/os	os-commandline-flagcount-const	platform-os.md	engine/foundation/os/command_line.h:205
+os::CommandLine::FlagName(usize) const	function	platform/os	os-commandline-flagname-usize-const	platform-os.md	engine/foundation/os/command_line.h:211
+os::CommandLine::FlagHasValue(usize) const	function	platform/os	os-commandline-flaghasvalue-usize-const	platform-os.md	engine/foundation/os/command_line.h:220
+os::CommandLine::FlagValue(usize) const	function	platform/os	os-commandline-flagvalue-usize-const	platform-os.md	engine/foundation/os/command_line.h:230
 os::Print(const char*,...)	function	platform/os	os-print-const-char-star	platform-os.md	engine/foundation/os/console.h:21
 os::PrintError(const char*,...)	function	platform/os	os-printerror-const-char-star	platform-os.md	engine/foundation/os/console.h:35
 os::PrintText(const char*)	function	platform/os	os-printtext-const-char-star	platform-os.md	engine/foundation/os/console.h:48
@@ -2702,23 +2712,25 @@ debug::PostMortemReport::current_limit_bytes	variable	foundation/debug	debug-pos
 debug::PostMortemReport::destination	variable	foundation/debug	debug-postmortemreport-destination	foundation-debug.md	engine/foundation/debug/post_mortem.h:50
 debug::PostMortemReport::note	variable	foundation/debug	debug-postmortemreport-note	foundation-debug.md	engine/foundation/debug/post_mortem.h:52
 debug::EnablePostMortemDumps(const PostMortemOptions&)	function	foundation/debug	debug-enablepostmortemdumps-const-postmortemoptions-amp	foundation-debug.md	engine/foundation/debug/post_mortem.h:70
-debug::CrashTestKind	enum	foundation/debug	debug-crashtestkind	foundation-debug.md	engine/foundation/debug/program_setup.h:17
-debug::CrashTestKind::None	enumerator	foundation/debug	debug-crashtestkind-none	foundation-debug.md	engine/foundation/debug/program_setup.h:19
-debug::CrashTestKind::Segv	enumerator	foundation/debug	debug-crashtestkind-segv	foundation-debug.md	engine/foundation/debug/program_setup.h:20
-debug::CrashTestKind::Abort	enumerator	foundation/debug	debug-crashtestkind-abort	foundation-debug.md	engine/foundation/debug/program_setup.h:21
-debug::CrashTestKind::Assert	enumerator	foundation/debug	debug-crashtestkind-assert	foundation-debug.md	engine/foundation/debug/program_setup.h:22
-debug::CrashTestKind::Ensure	enumerator	foundation/debug	debug-crashtestkind-ensure	foundation-debug.md	engine/foundation/debug/program_setup.h:23
-debug::ProgramDebugSetup	struct	foundation/debug	debug-programdebugsetup	foundation-debug.md	engine/foundation/debug/program_setup.h:29
-debug::ProgramDebugSetup::crash_handler_installed	variable	foundation/debug	debug-programdebugsetup-crash-handler-installed	foundation-debug.md	engine/foundation/debug/program_setup.h:32
-debug::ProgramDebugSetup::crash_test	variable	foundation/debug	debug-programdebugsetup-crash-test	foundation-debug.md	engine/foundation/debug/program_setup.h:34
-debug::ProgramDebugRequest	struct	foundation/debug	debug-programdebugrequest	foundation-debug.md	engine/foundation/debug/program_setup.h:40
-debug::ProgramDebugRequest::crash_handler	variable	foundation/debug	debug-programdebugrequest-crash-handler	foundation-debug.md	engine/foundation/debug/program_setup.h:43
-debug::ProgramDebugRequest::crash_test	variable	foundation/debug	debug-programdebugrequest-crash-test	foundation-debug.md	engine/foundation/debug/program_setup.h:45
-debug::ProgramDebugRequest::ignored_argument	variable	foundation/debug	debug-programdebugrequest-ignored-argument	foundation-debug.md	engine/foundation/debug/program_setup.h:48
-debug::ParseProgramDebugRequest(int,const char* const*,const char*,bool)	function	foundation/debug	debug-parseprogramdebugrequest-int-const-char-star-const-star-const-char-star-bool	foundation-debug.md	engine/foundation/debug/program_setup.h:63
-debug::IsProgramDebugArgument(const char*)	function	foundation/debug	debug-isprogramdebugargument-const-char-star	foundation-debug.md	engine/foundation/debug/program_setup.h:72
-debug::StartProgramDebugging(int,const char* const*)	function	foundation/debug	debug-startprogramdebugging-int-const-char-star-const-star	foundation-debug.md	engine/foundation/debug/program_setup.h:86
-debug::RunCrashTest(CrashTestKind)	function	foundation/debug	debug-runcrashtest-crashtestkind	foundation-debug.md	engine/foundation/debug/program_setup.h:96
+debug::CrashTestKind	enum	foundation/debug	debug-crashtestkind	foundation-debug.md	engine/foundation/debug/program_setup.h:18
+debug::CrashTestKind::None	enumerator	foundation/debug	debug-crashtestkind-none	foundation-debug.md	engine/foundation/debug/program_setup.h:20
+debug::CrashTestKind::Segv	enumerator	foundation/debug	debug-crashtestkind-segv	foundation-debug.md	engine/foundation/debug/program_setup.h:21
+debug::CrashTestKind::Abort	enumerator	foundation/debug	debug-crashtestkind-abort	foundation-debug.md	engine/foundation/debug/program_setup.h:22
+debug::CrashTestKind::Assert	enumerator	foundation/debug	debug-crashtestkind-assert	foundation-debug.md	engine/foundation/debug/program_setup.h:23
+debug::CrashTestKind::Ensure	enumerator	foundation/debug	debug-crashtestkind-ensure	foundation-debug.md	engine/foundation/debug/program_setup.h:24
+debug::kCrashHandlerOption	variable	foundation/debug	debug-kcrashhandleroption	foundation-debug.md	engine/foundation/debug/program_setup.h:29
+debug::kCrashTestOption	variable	foundation/debug	debug-kcrashtestoption	foundation-debug.md	engine/foundation/debug/program_setup.h:31
+debug::ProgramDebugSetup	struct	foundation/debug	debug-programdebugsetup	foundation-debug.md	engine/foundation/debug/program_setup.h:36
+debug::ProgramDebugSetup::crash_handler_installed	variable	foundation/debug	debug-programdebugsetup-crash-handler-installed	foundation-debug.md	engine/foundation/debug/program_setup.h:39
+debug::ProgramDebugSetup::crash_test	variable	foundation/debug	debug-programdebugsetup-crash-test	foundation-debug.md	engine/foundation/debug/program_setup.h:41
+debug::ProgramDebugRequest	struct	foundation/debug	debug-programdebugrequest	foundation-debug.md	engine/foundation/debug/program_setup.h:47
+debug::ProgramDebugRequest::crash_handler	variable	foundation/debug	debug-programdebugrequest-crash-handler	foundation-debug.md	engine/foundation/debug/program_setup.h:50
+debug::ProgramDebugRequest::crash_test	variable	foundation/debug	debug-programdebugrequest-crash-test	foundation-debug.md	engine/foundation/debug/program_setup.h:52
+debug::ProgramDebugRequest::ignored_argument	variable	foundation/debug	debug-programdebugrequest-ignored-argument	foundation-debug.md	engine/foundation/debug/program_setup.h:55
+debug::ParseProgramDebugRequest(int,const char* const*,const char*,bool)	function	foundation/debug	debug-parseprogramdebugrequest-int-const-char-star-const-star-const-char-star-bool	foundation-debug.md	engine/foundation/debug/program_setup.h:70
+debug::IsProgramDebugArgument(const char*)	function	foundation/debug	debug-isprogramdebugargument-const-char-star	foundation-debug.md	engine/foundation/debug/program_setup.h:79
+debug::StartProgramDebugging(int,const char* const*)	function	foundation/debug	debug-startprogramdebugging-int-const-char-star-const-star	foundation-debug.md	engine/foundation/debug/program_setup.h:93
+debug::RunCrashTest(CrashTestKind)	function	foundation/debug	debug-runcrashtest-crashtestkind	foundation-debug.md	engine/foundation/debug/program_setup.h:103
 debug::kMaxStackFrames	variable	foundation/debug	debug-kmaxstackframes	foundation-debug.md	engine/foundation/debug/stack_trace.h:17
 debug::kMaxSymbolBytes	variable	foundation/debug	debug-kmaxsymbolbytes	foundation-debug.md	engine/foundation/debug/stack_trace.h:21
 debug::kMaxSourcePathBytes	variable	foundation/debug	debug-kmaxsourcepathbytes	foundation-debug.md	engine/foundation/debug/stack_trace.h:23

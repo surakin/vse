@@ -21,6 +21,8 @@
 #include "io/file.h"
 #include "io/file_system.h"
 #include "io/path.h"
+#include "mem/heap_allocator.h"
+#include "os/command_line.h"
 #include "os/console.h"
 
 #import <Foundation/Foundation.h>
@@ -98,36 +100,26 @@ MTLFunctionType FunctionTypeOf(StringView stage)
 int main(int argc, char** argv)
 {
     debug::InstallDiagnosticsHooks();
-    const char* source = nullptr;
-    const char* stage = nullptr;
-    const char* out = nullptr;
-    const char* info = nullptr;
-    for (int i = 1; i + 1 < argc; i += 2)
+    static const os::CommandLineOption cli_options[] = {
+        {"source", true}, {"stage", true}, {"out", true}, {"info", true}};
+    const os::CommandLine<HeapAllocator> line(HeapAllocator::Default(), argc, argv,
+                                              Span<const os::CommandLineOption>(cli_options, 4));
+    StringView source_value;
+    StringView stage_value;
+    StringView out_value;
+    StringView info_value;
+    if (!line.Ok() || line.ArgCount() != 0 || !line.TryGetOption(StringView("source"), source_value) ||
+        !line.TryGetOption(StringView("stage"), stage_value) || !line.TryGetOption(StringView("out"), out_value) ||
+        !line.TryGetOption(StringView("info"), info_value))
     {
-        if (CStrCompare(argv[i], "--source") == 0)
-        {
-            source = argv[i + 1];
-        }
-        else if (CStrCompare(argv[i], "--stage") == 0)
-        {
-            stage = argv[i + 1];
-        }
-        else if (CStrCompare(argv[i], "--out") == 0)
-        {
-            out = argv[i + 1];
-        }
-        else if (CStrCompare(argv[i], "--info") == 0)
-        {
-            info = argv[i + 1];
-        }
-        else
-        {
-            return Usage();
-        }
+        return Usage();
     }
-    if (argc % 2 != 1 || source == nullptr || stage == nullptr || out == nullptr || info == nullptr ||
-        (StringView(stage) != StringView("vertex") && StringView(stage) != StringView("fragment") &&
-         StringView(stage) != StringView("compute")))
+    const char* source = source_value.Data();
+    const char* stage = stage_value.Data();
+    const char* out = out_value.Data();
+    const char* info = info_value.Data();
+    if (StringView(stage) != StringView("vertex") && StringView(stage) != StringView("fragment") &&
+        StringView(stage) != StringView("compute"))
     {
         return Usage();
     }

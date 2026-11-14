@@ -264,6 +264,7 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   endforeach()
   add_subdirectory(tools/net_access_check)  # Phase 20 Day 268 (its own line: editing the gate list above would widen scripts/test-phase.sh --affected)
   add_subdirectory(tools/shared_unit_check)  # Phase 22 (the shared-ownership gate; its own line, as net_access_check)
+  add_subdirectory(tools/cmdline_access_check)  # the command-line gate (out of plan, 2026-11-14; its own line, as net_access_check)
   add_subdirectory(tools/net_probe)  # Phase 20 Day 281
   add_subdirectory(tests/phase_labels)
   add_subdirectory(tests/test_phase_script)
@@ -347,6 +348,7 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   endforeach()
   add_subdirectory(tools/net_access_check)  # Phase 20 Day 268 (its own line: editing the gate list above would widen scripts/test-phase.sh --affected)
   add_subdirectory(tools/shared_unit_check)  # Phase 22 (the shared-ownership gate; its own line, as net_access_check)
+  add_subdirectory(tools/cmdline_access_check)  # the command-line gate (out of plan, 2026-11-14; its own line, as net_access_check)
   add_subdirectory(tools/net_probe)  # Phase 21 Day 310
   add_subdirectory(tests/phase_labels)
   add_subdirectory(tests/test_phase_script)
@@ -408,6 +410,7 @@ add_subdirectory(tools/sqlite_boundary_check)  # Phase 19 Day 251
 add_subdirectory(tools/database_sql_check)  # Phase 19 Day 252
 add_subdirectory(tools/net_access_check)  # Phase 20 Day 268
 add_subdirectory(tools/shared_unit_check)  # Phase 22: shared units are held by SharedPtr aliases and never pointed at
+add_subdirectory(tools/cmdline_access_check)  # programs read their command line through os::CommandLine, never by indexing argv
 add_subdirectory(tools/net_probe)  # Phase 20 Day 281
 add_subdirectory(tools/crash_extract)
 add_subdirectory(tests/foundation)

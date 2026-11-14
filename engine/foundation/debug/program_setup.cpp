@@ -106,24 +106,53 @@ ProgramDebugRequest ParseProgramDebugRequest(int argc, const char* const* argv, 
         {
             continue;
         }
+        // `--name=value` and `--name value` (the form os::CommandLine accepts for an option that takes a value).
+        const char* value = nullptr;
+        const char* shown = nullptr;  // what a warning quotes: the whole argument, or the value of the two-word form
+        bool crash_handler_option = false;
+        bool crash_test_option = false;
         if (StartsWith(argv[i], "--crash-handler="))
         {
-            const int value = ParseSwitch(argv[i] + CStrLength("--crash-handler="));
-            if (value >= 0)
-            {
-                request.crash_handler = value != 0;
-            }
-            else
-            {
-                request.ignored_argument = argv[i];
-            }
+            crash_handler_option = true;
+            value = argv[i] + CStrLength("--crash-handler=");
+            shown = argv[i];
         }
         else if (StartsWith(argv[i], "--crash-test="))
         {
-            request.crash_test = ParseCrashTest(argv[i] + CStrLength("--crash-test="));
+            crash_test_option = true;
+            value = argv[i] + CStrLength("--crash-test=");
+            shown = argv[i];
+        }
+        else if (CStrCompare(argv[i], "--crash-handler") == 0 && i + 1 < argc && argv[i + 1] != nullptr)
+        {
+            crash_handler_option = true;
+            value = argv[++i];
+            shown = value;
+        }
+        else if (CStrCompare(argv[i], "--crash-test") == 0 && i + 1 < argc && argv[i + 1] != nullptr)
+        {
+            crash_test_option = true;
+            value = argv[++i];
+            shown = value;
+        }
+        if (crash_handler_option)
+        {
+            const int on = ParseSwitch(value);
+            if (on >= 0)
+            {
+                request.crash_handler = on != 0;
+            }
+            else
+            {
+                request.ignored_argument = shown;
+            }
+        }
+        else if (crash_test_option)
+        {
+            request.crash_test = ParseCrashTest(value);
             if (request.crash_test == CrashTestKind::None)
             {
-                request.ignored_argument = argv[i];
+                request.ignored_argument = shown;
             }
         }
     }

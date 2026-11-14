@@ -1,0 +1,2 @@
+engine/boot/|code that has to read the raw arguments (fixture)
+tools/clean.cpp|nothing in it indexes argv (fixture: this entry is stale)

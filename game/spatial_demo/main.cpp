@@ -63,38 +63,29 @@ int main(int argc, char** argv)
     bool stats = false;
     bool debug_draw = false;
     bool serial = false;
-    for (int i = 1; i < argc; ++i)
+    static const os::CommandLineOption kCliOptions[] = {
+        {"entities", true}, {"frames", true},           {"stats", false},       {"debug-draw", false},
+        {"serial", false},  debug::kCrashHandlerOption, debug::kCrashTestOption};
+    const os::CommandLine<HeapAllocator> line(HeapAllocator::Default(), argc, argv,
+                                              Span<const os::CommandLineOption>(kCliOptions, 7));
+    const char* program = line.ProgramName().Data();
+    if (!line.Ok() || line.ArgCount() != 0)
     {
-        if (debug::IsProgramDebugArgument(argv[i]))
-        {
-            continue;
-        }
-        if (CStrCompare(argv[i], "--entities") == 0 && i + 1 < argc)
-        {
-            entities = static_cast<u32>(CStrToLong(argv[++i]));
-        }
-        else if (CStrCompare(argv[i], "--frames") == 0 && i + 1 < argc)
-        {
-            frames = static_cast<u32>(CStrToLong(argv[++i]));
-        }
-        else if (CStrCompare(argv[i], "--stats") == 0)
-        {
-            stats = true;
-        }
-        else if (CStrCompare(argv[i], "--debug-draw") == 0)
-        {
-            debug_draw = true;
-        }
-        else if (CStrCompare(argv[i], "--serial") == 0)
-        {
-            serial = true;
-        }
-        else
-        {
-            os::PrintError("usage: %s [--entities N] [--frames N] [--stats] [--debug-draw] [--serial]\n", argv[0]);
-            return 2;
-        }
+        os::PrintError("usage: %s [--entities N] [--frames N] [--stats] [--debug-draw] [--serial]\n", program);
+        return 2;
     }
+    StringView value;
+    if (line.TryGetOption("entities", value))
+    {
+        entities = static_cast<u32>(CStrToLong(value.Data()));
+    }
+    if (line.TryGetOption("frames", value))
+    {
+        frames = static_cast<u32>(CStrToLong(value.Data()));
+    }
+    stats = line.HasFlag("stats");
+    debug_draw = line.HasFlag("debug-draw");
+    serial = line.HasFlag("serial");
     if (entities == 0 || entities > 5000000)
     {
         entities = 50000;  // a negative or absurd count wrapped to a huge u32

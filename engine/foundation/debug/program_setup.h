@@ -1,5 +1,6 @@
 #pragma once
 
+#include "os/command_line.h"
 #include "types.h"
 
 //! What every program (the demos, the benches, a game's `main`) does at startup for debugging, in one call: prepare the
@@ -22,6 +23,12 @@ enum class CrashTestKind : u8
     Assert,  ///< Fail an `ENGINE_ASSERT`.
     Ensure   ///< Fail an `ENGINE_ENSURE`; the program carries on.
 };
+
+/// The `--crash-handler=on|off` option [[debug::StartProgramDebugging]] reads, for a program that declares its own
+/// options to [[os::CommandLine]] (list it among them, or the command line is refused).
+inline constexpr os::CommandLineOption kCrashHandlerOption = {"crash-handler", true};
+/// The `--crash-test=KIND` option, as above.
+inline constexpr os::CommandLineOption kCrashTestOption = {"crash-test", true};
 
 /// What [[debug::StartProgramDebugging]] decided and did.
 ///

@@ -11,6 +11,7 @@
 #include "extractor.h"
 #include "scanner.h"
 #include "source_file.h"
+#include "os/command_line.h"
 #include "debug/failure_hooks.h"
 #include "os/console.h"
 
@@ -120,30 +121,26 @@ bool PrintDiagnostics(const char* path, const DiagList* const* lists, usize list
     return had_error;
 }
 
+using Line = engine_placeholder::os::CommandLine<engine_placeholder::HeapAllocator>;
+using engine_placeholder::Span;
+using engine_placeholder::os::CommandLineOption;
+
 int Dump(int argc, char** argv)
 {
     bool all = false;
     bool keep_going = false;
     const char* path = nullptr;
-    for (int i = 2; i < argc; ++i)
+    static const CommandLineOption options[] = {{"all", false}, {"keep-going", false}};
+    const Line line(engine_placeholder::HeapAllocator::Default(), argc, argv,
+                    Span<const CommandLineOption>(options, 2));
+    if (!line.Ok())
     {
-        if (engine_placeholder::CStrCompare(argv[i], "--all") == 0)
-        {
-            all = true;
-        }
-        else if (engine_placeholder::CStrCompare(argv[i], "--keep-going") == 0)
-        {
-            keep_going = true;
-        }
-        else if (path == nullptr)
-        {
-            path = argv[i];
-        }
-        else
-        {
-            return Usage();
-        }
+        engine_placeholder::os::PrintError("docgen: %s\n", line.Error().Data());
+        return Usage();
     }
+    all = line.HasFlag("all");
+    keep_going = line.HasFlag("keep-going");
+    path = line.ArgCount() == 2 ? line.Arg(1).Data() : nullptr;
     if (path == nullptr)
     {
         return Usage();
@@ -171,21 +168,16 @@ int Docs(int argc, char** argv)
 {
     bool keep_going = false;
     const char* path = nullptr;
-    for (int i = 2; i < argc; ++i)
+    static const CommandLineOption options[] = {{"keep-going", false}};
+    const Line line(engine_placeholder::HeapAllocator::Default(), argc, argv,
+                    Span<const CommandLineOption>(options, 1));
+    if (!line.Ok())
     {
-        if (engine_placeholder::CStrCompare(argv[i], "--keep-going") == 0)
-        {
-            keep_going = true;
-        }
-        else if (path == nullptr)
-        {
-            path = argv[i];
-        }
-        else
-        {
-            return Usage();
-        }
+        engine_placeholder::os::PrintError("docgen: %s\n", line.Error().Data());
+        return Usage();
     }
+    keep_going = line.HasFlag("keep-going");
+    path = line.ArgCount() == 2 ? line.Arg(1).Data() : nullptr;
     if (path == nullptr)
     {
         return Usage();
@@ -249,32 +241,23 @@ int Reference(int argc, char** argv, bool check)
     const char* modules = nullptr;
     const char* out = nullptr;
     bool quiet = false;
-    for (int i = 2; i < argc; ++i)
+    static const CommandLineOption options[] = {
+        {"root", true}, {"modules", true}, {"out", true}, {"quiet", false}, {"keep-going", false}};
+    const Line line(engine_placeholder::HeapAllocator::Default(), argc, argv,
+                    Span<const CommandLineOption>(options, 5));
+    if (!line.Ok())
     {
-        if (engine_placeholder::CStrCompare(argv[i], "--root") == 0 && i + 1 < argc)
-        {
-            root = argv[++i];
-        }
-        else if (engine_placeholder::CStrCompare(argv[i], "--modules") == 0 && i + 1 < argc)
-        {
-            modules = argv[++i];
-        }
-        else if (engine_placeholder::CStrCompare(argv[i], "--out") == 0 && i + 1 < argc)
-        {
-            out = argv[++i];
-        }
-        else if (engine_placeholder::CStrCompare(argv[i], "--quiet") == 0)
-        {
-            quiet = true;
-        }
-        else if (engine_placeholder::CStrCompare(argv[i], "--keep-going") == 0)
-        {
-        }
-        else
-        {
-            return Usage();
-        }
+        engine_placeholder::os::PrintError("docgen: %s\n", line.Error().Data());
+        return Usage();
     }
+    if (line.ArgCount() != 1)
+    {
+        return Usage();
+    }
+    root = line.OptionOr("root", root);
+    modules = line.OptionOr("modules", nullptr);
+    out = line.OptionOr("out", nullptr);
+    quiet = line.HasFlag("quiet");
     ArenaAllocator arena(usize{1} << 30);
     auto join = [&](const char* a, const char* b)
     {
@@ -321,29 +304,23 @@ int Links(int argc, char** argv)
     const char* modules = nullptr;
     bool quiet = false;
     LinkOptions options;
-    for (int i = 2; i < argc; ++i)
+    static const CommandLineOption cli_options[] = {
+        {"root", true}, {"modules", true}, {"external", false}, {"quiet", false}};
+    const Line line(engine_placeholder::HeapAllocator::Default(), argc, argv,
+                    Span<const CommandLineOption>(cli_options, 4));
+    if (!line.Ok())
     {
-        if (engine_placeholder::CStrCompare(argv[i], "--root") == 0 && i + 1 < argc)
-        {
-            root = argv[++i];
-        }
-        else if (engine_placeholder::CStrCompare(argv[i], "--modules") == 0 && i + 1 < argc)
-        {
-            modules = argv[++i];
-        }
-        else if (engine_placeholder::CStrCompare(argv[i], "--external") == 0)
-        {
-            options.list_external = true;
-        }
-        else if (engine_placeholder::CStrCompare(argv[i], "--quiet") == 0)
-        {
-            quiet = true;
-        }
-        else
-        {
-            return Usage();
-        }
+        engine_placeholder::os::PrintError("docgen: %s\n", line.Error().Data());
+        return Usage();
     }
+    if (line.ArgCount() != 1)
+    {
+        return Usage();
+    }
+    root = line.OptionOr("root", root);
+    modules = line.OptionOr("modules", nullptr);
+    options.list_external = line.HasFlag("external");
+    quiet = line.HasFlag("quiet");
     ArenaAllocator arena(usize{1} << 30);
     StringView root_v(root, engine_placeholder::CStrLength(root));
     StringView map_path = modules != nullptr ? StringView(modules, engine_placeholder::CStrLength(modules))
@@ -402,37 +379,25 @@ int Lint(int argc, char** argv)
     bool update = false;
     bool allow_growth = false;
     bool quiet = false;
-    for (int i = 2; i < argc; ++i)
+    static const CommandLineOption options[] = {{"root", true},          {"modules", true},          {"baseline", true},
+                                                {"allow-growth", false}, {"update-baseline", false}, {"quiet", false}};
+    const Line line(engine_placeholder::HeapAllocator::Default(), argc, argv,
+                    Span<const CommandLineOption>(options, 6));
+    if (!line.Ok())
     {
-        if (engine_placeholder::CStrCompare(argv[i], "--root") == 0 && i + 1 < argc)
-        {
-            root = argv[++i];
-        }
-        else if (engine_placeholder::CStrCompare(argv[i], "--modules") == 0 && i + 1 < argc)
-        {
-            modules = argv[++i];
-        }
-        else if (engine_placeholder::CStrCompare(argv[i], "--allow-growth") == 0)
-        {
-            allow_growth = true;
-        }
-        else if (engine_placeholder::CStrCompare(argv[i], "--baseline") == 0 && i + 1 < argc)
-        {
-            baseline_path = argv[++i];
-        }
-        else if (engine_placeholder::CStrCompare(argv[i], "--update-baseline") == 0)
-        {
-            update = true;
-        }
-        else if (engine_placeholder::CStrCompare(argv[i], "--quiet") == 0)
-        {
-            quiet = true;
-        }
-        else
-        {
-            return Usage();
-        }
+        engine_placeholder::os::PrintError("docgen: %s\n", line.Error().Data());
+        return Usage();
     }
+    if (line.ArgCount() != 1)
+    {
+        return Usage();
+    }
+    root = line.OptionOr("root", root);
+    modules = line.OptionOr("modules", nullptr);
+    baseline_path = line.OptionOr("baseline", nullptr);
+    allow_growth = line.HasFlag("allow-growth");
+    update = line.HasFlag("update-baseline");
+    quiet = line.HasFlag("quiet");
     if (update && baseline_path == nullptr)
     {
         return Usage();
@@ -551,72 +516,63 @@ int Samples(int argc, char** argv)
     const char* root = ".";
     bool quiet = false;
     engine_placeholder::Vector<StringView, ArenaAllocator> only(arena);
-    for (int i = 2; i < argc; ++i)
+    static const CommandLineOption options[] = {{"root", true},     {"compiler", true},   {"build-dir", true},
+                                                {"jobs", true},     {"timeout", true},    {"compile-timeout", true},
+                                                {"-I", true, true}, {"flag", true, true}, {"link", true, true},
+                                                {"prelude", true},  {"keep", false},      {"quiet", false}};
+    const Line line(engine_placeholder::HeapAllocator::Default(), argc, argv,
+                    Span<const CommandLineOption>(options, 12));
+    if (!line.Ok())
     {
-        const bool more = i + 1 < argc;
-        if (engine_placeholder::CStrCompare(argv[i], "--root") == 0 && more)
-        {
-            root = argv[++i];
-        }
-        else if (engine_placeholder::CStrCompare(argv[i], "--compiler") == 0 && more)
-        {
-            opt.compiler = engine_placeholder::CStrFindChar(argv[i + 1], '/') != nullptr
-                               ? AbsoluteKeepingLinks(
-                                     StringView(argv[i + 1], engine_placeholder::CStrLength(argv[i + 1])), arena)
-                               : ArenaCat(arena, StringView(argv[i + 1], engine_placeholder::CStrLength(argv[i + 1])),
-                                          StringView()),
-            ++i;
-        }
-        else if (engine_placeholder::CStrCompare(argv[i], "--build-dir") == 0 && more)
-        {
-            opt.scratch_base = Absolute(argv[++i], arena);
-        }
-        else if (engine_placeholder::CStrCompare(argv[i], "--jobs") == 0 && more)
-        {
-            opt.jobs = static_cast<u32>(engine_placeholder::CStrToULong(argv[++i], nullptr, 10));
-        }
-        else if (engine_placeholder::CStrCompare(argv[i], "--timeout") == 0 && more)
-        {
-            opt.run_timeout_s = static_cast<u32>(engine_placeholder::CStrToULong(argv[++i], nullptr, 10));
-        }
-        else if (engine_placeholder::CStrCompare(argv[i], "--compile-timeout") == 0 && more)
-        {
-            opt.compile_timeout_s = static_cast<u32>(engine_placeholder::CStrToULong(argv[++i], nullptr, 10));
-        }
-        else if (engine_placeholder::CStrCompare(argv[i], "-I") == 0 && more)
-        {
-            opt.includes.Push(Absolute(argv[++i], arena));
-        }
-        else if (engine_placeholder::CStrCompare(argv[i], "--flag") == 0 && more)
-        {
-            opt.flags.Push(
-                ArenaCat(arena, StringView(argv[i + 1], engine_placeholder::CStrLength(argv[i + 1])), StringView())),
-                ++i;
-        }
-        else if (engine_placeholder::CStrCompare(argv[i], "--link") == 0 && more)
-        {
-            opt.links.Push(Absolute(argv[++i], arena));
-        }
-        else if (engine_placeholder::CStrCompare(argv[i], "--prelude") == 0 && more)
-        {
-            opt.prelude = Absolute(argv[++i], arena);
-        }
-        else if (engine_placeholder::CStrCompare(argv[i], "--keep") == 0)
-        {
-            opt.keep_scratch = true;
-        }
-        else if (engine_placeholder::CStrCompare(argv[i], "--quiet") == 0)
-        {
-            quiet = true;
-        }
-        else if (argv[i][0] != '-')
-        {
-            only.Push(ArenaCat(arena, StringView(argv[i], engine_placeholder::CStrLength(argv[i])), StringView()));
-        }
-        else
-        {
-            return Usage();
-        }
+        engine_placeholder::os::PrintError("docgen: %s\n", line.Error().Data());
+        return Usage();
+    }
+    root = line.OptionOr("root", root);
+    const char* compiler = line.OptionOr("compiler", nullptr);
+    if (compiler != nullptr)
+    {
+        opt.compiler = engine_placeholder::CStrFindChar(compiler, '/') != nullptr
+                           ? AbsoluteKeepingLinks(StringView(compiler, engine_placeholder::CStrLength(compiler)), arena)
+                           : ArenaCat(arena, StringView(compiler, engine_placeholder::CStrLength(compiler)),
+                                      StringView());
+    }
+    if (const char* build_dir = line.OptionOr("build-dir", nullptr))
+    {
+        opt.scratch_base = Absolute(build_dir, arena);
+    }
+    if (const char* jobs = line.OptionOr("jobs", nullptr))
+    {
+        opt.jobs = static_cast<u32>(engine_placeholder::CStrToULong(jobs, nullptr, 10));
+    }
+    if (const char* timeout = line.OptionOr("timeout", nullptr))
+    {
+        opt.run_timeout_s = static_cast<u32>(engine_placeholder::CStrToULong(timeout, nullptr, 10));
+    }
+    if (const char* timeout = line.OptionOr("compile-timeout", nullptr))
+    {
+        opt.compile_timeout_s = static_cast<u32>(engine_placeholder::CStrToULong(timeout, nullptr, 10));
+    }
+    for (usize k = 0; k < line.OptionCount("-I"); ++k)
+    {
+        opt.includes.Push(Absolute(line.OptionAt("-I", k).Data(), arena));
+    }
+    for (usize k = 0; k < line.OptionCount("flag"); ++k)
+    {
+        opt.flags.Push(ArenaCat(arena, line.OptionAt("flag", k), StringView()));
+    }
+    for (usize k = 0; k < line.OptionCount("link"); ++k)
+    {
+        opt.links.Push(Absolute(line.OptionAt("link", k).Data(), arena));
+    }
+    if (const char* prelude = line.OptionOr("prelude", nullptr))
+    {
+        opt.prelude = Absolute(prelude, arena);
+    }
+    opt.keep_scratch = line.HasFlag("keep");
+    quiet = line.HasFlag("quiet");
+    for (usize k = 1; k < line.ArgCount(); ++k)
+    {
+        only.Push(ArenaCat(arena, line.Arg(k), StringView()));
     }
     if (opt.compiler.Empty())
     {
@@ -689,35 +645,43 @@ int Samples(int argc, char** argv)
 int main(int argc, char** argv)
 {
     engine_placeholder::debug::InstallDiagnosticsHooks();  // a failed assert prints its stack trace
-    if (argc == 3 && engine_placeholder::CStrCompare(argv[1], "tokens") == 0)
+    // The first word is the command; each command declares its own options when it parses them.
+    const engine_placeholder::os::CommandLine<engine_placeholder::HeapAllocator> words(
+        engine_placeholder::HeapAllocator::Default(), argc, argv);
+    if (words.ArgCount() < 1)
     {
-        return Tokens(argv[2]);
+        return Usage();
     }
-    if (argc >= 3 && engine_placeholder::CStrCompare(argv[1], "dump") == 0)
+    const StringView command = words.Arg(0);
+    if (command == StringView("tokens"))
+    {
+        return words.ArgCount() == 2 && words.FlagCount() == 0 ? Tokens(words.Arg(1).Data()) : Usage();
+    }
+    if (command == StringView("dump") && words.ArgCount() >= 2)
     {
         return Dump(argc, argv);
     }
-    if (argc >= 3 && engine_placeholder::CStrCompare(argv[1], "docs") == 0)
+    if (command == StringView("docs") && words.ArgCount() >= 2)
     {
         return Docs(argc, argv);
     }
-    if (argc >= 2 && engine_placeholder::CStrCompare(argv[1], "reference") == 0)
+    if (command == StringView("reference"))
     {
         return Reference(argc, argv, false);
     }
-    if (argc >= 2 && engine_placeholder::CStrCompare(argv[1], "check") == 0)
+    if (command == StringView("check"))
     {
         return Reference(argc, argv, true);
     }
-    if (argc >= 2 && engine_placeholder::CStrCompare(argv[1], "links") == 0)
+    if (command == StringView("links"))
     {
         return Links(argc, argv);
     }
-    if (argc >= 2 && engine_placeholder::CStrCompare(argv[1], "lint") == 0)
+    if (command == StringView("lint"))
     {
         return Lint(argc, argv);
     }
-    if (argc >= 2 && engine_placeholder::CStrCompare(argv[1], "samples") == 0)
+    if (command == StringView("samples"))
     {
         return Samples(argc, argv);
     }

@@ -1796,6 +1796,26 @@ The deliberate fault a program was asked to cause with `--crash-test=...`, for c
 | <a id="debug-crashtestkind-assert"></a>`Assert` |  | Fail an `ENGINE_ASSERT`. |
 | <a id="debug-crashtestkind-ensure"></a>`Ensure` |  | Fail an `ENGINE_ENSURE`; the program carries on. |
 
+## `kCrashHandlerOption` {#debug-kcrashhandleroption}
+
+`variable debug::kCrashHandlerOption` — defined in `engine/foundation/debug/program_setup.h`
+
+```cpp
+inline constexpr os::CommandLineOption kCrashHandlerOption;
+```
+
+The `--crash-handler=on|off` option [`debug::StartProgramDebugging`](#debug-startprogramdebugging-int-const-char-star-const-star) reads, for a program that declares its own options to [`os::CommandLine`](platform-os.md#os-commandline) (list it among them, or the command line is refused).
+
+## `kCrashTestOption` {#debug-kcrashtestoption}
+
+`variable debug::kCrashTestOption` — defined in `engine/foundation/debug/program_setup.h`
+
+```cpp
+inline constexpr os::CommandLineOption kCrashTestOption;
+```
+
+The `--crash-test=KIND` option, as above.
+
 ## `ProgramDebugSetup` {#debug-programdebugsetup}
 
 `struct debug::ProgramDebugSetup` — defined in `engine/foundation/debug/program_setup.h`

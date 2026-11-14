@@ -211,6 +211,11 @@ TEST_CASE("The crash handler setting comes from the argument, then the environme
     const char* off[] = {"prog", "--crash-handler=off"};
     const char* on[] = {"prog", "--crash-handler=on"};
     const char* none[] = {"prog"};
+    // The space-separated form is the same option (os::CommandLine accepts it for a declared option).
+    const char* spaced_off[] = {"prog", "--crash-handler", "off"};
+    const char* spaced_test[] = {"prog", "--crash-test", "segv"};
+    CHECK_FALSE(ParseProgramDebugRequest(3, spaced_off, "1", true).crash_handler);
+    CHECK(ParseProgramDebugRequest(3, spaced_test, nullptr, false).crash_test == CrashTestKind::Segv);
     CHECK_FALSE(ParseProgramDebugRequest(2, off, "1", true).crash_handler);  // argument beats environment and default
     CHECK(ParseProgramDebugRequest(2, on, "0", false).crash_handler);
     CHECK(ParseProgramDebugRequest(1, none, "1", false).crash_handler);  // environment beats the default

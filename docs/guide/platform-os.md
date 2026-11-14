@@ -151,8 +151,41 @@ positional arguments: 1, first 'map.dat'
 --fast has a value: no
 ```
 
-In a real program you rarely read flags yourself: declare a setting with a `flag` name and the settings system reads it ([Settings](settings.md)). `hello_window` does
-parse a few by hand, as the oldest program.
+A program that has options of its own declares them, so that `--name value` works too and a typo is an error instead of a silently ignored word: pass a `Span<const os::CommandLineOption>` (`{"name", takes_value}`) as the fourth constructor argument. A flag that takes a value takes the next token (`--root DIR`) or `=value`; an unknown option, a missing value and `--flag=value` for a flag with no value make `Ok()` false and `Error()` say why (the first one found); a bare `--` ends the flags. Tools and demos never index `argv` themselves (`cmdline_access_check`).
+
+```cpp compile run standalone
+#include "containers/span.h"
+#include "mem/arena_allocator.h"
+#include "os/command_line.h"
+#include "os/console.h"
+
+using namespace engine_placeholder;
+
+int main() {
+    char a0[] = "tool";
+    char a1[] = "--root";
+    char a2[] = "some dir";
+    char a3[] = "--quiet";
+    char a4[] = "input.txt";
+    char* argv[] = {a0, a1, a2, a3, a4};
+
+    static const os::CommandLineOption options[] = {{"root", true}, {"quiet", false}};
+    ArenaAllocator arena(4096);
+    os::CommandLine<ArenaAllocator> command_line(arena, 5, argv, Span<const os::CommandLineOption>(options, 2));
+
+    StringView root;
+    command_line.TryGetOption("root", root);
+    os::Print("ok: %s, root '%s', quiet %s, positional '%s'\n", command_line.Ok() ? "yes" : "no", root.Data(),
+              command_line.HasFlag("quiet") ? "yes" : "no", command_line.Arg(0).Data());
+    return 0;
+}
+```
+
+```output
+ok: yes, root 'some dir', quiet yes, positional 'input.txt'
+```
+
+In a real program you rarely read flags yourself: declare a setting with a `flag` name and the settings system reads it ([Settings](settings.md)).
 
 ## Dynamic libraries and driver probing
 

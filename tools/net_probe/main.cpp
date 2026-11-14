@@ -21,6 +21,8 @@
 #include "net/tcp_transport.h"
 #include "net/udp_port.h"
 #include "net/udp_transport.h"
+#include "containers/span.h"
+#include "os/command_line.h"
 #include "os/console.h"
 #include "algorithm.h"
 #include "sync/thread.h"
@@ -40,19 +42,11 @@ int Usage()
     return 64;
 }
 
-// The value of --name=value, or null.
-const char* Option(int argc, char** argv, const char* name)
-{
-    const usize n = CStrLength(name);
-    for (int i = 2; i < argc; ++i)
-    {
-        if (CStrCompareN(argv[i], name, n) == 0 && argv[i][n] == '=')
-        {
-            return argv[i] + n + 1;
-        }
-    }
-    return nullptr;
-}
+constexpr os::CommandLineOption kOptions[] = {{"transport", true}, {"listen", true}, {"seconds", true},
+                                              {"connect", true},   {"count", true},  {"size", true},
+                                              {"file", true}};
+
+using Line = os::CommandLine<HeapAllocator>;
 
 // A transport on real sockets: the port or provider it needs lives beside it.
 struct Rig
@@ -94,11 +88,11 @@ bool ParseEndpoint(const char* text, Endpoint* out)
     return true;
 }
 
-int Echo(int argc, char** argv)
+int Echo(const Line& line)
 {
-    const char* transport = Option(argc, argv, "--transport");
-    const char* listen = Option(argc, argv, "--listen");
-    const char* seconds_text = Option(argc, argv, "--seconds");
+    const char* transport = line.OptionOr("transport", nullptr);
+    const char* listen = line.OptionOr("listen", nullptr);
+    const char* seconds_text = line.OptionOr("seconds", nullptr);
     Endpoint at;
     if (transport == nullptr || !ParseEndpoint(listen, &at))
     {
@@ -136,12 +130,12 @@ int Echo(int argc, char** argv)
 }
 
 // Connects and waits for the connection to open; null on failure.
-Transport* ConnectTo(Rig* rig, int argc, char** argv, ConnectionId* connection)
+Transport* ConnectTo(Rig* rig, const Line& line, ConnectionId* connection)
 {
-    const char* transport = Option(argc, argv, "--transport");
+    const char* transport = line.OptionOr("transport", nullptr);
     Endpoint to;
     Endpoint any;
-    if (transport == nullptr || !ParseEndpoint(Option(argc, argv, "--connect"), &to) ||
+    if (transport == nullptr || !ParseEndpoint(line.OptionOr("connect", nullptr), &to) ||
         Endpoint::Parse(StringView(to.GetAddress().IsV6() ? "[::]:0" : "0.0.0.0:0"), &any).Failed())
     {
         return nullptr;
@@ -174,16 +168,16 @@ Transport* ConnectTo(Rig* rig, int argc, char** argv, ConnectionId* connection)
     return nullptr;
 }
 
-int Ping(int argc, char** argv)
+int Ping(const Line& line)
 {
-    const char* count_text = Option(argc, argv, "--count");
-    const char* size_text = Option(argc, argv, "--size");
+    const char* count_text = line.OptionOr("count", nullptr);
+    const char* size_text = line.OptionOr("size", nullptr);
     const u32 count = count_text != nullptr ? static_cast<u32>(CStrToLong(count_text)) : 100;
     usize size = size_text != nullptr ? static_cast<usize>(CStrToLong(size_text)) : 64;
     size = size < 8 ? 8 : size;
     Rig rig;
     ConnectionId c = 0;
-    Transport* t = ConnectTo(&rig, argc, argv, &c);
+    Transport* t = ConnectTo(&rig, line, &c);
     if (t == nullptr)
     {
         return 1;
@@ -237,9 +231,9 @@ int Ping(int argc, char** argv)
     return 0;
 }
 
-int SendFile(int argc, char** argv)
+int SendFile(const Line& line)
 {
-    const char* file = Option(argc, argv, "--file");
+    const char* file = line.OptionOr("file", nullptr);
     if (file == nullptr)
     {
         return Usage();
@@ -252,7 +246,7 @@ int SendFile(int argc, char** argv)
     }
     Rig rig;
     ConnectionId c = 0;
-    Transport* t = ConnectTo(&rig, argc, argv, &c);
+    Transport* t = ConnectTo(&rig, line, &c);
     if (t == nullptr)
     {
         return 1;
@@ -300,25 +294,26 @@ int SendFile(int argc, char** argv)
     return echoed == data.Size() ? 0 : 1;
 }
 
-int ResolveCommand(int argc, char** argv)
+int ResolveCommand(const Line& line)
 {
-    if (argc != 3)
+    if (line.ArgCount() != 2)
     {
         return Usage();
     }
+    const char* text = line.Arg(1).Data();
     Endpoint e;
-    if (Endpoint::Parse(StringView(argv[2]), &e).Ok())
+    if (Endpoint::Parse(StringView(text), &e).Ok())
     {
         os::Print("%s\n", e.Format().chars.Data());
         return 0;
     }
     Address a;
-    if (Address::Parse(StringView(argv[2]), &a).Ok())
+    if (Address::Parse(StringView(text), &a).Ok())
     {
         os::Print("%s\n", a.Format().chars.Data());
         return 0;
     }
-    os::PrintError("net_probe: not an address: %s (host names are not resolved by this tool)\n", argv[2]);
+    os::PrintError("net_probe: not an address: %s (host names are not resolved by this tool)\n", text);
     return 1;
 }
 
@@ -326,25 +321,31 @@ int ResolveCommand(int argc, char** argv)
 
 int main(int argc, char** argv)
 {
-    if (argc < 2)
+    const Line line(HeapAllocator::Default(), argc, argv, Span<const os::CommandLineOption>(kOptions, 7));
+    if (!line.Ok() || line.ArgCount() < 1)
     {
+        if (!line.Ok())
+        {
+            os::PrintError("net_probe: %s\n", line.Error().Data());
+        }
         return Usage();
     }
-    if (CStrCompare(argv[1], "echo") == 0)
+    const StringView command = line.Arg(0);
+    if (command == StringView("echo"))
     {
-        return Echo(argc, argv);
+        return Echo(line);
     }
-    if (CStrCompare(argv[1], "ping") == 0)
+    if (command == StringView("ping"))
     {
-        return Ping(argc, argv);
+        return Ping(line);
     }
-    if (CStrCompare(argv[1], "send") == 0)
+    if (command == StringView("send"))
     {
-        return SendFile(argc, argv);
+        return SendFile(line);
     }
-    if (CStrCompare(argv[1], "resolve") == 0)
+    if (command == StringView("resolve"))
     {
-        return ResolveCommand(argc, argv);
+        return ResolveCommand(line);
     }
     return Usage();
 }

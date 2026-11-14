@@ -67,33 +67,33 @@ int main(int argc, char** argv)
     Options options;
     usize max_threads = jobs::DefaultParticipantCount();
     const char* csv = nullptr;
-    for (int i = 1; i < argc; ++i)
+    static const os::CommandLineOption kCliOptions[] = {{"entities", true},         {"frames", true},
+                                                        {"threads", true},          {"csv", true},
+                                                        debug::kCrashHandlerOption, debug::kCrashTestOption};
+    const os::CommandLine<HeapAllocator> line(HeapAllocator::Default(), argc, argv,
+                                              Span<const os::CommandLineOption>(kCliOptions, 6));
+    const char* program = line.ProgramName().Data();
+    if (!line.Ok() || line.ArgCount() != 0)
     {
-        if (debug::IsProgramDebugArgument(argv[i]))
-        {
-            continue;
-        }
-        if (CStrCompare(argv[i], "--entities") == 0 && i + 1 < argc)
-        {
-            options.entities = static_cast<u32>(CStrToLong(argv[++i]));
-        }
-        else if (CStrCompare(argv[i], "--frames") == 0 && i + 1 < argc)
-        {
-            options.frames = static_cast<u32>(CStrToLong(argv[++i]));
-        }
-        else if (CStrCompare(argv[i], "--threads") == 0 && i + 1 < argc)
-        {
-            max_threads = static_cast<usize>(CStrToLong(argv[++i]));
-        }
-        else if (CStrCompare(argv[i], "--csv") == 0 && i + 1 < argc)
-        {
-            csv = argv[++i];
-        }
-        else
-        {
-            os::PrintError("usage: %s [--entities N] [--frames N] [--threads N] [--csv PATH]\n", argv[0]);
-            return 2;
-        }
+        os::PrintError("usage: %s [--entities N] [--frames N] [--threads N] [--csv PATH]\n", program);
+        return 2;
+    }
+    StringView value;
+    if (line.TryGetOption("entities", value))
+    {
+        options.entities = static_cast<u32>(CStrToLong(value.Data()));
+    }
+    if (line.TryGetOption("frames", value))
+    {
+        options.frames = static_cast<u32>(CStrToLong(value.Data()));
+    }
+    if (line.TryGetOption("threads", value))
+    {
+        max_threads = static_cast<usize>(CStrToLong(value.Data()));
+    }
+    if (line.TryGetOption("csv", value))
+    {
+        csv = value.Data();
     }
     if (max_threads == 0)
     {

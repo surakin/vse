@@ -335,25 +335,21 @@ int main(int argc, char** argv)
     debug::RunCrashTest(debug_setup.crash_test);
     bool simulated = false;
     usize large = 262144;
-    for (int i = 1; i < argc; ++i)
+    static const os::CommandLineOption kCliOptions[] = {
+        {"simulated", false}, {"large", true}, debug::kCrashHandlerOption, debug::kCrashTestOption};
+    const os::CommandLine<HeapAllocator> line(HeapAllocator::Default(), argc, argv,
+                                              Span<const os::CommandLineOption>(kCliOptions, 4));
+    const char* program = line.ProgramName().Data();
+    if (!line.Ok() || line.ArgCount() != 0)
     {
-        if (debug::IsProgramDebugArgument(argv[i]))
-        {
-            continue;
-        }
-        if (CStrCompare(argv[i], "--simulated") == 0)
-        {
-            simulated = true;
-        }
-        else if (CStrCompare(argv[i], "--large") == 0 && i + 1 < argc)
-        {
-            large = static_cast<usize>(CStrToLong(argv[++i]));
-        }
-        else
-        {
-            os::PrintError("usage: %s [--simulated] [--large N]\n", argv[0]);
-            return 2;
-        }
+        os::PrintError("usage: %s [--simulated] [--large N]\n", program);
+        return 2;
+    }
+    simulated = line.HasFlag("simulated");
+    StringView value;
+    if (line.TryGetOption("large", value))
+    {
+        large = static_cast<usize>(CStrToLong(value.Data()));
     }
     settings::Registry registry;
     RegisterNetSettings(&registry);

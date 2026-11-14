@@ -124,3 +124,144 @@ TEST_CASE("CommandLine::FromNative sources args from StashNativeCommandLine", "[
     REQUIRE(cmd_line.Arg(0) == StringView("native_arg"));
     REQUIRE(cmd_line.HasFlag(StringView("native_flag")));
 }
+
+namespace
+{
+
+using engine_placeholder::Span;
+using engine_placeholder::os::CommandLineOption;
+
+constexpr CommandLineOption kOptions[] = {
+    {"root", true},
+    {"quiet", false},
+    {"out", true},
+    {"keep-going", false},
+};
+
+template <typename... Args> CommandLine<ArenaAllocator> MakeDeclared(ArenaAllocator& allocator, Args... literals)
+{
+    const char* argv[] = {literals...};
+    return CommandLine<ArenaAllocator>(allocator, static_cast<int>(sizeof...(Args)), const_cast<char**>(argv),
+                                       Span<const CommandLineOption>(kOptions, 4));
+}
+
+}  // namespace
+
+TEST_CASE("A declared option takes the next token or an =value", "[command_line][declared]")
+{
+    ArenaAllocator arena(8192);
+    auto line = MakeDeclared(arena, "tool", "check", "--root", "docs dir", "--out=x.txt", "--quiet", "file");
+    REQUIRE(line.Ok());
+    StringView value;
+    REQUIRE(line.TryGetOption("root", value));
+    CHECK(value == StringView("docs dir"));
+    REQUIRE(line.TryGetOption("out", value));
+    CHECK(value == StringView("x.txt"));
+    CHECK(line.HasFlag("quiet"));
+    CHECK_FALSE(line.TryGetOption("quiet", value));
+    REQUIRE(line.ArgCount() == 2);
+    CHECK(line.Arg(0) == StringView("check"));
+    CHECK(line.Arg(1) == StringView("file"));
+}
+
+TEST_CASE("A flag that takes no value does not swallow the next token", "[command_line][declared]")
+{
+    ArenaAllocator arena(8192);
+    auto line = MakeDeclared(arena, "tool", "--quiet", "file");
+    REQUIRE(line.Ok());
+    CHECK(line.HasFlag("quiet"));
+    REQUIRE(line.ArgCount() == 1);
+    CHECK(line.Arg(0) == StringView("file"));
+}
+
+TEST_CASE("Declared options report the first problem", "[command_line][declared]")
+{
+    ArenaAllocator arena(8192);
+    auto unknown = MakeDeclared(arena, "tool", "--bogus");
+    CHECK_FALSE(unknown.Ok());
+    CHECK(unknown.Error() == StringView("unknown option --bogus"));
+    auto missing = MakeDeclared(arena, "tool", "--root");
+    CHECK_FALSE(missing.Ok());
+    CHECK(missing.Error() == StringView("--root needs a value"));
+    auto extra = MakeDeclared(arena, "tool", "--quiet=yes");
+    CHECK_FALSE(extra.Ok());
+    CHECK(extra.Error() == StringView("--quiet takes no value"));
+    auto first = MakeDeclared(arena, "tool", "--bogus", "--root");
+    CHECK(first.Error() == StringView("unknown option --bogus"));  // the first one is kept
+}
+
+TEST_CASE("A bare -- ends the flags", "[command_line][declared]")
+{
+    ArenaAllocator arena(8192);
+    auto line = MakeDeclared(arena, "tool", "--quiet", "--", "--root", "x");
+    REQUIRE(line.Ok());
+    CHECK(line.HasFlag("quiet"));
+    CHECK_FALSE(line.HasFlag("root"));
+    REQUIRE(line.ArgCount() == 2);
+    CHECK(line.Arg(0) == StringView("--root"));
+    CHECK(line.Arg(1) == StringView("x"));
+}
+
+TEST_CASE("Without declared options nothing is an error and values need =", "[command_line][declared]")
+{
+    ArenaAllocator arena(8192);
+    auto line = MakeCommandLine(arena, "tool", "--root", "x");
+    CHECK(line.Ok());
+    CHECK(line.Error().Length() == 0);
+    CHECK(line.HasFlag("root"));
+    CHECK(line.ArgCount() == 1);
+}
+
+namespace
+{
+
+constexpr CommandLineOption kRepeatOptions[] = {{"link", true, true}, {"-I", true, true}, {"keep", false}};
+
+}  // namespace
+
+TEST_CASE("A repeatable option keeps every value and one-dash options take a value", "[command_line][declared]")
+{
+    ArenaAllocator arena(8192);
+    const char* argv[] = {"tool", "--link", "a", "-I", "inc1", "--link=b", "-Iinc2", "--keep", "x"};
+    CommandLine<ArenaAllocator> line(arena, 9, const_cast<char**>(argv),
+                                     Span<const CommandLineOption>(kRepeatOptions, 3));
+    REQUIRE(line.Ok());
+    REQUIRE(line.OptionCount("link") == 2);
+    CHECK(line.OptionAt("link", 0) == StringView("a"));
+    CHECK(line.OptionAt("link", 1) == StringView("b"));
+    REQUIRE(line.OptionCount("-I") == 2);
+    CHECK(line.OptionAt("-I", 0) == StringView("inc1"));
+    CHECK(line.OptionAt("-I", 1) == StringView("inc2"));
+    CHECK(line.HasFlag("keep"));
+    REQUIRE(line.ArgCount() == 1);
+    CHECK(line.Arg(0) == StringView("x"));
+}
+
+TEST_CASE("A one-dash token is positional unless declared, and a declared one needs a value",
+          "[command_line][declared]")
+{
+    ArenaAllocator arena(8192);
+    const char* positional[] = {"tool", "-Z", "-1", "-"};
+    CommandLine<ArenaAllocator> a(arena, 4, const_cast<char**>(positional),
+                                  Span<const CommandLineOption>(kRepeatOptions, 3));
+    CHECK(a.Ok());
+    REQUIRE(a.ArgCount() == 3);
+    CHECK(a.Arg(0) == StringView("-Z"));
+    CHECK(a.Arg(1) == StringView("-1"));
+    CHECK(a.Arg(2) == StringView("-"));
+    const char* missing[] = {"tool", "-I"};
+    CommandLine<ArenaAllocator> b(arena, 2, const_cast<char**>(missing),
+                                  Span<const CommandLineOption>(kRepeatOptions, 3));
+    CHECK_FALSE(b.Ok());
+    CHECK(b.Error() == StringView("-I needs a value"));
+}
+
+TEST_CASE("OptionOr gives the value or the fallback", "[command_line][declared]")
+{
+    ArenaAllocator arena(8192);
+    auto line = MakeDeclared(arena, "tool", "--root", "here", "--quiet");
+    CHECK(StringView(line.OptionOr("root", "elsewhere")) == StringView("here"));
+    CHECK(StringView(line.OptionOr("out", "elsewhere")) == StringView("elsewhere"));
+    CHECK(line.OptionOr("quiet", nullptr) == nullptr);  // a flag without a value has none
+    CHECK(line.OptionOr("out", nullptr) == nullptr);
+}

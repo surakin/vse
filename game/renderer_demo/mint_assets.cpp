@@ -1,6 +1,7 @@
 // renderer_demo_mint: writes the demo's texture files. Run as `renderer_demo_mint <output directory>`; the committed
 // files in assets/ are its output, and a test checks that they still are (byte for byte).
 
+#include "os/command_line.h"
 #include "os/console.h"
 
 #include "io/file.h"
@@ -9,9 +10,11 @@
 
 int main(int argc, char** argv)
 {
-    if (argc != 2)
+    const engine_placeholder::os::CommandLine<engine_placeholder::HeapAllocator> line(
+        engine_placeholder::HeapAllocator::Default(), argc, argv);
+    if (line.ArgCount() != 1)
     {
-        engine_placeholder::os::PrintError("usage: %s <output directory>\n", argv[0]);
+        engine_placeholder::os::PrintError("usage: %s <output directory>\n", line.ProgramName().Data());
         return 2;
     }
     using namespace renderer_demo;
@@ -20,7 +23,7 @@ int main(int argc, char** argv)
     for (u32 i = 0; i < count; ++i)
     {
         io::Path directory;
-        if (!io::Path::Parse(StringView(argv[1]), io::NativePathStyle(), &directory))
+        if (!io::Path::Parse(line.Arg(0), io::NativePathStyle(), &directory))
         {
             engine_placeholder::os::PrintError("renderer_demo_mint: the output directory is not a usable path\n");
             return 1;
