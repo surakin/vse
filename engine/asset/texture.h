@@ -7,9 +7,10 @@
 //! table (16 bytes per subresource: `u64` offset into the data section, `u32` size, `u32` row pitch; subresource
 //! `layer * mip_count + mip`), 18 the data. There is no "generate at load" flag: every level is stored, and the mip
 //! filter, the sRGB handling and the premultiplication happened in the minter. Each subresource starts at a multiple
-//! of the recorded subresource alignment (an offset in the data section, which the container aligns to 64 bytes) and its rows are `row_pitch` bytes apart (the row size rounded up to the row
-//! alignment and the texel size), so the loader hands the spans to the upload unchanged. The alignments depend on the
-//! target API (`TextureLayoutForTarget`); `RetargetTextureBlob` re-lays a blob out for another target.
+//! of the recorded subresource alignment (an offset in the data section, which the container aligns to 64 bytes) and
+//! its rows are `row_pitch` bytes apart (the row size rounded up to the row alignment and the texel size), so the
+//! loader hands the spans to the upload unchanged. The alignments depend on the target API (`TextureLayoutForTarget`);
+//! `RetargetTextureBlob` re-lays a blob out for another target.
 
 #include "asset/blob.h"
 #include "asset/resource_id.h"
@@ -51,7 +52,7 @@ enum class TextureKind : u32
 /// - Thread-safety: immutable value.
 struct TextureLayout
 {
-    u32 row_alignment = 4;          ///< Rows start a multiple of this many bytes apart (a power of two).
+    u32 row_alignment = 4;           ///< Rows start a multiple of this many bytes apart (a power of two).
     u32 subresource_alignment = 16;  ///< Each subresource starts at a multiple of this (a power of two).
 };
 
@@ -69,15 +70,15 @@ Status TextureLayoutForTarget(u32 target, TextureLayout* layout);
 /// - Ownership: borrows the spans for the call.
 struct TextureBuildInput
 {
-    TextureKind kind = TextureKind::Tex2D;     ///< The kind.
+    TextureKind kind = TextureKind::Tex2D;        ///< The kind.
     rhi::Format format = rhi::Format::Undefined;  ///< A format [[asset::IsTextureFormat]] accepts.
-    u32 width = 0;                             ///< Level 0 width (a cube's faces are square).
-    u32 height = 0;                            ///< Level 0 height.
-    u32 layers = 1;                            ///< 1 for 2D, 6 for a cube, 1 to 2048 for an array.
-    u32 mip_count = 1;                         ///< 1 to the full chain length.
-    Span<const ByteSpan> subresources;         ///< `layers * mip_count` levels, layer-major, tightly packed rows.
-    MipFilter filter = MipFilter::Box;         ///< What the minter used (recorded, not applied).
-    MipAlpha alpha = MipAlpha::Straight;       ///< What the minter used; `Premultiply` marks the texture premultiplied.
+    u32 width = 0;                                ///< Level 0 width (a cube's faces are square).
+    u32 height = 0;                               ///< Level 0 height.
+    u32 layers = 1;                               ///< 1 for 2D, 6 for a cube, 1 to 2048 for an array.
+    u32 mip_count = 1;                            ///< 1 to the full chain length.
+    Span<const ByteSpan> subresources;            ///< `layers * mip_count` levels, layer-major, tightly packed rows.
+    MipFilter filter = MipFilter::Box;            ///< What the minter used (recorded, not applied).
+    MipAlpha alpha = MipAlpha::Straight;  ///< What the minter used; `Premultiply` marks the texture premultiplied.
 };
 
 /// Builds a texture blob for target `target`: lays the subresources out for the target and writes the sections.
@@ -95,10 +96,10 @@ Status BuildTextureBlob(const TypeRegistry& types, ResourceId id, const TextureB
 /// - Ownership: borrows the blob bytes.
 struct TextureLevel
 {
-    ByteSpan bytes;      ///< `row_pitch * block rows` bytes (the last row is padded too).
-    u32 row_pitch = 0;   ///< Bytes between rows, a multiple of the texel size.
-    u32 width = 0;       ///< Texels across.
-    u32 height = 0;      ///< Texels down.
+    ByteSpan bytes;     ///< `row_pitch * block rows` bytes (the last row is padded too).
+    u32 row_pitch = 0;  ///< Bytes between rows, a multiple of the texel size.
+    u32 width = 0;      ///< Texels across.
+    u32 height = 0;     ///< Texels down.
 };
 
 /// A texture blob read in place.

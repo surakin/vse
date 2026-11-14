@@ -3,8 +3,8 @@
 //! Mip generation for the texture minter: a deterministic filter in exact integer arithmetic, so the same input gives
 //! byte-identical output on every compiler, machine and thread count. Phase 22 Day 323.
 //!
-//! The formats are `R8_UNorm`, `RG8_UNorm`, `RGBA8_UNorm`, `RGBA8_SRGB`, `R16_Float`, `RGBA16_Float`. An sRGB texture is
-//! filtered in linear light (a 16-bit linear value per channel, through a fixed table). Half-float texels are exact
+//! The formats are `R8_UNorm`, `RG8_UNorm`, `RGBA8_UNorm`, `RGBA8_SRGB`, `R16_Float`, `RGBA16_Float`. An sRGB texture
+//! is filtered in linear light (a 16-bit linear value per channel, through a fixed table). Half-float texels are exact
 //! multiples of 2^-24 and are filtered as such integers. Nothing here uses floating-point arithmetic.
 //!
 //! A level of `w x h` texels gives a next level of `max(1, w / 2) x max(1, h / 2)`. Destination texel `i` of an axis
@@ -36,9 +36,9 @@ enum class MipFilter : u32
 enum class MipAlpha : u32
 {
     Straight = 0,     ///< 8-bit RGBA only: colors are weighted by alpha while filtering and stored straight.
-    Premultiply = 1,  ///< The level 0 colors were multiplied by alpha (`PremultiplyAlphaRgba8`); all levels are filtered
-                      ///< as plain values and stay premultiplied.
-    Ignore = 2,       ///< Every channel is filtered as it is.
+    Premultiply = 1,  ///< The level 0 colors were multiplied by alpha (`PremultiplyAlphaRgba8`); all levels are
+                      ///< filtered as plain values and stay premultiplied.
+    Ignore = 2,  ///< Every channel is filtered as it is.
 };
 
 /// The options of a mip chain.
@@ -46,7 +46,7 @@ enum class MipAlpha : u32
 /// - Thread-safety: thread-compatible (a plain value).
 struct MipOptions
 {
-    MipFilter filter = MipFilter::Box;  ///< The filter.
+    MipFilter filter = MipFilter::Box;    ///< The filter.
     MipAlpha alpha = MipAlpha::Straight;  ///< The alpha treatment (only `Ignore` and `Premultiply` for half floats).
 };
 

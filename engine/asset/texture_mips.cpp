@@ -9,28 +9,22 @@ namespace
 
 // The sRGB decode of each 8-bit value as a linear 16-bit value: round(65535 * EOTF(v / 255)).
 constexpr u16 kSrgbToLinear16[256] = {
-    0, 20, 40, 60, 80, 99, 119, 139, 159, 179, 199, 219,
-    241, 264, 288, 313, 340, 367, 396, 427, 458, 491, 526, 562,
-    599, 637, 677, 718, 761, 805, 851, 898, 947, 997, 1048, 1101,
-    1156, 1212, 1270, 1330, 1391, 1453, 1517, 1583, 1651, 1720, 1790, 1863,
-    1937, 2013, 2090, 2170, 2250, 2333, 2418, 2504, 2592, 2681, 2773, 2866,
-    2961, 3058, 3157, 3258, 3360, 3464, 3570, 3678, 3788, 3900, 4014, 4129,
-    4247, 4366, 4488, 4611, 4736, 4864, 4993, 5124, 5257, 5392, 5530, 5669,
-    5810, 5953, 6099, 6246, 6395, 6547, 6700, 6856, 7014, 7174, 7335, 7500,
-    7666, 7834, 8004, 8177, 8352, 8528, 8708, 8889, 9072, 9258, 9445, 9635,
-    9828, 10022, 10219, 10417, 10619, 10822, 11028, 11235, 11446, 11658, 11873, 12090,
-    12309, 12530, 12754, 12980, 13209, 13440, 13673, 13909, 14146, 14387, 14629, 14874,
-    15122, 15371, 15623, 15878, 16135, 16394, 16656, 16920, 17187, 17456, 17727, 18001,
-    18277, 18556, 18837, 19121, 19407, 19696, 19987, 20281, 20577, 20876, 21177, 21481,
-    21787, 22096, 22407, 22721, 23038, 23357, 23678, 24002, 24329, 24658, 24990, 25325,
-    25662, 26001, 26344, 26688, 27036, 27386, 27739, 28094, 28452, 28813, 29176, 29542,
-    29911, 30282, 30656, 31033, 31412, 31794, 32179, 32567, 32957, 33350, 33745, 34143,
-    34544, 34948, 35355, 35764, 36176, 36591, 37008, 37429, 37852, 38278, 38706, 39138,
-    39572, 40009, 40449, 40891, 41337, 41785, 42236, 42690, 43147, 43606, 44069, 44534,
-    45002, 45473, 45947, 46423, 46903, 47385, 47871, 48359, 48850, 49344, 49841, 50341,
-    50844, 51349, 51858, 52369, 52884, 53401, 53921, 54445, 54971, 55500, 56032, 56567,
-    57105, 57646, 58190, 58737, 59287, 59840, 60396, 60955, 61517, 62082, 62650, 63221,
-    63795, 64372, 64952, 65535,
+    0,     20,    40,    60,    80,    99,    119,   139,   159,   179,   199,   219,   241,   264,   288,   313,
+    340,   367,   396,   427,   458,   491,   526,   562,   599,   637,   677,   718,   761,   805,   851,   898,
+    947,   997,   1048,  1101,  1156,  1212,  1270,  1330,  1391,  1453,  1517,  1583,  1651,  1720,  1790,  1863,
+    1937,  2013,  2090,  2170,  2250,  2333,  2418,  2504,  2592,  2681,  2773,  2866,  2961,  3058,  3157,  3258,
+    3360,  3464,  3570,  3678,  3788,  3900,  4014,  4129,  4247,  4366,  4488,  4611,  4736,  4864,  4993,  5124,
+    5257,  5392,  5530,  5669,  5810,  5953,  6099,  6246,  6395,  6547,  6700,  6856,  7014,  7174,  7335,  7500,
+    7666,  7834,  8004,  8177,  8352,  8528,  8708,  8889,  9072,  9258,  9445,  9635,  9828,  10022, 10219, 10417,
+    10619, 10822, 11028, 11235, 11446, 11658, 11873, 12090, 12309, 12530, 12754, 12980, 13209, 13440, 13673, 13909,
+    14146, 14387, 14629, 14874, 15122, 15371, 15623, 15878, 16135, 16394, 16656, 16920, 17187, 17456, 17727, 18001,
+    18277, 18556, 18837, 19121, 19407, 19696, 19987, 20281, 20577, 20876, 21177, 21481, 21787, 22096, 22407, 22721,
+    23038, 23357, 23678, 24002, 24329, 24658, 24990, 25325, 25662, 26001, 26344, 26688, 27036, 27386, 27739, 28094,
+    28452, 28813, 29176, 29542, 29911, 30282, 30656, 31033, 31412, 31794, 32179, 32567, 32957, 33350, 33745, 34143,
+    34544, 34948, 35355, 35764, 36176, 36591, 37008, 37429, 37852, 38278, 38706, 39138, 39572, 40009, 40449, 40891,
+    41337, 41785, 42236, 42690, 43147, 43606, 44069, 44534, 45002, 45473, 45947, 46423, 46903, 47385, 47871, 48359,
+    48850, 49344, 49841, 50341, 50844, 51349, 51858, 52369, 52884, 53401, 53921, 54445, 54971, 55500, 56032, 56567,
+    57105, 57646, 58190, 58737, 59287, 59840, 60396, 60955, 61517, 62082, 62650, 63221, 63795, 64372, 64952, 65535,
 };
 
 constexpr i64 kKaiserTaps[6] = {-5, 24, 109, 109, 24, -5};
@@ -44,13 +38,10 @@ u32 MipChannels(rhi::Format f)
 {
     switch (f)
     {
-        case rhi::Format::R8_UNorm:
-        case rhi::Format::R16_Float:
-            return 1;
-        case rhi::Format::RG8_UNorm:
-            return 2;
-        default:
-            return 4;
+    case rhi::Format::R8_UNorm:
+    case rhi::Format::R16_Float: return 1;
+    case rhi::Format::RG8_UNorm: return 2;
+    default: return 4;
     }
 }
 
@@ -217,26 +208,22 @@ bool MipReadTexel(rhi::Format format, const byte* p, bool weighted, i64* v)
 {
     switch (format)
     {
-        case rhi::Format::R16_Float:
-            return MipHalfToUnits(static_cast<u32>(p[0]) | (static_cast<u32>(p[1]) << 8), &v[0]);
-        case rhi::Format::RGBA16_Float:
-            for (u32 c = 0; c < 4; ++c)
+    case rhi::Format::R16_Float: return MipHalfToUnits(static_cast<u32>(p[0]) | (static_cast<u32>(p[1]) << 8), &v[0]);
+    case rhi::Format::RGBA16_Float:
+        for (u32 c = 0; c < 4; ++c)
+        {
+            if (!MipHalfToUnits(static_cast<u32>(p[2 * c]) | (static_cast<u32>(p[2 * c + 1]) << 8), &v[c]))
             {
-                if (!MipHalfToUnits(static_cast<u32>(p[2 * c]) | (static_cast<u32>(p[2 * c + 1]) << 8), &v[c]))
-                {
-                    return false;
-                }
+                return false;
             }
-            return true;
-        case rhi::Format::R8_UNorm:
-            v[0] = static_cast<i64>(p[0]) * 257;
-            return true;
-        case rhi::Format::RG8_UNorm:
-            v[0] = static_cast<i64>(p[0]) * 257;
-            v[1] = static_cast<i64>(p[1]) * 257;
-            return true;
-        default:
-            break;
+        }
+        return true;
+    case rhi::Format::R8_UNorm: v[0] = static_cast<i64>(p[0]) * 257; return true;
+    case rhi::Format::RG8_UNorm:
+        v[0] = static_cast<i64>(p[0]) * 257;
+        v[1] = static_cast<i64>(p[1]) * 257;
+        return true;
+    default: break;
     }
     const bool srgb = format == rhi::Format::RGBA8_SRGB;
     for (u32 c = 0; c < 3; ++c)
@@ -253,30 +240,27 @@ void MipWriteTexel(rhi::Format format, byte* p, bool weighted, const i64* s, i64
 {
     switch (format)
     {
-        case rhi::Format::R16_Float:
+    case rhi::Format::R16_Float:
+    {
+        const u32 h = MipUnitsToHalf(MipRoundDiv(s[0], total));
+        p[0] = static_cast<byte>(h);
+        p[1] = static_cast<byte>(h >> 8);
+        return;
+    }
+    case rhi::Format::RGBA16_Float:
+        for (u32 c = 0; c < 4; ++c)
         {
-            const u32 h = MipUnitsToHalf(MipRoundDiv(s[0], total));
-            p[0] = static_cast<byte>(h);
-            p[1] = static_cast<byte>(h >> 8);
-            return;
+            const u32 h = MipUnitsToHalf(MipRoundDiv(s[c], total));
+            p[2 * c] = static_cast<byte>(h);
+            p[2 * c + 1] = static_cast<byte>(h >> 8);
         }
-        case rhi::Format::RGBA16_Float:
-            for (u32 c = 0; c < 4; ++c)
-            {
-                const u32 h = MipUnitsToHalf(MipRoundDiv(s[c], total));
-                p[2 * c] = static_cast<byte>(h);
-                p[2 * c + 1] = static_cast<byte>(h >> 8);
-            }
-            return;
-        case rhi::Format::R8_UNorm:
-            p[0] = MipEncodeLinear8(MipRoundDiv(s[0], total));
-            return;
-        case rhi::Format::RG8_UNorm:
-            p[0] = MipEncodeLinear8(MipRoundDiv(s[0], total));
-            p[1] = MipEncodeLinear8(MipRoundDiv(s[1], total));
-            return;
-        default:
-            break;
+        return;
+    case rhi::Format::R8_UNorm: p[0] = MipEncodeLinear8(MipRoundDiv(s[0], total)); return;
+    case rhi::Format::RG8_UNorm:
+        p[0] = MipEncodeLinear8(MipRoundDiv(s[0], total));
+        p[1] = MipEncodeLinear8(MipRoundDiv(s[1], total));
+        return;
+    default: break;
     }
     const bool srgb = format == rhi::Format::RGBA8_SRGB;
     if (weighted)

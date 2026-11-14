@@ -299,8 +299,7 @@ Status ParseRawImage(ByteSpan bytes, RawImage* out)
     }
     const u64 w = TxLoad(bytes.Data() + 4, 4);
     const u64 h = TxLoad(bytes.Data() + 8, 4);
-    if (w == 0 || h == 0 || w > kMaxTextureSize || h > kMaxTextureSize ||
-        bytes.Size() - kRawHeaderBytes != w * h * 4)
+    if (w == 0 || h == 0 || w > kMaxTextureSize || h > kMaxTextureSize || bytes.Size() - kRawHeaderBytes != w * h * 4)
     {
         return Status::Make(ErrorCode::Corrupt, "the raw image size is outside 1 to 16384 or its pixels do not fit it");
     }
@@ -394,8 +393,8 @@ Status MintTexture(StringView text, Span<const ByteSpan> images, const TypeRegis
         options.filter = source.filter;
         options.alpha = source.alpha;
         Vector<byte> chain;
-        ENGINE_TRY(GenerateMipChain(source.format, width, height, ByteSpan(level0.Data(), level0.Size()), options,
-                                    &chain));
+        ENGINE_TRY(
+            GenerateMipChain(source.format, width, height, ByteSpan(level0.Data(), level0.Size()), options, &chain));
         if (!chains.TryReserve(images.Size()))
         {
             return Status::Make(ErrorCode::LimitExceeded, "out of memory");

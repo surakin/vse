@@ -14,8 +14,8 @@
 //!     filter box              (or `kaiser`; default box)
 //!     alpha straight          (or `premultiply` or `ignore`; default straight for rgba8, ignore otherwise)
 //!
-//! `id` comes first (written by `asset_mint adopt`, Day 332). The images are raw files: a 24-byte header (`RAW1`, width,
-//! height, the id as a `u64`, a reserved `u32`) and `width * height * 4` bytes of RGBA8 rows. No PNG.
+//! `id` comes first (written by `asset_mint adopt`, Day 332). The images are raw files: a 24-byte header (`RAW1`,
+//! width, height, the id as a `u64`, a reserved `u32`) and `width * height * 4` bytes of RGBA8 rows. No PNG.
 
 #include "asset/resource_id.h"
 #include "asset/resource_type.h"
@@ -44,14 +44,14 @@ struct TextureSourceFile
 /// - Thread-safety: thread-compatible.
 struct TextureSource
 {
-    ResourceId id;                                        ///< From the `id` line.
-    TextureKind kind = TextureKind::Tex2D;                ///< The `kind` record.
-    Vector<TextureSourceFile> sources;                    ///< The `source` records, in order.
-    rhi::Format format = rhi::Format::RGBA8_UNorm;        ///< The storage format (`srgb` already applied).
-    bool srgb = false;                                    ///< The `srgb` record.
-    u32 mips = 0;                                         ///< The `mips` record (0: the full chain).
-    MipFilter filter = MipFilter::Box;                    ///< The `filter` record.
-    MipAlpha alpha = MipAlpha::Straight;                  ///< The `alpha` record.
+    ResourceId id;                                  ///< From the `id` line.
+    TextureKind kind = TextureKind::Tex2D;          ///< The `kind` record.
+    Vector<TextureSourceFile> sources;              ///< The `source` records, in order.
+    rhi::Format format = rhi::Format::RGBA8_UNorm;  ///< The storage format (`srgb` already applied).
+    bool srgb = false;                              ///< The `srgb` record.
+    u32 mips = 0;                                   ///< The `mips` record (0: the full chain).
+    MipFilter filter = MipFilter::Box;              ///< The `filter` record.
+    MipAlpha alpha = MipAlpha::Straight;            ///< The `alpha` record.
 };
 
 /// Where and why a texture source or image was refused.
@@ -69,10 +69,10 @@ struct TextureSourceError
 /// - Ownership: borrows the file bytes.
 struct RawImage
 {
-    u32 width = 0;       ///< Texels across.
-    u32 height = 0;      ///< Texels down.
-    u64 id = 0;          ///< The id field of the header (0 when none).
-    ByteSpan pixels;     ///< `width * height * 4` bytes.
+    u32 width = 0;    ///< Texels across.
+    u32 height = 0;   ///< Texels down.
+    u64 id = 0;       ///< The id field of the header (0 when none).
+    ByteSpan pixels;  ///< `width * height * 4` bytes.
 };
 
 /// Parses a texture source.

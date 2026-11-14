@@ -106,7 +106,8 @@ Status TtMint(const Vector<char>& text, const Vector<Vector<byte>>& images, Vect
         spans.Push(ByteSpan(images[i].Data(), images[i].Size()));
     }
     TextureSourceError error;
-    const Status s = MintTexture(TtView(text), Span<const ByteSpan>(spans.Data(), spans.Size()), types, out, &error, target);
+    const Status s = MintTexture(TtView(text), Span<const ByteSpan>(spans.Data(), spans.Size()), types, out, &error,
+                                 target);
     if (error_out != nullptr)
     {
         *error_out = error;
@@ -232,8 +233,8 @@ TEST_CASE("mips: the box filter averages 2x2 texels exactly and halves odd sizes
     {
         for (u32 x = 0; x < 2; ++x)
         {
-            const u32 sum = image[(2 * y) * 4 + 2 * x] + image[(2 * y) * 4 + 2 * x + 1] + image[(2 * y + 1) * 4 + 2 * x] +
-                            image[(2 * y + 1) * 4 + 2 * x + 1];
+            const u32 sum = image[(2 * y) * 4 + 2 * x] + image[(2 * y) * 4 + 2 * x + 1] +
+                            image[(2 * y + 1) * 4 + 2 * x] + image[(2 * y + 1) * 4 + 2 * x + 1];
             CHECK(chain[16 + y * 2 + x] == (sum + 2) / 4);
         }
     }
@@ -252,7 +253,8 @@ TEST_CASE("mips: the box filter averages 2x2 texels exactly and halves odd sizes
     CHECK(odd_chain[15] >= (six - 3) / 6);
     CHECK(odd_chain[15] <= (six + 3) / 6 + 1);
     // Texel 1 covers x 2..4 (three columns) of all rows.
-    const i32 nine = static_cast<i32>(odd[2] + odd[3] + odd[4] + odd[7] + odd[8] + odd[9] + odd[12] + odd[13] + odd[14]);
+    const i32 nine = static_cast<i32>(odd[2] + odd[3] + odd[4] + odd[7] + odd[8] + odd[9] + odd[12] + odd[13] +
+                                      odd[14]);
     CHECK(odd_chain[16] >= (nine - 4) / 9);
     CHECK(odd_chain[16] <= (nine + 4) / 9 + 1);
 }
@@ -289,7 +291,8 @@ TEST_CASE("mips: sizes of non-power-of-two and one-texel-wide images", "[asset][
     }
 }
 
-TEST_CASE("mips: sRGB data is filtered in linear light and uniform colors survive every level", "[asset][texture][mips]")
+TEST_CASE("mips: sRGB data is filtered in linear light and uniform colors survive every level",
+          "[asset][texture][mips]")
 {
     // encode(decode(v)) == v for every sRGB value: a uniform 2x2 image of v has level 1 equal to v.
     for (u32 v = 0; v < 256; ++v)
@@ -346,8 +349,8 @@ TEST_CASE("mips: alpha weighting, premultiplication and ignoring alpha", "[asset
     REQUIRE(PremultiplyAlphaRgba8(false, MutableByteSpan(premultiplied.Data(), premultiplied.Size())).Ok());
     CHECK(premultiplied[0] == 255);
     CHECK(premultiplied[6] == 0);  // blue times alpha 0
-    const Vector<byte> chain =
-        TtChain(rhi::Format::RGBA8_UNorm, 2, 1, premultiplied, MipFilter::Box, MipAlpha::Premultiply);
+    const Vector<byte> chain = TtChain(rhi::Format::RGBA8_UNorm, 2, 1, premultiplied, MipFilter::Box,
+                                       MipAlpha::Premultiply);
     CHECK(chain[8] == 128);
     CHECK(chain[10] == 0);
     CHECK(chain[11] == 128);
@@ -421,7 +424,8 @@ TEST_CASE("mips: half-float texels are filtered exactly and non-finite ones are 
     CHECK(converted[7] == 0x3c);
 }
 
-TEST_CASE("mips: the Kaiser filter keeps uniform images, clamps overshoot and differs from the box", "[asset][texture][mips]")
+TEST_CASE("mips: the Kaiser filter keeps uniform images, clamps overshoot and differs from the box",
+          "[asset][texture][mips]")
 {
     Vector<byte> uniform;
     uniform.Resize(8 * 8 * 4);
@@ -443,8 +447,8 @@ TEST_CASE("mips: the Kaiser filter keeps uniform images, clamps overshoot and di
     }
     const Vector<byte> kaiser = TtChain(rhi::Format::R8_UNorm, 8, 1, edge, MipFilter::Kaiser);
     const Vector<byte> box = TtChain(rhi::Format::R8_UNorm, 8, 1, edge, MipFilter::Box);
-    CHECK(kaiser[8] == 0);      // clamped, not negative
-    CHECK(kaiser[11] == 255);   // clamped, not above
+    CHECK(kaiser[8] == 0);     // clamped, not negative
+    CHECK(kaiser[11] == 255);  // clamped, not above
     CHECK(box[8] == 0);
     CHECK(box[11] == 255);
     bool differs = false;
@@ -605,10 +609,15 @@ TEST_CASE("texture minter: a 2D texture round trips through the view with its mi
 TEST_CASE("texture minter: formats, a cube map and an array", "[asset][texture]")
 {
     TypeRegistry types;
-    const char* formats[] = {"format r8\n", "format rg8\n", "format rgba8\n", "format rgba8\nsrgb true\n",
-                             "format r16f\n", "format rgba16f\n", "format rgba16f\nsrgb true\nalpha premultiply\n"};
-    const rhi::Format expected[] = {rhi::Format::R8_UNorm, rhi::Format::RG8_UNorm, rhi::Format::RGBA8_UNorm,
-                                    rhi::Format::RGBA8_SRGB, rhi::Format::R16_Float, rhi::Format::RGBA16_Float,
+    const char* formats[] = {"format r8\n",
+                             "format rg8\n",
+                             "format rgba8\n",
+                             "format rgba8\nsrgb true\n",
+                             "format r16f\n",
+                             "format rgba16f\n",
+                             "format rgba16f\nsrgb true\nalpha premultiply\n"};
+    const rhi::Format expected[] = {rhi::Format::R8_UNorm,    rhi::Format::RG8_UNorm, rhi::Format::RGBA8_UNorm,
+                                    rhi::Format::RGBA8_SRGB,  rhi::Format::R16_Float, rhi::Format::RGBA16_Float,
                                     rhi::Format::RGBA16_Float};
     const Vector<byte> noise = TtNoise(8, 8, 11);
     for (u32 i = 0; i < 7; ++i)
@@ -806,8 +815,8 @@ TEST_CASE("texture: hostile blobs are refused", "[asset][texture]")
             byte value;
         };
         // kind 9; format 200; width 0; height 0xff...; layers 2 for a 2D; mips 9; filter 5; alpha 7; alignment 3 and 0.
-        const Patch patches[] = {{0, 9},  {4, 200}, {8, 0},   {15, 0xff}, {16, 2}, {20, 9},
-                                 {24, 5}, {28, 7},  {32, 3},  {36, 0},    {33, 0x20}};
+        const Patch patches[] = {{0, 9},  {4, 200}, {8, 0},  {15, 0xff}, {16, 2},   {20, 9},
+                                 {24, 5}, {28, 7},  {32, 3}, {36, 0},    {33, 0x20}};
         for (const Patch& p : patches)
         {
             Vector<byte> bad = TtCopy(header);

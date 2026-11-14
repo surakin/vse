@@ -73,12 +73,9 @@ bool TexShapeOk(TextureKind kind, u32 width, u32 height, u32 layers)
 {
     switch (kind)
     {
-        case TextureKind::Tex2D:
-            return layers == 1;
-        case TextureKind::Cube:
-            return layers == kCubeFaces && width == height;
-        case TextureKind::Array2D:
-            return layers >= 1 && layers <= kMaxTextureLayers;
+    case TextureKind::Tex2D: return layers == 1;
+    case TextureKind::Cube: return layers == kCubeFaces && width == height;
+    case TextureKind::Array2D: return layers >= 1 && layers <= kMaxTextureLayers;
     }
     return false;
 }
@@ -89,17 +86,10 @@ Status TextureLayoutForTarget(u32 target, TextureLayout* layout)
 {
     switch (target)
     {
-        case 0:
-            *layout = TextureLayout{4, 16};
-            return Status::Success();
-        case 1:
-            *layout = TextureLayout{256, 512};
-            return Status::Success();
-        case 2:
-            *layout = TextureLayout{16, 16};
-            return Status::Success();
-        default:
-            return TexInvalid("the texture layout of this target tag is not known to this version");
+    case 0: *layout = TextureLayout{4, 16}; return Status::Success();
+    case 1: *layout = TextureLayout{256, 512}; return Status::Success();
+    case 2: *layout = TextureLayout{16, 16}; return Status::Success();
+    default: return TexInvalid("the texture layout of this target tag is not known to this version");
     }
 }
 
