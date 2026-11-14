@@ -80,6 +80,19 @@ void RegisterManagerSettings(settings::Registry* registry)
             "(/ when none is written); a later entry wins over an earlier one");
 }
 
+void RegisterServerSettings(settings::Registry* registry)
+{
+    Declare(registry, settings::MakeInt("assets.net.max_read_bytes", 256 * 1024, 4096, 1 << 22),
+            "ENGINE_ASSETS_NET_MAX_READ_BYTES", "assets-net-max-read-bytes", "Resource server: largest read",
+            "the most bytes one Read request of the resource server returns; a larger request is refused");
+    Declare(registry, settings::MakeInt("assets.net.max_inflight", 16, 1, 4096), "ENGINE_ASSETS_NET_MAX_INFLIGHT",
+            "assets-net-max-inflight", "Resource server: requests per connection per poll",
+            "the requests the resource server answers for one connection in one poll; the others are answered Busy");
+    Declare(registry, settings::MakeInt("assets.net.page_entries", 256, 1, 1024), "ENGINE_ASSETS_NET_PAGE_ENTRIES",
+            "assets-net-page-entries", "Resource server: entries per page",
+            "the entries of a table page or a list page of the resource server");
+}
+
 Status MountSpecsFromSettings(const settings::Registry& registry, Vector<MountSpec>* out)
 {
     const settings::SettingId id = registry.Find(StringView("assets.mounts"));

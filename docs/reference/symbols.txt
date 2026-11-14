@@ -4446,11 +4446,12 @@ asset::MemoryBackendBytesFromSettings(const settings::Registry&)	function	asset	
 asset::AnimRotationErrorDegreesFromSettings(const settings::Registry&)	function	asset	asset-animrotationerrordegreesfromsettings-const-settings-registry-amp	asset.md	engine/asset/asset_settings.h:39
 asset::AnimTranslationErrorFromSettings(const settings::Registry&)	function	asset	asset-animtranslationerrorfromsettings-const-settings-registry-amp	asset.md	engine/asset/asset_settings.h:46
 asset::RegisterManagerSettings(settings::Registry*)	function	asset	asset-registermanagersettings-settings-registry-star	asset.md	engine/asset/asset_settings.h:57
-asset::MountSpec	struct	asset	asset-mountspec	asset.md	engine/asset/asset_settings.h:63
-asset::MountSpec::prefix	variable	asset	asset-mountspec-prefix	asset.md	engine/asset/asset_settings.h:65
-asset::MountSpec::path	variable	asset	asset-mountspec-path	asset.md	engine/asset/asset_settings.h:66
-asset::MountSpec::priority	variable	asset	asset-mountspec-priority	asset.md	engine/asset/asset_settings.h:67
-asset::MountSpecsFromSettings(const settings::Registry&,Vector<MountSpec>*)	function	asset	asset-mountspecsfromsettings-const-settings-registry-amp-vector-lt-mountspec-gt-star	asset.md	engine/asset/asset_settings.h:78
+asset::RegisterServerSettings(settings::Registry*)	function	asset	asset-registerserversettings-settings-registry-star	asset.md	engine/asset/asset_settings.h:65
+asset::MountSpec	struct	asset	asset-mountspec	asset.md	engine/asset/asset_settings.h:71
+asset::MountSpec::prefix	variable	asset	asset-mountspec-prefix	asset.md	engine/asset/asset_settings.h:73
+asset::MountSpec::path	variable	asset	asset-mountspec-path	asset.md	engine/asset/asset_settings.h:74
+asset::MountSpec::priority	variable	asset	asset-mountspec-priority	asset.md	engine/asset/asset_settings.h:75
+asset::MountSpecsFromSettings(const settings::Registry&,Vector<MountSpec>*)	function	asset	asset-mountspecsfromsettings-const-settings-registry-amp-vector-lt-mountspec-gt-star	asset.md	engine/asset/asset_settings.h:86
 asset::LoadPriority	enum	asset	asset-loadpriority	asset.md	engine/asset/async_loader.h:28
 asset::LoadPriority::Immediate	enumerator	asset	asset-loadpriority-immediate	asset.md	engine/asset/async_loader.h:30
 asset::LoadPriority::Normal	enumerator	asset	asset-loadpriority-normal	asset.md	engine/asset/async_loader.h:31
@@ -5256,6 +5257,82 @@ asset::ResourceManager::LoadedIds(Vector<ResourceId>*) const	function	asset	asse
 asset::ResourceManager::Pool()	function	asset	asset-resourcemanager-pool	asset.md	engine/asset/resource_manager.h:658
 asset::ResourceManager::Types() const	function	asset	asset-resourcemanager-types-const	asset.md	engine/asset/resource_manager.h:660
 asset::ResourceManager::Config() const	function	asset	asset-resourcemanager-config-const	asset.md	engine/asset/resource_manager.h:662
+asset::kProtoVersion	variable	asset	asset-kprotoversion	asset.md	engine/asset/resource_protocol.h:37
+asset::kProtoMaxPathBytes	variable	asset	asset-kprotomaxpathbytes	asset.md	engine/asset/resource_protocol.h:39
+asset::kProtoMaxPageEntries	variable	asset	asset-kprotomaxpageentries	asset.md	engine/asset/resource_protocol.h:41
+asset::kProtoHeaderSlack	variable	asset	asset-kprotoheaderslack	asset.md	engine/asset/resource_protocol.h:43
+asset::ProtoMessage	enum	asset	asset-protomessage	asset.md	engine/asset/resource_protocol.h:46
+asset::ProtoMessage::Hello	enumerator	asset	asset-protomessage-hello	asset.md	engine/asset/resource_protocol.h:48
+asset::ProtoMessage::Stat	enumerator	asset	asset-protomessage-stat	asset.md	engine/asset/resource_protocol.h:49
+asset::ProtoMessage::Table	enumerator	asset	asset-protomessage-table	asset.md	engine/asset/resource_protocol.h:50
+asset::ProtoMessage::List	enumerator	asset	asset-protomessage-list	asset.md	engine/asset/resource_protocol.h:51
+asset::ProtoMessage::Read	enumerator	asset	asset-protomessage-read	asset.md	engine/asset/resource_protocol.h:52
+asset::ProtoMessage::HelloAck	enumerator	asset	asset-protomessage-helloack	asset.md	engine/asset/resource_protocol.h:53
+asset::ProtoMessage::StatOk	enumerator	asset	asset-protomessage-statok	asset.md	engine/asset/resource_protocol.h:54
+asset::ProtoMessage::TableOk	enumerator	asset	asset-protomessage-tableok	asset.md	engine/asset/resource_protocol.h:55
+asset::ProtoMessage::ListOk	enumerator	asset	asset-protomessage-listok	asset.md	engine/asset/resource_protocol.h:56
+asset::ProtoMessage::ReadOk	enumerator	asset	asset-protomessage-readok	asset.md	engine/asset/resource_protocol.h:57
+asset::ProtoMessage::Error	enumerator	asset	asset-protomessage-error	asset.md	engine/asset/resource_protocol.h:58
+asset::ProtoError	enum	asset	asset-protoerror	asset.md	engine/asset/resource_protocol.h:62
+asset::ProtoError::None	enumerator	asset	asset-protoerror-none	asset.md	engine/asset/resource_protocol.h:64
+asset::ProtoError::NotFound	enumerator	asset	asset-protoerror-notfound	asset.md	engine/asset/resource_protocol.h:65
+asset::ProtoError::Range	enumerator	asset	asset-protoerror-range	asset.md	engine/asset/resource_protocol.h:66
+asset::ProtoError::TooLarge	enumerator	asset	asset-protoerror-toolarge	asset.md	engine/asset/resource_protocol.h:67
+asset::ProtoError::Busy	enumerator	asset	asset-protoerror-busy	asset.md	engine/asset/resource_protocol.h:68
+asset::ProtoError::Invalid	enumerator	asset	asset-protoerror-invalid	asset.md	engine/asset/resource_protocol.h:69
+asset::ProtoError::Unsupported	enumerator	asset	asset-protoerror-unsupported	asset.md	engine/asset/resource_protocol.h:70
+asset::ProtoError::Other	enumerator	asset	asset-protoerror-other	asset.md	engine/asset/resource_protocol.h:71
+asset::ProtoError::Malformed	enumerator	asset	asset-protoerror-malformed	asset.md	engine/asset/resource_protocol.h:72
+asset::ProtoErrorName(ProtoError)	function	asset	asset-protoerrorname-protoerror	asset.md	engine/asset/resource_protocol.h:79
+asset::ProtoEntry	struct	asset	asset-protoentry	asset.md	engine/asset/resource_protocol.h:85
+asset::ProtoEntry::ProtoEntry()	function	asset	asset-protoentry-protoentry	asset.md	engine/asset/resource_protocol.h:88
+asset::ProtoEntry::id	variable	asset	asset-protoentry-id	asset.md	engine/asset/resource_protocol.h:89
+asset::ProtoEntry::type_tag	variable	asset	asset-protoentry-type-tag	asset.md	engine/asset/resource_protocol.h:90
+asset::ProtoEntry::path	variable	asset	asset-protoentry-path	asset.md	engine/asset/resource_protocol.h:91
+asset::ProtoData	struct	asset	asset-protodata	asset.md	engine/asset/resource_protocol.h:98
+asset::ProtoData::ProtoData()	function	asset	asset-protodata-protodata	asset.md	engine/asset/resource_protocol.h:101
+asset::ProtoData::type	variable	asset	asset-protodata-type	asset.md	engine/asset/resource_protocol.h:102
+asset::ProtoData::request	variable	asset	asset-protodata-request	asset.md	engine/asset/resource_protocol.h:103
+asset::ProtoData::version	variable	asset	asset-protodata-version	asset.md	engine/asset/resource_protocol.h:104
+asset::ProtoData::max_read_bytes	variable	asset	asset-protodata-max-read-bytes	asset.md	engine/asset/resource_protocol.h:105
+asset::ProtoData::page_entries	variable	asset	asset-protodata-page-entries	asset.md	engine/asset/resource_protocol.h:106
+asset::ProtoData::max_inflight	variable	asset	asset-protodata-max-inflight	asset.md	engine/asset/resource_protocol.h:107
+asset::ProtoData::id	variable	asset	asset-protodata-id	asset.md	engine/asset/resource_protocol.h:108
+asset::ProtoData::offset	variable	asset	asset-protodata-offset	asset.md	engine/asset/resource_protocol.h:109
+asset::ProtoData::length	variable	asset	asset-protodata-length	asset.md	engine/asset/resource_protocol.h:110
+asset::ProtoData::size	variable	asset	asset-protodata-size	asset.md	engine/asset/resource_protocol.h:111
+asset::ProtoData::generation	variable	asset	asset-protodata-generation	asset.md	engine/asset/resource_protocol.h:112
+asset::ProtoData::page	variable	asset	asset-protodata-page	asset.md	engine/asset/resource_protocol.h:113
+asset::ProtoData::page_count	variable	asset	asset-protodata-page-count	asset.md	engine/asset/resource_protocol.h:114
+asset::ProtoData::unchanged	variable	asset	asset-protodata-unchanged	asset.md	engine/asset/resource_protocol.h:115
+asset::ProtoData::more	variable	asset	asset-protodata-more	asset.md	engine/asset/resource_protocol.h:116
+asset::ProtoData::prefix	variable	asset	asset-protodata-prefix	asset.md	engine/asset/resource_protocol.h:117
+asset::ProtoData::entries	variable	asset	asset-protodata-entries	asset.md	engine/asset/resource_protocol.h:118
+asset::ProtoData::ids	variable	asset	asset-protodata-ids	asset.md	engine/asset/resource_protocol.h:119
+asset::ProtoData::data	variable	asset	asset-protodata-data	asset.md	engine/asset/resource_protocol.h:120
+asset::ProtoData::error	variable	asset	asset-protodata-error	asset.md	engine/asset/resource_protocol.h:121
+asset::EncodeProto(const ProtoData&,ByteSpan,MutableByteSpan,usize*)	function	asset	asset-encodeproto-const-protodata-amp-bytespan-mutablebytespan-usize-star	asset.md	engine/asset/resource_protocol.h:133
+asset::EncodeProto(const ProtoData&,MutableByteSpan,usize*)	function	asset	asset-encodeproto-const-protodata-amp-mutablebytespan-usize-star	asset.md	engine/asset/resource_protocol.h:138
+asset::DecodeProto(ByteSpan,u32,ProtoData*)	function	asset	asset-decodeproto-bytespan-u32-protodata-star	asset.md	engine/asset/resource_protocol.h:153
+asset::ResourceServerConfig	struct	asset	asset-resourceserverconfig	asset.md	engine/asset/resource_server.h:25
+asset::ResourceServerConfig::max_read_bytes	variable	asset	asset-resourceserverconfig-max-read-bytes	asset.md	engine/asset/resource_server.h:27
+asset::ResourceServerConfig::max_inflight	variable	asset	asset-resourceserverconfig-max-inflight	asset.md	engine/asset/resource_server.h:28
+asset::ResourceServerConfig::page_entries	variable	asset	asset-resourceserverconfig-page-entries	asset.md	engine/asset/resource_server.h:29
+asset::ResourceServerConfigFromSettings(const settings::Registry&)	function	asset	asset-resourceserverconfigfromsettings-const-settings-registry-amp	asset.md	engine/asset/resource_server.h:37
+asset::ResourceServerStats	struct	asset	asset-resourceserverstats	asset.md	engine/asset/resource_server.h:42
+asset::ResourceServerStats::connections	variable	asset	asset-resourceserverstats-connections	asset.md	engine/asset/resource_server.h:44
+asset::ResourceServerStats::requests	variable	asset	asset-resourceserverstats-requests	asset.md	engine/asset/resource_server.h:45
+asset::ResourceServerStats::errors	variable	asset	asset-resourceserverstats-errors	asset.md	engine/asset/resource_server.h:46
+asset::ResourceServerStats::busy	variable	asset	asset-resourceserverstats-busy	asset.md	engine/asset/resource_server.h:47
+asset::ResourceServerStats::closed_protocol	variable	asset	asset-resourceserverstats-closed-protocol	asset.md	engine/asset/resource_server.h:48
+asset::ResourceServerStats::bytes_served	variable	asset	asset-resourceserverstats-bytes-served	asset.md	engine/asset/resource_server.h:49
+asset::ResourceServer	class	asset	asset-resourceserver	asset.md	engine/asset/resource_server.h:56
+asset::ResourceServer::ResourceServer(ResourceBackend&,net::Transport&,const ResourceServerConfig&)	function	asset	asset-resourceserver-resourceserver-resourcebackend-amp-net-transport-amp-const-resourceserverconfig-amp	asset.md	engine/asset/resource_server.h:65
+asset::ResourceServer::ResourceServer(const ResourceServer&)	function	asset	asset-resourceserver-resourceserver-const-resourceserver-amp	asset.md	engine/asset/resource_server.h:67
+asset::ResourceServer::operator=(const ResourceServer&)	function	asset	asset-resourceserver-operator-eq-const-resourceserver-amp	asset.md	engine/asset/resource_server.h:68
+asset::ResourceServer::Update()	function	asset	asset-resourceserver-update	asset.md	engine/asset/resource_server.h:73
+asset::ResourceServer::Stats() const	function	asset	asset-resourceserver-stats-const	asset.md	engine/asset/resource_server.h:77
+asset::ResourceServer::MaxReadBytes() const	function	asset	asset-resourceserver-maxreadbytes-const	asset.md	engine/asset/resource_server.h:81
 asset::kMaxTableEntries	variable	asset	asset-kmaxtableentries	asset.md	engine/asset/resource_table.h:23
 asset::TableEntryView	struct	asset	asset-tableentryview	asset.md	engine/asset/resource_table.h:28
 asset::TableEntryView::path	variable	asset	asset-tableentryview-path	asset.md	engine/asset/resource_table.h:30

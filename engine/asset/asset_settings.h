@@ -56,6 +56,14 @@ f64 AnimTranslationErrorFromSettings(const settings::Registry& registry);
 /// - Ownership: borrows its pointer arguments for the call only; nothing is retained.
 void RegisterManagerSettings(settings::Registry* registry);
 
+/// Declares the settings of the resource server: `assets.net.max_read_bytes` (the most bytes one `Read` returns),
+/// `assets.net.max_inflight` (the requests a connection has answered per `Update`; more are answered `Busy`) and
+/// `assets.net.page_entries` (the entries of a table or list page). A key that is already declared is left as it is.
+///
+/// - Thread-safety: thread-compatible; call it while the registry is being set up.
+/// - Ownership: borrows its pointer arguments for the call only; nothing is retained.
+void RegisterServerSettings(settings::Registry* registry);
+
 /// One entry of `assets.mounts`.
 ///
 /// - Thread-safety: thread-compatible plain data.

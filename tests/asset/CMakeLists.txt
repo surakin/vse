@@ -30,6 +30,7 @@ set(ASSET_TEST_SOURCES
   manager_test.cpp  # Day 328
   gpu_loader_test.cpp  # Day 329
   async_loader_test.cpp  # Day 330
+  resource_server_test.cpp  # Day 331
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/level_source.cpp  # Day 327: the level minter under test
 )
 

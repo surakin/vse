@@ -631,6 +631,54 @@ int main() {
 0 entities, 1 loaded, 0 in the backlog
 ```
 
+### Serving resources over the network
+
+`asset::ResourceServer` (`asset/resource_server.h`) serves any `ResourceBackend` (a directory, a pak, host memory) to many clients over a `net::Transport` (the TCP transport in practice), and `tools/resource_server` is the command line around it: `resource_server --root DIR --listen ADDR:PORT` or `--pak FILE`, with `--seconds N` to stop after a while; its options are its own command line, not engine settings. The server is read-only (the protocol has no request that writes), polled (`Update()` takes the transport's events and answers) and has no encryption or authentication: use it on a network you trust. The transport's own limits (connections, rate limits, queues) apply as they are.
+
+The protocol (`asset/resource_protocol.h`, version 1) is one transport message per request or response, encoded with `net::NetWriter`; a message is a type byte, a request id that the response repeats (so responses may interleave) and the fields below. A client says `Hello` first; a server closes a connection that sends anything else first, a second `Hello`, a message it cannot decode, a response where a request belongs, or an unknown type.
+
+| Message | Direction | Fields |
+|---|---|---|
+| `Hello` | client to server | version (u16), the largest response the client takes (u32) |
+| `HelloAck` | server to client | version (u16), the largest read the server serves to this client (u32), entries per page (u32), requests per poll (u32) |
+| `Stat` / `StatOk` | both | id (u64) / size in bytes (u64) |
+| `Table` | client to server | the generation the client has (u64, 0 for none), page (u32) |
+| `TableOk` | server to client | generation (u64), unchanged (bool), page (u32), page count (u32); unless unchanged: a count, then per entry the id (u64), the type tag (u32) and the path |
+| `List` / `ListOk` | both | prefix (string), page (u32) / the table generation (u64), page (u32), more (bool), a count and the ids (u64) |
+| `Read` / `ReadOk` | both | id (u64), offset (u64), length (u32) / offset (u64), the bytes |
+| `Error` | server to client | a code: `NotFound`, `Range` (a read starts past the end), `TooLarge` (a read above the limit, or a response that would not fit a message), `Busy`, `Invalid` (a page past the last), `Unsupported`, `Other` |
+
+Limits: a path or prefix is at most 1,024 bytes and a page at most 1,024 entries (`assets.net.page_entries`, default 256); a read at most `assets.net.max_read_bytes` (default 256 KiB, and never more than the transport's message holds) or what the client said it takes; a connection has at most `assets.net.max_inflight` requests answered per `Update` (default 16) and the rest are answered `Busy`. Every length is checked against its limit and the bytes that remain before anything is allocated, and every value has one encoding. A read that runs past the end returns the bytes that are there (the last range is short); a read at the end returns none. The table has a generation, a hash of its entries (the same table has the same generation after a restart, and a table that changes gets another): a client that sends the generation it has gets `unchanged` and no entries, and a list reply carries it too so that a change between two pages shows. New bytes under the same ids and paths do not change it. The server asks the backend what changed only when a client asks for the table or a list. A version other than 1 in `Hello` is answered `Unsupported` and the connection is closed. If a client's send queue is full, the answer is replaced by `Busy`.
+
+```cpp compile run standalone
+#include "asset/resource_protocol.h"
+#include "os/console.h"
+
+using namespace engine_placeholder;
+
+int main() {
+    asset::ProtoData request;
+    request.type = asset::ProtoMessage::Read;
+    request.request = 7;
+    request.id = 0x1234;
+    request.offset = 100;
+    request.length = 4096;
+
+    byte buffer[128];
+    usize size = 0;
+    if (asset::EncodeProto(request, MutableByteSpan(buffer, sizeof(buffer)), &size) != asset::ProtoError::None) return 1;
+    asset::ProtoData decoded;
+    if (asset::DecodeProto(ByteSpan(buffer, size), 4096, &decoded) != asset::ProtoError::None) return 1;
+    os::Print("read of id %llx, %llu bytes from %llu, in a message of %u bytes\n",
+              static_cast<unsigned long long>(decoded.id), static_cast<unsigned long long>(decoded.length),
+              static_cast<unsigned long long>(decoded.offset), static_cast<unsigned>(size));
+    return decoded.request == 7 && decoded.length == 4096 ? 0 : 1;
+}
+```
+```output
+read of id 1234, 4096 bytes from 100, in a message of 25 bytes
+```
+
 `asset::RegisterGpuLoaders(&manager, &context)` registers loaders for the types that live on the GPU, over the CPU loaders of the same resource types (a later registration replaces the earlier one, and the C++ type of the loaded object tells the two apart: `Handle<asset::GpuMeshAsset>`, `Handle<asset::GpuTextureAsset>`, `Handle<asset::GpuMaterialAsset>`). The context names the device, the `renderer::DeviceResources` the objects register with, the material system and the G-buffer templates.
 
 The blob's bytes are shared, not pointed at. The manager reads a blob into one `asset::BlobBuffer` (a `SharedBytes`), and the GPU objects hold a share of it: a `renderer::MeshGeometry` names the vertex, index and skin sections by offset, and `GpuTexture::CreateFromSharedLevels` takes the levels as offsets too. A mesh uploads from where the bytes are (nothing is copied; `Stats().load_conversions` stays 0), and after a device reset it uploads again from the same shared bytes, even when the manager has unloaded or reloaded the resource meanwhile: the last holder of the mesh or texture is what returns the buffer to the pool. A material holds a share of the textures and samplers it binds. Rule for new code: classes that need the same data share a `SharedPtr` to a small class that holds it, and never keep a raw pointer into each other's storage.

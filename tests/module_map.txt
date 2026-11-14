@@ -42,6 +42,7 @@ tools/docgen        3,4
 game/net_demo       20
 tools/net_probe     20
 tools/asset_mint    22
+tools/resource_server    22
 tools/signal_safety_check 7
 tools/ui_widget_style_check 15
 tools/unicode_data_gen 0,10   # the generator of the committed Unicode tables (strings, Phase 10)

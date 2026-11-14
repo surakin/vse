@@ -248,6 +248,7 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(engine/asset)  # Phase 22 Day 313
   add_subdirectory(engine/animation)  # Phase 22 Day 321
   add_subdirectory(tools/asset_mint)  # Phase 22 Day 316
+  add_subdirectory(tools/resource_server)  # Phase 22 Day 331
   add_subdirectory(tests/asset)
   add_subdirectory(tests/rhi)  # Day 160: the Phase 4 RHI suite through Vulkan
   add_subdirectory(tests/renderer)  # Day 161
@@ -315,6 +316,7 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(engine/asset)
   add_subdirectory(engine/animation)
   add_subdirectory(tools/asset_mint)  # Phase 22 Day 316
+  add_subdirectory(tools/resource_server)  # Phase 22 Day 331
   add_subdirectory(tests/asset)
   add_subdirectory(tests/rhi)
   add_subdirectory(tests/renderer)
@@ -389,6 +391,7 @@ add_subdirectory(engine/scene)  # Phase 17 Day 233
 add_subdirectory(engine/asset)  # Phase 22 Day 313
 add_subdirectory(engine/animation)  # Phase 22 Day 321
 add_subdirectory(tools/asset_mint)  # Phase 22 Day 316
+add_subdirectory(tools/resource_server)  # Phase 22 Day 331
 add_subdirectory(tools/docgen)
 add_subdirectory(tools/shader_mint)
 add_subdirectory(tools/rhi_boundary_check)
