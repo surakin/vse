@@ -40,27 +40,29 @@ struct CodecLimits
 /// The kinds of field the registry can store.
 enum class FieldKind : u8
 {
-    U8,         ///< An unsigned 8-bit integer.
-    U16,        ///< An unsigned 16-bit integer, little-endian.
-    U32,        ///< An unsigned 32-bit integer, little-endian.
-    U64,        ///< An unsigned 64-bit integer, little-endian.
-    I8,         ///< A signed 8-bit integer.
-    I16,        ///< A signed 16-bit integer, little-endian.
-    I32,        ///< A signed 32-bit integer, little-endian.
-    I64,        ///< A signed 64-bit integer, little-endian.
-    F32,        ///< A 32-bit float as its bit pattern.
-    F64,        ///< A 64-bit float as its bit pattern.
-    Bool,       ///< One validated byte.
-    Vec2,       ///< Two `f32`.
-    Vec3,       ///< Three `f32`.
-    Vec4,       ///< Four `f32`.
-    Quat,       ///< Four `f32` (x, y, z, w).
-    Mat4,       ///< Sixteen `f32`, column by column.
-    Aabb,       ///< Two `Vec3` (min, max).
-    Enum,       ///< An enumeration as its underlying integer, checked against a declared range.
-    String,     ///< A bounded varint length and UTF-8 text, validated.
-    Array,      ///< A fixed-size [[Array]]: its count as a varint, then the elements.
-    EntityRef,  ///< An [[storage::EntityRef]]: 16 bytes.
+    U8,           ///< An unsigned 8-bit integer.
+    U16,          ///< An unsigned 16-bit integer, little-endian.
+    U32,          ///< An unsigned 32-bit integer, little-endian.
+    U64,          ///< An unsigned 64-bit integer, little-endian.
+    I8,           ///< A signed 8-bit integer.
+    I16,          ///< A signed 16-bit integer, little-endian.
+    I32,          ///< A signed 32-bit integer, little-endian.
+    I64,          ///< A signed 64-bit integer, little-endian.
+    F32,          ///< A 32-bit float as its bit pattern.
+    F64,          ///< A 64-bit float as its bit pattern.
+    Bool,         ///< One validated byte.
+    Vec2,         ///< Two `f32`.
+    Vec3,         ///< Three `f32`.
+    Vec4,         ///< Four `f32`.
+    Quat,         ///< Four `f32` (x, y, z, w).
+    Mat4,         ///< Sixteen `f32`, column by column.
+    Aabb,         ///< Two `Vec3` (min, max).
+    Enum,         ///< An enumeration as its underlying integer, checked against a declared range.
+    String,       ///< A bounded varint length and UTF-8 text, validated.
+    Array,        ///< A fixed-size [[Array]]: its count as a varint, then the elements.
+    EntityRef,    ///< An [[storage::EntityRef]]: 16 bytes.
+    ResourceRef,  ///< A [[storage::ResourceRef]], or a `u64` declared with [[storage::FieldOptions::Reference]]: 8
+                  ///< bytes.
 };
 
 /// Per-field settings that the type alone does not give.
@@ -74,6 +76,11 @@ struct FieldOptions
     i64 range_max = 0;       ///< The largest valid value of an enum field.
     u64 max_bytes = 0xFFFFFFFFull;  ///< The most bytes of a string field (also held to
                                     ///< [[storage::CodecLimits::max_string_bytes]]).
+    bool is_reference = false;  ///< The field names a resource ([[storage::FieldOptions::Reference]]); a `ResourceRef`
+                                ///< member is one without saying so.
+    u32 ref_type = 0;           ///< The resource type the field accepts, as a four-character tag (see
+                                ///< [[storage::ResourceTag]]); 0 for any type.
+    bool nullable = true;       ///< Whether the null id (0) is a valid value; the level minter refuses it otherwise.
 
     /// Options for an enum field whose valid values run from `min` to `max` (inclusive).
     static constexpr FieldOptions Enum(i64 min, i64 max)
@@ -84,6 +91,19 @@ struct FieldOptions
         o.range_max = max;
         return o;
     }
+    /// Options for a field that names a resource (a `u64` or a [[storage::ResourceRef]] member): its stored bytes are
+    /// the same as without them, but the level minter types the reference against `type_tag` and the field is listed
+    /// in the level's reference table.
+    /// - Param type_tag: [[storage::ResourceTag]] of the accepted resource type, or 0 for any.
+    /// - Param nullable: whether the null id is allowed.
+    static constexpr FieldOptions Reference(u32 type_tag, bool nullable = true)
+    {
+        FieldOptions o;
+        o.is_reference = true;
+        o.ref_type = type_tag;
+        o.nullable = nullable;
+        return o;
+    }
     /// Options for a string field of at most `max_bytes` bytes.
     static constexpr FieldOptions Text(u64 max_bytes)
     {
@@ -92,6 +112,15 @@ struct FieldOptions
         return o;
     }
 };
+
+/// Packs a four-character resource type tag the way `asset::ResourceType::FromChars` does (`a` in the lowest byte).
+///
+/// - Fails: never.
+constexpr u32 ResourceTag(char a, char b, char c, char d)
+{
+    return static_cast<u32>(static_cast<u8>(a)) | (static_cast<u32>(static_cast<u8>(b)) << 8) |
+           (static_cast<u32>(static_cast<u8>(c)) << 16) | (static_cast<u32>(static_cast<u8>(d)) << 24);
+}
 
 struct FieldDesc;
 
@@ -108,6 +137,7 @@ template <class T, usize N> struct IsArrayField<Array<T, N>>
 {
     static constexpr bool value = true;
     using Element = T;
+    static constexpr usize count = N;
 };
 
 template <class V> constexpr bool NeedsRange()
@@ -223,6 +253,10 @@ template <class V> constexpr FieldKind KindOf()
     {
         return FieldKind::EntityRef;
     }
+    else if constexpr (IsSame<V, ResourceRef>)
+    {
+        return FieldKind::ResourceRef;
+    }
     else
     {
         static_assert(
@@ -321,6 +355,9 @@ struct FieldDesc
     usize memory_size = 0;           ///< `sizeof` of the member in the component.
     bool needs_range = false;  ///< Whether the member is an enum (or an array of enums), so the registration needs
                                ///< `options.has_range`.
+    FieldKind element_kind = FieldKind::U8;  ///< For an `Array` field, the kind of its elements.
+    usize element_count = 0;                 ///< For an `Array` field, the number of elements (`N`).
+    usize element_size = 0;                  ///< For an `Array` field, `sizeof` of one element in memory.
     /// Writes the member of the component at `component`. On failure nothing is promised about what `out` holds (the
     /// caller truncates).
     Status (*encode)(const FieldDesc& desc, const void* component, bytes::ByteWriter& out,
@@ -475,6 +512,10 @@ Status EncodeValue(const V& value, const FieldDesc& desc, bytes::ByteWriter& out
     {
         out.WriteU64(value.key.high);
         out.WriteU64(value.key.low);
+    }
+    else if constexpr (IsSame<V, ResourceRef>)
+    {
+        out.WriteU64(value.id);
     }
     else
     {
@@ -706,6 +747,17 @@ template <class V> Status DecodeValue(V* value, const FieldDesc& desc, bytes::By
         *value = r;
         return Status::Success();
     }
+    else if constexpr (IsSame<V, ResourceRef>)
+    {
+        u64 id = 0;
+        const bytes::ByteError e = in.ReadU64(&id);
+        if (e != bytes::ByteError::Ok)
+        {
+            return FromByteError(e);
+        }
+        value->id = id;
+        return Status::Success();
+    }
     else
     {
         static_assert(kAlwaysFalse<V>, "storage::Field: this member type has no stored form");
@@ -744,8 +796,25 @@ template <auto Member> FieldDesc Field(const char* name, FieldOptions options = 
     d.name = name;
     d.kind = detail::KindOf<V>();
     d.options = options;
+    if (d.kind == FieldKind::ResourceRef)
+    {
+        d.options.is_reference = true;
+    }
     d.memory_size = sizeof(V);
     d.needs_range = detail::NeedsRange<V>();
+    if constexpr (detail::IsArrayField<V>::value)
+    {
+        d.element_kind = detail::KindOf<typename detail::IsArrayField<V>::Element>();
+        d.element_count = detail::IsArrayField<V>::count;
+        d.element_size = sizeof(typename detail::IsArrayField<V>::Element);
+    }
+    if constexpr (IsSame<V, u64>)
+    {
+        if (options.is_reference)
+        {
+            d.kind = FieldKind::ResourceRef;  // a u64 that names a resource: the same eight bytes
+        }
+    }
     d.encode = [](const FieldDesc& desc, const void* component, bytes::ByteWriter& out, const CodecLimits& limits)
     { return detail::EncodeValue<V>(static_cast<const C*>(component)->*Member, desc, out, limits); };
     d.decode = [](const FieldDesc& desc, bytes::ByteReader& in, void* component, const CodecLimits& limits)

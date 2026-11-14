@@ -6,6 +6,8 @@
 //   asset_mint mint-clip SOURCE.anim.src OUTPUT.blob --skeleton=SKELETON.blob [--target=N]
 //   asset_mint mint-texture SOURCE.tex.src OUTPUT.blob [--target=N]
 //   asset_mint mint-material SOURCE.mat.src OUTPUT.blob [--target=N]
+//   asset_mint mint-level SOURCE.level.src OUTPUT.blob [--root=DIR] [--target=N]
+//   asset_mint unmint-level LEVEL.blob OUTPUT.level.src [--root=DIR]
 //
 // packs the blobs of a directory (found by their own headers; the path is the file's location) into one pak for target
 // N (default 0, the development target). It refuses an incomplete closure and lists each missing (blob, dependency)
@@ -18,12 +20,16 @@
 #include "jobs/scheduler.h"
 #include "io/file_system.h"
 #include "io/path.h"
+#include "animation/components.h"
+#include "asset/level.h"
 #include "clip_source.h"
+#include "level_source.h"
 #include "material_source.h"
 #include "mesh_source.h"
 #include "skeleton_source.h"
 #include "texture_source.h"
 #include "os/console.h"
+#include "storage/builtin_components.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::asset;
@@ -38,7 +44,9 @@ int Usage()
                    "       asset_mint mint-mesh SOURCE.mesh.src OUTPUT.blob [--skeleton=SKELETON.blob] [--target=N]\n"
                    "       asset_mint mint-clip SOURCE.anim.src OUTPUT.blob --skeleton=SKELETON.blob [--target=N]\n"
                    "       asset_mint mint-texture SOURCE.tex.src OUTPUT.blob [--target=N]\n"
-                   "       asset_mint mint-material SOURCE.mat.src OUTPUT.blob [--target=N]\n");
+                   "       asset_mint mint-material SOURCE.mat.src OUTPUT.blob [--target=N]\n"
+                   "       asset_mint mint-level SOURCE.level.src OUTPUT.blob [--root=DIR] [--target=N]\n"
+                   "       asset_mint unmint-level LEVEL.blob OUTPUT.level.src [--root=DIR]\n");
     return 64;
 }
 
@@ -654,6 +662,232 @@ int MintClipCommand(int argc, char** argv)
     return 0;
 }
 
+// Resolves a level's references against a project folder: the blobs under it, found by their own headers, and the paths
+// the folder's layout gives them (a `FilesystemBackend`'s table).
+class ProjectResolver final : public LevelReferenceResolver
+{
+public:
+    explicit ProjectResolver(const TypeRegistry& types) : types_(types) {}
+
+    Status Open(const io::Path& root)
+    {
+        ENGINE_TRY(FilesystemBackend::Create(root, types_, &backend_));
+        return backend_->ReadTable(&table_);
+    }
+
+    Status ResolvePath(StringView path, ResourceId* id, ByteSpan* blob) const override
+    {
+        if (!table_.Resolve(path, id))
+        {
+            return Status::Make(ErrorCode::NotFound, "the project has no such path");
+        }
+        return ResolveId(*id, blob);
+    }
+
+    Status ResolveId(ResourceId id, ByteSpan* blob) const override
+    {
+        for (usize i = 0; i < ids_.Size(); ++i)
+        {
+            if (ids_[i] == id)
+            {
+                *blob = ByteSpan(blobs_[i].Data(), blobs_[i].Size());
+                return Status::Success();
+            }
+        }
+        UniquePtr<ResourceReader> reader;
+        ENGINE_TRY(backend_->Open(id, &reader));
+        Vector<byte> bytes;
+        bytes.Resize(static_cast<usize>(reader->Size()));
+        ENGINE_TRY(reader->ReadAt(0, bytes.Data(), bytes.Size()));
+        ids_.Push(id);
+        blobs_.Push(static_cast<Vector<byte>&&>(bytes));
+        *blob = ByteSpan(blobs_[blobs_.Size() - 1].Data(), blobs_[blobs_.Size() - 1].Size());
+        return Status::Success();
+    }
+
+    Status PathOf(ResourceId id, String<HeapAllocator>* path) const override
+    {
+        Vector<StringView> paths;
+        if (table_.PathsOf(id, &paths) == 0)
+        {
+            return Status::Make(ErrorCode::NotFound, "the project has no path for the id");
+        }
+        *path = String<HeapAllocator>(HeapAllocator::Default(), paths[0]);
+        return Status::Success();
+    }
+
+private:
+    const TypeRegistry& types_;
+    UniquePtr<FilesystemBackend> backend_;
+    ResourceTable table_;
+    mutable Vector<ResourceId> ids_;
+    mutable Vector<Vector<byte>> blobs_;  // the inner buffers do not move when the outer grows
+};
+
+// The components a level may hold: the engine's own and the animation ones; a game adds its own where it builds its
+// tools.
+bool RegisterLevelRegistry(storage::ComponentRegistry* registry)
+{
+    return storage::RegisterBuiltinComponents(registry).Ok() && RegisterLevelComponents(registry).Ok() &&
+           animation::RegisterAnimationComponents(registry).Ok();
+}
+
+bool WriteOutput(const io::Path& output, const void* data, usize size)
+{
+    io::FilePtr file;
+    if (io::File::Open(output, io::OpenMode::Write, io::kOpenNone, &file).Failed())
+    {
+        os::PrintError("asset_mint: the output file could not be created\n");
+        return false;
+    }
+    const io::Status written = file->Write(data, size, 0);
+    if (written.Failed() || file->Close().Failed())
+    {
+        file->Close();
+        io::Remove(output);
+        os::PrintError("asset_mint: writing the output failed\n");
+        return false;
+    }
+    return true;
+}
+
+// Reads `--root=DIR` and `--target=N` after the two paths. The root defaults to the folder of `first`.
+bool LevelOptions(int argc, char** argv, io::Path* root, u32* target)
+{
+    io::Path first;
+    if (!io::Path::Parse(StringView(argv[2], CStrLength(argv[2])), io::NativePathStyle(), &first))
+    {
+        return false;
+    }
+    *root = first.Parent();
+    if (root->IsEmpty() && !io::Path::Parse(StringView("."), io::NativePathStyle(), root))  // a bare file name
+    {
+        return false;
+    }
+    for (int i = 4; i < argc; ++i)
+    {
+        if (StartsWith(argv[i], "--target=") && target != nullptr)
+        {
+            if (!ParseNumber(argv[i] + 9, target))
+            {
+                return false;
+            }
+        }
+        else if (StartsWith(argv[i], "--root="))
+        {
+            if (!io::Path::Parse(StringView(argv[i] + 7, CStrLength(argv[i] + 7)), io::NativePathStyle(), root))
+            {
+                return false;
+            }
+        }
+        else
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+// Mints a level source into a blob (Day 327).
+int MintLevelCommand(int argc, char** argv)
+{
+    io::Path root;
+    u32 target = 0;
+    io::Path output;
+    if (argc < 4 || !LevelOptions(argc, argv, &root, &target) ||
+        !io::Path::Parse(StringView(argv[3], CStrLength(argv[3])), io::NativePathStyle(), &output))
+    {
+        return Usage();
+    }
+    Vector<u8> text;
+    if (!ReadWholeFile(argv[2], u64{1} << 26, &text))
+    {
+        os::PrintError("asset_mint: the source file could not be read\n");
+        return 1;
+    }
+    TypeRegistry types;
+    storage::ComponentRegistry registry;
+    if (!RegisterLevelRegistry(&registry))
+    {
+        os::PrintError("asset_mint: the components could not be registered\n");
+        return 1;
+    }
+    ProjectResolver resolver(types);
+    const Status opened = resolver.Open(root);
+    if (opened.Failed())
+    {
+        os::PrintError("asset_mint: the project folder could not be read: %s\n", opened.Message());
+        return 1;
+    }
+    Vector<byte> blob;
+    LevelSourceError error;
+    if (MintLevel(StringView(reinterpret_cast<const char*>(text.Data()), text.Size()), resolver, types, registry, &blob,
+                  &error, target)
+            .Failed())
+    {
+        if (error.line == 0)
+        {
+            os::PrintError("asset_mint: %s: %s\n", argv[2], error.message.Data());
+        }
+        else
+        {
+            os::PrintError("asset_mint: %s:%u: %s\n", argv[2], static_cast<unsigned>(error.line), error.message.Data());
+        }
+        return 1;
+    }
+    if (!WriteOutput(output, blob.Data(), blob.Size()))
+    {
+        return 1;
+    }
+    os::Print("minted a level of %u bytes\n", static_cast<unsigned>(blob.Size()));
+    return 0;
+}
+
+// Prints a level blob back as its canonical text (Day 327).
+int UnmintLevelCommand(int argc, char** argv)
+{
+    io::Path root;
+    io::Path output;
+    if (argc < 4 || !LevelOptions(argc, argv, &root, nullptr) ||
+        !io::Path::Parse(StringView(argv[3], CStrLength(argv[3])), io::NativePathStyle(), &output))
+    {
+        return Usage();
+    }
+    Vector<u8> blob;
+    if (!ReadWholeFile(argv[2], u64{1} << 31, &blob))
+    {
+        os::PrintError("asset_mint: the level file could not be read\n");
+        return 1;
+    }
+    TypeRegistry types;
+    storage::ComponentRegistry registry;
+    if (!RegisterLevelRegistry(&registry))
+    {
+        os::PrintError("asset_mint: the components could not be registered\n");
+        return 1;
+    }
+    ProjectResolver resolver(types);
+    const Status opened = resolver.Open(root);
+    if (opened.Failed())
+    {
+        os::PrintError("asset_mint: the project folder could not be read: %s\n", opened.Message());
+        return 1;
+    }
+    String<HeapAllocator> text(HeapAllocator::Default());
+    LevelSourceError error;
+    if (FormatLevelBlob(ByteSpan(blob.Data(), blob.Size()), types, registry, resolver, &text, &error).Failed())
+    {
+        os::PrintError("asset_mint: %s: %s\n", argv[2], error.message.Data());
+        return 1;
+    }
+    if (!WriteOutput(output, text.View().Data(), text.Length()))
+    {
+        return 1;
+    }
+    os::Print("wrote the text of a level of %u bytes\n", static_cast<unsigned>(blob.Size()));
+    return 0;
+}
+
 }  // namespace
 
 int main(int argc, char** argv)
@@ -673,6 +907,14 @@ int main(int argc, char** argv)
     if (argc >= 2 && StringView(argv[1], CStrLength(argv[1])) == StringView("mint-material"))
     {
         return MintMaterialCommand(argc, argv);
+    }
+    if (argc >= 2 && StringView(argv[1], CStrLength(argv[1])) == StringView("mint-level"))
+    {
+        return MintLevelCommand(argc, argv);
+    }
+    if (argc >= 2 && StringView(argv[1], CStrLength(argv[1])) == StringView("unmint-level"))
+    {
+        return UnmintLevelCommand(argc, argv);
     }
     if (argc >= 2 && StringView(argv[1], CStrLength(argv[1])) == StringView("mint-clip"))
     {

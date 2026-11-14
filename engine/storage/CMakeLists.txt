@@ -15,6 +15,7 @@ set(STORAGE_SOURCES
   sql_store.cpp  # Day 262
   async_storage.cpp  # Day 264
   local_storage.cpp  # Day 264
+  field_walk.cpp  # Phase 22 Day 327
 )
 set(STORAGE_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

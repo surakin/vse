@@ -210,6 +210,15 @@ Status ComponentRegistry::RegisterEntry(const ComponentDesc& desc, ecs::Componen
         {
             return Status::Make(ErrorCode::Invalid, "an enum field needs a declared range (FieldOptions::Enum)");
         }
+        if (f.options.is_reference && f.kind != FieldKind::ResourceRef)
+        {
+            return Status::Make(ErrorCode::Invalid,
+                                "FieldOptions::Reference applies only to a u64 or a ResourceRef member");
+        }
+        if (f.kind == FieldKind::Array && f.element_kind == FieldKind::ResourceRef)
+        {
+            return Status::Make(ErrorCode::Invalid, "an array of resource references is not supported");
+        }
         usize other = 0;
         for (const FieldDesc& g : desc.fields)
         {

@@ -592,6 +592,7 @@ u32 PartsOf(FieldKind kind)
     case FieldKind::F32:
     case FieldKind::F64:
     case FieldKind::Bool:
+    case FieldKind::ResourceRef:
     case FieldKind::Enum: return 1;
     case FieldKind::Vec2: return 2;
     case FieldKind::Vec3: return 3;
@@ -722,7 +723,8 @@ Status ExtractCells(const SqlTable& table, ByteSpan blob, const CodecLimits& lim
             case FieldKind::Bool: cell.integer = static_cast<i64>(ReadLittle(p, 1)); break;
             case FieldKind::U16: cell.integer = static_cast<i64>(ReadLittle(p, 2)); break;
             case FieldKind::U32: cell.integer = static_cast<i64>(ReadLittle(p, 4)); break;
-            case FieldKind::U64: cell.integer = static_cast<i64>(ReadLittle(p, 8)); break;
+            case FieldKind::U64:
+            case FieldKind::ResourceRef: cell.integer = static_cast<i64>(ReadLittle(p, 8)); break;
             case FieldKind::I8: cell.integer = SignExtend(ReadLittle(p, 1), 1); break;
             case FieldKind::I16: cell.integer = SignExtend(ReadLittle(p, 2), 2); break;
             case FieldKind::I32: cell.integer = SignExtend(ReadLittle(p, 4), 4); break;

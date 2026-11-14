@@ -439,3 +439,90 @@ state cull none
 ```
 
 The minter checks the source against the template: a parameter must be a member of the shader's set 1 uniform block and have its type (an unknown or mistyped one lists the expected members), a texture slot must exist for the chosen options, and the texture's blob must have the slot's shape (2D, cube, array) and color space (the albedo slot takes sRGB data, the normal slot linear data). A texture path that does not resolve is a mint error with the source line. Parameters the source leaves out keep the template's defaults. A blob of another type version is refused with `UnsupportedVersion`, whose message names `asset_mint remint`.
+
+## Levels
+
+A level (`asset::types::kLevel`, `LEVL`) is the same data as a save: one `storage::EntityRecord` per entity, in key order, whose bytes are the entity container of `storage::WorldStorage` (a count, then framed component records encoded by the `storage::ComponentRegistry`). Saves and levels share one set of field codecs; a component registered for storage can be in a level with no further work. What a level adds is its references. A field that names a resource is declared with `storage::FieldOptions::Reference(storage::ResourceTag('M', 'E', 'S', 'H'), nullable)` (a `u64` member) or is a `storage::ResourceRef`: the stored bytes are the same eight as for a `u64`, the level minter types the reference against the declared resource type, and the blob lists every non-null use in a *reference table* (entity, component, field, declared type, id) and every distinct resource in the standard dependency section (role bit `kLevelRoleReference`; a level named by an `include` line has `kLevelRoleInclude`). The manager (Day 328) follows only that list, so a level's closure is known before any entity is made.
+
+`asset::BuildLevelBlob` writes the blob and `asset::ParseLevelBlob` reads it back into an `asset::LevelData`; the parser recomputes the references from the records and refuses a table or dependency list that disagrees. `asset::LoadLevelBlob` creates the entities in a world through `storage::WorldStorage::Load`, so the world is untouched when any record is bad. A component record is read only at its registered version: a level written with an older one is refused with `UnsupportedVersion` and fixed by re-minting from the source, never converted. Derived state (transforms, bounds) is not stored; run the systems once after a load. `asset::MeshReference` (a mesh and a material by id, id 50) and `asset::EntityName` (the name the text form gives an entity, id 51) are the level components; `RegisterLevelComponents` registers them beside the builtin and animation components.
+
+```cpp compile run standalone
+#include "asset/level.h"
+#include "ecs/transform.h"
+#include "os/console.h"
+#include "storage/builtin_components.h"
+#include "storage/component_record.h"
+
+using namespace engine_placeholder;
+
+int main() {
+    asset::TypeRegistry types;
+    storage::ComponentRegistry registry;
+    if (storage::RegisterBuiltinComponents(&registry).Failed()) return 1;
+    if (asset::RegisterLevelComponents(&registry).Failed()) return 1;
+
+    // One entity with a mesh: its record is the encoding of the component, framed.
+    asset::MeshReference mesh;
+    mesh.mesh.id = 0x201;
+    bytes::ByteWriter fields;
+    const storage::CodecLimits limits;
+    if (registry.FindById(asset::kMeshReferenceId)->Encode(&mesh, fields, limits).Failed()) return 1;
+    bytes::ByteWriter container;
+    container.WriteU32(1);
+    storage::ComponentRecord record;
+    record.id = asset::kMeshReferenceId;
+    record.version = 1;
+    record.bytes = fields.Bytes();
+    if (storage::WriteComponentRecord(record, limits, container).Failed()) return 1;
+
+    asset::LevelData data;
+    storage::EntityKey key;
+    key.low = 1;
+    data.entities.Push(storage::EntityRecord::Make(key, container.Bytes()));
+    asset::LevelResource resource;
+    resource.id = asset::ResourceId::FromValue(0x201);
+    resource.type = asset::types::kMesh;
+    resource.type_version = 1;
+    resource.roles = asset::kLevelRoleReference;
+    data.resources.Push(resource);
+
+    Vector<byte> blob;
+    if (asset::BuildLevelBlob(types, registry, asset::ResourceId::FromValue(7), data, &blob).Failed()) return 1;
+
+    ecs::World world;
+    storage::KeyIndex index;
+    asset::LevelData loaded;
+    if (asset::LoadLevelBlob(ByteSpan(blob.Data(), blob.Size()), types, registry, world, index, &loaded).Failed()) return 1;
+    const asset::MeshReference* got = world.Peek<asset::MeshReference>(index.Find(key));
+    os::Print("%u entity, %u reference, mesh %llx\n", static_cast<unsigned>(loaded.entities.Size()),
+              static_cast<unsigned>(loaded.references.Size()), static_cast<unsigned long long>(got->mesh.id));
+    return got->mesh.id == 0x201 ? 0 : 1;
+}
+```
+```output
+1 entity, 1 reference, mesh 201
+```
+
+The source is `.level.src`, read by `asset_mint mint-level SOURCE.level.src OUTPUT.blob [--root=DIR]` (the references are resolved against the blobs under `--root`, by the paths their folders give them) and printed back by `asset_mint unmint-level LEVEL.blob OUTPUT.level.src`:
+
+```text
+id 00000000000000d0
+include /levels/sky
+entity ground
+  component local_transform
+    position = 0 -1 0
+entity hero
+  parent ground
+  component mesh_reference
+    mesh = /meshes/hero
+    material = /materials/skin
+  skeleton /skeletons/hero
+  animation /clips/walk loop speed 1.5
+entity lamp key @0000000000000000000000000000002a
+  component local_transform
+    position = 3 4 5
+```
+
+`id` comes first (`asset_mint adopt` writes it). `entity NAME` starts an entity; its key is derived from the level's id and the name (`asset::LevelEntityKey`), so the same text always gives the same keys and two levels may use one name, and `key @HEX32` pins one. `component TYPE` starts a record named as the registry names it, and `FIELD = VALUE` lines set its fields: the names and kinds come from the registry, so a new component needs no change to the parser, and a field left out keeps the value of a default-constructed component. `parent NAME` links the entity to its parent. `skeleton PATH` and `animation PATH [loop|once] [speed X]` are shorthand for the `skeleton_instance` and `animation_player` components; the printer always writes the long form. Includes come before the first entity and may not form a cycle.
+
+The minter refuses with the line and the entity or field: an unknown component or field (listing the registry's names), a value that does not fit its field, a path that does not exist, a resource of another type than the field declares (a material where a mesh is wanted), a null in a field that is not nullable, a `parent` that is nowhere, an include that is not a level or that includes this level again, and a clip made for another skeleton than the entity's. It then loads the result into a scratch world the way the loader will. The printer writes entities in name order (unnamed ones last, by key) and the components in the order they are stored, so a level printed, minted and printed again is byte-identical, and `asset::FormatWorld` prints a loaded world as the same text.

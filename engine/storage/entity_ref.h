@@ -58,6 +58,16 @@ struct EntityRef
     EntityKey key;  ///< The target's key, or the null key.
 };
 
+/// A component field that names a resource (a mesh, a material, a clip) by its permanent 64-bit id, `0` for none.
+/// Stored as 8 little-endian bytes, the same bytes as a `u64`. The storage module does not know what the id means: the
+/// asset pipeline's level minter and loader read the declared resource type from [[storage::FieldOptions::Reference]].
+///
+/// - Thread-safety: thread-compatible plain data.
+struct ResourceRef
+{
+    u64 id = 0;  ///< The resource id (`asset::ResourceId::Value()`); 0 names nothing.
+};
+
 }  // namespace engine_placeholder::storage
 
 namespace engine_placeholder

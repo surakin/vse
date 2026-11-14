@@ -15,6 +15,7 @@ set(STORAGE_TEST_SOURCES
   async_test.cpp  # Day 264
   storage_bench.cpp  # Day 265
   hostile_file_test.cpp  # Day 265
+  field_walk_test.cpp  # Phase 22 Day 327
 )
 
 find_package(Threads REQUIRED)

@@ -25,6 +25,7 @@ set(ASSET_SOURCES
   texture.cpp  # Day 323
   block_compress.cpp  # Day 324
   material.cpp  # Day 326
+  level.cpp  # Day 327
 )
 set(ASSET_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
@@ -37,7 +38,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_library(asset${suffix} STATIC ${ASSET_SOURCES})
     target_include_directories(asset${suffix} PUBLIC ${ASSET_INCLUDE_ROOT})
     target_compile_options(asset${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX,OBJCXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
-    target_link_libraries(asset${suffix} PUBLIC jobs${suffix} foundation${suffix})
+    target_link_libraries(asset${suffix} PUBLIC storage${suffix} ecs${suffix} jobs${suffix} foundation${suffix})  # storage and ecs: the level format, Day 327
   endforeach()
   return()
 endif()
@@ -46,5 +47,5 @@ foreach(suffix "" "_asan" "_tsan")
   add_library(asset${suffix} STATIC ${ASSET_SOURCES})
   target_include_directories(asset${suffix} PUBLIC ${ASSET_INCLUDE_ROOT})
   target_compile_options(asset${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
-  target_link_libraries(asset${suffix} PUBLIC jobs${suffix} foundation${suffix})
+  target_link_libraries(asset${suffix} PUBLIC storage${suffix} ecs${suffix} jobs${suffix} foundation${suffix})  # storage and ecs: the level format, Day 327
 endforeach()

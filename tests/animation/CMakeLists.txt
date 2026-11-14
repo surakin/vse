@@ -3,6 +3,8 @@
 # clips. One executable per sanitizer flavor.
 set(ANIMATION_TEST_SOURCES
   animation_test.cpp  # Day 321
+  level_animation_test.cpp  # Day 327
+  ${CMAKE_SOURCE_DIR}/tools/asset_mint/level_source.cpp  # Day 327: the level minter, to mint a level with skeletal components
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/skeleton_source.cpp
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/clip_source.cpp
 )

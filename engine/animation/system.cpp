@@ -37,15 +37,17 @@ storage::Status RegisterAnimationComponents(storage::ComponentRegistry* registry
     ENGINE_TRY(registry->Register<AnimationPlayer>(
         {.id = kAnimationPlayerId,
          .name = "animation_player",
-         .fields = {storage::Field<&AnimationPlayer::clip>("clip"), storage::Field<&AnimationPlayer::time>("time"),
-                    storage::Field<&AnimationPlayer::speed>("speed"),
+         .fields = {storage::Field<&AnimationPlayer::clip>(
+                        "clip", storage::FieldOptions::Reference(storage::ResourceTag('A', 'N', 'I', 'M'), true)),
+                    storage::Field<&AnimationPlayer::time>("time"), storage::Field<&AnimationPlayer::speed>("speed"),
                     storage::Field<&AnimationPlayer::weight>("weight"),
                     storage::Field<&AnimationPlayer::playing>("playing"),
                     storage::Field<&AnimationPlayer::looping>("looping")}}));
-    ENGINE_TRY(
-        registry->Register<SkeletonInstance>({.id = kSkeletonInstanceId,
-                                              .name = "skeleton_instance",
-                                              .fields = {storage::Field<&SkeletonInstance::skeleton>("skeleton")}}));
+    ENGINE_TRY(registry->Register<SkeletonInstance>(
+        {.id = kSkeletonInstanceId,
+         .name = "skeleton_instance",
+         .fields = {storage::Field<&SkeletonInstance::skeleton>(
+             "skeleton", storage::FieldOptions::Reference(storage::ResourceTag('S', 'K', 'E', 'L'), false))}}));
     ENGINE_TRY(registry->Register<RootMotion>(
         {.id = kRootMotionId, .name = "root_motion", .flags = storage::kComponentDerived}));
     return storage::Status::Success();

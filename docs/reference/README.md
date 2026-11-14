@@ -25,10 +25,10 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [ECS](ecs.md) | 12 | 406 |
 | [Spatial Partitioning](spatial.md) | 12 | 333 |
 | [Networking](net.md) | 31 | 730 |
-| [Assets and resources](asset.md) | 23 | 729 |
+| [Assets and resources](asset.md) | 24 | 763 |
 | [Animation runtime](animation.md) | 3 | 76 |
 | [Database](database.md) | 9 | 161 |
-| [Storage](storage.md) | 17 | 410 |
+| [Storage](storage.md) | 18 | 427 |
 | [Scene bridge](scene.md) | 2 | 45 |
 | [The UI Toolkit](ui.md) | 46 | 1420 |
 | [The UI Window Adapter](ui_window.md) | 2 | 25 |

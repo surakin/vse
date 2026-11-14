@@ -43,6 +43,11 @@ struct LyActor
     LyMode mode = LyMode::Idle;
     String<HeapAllocator> name{HeapAllocator::Default()};
 };
+struct LyRefs
+{
+    ResourceRef mesh;
+    u64 clip = 0;
+};
 struct LyPlain
 {
     i32 value = 0;
@@ -641,6 +646,50 @@ TEST_CASE("Benchmark: 100,000 entities saved and loaded through the SQL store, b
                   found);
         rig.store.Reset();
     }
+}
+
+TEST_CASE("SQL layout: a resource reference is an integer column, queryable like the u64 it replaced",
+          "[storage][store][sql][layout][reference]")
+{
+    ComponentRegistry registry;
+    REQUIRE(RegisterBuiltinComponents(&registry).Ok());
+    REQUIRE(registry
+                .Register<LyRefs>({.id = 4002,
+                                   .name = "ly_refs",
+                                   .flags = kComponentStored | kComponentQueryable,
+                                   .fields = {Field<&LyRefs::mesh>("mesh"),
+                                              Field<&LyRefs::clip>("clip", FieldOptions::Reference(0, true))}})
+                .Ok());
+    World world;
+    KeyIndex index;
+    KeyGenerator keys = KeyGenerator::Seeded(5);
+    EntityKey wanted;
+    for (u64 i = 1; i <= 5; ++i)
+    {
+        const Entity e = world.Create(EntityKeyComponent{keys.Next()});
+        LyRefs refs;
+        refs.mesh.id = i * 100;
+        refs.clip = i * 1000;
+        REQUIRE(world.Add(e, Move(refs)) == ecs::Status::Ok);
+        if (i == 3)
+        {
+            wanted = world.Get<EntityKeyComponent>(e)->key;
+        }
+    }
+    REQUIRE(index.Sync(world).Ok());
+    DbRig rig;
+    rig.Open(registry, true);
+    WorldStorage storage(registry, *rig.store);
+    REQUIRE(storage.Save(world, index, SaveOptions(), nullptr).Ok());
+    CHECK(Mismatches(*rig.store) == 0);
+    Vector<EntityKey> found;
+    REQUIRE(rig.store->FindKeys("ly_refs", "mesh", CompareOp::Equal, database::ValueView::Integer(300), &found).Ok());
+    REQUIRE(found.Size() == 1);
+    CHECK(found[0] == wanted);
+    found.Clear();
+    REQUIRE(rig.store->FindKeys("ly_refs", "clip", CompareOp::Equal, database::ValueView::Integer(3000), &found).Ok());
+    REQUIRE(found.Size() == 1);
+    CHECK(found[0] == wanted);
 }
 
 }  // namespace engine_placeholder::storage

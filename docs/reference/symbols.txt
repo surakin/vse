@@ -4672,6 +4672,40 @@ asset::FilesystemBackend::Stat(ResourceId,ResourceInfo*)	function	asset	asset-fi
 asset::FilesystemBackend::Open(ResourceId,UniquePtr<ResourceReader>*)	function	asset	asset-filesystembackend-open-resourceid-uniqueptr-lt-resourcereader-gt-star	asset.md	engine/asset/filesystem_backend.h:67
 asset::FilesystemBackend::ReadTable(ResourceTable*)	function	asset	asset-filesystembackend-readtable-resourcetable-star	asset.md	engine/asset/filesystem_backend.h:68
 asset::FilesystemBackend::Watch(Vector<ChangeRecord>*)	function	asset	asset-filesystembackend-watch-vector-lt-changerecord-gt-star	asset.md	engine/asset/filesystem_backend.h:69
+asset::LevelComponentIds	enum	asset	asset-levelcomponentids	asset.md	engine/asset/level.h:43
+asset::kMeshReferenceId	enumerator	asset	asset-kmeshreferenceid	asset.md	engine/asset/level.h:45
+asset::kEntityNameId	enumerator	asset	asset-kentitynameid	asset.md	engine/asset/level.h:46
+asset::MeshReference	struct	asset	asset-meshreference	asset.md	engine/asset/level.h:53
+asset::MeshReference::mesh	variable	asset	asset-meshreference-mesh	asset.md	engine/asset/level.h:55
+asset::MeshReference::material	variable	asset	asset-meshreference-material	asset.md	engine/asset/level.h:56
+asset::MeshReference::flags	variable	asset	asset-meshreference-flags	asset.md	engine/asset/level.h:57
+asset::EntityName	struct	asset	asset-entityname	asset.md	engine/asset/level.h:63
+asset::EntityName::name	variable	asset	asset-entityname-name	asset.md	engine/asset/level.h:65
+asset::RegisterLevelComponents(storage::ComponentRegistry*)	function	asset	asset-registerlevelcomponents-storage-componentregistry-star	asset.md	engine/asset/level.h:74
+asset::kMaxLevelEntities	variable	asset	asset-kmaxlevelentities	asset.md	engine/asset/level.h:77
+asset::kMaxLevelNameBytes	variable	asset	asset-kmaxlevelnamebytes	asset.md	engine/asset/level.h:79
+asset::kLevelRoleReference	variable	asset	asset-klevelrolereference	asset.md	engine/asset/level.h:81
+asset::kLevelRoleInclude	variable	asset	asset-klevelroleinclude	asset.md	engine/asset/level.h:83
+asset::LevelNameValid(StringView)	function	asset	asset-levelnamevalid-stringview	asset.md	engine/asset/level.h:90
+asset::LevelEntityKey(ResourceId,StringView)	function	asset	asset-levelentitykey-resourceid-stringview	asset.md	engine/asset/level.h:100
+asset::LevelReference	struct	asset	asset-levelreference	asset.md	engine/asset/level.h:105
+asset::LevelReference::entity	variable	asset	asset-levelreference-entity	asset.md	engine/asset/level.h:107
+asset::LevelReference::component_id	variable	asset	asset-levelreference-component-id	asset.md	engine/asset/level.h:108
+asset::LevelReference::field	variable	asset	asset-levelreference-field	asset.md	engine/asset/level.h:109
+asset::LevelReference::type_tag	variable	asset	asset-levelreference-type-tag	asset.md	engine/asset/level.h:110
+asset::LevelReference::id	variable	asset	asset-levelreference-id	asset.md	engine/asset/level.h:111
+asset::LevelResource	struct	asset	asset-levelresource	asset.md	engine/asset/level.h:117
+asset::LevelResource::id	variable	asset	asset-levelresource-id	asset.md	engine/asset/level.h:119
+asset::LevelResource::type	variable	asset	asset-levelresource-type	asset.md	engine/asset/level.h:120
+asset::LevelResource::type_version	variable	asset	asset-levelresource-type-version	asset.md	engine/asset/level.h:121
+asset::LevelResource::roles	variable	asset	asset-levelresource-roles	asset.md	engine/asset/level.h:122
+asset::LevelData	struct	asset	asset-leveldata	asset.md	engine/asset/level.h:129
+asset::LevelData::entities	variable	asset	asset-leveldata-entities	asset.md	engine/asset/level.h:131
+asset::LevelData::resources	variable	asset	asset-leveldata-resources	asset.md	engine/asset/level.h:132
+asset::LevelData::references	variable	asset	asset-leveldata-references	asset.md	engine/asset/level.h:133
+asset::BuildLevelBlob(const TypeRegistry&,const storage::ComponentRegistry&,ResourceId,const LevelData&,Vector<byte>*,u32,const storage::CodecLimits&)	function	asset	asset-buildlevelblob-const-typeregistry-amp-const-storage-componentregistry-amp-resourceid-const-leveldata-amp-vector-lt-byte-gt-star-u32-const-storage-codeclimits-amp	asset.md	engine/asset/level.h:153
+asset::ParseLevelBlob(ByteSpan,const TypeRegistry&,const storage::ComponentRegistry&,LevelData*,ResourceId*,const storage::CodecLimits&)	function	asset	asset-parselevelblob-bytespan-const-typeregistry-amp-const-storage-componentregistry-amp-leveldata-star-resourceid-star-const-storage-codeclimits-amp	asset.md	engine/asset/level.h:171
+asset::LoadLevelBlob(ByteSpan,const TypeRegistry&,const storage::ComponentRegistry&,ecs::World&,storage::KeyIndex&,LevelData*,const storage::CodecLimits&)	function	asset	asset-loadlevelblob-bytespan-const-typeregistry-amp-const-storage-componentregistry-amp-ecs-world-amp-storage-keyindex-amp-leveldata-star-const-storage-codeclimits-amp	asset.md	engine/asset/level.h:191
 asset::LoadBuffer	class	asset	asset-loadbuffer	asset.md	engine/asset/load_buffer_pool.h:22
 asset::LoadBuffer::LoadBuffer()	function	asset	asset-loadbuffer-loadbuffer	asset.md	engine/asset/load_buffer_pool.h:25
 asset::LoadBuffer::LoadBuffer(const LoadBuffer&)	function	asset	asset-loadbuffer-loadbuffer-const-loadbuffer-amp	asset.md	engine/asset/load_buffer_pool.h:26
@@ -5519,8 +5553,10 @@ storage::EntityKey::ToText() const	function	storage	storage-entitykey-totext-con
 storage::EntityKey::FromText(StringView,EntityKey*)	function	storage	storage-entitykey-fromtext-stringview-entitykey-star	storage.md	engine/storage/entity_ref.h:49
 storage::EntityRef	struct	storage	storage-entityref	storage.md	engine/storage/entity_ref.h:56
 storage::EntityRef::key	variable	storage	storage-entityref-key	storage.md	engine/storage/entity_ref.h:58
-Hash<storage::EntityKey>	struct	storage	hash-lt-storage-entitykey-gt	storage.md	engine/storage/entity_ref.h:71
-Hash<storage::EntityKey>::operator()(const storage::EntityKey&) const	function	storage	hash-lt-storage-entitykey-gt-operator-call-const-storage-entitykey-amp-const	storage.md	engine/storage/entity_ref.h:74
+storage::ResourceRef	struct	storage	storage-resourceref	storage.md	engine/storage/entity_ref.h:66
+storage::ResourceRef::id	variable	storage	storage-resourceref-id	storage.md	engine/storage/entity_ref.h:68
+Hash<storage::EntityKey>	struct	storage	hash-lt-storage-entitykey-gt	storage.md	engine/storage/entity_ref.h:81
+Hash<storage::EntityKey>::operator()(const storage::EntityKey&) const	function	storage	hash-lt-storage-entitykey-gt-operator-call-const-storage-entitykey-amp-const	storage.md	engine/storage/entity_ref.h:84
 storage::CodecLimits	struct	storage	storage-codeclimits	storage.md	engine/storage/field.h:30
 storage::CodecLimits::max_record_bytes	variable	storage	storage-codeclimits-max-record-bytes	storage.md	engine/storage/field.h:32
 storage::CodecLimits::max_string_bytes	variable	storage	storage-codeclimits-max-string-bytes	storage.md	engine/storage/field.h:34
@@ -5548,22 +5584,37 @@ storage::FieldKind::Enum	enumerator	storage	storage-fieldkind-enum	storage.md	en
 storage::FieldKind::String	enumerator	storage	storage-fieldkind-string	storage.md	engine/storage/field.h:61
 storage::FieldKind::Array	enumerator	storage	storage-fieldkind-array	storage.md	engine/storage/field.h:62
 storage::FieldKind::EntityRef	enumerator	storage	storage-fieldkind-entityref	storage.md	engine/storage/field.h:63
-storage::FieldOptions	struct	storage	storage-fieldoptions	storage.md	engine/storage/field.h:69
-storage::FieldOptions::has_range	variable	storage	storage-fieldoptions-has-range	storage.md	engine/storage/field.h:71
-storage::FieldOptions::range_min	variable	storage	storage-fieldoptions-range-min	storage.md	engine/storage/field.h:73
-storage::FieldOptions::range_max	variable	storage	storage-fieldoptions-range-max	storage.md	engine/storage/field.h:74
-storage::FieldOptions::max_bytes	variable	storage	storage-fieldoptions-max-bytes	storage.md	engine/storage/field.h:75
-storage::FieldOptions::Enum(i64,i64)	function	storage	storage-fieldoptions-enum-i64-i64	storage.md	engine/storage/field.h:79
-storage::FieldOptions::Text(u64)	function	storage	storage-fieldoptions-text-u64	storage.md	engine/storage/field.h:88
-storage::FieldDesc	struct	storage	storage-fielddesc	storage.md	engine/storage/field.h:316
-storage::FieldDesc::name	variable	storage	storage-fielddesc-name	storage.md	engine/storage/field.h:318
-storage::FieldDesc::kind	variable	storage	storage-fielddesc-kind	storage.md	engine/storage/field.h:319
-storage::FieldDesc::options	variable	storage	storage-fielddesc-options	storage.md	engine/storage/field.h:320
-storage::FieldDesc::memory_size	variable	storage	storage-fielddesc-memory-size	storage.md	engine/storage/field.h:321
-storage::FieldDesc::needs_range	variable	storage	storage-fielddesc-needs-range	storage.md	engine/storage/field.h:322
-storage::FieldDesc::encode	variable	storage	storage-fielddesc-encode	storage.md	engine/storage/field.h:326
-storage::FieldDesc::decode	variable	storage	storage-fielddesc-decode	storage.md	engine/storage/field.h:330
-storage::Field(const char*,FieldOptions)	function	storage	storage-field-const-char-star-fieldoptions	storage.md	engine/storage/field.h:738
+storage::FieldKind::ResourceRef	enumerator	storage	storage-fieldkind-resourceref	storage.md	engine/storage/field.h:64
+storage::FieldOptions	struct	storage	storage-fieldoptions	storage.md	engine/storage/field.h:71
+storage::FieldOptions::has_range	variable	storage	storage-fieldoptions-has-range	storage.md	engine/storage/field.h:73
+storage::FieldOptions::range_min	variable	storage	storage-fieldoptions-range-min	storage.md	engine/storage/field.h:75
+storage::FieldOptions::range_max	variable	storage	storage-fieldoptions-range-max	storage.md	engine/storage/field.h:76
+storage::FieldOptions::max_bytes	variable	storage	storage-fieldoptions-max-bytes	storage.md	engine/storage/field.h:77
+storage::FieldOptions::is_reference	variable	storage	storage-fieldoptions-is-reference	storage.md	engine/storage/field.h:79
+storage::FieldOptions::ref_type	variable	storage	storage-fieldoptions-ref-type	storage.md	engine/storage/field.h:81
+storage::FieldOptions::nullable	variable	storage	storage-fieldoptions-nullable	storage.md	engine/storage/field.h:83
+storage::FieldOptions::Enum(i64,i64)	function	storage	storage-fieldoptions-enum-i64-i64	storage.md	engine/storage/field.h:86
+storage::FieldOptions::Reference(u32,bool)	function	storage	storage-fieldoptions-reference-u32-bool	storage.md	engine/storage/field.h:99
+storage::FieldOptions::Text(u64)	function	storage	storage-fieldoptions-text-u64	storage.md	engine/storage/field.h:108
+storage::ResourceTag(char,char,char,char)	function	storage	storage-resourcetag-char-char-char-char	storage.md	engine/storage/field.h:119
+storage::FieldDesc	struct	storage	storage-fielddesc	storage.md	engine/storage/field.h:350
+storage::FieldDesc::name	variable	storage	storage-fielddesc-name	storage.md	engine/storage/field.h:352
+storage::FieldDesc::kind	variable	storage	storage-fielddesc-kind	storage.md	engine/storage/field.h:353
+storage::FieldDesc::options	variable	storage	storage-fielddesc-options	storage.md	engine/storage/field.h:354
+storage::FieldDesc::memory_size	variable	storage	storage-fielddesc-memory-size	storage.md	engine/storage/field.h:355
+storage::FieldDesc::needs_range	variable	storage	storage-fielddesc-needs-range	storage.md	engine/storage/field.h:356
+storage::FieldDesc::element_kind	variable	storage	storage-fielddesc-element-kind	storage.md	engine/storage/field.h:358
+storage::FieldDesc::element_count	variable	storage	storage-fielddesc-element-count	storage.md	engine/storage/field.h:359
+storage::FieldDesc::element_size	variable	storage	storage-fielddesc-element-size	storage.md	engine/storage/field.h:360
+storage::FieldDesc::encode	variable	storage	storage-fielddesc-encode	storage.md	engine/storage/field.h:363
+storage::FieldDesc::decode	variable	storage	storage-fielddesc-decode	storage.md	engine/storage/field.h:367
+storage::Field(const char*,FieldOptions)	function	storage	storage-field-const-char-star-fieldoptions	storage.md	engine/storage/field.h:790
+storage::ReferenceValue	struct	storage	storage-referencevalue	storage.md	engine/storage/field_walk.h:22
+storage::ReferenceValue::field_index	variable	storage	storage-referencevalue-field-index	storage.md	engine/storage/field_walk.h:24
+storage::ReferenceValue::field	variable	storage	storage-referencevalue-field	storage.md	engine/storage/field_walk.h:25
+storage::ReferenceValue::id	variable	storage	storage-referencevalue-id	storage.md	engine/storage/field_walk.h:26
+storage::SkipField(const FieldDesc&,bytes::ByteReader&,const CodecLimits&)	function	storage	storage-skipfield-const-fielddesc-amp-bytes-bytereader-amp-const-codeclimits-amp	storage.md	engine/storage/field_walk.h:38
+storage::ReadReferences(const RegisteredComponent&,ByteSpan,const CodecLimits&,Vector<ReferenceValue>*)	function	storage	storage-readreferences-const-registeredcomponent-amp-bytespan-const-codeclimits-amp-vector-lt-referencevalue-gt-star	storage.md	engine/storage/field_walk.h:50
 storage::KeyGenerator	class	storage	storage-keygenerator	storage.md	engine/storage/identity.h:28
 storage::KeyGenerator::KeyGenerator()	function	storage	storage-keygenerator-keygenerator	storage.md	engine/storage/identity.h:33
 storage::KeyGenerator::Seeded(u64)	function	storage	storage-keygenerator-seeded-u64	storage.md	engine/storage/identity.h:38
