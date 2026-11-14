@@ -5,6 +5,7 @@
 //   asset_mint mint-mesh SOURCE.mesh.src OUTPUT.blob [--skeleton=SKELETON.blob] [--target=N]
 //   asset_mint mint-clip SOURCE.anim.src OUTPUT.blob --skeleton=SKELETON.blob [--target=N]
 //   asset_mint mint-texture SOURCE.tex.src OUTPUT.blob [--target=N]
+//   asset_mint mint-material SOURCE.mat.src OUTPUT.blob [--target=N]
 //
 // packs the blobs of a directory (found by their own headers; the path is the file's location) into one pak for target
 // N (default 0, the development target). It refuses an incomplete closure and lists each missing (blob, dependency)
@@ -18,6 +19,7 @@
 #include "io/file_system.h"
 #include "io/path.h"
 #include "clip_source.h"
+#include "material_source.h"
 #include "mesh_source.h"
 #include "skeleton_source.h"
 #include "texture_source.h"
@@ -35,7 +37,8 @@ int Usage()
                    "       asset_mint mint-skeleton SOURCE.skel.src OUTPUT.blob [--target=N]\n"
                    "       asset_mint mint-mesh SOURCE.mesh.src OUTPUT.blob [--skeleton=SKELETON.blob] [--target=N]\n"
                    "       asset_mint mint-clip SOURCE.anim.src OUTPUT.blob --skeleton=SKELETON.blob [--target=N]\n"
-                   "       asset_mint mint-texture SOURCE.tex.src OUTPUT.blob [--target=N]\n");
+                   "       asset_mint mint-texture SOURCE.tex.src OUTPUT.blob [--target=N]\n"
+                   "       asset_mint mint-material SOURCE.mat.src OUTPUT.blob [--target=N]\n");
     return 64;
 }
 
@@ -461,6 +464,101 @@ int MintTextureCommand(int argc, char** argv)
     return 0;
 }
 
+// Resolves a material's texture paths against the source file's folder: the file is a minted texture blob and its id is
+// the blob's own.
+class FolderResolver final : public MaterialReferenceResolver
+{
+public:
+    FolderResolver(const io::Path& directory, const TypeRegistry& types) : directory_(directory), types_(types) {}
+
+    Status Resolve(StringView path, ResourceId* id, ByteSpan* blob) const override
+    {
+        io::Path relative;
+        io::Path full;
+        if (!io::Path::Parse(path, io::NativePathStyle(), &relative) || !directory_.TryJoin(relative, &full))
+        {
+            return Status::Make(ErrorCode::Invalid, "the texture path is not valid");
+        }
+        Vector<u8> bytes;
+        if (!ReadWholeFilePath(full, u64{1} << 31, &bytes))
+        {
+            return Status::Make(ErrorCode::NotFound, "the texture file could not be read");
+        }
+        BlobReader reader;
+        if (reader.Open(ByteSpan(bytes.Data(), bytes.Size()), types_).Failed())
+        {
+            return Status::Make(ErrorCode::Invalid, "the texture file is not a blob");
+        }
+        *id = reader.Id();
+        files_.Push(static_cast<Vector<u8>&&>(bytes));  // the inner buffer does not move when the outer grows
+        const Vector<u8>& kept = files_[files_.Size() - 1];
+        *blob = ByteSpan(kept.Data(), kept.Size());
+        return Status::Success();
+    }
+
+private:
+    io::Path directory_;
+    const TypeRegistry& types_;
+    mutable Vector<Vector<u8>> files_;
+};
+
+// Mints a material source into a blob (Day 326).
+int MintMaterialCommand(int argc, char** argv)
+{
+    if (argc < 4)
+    {
+        return Usage();
+    }
+    u32 target = 0;
+    for (int i = 4; i < argc; ++i)
+    {
+        if (!StartsWith(argv[i], "--target=") || !ParseNumber(argv[i] + 9, &target))
+        {
+            return Usage();
+        }
+    }
+    io::Path source_path;
+    io::Path output;
+    if (!io::Path::Parse(StringView(argv[2], CStrLength(argv[2])), io::NativePathStyle(), &source_path) ||
+        !io::Path::Parse(StringView(argv[3], CStrLength(argv[3])), io::NativePathStyle(), &output))
+    {
+        return Usage();
+    }
+    Vector<u8> text;
+    if (!ReadWholeFile(argv[2], u64{1} << 24, &text))
+    {
+        os::PrintError("asset_mint: the source file could not be read\n");
+        return 1;
+    }
+    TypeRegistry types;
+    FolderResolver resolver(source_path.Parent(), types);
+    Vector<byte> blob;
+    MaterialSourceError error;
+    if (MintMaterial(StringView(reinterpret_cast<const char*>(text.Data()), text.Size()), resolver, types, &blob,
+                     &error, target)
+            .Failed())
+    {
+        os::PrintError("asset_mint: %s:%u: %s\n", argv[2], static_cast<unsigned>(error.line), error.message.Data());
+        return 1;
+    }
+    io::FilePtr file;
+    if (io::File::Open(output, io::OpenMode::Write, io::kOpenNone, &file).Failed())
+    {
+        os::PrintError("asset_mint: the output file could not be created\n");
+        return 1;
+    }
+    const io::Status written = file->Write(blob.Data(), blob.Size(), 0);
+    if (written.Failed() || file->Close().Failed())
+    {
+        file->Close();
+        io::Remove(output);
+        os::PrintError("asset_mint: writing the output failed\n");
+        return 1;
+    }
+    os::Print("minted a material of %u bytes\n", static_cast<unsigned>(blob.Size()));
+    return 0;
+}
+
 // Mints a clip source into a blob (Day 320). The clip's joints are named, so the skeleton's blob is required.
 int MintClipCommand(int argc, char** argv)
 {
@@ -571,6 +669,10 @@ int main(int argc, char** argv)
     if (argc >= 2 && StringView(argv[1], CStrLength(argv[1])) == StringView("mint-texture"))
     {
         return MintTextureCommand(argc, argv);
+    }
+    if (argc >= 2 && StringView(argv[1], CStrLength(argv[1])) == StringView("mint-material"))
+    {
+        return MintMaterialCommand(argc, argv);
     }
     if (argc >= 2 && StringView(argv[1], CStrLength(argv[1])) == StringView("mint-clip"))
     {

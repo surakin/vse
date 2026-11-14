@@ -1753,6 +1753,230 @@ The planes come from the world-space bounding spheres projected on the camera's 
 | Aborts | `camera` is null or `min_near` is not positive. |
 | Ownership | `camera` is borrowed for the call. |
 
+## `SlotShape` {#renderer-slotshape}
+
+`enum renderer::SlotShape` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+enum class SlotShape : u8 { ... }
+```
+
+The texture shape a material slot accepts (the asset minter checks a referenced texture against it).
+
+| Enumerator | Value | Description |
+|---|---|---|
+| <a id="renderer-slotshape-texture2d"></a>`Texture2D` | `0` | A single 2D image. |
+| <a id="renderer-slotshape-cube"></a>`Cube` |  | A cube map. |
+| <a id="renderer-slotshape-array2d"></a>`Array2D` |  | An array of 2D images. |
+
+## `SlotColorSpace` {#renderer-slotcolorspace}
+
+`enum renderer::SlotColorSpace` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+enum class SlotColorSpace : u8 { ... }
+```
+
+The color space a slot expects its texture in.
+
+| Enumerator | Value | Description |
+|---|---|---|
+| <a id="renderer-slotcolorspace-any"></a>`Any` | `0` | Either. |
+| <a id="renderer-slotcolorspace-srgb"></a>`Srgb` |  | Color data, stored sRGB-encoded. |
+| <a id="renderer-slotcolorspace-linear"></a>`Linear` |  | Data (normals, masks), stored linear. |
+
+## `TemplateTextureSlot` {#renderer-templatetextureslot}
+
+`struct renderer::TemplateTextureSlot` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+struct TemplateTextureSlot { ... }
+```
+
+One texture slot of a built-in template, as the asset minter checks it.
+
+| Field | Value |
+|---|---|
+| Thread-safety | immutable static data. |
+| Ownership | `name` is a string literal. |
+
+### `name` {#renderer-templatetextureslot-name}
+
+`variable renderer::TemplateTextureSlot::name` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+const char* name;
+```
+
+The shader's texture variable name.
+
+### `shape` {#renderer-templatetextureslot-shape}
+
+`variable renderer::TemplateTextureSlot::shape` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+SlotShape shape;
+```
+
+The shape accepted.
+
+### `color_space` {#renderer-templatetextureslot-color-space}
+
+`variable renderer::TemplateTextureSlot::color_space` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+SlotColorSpace color_space;
+```
+
+The color space accepted.
+
+## `TemplateParamDefault` {#renderer-templateparamdefault}
+
+`struct renderer::TemplateParamDefault` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+struct TemplateParamDefault { ... }
+```
+
+The initial value of a parameter-block member when a material does not set it (the values [`renderer::CreateGBufferMaterial`](#renderer-creategbuffermaterial-materialsystem-star-const-gbuffertemplates-amp-const-gbufferoptions-amp-const-char-star) writes).
+
+| Field | Value |
+|---|---|
+| Thread-safety | immutable static data. |
+| Ownership | `name` is a string literal. |
+
+### `name` {#renderer-templateparamdefault-name}
+
+`variable renderer::TemplateParamDefault::name` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+const char* name;
+```
+
+The member name.
+
+### `value` {#renderer-templateparamdefault-value}
+
+`variable renderer::TemplateParamDefault::value` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+f32 value[4];
+```
+
+The value (first `columns * rows` entries, or the integer bits for `flags`).
+
+## `GBufferTemplateInfo` {#renderer-gbuffertemplateinfo}
+
+`struct renderer::GBufferTemplateInfo` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+struct GBufferTemplateInfo { ... }
+```
+
+What an offline tool needs to know about one of the built-in G-buffer templates: its name, whether its vertex shader skins, the fragment permutations a material chooses from, and the slots and defaults of the material block.
+
+| Field | Value |
+|---|---|
+| Thread-safety | immutable static data. |
+| Ownership | every pointer is to static data. |
+
+### `name` {#renderer-gbuffertemplateinfo-name}
+
+`variable renderer::GBufferTemplateInfo::name` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+const char* name;
+```
+
+`gbuffer`, `gbuffer_color`, `gbuffer_skinned` or `gbuffer_skinned_color`.
+
+### `skinned` {#renderer-gbuffertemplateinfo-skinned}
+
+`variable renderer::GBufferTemplateInfo::skinned` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+bool skinned;
+```
+
+Whether the vertex shader has the `SKINNED` permutation.
+
+### `vertex_color` {#renderer-gbuffertemplateinfo-vertex-color}
+
+`variable renderer::GBufferTemplateInfo::vertex_color` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+bool vertex_color;
+```
+
+Whether the vertex shader has `VERTEX_COLOR`.
+
+### `fragment_permutations` {#renderer-gbuffertemplateinfo-fragment-permutations}
+
+`variable renderer::GBufferTemplateInfo::fragment_permutations` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+const ShaderPermutations* fragment_permutations;
+```
+
+The fragment shader's permutations.
+
+### `slots` {#renderer-gbuffertemplateinfo-slots}
+
+`variable renderer::GBufferTemplateInfo::slots` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+const TemplateTextureSlot* slots;
+```
+
+The texture slots.
+
+### `slot_count` {#renderer-gbuffertemplateinfo-slot-count}
+
+`variable renderer::GBufferTemplateInfo::slot_count` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+u32 slot_count;
+```
+
+Number of slots.
+
+### `defaults` {#renderer-gbuffertemplateinfo-defaults}
+
+`variable renderer::GBufferTemplateInfo::defaults` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+const TemplateParamDefault* defaults;
+```
+
+Parameter defaults.
+
+### `default_count` {#renderer-gbuffertemplateinfo-default-count}
+
+`variable renderer::GBufferTemplateInfo::default_count` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+u32 default_count;
+```
+
+Number of defaults.
+
+## `FindGBufferTemplateInfo(const char*)` {#renderer-findgbuffertemplateinfo-const-char-star}
+
+`function renderer::FindGBufferTemplateInfo` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+const GBufferTemplateInfo* FindGBufferTemplateInfo(const char* name);
+```
+
+Finds a built-in G-buffer template by name.
+
+| Field | Value |
+|---|---|
+| Parameter `name` | a template name; null gives null. |
+| Returns | the description, or null when no template has that name. |
+| Fails | returns null for an unknown name. |
+| Ownership | the result is static data. |
+
 ## `GBufferOptions` {#renderer-gbufferoptions}
 
 `struct renderer::GBufferOptions` — defined in `engine/renderer/gbuffer.h`

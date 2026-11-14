@@ -24,6 +24,8 @@ set(ASSET_TEST_SOURCES
   texture_test.cpp  # Day 323
   bc_test.cpp  # Day 324
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/texture_source.cpp  # Day 323: the texture minter under test
+  material_test.cpp  # Day 326
+  ${CMAKE_SOURCE_DIR}/tools/asset_mint/material_source.cpp  # Day 326: the material minter under test
 )
 
 find_package(Threads REQUIRED)
@@ -31,8 +33,9 @@ include(Catch)
 
 function(engine_add_asset_tests target asset_lib suffix label)
   add_executable(${target} ${ASSET_TEST_SOURCES})
+  string(REPLACE "asset" "" renderer_suffix ${asset_lib})  # Day 326: the material minter reads the passes' template tables
   string(REPLACE "asset" "renderer" renderer_lib ${asset_lib})  # Day 323: the texture test uploads a blob to a null device
-  target_link_libraries(${target} PRIVATE ${asset_lib} ${renderer_lib} Catch2::Catch2WithMain Threads::Threads)
+  target_link_libraries(${target} PRIVATE ${asset_lib} renderer_passes${renderer_suffix} ${renderer_lib} Catch2::Catch2WithMain Threads::Threads)
   target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tools/asset_mint)
   if(label STREQUAL "asan")
     engine_asan_runtime(${target})

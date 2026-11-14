@@ -114,6 +114,69 @@ f32 LinearizeDepth(f32 depth, f32 near_plane, f32 far_plane);
 /// - Aborts: `camera` is null or `min_near` is not positive.
 void FitCameraDepthRange(const RenderScene& scene, Camera* camera, f32 min_near);
 
+/// The texture shape a material slot accepts (the asset minter checks a referenced texture against it).
+enum class SlotShape : u8
+{
+    Texture2D = 0,  ///< A single 2D image.
+    Cube,           ///< A cube map.
+    Array2D,        ///< An array of 2D images.
+};
+
+/// The color space a slot expects its texture in.
+enum class SlotColorSpace : u8
+{
+    Any = 0,  ///< Either.
+    Srgb,     ///< Color data, stored sRGB-encoded.
+    Linear,   ///< Data (normals, masks), stored linear.
+};
+
+/// One texture slot of a built-in template, as the asset minter checks it.
+///
+/// - Thread-safety: immutable static data.
+/// - Ownership: `name` is a string literal.
+struct TemplateTextureSlot
+{
+    const char* name = "";                             ///< The shader's texture variable name.
+    SlotShape shape = SlotShape::Texture2D;            ///< The shape accepted.
+    SlotColorSpace color_space = SlotColorSpace::Any;  ///< The color space accepted.
+};
+
+/// The initial value of a parameter-block member when a material does not set it (the values
+/// [[renderer::CreateGBufferMaterial]] writes).
+///
+/// - Thread-safety: immutable static data.
+/// - Ownership: `name` is a string literal.
+struct TemplateParamDefault
+{
+    const char* name = "";        ///< The member name.
+    f32 value[4] = {0, 0, 0, 0};  ///< The value (first `columns * rows` entries, or the integer bits for `flags`).
+};
+
+/// What an offline tool needs to know about one of the built-in G-buffer templates: its name, whether its vertex shader
+/// skins, the fragment permutations a material chooses from, and the slots and defaults of the material block.
+///
+/// - Thread-safety: immutable static data.
+/// - Ownership: every pointer is to static data.
+struct GBufferTemplateInfo
+{
+    const char* name = "";      ///< `gbuffer`, `gbuffer_color`, `gbuffer_skinned` or `gbuffer_skinned_color`.
+    bool skinned = false;       ///< Whether the vertex shader has the `SKINNED` permutation.
+    bool vertex_color = false;  ///< Whether the vertex shader has `VERTEX_COLOR`.
+    const ShaderPermutations* fragment_permutations = nullptr;  ///< The fragment shader's permutations.
+    const TemplateTextureSlot* slots = nullptr;                 ///< The texture slots.
+    u32 slot_count = 0;                                         ///< Number of slots.
+    const TemplateParamDefault* defaults = nullptr;             ///< Parameter defaults.
+    u32 default_count = 0;                                      ///< Number of defaults.
+};
+
+/// Finds a built-in G-buffer template by name.
+///
+/// - Param name: a template name; null gives null.
+/// - Returns: the description, or null when no template has that name.
+/// - Fails: returns null for an unknown name.
+/// - Ownership: the result is static data.
+const GBufferTemplateInfo* FindGBufferTemplateInfo(const char* name);
+
 /// Options of a G-buffer material, which select the shader modules.
 ///
 /// - Thread-safety: thread-compatible plain data.

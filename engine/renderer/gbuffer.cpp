@@ -1,3 +1,4 @@
+#include "cstr/cstr.h"
 #include "cstr/mem_ops.h"
 #include "renderer/gbuffer.h"
 
@@ -192,6 +193,42 @@ void FitCameraDepthRange(const RenderScene& scene, Camera* camera, f32 min_near)
     }
     camera->near_plane = nearest > min_near ? nearest : min_near;
     camera->far_plane = farthest > camera->near_plane * 2.0f ? farthest : camera->near_plane * 2.0f;
+}
+
+namespace
+{
+
+constexpr TemplateTextureSlot kGBufferSlots[2] = {{"albedo_tex", SlotShape::Texture2D, SlotColorSpace::Srgb},
+                                                  {"normal_tex", SlotShape::Texture2D, SlotColorSpace::Linear}};
+
+constexpr TemplateParamDefault kGBufferParamDefaults[6] = {
+    {"base_color", {1, 1, 1, 1}},     {"roughness", {0.5f, 0, 0, 0}},    {"metallic", {0, 0, 0, 0}},
+    {"emissive_scale", {0, 0, 0, 0}}, {"alpha_cutoff", {0.5f, 0, 0, 0}}, {"occlusion", {1, 0, 0, 0}}};
+
+const GBufferTemplateInfo kGBufferTemplateInfos[4] = {
+    {"gbuffer", false, false, &shaders::kGbufferFragPermutations, kGBufferSlots, 2, kGBufferParamDefaults, 6},
+    {"gbuffer_color", false, true, &shaders::kGbufferFragPermutations, kGBufferSlots, 2, kGBufferParamDefaults, 6},
+    {"gbuffer_skinned", true, false, &shaders::kGbufferFragPermutations, kGBufferSlots, 2, kGBufferParamDefaults, 6},
+    {"gbuffer_skinned_color", true, true, &shaders::kGbufferFragPermutations, kGBufferSlots, 2, kGBufferParamDefaults,
+     6},
+};
+
+}  // namespace
+
+const GBufferTemplateInfo* FindGBufferTemplateInfo(const char* name)
+{
+    if (name == nullptr)
+    {
+        return nullptr;
+    }
+    for (const GBufferTemplateInfo& info : kGBufferTemplateInfos)
+    {
+        if (CStrCompare(info.name, name) == 0)
+        {
+            return &info;
+        }
+    }
+    return nullptr;
 }
 
 GBufferTemplates CreateGBufferTemplates(MaterialSystem* materials)

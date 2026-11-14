@@ -1,6 +1,6 @@
 # Assets and resources: identity, blobs, backends and the resource manager
 
-Status: Phase 22. Built: BC7 (a decoder for every mode, a mode 6 encoder; Day 325), block compression (BC1, BC4, BC5 encoders, BC1 to BC5 decoders) and the compressed texture formats (Day 324); textures with their mip chains, the `.tex.src` source form and the texture minter (Day 323); animation clips, their source form and minter (Day 320); the module skeleton and the container version constant (Day 313); resource ids, paths, types, the content hash, the blob container and the id <-> path table (Day 314). The backend interface, the filesystem and host-memory backends, the load buffer pool and mounts (Day 315). The pak format, its writer, reader and backend, and `asset_mint pack` (Day 316).
+Status: Phase 22. Built: the material format, its loader and the material minter (Day 326); BC7 (a decoder for every mode, a mode 6 encoder; Day 325), block compression (BC1, BC4, BC5 encoders, BC1 to BC5 decoders) and the compressed texture formats (Day 324); textures with their mip chains, the `.tex.src` source form and the texture minter (Day 323); animation clips, their source form and minter (Day 320); the module skeleton and the container version constant (Day 313); resource ids, paths, types, the content hash, the blob container and the id <-> path table (Day 314). The backend interface, the filesystem and host-memory backends, the load buffer pool and mounts (Day 315). The pak format, its writer, reader and backend, and `asset_mint pack` (Day 316).
 
 **Audience:** engine and game programmers who load meshes, textures, materials and levels. Design, spikes and the benchmark pass conditions:
 `docs/superpowers/specs/2026-11-13-asset-pipeline-design.md`.
@@ -417,3 +417,25 @@ int main() {
     return view.MipCount() == 3 && top.row_pitch == 256 ? 0 : 1;
 }
 ```
+
+## Materials
+
+A material (`asset::types::kMaterial`, `MATL`) names a built-in template, the fragment permutation options it enables, a parameter block, texture bindings, sampler descriptions and render-state overrides. `asset::BuildMaterialBlob` writes it and `asset::LoadMaterialBlob` reads it back into an `asset::MaterialAssetData` (Day 328 turns that into a `renderer::MaterialId`). The parameter block is stored in the template's std140 layout, so creating the material copies one block. The header's `kMaterialSkinnable` flag is set from the template (`gbuffer_skinned` and `gbuffer_skinned_color`), so a loader knows a material may be drawn on a skinned mesh without opening the template.
+
+Each texture binding is a resource id and also a dependency of the blob (type `TEXR`, role = the first slot that uses it), so a texture used in two slots is one dependency and the closure loader follows the references without reading the sections. The loader checks that the dependency list matches the bindings.
+
+The source is `.mat.src`, read by `asset_mint mint-material SOURCE.mat.src OUTPUT.blob`:
+
+```text
+id 00000000000000a1
+template gbuffer
+option NORMAL_MAP
+param roughness float 0.25
+param base_color color 1 0.5 0.25 1
+texture albedo_tex albedo.texr
+texture normal_tex normal.texr
+sampler linear_sampler filter nearest address clamp anisotropy 8
+state cull none
+```
+
+The minter checks the source against the template: a parameter must be a member of the shader's set 1 uniform block and have its type (an unknown or mistyped one lists the expected members), a texture slot must exist for the chosen options, and the texture's blob must have the slot's shape (2D, cube, array) and color space (the albedo slot takes sRGB data, the normal slot linear data). A texture path that does not resolve is a mint error with the source line. Parameters the source leaves out keep the template's defaults. A blob of another type version is refused with `UnsupportedVersion`, whose message names `asset_mint remint`.
