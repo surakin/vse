@@ -1,5 +1,6 @@
 #include "asset/texture_mips.h"
 
+#include "asset/block_compress.h"
 #include "cstr/mem_ops.h"
 
 namespace engine_placeholder::asset
@@ -355,9 +356,14 @@ bool MipDownsample(rhi::Format format, const MipOptions& options, const byte* sr
 
 }  // namespace
 
-bool IsTextureFormat(rhi::Format format)
+bool IsMipFormat(rhi::Format format)
 {
     return MipRgba8(format) || format == rhi::Format::R8_UNorm || format == rhi::Format::RG8_UNorm || MipIsHalf(format);
+}
+
+bool IsTextureFormat(rhi::Format format)
+{
+    return IsMipFormat(format) || IsBcFormat(format);
 }
 
 u32 FullMipCount(u32 width, u32 height)
@@ -372,11 +378,33 @@ u32 FullMipCount(u32 width, u32 height)
     return count;
 }
 
+u64 TightRowBytes(rhi::Format format, u32 width)
+{
+    if (IsBcFormat(format))
+    {
+        return static_cast<u64>((width + 3) / 4) * rhi::FormatInfo(format).bytes_per_block;
+    }
+    if (!IsMipFormat(format) || width == 0)
+    {
+        return 0;
+    }
+    return static_cast<u64>(width) * (MipIsHalf(format) ? MipChannels(format) * 2 : MipChannels(format));
+}
+
+u32 LevelRows(rhi::Format format, u32 height)
+{
+    return IsBcFormat(format) ? (height + 3) / 4 : height;
+}
+
 u64 TightLevelBytes(rhi::Format format, u32 width, u32 height)
 {
     if (!IsTextureFormat(format) || width == 0 || height == 0)
     {
         return 0;
+    }
+    if (IsBcFormat(format))
+    {
+        return TightRowBytes(format, width) * LevelRows(format, height);
     }
     const u32 channels = MipChannels(format);
     return static_cast<u64>(width) * height * (MipIsHalf(format) ? channels * 2 : channels);
@@ -404,7 +432,7 @@ Status PremultiplyAlphaRgba8(bool srgb, MutableByteSpan pixels)
 
 Status ConvertRgba8(rhi::Format format, bool source_srgb, u32 width, u32 height, ByteSpan rgba, Vector<byte>* out)
 {
-    if (!IsTextureFormat(format) || width == 0 || height == 0 || width > kMaxTextureSize || height > kMaxTextureSize ||
+    if (!IsMipFormat(format) || width == 0 || height == 0 || width > kMaxTextureSize || height > kMaxTextureSize ||
         rgba.Size() != static_cast<u64>(width) * height * 4)
     {
         return Status::Make(ErrorCode::Invalid, "the format is unsupported or the pixels do not match the size");
@@ -453,7 +481,7 @@ Status ConvertRgba8(rhi::Format format, bool source_srgb, u32 width, u32 height,
 Status GenerateMipChain(rhi::Format format, u32 width, u32 height, ByteSpan level0, const MipOptions& options,
                         Vector<byte>* chain)
 {
-    if (!IsTextureFormat(format) || width == 0 || height == 0 || width > kMaxTextureSize || height > kMaxTextureSize ||
+    if (!IsMipFormat(format) || width == 0 || height == 0 || width > kMaxTextureSize || height > kMaxTextureSize ||
         level0.Size() != TightLevelBytes(format, width, height))
     {
         return Status::Make(ErrorCode::Invalid, "the format is unsupported or the level 0 size does not match");

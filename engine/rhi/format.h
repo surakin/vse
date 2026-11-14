@@ -42,6 +42,7 @@ enum class Format : u8
     BC5_UNorm,          ///< Block-compressed two-channel (normal maps), 4x4 blocks of 16 bytes. Reserved.
     BC7_UNorm,          ///< Block-compressed high-quality RGBA, 4x4 blocks of 16 bytes, linear. Reserved.
     BC7_SRGB,           ///< BC7 with sRGB-encoded color. Reserved.
+    BC4_UNorm,          ///< Block-compressed single channel, 4x4 blocks of 8 bytes, linear.
     Count,              ///< Number of formats including `Undefined`; not a format.
 };
 
@@ -102,6 +103,7 @@ inline constexpr FormatProperties kFormatTable[static_cast<usize>(Format::Count)
     {"bc5_unorm", 16, 4, 4, 2, false, false, false, true},
     {"bc7_unorm", 16, 4, 4, 4, false, false, false, true},
     {"bc7_srgb", 16, 4, 4, 4, false, false, true, true},
+    {"bc4_unorm", 8, 4, 4, 1, false, false, false, true},
 };
 }  // namespace detail
 

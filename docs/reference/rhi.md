@@ -5384,6 +5384,7 @@ A texture or render-target pixel format.
 | <a id="rhi-format-bc5-unorm"></a>`BC5_UNorm` |  | Block-compressed two-channel (normal maps), 4x4 blocks of 16 bytes. Reserved. |
 | <a id="rhi-format-bc7-unorm"></a>`BC7_UNorm` |  | Block-compressed high-quality RGBA, 4x4 blocks of 16 bytes, linear. Reserved. |
 | <a id="rhi-format-bc7-srgb"></a>`BC7_SRGB` |  | BC7 with sRGB-encoded color. Reserved. |
+| <a id="rhi-format-bc4-unorm"></a>`BC4_UNorm` |  | Block-compressed single channel, 4x4 blocks of 8 bytes, linear. |
 | <a id="rhi-format-count"></a>`Count` |  | Number of formats including `Undefined`; not a format. |
 
 ## `FormatProperties` {#rhi-formatproperties}

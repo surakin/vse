@@ -95,6 +95,7 @@ TEST_CASE("FormatInfo matches hand-computed layouts for every format", "[rhi][fo
         {Format::BC5_UNorm, 16, 4, 4, 2, false, false, false, true},
         {Format::BC7_UNorm, 16, 4, 4, 4, false, false, false, true},
         {Format::BC7_SRGB, 16, 4, 4, 4, false, false, true, true},
+        {Format::BC4_UNorm, 8, 4, 4, 1, false, false, false, true},
     };
     // Every format except Undefined is covered exactly once.
     CHECK(sizeof(expected) / sizeof(expected[0]) == static_cast<usize>(Format::Count) - 1);

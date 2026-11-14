@@ -36,6 +36,7 @@ MTLPixelFormat ToMtlPixelFormat(Format format, id<MTLDevice> device)
     case Format::BC5_UNorm: return bc ? MTLPixelFormatBC5_RGUnorm : MTLPixelFormatInvalid;
     case Format::BC7_UNorm: return bc ? MTLPixelFormatBC7_RGBAUnorm : MTLPixelFormatInvalid;
     case Format::BC7_SRGB: return bc ? MTLPixelFormatBC7_RGBAUnorm_sRGB : MTLPixelFormatInvalid;
+    case Format::BC4_UNorm: return bc ? MTLPixelFormatBC4_RUnorm : MTLPixelFormatInvalid;
     case Format::RGB32_Float:  // vertex data only: Metal has no three-channel 32-bit texture format
     case Format::Undefined:
     case Format::Count: break;
@@ -51,7 +52,7 @@ bool MtlFormatSupports(Format format, TextureUsage usage, id<MTLDevice> device)
     }
     const bool depth = format == Format::D32_Float || format == Format::D24_UNorm_S8_UInt ||
                        format == Format::D32_Float_S8_UInt;
-    const bool compressed = format >= Format::BC1_UNorm && format <= Format::BC7_SRGB;
+    const bool compressed = (format >= Format::BC1_UNorm && format <= Format::BC7_SRGB) || format == Format::BC4_UNorm;
     const bool srgb = format == Format::RGBA8_SRGB || format == Format::BGRA8_SRGB;
     if (Has(usage, TextureUsage::DepthAttachment) && !depth)
     {

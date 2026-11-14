@@ -130,6 +130,7 @@ TEST_CASE("Every RHI format has a DXGI format, sRGB pairs map to sRGB, and depth
     CHECK(ToDxgi(Format::RGBA8_SRGB) == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
     CHECK(ToDxgi(Format::BGRA8_SRGB) == DXGI_FORMAT_B8G8R8A8_UNORM_SRGB);
     CHECK(ToDxgi(Format::BC7_SRGB) == DXGI_FORMAT_BC7_UNORM_SRGB);
+    CHECK(ToDxgi(Format::BC4_UNorm) == DXGI_FORMAT_BC4_UNORM);
     CHECK(ToDxgiResource(Format::D32_Float, TextureUsage::DepthAttachment) == DXGI_FORMAT_D32_FLOAT);
     CHECK(ToDxgiResource(Format::D32_Float, TextureUsage::DepthAttachment | TextureUsage::Sampled) ==
           DXGI_FORMAT_R32_TYPELESS);

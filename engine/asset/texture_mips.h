@@ -38,7 +38,7 @@ enum class MipAlpha : u32
     Straight = 0,     ///< 8-bit RGBA only: colors are weighted by alpha while filtering and stored straight.
     Premultiply = 1,  ///< The level 0 colors were multiplied by alpha (`PremultiplyAlphaRgba8`); all levels are
                       ///< filtered as plain values and stay premultiplied.
-    Ignore = 2,  ///< Every channel is filtered as it is.
+    Ignore = 2,       ///< Every channel is filtered as it is.
 };
 
 /// The options of a mip chain.
@@ -50,10 +50,29 @@ struct MipOptions
     MipAlpha alpha = MipAlpha::Straight;  ///< The alpha treatment (only `Ignore` and `Premultiply` for half floats).
 };
 
-/// Returns whether `format` is one the mip generator and the texture blob handle in this version.
+/// Returns whether `format` is one the texture blob stores in this version: the formats of the mip generator and the
+/// compressed BC1, BC4 and BC5 (which the generator itself refuses: compress each level of an RGBA8 chain, see
+/// `block_compress.h`).
 ///
 /// - Fails: never.
 bool IsTextureFormat(rhi::Format format);
+
+/// Returns the bytes of one row of `width` texels of `format`, tightly packed: a row of blocks for a compressed format
+/// (0 for an unsupported format or a width of 0).
+///
+/// - Fails: never.
+u64 TightRowBytes(rhi::Format format, u32 width);
+
+/// Returns the number of rows a level of `height` texels stores: block rows (`ceil(height / 4)`) for a compressed
+/// format, `height` otherwise.
+///
+/// - Fails: never.
+u32 LevelRows(rhi::Format format, u32 height);
+
+/// Returns whether `format` is one the mip generator and `ConvertRgba8` accept (the uncompressed formats).
+///
+/// - Fails: never.
+bool IsMipFormat(rhi::Format format);
 
 /// Returns the number of levels of a full chain: `floor(log2(max(width, height))) + 1`.
 ///

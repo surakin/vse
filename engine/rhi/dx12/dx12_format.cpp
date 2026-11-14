@@ -32,6 +32,7 @@ DXGI_FORMAT ToDxgi(Format format)
     case Format::BC5_UNorm: return DXGI_FORMAT_BC5_UNORM;
     case Format::BC7_UNorm: return DXGI_FORMAT_BC7_UNORM;
     case Format::BC7_SRGB: return DXGI_FORMAT_BC7_UNORM_SRGB;
+    case Format::BC4_UNorm: return DXGI_FORMAT_BC4_UNORM;
     case Format::Count: break;
     }
     return DXGI_FORMAT_UNKNOWN;

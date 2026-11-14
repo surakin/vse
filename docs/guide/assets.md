@@ -1,6 +1,6 @@
 # Assets and resources: identity, blobs, backends and the resource manager
 
-Status: Phase 22. Built: textures with their mip chains, the `.tex.src` source form and the texture minter (Day 323); animation clips, their source form and minter (Day 320); the module skeleton and the container version constant (Day 313); resource ids, paths, types, the content hash, the blob container and the id <-> path table (Day 314). The backend interface, the filesystem and host-memory backends, the load buffer pool and mounts (Day 315). The pak format, its writer, reader and backend, and `asset_mint pack` (Day 316).
+Status: Phase 22. Built: block compression (BC1, BC4, BC5 encoders, BC1 to BC5 decoders) and the compressed texture formats (Day 324); textures with their mip chains, the `.tex.src` source form and the texture minter (Day 323); animation clips, their source form and minter (Day 320); the module skeleton and the container version constant (Day 313); resource ids, paths, types, the content hash, the blob container and the id <-> path table (Day 314). The backend interface, the filesystem and host-memory backends, the load buffer pool and mounts (Day 315). The pak format, its writer, reader and backend, and `asset_mint pack` (Day 316).
 
 **Audience:** engine and game programmers who load meshes, textures, materials and levels. Design, spikes and the benchmark pass conditions:
 `docs/superpowers/specs/2026-11-13-asset-pipeline-design.md`.
@@ -347,7 +347,7 @@ int main() {
 
 ## Textures
 
-A texture (`asset::types::kTexture`, `TEXR`) stores **every mip level of every layer**: there is no "generate at load" flag, because the mip filter, the sRGB handling and the premultiplication all happen in the minter. The kinds are a 2D image, a cube map (six square layers, +X -X +Y -Y +Z -Z) and an array of 1 to 2048 layers. The formats of this day are `R8_UNorm`, `RG8_UNorm`, `RGBA8_UNorm`, `RGBA8_SRGB`, `R16_Float` and `RGBA16_Float`; block-compressed formats join behind the same layout on Days 324 and 325.
+A texture (`asset::types::kTexture`, `TEXR`) stores **every mip level of every layer**: there is no "generate at load" flag, because the mip filter, the sRGB handling and the premultiplication all happen in the minter. The kinds are a 2D image, a cube map (six square layers, +X -X +Y -Y +Z -Z) and an array of 1 to 2048 layers. The formats of this day are `R8_UNorm`, `RG8_UNorm`, `RGBA8_UNorm`, `RGBA8_SRGB`, `R16_Float` and `RGBA16_Float`; `BC1_UNorm`, `BC1_SRGB`, `BC4_UNorm` and `BC5_UNorm` join them behind the same layout (Day 324; BC7 is Day 325): a compressed level stores block rows, `ceil(h / 4)` of them, each `ceil(w / 4)` blocks of 8 or 16 bytes, rounded up to the target's row alignment.
 
 The blob has a header, a table of subresources (`layer * mip_count + mip`: offset, size, row pitch) and one data section. Each subresource starts at the target's subresource alignment and its rows are `row_pitch` bytes apart, so `TextureView::Level(layer, mip)` gives spans that go to `Device::UploadTexture` unchanged (`row_pitch` is its argument). The alignments are the target API's: `TextureLayoutForTarget` gives rows of 4 and subresources of 16 for the development target 0 (Vulkan), 256 and 512 for Direct3D 12 (target 1), 16 and 16 for Metal (target 2). `asset_mint pack --target` (Day 332) re-lays a blob out with `RetargetTextureBlob`; minting for a target (`mint-texture ... --target=N`) gives the same bytes.
 
@@ -361,7 +361,7 @@ The source form `.tex.src` (`asset_mint mint-texture SOURCE OUTPUT [--target=N]`
 id 00000000000000dd
 kind cube              # 2d (default), cube or array
 source px.raw          # one per layer: 1 for 2d, 6 for a cube
-format rgba8           # r8 rg8 rgba8 r16f rgba16f
+format rgba8           # r8 rg8 rgba8 r16f rgba16f bc1 bc4 bc5
 srgb true              # rgba8: store sRGB; half floats: the source is sRGB
 mips full              # or a count
 filter box             # or kaiser
@@ -369,6 +369,18 @@ alpha straight         # or premultiply, ignore
 ```
 
 A raw image is `RAW1`, width, height, an id field and a reserved `u32` (24 bytes, little-endian), then `width * height * 4` bytes of RGBA8: no PNG. Errors name the line; a missing `id` line names `asset_mint adopt`.
+
+### Block compression
+
+`asset/block_compress.h` holds the decoders (`DecodeBlock`, `DecodeImage` for BC1, BC2, BC3, BC4 and BC5) and the encoders (`EncodeBlock`, `EncodeImage` for BC1, BC4 and BC5). A block is 4x4 texels in 8 bytes (BC1, BC4) or 16 (BC5); decoding gives RGBA8 (BC4 in red, BC5 in red and green, the rest 0 and alpha 255). Everything is integer arithmetic: the same texels give the same blocks on every compiler, machine and worker count, and a partial block at the right or bottom edge repeats its last column and row.
+
+- **BC1:** the endpoints come from a principal-axis fit (power iteration on the covariance in fixed point), tried at the extremes and pulled in by 1/8 and 1/4, then up to two (`Normal`) or four (`High`) least-squares refinements that are kept only when the error drops. The 4-color form is used for opaque blocks; with `punchthrough_alpha` (the minter turns it on unless `alpha ignore`), texels with alpha below 128 select the 3-color form's transparent code. Ties go to the lower code.
+- **BC4 and BC5:** the endpoints start at the block's minimum and maximum, both orders are tried (the 8-step form and the 6-step form that adds 0 and 255), and least-squares refinement follows. BC5 is two BC4 blocks, red then green.
+- **Parallel:** `EncodeImage(..., scheduler, &blocks)` spreads block rows over a `jobs::Scheduler` (null: the calling thread); every block writes its own bytes, so the output does not depend on the worker count.
+
+The measured errors of the tests (a 64x64 image, mean squared error per channel): a solid color 4.3 (the 5:6:5 grid), a gradient 8.8 in BC1 and 0.2 in BC4, a block-aligned checker 3.8, a normal map 25 in BC5; uniform noise has no line to fit and gives 2843 in BC1 (13.6 dB), 62 in BC4 and 61 in BC5.
+
+In `.tex.src`, `format bc1` (with `srgb true` giving `BC1_SRGB`), `bc4` (red) and `bc5` (red and green) take the image's channels, filter the chain as RGBA8 (in linear light for sRGB) and compress each stored level; the blob keeps the compressed levels and `TextureView::Level` returns them as they are. `alpha` defaults to `straight` for bc1 and `ignore` for bc4 and bc5. `MintTexture` takes an optional scheduler for the compression; `asset_mint mint-texture` passes its own.
 
 ```cpp compile run standalone
 #include "asset/texture.h"

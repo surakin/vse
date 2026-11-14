@@ -58,7 +58,7 @@ u32 TexExtent(u32 base, u32 level)
 
 u32 TexTexelBytes(rhi::Format format)
 {
-    return static_cast<u32>(TightLevelBytes(format, 1, 1));
+    return static_cast<u32>(TightRowBytes(format, 1));  // a texel, or the 8 or 16 bytes of one block
 }
 
 // The row pitch of a level `width` texels across: the row size rounded up to the row alignment and the texel size.
@@ -66,7 +66,7 @@ u64 TexRowPitch(rhi::Format format, u32 width, const TextureLayout& layout)
 {
     const u64 texel = TexTexelBytes(format);
     const u64 unit = layout.row_alignment > texel ? layout.row_alignment : texel;
-    return TexAlignUp(static_cast<u64>(width) * texel, unit);
+    return TexAlignUp(TightRowBytes(format, width), unit);
 }
 
 bool TexShapeOk(TextureKind kind, u32 width, u32 height, u32 layers)
@@ -134,7 +134,7 @@ Status BuildTextureBlob(const TypeRegistry& types, ResourceId id, const TextureB
                 return TexInvalid("a subresource does not have the size of its level");
             }
             const u64 pitch = TexRowPitch(input.format, w, layout);
-            const u64 size = pitch * h;
+            const u64 size = pitch * LevelRows(input.format, h);
             total = TexAlignUp(total, layout.subresource_alignment);
             if (total + size > (u64{1} << 40) || size > 0xffffffffull)
             {
@@ -162,8 +162,8 @@ Status BuildTextureBlob(const TypeRegistry& types, ResourceId id, const TextureB
             const u64 offset = TexLoad(e, 8);
             const u64 pitch = TexLoad(e + 12, 4);
             const ByteSpan src = input.subresources[layer * input.mip_count + mip];
-            const usize row_bytes = static_cast<usize>(TexTexelBytes(input.format)) * w;
-            for (u32 y = 0; y < h; ++y)
+            const usize row_bytes = static_cast<usize>(TightRowBytes(input.format, w));
+            for (u32 y = 0; y < LevelRows(input.format, h); ++y)
             {
                 MemCopy(data.Data() + offset + y * pitch, src.Data() + static_cast<usize>(y) * row_bytes, row_bytes);
             }
@@ -260,7 +260,7 @@ Status TextureView::Open(ByteSpan data, const TypeRegistry& types)
         const u64 pitch = TexLoad(e + 12, 4);
         const u32 w = TexExtent(static_cast<u32>(width), mip);
         const u32 hh = TexExtent(static_cast<u32>(height), mip);
-        if (pitch != TexRowPitch(fmt, w, layout) || size != pitch * hh || offset % sub_alignment != 0 ||
+        if (pitch != TexRowPitch(fmt, w, layout) || size != pitch * LevelRows(fmt, hh) || offset % sub_alignment != 0 ||
             offset < floor_offset || offset > texels.Size() || size > texels.Size() - offset)
         {
             return TexCorrupt("a texture subresource has the wrong pitch, size or place");
@@ -326,13 +326,14 @@ Status RetargetTextureBlob(const TypeRegistry& types, ByteSpan blob, u32 target,
         for (u32 mip = 0; mip < view.MipCount(); ++mip)
         {
             const TextureLevel level = view.Level(layer, mip);
-            const usize row_bytes = static_cast<usize>(TightLevelBytes(view.Format(), level.width, 1));
-            const usize bytes = row_bytes * level.height;
+            const usize row_bytes = static_cast<usize>(TightRowBytes(view.Format(), level.width));
+            const usize rows = LevelRows(view.Format(), level.height);
+            const usize bytes = row_bytes * rows;
             if (!tight.TryResize(used + bytes))
             {
                 return Status::Make(ErrorCode::LimitExceeded, "out of memory");
             }
-            for (u32 y = 0; y < level.height; ++y)
+            for (usize y = 0; y < rows; ++y)
             {
                 MemCopy(tight.Data() + used + static_cast<usize>(y) * row_bytes,
                         level.bytes.Data() + static_cast<usize>(y) * level.row_pitch, row_bytes);

@@ -14,6 +14,7 @@
 #include "containers/vector.h"
 #include "cstr/cstr.h"
 #include "io/file.h"
+#include "jobs/scheduler.h"
 #include "io/file_system.h"
 #include "io/path.h"
 #include "clip_source.h"
@@ -428,7 +429,16 @@ int MintTextureCommand(int argc, char** argv)
     }
     TypeRegistry types;
     Vector<byte> blob;
-    if (MintTexture(text_view, Span<const ByteSpan>(spans.Data(), spans.Size()), types, &blob, &error, target).Failed())
+    // The block compression of a bc texture fans out over the workers; other formats need no threads.
+    jobs::Scheduler::Config scheduler_config;
+    UniquePtr<jobs::Scheduler> scheduler;
+    if (IsBcFormat(source.format))
+    {
+        scheduler = MakeUnique<jobs::Scheduler>(scheduler_config);
+    }
+    if (MintTexture(text_view, Span<const ByteSpan>(spans.Data(), spans.Size()), types, &blob, &error, target,
+                    scheduler.Get())
+            .Failed())
     {
         os::PrintError("asset_mint: %s:%u: %s\n", argv[2], static_cast<unsigned>(error.line), error.message.Data());
         return 1;

@@ -130,7 +130,7 @@ public:
     /// True for `RGBA8_SRGB` (color channels sRGB-encoded).
     ///
     /// - Fails: never.
-    bool Srgb() const { return format_ == rhi::Format::RGBA8_SRGB; }
+    bool Srgb() const { return rhi::FormatInfo(format_).is_srgb; }
     /// True when the colors were multiplied by alpha in the minter.
     ///
     /// - Fails: never.

@@ -8,7 +8,7 @@
 //!     id 0123456789abcdef
 //!     kind 2d                 (or `cube` or `array`; optional, default 2d)
 //!     source rock.raw         (one file for 2d, six for a cube: +X -X +Y -Y +Z -Z, one per layer for an array)
-//!     format rgba8            (r8, rg8, rgba8, r16f or rgba16f; default rgba8)
+//!     format rgba8            (r8, rg8, rgba8, r16f, rgba16f, bc1, bc4 or bc5; default rgba8)
 //!     srgb true               (rgba8: store sRGB-encoded; r16f/rgba16f: the source colors are sRGB; default false)
 //!     mips full               (or a count; default full)
 //!     filter box              (or `kaiser`; default box)
@@ -17,6 +17,7 @@
 //! `id` comes first (written by `asset_mint adopt`, Day 332). The images are raw files: a 24-byte header (`RAW1`,
 //! width, height, the id as a `u64`, a reserved `u32`) and `width * height * 4` bytes of RGBA8 rows. No PNG.
 
+#include "asset/block_compress.h"
 #include "asset/resource_id.h"
 #include "asset/resource_type.h"
 #include "asset/status.h"
@@ -104,8 +105,10 @@ Status BuildRawImage(u32 width, u32 height, ByteSpan rgba, u64 id, Vector<byte>*
 /// - Fails: `Invalid` with `error` filled in as for [[asset::ParseTextureSource]], plus: a number of files that is
 ///   not the number of `source` records, a raw file that is malformed, images of different sizes, a cube whose faces
 ///   are not square, a requested mip count above the full chain; and as [[asset::BuildTextureBlob]].
+/// - Param scheduler: where the block compression of `bc1`, `bc4` and `bc5` textures fans out, or null for the calling
+///   thread; the blob is the same either way (the caller must be the scheduler's participant 0 outside any job).
 /// - Ownership: borrows its arguments for the call; `*out` is replaced.
 Status MintTexture(StringView text, Span<const ByteSpan> images, const TypeRegistry& types, Vector<byte>* out,
-                   TextureSourceError* error, u32 target = 0);
+                   TextureSourceError* error, u32 target = 0, jobs::Scheduler* scheduler = nullptr);
 
 }  // namespace engine_placeholder::asset

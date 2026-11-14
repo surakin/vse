@@ -1,5 +1,6 @@
 #include "texture_source.h"
 
+#include "asset/block_compress.h"
 #include "cstr/cstr.h"
 #include "cstr/format.h"
 #include "cstr/mem_ops.h"
@@ -191,9 +192,21 @@ Status ParseTextureSource(StringView text, TextureSource* out, TextureSourceErro
             {
                 base = rhi::Format::RGBA16_Float;
             }
+            else if (v == StringView("bc1"))
+            {
+                base = rhi::Format::BC1_UNorm;
+            }
+            else if (v == StringView("bc4"))
+            {
+                base = rhi::Format::BC4_UNorm;
+            }
+            else if (v == StringView("bc5"))
+            {
+                base = rhi::Format::BC5_UNorm;
+            }
             else
             {
-                return TxFail(error, line_number, "format is r8, rg8, rgba8, r16f or rgba16f");
+                return TxFail(error, line_number, "format is r8, rg8, rgba8, r16f, rgba16f, bc1, bc4 or bc5");
             }
         }
         else if (kind == StringView("srgb"))
@@ -274,14 +287,20 @@ Status ParseTextureSource(StringView text, TextureSource* out, TextureSourceErro
         return TxFail(error, 0, "the number of source records does not fit the kind (1 for 2d, 6 for a cube)");
     }
     const bool half = base == rhi::Format::R16_Float || base == rhi::Format::RGBA16_Float;
-    if (out->srgb && (base == rhi::Format::R8_UNorm || base == rhi::Format::RG8_UNorm))
+    if (out->srgb && (base == rhi::Format::R8_UNorm || base == rhi::Format::RG8_UNorm ||
+                      base == rhi::Format::BC4_UNorm || base == rhi::Format::BC5_UNorm))
     {
-        return TxFail(error, 0, "srgb needs rgba8 or a half-float format");
+        return TxFail(error, 0, "srgb needs rgba8, bc1 or a half-float format");
     }
     out->format = (base == rhi::Format::RGBA8_UNorm && out->srgb) ? rhi::Format::RGBA8_SRGB : base;
+    if (base == rhi::Format::BC1_UNorm && out->srgb)
+    {
+        out->format = rhi::Format::BC1_SRGB;
+    }
     if (!alpha_given)
     {
-        out->alpha = (base == rhi::Format::RGBA8_UNorm) ? MipAlpha::Straight : MipAlpha::Ignore;
+        out->alpha = (base == rhi::Format::RGBA8_UNorm || base == rhi::Format::BC1_UNorm) ? MipAlpha::Straight
+                                                                                          : MipAlpha::Ignore;
     }
     if (half && out->alpha == MipAlpha::Straight)
     {
@@ -337,7 +356,7 @@ Status BuildRawImage(u32 width, u32 height, ByteSpan rgba, u64 id, Vector<byte>*
 }
 
 Status MintTexture(StringView text, Span<const ByteSpan> images, const TypeRegistry& types, Vector<byte>* out,
-                   TextureSourceError* error, u32 target)
+                   TextureSourceError* error, u32 target, jobs::Scheduler* scheduler)
 {
     TextureSource source;
     const Status parsed = ParseTextureSource(text, &source, error);
@@ -374,7 +393,12 @@ Status MintTexture(StringView text, Span<const ByteSpan> images, const TypeRegis
         {
             return TxFail(error, line, "the image has a different size from the first one");
         }
-        const bool storage_srgb = source.format == rhi::Format::RGBA8_SRGB;
+        // A compressed texture is filtered as 8-bit RGBA, then each stored level is compressed.
+        const bool compressed = IsBcFormat(source.format);
+        const bool storage_srgb = source.format == rhi::Format::RGBA8_SRGB || source.format == rhi::Format::BC1_SRGB;
+        const rhi::Format work_format = !compressed
+                                            ? source.format
+                                            : (storage_srgb ? rhi::Format::RGBA8_SRGB : rhi::Format::RGBA8_UNorm);
         const bool source_srgb = source.srgb;
         Vector<byte> rgba;
         if (!rgba.TryResize(raw.pixels.Size()))
@@ -387,14 +411,14 @@ Status MintTexture(StringView text, Span<const ByteSpan> images, const TypeRegis
             ENGINE_TRY(PremultiplyAlphaRgba8(source_srgb, MutableByteSpan(rgba.Data(), rgba.Size())));
         }
         Vector<byte> level0;
-        ENGINE_TRY(ConvertRgba8(source.format, source_srgb || storage_srgb, width, height,
+        ENGINE_TRY(ConvertRgba8(work_format, source_srgb || storage_srgb, width, height,
                                 ByteSpan(rgba.Data(), rgba.Size()), &level0));
         MipOptions options;
         options.filter = source.filter;
         options.alpha = source.alpha;
         Vector<byte> chain;
         ENGINE_TRY(
-            GenerateMipChain(source.format, width, height, ByteSpan(level0.Data(), level0.Size()), options, &chain));
+            GenerateMipChain(work_format, width, height, ByteSpan(level0.Data(), level0.Size()), options, &chain));
         if (!chains.TryReserve(images.Size()))
         {
             return Status::Make(ErrorCode::LimitExceeded, "out of memory");
@@ -407,6 +431,38 @@ Status MintTexture(StringView text, Span<const ByteSpan> images, const TypeRegis
         return TxFail(error, 0, "the mip count is above the full chain of the image");
     }
     const u32 stored = source.mips == 0 ? full : source.mips;
+    if (IsBcFormat(source.format))
+    {
+        // Compress the first `stored` RGBA8 levels of every chain.
+        const rhi::Format work_format = source.format == rhi::Format::BC1_SRGB ? rhi::Format::RGBA8_SRGB
+                                                                               : rhi::Format::RGBA8_UNorm;
+        BcEncodeOptions encode;
+        encode.punchthrough_alpha = source.alpha != MipAlpha::Ignore;
+        for (usize layer = 0; layer < chains.Size(); ++layer)
+        {
+            Vector<byte> packed;
+            usize offset = 0;
+            u32 w = width;
+            u32 h = height;
+            for (u32 mip = 0; mip < stored; ++mip)
+            {
+                const usize bytes = static_cast<usize>(TightLevelBytes(work_format, w, h));
+                Vector<byte> level;
+                ENGINE_TRY(EncodeImage(BcKindOf(source.format), w, h, ByteSpan(chains[layer].Data() + offset, bytes),
+                                       encode, scheduler, &level));
+                const usize used = packed.Size();
+                if (!packed.TryResize(used + level.Size()))
+                {
+                    return Status::Make(ErrorCode::LimitExceeded, "out of memory");
+                }
+                MemCopy(packed.Data() + used, level.Data(), level.Size());
+                offset += bytes;
+                w = w > 1 ? w / 2 : 1;
+                h = h > 1 ? h / 2 : 1;
+            }
+            chains[layer] = Move(packed);
+        }
+    }
     Vector<ByteSpan> spans;
     if (!spans.TryReserve(chains.Size() * stored))
     {
