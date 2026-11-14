@@ -1,7 +1,7 @@
 // Phase 22 Day 322: GPU skinning on a real device with validation on. A flat ribbon with two joints is bent by a joint
-// palette and drawn into the G-buffer; the coverage and the normals are compared with a CPU reference (the same weighted
-// matrix sum, rasterized on the CPU), and the image must not change across a device reset of every owner (the mesh with
-// its skin stream, the joint palette buffer, the material system).
+// palette and drawn into the G-buffer; the coverage and the normals are compared with a CPU reference (the same
+// weighted matrix sum, rasterized on the CPU), and the image must not change across a device reset of every owner (the
+// mesh with its skin stream, the joint palette buffer, the material system).
 #include "lang/scalar.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -308,9 +308,9 @@ TEST_CASE("The skinned image survives a reset of the mesh, the palette buffer an
     }
 }
 
-// Hidden benchmark for Day 337: 1,000 and 10,000 skinned instances of a 5,000-vertex, 40-joint mesh. Prints the CPU time
-// of `GBufferPass::Prepare` (cull, palette copy, object data, sort) and of a whole frame with readback (CPU recording plus
-// the GPU time, the backend reports no separate figure here).
+// Hidden benchmark for Day 337: 1,000 and 10,000 skinned instances of a 5,000-vertex, 40-joint mesh. Prints the CPU
+// time of `GBufferPass::Prepare` (cull, palette copy, object data, sort) and of a whole frame with readback (CPU
+// recording plus the GPU time, the backend reports no separate figure here).
 TEST_CASE("Skinned instances: CPU prepare and frame time (recorded)", "[.][render-bench][skinning]")
 {
     FOR_EACH_GPU_BACKEND(backend)
@@ -360,7 +360,9 @@ TEST_CASE("Skinned instances: CPU prepare and frame time (recorded)", "[.][rende
                     RenderObjectDesc od;
                     od.mesh = &mesh;
                     od.material = material.index;
-                    od.transform = ModelMatrix(Vec3(static_cast<f32>(i % 100) * 0.1f - 5.0f, 0, static_cast<f32>(i / 100) * 0.05f - 2.5f), 0.02f, 0.0f);
+                    od.transform = ModelMatrix(
+                        Vec3(static_cast<f32>(i % 100) * 0.1f - 5.0f, 0, static_cast<f32>(i / 100) * 0.05f - 2.5f),
+                        0.02f, 0.0f);
                     od.joint_matrices = palette.Data();
                     od.joint_count = 40;
                     REQUIRE(scene.AddObject(od).IsValid());
@@ -369,9 +371,11 @@ TEST_CASE("Skinned instances: CPU prepare and frame time (recorded)", "[.][rende
                 const Layers L = rig.Render(scene, cam);
                 const u64 t1 = os::MonotonicTimeNanos();
                 REQUIRE(L.ok);
-                os::Print("skinned bench (%s): %u instances x 4,900 vertices, 40 joints: whole frame with readback %.2f ms, "
-                          "%u drawn, %u draws\n",
-                          device->BackendName(), count, static_cast<f64>(t1 - t0) / 1e6, L.stats.drawn_objects, L.stats.draws);
+                os::Print(
+                    "skinned bench (%s): %u instances x 4,900 vertices, 40 joints: whole frame with readback %.2f ms, "
+                    "%u drawn, %u draws\n",
+                    device->BackendName(), count, static_cast<f64>(t1 - t0) / 1e6, L.stats.drawn_objects,
+                    L.stats.draws);
             }
             device->WaitIdle();
         }

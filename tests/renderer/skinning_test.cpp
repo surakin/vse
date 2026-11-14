@@ -191,7 +191,8 @@ TEST_CASE("The joint palette hands out offsets until it is full and starts again
     rig.BeginFrame(0);
     CHECK(rig.frame->MaxJointMatrices() == 10);
     CHECK(rig.frame->WriteJoints(matrices, 6) == 0);
-    CHECK(rig.frame->WriteJoints(matrices, 6) == kNoJoints);  // 4 left: nothing is written for a palette that does not fit
+    CHECK(rig.frame->WriteJoints(matrices, 6) ==
+          kNoJoints);  // 4 left: nothing is written for a palette that does not fit
     CHECK(rig.frame->JointsWritten() == 6);
     CHECK(rig.frame->WriteJoints(matrices, 4) == 6);
     CHECK(rig.frame->WriteJoints(matrices, 1) == kNoJoints);
