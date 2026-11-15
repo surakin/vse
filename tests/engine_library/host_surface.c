@@ -193,7 +193,7 @@ static void TestArguments(engine_handle engine, Display* display, Window window)
     bad.struct_size = 8;
     CHECK_STATUS(g_api->surface_create(engine, &bad, &surface), ENGINE_ERROR_STRUCT_SIZE);
     bad = info;
-    bad.flags = 1;
+    bad.flags = 0x80000000u; /* an unknown bit: 1 is ENGINE_SURFACE_FLAG_VULKAN since Day 354 */
     CHECK_STATUS(g_api->surface_create(engine, &bad, &surface), ENGINE_ERROR_INVALID_ARGUMENT);
     bad = info;
     bad.kind = 99;
