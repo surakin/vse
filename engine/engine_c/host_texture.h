@@ -23,6 +23,7 @@ struct TextureCounters
     Atomic<u64> updates_replaced{0};   ///< Updates that arrived before the previous one was uploaded by any device.
     Atomic<u64> textures_uploaded{0};  ///< Uploads made by the surfaces.
     Atomic<u64> bytes_uploaded{0};     ///< Bytes of those uploads.
+    Atomic<u64> slots_reverted{0};     ///< Slot bindings that fell back to the slot's own value, one per frame.
 };
 
 /// The bounds of a host texture, read from the `assets.host_texture.*` settings when the engine is created.
@@ -64,6 +65,8 @@ public:
     engine_status Resize(u32 width, u32 height);
 
     /// The size now.
+    /// Whether an update gave it pixels since it was made or resized.
+    bool HasPixels() const;
     u32 Width() const;
     /// See `Width`.
     u32 Height() const;

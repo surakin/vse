@@ -301,6 +301,8 @@ engine_status MakeScene(SurfaceObject* s, ResourceHost* resources)
         s->scene.Reset();
         return Fail(ENGINE_ERROR_UNSUPPORTED, "the device cannot draw a scene on this surface");
     }
+    Runtime* runtime = CurrentRuntime();
+    s->scene->AttachTextures(runtime != nullptr ? &runtime->textures : nullptr);
     return ENGINE_OK;
 }
 
@@ -943,6 +945,8 @@ engine_status SurfaceHost::State(engine_handle surface, engine_surface_state* ou
     out->camera_status = s->camera_status;
     out->camera_entity = s->camera_entity;
     out->lights_refused = s->lights_refused;
+    out->textures_uploaded = s->scene != nullptr ? s->scene->TextureUploads() : 0;
+    out->texture_bytes_uploaded = s->scene != nullptr ? s->scene->TextureBytes() : 0;
     out->present_mode = s->present_mode;
     if (s->swapchain != nullptr)
     {

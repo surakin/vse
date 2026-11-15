@@ -18,6 +18,7 @@ constexpr u32 kMaxObjects = 4096;
 constexpr u32 kMaxLights = 64;
 
 bool SameOverrides(const SlotOverrides& a, const SlotOverrides& b);
+bool SameHostHandles(const rhi::TextureHandle* a, const rhi::TextureHandle* b, u32 count);
 
 }  // namespace
 
@@ -83,6 +84,7 @@ SurfaceScene::~SurfaceScene()
         DestroyInstance(instances_.Size() - 1);
     }
     scene_ = nullptr;
+    live_.Release();
     meshes_.Clear();
     materials_.Clear();
     frame_.Destroy();
@@ -91,6 +93,7 @@ SurfaceScene::~SurfaceScene()
 
 void SurfaceScene::Rebind(rhi::Device* device, rhi::Swapchain* swapchain)
 {
+    live_.Release();  // made again on the new device from the kept pixels
     device_ = device;
     frame_.Rebind(device, swapchain);
 }
@@ -176,6 +179,20 @@ u32 SurfaceScene::MaterialFor(const SlotOverrides& overrides, u64 entity, u32 ba
     {
         return base_index;
     }
+    // The device textures the host textures of the slots have now (this also stages their newest pixels).
+    rhi::TextureHandle host_handles[SlotOverrides::kMax];
+    for (u32 i = 0; i < overrides.count; ++i)
+    {
+        const SlotOverrides::Item& item = overrides.items[i];
+        if (item.kind == ENGINE_SLOT_HOST_TEXTURE)
+        {
+            host_handles[i] = live_.Acquire(item.host_texture);
+            if (!host_handles[i].IsValid())
+            {
+                live_.Revert();
+            }
+        }
+    }
     Instance* instance = nullptr;
     for (usize i = 0; i < instances_.Size(); ++i)
     {
@@ -186,7 +203,7 @@ u32 SurfaceScene::MaterialFor(const SlotOverrides& overrides, u64 entity, u32 ba
         }
     }
     if (instance != nullptr && instance->base_index == base_index && SameOverrides(instance->content, overrides) &&
-        instance->material.IsValid())
+        instance->material.IsValid() && SameHostHandles(instance->host_handles, host_handles, overrides.count))
     {
         instance->seen = true;
         return instance->material.index;
@@ -209,6 +226,10 @@ u32 SurfaceScene::MaterialFor(const SlotOverrides& overrides, u64 entity, u32 ba
     made.entity = entity;
     made.base_index = base_index;
     made.content = overrides;
+    for (u32 i = 0; i < overrides.count; ++i)
+    {
+        made.host_handles[i] = host_handles[i];
+    }
     if (!base.IsValid())
     {
         return base_index;
@@ -229,6 +250,13 @@ u32 SurfaceScene::MaterialFor(const SlotOverrides& overrides, u64 entity, u32 ba
         {
             materials->SetVec4(made.material, item.name,
                                Vec4(item.value[0], item.value[1], item.value[2], item.value[3]));
+        }
+        else if (item.kind == ENGINE_SLOT_HOST_TEXTURE)
+        {
+            if (host_handles[i].IsValid())
+            {
+                materials->SetTexture(made.material, item.name, host_handles[i]);
+            }  // else the slot keeps the material's own value
         }
         else
         {
@@ -373,7 +401,19 @@ bool SameOverrides(const SlotOverrides& a, const SlotOverrides& b)
         const SlotOverrides::Item& x = a.items[i];
         const SlotOverrides::Item& y = b.items[i];
         if (MemCompare(x.name, y.name, sizeof(x.name)) != 0 || x.kind != y.kind || x.texture != y.texture ||
-            MemCompare(x.value, y.value, sizeof(x.value)) != 0)
+            x.host_texture != y.host_texture || MemCompare(x.value, y.value, sizeof(x.value)) != 0)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool SameHostHandles(const rhi::TextureHandle* a, const rhi::TextureHandle* b, u32 count)
+{
+    for (u32 i = 0; i < count; ++i)
+    {
+        if (a[i].IsValid() != b[i].IsValid() || (a[i].IsValid() && !(a[i] == b[i])))
         {
             return false;
         }
@@ -448,6 +488,7 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
                                       f32 delta_seconds)
 {
     SceneFrameReport report;
+    live_.BeginFrame();
     const f32 aspect = height != 0 ? static_cast<f32>(width) / static_cast<f32>(height) : 1.0f;
     for (usize i = 0; i < entries_.Size(); ++i)
     {
@@ -565,6 +606,8 @@ SceneFrameReport SurfaceScene::Render(WorldObject& world, u64 camera_entity, u32
             ++i;
         }
     }
+    live_.Flush();     // the copies the slots asked for, before the frame samples the textures
+    live_.EndFrame();  // textures no slot names any more are dropped
     SyncLights(world, &report);
     renderer::Camera camera;  // the default camera unless the host named one that works
     camera.SetLookAt(Vec3(0.0f, 1.5f, 5.0f), Vec3(0.0f, 0.0f, 0.0f), Vec3(0.0f, 1.0f, 0.0f));

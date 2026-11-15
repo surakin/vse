@@ -1617,6 +1617,8 @@ Phase 22 **plan amended (2026-11-13, the user's request): loading performance is
 
 **Windows PC: Phase 23 Days 349-353 checked (2026-11-15), `master` at `c85e1e6b`.** The four trees build clean; `--affected`: `ran 3099 of 6000 tests (phases: all; flavors: plain; display: included; crash tests: excluded)` (MSVC trees), `ran 3129 of 3282 tests (phases: all; flavors: plain; display: included; crash tests: excluded)` (clang-cl trees), asan `ran 2619 of 6000 tests (phases: all; flavors: asan; display: included; crash tests: excluded)`; only flakes failed (the DX12 device-removed flake in five tests, `Throughput`, and a new reactor-close flake under asan, filed), each passing 3 of 3 reruns; docs 7 of 7. The C API's hosts and the foreign-window surfaces are POSIX, X11 and Wayland only until Day 354.
 
+**Phase 24 Day 366 done (2026-11-15, Linux): host textures on a surface.** `ENGINE_SLOT_HOST_TEXTURE`, per-surface `LiveTextures` (staging ring, budget, one submission), reverting and counters; tests written and built, not run. **Next: Day 367 (labels).**
+
 **Phase 24 Day 365 done (2026-11-15, Linux): host textures, CPU side and C API.** `texture_create/update/resize/destroy/read_pixels`, latest-wins, settings, frame counters; tests written and built, not run. **Next: Day 366 (host textures II: binding and upload).**
 
 **Phase 24 Day 364 done (2026-11-15, Linux): a glTF scene as a level.** `ImportLevel`, `--emit-level`, `ENGINE_IMPORT_EMIT_LEVEL`, `level_spawn`; tests written and built, not run. **Next: Day 365 (host textures I).**

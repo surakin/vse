@@ -468,6 +468,7 @@ engine_status FrameFn(engine_handle engine, const engine_frame_info* info, engin
         result.textures_uploaded = counters.textures_uploaded.Exchange(0, MemoryOrder::Relaxed);
         result.bytes_uploaded = counters.bytes_uploaded.Exchange(0, MemoryOrder::Relaxed);
         result.updates_replaced = counters.updates_replaced.Exchange(0, MemoryOrder::Relaxed);
+        result.slots_reverted = counters.slots_reverted.Exchange(0, MemoryOrder::Relaxed);
     }
     result.elapsed_us = (os::MonotonicTimeNanos() - start) / 1000;
     if (stats != nullptr)
@@ -1032,7 +1033,8 @@ engine_status EntitySetSlotOverrideFn(engine_handle world, u64 key, engine_strin
                      static_cast<int>(slot.length < 40 ? slot.length : 40), slot.data != nullptr ? slot.data : "");
         return ENGINE_ERROR_INVALID_ARGUMENT;
     }
-    if (value->kind != expected)
+    const bool host_texture = expected == ENGINE_SLOT_TEXTURE && value->kind == ENGINE_SLOT_HOST_TEXTURE;
+    if (value->kind != expected && !host_texture)
     {
         SetLastError("invalid_argument: the slot '%.*s' takes another kind of value", static_cast<int>(slot.length),
                      slot.data);
@@ -1045,7 +1047,15 @@ engine_status EntitySetSlotOverrideFn(engine_handle world, u64 key, engine_strin
             return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the override value is not finite");
         }
     }
-    if (expected == ENGINE_SLOT_TEXTURE && value->texture_resource == 0)
+    if (host_texture)
+    {
+        Runtime* runtime = CurrentRuntime();
+        if (runtime == nullptr || runtime->textures.Find(value->host_texture).Get() == nullptr)
+        {
+            return Fail(ENGINE_ERROR_STALE_HANDLE, "the host texture does not exist (destroyed, or not a texture)");
+        }
+    }
+    else if (expected == ENGINE_SLOT_TEXTURE && value->texture_resource == 0)
     {
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a texture override needs a texture resource id");
     }
@@ -1075,6 +1085,7 @@ engine_status EntitySetSlotOverrideFn(engine_handle world, u64 key, engine_strin
                          item.kind = value->kind;
                          MemCopy(item.value, value->value, sizeof(item.value));
                          item.texture = value->texture_resource;
+                         item.host_texture = host_texture ? value->host_texture.value : 0;
                          if (at == overrides.count)
                          {
                              ++overrides.count;

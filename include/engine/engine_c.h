@@ -455,6 +455,8 @@ extern "C"
         uint32_t
             lights_refused; /* lights of the bound world the last frame could not use (the surface has room for 64) */
         uint32_t reserved;  /* zero */
+        uint64_t textures_uploaded;      /* uploads of host textures to this surface's device (Phase 24 Day 366) */
+        uint64_t texture_bytes_uploaded; /* bytes of those uploads */
     } engine_surface_state;
 
     /* The pixels of a rendered frame: RGBA8, `stride` bytes per row (width * 4), top row first. `data` is the host's to
@@ -678,18 +680,23 @@ extern "C"
 #define ENGINE_SLOT_FLOAT 1u   /* value[0] */
 #define ENGINE_SLOT_COLOR 2u   /* value[0..3]: linear RGBA */
 #define ENGINE_SLOT_TEXTURE 3u /* texture_resource: the resource id of a texture the host added or loaded */
+#define ENGINE_SLOT_HOST_TEXTURE                                                                                       \
+    4u /* host_texture: a host texture (texture_create); the slot shows its newest pixels (Phase 24 Day 366) */
 
     /* A per-entity override of one slot of the material its mesh reference names (Phase 24 Day 362): the entity draws
      * with its own copy of the material in which that slot has this value, and every other entity that uses the
      * material is untouched. The slots are those of the engine's G-buffer material: ENGINE_SLOT_COLOR for "base_color";
      * ENGINE_SLOT_FLOAT for "roughness", "metallic", "emissive_scale", "alpha_cutoff" and "occlusion";
-     * ENGINE_SLOT_TEXTURE for "albedo_tex" and "normal_tex". */
+     * ENGINE_SLOT_TEXTURE (a resource) or ENGINE_SLOT_HOST_TEXTURE (a host texture, which only the surfaces that draw
+     * the entity upload, once per device; destroying it or having no pixels yet leaves the slot at the material's own
+     * value, counted in engine_frame_stats.slots_reverted) for "albedo_tex" and "normal_tex". */
     typedef struct engine_slot_override
     {
         uint32_t struct_size;
         uint32_t kind; /* ENGINE_SLOT_* */
         float value[4];
         uint64_t texture_resource;
+        engine_handle host_texture; /* for ENGINE_SLOT_HOST_TEXTURE */
     } engine_slot_override;
 
     /* The kinds of engine_light.kind. */

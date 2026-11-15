@@ -203,7 +203,7 @@ field engine_surface_info.display offset=32 size=8
 field engine_surface_info.surface offset=40 size=8
 field engine_surface_info.window_id offset=48 size=8
 field engine_surface_info.callbacks offset=56 size=8
-struct engine_surface_state size=96
+struct engine_surface_state size=112
 field engine_surface_state.struct_size offset=0 size=4
 field engine_surface_state.image_width offset=4 size=4
 field engine_surface_state.image_height offset=8 size=4

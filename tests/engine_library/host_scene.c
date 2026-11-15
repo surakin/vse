@@ -1017,6 +1017,117 @@ int main(void)
         CHECK_STATUS(g_api->entity_destroy(world, hero), ENGINE_OK);
     }
 
+    /* host textures (Phase 24 Day 366): three entities share one material, each shows its own pattern, a producer's
+       update shows in the next frame, a resize and a destroy fall back to the material's own value */
+    {
+        engine_handle world3;
+        engine_handle textures[3];
+        uint64_t three[3];
+        engine_slot_override slot;
+        engine_texture_info tinfo;
+        engine_update_info uinfo;
+        engine_frame_info finfo;
+        engine_frame_stats fstats;
+        unsigned char solid[4 * 4 * 4];
+        int rgb[3][3];
+        int k;
+        int j;
+        memset(&world3, 0, sizeof(world3));
+        CHECK_STATUS(g_api->world_create(engine, &world3), ENGINE_OK);
+        memset(&tinfo, 0, sizeof(tinfo));
+        tinfo.struct_size = sizeof(tinfo);
+        tinfo.width = 4;
+        tinfo.height = 4;
+        tinfo.flags = 0;
+        memset(&slot, 0, sizeof(slot));
+        slot.struct_size = sizeof(slot);
+        slot.kind = ENGINE_SLOT_HOST_TEXTURE;
+        memset(&finfo, 0, sizeof(finfo));
+        finfo.struct_size = sizeof(finfo);
+        finfo.delta_seconds = 0.016;
+        for (k = 0; k < 3; ++k)
+        {
+            CHECK_STATUS(g_api->entity_create(world3, &three[k]), ENGINE_OK);
+            PlaceAt(world3, three[k], -2.2f + 2.2f * (float)k, 0.0f, 0.0f);
+            CHECK_STATUS(SetMeshReference(world3, three[k], MESH_ID, MATERIAL_ID), ENGINE_OK);
+            memset(&textures[k], 0, sizeof(textures[k]));
+            CHECK_STATUS(g_api->texture_create(engine, &tinfo, &textures[k]), ENGINE_OK);
+            for (j = 0; j < 16; ++j)
+            {
+                solid[j * 4 + 0] = (unsigned char)(k == 0 ? 255 : 0);
+                solid[j * 4 + 1] = (unsigned char)(k == 1 ? 255 : 0);
+                solid[j * 4 + 2] = (unsigned char)(k == 2 ? 255 : 0);
+                solid[j * 4 + 3] = 255;
+            }
+            CHECK_STATUS(g_api->texture_update(textures[k], solid, 16, NULL), ENGINE_OK);
+            slot.host_texture = textures[k];
+            CHECK_STATUS(g_api->entity_set_slot_override(world3, three[k], Str("albedo_tex"), &slot), ENGINE_OK);
+        }
+        /* the slot needs a live texture, and only the albedo and normal slots take one */
+        slot.host_texture = none;
+        CHECK_STATUS(g_api->entity_set_slot_override(world3, three[0], Str("albedo_tex"), &slot),
+                     ENGINE_ERROR_STALE_HANDLE);
+        slot.host_texture = textures[0];
+        CHECK_STATUS(g_api->entity_set_slot_override(world3, three[0], Str("roughness"), &slot),
+                     ENGINE_ERROR_INVALID_ARGUMENT);
+        CHECK_STATUS(g_api->surface_set_world(surface, world3), ENGINE_OK);
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        for (k = 0; k < 3; ++k)
+        {
+            ColorAt(surface, &pixels, -2.2f + 2.2f * (float)k, -0.2f, 0.0f, rgb[k]);
+        }
+        CHECK(rgb[0][0] > rgb[0][1] + 30 && rgb[0][0] > rgb[0][2] + 30);
+        CHECK(rgb[1][1] > rgb[1][0] + 30 && rgb[1][1] > rgb[1][2] + 30);
+        CHECK(rgb[2][2] > rgb[2][0] + 30 && rgb[2][2] > rgb[2][1] + 30);
+        CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+        CHECK(state.textures_uploaded >= 3 && state.texture_bytes_uploaded >= 3 * 64);
+        /* a newer update shows in the next frame: the first entity turns blue */
+        for (j = 0; j < 16; ++j)
+        {
+            solid[j * 4 + 0] = 0;
+            solid[j * 4 + 1] = 0;
+            solid[j * 4 + 2] = 255;
+        }
+        CHECK_STATUS(g_api->texture_update(textures[0], solid, 16, NULL), ENGINE_OK);
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        ColorAt(surface, &pixels, -2.2f, -0.2f, 0.0f, rgb[0]);
+        CHECK(rgb[0][2] > rgb[0][0] + 30);
+        /* a resize without pixels: the slot shows the material's own value (counted); the next update shows again */
+        CHECK_STATUS(g_api->texture_resize(textures[1], 8, 8), ENGINE_OK);
+        memset(&fstats, 0, sizeof(fstats));
+        fstats.struct_size = sizeof(fstats);
+        CHECK_STATUS(g_api->frame(engine, &finfo, &fstats), ENGINE_OK);
+        CHECK(fstats.slots_reverted >= 1);
+        {
+            unsigned char big[8 * 8 * 4];
+            for (j = 0; j < 64; ++j)
+            {
+                big[j * 4 + 0] = 255;
+                big[j * 4 + 1] = 255;
+                big[j * 4 + 2] = 0;
+                big[j * 4 + 3] = 255;
+            }
+            memset(&uinfo, 0, sizeof(uinfo));
+            CHECK_STATUS(g_api->texture_update(textures[1], big, 32, NULL), ENGINE_OK);
+        }
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        ColorAt(surface, &pixels, 0.0f, -0.2f, 0.0f, rgb[1]);
+        CHECK(rgb[1][0] > rgb[1][2] + 30 && rgb[1][1] > rgb[1][2] + 30); /* yellow */
+        /* destroying a texture reverts its slot; the neighbours keep theirs */
+        CHECK_STATUS(g_api->texture_destroy(textures[2]), ENGINE_OK);
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        ColorAt(surface, &pixels, 2.2f, -0.2f, 0.0f, rgb[2]);
+        CHECK(abs(rgb[2][0] - rgb[2][1]) < 40 && abs(rgb[2][1] - rgb[2][2]) < 40); /* the brick's own colour */
+        ColorAt(surface, &pixels, -2.2f, -0.2f, 0.0f, rgb[0]);
+        CHECK(rgb[0][2] > rgb[0][0] + 30);
+        /* the same texture on a second surface of the same engine is uploaded there too: here only the counters */
+        CHECK_STATUS(g_api->surface_set_world(surface, none), ENGINE_OK);
+        CHECK_STATUS(g_api->world_destroy(world3), ENGINE_OK);
+        CHECK_STATUS(g_api->texture_destroy(textures[0]), ENGINE_OK);
+        CHECK_STATUS(g_api->texture_destroy(textures[1]), ENGINE_OK);
+        CHECK_STATUS(g_api->surface_set_world(surface, world), ENGINE_OK);
+    }
+
     /* unbound: the clear color again; bound to a world destroyed under it: the clear color and the reason */
     CHECK_STATUS(g_api->surface_set_world(surface, none), ENGINE_OK);
     CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);

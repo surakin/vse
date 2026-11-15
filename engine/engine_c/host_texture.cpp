@@ -27,6 +27,12 @@ HostTexture::HostTexture(u32 width, u32 height, bool srgb, StringView, const Hos
 {
 }
 
+bool HostTexture::HasPixels() const
+{
+    LockGuard<Mutex> lock(mutex_);
+    return has_pixels_;
+}
+
 u32 HostTexture::Width() const
 {
     LockGuard<Mutex> lock(mutex_);

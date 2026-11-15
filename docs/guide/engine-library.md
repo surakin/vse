@@ -626,6 +626,13 @@ sets an environment with ambient 0. **Not built:** shadows (the renderer has non
 - **Settings.** `assets.host_texture.max_size`, `assets.host_texture.upload_budget` (bytes a surface uploads per frame, default 8 MB; used from Day 366).
 - **Not yet.** Nothing draws a host texture before Day 366 (a material slot that names one); `textures_uploaded` and `bytes_uploaded` stay 0 until then.
 
+## Host textures on a surface (Phase 24 Day 366)
+
+- **Binding.** `entity_set_slot_override(world, entity, "albedo_tex", &o)` with `o.kind = ENGINE_SLOT_HOST_TEXTURE` and `o.host_texture` set makes that entity draw the texture's newest pixels in place of the slot (`"normal_tex"` too). Entities that share the material keep theirs; the handle must name a live texture (`STALE_HANDLE` otherwise).
+- **Upload.** Each surface keeps, for each host texture an entity of its world names, one device texture and a ring of three mapped staging buffers; every frame it copies the newest pixels (rows padded to the device's pitch) and uploads them in one submission before the frame is drawn, at most `assets.host_texture.upload_budget` bytes per frame (the first texture of a frame always goes). A texture drawn by two surfaces is uploaded to each device. `surface_state.textures_uploaded` and `texture_bytes_uploaded` count the uploads of the surface; `frame_stats.textures_uploaded` and `bytes_uploaded` those since the previous frame call.
+- **Reverting.** A texture that was destroyed, has no pixels (never updated, or just resized) or did not fit the budget on its first frame leaves the slot at the material's own value for that frame; each such slot of each frame is counted in `frame_stats.slots_reverted`.
+- **Resize** makes a new device texture at the next update, after the device is idle; the material of the entity is rebuilt to point at it.
+
 ## Writing a host: the short path (Days 346-357)
 
 1. Include `engine/engine_c.h` (and `engine_loader.h` to load the library at run time). Nothing else of the engine is a header a host may use: the C++ interfaces have no stable ABI.

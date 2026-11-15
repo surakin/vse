@@ -75,6 +75,7 @@ struct SlotOverrides
         u32 kind = 0;  ///< ENGINE_SLOT_*.
         f32 value[4] = {};
         u64 texture = 0;
+        u64 host_texture = 0;  ///< The value of an engine_handle of a host texture (ENGINE_SLOT_HOST_TEXTURE).
     };
     u32 count = 0;
     Item items[kMax];

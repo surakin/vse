@@ -10,6 +10,7 @@
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
 #include "engine/engine_c.h"
+#include "engine_c/live_textures.h"
 #include "engine_c/runtime.h"
 #include "renderer/camera.h"
 #include "renderer/render_scene.h"
@@ -67,6 +68,12 @@ public:
     SceneFrameReport Render(WorldObject& world, u64 camera_entity, u32 width, u32 height, f32 seconds,
                             f32 delta_seconds);
 
+    /// Names the host the surface's host textures come from (null: a slot naming one keeps its own value).
+    void AttachTextures(TextureHost* textures) { live_.Attach(device_, textures); }
+    /// Host texture uploads and bytes this surface made.
+    u64 TextureUploads() const { return live_.Uploads(); }
+    u64 TextureBytes() const { return live_.UploadedBytes(); }
+
     /// Turns a surface pixel into a world ray with the camera of the last frame.
     ///
     /// - Returns: false when no frame has drawn yet.
@@ -101,6 +108,7 @@ private:
         SlotOverrides content;
         renderer::MaterialId material;
         Vector<asset::Handle<asset::GpuTextureAsset>> textures;  // keeps the overriding textures resident
+        rhi::TextureHandle host_handles[SlotOverrides::kMax];    // the device textures bound for host textures
         bool seen = false;
     };
     struct Mesh
@@ -135,6 +143,7 @@ private:
     renderer::LightId sun_;      // the default sun of a world with no light and no environment
     Vector<Mesh> meshes_;
     Vector<Material> materials_;
+    LiveTextures live_;  // the device side of the host textures the world's slots name
     renderer::MaterialId default_material_;
     renderer::MaterialId default_skinned_material_;  // for meshes with a skin stream (Day 363)
     renderer::Camera last_camera_;                   // the camera of the last frame, for PixelRay and Project

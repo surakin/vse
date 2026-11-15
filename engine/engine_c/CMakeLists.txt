@@ -24,7 +24,7 @@ else()
   set(ENGINE_C_WITH_IMPORTER_VALUE 0)
 endif()
 
-set(ENGINE_C_SOURCES engine_c.cpp host_texture.cpp import.cpp resources.cpp runtime.cpp status_map.cpp surface.cpp surface_scene.cpp)
+set(ENGINE_C_SOURCES engine_c.cpp host_texture.cpp live_textures.cpp import.cpp resources.cpp runtime.cpp status_map.cpp surface.cpp surface_scene.cpp)
 if(APPLE)
   # Day 355: a host's NSView or CAMetalLayer as a surface (AppKit and QuartzCore, inside an autorelease pool).
   list(APPEND ENGINE_C_SOURCES macos/cocoa_surface.mm)
