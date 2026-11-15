@@ -59,8 +59,12 @@ asset::Status Spawn(asset::ResourceManager& manager, asset::ResourceId id, const
     for (usize i = 0; i < data.entities.Size(); ++i)
     {
         const ecs::Entity entity = index.Find(data.entities[i].key);
+        if (!entity.IsValid())
+        {
+            continue;
+        }
         const asset::MeshReference* reference = world.Peek<asset::MeshReference>(entity);
-        if (!entity.IsValid() || reference == nullptr)
+        if (reference == nullptr)
         {
             continue;
         }

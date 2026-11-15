@@ -279,8 +279,9 @@ void ResourceServer::Handle(Connection& connection, ByteSpan message)
         }
         if (request.version != kProtoVersion)
         {
+            const net::ConnectionId id = connection.id;  // before the reply: a failed send drops the connection and
+                                                         // moves another into its slot
             Fail(connection, request.request, ProtoError::Unsupported);  // the client learns why it is let go
-            const net::ConnectionId id = connection.id;
             (void)transport_->Close(id, kCloseProtocol);
             Drop(id);
             return;

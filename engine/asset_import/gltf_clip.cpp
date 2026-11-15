@@ -213,7 +213,7 @@ Status ReadChannelKeys(const GltfDocument& document, const ImportOptions& option
         if (total > static_cast<f64>(kMaxClipKeys))
         {
             error->SetNumber(sampler.Path(), StringView("resamples to more keys than a clip channel holds (65535): "),
-                             static_cast<u64>(total));
+                             static_cast<u64>(total < 1e18 ? total : 1e18));
             return Status::Make(ErrorCode::TooLarge, "too many keys");
         }
         const usize count = static_cast<usize>(total);

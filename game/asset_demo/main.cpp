@@ -111,7 +111,8 @@ int main(int argc, char** argv)
     }
     Vector<String<HeapAllocator>> rest_storage;
     Vector<char*> rest;
-    rest_storage.Push(String<HeapAllocator>(HeapAllocator::Default(), StringView(argv[0], CStrLength(argv[0]))));
+    const Line native(HeapAllocator::Default(), argc, argv);
+    rest_storage.Push(String<HeapAllocator>(HeapAllocator::Default(), native.ProgramName()));
     for (usize i = 0; i < cli.rest.Size(); ++i)
     {
         rest_storage.Push(String<HeapAllocator>(HeapAllocator::Default(), cli.rest[i].View()));

@@ -87,6 +87,7 @@ game/rhi_demo       4,5
 game/renderer_demo  4,5
 game/renderer_bench 4,5
 game/common         4,5
+game/CMakeLists.txt 22   # the demos registered there; a demo adds its own line (a change here selects the importer demo only)
 docs                3
 tests/foundation    0,1
 tests/jobs          2

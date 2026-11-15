@@ -303,7 +303,10 @@ void NetworkBackend::PumpLocked()
             if (message.type == ProtoMessage::HelloAck)
             {
                 greeted_ = true;
-                max_read_ = message.max_read_bytes;
+                // What the server grants is clamped to what this client asked and can decode.
+                max_read_ = message.max_read_bytes < 4096
+                                ? 4096
+                                : (message.max_read_bytes > (1u << 20) ? (1u << 20) : message.max_read_bytes);
                 page_entries_ = message.page_entries;
                 state_ = NetworkState::Online;
                 failures_ = 0;
@@ -525,8 +528,12 @@ Status NetworkBackend::Call(const ProtoData& request, ProtoData* response)
             stats_.retries += 1;
         }
         // The back-off: base * 2^attempt, at most the limit, and a random share on top.
-        u64 delay = options_.config.backoff_nanos << (attempt < 32 ? attempt : 32);
-        if (delay > options_.config.backoff_max_nanos || delay < options_.config.backoff_nanos)
+        u64 delay = options_.config.backoff_nanos;
+        for (u32 doubled = 0; doubled < attempt && delay < options_.config.backoff_max_nanos; ++doubled)
+        {
+            delay = delay > options_.config.backoff_max_nanos / 2 ? options_.config.backoff_max_nanos : delay * 2;
+        }
+        if (delay > options_.config.backoff_max_nanos)
         {
             delay = options_.config.backoff_max_nanos;
         }
@@ -1123,8 +1130,12 @@ void NetworkBackend::StepFetchLocked()
             return;
         }
         stats_.retries += 1;
-        u64 delay = options_.config.backoff_nanos << (f.failures < 32 ? f.failures - 1 : 32);
-        if (delay > options_.config.backoff_max_nanos || delay < options_.config.backoff_nanos)
+        u64 delay = options_.config.backoff_nanos;
+        for (u32 doubled = 1; doubled < f.failures && delay < options_.config.backoff_max_nanos; ++doubled)
+        {
+            delay = delay > options_.config.backoff_max_nanos / 2 ? options_.config.backoff_max_nanos : delay * 2;
+        }
+        if (delay > options_.config.backoff_max_nanos)
         {
             delay = options_.config.backoff_max_nanos;
         }
