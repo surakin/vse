@@ -243,7 +243,7 @@ TEST_CASE("A material follows a texture owner that was rebuilt on its own", "[re
         again.desc.usage = rhi::TextureUsage::Sampled;
         again.pixels.Resize(64);
         REQUIRE(kept->Create(rig.host.GetDevice(), static_cast<TextureImage&&>(again), &rig.registry, "kept"));
-        const u32 with_texture = rig.host.GetDevice()->Resources().textures;
+        const usize with_texture = rig.host.GetDevice()->Resources().textures;
         REQUIRE(materials->SetTexture(plastic, "albedo_tex", kept));
         kept.Reset();  // the caller lets go; the material still holds it
         CHECK(rig.host.GetDevice()->Resources().textures == with_texture);

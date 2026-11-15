@@ -7,6 +7,10 @@
 #include "png.h"
 #include "stb_image.h"
 
+// png_guard.c: runs `body(context)` with the read's error jump set; 1 when the body returned, 0 when libpng jumped
+// back. The setjmp is in C because MSVC refuses it in a C++ function (C4611).
+extern "C" int engine_asset_png_guard(png_structp png, void (*body)(void*), void* context);
+
 namespace engine_placeholder::asset
 {
 
@@ -21,8 +25,8 @@ Status Refuse(GltfError* error, const char* what, ErrorCode code = ErrorCode::In
     return Status::Make(code, "an image is refused");
 }
 
-// The state of one PNG read. Plain data: the functions that call `setjmp` hold nothing else, so a jump back skips no
-// destructor.
+// The state of one PNG read. Plain data: the bodies run under `engine_asset_png_guard` hold nothing else, so a jump
+// back skips no destructor.
 struct PngJob
 {
     const byte* data = nullptr;
@@ -68,6 +72,24 @@ void PngFail(png_structp png, png_const_charp message)
 
 void PngWarn(png_structp, png_const_charp) {}
 
+// The header read, run under the guard: `job` only.
+void PngOpenBody(void* context)
+{
+    PngJob* job = static_cast<PngJob*>(context);
+    png_set_user_limits(job->png, kMaxSide, kMaxSide);
+    png_set_chunk_malloc_max(job->png, 4u << 20);
+    png_set_chunk_cache_max(job->png, 128);
+    png_set_read_fn(job->png, job, &PngReadData);
+    png_read_info(job->png, job->info);
+    png_uint_32 width = 0;
+    png_uint_32 height = 0;
+    int interlace = 0;
+    png_get_IHDR(job->png, job->info, &width, &height, &job->bit_depth, &job->color_type, &interlace, nullptr, nullptr);
+    job->width = width;
+    job->height = height;
+    job->has_transparency = png_get_valid(job->png, job->info, PNG_INFO_tRNS) != 0;
+}
+
 // Reads the header. False (with `message`) when it is not a PNG libpng accepts; on true the read is open.
 bool PngOpen(PngJob* job)
 {
@@ -84,34 +106,26 @@ bool PngOpen(PngJob* job)
         SetMessage(job, "the PNG reader could not be created");
         return false;
     }
-    if (setjmp(png_jmpbuf(job->png)))
+    if (engine_asset_png_guard(job->png, &PngOpenBody, job) == 0)
     {
         png_destroy_read_struct(&job->png, &job->info, nullptr);
         return false;
     }
-    png_set_user_limits(job->png, kMaxSide, kMaxSide);
-    png_set_chunk_malloc_max(job->png, 4u << 20);
-    png_set_chunk_cache_max(job->png, 128);
-    png_set_read_fn(job->png, job, &PngReadData);
-    png_read_info(job->png, job->info);
-    png_uint_32 width = 0;
-    png_uint_32 height = 0;
-    int interlace = 0;
-    png_get_IHDR(job->png, job->info, &width, &height, &job->bit_depth, &job->color_type, &interlace, nullptr, nullptr);
-    job->width = width;
-    job->height = height;
-    job->has_transparency = png_get_valid(job->png, job->info, PNG_INFO_tRNS) != 0;
     return true;
 }
 
-// Decodes the rows into `out` (`width * height * 4` bytes) and closes the read.
-bool PngRead(PngJob* job, byte* out)
+// The rows of one read, run under the guard.
+struct PngRows
 {
-    if (setjmp(png_jmpbuf(job->png)))
-    {
-        png_destroy_read_struct(&job->png, &job->info, nullptr);
-        return false;
-    }
+    PngJob* job = nullptr;
+    byte* out = nullptr;
+};
+
+// The decode, run under the guard: plain pointers only.
+void PngReadBody(void* context)
+{
+    PngJob* job = static_cast<PngRows*>(context)->job;
+    byte* out = static_cast<PngRows*>(context)->out;
     if (job->color_type == PNG_COLOR_TYPE_PALETTE)
     {
         png_set_palette_to_rgb(job->png);
@@ -151,8 +165,17 @@ bool PngRead(PngJob* job, byte* out)
         }
     }
     png_read_end(job->png, nullptr);
+}
+
+// Decodes the rows into `out` (`width * height * 4` bytes) and closes the read.
+bool PngRead(PngJob* job, byte* out)
+{
+    PngRows rows;
+    rows.job = job;
+    rows.out = out;
+    const bool ok = engine_asset_png_guard(job->png, &PngReadBody, &rows) != 0;
     png_destroy_read_struct(&job->png, &job->info, nullptr);
-    return true;
+    return ok;
 }
 
 Status CheckSize(u64 width, u64 height, u64 max_pixels, GltfError* error)

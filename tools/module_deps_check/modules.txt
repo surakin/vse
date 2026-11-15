@@ -37,7 +37,7 @@ include-dir tools/docgen/src
 include-dir tools/shader_mint
 include-dir third_party/nlohmann_json
 include-dir third_party/yyjson
-include-dir third_party/libpng   # Phase 22 Day 338: png.h, included only by asset_import/image_decode.cpp
+include-dir third_party/libpng   # Phase 22 Day 338: png.h, included only by asset_import/image_decode.cpp and png_guard.c
 include-dir third_party/stb_image   # Phase 22 Day 338: stb_image.h, included only by asset_import/image_decode.cpp
 system-include ^wayland-[a-z-]*\.h$
 

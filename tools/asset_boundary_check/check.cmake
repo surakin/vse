@@ -5,8 +5,9 @@
 #      outside engine/asset_import/ may link `asset_import` or `asset_mint`.
 #   2. A file under game/ or tools/ (tools/asset_mint excepted) may include "asset_import/..." or link it only through an allow-list entry, which
 #      gives the reason (a demo's import mode, a host program).
-#   3. The decoders (png.h, zlib.h, stb_image.h, and the png, zlib and stb_jpeg targets) are reached only from engine/asset_import/image_decode.cpp
-#      and its CMake file, or an allow-list entry (FreeType's color bitmaps, Phase 27).
+#   3. The decoders (png.h, zlib.h, stb_image.h, and the png, zlib and stb_jpeg targets) are reached only from engine/asset_import/image_decode.cpp,
+#      its C helper png_guard.c (libpng's setjmp, which MSVC refuses in C++) and its CMake file, or an allow-list entry (FreeType's color bitmaps,
+#      Phase 27).
 # Comments are not violations. A stale allow-list entry fails the gate, so the list only shrinks.
 cmake_minimum_required(VERSION 3.20)
 
@@ -91,7 +92,8 @@ foreach(f IN LISTS files)
     set(in_game_or_tools TRUE)
   endif()
   set(decoder_home FALSE)
-  if(f STREQUAL "engine/asset_import/image_decode.cpp" OR f STREQUAL "engine/asset_import/CMakeLists.txt")
+  if(f STREQUAL "engine/asset_import/image_decode.cpp" OR f STREQUAL "engine/asset_import/png_guard.c"
+     OR f STREQUAL "engine/asset_import/CMakeLists.txt")
     set(decoder_home TRUE)
   endif()
   set(is_cmake FALSE)
