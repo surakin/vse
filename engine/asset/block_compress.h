@@ -7,7 +7,9 @@
 //! A block is 4x4 texels, row-major, stored in 8 bytes (BC1, BC4) or 16 bytes (BC2, BC3, BC5, BC7). The decoders give
 //! 8-bit RGBA texels (BC4 puts its channel in red and BC5 its two in red and green; the others read 0 and alpha 255).
 //! The interpolated colors of BC1 are `(2a + b) / 3` and `(a + b) / 2` of the 8-bit expanded endpoints, truncated: the
-//! decoder is the reference of this engine, GPUs differ by at most one step. The encoders choose among endpoint sets by
+//! decoder is the reference of this engine. A GPU's BC1, BC4 and BC5 decode can differ from it by up to two steps per
+//! channel (a Radeon 860M on D3D12 and Vulkan, `tests/rhi/bc_gpu_test.cpp`; rounding the palette instead does not
+//! bring it to one); BC7, specified in integers, matches exactly. The encoders choose among endpoint sets by
 //! the sum of squared channel errors and break every tie in favor of the lower index or the first candidate tried, so
 //! the result depends on the input texels only. A partial block at the right or bottom edge repeats its last column and
 //! row.
