@@ -53,6 +53,11 @@ public:
     ///
     /// - Thread-safety: thread-safe.
     engine_status SetWorld(engine_handle surface, engine_handle world, ResourceHost* resources);
+    /// Names the camera entity of the bound world (0: the default camera).
+    engine_status SetCamera(engine_handle surface, u64 camera_entity);
+    /// The world ray of a surface pixel and the projection of a world point, with the camera of the last frame.
+    engine_status PixelRay(engine_handle surface, f32 x, f32 y, f32* origin, f32* direction);
+    engine_status Project(engine_handle surface, const f32* point, f32* out);
 
     /// Renders every surface once: a surface with a world draws it (the world mutex is held by the caller, `runtime`
     /// is the engine's), the others clear to their background color.
@@ -101,5 +106,8 @@ engine_status SurfaceReadPixelsFn(engine_handle surface, engine_handle* ticket);
 engine_status PixelsFinishFn(engine_handle ticket, engine_pixels* out);
 engine_status PixelsDestroyFn(engine_handle ticket);
 engine_status SurfaceSetWorldFn(engine_handle surface, engine_handle world);
+engine_status SurfaceSetCameraFn(engine_handle surface, u64 camera_entity);
+engine_status SurfacePixelRayFn(engine_handle surface, float x, float y, float* origin, float* direction);
+engine_status SurfaceProjectFn(engine_handle surface, const float* point, float* out);
 
 }  // namespace engine_placeholder::engine_c

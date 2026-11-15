@@ -5,6 +5,7 @@
    surface (back to the background color, with the reason), unbinding, several surfaces on one world, and the arguments.
    Set ENGINE_UPDATE_GOLDEN=1 to write the golden image instead of comparing. */
 #include <stdint.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -225,6 +226,34 @@ static void CompareOrWriteGolden(const engine_pixels* pixels)
     free(expected);
 }
 
+static unsigned long long Checksum(const engine_pixels* pixels)
+{
+    unsigned long long sum = 1469598103934665603ull;
+    unsigned x;
+    unsigned y;
+    for (y = 0; y < pixels->height; ++y)
+    {
+        for (x = 0; x < pixels->width * 4; ++x)
+        {
+            sum = (sum ^ Pixel(pixels, 0, y)[x]) * 1099511628211ull;
+        }
+    }
+    return sum;
+}
+
+static engine_status SetCamera(engine_handle world, uint64_t entity, float fov, unsigned flags, float aspect)
+{
+    engine_camera camera;
+    memset(&camera, 0, sizeof(camera));
+    camera.struct_size = sizeof(camera);
+    camera.flags = flags;
+    camera.fov_y = fov;
+    camera.near_plane = 0.1f;
+    camera.far_plane = 100.0f;
+    camera.aspect = aspect;
+    return g_api->component_set(world, entity, ENGINE_COMPONENT_CAMERA, &camera);
+}
+
 static engine_status SetMeshReference(engine_handle world, uint64_t entity, uint64_t mesh, uint64_t material)
 {
     engine_mesh_reference reference;
@@ -264,6 +293,7 @@ int main(void)
     engine_pixels pixels;
     uint64_t entity;
     uint64_t stray;
+    uint64_t cam;
     Blob texture;
     Blob material;
     Blob mesh;
@@ -398,6 +428,96 @@ int main(void)
     CHECK(state.entities_unresolved == 0);
     CHECK_STATUS(g_api->entity_destroy(world, stray), ENGINE_OK);
 
+    /* Day 360: a camera entity decides what the surface shows */
+    {
+        float origin[3];
+        float direction[3];
+        float point[3] = {1.0f, 0.0f, 0.0f};
+        float out[3];
+        float again[3];
+        float far_point[3];
+        unsigned long long before;
+        engine_camera read_back;
+        CHECK_STATUS(g_api->entity_create(world, &cam), ENGINE_OK);
+        PlaceAt(world, cam, 0.0f, 0.0f, 4.0f);
+        CHECK_STATUS(SetCamera(world, cam, 0.0f, 0, 1.0f), ENGINE_ERROR_INVALID_ARGUMENT); /* fov 0 */
+        CHECK_STATUS(SetCamera(world, cam, 1.0471976f, 0x80u, 1.0f), ENGINE_ERROR_INVALID_ARGUMENT);
+        CHECK_STATUS(SetCamera(world, cam, 1.0471976f, ENGINE_CAMERA_FIXED_ASPECT, 0.0f),
+                     ENGINE_ERROR_INVALID_ARGUMENT);
+        CHECK_STATUS(SetCamera(world, cam, 1.0471976f, 0, 1.0f), ENGINE_OK);
+        memset(&read_back, 0, sizeof(read_back));
+        read_back.struct_size = sizeof(read_back);
+        CHECK_STATUS(g_api->component_get(world, cam, ENGINE_COMPONENT_CAMERA, &read_back), ENGINE_OK);
+        CHECK(read_back.fov_y > 1.04f && read_back.fov_y < 1.05f && read_back.far_plane == 100.0f);
+        CHECK_STATUS(g_api->surface_set_camera(none, cam), ENGINE_ERROR_INVALID_ARGUMENT);
+        CHECK_STATUS(g_api->surface_set_camera(world, cam), ENGINE_ERROR_TYPE_MISMATCH);
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        before = Checksum(&pixels);
+        CHECK_STATUS(g_api->surface_set_camera(surface, cam), ENGINE_OK);
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        CHECK(Checksum(&pixels) != before); /* another camera, another picture */
+        CHECK(HasObject(&pixels, clear));
+        CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+        CHECK(state.camera_status == ENGINE_OK && state.camera_entity == cam);
+        /* analytic: the camera at (0,0,4) looks at the origin with a 60 degree field and a 4:3 picture */
+        CHECK_STATUS(g_api->surface_project(surface, point, out), ENGINE_OK);
+        CHECK(fabsf(out[0] - 109.98f) < 0.5f && fabsf(out[1] - 60.0f) < 0.5f && fabsf(out[2] - 4.0f) < 0.01f);
+        point[0] = 0.0f;
+        CHECK_STATUS(g_api->surface_project(surface, point, out), ENGINE_OK);
+        CHECK(fabsf(out[0] - 80.0f) < 0.5f && fabsf(out[1] - 60.0f) < 0.5f);
+        /* the ray of a pixel passes through what projects to that pixel */
+        CHECK_STATUS(g_api->surface_pixel_ray(surface, 109.98f, 60.0f, origin, direction), ENGINE_OK);
+        CHECK(fabsf(origin[2] - 4.0f) < 0.001f && direction[2] < 0.0f);
+        far_point[0] = origin[0] + direction[0] * 4.0f;
+        far_point[1] = origin[1] + direction[1] * 4.0f;
+        far_point[2] = origin[2] + direction[2] * 4.0f;
+        CHECK(fabsf(far_point[0] - 1.0f) < 0.02f && fabsf(far_point[1]) < 0.02f && fabsf(far_point[2]) < 0.05f);
+        CHECK_STATUS(g_api->surface_project(surface, far_point, again), ENGINE_OK);
+        CHECK(fabsf(again[0] - 109.98f) < 0.1f && fabsf(again[1] - 60.0f) < 0.1f);
+        CHECK_STATUS(g_api->surface_pixel_ray(surface, 1.0f, 1.0f, NULL, direction), ENGINE_ERROR_INVALID_ARGUMENT);
+        /* a point behind the camera has a negative distance */
+        point[2] = 10.0f;
+        CHECK_STATUS(g_api->surface_project(surface, point, out), ENGINE_OK);
+        CHECK(out[2] < 0.0f);
+        /* a moved camera changes the image */
+        before = Checksum(&pixels);
+        PlaceAt(world, cam, 1.5f, 0.0f, 4.0f);
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        CHECK(Checksum(&pixels) != before);
+        /* a fixed aspect is used as given */
+        CHECK_STATUS(SetCamera(world, cam, 1.0471976f, ENGINE_CAMERA_FIXED_ASPECT, 2.0f), ENGINE_OK);
+        PlaceAt(world, cam, 0.0f, 0.0f, 4.0f);
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        point[0] = 1.0f;
+        point[2] = 0.0f;
+        CHECK_STATUS(g_api->surface_project(surface, point, out), ENGINE_OK);
+        CHECK(fabsf(out[0] - 97.3f) < 1.0f); /* 0.25 / (tan 30 * 2) = 0.2165 of the half width: (0.108 + 0.5) * 160 */
+        CHECK_STATUS(SetCamera(world, cam, 1.0471976f, 0, 1.0f), ENGINE_OK);
+        /* a camera that loses its component: the surface draws through the default camera and says why */
+        CHECK_STATUS(g_api->component_remove(world, cam, ENGINE_COMPONENT_CAMERA), ENGINE_OK);
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        CHECK(HasObject(&pixels, clear));
+        CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+        CHECK(state.camera_status == ENGINE_ERROR_NOT_FOUND && state.camera_entity == cam);
+        CHECK_STATUS(SetCamera(world, cam, 1.0471976f, 0, 1.0f), ENGINE_OK); /* it comes back: used again */
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+        CHECK(state.camera_status == ENGINE_OK);
+        /* a destroyed camera entity */
+        CHECK_STATUS(g_api->entity_destroy(world, cam), ENGINE_OK);
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        CHECK(HasObject(&pixels, clear));
+        CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+        CHECK(state.camera_status == ENGINE_ERROR_NOT_FOUND);
+        CHECK_STATUS(g_api->surface_set_camera(surface, 0), ENGINE_OK);
+        CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+        CHECK_STATUS(g_api->surface_state(surface, &state), ENGINE_OK);
+        CHECK(state.camera_status == ENGINE_OK && state.camera_entity == 0);
+        CHECK_STATUS(g_api->entity_create(world, &cam), ENGINE_OK); /* one for the second surface below */
+        PlaceAt(world, cam, 0.0f, 0.0f, 4.0f);
+        CHECK_STATUS(SetCamera(world, cam, 1.0471976f, 0, 1.0f), ENGINE_OK);
+    }
+
     /* a second surface on the same window size shows the same world through its own scene */
     {
         Window other = XCreateSimpleWindow(display, DefaultRootWindow(display), 0, 0, WIDTH, HEIGHT, 0, 0, 0);
@@ -409,8 +529,22 @@ int main(void)
         CHECK_STATUS(g_api->surface_create(engine, &other_info, &second), ENGINE_OK);
         CHECK_STATUS(g_api->surface_set_background(second, background), ENGINE_OK);
         CHECK_STATUS(g_api->surface_set_world(second, world), ENGINE_OK);
-        CHECK_STATUS(FrameAndRead(engine, second, &pixels), ENGINE_OK);
-        CHECK(HasObject(&pixels, clear));
+        {
+            float ray_origin[3];
+            float ray_direction[3];
+            unsigned long long first_picture;
+            CHECK_STATUS(g_api->surface_pixel_ray(second, 1.0f, 1.0f, ray_origin, ray_direction),
+                         ENGINE_ERROR_NOT_READY); /* no frame has drawn it yet */
+            CHECK_STATUS(FrameAndRead(engine, second, &pixels), ENGINE_OK);
+            CHECK(HasObject(&pixels, clear));
+            first_picture = Checksum(&pixels);
+            /* two surfaces, two cameras, one world */
+            CHECK_STATUS(g_api->surface_set_camera(second, cam), ENGINE_OK);
+            CHECK_STATUS(FrameAndRead(engine, second, &pixels), ENGINE_OK);
+            CHECK(Checksum(&pixels) != first_picture);
+            CHECK_STATUS(FrameAndRead(engine, surface, &pixels), ENGINE_OK);
+            CHECK(Checksum(&pixels) == first_picture); /* the first surface still looks through the default camera */
+        }
         CHECK_STATUS(g_api->surface_destroy(second), ENGINE_OK);
         XDestroyWindow(display, other);
     }

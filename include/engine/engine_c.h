@@ -447,6 +447,10 @@ extern "C"
         uint32_t objects_drawn; /* objects the last frame of the bound world drew */
         uint64_t entities_unresolved; /* entities of the bound world in the last frame whose mesh or material did not
                                          resolve (not mounted, not of the type, or broken); they draw nothing */
+        int32_t camera_status;  /* ENGINE_OK while the camera named with surface_set_camera is in use (or none is named:
+                                   the default camera), else why the surface fell back to the default camera: NOT_FOUND
+                                   (the entity was destroyed, or has no engine_camera or no transform) */
+        uint64_t camera_entity; /* the entity named with surface_set_camera, 0 for the default camera */
     } engine_surface_state;
 
     /* The pixels of a rendered frame: RGBA8, `stride` bytes per row (width * 4), top row first. `data` is the host's to
@@ -502,11 +506,12 @@ extern "C"
                                                  only */
         ENGINE_COMPONENT_NAME = 3,            /* text, up to ENGINE_NAME_MAX_BYTES bytes; set and read with
                                                  engine_api.entity_name_set/get */
-        ENGINE_COMPONENT_MESH_REFERENCE = 4   /* engine_mesh_reference: which mesh and material the entity draws */
+        ENGINE_COMPONENT_MESH_REFERENCE = 4,  /* engine_mesh_reference: which mesh and material the entity draws */
+        ENGINE_COMPONENT_CAMERA = 5           /* engine_camera: a perspective camera (Phase 24 Day 360) */
     } engine_component_kind;
 
 #define ENGINE_COMPONENT_BIT(kind) (1u << ((kind) - 1))
-#define ENGINE_COMPONENT_MASK_ALL 0xFu
+#define ENGINE_COMPONENT_MASK_ALL 0x1Fu
 #define ENGINE_NAME_MAX_BYTES 63u
 
     /* The local transform: scale, then rotate, then translate. The rotation is a unit quaternion (x, y, z, w). */
@@ -537,6 +542,25 @@ extern "C"
         uint64_t mesh;
         uint64_t material_resource;
     } engine_mesh_reference;
+
+    /* Bits of engine_camera.flags. */
+#define ENGINE_CAMERA_FIXED_ASPECT 0x1u /* use engine_camera.aspect instead of the surface's width over height */
+
+    /* A perspective camera (Phase 24 Day 360). The camera looks along its entity's -Z with +Y up and +X right (the
+     * engine's convention: the entity's world matrix, as the frame's transform system computed it, is the camera's
+     * placement; scale is ignored), so setting the entity's transform each frame is the whole camera control. An
+     * entity that is a camera needs ENGINE_COMPONENT_TRANSFORM too. `fov_y` is the vertical field of view in radians in
+     * (0, pi); `near_plane` > 0 and `far_plane` > `near_plane`, in metres. `aspect` is used only with
+     * ENGINE_CAMERA_FIXED_ASPECT (> 0); otherwise the surface's width over height is. */
+    typedef struct engine_camera
+    {
+        uint32_t struct_size;
+        uint32_t flags; /* ENGINE_CAMERA_* bits; an unknown bit is INVALID_ARGUMENT */
+        float fov_y;
+        float near_plane;
+        float far_plane;
+        float aspect;
+    } engine_camera;
 
     /* A job: called once, on one of the engine's worker threads (never on the thread that submitted it), with the
      * `user` pointer given to jobs_submit. While it runs it may call, through the table it was given: status_name,
@@ -1046,6 +1070,30 @@ extern "C"
          * `entities_unresolved`. Fails with: STALE_HANDLE, INVALID_ARGUMENT, TYPE_MISMATCH, UNSUPPORTED (the surface is
          * lost, or its device cannot draw a scene). Needs ENGINE_CAP_WORLD_ON_SURFACE. */
         engine_status (*surface_set_world)(engine_handle surface, engine_handle world);
+
+        /* ---- Phase 24 Day 360: cameras ---- */
+
+        /* Makes the surface look through the entity `camera_entity` (an entity of the bound world with
+         * ENGINE_COMPONENT_CAMERA and ENGINE_COMPONENT_TRANSFORM) on each frame; 0 returns the surface to the default
+         * camera. Several surfaces may name different cameras of one world. A camera entity that is destroyed or loses
+         * a component makes the surface draw through the default camera and report NOT_FOUND in `camera_status` of
+         * surface_state, never a crash; the name is kept, so a camera that comes back (its component set again) is used
+         * again. Naming a camera before the world is bound is allowed. Fails with: STALE_HANDLE, INVALID_ARGUMENT,
+         * TYPE_MISMATCH. */
+        engine_status (*surface_set_camera)(engine_handle surface, uint64_t camera_entity);
+
+        /* Turns the surface pixel (`x`, `y`) (top left is (0, 0); fractions allowed, the pixel centre is +0.5) into a
+         * world ray for picking: `origin` and `direction` (unit length) receive three floats each. It reads the camera
+         * and the size of the last frame that drew the surface (the camera as of the frame, not as of this call), so a
+         * host that moved the camera since asks again after the next `frame`. Fails with: STALE_HANDLE,
+         * INVALID_ARGUMENT, NOT_READY (no frame has drawn a scene on this surface yet), TYPE_MISMATCH. */
+        engine_status (*surface_pixel_ray)(engine_handle surface, float x, float y, float* origin, float* direction);
+
+        /* The inverse: projects the world point `point` (three floats) with the camera of the last frame. `out`
+         * receives three floats: the pixel x and y (as above) and the distance along the camera's viewing direction in
+         * metres (negative behind the camera, where x and y are not meaningful). Fails with: STALE_HANDLE,
+         * INVALID_ARGUMENT, NOT_READY, TYPE_MISMATCH. */
+        engine_status (*surface_project)(engine_handle surface, const float* point, float* out);
     } engine_api;
 
     /* Returns the function table.

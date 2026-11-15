@@ -742,6 +742,9 @@ extern "C"
             &engine_c::PixelsFinishFn,
             &engine_c::PixelsDestroyFn,
             &engine_c::SurfaceSetWorldFn,
+            &engine_c::SurfaceSetCameraFn,
+            &engine_c::SurfacePixelRayFn,
+            &engine_c::SurfaceProjectFn,
         };
         *out = &table;
         return ENGINE_OK;

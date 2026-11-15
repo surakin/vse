@@ -568,6 +568,16 @@ The picture is lit by a default sun and seen by a default camera until Day 360 a
 **Tested** by `host_scene.c` (a C program with an Xlib window; plain and asan): a minted mesh and material added from memory, an entity bound to them, the counts of `surface_state`, an unresolved
 material, the default material, the world destroyed under the surface and the image compared with the golden `golden/scene_rock_160x120.rgba` (no channel off by more than 4 and at most 0.5% of the values off by more than 1).
 
+## Cameras (Phase 24 Day 360)
+
+`ENGINE_COMPONENT_CAMERA` (`engine_camera`: `fov_y`, `near_plane`, `far_plane`, `flags`, `aspect`) makes an entity a perspective camera. It looks along the entity's world matrix's -Z with +Y up (scale ignored), so the host's
+whole camera control is setting the entity's transform each frame. `surface_set_camera(surface, entity)` names the camera of a surface (0: the default camera); two surfaces may name two cameras of one world.
+The aspect follows the surface unless `ENGINE_CAMERA_FIXED_ASPECT` is set. A camera entity that is destroyed or loses its component or transform makes the surface draw through the default camera and report `camera_status`
+`NOT_FOUND` in `surface_state`; the name is kept, so a camera that returns is used again.
+
+`surface_pixel_ray` and `surface_project` turn a surface pixel into a world ray and a world point into a pixel with the camera **of the last frame that drew the surface** (they answer `NOT_READY` before one has). The ray starts at the camera
+position; the projection reports the pixel and the distance along the view direction (negative behind the camera). Orthographic cameras are not built (`KNOWN-ISSUES.md`).
+
 ## Writing a host: the short path (Days 346-357)
 
 1. Include `engine/engine_c.h` (and `engine_loader.h` to load the library at run time). Nothing else of the engine is a header a host may use: the C++ interfaces have no stable ABI.

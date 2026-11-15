@@ -22,6 +22,18 @@ class Scheduler;
 namespace engine_placeholder::engine_c
 {
 
+/// The component of ENGINE_COMPONENT_CAMERA (Phase 24 Day 360).
+///
+/// - Thread-safety: plain data.
+struct CameraComponent
+{
+    u32 flags = 0;            ///< ENGINE_CAMERA_* bits.
+    f32 fov_y = 1.0471976f;   ///< Vertical field of view in radians.
+    f32 near_plane = 0.1f;    ///< Distance to the near plane.
+    f32 far_plane = 1000.0f;  ///< Distance to the far plane.
+    f32 aspect = 1.0f;        ///< Width over height, used with ENGINE_CAMERA_FIXED_ASPECT.
+};
+
 /// A world and the systems that run on it.
 ///
 /// - Thread-safety: thread-compatible; the runtime's world mutex guards every use.

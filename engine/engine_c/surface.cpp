@@ -155,6 +155,8 @@ struct SurfaceObject
     Vector<PixelsObject*>* frame_by_slot = nullptr;  // during RenderAll: the tickets the before-present hook serves
     u32 objects_drawn = 0;
     u64 entities_unresolved = 0;
+    u64 camera_entity = 0;                    // named by surface_set_camera, 0 for the default camera
+    engine_status camera_status = ENGINE_OK;  // NOT_FOUND while the named camera is not usable
 };
 
 namespace
@@ -822,6 +824,43 @@ engine_status SurfaceHost::Rebind(engine_handle surface, const engine_surface_in
     return ENGINE_OK;
 }
 
+engine_status SurfaceHost::SetCamera(engine_handle surface, u64 camera_entity)
+{
+    LockGuard<Mutex> lock(mutex_);
+    SurfaceSlot* slot = nullptr;
+    TRY_SURFACE(ResolveSlot(surfaces_, surface, kKindSurface, "surface", &slot));
+    SurfaceObject* s = slot->object.Get();
+    s->camera_entity = camera_entity;
+    s->camera_status = ENGINE_OK;  // the next frame says whether the entity works
+    return ENGINE_OK;
+}
+
+engine_status SurfaceHost::PixelRay(engine_handle surface, f32 x, f32 y, f32* origin, f32* direction)
+{
+    LockGuard<Mutex> lock(mutex_);
+    SurfaceSlot* slot = nullptr;
+    TRY_SURFACE(ResolveSlot(surfaces_, surface, kKindSurface, "surface", &slot));
+    SurfaceObject* s = slot->object.Get();
+    if (s->scene == nullptr || !s->scene->PixelRay(x, y, origin, direction))
+    {
+        return Fail(ENGINE_ERROR_NOT_READY, "no frame has drawn a scene on this surface yet");
+    }
+    return ENGINE_OK;
+}
+
+engine_status SurfaceHost::Project(engine_handle surface, const f32* point, f32* out)
+{
+    LockGuard<Mutex> lock(mutex_);
+    SurfaceSlot* slot = nullptr;
+    TRY_SURFACE(ResolveSlot(surfaces_, surface, kKindSurface, "surface", &slot));
+    SurfaceObject* s = slot->object.Get();
+    if (s->scene == nullptr || !s->scene->Project(point, out))
+    {
+        return Fail(ENGINE_ERROR_NOT_READY, "no frame has drawn a scene on this surface yet");
+    }
+    return ENGINE_OK;
+}
+
 engine_status SurfaceHost::SetWorld(engine_handle surface, engine_handle world, ResourceHost* resources)
 {
     LockGuard<Mutex> lock(mutex_);
@@ -900,6 +939,8 @@ engine_status SurfaceHost::State(engine_handle surface, engine_surface_state* ou
     out->world_status = s->world_status;
     out->objects_drawn = s->objects_drawn;
     out->entities_unresolved = s->entities_unresolved;
+    out->camera_status = s->camera_status;
+    out->camera_entity = s->camera_entity;
     out->present_mode = s->present_mode;
     if (s->swapchain != nullptr)
     {
@@ -1148,9 +1189,9 @@ void SurfaceHost::RenderAll(Runtime& runtime, f32 delta_seconds)
                 s->frame_by_slot = &by_slot;
                 const u32 width = s->swapchain->Width();
                 const u32 height = s->swapchain->Height();
-                const SceneFrameReport report = s->scene->Render(
-                    *world, height != 0 ? static_cast<f32>(width) / static_cast<f32>(height) : 1.0f, 0.0f,
-                    delta_seconds);
+                const SceneFrameReport report = s->scene->Render(*world, s->camera_entity, width, height, 0.0f,
+                                                                 delta_seconds);
+                s->camera_status = static_cast<engine_status>(report.camera_status);
                 s->frame_by_slot = nullptr;
                 s->objects_drawn = report.objects_drawn;
                 s->entities_unresolved = report.entities_unresolved;
@@ -1307,6 +1348,46 @@ engine_status SurfaceSetWorldFn(engine_handle surface, engine_handle world)
         }
     }
     return host->SetWorld(surface, world, runtime->Resources());
+}
+
+engine_status SurfaceSetCameraFn(engine_handle surface, u64 camera_entity)
+{
+    SurfaceHost* host = nullptr;
+    TRY_SURFACE(HostOfObject(surface, &host));
+    return host->SetCamera(surface, camera_entity);
+}
+
+engine_status SurfacePixelRayFn(engine_handle surface, float x, float y, float* origin, float* direction)
+{
+    if (origin == nullptr || direction == nullptr)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`origin` or `direction` is NULL");
+    }
+    if (!(x - x == 0.0f) || !(y - y == 0.0f))
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the pixel is not finite");
+    }
+    SurfaceHost* host = nullptr;
+    TRY_SURFACE(HostOfObject(surface, &host));
+    return host->PixelRay(surface, x, y, origin, direction);
+}
+
+engine_status SurfaceProjectFn(engine_handle surface, const float* point, float* out)
+{
+    if (point == nullptr || out == nullptr)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "`point` or `out` is NULL");
+    }
+    for (int i = 0; i < 3; ++i)
+    {
+        if (!(point[i] - point[i] == 0.0f))
+        {
+            return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the point is not finite");
+        }
+    }
+    SurfaceHost* host = nullptr;
+    TRY_SURFACE(HostOfObject(surface, &host));
+    return host->Project(surface, point, out);
 }
 
 engine_status SurfaceStateFn(engine_handle surface, engine_surface_state* out)

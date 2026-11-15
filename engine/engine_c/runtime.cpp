@@ -49,13 +49,14 @@ const char* NameOfKind(engine_component_kind kind)
     case ENGINE_COMPONENT_WORLD_TRANSFORM: return "world transform";
     case ENGINE_COMPONENT_NAME: return "name";
     case ENGINE_COMPONENT_MESH_REFERENCE: return "mesh reference";
+    case ENGINE_COMPONENT_CAMERA: return "camera";
     }
     return "component";
 }
 
 bool KnownKind(u32 kind)
 {
-    return kind >= ENGINE_COMPONENT_TRANSFORM && kind <= ENGINE_COMPONENT_MESH_REFERENCE;
+    return kind >= ENGINE_COMPONENT_TRANSFORM && kind <= ENGINE_COMPONENT_CAMERA;
 }
 
 ecs::ComponentId IdOfKind(engine_component_kind kind)
@@ -66,6 +67,7 @@ ecs::ComponentId IdOfKind(engine_component_kind kind)
     case ENGINE_COMPONENT_WORLD_TRANSFORM: return ecs::ComponentOf<ecs::WorldTransform>();
     case ENGINE_COMPONENT_NAME: return ecs::ComponentOf<EntityName>();
     case ENGINE_COMPONENT_MESH_REFERENCE: return ecs::ComponentOf<MeshReference>();
+    case ENGINE_COMPONENT_CAMERA: return ecs::ComponentOf<CameraComponent>();
     }
     return ecs::kInvalidComponent;
 }
@@ -491,6 +493,10 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
     {
         checked = CheckInStruct(value, sizeof(engine_transform), "engine_transform");
     }
+    else if (kind == ENGINE_COMPONENT_CAMERA)
+    {
+        checked = CheckInStruct(value, sizeof(engine_camera), "engine_camera");
+    }
     else
     {
         checked = CheckInStruct(value, sizeof(engine_mesh_reference), "engine_mesh_reference");
@@ -499,75 +505,104 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
     {
         return checked;
     }
-    return WithWorld(world, true, key,
-                     [&](WorldObject& object, ecs::Entity entity)
-                     {
-                         if (kind == ENGINE_COMPONENT_MESH_REFERENCE)
-                         {
-                             const engine_mesh_reference* in = static_cast<const engine_mesh_reference*>(value);
-                             MeshReference reference;
-                             reference.mesh = in->mesh;
-                             reference.material = in->material;
-                             reference.material_resource = in->material_resource;
-                             return SetOrAdd(object.world, entity, reference);
-                         }
-                         const engine_transform* in = static_cast<const engine_transform*>(value);
-                         for (const float f : in->position)
-                         {
-                             if (!Finite(f))
-                             {
-                                 return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the position is not finite");
-                             }
-                         }
-                         for (const float f : in->scale)
-                         {
-                             if (!Finite(f))
-                             {
-                                 return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the scale is not finite");
-                             }
-                         }
-                         for (const float f : in->rotation)
-                         {
-                             if (!Finite(f))
-                             {
-                                 return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the rotation is not finite");
-                             }
-                         }
-                         Quaternion rotation;
-                         rotation.x = in->rotation[0];
-                         rotation.y = in->rotation[1];
-                         rotation.z = in->rotation[2];
-                         rotation.w = in->rotation[3];
-                         const float length_squared = rotation.x * rotation.x + rotation.y * rotation.y +
-                                                      rotation.z * rotation.z + rotation.w * rotation.w;
-                         if (!(length_squared > 1e-12f) || !Finite(length_squared))
-                         {
-                             return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the rotation has no length");
-                         }
-                         const float inverse = 1.0f / Sqrt(length_squared);
-                         ecs::LocalTransform local;
-                         local.position = Vec3(in->position[0], in->position[1], in->position[2]);
-                         local.rotation = Quaternion{rotation.x * inverse, rotation.y * inverse, rotation.z * inverse,
-                                                     rotation.w * inverse};
-                         local.scale = Vec3(in->scale[0], in->scale[1], in->scale[2]);
-                         const bool had_local = object.world.Has<ecs::LocalTransform>(entity);
-                         const engine_status status = SetOrAdd(object.world, entity, local);
-                         if (status != ENGINE_OK)
-                         {
-                             return status;
-                         }
-                         // The frame's transform system writes the world matrix of every entity that has both.
-                         if (!object.world.Has<ecs::WorldTransform>(entity))
-                         {
-                             const engine_status added = SetOrAdd(object.world, entity, ecs::WorldTransform());
-                             if (added != ENGINE_OK && !had_local)
-                             {  // a failing call changes nothing: take back the component this call added
-                                 object.world.Remove<ecs::LocalTransform>(entity);
-                             }
-                             return added;
-                         }
-                         return ENGINE_OK;
-                     });
+    return WithWorld(
+        world, true, key,
+        [&](WorldObject& object, ecs::Entity entity)
+        {
+            if (kind == ENGINE_COMPONENT_CAMERA)
+            {
+                const engine_camera* in = static_cast<const engine_camera*>(value);
+                if ((in->flags & ~ENGINE_CAMERA_FIXED_ASPECT) != 0)
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the camera has an unknown flag bit");
+                }
+                if (!(Finite(in->fov_y) && in->fov_y > 0.0f && in->fov_y < 3.1415926f))
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "fov_y is not in (0, pi)");
+                }
+                if (!(Finite(in->near_plane) && in->near_plane > 0.0f && Finite(in->far_plane) &&
+                      in->far_plane > in->near_plane))
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the planes need 0 < near_plane < far_plane (finite)");
+                }
+                if ((in->flags & ENGINE_CAMERA_FIXED_ASPECT) != 0 && !(Finite(in->aspect) && in->aspect > 0.0f))
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a fixed aspect needs aspect > 0");
+                }
+                CameraComponent camera;
+                camera.flags = in->flags;
+                camera.fov_y = in->fov_y;
+                camera.near_plane = in->near_plane;
+                camera.far_plane = in->far_plane;
+                camera.aspect = in->aspect;
+                return SetOrAdd(object.world, entity, camera);
+            }
+            if (kind == ENGINE_COMPONENT_MESH_REFERENCE)
+            {
+                const engine_mesh_reference* in = static_cast<const engine_mesh_reference*>(value);
+                MeshReference reference;
+                reference.mesh = in->mesh;
+                reference.material = in->material;
+                reference.material_resource = in->material_resource;
+                return SetOrAdd(object.world, entity, reference);
+            }
+            const engine_transform* in = static_cast<const engine_transform*>(value);
+            for (const float f : in->position)
+            {
+                if (!Finite(f))
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the position is not finite");
+                }
+            }
+            for (const float f : in->scale)
+            {
+                if (!Finite(f))
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the scale is not finite");
+                }
+            }
+            for (const float f : in->rotation)
+            {
+                if (!Finite(f))
+                {
+                    return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the rotation is not finite");
+                }
+            }
+            Quaternion rotation;
+            rotation.x = in->rotation[0];
+            rotation.y = in->rotation[1];
+            rotation.z = in->rotation[2];
+            rotation.w = in->rotation[3];
+            const float length_squared = rotation.x * rotation.x + rotation.y * rotation.y + rotation.z * rotation.z +
+                                         rotation.w * rotation.w;
+            if (!(length_squared > 1e-12f) || !Finite(length_squared))
+            {
+                return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the rotation has no length");
+            }
+            const float inverse = 1.0f / Sqrt(length_squared);
+            ecs::LocalTransform local;
+            local.position = Vec3(in->position[0], in->position[1], in->position[2]);
+            local.rotation = Quaternion{rotation.x * inverse, rotation.y * inverse, rotation.z * inverse,
+                                        rotation.w * inverse};
+            local.scale = Vec3(in->scale[0], in->scale[1], in->scale[2]);
+            const bool had_local = object.world.Has<ecs::LocalTransform>(entity);
+            const engine_status status = SetOrAdd(object.world, entity, local);
+            if (status != ENGINE_OK)
+            {
+                return status;
+            }
+            // The frame's transform system writes the world matrix of every entity that has both.
+            if (!object.world.Has<ecs::WorldTransform>(entity))
+            {
+                const engine_status added = SetOrAdd(object.world, entity, ecs::WorldTransform());
+                if (added != ENGINE_OK && !had_local)
+                {  // a failing call changes nothing: take back the component this call added
+                    object.world.Remove<ecs::LocalTransform>(entity);
+                }
+                return added;
+            }
+            return ENGINE_OK;
+        });
 }
 
 engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void* out)
@@ -583,9 +618,11 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
     }
     const usize wanted = kind == ENGINE_COMPONENT_TRANSFORM         ? sizeof(engine_transform)
                          : kind == ENGINE_COMPONENT_WORLD_TRANSFORM ? sizeof(engine_world_transform)
+                         : kind == ENGINE_COMPONENT_CAMERA          ? sizeof(engine_camera)
                                                                     : sizeof(engine_mesh_reference);
     const char* what = kind == ENGINE_COMPONENT_TRANSFORM         ? "engine_transform"
                        : kind == ENGINE_COMPONENT_WORLD_TRANSFORM ? "engine_world_transform"
+                       : kind == ENGINE_COMPONENT_CAMERA          ? "engine_camera"
                                                                   : "engine_mesh_reference";
     const engine_status checked = CheckInStruct(out, wanted, what);
     if (checked != ENGINE_OK)
@@ -632,6 +669,23 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
                              MemCopy(out, &result, sizeof(result));
                              return ENGINE_OK;
                          }
+                         if (kind == ENGINE_COMPONENT_CAMERA)
+                         {
+                             const CameraComponent* camera = view.Peek<CameraComponent>(entity);
+                             if (camera == nullptr)
+                             {
+                                 return Fail(ENGINE_ERROR_NOT_FOUND, "the entity has no camera");
+                             }
+                             engine_camera result = {};
+                             result.struct_size = sizeof(engine_camera);
+                             result.flags = camera->flags;
+                             result.fov_y = camera->fov_y;
+                             result.near_plane = camera->near_plane;
+                             result.far_plane = camera->far_plane;
+                             result.aspect = camera->aspect;
+                             MemCopy(out, &result, sizeof(result));
+                             return ENGINE_OK;
+                         }
                          const MeshReference* reference = view.Peek<MeshReference>(entity);
                          if (reference == nullptr)
                          {
@@ -673,6 +727,7 @@ engine_status ComponentRemoveFn(engine_handle world, u64 key, u32 kind_value)
                              }
                              break;
                          case ENGINE_COMPONENT_NAME: status = w.Remove<EntityName>(entity); break;
+                         case ENGINE_COMPONENT_CAMERA: status = w.Remove<CameraComponent>(entity); break;
                          default: status = w.Remove<MeshReference>(entity); break;
                          }
                          if (status != ecs::Status::Ok)
@@ -769,9 +824,9 @@ engine_status QueryFn(engine_handle world, u32 mask, u64* keys, size_t capacity,
     return WithWorld(world, false, 0,
                      [&](WorldObject& object, ecs::Entity)
                      {
-                         ecs::ComponentId wanted[4];
+                         ecs::ComponentId wanted[5];
                          usize wanted_count = 0;
-                         for (u32 kind = ENGINE_COMPONENT_TRANSFORM; kind <= ENGINE_COMPONENT_MESH_REFERENCE; ++kind)
+                         for (u32 kind = ENGINE_COMPONENT_TRANSFORM; kind <= ENGINE_COMPONENT_CAMERA; ++kind)
                          {
                              if ((mask & ENGINE_COMPONENT_BIT(kind)) != 0)
                              {
