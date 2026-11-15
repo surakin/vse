@@ -269,7 +269,7 @@ endfunction()
 # A shared library the stack-trace tests load at run time. Plain build, no sanitizer runtime of its own.
 add_library(debug_test_plugin MODULE plugin.cpp)
 target_include_directories(debug_test_plugin PRIVATE ${CMAKE_SOURCE_DIR}/engine/foundation)
-set_target_properties(debug_test_plugin PROPERTIES UNITY_BUILD OFF)
+set_target_properties(debug_test_plugin PROPERTIES UNITY_BUILD OFF CXX_VISIBILITY_PRESET default)  # the tests look its entry point up by name: it stays visible when the shared build hides symbols by default
 
 engine_add_debug_tests(debug_tests foundation_debug jobs "" "debug")
 engine_add_debug_tests(debug_tests_asan foundation_debug_asan jobs_asan " [asan]" "asan")

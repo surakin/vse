@@ -102,3 +102,67 @@ The version script exports one symbol (`engine_shared_probe`, which runs jobs: D
 Left for later days: the second set of the engine's own test suites linked against the shared library (Day 356 runs the whole suite shared; the mode argument of
 `engine_add_*_tests` is added then, where the suites are run), the install rule (a `libengine.so.1` install with the headers belongs with the C API on Day 346),
 `-Wl,-rpath` for installed hosts, and sizes and start-up of a Release build (Day 356's benchmarks).
+
+## Day 356 results: the cost of the shared build, and the fallbacks
+
+Release builds (`CMAKE_BUILD_TYPE=Release`, Clang, unity, Linux x86-64): `build-rel` (static default) and `build-rel-shared` (`-DENGINE_BUILD_SHARED=ON`).
+
+| Measure | Static default | Shared build |
+|---|---|---|
+| `libengine.so.1.0` size | not built | 7.7 MB |
+| `libengine_c.a` (the C API layer alone) | 306,320 bytes | 306,456 bytes |
+| Start-up, whole `engine_c_api_bench` process (create, 5 measured loops, destroy) | 0.27 s | 0.27 s |
+| `ecs_bench` iteration at 100k entities, speed-up over the baseline (pass: 3.0) | x9.07 | x9.59 |
+| `ecs_bench` parallel efficiency, 4 workers (pass: 70%) | 84.6% | 84.8% |
+| `renderer_bench` (needs a GPU: built, not run) | built | built |
+
+`ecs_bench` and `renderer_bench` link the engine's modules as static libraries in both trees (they are C++ programs and cannot link a hidden-symbol
+library), so their two columns are the same code: the difference above is run-to-run noise, and **the static default did not get slower** (the shared
+option changes only position-independence flags, which x86-64 does not charge for). The Phase 22 asset benchmarks (`[.][asset-bench]`) link the same way and
+were not repeated.
+
+Per-call cost of the C API (`engine_c_api_bench`: a C host calling the function table; Release, ns per call):
+
+| Call | Linked statically (`libengine_c.a`) | Through `libengine.so.1` | Static tree, same C host |
+|---|---|---|---|
+| `frame` (one empty world) | 99.1 | 89.9 | 94.8 |
+| entity create + destroy | 35.6 | 32.8 | 35.1 |
+| `component_set` (transform) | 27.5 | 26.0 | 26.5 |
+| `component_get` (transform) | 17.6 | 15.5 | 17.8 |
+| `resource_mounted` (absent) | 44.0 | 42.9 | 46.2 |
+
+The function-table call (one indirect call plus handle validation) costs 15-45 ns; going through the shared library is within the noise of the static
+link, because the table is the only crossing and it is an indirect call in both. A resource *load* is not timed: it is dominated by file I/O, which the
+C layer does not change. The debug build is about 8 times slower (frame 715 ns), so only Release figures are quoted.
+
+### Shared GPU textures: not built
+
+The second embedding fallback (the host composites the engine's output itself) needs `VK_KHR_external_memory_fd` on Linux, a shared handle on D3D12
+and `IOSurface` on macOS. Not built in this phase: the primary path (render into a host-owned window, Days 349-354) and the read-back path
+(`surface_read_pixels`, Day 352) already cover every host the phase names; an importing host needs its own device from the same physical GPU with
+matching external-memory handle types, a synchronization contract (semaphore export) that the C API has no vocabulary for yet, and a test that creates a
+second Vulkan instance in the C host (the host would need the Vulkan loader as a test dependency). There is no `engine_caps` bit for it (a bit claiming a
+feature that is absent would be a lie, and a bit added later is free: size-prefixed structs and the caps word grow). Phase 24's scenes-for-hosts days are the place
+to revisit it when the host names the need.
+
+### The plugin question: not in this phase
+
+A game as a loadable library that the host reloads while running is **not in this phase**. The C ABI makes it possible (a game would be a second library
+that receives the function table through `engine_get_api`, exactly as a host does), and the `engine_reload_cycles` tests already prove the engine itself
+unloads and reloads cleanly. What it would need: a game-side entry-point contract, ownership of components registered by a module that is about to unload
+(their type descriptors point into its code), a quiesce point where no job of the module is running, and a state hand-over format. That is Phase 24-28
+scope and is decided with the first host that asks.
+
+### The suites against the shared build: a deviation from the day file
+
+The C++ suites include internal headers and call hidden functions, so they cannot link `libengine.so` (hidden visibility and a one-symbol export list are
+the point of Day 344). Day 343's "mode argument" is therefore not built. The suite was run in the shared configuration instead: `build-shared` configured with
+`-DENGINE_BUILD_SHARED=ON` builds every test as in the static tree (against the static libraries) and, in addition, builds `libengine.so` and every
+C host (`tests/engine_library/*.c`) against it, so the C-side tests exercise the shared library and the C++ side proves the shared option disturbs nothing.
+Result: `scripts/test-phase.sh --all --flavor all --build-dir build-shared`: `ran 8915 of 8915 tests (phases: all; flavors: all; display: included; crash tests: included)`
+in 263 s, with four failures that were bugs of the shared configuration, now fixed:
+
+- `debug_test_plugin` (3 tests): the MODULE the debug tests `dlopen` was compiled with the shared build's hidden visibility, so `dlsym` could not find its entry
+  points. The target now sets `CXX_VISIBILITY_PRESET default` (`tests/debug/CMakeLists.txt`).
+- `engine_reload_cycles_tsan`: a flake (not reproducible alone or 24 in parallel) where the first load/unload cycle counted the scheduler's worker threads
+  before they had finished starting; `host_reload.c` now waits for the thread count to settle on the first cycle (`waited_first_ms`).

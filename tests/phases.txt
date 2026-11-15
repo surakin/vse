@@ -379,6 +379,7 @@ test:cmdline_access_check*                      22   # the command-line gate (ou
 test:json_boundary_check*                       22   # the yyjson boundary gate (Day 335)
 test:asset_boundary_check*                      22   # the asset boundary gate (Day 339)
 test:engine_shared_option                       23   # the ENGINE_BUILD_SHARED option exists and defaults off (Day 342)
+test:engine_tutorial_loading*               23   # the tutorial's C host clears its own Xlib window through the C API, and the tutorial page holds the same code (Day 357)
 test:engine_install_consumer                  23   # the engine is installed to a scratch prefix (headers: include/engine only) and a consumer builds against it with find_package(Engine)
 test:engine_shared_link_probe*                  23   # a C program links the shared engine library and runs jobs in it (Day 343)
 test:engine_dup_singletons*                     23   # one allocator, counters, log and frame pool across the boundary; the plugin that carries its own foundation is detected (Day 345)

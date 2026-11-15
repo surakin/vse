@@ -99,6 +99,15 @@ int main(void)
         }
         if (cycle == 0)
         {
+            /* The same settling as below: a joined thread of the engine can be listed for a moment after its join (seen
+               once in a full run of the suite under load: the count was above the limit on the first cycle and every
+               later cycle then compared against it). The process may keep one thread of its own (a sanitizer's). */
+            int waited_first_ms = 0;
+            while (ThreadCount() > threads_before + 1 && waited_first_ms < 2000)
+            {
+                host_sleep_ms(1);
+                ++waited_first_ms;
+            }
             threads_after_first = ThreadCount();
             CHECK(threads_after_first >= threads_before && threads_after_first <= threads_before + 1);
         }

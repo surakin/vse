@@ -1,0 +1,16 @@
+# The tutorial page must hold exactly the program the test runs: the first ```c block of the page equals the file.
+#   cmake -DPROGRAM=<tutorial_clear_window.c> -DDOC=<loading-the-engine.md> -P tutorial_doc_check.cmake
+file(READ ${PROGRAM} program)
+file(READ ${DOC} doc)
+string(FIND "${doc}" "```c\n" begin)
+if(begin EQUAL -1)
+  message(FATAL_ERROR "${DOC} has no ```c block")
+endif()
+math(EXPR begin "${begin} + 5")
+string(SUBSTRING "${doc}" ${begin} -1 rest)
+string(FIND "${rest}" "\n```" end)
+math(EXPR end "${end} + 1")
+string(SUBSTRING "${rest}" 0 ${end} block)
+if(NOT block STREQUAL program)
+  message(FATAL_ERROR "the first ```c block of ${DOC} differs from ${PROGRAM}")
+endif()

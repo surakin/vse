@@ -468,3 +468,34 @@ if(APPLE)
   set_tests_properties(engine_c_header_ios PROPERTIES LABELS "engine_library")
   engine_label_tests(engine_c_header_ios)
 endif()
+
+# Day 356: the per-call cost of the C API, a hidden benchmark (built, not registered with ctest): bench_c_api.c linked statically against engine_c and, with
+# ENGINE_BUILD_SHARED, against libengine.so; the difference between the two is the cost of the shared boundary.
+if(TARGET engine_c AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  add_executable(engine_c_api_bench_static bench_c_api.c)
+  target_include_directories(engine_c_api_bench_static PRIVATE ${ENGINE_PUBLIC_INCLUDE_DIR})
+  target_link_libraries(engine_c_api_bench_static PRIVATE engine_c Threads::Threads ${ENGINE_LIBRARY_HOST_LIBS})
+  set_target_properties(engine_c_api_bench_static PROPERTIES LINKER_LANGUAGE CXX)
+  if(ENGINE_BUILD_SHARED AND TARGET engine)
+    add_executable(engine_c_api_bench_shared bench_c_api.c)
+    target_include_directories(engine_c_api_bench_shared PRIVATE ${ENGINE_PUBLIC_INCLUDE_DIR})
+    target_link_libraries(engine_c_api_bench_shared PRIVATE engine)
+    set_target_properties(engine_c_api_bench_shared PROPERTIES BUILD_RPATH "$<TARGET_FILE_DIR:engine>")
+  endif()
+endif()
+
+# Day 357: the program of docs/tutorials/loading-the-engine.md (a C host with an Xlib window clears it through the C API), built and run as a test; skips without a
+# display or a device. tutorial_clear_window_matches_doc compares it with the code block of the tutorial, so the page cannot drift from the program.
+if(TARGET engine_c AND CMAKE_SYSTEM_NAME STREQUAL "Linux" AND TARGET PkgConfig::EngineTestX11)
+  add_executable(tutorial_clear_window tutorial_clear_window.c)
+  target_include_directories(tutorial_clear_window PRIVATE ${ENGINE_PUBLIC_INCLUDE_DIR})
+  target_link_libraries(tutorial_clear_window PRIVATE engine_c PkgConfig::EngineTestX11 Threads::Threads ${ENGINE_LIBRARY_HOST_LIBS})
+  set_target_properties(tutorial_clear_window PROPERTIES LINKER_LANGUAGE CXX)
+  add_test(NAME engine_tutorial_loading COMMAND tutorial_clear_window)
+  set_tests_properties(engine_tutorial_loading PROPERTIES LABELS "engine_library" PASS_REGULAR_EXPRESSION "tutorial: (ok|skipped)")
+  engine_label_tests(engine_tutorial_loading)
+  add_test(NAME engine_tutorial_loading_matches_doc COMMAND ${CMAKE_COMMAND} -DPROGRAM=${CMAKE_CURRENT_SOURCE_DIR}/tutorial_clear_window.c
+           -DDOC=${CMAKE_SOURCE_DIR}/docs/tutorials/loading-the-engine.md -P ${CMAKE_CURRENT_SOURCE_DIR}/tutorial_doc_check.cmake)
+  set_tests_properties(engine_tutorial_loading_matches_doc PROPERTIES LABELS "engine_library;docs")
+  engine_label_tests(engine_tutorial_loading_matches_doc)
+endif()
