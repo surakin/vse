@@ -38,6 +38,12 @@ struct MemoryAddOptions
 {
     Span<const StringView> paths;  ///< Paths the backend's table reports for the resource (none: reachable by id only).
     const ContentHash* expected_hash = nullptr;  ///< A hash the host promises; a blob that differs is refused.
+    /// Lends the bytes instead of copying them (Phase 23 Day 350): the backend reads the host's memory in place, which
+    /// must stay valid and unchanged until `release` runs, and calls `release(release_user, bytes)` exactly once, when
+    /// the last holder of the resource (the backend, or a reader of a replaced or removed one) lets go, on the thread
+    /// that lets go. A call that fails never calls it (the host keeps the bytes). Null copies the bytes.
+    void (*release)(void* user, ByteSpan bytes) = nullptr;
+    void* release_user = nullptr;  ///< Passed to `release`.
 };
 
 /// Resources provided by the host.
@@ -67,20 +73,22 @@ public:
     /// Installs the dependents query (or clears it with a default-constructed one).
     void SetInUseQuery(const ResourceInUseQuery& query);
 
-    /// Registers `bytes`, copied.
+    /// Registers `bytes`, copied or, with `options.release`, lent.
     ///
     /// - Fails: `Invalid` (null id, a malformed path); `DuplicateId` (the id is live, or a path belongs to another id);
     ///   `Corrupt` (not a blob, the blob's id is not `id`, the hash does not verify or differs from the host's);
     ///   `UnsupportedVersion`, `TypeMismatch` (as `BlobReader::Open`); `LimitExceeded` (the budget); `Other` (memory).
     Status Add(ResourceId id, ByteSpan bytes, const MemoryAddOptions& options = MemoryAddOptions());
 
-    /// Replaces the bytes of a live resource with `bytes`, copied. Its paths stay.
+    /// Replaces the bytes of a live resource with `bytes`, copied or lent as `options` says. Its paths stay unless
+    /// `options` names new ones.
     ///
     /// - Fails: `NotFound`; `InUse` (dependents named in `*dependents` when it is not null; `force` unloads them
     /// first);
     ///   the failures of `Add` for the new bytes.
     /// - Ownership: borrows its pointer arguments for the call only; nothing is retained.
-    Status Replace(ResourceId id, ByteSpan bytes, bool force = false, Vector<ResourceId>* dependents = nullptr);
+    Status Replace(ResourceId id, ByteSpan bytes, bool force = false, Vector<ResourceId>* dependents = nullptr,
+                   const MemoryAddOptions& options = MemoryAddOptions());
 
     /// Removes a resource and its paths.
     ///

@@ -4462,15 +4462,16 @@ asset::CurrentContainerVersion()	function	asset	asset-currentcontainerversion	as
 asset::RegisterAssetSettings(settings::Registry*)	function	asset	asset-registerassetsettings-settings-registry-star	asset.md	engine/asset/asset_settings.h:20
 asset::BufferPoolBytesFromSettings(const settings::Registry&)	function	asset	asset-bufferpoolbytesfromsettings-const-settings-registry-amp	asset.md	engine/asset/asset_settings.h:26
 asset::MemoryBackendBytesFromSettings(const settings::Registry&)	function	asset	asset-memorybackendbytesfromsettings-const-settings-registry-amp	asset.md	engine/asset/asset_settings.h:32
-asset::AnimRotationErrorDegreesFromSettings(const settings::Registry&)	function	asset	asset-animrotationerrordegreesfromsettings-const-settings-registry-amp	asset.md	engine/asset/asset_settings.h:39
-asset::AnimTranslationErrorFromSettings(const settings::Registry&)	function	asset	asset-animtranslationerrorfromsettings-const-settings-registry-amp	asset.md	engine/asset/asset_settings.h:46
-asset::RegisterManagerSettings(settings::Registry*)	function	asset	asset-registermanagersettings-settings-registry-star	asset.md	engine/asset/asset_settings.h:57
-asset::RegisterServerSettings(settings::Registry*)	function	asset	asset-registerserversettings-settings-registry-star	asset.md	engine/asset/asset_settings.h:65
-asset::MountSpec	struct	asset	asset-mountspec	asset.md	engine/asset/asset_settings.h:71
-asset::MountSpec::prefix	variable	asset	asset-mountspec-prefix	asset.md	engine/asset/asset_settings.h:73
-asset::MountSpec::path	variable	asset	asset-mountspec-path	asset.md	engine/asset/asset_settings.h:74
-asset::MountSpec::priority	variable	asset	asset-mountspec-priority	asset.md	engine/asset/asset_settings.h:75
-asset::MountSpecsFromSettings(const settings::Registry&,Vector<MountSpec>*)	function	asset	asset-mountspecsfromsettings-const-settings-registry-amp-vector-lt-mountspec-gt-star	asset.md	engine/asset/asset_settings.h:86
+asset::MemoryMountPriorityFromSettings(const settings::Registry&)	function	asset	asset-memorymountpriorityfromsettings-const-settings-registry-amp	asset.md	engine/asset/asset_settings.h:40
+asset::AnimRotationErrorDegreesFromSettings(const settings::Registry&)	function	asset	asset-animrotationerrordegreesfromsettings-const-settings-registry-amp	asset.md	engine/asset/asset_settings.h:47
+asset::AnimTranslationErrorFromSettings(const settings::Registry&)	function	asset	asset-animtranslationerrorfromsettings-const-settings-registry-amp	asset.md	engine/asset/asset_settings.h:54
+asset::RegisterManagerSettings(settings::Registry*)	function	asset	asset-registermanagersettings-settings-registry-star	asset.md	engine/asset/asset_settings.h:65
+asset::RegisterServerSettings(settings::Registry*)	function	asset	asset-registerserversettings-settings-registry-star	asset.md	engine/asset/asset_settings.h:73
+asset::MountSpec	struct	asset	asset-mountspec	asset.md	engine/asset/asset_settings.h:79
+asset::MountSpec::prefix	variable	asset	asset-mountspec-prefix	asset.md	engine/asset/asset_settings.h:81
+asset::MountSpec::path	variable	asset	asset-mountspec-path	asset.md	engine/asset/asset_settings.h:82
+asset::MountSpec::priority	variable	asset	asset-mountspec-priority	asset.md	engine/asset/asset_settings.h:83
+asset::MountSpecsFromSettings(const settings::Registry&,Vector<MountSpec>*)	function	asset	asset-mountspecsfromsettings-const-settings-registry-amp-vector-lt-mountspec-gt-star	asset.md	engine/asset/asset_settings.h:94
 asset::LoadPriority	enum	asset	asset-loadpriority	asset.md	engine/asset/async_loader.h:28
 asset::LoadPriority::Immediate	enumerator	asset	asset-loadpriority-immediate	asset.md	engine/asset/async_loader.h:30
 asset::LoadPriority::Normal	enumerator	asset	asset-loadpriority-normal	asset.md	engine/asset/async_loader.h:31
@@ -4976,21 +4977,23 @@ asset::ResourceInUseQuery::user	variable	asset	asset-resourceinusequery-user	ass
 asset::MemoryAddOptions	struct	asset	asset-memoryaddoptions	asset.md	engine/asset/memory_backend.h:37
 asset::MemoryAddOptions::paths	variable	asset	asset-memoryaddoptions-paths	asset.md	engine/asset/memory_backend.h:39
 asset::MemoryAddOptions::expected_hash	variable	asset	asset-memoryaddoptions-expected-hash	asset.md	engine/asset/memory_backend.h:40
-asset::HostMemoryBackend	class	asset	asset-hostmemorybackend	asset.md	engine/asset/memory_backend.h:54
-asset::HostMemoryBackend::HostMemoryBackend(const TypeRegistry&,u64)	function	asset	asset-hostmemorybackend-hostmemorybackend-const-typeregistry-amp-u64	asset.md	engine/asset/memory_backend.h:58
-asset::HostMemoryBackend::~HostMemoryBackend()	function	asset	asset-hostmemorybackend-tilde-hostmemorybackend	asset.md	engine/asset/memory_backend.h:60
-asset::HostMemoryBackend::EntryPtr	alias	asset	asset-hostmemorybackend-entryptr	asset.md	engine/asset/memory_backend.h:65
-asset::HostMemoryBackend::SetInUseQuery(const ResourceInUseQuery&)	function	asset	asset-hostmemorybackend-setinusequery-const-resourceinusequery-amp	asset.md	engine/asset/memory_backend.h:68
-asset::HostMemoryBackend::Add(ResourceId,ByteSpan,const MemoryAddOptions&)	function	asset	asset-hostmemorybackend-add-resourceid-bytespan-const-memoryaddoptions-amp	asset.md	engine/asset/memory_backend.h:75
-asset::HostMemoryBackend::Replace(ResourceId,ByteSpan,bool,Vector<ResourceId>*)	function	asset	asset-hostmemorybackend-replace-resourceid-bytespan-bool-vector-lt-resourceid-gt-star	asset.md	engine/asset/memory_backend.h:83
-asset::HostMemoryBackend::Remove(ResourceId,bool,Vector<ResourceId>*)	function	asset	asset-hostmemorybackend-remove-resourceid-bool-vector-lt-resourceid-gt-star	asset.md	engine/asset/memory_backend.h:90
-asset::HostMemoryBackend::BytesHeld() const	function	asset	asset-hostmemorybackend-bytesheld-const	asset.md	engine/asset/memory_backend.h:93
-asset::HostMemoryBackend::Name() const	function	asset	asset-hostmemorybackend-name-const	asset.md	engine/asset/memory_backend.h:95
-asset::HostMemoryBackend::Capabilities() const	function	asset	asset-hostmemorybackend-capabilities-const	asset.md	engine/asset/memory_backend.h:96
-asset::HostMemoryBackend::Stat(ResourceId,ResourceInfo*)	function	asset	asset-hostmemorybackend-stat-resourceid-resourceinfo-star	asset.md	engine/asset/memory_backend.h:97
-asset::HostMemoryBackend::Open(ResourceId,UniquePtr<ResourceReader>*)	function	asset	asset-hostmemorybackend-open-resourceid-uniqueptr-lt-resourcereader-gt-star	asset.md	engine/asset/memory_backend.h:98
-asset::HostMemoryBackend::ReadTable(ResourceTable*)	function	asset	asset-hostmemorybackend-readtable-resourcetable-star	asset.md	engine/asset/memory_backend.h:99
-asset::HostMemoryBackend::Watch(Vector<ChangeRecord>*)	function	asset	asset-hostmemorybackend-watch-vector-lt-changerecord-gt-star	asset.md	engine/asset/memory_backend.h:100
+asset::MemoryAddOptions::release	variable	asset	asset-memoryaddoptions-release	asset.md	engine/asset/memory_backend.h:45
+asset::MemoryAddOptions::release_user	variable	asset	asset-memoryaddoptions-release-user	asset.md	engine/asset/memory_backend.h:46
+asset::HostMemoryBackend	class	asset	asset-hostmemorybackend	asset.md	engine/asset/memory_backend.h:60
+asset::HostMemoryBackend::HostMemoryBackend(const TypeRegistry&,u64)	function	asset	asset-hostmemorybackend-hostmemorybackend-const-typeregistry-amp-u64	asset.md	engine/asset/memory_backend.h:64
+asset::HostMemoryBackend::~HostMemoryBackend()	function	asset	asset-hostmemorybackend-tilde-hostmemorybackend	asset.md	engine/asset/memory_backend.h:66
+asset::HostMemoryBackend::EntryPtr	alias	asset	asset-hostmemorybackend-entryptr	asset.md	engine/asset/memory_backend.h:71
+asset::HostMemoryBackend::SetInUseQuery(const ResourceInUseQuery&)	function	asset	asset-hostmemorybackend-setinusequery-const-resourceinusequery-amp	asset.md	engine/asset/memory_backend.h:74
+asset::HostMemoryBackend::Add(ResourceId,ByteSpan,const MemoryAddOptions&)	function	asset	asset-hostmemorybackend-add-resourceid-bytespan-const-memoryaddoptions-amp	asset.md	engine/asset/memory_backend.h:81
+asset::HostMemoryBackend::Replace(ResourceId,ByteSpan,bool,Vector<ResourceId>*,const MemoryAddOptions&)	function	asset	asset-hostmemorybackend-replace-resourceid-bytespan-bool-vector-lt-resourceid-gt-star-const-memoryaddoptions-amp	asset.md	engine/asset/memory_backend.h:90
+asset::HostMemoryBackend::Remove(ResourceId,bool,Vector<ResourceId>*)	function	asset	asset-hostmemorybackend-remove-resourceid-bool-vector-lt-resourceid-gt-star	asset.md	engine/asset/memory_backend.h:98
+asset::HostMemoryBackend::BytesHeld() const	function	asset	asset-hostmemorybackend-bytesheld-const	asset.md	engine/asset/memory_backend.h:101
+asset::HostMemoryBackend::Name() const	function	asset	asset-hostmemorybackend-name-const	asset.md	engine/asset/memory_backend.h:103
+asset::HostMemoryBackend::Capabilities() const	function	asset	asset-hostmemorybackend-capabilities-const	asset.md	engine/asset/memory_backend.h:104
+asset::HostMemoryBackend::Stat(ResourceId,ResourceInfo*)	function	asset	asset-hostmemorybackend-stat-resourceid-resourceinfo-star	asset.md	engine/asset/memory_backend.h:105
+asset::HostMemoryBackend::Open(ResourceId,UniquePtr<ResourceReader>*)	function	asset	asset-hostmemorybackend-open-resourceid-uniqueptr-lt-resourcereader-gt-star	asset.md	engine/asset/memory_backend.h:106
+asset::HostMemoryBackend::ReadTable(ResourceTable*)	function	asset	asset-hostmemorybackend-readtable-resourcetable-star	asset.md	engine/asset/memory_backend.h:107
+asset::HostMemoryBackend::Watch(Vector<ChangeRecord>*)	function	asset	asset-hostmemorybackend-watch-vector-lt-changerecord-gt-star	asset.md	engine/asset/memory_backend.h:108
 asset::kMaxMeshVertices	variable	asset	asset-kmaxmeshvertices	asset.md	engine/asset/mesh.h:31
 asset::kMaxMeshIndices	variable	asset	asset-kmaxmeshindices	asset.md	engine/asset/mesh.h:33
 asset::kMaxMeshLods	variable	asset	asset-kmaxmeshlods	asset.md	engine/asset/mesh.h:35

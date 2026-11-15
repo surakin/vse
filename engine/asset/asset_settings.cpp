@@ -74,6 +74,10 @@ void RegisterManagerSettings(settings::Registry* registry)
     Declare(registry, settings::MakeInt("assets.max_queued", 256, 0, 1000000), "ENGINE_ASSETS_MAX_QUEUED",
             "assets-max-queued", "Asynchronous loads waiting",
             "the most asynchronous loads waiting for a free reading slot; a request past it fails with LimitExceeded");
+    Declare(registry, settings::MakeInt("assets.memory_priority", 1000, -1000000, 1000000),
+            "ENGINE_ASSETS_MEMORY_PRIORITY", "assets-memory-priority", "Host-provided content mount priority",
+            "the priority of the mount of the memory backend (host-provided content); higher wins, and the mounts of "
+            "`assets.mounts` have the priorities 0, 1, 2, ..., so the default puts host content above them");
     Declare(registry, settings::MakeText("assets.mounts", ""), "ENGINE_ASSETS_MOUNTS", "assets-mounts",
             "Resource mounts",
             "PREFIX=PATH entries separated by ';': a directory of loose blobs or a pak file mounted under the prefix "
@@ -157,6 +161,11 @@ u64 BufferPoolBytesFromSettings(const settings::Registry& registry)
 u64 MemoryBackendBytesFromSettings(const settings::Registry& registry)
 {
     return Read(registry, "assets.memory_backend_bytes");
+}
+
+i32 MemoryMountPriorityFromSettings(const settings::Registry& registry)
+{
+    return static_cast<i32>(settings::Setting<i64>::Find(registry, StringView("assets.memory_priority")).Get());
 }
 
 f64 AnimRotationErrorDegreesFromSettings(const settings::Registry& registry)

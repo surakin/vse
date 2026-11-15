@@ -75,7 +75,30 @@ struct engine_mesh_reference size=16
 field engine_mesh_reference.struct_size offset=0 size=4
 field engine_mesh_reference.material offset=4 size=4
 field engine_mesh_reference.mesh offset=8 size=8
-struct engine_api size=240
+struct engine_resource_add_info size=80
+field engine_resource_add_info.struct_size offset=0 size=4
+field engine_resource_add_info.flags offset=4 size=4
+field engine_resource_add_info.id offset=8 size=8
+field engine_resource_add_info.path offset=16 size=16
+field engine_resource_add_info.bytes offset=32 size=8
+field engine_resource_add_info.size offset=40 size=8
+field engine_resource_add_info.release offset=48 size=8
+field engine_resource_add_info.release_user offset=56 size=8
+field engine_resource_add_info.expected_hash offset=64 size=16
+struct engine_resource_info size=48
+field engine_resource_info.struct_size offset=0 size=4
+field engine_resource_info.type offset=4 size=4
+field engine_resource_info.id offset=8 size=8
+field engine_resource_info.size offset=16 size=8
+field engine_resource_info.content_hash offset=24 size=16
+field engine_resource_info.loaded offset=40 size=4
+field engine_resource_info.reserved offset=44 size=4
+struct engine_ticket_info size=16
+field engine_ticket_info.struct_size offset=0 size=4
+field engine_ticket_info.done offset=4 size=4
+field engine_ticket_info.blobs_read offset=8 size=4
+field engine_ticket_info.blobs_total offset=12 size=4
+struct engine_api size=344
 field engine_api.struct_size offset=0 size=4
 field engine_api.abi_major offset=4 size=4
 field engine_api.abi_minor offset=8 size=4
@@ -108,3 +131,16 @@ field engine_api.counter_value offset=208 size=8
 field engine_api.counter_wait offset=216 size=8
 field engine_api.crash_handler_install offset=224 size=8
 field engine_api.crash_handler_uninstall offset=232 size=8
+field engine_api.resource_add offset=240 size=8
+field engine_api.resource_replace offset=248 size=8
+field engine_api.resource_remove offset=256 size=8
+field engine_api.resource_mounted offset=264 size=8
+field engine_api.resource_load offset=272 size=8
+field engine_api.resource_release offset=280 size=8
+field engine_api.resource_status offset=288 size=8
+field engine_api.resource_load_async offset=296 size=8
+field engine_api.ticket_poll offset=304 size=8
+field engine_api.ticket_wait offset=312 size=8
+field engine_api.ticket_finish offset=320 size=8
+field engine_api.ticket_cancel offset=328 size=8
+field engine_api.ticket_destroy offset=336 size=8

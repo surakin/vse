@@ -14,7 +14,7 @@ else()
   set(ENGINE_C_TEST_EXTENSION_VALUE 0)
 endif()
 
-set(ENGINE_C_SOURCES engine_c.cpp runtime.cpp status_map.cpp)
+set(ENGINE_C_SOURCES engine_c.cpp resources.cpp runtime.cpp status_map.cpp)
 if(ENGINE_C_TEST_EXTENSION)
   list(APPEND ENGINE_C_SOURCES test_state.cpp)
 endif()

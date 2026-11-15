@@ -31,6 +31,14 @@ u64 BufferPoolBytesFromSettings(const settings::Registry& registry);
 /// - Thread-safety: thread-safe.
 u64 MemoryBackendBytesFromSettings(const settings::Registry& registry);
 
+/// The value of `assets.memory_priority` (default 1000): the priority a program mounts its [[asset::HostMemoryBackend]]
+/// at, above the mounts of `assets.mounts` (which have the priorities 0, 1, 2, ...). Declared by
+/// `RegisterManagerSettings`.
+///
+/// - Aborts: the setting was not declared.
+/// - Thread-safety: thread-safe.
+i32 MemoryMountPriorityFromSettings(const settings::Registry& registry);
+
 /// The value of `assets.anim_rotation_error_degrees` (default 0.05): the bound a clip minter holds a clip's rotation
 /// error to.
 ///

@@ -201,6 +201,21 @@ The value of `assets.memory_backend_bytes`.
 | Aborts | the setting was not declared. |
 | Thread-safety | thread-safe. |
 
+## `MemoryMountPriorityFromSettings(const settings::Registry&)` {#asset-memorymountpriorityfromsettings-const-settings-registry-amp}
+
+`function asset::MemoryMountPriorityFromSettings` — defined in `engine/asset/asset_settings.h`
+
+```cpp
+i32 MemoryMountPriorityFromSettings(const settings::Registry& registry);
+```
+
+The value of `assets.memory_priority` (default 1000): the priority a program mounts its [`asset::HostMemoryBackend`](#asset-hostmemorybackend) at, above the mounts of `assets.mounts` (which have the priorities 0, 1, 2, ...). Declared by `RegisterManagerSettings`.
+
+| Field | Value |
+|---|---|
+| Aborts | the setting was not declared. |
+| Thread-safety | thread-safe. |
+
 ## `AnimRotationErrorDegreesFromSettings(const settings::Registry&)` {#asset-animrotationerrordegreesfromsettings-const-settings-registry-amp}
 
 `function asset::AnimRotationErrorDegreesFromSettings` — defined in `engine/asset/asset_settings.h`
@@ -5812,6 +5827,26 @@ const ContentHash* expected_hash;
 
 A hash the host promises; a blob that differs is refused.
 
+### `release` {#asset-memoryaddoptions-release}
+
+`variable asset::MemoryAddOptions::release` — defined in `engine/asset/memory_backend.h`
+
+```cpp
+void (*release)(void* user, ByteSpan bytes);
+```
+
+Lends the bytes instead of copying them (Phase 23 Day 350): the backend reads the host's memory in place, which must stay valid and unchanged until `release` runs, and calls `release(release_user, bytes)` exactly once, when the last holder of the resource (the backend, or a reader of a replaced or removed one) lets go, on the thread that lets go. A call that fails never calls it (the host keeps the bytes). Null copies the bytes.
+
+### `release_user` {#asset-memoryaddoptions-release-user}
+
+`variable asset::MemoryAddOptions::release_user` — defined in `engine/asset/memory_backend.h`
+
+```cpp
+void* release_user;
+```
+
+Passed to `release`.
+
 ## `HostMemoryBackend` {#asset-hostmemorybackend}
 
 `class asset::HostMemoryBackend` — defined in `engine/asset/memory_backend.h`
@@ -5877,21 +5912,21 @@ Installs the dependents query (or clears it with a default-constructed one).
 Status Add(ResourceId id, ByteSpan bytes, const MemoryAddOptions& options = MemoryAddOptions());
 ```
 
-Registers `bytes`, copied.
+Registers `bytes`, copied or, with `options.release`, lent.
 
 | Field | Value |
 |---|---|
 | Fails | `Invalid` (null id, a malformed path); `DuplicateId` (the id is live, or a path belongs to another id); `Corrupt` (not a blob, the blob's id is not `id`, the hash does not verify or differs from the host's); `UnsupportedVersion`, `TypeMismatch` (as `BlobReader::Open`); `LimitExceeded` (the budget); `Other` (memory). |
 
-### `Replace(ResourceId,ByteSpan,bool,Vector<ResourceId>*)` {#asset-hostmemorybackend-replace-resourceid-bytespan-bool-vector-lt-resourceid-gt-star}
+### `Replace(ResourceId,ByteSpan,bool,Vector<ResourceId>*,const MemoryAddOptions&)` {#asset-hostmemorybackend-replace-resourceid-bytespan-bool-vector-lt-resourceid-gt-star-const-memoryaddoptions-amp}
 
 `method asset::HostMemoryBackend::Replace` — defined in `engine/asset/memory_backend.h`
 
 ```cpp
-Status Replace(ResourceId id, ByteSpan bytes, bool force = false, Vector<ResourceId>* dependents = nullptr);
+Status Replace(ResourceId id, ByteSpan bytes, bool force = false, Vector<ResourceId>* dependents = nullptr, const MemoryAddOptions& options = MemoryAddOptions());
 ```
 
-Replaces the bytes of a live resource with `bytes`, copied. Its paths stay.
+Replaces the bytes of a live resource with `bytes`, copied or lent as `options` says. Its paths stay unless `options` names new ones.
 
 | Field | Value |
 |---|---|

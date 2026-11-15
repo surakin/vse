@@ -7,6 +7,8 @@
 #include "cstr/mem_ops.h"
 #include "ecs/transform.h"
 #include "engine_c/engine_internal.h"
+#include "engine_c/handles.h"
+#include "engine_c/resources.h"
 #include "engine_c/engine_objects.h"
 #include "jobs/scheduler.h"
 #include "jobs/topology.h"
@@ -36,70 +38,7 @@ struct EntityName
 
 constexpr usize kMaxSlots = 1u << 16;  // worlds, and counters, each
 
-// Handles of worlds and counters: kind (8 bits), generation (32), slot + 1 (24). The generation counts for the whole
-// process, so the handle of an object of an earlier engine is stale in a later one.
-enum HandleKind : u64
-{
-    kKindWorld = 1,
-    kKindCounter = 2
-};
-
 Atomic<u32> g_generation{0};
-
-u32 NextGeneration()
-{
-    return g_generation.FetchAdd(1) + 1;
-}
-
-engine_handle MakeObjectHandle(HandleKind kind, u32 generation, usize slot)
-{
-    engine_handle h;
-    h.value = (static_cast<u64>(kind) << 56) | (static_cast<u64>(generation) << 24) | static_cast<u64>(slot + 1);
-    return h;
-}
-
-// Finds the slot a handle of `kind` names. The caller holds the mutex that guards `slots`.
-template <class Slot>
-engine_status ResolveSlot(Vector<Slot>& slots, engine_handle handle, HandleKind kind, const char* what, Slot** out)
-{
-    *out = nullptr;
-    if (handle.value == 0)
-    {
-        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the handle is zero");
-    }
-    const u64 handle_kind = handle.value >> 56;
-    if (handle_kind > kKindCounter)
-    {
-        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the handle was never issued");
-    }
-    if (handle_kind != static_cast<u64>(kind))
-    {
-        SetLastError("type_mismatch: the handle is not a %s", what);
-        return ENGINE_ERROR_TYPE_MISMATCH;
-    }
-    const u32 generation = static_cast<u32>((handle.value >> 24) & 0xFFFFFFFFull);
-    const u64 index_plus_one = handle.value & 0xFFFFFFull;
-    if (generation == 0 || generation > g_generation.Load() || index_plus_one == 0)
-    {
-        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the handle was never issued");
-    }
-    const usize index = static_cast<usize>(index_plus_one - 1);
-    if (index >= slots.Size() || slots[index].generation != generation || slots[index].object.Get() == nullptr)
-    {
-        SetLastError("stale_handle: the %s was destroyed", what);
-        return ENGINE_ERROR_STALE_HANDLE;
-    }
-    *out = &slots[index];
-    return ENGINE_OK;
-}
-
-// The `struct_size` a host's struct starts with (the first field of every struct of the API).
-u32 StructSizeOf(const void* p)
-{
-    u32 size = 0;
-    MemCopy(&size, p, sizeof(size));
-    return size;
-}
 
 bool Finite(float v)
 {
@@ -167,6 +106,16 @@ jobs::Job RunHostJob(engine_job_fn fn, void* user, CounterObject* counter, Atomi
 }
 
 }  // namespace
+
+u32 NextGeneration()
+{
+    return g_generation.FetchAdd(1) + 1;
+}
+
+u32 LastGeneration()
+{
+    return g_generation.Load();
+}
 
 WorldObject::WorldObject()
 {
@@ -240,6 +189,32 @@ void JobHost::Main(JobHost* self)
 Runtime::Runtime() = default;
 Runtime::~Runtime() = default;
 
+JobHost& Runtime::EnsureJobs()
+{
+    LockGuard<Mutex> lock(table_mutex);
+    if (jobs.Get() == nullptr)
+    {
+        jobs = MakeUnique<JobHost>();
+    }
+    return *jobs;
+}
+
+ResourceHost* Runtime::Resources()
+{
+    LockGuard<Mutex> lock(table_mutex);
+    if (resources.Get() == nullptr)
+    {
+        resources = MakeUnique<ResourceHost>(*this);
+    }
+    return resources.Get();
+}
+
+ResourceHost* Runtime::ResourcesIfCreated()
+{
+    LockGuard<Mutex> lock(table_mutex);
+    return resources.Get();
+}
+
 // ---- the frame
 
 engine_status FrameFn(engine_handle engine, const engine_frame_info* info, engine_frame_stats* stats)
@@ -274,6 +249,10 @@ engine_status FrameFn(engine_handle engine, const engine_frame_info* info, engin
     const u64 budget_ns = info->budget_us * 1000ull;
     engine_frame_stats result = {};
     result.struct_size = sizeof(engine_frame_stats);
+    if (ResourceHost* resources = runtime->ResourcesIfCreated())
+    {
+        resources->PumpLoads();  // builds what asynchronous loads have read, within a small budget
+    }
     LockGuard<Mutex> lock(runtime->world_mutex);
     result.frame_index = ++runtime->frames;
     const usize count = runtime->worlds.Size();

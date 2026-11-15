@@ -69,6 +69,11 @@ public:
     /// - Thread-safety: thread-safe.
     void Submit(jobs::Job&& job);
 
+    /// The scheduler (it runs from the constructor's return until the destructor).
+    ///
+    /// - Thread-safety: thread-safe.
+    jobs::Scheduler* GetScheduler() const { return scheduler_; }
+
 private:
     static void Main(JobHost* self);
 
@@ -78,6 +83,23 @@ private:
     Atomic<int> stop_{0};
     jobs::Scheduler* scheduler_ = nullptr;
     Thread thread_;
+};
+
+class ResourceHost;
+
+/// The settings the resource host is made from (read when the engine is created).
+///
+/// - Thread-safety: thread-compatible plain data.
+struct ResourceConfig
+{
+    u64 memory_bytes = u64{512} << 20;       ///< `assets.memory_backend_bytes`.
+    i32 priority = 1000;                     ///< `assets.memory_priority`.
+    u64 buffer_pool_bytes = u64{256} << 20;  ///< `assets.buffer_pool_bytes`.
+    u64 cache_bytes = 0;                     ///< `assets.cache_bytes`.
+    bool allow_fallbacks = false;            ///< `assets.allow_fallbacks`.
+    bool verify_on_load = false;             ///< `assets.verify_on_load`.
+    u32 max_inflight = 4;                    ///< `assets.max_inflight`.
+    u32 max_queued = 256;                    ///< `assets.max_queued`.
 };
 
 /// What an engine holds of worlds, counters and jobs.
@@ -111,10 +133,32 @@ public:
     };
     Vector<CounterSlot> counters;
     UniquePtr<JobHost> jobs;
+
+    /// Starts the job system if it is not running and returns it.
+    ///
+    /// - Thread-safety: thread-safe.
+    JobHost& EnsureJobs();
+
+    /// What the resource host is made from; set once when the engine is created, before any call.
+    ResourceConfig resource_config;
+
+    /// The resources of the engine: made by the first call that needs them.
+    ///
+    /// - Thread-safety: thread-safe.
+    ResourceHost* Resources();
+
+    /// The resources if they exist, else null.
+    ///
+    /// - Thread-safety: thread-safe.
+    ResourceHost* ResourcesIfCreated();
     /// Jobs submitted and not yet run to their end. The scheduler aborts when its queues are full, so a submit that
     /// would pass `kMaxJobsInFlight` is refused.
     Atomic<u32> jobs_in_flight{0};
     static constexpr u32 kMaxJobsInFlight = 2048;
+
+    // Declared last, so it is destroyed first: its lent buffers are handed back on the job system's worker, and its
+    // loads read on the job system's scheduler.
+    UniquePtr<ResourceHost> resources;  // guarded by table_mutex at creation
 };
 
 // The functions of the table that the runtime serves (engine_c.cpp lists them in the table).

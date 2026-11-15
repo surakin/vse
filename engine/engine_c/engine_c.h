@@ -241,6 +241,72 @@ typedef struct engine_mesh_reference
  * destroy, counter_wait, crash_handler_install or crash_handler_uninstall: wait for other work from outside the job. It never throws or longjmps. */
 typedef void (*engine_job_fn)(void* user);
 
+/* ---- Day 350: resources and host-provided content ---------------------------------------------------------------------------------------------- */
+
+/* A resource type is its four characters as a uint32_t, the first in the lowest byte: ENGINE_RESOURCE_TYPE('M','E','S','H'). Types with a loader today:
+ * skeleton, animation, mesh, texture, material and level, loaded as their CPU data (the engine's own objects; nothing of them is exposed). */
+#define ENGINE_RESOURCE_TYPE(a, b, c, d) \
+    ((uint32_t)(unsigned char)(a) | ((uint32_t)(unsigned char)(b) << 8) | ((uint32_t)(unsigned char)(c) << 16) | ((uint32_t)(unsigned char)(d) << 24))
+#define ENGINE_RESOURCE_MESH ENGINE_RESOURCE_TYPE('M', 'E', 'S', 'H')
+#define ENGINE_RESOURCE_TEXTURE ENGINE_RESOURCE_TYPE('T', 'E', 'X', 'R')
+#define ENGINE_RESOURCE_MATERIAL ENGINE_RESOURCE_TYPE('M', 'A', 'T', 'L')
+#define ENGINE_RESOURCE_LEVEL ENGINE_RESOURCE_TYPE('L', 'E', 'V', 'L')
+#define ENGINE_RESOURCE_ANIMATION ENGINE_RESOURCE_TYPE('A', 'N', 'I', 'M')
+#define ENGINE_RESOURCE_SKELETON ENGINE_RESOURCE_TYPE('S', 'K', 'E', 'L')
+
+/* Flags of engine_resource_add_info and of resource_remove. */
+#define ENGINE_RESOURCE_BORROW 0x1u     /* add, replace: lend the bytes instead of copying them; `release` is required */
+#define ENGINE_RESOURCE_CHECK_HASH 0x2u /* add, replace: the blob's content hash must equal `expected_hash` (CORRUPT otherwise) */
+#define ENGINE_RESOURCE_FORCE 0x4u      /* replace, remove: unload the loaded resources that depend on this one, atomically, instead of refusing (IN_USE) */
+
+/* Called when the engine is done with lent bytes: exactly once per successful add or replace that lent them, after the last reader of those bytes
+ * is gone (the resource was replaced or removed and no load is reading it, or the engine was destroyed), on one of the engine's worker threads (never
+ * on the thread that called the engine, and never while the engine holds a lock the callback could need). From then on the bytes are the host's
+ * again. It may call status_name, last_error, thread_detach, the resource_* and world functions and jobs_submit; it must not call frame, create,
+ * destroy, counter_wait or ticket_wait. It never throws or longjmps, and engine workers wait for it: it should return soon. A failed add or replace never calls it: the host keeps the bytes. engine_destroy runs every
+ * pending release before it returns. */
+typedef void (*engine_resource_release_fn)(void* user, const void* bytes, size_t size);
+
+/* One resource's bytes: a complete blob as `asset_mint` makes it (container, type, id, content hash; the engine checks all of them). */
+typedef struct engine_resource_add_info
+{
+    uint32_t struct_size;
+    uint32_t flags;                           /* ENGINE_RESOURCE_BORROW, ENGINE_RESOURCE_CHECK_HASH, ENGINE_RESOURCE_FORCE (replace only) */
+    uint64_t id;                              /* the resource id; it must be the id inside the blob; not zero */
+    engine_string path;                       /* a path that names the resource for resource_load; empty: reachable by id only. Replace: empty keeps the paths */
+    const void* bytes;                        /* the blob */
+    size_t size;                              /* its length */
+    engine_resource_release_fn release;       /* with ENGINE_RESOURCE_BORROW; NULL otherwise */
+    void* release_user;                       /* passed to `release` */
+    uint8_t expected_hash[16];                /* with ENGINE_RESOURCE_CHECK_HASH */
+} engine_resource_add_info;
+
+/* What resource_mounted and resource_status report. */
+typedef struct engine_resource_info
+{
+    uint32_t struct_size;
+    uint32_t type;           /* the resource type tag */
+    uint64_t id;
+    uint64_t size;           /* bytes of the blob in the memory backend (0 when the resource is not in it) */
+    uint8_t content_hash[16];
+    int32_t loaded;          /* 1 while the engine has it loaded (for resource_status: while the handle is valid) */
+    int32_t reserved;
+} engine_resource_info;
+
+/* How soon an asynchronous load is served. */
+#define ENGINE_LOAD_IMMEDIATE 0u
+#define ENGINE_LOAD_NORMAL 1u
+#define ENGINE_LOAD_BACKGROUND 2u
+
+/* What ticket_poll reports. */
+typedef struct engine_ticket_info
+{
+    uint32_t struct_size;
+    int32_t done;          /* 1 once the load ended (with a resource, an error or a cancellation) */
+    uint32_t blobs_read;   /* blobs read of ... */
+    uint32_t blobs_total;  /* ... the blobs known so far (the total grows as the closure is found) */
+} engine_ticket_info;
+
 /* ---- the function table ------------------------------------------------------------------------------------------------------------------------ */
 
 typedef struct engine_api
@@ -366,6 +432,68 @@ typedef struct engine_api
 
     /* Removes the engine's crash handler and restores the previous one. Fails with: STALE_HANDLE, INVALID_ARGUMENT, NOT_FOUND (not installed). */
     engine_status (*crash_handler_uninstall)(engine_handle engine);
+
+    /* ---- Day 350: resources ---- */
+
+    /* Adds a resource to the engine's memory backend (host-provided content, mounted above the files and paks: setting `assets.memory_priority`). The
+     * blob is checked as a whole before anything changes. Without ENGINE_RESOURCE_BORROW the bytes are copied (the host may free them when the call
+     * returns); with it the engine reads them in place and the host must keep them valid and unchanged until `release` runs. The budget is the setting
+     * `assets.memory_backend_bytes`, lent bytes included.
+     * Fails with: STALE_HANDLE, INVALID_ARGUMENT (zero id, bytes NULL, flags, release missing or given without BORROW), STRUCT_SIZE, ALREADY_EXISTS (the id
+     * or the path is live: use resource_replace), CORRUPT (not a blob, the id inside is another, the hash does not verify or differs from
+     * `expected_hash`), UNSUPPORTED_VERSION, TYPE_MISMATCH, LIMIT_EXCEEDED (the budget). */
+    engine_status (*resource_add)(engine_handle engine, const engine_resource_add_info* info);
+
+    /* Replaces the bytes of a resource in the memory backend. A load that is reading the old bytes finishes with them; the old bytes are released after
+     * their last reader. The paths stay unless `info->path` names one. A loaded copy of the replaced resource is rebuilt from the new bytes before the call returns (its handles
+     * stay valid; if the new blob cannot be loaded, for instance a dependency no longer matches, the old version stays loaded). If a loaded resource depends on this one the call
+     * fails with IN_USE and writes those resources' ids (uint64_t values) to `*dependents` (a buffer the host releases; may be NULL) and changes nothing; with ENGINE_RESOURCE_FORCE
+     * the dependents are unloaded first (their handles become stale: resource_status reports `loaded` 0) and their ids are written.
+     * Fails with: those of resource_add except ALREADY_EXISTS (for a path of another resource), and NOT_FOUND (not in the memory backend), IN_USE. */
+    engine_status (*resource_replace)(engine_handle engine, const engine_resource_add_info* info, engine_buffer* dependents);
+
+    /* Removes a resource from the memory backend (flags: ENGINE_RESOURCE_FORCE), as resource_replace refuses or forces for dependents. A copy of the resource that is loaded and
+     * has no dependents stays loaded for as long as its handles are held (it no longer has its bytes in the backend: a load of it fails with NOT_FOUND).
+     * Fails with: STALE_HANDLE, INVALID_ARGUMENT (flags), NOT_FOUND, IN_USE. */
+    engine_status (*resource_remove)(engine_handle engine, uint64_t id, uint32_t flags, engine_buffer* dependents);
+
+    /* Reads what the memory backend holds of a resource (`out->struct_size` set by the host). Fails with: STALE_HANDLE, INVALID_ARGUMENT, STRUCT_SIZE, NOT_FOUND. */
+    engine_status (*resource_mounted)(engine_handle engine, uint64_t id, engine_resource_info* out);
+
+    /* Loads a resource and everything it depends on (a closure, atomically), or finds it loaded, and returns a handle that keeps it loaded. The resource is named by
+     * `path` (resolved through the mounts' tables) when `path.length` is not 0, else by `id`. `type` is the type the host expects (a resource of another type is
+     * TYPE_MISMATCH). Nothing of the loaded data is exposed: rendering and the other engine functions use the handle. The handle counts as an object of the engine until
+     * resource_release. Fails with: STALE_HANDLE, INVALID_ARGUMENT, NOT_FOUND, MISSING_DEPENDENCY, TYPE_MISMATCH, DEPENDENCY_CYCLE, CORRUPT, UNSUPPORTED_VERSION, LIMIT_EXCEEDED, NOT_READY, UNSUPPORTED (no loader for the type). */
+    engine_status (*resource_load)(engine_handle engine, uint64_t id, engine_string path, uint32_t type, engine_handle* out);
+
+    /* Gives a resource handle back. Fails with: STALE_HANDLE, INVALID_ARGUMENT, TYPE_MISMATCH. */
+    engine_status (*resource_release)(engine_handle resource);
+
+    /* Reports a resource handle: `loaded` is 1 while the resource is still loaded, 0 after a forced replace or remove unloaded it. Fails with: STALE_HANDLE, INVALID_ARGUMENT, STRUCT_SIZE, TYPE_MISMATCH. */
+    engine_status (*resource_status)(engine_handle resource, engine_resource_info* out);
+
+    /* Starts loading a resource on the engine's workers and returns a ticket at once (a ticket that is already done when the resource is loaded). `priority` is
+     * ENGINE_LOAD_*. The objects are built by calls of the host's own thread (frame, ticket_poll, ticket_wait, ticket_finish), never by an engine thread on its
+     * own. The ticket counts as an object of the engine until ticket_destroy. Fails with: INVALID_ARGUMENT, UNSUPPORTED (no loader), LIMIT_EXCEEDED (too many tickets, STALE_HANDLE; every error of the load itself, a full queue included, comes with
+     * ticket_finish). */
+    engine_status (*resource_load_async)(engine_handle engine, uint64_t id, engine_string path, uint32_t type, uint32_t priority, engine_handle* ticket);
+
+    /* Looks at a ticket without waiting (it also builds what is ready). Fails with: STALE_HANDLE, INVALID_ARGUMENT, STRUCT_SIZE, TYPE_MISMATCH. */
+    engine_status (*ticket_poll)(engine_handle ticket, engine_ticket_info* out);
+
+    /* Waits until the load is done, at most `timeout_ms` (UINT64_MAX waits for ever), building the objects as they are read. Not from inside a job or a release callback (INVALID_ARGUMENT).
+     * Returns OK when done (the outcome comes from ticket_finish), NOT_READY on a timeout. Fails with: STALE_HANDLE, INVALID_ARGUMENT, TYPE_MISMATCH, NOT_READY. */
+    engine_status (*ticket_wait)(engine_handle ticket, uint64_t timeout_ms);
+
+    /* Takes the outcome of a finished load: OK and a resource handle in `*resource` (as resource_load's), or the load's error (and `*resource` is zero), CANCELLED after ticket_cancel.
+     * Fails with: NOT_READY (not done), and the errors of resource_load, CANCELLED, STALE_HANDLE, INVALID_ARGUMENT, TYPE_MISMATCH. */
+    engine_status (*ticket_finish)(engine_handle ticket, engine_handle* resource);
+
+    /* Asks the load to stop; the ticket reads as done with CANCELLED soon after (unless it had finished). Fails with: STALE_HANDLE, INVALID_ARGUMENT, TYPE_MISMATCH. */
+    engine_status (*ticket_cancel)(engine_handle ticket);
+
+    /* Destroys a ticket, cancelling a load that has not finished. A resource the ticket would have given is released. Fails with: STALE_HANDLE, INVALID_ARGUMENT, TYPE_MISMATCH. */
+    engine_status (*ticket_destroy)(engine_handle ticket);
 } engine_api;
 
 /* Returns the function table.

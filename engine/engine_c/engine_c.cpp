@@ -3,6 +3,8 @@
 // boundary: every function checks its arguments and its handle, turns the engine's own result types into an
 // `engine_status` (status_map.h) and keeps the text of a failure for `last_error`.
 #include "build_defs.h"
+#include "asset/asset_settings.h"
+#include "asset/resource_manager.h"
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
 #include "jobs/frame_pool.h"
@@ -15,6 +17,7 @@
 #include "debug/stack_trace.h"
 #include "engine_c/engine_internal.h"
 #include "engine_c/engine_objects.h"
+#include "engine_c/resources.h"
 #include "engine_c/runtime.h"
 #include "engine_c/status_map.h"
 #include "log/diagnostics_hooks.h"
@@ -260,6 +263,8 @@ engine_status CreateFn(const engine_create_info* info, engine_handle* out)
 
     settings::RegisterEngineSettings(&engine->registry);
     settings::RegisterLogSettings(&engine->registry);
+    asset::RegisterAssetSettings(&engine->registry);
+    asset::RegisterManagerSettings(&engine->registry);
     {
         settings::SettingDesc dump = settings::MakeText("crash.dump_directory", "");
         dump.description = "the directory a crash dump goes to (empty: the user's crash directory)";
@@ -332,6 +337,18 @@ engine_status CreateFn(const engine_create_info* info, engine_handle* out)
     if (report.notes.Size() > 0)
     {  // an unknown key is a note: a typo in a host's entry must not pass silently
         return FailWithProblem(report.notes[0]);
+    }
+    {  // what the resource host will be made from, read now (a later setting_set does not change a host that exists)
+        ResourceConfig& config = engine->runtime->resource_config;
+        config.memory_bytes = asset::MemoryBackendBytesFromSettings(engine->registry);
+        config.priority = asset::MemoryMountPriorityFromSettings(engine->registry);
+        const asset::ManagerConfig manager = asset::ManagerConfigFromSettings(engine->registry);
+        config.buffer_pool_bytes = manager.buffer_pool_bytes;
+        config.cache_bytes = manager.cache_bytes;
+        config.allow_fallbacks = manager.allow_fallbacks;
+        config.verify_on_load = manager.verify_on_load;
+        config.max_inflight = manager.max_inflight;
+        config.max_queued = manager.max_queued;
     }
     for (LogChannel* channel = LogChannel::First(); channel != nullptr; channel = channel->Next())
     {
@@ -674,6 +691,19 @@ extern "C"
             &engine_c::CounterWaitFn,
             &engine_c::CrashHandlerInstallFn,
             &engine_c::CrashHandlerUninstallFn,
+            &engine_c::ResourceAddFn,
+            &engine_c::ResourceReplaceFn,
+            &engine_c::ResourceRemoveFn,
+            &engine_c::ResourceMountedFn,
+            &engine_c::ResourceLoadFn,
+            &engine_c::ResourceReleaseFn,
+            &engine_c::ResourceStatusFn,
+            &engine_c::ResourceLoadAsyncFn,
+            &engine_c::TicketPollFn,
+            &engine_c::TicketWaitFn,
+            &engine_c::TicketFinishFn,
+            &engine_c::TicketCancelFn,
+            &engine_c::TicketDestroyFn,
         };
         *out = &table;
         return ENGINE_OK;

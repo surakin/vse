@@ -210,3 +210,37 @@ removes the handler if the host did not. The dump the crash test checks is in a 
 matrices, runs a frame with a budget over two worlds, submits 500 jobs and waits, runs jobs that create entities through the table, waits with a timeout, destroys a counter with a pending job (refused), makes every bad call (a stale
 world and entity, a counter used as a world, a wrong struct size, a name too long, a non-finite transform), runs two host threads each with a world and a counter beside a third that runs frames (the thread-safe subset, under tsan), and,
 in a child process that starts before any thread exists, crashes inside a job and counts the envelope the handler left.
+
+## Host-provided content and loading (Day 350)
+
+A host that has its content in memory (it downloaded it, unpacked it, generated it) hands the minted blobs to the engine and loads them through the table:
+`resource_add`, `resource_replace`, `resource_remove`, `resource_mounted`, and `resource_load` / `resource_load_async` with their handles and tickets
+(`engine_c.h`, "Day 350"). The engine never mints: the host adds blobs that `asset_mint` made (decision of Day 342).
+
+- **One mount.** The engine mounts its `HostMemoryBackend` at `/` at the priority `assets.memory_priority` (default 1000; the mounts of `assets.mounts` have
+  the priorities 0, 1, 2, ...), so host content wins over files. The budget is `assets.memory_backend_bytes` and counts lent bytes too; an add past it is
+  `LIMIT_EXCEEDED` (back-pressure, never eviction). The resource settings are read when the engine is created.
+- **Copied or lent.** Without `ENGINE_RESOURCE_BORROW` the bytes are copied and the host frees its buffer when the call returns. With it the engine reads the
+  host's memory in place and calls `release(user, bytes, size)` exactly once, on an engine worker thread, after the last reader of those bytes is gone: the
+  resource was replaced or removed and no load reads it any more, or the engine was destroyed (`destroy` returns after every pending release ran). A call
+  that fails never calls `release`: the host keeps its buffer. A lent buffer must stay valid and unchanged until its release; a buffer that was overwritten
+  no longer opens as a blob and the load fails with `CORRUPT`, and AddressSanitizer reports one that was freed.
+- **Checked as a whole.** An add or replace opens the blob (container, type, version), checks that its own id is the id given and that its content hash
+  verifies; `ENGINE_RESOURCE_CHECK_HASH` also compares the hash with the one the host promises.
+- **Dependents.** Replacing or removing a resource that a loaded resource depends on is refused with `IN_USE` and the ids of the dependents come back in a buffer
+  (an array of `uint64_t` values). `ENGINE_RESOURCE_FORCE` unloads them first, atomically, and their handles read `loaded` 0 in `resource_status`. A
+  replace of a loaded resource nothing depends on rebuilds it in place: its handles stay valid.
+- **Loading.** `resource_load` names the resource by path (when `path.length` is not 0) or by id and the type the host expects; it loads the whole closure
+  or fails (`MISSING_DEPENDENCY`, `TYPE_MISMATCH`, ...). The handle keeps it loaded and counts as an object of the engine (`destroy` refuses with `IN_USE`
+  until it is released). Nothing of the loaded data is exposed: there is no pointer into a blob. Rendering uses the handle through the frame loop (later days).
+- **Tickets.** `resource_load_async` returns a ticket at once; the blobs are read on the engine's workers and the objects are built by the host's own calls
+  (`frame`, `ticket_poll`, `ticket_wait`, `ticket_finish`), never by an engine thread on its own, so a program's GPU objects can stay on its render thread
+  when later days add them. `ticket_finish` gives a handle (each call its own) or the load's error; `ticket_cancel` stops the load; `ticket_destroy` ends the
+  ticket and cancels what has not finished.
+- **Tested** by `host_resources.c`: blobs minted by `asset_mint`, the bad calls of every function, the dependents refused and forced, a texture replaced 24 times
+  while a handle is held and another thread runs frames, every release counted (once, off the host's thread), the engine destroyed holding lent buffers, a
+  lent buffer overwritten (`CORRUPT`), and the tickets (poll, wait, finish twice, failure, cancel, destroy before the end).
+
+Not here: paks and loose files are not mounted by the C API yet (`assets.mounts` is declared but only the memory mount is made), and GPU resources come
+with the renderer's C functions.
+
