@@ -1,30 +1,27 @@
 /* Phase 23 Day 345: the engine library leaves the address space after its jobs ran. Runs jobs on the calling thread and
    on a host thread that is joined, installs and uninstalls the crash handler (every engine worker registers with it),
-   then dlclose; the library is unloaded when dlopen(RTLD_NOLOAD) no longer finds it (on Linux; macOS keeps it:
-   process_probe.h). Built with the sanitizer of the engine library it loads. */
-#include <dlfcn.h>
-#include <pthread.h>
+   then unloads it (dlclose, FreeLibrary); the library is unloaded when the system's loader no longer finds it. Built
+   with the sanitizer of the engine library it loads. */
 #include <stdio.h>
 
 #include "host_api.h"
-#include "process_probe.h"
 
 static const struct engine_test_extension* g_table;
 static int g_thread_ran;
 
-static void* ThreadMain(void* unused)
+static void ThreadMain(void* unused)
 {
     (void)unused;
     g_thread_ran = g_table->run_jobs(500);
-    return NULL;
 }
 
 int main(void)
 {
-    void* engine = dlopen(ENGINE_LIB_PATH, RTLD_NOW | RTLD_LOCAL);
+    host_quiet_failures(); /* Windows: report failures on stderr, never in a dialog */
+    void* engine = host_lib_open(ENGINE_LIB_PATH);
     if (engine == NULL)
     {
-        printf("dlopen: %s\n", dlerror());
+        printf("dlopen: %s\n", host_lib_error());
         return 2;
     }
     g_table = host_test_extension(engine);
@@ -37,13 +34,13 @@ int main(void)
     int ok = 1;
     ok &= g_table->crash_install(UNLOAD_DUMP_DIR) == 1; /* workers started from now on register with the handler */
     ok &= g_table->run_jobs(500) == 500; /* on this thread: its frame-pool cache and workers' caches are in use */
-    pthread_t thread;
-    if (pthread_create(&thread, NULL, ThreadMain, NULL) != 0)
+    host_thread thread;
+    if (host_thread_start(&thread, ThreadMain, NULL) != 0)
     {
-        printf("pthread_create failed\n");
+        printf("could not start a thread\n");
         return 2;
     }
-    pthread_join(thread, NULL);
+    host_thread_join(&thread);
     ok &= g_thread_ran == 500;
     g_table->crash_uninstall();
     if (!ok)
@@ -52,17 +49,22 @@ int main(void)
         return 1;
     }
 
-    if (dlclose(engine) != 0)
+    if (!host_lib_is_loaded(ENGINE_LIB_PATH))
     {
-        printf("unload_host: dlclose failed: %s\n", dlerror());
+        printf("unload_host: the loader probe does not see the library while it is loaded\n");
+        return 2;
+    }
+    if (host_lib_close(engine) != 0)
+    {
+        printf("unload_host: closing the library failed: %s\n", host_lib_error());
         return 1;
     }
-    if (!ProbeLibraryGone(ENGINE_LIB_PATH))
+    if (!host_lib_gone(ENGINE_LIB_PATH))
     {
         printf("unload_host: the engine library is still mapped after dlclose (a thread_local destructor pins it)\n");
         return 1;
     }
-    if (!ENGINE_LIBRARY_UNLOADS)
+    if (!HOST_LIBRARY_UNLOADS)
     {
         printf("unload_host: the engine library was closed (dyld keeps an image with Objective-C classes mapped)\n");
         return 0;

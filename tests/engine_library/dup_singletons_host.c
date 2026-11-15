@@ -1,7 +1,6 @@
 /* Phase 23 Day 345: loads the engine library and one plugin and checks that the plugin sees the engine's one allocator,
    await counters, log and frame pool. The paths are compiled in (ENGINE_LIB_PATH, PLUGIN_PATH). Exit 0: one of each;
    exit 1: a singleton seen twice. */
-#include <dlfcn.h>
 #include <stdio.h>
 
 #include "host_api.h"
@@ -20,19 +19,22 @@ static int Same(const char* what, const void* a, const void* b)
 
 int main(void)
 {
-    void* engine = dlopen(ENGINE_LIB_PATH, RTLD_NOW | RTLD_LOCAL);
+    host_quiet_failures(); /* Windows: report failures on stderr, never in a dialog */
+    void* engine = host_lib_open(ENGINE_LIB_PATH);
     if (engine == NULL)
     {
-        printf("dlopen engine: %s\n", dlerror());
+        printf("dlopen engine: %s\n", host_lib_error());
         return 2;
     }
-    void* plugin = dlopen(PLUGIN_PATH, RTLD_NOW | RTLD_LOCAL);
+    void* plugin = host_lib_open(PLUGIN_PATH);
     if (plugin == NULL)
     {
-        printf("dlopen/dlsym: %s\n", dlerror());
+        printf("dlopen/dlsym: %s\n", host_lib_error());
         return 2;
     }
-    report_fn report = (report_fn)dlsym(plugin, "plugin_report");
+    report_fn report = NULL;
+    void* report_symbol = host_lib_symbol(plugin, "plugin_report");
+    memcpy(&report, &report_symbol, sizeof(report));
     const struct engine_test_extension* table = host_test_extension(engine);
     if (report == NULL || table == NULL || table->size < sizeof(struct engine_test_extension))
     {

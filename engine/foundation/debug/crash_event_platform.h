@@ -60,6 +60,12 @@ void ReportCrashFromMachContext(const void* user_context);
 // library replaces.
 void PrepareCrashEventHook();
 
+// Windows: called after the library has closed (which puts the gate back on top): when the gate is still the top-level
+// filter, the filter that was there before PrepareCrashEventHook is made top-level again, so a host that loaded the
+// engine gets its own handling back, and no filter points into an engine library that is unloaded later (Phase 23 Day
+// 354).
+void FinishCrashEventHookRemoval();
+
 // Windows: the crash library calls its `on_crash` hook with the fault's EXCEPTION_POINTERS (on its own handler thread,
 // after the dump); crash_handler_sentry.cpp passes them here, which builds the CrashEvent and calls the hook
 // InstallCrashEventHook installed. Signal-safe.

@@ -443,8 +443,10 @@ engine_status GetInfoFn(engine_handle handle, engine_info* out)
                     (engine_c::SurfaceKindSupported(ENGINE_SURFACE_X11) ? ENGINE_CAP_SURFACE_X11 : 0u) |
                     (engine_c::SurfaceKindSupported(ENGINE_SURFACE_WAYLAND) ? ENGINE_CAP_SURFACE_WAYLAND : 0u) |
                     (engine_c::SurfaceKindSupported(ENGINE_SURFACE_COCOA) ? ENGINE_CAP_SURFACE_COCOA : 0u) |
+                    (engine_c::SurfaceKindSupported(ENGINE_SURFACE_WIN32) ? ENGINE_CAP_SURFACE_WIN32 : 0u) |
                     (engine_c::SurfaceKindSupported(ENGINE_SURFACE_X11) ||
-                             engine_c::SurfaceKindSupported(ENGINE_SURFACE_COCOA)
+                             engine_c::SurfaceKindSupported(ENGINE_SURFACE_COCOA) ||
+                             engine_c::SurfaceKindSupported(ENGINE_SURFACE_WIN32)
                          ? ENGINE_CAP_READBACK
                          : 0u);
         out->reserved = 0;
@@ -746,7 +748,7 @@ extern "C"
 
 }  // extern "C"
 
-#if ENGINE_C_UNLOAD_HOOK
+#if ENGINE_C_UNLOAD_HOOK && !ENGINE_PLATFORM_WINDOWS
 // Runs when the shared library is unloaded (and at process exit, once the host's own static destructors are done with
 // the engine): the one pool of the job system that is immortal in a program gives its memory back, so a host that loads
 // and unloads the library does not accumulate it. By the contract of the C API every thread that used the engine has
@@ -755,4 +757,20 @@ __attribute__((destructor)) static void EngineLibraryUnloaded()
 {
     engine_placeholder::jobs::FramePool::DestroyGlobalAtUnload();
 }
+#elif ENGINE_C_UNLOAD_HOOK
+// Windows (Day 354): the same, as the destructor of a static object, which the C runtime of engine.dll runs when the
+// DLL is detached (FreeLibrary, or process exit). engine.dll has no DllMain of its own: loading it runs the C runtime's
+// start and the constructors of statics, none of which starts a thread or allocates from the engine (host_dllmain.c
+// checks it), and the work of unloading is only this.
+namespace
+{
+struct EngineLibraryUnloadHook
+{
+    EngineLibraryUnloadHook() = default;
+    EngineLibraryUnloadHook(const EngineLibraryUnloadHook&) = delete;
+    EngineLibraryUnloadHook& operator=(const EngineLibraryUnloadHook&) = delete;
+    ~EngineLibraryUnloadHook() { engine_placeholder::jobs::FramePool::DestroyGlobalAtUnload(); }
+};
+const EngineLibraryUnloadHook g_engine_library_unload_hook;
+}  // namespace
 #endif

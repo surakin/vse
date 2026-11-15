@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "host_os.h"
 #include "engine/engine_c.h"
 
 static int g_failures = 0;
@@ -30,6 +31,7 @@ int main(void)
     engine_import_info poll;
     engine_resource_info unused;
     const char text[] = "{}";
+    host_quiet_failures(); /* Windows: report failures on stderr, never in a dialog */
     (void)unused;
     if (engine_get_api(ENGINE_ABI_VERSION_MAJOR, ENGINE_ABI_VERSION_MINOR, sizeof(engine_api), &api) != ENGINE_OK)
     {

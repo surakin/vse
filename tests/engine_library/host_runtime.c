@@ -3,17 +3,11 @@
    stale world, a stale entity, a wrong handle kind, a bad struct size) and expects the documented status each time. A
    second part runs two host threads at once (the thread rules of engine_c.h); under ThreadSanitizer that is the check
    of the locking. */
-#include <dirent.h>
 #include <math.h>
-#include <pthread.h>
-#include <signal.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-#include <unistd.h>
 
-#include "process_probe.h"
+#include "host_os.h"
 #include "engine/engine_c.h"
 
 static int g_failures = 0;
@@ -25,7 +19,7 @@ static const engine_api* g_api = NULL;
         if (!(condition))                                                                                              \
         {                                                                                                              \
             printf("host_runtime: line %d: CHECK failed: %s\n", __LINE__, #condition);                                 \
-            __atomic_fetch_add(&g_failures, 1, __ATOMIC_RELAXED);                                                      \
+            host_atomic_add(&g_failures, 1);                                                                           \
         }                                                                                                              \
     } while (0)
 
@@ -37,7 +31,7 @@ static const engine_api* g_api = NULL;
         {                                                                                                              \
             printf("host_runtime: line %d: %s returned %d, expected %d\n", __LINE__, #call, (int)got_,                 \
                    (int)(expected));                                                                                   \
-            __atomic_fetch_add(&g_failures, 1, __ATOMIC_RELAXED);                                                      \
+            host_atomic_add(&g_failures, 1);                                                                           \
         }                                                                                                              \
     } while (0)
 
@@ -97,18 +91,18 @@ typedef struct job_state
 {
     int ran;        /* jobs that ran, counted atomically */
     int bad_thread; /* jobs that ran on the thread that submitted them */
-    pthread_t submitter;
+    host_thread_id submitter;
     engine_handle world; /* a job that makes an entity in this world, when set */
 } job_state;
 
 static void CountJob(void* user)
 {
     job_state* state = (job_state*)user;
-    if (pthread_equal(pthread_self(), state->submitter))
+    if (host_thread_equal(host_thread_self(), state->submitter))
     {
-        __atomic_fetch_add(&state->bad_thread, 1, __ATOMIC_RELAXED);
+        host_atomic_add(&state->bad_thread, 1);
     }
-    __atomic_fetch_add(&state->ran, 1, __ATOMIC_RELAXED);
+    host_atomic_add(&state->ran, 1);
 }
 
 static void EntityJob(void* user)
@@ -117,7 +111,7 @@ static void EntityJob(void* user)
     uint64_t key = 0;
     if (g_api->entity_create(state->world, &key) == ENGINE_OK && key != 0)
     {
-        __atomic_fetch_add(&state->ran, 1, __ATOMIC_RELAXED);
+        host_atomic_add(&state->ran, 1);
     }
 }
 
@@ -127,7 +121,7 @@ static void WaitInsideJob(void* user)
     /* The counter handle is in `world` (reused as storage): a wait from inside a job is refused. */
     if (g_api->counter_wait(state->world, 0) == ENGINE_ERROR_INVALID_ARGUMENT)
     {
-        __atomic_fetch_add(&state->ran, 1, __ATOMIC_RELAXED);
+        host_atomic_add(&state->ran, 1);
     }
 }
 
@@ -361,7 +355,7 @@ static void TestJobs(engine_handle engine)
     int i;
 
     memset(&state, 0, sizeof(state));
-    state.submitter = pthread_self();
+    state.submitter = host_thread_self();
     CHECK_STATUS(g_api->counter_create(engine, &counter), ENGINE_OK);
     CHECK_STATUS(g_api->counter_value(counter, &pending), ENGINE_OK);
     CHECK(pending == 0);
@@ -371,7 +365,7 @@ static void TestJobs(engine_handle engine)
         CHECK_STATUS(g_api->jobs_submit(engine, &CountJob, &state, counter), ENGINE_OK);
     }
     CHECK_STATUS(g_api->counter_wait(counter, UINT64_MAX), ENGINE_OK);
-    CHECK(__atomic_load_n(&state.ran, __ATOMIC_ACQUIRE) == kJobs);
+    CHECK(host_atomic_load(&state.ran) == kJobs);
     CHECK(state.bad_thread == 0); /* a job runs on an engine thread, never on the submitter's */
     CHECK_STATUS(g_api->counter_value(counter, &pending), ENGINE_OK);
     CHECK(pending == 0);
@@ -418,14 +412,14 @@ static void TestJobs(engine_handle engine)
     CHECK_STATUS(g_api->jobs_submit(engine, &CountJob, &state, counter), ENGINE_ERROR_STALE_HANDLE);
 }
 
-static volatile int g_hold = 0;
+static int g_hold = 0; /* read and written through host_atomic_* */
 
 static void HoldJob(void* user)
 {
     (void)user;
-    while (__atomic_load_n(&g_hold, __ATOMIC_ACQUIRE) == 0)
+    while (host_atomic_load(&g_hold) == 0)
     {
-        usleep(200);
+        host_sleep_ms(1);
     }
 }
 
@@ -434,13 +428,13 @@ static void TestPendingCounter(engine_handle engine)
     engine_handle counter;
     uint64_t pending = 0;
     CHECK_STATUS(g_api->counter_create(engine, &counter), ENGINE_OK);
-    __atomic_store_n(&g_hold, 0, __ATOMIC_RELEASE);
+    host_atomic_store(&g_hold, 0);
     CHECK_STATUS(g_api->jobs_submit(engine, &HoldJob, NULL, counter), ENGINE_OK);
     CHECK_STATUS(g_api->counter_wait(counter, 20), ENGINE_ERROR_NOT_READY);
     CHECK_STATUS(g_api->counter_value(counter, &pending), ENGINE_OK);
     CHECK(pending == 1);
     CHECK_STATUS(g_api->counter_destroy(counter), ENGINE_ERROR_IN_USE);
-    __atomic_store_n(&g_hold, 1, __ATOMIC_RELEASE);
+    host_atomic_store(&g_hold, 1);
     CHECK_STATUS(g_api->counter_wait(counter, UINT64_MAX), ENGINE_OK);
     CHECK_STATUS(g_api->counter_destroy(counter), ENGINE_OK);
 }
@@ -451,7 +445,7 @@ static void TestTooManyJobs(engine_handle engine)
     engine_handle counter;
     int accepted = 0, refused = 0, i;
     CHECK_STATUS(g_api->counter_create(engine, &counter), ENGINE_OK);
-    __atomic_store_n(&g_hold, 0, __ATOMIC_RELEASE);
+    host_atomic_store(&g_hold, 0);
     for (i = 0; i < 20000; ++i)
     {
         const engine_status status = g_api->jobs_submit(engine, &HoldJob, NULL, counter);
@@ -466,7 +460,7 @@ static void TestTooManyJobs(engine_handle engine)
         }
     }
     CHECK(accepted > 0 && refused > 0);
-    __atomic_store_n(&g_hold, 1, __ATOMIC_RELEASE);
+    host_atomic_store(&g_hold, 1);
     CHECK_STATUS(g_api->counter_wait(counter, UINT64_MAX), ENGINE_OK);
     CHECK_STATUS(g_api->jobs_submit(engine, &HoldJob, NULL, counter), ENGINE_OK); /* the room is back */
     CHECK_STATUS(g_api->counter_wait(counter, UINT64_MAX), ENGINE_OK);
@@ -482,7 +476,7 @@ typedef struct thread_args
     int failures;
 } thread_args;
 
-static void* ThreadMain(void* user)
+static void ThreadMain(void* user)
 {
     thread_args* args = (thread_args*)user;
     engine_handle world, counter;
@@ -491,7 +485,7 @@ static void* ThreadMain(void* user)
     size_t total = 0;
     int round, i;
     memset(&state, 0, sizeof(state));
-    state.submitter = pthread_self();
+    state.submitter = host_thread_self();
     CHECK_STATUS(g_api->world_create(args->engine, &world), ENGINE_OK);
     CHECK_STATUS(g_api->counter_create(args->engine, &counter), ENGINE_OK);
     for (round = 0; round < 20; ++round)
@@ -509,16 +503,15 @@ static void* ThreadMain(void* user)
         CHECK(total == (size_t)(round + 1) * 10);
     }
     CHECK_STATUS(g_api->counter_wait(counter, UINT64_MAX), ENGINE_OK);
-    CHECK(__atomic_load_n(&state.ran, __ATOMIC_ACQUIRE) == 200);
+    CHECK(host_atomic_load(&state.ran) == 200);
     CHECK_STATUS(g_api->counter_destroy(counter), ENGINE_OK);
     CHECK_STATUS(g_api->world_destroy(world), ENGINE_OK);
     g_api->thread_detach();
-    return NULL;
 }
 
 static void TestTwoThreads(engine_handle engine)
 {
-    pthread_t threads[2];
+    host_thread threads[2];
     thread_args args[2];
     engine_frame_info info = FrameInfo(0.01, 0);
     int i;
@@ -527,7 +520,7 @@ static void TestTwoThreads(engine_handle engine)
         args[i].engine = engine;
         args[i].id = i;
         args[i].failures = 0;
-        pthread_create(&threads[i], NULL, ThreadMain, &args[i]);
+        host_thread_start(&threads[i], ThreadMain, &args[i]);
     }
     for (i = 0; i < 20; ++i)
     {
@@ -535,49 +528,13 @@ static void TestTwoThreads(engine_handle engine)
     }
     for (i = 0; i < 2; ++i)
     {
-        pthread_join(threads[i], NULL);
+        host_thread_join(&threads[i]);
     }
 }
 
 /* ---- the crash handler ---- */
 
-static void HostHandler(int signal_number)
-{
-    (void)signal_number;
-}
-
 #ifndef RUNTIME_NO_CRASH_CHILD
-static int CountEnvelopes(const char* path)
-{
-    int count = 0;
-    DIR* dir = opendir(path);
-    struct dirent* entry;
-    if (dir == NULL)
-    {
-        return 0;
-    }
-    while ((entry = readdir(dir)) != NULL)
-    {
-        char child[1024];
-        struct stat info;
-        snprintf(child, sizeof(child), "%s/%s", path, entry->d_name);
-        if (entry->d_name[0] == '.' || stat(child, &info) != 0)
-        {
-            continue;
-        }
-        if (S_ISDIR(info.st_mode))
-        {
-            count += CountEnvelopes(child);
-        }
-        else if (strstr(entry->d_name, ".envelope") != NULL)
-        {
-            ++count;
-        }
-    }
-    closedir(dir);
-    return count;
-}
-
 static void CrashJob(void* user)
 {
     (void)user;
@@ -592,29 +549,24 @@ static void CrashChild(const char* dump_dir)
     engine = NewEngine(dump_dir);
     if (g_api->crash_handler_install(engine) != ENGINE_OK)
     {
-        _exit(3);
+        host_exit_now(5); /* 3 is how a crash inside a job ends on Windows */
     }
     g_api->counter_create(engine, &counter);
     g_api->jobs_submit(engine, &CrashJob, NULL, counter);
     g_api->counter_wait(counter, 10000);
-    _exit(4); /* not reached: the job crashes */
+    host_exit_now(4); /* not reached: the job crashes */
 }
 #endif
 
 static void TestCrashHandlerRestored(engine_handle engine)
 {
-    struct sigaction host, during, after;
-    memset(&host, 0, sizeof(host));
-    host.sa_handler = HostHandler;
-    sigaction(ENGINE_CRASH_HANDLER_SIGNAL, &host, NULL);
+    host_install_own_crash_handler();
     CHECK_STATUS(g_api->crash_handler_uninstall(engine), ENGINE_ERROR_NOT_FOUND);
     CHECK_STATUS(g_api->crash_handler_install(engine), ENGINE_OK);
     CHECK_STATUS(g_api->crash_handler_install(engine), ENGINE_ERROR_ALREADY_EXISTS);
-    sigaction(ENGINE_CRASH_HANDLER_SIGNAL, NULL, &during);
-    CHECK(during.sa_handler != HostHandler);
+    CHECK(!host_own_crash_handler_active());
     CHECK_STATUS(g_api->crash_handler_uninstall(engine), ENGINE_OK);
-    sigaction(ENGINE_CRASH_HANDLER_SIGNAL, NULL, &after);
-    CHECK(after.sa_handler == HostHandler);
+    CHECK(host_own_crash_handler_active());
     CHECK_STATUS(g_api->crash_handler_uninstall(engine), ENGINE_ERROR_NOT_FOUND);
     /* destroy takes the handler away too */
     CHECK_STATUS(g_api->crash_handler_install(engine), ENGINE_OK);
@@ -623,39 +575,26 @@ static void TestCrashHandlerRestored(engine_handle engine)
 int main(void)
 {
     char dump_dir[1024];
-    pid_t child;
-    int status = 0;
     engine_handle engine;
+    host_quiet_failures(); /* Windows: report failures on stderr, never in a dialog */
 
-    snprintf(dump_dir, sizeof(dump_dir), "%s.%d", RUNTIME_DUMP_DIR, (int)getpid());
-    mkdir(dump_dir, 0700);
+    snprintf(dump_dir, sizeof(dump_dir), "%s.%d", RUNTIME_DUMP_DIR, host_pid());
+    host_mkdir(dump_dir);
     if (engine_get_api(ENGINE_ABI_VERSION_MAJOR, ENGINE_ABI_VERSION_MINOR, sizeof(engine_api), &g_api) != ENGINE_OK)
     {
         printf("host_runtime: no function table\n");
         return 2;
     }
     CHECK(g_api->struct_size >= sizeof(engine_api));
+#ifndef RUNTIME_NO_CRASH_CHILD
+    host_child_entry(&CrashChild); /* Windows: the crash child is a second run of this program, with the table */
+#endif
 
     /* a crash in a job leaves a dump (the child starts before any thread of this program exists) */
 #ifndef RUNTIME_NO_CRASH_CHILD /* ThreadSanitizer: the crash handler's dump helper traces the crashed process and      \
                                   never finishes (the Day 345 crash test is plain only too) */
-    child = fork();
-    if (child == 0)
-    {
-        CrashChild(dump_dir);
-    }
-    waitpid(child, &status, 0);
-    if (!ProbeEndedByFault(status))
-    {
-        printf("host_runtime: the crash child ended with status 0x%x (signaled %d, signal %d, exited %d, code %d)\n",
-               status, WIFSIGNALED(status) ? 1 : 0, WIFSIGNALED(status) ? WTERMSIG(status) : 0,
-               WIFEXITED(status) ? 1 : 0, WIFEXITED(status) ? WEXITSTATUS(status) : 0);
-    }
-    CHECK(ProbeEndedByFault(status));
-    CHECK(CountEnvelopes(dump_dir) >= 1);
-#else
-    (void)child;
-    (void)status;
+    CHECK(host_run_crash_child(&CrashChild, dump_dir));
+    CHECK(host_count_files(dump_dir, ".envelope") >= 1);
 #endif
 
     engine = NewEngine(dump_dir);

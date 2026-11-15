@@ -131,7 +131,10 @@ mode and job limits a child runs with, and that a hung child's own child is gone
   there is no report and no dump in the handler's directory (exit code `0xC0000409`; `crash_end_to_end_windows_test.cpp` checks it).
   Windows Error Reporting's LocalDumps, when an administrator has set them up (`EnablePostMortemDumps`), is the only dump such a crash can leave.
 - **`detail::InstallCrashEventHook`** installs the observer and the crash gate; `RemoveCrashEventHook` removes the observer and turns the
-  gate into a pass-through.
+  gate into a pass-through; after `sentry_close` (which puts the gate back on top) `FinishCrashEventHookRemoval` gives the top-level filter
+  back to the one that was there before the engine installed, unless something was installed over the gate since (Phase 23 Day 354: a host
+  that loaded `engine.dll` gets its own filter back, and none is left pointing into the library after `FreeLibrary`;
+  `tests/engine_library/host_runtime.c` checks it).
 - **Scripts (Built, Day 156):** `scripts/store-symbols.ps1` files a program's PDB and image in the layout WinDbg reads
   (`<pdb>\<GUID+age>\<pdb>`, `<exe>\<timestamp><size>\<exe>`); `crash-report.ps1` prints the exception, the modules with their build ids
   and the report with its frames named from the store (`crash_extract --resolve`, DbgHelp), and refuses a different build of the program

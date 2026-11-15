@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "host_os.h"
 #include "engine/engine_c.h"
 #include "engine_c/engine_test_extension.h"
 
@@ -350,6 +351,7 @@ static void TestLifecycle(const engine_api* api)
 int main(void)
 {
     const engine_api* api = NULL;
+    host_quiet_failures(); /* Windows: report failures on stderr, never in a dialog */
     TestNegotiation();
     if (engine_get_api(ENGINE_ABI_VERSION_MAJOR, ENGINE_ABI_VERSION_MINOR, sizeof(engine_api), &api) != ENGINE_OK ||
         api == NULL)

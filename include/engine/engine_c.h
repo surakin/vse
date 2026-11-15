@@ -176,6 +176,7 @@ typedef struct engine_info
 #define ENGINE_CAP_SURFACE_WAYLAND 0x4u /* surface_create renders into a Wayland wl_surface the host owns (Day 352) */
 #define ENGINE_CAP_READBACK 0x8u /* surface_read_pixels works (Day 352) */
 #define ENGINE_CAP_SURFACE_COCOA 0x10u /* surface_create renders with Metal into an NSView or CAMetalLayer the host owns (macOS, Day 355) */
+#define ENGINE_CAP_SURFACE_WIN32 0x20u /* surface_create renders into a Win32 window (HWND) the host owns, with Direct3D 12 or Vulkan (Day 354) */
 
 /* ---- Day 352: rendering into a window the host owns ---- */
 
@@ -187,6 +188,12 @@ typedef struct engine_info
  * surface_rebind). surface_create, surface_rebind, surface_resized and surface_destroy of a Cocoa surface are called on the main thread (INVALID_ARGUMENT
  * otherwise), and frame draws it only there: a frame on another thread skips it and fails its pending read-backs with INVALID_ARGUMENT. */
 #define ENGINE_SURFACE_COCOA 3u
+#define ENGINE_SURFACE_WIN32 4u /* `display` is the HINSTANCE of the window's class (GetModuleHandleW(NULL) for a class of the program), `surface` the HWND (Day 354) */
+
+/* engine_surface_info.flags: which graphics API draws into the window. Neither bit is the platform's own (Direct3D 12 on Windows, Vulkan on Linux, Metal on
+ * macOS, which has no bit); both at once is INVALID_ARGUMENT; one that this platform has not is UNSUPPORTED. A surface keeps its API across surface_rebind. */
+#define ENGINE_SURFACE_FLAG_VULKAN 0x1u
+#define ENGINE_SURFACE_FLAG_D3D12 0x2u
 
 /* Input forwarded by the host (Day 353). The values of engine_key are those of the engine's own key enumeration (layout-aware keys: the symbol the layout
  * produces), 0 is "unknown". */
@@ -361,7 +368,7 @@ typedef struct engine_surface_info
 {
     uint32_t struct_size;
     uint32_t kind;   /* ENGINE_SURFACE_* */
-    uint32_t flags;  /* 0 */
+    uint32_t flags;  /* ENGINE_SURFACE_FLAG_*, or 0 for the platform's own graphics API */
     uint32_t width;  /* in pixels */
     uint32_t height;
     float scale;     /* the DPI scale of the window; 0 means 1 */

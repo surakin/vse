@@ -396,6 +396,8 @@ test:engine_host_dl*                            23   # a C host loads the engine
 test:engine_abi_snapshot                        23   # the C API's layout equals abi/engine_api.snapshot, or only appends under a higher minor (Day 347)
 test:engine_reload_cycles*                       23   # 50 load-run-destroy-unload cycles in one process; the library leaves /proc/self/maps, threads and memory return; plain, asan, tsan (Day 348)
 test:engine_destroy_waits_for_callback*         23   # destroy waits for a host thread inside the log callback, the handle is stale meanwhile (Day 348)
+test:engine_load_runs_nothing*                  23   # loading the library starts no thread and runs nothing of the engine; the workers start with create (Day 354)
+test:engine_other_crt                           23   # a host built with another C runtime (Windows /MT against /MD) runs frames, memory and resources through the loader (Day 354)
 tests/engine_library/status_map_test.cpp        23   # the engine's result types map onto the C statuses (Day 346)
 tests/engine_library/surface_wayland_test.cpp    23   # the engine renders into a Wayland surface the host owns: golden frame read back, resize, hidden surface, rebind (Day 352)
 tests/engine_library/surface_input_test.cpp      23   # forwarded pointer, key, text and touch events drive a UI button and text field on a host surface; cursor, clipboard, text-input and focus requests go back to the host callbacks (Day 353)

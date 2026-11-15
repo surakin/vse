@@ -1,6 +1,7 @@
 // Phase 23 Day 353: input the host forwards and requests the engine sends back, on a surface over a window the host
-// owns. The host here is the test: it opens a window with the platform layer (X11 on Linux, Cocoa on macOS from Day
-// 355, as a host with its own toolkit would), creates the engine and a surface, and forwards its events through
+// owns. The host here is the test: it opens a window with the platform layer (X11 on Linux, Win32 on Windows from Day
+// 354, Cocoa on macOS from Day 355, as a host with its own toolkit would), creates the engine and a surface, and
+// forwards its events through
 // `surface_input`. The engine's UI toolkit (ui::Surface with a button and text fields, bound to the surface's window by
 // ui_window's WindowAdapter, the way an application binds it to its own window) reacts as it would to a window of its
 // own: a click changes a counter that the test reads back through the world API, typed text reaches a field, the cursor
@@ -41,8 +42,8 @@ static_assert(os::kModCtrl == ENGINE_MOD_CTRL && os::kModSuper == ENGINE_MOD_SUP
 // (SKIP_IF_NO_DISPLAY_SESSION).
 bool HaveDisplay()
 {
-#if ENGINE_PLATFORM_MACOS
-    return true;
+#if ENGINE_PLATFORM_MACOS || ENGINE_PLATFORM_WINDOWS
+    return true;  // the desktop is there (a locked session is skipped by SKIP_IF_NO_DISPLAY_SESSION)
 #else
     const char* display = os::GetEnvironment("DISPLAY");
     return display != nullptr && display[0] != '\0';
@@ -180,8 +181,14 @@ struct Rig
         create.struct_size = sizeof(create);
         create.flags = ENGINE_CREATE_LOG_SUPPRESS_CONSOLE;
         REQUIRE(api->create(&create, &engine) == ENGINE_OK);
-        if (!host.Open(ENGINE_PLATFORM_MACOS ? os::WindowBackend::Cocoa : os::WindowBackend::X11, "engine input test",
-                       200, 120, &input))
+#if ENGINE_PLATFORM_WINDOWS
+        const os::WindowBackend backend = os::WindowBackend::Win32;
+#elif ENGINE_PLATFORM_MACOS
+        const os::WindowBackend backend = os::WindowBackend::Cocoa;
+#else
+        const os::WindowBackend backend = os::WindowBackend::X11;
+#endif
+        if (!host.Open(backend, "engine input test", 200, 120, &input))
         {
             return false;
         }
@@ -204,7 +211,10 @@ struct Rig
         info.height = 120;
         info.scale = 1.0f;
         info.display = native.display;
-#if ENGINE_PLATFORM_MACOS
+#if ENGINE_PLATFORM_WINDOWS
+        info.kind = ENGINE_SURFACE_WIN32;  // the HINSTANCE and the HWND (Day 354)
+        info.surface = native.surface;
+#elif ENGINE_PLATFORM_MACOS
         info.kind = ENGINE_SURFACE_COCOA;  // the window's content NSView and its CAMetalLayer
         info.surface = native.surface;
         info.width = host.Get()->Width();  // in pixels: twice the points on a Retina display

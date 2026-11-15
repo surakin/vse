@@ -474,7 +474,8 @@ int main(void)
     Window window;
     engine_handle engine;
     engine_info info;
-    setvbuf(stdout, NULL, _IOLBF, 0);
+    setvbuf(stdout, NULL, _IONBF,
+            0); /* unbuffered: the Windows C runtime takes _IOLBF as full buffering and asserts on size 0 */
     if (engine_get_api(ENGINE_ABI_VERSION_MAJOR, ENGINE_ABI_VERSION_MINOR, sizeof(engine_api), &g_api) != ENGINE_OK)
     {
         printf("host_surface: engine_get_api failed\n");

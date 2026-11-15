@@ -3,14 +3,13 @@
    minor newer than the library's), then loads the real library, checks the table, creates an engine, runs jobs through
    the test extension (the frame loop arrives on Day 349), destroys the engine, unloads, and checks that the library
    left the address space. */
-#include <dlfcn.h>
 #include <stdio.h>
 #include <string.h>
 
+#include "host_os.h"
 #include "engine/engine_c.h"
 #include "engine/engine_loader.h"
 #include "engine_c/engine_test_extension.h"
-#include "process_probe.h"
 
 static int g_failures = 0;
 
@@ -41,6 +40,7 @@ static void Refused(const char* path, uint32_t major, uint32_t minor, engine_sta
 
 int main(void)
 {
+    host_quiet_failures(); /* Windows: report failures on stderr, never in a dialog */
     engine_loader loader;
     engine_create_info info;
     engine_handle engine;
@@ -66,8 +66,8 @@ int main(void)
     CHECK(engine_load(ENGINE_LIB_PATH, 1, 0, NULL) == ENGINE_ERROR_INVALID_ARGUMENT);
     CHECK(engine_unload(NULL) == ENGINE_ERROR_INVALID_ARGUMENT);
     /* None of the refusals left a library behind. */
-    CHECK(!ProbeLibraryLoaded(FAKE_OTHER_MAJOR_PATH)); /* no Objective-C in it: it unloads on macOS too */
-    CHECK(ProbeLibraryGone(ENGINE_LIB_PATH)); /* the refused real library was closed (on macOS dyld keeps it mapped) */
+    CHECK(!host_lib_is_loaded(FAKE_OTHER_MAJOR_PATH));
+    CHECK(host_lib_gone(ENGINE_LIB_PATH)); /* the refused real library was closed (on macOS dyld keeps it mapped) */
 
     /* The real library. */
     if (engine_load(ENGINE_LIB_PATH, ENGINE_ABI_VERSION_MAJOR, ENGINE_ABI_VERSION_MINOR, &loader) != ENGINE_OK)
@@ -75,6 +75,8 @@ int main(void)
         printf("host_dl: cannot load the engine: %s\n", loader.message);
         return 2;
     }
+    CHECK(host_lib_is_loaded(
+        ENGINE_LIB_PATH)); /* the probe sees it while it is loaded (the checks of its absence mean something) */
     CHECK(loader.api->abi_major == ENGINE_ABI_VERSION_MAJOR && loader.api->abi_minor == ENGINE_ABI_VERSION_MINOR);
     CHECK(loader.api->struct_size == sizeof(engine_api));
 
@@ -96,7 +98,7 @@ int main(void)
     loader.api->thread_detach();
     CHECK(engine_unload(&loader) == ENGINE_OK);
     CHECK(loader.api == NULL && loader.library == NULL);
-    CHECK(ProbeLibraryGone(ENGINE_LIB_PATH)); /* the library left the address space (where libraries unload) */
+    CHECK(host_lib_gone(ENGINE_LIB_PATH)); /* the library left the address space (where libraries unload) */
 
     if (g_failures != 0)
     {

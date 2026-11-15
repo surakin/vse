@@ -1,6 +1,7 @@
 # ABI gate for the shared engine library (Phase 23 Day 344). Run as:
 #   cmake -DEXPORTS=<abi/engine.exports> -DVERSION_HEADER=<engine_abi_version.h>
 #         [-DLIBRARY=<libengine.so> -DNM=<nm> | -DNM_OUTPUT=<file of `nm -D --defined-only` text>] [-DNM_STYLE=macho: `nm -gU` of a dylib]
+#          | -DLIBRARY=<engine.dll> -DDUMPBIN=<dumpbin.exe> | -DDUMPBIN_OUTPUT=<file of `dumpbin /exports` text>]
 #         [-DPREVIOUS=<the last list> | -DGIT_ROOT=<repo>]  [-DC_HEADER=<engine_c.h> -DC_COMPILER=<cc>]  -P check.cmake
 # Checks, each failing with a message that names the fix:
 #   1. The version line of the export list and ENGINE_ABI_VERSION_MAJOR/MINOR of the version header are the same.
@@ -105,6 +106,34 @@ elseif(NM_OUTPUT)
   file(READ "${NM_OUTPUT}" nm_text)
   set(have_library TRUE)
 endif()
+# Windows (Day 354): a DLL's exports are its export table, read with `dumpbin /exports`; the rows after the "ordinal hint RVA name" header are
+# "<ordinal> <hint> <RVA> <name> [= <target>]". They are turned into the nm form above, so the comparison below is the same.
+set(dumpbin_text "")
+if(LIBRARY AND DUMPBIN)
+  execute_process(COMMAND "${DUMPBIN}" -nologo -exports "${LIBRARY}" RESULT_VARIABLE db_rc OUTPUT_VARIABLE dumpbin_text ERROR_VARIABLE db_err)
+  if(NOT db_rc EQUAL 0)
+    gate_problem("${DUMPBIN} -exports failed on ${LIBRARY}: ${db_err}")
+    set(dumpbin_text "")
+  endif()
+elseif(DUMPBIN_OUTPUT)
+  file(READ "${DUMPBIN_OUTPUT}" dumpbin_text)
+endif()
+if(NOT dumpbin_text STREQUAL "")
+  set(have_library TRUE)
+  set(nm_text "")
+  string(REPLACE "\n" ";" db_lines "${dumpbin_text}")
+  set(in_table FALSE)
+  foreach(line IN LISTS db_lines)
+    string(STRIP "${line}" line)
+    if(line MATCHES "^ordinal +hint +RVA +name$")
+      set(in_table TRUE)
+    elseif(line STREQUAL "Summary")
+      set(in_table FALSE)
+    elseif(in_table AND line MATCHES "^[0-9]+ +[0-9A-Fa-f]+ +[0-9A-Fa-f]+ +([^ ]+)")
+      string(APPEND nm_text "0 T ${CMAKE_MATCH_1}\n")
+    endif()
+  endforeach()
+endif()
 if(have_library)
   string(REPLACE "\n" ";" nm_lines "${nm_text}")
   set(exported "")
@@ -188,7 +217,29 @@ endif()
 # calls would be a -Wunused-function error, which no includer sees.
 if(C_HEADER)
   if(C_COMPILER)
-    execute_process(COMMAND "${C_COMPILER}" -std=c11 -pedantic -Wall -Wextra -Werror -fsyntax-only -x c /dev/null -include "${C_HEADER}" RESULT_VARIABLE cc_rc ERROR_VARIABLE cc_err)
+    get_filename_component(cc_name "${C_COMPILER}" NAME_WE)
+    string(TOLOWER "${cc_name}" cc_name)
+    if(cc_name STREQUAL "cl" OR cc_name STREQUAL "clang-cl")
+      # The MSVC family (Windows, Phase 23 Day 354): the same check in its spelling: C11, warnings as errors, syntax only, the header forced
+      # into an empty C file (an empty file of its own: there is no /dev/null).
+      get_filename_component(header_dir "${C_HEADER}" DIRECTORY)
+      string(RANDOM LENGTH 12 run_id)  # the cases run in parallel: each its own file
+      set(empty_c "${CMAKE_CURRENT_BINARY_DIR}/abi_check_empty_${cc_name}_${run_id}.c")
+      file(WRITE "${empty_c}" "")
+      set(system_includes "")
+      if(C_SYSTEM_INCLUDES)
+        string(REPLACE "|" ";" dirs "${C_SYSTEM_INCLUDES}")
+        foreach(d IN LISTS dirs)
+          list(APPEND system_includes "/I${d}")
+        endforeach()
+      endif()
+      execute_process(COMMAND "${C_COMPILER}" /nologo /std:c11 /W4 /WX /Zs /TC "/FI${C_HEADER}" "/I${header_dir}" ${system_includes} "${empty_c}"
+                      RESULT_VARIABLE cc_rc OUTPUT_VARIABLE cc_out ERROR_VARIABLE cc_err)
+      string(APPEND cc_err "${cc_out}")
+      file(REMOVE "${empty_c}")
+    else()
+      execute_process(COMMAND "${C_COMPILER}" -std=c11 -pedantic -Wall -Wextra -Werror -fsyntax-only -x c /dev/null -include "${C_HEADER}" RESULT_VARIABLE cc_rc ERROR_VARIABLE cc_err)
+    endif()
     if(NOT cc_rc EQUAL 0)
       gate_problem("${C_HEADER} is not valid C11: ${cc_err}")
     endif()

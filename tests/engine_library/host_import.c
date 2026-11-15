@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "host_os.h"
 #include "engine/engine_c.h"
 #if IMPORT_DYNAMIC
 #include "engine/engine_loader.h"
@@ -78,7 +79,7 @@ typedef struct Bytes
     size_t size;
 } Bytes;
 
-static Bytes ReadFile(const char* path)
+static Bytes ReadWholeFile(const char* path)
 {
     Bytes b = {NULL, 0};
     FILE* f = fopen(path, "rb");
@@ -933,9 +934,12 @@ static void TestHostile(engine_handle engine, const Bytes* gltf)
 
 int main(void)
 {
-    Bytes gltf = ReadFile(IMPORT_FIXTURE);
+    Bytes gltf;
     engine_handle engine;
-    setvbuf(stdout, NULL, _IOLBF, 0);
+    host_quiet_failures(); /* Windows: report failures on stderr, never in a dialog */
+    gltf = ReadWholeFile(IMPORT_FIXTURE);
+    setvbuf(stdout, NULL, _IONBF,
+            0); /* unbuffered: the Windows C runtime takes _IOLBF as full buffering and asserts on size 0 */
     if (gltf.data == NULL)
     {
         return 2;

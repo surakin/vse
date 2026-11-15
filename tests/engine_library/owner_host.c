@@ -2,7 +2,6 @@
    released through the engine's own function. The planted variant (OWNER_WRONG_FREE) frees it with free(): the engine
    still counts the block as live. (In the sanitized flavor ASan may also report an allocator mismatch; the engine
    library binds its own operator new, so the count is the check that does not depend on it.) */
-#include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -10,11 +9,12 @@
 
 int main(void)
 {
-    void* engine = dlopen(ENGINE_LIB_PATH, RTLD_NOW | RTLD_LOCAL);
+    host_quiet_failures(); /* Windows: report failures on stderr, never in a dialog */
+    void* engine = host_lib_open(ENGINE_LIB_PATH);
     const struct engine_test_extension* table = host_test_extension(engine);
     if (table == NULL)
     {
-        printf("no state probe: %s\n", dlerror());
+        printf("no state probe: %s\n", host_lib_error());
         return 2;
     }
     void* block = table->allocate(4096);

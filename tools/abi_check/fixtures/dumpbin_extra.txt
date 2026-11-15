@@ -1,0 +1,7 @@
+    ordinal hint RVA      name
+
+          1    0 00008233 alpha = alpha
+          2    1 00001180 beta = beta
+          3    2 00001190 leaked = leaked
+
+  Summary

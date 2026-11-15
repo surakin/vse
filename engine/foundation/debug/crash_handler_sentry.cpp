@@ -371,6 +371,9 @@ void UninstallCrashHandler()
         os::SleepNanos(1000 * 1000);
     }
     sentry_close();
+#if ENGINE_PLATFORM_WINDOWS
+    detail::FinishCrashEventHookRemoval();  // the library put the gate back on top: the host's filter goes there
+#endif
     g_crash_handler_installed.Store(false, MemoryOrder::Release);
 }
 

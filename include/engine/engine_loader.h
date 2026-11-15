@@ -1,6 +1,7 @@
 /* engine_loader.h: loads the engine library at run time and returns its function table (Phase 23 Day 347). Header-only
  * plain C with no engine dependency but engine_c.h: a host copies this file and engine_c.h and nothing else. POSIX
- * (`dlopen`) today; the Windows variant arrives with Day 354.
+ * (`dlopen`), and Windows (`LoadLibraryExW` and `GetProcAddress`, Day 354: the path is UTF-8, as everywhere in the API;
+ * for a path with a folder in it the DLLs engine.dll depends on are looked for beside it first).
  *
  *     engine_loader loader;
  *     if (engine_load("libengine.so.1", ENGINE_ABI_VERSION_MAJOR, ENGINE_ABI_VERSION_MINOR, &loader) != ENGINE_OK)
@@ -16,15 +17,20 @@
 #ifndef ENGINE_LOADER_H
 #define ENGINE_LOADER_H
 
-#include <dlfcn.h>
 #include <string.h>
+
+#if defined(_WIN32)
+#include <windows.h>
+#else
+#include <dlfcn.h>
+#endif
 
 #include "engine_c.h"
 
 typedef struct engine_loader
 {
     uint32_t struct_size;
-    void* library;         /* the dlopen handle, NULL when nothing is loaded */
+    void* library;         /* the dlopen handle (Windows: the HMODULE), NULL when nothing is loaded */
     const engine_api* api; /* the function table, NULL when nothing is loaded */
     char message[256];     /* why the last engine_load refused, or empty */
 } engine_loader;
@@ -56,6 +62,92 @@ static inline void engine_loader_append_uint(engine_loader* loader, unsigned lon
     engine_loader_append(loader, digits + i);
 }
 
+/* The system's loader, one function each: open (NULL, and the reason appended to `out`, on failure), find a symbol,
+ * close (0 on success). */
+#if defined(_WIN32)
+static inline void* engine_loader_open(const char* path, engine_loader* out)
+{
+    wchar_t wide[1024];
+    HMODULE module;
+    DWORD flags = 0;
+    DWORD error;
+    char reason[256];
+    if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path, -1, wide, (int)(sizeof(wide) / sizeof(wide[0]))) == 0)
+    {
+        engine_loader_append(out, "cannot load ");
+        engine_loader_append(out, path);
+        engine_loader_append(out, ": the path is not UTF-8 or is too long");
+        return NULL;
+    }
+    if (strchr(path, '/') != NULL || strchr(path, '\\') != NULL)
+    {
+        flags = LOAD_WITH_ALTERED_SEARCH_PATH; /* the library's own folder first, for the DLLs it needs */
+    }
+    module = LoadLibraryExW(wide, NULL, flags);
+    if (module != NULL)
+    {
+        return (void*)module;
+    }
+    error = GetLastError();
+    reason[0] = '\0';
+    if (FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, error, 0, reason,
+                       (DWORD)sizeof(reason), NULL) == 0)
+    {
+        reason[0] = '\0';
+    }
+    else
+    {
+        size_t n = strlen(reason);
+        while (n > 0 &&
+               (reason[n - 1] == '\r' || reason[n - 1] == '\n' || reason[n - 1] == ' ' || reason[n - 1] == '.'))
+        {
+            reason[--n] = '\0'; /* the system's sentence ends with a period and a line break */
+        }
+    }
+    engine_loader_append(out, "cannot load ");
+    engine_loader_append(out, path);
+    engine_loader_append(out, ": ");
+    engine_loader_append(out, reason[0] != '\0' ? reason : "unknown reason");
+    engine_loader_append(out, " (error ");
+    engine_loader_append_uint(out, (unsigned long)error);
+    engine_loader_append(out, ")");
+    return NULL;
+}
+static inline void* engine_loader_symbol(void* library, const char* name)
+{
+    FARPROC p = GetProcAddress((HMODULE)library, name);
+    void* symbol;
+    memcpy(&symbol, &p, sizeof(symbol)); /* function pointer to object pointer without a cast ISO C forbids */
+    return symbol;
+}
+static inline int engine_loader_close(void* library)
+{
+    return FreeLibrary((HMODULE)library) ? 0 : -1;
+}
+#else
+static inline void* engine_loader_open(const char* path, engine_loader* out)
+{
+    void* library = dlopen(path, RTLD_NOW | RTLD_LOCAL);
+    if (library == NULL)
+    {
+        const char* reason = dlerror();
+        engine_loader_append(out, "cannot load ");
+        engine_loader_append(out, path);
+        engine_loader_append(out, ": ");
+        engine_loader_append(out, reason != NULL ? reason : "unknown reason");
+    }
+    return library;
+}
+static inline void* engine_loader_symbol(void* library, const char* name)
+{
+    return dlsym(library, name);
+}
+static inline int engine_loader_close(void* library)
+{
+    return dlclose(library);
+}
+#endif
+
 /* Loads the library at `path` and checks that it serves ABI `wanted_major`.`wanted_minor`. On success `out->api` is the
  * table and `out->library` the handle; on any failure nothing stays loaded. Fails with: INVALID_ARGUMENT, IO,
  * UNSUPPORTED, UNSUPPORTED_VERSION. */
@@ -79,22 +171,17 @@ static inline engine_status engine_load(const char* path, uint32_t wanted_major,
         engine_loader_append(out, "no library path given");
         return ENGINE_ERROR_INVALID_ARGUMENT;
     }
-    library = dlopen(path, RTLD_NOW | RTLD_LOCAL);
+    library = engine_loader_open(path, out);
     if (library == NULL)
     {
-        const char* reason = dlerror();
-        engine_loader_append(out, "cannot load ");
-        engine_loader_append(out, path);
-        engine_loader_append(out, ": ");
-        engine_loader_append(out, reason != NULL ? reason : "unknown reason");
         return ENGINE_ERROR_IO;
     }
-    symbol = dlsym(library, "engine_get_api");
+    symbol = engine_loader_symbol(library, "engine_get_api");
     if (symbol == NULL)
     {
         engine_loader_append(out, path);
         engine_loader_append(out, " is not an engine library: it has no engine_get_api");
-        dlclose(library);
+        engine_loader_close(library);
         return ENGINE_ERROR_UNSUPPORTED;
     }
     memcpy(&get_api, &symbol, sizeof(get_api)); /* object pointer to function pointer without a cast ISO C forbids */
@@ -109,7 +196,7 @@ static inline engine_status engine_load(const char* path, uint32_t wanted_major,
         engine_loader_append(out, " (status ");
         engine_loader_append_uint(out, (unsigned long)status);
         engine_loader_append(out, ")");
-        dlclose(library);
+        engine_loader_close(library);
         return status != ENGINE_OK ? status : ENGINE_ERROR_UNSUPPORTED_VERSION;
     }
     if (api->struct_size < offsetof(engine_api, status_name) || api->abi_major != wanted_major ||
@@ -124,7 +211,7 @@ static inline engine_status engine_load(const char* path, uint32_t wanted_major,
         engine_loader_append_uint(out, wanted_major);
         engine_loader_append(out, ".");
         engine_loader_append_uint(out, wanted_minor);
-        dlclose(library);
+        engine_loader_close(library);
         return ENGINE_ERROR_UNSUPPORTED_VERSION;
     }
     out->library = library;
@@ -141,7 +228,7 @@ static inline engine_status engine_unload(engine_loader* loader)
     {
         return ENGINE_ERROR_INVALID_ARGUMENT;
     }
-    if (loader->library != NULL && dlclose(loader->library) != 0)
+    if (loader->library != NULL && engine_loader_close(loader->library) != 0)
     {
         status = ENGINE_ERROR_IO;
     }

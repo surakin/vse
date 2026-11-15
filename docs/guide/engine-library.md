@@ -128,7 +128,7 @@ loads it with `dlopen`).
 ## Loading the library (Day 347)
 
 `include/engine/engine_loader.h` is header-only plain C that needs nothing but `engine_c.h`: a host copies the two files. `engine_load(path, major, minor,
-&loader)` opens the library (`dlopen` with `RTLD_NOW | RTLD_LOCAL`; the Windows variant arrives with Day 354), finds `engine_get_api`, asks for the version
+&loader)` opens the library (`dlopen` with `RTLD_NOW | RTLD_LOCAL`; on Windows `LoadLibraryExW`, Day 354: below), finds `engine_get_api`, asks for the version
 the host was compiled against and checks that the table says the same; `loader.api` is then the function table. Every refusal leaves a sentence in
 `loader.message` and nothing loaded: a file that is missing or not a library (`ENGINE_ERROR_IO`), a library without the entry point
 (`ENGINE_ERROR_UNSUPPORTED`), another major or a newer minor than the library has, or a table that does not say what it should
@@ -295,8 +295,8 @@ An application with its own toolkit (a Qt, GTK or Electron shell, or a C program
 `surface_destroy`, described in `engine_c.h` ("Day 352"). The engine **never creates, resizes, moves or destroys the host's window**; the host owns its size,
 visibility and scale and reports them. In this order:
 
-1. **Ask what the build can do.** `get_info`: `caps & ENGINE_CAP_SURFACE_X11` and `ENGINE_CAP_SURFACE_WAYLAND` say which window kinds `surface_create` accepts
-   (today Linux with the Vulkan backend), `ENGINE_CAP_READBACK` that `surface_read_pixels` works. A build that cannot answers `UNSUPPORTED` with a sentence in
+1. **Ask what the build can do.** `get_info`: `caps & ENGINE_CAP_SURFACE_X11`, `ENGINE_CAP_SURFACE_WAYLAND`, `ENGINE_CAP_SURFACE_WIN32` and `ENGINE_CAP_SURFACE_COCOA`
+   say which window kinds `surface_create` accepts (Linux with the Vulkan backend; Windows with Direct3D 12 and Vulkan, Day 354; macOS with Metal, Day 355), `ENGINE_CAP_READBACK` that `surface_read_pixels` works. A build that cannot answers `UNSUPPORTED` with a sentence in
    `last_error`, never a crash.
 2. **Create the surface** from the window's native handles in an `engine_surface_info`: for X11 the `Display*` (`display`) and the `Window` (`window_id`), for
    Wayland the host's own `wl_display*` (`display`) and `wl_surface*` (`surface`): the engine makes **no second connection**, it presents on the host's, so the
@@ -414,9 +414,56 @@ target_link_libraries(app PRIVATE engine::engine)
 A host that loads the library with `dlopen` needs only the headers (`engine_loader.h`). **Tested** by `engine_install_consumer`: it installs to a scratch prefix,
 checks that exactly the three headers were installed, and builds and runs `tests/engine_library/consumer` (a program outside the tree: `find_package(Engine)`,
 public headers only) against that prefix. On macOS (Day 355) the package installs `lib/libengine.1.0.dylib` with the links `libengine.1.dylib` and `libengine.dylib`;
-the install name is `@rpath/libengine.1.dylib`: the host's own rpath says where it lives. The Windows package follows with Day 354. A header that is only for the tests
+the install name is `@rpath/libengine.1.dylib`: the host's own rpath says where it lives. On Windows (Day 354) the install rule puts `engine.dll` in `bin/` and its
+import library in `lib/`; the consumer test does not run there (`KNOWN-ISSUES.md`). A header that is only for the tests
 (`engine_test_extension.h`) stays in `engine/engine_c/` and is not installed.
 
+## Windows: engine.dll, loading it, and embedding into an HWND (Day 354)
+
+**Building it.** `-DENGINE_BUILD_SHARED=ON` on the `windows-msvc` and `windows-clang-cl` presets builds `engine.dll` (and `engine_asan.dll` in the MSVC tree;
+MSVC has no ThreadSanitizer), the same aggregate of the module libraries as on Linux, whole-archived through CMake's `WHOLE_ARCHIVE` feature (`/WHOLEARCHIVE`).
+A DLL exports only what `__declspec(dllexport)` or its module-definition file names, so the export list of `abi/engine.exports` becomes a `.def` file
+(`engine_shared.def`, generated beside the version script) and `ENGINE_API` is the `dllexport` on `engine_get_api`; the C header's declaration carries it too in
+the library's own sources (`ENGINE_C_API`, set by `engine/engine_c/CMakeLists.txt`: MSVC wants both to agree). `abi_check` reads the DLL's export table with
+`dumpbin /exports` (the toolchain files find it with MSVC) and holds it to the list, as it holds `nm -D` on Linux; it also compiles `engine_c.h` as C11 with
+`cl /std:c11 /W4 /WX`. The linker writes an import library beside the DLL; hosts do not use it.
+
+**Loading it.** `engine_loader.h` is the same header on every system: on Windows `engine_load` converts the UTF-8 path to UTF-16 and calls `LoadLibraryExW`
+(with `LOAD_WITH_ALTERED_SEARCH_PATH` when the path has a folder in it, so the DLLs `engine.dll` needs, such as the AddressSanitizer runtime beside it, are found
+there first), finds `engine_get_api` with `GetProcAddress`, and `engine_unload` calls `FreeLibrary`. The system's message for a refusal is in `loader.message`
+with its error number. Delay-loading is not used.
+
+**`DllMain`.** `engine.dll` has none of its own. Loading it runs the C runtime's start and the constructors of the engine's statics, none of which starts a
+thread or writes a line (`engine_load_runs_nothing`: the process has the threads it had before the load; the job system starts its workers when it is first
+used). The one piece of work on unload is the same as on Linux, the immortal frame pool giving its memory back: a static object's destructor, which the C runtime
+runs when the DLL is detached (`FreeLibrary`, or process exit).
+
+**One C runtime each.** The engine and the host may use different C runtimes, and on Windows they often do (a host built with the static `/MT`, the engine with
+the DLL `/MD`): two heaps, two `stdio`, two `errno`. Nothing of one runtime crosses to the other: **no `FILE*`, no allocation, no `errno`** passes the boundary.
+The host's bytes are copied in (or lent with a release callback the engine calls), the engine's memory comes back as an `engine_buffer` the host releases with
+`engine_buffer_release`, which calls the engine's own release function. `engine_other_crt` is such a host: built `/MT` (it depends on `KERNEL32.dll` alone), it
+runs frames, the memory test and the resource test of Day 350 through the loader.
+
+**Unload and reload.** `engine_reload_cycles` runs the 50 load-run-destroy-unload cycles on Windows too (plain and asan): after each `FreeLibrary` the DLL is
+gone from the module list, the thread count is back, and the working set does not grow. The crash handler gives the host's own unhandled-exception filter back
+when it is uninstalled (`FinishCrashEventHookRemoval`, `engine/foundation/os/windows/debug/BACKEND.md`), so no filter points into the DLL after it is unloaded.
+
+**Rendering into an HWND.** `ENGINE_SURFACE_WIN32` takes the window's `HINSTANCE` (the module of its window class; `GetModuleHandleW(NULL)` for a class of the
+program) in `display` and the `HWND` in `surface`. `engine_surface_info.flags` chooses the graphics API: `ENGINE_SURFACE_FLAG_D3D12`, `ENGINE_SURFACE_FLAG_VULKAN`,
+or neither for the platform's own (Direct3D 12 on Windows, Vulkan on Linux, Metal on macOS); both at once is `INVALID_ARGUMENT`, one the platform has not is `UNSUPPORTED`, and a
+surface keeps its API across `surface_rebind`. Everything else is as on Linux (steps 1-6 above). **Report the window's real client size**: Vulkan draws the
+client area the window has, Direct3D 12 the size the host gives (DXGI scales its buffers to the window), so the two differ when the host's numbers are wrong
+(Windows gives a captioned window a minimum width: a 200-pixel client area came out 232 wide). A destroyed window reads as hidden on Direct3D 12 and as
+presented on Vulkan; either way the frames go on and `surface_rebind` recovers on a new window.
+
+**The C hosts on Windows.** The hosts of `tests/engine_library` reach the operating system through `host_os.h` (atomics, threads, sleeping, loading a library, a
+directory, a crash in a child process, the host's own crash handler, process facts), with a POSIX side (`posix/host_os_posix.h`: what the hosts called directly
+before, and the process probes of Day 355) and a Windows side (`windows/host_os_windows.h`: Win32, Toolhelp, psapi). `host_quiet_failures()` comes first in every host's `main`: on Windows it sends
+the debug C runtime's asserts and `abort()` to standard error instead of a dialog box. The crash child is a second run of the program on Windows (there is no
+`fork`); a fault inside a job ends it through the coroutine's `unhandled_exception` as an abort, with the dump written (`KNOWN-ISSUES.md`). `host_win32.c`
+(`engine_c_surface_win32`, plain and asan) is the Windows counterpart of `host_surface.c`: its own window class, window procedure and message loop, run with
+Direct3D 12 and with Vulkan, forwarding what its window receives through `surface_input` and answering the cursor and clipboard requests with Win32;
+`surface_input_test.cpp` runs on a Win32 window too (the UI's click, text, cursor and clipboard requests through the host's callbacks).
 
 ## macOS: the dylib and embedding into an `NSView` (Day 355)
 
@@ -438,7 +485,7 @@ The tests run unsigned, unhardened hosts.
 process: `libengine.dylib` stays mapped after its last `dlclose`. The library's destructor (`EngineLibraryUnloaded`) therefore does not run, and the
 engine's process-wide state (the frame pool, the log channels) stays and is reused by the next `engine_create`. What the tests check on macOS is what
 still holds: `dlclose` returns 0, the threads the engine started are gone, the resident size stays flat over 50 cycles, and the engine holds no block after
-`destroy`; what they tolerate is the mapping (`tests/engine_library/process_probe.h`, `ENGINE_LIBRARY_UNLOADS`). A host that must get the memory of the
+`destroy`; what they tolerate is the mapping (`tests/engine_library/host_os.h`, `HOST_LIBRARY_UNLOADS`). A host that must get the memory of the
 code back runs the engine in a helper process.
 
 **Autorelease pools.** Every entry of the C API that touches AppKit or Metal drains a pool of its own: the Metal backend's entry points and the Cocoa surface
@@ -501,5 +548,5 @@ resize and a change of scale, a hidden window, 30 frames from a display link on 
 pasteboard callbacks (called by the host there; the engine's UI calling them is `surface_input_test.cpp`'s part), a frame and a `surface_destroy` off the main
 thread (the frame skips the surface and fails its read-back; the destroy is refused), the view's `wantsLayer` given back, a rebind to a view with its own `CAMetalLayer` and to an explicit layer, a refused rebind that changes nothing, the window closed under
 the engine and the rebind to a new one, a read-back cancelled by `surface_destroy`, and `destroy` refused while the surface exists. `surface_input_test.cpp`
-runs its UI rig on a Cocoa window there too. The Linux hosts run on the Mac unchanged except for the process probes (`process_probe.h`: Mach and dyld in
+runs its UI rig on a Cocoa window there too. The Linux hosts run on the Mac through the POSIX side of `host_os.h`, with the process probes (`process_probe.h`: Mach and dyld in
 place of `/proc`) and the unload limit above.

@@ -144,8 +144,9 @@ struct SurfaceObject
     bool visible = false;
     bool lost = false;
     u32 present_mode = 0;
-    u32 active_touch = 0;   // the touch that acts as the pointer, plus one; 0 for none
-    Vector<usize> waiting;  // slots of the read-back tickets waiting for a frame
+    rhi::Backend backend = rhi::Backend::Vulkan;  // ENGINE_SURFACE_FLAG_*, or the platform's own (Day 354)
+    u32 active_touch = 0;                         // the touch that acts as the pointer, plus one; 0 for none
+    Vector<usize> waiting;                        // slots of the read-back tickets waiting for a frame
 };
 
 namespace
@@ -167,6 +168,12 @@ os::NativeWindowInfo NativeOf(const engine_surface_info& info, void* layer = nul
         native.display = info.display;
         native.surface = info.surface;
     }
+    else if (info.kind == ENGINE_SURFACE_WIN32)
+    {
+        native.kind = os::NativeWindowKind::Win32;  // display: the HINSTANCE, surface: the HWND
+        native.display = info.display;
+        native.surface = info.surface;
+    }
     else
     {
         native.kind = os::NativeWindowKind::Xlib;
@@ -174,6 +181,41 @@ os::NativeWindowInfo NativeOf(const engine_surface_info& info, void* layer = nul
         native.window_id = info.window_id;
     }
     return native;
+}
+
+rhi::Backend BackendOf(const engine_surface_info& info)
+{
+    if ((info.flags & ENGINE_SURFACE_FLAG_D3D12) != 0)
+    {
+        return rhi::Backend::Dx12;
+    }
+    if ((info.flags & ENGINE_SURFACE_FLAG_VULKAN) != 0)
+    {
+        return rhi::Backend::Vulkan;
+    }
+    // the platform's own
+    if (info.kind == ENGINE_SURFACE_WIN32)
+    {
+        return rhi::Backend::Dx12;
+    }
+    return info.kind == ENGINE_SURFACE_COCOA ? rhi::Backend::Metal : rhi::Backend::Vulkan;
+}
+
+bool BackendSupported(u32 kind, rhi::Backend backend)
+{
+    if (backend == rhi::Backend::Dx12)
+    {
+        return ENGINE_PLATFORM_WINDOWS != 0 && kind == ENGINE_SURFACE_WIN32;
+    }
+    if (backend == rhi::Backend::Metal)
+    {
+        return ENGINE_PLATFORM_MACOS != 0 && kind == ENGINE_SURFACE_COCOA;
+    }
+#if ENGINE_RHI_HAVE_VULKAN
+    return backend == rhi::Backend::Vulkan && kind != ENGINE_SURFACE_COCOA;  // no Vulkan on macOS (no MoltenVK)
+#else
+    return false;
+#endif
 }
 
 engine_status CheckInfo(const engine_surface_info* given, engine_surface_info* out)
@@ -187,15 +229,26 @@ engine_status CheckInfo(const engine_surface_info* given, engine_surface_info* o
         return Fail(ENGINE_ERROR_STRUCT_SIZE, "engine_surface_info.struct_size is smaller than the struct");
     }
     *out = *given;
-    if (out->flags != 0)
+    if ((out->flags & ~(ENGINE_SURFACE_FLAG_VULKAN | ENGINE_SURFACE_FLAG_D3D12)) != 0)
     {
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "engine_surface_info.flags has an unknown bit");
+    }
+    if (out->flags == (ENGINE_SURFACE_FLAG_VULKAN | ENGINE_SURFACE_FLAG_D3D12))
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "engine_surface_info.flags asks for two graphics APIs");
     }
     if (!SurfaceKindSupported(out->kind))
     {
         return Fail(ENGINE_ERROR_UNSUPPORTED, "this build cannot render into a window of that kind");
     }
-    if (out->display == nullptr || (out->kind == ENGINE_SURFACE_WAYLAND && out->surface == nullptr) ||
+    if (!BackendSupported(out->kind, BackendOf(*out)))
+    {
+        return Fail(ENGINE_ERROR_UNSUPPORTED,
+                    "this build cannot draw into a window of that kind with that graphics API");
+    }
+    // Wayland and Win32 name the window by a pointer (`surface`), X11 by an id; a Cocoa surface's CAMetalLayer is optional.
+    const bool by_pointer = out->kind == ENGINE_SURFACE_WAYLAND || out->kind == ENGINE_SURFACE_WIN32;
+    if (out->display == nullptr || (by_pointer && out->surface == nullptr) ||
         (out->kind == ENGINE_SURFACE_X11 && out->window_id == 0))
     {
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "the native handles of the window are missing");
@@ -239,15 +292,17 @@ engine_status Build(SurfaceObject* s)
 {
     rhi::RegisterCompiledBackends();
     rhi::DeviceCreateInfo info;
-    info.backend = ENGINE_PLATFORM_MACOS ? rhi::Backend::Metal : rhi::Backend::Vulkan;
+    info.backend = s->backend;
     info.application_name = "engine";
     info.window = &s->window;
     info.pipeline_cache = false;
     s->device = rhi::CreateDevice(info);
     if (s->device.Get() == nullptr)
     {
-        return Fail(ENGINE_ERROR_UNSUPPORTED, ENGINE_PLATFORM_MACOS ? "no Metal device can present to this view"
-                                                                    : "no Vulkan device can present to this window");
+        return Fail(ENGINE_ERROR_UNSUPPORTED, s->backend == rhi::Backend::Metal ? "no Metal device can present to this view"
+                                              : s->backend == rhi::Backend::Dx12
+                                                  ? "no Direct3D 12 device can present to this window"
+                                                  : "no Vulkan device can present to this window");
     }
     s->swapchain = s->device->CreateSwapchain(SwapchainDescOf(s));
     if (s->swapchain == nullptr)
@@ -279,6 +334,8 @@ bool SurfaceKindSupported(u32 kind)
 {
 #if ENGINE_PLATFORM_MACOS
     return kind == ENGINE_SURFACE_COCOA;  // Metal, which every macOS build has
+#elif ENGINE_PLATFORM_WINDOWS
+    return kind == ENGINE_SURFACE_WIN32;  // Direct3D 12 always, Vulkan when the backend is built (Day 354)
 #elif ENGINE_RHI_HAVE_VULKAN
     return kind == ENGINE_SURFACE_X11 || kind == ENGINE_SURFACE_WAYLAND;
 #else
@@ -334,6 +391,7 @@ engine_status SurfaceHost::Create(const engine_surface_info* given, engine_handl
     cocoa = macos::CocoaLayer();  // the reference moved: the local owns nothing
 #endif
     object->present_mode = info.present_mode;
+    object->backend = BackendOf(info);
     if (info.callbacks != nullptr)
     {
         object->hooks.Set(*info.callbacks);
@@ -675,6 +733,10 @@ engine_status SurfaceHost::Rebind(engine_handle surface, const engine_surface_in
         s->window.GetNativeInfo().kind != os::NativeWindowKind::Invalid)
     {
         return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a surface keeps the kind of window it was made for");
+    }
+    if (BackendOf(info) != s->backend)
+    {
+        return Fail(ENGINE_ERROR_INVALID_ARGUMENT, "a surface keeps the graphics API it was made with");
     }
     void* layer = nullptr;
 #if ENGINE_PLATFORM_MACOS

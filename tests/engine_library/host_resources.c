@@ -4,22 +4,20 @@
    material (0e01) that depends on the texture and a mesh (0b02). It counts every release of a lent buffer: exactly one
    per successful add or replace that lent it, on an engine worker thread, after the last reader is done, and never for
    a call that failed. */
-#include <pthread.h>
-#include <stdatomic.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
+#include "host_os.h"
 #include "engine/engine_c.h"
 
 #define TEXTURE_ID 0xd01u
 #define MATERIAL_ID 0xe01u
 #define MESH_ID 0xb02u
 
-static atomic_int g_failures;
+static int g_failures;
 static const engine_api* g_api = NULL;
-static pthread_t g_main_thread;
+static host_thread_id g_main_thread;
 
 #define CHECK(condition)                                                                                               \
     do                                                                                                                 \
@@ -27,7 +25,7 @@ static pthread_t g_main_thread;
         if (!(condition))                                                                                              \
         {                                                                                                              \
             printf("host_resources: line %d: CHECK failed: %s\n", __LINE__, #condition);                               \
-            atomic_fetch_add(&g_failures, 1);                                                                          \
+            host_atomic_add(&g_failures, 1);                                                                           \
         }                                                                                                              \
     } while (0)
 
@@ -39,7 +37,7 @@ static pthread_t g_main_thread;
         {                                                                                                              \
             printf("host_resources: line %d: %s returned %d, expected %d\n", __LINE__, #call, (int)got_,               \
                    (int)(expected));                                                                                   \
-            atomic_fetch_add(&g_failures, 1);                                                                          \
+            host_atomic_add(&g_failures, 1);                                                                           \
         }                                                                                                              \
     } while (0)
 
@@ -84,7 +82,7 @@ static Blob ReadBlob(const char* name)
     if (f == NULL)
     {
         printf("host_resources: cannot open %s\n", path);
-        atomic_fetch_add(&g_failures, 1);
+        host_atomic_add(&g_failures, 1);
         return blob;
     }
     fseek(f, 0, SEEK_END);
@@ -94,7 +92,7 @@ static Blob ReadBlob(const char* name)
     if (fread(blob.data, 1, blob.size, f) != blob.size)
     {
         printf("host_resources: short read of %s\n", path);
-        atomic_fetch_add(&g_failures, 1);
+        host_atomic_add(&g_failures, 1);
     }
     fclose(f);
     return blob;
@@ -113,26 +111,26 @@ static Blob Copy(const Blob* blob)
 
 typedef struct Lent
 {
-    Blob blob;              /* the host's bytes, valid until the release */
-    atomic_int released;    /* how many times the engine handed it back */
-    atomic_int wrong_place; /* a release on the thread that called the engine, or with other bytes */
+    Blob blob;       /* the host's bytes, valid until the release */
+    int released;    /* how many times the engine handed it back */
+    int wrong_place; /* a release on the thread that called the engine, or with other bytes */
 } Lent;
 
 static void OnRelease(void* user, const void* bytes, size_t size)
 {
     Lent* lent = (Lent*)user;
-    if (pthread_equal(pthread_self(), g_main_thread) || bytes != lent->blob.data || size != lent->blob.size)
+    if (host_thread_equal(host_thread_self(), g_main_thread) || bytes != lent->blob.data || size != lent->blob.size)
     {
-        atomic_fetch_add(&lent->wrong_place, 1);
+        host_atomic_add(&lent->wrong_place, 1);
     }
-    atomic_fetch_add(&lent->released, 1);
+    host_atomic_add(&lent->released, 1);
 }
 
 static void LentInit(Lent* lent, const Blob* from)
 {
     lent->blob = Copy(from);
-    atomic_init(&lent->released, 0);
-    atomic_init(&lent->wrong_place, 0);
+    host_atomic_store(&lent->released, 0);
+    host_atomic_store(&lent->wrong_place, 0);
 }
 
 /* Waits (at most 3 s) until the buffer was handed back, then a little longer to see that it is not handed back twice.
@@ -140,20 +138,20 @@ static void LentInit(Lent* lent, const Blob* from)
 static int Released(Lent* lent)
 {
     int waited = 0;
-    while (atomic_load(&lent->released) == 0 && waited < 3000)
+    while (host_atomic_load(&lent->released) == 0 && waited < 3000)
     {
-        usleep(1000);
+        host_sleep_ms(1);
         ++waited;
     }
-    usleep(2000);
-    return atomic_load(&lent->released);
+    host_sleep_ms(2);
+    return host_atomic_load(&lent->released);
 }
 
 /* Looks briefly and says how many times the buffer was handed back: for the cases where none is expected. */
 static int StillMine(Lent* lent)
 {
-    usleep(30000);
-    return atomic_load(&lent->released);
+    host_sleep_ms(30);
+    return host_atomic_load(&lent->released);
 }
 
 static engine_resource_add_info Info(uint64_t id, const char* path, const Blob* blob, uint32_t flags, Lent* lent)
@@ -308,7 +306,7 @@ static void TestAddAndMounted(engine_handle engine)
     info = Info(MESH_ID, "/materials/brick", &g_mesh, 0, NULL);
     CHECK_STATUS(g_api->resource_add(engine, &info), ENGINE_ERROR_ALREADY_EXISTS);
     CHECK(StillMine(&duplicate_lent) == 0 && StillMine(&torn_lent) == 0);
-    CHECK(atomic_load(&g_texture_lent.released) == 0); /* still mounted: nothing handed back */
+    CHECK(host_atomic_load(&g_texture_lent.released) == 0); /* still mounted: nothing handed back */
 
     /* what the engine holds */
     memset(&mounted, 0, sizeof(mounted));
@@ -432,7 +430,7 @@ static void TestDependents(engine_handle engine)
     CHECK(DependentIds(&deps, ids, 4) == 1 && ids[0] == MATERIAL_ID);
     engine_buffer_release(&deps);
     CHECK_STATUS(g_api->resource_remove(engine, TEXTURE_ID, 0, NULL), ENGINE_ERROR_IN_USE); /* no buffer asked for */
-    CHECK(StillMine(b1) == 0 && atomic_load(&g_texture_lent.released) == 0);
+    CHECK(StillMine(b1) == 0 && host_atomic_load(&g_texture_lent.released) == 0);
 
     /* forced: the dependents are unloaded (their handles go stale), the new bytes are in, the old buffer is handed back
      * once */
@@ -443,7 +441,7 @@ static void TestDependents(engine_handle engine)
     CHECK(Loaded(material) == 0);
     CHECK_STATUS(g_api->resource_mounted(engine, TEXTURE_ID, &mounted), ENGINE_OK);
     CHECK(mounted.size == g_texture_b.size);
-    CHECK(Released(&g_texture_lent) == 1 && atomic_load(&g_texture_lent.wrong_place) == 0);
+    CHECK(Released(&g_texture_lent) == 1 && host_atomic_load(&g_texture_lent.wrong_place) == 0);
     CHECK(StillMine(b1) == 0);
     CHECK_STATUS(g_api->resource_release(material), ENGINE_OK);
 
@@ -454,7 +452,7 @@ static void TestDependents(engine_handle engine)
     CHECK(DependentIds(&deps, ids, 4) == 1 && ids[0] == MATERIAL_ID);
     engine_buffer_release(&deps);
     CHECK(Loaded(material) == 0);
-    CHECK(Released(b1) == 1 && atomic_load(&b1->wrong_place) == 0);
+    CHECK(Released(b1) == 1 && host_atomic_load(&b1->wrong_place) == 0);
     CHECK_STATUS(g_api->resource_mounted(engine, TEXTURE_ID, &mounted), ENGINE_ERROR_NOT_FOUND);
     CHECK_STATUS(g_api->resource_release(material), ENGINE_OK);
     {
@@ -476,23 +474,22 @@ static void TestDependents(engine_handle engine)
 
 /* ---- a texture is replaced while frames run and a handle to it is held */
 
-static atomic_int g_frames_stop;
-static atomic_int g_frames_run;
+static int g_frames_stop;
+static int g_frames_run;
 
-static void* FrameThread(void* user)
+static void FrameThread(void* user)
 {
     engine_handle engine = *(engine_handle*)user;
     engine_frame_info frame;
     memset(&frame, 0, sizeof(frame));
     frame.struct_size = sizeof(frame);
     frame.delta_seconds = 0.016;
-    while (!atomic_load(&g_frames_stop))
+    while (!host_atomic_load(&g_frames_stop))
     {
         CHECK_STATUS(g_api->frame(engine, &frame, NULL), ENGINE_OK);
-        atomic_fetch_add(&g_frames_run, 1);
+        host_atomic_add(&g_frames_run, 1);
     }
     g_api->thread_detach();
-    return NULL;
 }
 
 #define FLIPS 24
@@ -502,43 +499,43 @@ static void TestReplaceInFlight(engine_handle engine)
     Lent lent[FLIPS];
     engine_handle texture;
     engine_resource_add_info info;
-    pthread_t thread;
+    host_thread thread;
     int i;
 
     /* the texture mounted so far (copy it out of the way: remove it, its lent buffer is handed back, then add a copy)
      */
     CHECK_STATUS(g_api->resource_remove(engine, MATERIAL_ID, 0, NULL), ENGINE_OK);
     CHECK_STATUS(g_api->resource_remove(engine, TEXTURE_ID, 0, NULL), ENGINE_OK);
-    CHECK(Released(&g_b2) == 1 && atomic_load(&g_b2.wrong_place) == 0); /* the texture TestDependents put back */
+    CHECK(Released(&g_b2) == 1 && host_atomic_load(&g_b2.wrong_place) == 0); /* the texture TestDependents put back */
     free(g_b2.blob.data);
     info = Info(TEXTURE_ID, "/textures/brick", &g_texture, 0, NULL);
     CHECK_STATUS(g_api->resource_add(engine, &info), ENGINE_OK);
     texture = LoadSync(engine, TEXTURE_ID, ENGINE_RESOURCE_TEXTURE);
     CHECK(Loaded(texture) == 1);
 
-    atomic_store(&g_frames_stop, 0);
-    atomic_store(&g_frames_run, 0);
-    CHECK(pthread_create(&thread, NULL, &FrameThread, &engine) == 0);
+    host_atomic_store(&g_frames_stop, 0);
+    host_atomic_store(&g_frames_run, 0);
+    CHECK(host_thread_start(&thread, &FrameThread, &engine) == 0);
     for (i = 0; i < FLIPS; ++i)
     {
         LentInit(&lent[i], (i % 2) == 0 ? &g_texture_b : &g_texture);
         info = Info(TEXTURE_ID, NULL, &lent[i].blob, 0, &lent[i]);
         CHECK_STATUS(g_api->resource_replace(engine, &info, NULL), ENGINE_OK);
         CHECK(Loaded(texture) == 1); /* reloaded in place: the handle stays valid */
-        CHECK(atomic_load(&lent[i].released) == 0);
+        CHECK(host_atomic_load(&lent[i].released) == 0);
         if (i > 0)
         {
             CHECK(Released(&lent[i - 1]) == 1); /* the one before is handed back once its last reader is done */
         }
     }
-    atomic_store(&g_frames_stop, 1);
-    pthread_join(thread, NULL);
-    CHECK(atomic_load(&g_frames_run) > 0);
+    host_atomic_store(&g_frames_stop, 1);
+    host_thread_join(&thread);
+    CHECK(host_atomic_load(&g_frames_run) > 0);
     CHECK_STATUS(g_api->resource_release(texture), ENGINE_OK);
     CHECK_STATUS(g_api->resource_remove(engine, TEXTURE_ID, 0, NULL), ENGINE_OK);
     for (i = 0; i < FLIPS; ++i)
     {
-        CHECK(Released(&lent[i]) == 1 && atomic_load(&lent[i].wrong_place) == 0);
+        CHECK(Released(&lent[i]) == 1 && host_atomic_load(&lent[i].wrong_place) == 0);
         free(lent[i].blob.data);
     }
     CHECK_STATUS(MountedStatus(engine, TEXTURE_ID), ENGINE_ERROR_NOT_FOUND);
@@ -559,7 +556,7 @@ static int WaitTicket(engine_handle ticket)
         {
             return 1;
         }
-        usleep(1000);
+        host_sleep_ms(1);
     }
     return 0;
 }
@@ -688,11 +685,11 @@ static void TestLifetime(void)
     }
     CHECK_STATUS(g_api->destroy(engine), ENGINE_OK);
     /* destroy ran every pending release before it returned, each once, on an engine worker */
-    CHECK(atomic_load(&lent[0].released) == 1 && atomic_load(&lent[1].released) == 1);
-    CHECK(atomic_load(&lent[2].released) == 0);
-    CHECK(atomic_load(&lent[0].wrong_place) == 0 && atomic_load(&lent[1].wrong_place) == 0);
-    usleep(5000);
-    CHECK(atomic_load(&lent[0].released) == 1 && atomic_load(&lent[1].released) == 1);
+    CHECK(host_atomic_load(&lent[0].released) == 1 && host_atomic_load(&lent[1].released) == 1);
+    CHECK(host_atomic_load(&lent[2].released) == 0);
+    CHECK(host_atomic_load(&lent[0].wrong_place) == 0 && host_atomic_load(&lent[1].wrong_place) == 0);
+    host_sleep_ms(5);
+    CHECK(host_atomic_load(&lent[0].released) == 1 && host_atomic_load(&lent[1].released) == 1);
     for (i = 0; i < 3; ++i)
     {
         free(lent[i].blob.data);
@@ -718,8 +715,9 @@ static void TestLifetime(void)
 int main(void)
 {
     engine_handle engine;
-    g_main_thread = pthread_self();
-    atomic_init(&g_failures, 0);
+    host_quiet_failures(); /* Windows: report failures on stderr, never in a dialog */
+    g_main_thread = host_thread_self();
+    host_atomic_store(&g_failures, 0);
     if (engine_get_api(ENGINE_ABI_VERSION_MAJOR, ENGINE_ABI_VERSION_MINOR, sizeof(engine_api), &g_api) != ENGINE_OK)
     {
         printf("host_resources: no function table\n");
@@ -744,9 +742,9 @@ int main(void)
     CHECK_STATUS(g_api->destroy(engine), ENGINE_OK);
     TestLifetime();
 
-    if (atomic_load(&g_failures) != 0)
+    if (host_atomic_load(&g_failures) != 0)
     {
-        printf("host_resources: %d checks failed\n", atomic_load(&g_failures));
+        printf("host_resources: %d checks failed\n", host_atomic_load(&g_failures));
         return 1;
     }
     printf("host_resources: ok\n");

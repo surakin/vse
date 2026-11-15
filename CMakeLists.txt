@@ -57,8 +57,13 @@ if(ENGINE_BUILD_SHARED)
     set(CMAKE_CXX_VISIBILITY_PRESET hidden)
     set(CMAKE_C_VISIBILITY_PRESET hidden)
     set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
+  elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    # Windows (Day 354): engine.dll. No position-independent code to ask for, and a DLL exports only what dllexport or its .def file names.
+    if(CMAKE_VERSION VERSION_LESS 3.24)
+      message(FATAL_ERROR "ENGINE_BUILD_SHARED needs CMake 3.24 or newer (whole-archive linking through $<LINK_LIBRARY:WHOLE_ARCHIVE,...>); this is ${CMAKE_VERSION}")
+    endif()
   else()
-    message(STATUS "ENGINE_BUILD_SHARED=ON: the shared engine library is built on Linux (Day 343) and macOS (Day 355); Windows follows on Day 354; this configuration still builds the static libraries")
+    message(STATUS "ENGINE_BUILD_SHARED=ON: the shared engine library is built on Linux (Day 343), Windows (Day 354) and macOS (Day 355); this configuration still builds the static libraries")
   endif()
 endif()
 if(APPLE)
@@ -277,6 +282,7 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(engine/asset)  # Phase 22 Day 313
   add_subdirectory(engine/asset_import)  # Phase 22 Day 335: the glTF importer (a leaf above asset)
   add_subdirectory(engine/animation)  # Phase 22 Day 321
+  add_subdirectory(engine/engine_c)  # Phase 23 Day 354: the C API and, with ENGINE_BUILD_SHARED, engine.dll
   add_subdirectory(tools/asset_mint)  # Phase 22 Day 316
   add_subdirectory(tools/resource_server)  # Phase 22 Day 331
   add_subdirectory(tests/asset)
@@ -297,6 +303,8 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(tools/cmdline_access_check)  # the command-line gate (out of plan, 2026-11-14; its own line, as net_access_check)
   add_subdirectory(tools/json_boundary_check)  # Phase 22 Day 335: yyjson is included only by asset_import/json_view.cpp
   add_subdirectory(tools/asset_boundary_check)  # Phase 22 Day 339: the runtime never includes or links the importer; only the importer includes the decoders
+  add_subdirectory(tools/abi_check)  # Phase 23 Day 354: engine.dll exports exactly abi/engine.exports (dumpbin /exports); the C header is C
+  add_subdirectory(tools/shared_state_check)  # Phase 23 Day 354: no public header under engine/ defines mutable static state
   add_subdirectory(tests/engine_library)  # Phase 23 Day 342: the shared-build option and, later, the C hosts
   add_subdirectory(tools/net_probe)  # Phase 20 Day 281
   add_subdirectory(tests/phase_labels)

@@ -338,6 +338,21 @@ bool CrashReportInProgress()
     return g_reports_in_progress.Load(MemoryOrder::Acquire) != 0;
 }
 
+void FinishCrashEventHookRemoval()
+{
+    // The gate is top-level again once the library has closed (Breakpad restores the filter it replaced). Unless
+    // something was installed over it since, the filter from before the engine takes its place; the gate then waits for
+    // the next PrepareCrashEventHook, which records the top-level filter of that moment.
+    const LPTOP_LEVEL_EXCEPTION_FILTER before = g_filter_before_gate.Load(MemoryOrder::Acquire);
+    const LPTOP_LEVEL_EXCEPTION_FILTER top = SetUnhandledExceptionFilter(before);
+    if (top != &CrashGate)
+    {
+        SetUnhandledExceptionFilter(top);  // another filter is on top: leave it there (the gate passes everything on)
+        return;
+    }
+    g_filter_before_gate.Store(nullptr, MemoryOrder::Release);
+}
+
 void RemoveCrashEventHook()
 {
     // The gate stays the top-level filter (the library restores it when it closes) but passes everything on to what was
