@@ -43,7 +43,7 @@ flavors 20  linux: plain,asan,tsan
 flavors 20  windows: plain,asan
 flavors 22  linux: plain,asan,tsan
 flavors 22  windows: plain,asan
-flavors 23  linux: plain # tests/engine_library (Day 342)
+flavors 23  linux: plain,asan,tsan # tests/engine_library (Day 342; Day 343: the shared-library probes, skipped when ENGINE_BUILD_SHARED is OFF)
 flavors 23  windows: plain
 flavors 15  windows: plain,asan
 # What the Windows build has of each phase (Phase 13 ports one layer per day; each day updates its phases here; `none` = no tests yet).
@@ -378,6 +378,7 @@ test:cmdline_access_check*                      22   # the command-line gate (ou
 test:json_boundary_check*                       22   # the yyjson boundary gate (Day 335)
 test:asset_boundary_check*                      22   # the asset boundary gate (Day 339)
 test:engine_shared_option                       23   # the ENGINE_BUILD_SHARED option exists and defaults off (Day 342)
+test:engine_shared_link_probe*                  23   # a C program links the shared engine library and runs jobs in it (Day 343)
 test:resource_server_*                           22   # the resource server tool (Day 331)
 test:asset_mint_*                                22   # the minting tool's script tests (Day 333)
 

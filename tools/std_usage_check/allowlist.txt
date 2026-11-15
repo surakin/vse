@@ -26,3 +26,4 @@ tests/lang/|<cstdint>,<limits>,<type_traits>,<utility>|Oracle test of the lang w
 tests/sync/|<atomic>,<chrono>,<cstdio>,<mutex>,<thread>,<vector>|Oracle test of the sync wrappers against std::atomic, std::mutex, std::thread, std::chrono.
 tests/cstr/|<cmath>,<cstdint>,<cstdio>,<cstdlib>,<cstring>,<cwchar>|Oracle test of the cstr/os wrappers against the C library functions they forward to.
 tests/windows/discovery/|<cstdio>|Built as a project of its own by the Windows toolchain discovery test, without the engine's include paths: it checks that a program using the C++ library builds and links with each compiler.
+tests/engine_library/shared_link_probe.c|<stdio.h>|a C program standing for a foreign host: it uses no engine header on purpose (Phase 23; the C hosts of Days 346 onward are listed here too)

@@ -524,4 +524,10 @@ of release builds ("Turning a dump into a trace" and "Keeping symbols for releas
 
 ## The shared build option (Phase 23)
 
-`ENGINE_BUILD_SHARED` (default OFF, `cmake -DENGINE_BUILD_SHARED=ON`) is the switch of the engine-as-a-library build: one shared library with hidden symbols and a flat C API instead of the static libraries. It only reports itself until Phase 23 Day 343 adds the build; the design is in `docs/superpowers/specs/2026-11-16-engine-library-design.md`. The ctest `engine_shared_option` checks that the option exists.
+`ENGINE_BUILD_SHARED` (default OFF, `cmake -DENGINE_BUILD_SHARED=ON`) builds the engine as one shared library with hidden symbols and a flat C API instead of
+only the static libraries; the design is in `docs/superpowers/specs/2026-11-16-engine-library-design.md`. On Linux (Phase 23 Day 343) it makes every module and
+vendored library position independent, compiles with hidden visibility, and adds the targets `engine`, `engine_asan` and `engine_tsan` (`libengine.so.1` and its
+flavors: every module's static library whole-archived, a version script as the export list, `SONAME libengine.so.1`). A C program per flavor links it and runs jobs
+inside it (`engine_shared_link_probe*`; without the option the three tests are skipped stubs, so the phase has the same flavors in every configuration). A
+sanitized library loads only into a program built with the same sanitizer. With the option OFF nothing changes: no compile command differs. Windows and macOS
+build it on Days 354 and 355. The ctest `engine_shared_option` checks that the option exists and is declared OFF.

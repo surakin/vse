@@ -165,6 +165,10 @@ allow asset_import asset
 # 13 animation (Phase 22 Day 321): poses, the clip sampler, skinning matrices and the ECS components and parallel system that play clips; reads asset's skeleton and clip views (allowed below, same layer), ecs, storage, jobs and the foundation; nothing includes it but programs
 module engine/animation/ animation 13
 allow animation asset
+module engine/engine_c/ engine_c 14
+target engine engine_c
+target engine_asan engine_c
+target engine_tsan engine_c
 # 14 programs: demos, benchmarks, tools
 module game/hello_window/ game/hello_window 14
 module game/input_probe/ game/input_probe 14

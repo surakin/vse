@@ -83,3 +83,22 @@ and by `engine_destroy` for the calling thread; Day 345 converts the two offende
 - Day 345: the shared-state gate; convert the non-trivial thread-locals; the dup-singleton test is Spike 2 made permanent.
 - Day 348: the unload test runs on the main thread, under asan and tsan.
 - Days 347 and later: the C hosts of the sanitizer flavors are built with the sanitizer.
+
+## Day 343 results: the shared build on Linux
+
+`-DENGINE_BUILD_SHARED=ON` (Clang, unity; also checked non-unity and with GCC, below): `engine`, `engine_asan`, `engine_tsan`, each the whole-archive of the
+24 module static libraries of its flavor (every library under `engine/` except tests; the third-party C libraries join through the modules' usage
+requirements and are position independent through `CMAKE_POSITION_INDEPENDENT_CODE`, set before any target). `SONAME libengine.so.1`, files `libengine.so.1.0`.
+The version script exports one symbol (`engine_shared_probe`, which runs jobs: Day 346 replaces it with `engine_get_api`).
+
+| Measure | Result |
+|---|---|
+| Size, debug build (no optimization, `-g`): plain / asan / tsan | 25.3 / 56.9 / 28.5 MB |
+| Exported symbols (`nm -D --defined-only`) | 1 (`engine_shared_probe@@ENGINE_1`) |
+| Load and scheduler start through `libengine.so.1` (`ldprobe` with 0 jobs) | 2 ms (an empty C program: under 1 ms) |
+| A C program linking it runs 2,000 jobs, plain, asan, tsan | passes |
+| Static default (`ENGINE_BUILD_SHARED=OFF`) | no compile command changed: `ninja -n` after the change rebuilds nothing, so `renderer_bench` and `ecs_bench` cannot differ; no figures were taken |
+
+Left for later days: the second set of the engine's own test suites linked against the shared library (Day 356 runs the whole suite shared; the mode argument of
+`engine_add_*_tests` is added then, where the suites are run), the install rule (a `libengine.so.1` install with the headers belongs with the C API on Day 346),
+`-Wl,-rpath` for installed hosts, and sizes and start-up of a Release build (Day 356's benchmarks).

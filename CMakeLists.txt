@@ -38,6 +38,25 @@ if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin" AND NOT CMAKE_TOOLCHAIN_FILE AND NOT
 endif()
 
 project(engine_placeholder CXX C)
+
+# Phase 23: the engine as one loadable shared library behind the C API (docs/superpowers/specs/2026-11-16-engine-library-design.md). Declared once, before
+# any target, because it changes how every target is compiled: position-independent code (the static libraries are linked into the shared one) and hidden
+# symbols (the version script of the library is the export list). OFF is the default and changes nothing. Linux builds it from Day 343; Windows and macOS
+# from Days 354 and 355.
+option(ENGINE_BUILD_SHARED "Build the engine as one loadable shared library behind the C API (Phase 23: Linux from Day 343)" OFF)
+if(ENGINE_BUILD_SHARED)
+  if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    if(CMAKE_VERSION VERSION_LESS 3.24)
+      message(FATAL_ERROR "ENGINE_BUILD_SHARED needs CMake 3.24 or newer (whole-archive linking through $<LINK_LIBRARY:WHOLE_ARCHIVE,...>); this is ${CMAKE_VERSION}")
+    endif()
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+    set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+    set(CMAKE_C_VISIBILITY_PRESET hidden)
+    set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
+  else()
+    message(STATUS "ENGINE_BUILD_SHARED=ON: the shared engine library is built on Linux (Day 343); Windows and macOS follow on Days 354 and 355; this configuration still builds the static libraries")
+  endif()
+endif()
 if(APPLE)
   # Objective-C++ (.mm files with ARC) is how the macOS backends talk to AppKit, Metal and QuartzCore (Phase 21 decision 3).
   enable_language(OBJCXX)
@@ -212,10 +231,6 @@ if(ENGINE_PLATFORM STREQUAL "windows")
        FILES_MATCHING PATTERN "*.h")
   include(cmake/EngineTestPhases.cmake)
   option(ENGINE_UNITY_BUILD "Compile each target's sources as merged unity translation units" ON)
-  option(ENGINE_BUILD_SHARED "Build the engine as one loadable shared library behind the C API (Phase 23; the build itself arrives on Day 343)" OFF)
-  if(ENGINE_BUILD_SHARED)
-    message(STATUS "ENGINE_BUILD_SHARED=ON: the shared engine library is built from Phase 23 Day 343 on; this configuration still builds the static libraries")
-  endif()
   set(CMAKE_UNITY_BUILD ${ENGINE_UNITY_BUILD})
   set(CMAKE_UNITY_BUILD_BATCH_SIZE 16)
   add_subdirectory(engine/foundation)
@@ -296,10 +311,6 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   include(cmake/EngineSentry.cmake)
   engine_add_sentry(C11)
   option(ENGINE_UNITY_BUILD "Compile each target's sources as merged unity translation units" ON)
-  option(ENGINE_BUILD_SHARED "Build the engine as one loadable shared library behind the C API (Phase 23; the build itself arrives on Day 343)" OFF)
-  if(ENGINE_BUILD_SHARED)
-    message(STATUS "ENGINE_BUILD_SHARED=ON: the shared engine library is built from Phase 23 Day 343 on; this configuration still builds the static libraries")
-  endif()
   set(CMAKE_UNITY_BUILD ${ENGINE_UNITY_BUILD})
   set(CMAKE_UNITY_BUILD_BATCH_SIZE 16)
   add_compile_options(${ENGINE_WARNING_COMPILE_OPTIONS} ${ENGINE_MACOS_COMPILE_OPTIONS})
@@ -390,10 +401,6 @@ include(cmake/EngineDeathTests.cmake)
 # full-build time. Set after the vendored Catch2 so only our own targets are batched. Turn it off
 # (-DENGINE_UNITY_BUILD=OFF) to check that every source still compiles on its own, or for clearer per-file errors.
 option(ENGINE_UNITY_BUILD "Compile each target's sources as merged unity translation units" ON)
-option(ENGINE_BUILD_SHARED "Build the engine as one loadable shared library behind the C API (Phase 23; the build itself arrives on Day 343)" OFF)
-if(ENGINE_BUILD_SHARED)
-  message(STATUS "ENGINE_BUILD_SHARED=ON: the shared engine library is built from Phase 23 Day 343 on; this configuration still builds the static libraries")
-endif()
 set(CMAKE_UNITY_BUILD ${ENGINE_UNITY_BUILD})
 set(CMAKE_UNITY_BUILD_BATCH_SIZE 16)
 
@@ -417,6 +424,7 @@ add_subdirectory(engine/scene)  # Phase 17 Day 233
 add_subdirectory(engine/asset)  # Phase 22 Day 313
 add_subdirectory(engine/asset_import)  # Phase 22 Day 335: the glTF importer (a leaf above asset)
 add_subdirectory(engine/animation)  # Phase 22 Day 321
+add_subdirectory(engine/engine_c)  # Phase 23: the aggregate shared library (ENGINE_BUILD_SHARED) and, from Day 346, the C API
 add_subdirectory(tools/asset_mint)  # Phase 22 Day 316
 add_subdirectory(tools/resource_server)  # Phase 22 Day 331
 add_subdirectory(tools/docgen)
