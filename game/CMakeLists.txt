@@ -56,6 +56,7 @@ add_subdirectory(renderer_bench)
 add_subdirectory(ecs_bench)
 add_subdirectory(spatial_demo)
 add_subdirectory(storage_demo)
+add_subdirectory(asset_demo)  # Phase 22 Day 339: the glTF import demo (the the host path)
 add_subdirectory(net_demo)  # Phase 20 Day 281 (macOS from Phase 21 Day 310)
 add_subdirectory(ui_demo)
 

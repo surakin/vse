@@ -9,6 +9,9 @@
 #include "asset/texture.h"
 #include "asset_import/gltf_async.h"
 #include "asset_import/gltf_import.h"
+#include "asset_import/import_settings.h"
+#include "settings/registry.h"
+#include "settings/settings.h"
 #include "jobs/scheduler.h"
 #include "cstr/cstr.h"
 #include "cstr/format.h"
@@ -266,6 +269,33 @@ TEST_CASE(
         unused = unused || result.report.notes[i].View().Contains(StringView("1 textures are used by no material"));
     }
     CHECK(unused);
+}
+
+TEST_CASE("gltf settings: the import limits are settings and the import obeys them", "[asset][gltf]")
+{
+    settings::Registry registry;
+    RegisterImportSettings(&registry);
+    RegisterImportSettings(&registry);  // twice changes nothing
+    ImportLimits limits = ImportLimitsFromSettings(registry);
+    const ImportLimits defaults;
+    CHECK(limits.max_file_bytes == defaults.max_file_bytes);
+    CHECK(limits.max_pixels == defaults.max_pixels);
+    CHECK(limits.max_nodes == defaults.max_nodes);
+    CHECK(registry.Find(StringView("assets.import.max_output_bytes")).IsValid());
+    // A setting changed through the settings system is what ImportLimitsFromSettings reads, and the import obeys it.
+    settings::Settings loaded(registry);
+    REQUIRE(loaded.SetText(StringView("assets.import.max_pixels"), StringView("8")).error == settings::SetError::None);
+    limits = ImportLimitsFromSettings(registry);
+    CHECK(limits.max_pixels == 8);
+    ImportOptions options;
+    options.limits = limits;
+    NoGltfSource none;
+    ImportResult result;
+    GltfError error;
+    const Vector<byte> glb = TexturedGlb(
+        "\"materials\":[{\"pbrMetallicRoughness\":{\"baseColorTexture\":{\"index\":0}}}],");
+    CHECK(ImportGltf(ByteSpan(glb.Data(), glb.Size()), none, options, &result, &error).Is(ErrorCode::TooLarge));
+    CHECK(MtSays(error, "images[0]"));
 }
 
 TEST_CASE("gltf async: an import runs on the job system, reports progress, cancels and runs many at once",

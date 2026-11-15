@@ -1,0 +1,1 @@
+game/viewer/|the viewer imports glTF at run time (the the host path)

@@ -1,0 +1,16 @@
+# Phase 22 Day 339: the asset demo, a headless console program: a glTF is imported from memory into a host memory backend, mounted, and every resource
+# loaded through the resource manager (the the host path). A program under game/ may link the importer (tools/asset_boundary_check's allow list).
+add_executable(asset_demo main.cpp)
+engine_split_debug_info(asset_demo)
+target_compile_options(asset_demo PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
+target_link_libraries(asset_demo PRIVATE asset_import asset animation renderer_passes renderer jobs foundation)
+set(ASSET_DEMO_MODEL ${CMAKE_SOURCE_DIR}/tests/asset/data/gltf/model.gltf)
+add_test(NAME asset_demo_runs COMMAND asset_demo --import ${ASSET_DEMO_MODEL})
+add_test(NAME asset_demo_async_runs COMMAND asset_demo --import ${ASSET_DEMO_MODEL} --async)
+add_test(NAME asset_demo_scaled_runs COMMAND asset_demo --import ${ASSET_DEMO_MODEL} --scale 0.01 --prefix /model)
+add_test(NAME asset_demo_limit_flag COMMAND asset_demo --import ${ASSET_DEMO_MODEL} --assets-import-max-pixels 4)
+add_test(NAME asset_demo_bad_file COMMAND asset_demo --import ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
+set_tests_properties(asset_demo_runs asset_demo_async_runs asset_demo_scaled_runs PROPERTIES LABELS "demo" PASS_REGULAR_EXPRESSION "asset_demo: ok" ENVIRONMENT "${DEMO_PROFILE_ENV}")
+set_tests_properties(asset_demo_limit_flag PROPERTIES LABELS "demo" PASS_REGULAR_EXPRESSION "the import was refused" ENVIRONMENT "${DEMO_PROFILE_ENV}")
+set_tests_properties(asset_demo_bad_file PROPERTIES LABELS "demo" PASS_REGULAR_EXPRESSION "the import was refused" ENVIRONMENT "${DEMO_PROFILE_ENV}")
+engine_label_tests(asset_demo_runs asset_demo_async_runs asset_demo_scaled_runs asset_demo_limit_flag asset_demo_bad_file)

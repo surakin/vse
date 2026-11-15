@@ -39,6 +39,8 @@ set(ASSET_TEST_SOURCES
   gltf_mesh_test.cpp  # Day 336
   gltf_skin_test.cpp  # Day 337
   gltf_image_test.cpp  # Day 338
+  asset_bench.cpp  # Day 340: hidden benchmarks
+  hostile_blob_test.cpp  # Day 340
   gltf_material_test.cpp  # Day 338
   png_writer.h  # Day 338
   jpeg_samples.h  # Day 338

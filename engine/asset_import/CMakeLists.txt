@@ -13,6 +13,7 @@ set(ASSET_IMPORT_SOURCES
   gltf_clip.cpp  # Day 337
   image_decode.cpp  # Day 338
   gltf_async.cpp  # Day 338
+  import_settings.cpp  # Day 339
   gltf_material.cpp  # Day 338
   material_source.cpp  # Day 338: the material minter moved here from tools/asset_mint
 )

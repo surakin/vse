@@ -1,0 +1,6 @@
+# path|reason - files (or directories, with a trailing /) allowed to cross the boundary of check.cmake: include the importer from engine/, game/ or
+# tools/, link `asset_import`, or include a decoder header. An entry that no longer exempts anything fails the gate (remove it).
+# Short on purpose: the runtime does not use the importer; the demos and a host program (Phase 23's C API) are listed with their reason. An entry
+# exempts its path from every rule of the gate, so keep it to the files that need it.
+game/asset_demo/main.cpp|the demo's whole point is the in-memory import of a glTF (the the host path)
+game/asset_demo/CMakeLists.txt|the demo links the importer

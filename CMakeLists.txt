@@ -271,6 +271,7 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(tools/shared_unit_check)  # Phase 22 (the shared-ownership gate; its own line, as net_access_check)
   add_subdirectory(tools/cmdline_access_check)  # the command-line gate (out of plan, 2026-11-14; its own line, as net_access_check)
   add_subdirectory(tools/json_boundary_check)  # Phase 22 Day 335: yyjson is included only by asset_import/json_view.cpp
+  add_subdirectory(tools/asset_boundary_check)  # Phase 22 Day 339: the runtime never includes or links the importer; only the importer includes the decoders
   add_subdirectory(tools/net_probe)  # Phase 20 Day 281
   add_subdirectory(tests/phase_labels)
   add_subdirectory(tests/test_phase_script)
@@ -357,6 +358,7 @@ if(ENGINE_PLATFORM STREQUAL "macos")
   add_subdirectory(tools/shared_unit_check)  # Phase 22 (the shared-ownership gate; its own line, as net_access_check)
   add_subdirectory(tools/cmdline_access_check)  # the command-line gate (out of plan, 2026-11-14; its own line, as net_access_check)
   add_subdirectory(tools/json_boundary_check)  # Phase 22 Day 335: yyjson is included only by asset_import/json_view.cpp
+  add_subdirectory(tools/asset_boundary_check)  # Phase 22 Day 339: the runtime never includes or links the importer; only the importer includes the decoders
   add_subdirectory(tools/net_probe)  # Phase 21 Day 310
   add_subdirectory(tests/phase_labels)
   add_subdirectory(tests/test_phase_script)
@@ -421,6 +423,7 @@ add_subdirectory(tools/net_access_check)  # Phase 20 Day 268
 add_subdirectory(tools/shared_unit_check)  # Phase 22: shared units are held by SharedPtr aliases and never pointed at
 add_subdirectory(tools/cmdline_access_check)  # programs read their command line through os::CommandLine, never by indexing argv
 add_subdirectory(tools/json_boundary_check)  # Phase 22 Day 335: yyjson is included only by asset_import/json_view.cpp
+add_subdirectory(tools/asset_boundary_check)  # Phase 22 Day 339: the runtime never includes or links the importer; only the importer includes the decoders
 add_subdirectory(tools/net_probe)  # Phase 20 Day 281
 add_subdirectory(tools/crash_extract)
 add_subdirectory(tests/foundation)

@@ -175,6 +175,7 @@ module game/rhi_bench/ game/rhi_bench 14
 module game/ecs_bench/ game/ecs_bench 14
 module game/spatial_demo/ game/spatial_demo 14
 module game/storage_demo/ game/storage_demo 14
+module game/asset_demo/ game/asset_demo 14
 module game/net_demo/ game/net_demo 14
 module game/rhi_demo/ game/rhi_demo 14
 module game/ui_demo/ game/ui_demo 14
@@ -193,6 +194,7 @@ module tools/net_access_check/ tools/gates 14
 module tools/shared_unit_check/ tools/gates 14
 module tools/cmdline_access_check/ tools/gates 14
 module tools/json_boundary_check/ tools/gates 14
+module tools/asset_boundary_check/ tools/gates 14
 module tools/sqlite_boundary_check/ tools/gates 14
 module tools/database_sql_check/ tools/gates 14
 module tools/module_deps_check/ tools/gates 14
@@ -282,6 +284,7 @@ target rhi_bench game/rhi_bench
 target ecs_bench game/ecs_bench
 target spatial_demo game/spatial_demo
 target storage_demo game/storage_demo
+target asset_demo game/asset_demo
 target net_demo game/net_demo
 target renderer_demo_lib game/renderer_demo
 target renderer_demo game/renderer_demo

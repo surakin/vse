@@ -209,6 +209,7 @@ test:renderer_demo_device_loss_screenshot       5
 test:spatial_demo_runs                        18
 test:storage_demo_runs                        19
 test:storage_demo_columns_runs                19
+test:asset_demo_*                              22   # the glTF import demo (Day 339)
 test:net_demo_runs                             20   # Phase 20 Day 281
 test:net_demo_simulated_runs                   20
 test:net_probe_*                               20   # Phase 20 Day 281
@@ -372,6 +373,7 @@ test:net_access_check*                          20   # the socket access gate (D
 test:shared_unit_check*                         22   # the shared-ownership gate (Phase 22)
 test:cmdline_access_check*                      22   # the command-line gate (out of plan, 2026-11-14)
 test:json_boundary_check*                       22   # the yyjson boundary gate (Day 335)
+test:asset_boundary_check*                      22   # the asset boundary gate (Day 339)
 test:resource_server_*                           22   # the resource server tool (Day 331)
 test:asset_mint_*                                22   # the minting tool's script tests (Day 333)
 

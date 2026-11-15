@@ -59,6 +59,7 @@ tools/net_access_check 20
 tools/shared_unit_check 22
 tools/cmdline_access_check 22
 tools/json_boundary_check 22
+tools/asset_boundary_check 22
 engine/asset_import 22
 third_party/yyjson 22
 third_party/zlib 22
@@ -80,6 +81,7 @@ game/rhi_bench      4
 game/ecs_bench      17
 game/spatial_demo   18
 game/storage_demo   19
+game/asset_demo     22
 game/ui_demo        3,15
 game/rhi_demo       4,5
 game/renderer_demo  4,5

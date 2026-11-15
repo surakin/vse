@@ -1,0 +1,2 @@
+game/viewer/|the viewer imports glTF
+engine/asset_import/|nothing here needs an entry

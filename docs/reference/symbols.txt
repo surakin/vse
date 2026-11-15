@@ -5831,6 +5831,8 @@ asset::DecodedImage::has_alpha	variable	asset_import	asset-decodedimage-has-alph
 asset::DecodedImage::reduced_depth	variable	asset_import	asset-decodedimage-reduced-depth	asset_import.md	engine/asset_import/image_decode.h:37
 asset::SniffImageFormat(ByteSpan)	function	asset_import	asset-sniffimageformat-bytespan	asset_import.md	engine/asset_import/image_decode.h:44
 asset::DecodePixels(ByteSpan,u64,DecodedImage*,GltfError*)	function	asset_import	asset-decodepixels-bytespan-u64-decodedimage-star-gltferror-star	asset_import.md	engine/asset_import/image_decode.h:58
+asset::RegisterImportSettings(settings::Registry*)	function	asset_import	asset-registerimportsettings-settings-registry-star	asset_import.md	engine/asset_import/import_settings.h:19
+asset::ImportLimitsFromSettings(const settings::Registry&)	function	asset_import	asset-importlimitsfromsettings-const-settings-registry-amp	asset_import.md	engine/asset_import/import_settings.h:27
 asset::JsonValue	class	asset_import	asset-jsonvalue	asset_import.md	engine/asset_import/json_view.h:29
 asset::JsonValue::JsonValue()	function	asset_import	asset-jsonvalue-jsonvalue	asset_import.md	engine/asset_import/json_view.h:33
 asset::JsonValue::Exists() const	function	asset_import	asset-jsonvalue-exists-const	asset_import.md	engine/asset_import/json_view.h:37

@@ -99,3 +99,35 @@ The in-memory glTF importer (`engine/asset_import`) parses files that may come f
 | jsmn | Not chosen: a tokenizer only, so strings, numbers and UTF-8 would be ours to write. |
 | nlohmann/json 3.12 | Not for this module: it throws, or aborts without exceptions, on a wrong type, and it needs `std` types. It stays in `tools/shader_mint`. |
 
+## Results (Phase 22 Day 340, Linux x86-64, 16 hardware threads, Release, Clang)
+
+Measured by `tests/asset/asset_bench.cpp` (`[.][asset-bench]`) and `tests/animation/animation_test.cpp` (`[.][animation-bench]`); the pass conditions are the
+planner's defaults above, **not yet confirmed by the user**.
+
+| Measure | Result | Pass condition | |
+|---|---|---|---|
+| Lookup by id in a table of 100,000 entries | 22 ns | under 1 microsecond | met |
+| Lookup by path, same table (path formatting included) | 399 ns | under 1 microsecond | met |
+| Opening and validating an 8 MiB blob | 0.1 microseconds (the sections are indexed, the bytes are not scanned; the content hash is a separate pass) | not stated | |
+| BC1 encode, 1 / 8 workers | 42 / 208 megapixels per second | at least 20 on 8 workers | met |
+| BC4 encode, 1 / 8 workers | 289 / 1,298 | | |
+| BC5 encode, 1 / 8 workers | 153 / 660 | | |
+| BC7 encode (`normal`), 1 / 8 workers | 13.6 / 77.4 | at least 2 on 8 workers | met |
+| Minting a 1024 x 1024 BC7 texture with its full mip chain, 1 worker | 0.12 s, 1,402,240 bytes | | |
+| Adding 10,000 blobs of 4 KiB to the memory backend | 270 ms (blob building included) | | |
+| 10,000 characters of 20 joints through the animation system, 1 / 8 workers | 8.13 / 1.63 ms per update | 4 ms for 10,000 characters of 40 joints on 8 workers | 20 joints measured; 40 not measured |
+| Clip samples per second (40 joints, 3 tracks) | 4.58 million | | |
+
+**Not measured on Day 340, and open:** sequential pak read against loose-file read (80 %), the ranged read rates of the three backends, the load path at 90 % of
+the raw read rate, a 10,000-resource level fully resident with the frame-time p99 while streaming, the bulk component load per 1,000 entities, the asynchronous
+latency, and 40-joint characters. Spike 5's figures above (the zero-copy path) stand for the load path; the rest is in `KNOWN-ISSUES.md`.
+
+## What was built that the decisions did not say (deviations from Day 313)
+
+- Days were split and inserted: Day 333 became two (the tool's first and second parts), and Days 335-338 are the glTF importer, an in-memory library
+  (`engine/asset_import`) for a host that imports at run time (the host), added on 2026-11-14 with the user's decisions: no hand-written JSON (yyjson by a spike),
+  zlib and libpng and stb_image's JPEG decoder vendored behind the importer, the command line through `os::CommandLine`.
+- The texture and material minters' cores moved from `tools/asset_mint` into `asset` (`MintTextureFromPixels`) and `asset_import` (`MintMaterial`) so that the
+  tool and the importer mint identically; `asset_mint` links `asset_import`.
+- Not built: the level as a glTF scene, the project registration of a glTF, the golden-image render of an imported model, the animated demo, the
+  three-backend screenshot comparison, device reset and hot reload in the demo, the loading tutorial (`KNOWN-ISSUES.md`, Days 338 and 339).
