@@ -1,10 +1,8 @@
 # Phase 24 — Scenes for Hosts Through the C API
 
-> **Draft (2026-11-15), written from a the host session at the user's request; placed as Phase 24 on 2026-11-15 (the user), every later phase moved up one.** Its days are not
-> broken down, so it cannot start (CLAUDE.md, "Planning policy"): day files come first.
+> Drafted 2026-11-15 from a the host session at the user's request; placed as Phase 24 the same day (every later phase moved up one) and broken into day files (Days 358-372) at the user's request.
 
-**Status: drafted at phase level (2026-11-15); no day files.** Placed right after Phase 23 because it builds on its C ABI, surfaces and
-host-provided content, and because its first user (the host's 3D call rooms) needs nothing from physics, audio or scripting.
+**Status: planned (2026-11-15): the day files are written (Days 358-372, `plans/phase-24-c-api-scenes-for-hosts/`), so the phase can start once Phase 23 closes (Day 357); Phase 28 (3D text) moved to Days 373-388 to make room (+15).** Placed right after Phase 23 because it builds on its C ABI, surfaces and host-provided content, and because its first user (the host's 3D call rooms) needs nothing from physics, audio or scripting.
 
 **Depends on:** Phase 23 (the C ABI, the function table and its version rules, surfaces in host-owned windows on Linux, Windows and macOS,
 host-owned input and the host-driven frame, host-provided content, glTF import at run time), Phase 22 (resources, the level format and
@@ -33,7 +31,27 @@ anything. The C host test renders the meadow with three robots (one walking, two
 compares pixels with a golden image; the ABI gate records the version bump; the guide and a tutorial are written; Linux, Windows and macOS
 pass the phase's tests and the full suite in every flavor.
 
-## Key deliverables (to be broken into days before the phase starts)
+## Days
+
+358. [Design Spec, Spikes & Phase Setup](phase-24-c-api-scenes-for-hosts/day-358-design-spec-spikes-and-setup.md)
+359. [A World on a Surface](phase-24-c-api-scenes-for-hosts/day-359-a-world-on-a-surface.md)
+360. [Cameras](phase-24-c-api-scenes-for-hosts/day-360-cameras.md)
+361. [Lights & the Environment](phase-24-c-api-scenes-for-hosts/day-361-lights-and-environment.md)
+362. [Meshes, Material Slots, Visibility & Hierarchy](phase-24-c-api-scenes-for-hosts/day-362-meshes-materials-and-hierarchy.md)
+363. [Skinned Meshes & Animation](phase-24-c-api-scenes-for-hosts/day-363-skinned-meshes-and-animation.md)
+364. [A glTF Scene as a Level](phase-24-c-api-scenes-for-hosts/day-364-a-gltf-scene-as-a-level.md)
+365. [Host Textures I: Create, Update, Resize](phase-24-c-api-scenes-for-hosts/day-365-host-textures-i-create-and-update.md)
+366. [Host Textures II: Binding, Several Surfaces & Reset](phase-24-c-api-scenes-for-hosts/day-366-host-textures-ii-binding-and-reset.md)
+367. [Labels: Text in the World](phase-24-c-api-scenes-for-hosts/day-367-labels-text-in-the-world.md)
+368. [Device Reset, Surface Rebind & Many Surfaces](phase-24-c-api-scenes-for-hosts/day-368-reset-rebind-and-many-surfaces.md)
+369. [Windows: Scenes on an `HWND` (Vulkan & Direct3D 12)](phase-24-c-api-scenes-for-hosts/day-369-windows-scenes-on-an-hwnd.md)
+370. [macOS: Scenes on an `NSView` (Metal)](phase-24-c-api-scenes-for-hosts/day-370-macos-scenes-on-an-nsview.md)
+371. [The Walk-Around Sample & the Acceptance Scene](phase-24-c-api-scenes-for-hosts/day-371-walk-around-sample-and-acceptance-scene.md)
+372. [Docs, Closing Runs on Three Machines & the Phase Review](phase-24-c-api-scenes-for-hosts/day-372-docs-closing-runs-and-phase-review.md)
+
+The Linux machine does Days 358-368, 371 and 372's Linux half; **Day 369 is for the Windows PC and Day 370 for the Mac** (CLAUDE.md, "Three machines"): Linux days write the shared code and the C hosts so the other two machines run and fix. The phase starts only after Phase 23's Day 357 (`CURRENT_PHASE` moves to 24 on Day 358).
+
+## Key deliverables (broken into the days above)
 
 - **A world on a surface.** `surface_set_world(surface, world, camera_entity)` (names decided in the spec): the surface renders that world
   through that camera on every `engine_frame` instead of clearing; several surfaces may show one world through different cameras; unbinding
@@ -92,7 +110,7 @@ pass the phase's tests and the full suite in every flavor.
   `docs/tutorials/a-3d-scene-in-your-window.md` (import a `.glb`, spawn it, add a camera and a light, play an animation, feed a texture);
   the spec `docs/superpowers/specs/2026-11-NN-c-api-scenes-design.md` written on the first day.
 
-## Notes / open questions (to settle in the spec on the first day)
+## Notes / open questions (to settle in the spec on Day 358)
 
 - **Coordinate conventions at the boundary.** glTF is right-handed, `+Y` up, metres; the importer converts to the engine's convention
   (Phase 22 Day 336, "no flip"). Decide whether C API transforms are in the engine's convention or glTF's, once, and state it in the header:

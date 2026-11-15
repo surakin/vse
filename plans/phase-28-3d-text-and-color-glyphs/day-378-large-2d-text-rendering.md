@@ -1,9 +1,9 @@
-# Phase 28 / Day 363 — Large 2D Text on the GPU
+# Phase 28 / Day 378 — Large 2D Text on the GPU
 
 **Phase:** [Phase 28 — 3D Text, Large 2D Text & Colored Glyphs](../phase-28-3d-text-and-color-glyphs.md)
-**Depends on:** Day 362; `renderer::TextRenderer` (Phase 14 Days 180-181).
+**Depends on:** Day 377; `renderer::TextRenderer` (Phase 14 Days 180-181).
 
-Draw the Day 362 meshes in the overlay pass and remove Phase 14's scaled-raster stand-in.
+Draw the Day 377 meshes in the overlay pass and remove Phase 14's scaled-raster stand-in.
 
 ## Tasks
 
@@ -15,7 +15,7 @@ Draw the Day 362 meshes in the overlay pass and remove Phase 14's scaled-raster 
 - [ ] **GPU tests** (`tests/renderer/text_mesh_test.cpp`, per backend): 160 px and 512 px 'Hello' drawn onto a cleared target; pixels outside the layout bounds untouched; coverage inside the bounds matches the software rasterizer within a tolerance; the same string at 128 px (atlas) and 129 px (mesh) has the same bounds within one pixel (nothing moves); two overlapping draws blend in call order; text at a non-integer origin has partial-coverage edges; a golden PGM of 'Hamburg' at 200 px committed under `tests/renderer/golden/`.
 - [ ] **Quality/cost check for the switchover** at 96, 128, 160 px: side-by-side PGMs of the atlas and mesh paths and the per-frame CPU/GPU cost (the numbers back the default of the setting; if the mesh path is clearly better below 128 px the spec is amended).
 - [ ] **Runs (CLAUDE.md "Tests run by phase"):** `scripts/test-phase.sh --affected` plain; then the asan and tsan flavors if the day touched lifetime, memory or concurrency code; quote each run's final `ran X of Y tests (phases ...)` line in this file. `ctest -L docs` when a public header or a guide changed. Build clean (warnings are errors) with Clang and GCC, unity on and off. New code uses the engine's wrappers and types, never `std` (`std_usage_check`).
-- [ ] **Two machines (CLAUDE.md "Windows is a supported platform"):** shared code is built and tested on the Windows PC no later than Day 373; until then the day files "open until the other machine runs it" in `KNOWN-ISSUES.md`.
+- [ ] **Two machines (CLAUDE.md "Windows is a supported platform"):** shared code is built and tested on the Windows PC no later than Day 388; until then the day files "open until the other machine runs it" in `KNOWN-ISSUES.md`.
 - [ ] **Documentation (CLAUDE.md "Public API is documented before a day is done"):** public headers carry `///` comments with the contract labels (`docs/DOC-CONVENTIONS.md`); `docgen lint` stays at zero; `cmake --build build --target docs` output committed; `docs/guide/text.md` "Large text" finished (cost, setting, limits); `docs/guide/render-settings.md` gets the new setting.
 - [ ] **Day review (CLAUDE.md, required):** `/code-review high` over the day's diff after the scoped tests; verify, fix (with a regression test that fails without the fix) or decline each finding with a reason; record the count and outcome under "Post-implementation code review" below and in `STATUS.md`.
 - [ ] `STATUS.md` and `KNOWN-ISSUES.md` updated in the same commit; commit and push.
