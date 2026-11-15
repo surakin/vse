@@ -1,4 +1,5 @@
 #include "sync/thread.h"
+#include "log/diagnostics_hooks.h"
 #include "containers/vector.h"
 #include "test_text.h"
 
@@ -364,6 +365,7 @@ TEST_CASE("Vulkan: plain threads can record, and thread slots are recycled", "[r
                 lists[t]->Begin();
                 lists[t]->Barrier(dst[t], ResourceState::Undefined, ResourceState::CopyDst);
                 lists[t]->End();
+                NotifyThreadEnd();  // gives the command-pool slot back
             });
     }
     for (Thread& th : threads)
@@ -379,12 +381,18 @@ TEST_CASE("Vulkan: plain threads can record, and thread slots are recycled", "[r
     device->EndFrame();
     device->WaitIdle();
 
-    // Far more short-lived threads than there are slots: each gives its slot back when it exits.
+    // Far more short-lived threads than there are slots: each gives its slot back through NotifyThreadEnd before it ends.
     device->BeginFrame();
     for (usize i = 0; i < VulkanDevice::kThreadSlots * 2; ++i)
     {
         CommandList* got = nullptr;
-        Thread([&] { got = device->CreateCommandList(); }).Join();
+        Thread(
+            [&]
+            {
+                got = device->CreateCommandList();
+                NotifyThreadEnd();
+            })
+            .Join();
         REQUIRE(got != nullptr);
     }
     // The lists above were never begun or submitted, which is fine: the pools are reset when their frame slot comes

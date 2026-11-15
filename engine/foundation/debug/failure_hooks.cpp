@@ -66,7 +66,7 @@ void InstallDiagnosticsHooks()
 {
     SetFailureReportHooks(&kHooks);
     SetThreadStartHook(&RegisterThread);
-    SetThreadEndHook(&UnregisterThread);
+    AddThreadEndHook(&UnregisterThread);
 }
 
 }  // namespace engine_placeholder::debug

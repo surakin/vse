@@ -94,8 +94,7 @@ void IoThread::Loop()
         }
         req->run(req);  // may free *req (the awaiter's state) once it decrements
     }
-    FramePool::ReleaseThreadCache();  // no thread_local destructor does it (the engine library must stay unloadable)
-    NotifyThreadEnd();
+    NotifyThreadEnd();  // gives back the frame-pool cache and the crash stack: no thread_local destructor does
 }
 
 // ---- read request state ---------------------------------------------------

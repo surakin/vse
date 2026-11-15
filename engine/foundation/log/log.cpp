@@ -393,7 +393,7 @@ namespace
 {
 Atomic<const FailureReportHooks*> g_failure_hooks{nullptr};
 Atomic<ThreadStartHook> g_thread_start_hook{nullptr};
-Atomic<ThreadEndHook> g_thread_end_hook{nullptr};
+Atomic<ThreadEndHook> g_thread_end_hooks[kMaxThreadEndHooks];
 }  // namespace
 
 const FailureReportHooks* SetFailureReportHooks(const FailureReportHooks* hooks)
@@ -420,17 +420,28 @@ void NotifyThreadStart(const char* name)
     }
 }
 
-ThreadEndHook SetThreadEndHook(ThreadEndHook hook)
+bool AddThreadEndHook(ThreadEndHook hook)
 {
-    return g_thread_end_hook.Exchange(hook, MemoryOrder::AcqRel);
+    for (usize i = 0; i < kMaxThreadEndHooks; ++i)
+    {
+        ThreadEndHook expected = nullptr;
+        if (g_thread_end_hooks[i].CompareExchangeStrong(expected, hook, MemoryOrder::AcqRel) || expected == hook)
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 void NotifyThreadEnd()
 {
-    ThreadEndHook hook = g_thread_end_hook.Load(MemoryOrder::Acquire);
-    if (hook != nullptr)
+    for (usize i = 0; i < kMaxThreadEndHooks; ++i)
     {
-        hook();
+        ThreadEndHook hook = g_thread_end_hooks[i].Load(MemoryOrder::Acquire);
+        if (hook != nullptr)
+        {
+            hook();
+        }
     }
 }
 

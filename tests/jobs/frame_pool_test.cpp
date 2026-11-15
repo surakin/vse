@@ -8,6 +8,7 @@
 
 #include "jobs/frame_pool.h"
 #include "lang/traits.h"
+#include "log/diagnostics_hooks.h"
 #include "os/os.h"
 #include "cstr/mem_ops.h"
 
@@ -179,7 +180,7 @@ TEST_CASE("FramePool global instance: blocks freed on another thread are reusabl
             {
                 pool.Deallocate(blocks[i]);
             }
-            FramePool::ReleaseThreadCache();  // the cache has no destructor: the thread hands it back
+            NotifyThreadEnd();  // the cache has no destructor: the thread hands it back (the first use registered the hook)
         });
     freer.Join();
 

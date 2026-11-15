@@ -7,7 +7,7 @@
 //! - [[FailureReportHooks]]: what the default assert handler and the error-log trace add to a bare message (a stack
 //! trace, the crash
 //!   context, a look at the debugger).
-//! - [[SetThreadStartHook]] and [[SetThreadEndHook]]: what a thread does first so a crash on it is reported by name
+//! - [[SetThreadStartHook]] and [[AddThreadEndHook]]: what a thread does first so a crash on it is reported by name
 //! (registration with the crash handler), and what it gives back last.
 //!
 //! `debug::InstallDiagnosticsHooks` (called by `debug::InitDebugFacilities`) installs both. Until then the base
@@ -74,17 +74,22 @@ void NotifyThreadStart(const char* name);
 /// The function [[NotifyThreadEnd]] calls: what a thread gives back before it ends.
 using ThreadEndHook = void (*)();
 
-/// Installs the function [[NotifyThreadEnd]] calls.
+/// Adds a function [[NotifyThreadEnd]] calls. Adding the same function twice keeps one entry.
 ///
-/// - Param hook: the function, or null to remove it.
-/// - Returns: the hook installed before, or null.
-/// - Thread-safety: thread-safe. One atomic store.
-ThreadEndHook SetThreadEndHook(ThreadEndHook hook);
+/// - Param hook: the function (never null).
+/// - Returns: false when all [[kMaxThreadEndHooks]] entries are taken.
+/// - Fails: returns false as described.
+/// - Thread-safety: thread-safe. Lock-free.
+bool AddThreadEndHook(ThreadEndHook hook);
 
-/// Called last thing on an engine thread (the I/O thread, the job workers) before it ends: releases what the thread
-/// registered at [[NotifyThreadStart]] (the crash handler's alternate stack), because no `thread_local` destructor does
+/// How many functions [[AddThreadEndHook]] holds.
+inline constexpr usize kMaxThreadEndHooks = 8;
+
+/// Called last thing on a thread before it ends (the engine's I/O thread and job workers do; so must any other thread
+/// that recorded Vulkan commands): releases what the thread acquired, the crash handler's alternate stack and a Vulkan
+/// command-pool slot, because no `thread_local` destructor does
 /// it (a destructor registered on a thread pins the shared engine library in memory). Does nothing until a hook is
-/// installed.
+/// added.
 ///
 /// - Thread-safety: thread-safe.
 void NotifyThreadEnd();

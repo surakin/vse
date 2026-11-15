@@ -1602,7 +1602,7 @@ It uses the default [`jobs::FramePool::Config`](#jobs-framepool-config) with thr
 static void ReleaseThreadCache();
 ```
 
-Hands the calling thread's cached blocks back to the pool that owns them. A thread that used the global pool calls it before it ends (the job system's workers and a scheduler's creating thread do); a thread that ends without it strands at most 64 blocks per size class, which the pool never sees again.
+Hands the calling thread's cached blocks back to the pool that owns them. [`NotifyThreadEnd`](foundation-log.md#notifythreadend) calls it (the first use of a cache registers it), so a thread that calls `NotifyThreadEnd` before it ends needs nothing more; the job system's workers, the I/O thread and a scheduler's creating thread do. A thread that ends without either strands at most 64 blocks per size class, which the pool never sees again.
 
 | Field | Value |
 |---|---|

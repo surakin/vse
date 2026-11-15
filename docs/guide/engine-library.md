@@ -50,11 +50,12 @@ The rules, and what enforces them:
 - **Nothing is freed by the side that did not allocate it.** A buffer the engine hands out comes back through the engine's release function, never the
   host's `free`. The host tests count the blocks the engine still holds after a release (`engine_owner_*`).
 - **No `thread_local` destructor on a thread the engine does not own.** `ld.so` refuses to unload a library that registered a thread-exit destructor on a thread
-  that is still alive. The frame pool's per-thread cache and the crash handler's alternate stack were the two offenders on the engine's API path; both are
-  now plain data, handed back explicitly: `jobs::FramePool::ReleaseThreadCache()` and `debug::UnregisterThreadForCrashHandling()` (through
-  `NotifyThreadEnd`, which the job workers and the I/O thread call last, and, for the creating thread, the end of the scheduler's pool). A thread that
-  ends without calling them strands at most 64 cached blocks per size class and one 128 KiB, mostly untouched, alternate stack; the C API (Day 346)
-  gives a host thread `engine_thread_detach` for it. Still on the list: the Vulkan backend's per-thread pool slot holder (Day 346 or 348).
+  that is still alive. The three per-thread things on the engine's API path were the frame pool's cache, the crash handler's alternate stack and the Vulkan
+  backend's command-pool slot; each is plain data now, handed back through `NotifyThreadEnd()` (`log/diagnostics_hooks.h`), which runs the functions added
+  with `AddThreadEndHook` (the first use of each registers its own). The job workers, the I/O thread and the end of the scheduler's pool call it; **any other
+  thread that used the engine must call it before it ends** (the C API gives a host thread `engine_thread_detach`, Day 346). A thread that does not strands at
+  most 64 cached blocks per size class and one 128 KiB, mostly untouched, alternate stack, and keeps its Vulkan slot (there are `kThreadSlots` of them, so a
+  program that records on many short-lived threads must call it).
 - **The crash handler is installed once, by the engine, and removed at shutdown;** the host's own handlers are back afterwards.
 
 The tests (`tests/engine_library`, Linux, `-DENGINE_BUILD_SHARED=ON`) are small C programs that `dlopen` the library: `engine_dup_singletons` (a plugin that

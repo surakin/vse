@@ -3,6 +3,7 @@
 #include "sync/atomic.h"
 #include "sync/mutex.h"
 
+#include "log/diagnostics_hooks.h"
 #include "rhi/rhi_log.h"
 #include "rhi/vulkan/vk_result.h"
 #include "rhi/vulkan/vulkan_device.h"
@@ -21,24 +22,22 @@ namespace
 constexpr usize kSlotWords = (VulkanDevice::kThreadSlots + 63) / 64;
 Atomic<u64> g_slot_words[kSlotWords];
 
-// Set when this thread's slot has been given back at thread exit. Kept outside the holder, in a trivially destructible
-// variable: a store the destructor made to its own `id` would be dead (and removed by the optimizer), so a later
-// thread-exit handler on this thread would reuse a slot that another thread may own by then.
-thread_local bool t_slot_released = false;
+// This thread's slot, or -1. Plain data, not an object with a destructor: a thread_local destructor registered on a host's thread keeps
+// the shared engine library mapped until that thread ends (Phase 23 Day 345). The slot goes back through NotifyThreadEnd, which the
+// job workers call last and which any other thread that recorded commands calls before it ends; a thread that does not keeps its slot
+// (kThreadSlots of them), and the next thread to ask for one may find none.
+thread_local i32 t_slot_id = -1;
 
-struct FallbackSlotHolder
+void ReleaseCurrentThreadSlot()
 {
-    i32 id = -1;
-    ~FallbackSlotHolder()
+    const i32 id = t_slot_id;
+    if (id >= 0)
     {
-        t_slot_released = true;
-        if (id >= 0)
-        {
-            g_slot_words[static_cast<usize>(id) / 64].FetchAnd(~(u64{1} << (static_cast<usize>(id) % 64)),
-                                                               MemoryOrder::Release);
-        }
+        t_slot_id = -1;
+        g_slot_words[static_cast<usize>(id) / 64].FetchAnd(~(u64{1} << (static_cast<usize>(id) % 64)),
+                                                           MemoryOrder::Release);
     }
-};
+}
 
 // Claims a free bit in the table; returns its index, or -1 if all are taken.
 i32 ClaimSlot()
@@ -67,20 +66,18 @@ i32 ClaimSlot()
     return -1;
 }
 
-// Returns the calling thread's pool slot, -1 if all are taken, or -2 if this thread already gave its slot back (it is
-// exiting).
+// Returns the calling thread's pool slot, or -1 if all are taken.
 i32 CurrentPoolSlot()
 {
-    if (t_slot_released)
+    if (t_slot_id < 0)
     {
-        return -2;
+        t_slot_id = ClaimSlot();
+        if (t_slot_id >= 0)
+        {
+            AddThreadEndHook(&ReleaseCurrentThreadSlot);
+        }
     }
-    thread_local FallbackSlotHolder holder;
-    if (holder.id < 0)
-    {
-        holder.id = ClaimSlot();
-    }
-    return holder.id;
+    return t_slot_id;
 }
 
 }  // namespace
@@ -123,12 +120,6 @@ usize VulkanDevice::CommandPoolCount() const
 VulkanDevice::ThreadPool* VulkanDevice::PoolForCurrentThread(usize frame_slot)
 {
     const i32 slot = CurrentPoolSlot();
-    if (slot == -2)
-    {
-        RhiLog(LogVerbosity::Error,
-               "Vulkan: a command list was requested by a thread that is exiting (its command pool slot is gone)");
-        return nullptr;
-    }
     if (slot < 0)
     {
         RhiLog(LogVerbosity::Error,

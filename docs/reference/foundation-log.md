@@ -17,7 +17,7 @@ Every failure goes to one handler (see [`SetAssertHandler`](#setasserthandler-as
 Two registrations through which the debugging module (layer 7) reaches code below it without being included by it.
 
 - [`FailureReportHooks`](#failurereporthooks): what the default assert handler and the error-log trace add to a bare message (a stack trace, the crash context, a look at the debugger).
-- [`SetThreadStartHook`](#setthreadstarthook-threadstarthook) and [`SetThreadEndHook`](#setthreadendhook-threadendhook): what a thread does first so a crash on it is reported by name (registration with the crash handler), and what it gives back last.
+- [`SetThreadStartHook`](#setthreadstarthook-threadstarthook) and [`AddThreadEndHook`](#addthreadendhook-threadendhook): what a thread does first so a crash on it is reported by name (registration with the crash handler), and what it gives back last.
 
 `debug::InstallDiagnosticsHooks` (called by `debug::InitDebugFacilities`) installs both. Until then the base behavior is complete on its own: a failed assert prints its message line and aborts, an ensure prints its line and continues, and a thread starts unregistered.
 
@@ -616,21 +616,32 @@ using ThreadEndHook = void (*)();
 
 The function [`NotifyThreadEnd`](#notifythreadend) calls: what a thread gives back before it ends.
 
-## `SetThreadEndHook(ThreadEndHook)` {#setthreadendhook-threadendhook}
+## `AddThreadEndHook(ThreadEndHook)` {#addthreadendhook-threadendhook}
 
-`function SetThreadEndHook` — defined in `engine/foundation/log/diagnostics_hooks.h`
+`function AddThreadEndHook` — defined in `engine/foundation/log/diagnostics_hooks.h`
 
 ```cpp
-ThreadEndHook SetThreadEndHook(ThreadEndHook hook);
+bool AddThreadEndHook(ThreadEndHook hook);
 ```
 
-Installs the function [`NotifyThreadEnd`](#notifythreadend) calls.
+Adds a function [`NotifyThreadEnd`](#notifythreadend) calls. Adding the same function twice keeps one entry.
 
 | Field | Value |
 |---|---|
-| Parameter `hook` | the function, or null to remove it. |
-| Returns | the hook installed before, or null. |
-| Thread-safety | thread-safe. One atomic store. |
+| Parameter `hook` | the function (never null). |
+| Returns | false when all [`kMaxThreadEndHooks`](#kmaxthreadendhooks) entries are taken. |
+| Fails | returns false as described. |
+| Thread-safety | thread-safe. Lock-free. |
+
+## `kMaxThreadEndHooks` {#kmaxthreadendhooks}
+
+`variable kMaxThreadEndHooks` — defined in `engine/foundation/log/diagnostics_hooks.h`
+
+```cpp
+inline constexpr usize kMaxThreadEndHooks;
+```
+
+How many functions [`AddThreadEndHook`](#addthreadendhook-threadendhook) holds.
 
 ## `NotifyThreadEnd()` {#notifythreadend}
 
@@ -640,7 +651,7 @@ Installs the function [`NotifyThreadEnd`](#notifythreadend) calls.
 void NotifyThreadEnd();
 ```
 
-Called last thing on an engine thread (the I/O thread, the job workers) before it ends: releases what the thread registered at [`NotifyThreadStart`](#notifythreadstart-const-char-star) (the crash handler's alternate stack), because no `thread_local` destructor does it (a destructor registered on a thread pins the shared engine library in memory). Does nothing until a hook is installed.
+Called last thing on a thread before it ends (the engine's I/O thread and job workers do; so must any other thread that recorded Vulkan commands): releases what the thread acquired, the crash handler's alternate stack and a Vulkan command-pool slot, because no `thread_local` destructor does it (a destructor registered on a thread pins the shared engine library in memory). Does nothing until a hook is added.
 
 | Field | Value |
 |---|---|

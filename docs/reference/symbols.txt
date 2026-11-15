@@ -1075,8 +1075,9 @@ ThreadStartHook	alias	foundation/log	threadstarthook	foundation-log.md	engine/fo
 SetThreadStartHook(ThreadStartHook)	function	foundation/log	setthreadstarthook-threadstarthook	foundation-log.md	engine/foundation/log/diagnostics_hooks.h:65
 NotifyThreadStart(const char*)	function	foundation/log	notifythreadstart-const-char-star	foundation-log.md	engine/foundation/log/diagnostics_hooks.h:72
 ThreadEndHook	alias	foundation/log	threadendhook	foundation-log.md	engine/foundation/log/diagnostics_hooks.h:75
-SetThreadEndHook(ThreadEndHook)	function	foundation/log	setthreadendhook-threadendhook	foundation-log.md	engine/foundation/log/diagnostics_hooks.h:82
-NotifyThreadEnd()	function	foundation/log	notifythreadend	foundation-log.md	engine/foundation/log/diagnostics_hooks.h:90
+AddThreadEndHook(ThreadEndHook)	function	foundation/log	addthreadendhook-threadendhook	foundation-log.md	engine/foundation/log/diagnostics_hooks.h:83
+kMaxThreadEndHooks	variable	foundation/log	kmaxthreadendhooks	foundation-log.md	engine/foundation/log/diagnostics_hooks.h:86
+NotifyThreadEnd()	function	foundation/log	notifythreadend	foundation-log.md	engine/foundation/log/diagnostics_hooks.h:95
 LogVerbosity	enum	foundation/log	logverbosity	foundation-log.md	engine/foundation/log/log.h:17
 LogVerbosity::Error	enumerator	foundation/log	logverbosity-error	foundation-log.md	engine/foundation/log/log.h:19
 LogVerbosity::Warn	enumerator	foundation/log	logverbosity-warn	foundation-log.md	engine/foundation/log/log.h:20
@@ -8158,7 +8159,7 @@ jobs::FramePool::Deallocate(void*)	function	jobs	jobs-framepool-deallocate-void-
 jobs::FramePool::GetStats() const	function	jobs	jobs-framepool-getstats-const	jobs.md	engine/jobs/frame_pool.h:161
 jobs::FramePool::CentralAvailableForTesting(usize)	function	jobs	jobs-framepool-centralavailablefortesting-usize	jobs.md	engine/jobs/frame_pool.h:172
 jobs::FramePool::Global()	function	jobs	jobs-framepool-global	jobs.md	engine/jobs/frame_pool.h:182
-jobs::FramePool::ReleaseThreadCache()	function	jobs	jobs-framepool-releasethreadcache	jobs.md	engine/jobs/frame_pool.h:189
+jobs::FramePool::ReleaseThreadCache()	function	jobs	jobs-framepool-releasethreadcache	jobs.md	engine/jobs/frame_pool.h:190
 jobs::CompletionFn	alias	jobs	jobs-completionfn	jobs.md	engine/jobs/job.h:38
 jobs::Job	class	jobs	jobs-job	jobs.md	engine/jobs/job.h:56
 jobs::Job::Handle	alias	jobs	jobs-job-handle	jobs.md	engine/jobs/job.h:62

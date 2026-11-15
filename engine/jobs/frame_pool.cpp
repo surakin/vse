@@ -2,6 +2,7 @@
 
 #include "lang/new.h"
 #include "lang/traits.h"
+#include "log/diagnostics_hooks.h"
 
 #include "log/assert.h"
 #include "os/os.h"
@@ -190,7 +191,7 @@ void* FramePool::Allocate(usize size)
     if (config_.thread_caches)
     {
         ENGINE_ASSERT(cache.owner == nullptr || cache.owner == this, "FramePool: thread cache belongs to another pool");
-        cache.owner = this;
+        NoteCacheUse(cache);
         if (cache.head[c] == nullptr)
         {
             // Refill a batch from the central pool under one lock.
@@ -260,7 +261,7 @@ void FramePool::Deallocate(void* ptr)
         return;
     }
     ENGINE_ASSERT(cache.owner == nullptr || cache.owner == this, "FramePool: thread cache belongs to another pool");
-    cache.owner = this;
+    NoteCacheUse(cache);
     *static_cast<void**>(block) = cache.head[cls];
     cache.head[cls] = block;
     ++cache.count[cls];
@@ -289,6 +290,15 @@ void FramePool::FlushCache(ThreadCache& cache)
             --cache.count[c];
             CentralPushLocked(c, b);
         }
+    }
+}
+
+void FramePool::NoteCacheUse(ThreadCache& cache)
+{
+    if (cache.owner == nullptr)
+    {
+        cache.owner = this;
+        AddThreadEndHook(&ReleaseThreadCache);  // idempotent; run by NotifyThreadEnd on every thread that calls it
     }
 }
 
