@@ -27,7 +27,7 @@ and a display are needed only for the last step.
 ## Complete code
 
 This runs on the null device, which checks every barrier and binding the Vulkan backend relies on and counts the errors
-it catches. The real thing is [demo_frame.cpp](../../game/renderer_demo/demo_frame.cpp) (the frame) and
+it catches. The real thing is [scene_frame.cpp](../../engine/renderer/scene_frame.cpp) (the frame) and
 [demo_scene.cpp](../../game/renderer_demo/demo_scene.cpp) (the scene).
 
 ```cpp compile standalone run

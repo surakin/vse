@@ -8,7 +8,6 @@ set(SCENE_TEST_SOURCES
   level_spawner_test.cpp  # Phase 22 Day 329
   scene_spikes_test.cpp  # Phase 24 Day 358: the spikes of the C API's scenes
   ${CMAKE_SOURCE_DIR}/tools/asset_mint/level_source.cpp  # Day 329: the level minter, to make the levels the spawner loads
-  ${CMAKE_SOURCE_DIR}/game/renderer_demo/demo_frame.cpp
 )
 
 # The GPU test creates a real device: LeakSanitizer's suppressions and driver-unloading workaround, as for tests/renderer (Linux only).

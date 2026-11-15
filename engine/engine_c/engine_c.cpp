@@ -447,7 +447,7 @@ engine_status GetInfoFn(engine_handle handle, engine_info* out)
                     (engine_c::SurfaceKindSupported(ENGINE_SURFACE_X11) ||
                              engine_c::SurfaceKindSupported(ENGINE_SURFACE_COCOA) ||
                              engine_c::SurfaceKindSupported(ENGINE_SURFACE_WIN32)
-                         ? ENGINE_CAP_READBACK
+                         ? (ENGINE_CAP_READBACK | ENGINE_CAP_WORLD_ON_SURFACE)
                          : 0u);
         out->reserved = 0;
         out->struct_size = static_cast<u32>(sizeof(engine_info));
@@ -741,6 +741,7 @@ extern "C"
             &engine_c::SurfaceReadPixelsFn,
             &engine_c::PixelsFinishFn,
             &engine_c::PixelsDestroyFn,
+            &engine_c::SurfaceSetWorldFn,
         };
         *out = &table;
         return ENGINE_OK;

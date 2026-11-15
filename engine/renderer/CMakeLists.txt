@@ -29,6 +29,7 @@ set(RENDERER_PASS_SOURCES
   ui_renderer.cpp
   viewport_target.cpp
   ui_surface_target.cpp
+  scene_frame.cpp  # Phase 24 Day 359 (moved from game/renderer_demo)
 )
 
 # Headers are included as "renderer/<name>.h", rooted at engine/.

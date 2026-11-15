@@ -16,6 +16,8 @@ class ForeignWindow;
 namespace engine_placeholder::engine_c
 {
 
+class ResourceHost;
+class Runtime;
 struct SurfaceObject;
 struct PixelsObject;
 
@@ -50,7 +52,11 @@ public:
     /// Renders one frame into every surface (called by `frame`).
     ///
     /// - Thread-safety: thread-safe.
-    void RenderAll();
+    engine_status SetWorld(engine_handle surface, engine_handle world, ResourceHost* resources);
+
+    /// Renders every surface once: a surface with a world draws it (the world mutex is held by the caller, `runtime`
+    /// is the engine's), the others clear to their background color.
+    void RenderAll(Runtime& runtime, f32 delta_seconds);
 
 private:
     struct SurfaceSlot
@@ -94,5 +100,6 @@ engine_status SurfaceStateFn(engine_handle surface, engine_surface_state* out);
 engine_status SurfaceReadPixelsFn(engine_handle surface, engine_handle* ticket);
 engine_status PixelsFinishFn(engine_handle ticket, engine_pixels* out);
 engine_status PixelsDestroyFn(engine_handle ticket);
+engine_status SurfaceSetWorldFn(engine_handle surface, engine_handle world);
 
 }  // namespace engine_placeholder::engine_c

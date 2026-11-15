@@ -78,6 +78,14 @@ public:
     /// - Thread-safety: thread-safe.
     ImportHost& Imports() { return *imports_; }
 
+    /// The type registry and the memory backend a surface's own manager is built over (Phase 24 Day 359): the content a
+    /// host added is read through them on the surface's device.
+    ///
+    /// - Thread-safety: thread-safe (set at construction).
+    asset::TypeRegistry& Types() { return types_; }
+    /// See `Types`.
+    asset::HostMemoryBackend& Memory() { return *memory_; }
+
     /// Builds what the loader has read (called by every frame).
     ///
     /// - Thread-safety: thread-safe.

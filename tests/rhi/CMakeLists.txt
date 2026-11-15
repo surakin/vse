@@ -48,7 +48,6 @@ set(RHI_TEST_SOURCES
   ${CMAKE_SOURCE_DIR}/game/ui_demo/ui_demo_gpu.cpp
   ${CMAKE_SOURCE_DIR}/game/ui_demo/ui_script.cpp
   ${CMAKE_SOURCE_DIR}/game/renderer_demo/demo_scene.cpp
-  ${CMAKE_SOURCE_DIR}/game/renderer_demo/demo_frame.cpp
   ${CMAKE_SOURCE_DIR}/game/renderer_demo/demo_assets.cpp
   ${CMAKE_SOURCE_DIR}/game/common/cube_scene.cpp
   ${CMAKE_SOURCE_DIR}/game/common/textures.cpp

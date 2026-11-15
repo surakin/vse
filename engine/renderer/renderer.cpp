@@ -788,6 +788,10 @@ FrameStatus Renderer::RenderFrameImpl(const RenderScene* scene, const Camera* ca
     FrameStatus result = FrameStatus::Ok;
     if (acquired)
     {
+        if (desc_.before_present != nullptr)
+        {
+            desc_.before_present(desc_.swapchain->CurrentTexture(), desc_.before_present_user);
+        }
         const rhi::SwapchainStatus presented = desc_.swapchain->Present();
         if (presented == rhi::SwapchainStatus::Lost)
         {

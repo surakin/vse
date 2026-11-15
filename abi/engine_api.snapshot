@@ -73,7 +73,7 @@ field engine_transform.scale offset=32 size=12
 struct engine_world_transform size=68
 field engine_world_transform.struct_size offset=0 size=4
 field engine_world_transform.matrix offset=4 size=64
-struct engine_mesh_reference size=16
+struct engine_mesh_reference size=24
 field engine_mesh_reference.struct_size offset=0 size=4
 field engine_mesh_reference.material offset=4 size=4
 field engine_mesh_reference.mesh offset=8 size=8
@@ -203,7 +203,7 @@ field engine_surface_info.display offset=32 size=8
 field engine_surface_info.surface offset=40 size=8
 field engine_surface_info.window_id offset=48 size=8
 field engine_surface_info.callbacks offset=56 size=8
-struct engine_surface_state size=56
+struct engine_surface_state size=72
 field engine_surface_state.struct_size offset=0 size=4
 field engine_surface_state.image_width offset=4 size=4
 field engine_surface_state.image_height offset=8 size=4
@@ -220,7 +220,7 @@ field engine_pixels.width offset=4 size=4
 field engine_pixels.height offset=8 size=4
 field engine_pixels.stride offset=12 size=4
 field engine_pixels.data offset=16 size=32
-struct engine_api size=480
+struct engine_api size=488
 field engine_api.struct_size offset=0 size=4
 field engine_api.abi_major offset=4 size=4
 field engine_api.abi_minor offset=8 size=4

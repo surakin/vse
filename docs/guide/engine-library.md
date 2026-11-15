@@ -303,8 +303,7 @@ visibility and scale and reports them. In this order:
    host keeps dispatching its events as it did. The size is in pixels and the scale is the DPI factor (0 means 1). Each surface has a device of its own; the
    surface counts as an object of the engine until `surface_destroy`, and `destroy` of the engine answers `IN_USE` until it is gone. **Destroy the surface
    before the window.**
-3. **Draw.** Every `frame` renders one frame into every surface: in this version a clear to the surface's background color (`surface_set_background`; the
-   renderer is not behind the C API yet, so a scene such as the demo's cube has nothing to render it with: `KNOWN-ISSUES.md`). The host calls `frame` from its own
+3. **Draw.** Every `frame` renders one frame into every surface: a clear to the surface's background color (`surface_set_background`), and, from Day 359, the world bound with `surface_set_world` (next section). The host calls `frame` from its own
    thread, as everywhere in the API.
 4. **Follow the window.** The host tells the engine every change of size or scale with `surface_resized` (what a toolkit does on `ConfigureNotify` or when the
    Wayland surface is configured; **the size reported must be the size the window really has**: on X11 the swapchain takes the server's extent when it is rebuilt).
@@ -550,6 +549,24 @@ thread (the frame skips the surface and fails its read-back; the destroy is refu
 the engine and the rebind to a new one, a read-back cancelled by `surface_destroy`, and `destroy` refused while the surface exists. `surface_input_test.cpp`
 runs its UI rig on a Cocoa window there too. The Linux hosts run on the Mac through the POSIX side of `host_os.h`, with the process probes (`process_probe.h`: Mach and dyld in
 place of `/proc`) and the unload limit above.
+
+## A world on a surface (Phase 24 Day 359)
+
+`surface_set_world(surface, world)` binds a world to a surface (`ENGINE_CAP_WORLD_ON_SURFACE` in `caps`; pass a null world to unbind). Every `frame` then draws, on that surface, the entities of the
+world that have an `engine_mesh_reference` and a transform: the mesh and the material are resources the host added or loaded (Day 350), looked up by id; a material id of 0 is the surface's default grey material.
+The picture is lit by a default sun and seen by a default camera until Day 360 adds `surface_set_camera`.
+
+- **Per surface, not per engine.** Each surface owns a `renderer::SceneFrame` (the frame object the renderer demo used, moved into `engine/renderer`), a `RenderScene` and a resource manager over the engine's
+  resource host, so two surfaces draw independent pictures and a surface lost with its window loses only its own GPU content, which is rebuilt from the resources on `surface_rebind`.
+- **Order.** `frame` runs the world's systems first, then renders every surface: what a system changed this frame is what the picture shows.
+- **What it reports.** `engine_surface_state` gains `world_status` (`ENGINE_OK`, or `STALE_HANDLE` once the bound world was destroyed: the surface draws the background and keeps going),
+  `objects_drawn` (meshes the last frame drew) and `entities_unresolved` (entities whose mesh or material id did not resolve: they are skipped, never drawn wrongly, and counted).
+- **Mesh layout.** The G-buffer templates read the full vertex layout; a mesh minted with the packed default (`quality packed`) is refused by the template with a log line, so
+  `asset_mint` sources for meshes a surface draws say `quality full`.
+- **Destroy order.** Destroy the surface before the world; a world destroyed first leaves the surface drawing its background with `world_status` `STALE_HANDLE`.
+
+**Tested** by `host_scene.c` (a C program with an Xlib window; plain and asan): a minted mesh and material added from memory, an entity bound to them, the counts of `surface_state`, an unresolved
+material, the default material, the world destroyed under the surface and the image compared with the golden `golden/scene_rock_160x120.rgba` (no channel off by more than 4 and at most 0.5% of the values off by more than 1).
 
 ## Writing a host: the short path (Days 346-357)
 

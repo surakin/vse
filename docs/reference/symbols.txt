@@ -9886,81 +9886,132 @@ renderer::FrameContext::camera	variable	renderer	renderer-framecontext-camera	re
 renderer::FrameContext::device	variable	renderer	renderer-framecontext-device	renderer.md	engine/renderer/renderer.h:89
 renderer::FrameContext::frame_index	variable	renderer	renderer-framecontext-frame-index	renderer.md	engine/renderer/renderer.h:91
 renderer::FrameBuildFn	alias	renderer	renderer-framebuildfn	renderer.md	engine/renderer/renderer.h:95
-renderer::RecoveryPolicy	struct	renderer	renderer-recoverypolicy	renderer.md	engine/renderer/renderer.h:103
-renderer::RecoveryPolicy::max_attempts	variable	renderer	renderer-recoverypolicy-max-attempts	renderer.md	engine/renderer/renderer.h:106
-renderer::RecoveryPolicy::delay_frames	variable	renderer	renderer-recoverypolicy-delay-frames	renderer.md	engine/renderer/renderer.h:109
-renderer::RecoveryPolicy::max_delay_frames	variable	renderer	renderer-recoverypolicy-max-delay-frames	renderer.md	engine/renderer/renderer.h:111
-renderer::RecoveryPolicy::fallback_adapter	variable	renderer	renderer-recoverypolicy-fallback-adapter	renderer.md	engine/renderer/renderer.h:114
-renderer::RendererDesc	struct	renderer	renderer-rendererdesc	renderer.md	engine/renderer/renderer.h:120
-renderer::RendererDesc::device	variable	renderer	renderer-rendererdesc-device	renderer.md	engine/renderer/renderer.h:123
-renderer::RendererDesc::swapchain	variable	renderer	renderer-rendererdesc-swapchain	renderer.md	engine/renderer/renderer.h:125
-renderer::RendererDesc::scheduler	variable	renderer	renderer-rendererdesc-scheduler	renderer.md	engine/renderer/renderer.h:127
-renderer::RendererDesc::arena_bytes	variable	renderer	renderer-rendererdesc-arena-bytes	renderer.md	engine/renderer/renderer.h:129
-renderer::RendererDesc::graph	variable	renderer	renderer-rendererdesc-graph	renderer.md	engine/renderer/renderer.h:131
-renderer::RendererDesc::pool	variable	renderer	renderer-rendererdesc-pool	renderer.md	engine/renderer/renderer.h:133
-renderer::RendererDesc::host	variable	renderer	renderer-rendererdesc-host	renderer.md	engine/renderer/renderer.h:138
-renderer::RendererDesc::create_info	variable	renderer	renderer-rendererdesc-create-info	renderer.md	engine/renderer/renderer.h:142
-renderer::RendererDesc::recovery	variable	renderer	renderer-rendererdesc-recovery	renderer.md	engine/renderer/renderer.h:144
-renderer::RendererDesc::window	variable	renderer	renderer-rendererdesc-window	renderer.md	engine/renderer/renderer.h:146
-renderer::RendererDesc::initial_settings	variable	renderer	renderer-rendererdesc-initial-settings	renderer.md	engine/renderer/renderer.h:149
-renderer::RendererDesc::resources	variable	renderer	renderer-rendererdesc-resources	renderer.md	engine/renderer/renderer.h:152
-renderer::RendererDesc::build	variable	renderer	renderer-rendererdesc-build	renderer.md	engine/renderer/renderer.h:154
-renderer::RendererDesc::build_user	variable	renderer	renderer-rendererdesc-build-user	renderer.md	engine/renderer/renderer.h:156
-renderer::RendererStats	struct	renderer	renderer-rendererstats	renderer.md	engine/renderer/renderer.h:162
-renderer::RendererStats::frames_rendered	variable	renderer	renderer-rendererstats-frames-rendered	renderer.md	engine/renderer/renderer.h:165
-renderer::RendererStats::frames_skipped	variable	renderer	renderer-rendererstats-frames-skipped	renderer.md	engine/renderer/renderer.h:167
-renderer::RendererStats::frames_failed	variable	renderer	renderer-rendererstats-frames-failed	renderer.md	engine/renderer/renderer.h:169
-renderer::RendererStats::frames_lost	variable	renderer	renderer-rendererstats-frames-lost	renderer.md	engine/renderer/renderer.h:171
-renderer::RendererStats::swapchain_recreations	variable	renderer	renderer-rendererstats-swapchain-recreations	renderer.md	engine/renderer/renderer.h:173
-renderer::RendererStats::applies	variable	renderer	renderer-rendererstats-applies	renderer.md	engine/renderer/renderer.h:175
-renderer::RendererStats::resets	variable	renderer	renderer-rendererstats-resets	renderer.md	engine/renderer/renderer.h:177
-renderer::RendererStats::rollbacks	variable	renderer	renderer-rendererstats-rollbacks	renderer.md	engine/renderer/renderer.h:179
-renderer::RendererStats::recoveries	variable	renderer	renderer-rendererstats-recoveries	renderer.md	engine/renderer/renderer.h:181
-renderer::RendererStats::recovery_failures	variable	renderer	renderer-rendererstats-recovery-failures	renderer.md	engine/renderer/renderer.h:183
-renderer::RendererStats::last_reset_ms	variable	renderer	renderer-rendererstats-last-reset-ms	renderer.md	engine/renderer/renderer.h:185
-renderer::RendererStats::last_fence	variable	renderer	renderer-rendererstats-last-fence	renderer.md	engine/renderer/renderer.h:187
-renderer::BackendForSetting(u32,const char**)	function	renderer	renderer-backendforsetting-u32-const-char-star-star	renderer.md	engine/renderer/renderer.h:199
-renderer::MakeDeviceCreateInfo(const RenderSettings&,const rhi::DeviceCreateInfo&,char*,rhi::DeviceCreateInfo*)	function	renderer	renderer-makedevicecreateinfo-const-rendersettings-amp-const-rhi-devicecreateinfo-amp-char-star-rhi-devicecreateinfo-star	renderer.md	engine/renderer/renderer.h:210
-renderer::MakeSwapchainDesc(const RenderSettings&)	function	renderer	renderer-makeswapchaindesc-const-rendersettings-amp	renderer.md	engine/renderer/renderer.h:217
-renderer::ApplyResult	struct	renderer	renderer-applyresult	renderer.md	engine/renderer/renderer.h:222
-renderer::ApplyResult::ok	variable	renderer	renderer-applyresult-ok	renderer.md	engine/renderer/renderer.h:225
-renderer::ApplyResult::queued	variable	renderer	renderer-applyresult-queued	renderer.md	engine/renderer/renderer.h:228
-renderer::ApplyResult::rolled_back	variable	renderer	renderer-applyresult-rolled-back	renderer.md	engine/renderer/renderer.h:230
-renderer::ApplyResult::device_lost	variable	renderer	renderer-applyresult-device-lost	renderer.md	engine/renderer/renderer.h:232
-renderer::ApplyResult::performed	variable	renderer	renderer-applyresult-performed	renderer.md	engine/renderer/renderer.h:234
-renderer::ApplyResult::change	variable	renderer	renderer-applyresult-change	renderer.md	engine/renderer/renderer.h:236
-renderer::ApplyResult::reason	variable	renderer	renderer-applyresult-reason	renderer.md	engine/renderer/renderer.h:238
-renderer::ApplyResult::total_ms	variable	renderer	renderer-applyresult-total-ms	renderer.md	engine/renderer/renderer.h:240
-renderer::ApplyResult::release_ms	variable	renderer	renderer-applyresult-release-ms	renderer.md	engine/renderer/renderer.h:242
-renderer::ApplyResult::device_ms	variable	renderer	renderer-applyresult-device-ms	renderer.md	engine/renderer/renderer.h:244
-renderer::ApplyResult::swapchain_ms	variable	renderer	renderer-applyresult-swapchain-ms	renderer.md	engine/renderer/renderer.h:246
-renderer::ApplyResult::rebuild_ms	variable	renderer	renderer-applyresult-rebuild-ms	renderer.md	engine/renderer/renderer.h:248
-renderer::ApplyResult::reset	variable	renderer	renderer-applyresult-reset	renderer.md	engine/renderer/renderer.h:251
-renderer::ResetBeginFn	alias	renderer	renderer-resetbeginfn	renderer.md	engine/renderer/renderer.h:255
-renderer::ResetEndFn	alias	renderer	renderer-resetendfn	renderer.md	engine/renderer/renderer.h:258
-renderer::Renderer	class	renderer	renderer-renderer	renderer.md	engine/renderer/renderer.h:268
-renderer::Renderer::Renderer(const RendererDesc&)	function	renderer	renderer-renderer-renderer-const-rendererdesc-amp	renderer.md	engine/renderer/renderer.h:276
-renderer::Renderer::Renderer(const Renderer&)	function	renderer	renderer-renderer-renderer-const-renderer-amp	renderer.md	engine/renderer/renderer.h:277
-renderer::Renderer::operator=(const Renderer&)	function	renderer	renderer-renderer-operator-eq-const-renderer-amp	renderer.md	engine/renderer/renderer.h:278
-renderer::Renderer::Rebind(rhi::Device*,rhi::Swapchain*)	function	renderer	renderer-renderer-rebind-rhi-device-star-rhi-swapchain-star	renderer.md	engine/renderer/renderer.h:289
-renderer::Renderer::ApplySettings(const RenderSettings&)	function	renderer	renderer-renderer-applysettings-const-rendersettings-amp	renderer.md	engine/renderer/renderer.h:307
-renderer::Renderer::ForceDeviceReset()	function	renderer	renderer-renderer-forcedevicereset	renderer.md	engine/renderer/renderer.h:315
-renderer::Renderer::Settings() const	function	renderer	renderer-renderer-settings-const	renderer.md	engine/renderer/renderer.h:319
-renderer::Renderer::LastApply() const	function	renderer	renderer-renderer-lastapply-const	renderer.md	engine/renderer/renderer.h:323
-renderer::Renderer::GetCapabilities() const	function	renderer	renderer-renderer-getcapabilities-const	renderer.md	engine/renderer/renderer.h:327
-renderer::Renderer::SetResetCallbacks(ResetBeginFn,ResetEndFn,void*)	function	renderer	renderer-renderer-setresetcallbacks-resetbeginfn-resetendfn-void-star	renderer.md	engine/renderer/renderer.h:336
-renderer::Renderer::GetDevice() const	function	renderer	renderer-renderer-getdevice-const	renderer.md	engine/renderer/renderer.h:348
-renderer::Renderer::GetSwapchain() const	function	renderer	renderer-renderer-getswapchain-const	renderer.md	engine/renderer/renderer.h:353
-renderer::Renderer::IsRecovering() const	function	renderer	renderer-renderer-isrecovering-const	renderer.md	engine/renderer/renderer.h:358
-renderer::Renderer::IsBroken() const	function	renderer	renderer-renderer-isbroken-const	renderer.md	engine/renderer/renderer.h:362
-renderer::Renderer::RenderFrame(const RenderScene*,const Camera*,const FrameTarget*)	function	renderer	renderer-renderer-renderframe-const-renderscene-star-const-camera-star-const-frametarget-star	renderer.md	engine/renderer/renderer.h:378
-renderer::Renderer::LastError() const	function	renderer	renderer-renderer-lasterror-const	renderer.md	engine/renderer/renderer.h:383
-renderer::Renderer::Stats() const	function	renderer	renderer-renderer-stats-const	renderer.md	engine/renderer/renderer.h:387
-renderer::Renderer::Pool() const	function	renderer	renderer-renderer-pool-const	renderer.md	engine/renderer/renderer.h:391
-renderer::Renderer::FrameIndex() const	function	renderer	renderer-renderer-frameindex-const	renderer.md	engine/renderer/renderer.h:395
+renderer::BeforePresentFn	alias	renderer	renderer-beforepresentfn	renderer.md	engine/renderer/renderer.h:102
+renderer::RecoveryPolicy	struct	renderer	renderer-recoverypolicy	renderer.md	engine/renderer/renderer.h:110
+renderer::RecoveryPolicy::max_attempts	variable	renderer	renderer-recoverypolicy-max-attempts	renderer.md	engine/renderer/renderer.h:113
+renderer::RecoveryPolicy::delay_frames	variable	renderer	renderer-recoverypolicy-delay-frames	renderer.md	engine/renderer/renderer.h:116
+renderer::RecoveryPolicy::max_delay_frames	variable	renderer	renderer-recoverypolicy-max-delay-frames	renderer.md	engine/renderer/renderer.h:118
+renderer::RecoveryPolicy::fallback_adapter	variable	renderer	renderer-recoverypolicy-fallback-adapter	renderer.md	engine/renderer/renderer.h:121
+renderer::RendererDesc	struct	renderer	renderer-rendererdesc	renderer.md	engine/renderer/renderer.h:127
+renderer::RendererDesc::device	variable	renderer	renderer-rendererdesc-device	renderer.md	engine/renderer/renderer.h:130
+renderer::RendererDesc::swapchain	variable	renderer	renderer-rendererdesc-swapchain	renderer.md	engine/renderer/renderer.h:132
+renderer::RendererDesc::scheduler	variable	renderer	renderer-rendererdesc-scheduler	renderer.md	engine/renderer/renderer.h:134
+renderer::RendererDesc::arena_bytes	variable	renderer	renderer-rendererdesc-arena-bytes	renderer.md	engine/renderer/renderer.h:136
+renderer::RendererDesc::graph	variable	renderer	renderer-rendererdesc-graph	renderer.md	engine/renderer/renderer.h:138
+renderer::RendererDesc::pool	variable	renderer	renderer-rendererdesc-pool	renderer.md	engine/renderer/renderer.h:140
+renderer::RendererDesc::host	variable	renderer	renderer-rendererdesc-host	renderer.md	engine/renderer/renderer.h:145
+renderer::RendererDesc::create_info	variable	renderer	renderer-rendererdesc-create-info	renderer.md	engine/renderer/renderer.h:149
+renderer::RendererDesc::recovery	variable	renderer	renderer-rendererdesc-recovery	renderer.md	engine/renderer/renderer.h:151
+renderer::RendererDesc::window	variable	renderer	renderer-rendererdesc-window	renderer.md	engine/renderer/renderer.h:153
+renderer::RendererDesc::initial_settings	variable	renderer	renderer-rendererdesc-initial-settings	renderer.md	engine/renderer/renderer.h:156
+renderer::RendererDesc::resources	variable	renderer	renderer-rendererdesc-resources	renderer.md	engine/renderer/renderer.h:159
+renderer::RendererDesc::build	variable	renderer	renderer-rendererdesc-build	renderer.md	engine/renderer/renderer.h:161
+renderer::RendererDesc::build_user	variable	renderer	renderer-rendererdesc-build-user	renderer.md	engine/renderer/renderer.h:163
+renderer::RendererDesc::before_present	variable	renderer	renderer-rendererdesc-before-present	renderer.md	engine/renderer/renderer.h:166
+renderer::RendererDesc::before_present_user	variable	renderer	renderer-rendererdesc-before-present-user	renderer.md	engine/renderer/renderer.h:168
+renderer::RendererStats	struct	renderer	renderer-rendererstats	renderer.md	engine/renderer/renderer.h:174
+renderer::RendererStats::frames_rendered	variable	renderer	renderer-rendererstats-frames-rendered	renderer.md	engine/renderer/renderer.h:177
+renderer::RendererStats::frames_skipped	variable	renderer	renderer-rendererstats-frames-skipped	renderer.md	engine/renderer/renderer.h:179
+renderer::RendererStats::frames_failed	variable	renderer	renderer-rendererstats-frames-failed	renderer.md	engine/renderer/renderer.h:181
+renderer::RendererStats::frames_lost	variable	renderer	renderer-rendererstats-frames-lost	renderer.md	engine/renderer/renderer.h:183
+renderer::RendererStats::swapchain_recreations	variable	renderer	renderer-rendererstats-swapchain-recreations	renderer.md	engine/renderer/renderer.h:185
+renderer::RendererStats::applies	variable	renderer	renderer-rendererstats-applies	renderer.md	engine/renderer/renderer.h:187
+renderer::RendererStats::resets	variable	renderer	renderer-rendererstats-resets	renderer.md	engine/renderer/renderer.h:189
+renderer::RendererStats::rollbacks	variable	renderer	renderer-rendererstats-rollbacks	renderer.md	engine/renderer/renderer.h:191
+renderer::RendererStats::recoveries	variable	renderer	renderer-rendererstats-recoveries	renderer.md	engine/renderer/renderer.h:193
+renderer::RendererStats::recovery_failures	variable	renderer	renderer-rendererstats-recovery-failures	renderer.md	engine/renderer/renderer.h:195
+renderer::RendererStats::last_reset_ms	variable	renderer	renderer-rendererstats-last-reset-ms	renderer.md	engine/renderer/renderer.h:197
+renderer::RendererStats::last_fence	variable	renderer	renderer-rendererstats-last-fence	renderer.md	engine/renderer/renderer.h:199
+renderer::BackendForSetting(u32,const char**)	function	renderer	renderer-backendforsetting-u32-const-char-star-star	renderer.md	engine/renderer/renderer.h:211
+renderer::MakeDeviceCreateInfo(const RenderSettings&,const rhi::DeviceCreateInfo&,char*,rhi::DeviceCreateInfo*)	function	renderer	renderer-makedevicecreateinfo-const-rendersettings-amp-const-rhi-devicecreateinfo-amp-char-star-rhi-devicecreateinfo-star	renderer.md	engine/renderer/renderer.h:222
+renderer::MakeSwapchainDesc(const RenderSettings&)	function	renderer	renderer-makeswapchaindesc-const-rendersettings-amp	renderer.md	engine/renderer/renderer.h:229
+renderer::ApplyResult	struct	renderer	renderer-applyresult	renderer.md	engine/renderer/renderer.h:234
+renderer::ApplyResult::ok	variable	renderer	renderer-applyresult-ok	renderer.md	engine/renderer/renderer.h:237
+renderer::ApplyResult::queued	variable	renderer	renderer-applyresult-queued	renderer.md	engine/renderer/renderer.h:240
+renderer::ApplyResult::rolled_back	variable	renderer	renderer-applyresult-rolled-back	renderer.md	engine/renderer/renderer.h:242
+renderer::ApplyResult::device_lost	variable	renderer	renderer-applyresult-device-lost	renderer.md	engine/renderer/renderer.h:244
+renderer::ApplyResult::performed	variable	renderer	renderer-applyresult-performed	renderer.md	engine/renderer/renderer.h:246
+renderer::ApplyResult::change	variable	renderer	renderer-applyresult-change	renderer.md	engine/renderer/renderer.h:248
+renderer::ApplyResult::reason	variable	renderer	renderer-applyresult-reason	renderer.md	engine/renderer/renderer.h:250
+renderer::ApplyResult::total_ms	variable	renderer	renderer-applyresult-total-ms	renderer.md	engine/renderer/renderer.h:252
+renderer::ApplyResult::release_ms	variable	renderer	renderer-applyresult-release-ms	renderer.md	engine/renderer/renderer.h:254
+renderer::ApplyResult::device_ms	variable	renderer	renderer-applyresult-device-ms	renderer.md	engine/renderer/renderer.h:256
+renderer::ApplyResult::swapchain_ms	variable	renderer	renderer-applyresult-swapchain-ms	renderer.md	engine/renderer/renderer.h:258
+renderer::ApplyResult::rebuild_ms	variable	renderer	renderer-applyresult-rebuild-ms	renderer.md	engine/renderer/renderer.h:260
+renderer::ApplyResult::reset	variable	renderer	renderer-applyresult-reset	renderer.md	engine/renderer/renderer.h:263
+renderer::ResetBeginFn	alias	renderer	renderer-resetbeginfn	renderer.md	engine/renderer/renderer.h:267
+renderer::ResetEndFn	alias	renderer	renderer-resetendfn	renderer.md	engine/renderer/renderer.h:270
+renderer::Renderer	class	renderer	renderer-renderer	renderer.md	engine/renderer/renderer.h:280
+renderer::Renderer::Renderer(const RendererDesc&)	function	renderer	renderer-renderer-renderer-const-rendererdesc-amp	renderer.md	engine/renderer/renderer.h:288
+renderer::Renderer::Renderer(const Renderer&)	function	renderer	renderer-renderer-renderer-const-renderer-amp	renderer.md	engine/renderer/renderer.h:289
+renderer::Renderer::operator=(const Renderer&)	function	renderer	renderer-renderer-operator-eq-const-renderer-amp	renderer.md	engine/renderer/renderer.h:290
+renderer::Renderer::Rebind(rhi::Device*,rhi::Swapchain*)	function	renderer	renderer-renderer-rebind-rhi-device-star-rhi-swapchain-star	renderer.md	engine/renderer/renderer.h:301
+renderer::Renderer::ApplySettings(const RenderSettings&)	function	renderer	renderer-renderer-applysettings-const-rendersettings-amp	renderer.md	engine/renderer/renderer.h:319
+renderer::Renderer::ForceDeviceReset()	function	renderer	renderer-renderer-forcedevicereset	renderer.md	engine/renderer/renderer.h:327
+renderer::Renderer::Settings() const	function	renderer	renderer-renderer-settings-const	renderer.md	engine/renderer/renderer.h:331
+renderer::Renderer::LastApply() const	function	renderer	renderer-renderer-lastapply-const	renderer.md	engine/renderer/renderer.h:335
+renderer::Renderer::GetCapabilities() const	function	renderer	renderer-renderer-getcapabilities-const	renderer.md	engine/renderer/renderer.h:339
+renderer::Renderer::SetResetCallbacks(ResetBeginFn,ResetEndFn,void*)	function	renderer	renderer-renderer-setresetcallbacks-resetbeginfn-resetendfn-void-star	renderer.md	engine/renderer/renderer.h:348
+renderer::Renderer::GetDevice() const	function	renderer	renderer-renderer-getdevice-const	renderer.md	engine/renderer/renderer.h:360
+renderer::Renderer::GetSwapchain() const	function	renderer	renderer-renderer-getswapchain-const	renderer.md	engine/renderer/renderer.h:365
+renderer::Renderer::IsRecovering() const	function	renderer	renderer-renderer-isrecovering-const	renderer.md	engine/renderer/renderer.h:370
+renderer::Renderer::IsBroken() const	function	renderer	renderer-renderer-isbroken-const	renderer.md	engine/renderer/renderer.h:374
+renderer::Renderer::RenderFrame(const RenderScene*,const Camera*,const FrameTarget*)	function	renderer	renderer-renderer-renderframe-const-renderscene-star-const-camera-star-const-frametarget-star	renderer.md	engine/renderer/renderer.h:390
+renderer::Renderer::LastError() const	function	renderer	renderer-renderer-lasterror-const	renderer.md	engine/renderer/renderer.h:395
+renderer::Renderer::Stats() const	function	renderer	renderer-renderer-stats-const	renderer.md	engine/renderer/renderer.h:399
+renderer::Renderer::Pool() const	function	renderer	renderer-renderer-pool-const	renderer.md	engine/renderer/renderer.h:403
+renderer::Renderer::FrameIndex() const	function	renderer	renderer-renderer-frameindex-const	renderer.md	engine/renderer/renderer.h:407
 renderer::RendererName()	function	renderer	renderer-renderername	renderer.md	engine/renderer/renderer_info.h:13
 renderer::RenderLogV(LogVerbosity,const char*,...)	function	renderer	renderer-renderlogv-logverbosity-const-char-star	renderer.md	engine/renderer/renderer_log.h:23
 RenderLog	macro	renderer	renderlog	renderer.md	engine/renderer/renderer_log.h:46
+renderer::SceneFrameSetup	struct	renderer	renderer-sceneframesetup	renderer.md	engine/renderer/scene_frame.h:33
+renderer::SceneFrameSetup::device	variable	renderer	renderer-sceneframesetup-device	renderer.md	engine/renderer/scene_frame.h:36
+renderer::SceneFrameSetup::swapchain	variable	renderer	renderer-sceneframesetup-swapchain	renderer.md	engine/renderer/scene_frame.h:38
+renderer::SceneFrameSetup::max_objects	variable	renderer	renderer-sceneframesetup-max-objects	renderer.md	engine/renderer/scene_frame.h:40
+renderer::SceneFrameSetup::max_lights	variable	renderer	renderer-sceneframesetup-max-lights	renderer.md	engine/renderer/scene_frame.h:42
+renderer::SceneFrameSetup::gbuffer_layer	variable	renderer	renderer-sceneframesetup-gbuffer-layer	renderer.md	engine/renderer/scene_frame.h:44
+renderer::SceneFrameSetup::exposure	variable	renderer	renderer-sceneframesetup-exposure	renderer.md	engine/renderer/scene_frame.h:46
+renderer::SceneFrameSetup::scheduler	variable	renderer	renderer-sceneframesetup-scheduler	renderer.md	engine/renderer/scene_frame.h:48
+renderer::SceneFrameSetup::resources	variable	renderer	renderer-sceneframesetup-resources	renderer.md	engine/renderer/scene_frame.h:50
+renderer::SceneFrameSetup::prewarm_pipelines	variable	renderer	renderer-sceneframesetup-prewarm-pipelines	renderer.md	engine/renderer/scene_frame.h:52
+renderer::SceneFrameSetup::host	variable	renderer	renderer-sceneframesetup-host	renderer.md	engine/renderer/scene_frame.h:54
+renderer::SceneFrameSetup::create_info	variable	renderer	renderer-sceneframesetup-create-info	renderer.md	engine/renderer/scene_frame.h:56
+renderer::SceneFrameSetup::initial_settings	variable	renderer	renderer-sceneframesetup-initial-settings	renderer.md	engine/renderer/scene_frame.h:58
+renderer::SceneFrameSetup::window	variable	renderer	renderer-sceneframesetup-window	renderer.md	engine/renderer/scene_frame.h:60
+renderer::SceneFrameSetup::recovery	variable	renderer	renderer-sceneframesetup-recovery	renderer.md	engine/renderer/scene_frame.h:62
+renderer::SceneFrameSetup::before_present	variable	renderer	renderer-sceneframesetup-before-present	renderer.md	engine/renderer/scene_frame.h:64
+renderer::SceneFrameSetup::before_present_user	variable	renderer	renderer-sceneframesetup-before-present-user	renderer.md	engine/renderer/scene_frame.h:66
+renderer::SceneFrameSetup::font_path	variable	renderer	renderer-sceneframesetup-font-path	renderer.md	engine/renderer/scene_frame.h:69
+renderer::SceneFrameCompose	struct	renderer	renderer-sceneframecompose	renderer.md	engine/renderer/scene_frame.h:76
+renderer::SceneFrameCompose::scene_target	variable	renderer	renderer-sceneframecompose-scene-target	renderer.md	engine/renderer/scene_frame.h:80
+renderer::SceneFrameCompose::after_scene	variable	renderer	renderer-sceneframecompose-after-scene	renderer.md	engine/renderer/scene_frame.h:83
+renderer::SceneFrameCompose::user	variable	renderer	renderer-sceneframecompose-user	renderer.md	engine/renderer/scene_frame.h:85
+renderer::SceneFrame	class	renderer	renderer-sceneframe	renderer.md	engine/renderer/scene_frame.h:94
+renderer::SceneFrame::SceneFrame()	function	renderer	renderer-sceneframe-sceneframe	renderer.md	engine/renderer/scene_frame.h:98
+renderer::SceneFrame::~SceneFrame()	function	renderer	renderer-sceneframe-tilde-sceneframe	renderer.md	engine/renderer/scene_frame.h:100
+renderer::SceneFrame::SceneFrame(const SceneFrame&)	function	renderer	renderer-sceneframe-sceneframe-const-sceneframe-amp	renderer.md	engine/renderer/scene_frame.h:101
+renderer::SceneFrame::operator=(const SceneFrame&)	function	renderer	renderer-sceneframe-operator-eq-const-sceneframe-amp	renderer.md	engine/renderer/scene_frame.h:102
+renderer::SceneFrame::Create(const SceneFrameSetup&)	function	renderer	renderer-sceneframe-create-const-sceneframesetup-amp	renderer.md	engine/renderer/scene_frame.h:108
+renderer::SceneFrame::Rebind(rhi::Device*,rhi::Swapchain*)	function	renderer	renderer-sceneframe-rebind-rhi-device-star-rhi-swapchain-star	renderer.md	engine/renderer/scene_frame.h:112
+renderer::SceneFrame::Destroy()	function	renderer	renderer-sceneframe-destroy	renderer.md	engine/renderer/scene_frame.h:114
+renderer::SceneFrame::GetRenderer()	function	renderer	renderer-sceneframe-getrenderer	renderer.md	engine/renderer/scene_frame.h:120
+renderer::SceneFrame::Materials()	function	renderer	renderer-sceneframe-materials	renderer.md	engine/renderer/scene_frame.h:125
+renderer::SceneFrame::Templates() const	function	renderer	renderer-sceneframe-templates-const	renderer.md	engine/renderer/scene_frame.h:127
+renderer::SceneFrame::SetCompose(const SceneFrameCompose&)	function	renderer	renderer-sceneframe-setcompose-const-sceneframecompose-amp	renderer.md	engine/renderer/scene_frame.h:130
+renderer::SceneFrame::SetTime(f32,f32)	function	renderer	renderer-sceneframe-settime-f32-f32	renderer.md	engine/renderer/scene_frame.h:132
+renderer::SceneFrame::Render(const RenderScene*,const Camera*,const FrameTarget*)	function	renderer	renderer-sceneframe-render-const-renderscene-star-const-camera-star-const-frametarget-star	renderer.md	engine/renderer/scene_frame.h:138
+renderer::SceneFrame::SetOverlay(bool,StringView,StringView)	function	renderer	renderer-sceneframe-setoverlay-bool-stringview-stringview	renderer.md	engine/renderer/scene_frame.h:145
+renderer::SceneFrame::OverlayAvailable() const	function	renderer	renderer-sceneframe-overlayavailable-const	renderer.md	engine/renderer/scene_frame.h:149
+renderer::SceneFrame::OverlayOn() const	function	renderer	renderer-sceneframe-overlayon-const	renderer.md	engine/renderer/scene_frame.h:153
+renderer::SceneFrame::SetOverlayScale(f32)	function	renderer	renderer-sceneframe-setoverlayscale-f32	renderer.md	engine/renderer/scene_frame.h:156
+renderer::SceneFrame::OverlayStats() const	function	renderer	renderer-sceneframe-overlaystats-const	renderer.md	engine/renderer/scene_frame.h:158
+renderer::SceneFrame::LastError() const	function	renderer	renderer-sceneframe-lasterror-const	renderer.md	engine/renderer/scene_frame.h:164
+renderer::SceneFrame::Stats() const	function	renderer	renderer-sceneframe-stats-const	renderer.md	engine/renderer/scene_frame.h:166
+renderer::SceneFrame::PoolStats() const	function	renderer	renderer-sceneframe-poolstats-const	renderer.md	engine/renderer/scene_frame.h:168
+renderer::SceneFrame::GBufferStatistics() const	function	renderer	renderer-sceneframe-gbufferstatistics-const	renderer.md	engine/renderer/scene_frame.h:170
+renderer::SceneFrame::Lights() const	function	renderer	renderer-sceneframe-lights-const	renderer.md	engine/renderer/scene_frame.h:172
+renderer::SceneFrame::PointDraws() const	function	renderer	renderer-sceneframe-pointdraws-const	renderer.md	engine/renderer/scene_frame.h:174
+renderer::SceneFrame::LastGBufferOk() const	function	renderer	renderer-sceneframe-lastgbufferok-const	renderer.md	engine/renderer/scene_frame.h:178
 renderer::kMaxPermutationOptions	variable	renderer	renderer-kmaxpermutationoptions	renderer.md	engine/renderer/shader_permutation.h:19
 renderer::kMaxPermutationKeys	variable	renderer	renderer-kmaxpermutationkeys	renderer.md	engine/renderer/shader_permutation.h:21
 renderer::PermutationKey	struct	renderer	renderer-permutationkey	renderer.md	engine/renderer/shader_permutation.h:26

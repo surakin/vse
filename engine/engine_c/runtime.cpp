@@ -25,13 +25,7 @@ namespace engine_placeholder::engine_c
 namespace
 {
 
-// The components the C API owns (the transform pair is the ECS's own).
-struct MeshReference
-{
-    u64 mesh = 0;
-    u32 material = 0;
-};
-
+// The components the C API owns (the transform pair is the ECS's own; MeshReference is in runtime.h).
 struct EntityName
 {
     u8 length = 0;
@@ -108,6 +102,17 @@ jobs::Job RunHostJob(engine_job_fn fn, void* user, CounterObject* counter, Atomi
 }
 
 }  // namespace
+
+WorldObject* FindWorld(Runtime& runtime, engine_handle handle, engine_status* status)
+{
+    WorldObject* object = nullptr;
+    const engine_status resolved = ResolveWorld(runtime, handle, &object);
+    if (status != nullptr)
+    {
+        *status = resolved;
+    }
+    return resolved == ENGINE_OK ? object : nullptr;
+}
 
 u32 NextGeneration()
 {
@@ -272,10 +277,6 @@ engine_status FrameFn(engine_handle engine, const engine_frame_info* info, engin
     {
         resources->PumpLoads();  // builds what asynchronous loads have read, within a small budget
     }
-    if (SurfaceHost* surfaces = runtime->SurfacesIfCreated())
-    {
-        surfaces->RenderAll();  // the host's windows, one frame each, before the worlds step
-    }
     LockGuard<Mutex> lock(runtime->world_mutex);
     result.frame_index = ++runtime->frames;
     const usize count = runtime->worlds.Size();
@@ -301,6 +302,10 @@ engine_status FrameFn(engine_handle engine, const engine_frame_info* info, engin
         object->schedule.Run(object->world, static_cast<f32>(info->delta_seconds));
         ++result.worlds_run;
         result.entities += object->world.Stats().entities;
+    }
+    if (SurfaceHost* surfaces = runtime->SurfacesIfCreated())
+    {
+        surfaces->RenderAll(*runtime, static_cast<f32>(info->delta_seconds));  // after the worlds ran (Day 359)
     }
     result.elapsed_us = (os::MonotonicTimeNanos() - start) / 1000;
     if (stats != nullptr)
@@ -503,6 +508,7 @@ engine_status ComponentSetFn(engine_handle world, u64 key, u32 kind_value, const
                              MeshReference reference;
                              reference.mesh = in->mesh;
                              reference.material = in->material;
+                             reference.material_resource = in->material_resource;
                              return SetOrAdd(object.world, entity, reference);
                          }
                          const engine_transform* in = static_cast<const engine_transform*>(value);
@@ -635,6 +641,7 @@ engine_status ComponentGetFn(engine_handle world, u64 key, u32 kind_value, void*
                          result.struct_size = sizeof(engine_mesh_reference);
                          result.mesh = reference->mesh;
                          result.material = reference->material;
+                         result.material_resource = reference->material_resource;
                          MemCopy(out, &result, sizeof(result));
                          return ENGINE_OK;
                      });

@@ -94,6 +94,13 @@ struct FrameContext
 /// A frame callback: declare the passes on `context.graph`. Return false to abandon the frame.
 using FrameBuildFn = bool (*)(const FrameContext& context, void* user);
 
+/// Called when a frame that presents is complete on the GPU's queue and not yet presented: `image` is the swapchain
+/// image the frame drew (in the `Present` state), still owned by the renderer. A host reads it back here (a screenshot:
+/// the C API's `surface_read_pixels`); the callback must not present, resize or destroy anything of the swapchain.
+///
+/// - Thread-safety: owner-thread-only: called on the thread that called `RenderFrame`.
+using BeforePresentFn = void (*)(rhi::TextureHandle image, void* user);
+
 /// What the renderer does when the device (or its swapchain surface) is lost.
 ///
 /// Needs a [[renderer::RendererDesc::host]]; without one a loss stays terminal. Attempts and delays are counted in
@@ -154,6 +161,11 @@ struct RendererDesc
     FrameBuildFn build = nullptr;
     /// Passed to the callback.
     void* build_user = nullptr;
+    /// The before-present hook (may be null): see [[renderer::BeforePresentFn]]. Not called for a frame without a
+    /// swapchain.
+    BeforePresentFn before_present = nullptr;
+    /// Passed to `before_present`.
+    void* before_present_user = nullptr;
 };
 
 /// What the renderer has done.

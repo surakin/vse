@@ -1,4 +1,4 @@
-#include "demo_frame.h"
+#include "renderer/scene_frame.h"
 
 #include "lang/scalar.h"
 #include "cstr/cstr.h"
@@ -6,18 +6,16 @@
 #include "io/path.h"
 #include "rhi/rhi_log.h"
 
-namespace renderer_demo
+namespace engine_placeholder::renderer
 {
 
-using namespace engine_placeholder::renderer;
-
-DemoFrame::DemoFrame() = default;
-DemoFrame::~DemoFrame()
+SceneFrame::SceneFrame() = default;
+SceneFrame::~SceneFrame()
 {
     Destroy();
 }
 
-void DemoFrame::Destroy()
+void SceneFrame::Destroy()
 {
     if (device_ != nullptr)
     {
@@ -40,13 +38,13 @@ void DemoFrame::Destroy()
     device_ = nullptr;
 }
 
-bool DemoFrame::Create(const FrameSetup& setup)
+bool SceneFrame::Create(const SceneFrameSetup& setup)
 {
     Destroy();
     char error[256];
     if (!CheckGBufferFormats(setup.device, error, sizeof(error)))
     {
-        rhi::RhiLogV(LogVerbosity::Error, "renderer_demo: %s", error);
+        rhi::RhiLogV(LogVerbosity::Error, "scene frame: %s", error);
         return false;
     }
     device_ = setup.device;
@@ -59,7 +57,7 @@ bool DemoFrame::Create(const FrameSetup& setup)
     frame_ = MakeUnique<FrameResources>(setup.device, setup.max_objects, setup.max_lights);
     if (!frame_->RegisterWith(setup.resources) || !materials_->Valid() || !frame_->Valid())
     {
-        rhi::RhiLogV(LogVerbosity::Error, "renderer_demo: could not create the material system or the frame buffers");
+        rhi::RhiLogV(LogVerbosity::Error, "scene frame: could not create the material system or the frame buffers");
         Destroy();
         return false;
     }
@@ -73,7 +71,7 @@ bool DemoFrame::Create(const FrameSetup& setup)
     if (!registered || !templates_.plain.IsValid() || !templates_.colored.IsValid() || !lighting_->Valid() ||
         !tonemap_->Valid() || !debug_view_->Valid())
     {
-        rhi::RhiLogV(LogVerbosity::Error, "renderer_demo: could not create the render passes");
+        rhi::RhiLogV(LogVerbosity::Error, "scene frame: could not create the render passes");
         Destroy();
         return false;
     }
@@ -87,7 +85,9 @@ bool DemoFrame::Create(const FrameSetup& setup)
     rd.initial_settings = setup.initial_settings;
     rd.window = setup.window;
     rd.recovery = setup.recovery;
-    rd.build = &DemoFrame::Build;
+    rd.before_present = setup.before_present;
+    rd.before_present_user = setup.before_present_user;
+    rd.build = &SceneFrame::Build;
     rd.build_user = this;
     renderer_ = MakeUnique<Renderer>(rd);
     if (setup.font_path != nullptr)
@@ -100,22 +100,21 @@ bool DemoFrame::Create(const FrameSetup& setup)
             const text::Status opened = text::Font::OpenFile(
                 font_library_, io::Path(StringView(setup.font_path, CStrLength(setup.font_path))), fo, &font_);
             if (opened.Ok() &&
-                !text_.Create(setup.device, &atlas_, renderer::TextRendererDesc{rhi::Format::RGBA8_SRGB, 4096},
-                              setup.resources))
+                !text_.Create(setup.device, &atlas_, TextRendererDesc{rhi::Format::RGBA8_SRGB, 4096}, setup.resources))
             {
                 font_.Close();
             }
             else if (!opened.Ok())
             {
-                rhi::RhiLogV(LogVerbosity::Warn, "renderer_demo: the overlay font '%s' did not open: %s",
-                             setup.font_path, opened.message);
+                rhi::RhiLogV(LogVerbosity::Warn, "scene frame: the overlay font '%s' did not open: %s", setup.font_path,
+                             opened.message);
             }
         }
     }
     return true;
 }
 
-bool DemoFrame::SetOverlay(bool on, StringView greeting, StringView status)
+bool SceneFrame::SetOverlay(bool on, StringView greeting, StringView status)
 {
     if (!font_.IsOpen())
     {
@@ -135,7 +134,7 @@ bool DemoFrame::SetOverlay(bool on, StringView greeting, StringView status)
     return true;
 }
 
-void DemoFrame::Rebind(rhi::Device* device, rhi::Swapchain* swapchain)
+void SceneFrame::Rebind(rhi::Device* device, rhi::Swapchain* swapchain)
 {
     if (!renderer_)
     {
@@ -145,14 +144,14 @@ void DemoFrame::Rebind(rhi::Device* device, rhi::Swapchain* swapchain)
     renderer_->Rebind(device, swapchain);
 }
 
-FrameStatus DemoFrame::Render(const RenderScene* scene, const Camera* camera, const FrameTarget* offscreen)
+FrameStatus SceneFrame::Render(const RenderScene* scene, const Camera* camera, const FrameTarget* offscreen)
 {
     return renderer_->RenderFrame(scene, camera, offscreen);
 }
 
-bool DemoFrame::Build(const FrameContext& context, void* user)
+bool SceneFrame::Build(const FrameContext& context, void* user)
 {
-    DemoFrame* self = static_cast<DemoFrame*>(user);
+    SceneFrame* self = static_cast<SceneFrame*>(user);
     if (context.scene == nullptr || context.camera == nullptr)
     {
         return false;
@@ -178,7 +177,7 @@ bool DemoFrame::Build(const FrameContext& context, void* user)
                                                 Frustum::FromViewProjection(context.camera->ViewProjection()));
     if (!self->gbuffer_ok_)
     {
-        rhi::RhiLogV(LogVerbosity::Warn, "renderer_demo: some objects were not drawn: %s", self->gbuffer_->LastError());
+        rhi::RhiLogV(LogVerbosity::Warn, "scene frame: some objects were not drawn: %s", self->gbuffer_->LastError());
     }
     self->gbuffer_stats_ = self->gbuffer_->Stats();
     self->light_summary_ = self->lighting_->Prepare(*context.scene, data);
@@ -224,4 +223,4 @@ bool DemoFrame::Build(const FrameContext& context, void* user)
     return true;
 }
 
-}  // namespace renderer_demo
+}  // namespace engine_placeholder::renderer

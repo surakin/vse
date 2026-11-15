@@ -25,6 +25,16 @@ namespace engine_placeholder::engine_c
 /// A world and the systems that run on it.
 ///
 /// - Thread-safety: thread-compatible; the runtime's world mutex guards every use.
+/// The component of ENGINE_COMPONENT_MESH_REFERENCE: what an entity draws.
+///
+/// - Thread-safety: plain data.
+struct MeshReference
+{
+    u64 mesh = 0;               ///< The resource id of the mesh (0: nothing to draw).
+    u32 material = 0;           ///< The host's own number, kept and returned (the engine does not read it).
+    u64 material_resource = 0;  ///< The resource id of the material (0: the surface's default material).
+};
+
 struct WorldObject
 {
     WorldObject();
@@ -215,5 +225,12 @@ engine_status CounterWaitFn(engine_handle counter, u64 timeout_ms);
 /// - Thread-safety: thread-safe.
 /// - Fails: never.
 void MakeTextBuffer(StringView text, engine_buffer* out);
+
+/// The world a handle names, or null when the handle is stale or not a world's (the failure text is set as for any
+/// handle).
+///
+/// - Thread-safety: the caller holds `runtime.world_mutex`.
+/// - Param status: when not null, receives ENGINE_OK or the failure of the handle.
+WorldObject* FindWorld(Runtime& runtime, engine_handle handle, engine_status* status = nullptr);
 
 }  // namespace engine_placeholder::engine_c

@@ -208,6 +208,9 @@ extern "C"
     0x10u /* surface_create renders with Metal into an NSView or CAMetalLayer the host owns (macOS, Day 355) */
 #define ENGINE_CAP_SURFACE_WIN32                                                                                       \
     0x20u /* surface_create renders into a Win32 window (HWND) the host owns, with Direct3D 12 or Vulkan (Day 354) */
+#define ENGINE_CAP_WORLD_ON_SURFACE                                                                                    \
+    0x40u /* surface_set_world draws a world's meshes on a surface (Phase 24 Day 359)                                  \
+           */
 
 /* ---- Day 352: rendering into a window the host owns ---- */
 
@@ -439,6 +442,11 @@ extern "C"
         uint64_t frames_skipped; /* frames that drew nothing (zero size, lost) */
         uint64_t input_dropped; /* input events dropped because the queue (1024) was full: the engine's UI did not drain
                                    it */
+        int32_t world_status;   /* ENGINE_OK, or why the world set with surface_set_world was unbound (STALE_HANDLE: it
+                                   was destroyed under the surface); the surface is back to its background color then */
+        uint32_t objects_drawn; /* objects the last frame of the bound world drew */
+        uint64_t entities_unresolved; /* entities of the bound world in the last frame whose mesh or material did not
+                                         resolve (not mounted, not of the type, or broken); they draw nothing */
     } engine_surface_state;
 
     /* The pixels of a rendered frame: RGBA8, `stride` bytes per row (width * 4), top row first. `data` is the host's to
@@ -517,13 +525,17 @@ extern "C"
         float matrix[16];
     } engine_world_transform;
 
-    /* The mesh an entity draws. `mesh` is an identifier the host chooses (loaded resources name theirs on Day 350); the
-     * engine stores it. */
+    /* The mesh an entity draws. `mesh` is the resource id of a mesh the host added or loaded (Day 350) and
+     * `material_resource` that of a material (0: the surface's default grey material); a surface bound to the entity's
+     * world (surface_set_world, Day 359) draws it, and an entity whose mesh or material is not mounted or is not of the
+     * type draws nothing and is counted in engine_surface_state.entities_unresolved. `material` is a number of the
+     * host's own: the engine stores and returns it and never reads it. */
     typedef struct engine_mesh_reference
     {
         uint32_t struct_size;
         uint32_t material;
         uint64_t mesh;
+        uint64_t material_resource;
     } engine_mesh_reference;
 
     /* A job: called once, on one of the engine's worker threads (never on the thread that submitted it), with the
@@ -1021,6 +1033,19 @@ extern "C"
         /* Destroys a read-back ticket (and the pixels it still holds). Fails with: STALE_HANDLE, INVALID_ARGUMENT,
          * TYPE_MISMATCH. */
         engine_status (*pixels_destroy)(engine_handle ticket);
+
+        /* ---- Phase 24 Day 359: a world on a surface ---- */
+
+        /* Makes the surface draw `world` (every entity with ENGINE_COMPONENT_TRANSFORM and
+         * ENGINE_COMPONENT_MESH_REFERENCE) on each `frame`, after the worlds have run, instead of clearing to its
+         * background color, through a fixed default camera and a default light (Days 360 and 361 let the host name its
+         * own). A `world` whose value is 0 unbinds the surface (it clears again). Several surfaces may show one world.
+         * A world destroyed under the surface unbinds it at the next frame with `world_status` STALE_HANDLE in
+         * surface_state. The surface makes what it draws resident on its own device the first frame an entity names it:
+         * a mesh or material that is not mounted (or not of the type) draws nothing and is counted in
+         * `entities_unresolved`. Fails with: STALE_HANDLE, INVALID_ARGUMENT, TYPE_MISMATCH, UNSUPPORTED (the surface is
+         * lost, or its device cannot draw a scene). Needs ENGINE_CAP_WORLD_ON_SURFACE. */
+        engine_status (*surface_set_world)(engine_handle surface, engine_handle world);
     } engine_api;
 
     /* Returns the function table.

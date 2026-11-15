@@ -3,7 +3,9 @@
 #include "engine_c/engine_internal.h"
 #include "engine_c/engine_objects.h"
 #include "engine_c/handles.h"
+#include "engine_c/resources.h"
 #include "engine_c/runtime.h"
+#include "engine_c/surface_scene.h"
 #include "cstr/mem_ops.h"
 #include "lang/utility.h"
 #include "os/os.h"
@@ -144,9 +146,15 @@ struct SurfaceObject
     bool visible = false;
     bool lost = false;
     u32 present_mode = 0;
-    rhi::Backend backend = rhi::Backend::Vulkan;  // ENGINE_SURFACE_FLAG_*, or the platform's own (Day 354)
-    u32 active_touch = 0;                         // the touch that acts as the pointer, plus one; 0 for none
-    Vector<usize> waiting;                        // slots of the read-back tickets waiting for a frame
+    rhi::Backend backend = rhi::Backend::Vulkan;     // ENGINE_SURFACE_FLAG_*, or the platform's own (Day 354)
+    u32 active_touch = 0;                            // the touch that acts as the pointer, plus one; 0 for none
+    Vector<usize> waiting;                           // slots of the read-back tickets waiting for a frame
+    engine_handle world = {};                        // the world bound by surface_set_world (value 0: none)
+    engine_status world_status = ENGINE_OK;          // why it was unbound, ENGINE_OK while bound or never bound
+    UniquePtr<SurfaceScene> scene;                   // after the swapchain in destruction order: it points at it
+    Vector<PixelsObject*>* frame_by_slot = nullptr;  // during RenderAll: the tickets the before-present hook serves
+    u32 objects_drawn = 0;
+    u64 entities_unresolved = 0;
 };
 
 namespace
@@ -275,6 +283,20 @@ engine_status CheckInfo(const engine_surface_info* given, engine_surface_info* o
     if (out->callbacks != nullptr && StructSizeOf(out->callbacks) < sizeof(engine_surface_callbacks))
     {
         return Fail(ENGINE_ERROR_STRUCT_SIZE, "engine_surface_callbacks.struct_size is smaller than the struct");
+    }
+    return ENGINE_OK;
+}
+
+void BeforePresent(rhi::TextureHandle image, void* user);
+
+// Makes the scene a bound world is drawn with, on the surface's device and swapchain.
+engine_status MakeScene(SurfaceObject* s, ResourceHost* resources)
+{
+    s->scene = MakeUnique<SurfaceScene>(s->device.Get(), s->swapchain, resources, &BeforePresent, s);
+    if (!s->scene->Valid())
+    {
+        s->scene.Reset();
+        return Fail(ENGINE_ERROR_UNSUPPORTED, "the device cannot draw a scene on this surface");
     }
     return ENGINE_OK;
 }
@@ -451,6 +473,7 @@ engine_status SurfaceHost::Destroy(engine_handle surface)
         FailWaiting(slot->object.Get(), &by_slot, ENGINE_ERROR_CANCELLED);
         dying = Move(slot->object);
     }
+    dying->scene.Reset();  // its renderer points at the swapchain
     if (dying->swapchain != nullptr)
     {
         dying->device->DestroySwapchain(dying->swapchain);
@@ -757,6 +780,14 @@ engine_status SurfaceHost::Rebind(engine_handle surface, const engine_surface_in
     {
         s->hooks.Set(*info.callbacks);
     }
+    const engine_handle world = s->world;
+    const bool had_scene = s->scene != nullptr;
+    s->scene.Reset();  // its renderer points at the swapchain; made again below
+    if (had_scene)
+    {  // unbound until the new swapchain exists: a failure below leaves the surface without a scene
+        s->world = engine_handle{};
+        s->world_status = ENGINE_ERROR_UNSUPPORTED;
+    }
     s->device->DestroySwapchain(s->swapchain);
     s->swapchain = nullptr;
     s->active_touch = 0;
@@ -779,6 +810,43 @@ engine_status SurfaceHost::Rebind(engine_handle surface, const engine_surface_in
     }
     s->lost = false;
     ++s->recoveries;
+    if (had_scene)
+    {
+        Runtime* runtime = CurrentRuntime();
+        if (runtime != nullptr && MakeScene(s, runtime->Resources()) == ENGINE_OK)
+        {
+            s->world = world;
+            s->world_status = ENGINE_OK;
+        }  // else unbound: the surface clears, with world_status UNSUPPORTED
+    }
+    return ENGINE_OK;
+}
+
+engine_status SurfaceHost::SetWorld(engine_handle surface, engine_handle world, ResourceHost* resources)
+{
+    LockGuard<Mutex> lock(mutex_);
+    SurfaceSlot* slot = nullptr;
+    TRY_SURFACE(ResolveSlot(surfaces_, surface, kKindSurface, "surface", &slot));
+    SurfaceObject* s = slot->object.Get();
+    if (world.value == 0)
+    {
+        s->scene.Reset();
+        s->world = engine_handle{};
+        s->world_status = ENGINE_OK;
+        s->objects_drawn = 0;
+        s->entities_unresolved = 0;
+        return ENGINE_OK;
+    }
+    if (s->lost || s->swapchain == nullptr)
+    {
+        return Fail(ENGINE_ERROR_UNSUPPORTED, "the surface is lost: call surface_rebind first");
+    }
+    if (s->scene == nullptr)
+    {
+        TRY_SURFACE(MakeScene(s, resources));
+    }
+    s->world = world;
+    s->world_status = ENGINE_OK;
     return ENGINE_OK;
 }
 
@@ -829,6 +897,9 @@ engine_status SurfaceHost::State(engine_handle surface, engine_surface_state* ou
     out->recoveries = s->recoveries;
     out->frames_skipped = s->skipped;
     out->input_dropped = s->window.DroppedEvents();
+    out->world_status = s->world_status;
+    out->objects_drawn = s->objects_drawn;
+    out->entities_unresolved = s->entities_unresolved;
     out->present_mode = s->present_mode;
     if (s->swapchain != nullptr)
     {
@@ -1012,7 +1083,21 @@ void ServeReadbacks(SurfaceObject* s, rhi::TextureHandle image, Vector<PixelsObj
 
 }  // namespace
 
-void SurfaceHost::RenderAll()
+namespace
+{
+
+void BeforePresent(rhi::TextureHandle image, void* user)
+{
+    SurfaceObject* s = static_cast<SurfaceObject*>(user);
+    if (s->frame_by_slot != nullptr)
+    {
+        ServeReadbacks(s, image, *s->frame_by_slot);
+    }
+}
+
+}  // namespace
+
+void SurfaceHost::RenderAll(Runtime& runtime, f32 delta_seconds)
 {
     LockGuard<Mutex> lock(mutex_);
     Vector<PixelsObject*> by_slot;
@@ -1049,6 +1134,44 @@ void SurfaceHost::RenderAll()
             continue;
         }
 #endif
+        if (s->scene != nullptr)
+        {
+            WorldObject* world = FindWorld(runtime, s->world);
+            if (world == nullptr)
+            {  // destroyed under the surface: back to the background color, with the reason
+                s->scene.Reset();
+                s->world = engine_handle{};
+                s->world_status = ENGINE_ERROR_STALE_HANDLE;
+            }
+            else
+            {
+                s->frame_by_slot = &by_slot;
+                const u32 width = s->swapchain->Width();
+                const u32 height = s->swapchain->Height();
+                const SceneFrameReport report = s->scene->Render(
+                    *world, height != 0 ? static_cast<f32>(width) / static_cast<f32>(height) : 1.0f, 0.0f,
+                    delta_seconds);
+                s->frame_by_slot = nullptr;
+                s->objects_drawn = report.objects_drawn;
+                s->entities_unresolved = report.entities_unresolved;
+                if (report.status == renderer::FrameStatus::Ok)
+                {
+                    s->visible = true;
+                    ++s->presented;
+                    // a ticket asked for this frame was served before the present; the rest wait for the next
+                }
+                else
+                {
+                    ++s->skipped;
+                    if (report.status == renderer::FrameStatus::DeviceLost)
+                    {
+                        s->lost = true;
+                        FailWaiting(s, &by_slot, ENGINE_ERROR_UNSUPPORTED);
+                    }
+                }
+                continue;
+            }
+        }
         s->device->BeginFrame();
         const rhi::SwapchainStatus acquired = s->swapchain->Acquire();
         if (acquired == rhi::SwapchainStatus::Minimized)
@@ -1167,6 +1290,23 @@ engine_status SurfaceSetBackgroundFn(engine_handle surface, const float* rgba)
     SurfaceHost* host = nullptr;
     TRY_SURFACE(HostOfObject(surface, &host));
     return host->SetBackground(surface, rgba);
+}
+
+engine_status SurfaceSetWorldFn(engine_handle surface, engine_handle world)
+{
+    SurfaceHost* host = nullptr;
+    TRY_SURFACE(HostOfObject(surface, &host));
+    Runtime* runtime = CurrentRuntime();
+    if (world.value != 0)
+    {  // the world is checked under its own mutex, and before the surface's: the frame takes them in that order
+        LockGuard<Mutex> lock(runtime->world_mutex);
+        engine_status found = ENGINE_OK;
+        if (FindWorld(*runtime, world, &found) == nullptr)
+        {
+            return found;
+        }
+    }
+    return host->SetWorld(surface, world, runtime->Resources());
 }
 
 engine_status SurfaceStateFn(engine_handle surface, engine_surface_state* out)

@@ -1,6 +1,6 @@
 # The Phase 5 showcase: a large lit scene drawn by the deferred renderer, in a window or offscreen (--screenshot).
 # The scene, the frame and the asset generator are in a small static library so the tests build the very same scene.
-add_library(renderer_demo_lib STATIC demo_assets.cpp demo_scene.cpp demo_frame.cpp ../common/textures.cpp)
+add_library(renderer_demo_lib STATIC demo_assets.cpp demo_scene.cpp ../common/textures.cpp)
 target_compile_options(renderer_demo_lib PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
 target_include_directories(renderer_demo_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/game/common)
 target_link_libraries(renderer_demo_lib PUBLIC scene ecs renderer_passes renderer rhi foundation)
